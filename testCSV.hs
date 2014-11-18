@@ -3,7 +3,7 @@ import System.Environment
 import Debug.Trace
 import ReadFiles
 
--- | 'main' Main function to run program 
+-- | 'main' Main function to run program, blah blah 
 main :: IO ()
 main = 
   do 
