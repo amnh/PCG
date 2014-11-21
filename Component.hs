@@ -793,6 +793,26 @@ binaryToNewick binTreeList =
         in
         (nodeName (nameTree V.! newRootCode)) : binaryToNewick (tail binTreeList)
 
+-- | rootModifyName adds parens and semicolon to name if root for single
+-- descendent
+rootModifyName :: String -> Bool -> String
+rootModifyName inName isRoot =
+    if null inName then error "Name list empty"
+    else 
+        if isRoot then
+            ("(" ++ inName ++ ");")
+        else inName
+
+-- | addColonIfRoot suprisingly enough, adds acolon to end of name if root for
+-- valid newick format
+addColonIfRoot :: Bool -> String -> String
+addColonIfRoot isRoot inName =
+    if null inName then error "Name list empty"
+    else 
+        if isRoot then
+            (inName ++ ";")
+        else inName
+
 
 -- | binaryToNewickNames takes a binary tree and outputs tree obnly with names
 -- updated.  Based on `traverseComponen' 
@@ -805,7 +825,7 @@ binaryToNewickNames inComp curPNode
   | length (children curPNode) == 1 =
     let onlyNodeCode = head (children curPNode)
         onlyResult = binaryToNewickNames inComp (inComp V.! onlyNodeCode)
-        thisName = nodeName  (inComp V.! onlyNodeCode)
+        thisName = rootModifyName (nodeName  (inComp V.! onlyNodeCode)) (isRoot curPNode)
         thisNode = modifyNodeName curPNode thisName
     in   --add as node name?  helpful to follow rsolutions 
         onlyResult V.++ V.singleton thisNode
@@ -819,9 +839,9 @@ binaryToNewickNames inComp curPNode
         rightResult
                = binaryToNewickNames inComp (inComp V.! rightNodeCode) 
         thisName --check here for already done in previous rootings/trees, should control for left/right name issues
-               = "(" ++  
+               = addColonIfRoot (isRoot curPNode) ("(" ++  
                    (min (nodeName (V.last leftResult))  (nodeName (V.last rightResult))) ++
-                     "," ++ (max (nodeName (V.last leftResult))  (nodeName (V.last rightResult)))  ++ ")"
+                     "," ++ (max (nodeName (V.last leftResult))  (nodeName (V.last rightResult)))  ++ ")")
         thisNode = modifyNodeName curPNode thisName
     in
         --should this be reversed so tail recursive?
