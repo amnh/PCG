@@ -389,12 +389,12 @@ getBinaryCostList binTreeList charInfoList dataMatrix previousBinaryTree =
     if V.null binTreeList then V.empty
     else 
         let curBinTree = V.head binTreeList 
-            startNode = V.last curBinTree
+            startNode = V.last curBinTree  --assumes root last--change to getRootCode?
             updatedPhyloComponent = traverseComponent dataMatrix curBinTree startNode charInfoList previousBinaryTree
             newOrder = getCodeNodePair updatedPhyloComponent
             reorderedUpdatedPhyloComponent = updatedPhyloComponent V.// newOrder
         in
-        V.cons (totalCost (V.last reorderedUpdatedPhyloComponent))  
+        V.cons (totalCost (V.last reorderedUpdatedPhyloComponent))  --assumes root last getRootCode?
             (getBinaryCostList (V.tail binTreeList) charInfoList dataMatrix reorderedUpdatedPhyloComponent)
 
 -- | compileBinaryCosts gets the costs of eachbinary tree
@@ -699,13 +699,13 @@ traverseComponent dataMatrix inComp curPNode charInfoList previousBinaryTree
             charInfoList previousBinaryTree
         thisName
           = "(" ++
-            nodeName curPNode ++ "=" ++ nodeName (V.last onlyChild) ++ ")"
+            nodeName curPNode ++ "=" ++ nodeName (V.head onlyChild) ++ ")"
         thisNode
           = modifyNamePrelimLocalTotal curPNode thisName
-            (preliminaryStates (V.last onlyChild))
-            (localCost (V.last onlyChild))
-            (totalCost (V.last onlyChild))
-    in onlyChild V.++ V.singleton thisNode
+            (preliminaryStates (V.head onlyChild))
+            (localCost (V.head onlyChild))
+            (totalCost (V.head onlyChild))
+    in (V.singleton thisNode) V.++ onlyChild
   | otherwise =
     --trace ("\nUpdated Component:" ++ show curPNode)
         (let leftNodeCode = head (children curPNode)
@@ -718,30 +718,30 @@ traverseComponent dataMatrix inComp curPNode charInfoList previousBinaryTree
                    charInfoList previousBinaryTree
              thisName --check here for already done in previous rootings/trees, should control for left/right name issues
                = "(" ++  
-                   (min (nodeName (V.last leftResult))  (nodeName (V.last rightResult))) ++
-                     "," ++ (max (nodeName (V.last leftResult))  (nodeName (V.last rightResult)))  ++ ")"
+                   (min (nodeName (V.head leftResult))  (nodeName (V.head rightResult))) ++
+                     "," ++ (max (nodeName (V.head leftResult))  (nodeName (V.head rightResult)))  ++ ")"
          in
             if thisName == (getPrevName previousBinaryTree (code curPNode)) then
                 let thisNode = modifyNamePrelimLocalTotal curPNode thisName  (preliminaryStates previousTreeNode)
                         (localCost previousTreeNode) (totalCost previousTreeNode)
                     previousTreeNode = previousBinaryTree V.! (code curPNode)
                 in
-                (leftResult V.++ rightResult) V.++ (V.singleton thisNode)  
+                (V.singleton thisNode) V.++ (leftResult V.++ rightResult) 
             else
                 let prelimStatesCost
-                        = makePrelim (preliminaryStates (V.last leftResult))
-                        (preliminaryStates (V.last rightResult))
+                        = makePrelim (preliminaryStates (V.head leftResult))
+                        (preliminaryStates (V.head rightResult))
                         charInfoList
                     sumThreeCosts
-                        = V.zipWith3 (\ a b c -> a + b + c) (totalCost (V.last leftResult))
-                        (totalCost (V.last rightResult))
+                        = V.zipWith3 (\ a b c -> a + b + c) (totalCost (V.head leftResult))
+                        (totalCost (V.head rightResult))
                         (extractNodeCosts prelimStatesCost) --thisNodeCosts
                     thisNode
                         = modifyNamePrelimLocalTotal curPNode thisName (extractNodeStates prelimStatesCost) 
                         (extractNodeCosts prelimStatesCost) --thisNodeCosts
                         sumThreeCosts
                 in --should this be reversed so tail recursive?
-                (leftResult V.++ rightResult) V.++ V.singleton thisNode
+                (V.singleton thisNode) V.++ (leftResult V.++ rightResult)
                 )
                 
 
@@ -828,7 +828,8 @@ binaryToNewickNames inComp curPNode
         thisName = rootModifyName (nodeName  (inComp V.! onlyNodeCode)) (isRoot curPNode)
         thisNode = modifyNodeName curPNode thisName
     in   --add as node name?  helpful to follow rsolutions 
-        onlyResult V.++ V.singleton thisNode
+        --onlyResult V.++ V.singleton thisNode
+        (V.singleton thisNode) V.++ onlyResult
   | isTerminal curPNode = 
     V.singleton curPNode
   | otherwise = 
@@ -840,12 +841,13 @@ binaryToNewickNames inComp curPNode
                = binaryToNewickNames inComp (inComp V.! rightNodeCode) 
         thisName --check here for already done in previous rootings/trees, should control for left/right name issues
                = addColonIfRoot (isRoot curPNode) ("(" ++  
-                   (min (nodeName (V.last leftResult))  (nodeName (V.last rightResult))) ++
-                     "," ++ (max (nodeName (V.last leftResult))  (nodeName (V.last rightResult)))  ++ ")")
+                   (min (nodeName (V.head leftResult))  (nodeName (V.head rightResult))) ++
+                     "," ++ (max (nodeName (V.head leftResult))  (nodeName (V.head rightResult)))  ++ ")")
         thisNode = modifyNodeName curPNode thisName
     in
         --should this be reversed so tail recursive?
-        (leftResult V.++ rightResult) V.++ V.singleton thisNode
+        --(leftResult V.++ rightResult) V.++ V.singleton thisNode
+        (V.singleton thisNode) V.++ (leftResult V.++ rightResult)
 
 -- | getInEdges takes a node and its parent(s) and return list of edges 
 -- (min code, max code)
