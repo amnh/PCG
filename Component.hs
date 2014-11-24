@@ -572,7 +572,7 @@ getComponentCost dataMatrix inComp charInfoList =
                 softAdjust2 = getSoftAdjust2 (V.head bestDisplayIndices) 
                     (displayTreeCharCostList V.! (V.head bestDisplayIndices))  
                     (V.length dataMatrix) charDisplayIndices 
-                rootCost = getRootCosts charInfoList    
+                rootCost = getRootCosts charInfoList --make into a fold   
              in 
                 trace ("\nBinaries : " ++ show (length displayTreeList) ++ " " ++ show (V.length reRootedVect) ++ " " 
                     ++ show (V.length charCostVectVect) ++ " " ++ show allCosts ++ " "
@@ -598,7 +598,8 @@ getRootCosts charInfoList =
     else 
         let firstChar = head charInfoList
         in
-        (rootCost firstChar) + (getRootCosts $ tail charInfoList) 
+        if activity firstChar then ((weight firstChar) * (rootCost firstChar)) + (getRootCosts $ tail charInfoList)
+        else (getRootCosts $ tail charInfoList)
 
 
 -- | getReRootList takes list of binary trees and returns list of all reroots of
