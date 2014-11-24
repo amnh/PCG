@@ -42,6 +42,7 @@ module Component
 , PhyloForest
 , NodeCode(..)
 , getForestCostList
+, getRootCosts
 ) where
 
 import Data.List
@@ -509,13 +510,36 @@ getSoftAdjust2 bestTreeIndex bestTreeCharCostList numTerminals bestCharIndicesLi
         in
         --if (firstDisplayTreeChar /= bestTreeIndex) then
         if (V.notElem bestTreeIndex bestDisplayTreeCharList) then
-            trace (" P2 " ++ show charPenalty) charPenalty  +  (getSoftAdjust2 bestTreeIndex (V.tail bestTreeCharCostList) numTerminals (V.tail bestCharIndicesList))
+            trace (" P2 " ++ show charPenalty) charPenalty  +  
+                (getSoftAdjust2 bestTreeIndex (V.tail bestTreeCharCostList) numTerminals (V.tail bestCharIndicesList))
         else
             (getSoftAdjust2 bestTreeIndex (V.tail bestTreeCharCostList) numTerminals (V.tail bestCharIndicesList))
 
+-- | edgeCodeToName takes Edge codes numbers and returns Node Name
+edgeCodeToName :: Int -> PhyloComponent -> String
+edgeCodeToName nodeCode inNodes =
+    if nodeCode < 0 || (nodeCode - 1 ) > V.length inNodes then 
+        error ("Impossible node code " ++ show nodeCode ++ " component size " ++ show (V.length inNodes))
+    else 
+        nodeName (inNodes V.! nodeCode)
+
+-- | edgePairListStringPairList takes list of edges and returns String Pairs for
+-- each edge 
+edgePairListStringPairList :: [(Int, Int)] -> PhyloComponent -> [(String, String)]
+edgePairListStringPairList edgeList inNodes =
+    if null edgeList then []
+    else 
+        let (a, b) = head edgeList
+            c = edgeCodeToName a inNodes
+            d = edgeCodeToName b inNodes
+        in
+        (c, d) : edgePairListStringPairList (tail edgeList) inNodes
+
+
 -- | getComponentCost returns cost of component from an input node (sum of all char
 --total costs)--checks if root
---need to work for list of binaries created--bnot just single as here
+--need to add root cost (for forest optimization) and MaxFloat for unused 
+--edges so exclude Forests/Coponents with superfluous edges.
 getComponentCost :: DataMatrixVLS -> PhyloComponent -> [CharInfo] -> Float
 getComponentCost dataMatrix inComp charInfoList =
     if V.null inComp then 0
@@ -529,8 +553,9 @@ getComponentCost dataMatrix inComp charInfoList =
             let displayTreeList = phyloComponentToTreeList inComp
                 inCompEdgeSet = edgeSetFromComponent inComp
                 reRootedVect = getReRootList displayTreeList
-                charCostVectVect = getBinaryCostList reRootedVect charInfoList dataMatrix V.empty --displayTreeList charInfoList dataMatrix
-                displayTreeCharCostList = getDisplayTreeCostList ((V.length charCostVectVect) `quot` (length displayTreeList)) charCostVectVect 
+                charCostVectVect = getBinaryCostList reRootedVect charInfoList dataMatrix V.empty 
+                displayTreeCharCostList = getDisplayTreeCostList ((V.length charCostVectVect) 
+                    `quot` (length displayTreeList)) charCostVectVect 
                 displayTreeCostList = getBinCosts displayTreeCharCostList
                 allCosts = compileBinaryCosts charCostVectVect --really for debug purposes
                 softCostList = compileSoftCosts displayTreeCharCostList --charCostVectVect
@@ -538,11 +563,16 @@ getComponentCost dataMatrix inComp charInfoList =
                 bestDisplayIndices = V.elemIndices (V.minimum displayTreeCostList) displayTreeCostList
                 charDisplayIndices = getCharDisplayIndices softCostList displayTreeCharCostList
                 --inCompEdgeSet = edgeSetFromComponentList displayTreeList
-                unusedEdges = Set.difference inCompEdgeSet (edgeSetFromComponentListSome displayTreeList (nub $ listOfVector $ V.toList charDisplayIndices) 0)
+                unusedEdges = Set.toList $ Set.difference inCompEdgeSet 
+                    (edgeSetFromComponentListSome displayTreeList 
+                    (nub $ listOfVector $ V.toList charDisplayIndices) 0)
                 numReticulateEdges = getReticulateEdges 0 (V.init inComp) 
                 softAdjust = getSoftAdjust numReticulateEdges softCost (V.length dataMatrix)
                 --arbitrarily uses first `best` binary tree
-                softAdjust2 = getSoftAdjust2 (V.head bestDisplayIndices) (displayTreeCharCostList V.! (V.head bestDisplayIndices))  (V.length dataMatrix) charDisplayIndices 
+                softAdjust2 = getSoftAdjust2 (V.head bestDisplayIndices) 
+                    (displayTreeCharCostList V.! (V.head bestDisplayIndices))  
+                    (V.length dataMatrix) charDisplayIndices 
+                rootCost = getRootCosts charInfoList    
              in 
                 trace ("\nBinaries : " ++ show (length displayTreeList) ++ " " ++ show (V.length reRootedVect) ++ " " 
                     ++ show (V.length charCostVectVect) ++ " " ++ show allCosts ++ " "
@@ -550,13 +580,26 @@ getComponentCost dataMatrix inComp charInfoList =
                     ++ " -> " ++ show (V.minimum displayTreeCostList) ++ "\nsoft " ++ show softCost ++ " soft adjust " ++ show softAdjust 
                     ++ "\nSoft Indices " ++ show charDisplayIndices ++ "\nSoft-2 "  ++ show softAdjust2 ++ " -> " ++ show (softCost + softAdjust2)
                     ++ "\nDisplay Trees " ++ show (binaryToNewick displayTreeList) 
-                    ++ "\nUnused Edges " ++ show unusedEdges
-                    ++ "\nFrom : " ++ show inComp
+                    ++ "\nUnused Edges " ++ show (edgePairListStringPairList unusedEdges inComp)
+                    -- ++ "\nRoot cost: " ++ show rootCost
+                    -- ++ "\nFrom : " ++ show inComp
                     ) 
                 --"\nInput " 
                 --    ++ show inComp ++ "\nBin " ++ show displayTreeList)( 
-                softCost + softAdjust2 --V.minimum charCostVectVect
-                --)--
+                (
+                if null unusedEdges then softCost + softAdjust2 + rootCost -- Need to add root cost here sum over charInfo rootCosts.
+                else maxFloat --V.minimum charCostVectVect
+                )
+
+-- | getRootCosts sums over root costs in CharInfo
+getRootCosts :: [CharInfo] -> Float
+getRootCosts charInfoList =
+    if null charInfoList then 0.0
+    else 
+        let firstChar = head charInfoList
+        in
+        (rootCost firstChar) + (getRootCosts $ tail charInfoList) 
+
 
 -- | getReRootList takes list of binary trees and returns list of all reroots of
 --all binary trees

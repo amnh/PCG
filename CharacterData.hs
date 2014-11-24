@@ -43,6 +43,7 @@ module CharacterData
 , CharacterSetList
 , CharacterSet
 , DataMatrixVLS
+, redoRootCosts
 ) where
 
 import System.IO
@@ -77,7 +78,7 @@ convertToBit x
     | otherwise =
        shift 1 x
 
---convertDNASeqToBit takes DNA sequnce and returns Storable Vector of Int64 of bit
+-- | convertDNASeqToBit takes DNA sequnce and returns Storable Vector of Int64 of bit
 --representations (-=0, Aa = 1, Cc = 2, Gg=4 etc with IUPAC amibuities)
 --currelty gap ambiguities not allow in this convertion other than ?
 --Should make ACGT- but types and add for ambiguities
@@ -104,14 +105,30 @@ convertDNASeqToBit x
     | toUpper (head x) == '?' = VS.cons (31 :: Int64) (convertDNASeqToBit (tail x))
     | otherwise = error ("Unreconized seqeunce character code " ++ show (head x)) 
 
+-- | getListLengths sums lengths of characters in colummn of characters
+-- since its a list awful n access, but only once, maybe change to Vector
+getListLengths ::  DataMatrixVLS -> Int -> Int
+getListLengths phyloData charNum =
+    if V.null phyloData then 0
+    else 
+        let rowTerminal = V.head phyloData
+        in
+        (VS.length (rowTerminal !! charNum)) + (getListLengths (V.tail phyloData) charNum)
 
+-- | redoRootCosts resets root costs for seqeunce characters--for now to 1/2
+-- length by default
+redoRootCosts :: DataMatrixVLS -> [CharInfo] -> Int -> [CharInfo] 
+redoRootCosts phyloData charInfoList charNum =
+    if null charInfoList then []
+    else 
+        let numTerminals = V.length phyloData
+            sumLengthChar = getListLengths phyloData charNum 
+            newRootCost = 0.5 * (fromIntegral sumLengthChar) / (fromIntegral numTerminals)
+            newCharInfo = modifyRootCost (head charInfoList) newRootCost 
+        in
+        newCharInfo : redoRootCosts phyloData (tail charInfoList) (charNum + 1)
 
----ConvertGenSeqToBitTop  does top processing to set up the string (words) for
---bit processing
-
-
-
---convertGenSeqToBit takes custom alphabet sequnce and returns Storable Vector of Int64 of bit
+-- | convertGenSeqToBit takes custom alphabet sequnce and returns Storable Vector of Int64 of bit
 --representations
 --currelty gap ambiguities not allow in this convertion other than ?
 --Should make 
@@ -130,14 +147,14 @@ convertGenSeqToBit x alphabet =
         VS.cons bitChar  (convertGenSeqToBit (tail x) alphabet)
 
 
---charSetToVestList converts, recursively, chars to vectors
+-- | charSetToVestList converts, recursively, chars to vectors
 charSetToVectList :: [String] -> [CharInfo] -> CharacterSetList 
 charSetToVectList x charInfo 
     | null x = []
     | otherwise =
         charSetToVect (head x) (head charInfo) : charSetToVectList (tail x) (tail charInfo)
 
---charToBaseChar takes list of input elements and list of char infomation and returns Vector of recoded
+-- | charToBaseChar takes list of input elements and list of char infomation and returns Vector of recoded
 --base characters that should be ready for analysis
 --"no_data" is missing data message so sets all bits to '0'
 --need to recode ambiguities correctly--read states set each bit in char state
@@ -160,13 +177,13 @@ charSetToVect x charInfo
             else convertGenSeqToBit (words x) (alphabet charInfo) --Top x 
         else error ("Char type " ++ show charInfo ++ " not implemented")
 
---termToVector takes a pairs of terminal and data (and dat info) and
+-- | termToVector takes a pairs of terminal and data (and dat info) and
 --creates Vector of that pairData
 --this is curried--reccomended by hlint
 termToVector :: TermData -> [CharInfo] -> CharacterSetList
 termToVector (name, dataList) = charSetToVectList dataList
 
---termToVectorList takes list of pairs of terminal and data (and dat info) and
+-- | termToVectorList takes list of pairs of terminal and data (and dat info) and
 --creates Vector of list of pairData recusively
 termToVectorList :: [TermData] -> [CharInfo] -> [CharacterSetList]
 termToVectorList x charInfo =
@@ -174,7 +191,7 @@ termToVectorList x charInfo =
    else 
          termToVector (head x) charInfo :  termToVectorList (tail x) charInfo
 
---createBaseData takes data from data file parser functions and creates
+-- | createBaseData takes data from data file parser functions and creates
 --a base data format of array of list of storable vector of Int64
 --leaves (outdegree =0) are enumerated [0, (n-1)], then roots and other vertices
 --Forests should hold their own non-leaf data, leaf data only one set to save
@@ -185,7 +202,7 @@ createBaseData (pairedData, charInfo) = --testDataMatrixVLS
     if null pairedData then V.empty
     else V.fromList (termToVectorList pairedData charInfo)
 
---printSingelChar outputs singel string char
+-- | printSingelChar outputs singel string char
 printSingleChar :: BaseChar -> IO ()
 printSingleChar x =
     if VS.null x then hPutStr stderr " | "
@@ -194,7 +211,7 @@ printSingleChar x =
             hPutStr stderr (show (VS.head x) ++ " ")
             printSingleChar (VS.tail x)
 
---printRowChars prints strings for given row
+-- | printRowChars prints strings for given row
 printRowChars :: CharacterSetList -> IO ()
 printRowChars x =
     if null x then hPutStr stderr ""
