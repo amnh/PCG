@@ -57,7 +57,8 @@ import ReadFiles
 import CharacterData
 import qualified Parsimony as Pars
 
-maxFloat = 1000000000000.0 --this is not good, must set some real max value
+-- | stuff for maxFloat
+maxFloat = 1.0e32 --0x749DC5AD -- 1e32 -- 0x7f7ffff is max 32 bit FLOAT IEEE ~3.4e34
 
 --type for nodes with phylodata--linked to DataMatrix
 --need to add funcionts to modify these potentially
@@ -592,6 +593,8 @@ getComponentCost dataMatrix inComp charInfoList =
                 )
 
 -- | getRootCosts sums over root costs in CharInfo
+-- really should be 1/2 subcost for length of character,
+-- so needs to be adjusted for alternate costs matricces (sankoff, DO)
 getRootCosts :: [CharInfo] -> Float
 getRootCosts charInfoList =
     if null charInfoList then 0.0
