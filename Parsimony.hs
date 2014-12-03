@@ -1,6 +1,6 @@
 {- |
 Module      :  Parsimony Optimization functions
-Description :  Functions for parimsony cost and vertex optimizations
+Description :  Functions for parsimony cost and vertex optimizations
 Copyright   :  (c) 2014 Ward C. Wheeler, Division of Invertebrate Zoology, AMNH. All rights reserved.
 License     :  
 
@@ -56,7 +56,7 @@ inDelBit = (bit 63) :: Int64 --(bit 63) :: Int64 --set indelBit to 64th bit in I
 barrierCost = (bit 60) :: Int --really big Int--asssumes 64 bit at least, but can be added to without rolling over.
 barrierBit = (bit 63) :: Int64
 
---getPrelim takes bit-coded states and returns cost and prelim state
+-- | getPrelim takes bit-coded states and returns cost and prelim state
 getPrelim :: BaseChar -> BaseChar -> CharInfo -> (BaseChar, Float)
 getPrelim lState rState charInfo =
     --trace ("\nlS " ++ show lState ++ " rS " ++ show rState) (
@@ -89,7 +89,7 @@ getPrelim lState rState charInfo =
         else-}  (median2, charWeight * cost2)
     else error "Unrecognized/Not implemented character type"
 
---transformFullYShortY take full Y value (if did entire NW matrix) and returns
+-- | transformFullYShortY take full Y value (if did entire NW matrix) and returns
 --short (Ukkonnen Y) given Y, Y length and row numbera
 --remove error when working--overhead
 transformFullYShortY :: Int -> Int -> Int -> Int

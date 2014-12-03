@@ -90,6 +90,47 @@ executeCommandList commandList =             --(inputData, processedData, inputF
         executeCommandList (tail commandList)
     --(inputData, processedData, inputForest)
 
+-- | removeBranchLengths takes Newick/ENeweick and strips out branch lengths
+removeBranchLengths :: String -> String
+removeBranchLengths inString =
+    if null inString then error "Null input string"
+    else 
+        let firstSplit = splitOn "," inString
+            secondSplit =  splitParen firstSplit
+            outString = reassemble "," secondSplit
+        in
+        outString
+
+-- | reassemble takes [String] and adds arg between elements and returns String
+reassemble :: String -> [String] -> String
+reassemble joinString inList =
+    if null joinString  then error "Join string is empty"
+    else if null inList then []
+    else
+         if not (null $ tail inList) then (head inList) ++ (joinString ++ (reassemble joinString $ tail inList))
+         else head inList
+
+-- | splitParen takes list of String and splits each one on ')' and reassmebles
+splitParen :: [String] -> [String]
+splitParen inList =
+    if null inList then []
+    else 
+        let firstSplit = splitOn ")" (head inList)
+            secondSplit  = splitColon firstSplit
+            outList = reassemble ")" secondSplit
+        in
+            outList : (splitParen $ tail inList)
+
+-- | splitColon takes list of String and splits each one on ':'deletes branch
+-- length after it 
+splitColon ::[String] -> [String]
+splitColon inList =
+    if null inList then []
+    else 
+        let firstSplit = splitOn ":" (head inList)
+            outList = head firstSplit
+        in
+            outList : (splitColon $ tail inList)
 
 {-# NOINLINE getGraphContents #-}
 --getGraphContents inputs read commands, processes into data, and returns list of rawData
@@ -111,7 +152,7 @@ getGraphContents cL =
        else if last b == "newick" then  --really reads extended Newick (#Hi stuff)
            let fileContents = readFile (init $ head b) -- <- readFile (head b)
                y = unsafePerformIO fileContents
-               z = processNewick y
+               z = processNewick (removeBranchLengths y)
                t = mergeNetNodes z
             in
             [t] : getGraphContents (tail cL)
@@ -119,7 +160,7 @@ getGraphContents cL =
            let fileContents = readFile (init $ head b) -- <- readFile (head b)
                y = unsafePerformIO fileContents
             in
-            processFEN y : getGraphContents (tail cL)
+            processFEN (removeBranchLengths y) : getGraphContents (tail cL)
        else error "File format not recognized"
        )
 
