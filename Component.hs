@@ -41,10 +41,12 @@ module Component
 , PhyloForest
 , NodeCode(..)
 , getForestCostList
+, getRootCosts
 ) where
 
 import Data.List
 import Data.Int
+import qualified Data.Set as Set
 import qualified Data.Vector as V
 import qualified Data.Vector.Storable as VS
 import Data.Maybe
@@ -54,7 +56,8 @@ import ReadFiles
 import CharacterData
 import qualified Parsimony as Pars
 
-maxFloat = 1000000000000.0 --this is not good, must set some real max value
+-- | stuff for maxFloat
+maxFloat = 1.0e32 --0x749DC5AD -- 1e32 -- 0x7f7ffff is max 32 bit FLOAT IEEE ~3.4e34
 
 --type for nodes with phylodata--linked to DataMatrix
 --need to add funcionts to modify these potentially
@@ -88,7 +91,7 @@ type PhyloComponent = (V.Vector PhyloNode)
 type PhyloForest = [PhyloComponent]
 type NodeCode = Int
 
---functions to modify PhyloNode
+-- | functions to modify PhyloNode
 modifyNodeName :: PhyloNode -> String -> PhyloNode
 modifyNodeName pNode newName = pNode { nodeName = newName}
 
@@ -148,7 +151,7 @@ modifyNamePrelimLocalTotal pNode newName cSL lC tC =
         , totalCost = tC
     }
 
---pullNames take list of GenPhyNetNodes and creates list of first element in
+-- | pullNames take list of GenPhyNetNodes and creates list of first element in
 pullNames :: [GenPhyNetNode] -> [String]
 pullNames x =
     if null x then []
@@ -157,7 +160,7 @@ pullNames x =
         in
         a : pullNames (tail x)
 
---getNodeNames gets all names from GenForest
+-- | getNodeNames gets all names from GenForest
 getNodeNames :: [GenForest] -> [String]
 getNodeNames x =
     if null x then []
@@ -166,7 +169,7 @@ getNodeNames x =
         in
         pullNames y ++ getNodeNames (tail x)
             
---baseDataToLeafNodes converts base Data array set to node structures for leaf
+-- | baseDataToLeafNodes converts base Data array set to node structures for leaf
 --taxa, vector of nodes (ForestPhyloNodes) for O(1) random accessa
 --takes input list of Forests and return list of PhyloForest
 baseDataToLeafNodes :: [GenForest] -> [PhyloForest] 
@@ -175,7 +178,7 @@ baseDataToLeafNodes inGraphs =
     else 
         makePhyloForest (head inGraphs) : baseDataToLeafNodes (tail inGraphs)      
 
---makePhyloForest makes an individual PhyloForest from a list
+-- | makePhyloForest makes an individual PhyloForest from a list
 --of input Graphs
 makePhyloForest :: GenForest -> PhyloForest
 makePhyloForest inGraph =
@@ -184,7 +187,7 @@ makePhyloForest inGraph =
         makePhyloComponent (head inGraph) : makePhyloForest (tail inGraph)          
 
 
---getNamesFromGenPhyNet extracts pair of lists of strings, terminals first then HTUs
+-- | getNamesFromGenPhyNet extracts pair of lists of strings, terminals first then HTUs
 getNamesFromGenPhyNet :: GenPhyNet  -> [String]
 getNamesFromGenPhyNet inNet =
     if null inNet then []
@@ -194,7 +197,7 @@ getNamesFromGenPhyNet inNet =
             if null desc then firstName : getNamesFromGenPhyNet (tail inNet)
             else getNamesFromGenPhyNet (tail inNet) ++ [firstName]
             
---getCodeNodePair cretes alist of pairs of indexCodes and PhyloNodes for
+-- | getCodeNodePair cretes alist of pairs of indexCodes and PhyloNodes for
 --reordering in the Vector to allow for effiecenit traversal access
 getCodeNodePair :: PhyloComponent -> [(Int, PhyloNode)]
 getCodeNodePair phyCom =
@@ -205,7 +208,7 @@ getCodeNodePair phyCom =
         (code curNode, curNode) : getCodeNodePair (V.tail phyCom)
 
 
---makePhyloComponent take a GenPhyNet (input component) and makes list of names
+-- | makePhyloComponent take a GenPhyNet (input component) and makes list of names
 --in component and passes to Rec version to make phylocomponent
 --need to reorder based on codes here so traversal work within component
 makePhyloComponent ::  GenPhyNet -> PhyloComponent
@@ -219,7 +222,7 @@ makePhyloComponent inNet =
         --trace ("\ninitial phylocomponent " ++ show inNet ++ " to " ++ show (initPhyloComponent V.// newOrder))
         initPhyloComponent V.// newOrder
 
---makePhyloComponentRec take a GenPhyNet (input component) and make Vector
+-- | makePhyloComponentRec take a GenPhyNet (input component) and make Vector
 --PhyloComp
 makePhyloComponentRec :: [String] -> GenPhyNet -> Int -> PhyloComponent  
 makePhyloComponentRec nameList inNet indexCode =
@@ -228,7 +231,7 @@ makePhyloComponentRec nameList inNet indexCode =
         V.cons (makePhyloNode nameList (head inNet) indexCode) 
             (makePhyloComponentRec nameList (tail inNet) (indexCode + 1))
 
---getCodes takes name list and return list of element numbers for code
+-- | getCodes takes name list and return list of element numbers for code
 --assignments in PhyloNode
 getCodes :: [String] -> [String] -> [NodeCode]
 getCodes allNames inNames =
@@ -239,7 +242,7 @@ getCodes allNames inNames =
 
 
 
---makePhyloNode takes an individual GenPOhyNetNode and converts into PhyloNode
+-- | makePhyloNode takes an individual GenPOhyNetNode and converts into PhyloNode
 makePhyloNode :: [String] -> GenPhyNetNode -> Int -> PhyloNode
 makePhyloNode nameList inNode indexCode =
         let (inName, descList, ancList) = inNode
@@ -263,7 +266,7 @@ makePhyloNode nameList inNode indexCode =
         , totalCost = V.singleton 0
         }
 
---splitDataByComponent take DataMatrix and phyloComponent and returns data from
+-- | splitDataByComponent take DataMatrix and phyloComponent and returns data from
 --component name list--should split would be more efficeint
 splitDataByComponent :: DataMatrixVLS -> [String] -> PhyloComponent -> DataMatrixVLS
 splitDataByComponent inData termNameList inComponent =
@@ -276,13 +279,13 @@ splitDataByComponent inData termNameList inComponent =
         if isNothing nameIndex then splitDataByComponent inData termNameList (V.tail inComponent)
         else V.cons (inData V.! fromJust nameIndex)  (splitDataByComponent inData termNameList (V.tail inComponent))
 
---getForestCostList takes data matrix, list of input PhyloForest, and charinfo  and returns list of costs
+-- | getForestCostList takes data matrix, list of input PhyloForest, and charinfo  and returns list of costs
 getForestCostList :: DataMatrixVLS -> [PhyloForest] -> [CharInfo] -> [String] -> [Float]
 getForestCostList dataMatrix  inForList charInfoList termNameList =
     getForestCost dataMatrix  (head inForList) charInfoList termNameList : 
         getForestCostList dataMatrix (tail inForList) charInfoList termNameList
 
---getForestCost returns cost of single forest
+-- | getForestCost returns cost of single forest
 getForestCost :: DataMatrixVLS -> PhyloForest -> [CharInfo] -> [String] -> Float
 getForestCost dataMatrix inFor charInfoList termNameList = 
     if null inFor then 0
@@ -292,10 +295,11 @@ getForestCost dataMatrix inFor charInfoList termNameList =
         getComponentCost compData (head inFor) charInfoList + 
             getForestCost dataMatrix (tail inFor) charInfoList termNameList
 
---phyloComponentToTreeList takes PhyloComponent and returns list of trees
+-- | phyloComponentToTreeList takes PhyloComponent and returns list of trees
 --"displayed" for subsequent traversal and diagnosis
 --need to "split" every time traversal hits a network node making a Tree 
 --by makeing one of the parent nodes indegree 1 outdegree 1
+--errors if resolution yeilds a terminal intenal node
 --Basically
 --  Examine nodes (Vector) in turn
 --      if nodes is tree node, add to Vector
@@ -321,7 +325,7 @@ phyloComponentToTreeList inPhyloComp =
         --trace("Binarized list: " ++ show retTreeList ++ "\n\n")
         retTreeList
 
---binarizeComponent recursivelt splits PhyloCOmpoennt at first network node, adds to list of trees,
+-- | binarizeComponent recursivelt splits PhyloCOmpoennt at first network node, adds to list of trees,
 --and does this through growing list for all splits
 binarizeComponent :: [PhyloComponent] -> Int -> Int -> [PhyloComponent]
 binarizeComponent inCompList index maxIndex
@@ -334,7 +338,7 @@ binarizeComponent inCompList index maxIndex
               binarizeComponent (tail inCompList) index maxIndex
     in binarizeComponent splitComp (index + 1) maxIndex
 
---clearNonParents takes index and list of parents to clear 
+-- | clearNonParents takes index and list of parents to clear 
 clearNonParents :: Int -> [Int] -> PhyloComponent -> [(Int, PhyloNode)]
 clearNonParents child parentsToClear phyloComponent = 
     if null parentsToClear then []
@@ -349,9 +353,9 @@ clearNonParents child parentsToClear phyloComponent =
         if null newChildList then [] --this if HTU with no children--impossible binary resolution of network
         else (parent, newParent) : clearNonParents child (tail parentsToClear) phyloComponent
 
---generateBinaryResolutions takes a network node with indegree = n (can be
+-- | generateBinaryResolutions takes a network node with indegree = n (can be
 --greater that 2) and the position of the node in Vector of nodes and return
---list of resolutions at theat position
+--list of resolutions at that position
 generateBinaryResolutions :: PhyloNode -> Int -> PhyloComponent -> [Int] -> [Int] -> [PhyloComponent]
 generateBinaryResolutions inNode index totalComponent parentList fullParentList =
     if null parentList then []
@@ -364,10 +368,11 @@ generateBinaryResolutions inNode index totalComponent parentList fullParentList 
         if length modList > 1 then  --this is check for impossible resolutions of network nodes
             (totalComponent V.// modList) : generateBinaryResolutions inNode index totalComponent (tail parentList) fullParentList
         else 
-            generateBinaryResolutions inNode index totalComponent (tail parentList) fullParentList
+            error ("Error in display tree creation: Resolution of node yields internal node as terminal" ++ show modList)
+            --generateBinaryResolutions inNode index totalComponent (tail parentList) fullParentList
 
 
---splitAndModifyComponent modifies phylocomponent returning two PhyloComponents, should work for indegree > 2
+-- | splitAndModifyComponent modifies phylocomponent returning two PhyloComponents, should work for indegree > 2
 splitAndModifyComponent :: PhyloNode -> Int -> PhyloComponent -> [PhyloComponent]
 splitAndModifyComponent inNode index totalComponent
     | isTreeNode inNode = [totalComponent]
@@ -378,35 +383,35 @@ splitAndModifyComponent inNode index totalComponent
         generateBinaryResolutions inNode index totalComponent parentList
           parentList
 
---getBinaryCostList takes list of binary trees and returns list of costs
+-- | getBinaryCostList takes list of binary trees and returns list of costs
 --this needs to be list of costs per character to be minimized over characters
 getBinaryCostList :: V.Vector PhyloComponent -> [CharInfo] -> DataMatrixVLS -> PhyloComponent -> V.Vector (V.Vector Float)
 getBinaryCostList binTreeList charInfoList dataMatrix previousBinaryTree =
     if V.null binTreeList then V.empty
     else 
         let curBinTree = V.head binTreeList 
-            startNode = V.last curBinTree
+            startNode = V.last curBinTree  --assumes root last--change to getRootCode?
             updatedPhyloComponent = traverseComponent dataMatrix curBinTree startNode charInfoList previousBinaryTree
             newOrder = getCodeNodePair updatedPhyloComponent
             reorderedUpdatedPhyloComponent = updatedPhyloComponent V.// newOrder
         in
-        V.cons (totalCost (V.last reorderedUpdatedPhyloComponent))  
+        V.cons (totalCost (V.last reorderedUpdatedPhyloComponent))  --assumes root last getRootCode?
             (getBinaryCostList (V.tail binTreeList) charInfoList dataMatrix reorderedUpdatedPhyloComponent)
 
---compileBinaryCosts gets the costs of eachbinary tree
+-- | compileBinaryCosts gets the costs of eachbinary tree
 compileBinaryCosts :: V.Vector (V.Vector Float) -> V.Vector Float
 compileBinaryCosts costListList =
     if V.null costListList then V.empty 
     else V.cons (V.sum (V.head costListList))  (compileBinaryCosts (V.tail costListList))
 
---compileSoftCost gets the costs of eachbinary tree
+-- | compileSoftCost gets the costs of eachbinary tree
 compileSoftCosts :: V.Vector (V.Vector Float) -> V.Vector Float
 compileSoftCosts costListList =
     if V.null costListList then V.empty
     else 
         getPositionMin costListList 0
 
---minOfList get min cost of column of vectors
+-- | minOfList get min cost of column of vectors
 minOfList :: V.Vector (V.Vector Float) -> Int -> Float -> Float
 minOfList costListList position curMin =
     if V.null costListList then curMin
@@ -416,7 +421,7 @@ minOfList costListList position curMin =
         if curCost < curMin then minOfList (V.tail costListList) position curCost
         else minOfList (V.tail costListList) position curMin
 
---getPositionMin takes vector of vector of costs and returns minimum of costs
+-- | getPositionMin takes vector of vector of costs and returns minimum of costs
 --over charcaters for soft-wired cost
 getPositionMin :: V.Vector (V.Vector Float) -> Int -> V.Vector Float
 getPositionMin costList position =
@@ -426,7 +431,7 @@ getPositionMin costList position =
         in
         V.cons getPositionCost  (getPositionMin costList (position + 1))
 
---getReticulateCount take a PhyloComponent and returns number of reticulate
+-- | getReticulateCount take a PhyloComponent and returns number of reticulate
 --edges, num parents - 1 for all (non root)
 getReticulateEdges :: Int -> PhyloComponent -> Int
 getReticulateEdges prevNum inComp =
@@ -436,13 +441,13 @@ getReticulateEdges prevNum inComp =
         in
         getReticulateEdges (prevNum + numParents - 1) (V.tail inComp)
 
---getSoftAdjust this is an added cost of network edges r/2 * bestCost / (2n -2)
+-- | getSoftAdjust this is an added cost of network edges r/2 * bestCost / (2n -2)
 getSoftAdjust :: Int -> Float -> Int -> Float
 getSoftAdjust numReticulateEdges softCost numTerminals =
     if numTerminals == 1 then 0
     else (fromIntegral numReticulateEdges) * softCost / fromIntegral (2 * ((2 * numTerminals)  - 2))
 
---getDisplayTreeCostList spits cost list into display trees (resolutions), 
+-- | getDisplayTreeCostList spits cost list into display trees (resolutions), 
 --with lists of best rooted cost for each character
 getDisplayTreeCostList :: Int -> V.Vector (V.Vector Float) -> V.Vector (V.Vector Float)
 getDisplayTreeCostList rootsPerTree charCostVectVect = 
@@ -454,7 +459,7 @@ getDisplayTreeCostList rootsPerTree charCostVectVect =
        in
        V.cons displayCharCostVect  (getDisplayTreeCostList rootsPerTree remainderDisplayRoots)
 
---getBinCosts take list of char costs by tree and returns list of sums
+-- | getBinCosts take list of char costs by tree and returns list of sums
 getBinCosts :: V.Vector (V.Vector Float) -> V.Vector Float
 getBinCosts displayCharCosts =
     if V.null displayCharCosts then V.empty
@@ -463,7 +468,7 @@ getBinCosts displayCharCosts =
         in
         V.cons bTree (getBinCosts $ V.tail displayCharCosts)
 
---getCharDisplayIndices takes best cost for each charcaet and returns list of
+-- | getCharDisplayIndices takes best cost for each charcaet and returns list of
 --indices of the display tree that cost was found on 
 getCharDisplayIndices :: V.Vector Float -> V.Vector (V.Vector Float) -> V.Vector (V.Vector Int)
 getCharDisplayIndices softCostList displayTreeCharCostList =
@@ -471,7 +476,7 @@ getCharDisplayIndices softCostList displayTreeCharCostList =
     else 
         getPositionElement softCostList displayTreeCharCostList 0 
 
---getMatchTree  takes a value, position and vector of vetcor fo floats and
+-- | getMatchTree  takes a value, position and vector of vetcor fo floats and
 --returns element match index Vector
 getMatchTree :: V.Vector Float -> V.Vector (V.Vector Float) -> Int -> Int -> V.Vector Int
 getMatchTree  softCostList displayTreeCharCostList position dTree =
@@ -481,7 +486,7 @@ getMatchTree  softCostList displayTreeCharCostList position dTree =
             V.cons dTree (getMatchTree  softCostList (V.tail displayTreeCharCostList) position (dTree + 1)) 
         else (getMatchTree  softCostList (V.tail displayTreeCharCostList) position (dTree + 1))
 
---getPositionElement check each element at a position to see if it equals minium
+-- | getPositionElement check each element at a position to see if it equals minium
 --value and retuns list of elements
 getPositionElement ::  V.Vector Float -> V.Vector (V.Vector Float) -> Int -> V.Vector (V.Vector Int)
 getPositionElement softCostList displayTreeCharCostList position =
@@ -491,7 +496,7 @@ getPositionElement softCostList displayTreeCharCostList position =
         in        
         V.cons matchTree (getPositionElement softCostList displayTreeCharCostList (position + 1)) 
 
---getSoftAdjust2 this is an added cost of network edges r/2 * bestCost / (2n -2)
+-- | getSoftAdjust2 this is an added cost of network edges r/2 * bestCost / (2n -2)
 getSoftAdjust2 :: Int -> V.Vector Float -> Int -> V.Vector (V.Vector Int) -> Float 
 getSoftAdjust2 bestTreeIndex bestTreeCharCostList numTerminals bestCharIndicesList =
     if numTerminals == 1 then 0
@@ -505,13 +510,36 @@ getSoftAdjust2 bestTreeIndex bestTreeCharCostList numTerminals bestCharIndicesLi
         in
         --if (firstDisplayTreeChar /= bestTreeIndex) then
         if (V.notElem bestTreeIndex bestDisplayTreeCharList) then
-            trace (" P2 " ++ show charPenalty) charPenalty  +  (getSoftAdjust2 bestTreeIndex (V.tail bestTreeCharCostList) numTerminals (V.tail bestCharIndicesList))
+            trace (" P2 " ++ show charPenalty) charPenalty  +  
+                (getSoftAdjust2 bestTreeIndex (V.tail bestTreeCharCostList) numTerminals (V.tail bestCharIndicesList))
         else
             (getSoftAdjust2 bestTreeIndex (V.tail bestTreeCharCostList) numTerminals (V.tail bestCharIndicesList))
 
---getComponentCost returns cost of component from an input node (sum of all char
+-- | edgeCodeToName takes Edge codes numbers and returns Node Name
+edgeCodeToName :: Int -> PhyloComponent -> String
+edgeCodeToName nodeCode inNodes =
+    if nodeCode < 0 || (nodeCode - 1 ) > V.length inNodes then 
+        error ("Impossible node code " ++ show nodeCode ++ " component size " ++ show (V.length inNodes))
+    else 
+        nodeName (inNodes V.! nodeCode)
+
+-- | edgePairListStringPairList takes list of edges and returns String Pairs for
+-- each edge 
+edgePairListStringPairList :: [(Int, Int)] -> PhyloComponent -> [(String, String)]
+edgePairListStringPairList edgeList inNodes =
+    if null edgeList then []
+    else 
+        let (a, b) = head edgeList
+            c = edgeCodeToName a inNodes
+            d = edgeCodeToName b inNodes
+        in
+        (c, d) : edgePairListStringPairList (tail edgeList) inNodes
+
+
+-- | getComponentCost returns cost of component from an input node (sum of all char
 --total costs)--checks if root
---need to work for list of binaries created--bnot just single as here
+--need to add root cost (for forest optimization) and MaxFloat for unused 
+--edges so exclude Forests/Coponents with superfluous edges.
 getComponentCost :: DataMatrixVLS -> PhyloComponent -> [CharInfo] -> Float
 getComponentCost dataMatrix inComp charInfoList =
     if V.null inComp then 0
@@ -523,31 +551,60 @@ getComponentCost dataMatrix inComp charInfoList =
              --lists of phylocompoents should be changed to vectors for better
              --access when doing incremental optimizations--lots to reuse 
             let displayTreeList = phyloComponentToTreeList inComp
+                inCompEdgeSet = edgeSetFromComponent inComp
                 reRootedVect = getReRootList displayTreeList
-                charCostVectVect = getBinaryCostList reRootedVect charInfoList dataMatrix V.empty --displayTreeList charInfoList dataMatrix
-                displayTreeCharCostList = getDisplayTreeCostList ((V.length charCostVectVect) `quot` (length displayTreeList)) charCostVectVect 
+                charCostVectVect = getBinaryCostList reRootedVect charInfoList dataMatrix V.empty 
+                displayTreeCharCostList = getDisplayTreeCostList ((V.length charCostVectVect) 
+                    `quot` (length displayTreeList)) charCostVectVect 
                 displayTreeCostList = getBinCosts displayTreeCharCostList
                 allCosts = compileBinaryCosts charCostVectVect --really for debug purposes
                 softCostList = compileSoftCosts displayTreeCharCostList --charCostVectVect
                 softCost = V.sum softCostList
                 bestDisplayIndices = V.elemIndices (V.minimum displayTreeCostList) displayTreeCostList
                 charDisplayIndices = getCharDisplayIndices softCostList displayTreeCharCostList
+                --inCompEdgeSet = edgeSetFromComponentList displayTreeList
+                unusedEdges = Set.toList $ Set.difference inCompEdgeSet 
+                    (edgeSetFromComponentListSome displayTreeList 
+                    (nub $ listOfVector $ V.toList charDisplayIndices) 0)
                 numReticulateEdges = getReticulateEdges 0 (V.init inComp) 
                 softAdjust = getSoftAdjust numReticulateEdges softCost (V.length dataMatrix)
                 --arbitrarily uses first `best` binary tree
-                softAdjust2 = getSoftAdjust2 (V.head bestDisplayIndices) (displayTreeCharCostList V.! (V.head bestDisplayIndices))  (V.length dataMatrix) charDisplayIndices 
+                softAdjust2 = getSoftAdjust2 (V.head bestDisplayIndices) 
+                    (displayTreeCharCostList V.! (V.head bestDisplayIndices))  
+                    (V.length dataMatrix) charDisplayIndices 
+                rootCost = getRootCosts charInfoList --make into a fold   
              in 
                 trace ("\nBinaries : " ++ show (length displayTreeList) ++ " " ++ show (V.length reRootedVect) ++ " " 
                     ++ show (V.length charCostVectVect) ++ " " ++ show allCosts ++ " "
                     ++ show softCostList ++ "\nDisplay Costs " ++ show displayTreeCostList ++ " best tree " ++ show bestDisplayIndices 
                     ++ " -> " ++ show (V.minimum displayTreeCostList) ++ "\nsoft " ++ show softCost ++ " soft adjust " ++ show softAdjust 
-                    ++ "\nSoft Indices " ++ show charDisplayIndices ++ "\nSoft-2 "  ++ show softAdjust2 ++ " -> " ++ show (softCost + softAdjust2)) 
+                    ++ "\nSoft Indices " ++ show charDisplayIndices ++ "\nSoft-2 "  ++ show softAdjust2 ++ " -> " ++ show (softCost + softAdjust2)
+                    ++ "\nDisplay Trees " ++ show (binaryToNewick displayTreeList) 
+                    ++ "\nUnused Edges " ++ show (edgePairListStringPairList unusedEdges inComp)
+                    -- ++ "\nRoot cost: " ++ show rootCost
+                    -- ++ "\nFrom : " ++ show inComp
+                    ) 
                 --"\nInput " 
                 --    ++ show inComp ++ "\nBin " ++ show displayTreeList)( 
-                softCost + softAdjust2 --V.minimum charCostVectVect
-                --)--
+                (
+                if null unusedEdges then softCost + softAdjust2 + rootCost -- Need to add root cost here sum over charInfo rootCosts.
+                else maxFloat --V.minimum charCostVectVect
+                )
 
---getReRootList takes list of binary trees and returns list of all reroots of
+-- | getRootCosts sums over root costs in CharInfo
+-- really should be 1/2 subcost for length of character,
+-- so needs to be adjusted for alternate costs matricces (sankoff, DO)
+getRootCosts :: [CharInfo] -> Float
+getRootCosts charInfoList =
+    if null charInfoList then 0.0
+    else 
+        let firstChar = head charInfoList
+        in
+        if activity firstChar then ((weight firstChar) * (rootCost firstChar)) + (getRootCosts $ tail charInfoList)
+        else (getRootCosts $ tail charInfoList)
+
+
+-- | getReRootList takes list of binary trees and returns list of all reroots of
 --all binary trees
 getReRootList :: [PhyloComponent] -> V.Vector PhyloComponent
 getReRootList inBinaryList =
@@ -555,7 +612,7 @@ getReRootList inBinaryList =
     else 
         getReRoots (head inBinaryList)  V.++ getReRootList (tail inBinaryList)
 
---getReRoots inputs a single binary phylocomponent and returns a list of all
+-- | getReRoots inputs a single binary phylocomponent and returns a list of all
 --reroots
 getReRoots :: PhyloComponent -> V.Vector PhyloComponent
 getReRoots inBinaryTree =
@@ -572,7 +629,7 @@ getReRoots inBinaryTree =
             in
             V.cons inBinaryTree  reRootList --include original for its root
 
---deRootComp deroots tree based on root node children
+-- | deRootComp deroots tree based on root node children
 --assigns the parent of left desc of root to right desc and visa versa
 --this so when rerooted, the node changes can stop at these nodes
 --This might be unnecessary, depending on stopping rule for updating nodes in
@@ -583,8 +640,8 @@ deRootComp inBinaryTree leftChild rightChild =
             newRightNode = modifyParentList (inBinaryTree V.! rightChild) [leftChild]
         in
         inBinaryTree V.// [(leftChild, newLeftNode), (rightChild, newRightNode)] 
- 
---rootOnEdge takes a derooted binary tree, its original root children (root should be last in 
+
+-- | rootOnEdge takes a derooted binary tree, its original root children (root should be last in 
 --vector list) and reroots tree on the edge leading to each node in turn, but
 --not the original (which is added back to list in getReRoots).  The rootNode is
 --modified as are all nodes that need a parent and child switched
@@ -619,7 +676,7 @@ rootOnEdges inUnRootedComp origUnRootedComp origLeft origRight rootCode =
                 -}
                 V.cons newComp (rootOnEdges (V.tail inUnRootedComp) origUnRootedComp origLeft origRight rootCode) 
 
---rerootNextParent goes down teh tree parent to parent updating each node by
+-- | rerootNextParent goes down teh tree parent to parent updating each node by
 --swapping parents and child until a node is unchanged or it hits the original
 --egde/root position.
 rerootNextParent :: PhyloComponent -> Int -> Int -> Int -> Int -> Int -> [(Int, PhyloNode)]
@@ -647,7 +704,7 @@ rerootNextParent origUnRootedComp origLeft origRight nodeFrom nodeToReroot rootC
             (nodeToReroot, newNode) : (rerootNextParent origUnRootedComp origLeft origRight nodeToReroot origParent rootCode)
 
 
---makePrelim takes CharacterSetList if preliminary states of left and right
+-- | makePrelim takes CharacterSetList if preliminary states of left and right
 --children to create the prelim states for cur node
 --THIS IS A PLACEHOLDER
 makePrelim :: CharacterSetList -> CharacterSetList -> [CharInfo] -> [(BaseChar, Float)]
@@ -663,7 +720,7 @@ makePrelim lStates rStates charInfoList =
         --trace ("Optimizing " ++ show (length lStates) ++ " characters")
         newStatesCost : makePrelim (tail lStates) (tail rStates) (tail charInfoList)
 
---traverseComponent takes, data, a node and current phylo vector and traverses netwrok 
+-- | traverseComponent takes, data, a node and current phylo vector and traverses netwrok 
 --according to the phylonode input component 
 ----the function updates the phylo tree and preliminary dat etc as is proceeeds
 --post-order
@@ -688,13 +745,13 @@ traverseComponent dataMatrix inComp curPNode charInfoList previousBinaryTree
             charInfoList previousBinaryTree
         thisName
           = "(" ++
-            nodeName curPNode ++ "=" ++ nodeName (V.last onlyChild) ++ ")"
+            nodeName curPNode ++ "=" ++ nodeName (V.head onlyChild) ++ ")"
         thisNode
           = modifyNamePrelimLocalTotal curPNode thisName
-            (preliminaryStates (V.last onlyChild))
-            (localCost (V.last onlyChild))
-            (totalCost (V.last onlyChild))
-    in onlyChild V.++ V.singleton thisNode
+            (preliminaryStates (V.head onlyChild))
+            (localCost (V.head onlyChild))
+            (totalCost (V.head onlyChild))
+    in (V.singleton thisNode) V.++ onlyChild
   | otherwise =
     --trace ("\nUpdated Component:" ++ show curPNode)
         (let leftNodeCode = head (children curPNode)
@@ -707,34 +764,34 @@ traverseComponent dataMatrix inComp curPNode charInfoList previousBinaryTree
                    charInfoList previousBinaryTree
              thisName --check here for already done in previous rootings/trees, should control for left/right name issues
                = "(" ++  
-                   (min (nodeName (V.last leftResult))  (nodeName (V.last rightResult))) ++
-                     "," ++ (max (nodeName (V.last leftResult))  (nodeName (V.last rightResult)))  ++ ")"
+                   (min (nodeName (V.head leftResult))  (nodeName (V.head rightResult))) ++
+                     "," ++ (max (nodeName (V.head leftResult))  (nodeName (V.head rightResult)))  ++ ")"
          in
             if thisName == (getPrevName previousBinaryTree (code curPNode)) then
                 let thisNode = modifyNamePrelimLocalTotal curPNode thisName  (preliminaryStates previousTreeNode)
                         (localCost previousTreeNode) (totalCost previousTreeNode)
                     previousTreeNode = previousBinaryTree V.! (code curPNode)
                 in
-                (leftResult V.++ rightResult) V.++ (V.singleton thisNode)  
+                (V.singleton thisNode) V.++ (leftResult V.++ rightResult) 
             else
                 let prelimStatesCost
-                        = makePrelim (preliminaryStates (V.last leftResult))
-                        (preliminaryStates (V.last rightResult))
+                        = makePrelim (preliminaryStates (V.head leftResult))
+                        (preliminaryStates (V.head rightResult))
                         charInfoList
                     sumThreeCosts
-                        = V.zipWith3 (\ a b c -> a + b + c) (totalCost (V.last leftResult))
-                        (totalCost (V.last rightResult))
+                        = V.zipWith3 (\ a b c -> a + b + c) (totalCost (V.head leftResult))
+                        (totalCost (V.head rightResult))
                         (extractNodeCosts prelimStatesCost) --thisNodeCosts
                     thisNode
                         = modifyNamePrelimLocalTotal curPNode thisName (extractNodeStates prelimStatesCost) 
                         (extractNodeCosts prelimStatesCost) --thisNodeCosts
                         sumThreeCosts
-                in
-                (leftResult V.++ rightResult) V.++ V.singleton thisNode
+                in --should this be reversed so tail recursive?
+                (V.singleton thisNode) V.++ (leftResult V.++ rightResult)
                 )
                 
 
---getPrevName retrieves the name of a given code from the previousBinaryTree 
+-- | getPrevName retrieves the name of a given code from the previousBinaryTree 
 --or "firstTree" if previous tree is empty (first one)
 getPrevName :: PhyloComponent -> Int -> String
 getPrevName binaryTree nodeCode = 
@@ -742,7 +799,7 @@ getPrevName binaryTree nodeCode =
     else nodeName (binaryTree V.! nodeCode)
 
 
---extractNodeCosts creates list of costs from list of pairs of cost, states
+-- | extractNodeCosts creates list of costs from list of pairs of cost, states
 extractNodeCosts :: [(BaseChar, Float)] -> V.Vector Float
 extractNodeCosts inPair =
     if null inPair then V.empty
@@ -758,4 +815,145 @@ extractNodeStates inPair =
         let (a, _) = head inPair
         in
         a : (extractNodeStates (tail inPair))
+
+
+-- | getRootCode scans PhyloComponent for root node starting with nodeNum and returns 
+-- root index
+getRootCode :: PhyloComponent -> Int -> Int
+getRootCode inTree nodeNum =
+    if nodeNum == V.length inTree then error ("Error: No root found in " ++ show inTree)
+    else 
+       if isRoot $ inTree V.! nodeNum then nodeNum
+       else getRootCode inTree (nodeNum + 1)
+
+-- | binaryToNewick takes a binary tree and outputs string representation in
+-- newick format. Calls binaryToNewickNames
+binaryToNewick :: [PhyloComponent] -> [String]
+binaryToNewick binTreeList =
+    if null binTreeList then []
+    else 
+        let binTree = head binTreeList
+            inRootCode = getRootCode binTree 0
+            nameTree =  binaryToNewickNames binTree (binTree V.! inRootCode)
+            newRootCode = getRootCode nameTree 0
+        in
+        (nodeName (nameTree V.! newRootCode)) : binaryToNewick (tail binTreeList)
+
+-- | rootModifyName adds parens and semicolon to name if root for single
+-- descendent
+rootModifyName :: String -> Bool -> String
+rootModifyName inName isRoot =
+    if null inName then error "Name list empty"
+    else 
+        if isRoot then
+            ("(" ++ inName ++ ");")
+        else inName
+
+-- | addColonIfRoot suprisingly enough, adds acolon to end of name if root for
+-- valid newick format
+addColonIfRoot :: Bool -> String -> String
+addColonIfRoot isRoot inName =
+    if null inName then error "Name list empty"
+    else 
+        if isRoot then
+            (inName ++ ";")
+        else inName
+
+
+-- | binaryToNewickNames takes a binary tree and outputs tree obnly with names
+-- updated.  Based on `traverseComponen' 
+binaryToNewickNames ::  PhyloComponent -> PhyloNode -> PhyloComponent
+binaryToNewickNames inComp curPNode
+  | not (isTreeNode curPNode) =
+    error ("Should not hit network node in traversal" ++ show curPNode)
+  | length (children curPNode) > 2 =
+    error "Descendant polytomies not yet implemented"
+  | length (children curPNode) == 1 =
+    let onlyNodeCode = head (children curPNode)
+        onlyResult = binaryToNewickNames inComp (inComp V.! onlyNodeCode)
+        thisName = rootModifyName (nodeName  (inComp V.! onlyNodeCode)) (isRoot curPNode)
+        thisNode = modifyNodeName curPNode thisName
+    in   --add as node name?  helpful to follow rsolutions 
+        --onlyResult V.++ V.singleton thisNode
+        (V.singleton thisNode) V.++ onlyResult
+  | isTerminal curPNode = 
+    V.singleton curPNode
+  | otherwise = 
+    let leftNodeCode = head (children curPNode)
+        rightNodeCode = last (children curPNode)
+        leftResult
+               = binaryToNewickNames inComp (inComp V.! leftNodeCode) 
+        rightResult
+               = binaryToNewickNames inComp (inComp V.! rightNodeCode) 
+        thisName --check here for already done in previous rootings/trees, should control for left/right name issues
+               = addColonIfRoot (isRoot curPNode) ("(" ++  
+                   (min (nodeName (V.head leftResult))  (nodeName (V.head rightResult))) ++
+                     "," ++ (max (nodeName (V.head leftResult))  (nodeName (V.head rightResult)))  ++ ")")
+        thisNode = modifyNodeName curPNode thisName
+    in
+        --should this be reversed so tail recursive?
+        --(leftResult V.++ rightResult) V.++ V.singleton thisNode
+        (V.singleton thisNode) V.++ (leftResult V.++ rightResult)
+
+-- | getInEdges takes a node and its parent(s) and return list of edges 
+-- (min code, max code)
+getInEdges :: [Int] -> Int -> [(Int, Int)]
+getInEdges parents curNode =
+    if null parents then []
+    else 
+        let curParent = head parents
+            inNode = min curParent curNode
+            outNode = max curParent curNode
+        in 
+        (inNode, outNode) : (getInEdges (tail parents) curNode) 
+        
+
+-- | edgeSetFromCopmonent takes a phylogenetic component and returns edge set
+-- generates them as edges leading to node
+edgeSetFromComponent :: PhyloComponent -> Set.Set (Int, Int)
+edgeSetFromComponent inComponent =
+    if V.null inComponent then Set.empty
+    else 
+        let curNode = V.head inComponent
+            parentList = parents curNode
+            inEdgeList = getInEdges parentList (code curNode)    
+        in
+        Set.union (Set.fromList inEdgeList) (edgeSetFromComponent $ V.tail inComponent) 
+
+
+-- | edgeSetFromCopmonentList takes a list of phylogenetic components and returns edge set
+-- generates them as edges leading to node
+edgeSetFromComponentList :: [PhyloComponent] -> Set.Set (Int, Int)
+edgeSetFromComponentList inComponentList =
+    if null inComponentList then Set.empty
+    else 
+        let curComponent = head inComponentList
+        in
+        Set.union (edgeSetFromComponent curComponent) (edgeSetFromComponentList $ tail inComponentList) 
+        
+-- | edgeSetFromComponentListSome generate edge list from list of components,
+-- but excludes those not in input list of Ints 
+-- generates them as edges leading to node
+edgeSetFromComponentListSome :: [PhyloComponent] -> [Int] -> Int -> Set.Set (Int, Int)
+edgeSetFromComponentListSome inComponentList onlyThese thisNum =
+    if null inComponentList || null onlyThese then Set.empty
+    else
+        if elem thisNum onlyThese then
+            Set.union (edgeSetFromComponent $ head inComponentList) (edgeSetFromComponentListSome (tail inComponentList) onlyThese (thisNum + 1))
+        else
+            edgeSetFromComponentListSome (tail inComponentList) onlyThese (thisNum + 1)
+
+
+-- | listOfVectorVector takes Vector.Vector (Vector.Vector Int) and
+-- return [Int]
+listOfVector :: [V.Vector Int] -> [Int]
+listOfVector inVectList =
+    if null inVectList then []
+    else 
+        let first = head inVectList
+            firstList = V.toList first 
+        in 
+        firstList ++ (listOfVector (tail inVectList))
+
+
 

@@ -99,7 +99,7 @@ transformFullYShortY currentY rowNumber maxGap =
     if (transformY < 0) then error (show currentY ++ " " ++ show rowNumber ++ " " ++ show maxGap ++ " Impossible negative value for transfomred Y")
     else transformY
 
---maxShortY is teh maximum value for short Y in Ukkonen usually 2*maxGap
+-- | maxShortY is teh maximum value for short Y in Ukkonen usually 2*maxGap
 --untill near bottom of matrix when running up against the full Y length
 --assumes length X /> length Y.
 maxShortY :: Int -> Int -> Int -> Int
@@ -109,7 +109,7 @@ maxShortY maxFullY rowNumber maxGap =
     in
     leftPart + rightPart
 
---setLeftRight returns sequence that is longer first,
+-- | setLeftRight returns sequence that is longer first,
 --shorter second
 setLeftRight :: BaseChar -> BaseChar -> (BaseChar, Int, BaseChar, Int)
 setLeftRight inL inR = 
@@ -121,7 +121,7 @@ setLeftRight inL inR =
             in
             (outL, VS.length outL, outR, VS.length outR)
 
---ukkonenCore core functions of Ukkonen to allow for recursing with maxGap
+-- | ukkonenCore core functions of Ukkonen to allow for recursing with maxGap
 --doubled if not large enough (returns Nothing)  
 ukkonenCore :: BaseChar -> Int -> BaseChar -> Int -> Int -> Int -> Int -> (BaseChar, Float)
 ukkonenCore lSeq lLength rSeq rLength maxGap indelCost subCost =  
@@ -140,7 +140,7 @@ ukkonenCore lSeq lLength rSeq rLength maxGap indelCost subCost =
 
 --FOR both DO's  lseq is a row, acrosss so num columns = length of lseq
 --There are rseq rows
---UkkonenDO takes two input sequences and returns median sequence and cost
+-- | UkkonenDO takes two input sequences and returns median sequence and cost
 --only 1:1 for now. Uses Ukkonen's space/time saving algorithm
 --need to make sure Left/Right and diag/ins/del orders consistent and with
 --POY4/5
@@ -167,7 +167,7 @@ ukkonenDO inlSeq inrSeq charInfo =
         --(median, fromIntegral cost)
         (median, cost)
 
---tracebackUkkonen creates REVERSE mediian from nwMatrix, reverse to make tail
+-- | tracebackUkkonen creates REVERSE mediian from nwMatrix, reverse to make tail
 --recusive, for Ukkonen space/time saving offsets
 --need to count gaps in traceback for threshold/barrier stuff
 --CHANGE TO MAYBE (VS.Vector Int64) FOR BARRIER CHECK
@@ -191,7 +191,7 @@ tracebackUkkonen nwMatrix posR posL maxGap rInDel lInDel =
                     else (tracebackUkkonen nwMatrix (posR - 1) (posL - 1) maxGap rInDel lInDel) 
             --)--)
 
---getFirstRowUkkonen initializes first row of NW-Ukkonen matrix
+-- | getFirstRowUkkonen initializes first row of NW-Ukkonen matrix
 getFirstRowUkkonen :: Int -> Int -> Int -> Int -> BaseChar -> Int -> V.Vector (Int, Int64, Direction)
 getFirstRowUkkonen indelCost rowLength position prevCost lSeq  maxGap = 
     --trace ("row 0 pos " ++ show position ++ "/" ++ show (maxShortY rowLength 0 maxGap) ++ " rowLength " ++ show rowLength ++ " maxGap " ++ show maxGap ++ " lseq " ++ show lSeq) (
@@ -212,7 +212,7 @@ getFirstRowUkkonen indelCost rowLength position prevCost lSeq  maxGap =
                     (getFirstRowUkkonen  indelCost rowLength (position + 1) prevCost lSeq maxGap)
    --) 
 
---getRowUkkonen starts at second row (=1) and creates each row in turn--Ukkonen
+-- | getRowUkkonen starts at second row (=1) and creates each row in turn--Ukkonen
 getRowsUkkonen :: BaseChar -> BaseChar -> Int -> Int -> Int -> V.Vector (Int, Int64, Direction) -> Int -> V.Vector (V.Vector (Int, Int64, Direction))
 getRowsUkkonen lSeq rSeq indelCost subCost rowNum prevRow maxGap =
     if rowNum == ((VS.length rSeq) + 1) then V.empty
@@ -230,7 +230,7 @@ getRowsUkkonen lSeq rSeq indelCost subCost rowNum prevRow maxGap =
             V.cons thisRowNonZero (getRowsUkkonen lSeq rSeq indelCost subCost (rowNum + 1) thisRowNonZero maxGap)
             --)
 
---getThisRowUkkonen takes sequences and parameters with row number and make a non-first
+-- | getThisRowUkkonen takes sequences and parameters with row number and make a non-first
 --row--Ukkonen
 getThisRowUkkonen :: BaseChar -> BaseChar -> Int -> Int -> Int ->  V.Vector (Int, Int64, Direction) -> Int -> Int -> Int -> Int -> V.Vector (Int, Int64, Direction)
 getThisRowUkkonen lSeq rSeq indelCost subCost rowNum prevRow position rowLength prevCost maxGap =
@@ -263,7 +263,7 @@ getThisRowUkkonen lSeq rSeq indelCost subCost rowNum prevRow position rowLength 
         --    ++ " trip " ++ show minCost ++ " " ++ show minState ++ " " ++ show minDir)
         V.cons (minCost, minState, minDir) (getThisRowUkkonen lSeq rSeq indelCost subCost rowNum prevRow (position + 1) rowLength minCost maxGap)        
 
---naive_do takes two input sequences and returns median sequence and cost 
+-- | naive_do takes two input sequences and returns median sequence and cost 
 --based on charInfo-1:1 for now
 --to do:
 --      different costs
@@ -292,7 +292,7 @@ naive_do inlSeq inrSeq charInfo =
         --trace ("NW: " ++ show nwMatrix ++ "\nCost/median " ++ show cost ++ "->" ++ show median)
         (median, fromIntegral cost)
 
---traceback creates REVERSE mediian from nwMatrix, reverse to make tail
+-- | traceback creates REVERSE mediian from nwMatrix, reverse to make tail
 --recusive
 traceback :: V.Vector (V.Vector (Int, Int64, Direction)) -> Int -> Int -> VS.Vector Int64
 traceback nwMatrix posL posR =
@@ -310,7 +310,7 @@ traceback nwMatrix posL posR =
                     else if direction == DownDir then (traceback nwMatrix (posL - 1) (posR) )  
                     else (traceback nwMatrix (posL - 1) (posR - 1)) 
 
---getFirstRow initializes foirst row of NW matrix
+-- | getFirstRow initializes foirst row of NW matrix
 getFirstRow :: Int -> Int -> Int -> Int -> BaseChar -> V.Vector (Int, Int64, Direction)
 getFirstRow indelCost rowLength position prevCost lSeq  = 
     if position == (rowLength + 1) then V.empty
@@ -328,7 +328,7 @@ getFirstRow indelCost rowLength position prevCost lSeq  =
                 V.cons (prevCost, newState, LeftDir)
                     (getFirstRow  indelCost rowLength (position + 1) prevCost lSeq)
 
---getRow starts at second row (=1) and cretes each row in turn
+-- | getRow starts at second row (=1) and cretes each row in turn
 getRows :: BaseChar -> BaseChar -> Int -> Int -> Int -> V.Vector (Int, Int64, Direction) -> V.Vector (V.Vector (Int, Int64, Direction))
 getRows lSeq rSeq indelCost subCost rowNum prevRow =
     if rowNum == ((VS.length rSeq) + 1) then V.empty
@@ -338,7 +338,7 @@ getRows lSeq rSeq indelCost subCost rowNum prevRow =
         --trace ("Row " ++ show rowNum)
         V.cons thisRow (getRows lSeq rSeq indelCost subCost (rowNum + 1) thisRow) 
 
---getDiagDirCost takes union intersection and state to get diagonla sub or no-sub
+-- | getDiagDirCost takes union intersection and state to get diagonla sub or no-sub
 --cost
 getDiagDirCost :: Int -> Int64 -> Int64 -> Int -> (Int, Int64)
 getDiagDirCost upLeftDirCost intersection union subCost =
@@ -346,7 +346,7 @@ getDiagDirCost upLeftDirCost intersection union subCost =
     if intersection /= 0 then (upLeftDirCost, intersection)
     else (upLeftDirCost + subCost, union)
 
---getUnionIntersection
+-- | getUnionIntersection
 getUnionIntersectionState :: Int64 -> Int64 -> Int64
 getUnionIntersectionState lState rState =
     let intersection = (lState .&. rState) :: Int64
@@ -354,7 +354,7 @@ getUnionIntersectionState lState rState =
     if intersection /= 0 then intersection
     else (lState .|. rState) :: Int64
 
---getMinCostDir takes costs and states of three directins and returns min cost,
+-- | getMinCostDir takes costs and states of three directins and returns min cost,
 --directin, and state
 --ORDER diag, down, left so same as POY4-5.
 getMinCostDir :: Int -> Int -> Int -> Int64 -> Int64 -> Int64 -> (Int, Int64, Direction)
@@ -373,7 +373,7 @@ getMinCostDir leftCost downCost diagCost diagState leftState downState =
     else (diagCost, diagState, DiagDir)
     -}
     
---getOverlapCost cheks for ovelap in gap so if indel, but opossite a gap
+-- | getOverlapCost cheks for ovelap in gap so if indel, but opossite a gap
 --ambiguity--there is no cost
 getOverlapCost :: Int -> Int -> Int64 -> Int
 getOverlapCost preCost indelCost oppositeState =
@@ -384,7 +384,7 @@ getOverlapCost preCost indelCost oppositeState =
     else preCost
     --)
 
---getThisRow takes sequences and parameters with row number and make a non-first
+-- | getThisRow takes sequences and parameters with row number and make a non-first
 --row
 getThisRow :: BaseChar -> BaseChar -> Int -> Int -> Int ->  V.Vector (Int, Int64, Direction) -> Int -> Int -> Int -> V.Vector (Int, Int64, Direction)
 getThisRow lSeq rSeq indelCost subCost rowNum prevRow position rowLength prevCost =

@@ -75,10 +75,11 @@ main =
                 ++ show graphAndDataJibe)
         printInputData $ fst inputData
         let phyloData = createBaseData inputData
+        let newCharInfo = redoRootCosts phyloData (snd inputData) 0
         printDataMatrixVLS phyloData termNameList
         let curForestList = baseDataToLeafNodes inputGraphList
         hPutStrLn stderr ("Data recoded " ++ show (V.length phyloData) ++ " leaves in " 
-            ++ show (length $ head curForestList) ++ " components")
+            ++ show (length $ head curForestList) ++ " components" ++ " with root cost " ++ show (getRootCosts newCharInfo))
         --hPrint stderr curForestList
-        let inCost = getForestCostList phyloData curForestList (snd inputData) termNameList
+        let inCost = getForestCostList phyloData curForestList newCharInfo termNameList
         hPutStrLn stderr ("At cost " ++ show (head inCost))

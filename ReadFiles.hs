@@ -50,6 +50,7 @@ module ReadFiles
 , CharInfo(..)
 , RawData
 , TermData
+, modifyRootCost
 ) where
 
 import Data.List
@@ -58,11 +59,12 @@ import Data.Maybe
 import qualified Data.Text as T
 import Debug.Trace
 
---data type for input characters
+-- | CharType data type for input characters
 data CharType = Add | NonAdd | Matrix | NucSeq | AminoSeq | GenSeq | Genome
     deriving (Read, Show, Eq)
 
---information about characters
+-- | CharInfo information about characters
+-- need to add rootCost for forest optimization
 data CharInfo = CharInfo { charType :: CharType
                          , activity :: Bool
                          , weight :: Float
@@ -70,15 +72,16 @@ data CharInfo = CharInfo { charType :: CharType
                          , name :: String
                          , numStates :: Int
                          , alphabet :: [String]
+                         , rootCost :: Float
                          } deriving (Show, Eq)
 
---RawData type processed from input to be passed to characterData
+-- | RawData type processed from input to be passed to characterData
 --to recode into usable form
 --the format is tuple of a list of taxon-data list tuples and charinfo list.
 --the data list and charinfo list must have the same length
 type RawData = ([TermData], [CharInfo])
 
---type TermData type contians termnal name and list of characters
+-- | type TermData type contians termnal name and list of characters
 type TermData = (String, [String])
 
 
@@ -107,7 +110,11 @@ modifyNumStates :: CharInfo -> Int -> CharInfo
 modifyNumStates charState x =
     charState { numStates = x }
 
---identify taxon names (with leading '>'--no space after '>') from input lines (to allow for
+modifyRootCost :: CharInfo -> Float -> CharInfo
+modifyRootCost  charState x =
+    charState { rootCost = x }
+
+-- | getTaxonNames identify taxon names (with leading '>'--no space after '>') from input lines (to allow for
 --non-name info in taxon line ala fasta
 getTaxonNames :: [String] -> [String]
 getTaxonNames y
@@ -123,7 +130,7 @@ getTaxonNames y
               thwx = tail hwx
             in thwx : getTaxonNames xs
 
---get list for each taxon (names and sequence) by checking if word is name
+-- | getSequences get list for each taxon (names and sequence) by checking if word is name
 --and if not appending to that list
 getSequences :: [String] -> [String]
 getSequences [] = []
@@ -133,6 +140,7 @@ getSequences (x:xs)
     | head x  == '>' = ">" : getSequences xs
     | otherwise = concat (words x) :  getSequences xs 
 
+-- | getCustomSequences
 --get list for each taxon (names and sequence) by checking if word is name
 --and if not appending to that list--but leave spaces between symbols
 getCustomSequences :: [String] -> [String]
@@ -143,12 +151,13 @@ getCustomSequences (x:xs)
     | head x  == '>' = ">" : getCustomSequences xs
     | otherwise = x :  getCustomSequences xs 
 
+-- | mergeSeqs
 --merge list of String into String
 mergeSeqs :: [[String]] -> [String]
 mergeSeqs [] = []
 mergeSeqs x = map concat x  
 
---convertSeqToList makes sequence into list of String to move towards rawData
+-- | convertSeqToList makes sequence into list of String to move towards rawData
 --type
 convertSeqToList :: [(String, String)] -> [(String, [String])]
 convertSeqToList x =
@@ -158,6 +167,7 @@ convertSeqToList x =
         in
             (y, [z]) : convertSeqToList (tail x)
 
+-- | processFastaInput
 --Process input fasta data and return RAwData--but only for asingle input file
 --Taxon names must begin with '>' with no spaces, charcaters after spaces on 
 --  taxon line are ignores (e.g. genbank #s) 
@@ -186,11 +196,12 @@ processFastaInput x =
                                  , name = "FastaSeqChar"
                                  , numStates = 0
                                  , alphabet = ["A", "C", "G", "T", "-"]
+                                 , rootCost = 0.5
                                  }
         in
             (pairedListData, [defaultFastaCharInfo])
 
---getInts takes String andretuns [Int] 
+-- | getInts takes String andretuns [Int] 
 getInts :: [String] -> [Int]
 getInts inString =
     if null inString then []
@@ -201,7 +212,7 @@ getInts inString =
         b : getInts (tail inString)
 
 
---processTCM takes tcmfile contents and returns alphabet and 
+-- | processTCM takes tcmfile contents and returns alphabet and 
 --costmatrix
 processTCM :: String -> ([String], [Int])
 processTCM tcmStuff =
@@ -213,7 +224,7 @@ processTCM tcmStuff =
         in
         (alphabet, costMatrix)
 
---processCustomAlphabet takes input custom_alphabet sequences 
+-- | processCustomAlphabet takes input custom_alphabet sequences 
 --and returns processed data
 processCustomAlphabet :: String -> String -> RawData 
 processCustomAlphabet x tcmStuff = 
@@ -236,6 +247,7 @@ processCustomAlphabet x tcmStuff =
                                  , name = "CustomAlphabetChar"
                                  , numStates = 0
                                  , alphabet = alphabetList
+                                 , rootCost = 0.5
                                  }
         in
             if (length alphabetList) > 63 then error "Alphabet > 63"
@@ -243,6 +255,7 @@ processCustomAlphabet x tcmStuff =
                 trace ("\nCA alphabet " ++ show (alphabetList) )-- ++ " " ++ show matrixList)
                 (pairedListData, [defaultGenSeqCharInfo])
 
+-- | reformatCharString
 --Convert String of chars into list of String so a charcater can be a sequence,
 --or ambiguous if Hennig86/TNTR/Nexus
 reformatCharString :: String -> [String]
@@ -254,11 +267,12 @@ reformatCharString x
         trace ("y = " ++ show y)
           (head y : reformatCharString (concat (tail y)))
 
---Extract pairs form lines of data file body
+-- | extractLines Extract pairs form lines of data file body
 extractLines :: [String] -> [(String, [String])]
 extractLines [] = []
 extractLines (x:xs) = (x, reformatCharString (head xs)) : extractLines (tail xs) 
 
+-- | getTaxCharPairs
 --get Taxon, Characters Pairs assuming on same line separated by space
 getTaxCharPairs :: String -> [(String, [String])]
 getTaxCharPairs x =
@@ -271,7 +285,7 @@ getTaxCharPairs x =
             --trace ("in " ++ (show x) ++  "to " ++ (show guts) ++ " to " ++ (show resPairs)) 
             resPairs
 
---getAction returns charcater type info from Hennig86/TNT +,-,[,],w etc
+-- | getAction returns charcater type info from Hennig86/TNT +,-,[,],w etc
 getAction :: Char -> String
 getAction x
     | x == '-' = "NonAdditive"
@@ -281,7 +295,7 @@ getAction x
     | x == '/' = "Weight"
     | otherwise = error ("Unrecognized character attribute " ++ show x ++ " in Hennig86/TNT input file.")
 
---stringToInt Converts sString to Int, needs to return or check if not an Int.
+-- | stringToInt Converts sString to Int, needs to return or check if not an Int.
 stringToInt :: String -> Int
 stringToInt x =
     if null x then error ("Input error " ++ show x ++ "in stringToInt function")
@@ -290,7 +304,7 @@ stringToInt x =
         in
         y
         
---getScope reads Hennig86/TNT scope options '.' etc and sets
+-- | getScope reads Hennig86/TNT scope options '.' etc and sets
 getScope :: [String] -> Int -> [Int]
 getScope (x : xs) nchar
     | null (x : xs) =
@@ -313,7 +327,7 @@ getScope (x : xs) nchar
         ("Unrecognized character scope " ++
            show (x : xs) ++ " in Hennig86/TNT input file.")
 
---processWeightScope removes and returns weight adnd scope as separate theings
+-- | processWeightScope removes and returns weight adnd scope as separate theings
 processWeightScope :: String -> String -> (String, Int)
 processWeightScope attribute x  
     | null x = ([], 0)
@@ -324,7 +338,7 @@ processWeightScope attribute x
           z = unwords (tail y)      
         in (z, weight)
 
---modifyCharInfo updates CharInfo record, overwriting previous values
+-- | modifyCharInfo updates CharInfo record, overwriting previous values
 --checks to make sure modifucations are within nchar
 modifyCharInfo :: [CharInfo] -> String -> [Int] -> Int -> Int -> [CharInfo]
 modifyCharInfo oldCharInfo attribute scope weight nchar =
@@ -360,7 +374,7 @@ modifyCharInfo oldCharInfo attribute scope weight nchar =
             modifyCharInfo newCharInfo attribute (tail scope) weight nchar
         else  error ("Unrecognized character attribute " ++ show attribute ++ " in input file.")
     
---Set Codes based on Henig/TNT get and set action and scope 
+-- | setCodes based on Henig/TNT get and set action and scope 
 setCodes :: [String] -> Int -> [CharInfo] -> [CharInfo]
 setCodes x nchar initialCharInfo =
     if null x then []
@@ -376,7 +390,7 @@ setCodes x nchar initialCharInfo =
             -- ++ (show (tail y)) ++ " sc " ++ (show (splitOn "." (tail y))) ++ " scope " ++ (show scope)) 
             newCharInfo
 
---Get information on charcater type etc from lines after data body--one set
+-- | getCharInfo information on charcater type etc from lines after data body--one set
 --option (cc -.; cc[ 0;) per semicolon
 getCharInfo :: [String] -> Int -> [CharInfo] -> [CharInfo]
 getCharInfo (x : xs) nchar initialCharInfo
@@ -389,7 +403,7 @@ getCharInfo (x : xs) nchar initialCharInfo
         in newerCharInfo
     | otherwise = error ("Unrecongized character option " ++ show x)
 
---initializeCharInfo sets chrcater info to defaults 
+-- | initializeCharInfo sets chrcater info to defaults 
 initializeCharInfo :: CharInfo -> Int -> Int -> [CharInfo]
 initializeCharInfo defaults nchar acc =
     if acc == nchar then []
@@ -402,11 +416,12 @@ initializeCharInfo defaults nchar acc =
                         , name = name defaults
                         , numStates = numStates defaults
                         , alphabet = []
+                        , rootCost = 0.5
                         }
         in
         newChar : initializeCharInfo defaults nchar (acc + 1)
 
---parse Xread version of Hennig86/TNT file
+-- | parse Xread version of Hennig86/TNT file
 processXread :: [String] -> RawData 
 processXread x = 
     if null x 
@@ -420,6 +435,7 @@ processXread x =
                         , name = "Hennig86/TNTChar"
                         , numStates = 0
                         , alphabet = []
+                        , rootCost = 0.5
                         }
             thang = splitOn "'" (unwords x)
             message = head (tail thang)
@@ -434,7 +450,7 @@ processXread x =
             trace ("Hennig/TNT file message " ++ show message ++ " ntax = " ++ show ntax ++ " nchar = " ++ show nchar) 
             (taxCharPair, charInfo)
 
-
+-- | processTNTInput
 --Process basic Hennig86/TNT file
 --assumes:
 --1) starts with "xread"
@@ -460,12 +476,14 @@ processTNTInput x =
             then processXread (tail (words x))
         else error "Only processing 'xread' Hennig/TNT files for now"
 
+-- | processNexusInput
 --Process basic Nexus file (eventually complete to specification)
 processNexusInput :: String -> RawData
 processNexusInput x =
     error (if null x then error "NEXUS stream empty."
     else "NEXUS file parsing not implemented.") --([],[])
 
+-- | assignCharType
 --assignType makes a character info array of itype 'y' for each column
 --in 'x' file
 assignCharType  :: Int -> CharInfo -> [CharInfo]
@@ -473,6 +491,7 @@ assignCharType x y
     | x == 0 = []
     | otherwise = y : assignCharType (x - 1) y 
 
+-- | getPairDataCSV
 --Process CSV input as lines to extract name and data cells
 getPairDataCSV :: [String] -> [(String, [String])]
 getPairDataCSV x =
@@ -486,7 +505,7 @@ getPairDataCSV x =
         else 
             trace ("CSV in " ++ show name ++ " " ++ show (length x) ++ " " ++ show (length characters)) (name, characters) : getPairDataCSV (tail x)
  
---Process CSV ',' delimited file
+-- | processCsvInput Process CSV ',' delimited file
 --assumes
 --One taxon per line first field taxon name
 --  comma delimited cells in lines, one line per terminal
@@ -506,13 +525,14 @@ processCsvInput x =
                      , name = "CsvChar"
                      , numStates = 0
                      , alphabet = []
+                     , rootCost = 0.5
                      }
             charTypeValue = assignCharType (length charData) defaultCsvInfo 
         in
         trace ("lines in " ++ show (length inLines)) 
         (pairedNameData, charTypeValue)
 
---PrintStrinListWithNewLine between elements
+-- | printStrinListWithNewLine between elements
 printStringListWithNewLine :: [String] -> IO ()
 printStringListWithNewLine x =
     if null x then putStrLn " \\newpage "
@@ -522,6 +542,7 @@ printStringListWithNewLine x =
             putStrLn " \\\\ "
             printStringListWithNewLine (tail x)
 
+-- | printInputCharacters
 --Print Characters 
 printInputCharacters :: [String] -> IO ()
 printInputCharacters x =
@@ -532,6 +553,7 @@ printInputCharacters x =
             printInputCharacters (tail x)
     else putStrLn ""
 
+-- | printInputData
 --Print input data as strings to check validity of the read
 --uses the ``pairedNameData'' one line per taxon, taxon
 --name followed by characters then \n
@@ -546,6 +568,7 @@ printInputData x =
           printInputData (tail x)
     else putStrLn ""
 
+-- | printInputDataByTerminal
 --Print input data as strings to check validity of IPA read
 --uses the ``pairedNameData'' one page per taxon
 --characters in column including latex commands for IPA
@@ -562,6 +585,7 @@ printInputDataByTerminal x =
           printInputDataByTerminal (tail x)
     else putStrLn ""
 
+-- | removeTerminalNames
 --Remove the names from pairedData
 removeTerminalNames ::  [(String, [String])] -> [[String]]
 removeTerminalNames x =
@@ -571,6 +595,7 @@ removeTerminalNames x =
         in
         b : removeTerminalNames (tail x)
 
+-- | printOneAtATime
 --Print one char at a time
 printOneAtATime :: [[String]] -> IO ()
 printOneAtATime x = 
@@ -580,6 +605,7 @@ printOneAtATime x =
             printStringListWithNewLine (head x)
             printOneAtATime (tail x)
 
+-- | printInputDataByCharacter
 --Print input data as columns of character states 1 at a time then \n
 --so get a single column output separated by new line latex characters
 printInputDataByCharacter :: [(String, [String])] -> IO ()
