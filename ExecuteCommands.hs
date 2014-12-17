@@ -312,7 +312,7 @@ processNewick inNewickString =
             let (leftDesc, preRightDesc) = splitAt commaPosition reducedString --assumes binary
                 rightDesc = tail preRightDesc --removes ','
                 leftDescStripped = stripLabel leftDesc
-                rightDescStripped = stripLabel rightDesc
+                rightDescStripped = stripLabel rightDesc --check for polytomies here
             in
             {-trace ("\nRoot label = " ++ show nodeName ++ "\n processed newick " ++ show reducedString ++ "->" 
                 ++ show leftDesc ++ " " ++ show (tail rightDesc)) (
