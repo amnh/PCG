@@ -1,5 +1,4 @@
 {-- |
-
 Module      :  Functions for manipulating phylogeentic components
 Description :  Takes data from parser functins and recodess into usable state 
 Copyright   :  (c) 2014 Ward C. Wheeler, Division of Invertebrate Zoology, AMNH. All rights reserved.

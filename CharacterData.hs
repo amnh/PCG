@@ -1,5 +1,4 @@
 {-- |
-
 Module      :  Functions for processing character data
 Description :  Takes data from parser functins and recodess into usable state 
 Copyright   :  (c) 2014 Ward C. Wheeler, Division of Invertebrate Zoology, AMNH. All rights reserved.
@@ -89,7 +88,9 @@ convertDNASeqToBit x
     | toUpper (head x) == 'C' = VS.cons (2 :: Int64) (convertDNASeqToBit (tail x))
     | toUpper (head x) == 'G' = VS.cons (4 :: Int64) (convertDNASeqToBit (tail x))
     | toUpper (head x) == 'T' = VS.cons (8 :: Int64) (convertDNASeqToBit (tail x))
-    | head x == '-' = VS.cons (16 :: Int64) (convertDNASeqToBit (tail x))
+--    | head x == '-' = VS.cons (16 :: Int64) (convertDNASeqToBit (tail x))
+--    strips out gaps for now need to add prealigned data type option later
+    | head x == '-' =  (convertDNASeqToBit (tail x))
     | toUpper (head x) == 'R' = VS.cons (5 :: Int64) (convertDNASeqToBit (tail x))
     | toUpper (head x) == 'Y' = VS.cons (10 :: Int64) (convertDNASeqToBit (tail x))
     | toUpper (head x) == 'M' = VS.cons (3 :: Int64) (convertDNASeqToBit (tail x))
@@ -162,7 +163,6 @@ charSetToVectList x charInfo
 charSetToVect :: String -> CharInfo -> BaseChar 
 charSetToVect x charInfo 
     | null x = VS.empty
-    -- | x == "no_data" = VS.singleton (0 :: Int64)   --all '0'
     | otherwise =
         if ((charType charInfo == NonAdd) || (charType charInfo == Add)) && 
             ((head x == '?') || (head x == '-') || (x == "no_data")) then  VS.singleton (maxBound :: Int64) --all '1' missing data

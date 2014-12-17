@@ -1,6 +1,6 @@
 {- |
 Module      :  Parsimony Optimization functions
-Description :  Functions for parimsony cost and vertex optimizations
+Description :  Functions for parsimony cost and vertex optimizations
 Copyright   :  (c) 2014 Ward C. Wheeler, Division of Invertebrate Zoology, AMNH. All rights reserved.
 License     :  
 
