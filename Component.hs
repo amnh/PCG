@@ -449,15 +449,16 @@ getSoftAdjust numReticulateEdges softCost numTerminals =
 
 -- | getDisplayTreeCostList spits cost list into display trees (resolutions), 
 --with lists of best rooted cost for each character
-getDisplayTreeCostList :: Int -> V.Vector (V.Vector Float) -> V.Vector (V.Vector Float)
-getDisplayTreeCostList rootsPerTree charCostVectVect = 
+getDisplayTreeCostList :: [V.Vector PhyloComponent] -> V.Vector (V.Vector Float) -> V.Vector (V.Vector Float)
+getDisplayTreeCostList rerootedList charCostVectVect = 
    if V.null charCostVectVect then V.empty
    else 
-       let displayRoots = V.take rootsPerTree charCostVectVect
-           remainderDisplayRoots = V.drop rootsPerTree charCostVectVect
-           displayCharCostVect = compileSoftCosts displayRoots
+       let  rootsPerTree = V.length (head rerootedList)  
+            displayRoots = V.take rootsPerTree charCostVectVect
+            remainderDisplayRoots = V.drop rootsPerTree charCostVectVect
+            displayCharCostVect = compileSoftCosts displayRoots
        in
-       V.cons displayCharCostVect  (getDisplayTreeCostList rootsPerTree remainderDisplayRoots)
+       V.cons displayCharCostVect  (getDisplayTreeCostList (tail rerootedList) remainderDisplayRoots)
 
 -- | getBinCosts take list of char costs by tree and returns list of sums
 getBinCosts :: V.Vector (V.Vector Float) -> V.Vector Float
@@ -552,10 +553,10 @@ getComponentCost dataMatrix inComp charInfoList =
              --access when doing incremental optimizations--lots to reuse 
             let displayTreeList = phyloComponentToTreeList inComp
                 inCompEdgeSet = edgeSetFromComponent inComp
-                reRootedVect = getReRootList displayTreeList
+                reRootedVectList = getReRootList displayTreeList --change to list of Vetors etc to keep trac of rerootlengths
+                reRootedVect = V.concat reRootedVectList
                 charCostVectVect = getBinaryCostList reRootedVect charInfoList dataMatrix V.empty 
-                displayTreeCharCostList = getDisplayTreeCostList ((V.length charCostVectVect) 
-                    `quot` (length displayTreeList)) charCostVectVect 
+                displayTreeCharCostList = getDisplayTreeCostList reRootedVectList charCostVectVect --error here I think number reoots may vary?
                 displayTreeCostList = getBinCosts displayTreeCharCostList
                 allCosts = compileBinaryCosts charCostVectVect --really for debug purposes
                 softCostList = compileSoftCosts displayTreeCharCostList --charCostVectVect
@@ -606,11 +607,13 @@ getRootCosts charInfoList =
 
 -- | getReRootList takes list of binary trees and returns list of all reroots of
 --all binary trees
-getReRootList :: [PhyloComponent] -> V.Vector PhyloComponent
+getReRootList :: [PhyloComponent] -> [V.Vector PhyloComponent]
 getReRootList inBinaryList =
-    if null inBinaryList then V.empty
+    if null inBinaryList then []
     else 
-        getReRoots (head inBinaryList)  V.++ getReRootList (tail inBinaryList)
+        --trace ("num reroots " ++ show (V.length $ getReRoots (head inBinaryList) )) (
+        (getReRoots (head inBinaryList)) :  (getReRootList (tail inBinaryList))
+        --)
 
 -- | getReRoots inputs a single binary phylocomponent and returns a list of all
 --reroots
