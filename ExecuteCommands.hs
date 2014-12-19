@@ -59,7 +59,7 @@ import ReadFiles
 import ReadGraphs
 import qualified Data.Vector as V
 
-maxIntLocal = 1000000000
+--maxIntLocal = 1000000000
 
 -- | executeCommand takes command tuple and executes
 executeCommand :: Command -> IO ()
@@ -255,7 +255,7 @@ getNodeNames inNodes =
 --if that number == 0 when a comma is encountered, that's the dividing comma 
 getDividingComma :: String -> Int -> Int -> Int -> Int --should be list for non-binary
 getDividingComma newickString numLeftParens numRightParens curPosition = 
-    if null newickString then  maxIntLocal --this for hitting a terminal name error "Error in binary Newick file--couldn't find comma break"
+    if null newickString then (-1) --this for hitting a terminal name error "Error in binary Newick file--couldn't find comma break"
     else 
         let firstChar = head newickString
         in
@@ -312,7 +312,7 @@ getRestNewick inSubTree ancTree =
                 subTreeNoLabel = tail $ init $ subTreeStripped --getSisters subTreeStripped --tail $ init $ subTreeStripped
                 commaPositionHere = getDividingComma subTreeNoLabel 0 0 0
                 (leftDesc, preRightDesc) = splitAt commaPositionHere subTreeNoLabel --assumes binary
-                rightDesc = dichotomize (tail preRightDesc) --removes ','
+                rightDesc = dichotomize (tail preRightDesc) --removes ',' and resolves polytomies
                 leftDescStripped = stripLabel leftDesc
                 rightDescStripped = stripLabel rightDesc 
             in
@@ -336,7 +336,7 @@ dichotomize :: String -> String
 dichotomize inString =
     if null inString then error "Null in dichotomize"
     else 
-        if (getDividingComma inString 0 0 0) < maxIntLocal then "(" ++ inString ++ ")"
+        if (getDividingComma inString 0 0 0) /= (-1) then "(" ++ inString ++ ")"
         else inString
 
 {-
@@ -383,7 +383,7 @@ processNewick inNewickString =
             reducedString = tail $ init gutsOnly --getSisters gutsOnly --tail $ init gutsOnly
             commaPosition = getDividingComma reducedString 0 0 0
         in
-        if commaPosition /= maxIntLocal then 
+        if commaPosition /= (-1) then 
             let (leftDesc, preRightDesc) = splitAt commaPosition reducedString --assumes binary
                 rightDesc = tail preRightDesc --removes ','
                 leftDescStripped = stripLabel leftDesc
