@@ -292,7 +292,7 @@ getRestNewick inSubTree ancTree =
     if null inSubTree then error "Error in Newick file parsing"
     else 
         if (notElem ',' inSubTree) then --commaPosition == maxIntLocal then
-            trace ("\nTerminal " ++ show ancTree ++ "->" ++ show inSubTree) (
+            --trace ("\nTerminal " ++ show ancTree ++ "->" ++ show inSubTree) (
             if (head inSubTree /= '(') then [(inSubTree, [], [ancTree])]
             else --is indegree=outdegree=1 node 
                 let nodeName = stripBranchLengths $ reverse $ takeWhile (/= ')') $ reverse inSubTree
@@ -304,7 +304,7 @@ getRestNewick inSubTree ancTree =
                     [(inSubTree, [descNodeName], [ancTree])] ++ (getRestNewick descNodeName inSubTree)
                 else 
                      [(nodeName, [descNodeName], [ancTree])] ++ (getRestNewick descNodeName nodeName)
-                )
+                --)
         else 
             --set node and recurse
             let nodeName = stripBranchLengths $ reverse $ takeWhile (/= ')') $ reverse inSubTree
@@ -316,10 +316,10 @@ getRestNewick inSubTree ancTree =
                 leftDescStripped = stripLabel leftDesc
                 rightDescStripped = stripLabel rightDesc 
             in
-            trace ("\n label stuff " ++ show nodeName ++ " " ++ show subTreeStripped ++ " " ++ show subTreeNoLabel 
+            {-trace ("\n label stuff " ++ show nodeName ++ " " ++ show subTreeStripped ++ " " ++ show subTreeNoLabel 
                 ++ " " ++ show commaPositionHere ++ "\nInternal " ++ show ancTree ++ "->" ++ show leftDesc ++ " and " 
                 ++ show rightDesc ++ " label " ++ show nodeName ++ show (getDividingComma rightDesc 0 0 0)) (
-            
+            -}
             --trace ("posLR " ++ show commaPositionHere ++ " reverse " ++ show ((length subTreeNoLabel) - (getDividingComma (reverse subTreeNoLabel) 0 0 0) - 1) ++ show rightDesc) (
             if null nodeName then
                 [(inSubTree, [leftDescStripped, rightDescStripped], [ancTree])] ++ (getRestNewick leftDesc inSubTree ) 
@@ -327,7 +327,7 @@ getRestNewick inSubTree ancTree =
             else 
                 [(nodeName, [leftDescStripped, rightDescStripped], [ancTree])] ++ (getRestNewick leftDesc nodeName) 
                     ++ (getRestNewick rightDesc nodeName)
-            )
+            --)
 
 -- | dichotomize takes part of newick string and if more than one component adds
 -- parens on outside.  THis effectively dichotomizes multi-tomies in newick
