@@ -874,7 +874,7 @@ binaryToNewickNames inComp curPNode
   | length (children curPNode) == 1 =
     let onlyNodeCode = head (children curPNode)
         onlyResult = binaryToNewickNames inComp (inComp V.! onlyNodeCode)
-        thisName = rootModifyName (nodeName  (inComp V.! onlyNodeCode)) (isRoot curPNode)
+        thisName = rootModifyName (nodeName $ V.head onlyResult) (isRoot curPNode) --(inComp V.! onlyNodeCode)) (isRoot curPNode)
         thisNode = modifyNodeName curPNode thisName
     in   --add as node name?  helpful to follow rsolutions 
         --onlyResult V.++ V.singleton thisNode
