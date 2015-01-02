@@ -530,7 +530,7 @@ getSoftAdjust3 bestTreeIndex bestTreeCharCostList numTerminals bestCharIndicesLi
         let bestDisplayEdgeSet = edgeSetFromComponent (displayTreeList !! bestTreeIndex)
             bestDisplayTreeCharList = V.head bestCharIndicesList  
             bestCharDisplayEdgeSet = edgeSetFromComponent (displayTreeList !! (V.head bestDisplayTreeCharList)) --arbitrarily take first one if multiple 
-            edgeDiffNum = Set.size $ Set.difference bestDisplayEdgeSet bestCharDisplayEdgeSet
+            edgeDiffNum = Set.size $ Set.difference bestCharDisplayEdgeSet bestDisplayEdgeSet --edges in Char best tree not in overall best binary tree
             charCost = V.head bestTreeCharCostList 
             numEdges =  fromIntegral (2 * ((2 * numTerminals)  - 2)) --actually 2 x num edges for reduction of 1/2 in expectation
             charPenalty = (fromIntegral edgeDiffNum) * charCost / numEdges
