@@ -518,6 +518,10 @@ getSoftAdjust2 bestTreeIndex bestTreeCharCostList numTerminals bestCharIndicesLi
 
 -- | getSoftAdjust3 this is an added cost of network edges r/2 * bestCost / (2n -2)
 -- but multiplied by number of edges not in best binary, so >= SoftAdjust2
+-- edges include indegree=outdegree=1 in number different. num edges for base
+-- cost is as if htere were no indegree=outdegree=1 nodes.  Could adjust for
+-- this--but really may make no difference unless there are superfluous nodes in
+-- network.  
 getSoftAdjust3 :: Int -> V.Vector Float -> Int -> V.Vector (V.Vector Int) -> [PhyloComponent] -> Set.Set (Int, Int) -> Float 
 getSoftAdjust3 bestTreeIndex bestTreeCharCostList numTerminals bestCharIndicesList displayTreeList bestDisplayEdgeSet  =
     if numTerminals == 1 then 0
