@@ -516,6 +516,27 @@ getSoftAdjust2 bestTreeIndex bestTreeCharCostList numTerminals bestCharIndicesLi
         else
             (getSoftAdjust2 bestTreeIndex (V.tail bestTreeCharCostList) numTerminals (V.tail bestCharIndicesList))
 
+-- | getSoftAdjust3 this is an added cost of network edges r/2 * bestCost / (2n -2)
+-- but multiplied by number of edges not in best binary, so >= SoftAdjust2
+getSoftAdjust3 :: Int -> V.Vector Float -> Int -> V.Vector (V.Vector Int) -> [PhyloComponent] -> Set.Set (Int, Int) -> Float 
+getSoftAdjust3 bestTreeIndex bestTreeCharCostList numTerminals bestCharIndicesList displayTreeList bestDisplayEdgeSet  =
+    if numTerminals == 1 then 0
+    else if V.null bestTreeCharCostList then 0
+    else
+        let bestDisplayEdgeSet = edgeSetFromComponent (displayTreeList !! bestTreeIndex)
+            bestDisplayTreeCharList = V.head bestCharIndicesList  
+            bestCharDisplayEdgeSet = edgeSetFromComponent (displayTreeList !! (V.head bestDisplayTreeCharList)) --arbitrarily take first one if multiple 
+            edgeDiffNum = Set.size $ Set.difference bestDisplayEdgeSet bestCharDisplayEdgeSet
+            charCost = V.head bestTreeCharCostList 
+            numEdges =  fromIntegral (2 * ((2 * numTerminals)  - 2)) --actually 2 x num edges for reduction of 1/2 in expectation
+            charPenalty = (fromIntegral edgeDiffNum) * charCost / numEdges
+        in
+        if (V.notElem bestTreeIndex bestDisplayTreeCharList) then
+            trace (" P2 " ++ show charPenalty) charPenalty  +  
+                (getSoftAdjust3 bestTreeIndex (V.tail bestTreeCharCostList) numTerminals (V.tail bestCharIndicesList) displayTreeList bestDisplayEdgeSet)
+        else
+            (getSoftAdjust3 bestTreeIndex (V.tail bestTreeCharCostList) numTerminals (V.tail bestCharIndicesList) displayTreeList bestDisplayEdgeSet)
+
 -- | edgeCodeToName takes Edge codes numbers and returns Node Name
 edgeCodeToName :: Int -> PhyloComponent -> String
 edgeCodeToName nodeCode inNodes =
@@ -573,6 +594,9 @@ getComponentCost dataMatrix inComp charInfoList =
                 softAdjust2 = getSoftAdjust2 (V.head bestDisplayIndices) 
                     (displayTreeCharCostList V.! (V.head bestDisplayIndices))  
                     (V.length dataMatrix) charDisplayIndices 
+                softAdjust3 = getSoftAdjust3 (V.head bestDisplayIndices) 
+                    (displayTreeCharCostList V.! (V.head bestDisplayIndices))  
+                    (V.length dataMatrix) charDisplayIndices displayTreeList (edgeSetFromComponent $ displayTreeList !! (V.head bestDisplayIndices))
                 rootCost = getRootCosts charInfoList --make into a fold   
              in 
                 trace ("\nBinaries : " ++ show (length displayTreeList) ++ " " ++ show (V.length reRootedVect) ++ " " 
@@ -580,8 +604,11 @@ getComponentCost dataMatrix inComp charInfoList =
                     ++ show softCostList ++ "\nDisplay Costs " ++ show displayTreeCostList ++ " best tree " ++ show bestDisplayIndices 
                     ++ " -> " ++ show (V.minimum displayTreeCostList) ++ "\nsoft " ++ show softCost ++ " soft adjust " ++ show softAdjust 
                     ++ "\nSoft Indices " ++ show charDisplayIndices ++ "\nSoft-2 "  ++ show softAdjust2 ++ " -> " ++ show (softCost + softAdjust2)
+                    ++ " Soft-3 "  ++ show softAdjust3 ++ " -> " ++ show (softCost + softAdjust3)
                     ++ "\nDisplay Trees " ++ show (binaryToNewick displayTreeList) 
                     ++ "\nUnused Edges " ++ show (edgePairListStringPairList unusedEdges inComp)
+                    -- ++ "\nDisplay edges " ++ show (edgePairListStringPairList (Set.toList inCompEdgeSet) inComp)
+                    -- ++ "\nUsed edges " ++ show (edgePairListStringPairList (Set.toList $ edgeSetFromComponentListSome displayTreeList (nub $ listOfVector $ V.toList charDisplayIndices) 0) inComp)
                     -- ++ "\nRoot cost: " ++ show rootCost
                     -- ++ "\nFrom : " ++ show inComp
                     ) 
