@@ -55,6 +55,8 @@ import ReadGraphs
 import ReadFiles
 import CharacterData
 import qualified Parsimony as Pars
+import Control.Parallel.Strategies
+import Control.DeepSeq
 
 -- | stuff for maxFloat
 maxFloat = 1.0e32 --0x7f7ffff is max 32 bit FLOAT IEEE ~3.4e34
@@ -745,14 +747,17 @@ makePrelim :: CharacterSetList -> CharacterSetList -> [CharInfo] -> [(BaseChar, 
 makePrelim lStates rStates charInfoList =
     if null lStates || null rStates || null charInfoList then []
     else 
-        let lState = head lStates
-            rState = head rStates
-            charInfo = head charInfoList
-            newStatesCost = Pars.getPrelim lState rState charInfo 
+        if False then
+            let lState = head lStates
+                rState = head rStates
+                charInfo = head charInfoList
+                newStatesCost = Pars.getPrelim lState rState charInfo 
                 --(VS.singleton (0 :: Int64), 0) --(state, cost) --placeholder to optimization
-        in
-        --trace ("Optimizing " ++ show (length lStates) ++ " characters")
-        newStatesCost : makePrelim (tail lStates) (tail rStates) (tail charInfoList)
+            in
+            --trace ("Optimizing " ++ show (length lStates) ++ " characters")
+            newStatesCost : makePrelim (tail lStates) (tail rStates) (tail charInfoList)
+        else 
+            parMap rdeepseq Pars.getPrelimTriple (zip3 lStates rStates charInfoList)
 
 -- | traverseComponent takes, data, a node and current phylo vector and traverses netwrok 
 --according to the phylonode input component 
