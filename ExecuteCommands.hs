@@ -59,7 +59,9 @@ import ReadFiles
 import ReadGraphs
 import qualified Data.Vector as V
 
---executeCommand takes command tuple and executes
+--maxIntLocal = 1000000000
+
+-- | executeCommand takes command tuple and executes
 executeCommand :: Command -> IO ()
 executeCommand x =
     if  fst x == "read" then do
@@ -73,13 +75,13 @@ executeCommand x =
     else 
         error ("Command " ++ show x  ++ " not recognizes/implememnted.")
 
---sendMessage is wrapper for update infor via IO ()
+-- | sendMessage is wrapper for update infor via IO ()
 sendMessage :: String -> IO ()
 sendMessage x =
         if null x then hPutStrLn stderr "Unspecified message"
         else putStrLn x
 
---executeCommandList executes each command in list returning inputData,
+-- | executeCommandList executes each command in list returning inputData,
 --processData, Forest tuple
 executeCommandList :: [Command] -> IO ()    --(RawData, RawData, GenForest) -> (RawData, RawData, GenForest)
 executeCommandList commandList =             --(inputData, processedData, inputForest) =
@@ -253,7 +255,7 @@ getNodeNames inNodes =
 --if that number == 0 when a comma is encountered, that's the dividing comma 
 getDividingComma :: String -> Int -> Int -> Int -> Int --should be list for non-binary
 getDividingComma newickString numLeftParens numRightParens curPosition = 
-    if null newickString then 0 --this for hitting a terminal name error "Error in binary Newick file--couldn't find comma break"
+    if null newickString then (-1) --this for hitting a terminal name error "Error in binary Newick file--couldn't find comma break"
     else 
         let firstChar = head newickString
         in
@@ -289,16 +291,13 @@ getRestNewick :: String -> String -> GenPhyNet
 getRestNewick inSubTree ancTree =
     if null inSubTree then error "Error in Newick file parsing"
     else 
-        let subTree = tail $ init $ inSubTree 
-            commaPosition = getDividingComma subTree 0 0 0
-        in
-        if commaPosition == 0 then
-            --trace ("\nTerminal " ++ show ancTree ++ "->" ++ show inSubTree ++ " label " ++ show nodeName)
+        if (notElem ',' inSubTree) then --commaPosition == maxIntLocal then
+            --trace ("\nTerminal " ++ show ancTree ++ "->" ++ show inSubTree) (
             if (head inSubTree /= '(') then [(inSubTree, [], [ancTree])]
             else --is indegree=outdegree=1 node 
                 let nodeName = stripBranchLengths $ reverse $ takeWhile (/= ')') $ reverse inSubTree
                     descNode = reverse $ dropWhile (/= ')') $ reverse inSubTree
-                    descNodeName = stripLabel $ tail $ init $ descNode
+                    descNodeName = stripLabel $ tail $ init descNode --getSisters descNode  --tail $ init $ descNode
                 in
                 --trace ("\n11 " ++ show inSubTree ++ " " ++ show nodeName ++ " " ++ show descNode ++ " " ++ show descNodeName) (
                 if null nodeName then
@@ -310,17 +309,18 @@ getRestNewick inSubTree ancTree =
             --set node and recurse
             let nodeName = stripBranchLengths $ reverse $ takeWhile (/= ')') $ reverse inSubTree
                 subTreeStripped =  reverse $ dropWhile (/= ')') $ reverse inSubTree
-                subTreeNoLabel = tail $ init $ subTreeStripped
+                subTreeNoLabel = tail $ init $ subTreeStripped --getSisters subTreeStripped --tail $ init $ subTreeStripped
                 commaPositionHere = getDividingComma subTreeNoLabel 0 0 0
                 (leftDesc, preRightDesc) = splitAt commaPositionHere subTreeNoLabel --assumes binary
-                rightDesc = tail preRightDesc --removes ','
+                rightDesc = dichotomize (tail preRightDesc) --removes ',' and resolves polytomies
                 leftDescStripped = stripLabel leftDesc
-                rightDescStripped = stripLabel rightDesc
+                rightDescStripped = stripLabel rightDesc 
             in
-            {- trace ("\n labe stuff " ++ show nodeName ++ " " ++ show subTreeStripped ++ " " ++ show subTreeNoLabel 
+            {-trace ("\n label stuff " ++ show nodeName ++ " " ++ show subTreeStripped ++ " " ++ show subTreeNoLabel 
                 ++ " " ++ show commaPositionHere ++ "\nInternal " ++ show ancTree ++ "->" ++ show leftDesc ++ " and " 
-                ++ show rightDesc ++ " label " ++ show nodeName ) (
+                ++ show rightDesc ++ " label " ++ show nodeName ++ show (getDividingComma rightDesc 0 0 0)) (
             -}
+            --trace ("posLR " ++ show commaPositionHere ++ " reverse " ++ show ((length subTreeNoLabel) - (getDividingComma (reverse subTreeNoLabel) 0 0 0) - 1) ++ show rightDesc) (
             if null nodeName then
                 [(inSubTree, [leftDescStripped, rightDescStripped], [ancTree])] ++ (getRestNewick leftDesc inSubTree ) 
                     ++ (getRestNewick rightDesc inSubTree)
@@ -328,6 +328,40 @@ getRestNewick inSubTree ancTree =
                 [(nodeName, [leftDescStripped, rightDescStripped], [ancTree])] ++ (getRestNewick leftDesc nodeName) 
                     ++ (getRestNewick rightDesc nodeName)
             --)
+
+-- | dichotomize takes part of newick string and if more than one component adds
+-- parens on outside.  THis effectively dichotomizes multi-tomies in newick
+-- description
+dichotomize :: String -> String
+dichotomize inString =
+    if null inString then error "Null in dichotomize"
+    else 
+        if (getDividingComma inString 0 0 0) /= (-1) then "(" ++ inString ++ ")"
+        else inString
+
+{-
+ - -- | getSisters takes a paren defined string   '(' blah, blah2 ')' and strips
+-- out leading and trailing parens.  Also checks if extraneous parens as in
+-- created by Dendroscope
+-- also issue of polytomies
+getSisters :: String -> String
+getSisters inString =
+    if null inString then error ("Error in newick parsing 'getSisters'")
+    else if (notElem ',' inString) then inString --leaf name
+    --else if (getDividingComma inString 0 0 0) < maxIntLocal then trace ("Comma Inpos " ++ show (getDividingComma inString 0 0 0) ++ show inString) inString
+    else tail $ init inString
+       {- let candidate = tail $ init inString
+            commaPosition = getDividingComma candidate 0 0 0
+            (frontPart, backPart) = trace ("Comma pos " ++ show commaPosition ++ show candidate) splitAt commaPosition candidate
+            numLeftFront = length $ elemIndices '(' frontPart
+            numLeftBack = length $ elemIndices '(' backPart
+            numRightFront = length $ elemIndices ')' frontPart
+            numRightBack = length $ elemIndices '(' backPart
+        in
+        if (numLeftFront == numRightFront) && (numLeftBack == numRightBack) then candidate
+        else  trace ("Extra parens in E/Newick: " ++ show inString ++ "  proceeding") getSisters candidate
+    -}
+-}
 
 --processNewick reads Enhanced Newick files and returns GenForest
 --for now only reads one tree (later splitOn ';' and return [GenForest])
@@ -346,18 +380,19 @@ processNewick inNewickString =
             nodeName = stripBranchLengths $ reverse $ takeWhile (/= ')') $ reverse gutsOnlyLabel
             gutsOnly = reverse $ dropWhile (/= ')') $ reverse gutsOnlyLabel
             nodeAnc = []
-            reducedString = tail $ init gutsOnly
+            reducedString = tail $ init gutsOnly --getSisters gutsOnly --tail $ init gutsOnly
             commaPosition = getDividingComma reducedString 0 0 0
         in
-        if commaPosition > 0 then 
+        if commaPosition /= (-1) then 
             let (leftDesc, preRightDesc) = splitAt commaPosition reducedString --assumes binary
                 rightDesc = tail preRightDesc --removes ','
                 leftDescStripped = stripLabel leftDesc
-                rightDescStripped = stripLabel rightDesc
+                rightDescStripped = stripLabel rightDesc --check for polytomies here
             in
             {-trace ("\nRoot label = " ++ show nodeName ++ "\n processed newick " ++ show reducedString ++ "->" 
                 ++ show leftDesc ++ " " ++ show (tail rightDesc)) (
             -}
+            --trace ("posLR " ++ show (getDividingComma rightDesc 0 0 0) ++ show rightDesc) (
             if null nodeName then
                 (gutsOnly, [leftDescStripped, rightDescStripped], []) :  ((getRestNewick leftDesc gutsOnly ) ++ (getRestNewick rightDesc gutsOnly)) 
             else (nodeName, [leftDescStripped, rightDescStripped], []) :  ((getRestNewick leftDesc nodeName ) ++ (getRestNewick rightDesc nodeName))

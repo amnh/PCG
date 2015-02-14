@@ -398,9 +398,9 @@ printGraphVizDot x dotFile =
         hPutStrLn myHandle "}"
         hClose myHandle
         pCode <- findExecutable "dot" --system "dot" --check for Graphviz
-        r <- createProcess (proc "dot" ["-Tpdf", dotFile, "-O"])
+        r <- createProcess (proc "dot" ["-Teps", dotFile, "-O"])
         hPutStrLn stderr
             (if isJust pCode then --pCode /= Nothing then
-                "executed dot " ++ "-Tpdf " ++ dotFile ++ " -O " else
+                "executed dot " ++ "-Teps " ++ dotFile ++ " -O " else
                 "Graphviz call failed (not installed or found).  Dot file still created.")
 

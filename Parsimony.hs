@@ -36,6 +36,7 @@ Portability :  portable (I hope)
 
 module Parsimony
 ( getPrelim
+, getPrelimTriple
 ) where
 
 import Debug.Trace
@@ -55,6 +56,39 @@ data Direction = LeftDir | DownDir | DiagDir
 inDelBit = (bit 63) :: Int64 --(bit 63) :: Int64 --set indelBit to 64th bit in Int64
 barrierCost = (bit 60) :: Int --really big Int--asssumes 64 bit at least, but can be added to without rolling over.
 barrierBit = (bit 63) :: Int64
+
+-- | getPrelimTriple takes bit-coded states (as triple) and returns cost and prelim state
+getPrelimTriple :: (BaseChar, BaseChar, CharInfo) -> (BaseChar, Float)
+getPrelimTriple (lState, rState, charInfo) =
+    --trace ("\nlS " ++ show lState ++ " rS " ++ show rState) (
+    if not (activity charInfo) then (VS.singleton (0 :: Int64), 0)
+    else if charType charInfo == NonAdd then
+        let lS = VS.head lState
+            rS = VS.head rState
+            intersection = (lS .&. rS) :: Int64 
+        in
+        if intersection /= 0 then (VS.singleton intersection, 0)
+        else 
+            let union = VS.singleton ((lS .|. rS) :: Int64)
+                cost = (weight charInfo)
+            in (union, cost)
+    else if charType charInfo == GenSeq then
+        let (median, cost) = naive_do lState rState charInfo
+            charWeight = (weight charInfo)
+        in
+        (median, charWeight * cost) 
+    else if charType charInfo == NucSeq then
+        let (median2, cost2) = ukkonenDO lState rState charInfo
+            charWeight = (weight charInfo)
+        in
+        {-let (lSeq, _, rSeq, _) = setLeftRight lState rState
+            (median, cost) = naive_do lState rState charInfo
+        in
+        if (cost /= cost2) || (median /= median2) then 
+            trace ("(" ++ show cost ++ " " ++ show cost2 ++ ")" ++ "\n" ++ show lSeq ++ "\n" ++ show rSeq ++ "\n" ++ show median ++ "\n" ++ show median2 ++ "\n") 
+            (median2, charWeight * cost2)
+        else-}  (median2, charWeight * cost2)
+    else error "Unrecognized/Not implemented character type"
 
 -- | getPrelim takes bit-coded states and returns cost and prelim state
 getPrelim :: BaseChar -> BaseChar -> CharInfo -> (BaseChar, Float)

@@ -76,10 +76,10 @@ main =
         hPutStrLn stderr ("There are " ++ show (length $ fst inputData) ++ 
             " taxa and " ++ show (length $ snd inputData) ++ " characters, trees jibe with data:" 
                 ++ show graphAndDataJibe)
-        printInputData $ fst inputData
+        --printInputData $ fst inputData
         let phyloData = createBaseData inputData
         let newCharInfo = redoRootCosts phyloData (snd inputData) 0
-        printDataMatrixVLS phyloData termNameList
+        --printDataMatrixVLS phyloData termNameList
         let curForestList = baseDataToLeafNodes inputGraphList
         hPutStrLn stderr ("Data recoded " ++ show (V.length phyloData) ++ " leaves in " 
             ++ show (length $ head curForestList) ++ " components" ++ " with root cost " 
