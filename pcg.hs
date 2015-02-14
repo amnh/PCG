@@ -41,6 +41,7 @@ import System.Process
 import System.Environment
 import Debug.Trace
 import Data.List
+import qualified Data.Text as T
 import qualified Data.Vector as V
 import qualified Data.Set as Set
 import CharacterData
@@ -58,6 +59,8 @@ main =
         args <- getArgs
         scriptFileHandle <- checkScriptInfo args
         commandDataString <- hGetContents scriptFileHandle
+        let commandList = parseCommandList (T.pack commandDataString)
+        hPutStrLn stderr ("Command list " ++ show commandList)
         let (readDataList, readGraphList, reportList, exitList, analysisList) = parseCommands commandDataString 
         let pairDataList = getReadContents readDataList
         let inputGraphList = getGraphContents readGraphList
@@ -79,7 +82,8 @@ main =
         printDataMatrixVLS phyloData termNameList
         let curForestList = baseDataToLeafNodes inputGraphList
         hPutStrLn stderr ("Data recoded " ++ show (V.length phyloData) ++ " leaves in " 
-            ++ show (length $ head curForestList) ++ " components" ++ " with root cost " ++ show (getRootCosts newCharInfo))
+            ++ show (length $ head curForestList) ++ " components" ++ " with root cost " 
+            ++ show (getRootCosts newCharInfo))
         --hPrint stderr curForestList
         let inCost = getForestCostList phyloData curForestList newCharInfo termNameList
         hPutStrLn stderr ("At cost " ++ show (head inCost))
