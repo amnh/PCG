@@ -59,7 +59,7 @@ main =
         args <- getArgs
         scriptFileHandle <- checkScriptInfo args
         commandDataString <- hGetContents scriptFileHandle
-        let commandList = parseCommandList (T.pack commandDataString)
+        let commandList = reverse $ parseCommandList (T.pack commandDataString)
         hPutStrLn stderr ("Command list " ++ show commandList)
         let (readDataList, readGraphList, reportList, exitList, analysisList) = parseCommands commandDataString 
         let pairDataList = getReadContents readDataList
