@@ -38,6 +38,7 @@ module ProcessCommands
 ( Command
 , CommandList
 , parseCommands
+, parseCommandList
 , checkScriptInfo
 ) where
 
@@ -45,11 +46,15 @@ import System.IO
 import System.Process
 import System.Environment
 import Data.List
-import Data.List.Split()
+import Data.List.Split
 import Debug.Trace
+import qualified Data.Text as T
 
 type Command = (String, [String])
 type CommandList = [Command]
+
+permissibleCommands = ["read", "exit", "build"] 
+maxInt = 1000000000
 
 --checkScriptInfo takes command line and verifies that there is a single
 --script file of commands specified
@@ -63,7 +68,36 @@ checkScriptInfo inArgs
          putStr (head inArgs)
          openFile (head inArgs) ReadMode
 
---parseCommands parses lines of input file or perhaps interactive 
+-- | getLastCommand take a list of String commands and a Text type list 
+-- and determines the last of the commands to parese back to front by parse
+-- commands
+getLastCommand :: [String] -> T.Text -> Int -> T.Text -> T.Text
+getLastCommand c x best bestText =
+    if T.null x then error "Command unrecognized"
+    else if null c then bestText
+    else 
+        let (a, b) = T.breakOnEnd (T.pack $ head c) x
+        in
+        if T.length b < best then
+            getLastCommand (tail c) x  (T.length b) (T.pack $ head c) 
+        else 
+            getLastCommand (tail c) x best bestText
+
+-- | parseCommandList splits by permissible commands
+parseCommandList :: T.Text -> [(T.Text,T.Text)]
+parseCommandList x = 
+    if T.length x == 0 then []
+    else
+        --trace ("Parsing " ++ show x) (
+        let lastCommand = getLastCommand permissibleCommands x maxInt T.empty
+            (a, b) = T.breakOnEnd lastCommand x
+            toDrop = length $ head permissibleCommands
+            c = T.take ((T.length a) - toDrop) a
+        in
+        (lastCommand, b) : (parseCommandList c)
+        
+
+-- | parseCommands parses lines of input file or perhaps interactive 
 --to get program options
 --for now--this is simeple and sucks
 --only one command per line for now--also sucks
