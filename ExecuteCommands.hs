@@ -57,6 +57,7 @@ import Debug.Trace
 import ProcessCommands
 import ReadFiles
 import ReadGraphs
+--import PhylogeneticGraphs
 import qualified Data.Vector as V
 
 --maxIntLocal = 1000000000
@@ -289,7 +290,8 @@ stripBranchLengths inLabel =
 --through the subtrees until only terminals are found (no commas)
 getRestNewick :: String -> String -> GenPhyNet
 getRestNewick inSubTree ancTree =
-    if null inSubTree then error "Error in Newick file parsing"
+    --trace ("\nGRN inSubTree: " ++ inSubTree ++ " \nanc " ++ ancTree) (
+    if null inSubTree then error ("Error in Newick file parsing.  Anc: " ++ ancTree)
     else 
         if (notElem ',' inSubTree) then --commaPosition == maxIntLocal then
             --trace ("\nTerminal " ++ show ancTree ++ "->" ++ show inSubTree) (
@@ -327,7 +329,7 @@ getRestNewick inSubTree ancTree =
             else 
                 [(nodeName, [leftDescStripped, rightDescStripped], [ancTree])] ++ (getRestNewick leftDesc nodeName) 
                     ++ (getRestNewick rightDesc nodeName)
-            --)
+      --      )
 
 -- | dichotomize takes part of newick string and if more than one component adds
 -- parens on outside.  THis effectively dichotomizes multi-tomies in newick
@@ -411,6 +413,7 @@ processNewickComponents inNewickList =
             newickNodes = processNewick componentString
             enhancedNewickNodes = mergeNetNodes newickNodes
         in
+        trace ("\nNewick Components " ++ show newickNodes) 
         enhancedNewickNodes : (processNewickComponents (tail inNewickList))
 
 --processFEN reads Forest Enhanced Newick files and returns GenForest

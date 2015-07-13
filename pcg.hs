@@ -68,8 +68,8 @@ main =
         let inputData  = flattenCharList pairDataList  
         let termNameList = getNameList $ fst inputData
         let graphAndDataJibe = checkGraphAndData (Set.fromList termNameList) inputGraphList
-        --if graphAndDataJibe then error "Input graphs and data jibe"
-        --else error "Input graphs and data terminals are inconsistent"
+        if graphAndDataJibe then hPutStrLn stderr "Input graphs and data jibe"
+        else error "Input graphs and data terminals are inconsistent"
         hPutStrLn stderr ("There are " ++ show (length $ fst inputData) ++ 
             " taxa and " ++ show (length $ snd inputData) ++ " characters, trees jibe with data:" 
                 ++ show graphAndDataJibe)

@@ -247,7 +247,7 @@ termFromNode x =
     let (a, c, _) = x
     in
     if null c then a
-    else []
+    else "HopeThereIsNeverAtaxonWithThisNamer"
 
 --termFromNet gets terminals from Network
 termFromNet :: GenPhyNet -> [String]
@@ -263,17 +263,20 @@ getTerminals x =
     else 
         termFromNet (head x) ++ getTerminals (tail x) 
     
---checkGraphAndData checks if termal leaf set of inputgraphs is same as
+-- | checkGraphAndData checks if termal leaf set of inputgraphs is same as
 --taxon list
-
 checkGraphAndData :: Set.Set String -> [GenForest] -> Bool
 checkGraphAndData terminals graphList
     | Set.null terminals = error "No terminals in list"
     | null graphList = True
     | otherwise =
-      let graphTermList = getTerminals (head graphList)
+      let graphTermList = filter ('#' `notElem`) $ filter (/= "HopeThereIsNeverAtaxonWithThisNamer") $ getTerminals (head graphList)
           graphTermSet = Set.fromList graphTermList
       in
-      if Set.difference terminals graphTermSet /= Set.empty then 
-        trace ("Set diff:" ++ show (Set.difference terminals graphTermSet)) False
+      if  ((Set.difference terminals graphTermSet) /= Set.empty) || ((Set.difference graphTermSet terminals) /= Set.empty)   then 
+        trace ("\n" ++ show  terminals ++ "\n" ++ show graphTermList ++ "\nSet diff: " ++ show (Set.union (Set.difference terminals graphTermSet) (Set.difference graphTermSet terminals))) False
       else checkGraphAndData terminals (tail graphList)
+
+
+
+
