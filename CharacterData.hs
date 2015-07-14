@@ -43,6 +43,7 @@ module CharacterData
 , CharacterSet
 , DataMatrixVLS
 , redoRootCosts
+, areCycles
 ) where
 
 import System.IO
@@ -57,6 +58,8 @@ import Data.Bits
 import qualified Data.Set as Set
 import ReadFiles
 import ReadGraphs
+import Control.Parallel.Strategies
+import Control.DeepSeq
 
 --BasedData type array of list of vector of Int64
 type BaseData = RawData
@@ -274,8 +277,75 @@ checkGraphAndData terminals graphList
           graphTermSet = Set.fromList graphTermList
       in
       if  ((Set.difference terminals graphTermSet) /= Set.empty) || ((Set.difference graphTermSet terminals) /= Set.empty)   then 
-        trace ("\n" ++ show  terminals ++ "\n" ++ show graphTermList ++ "\nSet diff: " ++ show (Set.union (Set.difference terminals graphTermSet) (Set.difference graphTermSet terminals))) False
+        trace ("\n" ++ show  terminals ++ "\n" ++ show graphTermList ++ "\nSet diff: " 
+        ++ show (Set.union (Set.difference terminals graphTermSet) (Set.difference graphTermSet terminals))) False
       else checkGraphAndData terminals (tail graphList)
+
+-- | areCycles takes a list of GenForest and checks if there are cyles in each
+-- component.  If there are cycles, errors with cycle info.a
+-- this could be parallelized using parMap
+areCycles :: [GenForest] -> Bool
+areCycles inForestList =
+    if null inForestList then error "Empty forest list in areCycles"
+    else
+        let cyclesList = map checkForCycles inForestList
+        in
+    if any (==True) cyclesList then True
+    else False
+
+-- | getFirstTwo takes a triple anc converts to pairs with first two
+getFirstTwo :: (a, b, c) -> (a, b)
+getFirstTwo (first, second, third) = (first, second)
+
+-- | checkForCycles inputs a GenForest and checks components for cycles
+-- this is stupidly O(n^3) could be O(n^2) I think by reusing desc lists 
+checkForCycles :: GenForest -> Bool
+checkForCycles inForest =
+    if null inForest then error "Null input in checkForCyles"
+    else 
+        let allNodes = map getFirstTwo $ concat inForest --flatten nodes to one list
+            nodeDescList = parMap rdeepseq (getDescendantList $ allNodes) allNodes
+        in
+        --trace ("\nInForest " ++ show allNodes ++ "\nDesc " ++ show nodeDescList) (
+        if head nodeDescList == ("", []) then True
+        else False 
+        --)
+
+-- | getDescendantList takes  node and tracks descdents adding all--not just
+-- leaves
+getDescendantList :: [(String, [String])] -> (String, [String]) -> (String, [String])
+getDescendantList allNodeList inNode =
+    if null allNodeList then error "Null input in getDescendantList"
+    else
+        let (nodeName, descList) = inNode
+        in
+        if (intersect [nodeName] descList) /= [] then error ("Cycle found involving " ++ show (intersect [nodeName] descList)) 
+        else
+            let allDescList = descList ++ (onlyDescendantList allNodeList descList [nodeName])
+            in
+            (nodeName, allDescList)
+
+-- | onlyDescendantList takes a list of names, fileds the nodes among all nodes
+-- and returns descdant list
+onlyDescendantList :: [(String, [String])] -> [String] -> [String] -> [String]
+onlyDescendantList allNodeList descNodeList rootNodeNameList =
+    if null descNodeList then []
+    else
+        let descNode = lookup (head descNodeList) allNodeList 
+        in
+        if descNode == Nothing then error ("Node with name " ++ (head descNodeList) ++ " not found in onlyDescendantList")
+        else
+            let newDescList = fromJust descNode
+            in
+            if (intersect rootNodeNameList newDescList) /= [] then error ("Cycle found involving  " ++ show (intersect rootNodeNameList newDescList))
+            else 
+                --trace ("\nNNList " ++ show newDescList)
+                newDescList ++ (onlyDescendantList allNodeList newDescList $ rootNodeNameList ++ newDescList) 
+                    ++ (onlyDescendantList allNodeList (tail descNodeList) $ rootNodeNameList ++ newDescList)
+
+
+
+
 
 
 

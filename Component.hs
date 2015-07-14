@@ -370,8 +370,8 @@ generateBinaryResolutions inNode index totalComponent parentList fullParentList 
         if length modList > 1 then  --this is check for impossible resolutions of network nodes
             (totalComponent V.// modList) : generateBinaryResolutions inNode index totalComponent (tail parentList) fullParentList
         else 
-            error ("Error in display tree creation: Resolution of node yields internal node as terminal" ++ show modList)
-            --generateBinaryResolutions inNode index totalComponent (tail parentList) fullParentList
+            --error ("Error in display tree creation: Resolution of node yields internal node as terminal" ++ show modList)
+            generateBinaryResolutions inNode index totalComponent (tail parentList) fullParentList
 
 
 -- | splitAndModifyComponent modifies phylocomponent returning two PhyloComponents, should work for indegree > 2

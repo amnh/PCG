@@ -413,7 +413,7 @@ processNewickComponents inNewickList =
             newickNodes = processNewick componentString
             enhancedNewickNodes = mergeNetNodes newickNodes
         in
-        trace ("\nNewick Components " ++ show newickNodes) 
+        --trace ("\nNewick Components " ++ show newickNodes) 
         enhancedNewickNodes : (processNewickComponents (tail inNewickList))
 
 --processFEN reads Forest Enhanced Newick files and returns GenForest
