@@ -393,7 +393,7 @@ getBinaryCostList binTreeList charInfoList dataMatrix previousBinaryTree =
     else 
         let curBinTree = V.head binTreeList 
             startNode = V.last curBinTree  --assumes root last--change to getRootCode?
-            updatedPhyloComponent = traverseComponent dataMatrix curBinTree startNode charInfoList previousBinaryTree
+            !updatedPhyloComponent = traverseComponent dataMatrix curBinTree startNode charInfoList previousBinaryTree
             newOrder = getCodeNodePair updatedPhyloComponent
             reorderedUpdatedPhyloComponent = updatedPhyloComponent V.// newOrder
         in
@@ -775,6 +775,12 @@ traverseComponent dataMatrix inComp curPNode charInfoList previousBinaryTree
         (modifyPrelimLocalTotal curPNode (dataMatrix V.! code curPNode)
            allZero
            allZero)
+  | (not $ isTerminal curPNode) && (length (children curPNode) == 0) = --promoted internal vertex
+    let allZero = V.replicate (length (V.head dataMatrix)) 0 in
+      V.singleton
+        (modifyPrelimLocalTotal curPNode (dataMatrix V.! code curPNode)
+           allZero
+           allZero) 
   | length (children curPNode) > 2 =
     error "Descendant polytomies not yet implemented"
   | length (children curPNode) == 1 =
@@ -793,6 +799,8 @@ traverseComponent dataMatrix inComp curPNode charInfoList previousBinaryTree
     in (V.singleton thisNode) V.++ onlyChild
   | otherwise =
     --trace ("\nUpdated Component:" ++ show curPNode)
+    --change this so check only namae first--if not then do the traversals left
+    --and right--or-maybe the lazy does it.
         (let leftNodeCode = head (children curPNode)
              rightNodeCode = last (children curPNode)
              leftResult
