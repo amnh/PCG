@@ -119,6 +119,7 @@ getListLengths phyloData charNum =
         in
         (VS.length (rowTerminal !! charNum)) + (getListLengths (V.tail phyloData) charNum)
 
+
 -- | redoRootCosts resets root costs for seqeunce characters--for now to 1/2
 -- length by default
 redoRootCosts :: DataMatrixVLS -> [CharInfo] -> Int -> [CharInfo] 
@@ -154,7 +155,7 @@ convertGenSeqToBit x alphabet =
 -- | charSetToVestList converts, recursively, chars to vectors
 charSetToVectList :: [String] -> [CharInfo] -> CharacterSetList 
 charSetToVectList x charInfo 
-    | null x = []
+    | null x    = []
     | otherwise =
         charSetToVect (head x) (head charInfo) : charSetToVectList (tail x) (tail charInfo)
 
@@ -164,21 +165,23 @@ charSetToVectList x charInfo
 --need to recode ambiguities correctly--read states set each bit in char state
 --(Int)
 charSetToVect :: String -> CharInfo -> BaseChar 
-charSetToVect x charInfo 
+charSetToVect x charInfo
     | null x = VS.empty
-    | otherwise =
-        if ((charType charInfo == NonAdd) || (charType charInfo == Add)) && 
-            ((head x == '?') || (head x == '-') || (x == "no_data")) then  VS.singleton (maxBound :: Int64) --all '1' missing data
-        else if charType charInfo == Add then 
+    | ((charType charInfo == NonAdd) || (charType charInfo == Add)) && ((head x == '?') || (head x == '-') || (x == "no_data")) =
+        VS.singleton (maxBound :: Int64) --all '1' missing data
+    | charType charInfo == Add = 
             VS.singleton (fromIntegral (digitToInt (head x)) :: Int64) --works through hex 0-9, a-z, A-Z
-        else if charType charInfo == NonAdd then VS.singleton (convertToBit (digitToInt (head x)))
-        else if charType charInfo == NucSeq then
-            if x == "no_data" then VS.empty
-            else convertDNASeqToBit x
-        else if charType charInfo == GenSeq then
-            if x == "no_data" then VS.empty
-            else convertGenSeqToBit (words x) (alphabet charInfo) --Top x 
-        else error ("Char type " ++ show charInfo ++ " not implemented")
+    | charType charInfo == NonAdd = 
+        VS.singleton (convertToBit (digitToInt (head x)))
+    | (charType charInfo == NucSeq) && (x == "no_data") = 
+        VS.empty
+    | (charType charInfo == NucSeq) = 
+        convertDNASeqToBit x
+    | (charType charInfo == GenSeq) && (x == "no_data") = 
+        VS.empty
+    | (charType charInfo == GenSeq) = 
+        convertGenSeqToBit (words x) (alphabet charInfo) --Top x 
+    | otherwise = error ("Char type " ++ show charInfo ++ " not implemented")
 
 -- | termToVector takes a pairs of terminal and data (and dat info) and
 --creates Vector of that pairData
@@ -265,33 +268,32 @@ getTerminals x =
     if null x then []
     else 
         termFromNet (head x) ++ getTerminals (tail x) 
-    
+
 -- | checkGraphAndData checks if termal leaf set of inputgraphs is same as
 --taxon list
 checkGraphAndData :: Set.Set String -> [GenForest] -> Bool
 checkGraphAndData terminals graphList
     | Set.null terminals = error "No terminals in list"
     | null graphList = True
-    | otherwise =
-      let graphTermList = filter ('#' `notElem`) $ filter (/= "HopeThereIsNeverAtaxonWithThisNamer") $ getTerminals (head graphList)
-          graphTermSet = Set.fromList graphTermList
-      in
-      if  ((Set.difference terminals graphTermSet) /= Set.empty) || ((Set.difference graphTermSet terminals) /= Set.empty)   then 
+    | ((Set.difference terminals graphTermSet) /= Set.empty) || ((Set.difference graphTermSet terminals) /= Set.empty) =
         trace ("\n" ++ show  terminals ++ "\n" ++ show graphTermList ++ "\nSet diff: " 
         ++ show (Set.union (Set.difference terminals graphTermSet) (Set.difference graphTermSet terminals))) False
-      else checkGraphAndData terminals (tail graphList)
+    | otherwise = checkGraphAndData terminals (tail graphList)
+        where
+            graphTermList = filter ('#' `notElem`) $ filter (/= "HopeThereIsNeverAtaxonWithThisNamer") $ getTerminals (head graphList)
+            graphTermSet = Set.fromList graphTermList
+
 
 -- | areCycles takes a list of GenForest and checks if there are cyles in each
 -- component.  If there are cycles, errors with cycle info.a
 -- this could be parallelized using parMap
+-- null check should work because of laziness
 areCycles :: [GenForest] -> Bool
-areCycles inForestList =
-    if null inForestList then error "Empty forest list in areCycles"
-    else
-        let cyclesList = map checkForCycles inForestList
-        in
-    if any (==True) cyclesList then True
-    else False
+areCycles inForestList
+    | null inForestList = error "Empty forest list in areCycles"
+    | any (==True) cyclesList = True
+    | otherwise = False
+        where cyclesList = map checkForCycles inForestList
 
 -- | getFirstTwo takes a triple anc converts to pairs with first two
 getFirstTwo :: (a, b, c) -> (a, b)
@@ -300,48 +302,52 @@ getFirstTwo (first, second, third) = (first, second)
 -- | checkForCycles inputs a GenForest and checks components for cycles
 -- this is stupidly O(n^3) could be O(n^2) I think by reusing desc lists 
 checkForCycles :: GenForest -> Bool
-checkForCycles inForest =
-    if null inForest then error "Null input in checkForCyles"
-    else 
-        let allNodes = map getFirstTwo $ concat inForest --flatten nodes to one list
-            nodeDescList = parMap rdeepseq (getDescendantList $ allNodes) allNodes
-        in
-        --trace ("\nInForest " ++ show allNodes ++ "\nDesc " ++ show nodeDescList) (
-        if head nodeDescList == ("", []) then True
-        else False 
-        --)
+checkForCycles inForest = False
+    {- --| null inForest = error "Null input in checkForCyles" --trace ("\nInForest " ++ show allNodes ++ "\nDesc " ++ show nodeDescList) (
+    --| head nodeDescList == ("", []) = True
+    --| otherwise = False
+    --    where
+    --        allNodes = map getFirstTwo $ concat inForest --flatten nodes to one list
+    --        nodeDescList = parMap rdeepseq (getDescendantList $ allNodes) allNodes
+-}
+---- | getDescendantList takes  node and tracks descdents adding all--not just
+---- leaves
+--getDescendantList :: [(String, [String])] -> (String, [String]) -> (String, [String])
+--getDescendantList allNodeList inNode =
+--    if null allNodeList then error "Null input in getDescendantList"
+--    else
+--        let (nodeName, descList) = inNode
+--        in
+--        if (intersect [nodeName] descList) /= [] then error ("Cycle found involving " ++ show (intersect [nodeName] descList)) 
+--        else
+--            let allDescList = descList ++ (onlyDescendantList allNodeList descList [nodeName])
+--            in
+--            (nodeName, allDescList)
 
 -- | getDescendantList takes  node and tracks descdents adding all--not just
 -- leaves
 getDescendantList :: [(String, [String])] -> (String, [String]) -> (String, [String])
-getDescendantList allNodeList inNode =
-    if null allNodeList then error "Null input in getDescendantList"
-    else
-        let (nodeName, descList) = inNode
-        in
-        if (intersect [nodeName] descList) /= [] then error ("Cycle found involving " ++ show (intersect [nodeName] descList)) 
-        else
-            let allDescList = descList ++ (onlyDescendantList allNodeList descList [nodeName])
-            in
-            (nodeName, allDescList)
+getDescendantList allNodeList inNode
+    | null allNodeList                      = error "Null input in getDescendantList"
+    | (intersect [nodeName] descList) /= [] = error ("Cycle found involving " ++ show (intersect [nodeName] descList)) 
+    | otherwise                             = (nodeName, allDescList)
+        where
+            (nodeName, descList) = inNode
+            allDescList = descList ++ (onlyDescendantList allNodeList descList [nodeName])
 
 -- | onlyDescendantList takes a list of names, fileds the nodes among all nodes
 -- and returns descdant list
 onlyDescendantList :: [(String, [String])] -> [String] -> [String] -> [String]
-onlyDescendantList allNodeList descNodeList rootNodeNameList =
-    if null descNodeList then []
-    else
-        let descNode = lookup (head descNodeList) allNodeList 
-        in
-        if descNode == Nothing then error ("Node with name " ++ (head descNodeList) ++ " not found in onlyDescendantList")
-        else
-            let newDescList = fromJust descNode
-            in
-            if (intersect rootNodeNameList newDescList) /= [] then error ("Cycle found involving  " ++ show (intersect rootNodeNameList newDescList))
-            else 
-                --trace ("\nNNList " ++ show newDescList)
-                newDescList ++ (onlyDescendantList allNodeList newDescList $ rootNodeNameList ++ newDescList) 
-                    ++ (onlyDescendantList allNodeList (tail descNodeList) $ rootNodeNameList ++ newDescList)
+onlyDescendantList allNodeList descNodeList rootNodeNameList
+    | null descNodeList                                 = []
+    | descNode == Nothing                               = error ("Node with name " ++ (head descNodeList) ++ " not found in onlyDescendantList")
+    | (intersect rootNodeNameList newDescList) /= []    = error ("Cycle found involving  " ++ show (intersect rootNodeNameList newDescList))
+    | otherwise = --trace ("\nNNList " ++ show newDescList)
+        newDescList ++ (onlyDescendantList allNodeList newDescList $ rootNodeNameList ++ newDescList) 
+        ++ (onlyDescendantList allNodeList (tail descNodeList) $ rootNodeNameList ++ newDescList)
+        where
+            descNode = lookup (head descNodeList) allNodeList 
+            newDescList = fromJust descNode
 
 
 
