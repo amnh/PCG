@@ -84,9 +84,9 @@ data PhyloNode = PhyloNode  { code :: NodeCode                --links to DataMat
                             , isTreeNode :: Bool
                             , children :: [NodeCode]
                             , parents :: [NodeCode]
-                            , preliminaryStates :: CharacterSetList
-                            , localCost :: V.Vector Float
-                            , totalCost :: V.Vector Float
+                            , preliminaryStates :: !CharacterSetList
+                            , localCost :: !(V.Vector Float)
+                            , totalCost :: !(V.Vector Float)
                             } deriving (Show)
 
 type PhyloComponent = (V.Vector PhyloNode)
@@ -387,18 +387,19 @@ splitAndModifyComponent inNode index totalComponent
 
 -- | getBinaryCostList takes list of binary trees and returns list of costs
 --this needs to be list of costs per character to be minimized over characters
-getBinaryCostList :: V.Vector PhyloComponent -> [CharInfo] -> DataMatrixVLS -> PhyloComponent -> V.Vector (V.Vector Float)
-getBinaryCostList binTreeList charInfoList dataMatrix previousBinaryTree =
+getBinaryCostList :: [CharInfo] -> DataMatrixVLS -> PhyloComponent -> V.Vector PhyloComponent -> V.Vector (V.Vector Float)
+getBinaryCostList charInfoList dataMatrix previousBinaryTree binTreeList =
     if V.null binTreeList then V.empty
     else 
         let curBinTree = V.head binTreeList 
             startNode = V.last curBinTree  --assumes root last--change to getRootCode?
             !updatedPhyloComponent = traverseComponent dataMatrix curBinTree startNode charInfoList previousBinaryTree
             newOrder = getCodeNodePair updatedPhyloComponent
-            reorderedUpdatedPhyloComponent = updatedPhyloComponent V.// newOrder
+            !reorderedUpdatedPhyloComponent = updatedPhyloComponent V.// newOrder
         in
+        trace ("TC:" ++ show (totalCost (V.last reorderedUpdatedPhyloComponent)) ++ " ")
         V.cons (totalCost (V.last reorderedUpdatedPhyloComponent))  --assumes root last getRootCode?
-            (getBinaryCostList (V.tail binTreeList) charInfoList dataMatrix reorderedUpdatedPhyloComponent)
+            (getBinaryCostList charInfoList dataMatrix reorderedUpdatedPhyloComponent  (V.tail binTreeList))
 
 -- | compileBinaryCosts gets the costs of eachbinary tree
 compileBinaryCosts :: V.Vector (V.Vector Float) -> V.Vector Float
@@ -581,8 +582,11 @@ getComponentCost dataMatrix inComp charInfoList =
             let displayTreeList = phyloComponentToTreeList inComp
                 inCompEdgeSet = edgeSetFromComponent inComp
                 reRootedVectList = getReRootList displayTreeList --change to list of Vetors etc to keep trac of rerootlengths
-                reRootedVect = V.concat reRootedVectList
-                charCostVectVect = getBinaryCostList reRootedVect charInfoList dataMatrix V.empty 
+                {-
+                reRootedVect = V.concat reRootedVectList--could do a parmap here
+                charCostVectVect = getBinaryCostList charInfoList dataMatrix V.empty reRootedVect
+                -}
+                !charCostVectVect =  V.concat $ parMap rdeepseq (getBinaryCostList charInfoList dataMatrix V.empty) reRootedVectList
                 displayTreeCharCostList = getDisplayTreeCostList reRootedVectList charCostVectVect --error here I think number reoots may vary?
                 displayTreeCostList = getBinCosts displayTreeCharCostList
                 allCosts = compileBinaryCosts charCostVectVect --really for debug purposes
@@ -605,7 +609,7 @@ getComponentCost dataMatrix inComp charInfoList =
                     (V.length dataMatrix) charDisplayIndices displayTreeList (edgeSetFromComponent $ displayTreeList !! (V.head bestDisplayIndices))
                 rootCost = getRootCosts charInfoList --make into a fold   
              in 
-                trace ("\nBinaries : " ++ show (length displayTreeList) ++ " " ++ show (V.length reRootedVect) ++ " " 
+                trace ("\nBinaries : " ++ show (length displayTreeList) ++ " " ++ show (V.length $ V.concat reRootedVectList) ++ " " 
                     ++ show (V.length charCostVectVect) ++ " " ++ show allCosts ++ " "
                     ++ show softCostList ++ "\nDisplay Costs " ++ show displayTreeCostList ++ " best tree " ++ show bestDisplayIndices 
                     ++ " -> " ++ show (V.minimum displayTreeCostList) ++ "\nsoft " ++ show softCost ++ " soft adjust " ++ show softAdjust 
