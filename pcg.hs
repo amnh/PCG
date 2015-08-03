@@ -77,9 +77,11 @@ main =
         hPutStrLn stderr ("There are " ++ show (length $ fst inputData) ++ 
             " taxa and " ++ show (length $ snd inputData) ++ " characters")
         --Check for cycles in input graphs
+        {-
         let checkCycles = areCycles inputGraphList
         if checkCycles then error "There are cycles in input graphs, which are not allowed"
         else hPutStrLn stderr "Inp[ut graphs are acyclic."
+        -}
         --printInputData $ fst inputData
         let phyloData = createBaseData inputData
         let newCharInfo = redoRootCosts phyloData (snd inputData) 0

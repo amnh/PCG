@@ -102,7 +102,7 @@ hasCurlies :: String -> Bool
 hasCurlies x =
     let leftCurly = elemIndices '{' x 
         rightCurly = elemIndices '}' x
-        equalSigns = elemIndices '}' x
+        equalSigns = elemIndices '=' x
     in
     not ((length leftCurly /= 3) || (length rightCurly /= 3) || (length equalSigns /=3)) 
 
@@ -165,7 +165,8 @@ isValidGraph vSet eSet rSet
     | not (rSet `Set.isSubsetOf` vSet) =
       trace "Root(s) specification error " False
     | not (eSet `Set.isSubsetOf` vSet) =
-      trace "Edge specification error " False
+      trace ("Edge specification error " ++ show (Set.size vSet) ++ " vertices and " ++ show (Set.size eSet) 
+        ++ " edge vertices with difference " ++ show (Set.difference eSet vSet)) False
     | otherwise = trace "Graph is set valid." True
 
 --swapIfSecondRoot swpas tuple if second is root
