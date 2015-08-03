@@ -72,29 +72,24 @@ checkScriptInfo inArgs
 -- and determines the last of the commands to parese back to front by parse
 -- commands
 getLastCommand :: [String] -> T.Text -> Int -> T.Text -> T.Text
-getLastCommand c x best bestText =
-    if T.null x then error "Command unrecognized"
-    else if null c then bestText
-    else 
-        let (a, b) = T.breakOnEnd (T.pack $ head c) x
-        in
-        if T.length b < best then
-            getLastCommand (tail c) x  (T.length b) (T.pack $ head c) 
-        else 
-            getLastCommand (tail c) x best bestText
+getLastCommand c x best bestText 
+  | T.null x = error "Command unrecognized"
+  | null c = bestText
+  | T.length b < best =  getLastCommand (tail c) x  (T.length b) (T.pack $ head c) 
+  | otherwise = getLastCommand (tail c) x best bestText
+    where (a, b) = T.breakOnEnd (T.pack $ head c) x
 
 -- | parseCommandList splits by permissible commands
 parseCommandList :: T.Text -> [(T.Text,T.Text)]
-parseCommandList x = 
-    if T.length x == 0 then []
-    else
+parseCommandList x 
+    | T.length x == 0 = []
+    | otherwise =
         --trace ("Parsing " ++ show x) (
         let lastCommand = getLastCommand permissibleCommands x maxInt T.empty
             (a, b) = T.breakOnEnd lastCommand x
             toDrop = length $ head permissibleCommands
             c = T.take ((T.length a) - toDrop) a
-        in
-        (lastCommand, b) : (parseCommandList c)
+        in (lastCommand, b) : (parseCommandList c)
         
 
 -- | parseCommands parses lines of input file or perhaps interactive 
@@ -125,23 +120,21 @@ getCommandList ::  [String] -> CommandList
 getCommandList y 
     | null y = []
     | head y == "" = []
-    | otherwise =
-      let x = head y
-          command = takeWhile (/= '(') x
-          rest = dropWhile (/= '(') x
-          endCommand = elemIndices ')' rest
-          argumentList = drop 1 (take (last endCommand - 1) rest)
-        in
-        if null endCommand then
-          error ("Improperly formatted command" ++ show command) else
-          if head argumentList == '"' then
-            let argument = drop 2 (take (last endCommand - 1) rest) in
-                (command, [argument]) : getCommandList (tail y)
-          else 
-            let fileType = takeWhile (/= ':') argumentList
-                fileName = drop 1 $ dropWhile (/= '"') argumentList in
-                trace (show command ++ show fileName ++ show fileType)
-                (command, [fileName, fileType]) : getCommandList (tail y)
+    | null endCommand = error ("Improperly formatted command" ++ show command)
+    | head argumentList == '"' = 
+      let argument = drop 2 (take (last endCommand - 1) rest) 
+      in (command, [argument]) : getCommandList (tail y)
+    | otherwise = 
+      let fileType = takeWhile (/= ':') argumentList
+          fileName = drop 1 $ dropWhile (/= '"') argumentList 
+      in trace (show command ++ show fileName ++ show fileType) (command, [fileName, fileType]) : getCommandList (tail y)
+
+      where 
+        x = head y
+        command = takeWhile (/= '(') x
+        rest = dropWhile (/= '(') x
+        endCommand = elemIndices ')' rest
+        argumentList = drop 1 (take (last endCommand - 1) rest)
 
 --getGraphReads pulls out graph read commands form all read commands
 getGraphReads :: CommandList -> CommandList
@@ -165,7 +158,7 @@ filterCommandList :: CommandList -> String -> CommandList
 filterCommandList xList yCommand
     | null xList = []
     | null yCommand = error "command String empty"
-    | otherwise =
+    | otherwise = 
       let (a, b) = head xList in
         if a == yCommand then
           (a, b) : filterCommandList (tail xList) yCommand else
