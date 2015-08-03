@@ -120,15 +120,14 @@ getTaxonNames :: [String] -> [String]
 getTaxonNames y
     | null y = []
     | null (head y)  = getTaxonNames (tail y)
-    | otherwise =
-      let x = head y
-          xs = tail y
-        in
-        if head x /= '>' then getTaxonNames xs else
-          let wx = words x
-              hwx = head wx
-              thwx = tail hwx
-            in thwx : getTaxonNames xs
+    | head x /= '>' = getTaxonNames xs
+    | otherwise = thwx : getTaxonNames xs
+      where 
+        x = head y
+        xs = tail y
+        wx = words x
+        hwx = head wx
+        thwx = tail hwx
 
 -- | getSequences get list for each taxon (names and sequence) by checking if word is name
 --and if not appending to that list
@@ -164,12 +163,11 @@ convertSeqToList x =
     if null x then []
     else 
         let (y, z) = head x
-        in
-            (y, [z]) : convertSeqToList (tail x)
+        in (y, [z]) : convertSeqToList (tail x)
 
 -- | processFastaInput
 --Process input fasta data and return RAwData--but only for asingle input file
---Taxon names must begin with '>' with no spaces, charcaters after spaces on 
+--Taxon names must begin with '>' with no spaces, characters after spaces on 
 --  taxon line are ignores (e.g. genbank #s) 
 --does not filter out numbers fomr sequences to allow generality, spaces in sequences
 --shouldn't matter
@@ -187,8 +185,7 @@ processFastaInput x =
             pairedData = zip taxNames contSeqs
             pairedListData = convertSeqToList pairedData
 
-        in 
-        let defaultFastaCharInfo = CharInfo {
+            defaultFastaCharInfo = CharInfo {
                                    charType = NucSeq
                                  , activity = True
                                  , weight = 1.0
@@ -198,19 +195,17 @@ processFastaInput x =
                                  , alphabet = ["A", "C", "G", "T", "-"]
                                  , rootCost = 0.5
                                  }
-        in
-            (pairedListData, [defaultFastaCharInfo])
+        in (pairedListData, [defaultFastaCharInfo])
 
 -- | getInts takes String andretuns [Int] 
 getInts :: [String] -> [Int]
 getInts inString =
     if null inString then []
-    else 
-        let a = head inString
-            b = read a :: Int
-        in
-        b : getInts (tail inString)
-
+    else map (\s -> read s :: Int) inString
+        --let a = head inString
+        --    b = read a :: Int
+        --in
+        --b : getInts (tail inString)
 
 -- | processTCM takes tcmfile contents and returns alphabet and 
 --costmatrix
@@ -221,8 +216,7 @@ processTCM tcmStuff =
         let firstLine = head (lines tcmStuff)
             alphabet = words firstLine
             costMatrix = getInts $ tail (lines tcmStuff) --not really processed now
-        in
-        (alphabet, costMatrix)
+        in (alphabet, costMatrix)
 
 -- | processCustomAlphabet takes input custom_alphabet sequences 
 --and returns processed data
@@ -238,8 +232,8 @@ processCustomAlphabet x tcmStuff =
             pairedData = zip taxNames contSeqs
             pairedListData = convertSeqToList pairedData
             (alphabetList , matrixList) = processTCM tcmStuff
-        in 
-        let defaultGenSeqCharInfo = CharInfo {
+        
+            defaultGenSeqCharInfo = CharInfo {
                                    charType = GenSeq
                                  , activity = True
                                  , weight = 1.0
@@ -263,27 +257,22 @@ reformatCharString x
     | null x = []
     | head x /= '[' = [head x] : reformatCharString (tail x)
     | otherwise =
-      let y = splitOn "]" (tail x) in
-        trace ("y = " ++ show y)
+      let y = splitOn "]" (tail x) 
+      in trace ("y = " ++ show y)
           (head y : reformatCharString (concat (tail y)))
 
 -- | extractLines Extract pairs form lines of data file body
 extractLines :: [String] -> [(String, [String])]
 extractLines [] = []
-extractLines (x:xs) = (x, reformatCharString (head xs)) : extractLines (tail xs) 
+extractLines xs = map (\x -> (x, reformatCharString x)) xs --(x, reformatCharString (head xs)) : extractLines (tail xs) 
 
 -- | getTaxCharPairs
 --get Taxon, Characters Pairs assuming on same line separated by space
 getTaxCharPairs :: String -> [(String, [String])]
 getTaxCharPairs x =
-    if null x 
-        then []
-    else 
-        let guts = words x
-            resPairs = extractLines guts
-        in
-            --trace ("in " ++ (show x) ++  "to " ++ (show guts) ++ " to " ++ (show resPairs)) 
-            resPairs
+    if null x then []
+    else --trace ("in " ++ (show x) ++  "to " ++ (show guts) ++ " to " ++ (show resPairs)) 
+      extractLines $ words x 
 
 -- | getAction returns charcater type info from Hennig86/TNT +,-,[,],w etc
 getAction :: Char -> String
@@ -299,10 +288,7 @@ getAction x
 stringToInt :: String -> Int
 stringToInt x =
     if null x then error ("Input error " ++ show x ++ "in stringToInt function")
-    else 
-        let y = read x :: Int
-        in
-        y
+    else read x :: Int
         
 -- | getScope reads Hennig86/TNT scope options '.' etc and sets
 getScope :: [String] -> Int -> [Int]
@@ -312,14 +298,14 @@ getScope (x : xs) nchar
     | length (x : xs) == 2 =
       let y = words x
           z = words (head xs)
-        in
-        if null y then
-          if null z then [0 .. (nchar - 1)] else
-            let second = stringToInt (head z) in [0 .. second]
-          else
-          let first = stringToInt (head y) in
-            if null z then [first, nchar - 1] else
-              let second = stringToInt (head z) in [first .. second]
+          second = stringToInt $ head z
+          first = stringToInt (head y)
+
+          a   | (null y) && (null z) = [0 .. (nchar - 1)]
+              | null y = [0 .. second]
+              | null z = [first, nchar-1]
+              | otherwise = [first .. second]
+        in a
     | length (x : xs) == 1 =
       let individualNums = map stringToInt (words x) in individualNums
     | otherwise =
@@ -341,38 +327,36 @@ processWeightScope attribute x
 -- | modifyCharInfo updates CharInfo record, overwriting previous values
 --checks to make sure modifucations are within nchar
 modifyCharInfo :: [CharInfo] -> String -> [Int] -> Int -> Int -> [CharInfo]
-modifyCharInfo oldCharInfo attribute scope weight nchar =
-    if null scope || (head scope > (nchar - 1)) || (head scope < 0) then oldCharInfo    
-    else 
-        let (xs, ys) = splitAt (head scope) oldCharInfo
-        in
-        if  attribute == "NonAdditive" then
-            let newCharElem = modifyCharType (oldCharInfo !! head scope) NonAdd
-                newCharInfo = xs ++ [newCharElem] ++ tail ys
-            in
-            modifyCharInfo newCharInfo attribute (tail scope) weight nchar
-        else if attribute == "Additive" then
-            let newCharElem = modifyCharType (oldCharInfo !! head scope) Add
-                newCharInfo = xs ++ [newCharElem] ++ tail ys
-            in
-            modifyCharInfo newCharInfo attribute (tail scope) weight nchar
-
-        else if attribute == "Active" then
-            let newCharElem = modifyActivity (oldCharInfo !! head scope) True
-                newCharInfo = xs ++ [newCharElem] ++ tail ys
-            in
-            modifyCharInfo newCharInfo attribute (tail scope) weight nchar
-        else if attribute == "InActive" then
-            let newCharElem = modifyActivity (oldCharInfo !! head scope) False
-                newCharInfo = xs ++ [newCharElem] ++ tail ys
-            in
-            modifyCharInfo newCharInfo attribute (tail scope) weight nchar
-        else if attribute == "Weight" then
-            let newCharElem = modifyWeight (oldCharInfo !! head scope) (fromIntegral weight)
-                newCharInfo = xs ++ [newCharElem] ++ tail ys
-            in
-            modifyCharInfo newCharInfo attribute (tail scope) weight nchar
-        else  error ("Unrecognized character attribute " ++ show attribute ++ " in input file.")
+modifyCharInfo oldCharInfo attribute scope weight nchar 
+    | null scope || (head scope > (nchar - 1)) || (head scope < 0) = oldCharInfo    
+    | attribute == "NonAdditive" =
+        let 
+          newCharElem = modifyCharType (oldCharInfo !! head scope) NonAdd
+          newCharInfo = xs ++ [newCharElem] ++ tail ys
+        in modifyCharInfo newCharInfo attribute (tail scope) weight nchar
+    | attribute == "Additive" =
+        let 
+          newCharElem = modifyCharType (oldCharInfo !! head scope) Add
+          newCharInfo = xs ++ [newCharElem] ++ tail ys
+        in modifyCharInfo newCharInfo attribute (tail scope) weight nchar
+    | attribute == "Active" =
+        let 
+          newCharElem = modifyActivity (oldCharInfo !! head scope) True
+          newCharInfo = xs ++ [newCharElem] ++ tail ys
+        in modifyCharInfo newCharInfo attribute (tail scope) weight nchar
+    | attribute == "InActive" =
+        let 
+          newCharElem = modifyActivity (oldCharInfo !! head scope) False
+          newCharInfo = xs ++ [newCharElem] ++ tail ys
+        in modifyCharInfo newCharInfo attribute (tail scope) weight nchar
+    | attribute == "Weight" =
+        let 
+          newCharElem = modifyWeight (oldCharInfo !! head scope) (fromIntegral weight)
+          newCharInfo = xs ++ [newCharElem] ++ tail ys
+        in modifyCharInfo newCharInfo attribute (tail scope) weight nchar
+    | otherwise = error ("Unrecognized character attribute " ++ show attribute ++ " in input file.")
+        where 
+          (xs, ys) = splitAt (head scope) oldCharInfo
     
 -- | setCodes based on Henig/TNT get and set action and scope 
 setCodes :: [String] -> Int -> [CharInfo] -> [CharInfo]
@@ -400,7 +384,7 @@ getCharInfo (x : xs) nchar initialCharInfo
     | head (words x) == "cc" || head (words x) == "ccode" =
       let newCharInfo = setCodes (tail (words x)) nchar initialCharInfo
           newerCharInfo = getCharInfo xs nchar newCharInfo
-        in newerCharInfo
+      in newerCharInfo
     | otherwise = error ("Unrecongized character option " ++ show x)
 
 -- | initializeCharInfo sets chrcater info to defaults 
@@ -418,8 +402,7 @@ initializeCharInfo defaults nchar acc =
                         , alphabet = []
                         , rootCost = 0.5
                         }
-        in
-        newChar : initializeCharInfo defaults nchar (acc + 1)
+        in newChar : initializeCharInfo defaults nchar (acc + 1)
 
 -- | parse Xread version of Hennig86/TNT file
 processXread :: [String] -> RawData 
@@ -446,8 +429,7 @@ processXread x =
             rest = splitOn ";" (unwords (tail (tail body)))
             taxCharPair = getTaxCharPairs (head rest) 
             charInfo = getCharInfo (tail rest) nchar initialCharInfo
-        in
-            trace ("Hennig/TNT file message " ++ show message ++ " ntax = " ++ show ntax ++ " nchar = " ++ show nchar) 
+        in trace ("Hennig/TNT file message " ++ show message ++ " ntax = " ++ show ntax ++ " nchar = " ++ show nchar) 
             (taxCharPair, charInfo)
 
 -- | processTNTInput
@@ -468,13 +450,12 @@ processXread x =
 --  2) costmatrix
 processTNTInput :: String -> RawData  
 processTNTInput x =
-    if null x 
-        then ([], [])
+    if null x then ([], [])
     else 
-        let header = head (words x) in
-        if T.unpack (T.toLower (T.pack header)) == "xread" 
-            then processXread (tail (words x))
-        else error "Only processing 'xread' Hennig/TNT files for now"
+        let header = head (words x) 
+        in
+          if T.unpack (T.toLower (T.pack header)) == "xread" then processXread (tail (words x))
+          else error "Only processing 'xread' Hennig/TNT files for now"
 
 -- | processNexusInput
 --Process basic Nexus file (eventually complete to specification)
@@ -501,9 +482,9 @@ getPairDataCSV x =
             name = head currentLine
             characters = tail currentLine
         in
-        if (name == "\n") || (name == "\r") || null characters then getPairDataCSV (tail x)
-        else 
-            trace ("CSV in " ++ show name ++ " " ++ show (length x) ++ " " ++ show (length characters)) (name, characters) : getPairDataCSV (tail x)
+          if (name == "\n") || (name == "\r") || null characters then getPairDataCSV (tail x)
+          else 
+              trace ("CSV in " ++ show name ++ " " ++ show (length x) ++ " " ++ show (length characters)) (name, characters) : getPairDataCSV (tail x)
  
 -- | processCsvInput Process CSV ',' delimited file
 --assumes
@@ -529,8 +510,8 @@ processCsvInput x =
                      }
             charTypeValue = assignCharType (length charData) defaultCsvInfo 
         in
-        trace ("lines in " ++ show (length inLines)) 
-        (pairedNameData, charTypeValue)
+          trace ("lines in " ++ show (length inLines)) 
+          (pairedNameData, charTypeValue)
 
 -- | printStrinListWithNewLine between elements
 printStringListWithNewLine :: [String] -> IO ()
@@ -590,10 +571,7 @@ printInputDataByTerminal x =
 removeTerminalNames ::  [(String, [String])] -> [[String]]
 removeTerminalNames x =
     if null x then []
-    else 
-        let (a, b) = head x
-        in
-        b : removeTerminalNames (tail x)
+    else map (\(a,b) -> b) x
 
 -- | printOneAtATime
 --Print one char at a time
