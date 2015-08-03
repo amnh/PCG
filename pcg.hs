@@ -79,7 +79,7 @@ main =
         --Check for cycles in input graphs
         let checkCycles = areCycles inputGraphList
         if checkCycles then error "There are cycles in input graphs, which are not allowed"
-        else hPutStrLn stderr "Inp[ut graphs are acyclic."
+        else hPutStrLn stderr "Input graphs are acyclic."
         --printInputData $ fst inputData
         let phyloData = createBaseData inputData
         let newCharInfo = redoRootCosts phyloData (snd inputData) 0

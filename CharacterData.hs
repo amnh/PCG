@@ -310,19 +310,6 @@ checkForCycles inForest = False
     --        allNodes = map getFirstTwo $ concat inForest --flatten nodes to one list
     --        nodeDescList = parMap rdeepseq (getDescendantList $ allNodes) allNodes
 -}
----- | getDescendantList takes  node and tracks descdents adding all--not just
----- leaves
---getDescendantList :: [(String, [String])] -> (String, [String]) -> (String, [String])
---getDescendantList allNodeList inNode =
---    if null allNodeList then error "Null input in getDescendantList"
---    else
---        let (nodeName, descList) = inNode
---        in
---        if (intersect [nodeName] descList) /= [] then error ("Cycle found involving " ++ show (intersect [nodeName] descList)) 
---        else
---            let allDescList = descList ++ (onlyDescendantList allNodeList descList [nodeName])
---            in
---            (nodeName, allDescList)
 
 -- | getDescendantList takes  node and tracks descdents adding all--not just
 -- leaves
