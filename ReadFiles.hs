@@ -264,7 +264,8 @@ reformatCharString x
 -- | extractLines Extract pairs form lines of data file body
 extractLines :: [String] -> [(String, [String])]
 extractLines [] = []
-extractLines xs = map (\x -> (x, reformatCharString x)) xs --(x, reformatCharString (head xs)) : extractLines (tail xs) 
+extractLines (x:xs) = 
+                  (x, reformatCharString (head xs)) : extractLines (tail xs) 
 
 -- | getTaxCharPairs
 --get Taxon, Characters Pairs assuming on same line separated by space

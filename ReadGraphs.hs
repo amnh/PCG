@@ -103,7 +103,8 @@ hasCurlies x =
     let leftCurly = elemIndices '{' x 
         rightCurly = elemIndices '}' x
         equalSigns = elemIndices '=' x
-    in not ((length leftCurly /= 3) || (length rightCurly /= 3) || (length equalSigns /=3)) 
+    in 
+        not ((length leftCurly /= 3) || (length rightCurly /= 3) || (length equalSigns /=3)) 
 
 
 --deleteAll filters out char Char y from String x
@@ -168,7 +169,7 @@ isValidGraph vSet eSet rSet
         ++ " edge vertices with difference " ++ show (Set.difference eSet vSet)) False
     | otherwise = trace "Graph is set valid." True
 
---swapIfSecondRootRoot swpas tuple if second is root
+--swapIfSecondRoot swaps tuple if second is root
 swapIfSecondRoot :: String -> (String, String) -> (String, String)
 swapIfSecondRoot x y =
     if x == snd y then swap y
@@ -189,21 +190,21 @@ divideSet inSet root =
 getNonRoot :: String -> [(String, String)] -> [String]
 getNonRoot root edgeList =
     if null edgeList then []
-    else --map (\x -> snd x) edgeList
-        let b = snd (head edgeList)
-            retList = b : getNonRoot root (tail edgeList)
-        in retList
+    else map (\x -> snd x) edgeList
+        --let b = snd (head edgeList)
+        --    retList = b : getNonRoot root (tail edgeList)
+        --in retList
 
 --getRootDesc returns list of nodes that are descendents of 'root' based
 --on directed edges
 getRootDesc :: String -> [(String, String)] -> [String]
 getRootDesc root edgeList =
     if null edgeList then []
-    else --[snd e | e<- edgeList, (snd e) /= root]
-        let b = snd (head edgeList)
-        in
-        if b /= root then b : getRootDesc root (tail edgeList)
-        else getRootDesc root (tail edgeList)
+    else [snd e | e<- edgeList, (snd e) /= root]
+        --let b = snd (head edgeList)
+        --in
+        --if b /= root then b : getRootDesc root (tail edgeList)
+        --else getRootDesc root (tail edgeList)
 
 --getRootAnc returns list of nodes that are ancestors of 'root' based
 --on directed edges
@@ -331,9 +332,10 @@ processVertexEdgeRoot x =
         let 
             x1 = insertSpacesBeforeAndAfterDelimiters "={}()," x --this to help format with tuples
             y = checkAndSplitInput x1
+            z = stringTupleToForest y
         in
             --trace ("\nInstring " ++ (show x) ++ " to " ++ show z)
-            stringTupleToForest y
+            z
 
 --printGraph prints ascii graph representation
 -- NOT IMPLEMENTED
