@@ -276,8 +276,8 @@ checkGraphAndData terminals graphList
     | Set.null terminals = error "No terminals in list"
     | null graphList = True
     | ((Set.difference terminals graphTermSet) /= Set.empty) || ((Set.difference graphTermSet terminals) /= Set.empty) =
-        trace ("\n" ++ show  terminals ++ "\n" ++ show graphTermList ++ "\nSet diff: " 
-        ++ show (Set.union (Set.difference terminals graphTermSet) (Set.difference graphTermSet terminals))) False
+        trace ("\n" ++ show  terminals ++ "\n" ++ show graphTermList ++ "\nSet diff: " ++ show (Set.union (Set.difference terminals graphTermSet) (Set.difference graphTermSet terminals))) 
+        False
     | otherwise = checkGraphAndData terminals (tail graphList)
         where
             graphTermList = filter ('#' `notElem`) $ filter (/= "HopeThereIsNeverAtaxonWithThisNamer") $ getTerminals (head graphList)

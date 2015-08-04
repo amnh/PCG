@@ -383,11 +383,11 @@ getBinaryCostList binTreeList charInfoList dataMatrix previousBinaryTree
             startNode = V.last curBinTree  --assumes root last--change to getRootCode?
             updatedPhyloComponent = traverseComponent dataMatrix curBinTree startNode charInfoList previousBinaryTree
             newOrder = getCodeNodePair updatedPhyloComponent
-            !reorderedUpdatedPhyloComponent = updatedPhyloComponent V.// newOrder
+            reorderedUpdatedPhyloComponent = updatedPhyloComponent V.// newOrder
         in
-        trace ("TC:" ++ show (totalCost (V.last reorderedUpdatedPhyloComponent)) ++ " ")
+        --trace ("TC:" ++ show (totalCost (V.last reorderedUpdatedPhyloComponent)) ++ " ")
         V.cons (totalCost (V.last reorderedUpdatedPhyloComponent))  --assumes root last getRootCode?
-            (getBinaryCostList charInfoList dataMatrix reorderedUpdatedPhyloComponent  (V.tail binTreeList))
+            (getBinaryCostList (V.tail binTreeList) charInfoList dataMatrix reorderedUpdatedPhyloComponent  )
 
 -- | compileBinaryCosts gets the costs of eachbinary tree
 compileBinaryCosts :: V.Vector (V.Vector Float) -> V.Vector Float
@@ -612,8 +612,9 @@ edgePairListStringPairList edgeList inNodes = map (\(a,b) -> (edgeCodeToName a i
 getComponentCost :: DataMatrixVLS -> PhyloComponent -> [CharInfo] -> Float
 getComponentCost dataMatrix inComp charInfoList
     | V.null inComp = 0
-    | not (isRoot startNode) = trace ("\nBinaries : " ++ show (length displayTreeList) ++ " " ++ show (V.length reRootedVect) ++ " " 
-        ++ show (V.length charCostVectVect) ++ " " ++ show allCosts ++ " "
+    | not (isRoot startNode) = trace ("\nBinaries : " ++ show (length displayTreeList) ++ " " 
+        ++ show (V.length reRootedVect) ++ " " ++ show (V.length charCostVectVect) ++ " " 
+        ++ show allCosts ++ " "
         ++ show softCostList ++ "\nDisplay Costs " ++ show displayTreeCostList ++ " best tree " ++ show bestDisplayIndices 
         ++ " -> " ++ show (V.minimum displayTreeCostList) ++ "\nsoft " ++ show softCost ++ " soft adjust " ++ show softAdjust 
         ++ "\nSoft Indices " ++ show charDisplayIndices ++ "\nSoft-2 "  ++ show softAdjust2 ++ " -> " ++ show (softCost + softAdjust2)
@@ -638,10 +639,8 @@ getComponentCost dataMatrix inComp charInfoList
             displayTreeList = phyloComponentToTreeList inComp
             inCompEdgeSet = edgeSetFromComponent inComp
             reRootedVectList = getReRootList displayTreeList --change to list of Vetors etc to keep trac of rerootlengths
-            {-
             reRootedVect = V.concat reRootedVectList
             charCostVectVect = getBinaryCostList reRootedVect charInfoList dataMatrix V.empty 
-            -}
             displayTreeCharCostList = getDisplayTreeCostList reRootedVectList charCostVectVect --error here I think number reoots may vary?
             displayTreeCostList = getBinCosts displayTreeCharCostList
             allCosts = compileBinaryCosts charCostVectVect --really for debug purposes
