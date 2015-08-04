@@ -83,7 +83,7 @@ simpleForest = [simpleGenPhyNet]
 
 --hasVertexSet checks input for keyword "vertexSet"
 hasVertexSet :: [String] -> Bool
-hasVertexSet x =
+hasVertexSet x = 
     "vertexSet" `elem` x 
 
 --hasVertexSet checks input for keyword "edgeSet"
@@ -103,8 +103,7 @@ hasCurlies x =
     let leftCurly = elemIndices '{' x 
         rightCurly = elemIndices '}' x
         equalSigns = elemIndices '=' x
-    in
-    not ((length leftCurly /= 3) || (length rightCurly /= 3) || (length equalSigns /=3)) 
+    in not ((length leftCurly /= 3) || (length rightCurly /= 3) || (length equalSigns /=3)) 
 
 
 --deleteAll filters out char Char y from String x
@@ -169,9 +168,9 @@ isValidGraph vSet eSet rSet
         ++ " edge vertices with difference " ++ show (Set.difference eSet vSet)) False
     | otherwise = trace "Graph is set valid." True
 
---swapIfSecondRoot swpas tuple if second is root
-swapIfSecond :: String -> (String, String) -> (String, String)
-swapIfSecond x y =
+--swapIfSecondRootRoot swpas tuple if second is root
+swapIfSecondRoot :: String -> (String, String) -> (String, String)
+swapIfSecondRoot x y =
     if x == snd y then swap y
     else y
 
@@ -180,27 +179,27 @@ swapIfSecond x y =
 divideSet :: Set.Set (String, String) -> String -> (Set.Set (String, String) , Set.Set (String, String))
 divideSet inSet root =
     let (rSet, nonRSet) =  Set.partition (\x -> (fst x == root) || (snd x == root)) inSet
-        orderedRootSet = Set.map (swapIfSecond root) rSet
+        orderedRootSet = Set.map (swapIfSecondRoot root) rSet
     in
     --trace ("RS: " ++ show orderedRootSet ++ "Rest " ++ show nonRSet)
     (orderedRootSet, nonRSet)
 
 --getNonRoot extract a list of vertices on edges with input root
+-- NOT SURE THIS FUNCTION DOES WHAT IT SAYS
 getNonRoot :: String -> [(String, String)] -> [String]
 getNonRoot root edgeList =
     if null edgeList then []
-    else 
+    else --map (\x -> snd x) edgeList
         let b = snd (head edgeList)
             retList = b : getNonRoot root (tail edgeList)
-        in
-        retList
+        in retList
 
 --getRootDesc returns list of nodes that are descendents of 'root' based
 --on directed edges
 getRootDesc :: String -> [(String, String)] -> [String]
 getRootDesc root edgeList =
     if null edgeList then []
-    else 
+    else --[snd e | e<- edgeList, (snd e) /= root]
         let b = snd (head edgeList)
         in
         if b /= root then b : getRootDesc root (tail edgeList)
@@ -211,7 +210,7 @@ getRootDesc root edgeList =
 getRootAnc :: String -> [(String, String)] -> [String]
 getRootAnc root edgeList =
     if null edgeList then []
-    else 
+    else --[fst e | e<- edgeList, (snd e) /= root]
         let (a, b) =  head edgeList
         in
         if b == root then a : getRootAnc root (tail edgeList)
@@ -227,11 +226,10 @@ orderEdges x y =
             (setWithRoot, setWithoutRoot) = divideSet x curRoot
             nextRoots = getNonRoot curRoot (Set.toList setWithRoot)
             returnEdges = Set.union setWithRoot (orderEdges setWithoutRoot (tail y ++ nextRoots))
-        in
-    returnEdges
+        in returnEdges
 
 --getEdgeSet takes string of vertices ordered by "take 2" from list of edge
---vertices and recurses down the line--does not check that the lenght is even
+--vertices and recurses down the line--does not check that the length is even
 getEdgeSet :: [String] -> [(String, String)]
 getEdgeSet x =
     if null x then []
@@ -239,12 +237,12 @@ getEdgeSet x =
         let y = take 2 x
             yEdge = (head y,last y)
             yEdgeList = yEdge  : getEdgeSet (drop 2 x)
-        in
-        yEdgeList
+        in yEdgeList
 
 --buildRestGenPhyNet builds on root list of GenPhyNodes
 --added "nub" to descendent list because netowrk nodes were being set multiple
 --times
+-- THIS PAIRING COULD BE BUILT BETTER BUT NOT QUICKLY
 buildRestGenPhyNet :: [String] -> Set.Set (String, String) -> [(String, String)] -> GenPhyNet 
 buildRestGenPhyNet nodeList directedEdgeSet allDirectedEdgeList = 
     if null nodeList then []
@@ -275,7 +273,7 @@ buildGenPhyNet root directedEdges =
 buildForest :: [String] -> Set.Set (String, String) -> GenForest 
 buildForest r directedEdges =
     if null r then []
-    else 
+    else --map (\root -> buildGenPhyNet root directedEdges) r
         let returnForest = buildGenPhyNet (head r) directedEdges :  buildForest (tail r) directedEdges
         in
         returnForest
@@ -324,7 +322,7 @@ insertSpacesBeforeAndAfterDelimiters y x
     | head x  `elem` y  =  ' ' : head x : ' ' : insertSpacesBeforeAndAfterDelimiters y (tail x)
     | otherwise =  head x : insertSpacesBeforeAndAfterDelimiters y (tail x)
 
---processVertexEdgeRoot takes input string of graph descrition from a set of
+--processVertexEdgeRoot takes input string of graph description from a set of
 --vertices, edges, and roots and returns a base forest data structure
 processVertexEdgeRoot :: String -> GenForest 
 processVertexEdgeRoot x =
@@ -333,12 +331,12 @@ processVertexEdgeRoot x =
         let 
             x1 = insertSpacesBeforeAndAfterDelimiters "={}()," x --this to help format with tuples
             y = checkAndSplitInput x1
-            z = stringTupleToForest y
         in
             --trace ("\nInstring " ++ (show x) ++ " to " ++ show z)
-            z
+            stringTupleToForest y
 
 --printGraph prints ascii graph representation
+-- NOT IMPLEMENTED
 printGraph :: GenForest -> IO ()
 printGraph x = 
     putStrLn "Output graph :"
@@ -372,6 +370,7 @@ hPutGenPhyNet myHandle x =
             hPutGenPhyNet myHandle (tail x)
 
 --putForest prints GenPhyNet in Forest
+-- COULD A MAP BE USED HERE?
 hPutForest :: Handle -> GenForest -> IO ()
 hPutForest myHandle x = 
     if null x then  hPutStr myHandle ""
