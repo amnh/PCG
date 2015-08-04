@@ -274,11 +274,10 @@ buildGenPhyNet root directedEdges =
 buildForest :: [String] -> Set.Set (String, String) -> GenForest 
 buildForest r directedEdges =
     if null r then []
-    else --map (\root -> buildGenPhyNet root directedEdges) r
-        let returnForest = buildGenPhyNet (head r) directedEdges :  buildForest (tail r) directedEdges
-        in
-        returnForest
-
+    else map (\root -> buildGenPhyNet root directedEdges) r
+        --let returnForest = buildGenPhyNet (head r) directedEdges :  buildForest (tail r) directedEdges
+        --in
+        --returnForest
 
 --stringTupleToForest converts vertex, edge, and root string tuples to
 --GenForest type
