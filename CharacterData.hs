@@ -71,6 +71,7 @@ type CharacterSet = (V.Vector BaseChar)         --O(1) charcater acess--prob not
 type CharacterSetList = [BaseChar]              --List so can easily parallel map functinos over data
 type DataMatrix = (V.Vector CharacterSet)       --Vector so O(1) random access
 type DataMatrixVLS = (V.Vector CharacterSetList) --BVLS = Vector-List-Storable
+type DataMatrixVP = V.Vector (VS.Vector Int64)    -- Data matrix with vertical bit packing st rows are characters and columns nodes
 
 --convertToBit converts an In to bit re 0=1, 1=2, 2=4 etc
 convertToBit :: Int -> Int64
@@ -165,6 +166,7 @@ charSetToVectList x charInfo
 --need to recode ambiguities correctly--read states set each bit in char state
 --(Int)
 charSetToVect :: String -> CharInfo -> BaseChar 
+--charSetToVect x charInfo | trace ("charSetToVect with info "++show charInfo) False = undefined
 charSetToVect x charInfo
     | null x = VS.empty
     | ((charType charInfo == NonAdd) || (charType charInfo == Add)) && ((head x == '?') || (head x == '-') || (x == "no_data")) =
@@ -207,6 +209,52 @@ createBaseData :: RawData -> DataMatrixVLS
 createBaseData (pairedData, charInfo) = --testDataMatrixVLS
     if null pairedData then V.empty
     else V.fromList (termToVectorList pairedData charInfo)
+
+-- SECTION TO CREATE A VERTICALLY PACKED DATA MATRIX
+
+-- | vPackBaseData takes data from the file parser and creates
+-- the vertically packed 3-d data format where each column holds a node
+-- the first 64 nodes are in layer 1, etc.
+-- for now the leaves are just packed into the first bits in order of read-in
+-- basically a wrapper for recursion of vPackNode
+-- kind of space inefficient because it makes a bunch of mostly empty matrices, better way?
+vPackBaseData :: RawData -> Int -> DataMatrixVP
+vPackBaseData (pairedData, charInfo) initCode= --testDataMatrixVLS
+    if null pairedData then V.empty
+    else 
+        let initMatrixVP = getInitVP (length $ alphabet $ head charInfo) (length pairedData)
+        in vPackSum (vPackNode initMatrixVP (head pairedData) (head charInfo) initCode) (vPackBaseData (tail pairedData, tail charInfo) (initCode+1))
+
+-- | Vertically packs a single node into a vertical data matrix
+-- takes the existing matrix, the terminal data, the character info, and the position in the matrix
+vPackNode :: DataMatrixVP -> TermData -> CharInfo -> Int -> DataMatrixVP
+vPackNode initMat (name, []) _ _ = initMat
+vPackNode initMat (termName, (c:charsTail)) info pos = 
+    let 
+        alph = alphabet info
+        charRow = fromJust $ elemIndex c alph
+        bitMatrix = div pos 64
+        bitCol = mod pos 64
+        headSection = V.take charRow initMat
+        tailSection = V.drop (charRow+1) initMat
+        headBits = VS.take charRow (initMat V.! bitMatrix)
+        tailBits = VS.drop (charRow+1) (initMat V.! bitMatrix)
+        newBit = setBit ((initMat V.! row) V.! bitCol) col
+        newSection = V.singleton (headBits VS.++ (VS.singleton newBit) VS.++ tailBits)
+
+    in vPackSum (headSection V.++ newSection V.++ tailSection) (vPackNode initMat (termName, charsTail) info pos)
+
+-- | Sums together two vertically packed data matrices to combine their entries
+vPackSum :: DataMatrixVP -> DataMatrixVP -> DataMatrixVP
+vPackSum mat1 mat2 = V.zipWith (VS.zipWith (.|.)) mat1 mat2
+
+-- | Generates an empty vertical packing matrix for later use
+-- takes the length of the alphabet and the number of leaf nodes
+getInitVP :: Int -> Int -> DataMatrixVP
+getInitVP alphLen leafNum = V.replicate needBits (VS.replicate alphLen (0 :: Int64))
+    where 
+        nodeNum = (leafNum * 2) - 1
+        needBits = (div nodeNum 64) + 1
 
 -- | printSingelChar outputs singel string char
 printSingleChar :: BaseChar -> IO ()

@@ -81,7 +81,7 @@ data CharInfo = CharInfo { charType :: CharType
 --the data list and charinfo list must have the same length
 type RawData = ([TermData], [CharInfo])
 
--- | type TermData type contians termnal name and list of characters
+-- | type TermData type contains terminal name and list of characters
 type TermData = (String, [String])
 
 
@@ -197,7 +197,7 @@ processFastaInput x =
                                  }
         in (pairedListData, [defaultFastaCharInfo])
 
--- | getInts takes String andretuns [Int] 
+-- | getInts takes String and returns [Int] 
 getInts :: [String] -> [Int]
 getInts inString =
     if null inString then []
