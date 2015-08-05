@@ -353,7 +353,7 @@ generateBinaryResolutions inNode index totalComponent parentList fullParentList
     | null parentList = []
     | length modList > 1 =  --this is check for impossible resolutions of network nodes
         (totalComponent V.// modList) : generateBinaryResolutions inNode index totalComponent (tail parentList) fullParentList
-    | otherwise = generateBinaryResolutions inNode index totalComponent (tail parentList) fullParentList 
+    | otherwise = [] --generateBinaryResolutions inNode index totalComponent (tail parentList) fullParentList 
         -- error ("Error in display tree creation: Resolution of node yields internal node as terminal" ++ show modList)
         where
             curParent = head parentList
@@ -385,7 +385,7 @@ getBinaryCostList binTreeList charInfoList dataMatrix previousBinaryTree
             newOrder = getCodeNodePair updatedPhyloComponent
             reorderedUpdatedPhyloComponent = updatedPhyloComponent V.// newOrder
         in
-        --trace ("TC:" ++ show (totalCost (V.last reorderedUpdatedPhyloComponent)) ++ " ")
+        trace ("TC:" ++ show (totalCost (V.last reorderedUpdatedPhyloComponent)) ++ " ")
         V.cons (totalCost (V.last reorderedUpdatedPhyloComponent))  --assumes root last getRootCode?
             (getBinaryCostList (V.tail binTreeList) charInfoList dataMatrix reorderedUpdatedPhyloComponent  )
 
@@ -551,7 +551,8 @@ edgePairListStringPairList edgeList inNodes = map (\(a,b) -> (edgeCodeToName a i
 getComponentCost :: DataMatrixVLS -> PhyloComponent -> [CharInfo] -> Float
 getComponentCost dataMatrix inComp charInfoList
     | V.null inComp = 0
-    | not (isRoot startNode) = trace ("\nBinaries : " ++ show (length displayTreeList) ++ " " 
+    | not (isRoot startNode) = error "Start element of phylocomponent is not component root"
+    | null unusedEdges = trace ("\nBinaries : " ++ show (length displayTreeList) ++ " "
         ++ show (V.length reRootedVect) ++ " " ++ show (V.length charCostVectVect) ++ " " 
         ++ show allCosts ++ " "
         ++ show softCostList ++ "\nDisplay Costs " ++ show displayTreeCostList ++ " best tree " ++ show bestDisplayIndices 
@@ -567,8 +568,7 @@ getComponentCost dataMatrix inComp charInfoList
         ) 
         --"\nInput " 
         --    ++ show inComp ++ "\nBin " ++ show displayTreeList)( 
-        error "Start element of phylocomponent is not component root"
-    | null unusedEdges = softCost + softAdjust2 + rootCost -- Need to add root cost here sum over charInfo rootCosts.
+        softCost + softAdjust2 + rootCost -- Need to add root cost here sum over charInfo rootCosts.
     | otherwise = maxFloat --V.minimum charCostVectVect
         where
             --split here for list of binary components--naive at first--complete components
