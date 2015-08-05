@@ -106,9 +106,9 @@ removeBranchLengths inString =
 reassemble :: String -> [String] -> String
 reassemble joinString inList =
     if null joinString  then error "Join string is empty"
-    else foldr (\x acc-> x ++ joinString ++ acc) "" inList
-         --if not (null $ tail inList) then (head inList) ++ (joinString ++ (reassemble joinString $ tail inList))
-         --else head inList
+    else 
+         if not (null $ tail inList) then (head inList) ++ (joinString ++ (reassemble joinString $ tail inList))
+         else head inList
 
 -- | splitParen takes list of String and splits each one on ')' and reassmebles
 splitParen :: [String] -> [String]
@@ -353,7 +353,9 @@ processNewick inNewickString =
             --trace ("posLR " ++ show (getDividingComma rightDesc 0 0 0) ++ show rightDesc) (
     --check pren numbers match
     let newickString1 = filter (/= '\n') inNewickString --remove newlines
-        newickString = filter (/= ' ') newickString1 --remove spaces
+        newickString2 = filter (/= ' ') newickString1 --remove spaces
+        newickString3 = filter (/= '\t') newickString2
+        newickString = filter (/= '\r') newickString3
         leftParens = length $ elemIndices '(' newickString
         rightParens = length $ elemIndices ')' newickString
     
