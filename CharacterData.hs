@@ -44,6 +44,7 @@ module CharacterData
 , DataMatrixVLS
 , redoRootCosts
 , areCycles
+, vPackBaseData
 ) where
 
 import System.IO
@@ -239,7 +240,7 @@ vPackNode initMat (termName, (c:charsTail)) info pos =
         tailSection = V.drop (charRow+1) initMat
         headBits = VS.take charRow (initMat V.! bitMatrix)
         tailBits = VS.drop (charRow+1) (initMat V.! bitMatrix)
-        newBit = setBit ((initMat V.! row) V.! bitCol) col
+        newBit = setBit ((initMat V.! bitMatrix) VS.! charRow) (2^bitCol)
         newSection = V.singleton (headBits VS.++ (VS.singleton newBit) VS.++ tailBits)
 
     in vPackSum (headSection V.++ newSection V.++ tailSection) (vPackNode initMat (termName, charsTail) info pos)
