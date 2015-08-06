@@ -353,7 +353,9 @@ generateBinaryResolutions inNode index totalComponent parentList fullParentList
     | null parentList = []
     | length modList > 1 =  --this is check for impossible resolutions of network nodes
         (totalComponent V.// modList) : generateBinaryResolutions inNode index totalComponent (tail parentList) fullParentList
-    | otherwise = [] --generateBinaryResolutions inNode index totalComponent (tail parentList) fullParentList 
+    | otherwise = trace ("Error in display tree creation: Resolution of node yields internal node as terminal" ++ show modList)
+        [] 
+        --generateBinaryResolutions inNode index totalComponent (tail parentList) fullParentList 
         -- error ("Error in display tree creation: Resolution of node yields internal node as terminal" ++ show modList)
         where
             curParent = head parentList
@@ -375,8 +377,10 @@ splitAndModifyComponent inNode index totalComponent
 
 -- | getBinaryCostList takes list of binary trees and returns list of costs
 --this needs to be list of costs per character to be minimized over characters
-getBinaryCostList :: V.Vector PhyloComponent -> [CharInfo] -> DataMatrixVLS -> PhyloComponent -> V.Vector (V.Vector Float)
-getBinaryCostList binTreeList charInfoList dataMatrix previousBinaryTree 
+getBinaryCostList :: [CharInfo] -> DataMatrixVLS -> PhyloComponent -> V.Vector PhyloComponent -> V.Vector (V.Vector Float)
+getBinaryCostList charInfoList dataMatrix previousBinaryTree binTreeList
+--getBinaryCostList :: V.Vector PhyloComponent -> [CharInfo] -> DataMatrixVLS -> PhyloComponent -> V.Vector (V.Vector Float)
+--getBinaryCostList binTreeList charInfoList dataMatrix previousBinaryTree 
     | V.null binTreeList = V.empty
     | otherwise = 
         let curBinTree = V.head binTreeList 
@@ -387,7 +391,7 @@ getBinaryCostList binTreeList charInfoList dataMatrix previousBinaryTree
         in
         trace ("TC:" ++ show (totalCost (V.last reorderedUpdatedPhyloComponent)) ++ " ")
         V.cons (totalCost (V.last reorderedUpdatedPhyloComponent))  --assumes root last getRootCode?
-            (getBinaryCostList (V.tail binTreeList) charInfoList dataMatrix reorderedUpdatedPhyloComponent  )
+            (getBinaryCostList charInfoList dataMatrix reorderedUpdatedPhyloComponent  (V.tail binTreeList)) 
 
 -- | compileBinaryCosts gets the costs of eachbinary tree
 compileBinaryCosts :: V.Vector (V.Vector Float) -> V.Vector Float
@@ -553,7 +557,7 @@ getComponentCost dataMatrix inComp charInfoList
     | V.null inComp = 0
     | not (isRoot startNode) = error "Start element of phylocomponent is not component root"
     | null unusedEdges = trace ("\nBinaries : " ++ show (length displayTreeList) ++ " "
-        ++ show (V.length reRootedVect) ++ " " ++ show (V.length charCostVectVect) ++ " " 
+        ++ show (V.length $ V.concat reRootedVectList) ++ " " ++ show (V.length charCostVectVect) ++ " " 
         ++ show allCosts ++ " "
         ++ show softCostList ++ "\nDisplay Costs " ++ show displayTreeCostList ++ " best tree " ++ show bestDisplayIndices 
         ++ " -> " ++ show (V.minimum displayTreeCostList) ++ "\nsoft " ++ show softCost ++ " soft adjust " ++ show softAdjust 
@@ -561,15 +565,19 @@ getComponentCost dataMatrix inComp charInfoList
         ++ " Soft-3 "  ++ show softAdjust3 ++ " -> " ++ show (softCost + softAdjust3)
         ++ "\nDisplay Trees " ++ show (binaryToNewick displayTreeList) 
         ++ "\nUnused Edges " ++ show (edgePairListStringPairList unusedEdges inComp)
-        -- ++ "\nDisplay edges " ++ show (edgePairListStringPairList (Set.toList inCompEdgeSet) inComp)
-        -- ++ "\nUsed edges " ++ show (edgePairListStringPairList (Set.toList $ edgeSetFromComponentListSome displayTreeList (nub $ listOfVector $ V.toList charDisplayIndices) 0) inComp)
-        -- ++ "\nRoot cost: " ++ show rootCost
-        -- ++ "\nFrom : " ++ show inComp
         ) 
-        --"\nInput " 
-        --    ++ show inComp ++ "\nBin " ++ show displayTreeList)( 
         softCost + softAdjust2 + rootCost -- Need to add root cost here sum over charInfo rootCosts.
-    | otherwise = maxFloat --V.minimum charCostVectVect
+    | otherwise = trace ("\nBinaries : " ++ show (length displayTreeList) ++ " "
+        ++ show (V.length $ V.concat reRootedVectList) ++ " " ++ show (V.length charCostVectVect) ++ " " 
+        ++ show allCosts ++ " "
+        ++ show softCostList ++ "\nDisplay Costs " ++ show displayTreeCostList ++ " best tree " ++ show bestDisplayIndices 
+        ++ " -> " ++ show (V.minimum displayTreeCostList) ++ "\nsoft " ++ show softCost ++ " soft adjust " ++ show softAdjust 
+        ++ "\nSoft Indices " ++ show charDisplayIndices ++ "\nSoft-2 "  ++ show softAdjust2 ++ " -> " ++ show (softCost + softAdjust2)
+        ++ " Soft-3 "  ++ show softAdjust3 ++ " -> " ++ show (softCost + softAdjust3)
+        ++ "\nDisplay Trees " ++ show (binaryToNewick displayTreeList) 
+        ++ "\nUnused Edges " ++ show (edgePairListStringPairList unusedEdges inComp)
+        ) 
+        maxFloat --V.minimum charCostVectVect
         where
             --split here for list of binary components--naive at first--complete components
              --lists of phylocompoents should be changed to vectors for better
@@ -578,8 +586,9 @@ getComponentCost dataMatrix inComp charInfoList
             displayTreeList = phyloComponentToTreeList inComp
             inCompEdgeSet = edgeSetFromComponent inComp
             reRootedVectList = getReRootList displayTreeList --change to list of Vetors etc to keep trac of rerootlengths
-            reRootedVect = V.concat reRootedVectList
-            charCostVectVect = getBinaryCostList reRootedVect charInfoList dataMatrix V.empty 
+            --reRootedVect = V.concat reRootedVectList
+            --charCostVectVect = getBinaryCostList charInfoList dataMatrix V.empty reRootedVect
+            charCostVectVect =  V.concat $ parMap rdeepseq (getBinaryCostList charInfoList dataMatrix V.empty) reRootedVectList
             displayTreeCharCostList = getDisplayTreeCostList reRootedVectList charCostVectVect --error here I think number reoots may vary?
             displayTreeCostList = getBinCosts displayTreeCharCostList
             allCosts = compileBinaryCosts charCostVectVect --really for debug purposes
