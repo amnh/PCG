@@ -55,7 +55,6 @@ import qualified Data.Set as Set
 import Data.Tuple
 import System.IO
 import System.Process
-import Control.Exception
 import System.Directory
 
 --these types are for a general graph (forest) with isolated nodes, trees, and networks allowing
@@ -77,9 +76,8 @@ type GenPhyNet = [GenPhyNetNode]
 --need to add a Float for cost to this--perhaps make a tuple
 type GenForest = [GenPhyNet]
 
-simpleGenPhyNet = ("root", [], [])
-
-simpleForest = [simpleGenPhyNet]
+-- simpleGenPhyNet = ("root", [], [])
+-- simpleForest = [simpleGenPhyNet]
 
 --hasVertexSet checks input for keyword "vertexSet"
 hasVertexSet :: [String] -> Bool
@@ -119,7 +117,7 @@ getVertices (x:xs) (y:ys) (z:zs)
     | y == "vertexSet" = filter (not . null) $ deleteAll ",={" (tail ys)
     | z == "vertexSet" = filter (not . null) $ deleteAll ",={" (tail zs)
     | otherwise          = error "This can't happen"
-    
+getVertices _ _ _ = error "This can't happen"    
 
 --getEdges idenitifies which of three String lists are the edge set and
 --returns list of edge identifiers (Strings) after removing head word, { and =
@@ -129,6 +127,7 @@ getEdges (x:xs) (y:ys) (z:zs)
     | y == "edgeSet" = filter (not . null) $ deleteAll ",={" (tail ys)
     | z == "edgeSet" = filter (not . null) $ deleteAll ",={" (tail zs)
     | otherwise        = error "This can't happen"
+getEdges _ _ _ = error "This can't happen"    
     
 --getRoots idenitifies which of three String lists are the root set and
 --returns list of root identifiers (Strings) after removing head word, { and =
@@ -138,6 +137,7 @@ getRoots (x:xs) (y:ys) (z:zs)
     | y == "rootSet" = filter (not . null) $ deleteAll ",={" (tail ys)
     | z == "rootSet" = filter (not . null) $ deleteAll ",={" (tail zs)
     | otherwise        = error "This can't happen"
+getRoots _ _ _ = error "This can't happen"    
     
 --splityAndCreatSets inputs valid (checked) graph string and returns tuple of
 --vertex, edge and root strings
@@ -188,7 +188,8 @@ divideSet inSet root =
 --getNonRoot extract a list of vertices on edges with input root
 -- NOT SURE THIS FUNCTION DOES WHAT IT SAYS
 getNonRoot :: String -> [(String, String)] -> [String]
-getNonRoot root edgeList =
+-- getNonRoot root edgeList =
+getNonRoot _ edgeList =
     if null edgeList then []
     else map (\x -> snd x) edgeList
         --let b = snd (head edgeList)
@@ -339,7 +340,7 @@ processVertexEdgeRoot x =
 --printGraph prints ascii graph representation
 -- NOT IMPLEMENTED
 printGraph :: GenForest -> IO ()
-printGraph x = 
+printGraph _ = 
     putStrLn "Output graph :"
 
 --putEdges gets edges from nodes and list of descendents
@@ -399,7 +400,7 @@ printGraphVizDot x dotFile =
         hPutStrLn myHandle "}"
         hClose myHandle
         pCode <- findExecutable "dot" --system "dot" --check for Graphviz
-        r <- createProcess (proc "dot" ["-Teps", dotFile, "-O"])
+        _     <- createProcess (proc "dot" ["-Teps", dotFile, "-O"])
         hPutStrLn stderr
             (if isJust pCode then --pCode /= Nothing then
                 "executed dot " ++ "-Teps " ++ dotFile ++ " -O " else

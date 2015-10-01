@@ -6,9 +6,7 @@ module File.Format.Fastc.Parser
   ) where
 
 import Data.Char  (isSpace)
-import Data.Maybe (catMaybes)
 import File.Format.Fasta.Internal
-import Safe       (headMay)
 import Text.Parsec
 import Text.Parsec.Custom
 
