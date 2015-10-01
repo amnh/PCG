@@ -37,9 +37,10 @@ data PackedInfo = PackedInfo     { blockLenMap :: BlockLenMap
 
 
 -- | Standard special characters for genetic and amino acid sequences, based on standard codes
+specialCharsGene, specialCharsNuc :: M.Map Char String
 specialCharsGene = M.fromList [('?', "ACGT-"), ('R', "AG"), ('Y', "CT"), ('S', "GC"), ('W', "AT"), ('K', "GT"), ('M', "AC"), ('B', "CGT"), 
-                    ('D', "AGT"), ('H', "ACT"), ('H', "ACT"), ('V', "ACG"), ('N', "ACGT")] :: M.Map Char String
-specialCharsNuc = M.fromList [('?', "ACDEFGHIKLMNPQRSTVWY")] :: M.Map Char String
+                    ('D', "AGT"), ('H', "ACT"), ('H', "ACT"), ('V', "ACG"), ('N', "ACGT")] 
+specialCharsNuc = M.fromList [('?', "ACDEFGHIKLMNPQRSTVWY")] 
 
 -- | Master function to determine the mode and do all of the packing after checking for incorrect data types
 performPack :: RawData -> [String] -> PhyloForest -> (String, String) -> (PackedForest, PackedInfo, BN.PackMode)

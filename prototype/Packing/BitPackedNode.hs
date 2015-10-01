@@ -35,12 +35,15 @@ instance NFData BitPackedNode
 
 -- | make the cardinality table and the masks for 64 bit cardinality
 -- All cardinalities except for the "infinite" type are from the stored table
+fth16, thd16, snd16, fst16 :: Word64
+allSelect :: V.Vector Word64
+cardTable :: V.Vector Int
 cardTable = makeLookup 
-fth16 = (foldr (\i acc -> acc + 2^i) (0 :: Word64) ([48 .. 64] :: [Int])) :: Word64
-thd16 = (foldr (\i acc -> acc + 2^i) (0 :: Word64) ([32 .. 47] :: [Int])) :: Word64
-snd16 = (foldr (\i acc -> acc + 2^i) (0 :: Word64) ([16 .. 31] :: [Int])) :: Word64
-fst16 = (foldr (\i acc -> acc + 2^i) (0 :: Word64) ([0 .. 15] :: [Int])) :: Word64
-allSelect = V.fromList [fst16, snd16, thd16, fth16] :: V.Vector Word64
+fth16 = (foldr (\i acc -> acc + 2^i) (0 :: Word64) ([48 .. 64] :: [Int])) 
+thd16 = (foldr (\i acc -> acc + 2^i) (0 :: Word64) ([32 .. 47] :: [Int])) 
+snd16 = (foldr (\i acc -> acc + 2^i) (0 :: Word64) ([16 .. 31] :: [Int])) 
+fst16 = (foldr (\i acc -> acc + 2^i) (0 :: Word64) ([0 .. 15] :: [Int]))
+allSelect = V.fromList [fst16, snd16, thd16, fth16] 
 
 -- | Information data type for the pack mode
 data PackMode = MakePackMode     { bitLen :: Int

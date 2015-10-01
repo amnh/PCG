@@ -4,7 +4,6 @@ module Packing.PackedOptimize (allOptimization, optimizeForest, getRootCost) whe
 
 -- imports 
 import Packing.PackedBuild
-import Debug.Trace
 import Component
 import qualified Data.Vector as V
 import qualified Packing.BitPackedNode as BN

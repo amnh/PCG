@@ -2,7 +2,6 @@ module Packing.PackedTest where
 
 import System.IO
 import System.Environment
-import Debug.Trace
 import qualified Data.Text as T
 import qualified Data.Set as Set
 import CharacterData
