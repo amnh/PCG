@@ -84,7 +84,6 @@ main =
         -}
         --printInputData $ fst inputData
         let phyloData = createBaseData inputData
-        let packPhyloData = vPackBaseData inputData 0
         let newCharInfo = redoRootCosts phyloData (snd inputData) 0
         --printDataMatrixVLS phyloData termNameList
         let curForestList = baseDataToLeafNodes inputGraphList

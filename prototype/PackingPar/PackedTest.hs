@@ -1,17 +1,23 @@
-module Packing.PackedTest where
+module PackedTest where
 
 import System.IO
+import System.Process
 import System.Environment
 import Debug.Trace
+import Data.List
 import qualified Data.Text as T
+import qualified Data.Vector as V
 import qualified Data.Set as Set
 import CharacterData
+import ReadFiles
 import ReadGraphs
 import ProcessCommands
 import ExecuteCommands
 import Component
-import Packing.PackedBuild
-import Packing.PackedOptimize
+import PackedBuild
+import PackedOptimize
+import Criterion.Main
+import Criterion.Types
 
 -- | 'pcg' Main Function to run PCG
 main :: IO()
@@ -23,7 +29,7 @@ main =
         commandDataString <- hGetContents scriptFileHandle
         let commandList = reverse $ parseCommandList (T.pack commandDataString)
         hPutStrLn stderr ("Command list " ++ show commandList)
-        let (readDataList, readGraphList, _, _, _) = parseCommands commandDataString 
+        let (readDataList, readGraphList, reportList, exitList, analysisList) = parseCommands commandDataString 
         let pairDataList = getReadContents readDataList
         let inputGraphList = getGraphContents readGraphList
         if not $ null inputGraphList then printGraphVizDot (head inputGraphList) "tempFile.dot"
@@ -36,19 +42,20 @@ main =
         else error "Input graphs and data terminals are inconsistent"
 
         -- | Beginning of section to pack and fitch optimize
-        let inWeight = 0.5
+        let weight = 0.5
+        let cInfo = head $ snd finalInput
         let curForestList = --trace ("forest "++ show inputGraphList) 
                             baseDataToLeafNodes inputGraphList
-        let pack = --trace ("pack "++ show curForestList) 
-                           performPack finalInput termNameList (head curForestList) ("static","64")
-        --putStrLn("packed " ++ show allPacked)
+        let pack@(allPacked, packInfo, pMode) = --trace ("pack "++ show curForestList) 
+                           performPack finalInput termNameList (head curForestList) ("adaptive","16")
+        --putStrLn("packed " ++ show (V.head $ V.head $! allPacked))
         let optimized = --trace ("optimize with pack info " ++ show packInfo) 
-                            optimizeForest (head curForestList) pack inWeight
+                            optimizeForest (head curForestList) pack weight
         let costs = map (\dat -> getRootCost $ fst dat) optimized
         hPutStrLn stderr ("Tree cost done " ++ show costs)
 
 
-        -- | PCG comparison code
+        ---- | PCG comparison code
         --let inputData  = flattenCharList pairDataList  
         --let phyloData = createBaseData inputData
         --let newCharInfo = redoRootCosts phyloData (snd inputData) 0

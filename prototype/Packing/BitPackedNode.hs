@@ -1,4 +1,3 @@
-{-# LANGUAGE DeriveGeneric, BangPatterns #-}
 module Packing.BitPackedNode (BitPackedNode (EmptyPackNode, A16, S16, A64, S64, SInf), 
                         PackMode (bitLen, adaptive, MakePackMode), 
                         (.&.), 
@@ -14,11 +13,7 @@ module Packing.BitPackedNode (BitPackedNode (EmptyPackNode, A16, S16, A64, S64, 
                         bitSize) where
 
 -- | imports
-
-import GHC.Generics
 import Packing.CardinalityLookup
-import Control.DeepSeq
-import Control.Parallel.Strategies
 import Data.Bits 
 import Data.Word
 import qualified Data.Vector as V
@@ -28,28 +23,24 @@ import qualified Data.Map as M
 import Data.List
 import Data.Either
 import Debug.Trace
+import Control.Parallel.Strategies
 
 -- | Define the data type: 
 -- 1) all data is stored in vectors
 -- 2) bits can be packed adaptively (based on the part of the alphabet used for each character) or statically (based on the overall alphabet)
 -- 3) All data types are words to avoid sign issues, and can be of length 16 or 64
-data BitPackedNode = EmptyPackNode | A16 (V.Vector Word16) | S16 (V.Vector Word16) | A64 (V.Vector Word64) | S64 (V.Vector Word64) | SInf BV.BitVector deriving (Show, Eq, Generic)
+data BitPackedNode = EmptyPackNode | A16 (V.Vector Word16) | S16 (V.Vector Word16) | A64 (V.Vector Word64) | S64 (V.Vector Word64) | SInf BV.BitVector deriving (Show, Eq)
 
-instance NFData BitPackedNode 
-instance NFData BV.BV where
-    rnf bv = (\ !x-> ()) bv
---instance Generic BV.BV
---instance NFData (Rep BV.BV)
-
+instance NFData BitPackedNode
 
 -- | make the cardinality table and the masks for 64 bit cardinality
 -- All cardinalities except for the "infinite" type are from the stored table
-cardTable = makeLookup
-fth16 = foldr (\i acc -> acc + 2^i) (0 :: Word64) [48 .. 64]
-thd16 = foldr (\i acc -> acc + 2^i) (0 :: Word64) [32 .. 47]
-snd16 = foldr (\i acc -> acc + 2^i) (0 :: Word64) [16 .. 31]
-fst16 = foldr (\i acc -> acc + 2^i) (0 :: Word64) [0 .. 15]
-allSelect = V.fromList [fst16, snd16, thd16, fth16]
+cardTable = makeLookup 
+fth16 = (foldr (\i acc -> acc + 2^i) (0 :: Word64) ([48 .. 64] :: [Int])) :: Word64
+thd16 = (foldr (\i acc -> acc + 2^i) (0 :: Word64) ([32 .. 47] :: [Int])) :: Word64
+snd16 = (foldr (\i acc -> acc + 2^i) (0 :: Word64) ([16 .. 31] :: [Int])) :: Word64
+fst16 = (foldr (\i acc -> acc + 2^i) (0 :: Word64) ([0 .. 15] :: [Int])) :: Word64
+allSelect = V.fromList [fst16, snd16, thd16, fth16] :: V.Vector Word64
 
 -- | Information data type for the pack mode
 data PackMode = MakePackMode     { bitLen :: Int
@@ -64,17 +55,17 @@ instance Bits BitPackedNode where
     (.&.) _ EmptyPackNode = EmptyPackNode
     (.&.) (A16 bit1) (A16 bit2) = 
         let 
-            a     | (V.length bit1) /= (V.length bit2) = error "Attempt to take and of bits of different lengths"
+            a   | (V.length bit1) /= (V.length bit2) = error "Attempt to take and of bits of different lengths"
                 | otherwise = V.zipWith (\b1 b2 -> (.&.) b1 b2) bit1 bit2
         in A16 a
     (.&.) (S16 bit1) (S16 bit2) = 
         let 
-            a     | (V.length bit1) /= (V.length bit2) = error "Attempt to take and of bits of different lengths"
+            a   | (V.length bit1) /= (V.length bit2) = error "Attempt to take and of bits of different lengths"
                 | otherwise = V.zipWith (\b1 b2 -> (.&.) b1 b2) bit1 bit2
         in S16 a
     (.&.) (A64 bit1) (A64 bit2) = 
         let 
-            a     | (V.length bit1) /= (V.length bit2) = error "Attempt to take and of bits of different lengths"
+            a   | (V.length bit1) /= (V.length bit2) = error "Attempt to take and of bits of different lengths"
                 | otherwise = V.zipWith (\b1 b2 -> (.&.) b1 b2) bit1 bit2
         in A64 a
     (.&.) (S64 bit1) (S64 bit2) = 
@@ -84,38 +75,40 @@ instance Bits BitPackedNode where
         in S64 a
     (.&.) (SInf bit1) (SInf bit2) = 
         let
-            a     | (BV.size bit1) /= (BV.size bit2) = error "Attempt to take and of bits of different lengths"
+            a   | (BV.size bit1) /= (BV.size bit2) = error "Attempt to take and of bits of different lengths"
                 | otherwise = (.&.) bit1 bit2
         in SInf a
+    (.&.) _ _ = error "Attempt to take and of two different node types"
 
     -- | Or function: throws errors for different length bits, and of any empty node returns an empty
     (.|.) EmptyPackNode _ = EmptyPackNode
     (.|.) _ EmptyPackNode = EmptyPackNode
     (.|.) (A16 bit1) (A16 bit2) = 
         let 
-            a     | (V.length bit1) /= (V.length bit2) = error "Attempt to take and of bits of different lengths"
+            a   | (V.length bit1) /= (V.length bit2) = error "Attempt to take and of bits of different lengths"
                 | otherwise = V.zipWith (\b1 b2 -> (.|.) b1 b2) bit1 bit2
         in A16 a
     (.|.) (S16 bit1) (S16 bit2) = 
         let 
-            a     | (V.length bit1) /= (V.length bit2) = error "Attempt to take and of bits of different lengths"
+            a   | (V.length bit1) /= (V.length bit2) = error "Attempt to take and of bits of different lengths"
                 | otherwise = V.zipWith (\b1 b2 -> (.|.) b1 b2) bit1 bit2
         in S16 a
     (.|.) (A64 bit1) (A64 bit2) = 
         let 
-            a     | (V.length bit1) /= (V.length bit2) = error "Attempt to take and of bits of different lengths"
+            a   | (V.length bit1) /= (V.length bit2) = error "Attempt to take and of bits of different lengths"
                 | otherwise = V.zipWith (\b1 b2 -> (.|.) b1 b2) bit1 bit2
         in A64 a
     (.|.) (S64 bit1) (S64 bit2) = 
         let 
-            a     | (V.length bit1) /= (V.length bit2) = error "Attempt to take and of bits of different lengths"
+            a   | (V.length bit1) /= (V.length bit2) = error "Attempt to take and of bits of different lengths"
                 | otherwise = V.zipWith (\b1 b2 -> (.|.) b1 b2) bit1 bit2
         in S64 a
     (.|.) (SInf bit1) (SInf bit2) = 
         let
-            a     | (BV.size bit1) /= (BV.size bit2) = error "Attempt to take and of bits of different lengths"
+            a   | (BV.size bit1) /= (BV.size bit2) = error "Attempt to take and of bits of different lengths"
                 | otherwise = (.|.) bit1 bit2
         in SInf a
+    (.|.) _ _ = error "Attempt to take or of two different node types"
 
     -- | xor function as a combination of and, or
     xor EmptyPackNode _ = EmptyPackNode
@@ -124,101 +117,104 @@ instance Bits BitPackedNode where
 
     -- | complement function turning on opposite bits
     complement EmptyPackNode = EmptyPackNode
-    complement (A16 bit) = A16 $ V.map (\b -> complement b) bit
-    complement (S16 bit) = S16 $ V.map (\b -> complement b) bit
-    complement (A64 bit) = A64 $ V.map (\b -> complement b) bit
-    complement (S64 bit) = S64 $ V.map (\b -> complement b) bit
-    complement (SInf bit) = SInf $ complement bit
+    complement (A16 bita16) = A16 $ V.map (\b -> complement b) bita16
+    complement (S16 bits16) = S16 $ V.map (\b -> complement b) bits16
+    complement (A64 bita64) = A64 $ V.map (\b -> complement b) bita64
+    complement (S64 bits64) = S64 $ V.map (\b -> complement b) bits64
+    complement (SInf biti) = SInf $ complement biti
 
     -- | Generic shift function, a negative value causes a right shift and a positive a right shift
     shift EmptyPackNode _ = EmptyPackNode
-    shift (A16 bit) s = A16 $ V.map (\b -> shift b s) bit 
-    shift (S16 bit) s = S16 $ V.map (\b -> shift b s) bit
-    shift (A64 bit) s = A64 $ V.map (\b -> shift b s) bit
-    shift (S64 bit) s = S64 $ V.map (\b -> shift b s) bit
-    shift (SInf bit) s = SInf $ shift bit s
+    shift (A16 bita16) s = A16 $ V.map (\b -> shift b s) bita16
+    shift (S16 bits16) s = S16 $ V.map (\b -> shift b s) bits16
+    shift (A64 bita64) s = A64 $ V.map (\b -> shift b s) bita64
+    shift (S64 bits64) s = S64 $ V.map (\b -> shift b s) bits64
+    shift (SInf biti) s = SInf $ shift biti s
 
     -- | Rotate function for bits
     rotate EmptyPackNode _ = EmptyPackNode
-    rotate (A16 bit) r = A16 $ V.map (\b -> rotate b r) bit
-    rotate (S16 bit) r = S16 $ V.map (\b -> rotate b r) bit
-    rotate (A64 bit) r = A64 $ V.map (\b -> rotate b r) bit
-    rotate (S64 bit) r = S64 $ V.map (\b -> rotate b r) bit
-    rotate (SInf bit) r = SInf $ rotate bit r
+    rotate (A16 bita16) r = A16 $ V.map (\b -> rotate b r) bita16
+    rotate (S16 bits16) r = S16 $ V.map (\b -> rotate b r) bits16
+    rotate (A64 bita64) r = A64 $ V.map (\b -> rotate b r) bita64
+    rotate (S64 bits64) r = S64 $ V.map (\b -> rotate b r) bits64
+    rotate (SInf biti) r = SInf $ rotate biti r
 
     -- | Both setBit and bit i are not meaningful for these data structures (could be a variety of things) 
     -- and so simply return an empty
     -- NOTE THAT setBIT IS NOT MEANINGFUL FOR THIS DATA STRUCTURE
     setBit _ _ = EmptyPackNode
 
-    bit i = EmptyPackNode -- this is not meaningful for the bit vectors so just always give back an empty
+    bit _ = EmptyPackNode -- this is not meaningful for the bit vectors so just always give back an empty
 
     -- | The bit size is the number of slots for storage
     bitSize EmptyPackNode = 0
-    bitSize (A16 bit) = (V.length bit) * 16
-    bitSize (S16 bit) = (V.length bit) * 16
-    bitSize (A64 bit) = (V.length bit) * 64
-    bitSize (S64 bit) = (V.length bit) * 64
-    bitSize (SInf bit) = BV.size bit
+    bitSize (A16 bita16) = (V.length bita16) * 16
+    bitSize (S16 bits16) = (V.length bits16) * 16
+    bitSize (A64 bita64) = (V.length bita64) * 64
+    bitSize (S64 bits64) = (V.length bits64) * 64
+    bitSize (SInf biti) = BV.size biti
 
     -- | Maybe bit size: for us all bits have a size and so returns a just object
     bitSizeMaybe EmptyPackNode = Just 0
-    bitSizeMaybe (A16 bit) = Just $ (V.length bit) * 16
-    bitSizeMaybe (S16 bit) = Just $ (V.length bit) * 16
-    bitSizeMaybe (A64 bit) = Just $ (V.length bit) * 64
-    bitSizeMaybe (S64 bit) = Just $ (V.length bit) * 64
-    bitSizeMaybe (SInf bit) = Just $ BV.size bit
+    bitSizeMaybe (A16 bita16) = Just $ (V.length bita16) * 16
+    bitSizeMaybe (S16 bits16) = Just $ (V.length bits16) * 16
+    bitSizeMaybe (A64 bita64) = Just $ (V.length bita64) * 64
+    bitSizeMaybe (S64 bits64) = Just $ (V.length bits64) * 64
+    bitSizeMaybe (SInf biti) = Just $ BV.size biti
 
     -- | all my types are unsigned so isSigned is always False
-    isSigned bit = False 
+    isSigned _ = False 
 
     -- | testBit function to return true if the ith bit is on
     -- for multiple word structures it determines which word and then which bit based on value
     testBit EmptyPackNode _ = False
-    testBit (A16 bit) index = 
+    testBit (A16 bita16) index = 
         let 
             myBit = div index 16
             myPos = rem index 16
-        in testBit (bit V.! myBit) myPos
-    testBit (S16 bit) index = 
+        in testBit (bita16 V.! myBit) myPos
+    testBit (S16 bits16) index = 
         let 
             myBit = div index 16
             myPos = rem index 16
-        in testBit (bit V.! myBit) myPos
-    testBit (A64 bit) index = 
+        in testBit (bits16 V.! myBit) myPos
+    testBit (A64 bita64) index = 
         let 
             myBit = div index 64
             myPos = rem index 64
-        in testBit (bit V.! myBit) myPos
-    testBit (S64 bit) index = 
+        in testBit (bita64 V.! myBit) myPos
+    testBit (S64 bits64) index = 
         let 
             myBit = div index 64
             myPos = rem index 64
-        in testBit (bit V.! myBit) myPos
-    testBit (SInf bit) index = testBit bit index
+        in testBit (bits64 V.! myBit) myPos
+    testBit (SInf biti) index = testBit biti index
 
     -- | The popCount uses the cardinality lookup table to return the number of bits turned on
-    popCount (A16 bit) = V.foldr (\b acc -> acc + (cardinalityLookup b cardTable)) 0 bit
-    popCount (S16 bit) = V.foldr (\b acc -> acc + (cardinalityLookup b cardTable)) 0 bit
-    popCount (A64 bit) = 
+    popCount EmptyPackNode = 0
+    popCount (A16 bita16) = V.foldr (\b acc -> acc + (cardinalityLookup b cardTable)) 0 bita16
+    popCount (S16 bits16) = V.foldr (\b acc -> acc + (cardinalityLookup b cardTable)) 0 bits16
+    popCount (A64 bita64) = 
         let 
-            numbits = V.length bit
-            masked16 = V.map (\mask -> (.|.) (A64 $ V.replicate numbits mask) (A64 bit)) allSelect
+            numbits = V.length bita64
+            masked16 = V.map (\mask -> (.|.) (A64 $ V.replicate numbits mask) (A64 bita64)) allSelect
             shifts = V.fromList [48, 32, 16, 0]
             maskedRight = V.zipWith (\s node -> shift node (-s)) shifts masked16
-            convRight = V.map (\(A64 node) -> V.map (\bit -> fromIntegral bit :: Word16) node) maskedRight
+            convRight = V.map (\(A64 node) -> V.map (\b -> fromIntegral b :: Word16) node) maskedRight
             foldedCost = V.foldr (\node acc -> acc + popCount (A16 node)) 0 convRight
         in foldedCost
-    popCount (S64 bit) = 
+    popCount (S64 bits64) = 
         let 
-            numbits = V.length bit
-            masked16 = V.map (\mask -> (.|.) (S64 $ V.replicate numbits mask) (S64 bit)) allSelect
-            shifts = V.fromList [48, 32, 16, 0]
+            numbits = V.length bits64
+            masked16 = V.map (\mask -> (.|.) (S64 $ V.replicate numbits mask) (S64 bits64)) allSelect
+            shifts = trace ("masked 16 " ++ show masked16)
+                        V.fromList [48, 32, 16, 0]
             maskedRight = V.zipWith (\s node -> shift node (-s)) shifts masked16
-            convRight = V.map (\(S64 node) -> V.map (\bit -> fromIntegral bit :: Word16) node) maskedRight
-            foldedCost = V.foldr (\node acc -> acc + popCount (S16 node)) 0 convRight
+            convRight = V.map (\(S64 node) -> V.map (\b -> fromIntegral b :: Word16) node) maskedRight
+            foldedCost =  trace ("convRight " ++ show convRight)
+                            V.foldr (\node acc -> acc + popCount (S16 node)) 0 convRight
         in foldedCost
-    popCount (SInf bit) = popCount bit
+    popCount (SInf biti) = popCount biti
 
 -- | Creation of an encoded node given the string and relevant information
 makeNode :: String -> M.Map Char String -> V.Vector(V.Vector [Char]) -> String -> V.Vector [Int] -> PackMode -> BitPackedNode
@@ -266,13 +262,13 @@ makeBit16 string special alphabets overallAlph mode
             blocklen = length $ V.head alphabets 
             indices = V.fromList [0..(V.length convstr)-1]
             setbits = V.zipWith3 (\i str alph -> foldr (\char acc -> (.|.) acc (setBit 0 (15 - (i*blocklen) - (fromJust $ elemIndex char alph)))) (0 :: Word16) str) indices recodeS alphabets 
-        in (V.foldr (\bit acc -> (.|.) acc bit) (0 :: Word16) setbits)
+        in (V.foldr (\b acc -> (.|.) acc b) (0 :: Word16) setbits)
     | bitLen mode == 16 && not (adaptive mode) && (False `V.elem` charCheckSingle) = error ("Error in makeBit16, character " ++ show convstr ++ " not in the alphabet " ++ show overallAlph)
     | bitLen mode == 16 && not (adaptive mode) = --trace "not adaptive" $
         let 
             blocklen = length overallAlph
             setbits = V.imap (\i str -> foldr (\char acc -> (.|.) acc (setBit 0 (15 - (i*blocklen) - (fromJust $ elemIndex char overallAlph)))) (0 :: Word16) str) recodeS
-        in (V.foldr (\bit acc -> (.|.) acc bit) (0 :: Word16) setbits)
+        in (V.foldr (\b acc -> (.|.) acc b) (0 :: Word16) setbits)
     | otherwise = error "incorrect packing mode, cannot create node "
         where 
             convstr = V.fromList string
@@ -290,13 +286,13 @@ makeBit64 string special alphabets overallAlph mode
             blocklen = length $ V.head alphabets 
             indices = V.fromList [0..(V.length convstr)-1]
             setbits = V.zipWith3 (\i str alph -> foldr (\char acc -> (.|.) acc (setBit 0 (63 - (i*blocklen) - (fromJust $ elemIndex char alph)))) (0 :: Word64) str) indices recodeS alphabets 
-        in (V.foldr (\bit acc -> (.|.) acc bit) (0 :: Word64) setbits)
+        in (V.foldr (\b acc -> (.|.) acc b) (0 :: Word64) setbits)
     | bitLen mode == 64 && not (adaptive mode) && (False `V.elem` charCheckSingle) = error ("Error in makeBit16, character " ++ show convstr ++ " not in the alphabet " ++ show overallAlph)
     | bitLen mode == 64 && not (adaptive mode) = 
         let 
             blocklen = length overallAlph
             setbits = V.imap (\i str -> foldr (\char acc -> (.|.) acc (setBit 0 (63 - (i*blocklen) - (fromJust $ elemIndex char overallAlph)))) (0 :: Word64) str) recodeS
-        in (V.foldr (\bit acc -> (.|.) acc bit) (0 :: Word64) setbits)
+        in (V.foldr (\b acc -> (.|.) acc b) (0 :: Word64) setbits)
     | otherwise = error "incorrect packing mode, cannot create node "
         where 
             convstr = V.fromList string
@@ -309,39 +305,39 @@ makeBit64 string special alphabets overallAlph mode
 -- Extremely useful in the Fitch packed algorithm
 blockShiftAndFold :: String -> String -> BitPackedNode -> V.Vector Int -> Int -> BitPackedNode -> BitPackedNode
 --blockShiftAndFold sideMode foldMode inbits blocklens alphlen initVal | trace ("block shift and fold " ++ show inbits) False = undefined
-blockShiftAndFold sideMode foldMode (A16 inbits) blocklens alphlen (A16 initVal) = 
+blockShiftAndFold sideMode foldMode (A16 inbits) blocklens _ (A16 initVal) = 
     let 
-        c     | sideMode == "L" && foldMode == "&" = V.zipWith3 (\bit len iVal -> foldr (\s acc -> (.&.) acc (shiftL bit s)) iVal [1..len-1]) inbits blocklens initVal
-            | sideMode == "R" && foldMode == "&" = V.zipWith3 (\bit len iVal -> foldr (\s acc -> (.&.) acc (shiftR bit s)) iVal [1..len-1]) inbits blocklens initVal
-            | sideMode == "L" && foldMode == "|" = V.zipWith3 (\bit len iVal -> foldr (\s acc -> (.|.) acc (shiftL bit s)) iVal [1..len-1]) inbits blocklens initVal
-            | sideMode == "R" && foldMode == "|" = V.zipWith3 (\bit len iVal -> foldr (\s acc -> (.|.) acc (shiftR bit s)) iVal [1..len-1]) inbits blocklens initVal
+        c     | sideMode == "L" && foldMode == "&" = V.zipWith3 (\b len iVal -> foldr (\s acc -> (.&.) acc (shiftL b s)) iVal [1..len-1]) inbits blocklens initVal
+            | sideMode == "R" && foldMode == "&" = V.zipWith3 (\b len iVal -> foldr (\s acc -> (.&.) acc (shiftR b s)) iVal [1..len-1]) inbits blocklens initVal
+            | sideMode == "L" && foldMode == "|" = V.zipWith3 (\b len iVal -> foldr (\s acc -> (.|.) acc (shiftL b s)) iVal [1..len-1]) inbits blocklens initVal
+            | sideMode == "R" && foldMode == "|" = V.zipWith3 (\b len iVal -> foldr (\s acc -> (.|.) acc (shiftR b s)) iVal [1..len-1]) inbits blocklens initVal
             | otherwise = error "incorrect input for block shift and fold"
     in A16 c
-blockShiftAndFold sideMode foldMode (A64 inbits) blocklens alphlen (A64 initVal) = 
+blockShiftAndFold sideMode foldMode (A64 inbits) blocklens _ (A64 initVal) = 
     let 
-        c     | sideMode == "L" && foldMode == "&" = V.zipWith3 (\bit len iVal -> foldr (\s acc -> (.&.) acc (shiftL bit s)) iVal [1..len-1]) inbits blocklens initVal
-            | sideMode == "R" && foldMode == "&" = V.zipWith3 (\bit len iVal -> foldr (\s acc -> (.&.) acc (shiftR bit s)) iVal [1..len-1]) inbits blocklens initVal
-            | sideMode == "L" && foldMode == "|" = V.zipWith3 (\bit len iVal -> foldr (\s acc -> (.|.) acc (shiftL bit s)) iVal [1..len-1]) inbits blocklens initVal
-            | sideMode == "R" && foldMode == "|" = V.zipWith3 (\bit len iVal -> foldr (\s acc -> (.|.) acc (shiftR bit s)) iVal [1..len-1]) inbits blocklens initVal
+        c     | sideMode == "L" && foldMode == "&" = V.zipWith3 (\b len iVal -> foldr (\s acc -> (.&.) acc (shiftL b s)) iVal [1..len-1]) inbits blocklens initVal
+            | sideMode == "R" && foldMode == "&" = V.zipWith3 (\b len iVal -> foldr (\s acc -> (.&.) acc (shiftR b s)) iVal [1..len-1]) inbits blocklens initVal
+            | sideMode == "L" && foldMode == "|" = V.zipWith3 (\b len iVal -> foldr (\s acc -> (.|.) acc (shiftL b s)) iVal [1..len-1]) inbits blocklens initVal
+            | sideMode == "R" && foldMode == "|" = V.zipWith3 (\b len iVal -> foldr (\s acc -> (.|.) acc (shiftR b s)) iVal [1..len-1]) inbits blocklens initVal
             | otherwise = error "incorrect input for block shift and fold"
     in A64 c
-blockShiftAndFold sideMode foldMode (S16 inbits) blocklens alphlen (S16 initVal) = 
+blockShiftAndFold sideMode foldMode (S16 inbits) _ alphlen (S16 initVal) = 
     let
-        c     | sideMode == "L" && foldMode == "&" = V.zipWith (\bit iVal -> foldr (\s acc -> (.&.) acc (shiftL bit s)) iVal [1..alphlen-1]) inbits initVal
-            | sideMode == "R" && foldMode == "&" = V.zipWith (\bit iVal -> foldr (\s acc -> (.&.) acc (shiftR bit s)) iVal [1..alphlen-1]) inbits initVal
-            | sideMode == "L" && foldMode == "|" = V.zipWith (\bit iVal -> foldr (\s acc -> (.|.) acc (shiftL bit s)) iVal [1..alphlen-1]) inbits initVal
-            | sideMode == "R" && foldMode == "|" = V.zipWith (\bit iVal -> foldr (\s acc -> (.|.) acc (shiftR bit s)) iVal [1..alphlen-1]) inbits initVal
+        c     | sideMode == "L" && foldMode == "&" = V.zipWith (\b iVal -> foldr (\s acc -> (.&.) acc (shiftL b s)) iVal [1..alphlen-1]) inbits initVal
+            | sideMode == "R" && foldMode == "&" = V.zipWith (\b iVal -> foldr (\s acc -> (.&.) acc (shiftR b s)) iVal [1..alphlen-1]) inbits initVal
+            | sideMode == "L" && foldMode == "|" = V.zipWith (\b iVal -> foldr (\s acc -> (.|.) acc (shiftL b s)) iVal [1..alphlen-1]) inbits initVal
+            | sideMode == "R" && foldMode == "|" = V.zipWith (\b iVal -> foldr (\s acc -> (.|.) acc (shiftR b s)) iVal [1..alphlen-1]) inbits initVal
             | otherwise = error "incorrect input for block shift and fold"
     in S16 c
-blockShiftAndFold sideMode foldMode (S64 inbits) blocklens alphlen (S64 initVal) = 
+blockShiftAndFold sideMode foldMode (S64 inbits) _ alphlen (S64 initVal) = 
     let
-        c     | sideMode == "L" && foldMode == "&" = V.zipWith (\bit iVal -> foldr (\s acc -> (.&.) acc (shiftL bit s)) iVal [1..alphlen-1]) inbits initVal
-            | sideMode == "R" && foldMode == "&" = V.zipWith (\bit iVal -> foldr (\s acc -> (.&.) acc (shiftR bit s)) iVal [1..alphlen-1]) inbits initVal
-            | sideMode == "L" && foldMode == "|" = V.zipWith (\bit iVal -> foldr (\s acc -> (.|.) acc (shiftL bit s)) iVal [1..alphlen-1]) inbits initVal
-            | sideMode == "R" && foldMode == "|" = V.zipWith (\bit iVal -> foldr (\s acc -> (.|.) acc (shiftR bit s)) iVal [1..alphlen-1]) inbits initVal
+        c     | sideMode == "L" && foldMode == "&" = V.zipWith (\b iVal -> foldr (\s acc -> (.&.) acc (shiftL b s)) iVal [1..alphlen-1]) inbits initVal
+            | sideMode == "R" && foldMode == "&" = V.zipWith (\b iVal -> foldr (\s acc -> (.&.) acc (shiftR b s)) iVal [1..alphlen-1]) inbits initVal
+            | sideMode == "L" && foldMode == "|" = V.zipWith (\b iVal -> foldr (\s acc -> (.|.) acc (shiftL b s)) iVal [1..alphlen-1]) inbits initVal
+            | sideMode == "R" && foldMode == "|" = V.zipWith (\b iVal -> foldr (\s acc -> (.|.) acc (shiftR b s)) iVal [1..alphlen-1]) inbits initVal
             | otherwise = error "incorrect input for block shift and fold"
     in S64 c
-blockShiftAndFold sideMode foldMode (SInf inbits) blocklens alphlen (SInf initVal) = 
+blockShiftAndFold sideMode foldMode (SInf inbits) _ alphlen (SInf initVal) = 
     let 
         c     | sideMode == "L" && foldMode == "&" = foldr (\s acc -> (.&.) acc (shiftL inbits s)) initVal [1..alphlen-1]
             | sideMode == "R" && foldMode == "&" = foldr (\s acc -> (.&.) acc (shiftR inbits s)) initVal [1..alphlen-1]
@@ -349,6 +345,7 @@ blockShiftAndFold sideMode foldMode (SInf inbits) blocklens alphlen (SInf initVa
             | sideMode == "R" && foldMode == "|" = foldr (\s acc -> (.|.) acc (shiftR inbits s)) initVal [1..alphlen-1]
             | otherwise = error "incorrect input for block shift and fold"
     in SInf c
+blockShiftAndFold _ _ _ _ _ _ = error "Attempt to block, shift, and fold nodes of two different types"
 
 -- | Occupancy mask to remove excess bits from being counted
 -- Bits should always be masked to achieve the correct cost from popCount
@@ -359,7 +356,7 @@ occupancyMask blockLens numCharVec alphLen numChars mode
     | bitLen mode == 16 && not (adaptive mode) = 
         let 
             numfit = div 16 alphLen
-            needBits = ceiling $ (fromIntegral numChars) / (fromIntegral numfit)
+            needBits = (ceiling $ (fromIntegral numChars :: Float) / (fromIntegral numfit :: Float)) :: Int
             leftovers = (alphLen * numChars) - (alphLen * numfit * (needBits - 1))
             bitsFull = alphLen * numfit
             fullMask = shift (complement (0 :: Word16)) (16 - bitsFull)
@@ -369,7 +366,7 @@ occupancyMask blockLens numCharVec alphLen numChars mode
     | bitLen mode == 64 && not (adaptive mode) =
         let 
             numfit = div 64 alphLen
-            needBits = ceiling $ (fromIntegral numChars) / (fromIntegral numfit)
+            needBits = (ceiling $ (fromIntegral numChars :: Float) / (fromIntegral numfit :: Float)) :: Int
             leftovers = (alphLen * numChars) - (alphLen * numfit * (needBits - 1))
             bitsFull = alphLen * numfit
             fullMask = shift (complement (0 :: Word64)) (64 - bitsFull)
@@ -433,38 +430,38 @@ genMasks blockLens numCharVec alphLen numChars mode =
 
 -- | Display function that prints a node's meaning given the packed verison and info
 displayNode :: BitPackedNode -> V.Vector (V.Vector [Char]) -> [Char] -> V.Vector Int -> V.Vector [Int] -> String
-displayNode EmptyPackNode bitAlphs oneAlph blockLens shuffles = ""
-displayNode (A16 node) bitAlphs oneAlph blockLens shuffles = 
+displayNode EmptyPackNode _ _ _ _ = ""
+displayNode (A16 node) bitAlphs _ blockLens shuffles = 
     let 
-        remixed = V.zipWith3 (\bit bitLen alphs -> displayBit (Left bit) bitLen alphs) node blockLens bitAlphs
+        remixed = V.zipWith3 (\b len alphs -> displayBit (Left b) len alphs) node blockLens bitAlphs
         mapRemix = V.toList $ V.zipWith (\indices strs -> zip indices strs) shuffles remixed
         unrollMap = foldr (\rList acc -> rList ++ acc) [] mapRemix
         replace = V.replicate (length unrollMap) "" 
         ordered = V.toList $ (V.//) replace unrollMap
     in foldr (\str acc -> str ++ acc) [] ordered
-displayNode (S16 node) bitAlphs oneAlph blockLens shuffles = 
+displayNode (S16 node) _ oneAlph _ _ = 
     let 
-        bitLen = length oneAlph
-        numfit = div 16 bitLen
+        bitlen = length oneAlph
+        numfit = div 16 bitlen
         alphabets = V.replicate numfit oneAlph    
-        strs = V.foldl (\acc bit -> acc ++ displayBit (Left bit) bitLen alphabets) [] node
+        strs = V.foldl (\acc b -> acc ++ displayBit (Left b) bitlen alphabets) [] node
     in foldr (\str acc -> str ++ acc) "" strs
-displayNode (A64 node) bitAlphs oneAlph blockLens shuffles = 
+displayNode (A64 node) bitAlphs _ blockLens shuffles = 
     let 
-        remixed = V.zipWith3 (\bit bitLen alphs -> displayBit (Right bit) bitLen alphs) node blockLens bitAlphs
+        remixed = V.zipWith3 (\b len alphs -> displayBit (Right b) len alphs) node blockLens bitAlphs
         mapRemix = V.toList $ V.zipWith (\indices strs -> zip indices strs) shuffles remixed
         unrollMap = foldr (\rList acc -> rList ++ acc) [] mapRemix
         replace = V.replicate (length unrollMap) "" 
         ordered = V.toList $ (V.//) replace unrollMap
     in foldr (\str acc -> str ++ acc) [] ordered
-displayNode (S64 node) bitAlphs oneAlph blockLens shuffles = 
+displayNode (S64 node) _ oneAlph _ _ = 
     let 
-        bitLen = length oneAlph
-        numfit = div 64 bitLen
+        bitlen = length oneAlph
+        numfit = div 64 bitlen
         alphabets = V.replicate numfit oneAlph    
-        strs = V.foldl (\acc bit -> acc ++ displayBit (Right bit) bitLen alphabets) [] node
+        strs = V.foldl (\acc b -> acc ++ displayBit (Right b) bitlen alphabets) [] node
     in foldr (\str acc -> str ++ acc) "" strs
-displayNode (SInf node) bitAlphs oneAlph blockLens shuffles = 
+displayNode (SInf node) _ oneAlph _ _ = 
     let 
         alphlen = length oneAlph
         indices = [0..(fromJust $ bitSizeMaybe node) - 1]
@@ -474,26 +471,27 @@ displayNode (SInf node) bitAlphs oneAlph blockLens shuffles =
 
 -- | Display a single word of given length
 displayBit :: Either Word16 Word64 -> Int -> V.Vector [Char] -> [String]
-displayBit eWord bitLen alphabets 
+displayBit eWord bitlen alphabets 
     | isLeft eWord = 
         let 
-            bit = head $ lefts [eWord]
+            b = head $ lefts [eWord]
             numchars = V.length alphabets
-            indices = V.fromList [0, bitLen..bitLen*numchars]
-            alphpos = [0..bitLen-1]
-        in V.toList $ V.zipWith (\alph lIndex -> (foldr (\a acc -> if (testBit bit (15 - a - lIndex)) then acc ++ [(alph !! a)] else acc) "|" alphpos) ) alphabets indices
+            indices = V.fromList [0, bitlen..bitlen*numchars]
+            alphpos = [0..bitlen-1]
+        in V.toList $ V.zipWith (\alph lIndex -> (foldr (\a acc -> if (testBit b (15 - a - lIndex)) then acc ++ [(alph !! a)] else acc) "|" alphpos) ) alphabets indices
     | otherwise = 
         let 
-            bit = head $ rights [eWord]
+            b = head $ rights [eWord]
             numchars = V.length alphabets
-            indices = V.fromList [0, bitLen..bitLen*numchars]
-            alphpos = [0..bitLen-1]
-        in V.toList $ V.zipWith (\alph lIndex -> (foldr (\a acc -> if (testBit bit (63 - a - lIndex)) then acc ++ [(alph !! a)] else acc) "|" alphpos) ) alphabets indices
+            indices = V.fromList [0, bitlen..bitlen*numchars]
+            alphpos = [0..bitlen-1]
+        in V.toList $ V.zipWith (\alph lIndex -> (foldr (\a acc -> if (testBit b (63 - a - lIndex)) then acc ++ [(alph !! a)] else acc) "|" alphpos) ) alphabets indices
 
 
 -- | Get the cost, intelligently figuring out whether it's adaptive or non-adaptive
 -- this function allows for the cost to be divided by the alphabet length at each position
 getNodeCost :: BitPackedNode -> PackMode -> V.Vector Int -> Int -> Float
+--getNodeCost node mode blockLens alphLen | trace ("cost of node " ++ show node) False = undefined
 getNodeCost node mode blockLens alphLen
     | not $ adaptive mode = fromIntegral $ div (popCount node) alphLen  
     | bitLen mode == 16 = 
@@ -505,11 +503,13 @@ getNodeCost node mode blockLens alphLen
     | otherwise =         
         let 
             numbits = div (fromJust $ bitSizeMaybe node) 64
-            masked16 = V.map (\mask -> (.|.) (A64 $ V.replicate numbits mask) node) allSelect
+            masked16 = trace ("masked 16 " ++ show numbits)
+                            V.map (\mask -> (.|.) (A64 $ V.replicate numbits mask) node) allSelect
             shifts = V.fromList [48, 32, 16, 0]
-            maskedRight = V.zipWith (\s node -> shift node (-s)) shifts masked16
-            convRight = V.map (\(A64 node) -> V.map (\bit -> fromIntegral bit :: Word16) node) maskedRight
-            counts = V.map (\node -> popCount (A16 node)) convRight 
+            maskedRight = V.zipWith (\s n -> shift n (-s)) shifts masked16
+            convRight = trace ("convRight " ++ show maskedRight)
+                            V.map (\(A64 n) -> V.map (\b -> fromIntegral b :: Word16) n) maskedRight
+            counts = V.map (\n -> popCount (A16 n)) convRight 
             costs = V.zipWith (\l c -> div c l) blockLens counts
         in fromIntegral $ V.sum costs
 

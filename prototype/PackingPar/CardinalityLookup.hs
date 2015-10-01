@@ -1,5 +1,5 @@
 
-module Packing.CardinalityLookup(makeLookup, cardinalityLookup) where
+module CardinalityLookup(makeLookup, cardinalityLookup) where
 
 import qualified Data.Vector as V
 import Data.Word
@@ -15,5 +15,5 @@ makeLookup = V.fromList lookupList
 
 cardinalityLookup :: Word16 -> CardLookup -> Int
 cardinalityLookup bit lTable = --trace ("cardinality lookup at position "++ show bit)
-                                lTable V.! (fromIntegral bit) 
+								lTable V.! (fromIntegral bit) 
 
