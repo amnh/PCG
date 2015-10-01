@@ -51,6 +51,7 @@ module ReadFiles
 , RawData
 , TermData
 , modifyRootCost
+, modifyAlphabet
 ) where
 
 import Data.List
@@ -113,6 +114,10 @@ modifyNumStates charState x =
 modifyRootCost :: CharInfo -> Float -> CharInfo
 modifyRootCost  charState x =
     charState { rootCost = x }
+
+modifyAlphabet :: CharInfo -> [String] -> CharInfo
+modifyAlphabet charState alph = 
+    charState {alphabet = alph }
 
 -- | getTaxonNames identify taxon names (with leading '>'--no space after '>') from input lines (to allow for
 --non-name info in taxon line ala fasta
