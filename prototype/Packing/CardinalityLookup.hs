@@ -15,5 +15,5 @@ makeLookup = V.fromList lookupList
 
 cardinalityLookup :: Word16 -> CardLookup -> Int
 cardinalityLookup bit lTable = --trace ("cardinality lookup at position "++ show bit)
-                               lTable V.! (fromIntegral bit) 
+                                lTable V.! (fromIntegral bit) 
 

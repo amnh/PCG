@@ -5,14 +5,12 @@ module Packing.PackedOptimize (allOptimization, optimizeForest, getRootCost) whe
 -- imports 
 import Packing.PackedBuild
 import Debug.Trace
-import ReadFiles
 import Component
 import qualified Data.Vector as V
 import qualified Packing.BitPackedNode as BN
 
 -- | Useful higher level data structures of trees, costs, etc
 type TreeInfo = (PhyloComponent, PackedTree)
-type NodeInfo = (PhyloNode, PackedTree)
 type ExpandTree = (PhyloComponent, PackedTree, PackedTree)
 type NewRows = [(Int, BN.BitPackedNode)]
 type NewNodes = [(Int, PhyloNode)]
@@ -24,9 +22,9 @@ optimizeForest forestTrees (packForest, pInfo, pMode) weight = zipWith (\dat tre
 
 -- | Unified function to perform both the first and second passes of fitch
 allOptimization :: TreeInfo -> PackedInfo -> BN.PackMode -> Float -> TreeInfo
-allOptimization input@(tree, initMat) pInfo pMode weight = 
+allOptimization input pInfo pMode weight = 
     let 
-        downPass@(tree, mat, fmat) = optimizationDownPass input pInfo pMode weight
+        downPass = optimizationDownPass input pInfo pMode weight
         upPass = --trace ("down pass done " ++ show mat )
                     optimizationUpPass downPass pInfo pMode
     in upPass
@@ -121,7 +119,7 @@ internalDownPass (tree, mat) pInfo myCode pMode weight
 -- | Bit operations for the down pass: basically creats a mask for union and intersection areas and then takes them
 -- returns the new assignment, the union/intersect mask, and the new total cost
 downBitOps :: (NodeCost, BN.BitPackedNode) -> (NodeCost, BN.BitPackedNode) -> PackedInfo -> BN.PackMode -> Float -> (BN.BitPackedNode, BN.BitPackedNode, NodeCost)
---downBitOps (lcost, lbit) (rcost, rbit) pInfo pMode | trace ("down bit ops with bit ") False = undefined
+--downBitOps (lcost, lbit) (rcost, rbit) pInfo pMode weight | trace ("down bit ops with bit " ++ show lbit) False = undefined
 downBitOps (lcost, lbit) (rcost, rbit) pInfo pMode weight =
     let
         notOr = BN.complement $ lbit BN..&. rbit 
@@ -143,13 +141,13 @@ downBitOps (lcost, lbit) (rcost, rbit) pInfo pMode weight =
 combChanges :: NewRows -> PackedTree -> PackedTree
 --combChanges changes initMat | trace ("combChanges with matrices "++ show changes) False = undefined
 combChanges changes initMat -- check for duplicates and throw an error
-    | -1 `elem` (foldr (\(code, _) acc -> if code `elem` acc then -1 : code : acc else acc) [] changes) = error "multiple changes made to same node"
+    | -1 `elem` (foldr (\(c, _) acc -> if c `elem` acc then -1 : c : acc else acc) [] changes) = error "multiple changes made to same node"
     | otherwise = (V.//) initMat changes
 
 -- | Combine changes to a tree from left and right children, multiple changes to the same node are not allowed
 combTreeChanges :: NewNodes -> PhyloComponent -> PhyloComponent
 combTreeChanges changes origTree 
-    | -1 `elem` (foldr (\(code, _) acc -> if code `elem` acc then -1 : code : acc else acc) [] changes) = error "multiple changes made to same node"
+    | -1 `elem` (foldr (\(c, _) acc -> if c `elem` acc then -1 : c : acc else acc) [] changes) = error "multiple changes made to same node"
     | otherwise = (V.//) origTree changes
 
 -- | Wrapper for up pass recursion to deal with root
@@ -193,23 +191,21 @@ internalUpPass (tree, mat, fmat) pInfo myCode pMode
             leftCode = head $ children node
             rightCode = head $ tail $ children node
             parentCode = head $ parents $ tree V.! myCode
-            newBit = upPassBitOps (mat V.! parentCode) (mat V.! myCode) (mat V.! leftCode) (mat V.! rightCode) (fmat V.! myCode) pInfo pMode
+            newBit = upPassBitOps (mat V.! parentCode) (mat V.! myCode) (mat V.! leftCode) (mat V.! rightCode) (fmat V.! myCode) pInfo 
             passMat = (V.//) mat [(myCode, newBit)] 
-            leftChanges = internalUpPass (tree, mat, fmat) pInfo leftCode pMode
-            rightChanges = internalUpPass (tree, mat, fmat) pInfo rightCode pMode
+            leftChanges = internalUpPass (tree, passMat, fmat) pInfo leftCode pMode
+            rightChanges = internalUpPass (tree, passMat, fmat) pInfo rightCode pMode
         in (myCode, newBit) : (leftChanges ++ rightChanges)
 
 -- | Bit operations for the up pass
-upPassBitOps :: BN.BitPackedNode -> BN.BitPackedNode ->BN.BitPackedNode -> BN.BitPackedNode -> BN.BitPackedNode -> PackedInfo -> BN.PackMode -> BN.BitPackedNode
-upPassBitOps pBit myBit lBit rBit fBit pInfo pMode = 
+upPassBitOps :: BN.BitPackedNode -> BN.BitPackedNode ->BN.BitPackedNode -> BN.BitPackedNode -> BN.BitPackedNode -> PackedInfo -> BN.BitPackedNode
+upPassBitOps pBit myBit lBit rBit fBit pInfo = 
     let 
         setX = (BN.complement myBit) BN..&. pBit
         notX = BN.complement setX
-        notXShift = BN.shift notX (-1)
         setG = notX BN..&. (snd $ masks pInfo)
         rightG = BN.blockShiftAndFold "R" "&" notX (blockLenMap pInfo) (length $ maxAlphabet pInfo) setG
         finalG = BN.blockShiftAndFold "L" "|" rightG (blockLenMap pInfo) (length $ maxAlphabet pInfo) rightG
-        maskedG = (fst $ masks pInfo) BN..&. finalG
         maskedNotG = (fst $ masks pInfo) BN..&. (BN.complement finalG)
         maskedNotF = (fst $ masks pInfo) BN..&. (BN.complement fBit)
         setS = myBit BN..&. (pBit BN..|. maskedNotG)
