@@ -8,4 +8,4 @@ all: packing-benchmark
 packing-benchmark: Packing/PackedTest.hs
 	ghc $< -o $@ -main-is Packing.PackedTest $(optimize) $(linking) $(warnings) $(sanity)
 clean:
-	rm -R *.o *.hi
+	find . -type f -name '*.o' -delete && find . -type f -name '*.hi' -delete
