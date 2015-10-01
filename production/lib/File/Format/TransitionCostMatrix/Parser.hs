@@ -7,7 +7,6 @@ module File.Format.TransitionCostMatrix.Parser
   , transitionCosts
   ) where
 
-import Data.Functor.Identity (Identity,runIdentity)
 import Data.List             (sort)
 import Data.Matrix           (Matrix,fromList)
 import Data.Maybe            (catMaybes)

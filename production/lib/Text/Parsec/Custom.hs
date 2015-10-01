@@ -3,6 +3,7 @@
 module Text.Parsec.Custom
  ( (<:>)
  , (<++>)
+ , anyTill
  , caseInsensitiveChar
  , caseInsensitiveString
  , eol
