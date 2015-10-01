@@ -42,6 +42,8 @@ module Component
 , NodeCode(..)
 , getForestCostList
 , getRootCosts
+, modifyLocalCost
+, modifyTotalCost
 ) where
 
 import Data.List
