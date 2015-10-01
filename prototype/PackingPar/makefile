@@ -4,7 +4,7 @@ optimize = -O2
 linking  = -main-is $(main)
 warnings = -w -W -Wall
 sanity   = -fwarn-duplicate-exports -fwarn-incomplete-patterns -fwarn-missing-signatures -fwarn-overlapping-patterns -fwarn-unused-binds -fwarn-unused-imports -fwarn-unused-matches -fwarn-unused-do-bind 
-otherDir = -i"../../phylocomgraph":"." 
+otherDir = -i"../":"." 
 name     = $(main)
 source   = $(main).$(language)
 

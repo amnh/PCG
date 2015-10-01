@@ -6,12 +6,14 @@ module PackedBuild (performPack,
 
 import qualified BitPackedNode as BN
 import qualified Data.Vector as V
+import CharacterData
 import ReadFiles
 import Component
 import Debug.Trace
 import Data.List
 import qualified Data.Map as M
 import Data.Maybe
+import Control.Parallel.Strategies
 
 -- | Define necessary types, mainly useful structures of nodes
 type SeenAlphs = [[Char]]
@@ -38,8 +40,8 @@ data PackedInfo = PackedInfo 	{ blockLenMap :: BlockLenMap
 
 -- | Standard special characters for genetic and amino acid sequences, based on standard codes
 specialCharsGene = M.fromList [('?', "ACGT-"), ('R', "AG"), ('Y', "CT"), ('S', "GC"), ('W', "AT"), ('K', "GT"), ('M', "AC"), ('B', "CGT"), 
-					('D', "AGT"), ('H', "ACT"), ('H', "ACT"), ('V', "ACG"), ('N', "ACGT")] :: M.Map Char String
-specialCharsNuc = M.fromList [('?', "ACDEFGHIKLMNPQRSTVWY")] :: M.Map Char String
+					('D', "AGT"), ('H', "ACT"), ('H', "ACT"), ('V', "ACG"), ('N', "ACGT")]
+specialCharsNuc = M.fromList [('?', "ACDEFGHIKLMNPQRSTVWY")]
 
 -- | Master function to determine the mode and do all of the packing after checking for incorrect data types
 performPack :: RawData -> [String] -> PhyloForest -> (String, String) -> (PackedForest, PackedInfo, BN.PackMode)
@@ -48,20 +50,21 @@ performPack raw@(pairedData, infoList) names forest inMode
 	| otherwise = 
 		let 
 			numChars = length $ snd $ head pairedData
-			alphabets = genSeenAlphabets pairedData numChars
-			special = trace ("alphabets " ++ show (length alphabets))
+			alphabets = genAlphMap pairedData numChars
+			special = --trace ("alphabets " ++ show (length alphabets))
 						getSpecial alphabets (head infoList)
 			overallAlph = special M.! '?'
 			pMode = getPackMode inMode overallAlph
 			pInfo = getPackInfo raw pMode alphabets special
-			leaves = createPackedLeaves pMode pInfo raw
+			leaves = createPackedLeaves pMode pInfo raw names
 			packForest = V.fromList $ map (\tree -> packTree names leaves tree) forest
-		in (packForest, pInfo, pMode)
+		in --trace ("packed forest " ++ show packForest)
+				(packForest, pInfo, pMode)
 
 
 -- | Helper function to take string input and output the BN.PackMode object, automatically determining as needed
 getPackMode :: (String, String) -> [Char] -> BN.PackMode
-getPackMode (genMode, bitLen) alph
+getPackMode (genMode, bitLen) alphabet
 	| genMode == "automatic" = setAutoPack alphlen
 	| bitLen == "16" && alphlen > 16 = trace ("bit length set to 16 but alphabet length is " ++ show alphlen ++ " auto packing instead")
 										setAutoPack alphlen
@@ -73,7 +76,7 @@ getPackMode (genMode, bitLen) alph
 	| genMode == "static" && bitLen == "64" = BN.MakePackMode {BN.bitLen = 64, BN.adaptive = False}
 	| genMode == "static" && bitLen == "infinite" = BN.MakePackMode {BN.bitLen = 0, BN.adaptive = False}
 	| otherwise = trace ("pack mode set incorrectly, performing auto mode pack") (setAutoPack alphlen) 
-		where alphlen = length alph
+		where alphlen = length alphabet
 
 -- | Helper function to determine the best packing mode for some data
 -- based on early results it looks like static 64 performs best, but further use cases could change this
@@ -85,12 +88,12 @@ setAutoPack alphlen
 -- | Creates the pack info structure, filling in everything for the word types (in which case it won't be evaluated because of laziness)
 -- and only giving the infinite what's meaningful
 getPackInfo :: RawData -> BN.PackMode -> SeenAlphs -> SpecialMap -> PackedInfo
-getPackInfo (pairedData, _) pMode alphabets special 
+getPackInfo raw@(pairedData, infoList) pMode alphabets special 
 	| BN.bitLen pMode == 16 = 
 		let 
-			(blocklens, finalAlphs, shuffle) = adaptiveReGroup nubAlphabets 16 
+			regroup@(blocklens, finalAlphs, shuffle) = adaptiveReGroup nubAlphabets special 16 numChars
 			mapChars = V.map V.length finalAlphs
-			m = BN.genMasks blocklens mapChars alphlen numChars pMode
+			m@(occMask, sMask) = BN.genMasks blocklens mapChars alphlen numChars pMode
 		in PackedInfo {
 						blockLenMap = blocklens, 
 						bitAlphs = finalAlphs,
@@ -102,9 +105,9 @@ getPackInfo (pairedData, _) pMode alphabets special
 						masks = m} 
 	| BN.bitLen pMode == 64 = 
 		let 
-				(blocklens, finalAlphs, shuffle) = adaptiveReGroup nubAlphabets 64 
+				regroup@(blocklens, finalAlphs, shuffle) = adaptiveReGroup nubAlphabets special 64 numChars
 				mapChars = V.map V.length finalAlphs
-				m = BN.genMasks blocklens mapChars alphlen numChars pMode
+				m@(occMask, sMask) = BN.genMasks blocklens mapChars alphlen numChars pMode
 			in PackedInfo {
 							blockLenMap = blocklens, 
 							bitAlphs = finalAlphs,
@@ -116,7 +119,7 @@ getPackInfo (pairedData, _) pMode alphabets special
 							masks = m} 
 	| BN.bitLen pMode == 0 = 
 		let 
-			m = BN.genMasks V.empty V.empty alphlen numChars pMode
+			m@(occMask, sMask) = BN.genMasks V.empty V.empty alphlen numChars pMode
 		in PackedInfo {
 						blockLenMap = V.empty, 
 						bitAlphs = V.empty,
@@ -144,11 +147,21 @@ genSeenAlphabets terminals numChars
 	| null $ snd $ head terminals = []
 	| otherwise = 
 		let
-			heads = map (\(_, chars) -> head chars) terminals
-			rest = map (\(n, chars) -> (n, tail chars)) terminals
+			heads = map (\(name, chars) -> head chars) terminals
+			tails = map (\(name, chars) -> (name, tail chars)) terminals
 			allTogether = nub (map head heads)
-			toSee = genSeenAlphabets rest numChars 
+			toSee = genSeenAlphabets tails numChars 
 		in allTogether : toSee
+
+-- | Get the seen alphabets by a map over each index for parallelization
+genAlphMap :: [TermData] -> Int -> SeenAlphs
+genAlphMap terminals numChars = map (\i -> genAlphAtI terminals numChars i) [0..numChars] `using` (parListChunk 8 rseq)
+
+-- | Create the reduced alphabets at an index
+genAlphAtI :: [TermData] -> Int -> Int -> [Char]
+genAlphAtI terminals numChars index 
+	| index >= numChars = []
+	| otherwise = nub $ map (\(name, chars) -> head $ chars !! index) terminals
 
 -- | Function to correctly map the question mark to all characters
 -- uses the charInfo as meaningful, but has a fall through in case
@@ -169,24 +182,42 @@ getSpecial alphabets charInfo
 
 -- | Do the regrouping process to put characters with the same length of seen alphabet together
 -- also develops other relevant information and splits into the necessary number for packing
-adaptiveReGroup :: [[Char]] -> Int -> (BlockLenMap, BitAlphabets, ShuffleChars)
-adaptiveReGroup alphabets groupLen =
+adaptiveReGroup :: [[Char]] -> M.Map Char String -> Int -> Int -> (BlockLenMap, BitAlphabets, ShuffleChars)
+adaptiveReGroup alphabets special groupLen numChars =
 	let
 		maxlen = foldr (\alph acc -> if (length alph) > acc then length alph else acc) 0 alphabets
-		(alphGroups, groupMembers) = reGroupChars alphabets 1 maxlen
-		nbAlphs = --trace ("groups " ++ show alphGroups)
-					[a | a<- alphGroups, a /= []]
+		groups@(alphGroups, groupMembers) = reGroupPar alphabets maxlen
+		nbAlphs = [a | a<- alphGroups, a /= []]
 		nbMembs = [m | m<-groupMembers, m /=[]]
-		numCharList = map length nbMembs
+		numChars = map length nbMembs
 		(splitAlphGroups, splitGroupMembers) = --trace ("split with numChars " ++ show numChars ++ "and num groups " ++ show (length nbAlphs))
-												splitAtInt (nbAlphs, nbMembs) groupLen numCharList
+												splitAtInt (nbAlphs, nbMembs) groupLen numChars
 		finalAlphs = V.fromList $ map V.fromList splitAlphGroups
 		blocklens = V.fromList $ map (\g -> length $ head g) splitAlphGroups
 		shuffle = V.fromList splitGroupMembers
 	in (blocklens, finalAlphs, shuffle)
+
+-- | regroup as a map instead of recursion for parallelization
+reGroupPar :: [String] -> Int -> ([[String]], [[Int]])
+reGroupPar inAlph maxlen = 
+	let 
+		iter = [1..maxlen]
+		raw = map (\i -> reGroupAtI inAlph i) iter `using` (parListChunk 4 rpar) :: [([String], [Int])]
+		indices = foldr (\(alph, i) acc -> i : acc) [] raw
+		alphabets = foldr (\(alph, i) acc -> alph : acc) [] raw 
+	in (alphabets, indices)
+
+	where 
+		-- |Regroup at a single index
+		reGroupAtI :: [String] -> Int -> ([String], [Int])
+		reGroupAtI alphabets searchLen = 
+			let 			
+				indices = [i | i <- [0..length alphabets - 1], (length $ alphabets !! i) == searchLen]
+				matchAlphabets = map (\i -> alphabets !! i) indices
+			in (matchAlphabets, indices)
 		
 -- | Lower-level function to regroup for a single seen alphabet length and recurse
-reGroupChars :: [[Char]] -> Int -> Int -> ([[[Char]]], [[Int]])
+reGroupChars :: [[Char]] -> Int -> Int -> ([[String]], [[Int]])
 --reGroupChars alphabets string searchLen | trace ("re group chars with searchlen " ++ show searchLen ++ " and string length " ++ show (length string)) False = undefined
 reGroupChars alphabets searchLen maxlen 
 	| searchLen > maxlen = ([], [])
@@ -196,7 +227,7 @@ reGroupChars alphabets searchLen maxlen
 			matchAlphabets = --trace ("indices " ++ show indices ++ " and alphabets " ++ show alphabets)
 							map (\i -> alphabets !! i) indices
 			(alphGroups, groupMembers) = reGroupChars alphabets (searchLen + 1) maxlen
-			ret = (matchAlphabets : alphGroups, indices : groupMembers)
+			ret@(allAlphs, allMembs) = (matchAlphabets : alphGroups, indices : groupMembers)
 		in ret
 
 -- | Function to split groups at the word length for packing
@@ -224,15 +255,18 @@ splitAtInt (inAlph, inGroups) sPoint numChars
 
 
 -- | Creates a leaf matrix for a packed forest given the raw data, simply a recursion of charSetToPacked
-createPackedLeaves :: BN.PackMode -> PackedInfo -> RawData -> PackedTree 
-createPackedLeaves pMode pInfo (pairedData, infoList) 
+createPackedLeaves :: BN.PackMode -> PackedInfo -> RawData -> [String] -> PackedTree 
+createPackedLeaves pMode pInfo raw@(pairedData, infoList) names
 	| (length pairedData == 0) = V.empty
-	| otherwise = (charSetToPacked (snd $ head pairedData) (head infoList) pInfo pMode) `V.cons` (createPackedLeaves pMode pInfo ((tail pairedData), infoList))
+	| otherwise = 
+		let indices = [0..length pairedData - 1]
+		in V.fromList $ parMap rpar (\i -> charSetToPacked (snd $ pairedData !! i) (infoList !! i) pInfo pMode (names !! i)) indices
+		--(charSetToPacked (snd $ head pairedData) (head infoList) pInfo pMode (head names)) `V.cons` (createPackedLeaves pMode pInfo ((tail pairedData), infoList) (tail names))
 
 
 -- | Converts a single node into a packed node
-charSetToPacked :: [String] -> CharInfo -> PackedInfo -> BN.PackMode -> BN.BitPackedNode
-charSetToPacked strings charInfo pInfo pMode
+charSetToPacked :: [String] -> CharInfo -> PackedInfo -> BN.PackMode -> String -> BN.BitPackedNode
+charSetToPacked strings charInfo pInfo pMode myName
 	| ((length strings) == 0) || ((head strings) == "no_data") = BN.EmptyPackNode
 	| charType charInfo == Add = error "packing only available for non-additive characters"
 	| (length strings /= totalChars pInfo) = error "inconsistent number of characters, unsuitable for bit packing"
