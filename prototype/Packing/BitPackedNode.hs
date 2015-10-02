@@ -38,13 +38,15 @@ instance NFData BV.BV where
 
 -- | make the cardinality table and the masks for 64 bit cardinality
 -- All cardinalities except for the "infinite" type are from the stored table
-cardTable :: CardLookup
-cardTable = makeLookup
-fth16, thd16, snd16, fst16 :: Word64 
-fth16 = (foldr (\i acc -> acc + 2^i) (0 :: Word64) ([48 .. 64] :: [Int]))
-thd16 = (foldr (\i acc -> acc + 2^i) (0 :: Word64) ([32 .. 47] :: [Int]))
-snd16 = (foldr (\i acc -> acc + 2^i) (0 :: Word64) ([16 .. 31] :: [Int]))
-fst16 = (foldr (\i acc -> acc + 2^i) (0 :: Word64) ([0  .. 15] :: [Int]))
+cardTable :: V.Vector Int
+cardTable = makeLookup 
+
+fth16, thd16, snd16, fst16 :: Word64
+fth16 = (foldr (\i acc -> acc + 2^i) (0 :: Word64) ([48 .. 64] :: [Int])) 
+thd16 = (foldr (\i acc -> acc + 2^i) (0 :: Word64) ([32 .. 47] :: [Int])) 
+snd16 = (foldr (\i acc -> acc + 2^i) (0 :: Word64) ([16 .. 31] :: [Int])) 
+fst16 = (foldr (\i acc -> acc + 2^i) (0 :: Word64) ([0 .. 15] :: [Int]))
+
 allSelect :: V.Vector Word64
 allSelect = V.fromList [fst16, snd16, thd16, fth16] 
 

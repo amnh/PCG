@@ -4,21 +4,15 @@ module PackedOptimize (allOptimization, optimizeForest, getRootCost) where
 
 -- imports 
 import PackedBuild
-import BitPackedNode
-import Debug.Trace
-import ReadFiles
 import Component
 import qualified Data.Vector as V
 import qualified BitPackedNode as BN
 import Control.Parallel.Strategies
 import Control.DeepSeq
-import Control.Monad.Par
-import Data.Word
 import Data.Maybe
 
 -- | Useful higher level data structures of trees, costs, etc
 type TreeInfo = (PhyloComponent, PackedTree)
-type NodeInfo = (PhyloNode, PackedTree)
 type ExpandTree = (PhyloComponent, PackedTree, PackedTree)
 type NewRows = [(Int, BN.BitPackedNode)]
 type NewNodes = [(Int, V.Vector Float)]
@@ -30,16 +24,16 @@ optimizeForest forestTrees (packForest, pInfo, pMode) weight = zipWith (\dat tre
 
 -- | Unified function to perform both the first and second passes of fitch
 allOptimization :: TreeInfo -> PackedInfo -> BN.PackMode -> Float -> TreeInfo
-allOptimization input@(tree, initMat) pInfo pMode weight = 
+allOptimization input pInfo pMode inWeight = 
     let 
-        downPass@(tree, mat, fmat) = optimizationDownPass input pInfo pMode weight
+        downPass = optimizationDownPass input pInfo pMode inWeight
         upPass = --trace ("down pass done " ++ show mat )
         			optimizationUpPass downPass pInfo pMode
     in upPass
 
 -- | Optimization down pass warpper for recursion from root
 optimizationDownPass :: TreeInfo -> PackedInfo -> BN.PackMode -> Float -> ExpandTree
-optimizationDownPass (tree, mat) pInfo pMode weight
+optimizationDownPass (tree, mat) pInfo pMode inWeight
 	| (length $ children root) > 2 = error "Fitch algorithm only applies to binary trees" -- more than two children means fitch won't work
 	| isTerminal root = -- if the root is a terminal, give the whole tree a cost of zero, do not reassign nodes
 		let 
@@ -49,7 +43,7 @@ optimizationDownPass (tree, mat) pInfo pMode weight
 	| (length $ children root) == 1 = -- if there is only one child, continue recursion down and resolve
         let 
             leftChild = head $ children root
-            (nodes1, mRows1, fRows1) = internalDownPass (tree, mat) pInfo leftChild pMode weight
+            (nodes1, mRows1, fRows1) = internalDownPass (tree, mat) pInfo leftChild pMode inWeight
             carryBit = snd $ head mRows1 -- with only one child, assignment and cost is simply carried up
             carryFBit = snd $ head fRows1
             carryCost = snd $ head nodes1
@@ -64,12 +58,12 @@ optimizationDownPass (tree, mat) pInfo pMode weight
         let 
             leftChild = head $ children root
             rightChild = head $ tail $ children root
-            ((nodes1, mRows1, fRows1), (nodes2, mRows2, fRows2)) = parChildren (tree, mat) pInfo pMode weight leftChild rightChild
+            ((nodes1, mRows1, fRows1), (nodes2, mRows2, fRows2)) = parChildren (tree, mat) pInfo pMode inWeight leftChild rightChild
             lbit = snd $ head mRows1
             rbit = snd $ head mRows2
             lcost = snd $ head nodes1
             rcost = snd $ head nodes2
-            (mybit, myF, myCost) = downBitOps (lcost, lbit) (rcost, rbit) pInfo pMode weight
+            (mybit, myF, myCost) = downBitOps (lcost, lbit) (rcost, rbit) pInfo pMode inWeight
             treeUpdates = (code root, myCost) : (nodes1 ++ nodes2)
             allMChanges = (code root, mybit) : (mRows1 ++ mRows2) -- new bits always added to head to pass to bit ops
             allFRows = (code root, myF) : (fRows1 ++ fRows2)
@@ -83,18 +77,18 @@ optimizationDownPass (tree, mat) pInfo pMode weight
 
 -- | Function to run children in parallel
 parChildren :: TreeInfo -> PackedInfo -> BN.PackMode -> Float -> Int -> Int -> ((NewNodes, NewRows, NewRows), (NewNodes, NewRows, NewRows))
-parChildren tInfo pInfo pMode weight leftChild rightChild = runEval $ do
-        leftEval <- rpar (force (internalDownPass tInfo pInfo leftChild pMode weight))
-        rightEval <- rpar (force (internalDownPass tInfo pInfo rightChild pMode weight))
-        rseq leftEval
-        rseq rightEval
+parChildren tInfo pInfo pMode inWeight leftChild rightChild = runEval $ do
+        leftEval <- rpar (force (internalDownPass tInfo pInfo leftChild pMode inWeight))
+        rightEval <- rpar (force (internalDownPass tInfo pInfo rightChild pMode inWeight))
+        _ <- rseq leftEval
+        _ <- rseq rightEval
         return (leftEval, rightEval)
 
 
 -- | Internal down pass that creates new rows without combining, making the algorithm faster
 internalDownPass :: TreeInfo -> PackedInfo -> Int -> BN.PackMode -> Float -> (NewNodes, NewRows, NewRows)
 --internalDownPass (tree, mat) pInfo myCode pMode | trace ("internal down pass with code " ++ show (mat V.! myCode)) False = undefined
-internalDownPass (tree, mat) pInfo myCode pMode weight
+internalDownPass (tree, mat) pInfo myCode pMode inWeight
 	| isTerminal node = --if it's a leaf, just vie cost zero and bounce up
         ([(myCode, (V.singleton 0))], [(myCode, mat V.! myCode)], [(myCode, mat V.! myCode)])
     | (length $ children node) > 2 = error "Fitch algorithm only works for binary trees"
@@ -102,7 +96,7 @@ internalDownPass (tree, mat) pInfo myCode pMode weight
     | (length $ children node) == 1 = --if only one child, recurse down and carry the assignment
         let 
             leftChild = head $ children node
-            (nodes1, mRows1, fRows1) = internalDownPass (tree, mat) pInfo leftChild pMode weight
+            (nodes1, mRows1, fRows1) = internalDownPass (tree, mat) pInfo leftChild pMode inWeight
             carryBit = --trace ("carry bit " ++ show mRows1 ++ " and code " ++ show myCode)
             			snd $ head mRows1
             carryFBit = snd $ head fRows1
@@ -116,12 +110,12 @@ internalDownPass (tree, mat) pInfo myCode pMode weight
             leftChild = --trace ("children " ++ show (children node))
                         head $ children node
             rightChild = head $ tail $ children node
-            ((nodes1, mRows1, fRows1), (nodes2, mRows2, fRows2)) = parChildren (tree, mat) pInfo pMode weight leftChild rightChild
+            ((nodes1, mRows1, fRows1), (nodes2, mRows2, fRows2)) = parChildren (tree, mat) pInfo pMode inWeight leftChild rightChild
             lbit = snd $ head mRows1
             rbit = snd $ head mRows2
             lcost = snd $ head nodes1
             rcost = snd $ head nodes2
-            (mybit, myF, myCost) = downBitOps (lcost, lbit) (rcost, rbit) pInfo pMode weight
+            (mybit, myF, myCost) = downBitOps (lcost, lbit) (rcost, rbit) pInfo pMode inWeight
             treeUpdates = (myCode, myCost) : (nodes1 ++ nodes2)
             allMChanges = (myCode, mybit) : (mRows1 ++ mRows2) -- new bits always added to head to pass to bit ops
             allFRows = (myCode, myF) : (fRows1 ++ fRows2)
@@ -133,7 +127,7 @@ internalDownPass (tree, mat) pInfo myCode pMode weight
 -- returns the new assignment, the union/intersect mask, and the new total cost
 downBitOps :: (NodeCost, BN.BitPackedNode) -> (NodeCost, BN.BitPackedNode) -> PackedInfo -> BN.PackMode -> Float -> (BN.BitPackedNode, BN.BitPackedNode, NodeCost)
 --downBitOps (lcost, lbit) (rcost, rbit) pInfo pMode weight | trace ("down bit ops with bit " ++ show lbit ++ " and right " ++ show rbit) False = undefined
-downBitOps (lcost, lbit) (rcost, rbit) pInfo pMode weight =
+downBitOps (lcost, lbit) (rcost, rbit) pInfo pMode inWeight =
 	let
 		notOr = BN.complement $ lbit BN..&. rbit 
 		union = --trace ("notOr " ++ show notOr)
@@ -146,7 +140,7 @@ downBitOps (lcost, lbit) (rcost, rbit) pInfo pMode weight =
 					(fst $ masks pInfo) BN..&. finalF
 		myCost = --trace ("in to cost " ++ show maskF)
                     BN.getNodeCost maskF pMode (blockLenMap pInfo) (length $ maxAlphabet pInfo)
-		weightCost = weight * myCost
+		weightCost = inWeight * myCost
 		newcost = V.singleton $ (V.head lcost) + (V.head rcost) + weightCost
 		outbit = (maskF BN..&. union) BN..|. (lbit BN..&. rbit)
 	in --trace ("finished bit ops " ++ show outbit)
@@ -157,13 +151,13 @@ downBitOps (lcost, lbit) (rcost, rbit) pInfo pMode weight =
 combChanges :: NewRows -> PackedTree -> PackedTree
 --combChanges changes initMat | trace ("combChanges with matrices "++ show changes) False = undefined
 combChanges changes initMat -- check for duplicates and throw an error
-    | -1 `elem` (foldr (\(code, _) acc -> if code `elem` acc then -1 : code : acc else acc) [] changes) = error "multiple changes made to same node"
+    | -1 `elem` (foldr (\(c, _) acc -> if c `elem` acc then -1 : c : acc else acc) [] changes) = error "multiple changes made to same node"
     | otherwise = parVecUpdate initMat changes
 
 -- | Combine changes to a tree from left and right children, multiple changes to the same node are not allowed
 combTreeChanges :: NewNodes -> PhyloComponent -> PhyloComponent
 combTreeChanges changes origTree 
-    | -1 `elem` (foldr (\(code, _) acc -> if code `elem` acc then -1 : code : acc else acc) [] changes) = error "multiple changes made to same node"
+    | -1 `elem` (foldr (\(c, _) acc -> if c `elem` acc then -1 : c : acc else acc) [] changes) = error "multiple changes made to same node"
     | otherwise = 
         let newNodes = map (\(index, cost) -> (index, modifyTotalCost (origTree V.! index) cost)) changes
         in parVecUpdate origTree newNodes
@@ -211,8 +205,8 @@ parUpPass :: ExpandTree -> PackedInfo -> Int -> Int -> BN.PackMode -> (NewRows, 
 parUpPass tInfo pInfo leftCode rightCode pMode  = runEval $ do
         leftEval <- rpar (force (internalUpPass tInfo pInfo leftCode pMode))
         rightEval <- rpar (force (internalUpPass tInfo pInfo rightCode pMode))
-        rseq leftEval
-        rseq rightEval
+        _ <- rseq leftEval
+        _ <- rseq rightEval
         return (leftEval, rightEval)
 
 
@@ -234,22 +228,20 @@ internalUpPass (tree, mat, fmat) pInfo myCode pMode
             leftCode = head $ children node
             rightCode = head $ tail $ children node
             parentCode = head $ parents $ tree V.! myCode
-            newBit = upPassBitOps (mat V.! parentCode) (mat V.! myCode) (mat V.! leftCode) (mat V.! rightCode) (fmat V.! myCode) pInfo pMode
+            newBit = upPassBitOps (mat V.! parentCode) (mat V.! myCode) (mat V.! leftCode) (mat V.! rightCode) (fmat V.! myCode) pInfo
             passMat = (V.//) mat [(myCode, newBit)] 
-            (leftChanges, rightChanges) = parUpPass (tree, mat, fmat) pInfo leftCode rightCode pMode
+            (leftChanges, rightChanges) = parUpPass (tree, passMat, fmat) pInfo leftCode rightCode pMode
         in (myCode, newBit) : (leftChanges ++ rightChanges)
 
 -- | Bit operations for the up pass
-upPassBitOps :: BN.BitPackedNode -> BN.BitPackedNode ->BN.BitPackedNode -> BN.BitPackedNode -> BN.BitPackedNode -> PackedInfo -> BN.PackMode -> BN.BitPackedNode
-upPassBitOps pBit myBit lBit rBit fBit pInfo pMode = 
+upPassBitOps :: BN.BitPackedNode -> BN.BitPackedNode ->BN.BitPackedNode -> BN.BitPackedNode -> BN.BitPackedNode -> PackedInfo -> BN.BitPackedNode
+upPassBitOps pBit myBit lBit rBit fBit pInfo = 
 	let 
 		setX = (BN.complement myBit) BN..&. pBit
 		notX = BN.complement setX
-		notXShift = BN.shift notX (-1)
 		setG = notX BN..&. (snd $ masks pInfo)
 		rightG = BN.blockShiftAndFold "R" "&" notX (blockLenMap pInfo) (length $ maxAlphabet pInfo) setG
 		finalG = BN.blockShiftAndFold "L" "|" rightG (blockLenMap pInfo) (length $ maxAlphabet pInfo) rightG
-		maskedG = (fst $ masks pInfo) BN..&. finalG
 		maskedNotG = (fst $ masks pInfo) BN..&. (BN.complement finalG)
 		maskedNotF = (fst $ masks pInfo) BN..&. (BN.complement fBit)
 		setS = myBit BN..&. (pBit BN..|. maskedNotG)

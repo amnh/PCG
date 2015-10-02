@@ -11,53 +11,16 @@ import Data.Maybe
 import Data.Vector           (Vector,fromList,toList)
 import File.Format.Fastc.Parser
 import File.Format.Newick
---import qualified Data.Set as Set
+import System.IO
+import System.Environment
+import qualified Data.Text as T
+import qualified Data.Set as Set
 import CharacterData
 import ReadFiles
---import ReadGraphs
 import Component
 import Packing.PackedBuild
 import Packing.PackedOptimize
 import Prelude hiding (lookup)
-
-import Debug.Trace (trace)
-
-{-
--- | 'pcg' Main Function to run PCG
-main :: IO ()
-main = 
-    do
-        --get input command filename
-        args <- getArgs
-        scriptFileHandle <- checkScriptInfo args
-        commandDataString <- hGetContents scriptFileHandle
-        let commandList = reverse $ parseCommandList (T.pack commandDataString)
-        hPutStrLn stderr ("Command list " ++ show commandList)
-        let (readDataList, readGraphList, reportList, exitList, analysisList) = parseCommands commandDataString 
-        let pairDataList = getReadContents readDataList
-        let inputGraphList = getGraphContents readGraphList
-        if not $ null inputGraphList then printGraphVizDot (head inputGraphList) "tempFile.dot"
-        else hPutStrLn stderr "No input graph to report"
-        let finalInput  = flattenCharList pairDataList  
-        let termNameList = getNameList $ fst finalInput
-        --Check that leaves on graph and input data agree
-        let graphAndDataJibe = checkGraphAndData (Set.fromList termNameList) inputGraphList
-        if graphAndDataJibe then hPutStrLn stderr "Input graphs and data jibe"
-        else error "Input graphs and data terminals are inconsistent"
-
-        -- | Beginning of section to pack and fitch optimize
-        let weight = 1
-        --let cInfo = head $ snd finalInput
---        let curForestList = --trace ("forest "++ show inputGraphList) 
---                            baseDataToLeafNodes inputGraphList
-        let pack@(allPacked, packInfo, pMode) = --trace ("pack "++ show curForestList) 
-                           performPack finalInput termNameList (head curForestList) ("adaptive","16")
-        --putStrLn("packed " ++ show (V.head $ V.head $! allPacked))
-        let optimized = --trace ("optimize with pack info " ++ show packInfo) 
-                            optimizeForest (head curForestList) pack weight
-        let costs = map (\dat -> getRootCost $ fst dat) optimized
-        hPutStrLn stderr ("Tree cost done " ++ show costs)
--}
 
 main = do
     benches <- sequence 
