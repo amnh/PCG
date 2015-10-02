@@ -1,3 +1,4 @@
+{-# LANGUAGE BangPatterns, DeriveGeneric #-}
 module Packing.BitPackedNode (BitPackedNode (EmptyPackNode, A16, S16, A64, S64, SInf), 
                         PackMode (bitLen, adaptive, MakePackMode), 
                         (.&.), 
@@ -12,35 +13,40 @@ module Packing.BitPackedNode (BitPackedNode (EmptyPackNode, A16, S16, A64, S64, 
                         shift,
                         bitSize) where
 
--- | imports
-import Packing.CardinalityLookup
-import Data.Bits 
-import Data.Word
-import qualified Data.Vector as V
+import           Control.DeepSeq
+import           Data.Bits 
 import qualified Data.BitVector as BV
-import Data.Maybe
-import qualified Data.Map as M
-import Data.List
-import Data.Either
-import Debug.Trace
-import Control.Parallel.Strategies
+import           Data.Either
+import           Data.List
+import           Data.Maybe
+import qualified Data.Vector    as V
+import           Data.Word
+import qualified Data.Map       as M
+import           Debug.Trace
+import           GHC.Generics
+import           Packing.CardinalityLookup
 
 -- | Define the data type: 
 -- 1) all data is stored in vectors
 -- 2) bits can be packed adaptively (based on the part of the alphabet used for each character) or statically (based on the overall alphabet)
 -- 3) All data types are words to avoid sign issues, and can be of length 16 or 64
-data BitPackedNode = EmptyPackNode | A16 (V.Vector Word16) | S16 (V.Vector Word16) | A64 (V.Vector Word64) | S64 (V.Vector Word64) | SInf BV.BitVector deriving (Show, Eq)
+data BitPackedNode = EmptyPackNode | A16 (V.Vector Word16) | S16 (V.Vector Word16) | A64 (V.Vector Word64) | S64 (V.Vector Word64) | SInf BV.BitVector deriving (Eq, Generic, Show)
 
 instance NFData BitPackedNode
+instance NFData BV.BV where
+    rnf bv = (\ !_ -> ()) bv
 
 -- | make the cardinality table and the masks for 64 bit cardinality
 -- All cardinalities except for the "infinite" type are from the stored table
-cardTable = makeLookup 
-fth16 = (foldr (\i acc -> acc + 2^i) (0 :: Word64) ([48 .. 64] :: [Int])) :: Word64
-thd16 = (foldr (\i acc -> acc + 2^i) (0 :: Word64) ([32 .. 47] :: [Int])) :: Word64
-snd16 = (foldr (\i acc -> acc + 2^i) (0 :: Word64) ([16 .. 31] :: [Int])) :: Word64
-fst16 = (foldr (\i acc -> acc + 2^i) (0 :: Word64) ([0 .. 15] :: [Int])) :: Word64
-allSelect = V.fromList [fst16, snd16, thd16, fth16] :: V.Vector Word64
+cardTable :: CardLookup
+cardTable = makeLookup
+fth16, thd16, snd16, fst16 :: Word64 
+fth16 = (foldr (\i acc -> acc + 2^i) (0 :: Word64) ([48 .. 64] :: [Int]))
+thd16 = (foldr (\i acc -> acc + 2^i) (0 :: Word64) ([32 .. 47] :: [Int]))
+snd16 = (foldr (\i acc -> acc + 2^i) (0 :: Word64) ([16 .. 31] :: [Int]))
+fst16 = (foldr (\i acc -> acc + 2^i) (0 :: Word64) ([0  .. 15] :: [Int]))
+allSelect :: V.Vector Word64
+allSelect = V.fromList [fst16, snd16, thd16, fth16] 
 
 -- | Information data type for the pack mode
 data PackMode = MakePackMode     { bitLen :: Int
@@ -49,7 +55,6 @@ data PackMode = MakePackMode     { bitLen :: Int
 
 -- | Make the instance
 instance Bits BitPackedNode where
-
     -- | And function: throws errors for different length bits, and of any empty node returns an empty
     (.&.) EmptyPackNode _ = EmptyPackNode
     (.&.) _ EmptyPackNode = EmptyPackNode
