@@ -9,6 +9,7 @@ import Data.List             (partition)
 import Data.Map              (Map,(!),elems,empty,insert,insertWith,lookup)
 import Data.Maybe
 import Data.Vector           (Vector,fromList,toList)
+import Debug.Trace           (trace)
 import File.Format.Fastc.Parser
 import File.Format.Newick
 import System.IO

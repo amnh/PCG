@@ -47,10 +47,8 @@ module Component
 ) where
 
 import Data.List
-import Data.Int
 import qualified Data.Set as Set
 import qualified Data.Vector as V
-import qualified Data.Vector.Storable as VS
 import Data.Maybe
 import Debug.Trace
 import ReadGraphs
@@ -58,9 +56,10 @@ import ReadFiles
 import CharacterData
 import qualified Parsimony as Pars
 import Control.Parallel.Strategies
-import Control.DeepSeq
 
 -- | stuff for maxFloat
+-- TODO maybe use: `maxBound :: Float`
+maxFloat :: Float
 maxFloat = 1.0e32 --0x7f7ffff is max 32 bit FLOAT IEEE ~3.4e34
 
 --type for nodes with phylodata--linked to DataMatrix
@@ -112,12 +111,14 @@ modifyParentList pNode newSet =
           parents = sort newSet
     }
 
+{-
 modifyParentListTreeStatus :: PhyloNode -> [NodeCode] -> PhyloNode
 modifyParentListTreeStatus pNode newSet = 
     pNode { 
           parents = sort newSet
         , isTreeNode = length newSet == 1 
     }
+-}
 
 modifyParentAndChild :: PhyloNode -> [NodeCode] -> [NodeCode] -> PhyloNode
 modifyParentAndChild pNode newChildren newParents =
@@ -129,8 +130,10 @@ modifyParentAndChild pNode newChildren newParents =
 modifyChildList :: PhyloNode -> [NodeCode] -> PhyloNode
 modifyChildList pNode newSet = pNode { children = sort newSet}
 
+{-
 modifyPreliminaryStates :: PhyloNode -> CharacterSetList -> PhyloNode
 modifyPreliminaryStates pNode newSet = pNode { preliminaryStates = newSet}
+-}
 
 modifyLocalCost :: PhyloNode -> V.Vector Float -> PhyloNode
 modifyLocalCost pNode newCost = pNode { localCost = newCost}
@@ -156,6 +159,7 @@ modifyNamePrelimLocalTotal pNode newName cSL lC tC =
     }
 
 -- | pullNames take list of GenPhyNetNodes and creates list of first element in
+{-
 pullNames :: [GenPhyNetNode] -> [String]
 pullNames x =
     if null x then []
@@ -163,10 +167,12 @@ pullNames x =
         let (a, _, _) = head x
         in
         a : pullNames (tail x)
+-}
 
 -- FIX THE NAMING BETWEEN THESE
 
 -- | getNodeNames gets all names from GenForest
+{-
 getNodeNames :: [GenForest] -> [String]
 getNodeNames x =
     if null x then []
@@ -174,7 +180,8 @@ getNodeNames x =
         let y = concat (head x)
         in
         pullNames y ++ getNodeNames (tail x)
-            
+-}
+          
 -- | baseDataToLeafNodes converts base Data array set to node structures for leaf
 --taxa, vector of nodes (ForestPhyloNodes) for O(1) random accessa
 --takes input list of Forests and return list of PhyloForest
@@ -192,7 +199,7 @@ getNamesFromGenPhyNet inNet
     | null inNet = []
     | null desc = firstName : getNamesFromGenPhyNet (tail inNet)
     | otherwise = getNamesFromGenPhyNet (tail inNet) ++ [firstName]
-        where (firstName, desc,  anc) = head inNet
+        where (firstName, desc, _) = head inNet
             
 -- | getCodeNodePair cretes alist of pairs of indexCodes and PhyloNodes for
 --reordering in the Vector to allow for effiecenit traversal access
@@ -239,7 +246,7 @@ getCodes allNames inNames = --trace ("\ngetCodes " ++ show (head inNames) ++ " "
 
 -- | makePhyloNode takes an individual GenPOhyNetNode and converts into PhyloNode
 makePhyloNode :: [String] -> GenPhyNetNode -> Int -> PhyloNode
-makePhyloNode nameList inNode indexCode =
+makePhyloNode nameList inNode _ =
         let (inName, descList, ancList) = inNode
             isLeaf = null descList
             isRootNode = null ancList
@@ -521,7 +528,7 @@ getSoftAdjust3 bestTreeIndex bestTreeCharCostList numTerminals bestCharIndicesLi
                 (getSoftAdjust3 bestTreeIndex (V.tail bestTreeCharCostList) numTerminals (V.tail bestCharIndicesList) displayTreeList bestDisplayEdgeSet)
     | otherwise = (getSoftAdjust3 bestTreeIndex (V.tail bestTreeCharCostList) numTerminals (V.tail bestCharIndicesList) displayTreeList bestDisplayEdgeSet)
         where
-            bestDisplayEdgeSet = edgeSetFromComponent (displayTreeList !! bestTreeIndex)
+--            bestDisplayEdgeSet = edgeSetFromComponent (displayTreeList !! bestTreeIndex)
             bestDisplayTreeCharList = V.head bestCharIndicesList  
             bestCharDisplayEdgeSet = edgeSetFromComponent (displayTreeList !! (V.head bestDisplayTreeCharList)) --arbitrarily take first one if multiple 
             edgeDiffNum = Set.size $ Set.difference bestCharDisplayEdgeSet bestDisplayEdgeSet --edges in Char best tree not in overall best binary tree
@@ -902,6 +909,7 @@ edgeSetFromComponent inComponent =
 
 -- | edgeSetFromCopmonentList takes a list of phylogenetic components and returns edge set
 -- generates them as edges leading to node
+{-
 edgeSetFromComponentList :: [PhyloComponent] -> Set.Set (Int, Int)
 edgeSetFromComponentList inComponentList = 
     if null inComponentList then Set.empty
@@ -909,7 +917,8 @@ edgeSetFromComponentList inComponentList =
         let curComponent = head inComponentList
         in
         Set.union (edgeSetFromComponent curComponent) (edgeSetFromComponentList $ tail inComponentList) 
-        
+-}
+      
 -- | edgeSetFromComponentListSome generate edge list from list of components,
 -- but excludes those not in input list of Ints 
 -- generates them as edges leading to node
