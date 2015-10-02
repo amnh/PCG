@@ -56,7 +56,6 @@ module ReadFiles
 
 import Data.List
 import Data.List.Split
-import Data.Maybe
 import qualified Data.Text as T
 import Debug.Trace
 
@@ -99,6 +98,7 @@ modifyWeight :: CharInfo -> Float -> CharInfo
 modifyWeight charState x =
     charState { weight = x }
 
+{--
 modifyCostMatrix :: CharInfo -> [Int] -> CharInfo
 modifyCostMatrix charState x =
     charState { costMatrix = x }
@@ -110,6 +110,7 @@ modifyName charState x =
 modifyNumStates :: CharInfo -> Int -> CharInfo
 modifyNumStates charState x =
     charState { numStates = x }
+--}
 
 modifyRootCost :: CharInfo -> Float -> CharInfo
 modifyRootCost  charState x =
@@ -298,9 +299,8 @@ stringToInt x =
         
 -- | getScope reads Hennig86/TNT scope options '.' etc and sets
 getScope :: [String] -> Int -> [Int]
+getScope [] _ = error "Missing character scope in Hennig86/TNT input file."
 getScope (x : xs) nchar
-    | null (x : xs) =
-      error "Missing character scope in Hennig86/TNT input file."
     | length (x : xs) == 2 =
       let y = words x
           z = words (head xs)
@@ -383,8 +383,8 @@ setCodes x nchar initialCharInfo =
 -- | getCharInfo information on charcater type etc from lines after data body--one set
 --option (cc -.; cc[ 0;) per semicolon
 getCharInfo :: [String] -> Int -> [CharInfo] -> [CharInfo]
+getCharInfo [] _ _ = []
 getCharInfo (x : xs) nchar initialCharInfo
-    | null (x : xs) = []
     | head (words x) == "proc" || head (words x) == "proc/" =
       initialCharInfo
     | head (words x) == "cc" || head (words x) == "ccode" =
@@ -577,7 +577,7 @@ printInputDataByTerminal x =
 removeTerminalNames ::  [(String, [String])] -> [[String]]
 removeTerminalNames x =
     if null x then []
-    else map (\(a,b) -> b) x
+    else map (\(_,b) -> b) x
 
 -- | printOneAtATime
 --Print one char at a time

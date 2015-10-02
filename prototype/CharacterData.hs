@@ -58,18 +58,16 @@ import Data.Bits
 import qualified Data.Set as Set
 import ReadFiles
 import ReadGraphs
-import Control.Parallel.Strategies
-import Control.DeepSeq
 
 --BasedData type array of list of vector of Int64
-type BaseData = RawData
+--type BaseData = RawData
 
 --types for character data, only BaseChar is "storable" so potentially interoperable with C
 --characterSet better as list perhaps to allow for parallel map (data parallel) 
 type BaseChar = (VS.Vector Int64)               --Vector so O(1) access, Int64 so can do bitwise stuff, Storable so can do FFI-C length 1-many
 type CharacterSet = (V.Vector BaseChar)         --O(1) charcater acess--prob not need likely sequential so list OK
 type CharacterSetList = [BaseChar]              --List so can easily parallel map functinos over data
-type DataMatrix = (V.Vector CharacterSet)       --Vector so O(1) random access
+--type DataMatrix = (V.Vector CharacterSet)       --Vector so O(1) random access
 type DataMatrixVLS = (V.Vector CharacterSetList) --BVLS = Vector-List-Storable
 
 --convertToBit converts an In to bit re 0=1, 1=2, 2=4 etc
@@ -188,7 +186,7 @@ charSetToVect x charInfo
 --creates Vector of that pairData
 --this is curried--reccomended by hlint
 termToVector :: TermData -> [CharInfo] -> CharacterSetList
-termToVector (name, dataList) = charSetToVectList dataList
+termToVector (_, dataList) = charSetToVectList dataList
 
 -- | termToVectorList takes list of pairs of terminal and data (and dat info) and
 --creates Vector of list of pairData recusively
@@ -298,13 +296,13 @@ areCycles inForestList
         where cyclesList = map checkForCycles inForestList
 
 -- | getFirstTwo takes a triple anc converts to pairs with first two
-getFirstTwo :: (a, b, c) -> (a, b)
-getFirstTwo (first, second, third) = (first, second)
+--getFirstTwo :: (a, b, c) -> (a, b)
+--getFirstTwo (first, second, third) = (first, second)
 
 -- | checkForCycles inputs a GenForest and checks components for cycles
 -- this is stupidly O(n^3) could be O(n^2) I think by reusing desc lists 
 checkForCycles :: GenForest -> Bool
-checkForCycles inForest = False
+checkForCycles _ {-inForest-} = False
     {- --| null inForest = error "Null input in checkForCyles" --trace ("\nInForest " ++ show allNodes ++ "\nDesc " ++ show nodeDescList) (
     --| head nodeDescList == ("", []) = True
     --| otherwise = False
@@ -315,6 +313,7 @@ checkForCycles inForest = False
 
 -- | getDescendantList takes  node and tracks descdents adding all--not just
 -- leaves
+{-
 getDescendantList :: [(String, [String])] -> (String, [String]) -> (String, [String])
 getDescendantList allNodeList inNode
     | null allNodeList                      = error "Null input in getDescendantList"
@@ -323,9 +322,11 @@ getDescendantList allNodeList inNode
         where
             (nodeName, descList) = inNode
             allDescList = descList ++ (onlyDescendantList allNodeList descList [nodeName])
+-}
 
 -- | onlyDescendantList takes a list of names, fileds the nodes among all nodes
 -- and returns descdant list
+{-
 onlyDescendantList :: [(String, [String])] -> [String] -> [String] -> [String]
 onlyDescendantList allNodeList descNodeList rootNodeNameList
     | null descNodeList                                 = []
@@ -337,11 +338,4 @@ onlyDescendantList allNodeList descNodeList rootNodeNameList
         where
             descNode = lookup (head descNodeList) allNodeList 
             newDescList = fromJust descNode
-
-
-
-
-
-
-
-
+-}
