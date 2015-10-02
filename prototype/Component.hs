@@ -1,3 +1,4 @@
+{-# LANGUAGE DeriveGeneric #-}
 {-- |
 Module      :  Functions for manipulating phylogeentic components
 Description :  Takes data from parser functins and recodess into usable state 
@@ -51,6 +52,7 @@ import qualified Data.Set as Set
 import qualified Data.Vector as V
 import Data.Maybe
 import Debug.Trace
+import GHC.Generics
 import ReadGraphs
 import ReadFiles
 import CharacterData
@@ -88,7 +90,9 @@ data PhyloNode = PhyloNode  { code :: NodeCode                --links to DataMat
                             , preliminaryStates :: !CharacterSetList
                             , localCost :: !(V.Vector Float)
                             , totalCost :: !(V.Vector Float)
-                            } deriving (Show)
+                            } deriving (Generic, Show)
+
+instance NFData PhyloNode
 
 type PhyloComponent = (V.Vector PhyloNode)
 type PhyloForest = [PhyloComponent]

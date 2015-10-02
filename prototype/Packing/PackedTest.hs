@@ -3,19 +3,14 @@ module Packing.PackedTest where
 
 import Control.Arrow         ((&&&),first)
 import Criterion.Main
-import Criterion.Types
 import Data.Functor.Identity (runIdentity)
 import Data.List             (partition)
-import Data.Map              (Map,(!),elems,empty,insert,insertWith,lookup)
+import Data.Map              (Map,elems,empty,insert,insertWith,lookup)
 import Data.Maybe
 import Data.Vector           (Vector,fromList,toList)
 import Debug.Trace           (trace)
 import File.Format.Fastc.Parser
 import File.Format.Newick
-import System.IO
-import System.Environment
-import qualified Data.Text as T
-import qualified Data.Set as Set
 import CharacterData
 import ReadFiles
 import Component
@@ -23,6 +18,7 @@ import Packing.PackedBuild
 import Packing.PackedOptimize
 import Prelude hiding (lookup)
 
+main :: IO ()
 main = do
     benches <- sequence 
                [ benchmarkFitchOptimization "data-sets/artmor.fastc"    "data-sets/artmor.tree"    "(Small ):"
@@ -31,9 +27,12 @@ main = do
                ]
     defaultMain [ bgroup "fitch opts" (concat benches) ]
 
+getSeqsFromFile :: FilePath -> IO RawData
 getSeqsFromFile file =           fastcToCharData . fromRight . runIdentity  . parseFastcStream  <$> readFile file
+getTreeFromFile :: FilePath -> IO PhyloForest
 getTreeFromFile file = head . fmap newickToPhylo . fromRight . runIdentity  . parseNewickStream <$> readFile file
 
+benchmarkFitchOptimization :: FilePath -> FilePath -> [Char] -> IO [Benchmark]
 benchmarkFitchOptimization seqsFile treeFile prefix = do
     !seqs <- getSeqsFromFile seqsFile
     !tree <- getTreeFromFile treeFile
@@ -55,7 +54,7 @@ fastcToCharData = (pure . fastcToTermData &&& pure . fastcToCharInfo) . head
     fastcToTermData :: FastcData -> TermData
     fastcToTermData = fastcLabel &&& pure . fastcLabel
     fastcToCharInfo :: FastcData -> CharInfo
-    fastcToCharInfo (FastcData name syms) = CharInfo NucSeq False 1.0 [] "Input" (length syms) syms 0.0
+    fastcToCharInfo (FastcData _ syms) = CharInfo NucSeq False 1.0 [] "Input" (length syms) syms 0.0
 
 
 newickToPhylo :: NewickForest -> PhyloForest
@@ -95,6 +94,7 @@ newickToPhylo = fmap treeToComponent
                   h x = case lookup x mapping of
                          Just y  -> y
                          Nothing -> trace (show x) 0
+        setRoot'             []  = []
         setRoot' ((n,p,c,_):xs)  = (n,p,c,True):xs
         collate' :: [(NewickNode, [NewickNode], NodeCode, Bool)] -> [(NewickNode, [NewickNode], NodeCode, Bool)]
         collate' = elems . foldr (\(x,p,i,r) m -> insertWith g (newickLabel x) (x,p,i,r) m) empty
@@ -107,7 +107,7 @@ newickToPhylo = fmap treeToComponent
           where
             nodeName'          = maybe "" id $ newickLabel n
             isTerminal'        = null children'
-            isRoot'            = False
+--            isRoot'            = False
             isTreeNode'        = not $ null children'
             children'          = c
             preliminaryStates' = [] :: CharacterSetList
