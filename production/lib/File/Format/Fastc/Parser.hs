@@ -9,6 +9,7 @@ import Data.Char  (isSpace)
 import File.Format.Fasta.Internal
 import Text.Parsec
 import Text.Parsec.Custom
+--import Text.Megaparsec
 
 data FastcData 
    = FastcData
@@ -16,18 +17,18 @@ data FastcData
    , fastcSymbols :: [String]
    } deriving (Show)
 
-parseFastcStream :: Stream s m Char => s -> m (Either ParseError [FastcData])
-parseFastcStream = runParserT (many1 fastaTaxonSequenceDefinition <* eof) () "A list of taxon names and corresponding character sequences"
+parseFastcStream :: Stream s m Char => ParsecT s u m [FastcData]
+parseFastcStream = many1 fastaTaxonSequenceDefinition <* eof
 
 fastaTaxonSequenceDefinition :: Stream s m Char => ParsecT s u m FastcData
 fastaTaxonSequenceDefinition = do
-    name    <- fastaLabelDefinition
-    symbols <- try symbolSequence <?> ("Unable to read symbol sequence for label: '" ++ name ++ "'")
-    _       <- spaces
-    pure $ FastcData name symbols
+    name <- identifierLine
+    seq' <- try symbols <?> ("Unable to read symbol sequence for label: '" ++ name ++ "'")
+    _    <- spaces
+    pure $ FastcData name seq'
 
-symbolSequence :: Stream s m Char => ParsecT s u m [String]
-symbolSequence = fastaSequenceDefinition validSymbols
+symbols :: Stream s m Char => ParsecT s u m [String]
+symbols = symbolSequence validSymbols
   where
     validSymbols = validStart <:> many (satisfy (not .isSpace))
     validStart   = satisfy $ \x -> x /= '>' && (not . isSpace) x

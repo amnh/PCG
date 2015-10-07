@@ -1,6 +1,9 @@
 module File.Format.Fasta
-  ( FastaData(..) 
-  , parseFastaStream
+  ( FastaSequence(..)
+  , FastaSequenceType(..)
+  , fastaStreamTranslator
+  , fastaStreamParser
   ) where
 
- import File.Format.Fasta.Parser (FastaData(..),parseFastaStream) 
+ import File.Format.Fasta.Parser     (FastaSequence(..),fastaStreamParser) 
+ import File.Format.Fasta.Translator (FastaSequenceType(..),fastaStreamTranslator)
