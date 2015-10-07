@@ -214,11 +214,11 @@ instance Bits BitPackedNode where
         let 
             numbits = V.length bits64
             masked16 = V.map (\mask -> (.|.) (S64 $ V.replicate numbits mask) (S64 bits64)) allSelect
-            shifts = trace ("masked 16 " ++ show masked16)
+            shifts = --trace ("masked 16 " ++ show masked16)
                         V.fromList [48, 32, 16, 0]
             maskedRight = V.zipWith (\s node -> shift node (-s)) shifts masked16
             convRight = V.map (\(S64 node) -> V.map (\b -> fromIntegral b :: Word16) node) maskedRight
-            foldedCost =  trace ("convRight " ++ show convRight)
+            foldedCost =  --trace ("convRight " ++ show convRight)
                             V.foldr (\node acc -> acc + popCount (S16 node)) 0 convRight
         in foldedCost
     popCount (SInf biti) = popCount biti
@@ -352,7 +352,8 @@ blockShiftAndFold sideMode foldMode (SInf inbits) _ alphlen (SInf initVal) =
             | sideMode == "R" && foldMode == "|" = foldr (\s acc -> (.|.) acc (shiftR inbits s)) initVal [1..alphlen-1]
             | otherwise = error "incorrect input for block shift and fold"
     in SInf c
-blockShiftAndFold _ _ _ _ _ _ = error "Attempt to block, shift, and fold nodes of two different types"
+blockShiftAndFold _ _ EmptyPackNode _ _ _ = error "Attempt to block, shift, and fold empty node"
+blockShiftAndFold _ _ node _ _ initNode = error ("Attempt to block, shift, and fold node " ++ show node ++ " and initial " ++ show initNode ++ " of two different types")
 
 -- | Occupancy mask to remove excess bits from being counted
 -- Bits should always be masked to achieve the correct cost from popCount
@@ -510,11 +511,11 @@ getNodeCost node mode blockLens alphLen
     | otherwise =         
         let 
             numbits = div (fromJust $ bitSizeMaybe node) 64
-            masked16 = trace ("masked 16 " ++ show numbits)
+            masked16 = --trace ("masked 16 " ++ show numbits)
                             V.map (\mask -> (.|.) (A64 $ V.replicate numbits mask) node) allSelect
             shifts = V.fromList [48, 32, 16, 0]
             maskedRight = V.zipWith (\s n -> shift n (-s)) shifts masked16
-            convRight = trace ("convRight " ++ show maskedRight)
+            convRight = --trace ("convRight " ++ show maskedRight)
                             V.map (\(A64 n) -> V.map (\b -> fromIntegral b :: Word16) n) maskedRight
             counts = V.map (\n -> popCount (A16 n)) convRight 
             costs = V.zipWith (\l c -> div c l) blockLens counts
