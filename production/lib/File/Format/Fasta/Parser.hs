@@ -1,9 +1,6 @@
 {-# LANGUAGE FlexibleContexts #-}
 
-module File.Format.Fasta.Parser 
-  ( FastaData(..) 
-  , parseFastaStream
-  ) where
+module File.Format.Fasta.Parser where
 
 import Data.Maybe (catMaybes)
 import File.Format.Fasta.Internal
@@ -27,9 +24,13 @@ fastaTaxonSequenceDefinition = do
     pure $ FastaData name nukesSequence
 
 fastaTaxonName :: Stream s m Char => ParsecT s u m String
-fastaTaxonName = fastaLabelDefinition
+fastaTaxonName = fastaLabelLine
 
 fastaNucleotides :: Stream s m Char => ParsecT s u m String
 fastaNucleotides = catMaybes . (headMay <$>) <$> fastaSequenceDefinition validNucleotideSymbols
   where
-    validNucleotideSymbols = foldr1 (<|>) $ string . pure <$> "GATC-"
+    validNucleotideSymbols = foldr1 (<|>) $ string . pure <$> validChars
+
+validChars :: String
+validChars = "GATC-"
+

@@ -6,18 +6,12 @@ module Text.Parsec.Custom.Test
 -- This function can be combined with other testSuites definitions from other
 -- Test modules to form a giant test suite to run
 
-import           Data.Char                    (chr,isDigit)
-import           Data.Word                    (Word8)
 import           Safe                         (readMay)
-import           Test.SmallCheck.Series       (Series,generate)
+import           Test.SmallCheck.Series       ()
 import           Test.Tasty                   (TestTree,testGroup)
 import           Test.Tasty.HUnit
-import           Test.Tasty.QuickCheck hiding (Property,Testable,testProperty,generate)
-import qualified Test.Tasty.QuickCheck as QC  (Property,Testable,testProperty,generate)
-import           Test.Tasty.SmallCheck hiding (Property,Testable,testProperty)
-import qualified Test.Tasty.SmallCheck as SC  (Property,Testable,testProperty)
+import           Test.Tasty.QuickCheck
 import           Text.Parsec                  (parse,eof,spaces)
--- Contains out definitions to test
 import           Text.Parsec.Custom
 
 -- | Coalese the many TestTrees to a single TestTree
@@ -40,8 +34,8 @@ tests = [ testGroup "Integer Parsing" [integerProperties, validZeroTests, invali
 --   of `x` holds for all inputs provided. 
 integerProperties :: TestTree
 integerProperties = testGroup "Arbitrary Integral Tests"
-  [ QC.testProperty "Surjectivity" integerSurjection
-  , QC.testProperty "Injectivity"  integerInjection
+  [ testProperty "Surjectivity" integerSurjection
+  , testProperty "Injectivity"  integerInjection
   ]
 
 -- | Ensure that all Ints represented as Strings are correctly parsed as Ints.
@@ -57,6 +51,7 @@ integerInjection x = (readMay x :: Maybe Int) == fromRight (parse (spaces *> int
 -- | Since zero is the first symbol in the decimal base numebr system, it can 
 --   be represent in many strange ways. We should properly handle these  
 --   strange representations of zero.
+validZeroTests :: TestTree
 validZeroTests = testGroup "Strange Integral Zero Representations"
   [ testCase "Double Zero"       $ assert $ parse integer "" "00"       == Right 0
   , testCase "Plus Zero"         $ assert $ parse integer "" "+0"       == Right 0
@@ -68,6 +63,7 @@ validZeroTests = testGroup "Strange Integral Zero Representations"
 
 -- | The '+' & '-' prefixes on numbers should not be repeated. 
 --   The parser should fail on consuming multiple of these prefixes.
+invalidPrefixes :: TestTree
 invalidPrefixes = testGroup "Invalid Integral Prefixes"
   [ testCase "Double Plus"  $ assert $ (not . isRight) $ parse integer "" "++0"
   , testCase "Double Minus" $ assert $ (not . isRight) $ parse integer "" "--0"
@@ -75,8 +71,8 @@ invalidPrefixes = testGroup "Invalid Integral Prefixes"
 
 decimalProperties :: TestTree
 decimalProperties = testGroup "Arbitrary Decimal Tests"
-  [ QC.testProperty "Surjectivity" decimalSurjection
-  , QC.testProperty "Injectivity"  decimalInjection
+  [ testProperty "Surjectivity" decimalSurjection
+  , testProperty "Injectivity"  decimalInjection
   ]
 
 -- | Ensure that all Ints represented as Strings are correctly parsed as Ints.
@@ -104,12 +100,6 @@ inlineSpaceAssertions = testGroup "Inline Space Assertions" [validInlineSpace,in
 
 
 -- | Helper functions
-
-integerRange :: [Int]
-integerRange = [lower..upper]
-  where
-    lower = negate upper
-    upper = fromEnum $ (maxBound :: Word8)
 
 isLeft :: Either a b -> Bool
 isLeft = not . isRight

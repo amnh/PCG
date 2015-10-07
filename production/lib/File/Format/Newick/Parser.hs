@@ -16,7 +16,7 @@ import Text.Parsec         hiding (label)
 import Text.Parsec.Custom
 
 newickStandardDefinition :: Stream s m Char => ParsecT s u m NewickNode
-newickStandardDefinition = cleanData <$> (whitespace *> newickNodeDefinition <* symbol (char ';'))
+newickStandardDefinition = whitespace *> newickNodeDefinition <* symbol (char ';')
 
 newickExtendedDefinition :: Stream s m Char => ParsecT s u m NewickNode
 newickExtendedDefinition = newickStandardDefinition >>= joinNonUniqueLabeledNodes
@@ -87,17 +87,6 @@ whitespace = try commentDefinition <|> spaces
   where
     commentDefinition :: Stream s m Char => ParsecT s u m ()
     commentDefinition = spaces *> string "[" *> noneOf "]" `manyTill` char ']' <* char ']' <* spaces >>= \_ -> pure ()
-
-cleanData :: NewickNode -> NewickNode
-cleanData node = NewickNode 
-             <$> (fmap cleanData . descendants)
-             <*> (fmap (replace '_' ' ') . newickLabel) 
-             <*> branchLength 
-               $ node
-
-replace :: Eq a => a -> a -> [a] -> [a]
-replace _ _     [] = []
-replace x e (y:ys) = (if x==y then e else y) : replace x e ys
 
 joinNonUniqueLabeledNodes :: Stream s m Char => NewickNode -> ParsecT s u m NewickNode
 joinNonUniqueLabeledNodes root = joinNonUniqueLabeledNodes' [] root
