@@ -1,0 +1,17 @@
+digraph G {
+	rankdir = LR;
+	node [ shape = rect];
+	"r0"  -> "r1";
+	"r0"  -> "r7";
+	"r1"  -> "r2";
+	"r1"  -> "r3";
+	"r7"  -> "r8";
+	"r2"  -> "r5";
+	"r2"  -> "two";
+	"r3"  -> "r4";
+	"r3"  -> "three";
+	"r8"  -> "one";
+	"r5"  -> "four";
+	"r4"  -> "five";
+	"r6"  -> "zero";
+}

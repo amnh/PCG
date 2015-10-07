@@ -1,0 +1,2 @@
+read("spider-10.tnt")
+read(newick:("spider-10.tre"))

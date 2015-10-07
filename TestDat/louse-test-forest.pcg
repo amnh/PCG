@@ -1,0 +1,2 @@
+read(custom_alphabet:("UT-louse.fas", tcm:("UT-louse-11.matrix")))
+read(fen:("UT-louse-label.fen"))
