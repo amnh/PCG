@@ -1,14 +1,15 @@
 {-# LANGUAGE FlexibleContexts #-}
 
-module File.Format.Fasta.Translator where
+module File.Format.Fasta.Converter where
 
-import           Data.Map                   hiding (foldr,fromList,partition)
+import           Data.List                         (intercalate,partition)
+import           Data.Map                   hiding (filter,foldr,fromList,partition,null)
 import qualified Data.Map                   as M   (fromList)
 import qualified Data.Vector                as V   (fromList)
 import           File.Format.Fasta.Internal
 import           File.Format.Fasta.Parser
 import           Text.Parsec
---import           Text.Parsec.Custom                (fails)
+import           Text.Parsec.Custom                (fails)
 
 data FastaSequenceType = DNA | RNA | AminoAcid deriving (Bounded,Eq,Enum,Read,Show)
 
@@ -17,11 +18,28 @@ colate seqType = foldr f empty
   where
     f (FastaSequence name seq') mapping = insert name (seqCharMapping seqType seq') mapping
 
-fastaStreamTranslator :: FastaSequenceType -> FastaParseResult -> ParsecT s u m TaxonSequenceMap
-fastaStreamTranslator seqType = fmap (colate seqType) . validateInterpretedStream seqType 
+fastaStreamConverter :: FastaSequenceType -> FastaParseResult -> ParsecT s u m TaxonSequenceMap
+fastaStreamConverter seqType = fmap (colate seqType) . validateStreamConversion seqType 
 
-validateInterpretedStream :: FastaSequenceType -> FastaParseResult -> ParsecT s u m FastaParseResult
-validateInterpretedStream = undefined
+validateStreamConversion :: FastaSequenceType -> FastaParseResult -> ParsecT s u m FastaParseResult
+validateStreamConversion seqType xs =
+  case partition hasErrors result of
+    ([] , _) -> pure xs
+    (err, _) -> fails $ errorMessage <$> err
+  where
+    result = containsIncorrectChars <$> xs  
+    hasErrors = not . null . snd
+    containsIncorrectChars (FastaSequence name seq') = (name, f seq')
+    f = g seqType
+    g AminoAcid = filter (not . (`elem` iupacAminoAcidChars ))
+    g DNA       = filter (not . (`elem` iupacNucleotideChars))
+    g RNA       = filter (not . (`elem` iupacRNAChars       ))
+    errorMessage (name,badChars) = concat
+     [ "In the sequence for taxon: '"
+     , name
+     , "' the following invalid characters were found: "
+     , intercalate ", " $ (\c -> '\'':c:"'") <$> badChars
+     ]
 
 seqCharMapping :: FastaSequenceType -> String -> CharacterSequence 
 seqCharMapping seqType = V.fromList . fmap (f seqType)
