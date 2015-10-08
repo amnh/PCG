@@ -21,14 +21,15 @@ import Prelude hiding (lookup)
 main :: IO ()
 main = do
     benches <- sequence 
-               [ benchmarkFitchOptimization "data-sets/artmor.fastc"    "data-sets/artmor.tree"    "(Small ):"
-               --, benchmarkFitchOptimization "data-sets/spider-10.fastc" "data-sets/spider-10.tree" "(Medium):"
+               [ --benchmarkFitchOptimization "data-sets/artmor.fastc"    "data-sets/artmor.tree"    "(Small ):"
+                --benchmarkFitchOptimization "data-sets/spider-10.fastc" "data-sets/spider-10.tree" "(Medium):"
                --, benchmarkFitchOptimization "data-sets/spider.fastc"    "data-sets/spider.tree"    "(Large ):"
+                  benchmarkFitchOptimization ""
                ]
     defaultMain [ bgroup "fitch opts" (concat benches) ]
 
 getSeqsFromFile :: FilePath -> IO RawData
-getSeqsFromFile file = fastcToCharData . fromRight . runIdentity  . parseFastcStream  <$> readFile file
+getSeqsFromFile file = fastcToCharData . fromRight . parse (fastaStreamConverter DNA =<< fastaStreamParser) file <$> readFile file
 getTreeFromFile :: FilePath -> IO PhyloForest
 getTreeFromFile file = head . fmap newickToPhylo . fromRight . runIdentity  . parseNewickStream <$> readFile file
 
