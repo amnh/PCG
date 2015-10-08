@@ -59,7 +59,8 @@ caseInsensitiveString :: Stream s m Char => String -> ParsecT s u m String
 caseInsensitiveString s = try (mapM caseInsensitiveChar s) <?> "\"" ++ s ++ "\""
 
 fails :: [String] -> ParsecT s u m a
-fails = labels empty
+fails [x] = fail x
+fails xs  = labels empty xs
 
 anyTill :: Stream s m Char => ParsecT s u m a -> ParsecT s u m String
 anyTill c = do 
