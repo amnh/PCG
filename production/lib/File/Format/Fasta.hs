@@ -7,3 +7,4 @@ module File.Format.Fasta
 
  import File.Format.Fasta.Parser     (FastaSequence(..),fastaStreamParser) 
  import File.Format.Fasta.Translator (FastaSequenceType(..),fastaStreamTranslator)
+ 
