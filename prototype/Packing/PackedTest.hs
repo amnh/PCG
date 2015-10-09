@@ -28,10 +28,9 @@ type TaxonSequenceMap  = Map String (V.Vector [String])
 main :: IO ()
 main = do
     benches <- sequence 
-               [ --benchmarkFitchOptimization "data-sets/artmor.fastc"    "data-sets/artmor.tree"    "(Small ):"
-                --benchmarkFitchOptimization "data-sets/spider-10.fastc" "data-sets/spider-10.tree" "(Medium):"
-               --, benchmarkFitchOptimization "data-sets/spider.fastc"    "data-sets/spider.tree"    "(Large ):"
-                  benchmarkFitchOptimization "data-sets/28S_trimal.fas" "data-sets/sp_rand_28s.tre" "(Medium Fasta: )"
+               [ benchmarkFitchOptimization "data-sets/28S_trimal.fas" "data-sets/sp_rand_28s.tre" "(Medium Fasta: )"
+                , benchmarkPackingOnly "data-sets/28S_trimal.fas" "data-sets/sp_rand_28s.tre" "(Medium Fasta: )"
+                , benchmarkFitchOnly "data-sets/28S_trimal.fas" "data-sets/sp_rand_28s.tre" "(Medium Fasta: )"
                ]
     defaultMain [ bgroup "fitch opts" (concat benches) ]
 
@@ -55,17 +54,45 @@ benchmarkFitchOptimization seqsFile treeFile prefix = do
          , bench (prefix++" packing & optimizing S16")   $ nf (costForest tree (performPack seqs names tree ("static"  ,"16"      ))) weight
          , bench (prefix++" packing & optimizing A64")   $ nf (costForest tree (performPack seqs names tree ("adaptive","64"      ))) weight
          , bench (prefix++" packing & optimizing S64")   $ nf (costForest tree (performPack seqs names tree ("static"  ,"64"      ))) weight
-         , bench (prefix++" packing & optimizing Inf")   $ nf (optimizeForest tree (performPack seqs names tree ("static"  ,"infinite"))) weight
-         , bench (prefix++" packing & optimizing old pcg")   $ nf (costForest tree (performBuild seqs names tree)) weight
+         , bench (prefix++" packing & optimizing Inf")   $ nf (costForest tree (performPack seqs names tree ("static"  ,"infinite"))) weight
+         , bench (prefix++" packing & optimizing unpacked")   $ nf (costForest tree (performBuild seqs names tree)) weight
          ]
 
---benchmarkOldOptimization :: FilePath -> FilePath -> [Char] -> IO [Benchmark]
---benchmarkOldOptimization seqsFile treeFile prefix = do
---    !seqs <- getSeqsFromFile seqsFile
---    !tree <- getTreeFromFile treeFile
---    let !names  = head $ filter (not.null) . fmap nodeName <$> fmap V.toList tree
---    let !weight = 1
---    pure [ bench (prefix++" packing & optimizing old pcg")   $ nf (runOrigPCG seqs tree) names]
+benchmarkFitchOnly :: FilePath -> FilePath -> [Char] -> IO [Benchmark]
+benchmarkFitchOnly seqsFile treeFile prefix = do
+  !seqs <- getSeqsFromFile seqsFile
+  !tree <- getTreeFromFile treeFile
+  let !weight = 1
+  let !names  = head $ filter (not.null) . fmap nodeName <$> fmap V.toList tree
+  let !packA16 = performPack seqs names tree ("adaptive","16"      )
+  let !packS16 = performPack seqs names tree ("static"  ,"16"      )
+  let !packA64 = performPack seqs names tree ("adaptive","64"      )
+  let !packS64 = performPack seqs names tree ("static"  ,"64"      )
+  let !packInf = performPack seqs names tree ("static"  ,"infinite")
+  let !unpacked = performBuild seqs names tree
+  let f = flip (costForest tree) weight
+  pure [ bench (prefix++" just optimizing A16")   $ nf f packA16
+         , bench (prefix++" just optimizing S16")   $ nf f packS16
+         , bench (prefix++" just optimizing A64")   $ nf f packA64
+         , bench (prefix++" just optimizing S64")   $ nf f packS64
+         , bench (prefix++" just optimizing Inf")   $ nf f packInf
+         , bench (prefix++" just optimizing unpacked")   $ nf (costForest tree unpacked) weight
+        ]
+
+benchmarkPackingOnly :: FilePath -> FilePath -> [Char] -> IO [Benchmark]
+benchmarkPackingOnly seqsFile treeFile prefix = do
+  !seqs <- getSeqsFromFile seqsFile
+  !tree <- getTreeFromFile treeFile
+  let !names  = head $ filter (not.null) . fmap nodeName <$> fmap V.toList tree
+  let f = performPack seqs names tree
+  pure [ bench (prefix++" packing A16")   $ nf f ("adaptive","16"      )
+         , bench (prefix++" packing S16")   $ nf f ("static"  ,"16"      )
+         , bench (prefix++" packing A64")   $ nf f ("adaptive","64"      )
+         , bench (prefix++" packing S64")   $ nf f ("static"  ,"64"      )
+         , bench (prefix++" packing Inf")   $ nf f ("static"  ,"infinite")
+         , bench (prefix++" packing unpacked")   $ nf (performBuild seqs names) tree
+         ]
+
 
 fromRight :: Show a => Either a b -> b
 fromRight (Right x) = x
@@ -77,26 +104,10 @@ newToOld taxseq =
     listForm = toList taxseq
     charToList = map (\(name, vec) -> (name, V.toList $ V.map (\pos -> head pos) vec)) listForm
     alphabet = nub $ foldr (\(name, charList) acc -> charList ++ acc) [] charToList
-    info = trace ("set alph " ++ show alphabet)
+    info = --trace ("set alph " ++ show alphabet)
             CharInfo NucSeq False 1.0 [] "Input" (length $ snd $ head listForm) alphabet 0.0
     infoList = replicate (length charToList) info
   in (charToList, infoList)
-
---runOrigPCG :: RawData -> PhyloForest -> [String] -> [Float]
-----runOrigPCG inputData forest names | trace ("run old with input data " ++ show (head $ fst inputData) ++ "forest" ++ show (head forest) ++ " names " ++ show names) False = undefined
---runOrigPCG inputData forest names = 
---  let 
---    rootIndices = map (\tree -> V.foldr (\i acc -> if isRoot (tree V.! i) then i else acc) 0 (V.fromList [0..length tree -1])) forest
---    reIndexForest = zipWith (\tree rootPos -> V.map (\i -> if i < rootPos then modifyNodeCode (tree V.! i) (i - 1) else tree V.! i) (V.fromList [0..V.length tree -1])) forest rootIndices
---    reorderForest = --trace ("rootIndices " ++ show rootIndices)
---                      zipWith (\tree rootPos -> (V.take (rootPos - 1) tree) V.++ (V.drop rootPos tree) V.++ (V.singleton (modifyNodeCode (tree V.! rootPos) (V.length tree - 1)))) reIndexForest rootIndices
---    phyloData = trace ("phyloData " ++ show reorderForest)
---                createBaseData inputData
---    newCharInfo = trace ("update char ifo " ++ show phyloData)
---                    redoRootCosts phyloData (snd inputData) 0
---    inCost = trace ("get cost " ++ show newCharInfo)
---              getForestCostList phyloData [reorderForest] newCharInfo names
---  in inCost
 
 modifyNodeCode :: PhyloNode -> Int -> PhyloNode
 modifyNodeCode node newCode = node {code = newCode}

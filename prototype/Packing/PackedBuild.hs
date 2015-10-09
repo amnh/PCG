@@ -1,3 +1,4 @@
+{-# LANGUAGE BangPatterns, DeriveGeneric #-}
 
 module Packing.PackedBuild (performPack, 
                         PackedInfo (blockLenMap, bitAlphs, shuffleChars, specialMap, maxAlphabet, totalChars, blockChars, masks, PackedInfo), 
@@ -5,6 +6,8 @@ module Packing.PackedBuild (performPack,
                         PackedForest,
                         SpecialMap) where
 
+import           Control.DeepSeq
+import           GHC.Generics
 import qualified Packing.BitPackedNode as BN
 import qualified Data.Vector as V
 import ReadFiles
@@ -24,6 +27,7 @@ type BitAlphabets = V.Vector (V.Vector [Char])
 type ShuffleChars = V.Vector [Int]
 type SpecialMap = M.Map Char String
 
+instance NFData PackedInfo
 
 -- | Data types for info on the pack.  Note that for static packing not all PackedInfo fields will be useful or filled
 data PackedInfo = PackedInfo     { blockLenMap :: BlockLenMap
@@ -34,7 +38,7 @@ data PackedInfo = PackedInfo     { blockLenMap :: BlockLenMap
                                 , totalChars :: Int
                                 , blockChars :: V.Vector Int
                                 , masks :: Masks
-                                } deriving (Show, Eq)
+                                } deriving (Show, Eq, Generic)
 
 
 -- | Standard special characters for genetic and amino acid sequences, based on standard codes
