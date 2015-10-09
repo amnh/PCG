@@ -35,6 +35,7 @@ data BitPackedNode = EmptyPackNode | A16 (V.Vector Word16) | S16 (V.Vector Word1
 instance NFData BitPackedNode
 instance NFData BV.BV where
     rnf bv = (\ !_ -> ()) bv
+instance NFData PackMode
 
 -- | make the cardinality table and the masks for 64 bit cardinality
 -- All cardinalities except for the "infinite" type are from the stored table
@@ -53,7 +54,7 @@ allSelect = V.fromList [fst16, snd16, thd16, fth16]
 -- | Information data type for the pack mode
 data PackMode = MakePackMode     { bitLen :: Int
                                 , adaptive :: Bool
-                                } deriving (Show, Eq)
+                                } deriving (Show, Eq, Generic)
 
 -- | Make the instance
 instance Bits BitPackedNode where
