@@ -1,8 +1,9 @@
 
 module Packing.PackedBuild (performPack, 
-                        PackedInfo (blockLenMap, bitAlphs, shuffleChars, specialMap, maxAlphabet, totalChars, blockChars, masks), 
+                        PackedInfo (blockLenMap, bitAlphs, shuffleChars, specialMap, maxAlphabet, totalChars, blockChars, masks, PackedInfo), 
                         PackedTree, 
-                        PackedForest) where
+                        PackedForest,
+                        SpecialMap) where
 
 import qualified Packing.BitPackedNode as BN
 import qualified Data.Vector as V
@@ -90,7 +91,7 @@ setAutoPack alphlen
 -- and only giving the infinite what's meaningful
 getPackInfo :: RawData -> BN.PackMode -> SeenAlphs -> SpecialMap -> PackedInfo
 getPackInfo (pairedData, _) pMode alphabets special 
-    | BN.bitLen pMode == 16 = 
+    | BN.bitLen pMode == 16 && (BN.adaptive pMode) = 
         let 
             (blocklens, finalAlphs, shuffle) = adaptiveReGroup nubAlphabets 16 
             mapChars = V.map V.length finalAlphs
@@ -104,7 +105,7 @@ getPackInfo (pairedData, _) pMode alphabets special
                         totalChars = numChars,
                         blockChars = mapChars,
                         masks = m} 
-    | BN.bitLen pMode == 64 = 
+    | BN.bitLen pMode == 64 && (BN.adaptive pMode) = 
         let 
                 (blocklens, finalAlphs, shuffle) = adaptiveReGroup nubAlphabets 64 
                 mapChars = V.map V.length finalAlphs
@@ -118,7 +119,7 @@ getPackInfo (pairedData, _) pMode alphabets special
                             totalChars = numChars,
                             blockChars = mapChars,
                             masks = m} 
-    | BN.bitLen pMode == 0 = 
+    | not (BN.adaptive pMode) = 
         let 
             m = BN.genMasks V.empty V.empty alphlen numChars pMode
         in PackedInfo {

@@ -1,5 +1,5 @@
 {-# LANGUAGE BangPatterns, DeriveGeneric #-}
-module Packing.BitPackedNode (BitPackedNode (EmptyPackNode, A16, S16, A64, S64, SInf), 
+module Packing.BitPackedNode (BitPackedNode (..), 
                         PackMode (bitLen, adaptive, MakePackMode), 
                         (.&.), 
                         (.|.), 
@@ -225,6 +225,7 @@ instance Bits BitPackedNode where
 
 -- | Creation of an encoded node given the string and relevant information
 makeNode :: String -> M.Map Char String -> V.Vector(V.Vector [Char]) -> String -> V.Vector [Int] -> PackMode -> BitPackedNode
+--makeNode string special bitAlphs overallAlph shuffles mode | trace ("makeNode with " ++ show mode) False = undefined
 makeNode string special bitAlphs overallAlph shuffles mode 
     | bitLen mode == 16 && adaptive mode = A16 $ V.zipWith (\alph chars -> makeBit16 chars special alph overallAlph mode) bitAlphs remixString
 
@@ -255,7 +256,8 @@ makeNode string special bitAlphs overallAlph shuffles mode
             recodeS = foldr (\c acc -> if c `elem` specialKeys then (special M.! c) : acc else [c] : acc) [] string
             tfVec = foldr (\str acc -> (map (\a -> if a `elem` str then True else False) overallAlph) ++ acc) [] recodeS
             outvec = BV.fromBits tfVec
-        in SInf outvec
+        in --trace ("outvec for inf " ++ show outvec)
+            SInf outvec
     | otherwise = error "incorrect packing mode, cannot create node "
         where remixString = V.map (\indices -> (map (\i -> string !! i) indices)) shuffles
 
