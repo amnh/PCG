@@ -1,21 +1,30 @@
+{-# LANGUAGE BangPatterns, FlexibleContexts #-}
+
 module File.Format.Fasta.Test
   ( testSuite
   ) where
 
-import Data.Char (isSpace)
+import Control.Arrow ((&&&))
+import Data.Char                  (isSpace)
+import Data.Map                   (Map,fromList,toList)
 import File.Format.Fasta.Internal
 import File.Format.Fasta.Parser
-
-import           Safe                         (headMay)
-import           Test.Tasty                   (TestTree,testGroup)
-import           Test.Tasty.HUnit
-import           Test.Tasty.QuickCheck
-import           Text.Parsec                  (parse,eof)
+import Safe                       (headMay)
+import System.Directory
+-- | In order to build an informative test tree dynamically
+--   with informatin derived from the file system we need to
+--   use unsafe IO operation when building the subtree. Specifically,
+--   we coerce IO [TestTree] -> [TestTree]
+--import System.IO.Unsafe           (unsafePerformIO)
+import Test.Tasty                 (TestTree,testGroup,withResource)
+import Test.Tasty.HUnit
+import Test.Tasty.QuickCheck
+import Text.Parsec                (parse,eof)
 
 testSuite :: TestTree
 testSuite = testGroup "Fasta Format"
   [ testGroup "Fasta Generalized Combinators" [identifier',commentBody',identifierLine']
-  , testGroup "Fasta Parser" [fastaSequence']
+  , testGroup "Fasta Parser" [fastaSequence',validFastaFiles]
   ]
 
 identifier' :: TestTree
@@ -112,9 +121,70 @@ fastaSequence' = testGroup "fastaNucleotides" $ [valid]
       , " -G A\nT\n AC A- \n"
       , "-GA\n\nT\n \nACA-\n"
       ]
-isLeft :: Either a b -> Bool
+
+
+-- | Reads in all files in a directory and ensures that they correctly parse
+--   NOTE: Library hack :(
+--   On success, no file names will be displayed.
+--   On the first failure, no subsequent files will have parsing attempt tried
+--   and the file path for the failed file will be displayed.
+validFastaFiles :: TestTree
+validFastaFiles = testGroup "fastaStreamParser" [withResource validContents release validateFiles]
+  where 
+    parse'  (path,content) = parse fastaStreamParser path content
+    success (path,content) = assertBool path . isRight $ parse' (path,content)
+    release = const $ pure ()
+    validContents = getFileContentsInDirectory "test/data-sets/fasta/valid"
+    validateFiles :: IO (Map FilePath String) -> TestTree
+    validateFiles !filesIO = testGroup "Valid files" [testCase "Unexpected parse errors" fileTree]
+      where 
+        fileTree = do
+          files <- toList <$> filesIO
+          sequence_ $ success <$> files
+{-
+validFastaFiles' :: TestTree
+validFastaFiles' = testGroup "fastaStreamParser" [withResource validContents release validateFiles]
+  where 
+    parse'  (path,content) = parse fastaStreamParser path content
+    success (path,content) = testCase (show path) . assert . isRight $ parse' (path,content)
+    release = const $ pure ()
+    validContents = getFileContentsInDirectory "test/data-sets/fasta/valid"
+    validateFiles :: IO (Map FilePath String) -> TestTree
+    validateFiles !filesIO = testGroup "Valid files" $ unsafePerformIO fileTree
+      where 
+        fileTree = fmap success . toList <$> filesIO
+-}
+
+-- | Gets all the given files and thier contents in the specified directory
+getFileContentsInDirectory :: FilePath -> IO (Map FilePath String)
+getFileContentsInDirectory path = do
+    files <- filter isFile <$> getDirectoryContents path
+    sequence . fromList $ (id &&& readFile) . withPath <$> files
+  where
+    isFile = not . all (=='.')
+    withPath file = if last path /= '/'
+                    then concat [path,"/",file] 
+                    else concat [path,    file] 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+isLeft, isRight :: Either a b  -> Bool
 isLeft (Left _) = True
 isLeft _        = False
+isRight = not . isLeft
 
 headOrEmpty :: [[a]] -> [a]
 headOrEmpty = maybe [] id . headMay

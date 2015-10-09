@@ -40,11 +40,7 @@ fastaTaxonName = identifierLine
 fastaSequence :: Stream s m Char => ParsecT s u m String
 fastaSequence = symbolSequence $ oneOf alphabet
 
--- | Matches 
---validSymbols :: Stream s m Char => String -> ParsecT s u m String
---validSymbols xs = concat <$> oneOf xs
---validSymbols xs = foldr1 (<|>) $ string . pure <$> xs
-
+-- | Various input alphabets
 alphabet, iupacAminoAcidChars, iupacNucleotideChars, iupacRNAChars :: String
 alphabet = unionAll [iupacAminoAcidChars, iupacNucleotideChars, iupacRNAChars]
 iupacAminoAcidChars  = caseInsensitiveOptions "ACDEFGHIKLMNPQRSTVWY"
@@ -113,14 +109,3 @@ validateSequenceConsistency xs = do
                        , "Check this taxon's sequence to ensure that it contains characted codes "
                        , "from only one data format."
                        ]
-
-{-
-fastaCustom :: Stream s m Char => ParsecT s u m [String]
-fastaCustom = fastaSequenceDefinition validSymbols
-  where
-    validSymbols = validStart <:> many (satisfy (not .isSpace))
-    validStart   = satisfy $ \x -> x /= '>' -- Makes parsing the next new fasta taxon identifier impossible
-                                && x /= '[' -- Makes parsing conditional blocks in sequence impossible
-                                && (not . isSpace) x
--}
-
