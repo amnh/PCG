@@ -37,7 +37,7 @@ commentBody  = do
     _       <- inlineSpaces
     _       <- optional $ char '$'
     _       <- inlineSpaces
-    content <- many1 (commentWord <* inlineSpaces)
+    content <- many (commentWord <* inlineSpaces)
     pure $ unwords content
 
 commentWord :: Stream s m Char => ParsecT s u m String
