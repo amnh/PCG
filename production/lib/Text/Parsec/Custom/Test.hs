@@ -71,8 +71,8 @@ invalidPrefixes = testGroup "Invalid Integral Prefixes"
 
 decimalProperties :: TestTree
 decimalProperties = testGroup "Arbitrary Decimal Tests"
-  [ testProperty "Surjectivity" decimalSurjection
-  , testProperty "Injectivity"  decimalInjection
+  [ testProperty "Injectivity"  decimalInjection
+--  , testProperty "Surjectivity" decimalSurjection
   ]
 
 {-
