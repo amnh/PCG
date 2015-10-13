@@ -15,7 +15,7 @@ data FastaSequence
    = FastaSequence
    { taxonName     :: Identifier
    , taxonSequence :: String
-   } deriving (Show)
+   } deriving (Eq,Show)
 type FastaParseResult = [FastaSequence]
 
 -- | Consumes a Char stream and parses the stream into a FastaParseResult that

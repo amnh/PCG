@@ -5,19 +5,19 @@ module File.Format.Fasta.Test
   ) where
 
 import Data.Char                  (isSpace)
+import Data.Either.Custom
 import File.Format.Fasta.Internal
 import File.Format.Fasta.Parser
 import Safe                       (headMay)
 import Test.Tasty                 (TestTree,testGroup)
 import Test.Tasty.HUnit
 import Test.Tasty.QuickCheck
-import TestSuite.Internal
 import Text.Parsec                (parse,eof)
 
 testSuite :: TestTree
 testSuite = testGroup "Fasta Format"
   [ testGroup "Fasta Generalized Combinators" [identifier',commentBody',identifierLine']
-  , testGroup "Fasta Parser" [fastaSequence']
+  , testGroup "Fasta Parser" [fastaSequence',fastaTaxonSequenceDefinition']
   ]
 
 identifier' :: TestTree
@@ -93,34 +93,47 @@ validCommentBodies =
 identifierLine' :: TestTree
 identifierLine' = testGroup "fastaLabelLine" $ [validWithoutComments, validWithComments]
   where
+    parse'               = parse (identifierLine <* eof) ""
+    success (res,str)    = testCase (show str) . assert $ parse' str == Right res
     validWithoutComments = testGroup "Valid taxon label lines without comemnts" $ success <$> validTaxonCommentlessLines
     validWithComments    = testGroup "Valid taxon label lines with comments"    $ success <$> validTaxonCommentLines
-    success (str,res) = testCase (show str) . assert $ parse' str == Right res
-    parse' = parse (identifierLine <* eof) ""
-    validTaxonCommentLines     = zip validTaxonCommentedLabels validTaxonLabels
-    validTaxonCommentedLabels  = (\x -> "> "++x++"\n") <$> zipWith (++) validTaxonLabels validCommentBodies
-    validTaxonCommentlessLines = zip ((\x -> "> "++x++"\n") <$> validTaxonLabels) validTaxonLabels
+
+validTaxonCommentLines     :: [(String, String)]
+validTaxonCommentLines     = zip validTaxonLabels validTaxonCommentedLabels 
+validTaxonCommentlessLines :: [(String, String)]
+validTaxonCommentlessLines = zip  validTaxonLabels (inlineLabel <$> validTaxonLabels)
+validTaxonCommentedLabels  :: [String]
+validTaxonCommentedLabels  = inlineLabel <$> zipWith (++) validTaxonLabels validCommentBodies
+inlineLabel :: String -> String
+inlineLabel x = concat ["> ", x, "\n"]
 
 fastaSequence' :: TestTree
 fastaSequence' = testGroup "fastaNucleotides" $ [valid]
   where
     parse' = parse fastaSequence ""
-    success str = testCase (show str) . assert $ parse' str == Right "-GATACA-"
+    success (res,str) = testCase (show str) . assert $ parse' str == Right res
     valid = testGroup "Valid sequences" $ success <$> validSequences
-    validSequences =
-      [ "-GATACA-\n"
-      , "- G ATA CA- \n"
-      , "-GAT\nACA-\n"
-      , " -G A\nT\n AC A- \n"
-      , "-GA\n\nT\n \nACA-\n"
+
+validSequences :: [(String,String)]
+validSequences =
+      [ ("-GATACA-", "-GATACA-\n"         )
+      , ("-GATACA-", "- G ATA CA- \n"     )
+      , ("-GATACA-", "-GAT\nACA-\n"       )
+      , ("-GATACA-", " -G A\nT\n AC A- \n")
+      , ("-GATACA-", "-GA\n\nT\n \nACA-\n")
       ]
 
-{-
-isLeft, isRight :: Either a b  -> Bool
-isLeft (Left _) = True
-isLeft _        = False
-isRight = not . isLeft
--}
+fastaTaxonSequenceDefinition' :: TestTree
+fastaTaxonSequenceDefinition' = testGroup "fastaTaxonSequenceDefinition" $ [valid]
+  where
+    parse'              = parse fastaTaxonSequenceDefinition ""
+    success (res,str)   = testCase (show str) . assert $ parse' str == Right res
+    valid               = testGroup "Valid sequences" $ success <$> validTaxonSequences
+    validTaxonSequences = zipWith f validTaxonLines validSequences
+    validTaxonLines     = validTaxonCommentLines ++ validTaxonCommentlessLines
+    f (x,str) (y,seq')  = (FastaSequence x y, concat [str,"\n",seq'])
+
 
 headOrEmpty :: [[a]] -> [a]
 headOrEmpty = maybe [] id . headMay
+
