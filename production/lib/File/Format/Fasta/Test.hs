@@ -109,20 +109,25 @@ inlineLabel :: String -> String
 inlineLabel x = concat ["> ", x, "\n"]
 
 fastaSequence' :: TestTree
-fastaSequence' = testGroup "fastaNucleotides" $ [valid]
+fastaSequence' = testGroup "fastaNucleotides" $ [valid,nonDNAValid]
   where
-    parse' = parse fastaSequence ""
+    parse'            = parse fastaSequence ""
     success (res,str) = testCase (show str) . assert $ parse' str == Right res
-    valid = testGroup "Valid sequences" $ success <$> validSequences
+    valid             = testGroup "Valid sequences" $ success <$> validSequences
+    nonDNAValid       = testGroup "Valid sequences" $ success <$> nonDNASequences
+    nonDNASequences   = [ ("-.?"                 , "-.?\n"                 ) -- Gap / Missing 
+                        , ("RYSWKMBDHVN"         , "RYSWKMBDHVN\n"         ) -- IUPAC Ambiguity Codes
+                        , ("ACDEFGHIKLMNPQRSTVWY", "ACDEFGHIKLMNPQRSTVWY\n") -- AminoAcids
+                        ]
 
 validSequences :: [(String,String)]
 validSequences =
-      [ ("-GATACA-", "-GATACA-\n"         )
-      , ("-GATACA-", "- G ATA CA- \n"     )
-      , ("-GATACA-", "-GAT\nACA-\n"       )
-      , ("-GATACA-", " -G A\nT\n AC A- \n")
-      , ("-GATACA-", "-GA\n\nT\n \nACA-\n")
-      ]
+  [ ("-GATACA-"            , "-GATACA-\n"            )
+  , ("-GATACA-"            , "- G ATA CA- \n"        )
+  , ("-GATACA-"            , "-GAT\nACA-\n"          )
+  , ("-GATACA-"            , " -G A\nT\n AC A- \n"   )
+  , ("-GATACA-"            , "-GA\n\nT\n \nACA-\n"   )
+  ]
 
 fastaTaxonSequenceDefinition' :: TestTree
 fastaTaxonSequenceDefinition' = testGroup "fastaTaxonSequenceDefinition" $ [valid]
