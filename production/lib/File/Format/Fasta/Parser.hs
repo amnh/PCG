@@ -9,7 +9,7 @@ import           Data.List                         (nub,partition)
 import           Data.List.Utility
 import           File.Format.Fasta.Internal
 import           Text.Parsec
-import           Text.Parsec.Custom                (fails)
+import           Text.Parsec.Custom
 
 data FastaSequence
    = FastaSequence
@@ -39,6 +39,15 @@ fastaTaxonName = identifierLine
 --   constrained to a valid Char alphabet representing possible character states
 fastaSequence :: Stream s m Char => ParsecT s u m String
 fastaSequence = symbolSequence $ oneOf alphabet
+
+-- | Takes a symbol combinator and constructs a combinator which matches
+--   many of the symbols seperated by spaces and newlines and the enitire
+--   sequence ends in a new line
+symbolSequence :: Stream s m Char => ParsecT s u m a -> ParsecT s u m [a]
+symbolSequence sym = spaces *> fullSequence
+  where
+    fullSequence = concat <$> many1 (inlineSpaces *> sequenceLine)
+    sequenceLine = (sym <* inlineSpaces) `manyTill` eol
 
 -- | Various input alphabets
 alphabet, iupacAminoAcidChars, iupacNucleotideChars, iupacRNAChars :: String

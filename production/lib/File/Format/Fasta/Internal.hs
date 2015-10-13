@@ -43,8 +43,3 @@ commentBody  = do
 commentWord :: Stream s m Char => ParsecT s u m String
 commentWord  = many1 (satisfy (not . isSpace)) <?> "Non-space characters"
 
-symbolSequence :: Stream s m Char => ParsecT s u m a -> ParsecT s u m [a]
-symbolSequence sym = spaces *> fullSequence
-  where
-    fullSequence = concat <$> many1 (inlineSpaces *> sequenceLine)
-    sequenceLine = (sym <* inlineSpaces) `manyTill` eol
