@@ -1,4 +1,4 @@
-module TestSuite.Internal where
+module Data.Either.Custom where
 
 isLeft, isRight :: Either a b -> Bool
 isLeft (Left _) = True
