@@ -4,6 +4,7 @@ module File.Format.Fasta.Test
   ( testSuite
   ) where
 
+import Control.Arrow              (second)
 import Data.Char                  (isSpace)
 import Data.Either.Custom
 import File.Format.Fasta.Internal
@@ -17,7 +18,7 @@ import Text.Parsec                (parse,eof)
 testSuite :: TestTree
 testSuite = testGroup "Fasta Format"
   [ testGroup "Fasta Generalized Combinators" [identifier',commentBody',identifierLine']
-  , testGroup "Fasta Parser" [fastaSequence',fastaTaxonSequenceDefinition']
+  , testGroup "Fasta Parser" [fastaSequence',fastaTaxonSequenceDefinition',fastaStreamParser']
   ]
 
 identifier' :: TestTree
@@ -129,10 +130,20 @@ fastaTaxonSequenceDefinition' = testGroup "fastaTaxonSequenceDefinition" $ [vali
     parse'              = parse fastaTaxonSequenceDefinition ""
     success (res,str)   = testCase (show str) . assert $ parse' str == Right res
     valid               = testGroup "Valid sequences" $ success <$> validTaxonSequences
-    validTaxonSequences = zipWith f validTaxonLines validSequences
-    validTaxonLines     = validTaxonCommentLines ++ validTaxonCommentlessLines
+
+validTaxonLines     :: [(String,String)]
+validTaxonLines     = validTaxonCommentLines ++ validTaxonCommentlessLines
+validTaxonSequences :: [(FastaSequence,String)]
+validTaxonSequences = zipWith f validTaxonLines validSequences
+  where
     f (x,str) (y,seq')  = (FastaSequence x y, concat [str,"\n",seq'])
 
+fastaStreamParser' :: TestTree
+fastaStreamParser' = testGroup "fastaStreamParser" $ [testGroup "Valid stream" $ [validStream]]
+  where
+    parse'      = parse fastaStreamParser ""
+    validStream = testCase "Concatenateed fasta stream" . assert $ parse' str == Right res
+    (res,str)   = second concat $ unzip validTaxonSequences
 
 headOrEmpty :: [[a]] -> [a]
 headOrEmpty = maybe [] id . headMay
