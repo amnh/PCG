@@ -2,6 +2,7 @@
 
 module File.Format.Fasta.Test
   ( testSuite
+  , validTaxonLines
   ) where
 
 import Control.Arrow              (second)
@@ -11,6 +12,7 @@ import Data.Maybe                 (fromMaybe)
 import File.Format.Fasta.Internal
 import File.Format.Fasta.Parser
 import Safe                       (headMay)
+import Test.Custom                (parseEquals,parseFailure)
 import Test.Tasty                 (TestTree,testGroup)
 import Test.Tasty.HUnit
 import Test.Tasty.QuickCheck
@@ -31,9 +33,8 @@ identifier' = testGroup "identifier" [invariant, valid, invalid]
   where
     valid         = testGroup "Valid taxon labels"   $ success <$>   validTaxonLabels
     invalid       = testGroup "Invalid taxon labels" $ failure <$> invalidTaxonLabels
-    success str   = testCase (show str) . assert $ parse' str == Right str
-    failure str   = testCase (show str) . assert . isLeft $ parse' str
-    parse' = parse (identifier <* eof) ""
+    success str   = testCase (show str) $ parseEquals  (identifier <* eof) str str
+    failure str   = testCase (show str) $ parseFailure (identifier <* eof) str
     invalidTaxonLabels =
       [ x ++ [s] ++ y |  e    <- validTaxonLabels
                       ,  s    <- "$ \t\r\n"
@@ -84,8 +85,7 @@ commentBody' = testGroup "commentBody" [generalComment, prependedDollarSign, val
             line' = unwords $ words line
     validComments = testGroup "Valid comments" $ success <$> validCommentBodies
       where 
-        success str = testCase (show str) . assert $ parse' str == Right "A species of animal"
-        parse' = parse (commentBody <* eof) ""
+        success str = testCase (show str) $ parseEquals (commentBody <* eof) str "A species of animal"
 
 validCommentBodies :: [String]
 validCommentBodies =
@@ -99,10 +99,9 @@ validCommentBodies =
 identifierLine' :: TestTree
 identifierLine' = testGroup "fastaLabelLine" [validWithoutComments, validWithComments]
   where
-    parse'               = parse (identifierLine <* eof) ""
-    success (res,str)    = testCase (show str) . assert $ parse' str == Right res
     validWithoutComments = testGroup "Valid taxon label lines without comemnts" $ success <$> validTaxonCommentlessLines
     validWithComments    = testGroup "Valid taxon label lines with comments"    $ success <$> validTaxonCommentLines
+    success (res,str)    = testCase (show str) $ parseEquals (identifierLine <* eof) str res
 
 validTaxonCommentLines     :: [(String, String)]
 validTaxonCommentLines     = zip validTaxonLabels validTaxonCommentedLabels 
@@ -116,10 +115,9 @@ inlineLabel x = concat ["> ", x, "\n"]
 fastaSequence' :: TestTree
 fastaSequence' = testGroup "fastaSequence" [valid,nonDNAValid]
   where
-    parse'            = parse fastaSequence ""
-    success (res,str) = testCase (show str) . assert $ parse' str == Right res
-    valid             = testGroup "Valid sequences" $ success <$> validSequences
-    nonDNAValid       = testGroup "Valid sequences" $ success <$> nonDNASequences
+    valid             = testGroup "Valid DNA sequences"     $ success <$> validSequences
+    nonDNAValid       = testGroup "Valid non-DNA sequences" $ success <$> nonDNASequences
+    success (res,str) = testCase (show str) $ parseEquals fastaSequence str res
     nonDNASequences   = [ ("-.?"                 , "-.?\n"                 ) -- Gap / Missing
                         , ("#"                   , "#\n"                   ) -- Sequence Partition 
                         , ("RYSWKMBDHVN"         , "RYSWKMBDHVN\n"         ) -- IUPAC Ambiguity Codes
@@ -138,9 +136,8 @@ validSequences =
 fastaTaxonSequenceDefinition' :: TestTree
 fastaTaxonSequenceDefinition' = testGroup "fastaTaxonSequenceDefinition" [valid]
   where
-    parse'              = parse fastaTaxonSequenceDefinition ""
-    success (res,str)   = testCase (show str) . assert $ parse' str == Right res
-    valid               = testGroup "Valid sequences" $ success <$> validTaxonSequences
+    valid             = testGroup "Valid sequences" $ success <$> validTaxonSequences
+    success (res,str) = testCase (show str) $ parseEquals fastaTaxonSequenceDefinition str res
 
 validTaxonLines     :: [(String,String)]
 validTaxonLines     = validTaxonCommentLines ++ validTaxonCommentlessLines
@@ -152,8 +149,7 @@ validTaxonSequences = zipWith f validTaxonLines validSequences
 fastaStreamParser' :: TestTree
 fastaStreamParser' = testGroup "fastaStreamParser" [testGroup "Valid stream" [validStream]]
   where
-    parse'      = parse fastaStreamParser ""
-    validStream = testCase "Concatenateed fasta stream" . assert $ parse' str == Right res
+    validStream = testCase "Concatenateed fasta stream" $ parseEquals fastaStreamParser str res
     (res,str)   = second concat $ unzip validTaxonSequences
 
 headOrEmpty :: [[a]] -> [a]
