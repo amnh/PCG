@@ -16,7 +16,7 @@ data FastaSequenceType = DNA | RNA | AminoAcid deriving (Bounded,Eq,Enum,Read,Sh
 colate :: FastaSequenceType -> FastaParseResult -> TaxonSequenceMap
 colate seqType = foldr f empty
   where
-    f (FastaSequence name seq') mapping = insert name (seqCharMapping seqType seq') mapping
+    f (FastaSequence name seq') = insert name (seqCharMapping seqType seq')
 
 fastaStreamConverter :: FastaSequenceType -> FastaParseResult -> ParsecT s u m TaxonSequenceMap
 fastaStreamConverter seqType = fmap (colate seqType) . validateStreamConversion seqType 
@@ -50,7 +50,7 @@ seqCharMapping seqType = V.fromList . fmap (f seqType)
 
 iupacNucleotideSubstitutions :: Map Char [String]
 iupacNucleotideSubstitutions = 
-  (fmap pure) <$> M.fromList 
+  fmap pure <$> M.fromList 
   [ ('A', "A")
   , ('C', "C")
   , ('G', "G")

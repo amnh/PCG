@@ -1,4 +1,4 @@
-{-# LANGUAGE BangPatterns, FlexibleContexts #-}
+{-# LANGUAGE FlexibleContexts #-}
 
 module File.Format.Fasta.Test
   ( testSuite
@@ -7,6 +7,7 @@ module File.Format.Fasta.Test
 import Control.Arrow              (second)
 import Data.Char                  (isSpace)
 import Data.Either.Custom
+import Data.Maybe                 (fromMaybe)
 import File.Format.Fasta.Internal
 import File.Format.Fasta.Parser
 import Safe                       (headMay)
@@ -26,7 +27,7 @@ testSuite = testGroup "Fasta Format"
   ]
 
 identifier' :: TestTree
-identifier' = testGroup "identifier" $ [invariant, valid, invalid]
+identifier' = testGroup "identifier" [invariant, valid, invalid]
   where
     valid         = testGroup "Valid taxon labels"   $ success <$>   validTaxonLabels
     invalid       = testGroup "Invalid taxon labels" $ failure <$> invalidTaxonLabels
@@ -96,7 +97,7 @@ validCommentBodies =
   ]
 
 identifierLine' :: TestTree
-identifierLine' = testGroup "fastaLabelLine" $ [validWithoutComments, validWithComments]
+identifierLine' = testGroup "fastaLabelLine" [validWithoutComments, validWithComments]
   where
     parse'               = parse (identifierLine <* eof) ""
     success (res,str)    = testCase (show str) . assert $ parse' str == Right res
@@ -113,7 +114,7 @@ inlineLabel :: String -> String
 inlineLabel x = concat ["> ", x, "\n"]
 
 fastaSequence' :: TestTree
-fastaSequence' = testGroup "fastaNucleotides" $ [valid,nonDNAValid]
+fastaSequence' = testGroup "fastaSequence" [valid,nonDNAValid]
   where
     parse'            = parse fastaSequence ""
     success (res,str) = testCase (show str) . assert $ parse' str == Right res
@@ -135,7 +136,7 @@ validSequences =
   ]
 
 fastaTaxonSequenceDefinition' :: TestTree
-fastaTaxonSequenceDefinition' = testGroup "fastaTaxonSequenceDefinition" $ [valid]
+fastaTaxonSequenceDefinition' = testGroup "fastaTaxonSequenceDefinition" [valid]
   where
     parse'              = parse fastaTaxonSequenceDefinition ""
     success (res,str)   = testCase (show str) . assert $ parse' str == Right res
@@ -149,12 +150,12 @@ validTaxonSequences = zipWith f validTaxonLines validSequences
     f (x,str) (y,seq')  = (FastaSequence x y, concat [str,"\n",seq'])
 
 fastaStreamParser' :: TestTree
-fastaStreamParser' = testGroup "fastaStreamParser" $ [testGroup "Valid stream" $ [validStream]]
+fastaStreamParser' = testGroup "fastaStreamParser" [testGroup "Valid stream" [validStream]]
   where
     parse'      = parse fastaStreamParser ""
     validStream = testCase "Concatenateed fasta stream" . assert $ parse' str == Right res
     (res,str)   = second concat $ unzip validTaxonSequences
 
 headOrEmpty :: [[a]] -> [a]
-headOrEmpty = maybe [] id . headMay
+headOrEmpty = fromMaybe [] . headMay
 

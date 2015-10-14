@@ -59,11 +59,10 @@ iupacAminoAcidChars  = caseInsensitiveOptions $ "ACDEFGHIKLMNPQRSTVWY" ++ otherV
 iupacNucleotideChars = caseInsensitiveOptions $ "ACGTRYSWKMBDHVN"      ++ otherValidChars
 iupacRNAChars        = f <$> iupacNucleotideChars
   where
-    f x = if x == 'T'
-          then 'U'
-          else if x == 't'
-          then 'u'
-          else x
+    f x 
+      | x == 'T'  = 'U'
+      | x == 't'  = 'u'
+      | otherwise = x
 
 -- | Naively takes the union of many lists to a single list
 unionAll :: Eq a => [[a]] -> [a]
@@ -93,10 +92,10 @@ validate = validateSequenceConsistency <=< validateIdentifierConsistency
 
 -- | Ensures that there are no duplicate identifiers in the stream
 validateIdentifierConsistency :: Stream s m Char => FastaParseResult -> ParsecT s u m FastaParseResult
-validateIdentifierConsistency xs = do
-    case dupes of
-      [] -> pure xs
-      _  -> fails errorMessages
+validateIdentifierConsistency xs =
+  case dupes of
+    [] -> pure xs
+    _  -> fails errorMessages
   where
     dupes = duplicates $ taxonName <$> xs
     errorMessages  = errorMessage <$> dupes
@@ -107,10 +106,10 @@ validateSequenceConsistency :: Stream s m Char => FastaParseResult -> ParsecT s 
 validateSequenceConsistency = validateConsistentPartition <=< validateConsistentAlphabet
 
 validateConsistentAlphabet :: Stream s m Char => FastaParseResult -> ParsecT s u m FastaParseResult
-validateConsistentAlphabet xs = do
-    case partition snd results of
-      (_,[]) -> pure xs
-      (_,ys) -> fails $ errorMessage <$> ys
+validateConsistentAlphabet xs =
+  case partition snd results of
+    (_,[]) -> pure xs
+    (_,ys) -> fails $ errorMessage <$> ys
   where
     results            = validation <$> xs
     validation         = taxonName &&& consistentAlphabet . taxonSequence
@@ -126,10 +125,10 @@ validateConsistentAlphabet xs = do
                        ]
 
 validateConsistentPartition :: Stream s m Char => FastaParseResult -> ParsecT s u m FastaParseResult
-validateConsistentPartition xs = do
-    case consistentPartition xs of
-      [] -> pure xs
-      ys -> fails $ errorMessage <$> ys
+validateConsistentPartition xs =
+  case consistentPartition xs of
+    [] -> pure xs
+    ys -> fails $ errorMessage <$> ys
   where
     consistentPartition = interpretOccuranceMap . collateOccuranceMap . buildOccuranceMap
     buildOccuranceMap = foldr f empty

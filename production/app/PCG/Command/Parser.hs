@@ -70,7 +70,7 @@ argumentDefinition =
 argumentListDefinition :: Parsec String u [Argument]
 argumentListDefinition = 
      symbol (char '(') 
-  *> argumentDefinition `sepBy` (trimmed (char ','))
+  *> argumentDefinition `sepBy` trimmed (char ',')
   <* symbol (char ')')
 
 primativeDefinition :: Parsec String u Primative
@@ -98,9 +98,9 @@ primativeDefinition = symbol $
         hours   <- number 
         _       <- char ':'
         minutes <- number
-        let totalSeconds = (read days)    * 60 * 60 * 24
-                         + (read hours)   * 60 * 60
-                         + (read minutes) * 60 
+        let totalSeconds = read days    * 60 * 60 * 24
+                         + read hours   * 60 * 60
+                         + read minutes * 60 
         pure . TimeSpan $ secondsToDiffTime totalSeconds
     textValue   = char '"' *> many (escaped <|> nonEscaped) <* char '"'
     nonEscaped  = noneOf "\\\""
