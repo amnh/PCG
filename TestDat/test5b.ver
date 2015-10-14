@@ -1,0 +1,4 @@
+vertexSet = {r7 r8 five r1 r2 r3 r4 r5 r6 zero one, two, three, four, r0} 
+rootSet = { r0, r6}
+edgeSet = {(r0 r7) (r6, zero) (one r8) (r7 r8) (r0 r1) (r1 r2) (r1 r3) (r2 r5) (r3 r4) (r3
+three) (r4 five) (r5 r4) (r5 four) (r7 r5) (r2 two) (r8 r4)}

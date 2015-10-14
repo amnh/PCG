@@ -1,12 +1,13 @@
 {- Module for non-additive optimization of a bit packed tree-}
 
-module Packing.PackedOptimize (allOptimization, optimizeForest, getRootCost) where
+module Packing.PackedOptimize (allOptimization, optimizeForest, getRootCost, costForest) where
 
 -- imports 
 import Packing.PackedBuild
 import Component
 import qualified Data.Vector as V
 import qualified Packing.BitPackedNode as BN
+import Debug.Trace
 
 -- | Useful higher level data structures of trees, costs, etc
 type TreeInfo = (PhyloComponent, PackedTree)
@@ -14,6 +15,14 @@ type ExpandTree = (PhyloComponent, PackedTree, PackedTree)
 type NewRows = [(Int, BN.BitPackedNode)]
 type NewNodes = [(Int, PhyloNode)]
 type NodeCost = V.Vector Float
+
+-- | Function to get the cost of an entire forest by map
+costForest :: PhyloForest -> (PackedForest, PackedInfo, BN.PackMode) -> Float -> [Float]
+costForest forestTrees (packForest, pInfo, pMode) weight = 
+    let 
+        downOut = zipWith (\dat tree -> optimizationDownPass (tree, dat) pInfo pMode weight) (V.toList packForest) forestTrees
+        costs = map (\(tree, _, _) -> V.head $ getRootCost tree) downOut
+    in costs
 
 -- | Function to optimize an entire forest by a map
 optimizeForest :: PhyloForest -> (PackedForest, PackedInfo, BN.PackMode) -> Float -> [TreeInfo]
@@ -24,8 +33,7 @@ allOptimization :: TreeInfo -> PackedInfo -> BN.PackMode -> Float -> TreeInfo
 allOptimization input pInfo pMode weight = 
     let 
         downPass = optimizationDownPass input pInfo pMode weight
-        upPass = --trace ("down pass done " ++ show mat )
-                    optimizationUpPass downPass pInfo pMode
+        upPass = optimizationUpPass downPass pInfo pMode
     in upPass
 
 -- | Optimization down pass warpper for recursion from root
@@ -118,7 +126,7 @@ internalDownPass (tree, mat) pInfo myCode pMode weight
 -- | Bit operations for the down pass: basically creats a mask for union and intersection areas and then takes them
 -- returns the new assignment, the union/intersect mask, and the new total cost
 downBitOps :: (NodeCost, BN.BitPackedNode) -> (NodeCost, BN.BitPackedNode) -> PackedInfo -> BN.PackMode -> Float -> (BN.BitPackedNode, BN.BitPackedNode, NodeCost)
---downBitOps (lcost, lbit) (rcost, rbit) pInfo pMode weight | trace ("down bit ops with bit " ++ show lbit) False = undefined
+--downBitOps (lcost, lbit) (rcost, rbit) pInfo pMode weight | trace ("down bit ops with bit " ++ show (BN.bitSize lbit) ++ " and bit " ++ show (BN.bitSize rbit)) False = undefined
 downBitOps (lcost, lbit) (rcost, rbit) pInfo pMode weight =
     let
         notOr = BN.complement $ lbit BN..&. rbit 

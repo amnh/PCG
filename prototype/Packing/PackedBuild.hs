@@ -1,9 +1,13 @@
+{-# LANGUAGE BangPatterns, DeriveGeneric #-}
 
 module Packing.PackedBuild (performPack, 
-                        PackedInfo (blockLenMap, bitAlphs, shuffleChars, specialMap, maxAlphabet, totalChars, blockChars, masks), 
+                        PackedInfo (blockLenMap, bitAlphs, shuffleChars, specialMap, maxAlphabet, totalChars, blockChars, masks, PackedInfo), 
                         PackedTree, 
-                        PackedForest) where
+                        PackedForest,
+                        SpecialMap) where
 
+import           Control.DeepSeq
+import           GHC.Generics
 import qualified Packing.BitPackedNode as BN
 import qualified Data.Vector as V
 import ReadFiles
@@ -23,6 +27,7 @@ type BitAlphabets = V.Vector (V.Vector [Char])
 type ShuffleChars = V.Vector [Int]
 type SpecialMap = M.Map Char String
 
+instance NFData PackedInfo
 
 -- | Data types for info on the pack.  Note that for static packing not all PackedInfo fields will be useful or filled
 data PackedInfo = PackedInfo     { blockLenMap :: BlockLenMap
@@ -33,14 +38,14 @@ data PackedInfo = PackedInfo     { blockLenMap :: BlockLenMap
                                 , totalChars :: Int
                                 , blockChars :: V.Vector Int
                                 , masks :: Masks
-                                } deriving (Show, Eq)
+                                } deriving (Show, Eq, Generic)
 
 
 -- | Standard special characters for genetic and amino acid sequences, based on standard codes
-specialCharsGene, specialCharsNuc :: M.Map Char String
-specialCharsGene = M.fromList [('?', "ACGT-"), ('R', "AG"), ('Y', "CT"), ('S', "GC"), ('W', "AT"), ('K', "GT"), ('M', "AC"), ('B', "CGT"), 
-                    ('D', "AGT"), ('H', "ACT"), ('H', "ACT"), ('V', "ACG"), ('N', "ACGT")] 
-specialCharsNuc = M.fromList [('?', "ACDEFGHIKLMNPQRSTVWY")] 
+--specialCharsGene, specialCharsNuc :: M.Map Char String
+--specialCharsGene = M.fromList [('?', "ACGT-"), ('R', "AG"), ('Y', "CT"), ('S', "GC"), ('W', "AT"), ('K', "GT"), ('M', "AC"), ('B', "CGT"), 
+--                    ('D', "AGT"), ('H', "ACT"), ('H', "ACT"), ('V', "ACG"), ('N', "ACGT")] 
+--specialCharsNuc = M.fromList [('?', "ACDEFGHIKLMNPQRSTVWY")] 
 
 -- | Master function to determine the mode and do all of the packing after checking for incorrect data types
 performPack :: RawData -> [String] -> PhyloForest -> (String, String) -> (PackedForest, PackedInfo, BN.PackMode)
@@ -49,15 +54,18 @@ performPack raw@(pairedData, infoList) names forest inMode
     | otherwise = 
         let 
             numChars = length $ snd $ head pairedData
-            alphabets = genSeenAlphabets pairedData numChars
-            special = trace ("alphabets " ++ show (length alphabets))
+            alphabets = --trace ("numChars " ++ show numChars  ++ "data " ++ show pairedData)
+                            genSeenAlphabets pairedData numChars
+            special = --trace ("alphabets " ++ show (length alphabets))
                         getSpecial alphabets (head infoList)
             overallAlph = special M.! '?'
-            pMode = getPackMode inMode overallAlph
+            pMode = --trace ("set pack mode with alphabet " ++ show overallAlph)
+                        getPackMode inMode overallAlph
             pInfo = getPackInfo raw pMode alphabets special
             leaves = createPackedLeaves pMode pInfo raw
             packForest = V.fromList $ map (\tree -> packTree names leaves tree) forest
-        in (packForest, pInfo, pMode)
+        in --trace ("packed forest "++ show packForest)
+            (packForest, pInfo, pMode)
 
 
 -- | Helper function to take string input and output the BN.PackMode object, automatically determining as needed
@@ -87,7 +95,7 @@ setAutoPack alphlen
 -- and only giving the infinite what's meaningful
 getPackInfo :: RawData -> BN.PackMode -> SeenAlphs -> SpecialMap -> PackedInfo
 getPackInfo (pairedData, _) pMode alphabets special 
-    | BN.bitLen pMode == 16 = 
+    | BN.bitLen pMode == 16 && (BN.adaptive pMode) = 
         let 
             (blocklens, finalAlphs, shuffle) = adaptiveReGroup nubAlphabets 16 
             mapChars = V.map V.length finalAlphs
@@ -101,7 +109,7 @@ getPackInfo (pairedData, _) pMode alphabets special
                         totalChars = numChars,
                         blockChars = mapChars,
                         masks = m} 
-    | BN.bitLen pMode == 64 = 
+    | BN.bitLen pMode == 64 && (BN.adaptive pMode) = 
         let 
                 (blocklens, finalAlphs, shuffle) = adaptiveReGroup nubAlphabets 64 
                 mapChars = V.map V.length finalAlphs
@@ -115,7 +123,7 @@ getPackInfo (pairedData, _) pMode alphabets special
                             totalChars = numChars,
                             blockChars = mapChars,
                             masks = m} 
-    | BN.bitLen pMode == 0 = 
+    | not (BN.adaptive pMode) = 
         let 
             m = BN.genMasks V.empty V.empty alphlen numChars pMode
         in PackedInfo {
@@ -155,9 +163,7 @@ genSeenAlphabets terminals numChars
 -- uses the charInfo as meaningful, but has a fall through in case
 getSpecial :: SeenAlphs -> CharInfo -> M.Map Char String
 getSpecial alphabets charInfo 
-    | charType charInfo == GenSeq = specialCharsGene
-    | charType charInfo == NucSeq = specialCharsNuc
-    | not (null $ alphabet charInfo) = trace "use charInfo" $
+    | not (null $ alphabet charInfo) = --trace "use charInfo" $
         let 
             alph = map head (alphabet charInfo)
             finalAlph = [x | x<-alph, not $ x `elem` "?-"]
@@ -244,15 +250,18 @@ charSetToPacked strings charInfo pInfo pMode
 -- | Uses a tree traversal to order the packed nodes into a packed tree, 
 -- filling in empties elsewhere for a full structure with correct indices
 packTree :: [String] -> PackedTree -> PhyloComponent -> PackedTree
+--packTree names _ allNodes | trace ("pack tree with names " ++ show names) False = undefined
 packTree names leaves allNodes
     | (V.length allNodes == 0 ) = V.empty
-    | not (myName `elem` names) = BN.EmptyPackNode `V.cons` packTree names leaves (V.tail allNodes)
+    | not amLeaf = BN.EmptyPackNode `V.cons` packTree names leaves (V.tail allNodes)
     | otherwise = 
         let 
-            namePos = fromJust $ myName `elemIndex` names
-            myNode = leaves V.! namePos
+            myName = nodeName $ V.head allNodes
+            myPos = fromJust $ myName `elemIndex` names
+            myNode = leaves V.! myPos
         in myNode `V.cons` packTree names leaves (V.tail allNodes)  
         where 
-            myName = nodeName $ V.head allNodes
+            amLeaf = isTerminal $ V.head allNodes
+
 
 

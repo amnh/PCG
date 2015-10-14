@@ -7,7 +7,7 @@ module File.Format.TransitionCostMatrix.Parser
   , transitionCosts
   ) where
 
-import Data.List             (sort)
+import Data.List.Utility     (duplicates)
 import Data.Matrix           (Matrix,fromList)
 import Data.Maybe            (catMaybes)
 import Data.Char             (isSpace)
@@ -56,7 +56,7 @@ validateParseResult (ParseResult alphabet protoMatrix)
     emptyAlphabet  = case alphabet of 
                        [] -> Just "No alphabet specified"
                        _  -> Nothing
-    doubleAlphabet = case dupes alphabet of
+    doubleAlphabet = case duplicates alphabet of
                        [] -> Nothing
                        xs -> Just $ "The following symbols were listed multiple times in the custom alphabet: " ++ show xs
     emptyMatrix    = case protoMatrix of
@@ -66,15 +66,6 @@ validateParseResult (ParseResult alphabet protoMatrix)
                      then Just $ "Matrix has "++show rows++" rows but "++show size++" rows were expected"
                      else Nothing
     badColCount    = foldr g [] badCols
-
-dupes :: Ord a => [a] -> [a]
-dupes = dupes' . sort
-  where
-    dupes'       [] = []
-    dupes'      [_] = []
-    dupes' (x:y:ys) = if   x == y 
-                      then x : dupes' (dropWhile (y==) ys) 
-                      else dupes' (y:ys)
 
 symbol  :: Stream s m Char => ParsecT s u m a -> ParsecT s u m a
 symbol  x = x <* spaces

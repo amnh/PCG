@@ -5,10 +5,11 @@ module TestSuite.LibraryTests
 
 import Test.Tasty 
 import qualified Text.Parsec.Custom.Test as CustomParsec
+import qualified File.Format.Fasta.Test  as Fasta
 
 main :: IO ()
 main = defaultMain testSuite
 
 testSuite :: TestTree
-testSuite = testGroup "Library Test Suite" [ CustomParsec.testSuite ]
+testSuite = testGroup "Library Test Suite" [ CustomParsec.testSuite, Fasta.testSuite ]
 

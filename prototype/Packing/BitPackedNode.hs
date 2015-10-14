@@ -1,5 +1,5 @@
 {-# LANGUAGE BangPatterns, DeriveGeneric #-}
-module Packing.BitPackedNode (BitPackedNode (EmptyPackNode, A16, S16, A64, S64, SInf), 
+module Packing.BitPackedNode (BitPackedNode (..), 
                         PackMode (bitLen, adaptive, MakePackMode), 
                         (.&.), 
                         (.|.), 
@@ -35,6 +35,7 @@ data BitPackedNode = EmptyPackNode | A16 (V.Vector Word16) | S16 (V.Vector Word1
 instance NFData BitPackedNode
 instance NFData BV.BV where
     rnf bv = (\ !_ -> ()) bv
+instance NFData PackMode
 
 -- | make the cardinality table and the masks for 64 bit cardinality
 -- All cardinalities except for the "infinite" type are from the stored table
@@ -53,7 +54,7 @@ allSelect = V.fromList [fst16, snd16, thd16, fth16]
 -- | Information data type for the pack mode
 data PackMode = MakePackMode     { bitLen :: Int
                                 , adaptive :: Bool
-                                } deriving (Show, Eq)
+                                } deriving (Show, Eq, Generic)
 
 -- | Make the instance
 instance Bits BitPackedNode where
@@ -214,17 +215,18 @@ instance Bits BitPackedNode where
         let 
             numbits = V.length bits64
             masked16 = V.map (\mask -> (.|.) (S64 $ V.replicate numbits mask) (S64 bits64)) allSelect
-            shifts = trace ("masked 16 " ++ show masked16)
+            shifts = --trace ("masked 16 " ++ show masked16)
                         V.fromList [48, 32, 16, 0]
             maskedRight = V.zipWith (\s node -> shift node (-s)) shifts masked16
             convRight = V.map (\(S64 node) -> V.map (\b -> fromIntegral b :: Word16) node) maskedRight
-            foldedCost =  trace ("convRight " ++ show convRight)
+            foldedCost =  --trace ("convRight " ++ show convRight)
                             V.foldr (\node acc -> acc + popCount (S16 node)) 0 convRight
         in foldedCost
     popCount (SInf biti) = popCount biti
 
 -- | Creation of an encoded node given the string and relevant information
 makeNode :: String -> M.Map Char String -> V.Vector(V.Vector [Char]) -> String -> V.Vector [Int] -> PackMode -> BitPackedNode
+--makeNode string special bitAlphs overallAlph shuffles mode | trace ("makeNode with " ++ show mode) False = undefined
 makeNode string special bitAlphs overallAlph shuffles mode 
     | bitLen mode == 16 && adaptive mode = A16 $ V.zipWith (\alph chars -> makeBit16 chars special alph overallAlph mode) bitAlphs remixString
 
@@ -255,7 +257,8 @@ makeNode string special bitAlphs overallAlph shuffles mode
             recodeS = foldr (\c acc -> if c `elem` specialKeys then (special M.! c) : acc else [c] : acc) [] string
             tfVec = foldr (\str acc -> (map (\a -> if a `elem` str then True else False) overallAlph) ++ acc) [] recodeS
             outvec = BV.fromBits tfVec
-        in SInf outvec
+        in --trace ("outvec for inf " ++ show outvec)
+            SInf outvec
     | otherwise = error "incorrect packing mode, cannot create node "
         where remixString = V.map (\indices -> (map (\i -> string !! i) indices)) shuffles
 
@@ -352,7 +355,8 @@ blockShiftAndFold sideMode foldMode (SInf inbits) _ alphlen (SInf initVal) =
             | sideMode == "R" && foldMode == "|" = foldr (\s acc -> (.|.) acc (shiftR inbits s)) initVal [1..alphlen-1]
             | otherwise = error "incorrect input for block shift and fold"
     in SInf c
-blockShiftAndFold _ _ _ _ _ _ = error "Attempt to block, shift, and fold nodes of two different types"
+blockShiftAndFold _ _ EmptyPackNode _ _ _ = error "Attempt to block, shift, and fold empty node"
+blockShiftAndFold _ _ node _ _ initNode = error ("Attempt to block, shift, and fold node " ++ show node ++ " and initial " ++ show initNode ++ " of two different types")
 
 -- | Occupancy mask to remove excess bits from being counted
 -- Bits should always be masked to achieve the correct cost from popCount
@@ -510,11 +514,11 @@ getNodeCost node mode blockLens alphLen
     | otherwise =         
         let 
             numbits = div (fromJust $ bitSizeMaybe node) 64
-            masked16 = trace ("masked 16 " ++ show numbits)
+            masked16 = --trace ("masked 16 " ++ show numbits)
                             V.map (\mask -> (.|.) (A64 $ V.replicate numbits mask) node) allSelect
             shifts = V.fromList [48, 32, 16, 0]
             maskedRight = V.zipWith (\s n -> shift n (-s)) shifts masked16
-            convRight = trace ("convRight " ++ show maskedRight)
+            convRight = --trace ("convRight " ++ show maskedRight)
                             V.map (\(A64 n) -> V.map (\b -> fromIntegral b :: Word16) n) maskedRight
             counts = V.map (\n -> popCount (A16 n)) convRight 
             costs = V.zipWith (\l c -> div c l) blockLens counts

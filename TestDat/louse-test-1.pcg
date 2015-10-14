@@ -1,0 +1,2 @@
+read(custom_alphabet:("louse-test.fas", tcm:("UT-louse-11.matrix")))
+read(newick:("louse-test.newick"))
