@@ -1,8 +1,16 @@
 {-# LANGUAGE FlexibleContexts #-}
 
-module File.Format.Fastc.Parser
-  ( FastcData(..) 
-  , parseFastcStream
+module File.Format.Fastc.Parser 
+  ( CharacterSequence
+  , FastcSequence(..)
+  , Identifier
+  , fastcStreamParser
+  , fastcSymbolSequence
+  , fastcTaxonSequenceDefinition
+
+  , symbolGroup
+  , validSymbol
+  , ambiguityGroup
   ) where
 
 import Data.Char                  (isSpace)
@@ -12,40 +20,41 @@ import Text.Parsec
 import Text.Parsec.Custom
 --import Text.Megaparsec
 
-data FastcData 
-   = FastcData
+type FastcParseResult = [FastcSequence]
+data FastcSequence
+   = FastcSequence
    { fastcLabel   :: Identifier
    , fastcSymbols :: CharacterSequence
-   } deriving (Show)
+   } deriving (Eq,Show)
 
-parseFastcStream :: Stream s m Char => ParsecT s u m [FastcData]
-parseFastcStream = many1 fastcTaxonSequenceDefinition <* eof
+fastcStreamParser :: Stream s m Char => ParsecT s u m FastcParseResult
+fastcStreamParser = many1 fastcTaxonSequenceDefinition <* eof
 
-fastcTaxonSequenceDefinition :: Stream s m Char => ParsecT s u m FastcData
+fastcTaxonSequenceDefinition :: Stream s m Char => ParsecT s u m FastcSequence
 fastcTaxonSequenceDefinition = do
     name <- identifierLine
-    seq' <- try symbolSequence <?> ("Unable to read symbol sequence for label: '" ++ name ++ "'")
+    seq' <- try fastcSymbolSequence <?> ("Unable to read symbol sequence for label: '" ++ name ++ "'")
     _    <- spaces
-    pure $ FastcData name seq'
+    pure $ FastcSequence name seq'
 
-symbolSequence :: Stream s m Char =>  ParsecT s u m CharacterSequence
-symbolSequence = fromList <$> (spaces *> fullSequence)
+fastcSymbolSequence :: Stream s m Char =>  ParsecT s u m CharacterSequence
+fastcSymbolSequence = fromList <$> (spaces *> fullSequence)
   where
     fullSequence = concat <$> many1 (inlineSpaces *> sequenceLine)
     sequenceLine = (symbolGroup <* inlineSpaces) `manyTill` eol
 
 symbolGroup :: Stream s m Char => ParsecT s u m [String]
-symbolGroup = (pure <$> validSymbol)
-          <|> ambiguityGroup
+symbolGroup = ambiguityGroup
+          <|> (pure <$> validSymbol)
 
 ambiguityGroup :: Stream s m Char => ParsecT s u m [String]
-ambiguityGroup = do 
-    _ <- char '['
-    x <- many1 validSymbol
-    _ <- char ']'
-    pure x
+ambiguityGroup = validSymbol `sepBy1` (char '|' <* inlineSpaces)
 
 validSymbol :: Stream s m Char => ParsecT s u m String
-validSymbol = validStart <:> many (satisfy (not .isSpace)) <* inlineSpaces
+validSymbol = (validStartChar <:> many validBodyChar) <* inlineSpaces
   where
-    validStart = satisfy $ \x -> x /= '>' && (not . isSpace) x
+    validStartChar = satisfy $ \x -> x /= '>' -- need to be able to match new taxa lines
+                                  && x /= '|' -- need to be able to start an ambiguity list 
+                                  && (not . isSpace) x
+    validBodyChar  = satisfy $ \x -> x /= '|' -- need to be able to end an ambiguity sequence
+                                  && (not . isSpace) x
