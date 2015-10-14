@@ -5,8 +5,10 @@ module File.Format.Fasta.Parser where
 import           Control.Arrow                     ((&&&))
 import           Control.Monad                     ((<=<))
 import           Data.Char                         (isLower,isUpper,toLower,toUpper)
-import           Data.List                         (nub,partition)
+import           Data.List                         (nub,partition,sortBy)
 import           Data.List.Utility
+import           Data.Map                          (empty,insertWith,toList)
+import           Data.Ord                          (comparing) 
 import           File.Format.Fasta.Internal
 import           Text.Parsec
 import           Text.Parsec.Custom
@@ -50,10 +52,11 @@ symbolSequence sym = spaces *> fullSequence
     sequenceLine = (sym <* inlineSpaces) `manyTill` eol
 
 -- | Various input alphabets
-alphabet, iupacAminoAcidChars, iupacNucleotideChars, iupacRNAChars :: String
-alphabet = unionAll [iupacAminoAcidChars, iupacNucleotideChars, iupacRNAChars]
-iupacAminoAcidChars  = caseInsensitiveOptions "ACDEFGHIKLMNPQRSTVWY"
-iupacNucleotideChars = caseInsensitiveOptions "ACGTRYSWKMBDHVN.-?"
+alphabet, otherValidChars, iupacAminoAcidChars, iupacNucleotideChars, iupacRNAChars :: String
+alphabet             = unionAll [iupacAminoAcidChars, iupacNucleotideChars, iupacRNAChars]
+otherValidChars      = ".-?#"
+iupacAminoAcidChars  = caseInsensitiveOptions $ "ACDEFGHIKLMNPQRSTVWY" ++ otherValidChars
+iupacNucleotideChars = caseInsensitiveOptions $ "ACGTRYSWKMBDHVN"      ++ otherValidChars
 iupacRNAChars        = f <$> iupacNucleotideChars
   where
     f x = if x == 'T'
@@ -101,16 +104,19 @@ validateIdentifierConsistency xs = do
 
 -- | Ensures that the charcters are all from a consistent alphabet
 validateSequenceConsistency :: Stream s m Char => FastaParseResult -> ParsecT s u m FastaParseResult
-validateSequenceConsistency xs = do
+validateSequenceConsistency = validateConsistentPartition <=< validateConsistentAlphabet
+
+validateConsistentAlphabet :: Stream s m Char => FastaParseResult -> ParsecT s u m FastaParseResult
+validateConsistentAlphabet xs = do
     case partition snd results of
       (_,[]) -> pure xs
       (_,ys) -> fails $ errorMessage <$> ys
   where
     results            = validation <$> xs
-    validation         = taxonName &&& validSequence . taxonSequence
-    validSequence seq' = all (`elem` iupacAminoAcidChars ) seq'
-                      || all (`elem` iupacNucleotideChars) seq'
-                      || all (`elem` iupacRNAChars       ) seq'
+    validation         = taxonName &&& consistentAlphabet . taxonSequence
+    consistentAlphabet  seq' = all (`elem` iupacAminoAcidChars ) seq'
+                            || all (`elem` iupacNucleotideChars) seq'
+                            || all (`elem` iupacRNAChars       ) seq'
     errorMessage (n,_) = concat 
                        [ "Error in sequence for taxon name: '"
                        ,  n
@@ -118,3 +124,37 @@ validateSequenceConsistency xs = do
                        , "Check this taxon's sequence to ensure that it contains characted codes "
                        , "from only one data format."
                        ]
+
+validateConsistentPartition :: Stream s m Char => FastaParseResult -> ParsecT s u m FastaParseResult
+validateConsistentPartition xs = do
+    case consistentPartition xs of
+      [] -> pure xs
+      ys -> fails $ errorMessage <$> ys
+  where
+    consistentPartition = interpretOccuranceMap . collateOccuranceMap . buildOccuranceMap
+    buildOccuranceMap = foldr f empty
+      where
+        f e = insertWith (++) (partitionChars e) [taxonName e]
+        partitionChars = length . filter (=='#') . taxonSequence
+    collateOccuranceMap = sortBy comparator . toList
+      where
+        comparator x y = descending $ comparing (length . snd) x y
+        descending LT  = GT
+        descending GT  = LT
+        descending x   = x
+    interpretOccuranceMap []         = []
+    interpretOccuranceMap [_]        = []
+    interpretOccuranceMap ((n,_):ys) = concat $ errorTokens <$> ys
+      where
+        errorTokens (m,zs) = (\z -> (n,m,z)) <$> zs
+    errorMessage (expected,actual,name) = concat
+      [ "Error in sequence for taxon name: '"
+      ,  name
+      , "' the sequence includes "
+      , show actual
+      , " partition characters ('#'). "
+      , "Expecting "
+      , show expected
+      , " partition characters in the sequence."
+      ]
+

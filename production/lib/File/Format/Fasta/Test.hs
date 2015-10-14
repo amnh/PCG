@@ -17,8 +17,12 @@ import Text.Parsec                (parse,eof)
 
 testSuite :: TestTree
 testSuite = testGroup "Fasta Format"
-  [ testGroup "Fasta Generalized Combinators" [identifier',commentBody',identifierLine']
-  , testGroup "Fasta Parser" [fastaSequence',fastaTaxonSequenceDefinition',fastaStreamParser']
+  [ testGroup "Fasta Generalized Combinators" 
+      [identifier',commentBody',identifierLine']
+  , testGroup "Fasta Parser"
+      [fastaSequence',fastaTaxonSequenceDefinition',fastaStreamParser']
+  , testGroup "Fasta Converter"
+      []
   ]
 
 identifier' :: TestTree
@@ -115,11 +119,12 @@ fastaSequence' = testGroup "fastaNucleotides" $ [valid,nonDNAValid]
     success (res,str) = testCase (show str) . assert $ parse' str == Right res
     valid             = testGroup "Valid sequences" $ success <$> validSequences
     nonDNAValid       = testGroup "Valid sequences" $ success <$> nonDNASequences
-    nonDNASequences   = [ ("-.?"                 , "-.?\n"                 ) -- Gap / Missing 
+    nonDNASequences   = [ ("-.?"                 , "-.?\n"                 ) -- Gap / Missing
+                        , ("#"                   , "#\n"                   ) -- Sequence Partition 
                         , ("RYSWKMBDHVN"         , "RYSWKMBDHVN\n"         ) -- IUPAC Ambiguity Codes
                         , ("ACDEFGHIKLMNPQRSTVWY", "ACDEFGHIKLMNPQRSTVWY\n") -- AminoAcids
                         ]
-
+-- add X as ambiguity for AminoAcids
 validSequences :: [(String,String)]
 validSequences =
   [ ("-GATACA-"            , "-GATACA-\n"            )
