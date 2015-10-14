@@ -24,7 +24,7 @@ data TCM
    } deriving (Show)
 
 parseTcmStream :: Stream s m Char => s -> m (Either ParseError TCM)
-parseTcmStream = runParserT (validateParseResult =<< tcmDefinition <* eof) () "Custom alphatbet and it's associated cost matrix"
+parseTcmStream = runParserT (validateParseResult =<< tcmDefinition <* eof) () "Custom alphabet and its associated cost matrix"
 
 tcmDefinition :: Stream s m Char => ParsecT s u m ParseResult
 tcmDefinition = do
