@@ -7,10 +7,6 @@ module File.Format.Fastc.Parser
   , fastcStreamParser
   , fastcSymbolSequence
   , fastcTaxonSequenceDefinition
-
-  , symbolGroup
-  , validSymbol
-  , ambiguityGroup
   ) where
 
 import Data.Char                  (isSpace)
@@ -18,7 +14,6 @@ import Data.Vector                (fromList)
 import File.Format.Fasta.Internal
 import Text.Parsec
 import Text.Parsec.Custom
---import Text.Megaparsec
 
 type FastcParseResult = [FastcSequence]
 data FastcSequence

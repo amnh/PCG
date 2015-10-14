@@ -7,7 +7,6 @@ module File.Format.Fasta.Test
 
 import Control.Arrow              (second)
 import Data.Char                  (isSpace)
-import Data.Either.Custom
 import Data.Maybe                 (fromMaybe)
 import File.Format.Fasta.Internal
 import File.Format.Fasta.Parser
