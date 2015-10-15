@@ -1,13 +1,9 @@
 {-# LANGUAGE FlexibleContexts #-}
 
-module File.Format.Newick.Parser
-  ( NewickNode()
-  , newickStandardDefinition
-  , newickExtendedDefinition
-  , newickForestDefinition
-  ) where
+module File.Format.Newick.Parser where
 
 import Control.Monad              (liftM)
+import Data.Char                  (isSpace)
 import Data.Map            hiding (filter,foldl,foldr,null)
 import Data.Maybe                 (fromJust,fromMaybe,isJust)
 import File.Format.Newick.Internal
@@ -44,21 +40,28 @@ newickLeafDefinition = do
     pure . NewickNode [] (Just label') $ branchLength'
 
 newickLabelDefinition :: Stream s m Char => ParsecT s u m String
-newickLabelDefinition = quotedLabel <|> unquotedLabel
+newickLabelDefinition = (quotedLabel <|> unquotedLabel) <* whitespace
 
 -- | We use a recursive parsing technique to handle the quoted escape sequence
 --   of two single quotes ("''") to denote an escaped quotation character 
 --   in the quoted label rather than signifying the end of the quoted label
 quotedLabel :: Stream s m Char => ParsecT s u m String
-quotedLabel = char '\'' *> quotedLabelData <* whitespace
+quotedLabel = do
+    _ <- char '\''
+    x <- quotedLabelData
+    case filter (not.isSpace) x of
+      [] -> fail $ "Blank quoted identifier found. The identifier '"++x++"' is not valid"
+      _  -> pure x
   where 
     quotedLabelData = do
-      prefix <- many (noneOf " \r\n'")
+      prefix <- many (noneOf $ '\'':invalidQuotedLabelChars)
       _      <- char '\'' 
       suffix <- optionMaybe (char '\'' <:> quotedLabelData)
-      pure $ case suffix of
-        Just x  -> prefix ++ x
-        Nothing -> prefix
+      case suffix of
+        Just y  -> pure $ prefix ++ y
+        Nothing -> pure prefix
+
+
 
 -- | The following characters are not allowed in a newick unquoted label:
 --   " \r\n\t\v\b':;,()[]<>"
@@ -70,11 +73,19 @@ quotedLabel = char '\'' *> quotedLabelData <* whitespace
 --   format. However, if a user really want to put '<' & '>' characters in
 --   a node label, they can always put such characters in a quoted label.
 unquotedLabel :: Stream s m Char => ParsecT s u m String
-unquotedLabel = many1 (noneOf " \r\n\t\v\b':;,()[]<>") <* whitespace
+unquotedLabel = many1 (noneOf invalidUnquotedLabelChars)
+
+requiresQuotedLabelChars :: String
+requiresQuotedLabelChars = " ':;,()[]<>"
+
+invalidQuotedLabelChars :: String
+invalidQuotedLabelChars = "\r\n\t\f\v\b"
+
+invalidUnquotedLabelChars :: String
+invalidUnquotedLabelChars = invalidQuotedLabelChars ++ requiresQuotedLabelChars
 
 branchLengthDefinition :: Stream s m Char => ParsecT s u m Double
 branchLengthDefinition = symbol (char ':') *> symbol decimal
-  where
 
 trimmed :: Stream s m Char => ParsecT s u m a -> ParsecT s u m a
 trimmed x = whitespace *> x <* whitespace
