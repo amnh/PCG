@@ -2,6 +2,7 @@
 
 module File.Format.Fastc.Parser 
   ( CharacterSequence
+  , FastcParseResult
   , FastcSequence(..)
   , Identifier
   , fastcStreamParser
