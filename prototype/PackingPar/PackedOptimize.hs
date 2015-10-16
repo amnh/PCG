@@ -1,6 +1,6 @@
 {- Module for non-additive optimization of a bit packed tree-}
 
-module PackedOptimize (allOptimization, optimizeForest, getRootCost) where
+module PackedOptimize (allOptimization, optimizeForest, getRootCost, costForest) where
 
 -- imports 
 import PackedBuild
@@ -17,6 +17,14 @@ type ExpandTree = (PhyloComponent, PackedTree, PackedTree)
 type NewRows = [(Int, BN.BitPackedNode)]
 type NewNodes = [(Int, V.Vector Float)]
 type NodeCost = V.Vector Float
+
+-- | Function to get the cost of an entire forest by map
+costForest :: PhyloForest -> (PackedForest, PackedInfo, BN.PackMode) -> Float -> [Float]
+costForest forestTrees (packForest, pInfo, pMode) weight = 
+    let 
+        downOut = zipWith (\dat tree -> optimizationDownPass (tree, dat) pInfo pMode weight) (V.toList packForest) forestTrees
+        costs = map (\(tree, _, _) -> V.head $ getRootCost tree) downOut
+    in costs
 
 -- | Function to optimize an entire forest by a map
 optimizeForest :: PhyloForest -> (PackedForest, PackedInfo, BN.PackMode) -> Float -> [TreeInfo]
