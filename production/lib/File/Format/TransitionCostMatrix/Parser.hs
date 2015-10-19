@@ -3,7 +3,7 @@
 module File.Format.TransitionCostMatrix.Parser
   ( TCM()
   , customAlphabet
-  , parseTcmStream
+  , tcmStreamParser
   , transitionCosts
   ) where
 
@@ -23,8 +23,8 @@ data TCM
    , transitionCosts ::  Matrix Double -- n+1 X n+1 matrix where n = length customAlphabet
    } deriving (Show)
 
-parseTcmStream :: Stream s m Char => s -> m (Either ParseError TCM)
-parseTcmStream = runParserT (validateParseResult =<< tcmDefinition <* eof) () "Custom alphabet and its associated cost matrix"
+tcmStreamParser s m Char => s -> m (Either ParseError TCM)
+tcmStreamParser = runParserT (validateParseResult =<< tcmDefinition <* eof) () "Custom alphabet and its associated cost matrix"
 
 tcmDefinition :: Stream s m Char => ParsecT s u m ParseResult
 tcmDefinition = do
