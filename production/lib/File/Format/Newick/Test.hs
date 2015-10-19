@@ -22,7 +22,7 @@ testSuite = testGroup "Newick Format"
   , testGroup "Extended Newick Parser"
       [newickExtendedDefinition']
   , testGroup "Forest Newick Parser"
-      []
+      [newickForestDefinition']
   , testGroup "Newick Converter"
       []
   ]
@@ -121,29 +121,46 @@ descendantList' = testGroup "descendantListDefinition" [valid,invalid]
 newickStandardDefinition' :: TestTree
 newickStandardDefinition' = testGroup "newickStandardDefinition" [valid,invalid]
   where
-    valid         = testGroup "Valid Newick trees"   $ success <$> validTrees
-    invalid       = testGroup "Invalid Newick trees" $ failure <$> invalidTrees
+    valid         = testGroup "Valid Newick trees"   $ success <$> validStandardTrees
+    invalid       = testGroup "Invalid Newick trees" $ failure <$> invalidStandardTrees
     success str   = testCase (show str) $ parseSuccess (newickStandardDefinition <* eof) str
     failure str   = testCase (show str) $ parseFailure (newickStandardDefinition <* eof) str
-    validTrees =
-      [ "(left,right)root:1;"
-      , "(((1,2),3),(4,5));"
-      ]
-    invalidTrees =
+    invalidStandardTrees =
       [ "(left,right)root:1"  -- Missing ending semicolon
       , "(((1,2),3),(4,5):);" -- Missing length after colon
+      ]
+
+validStandardTrees :: [String]
+validStandardTrees =
+      [ "(left,right)root:1;"
+      , "(((1,2),3),(4,5));"
       ]
 
 newickExtendedDefinition' :: TestTree
 newickExtendedDefinition' = testGroup "newickExtendedDefinition" [valid,invalid]
   where
-    valid         = testGroup "Valid Newick trees"   $ success <$> validTrees
-    invalid       = testGroup "Invalid Newick trees" $ failure <$> invalidTrees
+    valid         = testGroup "Valid Newick trees"   $ success <$> validExtendedTrees
+    invalid       = testGroup "Invalid Newick trees" $ failure <$> invalidExtendedTrees
     success str   = testCase (show str) $ parseSuccess (newickExtendedDefinition <* eof) str
     failure str   = testCase (show str) $ parseFailure (newickExtendedDefinition <* eof) str
-    validTrees =
-      [ "(((1,2),X),((3,4)X,5));" -- Acyclical node merge
-      ]
-    invalidTrees =
+    invalidExtendedTrees =
       [ "(((1,2),X)Y,((3,Y)X,4));" -- Cyclic node merge, non-sensical
       ]
+
+validExtendedTrees :: [String]
+validExtendedTrees =
+      [ "(((1,2),X),((3,4)X,5));" -- Acyclical node merge
+      ]
+
+newickForestDefinition' :: TestTree
+newickForestDefinition' = testGroup "newickForestDefinition" [valid,invalid]
+  where
+    valid          = testGroup "Valid Newick trees"   $ success <$> validForests
+    invalid        = testGroup "Invalid Newick trees" $ failure <$> invalidForests
+    success str    = testCase (show str) $ parseSuccess (newickForestDefinition <* eof) str
+    failure str    = testCase (show str) $ parseFailure (newickForestDefinition <* eof) str
+    validForests   = [concat ["<", concat validStandardTrees, concat validExtendedTrees, ">"]]
+    invalidForests =
+      [ "(((1,2),X),((3,4)X,5));" -- no angle braces
+      ]
+

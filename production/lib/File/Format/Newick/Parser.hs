@@ -140,10 +140,10 @@ joinNonUniqueLabeledNodes root = joinNonUniqueLabeledNodes' [] root
                   && (not . null . dropWhile (/=label)) stack
         cycle'     = (label : takeWhile (/=label) stack) ++ [label]
         cycleError = init $ unlines -- we use init to remove trailing newline
-                   [ "Cycle detected in Newick tree definition" 
+                   [ "Cycle detected in Newick tree definition"
                    , prettyErr cycle'
                    ]
-        prettyErr  = intercalate " -> " . fmap show 
+        prettyErr  = intercalate " -> " . fmap show
 
 {-
 parseAllSuccess :: String -> IO [(String, ParseError)]
