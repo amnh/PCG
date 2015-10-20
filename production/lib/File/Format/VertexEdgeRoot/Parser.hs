@@ -1,12 +1,6 @@
 {-# LANGUAGE FlexibleContexts #-}
 
-module File.Format.VertexEdgeRoot.Parser 
-  ( VertexEdgeRoot
-  , edges
-  , parseVertexEdgeRootStream
-  , roots
-  , verticies 
-  ) where
+module File.Format.VertexEdgeRoot.Parser where
 
 import Data.Either           (partitionEithers)
 import Data.List             (partition,sortBy)
@@ -18,7 +12,7 @@ import Text.Parsec.Custom
 type VertexLabel   = String
 type EdgeLength    = Maybe Double
 
-data VertexSetType = Verticies | Roots deriving (Eq)
+data VertexSetType = Verticies | Roots deriving (Eq,Show)
 data EdgeInfo      = EdgeInfo (VertexLabel,VertexLabel) EdgeLength deriving (Show,Eq,Ord)
 data VertexEdgeRoot
    = VertexEdgeRoot
@@ -27,8 +21,8 @@ data VertexEdgeRoot
    , roots       :: Set VertexLabel
    } deriving (Show)
 
-parseVertexEdgeRootStream :: Stream s m Char => s -> m (Either ParseError VertexEdgeRoot)
-parseVertexEdgeRootStream = runParserT (verDefinition <* eof) () "A set of verticies, a set of edges, and a set of root verticies"
+verStreamParser :: Stream s m Char => s -> m (Either ParseError VertexEdgeRoot)
+verStreamParser = runParserT (verDefinition <* eof) () "A set of verticies, a set of edges, and a set of root verticies"
 
 -- We have a complicated definition here because we do not want to restrict
 -- the order of the set definitions, and yet we must enforce that there is 
@@ -96,15 +90,15 @@ vertexSetDefinition = try labeledVertexSetDefinition <|> unlabeledVertexSetDefin
 -- A labeled vertex set contains a label followed by an unlabeled vertex set
 labeledVertexSetDefinition :: Stream s m Char => ParsecT s u m (Maybe VertexSetType, Set VertexLabel)
 labeledVertexSetDefinition = do
-    setType <- vertextSetType
+    setType <- vertexSetType
     _       <- symbol (char '=')
     (_,set) <- unlabeledVertexSetDefinition
     pure (Just setType, set)
 
 -- A vertex set label is one of the following case insensative strings:
 -- "vertexset", rootset"
-vertextSetType :: Stream s m Char => ParsecT s u m VertexSetType
-vertextSetType = do
+vertexSetType :: Stream s m Char => ParsecT s u m VertexSetType
+vertexSetType = do
     value <- optionMaybe (try (symbol (caseInsensitiveString "VertexSet")))
     case value of
       Just _  -> pure Verticies
