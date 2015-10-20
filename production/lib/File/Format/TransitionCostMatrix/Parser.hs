@@ -42,8 +42,8 @@ matrixBlock = validateMatrix =<< many (symbol matrixRow)
 
 validateParseResult :: Stream s m Char => ParseResult -> ParsecT s u m TCM
 validateParseResult (ParseResult alphabet matrix)
-  | dimMismatch  = pure $ TCM alphabet matrix
-  | otherwise    = fail errorMessage
+  | dimMismatch  = fail errorMessage
+  | otherwise    = pure $ TCM alphabet matrix
   where
     size         = length alphabet
     rows         = nrows matrix
