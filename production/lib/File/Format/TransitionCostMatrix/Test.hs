@@ -43,16 +43,16 @@ invalidAlphabets = appendNewlines
 alphabetLine' :: TestTree
 alphabetLine' = testGroup "alphabetLine" [validLines,invalidLines]
   where
-    validLines   = testGroup "Valid unquoted labels"   $ success <$> validAlphabets
-    invalidLines = testGroup "Invalid unquoted labels" $ failure <$> invalidAlphabets
+    validLines   = testGroup "Valid alphabet definition"   $ success <$> validAlphabets
+    invalidLines = testGroup "Invalid alphabet definition" $ failure <$> invalidAlphabets
     success str  = testCase (show str) $ parseEquals   (alphabetLine <* eof) str (words str)
     failure str  = testCase (show str) $ parseFailure  (alphabetLine <* eof) str
 
 matrixBlock' :: TestTree
 matrixBlock' = testGroup "matrixBlock" [validBlocks,invalidBlocks]
   where
-    validBlocks   = testGroup "Valid unquoted labels"   $ success <$> validMatricies
-    invalidBlocks = testGroup "Invalid unquoted labels" $ failure <$> invalidMatricies
+    validBlocks   = testGroup "Valid matrix block"   $ success <$> validMatricies
+    invalidBlocks = testGroup "Invalid matrix block" $ failure <$> invalidMatricies
     success str   = testCase (show str) $ parseSuccess  (matrixBlock <* eof) str
     failure str   = testCase (show str) $ parseFailure  (matrixBlock <* eof) str
 
