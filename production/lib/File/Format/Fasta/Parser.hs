@@ -5,10 +5,9 @@ module File.Format.Fasta.Parser where
 import           Control.Arrow                     ((&&&))
 import           Control.Monad                     ((<=<))
 import           Data.Char                         (isLower,isUpper,toLower,toUpper)
-import           Data.List                         (nub,partition,sortBy)
+import           Data.List                         (nub,partition)
 import           Data.List.Utility
-import           Data.Map                          (empty,insertWith,toList)
-import           Data.Ord                          (comparing) 
+import           Data.Maybe                        (fromJust)
 import           File.Format.Fasta.Internal
 import           Text.Parsec
 import           Text.Parsec.Custom
@@ -125,35 +124,23 @@ validateConsistentAlphabet xs =
                        ]
 
 validateConsistentPartition :: Stream s m Char => FastaParseResult -> ParsecT s u m FastaParseResult
-validateConsistentPartition xs =
-  case consistentPartition xs of
-    [] -> pure xs
-    ys -> fails $ errorMessage <$> ys
+validateConsistentPartition xs
+  |  null xs
+  || null errors  = pure xs
+  |  otherwise    = fails errors
   where
-    consistentPartition = interpretOccuranceMap . collateOccuranceMap . buildOccuranceMap
-    buildOccuranceMap = foldr f empty
-      where
-        f e = insertWith (++) (partitionChars e) [taxonName e]
-        partitionChars = length . filter (=='#') . taxonSequence
-    collateOccuranceMap = sortBy comparator . toList
-      where
-        comparator x y = descending $ comparing (length . snd) x y
-        descending LT  = GT
-        descending GT  = LT
-        descending x   = x
-    interpretOccuranceMap []         = []
-    interpretOccuranceMap [_]        = []
-    interpretOccuranceMap ((n,_):ys) = concat $ errorTokens <$> ys
-      where
-        errorTokens (m,zs) = (\z -> (n,m,z)) <$> zs
-    errorMessage (expected,actual,name) = concat
+    expectedPartitions     = fromJust . mostCommon $ fst <$> withPartitionCount
+    partitionCount         = length . filter (=='#') . taxonSequence
+    withPartitionCount     = (partitionCount &&& id) <$> xs
+    inconsistentPartitions = filter ((/= expectedPartitions) . fst) withPartitionCount
+    errors                 = errorMessage <$> inconsistentPartitions
+    errorMessage (actualPartitions, taxa) = concat
       [ "Error in sequence for taxon name: '"
-      ,  name
+      ,  taxonName taxa
       , "' the sequence includes "
-      , show actual
+      , show actualPartitions
       , " partition characters ('#'). "
       , "Expecting "
-      , show expected
+      , show expectedPartitions
       , " partition characters in the sequence."
       ]
-

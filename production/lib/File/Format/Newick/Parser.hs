@@ -4,6 +4,7 @@ module File.Format.Newick.Parser where
 
 import Control.Monad              (liftM)
 import Data.Char                  (isSpace)
+import Data.List                  (intercalate)
 import Data.Map            hiding (filter,foldl,foldr,null)
 import Data.Maybe                 (fromJust,fromMaybe,isJust)
 import File.Format.Newick.Internal
@@ -112,8 +113,7 @@ joinNonUniqueLabeledNodes root = joinNonUniqueLabeledNodes' [] root
         labeledNodes           = filter (isJust . newickLabel) $ toList' root 
         joinNodes :: Map String [NewickNode] -> NewickNode -> Map String [NewickNode]
         joinNodes mapping node = insertWith (++) (fromJust $ newickLabel node) (descendants node) mapping
-        toList' :: NewickNode -> [NewickNode]
-        toList' = concat . fmap toList' . descendants
+        toList' node = [node] ++ (concat . fmap toList' . descendants) node
     -- When transforming the Newick Tree to the Newick Network by joining 
     -- identically labeled nodes, there exists the possiblily that a directed 
     -- cycle is defined in the tree which will result in infinite recursion 
@@ -125,23 +125,25 @@ joinNonUniqueLabeledNodes root = joinNonUniqueLabeledNodes' [] root
     -- PhyloGraph data structures.
     joinNonUniqueLabeledNodes' ::  Stream s m Char => [Maybe String] -> NewickNode -> ParsecT s u m NewickNode
     joinNonUniqueLabeledNodes' stack node
-      |  isJust label 
-      && (not.null) cyclic = fail cycleError
-      |  null children     = pure $ newNode []
-      |  otherwise         = resultNode children
+      | hasCycle      = fail cycleError
+      | null children = pure $ newNode []
+      | otherwise     = resultNode children
       where
         label      = newickLabel node
         joinedList = label >>= (`lookup` joinedNodes)
         children   = fromMaybe (descendants node) joinedList
-        children'  = sequence . fmap (joinNonUniqueLabeledNodes' stack')
-        resultNode = liftM newNode . children'
+        gatherList = sequence . fmap (joinNonUniqueLabeledNodes' stack')
+        resultNode = liftM newNode . gatherList
         newNode x  = NewickNode x label (branchLength node)
         stack'     = label : stack
-        cyclic     = dropWhile (/=label) stack
-        cycleError = unlines
-                   [ "Cycle detected in Newick tree definition" 
-                   , show cyclic -- TODO: make the error message prettier!
+        hasCycle   = isJust label
+                  && (not . null . dropWhile (/=label)) stack
+        cycle'     = (label : takeWhile (/=label) stack) ++ [label]
+        cycleError = init $ unlines -- we use init to remove trailing newline
+                   [ "Cycle detected in Newick tree definition"
+                   , prettyErr cycle'
                    ]
+        prettyErr  = intercalate " -> " . fmap show
 
 {-
 parseAllSuccess :: String -> IO [(String, ParseError)]

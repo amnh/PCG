@@ -4,10 +4,11 @@ module TestSuite.LibraryTests
   ) where
 
 import Test.Tasty 
-import qualified Text.Parsec.Custom.Test as CustomParsec
-import qualified File.Format.Fasta.Test  as Fasta
-import qualified File.Format.Fastc.Test  as Fastc
-import qualified File.Format.Newick.Test as Newick
+import qualified Text.Parsec.Custom.Test               as CustomParsec
+import qualified File.Format.Fasta.Test                as Fasta
+import qualified File.Format.Fastc.Test                as Fastc
+import qualified File.Format.Newick.Test               as Newick
+import qualified File.Format.TransitionCostMatrix.Test as TCM
 
 main :: IO ()
 main = defaultMain testSuite
@@ -18,5 +19,6 @@ testSuite = testGroup "Library Test Suite"
   , Fasta.testSuite
   , Fastc.testSuite
   , Newick.testSuite
+  , TCM.testSuite
   ]
 

@@ -1,15 +1,11 @@
 {-# LANGUAGE FlexibleContexts #-}
 
-module File.Format.VertexEdgeRoot.Parser 
-  ( VertexEdgeRoot
-  , edges
-  , parseVertexEdgeRootStream
-  , roots
-  , verticies 
-  ) where
+module File.Format.VertexEdgeRoot.Parser where
 
+import Data.Char             (isSpace)
 import Data.Either           (partitionEithers)
 import Data.List             (partition,sortBy)
+import Data.List.Utility     (duplicates)
 import Data.Ord              (comparing)
 import Data.Set              (Set,fromList,size)
 import Text.Parsec
@@ -18,7 +14,7 @@ import Text.Parsec.Custom
 type VertexLabel   = String
 type EdgeLength    = Maybe Double
 
-data VertexSetType = Verticies | Roots deriving (Eq)
+data VertexSetType = Verticies | Roots deriving (Eq,Show)
 data EdgeInfo      = EdgeInfo (VertexLabel,VertexLabel) EdgeLength deriving (Show,Eq,Ord)
 data VertexEdgeRoot
    = VertexEdgeRoot
@@ -27,8 +23,13 @@ data VertexEdgeRoot
    , roots       :: Set VertexLabel
    } deriving (Show)
 
-parseVertexEdgeRootStream :: Stream s m Char => s -> m (Either ParseError VertexEdgeRoot)
-parseVertexEdgeRootStream = runParserT (verDefinition <* eof) () "A set of verticies, a set of edges, and a set of root verticies"
+edgeConnection :: EdgeInfo -> (VertexLabel,VertexLabel)
+edgeConnection (EdgeInfo (a,b) _)
+  | a <= b    = (a,b)
+  | otherwise = (b,a)
+  
+verStreamParser :: Stream s m Char => ParsecT s u m VertexEdgeRoot
+verStreamParser = verDefinition
 
 -- We have a complicated definition here because we do not want to restrict
 -- the order of the set definitions, and yet we must enforce that there is 
@@ -94,50 +95,77 @@ vertexSetDefinition :: Stream s m Char => ParsecT s u m (Maybe VertexSetType, Se
 vertexSetDefinition = try labeledVertexSetDefinition <|> unlabeledVertexSetDefinition
 
 -- A labeled vertex set contains a label followed by an unlabeled vertex set
-labeledVertexSetDefinition :: Stream s m Char => ParsecT s u m (Maybe VertexSetType, Set VertexLabel)
+labeledVertexSetDefinition :: Stream s m Char => ParsecT s u m (Maybe VertexSetType, Set VertexLabel )
 labeledVertexSetDefinition = do
-    setType <- vertextSetType
+    setType <- vertexSetType
     _       <- symbol (char '=')
     (_,set) <- unlabeledVertexSetDefinition
     pure (Just setType, set)
 
 -- A vertex set label is one of the following case insensative strings:
 -- "vertexset", rootset"
-vertextSetType :: Stream s m Char => ParsecT s u m VertexSetType
-vertextSetType = do
+vertexSetType :: Stream s m Char => ParsecT s u m VertexSetType
+vertexSetType = do
     value <- optionMaybe (try (symbol (caseInsensitiveString "VertexSet")))
     case value of
       Just _  -> pure Verticies
       Nothing -> symbol (caseInsensitiveString "RootSet") *> pure Roots
 
 unlabeledVertexSetDefinition :: Stream s m Char => ParsecT s u m (Maybe VertexSetType, Set VertexLabel)
-unlabeledVertexSetDefinition = do
-    _       <- symbol (char '{')
-    labels' <- vertexLabelDefinition `sepBy` symbol (char ',')
-    _       <- symbol (char '}')
-    pure (Nothing, fromList labels')
-    
+unlabeledVertexSetDefinition = validateVertexSet =<< unlabeledVertexSetDefinition'
+  where
+    unlabeledVertexSetDefinition' :: Stream s m Char => ParsecT s u m (Maybe VertexSetType, [VertexLabel])
+    unlabeledVertexSetDefinition' = do
+        _       <- symbol (char '{')
+        labels' <- vertexLabelDefinition `sepBy1` symbol (char ',')
+        _       <- symbol (char '}')
+        pure (Nothing, labels')
+    validateVertexSet :: Stream s m Char => (Maybe VertexSetType, [VertexLabel]) -> ParsecT s u m (Maybe VertexSetType, Set VertexLabel)
+    validateVertexSet (t,vs)
+      | null dupes = pure $ (t, fromList vs)
+      | otherwise  = fail $ errorMessage
+      where
+        dupes = duplicates vs
+        errorMessage = "The following verticies were defined multiple times: " ++ show dupes
+
 vertexLabelDefinition :: Stream s m Char => ParsecT s u m String
-vertexLabelDefinition = many1 alphaNum
+vertexLabelDefinition = many1 validChar
+  where
+    validChar = satisfy $ \x -> x `notElem` "{}(),"
+                             && (not . isSpace) x
 
 edgeSetDefinition :: Stream s m Char => ParsecT s u m (Set EdgeInfo)
-edgeSetDefinition = do
-    _      <- optional (try edgeSetLabel)
-    _      <- symbol (char '{')
-    pairs  <- edgePairingDefinition `sepBy` symbol (char ',')
-    _      <- symbol (char '}')
-    pure $ fromList pairs
+edgeSetDefinition = validateEdgeSet =<< edgeSetDefinition'
   where
-    edgePairingDefinition = do 
-      _ <- symbol (char '(') 
-      x <- symbol vertexLabelDefinition
-      _ <- symbol (char ',') 
-      y <- symbol vertexLabelDefinition
-      _ <- symbol (char ')')
-      z <- optionMaybe (try branchLengthDefinition)
-      pure $ EdgeInfo (x,y) z
-    branchLengthDefinition = symbol (char ':') *> symbol decimal
+    edgeSetLabel :: Stream s m Char => ParsecT s u m String
     edgeSetLabel = symbol (caseInsensitiveString "EdgeSet") <* symbol (char '=')
+    edgeSetDefinition' :: Stream s m Char => ParsecT s u m [EdgeInfo]
+    edgeSetDefinition' = do
+        _      <- optional (try edgeSetLabel)
+        _      <- symbol (char '{')
+        pairs  <- edgeDefinition `sepBy` symbol (char ',')
+        _      <- symbol (char '}')
+        pure $ pairs
+    validateEdgeSet :: Stream s m Char => [EdgeInfo] -> ParsecT s u m (Set EdgeInfo)
+    validateEdgeSet xs
+      | null dupes = pure $ fromList xs
+      | otherwise  = fail $ errorMessage 
+      where
+        dupes = duplicates $ edgeConnection <$> xs
+        errorMessage = "The following edges were defined multiple times: " ++ show dupes
+
+edgeDefinition :: Stream s m Char => ParsecT s u m EdgeInfo
+edgeDefinition = symbol $ do
+    _ <- spaces
+    _ <- symbol (char '(') 
+    x <- symbol vertexLabelDefinition
+    _ <- symbol (char ',') 
+    y <- symbol vertexLabelDefinition
+    _ <- symbol (char ')')
+    z <- optionMaybe (try branchLengthDefinition)
+    pure $ EdgeInfo (x,y) z
+  where
+    branchLengthDefinition = symbol (char ':') *> symbol decimal
 
 symbol :: Stream s m Char => ParsecT s u m a -> ParsecT s u m a
 symbol x = x <* spaces
