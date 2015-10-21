@@ -1,5 +1,5 @@
 {-# LANGUAGE BangPatterns, DeriveGeneric #-}
-module GPUNode ((.&.), 
+module PackingPar.GPUNode ((.&.), 
                 (.|.), 
                 complement, 
                 popCount, 
@@ -11,7 +11,7 @@ module GPUNode ((.&.),
                 bitSize) where
 
 -- | imports
-import CardinalityLookup
+import Packing.CardinalityLookup
 import qualified Data.Bits as B
 import Data.Word
 import qualified Data.Vector as V

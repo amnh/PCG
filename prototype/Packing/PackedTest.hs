@@ -1,5 +1,5 @@
 {-# LANGUAGE BangPatterns #-}
-module Packing.PackedTest where
+module Packing.PackedTest (getSeqsFromFile, getTreeFromFile, main) where
 
 import Control.Arrow         ((&&&),first)
 import Criterion.Main
@@ -42,11 +42,7 @@ getTreeFromFile file = head . fmap newickToPhylo . fromRight . runIdentity  . pa
 benchmarkFitchOptimization :: FilePath -> FilePath -> [Char] -> IO [Benchmark]
 benchmarkFitchOptimization seqsFile treeFile prefix = do
     !seqs <- getSeqsFromFile seqsFile
-    --putStrLn(show seqs)
-    -- !preTree <- fromRight . runIdentity  . parseNewickStream <$> readFile treeFile
-    --putStrLn(show preTree)
     !tree <- getTreeFromFile treeFile
-    --putStrLn(show tree)
     let !weight = 1
     let !names  = --trace ("names " ++ show (head $  filter (not.null) . fmap nodeName <$> fmap V.toList tree))
                     head $ filter (not.null) . fmap nodeName <$> fmap V.toList tree
@@ -112,13 +108,15 @@ newToOld taxseq =
 modifyNodeCode :: PhyloNode -> Int -> PhyloNode
 modifyNodeCode node newCode = node {code = newCode}
 
-fastcToCharData :: [FastcData] -> RawData
+fastcToCharData :: [FastcSequence] -> RawData
 fastcToCharData = (map fastcToTermData &&& map fastcToCharInfo)
   where
-    fastcToTermData :: FastcData -> TermData
-    fastcToTermData = fastcLabel &&& fastcSymbols
-    fastcToCharInfo :: FastcData -> CharInfo
-    fastcToCharInfo (FastcData _ syms) = CharInfo NucSeq False 1.0 [] "Input" (length syms) [] 0.0
+    fastcToTermData :: FastcSequence -> TermData
+    fastcToTermData (FastcSequence labels syms) = 
+      let seqs = V.toList $ V.map head syms
+      in (labels, seqs)
+    fastcToCharInfo :: FastcSequence -> CharInfo
+    fastcToCharInfo (FastcSequence _ syms) = CharInfo NucSeq False 1.0 [] "Input" (length syms) [] 0.0
 
 
 newickToPhylo :: NewickForest -> PhyloForest

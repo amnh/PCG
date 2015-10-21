@@ -1,5 +1,5 @@
 {-# LANGUAGE BangPatterns #-}
-module PackingPar.ParBench where
+module BenchPar where
 
 import Criterion.Main
 import qualified Data.Vector as V
@@ -7,7 +7,7 @@ import Debug.Trace           (trace)
 import Component
 import CharacterData
 import Packing.UnpackedBuild
-import qualified Packing.PackedTest as T
+import Packing.PackedTest
 import Packing.PackedBuild
 import Packing.BitPackedNode
 import Packing.PackedOptimize
@@ -27,8 +27,8 @@ main = do
 
 benchmarkFitchOptimization :: FilePath -> FilePath -> [Char] -> IO [Benchmark]
 benchmarkFitchOptimization seqsFile treeFile prefix = do
-    !seqs <- T.getSeqsFromFile seqsFile
-    !tree <- T.getTreeFromFile treeFile
+    !seqs <- getSeqsFromFile seqsFile
+    !tree <- getTreeFromFile treeFile
     let !weight = 1
     let !names  = --trace ("names " ++ show (head $  filter (not.null) . fmap nodeName <$> fmap V.toList tree))
                     head $ filter (not.null) . fmap nodeName <$> fmap V.toList tree
