@@ -4,10 +4,13 @@ module File.Format.VertexEdgeRoot.Parser where
 
 import Data.Char             (isSpace)
 import Data.Either           (partitionEithers)
-import Data.List             (partition,sortBy)
+import Data.List             (delete,partition,maximumBy,sortBy)
 import Data.List.Utility     (duplicates)
+import Data.Map              (Map,empty,insert,lookup)
+import Data.Maybe            (catMaybes,fromMaybe)
 import Data.Ord              (comparing)
-import Data.Set              (Set,fromList,size)
+import Data.Set              (Set,elems,fromList,size)
+import Prelude        hiding (lookup)
 import Text.Parsec
 import Text.Parsec.Custom
 
@@ -17,7 +20,7 @@ type EdgeLength    = Maybe Double
 data VertexSetType = Verticies | Roots deriving (Eq,Show)
 data EdgeInfo      = EdgeInfo (VertexLabel,VertexLabel) EdgeLength deriving (Show,Eq,Ord)
 data VertexEdgeRoot
-   = VertexEdgeRoot
+   = VER
    { verticies   :: Set VertexLabel
    , edges       :: Set EdgeInfo
    , roots       :: Set VertexLabel
@@ -27,10 +30,15 @@ edgeConnection :: EdgeInfo -> (VertexLabel,VertexLabel)
 edgeConnection (EdgeInfo (a,b) _)
   | a <= b    = (a,b)
   | otherwise = (b,a)
-  
-verStreamParser :: Stream s m Char => ParsecT s u m VertexEdgeRoot
-verStreamParser = verDefinition
 
+
+-- | Reads two vertex sets and an edge set, conditionally infers the root set
+-- when vertex sets are unlabeled. Ensures that the elements of the root set
+-- are not connected in the forest. Ensures that the rooted trees in the
+-- forest do not contain cycles.
+verStreamParser :: Stream s m Char => ParsecT s u m VertexEdgeRoot
+verStreamParser = validateForest =<< verDefinition
+    
 -- We have a complicated definition here because we do not want to restrict
 -- the order of the set definitions, and yet we must enforce that there is 
 -- only one edge set and two vertex sets. One vertex set is the set of all 
@@ -55,13 +63,13 @@ verDefinition = do
     formVertexEdgeRoot x@(typeA, setA) y@(typeB, setB) edges' =
       case (typeA, typeB) of
         (Nothing       , Nothing       ) -> let [m,n] = sortBy (comparing size) [setA,setB]
-                                            in pure $ VertexEdgeRoot n    edges' m
-        (Nothing       , Just Verticies) ->    pure $ VertexEdgeRoot setB edges' setA
-        (Nothing       , Just Roots    ) ->    pure $ VertexEdgeRoot setA edges' setB
-        (Just Verticies, Nothing       ) ->    pure $ VertexEdgeRoot setA edges' setB
-        (Just Roots    , Nothing       ) ->    pure $ VertexEdgeRoot setB edges' setA
-        (Just Verticies, Just Roots    ) ->    pure $ VertexEdgeRoot setA edges' setB 
-        (Just Roots    , Just Verticies) ->    pure $ VertexEdgeRoot setB edges' setA
+                                            in pure $ VER n    edges' m
+        (Nothing       , Just Verticies) ->    pure $ VER setB edges' setA
+        (Nothing       , Just Roots    ) ->    pure $ VER setA edges' setB
+        (Just Verticies, Nothing       ) ->    pure $ VER setA edges' setB
+        (Just Roots    , Nothing       ) ->    pure $ VER setB edges' setA
+        (Just Verticies, Just Roots    ) ->    pure $ VER setA edges' setB 
+        (Just Roots    , Just Verticies) ->    pure $ VER setB edges' setA
         (_             , _             ) -> runFail $ vertexSetMessages [x,y]
     runFail [x] = fail x
     runFail xs  = fails xs
@@ -147,12 +155,20 @@ edgeSetDefinition = validateEdgeSet =<< edgeSetDefinition'
         _      <- symbol (char '}')
         pure $ pairs
     validateEdgeSet :: Stream s m Char => [EdgeInfo] -> ParsecT s u m (Set EdgeInfo)
-    validateEdgeSet xs
-      | null dupes = pure $ fromList xs
-      | otherwise  = fail $ errorMessage 
+    validateEdgeSet es
+      | null errors = pure $ fromList es
+      | otherwise   = fails errors
       where
-        dupes = duplicates $ edgeConnection <$> xs
-        errorMessage = "The following edges were defined multiple times: " ++ show dupes
+        edges' = edgeConnection <$> es
+        dupes  = duplicates edges'
+        selfs  = filter (uncurry (==)) edges'
+        errors = case (dupes,selfs) of
+                   ([]   ,[]   ) -> []
+                   ((_:_),[]   ) -> [dupesErrorMessage]
+                   ([]   ,(_:_)) -> [selfsErrorMessage] 
+                   ((_:_),(_:_)) -> [dupesErrorMessage,selfsErrorMessage]
+        dupesErrorMessage = "Duplicate edges detected. The following edges were defined multiple times: "    ++ show dupes
+        selfsErrorMessage = "Self-referencing edge(s) detected.The following edge(s) are self=referencing: " ++ show selfs
 
 edgeDefinition :: Stream s m Char => ParsecT s u m EdgeInfo
 edgeDefinition = symbol $ do
@@ -170,3 +186,76 @@ edgeDefinition = symbol $ do
 symbol :: Stream s m Char => ParsecT s u m a -> ParsecT s u m a
 symbol x = x <* spaces
     
+validateForest :: Stream s m Char => VertexEdgeRoot -> ParsecT s u m VertexEdgeRoot
+validateForest ver@(VER vs es rs )
+  | (not.null) treeEdgeCycles = fails $ edgeCycleErrorMessage <$> treeEdgeCycles
+  | (not.null) connectedRoots = fails $ manyRootsErrorMessage <$> connectedRoots
+  | otherwise                 = pure ver
+  where
+    rootList       = elems rs
+    treeEdgeCycles = catMaybes         $ findCycle <$> rootList
+    connectedRoots = filter (not.null) $ findRoots <$> rootList
+    connections    = buildEdgeMap vs es
+
+    findCycle :: VertexLabel -> Maybe (VertexLabel,[VertexLabel])
+    findCycle root
+      | null result = Nothing
+      | otherwise   = Just (root,result)
+      where
+        result = findCycle' [] Nothing root
+        findCycle' stack parent node
+          | cycleDetected = cycle'
+          | null children = []
+          | otherwise     = maximumBy (comparing length) childCycles
+          where
+            (inner,base)  = span (/=node) stack
+            cycleDetected = not $ null base
+            cycle'        = [node] ++ inner ++ [node]
+            childCycles   = findCycle' (node:stack) (Just node) <$> children
+            adjacentNodes = fromMaybe [] $ node `lookup` connections
+            children      = case parent of
+                              Just x  -> x `delete` adjacentNodes
+                              Nothing -> adjacentNodes
+
+    findRoots :: VertexLabel -> [VertexLabel]
+    findRoots root
+      | null result = []
+      | otherwise   = root:result
+      where
+        result = findRoots' Nothing root
+        findRoots' parent node
+          | null children   = []
+          | otherwise       = rootsFound
+          where
+            rootsFound      = rootChildren ++ rootDescendants
+            rootChildren    = filter (`elem` rs) children
+            rootDescendants = concat $ findRoots' (Just node) <$> children
+            adjacentNodes   = fromMaybe [] $ node `lookup` connections
+            children        = case parent of
+                                Just x  -> x `delete` adjacentNodes
+                                Nothing -> adjacentNodes
+
+    edgeCycleErrorMessage (r,xs) = concat
+      [ "In the tree rooted at '"
+      , show r
+      , "', the following cycle was detected: "
+      , show xs
+      ] 
+    manyRootsErrorMessage xs = concat
+      [ "Multiple root nodes detected in a single tree. "
+      , "The following root nodes should form different trees, but thay are part of the same tree: "
+      , show xs
+      ]
+
+buildEdgeMap :: Set VertexLabel -> Set EdgeInfo -> Map VertexLabel [VertexLabel]
+buildEdgeMap vs es = foldr buildMap empty vs
+  where
+    edgeList           = edgeConnection <$> elems es
+    buildMap node map' = insert node (connected node) map' 
+    connected node     = catMaybes $ f <$> edgeList
+      where
+        f (a,b)
+          | a == node  = Just b
+          | b == node  = Just a
+          | otherwise  = Nothing
+
