@@ -4,6 +4,7 @@ module File.Format.Nexus.Parser where
 
 import Data.Char (isSpace,toLower,toUpper)
 import Data.Either (lefts)
+import Data.List (sort)
 import qualified Data.Map.Lazy as M
 import Data.Maybe (isJust, fromJust, catMaybes)
 import qualified Data.Set as S
@@ -137,6 +138,9 @@ data SequenceBlock
 parseNexusStream :: String -> Either ParseError Nexus
 parseNexusStream = parse (validateParseResult =<< parseNexus <* eof) "PCG encountered a Nexus file parsing error it could not overcome:"
 
+-- TODO: replace equate chars, ignore case, check alignment and length of aligned blocks, check alphabet, think about 12 and 20, below, make each sequence a vector, not a list
+
+
 -- Because some errors are dependent on passing some other validation, they've been split into
 -- dependant and independant errors. Errors are enumerated below, along with their dependancies.
 -- Comments are included in the code that explain which of the below errors are caught at various points.
@@ -153,19 +157,27 @@ parseNexusStream = parse (validateParseResult =<< parseNexus <* eof) "PCG encoun
 --  6. No taxa block _and_ no new taxa specified in sequence blocks            3              indep              done
 --  7. "newtaxa" keyword in seq block, but no taxa actually spec'ed            3                dep              done
 --  8. "newtaxa" keywork in seq block, but ntaxa missing                       3,5              dep              done
---  9. "nolabels" but labels actually present--subsumed under 10 and 11        3                dep
+--  9. "nolabels" but labels actually present--subsumed under 10, 11, 12       3                dep
 -- 10. Matrix has alphabet values not specified                                3,4              dep
 -- 11. Aligned block not Aligned                                               3,4              dep
--- 12. Matrix has non-spec'ed taxa                                             1,3,4,5          dep
--- 13. Matrix interleaved, but some blocks missing taxa                        1,3,4,5          dep
+-- 12. Matrix has non-spec'ed taxa                                             1,3,4,5          dep              done
+-- 13. Matrix interleaved, but some blocks missing taxa                        1,3,4,5          dep              done
 --     ---for aligned matrices, caught by 10
---     ---for unaligned, bother catching?
+--     ---for unaligned, caught by combo of 12 & 22
 -- 14. Matrix interleaved, unlabeled, but length not a multiple of # of taxa   1,3,4            dep              done
 -- 15. Character count is incorrect                                            3,4,5            dep
 -- 16. Taxa count is incorrect                                                 1,3,5            dep              done
--- 17. "nolabels" but there is a taxa block and newtaxa in seq block           1,3,7,8          dep
+-- 17. "nolabels" but there is a taxa block and newtaxa in seq block,          1,3,7,8          dep
+--     so order fo sequences is unclear
 -- 18. Missing semicolons                                                       -             indep              caught in parse
 -- 19. Equate or symbols strings missing their closing quotes                  3                dep              done
+-- 20. Match character can't be a space                                        3                dep            
+--     ---for aligned blocks, will be caught 
+--     ---as with 13, not sure how to catch for unaligned
+-- 21. Space in taxon name                                                     5,6              dep              done
+--     ---for aligned, should be caught by 16
+--     ---for unaligned, caught by combo of 12 & 22
+-- 22. In unaligned, interleaved block, a taxon is repeated                    3                dep              done
 validateParseResult :: ParseResult -> Parsec s u Nexus
 validateParseResult (ParseResult sequences taxas trees)
   | not (null independentErrors) = fails independentErrors
@@ -173,12 +185,14 @@ validateParseResult (ParseResult sequences taxas trees)
   | otherwise                  = pure $ Nexus taxaLst (alignedTaxaSeqMap ++ unalignedTaxaSeqMap)
   where
         alignedTaxaSeqMap = getSeqFromMatrix (getBlock "aligned" sequences) taxaLst
-        dependentErrors = catMaybes $ incorrectTaxaCount : (missingCloseQuotes ++ seqTaxaCountErrors ++ interleaveErrors)
+        dependentErrors = catMaybes $ incorrectTaxaCount : (missingCloseQuotes ++ seqTaxaCountErrors ++ interleaveErrors ++ seqTaxonCountErrors ++ incorrectCharCount)
         equates = foldr (\x acc -> (getEquates x) : acc) [] sequences
         independentErrors = catMaybes $ noTaxaError : multipleTaxaBlocks : sequenceBlockErrors
         f [x] = Just x
         f _   = Nothing
 
+        incorrectCharCount = checkSeqLength (getBlock "aligned" sequences) alignedTaxaSeqMap
+        seqTaxonCountErrors = foldr (\x acc -> (getSeqTaxonCountErrors taxaLst x) ++ acc) [] sequences -- errors 12, 22
         incorrectTaxaCount = f taxas >>= \(TaxaSpecification num taxons) -> if num /= length taxons
                 then Just $ "Incorrect number of taxa in taxa block." ++ (show num) ++ " " ++ (show taxons) -- half of error 16
                 else Nothing
@@ -188,7 +202,7 @@ validateParseResult (ParseResult sequences taxas trees)
         missingCloseQuotes = (map (\x -> Just x) (lefts equates)) ++ (map (\x -> Just x) (lefts symbols')) -- error 19
         multipleTaxaBlocks = case taxas of
                             (_:_:_) -> Just "Multiple taxa blocks supplied."  -- error 1
-                            _       -> trace (show taxas) $ Nothing
+                            _       -> Nothing
         noTaxaError =  if null taxas && not (foldr (\x acc -> acc || (areNewTaxa x)) False sequences) -- will register as False if sequences is empty
                                        then Just $ "Taxa are never specified. "  ++ (show taxas) ++ " " ++ (show sequences)-- error 6
                                        else Nothing
@@ -213,7 +227,39 @@ validateParseResult (ParseResult sequences taxas trees)
                                                         then [Just "More than one unaligned block provided."] -- error 3
                                                         else matrixDimsErrors  -- errors 4,5
                                  _         -> matrixDimsErrors  -- errors 4,5
+        --taxaFromSeqMatrix = foldr (\x acc -> (getTaxaFromMatrix x) ++ acc) [] sequences 
         -- convertSeqs = ( concatSeqs . cleanSeqs sequences  -- convert each sequence, then
+
+checkSeqLength :: [PhyloSequence] -> [M.Map String [[String]]] -> [Maybe String]
+checkSeqLength [] _ = [Nothing]
+checkSeqLength seq seqMap =
+    M.foldrWithKey (\key val acc -> (if (length val) == len
+                                     then Nothing
+                                     else Just (key ++ "'s sequence is the wrong length in an aligned block.")) : acc) [] $ head seqMap
+    where
+        len = numChars $ head $ charDims $ head seq
+
+
+getSeqTaxonCountErrors :: [String] -> PhyloSequence -> [Maybe String]
+getSeqTaxonCountErrors taxaLst seq = extraTaxonErrors ++ wrongCountErrors
+    where 
+        seqTaxaMap = getTaxaFromMatrix seq
+        listedTaxaMap = M.fromList (zip taxaLst [1..])
+        extraTaxonErrors = M.foldrWithKey 
+                                (\key val acc -> (if M.member key listedTaxaMap
+                                                  then Nothing 
+                                                  else Just ("\"" ++ key ++ "\" is in a matrix, but isn't specified anywhere, such as in a taxa block or as newtaxa."))
+                                                  : acc
+                                 ) [] seqTaxaMap
+        wrongCountErrors = M.foldrWithKey (\key val acc -> (if val /= median
+                                                                   then Just ("\"" ++ key ++ "\" appears the wrong number of times in a matrix.")
+                                                                   else Nothing) : acc
+                                          ) [] seqTaxaMap
+        median = findMedian $ M.elems seqTaxaMap
+
+findMedian :: (Ord a) => [a] -> a
+findMedian xs = (sort xs) !! (quot (length xs) 2)
+
 
 getEquates :: PhyloSequence -> Either String [String]
 getEquates seq = eqs
@@ -222,6 +268,17 @@ getEquates seq = eqs
         eqs = if isJust form
               then equate $ fromJust form
               else Right [""]
+
+getTaxaFromMatrix :: PhyloSequence -> M.Map String Int
+getTaxaFromMatrix seq =
+    if noLabels 
+        then M.empty
+        else taxaMap
+    where
+        (noLabels, interleaved, tkns, cont, matchChar') = getFormatInfo seq
+        mtx = filter (\x -> (lstrip x) /= "") $ lines $ head $ matrix seq -- I've already checked to make sure there's a matrix
+        taxaMap = foldr (\x acc -> M.insert x (succ (M.findWithDefault 0 x acc)) acc) M.empty taxa
+        taxa = foldr (\x acc -> (takeWhile (/= ' ') x ): acc) [] mtx
 
 -- TODO: This is too similar to getEquates, above. Can they be combined?
 getSymbols :: PhyloSequence -> Either String [String]
@@ -343,47 +400,63 @@ getBlock which seqs = if which == "aligned"
                                           then [fromJust block]
                                           else []
 
+getFormatInfo :: PhyloSequence -> (Bool, Bool, Bool, Bool, String)
+getFormatInfo seq = 
+    if isJust seqForm
+    then
+        ( unlabeled $ fromJust seqForm
+        , interleave $ fromJust seqForm
+        , areTokens $ fromJust seqForm
+        , map toLower (charDataType $ fromJust seqForm) == "continuous"
+        , matchChar $ fromJust seqForm)
+    else
+        (False, False, False, False, "")
+    where
+        seqForm = headMay $ format seq
+
 
 getSeqFromMatrix :: [PhyloSequence] -> [String] -> [M.Map String [[String]]]
 getSeqFromMatrix [] _ = []
-getSeqFromMatrix seqs taxaLst =
-    if noLabels
-        then if interleaved
-            -- TODO: clean this ridiculous crap up.
-            then [M.map (splitSequence tkns cont) 
-                        (foldr 
-                             (\x1 acc1 
-                                 -> (foldr 
-                                      (\x2 acc2 
-                                           -> M.insert (fst x2) ((acc2 M.! (fst x2)) ++ (snd x2)) acc2)) 
-                                      acc1 x1) 
-                             (M.fromList (zip taxaLst [[] | x <- taxaLst])) (map (zip taxaLst) $ chunksOf numTaxa mtx))]
-            else [M.fromList $ zip taxaLst (map (splitSequence tkns cont) mtx)]
-        else trace (show seq') $ if interleaved
-            then [M.map (splitSequence tkns cont) 
-                        (foldr 
-                            (\x acc 
-                                 -> M.insert (fst x) ((acc M.! (fst x)) ++ (snd x)) acc)
-                             (M.fromList (zip taxaLst [[] | x <- taxaLst])) 
-                                             (map (\x -> let (name, seq) = span (/= ' ') x
-                                                         in (name, seq)) mtx))]
-            else [M.fromList $ map (\x -> let (name, seq) = span (/= ' ') x
-                                          in (name, (splitSequence tkns cont seq))) mtx]
+getSeqFromMatrix seqLst taxaLst =
+    [M.map (splitSequence tkns cont) matchCharsReplaced]
     where
-        seq' = head seqs
+        seq' = head seqLst
         numTaxa = length taxaLst
-        seqForm = headMay $ format seq'
-        (noLabels, interleaved, tkns, cont) =
-            if isJust seqForm
-            then
-                ( unlabeled $ fromJust seqForm
-                , interleave $ fromJust seqForm
-                , areTokens $ fromJust seqForm
-                , map toLower (charDataType $ fromJust seqForm) == "continuous")
-            else
-                (False, False, False, False)
-        mtx = filter (\x -> (lstrip x) /= "") $ lines $ head $ matrix seq' -- I've already checked to make sure there's a matrix
+        taxaMap = M.fromList (zip taxaLst [[] | x <- taxaLst])
+        (noLabels, interleaved, tkns, cont, matchChar') = getFormatInfo seq'
+        mtx = filter (\x -> (lstrip x) /= "") $ lines $ head $ matrix seq' -- I've already checked to make sure there's a matrix, and I'm filtering out double lines, in case of interleaved matrices
+        entireSeqs = if noLabels    -- this will be a list of tuples (taxon, concatted seq)
+               then if interleaved
+                    then concat (map (zip taxaLst) $ chunksOf numTaxa mtx)
+                    else zip taxaLst mtx
+               else map (\x -> let (name, seq) = span (/= ' ') x 
+                               in (name, seq)) 
+                         mtx
 
+        entireDeinterleavedSeqs = if interleaved 
+                                  then deInterleave taxaMap entireSeqs
+                                  else M.fromList entireSeqs
+        firstSeq = fromJust $ M.lookup (if noLabels
+                                        then head taxaLst
+                                        else takeWhile (/= ' ') $ head mtx)
+                            entireDeinterleavedSeqs
+        matchCharsReplaced = if matchChar' /= "" 
+                             then M.map (replaceMatches (head matchChar') firstSeq) entireDeinterleavedSeqs
+                             else entireDeinterleavedSeqs
+        
+
+
+deInterleave :: M.Map String String -> [(String, String)] -> M.Map String String
+deInterleave inMap tuples =
+    foldr (\x acc -> M.insert (fst x) ((snd x) ++ (acc M.! (fst x))) acc) inMap tuples 
+
+replaceMatches :: Char -> String -> String -> String
+replaceMatches matchChar canonical toReplace = 
+    zipWith f canonical toReplace
+    where
+        f x y = if y == matchChar
+                then x
+                else y
 
 chunksOf :: Int -> [a] -> [[a]]
 chunksOf _ [] = []
@@ -551,7 +624,7 @@ charFormatFieldDef = do
              <|> (EqStr <$> try (quotedStringDefinition "equate"))
              <|> (MissStr <$> try (stringDefinition "missing"))
              <|> (GapChar <$> try (stringDefinition "gap"))
-             <|> (MatchChar <$> try (stringDefinition "matchcar"))
+             <|> (MatchChar <$> try (stringDefinition "matchchar"))
              <|> (Items <$> try (stringDefinition "items"))
              <|> (RespectCase <$> try (booleanDefinition "respectcase"))
              <|> (Unlabeled <$> try (booleanDefinition "nolabels"))
