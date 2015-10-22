@@ -1,6 +1,6 @@
 {- Module for non-additive optimization of a bit packed tree-}
-
-module PackingPar.PackedOptimize (allOptimization, optimizeForest, getRootCost, costForest) where
+{-# LANGUAGE BangPatterns, DeriveGeneric #-}
+module PackingPar.PackedParOptimize (allOptimization, optimizeForest, getRootCost, costForest) where
 
 -- imports 
 import PackingPar.PackedBuild
@@ -10,16 +10,19 @@ import qualified Packing.BitPackedNode as BN
 import Control.Parallel.Strategies
 import Control.DeepSeq
 import Data.Maybe
+import PackingPar.ParEnabledNode2
+import qualified Data.Array.Accelerate as A
+import Data.Bits
 
 -- | Useful higher level data structures of trees, costs, etc
-type TreeInfo = (PhyloComponent, PackedTree)
-type ExpandTree = (PhyloComponent, PackedTree, PackedTree)
-type NewRows = [(Int, BN.BitPackedNode)]
+type TreeInfo a = (PhyloComponent, PackedTree a)
+type ExpandTree a = (PhyloComponent, PackedTree a, PackedTree a)
+type NewRows a = [(Int, ParEnabledNode a)]
 type NewNodes = [(Int, V.Vector Float)]
 type NodeCost = V.Vector Float
 
 -- | Function to get the cost of an entire forest by map
-costForest :: PhyloForest -> (PackedForest, PackedInfo, BN.PackMode) -> Float -> [Float]
+costForest :: (Eq a, Bits a, A.IsIntegral a, A.Elt a, Integral a, NFData a) => PhyloForest -> (PackedForest a, PackedInfo a, ParPackMode) -> Float -> [Float]
 costForest forestTrees (packForest, pInfo, pMode) weight = 
     let 
         downOut = zipWith (\dat tree -> optimizationDownPass (tree, dat) pInfo pMode weight) (V.toList packForest) forestTrees
@@ -27,28 +30,28 @@ costForest forestTrees (packForest, pInfo, pMode) weight =
     in costs
 
 -- | Function to optimize an entire forest by a map
-optimizeForest :: PhyloForest -> (PackedForest, PackedInfo, BN.PackMode) -> Float -> [TreeInfo]
+optimizeForest :: (Eq a, Bits a, A.IsIntegral a, A.Elt a, Integral a, NFData a) => PhyloForest -> (PackedForest a, PackedInfo a, ParPackMode) -> Float -> [TreeInfo a]
 optimizeForest forestTrees (packForest, pInfo, pMode) weight = zipWith (\dat tree -> allOptimization (tree, dat) pInfo pMode weight) (V.toList packForest) forestTrees
 
 -- | Unified function to perform both the first and second passes of fitch
-allOptimization :: TreeInfo -> PackedInfo -> BN.PackMode -> Float -> TreeInfo
+allOptimization :: (Eq a, Bits a, A.IsIntegral a, A.Elt a, Integral a, NFData a) => TreeInfo a -> PackedInfo a -> ParPackMode -> Float -> TreeInfo a
 allOptimization input pInfo pMode inWeight = 
     let 
         downPass = optimizationDownPass input pInfo pMode inWeight
         upPass = --trace ("down pass done " ++ show mat )
-        			optimizationUpPass downPass pInfo pMode
+                    optimizationUpPass downPass pInfo pMode
     in upPass
 
 -- | Optimization down pass warpper for recursion from root
-optimizationDownPass :: TreeInfo -> PackedInfo -> BN.PackMode -> Float -> ExpandTree
+optimizationDownPass :: (Eq a, Bits a, A.IsIntegral a, A.Elt a, Integral a, NFData a) => TreeInfo a -> PackedInfo a -> ParPackMode -> Float -> ExpandTree a
 optimizationDownPass (tree, mat) pInfo pMode inWeight
-	| (length $ children root) > 2 = error "Fitch algorithm only applies to binary trees" -- more than two children means fitch won't work
-	| isTerminal root = -- if the root is a terminal, give the whole tree a cost of zero, do not reassign nodes
-		let 
-			newNode = modifyTotalCost root (V.singleton 0)
-			newTree = (V.//) tree [(code root, newNode)]
-		in (newTree, mat, mat)
-	| (length $ children root) == 1 = -- if there is only one child, continue recursion down and resolve
+    | (length $ children root) > 2 = error "Fitch algorithm only applies to binary trees" -- more than two children means fitch won't work
+    | isTerminal root = -- if the root is a terminal, give the whole tree a cost of zero, do not reassign nodes
+        let 
+            newNode = modifyTotalCost root (V.singleton 0)
+            newTree = (V.//) tree [(code root, newNode)]
+        in (newTree, mat, mat)
+    | (length $ children root) == 1 = -- if there is only one child, continue recursion down and resolve
         let 
             leftChild = head $ children root
             (nodes1, mRows1, fRows1) = internalDownPass (tree, mat) pInfo leftChild pMode inWeight
@@ -81,10 +84,10 @@ optimizationDownPass (tree, mat) pInfo pMode inWeight
         in --trace ("new matrix " ++ show combmat)
             (combTree, combmat, fcombmat)
 
-		where root = head $ [x | x <- (V.toList tree), isRoot x]
+        where root = head $ [x | x <- (V.toList tree), isRoot x]
 
 -- | Function to run children in parallel
-parChildren :: TreeInfo -> PackedInfo -> BN.PackMode -> Float -> Int -> Int -> ((NewNodes, NewRows, NewRows), (NewNodes, NewRows, NewRows))
+parChildren :: (Eq a, Bits a, A.IsIntegral a, A.Elt a, Integral a, NFData a) => TreeInfo a -> PackedInfo a -> ParPackMode -> Float -> Int -> Int -> ((NewNodes, NewRows a, NewRows a), (NewNodes, NewRows a, NewRows a))
 parChildren tInfo pInfo pMode inWeight leftChild rightChild = runEval $ do
         leftEval <- rpar (force (internalDownPass tInfo pInfo leftChild pMode inWeight))
         rightEval <- rpar (force (internalDownPass tInfo pInfo rightChild pMode inWeight))
@@ -94,10 +97,10 @@ parChildren tInfo pInfo pMode inWeight leftChild rightChild = runEval $ do
 
 
 -- | Internal down pass that creates new rows without combining, making the algorithm faster
-internalDownPass :: TreeInfo -> PackedInfo -> Int -> BN.PackMode -> Float -> (NewNodes, NewRows, NewRows)
+internalDownPass :: (Eq a, Bits a, A.IsIntegral a, A.Elt a, Integral a, NFData a) => TreeInfo a -> PackedInfo a -> Int -> ParPackMode -> Float -> (NewNodes, NewRows a, NewRows a)
 --internalDownPass (tree, mat) pInfo myCode pMode | trace ("internal down pass with code " ++ show (mat V.! myCode)) False = undefined
 internalDownPass (tree, mat) pInfo myCode pMode inWeight
-	| isTerminal node = --if it's a leaf, just vie cost zero and bounce up
+    | isTerminal node = --if it's a leaf, just vie cost zero and bounce up
         ([(myCode, (V.singleton 0))], [(myCode, mat V.! myCode)], [(myCode, mat V.! myCode)])
     | (length $ children node) > 2 = error "Fitch algorithm only works for binary trees"
     | (length $ parents node) > 1 = error "Fitch algorithm only works for trees, not networks" -- check for non-binary trees and networks
@@ -106,7 +109,7 @@ internalDownPass (tree, mat) pInfo myCode pMode inWeight
             leftChild = head $ children node
             (nodes1, mRows1, fRows1) = internalDownPass (tree, mat) pInfo leftChild pMode inWeight
             carryBit = --trace ("carry bit " ++ show mRows1 ++ " and code " ++ show myCode)
-            			snd $ head mRows1
+                        snd $ head mRows1
             carryFBit = snd $ head fRows1
             carryCost = snd $ head nodes1
             newNodes = (myCode, carryCost) : nodes1
@@ -114,7 +117,7 @@ internalDownPass (tree, mat) pInfo myCode pMode inWeight
             allFChanges = (myCode, carryFBit) : fRows1
         in (newNodes, allMChanges, allFChanges)
     | otherwise = -- if two children, do recursive calls and get node assignment
-    	let 
+        let 
             leftChild = --trace ("children " ++ show (children node))
                         head $ children node
             rightChild = head $ tail $ children node
@@ -133,30 +136,30 @@ internalDownPass (tree, mat) pInfo myCode pMode inWeight
 
 -- | Bit operations for the down pass: basically creats a mask for union and intersection areas and then takes them
 -- returns the new assignment, the union/intersect mask, and the new total cost
-downBitOps :: (NodeCost, BN.BitPackedNode) -> (NodeCost, BN.BitPackedNode) -> PackedInfo -> BN.PackMode -> Float -> (BN.BitPackedNode, BN.BitPackedNode, NodeCost)
+downBitOps :: (Eq a, Bits a, A.IsIntegral a, A.Elt a, Integral a, NFData a) => (NodeCost, ParEnabledNode a) -> (NodeCost, ParEnabledNode a) -> PackedInfo a -> ParPackMode -> Float -> (ParEnabledNode a, ParEnabledNode a, NodeCost)
 --downBitOps (lcost, lbit) (rcost, rbit) pInfo pMode weight | trace ("down bit ops with bit " ++ show lbit ++ " and right " ++ show rbit) False = undefined
 downBitOps (lcost, lbit) (rcost, rbit) pInfo pMode inWeight =
-	let
-		notOr = BN.complement $ lbit BN..&. rbit 
-		union = --trace ("notOr " ++ show notOr)
-                    lbit BN..|. rbit
-		fBit = notOr BN..&. (snd $ masks pInfo)
-		rightF = --trace ("fBit " ++ show fBit)
-                    BN.blockShiftAndFold "R" "&" notOr (blockLenMap pInfo) (length $ maxAlphabet pInfo) fBit
-		finalF = BN.blockShiftAndFold "L" "|" rightF (blockLenMap pInfo) (length $ maxAlphabet pInfo) rightF
-		maskF = --trace ("mask "++ show (fst $ masks pInfo) ++ " and bit " ++ show finalF)
-					(fst $ masks pInfo) BN..&. finalF
-		myCost = --trace ("in to cost " ++ show maskF)
-                    BN.getNodeCost maskF pMode (blockLenMap pInfo) (length $ maxAlphabet pInfo)
-		weightCost = inWeight * myCost
-		newcost = V.singleton $ (V.head lcost) + (V.head rcost) + weightCost
-		outbit = (maskF BN..&. union) BN..|. (lbit BN..&. rbit)
-	in --trace ("finished bit ops " ++ show outbit)
-		(outbit, maskF, newcost)
+    let
+        notOr = complement $ lbit .&. rbit 
+        union = --trace ("notOr " ++ show notOr)
+                    lbit .|. rbit
+        fBit = notOr .&. (snd $ masks pInfo)
+        rightF = --trace ("fBit " ++ show fBit)
+                    blockShiftAndFold "R" "&" notOr (blockLenMap pInfo) (length $ maxAlphabet pInfo) fBit
+        finalF = blockShiftAndFold "L" "|" rightF (blockLenMap pInfo) (length $ maxAlphabet pInfo) rightF
+        maskF = --trace ("mask "++ show (fst $ masks pInfo) ++ " and bit " ++ show finalF)
+                    (fst $ masks pInfo) .&. finalF
+        myCost = --trace ("in to cost " ++ show maskF)
+                    getNodeCost maskF (blockLenMap pInfo) (length $ maxAlphabet pInfo)
+        weightCost = inWeight * myCost
+        newcost = V.singleton $ (V.head lcost) + (V.head rcost) + weightCost
+        outbit = (maskF .&. union) .|. (lbit .&. rbit)
+    in --trace ("finished bit ops " ++ show outbit)
+        (outbit, maskF, newcost)
 
 -- | Combines the changes made to two different matrices given a base matrix
 -- assumes the same row isn't changed twice, which should never happen, so throws error if it does
-combChanges :: NewRows -> PackedTree -> PackedTree
+combChanges :: (Eq a, Bits a, A.IsIntegral a, A.Elt a, Integral a, NFData a) => NewRows a -> PackedTree a -> PackedTree a
 --combChanges changes initMat | trace ("combChanges with matrices "++ show changes) False = undefined
 combChanges changes initMat -- check for duplicates and throw an error
     | -1 `elem` (foldr (\(c, _) acc -> if c `elem` acc then -1 : c : acc else acc) [] changes) = error "multiple changes made to same node"
@@ -187,7 +190,7 @@ parVecUpdate initVec updates =
                 match = foldr (\(i, val) acc -> if i == (fst item) then val : acc else acc ) [] list
 
 -- | Wrapper for up pass recursion to deal with root
-optimizationUpPass :: ExpandTree -> PackedInfo -> BN.PackMode -> TreeInfo
+optimizationUpPass :: (Eq a, Bits a, A.IsIntegral a, A.Elt a, Integral a, NFData a) => ExpandTree a -> PackedInfo a -> ParPackMode -> TreeInfo a
 --optimizationUpPass (tree, mat, fmat) pInfo pMode | trace "up pass" False = undefined
 optimizationUpPass (tree, mat, fmat) pInfo pMode 
     | isTerminal root = (tree, mat)
@@ -209,7 +212,7 @@ optimizationUpPass (tree, mat, fmat) pInfo pMode
         where root = head $ [x | x <- (V.toList tree), isRoot x]
 
 -- | Paralellized calls to internal up pass
-parUpPass :: ExpandTree -> PackedInfo -> Int -> Int -> BN.PackMode -> (NewRows, NewRows)
+parUpPass :: (Eq a, Bits a, A.IsIntegral a, A.Elt a, Integral a, NFData a) => ExpandTree a -> PackedInfo a -> Int -> Int -> ParPackMode -> (NewRows a, NewRows a)
 parUpPass tInfo pInfo leftCode rightCode pMode  = runEval $ do
         leftEval <- rpar (force (internalUpPass tInfo pInfo leftCode pMode))
         rightEval <- rpar (force (internalUpPass tInfo pInfo rightCode pMode))
@@ -219,10 +222,10 @@ parUpPass tInfo pInfo leftCode rightCode pMode  = runEval $ do
 
 
 -- | Internal up pass that performs most of the recursion
-internalUpPass :: ExpandTree -> PackedInfo -> Int -> BN.PackMode -> NewRows
+internalUpPass :: (Eq a, Bits a, A.IsIntegral a, A.Elt a, Integral a, NFData a) => ExpandTree a -> PackedInfo a -> Int -> ParPackMode -> NewRows a
 --internalUpPass (tree, mat, fmat) pInfo myCode pMode | trace ("internal up pass ") False = undefined
 internalUpPass (tree, mat, fmat) pInfo myCode pMode
-	| isTerminal (tree V.! myCode) = []
+    | isTerminal (tree V.! myCode) = []
     | (length $ children $ (tree V.! myCode)) > 2 = error "up pass cannot be performed for larger than binary trees" -- check for non-binary
     | (length $ children $ (tree V.! myCode)) == 1 = --if one child, just recurse down
         let 
@@ -242,20 +245,20 @@ internalUpPass (tree, mat, fmat) pInfo myCode pMode
         in (myCode, newBit) : (leftChanges ++ rightChanges)
 
 -- | Bit operations for the up pass
-upPassBitOps :: BN.BitPackedNode -> BN.BitPackedNode ->BN.BitPackedNode -> BN.BitPackedNode -> BN.BitPackedNode -> PackedInfo -> BN.BitPackedNode
+upPassBitOps :: (Eq a, Bits a, A.IsIntegral a, A.Elt a, Integral a, NFData a) => ParEnabledNode a -> ParEnabledNode a ->ParEnabledNode a -> ParEnabledNode a -> ParEnabledNode a -> PackedInfo a -> ParEnabledNode a
 upPassBitOps pBit myBit lBit rBit fBit pInfo = 
-	let 
-		setX = (BN.complement myBit) BN..&. pBit
-		notX = BN.complement setX
-		setG = notX BN..&. (snd $ masks pInfo)
-		rightG = BN.blockShiftAndFold "R" "&" notX (blockLenMap pInfo) (length $ maxAlphabet pInfo) setG
-		finalG = BN.blockShiftAndFold "L" "|" rightG (blockLenMap pInfo) (length $ maxAlphabet pInfo) rightG
-		maskedNotG = (fst $ masks pInfo) BN..&. (BN.complement finalG)
-		maskedNotF = (fst $ masks pInfo) BN..&. (BN.complement fBit)
-		setS = myBit BN..&. (pBit BN..|. maskedNotG)
-		sndS = setS BN..|. (pBit BN..&. fBit)
-		thdS = sndS BN..|. (maskedNotG BN..&. (maskedNotF BN..&. (pBit BN..&. (lBit BN..|. rBit))))
-	in thdS
+    let 
+        setX = (complement myBit) .&. pBit
+        notX = complement setX
+        setG = notX .&. (snd $ masks pInfo)
+        rightG = blockShiftAndFold "R" "&" notX (blockLenMap pInfo) (length $ maxAlphabet pInfo) setG
+        finalG = blockShiftAndFold "L" "|" rightG (blockLenMap pInfo) (length $ maxAlphabet pInfo) rightG
+        maskedNotG = (fst $ masks pInfo) .&. (complement finalG)
+        maskedNotF = (fst $ masks pInfo) .&. (complement fBit)
+        setS = myBit .&. (pBit .|. maskedNotG)
+        sndS = setS .|. (pBit .&. fBit)
+        thdS = sndS .|. (maskedNotG .&. (maskedNotF .&. (pBit .&. (lBit .|. rBit))))
+    in thdS
 
 -- | Function to get the root cost of the tree
 getRootCost :: PhyloComponent -> V.Vector Float
