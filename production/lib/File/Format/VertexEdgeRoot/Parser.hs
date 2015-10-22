@@ -130,8 +130,8 @@ unlabeledVertexSetDefinition = validateVertexSet =<< unlabeledVertexSetDefinitio
         pure (Nothing, labels')
     validateVertexSet :: Stream s m Char => (Maybe VertexSetType, [VertexLabel]) -> ParsecT s u m (Maybe VertexSetType, Set VertexLabel)
     validateVertexSet (t,vs)
-      | null dupes = pure $ (t, fromList vs)
-      | otherwise  = fail $ errorMessage
+      | null dupes = pure (t, fromList vs)
+      | otherwise  = fail errorMessage
       where
         dupes = duplicates vs
         errorMessage = "The following verticies were defined multiple times: " ++ show dupes
@@ -147,13 +147,15 @@ edgeSetDefinition = validateEdgeSet =<< edgeSetDefinition'
   where
     edgeSetLabel :: Stream s m Char => ParsecT s u m String
     edgeSetLabel = symbol (caseInsensitiveString "EdgeSet") <* symbol (char '=')
+
     edgeSetDefinition' :: Stream s m Char => ParsecT s u m [EdgeInfo]
     edgeSetDefinition' = do
         _      <- optional (try edgeSetLabel)
         _      <- symbol (char '{')
         pairs  <- edgeDefinition `sepBy` symbol (char ',')
         _      <- symbol (char '}')
-        pure $ pairs
+        pure pairs
+
     validateEdgeSet :: Stream s m Char => [EdgeInfo] -> ParsecT s u m (Set EdgeInfo)
     validateEdgeSet es
       | null errors = pure $ fromList es
@@ -163,10 +165,10 @@ edgeSetDefinition = validateEdgeSet =<< edgeSetDefinition'
         dupes  = duplicates edges'
         selfs  = filter (uncurry (==)) edges'
         errors = case (dupes,selfs) of
-                   ([]   ,[]   ) -> []
-                   ((_:_),[]   ) -> [dupesErrorMessage]
-                   ([]   ,(_:_)) -> [selfsErrorMessage] 
-                   ((_:_),(_:_)) -> [dupesErrorMessage,selfsErrorMessage]
+                   ([] ,[] ) -> []
+                   (_:_,[] ) -> [dupesErrorMessage]
+                   ([] ,_:_) -> [selfsErrorMessage] 
+                   (_:_,_:_) -> [dupesErrorMessage,selfsErrorMessage]
         dupesErrorMessage = "Duplicate edges detected. The following edges were defined multiple times: "    ++ show dupes
         selfsErrorMessage = "Self-referencing edge(s) detected.The following edge(s) are self=referencing: " ++ show selfs
 
@@ -250,9 +252,9 @@ validateForest ver@(VER vs es rs )
 buildEdgeMap :: Set VertexLabel -> Set EdgeInfo -> Map VertexLabel [VertexLabel]
 buildEdgeMap vs es = foldr buildMap empty vs
   where
-    edgeList           = edgeConnection <$> elems es
-    buildMap node map' = insert node (connected node) map' 
-    connected node     = catMaybes $ f <$> edgeList
+    edgeList       = edgeConnection <$> elems es
+    buildMap  node = insert node (connected node)
+    connected node = catMaybes $ f <$> edgeList
       where
         f (a,b)
           | a == node  = Just b

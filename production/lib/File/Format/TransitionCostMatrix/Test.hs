@@ -29,8 +29,8 @@ validAlphabets = appendNewlines
   , "do re mi"
   , "\\alpha \\beta \\gamma"
   , "Wiskey Tango Foxtrot"
-  , intercalate " " $ pure <$> ['a'..'z']
-  , intercalate " " $ pure <$> ['0'..'9']
+  , unwords $ pure <$> ['a'..'z']
+  , unwords $ pure <$> ['0'..'9']
   ]
 
 invalidAlphabets :: [String]
@@ -80,4 +80,4 @@ tcmStreamParser' = testGroup "tcmStreamParser" [valid,invalid]
     invalidStreams = ["a b c\n1 2 3\n4 5 6\n7 8 9\n"]
 
 appendNewlines :: [String] -> [String]
-appendNewlines = fmap (\x -> x ++"\n")
+appendNewlines = fmap (++"\n")
