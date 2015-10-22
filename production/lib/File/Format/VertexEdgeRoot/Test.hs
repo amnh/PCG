@@ -136,8 +136,8 @@ invalidEdges =
 edgeSetDefinition' :: TestTree
 edgeSetDefinition' = testGroup "edgeSetDefinition" [validSets,invalidSets]
   where
-    validSets   = testGroup "Valid edge set labels"   $ success <$> validEdgeSets
-    invalidSets = testGroup "Invalid set labels" $ failure <$> invalidEdgeSets
+    validSets   = testGroup "Valid edge sets"   $ success <$> validEdgeSets
+    invalidSets = testGroup "Invalid edge sets" $ failure <$> invalidEdgeSets
     success str = testCase (show str) $ parseSuccess (edgeSetDefinition <* eof) str
     failure str = testCase (show str) $ parseFailure (edgeSetDefinition <* eof) str
 
@@ -152,18 +152,20 @@ invalidEdgeSets =
   [ "{(a,b),(a,b)}"
   , "{(a,b),(b,a)}"
   , "{(a,b):1,(a,b):2}" -- still invalid
+  , "{(a,a)}" -- cannot be connected to yourself
   ]
 
 verStreamParser' :: TestTree
 verStreamParser' = testGroup "verStreamParser" [valid,invalid]
   where
-    valid       = testGroup "Valid VER definitions"   $ success <$> validVerDefs
-    invalid     = testGroup "Invalid VER definitions" $ failure <$> invalidVerDefs
-    success str = testCase (show str) $ parseSuccess (verStreamParser <* eof) str
-    failure str = testCase (show str) $ parseFailure (verStreamParser <* eof) str
+    valid        = testGroup "Valid VER definitions"   $ success <$> validVerDefs
+    invalid      = testGroup "Invalid VER definitions" $ failure <$> invalidVerDefs
+    success str  = testCase (show str) $ parseSuccess (verStreamParser <* eof) str
+    failure str  = testCase (show str) $ parseFailure (verStreamParser <* eof) str
     validVerDefs =
-      [
+      ["{a,b,c}{(a,b),(a,c)}{a}"
       ]
     invalidVerDefs =
-      [
+      [ "{a,b,c}{(a,b),(a,c),(b,c)}{a}" -- contains a cycle
+      , "{a,b,c}{(a,b),(a,c)}{a,c}"     -- root nodes are connected
       ]

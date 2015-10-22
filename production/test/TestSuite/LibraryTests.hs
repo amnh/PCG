@@ -9,6 +9,7 @@ import qualified File.Format.Fasta.Test                as Fasta
 import qualified File.Format.Fastc.Test                as Fastc
 import qualified File.Format.Newick.Test               as Newick
 import qualified File.Format.TransitionCostMatrix.Test as TCM
+import qualified File.Format.VertexEdgeRoot.Test       as VER
 
 main :: IO ()
 main = defaultMain testSuite
@@ -20,5 +21,6 @@ testSuite = testGroup "Library Test Suite"
   , Fastc.testSuite
   , Newick.testSuite
   , TCM.testSuite
+  , VER.testSuite
   ]
 
