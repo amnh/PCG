@@ -34,10 +34,10 @@ cabal-version: >= 1.8
 library
   -- Modules exported by the library.
   exposed-modules:     File.Format.Fasta
-                     , File.Format.Fastc.Parser
+                     , File.Format.Fastc
                      , File.Format.Newick
-                     , File.Format.VertexEdgeRoot.Parser
-                     , File.Format.TransitionCostMatrix.Parser
+                     , File.Format.VertexEdgeRoot
+                     , File.Format.TransitionCostMatrix
                      , Text.Parsec.Custom
                      , Bio.Phylogeny.Graph
   
@@ -45,8 +45,11 @@ library
   -- other-modules:       
                        File.Format.Fasta.Internal
                        File.Format.Fasta.Parser
+                       File.Format.Fastc.Parser
                        File.Format.Newick.Internal
                        File.Format.Newick.Parser
+                       File.Format.TransitionCostMatrix.Parser
+                       File.Format.VertexEdgeRoot.Parser
 
   -- LANGUAGE extensions used by modules in this package.
   other-extensions:    FlexibleContexts, BangPatterns, DeriveGeneric

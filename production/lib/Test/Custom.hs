@@ -18,7 +18,7 @@ parseSuccess parser str =
 parseFailure :: Parsec String () a -> String -> Assertion
 parseFailure parser str =
   case result of
-    Right _ -> assertFailure $ "Should have failed to parse input: str"
+    Right _ -> assertFailure $ "Should have failed to parse input: " ++ show str
     Left  _ -> assert True
   where
     result = parse parser "" str

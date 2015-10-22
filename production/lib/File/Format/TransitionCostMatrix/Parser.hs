@@ -85,7 +85,7 @@ validateMatrix matrix
     badCols            = foldr getBadCols [] $ zip [(1::Int)..] matrix
     getBadCols (n,e) a = let x = length e in if x /= cols then (n,x):a else a  
     colMsg (x,y)       = (:) (Just $ "Matrix row "++show x++" has "++show y++" columns but "++show cols++" columns were expected")
-    matrixErrors       = catMaybes $ [badRowCount] ++ badColCount
+    matrixErrors       = catMaybes $ badRowCount : badColCount
     badColCount        = foldr colMsg [] badCols
     badRowCount        = if   rows == cols
                          then Nothing
