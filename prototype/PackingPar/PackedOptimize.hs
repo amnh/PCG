@@ -19,11 +19,11 @@ type NewNodes = [(Int, V.Vector Float)]
 type NodeCost = V.Vector Float
 
 -- | Function to get the cost of an entire forest by map
-costForest :: PhyloForest -> (PackedForest, PackedInfo, BN.PackMode) -> Float -> [Float]
-costForest forestTrees (packForest, pInfo, pMode) weight = 
+costForest :: PhyloForest -> (PackedForest, PackedInfo, BN.PackMode) -> Float -> Int -> [Float]
+costForest forestTrees (packForest, pInfo, pMode) weight parMode = 
     let 
-        downOut = zipWith (\dat tree -> optimizationDownPass (tree, dat) pInfo pMode weight) (V.toList packForest) forestTrees
-        costs = map (\(tree, _, _) -> V.head $ getRootCost tree) downOut
+        downOut = zipWith (\dat tree -> optimizationDownPass (tree, dat) pInfo pMode weight) (V.toList packForest) forestTrees parMode
+        costs = map (\(tree, _, _) -> V.head $ getRootCost tree) downOut parMode
     in costs
 
 -- | Function to optimize an entire forest by a map
@@ -40,8 +40,8 @@ allOptimization input pInfo pMode inWeight =
     in upPass
 
 -- | Optimization down pass warpper for recursion from root
-optimizationDownPass :: TreeInfo -> PackedInfo -> BN.PackMode -> Float -> ExpandTree
-optimizationDownPass (tree, mat) pInfo pMode inWeight
+optimizationDownPass :: TreeInfo -> PackedInfo -> BN.PackMode -> Float -> Int -> ExpandTree
+optimizationDownPass (tree, mat) pInfo pMode inWeight parMode
 	| (length $ children root) > 2 = error "Fitch algorithm only applies to binary trees" -- more than two children means fitch won't work
 	| isTerminal root = -- if the root is a terminal, give the whole tree a cost of zero, do not reassign nodes
 		let 
@@ -58,15 +58,17 @@ optimizationDownPass (tree, mat) pInfo pMode inWeight
             newNodes = (code root, carryCost) : nodes1
             allMChanges = (code root, carryBit) : mRows1
             allFChanges = (code root, carryFBit) : fRows1
-            combmat = combChanges allMChanges mat
-            fcombmat = combChanges allFChanges mat
-            combTree = combTreeChanges newNodes tree
+            combmat = combChanges allMChanges mat parMode
+            fcombmat = combChanges allFChanges mat parMode
+            combTree = combTreeChanges newNodes tree parMode
         in (combTree, combmat, fcombmat)
     | otherwise = -- if there are two children, do two recursive calls, get node assignment, and then resolve
         let 
             leftChild = head $ children root
             rightChild = head $ tail $ children root
-            ((nodes1, mRows1, fRows1), (nodes2, mRows2, fRows2)) = parChildren (tree, mat) pInfo pMode inWeight leftChild rightChild
+            ((nodes1, mRows1, fRows1), (nodes2, mRows2, fRows2)) = parChildren (tree, mat) pInfo pMode inWeight leftChild rightChild parMode
+            --(nodes1, mRows1, fRows1) = internalDownPass (tree, mat) pInfo leftChild pMode inWeight
+            --(nodes2, mRows2, fRows2) = internalDownPass (tree, mat) pInfo rightChild pMode inWeight
             lbit = snd $ head mRows1
             rbit = snd $ head mRows2
             lcost = snd $ head nodes1
@@ -75,22 +77,28 @@ optimizationDownPass (tree, mat) pInfo pMode inWeight
             treeUpdates = (code root, myCost) : (nodes1 ++ nodes2)
             allMChanges = (code root, mybit) : (mRows1 ++ mRows2) -- new bits always added to head to pass to bit ops
             allFRows = (code root, myF) : (fRows1 ++ fRows2)
-            combmat = combChanges allMChanges mat
-            fcombmat = combChanges allFRows mat
-            combTree = combTreeChanges treeUpdates tree
+            combmat = combChanges allMChanges mat parMode
+            fcombmat = combChanges allFRows mat parMode
+            combTree = combTreeChanges treeUpdates tree parMode
         in --trace ("new matrix " ++ show combmat)
             (combTree, combmat, fcombmat)
 
 		where root = head $ [x | x <- (V.toList tree), isRoot x]
 
 -- | Function to run children in parallel
-parChildren :: TreeInfo -> PackedInfo -> BN.PackMode -> Float -> Int -> Int -> ((NewNodes, NewRows, NewRows), (NewNodes, NewRows, NewRows))
-parChildren tInfo pInfo pMode inWeight leftChild rightChild = runEval $ do
+parChildren :: TreeInfo -> PackedInfo -> BN.PackMode -> Float -> Int -> Int -> Boolean -> ((NewNodes, NewRows, NewRows), (NewNodes, NewRows, NewRows))
+parChildren tInfo pInfo pMode inWeight leftChild rightChild parOn
+    | parOn >= 1 = runEval $ do
         leftEval <- rpar (force (internalDownPass tInfo pInfo leftChild pMode inWeight))
         rightEval <- rpar (force (internalDownPass tInfo pInfo rightChild pMode inWeight))
         _ <- rseq leftEval
         _ <- rseq rightEval
         return (leftEval, rightEval)
+    | otherwise = 
+        let 
+            left = internalDownPass tInfo pInfo leftChild pMode inWeight
+            right = internalDownPass tInfo pInfo rightChild pMode inWeight
+        in (left, right)
 
 
 -- | Internal down pass that creates new rows without combining, making the algorithm faster
@@ -118,7 +126,9 @@ internalDownPass (tree, mat) pInfo myCode pMode inWeight
             leftChild = --trace ("children " ++ show (children node))
                         head $ children node
             rightChild = head $ tail $ children node
-            ((nodes1, mRows1, fRows1), (nodes2, mRows2, fRows2)) = parChildren (tree, mat) pInfo pMode inWeight leftChild rightChild
+            --((nodes1, mRows1, fRows1), (nodes2, mRows2, fRows2)) = parChildren (tree, mat) pInfo pMode inWeight leftChild rightChild
+            (nodes1, mRows1, fRows1) = internalDownPass (tree, mat) pInfo leftChild pMode inWeight
+            (nodes2, mRows2, fRows2) = internalDownPass (tree, mat) pInfo rightChild pMode inWeight
             lbit = snd $ head mRows1
             rbit = snd $ head mRows2
             lcost = snd $ head nodes1
@@ -156,19 +166,23 @@ downBitOps (lcost, lbit) (rcost, rbit) pInfo pMode inWeight =
 
 -- | Combines the changes made to two different matrices given a base matrix
 -- assumes the same row isn't changed twice, which should never happen, so throws error if it does
-combChanges :: NewRows -> PackedTree -> PackedTree
+combChanges :: NewRows -> PackedTree -> Int -> PackedTree
 --combChanges changes initMat | trace ("combChanges with matrices "++ show changes) False = undefined
-combChanges changes initMat -- check for duplicates and throw an error
+combChanges changes initMat parMode -- check for duplicates and throw an error
     | -1 `elem` (foldr (\(c, _) acc -> if c `elem` acc then -1 : c : acc else acc) [] changes) = error "multiple changes made to same node"
-    | otherwise = parVecUpdate initMat changes
+    | parMode == 2 = parVecUpdate initMat changes
+    | otherwise = (V.//) initMat changes
 
 -- | Combine changes to a tree from left and right children, multiple changes to the same node are not allowed
-combTreeChanges :: NewNodes -> PhyloComponent -> PhyloComponent
-combTreeChanges changes origTree 
+combTreeChanges :: NewNodes -> PhyloComponent -> Int -> PhyloComponent
+combTreeChanges changes origTree parMode
     | -1 `elem` (foldr (\(c, _) acc -> if c `elem` acc then -1 : c : acc else acc) [] changes) = error "multiple changes made to same node"
-    | otherwise = 
+    | parMode == 2 = 
         let newNodes = map (\(index, cost) -> (index, modifyTotalCost (origTree V.! index) cost)) changes
         in parVecUpdate origTree newNodes
+    | otherwise = 
+        let newNodes = map (\(index, cost) -> (index, modifyTotalCost (origTree V.! index) cost)) changes
+        in (V.//) origTree newNodes
 
 -- | My update function evaluating in parallel
 parVecUpdate :: V.Vector a -> [(Int, a)] -> V.Vector a
@@ -187,9 +201,9 @@ parVecUpdate initVec updates =
                 match = foldr (\(i, val) acc -> if i == (fst item) then val : acc else acc ) [] list
 
 -- | Wrapper for up pass recursion to deal with root
-optimizationUpPass :: ExpandTree -> PackedInfo -> BN.PackMode -> TreeInfo
+optimizationUpPass :: ExpandTree -> PackedInfo -> BN.PackMode -> Int -> TreeInfo
 --optimizationUpPass (tree, mat, fmat) pInfo pMode | trace "up pass" False = undefined
-optimizationUpPass (tree, mat, fmat) pInfo pMode 
+optimizationUpPass (tree, mat, fmat) pInfo pMode parMode
     | isTerminal root = (tree, mat)
     | (length $ children root) > 2 = error "up pass cannot be performed for larger than binary trees" -- check for non-binary trees
     | (length $ children root) == 1 = -- for one child, recurse down and resolve changes
@@ -202,20 +216,28 @@ optimizationUpPass (tree, mat, fmat) pInfo pMode
         let 
             leftCode = head $ children root
             rightCode = head $ tail $ children root
-            (leftChanges, rightChanges) = parUpPass (tree, mat, fmat) pInfo leftCode rightCode pMode
+            (leftChanges, rightChanges) = parUpPass (tree, mat, fmat) pInfo leftCode rightCode pMode parMode
+            --leftChanges = internalUpPass (tree, mat, fmat) pInfo leftCode pMode
+            --rightChanges = internalUpPass (tree, mat, fmat) pInfo rightCode pMode
             outmat = combChanges (leftChanges ++ rightChanges) mat
         in (tree, outmat)
 
         where root = head $ [x | x <- (V.toList tree), isRoot x]
 
 -- | Paralellized calls to internal up pass
-parUpPass :: ExpandTree -> PackedInfo -> Int -> Int -> BN.PackMode -> (NewRows, NewRows)
-parUpPass tInfo pInfo leftCode rightCode pMode  = runEval $ do
+parUpPass :: ExpandTree -> PackedInfo -> Int -> Int -> BN.PackMode -> Int -> (NewRows, NewRows)
+parUpPass tInfo pInfo leftCode rightCode pMode parMode
+    | parMode >=1 = runEval $ do
         leftEval <- rpar (force (internalUpPass tInfo pInfo leftCode pMode))
         rightEval <- rpar (force (internalUpPass tInfo pInfo rightCode pMode))
         _ <- rseq leftEval
         _ <- rseq rightEval
         return (leftEval, rightEval)
+    | otherwise = 
+        let
+            left = internalUpPass tInfo pInfo leftCode pMode
+            right = internalUpPass tInfo pInfo rightCode pMode
+        in (left, right)
 
 
 -- | Internal up pass that performs most of the recursion

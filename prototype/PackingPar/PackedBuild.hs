@@ -175,7 +175,7 @@ genSeenAlphabets terminals numChars
 -- uses the charInfo as meaningful, but has a fall through in case
 getSpecial :: SeenAlphs -> CharInfo -> M.Map Char String
 getSpecial alphabets charInfo 
-    | not (null $ alphabet charInfo) = trace "use charInfo" $
+    | not (null $ alphabet charInfo) = --trace "use charInfo" $
         let 
             alph = map head (alphabet charInfo)
             finalAlph = [x | x<-alph, not $ x `elem` "?-"]
