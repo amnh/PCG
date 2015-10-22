@@ -141,6 +141,7 @@ edgeSetDefinition' = testGroup "edgeSetDefinition" [validSets,invalidSets]
     success str = testCase (show str) $ parseSuccess (edgeSetDefinition <* eof) str
     failure str = testCase (show str) $ parseFailure (edgeSetDefinition <* eof) str
 
+validEdgeSets :: [String]
 validEdgeSets =
   [ "EdgeSet={(a,b)}"
   , "eDgEsEt={(a,b)}"
@@ -148,6 +149,7 @@ validEdgeSets =
   , "EdgeSet={}" -- It doesn't *have* to have edges
   ]
 
+invalidEdgeSets :: [String]
 invalidEdgeSets =
   [ "{(a,b),(a,b)}"
   , "{(a,b),(b,a)}"
