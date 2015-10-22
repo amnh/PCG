@@ -1,5 +1,5 @@
 module File.Format.VertexEdgeRoot
-  ( VER(..)
+  ( VertexEdgeRoot(..)
   , verStreamParser
   ) where
 
