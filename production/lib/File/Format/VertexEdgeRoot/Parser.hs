@@ -119,6 +119,8 @@ vertexSetType = do
       Just _  -> pure Verticies
       Nothing -> symbol (caseInsensitiveString "RootSet") *> pure Roots
 
+-- A vertex set with an optional set label enclosed in braces.
+-- A vertex set cannot have duplicate verticies
 unlabeledVertexSetDefinition :: Stream s m Char => ParsecT s u m (Maybe VertexSetType, Set VertexLabel)
 unlabeledVertexSetDefinition = validateVertexSet =<< unlabeledVertexSetDefinition'
   where
@@ -136,12 +138,16 @@ unlabeledVertexSetDefinition = validateVertexSet =<< unlabeledVertexSetDefinitio
         dupes = duplicates vs
         errorMessage = "The following verticies were defined multiple times: " ++ show dupes
 
+-- A vertex label is any non-scpace character that is also not a brace, paren, or comma.
 vertexLabelDefinition :: Stream s m Char => ParsecT s u m String
 vertexLabelDefinition = many1 validChar
   where
     validChar = satisfy $ \x -> x `notElem` "{}(),"
                              && (not . isSpace) x
 
+-- Parses an edge set with an optional edge set label.
+-- Edges cannot be from one node to the same node.
+-- Edges are undirected, with duplicate edges prohibited.
 edgeSetDefinition :: Stream s m Char => ParsecT s u m (Set EdgeInfo)
 edgeSetDefinition = validateEdgeSet =<< edgeSetDefinition'
   where
@@ -187,7 +193,10 @@ edgeDefinition = symbol $ do
 
 symbol :: Stream s m Char => ParsecT s u m a -> ParsecT s u m a
 symbol x = x <* spaces
-    
+
+-- A VER forest is not valid if:
+--   * Any two root nodes are connected
+--   * Any tree contains a cycle
 validateForest :: Stream s m Char => VertexEdgeRoot -> ParsecT s u m VertexEdgeRoot
 validateForest ver@(VER vs es rs )
   | (not.null) treeEdgeCycles = fails $ edgeCycleErrorMessage <$> treeEdgeCycles
@@ -195,10 +204,14 @@ validateForest ver@(VER vs es rs )
   | otherwise                 = pure ver
   where
     rootList       = elems rs
-    treeEdgeCycles = catMaybes         $ findCycle <$> rootList
-    connectedRoots = filter (not.null) $ findRoots <$> rootList
+    treeEdgeCycles = catMaybes       $ findCycle <$> rootList
+    connectedRoots = filter manyList $ findRoots <$> rootList
     connections    = buildEdgeMap vs es
-
+    manyList []  = False
+    manyList [_] = False
+    manyList _   = True
+    -- Detect if the tree contains a cycle by consulting a stack
+    -- while performing a depth-first-search
     findCycle :: VertexLabel -> Maybe (VertexLabel,[VertexLabel])
     findCycle root
       | null result = Nothing
@@ -219,23 +232,17 @@ validateForest ver@(VER vs es rs )
                               Just x  -> x `delete` adjacentNodes
                               Nothing -> adjacentNodes
 
+    -- Determine if multiple roots are connected by traversing the tree
+    -- and checking each node for inclusion in the root set.
     findRoots :: VertexLabel -> [VertexLabel]
-    findRoots root
-      | null result = []
-      | otherwise   = root:result
+    findRoots root = findRoots' root root
       where
-        result = findRoots' Nothing root
-        findRoots' parent node
-          | null children   = []
-          | otherwise       = rootsFound
+        findRoots' parent node = selfRoot ++ descendantRoots
           where
-            rootsFound      = rootChildren ++ rootDescendants
-            rootChildren    = filter (`elem` rs) children
-            rootDescendants = concat $ findRoots' (Just node) <$> children
+            selfRoot        = filter (`elem` rs) [node]
+            descendantRoots = concat $ findRoots' node <$> children
+            children        = parent `delete` adjacentNodes
             adjacentNodes   = fromMaybe [] $ node `lookup` connections
-            children        = case parent of
-                                Just x  -> x `delete` adjacentNodes
-                                Nothing -> adjacentNodes
 
     edgeCycleErrorMessage (r,xs) = concat
       [ "In the tree rooted at '"
