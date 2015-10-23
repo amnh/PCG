@@ -4,12 +4,12 @@ module File.Format.VertexEdgeRoot.Test
   ( testSuite
   ) where
 
-import Data.List                               (intercalate)
+import Data.List                         (intercalate)
 import File.Format.VertexEdgeRoot.Parser
-import Test.Custom                             (parseEquals,parseFailure,parseSuccess)
-import Test.Tasty                              (TestTree,testGroup)
+import Test.Custom                       (parseEquals,parseFailure,parseSuccess)
+import Test.Tasty                        (TestTree,testGroup)
 import Test.Tasty.HUnit
-import Text.Parsec                             (eof)
+import Text.Megaparsec            hiding (label)
 
 testSuite :: TestTree
 testSuite = testGroup "VER Format"
@@ -21,7 +21,6 @@ testSuite = testGroup "VER Format"
   , testGroup "VER Converter"
       []
   ]
-
 
 validSetLabels :: [(VertexSetType,String)]
 validSetLabels =

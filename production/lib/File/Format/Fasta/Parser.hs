@@ -2,15 +2,16 @@
 
 module File.Format.Fasta.Parser where
 
-import           Control.Arrow                     ((&&&))
-import           Control.Monad                     ((<=<))
-import           Data.Char                         (isLower,isUpper,toLower,toUpper)
-import           Data.List                         (nub,partition)
-import           Data.List.Utility
-import           Data.Maybe                        (fromJust)
-import           File.Format.Fasta.Internal
-import           Text.Parsec
-import           Text.Parsec.Custom
+import Control.Arrow              ((&&&))
+import Control.Monad              ((<=<))
+import Data.Char                  (isLower,isUpper,toLower,toUpper)
+import Data.List                  (nub,partition)
+import Data.List.Utility
+import Data.Maybe                 (fromJust)
+import File.Format.Fasta.Internal
+import Text.Megaparsec
+import Text.Megaparsec.Custom
+import Text.Megaparsec.Prim       (MonadParsec)
 
 data FastaSequence
    = FastaSequence
@@ -21,33 +22,33 @@ type FastaParseResult = [FastaSequence]
 
 -- | Consumes a Char stream and parses the stream into a FastaParseResult that
 --   has been validated for information consistency
-fastaStreamParser :: Stream s m Char => ParsecT s u m FastaParseResult
-fastaStreamParser = validate =<< seqTranslation <$> (many1 fastaTaxonSequenceDefinition <* eof)
+fastaStreamParser :: MonadParsec s m Char => m FastaParseResult
+fastaStreamParser = validate =<< seqTranslation <$> (some fastaTaxonSequenceDefinition <* eof)
 
 -- | Parses a single FASTA defined taxon sequence from a Char stream
-fastaTaxonSequenceDefinition :: Stream s m Char => ParsecT s u m FastaSequence
+fastaTaxonSequenceDefinition :: MonadParsec s m Char => m FastaSequence
 fastaTaxonSequenceDefinition = do
     name <- fastaTaxonName
     seq' <- try fastaSequence <?> ("Unable to read character sequence for taxon: '" ++ name ++ "'")
-    _    <- spaces
+    _    <- space
     pure $ FastaSequence name seq'
 
 -- | Consumes a line from the Char stream and parses a FASTA identifier
-fastaTaxonName :: Stream s m Char => ParsecT s u m String
+fastaTaxonName :: MonadParsec s m Char => m String
 fastaTaxonName = identifierLine
 
 -- | Consumes one or more lines from the Char stream to produce a list of Chars
 --   constrained to a valid Char alphabet representing possible character states
-fastaSequence :: Stream s m Char => ParsecT s u m String
+fastaSequence :: MonadParsec s m Char => m String
 fastaSequence = symbolSequence $ oneOf alphabet
 
 -- | Takes a symbol combinator and constructs a combinator which matches
 --   many of the symbols seperated by spaces and newlines and the enitire
 --   sequence ends in a new line
-symbolSequence :: Stream s m Char => ParsecT s u m a -> ParsecT s u m [a]
-symbolSequence sym = spaces *> fullSequence
+symbolSequence :: MonadParsec s m Char => m a -> m [a]
+symbolSequence sym = space *> fullSequence
   where
-    fullSequence = concat <$> many1 (inlineSpaces *> sequenceLine)
+    fullSequence = concat <$> some (inlineSpaces *> sequenceLine)
     sequenceLine = (sym <* inlineSpaces) `manyTill` eol
 
 -- | Various input alphabets
@@ -85,26 +86,26 @@ seqTranslation = foldr f []
     f (FastaSequence name seq') a = FastaSequence name (toUpper <$> seq') : a
 
 -- | Ensures that the parsed result has consistent data
-validate :: Stream s m Char => FastaParseResult ->  ParsecT s u m FastaParseResult
+validate :: MonadParsec s m Char => FastaParseResult -> m FastaParseResult
 validate = validateSequenceConsistency <=< validateIdentifierConsistency
 
 
 -- | Ensures that there are no duplicate identifiers in the stream
-validateIdentifierConsistency :: Stream s m Char => FastaParseResult -> ParsecT s u m FastaParseResult
+validateIdentifierConsistency :: MonadParsec s m Char => FastaParseResult -> m FastaParseResult
 validateIdentifierConsistency xs =
   case dupes of
     [] -> pure xs
-    _  -> fails errorMessages
+    _  -> fails errors
   where
     dupes = duplicates $ taxonName <$> xs
-    errorMessages  = errorMessage <$> dupes
+    errors         = errorMessage <$> dupes
     errorMessage x = "Multiple taxon labels found identified by: '"++x++"'" 
 
 -- | Ensures that the charcters are all from a consistent alphabet
-validateSequenceConsistency :: Stream s m Char => FastaParseResult -> ParsecT s u m FastaParseResult
+validateSequenceConsistency :: MonadParsec s m Char => FastaParseResult -> m FastaParseResult
 validateSequenceConsistency = validateConsistentPartition <=< validateConsistentAlphabet
 
-validateConsistentAlphabet :: Stream s m Char => FastaParseResult -> ParsecT s u m FastaParseResult
+validateConsistentAlphabet :: MonadParsec s m Char => FastaParseResult -> m FastaParseResult
 validateConsistentAlphabet xs =
   case partition snd results of
     (_,[]) -> pure xs
@@ -123,7 +124,7 @@ validateConsistentAlphabet xs =
                        , "from only one data format."
                        ]
 
-validateConsistentPartition :: Stream s m Char => FastaParseResult -> ParsecT s u m FastaParseResult
+validateConsistentPartition :: MonadParsec s m Char => FastaParseResult -> m FastaParseResult
 validateConsistentPartition xs
   |  null xs
   || null errors  = pure xs

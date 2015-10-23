@@ -15,7 +15,7 @@ import Test.Custom                (parseEquals,parseFailure)
 import Test.Tasty                 (TestTree,testGroup)
 import Test.Tasty.HUnit
 import Test.Tasty.QuickCheck
-import Text.Parsec                (parse,eof)
+import Text.Megaparsec            (parse,eof)
 
 testSuite :: TestTree
 testSuite = testGroup "Fasta Format"

@@ -4,12 +4,11 @@ module File.Format.TransitionCostMatrix.Test
   ( testSuite
   ) where
 
-import Data.List                               (intercalate)
 import File.Format.TransitionCostMatrix.Parser
 import Test.Custom                             (parseEquals,parseFailure,parseSuccess)
 import Test.Tasty                              (TestTree,testGroup)
 import Test.Tasty.HUnit
-import Text.Parsec                             (eof)
+import Text.Megaparsec
 
 testSuite :: TestTree
 testSuite = testGroup "TCM Format"
@@ -81,3 +80,29 @@ tcmStreamParser' = testGroup "tcmStreamParser" [valid,invalid]
 
 appendNewlines :: [String] -> [String]
 appendNewlines = fmap (++"\n")
+
+{-
+parseSuccess :: Parsec String a -> String -> Assertion
+parseSuccess parser str =
+    case result of
+          Left  x -> assertFailure $ show x
+          Right _ -> assert True
+  where
+    result = parse parser "" str
+
+parseFailure :: Parsec String a -> String -> Assertion
+parseFailure parser str =
+    case result of
+          Right _ -> assertFailure $ "Should have failed to parse input: " ++ show str
+          Left  _ -> assert True
+  where
+    result = parse parser "" str
+
+parseEquals :: (Eq a, Show a) => Parsec String a -> String -> a -> Assertion
+parseEquals parser str expected =
+    case result of
+          Left  x -> assertFailure $ show x
+          Right x -> assertEqual ("Parse result of :" ++ show str) expected x
+  where
+    result = parse parser "" str
+-}

@@ -8,8 +8,8 @@ import qualified Data.Map                   as M   (fromList)
 import qualified Data.Vector                as V   (fromList)
 import           File.Format.Fasta.Internal
 import           File.Format.Fasta.Parser
-import           Text.Parsec
-import           Text.Parsec.Custom                (fails)
+import           Text.Megaparsec.Custom            (fails)
+import           Text.Megaparsec.Prim              (MonadParsec)
 
 data FastaSequenceType = DNA | RNA | AminoAcid deriving (Bounded,Eq,Enum,Read,Show)
 
@@ -18,10 +18,10 @@ colate seqType = foldr f empty
   where
     f (FastaSequence name seq') = insert name (seqCharMapping seqType seq')
 
-fastaStreamConverter :: FastaSequenceType -> FastaParseResult -> ParsecT s u m TaxonSequenceMap
+fastaStreamConverter :: MonadParsec s m Char => FastaSequenceType -> FastaParseResult -> m TaxonSequenceMap
 fastaStreamConverter seqType = fmap (colate seqType) . validateStreamConversion seqType 
 
-validateStreamConversion :: FastaSequenceType -> FastaParseResult -> ParsecT s u m FastaParseResult
+validateStreamConversion :: MonadParsec s m Char => FastaSequenceType -> FastaParseResult -> m FastaParseResult
 validateStreamConversion seqType xs =
   case partition hasErrors result of
     ([] , _) -> pure xs

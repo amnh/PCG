@@ -2,12 +2,13 @@
 
 module File.Format.TransitionCostMatrix.Parser where
 
-import Data.List.Utility     (duplicates,mostCommon)
-import Data.Matrix           (Matrix,fromList,ncols,nrows)
-import Data.Maybe            (catMaybes,fromJust)
-import Data.Char             (isSpace)
-import Text.Parsec
-import Text.Parsec.Custom
+import Data.Char              (isSpace)
+import Data.List.Utility      (duplicates,mostCommon)
+import Data.Matrix            (Matrix,fromList,ncols,nrows)
+import Data.Maybe             (catMaybes,fromJust)
+import Text.Megaparsec
+import Text.Megaparsec.Custom
+import Text.Megaparsec.Prim   (MonadParsec)
 
 data ParseResult 
    = ParseResult [String] (Matrix Double)
@@ -18,29 +19,29 @@ data TCM
    , transitionCosts ::  Matrix Double -- n+1 X n+1 matrix where n = length customAlphabet
    } deriving (Show)
 
-tcmStreamParser :: Stream s m Char => ParsecT s u m TCM
+tcmStreamParser :: MonadParsec s m Char => m TCM
 tcmStreamParser = validateParseResult =<< tcmDefinition <* eof
 
-tcmDefinition :: Stream s m Char => ParsecT s u m ParseResult
+tcmDefinition :: MonadParsec s m Char => m ParseResult
 tcmDefinition = do
-    _        <- spaces
+    _        <- space
     alphabet <- symbol alphabetLine
     matrix   <- symbol matrixBlock
     pure $ ParseResult alphabet matrix
 
-alphabetLine :: Stream s m Char => ParsecT s u m [String]
-alphabetLine = validateAlphabet =<< (alphabetSymbol <* inlineSpaces) `manyTill` eol
+alphabetLine :: MonadParsec s m Char => m [String]
+alphabetLine = validateAlphabet =<< (alphabetSymbol <* inlineSpaces) `manyTill` endOfLine
   where
-    alphabetSymbol = many1 nonSpace
+    alphabetSymbol = some nonSpace
     nonSpace       = satisfy (not . isSpace)
 
-matrixBlock :: Stream s m Char => ParsecT s u m (Matrix Double)
+matrixBlock :: MonadParsec s m Char => m (Matrix Double)
 matrixBlock = validateMatrix =<< many (symbol matrixRow)
   where
-    matrixRow   = (matrixEntry <* inlineSpaces) `manyTill` eol
-    matrixEntry = decimal
+    matrixRow   = (matrixEntry <* inlineSpaces) `manyTill` endOfLine
+    matrixEntry = double
 
-validateParseResult :: Stream s m Char => ParseResult -> ParsecT s u m TCM
+validateParseResult :: MonadParsec s m Char => ParseResult -> m TCM
 validateParseResult (ParseResult alphabet matrix)
   | dimMismatch  = fail errorMessage
   | otherwise    = pure $ TCM alphabet matrix
@@ -64,7 +65,7 @@ validateParseResult (ParseResult alphabet matrix)
                  , "."
                  ]
 
-validateAlphabet :: Stream s m Char => [String] -> ParsecT s u m [String]
+validateAlphabet :: MonadParsec s m Char => [String] -> m [String]
 validateAlphabet alphabet
   | emptyAlphabet   = fail   "No alphabet specified"
   | duplicatesExist = fail $ "The following symbols were listed multiple times in the custom alphabet: " ++ show dupes
@@ -74,7 +75,7 @@ validateAlphabet alphabet
     duplicatesExist = not $ null dupes
     dupes           = duplicates alphabet
 
-validateMatrix :: Stream s m Char => [[Double]] -> ParsecT s u m (Matrix Double)
+validateMatrix :: MonadParsec s m Char => [[Double]] -> m (Matrix Double)
 validateMatrix matrix
   | null matrix        = fail "No matrix specified"
   | null matrixErrors  = pure . fromList rows cols $ concat matrix
@@ -97,5 +98,5 @@ validateMatrix matrix
                                 , " rows were expected"
                                 ]
 
-symbol  :: Stream s m Char => ParsecT s u m a -> ParsecT s u m a
-symbol  x = x <* spaces
+symbol  :: MonadParsec s m Char => m a -> m a
+symbol  x = x <* space
