@@ -97,7 +97,10 @@ whitespace :: MonadParsec s m Char => m ()
 whitespace = try commentDefinition <|> space
   where
     commentDefinition :: MonadParsec s m Char => m ()
-    commentDefinition = space *> string "[" *> noneOf "]" `manyTill` char ']' <* char ']' <* space >>= \_ -> pure ()
+    commentDefinition = space *> some (comment commentStart commentEnd *> space) >> pure ()
+    commentStart, commentEnd :: MonadParsec s m Char => m String
+    commentStart = string "[" <?> "\"[\" comment start"
+    commentEnd   = string "]" <?> "\"]\" comment end"
 
 joinNonUniqueLabeledNodes :: MonadParsec s m Char => NewickNode -> m NewickNode
 joinNonUniqueLabeledNodes root = joinNonUniqueLabeledNodes' [] root
