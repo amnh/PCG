@@ -12,6 +12,7 @@ module PCG.Computation
   , info
   , notifications
   , runComputation
+  , trans
   , warn
   ) where
 

@@ -68,3 +68,6 @@ instance Monad m => Alternative (ComputationT m) where
 
 impure :: IO a -> ComputationT IO a
 impure = liftIO
+
+trans :: Computation a -> ComputationT IO a
+trans = ComputationT . pure 
