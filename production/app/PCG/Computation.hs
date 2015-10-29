@@ -5,6 +5,7 @@ module PCG.Computation
   , CompUnit()
   , Alternative(..)
   , Monoid(..)
+  , (<>)
   , (<!>)
   , (<?>)
   , impure
@@ -15,7 +16,7 @@ module PCG.Computation
   ) where
 
 import Control.Applicative (Alternative(..))
-import Data.Monoid         (Monoid(..))
+import Data.Monoid         (Monoid(..),(<>))
 
 import PCG.Computation.Internal
 import PCG.Computation.Trans
