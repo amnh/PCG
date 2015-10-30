@@ -1,8 +1,9 @@
 {-# LANGUAGE DeriveFunctor #-}
-module PCG.Computation
-  ( ComputationT()
-  , Computation()
-  , CompUnit()
+module PCG.Evaluation
+  ( EvaluationT()
+  , Evaluation()
+  , EvalUnit()
+  , ImpureEvaluation
   , Alternative(..)
   , Monoid(..)
   , (<>)
@@ -11,7 +12,7 @@ module PCG.Computation
   , impure
   , info
   , notifications
-  , runComputation
+  , runEvaluation
   , trans
   , warn
   ) where
@@ -19,6 +20,6 @@ module PCG.Computation
 import Control.Applicative (Alternative(..))
 import Data.Monoid         (Monoid(..),(<>))
 
-import PCG.Computation.Internal
-import PCG.Computation.Trans
-import PCG.Computation.Unit
+import PCG.Evaluation.Internal
+import PCG.Evaluation.Trans
+import PCG.Evaluation.Unit

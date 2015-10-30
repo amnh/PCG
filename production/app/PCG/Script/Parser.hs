@@ -1,4 +1,4 @@
-module PGC.Command.Parser 
+module PCG.Script.Parser
     ( parseScript
     , parseCommand
     ) where
@@ -10,41 +10,23 @@ import Data.Time.Clock       (DiffTime,secondsToDiffTime)
 import Text.Parsec           (Parsec)
 import Text.Parsec.Char
 import Text.ParserCombinators.Parsec
-
-data Script    = Script [Command]
-               deriving (Show)
-data Command   = Command Lident [Argument]
-               deriving (Show)
-data Lident    = Lident String
-               deriving (Show)
-data Argument  = PrimativeArg Primative
-               | LidentArg Lident
-               | LidentNamedArg Lident Argument
-               | CommandArg Command
-               | ArgumentList [Argument]
-               deriving (Show)
-data Primative = WholeNum  Int64
-               | RealNum   Double
-               | BitValue  Bool
-               | TextValue String
-               | TimeSpan  DiffTime
-               deriving (Show)
+import PCG.Script.Types
 
 parseScript :: String -> Either ParseError Script
 parseScript = parse scriptDefinition "POY Script"
 
-parseCommand :: String -> Either ParseError Command
+parseCommand :: String -> Either ParseError DubiousCommand
 parseCommand = parse commandDefinition "!"
 
 scriptDefinition :: Parsec String u Script
 scriptDefinition = Script <$> (trimmed (many1 commandDefinition) <* eof)
 
-commandDefinition :: Parsec String u Command
+commandDefinition :: Parsec String u DubiousCommand
 commandDefinition = do
   _         <- whitespace
   lident    <- lidentDefinition
   arguments <- argumentListDefinition
-  return $ Command lident arguments
+  return $ DubiousCommand lident arguments
 
 lidentDefinition :: Parsec String u Lident
 lidentDefinition = try $ Lident <$> symbol lident
