@@ -83,13 +83,14 @@ convertToBit x
 --currelty gap ambiguities not allow in this convertion other than ?
 --Should make ACGT- but types and add for ambiguities
 convertDNASeqToBit :: String -> BaseChar
+convertDNASeqToBit x | trace ("convert DNA seq yoooo " ++ show x) False = undefined
 convertDNASeqToBit x 
-    | null x = VS.empty
+    | null x = trace "null seq" VS.empty
     | toUpper (head x) == 'A' = VS.cons (1 :: Int64) (convertDNASeqToBit (tail x))
     | toUpper (head x) == 'C' = VS.cons (2 :: Int64) (convertDNASeqToBit (tail x))
     | toUpper (head x) == 'G' = VS.cons (4 :: Int64) (convertDNASeqToBit (tail x))
     | toUpper (head x) == 'T' = VS.cons (8 :: Int64) (convertDNASeqToBit (tail x))
---    | head x == '-' = VS.cons (16 :: Int64) (convertDNASeqToBit (tail x))
+    | head x == '-' = VS.cons (16 :: Int64) (convertDNASeqToBit (tail x))
 --    strips out gaps for now need to add prealigned data type option later
     | head x == '-' =  (convertDNASeqToBit (tail x))
     | toUpper (head x) == 'R' = VS.cons (5 :: Int64) (convertDNASeqToBit (tail x))
@@ -152,6 +153,7 @@ convertGenSeqToBit x alphabet =
 
 -- | charSetToVestList converts, recursively, chars to vectors
 charSetToVectList :: [String] -> [CharInfo] -> CharacterSetList 
+charSetToVectList x charInfo | trace "charSetToVectList" False = undefined
 charSetToVectList x charInfo 
     | null x    = []
     | otherwise =
@@ -163,7 +165,7 @@ charSetToVectList x charInfo
 --need to recode ambiguities correctly--read states set each bit in char state
 --(Int)
 charSetToVect :: String -> CharInfo -> BaseChar 
---charSetToVect x charInfo | trace ("charSetToVect with info "++show charInfo) False = undefined
+charSetToVect x charInfo | trace ("charSetToVect with lens "++show (length x) ++ "and" ++ show charInfo) False = undefined
 charSetToVect x charInfo
     | null x = VS.empty
     | ((charType charInfo == NonAdd) || (charType charInfo == Add)) && ((head x == '?') || (head x == '-') || (x == "no_data")) =
@@ -186,11 +188,13 @@ charSetToVect x charInfo
 --creates Vector of that pairData
 --this is curried--reccomended by hlint
 termToVector :: TermData -> [CharInfo] -> CharacterSetList
+termToVector dat | trace "termToVector" False = undefined
 termToVector (_, dataList) = charSetToVectList dataList
 
 -- | termToVectorList takes list of pairs of terminal and data (and dat info) and
 --creates Vector of list of pairData recusively
 termToVectorList :: [TermData] -> [CharInfo] -> [CharacterSetList]
+termToVectorList x charInfo | trace "term to vector list" False = undefined
 termToVectorList x charInfo =
    if null x then []
    else 
@@ -203,6 +207,7 @@ termToVectorList x charInfo =
 --space/copy time, but prob not big a deal.
 --Creates a Vector for leaf names
 createBaseData :: RawData -> DataMatrixVLS
+createBaseData (pairedData, charInfo) | trace "create base data" False = undefined
 createBaseData (pairedData, charInfo) = --testDataMatrixVLS
     if null pairedData then V.empty
     else V.fromList (termToVectorList pairedData charInfo)

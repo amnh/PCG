@@ -82,19 +82,29 @@ maxFloat = 1.0e32 --0x7f7ffff is max 32 bit FLOAT IEEE ~3.4e34
 
 data PhyloNode = PhyloNode  { code :: NodeCode                --links to DataMatrix for terminal
                             , nodeName :: String            --fromNameList HTUcode for non-leaf, or Newick
-                            , isTerminal :: Bool
+                            , isTerminal :: Bool --removed in favor of checking for null and one children/parents
                             , isRoot :: Bool
                             , isTreeNode :: Bool
-                            , children :: [NodeCode]
+                            , children :: [NodeCode] -- change to int sets for children and parents?
                             , parents :: [NodeCode]
                             , preliminaryStates :: !CharacterSetList
                             , localCost :: !(V.Vector Float)
                             , totalCost :: !(V.Vector Float)
-                            } deriving (Generic, Show)
+                            -- added Oct 5, consider strictness for these
+                            --, finalStates :: !CharacterSetList
+                            --, singleStates :: !CharacterSetList -- check type
+                            --, nodeIdentifier :: IntSet -- work with the type for easier identity check
+                            --, preliminaryBitState :: BitPackedNode
+                            --, finalBitState :: BitPackedNode -- add update function to rectify packed and unpacked
+                            --, impliedBitState :: BitPackedNode -- temporary bit node for implied alignment
+                            } deriving (Generic, Show, Read)
+
+
+--data EdgeType = EdgeType {edgeLength, unionOfEndStates, startCode, endCode} -- format this for compile
 
 instance NFData PhyloNode
 
-type PhyloComponent = (V.Vector PhyloNode)
+type PhyloComponent = (V.Vector PhyloNode) -- the root is the last element (in theory)
 type PhyloForest = [PhyloComponent]
 type NodeCode = Int
 
