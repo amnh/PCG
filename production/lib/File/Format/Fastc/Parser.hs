@@ -13,8 +13,9 @@ module File.Format.Fastc.Parser
 import Data.Char                  (isSpace)
 import Data.Vector                (fromList)
 import File.Format.Fasta.Internal
-import Text.Parsec
-import Text.Parsec.Custom
+import Text.Megaparsec
+import Text.Megaparsec.Custom
+import Text.Megaparsec.Prim       (MonadParsec)
 
 type FastcParseResult = [FastcSequence]
 data FastcSequence
@@ -23,30 +24,30 @@ data FastcSequence
    , fastcSymbols :: CharacterSequence
    } deriving (Eq,Show)
 
-fastcStreamParser :: Stream s m Char => ParsecT s u m FastcParseResult
-fastcStreamParser = many1 fastcTaxonSequenceDefinition <* eof
+fastcStreamParser :: MonadParsec s m Char => m FastcParseResult
+fastcStreamParser = some fastcTaxonSequenceDefinition <* eof
 
-fastcTaxonSequenceDefinition :: Stream s m Char => ParsecT s u m FastcSequence
+fastcTaxonSequenceDefinition :: MonadParsec s m Char => m FastcSequence
 fastcTaxonSequenceDefinition = do
     name <- identifierLine
     seq' <- try fastcSymbolSequence <?> ("Unable to read symbol sequence for label: '" ++ name ++ "'")
-    _    <- spaces
+    _    <- space
     pure $ FastcSequence name seq'
 
-fastcSymbolSequence :: Stream s m Char =>  ParsecT s u m CharacterSequence
-fastcSymbolSequence = fromList <$> (spaces *> fullSequence)
+fastcSymbolSequence :: MonadParsec s m Char => m CharacterSequence
+fastcSymbolSequence = fromList <$> (space *> fullSequence)
   where
-    fullSequence = concat <$> many1 (inlineSpaces *> sequenceLine)
-    sequenceLine = (symbolGroup <* inlineSpaces) `manyTill` eol
+    fullSequence = concat <$> some (inlineSpaces *> sequenceLine)
+    sequenceLine = (symbolGroup <* inlineSpaces) `manyTill` endOfLine
 
-symbolGroup :: Stream s m Char => ParsecT s u m [String]
+symbolGroup :: MonadParsec s m Char => m [String]
 symbolGroup = ambiguityGroup
           <|> (pure <$> validSymbol)
 
-ambiguityGroup :: Stream s m Char => ParsecT s u m [String]
+ambiguityGroup :: MonadParsec s m Char => m [String]
 ambiguityGroup = validSymbol `sepBy1` (char '|' <* inlineSpaces)
 
-validSymbol :: Stream s m Char => ParsecT s u m String
+validSymbol :: MonadParsec s m Char => m String
 validSymbol = (validStartChar <:> many validBodyChar) <* inlineSpaces
   where
     validStartChar = satisfy $ \x -> x /= '>' -- need to be able to match new taxa lines

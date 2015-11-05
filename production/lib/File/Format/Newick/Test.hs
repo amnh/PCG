@@ -11,7 +11,7 @@ import Test.Custom                (parseEquals,parseFailure,parseSuccess)
 import Test.Tasty                 (TestTree,testGroup)
 import Test.Tasty.HUnit
 import Test.Tasty.QuickCheck
-import Text.Parsec                (parse,eof)
+import Text.Megaparsec
 
 testSuite :: TestTree
 testSuite = testGroup "Newick Format"
@@ -26,7 +26,6 @@ testSuite = testGroup "Newick Format"
   , testGroup "Newick Converter"
       []
   ]
-
 
 validUnquotedLabels :: [String]
 validUnquotedLabels =

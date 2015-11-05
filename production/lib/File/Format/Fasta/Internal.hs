@@ -2,37 +2,38 @@
 
 module File.Format.Fasta.Internal where
 
-import Data.Char           (isSpace)
-import Data.Map            (Map)
-import Data.Vector         (Vector)
-import Text.Parsec
-import Text.Parsec.Custom
+import Data.Char              (isSpace)
+import Data.Map               (Map)
+import Data.Vector            (Vector)
+import Text.Megaparsec
+import Text.Megaparsec.Custom
+import Text.Megaparsec.Prim   (MonadParsec)
 
 type TaxonSequenceMap  = Map Identifier CharacterSequence
 type Identifier        = String
 type Symbol            = String
 type CharacterSequence = Vector [Symbol]
 
-identifierLine :: Stream s m Char => ParsecT s u m Identifier
+identifierLine :: MonadParsec s m Char => m Identifier
 identifierLine = do
     _ <- char '>'
     _ <- inlineSpaces
     x <- identifier 
     _ <- inlineSpaces
     _ <- optional (try commentBody <?> commentMessage x)
-    _ <- eol <?> lineEndMessage x
+    _ <- endOfLine <?> lineEndMessage x
     pure x
   where
     commentMessage x = "Invalid comment for following label: '" ++ x ++ "'"
     lineEndMessage x = "There is no end-of-line after label: '" ++ x ++ "'"
 
-identifier :: Stream s m Char => ParsecT s u m Identifier
-identifier = many1 $ satisfy validIdentifierChar
+identifier :: MonadParsec s m Char => m Identifier
+identifier = some $ satisfy validIdentifierChar
 
 validIdentifierChar :: Char -> Bool
 validIdentifierChar c = (not . isSpace) c && c /= '$'
 
-commentBody :: Stream s m Char => ParsecT s u m String
+commentBody :: MonadParsec s m Char => m String
 commentBody  = do
     _       <- inlineSpaces
     _       <- optional $ char '$'
@@ -40,6 +41,5 @@ commentBody  = do
     content <- many (commentWord <* inlineSpaces)
     pure $ unwords content
 
-commentWord :: Stream s m Char => ParsecT s u m String
-commentWord  = many1 (satisfy (not . isSpace)) <?> "Non-space characters"
-
+commentWord :: MonadParsec s m Char => m String
+commentWord  = some (satisfy (not . isSpace)) <?> "Non-space characters"

@@ -5,12 +5,12 @@ module TestSuite.GeneratedTests.Fasta
   ) where
 
 import Data.Either.Custom
-import Data.Map                   (toList)
+import Data.Map                          (toList)
 import File.Format.Fasta
-import Test.Tasty                 (TestTree,testGroup)
+import Test.Tasty                        (TestTree,testGroup)
 import Test.Tasty.HUnit
 import TestSuite.GeneratedTests.Internal
-import Text.Parsec                (parse)
+import Text.Megaparsec                   (parse)
 
 testSuite :: IO TestTree
 testSuite = testGroup "fastaStreamParser" <$> sequence [validFastaFiles, invalidFastaFiles]

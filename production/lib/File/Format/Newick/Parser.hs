@@ -9,44 +9,45 @@ import Data.Map            hiding (filter,foldl,foldr,null)
 import Data.Maybe                 (fromJust,fromMaybe,isJust)
 import File.Format.Newick.Internal
 import Prelude             hiding (lookup)
-import Text.Parsec         hiding (label)
-import Text.Parsec.Custom
+import Text.Megaparsec     hiding (label)
+import Text.Megaparsec.Custom
+import Text.Megaparsec.Prim       (MonadParsec)
 
-newickStandardDefinition :: Stream s m Char => ParsecT s u m NewickNode
+newickStandardDefinition :: MonadParsec s m Char => m NewickNode
 newickStandardDefinition = whitespace *> newickNodeDefinition <* symbol (char ';')
 
-newickExtendedDefinition :: Stream s m Char => ParsecT s u m NewickNode
+newickExtendedDefinition :: MonadParsec s m Char => m NewickNode
 newickExtendedDefinition = newickStandardDefinition >>= joinNonUniqueLabeledNodes
 
-newickForestDefinition :: Stream s m Char => ParsecT s u m NewickForest
+newickForestDefinition :: MonadParsec s m Char => m NewickForest
 newickForestDefinition = whitespace *> symbol (char '<') *> many newickExtendedDefinition <* symbol (char '>')
 
-newickNodeDefinition :: Stream s m Char => ParsecT s u m NewickNode
+newickNodeDefinition :: MonadParsec s m Char => m NewickNode
 newickNodeDefinition = do
     descendants'  <- descendantListDefinition
-    label'        <- optionMaybe newickLabelDefinition
-    branchLength' <- optionMaybe branchLengthDefinition
+    label'        <- optional newickLabelDefinition
+    branchLength' <- optional branchLengthDefinition
     pure $ NewickNode descendants' label' branchLength'
 
-descendantListDefinition :: Stream s m Char => ParsecT s u m [NewickNode]
+descendantListDefinition :: MonadParsec s m Char => m [NewickNode]
 descendantListDefinition = char '(' *> trimmed subtreeDefinition `sepBy1` char ',' <* char ')' <* whitespace
 
-subtreeDefinition :: Stream s m Char => ParsecT s u m NewickNode
+subtreeDefinition :: MonadParsec s m Char => m NewickNode
 subtreeDefinition = newickNodeDefinition <|> newickLeafDefinition
 
-newickLeafDefinition :: Stream s m Char => ParsecT s u m NewickNode
+newickLeafDefinition :: MonadParsec s m Char => m NewickNode
 newickLeafDefinition = do
     label'        <- newickLabelDefinition
-    branchLength' <- optionMaybe branchLengthDefinition
+    branchLength' <- optional branchLengthDefinition
     pure . NewickNode [] (Just label') $ branchLength'
 
-newickLabelDefinition :: Stream s m Char => ParsecT s u m String
+newickLabelDefinition :: MonadParsec s m Char => m String
 newickLabelDefinition = (quotedLabel <|> unquotedLabel) <* whitespace
 
 -- | We use a recursive parsing technique to handle the quoted escape sequence
 --   of two single quotes ("''") to denote an escaped quotation character 
 --   in the quoted label rather than signifying the end of the quoted label
-quotedLabel :: Stream s m Char => ParsecT s u m String
+quotedLabel :: MonadParsec s m Char => m String
 quotedLabel = do
     _ <- char '\''
     x <- quotedLabelData
@@ -57,12 +58,10 @@ quotedLabel = do
     quotedLabelData = do
       prefix <- many (noneOf $ '\'':invalidQuotedLabelChars)
       _      <- char '\'' 
-      suffix <- optionMaybe (char '\'' <:> quotedLabelData)
+      suffix <- optional (char '\'' <:> quotedLabelData)
       case suffix of
         Just y  -> pure $ prefix ++ y
         Nothing -> pure prefix
-
-
 
 -- | The following characters are not allowed in a newick unquoted label:
 --   " \r\n\t\v\b':;,()[]<>"
@@ -73,8 +72,8 @@ quotedLabel = do
 --   interpretation of the standard Newick format and the Extended Newick
 --   format. However, if a user really want to put '<' & '>' characters in
 --   a node label, they can always put such characters in a quoted label.
-unquotedLabel :: Stream s m Char => ParsecT s u m String
-unquotedLabel = many1 (noneOf invalidUnquotedLabelChars)
+unquotedLabel :: MonadParsec s m Char => m String
+unquotedLabel = some $ noneOf invalidUnquotedLabelChars
 
 requiresQuotedLabelChars :: String
 requiresQuotedLabelChars = " ':;,()[]<>"
@@ -85,22 +84,25 @@ invalidQuotedLabelChars = "\r\n\t\f\v\b"
 invalidUnquotedLabelChars :: String
 invalidUnquotedLabelChars = invalidQuotedLabelChars ++ requiresQuotedLabelChars
 
-branchLengthDefinition :: Stream s m Char => ParsecT s u m Double
-branchLengthDefinition = symbol (char ':') *> symbol decimal
+branchLengthDefinition :: MonadParsec s m Char => m Double
+branchLengthDefinition = symbol (char ':') *> symbol double
 
-trimmed :: Stream s m Char => ParsecT s u m a -> ParsecT s u m a
+trimmed :: MonadParsec s m Char => m a -> m a
 trimmed x = whitespace *> x <* whitespace
 
-symbol  :: Stream s m Char => ParsecT s u m a -> ParsecT s u m a
+symbol  :: MonadParsec s m Char => m a -> m a
 symbol  x = x <* whitespace
 
-whitespace :: Stream s m Char => ParsecT s u m ()
-whitespace = try commentDefinition <|> spaces
+whitespace :: MonadParsec s m Char => m ()
+whitespace = try commentDefinition <|> space
   where
-    commentDefinition :: Stream s m Char => ParsecT s u m ()
-    commentDefinition = spaces *> string "[" *> noneOf "]" `manyTill` char ']' <* char ']' <* spaces >>= \_ -> pure ()
+    commentDefinition :: MonadParsec s m Char => m ()
+    commentDefinition = space *> some (comment commentStart commentEnd *> space) >> pure ()
+    commentStart, commentEnd :: MonadParsec s m Char => m String
+    commentStart = string "[" <?> "\"[\" comment start"
+    commentEnd   = string "]" <?> "\"]\" comment end"
 
-joinNonUniqueLabeledNodes :: Stream s m Char => NewickNode -> ParsecT s u m NewickNode
+joinNonUniqueLabeledNodes :: MonadParsec s m Char => NewickNode -> m NewickNode
 joinNonUniqueLabeledNodes root = joinNonUniqueLabeledNodes' [] root
   where
     -- We first fold over the Newick Tree to collect all labeled nodes and 
@@ -123,7 +125,7 @@ joinNonUniqueLabeledNodes root = joinNonUniqueLabeledNodes' [] root
     -- return a Left value of type Either ParseError NewickNode to represent 
     -- a parse error. It is assumed that cycles are note permitted in our
     -- PhyloGraph data structures.
-    joinNonUniqueLabeledNodes' ::  Stream s m Char => [Maybe String] -> NewickNode -> ParsecT s u m NewickNode
+    joinNonUniqueLabeledNodes' :: MonadParsec s m Char => [Maybe String] -> NewickNode -> m NewickNode
     joinNonUniqueLabeledNodes' stack node
       | hasCycle      = fail cycleError
       | null children = pure $ newNode []
@@ -144,18 +146,3 @@ joinNonUniqueLabeledNodes root = joinNonUniqueLabeledNodes' [] root
                    , prettyErr cycle'
                    ]
         prettyErr  = intercalate " -> " . fmap show
-
-{-
-parseAllSuccess :: String -> IO [(String, ParseError)]
-parseAllSuccess directory = (fmap fixPaths $ getDirectoryContents (directory++"/"))
-                        >>= handleFiles
-  where
-    handleFiles :: [String] -> IO [(String, ParseError)]
-    handleFiles paths = do 
-      parsedData <- sequence $ fmap (fmap (getLeft . parseNewickData) . readFile) paths
-      return . fmap (id *** fromJust) . Prelude.filter (isJust . snd) $ zip paths parsedData
-    getLeft (Left x) = Just x
-    getLeft       _  = Nothing
-    fixPaths :: [String] -> [String]
-    fixPaths = fmap ((directory++"/")++) . Prelude.filter ((/='.').head)
--}

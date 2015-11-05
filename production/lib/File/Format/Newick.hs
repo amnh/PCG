@@ -8,12 +8,13 @@ module File.Format.Newick
   , isLeaf
   , newickLabel
   , newickNode
-  , parseNewickStream
+  , newickStreamParser
   ) where
 
 import File.Format.Newick.Internal
 import File.Format.Newick.Parser
-import Text.Parsec
+import Text.Megaparsec
+import Text.Megaparsec.Prim        (MonadParsec)
 
-parseNewickStream :: Stream s m Char => s -> m (Either ParseError [NewickForest])
-parseNewickStream = runParserT (many (try newickForestDefinition <|> (pure <$> newickExtendedDefinition)) <* eof) () "One or more Extended Newick Forest definitions"
+newickStreamParser :: MonadParsec s m Char => m [NewickForest]
+newickStreamParser = many (try newickForestDefinition <|> (pure <$> newickExtendedDefinition)) <* eof
