@@ -740,7 +740,7 @@ makePrelim lStates rStates charInfoList
             rState = head rStates
             charInfo = head charInfoList
             newStatesCost = Pars.getPrelim lState rState charInfo 
-            --(VS.singleton (0 :: Int64), 0) --(state, cost) --placeholder to optimization
+            --(V.singleton (0 :: Int64), 0) --(state, cost) --placeholder to optimization
         in
         --trace ("Optimizing " ++ show (length lStates) ++ " characters")
         newStatesCost : makePrelim (tail lStates) (tail rStates) (tail charInfoList)
