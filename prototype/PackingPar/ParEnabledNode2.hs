@@ -27,6 +27,7 @@ import           GHC.Generics
 import           PackingPar.CardinalityLookup
 import qualified Data.Array.Accelerate as A
 import qualified Data.Array.Accelerate.Interpreter as AI
+--import qualified Data.Array.Accelerate.OpenCL as OC
 import Control.Parallel.Strategies
 import Data.Word
 import qualified Data.BitVector as BV

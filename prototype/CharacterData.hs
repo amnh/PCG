@@ -64,7 +64,7 @@ import ReadGraphs
 
 --types for character data, only BaseChar is "storable" so potentially interoperable with C
 --characterSet better as list perhaps to allow for parallel map (data parallel) 
-type BaseChar = (VS.Vector Int64)               --Vector so O(1) access, Int64 so can do bitwise stuff, Storable so can do FFI-C length 1-many
+type BaseChar = (V.Vector Int64)               --Vector so O(1) access, Int64 so can do bitwise stuff, Storable so can do FFI-C length 1-many
 type CharacterSet = (V.Vector BaseChar)         --O(1) charcater acess--prob not need likely sequential so list OK
 type CharacterSetList = [BaseChar]              --List so can easily parallel map functinos over data
 --type DataMatrix = (V.Vector CharacterSet)       --Vector so O(1) random access
@@ -83,28 +83,28 @@ convertToBit x
 --currelty gap ambiguities not allow in this convertion other than ?
 --Should make ACGT- but types and add for ambiguities
 convertDNASeqToBit :: String -> BaseChar
+convertDNASeqToBit x | trace ("convert DNA seq yoooo " ++ show x) False = undefined
 convertDNASeqToBit x 
-    | null x = VS.empty
-    | toUpper (head x) == 'A' = VS.cons (1 :: Int64) (convertDNASeqToBit (tail x))
-    | toUpper (head x) == 'C' = VS.cons (2 :: Int64) (convertDNASeqToBit (tail x))
-    | toUpper (head x) == 'G' = VS.cons (4 :: Int64) (convertDNASeqToBit (tail x))
-    | toUpper (head x) == 'T' = VS.cons (8 :: Int64) (convertDNASeqToBit (tail x))
---    | head x == '-' = VS.cons (16 :: Int64) (convertDNASeqToBit (tail x))
+    | null x = V.empty
+    | toUpper (head x) == 'A' = V.cons (1 :: Int64) (convertDNASeqToBit (tail x))
+    | toUpper (head x) == 'C' = V.cons (2 :: Int64) (convertDNASeqToBit (tail x))
+    | toUpper (head x) == 'G' = V.cons (4 :: Int64) (convertDNASeqToBit (tail x))
+    | toUpper (head x) == 'T' = V.cons (8 :: Int64) (convertDNASeqToBit (tail x))
 --    strips out gaps for now need to add prealigned data type option later
     | head x == '-' =  (convertDNASeqToBit (tail x))
-    | toUpper (head x) == 'R' = VS.cons (5 :: Int64) (convertDNASeqToBit (tail x))
-    | toUpper (head x) == 'Y' = VS.cons (10 :: Int64) (convertDNASeqToBit (tail x))
-    | toUpper (head x) == 'M' = VS.cons (3 :: Int64) (convertDNASeqToBit (tail x))
-    | toUpper (head x) == 'K' = VS.cons (12 :: Int64) (convertDNASeqToBit (tail x))
-    | toUpper (head x) == 'W' = VS.cons (9 :: Int64) (convertDNASeqToBit (tail x))
-    | toUpper (head x) == 'S' = VS.cons (6 :: Int64) (convertDNASeqToBit (tail x))
-    | toUpper (head x) == 'B' = VS.cons (14 :: Int64) (convertDNASeqToBit (tail x))
-    | toUpper (head x) == 'D' = VS.cons (13 :: Int64) (convertDNASeqToBit (tail x))
-    | toUpper (head x) == 'H' = VS.cons (11 :: Int64) (convertDNASeqToBit (tail x))
-    | toUpper (head x) == 'V' = VS.cons (7 :: Int64) (convertDNASeqToBit (tail x))
-    | toUpper (head x) == 'N' = VS.cons (15 :: Int64) (convertDNASeqToBit (tail x))
-    | toUpper (head x) == 'X' = VS.cons (15 :: Int64) (convertDNASeqToBit (tail x))
-    | toUpper (head x) == '?' = VS.cons (31 :: Int64) (convertDNASeqToBit (tail x))
+    | toUpper (head x) == 'R' = V.cons (5 :: Int64) (convertDNASeqToBit (tail x))
+    | toUpper (head x) == 'Y' = V.cons (10 :: Int64) (convertDNASeqToBit (tail x))
+    | toUpper (head x) == 'M' = V.cons (3 :: Int64) (convertDNASeqToBit (tail x))
+    | toUpper (head x) == 'K' = V.cons (12 :: Int64) (convertDNASeqToBit (tail x))
+    | toUpper (head x) == 'W' = V.cons (9 :: Int64) (convertDNASeqToBit (tail x))
+    | toUpper (head x) == 'S' = V.cons (6 :: Int64) (convertDNASeqToBit (tail x))
+    | toUpper (head x) == 'B' = V.cons (14 :: Int64) (convertDNASeqToBit (tail x))
+    | toUpper (head x) == 'D' = V.cons (13 :: Int64) (convertDNASeqToBit (tail x))
+    | toUpper (head x) == 'H' = V.cons (11 :: Int64) (convertDNASeqToBit (tail x))
+    | toUpper (head x) == 'V' = V.cons (7 :: Int64) (convertDNASeqToBit (tail x))
+    | toUpper (head x) == 'N' = V.cons (15 :: Int64) (convertDNASeqToBit (tail x))
+    | toUpper (head x) == 'X' = V.cons (15 :: Int64) (convertDNASeqToBit (tail x))
+    | toUpper (head x) == '?' = V.cons (31 :: Int64) (convertDNASeqToBit (tail x))
     | otherwise = error ("Unreconized seqeunce character code " ++ show (head x)) 
 
 -- | getListLengths sums lengths of characters in colummn of characters
@@ -115,7 +115,7 @@ getListLengths phyloData charNum =
     else 
         let rowTerminal = V.head phyloData
         in
-        (VS.length (rowTerminal !! charNum)) + (getListLengths (V.tail phyloData) charNum)
+        (V.length (rowTerminal !! charNum)) + (getListLengths (V.tail phyloData) charNum)
 
 
 -- | redoRootCosts resets root costs for seqeunce characters--for now to 1/2
@@ -141,17 +141,18 @@ redoRootCosts phyloData charInfoList charNum =
 --USE convertToBit
 convertGenSeqToBit :: [String] -> [String] -> BaseChar
 convertGenSeqToBit x alphabet =
-    if null x then VS.empty
+    if null x then V.empty
     else 
         let curState = head x
             bitNum = fromJust (elemIndex curState alphabet)
             bitChar = (bit bitNum) :: Int64  
         in
-        VS.cons bitChar  (convertGenSeqToBit (tail x) alphabet)
+        V.cons bitChar  (convertGenSeqToBit (tail x) alphabet)
 
 
 -- | charSetToVestList converts, recursively, chars to vectors
 charSetToVectList :: [String] -> [CharInfo] -> CharacterSetList 
+charSetToVectList x charInfo | trace "charSetToVectList" False = undefined
 charSetToVectList x charInfo 
     | null x    = []
     | otherwise =
@@ -163,21 +164,21 @@ charSetToVectList x charInfo
 --need to recode ambiguities correctly--read states set each bit in char state
 --(Int)
 charSetToVect :: String -> CharInfo -> BaseChar 
---charSetToVect x charInfo | trace ("charSetToVect with info "++show charInfo) False = undefined
+charSetToVect x charInfo | trace ("charSetToVect with lens "++show (length x) ++ "and" ++ show charInfo) False = undefined
 charSetToVect x charInfo
-    | null x = VS.empty
+    | null x = V.empty
     | ((charType charInfo == NonAdd) || (charType charInfo == Add)) && ((head x == '?') || (head x == '-') || (x == "no_data")) =
-        VS.singleton (maxBound :: Int64) --all '1' missing data
+        V.singleton (maxBound :: Int64) --all '1' missing data
     | charType charInfo == Add = 
-            VS.singleton (fromIntegral (digitToInt (head x)) :: Int64) --works through hex 0-9, a-z, A-Z
+            V.singleton (fromIntegral (digitToInt (head x)) :: Int64) --works through hex 0-9, a-z, A-Z
     | charType charInfo == NonAdd = 
-        VS.singleton (convertToBit (digitToInt (head x)))
+        V.singleton (convertToBit (digitToInt (head x)))
     | (charType charInfo == NucSeq) && (x == "no_data") = 
-        VS.empty
+        V.empty
     | (charType charInfo == NucSeq) = 
         convertDNASeqToBit x
     | (charType charInfo == GenSeq) && (x == "no_data") = 
-        VS.empty
+        V.empty
     | (charType charInfo == GenSeq) = 
         convertGenSeqToBit (words x) (alphabet charInfo) --Top x 
     | otherwise = error ("Char type " ++ show charInfo ++ " not implemented")
@@ -186,11 +187,13 @@ charSetToVect x charInfo
 --creates Vector of that pairData
 --this is curried--reccomended by hlint
 termToVector :: TermData -> [CharInfo] -> CharacterSetList
+termToVector dat | trace "termToVector" False = undefined
 termToVector (_, dataList) = charSetToVectList dataList
 
 -- | termToVectorList takes list of pairs of terminal and data (and dat info) and
 --creates Vector of list of pairData recusively
 termToVectorList :: [TermData] -> [CharInfo] -> [CharacterSetList]
+termToVectorList x charInfo | trace "term to vector list" False = undefined
 termToVectorList x charInfo =
    if null x then []
    else 
@@ -203,6 +206,7 @@ termToVectorList x charInfo =
 --space/copy time, but prob not big a deal.
 --Creates a Vector for leaf names
 createBaseData :: RawData -> DataMatrixVLS
+createBaseData (pairedData, charInfo) | trace "create base data" False = undefined
 createBaseData (pairedData, charInfo) = --testDataMatrixVLS
     if null pairedData then V.empty
     else V.fromList (termToVectorList pairedData charInfo)
@@ -211,11 +215,11 @@ createBaseData (pairedData, charInfo) = --testDataMatrixVLS
 -- | printSingelChar outputs singel string char
 printSingleChar :: BaseChar -> IO ()
 printSingleChar x =
-    if VS.null x then hPutStr stderr " | "
+    if V.null x then hPutStr stderr " | "
     else
         do
-            hPutStr stderr (show (VS.head x) ++ " ")
-            printSingleChar (VS.tail x)
+            hPutStr stderr (show (V.head x) ++ " ")
+            printSingleChar (V.tail x)
 
 -- | printRowChars prints strings for given row
 printRowChars :: CharacterSetList -> IO ()
