@@ -10,8 +10,10 @@ import Data.Maybe (isJust, fromJust, catMaybes)
 import qualified Data.Set as S
 import Debug.Trace
 import Safe
-import Text.Parsec hiding (label)
-import Text.Parsec.Custom
+import Text.Megaparsec hiding (label)
+import Text.Megaparsec.Lexer  (integer)
+import Text.Megaparsec.Prim   (MonadParsec)
+import Text.Megaparsec.Custom
 import qualified Data.Vector as V
 
 data ParseResult = ParseResult [PhyloSequence] [TaxaSpecification] [TreeBlock] deriving (Show)
@@ -178,7 +180,7 @@ parseNexusStream = parse (validateParseResult =<< parseNexus <* eof) "PCG encoun
 --     ---for aligned, should be caught by 16
 --     ---for unaligned, caught by combo of 12 & 22
 -- 22. In unaligned, interleaved block, a taxon is repeated                    3                dep              done
-validateParseResult :: ParseResult -> Parsec s u Nexus
+validateParseResult :: MonadParsec s m Char => ParseResult -> m Nexus
 validateParseResult (ParseResult sequences taxas trees)
   | not (null independentErrors) = fails independentErrors
   | not (null dependentErrors)   = fails dependentErrors
@@ -509,31 +511,31 @@ convertMatrix taxa sequence = V.fromList [("dummy", ["data", "here"])]
 --    V.foldr (\x acc -> if ) Nothing seqs
 --                 where initLength = length $ snd (seqs ! 0)
 
-parseNexus :: Parsec String u ParseResult
+parseNexus :: MonadParsec s m Char => m ParseResult
 parseNexus = nexusFileDefinition
 
-nexusFileDefinition :: Parsec String u ParseResult
+nexusFileDefinition :: MonadParsec s m Char => m ParseResult
 nexusFileDefinition = do
     _       <- string "#NEXUS"
-    _       <- spaces
-    comment <- optionMaybe commentDefinition
-    _       <- spaces
+    _       <- space
+    comment <- optional commentDefinition
+    _       <- space
     (x,y,z) <- partitionNexusBlocks <$> (many nexusBlock)
     pure $ ParseResult x y z
 
-ignoredBlockDefinition :: Parsec String u String
+ignoredBlockDefinition :: MonadParsec s m Char => m String
 ignoredBlockDefinition = do
-    title <- many letter
-    _     <- symbol (caseInsensitiveString ";")
+    title <- many letterChar
+    _     <- symbol (string' ";")
     _     <- whitespace
-    _     <- anyTill $ symbol (caseInsensitiveString "END;")
+    _     <- anyTill $ symbol (string' "END;")
     pure $ title
 
-nexusBlock :: Parsec String u NexusBlock
+nexusBlock :: MonadParsec s m Char => m NexusBlock
 nexusBlock = do
-        _      <- symbol (caseInsensitiveString "BEGIN")
+        _      <- symbol (string' "BEGIN")
         block' <- symbol block
-        _      <- symbol (caseInsensitiveString "END;")
+        _      <- symbol (string' "END;")
         pure $ block'
     where
         block =  (CharacterBlock <$> try (characterBlockDefinition "characters" True))
@@ -543,21 +545,21 @@ nexusBlock = do
              <|> (TreesBlock     <$> try treeBlockDefinition)
              <|> (IgnoredBlock   <$> try ignoredBlockDefinition)
 
-characterBlockDefinition :: String -> Bool -> Parsec String u PhyloSequence
+characterBlockDefinition :: MonadParsec s m Char => String -> Bool -> m PhyloSequence
 characterBlockDefinition which aligned = do
-    _           <- symbol (caseInsensitiveString $ which ++ ";")
+    _           <- symbol (string' $ which ++ ";")
     (v,w,x,y,z) <- partitionSequenceBlock <$> (many seqSubBlock)
     pure $ PhyloSequence aligned v w x y z
 
-taxaBlockDefinition :: Parsec String u TaxaSpecification
+taxaBlockDefinition :: MonadParsec s m Char => m TaxaSpecification
 taxaBlockDefinition = do
-    _     <- symbol (caseInsensitiveString "taxa;")
+    _     <- symbol (string' "taxa;")
     (y,z) <- partitionTaxaBlock <$> (many seqSubBlock)
     pure $ TaxaSpecification y z
 
-taxaSubBlock :: Parsec String u SeqSubBlock
+taxaSubBlock :: MonadParsec s m Char => m SeqSubBlock
 taxaSubBlock = do
-        _      <- optionMaybe whitespace
+        _      <- optional whitespace
         block' <- symbol block
         pure block'
     where
@@ -565,15 +567,15 @@ taxaSubBlock = do
              <|> (Taxa <$> try (stringListDefinition "taxlabels"))
              <|> (Ignored <$> try (ignoredSubBlockDef ';'))
 
-treeBlockDefinition :: Parsec String u TreeBlock
+treeBlockDefinition :: MonadParsec s m Char => m TreeBlock
 treeBlockDefinition = do
-        _     <- symbol (caseInsensitiveString "trees;")
+        _     <- symbol (string' "trees;")
         (x,y) <- partitionTreeBlock <$> (many treeFieldDef)
         pure $ TreeBlock x y
 
-seqSubBlock :: Parsec String u SeqSubBlock
+seqSubBlock :: MonadParsec s m Char => m SeqSubBlock
 seqSubBlock = do
-        _      <- optionMaybe whitespace
+        _      <- optional whitespace
         block' <- symbol block
         pure block'
     where
@@ -584,34 +586,29 @@ seqSubBlock = do
              <|> (Taxa <$> try (stringListDefinition "taxlabels"))
              <|> (Ignored <$> try (ignoredSubBlockDef ';'))
 
-dimensionsDefinition :: Parsec String u DimensionsFormat
+dimensionsDefinition :: MonadParsec s m Char => m DimensionsFormat
 dimensionsDefinition = do
-        _         <- symbol (caseInsensitiveString "dimensions")
-        newTaxa'  <- optionMaybe (try (symbol (caseInsensitiveString "newTaxa")))
-        _         <- optionMaybe (try (symbol (caseInsensitiveString "nTax")))
-        _         <- optionMaybe $ try (symbol (char '='))
-        numTaxa'  <- optionMaybe $ try (symbol integer)
-        _         <- optionMaybe $ symbol (caseInsensitiveString "nchar")
-        _         <- optionMaybe $ symbol (char '=')
-        charCount <- optionMaybe $ try (symbol integer)
+        _         <- symbol (string' "dimensions")
+        newTaxa'  <- optional (try (symbol (string' "newTaxa")))
+        _         <- optional (try (symbol (string' "nTax")))
+        _         <- optional $ try (symbol (char '='))
+        numTaxa'  <- optional $ try (symbol integer)
+        _         <- optional $ symbol (string' "nchar")
+        _         <- optional $ symbol (char '=')
+        charCount <- optional $ try (symbol integer)
         _         <- symbol $ char ';'
         pure $ DimensionsFormat (newTaxa' /= Nothing)
-                                (if numTaxa' == Nothing then 0 else read (fromJust numTaxa') :: Int)
-                                (if charCount == Nothing then 0 else read (fromJust charCount) :: Int)
-    where
-        plus    = char '+' *> number
-        minus   = char '-' <:> number
-        number  = many1 digit
-        integer = plus <|> minus <|> number
+                                (if numTaxa'  == Nothing then 0 else fromEnum (fromJust numTaxa' ))
+                                (if charCount == Nothing then 0 else fromEnum (fromJust charCount))
 
-formatDefinition :: Parsec String u CharacterFormat
+formatDefinition :: MonadParsec s m Char => m CharacterFormat
 formatDefinition = do
-        _                         <- symbol (caseInsensitiveString "format")
+        _                         <- symbol (string' "format")
         (o,p,q,r,s,t,u,v,w,x,y,z) <- partitionCharFormat <$> charFormatFieldDef
         _                         <- symbol $ char ';'
         pure $ CharacterFormat o p q r s t u v w x y z
 
-charFormatFieldDef :: Parsec String u [CharFormatField]
+charFormatFieldDef :: MonadParsec s m Char => m [CharFormatField]
 charFormatFieldDef = do
         block' <- many block
         pure block'
@@ -630,7 +627,7 @@ charFormatFieldDef = do
              <|> (Unlabeled <$> try (booleanDefinition "nolabels"))
              <|> (IgnFF <$> try (ignoredSubBlockDef ' '))
 
-treeFieldDef :: Parsec String u TreeField
+treeFieldDef :: MonadParsec s m Char => m TreeField
 treeFieldDef = do
         block' <- block
         pure block'
@@ -641,69 +638,69 @@ treeFieldDef = do
 
 
 
-booleanDefinition :: String -> Parsec String u Bool
+booleanDefinition :: MonadParsec s m Char => String -> m Bool
 booleanDefinition blockTitle = do
-    title <- symbol (caseInsensitiveString blockTitle)
+    title <- symbol (string' blockTitle)
     -- _     <- symbol $ char ';'
     pure $ ((map toUpper title) == (map toUpper blockTitle))
 
-stringDefinition :: String -> Parsec String u String
+stringDefinition :: MonadParsec s m Char => String -> m String
 stringDefinition blockTitle = do
-    _     <- symbol (caseInsensitiveString blockTitle)
+    _     <- symbol (string' blockTitle)
     _     <- symbol $ char '='
     value <- symbol $ notKeywordWord ""
     -- _     <- symbol $ char ';'
     pure $ value
 
 -- TODO?: This doesn't work if they leave off the opening quote mark.
-quotedStringDefinition :: String -> Parsec String u (Either String [String])
+quotedStringDefinition :: MonadParsec s m Char => String -> m (Either String [String])
 quotedStringDefinition blockTitle = do
-    _     <- symbol (caseInsensitiveString blockTitle)
+    _     <- symbol (string' blockTitle)
     _     <- symbol $ char '='
     _     <- symbol $ char '"'
-    value <- many1 $ symbol $ notKeywordWord "\""
-    close <- optionMaybe $ char '"'
+    value <- some $ symbol $ notKeywordWord "\""
+    close <- optional $ char '"'
     -- _     <- symbol $ char ';'
     pure $ if isJust close 
            then Right value 
            else Left (blockTitle ++ " missing closing quote.")
 
-stringListDefinition :: String -> Parsec String u [String]
+stringListDefinition :: MonadParsec s m Char => String -> m [String]
 stringListDefinition label = do
-        _        <- symbol (caseInsensitiveString label)
+        _        <- symbol (string' label)
         theItems <- many $ symbol $ notKeywordWord ""
         _        <- symbol $ char ';'
         pure $ theItems
 
-delimitedStringListDefinition :: String -> Char -> Parsec String u [String]
+delimitedStringListDefinition :: MonadParsec s m Char => String -> Char -> m [String]
 delimitedStringListDefinition label delimiter = do
-    _        <- symbol (caseInsensitiveString label)
+    _        <- symbol (string' label)
     theItems <- many (noneOf $ delimiter : ";") `sepBy` (char delimiter)
     _        <- symbol $ char ';'
     pure $ theItems
 
 
-treeDefinition :: Parsec String u (String, String)
+treeDefinition :: MonadParsec s m Char => m (String, String)
 treeDefinition = do
-    _     <- symbol (caseInsensitiveString "tree")
+    _     <- symbol (string' "tree")
     label <- symbol $ many (noneOf ";=")
     _     <- symbol $ char '='
     trees <- symbol $ many (noneOf ";")
     _     <- symbol $ char ';'
     pure (label, trees)
 
-matrixDefinition :: Parsec String u String
+matrixDefinition :: MonadParsec s m Char => m String
 matrixDefinition = do
-    first     <- symbol (caseInsensitiveString "matrix")
+    first     <- symbol (string' "matrix")
     goodStuff <- many $ noneOf ";"
     _         <- symbol $ char ';'
     pure goodStuff
 
-ignoredSubBlockDef :: Char -> Parsec String u String
+ignoredSubBlockDef :: MonadParsec s m Char => Char -> m String
 ignoredSubBlockDef endChar = do
-    title <- anyTill (symbol (caseInsensitiveString "end;")
-                      <|> symbol (caseInsensitiveString ";")
-                      <|> symbol (caseInsensitiveString [endChar])
+    title <- anyTill (symbol (string' "end;")
+                      <|> symbol (string ";")
+                      <|> symbol (string' [endChar])
                      )
     _     <- symbol $ char endChar -- didn't think I needed this,
                                    -- but otherwise I get
@@ -773,19 +770,21 @@ partitionTreeBlock = foldr f ([],[])
         f _                    ws = ws
 
 
-trimmed :: Parsec String u a -> Parsec String u a
+trimmed :: MonadParsec s m Char => m a -> m a
 trimmed x = whitespace *> x <* whitespace
 
-symbol :: Parsec String u a -> Parsec String u a
+symbol :: MonadParsec s m Char => m a -> m a
 symbol x = x <* whitespace
 
-whitespace :: Parsec String u ()
-whitespace = (many1 (commentDefinition) *> pure ())
-          <|> spaces
+whitespace :: MonadParsec s m Char => m ()
+whitespace = (some(commentDefinition) *> pure ())
+          <|> space
           <?> "white space"
 
-commentDefinition :: Parsec String u String
-commentDefinition = commentDefinition' False
+commentDefinition :: MonadParsec s m Char => m String
+commentDefinition = comment (string "[")  (string "]")
+{-
+  commentDefinition' False
     where
         commentContent = many (noneOf "[]")
         commentDefinition' enquote = do
@@ -793,15 +792,15 @@ commentDefinition = commentDefinition' False
             before   <- commentContent
             comments <- many (commentDefinition' True <++> commentContent)
             _        <- char ']' <?> "\"]\" to correctly close comment"
-            _        <- spaces
+            _        <- space
             pure . concat $
                 if enquote
                 then "[" : before : comments ++ ["]"]
                 else       before : comments
+-}
 
-
-spaces1 :: Parsec String u ()
-spaces1 = space *> spaces
+space1 :: MonadParsec s m Char => m ()
+space1 = skipSome spaceChar
 
 lstrip :: String -> String
 lstrip "" = ""
@@ -813,13 +812,13 @@ rstrip = reverse . lstrip . reverse
 strip :: String -> String
 strip = lstrip . rstrip
 
-notKeywordWord :: (Monad m) => String -> ParsecT String u m String
+notKeywordWord :: MonadParsec s m Char => String -> m String
 notKeywordWord avoidChars = do
     word <- lookAhead $ nextWord
     if (toLower <$> word) `S.member` keywords
     then fail $ "Unexpected keyword '" ++ word ++ "', perhaps you are missing a semicolon?"
     else nextWord
   where
-    nextWord = many1 $ try $ satisfy (\x -> (not $ elem x (';' : avoidChars)) && (not $ isSpace x))
+    nextWord = some$ try $ satisfy (\x -> (not $ elem x (';' : avoidChars)) && (not $ isSpace x))
     keywords = S.fromList ["ancstates", "assumptions", "begin", "changeset", "characters", "charlabels", "charpartition", "charset", "charstatelabels", "codeorder", "codeset", "codons", "data", "datatype", "deftype", "diagonal", "dimensions", "distances", "eliminate", "end", "equate", "exset", "extensions", "format", "gap", "interleave", "items", "labels", "matchchar", "matrix", "missing", "nchar", "newtaxa", "nodiagonal", "nolabels", "notes", "notokens", "ntax", "options", "picture", "respectcase", "sets", "statelabels", "statesformat", "symbols", "taxa", "taxlabels", "taxpartition", "taxset", "text", "tokens", "translate", "transpose", "tree", "treepartition", "trees", "treeset", "triangle", "typeset", "unaligned", "usertype", "wtset"]
 
