@@ -9,7 +9,7 @@ import File.Format.VertexEdgeRoot.Parser
 import Test.Custom                       (parseEquals,parseFailure,parseSuccess)
 import Test.Tasty                        (TestTree,testGroup)
 import Test.Tasty.HUnit
-import Text.Megaparsec            hiding (label)
+import Text.Megaparsec                   (eof)
 
 testSuite :: TestTree
 testSuite = testGroup "VER Format"

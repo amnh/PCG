@@ -11,7 +11,7 @@ import Test.Custom                (parseEquals,parseFailure,parseSuccess)
 import Test.Tasty                 (TestTree,testGroup)
 import Test.Tasty.HUnit
 import Test.Tasty.QuickCheck
-import Text.Megaparsec
+import Text.Megaparsec            (eof,parse)
 
 testSuite :: TestTree
 testSuite = testGroup "Newick Format"

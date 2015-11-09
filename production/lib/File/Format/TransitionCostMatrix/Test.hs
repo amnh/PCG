@@ -8,7 +8,7 @@ import File.Format.TransitionCostMatrix.Parser
 import Test.Custom                             (parseEquals,parseFailure,parseSuccess)
 import Test.Tasty                              (TestTree,testGroup)
 import Test.Tasty.HUnit
-import Text.Megaparsec
+import Text.Megaparsec                         (eof)
 
 testSuite :: TestTree
 testSuite = testGroup "TCM Format"
