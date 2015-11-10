@@ -127,11 +127,8 @@ ukkonenCore lSeq lLength rSeq rLength maxGap indelCost subCost
             firstRow = getFirstRowUkkonen indelCost lLength 0 0 lSeq maxGap
             nwMatrix = V.cons firstRow (getRowsUkkonen lSeq rSeq indelCost subCost 1 firstRow maxGap)
             (cost, _, _) = V.last (V.last nwMatrix) -- V.! rLength) --V.! (transformFullYShortY lLength rLength  maxGap) --fix for offset
-            medianTriple = V.reverse (tracebackUkkonen nwMatrix lSeq rSeq rLength lLength maxGap 0 0)
-            medianGap = V.map firstOfThree medianTriple
+            (medianGap, alignLeft, alignRight) = V.unzip3 $ V.reverse (tracebackUkkonen nwMatrix lSeq rSeq rLength lLength maxGap 0 0)
             median = V.filter (/= inDelBit) medianGap
-            alignLeft = V.map secondOfThree medianTriple
-            alignRight = V.map thirdOfThree medianTriple
 
 --FOR both DO's  lseq is a row, acrosss so num columns = length of lseq
 --There are rseq rows
@@ -270,11 +267,8 @@ naiveDo inlSeq inrSeq charInfo
             firstRow = getFirstRow indelCost lLength 0 0 lSeq
             nwMatrix = V.cons firstRow (getRows lSeq rSeq indelCost subCost 1 firstRow)
             (cost, _, _) = (nwMatrix V.! rLength) V.! lLength
-            medianTriple = V.reverse (traceback nwMatrix rSeq lSeq (V.length rSeq) (V.length lSeq))
-            medianGap = V.map firstOfThree medianTriple
+            (medianGap, alignLeft, alignRight) = V.unzip3 $ V.reverse (traceback nwMatrix rSeq lSeq (V.length rSeq) (V.length lSeq))
             median = V.filter (/= inDelBit) medianGap
-            alignLeft = V.map secondOfThree medianTriple
-            alignRight = V.map thirdOfThree medianTriple
 
 -- | traceback creates REVERSE mediian from nwMatrix, reverse to make tail
 --recusive
