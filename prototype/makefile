@@ -22,3 +22,6 @@ par: PackingPar/ParBench.hs
 parclean:
 	rm PackingPar/ParEnabledNode2.o PackingPar/ParEnabledNode2.hi PackingPar/PackedBuild.hi PackingPar/PackedBuild.o ./par PackingPar/PackedParOptimize.hi PackingPar/PackedParOptimize.o PackingPar/ParBench.o PackingPar/ParBench.hi
 	
+ia: ImpliedAlign.hs
+	ghc $< $(linking) $(sanity) 
+
