@@ -554,12 +554,12 @@ characterBlockDefinition which aligned = do
 taxaBlockDefinition :: MonadParsec s m Char => m TaxaSpecification
 taxaBlockDefinition = do
     _     <- symbol (string' "taxa;")
-    (y,z) <- partitionTaxaBlock <$> (many seqSubBlock)
+    (y,z) <- partitionTaxaBlock <$> (many taxaSubBlock)
     pure $ TaxaSpecification y z
 
 taxaSubBlock :: MonadParsec s m Char => m SeqSubBlock
 taxaSubBlock = do
-        _      <- optional whitespace
+        _      <- whitespace
         block' <- symbol block
         pure block'
     where
@@ -575,7 +575,7 @@ treeBlockDefinition = do
 
 seqSubBlock :: MonadParsec s m Char => m SeqSubBlock
 seqSubBlock = do
-        _      <- optional whitespace
+        -- _      <- whitespace
         block' <- symbol block
         pure block'
     where
@@ -598,8 +598,8 @@ dimensionsDefinition = do
         charCount <- optional $ try (symbol integer)
         _         <- symbol $ char ';'
         pure $ DimensionsFormat (newTaxa' /= Nothing)
-                                (if numTaxa'  == Nothing then 0 else fromEnum (fromJust numTaxa' ))
-                                (if charCount == Nothing then 0 else fromEnum (fromJust charCount))
+                                (maybe 0 fromEnum numTaxa')
+                                (maybe 0 fromEnum charCount)
 
 formatDefinition :: MonadParsec s m Char => m CharacterFormat
 formatDefinition = do
@@ -779,7 +779,7 @@ symbol x = x <* whitespace
 whitespace :: MonadParsec s m Char => m ()
 whitespace = (some(commentDefinition) *> pure ())
           <|> space
-          <?> "white space"
+          <?> "whitespace"
 
 commentDefinition :: MonadParsec s m Char => m String
 commentDefinition = comment (string "[")  (string "]")
