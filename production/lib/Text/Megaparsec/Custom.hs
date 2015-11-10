@@ -37,13 +37,8 @@ double = try (signed space float)
 endOfLine :: MonadParsec s m Char => m Char
 endOfLine = (try eol <|> string "\r") *> pure '\n'
 
--- | Use this failure definition when Megaparsec 4.2.0.0 is
--- relesed in December 2015:
---   fails = failure . fmap Message
 fails :: MonadParsec s m Char => [String] -> m a
-fails []  = fail "Unspecified error" -- You were dumb
-fails [x] = fail x
-fails xs  = fail . init $ unlines xs
+fails = failure . fmap Message
 
 inlineSpace :: MonadParsec s m Char => m Char
 inlineSpace = satisfy $ \x -> isSpace x 
