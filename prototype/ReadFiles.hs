@@ -77,7 +77,7 @@ data CharInfo = CharInfo { charType :: CharType
                          , numStates :: Int
                          , alphabet :: [String]
                          , rootCost :: Float
-                         } deriving (Show, Eq)
+                         } deriving (Show, Eq, Read)
 
 -- | RawData type processed from input to be passed to characterData
 --to recode into usable form

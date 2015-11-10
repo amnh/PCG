@@ -37,6 +37,7 @@ Portability :  portable (I hope)
 module Parsimony
 ( getPrelim
 , getPrelimTriple
+, ukonnenDO
 ) where
 
 import Debug.Trace
@@ -59,16 +60,16 @@ barrierBit = bit 63 :: Int64
 
 
 -- | getPrelimTriple takes bit-coded states (as triple) and returns cost and prelim state
-getPrelimTriple :: (BaseChar, BaseChar, CharInfo) -> (BaseChar, Float)
+getPrelimTriple :: (BaseChar, BaseChar, CharInfo) -> (BaseChar, Float, BaseChar, BaseChar, BaseChar)
 getPrelimTriple (lState, rState, charInfo)
-    | not (activity charInfo) = (V.singleton (0 :: Int64), 0)
+    | not (activity charInfo) = (V.singleton (0 :: Int64), 0, V.singleton (0 :: Int64), lState, rState)
     | charType charInfo == NonAdd = let
-        x   | intersection /= 0 = (V.singleton intersection, 0)
-            | otherwise = (V.singleton ((lS .|. rS) :: Int64) , weight charInfo)
+        x   | intersection /= 0 = (V.singleton intersection, 0, V.singleton intersection, lState, rState)
+            | otherwise = (V.singleton ((lS .|. rS) :: Int64), weight charInfo, V.singleton ((lS .|. rS) :: Int64), lState, rState)
         in x
     | charType charInfo == GenSeq = --trace ("lS " ++ show lState ++ " rs " ++ show rState ++ "median " ++ show median ++ " cost " ++ show cost ++ " mG " ++ show medianGap ++ " aL " ++ show alignLeft ++ " aR " ++ show alignRight) 
-        (median, charWeight * cost)  --this should be based on min of inouts length
-    | charType charInfo == NucSeq = (median2, charWeight * cost2)
+        (median, charWeight * cost, medianGap, alignLeft, alignRight)  --this should be based on min of inouts length
+    | charType charInfo == NucSeq = (median2, charWeight * cost2, medianGap2, alignLeft2, alignRight2)
     | otherwise = error "Unrecognized/Not implemented character type"
         where
             (median, cost, medianGap, alignLeft, alignRight) = naiveDo lState rState charInfo
@@ -81,7 +82,7 @@ getPrelimTriple (lState, rState, charInfo)
 
 -- | getPrelim takes bit-coded states and returns cost and prelim state
 -- depends entirely on getPrelimTriple, just joins together args
-getPrelim :: BaseChar -> BaseChar -> CharInfo -> (BaseChar, Float)
+getPrelim :: BaseChar -> BaseChar -> CharInfo -> (BaseChar, Float, BaseChar, BaseChar, BaseChar)
 getPrelim lState rState charInfo = getPrelimTriple (lState, rState, charInfo)
 
 
@@ -127,11 +128,8 @@ ukkonenCore lSeq lLength rSeq rLength maxGap indelCost subCost
             firstRow = getFirstRowUkkonen indelCost lLength 0 0 lSeq maxGap
             nwMatrix = V.cons firstRow (getRowsUkkonen lSeq rSeq indelCost subCost 1 firstRow maxGap)
             (cost, _, _) = V.last (V.last nwMatrix) -- V.! rLength) --V.! (transformFullYShortY lLength rLength  maxGap) --fix for offset
-            medianTriple = V.reverse (tracebackUkkonen nwMatrix lSeq rSeq rLength lLength maxGap 0 0)
-            medianGap = V.map firstOfThree medianTriple
+            (medianGap, alignLeft, alignRight) = V.unzip3 $ V.reverse (tracebackUkkonen nwMatrix lSeq rSeq rLength lLength maxGap 0 0)
             median = V.filter (/= inDelBit) medianGap
-            alignLeft = V.map secondOfThree medianTriple
-            alignRight = V.map thirdOfThree medianTriple
 
 --FOR both DO's  lseq is a row, acrosss so num columns = length of lseq
 --There are rseq rows
@@ -270,11 +268,8 @@ naiveDo inlSeq inrSeq charInfo
             firstRow = getFirstRow indelCost lLength 0 0 lSeq
             nwMatrix = V.cons firstRow (getRows lSeq rSeq indelCost subCost 1 firstRow)
             (cost, _, _) = (nwMatrix V.! rLength) V.! lLength
-            medianTriple = V.reverse (traceback nwMatrix rSeq lSeq (V.length rSeq) (V.length lSeq))
-            medianGap = V.map firstOfThree medianTriple
+            (medianGap, alignLeft, alignRight) = V.unzip3 $ V.reverse (traceback nwMatrix rSeq lSeq (V.length rSeq) (V.length lSeq))
             median = V.filter (/= inDelBit) medianGap
-            alignLeft = V.map secondOfThree medianTriple
-            alignRight = V.map thirdOfThree medianTriple
 
 -- | traceback creates REVERSE mediian from nwMatrix, reverse to make tail
 --recusive
