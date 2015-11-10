@@ -173,8 +173,8 @@ parseNexusStream = parse (validateParseResult =<< parseNexus <* eof) "PCG encoun
 --     so order fo sequences is unclear
 -- 18. Missing semicolons                                                       -             indep              caught in parse
 -- 19. Equate or symbols strings missing their closing quotes                  3                dep              done
--- 20. Match character can't be a space                                        3                dep            
---     ---for aligned blocks, will be caught 
+-- 20. Match character can't be a space                                        3                dep
+--     ---for aligned blocks, will be caught
 --     ---as with 13, not sure how to catch for unaligned
 -- 21. Space in taxon name                                                     5,6              dep              done
 --     ---for aligned, should be caught by 16
@@ -229,7 +229,7 @@ validateParseResult (ParseResult sequences taxas trees)
                                                         then [Just "More than one unaligned block provided."] -- error 3
                                                         else matrixDimsErrors  -- errors 4,5
                                  _         -> matrixDimsErrors  -- errors 4,5
-        --taxaFromSeqMatrix = foldr (\x acc -> (getTaxaFromMatrix x) ++ acc) [] sequences 
+        --taxaFromSeqMatrix = foldr (\x acc -> (getTaxaFromMatrix x) ++ acc) [] sequences
         -- convertSeqs = ( concatSeqs . cleanSeqs sequences  -- convert each sequence, then
 
 checkSeqLength :: [PhyloSequence] -> [M.Map String [[String]]] -> [Maybe String]
@@ -244,12 +244,12 @@ checkSeqLength seq seqMap =
 
 getSeqTaxonCountErrors :: [String] -> PhyloSequence -> [Maybe String]
 getSeqTaxonCountErrors taxaLst seq = extraTaxonErrors ++ wrongCountErrors
-    where 
+    where
         seqTaxaMap = getTaxaFromMatrix seq
         listedTaxaMap = M.fromList (zip taxaLst [1..])
-        extraTaxonErrors = M.foldrWithKey 
+        extraTaxonErrors = M.foldrWithKey
                                 (\key val acc -> (if M.member key listedTaxaMap
-                                                  then Nothing 
+                                                  then Nothing
                                                   else Just ("\"" ++ key ++ "\" is in a matrix, but isn't specified anywhere, such as in a taxa block or as newtaxa."))
                                                   : acc
                                  ) [] seqTaxaMap
@@ -273,7 +273,7 @@ getEquates seq = eqs
 
 getTaxaFromMatrix :: PhyloSequence -> M.Map String Int
 getTaxaFromMatrix seq =
-    if noLabels 
+    if noLabels
         then M.empty
         else taxaMap
     where
@@ -403,7 +403,7 @@ getBlock which seqs = if which == "aligned"
                                           else []
 
 getFormatInfo :: PhyloSequence -> (Bool, Bool, Bool, Bool, String)
-getFormatInfo seq = 
+getFormatInfo seq =
     if isJust seqForm
     then
         ( unlabeled $ fromJust seqForm
@@ -431,29 +431,29 @@ getSeqFromMatrix seqLst taxaLst =
                then if interleaved
                     then concat (map (zip taxaLst) $ chunksOf numTaxa mtx)
                     else zip taxaLst mtx
-               else map (\x -> let (name, seq) = span (/= ' ') x 
-                               in (name, seq)) 
+               else map (\x -> let (name, seq) = span (/= ' ') x
+                               in (name, seq))
                          mtx
 
-        entireDeinterleavedSeqs = if interleaved 
+        entireDeinterleavedSeqs = if interleaved
                                   then deInterleave taxaMap entireSeqs
                                   else M.fromList entireSeqs
         firstSeq = fromJust $ M.lookup (if noLabels
                                         then head taxaLst
                                         else takeWhile (/= ' ') $ head mtx)
                             entireDeinterleavedSeqs
-        matchCharsReplaced = if matchChar' /= "" 
+        matchCharsReplaced = if matchChar' /= ""
                              then M.map (replaceMatches (head matchChar') firstSeq) entireDeinterleavedSeqs
                              else entireDeinterleavedSeqs
-        
+
 
 
 deInterleave :: M.Map String String -> [(String, String)] -> M.Map String String
 deInterleave inMap tuples =
-    foldr (\x acc -> M.insert (fst x) ((snd x) ++ (acc M.! (fst x))) acc) inMap tuples 
+    foldr (\x acc -> M.insert (fst x) ((snd x) ++ (acc M.! (fst x))) acc) inMap tuples
 
 replaceMatches :: Char -> String -> String -> String
-replaceMatches matchChar canonical toReplace = 
+replaceMatches matchChar canonical toReplace =
     zipWith f canonical toReplace
     where
         f x y = if y == matchChar
@@ -526,8 +526,7 @@ nexusFileDefinition = do
 ignoredBlockDefinition :: MonadParsec s m Char => m String
 ignoredBlockDefinition = do
     title <- many letterChar
-    _     <- symbol (string' ";")
-    _     <- whitespace
+    _     <- symbol $ char ';'
     _     <- anyTill $ symbol (string' "END;")
     pure $ title
 
@@ -554,7 +553,7 @@ characterBlockDefinition which aligned = do
 taxaBlockDefinition :: MonadParsec s m Char => m TaxaSpecification
 taxaBlockDefinition = do
     _     <- symbol (string' "taxa;")
-    (y,z) <- partitionTaxaBlock <$> (many taxaSubBlock)
+    (y,z) <- partitionTaxaBlock <$> (many seqSubBlock)
     pure $ TaxaSpecification y z
 
 taxaSubBlock :: MonadParsec s m Char => m SeqSubBlock
@@ -661,8 +660,8 @@ quotedStringDefinition blockTitle = do
     value <- some $ symbol $ notKeywordWord "\""
     close <- optional $ char '"'
     -- _     <- symbol $ char ';'
-    pure $ if isJust close 
-           then Right value 
+    pure $ if isJust close
+           then Right value
            else Left (blockTitle ++ " missing closing quote.")
 
 stringListDefinition :: MonadParsec s m Char => String -> m [String]
@@ -733,7 +732,7 @@ partitionTaxaBlock = foldr f (0,[])
                 num = numTaxa n
         f (Taxa n) (y,z) = (  y, n)
         f _           ws = ws
-            
+
 
 
 
