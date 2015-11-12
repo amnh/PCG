@@ -37,7 +37,7 @@ Portability :  portable (I hope)
 module Parsimony
 ( getPrelim
 , getPrelimTriple
-, ukonnenDO
+, ukkonenDO
 ) where
 
 import Debug.Trace
