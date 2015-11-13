@@ -56,12 +56,8 @@ module ReadFiles
 
 import Data.List
 import Data.List.Split
-import Data.Map (toList)
 import qualified Data.Text as T
---import Debug.Trace
-import File.Format.Fasta
-import File.Format.TransitionCostMatrix
-import Text.Megaparsec hiding (oneOf)
+import Debug.Trace
 
 -- | CharType data type for input characters
 data CharType = Add | NonAdd | Matrix | NucSeq | AminoSeq | GenSeq | Genome
@@ -167,45 +163,22 @@ mergeSeqs [] = []
 mergeSeqs x = map concat x  
 
 -- | convertSeqToList makes sequence into list of String to move towards rawData
--- type
-convertSeqToList :: [(String, String)] -> [(String, [String])]
-convertSeqToList = fmap (fmap pure) 
-{-- Don't use direct recursion, use functor definitions
+--type
 convertSeqToList :: [(String, String)] -> [(String, [String])]
 convertSeqToList x =
     if null x then []
     else 
         let (y, z) = head x
         in (y, [z]) : convertSeqToList (tail x)
--}
 
 -- | processFastaInput
--- Process input fasta data and return RAwData--but only for asingle input file
--- Taxon names must begin with '>' with no spaces, characters after spaces on 
--- taxon line are ignores (e.g. genbank #s) 
--- does not filter out numbers fomr sequences to allow generality, spaces in sequences
--- shouldn't matter
--- now does 2 passes + zip, but should be made into a single pass
--- breaking on names with '>' only 
-processFastaInput :: String -> RawData 
-processFastaInput str =
-  case result of
-    Left errors -> error $ show errors -- Not safe but nessisary for preserving types
-    Right xs    -> (fmap . (fmap pure) $ toList xs, [defaultInfo])
-  where
-    result = parse (fastaStreamConverter DNA =<< fastaStreamParser) "Unspecified Source File" str
-    defaultInfo = CharInfo
-                { charType = NucSeq
-                , activity = True
-                , weight = 1.0
-                , costMatrix = []
-                , name = "FastaSeqChar"
-                , numStates = 0
-                , alphabet = ["A", "C", "G", "T", "-"]
-                , rootCost = 0.5
-                }
-    
-{-- | old definition
+--Process input fasta data and return RAwData--but only for asingle input file
+--Taxon names must begin with '>' with no spaces, characters after spaces on 
+--  taxon line are ignores (e.g. genbank #s) 
+--does not filter out numbers fomr sequences to allow generality, spaces in sequences
+--shouldn't matter
+--now does 2 passes + zip, but should be made into a single pass
+--breaking on names with '>' only 
 processFastaInput :: String -> RawData 
 processFastaInput x = 
     if  null x then ([],[])
@@ -229,7 +202,6 @@ processFastaInput x =
                                  , rootCost = 0.5
                                  }
         in (pairedListData, [defaultFastaCharInfo])
--}
 
 -- | getInts takes String and returns [Int] 
 getInts :: [String] -> [Int]
@@ -242,7 +214,7 @@ getInts inString =
         --b : getInts (tail inString)
 
 -- | processTCM takes tcmfile contents and returns alphabet and 
--- costmatrix
+--costmatrix
 processTCM :: String -> ([String], [Int])
 processTCM tcmStuff =
     if null tcmStuff then error "tcm file empty"
@@ -253,7 +225,7 @@ processTCM tcmStuff =
         in (alphabet, costMatrix)
 
 -- | processCustomAlphabet takes input custom_alphabet sequences 
--- and returns processed data
+--and returns processed data
 processCustomAlphabet :: String -> String -> RawData 
 processCustomAlphabet x tcmStuff = 
     if  null x then ([],[])
@@ -280,7 +252,7 @@ processCustomAlphabet x tcmStuff =
         in
             if (length alphabetList) > 63 then error "Alphabet > 63"
             else 
---                trace ("\nCA alphabet " ++ show (alphabetList) )-- ++ " " ++ show matrixList)
+                trace ("\nCA alphabet " ++ show (alphabetList) )-- ++ " " ++ show matrixList)
                 (pairedListData, [defaultGenSeqCharInfo])
 
 -- | reformatCharString
@@ -292,7 +264,7 @@ reformatCharString x
     | head x /= '[' = [head x] : reformatCharString (tail x)
     | otherwise =
       let y = splitOn "]" (tail x) 
-      in --trace ("y = " ++ show y)
+      in trace ("y = " ++ show y)
           (head y : reformatCharString (concat (tail y)))
 
 -- | extractLines Extract pairs form lines of data file body
@@ -463,7 +435,7 @@ processXread x =
             rest = splitOn ";" (unwords (tail (tail body)))
             taxCharPair = getTaxCharPairs (head rest) 
             charInfo = getCharInfo (tail rest) nchar initialCharInfo
-        in --trace ("Hennig/TNT file message " ++ show message ++ " ntax = " ++ show ntax ++ " nchar = " ++ show nchar) 
+        in trace ("Hennig/TNT file message " ++ show message ++ " ntax = " ++ show ntax ++ " nchar = " ++ show nchar) 
             (taxCharPair, charInfo)
 
 -- | processTNTInput
@@ -518,8 +490,7 @@ getPairDataCSV x =
         in
           if (name == "\n") || (name == "\r") || null characters then getPairDataCSV (tail x)
           else 
-              --trace ("CSV in " ++ show name ++ " " ++ show (length x) ++ " " ++ show (length characters))
-              (name, characters) : getPairDataCSV (tail x)
+              trace ("CSV in " ++ show name ++ " " ++ show (length x) ++ " " ++ show (length characters)) (name, characters) : getPairDataCSV (tail x)
  
 -- | processCsvInput Process CSV ',' delimited file
 --assumes
@@ -545,7 +516,7 @@ processCsvInput x =
                      }
             charTypeValue = assignCharType (length charData) defaultCsvInfo 
         in
---          trace ("lines in " ++ show (length inLines)) 
+          trace ("lines in " ++ show (length inLines)) 
           (pairedNameData, charTypeValue)
 
 -- | printStrinListWithNewLine between elements
@@ -629,8 +600,4 @@ printInputDataByCharacter x =
             let z = transpose y
             printOneAtATime z
     else putStrLn ""
-        
-
-
-
 

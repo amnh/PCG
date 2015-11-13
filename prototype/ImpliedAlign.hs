@@ -1,6 +1,6 @@
 
 
-module ImpliedAlign (implyMain) where
+module ImpliedAlign (implyMain, subtreeWrap) where
 
 import Component
 import Parsimony (ukkonenDO)
@@ -9,22 +9,34 @@ import Data.Matrix (Matrix, zero, setElem, elementwise, getRow)
 import qualified Data.Vector as V (length, (!), findIndex, cons, ifoldr, empty, (++), singleton, imap, (//))
 import Data.Maybe
 import CharacterData (BaseChar)
+import Debug.Trace
 
-type Subtrees = Matrix Integer
+type Subtrees = Matrix Int
 data Side = LeftChild | RightChild | Parent deriving (Eq, Show, Read)
 type AlignOut = (BaseChar, Float, BaseChar, BaseChar, BaseChar)
 
 -- | implyMain is a the function that performs an implied alignment for a tree starting at the root
 implyMain :: CharInfo -> PhyloComponent -> PhyloComponent
-implyMain info tree = iaMainPreorder tree tree subMat (tree V.! root) info
+implyMain info tree 
+    | isNothing root = error "Tree has no root"
+    | otherwise = iaMainPreorder tree tree subMat (tree V.! (fromJust root)) info
     where 
-        root = fromJust $ V.findIndex (\node -> isRoot node) tree
-        (subMat, _) = getSubtrees tree root (zero (V.length tree) (V.length tree))
+        root = V.findIndex (\node -> isRoot node) tree
+        subMat = subtreeWrap tree
+
+-- | Wrapper for getSubtrees
+subtreeWrap :: PhyloComponent -> Subtrees
+subtreeWrap tree 
+    | isNothing root = error "Tree has no root"
+    | otherwise = fst $ getSubtrees tree (fromJust root) (zero (V.length tree) (V.length tree))
+
+        where root = V.findIndex (\node -> isRoot node) tree
 
 -- | List the subtrees at each node to use in the preorder traversal
 getSubtrees :: PhyloComponent -> NodeCode -> Subtrees -> (Subtrees, [Int])
+--getSubtrees inTree curCode initStructure | trace "getSubtrees" False = undefined
 getSubtrees inTree curCode initStructure
-    | isTerminal node = (initStructure, [curCode])
+    | isTerminal node || (null $ children node) = (initStructure, [curCode])
     | (length $ children node) > 2 = error "Can only perform implied alignment on binary trees"
     | (length $ children node) == 1 = 
         let
