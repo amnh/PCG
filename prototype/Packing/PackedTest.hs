@@ -28,9 +28,12 @@ type TaxonSequenceMap  = Map String (V.Vector [String])
 main :: IO ()
 main = do
     benches <- sequence 
-               [ benchmarkFitchOptimization "data-sets/28S_trimal.fas" "data-sets/sp_rand_28s.tre" "(Medium Fasta: )"
-                , benchmarkPackingOnly "data-sets/28S_trimal.fas" "data-sets/sp_rand_28s.tre" "(Medium Fasta: )"
-                , benchmarkFitchOnly "data-sets/28S_trimal.fas" "data-sets/sp_rand_28s.tre" "(Medium Fasta: )"
+               [ --benchmarkFitchOptimization "data-sets/28S_trimal.fas" "data-sets/sp_rand_28s.tre" "(Medium Fasta: )"
+                --, benchmarkPackingOnly "data-sets/28S_trimal.fas" "data-sets/sp_rand_28s.tre" "(Medium Fasta: )"
+                --, benchmarkFitchOnly "data-sets/28S_trimal.fas" "data-sets/sp_rand_28s.tre" "(Medium Fasta: )"
+                 benchmarkFitchOptimization "data-sets/IASallToFasta.fas" "data-sets/sall_o0g1t1_satf27-newick.tre" "(Large Fasta: )"
+                 , benchmarkPackingOnly "data-sets/IASallToFasta.fas" "data-sets/sall_o0g1t1_satf27-newick.tre" "(Large Fasta: )"
+                 , benchmarkFitchOnly "data-sets/IASallToFasta.fas" "data-sets/sall_o0g1t1_satf27-newick.tre" "(Large Fasta: )"
                ]
     defaultMain [ bgroup "fitch opts" (concat benches) ]
 
@@ -50,8 +53,8 @@ benchmarkFitchOptimization seqsFile treeFile prefix = do
          , bench (prefix++" packing & optimizing S16")   $ nf (costForest tree (performPack seqs names tree ("static"  ,"16"      ))) weight
          , bench (prefix++" packing & optimizing A64")   $ nf (costForest tree (performPack seqs names tree ("adaptive","64"      ))) weight
          , bench (prefix++" packing & optimizing S64")   $ nf (costForest tree (performPack seqs names tree ("static"  ,"64"      ))) weight
-         , bench (prefix++" packing & optimizing Inf")   $ nf (costForest tree (performPack seqs names tree ("static"  ,"infinite"))) weight
-         , bench (prefix++" packing & optimizing unpacked")   $ nf (costForest tree (performBuild seqs names tree)) weight
+          , bench (prefix++" packing & optimizing Inf")   $ nf (costForest tree (performPack seqs names tree ("static"  ,"infinite"))) weight
+         --bench (prefix++" packing & optimizing unpacked")   $ nf (costForest tree (performBuild seqs names tree)) weight
          ]
 
 benchmarkFitchOnly :: FilePath -> FilePath -> [Char] -> IO [Benchmark]
@@ -65,14 +68,14 @@ benchmarkFitchOnly seqsFile treeFile prefix = do
   let !packA64 = performPack seqs names tree ("adaptive","64"      )
   let !packS64 = performPack seqs names tree ("static"  ,"64"      )
   let !packInf = performPack seqs names tree ("static"  ,"infinite")
-  let !unpacked = performBuild seqs names tree
+  --let !unpacked = performBuild seqs names tree
   let f = flip (costForest tree) weight
   pure [ bench (prefix++" just optimizing A16")   $ nf f packA16
          , bench (prefix++" just optimizing S16")   $ nf f packS16
          , bench (prefix++" just optimizing A64")   $ nf f packA64
          , bench (prefix++" just optimizing S64")   $ nf f packS64
          , bench (prefix++" just optimizing Inf")   $ nf f packInf
-         , bench (prefix++" just optimizing unpacked")   $ nf (costForest tree unpacked) weight
+         --, bench (prefix++" just optimizing unpacked")   $ nf (costForest tree unpacked) weight
         ]
 
 benchmarkPackingOnly :: FilePath -> FilePath -> [Char] -> IO [Benchmark]
@@ -86,7 +89,7 @@ benchmarkPackingOnly seqsFile treeFile prefix = do
          , bench (prefix++" packing A64")   $ nf f ("adaptive","64"      )
          , bench (prefix++" packing S64")   $ nf f ("static"  ,"64"      )
          , bench (prefix++" packing Inf")   $ nf f ("static"  ,"infinite")
-         , bench (prefix++" packing unpacked")   $ nf (performBuild seqs names) tree
+         --, bench (prefix++" packing unpacked")   $ nf (performBuild seqs names) tree
          ]
 
 
@@ -120,7 +123,7 @@ fastcToCharData = (map fastcToTermData &&& map fastcToCharInfo)
 
 
 newickToPhylo :: NewickForest -> PhyloForest
-newickToPhylo = fmap treeToComponent
+newickToPhylo newForest = fmap treeToComponent newForest
   where
 
     treeToComponent :: NewickNode -> PhyloComponent--V.Vector PhyloNode
