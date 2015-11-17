@@ -1,19 +1,18 @@
-{-# LANGUAGE DeriveFunctor #-}
+{-# LANGUAGE FlexibleInstances, MultiParamTypeClasses #-}
 module PCG.Evaluation.Trans where
 
 import Control.Applicative
-import Control.Monad             (MonadPlus(mzero, mplus), liftM2, ap)
-import Control.Monad.Fix         (MonadFix(mfix))
+import Control.Monad          (MonadPlus(mzero, mplus), join, liftM2)
 import Control.Monad.IO.Class
 import Control.Monad.Trans.Class
---import Control.Monad.Trans.Except (ExceptT(..))
-import Data.Functor.Classes
 import Data.Monoid
 
 import PCG.Evaluation.Internal
 import PCG.Evaluation.Unit
+import PCG.Graph
 
-type ImpureEvaluation a = EvaluationT IO a
+type SearchState = EvaluationT IO Graph
+
 newtype EvaluationT m a
       = EvaluationT
       { runEvaluation :: m (Evaluation a)
@@ -31,24 +30,15 @@ instance Monad m => Monad (EvaluationT m) where
   fail    = EvaluationT . pure . fail
   x >>  y = EvaluationT $ liftM2 (>>) (runEvaluation x) (runEvaluation y)
   x >>= f = EvaluationT $ do
-              v <- runEvaluation x
-              case v of
+              y <- runEvaluation x
+              case y of
                 Evaluation ns  NoOp     -> pure . Evaluation ns $ NoOp
-                Evaluation ns (Error x) -> pure . Evaluation ns $ Error x
-                Evaluation ns (Value x) -> liftM2 prependNotifications (runEvaluation $ f x) (pure ns)
+                Evaluation ns (Error e) -> pure . Evaluation ns $ Error e
+                Evaluation ns (Value v) -> liftM2 prependNotifications (runEvaluation $ f v) (pure ns)
 
 instance MonadIO m => MonadIO (EvaluationT m) where
   liftIO = lift . liftIO
 
--- | Satisifying:
--- * Monoid
---     mplus mzero a = a
---     mplus a mzero = a
---     mplus (mplus a b) c = mplus a (mplus b c)
--- * Left Zero
---     mzero >>= k = mzero
--- * Left Distribution
---     mplus a b >>= k = mplus (a >>= k) (b >>= k)
 instance Monad m => MonadPlus (EvaluationT m) where
     mzero = mempty
     mplus = (<>)
@@ -60,15 +50,19 @@ instance Monad m => Monoid (EvaluationT m a) where
     mempty = EvaluationT $ pure mempty
     mappend x y = EvaluationT $ liftM2 (<>) (runEvaluation x) (runEvaluation y)
 
--- Maybe add error strings Notifications list also?
--- Currently we throw this information away,
--- perhaps it should be preserved in the Alternative context?
 instance Monad m => Alternative (EvaluationT m) where
     empty = mempty
     (<|>) x y = EvaluationT $ liftM2 (<|>) (runEvaluation x)(runEvaluation y)
 
-impure :: IO a -> ImpureEvaluation a
+instance Monad m => Logger (EvaluationT m) a where
+  info = state . info
+  warn = state . warn
+           
+impure :: IO a -> EvaluationT IO a
 impure = liftIO
 
-trans :: Evaluation a -> EvaluationT IO a
-trans = EvaluationT . pure 
+state :: Monad m => Evaluation a -> EvaluationT m a
+state = EvaluationT . pure 
+
+showRun :: Show a => EvaluationT IO a -> IO ()
+showRun = join . fmap print . runEvaluation

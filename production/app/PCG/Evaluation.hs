@@ -3,23 +3,32 @@ module PCG.Evaluation
   ( EvaluationT()
   , Evaluation()
   , EvalUnit()
-  , ImpureEvaluation
+  , SearchState
   , Alternative(..)
   , Monoid(..)
   , (<>)
   , (<!>)
   , (<?>)
-  , impure
+  , evalEither
+  , evalIO
   , info
   , notifications
   , runEvaluation
-  , trans
+  , state
+  , showRun
   , warn
   ) where
 
 import Control.Applicative (Alternative(..))
-import Data.Monoid         (Monoid(..),(<>))
+import Data.Monoid         ((<>))
 
 import PCG.Evaluation.Internal
 import PCG.Evaluation.Trans
 import PCG.Evaluation.Unit
+
+evalIO :: IO a -> EvaluationT IO a
+evalIO = impure
+
+evalEither :: Show a => Either a b -> Evaluation b
+evalEither (Left  e) = fail $ show e
+evalEither (Right x) = pure x

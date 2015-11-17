@@ -1,41 +1,37 @@
-module PCG.Script.Parser
-    ( parseScript
-    , parseCommand
-    ) where
+{-# LANGUAGE FlexibleContexts #-}
+module PCG.Script.Parser where
 
-import Data.Char             (toUpper)
-import Data.Int              (Int64)
-import Data.Maybe            (fromJust)
-import Data.Time.Clock       (DiffTime,secondsToDiffTime)
-import Text.Parsec           (Parsec)
-import Text.Parsec.Char
-import Text.ParserCombinators.Parsec
+import Data.Char              (toLower)
+import Data.Maybe             (fromJust)
+import Data.Time.Clock        (secondsToDiffTime)
+import Text.Megaparsec
+import Text.Megaparsec.Custom
+import Text.Megaparsec.Prim   (MonadParsec)
+import Text.Megaparsec.Lexer  (float,integer,signed)
+
 import PCG.Script.Types
 
-parseScript :: String -> Either ParseError Script
-parseScript = parse scriptDefinition "POY Script"
+scriptStreamParser :: MonadParsec s m Char => m Script
+scriptStreamParser = scriptDefinition
 
-parseCommand :: String -> Either ParseError DubiousCommand
-parseCommand = parse commandDefinition "!"
+scriptDefinition :: MonadParsec s m Char => m Script
+scriptDefinition = Script <$> (trimmed (some commandDefinition) <* eof)
 
-scriptDefinition :: Parsec String u Script
-scriptDefinition = Script <$> (trimmed (many1 commandDefinition) <* eof)
-
-commandDefinition :: Parsec String u DubiousCommand
+commandDefinition :: MonadParsec s m Char => m DubiousCommand
 commandDefinition = do
   _         <- whitespace
   lident    <- lidentDefinition
   arguments <- argumentListDefinition
   return $ DubiousCommand lident arguments
 
-lidentDefinition :: Parsec String u Lident
+lidentDefinition :: MonadParsec s m Char => m Lident
 lidentDefinition = try $ Lident <$> symbol lident
   where
     lident         = leadingChar <:> many followingChars
-    leadingChar    = char '_' <|> lower
-    followingChars = char '_' <|> alphaNum
+    leadingChar    = char '_' <|> lowerChar
+    followingChars = char '_' <|> alphaNumChar
 
-argumentDefinition :: Parsec String u Argument
+argumentDefinition :: MonadParsec s m Char => m Argument
 argumentDefinition =
       try (PrimativeArg <$> primativeDefinition)
   <|> try (CommandArg   <$> commandDefinition)
@@ -49,40 +45,30 @@ argumentDefinition =
       argument <- argumentDefinition
       return $ LidentNamedArg lident argument
 
-argumentListDefinition :: Parsec String u [Argument]
+argumentListDefinition :: MonadParsec s m Char => m [Argument]
 argumentListDefinition = 
      symbol (char '(') 
   *> argumentDefinition `sepBy` trimmed (char ',')
   <* symbol (char ')')
 
-primativeDefinition :: Parsec String u Primative
+primativeDefinition :: MonadParsec s m Char => m Primative
 primativeDefinition = symbol $
       try  timeValue'
-  <|> try (RealNum   . read <$> (try exponential <|> decimal))
-  <|> try (WholeNum  . read <$> integer)
-  <|> try (bitValue'        <$> bitValue)
-  <|> try (TextValue        <$> textValue)
+  <|> try (RealNum   <$> signed space float)
+  <|> try (WholeNum . fromIntegral <$> signed space integer)
+  <|> try (BitValue  <$> bitValue)
+  <|> try (TextValue <$> textValue)
   where 
-    plus        = char '+' *> number
-    minus       = char '-' <:> number
-    number      = many1 digit
-    integer     = plus <|> minus <|> number
-    exponential = (decimal <|> number) <++> (oneOf "eE" <:> integer)
-    decimal     = integer <++> (char '.' <:> number)
-    bitValue    = try (oneOf "tT" <:> string "rue") <|> try (oneOf "fF" <:> string "alse")
-    bitValue'   = BitValue . read . format
-      where
-        format     [] = []
-        format (x:xs) = toUpper x : xs
+    bitValue    = ((=="true") . fmap toLower) <$> (try (string' "true") <|> try (string' "false"))
     timeValue'  = do
-        days    <- number 
+        days    <- integer
         _       <- char ':'
-        hours   <- number 
+        hours   <- integer
         _       <- char ':'
-        minutes <- number
-        let totalSeconds = read days    * 60 * 60 * 24
-                         + read hours   * 60 * 60
-                         + read minutes * 60 
+        minutes <- integer
+        let totalSeconds = days    * 60 * 60 * 24
+                         + hours   * 60 * 60
+                         + minutes * 60 
         pure . TimeSpan $ secondsToDiffTime totalSeconds
     textValue   = char '"' *> many (escaped <|> nonEscaped) <* char '"'
     nonEscaped  = noneOf "\\\""
@@ -105,28 +91,11 @@ primativeDefinition = symbol $
                   ]
 
 -- Other combinators
-(<++>) :: Applicative f => f [a] -> f [a] -> f [a]
-(<++>) a b = (++) <$> a <*> b
-
-(<:>) :: Applicative f => f a -> f [a] -> f [a]
-(<:>) a b = (:)  <$> a <*> b
-
-trimmed :: Parsec String u a -> Parsec String u a
+trimmed :: MonadParsec s m Char => m a -> m a
 trimmed x = whitespace *> x <* whitespace
 
-symbol  :: Parsec String u a -> Parsec String u a
+symbol  :: MonadParsec s m Char => m a -> m a
 symbol  x = x <* whitespace
 
---whitespace = spaces
-whitespace = try commentDefinition <|> spaces
-  where
-    commentDefinition :: Parsec String u ()
-    --commentDefinition = string "(*" *> manyTill anyChar (try $ string "*)")
-    --commentDefinition = between (string "(*") (try $ string "*)") $ skipMany anyChar
-    commentDefinition = spaces *> string "(*" *> manyTill (noneOf "*") (char '*') <* char ')' <* spaces >>= \_ -> pure ()
-        
-
--- Currently unused
---liftReadS :: ReadS a -> String -> Parser a
---liftReadS reader = maybe (unexpected "no parse") (return . fst) .
---                 listToMaybe . filter (null . snd) . reader
+whitespace :: MonadParsec s m Char => m ()
+whitespace = try (comment (string "(*") (string "*)") >> pure ()) <|> space
