@@ -13,7 +13,9 @@ import Test.Custom                (parseEquals,parseFailure,parseSuccess)
 import Test.Tasty                 (TestTree,testGroup)
 import Test.Tasty.HUnit
 import Test.Tasty.QuickCheck
-import Text.Megaparsec            (eof,parse)
+import Text.Megaparsec            (char,eof,parse)
+
+import Debug.Trace (trace)
 
 testSuite :: TestTree
 testSuite = testGroup "Nexus Format"
@@ -81,32 +83,57 @@ quotedStringDefinition' = testGroup "quotedStringDefinition" [generalProperty, m
             str = key ++ "=\"" ++ val ++ "\""
 
 ignoredSubBlockDef' :: TestTree
-ignoredSubBlockDef' = testGroup "ignoredSubBlockDef" [endTest {-, semicolonTest, argumentTest-}]
+ignoredSubBlockDef' = testGroup "ignoredSubBlockDef" [endTest, sendTest, semicolonTest, argumentTest]
     where
-        endTest = testProperty "Block ends with \"end;\"" f
+        endTest = testProperty "END;" f
+            where
+                f :: Bool
+                f = isLeft $ parse (ignoredSubBlockDef ';' <* eof) "" "end;"
+        sendTest = testProperty "Some word that ends with \"end;\"" f
             where
                 f :: NonEmptyList AsciiAlphaNum -> Bool
-                f x = parse (ignoredSubBlockDef ';' <* eof) "" inp == Right x'
+                f x = parse (ignoredSubBlockDef ';' <* char ';' <* eof) "" inp == Right res
                     where
                         x' = (getAsciiAlphaNum <$> getNonEmpty x)
-                        inp = x' ++ " end;"
+                        res = x' ++ "end"
+                        inp = res ++ ";"
+        semicolonTest = testProperty "Block ends with \";\"" f
+            where
+                f :: NonEmptyList AsciiAlphaNum -> Bool
+                f x = parse (ignoredSubBlockDef ';' <* char ';' <* eof) "" inp == Right x'
+                    where
+                        x' = (getAsciiAlphaNum <$> getNonEmpty x)
+                        inp = x' ++ ";"
+        argumentTest = testProperty "Block ends with a passed character" f
+            where
+                f :: (NonEmptyList AsciiAlphaNum, AsciiNonAlphaNum) -> Bool
+                f (x,y) = parse (ignoredSubBlockDef arg <* char arg <* eof) "" inp == Right x'
+                    where
+                        arg = getAsciiNonAlphaNum y
+                        x' = (getAsciiAlphaNum <$> getNonEmpty x)
+                        inp = x' ++ [arg]
 
 newtype AsciiAlphaNum = AsciiAlphaNum Char deriving (Eq)
+
+newtype AsciiNonAlphaNum = AsciiNonAlphaNum Char deriving (Eq)
 
 getAsciiAlphaNum (AsciiAlphaNum c) = c
 nonSpaceChars = fmap AsciiAlphaNum . filter isAlphaNum $ chr <$> [0..128]
 
---createStringList :: [AsciiAlphaNum] -> ([[AsciiAlphaNum]], [AsciiAlphaNum])
---createStringList ys = (vals, valLst)
---    where
---        vals = 
---        valLst = fmap AsciiAlphaNum . foldr (\x acc -> x ++ (sublistOf " \t\n\r")  acc) [] ys
+getAsciiNonAlphaNum (AsciiNonAlphaNum c) = c
+nonAlphaNumChars = fmap AsciiNonAlphaNum . filter (not . isAlphaNum) $ chr <$> [0..128]
 
 instance Arbitrary AsciiAlphaNum where
   arbitrary = elements nonSpaceChars
 
 instance Show AsciiAlphaNum where
   show (AsciiAlphaNum c) = show c
+
+instance Arbitrary AsciiNonAlphaNum where
+  arbitrary = elements nonAlphaNumChars
+
+instance Show AsciiNonAlphaNum where
+  show (AsciiNonAlphaNum c) = show c
 
 newtype NexusKeyword = NexusKeyword String deriving (Eq)
 

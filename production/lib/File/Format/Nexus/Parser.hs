@@ -705,19 +705,14 @@ matrixDefinition = do
     _         <- symbol $ char ';'
     pure goodStuff
 
--- | ignoredSubBlockDef takes any string that terminates with "end;", ";", or
--- the passed end character. It returns that string up to but 
--- not including whatever the termination string is
+-- | ignoredSubBlockDef takes any string that terminates with 
+-- the passed end character (or a semicolon). It returns that string up to, but 
+-- not including, whatever the terminating char is. Also fails if the input is "end;"
 ignoredSubBlockDef :: MonadParsec s m Char => Char -> m String
 ignoredSubBlockDef endChar = do
-    title <- anyTill (symbol (string' "end;")
-                      <|> symbol (string ";")
-                      <|> symbol (string' [endChar])
-                     )
-    _     <- symbol $ char endChar -- didn't think I needed this,
-                                   -- but otherwise I get
-                                   -- "many applied to parser that accepts empty string"
-    pure title
+    _ <- notFollowedBy (space *> string' "end;")
+    anyTill (symbol (string ";")
+             <|> symbol (string' [endChar]))
 
 -- -------------------------------------------------------------------------------------------------
 -- | Partitioning functions, which take a list of some type and produce a tuple.
