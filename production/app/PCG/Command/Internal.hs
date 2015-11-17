@@ -1,14 +1,9 @@
 module PCG.Command.Internal where
 
-import Data.Char             (toLower)
-import Data.Either           (partitionEithers)
-import Data.Int              (Int64)
-import Data.Map              (Map,fromList,lookup)
-import Data.Maybe            (fromJust)
-import Data.Time.Clock       (DiffTime,secondsToDiffTime)
-import Prelude hiding (lookup)
+import Data.Int        (Int64)
+import Data.Time.Clock (DiffTime)
+import Prelude hiding  (lookup)
 
-import PCG.Command.Types
 import PCG.Script.Types
 
 partitionArguments :: [Argument] -> ([Primative], [Lident], [(Lident,Argument)], [DubiousCommand], [[Argument]])
