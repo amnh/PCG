@@ -613,7 +613,7 @@ charFormatFieldDef = do
         pure block'
     where
         block =  (CharDT <$> try (stringDefinition "datatype"))
-             <|> (SymStr <$> try (quotedStringDefinition "symbols"))
+             {- <|> (SymStr <$> try (quotedStringDefinition "symbols"))
              <|> (Transpose <$> try (booleanDefinition "transpose"))
              <|> (Interleave <$> try (booleanDefinition "interleave"))
              <|> (Tokens <$> try (booleanDefinition "tokens"))
@@ -624,7 +624,7 @@ charFormatFieldDef = do
              <|> (Items <$> try (stringDefinition "items"))
              <|> (RespectCase <$> try (booleanDefinition "respectcase"))
              <|> (Unlabeled <$> try (booleanDefinition "nolabels"))
-             <|> (IgnFF <$> try (ignoredSubBlockDef ' '))
+             -- <|> (IgnFF <$> try (ignoredSubBlockDef ' ')) -}
 
 treeFieldDef :: MonadParsec s m Char => m TreeField
 treeFieldDef = do

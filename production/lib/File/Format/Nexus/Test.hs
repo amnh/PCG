@@ -33,7 +33,7 @@ booleanDefinition' = testGroup "booleanDefinition" [generalProperty]
            || parse (booleanDefinition x <* eof) "" x == Right True
 
 stringDefinition' :: TestTree
-stringDefinition' = testGroup "stringDefinition" [generalProperty, rejectsKeywords]
+stringDefinition' = testGroup "stringDefinition" [generalProperty, withSpace, rejectsKeywords]
   where
     generalProperty = testProperty "General string definition: key=value, capture value" f
       where
@@ -43,6 +43,15 @@ stringDefinition' = testGroup "stringDefinition" [generalProperty, rejectsKeywor
             key = getAsciiAlphaNum <$> getNonEmpty x
             val = getAsciiAlphaNum <$> getNonEmpty y
             str = key ++ "=" ++ val
+    withSpace = testProperty "With 1 or more space characters after the =" f
+      where
+        f :: (NonEmptyList AsciiAlphaNum, NonEmptyList AsciiAlphaNum, NonEmptyList Whitespace) -> Bool
+        f (x,y,z) = parse (stringDefinition key <* eof) "" str == Right val
+          where
+            key = getAsciiAlphaNum  <$> getNonEmpty x
+            val = getAsciiAlphaNum  <$> getNonEmpty y
+            spc = getWhitespaceChar <$> getNonEmpty z
+            str = key ++ "=" ++ spc ++ val
     rejectsKeywords = testProperty "Rejects Keywords" f
       where
         f :: (NonEmptyList AsciiAlphaNum, NexusKeyword) -> Bool
@@ -53,18 +62,19 @@ stringDefinition' = testGroup "stringDefinition" [generalProperty, rejectsKeywor
             str = key ++ "=" ++ val
 
 quotedStringDefinition' :: TestTree
-quotedStringDefinition' = testGroup "quotedStringDefinition" [generalProperty, missingCloseQuote, rejectsKeywords]
+quotedStringDefinition' = testGroup "quotedStringDefinition" [generalProperty, missingCloseQuote, rejectsKeywords, withSpace]
   where
+    badChars = "[;\""
     generalProperty = testProperty "General quoted string definition: key=\"space delimited values\", capture values" f
       where
         f :: (NonEmptyList AsciiAlphaNum, NonEmptyList Char) -> Bool
         f (x,y) = null res || parse (quotedStringDefinition key <* eof) "" str == Right (Right res)
           where
             key = getAsciiAlphaNum <$> getNonEmpty x
-            val = filter (`notElem` bad) $ getNonEmpty y
+            val = filter (`notElem` badChars) $ getNonEmpty y
             res = words val
             str = key ++ "=\"" ++ val ++ "\""
-            bad = "[;\""
+            
     missingCloseQuote = testProperty "Missing close quote" f
       where
         f :: (NonEmptyList AsciiAlphaNum, NonEmptyList AsciiAlphaNum) -> Bool
@@ -81,6 +91,16 @@ quotedStringDefinition' = testGroup "quotedStringDefinition" [generalProperty, m
             key = getAsciiAlphaNum <$> getNonEmpty x
             val = getNexusKeyword y
             str = key ++ "=\"" ++ val ++ "\""
+    withSpace = testProperty "With 1 or more space characters after the =" f
+      where
+        f :: (NonEmptyList AsciiAlphaNum, NonEmptyList Char, NonEmptyList Whitespace) -> Bool
+        f (x,y,z) = null res || parse (quotedStringDefinition key <* eof) "" str == Right (Right res)
+          where
+            key = getAsciiAlphaNum  <$> getNonEmpty x
+            val = filter (`notElem` badChars) $ getNonEmpty y
+            res = words val
+            spc = getWhitespaceChar <$> getNonEmpty z
+            str = key ++ "=" ++ spc ++ "\"" ++ val ++ "\""
 
 ignoredSubBlockDef' :: TestTree
 ignoredSubBlockDef' = testGroup "ignoredSubBlockDef" [endTest, sendTest, semicolonTest, argumentTest]
@@ -113,15 +133,25 @@ ignoredSubBlockDef' = testGroup "ignoredSubBlockDef" [endTest, sendTest, semicol
                         x' = (getAsciiAlphaNum <$> getNonEmpty x)
                         inp = x' ++ [arg]
 
-newtype AsciiAlphaNum = AsciiAlphaNum Char deriving (Eq)
 
-newtype AsciiNonAlphaNum = AsciiNonAlphaNum Char deriving (Eq)
+charFormatFieldDef' :: TestTree
+charFormatFieldDef' = testGroup "charFormatFieldDef" [charDT]
+    where
+      charDT = undefined --testGroup "Valid CharDT strings" $ success <$> valid CharDT 
+      --success str = testCase (show str) $ parseSuccess (charFormatFieldDef <* eof) str
 
-getAsciiAlphaNum (AsciiAlphaNum c) = c
+
+newtype AsciiAlphaNum = AsciiAlphaNum { getAsciiAlphaNum :: Char } deriving (Eq)
+
+newtype AsciiNonAlphaNum = AsciiNonAlphaNum { getAsciiNonAlphaNum :: Char } deriving (Eq)
+
+newtype Whitespace = Whitespace { getWhitespaceChar :: Char } deriving (Eq)
+
 nonSpaceChars = fmap AsciiAlphaNum . filter isAlphaNum $ chr <$> [0..128]
 
-getAsciiNonAlphaNum (AsciiNonAlphaNum c) = c
 nonAlphaNumChars = fmap AsciiNonAlphaNum . filter (not . isAlphaNum) $ chr <$> [0..128]
+
+whitespaceChars = fmap Whitespace " \t\n\r\f\v"
 
 instance Arbitrary AsciiAlphaNum where
   arbitrary = elements nonSpaceChars
@@ -134,6 +164,12 @@ instance Arbitrary AsciiNonAlphaNum where
 
 instance Show AsciiNonAlphaNum where
   show (AsciiNonAlphaNum c) = show c
+
+instance Arbitrary Whitespace where
+  arbitrary = elements whitespaceChars
+
+instance Show Whitespace where
+  show (Whitespace c) = show c
 
 newtype NexusKeyword = NexusKeyword String deriving (Eq)
 
