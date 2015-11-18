@@ -2,9 +2,8 @@
 
 module IATests (main) where
 
-import Prelude
-import Data.Vector hiding ((++), length, foldr, null)
-import qualified Data.Vector as V ((++))
+import Data.Vector hiding ((++), length, foldr, null, zipWith, and, head, foldr)
+import qualified Data.Vector as V ((++), zipWith, and, head, length, foldr)
 import qualified Component as PN
 import Data.List (intersect)
 import CharacterData (BaseChar)
@@ -13,46 +12,20 @@ import Test.Tasty
 import Test.Tasty.HUnit
 import Test.Tasty.QuickCheck
 import ImpliedAlign
-import Data.Matrix hiding (fromList)
+import Data.Matrix hiding (fromList, trace)
 import CharacterData (CharacterSetList)
+import Debug.Trace
+import ReadFiles
+import Data.Bits
 
 testTreeLen = 100
 
 main :: IO()
-main = defaultMain subtreeVerify
-
--- | Unit tests on small functions
---smallTests :: Test
---smallTests = testGroup "Tests of all small functions" []
+main = defaultMain (testGroup "Tests of Implied Alignment" [subtreeVerify, iaVerify, simpleUnit])
 
 subtreeVerify :: TestTree
-subtreeVerify = testGroup "Check correct generation of subtrees" [compareKnown, compareList, subLength, correctOnes]
+subtreeVerify = testGroup "Check correct generation of subtrees" [subLength, correctOnes]
     where
-        compareKnown = testProperty "Returns a tree of correct length" checkTree
-            where
-                checkTree :: SimpleTree -> Bool
-                checkTree (Leaf) = True
-                checkTree (Node _ _) = True 
-        compareList = testProperty "Nonzero length" checkList
-            where
-                checkList :: IndexTree -> Bool
-                checkList tree = not $ null tree
-        --    where
-        --        getCost :: PN.PhyloComponent -> PackedTree -> BitPackedNode -> Bool
-        --        getCost tree packedTree mask = (length cost) == 1
-        --            where 
-        --                redonePack = reindex tree packedTree
-        --                numChars = (length $ redonePack ! 0) `div` 4
-        --                info = PackedInfo empty empty empty mempty "ACGT-" numChars empty (mask, mask)
-        --                mode = PackMode 16 False
-        --                cost = costForest [tree] (redonePack, info, mode) 1.0
-
-        --                reindex :: PN.PhyloComponent -> PackedTree -> PackedTree
-        --                reindex tree pack =
-        --                    let 
-        --                        numLeaves = foldr (\node acc -> if isTerminal node then acc + 1 else acc) 0 tree
-        --                        pickRows = take numLeaves pack
-        --                        out = zipWith (\node row -> if isTerminal node then row else empty) tree pack
 
         subLength = testProperty "Subtrees return matrix of correct length" subLen
             where
@@ -65,14 +38,75 @@ subtreeVerify = testGroup "Check correct generation of subtrees" [compareKnown, 
                 subContent tree = 
                     let 
                         n = length tree
-                        matrix = subtreeWrap tree
-                    in trace ("matrix "++ show matrix) (foldr (+) 0 matrix == (2 * (n-1)) - 2)
-    
+                        numOnes = foldr (+) 0 (subtreeWrap tree)
+                    in --trace ("Actual number of ones " ++ show numOnes ++ " with n " ++ show n) 
+                        ((numOnes == (2 * n) - 4) || numOnes == 0)
+
+iaVerify :: TestTree
+iaVerify = testGroup "Check properties of implied alignment" [mergeLength, conserveProperties, conserveSize, seqLensIncrease]
+    where
+        mergeLength = testProperty "Merged subtrees have correct length" checkMerge
+        conserveProperties = testProperty "Other properties are conserved before and after alignment" checkExternal
+        conserveSize = testProperty "Number of nodes is conserved" checkSize
+        seqLensIncrease = testProperty "Sequence lengths are the same or longer" checkSeqs
+        standardInfo = CharInfo GenSeq False 1.0 [] "hi" 5 ["A","C", "G", "T", "-"] 0.0
+
+        checkMerge :: PN.PhyloComponent -> PN.PhyloComponent -> Bool
+        checkMerge tree1 tree2 = 
+            let node = V.head tree1
+            in (V.length $ mergeSubtree tree1 tree2 node) == (V.length tree1) + (V.length tree2) + 1
+
+        checkExternal :: PN.PhyloComponent -> Bool
+        checkExternal tree = 
+            let 
+                ia = implyMain standardInfo tree
+                matches = V.zipWith matchProperties ia tree
+            in --trace ("matches " ++ show matches ++ " with nodes " ++ show ia ++ show tree)
+                V.and matches
+        checkSize :: PN.PhyloComponent -> Bool
+        checkSize tree = 
+            let ia = implyMain standardInfo tree
+            in V.length ia == V.length tree
+
+        checkSeqs :: PN.PhyloComponent -> Bool
+        checkSeqs tree = 
+            let 
+                ia = implyMain standardInfo tree
+                matchLens = V.zipWith matchLengths ia tree
+            in V.and matchLens
+
+
+        matchProperties :: PN.PhyloNode -> PN.PhyloNode -> Bool
+        matchProperties n1 n2 = PN.code n1 == PN.code n2 && PN.nodeName n1 == PN.nodeName n2 && PN.isTerminal n1 == PN.isTerminal n2
+                                    && PN.isRoot n1 == PN.isRoot n2 && PN.isTreeNode n1 == PN.isTreeNode n2 
+                                    && PN.children n1 == PN.children n2 && PN.parents n1 == PN.parents n2 
+                                    && PN.localCost n1 == PN.localCost n2 && PN.totalCost n1 == PN.totalCost n2
+
+        matchLengths :: PN.PhyloNode -> PN.PhyloNode -> Bool
+        matchLengths n1 n2 = (getPop $ PN.preliminaryGapped n2) >= (getPop $ PN.preliminaryGapped n1) 
+                                && (getPop $ PN.alignLeft n2) >= (getPop $ PN.alignLeft n1)
+                                && (getPop $ PN.alignRight n2) >= (getPop $ PN.alignRight n1)
+            where
+                getPop :: Vector Int64 -> Int
+                getPop = V.foldr (\i acc -> acc + popCount i) 0
+
+simpleUnit :: TestTree
+simpleUnit = testGroup "Check implied alignment on a simple tree dataset" [simpleIA]
+    where
+        standardInfo = CharInfo GenSeq False 1.0 [] "hi" 5 ["A","C", "G", "T", "-"] 0.0
+        standardNode = PN.PhyloNode 0 "stop" False False False [] [] [] (singleton 0.0) (singleton 0.0) empty empty empty
+        simpleTree = fromList [standardNode {PN.isRoot = True, PN.children = [1,2], PN.preliminaryGapped = fromList [8, 1], PN.alignLeft = fromList [1, 2, 4], PN.alignRight = fromList [8], PN.preliminaryStates = [fromList [8, 1]]}
+                        , standardNode {PN.isTerminal = True, PN.preliminaryGapped = fromList [1, 2, 4], PN.code = 1, PN.parents = [0], PN.preliminaryStates = [fromList [1, 2, 4]]}
+                        , standardNode {PN.isTerminal = True, PN.preliminaryGapped = fromList [8], PN.code = 2, PN.parents = [0], PN.preliminaryStates = [fromList [8]]}]
+        resultTree = fromList [standardNode {PN.isRoot = True, PN.children = [1,2], PN.preliminaryGapped = fromList [8, 1, 16, 16], PN.alignLeft = fromList [16, 1, 2, 4], PN.alignRight = fromList [8, 16, 16, 16], PN.preliminaryStates = [fromList [8, 1]]}
+                        , standardNode {PN.isTerminal = True, PN.preliminaryGapped = fromList [16, 1, 2, 4], PN.code = 1, PN.parents = [0], PN.preliminaryStates = [fromList [1, 2, 4]]}
+                        , standardNode {PN.isTerminal = True, PN.preliminaryGapped = fromList [8, 16, 16, 16], PN.code = 2, PN.parents = [0], PN.preliminaryStates = [fromList [8]]}]
+        simpleIA = testCase "Simple tree check" (assertEqual "Three-node tree behaves as expected" resultTree (implyMain standardInfo simpleTree))
 
 instance Arbitrary BaseChar where
     arbitrary = fmap fromList $ listOf $ choose (0, maxBound :: Int64)
 
-    data BranchPhylo = PLeaf {code :: PN.NodeCode                --links to DataMatrix for terminal
+data BranchPhylo = PLeaf {code :: PN.NodeCode                --links to DataMatrix for terminal
                             , nodeName :: String            --fromNameList HTUcode for non-leaf, or Newick
                             , isTerminal :: Bool --removed in favor of checking for null and one children/parents
                             , isRoot :: Bool
@@ -112,7 +146,7 @@ instance Arbitrary BranchPhylo where
         alignRight <- arbitrary :: Gen BaseChar
         genCost <- fmap fromList $ listOf (arbitrary :: Gen Float)
         totalCost <- fmap fromList $ listOf (arbitrary :: Gen Float)
-        if terminate == 0 then return $ PLeaf 0 "hi" True False False [] [] mySeq genCost totalCost myGapped alignLeft alignRight
+        if terminate == 0 then return $ PLeaf 0 "hi" True False False [] [] mySeq genCost totalCost myGapped empty empty
             else return $ PNode 0 "hi" False False True [] [] mySeq genCost totalCost myGapped alignLeft alignRight leftTree rightTree
 
 instance Arbitrary PN.PhyloComponent where
