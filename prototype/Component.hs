@@ -102,7 +102,7 @@ data PhyloNode = PhyloNode  { code :: NodeCode                --links to DataMat
                             --, preliminaryBitState :: BitPackedNode
                             --, finalBitState :: BitPackedNode -- add update function to rectify packed and unpacked
                             --, impliedBitState :: BitPackedNode -- temporary bit node for implied alignment
-                            } deriving (Generic, Show, Read)
+                            } deriving (Generic, Show, Read, Eq)
 
 
 --data EdgeType = EdgeType {edgeLength, unionOfEndStates, startCode, endCode} -- format this for compile

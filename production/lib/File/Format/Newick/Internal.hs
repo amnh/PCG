@@ -35,7 +35,13 @@ data NewickNode
    { descendants  :: [NewickNode] --leaf nodes are empty lists
    , newickLabel  :: Maybe String --leaf nodes will always be Just
    , branchLength :: Maybe Double
-   } deriving (Show,Eq,Ord)
+   } deriving (Eq,Ord)
+
+instance Show NewickNode where
+  show (NewickNode d n b) = name ++ len ++ " " ++ show d 
+    where
+      name = maybe "Node" show n
+      len  = maybe "" (\x -> ':' : show x) b
 
 newickNode :: [NewickNode] -> Maybe String -> Maybe Double -> Maybe NewickNode
 newickNode nodes label length'

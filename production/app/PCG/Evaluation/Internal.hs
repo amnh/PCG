@@ -1,35 +1,40 @@
-{-# LANGUAGE DeriveFunctor #-}
+{-# LANGUAGE FlexibleInstances, MultiParamTypeClasses #-}
 module PCG.Evaluation.Internal where
 
 import Control.Applicative
-import Control.Monad             (MonadPlus(mzero, mplus), liftM2)
+import Control.Monad             (MonadPlus(mzero, mplus))
 --import Control.Monad.Fix         (MonadFix(mfix))
-import Control.Monad.IO.Class
-import Control.Monad.Trans.Class
+--import Control.Monad.IO.Class
+--import Control.Monad.Trans.Class
 --import Control.Monad.Trans.Except (ExceptT(..))
-import Data.DList                (DList,append,apply,singleton,toList)
+import Data.DList                (DList,append,singleton,toList)
 import qualified Data.DList as D (empty)
-import Data.Functor.Classes
 import Data.Monoid
+import Test.QuickCheck
 
 import PCG.Evaluation.Unit
 
 data Notification
    = Warning String
    | Information String
-   deriving (Show)
+   deriving (Eq,Show)
 
 data Evaluation a
    = Evaluation (DList Notification) (EvalUnit a)
+   deriving (Eq)
 
 notifications :: Evaluation a -> [Notification]
 notifications (Evaluation ms _) = toList ms
 
+instance Arbitrary a => Arbitrary (Evaluation a) where
+  arbitrary = oneof [pure mempty, pure $ fail "Error Description", pure <$> arbitrary]
+
+                                  
 instance Show a => Show (Evaluation a) where
-  show (Evaluation ms e) = unwords
+  show (Evaluation ms x) = unwords
                           [ "Evaluation"
                           , show $ toList ms
-                          , show e
+                          , show x
                           ]
 
 instance Functor Evaluation where
@@ -60,17 +65,31 @@ instance Monoid (Evaluation a) where
 -- perhaps it should be preserved in the Alternative context?
 instance Alternative Evaluation where
   empty = mempty
-  (<|>) v@(Evaluation ms (Value x)) _                     = v
-  (<|>) (Evaluation ms e)           (Evaluation ns NoOp) = Evaluation (ms `append` ns) e
-  (<|>) (Evaluation ms _)           (Evaluation ns e   ) = Evaluation (ms `append` ns) e
+  (<|>) v@(Evaluation _ (Value _)) _                     = v
+  (<|>) (Evaluation ms e)          (Evaluation ns NoOp) = Evaluation (ms `append` ns) e
+  (<|>) (Evaluation ms _)          (Evaluation ns e   ) = Evaluation (ms `append` ns) e
 
-(<!>), (<?>) :: Evaluation a -> String -> Evaluation a
-c <!> s = c <> (warn s)
-c <?> s = c <> (info s)
+{-|
+Typeclass Laws:
 
-info, warn :: String -> Evaluation a
-info s = Evaluation (singleton $ Information s) mempty
-warn s = Evaluation (singleton $ Warning     s) mempty
+Failure nullification:
+  fail x >> info y === fail x
+  fail x >> warn y === fail x
+
+Assocativity:
+  info x >> (info y >> info z) === (info x >> info y) >> info z
+  warn x >> (warn y >> warn z) === (warn x >> warn y) >> warn z
+
+-}
+class Monad m => Logger m a where
+  info, warn   :: String -> m a
+  (<?>), (<!>) :: m a -> String -> m a
+  (<?>) x s = x >> (info s)
+  (<!>) x s = x >> (warn s)
+
+instance Logger Evaluation a where
+  info s = Evaluation (singleton $ Information s) mempty
+  warn s = Evaluation (singleton $ Warning     s) mempty
 
 prependNotifications :: Evaluation a -> DList Notification -> Evaluation a
 prependNotifications e@(Evaluation _  (Error _)) _  = e

@@ -1,15 +1,18 @@
 module PCG.Evaluation.Unit where
 
 import Control.Applicative
-import Control.Monad (MonadPlus(mzero, mplus), liftM2, ap)
-import Control.Monad.Fix (MonadFix(mfix))
+import Control.Monad (MonadPlus(mzero, mplus))
 import Data.Monoid
+import Test.QuickCheck
 
 data EvalUnit a
    = NoOp
-   | Error String
+   | Error String 
    | Value a
    deriving (Eq,Show)
+
+instance Arbitrary a => Arbitrary (EvalUnit a) where
+    arbitrary = oneof [pure mempty, pure $ fail "Error Description", pure <$> arbitrary]
 
 instance Functor EvalUnit where
   _ `fmap` NoOp    = NoOp
@@ -27,8 +30,8 @@ instance Monad EvalUnit where
   fail   = Error
   Error x >>  _ = Error x
   _       >>  e = e
-  NoOp    >>= f = NoOp
-  Error x >>= f = Error x
+  NoOp    >>= _ = NoOp
+  Error x >>= _ = Error x
   Value x >>= f = f x
 
 instance MonadPlus EvalUnit where

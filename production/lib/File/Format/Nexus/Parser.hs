@@ -640,20 +640,16 @@ treeFieldDef = do
 -- and returns True if it succeeds in matching. The semicolon is not captured by this fn.
 -- A test exists in the test suite.
 booleanDefinition :: MonadParsec s m Char => String -> m Bool
-booleanDefinition blockTitle = do
-    title <- symbol (string' blockTitle)
-    -- _     <- symbol $ char ';'
-    pure $ ((map toUpper title) == (map toUpper blockTitle))
+booleanDefinition blockTitle = symbol (string' blockTitle) *> pure True
 
 -- | stringDefinition takes a string of format TITLE=value;
 -- and returns the value. The semicolon is not captured by this fn.
 -- A test exists in the test suite.
 stringDefinition :: MonadParsec s m Char => String -> m String
 stringDefinition blockTitle = do
-    _     <- symbol (string' blockTitle)
+    _     <- symbol $ string' blockTitle
     _     <- symbol $ char '='
     value <- symbol $ notKeywordWord ""
-    -- _     <- symbol $ char ';'
     pure $ value
 
 -- | quotedStringDefinition takes a string of format TITLE="value1 value2 ...";
@@ -661,7 +657,6 @@ stringDefinition blockTitle = do
 -- The semicolon is not captured by this fn.
 -- Fails gracefully if the close quote is missing.
 -- A test exists in the test suite.
--- TODO?: This doesn't work if they leave off the opening quote mark.
 quotedStringDefinition :: MonadParsec s m Char => String -> m (Either String [String])
 quotedStringDefinition blockTitle = do
     _     <- symbol (string' blockTitle)
@@ -830,5 +825,10 @@ notKeywordWord avoidChars = do
     else nextWord
   where
     nextWord = some$ try $ satisfy (\x -> (not $ elem x (';' : avoidChars)) && (not $ isSpace x))
+<<<<<<< HEAD
+
+nexusKeywords = S.fromList ["ancstates", "assumptions", "begin", "changeset", "characters", "charlabels", "charpartition", "charset", "charstatelabels", "codeorder", "codeset", "codons", "data", "datatype", "deftype", "diagonal", "dimensions", "distances", "eliminate", "end", "equate", "exset", "extensions", "format", "gap", "interleave", "items", "labels", "matchchar", "matrix", "missing", "nchar", "newtaxa", "nodiagonal", "nolabels", "notes", "notokens", "ntax", "options", "picture", "respectcase", "sets", "statelabels", "statesformat", "symbols", "taxa", "taxlabels", "taxpartition", "taxset", "text", "tokens", "translate", "transpose", "tree", "treepartition", "trees", "treeset", "triangle", "typeset", "unaligned", "usertype", "wtset"]
+=======
     
+>>>>>>> 6882b22354039831d7959d4ee1a6e35044facf1d
 

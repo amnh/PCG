@@ -1,7 +1,6 @@
 module PCG.Script
   ( module PCG.Script.Types
-  , parseScript
-  , parseCommand
+  , scriptStreamParser
   ) where
 
 import PCG.Script.Parser

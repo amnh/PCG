@@ -5,8 +5,12 @@ module TestSuite.ExecutableTests
 
 import Test.Tasty
 
+import qualified PCG.Evaluation.Test as Evaluation (testSuite)
+
 main :: IO ()
 main = defaultMain testSuite
 
 testSuite :: TestTree
-testSuite = testGroup "Executable Test Suite" []
+testSuite = testGroup "Executable Test Suite"
+  [ Evaluation.testSuite
+  ]
