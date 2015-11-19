@@ -20,7 +20,7 @@ import Debug.Trace (trace)
 testSuite :: TestTree
 testSuite = testGroup "Nexus Format"
   [ testGroup "Nexus Combinators"
-      [booleanDefinition', stringDefinition', quotedStringDefinition', ignoredSubBlockDef']
+      [booleanDefinition', stringDefinition', quotedStringDefinition', ignoredSubBlockDef', notKeywordWord']
   ]
 
 booleanDefinition' :: TestTree
@@ -124,7 +124,7 @@ ignoredSubBlockDef' = testGroup "ignoredSubBlockDef" [endTest, sendTest, semicol
                     where
                         x' = (getAsciiAlphaNum <$> getNonEmpty x)
                         inp = x' ++ ";"
-        argumentTest = testProperty "Block ends with a passed character" f
+        argumentTest = testProperty "Block ends with a designated delimiter" f
             where
                 f :: (NonEmptyList AsciiAlphaNum, AsciiNonAlphaNum) -> Bool
                 f (x,y) = parse (ignoredSubBlockDef arg <* char arg <* eof) "" inp == Right x'
@@ -137,8 +137,41 @@ ignoredSubBlockDef' = testGroup "ignoredSubBlockDef" [endTest, sendTest, semicol
 charFormatFieldDef' :: TestTree
 charFormatFieldDef' = testGroup "charFormatFieldDef" [charDT]
     where
-      charDT = undefined --testGroup "Valid CharDT strings" $ success <$> valid CharDT 
+      charDT = undefined --testGroup "Valid CharDT strings" $ success <$> validCharDT 
       --success str = testCase (show str) $ parseSuccess (charFormatFieldDef <* eof) str
+
+notKeywordWord' :: TestTree
+notKeywordWord' = testGroup "notKeywordWord" [rejectsKeywords, semicolonTest, withSpace, argumentTest]
+  where
+    rejectsKeywords = testProperty "Rejects keywords" f
+      where
+        -- f :: (NonEmptyList AsciiAlphaNum, NexusKeyword) -> Bool
+        f x = isLeft $ parse (notKeywordWord "" <* eof) "" str
+          where
+            str = getNexusKeyword x
+    semicolonTest = testProperty "Block ends with \";\", no argument" f
+      where
+        f :: NonEmptyList AsciiAlphaNum -> Bool
+        f x = parse (notKeywordWord "" <* char ';' <* eof) "" inp == Right x'
+            where
+                x'  = getAsciiAlphaNum <$> getNonEmpty x
+                inp = x' ++ ";"
+    withSpace = testProperty "Input has spaces; return string to first space, no argument" f
+      where
+        f :: (NonEmptyList AsciiAlphaNum, Char) -> Bool
+        f (x,y) = parse (notKeywordWord "" <* char ' ' <* char y <* eof) "" str == Right x'
+          where
+            x'  = getAsciiAlphaNum <$> getNonEmpty x
+            str = x' ++ " " ++ [y]
+    argumentTest = testProperty "Input ends with a designated delimiter" f
+      where
+        f :: (NonEmptyList AsciiAlphaNum, NonEmptyList Char) -> Bool
+        f (x,y) = and $ fmap (\(anArg,inp) -> parse (notKeywordWord args <* char anArg <* eof) "" inp == Right x') inp'
+          where
+            x'   = getAsciiAlphaNum <$> getNonEmpty x
+            args = filter (`notElem` x') $ getNonEmpty y
+            inp' = [(n,m++[n]) | n <- args, m <- [x']]
+
 
 
 newtype AsciiAlphaNum = AsciiAlphaNum { getAsciiAlphaNum :: Char } deriving (Eq)
