@@ -124,10 +124,11 @@ data CharDataType = Standard | DNA | RNA | Nucleotide | Protein | Continuous der
 
 data Nexus
    = Nexus
-   { taxa :: [String]
-   , characters :: [M.Map String [[String]]]
+   -- TODO: taxa was commented out before first push to Grace
+   { {- taxa :: [String]
+   ,-} characters :: M.Map String (V.Vector [String])
    --, characters :: SequenceBlock
-   } deriving (Show)
+   } deriving (Read,Show)
 
 data SequenceBlock
    = SequenceBlock
@@ -184,7 +185,11 @@ validateParseResult :: MonadParsec s m Char => ParseResult -> m Nexus
 validateParseResult (ParseResult sequences taxas trees)
   | not (null independentErrors) = fails independentErrors
   | not (null dependentErrors)   = fails dependentErrors
-  | otherwise                  = pure $ Nexus taxaLst (alignedTaxaSeqMap ++ unalignedTaxaSeqMap)
+  -- TODO: first arg to Nexus was commented out before first push to Grace
+  -- TODO: unalignedTaxaSeqMap was commented out before first push to Grace.
+  -- When it's added back, downstream (i.e. Nexus) fns will need to be modified
+  -- to expect a *list* of 
+  | otherwise                  = pure $ Nexus {-taxaLst-} (alignedTaxaSeqMap {- : unalignedTaxaSeqMap -})
   where
         alignedTaxaSeqMap = getSeqFromMatrix (getBlock "aligned" sequences) taxaLst
         dependentErrors = catMaybes $ incorrectTaxaCount : (missingCloseQuotes ++ seqTaxaCountErrors ++ interleaveErrors ++ seqTaxonCountErrors ++ incorrectCharCount)
@@ -232,12 +237,12 @@ validateParseResult (ParseResult sequences taxas trees)
         --taxaFromSeqMatrix = foldr (\x acc -> (getTaxaFromMatrix x) ++ acc) [] sequences
         -- convertSeqs = ( concatSeqs . cleanSeqs sequences  -- convert each sequence, then
 
-checkSeqLength :: [PhyloSequence] -> [M.Map String [[String]]] -> [Maybe String]
+checkSeqLength :: [PhyloSequence] -> M.Map String (V.Vector [String]) -> [Maybe String]
 checkSeqLength [] _ = [Nothing]
 checkSeqLength seq seqMap =
     M.foldrWithKey (\key val acc -> (if (length val) == len
                                      then Nothing
-                                     else Just (key ++ "'s sequence is the wrong length in an aligned block.")) : acc) [] $ head seqMap
+                                     else Just (key ++ "'s sequence is the wrong length in an aligned block.")) : acc) [] $ seqMap
     where
         len = numChars $ head $ charDims $ head seq
 
@@ -291,8 +296,8 @@ getSymbols seq = eqs
               then symbols $ fromJust form
               else Right [""]
 
-splitSequence :: Bool -> Bool -> String -> [[String]]
-splitSequence isTokens isContinuous seq =
+splitSequence :: Bool -> Bool -> String -> V.Vector [String]
+splitSequence isTokens isContinuous seq = V.fromList $
     if isTokens || isContinuous
         then findAmbiguousTokens (words seq) [] False
         else findAmbiguousNoTokens (strip seq) [] False
@@ -417,10 +422,10 @@ getFormatInfo seq =
         seqForm = headMay $ format seq
 
 
-getSeqFromMatrix :: [PhyloSequence] -> [String] -> [M.Map String [[String]]]
-getSeqFromMatrix [] _ = []
+getSeqFromMatrix :: [PhyloSequence] -> [String] -> M.Map String (V.Vector [String])
+getSeqFromMatrix [] _ = mempty
 getSeqFromMatrix seqLst taxaLst =
-    [M.map (splitSequence tkns cont) matchCharsReplaced]
+    M.map (splitSequence tkns cont) matchCharsReplaced
     where
         seq' = head seqLst
         numTaxa = length taxaLst
@@ -542,12 +547,12 @@ nexusBlock = do
              <|> (CharacterBlock <$> try (characterBlockDefinition "data" True)) -- data blocks should be aligned
              <|> (TaxaBlock      <$> try taxaBlockDefinition)
              <|> (TreesBlock     <$> try treeBlockDefinition)
-             <|> (IgnoredBlock   <$> try ignoredBlockDefinition)
+             -- <|> (IgnoredBlock   <$> try ignoredBlockDefinition)
 
 characterBlockDefinition :: MonadParsec s m Char => String -> Bool -> m PhyloSequence
 characterBlockDefinition which aligned = do
     _           <- symbol (string' $ which ++ ";")
-    (v,w,x,y,z) <- partitionSequenceBlock <$> (many seqSubBlock)
+    (v,w,x,y,z) <- partitionSequenceBlock <$> (some seqSubBlock)
     pure $ PhyloSequence aligned v w x y z
 
 taxaBlockDefinition :: MonadParsec s m Char => m TaxaSpecification
@@ -573,17 +578,14 @@ treeBlockDefinition = do
         pure $ TreeBlock x y
 
 seqSubBlock :: MonadParsec s m Char => m SeqSubBlock
-seqSubBlock = do
-        -- _      <- whitespace
-        block' <- symbol block
-        pure block'
+seqSubBlock = symbol block
     where
         block =  (Dims <$> try dimensionsDefinition)
              <|> (Format <$> try formatDefinition)
              <|> (Eliminate <$> try (stringDefinition "eliminate"))
              <|> (Matrix <$> try matrixDefinition)
              <|> (Taxa <$> try (stringListDefinition "taxlabels"))
-             <|> (Ignored <$> try (ignoredSubBlockDef ';'))
+             -- <|> (Ignored <$> try (ignoredSubBlockDef ';'))
 
 dimensionsDefinition :: MonadParsec s m Char => m DimensionsFormat
 dimensionsDefinition = do
@@ -609,7 +611,7 @@ formatDefinition = do
 
 charFormatFieldDef :: MonadParsec s m Char => m [CharFormatField]
 charFormatFieldDef = do
-        block' <- many block
+        block' <- some $ symbol block
         pure block'
     where
         block =  (CharDT <$> try (stringDefinition "datatype"))
@@ -625,6 +627,7 @@ charFormatFieldDef = do
              <|> (RespectCase <$> try (booleanDefinition "respectcase"))
              <|> (Unlabeled <$> try (booleanDefinition "nolabels"))
              <|> (IgnFF <$> try (ignoredSubBlockDef ' '))
+
 
 treeFieldDef :: MonadParsec s m Char => m TreeField
 treeFieldDef = do
@@ -653,28 +656,30 @@ stringDefinition blockTitle = do
     pure $ value
 
 -- | quotedStringDefinition takes a string of format TITLE="value1 value2 ...";
--- and returns a list of the value(s). The values are separated by whitespace. 
+-- and returns a list of the value(s). The values are separated by whitespace.
 -- The semicolon is not captured by this fn.
 -- Fails gracefully if the close quote is missing.
 -- A test exists in the test suite.
+-- TODO?: This doesn't work if they leave off the opening quote mark.
 quotedStringDefinition :: MonadParsec s m Char => String -> m (Either String [String])
-quotedStringDefinition blockTitle = do
+quotedStringDefinition blockTitle = {- -} do
     _     <- symbol (string' blockTitle)
     _     <- symbol $ char '='
     _     <- symbol $ char '"'
     value <- some $ symbol (notKeywordWord "\"" <?> "Word that is not a Nexus keyword")
-    close <- optional $ char '"'
-    -- _     <- symbol $ char ';'
+    {- close <- optional $ char '"'
     pure $ if isJust close
            then Right value
-           else Left (blockTitle ++ " missing closing quote.")
+           else Left (blockTitle ++ " missing closing quote.") -}
+    _ <- symbol $ char '"'
+    pure $ Right value
 
 stringListDefinition :: MonadParsec s m Char => String -> m [String]
 stringListDefinition label = do
-        _        <- symbol (string' label)
-        theItems <- many $ symbol $ notKeywordWord ""
-        _        <- symbol $ char ';'
-        pure $ theItems
+    _        <- symbol (string' label)
+    theItems <- many $ symbol $ notKeywordWord ""
+    _        <- symbol $ char ';'
+    pure $ theItems
 
 delimitedStringListDefinition :: MonadParsec s m Char => String -> Char -> m [String]
 delimitedStringListDefinition label delimiter = do
@@ -700,8 +705,8 @@ matrixDefinition = do
     _         <- symbol $ char ';'
     pure goodStuff
 
--- | ignoredSubBlockDef takes any string that terminates with 
--- the passed end character (or a semicolon). It returns that string up to, but 
+-- | ignoredSubBlockDef takes any string that terminates with
+-- the passed end character (or a semicolon). It returns that string up to, but
 -- not including, whatever the terminating char is. Also fails if the input is "end;"
 ignoredSubBlockDef :: MonadParsec s m Char => Char -> m String
 ignoredSubBlockDef endChar = do
@@ -817,6 +822,12 @@ strip = lstrip . rstrip
 nexusKeywords :: S.Set String
 nexusKeywords = S.fromList ["ancstates", "assumptions", "begin", "changeset", "characters", "charlabels", "charpartition", "charset", "charstatelabels", "codeorder", "codeset", "codons", "data", "datatype", "deftype", "diagonal", "dimensions", "distances", "eliminate", "end", "equate", "exset", "extensions", "format", "gap", "interleave", "items", "labels", "matchchar", "matrix", "missing", "nchar", "newtaxa", "nodiagonal", "nolabels", "notes", "notokens", "ntax", "options", "picture", "respectcase", "sets", "statelabels", "statesformat", "symbols", "taxa", "taxlabels", "taxpartition", "taxset", "text", "tokens", "translate", "transpose", "tree", "treepartition", "trees", "treeset", "triangle", "typeset", "unaligned", "usertype", "wtset"]
 
+-- | notKeywordWord takes two strings as input and returns a String.
+-- The first argument is a list of characters which
+-- should not appear in any returned value (i.e. a list of delimiters).
+-- The second argument is a string to parse.
+-- In addition, it checks to make sure that the output is not a Nexus keywords. If the output is
+-- a keyword, the fn fails with an error message.
 notKeywordWord :: MonadParsec s m Char => String -> m String
 notKeywordWord avoidChars = do
     word <- lookAhead $ nextWord
@@ -824,11 +835,6 @@ notKeywordWord avoidChars = do
     then fail $ "Unexpected keyword '" ++ word ++ "', perhaps you are missing a semicolon?"
     else nextWord
   where
-    nextWord = some$ try $ satisfy (\x -> (not $ elem x (';' : avoidChars)) && (not $ isSpace x))
-<<<<<<< HEAD
+    nextWord = some $ try $ satisfy (\x -> (not $ elem x (';' : avoidChars)) && (not $ isSpace x))
 
-nexusKeywords = S.fromList ["ancstates", "assumptions", "begin", "changeset", "characters", "charlabels", "charpartition", "charset", "charstatelabels", "codeorder", "codeset", "codons", "data", "datatype", "deftype", "diagonal", "dimensions", "distances", "eliminate", "end", "equate", "exset", "extensions", "format", "gap", "interleave", "items", "labels", "matchchar", "matrix", "missing", "nchar", "newtaxa", "nodiagonal", "nolabels", "notes", "notokens", "ntax", "options", "picture", "respectcase", "sets", "statelabels", "statesformat", "symbols", "taxa", "taxlabels", "taxpartition", "taxset", "text", "tokens", "translate", "transpose", "tree", "treepartition", "trees", "treeset", "triangle", "typeset", "unaligned", "usertype", "wtset"]
-=======
-    
->>>>>>> 6882b22354039831d7959d4ee1a6e35044facf1d
 
