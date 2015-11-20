@@ -124,10 +124,11 @@ data CharDataType = Standard | DNA | RNA | Nucleotide | Protein | Continuous der
 
 data Nexus
    = Nexus
-   { taxa :: [String]
-   , characters :: [M.Map String [[String]]]
+   -- TODO: taxa was commented out before first push to Grace
+   { {- taxa :: [String]
+   ,-} characters :: M.Map String (V.Vector [String])
    --, characters :: SequenceBlock
-   } deriving (Show)
+   } deriving (Read,Show)
 
 data SequenceBlock
    = SequenceBlock
@@ -184,7 +185,11 @@ validateParseResult :: MonadParsec s m Char => ParseResult -> m Nexus
 validateParseResult (ParseResult sequences taxas trees)
   | not (null independentErrors) = fails independentErrors
   | not (null dependentErrors)   = fails dependentErrors
-  | otherwise                  = pure $ Nexus taxaLst (alignedTaxaSeqMap ++ unalignedTaxaSeqMap)
+  -- TODO: first arg to Nexus was commented out before first push to Grace
+  -- TODO: unalignedTaxaSeqMap was commented out before first push to Grace.
+  -- When it's added back, downstream (i.e. Nexus) fns will need to be modified
+  -- to expect a *list* of 
+  | otherwise                  = pure $ Nexus {-taxaLst-} (alignedTaxaSeqMap {- : unalignedTaxaSeqMap -})
   where
         alignedTaxaSeqMap = getSeqFromMatrix (getBlock "aligned" sequences) taxaLst
         dependentErrors = catMaybes $ incorrectTaxaCount : (missingCloseQuotes ++ seqTaxaCountErrors ++ interleaveErrors ++ seqTaxonCountErrors ++ incorrectCharCount)
@@ -232,12 +237,12 @@ validateParseResult (ParseResult sequences taxas trees)
         --taxaFromSeqMatrix = foldr (\x acc -> (getTaxaFromMatrix x) ++ acc) [] sequences
         -- convertSeqs = ( concatSeqs . cleanSeqs sequences  -- convert each sequence, then
 
-checkSeqLength :: [PhyloSequence] -> [M.Map String [[String]]] -> [Maybe String]
+checkSeqLength :: [PhyloSequence] -> M.Map String (V.Vector [String]) -> [Maybe String]
 checkSeqLength [] _ = [Nothing]
 checkSeqLength seq seqMap =
     M.foldrWithKey (\key val acc -> (if (length val) == len
                                      then Nothing
-                                     else Just (key ++ "'s sequence is the wrong length in an aligned block.")) : acc) [] $ head seqMap
+                                     else Just (key ++ "'s sequence is the wrong length in an aligned block.")) : acc) [] $ seqMap
     where
         len = numChars $ head $ charDims $ head seq
 
@@ -291,8 +296,8 @@ getSymbols seq = eqs
               then symbols $ fromJust form
               else Right [""]
 
-splitSequence :: Bool -> Bool -> String -> [[String]]
-splitSequence isTokens isContinuous seq =
+splitSequence :: Bool -> Bool -> String -> V.Vector [String]
+splitSequence isTokens isContinuous seq = V.fromList $
     if isTokens || isContinuous
         then findAmbiguousTokens (words seq) [] False
         else findAmbiguousNoTokens (strip seq) [] False
@@ -417,10 +422,10 @@ getFormatInfo seq =
         seqForm = headMay $ format seq
 
 
-getSeqFromMatrix :: [PhyloSequence] -> [String] -> [M.Map String [[String]]]
-getSeqFromMatrix [] _ = []
+getSeqFromMatrix :: [PhyloSequence] -> [String] -> M.Map String (V.Vector [String])
+getSeqFromMatrix [] _ = mempty
 getSeqFromMatrix seqLst taxaLst =
-    [M.map (splitSequence tkns cont) matchCharsReplaced]
+    M.map (splitSequence tkns cont) matchCharsReplaced
     where
         seq' = head seqLst
         numTaxa = length taxaLst
@@ -515,7 +520,7 @@ parseNexus :: MonadParsec s m Char => m ParseResult
 parseNexus = nexusFileDefinition
 
 nexusFileDefinition :: MonadParsec s m Char => m ParseResult
-nexusFileDefinition = trace "nexusFileDefinition" $ do
+nexusFileDefinition = do
     _       <- string "#NEXUS"
     _       <- space
     comment <- optional commentDefinition
@@ -524,7 +529,7 @@ nexusFileDefinition = trace "nexusFileDefinition" $ do
     pure $ ParseResult x y z
 
 ignoredBlockDefinition :: MonadParsec s m Char => m String
-ignoredBlockDefinition = trace "ignoredBlockDefinition" $ do
+ignoredBlockDefinition = do
     title <- many letterChar
     _     <- symbol $ char ';'
     _     <- anyTill $ symbol (string' "END;")
@@ -545,13 +550,13 @@ nexusBlock = do
              -- <|> (IgnoredBlock   <$> try ignoredBlockDefinition)
 
 characterBlockDefinition :: MonadParsec s m Char => String -> Bool -> m PhyloSequence
-characterBlockDefinition which aligned = trace "some characterBlockDefinition" $ do
+characterBlockDefinition which aligned = do
     _           <- symbol (string' $ which ++ ";")
     (v,w,x,y,z) <- partitionSequenceBlock <$> (some seqSubBlock)
     pure $ PhyloSequence aligned v w x y z
 
 taxaBlockDefinition :: MonadParsec s m Char => m TaxaSpecification
-taxaBlockDefinition = trace "taxaBlockDefinition" $ do
+taxaBlockDefinition = do
     _     <- symbol (string' "taxa;")
     (y,z) <- partitionTaxaBlock <$> (many seqSubBlock)
     pure $ TaxaSpecification y z
@@ -567,7 +572,7 @@ taxaSubBlock = do
              <|> (Ignored <$> try (ignoredSubBlockDef ';'))
 
 treeBlockDefinition :: MonadParsec s m Char => m TreeBlock
-treeBlockDefinition = trace "treeBlockDefinition" $ do
+treeBlockDefinition = do
         _     <- symbol (string' "trees;")
         (x,y) <- partitionTreeBlock <$> (many treeFieldDef)
         pure $ TreeBlock x y
@@ -605,7 +610,7 @@ formatDefinition = do
         pure $ CharacterFormat o p q r s t u v w x y z
 
 charFormatFieldDef :: MonadParsec s m Char => m [CharFormatField]
-charFormatFieldDef = trace "some charFormatFieldDef" $ do
+charFormatFieldDef = do
         block' <- some $ symbol block
         pure block'
     where
@@ -657,7 +662,7 @@ stringDefinition blockTitle = do
 -- A test exists in the test suite.
 -- TODO?: This doesn't work if they leave off the opening quote mark.
 quotedStringDefinition :: MonadParsec s m Char => String -> m (Either String [String])
-quotedStringDefinition blockTitle = {- trace "some quotedStringDefinition" $ -} do
+quotedStringDefinition blockTitle = {- -} do
     _     <- symbol (string' blockTitle)
     _     <- symbol $ char '='
     _     <- symbol $ char '"'
@@ -670,14 +675,14 @@ quotedStringDefinition blockTitle = {- trace "some quotedStringDefinition" $ -} 
     pure $ Right value
 
 stringListDefinition :: MonadParsec s m Char => String -> m [String]
-stringListDefinition label = trace "stringListDefinition" $ do
+stringListDefinition label = do
     _        <- symbol (string' label)
     theItems <- many $ symbol $ notKeywordWord ""
     _        <- symbol $ char ';'
     pure $ theItems
 
 delimitedStringListDefinition :: MonadParsec s m Char => String -> Char -> m [String]
-delimitedStringListDefinition label delimiter = trace "delimitedStringListDefinition" $ do
+delimitedStringListDefinition label delimiter = do
     _        <- symbol (string' label)
     theItems <- many (noneOf $ delimiter : ";") `sepBy` (char delimiter)
     _        <- symbol $ char ';'
@@ -685,7 +690,7 @@ delimitedStringListDefinition label delimiter = trace "delimitedStringListDefini
 
 
 treeDefinition :: MonadParsec s m Char => m (String, String)
-treeDefinition = trace "treeDefinition" $ do
+treeDefinition = do
     _     <- symbol (string' "tree")
     label <- symbol $ many (noneOf ";=")
     _     <- symbol $ char '='
@@ -694,7 +699,7 @@ treeDefinition = trace "treeDefinition" $ do
     pure (label, trees)
 
 matrixDefinition :: MonadParsec s m Char => m String
-matrixDefinition = trace "matrixDefinition" $ do
+matrixDefinition = do
     first     <- symbol (string' "matrix")
     goodStuff <- many $ noneOf ";"
     _         <- symbol $ char ';'
