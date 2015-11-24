@@ -1,4 +1,4 @@
-{-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE DeriveGeneric, FlexibleInstances, MultiParamTypeClasses, TypeSynonymInstances #-}
 {-- |
 Module      :  Functions for manipulating phylogeentic components
 Description :  Takes data from parser functins and recodess into usable state 
@@ -47,9 +47,11 @@ module Component
 , modifyTotalCost
 ) where
 
+import Control.Monad ((<=<),join)
 import Data.List
 import qualified Data.Set as Set
 import qualified Data.Vector as V
+import Data.Vector ((!?))
 import Data.Maybe
 import Debug.Trace
 import GHC.Generics
@@ -60,6 +62,11 @@ import qualified Parsimony as Pars
 import Control.Parallel.Strategies
 import Data.Bits ((.|.))
 import Data.Int
+import Safe
+
+import Data.Tree.Binary.Class
+import Data.Tree.Node.Encoded
+
 
 -- | stuff for maxFloat
 -- TODO maybe use: `maxBound :: Float`
@@ -104,6 +111,16 @@ data PhyloNode = PhyloNode  { code :: NodeCode                --links to DataMat
                             --, impliedBitState :: BitPackedNode -- temporary bit node for implied alignment
                             } deriving (Generic, Show, Read, Eq)
 
+instance BinaryTree PhyloComponent PhyloNode where
+  parent       n t = join $ (t !?) <$> (headMay $ parents n)
+  bothChildren n t = (f x, f y)
+    where
+      x = headMay $ children n
+      y = headMay <=< tailMay $ children n
+      f = join . fmap (t !?)
+
+instance EncodedNode PhyloNode where
+  encoded = headMay . preliminaryStates
 
 --data EdgeType = EdgeType {edgeLength, unionOfEndStates, startCode, endCode} -- format this for compile
 
@@ -112,6 +129,9 @@ instance NFData PhyloNode
 type PhyloComponent = (V.Vector PhyloNode) -- the root is the last element (in theory)
 type PhyloForest = [PhyloComponent]
 type NodeCode = Int
+
+
+
 
 -- | functions to modify PhyloNode
 modifyNodeName :: PhyloNode -> String -> PhyloNode
