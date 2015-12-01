@@ -28,7 +28,10 @@ anyTill c = do
     ahead <- optional $ lookAhead c
     case ahead of
       Just _  -> pure []
-      Nothing -> anyChar <:> anyTill c
+      Nothing -> somethingTill c
+
+somethingTill :: MonadParsec s m Char => m a -> m String
+somethingTill c = anyChar <:> anyTill c
 
 double :: MonadParsec s m Char => m Double
 double = try (signed space float)
