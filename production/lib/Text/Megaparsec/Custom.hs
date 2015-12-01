@@ -3,13 +3,14 @@
 module Text.Megaparsec.Custom
  ( (<:>)
  , (<++>)
- , anyTill
+ , anythingTill
  , comment
  , double
  , endOfLine
  , fails
  , inlineSpace 
  , inlineSpaces
+ , somethingTill
  ) where
 
 import Data.Char             (isSpace)
@@ -23,12 +24,15 @@ import Text.Megaparsec.Lexer (float,integer,signed)
 (<++>) :: Applicative f => f [a] -> f [a] -> f [a]
 (<++>) a b = (++) <$> a <*> b
 
-anyTill :: MonadParsec s m Char => m a -> m String
-anyTill c = do 
+anythingTill :: MonadParsec s m Char => m a -> m String
+anythingTill c = do 
     ahead <- optional $ lookAhead c
     case ahead of
       Just _  -> pure []
-      Nothing -> anyChar <:> anyTill c
+      Nothing -> somethingTill c
+
+somethingTill :: MonadParsec s m Char => m a -> m String
+somethingTill c = anyChar <:> anythingTill c
 
 double :: MonadParsec s m Char => m Double
 double = try (signed space float)

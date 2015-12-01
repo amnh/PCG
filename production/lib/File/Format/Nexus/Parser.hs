@@ -532,7 +532,7 @@ ignoredBlockDefinition :: MonadParsec s m Char => m String
 ignoredBlockDefinition = do
     title <- many letterChar
     _     <- symbol $ char ';'
-    _     <- anyTill $ symbol (string' "END;")
+    _     <- anythingTill $ symbol (string' "END;")
     pure $ title
 
 nexusBlock :: MonadParsec s m Char => m NexusBlock
@@ -711,7 +711,7 @@ matrixDefinition = do
 ignoredSubBlockDef :: MonadParsec s m Char => Char -> m String
 ignoredSubBlockDef endChar = do
     _ <- notFollowedBy (space *> string' "end;")
-    anyTill (symbol (string ";")
+    anythingTill (symbol (string ";")
              <|> symbol (string' [endChar]))
 
 -- -------------------------------------------------------------------------------------------------
