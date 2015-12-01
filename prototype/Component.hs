@@ -51,7 +51,7 @@ import Control.Monad ((<=<),join)
 import Data.List
 import qualified Data.Set as Set
 import qualified Data.Vector as V
-import Data.Vector ((!?))
+import Data.Vector ((!?), (//))
 import Data.Maybe
 import Debug.Trace
 import GHC.Generics
@@ -66,6 +66,7 @@ import Safe
 
 import Data.Tree.Binary.Class
 import Data.Tree.Node.Encoded
+import Data.Tree.Node.Preliminary
 
 
 -- | stuff for maxFloat
@@ -102,6 +103,7 @@ data PhyloNode = PhyloNode  { code :: NodeCode                --links to DataMat
                             , preliminaryGapped :: BaseChar
                             , alignLeft :: BaseChar
                             , alignRight :: BaseChar
+                            , tempField :: BaseChar
                             -- added Oct 5, consider strictness for these
                             --, finalStates :: !CharacterSetList
                             --, singleStates :: !CharacterSetList -- check type
@@ -113,14 +115,57 @@ data PhyloNode = PhyloNode  { code :: NodeCode                --links to DataMat
 
 instance BinaryTree PhyloComponent PhyloNode where
   parent       n t = join $ (t !?) <$> (headMay $ parents n)
-  bothChildren n t = (f x, f y)
-    where
-      x = headMay $ children n
-      y = headMay <=< tailMay $ children n
-      f = join . fmap (t !?)
+  bothChildren n t = 
+    let
+        x = headMay $ children n
+        y = headMay <=< tailMay $ children n
+        f = join . fmap (t !?)
+    in (f x, f y)
+  root           t = head $ [x | x <- (V.toList t), isRoot x]
+  update     t [n] = t // [(code n, n)]
+
 
 instance EncodedNode PhyloNode where
-  encoded = headMay . preliminaryStates
+  encoded node 
+    | null $ preliminaryStates node = Nothing
+    | otherwise = Just (V.fromList $ preliminaryStates node)
+  setEncoded node value 
+    | isNothing value = node {preliminaryStates = []}
+    | otherwise = node {preliminaryStates = V.toList $ fromJust value}
+
+instance PreliminaryNode PhyloNode where
+    preliminary node
+        | null $ preliminaryStates node = Nothing
+        | otherwise = Just $ V.fromList $ preliminaryStates node
+    setPreliminary value node 
+        | isNothing value = node {preliminaryStates = []}
+        | otherwise = node {preliminaryStates = V.toList $ fromJust value}
+    preliminaryAlign node
+        | V.null $ preliminaryGapped node = Nothing
+        | otherwise = Just $ V.singleton $ preliminaryGapped node
+    setAlign value node
+        | isNothing value = node {preliminaryGapped = V.empty}
+        | otherwise = node {preliminaryGapped = V.head $ fromJust value}
+    temporary node
+        | V.null $ tempField node = Nothing
+        | otherwise = Just $ V.singleton $ tempField node
+    setTemporary value node 
+        | isNothing value = node {preliminaryGapped = V.empty}
+        | otherwise = node {preliminaryGapped = V.head $ fromJust value}
+    cost = V.head . totalCost
+    setCost value node = node {totalCost = V.singleton value}
+
+instance CharacterNode PhyloNode where
+    characters _ = empty
+    setCharacters n _ = n
+
+instance FinalNode PhyloNode where
+    final node 
+        | null $ preliminaryStates node = Nothing
+        | otherwise = Just $ V.fromList $ preliminaryStates node
+    setFinal value node
+        | isNothing value = node {preliminaryStates = []}
+        | otherwise = node {preliminaryStates = V.toList $ fromJust value}
 
 --data EdgeType = EdgeType {edgeLength, unionOfEndStates, startCode, endCode} -- format this for compile
 

@@ -38,6 +38,7 @@ module Parsimony
 ( getPrelim
 , getPrelimTriple
 , ukkonenDO
+, naiveDO
 ) where
 
 import Debug.Trace
@@ -72,7 +73,7 @@ getPrelimTriple (lState, rState, charInfo)
     | charType charInfo == NucSeq = (median2, charWeight * cost2, medianGap2, alignLeft2, alignRight2)
     | otherwise = error "Unrecognized/Not implemented character type"
         where
-            (median, cost, medianGap, alignLeft, alignRight) = naiveDo lState rState charInfo
+            (median, cost, medianGap, alignLeft, alignRight) = naiveDO lState rState charInfo
             charWeight = weight charInfo
             (median2, cost2, medianGap2, alignLeft2, alignRight2) = ukkonenDO lState rState charInfo
             lS = V.head lState
@@ -248,7 +249,7 @@ secondOfThree (in1, in2, in3) = in2
 thirdOfThree :: (a, b, c) -> c
 thirdOfThree (in1, in2, in3) = in3
 
--- | naiveDo takes two input sequences and returns median sequence and cost 
+-- | naiveDO takes two input sequences and returns median sequence and cost 
 --based on charInfo-1:1 for now
 --to do:
 --      different costs
@@ -256,8 +257,8 @@ thirdOfThree (in1, in2, in3) = in3
 --      Ukkonnen
 --      C via FFI
 --      Affine
-naiveDo :: BaseChar -> BaseChar -> CharInfo -> (BaseChar, Float, BaseChar, BaseChar, BaseChar)
-naiveDo inlSeq inrSeq charInfo
+naiveDO :: BaseChar -> BaseChar -> CharInfo -> (BaseChar, Float, BaseChar, BaseChar, BaseChar)
+naiveDO inlSeq inrSeq charInfo
     | V.null inlSeq = (inrSeq, 0, inrSeq, V.replicate (V.length inrSeq) (maxBound :: Int64), inrSeq)
     | V.null inrSeq = (inlSeq, 0, inlSeq, inlSeq, V.replicate (V.length inlSeq) (maxBound :: Int64))
     | otherwise = --trace ("NW: " ++ show nwMatrix ++ "\nCost/median " ++ show cost ++ "->" ++ show median)

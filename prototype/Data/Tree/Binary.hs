@@ -1,3 +1,3 @@
-module Data.Tree.Binary where
+module Data.Tree.Binary (BinaryTree (..)) where
 
-import Data.Tree.Binary.Class ()
+import Data.Tree.Binary.Class 
