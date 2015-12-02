@@ -4,7 +4,7 @@ module File.Format.Newick.Test
   ( testSuite
   ) where
 
-import Data.Either.Custom         (isRight,rightMay)
+import Data.Either.Combinators    (isRight,rightToMaybe)
 import File.Format.Newick.Internal
 import File.Format.Newick.Parser
 import Test.Custom                (parseEquals,parseFailure,parseSuccess)
@@ -97,7 +97,7 @@ newickLeaf' = testGroup "newickLeafDefinition'" [invariant]
         labelValue = parse (newickLabelDefinition <* eof) "" str
         validLeaf  = parse newickLeafDefinition "" target == result
         target     = str ++ ":" ++ show num
-        result     = Right $ NewickNode [] (rightMay labelValue) (Just num) 
+        result     = Right $ NewickNode [] (rightToMaybe labelValue) (Just num) 
     
 descendantList' :: TestTree
 descendantList' = testGroup "descendantListDefinition" [valid,invalid]

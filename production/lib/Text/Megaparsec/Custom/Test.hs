@@ -6,11 +6,11 @@ module Text.Megaparsec.Custom.Test
 -- This function can be combined with other testSuites definitions from other
 -- Test modules to form a giant test suite to run
 
-import Data.Either.Custom
-import Safe                   (readMay)
-import Test.SmallCheck.Series ()
+import Data.Either.Combinators
+import Safe                    (readMay)
+import Test.SmallCheck.Series  ()
 import Test.Custom
-import Test.Tasty             (TestTree,testGroup)
+import Test.Tasty              (TestTree,testGroup)
 import Test.Tasty.HUnit
 import Test.Tasty.QuickCheck
 import Text.Megaparsec
@@ -41,7 +41,7 @@ decimalSurjection x = Right x  == parse double "" (show x)
 -- | Ensure that all Strings which can be `read` as an Int are parsed as Ints.
 --   The parser should always fail to parse a String that cannot be read as an Int.
 decimalInjection :: String -> Bool 
-decimalInjection x = (readMay x :: Maybe Double) == rightMay (parse (space *> double <* eof) "" x)
+decimalInjection x = (readMay x :: Maybe Double) == rightToMaybe (parse (space *> double <* eof) "" x)
 
 inlineSpaceAssertions :: TestTree
 inlineSpaceAssertions = testGroup "Inline Space Assertions" [validInlineSpace,invalidInlineSpace]
