@@ -3,7 +3,7 @@
 module ImpliedAlign (implyMain, subtreeWrap, mergeSubtree) where
 
 import Component
-import Parsimony (ukkonenDO)
+import Parsimony (naiveDO)
 import ReadFiles
 import Data.Matrix (Matrix, zero, setElem, elementwise, getRow)
 import qualified Data.Vector as V (length, (!), findIndex, cons, ifoldr, (++), singleton, imap, (//), empty)
@@ -59,18 +59,18 @@ getSubtrees inTree curCode initStructure
 -- | iaMainDown is the main downpass of an implied alignment
 -- Starts at the given node
 iaMainPreorder :: PhyloComponent -> PhyloComponent -> Subtrees -> PhyloNode -> CharInfo -> PhyloComponent
-iaMainPreorder fullTree subTree subMat node info | trace ("preorder ") False = undefined
+--iaMainPreorder fullTree subTree subMat node info | trace ("preorder ") False = undefined
 iaMainPreorder fullTree subTree subMat node info
      | (length $ children node) > 2 = error "Implied alignment only implemented for binary trees"
      | null $ preliminaryGapped node = subTree
      | isTerminal node || null (children node) = subTree
      | leftCheck && rightCheck && (not $ null $ alignLeft node) && (not $ null $ alignRight node) = trace ("both case " ++ show node) $
         let 
-            alignedLeft = ukkonenDO (preliminaryGapped node) (alignLeft node) info
+            alignedLeft = naiveDO (preliminaryGapped node) (alignLeft node) info
             updatedTree = trace ("set alignment left " ++ show alignedLeft) $
                             changeAlignTree fullTree node LeftChild alignedLeft
             secondNode = updatedTree V.! (code node)
-            alignedRight = ukkonenDO (preliminaryGapped secondNode) (alignRight secondNode) info
+            alignedRight = naiveDO (preliminaryGapped secondNode) (alignRight secondNode) info
             finalUpdate = trace ("set alignment right " ++ show alignedRight) $
                         changeAlignTree updatedTree secondNode RightChild alignedRight
             newSub = grabSubtree finalUpdate (code node) subMat
@@ -87,7 +87,7 @@ iaMainPreorder fullTree subTree subMat node info
 
      | leftCheck && (not $ null $ alignLeft node) = 
         let 
-            aligned = ukkonenDO (preliminaryGapped node) (alignLeft node) info
+            aligned = naiveDO (preliminaryGapped node) (alignLeft node) info
             updatedTree = changeAlignTree fullTree node LeftChild aligned
             leftTree = grabSubtree updatedTree leftI subMat
             rightTree = grabSubtree updatedTree rightI subMat
@@ -100,7 +100,7 @@ iaMainPreorder fullTree subTree subMat node info
                 else  mergeSubtree leftEval rightEval newNode
      | rightCheck && (not $ null $ alignRight node) = 
         let 
-            aligned = ukkonenDO (preliminaryGapped node) (alignRight node) info
+            aligned = naiveDO (preliminaryGapped node) (alignRight node) info
             updatedTree = changeAlignTree fullTree node RightChild aligned
             leftTree = grabSubtree updatedTree leftI subMat
             rightTree = grabSubtree updatedTree rightI subMat
@@ -135,7 +135,7 @@ iaPostorder tree curNode info
     | isRoot curNode || null (parents curNode) = tree
     | (V.length $ preliminaryGapped parent) /= (V.length $ preliminaryGapped curNode) = 
         let 
-            aligned = ukkonenDO (preliminaryGapped curNode) (preliminaryGapped parent) info
+            aligned = naiveDO (preliminaryGapped curNode) (preliminaryGapped parent) info
             updatedTree = changeAlignTree tree curNode Parent aligned
         in iaPostorder updatedTree parent info
     | otherwise = iaPostorder tree parent info

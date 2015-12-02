@@ -17,13 +17,12 @@ import Component
 import Packing.PackedBuild
 import Packing.PackedOptimize
 import Prelude hiding (lookup)
-import           Text.Parsec
 import File.Format.Fasta
 import Component
 import CharacterData
 import Packing.UnpackedBuild
-
-type TaxonSequenceMap  = Map String (V.Vector [String])
+import Text.Megaparsec
+import Data.Int
 
 main :: IO ()
 main = do
@@ -40,7 +39,7 @@ main = do
 getSeqsFromFile :: FilePath -> IO RawData
 getSeqsFromFile file = newToOld . fromRight . parse (fastaStreamConverter DNA =<< fastaStreamParser) file <$> readFile file
 getTreeFromFile :: FilePath -> IO PhyloForest
-getTreeFromFile file = head . fmap newickToPhylo . fromRight . runIdentity  . parseNewickStream <$> readFile file
+getTreeFromFile file = head . fmap newickToPhylo . fromRight . parse newickStreamParser file <$> readFile file
 
 benchmarkFitchOptimization :: FilePath -> FilePath -> [Char] -> IO [Benchmark]
 benchmarkFitchOptimization seqsFile treeFile prefix = do
@@ -180,7 +179,7 @@ newickToPhylo newForest = fmap treeToComponent newForest
         setIndex' :: Int -> (NewickNode, [NewickNode], NodeCode, Bool) -> (NewickNode, [NewickNode], NodeCode, Bool)
         setIndex' i (n,p,_,r) = (n,p,i,r)
         toPhyloNode :: (NewickNode, [NodeCode], [NodeCode], NodeCode, Bool) -> PhyloNode
-        toPhyloNode (n,c,p,i,r) = PhyloNode i nodeName' isTerminal' r isTreeNode' children' p preliminaryStates' localCost' totalCost'
+        toPhyloNode (n,c,p,i,r) = PhyloNode i nodeName' isTerminal' r isTreeNode' children' p preliminaryStates' localCost' totalCost' preliminaryGapped' alignLeft' alignRight' tempField'
           where
             nodeName'          = maybe "" id $ newickLabel n
             isTerminal'        = null children'
@@ -190,3 +189,7 @@ newickToPhylo newForest = fmap treeToComponent newForest
             preliminaryStates' = [] :: CharacterSetList
             localCost'         = V.fromList [] :: (V.Vector Float)
             totalCost'         = V.fromList [] :: (V.Vector Float)
+            preliminaryGapped' = V.empty :: (V.Vector Int64)
+            alignLeft'         = V.empty :: (V.Vector Int64)
+            alignRight'        = V.empty :: (V.Vector Int64)
+            tempField'         = V.empty :: (V.Vector Int64)
