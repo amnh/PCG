@@ -23,5 +23,5 @@ parclean:
 	rm PackingPar/ParEnabledNode2.o PackingPar/ParEnabledNode2.hi PackingPar/PackedBuild.hi PackingPar/PackedBuild.o ./par PackingPar/PackedParOptimize.hi PackingPar/PackedParOptimize.o PackingPar/ParBench.o PackingPar/ParBench.hi
 	
 ia: IATests.hs
-	ghc $< -o $@ -main-is IATests.main $(linking) $(sanity) -prof -auto-all -caf-all
+	ghc $< -o $@ -main-is IATests $(linking) $(sanity) -i.:../production/lib
 

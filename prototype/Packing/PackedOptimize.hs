@@ -1,6 +1,6 @@
 {- Module for non-additive optimization of a bit packed tree-}
 
-module Packing.PackedOptimize (allOptimization, optimizeForest, getRootCost, costForest) where
+module Packing.PackedOptimize (allOptimization, optimizeForest, getRootCost, costForest, TreeInfo) where
 
 -- imports 
 import Packing.PackedBuild

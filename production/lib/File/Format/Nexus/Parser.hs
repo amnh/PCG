@@ -625,9 +625,9 @@ charFormatFieldDef = trace "many charFormatFieldDef" $ do
         block' <- many $ symbol block
         pure block'
     where
-        block = (CharDT <$> try (stringDefinition "datatype"))
+        block =  (CharDT <$> try (stringDefinition "datatype"))
              <|> (SymStr <$> try (quotedStringDefinition "symbols"))
-             <|>  (Transpose <$> try (booleanDefinition "transpose"))
+             <|> (Transpose <$> try (booleanDefinition "transpose"))
              <|> (Interleave <$> try (booleanDefinition "interleave"))
              <|> (Tokens <$> try (booleanDefinition "tokens"))
              <|> (EqStr <$> try (quotedStringDefinition "equate"))
