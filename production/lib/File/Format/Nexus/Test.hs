@@ -19,8 +19,7 @@ import Debug.Trace (trace)
 
 testSuite :: TestTree
 testSuite = testGroup "Nexus Format"
-  [ testGroup "Nexus Combinators" [ignoredSubBlockDef']
-      {- [booleanDefinition', stringDefinition', quotedStringDefinition', ignoredSubBlockDef', notKeywordWord', charFormatFieldDef', formatDefinition'] -}
+  [ testGroup "Nexus Combinators" [booleanDefinition', stringDefinition', quotedStringDefinition', ignoredSubBlockDef', notKeywordWord', charFormatFieldDef', formatDefinition'] 
   ]
 
 booleanDefinition' :: TestTree
@@ -153,7 +152,6 @@ charFormatFieldDef' = testGroup "charFormatFieldDef" ([emptyString] ++ testSingl
                          , ("respectcase", RespectCase True)
                          , ("nolabels", Unlabeled True)
                          , ("something ", IgnFF "something")
-                         , (" ;", IgnFF " ")
                          ]
         stringTypeListPerms = [(string ++ " " ++ string', [result, result']) | (string, result) <- stringTypeList, (string', result') <- stringTypeList]
  

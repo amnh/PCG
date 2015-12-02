@@ -532,7 +532,7 @@ ignoredBlockDefinition :: MonadParsec s m Char => m String
 ignoredBlockDefinition = trace "ignoredBlockDefinition" $ do
     title <- many letterChar
     _     <- symbol $ char ';'
-    _     <- anyTill $ symbol (string' "END;")
+    _     <- anythingTill $ symbol (string' "END;")
     pure $ title
 
 nexusBlock :: MonadParsec s m Char => m NexusBlock
@@ -547,7 +547,7 @@ nexusBlock = do
              <|> (CharacterBlock <$> try (characterBlockDefinition "data" True)) -- data blocks should be aligned
              <|> (TaxaBlock      <$> try taxaBlockDefinition)
              <|> (TreesBlock     <$> try treeBlockDefinition)
-             -- <|> (IgnoredBlock   <$> try ignoredBlockDefinition)
+             <|> (IgnoredBlock   <$> try ignoredBlockDefinition)
 
 characterBlockDefinition :: MonadParsec s m Char => String -> Bool -> m PhyloSequence
 characterBlockDefinition which aligned = trace "some characterBlockDefinition" $ do
@@ -625,7 +625,7 @@ charFormatFieldDef = trace "many charFormatFieldDef" $ do
         block' <- many $ symbol block
         pure block'
     where
-        block = {-} (CharDT <$> try (stringDefinition "datatype"))
+        block = (CharDT <$> try (stringDefinition "datatype"))
              <|> (SymStr <$> try (quotedStringDefinition "symbols"))
              <|>  (Transpose <$> try (booleanDefinition "transpose"))
              <|> (Interleave <$> try (booleanDefinition "interleave"))
@@ -637,7 +637,7 @@ charFormatFieldDef = trace "many charFormatFieldDef" $ do
              <|> (Items <$> try (stringDefinition "items"))
              <|> (RespectCase <$> try (booleanDefinition "respectcase"))
              <|> (Unlabeled <$> try (booleanDefinition "nolabels"))
-             <|> -} (IgnFF <$> try (ignoredSubBlockDef ' '))
+             <|> (IgnFF <$> try (ignoredSubBlockDef ' '))
 
 
 treeFieldDef :: MonadParsec s m Char => m TreeField
@@ -654,7 +654,7 @@ treeFieldDef = do
 -- and returns True if it succeeds in matching. The semicolon is not captured by this fn.
 -- A test exists in the test suite.
 booleanDefinition :: MonadParsec s m Char => String -> m Bool
-booleanDefinition blockTitle = symbol (string' blockTitle) *> pure True
+booleanDefinition blockTitle = trace "booleanDefinition" $ symbol (string' blockTitle) *> pure True
 
 -- | stringDefinition takes a string of format TITLE=value;
 -- and returns the value. The semicolon is not captured by this fn.
@@ -673,7 +673,7 @@ stringDefinition blockTitle = do
 -- A test exists in the test suite.
 -- TODO?: This doesn't work if they leave off the opening quote mark.
 quotedStringDefinition :: MonadParsec s m Char => String -> m (Either String [String])
-quotedStringDefinition blockTitle = {- trace "some quotedStringDefinition" $ -} do
+quotedStringDefinition blockTitle = trace "some quotedStringDefinition" $ do
     _     <- symbol (string' blockTitle)
     _     <- symbol $ char '='
     _     <- symbol $ char '"'
@@ -686,7 +686,7 @@ quotedStringDefinition blockTitle = {- trace "some quotedStringDefinition" $ -} 
     --pure $ Right value
 
 stringListDefinition :: MonadParsec s m Char => String -> m [String]
-stringListDefinition label = trace "stringListDefinition" $ do
+stringListDefinition label = trace "many stringListDefinition" $ do
     _        <- symbol (string' label)
     theItems <- many $ symbol $ notKeywordWord ""
     _        <- symbol $ char ';'
@@ -721,8 +721,8 @@ matrixDefinition = trace "matrixDefinition" $ do
 -- not including, whatever the terminating char is. Also fails if the input is "end;"
 -- A test exists in the test suite.
 ignoredSubBlockDef :: MonadParsec s m Char => Char -> m String
-ignoredSubBlockDef endChar = do
-    _ <- notFollowedBy (space *> string' "end;")
+ignoredSubBlockDef endChar = trace "ignoredSubBlockDef" $ do
+    _ <- notFollowedBy (space *> string' "end;") <?> "something other than end of block"
     somethingTill (symbol (string ";")
              <|> symbol (string' [endChar]))
 
