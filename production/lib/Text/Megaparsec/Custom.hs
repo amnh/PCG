@@ -26,13 +26,16 @@ import Text.Megaparsec.Lexer (float,integer,signed)
 
 anythingTill :: MonadParsec s m Char => m a -> m String
 anythingTill c = do 
-    ahead <- optional $ lookAhead c
+    ahead <- optional $ try $ lookAhead c
     case ahead of
       Just _  -> pure []
       Nothing -> somethingTill c
 
 somethingTill :: MonadParsec s m Char => m a -> m String
-somethingTill c = anyChar <:> anythingTill c
+somethingTill c = 
+    do
+    _ <- notFollowedBy c
+    anyChar <:> anythingTill c
 
 double :: MonadParsec s m Char => m Double
 double = try (signed space float)
