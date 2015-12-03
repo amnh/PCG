@@ -11,13 +11,10 @@ import           File.Format.Fasta.Parser
 import           Text.Megaparsec.Custom            (fails)
 import           Text.Megaparsec.Prim              (MonadParsec)
 
+-- | Different forms a 'FastaSequence' can be interpreted as.
 data FastaSequenceType = DNA | RNA | AminoAcid deriving (Bounded,Eq,Enum,Read,Show)
 
-colate :: FastaSequenceType -> FastaParseResult -> TaxonSequenceMap
-colate seqType = foldr f empty
-  where
-    f (FastaSequence name seq') = insert name (seqCharMapping seqType seq')
-
+-- | Define and convert a 'FastaParseResult' to the expected sequence type 
 fastaStreamConverter :: MonadParsec s m Char => FastaSequenceType -> FastaParseResult -> m TaxonSequenceMap
 fastaStreamConverter seqType = fmap (colate seqType) . validateStreamConversion seqType 
 
@@ -40,6 +37,11 @@ validateStreamConversion seqType xs =
      , "' the following invalid characters were found: "
      , intercalate ", " $ (\c -> '\'':c:"'") <$> badChars
      ]
+
+colate :: FastaSequenceType -> FastaParseResult -> TaxonSequenceMap
+colate seqType = foldr f empty
+  where
+    f (FastaSequence name seq') = insert name (seqCharMapping seqType seq')
 
 seqCharMapping :: FastaSequenceType -> String -> CharacterSequence 
 seqCharMapping seqType = V.fromList . fmap (f seqType)

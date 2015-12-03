@@ -9,9 +9,16 @@ import Text.Megaparsec
 import Text.Megaparsec.Custom
 import Text.Megaparsec.Prim   (MonadParsec)
 
+-- | Naive representation of a collection taxa sequences
 type TaxonSequenceMap  = Map Identifier CharacterSequence
+
+-- | Unique identifier for a taxa 
 type Identifier        = String
+
+-- | Component of a phylogenetic character
 type Symbol            = String
+
+-- | Indexed sequences of 'Symbol's with possible abiguity at an index
 type CharacterSequence = Vector [Symbol]
 
 identifierLine :: MonadParsec s m Char => m Identifier

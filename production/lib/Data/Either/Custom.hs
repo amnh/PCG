@@ -4,7 +4,7 @@
 -- Copyright   :  (c) 2015-2015 Ward Wheeler
 -- License     :  BSD-style
 --
--- Maintainer  :  ward@amnh.org
+-- Maintainer  :  wheeler@amnh.org
 -- Stability   :  provisional
 -- Portability :  portable
 --
