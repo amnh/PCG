@@ -43,14 +43,17 @@ import Text.Megaparsec.Lexer (float,integer,signed)
 -- | @anythingTill end@ consumes zero or more characters until @end@ is matched, leaving @end@ in the stream
 anythingTill :: MonadParsec s m Char => m a -> m String
 anythingTill c = do 
-    ahead <- optional $ lookAhead c
+    ahead <- optional $ try $ lookAhead c
     case ahead of
       Just _  -> pure []
       Nothing -> somethingTill c
 
 -- | @somethingTill end@ consumes one or more characters until @end@ is matched, leaving @end@ in the stream
 somethingTill :: MonadParsec s m Char => m a -> m String
-somethingTill c = anyChar <:> anythingTill c
+somethingTill c = 
+    do
+    _ <- notFollowedBy c
+    anyChar <:> anythingTill c
 
 -- | Flexibly parses a 'Double' value represented in a variety of forms.
 double :: MonadParsec s m Char => m Double
