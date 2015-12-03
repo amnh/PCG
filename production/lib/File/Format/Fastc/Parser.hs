@@ -17,13 +17,17 @@ import Text.Megaparsec
 import Text.Megaparsec.Custom
 import Text.Megaparsec.Prim       (MonadParsec)
 
+-- | Unconverted result of a fastc parse
 type FastcParseResult = [FastcSequence]
+
+-- | Pairing of taxa label with an unconverted sequence
 data FastcSequence
    = FastcSequence
    { fastcLabel   :: Identifier
    , fastcSymbols :: CharacterSequence
    } deriving (Eq,Show)
 
+-- | Consumes a stream of 'Char's and parses the stream into a 'FastcParseResult'
 fastcStreamParser :: MonadParsec s m Char => m FastcParseResult
 fastcStreamParser = some fastcTaxonSequenceDefinition <* eof
 

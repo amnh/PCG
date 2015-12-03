@@ -40,11 +40,15 @@ executable pcg
                      , deepseq              >=1.4  && <1.5
                      , directory            -any
                      , dlist                -any
+                     , either               -any
+                     , Glob                 -any
+                     , hashable             -any
                      , matrix               -any
                      , megaparsec           >=4.2
                      , parallel             >=3.2  && <3.3
                      , QuickCheck           -any
                      , safe                 >=0.3  && <0.4
+                     , semigroups           -any
                      , smallcheck           -any 
                      , tasty                -any
                      , tasty-hunit          -any
@@ -101,10 +105,12 @@ library
                      , criterion        >=1.1  && <1.2
                      , deepseq          >=1.4  && <1.5
                      , dlist            -any
+                     , either           -any
                      , matrix           -any
                      , megaparsec       >=4.2
                      , parallel         >=3.2  && <3.3
                      , safe             >=0.3  && <0.4
+                     , semigroups       -any
                      , smallcheck       -any 
                      , tasty            -any
                      , tasty-hunit      -any
@@ -140,11 +146,14 @@ Test-Suite testsuite
                      , deepseq              >=1.4  && <1.5
                      , directory            -any
                      , dlist                -any
+                     , hashable             -any
+                     , either               -any
                      , matrix               -any
                      , megaparsec           >=4.2
                      , parallel             >=3.2  && <3.3
                      , QuickCheck           -any
                      , safe                 >=0.3  && <0.4
+                     , semigroups           -any
                      , smallcheck           -any 
                      , tasty                -any
                      , tasty-hunit          -any
