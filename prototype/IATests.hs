@@ -11,25 +11,30 @@ import Data.Int
 import Test.Tasty
 import Test.Tasty.HUnit
 import Test.Tasty.QuickCheck
-import ImpliedAlign
+import ImpliedAlignSafe
 import Data.Matrix hiding (fromList, trace, toList, (!))
 import CharacterData (CharacterSetList)
 import Debug.Trace
 import Packing.PackedTest (getSeqsFromFile, getTreeFromFile)
-import Packing.PackedOptimize
 import Data.Traversable (sequence)
-import ReadFiles
+import ReadFiles hiding (rootCost)
 import Data.Bits (popCount)
 import Packing.PackedBuild
 import Packing.BitPackedNode
 import Data.BitVector (nat, bit)
+import OldStructureFitch 
+import Control.Applicative (liftA2)
+import Packing.PackedOptimize (TreeInfo, optimizeForest)
+import Data.PhyloCharacter
+import Data.Tree.Node.Character
+
 
 testTreeLen = 100
 
 main :: IO()
 main = do
-    unit <- simpleUnit
-    defaultMain (testGroup "Tests of Implied Alignment" [subtreeVerify, iaVerify, unit])
+    fitch <- fitchVerify
+    defaultMain (testGroup "Tests of Implied Alignment" [subtreeVerify, iaVerify, fitch])
 
 subtreeVerify :: TestTree
 subtreeVerify = testGroup "Check correct generation of subtrees" [subLength, correctOnes]
@@ -49,6 +54,10 @@ subtreeVerify = testGroup "Check correct generation of subtrees" [subLength, cor
                         numOnes = foldr (+) 0 (subtreeWrap tree)
                     in --trace ("Actual number of ones " ++ show numOnes ++ " with n " ++ show n) 
                         ((numOnes == (2 * n) - 4) || numOnes == 0)
+        --correctAccum = testProperty "Returns a matrix with more ones" addOnes
+        --    where
+        --        addOnes :: (Subtrees, [Int]) -> Int -> Bool
+        --        addOnes (matrix, setVals)
 
 iaVerify :: TestTree
 iaVerify = testGroup "Check properties of implied alignment" [mergeLength, conserveProperties, conserveSize, seqLensIncrease]
@@ -98,59 +107,72 @@ iaVerify = testGroup "Check properties of implied alignment" [mergeLength, conse
                 getPop :: Vector Int64 -> Int
                 getPop = V.foldr (\i acc -> acc + popCount i) 0
 
-simpleUnit :: IO TestTree
-simpleUnit = (testGroup "Simple unit test") <$> (sequence [treeCase])
+fitchVerify :: IO TestTree
+fitchVerify = (testGroup "Fitch before and after test") <$> (sequence [mediumCase, smallCase])
     where
         standardInfo = CharInfo GenSeq False 1.0 [] "hi" 5 ["A","C", "G", "T", "-"] 0.0
-        standardNode = PN.PhyloNode 0 "stop" False False False [] [] [] empty empty empty empty empty empty
-        --simpleTree = fromList [standardNode {PN.isRoot = True, PN.children = [1,2], PN.preliminaryGapped = fromList [8, 1], PN.alignLeft = fromList [1, 2, 4], PN.alignRight = fromList [8], PN.preliminaryStates = [fromList [8, 1]]}
-        --                , standardNode {PN.isTerminal = True, PN.preliminaryGapped = fromList [1, 2, 4], PN.code = 1, PN.parents = [0], PN.preliminaryStates = [fromList [1, 2, 4]]}
-        --                , standardNode {PN.isTerminal = True, PN.preliminaryGapped = fromList [8], PN.code = 2, PN.parents = [0], PN.preliminaryStates = [fromList [8]]}]
-        --resultTree = fromList [standardNode {PN.isRoot = True, PN.children = [1,2], PN.preliminaryGapped = fromList [8, 1, 16, 16], PN.alignLeft = fromList [16, 1, 2, 4], PN.alignRight = fromList [8, 16, 16, 16], PN.preliminaryStates = [fromList [8, 1]]}
-        --                , standardNode {PN.isTerminal = True, PN.preliminaryGapped = fromList [16, 1, 2, 4], PN.code = 1, PN.parents = [0], PN.preliminaryStates = [fromList [1, 2, 4]]}
-        --                , standardNode {PN.isTerminal = True, PN.preliminaryGapped = fromList [8, 16, 16, 16], PN.code = 2, PN.parents = [0], PN.preliminaryStates = [fromList [8]]}]
-        resultTree = fromList [standardNode {PN.code = 0, PN.nodeName = "#a", PN.isTerminal = False, PN.isRoot = True, PN.isTreeNode = True, PN.children = [1,2], PN.parents = [], PN.preliminaryStates = [], PN.totalCost = fromList [2.0], PN.preliminaryGapped = fromList [13568], PN.alignLeft = fromList [9216], PN.alignRight = fromList [4352]},
-                                standardNode {PN.code = 1, PN.nodeName = "b", PN.isTerminal = True, PN.isRoot = False, PN.isTreeNode = False, PN.children = [], PN.parents = [0], PN.preliminaryStates = [], PN.totalCost = fromList [0.0], PN.preliminaryGapped = fromList [9216], PN.alignLeft = fromList [], PN.alignRight = fromList []},
-                                standardNode {PN.code = 2, PN.nodeName = "c", PN.isTerminal = True, PN.isRoot = False, PN.isTreeNode = False, PN.children = [], PN.parents = [0], PN.preliminaryStates = [], PN.totalCost = fromList [0.0], PN.preliminaryGapped = fromList [4352], PN.alignLeft = fromList [], PN.alignRight = fromList []}]
-        readTreeInfo = processFiles "TinyCommands.pcg"
-        singleRead = fmap head readTreeInfo
-        ioTree = fmap assignNodes singleRead
-        treeEquiv = (assertEqual "Check tree stays the same" resultTree) <$> ioTree
-        treeCase = (testCase "Check evaluation") <$> treeEquiv
+
+        smallCase = pipeFile "TinyCommands.pcg"
+        mediumCase = pipeFile "data-sets/artmor.pcg"
+
+        pipeFile :: String -> IO TestTree
+        pipeFile inFile = 
+            let
+                singleRead = processFiles inFile
+                ioTree = --trace ("ioTree " ++ fmap show singleRead)
+                            fmap assignNodes singleRead
+                fitchTree = --trace ("fitchTree " ++ fmap show ioTree)
+                                allOptimization 1.0 <$> ioTree
+                iaTree = implyMain standardInfo <$> fitchTree
+                reFitch = allOptimization 1.0 <$> iaTree
+                checkCost = liftA2 (assertEqual "Check Fitch cost stays the same") (fmap rootCost fitchTree) (fmap rootCost reFitch)
+            in testCase "Check static Fitch" <$> checkCost
+
+-- | Get the cost at the root of the tree
+rootCost :: PN.PhyloComponent -> Float
+rootCost tree = 
+    let root = V.head $ V.filter PN.isRoot tree
+    in V.head $ PN.totalCost root
 
 
-processFiles :: String -> IO [TreeInfo]
+processFiles :: String -> IO ((PackedForest, PackedInfo, PackMode), PN.PhyloForest)
 processFiles inFile = do
     seqs <- getSeqsFromFile "TinySequence.fas"
     tree <- getTreeFromFile "TinyTree.newick"
     let weight = 1
     let names  = head $ filter (not.null) . fmap PN.nodeName <$> fmap V.toList tree
-    return $ optimizeForest tree (performPack seqs names tree ("static", "16")) weight
+    return $ (performPack seqs names tree ("static", "16"), tree)
 
-assignNodes :: TreeInfo -> PN.PhyloComponent
+assignNodes :: ((PackedForest, PackedInfo, PackMode), PN.PhyloForest) -> PN.PhyloComponent
 --assignNodes (inTree, pack) | trace ("assign nodes " ++ show pack) False = undefined
-assignNodes (inTree, pack) = --undefined
-    let rootCode = PN.code $ V.head $ V.filter PN.isRoot inTree
-    in inTree // (assign rootCode (inTree, pack))
+assignNodes ((packForest, info, mode), inForest) = --undefined
+    let 
+        pack = V.head packForest
+        inTree = head inForest
+        rootCode = PN.code $ V.head $ V.filter PN.isRoot inTree
+        masks = genMasks (blockLenMap info) (blockChars info) (length $ maxAlphabet info) (totalChars info) mode
+        recodeMasks = (packToBase $ fst masks, packToBase $ snd masks)
+    in inTree // (assign rootCode (inTree, pack) recodeMasks)
 
     where 
-        assign :: Int -> TreeInfo -> [(Int, PN.PhyloNode)]
-        assign curNode (inTree, pack) 
-            | PN.isTerminal (inTree ! curNode) = [(curNode, (inTree ! curNode) {PN.preliminaryGapped = (packToBase $ pack ! curNode)})]
+        assign :: Int -> TreeInfo -> (BaseChar, BaseChar) -> [(Int, PN.PhyloNode)]
+        assign curNode (inTree, pack) masks
+            | PN.isTerminal (inTree ! curNode) = [(curNode, (inTree ! curNode) {PN.preliminaryGapped = (packToBase $ pack ! curNode), PN.charVals = singleton $ DNA True masks (fromList ["A", "C", "G", "T", "-"])})]
             | (length $ PN.children (inTree ! curNode)) < 2 = error "Only binary trees allowed"
             | otherwise = 
                 let 
                     leftCode = head $ PN.children (inTree ! curNode)
                     rightCode = head $ tail $ PN.children (inTree ! curNode)
-                    newNode = (inTree ! curNode) {PN.preliminaryGapped = (packToBase $ pack ! curNode), PN.alignLeft = (packToBase $ pack ! leftCode), PN.alignRight = (packToBase $ pack ! rightCode)}
-                    leftUpdates = assign leftCode (inTree, pack)
-                    rightUpdates = assign rightCode (inTree, pack)
+                    node = (inTree ! curNode) {PN.preliminaryGapped = (packToBase $ pack ! curNode)}
+                    newNode = setCharacters node (singleton $ DNA True masks (fromList ["A", "C", "G", "T", "-"]))
+                    leftUpdates = assign leftCode (inTree, pack) masks
+                    rightUpdates = assign rightCode (inTree, pack) masks
                 in [(curNode, newNode)] ++ leftUpdates ++ rightUpdates
 
         packToBase :: BitPackedNode -> BaseChar
-        packToBase input | trace ("input to conversion "++ show input) False = undefined
+        --packToBase input | trace ("input to conversion "++ show input) False = undefined
         packToBase EmptyPackNode = empty
-        packToBase (S16 content) = --trace (show (fromEnum $ V.head content :: Int64))
+        packToBase (S16 content) = --trace (show content)
                                     V.map (\i -> fromIntegral i) content :: Vector Int64
         packToBase (S64 content) = V.map fromIntegral content :: Vector Int64
         packToBase (A16 content) = V.map fromIntegral content :: Vector Int64
@@ -173,7 +195,8 @@ data BranchPhylo = PLeaf {code :: PN.NodeCode                --links to DataMatr
                             , preliminaryGapped :: BaseChar
                             , alignLeft :: BaseChar
                             , alignRight :: BaseChar
-                            , tempField :: BaseChar}
+                            , tempField :: BaseChar
+                            , charVals :: Vector (PhyloCharacter Int64)}
                         | PNode {code :: PN.NodeCode                --links to DataMatrix for terminal
                             , nodeName :: String            --fromNameList HTUcode for non-leaf, or Newick
                             , isTerminal :: Bool --removed in favor of checking for null and one children/parents
@@ -189,7 +212,8 @@ data BranchPhylo = PLeaf {code :: PN.NodeCode                --links to DataMatr
                             , alignRight :: BaseChar
                             , leftChild :: BranchPhylo
                             , rightChild :: BranchPhylo
-                            , tempField :: BaseChar}
+                            , tempField :: BaseChar
+                            , charVals :: Vector (PhyloCharacter Int64)}
 
 instance Arbitrary BranchPhylo where
     arbitrary = do
@@ -202,34 +226,35 @@ instance Arbitrary BranchPhylo where
         alignRight <- arbitrary :: Gen BaseChar
         genCost <- fmap fromList $ listOf (arbitrary :: Gen Float)
         totalCost <- fmap fromList $ listOf (arbitrary :: Gen Float)
-        if terminate == 0 then return $ PLeaf 0 "hi" True False False [] [] mySeq genCost totalCost myGapped empty empty empty
-            else return $ PNode 0 "hi" False False True [] [] mySeq genCost totalCost myGapped alignLeft alignRight leftTree rightTree empty
+        if terminate == 0 then return $ PLeaf 0 "hi" True False False [] [] mySeq genCost totalCost myGapped empty empty empty empty
+            else return $ PNode 0 "hi" False False True [] [] mySeq genCost totalCost myGapped alignLeft alignRight leftTree rightTree empty empty
 
 instance Arbitrary PN.PhyloComponent where
     arbitrary = fmap (indexPhylo empty) (arbitrary :: Gen BranchPhylo)
+
 
 indexPhylo :: PN.PhyloComponent -> BranchPhylo -> PN.PhyloComponent
 indexPhylo initTree newLeaf
     | null initTree && isTerminal newLeaf =
         let outLeaf = PN.PhyloNode 0 (nodeName newLeaf) True True False (children newLeaf) []
                                 (preliminaryStates newLeaf) (localCost newLeaf) (totalCost newLeaf) 
-                                (preliminaryGapped newLeaf) (alignLeft newLeaf) (alignRight newLeaf) (tempField newLeaf)
+                                (preliminaryGapped newLeaf) (alignLeft newLeaf) (alignRight newLeaf) (tempField newLeaf) (charVals newLeaf)
         in initTree V.++ (singleton outLeaf)
     | null initTree = 
         let outLeaf = PN.PhyloNode 0 (nodeName newLeaf) False True True (children newLeaf) []
                                 (preliminaryStates newLeaf) (localCost newLeaf) (totalCost newLeaf) 
-                                (preliminaryGapped newLeaf) (alignLeft newLeaf) (alignRight newLeaf) (tempField newLeaf)
+                                (preliminaryGapped newLeaf) (alignLeft newLeaf) (alignRight newLeaf) (tempField newLeaf) (charVals newLeaf)
         in initTree V.++ (singleton outLeaf)
     | isTerminal newLeaf = 
         let outLeaf = PN.PhyloNode (length initTree) (nodeName newLeaf) True (isRoot newLeaf) (isTreeNode newLeaf) [] [length initTree - 1]
                                 (preliminaryStates newLeaf) (localCost newLeaf) (totalCost newLeaf) 
-                                (preliminaryGapped newLeaf) (alignLeft newLeaf) (alignRight newLeaf) (tempField newLeaf)
+                                (preliminaryGapped newLeaf) (alignLeft newLeaf) (alignRight newLeaf) (tempField newLeaf) (charVals newLeaf)
         in initTree V.++ (singleton outLeaf)
     | otherwise = 
         let
             partNode = PN.PhyloNode (length initTree) (nodeName newLeaf) False False True [] [length initTree - 1]
                                 (preliminaryStates newLeaf) (localCost newLeaf) (totalCost newLeaf) 
-                                (preliminaryGapped newLeaf) (alignLeft newLeaf) (alignRight newLeaf) (tempField newLeaf)
+                                (preliminaryGapped newLeaf) (alignLeft newLeaf) (alignRight newLeaf) (tempField newLeaf) (charVals newLeaf)
             leftTree = indexPhylo (initTree V.++ (singleton partNode)) (leftChild newLeaf) 
             rightTree = indexPhylo leftTree (rightChild newLeaf)
             finalNode = partNode {PN.children = [length initTree + 1, length leftTree + 1]}

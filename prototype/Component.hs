@@ -67,6 +67,9 @@ import Safe
 import Data.Tree.Binary.Class
 import Data.Tree.Node.Encoded
 import Data.Tree.Node.Preliminary
+import Data.Tree.Node.Final
+import Data.Tree.Node.Character
+import Data.PhyloCharacter
 
 
 -- | stuff for maxFloat
@@ -104,6 +107,7 @@ data PhyloNode = PhyloNode  { code :: NodeCode                --links to DataMat
                             , alignLeft :: BaseChar
                             , alignRight :: BaseChar
                             , tempField :: BaseChar
+                            , charVals :: V.Vector (PhyloCharacter Int64)
                             -- added Oct 5, consider strictness for these
                             --, finalStates :: !CharacterSetList
                             --, singleStates :: !CharacterSetList -- check type
@@ -112,6 +116,8 @@ data PhyloNode = PhyloNode  { code :: NodeCode                --links to DataMat
                             --, finalBitState :: BitPackedNode -- add update function to rectify packed and unpacked
                             --, impliedBitState :: BitPackedNode -- temporary bit node for implied alignment
                             } deriving (Generic, Show, Read, Eq)
+
+instance NFData (PhyloCharacter Int64)
 
 instance BinaryTree PhyloComponent PhyloNode where
   parent       n t = join $ (t !?) <$> (headMay $ parents n)
@@ -122,10 +128,10 @@ instance BinaryTree PhyloComponent PhyloNode where
         f = join . fmap (t !?)
     in (f x, f y)
   root           t = head $ [x | x <- (V.toList t), isRoot x]
-  update     t [n] = t // [(code n, n)]
+  update     t nodes = t // (map (\n -> (code n, n)) nodes)
 
 
-instance EncodedNode PhyloNode where
+instance EncodedNode PhyloNode Int64 where
   encoded node 
     | null $ preliminaryStates node = Nothing
     | otherwise = Just (V.fromList $ preliminaryStates node)
@@ -133,7 +139,7 @@ instance EncodedNode PhyloNode where
     | isNothing value = node {preliminaryStates = []}
     | otherwise = node {preliminaryStates = V.toList $ fromJust value}
 
-instance PreliminaryNode PhyloNode where
+instance PreliminaryNode PhyloNode Int64 where
     preliminary node
         | null $ preliminaryStates node = Nothing
         | otherwise = Just $ V.fromList $ preliminaryStates node
@@ -155,11 +161,11 @@ instance PreliminaryNode PhyloNode where
     cost = V.head . totalCost
     setCost value node = node {totalCost = V.singleton value}
 
-instance CharacterNode PhyloNode where
-    characters _ = empty
-    setCharacters n _ = n
+instance CharacterNode PhyloNode Int64 where
+    characters = charVals
+    setCharacters n val = n {charVals = val}
 
-instance FinalNode PhyloNode where
+instance FinalNode PhyloNode Int64 where
     final node 
         | null $ preliminaryStates node = Nothing
         | otherwise = Just $ V.fromList $ preliminaryStates node
