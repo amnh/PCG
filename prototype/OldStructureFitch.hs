@@ -18,12 +18,14 @@ import Safe
 import Data.Sequence.Coded
 import Data.Bits
 import Data.PhyloCharacter
+import Control.Monad
 
-type TreeConstraint t n b = (EncodedNode n b, BinaryTree t n, PreliminaryNode n b, CharacterNode n b, Bits b, FinalNode n b)
+type TreeConstraint t n b = (EncodedNode n b, BinaryTree t n, PreliminaryNode n b, CharacterNode n b, Bits b, FinalNode n b, Show t)
 type NodeConstraint n b = (EncodedNode n b, PreliminaryNode n b, CharacterNode n b, Bits b, FinalNode n b)
 
 -- | Unified function to perform both the first and second passes of fitch
 allOptimization :: TreeConstraint t n b => Float -> t -> t
+--allOptimization weight inTree | trace ("allOptimization " ++ show inTree) False = undefined
 allOptimization weight inTree = 
     let 
         downPass = optimizationDownPass weight inTree
@@ -122,7 +124,7 @@ downBitOps weight curNode lNode rNode =
     where
         fetchCost :: (Bits b) => EncodedSeq b -> V.Vector (PhyloCharacter b) -> Float
         fetchCost encoded chars 
-            | isNothing encoded = 0
+            | isNothing encoded || (V.length chars) /= (V.length $ fromJust encoded) = 0
             | otherwise = 
                 let val = V.ifoldr (\i char acc -> div (popCount char) (V.length $ alphabet $ chars V.! i)) 0 (fromJust encoded)
                 in (fromIntegral val :: Float)
@@ -175,9 +177,9 @@ upPassBitOps weight myNode lNode rNode pNode =
         chars = V.filter aligned (characters lNode)
         rBit = grabAligned rNode
         myBit = grabAligned myNode
-        fBit = Just $ V.ifilter (\i b -> aligned $ (characters myNode) V.! i) (fromJust $ temporary myNode)
-        pBit | isNothing pBit = Nothing
-             | otherwise = grabAligned (fromJust pNode)
+        fBit | (V.length $ characters myNode) /= (V.length $ fromJust $ temporary myNode) = Nothing
+             | otherwise = Just $ V.ifilter (\i b -> aligned $ (characters myNode) V.! i) (fromJust $ temporary myNode)
+        pBit = join $ fmap grabAligned pNode 
         setX = (complement myBit) .&. pBit
         notX = complement setX
         setG = notX .&. (Just $ V.map (snd . masks) chars)
@@ -194,8 +196,9 @@ upPassBitOps weight myNode lNode rNode pNode =
 -- | Grabs the aligned portions of a node's encoded sequence
 grabAligned :: NodeConstraint n b => n -> EncodedSeq b
 grabAligned node 
-    | isJust $ preliminaryAlign node = Just $ V.ifilter (\i b -> aligned $ (characters node) V.! i) (fromJust $ preliminaryAlign node)
-    | otherwise = Nothing
+    | isNothing $ preliminaryAlign node = Nothing
+    | (V.length $ characters node) /= (V.length $ fromJust $ preliminaryAlign node) = Nothing
+    | otherwise = Just $ V.ifilter (\i b -> aligned $ (characters node) V.! i) (fromJust $ preliminaryAlign node)
 
 -- | Convenience function for bit ops
 blockShiftAndFold :: (Bits b) => String -> String -> V.Vector (PhyloCharacter b) -> EncodedSeq b -> EncodedSeq b -> EncodedSeq b

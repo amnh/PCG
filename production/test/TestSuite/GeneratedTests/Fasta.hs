@@ -4,7 +4,7 @@ module TestSuite.GeneratedTests.Fasta
   ( testSuite
   ) where
 
-import Data.Either.Custom
+import Data.Either.Combinators
 import Data.Map                          (toList)
 import File.Format.Fasta
 import Test.Tasty                        (TestTree,testGroup)

@@ -17,44 +17,48 @@ type AlignOut = (BaseChar, Float, BaseChar, BaseChar, BaseChar)
 
 -- | implyMain is a the function that performs an implied alignment for a tree starting at the root
 implyMain :: CharInfo -> PhyloComponent -> PhyloComponent
+--implyMain info tree | trace ("implyMain " ++ show tree) False = undefined
 implyMain info tree 
-    | isNothing root = error "Tree has no root"
-    | otherwise = iaMainPreorder tree tree subMat (tree V.! (fromJust root)) info
+    | isNothing root || root < 0 || root >= (V.length tree) = error "Tree has no root or root reference is outside tree"
+    | isNothing subtreeWrap tree = error "Subtrees could not be generated"
+    | otherwise = iaMainPreorder tree tree (fromJust subMat) (tree V.! (fromJust root)) info
     where 
         root = V.findIndex (\node -> isRoot node) tree
         subMat = subtreeWrap tree
 
 -- | Wrapper for getSubtrees
-subtreeWrap :: PhyloComponent -> Subtrees
+subtreeWrap :: PhyloComponent -> Maybe Subtrees
 subtreeWrap tree 
-    | isNothing root = error "Tree has no root"
-    | otherwise = fst $ getSubtrees tree (fromJust root) (zero (V.length tree) (V.length tree))
+    | isNothing root || root < 0 || root >= (V.length tree) = error "Tree has no root or root reference is outside tree"
+    | otherwise = fmap fst $ getSubtrees tree root (zero (V.length tree) (V.length tree))
 
         where root = V.findIndex (\node -> isRoot node) tree
 
 -- | List the subtrees at each node to use in the preorder traversal
-getSubtrees :: PhyloComponent -> NodeCode -> Subtrees -> (Subtrees, [Int])
+getSubtrees :: PhyloComponent -> Maybe NodeCode -> Subtrees -> Maybe (Subtrees, [Int])
 --getSubtrees inTree curCode initStructure | trace "getSubtrees" False = undefined
 getSubtrees inTree curCode initStructure
-    | isTerminal node || (null $ children node) = (initStructure, [curCode])
+    | isTerminal <$> node || (null $ children node) = (initStructure, [curCode])
     | (length $ children node) > 2 = error "Can only perform implied alignment on binary trees"
     | (length $ children node) == 1 = 
         let
-            child = head $ children node
-            (downStruc, downPos) = getSubtrees inTree child initStructure
-            setMat = foldr (\pos acc -> setElem 1 (curCode, pos) acc) downStruc downPos
+            child = join $ headMay <$> children <$> node
+            recurse = getSubtrees inTree child initStructure
+            setMat = accum <$> recurse
         in (setMat, curCode : downPos)
     | otherwise = 
         let
             (leftStruc, leftPos) = getSubtrees inTree (head $ children node) initStructure
-            (rightStruc, rightPos) = getSubtrees inTree ((children node) !! 1) initStructure
+            (rightStruc, rightPos) = getSubtrees inTree ((children node) !? 1) initStructure
             totalStruc = leftStruc `sumMat` rightStruc
             totalPos = leftPos ++ rightPos
             setMat = foldr (\pos acc -> setElem 1 (curCode, pos) acc) totalStruc totalPos
         in (setMat, curCode : totalPos)
         where
-            node = inTree V.! curCode
+            node = join $ (V.!?) inTree <$> curCode
             sumMat = elementwise (+)
+            accum :: (Subtrees, [Int]) -> Subtrees
+            accum (downStruc, downPos) = foldr (\pos acc -> setElem 1 (curCode, pos) acc) downStruc downPos
 
 -- | iaMainDown is the main downpass of an implied alignment
 -- Starts at the given node

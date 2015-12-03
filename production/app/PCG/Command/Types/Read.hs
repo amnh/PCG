@@ -1,22 +1,29 @@
+{-# LANGUAGE FlexibleContexts #-}
+
 module PCG.Command.Types.Read
   ( evaluate
   , validate
   ) where
 
-import Control.Arrow       ((&&&))
-import Control.Monad       (liftM2,when)
-import Data.Char           (toLower)
-import Data.Either         (partitionEithers)
-import Data.Either.Custom  (isRight, rightMay)
-import Data.Map            (toList)
-import Data.Maybe          (fromJust,isNothing)
-import Data.HashMap.Strict (fromList)
-import Prelude      hiding (lookup)
+import Control.Arrow              ((&&&))
+import Control.Monad              (liftM2,when)
+import Control.Monad.IO.Class
+import Control.Monad.Trans.Either
+import Data.Bifunctor             (first)
+import Data.Char                  (toLower)
+import Data.Either                (partitionEithers)
+import Data.Either.Combinators    (isRight, rightToMaybe)
+import Data.Either.Custom
+import Data.Map                   (Map,toList)
+import Data.Maybe                 (fromJust,isNothing)
+import Data.Hashable
+import Data.HashMap.Strict        (HashMap,fromList)
+import Data.Text.Lazy             (Text)
+import Prelude             hiding (lookup)
 import Text.Megaparsec
-import System.Directory    (doesFileExist)
 
 import File.Format.Fasta
-import File.Format.Fastc
+import File.Format.Fastc   hiding (Identifier)
 import File.Format.Newick
 import File.Format.TransitionCostMatrix
 import File.Format.VertexEdgeRoot
@@ -29,90 +36,65 @@ import PCG.Script.Types
 
 evaluate :: Command -> SearchState -> SearchState
 evaluate (READ fileSpecs) old = do
-    let paths = concatMap getSpecifiedFiles fileSpecs
-    when (null paths) $ fail "The read command has files specified"
-    exists <- evalIO . sequence $ fmap doesFileExist paths
-    _      <- case fmap fst . filter (not . snd) $ zip paths exists of
-                [x]    -> fail $ "The file  " ++ show  x     ++ " does not exist"
-                (x:xs) -> fail $ "The files " ++ show (x:xs) ++ " do not exist"
-                []     -> pure ()
-    foldl smartParse old fileSpecs
+    when (null fileSpecs) $ fail "No files specified in 'read()' command"
+    result <- liftIO . runEitherT . eitherTValidation $ parseSpecifiedFile <$> fileSpecs
+    case result of
+      Left err -> fail $ show err
+      Right xs -> foldl (<>) old xs
 evaluate _ _ = fail "Invalid READ command binding"
 
-smartParse :: SearchState -> FileSpecification -> SearchState
-smartParse ss (AminoAcidFile xs) = do
-    contents <- evalIO . sequence $ parse' <$> xs
-    parsed   <- case partitionEithers contents of
-                  ([]    , ys) -> pure ys
-                  ([e]   , _ ) -> fail $ "The following parse error was encountered: " ++ show e
-                  (errors, _ ) -> fail . unlines . ("The following parse errors were encountered: ":) $ show <$> errors
-    ss <> pure (mempty { taxaSeqs = convert parsed }) 
-  where
-    parse' filePath = parse (fastaStreamConverter AminoAcid =<< fastaStreamParser) filePath <$> readFile filePath
-    convert         = fromList . concatMap toList
-smartParse ss (NucleotideFile xs) = do
-    contents <- evalIO . sequence $ parse' <$> xs
-    parsed   <- case partitionEithers contents of
-                  ([]    , ys) -> pure ys
-                  ([e]   , _ ) -> fail $ "The following parse error was encountered: " ++ show e
-                  (errors, _ ) -> fail . unlines . ("The following parse errors were encountered: ":) $ show <$> errors
-    ss <> pure (mempty { taxaSeqs = convert parsed }) 
-  where
-    parse' filePath = parse (fastaStreamConverter DNA =<< fastaStreamParser) filePath <$> readFile filePath
-    convert         = fromList . concatMap toList
-smartParse _  (AnnotatedFile  _) = fail "Annotated file specification is not implemented"
-smartParse _  (ChromosomeFile _) = fail "Chromosome file specification is not implemented"
-smartParse _  (GenomeFile     _) = fail "Genome file specification is not implemented"
-smartParse ss (CustomAlphabetFile files _ {-tcm-} _) = do
-    contents <- evalIO . sequence $ parse' <$> files
-    parsed   <- case partitionEithers contents of
-                  ([]    , xs) -> pure xs
-                  ([e]   , _ ) -> fail $ "The following parse error was encountered: " ++ show e
-                  (errors, _ ) -> fail . unlines . ("The following parse errors were encountered: ":) $ show <$> errors
-{-
-    _        <- case tcm of
-                 Just tcm' -> evalIO $ parse tcmStreamParser tcm' <$> readFile tcm' -- ignore the matrix for now
-                 Nothing   -> pure $ Right mempty
--}
-    ss <> pure (mempty { taxaSeqs = convert parsed }) 
-  where
-    parse' filePath = parse fastcStreamParser filePath <$> readFile filePath
-    convert         = fromList . concatMap (fmap (fastcLabel &&& fastcSymbols))
-smartParse ss (PrealignedFile spec _ {-tcm-}) = do
-    res <- smartParse ss spec
-{-
-    _   <- case tcm of
-             Just tcm' -> evalIO $ parse tcmStreamParser tcm' <$> readFile tcm' -- ignore the matrix for now
-             Nothing   -> pure $ Right mempty
--}
-    pure res
-smartParse ss (UnspecifiedFile xs) = do
-    foldl (<>) ss (progressiveParse <$> xs)
---  where
---    parse' filePath = parse (fastaStreamConverter DNA =<< fastaStreamParser) filePath <$> readFile filePath
---    convert         = fromList . concatMap toList
+parseSpecifiedFile  :: FileSpecification -> EitherT ReadError IO SearchState
+-- Currently ignoring TCM
+parseSpecifiedFile      (PrealignedFile     x _  ) = parseSpecifiedFile x
+-- Currently ignoring TCM
+parseSpecifiedFile spec@(CustomAlphabetFile _ _ _) = 
+  parseSpecifiedFileSimple  fastcStreamParser (setTaxaSeqs . customToHashMap) spec
+parseSpecifiedFile spec@(AminoAcidFile      _    ) =
+  parseSpecifiedFileSimple (fastaStreamConverter AminoAcid =<< fastaStreamParser) (setTaxaSeqs . mapsToHashMap) spec
+parseSpecifiedFile spec@(NucleotideFile     _    ) =
+  parseSpecifiedFileSimple (fastaStreamConverter DNA       =<< fastaStreamParser) (setTaxaSeqs . mapsToHashMap) spec
+parseSpecifiedFile spec@(UnspecifiedFile    _    ) =
+  getSpecifiedContent spec >>= fmap (foldl (<>) mempty) . eitherTValidation . fmap progressiveParse . dataFiles
+parseSpecifiedFile      (AnnotatedFile      _    ) = fail "Annotated file specification is not implemented"
+parseSpecifiedFile      (ChromosomeFile     _    ) = fail "Chromosome file specification is not implemented"
+parseSpecifiedFile      (GenomeFile         _    ) = fail "Genome file specification is not implemented"
 
-progressiveParse :: FilePath -> SearchState
-progressiveParse path = do
-    content <- evalIO $ readFile path
-    case partitionEithers $ parseTryOrderForSequences <*> [content] of
-      (_ , parsed:_) -> pure (mempty { taxaSeqs = fromList $ toList parsed })
-      (_ , []      ) ->
-        case parse newickStreamParser path content of
-          Right _ -> pure mempty
-          Left  _ ->
-            case parse tcmStreamParser path content of
-              Right _ -> pure mempty
-              Left  _ ->
-                case parse verStreamParser path content of
-                  Right _ -> pure mempty
-                  Left  _ -> fail $ "Could not determine the file type of '"++path++"'. Try annotating the expected file data in the 'read' for more explicit error message on file prsing failures."
+setTaxaSeqs :: HashMap Identifier Sequence -> SearchState
+setTaxaSeqs x = pure (mempty { taxaSeqs = x })
+
+mapsToHashMap :: (Eq k, Hashable k) => [Map k v] -> HashMap k v
+mapsToHashMap = fromList . concatMap toList
+
+customToHashMap :: [FastcParseResult] -> HashMap Identifier CharacterSequence
+customToHashMap = fromList . concatMap (fmap (fastcLabel &&& fastcSymbols))
+
+parseSpecifiedFileSimple :: Parsec Text a -> ([a] -> SearchState) -> FileSpecification -> EitherT ReadError IO SearchState
+parseSpecifiedFileSimple comb toState spec = getSpecifiedContent spec >>= (hoistEither . parseSpecifiedContent)
   where
-    parseTryOrderForSequences :: [FilePath -> Either ParseError TaxonSequenceMap]
+    parseSpecifiedContent :: FileSpecificationContent -> Either ReadError SearchState
+    parseSpecifiedContent = fmap toState . eitherValidation . fmap (first unparsable . parse') . dataFiles
+    parse' (path,content) = parse comb path content
+
+progressiveParse :: FileResult -> EitherT ReadError IO SearchState
+progressiveParse (filePath, fileContent) =
+  case snd . partitionEithers $ parseTryOrderForSequences <*> [fileContent] of
+    parsed:_ -> pure . pure $ mempty { taxaSeqs = fromList $ toList parsed }
+    []       ->
+      case parse newickStreamParser filePath fileContent of
+        Right _ -> pure mempty
+        Left  _ ->
+          case parse tcmStreamParser  filePath fileContent of
+            Right _ -> pure mempty
+            Left  _ ->
+              case parse verStreamParser filePath fileContent of
+                Right _ -> pure mempty
+                Left  _ -> fail $ "Could not determine the file type of '"++filePath++"'. Try annotating the expected file data in the 'read' for more explicit error message on file parsing failures."
+  where
+    parseTryOrderForSequences :: [FileContent -> Either ParseError TaxonSequenceMap]
     parseTryOrderForSequences =
-      [ parse (fastaStreamConverter DNA       =<< fastaStreamParser) path
-      , parse (fastaStreamConverter RNA       =<< fastaStreamParser) path
-      , parse (fastaStreamConverter AminoAcid =<< fastaStreamParser) path
+      [ parse (fastaStreamConverter DNA       =<< fastaStreamParser) filePath
+      , parse (fastaStreamConverter RNA       =<< fastaStreamParser) filePath
+      , parse (fastaStreamConverter AminoAcid =<< fastaStreamParser) filePath
       ]
 
 validate :: [Argument] -> Either String Command
@@ -147,31 +129,31 @@ validateReadArg (LidentNamedArg (Lident identifier) (ArgumentList xs)) | (\x -> 
 validateReadArg (LidentNamedArg (Lident identifier) (ArgumentList xs)) | (\x -> x == "breakinv"   || x == "custom_alphabet") $ toLower <$> identifier = subDefinition
   where
     (files,suffix) = span (isRight . primativeString) xs
-    files'  = (fromJust . rightMay . primativeString) <$> files
+    files'  = (fromJust . rightToMaybe . primativeString) <$> files
     options = getCustomAlphabetOption <$> tail suffix
     badOption = any isNothing options
-    tcmFile = case suffix of
-               (LidentNamedArg (Lident y) ys):_ -> if "tcm" == (toLower <$> y)
-                                                   then either (const Nothing) Just $ primativeString ys
-                                                   else Nothing
-               _                                -> Nothing
+    tcmFile' = case suffix of
+                (LidentNamedArg (Lident y) ys):_ -> if "tcm" == (toLower <$> y)
+                                                    then either (const Nothing) Just $ primativeString ys
+                                                    else Nothing
+                _                                -> Nothing
 
     subDefinition
       |   null xs
-      || (null.tail) xs     = Left  "Missing minimum arguments of at least one file path containing data and file path to tcm definition"
+      || (null.tail) xs      = Left  "Missing minimum arguments of at least one file path containing data and file path to tcm definition"
       |   null suffix
-      ||  isNothing tcmFile = Left  "Missing filepath to tcm definition"
-      |   badOption         = Left  "One or more optional arguments are invalid"
-      | otherwise           = case partitionOptions $ fromJust <$> options of
-                                ([] ,[] , []) -> Right $ CustomAlphabetFile files' tcmFile []
-                                ([a],[] , []) -> Right $ CustomAlphabetFile files' tcmFile [a]
-                                ([] ,[b], []) -> Right $ CustomAlphabetFile files' tcmFile [b]
-                                ([] ,[] ,[c]) -> Right $ CustomAlphabetFile files' tcmFile [c]
-                                ([a],[b], []) -> Right $ CustomAlphabetFile files' tcmFile [a,b]
-                                ([a],[] ,[c]) -> Right $ CustomAlphabetFile files' tcmFile [a,c]
-                                ([] ,[b],[c]) -> Right $ CustomAlphabetFile files' tcmFile [b,c]
-                                ([a],[b],[c]) -> Right $ CustomAlphabetFile files' tcmFile [a,b,c]
-                                _             -> Left "Multiple labeled arguments sharing the same label"
+      ||  isNothing tcmFile' = Left  "Missing filepath to tcm definition"
+      |   badOption          = Left  "One or more optional arguments are invalid"
+      | otherwise            = case partitionOptions $ fromJust <$> options of
+                                 ([] ,[] , []) -> Right $ CustomAlphabetFile files' tcmFile' []
+                                 ([a],[] , []) -> Right $ CustomAlphabetFile files' tcmFile' [a]
+                                 ([] ,[b], []) -> Right $ CustomAlphabetFile files' tcmFile' [b]
+                                 ([] ,[] ,[c]) -> Right $ CustomAlphabetFile files' tcmFile' [c]
+                                 ([a],[b], []) -> Right $ CustomAlphabetFile files' tcmFile' [a,b]
+                                 ([a],[] ,[c]) -> Right $ CustomAlphabetFile files' tcmFile' [a,c]
+                                 ([] ,[b],[c]) -> Right $ CustomAlphabetFile files' tcmFile' [b,c]
+                                 ([a],[b],[c]) -> Right $ CustomAlphabetFile files' tcmFile' [a,b,c]
+                                 _             -> Left "Multiple labeled arguments sharing the same label"
 
 validateReadArg (LidentNamedArg (Lident identifier) (ArgumentList (arg:args))) | "prealigned" == (toLower <$> identifier) =
   case args of
@@ -179,7 +161,7 @@ validateReadArg (LidentNamedArg (Lident identifier) (ArgumentList (arg:args))) |
     [(LidentNamedArg (Lident x) xs)] -> case toLower <$> x of
                                           "tcm" -> liftM2 PrealignedFile val (Just <$> primativeString xs)
                                           _     -> Left  $ "Unexpected named argument '" ++ x ++ "'"
-    _                                -> Left  "Too many arguments"
+    _                                -> Left "Too many arguments"
   where
     val = validateReadArg arg
 
@@ -221,5 +203,3 @@ primativeString (ArgumentList   _              ) = Left $ "Argument list "     +
 primativeStringErrorSuffix :: [Char]
 primativeStringErrorSuffix = "found where a string argument containing a file path was expected"
 
---smartParse (filePath, fileData) = parse (fastaStreamConverter DNA =<< fastaStreamParser) filePath fileData
---smartParse (,) = 

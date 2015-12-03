@@ -13,15 +13,18 @@ import Text.Megaparsec
 import Text.Megaparsec.Custom
 import Text.Megaparsec.Prim       (MonadParsec)
 
+-- | Pairing of taxa with an unconverted sequence
 data FastaSequence
    = FastaSequence
    { taxonName     :: Identifier
    , taxonSequence :: String
    } deriving (Eq,Show)
+
+-- | Unconverted result of a fasta parse
 type FastaParseResult = [FastaSequence]
 
--- | Consumes a Char stream and parses the stream into a FastaParseResult that
---   has been validated for information consistency
+-- | Consumes a stream of 'Char's and parses the stream into a 'FastaParseResult' that
+-- has been validated for information consistency
 fastaStreamParser :: MonadParsec s m Char => m FastaParseResult
 fastaStreamParser = validate =<< seqTranslation <$> (some fastaTaxonSequenceDefinition <* eof)
 
