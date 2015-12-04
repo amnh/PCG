@@ -1,4 +1,4 @@
-{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE DoAndIfThenElse, FlexibleContexts #-}
 
 module File.Format.Nexus.Parser where
 
@@ -8,7 +8,7 @@ import Data.List (sort)
 import qualified Data.Map.Lazy as M
 import Data.Maybe (isJust, fromJust, catMaybes)
 import qualified Data.Set as S
-import Debug.Trace
+--import Debug.Trace
 import Safe
 import Text.Megaparsec hiding (label)
 import Text.Megaparsec.Lexer  (integer)
@@ -89,7 +89,7 @@ data CharFormatField
    | Interleave  Bool
    | Unlabeled   Bool   -- if matrix is unlabeled, in which case first token in each line is a char
    | IgnFF       String -- for non-standard inputs, plus notokens, which is the default anyway
-   deriving (Show)
+   deriving (Eq,Show)
 
 
 data TreeField
@@ -118,7 +118,7 @@ data CharacterFormat
    , transpose    :: Bool
    , interleave   :: Bool
    , unlabeled    :: Bool
-   } deriving (Show)
+   } deriving (Eq,Show)
 
 data CharDataType = Standard | DNA | RNA | Nucleotide | Protein | Continuous deriving (Read, Show)
 
@@ -181,7 +181,7 @@ parseNexusStream = parse (validateParseResult =<< parseNexus <* eof) "PCG encoun
 --     ---for aligned, should be caught by 16
 --     ---for unaligned, caught by combo of 12 & 22
 -- 22. In unaligned, interleaved block, a taxon is repeated                    3                dep              done
-validateParseResult :: MonadParsec s m Char => ParseResult -> m Nexus
+validateParseResult :: (Show s, MonadParsec s m Char) => ParseResult -> m Nexus
 validateParseResult (ParseResult sequences taxas trees)
   | not (null independentErrors) = fails independentErrors
   | not (null dependentErrors)   = fails dependentErrors
@@ -516,11 +516,13 @@ convertMatrix taxa sequence = V.fromList [("dummy", ["data", "here"])]
 --    V.foldr (\x acc -> if ) Nothing seqs
 --                 where initLength = length $ snd (seqs ! 0)
 
-parseNexus :: MonadParsec s m Char => m ParseResult
+parseNexus :: (Show s, MonadParsec s m Char) => m ParseResult
 parseNexus = nexusFileDefinition
 
-nexusFileDefinition :: MonadParsec s m Char => m ParseResult
-nexusFileDefinition = do
+nexusFileDefinition :: (Show s, MonadParsec s m Char) => m ParseResult
+nexusFileDefinition = {-do
+    x <- getInput
+    trace ("nexusFileDefinition"  ++ show x) $ -}do
     _       <- string "#NEXUS"
     _       <- space
     comment <- optional commentDefinition
@@ -528,14 +530,16 @@ nexusFileDefinition = do
     (x,y,z) <- partitionNexusBlocks <$> (many nexusBlock)
     pure $ ParseResult x y z
 
-ignoredBlockDefinition :: MonadParsec s m Char => m String
-ignoredBlockDefinition = do
+ignoredBlockDefinition :: (Show s, MonadParsec s m Char) => m String
+ignoredBlockDefinition = {-do
+    x <- getInput
+    trace ("ignoredBlockDefinition"  ++ show x) $ -}do
     title <- many letterChar
     _     <- symbol $ char ';'
-    _     <- anythingTill $ symbol (string' "END;")
+    _     <- somethingTill $ symbol (string' "END;")
     pure $ title
 
-nexusBlock :: MonadParsec s m Char => m NexusBlock
+nexusBlock :: (Show s, MonadParsec s m Char) => m NexusBlock
 nexusBlock = do
         _      <- symbol (string' "BEGIN")
         block' <- symbol block
@@ -545,40 +549,50 @@ nexusBlock = do
         block =  (CharacterBlock <$> try (characterBlockDefinition "characters" True))
              <|> (CharacterBlock <$> try (characterBlockDefinition "unaligned" False))
              <|> (CharacterBlock <$> try (characterBlockDefinition "data" True)) -- data blocks should be aligned
-             <|> (TaxaBlock      <$> try taxaBlockDefinition)
+  --           <|> (TaxaBlock      <$> try taxaBlockDefinition)
              <|> (TreesBlock     <$> try treeBlockDefinition)
-             -- <|> (IgnoredBlock   <$> try ignoredBlockDefinition)
+             <|> (IgnoredBlock   <$> try ignoredBlockDefinition)
 
-characterBlockDefinition :: MonadParsec s m Char => String -> Bool -> m PhyloSequence
-characterBlockDefinition which aligned = do
+characterBlockDefinition :: (Show s, MonadParsec s m Char) => String -> Bool -> m PhyloSequence
+characterBlockDefinition which aligned = {-do
+    x <- getInput
+    trace ("characterBlockDefinition"  ++ show x) $ -}do
     _           <- symbol (string' $ which ++ ";")
     (v,w,x,y,z) <- partitionSequenceBlock <$> (some seqSubBlock)
     pure $ PhyloSequence aligned v w x y z
 
-taxaBlockDefinition :: MonadParsec s m Char => m TaxaSpecification
-taxaBlockDefinition = do
+taxaBlockDefinition :: (Show s, MonadParsec s m Char) => m TaxaSpecification
+taxaBlockDefinition = {-do
+    x <- getInput
+    trace ("taxaBlockDefinition"  ++ show x) $ -}do
     _     <- symbol (string' "taxa;")
-    (y,z) <- partitionTaxaBlock <$> (many seqSubBlock)
+    (y,z) <- partitionTaxaBlock <$> (many taxaSubBlock)
     pure $ TaxaSpecification y z
 
-taxaSubBlock :: MonadParsec s m Char => m SeqSubBlock
-taxaSubBlock = do
+taxaSubBlock :: (Show s, MonadParsec s m Char) => m SeqSubBlock
+taxaSubBlock = {-do
+    x <- getInput
+    trace ("many taxaSubBlock"  ++ show x) $ -}do
         _      <- whitespace
         block' <- symbol block
         pure block'
     where
         block =  (Dims <$> try dimensionsDefinition)
              <|> (Taxa <$> try (stringListDefinition "taxlabels"))
-             <|> (Ignored <$> try (ignoredSubBlockDef ';'))
+             -- <|> (Ignored <$> try (ignoredSubBlockDef ';'))
 
-treeBlockDefinition :: MonadParsec s m Char => m TreeBlock
-treeBlockDefinition = do
+treeBlockDefinition :: (Show s, MonadParsec s m Char) => m TreeBlock
+treeBlockDefinition = {-do
+    x <- getInput
+    trace ("treeBlockDefinition"  ++ show x) $ -}do
         _     <- symbol (string' "trees;")
         (x,y) <- partitionTreeBlock <$> (many treeFieldDef)
         pure $ TreeBlock x y
 
-seqSubBlock :: MonadParsec s m Char => m SeqSubBlock
-seqSubBlock = symbol block
+seqSubBlock :: (Show s, MonadParsec s m Char) => m SeqSubBlock
+seqSubBlock = {-do
+    x <- getInput
+    trace ("seqSubBlock" ++ (show x)) $ -}symbol block
     where
         block =  (Dims <$> try dimensionsDefinition)
              <|> (Format <$> try formatDefinition)
@@ -587,8 +601,10 @@ seqSubBlock = symbol block
              <|> (Taxa <$> try (stringListDefinition "taxlabels"))
              -- <|> (Ignored <$> try (ignoredSubBlockDef ';'))
 
-dimensionsDefinition :: MonadParsec s m Char => m DimensionsFormat
-dimensionsDefinition = do
+dimensionsDefinition :: (Show s, MonadParsec s m Char) => m DimensionsFormat
+dimensionsDefinition = {-do 
+        x         <- getInput 
+        trace ("**dimensionsDefinition:  " ++ show x) $ -}do
         _         <- symbol (string' "dimensions")
         newTaxa'  <- optional (try (symbol (string' "newTaxa")))
         _         <- optional (try (symbol (string' "nTax")))
@@ -602,16 +618,29 @@ dimensionsDefinition = do
                                 (maybe 0 fromEnum numTaxa')
                                 (maybe 0 fromEnum charCount)
 
-formatDefinition :: MonadParsec s m Char => m CharacterFormat
+-- | formatDefinition tests an input String. If that String passes the (implicit) definition
+-- of a format statement in the characters block or unaligned block of a Nexus file, it returns
+-- a parse of the String. A well-formed input string will start with the word "format" followed by
+-- a space-delimited list of words, each of which can be successfully parsed by 
+-- charFormatFieldDef, and end with a semi-colon.
+-- TODO: An incomplete test exists in the test suite.
+formatDefinition :: (Show s, MonadParsec s m Char) => m CharacterFormat
 formatDefinition = do
         _                         <- symbol (string' "format")
         (o,p,q,r,s,t,u,v,w,x,y,z) <- partitionCharFormat <$> charFormatFieldDef
         _                         <- symbol $ char ';'
         pure $ CharacterFormat o p q r s t u v w x y z
 
-charFormatFieldDef :: MonadParsec s m Char => m [CharFormatField]
-charFormatFieldDef = do
-        block' <- some $ symbol block
+-- | charFormatFieldDef takes a String and attempts to parse it into multiple CharFormatFields
+-- the return type is [CharFormatField]. The parse fails if any part of the string cannot be parsed
+-- by any of the sub-parsers, or if any of those sub-parsers fails.
+-- A test exists in the test suite, although only false positives are tested for, not false negatives.
+-- I deemed this good enough, since each of the called fns is well-tested, and the calling fn is, as well.
+charFormatFieldDef :: (Show s, MonadParsec s m Char) => m [CharFormatField]
+charFormatFieldDef = {-do
+        x <- getInput
+        trace ("many charFormatFieldDef"  ++ show x) $ -}do
+        block' <- many $ symbol block
         pure block'
     where
         block =  (CharDT <$> try (stringDefinition "datatype"))
@@ -629,7 +658,7 @@ charFormatFieldDef = do
              <|> (IgnFF <$> try (ignoredSubBlockDef ' '))
 
 
-treeFieldDef :: MonadParsec s m Char => m TreeField
+treeFieldDef :: (Show s, MonadParsec s m Char) => m TreeField
 treeFieldDef = do
         block' <- block
         pure block'
@@ -642,13 +671,15 @@ treeFieldDef = do
 -- | booleanDefinition takes a string of format KEYWORD;
 -- and returns True if it succeeds in matching. The semicolon is not captured by this fn.
 -- A test exists in the test suite.
-booleanDefinition :: MonadParsec s m Char => String -> m Bool
-booleanDefinition blockTitle = symbol (string' blockTitle) *> pure True
+booleanDefinition :: (Show s, MonadParsec s m Char) => String -> m Bool
+booleanDefinition blockTitle = {-do
+        x <- getInput
+        trace (("booleanDefinition " ++ blockTitle)  ++ show x) $-} symbol (string' blockTitle) *> pure True
 
 -- | stringDefinition takes a string of format TITLE=value;
 -- and returns the value. The semicolon is not captured by this fn.
 -- A test exists in the test suite.
-stringDefinition :: MonadParsec s m Char => String -> m String
+stringDefinition :: (Show s, MonadParsec s m Char) => String -> m String
 stringDefinition blockTitle = do
     _     <- symbol $ string' blockTitle
     _     <- symbol $ char '='
@@ -661,36 +692,44 @@ stringDefinition blockTitle = do
 -- Fails gracefully if the close quote is missing.
 -- A test exists in the test suite.
 -- TODO?: This doesn't work if they leave off the opening quote mark.
-quotedStringDefinition :: MonadParsec s m Char => String -> m (Either String [String])
-quotedStringDefinition blockTitle = {- -} do
+quotedStringDefinition :: (Show s, MonadParsec s m Char) => String -> m (Either String [String])
+quotedStringDefinition blockTitle = {-do
+    x <- getInput
+    trace (("some quotedStringDefinition " ++ blockTitle)  ++ show x) $ -}do
     _     <- symbol (string' blockTitle)
     _     <- symbol $ char '='
     _     <- symbol $ char '"'
     value <- some $ symbol (notKeywordWord "\"" <?> "Word that is not a Nexus keyword")
-    {- close <- optional $ char '"'
+    close <- optional $ char '"'
     pure $ if isJust close
            then Right value
-           else Left (blockTitle ++ " missing closing quote.") -}
-    _ <- symbol $ char '"'
-    pure $ Right value
+           else Left (blockTitle ++ " missing closing quote.") 
+    -- _ <- symbol $ char '"'
+    --pure $ Right value
 
-stringListDefinition :: MonadParsec s m Char => String -> m [String]
-stringListDefinition label = do
+stringListDefinition :: (Show s, MonadParsec s m Char) => String -> m [String]
+stringListDefinition label = {-do
+    x <- getInput
+    trace (("many stringListDefinition " ++ label)  ++ show x) $ -}do
     _        <- symbol (string' label)
     theItems <- many $ symbol $ notKeywordWord ""
     _        <- symbol $ char ';'
     pure $ theItems
 
-delimitedStringListDefinition :: MonadParsec s m Char => String -> Char -> m [String]
-delimitedStringListDefinition label delimiter = do
+delimitedStringListDefinition :: (Show s, MonadParsec s m Char) => String -> Char -> m [String]
+delimitedStringListDefinition label delimiter = {-do
+    x <- getInput
+    trace (("delimitedStringListDefinition " ++ label)  ++ show x) $ -}do
     _        <- symbol (string' label)
     theItems <- many (noneOf $ delimiter : ";") `sepBy` (char delimiter)
     _        <- symbol $ char ';'
     pure $ theItems
 
 
-treeDefinition :: MonadParsec s m Char => m (String, String)
-treeDefinition = do
+treeDefinition :: (Show s, MonadParsec s m Char) => m (String, String)
+treeDefinition = {-do
+    x <- getInput
+    trace ("treeDefinition"  ++ show x) $ -}do
     _     <- symbol (string' "tree")
     label <- symbol $ many (noneOf ";=")
     _     <- symbol $ char '='
@@ -698,21 +737,26 @@ treeDefinition = do
     _     <- symbol $ char ';'
     pure (label, trees)
 
-matrixDefinition :: MonadParsec s m Char => m String
-matrixDefinition = do
+matrixDefinition :: (Show s, MonadParsec s m Char) => m String
+matrixDefinition = {-do
+    x <- getInput
+    trace ("matrixDefinition"  ++ show x) $ -}do
     first     <- symbol (string' "matrix")
     goodStuff <- many $ noneOf ";"
     _         <- symbol $ char ';'
     pure goodStuff
 
 -- | ignoredSubBlockDef takes any string that terminates with
--- the passed end character (or a semicolon). It returns that string up to, but
+-- the passed end character, a semicolon or "end;". It returns that string up to, but
 -- not including, whatever the terminating char is. Also fails if the input is "end;"
-ignoredSubBlockDef :: MonadParsec s m Char => Char -> m String
-ignoredSubBlockDef endChar = do
-    _ <- notFollowedBy (space *> string' "end;")
-    anythingTill (symbol (string ";")
-             <|> symbol (string' [endChar]))
+-- A test exists in the test suite.
+ignoredSubBlockDef :: (Show s, MonadParsec s m Char) => Char -> m String
+ignoredSubBlockDef endChar = {-do
+    x <- getInput
+    trace (("ignoredSubBlockDef endChar: " ++ [endChar])  ++ show x) $ -}do
+    _ <- notFollowedBy (space *> string' "end;") <?> "something other than end of block"
+    somethingTill (symbol (char ';')
+                   <|> symbol (char' endChar))
 
 -- -------------------------------------------------------------------------------------------------
 -- | Partitioning functions, which take a list of some type and produce a tuple.
@@ -777,36 +821,21 @@ partitionTreeBlock = foldr f ([],[])
         f _                    ws = ws
 
 
-trimmed :: MonadParsec s m Char => m a -> m a
+trimmed :: (Show s, MonadParsec s m Char) => m a -> m a
 trimmed x = whitespace *> x <* whitespace
 
-symbol :: MonadParsec s m Char => m a -> m a
+symbol :: (Show s, MonadParsec s m Char) => m a -> m a
 symbol x = x <* whitespace
 
-whitespace :: MonadParsec s m Char => m ()
+whitespace :: (Show s, MonadParsec s m Char) => m ()
 whitespace = (some(commentDefinition) *> pure ())
           <|> space
           <?> "whitespace"
 
-commentDefinition :: MonadParsec s m Char => m String
+commentDefinition :: (Show s, MonadParsec s m Char) => m String
 commentDefinition = comment (string "[")  (string "]")
-{-
-  commentDefinition' False
-    where
-        commentContent = many (noneOf "[]")
-        commentDefinition' enquote = do
-            _        <- char '[' <?> "\"[\" to begin a comment definition"
-            before   <- commentContent
-            comments <- many (commentDefinition' True <++> commentContent)
-            _        <- char ']' <?> "\"]\" to correctly close comment"
-            _        <- space
-            pure . concat $
-                if enquote
-                then "[" : before : comments ++ ["]"]
-                else       before : comments
--}
 
-space1 :: MonadParsec s m Char => m ()
+space1 :: (Show s, MonadParsec s m Char) => m ()
 space1 = skipSome spaceChar
 
 lstrip :: String -> String
@@ -828,7 +857,7 @@ nexusKeywords = S.fromList ["ancstates", "assumptions", "begin", "changeset", "c
 -- The second argument is a string to parse.
 -- In addition, it checks to make sure that the output is not a Nexus keywords. If the output is
 -- a keyword, the fn fails with an error message.
-notKeywordWord :: MonadParsec s m Char => String -> m String
+notKeywordWord :: (Show s, MonadParsec s m Char) => String -> m String
 notKeywordWord avoidChars = do
     word <- lookAhead $ nextWord
     if (toLower <$> word) `S.member` nexusKeywords

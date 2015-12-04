@@ -19,8 +19,14 @@ import Debug.Trace (trace)
 
 testSuite :: TestTree
 testSuite = testGroup "Nexus Format"
-  [ testGroup "Nexus Combinators"
-      [booleanDefinition', stringDefinition', quotedStringDefinition', ignoredSubBlockDef', notKeywordWord']
+  [ testGroup "Nexus Combinators" [ booleanDefinition'
+                                  , stringDefinition'
+                                  , quotedStringDefinition'
+                                  , ignoredSubBlockDef'
+                                  , notKeywordWord'
+                                  , charFormatFieldDef'
+                                  , formatDefinition'
+                                  , stringListDefinition'] 
   ]
 
 booleanDefinition' :: TestTree
@@ -103,8 +109,9 @@ quotedStringDefinition' = testGroup "quotedStringDefinition" [generalProperty, m
             str = key ++ "=" ++ spc ++ "\"" ++ val ++ "\""
 
 ignoredSubBlockDef' :: TestTree
-ignoredSubBlockDef' = testGroup "ignoredSubBlockDef" [endTest, sendTest, semicolonTest, argumentTest]
+ignoredSubBlockDef' = testGroup "ignoredSubBlockDef" [endTest, sendTest, semicolonTest, argumentTest, emptyStringTest]
     where
+--        justDelimiter = tesCase
         endTest = testProperty "END;" f
             where
                 f :: Bool
@@ -132,13 +139,55 @@ ignoredSubBlockDef' = testGroup "ignoredSubBlockDef" [endTest, sendTest, semicol
                         arg = getAsciiNonAlphaNum y
                         x' = (getAsciiAlphaNum <$> getNonEmpty x)
                         inp = x' ++ [arg]
-
+        emptyStringTest = testCase "Empty String" $ parseFailure (ignoredSubBlockDef ' ' <* eof) ";"
 
 charFormatFieldDef' :: TestTree
-charFormatFieldDef' = testGroup "charFormatFieldDef" [charDT]
+charFormatFieldDef' = testGroup "charFormatFieldDef" ([emptyString] ++ testSingletons ++ testCommutivity)
     where
-      charDT = undefined --testGroup "Valid CharDT strings" $ success <$> validCharDT 
-      --success str = testCase (show str) $ parseSuccess (charFormatFieldDef <* eof) str
+        emptyString = testCase "Empty String" $ parseEquals charFormatFieldDef "" []
+        testSingletons = map (\(x,y) -> testCase x (parseEquals charFormatFieldDef x [y])) stringTypeList
+        testCommutivity = map (\(x,y) -> testCase x (parseEquals charFormatFieldDef x y)) stringTypeListPerms 
+        stringTypeList = [ ("datatype=xyz", CharDT "xyz")
+                         , ("symbols=\"abc\"", SymStr (Right ["abc"]))
+                         , ("transpose", Transpose True)
+                         , ("interleave", Interleave True)
+                         , ("tokens", Tokens True)
+                         , ("equate=\"a={bc} d={ef}\"", EqStr (Right ["a={bc}", "d={ef}"]))
+                         , ("missing=def", MissStr "def")
+                         , ("gap=-", GapChar "-")
+                         , ("matchchar=.", MatchChar ".")
+                         , ("items=ghi", Items "ghi")
+                         , ("respectcase", RespectCase True)
+                         , ("nolabels", Unlabeled True)
+                         , ("something ", IgnFF "something")
+                         ]
+        stringTypeListPerms = [(string ++ " " ++ string', [result, result']) | (string, result) <- stringTypeList, (string', result') <- stringTypeList]
+
+stringListDefinition' :: TestTree
+stringListDefinition' = testGroup "stringListDefinition" [test1, test2, rejectsKeywords]
+    where
+        test1 = testCase "Nothing between label and ;" $ parseEquals (stringListDefinition "label1") "label1;" []
+        test2 = testCase "Label doesn't match" $ parseFailure (stringListDefinition "label2") "label1 abc;"
+        rejectsKeywords = testProperty "Rejects Keywords" f
+          where
+            f :: (NonEmptyList AsciiAlphaNum, NexusKeyword) -> Bool
+            f (x,y) = isLeft $ parse (stringListDefinition key <* eof) "" str
+              where
+                key = getAsciiAlphaNum <$> getNonEmpty x
+                val = getNexusKeyword y
+                str = key ++ " " ++ val ++ ";"
+
+formatDefinition' :: TestTree
+formatDefinition' = testGroup "formatDefinition" [test1, test2, test3, test4, test5, test6] 
+    where
+        test1 = testCase "transpose" $ parseEquals formatDefinition "format transpose;" $ CharacterFormat "" (Right [""]) (Right [""]) "" "" "" "" False False True False False
+        test2 = testCase "datatype" $ parseEquals formatDefinition "format DATATYPE=Standard;" $ CharacterFormat "Standard" (Right [""]) (Right [""]) "" "" "" "" False False False False False
+        test3 = testCase "symbols" $ parseEquals formatDefinition "format symbols=\"abcd\";" $ CharacterFormat "" (Right ["abcd"]) (Right [""]) "" "" "" "" False False False False False
+        test4 = testCase "missing" $ parseEquals formatDefinition "format MISSING=?;" $ CharacterFormat "" (Right [""]) (Right [""]) "?" "" "" "" False False False False False
+        test5 = testCase "gap" $ parseEquals formatDefinition "format GAP= -;" $ CharacterFormat "" (Right [""]) (Right [""]) "" "-" "" "" False False False False False
+        test6 = testCase "all previous 5" $ parseEquals formatDefinition "FORMAT DATATYPE=Standard symbols=\"abcd\" MISSING=? GAP= - transpose;" $ CharacterFormat "Standard" (Right ["abcd"]) (Right [""]) "?" "-" "" "" False False True False False
+        
+
 
 notKeywordWord' :: TestTree
 notKeywordWord' = testGroup "notKeywordWord" [rejectsKeywords, semicolonTest, withSpace, argumentTest]
@@ -172,7 +221,22 @@ notKeywordWord' = testGroup "notKeywordWord" [rejectsKeywords, semicolonTest, wi
             args = filter (`notElem` x') $ getNonEmpty y
             inp' = [(n,m++[n]) | n <- args, m <- [x']]
 
-
+stringTypeList = 
+                 [ ("datatype=xyz", CharDT "xyz")
+                 , ("symbols=\"abc\"", SymStr (Right ["abc"]))
+                 , ("transpose", Transpose True)
+                 , ("interleave", Interleave True)
+                 , ("tokens", Tokens True)
+                 , ("equate=\"a={bc} d={ef}\"", EqStr (Right ["a={bc}", "d={ef}"]))
+                 , ("missing=def", MissStr "def")
+                 , ("gap=-", GapChar "-")
+                 , ("matchchar=.", MatchChar ".")
+                 , ("items=ghi", Items "ghi")
+                 , ("respectcase", RespectCase True)
+                 , ("nolabels", Unlabeled True)
+                 , ("something ", IgnFF "something")
+                 ]
+stringTypeListPerms = [(string ++ " " ++ string', [result, result']) | (string, result) <- stringTypeList, (string', result') <- stringTypeList]
 
 newtype AsciiAlphaNum = AsciiAlphaNum { getAsciiAlphaNum :: Char } deriving (Eq)
 

@@ -41,7 +41,10 @@ decimalSurjection x = Right x  == parse double "" (show x)
 -- | Ensure that all Strings which can be `read` as an Int are parsed as Ints.
 --   The parser should always fail to parse a String that cannot be read as an Int.
 decimalInjection :: String -> Bool 
-decimalInjection x = (readMay x :: Maybe Double) == rightToMaybe (parse (space *> double <* eof) "" x)
+decimalInjection x =
+  case readMay x :: Maybe Double of
+    Nothing  -> True
+    Just res -> parse (space *> double <* eof) "" x == Right res
 
 inlineSpaceAssertions :: TestTree
 inlineSpaceAssertions = testGroup "Inline Space Assertions" [validInlineSpace,invalidInlineSpace]
