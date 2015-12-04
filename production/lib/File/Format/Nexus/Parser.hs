@@ -1,4 +1,4 @@
-{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE DoAndIfThenElse, FlexibleContexts #-}
 
 module File.Format.Nexus.Parser where
 
@@ -8,7 +8,7 @@ import Data.List (sort)
 import qualified Data.Map.Lazy as M
 import Data.Maybe (isJust, fromJust, catMaybes)
 import qualified Data.Set as S
-import Debug.Trace
+--import Debug.Trace
 import Safe
 import Text.Megaparsec hiding (label)
 import Text.Megaparsec.Lexer  (integer)
@@ -520,9 +520,9 @@ parseNexus :: (Show s, MonadParsec s m Char) => m ParseResult
 parseNexus = nexusFileDefinition
 
 nexusFileDefinition :: (Show s, MonadParsec s m Char) => m ParseResult
-nexusFileDefinition = do
+nexusFileDefinition = {-do
     x <- getInput
-    trace ("nexusFileDefinition"  ++ show x) $ do
+    trace ("nexusFileDefinition"  ++ show x) $ -}do
     _       <- string "#NEXUS"
     _       <- space
     comment <- optional commentDefinition
@@ -531,9 +531,9 @@ nexusFileDefinition = do
     pure $ ParseResult x y z
 
 ignoredBlockDefinition :: (Show s, MonadParsec s m Char) => m String
-ignoredBlockDefinition = do
+ignoredBlockDefinition = {-do
     x <- getInput
-    trace ("ignoredBlockDefinition"  ++ show x) $ do
+    trace ("ignoredBlockDefinition"  ++ show x) $ -}do
     title <- many letterChar
     _     <- symbol $ char ';'
     _     <- somethingTill $ symbol (string' "END;")
@@ -554,25 +554,25 @@ nexusBlock = do
              <|> (IgnoredBlock   <$> try ignoredBlockDefinition)
 
 characterBlockDefinition :: (Show s, MonadParsec s m Char) => String -> Bool -> m PhyloSequence
-characterBlockDefinition which aligned = do
+characterBlockDefinition which aligned = {-do
     x <- getInput
-    trace ("characterBlockDefinition"  ++ show x) $ do
+    trace ("characterBlockDefinition"  ++ show x) $ -}do
     _           <- symbol (string' $ which ++ ";")
     (v,w,x,y,z) <- partitionSequenceBlock <$> (some seqSubBlock)
     pure $ PhyloSequence aligned v w x y z
 
 taxaBlockDefinition :: (Show s, MonadParsec s m Char) => m TaxaSpecification
-taxaBlockDefinition = do
+taxaBlockDefinition = {-do
     x <- getInput
-    trace ("taxaBlockDefinition"  ++ show x) $ do
+    trace ("taxaBlockDefinition"  ++ show x) $ -}do
     _     <- symbol (string' "taxa;")
     (y,z) <- partitionTaxaBlock <$> (many taxaSubBlock)
     pure $ TaxaSpecification y z
 
 taxaSubBlock :: (Show s, MonadParsec s m Char) => m SeqSubBlock
-taxaSubBlock = do
+taxaSubBlock = {-do
     x <- getInput
-    trace ("many taxaSubBlock"  ++ show x) $ do
+    trace ("many taxaSubBlock"  ++ show x) $ -}do
         _      <- whitespace
         block' <- symbol block
         pure block'
@@ -582,15 +582,17 @@ taxaSubBlock = do
              <|> (Ignored <$> try (ignoredSubBlockDef ';'))
 
 treeBlockDefinition :: (Show s, MonadParsec s m Char) => m TreeBlock
-treeBlockDefinition = do
+treeBlockDefinition = {-do
     x <- getInput
-    trace ("treeBlockDefinition"  ++ show x) $ do
+    trace ("treeBlockDefinition"  ++ show x) $ -}do
         _     <- symbol (string' "trees;")
         (x,y) <- partitionTreeBlock <$> (many treeFieldDef)
         pure $ TreeBlock x y
 
 seqSubBlock :: (Show s, MonadParsec s m Char) => m SeqSubBlock
-seqSubBlock = getInput >>= (\x -> trace ("seqSubBlock" ++ (show x)) $ symbol block)
+seqSubBlock = {-do
+    x <- getInput
+    trace ("seqSubBlock" ++ (show x)) $ -}symbol block
     where
         block =  (Dims <$> try dimensionsDefinition)
              <|> (Format <$> try formatDefinition)
@@ -600,9 +602,9 @@ seqSubBlock = getInput >>= (\x -> trace ("seqSubBlock" ++ (show x)) $ symbol blo
              <|> (Ignored <$> try (ignoredSubBlockDef ';'))
 
 dimensionsDefinition :: (Show s, MonadParsec s m Char) => m DimensionsFormat
-dimensionsDefinition = do 
+dimensionsDefinition = {-do 
         x         <- getInput 
-        trace ("**dimensionsDefinition:  " ++ show x) $ do
+        trace ("**dimensionsDefinition:  " ++ show x) $ -}do
         _         <- symbol (string' "dimensions")
         newTaxa'  <- optional (try (symbol (string' "newTaxa")))
         _         <- optional (try (symbol (string' "nTax")))
@@ -635,9 +637,9 @@ formatDefinition = do
 -- A test exists in the test suite, although only false positives are tested for, not false negatives.
 -- I deemed this good enough, since each of the called fns is well-tested, and the calling fn is, as well.
 charFormatFieldDef :: (Show s, MonadParsec s m Char) => m [CharFormatField]
-charFormatFieldDef = do
+charFormatFieldDef = {-do
         x <- getInput
-        trace ("many charFormatFieldDef"  ++ show x) $ do
+        trace ("many charFormatFieldDef"  ++ show x) $ -}do
         block' <- many $ symbol block
         pure block'
     where
@@ -670,9 +672,9 @@ treeFieldDef = do
 -- and returns True if it succeeds in matching. The semicolon is not captured by this fn.
 -- A test exists in the test suite.
 booleanDefinition :: (Show s, MonadParsec s m Char) => String -> m Bool
-booleanDefinition blockTitle = do
+booleanDefinition blockTitle = {-do
         x <- getInput
-        trace (("booleanDefinition " ++ blockTitle)  ++ show x) $ symbol (string' blockTitle) *> pure True
+        trace (("booleanDefinition " ++ blockTitle)  ++ show x) $-} symbol (string' blockTitle) *> pure True
 
 -- | stringDefinition takes a string of format TITLE=value;
 -- and returns the value. The semicolon is not captured by this fn.
@@ -691,9 +693,9 @@ stringDefinition blockTitle = do
 -- A test exists in the test suite.
 -- TODO?: This doesn't work if they leave off the opening quote mark.
 quotedStringDefinition :: (Show s, MonadParsec s m Char) => String -> m (Either String [String])
-quotedStringDefinition blockTitle = do
+quotedStringDefinition blockTitle = {-do
     x <- getInput
-    trace (("some quotedStringDefinition " ++ blockTitle)  ++ show x) $ do
+    trace (("some quotedStringDefinition " ++ blockTitle)  ++ show x) $ -}do
     _     <- symbol (string' blockTitle)
     _     <- symbol $ char '='
     _     <- symbol $ char '"'
@@ -706,18 +708,18 @@ quotedStringDefinition blockTitle = do
     --pure $ Right value
 
 stringListDefinition :: (Show s, MonadParsec s m Char) => String -> m [String]
-stringListDefinition label = do
+stringListDefinition label = {-do
     x <- getInput
-    trace (("many stringListDefinition " ++ label)  ++ show x) $ do
+    trace (("many stringListDefinition " ++ label)  ++ show x) $ -}do
     _        <- symbol (string' label)
     theItems <- many $ symbol $ notKeywordWord ""
     _        <- symbol $ char ';'
     pure $ theItems
 
 delimitedStringListDefinition :: (Show s, MonadParsec s m Char) => String -> Char -> m [String]
-delimitedStringListDefinition label delimiter = do
+delimitedStringListDefinition label delimiter = {-do
     x <- getInput
-    trace (("delimitedStringListDefinition " ++ label)  ++ show x) $ do
+    trace (("delimitedStringListDefinition " ++ label)  ++ show x) $ -}do
     _        <- symbol (string' label)
     theItems <- many (noneOf $ delimiter : ";") `sepBy` (char delimiter)
     _        <- symbol $ char ';'
@@ -725,9 +727,9 @@ delimitedStringListDefinition label delimiter = do
 
 
 treeDefinition :: (Show s, MonadParsec s m Char) => m (String, String)
-treeDefinition = do
+treeDefinition = {-do
     x <- getInput
-    trace ("treeDefinition"  ++ show x) $ do
+    trace ("treeDefinition"  ++ show x) $ -}do
     _     <- symbol (string' "tree")
     label <- symbol $ many (noneOf ";=")
     _     <- symbol $ char '='
@@ -736,9 +738,9 @@ treeDefinition = do
     pure (label, trees)
 
 matrixDefinition :: (Show s, MonadParsec s m Char) => m String
-matrixDefinition = do
+matrixDefinition = {-do
     x <- getInput
-    trace ("matrixDefinition"  ++ show x) $ do
+    trace ("matrixDefinition"  ++ show x) $ -}do
     first     <- symbol (string' "matrix")
     goodStuff <- many $ noneOf ";"
     _         <- symbol $ char ';'
@@ -749,9 +751,9 @@ matrixDefinition = do
 -- not including, whatever the terminating char is. Also fails if the input is "end;"
 -- A test exists in the test suite.
 ignoredSubBlockDef :: (Show s, MonadParsec s m Char) => Char -> m String
-ignoredSubBlockDef endChar = do
+ignoredSubBlockDef endChar = {-do
     x <- getInput
-    trace (("ignoredSubBlockDef endChar: " ++ [endChar])  ++ show x) $ do
+    trace (("ignoredSubBlockDef endChar: " ++ [endChar])  ++ show x) $ -}do
     _ <- notFollowedBy (space *> string' "end;") <?> "something other than end of block"
     somethingTill (symbol (char ';')
                    <|> symbol (char' endChar))
@@ -832,21 +834,6 @@ whitespace = (some(commentDefinition) *> pure ())
 
 commentDefinition :: (Show s, MonadParsec s m Char) => m String
 commentDefinition = comment (string "[")  (string "]")
-{-
-  commentDefinition' False
-    where
-        commentContent = many (noneOf "[]")
-        commentDefinition' enquote = do
-            _        <- char '[' <?> "\"[\" to begin a comment definition"
-            before   <- commentContent
-            comments <- many (commentDefinition' True <++> commentContent)
-            _        <- char ']' <?> "\"]\" to correctly close comment"
-            _        <- space
-            pure . concat $
-                if enquote
-                then "[" : before : comments ++ ["]"]
-                else       before : comments
--}
 
 space1 :: (Show s, MonadParsec s m Char) => m ()
 space1 = skipSome spaceChar
