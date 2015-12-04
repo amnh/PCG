@@ -179,7 +179,7 @@ newickToPhylo newForest = fmap treeToComponent newForest
         setIndex' :: Int -> (NewickNode, [NewickNode], NodeCode, Bool) -> (NewickNode, [NewickNode], NodeCode, Bool)
         setIndex' i (n,p,_,r) = (n,p,i,r)
         toPhyloNode :: (NewickNode, [NodeCode], [NodeCode], NodeCode, Bool) -> PhyloNode
-        toPhyloNode (n,c,p,i,r) = PhyloNode i nodeName' isTerminal' r isTreeNode' children' p preliminaryStates' localCost' totalCost' preliminaryGapped' alignLeft' alignRight' tempField'
+        toPhyloNode (n,c,p,i,r) = PhyloNode i nodeName' isTerminal' r isTreeNode' children' p preliminaryStates' localCost' totalCost' preliminaryGapped' alignLeft' alignRight' tempField' charVals'
           where
             nodeName'          = maybe "" id $ newickLabel n
             isTerminal'        = null children'
@@ -193,3 +193,4 @@ newickToPhylo newForest = fmap treeToComponent newForest
             alignLeft'         = V.empty :: (V.Vector Int64)
             alignRight'        = V.empty :: (V.Vector Int64)
             tempField'         = V.empty :: (V.Vector Int64)
+            charVals'          = V.empty 

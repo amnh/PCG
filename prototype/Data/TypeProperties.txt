@@ -1,0 +1,50 @@
+Trees:
+    Rose: 
+        - the node returned by parent should not be in children
+        - the node returned by parent should be in those returned by parents
+
+    Binary:
+        - left and right children should be distinct
+        - bothChildren and separate left and right child methods should agree
+
+    Network: 
+        - parents and children should not have any common nodes
+        - after update, a tree should be the same size as before
+        - the node returned by root should satisfy isRoot
+        - after setters are applied, should get new value back
+
+    Nodes:
+        Encoded: 
+            - after setting, should return new value
+
+        Preliminary:
+            - after setters, new value should be returned
+            - preliminaryAlign should be the same length or longer than preliminary
+            - cost should be positive
+
+        Character:
+            - after setter, new value returned
+
+        Final:
+            - after setter, new value returned
+
+        Packed:
+            - after setter, new value returned
+            - if combined with encoded, packed sequence should be same length or shorter
+
+        EdgeAware:
+            - after setter, new value returned
+            - at least one edge is returned from edges
+
+    Edges:
+        Standard:
+            - origin and terminal should return different nodes
+            - connection should agree with (origin, terminal)
+            - after setter is applied, should get new value back
+
+Sequence:
+    Parsed:
+        - encode should return a structure of corresponding length
+
+    Single:
+        - checkAmbiguous should always return False

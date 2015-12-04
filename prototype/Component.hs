@@ -47,7 +47,7 @@ module Component
 , modifyTotalCost
 ) where
 
-import Control.Monad ((<=<),join)
+import Control.Monad ((<=<),join, filterM)
 import Data.List
 import qualified Data.Set as Set
 import qualified Data.Vector as V
@@ -65,11 +65,13 @@ import Data.Int
 import Safe
 
 import Data.Tree.Binary.Class
+import Data.Tree.Rose
 import Data.Tree.Node.Encoded
 import Data.Tree.Node.Preliminary
 import Data.Tree.Node.Final
 import Data.Tree.Node.Character
 import Data.PhyloCharacter
+import qualified Data.Tree.Network as N
 
 
 -- | stuff for maxFloat
@@ -119,16 +121,14 @@ data PhyloNode = PhyloNode  { code :: NodeCode                --links to DataMat
 
 instance NFData (PhyloCharacter Int64)
 
-instance BinaryTree PhyloComponent PhyloNode where
-  parent       n t = join $ (t !?) <$> (headMay $ parents n)
-  bothChildren n t = 
-    let
-        x = headMay $ children n
-        y = headMay <=< tailMay $ children n
-        f = join . fmap (t !?)
-    in (f x, f y)
-  root           t = head $ [x | x <- (V.toList t), isRoot x]
-  update     t nodes = t // (map (\n -> (code n, n)) nodes)
+--instance BinaryTree PhyloComponent PhyloNode where
+--  parent       n t = join $ (t !?) <$> (headMay $ parents n)
+--  bothChildren n t = 
+--    let
+--        x = headMay $ children n
+--        y = headMay <=< tailMay $ children n
+--        f = join . fmap (t !?)
+--    in (f x, f y)
 
 
 instance EncodedNode PhyloNode Int64 where
@@ -172,6 +172,25 @@ instance FinalNode PhyloNode Int64 where
     setFinal value node
         | isNothing value = node {preliminaryStates = []}
         | otherwise = node {preliminaryStates = V.toList $ fromJust value}
+
+instance N.Network PhyloComponent PhyloNode where
+    root           t = head $ [x | x <- (V.toList t), isRoot x]
+    update     t nodes = t // (map (\n -> (code n, n)) nodes)
+    parents     n t = Just $ foldr (\i acc-> (t V.! i) : acc) [] (parents n)
+    children    n t = Just $ foldr (\i acc-> (t V.! i) : acc) [] (children n)
+    isLeaf      n t = isTerminal n
+    isRoot      n t = isRoot n
+
+instance RoseTree PhyloComponent PhyloNode 
+
+instance BinaryTree PhyloComponent PhyloNode where
+    parent       n t = join $ (t !?) <$> (headMay $ parents n)
+    bothChildren n t = 
+        let
+            x = headMay $ children n
+            y = headMay <=< tailMay $ children n
+            f = join . fmap (t !?)
+        in (f x, f y)
 
 --data EdgeType = EdgeType {edgeLength, unionOfEndStates, startCode, endCode} -- format this for compile
 
