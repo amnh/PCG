@@ -549,7 +549,7 @@ nexusBlock = do
         block =  (CharacterBlock <$> try (characterBlockDefinition "characters" True))
              <|> (CharacterBlock <$> try (characterBlockDefinition "unaligned" False))
              <|> (CharacterBlock <$> try (characterBlockDefinition "data" True)) -- data blocks should be aligned
-  --           <|> (TaxaBlock      <$> try taxaBlockDefinition)
+             <|> (TaxaBlock      <$> try taxaBlockDefinition)
              <|> (TreesBlock     <$> try treeBlockDefinition)
              <|> (IgnoredBlock   <$> try ignoredBlockDefinition)
 
@@ -579,7 +579,7 @@ taxaSubBlock = do
     where
         block =  (Dims <$> try dimensionsDefinition)
              <|> (Taxa <$> try (stringListDefinition "taxlabels"))
-             -- <|> (Ignored <$> try (ignoredSubBlockDef ';'))
+             <|> (Ignored <$> try (ignoredSubBlockDef ';'))
 
 treeBlockDefinition :: (Show s, MonadParsec s m Char) => m TreeBlock
 treeBlockDefinition = do
@@ -597,7 +597,7 @@ seqSubBlock = getInput >>= (\x -> trace ("seqSubBlock" ++ (show x)) $ symbol blo
              <|> (Eliminate <$> try (stringDefinition "eliminate"))
              <|> (Matrix <$> try matrixDefinition)
              <|> (Taxa <$> try (stringListDefinition "taxlabels"))
-             -- <|> (Ignored <$> try (ignoredSubBlockDef ';'))
+             <|> (Ignored <$> try (ignoredSubBlockDef ';'))
 
 dimensionsDefinition :: (Show s, MonadParsec s m Char) => m DimensionsFormat
 dimensionsDefinition = do 
