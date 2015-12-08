@@ -1,55 +1,33 @@
------------------------------------------------------------------------------
--- |
--- Module      :  Bio.Phylogeny.Graph
--- Copyright   :  (c) 2015-2015 Ward Wheeler
--- License     :  BSD-style
---
--- Maintainer  :  wheeler@amnh.org
--- Stability   :  provisional
--- Portability :  portable
---
--- Exploritory types for Graph representations
---
------------------------------------------------------------------------------
-
 module Bio.Phylogeny.Graph where
 
-import           Data.IntSet   hiding (toList,foldr)
-import           Data.Sequence hiding (fromList)
-import qualified Data.Sequence as S   (fromList)
-import           Data.Vector   hiding (fromList,foldr)
-import qualified Data.Vector   as V   (fromList)
+import Data.IntMap
+import Data.IntSet
+import Data.HashMap.Strict
+import Data.Monoid
+import Data.Vector
 
-type Edges = (IntSet,IntSet)
-data AnnotatedNode  
-   = AN
-   { label     :: Maybe String
-   , states    :: Int --Obviously not an Int
-   , localCost :: Double
-   , totalCost :: Double 
-   }
+type Identifier = String
+type Sequence   = Vector [String]
+type CharInfo   = String
+type NodeInfo   = String
 
-type StrictNetwork = Vector Edges
-type StrictForest  = [StrictNetwork]
-data StrictGraph   = SG StrictForest (Vector AnnotatedNode)
-type FluidNetwork  = Seq Edges
-type FluidForest   = [FluidNetwork]
-data FluidGraph    = FG FluidForest  (Seq    AnnotatedNode)
+data EdgeSet
+   = EdgeSet
+   { parents  :: IntSet
+   , children :: IntSet
+   } deriving (Eq,Show)
 
-class Graphable a where
-  toStrictGraph :: a -> StrictGraph
-  toStrictGraph = (\(FG f a) -> SG (s2v <$> f) (s2v a)) . toFluidGraph
-  toFluidGraph  :: a -> FluidGraph
-  toFluidGraph  = (\(SG f a) -> FG (v2s <$> f) (v2s a)) . toStrictGraph
+data Graph
+   = Graph
+   { taxaNodes  :: IntMap  Identifier
+   , taxaSeqs   :: HashMap Identifier Sequence
+   , characters :: Vector  CharInfo
+   , nodes      :: Vector  NodeInfo
+   , edges      :: Vector  EdgeSet
+   , roots      :: IntSet
+   } deriving (Eq,Show)
 
-v2s :: Vector a -> Seq a
-v2s = S.fromList . toList
-s2v :: Seq a -> Vector a
-s2v = V.fromList . foldr (:) []
-
-{-
-class PhyloGraph a where
-	bitPack  :: a -> ???
-	optemize :: a -> ???
-
--}
+-- Seems like this could be derived... silly GHC
+instance Monoid Graph where
+  mempty = Graph mempty mempty mempty mempty mempty mempty
+  mappend (Graph a b c d e f) (Graph a' b' c' d' e' f') = Graph (a<>a') (b<>b') (c<>c') (d<>d') (e<>e') (f<>f')

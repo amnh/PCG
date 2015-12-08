@@ -1,8 +1,8 @@
 module PCG.Computation.Internal where
 
+import Control.Evaluation
 import Data.Either    (partitionEithers)
 import PCG.Command
-import PCG.Evaluation
 import PCG.Script
 
 import qualified PCG.Command.Types.Read as Read

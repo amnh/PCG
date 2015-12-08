@@ -1,8 +1,9 @@
 {-# LANGUAGE FlexibleInstances, MultiParamTypeClasses #-}
-module PCG.Evaluation.Internal where
+module Control.Evaluation.Internal where
 
 import Control.Applicative
 import Control.Monad             (MonadPlus(mzero, mplus))
+import Control.Evaluation.Unit
 --import Control.Monad.Fix         (MonadFix(mfix))
 --import Control.Monad.IO.Class
 --import Control.Monad.Trans.Class
@@ -11,8 +12,6 @@ import Data.DList                (DList,append,singleton,toList)
 import qualified Data.DList as D (empty)
 import Data.Monoid
 import Test.QuickCheck
-
-import PCG.Evaluation.Unit
 
 data Notification
    = Warning String

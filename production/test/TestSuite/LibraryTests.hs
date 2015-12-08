@@ -3,7 +3,8 @@ module TestSuite.LibraryTests
   , testSuite
   ) where
 
-import Test.Tasty 
+import Test.Tasty
+import qualified Control.Evaluation.Test               as Evaluation
 import qualified Text.Megaparsec.Custom.Test           as Megaparsec
 import qualified File.Format.Fasta.Test                as Fasta
 import qualified File.Format.Fastc.Test                as Fastc
@@ -16,7 +17,8 @@ main = defaultMain testSuite
 
 testSuite :: TestTree
 testSuite = testGroup "Library Test Suite" 
-  [ Megaparsec.testSuite
+  [ Evaluation.testSuite
+  , Megaparsec.testSuite
   , Fasta.testSuite
   , Fastc.testSuite
   , Newick.testSuite

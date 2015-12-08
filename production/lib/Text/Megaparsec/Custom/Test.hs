@@ -23,7 +23,7 @@ testSuite = testGroup "Custom Parsec Combinator Tests" tests
 -- | A list of all tests in represented as TestTrees
 tests :: [TestTree]
 tests = [ testGroup "Double Parsing" [decimalProperties]
-        , testGroup "Inline Space Parsing" [inlineSpaceAssertions {- , inlineSpacesAssertions-}]
+        , testGroup "Inline Space Parsing" [inlineSpaceAssertions, inlineSpacesAssertions]
         ]
 
 decimalProperties :: TestTree
@@ -58,3 +58,19 @@ inlineSpaceAssertions = testGroup "Inline Space Assertions" [validInlineSpace,in
       [ testCase "newline"        $ parseFailure inlineSpace "\n"
       , testCase "caraige return" $ parseFailure inlineSpace "\r"
       ]
+
+inlineSpacesAssertions :: TestTree
+inlineSpacesAssertions = testGroup "Inline Spaces Assertions" [validInlineSpaces,invalidInlineSpaces]
+  where
+    validInlineSpaces = testGroup "Valid Inline Spaces"
+      [ testCase "Consumes multiple spaces" $ parseSuccess (inlineSpaces <* eof) " \t\v"
+      , testCase "Consumes spaces up to a newline" $ mapM_ parse' exampleInputs
+      ]
+    invalidInlineSpaces = testGroup "Invalid Inline Spaces"
+      [ testCase "newline"        $ parseFailure inlineSpace "\n"
+      , testCase "caraige return" $ parseFailure inlineSpace "\r"
+      ]
+    parse' (inlines,line) = parseSuccess (inlineSpaces <* string line <* eof) (inlines ++ line)
+    exampleSpaces     = "\t\v "
+    exampleNewlines   = "\n\r"
+    exampleInputs = [ ([x,y],[z]) | x <- exampleSpaces, y <- exampleSpaces, z <- exampleNewlines ]

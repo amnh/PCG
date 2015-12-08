@@ -11,6 +11,9 @@ import Data.Maybe                (catMaybes)
 import Data.Semigroup
 import Text.Megaparsec           (ParseError)
 
+-- | The various ways in which a 'Read' 'Command' from a POY script can fail.
+-- A single 'Read' 'Command' can fail in multiple ways simultaneously.
+-- To account for this the 'ReadError' type is a composable 'Semigroup' to allow for the collection of possible sub errors to be coalesced into a single 'ReadError' value. The `show` definition will render the 'Read Error' as a human legible collection of errors that occured within the 'Read' 'Command'.
 data ReadError = ReadError (NonEmpty ReadErrorMessage)
 
 data ReadErrorMessage
@@ -66,14 +69,25 @@ instance Show ReadError where
           f e@(FileUnparsable _  ) (w,x,y,z) = (  w,  x,e:y,  z) 
           f e@(FileAmbiguous  _ _) (w,x,y,z) = (  w,  x,  y,e:z)
 
+-- | Remark that the specified file could not be found on the file system
 unfindable :: FilePath -> ReadError
 unfindable path = ReadError $ FileUnfindable path :| []
 
+-- | Remark that the specified file could not be opened (probably a permission error)
 unopenable :: FilePath -> ReadError
 unopenable path = ReadError $ FileUnopenable path :| []
 
+-- | Remark that a parsing error occured when reading the file. Note that the 'ParseError' should contain the 'FilePath' information. 
 unparsable :: ParseError -> ReadError
 unparsable pErr = ReadError $ FileUnparsable pErr :| []
 
+-- | Remark that the specified file path matches many possible files.
+-- This should be used when a single file is expected but 'regex matching' or 'file globbing'
+-- are present in the processing of the Read Command.
+--
+-- @ambiguous path matches@ notes that @path@ ambiguously can be matched to each of the @matches@ file paths.
+-- Don't let @matches@ equal @[]@.
+-- That would be nonsensical and seriously not cool.
+-- Don't make me change the type of @matches@ for @['FilePath']@ to 'NonEmpty'.
 ambiguous  :: FilePath -> [FilePath] -> ReadError
 ambiguous path matches = ReadError $ FileAmbiguous path (fromList matches) :| []
