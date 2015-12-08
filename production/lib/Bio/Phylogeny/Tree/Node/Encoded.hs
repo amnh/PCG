@@ -5,8 +5,8 @@ module Bio.Phylogeny.Tree.Node.Encoded where
 import Data.Bits
 import Data.Int
 import Data.Vector
-import Data.Sequence.Encoded
+import Bio.Sequence.Coded
 
 class EncodedNode a b | a -> b where
-  encoded :: a -> EncodedSeq
-  setEncoded :: a -> EncodedSeq -> a
+  encoded :: a -> EncodedSeq b
+  setEncoded :: a -> EncodedSeq b -> a
