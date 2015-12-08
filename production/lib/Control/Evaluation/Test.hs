@@ -1,8 +1,8 @@
 {-# LANGUAGE AllowAmbiguousTypes, ViewPatterns #-}
-module PCG.Evaluation.Test where
+module Control.Evaluation.Test where
 
-import PCG.Evaluation.Unit
-import PCG.Evaluation.Internal
+import Control.Evaluation.Unit
+import Control.Evaluation.Internal
 --import PCG.Evaluation.Trans
 import Data.Monoid
 

@@ -1,15 +1,14 @@
 {-# LANGUAGE FlexibleInstances, MultiParamTypeClasses #-}
-module PCG.Evaluation.Trans where
+module Control.Evaluation.Trans where
 
+import Bio.Phylogeny.Graph
 import Control.Applicative
+import Control.Evaluation.Internal
+import Control.Evaluation.Unit
 import Control.Monad          (MonadPlus(mzero, mplus), join, liftM2)
 import Control.Monad.IO.Class
 import Control.Monad.Trans.Class
 import Data.Monoid
-
-import PCG.Evaluation.Internal
-import PCG.Evaluation.Unit
-import PCG.Graph
 
 type SearchState = EvaluationT IO Graph
 

@@ -5,10 +5,12 @@ module PCG.Command.Types.Read
   , validate
   ) where
 
+import Bio.Phylogeny.Graph
 import Control.Arrow              ((&&&))
 import Control.Monad              (liftM2,when)
 import Control.Monad.IO.Class
 import Control.Monad.Trans.Either
+import Control.Evaluation
 import Data.Bifunctor             (first)
 import Data.Char                  (toLower)
 import Data.Either                (partitionEithers)
@@ -30,8 +32,6 @@ import File.Format.VertexEdgeRoot
 
 import PCG.Command.Types
 import PCG.Command.Types.Read.Internal
-import PCG.Evaluation
-import PCG.Graph
 import PCG.Script.Types
 
 evaluate :: Command -> SearchState -> SearchState
@@ -164,7 +164,6 @@ validateReadArg (LidentNamedArg (Lident identifier) (ArgumentList (arg:args))) |
     _                                -> Left "Too many arguments"
   where
     val = validateReadArg arg
-
 validateReadArg _ = Left "Unknown argument in read command"
 
 partitionOptions :: [CustomAlphabetOptions] -> ([CustomAlphabetOptions],[CustomAlphabetOptions],[CustomAlphabetOptions])

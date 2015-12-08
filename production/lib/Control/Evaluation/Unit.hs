@@ -1,4 +1,4 @@
-module PCG.Evaluation.Unit where
+module Control.Evaluation.Unit where
 
 import Control.Applicative
 import Control.Monad (MonadPlus(mzero, mplus))

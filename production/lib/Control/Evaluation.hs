@@ -1,5 +1,5 @@
 {-# LANGUAGE DeriveFunctor #-}
-module PCG.Evaluation
+module Control.Evaluation
   ( EvaluationT()
   , Evaluation()
   , EvalUnit()
@@ -22,9 +22,9 @@ module PCG.Evaluation
 import Control.Applicative (Alternative(..))
 import Data.Monoid         ((<>))
 
-import PCG.Evaluation.Internal
-import PCG.Evaluation.Trans
-import PCG.Evaluation.Unit
+import Control.Evaluation.Internal
+import Control.Evaluation.Trans
+import Control.Evaluation.Unit
 
 evalIO :: IO a -> EvaluationT IO a
 evalIO = impure
