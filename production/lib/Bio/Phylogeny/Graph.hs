@@ -19,13 +19,20 @@ import Data.IntMap hiding (filter, map, (!))
 import Data.IntSet hiding (filter, map)
 import Data.HashMap.Strict hiding (filter, map, (!))
 import Data.Monoid
-import Data.Vector hiding (filter, map)
+import Data.Vector hiding (filter, map, head, (!?))
 import Bio.Phylogeny.PhyloCharacter
 import Bio.Phylogeny.Tree.Node
 import Bio.Phylogeny.Forest
 import Data.Int
 import Data.BitVector
 import qualified Bio.Phylogeny.Network as N
+import Bio.Phylogeny.Tree.Binary
+import Data.Keyed hiding ((!))
+import Safe
+import Bio.Phylogeny.Tree.Rose
+import qualified Bio.Phylogeny.Tree.Edge.Standard as E
+import qualified Bio.Phylogeny.Tree.EdgeAware as ET
+import qualified Bio.Phylogeny.Tree.CharacterAware as CT
 
 type Identifier = String
 type Sequence   = Vector [String]
@@ -34,9 +41,16 @@ type NodeInfo   = Node BitVector
 
 data EdgeSet
    = EdgeSet
-   { origins  :: IntSet
-   , terminals :: IntSet
+   { inNodes  :: IntSet
+   , outNodes :: IntMap EdgeInfo
    } deriving (Eq,Show)
+
+data EdgeInfo 
+   = EdgeInfo
+   { len :: Float
+   , origin :: NodeInfo
+   , terminal :: NodeInfo
+   } deriving (Eq, Show)
 
 data Tree
    = Tree
@@ -67,7 +81,29 @@ instance N.Network Tree NodeInfo where
   isRoot n t = isRoot n
   update t new = t {nodes = (nodes t) // (map (\n -> (code n, n)) new) }
 
+instance BinaryTree Tree NodeInfo where
+  parent n t = headMay $ map (\i -> (nodes t) ! i) (parents n)
+  leftChild n t = (map (\i -> (nodes t) ! i) (children n)) !? 0
+  rightChild n t = (map (\i -> (nodes t) ! i) (children n)) !? 1
+
+instance RoseTree Tree NodeInfo where
+  parent n t = headMay $ map (\i -> (nodes t) ! i) (parents n)
+
 instance Forest Graph Tree where
   trees (Graph f) = f
   setTrees _ f2 = Graph f2
   filterTrees (Graph f) func = Graph $ filter func f
+
+instance E.StandardEdge EdgeInfo NodeInfo where
+  edgeLen = len
+  setEdgeLen e f = e {len = f}
+  origin = origin
+  terminal = terminal
+
+instance ET.EdgedTree Tree NodeInfo EdgeSet where
+  edges n t = (edges t) ! (code n)
+  setEdges n t e = t {edges = (edges t) // [(code n, e)]}
+
+instance CT.CharacterTree Tree CharInfo where
+  characters = characters
+  setCharacters t c = t {characters = c} 

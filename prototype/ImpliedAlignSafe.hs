@@ -24,12 +24,12 @@ implyMain :: CharInfo -> PhyloComponent -> PhyloComponent
 --implyMain info tree | trace ("implyMain " ++ show tree) False = undefined
 implyMain info tree = case root of
     Nothing -> error "Tree has no root or root reference is outside tree"
-    Just r ->  --trace ("subtrees " ++ show subMat)
+    Just r ->  trace ("subtrees " ++ show subMat)
                 iaMainPreorder tree tree subMat (Just r) info
 
     where 
         root = join $ (tree V.!?) <$> (V.findIndex (\node -> isRoot node) tree)
-        subMat = subtreeWrap tree
+        subMat = (zero (V.length tree) (V.length tree))
 
 -- | Wrapper for getSubtrees
 subtreeWrap :: PhyloComponent -> Subtrees
@@ -39,7 +39,7 @@ subtreeWrap tree = fst $ getSubtrees tree root (zero (V.length tree) (V.length t
 
 -- | List the subtrees at each node to use in the preorder traversal
 getSubtrees :: PhyloComponent -> Maybe NodeCode -> Subtrees -> (Subtrees, [Int])
---getSubtrees inTree curCode initStructure | trace ("getSubtrees " ++ show curCode) False = undefined
+getSubtrees inTree curCode initStructure | trace ("getSubtrees " ++ show curCode) False = undefined
 getSubtrees inTree curCode initStructure = case node of 
         Nothing ->  (initStructure, [])
         Just n ->   if isTerminal n then (initStructure, [fromJust curCode])
@@ -71,7 +71,7 @@ getSubtrees inTree curCode initStructure = case node of
 
 -- Starts at the given node
 iaMainPreorder :: PhyloComponent -> PhyloComponent -> Subtrees -> Maybe PhyloNode -> CharInfo -> PhyloComponent
-iaMainPreorder fullTree subTree subMat node info | trace ("preorder with subtree " ++ show subTree) False = undefined
+--iaMainPreorder fullTree subTree subMat node info | trace ("preorder with subtree " ++ show subTree) False = undefined
 iaMainPreorder fullTree subTree subMat inNode info = case inNode of 
     Nothing -> subTree
     Just node ->    let outTree | leftCheck && rightCheck = 
