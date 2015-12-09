@@ -2,8 +2,8 @@
 module Bio.Phylogeny.Network.Class where
 
 class Network t n | t -> n where
-    parents :: n -> t -> Maybe [n] -- use an empty list instead
-    children :: n -> t -> Maybe [n]
+    parents :: n -> t -> [n] 
+    children :: n -> t -> [n]
     root :: t -> n
     isLeaf :: n -> t -> Bool
     isRoot :: n -> t -> Bool

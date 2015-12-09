@@ -5,7 +5,6 @@ module Bio.Phylogeny.PhyloCharacter where
 
 import Data.Vector
 import Data.Bits
-import qualified ReadFiles as RF
 import Data.Int
 import GHC.Generics
 
