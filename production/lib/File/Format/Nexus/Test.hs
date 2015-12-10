@@ -26,7 +26,9 @@ testSuite = testGroup "Nexus Format"
                                   , notKeywordWord'
                                   , charFormatFieldDef'
                                   , formatDefinition'
-                                  , stringListDefinition'] 
+                                  , stringListDefinition'
+                                  , treeDefinition'
+                                  ] 
   ]
 
 booleanDefinition' :: TestTree
@@ -237,6 +239,23 @@ stringTypeList =
                  , ("something ", IgnFF "something")
                  ]
 stringTypeListPerms = [(string ++ " " ++ string', [result, result']) | (string, result) <- stringTypeList, (string', result') <- stringTypeList]
+
+treeDefinition' :: TestTree
+treeDefinition' = testGroup "treeDefinition" [failsOnEmptyTree, succeedsOnSimple, withBranchLengths, withComments, arbitraryName]
+  where
+    failsOnEmptyTree  = testCase "Fails on 'empty tree'"              $ parseFailure treeDefinition "TREE emptyTree   = ;"
+    succeedsOnSimple  = testCase "Parses simple tree"                 $ parseSuccess treeDefinition "TREE simpleTree  = (A,B);"
+    withBranchLengths = testCase "Parses tree with branch lengths"    $ parseSuccess treeDefinition "TREE brancheNums = (A:42,B:1.337);"
+    withComments      = testCase "Parses tree with internal comments" $ parseSuccess treeDefinition "TREE comments    = (A[left], B[right]);"
+    arbitraryName     = testProperty "Arbitrary labeled tree" $ f
+      where
+        f :: NonEmptyList AsciiAlphaNum -> Bool
+        f randomLabel = case parse (treeDefinition <* eof) "" (unwords ["Tree ", treeLabel, "=", "(A,B);"]) of
+                          Right (treeLabel', _) -> treeLabel == treeLabel'
+                          Left  _               -> False
+          where
+            treeLabel = getAsciiAlphaNum <$> getNonEmpty randomLabel
+
 
 newtype AsciiAlphaNum = AsciiAlphaNum { getAsciiAlphaNum :: Char } deriving (Eq)
 

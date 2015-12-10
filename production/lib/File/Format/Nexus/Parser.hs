@@ -9,6 +9,7 @@ import qualified Data.Map.Lazy as M
 import Data.Maybe (isJust, fromJust, catMaybes)
 import qualified Data.Set as S
 import Debug.Trace -- <-- the best module!!! :)
+import File.Format.Newick
 import Safe
 import Text.Megaparsec hiding (label)
 import Text.Megaparsec.Lexer  (integer)
@@ -45,12 +46,6 @@ data PhyloSequence
    , elims         :: [String]
    , seqTaxaLabels :: [[String]]
    , name          :: String -- characters, taxa or data
-   } deriving (Show)
-
-data TreeBlock
-   = TreeBlock
-   { translate :: [[String]]
-   , trees     :: [(String,String)]
    } deriving (Show)
 
 -- | SeqSubBlock is list of fields available in sequence blocks. It's set up as an enumeration
@@ -94,10 +89,18 @@ data CharFormatField
    | IgnFF       String -- for non-standard inputs, plus notokens, which is the default anyway
    deriving (Eq,Show)
 
+type TreeName       = String
+type SerializedTree = String
+
+data TreeBlock
+   = TreeBlock
+   { translate :: [[String]]
+   , trees     :: [(TreeName, [NewickForest])]
+   } deriving (Show)
 
 data TreeField
    = Translation [String]
-   | Tree        (String,String)
+   | Tree        (TreeName, [NewickForest])
    | IgnTF       String
 
 data CharStateFormat
@@ -498,9 +501,10 @@ checkForNewTaxa seq = case (charDims seq) of
 
 getTaxaFromSeq :: PhyloSequence -> [String]
 getTaxaFromSeq seq = if areNewTaxa seq
-                     then (seqTaxaLabels seq)
-                         | (x:_)     = x
-                         | otherwise =
+                     then case seqTaxaLabels seq of
+                       []    -> []
+                       (x:_) -> x
+                     else []
 
 convertMatrix :: [String] -> PhyloSequence -> V.Vector (String, [String])
 convertMatrix taxa sequence = V.fromList [("dummy", ["data", "here"])]
@@ -586,18 +590,21 @@ treeBlockDefinition = {-do
         _     <- symbol (string' "trees;")
         (x,y) <- partitionTreeBlock <$> (many treeFieldDef)
         pure $ TreeBlock x y
+--  where
+    
+    
 
 seqSubBlock :: (Show s, MonadParsec s m Char) => m SeqSubBlock
 seqSubBlock = {-do
     x <- getInput
     trace ("seqSubBlock" ++ (show x)) $ -}symbol block
     where
-        block =  (Dims <$> try dimensionsDefinition)
-             <|> (Format <$> try formatDefinition)
+        block =  (Dims      <$> try dimensionsDefinition)
+             <|> (Format    <$> try formatDefinition)
              <|> (Eliminate <$> try (stringDefinition "eliminate"))
-             <|> (Matrix <$> try matrixDefinition)
-             <|> (Taxa <$> try (stringListDefinition "taxlabels"))
-             <|> (Ignored <$> try (ignoredSubBlockDef ';'))
+             <|> (Matrix    <$> try matrixDefinition)
+             <|> (Taxa      <$> try (stringListDefinition "taxlabels"))
+             <|> (Ignored   <$> try (ignoredSubBlockDef ';'))
 
 dimensionsDefinition :: (Show s, MonadParsec s m Char) => m DimensionsFormat
 dimensionsDefinition = {-do 
@@ -641,19 +648,19 @@ charFormatFieldDef = {-do
         block' <- many $ symbol block
         pure block'
     where
-        block =  (CharDT <$> try (stringDefinition "datatype"))
-             <|> (SymStr <$> try (quotedStringDefinition "symbols"))
-             <|> (Transpose <$> try (booleanDefinition "transpose"))
-             <|> (Interleave <$> try (booleanDefinition "interleave"))
-             <|> (Tokens <$> try (booleanDefinition "tokens"))
-             <|> (EqStr <$> try (quotedStringDefinition "equate"))
-             <|> (MissStr <$> try (stringDefinition "missing"))
-             <|> (GapChar <$> try (stringDefinition "gap"))
-             <|> (MatchChar <$> try (stringDefinition "matchchar"))
-             <|> (Items <$> try (stringDefinition "items"))
-             <|> (RespectCase <$> try (booleanDefinition "respectcase"))
-             <|> (Unlabeled <$> try (booleanDefinition "nolabels"))
-             <|> (IgnFF <$> try (ignoredSubBlockDef ' '))
+        block =  (CharDT      <$> try (stringDefinition       "datatype"   ))
+             <|> (SymStr      <$> try (quotedStringDefinition "symbols"    ))
+             <|> (Transpose   <$> try (booleanDefinition      "transpose"  ))
+             <|> (Interleave  <$> try (booleanDefinition      "interleave" ))
+             <|> (Tokens      <$> try (booleanDefinition      "tokens"     ))
+             <|> (EqStr       <$> try (quotedStringDefinition "equate"     ))
+             <|> (MissStr     <$> try (stringDefinition       "missing"    ))
+             <|> (GapChar     <$> try (stringDefinition       "gap"        ))
+             <|> (MatchChar   <$> try (stringDefinition       "matchchar"  ))
+             <|> (Items       <$> try (stringDefinition       "items"      ))
+             <|> (RespectCase <$> try (booleanDefinition      "respectcase"))
+             <|> (Unlabeled   <$> try (booleanDefinition      "nolabels"   ))
+             <|> (IgnFF       <$> try (ignoredSubBlockDef     ' '          ))
 
 
 treeFieldDef :: (Show s, MonadParsec s m Char) => m TreeField
@@ -662,8 +669,8 @@ treeFieldDef = do
         pure block'
     where
         block =  (Translation <$> try (delimitedStringListDefinition "translate" ','))
-             <|> (Tree <$> try treeDefinition)
-             <|> (IgnTF <$> try (ignoredSubBlockDef ';'))
+             <|> (Tree        <$> try treeDefinition)
+             <|> (IgnTF       <$> try (ignoredSubBlockDef ';'))
 
 
 -- | booleanDefinition takes a string of format KEYWORD;
@@ -724,16 +731,15 @@ delimitedStringListDefinition label delimiter = {-do
     pure $ theItems
 
 
-treeDefinition :: (Show s, MonadParsec s m Char) => m (String, String)
+treeDefinition :: (Show s, MonadParsec s m Char) => m (String, [NewickForest])
 treeDefinition = {-do
     x <- getInput
     trace ("treeDefinition"  ++ show x) $ -}do
-    _     <- symbol (string' "tree")
-    label <- symbol $ many (noneOf ";=")
-    _     <- symbol $ char '='
-    trees <- symbol $ many (noneOf ";")
-    _     <- symbol $ char ';'
-    pure (label, trees)
+    _      <- symbol $ string' "tree"
+    label  <- symbol $ somethingTill (char '=' <|> spaceChar)
+    _      <- symbol $ char '='
+    newick <- symbol $ newickStreamParser
+    pure (label, newick)
 
 matrixDefinition :: (Show s, MonadParsec s m Char) => m [String]
 matrixDefinition = {-do
@@ -816,7 +822,7 @@ partitionCharFormat = foldr f ("", Right [""], Right [""], "", "", "", "", False
         f (Unlabeled n)   (p,q,r,s,t,u,v,w,x,y,z,o) = (p,q,r,s,t,u,v,w,x,y,z,n)
         f (IgnFF n)                              ws = ws
 
-partitionTreeBlock :: [TreeField] -> ([[String]], [(String,String)])
+partitionTreeBlock :: [TreeField] -> ([[String]], [(String,[NewickForest])])
 partitionTreeBlock = foldr f ([],[])
     where
         f (Translation n) (ys,zs) = (n:ys,   zs)
