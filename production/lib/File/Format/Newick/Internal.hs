@@ -1,3 +1,5 @@
+{-# LANGUAGE MultiParamTypeClasses #-}
+
 module File.Format.Newick.Internal
   ( NewickForest
   , NewickNode(..)
@@ -6,6 +8,9 @@ module File.Format.Newick.Internal
   ) where
 
 import Data.Maybe (isJust,isNothing)
+import Bio.Phylogeny.Forest
+import qualified Bio.Phylogeny.Network as N
+import Data.List
 
 {----
   - The Newick file format was developed by an informal committee meeting at
@@ -50,3 +55,22 @@ newickNode nodes label length'
 
 isLeaf :: NewickNode -> Bool
 isLeaf node = (null . descendants) node && (isJust . newickLabel) node
+
+instance N.Network NewickNode NewickNode where
+  root t = t
+  children n t = descendants n
+  isLeaf n t = isLeaf n
+  isRoot n t = null $ N.parents n t
+  parents node tree 
+    | node `elem` (descendants tree) = nub $ tree : foldr (\n acc -> N.parents node n ++ acc) [] (descendants tree)
+    | otherwise = nub $ foldr (\n acc -> N.parents node n ++ acc) [] (descendants tree)
+  update tree new = 
+    let 
+        updateHere = foldr (\n acc -> if match n acc then upOne n acc else acc) tree new
+        updateRest = updateHere {descendants = map (\n -> N.update n new) (descendants updateHere)}
+    in updateRest
+    where
+      match newNode t = (newickLabel t) == (newickLabel newNode) 
+      upOne newNode t = t {descendants = descendants newNode, branchLength = branchLength newNode}
+
+
