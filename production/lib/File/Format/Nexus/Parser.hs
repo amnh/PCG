@@ -730,7 +730,10 @@ delimitedStringListDefinition label delimiter = {-do
     _        <- symbol $ char ';'
     pure $ theItems
 
-
+-- | treeDefinition parses a 'String' of the format "TREE <label>=<newick tree/forest>".
+-- and returns the tuple of (<label>, '[NewickForest']). Label consists on one or more
+-- non-space, non-equal-sign characters. For the propper definition of a 'NewickForest'
+-- see the module for the Newick parser.
 treeDefinition :: (Show s, MonadParsec s m Char) => m (String, [NewickForest])
 treeDefinition = {-do
     x <- getInput
