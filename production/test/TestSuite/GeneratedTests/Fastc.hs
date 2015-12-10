@@ -1,6 +1,6 @@
 {-# LANGUAGE FlexibleContexts #-}
 
-module TestSuite.GeneratedTests.Fastac
+module TestSuite.GeneratedTests.Fastc
   ( testSuite
   ) where
 
@@ -13,7 +13,7 @@ import TestSuite.GeneratedTests.Internal
 import Text.Megaparsec                   (parse)
 
 testSuite :: IO TestTree
-testSuite = testGroup "fastcStreamParser" <$> sequence [validFastaFiles, {-invalidFastaFiles-}]
+testSuite = testGroup "fastcStreamParser" <$> sequence [validFastaFiles{-, invalidFastaFiles-}]
 
 validFastaFiles :: IO TestTree
 validFastaFiles = validateFileContents <$> validContents
