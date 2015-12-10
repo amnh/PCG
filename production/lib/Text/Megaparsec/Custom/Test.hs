@@ -7,6 +7,7 @@ module Text.Megaparsec.Custom.Test
 -- Test modules to form a giant test suite to run
 
 import Data.Either.Combinators
+import Data.List               (nub,sort)
 import Safe                    (readMay)
 import Test.SmallCheck.Series  ()
 import Test.Custom
@@ -22,10 +23,12 @@ testSuite = testGroup "Custom Parsec Combinator Tests" tests
 
 -- | A list of all tests in represented as TestTrees
 tests :: [TestTree]
-tests = [ testGroup "Double Parsing" [decimalProperties]
-        , testGroup "Inline Space Parsing" [inlineSpaceAssertions, inlineSpacesAssertions]
+tests = [ testGroup "Double Parsing"             [decimalProperties]
+        , testGroup "Inline Space Parsing"       [inlineSpaceAssertions, inlineSpacesAssertions]
         , testGroup "Combinator 'anythingTill'"  [anythingTillProperties ]
         , testGroup "Combinator 'somethingTill'" [somethingTillProperties]
+        , testGroup "Combinator 'endOfLine'"     [endOfLineAssertions]
+        , testGroup "Combinator 'fails'"         [failsProperties]
         ]
 
 decimalProperties :: TestTree
@@ -135,3 +138,28 @@ somethingTillProperties = testGroup "Properties"
             buffer'  = getNonEmpty buffer
             stream   = [delimiter] ++ buffer' ++ [delimiter]
 
+endOfLineAssertions :: TestTree
+endOfLineAssertions = testGroup "Assertions" [matchesUnix, matchesWindows, matchesOldMac]
+  where
+    matchesUnix    = testCase "Succeeds on Unix format '\\n'"         $ parseSuccess (endOfLine <* eof) "\n"
+    matchesWindows = testCase "Succeeds on Windows format \"\\r\\n\"" $ parseSuccess (endOfLine <* eof) "\r\n"
+    matchesOldMac  = testCase "Succeeds on Mac format '\\r'"          $ parseSuccess (endOfLine <* eof) "\r"
+    
+
+failsProperties :: TestTree
+failsProperties = testGroup "Property" [failsProperty]
+  where
+    failsProperty = testProperty "Arbitrary strings are lifted to parse errors" f
+      where
+        f :: NonEmptyList (NonEmptyList Char) -> Bool
+        f randomMessages = case parse (fails errors <* eof) "" "" of
+                            Left err -> errorMessages err == (Message <$> errors)
+                            Right _  -> False
+          where
+            errors = nub . sort . getNonEmpty $ getNonEmpty <$> randomMessages
+{-
+commentProperties :: TestTree
+commentProperties = testGroup "" []
+  where
+    f :: (NonEmpty Char, NonEmpty Char, NonEmpty Char) -> 
+-}
