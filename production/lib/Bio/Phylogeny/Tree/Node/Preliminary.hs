@@ -3,7 +3,6 @@
 module Bio.Phylogeny.Tree.Node.Preliminary where
 
 import Data.Vector
-import Data.Int
 
 class PreliminaryNode a b | a -> b where
     preliminary      :: a -> Maybe (Vector (Vector b))

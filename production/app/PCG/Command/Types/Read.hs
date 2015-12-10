@@ -60,7 +60,7 @@ parseSpecifiedFile      (ChromosomeFile     _    ) = fail "Chromosome file speci
 parseSpecifiedFile      (GenomeFile         _    ) = fail "Genome file specification is not implemented"
 
 setTaxaSeqs :: HashMap Identifier Sequence -> SearchState
-setTaxaSeqs x = pure (mempty { taxaSeqs = x })
+setTaxaSeqs x = pure $ Graph [mempty { taxaSeqs = x }]
 
 mapsToHashMap :: (Eq k, Hashable k) => [Map k v] -> HashMap k v
 mapsToHashMap = fromList . concatMap toList
@@ -78,7 +78,7 @@ parseSpecifiedFileSimple comb toState spec = getSpecifiedContent spec >>= (hoist
 progressiveParse :: FileResult -> EitherT ReadError IO SearchState
 progressiveParse (filePath, fileContent) =
   case snd . partitionEithers $ parseTryOrderForSequences <*> [fileContent] of
-    parsed:_ -> pure . pure $ mempty { taxaSeqs = fromList $ toList parsed }
+    parsed:_ -> pure . pure $ Graph [mempty { taxaSeqs = fromList $ toList parsed }]
     []       ->
       case parse newickStreamParser filePath fileContent of
         Right _ -> pure mempty

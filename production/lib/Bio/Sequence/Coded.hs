@@ -1,11 +1,9 @@
-
+{-# OPTIONS_GHC -fno-warn-orphans #-}
 
 module Bio.Sequence.Coded where
 
 import Prelude hiding (map, length, zipWith, null, foldr, head)
 import Data.Vector (map, length, zipWith, empty, null, foldr, Vector, head, (!))
-import Control.Monad (join)
-import Data.Functor ((<$>))
 import Data.Bits
 import Data.Maybe
 
@@ -20,28 +18,29 @@ instance Bits b => Bits (Vector b) where
         | (length bit1) /= (length bit2) = error "Attempt to take or of bits of different length"
         | otherwise = zipWith (.|.) bit1 bit2
     xor bit1 bit2 = (.&.) ((.|.) bit1 bit2) (complement ((.&.) bit1 bit2))
-    complement bit = map complement bit
-    shift bit s = map (\b -> shift b s) bit
-    rotate bit r = map (\b -> rotate b r) bit
+    complement x = map complement x
+    shift  bits s = map (\b -> shift  b s) bits
+    rotate bits r = map (\b -> rotate b r) bits
     setBit _ _= empty -- these methods are not meaningful so they just wipe it
     bit _ = empty
-    bitSize bit 
-        | null bit = 0
-        | otherwise = (length bit) * (bitSize $ head bit)
-    bitSizeMaybe bit 
-        | null bit = Just 0
-        | otherwise = ((length bit) *) <$> (bitSizeMaybe $ head bit)
-    isSigned bit 
-        | null bit = True
-        | otherwise = isSigned $ head bit
-    popCount bit = foldr (\b acc -> acc + popCount b) 0 bit
-    testBit bit index
-        | null bit = False
-        | otherwise = 
-            let
-                myBit = div index (bitSize $ head bit)
-                myPos = rem index (bitSize $ head bit)
-            in testBit (bit ! myBit) myPos
+    bitSize bits 
+        | null bits = 0
+        | otherwise = (length bits) * (maybe 0 id . bitSizeMaybe $ head bits)
+    bitSizeMaybe bits 
+        | null bits = Just 0
+        | otherwise = ((length bits) *) <$> (bitSizeMaybe $ head bits)
+    isSigned bits 
+        | null bits = True
+        | otherwise = isSigned $ head bits
+    popCount bits = foldr (\b acc -> acc + popCount b) 0 bits
+    testBit bits index
+        | null bits = False
+        | otherwise =
+          case bitSizeMaybe $ head bits of
+            Nothing      -> False
+            Just numBits -> let myBit = div index numBits
+                                myPos = rem index numBits
+                            in testBit (bits ! myBit) myPos
 
 instance Bits b => Bits (Maybe b) where
     (.&.) bit1 bit2
@@ -51,31 +50,31 @@ instance Bits b => Bits (Maybe b) where
         | isNothing bit1 || isNothing bit2 = Nothing
         | otherwise = Just $ (fromJust bit1) .|. (fromJust bit2)
     xor bit1 bit2 = (.&.) ((.|.) bit1 bit2) (complement ((.&.) bit1 bit2))
-    complement bit
-        | isNothing bit = Nothing
-        | otherwise = Just $ complement $ fromJust bit
-    shift bit s
-        | isNothing bit = Nothing
-        | otherwise = Just $ shift (fromJust bit) s
-    rotate bit r
-        | isNothing bit = Nothing
-        | otherwise = Just $ rotate (fromJust bit) r
-    setBit bit s
-        | isNothing bit = Nothing
-        | otherwise = Just $ setBit (fromJust bit) s
+    complement bits
+        | isNothing bits = Nothing
+        | otherwise = Just $ complement $ fromJust bits
+    shift bits s
+        | isNothing bits = Nothing
+        | otherwise = Just $ shift (fromJust bits) s
+    rotate bits r
+        | isNothing bits = Nothing
+        | otherwise = Just $ rotate (fromJust bits) r
+    setBit bits s
+        | isNothing bits = Nothing
+        | otherwise = Just $ setBit (fromJust bits) s
     bit i = Just (bit i)
-    bitSize bit
-        | isNothing bit = 0
-        | otherwise = bitSize $ fromJust bit
-    bitSizeMaybe bit
-        | isNothing bit =  Nothing
-        | otherwise = bitSizeMaybe $ fromJust bit
-    isSigned bit 
-        | isNothing bit = False
-        | otherwise = isSigned $ fromJust bit
-    popCount bit
-        | isNothing bit = 0
-        | otherwise = popCount $ fromJust bit
-    testBit bit index
-        | isNothing bit = False
-        | otherwise = testBit (fromJust bit) index
+    bitSize bits
+        | isNothing bits = 0
+        | otherwise = maybe 0 id . bitSizeMaybe $ fromJust bits
+    bitSizeMaybe bits
+        | isNothing bits =  Nothing
+        | otherwise = bitSizeMaybe $ fromJust bits
+    isSigned bits
+        | isNothing bits = False
+        | otherwise = isSigned $ fromJust bits
+    popCount bits
+        | isNothing bits = 0
+        | otherwise = popCount $ fromJust bits
+    testBit bits index
+        | isNothing bits = False
+        | otherwise = testBit (fromJust bits) index

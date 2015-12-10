@@ -1,6 +1,5 @@
 {-# LANGUAGE FunctionalDependencies #-}
 
-
 module Bio.Phylogeny.Tree.Edge.Standard where
 
 class StandardEdge e n | n -> e where

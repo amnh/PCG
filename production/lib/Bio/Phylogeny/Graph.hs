@@ -1,4 +1,5 @@
 {-# LANGUAGE MultiParamTypeClasses, TypeSynonymInstances, FlexibleInstances #-}
+{-# OPTIONS_GHC -fno-warn-orphans #-}
 -----------------------------------------------------------------------------
 -- |
 -- Module      :  Bio.Phylogeny.Graph
@@ -30,8 +31,8 @@ import Bio.Phylogeny.Tree.Binary
 import Data.Keyed hiding ((!))
 import Safe
 import Bio.Phylogeny.Tree.Rose
-import qualified Bio.Phylogeny.Tree.Edge.Standard as E
-import qualified Bio.Phylogeny.Tree.EdgeAware as ET
+import qualified Bio.Phylogeny.Tree.Edge.Standard  as E
+import qualified Bio.Phylogeny.Tree.EdgeAware      as ET
 import qualified Bio.Phylogeny.Tree.CharacterAware as CT
 
 type Identifier = String
@@ -62,7 +63,7 @@ data Tree
    , root       :: Int
    } deriving (Eq,Show)
 
-newtype Graph = Graph [Tree]
+newtype Graph = Graph [Tree] deriving (Show)
 
 -- Seems like this could be derived... silly GHC
 instance Monoid Graph where
@@ -74,16 +75,16 @@ instance Monoid Tree where
   mappend (Tree a b c d e f) (Tree a' b' c' d' e' f') = Tree (a<>a') (b<>b') (c<>c') (d<>d') (e<>e') (f + f')
 
 instance N.Network Tree NodeInfo where
-  parents n t = map (\i -> (nodes t) ! i) (parents n)
-  root t = (nodes t) ! (root t)
+  parents n t  = map (\i -> (nodes t) ! i) (parents n)
+  root t       = (nodes t) ! (root t)
   children n t = map (\i -> (nodes t) ! i) (children n)
-  isLeaf n t = isLeaf n
-  isRoot n t = isRoot n
+  isLeaf n _   = isLeaf n
+  isRoot n _   = isRoot n
   update t new = t {nodes = (nodes t) // (map (\n -> (code n, n)) new) }
 
 instance BinaryTree Tree NodeInfo where
-  parent n t = headMay $ map (\i -> (nodes t) ! i) (parents n)
-  leftChild n t = (map (\i -> (nodes t) ! i) (children n)) !? 0
+  parent     n t = headMay $ map (\i -> (nodes t) ! i) (parents n)
+  leftChild  n t = (map (\i -> (nodes t) ! i) (children n)) !? 0
   rightChild n t = (map (\i -> (nodes t) ! i) (children n)) !? 1
 
 instance RoseTree Tree NodeInfo where

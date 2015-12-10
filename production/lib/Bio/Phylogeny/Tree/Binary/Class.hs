@@ -1,11 +1,7 @@
 {-# LANGUAGE MultiParamTypeClasses, FunctionalDependencies #-}
 module Bio.Phylogeny.Tree.Binary.Class where
 
-import Data.Maybe
 import Bio.Phylogeny.Tree.Rose
-import Data.Keyed ((!?))
-import Bio.Phylogeny.Network
-import Control.Monad
 
 class RoseTree t n => BinaryTree t n | t -> n where
   leftChild, rightChild, parent :: n -> t -> Maybe n

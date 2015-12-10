@@ -4,8 +4,8 @@
 module Bio.Phylogeny.PhyloCharacter where
 
 import Data.Vector
-import Data.Bits
-import Data.Int
+--import Data.Bits
+--import Data.Int
 import GHC.Generics
 
 data PhyloCharacter b = DNA {aligned :: Bool, masks :: (Vector b, Vector b), alphabet :: Vector String}
