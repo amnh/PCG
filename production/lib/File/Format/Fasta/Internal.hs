@@ -24,9 +24,9 @@ type CharacterSequence = Vector [Symbol]
 identifierLine :: MonadParsec s m Char => m Identifier
 identifierLine = do
     _ <- char '>'
-    _ <- inlineSpaces
+    _ <- inlineSpace
     x <- identifier 
-    _ <- inlineSpaces
+    _ <- inlineSpace
     _ <- optional (try commentBody <?> commentMessage x)
     _ <- endOfLine <?> lineEndMessage x
     pure x
@@ -42,10 +42,10 @@ validIdentifierChar c = (not . isSpace) c && c /= '$'
 
 commentBody :: MonadParsec s m Char => m String
 commentBody  = do
-    _       <- inlineSpaces
+    _       <- inlineSpace
     _       <- optional $ char '$'
-    _       <- inlineSpaces
-    content <- many (commentWord <* inlineSpaces)
+    _       <- inlineSpace
+    content <- many (commentWord <* inlineSpace)
     pure $ unwords content
 
 commentWord :: MonadParsec s m Char => m String

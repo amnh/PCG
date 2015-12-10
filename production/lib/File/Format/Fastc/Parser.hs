@@ -41,18 +41,18 @@ fastcTaxonSequenceDefinition = do
 fastcSymbolSequence :: MonadParsec s m Char => m CharacterSequence
 fastcSymbolSequence = fromList <$> (space *> fullSequence)
   where
-    fullSequence = concat <$> some (inlineSpaces *> sequenceLine)
-    sequenceLine = (symbolGroup <* inlineSpaces) `manyTill` endOfLine
+    fullSequence = concat <$> some (inlineSpace *> sequenceLine)
+    sequenceLine = (symbolGroup <* inlineSpace) `manyTill` endOfLine
 
 symbolGroup :: MonadParsec s m Char => m [String]
 symbolGroup = ambiguityGroup
           <|> (pure <$> validSymbol)
 
 ambiguityGroup :: MonadParsec s m Char => m [String]
-ambiguityGroup = validSymbol `sepBy1` (char '|' <* inlineSpaces)
+ambiguityGroup = validSymbol `sepBy1` (char '|' <* inlineSpaceChar)
 
 validSymbol :: MonadParsec s m Char => m String
-validSymbol = (validStartChar <:> many validBodyChar) <* inlineSpaces
+validSymbol = (validStartChar <:> many validBodyChar) <* inlineSpace
   where
     validStartChar = satisfy $ \x -> x /= '>' -- need to be able to match new taxa lines
                                   && x /= '|' -- need to be able to start an ambiguity list 

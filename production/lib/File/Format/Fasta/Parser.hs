@@ -51,8 +51,8 @@ fastaSequence = symbolSequence $ oneOf alphabet
 symbolSequence :: MonadParsec s m Char => m a -> m [a]
 symbolSequence sym = space *> fullSequence
   where
-    fullSequence = concat <$> some (inlineSpaces *> sequenceLine)
-    sequenceLine = (sym <* inlineSpaces) `manyTill` eol
+    fullSequence = concat <$> some (inlineSpace *> sequenceLine)
+    sequenceLine = (sym <* inlineSpace) `manyTill` eol
 
 -- | Various input alphabets
 alphabet, otherValidChars, iupacAminoAcidChars, iupacNucleotideChars, iupacRNAChars :: String

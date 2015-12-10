@@ -24,7 +24,7 @@ testSuite = testGroup "Custom Parsec Combinator Tests" tests
 -- | A list of all tests in represented as TestTrees
 tests :: [TestTree]
 tests = [ testGroup "Double Parsing"             [decimalProperties]
-        , testGroup "Inline Space Parsing"       [inlineSpaceAssertions, inlineSpacesAssertions]
+        , testGroup "Inline Space Parsing"       [inlineSpaceCharAssertions, inlineSpaceAssertions]
         , testGroup "Combinator 'anythingTill'"  [anythingTillProperties ]
         , testGroup "Combinator 'somethingTill'" [somethingTillProperties]
         , testGroup "Combinator 'endOfLine'"     [endOfLineAssertions]
@@ -51,31 +51,31 @@ decimalInjection x =
     Nothing  -> True
     Just res -> parse (space *> double <* eof) "" x == Right res
 
+inlineSpaceCharAssertions :: TestTree
+inlineSpaceCharAssertions = testGroup "Inline Space Char Assertions" [validInlineSpace,invalidInlineSpace]
+  where
+    validInlineSpace = testGroup "Valid inlineSpaceChar"
+      [ testCase "space" $ parseEquals inlineSpaceChar " "  ' '
+      , testCase "tab"   $ parseEquals inlineSpaceChar "\t" '\t'
+      , testCase "vtab"  $ parseEquals inlineSpaceChar "\v" '\v'
+      ]
+    invalidInlineSpace = testGroup "Invalid inlineSpaceChar"
+      [ testCase "newline"        $ parseFailure inlineSpaceChar "\n"
+      , testCase "caraige return" $ parseFailure inlineSpaceChar "\r"
+      ]
+
 inlineSpaceAssertions :: TestTree
 inlineSpaceAssertions = testGroup "Inline Space Assertions" [validInlineSpace,invalidInlineSpace]
   where
-    validInlineSpace = testGroup "Valid Inline Space"
-      [ testCase "space" $ parseEquals inlineSpace " "  ' '
-      , testCase "tab"   $ parseEquals inlineSpace "\t" '\t'
-      , testCase "vtab"  $ parseEquals inlineSpace "\v" '\v'
-      ]
-    invalidInlineSpace = testGroup "Invalid Inline Space"
-      [ testCase "newline"        $ parseFailure inlineSpace "\n"
-      , testCase "caraige return" $ parseFailure inlineSpace "\r"
-      ]
-
-inlineSpacesAssertions :: TestTree
-inlineSpacesAssertions = testGroup "Inline Spaces Assertions" [validInlineSpaces,invalidInlineSpaces]
-  where
-    validInlineSpaces = testGroup "Valid Inline Spaces"
-      [ testCase "Consumes multiple spaces" $ parseSuccess (inlineSpaces <* eof) " \t\v"
+    validInlineSpace = testGroup "Valid inlineSpace"
+      [ testCase "Consumes multiple spaces" $ parseSuccess (inlineSpace <* eof) " \t\v"
       , testCase "Consumes spaces up to a newline" $ mapM_ parse' exampleInputs
       ]
-    invalidInlineSpaces = testGroup "Invalid Inline Spaces"
+    invalidInlineSpace = testGroup "Invalid inlineSpace"
       [ testCase "newline"        $ parseFailure inlineSpace "\n"
       , testCase "caraige return" $ parseFailure inlineSpace "\r"
       ]
-    parse' (inlines,line) = parseSuccess (inlineSpaces <* string line <* eof) (inlines ++ line)
+    parse' (inlines,line) = parseSuccess (inlineSpace <* string line <* eof) (inlines ++ line)
     exampleSpaces     = "\t\v "
     exampleNewlines   = "\n\r"
     exampleInputs = [ ([x,y],[z]) | x <- exampleSpaces, y <- exampleSpaces, z <- exampleNewlines ]
@@ -158,8 +158,9 @@ failsProperties = testGroup "Property" [failsProperty]
           where
             errors = nub . sort . getNonEmpty $ getNonEmpty <$> randomMessages
 {-
-commentProperties :: TestTree
-commentProperties = testGroup "" []
+commentAssertions :: TestTree
+commentAssertions = testGroup "" []
   where
     f :: (NonEmpty Char, NonEmpty Char, NonEmpty Char) -> 
+
 -}

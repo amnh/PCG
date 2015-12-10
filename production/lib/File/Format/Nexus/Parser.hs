@@ -500,7 +500,7 @@ getTaxaFromSeq :: PhyloSequence -> [String]
 getTaxaFromSeq seq = if areNewTaxa seq
                      then (seqTaxaLabels seq)
                          | (x:_)     = x
-                         | otherwise = 
+                         | otherwise =
 
 convertMatrix :: [String] -> PhyloSequence -> V.Vector (String, [String])
 convertMatrix taxa sequence = V.fromList [("dummy", ["data", "here"])]
