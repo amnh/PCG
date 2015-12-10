@@ -9,6 +9,7 @@ import Data.Tree.Node.Encoded
 import Data.Tree.Node.Preliminary
 import Data.Tree.Node.Character
 import Data.Tree.Node.Final
+import Data.Tree.Network
 import qualified Data.Vector as V
 import qualified Packing.BitPackedNode as BN
 import Debug.Trace

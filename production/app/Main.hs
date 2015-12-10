@@ -4,7 +4,7 @@ module Main (main) where
 import Text.Megaparsec
 
 import PCG.Computation.Internal
-import PCG.Evaluation
+import Control.Evaluation
 import PCG.Script
 
 --import System.Environment (getContents)

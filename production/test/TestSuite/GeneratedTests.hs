@@ -4,11 +4,13 @@ module TestSuite.GeneratedTests
 
 import           Test.Tasty                              (TestTree,testGroup)
 import qualified TestSuite.GeneratedTests.Fasta as Fasta (testSuite)
+import qualified TestSuite.GeneratedTests.Fastc as Fastc (testSuite)
 import qualified TestSuite.GeneratedTests.Nexus as Nexus (testSuite)
 
 testSuite :: IO TestTree
 testSuite = testGroup "Dynamically generated tests" 
            <$> sequence 
              [ Fasta.testSuite
+             , Fastc.testSuite
              , Nexus.testSuite
              ]

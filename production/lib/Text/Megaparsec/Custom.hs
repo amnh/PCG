@@ -60,7 +60,7 @@ double :: MonadParsec s m Char => m Double
 double = try (signed space float)
      <|> fromIntegral <$> (signed space integer)
 
--- | Custom 'eol' combinator to account for /very/ old MAc file formats ending lines in a single @\'\r\'@
+-- | Custom 'eol' combinator to account for /very/ old Mac file formats ending lines in a single @\'\\r\'@
 endOfLine :: MonadParsec s m Char => m Char
 endOfLine = (try eol <|> string "\r") *> pure '\n'
 

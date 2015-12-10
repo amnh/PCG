@@ -24,12 +24,12 @@ implyMain :: CharInfo -> PhyloComponent -> PhyloComponent
 --implyMain info tree | trace ("implyMain " ++ show tree) False = undefined
 implyMain info tree = case root of
     Nothing -> error "Tree has no root or root reference is outside tree"
-    Just r ->  --trace ("subtrees " ++ show subMat)
+    Just r ->  trace ("subtrees " ++ show subMat)
                 iaMainPreorder tree tree subMat (Just r) info
 
     where 
         root = join $ (tree V.!?) <$> (V.findIndex (\node -> isRoot node) tree)
-        subMat = subtreeWrap tree
+        subMat = (zero (V.length tree) (V.length tree))
 
 -- | Wrapper for getSubtrees
 subtreeWrap :: PhyloComponent -> Subtrees
@@ -39,16 +39,20 @@ subtreeWrap tree = fst $ getSubtrees tree root (zero (V.length tree) (V.length t
 
 -- | List the subtrees at each node to use in the preorder traversal
 getSubtrees :: PhyloComponent -> Maybe NodeCode -> Subtrees -> (Subtrees, [Int])
---getSubtrees inTree curCode initStructure | trace ("getSubtrees " ++ show curCode) False = undefined
+getSubtrees inTree curCode initStructure | trace ("getSubtrees " ++ show curCode) False = undefined
 getSubtrees inTree curCode initStructure = case node of 
         Nothing ->  (initStructure, [])
         Just n ->   if isTerminal n then (initStructure, [fromJust curCode])
                     else    let
                                 left = getSubtrees inTree ((children n) !? 0) initStructure
-                                right = getSubtrees inTree ((children n) !? 1) initStructure
-                                totalStruc = (fst left) `sumMat` (fst right)
-                                totalPos = (snd left) ++ (snd right)
-                            in (accum (totalStruc, totalPos) (fromJust curCode), (fromJust curCode) : totalPos)
+                                right = trace ("got left " ++ show left)
+                                            getSubtrees inTree ((children n) !? 1) initStructure
+                                totalStruc = trace ("got right " ++ show right)
+                                                (fst left) `sumMat` (fst right)
+                                totalPos = trace ("positions " ++ show totalStruc)
+                                            (snd left) ++ (snd right)
+                            in trace ("totalPos " ++ show totalPos)
+                                    (accum (totalStruc, totalPos) (fromJust curCode), (fromJust curCode) : totalPos)
 
         where
             node = join $ (V.!?) inTree <$> curCode
@@ -59,15 +63,15 @@ getSubtrees inTree curCode initStructure = case node of
             accum (downStruc, downPos) code = foldr (\pos acc -> setElemSafe 1 (code, pos) acc) downStruc downPos
 
             setElemSafe :: Int -> (Int, Int) -> Subtrees -> Subtrees
-            --setElemSafe value (row, col) matrix | trace ("set elem " ++ show (row, col)) False = undefined
+            setElemSafe value (row, col) matrix | trace ("set elem " ++ show (row, col)) False = undefined
             setElemSafe value (row, col) matrix
-                | row >= nrows matrix || col >= ncols matrix = error "Attempt to set a matrix element outside"
+                | row >= nrows matrix || col >= ncols matrix || row < 0 || col < 0 = error "Attempt to set a matrix element outside"
                 | otherwise = setElem value (row, col) matrix
 
 
 -- Starts at the given node
 iaMainPreorder :: PhyloComponent -> PhyloComponent -> Subtrees -> Maybe PhyloNode -> CharInfo -> PhyloComponent
-iaMainPreorder fullTree subTree subMat node info | trace ("preorder with subtree " ++ show subTree) False = undefined
+--iaMainPreorder fullTree subTree subMat node info | trace ("preorder with subtree " ++ show subTree) False = undefined
 iaMainPreorder fullTree subTree subMat inNode info = case inNode of 
     Nothing -> subTree
     Just node ->    let outTree | leftCheck && rightCheck = 
@@ -77,7 +81,6 @@ iaMainPreorder fullTree subTree subMat inNode info = case inNode of
                                         secondNode = safeGrab updatedTree node
                                         alignedRight = naiveDO (preliminaryGapped secondNode) (alignRight secondNode) info
                                         finalUpdate = changeAlignTree updatedTree secondNode RightChild alignedRight
-                                        newSub = grabSubtree finalUpdate (Just $ code node) subMat
                                         (leftEval, rightEval) = recurse finalUpdate subMat leftI rightI
                                         newNode = safeGrab finalUpdate node
                                     in if (length $ preliminaryGapped newNode) > (length $ preliminaryGapped node)
@@ -87,7 +90,6 @@ iaMainPreorder fullTree subTree subMat inNode info = case inNode of
                                     let 
                                         alignedLeft = naiveDO (preliminaryGapped node) (alignLeft node) info
                                         updatedTree = changeAlignTree fullTree node LeftChild alignedLeft
-                                        newSub = grabSubtree updatedTree (Just $ code node) subMat
                                         (leftEval, rightEval) = recurse updatedTree subMat leftI rightI
                                         newNode = safeGrab updatedTree node
                                     in if (length $ preliminaryGapped newNode) > (length $ preliminaryGapped node)
@@ -97,7 +99,6 @@ iaMainPreorder fullTree subTree subMat inNode info = case inNode of
                                     let 
                                         alignedRight = naiveDO (preliminaryGapped node) (alignRight node) info
                                         finalUpdate = changeAlignTree fullTree node RightChild alignedRight
-                                        newSub = grabSubtree finalUpdate (Just $ code node) subMat
                                         (leftEval, rightEval) = recurse finalUpdate subMat leftI rightI
                                         newNode = safeGrab finalUpdate node
                                     in if (length $ preliminaryGapped newNode) > (length $ preliminaryGapped node)
@@ -117,6 +118,7 @@ iaMainPreorder fullTree subTree subMat inNode info = case inNode of
             rightCheck = checkAlign (Just node) (join $ (fullTree V.!?) <$> rightI)
 
             recurse :: PhyloComponent -> Subtrees -> Maybe Int -> Maybe Int -> (PhyloComponent, PhyloComponent)
+            recurse updatedTree subMat leftI rightI | trace ("recurse " ++ show leftI ++ show rightI) False = undefined
             recurse updatedTree subMat leftI rightI = 
                 let 
                     leftTree = grabSubtree updatedTree leftI subMat
@@ -154,13 +156,14 @@ iaPostorder tree curNode info = case mparent of
 
 -- | Function to grab a subtree given a matrix and a row to use
 grabSubtree :: PhyloComponent -> Maybe Int -> Subtrees -> PhyloComponent
-grabSubtree fullTree mrow matrix | trace ("grabSubtree " ++ show mrow) False = undefined
+grabSubtree fullTree mrow matrix | trace ("grabSubtree " ++ show matrix) False = undefined
 grabSubtree fullTree mrow matrix = case mrow of 
-    Nothing -> V.empty
+    Nothing -> trace "nothing grab" $ V.empty
     Just row -> 
                 let 
                     grabRow = getRow row matrix
-                    nodes = V.ifoldr (\i on acc -> acc V.++ foldSubtree i on fullTree) V.empty grabRow
+                    nodes = trace ("got row " ++ show grabRow)
+                                V.ifoldr (\i on acc -> acc V.++ foldSubtree i on fullTree) V.empty grabRow
                 in nodes
 
     where
