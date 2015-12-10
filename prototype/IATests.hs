@@ -27,6 +27,7 @@ import Control.Applicative (liftA2)
 import Packing.PackedOptimize (TreeInfo, optimizeForest)
 import Data.PhyloCharacter
 import Data.Tree.Node.Character
+import System.Random
 
 
 testTreeLen = 100
@@ -54,10 +55,6 @@ subtreeVerify = testGroup "Check correct generation of subtrees" [subLength, cor
                         numOnes = foldr (+) 0 (subtreeWrap tree)
                     in --trace ("Actual number of ones " ++ show numOnes ++ " with n " ++ show n) 
                         ((numOnes == (2 * n) - 4) || numOnes == 0)
-        --correctAccum = testProperty "Returns a matrix with more ones" addOnes
-        --    where
-        --        addOnes :: (Subtrees, [Int]) -> Int -> Bool
-        --        addOnes (matrix, setVals)
 
 iaVerify :: TestTree
 iaVerify = testGroup "Check properties of implied alignment" [mergeLength, conserveProperties, conserveSize, seqLensIncrease]
@@ -217,7 +214,7 @@ data BranchPhylo = PLeaf {code :: PN.NodeCode                --links to DataMatr
 
 instance Arbitrary BranchPhylo where
     arbitrary = do
-        terminate <- choose (0,1) :: Gen Int
+        terminate <- (choose (0, 10) :: Gen Int)
         leftTree <- arbitrary :: Gen BranchPhylo
         rightTree <- arbitrary :: Gen BranchPhylo
         mySeq <- listOf (arbitrary :: Gen BaseChar)

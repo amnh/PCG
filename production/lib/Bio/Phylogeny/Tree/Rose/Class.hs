@@ -7,4 +7,4 @@ import Safe
 
 class Network t n => RoseTree t n | t -> n where
   parent :: n -> t -> Maybe n
-  parent n t = join $ headMay <$> (parents n t)
+  parent n t = headMay (parents n t)
