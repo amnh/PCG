@@ -22,8 +22,8 @@ module Text.Megaparsec.Custom
  , double
  , endOfLine
  , fails
- , inlineSpace 
- , inlineSpaces
+ , inlineSpaceChar 
+ , inlineSpace
  , somethingTill
  ) where
 
@@ -69,14 +69,14 @@ fails :: MonadParsec s m Char => [String] -> m a
 fails = failure . fmap Message
 
 -- | Consumes a whitespace character that is not a newline character
-inlineSpace :: MonadParsec s m Char => m Char
-inlineSpace = satisfy $ \x -> isSpace x 
+inlineSpaceChar :: MonadParsec s m Char => m Char
+inlineSpaceChar = satisfy $ \x -> isSpace x 
                            && '\n' /= x
                            && '\r' /= x
 
 -- | Consumes zero or more whitespace characters that are not newline characters
-inlineSpaces :: MonadParsec s m Char => m ()
-inlineSpaces = skipMany inlineSpace
+inlineSpace :: MonadParsec s m Char => m ()
+inlineSpace = skipMany inlineSpaceChar
 
 -- | @comment start end@ will parse a /nested/ comment structure which begins with
 -- the delimiter @start@ and ends with the delimiter @end@.

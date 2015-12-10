@@ -6,7 +6,7 @@ module File.Format.Nexus.Test
 
 import Control.Monad              (join)
 import Data.Char
-import Data.Either.Custom         (isLeft,isRight,rightMay)
+import Data.Either.Combinators    (isLeft,isRight)
 import Data.Set                   (toList)
 import File.Format.Nexus.Parser
 import Test.Custom                (parseEquals,parseFailure,parseSuccess)
