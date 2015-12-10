@@ -12,7 +12,8 @@ data PhyloCharacter b = DNA {aligned :: Bool, masks :: (Vector b, Vector b), alp
                       | RNA {aligned :: Bool, masks :: (Vector b, Vector b), alphabet :: Vector String}
                       | Morphology {aligned :: Bool, masks :: (Vector b, Vector b), alphabet :: Vector String}
                       | Continous 
-                      | Custom deriving (Show, Eq, Read, Generic)
+                      | Custom {aligned :: Bool, masks :: (Vector b, Vector b), alphabet :: Vector String} 
+                            deriving (Show, Eq, Read, Generic)
 
 
 --class PhyloCharacter a b | a -> b where
