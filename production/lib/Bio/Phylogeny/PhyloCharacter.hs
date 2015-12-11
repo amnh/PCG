@@ -4,16 +4,19 @@
 module Bio.Phylogeny.PhyloCharacter where
 
 import Data.Vector
---import Data.Bits
---import Data.Int
 import GHC.Generics
+import Data.Matrix (Matrix)
 
-data PhyloCharacter b = DNA {aligned :: Bool, masks :: (Vector b, Vector b), alphabet :: Vector String}
-                      | RNA {aligned :: Bool, masks :: (Vector b, Vector b), alphabet :: Vector String}
+-- | Define a character type as DNA, RNA, Morphology, Continous, or Custom
+-- Let it hold whether its aligned, masks for evaluation, its alphabet, and a cost matrix
+data PhyloCharacter b = DNA {aligned :: Bool, masks :: (Vector b, Vector b), alphabet :: Vector String, tcm :: CostMatrix}
+                      | RNA {aligned :: Bool, masks :: (Vector b, Vector b), alphabet :: Vector String, tcm :: CostMatrix}
                       | Morphology {aligned :: Bool, masks :: (Vector b, Vector b), alphabet :: Vector String}
                       | Continous 
-                      | Custom {aligned :: Bool, masks :: (Vector b, Vector b), alphabet :: Vector String} 
+                      | Custom {aligned :: Bool, masks :: (Vector b, Vector b), alphabet :: Vector String, tcm :: CostMatrix} 
                             deriving (Show, Eq, Read, Generic)
+
+type CostMatrix = Matrix Float
 
 
 --class PhyloCharacter a b | a -> b where
