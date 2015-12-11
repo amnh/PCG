@@ -1,9 +1,7 @@
 module Bio.Sequence.Parsed where
 
-import Bio.Sequence.Encoded
+import Bio.Sequence.Coded
 import Data.Vector
+import qualified Data.Map.Lazy as M
 
-type Parsed = Vector [String]
-
-class ParsedSequence s where 
-    encode :: s -> EncodedSeq
+type ParsedSequence = M.Map String (Vector (Vector [String]))

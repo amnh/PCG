@@ -30,7 +30,7 @@ tcmDefinition = do
     pure $ ParseResult alphabet matrix
 
 alphabetLine :: MonadParsec s m Char => m [String]
-alphabetLine = validateAlphabet =<< (alphabetSymbol <* inlineSpaces) `manyTill` endOfLine
+alphabetLine = validateAlphabet =<< (alphabetSymbol <* inlineSpace) `manyTill` endOfLine
   where
     alphabetSymbol = some nonSpace
     nonSpace       = satisfy (not . isSpace)
@@ -38,7 +38,7 @@ alphabetLine = validateAlphabet =<< (alphabetSymbol <* inlineSpaces) `manyTill` 
 matrixBlock :: MonadParsec s m Char => m (Matrix Double)
 matrixBlock = validateMatrix =<< many (symbol matrixRow)
   where
-    matrixRow   = (matrixEntry <* inlineSpaces) `manyTill` endOfLine
+    matrixRow   = (matrixEntry <* inlineSpace) `manyTill` endOfLine
     matrixEntry = double
 
 validateParseResult :: MonadParsec s m Char => ParseResult -> m TCM
