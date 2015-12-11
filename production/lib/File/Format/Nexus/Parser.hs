@@ -281,7 +281,7 @@ getEquates seq = eqs
               then equate $ fromJust form
               else Right [""]
 
-getTaxaFromMatrix :: PhyloSequence -> M.Map String Int
+getTaxaFromMatrix :: PhyloSequence -> [String] M.Map String Int
 getTaxaFromMatrix seq = {-trace (show taxa) $ -}
     if noLabels
         then M.empty
