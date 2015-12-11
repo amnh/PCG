@@ -49,7 +49,7 @@ symbolGroup = ambiguityGroup
           <|> (pure <$> validSymbol)
 
 ambiguityGroup :: MonadParsec s m Char => m [String]
-ambiguityGroup = validSymbol `sepBy1` (char '|' <* inlineSpaceChar)
+ambiguityGroup = validSymbol `sepBy1` (char '|' <* inlineSpace)
 
 validSymbol :: MonadParsec s m Char => m String
 validSymbol = (validStartChar <:> many validBodyChar) <* inlineSpace
