@@ -497,10 +497,7 @@ checkForNewTaxa seq = case (charDims seq) of
                                 else "unaligned"
 
 getTaxaFromSeq :: PhyloSequence -> [String]
-getTaxaFromSeq seq = if areNewTaxa seq
-                     then (seqTaxaLabels seq)
-                         | (x:_)     = x
-                         | otherwise =
+getTaxaFromSeq seq = undefined
 
 convertMatrix :: [String] -> PhyloSequence -> V.Vector (String, [String])
 convertMatrix taxa sequence = V.fromList [("dummy", ["data", "here"])]
