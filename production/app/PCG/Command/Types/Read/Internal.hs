@@ -85,7 +85,7 @@ getSpecifiedFileContents :: [FilePath] -> EitherT ReadError IO [FileResult]
 getSpecifiedFileContents = fmap concat . eitherTValidation . fmap getFileContents
 
 getSpecifiedContentSimple :: [FilePath] -> EitherT ReadError IO FileSpecificationContent
-getSpecifiedContentSimple = fmap (\x -> SpecContent x Nothing) . getSpecifiedFileContents
+getSpecifiedContentSimple = fmap (`SpecContent` Nothing) . getSpecifiedFileContents
 
 -- | Reads in the contents of the given FilePath, correctly interpolating glob paths
 getFileContents :: FilePath -> EitherT ReadError IO [(FilePath, FileContent)]

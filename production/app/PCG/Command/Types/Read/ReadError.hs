@@ -29,7 +29,7 @@ instance Show ReadErrorMessage where
   show (FileAmbiguous  path matches) = message
     where
       files   = toList matches
-      message = unlines $
+      message = unlines
         [ "The following file specification is ambiguous:"
         , "\t'"++path++"'"
         , "The file specification should match a single file, but multiple matches were found:"
@@ -47,12 +47,12 @@ instance Show ReadError where
         case unfindables of
           []  -> Nothing
           [x] -> Just $ "The file "  ++ show x ++ " does not exist"
-          xs  -> Just $ "The following files do not exists: \n"        ++ (unlines $ show <$> xs)
+          xs  -> Just $ "The following files do not exists: \n"        ++ unlines (show <$> xs)
       unopenableMessage =
         case unopenables of
           []  -> Nothing
           [x] -> Just $ "The file "  ++ show x ++ " can not be openned"
-          xs  -> Just $ "The following files could not be oppened: \n" ++ (unlines $ show <$> xs)
+          xs  -> Just $ "The following files could not be oppened: \n" ++ unlines (show <$> xs)
       unparsableMessage =
         case unparsables of
           []  -> Nothing
