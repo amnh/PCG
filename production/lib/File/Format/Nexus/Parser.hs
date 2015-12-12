@@ -420,7 +420,8 @@ getSeqFromMatrix seqLst taxaLst =
 
 deInterleave :: M.Map String String -> [(String, String)] -> M.Map String String
 deInterleave inMap tuples =
-    foldr (\x acc -> M.insertWith (:) name ((snd x) ++ (acc M.! (fst x))) acc) inMap tuples
+--    foldr (\x acc -> M.insertWith (:) name ((snd x) ++ (acc M.! (fst x))) acc) inMap tuples
+    foldr (\x acc -> M.insert (fst x) (snd x ++ (acc M.! fst x)) acc) inMap tuples
 
 replaceMatches :: Char -> String -> String -> String
 replaceMatches matchChar canonical toReplace = {- trace (canonical ++"\n" ++ toReplace ++ "\n") $ -}
