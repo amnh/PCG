@@ -83,10 +83,10 @@ inlineSpaceAssertions = testGroup "Inline Space Assertions" [validInlineSpace,in
 anythingTillProperties :: TestTree
 anythingTillProperties = testGroup "Properties"
                        [ emptySuccess
-                       , propperConsumtion
+                       , properConsumption
                        ]
   where
-    propperConsumtion = testProperty "Cosumes up to 'stop mark'" f
+    properConsumption = testProperty "Consumes up to 'stop mark'" f
       where
         f :: (NonEmptyList Char, Char, NonEmptyList Char) -> Bool
         f (prefix, delimiter, suffix) = parse (anythingTill stopMark <* stopMark <* remaining <* eof) "" stream == Right prefix'
@@ -107,11 +107,11 @@ anythingTillProperties = testGroup "Properties"
 somethingTillProperties :: TestTree
 somethingTillProperties = testGroup "Properties"
                         [ emptyFailure
-                        , propperConsumtion
+                        , properConsumption
                         , emptyCharFailure
                         ]
   where
-    propperConsumtion = testProperty "Cosumes up to 'stop mark'" f
+    properConsumption = testProperty "Consumes up to 'stop mark'" f
       where
         f :: (NonEmptyList Char, Char, NonEmptyList Char) -> Bool
         f (prefix, delimiter, suffix) = null prefix'

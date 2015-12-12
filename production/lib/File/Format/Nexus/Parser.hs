@@ -284,7 +284,7 @@ getEquates seq = eqs
               then equate $ fromJust form
               else Right [""]
 
-getTaxaFromMatrix :: PhyloSequence -> [String] M.Map String Int
+getTaxaFromMatrix :: PhyloSequence -> M.Map String Int
 getTaxaFromMatrix seq = {-trace (show taxa) $ -}
     if noLabels
         then M.empty
@@ -433,7 +433,7 @@ getSeqFromMatrix seqLst taxaLst =
         mtx     = head $ matrix $ head seqLst -- I've already checked to make sure there's a matrix
         entireSeqs = if noLabels    -- this will be a list of tuples (taxon, concatted seq)
                      then if interleaved
-                          then concat (map (zip taxaLst) $ chunksOf numTaxa mtx)
+                          then concat (map (zip taxaLst) (chunksOf numTaxa mtx))
                           else zip taxaLst mtx
                      else map (\x -> let (name, seq) = span (/= ' ') x
                                      in (name, dropWhile (`elem` " \t") seq)
@@ -451,7 +451,7 @@ getSeqFromMatrix seqLst taxaLst =
 
 deInterleave :: M.Map String String -> [(String, String)] -> M.Map String String
 deInterleave inMap tuples =
-    foldr (\x acc -> M.insert (fst x) ((snd x) ++ (acc M.! (fst x))) acc) inMap tuples
+    foldr (\x acc -> M.insertWith (:) name ((snd x) ++ (acc M.! (fst x))) acc) inMap tuples
 
 replaceMatches :: Char -> String -> String -> String
 replaceMatches matchChar canonical toReplace = {- trace (canonical ++"\n" ++ toReplace ++ "\n") $ -}
@@ -468,11 +468,10 @@ chunksOf n xs = f : chunksOf n s
     (f,s) = splitAt n xs
 
 areNewTaxa :: PhyloSequence -> Bool
-areNewTaxa seq = 
-    if (name seq) == "data" 
-    then True
-    else case (charDims seq) of
-        [] -> False
+areNewTaxa seq
+    | (name seq) == "data" = True
+    | otherwise            = case (charDims seq) of
+        []  -> False
         xs  -> case (seqTaxaLabels seq) of
                 [] -> False
                 _  -> newTaxa $ head xs
@@ -486,7 +485,7 @@ areNewTaxa seq =
 checkForNewTaxa :: PhyloSequence -> Maybe String
 checkForNewTaxa seq = case (charDims seq) of
                         [] -> Nothing
-                        xs  -> if newTaxa $ head xs
+                        xs -> if newTaxa $ head xs
                               then
                                   case (seqTaxaLabels seq) of
                                       [] -> Just $ "In the " ++ which ++ " block the newtaxa keyword is specified, but no new taxa are given."
@@ -500,11 +499,13 @@ checkForNewTaxa seq = case (charDims seq) of
                                 else "unaligned"
 
 getTaxaFromSeq :: PhyloSequence -> [String]
-getTaxaFromSeq seq = if areNewTaxa seq
-                     then case seqTaxaLabels seq of
-                       []    -> []
-                       (x:_) -> x
-                     else []
+getTaxaFromSeq seq 
+    | (areNewTaxa seq) = case seqTaxaLabels seq of
+                           []    -> {- trace (show keys) $ -} keys
+                           (x:_) -> x
+    | otherwise        = []
+    where
+        keys = M.keys $ getTaxaFromMatrix seq
 
 convertMatrix :: [String] -> PhyloSequence -> V.Vector (String, [String])
 convertMatrix taxa sequence = V.fromList [("dummy", ["data", "here"])]
