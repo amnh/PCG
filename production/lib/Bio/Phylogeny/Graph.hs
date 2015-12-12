@@ -35,17 +35,20 @@ import qualified Bio.Phylogeny.Tree.Edge.Standard  as E
 import qualified Bio.Phylogeny.Tree.EdgeAware      as ET
 import qualified Bio.Phylogeny.Tree.CharacterAware as CT
 
+-- | Standard graph types defined
 type Identifier = String
 type Sequence   = Vector [String]
 type CharInfo   = PhyloCharacter Int64
 type NodeInfo   = Node BitVector
 
+-- | Edge type: info is stored at the out connections of a node
 data EdgeSet
    = EdgeSet
    { inNodes  :: IntSet
    , outNodes :: IntMap EdgeInfo
    } deriving (Eq,Show)
 
+-- | Edge info type holding length, origin, and terminal
 data EdgeInfo 
    = EdgeInfo
    { len :: Float
@@ -53,6 +56,7 @@ data EdgeInfo
    , terminal :: NodeInfo
    } deriving (Eq, Show)
 
+-- | Tree structure holding nodes, their original sequences, their edges, and a root reference
 data Tree
    = Tree
    { taxaNodes  :: IntMap  Identifier
@@ -63,9 +67,10 @@ data Tree
    , root       :: Int
    } deriving (Eq,Show)
 
+-- | A graph is defined as a list of trees
 newtype Graph = Graph [Tree] deriving (Show)
 
--- Seems like this could be derived... silly GHC
+-- | Make all types instances of monoid to allow for mempty and mappend usage
 instance Monoid Graph where
   mempty = Graph []
   mappend (Graph g1) (Graph g2) = Graph (g1 <> g2)
@@ -74,6 +79,11 @@ instance Monoid Tree where
   mempty = Tree mempty mempty mempty mempty mempty 0
   mappend (Tree a b c d e f) (Tree a' b' c' d' e' f') = Tree (a<>a') (b<>b') (c<>c') (d<>d') (e<>e') (f + f')
 
+instance Monoid EdgeSet where
+  mempty = EdgeSet mempty mempty
+  mappend (EdgeSet in1 out1) (EdgeSet in2 out2) = EdgeSet (in1 <> in2) (out1 out2)
+
+-- | Make this tree structure an instance of the tree types
 instance N.Network Tree NodeInfo where
   parents n t  = map (\i -> (nodes t) ! i) (parents n)
   root t       = (nodes t) ! (root t)
@@ -90,11 +100,13 @@ instance BinaryTree Tree NodeInfo where
 instance RoseTree Tree NodeInfo where
   parent n t = headMay $ map (\i -> (nodes t) ! i) (parents n)
 
+-- | Make the graph structure an instance of a forest
 instance Forest Graph Tree where
   trees (Graph f) = f
   setTrees _ f2 = Graph f2
   filterTrees (Graph f) func = Graph $ filter func f
 
+-- | Make it an instance of data storage type classes
 instance E.StandardEdge EdgeInfo NodeInfo where
   edgeLen = len
   setEdgeLen e f = e {len = f}

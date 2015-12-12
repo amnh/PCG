@@ -7,9 +7,12 @@ import Data.Vector (map, length, zipWith, empty, null, foldr, Vector, head, (!))
 import Data.Bits
 import Data.Maybe
 
+-- | An encoded sequence is stored as a Maybe vector of encoded characters
+-- an encoded character is a vector of bits
 type EncodedSeq b = Maybe (Vector (EncodedChar b))
 type EncodedChar b = Vector b
 
+-- | To make this work, EncodedSeq is also an instance of bits because a Vector of bits is and a Maybe bits is
 instance Bits b => Bits (Vector b) where
     (.&.) bit1 bit2     
         | (length bit1) /= (length bit2) = error "Attempt to take and of bits of different length"

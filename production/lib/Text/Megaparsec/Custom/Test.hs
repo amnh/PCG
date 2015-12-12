@@ -55,13 +55,13 @@ inlineSpaceCharAssertions :: TestTree
 inlineSpaceCharAssertions = testGroup "Inline Space Char Assertions" [validInlineSpace,invalidInlineSpace]
   where
     validInlineSpace = testGroup "Valid inlineSpaceChar"
-      [ testCase "space" $ parseEquals inlineSpaceChar " "  ' '
-      , testCase "tab"   $ parseEquals inlineSpaceChar "\t" '\t'
-      , testCase "vtab"  $ parseEquals inlineSpaceChar "\v" '\v'
+      [ testCase "space" $ parseEquals (inlineSpaceChar <* eof) " "  ' '
+      , testCase "tab"   $ parseEquals (inlineSpaceChar <* eof) "\t" '\t'
+      , testCase "vtab"  $ parseEquals (inlineSpaceChar <* eof) "\v" '\v'
       ]
     invalidInlineSpace = testGroup "Invalid inlineSpaceChar"
-      [ testCase "newline"        $ parseFailure inlineSpaceChar "\n"
-      , testCase "caraige return" $ parseFailure inlineSpaceChar "\r"
+      [ testCase "newline"        $ parseFailure (inlineSpaceChar <* eof) "\n"
+      , testCase "caraige return" $ parseFailure (inlineSpaceChar <* eof) "\r"
       ]
 
 inlineSpaceAssertions :: TestTree
@@ -72,8 +72,8 @@ inlineSpaceAssertions = testGroup "Inline Space Assertions" [validInlineSpace,in
       , testCase "Consumes spaces up to a newline" $ mapM_ parse' exampleInputs
       ]
     invalidInlineSpace = testGroup "Invalid inlineSpace"
-      [ testCase "newline"        $ parseFailure inlineSpace "\n"
-      , testCase "caraige return" $ parseFailure inlineSpace "\r"
+      [ testCase "newline"        $ parseFailure (inlineSpace <* eof) "\n"
+      , testCase "caraige return" $ parseFailure (inlineSpace <* eof) "\r"
       ]
     parse' (inlines,line) = parseSuccess (inlineSpace <* string line <* eof) (inlines ++ line)
     exampleSpaces     = "\t\v "

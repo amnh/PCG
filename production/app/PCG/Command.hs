@@ -4,6 +4,7 @@ module PCG.Command
   ) where
 
 import Data.Char      (toLower)
+import Data.Maybe     (fromMaybe)
 import Data.Map       (Map,fromList,lookup)
 import Prelude hiding (lookup)
 
@@ -13,10 +14,7 @@ import PCG.Script.Types
 import qualified PCG.Command.Types.Read as Read
 
 rebukeDubiousness :: DubiousCommand -> Either String Command
-rebukeDubiousness dubious =
-  case commandInterpretation dubious of
-    Just x  -> x
-    Nothing -> Left $ "Command not found: " ++ show dubious
+rebukeDubiousness dubious = fromMaybe (Left $ "Command not found: " ++ show dubious) $ commandInterpretation dubious
 
 commandInterpretation :: DubiousCommand -> Maybe (Either String Command)
 commandInterpretation (DubiousCommand (Lident name) args) = (toLower <$> name) `lookup` validCommands <*> pure args

@@ -5,6 +5,7 @@ import PCG.Command.Types.Read.Internal
 data Command
   = READ [FileSpecification]
   | ECHO String EchoClass
+  | ANALYZE String
   | EXIT
   deriving (Show)
 

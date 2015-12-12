@@ -123,7 +123,7 @@ ignoredSubBlockDef' = testGroup "ignoredSubBlockDef" [endTest, sendTest, semicol
                 f :: NonEmptyList AsciiAlphaNum -> Bool
                 f x = parse (ignoredSubBlockDef ';' <* char ';' <* eof) "" inp == Right res
                     where
-                        x' = (getAsciiAlphaNum <$> getNonEmpty x)
+                        x'  = getAsciiAlphaNum <$> getNonEmpty x
                         res = x' ++ "end"
                         inp = res ++ ";"
         semicolonTest = testProperty "Block ends with \";\"" f
@@ -131,7 +131,7 @@ ignoredSubBlockDef' = testGroup "ignoredSubBlockDef" [endTest, sendTest, semicol
                 f :: NonEmptyList AsciiAlphaNum -> Bool
                 f x = parse (ignoredSubBlockDef ';' <* char ';' <* eof) "" inp == Right x'
                     where
-                        x' = (getAsciiAlphaNum <$> getNonEmpty x)
+                        x'  = getAsciiAlphaNum <$> getNonEmpty x
                         inp = x' ++ ";"
         argumentTest = testProperty "Block ends with a designated delimiter" f
             where
@@ -139,7 +139,7 @@ ignoredSubBlockDef' = testGroup "ignoredSubBlockDef" [endTest, sendTest, semicol
                 f (x,y) = parse (ignoredSubBlockDef arg <* char arg <* eof) "" inp == Right x'
                     where
                         arg = getAsciiNonAlphaNum y
-                        x' = (getAsciiAlphaNum <$> getNonEmpty x)
+                        x'  = getAsciiAlphaNum <$> getNonEmpty x
                         inp = x' ++ [arg]
         emptyStringTest = testCase "Empty String" $ parseFailure (ignoredSubBlockDef ' ' <* eof) ";"
 
@@ -241,13 +241,15 @@ stringTypeList =
 stringTypeListPerms = [(string ++ " " ++ string', [result, result']) | (string, result) <- stringTypeList, (string', result') <- stringTypeList]
 
 treeDefinition' :: TestTree
-treeDefinition' = testGroup "treeDefinition" [failsOnEmptyTree, succeedsOnSimple, withBranchLengths, withComments, arbitraryName]
+treeDefinition' = testGroup "treeDefinition" [failsOnEmptyTree, succeedsOnSimple, withBranchLengths, withComments, arbitraryName, rootedAnnotation, unrootedAnnotation]
   where
-    failsOnEmptyTree  = testCase "Fails on 'empty tree'"              $ parseFailure treeDefinition "TREE emptyTree   = ;"
-    succeedsOnSimple  = testCase "Parses simple tree"                 $ parseSuccess treeDefinition "TREE simpleTree  = (A,B);"
-    withBranchLengths = testCase "Parses tree with branch lengths"    $ parseSuccess treeDefinition "TREE brancheNums = (A:42,B:1.337);"
-    withComments      = testCase "Parses tree with internal comments" $ parseSuccess treeDefinition "TREE comments    = (A[left], B[right]);"
-    arbitraryName     = testProperty "Arbitrary labeled tree" $ f
+    failsOnEmptyTree   = testCase "Fails on 'empty tree'"                $ parseFailure treeDefinition "TREE emptyTree  = ;"
+    succeedsOnSimple   = testCase "Parses simple tree"                   $ parseSuccess treeDefinition "TREE simpleTree = (A,B);"
+    withBranchLengths  = testCase "Parses tree with branch lengths"      $ parseSuccess treeDefinition "TREE branchNums = (A:42,B:1.337):13;"
+    withComments       = testCase "Parses tree with internal comments"   $ parseSuccess treeDefinition "TREE comments   = (A[left], B[right]);"
+    rootedAnnotation   = testCase "Parses tree with rooted annotation"   $ parseSuccess treeDefinition "TREE rooted   = [&R] (A,B);"
+    unrootedAnnotation = testCase "Parses tree with unrooted annotation" $ parseSuccess treeDefinition "TREE unrooted = [&U] (A,B);"
+    arbitraryName      = testProperty "Arbitrary labeled tree" f
       where
         f :: NonEmptyList AsciiAlphaNum -> Bool
         f randomLabel = case parse (treeDefinition <* eof) "" (unwords ["Tree ", treeLabel, "=", "(A,B);"]) of
@@ -257,17 +259,13 @@ treeDefinition' = testGroup "treeDefinition" [failsOnEmptyTree, succeedsOnSimple
             treeLabel = getAsciiAlphaNum <$> getNonEmpty randomLabel
 
 
-newtype AsciiAlphaNum = AsciiAlphaNum { getAsciiAlphaNum :: Char } deriving (Eq)
-
+newtype AsciiAlphaNum    = AsciiAlphaNum    { getAsciiAlphaNum    :: Char } deriving (Eq)
 newtype AsciiNonAlphaNum = AsciiNonAlphaNum { getAsciiNonAlphaNum :: Char } deriving (Eq)
+newtype Whitespace       = Whitespace       { getWhitespaceChar   :: Char } deriving (Eq)
 
-newtype Whitespace = Whitespace { getWhitespaceChar :: Char } deriving (Eq)
-
-nonSpaceChars = fmap AsciiAlphaNum . filter isAlphaNum $ chr <$> [0..128]
-
+nonSpaceChars    = fmap AsciiAlphaNum    . filter        isAlphaNum  $ chr <$> [0..128]
 nonAlphaNumChars = fmap AsciiNonAlphaNum . filter (not . isAlphaNum) $ chr <$> [0..128]
-
-whitespaceChars = fmap Whitespace " \t\n\r\f\v"
+whitespaceChars  = fmap Whitespace " \t\n\r\f\v"
 
 instance Arbitrary AsciiAlphaNum where
   arbitrary = elements nonSpaceChars

@@ -4,6 +4,8 @@ module Bio.Phylogeny.Tree.Node.Preliminary where
 
 import Data.Vector
 
+-- | A preliminary node has a preliminary assignment as well as associated data
+-- Associated data: aligned preliminary, temporary, and cost
 class PreliminaryNode a b | a -> b where
     preliminary      :: a -> Maybe (Vector (Vector b))
     setPreliminary   :: Maybe (Vector (Vector b)) -> a -> a
