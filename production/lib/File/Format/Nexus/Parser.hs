@@ -1,5 +1,12 @@
 {-# LANGUAGE DoAndIfThenElse, FlexibleContexts #-}
 
+-- TODOs:
+-- • Step matrices
+-- • eliminate characters (in two ways?)
+-- • Split verification & parsing into two modules?
+-- • update output datatypes: nest vectors, add character metadata
+-- • 
+
 module File.Format.Nexus.Parser where
 
 import Data.Char (isSpace,toLower,toUpper)
@@ -157,13 +164,13 @@ parseNexusStream = parse (validateParseResult =<< parseNexus <* eof) "PCG encoun
 -- or may not be best practice.                                                             coded as
 -- Errors currently caught: # error                                       dependency   inde- or de- pendant    finished
 --  1. Too many taxa blocks                                                    -              indep              done
---  2. too many sequence blocks                                                -              indep              done
+--  ** removed ** too many sequence blocks                                                -              indep              done
 --     There are actually two subcases here:
 --        too many aligned, too many unaligned
---  3. No sequence blocks                                                      -              indep              done
+--  ** removed ** No sequence blocks                                                      -              indep              done
 --  4. No matrix in some sequence block                                        3              indep              done
 --  5. No dimensions in some sequence block                                    3              indep              done
---  6. No taxa block _and_ no new taxa specified in sequence blocks            3              indep              done
+--  6. Sequence block with "nolabels", but no taxa block _and_ no new taxa specified in sequence blocks            3              indep              done
 --  7. "newtaxa" keyword in characters or unaligned block, but no taxa actually spec'ed            3                dep              done
 --  8. "newtaxa" keywork in characters or unaligned block, but ntaxa missing                       3,5              dep              done
 --  9. "nolabels" but labels actually present--subsumed under 10, 11, 12       3                dep
@@ -247,7 +254,7 @@ checkSeqLength [] _ = [Nothing]
 checkSeqLength seq seqMap =
     M.foldrWithKey (\key val acc -> (if length val == len
                                      then Nothing
-                                     else Just (key ++ "'s sequence is the wrong length in an aligned block. It should be " ++ show len ++ ", but is " ++ show (length val) ++ ":\n" ++ show val ++ "\n")) : acc) [] seqMap
+                                     else Just (key ++ "'s sequence is the wrong length in an aligned block. It should be " ++ show len ++ ", but is " ++ show (length val) {- ++ ":\n" ++ show val -} ++ "\n")) : acc) [] seqMap
     where
         len = numChars . head . charDims $ head seq
 
@@ -404,11 +411,9 @@ getSeqFromMatrix seqLst taxaLst =
                      then if interleaved
                           then concatMap (zip taxaLst) (chunksOf numTaxa mtx)
                           else zip taxaLst mtx
-                     else map (\x -> let (name, seq) = span (/= ' ') x
-                                     in (name, dropWhile (`elem` " \t") seq)
-                              ) mtx
+                     else map (\x -> getTaxonAndSeqFromMatrixRow x) mtx
         entireDeinterleavedSeqs = if interleaved
-                                  then deInterleave taxaMap entireSeqs
+                                  then deInterleave taxaMap entireSeqs -- next step: figure out why entireSeqs is sometimes not split
                                   else M.fromList entireSeqs
         firstSeq = fromJust $ M.lookup (if noLabels
                                         then head taxaLst
@@ -418,10 +423,23 @@ getSeqFromMatrix seqLst taxaLst =
                              then M.map (replaceMatches (head matchChar') firstSeq) entireDeinterleavedSeqs
                              else entireDeinterleavedSeqs
 
+-- | deInterleaved takes in an interleaved matrix in the form [(taxon,sequence)] and returns
+-- a matrix of the form Map taxon sequence. The original list of tuples should have duplicate taxon entries
+-- (because of the matrix being interleaved), and the seqs should be concatted---in order---in the 
+-- returned map.
+-- A (partial?) test exists in the test suite.
 deInterleave :: M.Map String String -> [(String, String)] -> M.Map String String
 deInterleave inMap tuples =
---    foldr (\x acc -> M.insertWith (:) name ((snd x) ++ (acc M.! (fst x))) acc) inMap tuples
-    foldr (\x acc -> M.insert (fst x) (snd x ++ (acc M.! fst x)) acc) inMap tuples
+    foldr (\(name, seq) acc -> M.insertWith (++) name seq acc) inMap tuples
+
+-- | getTaxonAndSeqFromMatrixRow takes a String of format "xxx[space or tab]yyy"
+-- and returns a tuple of form ("xxx","yyy")
+-- A test exists in the test suite.
+getTaxonAndSeqFromMatrixRow :: String -> (String, String)
+getTaxonAndSeqFromMatrixRow inStr = (name, seq)
+    where 
+        (name, rest) = span (\x -> not (x `elem` " \t")) inStr
+        seq = dropWhile (`elem` " \t") rest
 
 replaceMatches :: Char -> String -> String -> String
 replaceMatches matchChar canonical toReplace = {- trace (canonical ++"\n" ++ toReplace ++ "\n") $ -}
@@ -477,17 +495,6 @@ getTaxaFromSeq seq
     where
         keys = M.keys $ getTaxaFromMatrix seq
 
-convertMatrix :: [String] -> PhyloSequence -> V.Vector (String, [String])
-convertMatrix taxa sequence = V.fromList [("dummy", ["data", "here"])]
-
--- | Checks for aligned block. If block should be aligned, but isn't, returns error String.
--- Otherwise, Nothing (no errors).
--- Also makes sure given dimensions match length of sequence found
---isAligned :: V.Vector (String, [String]) -> Maybe String
---isAligned seqs = case
---    V.foldr (\x acc -> if ) Nothing seqs
---                 where initLength = length $ snd (seqs ! 0)
-
 parseNexus :: (Show s, MonadParsec s m Char) => m ParseResult
 parseNexus = nexusFileDefinition
 
@@ -497,11 +504,12 @@ nexusFileDefinition = {-do
     trace ("nexusFileDefinition"  ++ show x) $ -}do
     _         <- string' "#NEXUS"
     _         <- space
-    comment   <- optional commentDefinition
-    _         <- space
+    comment   <- optional $ many $ commentDefinition <* space
     (x,y,z,a) <- partitionNexusBlocks <$> many nexusBlock
     pure $ ParseResult x y z a
 
+-- TODO: test this 
+-- why is PROTPARS-example.nex failing? It works with end;, but not with endblock;
 ignoredBlockDefinition :: (Show s, MonadParsec s m Char) => m IgnoredB
 ignoredBlockDefinition = {-do
     x <- getInput
@@ -509,14 +517,17 @@ ignoredBlockDefinition = {-do
     line  <- sourceLine . statePos <$> getParserState
     title <- many letterChar
     _     <- symbol $ char ';'
-    _     <- somethingTill $ symbol (string' "END;")
+    _     <- somethingTill blockend -- $ symbol $ (string' "END;") <|> (string' "endblock;")
     pure $ IgnoredB $ title ++ " at line " ++ show line
+
+blockend :: (Show s, MonadParsec s m Char) => m String
+blockend = symbol $ (string' "endblock;") <|> (string' "end;")
 
 nexusBlock :: (Show s, MonadParsec s m Char) => m NexusBlock
 nexusBlock = do
         _      <- symbol $ string' "BEGIN"
         block' <- symbol block
-        _      <- symbol $ string' "END;"
+        _      <- blockend
         pure block'
     where
         block =  (CharacterBlock <$> try (characterBlockDefinition "characters" True))
@@ -561,9 +572,6 @@ treeBlockDefinition = {-do
         _     <- symbol (string' "trees;")
         (x,y) <- partitionTreeBlock <$> many treeFieldDef
         pure $ TreeBlock x y
---  where
-    
-    
 
 seqSubBlock :: (Show s, MonadParsec s m Char) => m SeqSubBlock
 seqSubBlock = {-do
@@ -703,7 +711,7 @@ delimitedStringListDefinition label delimiter = {-do
 
 -- | treeDefinition parses a 'String' of the format "TREE <label>=<newick tree/forest>".
 -- and returns the tuple of (<label>, '[NewickForest']). Label consists on one or more
--- non-space, non-equal-sign characters. For the propper definition of a 'NewickForest'
+-- non-space, non-equal-sign characters. For the proper definition of a 'NewickForest'
 -- see the module for the Newick parser.
 treeDefinition :: (Show s, MonadParsec s m Char) => m (String, [NewickForest])
 treeDefinition = {-do
@@ -734,7 +742,7 @@ ignoredSubBlockDef :: (Show s, MonadParsec s m Char) => Char -> m String
 ignoredSubBlockDef endChar = {-do
     x <- getInput
     trace (("ignoredSubBlockDef endChar: " ++ [endChar])  ++ show x) $ -}do
-    _     <- notFollowedBy (space *> string' "end;") <?> "something other than end of block"
+    _     <- notFollowedBy (space *> ((string' "end;") <|> (string' "endblock;"))) <?> "something other than end of block"
     stuff <- somethingTill (symbol (char ';')
                             <|> symbol (char' endChar))
     _     <- anyChar
@@ -766,9 +774,6 @@ partitionTaxaBlock = foldr f (0,[])
                 num = numTaxa n
         f (Taxa n) (y,z) = (  y, n)
         f _           ws = ws
-
-
-
 
 partitionNexusBlocks :: [NexusBlock] -> ([PhyloSequence], [TaxaSpecification], [TreeBlock], [IgnoredB])
 partitionNexusBlocks = foldr f ([],[],[],[])
@@ -803,14 +808,15 @@ partitionTreeBlock = foldr f ([],[])
         f (Tree n)        (ys,zs) = (  ys, n:zs)
         f _                    ws = ws
 
-
 trimmed :: (Show s, MonadParsec s m Char) => m a -> m a
 trimmed x = whitespace *> x <* whitespace
 
 symbol :: (Show s, MonadParsec s m Char) => m a -> m a
 symbol x = x <* whitespace
 
--- TODO: remove comments in preprocessing step?
+-- | whitespace is any combination (zero or more) of whitespace chars (" \t\n\r\v\f") and comments, which in Nexus files
+-- are delimited by square brackets.
+-- TODO: Since this accepts the empty string, it's difficult to test....
 whitespace :: (Show s, MonadParsec s m Char) => m ()
 whitespace = (space *> optional (try $ some $ commentDefinition *> space) *> pure ())
           <?> "comments or whitespace"
@@ -836,7 +842,7 @@ strip :: String -> String
 strip = lstrip . rstrip
 
 nexusKeywords :: S.Set String
-nexusKeywords = S.fromList ["ancstates", "assumptions", "begin", "changeset", "characters", "charlabels", "charpartition", "charset", "charstatelabels", "codeorder", "codeset", "codons", "data", "datatype", "deftype", "diagonal", "dimensions", "distances", "eliminate", "end", "equate", "exset", "extensions", "format", "gap", "interleave", "items", "labels", "matchchar", "matrix", "missing", "nchar", "newtaxa", "nodiagonal", "nolabels", "notes", "notokens", "ntax", "options", "picture", "respectcase", "sets", "statelabels", "statesformat", "symbols", "taxa", "taxlabels", "taxpartition", "taxset", "text", "tokens", "translate", "transpose", "tree", "treepartition", "trees", "treeset", "triangle", "typeset", "unaligned", "usertype", "wtset"]
+nexusKeywords = S.fromList ["ancstates", "assumptions", "begin", "changeset", "characters", "charlabels", "charpartition", "charset", "charstatelabels", "codeorder", "codeset", "codons", "data", "datatype", "deftype", "diagonal", "dimensions", "distances", "eliminate", "end", "endblock", "equate", "exset", "extensions", "format", "gap", "interleave", "items", "labels", "matchchar", "matrix", "missing", "nchar", "newtaxa", "nodiagonal", "nolabels", "notes", "notokens", "ntax", "options", "picture", "respectcase", "sets", "statelabels", "statesformat", "symbols", "taxa", "taxlabels", "taxpartition", "taxset", "text", "tokens", "translate", "transpose", "tree", "treepartition", "trees", "treeset", "triangle", "typeset", "unaligned", "usertype", "wtset"]
 
 -- | notKeywordWord takes two strings as input and returns a String.
 -- The first argument is a list of characters which
