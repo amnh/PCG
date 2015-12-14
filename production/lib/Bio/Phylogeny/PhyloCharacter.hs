@@ -14,7 +14,7 @@ data PhyloCharacter b = DNA {aligned :: Bool, masks :: (Vector b, Vector b), alp
                       | Morphology {aligned :: Bool, masks :: (Vector b, Vector b), alphabet :: Vector String}
                       | Continous 
                       | Custom {aligned :: Bool, masks :: (Vector b, Vector b), alphabet :: Vector String, tcm :: CostMatrix} 
-                            deriving (Show, Eq, Read, Generic)
+                            deriving (Show, Eq, Generic)
 
 type CostMatrix = Matrix Float
 

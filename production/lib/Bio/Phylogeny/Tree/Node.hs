@@ -13,12 +13,12 @@ data Node b = Node  { code :: Int
                     , isLeaf :: Bool
                     , children :: [Int]
                     , parents :: [Int]
-                    , encoded :: EncodedSeq b
-                    , packed :: EncodedSeq b
-                    , preliminary :: EncodedSeq b
-                    , final :: EncodedSeq b
-                    , temporary :: EncodedSeq b
-                    , aligned :: EncodedSeq b
+                    , encoded :: EncodedSequences b
+                    , packed :: EncodedSequences b
+                    , preliminary :: EncodedSequences b
+                    , final :: EncodedSequences b
+                    , temporary :: EncodedSequences b
+                    , aligned :: EncodedSequences b
                     , cost :: Float} deriving (Eq, Show)
 
 instance EN.EncodedNode (Node b) b where

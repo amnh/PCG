@@ -9,23 +9,24 @@ import Bio.Phylogeny.Tree.Node.Encoded
 import Bio.Phylogeny.Tree.Node.Preliminary
 import Bio.Phylogeny.Tree.Node.Character
 import Bio.Phylogeny.Tree.Node.Final
-import Bio.Phylogeny.Tree.Network
+import Bio.Phylogeny.Network
+import Bio.Sequence.Coded
+import Bio.Phylogeny.PhyloCharacter
+
 import qualified Data.Vector as V
-import qualified Packing.BitPackedNode as BN
 import Debug.Trace
 import Data.Int
 import Data.Maybe
 import Safe
-import Data.Sequence.Coded
 import Data.Bits
-import Data.PhyloCharacter
 import Control.Monad
 
-type TreeConstraint t n b = (EncodedNode n b, BinaryTree t n, PreliminaryNode n b, CharacterNode n b, Bits b, FinalNode n b, Show t)
-type NodeConstraint n b = (EncodedNode n b, PreliminaryNode n b, CharacterNode n b, Bits b, FinalNode n b)
+type TreeConstraint t n s b = (BinaryTree t n, Show t, NodeConstraint n s b)
+type NodeConstraint n s b = (EncodedNode n s, PreliminaryNode n s, CharacterNode n b, FinalNode n s, SeqConstraint s b)
+type SeqConstraint s b = (Bits b, CodedSequence s b, Bits s)
 
 -- | Unified function to perform both the first and second passes of fitch
-allOptimization :: TreeConstraint t n b => Float -> t -> t
+allOptimization :: TreeConstraint t n s b => Float -> t -> t
 --allOptimization weight inTree | trace ("allOptimization " ++ show inTree) False = undefined
 allOptimization weight inTree = 
     let 
@@ -34,7 +35,7 @@ allOptimization weight inTree =
     in upPass
 
 -- | Optimization down pass warpper for recursion from root
-optimizationDownPass :: TreeConstraint t n b => Float -> t -> t
+optimizationDownPass :: TreeConstraint t n s b => Float -> t -> t
 optimizationDownPass weight tree
     | isLeaf (root tree) tree = -- if the root is a terminal, give the whole tree a cost of zero, do not reassign nodes
         let 
@@ -71,7 +72,7 @@ optimizationDownPass weight tree
             rightOnly = isNothing $ leftChild (root tree) tree
 
 -- | Internal down pass that creates new rows without combining, making the algorithm faster
-internalDownPass :: TreeConstraint t n b => Float -> n -> t -> [n]
+internalDownPass :: TreeConstraint t n s b => Float -> n -> t -> [n]
 internalDownPass weight node tree 
     | isLeaf node tree = -- if the root is a terminal, give the whole tree a cost of zero, do not reassign nodes
         let newNode = setCost 0.0 node
@@ -104,7 +105,7 @@ internalDownPass weight node tree
 
 -- | Bit operations for the down pass: basically creats a mask for union and intersection areas and then takes them
 -- returns the new assignment, the union/intersect mask, and the new total cost
-downBitOps :: NodeConstraint n b => Float -> n -> n -> n -> n
+downBitOps :: NodeConstraint n s b => Float -> n -> n -> n -> n
 downBitOps weight curNode lNode rNode =
     let
         lbit = grabAligned lNode
@@ -112,10 +113,10 @@ downBitOps weight curNode lNode rNode =
         rbit = grabAligned rNode
         notOr = complement $ lbit .&. rbit
         union = lbit .|. rbit
-        fbit = notOr .&. (Just $ V.map (snd . masks) chars)
+        fbit = notOr .&. (V.map (snd . masks) chars)
         rightF = blockShiftAndFold "R" "&" chars notOr fbit
         finalF = blockShiftAndFold "L" "|" chars rightF rightF
-        maskF = (Just $ V.map (fst . masks) chars) .&. finalF
+        maskF = (V.map (fst . masks) chars) .&. finalF
         myCost = fetchCost maskF chars
         weightCost = weight * myCost
         totalCost = (cost lNode) + (cost rNode) + weightCost
@@ -123,7 +124,7 @@ downBitOps weight curNode lNode rNode =
     in setPreliminary outbit $ setAlign outbit $ setTemporary finalF $ setCost totalCost curNode
 
     where
-        fetchCost :: (Bits b) => EncodedSeq b -> V.Vector (PhyloCharacter b) -> Float
+        fetchCost :: SeqConstraint s b => s -> V.Vector (PhyloCharacter b) -> Float
         fetchCost encoded chars 
             | isNothing encoded || (V.length chars) /= (V.length $ fromJust encoded) = 0
             | otherwise = 
@@ -131,7 +132,7 @@ downBitOps weight curNode lNode rNode =
                 in (fromIntegral val :: Float)
 
 -- | Wrapper for up pass recursion to deal with root
-optimizationUpPass :: TreeConstraint t n b => Float -> t -> t
+optimizationUpPass :: TreeConstraint t n s b => Float -> t -> t
 optimizationUpPass weight tree 
     | isLeaf (root tree) tree = tree
     | rightOnly && leftOnly = error "Problem with binary tree structure: non-terminal has no children"
@@ -152,7 +153,7 @@ optimizationUpPass weight tree
             rightOnly = isNothing $ leftChild (root tree) tree
 
 -- | Internal up pass that performs most of the recursion
-internalUpPass :: TreeConstraint t n b => Float -> n -> t -> [n]
+internalUpPass :: TreeConstraint t n s b => Float -> n -> t -> [n]
 internalUpPass weight node tree 
     | isLeaf node tree = []
     | rightOnly && leftOnly = error "Problem with binary tree structure: non-terminal has no children"
@@ -171,22 +172,21 @@ internalUpPass weight node tree
 
 
 -- | Bit operations for the up pass
-upPassBitOps :: NodeConstraint n b => Float -> n -> n -> n -> Maybe n -> n
+upPassBitOps :: NodeConstraint n s b => Float -> n -> n -> n -> Maybe n -> n
 upPassBitOps weight myNode lNode rNode pNode = 
     let
         lBit = grabAligned lNode
         chars = V.filter aligned (characters lNode)
         rBit = grabAligned rNode
         myBit = grabAligned myNode
-        fBit | (V.length $ characters myNode) /= (V.length $ fromJust $ temporary myNode) = Nothing
-             | otherwise = Just $ V.ifilter (\i b -> aligned $ (characters myNode) V.! i) (fromJust $ temporary myNode)
-        pBit = join $ fmap grabAligned pNode 
+        fBit = V.ifilter (\i b -> aligned $ (characters myNode) V.! i) (temporary myNode)
+        pBit = fmap grabAligned pNode 
         setX = (complement myBit) .&. pBit
         notX = complement setX
-        setG = notX .&. (Just $ V.map (snd . masks) chars)
+        setG = notX .&. (V.map (snd . masks) chars)
         rightG = blockShiftAndFold "R" "&" chars notX setG
         finalG = blockShiftAndFold "L" "|" chars rightG rightG
-        fstMask = Just $ V.map (fst . masks) chars
+        fstMask = V.map (fst . masks) chars
         maskedNotG = (complement finalG) .&. fstMask
         maskedNotF = (complement fBit) .&. fstMask
         setS = myBit .&. (pBit .|. maskedNotG)
@@ -195,18 +195,14 @@ upPassBitOps weight myNode lNode rNode pNode =
     in setFinal thdS myNode
 
 -- | Grabs the aligned portions of a node's encoded sequence
-grabAligned :: NodeConstraint n b => n -> EncodedSeq b
-grabAligned node 
-    | isNothing $ preliminaryAlign node = Nothing
-    | (V.length $ characters node) /= (V.length $ fromJust $ preliminaryAlign node) = Nothing
-    | otherwise = Just $ V.ifilter (\i b -> aligned $ (characters node) V.! i) (fromJust $ preliminaryAlign node)
+grabAligned :: NodeConstraint n s b => n -> V.Vector s
+grabAligned node = V.ifilter (\i b -> aligned $ (characters node) V.! i) (preliminaryAlign node)
 
 -- | Convenience function for bit ops
-blockShiftAndFold :: (Bits b) => String -> String -> V.Vector (PhyloCharacter b) -> EncodedSeq b -> EncodedSeq b -> EncodedSeq b
-blockShiftAndFold sideMode foldMode chars inbits initVal 
-    | isNothing inbits || isNothing initVal = Nothing
-    | sideMode == "L" && foldMode == "&" = Just $ V.zipWith3 (\b c iVal -> foldr (\s acc -> (.&.) acc (shiftL b s)) iVal [1..(V.length $ alphabet c)-1]) (fromJust inbits) chars (fromJust initVal)
-    | sideMode == "R" && foldMode == "&" = Just $ V.zipWith3 (\b c iVal -> foldr (\s acc -> (.&.) acc (shiftR b s)) iVal [1..(V.length $ alphabet c)-1]) (fromJust inbits) chars (fromJust initVal)
-    | sideMode == "L" && foldMode == "|" = Just $ V.zipWith3 (\b c iVal -> foldr (\s acc -> (.|.) acc (shiftL b s)) iVal [1..(V.length $ alphabet c)-1]) (fromJust inbits) chars (fromJust initVal)
-    | sideMode == "R" && foldMode == "|" = Just $ V.zipWith3 (\b c iVal -> foldr (\s acc -> (.|.) acc (shiftR b s)) iVal [1..(V.length $ alphabet c)-1]) (fromJust inbits) chars (fromJust initVal)
-    | otherwise = error "incorrect input for block shift and fold"
+blockShiftAndFold :: SeqConstraint s b => String -> String -> V.Vector (PhyloCharacter b) -> V.Vector s -> V.Vector s -> V.Vector s
+blockShiftAndFold sideMode foldMode chars inbits initVal -- = undefined
+     | sideMode == "L" && foldMode == "&" = V.zipWith3 (\b c iVal -> foldr (\s acc -> (.&.) acc (shiftL b s)) iVal [1..(V.length $ alphabet c)-1]) inbits chars initVal
+     | sideMode == "R" && foldMode == "&" = V.zipWith3 (\b c iVal -> foldr (\s acc -> (.&.) acc (shiftR b s)) iVal [1..(V.length $ alphabet c)-1]) inbits chars initVal
+     | sideMode == "L" && foldMode == "|" = V.zipWith3 (\b c iVal -> foldr (\s acc -> (.|.) acc (shiftL b s)) iVal [1..(V.length $ alphabet c)-1]) inbits chars initVal
+     | sideMode == "R" && foldMode == "|" = V.zipWith3 (\b c iVal -> foldr (\s acc -> (.|.) acc (shiftR b s)) iVal [1..(V.length $ alphabet c)-1]) inbits chars initVal
+     | otherwise = error "incorrect input for block shift and fold"

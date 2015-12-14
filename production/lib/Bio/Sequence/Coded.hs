@@ -1,30 +1,30 @@
+{-# LANGUAGE TypeSynonymInstances, FlexibleInstances, MultiParamTypeClasses #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
-module Bio.Sequence.Coded where
+module Bio.Sequence.Coded (CodedSequence(..), EncodedSeq (..), EncodedSequences(..)) where
 
 import Prelude hiding (map, length, zipWith, null, foldr, head)
-import Control.Applicative  (liftA2)
-import Data.Vector    (map, length, zipWith, empty, null, foldr, Vector, head, (!))
+import Control.Applicative  (liftA2, liftA)
+import Data.Vector    (map, length, zipWith, empty, null, foldr, Vector, head, (!), singleton, (!?))
 import Data.Bits
 import Data.Maybe
 import Bio.Sequence.Coded.Class
-import Control.Monad (join)
+import Control.Monad (join, liftM2)
 import Data.Monoid
 
 -- | An encoded sequence is stored as a Maybe of an encoded sequence character
+type EncodedSequences b = Vector (EncodedSeq b)
 type EncodedSeq b = Maybe (EncodedChar b)
 type EncodedChar b = Vector b
 
-instance Bits b => CodedSequence (EncodedSeq b) where
+instance Bits b => CodedSequence (EncodedSeq b) b where
     numChars s = case s of 
         Nothing -> 0
         Just vec -> length vec
-    gapChar = Just $ singleton $ singleton $ bit 1
-    grabChar s pos = (flip $ (!) s) <$> s
-
-instance Monoid EncodedSeq where
-    mempty = Nothing
-    mappend s1 s2 = liftM2 mappend s1 s2
+    gapChar = Just $ singleton $ bit 1
+    grabSubChar s pos = liftA ((flip (!)) pos) s
+    emptySeq = Nothing
+    isEmpty = isNothing
 
 -- | To make this work, EncodedSeq is also an instance of bits because a Vector of bits is and a Maybe bits is
 instance Bits b => Bits (Vector b) where
@@ -63,7 +63,6 @@ instance Bits b => Bits (Maybe b) where
     (.&.)           = liftA2 (.&.)
     (.|.)           = liftA2 (.|.)
     xor             = liftA2 xor
-    --xor bit1 bit2 = (.&.) ((.|.) bit1 bit2) (complement ((.&.) bit1 bit2))
     complement      = fmap complement
     shift  bits s   = fmap (`shift`  s) bits
     rotate bits r   = fmap (`rotate` r) bits
