@@ -517,11 +517,11 @@ ignoredBlockDefinition = {-do
     line  <- sourceLine . statePos <$> getParserState
     title <- many letterChar
     _     <- symbol $ char ';'
-    _     <- somethingTill blockend -- $ symbol $ (string' "END;") <|> (string' "endblock;")
+    _     <- somethingTill $ symbol blockend -- $ symbol $ (string' "END;") <|> (string' "endblock;")
     pure $ IgnoredB $ title ++ " at line " ++ show line
 
 blockend :: (Show s, MonadParsec s m Char) => m String
-blockend = symbol $ string' "endblock;" <|> string' "end;"
+blockend = string' "endblock;") <|> string' "end;"
 
 nexusBlock :: (Show s, MonadParsec s m Char) => m NexusBlock
 nexusBlock = do
