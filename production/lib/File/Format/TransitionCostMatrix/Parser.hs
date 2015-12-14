@@ -25,20 +25,20 @@ tcmStreamParser = validateParseResult =<< tcmDefinition <* eof
 tcmDefinition :: MonadParsec s m Char => m ParseResult
 tcmDefinition = do
     _        <- space
-    alphabet <- symbol alphabetLine
-    matrix   <- symbol matrixBlock
+    alphabet <- symbol $ alphabetLine inlineSpace
+    matrix   <- symbol $ matrixBlock  inlineSpace
     pure $ ParseResult alphabet matrix
 
-alphabetLine :: MonadParsec s m Char => m [String]
-alphabetLine = validateAlphabet =<< (alphabetSymbol <* inlineSpace) `manyTill` endOfLine
+alphabetLine :: MonadParsec s m Char => m () -> m [String]
+alphabetLine spacing = validateAlphabet =<< (alphabetSymbol <* spacing) `manyTill` endOfLine
   where
     alphabetSymbol = some nonSpace
     nonSpace       = satisfy (not . isSpace)
 
-matrixBlock :: MonadParsec s m Char => m (Matrix Double)
-matrixBlock = validateMatrix =<< many (symbol matrixRow)
+matrixBlock :: MonadParsec s m Char => m () -> m (Matrix Double)
+matrixBlock spacing = validateMatrix =<< many (symbol matrixRow)
   where
-    matrixRow   = (matrixEntry <* inlineSpace) `manyTill` endOfLine
+    matrixRow   = (matrixEntry <* spacing) `manyTill` endOfLine
     matrixEntry = double
 
 validateParseResult :: MonadParsec s m Char => ParseResult -> m TCM
