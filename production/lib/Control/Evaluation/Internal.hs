@@ -47,7 +47,7 @@ instance Monad Evaluation where
   return = pure
   fail   = Evaluation D.empty . Error
   (>>)  (Evaluation ms x) (Evaluation ns y) = Evaluation (ms `append` ns) (x>>y)
-  (>>=) (Evaluation ms  NoOp    ) _ = Evaluation ms $ NoOp
+  (>>=) (Evaluation ms  NoOp    ) _ = Evaluation ms NoOp
   (>>=) (Evaluation ms (Error x)) _ = Evaluation ms $ Error x
   (>>=) (Evaluation ms (Value x)) f = f x `prependNotifications` ms
 
@@ -83,8 +83,8 @@ Assocativity:
 class Monad m => Logger m a where
   info, warn   :: String -> m a
   (<?>), (<!>) :: m a -> String -> m a
-  (<?>) x s = x >> (info s)
-  (<!>) x s = x >> (warn s)
+  (<?>) x s = x >> info s
+  (<!>) x s = x >> warn s
 
 instance Logger Evaluation a where
   info s = Evaluation (singleton $ Information s) mempty

@@ -85,37 +85,37 @@ instance Monoid EdgeSet where
 
 -- | Make this tree structure an instance of the tree types
 instance N.Network Tree NodeInfo where
-  parents n t  = map (\i -> (nodes t) ! i) (parents n)
-  root t       = (nodes t) ! (root t)
-  children n t = map (\i -> (nodes t) ! i) (children n)
+  parents n t  = map (\i -> nodes t ! i) (parents n)
+  root t       = nodes t ! root t
+  children n t = map (\i -> nodes t ! i) (children n)
   isLeaf n _   = isLeaf n
   isRoot n _   = isRoot n
-  update t new = t {nodes = (nodes t) // (map (\n -> (code n, n)) new) }
+  update t new = t {nodes = nodes t // map (\n -> (code n, n)) new}
 
 instance BinaryTree Tree NodeInfo where
-  parent     n t = headMay $ map (\i -> (nodes t) ! i) (parents n)
-  leftChild  n t = (map (\i -> (nodes t) ! i) (children n)) !? 0
-  rightChild n t = (map (\i -> (nodes t) ! i) (children n)) !? 1
+  parent     n t = headMay $ map (\i -> nodes t ! i) (parents n)
+  leftChild  n t = map (\i -> nodes t ! i) (children n) !? 0
+  rightChild n t = map (\i -> nodes t ! i) (children n) !? 1
 
 instance RoseTree Tree NodeInfo where
-  parent n t = headMay $ map (\i -> (nodes t) ! i) (parents n)
+  parent n t = headMay $ map (\i -> nodes t ! i) (parents n)
 
 -- | Make the graph structure an instance of a forest
 instance Forest Graph Tree where
   trees (Graph f) = f
-  setTrees _ f2 = Graph f2
+  setTrees _ = Graph
   filterTrees (Graph f) func = Graph $ filter func f
 
 -- | Make it an instance of data storage type classes
 instance E.StandardEdge EdgeInfo NodeInfo where
-  edgeLen = len
+  edgeLen  = len
   setEdgeLen e f = e {len = f}
-  origin = origin
+  origin   = origin
   terminal = terminal
 
 instance ET.EdgedTree Tree NodeInfo EdgeSet where
-  edges n t = (edges t) ! (code n)
-  setEdges n t e = t {edges = (edges t) // [(code n, e)]}
+  edges    n t   = edges t ! code n
+  setEdges n t e = t {edges = edges t // [(code n, e)]}
 
 instance CT.CharacterTree Tree CharInfo where
   characters = characters

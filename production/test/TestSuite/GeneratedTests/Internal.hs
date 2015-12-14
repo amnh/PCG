@@ -12,5 +12,5 @@ getFileContentsInDirectory path = do
   where
     isFile = not . all (=='.')
     withPath file = if last path /= '/'
-                    then concat [path,"/",file]
-                    else concat [path,    file]
+                    then path ++ "/" ++ file
+                    else path ++ file
