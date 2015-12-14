@@ -58,7 +58,7 @@ somethingTill c =
 -- | Flexibly parses a 'Double' value represented in a variety of forms.
 double :: MonadParsec s m Char => m Double
 double = try (signed space float)
-     <|> fromIntegral <$> (signed space integer)
+     <|> fromIntegral <$> signed space integer
 
 -- | Custom 'eol' combinator to account for /very/ old Mac file formats ending lines in a single @\'\\r\'@
 endOfLine :: MonadParsec s m Char => m Char
@@ -85,7 +85,7 @@ inlineSpace = skipMany inlineSpaceChar
 comment :: MonadParsec s m Char => m String -> m String -> m String
 comment start end = commentDefinition' False
   where
-    commentChar    = (notFollowedBy $ start <|> end) *> anyChar
+    commentChar    = notFollowedBy (start <|> end) *> anyChar
     commentContent = many commentChar
     commentDefinition' enquote = do
         prefix   <- start

@@ -61,15 +61,15 @@ instance N.Network NewickNode NewickNode where
   isLeaf   n _ = isLeaf n
   isRoot   n t = null $ N.parents n t
   parents node tree 
-    | node `elem` (descendants tree) = nub $ tree : foldr (\n acc -> N.parents node n ++ acc) [] (descendants tree)
+    | node `elem` descendants tree = nub $ tree : foldr (\n acc -> N.parents node n ++ acc) [] (descendants tree)
     | otherwise = nub $ foldr (\n acc -> N.parents node n ++ acc) [] (descendants tree)
   update tree new = 
     let 
         updateHere = foldr (\n acc -> if match n acc then upOne n acc else acc) tree new
-        updateRest = updateHere {descendants = map (\n -> N.update n new) (descendants updateHere)}
+        updateRest = updateHere {descendants = map (`N.update` new) (descendants updateHere)}
     in updateRest
     where
-      match newNode t = (newickLabel t) == (newickLabel newNode) 
+      match newNode t = newickLabel t == newickLabel newNode
       upOne newNode t = t {descendants = descendants newNode, branchLength = branchLength newNode}
 
 

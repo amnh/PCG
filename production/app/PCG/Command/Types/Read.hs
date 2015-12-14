@@ -49,7 +49,7 @@ parseSpecifiedFile  :: FileSpecification -> EitherT ReadError IO SearchState
 -- Currently ignoring TCM
 parseSpecifiedFile      (PrealignedFile     x _  ) = parseSpecifiedFile x
 -- Currently ignoring TCM
-parseSpecifiedFile spec@(CustomAlphabetFile _ _ _) = 
+parseSpecifiedFile spec@(CustomAlphabetFile{}    ) = 
   parseSpecifiedFileSimple  fastcStreamParser (setTaxaSeqs . customToHashMap) spec
 parseSpecifiedFile spec@(AminoAcidFile      _    ) =
   parseSpecifiedFileSimple (fastaStreamConverter AminoAcid =<< fastaStreamParser) (setTaxaSeqs . mapsToHashMap) spec
@@ -102,7 +102,7 @@ progressiveParse (filePath, fileContent) =
 validate :: [Argument] -> Either String Command
 validate xs =
   case partitionEithers $ validateReadArg <$> xs of
-    ([]  , []) -> Left  $ "No arguments provided to the 'read' command! The 'read' command expects one or more arguments"
+    ([]  , []) -> Left "No arguments provided to the 'read' command! The 'read' command expects one or more arguments"
     (y:ys, _ ) -> Left  $ unlines (y:ys)
     ([]  , ys) -> Right $ READ ys
 
@@ -135,10 +135,10 @@ validateReadArg (LidentNamedArg (Lident identifier) (ArgumentList xs)) | (\x -> 
     options = getCustomAlphabetOption <$> tail suffix
     badOption = any isNothing options
     tcmFile' = case suffix of
-                (LidentNamedArg (Lident y) ys):_ -> if "tcm" == (toLower <$> y)
-                                                    then either (const Nothing) Just $ primativeString ys
-                                                    else Nothing
-                _                                -> Nothing
+                LidentNamedArg (Lident y) ys :_ -> if "tcm" == (toLower <$> y)
+                                                   then either (const Nothing) Just $ primativeString ys
+                                                   else Nothing
+                _                               -> Nothing
 
     subDefinition
       |   null xs
@@ -159,17 +159,17 @@ validateReadArg (LidentNamedArg (Lident identifier) (ArgumentList xs)) | (\x -> 
 
 validateReadArg (LidentNamedArg (Lident identifier) (ArgumentList (arg:args))) | "prealigned" == (toLower <$> identifier) =
   case args of
-    []                               -> flip PrealignedFile Nothing <$> val
-    [(LidentNamedArg (Lident x) xs)] -> case toLower <$> x of
-                                          "tcm" -> liftM2 PrealignedFile val (Just <$> primativeString xs)
-                                          _     -> Left  $ "Unexpected named argument '" ++ x ++ "'"
-    _                                -> Left "Too many arguments"
+    []                             -> flip PrealignedFile Nothing <$> val
+    [LidentNamedArg (Lident x) xs] -> case toLower <$> x of
+                                        "tcm" -> liftM2 PrealignedFile val (Just <$> primativeString xs)
+                                        _     -> Left $ "Unexpected named argument '" ++ x ++ "'"
+    _                              -> Left "Too many arguments"
   where
     val = validateReadArg arg
 validateReadArg _ = Left "Unknown argument in read command"
 
 partitionOptions :: [CustomAlphabetOptions] -> ([CustomAlphabetOptions],[CustomAlphabetOptions],[CustomAlphabetOptions])
-partitionOptions xs = foldr f ([],[],[]) xs
+partitionOptions = foldr f ([],[],[])
   where
     f e@(Init3D     _) (x,y,z) = (e:x,  y,  z)
     f e@(Level    _ _) (x,y,z) = (  x,e:y,  z)
@@ -178,13 +178,13 @@ partitionOptions xs = foldr f ([],[],[]) xs
 getCustomAlphabetOption :: Argument -> Maybe CustomAlphabetOptions
 getCustomAlphabetOption (LidentNamedArg (Lident identifier) (PrimativeArg (BitValue b)))
   | "init3d"     == (toLower <$> identifier) = Just $ Init3D b
-getCustomAlphabetOption (LidentNamedArg (Lident identifier) (ArgumentList [(PrimativeArg (WholeNum n)),(PrimativeArg (TextValue x))]))
+getCustomAlphabetOption (LidentNamedArg (Lident identifier) (ArgumentList [PrimativeArg (WholeNum n), PrimativeArg (TextValue x)]))
   |  "level"     == (toLower <$> identifier) = Level n <$> getCustomAlphabetStrategy x
 getCustomAlphabetOption (LidentNamedArg (Lident identifier) (PrimativeArg (TextValue x)))
   | "tiebreaker" == (toLower <$> identifier) = Tiebreaker <$> getCustomAlphabetStrategy x
 getCustomAlphabetOption _ = Nothing
 
-getCustomAlphabetStrategy :: [Char] -> Maybe CustomAlphabetStrategy
+getCustomAlphabetStrategy :: String -> Maybe CustomAlphabetStrategy
 getCustomAlphabetStrategy x
   | x' == "first"     = Just First
   | x' == "last"      = Just Last
@@ -201,6 +201,6 @@ primativeString (LidentNamedArg (Lident i) _   ) = Left $ "Labeled argument '" +
 primativeString (CommandArg     _              ) = Left $ "Command argument "  ++              primativeStringErrorSuffix
 primativeString (ArgumentList   _              ) = Left $ "Argument list "     ++              primativeStringErrorSuffix
 
-primativeStringErrorSuffix :: [Char]
+primativeStringErrorSuffix :: String
 primativeStringErrorSuffix = "found where a string argument containing a file path was expected"
 

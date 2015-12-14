@@ -98,7 +98,7 @@ validCommentBodies =
 identifierLine' :: TestTree
 identifierLine' = testGroup "fastaLabelLine" [validWithoutComments, validWithComments]
   where
-    validWithoutComments = testGroup "Valid taxon label lines without comemnts" $ success <$> validTaxonCommentlessLines
+    validWithoutComments = testGroup "Valid taxon label lines without comments" $ success <$> validTaxonCommentlessLines
     validWithComments    = testGroup "Valid taxon label lines with comments"    $ success <$> validTaxonCommentLines
     success (res,str)    = testCase (show str) $ parseEquals (identifierLine <* eof) str res
 
