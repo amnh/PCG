@@ -118,7 +118,7 @@ downBitOps weight curNode lNode rNode =
         maskF = (Just $ V.map (fst . masks) chars) .&. finalF
         myCost = fetchCost maskF chars
         weightCost = weight * myCost
-        totalCost = (cost lNode) + (cost rNode) + weightCost
+        totalCost = cost lNode + cost rNode + weightCost
         outbit = (maskF .&. union) .|. (lbit .&. rbit)
     in setPreliminary outbit $ setAlign outbit $ setTemporary finalF $ setCost totalCost curNode
 

@@ -233,7 +233,7 @@ validateParseResult (ParseResult sequences taxas trees ignored)
         --                                      then
         --                                      else ) Nothing convertSeqs ! 0
         symbols' =  foldr (\x acc -> getSymbols x : acc) [] sequences
-        taxaLst  = (foldr (\x acc -> acc ++ getTaxaFromSeq x) [] sequences) ++
+        taxaLst  = foldr (\x acc -> acc ++ getTaxaFromSeq x) [] sequences ++
                             if   (not . null) taxas
                             then taxaLabels $ head taxas
                             else []
@@ -411,7 +411,7 @@ getSeqFromMatrix seqLst taxaLst =
                      then if interleaved
                           then concatMap (zip taxaLst) (chunksOf numTaxa mtx)
                           else zip taxaLst mtx
-                     else map (\x -> getTaxonAndSeqFromMatrixRow x) mtx
+                     else getTaxonAndSeqFromMatrixRow <$> mtx
         entireDeinterleavedSeqs = if interleaved
                                   then deInterleave taxaMap entireSeqs -- next step: figure out why entireSeqs is sometimes not split
                                   else M.fromList entireSeqs
@@ -429,8 +429,7 @@ getSeqFromMatrix seqLst taxaLst =
 -- returned map.
 -- A (partial?) test exists in the test suite.
 deInterleave :: M.Map String String -> [(String, String)] -> M.Map String String
-deInterleave inMap tuples =
-    foldr (\(name, seq) acc -> M.insertWith (++) name seq acc) inMap tuples
+deInterleave = foldr (\(name, seq) acc -> M.insertWith (++) name seq acc)
 
 -- | getTaxonAndSeqFromMatrixRow takes a String of format "xxx[space or tab]yyy"
 -- and returns a tuple of form ("xxx","yyy")
@@ -438,7 +437,7 @@ deInterleave inMap tuples =
 getTaxonAndSeqFromMatrixRow :: String -> (String, String)
 getTaxonAndSeqFromMatrixRow inStr = (name, seq)
     where 
-        (name, rest) = span (\x -> not (x `elem` " \t")) inStr
+        (name, rest) = span (`notElem` " \t") inStr
         seq = dropWhile (`elem` " \t") rest
 
 replaceMatches :: Char -> String -> String -> String
@@ -457,10 +456,11 @@ chunksOf n xs = f : chunksOf n s
 
 areNewTaxa :: PhyloSequence -> Bool
 areNewTaxa seq
-    | (name seq) == "data" = True
-    | otherwise            = case (charDims seq) of
+    | name seq == "data" = True
+    | otherwise          =
+      case charDims seq of
         []  -> False
-        xs  -> case (seqTaxaLabels seq) of
+        xs  -> case seqTaxaLabels seq of
                 [] -> False
                 _  -> newTaxa $ head xs
 
@@ -488,9 +488,9 @@ checkForNewTaxa seq = case charDims seq of
 
 getTaxaFromSeq :: PhyloSequence -> [String]
 getTaxaFromSeq seq 
-    | (areNewTaxa seq) = case seqTaxaLabels seq of
-                           []    -> {- trace (show keys) $ -} keys
-                           (x:_) -> x
+    | areNewTaxa seq = case seqTaxaLabels seq of
+                         []    -> {- trace (show keys) $ -} keys
+                         (x:_) -> x
     | otherwise        = []
     where
         keys = M.keys $ getTaxaFromMatrix seq
@@ -521,7 +521,7 @@ ignoredBlockDefinition = {-do
     pure $ IgnoredB $ title ++ " at line " ++ show line
 
 blockend :: (Show s, MonadParsec s m Char) => m String
-blockend = symbol $ (string' "endblock;") <|> (string' "end;")
+blockend = symbol $ string' "endblock;" <|> string' "end;"
 
 nexusBlock :: (Show s, MonadParsec s m Char) => m NexusBlock
 nexusBlock = do
@@ -742,9 +742,8 @@ ignoredSubBlockDef :: (Show s, MonadParsec s m Char) => Char -> m String
 ignoredSubBlockDef endChar = {-do
     x <- getInput
     trace (("ignoredSubBlockDef endChar: " ++ [endChar])  ++ show x) $ -}do
-    _     <- notFollowedBy (space *> ((string' "end;") <|> (string' "endblock;"))) <?> "something other than end of block"
-    stuff <- somethingTill (symbol (char ';')
-                            <|> symbol (char' endChar))
+    _     <- notFollowedBy (space *> blockend) <?> "something other than end of block"
+    stuff <- somethingTill (symbol (char ';') <|> symbol (char' endChar))
     _     <- anyChar
     pure stuff
 

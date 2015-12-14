@@ -1,4 +1,3 @@
-{-# LANGUAGE DeriveFunctor #-}
 module Control.Evaluation
   ( EvaluationT()
   , Evaluation()

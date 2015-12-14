@@ -79,7 +79,7 @@ functorIdentity :: (Functor f, Eq (f a)) => f a -> Bool
 functorIdentity x = fmap id x == x
 
 functorComposition :: (Functor f, Eq (f c)) => f a -> Fun a b -> Fun b c -> Bool
-functorComposition x (apply -> f) (apply -> g) = (fmap (g . f) x) == (fmap g . fmap f $ x)
+functorComposition x (apply -> f) (apply -> g) = fmap (g . f) x == (fmap g . fmap f $ x)
 
 
 applicativeIdentity :: (Applicative f, Eq (f a)) => f a -> Bool
