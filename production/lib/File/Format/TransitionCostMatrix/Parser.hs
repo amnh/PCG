@@ -19,16 +19,46 @@ data TCM
    , transitionCosts ::  Matrix Double -- n+1 X n+1 matrix where n = length customAlphabet
    } deriving (Show)
 
+-- | Parses the entirety of a stream producing a TCM result.
+-- The result will contain an Alphabet with no duplicate elements
+-- and a square Matrix with dimension @(n+1) x (n+1)@ where @n@ is
+-- the length of the Alphabet.
 tcmStreamParser :: MonadParsec s m Char => m TCM
 tcmStreamParser = validateParseResult =<< tcmDefinition <* eof
 
+-- | Parses an intermediary result consisting of an Alphabet and a Matrix.
+-- Both the Alphabet and Matrix have been validated independantly for
+-- consistencey, but no validation has been performed to ensure that the
+-- dimensions of the Matrix and the length of the Alphabet are consistant
+-- with each other. 
 tcmDefinition :: MonadParsec s m Char => m ParseResult
 tcmDefinition = do
     _        <- space
-    alphabet <- symbol $ alphabetLine inlineSpace
-    matrix   <- symbol $ matrixBlock  inlineSpace
+    alphabet <- symbol $ tcmAlphabet
+    matrix   <- symbol $ tcmMatrix
     pure $ ParseResult alphabet matrix
 
+-- | Shorthand for the expected format of the alphabet lin in a TCM file.
+-- The same as 'alphabetLine inlineSpace'.
+tcmAlphabet :: MonadParsec s m Char => m [String]
+tcmAlphabet = alphabetLine inlineSpace
+
+-- | Shorthand for the expected format of the matrix block in a TCM file
+-- The same as 'matrixBlock inlineSpace'.
+tcmMatrix   :: MonadParsec s m Char => m (Matrix Double)
+tcmMatrix   = matrixBlock  inlineSpace
+
+-- | The 'alphabetLine' function takes a combinator to consume delimiters between
+-- entries in the alphabet line.
+-- ==== __Examples__
+--
+-- Basic usage:
+--
+-- >>> parse (alphabetLine inlineSpace) "" "a b c d\n"
+-- Right ["a","b","c","d"]
+--
+-- >>> parse (alphabetLine (inlineSpace *> char '|' <* inlineSpace)) "" "2 | 3 | 5 | 7\n"
+-- Right ["2","3","5","7"]
 alphabetLine :: MonadParsec s m Char => m () -> m [String]
 alphabetLine spacing = validateAlphabet =<< (alphabetSymbol <* spacing) `manyTill` endOfLine
   where
