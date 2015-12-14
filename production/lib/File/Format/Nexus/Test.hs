@@ -94,7 +94,7 @@ getTaxonAndSeqFromMatrixRow' = testGroup "getTaxonAndSeqFromMatrixRow" [space,sp
                     where
                         prefix' = getAsciiAlphaNum prefix
                         tax = getAsciiAlphaNum <$> getNonEmpty x
-                        seq = prefix' : (getNonEmpty y)
+                        seq = prefix' : getNonEmpty y
                         combo = tax ++ " " ++ seq
         spaces = testProperty "Multiple spaces" f
             where
@@ -103,7 +103,7 @@ getTaxonAndSeqFromMatrixRow' = testGroup "getTaxonAndSeqFromMatrixRow" [space,sp
                     where
                         prefix' = getAsciiAlphaNum prefix
                         tax = getAsciiAlphaNum <$> getNonEmpty x
-                        seq = prefix' : (getNonEmpty y)
+                        seq = prefix' : getNonEmpty y
                         combo = tax ++ "     " ++ seq
         tab = testProperty "Single tab" f
             where
@@ -112,7 +112,7 @@ getTaxonAndSeqFromMatrixRow' = testGroup "getTaxonAndSeqFromMatrixRow" [space,sp
                     where
                         prefix' = getAsciiAlphaNum prefix
                         tax = getAsciiAlphaNum <$> getNonEmpty x
-                        seq = prefix' : (getNonEmpty y)
+                        seq = prefix' : getNonEmpty y
                         combo = tax ++ "\t" ++ seq
         tabs = testProperty "Multiple tabs" f
             where
@@ -121,7 +121,7 @@ getTaxonAndSeqFromMatrixRow' = testGroup "getTaxonAndSeqFromMatrixRow" [space,sp
                     where
                         prefix' = getAsciiAlphaNum prefix
                         tax = getAsciiAlphaNum <$> getNonEmpty x
-                        seq = prefix' : (getNonEmpty y)
+                        seq = prefix' : getNonEmpty y
                         combo = tax ++ "\t\t\t\t" ++ seq
         both = testProperty "Combination of tabs & spaces" f
             where
@@ -131,7 +131,7 @@ getTaxonAndSeqFromMatrixRow' = testGroup "getTaxonAndSeqFromMatrixRow" [space,sp
                         prefix' = getAsciiAlphaNum prefix
                         tax = getAsciiAlphaNum <$> getNonEmpty x
                         sep = getInlineSpaceChar <$> getNonEmpty y
-                        seq = prefix' : (getNonEmpty z)
+                        seq = prefix' : getNonEmpty z
                         combo = tax ++ sep ++ seq
 
 ignoredSubBlockDef' :: TestTree

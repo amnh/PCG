@@ -13,7 +13,7 @@ import Text.Megaparsec                         (eof)
 testSuite :: TestTree
 testSuite = testGroup "TCM Format"
   [ testGroup "TCM Combinators"
-      [alphabetLine',matrixBlock']
+      [tcmAlphabet', tcmMatrix']
   , testGroup "TCM Parser" 
       [tcmStreamParser']
   , testGroup "TCM Converter"
@@ -39,21 +39,21 @@ invalidAlphabets = appendNewlines
   , "a b c a b a" -- many duplicate entries
   ]
 
-alphabetLine' :: TestTree
-alphabetLine' = testGroup "alphabetLine" [validLines,invalidLines]
+tcmAlphabet' :: TestTree
+tcmAlphabet' = testGroup "tcmAlphabet" [validLines, invalidLines]
   where
     validLines   = testGroup "Valid alphabet definition"   $ success <$> validAlphabets
     invalidLines = testGroup "Invalid alphabet definition" $ failure <$> invalidAlphabets
-    success str  = testCase (show str) $ parseEquals   (alphabetLine <* eof) str (words str)
-    failure str  = testCase (show str) $ parseFailure  (alphabetLine <* eof) str
+    success str  = testCase (show str) $ parseEquals   (tcmAlphabet <* eof) str (words str)
+    failure str  = testCase (show str) $ parseFailure  (tcmAlphabet <* eof) str
 
-matrixBlock' :: TestTree
-matrixBlock' = testGroup "matrixBlock" [validBlocks,invalidBlocks]
+tcmMatrix' :: TestTree
+tcmMatrix' = testGroup "tcmMatrix" [validBlocks, invalidBlocks]
   where
     validBlocks   = testGroup "Valid matrix block"   $ success <$> validMatricies
     invalidBlocks = testGroup "Invalid matrix block" $ failure <$> invalidMatricies
-    success str   = testCase (show str) $ parseSuccess  (matrixBlock <* eof) str
-    failure str   = testCase (show str) $ parseFailure  (matrixBlock <* eof) str
+    success str   = testCase (show str) $ parseSuccess  (tcmMatrix <* eof) str
+    failure str   = testCase (show str) $ parseFailure  (tcmMatrix <* eof) str
 
 validMatricies :: [String]
 validMatricies = appendNewlines
@@ -69,7 +69,7 @@ invalidMatricies = appendNewlines
   ]
 
 tcmStreamParser' :: TestTree
-tcmStreamParser' = testGroup "tcmStreamParser" [valid,invalid]
+tcmStreamParser' = testGroup "tcmStreamParser" [valid, invalid]
   where
     valid          = testGroup "Valid TCM streams"          $ success <$> validStreams
     invalid        = testGroup "Invalid invalid TCM stream" $ failure <$> invalidStreams

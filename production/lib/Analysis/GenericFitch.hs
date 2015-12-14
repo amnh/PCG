@@ -119,14 +119,14 @@ downBitOps weight curNode lNode rNode =
         maskF = (V.map (fst . masks) chars) .&. finalF
         myCost = fetchCost maskF chars
         weightCost = weight * myCost
-        totalCost = (cost lNode) + (cost rNode) + weightCost
+        totalCost = cost lNode + cost rNode + weightCost
         outbit = (maskF .&. union) .|. (lbit .&. rbit)
     in setPreliminary outbit $ setAlign outbit $ setTemporary finalF $ setCost totalCost curNode
 
     where
         fetchCost :: SeqConstraint s b => s -> V.Vector (PhyloCharacter b) -> Float
         fetchCost encoded chars 
-            | isNothing encoded || (V.length chars) /= (V.length $ fromJust encoded) = 0
+            | isNothing encoded || V.length chars /= V.length (fromJust encoded) = 0
             | otherwise = 
                 let val = V.ifoldr (\i char acc -> div (popCount char) (V.length $ alphabet $ chars V.! i)) 0 (fromJust encoded)
                 in (fromIntegral val :: Float)
@@ -181,14 +181,14 @@ upPassBitOps weight myNode lNode rNode pNode =
         myBit = grabAligned myNode
         fBit = V.ifilter (\i b -> aligned $ (characters myNode) V.! i) (temporary myNode)
         pBit = fmap grabAligned pNode 
-        setX = (complement myBit) .&. pBit
+        setX = complement myBit .&. pBit
         notX = complement setX
         setG = notX .&. (V.map (snd . masks) chars)
         rightG = blockShiftAndFold "R" "&" chars notX setG
         finalG = blockShiftAndFold "L" "|" chars rightG rightG
         fstMask = V.map (fst . masks) chars
-        maskedNotG = (complement finalG) .&. fstMask
-        maskedNotF = (complement fBit) .&. fstMask
+        maskedNotG = complement finalG .&. fstMask
+        maskedNotF = complement fBit   .&. fstMask
         setS = myBit .&. (pBit .|. maskedNotG)
         sndS = setS .|. (pBit .&. fBit)
         thdS = sndS .|. (maskedNotG .&. (maskedNotF .&. (pBit .&. (lBit .|. rBit))))
@@ -199,10 +199,13 @@ grabAligned :: NodeConstraint n s b => n -> V.Vector s
 grabAligned node = V.ifilter (\i b -> aligned $ (characters node) V.! i) (preliminaryAlign node)
 
 -- | Convenience function for bit ops
-blockShiftAndFold :: SeqConstraint s b => String -> String -> V.Vector (PhyloCharacter b) -> V.Vector s -> V.Vector s -> V.Vector s
-blockShiftAndFold sideMode foldMode chars inbits initVal -- = undefined
-     | sideMode == "L" && foldMode == "&" = V.zipWith3 (\b c iVal -> foldr (\s acc -> (.&.) acc (shiftL b s)) iVal [1..(V.length $ alphabet c)-1]) inbits chars initVal
-     | sideMode == "R" && foldMode == "&" = V.zipWith3 (\b c iVal -> foldr (\s acc -> (.&.) acc (shiftR b s)) iVal [1..(V.length $ alphabet c)-1]) inbits chars initVal
-     | sideMode == "L" && foldMode == "|" = V.zipWith3 (\b c iVal -> foldr (\s acc -> (.|.) acc (shiftL b s)) iVal [1..(V.length $ alphabet c)-1]) inbits chars initVal
-     | sideMode == "R" && foldMode == "|" = V.zipWith3 (\b c iVal -> foldr (\s acc -> (.|.) acc (shiftR b s)) iVal [1..(V.length $ alphabet c)-1]) inbits chars initVal
-     | otherwise = error "incorrect input for block shift and fold"
+blockShiftAndFold :: (SeqConstraint s b => String -> String -> V.Vector (PhyloCharacter b) -> V.Vector s -> V.Vector s -> V.Vector s
+blockShiftAndFold sideMode foldMode chars inbits initVal 
+    | isNothing inbits || isNothing initVal = Nothing
+    | sideMode == "L" && foldMode == "&" = f (.&.)
+    | sideMode == "R" && foldMode == "&" = f (.&.)
+    | sideMode == "L" && foldMode == "|" = f (.|.)
+    | sideMode == "R" && foldMode == "|" = f (.|.)
+    | otherwise = error "incorrect input for block shift and fold"
+    where
+      f g = Just $ V.zipWith3 (\b c iVal -> foldr (\s acc -> g acc (shiftL b s)) iVal [1 .. V.length (alphabet c) - 1]) (fromJust inbits) chars (fromJust initVal)
