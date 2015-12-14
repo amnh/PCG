@@ -3,14 +3,27 @@
 module Bio.Sequence.Coded where
 
 import Prelude hiding (map, length, zipWith, null, foldr, head)
-import Data.Vector (map, length, zipWith, empty, null, foldr, Vector, head, (!))
+import Data.Vector (map, length, zipWith, empty, null, foldr, Vector, head, (!), singleton)
 import Data.Bits
 import Data.Maybe
+import Bio.Sequence.Coded.Class
+import Control.Monad (join)
+import Data.Monoid
 
--- | An encoded sequence is stored as a Maybe vector of encoded characters
--- an encoded character is a vector of bits
-type EncodedSeq b = Maybe (Vector (EncodedChar b))
+-- | An encoded sequence is stored as a Maybe of an encoded sequence character
+type EncodedSeq b = Maybe (EncodedChar b)
 type EncodedChar b = Vector b
+
+instance Bits b => CodedSequence (EncodedSeq b) where
+    numChars s = case s of 
+        Nothing -> 0
+        Just vec -> length vec
+    gapChar = Just $ singleton $ singleton $ bit 1
+    grabChar s pos = (flip $ (!) s) <$> s
+
+instance Monoid EncodedSeq where
+    mempty = Nothing
+    mappend s1 s2 = liftM2 mappend s1 s2
 
 -- | To make this work, EncodedSeq is also an instance of bits because a Vector of bits is and a Maybe bits is
 instance Bits b => Bits (Vector b) where
