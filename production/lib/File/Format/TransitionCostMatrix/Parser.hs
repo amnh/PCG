@@ -1,3 +1,17 @@
+-----------------------------------------------------------------------------
+-- |
+-- Module      :  File.Format.TransitionCostMatrix.Parser
+-- Copyright   :  (c) 2015-2015 Ward Wheeler
+-- License     :  BSD-style
+--
+-- Maintainer  :  wheeler@amnh.org
+-- Stability   :  provisional
+-- Portability :  portable
+--
+-- Functions for for parsing TCM files into an alphabet and square matrix.
+--
+-----------------------------------------------------------------------------
+
 {-# LANGUAGE FlexibleContexts #-}
 
 module File.Format.TransitionCostMatrix.Parser where
@@ -49,7 +63,7 @@ tcmMatrix   :: MonadParsec s m Char => m (Matrix Double)
 tcmMatrix   = matrixBlock  inlineSpace
 
 -- | The 'alphabetLine' function takes a combinator to consume delimiters between
--- entries in the alphabet line.
+-- elements in the alphabet line and returns a list of elements in the alphabet.
 -- ==== __Examples__
 --
 -- Basic usage:
@@ -65,12 +79,28 @@ alphabetLine spacing = validateAlphabet =<< (alphabetSymbol <* spacing) `manyTil
     alphabetSymbol = some nonSpace
     nonSpace       = satisfy (not . isSpace)
 
+-- | The 'matrixBlock' function takes a combinator to consume delimiters between
+-- entries in a line of the matrix and returns a square 'Matrix Double'.
+-- ==== __Examples__
+--
+-- Basic usage:
+--
+-- >>> parse (matrixBlock inlineSpace) "" "1 2 3 \n 4 5 6\n7 8 9\n"
+-- Right (( 1 2 3 )
+--        ( 4 5 6 )
+--        ( 7 8 9 ))
+--
+-- >>> parse (matrixBlock (char ':') "" "1.0:1.0\n1.0:0.0"
+-- Right (( 1 2 )
+--        ( 3 4 ))
 matrixBlock :: MonadParsec s m Char => m () -> m (Matrix Double)
 matrixBlock spacing = validateMatrix =<< many (symbol matrixRow)
   where
     matrixRow   = (matrixEntry <* spacing) `manyTill` endOfLine
     matrixEntry = double
 
+-- | Validates that the dimensions of the Matrix are @(n+1) x (n+1)@
+-- where @n@ is the length of the Alphabet.
 validateParseResult :: MonadParsec s m Char => ParseResult -> m TCM
 validateParseResult (ParseResult alphabet matrix)
   | dimMismatch  = fail errorMessage
@@ -95,6 +125,14 @@ validateParseResult (ParseResult alphabet matrix)
                  , "."
                  ]
 
+-- | Validates the information contained in the Alphabet.
+--
+-- Ensures that the Alphabet:
+--
+--   * Is not empty
+--
+--   * Contains no duplicate elements
+--
 validateAlphabet :: MonadParsec s m Char => [String] -> m [String]
 validateAlphabet alphabet
   | emptyAlphabet   = fail   "No alphabet specified"
@@ -105,6 +143,16 @@ validateAlphabet alphabet
     duplicatesExist = not $ null dupes
     dupes           = duplicates alphabet
 
+-- | Validates the information contained in the Matrix constitutes a square matrix.
+--
+-- Ensures that the Matrix:
+--
+--   * Is not empty
+--
+--   * Each row has the same number of columns
+--
+--   * The number of rows match the number of columns
+--
 validateMatrix :: MonadParsec s m Char => [[Double]] -> m (Matrix Double)
 validateMatrix matrix
   | null matrix        = fail "No matrix specified"
@@ -128,5 +176,6 @@ validateMatrix matrix
                                 , " rows were expected"
                                 ]
 
+-- | Whitespace consuming combinator wrapper
 symbol  :: MonadParsec s m Char => m a -> m a
 symbol  x = x <* space
