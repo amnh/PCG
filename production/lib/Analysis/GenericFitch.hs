@@ -125,7 +125,7 @@ downBitOps weight curNode lNode rNode =
     where
         fetchCost :: (Bits b) => EncodedSeq b -> V.Vector (PhyloCharacter b) -> Float
         fetchCost encoded chars 
-            | isNothing encoded || (V.length chars) /= (V.length $ fromJust encoded) = 0
+            | isNothing encoded || V.length chars /= V.length (fromJust encoded) = 0
             | otherwise = 
                 let val = V.ifoldr (\i char acc -> div (popCount char) (V.length $ alphabet $ chars V.! i)) 0 (fromJust encoded)
                 in (fromIntegral val :: Float)
@@ -178,17 +178,17 @@ upPassBitOps weight myNode lNode rNode pNode =
         chars = V.filter aligned (characters lNode)
         rBit = grabAligned rNode
         myBit = grabAligned myNode
-        fBit | (V.length $ characters myNode) /= (V.length $ fromJust $ temporary myNode) = Nothing
-             | otherwise = Just $ V.ifilter (\i b -> aligned $ (characters myNode) V.! i) (fromJust $ temporary myNode)
+        fBit | V.length (characters myNode) /= (V.length . fromJust . temporary) myNode = Nothing
+             | otherwise = Just $ V.ifilter (\i b -> aligned $ characters myNode V.! i) (fromJust $ temporary myNode)
         pBit = join $ fmap grabAligned pNode 
-        setX = (complement myBit) .&. pBit
+        setX = complement myBit .&. pBit
         notX = complement setX
         setG = notX .&. (Just $ V.map (snd . masks) chars)
         rightG = blockShiftAndFold "R" "&" chars notX setG
         finalG = blockShiftAndFold "L" "|" chars rightG rightG
         fstMask = Just $ V.map (fst . masks) chars
-        maskedNotG = (complement finalG) .&. fstMask
-        maskedNotF = (complement fBit) .&. fstMask
+        maskedNotG = complement finalG .&. fstMask
+        maskedNotF = complement fBit   .&. fstMask
         setS = myBit .&. (pBit .|. maskedNotG)
         sndS = setS .|. (pBit .&. fBit)
         thdS = sndS .|. (maskedNotG .&. (maskedNotF .&. (pBit .&. (lBit .|. rBit))))
@@ -197,16 +197,18 @@ upPassBitOps weight myNode lNode rNode pNode =
 -- | Grabs the aligned portions of a node's encoded sequence
 grabAligned :: NodeConstraint n b => n -> EncodedSeq b
 grabAligned node 
-    | isNothing $ preliminaryAlign node = Nothing
-    | (V.length $ characters node) /= (V.length $ fromJust $ preliminaryAlign node) = Nothing
-    | otherwise = Just $ V.ifilter (\i b -> aligned $ (characters node) V.! i) (fromJust $ preliminaryAlign node)
+    | isNothing (preliminaryAlign node) = Nothing
+    | V.length (characters node) /= (V.length . fromJust . preliminaryAlign) node = Nothing
+    | otherwise = Just $ V.ifilter (\i b -> aligned $ characters node V.! i) (fromJust $ preliminaryAlign node)
 
 -- | Convenience function for bit ops
 blockShiftAndFold :: (Bits b) => String -> String -> V.Vector (PhyloCharacter b) -> EncodedSeq b -> EncodedSeq b -> EncodedSeq b
 blockShiftAndFold sideMode foldMode chars inbits initVal 
     | isNothing inbits || isNothing initVal = Nothing
-    | sideMode == "L" && foldMode == "&" = Just $ V.zipWith3 (\b c iVal -> foldr (\s acc -> (.&.) acc (shiftL b s)) iVal [1..(V.length $ alphabet c)-1]) (fromJust inbits) chars (fromJust initVal)
-    | sideMode == "R" && foldMode == "&" = Just $ V.zipWith3 (\b c iVal -> foldr (\s acc -> (.&.) acc (shiftR b s)) iVal [1..(V.length $ alphabet c)-1]) (fromJust inbits) chars (fromJust initVal)
-    | sideMode == "L" && foldMode == "|" = Just $ V.zipWith3 (\b c iVal -> foldr (\s acc -> (.|.) acc (shiftL b s)) iVal [1..(V.length $ alphabet c)-1]) (fromJust inbits) chars (fromJust initVal)
-    | sideMode == "R" && foldMode == "|" = Just $ V.zipWith3 (\b c iVal -> foldr (\s acc -> (.|.) acc (shiftR b s)) iVal [1..(V.length $ alphabet c)-1]) (fromJust inbits) chars (fromJust initVal)
+    | sideMode == "L" && foldMode == "&" = f (.&.)
+    | sideMode == "R" && foldMode == "&" = f (.&.)
+    | sideMode == "L" && foldMode == "|" = f (.|.)
+    | sideMode == "R" && foldMode == "|" = f (.|.)
     | otherwise = error "incorrect input for block shift and fold"
+    where
+      f g = Just $ V.zipWith3 (\b c iVal -> foldr (\s acc -> g acc (shiftL b s)) iVal [1 .. V.length (alphabet c) - 1]) (fromJust inbits) chars (fromJust initVal)
