@@ -1,4 +1,4 @@
-{-# LANGUAGE MultiParameterTypeClass #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
 
 module Bio.Sequence.Coded.Class where
 
