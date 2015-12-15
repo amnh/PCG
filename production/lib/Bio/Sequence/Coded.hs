@@ -1,16 +1,14 @@
 {-# LANGUAGE TypeSynonymInstances, FlexibleInstances, MultiParamTypeClasses #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
-module Bio.Sequence.Coded (CodedSequence(..), EncodedSeq (..), EncodedSequences(..)) where
+module Bio.Sequence.Coded (CodedSequence, EncodedSeq, EncodedSequences) where
 
 import Prelude hiding (map, length, zipWith, null, foldr, head)
 import Control.Applicative  (liftA2, liftA)
-import Data.Vector    (map, length, zipWith, empty, null, foldr, Vector, head, (!), singleton, (!?))
+import Data.Vector    (map, length, zipWith, empty, null, foldr, Vector, head, (!), singleton)
 import Data.Bits
 import Data.Maybe
 import Bio.Sequence.Coded.Class
-import Control.Monad (join, liftM2)
-import Data.Monoid
 
 -- | An encoded sequence is stored as a Maybe of an encoded sequence character
 type EncodedSequences b = Vector (EncodedSeq b)

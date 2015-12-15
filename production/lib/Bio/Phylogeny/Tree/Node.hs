@@ -8,32 +8,34 @@ import qualified Bio.Phylogeny.Tree.Node.Final as FN
 import qualified Bio.Phylogeny.Tree.Node.Packed as PN
 import qualified Bio.Phylogeny.Tree.Node.Preliminary as RN
 
+import Data.Vector
+
 data Node b = Node  { code :: Int
                     , isRoot :: Bool
                     , isLeaf :: Bool
                     , children :: [Int]
                     , parents :: [Int]
-                    , encoded :: EncodedSequences b
-                    , packed :: EncodedSequences b
-                    , preliminary :: EncodedSequences b
-                    , final :: EncodedSequences b
-                    , temporary :: EncodedSequences b
-                    , aligned :: EncodedSequences b
+                    , encoded :: Vector (EncodedSeq b)
+                    , packed :: Vector (EncodedSeq b)
+                    , preliminary :: Vector (EncodedSeq b)
+                    , final :: Vector (EncodedSeq b)
+                    , temporary :: Vector (EncodedSeq b)
+                    , aligned :: Vector (EncodedSeq b)
                     , cost :: Float} deriving (Eq, Show)
 
-instance EN.EncodedNode (Node b) b where
+instance EN.EncodedNode (Node b) (EncodedSeq b) where
     encoded = encoded
     setEncoded n s = n {encoded = s}
 
-instance FN.FinalNode (Node b) b where
+instance FN.FinalNode (Node b) (EncodedSeq b) where
     final = final
     setFinal f n = n {final = f}
 
-instance PN.PackedNode (Node b) b where
+instance PN.PackedNode (Node b) (EncodedSeq b) where
     packed = packed
     setPacked n s = n {packed = s}
 
-instance RN.PreliminaryNode (Node b) b where
+instance RN.PreliminaryNode (Node b) (EncodedSeq b) where
     preliminary = preliminary
     setPreliminary s n = n {preliminary = s}
     preliminaryAlign = aligned

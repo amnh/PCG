@@ -3,7 +3,6 @@
 module Bio.Phylogeny.Tree.Node.Preliminary where
 
 import Data.Vector
-import Bio.Sequence.Coded
 
 -- | A preliminary node has a preliminary assignment as well as associated data
 -- Associated data: aligned preliminary, temporary, and cost

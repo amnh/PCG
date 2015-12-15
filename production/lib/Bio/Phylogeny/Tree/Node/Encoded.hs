@@ -1,8 +1,7 @@
 {-# LANGUAGE FunctionalDependencies #-}
 
 module Bio.Phylogeny.Tree.Node.Encoded where
-
-import Bio.Sequence.Coded
+    
 import Data.Vector
 
 -- | An encoded node allows getting and setting on encoded data

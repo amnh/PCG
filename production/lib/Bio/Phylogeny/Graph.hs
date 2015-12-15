@@ -81,7 +81,7 @@ instance Monoid Tree where
 
 instance Monoid EdgeSet where
   mempty = EdgeSet mempty mempty
-  mappend (EdgeSet in1 out1) (EdgeSet in2 out2) = EdgeSet (in1 <> in2) (out1 out2)
+  mappend (EdgeSet in1 out1) (EdgeSet in2 out2) = EdgeSet (in1 <> in2) (out1 <> out2)
 
 -- | Make this tree structure an instance of the tree types
 instance N.Network Tree NodeInfo where

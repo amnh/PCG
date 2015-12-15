@@ -2,7 +2,6 @@
 
 module Bio.Phylogeny.Tree.Node.Final where
 
-import Bio.Sequence.Coded
 import Data.Vector
 
 -- | A final node has its final assignment
