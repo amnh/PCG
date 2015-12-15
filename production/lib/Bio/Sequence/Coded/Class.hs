@@ -8,4 +8,3 @@ class Monoid s => CodedSequence s b | s -> b where
     emptySeq :: s
     isEmpty :: s -> Bool
     grabSubChar :: s -> Int -> Maybe b
-
