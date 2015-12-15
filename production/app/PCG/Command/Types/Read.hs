@@ -29,7 +29,7 @@ import File.Format.Fastc   hiding (Identifier)
 import File.Format.Newick
 import File.Format.TransitionCostMatrix
 import File.Format.VertexEdgeRoot
-import File.Format.Conversion.ToInternal
+--import File.Format.Conversion.ToInternal
 
 import PCG.Command.Types
 import PCG.Command.Types.Read.Internal

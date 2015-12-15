@@ -20,7 +20,7 @@ instance Bits b => CodedSequence (EncodedSeq b) b where
         Nothing -> 0
         Just vec -> length vec
     gapChar = Just $ singleton $ bit 1
-    grabSubChar s pos = liftA ((flip (!)) pos) s
+    grabSubChar s pos = liftA (! pos) s
     emptySeq = Nothing
     isEmpty = isNothing
 
