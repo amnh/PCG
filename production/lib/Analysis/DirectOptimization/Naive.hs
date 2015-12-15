@@ -2,9 +2,10 @@
 
 module Analysis.DirectOptimization where
 
-import Prelude hiding (length,foldr, zipWith)
+import Prelude hiding (length, zipWith)
 import Data.Maybe
-import Data.Vector (Vector, singleton, length, zipWith, foldr, cons, empty, toList, (!))
+import Data.Vector (Vector, singleton, length, zipWith, cons, empty, toList, (!))
+import qualified Data.Vector as V (foldr)
 import Data.Bits
 import Data.Monoid ((<>))
 import Data.Matrix (fromList, Matrix, (<->), nrows, ncols, getElem, zero, matrix)
@@ -53,7 +54,7 @@ naiveDO seq1 seq2
             firstMatRow = firstAlignRow indelCost shorter shortlen 0 0 
             traversalMat = firstMatRow `joinMat` getAlignRows seq1 seq2 (indelCost, subCost) 1 firstMatRow
             cost = getMatrixCost traversalMat
-            (gapped, left, right) = traceback traversalMat seq1 seq2
+            (gapped, left, right) = traceback traversalMat seq1 seq2 
             ungapped = filterSeq gapped ((/=) gapChar)
         in (ungapped, cost, gapped, left, right)
 
@@ -100,14 +101,51 @@ getAlignRows seq1 seq2 costs rowNum prevRow
 generateRow :: SeqConstraint s b => s -> s -> Costs -> Int -> AlignRow s -> (Int, Float) -> AlignRow s
 generateRow seq1 seq2 costvals@(indelCost, subCost) rowNum prevRow@(costs, _, _) (position, prevCost) 
     | position == (numChars seq1 + 1) = (empty, emptySeq, empty)
-    | position == 0 && newState /= gapChar = (singleton $ upValue + indelCost, charToSeq newState, singleton DownDir) <> generateRow seq1 seq2 costvals rowNum prevRow (position + 1, upValue + indelCost)
-    | otherwise = undefined
+    | position == 0 && newState /= gapChar = (singleton $ upValue + indelCost, charToSeq newState, singleton DownDir) <> nextCall (upValue + indelCost)
+    | position == 0 = (singleton upValue, charToSeq newState, singleton DownDir) <> nextCall upValue
+    | otherwise = (singleton minCost, charToSeq minState, singleton minDir) <> nextCall minCost
         where
             newState = getOverlapState gapChar (seq2 `grabSubChar` (rowNum - 1))
             upValue = costs ! position
+            nextCall cost = generateRow seq1 seq2 costvals rowNum prevRow (position + 1, cost)
+            
+            char1 = getOverlapState gapChar (seq1 `grabSubChar` (position - 1))
+            char2 = getOverlapState gapChar (seq2 `grabSubChar` (rowNum - 1))
+            leftCost = overlapCost char1 indelCost
+            downCost = overlapCost char2 indelCost
+            diagVal = costs ! (position - 1)
+            intersect = char1 .&. char2
+            union = char1 .|. char2
+
+            (diagCost, diagState) = case intersect of
+                                        zeroBits -> (diagVal + subCost, union)
+                                        _        -> (diagVal, intersect)
+            (minCost, minState, minDir) = foldr (\(c, a, b) (ca, aa, ba) -> if c < ca then (c, a, b) else (ca, aa, ba)) (subCost, gapChar, DiagDir)
+                                                [(leftCost, char1, LeftDir), (diagCost, diagState, DiagDir), (downCost, char2, DownDir)]
+
+            overlapCost :: CharConstraint b => b -> Float -> Float
+            overlapCost char cost 
+                | gapChar .&. char == zeroBits = cost
+                | otherwise = 0 
 
 -- | Performs the traceback of an alignment matrix
 traceback :: SeqConstraint s b => AlignMatrix s -> s -> s -> (s, s, s)
-traceback = undefined
+traceback alignMat seq1 seq2 = tracebackInternal alignMat seq1 seq2 (nrows $ traversal alignMat, ncols $ traversal alignMat)
+    where
+        tracebackInternal :: SeqConstraint s b => AlignMatrix s -> s -> s -> (Int, Int) -> (s, s, s)
+        tracebackInternal alignMat seq1 seq2 (row, col) 
+            | row == 0 && col == 0 = (emptySeq, emptySeq, emptySeq)
+            | curDirect == LeftDir = (curState, charToSeq gapChar, charToUnMaybe $ seq2 `grabSubChar` (col - 1)) <> tracebackInternal alignMat seq1 seq2 (row, col - 1)
+            | curDirect == DownDir = (curState, charToUnMaybe $ seq1 `grabSubChar` (row - 1), charToSeq gapChar) <> tracebackInternal alignMat seq1 seq2 (row - 1, col)
+            | curDirect == DiagDir = (curState, charToUnMaybe $ seq1 `grabSubChar` (row - 1), charToUnMaybe $ seq2 `grabSubChar` (col - 1)) <> tracebackInternal alignMat seq1 seq2 (row - 1, col - 1)
+            | otherwise = error "Incorrect direction in matrix traversal for alignment"
+                where
+                    curDirect = getElem row col (traversal alignMat)
+                    curState = (seqs alignMat) ! row
+
+                    charToUnMaybe :: SeqConstraint s b => Maybe b -> s
+                    charToUnMaybe inBit = case inBit of
+                        Nothing -> emptySeq
+                        Just b -> charToSeq b
 
 
