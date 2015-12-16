@@ -47,16 +47,16 @@ makeOneInfo alphabets mySeq = zipWith charInfo alphabets mySeq
 subsetOf :: (Ord a) => [a] -> [a] -> Bool
 subsetOf list1 list2 = foldr (\l acc -> if l `elem` list2 then acc else False) True list1
 
-encodeIt :: Vector (Vector [String]) -> Vector CharInfo -> Maybe (Vector (Vector BitVector))
-encodeIt inSeqs inInfos = Just $ zipWith encodeOne inSeqs inInfos
+encodeIt :: Vector (Vector [String]) -> Vector CharInfo -> (Vector (Maybe (Vector BitVector)))
+encodeIt inSeqs inInfos = zipWith encodeOne inSeqs inInfos
     where
-        encodeOne :: Vector [String] -> CharInfo -> Vector BitVector
+        encodeOne :: Vector [String] -> CharInfo -> Maybe (Vector BitVector)
         encodeOne inSeq info = 
             let tfList = foldr (\pos acc -> map (\a -> if a `elem` pos then True else False) alph ++ acc) [] inSeq
-            in singleton $ fromBits tfList
+            in Just $ singleton $ fromBits tfList
             where
                 alph = toList $ alphabet info 
 
-packIt :: Vector (Vector [String]) -> Vector CharInfo -> Maybe (Vector (Vector BitVector))
+packIt :: Vector (Vector [String]) -> Vector CharInfo -> Vector (Maybe (Vector BitVector))
 packIt = encodeIt
 
