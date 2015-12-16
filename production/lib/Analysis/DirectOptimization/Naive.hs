@@ -1,6 +1,6 @@
 {-# LANGUAGE ConstraintKinds #-}
 
-module Analysis.DirectOptimization where
+module Analysis.DirectOptimization.Naive where
 
 import Prelude hiding (length, zipWith)
 import Data.Maybe
