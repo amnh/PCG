@@ -48,14 +48,14 @@ naiveDO seq1 seq2
         let
             seq1Len = numChars seq1
             seq2Len = numChars seq2
-            (shorter, shortlen, longer, longlen) = case seq1Len > seq2Len of
-                False -> (seq1, seq1Len, seq2, seq2Len)
-                True -> (seq2, seq2Len, seq1, seq1Len)
+            (shorter, shortlen, longer, longlen) = if seq1Len > seq2Len
+                                                   then (seq2, seq2Len, seq1, seq1Len)
+                                                   else (seq1, seq1Len, seq2, seq2Len)
             firstMatRow = firstAlignRow indelCost shorter shortlen 0 0 
             traversalMat = firstMatRow `joinMat` getAlignRows seq1 seq2 (indelCost, subCost) 1 firstMatRow
             cost = getMatrixCost traversalMat
-            (gapped, left, right) = traceback traversalMat seq1 seq2 
-            ungapped = filterSeq gapped ((/=) gapChar)
+            (gapped, left, right) = traceback traversalMat seq1 seq2
+            ungapped = filterSeq gapped (gapChar /=)
         in (ungapped, cost, gapped, left, right)
 
         where
@@ -66,7 +66,7 @@ naiveDO seq1 seq2
 
 -- | Joins an alignment row to the rest of a matrix
 joinMat :: SeqConstraint s b => AlignRow s -> AlignMatrix s -> AlignMatrix s
-joinMat (inCosts, inSeq, directions) inMat = AlignMatrix (inCosts `joinRow` (costs inMat)) (inSeq `cons` (seqs inMat)) (directions `joinRow` (traversal inMat)) 
+joinMat (inCosts, inSeq, directions) inMat = AlignMatrix (inCosts `joinRow` costs inMat) (inSeq `cons` seqs inMat) (directions `joinRow` traversal inMat) 
     where
         joinRow vec mat = fromList 1 (length vec) (toList vec) <-> mat
 
@@ -86,8 +86,8 @@ firstAlignRow indelCost inSeq rowLength position prevCost
 getOverlapState :: CharConstraint b => b -> Maybe b -> b
 getOverlapState compChar maybeChar
     | isNothing maybeChar = zeroBits
-    | compChar .&. (fromJust maybeChar) == zeroBits = compChar .|. (fromJust maybeChar)
-    | otherwise = compChar .&. (fromJust maybeChar)
+    | compChar .&. fromJust maybeChar == zeroBits = compChar .|. fromJust maybeChar
+    | otherwise = compChar .&. fromJust maybeChar
 
 -- | Main recursive function to get alignment rows
 getAlignRows :: SeqConstraint s b => s -> s -> Costs -> Int -> AlignRow s -> AlignMatrix s
