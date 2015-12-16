@@ -47,6 +47,9 @@ instance Show NewickNode where
       name = maybe "Node" show n
       len  = maybe "" (\x -> ':' : show x) b
 
+--treeFoldr :: (f 
+--treeFoldr f b t =
+
 newickNode :: [NewickNode] -> Maybe String -> Maybe Double -> Maybe NewickNode
 newickNode nodes label length'
   | null nodes && isNothing label = Nothing

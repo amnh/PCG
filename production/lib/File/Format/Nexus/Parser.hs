@@ -13,13 +13,13 @@
 
 module File.Format.Nexus.Parser where
 
-import Data.Char (isSpace,toLower,toUpper)
+import Data.Char   (isSpace,toLower)
 import Data.Either (lefts)
-import Data.List (sort)
+import Data.List   (sort)
 import qualified Data.Map.Lazy as M
-import Data.Maybe (isJust, fromJust, catMaybes, maybeToList)
+import Data.Maybe  (isJust, fromJust, catMaybes, maybeToList)
 import qualified Data.Set as S
-import Debug.Trace -- <-- the best module!!! :)
+--import Debug.Trace -- <-- the best module!!! :)
 import File.Format.Newick
 import File.Format.TransitionCostMatrix
 import Safe
@@ -212,7 +212,7 @@ parseNexusStream = parse (validateParseResult =<< parseNexus <* eof) "PCG encoun
 --     ---for unaligned, caught by combo of 12 & 22
 -- 22. In unaligned, interleaved block, a taxon is repeated                    3                dep              done
 validateParseResult :: (Show s, MonadParsec s m Char) => ParseResult -> m Nexus
-validateParseResult (ParseResult sequences taxas trees ignored)
+validateParseResult (ParseResult sequences taxas _treeSet _ignored)
   | not (null independentErrors) = fails independentErrors
   | not (null dependentErrors)   = fails dependentErrors
   -- TODO: first arg to Nexus was commented out before first push to Grace
@@ -255,10 +255,10 @@ validateParseResult (ParseResult sequences taxas trees ignored)
                             then taxaLabels $ head taxas
                             else []
         -- taxaSeqVector = V.fromList [(taxon, alignedTaxaSeqMap M.! taxon) | taxon <- taxaLst]
-        unalignedTaxaSeqMap = getSeqFromMatrix (getBlock "unaligned" sequences) taxaLst
+        --unalignedTaxaSeqMap = getSeqFromMatrix (getBlock "unaligned" sequences) taxaLst
         sequenceBlockErrors = case sequences of
                                  []        -> [Just "No characters or unaligned blocks provided.\n"] -- error 3
-                                 (x:y:z:_) -> [Just "Too many sequence blocks provided. Only one each of characters and unaligned blocks are allowed.\n"] -- error 2
+                                 (_:_:_:_) -> [Just "Too many sequence blocks provided. Only one each of characters and unaligned blocks are allowed.\n"] -- error 2
                                  (x:y:_) | aligned x && aligned y       -> [Just "More than one characters block provided."]
                                          | not (aligned x || aligned y) -> [Just "More than one unaligned block provided.\n"]
                                          | otherwise                    -> matrixDimsErrors
@@ -268,23 +268,23 @@ validateParseResult (ParseResult sequences taxas trees ignored)
 
 checkSeqLength :: [PhyloSequence] -> M.Map String (V.Vector [String]) -> [Maybe String]
 checkSeqLength [] _ = [Nothing]
-checkSeqLength seq seqMap =
+checkSeqLength seq' seqMap =
     M.foldrWithKey (\key val acc -> (if length val == len
                                      then Nothing
                                      else Just (key ++ "'s sequence is the wrong length in an aligned block. It should be " ++ show len ++ ", but is " ++ show (length val) {- ++ ":\n" ++ show val -} ++ "\n")) : acc) [] seqMap
     where
-        len = numChars . head . charDims $ head seq
+        len = numChars . head . charDims $ head seq'
 
 
 getSeqTaxonCountErrors :: [String] -> PhyloSequence -> [Maybe String]
-getSeqTaxonCountErrors taxaLst seq = extraTaxonErrors ++ wrongCountErrors
+getSeqTaxonCountErrors taxaLst seq' = extraTaxonErrors ++ wrongCountErrors
     where
-        seqTaxaMap = getTaxaFromMatrix seq
-        listedTaxaMap = M.fromList (zip taxaLst [1..])
+        seqTaxaMap = getTaxaFromMatrix seq'
+        listedTaxaMap = M.fromList $ zip taxaLst ([1..] :: [Int])
         extraTaxonErrors = M.foldrWithKey
-                                (\key val acc -> (if M.member key listedTaxaMap
-                                                  then Nothing
-                                                  else Just ("\"" ++ key ++ "\" is in a matrix, but isn't specified anywhere, such as in a taxa block or as newtaxa.\n"))
+                                (\key _ acc -> (if M.member key listedTaxaMap
+                                                then Nothing
+                                                else Just ("\"" ++ key ++ "\" is in a matrix, but isn't specified anywhere, such as in a taxa block or as newtaxa.\n"))
                                                   : acc
                                  ) [] seqTaxaMap
         wrongCountErrors = M.foldrWithKey (\key val acc -> (if val /= median
@@ -301,13 +301,13 @@ getEquates :: PhyloSequence -> Either String [String]
 getEquates = maybe (Right [""]) equate . headMay . format
 
 getTaxaFromMatrix :: PhyloSequence -> M.Map String Int
-getTaxaFromMatrix seq = {-trace (show taxa) $ -}
+getTaxaFromMatrix seq' = {-trace (show taxa) $ -}
     if noLabels
         then M.empty
         else taxaMap
     where
-        (noLabels, interleaved, tkns, cont, matchChar') = getFormatInfo seq
-        mtx     = head $ matrix seq -- I've already checked to make sure there's a matrix
+        (noLabels, _interleaved, _tkns, _cont, _matchChar') = getFormatInfo seq'
+        mtx     = head $ matrix seq' -- I've already checked to make sure there's a matrix
         taxaMap = foldr (\x acc -> M.insert x (succ (M.findWithDefault 0 x acc)) acc) M.empty taxa
         taxa    = foldr (\x acc -> takeWhile (`notElem` " \t") x : acc) [] mtx
 
@@ -316,10 +316,10 @@ getSymbols :: PhyloSequence -> Either String [String]
 getSymbols = maybe (Right [""]) symbols . headMay . format
 
 splitSequence :: Bool -> Bool -> String -> V.Vector [String]
-splitSequence isTokens isContinuous seq = V.fromList $
+splitSequence isTokens isContinuous seq' = V.fromList $
     if isTokens || isContinuous
-        then findAmbiguousTokens (words seq) [] False
-        else findAmbiguousNoTokens (strip seq) [] False
+        then findAmbiguousTokens (words seq') [] False
+        else findAmbiguousNoTokens (strip seq') [] False
 
 -- Parens and curly braces are treated the same
 findAmbiguousNoTokens :: String -> [String] -> Bool -> [[String]]
@@ -336,24 +336,24 @@ findAmbiguousNoTokens (x:xs) acc amb =
 
 -- Maybe this and dimsMissing could be conflated.
 matrixMissing :: PhyloSequence -> Maybe String
-matrixMissing seq
+matrixMissing seq'
   | numMatrices < 1 = tooFew
   | numMatrices > 1 = tooMany
   | otherwise       = Nothing
   where
-    numMatrices = length $ matrix seq
-    tooFew      = Just $ name seq ++ " block has no matrix.\n"
-    tooMany     = Just $ name seq ++ " block has more than one matrix.\n"
+    numMatrices = length $ matrix seq'
+    tooFew      = Just $ name seq' ++ " block has no matrix.\n"
+    tooMany     = Just $ name seq' ++ " block has more than one matrix.\n"
 
 dimsMissing :: PhyloSequence -> Maybe String
-dimsMissing seq
+dimsMissing seq'
   | numDims < 1 = tooFew
   | numDims > 1 = tooMany
   | otherwise   = Nothing
   where
-    numDims = length $ charDims seq
-    tooFew  = Just $ name seq ++ " block has no dimensions.\n"
-    tooMany = Just $ name seq ++ " block has more than one dimension.\n"
+    numDims = length $ charDims seq'
+    tooFew  = Just $ name seq' ++ " block has no dimensions.\n"
+    tooMany = Just $ name seq' ++ " block has more than one dimension.\n"
 
 findAmbiguousTokens :: [String] -> [String] -> Bool -> [[String]]
 findAmbiguousTokens [] _ _ = []
@@ -380,41 +380,38 @@ safeTail (_:xs) = xs
 
 findInterleaveError :: [String] -> PhyloSequence -> Maybe String
 findInterleaveError [] _ = Nothing
-findInterleaveError taxaLst seq =
-    if interleaved && noLabels && (numLines `mod` numTaxa /= 0)
+findInterleaveError taxaLst seq' =
+    if interleaved && noLabels && (lineCount `mod` taxaCount /= 0)
         then Just $ which ++ " block is not interleaved correctly. \n" {- ++ (show numLines) ++ " " ++ (show numTaxa) -}
         else Nothing
     where
-        formatted   = not . null $ format seq
-        interleaved = formatted && interleave (head $ format seq)
-        noLabels    = formatted && unlabeled  (head $ format seq)
-        numTaxa     = length taxaLst
-        numLines    = length . head $ matrix seq
-        which = if aligned seq
+        formatted   = not . null $ format seq'
+        interleaved = formatted && interleave (head $ format seq')
+        noLabels    = formatted && unlabeled  (head $ format seq')
+        taxaCount   = length taxaLst
+        lineCount   = length . head $ matrix seq'
+        which = if aligned seq'
                     then "Characters"
                     else "Unaligned"
 
+-- TODO: Review this function's functionality. Seems like it can be improved!
 getBlock :: String -> [PhyloSequence] -> [PhyloSequence]
 getBlock _ [] = []
-getBlock which seqs = f (which == "aligned") seqs
+getBlock which pseqs = f (which == "aligned") pseqs
   where
-    f xBool s = let block = headMay $ filter (\s -> xBool == aligned s) seqs
+    f xBool _ = let block = headMay $ filter (\s -> xBool == aligned s) pseqs
                 in maybeToList block
 
 
 getFormatInfo :: PhyloSequence -> (Bool, Bool, Bool, Bool, String)
-getFormatInfo seq =
-    if isJust seqForm
-    then ( unlabeled  $ fromJust seqForm
-         , interleave $ fromJust seqForm
-         , areTokens  $ fromJust seqForm
-         , map toLower (charDataType $ fromJust seqForm) == "continuous"
-         , matchChar  $ fromJust seqForm
-         )
-    else (False, False, False, False, "")
-    where
-        seqForm = headMay $ format seq
-
+getFormatInfo pseq = case headMay $ format pseq of
+                       Nothing -> (False, False, False, False, "")
+                       Just x  -> ( unlabeled x
+                                  , interleave x
+                                  , areTokens x
+                                  , map toLower (charDataType x) == "continuous"
+                                  , matchChar x
+                                  )
 
 getSeqFromMatrix :: [PhyloSequence] -> [String] -> M.Map String (V.Vector [String])
 getSeqFromMatrix [] _ = mempty
@@ -422,12 +419,12 @@ getSeqFromMatrix seqLst taxaLst =
     M.map (splitSequence tkns cont) matchCharsReplaced
     where
         (noLabels, interleaved, tkns, cont, matchChar') = getFormatInfo $ head seqLst
-        numTaxa = length taxaLst
-        taxaMap = M.fromList . zip taxaLst $ repeat []
-        mtx     = head $ matrix $ head seqLst -- I've already checked to make sure there's a matrix
+        taxaCount  = length taxaLst
+        taxaMap    = M.fromList . zip taxaLst $ repeat []
+        mtx        = head $ matrix $ head seqLst -- I've already checked to make sure there's a matrix
         entireSeqs = if noLabels    -- this will be a list of tuples (taxon, concatted seq)
                      then if interleaved
-                          then concatMap (zip taxaLst) (chunksOf numTaxa mtx)
+                          then concatMap (zip taxaLst) (chunksOf taxaCount mtx)
                           else zip taxaLst mtx
                      else getTaxonAndSeqFromMatrixRow <$> mtx
         entireDeinterleavedSeqs = if interleaved
@@ -447,22 +444,22 @@ getSeqFromMatrix seqLst taxaLst =
 -- returned map.
 -- A (partial?) test exists in the test suite.
 deInterleave :: M.Map String String -> [(String, String)] -> M.Map String String
-deInterleave = foldr (\(name, seq) acc -> M.insertWith (++) name seq acc)
+deInterleave = foldr (\(seqName, pseq) acc -> M.insertWith (++) seqName pseq acc)
 
 -- | getTaxonAndSeqFromMatrixRow takes a String of format "xxx[space or tab]yyy"
 -- and returns a tuple of form ("xxx","yyy")
 -- A test exists in the test suite.
 getTaxonAndSeqFromMatrixRow :: String -> (String, String)
-getTaxonAndSeqFromMatrixRow inStr = (name, seq)
+getTaxonAndSeqFromMatrixRow inStr = (seqName, pseq)
     where 
-        (name, rest) = span (`notElem` " \t") inStr
-        seq = dropWhile (`elem` " \t") rest
+        (seqName, rest) = span   (`notElem` " \t") inStr
+        pseq            = dropWhile (`elem` " \t") rest
 
 replaceMatches :: Char -> String -> String -> String
-replaceMatches matchChar canonical toReplace = {- trace (canonical ++"\n" ++ toReplace ++ "\n") $ -}
+replaceMatches matchTarget canonical toReplace = {- trace (canonical ++"\n" ++ toReplace ++ "\n") $ -}
     zipWith f canonical toReplace
     where
-        f x y = if y == matchChar
+        f x y = if y == matchTarget
                 then x
                 else y
 
@@ -473,12 +470,12 @@ chunksOf n xs = f : chunksOf n s
     (f,s) = splitAt n xs
 
 areNewTaxa :: PhyloSequence -> Bool
-areNewTaxa seq
-    | name seq == "data" = True
+areNewTaxa pseq
+    | name pseq == "data" = True
     | otherwise          =
-      case charDims seq of
+      case charDims pseq of
         []  -> False
-        xs  -> case seqTaxaLabels seq of
+        xs  -> case seqTaxaLabels pseq of
                 [] -> False
                 _  -> newTaxa $ head xs
 
@@ -489,29 +486,29 @@ areNewTaxa seq
 -- This is frighteningly similar to areNewTaxa, but I couldn't figure out a way around
 -- having them both, because of the way that areNewTaxa is used
 checkForNewTaxa :: PhyloSequence -> Maybe String
-checkForNewTaxa seq = case charDims seq of
-                        [] -> Nothing
-                        xs -> if newTaxa $ head xs
-                              then
-                                case seqTaxaLabels seq of
-                                 [] -> Just $ "In the " ++ which ++ " block the newtaxa keyword is specified, but no new taxa are given."
-                                 ys -> if length (head ys) == numTaxa (head xs)
-                                       then Just $ "In the " ++ which ++ " block the number of new taxa does not match the number of taxa specified."
-                                       else Nothing
-                              else Nothing
+checkForNewTaxa pseq = case charDims pseq of
+                         [] -> Nothing
+                         xs -> if newTaxa $ head xs
+                               then
+                                 case seqTaxaLabels pseq of
+                                  [] -> Just $ "In the " ++ which ++ " block the newtaxa keyword is specified, but no new taxa are given."
+                                  ys -> if length (head ys) == numTaxa (head xs)
+                                        then Just $ "In the " ++ which ++ " block the number of new taxa does not match the number of taxa specified."
+                                        else Nothing
+                               else Nothing
   where
-    which = if aligned seq
+    which = if aligned pseq
             then "characters"
             else "unaligned"
 
 getTaxaFromSeq :: PhyloSequence -> [String]
-getTaxaFromSeq seq 
-    | areNewTaxa seq = case seqTaxaLabels seq of
+getTaxaFromSeq pseq 
+    | areNewTaxa pseq = case seqTaxaLabels pseq of
                          []    -> {- trace (show keys) $ -} keys
                          (x:_) -> x
     | otherwise        = []
     where
-        keys = M.keys $ getTaxaFromMatrix seq
+        keys = M.keys $ getTaxaFromMatrix pseq
 
 parseNexus :: (Show s, MonadParsec s m Char) => m ParseResult
 parseNexus = nexusFileDefinition
@@ -522,7 +519,7 @@ nexusFileDefinition = {-do
     trace ("nexusFileDefinition"  ++ show x) $ -}do
     _         <- string' "#NEXUS"
     _         <- space
-    comment   <- optional $ many $ commentDefinition <* space
+    _         <- optional $ many $ commentDefinition <* space
     (x,y,z,a) <- partitionNexusBlocks <$> many nexusBlock
     pure $ ParseResult x y z a
 
@@ -557,12 +554,12 @@ nexusBlock = do
              <|> (IgnoredBlock     <$> try ignoredBlockDefinition)
 
 characterBlockDefinition :: (Show s, MonadParsec s m Char) => String -> Bool -> m PhyloSequence
-characterBlockDefinition which aligned = {-do
+characterBlockDefinition which isAlignedSequence = {-do
     x <- getInput
     trace ("characterBlockDefinition"  ++ show x) $ -}do
     _           <- symbol (string' $ which ++ ";")
     (v,w,x,y,z) <- partitionSequenceBlock <$> some seqSubBlock
-    pure $ PhyloSequence aligned v w x y z which
+    pure $ PhyloSequence isAlignedSequence v w x y z which
 
 taxaBlockDefinition :: (Show s, MonadParsec s m Char) => m TaxaSpecification
 taxaBlockDefinition = {-do
@@ -761,8 +758,8 @@ matrixDefinition :: (Show s, MonadParsec s m Char) => m [String]
 matrixDefinition = {-do
     x <- getInput
     trace ("matrixDefinition"  ++ show x) $ -}do
-    first     <- symbol (string' "matrix")
-    goodStuff <- some (somethingTill c <* c)
+    _         <- symbol $ string' "matrix"
+    goodStuff <- some   $ somethingTill c <* c
     _         <- symbol $ char ';'
     pure $ filter (/= "") goodStuff
     where 
@@ -798,20 +795,20 @@ partitionAssumptionsBlock = foldr f []
 partitionSequenceBlock :: [SeqSubBlock] -> ([[String]],[CharacterFormat],[DimensionsFormat],[String],[[String]])
 partitionSequenceBlock = foldr f ([],[],[],[],[])
     where
-        f (Matrix n)     (v,w,x,y,z) = (n:v,   w,   x,   y,   z)
-        f (Format n)     (v,w,x,y,z) = (  v, n:w,   x,   y,   z)
-        f (Dims n)       (v,w,x,y,z) = (  v,   w, n:x,   y,   z)
-        f (Eliminate n)  (v,w,x,y,z) = (  v,   w,   x, n:y,   z)
-        f (Taxa n)       (v,w,x,y,z) = (  v,   w,   x,   y, n:z)
-        f (Ignored n)             ws = ws
+        f (Matrix    e)  (v,w,x,y,z) = (e:v,   w,   x,   y,   z)
+        f (Format    e)  (v,w,x,y,z) = (  v, e:w,   x,   y,   z)
+        f (Dims      e)  (v,w,x,y,z) = (  v,   w, e:x,   y,   z)
+        f (Eliminate e)  (v,w,x,y,z) = (  v,   w,   x, e:y,   z)
+        f (Taxa      e)  (v,w,x,y,z) = (  v,   w,   x,   y, e:z)
+        f _                       ws = ws
 
 partitionTaxaBlock :: [SeqSubBlock] -> (Int, [String])
 partitionTaxaBlock = foldr f (0,[])
     where
-        f (Dims n) (y,z) = (num, z)
+        f (Dims n) (_,z) = (num, z)
             where
                 num = numTaxa n
-        f (Taxa n) (y,z) = (  y, n)
+        f (Taxa n) (y,_) = (  y, n)
         f _           ws = ws
 
 partitionNexusBlocks :: [NexusBlock] -> ([PhyloSequence], [TaxaSpecification], [TreeBlock], [IgnoredB])
@@ -826,19 +823,19 @@ partitionNexusBlocks = foldr f ([],[],[],[])
 partitionCharFormat :: [CharFormatField] -> (String, Either String [String], Either String [String], String, String, String, String, Bool, Bool, Bool, Bool, Bool)
 partitionCharFormat = foldr f ("", Right [""], Right [""], "", "", "", "", False, False, False, False, False)
     where
-        f (CharDT n)      (p,q,r,s,t,u,v,w,x,y,z,o) = (n,q,r,s,t,u,v,w,x,y,z,o)
-        f (SymStr n)      (p,q,r,s,t,u,v,w,x,y,z,o) = (p,n,r,s,t,u,v,w,x,y,z,o)
-        f (EqStr n)       (p,q,r,s,t,u,v,w,x,y,z,o) = (p,q,n,s,t,u,v,w,x,y,z,o)
-        f (MissStr n)     (p,q,r,s,t,u,v,w,x,y,z,o) = (p,q,r,n,t,u,v,w,x,y,z,o)
-        f (GapChar n)     (p,q,r,s,t,u,v,w,x,y,z,o) = (p,q,r,s,n,u,v,w,x,y,z,o)
-        f (MatchChar n)   (p,q,r,s,t,u,v,w,x,y,z,o) = (p,q,r,s,t,n,v,w,x,y,z,o)
-        f (Items n)       (p,q,r,s,t,u,v,w,x,y,z,o) = (p,q,r,s,t,u,n,w,x,y,z,o)
-        f (RespectCase n) (p,q,r,s,t,u,v,w,x,y,z,o) = (p,q,r,s,t,u,v,n,x,y,z,o)
-        f (Tokens n)      (p,q,r,s,t,u,v,w,x,y,z,o) = (p,q,r,s,t,u,v,w,n,y,z,o)
-        f (Transpose n)   (p,q,r,s,t,u,v,w,x,y,z,o) = (p,q,r,s,t,u,v,w,x,n,z,o)
-        f (Interleave n)  (p,q,r,s,t,u,v,w,x,y,z,o) = (p,q,r,s,t,u,v,w,x,y,n,o)
-        f (Unlabeled n)   (p,q,r,s,t,u,v,w,x,y,z,o) = (p,q,r,s,t,u,v,w,x,y,z,n)
-        f (IgnFF n)                              ws = ws
+        f (CharDT      n) (_,q,r,s,t,u,v,w,x,y,z,o) = (n,q,r,s,t,u,v,w,x,y,z,o)
+        f (SymStr      n) (p,_,r,s,t,u,v,w,x,y,z,o) = (p,n,r,s,t,u,v,w,x,y,z,o)
+        f (EqStr       n) (p,q,_,s,t,u,v,w,x,y,z,o) = (p,q,n,s,t,u,v,w,x,y,z,o)
+        f (MissStr     n) (p,q,r,_,t,u,v,w,x,y,z,o) = (p,q,r,n,t,u,v,w,x,y,z,o)
+        f (GapChar     n) (p,q,r,s,_,u,v,w,x,y,z,o) = (p,q,r,s,n,u,v,w,x,y,z,o)
+        f (MatchChar   n) (p,q,r,s,t,_,v,w,x,y,z,o) = (p,q,r,s,t,n,v,w,x,y,z,o)
+        f (Items       n) (p,q,r,s,t,u,_,w,x,y,z,o) = (p,q,r,s,t,u,n,w,x,y,z,o)
+        f (RespectCase n) (p,q,r,s,t,u,v,_,x,y,z,o) = (p,q,r,s,t,u,v,n,x,y,z,o)
+        f (Tokens      n) (p,q,r,s,t,u,v,w,_,y,z,o) = (p,q,r,s,t,u,v,w,n,y,z,o)
+        f (Transpose   n) (p,q,r,s,t,u,v,w,x,_,z,o) = (p,q,r,s,t,u,v,w,x,n,z,o)
+        f (Interleave  n) (p,q,r,s,t,u,v,w,x,y,_,o) = (p,q,r,s,t,u,v,w,x,y,n,o)
+        f (Unlabeled   n) (p,q,r,s,t,u,v,w,x,y,z,_) = (p,q,r,s,t,u,v,w,x,y,z,n)
+        f (IgnFF       _)                        ws = ws
 
 partitionTreeBlock :: [TreeField] -> ([[String]], [(String,[NewickForest])])
 partitionTreeBlock = foldr f ([],[])

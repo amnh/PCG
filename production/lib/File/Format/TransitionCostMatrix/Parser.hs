@@ -48,8 +48,8 @@ tcmStreamParser = validateParseResult =<< tcmDefinition <* eof
 tcmDefinition :: MonadParsec s m Char => m ParseResult
 tcmDefinition = do
     _        <- space
-    alphabet <- symbol $ tcmAlphabet
-    matrix   <- symbol $ tcmMatrix
+    alphabet <- symbol tcmAlphabet
+    matrix   <- symbol tcmMatrix
     pure $ ParseResult alphabet matrix
 
 -- | Shorthand for the expected format of the alphabet lin in a TCM file.

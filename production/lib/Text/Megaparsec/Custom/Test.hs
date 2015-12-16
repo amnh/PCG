@@ -15,6 +15,7 @@ import Test.Tasty              (TestTree,testGroup)
 import Test.Tasty.HUnit
 import Test.Tasty.QuickCheck
 import Text.Megaparsec
+import Text.Megaparsec.Prim    (MonadParsec)
 import Text.Megaparsec.Custom
 
 -- | Coalese the many TestTrees to a single TestTree
@@ -91,11 +92,7 @@ anythingTillProperties = testGroup "Properties"
         f :: (NonEmptyList Char, Char, NonEmptyList Char) -> Bool
         f (prefix, delimiter, suffix) = parse (anythingTill stopMark <* stopMark <* remaining <* eof) "" stream == Right prefix'
           where
-            stopMark  = char delimiter
-            prefix'   = filter (/= delimiter) $ getNonEmpty prefix
-            suffix'   = getNonEmpty suffix
-            stream    = prefix' ++ [delimiter] ++ suffix'
-            remaining = string suffix'
+            (stopMark, prefix', stream, remaining) = getConsumtionComponents prefix delimiter suffix
     emptySuccess = testProperty "Succeed when presented with just the 'stop mark'" f
       where
         f :: NonEmptyList Char -> Bool
@@ -117,11 +114,7 @@ somethingTillProperties = testGroup "Properties"
         f (prefix, delimiter, suffix) = null prefix'
                                      || parse (somethingTill stopMark <* stopMark <* remaining <* eof) "" stream == Right prefix'
           where
-            stopMark  = char delimiter
-            prefix'   = filter (/= delimiter) $ getNonEmpty prefix
-            suffix'   = getNonEmpty suffix
-            stream    = prefix' ++ [delimiter] ++ suffix'
-            remaining = string suffix'
+            (stopMark, prefix', stream, remaining) = getConsumtionComponents prefix delimiter suffix
     emptyFailure = testProperty "Fail when presented with just the 'stop mark'" f
       where
         f :: NonEmptyList Char -> Bool
@@ -137,6 +130,16 @@ somethingTillProperties = testGroup "Properties"
             stopMark = char delimiter
             buffer'  = getNonEmpty buffer
             stream   = [delimiter] ++ buffer' ++ [delimiter]
+
+-- | We abstract this construction code for testing proper consumption between 'anythingTill' and 'somethingTill' test-suites
+getConsumtionComponents :: MonadParsec s m Char => NonEmptyList Char -> Char -> NonEmptyList Char -> (m Char, String, String, m String)
+getConsumtionComponents prefix delimiter suffix = (stopMark, prefix', stream, remaining)
+  where
+    stopMark  = char delimiter
+    prefix'   = filter (/= delimiter) $ getNonEmpty prefix
+    suffix'   = getNonEmpty suffix
+    stream    = prefix' ++ [delimiter] ++ suffix'
+    remaining = string suffix'
 
 endOfLineAssertions :: TestTree
 endOfLineAssertions = testGroup "Assertions" [matchesUnix, matchesWindows, matchesOldMac]

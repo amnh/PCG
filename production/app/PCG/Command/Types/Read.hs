@@ -29,7 +29,7 @@ import File.Format.Fastc   hiding (Identifier)
 import File.Format.Newick
 import File.Format.TransitionCostMatrix
 import File.Format.VertexEdgeRoot
-import File.Format.Conversion.ToInternal
+-- import File.Format.Conversion.ToInternal
 
 import PCG.Command.Types
 import PCG.Command.Types.Read.Internal
@@ -83,7 +83,7 @@ progressiveParse (filePath, fileContent) =
     parsed:_ -> pure . pure $ Graph [mempty { taxaSeqs = fromList $ toList parsed }]
     []       ->
       case parse newickStreamParser filePath fileContent of
-        Right result -> pure . pure $ fmap convertGraph result
+        Right _ -> pure mempty
         Left  _ ->
           case parse tcmStreamParser  filePath fileContent of
             Right _ -> pure mempty

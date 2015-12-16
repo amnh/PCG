@@ -1,28 +1,31 @@
-{-# LANGUAGE TypeSynonymInstances, FlexibleInstances, MultiParamTypeClasses #-}
+{-# LANGUAGE TypeSynonymInstances, FlexibleInstances, MultiParamTypeClasses, UndecidableInstances #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
-module Bio.Sequence.Coded (CodedSequence, EncodedSeq, EncodedSequences) where
+module Bio.Sequence.Coded (CodedSequence(..), EncodedSeq, EncodedSequences, CodedChar(..)) where
 
-import Prelude hiding (map, length, zipWith, null, foldr, head)
+import Prelude hiding (map, length, zipWith, null, foldr, head, filter)
 import Control.Applicative  (liftA2, liftA)
-import Data.Vector    (map, length, zipWith, empty, null, foldr, Vector, head, (!), singleton)
+import Data.Vector    (map, length, zipWith, empty, null, foldr, Vector, head, (!), singleton, filter)
 import Data.Bits
 import Data.Maybe
 import Bio.Sequence.Coded.Class
 
 -- | An encoded sequence is stored as a Maybe of an encoded sequence character
 type EncodedSequences b = Vector (EncodedSeq b)
-type EncodedSeq b = Maybe (EncodedChar b)
-type EncodedChar b = Vector b
+type EncodedSeq b = Maybe (Vector b)
 
 instance Bits b => CodedSequence (EncodedSeq b) b where
     numChars s = case s of 
         Nothing -> 0
         Just vec -> length vec
-    gapChar = Just $ singleton $ bit 1
-    grabSubChar s pos = liftA ((flip (!)) pos) s
+    charToSeq = Just . singleton
+    grabSubChar s pos = liftA (! pos) s
     emptySeq = Nothing
     isEmpty = isNothing
+    filterSeq s condition = liftA (filter condition) s
+
+instance Bits b => CodedChar b where
+    gapChar = bit 1
 
 -- | To make this work, EncodedSeq is also an instance of bits because a Vector of bits is and a Maybe bits is
 instance Bits b => Bits (Vector b) where
