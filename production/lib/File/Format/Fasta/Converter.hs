@@ -1,3 +1,17 @@
+-----------------------------------------------------------------------------
+-- |
+-- Module      :  File.Format.Fasta.Converter
+-- Copyright   :  (c) 2015-2015 Ward Wheeler
+-- License     :  BSD-style
+--
+-- Maintainer  :  wheeler@amnh.org
+-- Stability   :  provisional
+-- Portability :  portable
+--
+-- Functions for interpreting and converting parsed abiguous FASTA sequences.
+--
+----------------------------------------------------------------------------- 
+
 {-# LANGUAGE FlexibleContexts #-}
 
 module File.Format.Fasta.Converter where
@@ -18,6 +32,7 @@ data FastaSequenceType = DNA | RNA | AminoAcid deriving (Bounded,Eq,Enum,Read,Sh
 fastaStreamConverter :: MonadParsec s m Char => FastaSequenceType -> FastaParseResult -> m TaxonSequenceMap
 fastaStreamConverter seqType = fmap (colate seqType) . validateStreamConversion seqType 
 
+-- | Validates that the stream contains a 'FastaParseResult' of the given 'FastaSequenceType'.
 validateStreamConversion :: MonadParsec s m Char => FastaSequenceType -> FastaParseResult -> m FastaParseResult
 validateStreamConversion seqType xs =
   case partition hasErrors result of
@@ -38,11 +53,14 @@ validateStreamConversion seqType xs =
      , intercalate ", " $ (\c -> '\'':c:"'") <$> badChars
      ]
 
+-- | Interprets and converts an entire 'FastaParseResult according to the given 'FatsaSequenceType' .
 colate :: FastaSequenceType -> FastaParseResult -> TaxonSequenceMap
 colate seqType = foldr f empty
   where
     f (FastaSequence name seq') = insert name (seqCharMapping seqType seq')
 
+-- | Interprets and converts an ambiguous sequence according to the given 'FatsaSequenceType'
+-- from the ambiguous form to a 'CharacterSequence' based on IUPAC codes.
 seqCharMapping :: FastaSequenceType -> String -> CharacterSequence 
 seqCharMapping seqType = V.fromList . fmap (f seqType)
   where 
@@ -50,6 +68,7 @@ seqCharMapping seqType = V.fromList . fmap (f seqType)
     f DNA       = (!) iupacNucleotideSubstitutions
     f RNA       = (!) iupacRNASubstitutions 
 
+-- | Substitutions for converting to a DNA sequence based on IUPAC codes.
 iupacNucleotideSubstitutions :: Map Char [String]
 iupacNucleotideSubstitutions = 
   fmap pure <$> M.fromList 
@@ -73,6 +92,7 @@ iupacNucleotideSubstitutions =
   , ('?', "?")
   ]
 
+-- | Substitutions for converting to an RNA sequence based on IUPAC codes.
 iupacRNASubstitutions :: Map Char [String]
 iupacRNASubstitutions = insert 'U' ["U"] . delete 'T' $ f <$> iupacNucleotideSubstitutions
   where
