@@ -1,3 +1,17 @@
+-----------------------------------------------------------------------------
+-- |
+-- Module      :  Bio.Phylogeny.Graph
+-- Copyright   :  (c) 2015-2015 Ward Wheeler
+-- License     :  BSD-style
+--
+-- Maintainer  :  wheeler@amnh.org
+-- Stability   :  provisional
+-- Portability :  portable
+--
+-- Types for the representation of a node
+--
+-----------------------------------------------------------------------------
+
 {-# LANGUAGE FlexibleInstances, MultiParamTypeClasses #-}
 
 module Bio.Phylogeny.Tree.Node where
@@ -10,6 +24,7 @@ import qualified Bio.Phylogeny.Tree.Node.Preliminary as RN
 
 import Data.Vector
 
+-- | A node data structure holding all the necessary info
 data Node b = Node  { code :: Int
                     , isRoot :: Bool
                     , isLeaf :: Bool
@@ -23,6 +38,7 @@ data Node b = Node  { code :: Int
                     , aligned :: Vector (EncodedSeq b)
                     , cost :: Float} deriving (Eq, Show)
 
+-- | Make it an instance of encoded, final, packed, and preliminary
 instance EN.EncodedNode (Node b) (EncodedSeq b) where
     encoded = encoded
     setEncoded n s = n {encoded = s}
