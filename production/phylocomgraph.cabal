@@ -33,6 +33,26 @@ cabal-version: >= 1.8
 
 executable pcg
   main-is:             Main.hs
+
+  other-modules:       Bio.Phylogeny.Forest.Class
+                       Bio.Phylogeny.Network.Class
+                       Bio.Phylogeny.Tree.Binary.Class
+                       Bio.Phylogeny.Tree.CharacterAware.Class
+                       Bio.Phylogeny.Tree.Edge.Standard
+                       Bio.Phylogeny.Tree.EdgeAware.Class
+                       Bio.Phylogeny.Tree.Rose.Class
+                       Bio.Sequence.Coded.Class
+                       Data.List.Utility
+                       File.Format.Fasta.Converter
+                       File.Format.Fasta.Internal
+                       File.Format.Fasta.Parser
+                       File.Format.Fastc.Parser
+                       File.Format.Newick.Internal
+                       File.Format.Newick.Parser
+                       File.Format.TransitionCostMatrix.Parser
+                       File.Format.VertexEdgeRoot.Parser
+                       Text.Megaparsec.Custom
+
   build-depends:       base                 >=4.8  && <4.9
                      , bv                   >=0.3  && <0.4
                      , containers           >=0.5  && <0.6
@@ -76,18 +96,41 @@ executable pcg
   
   default-language:    Haskell2010
 
-
 library
   -- Modules exported by the library.
-  exposed-modules:     File.Format.Fasta
-                     , File.Format.Fastc
-                     , File.Format.Newick
-                     , File.Format.VertexEdgeRoot
-                     , File.Format.TransitionCostMatrix
-                     , Bio.Phylogeny.Graph
+  exposed-modules:
+                       Bio.Phylogeny.Forest
+                       Bio.Phylogeny.Network
+                       Bio.Phylogeny.PhyloCharacter
+                       Bio.Phylogeny.Tree.Binary
+                       Bio.Phylogeny.Tree.CharacterAware
+                       Bio.Phylogeny.Tree.EdgeAware
+                       Bio.Phylogeny.Tree.Node
+                       Bio.Phylogeny.Tree.Node.Encoded
+                       Bio.Phylogeny.Tree.Node.Final
+                       Bio.Phylogeny.Tree.Node.Packed
+                       Bio.Phylogeny.Tree.Node.Preliminary
+                       Bio.Phylogeny.Tree.Rose
+                       Bio.Sequence.Coded
+                       File.Format.Fasta
+                       File.Format.Fastc
+                       File.Format.Newick
+                       File.Format.VertexEdgeRoot
+                       File.Format.TransitionCostMatrix
+                       Bio.Phylogeny.Graph
   
   -- Modules included in this library but not exported.
-  -- other-modules:
+  other-modules:
+                       Bio.Phylogeny.Forest.Class
+                       Bio.Phylogeny.Network.Class
+                       Bio.Phylogeny.Tree.Binary.Class
+                       Bio.Phylogeny.Tree.CharacterAware.Class
+                       Bio.Phylogeny.Tree.Edge.Standard
+                       Bio.Phylogeny.Tree.EdgeAware.Class
+                       Bio.Phylogeny.Tree.Rose.Class
+                       Bio.Sequence.Coded.Class
+                       Data.List.Utility
+                       File.Format.Fasta.Converter
                        File.Format.Fasta.Internal
                        File.Format.Fasta.Parser
                        File.Format.Fastc.Parser
@@ -95,6 +138,7 @@ library
                        File.Format.Newick.Parser
                        File.Format.TransitionCostMatrix.Parser
                        File.Format.VertexEdgeRoot.Parser
+                       Text.Megaparsec.Custom
 
   -- LANGUAGE extensions used by modules in this package.
   other-extensions:    FlexibleContexts, BangPatterns, DeriveGeneric
