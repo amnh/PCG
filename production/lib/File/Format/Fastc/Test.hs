@@ -5,6 +5,7 @@ module File.Format.Fastc.Test
   ) where
 
 import Control.Arrow            (first,second)
+import qualified Data.List.NonEmpty as NE (fromList)
 import Data.Vector              (Vector,fromList)
 import File.Format.Fasta.Test   (validTaxonLines)
 import File.Format.Fastc.Parser
@@ -48,6 +49,6 @@ validTaxonSequences = zipWith f validTaxonLines validSequences
 fastcStreamParser' :: TestTree
 fastcStreamParser' = testGroup "fastaStreamParser" [testGroup "Valid stream" [validStream]]
   where
-    validStream = testCase "Fastc concatenated stream" $ parseEquals fastcStreamParser str res
+    validStream = testCase "Fastc concatenated stream" $ parseEquals fastcStreamParser str (NE.fromList res)
     (res,str)   = second concat $ unzip validTaxonSequences
 

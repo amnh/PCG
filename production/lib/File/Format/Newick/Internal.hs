@@ -1,3 +1,17 @@
+-----------------------------------------------------------------------------
+-- |
+-- Module      :  File.Format.Newick.Internal
+-- Copyright   :  (c) 2015-2015 Ward Wheeler
+-- License     :  BSD-style
+--
+-- Maintainer  :  wheeler@amnh.org
+-- Stability   :  provisional
+-- Portability :  portable
+--
+-- Utility functions and types for parsing Newick tree files into a topological tree structure.
+--
+-----------------------------------------------------------------------------
+
 {-# LANGUAGE MultiParamTypeClasses #-}
 
 module File.Format.Newick.Internal
@@ -32,12 +46,14 @@ import Data.List
   - Extended Newick filed format.
   -}
 
+-- | One or more trees in a "Phylogenetic Forest".
 type NewickForest = [NewickNode]
 
+-- | A node in a "Phylogenetic Forest"
 data NewickNode
    = NewickNode
-   { descendants  :: [NewickNode] --leaf nodes are empty lists
-   , newickLabel  :: Maybe String --leaf nodes will always be Just
+   { descendants  :: [NewickNode] -- leaf nodes are empty lists
+   , newickLabel  :: Maybe String -- leaf nodes will always be Just
    , branchLength :: Maybe Double
    } deriving (Eq,Ord)
 
@@ -50,11 +66,16 @@ instance Show NewickNode where
 --treeFoldr :: (f 
 --treeFoldr f b t =
 
+-- | Smart constructor for a 'NewickNode' preseriving the invariant:
+--
+-- > null nodes ==> isJust . label
 newickNode :: [NewickNode] -> Maybe String -> Maybe Double -> Maybe NewickNode
 newickNode nodes label length'
   | null nodes && isNothing label = Nothing
   | otherwise = Just $ NewickNode nodes label length'
 
+
+-- | Determines whether a given 'NewickNode' is a leaf node in the tree.
 isLeaf :: NewickNode -> Bool
 isLeaf node = (null . descendants) node && (isJust . newickLabel) node
 

@@ -34,25 +34,6 @@ cabal-version: >= 1.8
 executable pcg
   main-is:             Main.hs
 
-  other-modules:       Bio.Phylogeny.Forest.Class
-                       Bio.Phylogeny.Network.Class
-                       Bio.Phylogeny.Tree.Binary.Class
-                       Bio.Phylogeny.Tree.CharacterAware.Class
-                       Bio.Phylogeny.Tree.Edge.Standard
-                       Bio.Phylogeny.Tree.EdgeAware.Class
-                       Bio.Phylogeny.Tree.Rose.Class
-                       Bio.Sequence.Coded.Class
-                       Data.List.Utility
-                       File.Format.Fasta.Converter
-                       File.Format.Fasta.Internal
-                       File.Format.Fasta.Parser
-                       File.Format.Fastc.Parser
-                       File.Format.Newick.Internal
-                       File.Format.Newick.Parser
-                       File.Format.TransitionCostMatrix.Parser
-                       File.Format.VertexEdgeRoot.Parser
-                       Text.Megaparsec.Custom
-
   build-depends:       base                 >=4.8  && <4.9
                      , bv                   >=0.3  && <0.4
                      , containers           >=0.5  && <0.6
@@ -96,32 +77,7 @@ executable pcg
   
   default-language:    Haskell2010
 
-library
-  -- Modules exported by the library.
-  exposed-modules:
-                       Bio.Phylogeny.Forest
-                       Bio.Phylogeny.Network
-                       Bio.Phylogeny.PhyloCharacter
-                       Bio.Phylogeny.Tree.Binary
-                       Bio.Phylogeny.Tree.CharacterAware
-                       Bio.Phylogeny.Tree.EdgeAware
-                       Bio.Phylogeny.Tree.Node
-                       Bio.Phylogeny.Tree.Node.Encoded
-                       Bio.Phylogeny.Tree.Node.Final
-                       Bio.Phylogeny.Tree.Node.Packed
-                       Bio.Phylogeny.Tree.Node.Preliminary
-                       Bio.Phylogeny.Tree.Rose
-                       Bio.Sequence.Coded
-                       File.Format.Fasta
-                       File.Format.Fastc
-                       File.Format.Newick
-                       File.Format.VertexEdgeRoot
-                       File.Format.TransitionCostMatrix
-                       Bio.Phylogeny.Graph
-  
-  -- Modules included in this library but not exported.
-  other-modules:
-                       Bio.Phylogeny.Forest.Class
+  other-modules:       Bio.Phylogeny.Forest.Class
                        Bio.Phylogeny.Network.Class
                        Bio.Phylogeny.Tree.Binary.Class
                        Bio.Phylogeny.Tree.CharacterAware.Class
@@ -139,7 +95,42 @@ library
                        File.Format.TransitionCostMatrix.Parser
                        File.Format.VertexEdgeRoot.Parser
                        Text.Megaparsec.Custom
+                       Bio.Phylogeny.Forest
+                       Bio.Phylogeny.Graph
+                       Bio.Phylogeny.Network
+                       Bio.Phylogeny.PhyloCharacter
+                       Bio.Phylogeny.Tree.Binary
+                       Bio.Phylogeny.Tree.CharacterAware
+                       Bio.Phylogeny.Tree.EdgeAware
+                       Bio.Phylogeny.Tree.Node
+                       Bio.Phylogeny.Tree.Node.Encoded
+                       Bio.Phylogeny.Tree.Node.Final
+                       Bio.Phylogeny.Tree.Node.Packed
+                       Bio.Phylogeny.Tree.Node.Preliminary
+                       Bio.Phylogeny.Tree.Rose
+                       Bio.Sequence.Coded
+                       Control.Evaluation
+                       Control.Evaluation.Internal
+                       Control.Evaluation.Trans
+                       Control.Evaluation.Unit
+                       Data.Either.Custom
+                       File.Format.Fasta
+                       File.Format.Fastc
+                       File.Format.Newick
+                       File.Format.TransitionCostMatrix
+                       File.Format.VertexEdgeRoot
+                       PCG.Command
+                       PCG.Command.Types
+                       PCG.Command.Types.Read
+                       PCG.Command.Types.Read.Internal
+                       PCG.Command.Types.Read.ReadError
+                       PCG.Computation.Internal
+                       PCG.Script
+                       PCG.Script.Parser
+                       PCG.Script.Types
 
+  
+library
   -- LANGUAGE extensions used by modules in this package.
   other-extensions:    FlexibleContexts, BangPatterns, DeriveGeneric
   
@@ -181,12 +172,58 @@ library
   
   default-language:    Haskell2010
   
+  -- Modules exported by the library.
+  exposed-modules:
+                       Bio.Phylogeny.Forest
+                       Bio.Phylogeny.Graph
+                       Bio.Phylogeny.Network
+                       Bio.Phylogeny.PhyloCharacter
+                       Bio.Phylogeny.Tree.Binary
+                       Bio.Phylogeny.Tree.CharacterAware
+                       Bio.Phylogeny.Tree.EdgeAware
+                       Bio.Phylogeny.Tree.Node
+                       Bio.Phylogeny.Tree.Node.Encoded
+                       Bio.Phylogeny.Tree.Node.Final
+                       Bio.Phylogeny.Tree.Node.Packed
+                       Bio.Phylogeny.Tree.Node.Preliminary
+                       Bio.Phylogeny.Tree.Rose
+                       Bio.Sequence.Coded
+                       File.Format.Fasta
+                       File.Format.Fastc
+                       File.Format.Newick
+                       File.Format.Nexus
+                       File.Format.VertexEdgeRoot
+                       File.Format.TransitionCostMatrix
+  
+  -- Modules included in this library but not exported.
+  other-modules:
+                       Bio.Phylogeny.Forest.Class
+                       Bio.Phylogeny.Network.Class
+                       Bio.Phylogeny.Tree.Binary.Class
+                       Bio.Phylogeny.Tree.CharacterAware.Class
+                       Bio.Phylogeny.Tree.Edge.Standard
+                       Bio.Phylogeny.Tree.EdgeAware.Class
+                       Bio.Phylogeny.Tree.Rose.Class
+                       Bio.Sequence.Coded.Class
+                       Data.List.Utility
+                       File.Format.Fasta.Converter
+                       File.Format.Fasta.Internal
+                       File.Format.Fasta.Parser
+                       File.Format.Fastc.Parser
+                       File.Format.Newick.Internal
+                       File.Format.Newick.Parser
+                       File.Format.Nexus.Parser
+                       File.Format.TransitionCostMatrix.Parser
+                       File.Format.VertexEdgeRoot.Parser
+                       Text.Megaparsec.Custom
 
 
 Test-Suite testsuite
   type:                exitcode-stdio-1.0
+
   main-is:             Main.hs
-  build-depends:       base             >=4.8 && <4.9
+
+  build-depends:       base                 >=4.8 && <4.9
                      , bv                   >=0.3  && <0.4
                      , containers           >=0.5  && <0.6
                      , criterion            >=1.1  && <1.2
@@ -214,3 +251,38 @@ Test-Suite testsuite
                      , vector               -any
 
   hs-source-dirs:      test, lib, app
+
+  other-modules:       Bio.Phylogeny.Network
+                       Bio.Phylogeny.Network.Class
+                       Control.Evaluation.Internal
+                       Control.Evaluation.Test
+                       Control.Evaluation.Unit
+                       Data.List.Utility
+                       File.Format.Fasta
+                       File.Format.Fasta.Converter
+                       File.Format.Fasta.Internal
+                       File.Format.Fasta.Parser
+                       File.Format.Fasta.Test
+                       File.Format.Fastc
+                       File.Format.Fastc.Parser
+                       File.Format.Fastc.Test
+                       File.Format.Newick
+                       File.Format.Newick.Internal
+                       File.Format.Newick.Parser
+                       File.Format.Newick.Test
+                       File.Format.Nexus
+                       File.Format.Nexus.Parser
+                       File.Format.TransitionCostMatrix.Parser
+                       File.Format.TransitionCostMatrix.Test
+                       File.Format.VertexEdgeRoot.Parser
+                       File.Format.VertexEdgeRoot.Test
+                       Test.Custom
+                       TestSuite.ExecutableTests
+                       TestSuite.GeneratedTests
+                       TestSuite.GeneratedTests.Fasta
+                       TestSuite.GeneratedTests.Fastc
+                       TestSuite.GeneratedTests.Internal
+                       TestSuite.GeneratedTests.Nexus
+                       TestSuite.LibraryTests
+                       Text.Megaparsec.Custom
+                       Text.Megaparsec.Custom.Test

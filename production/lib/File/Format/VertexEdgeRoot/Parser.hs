@@ -1,3 +1,18 @@
+-----------------------------------------------------------------------------
+-- |
+-- Module      :  File.Format.VertexEdgeRoot.Parser
+-- Copyright   :  (c) 2015-2015 Ward Wheeler
+-- License     :  BSD-style
+--
+-- Maintainer  :  wheeler@amnh.org
+-- Stability   :  provisional
+-- Portability :  portable
+--
+-- Functions for for parsing VER files into a collection of the
+-- vertex set, edge set, and root set representing a "Phylogenetic Forest".
+--
+-----------------------------------------------------------------------------
+
 {-# LANGUAGE FlexibleContexts #-}
 
 module File.Format.VertexEdgeRoot.Parser where
@@ -15,11 +30,19 @@ import Text.Megaparsec
 import Text.Megaparsec.Custom
 import Text.Megaparsec.Prim   (MonadParsec)
 
+-- | A textual identifier for a node in the graph
 type VertexLabel   = String
+
+-- | The possibly calculated distance between two nodes in the graph
 type EdgeLength    = Maybe Double
 
+-- | The two types of sets of nodes present in a VER file
 data VertexSetType = Verticies | Roots deriving (Eq,Show)
+
+-- | Connection between two nodes in the graph along with the distance of the connection
 data EdgeInfo      = EdgeInfo (VertexLabel,VertexLabel) EdgeLength deriving (Show,Eq,Ord)
+
+-- | Collection of Vericies, roots, and edges representing a "Phylogenetic Forest"
 data VertexEdgeRoot
    = VER
    { verticies   :: Set VertexLabel
@@ -27,6 +50,9 @@ data VertexEdgeRoot
    , roots       :: Set VertexLabel
    } deriving (Show)
 
+-- | Returns the `EdgeInfo as a tuple of 'VertexLabel's satisfying the constraint:
+--
+-- > let (a,b) = edgeConnection e in a <= b
 edgeConnection :: EdgeInfo -> (VertexLabel,VertexLabel)
 edgeConnection (EdgeInfo (a,b) _)
   | a <= b    = (a,b)
@@ -53,6 +79,7 @@ verStreamParser = validateForest =<< verDefinition
 -- nodes by inspecting the possibly provided set labels or in the absence of
 -- labels by comparing the size of the sets; as the set of all verticies is 
 -- surely a superset of the set of root nodes.
+-- | Parses exactly one vertex set, one edge set, and one root set.
 verDefinition :: MonadParsec s m Char => m VertexEdgeRoot
 verDefinition = do
     sets <- many setDefinition
@@ -85,7 +112,7 @@ verDefinition = do
     messages name (_:_:_)   = [message "Multiple" (name++"s")]
     message x y             = concat [x," ",y," defined in input"]
 
--- We read a set from the input. The set can be an edge set or a vertex set.
+-- | We read a set from the input. The set can be an edge set or a vertex set.
 -- If it is a vertex set, it may be labeled as a specific set of verticies or
 -- a set of roots. We use the Either type as a return type to denote the 
 -- conditional type of the result.
@@ -96,13 +123,13 @@ setDefinition = do
       Just x  -> pure $ Left x
       Nothing -> Right <$> vertexSetDefinition
 
--- A vertex set can be labeled or unlabeled. We first attempt to read in a 
+-- | A vertex set can be labeled or unlabeled. We first attempt to read in a 
 -- labeled vertex set, and if that fails an unlabeled vertex set. The label
 -- is returned contidionally in a Maybe type.
 vertexSetDefinition :: MonadParsec s m Char => m (Maybe VertexSetType, Set VertexLabel)
 vertexSetDefinition = try labeledVertexSetDefinition <|> unlabeledVertexSetDefinition
 
--- A labeled vertex set contains a label followed by an unlabeled vertex set
+-- | A labeled vertex set contains a label followed by an unlabeled vertex set
 labeledVertexSetDefinition :: MonadParsec s m Char => m (Maybe VertexSetType, Set VertexLabel )
 labeledVertexSetDefinition = do
     setType <- vertexSetType
@@ -110,7 +137,7 @@ labeledVertexSetDefinition = do
     (_,set) <- unlabeledVertexSetDefinition
     pure (Just setType, set)
 
--- A vertex set label is one of the following case insensative strings:
+-- | A vertex set label is one of the following case insensative strings:
 -- "vertexset", rootset"
 vertexSetType :: MonadParsec s m Char => m VertexSetType
 vertexSetType = do
@@ -119,7 +146,7 @@ vertexSetType = do
       Just _  -> pure Verticies
       Nothing -> symbol (string' "RootSet") *> pure Roots
 
--- A vertex set with an optional set label enclosed in braces.
+-- | A vertex set with an optional set label enclosed in braces.
 -- A vertex set cannot have duplicate verticies
 unlabeledVertexSetDefinition :: MonadParsec s m Char => m (Maybe VertexSetType, Set VertexLabel)
 unlabeledVertexSetDefinition = validateVertexSet =<< unlabeledVertexSetDefinition'
@@ -138,14 +165,14 @@ unlabeledVertexSetDefinition = validateVertexSet =<< unlabeledVertexSetDefinitio
         dupes = duplicates vs
         errorMessage = "The following verticies were defined multiple times: " ++ show dupes
 
--- A vertex label is any non-scpace character that is also not a brace, paren, or comma.
+-- | A vertex label is any non-scpace character that is also not a brace, paren, or comma.
 vertexLabelDefinition :: MonadParsec s m Char => m String
 vertexLabelDefinition = some validChar
   where
     validChar = satisfy $ \x -> x `notElem` "{}(),"
                              && (not . isSpace) x
 
--- Parses an edge set with an optional edge set label.
+-- | Parses an edge set with an optional edge set label.
 -- Edges cannot be from one node to the same node.
 -- Edges are undirected, with duplicate edges prohibited.
 edgeSetDefinition :: MonadParsec s m Char => m (Set EdgeInfo)
@@ -178,6 +205,8 @@ edgeSetDefinition = validateEdgeSet =<< edgeSetDefinition'
         dupesErrorMessage = "Duplicate edges detected. The following edges were defined multiple times: "    ++ show dupes
         selfsErrorMessage = "Self-referencing edge(s) detected.The following edge(s) are self=referencing: " ++ show selfs
 
+-- | Defines the serialized format of an edge connecting nodes 'a' and 'b' as '"(a,b)"'.
+-- Allows for optional "branch length" annotation as '"(a,b):12.34"'.
 edgeDefinition :: MonadParsec s m Char => m EdgeInfo
 edgeDefinition = symbol $ do
     _ <- space
@@ -191,11 +220,15 @@ edgeDefinition = symbol $ do
   where
     branchLengthDefinition = symbol (char ':') *> symbol double
 
+-- | Convinence combinator to consume trailing whitespace.
 symbol :: MonadParsec s m Char => m a -> m a
 symbol x = x <* space
 
--- A VER forest is not valid if:
+-- | Validates a parse result to ensure that the resulting forest is internally consistent.
+-- A VER forest is not consistent if:
+--
 --   * Any two root nodes are connected
+--
 --   * Any tree contains a cycle
 validateForest :: MonadParsec s m Char => VertexEdgeRoot -> m VertexEdgeRoot
 validateForest ver@(VER vs es rs )
@@ -256,6 +289,7 @@ validateForest ver@(VER vs es rs )
       , show xs
       ]
 
+-- | Convience method for building a connection 'Map' based on the existing edges in the graph.
 buildEdgeMap :: Set VertexLabel -> Set EdgeInfo -> Map VertexLabel [VertexLabel]
 buildEdgeMap vs es = foldr buildMap empty vs
   where

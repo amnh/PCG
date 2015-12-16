@@ -4,6 +4,8 @@ module File.Format.TransitionCostMatrix.Test
   ( testSuite
   ) where
 
+import Data.Foldable                           (toList)
+import Data.List.NonEmpty                      (fromList)
 import File.Format.TransitionCostMatrix.Parser
 import Test.Custom                             (parseEquals,parseFailure,parseSuccess)
 import Test.Tasty                              (TestTree,testGroup)
@@ -44,7 +46,7 @@ tcmAlphabet' = testGroup "tcmAlphabet" [validLines, invalidLines]
   where
     validLines   = testGroup "Valid alphabet definition"   $ success <$> validAlphabets
     invalidLines = testGroup "Invalid alphabet definition" $ failure <$> invalidAlphabets
-    success str  = testCase (show str) $ parseEquals   (tcmAlphabet <* eof) str (words str)
+    success str  = testCase (show str) $ parseEquals   (tcmAlphabet <* eof) str (fromList . words $ toList str)
     failure str  = testCase (show str) $ parseFailure  (tcmAlphabet <* eof) str
 
 tcmMatrix' :: TestTree
@@ -80,29 +82,3 @@ tcmStreamParser' = testGroup "tcmStreamParser" [valid, invalid]
 
 appendNewlines :: [String] -> [String]
 appendNewlines = fmap (++"\n")
-
-{-
-parseSuccess :: Parsec String a -> String -> Assertion
-parseSuccess parser str =
-    case result of
-          Left  x -> assertFailure $ show x
-          Right _ -> assert True
-  where
-    result = parse parser "" str
-
-parseFailure :: Parsec String a -> String -> Assertion
-parseFailure parser str =
-    case result of
-          Right _ -> assertFailure $ "Should have failed to parse input: " ++ show str
-          Left  _ -> assert True
-  where
-    result = parse parser "" str
-
-parseEquals :: (Eq a, Show a) => Parsec String a -> String -> a -> Assertion
-parseEquals parser str expected =
-    case result of
-          Left  x -> assertFailure $ show x
-          Right x -> assertEqual ("Parse result of :" ++ show str) expected x
-  where
-    result = parse parser "" str
--}

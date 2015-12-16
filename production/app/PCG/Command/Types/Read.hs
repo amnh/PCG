@@ -16,7 +16,9 @@ import Data.Char                  (toLower)
 import Data.Either                (partitionEithers)
 import Data.Either.Combinators    (isRight, rightToMaybe)
 import Data.Either.Custom
-import Data.Map                   (Map,toList)
+import Data.Foldable              (toList)
+import Data.Map                   (Map)
+import qualified Data.Map as M    (toList)
 import Data.Maybe                 (fromJust,isNothing)
 import Data.Hashable
 import Data.HashMap.Strict        (HashMap,fromList)
@@ -65,10 +67,10 @@ setTaxaSeqs :: HashMap Identifier Sequence -> SearchState
 setTaxaSeqs x = pure $ Graph [mempty { taxaSeqs = x }]
 
 mapsToHashMap :: (Eq k, Hashable k) => [Map k v] -> HashMap k v
-mapsToHashMap = fromList . concatMap toList
+mapsToHashMap = fromList . concatMap M.toList
 
 customToHashMap :: [FastcParseResult] -> HashMap Identifier CharacterSequence
-customToHashMap = fromList . concatMap (fmap (fastcLabel &&& fastcSymbols))
+customToHashMap = fromList . concatMap (fmap (fastcLabel &&& fastcSymbols) . toList)
 
 parseSpecifiedFileSimple :: Parsec Text a -> ([a] -> SearchState) -> FileSpecification -> EitherT ReadError IO SearchState
 parseSpecifiedFileSimple comb toState spec = getSpecifiedContent spec >>= (hoistEither . parseSpecifiedContent)
@@ -80,7 +82,7 @@ parseSpecifiedFileSimple comb toState spec = getSpecifiedContent spec >>= (hoist
 progressiveParse :: FileResult -> EitherT ReadError IO SearchState
 progressiveParse (filePath, fileContent) =
   case snd . partitionEithers $ parseTryOrderForSequences <*> [fileContent] of
-    parsed:_ -> pure . pure $ Graph [mempty { taxaSeqs = fromList $ toList parsed }]
+    parsed:_ -> pure . pure $ Graph [mempty { taxaSeqs = mapsToHashMap [parsed] }]
     []       ->
       case parse newickStreamParser filePath fileContent of
         Right _ -> pure mempty

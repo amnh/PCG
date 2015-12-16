@@ -1,3 +1,17 @@
+-----------------------------------------------------------------------------
+-- |
+-- Module      :  File.Format.Fasta.Parser
+-- Copyright   :  (c) 2015-2015 Ward Wheeler
+-- License     :  BSD-style
+--
+-- Maintainer  :  wheeler@amnh.org
+-- Stability   :  provisional
+-- Portability :  portable
+--
+-- Functions for parsing FASTA files.
+--
+----------------------------------------------------------------------------- 
+
 {-# LANGUAGE FlexibleContexts #-}
 
 module File.Format.Fasta.Parser where
@@ -108,6 +122,8 @@ validateIdentifierConsistency xs =
 validateSequenceConsistency :: MonadParsec s m Char => FastaParseResult -> m FastaParseResult
 validateSequenceConsistency = validateConsistentPartition <=< validateConsistentAlphabet
 
+-- | Validates that all elements of all sequences are consistent with each other sequence.
+-- Sequences of differing types cannot be mixed.
 validateConsistentAlphabet :: MonadParsec s m Char => FastaParseResult -> m FastaParseResult
 validateConsistentAlphabet xs =
   case partition snd results of
@@ -127,6 +143,7 @@ validateConsistentAlphabet xs =
                        , "from only one data format."
                        ]
 
+-- | Validates that sequences partitioned with the '\'#\'' character are all of the same length.
 validateConsistentPartition :: MonadParsec s m Char => FastaParseResult -> m FastaParseResult
 validateConsistentPartition xs
   |  null xs
