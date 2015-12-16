@@ -1,3 +1,17 @@
+-----------------------------------------------------------------------------
+-- |
+-- Module      :  File.Format.Fasta.Internal
+-- Copyright   :  (c) 2015-2015 Ward Wheeler
+-- License     :  BSD-style
+--
+-- Maintainer  :  wheeler@amnh.org
+-- Stability   :  provisional
+-- Portability :  portable
+--
+-- Utility functions used for parsing both FASTA & FASTC file formats.
+--
+----------------------------------------------------------------------------- 
+
 {-# LANGUAGE FlexibleContexts #-}
 
 module File.Format.Fasta.Internal where
@@ -21,6 +35,8 @@ type Symbol            = String
 -- | Indexed sequences of 'Symbol's with possible abiguity at an index
 type CharacterSequence = Vector [Symbol]
 
+-- | Parses a line containing the sequence identifier along with an
+-- optional conmment which is discarded.
 identifierLine :: MonadParsec s m Char => m Identifier
 identifierLine = do
     _ <- char '>'
@@ -34,12 +50,15 @@ identifierLine = do
     commentMessage x = "Invalid comment for following label: '" ++ x ++ "'"
     lineEndMessage x = "There is no end-of-line after label: '" ++ x ++ "'"
 
+-- | 'Identifier' of a sequence
 identifier :: MonadParsec s m Char => m Identifier
 identifier = some $ satisfy validIdentifierChar
 
+-- | Defines if a 'Char' is valid to be contained within a sequence 'Identifier'
 validIdentifierChar :: Char -> Bool
 validIdentifierChar c = (not . isSpace) c && c /= '$'
 
+-- | Defines the comment format which can be expected after an identifier
 commentBody :: MonadParsec s m Char => m String
 commentBody  = do
     _       <- inlineSpace
@@ -48,5 +67,6 @@ commentBody  = do
     content <- many (commentWord <* inlineSpace)
     pure $ unwords content
 
+-- | Defines the words of a commenty
 commentWord :: MonadParsec s m Char => m String
 commentWord  = some (satisfy (not . isSpace)) <?> "Non-space characters"
