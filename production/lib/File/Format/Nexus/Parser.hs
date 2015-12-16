@@ -1,3 +1,17 @@
+-----------------------------------------------------------------------------
+-- |
+-- Module      :  File.Format.Nexus.Parser
+-- Copyright   :  (c) 2015-2015 Ward Wheeler
+-- License     :  BSD-style
+--
+-- Maintainer  :  wheeler@amnh.org
+-- Stability   :  provisional
+-- Portability :  portable
+--
+-- Functions for for parsing and validating Nexus files.
+--
+-----------------------------------------------------------------------------
+
 {-# LANGUAGE DoAndIfThenElse, FlexibleContexts #-}
 
 -- Current TODO: l. 108
@@ -22,6 +36,7 @@ import qualified Data.Set as S
 --import Debug.Trace -- <-- the best module!!! :)
 import File.Format.Newick
 import File.Format.TransitionCostMatrix
+import File.Format.TransitionCostMatrix.Parser
 import Safe
 import Text.Megaparsec hiding (label)
 import Text.Megaparsec.Lexer  (integer)
@@ -110,11 +125,18 @@ type SerializedTree = String
 -- Then address TODO on ignoredBlockDefinition.
 data AssumptionBlock
    = AssumptionBlock
-   { tcm :: TCM } deriving (Show)
+   { tcm :: StepMatrix } deriving (Show)
 
 data AssumptionField
-   = TCMat 
+   = TCMat StepMatrix
    | IgnAF String
+
+data StepMatrix
+   = StepMatrix
+   { mtxType :: String
+   , mtxSize :: Int
+   , mtx     :: TCM
+   }
 
 data TreeBlock
    = TreeBlock
@@ -586,15 +608,21 @@ assumptionBlockDefinition = {-do
     x <- getInput
     trace ("assumptionsBlockDefinition"  ++ show x) $ -}do
         _   <- symbol (string' "assumptions;")
-        mtx <- partitionAssumptionsBlock <$> assumptionFieldDef
+        mtx <- partitionAssumptionsBlock <$> many assumptionFieldDef
         pure $ AssumptionBlock mtx
 
-assumptionFieldDef :: (Show s, MonadParsec s m Char) => m TCM
+assumptionFieldDef :: (Show s, MonadParsec s m Char) => m AssumptionField
 assumptionFieldDef = {-do
     x <- getInput
-    trace ("assumptionsBlockDefinition"  ++ show x) $ -}undefined
+    trace ("assumptionsBlockDefinition"  ++ show x) $ -}
         -- If we end up getting more than the matrix from assumptions, move this to a separate fn
-
+    do 
+        _ <- symbol $ string' "usertype"
+        name <- symbol $ somethingTill spaceChar
+        cardinality <- symbol $ (stringDefinition "(stepmatrix)" <|> stringDefinition "(realmatrix)")
+        alphabet <- alphabetLine whitespaceNoNewlines
+        matrix <- matrixBlock whitespaceNoNewlines
+        pure $ StepMatrix name cardinality $ TCM alphabet transitionCosts
 
 treeBlockDefinition :: (Show s, MonadParsec s m Char) => m TreeBlock
 treeBlockDefinition = {-do
@@ -724,7 +752,7 @@ quotedStringDefinition blockTitle = {-do
 
 stringListDefinition :: (Show s, MonadParsec s m Char) => String -> m [String]
 stringListDefinition label = {-do
-    x <- getInput
+    x <- getInputs
     trace (("many stringListDefinition " ++ label)  ++ show x) $ -}do
     _        <- symbol (string' label)
     theItems <- many $ symbol $ notKeywordWord ""
@@ -787,7 +815,7 @@ ignoredSubBlockDef endChar = {-do
 -- Also, can these be reduced to a single function, since they're all doing the same thing?
 
 partitionAssumptionsBlock :: [AssumptionField] -> [TCM]
-partitionAssumptionsBlock = foldr f []
+partitionAssumptionsBlock = foldr f ([])
     where
         f (TCMat n) vs = n:vs
         f (IgnAF n) ws = ws
