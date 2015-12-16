@@ -1,11 +1,15 @@
 {-# LANGUAGE DoAndIfThenElse, FlexibleContexts #-}
 
+-- Current TODO: l. 108
+
 -- TODOs:
 -- • Step matrices
--- • eliminate characters (in two ways?)
--- • Split verification & parsing into two modules?
+-- • check for and eliminate thusly noted characters (in at least two places?)
+-- • Split verification & parsing into two modules, maybe three (one for data types)
 -- • update output datatypes: nest vectors, add character metadata
--- • 
+-- • Verify character metadata, especially alphabets
+-- • Reconceive and reorder current validations
+-- • Fix three broken test cases
 
 module File.Format.Nexus.Parser where
 
@@ -17,6 +21,7 @@ import Data.Maybe (isJust, fromJust, catMaybes, maybeToList)
 import qualified Data.Set as S
 import Debug.Trace -- <-- the best module!!! :)
 import File.Format.Newick
+import File.Format.TransitionCostMatrix
 import Safe
 import Text.Megaparsec hiding (label)
 import Text.Megaparsec.Lexer  (integer)
@@ -27,10 +32,11 @@ import qualified Data.Vector as V
 data ParseResult = ParseResult [PhyloSequence] [TaxaSpecification] [TreeBlock] [IgnoredB] deriving (Show)
 
 data NexusBlock
-   = TaxaBlock      TaxaSpecification
-   | CharacterBlock PhyloSequence
-   | TreesBlock     TreeBlock
-   | IgnoredBlock   IgnoredB
+   = TaxaBlock        TaxaSpecification
+   | CharacterBlock   PhyloSequence
+   | TreesBlock       TreeBlock
+   | IgnoredBlock     IgnoredB
+   | AssumptionsBlock AssumptionBlock
    deriving (Show)
 
 -- | DimensionsFormat is format of dimensions field in characters and unaligned nexus blocks.
@@ -80,6 +86,7 @@ data IgnoredB = IgnoredB {ignoredName :: String} deriving (Show)
 -- | The different subfields of the Format field in the sequence blocks.
 -- As with SeqSubBlock, listed simply so that it can be "looped" over. Will eventually be
 -- coverted to CharacterFormat data type for export
+-- TODO: better documentation on the use of each field below
 data CharFormatField
    = CharDT      String
    | SymStr      (Either String [String]) -- the list of symbols
@@ -98,6 +105,16 @@ data CharFormatField
 
 type TreeName       = String
 type SerializedTree = String
+
+-- TODO: finish capturing Assumptions: this datatype, one for assumptionField, partioning fn, etc.
+-- Then address TODO on ignoredBlockDefinition.
+data AssumptionBlock
+   = AssumptionBlock
+   { tcm :: TCM } deriving (Show)
+
+data AssumptionField
+   = TCMat 
+   | IgnAF String
 
 data TreeBlock
    = TreeBlock
@@ -354,7 +371,8 @@ safeLast :: [a] -> [a]
 safeLast inLst = [ last inLst | not (null inLst) ]
 
 safeHead :: [a] -> [a]
-safeHead inLst = [ head inLst | null inLst ]
+safeHead [] = []
+safeHead (x:_) = [x]
 
 safeTail :: [a] -> [a]
 safeTail []     = []
@@ -521,7 +539,7 @@ ignoredBlockDefinition = {-do
     pure $ IgnoredB $ title ++ " at line " ++ show line
 
 blockend :: (Show s, MonadParsec s m Char) => m String
-blockend = string' "endblock;") <|> string' "end;"
+blockend = string' "endblock;" <|> string' "end;"
 
 nexusBlock :: (Show s, MonadParsec s m Char) => m NexusBlock
 nexusBlock = do
@@ -530,12 +548,13 @@ nexusBlock = do
         _      <- blockend
         pure block'
     where
-        block =  (CharacterBlock <$> try (characterBlockDefinition "characters" True))
-             <|> (CharacterBlock <$> try (characterBlockDefinition "unaligned" False))
-             <|> (CharacterBlock <$> try (characterBlockDefinition "data" True)) -- data blocks should be aligned
-             <|> (TaxaBlock      <$> try taxaBlockDefinition)
-             <|> (TreesBlock     <$> try treeBlockDefinition)
-             <|> (IgnoredBlock   <$> try ignoredBlockDefinition)
+        block =  (CharacterBlock   <$> try (characterBlockDefinition "characters" True))
+             <|> (CharacterBlock   <$> try (characterBlockDefinition "unaligned" False))
+             <|> (CharacterBlock   <$> try (characterBlockDefinition "data" True)) -- data blocks should be aligned
+             <|> (TaxaBlock        <$> try taxaBlockDefinition)
+             <|> (TreesBlock       <$> try treeBlockDefinition)
+             <|> (AssumptionsBlock <$> try assumptionBlockDefinition)
+             <|> (IgnoredBlock     <$> try ignoredBlockDefinition)
 
 characterBlockDefinition :: (Show s, MonadParsec s m Char) => String -> Bool -> m PhyloSequence
 characterBlockDefinition which aligned = {-do
@@ -564,6 +583,21 @@ taxaSubBlock = {-do
         block =  (Dims <$> try dimensionsDefinition)
              <|> (Taxa <$> try (stringListDefinition "taxlabels"))
              <|> (Ignored <$> try (ignoredSubBlockDef ';'))
+
+assumptionBlockDefinition :: (Show s, MonadParsec s m Char) => m AssumptionBlock
+assumptionBlockDefinition = {-do
+    x <- getInput
+    trace ("assumptionsBlockDefinition"  ++ show x) $ -}do
+        _   <- symbol (string' "assumptions;")
+        mtx <- partitionAssumptionsBlock <$> assumptionFieldDef
+        pure $ AssumptionBlock mtx
+
+assumptionFieldDef :: (Show s, MonadParsec s m Char) => m TCM
+assumptionFieldDef = {-do
+    x <- getInput
+    trace ("assumptionsBlockDefinition"  ++ show x) $ -}undefined
+        -- If we end up getting more than the matrix from assumptions, move this to a separate fn
+
 
 treeBlockDefinition :: (Show s, MonadParsec s m Char) => m TreeBlock
 treeBlockDefinition = {-do
@@ -754,6 +788,12 @@ ignoredSubBlockDef endChar = {-do
 -- and its fields used as arguments to a constructor.
 -- I'm wondering if there's isn't a more efficient way to do this.
 -- Also, can these be reduced to a single function, since they're all doing the same thing?
+
+partitionAssumptionsBlock :: [AssumptionField] -> [TCM]
+partitionAssumptionsBlock = foldr f []
+    where
+        f (TCMat n) vs = n:vs
+        f (IgnAF n) ws = ws
 
 partitionSequenceBlock :: [SeqSubBlock] -> ([[String]],[CharacterFormat],[DimensionsFormat],[String],[[String]])
 partitionSequenceBlock = foldr f ([],[],[],[],[])
