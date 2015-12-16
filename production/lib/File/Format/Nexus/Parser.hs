@@ -1,3 +1,17 @@
+-----------------------------------------------------------------------------
+-- |
+-- Module      :  File.Format.Fasta
+-- Copyright   :  (c) 2015-2015 Ward Wheeler
+-- License     :  BSD-style
+--
+-- Maintainer  :  wheeler@amnh.org
+-- Stability   :  provisional
+-- Portability :  portable
+--
+-- This parser will eventually work.
+--
+----------------------------------------------------------------------------- 
+
 {-# LANGUAGE DoAndIfThenElse, FlexibleContexts #-}
 
 -- TODOs:
@@ -26,6 +40,7 @@ import qualified Data.Vector as V
 
 data ParseResult = ParseResult [PhyloSequence] [TaxaSpecification] [TreeBlock] [IgnoredB] deriving (Show)
 
+-- | Types blocks in the Nexus file and their accompanying data.
 data NexusBlock
    = TaxaBlock      TaxaSpecification
    | CharacterBlock PhyloSequence
@@ -133,8 +148,12 @@ data CharacterFormat
    , unlabeled    :: Bool
    } deriving (Eq,Show)
 
+-- | The types of data which can be present in a Nexus file.
+-- This type might get scrapped and another type imported from
+-- different module, or preserved but moved to another module.
 data CharDataType = Standard | DNA | RNA | Nucleotide | Protein | Continuous deriving (Read, Show)
 
+-- | The collection of information extracted from blocks in the Nexus file.
 data Nexus
    = Nexus
    -- TODO: taxa was commented out before first push to Grace

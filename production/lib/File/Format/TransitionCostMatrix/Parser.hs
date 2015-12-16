@@ -33,8 +33,10 @@ data ParseResult
    = ParseResult (NonEmpty String) (Matrix Double)
 
 -- | The results of a TCM file consisting of
---     * A custom alphabet of 'Symbol's
---     * A matrix consisting of the ransition costs between symbols
+--
+--   * A custom alphabet of 'Symbol's
+--
+--   * A matrix consisting of the transition costs between symbols
 --
 -- The following equality will hold for an 'TCM':
 --
