@@ -1,3 +1,18 @@
+-----------------------------------------------------------------------------
+-- |
+-- Module      :  Text.Megaparsec.Custom
+-- Copyright   :  (c) 2015-2015 Ward Wheeler
+-- License     :  BSD-style
+--
+-- Maintainer  :  wheeler@amnh.org
+-- Stability   :  provisional
+-- Portability :  portable
+--
+-- Data structures and instances for coded sequences
+--
+-----------------------------------------------------------------------------
+
+
 {-# LANGUAGE TypeSynonymInstances, FlexibleInstances, MultiParamTypeClasses, UndecidableInstances #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
@@ -14,6 +29,7 @@ import Bio.Sequence.Coded.Class
 type EncodedSequences b = Vector (EncodedSeq b)
 type EncodedSeq b = Maybe (Vector b)
 
+-- | Make a coded sequence and coded character instances of bits
 instance Bits b => CodedSequence (EncodedSeq b) b where
     numChars s = case s of 
         Nothing -> 0
@@ -27,7 +43,7 @@ instance Bits b => CodedSequence (EncodedSeq b) b where
 instance Bits b => CodedChar b where
     gapChar = bit 1
 
--- | To make this work, EncodedSeq is also an instance of bits because a Vector of bits is and a Maybe bits is
+-- | To make this work, the underlying types are also an instance of bits because a Vector of bits is and a Maybe bits is
 instance Bits b => Bits (Vector b) where
     (.&.) bit1 bit2     
         | length bit1 /= length bit2 = error "Attempt to take and of bits of different length"
