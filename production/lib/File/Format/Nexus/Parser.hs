@@ -571,7 +571,7 @@ nexusBlock :: (Show s, MonadParsec s m Char) => m NexusBlock
 nexusBlock = do
         _      <- symbol $ string' "BEGIN"
         block' <- symbol block
-        _      <- blockend
+        _      <- symbol $ blockend
         pure block'
     where
         block =  (CharacterBlock   <$> try (characterBlockDefinition "characters" True))
