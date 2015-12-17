@@ -16,22 +16,39 @@
 
 module File.Format.TransitionCostMatrix.Parser where
 
-import Data.Char              (isSpace)
-import Data.List.Utility      (duplicates,mostCommon)
-import Data.Matrix            (Matrix,fromList,ncols,nrows)
-import Data.Maybe             (catMaybes,fromJust)
-import Text.Megaparsec
-import Text.Megaparsec.Custom
-import Text.Megaparsec.Prim   (MonadParsec)
+import           Data.Char                (isSpace)
+import           Data.Foldable            (toList)
+import           Data.List.NonEmpty       (NonEmpty)
+import qualified Data.List.NonEmpty as NE (fromList)
+import           Data.List.Utility        (duplicates,mostCommon)
+import           Data.Matrix              (Matrix,ncols,nrows)
+import qualified Data.Matrix        as M  (fromList)
+import           Data.Maybe               (catMaybes,fromJust)
+import           Text.Megaparsec
+import           Text.Megaparsec.Custom
+import           Text.Megaparsec.Prim     (MonadParsec)
 
+-- | Intermediate parse result prior to consistancy validation
 data TCMParseResult 
-   = TCMParseResult [String] (Matrix Double)
-   deriving (Show)
-   
+   = TCMParseResult (NonEmpty String) (Matrix Double) deriving (Show)
+
+-- | The results of a TCM file consisting of
+--
+--   * A custom alphabet of 'Symbol's
+--
+--   * A matrix consisting of the transition costs between symbols
+--
+-- The following equality will hold for an 'TCM':
+--
+-- > (length . customAlphabet) tcm == (nrows . transitionCosts) tcm && (length . customAlphabet) tcm == (ncols . transitionCosts) tcm
+--
+-- Note that the 'transitionCosts` does not need to be a symetic matrix nor have identity values on the matrix diagonal.
 data TCM 
    = TCM
-   { customAlphabet  :: [String]
-   , transitionCosts ::  Matrix Double -- n+1 X n+1 matrix where n = length customAlphabet
+   { -- | The custom alphabet of 'Symbols' for which the TCM matrix is defined
+     customAlphabet  :: NonEmpty String
+     -- | The cost to transition between any two symbols, square but not nessisarily symetric
+   , transitionCosts :: Matrix Double -- n+1 X n+1 matrix where n = length customAlphabet
    } deriving (Show)
 
 -- | Parses the entirety of a stream producing a TCM result.
@@ -55,7 +72,7 @@ tcmDefinition = do
 
 -- | Shorthand for the expected format of the alphabet lin in a TCM file.
 -- The same as 'alphabetLine inlineSpace'.
-tcmAlphabet :: MonadParsec s m Char => m [String]
+tcmAlphabet :: MonadParsec s m Char => m (NonEmpty String)
 tcmAlphabet = alphabetLine inlineSpace
 
 -- | Shorthand for the expected format of the matrix block in a TCM file
@@ -74,8 +91,8 @@ tcmMatrix   = matrixBlock  inlineSpace
 --
 -- >>> parse (alphabetLine (inlineSpace *> char '|' <* inlineSpace)) "" "2 | 3 | 5 | 7\n"
 -- Right ["2","3","5","7"]
-alphabetLine :: MonadParsec s m Char => m () -> m [String]
-alphabetLine spacing = validateAlphabet =<< (alphabetSymbol <* spacing) `manyTill` endOfLine
+alphabetLine :: MonadParsec s m Char => m () -> m (NonEmpty String)
+alphabetLine spacing = validateAlphabet =<< NE.fromList <$> ((alphabetSymbol <* spacing) `someTill` endOfLine)
   where
     alphabetSymbol = some nonSpace
     nonSpace       = satisfy (not . isSpace)
@@ -134,15 +151,13 @@ validateTCMParseResult (TCMParseResult alphabet matrix)
 --
 --   * Contains no duplicate elements
 --
-validateAlphabet :: MonadParsec s m Char => [String] -> m [String]
+validateAlphabet :: MonadParsec s m Char => NonEmpty String -> m (NonEmpty String)
 validateAlphabet alphabet
-  | emptyAlphabet   = fail   "No alphabet specified"
   | duplicatesExist = fail $ "The following symbols were listed multiple times in the custom alphabet: " ++ show dupes
   | otherwise       = pure alphabet 
   where
-    emptyAlphabet   = null alphabet
     duplicatesExist = not $ null dupes
-    dupes           = duplicates alphabet
+    dupes           = duplicates $ toList alphabet
 
 -- | Validates the information contained in the Matrix constitutes a square matrix.
 --
@@ -157,7 +172,7 @@ validateAlphabet alphabet
 validateMatrix :: MonadParsec s m Char => [[Double]] -> m (Matrix Double)
 validateMatrix matrix
   | null matrix        = fail "No matrix specified"
-  | null matrixErrors  = pure . fromList rows cols $ concat matrix
+  | null matrixErrors  = pure . M.fromList rows cols $ concat matrix
   | otherwise          = fails matrixErrors
   where
     rows               = length matrix

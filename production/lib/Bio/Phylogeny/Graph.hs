@@ -1,5 +1,3 @@
-{-# LANGUAGE MultiParamTypeClasses, TypeSynonymInstances, FlexibleInstances #-}
-{-# OPTIONS_GHC -fno-warn-orphans #-}
 -----------------------------------------------------------------------------
 -- |
 -- Module      :  Bio.Phylogeny.Graph
@@ -13,6 +11,10 @@
 -- Exploritory types for Graph representations
 --
 -----------------------------------------------------------------------------
+
+{-# LANGUAGE MultiParamTypeClasses, TypeSynonymInstances, FlexibleInstances #-}
+{-# OPTIONS_GHC -fno-warn-orphans #-}
+
 module Bio.Phylogeny.Graph where
 
 import Prelude 
@@ -75,10 +77,12 @@ instance Monoid Graph where
   mempty = Graph []
   mappend (Graph g1) (Graph g2) = Graph (g1 <> g2)
 
+-- | Trees are monoids
 instance Monoid Tree where
   mempty = Tree mempty mempty mempty mempty mempty 0
   mappend (Tree a b c d e f) (Tree a' b' c' d' e' f') = Tree (a<>a') (b<>b') (c<>c') (d<>d') (e<>e') (f + f')
 
+-- | Edge Sets are monoids
 instance Monoid EdgeSet where
   mempty = EdgeSet mempty mempty
   mappend (EdgeSet in1 out1) (EdgeSet in2 out2) = EdgeSet (in1 <> in2) (out1 <> out2)
@@ -92,11 +96,13 @@ instance N.Network Tree NodeInfo where
   isRoot n _   = isRoot n
   update t new = t {nodes = nodes t // map (\n -> (code n, n)) new}
 
+-- | This tree can be a binary tree
 instance BinaryTree Tree NodeInfo where
   parent     n t = headMay $ map (\i -> nodes t ! i) (parents n)
   leftChild  n t = map (\i -> nodes t ! i) (children n) !? 0
   rightChild n t = map (\i -> nodes t ! i) (children n) !? 1
 
+-- | Or this tree can be a rose tree
 instance RoseTree Tree NodeInfo where
   parent n t = headMay $ map (\i -> nodes t ! i) (parents n)
 
@@ -113,10 +119,12 @@ instance E.StandardEdge EdgeInfo NodeInfo where
   origin   = origin
   terminal = terminal
 
+-- | This tree knows its edges
 instance ET.EdgedTree Tree NodeInfo EdgeSet where
   edges    n t   = edges t ! code n
   setEdges n t e = t {edges = edges t // [(code n, e)]}
 
+-- | And the tree is aware of its character info
 instance CT.CharacterTree Tree CharInfo where
   characters = characters
   setCharacters t c = t {characters = c} 
