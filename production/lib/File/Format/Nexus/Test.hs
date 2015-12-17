@@ -161,7 +161,7 @@ ignoredSubBlockDef' = testGroup "ignoredSubBlockDef" [endTest, endblockTest, sen
         sendTest = testProperty "Some word that ends with \"end;\"" f
             where
                 f :: NonEmptyList AsciiAlphaNum -> Bool
-                f x = parse (ignoredSubBlockDef ';' <* char ';' <* eof) "" inp == Right res
+                f x = parse (ignoredSubBlockDef ';' <* eof) "" inp == Right res
                     where
                         x'  = getAsciiAlphaNum <$> getNonEmpty x
                         res = x' ++ "end"
@@ -169,14 +169,14 @@ ignoredSubBlockDef' = testGroup "ignoredSubBlockDef" [endTest, endblockTest, sen
         semicolonTest = testProperty "Block ends with \";\"" f
             where
                 f :: NonEmptyList AsciiAlphaNum -> Bool
-                f x = parse (ignoredSubBlockDef ';' <* char ';' <* eof) "" inp == Right x'
+                f x = parse (ignoredSubBlockDef ';' <* eof) "" inp == Right x'
                     where
                         x'  = getAsciiAlphaNum <$> getNonEmpty x
                         inp = x' ++ ";"
         argumentTest = testProperty "Block ends with a designated delimiter" f
             where
                 f :: (NonEmptyList AsciiAlphaNum, AsciiNonAlphaNum) -> Bool
-                f (x,y) = parse (ignoredSubBlockDef arg <* char arg <* eof) "" inp == Right x'
+                f (x,y) = parse (ignoredSubBlockDef arg <* eof) "" inp == Right x'
                     where
                         arg = getAsciiNonAlphaNum y
                         x'  = getAsciiAlphaNum <$> getNonEmpty x
