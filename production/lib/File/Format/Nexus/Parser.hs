@@ -574,12 +574,12 @@ nexusBlock = do
         pure block'
     where
         block =  (CharacterBlock   <$> try (characterBlockDefinition "characters" True))
---             <|> (CharacterBlock   <$> try (characterBlockDefinition "unaligned" False))
---             <|> (CharacterBlock   <$> try (characterBlockDefinition "data" True)) -- data blocks should be aligned
---             <|> (TaxaBlock        <$> try taxaBlockDefinition)
---             <|> (TreesBlock       <$> try treeBlockDefinition)
+             <|> (CharacterBlock   <$> try (characterBlockDefinition "unaligned" False))
+             <|> (CharacterBlock   <$> try (characterBlockDefinition "data" True)) -- data blocks should be aligned
+             <|> (TaxaBlock        <$> try taxaBlockDefinition)
+             <|> (TreesBlock       <$> try treeBlockDefinition)
              <|> (AssumptionsBlock <$> try assumptionsBlockDefinition)
---             <|> (SkippedBlock     <$> try ignoredBlockDefinition)
+             <|> (SkippedBlock     <$> try ignoredBlockDefinition)
 
 characterBlockDefinition :: (Show s, MonadParsec s m Char) => String -> Bool -> m PhyloSequence
 characterBlockDefinition which isAlignedSequence = {-do
@@ -657,10 +657,10 @@ seqSubBlock = {-do
     where
         block =  (Dims      <$> try dimensionsDefinition)
              <|> (Format    <$> try formatDefinition)
---             <|> (Eliminate <$> try (stringDefinition "eliminate"))
+             <|> (Eliminate <$> try (stringDefinition "eliminate"))
              <|> (Matrix    <$> try matrixDefinition)
---             <|> (Taxa      <$> try (stringListDefinition "taxlabels"))
---             <|> (IgnSSB    <$> try (ignoredSubBlockDef ';'))
+             <|> (Taxa      <$> try (stringListDefinition "taxlabels"))
+             <|> (IgnSSB    <$> try (ignoredSubBlockDef ';'))
 
 dimensionsDefinition :: (Show s, MonadParsec s m Char) => m DimensionsFormat
 dimensionsDefinition = {-do 
