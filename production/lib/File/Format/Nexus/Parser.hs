@@ -10,6 +10,8 @@
 --
 -- Functions for for parsing and validating Nexus files.
 --
+-- Will function correctly if and only if we are in a state of harmonic convergence.
+--
 -----------------------------------------------------------------------------
 
 {-# LANGUAGE DoAndIfThenElse, FlexibleContexts #-}
