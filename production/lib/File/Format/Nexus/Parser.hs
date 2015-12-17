@@ -14,9 +14,8 @@
 
 {-# LANGUAGE DoAndIfThenElse, FlexibleContexts #-}
 
--- Current TODO: l. 108
-
 -- TODOs:
+-- • Figure out why PROTPARS-example.nex won't parse
 -- • Step matrices
 -- • check for and eliminate thusly noted characters (in at least two places?)
 -- • Split verification & parsing into two modules, maybe three (one for data types)
@@ -31,9 +30,10 @@ import Data.Char   (isSpace,toLower)
 import Data.Either (lefts)
 import Data.List   (sort)
 import qualified Data.Map.Lazy as M
+import Data.Matrix            (Matrix)
 import Data.Maybe  (isJust, fromJust, catMaybes, maybeToList)
 import qualified Data.Set as S
---import Debug.Trace -- <-- the best module!!! :)
+import Debug.Trace -- <-- the best module!!! :)
 import File.Format.Newick
 import File.Format.TransitionCostMatrix
 import File.Format.TransitionCostMatrix.Parser
@@ -44,13 +44,13 @@ import Text.Megaparsec.Prim   (MonadParsec)
 import Text.Megaparsec.Custom
 import qualified Data.Vector as V
 
-data ParseResult = ParseResult [PhyloSequence] [TaxaSpecification] [TreeBlock] [IgnoredB] deriving (Show)
+data NexusParseResult = NexusParseResult [PhyloSequence] [TaxaSpecification] [TreeBlock] [AssumptionBlock] [IgnBlock] deriving (Show)
 
 data NexusBlock
    = TaxaBlock        TaxaSpecification
    | CharacterBlock   PhyloSequence
    | TreesBlock       TreeBlock
-   | IgnoredBlock     IgnoredB
+   | SkippedBlock     IgnBlock
    | AssumptionsBlock AssumptionBlock
    deriving (Show)
 
@@ -86,7 +86,7 @@ data SeqSubBlock
    -- | Items           ItemType
    | Eliminate       String
    | CharStateLabels [CharStateFormat]
-   | Ignored         String
+   | IgnSSB          String
    | Taxa            [String]
    deriving (Show)
 
@@ -96,7 +96,7 @@ data TaxaSpecification
    , taxaLabels :: [String]
    } deriving (Show)
 
-data IgnoredB = IgnoredB {ignoredName :: String} deriving (Show)
+data IgnBlock = IgnBlock {ignoredName :: String} deriving (Show)
 
 -- | The different subfields of the Format field in the sequence blocks.
 -- As with SeqSubBlock, listed simply so that it can be "looped" over. Will eventually be
@@ -121,22 +121,20 @@ data CharFormatField
 type TreeName       = String
 type SerializedTree = String
 
--- TODO: finish capturing Assumptions: this datatype, one for assumptionField, partioning fn, etc.
--- Then address TODO on ignoredBlockDefinition.
 data AssumptionBlock
    = AssumptionBlock
-   { tcm :: StepMatrix } deriving (Show)
+   { tcm :: [StepMatrix] } deriving (Show)
 
 data AssumptionField
-   = TCMat StepMatrix
-   | IgnAF String
+   = TCMMat StepMatrix
+   | IgnAF  String
 
 data StepMatrix
    = StepMatrix
    { mtxType :: String
    , mtxSize :: Int
-   , mtx     :: TCM
-   }
+   , mtx     :: TCMParseResult
+   } deriving (Show)
 
 data TreeBlock
    = TreeBlock
@@ -191,7 +189,7 @@ data SequenceBlock
    } deriving (Show)
 
 parseNexusStream :: String -> Either ParseError Nexus
-parseNexusStream = parse (validateParseResult =<< parseNexus <* eof) "PCG encountered a Nexus file parsing error it could not overcome:"
+parseNexusStream = parse (validateNexusParseResult =<< parseNexus <* eof) "PCG encountered a Nexus file parsing error it could not overcome:"
 
 -- TODO: replace equate chars, ignore case, check alignment and length of aligned blocks, check alphabet, think about 12 and 20, below, make each sequence a vector, not a list
 
@@ -233,8 +231,8 @@ parseNexusStream = parse (validateParseResult =<< parseNexus <* eof) "PCG encoun
 --     ---for aligned, should be caught by 16
 --     ---for unaligned, caught by combo of 12 & 22
 -- 22. In unaligned, interleaved block, a taxon is repeated                    3                dep              done
-validateParseResult :: (Show s, MonadParsec s m Char) => ParseResult -> m Nexus
-validateParseResult (ParseResult sequences taxas _treeSet _ignored)
+validateNexusParseResult :: (Show s, MonadParsec s m Char) => NexusParseResult -> m Nexus
+validateNexusParseResult (NexusParseResult sequences taxas _treeSet _assumptions _ignored)
   | not (null independentErrors) = fails independentErrors
   | not (null dependentErrors)   = fails dependentErrors
   -- TODO: first arg to Nexus was commented out before first push to Grace
@@ -532,33 +530,36 @@ getTaxaFromSeq pseq
     where
         keys = M.keys $ getTaxaFromMatrix pseq
 
-parseNexus :: (Show s, MonadParsec s m Char) => m ParseResult
+parseNexus :: (Show s, MonadParsec s m Char) => m NexusParseResult
 parseNexus = nexusFileDefinition
 
-nexusFileDefinition :: (Show s, MonadParsec s m Char) => m ParseResult
+nexusFileDefinition :: (Show s, MonadParsec s m Char) => m NexusParseResult
 nexusFileDefinition = {-do
     x <- getInput
     trace ("nexusFileDefinition"  ++ show x) $ -}do
-    _         <- string' "#NEXUS"
-    _         <- space
-    _         <- optional $ many $ commentDefinition <* space
-    (x,y,z,a) <- partitionNexusBlocks <$> many nexusBlock
-    pure $ ParseResult x y z a
+    _           <- string' "#NEXUS"
+    _           <- space
+    _           <- optional $ many $ commentDefinition <* space
+    (v,w,x,y,z) <- partitionNexusBlocks <$> many nexusBlock
+    pure $ NexusParseResult v w x y z
 
 -- TODO: test this 
 -- why is PROTPARS-example.nex failing? It works with end;, but not with endblock;
-ignoredBlockDefinition :: (Show s, MonadParsec s m Char) => m IgnoredB
+ignoredBlockDefinition :: (Show s, MonadParsec s m Char) => m IgnBlock
 ignoredBlockDefinition = {-do
     x <- getInput
-    trace ("ignoredBlockDefinition"  ++ show x) $ -} do
+    trace ("ignoredBlockDefinition"  ++ show x) $ -}do
     line  <- sourceLine . statePos <$> getParserState
     title <- many letterChar
     _     <- symbol $ char ';'
-    _     <- somethingTill $ symbol blockend -- $ symbol $ (string' "END;") <|> (string' "endblock;")
-    pure $ IgnoredB $ title ++ " at line " ++ show line
+    _     <- somethingTill $ symbol blockend
+    pure $ IgnBlock $ title ++ " at line " ++ show line
 
+-- | blockend is a parser than matched the end of a Nexus block.
+-- this should be "end;", but "endblock;" is also accepted, as it was used -- at some point by someone
+-- There is a test in the test suite.
 blockend :: (Show s, MonadParsec s m Char) => m String
-blockend = string' "endblock;" <|> string' "end;"
+blockend = lookAhead (try (string' "end;")) <|> lookAhead (try (string' "endblock;"))
 
 nexusBlock :: (Show s, MonadParsec s m Char) => m NexusBlock
 nexusBlock = do
@@ -572,8 +573,8 @@ nexusBlock = do
              <|> (CharacterBlock   <$> try (characterBlockDefinition "data" True)) -- data blocks should be aligned
              <|> (TaxaBlock        <$> try taxaBlockDefinition)
              <|> (TreesBlock       <$> try treeBlockDefinition)
-             <|> (AssumptionsBlock <$> try assumptionBlockDefinition)
-             <|> (IgnoredBlock     <$> try ignoredBlockDefinition)
+             <|> (AssumptionsBlock <$> try assumptionsBlockDefinition)
+             <|> (SkippedBlock     <$> try ignoredBlockDefinition)
 
 characterBlockDefinition :: (Show s, MonadParsec s m Char) => String -> Bool -> m PhyloSequence
 characterBlockDefinition which isAlignedSequence = {-do
@@ -599,30 +600,42 @@ taxaSubBlock = {-do
         block' <- symbol block
         pure block'
     where
-        block =  (Dims <$> try dimensionsDefinition)
-             <|> (Taxa <$> try (stringListDefinition "taxlabels"))
-             <|> (Ignored <$> try (ignoredSubBlockDef ';'))
+        block =  (Dims   <$> try dimensionsDefinition)
+             <|> (Taxa   <$> try (stringListDefinition "taxlabels"))
+             <|> (IgnSSB <$> try (ignoredSubBlockDef ';'))
 
-assumptionBlockDefinition :: (Show s, MonadParsec s m Char) => m AssumptionBlock
-assumptionBlockDefinition = {-do
+-- | assumptionsBlockDefinition 
+assumptionsBlockDefinition :: (Show s, MonadParsec s m Char) => m AssumptionBlock
+assumptionsBlockDefinition = {-do
     x <- getInput
     trace ("assumptionsBlockDefinition"  ++ show x) $ -}do
         _   <- symbol (string' "assumptions;")
-        mtx <- partitionAssumptionsBlock <$> many assumptionFieldDef
-        pure $ AssumptionBlock mtx
+        goodStuff <- partitionAssumptionBlock <$> many assumptionFieldDef
+        pure $ AssumptionBlock goodStuff
 
 assumptionFieldDef :: (Show s, MonadParsec s m Char) => m AssumptionField
 assumptionFieldDef = {-do
     x <- getInput
-    trace ("assumptionsBlockDefinition"  ++ show x) $ -}
-        -- If we end up getting more than the matrix from assumptions, move this to a separate fn
-    do 
-        _ <- symbol $ string' "usertype"
-        name <- symbol $ somethingTill spaceChar
-        cardinality <- symbol $ (stringDefinition "(stepmatrix)" <|> stringDefinition "(realmatrix)")
-        alphabet <- alphabetLine whitespaceNoNewlines
-        matrix <- matrixBlock whitespaceNoNewlines
-        pure $ StepMatrix name cardinality $ TCM alphabet transitionCosts
+    trace ("assumptionFieldDef"  ++ show x) $ -}symbol block
+    where block =  (TCMMat <$> try tcmMatrixDefinition)
+               <|> (IgnAF  <$> try (ignoredSubBlockDef ';'))
+
+-- | tcmMatrixDefinition expects a string of format 
+-- USERTYPE myMatrix (STEPMATRIX) =n
+-- s s s s
+-- k k k k
+-- etc.
+-- and a StepMatrix, which is some metadata: the matrix name and the dimension,
+-- as well as a TCMParseResult
+tcmMatrixDefinition :: (Show s, MonadParsec s m Char) => m StepMatrix
+tcmMatrixDefinition = do 
+        _            <- symbol $ string' "usertype"
+        name         <- symbol $ somethingTill spaceChar
+        _            <- symbol $ somethingTill $ char '='
+        cardinality  <- symbol $ integer -- (stringDefinition "(stepmatrix)" <|> stringDefinition "(realmatrix)")
+        alphabet     <- alphabetLine whitespaceNoNewlines
+        assumpMatrix <- matrixBlock whitespaceNoNewlines
+        pure $ StepMatrix name (fromEnum cardinality) (TCMParseResult alphabet assumpMatrix)
 
 treeBlockDefinition :: (Show s, MonadParsec s m Char) => m TreeBlock
 treeBlockDefinition = {-do
@@ -642,7 +655,7 @@ seqSubBlock = {-do
              <|> (Eliminate <$> try (stringDefinition "eliminate"))
              <|> (Matrix    <$> try matrixDefinition)
              <|> (Taxa      <$> try (stringListDefinition "taxlabels"))
-             <|> (Ignored   <$> try (ignoredSubBlockDef ';'))
+             <|> (IgnSSB    <$> try (ignoredSubBlockDef ';'))
 
 dimensionsDefinition :: (Show s, MonadParsec s m Char) => m DimensionsFormat
 dimensionsDefinition = {-do 
@@ -802,9 +815,9 @@ ignoredSubBlockDef endChar = {-do
     x <- getInput
     trace (("ignoredSubBlockDef endChar: " ++ [endChar])  ++ show x) $ -}do
     _     <- notFollowedBy (space *> blockend) <?> "something other than end of block"
-    stuff <- somethingTill (symbol (char ';') <|> symbol (char' endChar))
+    stuff <- somethingTill $ symbol (char ';' <|> char' endChar)
     _     <- anyChar
-    pure stuff
+    pure $ trace stuff stuff
 
 -- -------------------------------------------------------------------------------------------------
 -- | Partitioning functions, which take a list of some type and produce a tuple.
@@ -814,11 +827,11 @@ ignoredSubBlockDef endChar = {-do
 -- I'm wondering if there's isn't a more efficient way to do this.
 -- Also, can these be reduced to a single function, since they're all doing the same thing?
 
-partitionAssumptionsBlock :: [AssumptionField] -> [TCM]
-partitionAssumptionsBlock = foldr f ([])
+partitionAssumptionBlock :: [AssumptionField] -> [StepMatrix]
+partitionAssumptionBlock = foldr f ([])
     where
-        f (TCMat n) vs = n:vs
-        f (IgnAF n) ws = ws
+        f (TCMMat n) vs = n:vs
+        f (IgnAF  n) ws = ws
 
 partitionSequenceBlock :: [SeqSubBlock] -> ([[String]],[CharacterFormat],[DimensionsFormat],[String],[[String]])
 partitionSequenceBlock = foldr f ([],[],[],[],[])
@@ -839,13 +852,14 @@ partitionTaxaBlock = foldr f (0,[])
         f (Taxa n) (y,_) = (  y, n)
         f _           ws = ws
 
-partitionNexusBlocks :: [NexusBlock] -> ([PhyloSequence], [TaxaSpecification], [TreeBlock], [IgnoredB])
-partitionNexusBlocks = foldr f ([],[],[],[])
+partitionNexusBlocks :: [NexusBlock] -> ([PhyloSequence], [TaxaSpecification], [TreeBlock], [AssumptionBlock], [IgnBlock])
+partitionNexusBlocks = foldr f ([],[],[],[],[])
   where
-    f (CharacterBlock n) (xs,ys,zs,as) = (n:xs,   ys,   zs,   as)
-    f (TaxaBlock n)      (xs,ys,zs,as) = (  xs, n:ys,   zs,   as)
-    f (TreesBlock n)     (xs,ys,zs,as) = (  xs,   ys, n:zs,   as)
-    f (IgnoredBlock n)   (xs,ys,zs,as) = (  xs,   ys,   zs, n:as)
+    f (CharacterBlock n)   (xs,ys,zs,as,bs) = (n:xs,   ys,   zs,   as,   bs)
+    f (TaxaBlock n)        (xs,ys,zs,as,bs) = (  xs, n:ys,   zs,   as,   bs)
+    f (TreesBlock n)       (xs,ys,zs,as,bs) = (  xs,   ys, n:zs,   as,   bs)
+    f (AssumptionsBlock n) (xs,ys,zs,as,bs) = (  xs,   ys,   zs, n:as,   bs)
+    f (SkippedBlock n)     (xs,ys,zs,as,bs) = (  xs,   ys,   zs,   as, n:bs)
     --f _                             ws = ws
 
 partitionCharFormat :: [CharFormatField] -> (String, Either String [String], Either String [String], String, String, String, String, Bool, Bool, Bool, Bool, Bool)
@@ -875,8 +889,9 @@ partitionTreeBlock = foldr f ([],[])
 trimmed :: (Show s, MonadParsec s m Char) => m a -> m a
 trimmed x = whitespace *> x <* whitespace
 
-symbol :: (Show s, MonadParsec s m Char) => m a -> m a
-symbol x = x <* whitespace
+-- This now imported from TCM
+--symbol :: (Show s, MonadParsec s m Char) => m a -> m a
+--symbol x = x <* whitespace
 
 -- | whitespace is any combination (zero or more) of whitespace chars (" \t\n\r\v\f") and comments, which in Nexus files
 -- are delimited by square brackets.

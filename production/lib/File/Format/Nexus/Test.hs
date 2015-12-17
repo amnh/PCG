@@ -20,7 +20,8 @@ import Debug.Trace (trace)
 
 testSuite :: TestTree
 testSuite = testGroup "Nexus Format"
-  [ testGroup "Nexus Combinators" [ booleanDefinition'
+  [ testGroup "Nexus Combinators" [ blockend'
+                                  , booleanDefinition'
                                   , charFormatFieldDef'
                                   , deInterleave'
                                   , getTaxonAndSeqFromMatrixRow'
@@ -30,9 +31,20 @@ testSuite = testGroup "Nexus Format"
                                   , quotedStringDefinition'
                                   , stringDefinition'
                                   , stringListDefinition'
+                                  -- , tcmMatrixDefinition'
                                   , treeDefinition'
                                   ] 
   ]
+
+blockend' :: TestTree
+blockend' = testGroup "blockend" [end, endWithSemi, endblock, endblockWithSemi, other]
+    where
+        end = testCase "END should fail" $ parseFailure blockend "end" 
+        endWithSemi = testCase "END; should pass" $ parseSuccess blockend "end;" 
+        endblock = testCase "ENDBLOCK should fail" $ parseFailure blockend "endblock"
+        endblockWithSemi = testCase "ENDBLOCK; should pass" $ parseSuccess blockend "endblock;"
+        -- TODO: make this actually arbitrary
+        other = testCase "arbitrary other text" $ parseFailure blockend "other;"
 
 booleanDefinition' :: TestTree
 booleanDefinition' = testGroup "booleanDefinition" [generalProperty]
@@ -135,13 +147,17 @@ getTaxonAndSeqFromMatrixRow' = testGroup "getTaxonAndSeqFromMatrixRow" [space,sp
                         combo = tax ++ sep ++ seq
 
 ignoredSubBlockDef' :: TestTree
-ignoredSubBlockDef' = testGroup "ignoredSubBlockDef" [endTest, sendTest, semicolonTest, argumentTest, emptyStringTest]
+ignoredSubBlockDef' = testGroup "ignoredSubBlockDef" [endTest, endblockTest, sendTest, semicolonTest, argumentTest, emptyStringTest]
     where
 --        justDelimiter = tesCase
         endTest = testProperty "END;" f
             where
                 f :: Bool
                 f = isLeft $ parse (ignoredSubBlockDef ';' <* eof) "" "end;"
+        endblockTest = testProperty "ENDBLOCK;" f
+            where
+                f :: Bool
+                f = isLeft $ parse (ignoredSubBlockDef ';' <* eof) "" "endblock;"
         sendTest = testProperty "Some word that ends with \"end;\"" f
             where
                 f :: NonEmptyList AsciiAlphaNum -> Bool
@@ -282,6 +298,9 @@ stringListDefinition' = testGroup "stringListDefinition" [test1, test2, rejectsK
                 key = getAsciiAlphaNum <$> getNonEmpty x
                 val = getNexusKeyword y
                 str = key ++ " " ++ val ++ ";"
+
+tcmMatrixDefinition' :: TestTree
+tcmMatrixDefinition' = undefined
 
 treeDefinition' :: TestTree
 treeDefinition' = testGroup "treeDefinition" [failsOnEmptyTree, succeedsOnSimple, withBranchLengths, withComments, arbitraryName, rootedAnnotation, unrootedAnnotation]
