@@ -14,7 +14,7 @@ import Test.Custom                (parseEquals,parseFailure,parseSuccess)
 import Test.Tasty                 (TestTree,testGroup)
 import Test.Tasty.HUnit
 import Test.Tasty.QuickCheck
-import Text.Megaparsec            (char,eof,parse)
+import Text.Megaparsec            (char,eof,parse,string)
 
 import Debug.Trace (trace)
 
@@ -37,13 +37,22 @@ testSuite = testGroup "Nexus Format"
   ]
 
 blockend' :: TestTree
-blockend' = testGroup "blockend" [end, endWithSemi, endblock, endblockWithSemi, other]
+blockend' = testGroup "blockend: Input should never be consumed" [end, endWithSemi, endblock, endblockWithSemi, other]
     where
-        end = testCase "END should fail" $ parseFailure blockend "end" 
-        endWithSemi = testCase "END; should pass" $ parseSuccess blockend "end;" 
-        endblock = testCase "ENDBLOCK should fail" $ parseFailure blockend "endblock"
+        end = testProperty "END should fail" f
+            where 
+                f :: Bool
+                f = isLeft $ parse (blockend <* string "end") "" "end" 
+        endWithSemi = testProperty "END; should pass" f
+            where 
+                f :: Bool
+                f = parse (blockend <* string "end;") "" "end;" == Right "end;"
+        endblock = testProperty "ENDBLOCK should fail" f
+            where 
+                f :: Bool
+                f = isLeft $ parse (blockend <* string "endblock") "" "endblock"
         endblockWithSemi = testCase "ENDBLOCK; should pass" $ parseSuccess blockend "endblock;"
-        -- TODO: make this actually arbitrary
+        -- TODO: make this /actually/ arbitrary
         other = testCase "arbitrary other text" $ parseFailure blockend "other;"
 
 booleanDefinition' :: TestTree

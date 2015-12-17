@@ -557,14 +557,14 @@ ignoredBlockDefinition = {-do
     line  <- sourceLine . statePos <$> getParserState
     title <- many letterChar
     _     <- symbol $ char ';'
-    _     <- somethingTill $ symbol blockend
+    _     <- somethingTill $ lookAhead $ symbol blockend
     pure $ IgnBlock $ title ++ " at line " ++ show line
 
 -- | blockend is a parser than matched the end of a Nexus block.
 -- this should be "end;", but "endblock;" is also accepted, as it was used -- at some point by someone
 -- There is a test in the test suite.
 blockend :: (Show s, MonadParsec s m Char) => m String
-blockend = lookAhead (try (string' "end;")) <|> lookAhead (try (string' "endblock;"))
+blockend = try (string' "end;") <|> try (string' "endblock;")
 
 nexusBlock :: (Show s, MonadParsec s m Char) => m NexusBlock
 nexusBlock = do
@@ -574,17 +574,17 @@ nexusBlock = do
         pure block'
     where
         block =  (CharacterBlock   <$> try (characterBlockDefinition "characters" True))
-             <|> (CharacterBlock   <$> try (characterBlockDefinition "unaligned" False))
-             <|> (CharacterBlock   <$> try (characterBlockDefinition "data" True)) -- data blocks should be aligned
-             <|> (TaxaBlock        <$> try taxaBlockDefinition)
-             <|> (TreesBlock       <$> try treeBlockDefinition)
+--             <|> (CharacterBlock   <$> try (characterBlockDefinition "unaligned" False))
+--             <|> (CharacterBlock   <$> try (characterBlockDefinition "data" True)) -- data blocks should be aligned
+--             <|> (TaxaBlock        <$> try taxaBlockDefinition)
+--             <|> (TreesBlock       <$> try treeBlockDefinition)
              <|> (AssumptionsBlock <$> try assumptionsBlockDefinition)
-             <|> (SkippedBlock     <$> try ignoredBlockDefinition)
+--             <|> (SkippedBlock     <$> try ignoredBlockDefinition)
 
 characterBlockDefinition :: (Show s, MonadParsec s m Char) => String -> Bool -> m PhyloSequence
 characterBlockDefinition which isAlignedSequence = {-do
     x <- getInput
-    trace ("characterBlockDefinition"  ++ show x) $ -}do
+    trace ("characterBlockDefinition "  ++ show x) $ -}do
     _           <- symbol (string' $ which ++ ";")
     (v,w,x,y,z) <- partitionSequenceBlock <$> some seqSubBlock
     pure $ PhyloSequence isAlignedSequence v w x y z which
@@ -657,10 +657,10 @@ seqSubBlock = {-do
     where
         block =  (Dims      <$> try dimensionsDefinition)
              <|> (Format    <$> try formatDefinition)
-             <|> (Eliminate <$> try (stringDefinition "eliminate"))
+--             <|> (Eliminate <$> try (stringDefinition "eliminate"))
              <|> (Matrix    <$> try matrixDefinition)
-             <|> (Taxa      <$> try (stringListDefinition "taxlabels"))
-             <|> (IgnSSB    <$> try (ignoredSubBlockDef ';'))
+--             <|> (Taxa      <$> try (stringListDefinition "taxlabels"))
+--             <|> (IgnSSB    <$> try (ignoredSubBlockDef ';'))
 
 dimensionsDefinition :: (Show s, MonadParsec s m Char) => m DimensionsFormat
 dimensionsDefinition = {-do 
@@ -686,7 +686,9 @@ dimensionsDefinition = {-do
 -- charFormatFieldDef, and end with a semi-colon.
 -- TODO: An incomplete test exists in the test suite.
 formatDefinition :: (Show s, MonadParsec s m Char) => m CharacterFormat
-formatDefinition = do
+formatDefinition = {-do
+        x <- getInput
+        trace ("\n\nmany formatDefinition "  ++ show x) $ -}do
         _                         <- symbol (string' "format")
         (o,p,q,r,s,t,u,v,w,x,y,z) <- partitionCharFormat <$> charFormatFieldDef
         _                         <- symbol $ char ';'
@@ -803,11 +805,11 @@ treeDefinition = {-do
 matrixDefinition :: (Show s, MonadParsec s m Char) => m [String]
 matrixDefinition = {-do
     x <- getInput
-    trace ("matrixDefinition"  ++ show x) $ -}do
+    trace ("\n\nmatrixDefinition "  ++ show x) $ -}do
     _         <- symbol $ string' "matrix"
     goodStuff <- some   $ somethingTill c <* c
     _         <- symbol $ char ';'
-    pure $ filter (/= "") goodStuff
+    pure $ trace "Finished ignoredSubBlockDef\n" $ filter (/= "") goodStuff
     where 
         c = whitespaceNoNewlines *> (char ';' <|> endOfLine) <* whitespace
 
@@ -818,11 +820,11 @@ matrixDefinition = {-do
 ignoredSubBlockDef :: (Show s, MonadParsec s m Char) => Char -> m String
 ignoredSubBlockDef endChar = {-do
     x <- getInput
-    trace (("ignoredSubBlockDef endChar: " ++ [endChar])  ++ show x) $ -}do
+    trace (("\n\nignoredSubBlockDef endChar: " ++ [endChar])  ++ show x) $ -}do
     _     <- notFollowedBy (space *> blockend) <?> "something other than end of block"
     stuff <- somethingTill $ symbol (char ';' <|> char' endChar)
     _     <- anyChar
-    pure $ trace stuff stuff
+    pure $ stuff
 
 -- -------------------------------------------------------------------------------------------------
 -- | Partitioning functions, which take a list of some type and produce a tuple.
