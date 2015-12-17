@@ -32,12 +32,11 @@ import Data.Char   (isSpace,toLower)
 import Data.Either (lefts)
 import Data.List   (sort)
 import qualified Data.Map.Lazy as M
-import Data.Matrix            (Matrix)
+--import Data.Matrix            (Matrix)
 import Data.Maybe  (isJust, fromJust, catMaybes, maybeToList)
 import qualified Data.Set as S
 import Debug.Trace -- <-- the best module!!! :)
 import File.Format.Newick
-import File.Format.TransitionCostMatrix
 import File.Format.TransitionCostMatrix.Parser
 import Safe
 import Text.Megaparsec hiding (label)
@@ -134,9 +133,9 @@ data AssumptionField
 
 data StepMatrix
    = StepMatrix
-   { mtxType :: String
-   , mtxSize :: Int
-   , mtx     :: TCMParseResult
+   { matrixType :: String
+   , matrixSize :: Int
+   , matrixData :: TCM
    } deriving (Show)
 
 data TreeBlock
@@ -566,7 +565,7 @@ ignoredBlockDefinition = {-do
 -- this should be "end;", but "endblock;" is also accepted, as it was used -- at some point by someone
 -- There is a test in the test suite.
 blockend :: (Show s, MonadParsec s m Char) => m String
-blockend = try (string' "end;") <|> try (string' "endblock;")
+blockend = string' "end" <* optional (try $ string' "block") <* char ';'
 
 nexusBlock :: (Show s, MonadParsec s m Char) => m NexusBlock
 nexusBlock = do
@@ -637,12 +636,12 @@ assumptionFieldDef = {-do
 tcmMatrixDefinition :: (Show s, MonadParsec s m Char) => m StepMatrix
 tcmMatrixDefinition = do 
         _            <- symbol $ string' "usertype"
-        name         <- symbol $ somethingTill spaceChar
+        matrixName   <- symbol $ somethingTill spaceChar
         _            <- symbol $ somethingTill $ char '='
         cardinality  <- symbol $ integer -- (stringDefinition "(stepmatrix)" <|> stringDefinition "(realmatrix)")
-        alphabet     <- alphabetLine whitespaceNoNewlines
+        mtxAlphabet  <- alphabetLine whitespaceNoNewlines
         assumpMatrix <- matrixBlock whitespaceNoNewlines
-        pure $ StepMatrix name (fromEnum cardinality) (TCMParseResult alphabet assumpMatrix)
+        pure $ StepMatrix matrixName (fromEnum cardinality) (TCM mtxAlphabet assumpMatrix)
 
 treeBlockDefinition :: (Show s, MonadParsec s m Char) => m TreeBlock
 treeBlockDefinition = {-do
@@ -824,9 +823,11 @@ ignoredSubBlockDef endChar = {-do
     x <- getInput
     trace (("\n\nignoredSubBlockDef endChar: " ++ [endChar])  ++ show x) $ -}do
     _     <- notFollowedBy (space *> blockend) <?> "something other than end of block"
-    stuff <- somethingTill $ symbol (char ';' <|> char' endChar)
-    _     <- anyChar
-    pure $ stuff
+    stuff <- somethingTill stopMark
+    _     <- stopMark
+    pure stuff
+  where
+    stopMark = symbol $ char ';' <|> char' endChar
 
 -- -------------------------------------------------------------------------------------------------
 -- | Partitioning functions, which take a list of some type and produce a tuple.
@@ -840,7 +841,7 @@ partitionAssumptionBlock :: [AssumptionField] -> [StepMatrix]
 partitionAssumptionBlock = foldr f ([])
     where
         f (TCMMat n) vs = n:vs
-        f (IgnAF  n) ws = ws
+        f (IgnAF  _) ws = ws
 
 partitionSequenceBlock :: [SeqSubBlock] -> ([[String]],[CharacterFormat],[DimensionsFormat],[String],[[String]])
 partitionSequenceBlock = foldr f ([],[],[],[],[])
@@ -864,12 +865,12 @@ partitionTaxaBlock = foldr f (0,[])
 partitionNexusBlocks :: [NexusBlock] -> ([PhyloSequence], [TaxaSpecification], [TreeBlock], [AssumptionBlock], [IgnBlock])
 partitionNexusBlocks = foldr f ([],[],[],[],[])
   where
-    f (CharacterBlock n)   (xs,ys,zs,as,bs) = (n:xs,   ys,   zs,   as,   bs)
-    f (TaxaBlock n)        (xs,ys,zs,as,bs) = (  xs, n:ys,   zs,   as,   bs)
-    f (TreesBlock n)       (xs,ys,zs,as,bs) = (  xs,   ys, n:zs,   as,   bs)
+    f (CharacterBlock   n) (xs,ys,zs,as,bs) = (n:xs,   ys,   zs,   as,   bs)
+    f (TaxaBlock        n) (xs,ys,zs,as,bs) = (  xs, n:ys,   zs,   as,   bs)
+    f (TreesBlock       n) (xs,ys,zs,as,bs) = (  xs,   ys, n:zs,   as,   bs)
     f (AssumptionsBlock n) (xs,ys,zs,as,bs) = (  xs,   ys,   zs, n:as,   bs)
-    f (SkippedBlock n)     (xs,ys,zs,as,bs) = (  xs,   ys,   zs,   as, n:bs)
-    --f _                             ws = ws
+    f (SkippedBlock     n) (xs,ys,zs,as,bs) = (  xs,   ys,   zs,   as, n:bs)
+    --f _                                  ws = ws
 
 partitionCharFormat :: [CharFormatField] -> (String, Either String [String], Either String [String], String, String, String, String, Bool, Bool, Bool, Bool, Bool)
 partitionCharFormat = foldr f ("", Right [""], Right [""], "", "", "", "", False, False, False, False, False)

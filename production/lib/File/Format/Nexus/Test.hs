@@ -39,18 +39,9 @@ testSuite = testGroup "Nexus Format"
 blockend' :: TestTree
 blockend' = testGroup "blockend: Input should never be consumed" [end, endWithSemi, endblock, endblockWithSemi, other]
     where
-        end = testProperty "END should fail" f
-            where 
-                f :: Bool
-                f = isLeft $ parse (blockend <* string "end") "" "end" 
-        endWithSemi = testProperty "END; should pass" f
-            where 
-                f :: Bool
-                f = parse (blockend <* string "end;") "" "end;" == Right "end;"
-        endblock = testProperty "ENDBLOCK should fail" f
-            where 
-                f :: Bool
-                f = isLeft $ parse (blockend <* string "endblock") "" "endblock"
+        end              = testCase "END should fail"       $ parseFailure (blockend <* string "end" )     "end" 
+        endblock         = testCase "ENDBLOCK should fail"  $ parseFailure (blockend <* string "endblock") "endblock"
+        endWithSemi      = testCase "END; should pass"      $ parseSuccess blockend "end;"
         endblockWithSemi = testCase "ENDBLOCK; should pass" $ parseSuccess blockend "endblock;"
         -- TODO: make this /actually/ arbitrary
         other = testCase "arbitrary other text" $ parseFailure blockend "other;"
