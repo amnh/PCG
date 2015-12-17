@@ -17,14 +17,12 @@
 {-# LANGUAGE DoAndIfThenElse, FlexibleContexts #-}
 
 -- TODOs:
--- • Figure out why PROTPARS-example.nex won't parse
 -- • Step matrices
 -- • check for and eliminate thusly noted characters (in at least two places?)
 -- • Split verification & parsing into two modules, maybe three (one for data types)
 -- • update output datatypes: nest vectors, add character metadata
 -- • Verify character metadata, especially alphabets
 -- • Reconceive and reorder current validations
--- • Fix three broken test cases
 
 module File.Format.Nexus.Parser where
 
@@ -35,9 +33,9 @@ import qualified Data.Map.Lazy as M
 --import Data.Matrix            (Matrix)
 import Data.Maybe  (isJust, fromJust, catMaybes, maybeToList)
 import qualified Data.Set as S
---import Debug.Trace -- <-- the best module!!! :)
+import Debug.Trace -- <-- the best module!!! :)
 import File.Format.Newick
-import File.Format.TransitionCostMatrix.Parser (TCM(..),alphabetLine,matrixBlock)
+import File.Format.TransitionCostMatrix.Parser
 import Safe
 import Text.Megaparsec hiding (label)
 import Text.Megaparsec.Lexer  (integer)
@@ -184,6 +182,7 @@ data Nexus
    { {- taxa :: [String]
    ,-} characters :: M.Map String (V.Vector [String])
    --, characters :: SequenceBlock
+   --, 
    } deriving (Read,Show)
 
 data SequenceBlock
@@ -668,8 +667,8 @@ dimensionsDefinition = {-do
         x         <- getInput 
         trace ("**dimensionsDefinition:  " ++ show x) $ -}do
         _         <- symbol (string' "dimensions")
-        newTaxa'  <- optional $ try (symbol (string' "newTaxa"))
-        _         <- optional $ try (symbol (string' "nTax"))
+        newTaxa'  <- optional (try (symbol (string' "newTaxa")))
+        _         <- optional (try (symbol (string' "nTax")))
         _         <- optional $ try (symbol (char '='))
         numTaxa'  <- optional $ try (symbol integer)
         _         <- optional $ symbol (string' "nchar")
@@ -810,7 +809,7 @@ matrixDefinition = {-do
     _         <- symbol $ string' "matrix"
     goodStuff <- some   $ somethingTill c <* c
     _         <- symbol $ char ';'
-    pure {- $ trace "Finished ignoredSubBlockDef\n"-} $ filter (/= "") goodStuff
+    pure $ trace "Finished ignoredSubBlockDef\n" $ filter (/= "") goodStuff
     where 
         c = whitespaceNoNewlines *> (char ';' <|> endOfLine) <* whitespace
 
@@ -929,9 +928,6 @@ rstrip = reverse . lstrip . reverse
 
 strip :: String -> String
 strip = lstrip . rstrip
-
-symbol :: (Show s, MonadParsec s m Char) => m a -> m a
-symbol x = x <* whitespace
 
 nexusKeywords :: S.Set String
 nexusKeywords = S.fromList ["ancstates", "assumptions", "begin", "changeset", "characters", "charlabels", "charpartition", "charset", "charstatelabels", "codeorder", "codeset", "codons", "data", "datatype", "deftype", "diagonal", "dimensions", "distances", "eliminate", "end", "endblock", "equate", "exset", "extensions", "format", "gap", "interleave", "items", "labels", "matchchar", "matrix", "missing", "nchar", "newtaxa", "nodiagonal", "nolabels", "notes", "notokens", "ntax", "options", "picture", "respectcase", "sets", "statelabels", "statesformat", "symbols", "taxa", "taxlabels", "taxpartition", "taxset", "text", "tokens", "translate", "transpose", "tree", "treepartition", "trees", "treeset", "triangle", "typeset", "unaligned", "usertype", "wtset"]
