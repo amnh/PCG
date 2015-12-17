@@ -24,7 +24,6 @@
 -- • update output datatypes: nest vectors, add character metadata
 -- • Verify character metadata, especially alphabets
 -- • Reconceive and reorder current validations
--- • Fix three broken test cases
 
 module File.Format.Nexus.Parser where
 
