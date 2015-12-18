@@ -114,7 +114,7 @@ alphabetLine spacing = validateAlphabet =<< NE.fromList <$> ((alphabetSymbol <* 
 matrixBlock :: MonadParsec s m Char => m () -> m (Matrix Double)
 matrixBlock spacing = validateMatrix =<< many (symbol matrixRow)
   where
-    matrixRow   = (matrixEntry <* spacing) `manyTill` endOfLine
+    matrixRow   = (spacing *> matrixEntry <* spacing) `manyTill` endOfLine
     matrixEntry = double
 
 -- | Validates that the dimensions of the Matrix are @(n+1) x (n+1)@

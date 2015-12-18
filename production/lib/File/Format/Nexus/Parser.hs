@@ -35,7 +35,7 @@ import Data.Maybe  (isJust, fromJust, catMaybes, maybeToList)
 import qualified Data.Set as S
 import Debug.Trace -- <-- the best module!!! :)
 import File.Format.Newick
-import File.Format.TransitionCostMatrix.Parser
+import File.Format.TransitionCostMatrix.Parser hiding (symbol)
 import Safe
 import Text.Megaparsec hiding (label)
 import Text.Megaparsec.Lexer  (integer)
@@ -181,9 +181,8 @@ data Nexus
    -- TODO: taxa was commented out before first push to Grace
    { {- taxa :: [String]
    ,-} characters :: M.Map String (V.Vector [String])
-   --, characters :: SequenceBlock
-   --, 
-   } deriving (Read,Show)
+   , stepMatrices :: AssumptionBlock
+   } deriving (Show)
 
 data SequenceBlock
    = SequenceBlock
@@ -237,18 +236,19 @@ parseNexusStream = parse (validateNexusParseResult =<< parseNexus <* eof) "PCG e
 --     ---for unaligned, caught by combo of 12 & 22
 -- 22. In unaligned, interleaved block, a taxon is repeated                    3                dep              done
 validateNexusParseResult :: (Show s, MonadParsec s m Char) => NexusParseResult -> m Nexus
-validateNexusParseResult (NexusParseResult sequences taxas _treeSet _assumptions _ignored)
+validateNexusParseResult (NexusParseResult sequences taxas _treeSet assumptions _ignored)
   | not (null independentErrors) = fails independentErrors
   | not (null dependentErrors)   = fails dependentErrors
   -- TODO: first arg to Nexus was commented out before first push to Grace
   -- TODO: unalignedTaxaSeqMap was commented out before first push to Grace.
   -- When it's added back, downstream (i.e. Nexus) fns will need to be modified
   -- to expect a *list* of 
-  | otherwise                  = pure $ Nexus {-taxaLst-} (alignedTaxaSeqMap {- : unalignedTaxaSeqMap -})
+  | otherwise                  = pure $ Nexus {-taxaLst-} alignedTaxaSeqMap costMatrix {- : unalignedTaxaSeqMap -}
   where
         alignedTaxaSeqMap = getSeqFromMatrix (getBlock "aligned" sequences) taxaLst
         --TODO: dependentErrors & independentErrors becomes :: String error, String warning => [Maybe (Either error warning)]
         -- then partitionEithers . catMaybes, etc., etc.
+        costMatrix = head assumptions
         dependentErrors = catMaybes $ incorrectTaxaCount : (missingCloseQuotes ++ seqTaxaCountErrors ++ interleaveErrors ++ seqTaxonCountErrors ++ incorrectCharCount)
         equates = foldr (\x acc -> getEquates x : acc) [] sequences
         independentErrors = catMaybes $ noTaxaError : multipleTaxaBlocks : sequenceBlockErrors
@@ -633,19 +633,23 @@ assumptionFieldDef = {-do
 -- and a StepMatrix, which is some metadata: the matrix name and the dimension,
 -- as well as a TCMParseResult
 tcmMatrixDefinition :: (Show s, MonadParsec s m Char) => m StepMatrix
-tcmMatrixDefinition = do 
+tcmMatrixDefinition = {-do
+    x <- getInput
+    trace ("\n\ntcmMatrixDefinition "  ++ show x) $ -}do
         _            <- symbol $ string' "usertype"
         matrixName   <- symbol $ somethingTill spaceChar
-        _            <- symbol $ somethingTill $ char '='
-        cardinality  <- symbol $ integer -- (stringDefinition "(stepmatrix)" <|> stringDefinition "(realmatrix)")
-        mtxAlphabet  <- alphabetLine whitespaceNoNewlines
-        assumpMatrix <- matrixBlock whitespaceNoNewlines
-        pure $ StepMatrix matrixName (fromEnum cardinality) (TCM mtxAlphabet assumpMatrix)
+        _            <- symbol $ optional $ try (string' "(stepmatrix)") <|> try (string' "(realmatrix)")
+        _            <- symbol $ char '='
+        cardinality  <- symbol $ integer 
+        mtxAlphabet  <- symbol $ alphabetLine whitespaceNoNewlines
+        assumpMatrix <- symbol $ matrixBlock whitespaceNoNewlines
+        _            <- symbol $ char ';'
+        pure $ trace matrixName $ StepMatrix matrixName (fromEnum cardinality) (TCM mtxAlphabet assumpMatrix)
 
 treeBlockDefinition :: (Show s, MonadParsec s m Char) => m TreeBlock
 treeBlockDefinition = {-do
     x <- getInput
-    trace ("treeBlockDefinition"  ++ show x) $ -}do
+    trace ("\n\ntreeBlockDefinition "  ++ show x) $ -}do
         _     <- symbol (string' "trees;")
         (x,y) <- partitionTreeBlock <$> many treeFieldDef
         pure $ TreeBlock x y
@@ -658,7 +662,7 @@ seqSubBlock = {-do
         block =  (Dims      <$> try dimensionsDefinition)
              <|> (Format    <$> try formatDefinition)
              <|> (Eliminate <$> try (stringDefinition "eliminate"))
-             <|> (Matrix    <$> try matrixDefinition)
+             <|> (Matrix    <$> try seqMatrixDefinition)
              <|> (Taxa      <$> try (stringListDefinition "taxlabels"))
              <|> (IgnSSB    <$> try (ignoredSubBlockDef ';'))
 
@@ -802,14 +806,14 @@ treeDefinition = {-do
     newick <- symbol newickStreamParser
     pure (label, newick)
 
-matrixDefinition :: (Show s, MonadParsec s m Char) => m [String]
-matrixDefinition = {-do
+seqMatrixDefinition :: (Show s, MonadParsec s m Char) => m [String]
+seqMatrixDefinition = {-do
     x <- getInput
-    trace ("\n\nmatrixDefinition "  ++ show x) $ -}do
+    trace ("\n\nseqMatrixDefinition "  ++ show x) $ -}do
     _         <- symbol $ string' "matrix"
     goodStuff <- some   $ somethingTill c <* c
     _         <- symbol $ char ';'
-    pure $ trace "Finished ignoredSubBlockDef\n" $ filter (/= "") goodStuff
+    pure {- $ trace "Finished seqMatrixDefinition\n" -}$ filter (/= "") goodStuff
     where 
         c = whitespaceNoNewlines *> (char ';' <|> endOfLine) <* whitespace
 
@@ -820,7 +824,7 @@ matrixDefinition = {-do
 ignoredSubBlockDef :: (Show s, MonadParsec s m Char) => Char -> m String
 ignoredSubBlockDef endChar = {-do
     x <- getInput
-    trace (("\n\nignoredSubBlockDef endChar: " ++ [endChar])  ++ show x) $ -}do
+    trace (("\n\nignoredSubBlockDef endChar: " ++ [endChar] ++ " ")  ++ show x) $ -}do
     _     <- notFollowedBy (space *> blockend) <?> "something other than end of block"
     stuff <- somethingTill stopMark
     _     <- stopMark
@@ -840,7 +844,7 @@ partitionAssumptionBlock :: [AssumptionField] -> [StepMatrix]
 partitionAssumptionBlock = foldr f ([])
     where
         f (TCMMat n) vs = n:vs
-        f (IgnAF  _) ws = ws
+        f (IgnAF  _) vs = vs
 
 partitionSequenceBlock :: [SeqSubBlock] -> ([[String]],[CharacterFormat],[DimensionsFormat],[String],[[String]])
 partitionSequenceBlock = foldr f ([],[],[],[],[])
@@ -898,9 +902,9 @@ partitionTreeBlock = foldr f ([],[])
 trimmed :: (Show s, MonadParsec s m Char) => m a -> m a
 trimmed x = whitespace *> x <* whitespace
 
--- This now imported from TCM
---symbol :: (Show s, MonadParsec s m Char) => m a -> m a
---symbol x = x <* whitespace
+
+symbol :: (Show s, MonadParsec s m Char) => m a -> m a
+symbol x = x <* whitespace
 
 -- | whitespace is any combination (zero or more) of whitespace chars (" \t\n\r\v\f") and comments, which in Nexus files
 -- are delimited by square brackets.
