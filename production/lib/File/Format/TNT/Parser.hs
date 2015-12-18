@@ -1,6 +1,11 @@
 {-# LANGUAGE FlexibleContexts #-}
 module File.Format.TNT.Parser where
 
+{-- TODO:
+  - Robust tests
+  - Good documentation
+  -}
+
 import Data.Bifunctor         (second)
 import Data.Char              (isSpace)
 import Data.Maybe             (catMaybes)
