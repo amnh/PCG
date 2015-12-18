@@ -20,7 +20,8 @@ import Debug.Trace (trace)
 
 testSuite :: TestTree
 testSuite = testGroup "Nexus Format"
-  [ testGroup "Nexus Combinators" [ blockend'
+  [ testGroup "Nexus Combinators" [ assumptionFieldDef'
+                                  , blockend'
                                   , booleanDefinition'
                                   , charFormatFieldDef'
                                   , deInterleave'
@@ -31,11 +32,18 @@ testSuite = testGroup "Nexus Format"
                                   , quotedStringDefinition'
                                   , stringDefinition'
                                   , stringListDefinition'
-                                  -- , tcmMatrixDefinition'
+                                  , tcmMatrixDefinition'
                                   , treeDefinition'
                                   ] 
   ]
 
+assumptionFieldDef' :: TestTree
+assumptionFieldDef' = testGroup "assumptionFieldDef" [test1, test2]
+    where
+        test1 = testCase "Valid TCMMat" $ parseSuccess assumptionFieldDef validtcmMatrix
+        test2 = testCase "Valid IgnAF" $ parseSuccess assumptionFieldDef "other;"
+
+--TODO: break out failure cases for consumption of input
 blockend' :: TestTree
 blockend' = testGroup "blockend: Input should never be consumed" [end, endWithSemi, endblock, endblockWithSemi, other]
     where
@@ -300,7 +308,10 @@ stringListDefinition' = testGroup "stringListDefinition" [test1, test2, rejectsK
                 str = key ++ " " ++ val ++ ";"
 
 tcmMatrixDefinition' :: TestTree
-tcmMatrixDefinition' = undefined
+tcmMatrixDefinition' = testGroup "tcmMatrixDefinition" [test1]
+    where
+        test1 = testCase "Success given a perfectly formatted block" $ parseSuccess tcmMatrixDefinition validtcmMatrix
+
 
 treeDefinition' :: TestTree
 treeDefinition' = testGroup "treeDefinition" [failsOnEmptyTree, succeedsOnSimple, withBranchLengths, withComments, arbitraryName, rootedAnnotation, unrootedAnnotation]
@@ -338,7 +349,7 @@ stringTypeList =
 
 stringTypeListPerms = [(string ++ " " ++ string', [result, result']) | (string, result) <- stringTypeList, (string', result') <- stringTypeList]
 
-
+validtcmMatrix = "usertype name  = 4\n [a]A B C D\n 0 1 2 3\n 1 0 2 3\n 1 2 0 3\n 1 2 3 0\n;"
 
 
 newtype AsciiAlphaNum    = AsciiAlphaNum    { getAsciiAlphaNum    :: Char } deriving (Eq)
