@@ -1,7 +1,9 @@
 {-# LANGUAGE FlexibleContexts #-}
 module File.Format.TNT.Parser where
 
+import Data.Bifunctor         (second)
 import Data.Char              (isSpace)
+import Data.Maybe             (catMaybes)
 import Text.Megaparsec
 import Text.Megaparsec.Custom
 import Text.Megaparsec.Lexer  (integer)
@@ -11,15 +13,46 @@ type TaxonInfo     = (TaxonName, TaxonSequence)
 type TaxonName     = String
 type TaxonSequence = String
 
-xreadBlock :: MonadParsec s m Char => m [TaxonInfo]
-xreadBlock = do
-    _        <- symbol $ string' "xread"
-    _        <- optional $ try $ symbol $ comment (string "'") (string "'")
-    numOne   <- symbol $ integer
-    numTwo   <- symbol $ integer
-    taxaSeqs <- symbol $ some taxonSequence
-    _        <- symbol $ char ';'
-    pure taxaSeqs
+xreadCommand :: MonadParsec s m Char => m [TaxonInfo]
+xreadCommand = xreadValidation =<< xreadDefinition
+  where
+    xreadDefinition :: MonadParsec s m Char => m (Int, Int, [TaxonInfo])
+    xreadDefinition = do
+      _        <- symbol $ string' "xread"
+      _        <- optional $ try $ symbol $ comment (string "'") (string "'")
+      numTaxa  <- fromEnum <$> symbol integer
+      numChars <- fromEnum <$> symbol integer
+      taxaSeqs <- deinterleaveTaxa =<< symbol (some taxonSequence)
+      _        <- symbol $ char ';'
+      pure (numTaxa, numChars, taxaSeqs)
+
+    deinterleaveTaxa :: MonadParsec s m Char => [TaxonInfo] -> m [TaxonInfo]
+    deinterleaveTaxa = undefined
+
+    xreadValidation :: MonadParsec s m Char => (Int, Int, [TaxonInfo]) -> m [TaxonInfo]
+    xreadValidation (taxaCount, charCount, taxaSeqs)
+      | null errors = pure taxaSeqs
+      | otherwise   = fails errors
+      where
+        errors = catMaybes $ [taxaCountError, charCountError]
+        taxaCountError = let taxaLength = length taxaSeqs
+                         in if taxaCount == taxaLength
+                            then Nothing
+                            else Just $ concat
+                              [ "The number of taxa specified ("
+                              , show taxaCount
+                              , ") does not match the number of taxa found ("
+                              , show $ length taxaSeqs
+                              , ")"
+                              ]
+        charCountError = case filter ((/= charCount) . snd) . fmap (second length) $ taxaSeqs of
+                           [] -> Nothing
+                           xs -> Just $ concat
+                              [ "The number of characters specified ("
+                              , show charCount
+                              , ") does not match the number of chararacters found for the following taxa: "
+                              , show $ fst <$> xs
+                              ]                            
 
 taxonSequence :: MonadParsec s m Char => m TaxonInfo
 taxonSequence = do
