@@ -28,8 +28,9 @@ taxonSequence = do
     pure (name, seq')
   where
     taxonName     = some validNameChar
-    taxonSeq      = validSeqChar `someTill` endOfLine
-    validNameChar = satisfy (not . isSpace)
+    taxonSeq      = validSeqChar `someTill` terminal
+    terminal      = whitespaceInline *> endOfLine
+    validNameChar = satisfy (\x -> (not . isSpace) x && x /= ';')
     validSeqChar  = oneOf $ ['0'..'9'] ++ ['A'..'Z'] ++ ['a'..'z'] ++ "-?"
 
 symbol :: MonadParsec s m Char => m a -> m a
@@ -37,3 +38,6 @@ symbol c = c <* whitespace
 
 whitespace :: MonadParsec s m Char => m ()
 whitespace = space
+
+whitespaceInline :: MonadParsec s m Char => m ()
+whitespaceInline =  inlineSpace
