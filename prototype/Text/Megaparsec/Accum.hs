@@ -53,6 +53,11 @@ data AccumParser s m a = Accum (Maybe a) [Branch s m a]
 
 data Branch s m a = forall b. Branch (AccumParser s m (b -> a)) (m b)
 
+data Match s m a
+   = May  (m a)
+   | One  (m a)
+   | Many (m a)
+   | Some (m a)
 -- | The parser @makeAccumParser perm@ parses a permutation of parser described
 -- by @perm@. For example, suppose we want to parse a permutation of: an
 -- optional string of @a@'s, the character @b@ and an optional @c@. This can
@@ -83,8 +88,8 @@ makeAccumParser (Accum def xs) = choice (fmap branch xs ++ empty)
 -- by the parsers. The function @f@ gets its parameters in the order in
 -- which the parsers are specified, but actual input can be in any order.
 
-(<$$>) :: MonadParsec s m t => (a -> b) -> m a -> AccumParser s m b
-f <$$> p = newperm f <||> p
+-- (<$$>) :: MonadParsec s m t => (a -> b) -> m a -> AccumParser s m b
+-- f <$$> p = newperm f <||> p
 
 (<$?$>) :: MonadParsec s m t => (a -> b) -> m a -> AccumParser s m (Maybe b)
 f <$?$> p = newperm f <|?|> p
@@ -103,9 +108,8 @@ f <$+$> p = newperm f <|+|> p
 -- the optional combinator ('<|?>') instead. Returns a new permutation
 -- parser that includes @p@.
 
-(<||>) :: MonadParsec s m t
-       => AccumParser s m (a -> b) -> m a -> AccumParser s m b
-(<||>) = add
+-- (<||>) :: MonadParsec s m t => AccumParser s m (a -> b) -> m a -> AccumParser s m b
+-- (<||>) = add
 
 (<|?|>) :: MonadParsec s m t => AccumParser s m (a -> b) -> m a -> AccumParser s m (Maybe b)
 (<|?|>) = undefined
