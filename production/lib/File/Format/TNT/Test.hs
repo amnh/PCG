@@ -19,6 +19,7 @@ import Text.Megaparsec            (char,eof,parse,string)
 testSuite :: TestTree
 testSuite = testGroup "TNT Format"
   [ testGroup "TNT Combinators" [ xreadHeader'
+                                , flexiblePositiveInt'
                                 ] 
   ]
 
