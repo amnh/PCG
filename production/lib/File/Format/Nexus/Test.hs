@@ -9,18 +9,21 @@ import Data.Char
 import Data.Either.Combinators    (isLeft,isRight)
 import qualified Data.Map as M
 import Data.Set                   (toList)
+import File.Format.Nexus.Data
 import File.Format.Nexus.Parser
 import Test.Custom                (parseEquals,parseFailure,parseSuccess)
 import Test.Tasty                 (TestTree,testGroup)
 import Test.Tasty.HUnit
 import Test.Tasty.QuickCheck
-import Text.Megaparsec            (char,eof,parse)
+import Text.Megaparsec            (char,eof,parse,string)
 
 import Debug.Trace (trace)
 
 testSuite :: TestTree
 testSuite = testGroup "Nexus Format"
-  [ testGroup "Nexus Combinators" [ booleanDefinition'
+  [ testGroup "Nexus Combinators" [ assumptionFieldDef'
+                                  , blockend'
+                                  , booleanDefinition'
                                   , charFormatFieldDef'
                                   , deInterleave'
                                   , getTaxonAndSeqFromMatrixRow'
@@ -30,9 +33,27 @@ testSuite = testGroup "Nexus Format"
                                   , quotedStringDefinition'
                                   , stringDefinition'
                                   , stringListDefinition'
+                                  , tcmMatrixDefinition'
                                   , treeDefinition'
                                   ] 
   ]
+
+assumptionFieldDef' :: TestTree
+assumptionFieldDef' = testGroup "assumptionFieldDef" [test1, test2]
+    where
+        test1 = testCase "Valid TCMMat" $ parseSuccess assumptionFieldDef validtcmMatrix
+        test2 = testCase "Valid IgnAF" $ parseSuccess assumptionFieldDef "other;"
+
+--TODO: break out failure cases for consumption of input
+blockend' :: TestTree
+blockend' = testGroup "blockend: Input should never be consumed" [end, endWithSemi, endblock, endblockWithSemi, other]
+    where
+        end              = testCase "END should fail"       $ parseFailure (blockend <* string "end" )     "end" 
+        endblock         = testCase "ENDBLOCK should fail"  $ parseFailure (blockend <* string "endblock") "endblock"
+        endWithSemi      = testCase "END; should pass"      $ parseSuccess blockend "end;"
+        endblockWithSemi = testCase "ENDBLOCK; should pass" $ parseSuccess blockend "endblock;"
+        -- TODO: make this /actually/ arbitrary
+        other = testCase "arbitrary other text" $ parseFailure blockend "other;"
 
 booleanDefinition' :: TestTree
 booleanDefinition' = testGroup "booleanDefinition" [generalProperty]
@@ -135,17 +156,21 @@ getTaxonAndSeqFromMatrixRow' = testGroup "getTaxonAndSeqFromMatrixRow" [space,sp
                         combo = tax ++ sep ++ seq
 
 ignoredSubBlockDef' :: TestTree
-ignoredSubBlockDef' = testGroup "ignoredSubBlockDef" [endTest, sendTest, semicolonTest, argumentTest, emptyStringTest]
+ignoredSubBlockDef' = testGroup "ignoredSubBlockDef" [endTest, endblockTest, sendTest, semicolonTest, argumentTest, emptyStringTest]
     where
 --        justDelimiter = tesCase
         endTest = testProperty "END;" f
             where
                 f :: Bool
                 f = isLeft $ parse (ignoredSubBlockDef ';' <* eof) "" "end;"
+        endblockTest = testProperty "ENDBLOCK;" f
+            where
+                f :: Bool
+                f = isLeft $ parse (ignoredSubBlockDef ';' <* eof) "" "endblock;"
         sendTest = testProperty "Some word that ends with \"end;\"" f
             where
                 f :: NonEmptyList AsciiAlphaNum -> Bool
-                f x = parse (ignoredSubBlockDef ';' <* char ';' <* eof) "" inp == Right res
+                f x = parse (ignoredSubBlockDef ';' <* eof) "" inp == Right res
                     where
                         x'  = getAsciiAlphaNum <$> getNonEmpty x
                         res = x' ++ "end"
@@ -153,14 +178,14 @@ ignoredSubBlockDef' = testGroup "ignoredSubBlockDef" [endTest, sendTest, semicol
         semicolonTest = testProperty "Block ends with \";\"" f
             where
                 f :: NonEmptyList AsciiAlphaNum -> Bool
-                f x = parse (ignoredSubBlockDef ';' <* char ';' <* eof) "" inp == Right x'
+                f x = parse (ignoredSubBlockDef ';' <* eof) "" inp == Right x'
                     where
                         x'  = getAsciiAlphaNum <$> getNonEmpty x
                         inp = x' ++ ";"
         argumentTest = testProperty "Block ends with a designated delimiter" f
             where
                 f :: (NonEmptyList AsciiAlphaNum, AsciiNonAlphaNum) -> Bool
-                f (x,y) = parse (ignoredSubBlockDef arg <* char arg <* eof) "" inp == Right x'
+                f (x,y) = parse (ignoredSubBlockDef arg <* eof) "" inp == Right x'
                     where
                         arg = getAsciiNonAlphaNum y
                         x'  = getAsciiAlphaNum <$> getNonEmpty x
@@ -283,6 +308,12 @@ stringListDefinition' = testGroup "stringListDefinition" [test1, test2, rejectsK
                 val = getNexusKeyword y
                 str = key ++ " " ++ val ++ ";"
 
+tcmMatrixDefinition' :: TestTree
+tcmMatrixDefinition' = testGroup "tcmMatrixDefinition" [test1]
+    where
+        test1 = testCase "Success given a perfectly formatted block" $ parseSuccess tcmMatrixDefinition validtcmMatrix
+
+
 treeDefinition' :: TestTree
 treeDefinition' = testGroup "treeDefinition" [failsOnEmptyTree, succeedsOnSimple, withBranchLengths, withComments, arbitraryName, rootedAnnotation, unrootedAnnotation]
   where
@@ -319,7 +350,7 @@ stringTypeList =
 
 stringTypeListPerms = [(string ++ " " ++ string', [result, result']) | (string, result) <- stringTypeList, (string', result') <- stringTypeList]
 
-
+validtcmMatrix = "usertype name  = 4\n [a]A B C D\n 0 1 2 3\n 1 0 2 3\n 1 2 0 3\n 1 2 3 0\n;"
 
 
 newtype AsciiAlphaNum    = AsciiAlphaNum    { getAsciiAlphaNum    :: Char } deriving (Eq)

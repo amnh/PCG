@@ -26,9 +26,10 @@ module File.Format.Nexus
   ) where
 
 import File.Format.Nexus.Parser
+import File.Format.Nexus.Data
 import Text.Megaparsec
 import Text.Megaparsec.Prim      (MonadParsec)
 
 -- | Parses the entirety of a stream consisting of a single Nexus file resulting a 'Nexus'.
 nexusStreamParser :: (Show s, MonadParsec s m Char) => m Nexus
-nexusStreamParser = validateParseResult =<< parseNexus <* eof
+nexusStreamParser = validateNexusParseResult =<< parseNexus <* eof

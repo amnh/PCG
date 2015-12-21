@@ -28,9 +28,9 @@ import           Text.Megaparsec
 import           Text.Megaparsec.Custom
 import           Text.Megaparsec.Prim     (MonadParsec)
 
--- | Intermidiate parse result prior to consistancy validation
-data ParseResult 
-   = ParseResult (NonEmpty String) (Matrix Double)
+-- | Intermediate parse result prior to consistancy validation
+data TCMParseResult 
+   = TCMParseResult (NonEmpty String) (Matrix Double) deriving (Show)
 
 -- | The results of a TCM file consisting of
 --
@@ -56,19 +56,19 @@ data TCM
 -- and a square Matrix with dimension @(n+1) x (n+1)@ where @n@ is
 -- the length of the Alphabet.
 tcmStreamParser :: MonadParsec s m Char => m TCM
-tcmStreamParser = validateParseResult =<< tcmDefinition <* eof
+tcmStreamParser = validateTCMParseResult =<< tcmDefinition <* eof
 
 -- | Parses an intermediary result consisting of an Alphabet and a Matrix.
 -- Both the Alphabet and Matrix have been validated independantly for
 -- consistencey, but no validation has been performed to ensure that the
 -- dimensions of the Matrix and the length of the Alphabet are consistant
 -- with each other. 
-tcmDefinition :: MonadParsec s m Char => m ParseResult
+tcmDefinition :: MonadParsec s m Char => m TCMParseResult
 tcmDefinition = do
     _        <- space
     alphabet <- symbol tcmAlphabet
     matrix   <- symbol tcmMatrix
-    pure $ ParseResult alphabet matrix
+    pure $ TCMParseResult alphabet matrix
 
 -- | Shorthand for the expected format of the alphabet lin in a TCM file.
 -- The same as 'alphabetLine inlineSpace'.
@@ -114,13 +114,13 @@ alphabetLine spacing = validateAlphabet =<< NE.fromList <$> ((alphabetSymbol <* 
 matrixBlock :: MonadParsec s m Char => m () -> m (Matrix Double)
 matrixBlock spacing = validateMatrix =<< many (symbol matrixRow)
   where
-    matrixRow   = (matrixEntry <* spacing) `manyTill` endOfLine
+    matrixRow   = (spacing *> matrixEntry <* spacing) `manyTill` endOfLine
     matrixEntry = double
 
 -- | Validates that the dimensions of the Matrix are @(n+1) x (n+1)@
 -- where @n@ is the length of the Alphabet.
-validateParseResult :: MonadParsec s m Char => ParseResult -> m TCM
-validateParseResult (ParseResult alphabet matrix)
+validateTCMParseResult :: MonadParsec s m Char => TCMParseResult -> m TCM
+validateTCMParseResult (TCMParseResult alphabet matrix)
   | dimMismatch  = fail errorMessage
   | otherwise    = pure $ TCM alphabet matrix
   where
