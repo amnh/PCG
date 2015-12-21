@@ -10,8 +10,6 @@
 --
 -- Functions for for parsing and validating Nexus files.
 --
--- Will function correctly if and only if we are in a state of harmonic convergence.
---
 -----------------------------------------------------------------------------
 
 {-# LANGUAGE DoAndIfThenElse, FlexibleContexts #-}
@@ -26,13 +24,16 @@
 -- • Split verification & parsing into two modules, maybe three (one for data types)
 -- • check for and eliminate thusly noted characters (in at least two places?)
 -- • update output datatypes: nest vectors, add character metadata, trees, step matrices
+-- • replace equate chars 
+-- • ignore case
+-- • check alignment and length of aligned blocks, check alphabet, think about 12 and 20, below, make each sequence a vector, not a list
 -- • Something else?
 
 module File.Format.Nexus.Parser where
 
 import           Data.Char              (isSpace,toLower)
 import           Data.DList             (DList,append)
-import qualified Data.DList as DL       (toList,fromList)
+--import qualified Data.DList as DL       (toList,fromList)
 import           Data.Either            (lefts)
 import           Data.List              (sort)
 import qualified Data.Map.Lazy as M
@@ -53,7 +54,7 @@ import qualified Data.Vector as V
 parseNexusStream :: String -> Either ParseError Nexus
 parseNexusStream = parse (validateNexusParseResult =<< parseNexus <* eof) "PCG encountered a Nexus file parsing error it could not overcome:"
 
--- TODO: replace equate chars, ignore case, check alignment and length of aligned blocks, check alphabet, think about 12 and 20, below, make each sequence a vector, not a list
+
 
 
 -- Because some errors are dependent on passing some other validation, they've been split into

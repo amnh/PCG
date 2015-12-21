@@ -142,11 +142,13 @@ data SeqSubBlock
 -- | StepMatrix is type to be pulled from Assumptions block. 
 data StepMatrix
    = StepMatrix
-   { matrixType :: String -- 
-   , matrixSize :: Int
+   { matrixType :: String -- Actually, the name of the tcm. Originally was to be step or real. Collected, but unused.
+   , matrixSize :: Int    -- for validation
    , matrixData :: TCM
    } deriving (Show)
 
+-- | TaxaSpecification holds the number of taxa and the list of taxa names. It's collected from a taxa block, and appears as a subtype
+-- of NexusBlock. Used for verification.
 data TaxaSpecification
    = TaxaSpecification
    { taxaDims   :: Int
@@ -166,6 +168,7 @@ data TreeField
    = Translation [String]
    | Tree        (TreeName, [NewickForest])
    | IgnTF       String
+
 
 data SequenceBlock
    = SequenceBlock
