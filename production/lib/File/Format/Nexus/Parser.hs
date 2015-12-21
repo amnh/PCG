@@ -17,12 +17,16 @@
 {-# LANGUAGE DoAndIfThenElse, FlexibleContexts #-}
 
 -- TODOs:
--- • Step matrices
--- • check for and eliminate thusly noted characters (in at least two places?)
--- • Split verification & parsing into two modules, maybe three (one for data types)
--- • update output datatypes: nest vectors, add character metadata
+-- • Attempt to optimize sequence reading: concatting, character replacement, etc.
+-- • Reconceive and reorder current validations. Keep in mind next bullet point.
+-- • Check for info on spaces in seqs. Remove them from non-continuous data.
 -- • Verify character metadata, especially alphabets
--- • Reconceive and reorder current validations
+-- • Verify step matrices
+-- • deal with special chars in step matrices
+-- • Split verification & parsing into two modules, maybe three (one for data types)
+-- • check for and eliminate thusly noted characters (in at least two places?)
+-- • update output datatypes: nest vectors, add character metadata, trees, step matrices
+-- • Something else?
 
 module File.Format.Nexus.Parser where
 
@@ -30,10 +34,9 @@ import Data.Char   (isSpace,toLower)
 import Data.Either (lefts)
 import Data.List   (sort)
 import qualified Data.Map.Lazy as M
---import Data.Matrix            (Matrix)
 import Data.Maybe  (isJust, fromJust, catMaybes, maybeToList)
 import qualified Data.Set as S
-import Debug.Trace -- <-- the best module!!! :)
+--import Debug.Trace -- <-- the best module!!! :)
 import File.Format.Newick
 import File.Format.TransitionCostMatrix.Parser hiding (symbol)
 import Safe
@@ -68,7 +71,7 @@ data DimensionsFormat
 data PhyloSequence
    = PhyloSequence
    { aligned       :: Bool
-   , matrix        :: [[String]]
+   , seqMatrix     :: [[String]]
    , format        :: [CharacterFormat]
    , charDims      :: [DimensionsFormat] -- holds length of sequence, as well as info on new taxa
    , elims         :: [String]
@@ -114,7 +117,7 @@ data CharFormatField
    | Tokens      Bool
    | Transpose   Bool
    | Interleave  Bool
-   | Unlabeled   Bool   -- if matrix is unlabeled, in which case first token in each line is a char
+   | Unlabeled   Bool   -- if seqMatrix is unlabeled, in which case first token in each line is a char
    | IgnFF       String -- for non-standard inputs, plus notokens, which is the default anyway
    deriving (Eq,Show)
 
@@ -209,7 +212,7 @@ parseNexusStream = parse (validateNexusParseResult =<< parseNexus <* eof) "PCG e
 --     There are actually two subcases here:
 --        too many aligned, too many unaligned
 --  ** removed ** No sequence blocks                                                      -              indep              done
---  4. No matrix in some sequence block                                        3              indep              done
+--  4. No seqMatrix in some sequence block                                        3              indep              done
 --  5. No dimensions in some sequence block                                    3              indep              done
 --  6. Sequence block with "nolabels", but no taxa block _and_ no new taxa specified in sequence blocks            3              indep              done
 --  7. "newtaxa" keyword in characters or unaligned block, but no taxa actually spec'ed            3                dep              done
@@ -261,7 +264,7 @@ validateNexusParseResult (NexusParseResult sequences taxas _treeSet assumptions 
                 then Just $ "Incorrect number of taxa in taxa block.\n" {- ++ (show num) ++ " " ++ (show taxons) -} -- half of error 16
                 else Nothing
         interleaveErrors = foldr (\x acc -> findInterleaveError taxaLst x : acc) [] sequences -- error 14
-        matrixDimsErrors = foldr (\x acc -> matrixMissing x : acc) [] sequences ++
+        seqMatrixDimsErrors = foldr (\x acc -> seqMatrixMissing x : acc) [] sequences ++
                            foldr (\x acc -> dimsMissing   x : acc) [] sequences
         missingCloseQuotes = map Just (lefts equates) ++ map Just (lefts symbols') -- error 19
         multipleTaxaBlocks = case taxas of
@@ -286,8 +289,8 @@ validateNexusParseResult (NexusParseResult sequences taxas _treeSet assumptions 
                                  (_:_:_:_) -> [Just "Too many sequence blocks provided. Only one each of characters and unaligned blocks are allowed.\n"] -- error 2
                                  (x:y:_) | aligned x && aligned y       -> [Just "More than one characters block provided."]
                                          | not (aligned x || aligned y) -> [Just "More than one unaligned block provided.\n"]
-                                         | otherwise                    -> matrixDimsErrors
-                                 _         -> matrixDimsErrors
+                                         | otherwise                    -> seqMatrixDimsErrors
+                                 _         -> seqMatrixDimsErrors
         --taxaFromSeqMatrix = foldr (\x acc -> (getTaxaFromMatrix x) ++ acc) [] sequences
         -- convertSeqs = ( concatSeqs . cleanSeqs sequences  -- convert each sequence, then
 
@@ -309,11 +312,11 @@ getSeqTaxonCountErrors taxaLst seq' = extraTaxonErrors ++ wrongCountErrors
         extraTaxonErrors = M.foldrWithKey
                                 (\key _ acc -> (if M.member key listedTaxaMap
                                                 then Nothing
-                                                else Just ("\"" ++ key ++ "\" is in a matrix, but isn't specified anywhere, such as in a taxa block or as newtaxa.\n"))
+                                                else Just ("\"" ++ key ++ "\" is in a matrix in a sequence block, but isn't specified anywhere, such as in a taxa block or as newtaxa.\n"))
                                                   : acc
                                  ) [] seqTaxaMap
         wrongCountErrors = M.foldrWithKey (\key val acc -> (if val /= median
-                                                                   then Just ("\"" ++ key ++ "\" appears the wrong number of times in a matrix.\n")
+                                                                   then Just ("\"" ++ key ++ "\" appears the wrong number of times in a sequence block matrix.\n")
                                                                    else Nothing) : acc
                                           ) [] seqTaxaMap
         median = findMedian $ M.elems seqTaxaMap
@@ -332,7 +335,7 @@ getTaxaFromMatrix seq' = {-trace (show taxa) $ -}
         else taxaMap
     where
         (noLabels, _interleaved, _tkns, _cont, _matchChar') = getFormatInfo seq'
-        mtx     = head $ matrix seq' -- I've already checked to make sure there's a matrix
+        mtx     = head $ seqMatrix seq' -- I've already checked to make sure there's a matrix
         taxaMap = foldr (\x acc -> M.insert x (succ (M.findWithDefault 0 x acc)) acc) M.empty taxa
         taxa    = foldr (\x acc -> takeWhile (`notElem` " \t") x : acc) [] mtx
 
@@ -360,15 +363,15 @@ findAmbiguousNoTokens (x:xs) acc amb =
                            else [[x]] : findAmbiguousNoTokens xs [] amb
 
 -- Maybe this and dimsMissing could be conflated.
-matrixMissing :: PhyloSequence -> Maybe String
-matrixMissing seq'
+seqMatrixMissing :: PhyloSequence -> Maybe String
+seqMatrixMissing seq'
   | numMatrices < 1 = tooFew
   | numMatrices > 1 = tooMany
   | otherwise       = Nothing
   where
-    numMatrices = length $ matrix seq'
-    tooFew      = Just $ name seq' ++ " block has no matrix.\n"
-    tooMany     = Just $ name seq' ++ " block has more than one matrix.\n"
+    numMatrices = length $ seqMatrix seq'
+    tooFew      = Just $ name seq' ++ " block has no sequence matrix.\n"
+    tooMany     = Just $ name seq' ++ " block has more than one sequence matrix.\n"
 
 dimsMissing :: PhyloSequence -> Maybe String
 dimsMissing seq'
@@ -414,7 +417,7 @@ findInterleaveError taxaLst seq' =
         interleaved = formatted && interleave (head $ format seq')
         noLabels    = formatted && unlabeled  (head $ format seq')
         taxaCount   = length taxaLst
-        lineCount   = length . head $ matrix seq'
+        lineCount   = length . head $ seqMatrix seq'
         which = if aligned seq'
                     then "Characters"
                     else "Unaligned"
@@ -422,14 +425,14 @@ findInterleaveError taxaLst seq' =
 -- TODO: Review this function's functionality. Seems like it can be improved!
 getBlock :: String -> [PhyloSequence] -> [PhyloSequence]
 getBlock _ [] = []
-getBlock which pseqs = f (which == "aligned") pseqs
+getBlock which phyloSeqs = f (which == "aligned") phyloSeqs
   where
-    f xBool _ = let block = headMay $ filter (\s -> xBool == aligned s) pseqs
+    f xBool _ = let block = headMay $ filter (\s -> xBool == aligned s) phyloSeqs
                 in maybeToList block
 
 
 getFormatInfo :: PhyloSequence -> (Bool, Bool, Bool, Bool, String)
-getFormatInfo pseq = case headMay $ format pseq of
+getFormatInfo phyloSeq = case headMay $ format phyloSeq of
                        Nothing -> (False, False, False, False, "")
                        Just x  -> ( unlabeled x
                                   , interleave x
@@ -446,7 +449,7 @@ getSeqFromMatrix seqLst taxaLst =
         (noLabels, interleaved, tkns, cont, matchChar') = getFormatInfo $ head seqLst
         taxaCount  = length taxaLst
         taxaMap    = M.fromList . zip taxaLst $ repeat []
-        mtx        = head $ matrix $ head seqLst -- I've already checked to make sure there's a matrix
+        mtx        = head $ seqMatrix $ head seqLst -- I've already checked to make sure there's a matrix
         entireSeqs = if noLabels    -- this will be a list of tuples (taxon, concatted seq)
                      then if interleaved
                           then concatMap (zip taxaLst) (chunksOf taxaCount mtx)
@@ -463,23 +466,23 @@ getSeqFromMatrix seqLst taxaLst =
                              then M.map (replaceMatches (head matchChar') firstSeq) entireDeinterleavedSeqs
                              else entireDeinterleavedSeqs
 
--- | deInterleaved takes in an interleaved matrix in the form [(taxon,sequence)] and returns
--- a matrix of the form Map taxon sequence. The original list of tuples should have duplicate taxon entries
--- (because of the matrix being interleaved), and the seqs should be concatted---in order---in the 
+-- | deInterleaved takes in an interleaved seqMatrix in the form [(taxon,sequence)] and returns
+-- a seqMatrix of the form Map taxon sequence. The original list of tuples should have duplicate taxon entries
+-- (because of the seqMatrix being interleaved), and the seqs should be concatted---in order---in the 
 -- returned map.
 -- The first 'Map' parameter is used for when there are no label present
 -- A (partial?) test exists in the test suite.
 deInterleave :: M.Map String String -> [(String, String)] -> M.Map String String
-deInterleave = foldr (\(seqName, pseq) acc -> M.insertWith (++) seqName pseq acc)
+deInterleave = foldr (\(seqName, phyloSeq) acc -> M.insertWith (++) seqName phyloSeq acc)
 
 -- | getTaxonAndSeqFromMatrixRow takes a String of format "xxx[space or tab]yyy"
 -- and returns a tuple of form ("xxx","yyy")
 -- A test exists in the test suite.
 getTaxonAndSeqFromMatrixRow :: String -> (String, String)
-getTaxonAndSeqFromMatrixRow inStr = (seqName, pseq)
+getTaxonAndSeqFromMatrixRow inStr = (seqName, phyloSeq)
     where 
         (seqName, rest) = span   (`notElem` " \t") inStr
-        pseq            = dropWhile (`elem` " \t") rest
+        phyloSeq            = dropWhile (`elem` " \t") rest
 
 replaceMatches :: Char -> String -> String -> String
 replaceMatches matchTarget canonical toReplace = {- trace (canonical ++"\n" ++ toReplace ++ "\n") $ -}
@@ -496,12 +499,12 @@ chunksOf n xs = f : chunksOf n s
     (f,s) = splitAt n xs
 
 areNewTaxa :: PhyloSequence -> Bool
-areNewTaxa pseq
-    | name pseq == "data" = True
+areNewTaxa phyloSeq
+    | name phyloSeq == "data" = True
     | otherwise          =
-      case charDims pseq of
+      case charDims phyloSeq of
         []  -> False
-        xs  -> case seqTaxaLabels pseq of
+        xs  -> case seqTaxaLabels phyloSeq of
                 [] -> False
                 _  -> newTaxa $ head xs
 
@@ -512,29 +515,29 @@ areNewTaxa pseq
 -- This is frighteningly similar to areNewTaxa, but I couldn't figure out a way around
 -- having them both, because of the way that areNewTaxa is used
 checkForNewTaxa :: PhyloSequence -> Maybe String
-checkForNewTaxa pseq = case charDims pseq of
+checkForNewTaxa phyloSeq = case charDims phyloSeq of
                          [] -> Nothing
                          xs -> if newTaxa $ head xs
                                then
-                                 case seqTaxaLabels pseq of
+                                 case seqTaxaLabels phyloSeq of
                                   [] -> Just $ "In the " ++ which ++ " block the newtaxa keyword is specified, but no new taxa are given."
                                   ys -> if length (head ys) == numTaxa (head xs)
                                         then Just $ "In the " ++ which ++ " block the number of new taxa does not match the number of taxa specified."
                                         else Nothing
                                else Nothing
   where
-    which = if aligned pseq
+    which = if aligned phyloSeq
             then "characters"
             else "unaligned"
 
 getTaxaFromSeq :: PhyloSequence -> [String]
-getTaxaFromSeq pseq 
-    | areNewTaxa pseq = case seqTaxaLabels pseq of
+getTaxaFromSeq phyloSeq 
+    | areNewTaxa phyloSeq = case seqTaxaLabels phyloSeq of
                          []    -> {- trace (show keys) $ -} keys
                          (x:_) -> x
     | otherwise        = []
     where
-        keys = M.keys $ getTaxaFromMatrix pseq
+        keys = M.keys $ getTaxaFromMatrix phyloSeq
 
 parseNexus :: (Show s, MonadParsec s m Char) => m NexusParseResult
 parseNexus = nexusFileDefinition
@@ -631,7 +634,7 @@ assumptionFieldDef = {-do
 -- s s s s
 -- k k k k
 -- etc.
--- and a StepMatrix, which is some metadata: the matrix name and the dimension,
+-- and a StepMatrix, which is some metadata: the matrix name and the cardinality,
 -- as well as a TCMParseResult
 tcmMatrixDefinition :: (Show s, MonadParsec s m Char) => m StepMatrix
 tcmMatrixDefinition = {-do
