@@ -110,10 +110,11 @@ xreadCharCount = symbol $ flexiblePositiveInt "char count"
 --       , ("taxonTwo", "GGAATTCCGATC")
 --       ]
 xreadSequences :: MonadParsec s m Char => m (NonEmpty TaxonInfo)
-xreadSequences = NE.fromList . deinterleaveTaxa <$> symbol (some taxonSequence)
+xreadSequences = NE.fromList . deinterleaveTaxa <$> symbol (taxonSequence `sepEndBy1` terminal)
   where
+    terminal         = whitespaceInline *> endOfLine <* whitespace
     deinterleaveTaxa :: [TaxonInfo] -> [TaxonInfo]
-    deinterleaveTaxa = M.toList . fmap DL.toList . foldr f mempty 
+    deinterleaveTaxa = M.toList . fmap DL.toList . foldr f mempty
       where
         f :: TaxonInfo -> Map TaxonName (DList Char) -> Map TaxonName (DList Char)
         f (taxonName, taxonSequence) = insertWith append taxonName (DL.fromList taxonSequence)
@@ -125,8 +126,8 @@ taxonSequence :: MonadParsec s m Char => m TaxonInfo
 taxonSequence = (,) <$> (symbol taxonName) <*> taxonSeq
   where
     taxonName     = some validNameChar
-    taxonSeq      = validSeqChar `someTill` endOfLine
-    validNameChar = satisfy (\x -> (not . isSpace) x && x /= ';') <* whitespaceInline
+    taxonSeq      = some validSeqChar
+    validNameChar = satisfy (\x -> (not . isSpace) x && x /= ';') -- <* whitespaceInline
     validSeqChar  = oneOf $ ['0'..'9'] ++ ['A'..'Z'] ++ ['a'..'z'] ++ "-?"
 
 -- | Parses an positive integer from a variety of representations.
@@ -178,6 +179,10 @@ flexiblePositiveInt labeling = either coerceIntegral coerceFloating
 -- | Consumes trailing whitespace after the parameter combinator.
 symbol :: MonadParsec s m Char => m a -> m a
 symbol c = c <* whitespace
+
+-- | Consumes trailing whitespace after the parameter combinator.
+trim :: MonadParsec s m Char => m a -> m a
+trim c = whitespace *> c <* whitespace
 
 -- | Consumes zero or more whitespace characters __including__ line breaks.
 whitespace :: MonadParsec s m Char => m ()
