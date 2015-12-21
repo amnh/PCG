@@ -30,170 +30,25 @@
 
 module File.Format.Nexus.Parser where
 
-import Data.Char   (isSpace,toLower)
-import Data.Either (lefts)
-import Data.List   (sort)
+import           Data.Char              (isSpace,toLower)
+import           Data.DList             (DList,append)
+import qualified Data.DList as DL       (toList,fromList)
+import           Data.Either            (lefts)
+import           Data.List              (sort)
 import qualified Data.Map.Lazy as M
-import Data.Maybe  (isJust, fromJust, catMaybes, maybeToList)
+import           Data.Maybe             (isJust, fromJust, catMaybes, maybeToList)
 import qualified Data.Set as S
---import Debug.Trace -- <-- the best module!!! :)
-import File.Format.Newick
-import File.Format.TransitionCostMatrix.Parser hiding (symbol)
-import Safe
-import Text.Megaparsec hiding (label)
-import Text.Megaparsec.Lexer  (integer)
-import Text.Megaparsec.Prim   (MonadParsec)
-import Text.Megaparsec.Custom
+--import Debug.Trace
+import           File.Format.Newick
+import           File.Format.Nexus.Data
+import           File.Format.Nexus.Partition
+import           File.Format.TransitionCostMatrix.Parser hiding (symbol)
+import           Safe
+import           Text.Megaparsec hiding (label)
+import           Text.Megaparsec.Lexer  (integer)
+import           Text.Megaparsec.Prim   (MonadParsec)
+import           Text.Megaparsec.Custom
 import qualified Data.Vector as V
-
-data NexusParseResult = NexusParseResult [PhyloSequence] [TaxaSpecification] [TreeBlock] [AssumptionBlock] [IgnBlock] deriving (Show)
-
--- | Types blocks in the Nexus file and their accompanying data.
-data NexusBlock
-   = TaxaBlock        TaxaSpecification
-   | CharacterBlock   PhyloSequence
-   | TreesBlock       TreeBlock
-   | SkippedBlock     IgnBlock
-   | AssumptionsBlock AssumptionBlock
-   deriving (Show)
-
--- | DimensionsFormat is format of dimensions field in characters and unaligned nexus blocks.
--- It could also actually be used for the dimensions in the taxa block, with newTaxa = False
--- and numChars = 0
-data DimensionsFormat
-   = DimensionsFormat
-   { newTaxa  :: Bool
-   , numTaxa  :: Int
-   , numChars :: Int
-   } deriving (Show)
-
--- | Phylosequence is general sequence type, to be used for both characters (aligned) and unaligned blocks.
-data PhyloSequence
-   = PhyloSequence
-   { aligned       :: Bool
-   , seqMatrix     :: [[String]]
-   , format        :: [CharacterFormat]
-   , charDims      :: [DimensionsFormat] -- holds length of sequence, as well as info on new taxa
-   , elims         :: [String]
-   , seqTaxaLabels :: [[String]]
-   , name          :: String -- characters, taxa or data
-   } deriving (Show)
-
--- | SeqSubBlock is list of fields available in sequence blocks. It's set up as an enumeration
--- so that it can be "looped" over when parsing the sequence blocks, as the order of the fields
--- is not documented.
-data SeqSubBlock
-   = Matrix          [String]
-   | Format          CharacterFormat
-   | Dims            DimensionsFormat
-   -- | Items           ItemType
-   | Eliminate       String
-   | CharStateLabels [CharStateFormat]
-   | IgnSSB          String
-   | Taxa            [String]
-   deriving (Show)
-
-data TaxaSpecification
-   = TaxaSpecification
-   { taxaDims   :: Int
-   , taxaLabels :: [String]
-   } deriving (Show)
-
-data IgnBlock = IgnBlock {ignoredName :: String} deriving (Show)
-
--- | The different subfields of the Format field in the sequence blocks.
--- As with SeqSubBlock, listed simply so that it can be "looped" over. Will eventually be
--- coverted to CharacterFormat data type for export
--- TODO: better documentation on the use of each field below
-data CharFormatField
-   = CharDT      String
-   | SymStr      (Either String [String]) -- the list of symbols
-   | EqStr       (Either String [String]) -- the equate (symbol -> symbols) will be processed into Map Char String
-   | MissStr     String -- "missing" char
-   | GapChar     String -- gap char
-   | MatchChar   String -- "match" char
-   | Items       String
-   | RespectCase Bool   -- should the case of the characters be respected?
-   | Tokens      Bool
-   | Transpose   Bool
-   | Interleave  Bool
-   | Unlabeled   Bool   -- if seqMatrix is unlabeled, in which case first token in each line is a char
-   | IgnFF       String -- for non-standard inputs, plus notokens, which is the default anyway
-   deriving (Eq,Show)
-
-type TreeName       = String
-type SerializedTree = String
-
-data AssumptionBlock
-   = AssumptionBlock
-   { tcm :: [StepMatrix] } deriving (Show)
-
-data AssumptionField
-   = TCMMat StepMatrix
-   | IgnAF  String
-
-data StepMatrix
-   = StepMatrix
-   { matrixType :: String
-   , matrixSize :: Int
-   , matrixData :: TCM
-   } deriving (Show)
-
-data TreeBlock
-   = TreeBlock
-   { translate :: [[String]]
-   , trees     :: [(TreeName, [NewickForest])]
-   } deriving (Show)
-
-data TreeField
-   = Translation [String]
-   | Tree        (TreeName, [NewickForest])
-   | IgnTF       String
-
-data CharStateFormat
-   = CharStateFormat
-   { charNum   :: Int
-   , charName  :: String
-   , stateName :: [String]
-   } deriving (Show)
-
-data CharacterFormat
-   = CharacterFormat
-   { charDataType :: String
-   , symbols      :: Either String [String]
-   , equate       :: Either String [String]
-   , missing      :: String
-   , gap          :: String
-   , matchChar    :: String
-   , items        :: String
-   , respectCase  :: Bool
-   , areTokens    :: Bool
-   , transpose    :: Bool
-   , interleave   :: Bool
-   , unlabeled    :: Bool
-   } deriving (Eq,Show)
-
--- | The types of data which can be present in a Nexus file.
--- This type might get scrapped and another type imported from
--- different module, or preserved but moved to another module.
-data CharDataType = Standard | DNA | RNA | Nucleotide | Protein | Continuous deriving (Read, Show)
-
--- | The collection of information extracted from blocks in the Nexus file.
-data Nexus
-   = Nexus
-   -- TODO: taxa was commented out before first push to Grace
-   { {- taxa :: [String]
-   ,-} characters :: M.Map String (V.Vector [String])
-   , stepMatrices :: AssumptionBlock
-   } deriving (Show)
-
-data SequenceBlock
-   = SequenceBlock
-   { charType  :: CharDataType
-   , alphabet  :: String
-   , isAligned :: Bool
-   , seqs      :: [V.Vector (String, [String])]
-   } deriving (Show)
 
 parseNexusStream :: String -> Either ParseError Nexus
 parseNexusStream = parse (validateNexusParseResult =<< parseNexus <* eof) "PCG encountered a Nexus file parsing error it could not overcome:"
@@ -208,15 +63,18 @@ parseNexusStream = parse (validateNexusParseResult =<< parseNexus <* eof) "PCG e
 -- or may not be best practice.                                                             coded as
 -- Errors currently caught: # error                                       dependency   inde- or de- pendant    finished
 --  1. Too many taxa blocks                                                    -              indep              done
---  ** removed ** too many sequence blocks                                                -              indep              done
+--  ** removed ** too many sequence blocks                                     -              indep              done
 --     There are actually two subcases here:
 --        too many aligned, too many unaligned
---  ** removed ** No sequence blocks                                                      -              indep              done
---  4. No seqMatrix in some sequence block                                        3              indep              done
+--  ** removed ** No sequence blocks                                           -              indep              done
+--  2. No usable blocks                                                        -              indep
+--  4. No seqMatrix in some sequence block                                     3              indep              done
 --  5. No dimensions in some sequence block                                    3              indep              done
---  6. Sequence block with "nolabels", but no taxa block _and_ no new taxa specified in sequence blocks            3              indep              done
---  7. "newtaxa" keyword in characters or unaligned block, but no taxa actually spec'ed            3                dep              done
---  8. "newtaxa" keywork in characters or unaligned block, but ntaxa missing                       3,5              dep              done
+--  6. Non-data sequence block with "nolabels", 
+--     but no taxa block _and_ no new taxa specified in sequence blocks        3              indep              done
+--  7. "newtaxa" keyword in characters or unaligned block, 
+--     but no nolables and no taxlabels actually spec'ed                       3                dep              done
+--  8. "newtaxa" keywork in characters or unaligned block, but ntaxa missing   3,5              dep              done
 --  9. "nolabels" but labels actually present--subsumed under 10, 11, 12       3                dep
 -- 10. Matrix has alphabet values not specified                                3,4              dep
 -- 11. Aligned block not Aligned                                               3,4              dep
@@ -229,7 +87,7 @@ parseNexusStream = parse (validateNexusParseResult =<< parseNexus <* eof) "PCG e
 -- 16. Taxa count is incorrect                                                 1,3,5            dep              done
 -- 17. "nolabels" but there is a taxa block and newtaxa in seq block,          1,3,7,8          dep
 --     so order of sequences is unclear
--- 18. Missing semicolons                                                       -             indep              caught in parse
+-- 18. Missing semicolons                                                      -              indep              caught in parse
 -- 19. Equate or symbols strings missing their closing quotes                  3                dep              done
 -- 20. Match character can't be a space                                        3                dep
 --     ---for aligned blocks, will be caught
@@ -259,7 +117,6 @@ validateNexusParseResult (NexusParseResult sequences taxas _treeSet assumptions 
         f _   = Nothing
 
         incorrectCharCount  = checkSeqLength (getBlock "aligned" sequences) alignedTaxaSeqMap
-        seqTaxonCountErrors = foldr (\x acc -> getSeqTaxonCountErrors taxaLst x ++ acc) [] sequences -- errors 12, 22
         incorrectTaxaCount  = f taxas >>= \(TaxaSpecification num taxons) -> if num /= length taxons
                 then Just $ "Incorrect number of taxa in taxa block.\n" {- ++ (show num) ++ " " ++ (show taxons) -} -- half of error 16
                 else Nothing
@@ -274,6 +131,8 @@ validateNexusParseResult (NexusParseResult sequences taxas _treeSet assumptions 
                        then Just $ "Taxa are never specified. \n"  {-++ (show taxas) ++ " " ++ (show sequences) -} -- error 6
                        else Nothing
         seqTaxaCountErrors = foldr (\x acc -> checkForNewTaxa x : acc) [] sequences -- errors 7, 8 half of 16
+        seqTaxonCountErrors = foldr (\x acc -> getSeqTaxonCountErrors taxaLst x ++ acc) [] sequences -- errors 12, 22
+        
         --correctCharCount = foldr (\x acc -> if isJust checkDims x
         --                                      then
         --                                      else ) Nothing convertSeqs ! 0
@@ -648,7 +507,7 @@ tcmMatrixDefinition = {-do
         mtxAlphabet  <- symbol $ alphabetLine whitespaceNoNewlines
         assumpMatrix <- symbol $ matrixBlock whitespaceNoNewlines
         _            <- symbol $ char ';'
-        pure $ trace matrixName $ StepMatrix matrixName (fromEnum cardinality) (TCM mtxAlphabet assumpMatrix)
+        pure $ StepMatrix matrixName (fromEnum cardinality) (TCM mtxAlphabet assumpMatrix)
 
 treeBlockDefinition :: (Show s, MonadParsec s m Char) => m TreeBlock
 treeBlockDefinition = {-do
@@ -836,72 +695,11 @@ ignoredSubBlockDef endChar = {-do
   where
     stopMark = symbol $ char ';' <|> char' endChar
 
--- -------------------------------------------------------------------------------------------------
--- | Partitioning functions, which take a list of some type and produce a tuple.
--- Where there is a block with multiple optional fields or a field with multiple optional
--- subfields these take the output and put it into a tuple which can then be decomposed
--- and its fields used as arguments to a constructor.
--- I'm wondering if there's isn't a more efficient way to do this.
--- Also, can these be reduced to a single function, since they're all doing the same thing?
 
-partitionAssumptionBlock :: [AssumptionField] -> [StepMatrix]
-partitionAssumptionBlock = foldr f ([])
-    where
-        f (TCMMat n) vs = n:vs
-        f (IgnAF  _) vs = vs
 
-partitionSequenceBlock :: [SeqSubBlock] -> ([[String]],[CharacterFormat],[DimensionsFormat],[String],[[String]])
-partitionSequenceBlock = foldr f ([],[],[],[],[])
-    where
-        f (Matrix    e)  (v,w,x,y,z) = (e:v,   w,   x,   y,   z)
-        f (Format    e)  (v,w,x,y,z) = (  v, e:w,   x,   y,   z)
-        f (Dims      e)  (v,w,x,y,z) = (  v,   w, e:x,   y,   z)
-        f (Eliminate e)  (v,w,x,y,z) = (  v,   w,   x, e:y,   z)
-        f (Taxa      e)  (v,w,x,y,z) = (  v,   w,   x,   y, e:z)
-        f _                       ws = ws
-
-partitionTaxaBlock :: [SeqSubBlock] -> (Int, [String])
-partitionTaxaBlock = foldr f (0,[])
-    where
-        f (Dims n) (_,z) = (num, z)
-            where
-                num = numTaxa n
-        f (Taxa n) (y,_) = (  y, n)
-        f _           ws = ws
-
-partitionNexusBlocks :: [NexusBlock] -> ([PhyloSequence], [TaxaSpecification], [TreeBlock], [AssumptionBlock], [IgnBlock])
-partitionNexusBlocks = foldr f ([],[],[],[],[])
-  where
-    f (CharacterBlock   n) (xs,ys,zs,as,bs) = (n:xs,   ys,   zs,   as,   bs)
-    f (TaxaBlock        n) (xs,ys,zs,as,bs) = (  xs, n:ys,   zs,   as,   bs)
-    f (TreesBlock       n) (xs,ys,zs,as,bs) = (  xs,   ys, n:zs,   as,   bs)
-    f (AssumptionsBlock n) (xs,ys,zs,as,bs) = (  xs,   ys,   zs, n:as,   bs)
-    f (SkippedBlock     n) (xs,ys,zs,as,bs) = (  xs,   ys,   zs,   as, n:bs)
-    --f _                                  ws = ws
-
-partitionCharFormat :: [CharFormatField] -> (String, Either String [String], Either String [String], String, String, String, String, Bool, Bool, Bool, Bool, Bool)
-partitionCharFormat = foldr f ("", Right [""], Right [""], "", "", "", "", False, False, False, False, False)
-    where
-        f (CharDT      n) (_,q,r,s,t,u,v,w,x,y,z,o) = (n,q,r,s,t,u,v,w,x,y,z,o)
-        f (SymStr      n) (p,_,r,s,t,u,v,w,x,y,z,o) = (p,n,r,s,t,u,v,w,x,y,z,o)
-        f (EqStr       n) (p,q,_,s,t,u,v,w,x,y,z,o) = (p,q,n,s,t,u,v,w,x,y,z,o)
-        f (MissStr     n) (p,q,r,_,t,u,v,w,x,y,z,o) = (p,q,r,n,t,u,v,w,x,y,z,o)
-        f (GapChar     n) (p,q,r,s,_,u,v,w,x,y,z,o) = (p,q,r,s,n,u,v,w,x,y,z,o)
-        f (MatchChar   n) (p,q,r,s,t,_,v,w,x,y,z,o) = (p,q,r,s,t,n,v,w,x,y,z,o)
-        f (Items       n) (p,q,r,s,t,u,_,w,x,y,z,o) = (p,q,r,s,t,u,n,w,x,y,z,o)
-        f (RespectCase n) (p,q,r,s,t,u,v,_,x,y,z,o) = (p,q,r,s,t,u,v,n,x,y,z,o)
-        f (Tokens      n) (p,q,r,s,t,u,v,w,_,y,z,o) = (p,q,r,s,t,u,v,w,n,y,z,o)
-        f (Transpose   n) (p,q,r,s,t,u,v,w,x,_,z,o) = (p,q,r,s,t,u,v,w,x,n,z,o)
-        f (Interleave  n) (p,q,r,s,t,u,v,w,x,y,_,o) = (p,q,r,s,t,u,v,w,x,y,n,o)
-        f (Unlabeled   n) (p,q,r,s,t,u,v,w,x,y,z,_) = (p,q,r,s,t,u,v,w,x,y,z,n)
-        f (IgnFF       _)                        ws = ws
-
-partitionTreeBlock :: [TreeField] -> ([[String]], [(String,[NewickForest])])
-partitionTreeBlock = foldr f ([],[])
-    where
-        f (Translation n) (ys,zs) = (n:ys,   zs)
-        f (Tree n)        (ys,zs) = (  ys, n:zs)
-        f _                    ws = ws
+------------------------
+-- Utility fns --
+-- TODO: Are these used?
 
 trimmed :: (Show s, MonadParsec s m Char) => m a -> m a
 trimmed x = whitespace *> x <* whitespace
