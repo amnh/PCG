@@ -17,25 +17,31 @@
 
 module Bio.Phylogeny.Graph where
 
-import Prelude 
-import Data.IntMap hiding (filter, map, (!))
-import Data.IntSet hiding (filter, map)
-import Data.HashMap.Strict hiding (filter, map, (!))
+import Prelude hiding (length, (++))
+
+import Data.IntMap (IntMap, size, insert)
+import Data.IntSet (IntSet)
+import Data.HashMap.Strict (HashMap)
+import qualified Data.HashMap.Strict as H (insert)
 import Data.Monoid
-import Data.Vector hiding (filter, map, head, (!?))
+import Data.Vector (Vector, (//), length, singleton, elemIndex, (!), (++))
+import Data.Int
+import Data.BitVector (BitVector)
+
+import Data.Keyed hiding ((!))
+import Safe
+
 import Bio.Phylogeny.PhyloCharacter
 import Bio.Phylogeny.Tree.Node
 import Bio.Phylogeny.Forest
-import Data.Int
-import Data.BitVector
-import qualified Bio.Phylogeny.Network as N
-import Bio.Phylogeny.Tree.Binary
-import Data.Keyed hiding ((!))
-import Safe
 import Bio.Phylogeny.Tree.Rose
+import Bio.Phylogeny.Tree.Binary
+import qualified Bio.Phylogeny.Network as N
 import qualified Bio.Phylogeny.Tree.Edge.Standard  as E
 import qualified Bio.Phylogeny.Tree.EdgeAware      as ET
 import qualified Bio.Phylogeny.Tree.CharacterAware as CT
+import qualified Bio.Phylogeny.Tree.Referential    as RT
+
 
 -- | Standard graph types defined
 type Identifier = String
@@ -89,12 +95,26 @@ instance Monoid EdgeSet where
 
 -- | Make this tree structure an instance of the tree types
 instance N.Network Tree NodeInfo where
-  parents n t  = map (\i -> nodes t ! i) (parents n)
-  root t       = nodes t ! root t
-  children n t = map (\i -> nodes t ! i) (children n)
-  isLeaf n _   = isLeaf n
-  isRoot n _   = isRoot n
-  update t new = t {nodes = nodes t // map (\n -> (code n, n)) new}
+  parents n t   = map (\i -> nodes t ! i) (parents n)
+  root t        = nodes t ! root t
+  children n t  = map (\i -> nodes t ! i) (children n)
+  isLeaf n _    = isLeaf n
+  isRoot n _    = isRoot n
+  update t new  = t {nodes = nodes t // map (\n -> (code n, n)) new}
+  numNodes      = length . nodes 
+  addNode t n   = 
+    let
+      addPos = (size $ taxaNodes t)
+      names2 = insert addPos (show addPos) (taxaNodes t)
+      seqs2 = H.insert (show addPos) mempty (taxaSeqs t)
+      nodes2 = (nodes t) ++ singleton n
+      edges2 = (edges t) ++ singleton (makeEdges n)
+    in Tree names2 seqs2 (characters t) nodes2 edges2 (root t)
+  mergeTrees = undefined
+
+makeEdges :: NodeInfo -> EdgeSet
+makeEdges = undefined
+
 
 -- | This tree can be a binary tree
 instance BinaryTree Tree NodeInfo where
@@ -128,3 +148,7 @@ instance ET.EdgedTree Tree NodeInfo EdgeSet where
 instance CT.CharacterTree Tree CharInfo where
   characters = characters
   setCharacters t c = t {characters = c} 
+
+-- | This particular tree is referential
+instance RT.ReferentialTree Tree NodeInfo where
+  code node tree = elemIndex node (nodes tree)
