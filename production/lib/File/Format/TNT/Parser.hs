@@ -15,7 +15,7 @@ import qualified Data.Map.Strict as M   (toList)
 import           Data.Maybe             (catMaybes)
 import           Text.Megaparsec
 import           Text.Megaparsec.Custom
-import           Text.Megaparsec.Lexer  (integer,number)
+import           Text.Megaparsec.Lexer  (integer,number,signed)
 import           Text.Megaparsec.Prim   (MonadParsec)
 
 type TaxonInfo     = (TaxonName, TaxonSequence) 
@@ -92,9 +92,12 @@ xreadPreamble = xreadHeader *> ((,) <$> xreadTaxaCount <*> xreadCharCount)
 
 xreadHeader :: MonadParsec s m Char => m ()
 xreadHeader =  symbol (string' "xread")
-            *> optional (try $ symbol $ comment (string "'") (string "'"))
+            *> optional (try simpleComment)
             *> pure ()
-
+  where
+    simpleComment = delimiter *> anythingTill delimiter <* symbol delimiter
+      where
+        delimiter = char '\''
 
 xreadTaxaCount :: MonadParsec s m Char => m Int
 xreadTaxaCount = symbol $ flexiblePositiveInt "taxa count" 
@@ -103,7 +106,23 @@ xreadCharCount :: MonadParsec s m Char => m Int
 xreadCharCount = symbol $ flexiblePositiveInt "char count" 
                   
 flexiblePositiveInt :: MonadParsec s m Char => String -> m Int
-flexiblePositiveInt = undefined
+flexiblePositiveInt labeling = either coerceIntegral coerceFloating
+                             =<< signed whitespace number <?> ("positive integer for " ++ labeling)
+  where
+    coerceIntegral :: MonadParsec s m Char => Integer -> m Int
+    coerceIntegral x
+      | x <= 0      = fail $ concat ["The ",labeling," value (",show x,") is not a positive number"]
+      | otherwise   = pure $ fromEnum x
+    coerceFloating :: MonadParsec s m Char => Double -> m Int
+    coerceFloating x
+      | null errors = pure $ fromEnum rounded
+      | otherwise   = fails errors
+      where
+        errors      = catMaybes $ [posError,intError]
+        posError    = if x <= 0  then Nothing else Just $ concat ["The ",labeling," value (",show x,") is not a positive integer"]
+        intError    = if isInt x then Nothing else Just $ concat ["The ",labeling," value (",show x,") is a real value, not an integral value"]
+        isInt n     = n == fromInteger rounded
+        rounded     = round x
 
 taxonSequence :: MonadParsec s m Char => m TaxonInfo
 taxonSequence = (,) <$> (symbol taxonName) <*> taxonSeq
