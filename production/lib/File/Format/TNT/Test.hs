@@ -9,7 +9,7 @@ import Data.Char
 import Data.Either.Combinators    (isLeft,isRight)
 import qualified Data.Map as M
 import Data.Set                   (toList)
-import File.Format.Nexus.Parser
+import File.Format.TNT.Parser
 import Test.Custom                (parseEquals,parseFailure,parseSuccess)
 import Test.Tasty                 (TestTree,testGroup)
 import Test.Tasty.HUnit
@@ -38,8 +38,8 @@ flexiblePositiveInt' = testGroup "Positive Int parsed flexibly" [parsesInts, par
     parsesInts = testProperty "Parses positive, signed Integer literals" f
       where
         f :: Int -> Bool
-        f x = x > 0 == isRight (parse (flexiblePositiveInteger "") "" $ show x)
+        f x = (x > 0) == isRight (parse (flexiblePositiveInt "") "" $ show x)
     parsesIntegralDoubles = testProperty "Parses positive, signed integral valued Doubles" f
       where
         f :: Int -> Bool
-        f x = x > 0 == isRight (parse (flexiblePositiveInteger "") "" $ show (fromIntegral x :: Double))
+        f x = (x > 0) == isRight (parse (flexiblePositiveInt "") "" $ show (fromIntegral x :: Double))
