@@ -32,7 +32,7 @@
 module File.Format.Nexus.Parser where
 
 import           Data.Char              (isSpace,toLower)
-import           Data.DList             (DList,append)
+--import           Data.DList             (DList,append)
 --import qualified Data.DList as DL       (toList,fromList)
 import           Data.Either            (lefts)
 import           Data.List              (sort)

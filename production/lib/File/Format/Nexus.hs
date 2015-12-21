@@ -26,6 +26,7 @@ module File.Format.Nexus
   ) where
 
 import File.Format.Nexus.Parser
+import File.Format.Nexus.Data
 import Text.Megaparsec
 import Text.Megaparsec.Prim      (MonadParsec)
 
