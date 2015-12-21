@@ -9,6 +9,7 @@ import Data.Char
 import Data.Either.Combinators    (isLeft,isRight)
 import qualified Data.Map as M
 import Data.Set                   (toList)
+import File.Format.Nexus.Data
 import File.Format.Nexus.Parser
 import Test.Custom                (parseEquals,parseFailure,parseSuccess)
 import Test.Tasty                 (TestTree,testGroup)
