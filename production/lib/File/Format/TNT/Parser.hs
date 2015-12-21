@@ -91,7 +91,10 @@ xreadPreamble :: MonadParsec s m Char => m (Int, Int)
 xreadPreamble = xreadHeader *> ((,) <$> xreadTaxaCount <*> xreadCharCount)
 
 xreadHeader :: MonadParsec s m Char => m ()
-xreadHeader = undefined
+xreadHeader =  symbol (string' "xread")
+            *> optional (try $ symbol $ comment (string "'") (string "'"))
+            *> pure ()
+
 
 xreadTaxaCount :: MonadParsec s m Char => m Int
 xreadTaxaCount = symbol $ flexiblePositiveInt "taxa count" 
