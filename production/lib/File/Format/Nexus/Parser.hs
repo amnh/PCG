@@ -470,6 +470,7 @@ getSeqFromMatrix seqLst taxaLst =
 -- a seqMatrix of the form Map taxon sequence. The original list of tuples should have duplicate taxon entries
 -- (because of the seqMatrix being interleaved), and the seqs should be concatted---in order---in the 
 -- returned map.
+-- The first 'Map' parameter is used for when there are no label present
 -- A (partial?) test exists in the test suite.
 deInterleave :: M.Map String String -> [(String, String)] -> M.Map String String
 deInterleave = foldr (\(seqName, phyloSeq) acc -> M.insertWith (++) seqName phyloSeq acc)

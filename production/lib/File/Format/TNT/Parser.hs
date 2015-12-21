@@ -1,13 +1,22 @@
 {-# LANGUAGE FlexibleContexts #-}
 module File.Format.TNT.Parser where
 
-import Data.Bifunctor         (second)
-import Data.Char              (isSpace)
-import Data.Maybe             (catMaybes)
-import Text.Megaparsec
-import Text.Megaparsec.Custom
-import Text.Megaparsec.Lexer  (integer)
-import Text.Megaparsec.Prim   (MonadParsec)
+{-- TODO:
+  - Robust tests
+  - Good documentation
+  -}
+
+import           Data.Bifunctor         (second)
+import           Data.Char              (isSpace)
+import           Data.DList             (DList,append)
+import qualified Data.DList as DL       (toList,fromList)
+import           Data.Map.Strict        (Map,insertWith)
+import qualified Data.Map.Strict as M   (toList)
+import           Data.Maybe             (catMaybes)
+import           Text.Megaparsec
+import           Text.Megaparsec.Custom
+import           Text.Megaparsec.Lexer  (integer)
+import           Text.Megaparsec.Prim   (MonadParsec)
 
 type TaxonInfo     = (TaxonName, TaxonSequence) 
 type TaxonName     = String
@@ -22,12 +31,15 @@ xreadCommand = xreadValidation =<< xreadDefinition
       _        <- optional $ try $ symbol $ comment (string "'") (string "'")
       numTaxa  <- fromEnum <$> symbol integer
       numChars <- fromEnum <$> symbol integer
-      taxaSeqs <- deinterleaveTaxa =<< symbol (some taxonSequence)
+      taxaSeqs <- deinterleaveTaxa <$> symbol (some taxonSequence)
       _        <- symbol $ char ';'
       pure (numTaxa, numChars, taxaSeqs)
 
-    deinterleaveTaxa :: MonadParsec s m Char => [TaxonInfo] -> m [TaxonInfo]
-    deinterleaveTaxa = undefined
+    deinterleaveTaxa :: [TaxonInfo] -> [TaxonInfo]
+    deinterleaveTaxa = M.toList . fmap DL.toList . foldr f mempty 
+      where
+        f :: TaxonInfo -> Map TaxonName (DList Char) -> Map TaxonName (DList Char)
+        f (taxonName, taxonSequence) = insertWith append taxonName (DL.fromList taxonSequence)
 
     xreadValidation :: MonadParsec s m Char => (Int, Int, [TaxonInfo]) -> m [TaxonInfo]
     xreadValidation (taxaCount, charCount, taxaSeqs)
