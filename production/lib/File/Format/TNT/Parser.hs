@@ -15,7 +15,7 @@ import qualified Data.Map.Strict as M   (toList)
 import           Data.Maybe             (catMaybes)
 import           Text.Megaparsec
 import           Text.Megaparsec.Custom
-import           Text.Megaparsec.Lexer  (integer)
+import           Text.Megaparsec.Lexer  (integer,number)
 import           Text.Megaparsec.Prim   (MonadParsec)
 
 type TaxonInfo     = (TaxonName, TaxonSequence) 
@@ -35,6 +35,27 @@ xreadCommand = xreadValidation =<< xreadDefinition
       _        <- symbol $ char ';'
       pure (numTaxa, numChars, taxaSeqs)
 
+{-
+    xreadPreamble :: MonadParsec s m Char => m (Either Integer Double, Either Integer Double)
+    xreadPreamble = do
+      _        <- symbol $ string' "xread"
+      _        <- optional $ try $ symbol $ comment (string "'") (string "'")
+      numTaxa  <- symbol $ signed number
+      numChars <- symbol $ signed number
+      pure (numTaxa,numChars)
+
+    xreadPositiveInts :: MonadParsec s m Char => (Either Integer Double, Either Integer Double) -> m (Int, Int)
+    xreadPositiveInts (x,y) = do
+      case (x,y) of
+        (Left taxaCount, Left charCount) = pure $ (fromEnum taxaCount, fromEnum charCount)
+        (Right _       , Left _        ) =
+        (
+
+      where
+        validateNumber :: Either Integer Double -> m Int
+        
+        isInt x = x == fromInteger (round x)
+-}        
     deinterleaveTaxa :: [TaxonInfo] -> [TaxonInfo]
     deinterleaveTaxa = M.toList . fmap DL.toList . foldr f mempty 
       where
@@ -66,11 +87,23 @@ xreadCommand = xreadValidation =<< xreadDefinition
                               , show $ fst <$> xs
                               ]                            
 
+xreadPreamble :: MonadParsec s m Char => m (Int, Int)
+xreadPreamble = xreadHeader *> ((,) <$> xreadTaxaCount <*> xreadCharCount)
+
+xreadHeader :: MonadParsec s m Char => m ()
+xreadHeader = undefined
+
+xreadTaxaCount :: MonadParsec s m Char => m Int
+xreadTaxaCount = symbol $ flexiblePositiveInt "taxa count" 
+
+xreadCharCount :: MonadParsec s m Char => m Int
+xreadCharCount = symbol $ flexiblePositiveInt "char count" 
+                  
+flexiblePositiveInt :: MonadParsec s m Char => String -> m Int
+flexiblePositiveInt = undefined
+
 taxonSequence :: MonadParsec s m Char => m TaxonInfo
-taxonSequence = do
-    name <- symbol $ taxonName
-    seq' <- taxonSeq
-    pure (name, seq')
+taxonSequence = (,) <$> (symbol taxonName) <*> taxonSeq
   where
     taxonName     = some validNameChar
     taxonSeq      = validSeqChar `someTill` terminal
