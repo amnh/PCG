@@ -8,13 +8,7 @@
 -- Stability   :  provisional
 -- Portability :  portable
 --
--- Functions for for partitioning Nexus data types and subtypes.
---
------------------------------------------------------------------------------
-
-
--- -------------------------------------------------------------------------------------------------
--- | Partitioning functions, which take a list of some type and produce a tuple.
+-- Partitioning functions, which take a list of some type and produce a tuple.
 -- Where there is a block with multiple optional fields or a field with multiple optional
 -- subfields these take the output and put it into a tuple which can then be decomposed
 -- and its fields used as arguments to a constructor.

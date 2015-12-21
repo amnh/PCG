@@ -19,8 +19,14 @@ import           Text.Megaparsec.Custom
 import           Text.Megaparsec.Lexer  (integer,number,signed)
 import           Text.Megaparsec.Prim   (MonadParsec)
 
-type TaxonInfo     = (TaxonName, TaxonSequence) 
+-- | The sequence information for a taxon within the TNT file's XREAD command.
+-- Contains the 'TaxonName' and the naive 'TaxonSequence' 
+type TaxonInfo     = (TaxonName, TaxonSequence)
+
+-- | The name of a taxon in a TNT file's XREAD command.
 type TaxonName     = String
+
+-- | The naive sequence of a taxon in a TNT files' XREAD command.
 type TaxonSequence = String
 
 xreadCommand :: MonadParsec s m Char => m [TaxonInfo]
@@ -91,6 +97,9 @@ taxonSequence = (,) <$> (symbol taxonName) <*> taxonSeq
     validNameChar = satisfy (\x -> (not . isSpace) x && x /= ';')
     validSeqChar  = oneOf $ ['0'..'9'] ++ ['A'..'Z'] ++ ['a'..'z'] ++ "-?"
 
+-- | Parses an positive integer from a variety of representations.
+-- Parses both signed integral values and signed floating values
+-- if the value is positive and an integer.
 flexiblePositiveInt :: MonadParsec s m Char => String -> m Int
 flexiblePositiveInt labeling = either coerceIntegral coerceFloating
                              =<< signed whitespace number <?> ("positive integer for " ++ labeling)
@@ -110,11 +119,14 @@ flexiblePositiveInt labeling = either coerceIntegral coerceFloating
         isInt n     = n == fromInteger rounded
         rounded     = round x
 
+-- | Consumes trailing whitespace after the parameter combinator.
 symbol :: MonadParsec s m Char => m a -> m a
 symbol c = c <* whitespace
 
+-- | Consumes zero or more whitespace characters __including__ line breaks.
 whitespace :: MonadParsec s m Char => m ()
 whitespace = space
 
+-- | Consumes zero or more whitespace characters that are not line breaks.
 whitespaceInline :: MonadParsec s m Char => m ()
 whitespaceInline =  inlineSpace
