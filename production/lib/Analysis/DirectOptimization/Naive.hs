@@ -1,10 +1,10 @@
 {-# LANGUAGE ConstraintKinds #-}
 
-module Analysis.DirectOptimization.Naive where
+module Analysis.DirectOptimization.Naive (naiveDOThree, naiveDOTwo) where
 
-import Prelude hiding (length, zipWith)
+import Prelude hiding (length, zipWith, or)
 import Data.Maybe
-import Data.Vector (Vector, singleton, length, zipWith, cons, empty, toList, (!))
+import Data.Vector (Vector, singleton, length, zipWith, cons, empty, toList, (!), or)
 import qualified Data.Vector as V (foldr)
 import Data.Bits
 import Data.Monoid ((<>))
@@ -15,13 +15,11 @@ import Control.Applicative (liftA2)
 import Bio.Phylogeny.Tree.Node.Preliminary
 import Bio.Phylogeny.Network
 import Bio.Phylogeny.Tree.Node.Encoded
-
 import Bio.Sequence.Coded
 
-type TreeConstraint t n s b = (Network t n, NodeConstraint n s b)
-type NodeConstraint n s b = (PreliminaryNode n s, EncodedNode n s, SeqConstraint s b)
-type SeqConstraint s b = (CodedSequence s b, Eq s, CharConstraint b)
-type CharConstraint b = (Bits b, Eq b, CodedChar b)
+import Analysis.DirectOptimization.Utilities
+
+
 data Direction = LeftDir | RightDir | DiagDir | DownDir deriving (Eq, Show)
 
 type AlignRow s = (Vector Float, s, Vector Direction)
@@ -32,13 +30,23 @@ type Costs = (Float, Float)
 indelCost = 1
 subCost = 1
 
--- | Performs a naive direct optimization on sequences of first two nodes and saves to third node
-naiveDONode :: NodeConstraint n s b => n -> n -> n -> n
-naiveDONode align1 align2 save = 
-    let 
-        result = zipWith naiveDO (encoded align1) (encoded align2) 
+-- | Performs a three-way alignment with node 3, assigns to all three nodes, and returns those and whether it is longer
+naiveDOThree :: NodeConstraint n s b => n -> n -> n -> (n, n, n, Bool)
+naiveDOThree node1 node2 node3 = 
+    let
+        (aligned1, aligned3, isLonger1) = naiveDOTwo node1 node3
+        (aligned2, aligned3b, isLonger2) = naiveDOTwo node2 aligned3
+    in (aligned1, aligned2, aligned3b, isLonger1 || isLonger2)
+
+-- | Performs a two-way alignment, assigns to both nodes, and returns those and whether it is longer
+naiveDOTwo :: NodeConstraint n s b => n -> n -> (n, n, Bool)
+naiveDOTwo node1 node2 =
+    let
+        result = zipWith naiveDO (getForAlign node2) (getForAlign node2) 
         gapped = foldr (\(_, _, g, _, _) acc -> g `cons` acc) empty result
-    in setAlign gapped save
+        checkLen = zipWith (\align preAlign -> if numChars align > numChars preAlign then True else False) gapped (getForAlign node2)
+        foldCheck = or checkLen
+    in (setAlign gapped node1, setAlign gapped node2, foldCheck)
 
 -- | Performs a naive direct optimization
 naiveDO :: SeqConstraint s b => s -> s -> (s, Float, s, s, s)
