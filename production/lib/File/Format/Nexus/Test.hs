@@ -4,18 +4,20 @@ module File.Format.Nexus.Test
   ( testSuite
   ) where
 
-import Control.Monad              (join)
-import Data.Char
-import Data.Either.Combinators    (isLeft,isRight)
+import           Control.Monad            (join)
+import           Data.Char
+import           Data.DList               (DList)
+import qualified Data.DList as DL         (empty,fromList)
+import           Data.Either.Combinators  (isLeft,isRight)
 import qualified Data.Map as M
-import Data.Set                   (toList)
-import File.Format.Nexus.Data
-import File.Format.Nexus.Parser
-import Test.Custom                (parseEquals,parseFailure,parseSuccess)
-import Test.Tasty                 (TestTree,testGroup)
-import Test.Tasty.HUnit
-import Test.Tasty.QuickCheck
-import Text.Megaparsec            (char,eof,parse,string)
+import           Data.Set                 (toList)
+import           File.Format.Nexus.Data
+import           File.Format.Nexus.Parser
+import           Test.Custom              (parseEquals,parseFailure,parseSuccess)
+import           Test.Tasty               (TestTree,testGroup)
+import           Test.Tasty.HUnit
+import           Test.Tasty.QuickCheck
+import           Text.Megaparsec          (char,eof,parse,string)
 
 import Debug.Trace (trace)
 
@@ -31,6 +33,7 @@ testSuite = testGroup "Nexus Format"
                                   , ignoredSubBlockDef'
                                   , notKeywordWord'
                                   , quotedStringDefinition'
+                                  , replaceMatches'
                                   , stringDefinition'
                                   , stringListDefinition'
                                   , tcmMatrixDefinition'
@@ -87,13 +90,13 @@ charFormatFieldDef' = testGroup "charFormatFieldDef" ([emptyString] ++ testSingl
         stringTypeListPerms = [(string ++ " " ++ string', [result, result']) | (string, result) <- stringTypeList, (string', result') <- stringTypeList]
 
 deInterleave' :: TestTree
-deInterleave' = testCase "deInterleave" $ assertEqual "" (deInterleave inMap inTups) outMap
+deInterleave' = testCase "deInterleave" $ assertEqual "" outMap (deInterleave inMap inTups)
     where
         inMap = M.fromList [("a",""),("e",""),("i","")]
-        inTups = [("a","bbb"),("e","fff"),("i","jjj")
-                 ,("a","ccc"),("e","ggg"),("i","kkk")
-                 ,("a","ddd"),("e","hhh"),("i","lll")]
-        outMap = M.fromList [("a", "bbbcccddd"),("e","fffggghhh"),("i","jjjkkklll")]
+        inTups = [("a","123"),("e","fgh"),("i","789")
+                 ,("a","456"),("e","ijk"),("i","456")
+                 ,("a","789"),("e","lmn"),("i","123")]
+        outMap = M.fromList [("a", "123456789"),("e","fghijklmn"),("i","789456123")]
 
 formatDefinition' :: TestTree
 formatDefinition' = testGroup "formatDefinition" [test1, test2, test3, test4, test5, test6] 
@@ -264,6 +267,14 @@ quotedStringDefinition' = testGroup "quotedStringDefinition" [generalProperty, m
             res = words val
             spc = getWhitespaceChar <$> getNonEmpty z
             str = key ++ "=" ++ spc ++ "\"" ++ val ++ "\""
+
+replaceMatches' :: TestTree
+replaceMatches' = testCase "replaceMatches" $ assertEqual "" outString (replaceMatches matchChar canonical strToRepair)
+    where
+        matchChar   = '.'
+        canonical   = ".b.d.f.h.j.l.n."
+        strToRepair = "a.c.e.g.i.k.m.o"
+        outString   = "abcdefghijklmno"
 
 stringDefinition' :: TestTree
 stringDefinition' = testGroup "stringDefinition" [generalProperty, withSpace, rejectsKeywords]

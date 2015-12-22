@@ -32,8 +32,8 @@
 module File.Format.Nexus.Parser where
 
 import           Data.Char              (isSpace,toLower)
---import           Data.DList             (DList,append)
---import qualified Data.DList as DL       (toList,fromList)
+import           Data.DList             (DList,append)
+import qualified Data.DList as DL       (toList,fromList,empty)
 import           Data.Either            (lefts)
 import           Data.List              (sort)
 import qualified Data.Map.Lazy as M
@@ -308,7 +308,7 @@ getSeqFromMatrix seqLst taxaLst =
     where
         (noLabels, interleaved, tkns, cont, matchChar') = getFormatInfo $ head seqLst
         taxaCount  = length taxaLst
-        taxaMap    = M.fromList . zip taxaLst $ repeat []
+        taxaMap    = M.fromList . zip taxaLst $ repeat ""
         mtx        = head $ seqMatrix $ head seqLst -- I've already checked to make sure there's a matrix
         entireSeqs = if noLabels    -- this will be a list of tuples (taxon, concatted seq)
                      then if interleaved
@@ -316,7 +316,7 @@ getSeqFromMatrix seqLst taxaLst =
                           else zip taxaLst mtx
                      else getTaxonAndSeqFromMatrixRow <$> mtx
         entireDeinterleavedSeqs = if interleaved
-                                  then deInterleave taxaMap entireSeqs -- next step: figure out why entireSeqs is sometimes not split
+                                  then deInterleave taxaMap entireSeqs
                                   else M.fromList entireSeqs
         firstSeq = fromJust $ M.lookup (if noLabels
                                         then head taxaLst
@@ -325,15 +325,22 @@ getSeqFromMatrix seqLst taxaLst =
         matchCharsReplaced = if matchChar' /= ""
                              then M.map (replaceMatches (head matchChar') firstSeq) entireDeinterleavedSeqs
                              else entireDeinterleavedSeqs
+        -- equatesReplaced = if eqChar /= ""
+        --                    then M.map (replaceEquates (head eqChar)) matchCharsReplaced
 
--- | deInterleaved takes in an interleaved seqMatrix in the form [(taxon,sequence)] and returns
+-- | deInterleaved takes in a Map  interleaved seqMatrix in the form [(taxon,sequence)] and returns
 -- a seqMatrix of the form Map taxon sequence. The original list of tuples should have duplicate taxon entries
 -- (because of the seqMatrix being interleaved), and the seqs should be concatted---in order---in the 
 -- returned map.
 -- The first 'Map' parameter is used for when there are no label present
 -- A (partial?) test exists in the test suite.
+--deInterleave :: M.Map String (DList Char) -> [(String, String)] -> M.Map String String
+--deInterleave taxaMap seqs = M.map DL.toList finalMap
+--    where
+--        finalMap = foldr (\(seqName, phyloSeq) acc -> M.insertWith ((flip append)) seqName (DL.fromList phyloSeq) acc) taxaMap seqs
+
 deInterleave :: M.Map String String -> [(String, String)] -> M.Map String String
-deInterleave = foldr (\(seqName, phyloSeq) acc -> M.insertWith (++) seqName phyloSeq acc)
+deInterleave = foldr (\(seqName, phyloSeq) acc -> M.insertWith (++) seqName phyloSeq acc) 
 
 -- | getTaxonAndSeqFromMatrixRow takes a String of format "xxx[space or tab]yyy"
 -- and returns a tuple of form ("xxx","yyy")

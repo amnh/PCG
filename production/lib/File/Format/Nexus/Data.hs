@@ -102,6 +102,28 @@ data Nexus
    , stepMatrices :: AssumptionBlock
    } deriving (Show)
 
+--type AlphabetSymbol = String
+
+--type TaxonIdentifier = String
+
+--type AmbiguityGroup = [AlphabetSymbol]
+
+--type Sequence = Vector AmbiguityGroup
+
+--type TaxonSequenceMap = Map TaxonIdentifier Sequence
+
+--type Sequences = [([TaxonIdentifier], TaxonSequenceMap, CharacterMetadata)]
+
+--data CharacterMetadata 
+--     = CharacterMetadata
+--     { aligned  :: Bool
+--     , alphabet :: [AlphabetSymbol]
+--     , length   :: Maybe Int
+--     , ignored  :: Bool  -- This is a problem, as input may interleave ignored and non-ignored chars, so given seqs will need to be broken up
+--                         -- into separate seqs during validation (also true for TNT?).
+--                         -- That means that order of items in Sequences is important for IA output, I think. Maybe check with Ward?
+--     }
+
 -- | Types blocks in the Nexus file and their accompanying data.
 data NexusBlock
    = TaxaBlock        TaxaSpecification
