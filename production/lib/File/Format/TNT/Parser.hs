@@ -205,7 +205,7 @@ flexiblePositiveInt labeling = either coerceIntegral coerceFloating
       | otherwise   = fails errors
       where
         errors      = catMaybes $ [posError,intError]
-        posError    = if x <= 0  then Nothing else Just $ concat ["The ",labeling," value (",show x,") is not a positive integer"]
+        posError    = if x >= 1  then Nothing else Just $ concat ["The ",labeling," value (",show x,") is not a positive integer"]
         intError    = if isInt x then Nothing else Just $ concat ["The ",labeling," value (",show x,") is a real value, not an integral value"]
         isInt n     = n == fromInteger rounded
         rounded     = round x

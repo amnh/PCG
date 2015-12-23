@@ -20,6 +20,7 @@ testSuite :: TestTree
 testSuite = testGroup "TNT Format"
   [ testGroup "TNT Combinators" [ xreadHeader'
                                 , flexiblePositiveInt'
+                                , procedureTests
                                 ] 
   ]
 
@@ -44,3 +45,20 @@ flexiblePositiveInt' = testGroup "Positive Int parsed flexibly" [parsesInts, par
       where
         f :: Int -> Bool
         f x = (x > 0) == isRight (parse (flexiblePositiveInt "") "" $ show (fromIntegral x :: Double))
+
+procedureTests = testGroup "PROCEDURE command tests" [shortProcedureHeader, longProcedureHeader, closeFilesDirective, commandFile, fastaFile, generalEnding]
+  where
+    shortProcedureHeader = testCase "Parses component \"proc\""      $ parseSuccess procHeader    "proc"
+    longProcedureHeader  = testCase "Parses component \"procedure\"" $ parseSuccess procHeader    "procedure"
+    closeFilesDirective  = testCase "Parses component \"/;\""        $ parseSuccess procCloseFile "/;"
+    generalEnding        = testCase "Parses \"proc /;\""             $ parseSuccess procCommand   "proc /;"                                              
+    commandFile = testProperty "parses arbitrary command file" f
+      where
+         f :: NonEmptyList Char -> Bool
+         f x = isRight . parse procCommandFile "" $ fileName ++ ";" 
+           where fileName = takeWhile (not . isSpace) $ getNonEmpty x
+    fastaFile = testProperty "parses arbitrary command file" f
+      where
+         f :: NonEmptyList Char -> Bool
+         f x = isRight . parse procCommandFile "" $ "&" ++ fileName ++ ";" 
+           where fileName = takeWhile (not . isSpace) $ getNonEmpty x
