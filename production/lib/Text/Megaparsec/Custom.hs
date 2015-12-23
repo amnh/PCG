@@ -82,6 +82,16 @@ inlineSpace = skipMany inlineSpaceChar
 -- the delimiter @start@ and ends with the delimiter @end@.
 --
 -- Each opening @start@ must be matched with an @end@ in a proper nested structure.
+--
+-- *NOTE:* if @start@ and @end@ are not completely disjoint combinators, that is if
+-- there esxists any string which both @start@ and @end@ can match, the @comment@
+-- combinator will not behave as expected. The parser is unable to handle the ambiguity
+-- of whether strings matched in the intersection of @start@ and @end@ should represent
+-- the beginning of a nested comment structure or the closing of an open comment structure.
+--
+-- Ensure that the following holds for all `x :: String`:
+--
+-- > isRight (parse start "" x) /= isRight (parse end "" x)
 comment :: MonadParsec s m Char => m String -> m String -> m String
 comment start end = commentDefinition' False
   where
