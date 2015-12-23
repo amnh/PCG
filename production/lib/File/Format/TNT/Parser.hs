@@ -119,6 +119,40 @@ xreadSequences = NE.fromList . deinterleaveTaxa <$> symbol (taxonSequence `sepEn
         f :: TaxonInfo -> Map TaxonName (DList Char) -> Map TaxonName (DList Char)
         f (taxonName, taxonSequence) = insertWith append taxonName (DL.fromList taxonSequence)
 
+-- | Parses an PROCEDURE command that consisits of exacty
+-- one of the following:
+--
+--  * Close file directive
+--
+--  * Fasta file to read-in
+--
+--  * Command file to be interpreted
+procCommand :: MonadParsec s m Char => m ()
+procCommand =  procHeader *> procBody
+  where
+    procBody = (try procFastaFile   *> pure ())
+           <|> (try procCommandFile *> pure ())
+           <|>      procCloseFile
+
+-- | Consumes the superflous heading for a PROCEDURE command.
+procHeader :: MonadParsec s m Char => m ()
+procHeader = string' "proc" *> optional (string' "edure") *> pure ()
+
+-- | A directive to interpret a file. We throw this info away later.
+-- Interpreting a file kinda sucks, this ins't Lisp.
+procCommandFile :: MonadParsec s m Char => m FilePath
+procCommandFile = anythingTill (whitespace *> char ';') <* trim (char ';')
+
+-- | A directive to read in a FASTA file as aligned, non-addative data.
+-- Not sure if we should ignore this or acturally process additional files.
+procFastaFile :: MonadParsec s m Char => m FilePath
+procFastaFile = symbol (char '&') *> procCommandFile
+
+-- | A close file directive. Closes all open files. Found at the end of all
+-- properly formated TNT input files.
+procCloseFile :: MonadParsec s m Char => m ()
+procCloseFile = symbol (char '/') *> symbol (char ';') *> pure ()
+    
 -- | Parses a taxon name and sequence of characters for a given character.
 -- Character values can be one of 64 states ordered @[0..9,A..Z,a..z]@ and also the Chars @\'-\'@ & @\'?\'@.
 -- Taxon name cannot contain spaces or the @\';\'@ character.
