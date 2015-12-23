@@ -4,20 +4,21 @@ module File.Format.Nexus.Test
   ( testSuite
   ) where
 
-import           Control.Monad            (join)
+import           Control.Monad              (join)
 import           Data.Char
-import           Data.DList               (DList)
-import qualified Data.DList as DL         (empty,fromList)
-import           Data.Either.Combinators  (isLeft,isRight)
+import           Data.DList                 (DList)
+import qualified Data.DList as DL           (empty,fromList)
+import           Data.Either.Combinators    (isLeft,isRight)
 import qualified Data.Map as M
-import           Data.Set                 (toList)
+import           Data.Set                   (toList)
 import           File.Format.Nexus.Data
 import           File.Format.Nexus.Parser
-import           Test.Custom              (parseEquals,parseFailure,parseSuccess)
-import           Test.Tasty               (TestTree,testGroup)
+import           File.Format.Nexus.Validate
+import           Test.Custom                (parseEquals,parseFailure,parseSuccess)
+import           Test.Tasty                 (TestTree,testGroup)
 import           Test.Tasty.HUnit
 import           Test.Tasty.QuickCheck
-import           Text.Megaparsec          (char,eof,parse,string)
+import           Text.Megaparsec            (char,eof,parse,string)
 
 import Debug.Trace (trace)
 
@@ -38,7 +39,7 @@ testSuite = testGroup "Nexus Format"
                                   , stringListDefinition'
                                   , tcmMatrixDefinition'
                                   , treeDefinition'
-                                  ] 
+                                  ]
   ]
 
 assumptionFieldDef' :: TestTree
@@ -51,7 +52,7 @@ assumptionFieldDef' = testGroup "assumptionFieldDef" [test1, test2]
 blockend' :: TestTree
 blockend' = testGroup "blockend: Input should never be consumed" [end, endWithSemi, endblock, endblockWithSemi, other]
     where
-        end              = testCase "END should fail"       $ parseFailure (blockend <* string "end" )     "end" 
+        end              = testCase "END should fail"       $ parseFailure (blockend <* string "end" )     "end"
         endblock         = testCase "ENDBLOCK should fail"  $ parseFailure (blockend <* string "endblock") "endblock"
         endWithSemi      = testCase "END; should pass"      $ parseSuccess blockend "end;"
         endblockWithSemi = testCase "ENDBLOCK; should pass" $ parseSuccess blockend "endblock;"
@@ -72,7 +73,7 @@ charFormatFieldDef' = testGroup "charFormatFieldDef" ([emptyString] ++ testSingl
     where
         emptyString = testCase "Empty String" $ parseEquals charFormatFieldDef "" []
         testSingletons = map (\(x,y) -> testCase x (parseEquals charFormatFieldDef x [y])) stringTypeList
-        testCommutivity = map (\(x,y) -> testCase x (parseEquals charFormatFieldDef x y)) stringTypeListPerms 
+        testCommutivity = map (\(x,y) -> testCase x (parseEquals charFormatFieldDef x y)) stringTypeListPerms
         stringTypeList = [ ("datatype=xyz", CharDT "xyz")
                          , ("symbols=\"abc\"", SymStr (Right ["abc"]))
                          , ("transpose", Transpose True)
@@ -99,7 +100,7 @@ deInterleave' = testCase "deInterleave" $ assertEqual "" outMap (deInterleave in
         outMap = M.fromList [("a", "123456789"),("e","fghijklmn"),("i","789456123")]
 
 formatDefinition' :: TestTree
-formatDefinition' = testGroup "formatDefinition" [test1, test2, test3, test4, test5, test6] 
+formatDefinition' = testGroup "formatDefinition" [test1, test2, test3, test4, test5, test6]
     where
         test1 = testCase "transpose" $ parseEquals formatDefinition "format transpose;" $ CharacterFormat "" (Right [""]) (Right [""]) "" "" "" "" False False True False False
         test2 = testCase "datatype" $ parseEquals formatDefinition "format DATATYPE=Standard;" $ CharacterFormat "Standard" (Right [""]) (Right [""]) "" "" "" "" False False False False False
@@ -240,7 +241,7 @@ quotedStringDefinition' = testGroup "quotedStringDefinition" [generalProperty, m
             val = filter (`notElem` badChars) $ getNonEmpty y
             res = words val
             str = key ++ "=\"" ++ val ++ "\""
-            
+
     missingCloseQuote = testProperty "Missing close quote" f
       where
         f :: (NonEmptyList AsciiAlphaNum, NonEmptyList AsciiAlphaNum) -> Bool
@@ -343,7 +344,7 @@ treeDefinition' = testGroup "treeDefinition" [failsOnEmptyTree, succeedsOnSimple
           where
             treeLabel = getAsciiAlphaNum <$> getNonEmpty randomLabel
 
-stringTypeList = 
+stringTypeList =
                  [ ("datatype=xyz", CharDT "xyz")
                  , ("symbols=\"abc\"", SymStr (Right ["abc"]))
                  , ("transpose", Transpose True)
