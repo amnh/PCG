@@ -40,7 +40,7 @@ xreadCommand = xreadValidation =<< xreadDefinition
     xreadDefinition = uncurry (,,) <$> xreadPreamble <*> xreadSequences <* symbol (char ';')
 
     xreadValidation :: MonadParsec s m Char => (Int, Int, NonEmpty TaxonInfo) -> m (NonEmpty TaxonInfo)
-    xreadValidation (taxaCount, charCount, taxaSeqs)
+    xreadValidation (charCount, taxaCount, taxaSeqs)
       | null errors = pure taxaSeqs
       | otherwise   = fails errors
       where
@@ -68,7 +68,7 @@ xreadCommand = xreadValidation =<< xreadDefinition
 -- | Consumes everything in the XREAD command prior to the taxa sequences.
 -- Produces the expected taxa count and the length of the character sequences.
 xreadPreamble :: MonadParsec s m Char => m (Int, Int)
-xreadPreamble = xreadHeader *> ((,) <$> xreadTaxaCount <*> xreadCharCount)
+xreadPreamble = xreadHeader *> ((,) <$> xreadCharCount <*> xreadTaxaCount)
 
 -- | The superflous information of an XREAD command.
 -- Consumes the XREAD string identifier and zero or more comments
