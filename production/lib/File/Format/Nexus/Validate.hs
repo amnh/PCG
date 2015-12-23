@@ -16,11 +16,11 @@
 
 module File.Format.Nexus.Validate where
 
-import           Data.Char              (isSpace,toLower)
+import           Data.Char              (toLower)
 import           Data.Either            (lefts)
 import           Data.List              (sort)
 import qualified Data.Map.Lazy as M
-import           Data.Maybe             (isJust, fromJust, catMaybes, maybeToList)
+import           Data.Maybe             (fromJust, catMaybes, maybeToList)
 import qualified Data.Vector as V
 import           File.Format.Nexus.Data
 import           Safe
