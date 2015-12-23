@@ -385,7 +385,8 @@ getTaxaFromSeq phyloSeq
 -- Helper fns
 ----------------------------------------------
 
-
+-- It's super inefficient!!!
+-- Maybe use `Text`?
 
 lstrip :: String -> String
 lstrip "" = ""
