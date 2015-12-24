@@ -17,14 +17,16 @@
 
 module Bio.Phylogeny.Graph where
 
-import Prelude hiding (length, (++))
+import Prelude hiding (length)
 
-import Data.IntMap (IntMap, size, insert)
-import Data.IntSet (IntSet)
+import Data.IntMap (IntMap, size, insert, foldWithKey)
+import Data.IntSet (IntSet, fromList)
+import qualified Data.IntSet as IS (map)
 import Data.HashMap.Strict (HashMap)
 import qualified Data.HashMap.Strict as H (insert)
 import Data.Monoid
-import Data.Vector (Vector, (//), length, singleton, elemIndex, (!), (++))
+import Data.Vector (Vector, (//), length, singleton, elemIndex, (!))
+import qualified Data.Vector as V ((++), map)
 import Data.Int
 import Data.BitVector (BitVector)
 
@@ -86,7 +88,23 @@ instance Monoid Graph where
 -- | Trees are monoids
 instance Monoid Tree where
   mempty = Tree mempty mempty mempty mempty mempty 0
-  mappend (Tree a b c d e f) (Tree a' b' c' d' e' f') = Tree (a<>a') (b<>b') (c<>c') (d<>d') (e<>e') (f + f')
+  mappend (Tree a b c d e f) (Tree a' b' c' d' e' _) = 
+    let 
+      shift = length d
+      allNodes = d V.++ recodeAll d' shift
+      allEdges = e V.++ recodeEdges shift e'
+      allNames = a <> shiftNames a' shift
+    in Tree allNames (b <> b') (c <> c') allNodes allEdges f
+
+    where
+      shiftFun shift list = pure ((+) shift) <*> list
+      newEdge val shift = EdgeInfo 0 (recodeFun (origin val) shift) (recodeFun (terminal val) shift)
+      recodeFun node shift = node {code = (code node + shift), children = shiftFun shift (children node), parents = shiftFun shift (parents node)}
+      recodeAll innodes shift = V.map (\node -> recodeFun node shift) innodes
+      shiftEdges shift set = EdgeSet (IS.map ((+) shift) (inNodes set)) 
+                              (foldWithKey (\k val acc -> insert (k + shift) (newEdge val shift) acc) mempty (outNodes set))
+      recodeEdges shift vec = V.map (shiftEdges shift) vec
+      shiftNames names shift = foldWithKey (\k val acc -> insert (k + shift) val acc) mempty names
 
 -- | Edge Sets are monoids
 instance Monoid EdgeSet where
@@ -107,13 +125,16 @@ instance N.Network Tree NodeInfo where
       addPos = (size $ taxaNodes t)
       names2 = insert addPos (show addPos) (taxaNodes t)
       seqs2 = H.insert (show addPos) mempty (taxaSeqs t)
-      nodes2 = (nodes t) ++ singleton n
-      edges2 = (edges t) ++ singleton (makeEdges n)
+      nodes2 = (nodes t) V.++ singleton n
+      edges2 = (edges t) V.++ singleton (makeEdges n t)
     in Tree names2 seqs2 (characters t) nodes2 edges2 (root t)
-  mergeTrees = undefined
 
-makeEdges :: NodeInfo -> EdgeSet
-makeEdges = undefined
+makeEdges :: NodeInfo -> Tree -> EdgeSet
+makeEdges node inTree = 
+  let 
+    info = EdgeInfo 0 node 
+    out = foldr (\i acc -> insert i (info $ (nodes inTree) ! i) acc) mempty (children node)
+  in EdgeSet (fromList $ parents node) out
 
 
 -- | This tree can be a binary tree

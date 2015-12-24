@@ -69,8 +69,6 @@ instance Monoid NewickNode where
   mempty = NewickNode [] Nothing Nothing
   mappend (NewickNode des1 label1 len1) (NewickNode des2 label2 len2) = NewickNode (des1 <> des2) (label1 <> label2) (liftA2 (+) len1 len2)
 
---treeFoldr :: (f 
---treeFoldr f b t =
 
 -- | Smart constructor for a 'NewickNode' preseriving the invariant:
 --
@@ -105,7 +103,6 @@ instance N.Network NewickNode NewickNode where
     where
       tallyNodes :: NewickNode -> Int
       tallyNodes n = 1 + (sum $ (fmap tallyNodes (descendants n)))
-  mergeTrees = undefined
   addNode = undefined
 
 
