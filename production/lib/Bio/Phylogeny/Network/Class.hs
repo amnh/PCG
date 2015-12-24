@@ -24,5 +24,4 @@ class Monoid t => Network t n | t -> n where
     isRoot :: n -> t -> Bool
     update :: t -> [n] -> t
     numNodes :: t -> Int
-    mergeTrees :: t -> t -> t
     addNode :: t -> n -> t

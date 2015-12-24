@@ -25,8 +25,9 @@ module File.Format.Nexus
   , nexusStreamParser
   ) where
 
-import File.Format.Nexus.Parser
 import File.Format.Nexus.Data
+import File.Format.Nexus.Parser
+import File.Format.Nexus.Validate
 import Text.Megaparsec
 import Text.Megaparsec.Prim      (MonadParsec)
 
