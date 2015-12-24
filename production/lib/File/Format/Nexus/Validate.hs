@@ -34,12 +34,15 @@ import           Text.Megaparsec.Custom
 -- Note that nos. 4--6, below, are only dependent on 3, so are simply done as nested ifs. This may
 -- or may not be best practice.                                                             coded as
 -- Errors currently caught: # error                                       dependency   inde- or de- pendant    finished
---  1. Too many taxa blocks                                                    -              indep              done
+
 --  ** removed ** too many sequence blocks                                     -              indep              done
 --     There are actually two subcases here:
 --        too many aligned, too many unaligned
 --  ** removed ** No sequence blocks                                           -              indep              done
---  2. No usable blocks                                                        -              indep
+
+--  1. No usable blocks                                                        -              indep              done
+-----------------------------------  Everything below this relies on 1  -------------------------------------
+--  2. Too many taxa blocks                                                    -              indep              done
 --  4. No seqMatrix in some sequence block                                     3              indep              done
 --  5. No dimensions in some sequence block                                    3              indep              done
 --  6. Non-data sequence block with "nolabels", 
@@ -50,14 +53,14 @@ import           Text.Megaparsec.Custom
 --  9. "nolabels" but labels actually present--subsumed under 10, 11, 12       3                dep
 -- 10. Matrix has alphabet values not specified                                3,4              dep
 -- 11. Aligned block not Aligned                                               3,4              dep
--- 12. Matrix has non-spec'ed taxa                                             1,3,4,5          dep              done
--- 13. Matrix interleaved, but some blocks missing taxa                        1,3,4,5          dep              done
+-- 12. Matrix has non-spec'ed taxa                                             2,3,4,5          dep              done
+-- 13. Matrix interleaved, but some blocks missing taxa                        2,3,4,5          dep              done
 --     ---for aligned matrices, caught by 10
 --     ---for unaligned, caught by combo of 12 & 22
--- 14. Matrix interleaved, unlabeled, but length not a multiple of # of taxa   1,3,4            dep              done
+-- 14. Matrix interleaved, unlabeled, but length not a multiple of # of taxa   2,3,4            dep              done
 -- 15. Character count is incorrect                                            3,4,5            dep
--- 16. Taxa count is incorrect                                                 1,3,5            dep              done
--- 17. "nolabels" but there is a taxa block and newtaxa in seq block,          1,3,7,8          dep
+-- 16. Taxa count is incorrect                                                 2,3,5            dep              done
+-- 17. "nolabels" but there is a taxa block and newtaxa in seq block,          2,3,7,8          dep
 --     so order of sequences is unclear
 -- 18. Missing semicolons                                                      -              indep              caught in parse
 -- 19. Equate or symbols strings missing their closing quotes                  3                dep              done
@@ -68,10 +71,12 @@ import           Text.Megaparsec.Custom
 --     ---for aligned, should be caught by 16
 --     ---for unaligned, caught by combo of 12 & 22
 -- 22. In unaligned, interleaved block, a taxon is repeated                    3                dep              done
+
 validateNexusParseResult :: (Show s, MonadParsec s m Char) => NexusParseResult -> m Nexus
-validateNexusParseResult (NexusParseResult sequences taxas _treeSet assumptions _ignored)
-  | not (null independentErrors) = fails independentErrors
-  | not (null dependentErrors)   = fails dependentErrors
+validateNexusParseResult (NexusParseResult sequences taxas treeSet assumptions _ignored)
+  | null sequences && null taxas && null treeSet = fails ["There are no usable blocks in this file."]
+  | not (null independentErrors)                 = fails independentErrors
+  | not (null dependentErrors)                   = fails dependentErrors
   -- TODO: first arg to Nexus was commented out before first push to Grace
   -- TODO: unalignedTaxaSeqMap was commented out before first push to Grace.
   -- When it's added back, downstream (i.e. Nexus) fns will need to be modified

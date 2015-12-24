@@ -20,6 +20,24 @@ import           File.Format.Newick
 import           File.Format.TransitionCostMatrix.Parser hiding (symbol)
 
 
+
+--------------------------------------------------------------
+----------------- Types for sending data out -----------------
+--------------------------------------------------------------
+
+type Sequences = [([TaxonIdentifier], TaxonSequenceMap, CharacterMetadata)]
+
+type AlphabetSymbol = String
+
+type TaxonIdentifier = String
+
+​type AmbiguityGroup = [AlphabetSymbol]
+
+
+---------------------------------------------------------------
+--------------- Types for parsing and validation --------------
+---------------------------------------------------------------
+
 -- | AssumptionBlock is a spec'd block in Nexus format. We're only interested in a single entity in this block
 -- for now, the step matrix, but this datatype is included for later extensibility
 data AssumptionBlock
