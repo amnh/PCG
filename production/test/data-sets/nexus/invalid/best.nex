@@ -1,0 +1,21 @@
+#NEXUS
+
+begin mrbayes;
+    set autoclose=yes nowarn=yes;
+
+    execute finch.nex;
+
+    speciespartition test = SpeciesQ: 1, SpeciesW: 2, SpeciesB: 3, SpeciesO: 4;
+    set speciespartition = test;
+    
+    unlink topology=(all);
+    prset brlenspr=clock:speciestree;
+    prset topologypr=speciestree;
+    prset popvarpr=variable;
+    prset popsizepr=lognormal(4.6,2.3);
+
+    [Uncomment this line to start the analysis from this file]
+    [mcmc ng=10000000;]
+end;
+
+
