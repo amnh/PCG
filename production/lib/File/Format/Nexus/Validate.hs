@@ -89,7 +89,7 @@ validateNexusParseResult (NexusParseResult sequences taxas treeSet assumptions _
         costMatrix = head assumptions
         dependentErrors = catMaybes $ incorrectTaxaCount : (missingCloseQuotes ++ seqTaxaCountErrors ++ interleaveErrors ++ seqTaxonCountErrors ++ incorrectCharCount)
         equates = foldr (\x acc -> getEquates x : acc) [] sequences
-        independentErrors = catMaybes $ noTaxaError : multipleTaxaBlocks : sequenceBlockErrors
+        independentErrors = catMaybes $ noTaxaError : multipleTaxaBlocks : seqMatrixDimsErrors -- sequenceBlockErrors
         f [x] = Just x
         f _   = Nothing
 
@@ -120,13 +120,15 @@ validateNexusParseResult (NexusParseResult sequences taxas treeSet assumptions _
                             else []
         -- taxaSeqVector = V.fromList [(taxon, alignedTaxaSeqMap M.! taxon) | taxon <- taxaLst]
         --unalignedTaxaSeqMap = getSeqFromMatrix (getBlock "unaligned" sequences) taxaLst
-        sequenceBlockErrors = case sequences of
-                                 []        -> [Just "No characters or unaligned blocks provided.\n"] -- error 3
-                                 (_:_:_:_) -> [Just "Too many sequence blocks provided. Only one each of characters and unaligned blocks are allowed.\n"] -- error 2
-                                 (x:y:_) | aligned x && aligned y       -> [Just "More than one characters block provided."]
-                                         | not (aligned x || aligned y) -> [Just "More than one unaligned block provided.\n"]
-                                         | otherwise                    -> seqMatrixDimsErrors
-                                 _         -> seqMatrixDimsErrors
+
+        ------ To be deleted ------
+        --sequenceBlockErrors = case sequences of
+        --                         []        -> [Just "No characters or unaligned blocks provided.\n"] -- error 3
+        --                         (_:_:_:_) -> [Just "Too many sequence blocks provided. Only one each of characters and unaligned blocks are allowed.\n"] -- error 2
+        --                         (x:y:_) | alignedSeq x && alignedSeq y       -> [Just "More than one characters block provided."]
+        --                                 | not (alignedSeq x || alignedSeq y) -> [Just "More than one unaligned block provided.\n"]
+        --                                 | otherwise                    -> seqMatrixDimsErrors
+        --                         _         -> seqMatrixDimsErrors
         --taxaFromSeqMatrix = foldr (\x acc -> (getTaxaFromMatrix x) ++ acc) [] sequences
         -- convertSeqs = ( concatSeqs . cleanSeqs sequences  -- convert each sequence, then
 
@@ -200,24 +202,24 @@ findAmbiguousNoTokens (x:xs) acc amb =
 
 -- Maybe this and dimsMissing could be conflated.
 seqMatrixMissing :: PhyloSequence -> Maybe String
-seqMatrixMissing seq'
+seqMatrixMissing phyloSeq
   | numMatrices < 1 = tooFew
   | numMatrices > 1 = tooMany
   | otherwise       = Nothing
   where
-    numMatrices = length $ seqMatrix seq'
-    tooFew      = Just $ name seq' ++ " block has no sequence matrix.\n"
-    tooMany     = Just $ name seq' ++ " block has more than one sequence matrix.\n"
+    numMatrices = length $ seqMatrix phyloSeq
+    tooFew      = Just $ name phyloSeq ++ " block has no sequence matrix.\n"
+    tooMany     = Just $ name phyloSeq ++ " block has more than one sequence matrix.\n"
 
 dimsMissing :: PhyloSequence -> Maybe String
-dimsMissing seq'
+dimsMissing phyloSeq
   | numDims < 1 = tooFew
   | numDims > 1 = tooMany
   | otherwise   = Nothing
   where
-    numDims = length $ charDims seq'
-    tooFew  = Just $ name seq' ++ " block has no dimensions.\n"
-    tooMany = Just $ name seq' ++ " block has more than one dimension.\n"
+    numDims = length $ charDims phyloSeq
+    tooFew  = Just $ name phyloSeq ++ " block has no dimensions.\n"
+    tooMany = Just $ name phyloSeq ++ " block has more than one dimension.\n"
 
 findAmbiguousTokens :: [String] -> [String] -> Bool -> [[String]]
 findAmbiguousTokens [] _ _ = []
@@ -254,16 +256,14 @@ findInterleaveError taxaLst seq' =
         noLabels    = formatted && unlabeled  (head $ format seq')
         taxaCount   = length taxaLst
         lineCount   = length . head $ seqMatrix seq'
-        which = if aligned seq'
-                    then "Characters"
-                    else "Unaligned"
+        which = name seq'
 
 -- TODO: Review this function's functionality. Seems like it can be improved!
 getBlock :: String -> [PhyloSequence] -> [PhyloSequence]
 getBlock _ [] = []
 getBlock which phyloSeqs = f (which == "aligned") phyloSeqs
   where
-    f xBool _ = let block = headMay $ filter (\s -> xBool == aligned s) phyloSeqs
+    f xBool _ = let block = headMay $ filter (\s -> xBool == alignedSeq s) phyloSeqs
                 in maybeToList block
 
 
@@ -371,9 +371,7 @@ checkForNewTaxa phyloSeq = case charDims phyloSeq of
                                         else Nothing
                                else Nothing
   where
-    which = if aligned phyloSeq
-            then "characters"
-            else "unaligned"
+    which = name phyloSeq
 
 getTaxaFromSeq :: PhyloSequence -> [String]
 getTaxaFromSeq phyloSeq 

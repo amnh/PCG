@@ -29,10 +29,26 @@ type Sequences = [([TaxonIdentifier], TaxonSequenceMap, CharacterMetadata)]
 
 type AlphabetSymbol = String
 
+type AmbiguityGroup = [AlphabetSymbol]
+
 type TaxonIdentifier = String
 
-​type AmbiguityGroup = [AlphabetSymbol]
+data CharacterMetadata 
+   = CharacterMetadata
+   { isAligned :: Bool
+   , charType  :: CharDataType
+   , alphabet  :: [AlphabetSymbol]
+   , seqLength    :: Maybe Int
+   , ignored   :: Bool  -- This is a problem, as input may interleave ignored and non-ignored chars, so given seqs will need to bbroken up
+                       -- into separate seqs during validation (also true for TNT?).
+                       -- That means that order of items in Sequences is important for IA output, I think. Maybe check with Ward?
+   } deriving (Show)
 
+type Sequence = V.Vector AmbiguityGroup
+
+type TaxonSequenceMap = M.Map TaxonIdentifier Sequence
+
+--type Sequences = [([TaxonIdentifier], TaxonSequenceMap, CharacterMetadata)]
 
 ---------------------------------------------------------------
 --------------- Types for parsing and validation --------------
@@ -120,28 +136,6 @@ data Nexus
    , stepMatrices :: AssumptionBlock
    } deriving (Show)
 
---type AlphabetSymbol = String
-
---type TaxonIdentifier = String
-
---type AmbiguityGroup = [AlphabetSymbol]
-
---type Sequence = Vector AmbiguityGroup
-
---type TaxonSequenceMap = Map TaxonIdentifier Sequence
-
---type Sequences = [([TaxonIdentifier], TaxonSequenceMap, CharacterMetadata)]
-
---data CharacterMetadata 
---     = CharacterMetadata
---     { aligned  :: Bool
---     , alphabet :: [AlphabetSymbol]
---     , length   :: Maybe Int
---     , ignored  :: Bool  -- This is a problem, as input may interleave ignored and non-ignored chars, so given seqs will need to be broken up
---                         -- into separate seqs during validation (also true for TNT?).
---                         -- That means that order of items in Sequences is important for IA output, I think. Maybe check with Ward?
---     }
-
 -- | Types blocks in the Nexus file and their accompanying data.
 data NexusBlock
    = TaxaBlock        TaxaSpecification
@@ -156,7 +150,7 @@ data NexusParseResult = NexusParseResult [PhyloSequence] [TaxaSpecification] [Tr
 -- | Phylosequence is general sequence type, to be used for both characters and data blocks (aligned) and unaligned blocks.
 data PhyloSequence
    = PhyloSequence
-   { aligned       :: Bool
+   { alignedSeq    :: Bool
    , seqMatrix     :: [[String]]
    , format        :: [CharacterFormat]
    , charDims      :: [DimensionsFormat] -- holds length of sequence, as well as info on new taxa
@@ -209,11 +203,9 @@ data TreeField
    | Tree        (TreeName, [NewickForest])
    | IgnTF       String
 
-
 data SequenceBlock
    = SequenceBlock
-   { charType  :: CharDataType
-   , alphabet  :: String
-   , isAligned :: Bool
-   , seqs      :: [V.Vector (String, [String])]
+   { meta     :: CharacterMetadata
+   , elimList :: String
+   , seqs     :: [V.Vector (String, [String])]
    } deriving (Show)
