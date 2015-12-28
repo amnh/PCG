@@ -1,6 +1,6 @@
 {-# LANGUAGE ConstraintKinds #-}
 
-module Analysis.DirectOptimization.ImpliedAlign where
+module Analysis.DirectOptimization.ImpliedAlign (implyMain, getSubtrees) where
 
 import Bio.Phylogeny.Network
 import Bio.Phylogeny.Tree.CharacterAware
@@ -14,43 +14,20 @@ import Analysis.DirectOptimization.Utilities
 import Analysis.DirectOptimization.Naive
 
 import Prelude hiding (zipWith)
-import Data.Matrix (Matrix, zero, elementwise, nrows, ncols)
+import Data.Matrix (Matrix, zero, elementwise, nrows, ncols, getRow)
 import Data.Bits
 import Data.Maybe
 import Data.Vector (zipWith)
 
 import Control.Monad (join)
 import Control.Applicative (liftA2)
-
-type Subtrees = Matrix Int
+import Data.Monoid
 
 -- | implyMain performs an implied alignment on a tree
 implyMain :: TreeConstraint t n s b => t -> t
 implyMain inTree = iaMainPreorder inTree inTree subMat (Just $ root inTree)
     where
         subMat = getSubtrees inTree
-
--- | Create a subtree matrix to find all sub nodes
-getSubtrees :: TreeConstraint t n s b => t -> Subtrees
-getSubtrees tree = fst $ innerSubtree tree (zero (numNodes tree) (numNodes tree)) (root tree)
-    where
-        innerSubtree :: TreeConstraint t n s b => t -> Subtrees -> n -> (Subtrees, [n])
-        innerSubtree inTree curSubtrees curNode
-            | isLeaf curNode inTree = (curSubtrees, [curNode])
-            | otherwise = 
-                let
-                    lowersubs = fmap (innerSubtree inTree curSubtrees) (children curNode inTree)
-                    totalSubs = foldr sumSubs (zero (nrows curSubtrees) (ncols curSubtrees), []) lowersubs
-                in (accum totalSubs curNode inTree, curNode : (snd totalSubs))
-
-        sumMat = elementwise (+)
-
-        sumSubs :: NodeConstraint n s b => (Subtrees, [n]) -> (Subtrees, [n]) -> (Subtrees, [n])
-        sumSubs (struc1, list1) (struc2, list2) = (struc1 `sumMat` struc2, list1 ++ list2)
-
-        accum :: TreeConstraint t n s b => (Subtrees, [n]) -> n -> t -> Subtrees
-        accum (struc, nodes) curNode inTree = foldr (\n acc -> setElemSafe 1 (code n inTree, curCode) acc) struc nodes
-            where curCode = code curNode inTree
 
 -- | Main implied alignment function to save info to a tree
 iaMainPreorder :: TreeConstraint t n s b => t -> t -> Subtrees -> Maybe n -> t
@@ -79,33 +56,43 @@ iaMainPreorder fullTree subTree subtrees inNode
             leftCheck = checkAlign left inNode
             rightCheck = checkAlign right inNode
 
-            -- | Helper function to check whether two nodes have the same length sequences
-            checkAlign :: NodeConstraint n s b => Maybe n -> Maybe n -> Bool
-            checkAlign childNode parentNode 
-                | isNothing childNode || isNothing parentNode = False
-                | otherwise = 
-                    let checkLen = zipWith (\align preAlign -> if numChars align > numChars preAlign then True else False) (preliminaryAlign $ fromJust childNode) (getForAlign $ fromJust parentNode)
-                    in or checkLen
-
             -- | Common recursive call for an implied alignment
             recursiveIA :: TreeConstraint t n s b => t -> Subtrees -> Maybe n -> Maybe n -> Maybe n -> Bool -> t
             recursiveIA updatedTree subtrees leftNode rightNode inNode isLonger 
                 | isLonger = implyMain $ iaPostorder updatedTree inNode
                 | otherwise = merged
                     where
-                        leftTree = grabSubtree updatedTree ((flip code) updatedTree <$> leftNode) subtrees
+                        leftTree = grabSubtree updatedTree (join $ (flip code) updatedTree <$> leftNode) subtrees
                         leftEval = iaMainPreorder updatedTree leftTree subtrees leftNode
-                        rightTree = grabSubtree updatedTree ((flip code) updatedTree <$> rightNode) subtrees
+                        rightTree = grabSubtree updatedTree (join $ (flip code) updatedTree <$> rightNode) subtrees
                         rightEval = iaMainPreorder updatedTree rightTree subtrees rightNode
                         merged = mergeSubtrees leftEval rightEval inNode
 
             -- | Function to merge two subtrees under their parent node
             mergeSubtrees :: TreeConstraint t n s b => t -> t -> Maybe n -> t
-            mergeSubtrees left right node = undefined
+            mergeSubtrees left right node 
+                | isNothing node = mempty
+                | otherwise = (left <> right) `addNode` fromJust node
 
-grabSubtree :: TreeConstraint t n s b => t -> Maybe Int -> Subtrees -> t
-grabSubtree = undefined
-
+-- | Postorder traversal of the implied alignment, started at the given node on the given tree
 iaPostorder :: TreeConstraint t n s b => t -> Maybe n -> t
-iaPostorder = undefined
+iaPostorder inTree curNode 
+    | isNothing curNode || isNothing curParent = inTree
+    | isAligned = iaPostorder inTree curParent
+    | otherwise = 
+        let
+           (parentAlign, curAlign, isLonger) = naiveDOTwo (fromJust curNode) (fromJust curParent) 
+           updatedTree = inTree `update` [parentAlign, curAlign]
+        in iaPostorder updatedTree curParent
+        where
+            curParent = join $ (flip parent) inTree <$> curNode
+            isAligned = checkAlign curParent curNode
+
+-- | Helper function to check whether two nodes have the same length sequences
+checkAlign :: NodeConstraint n s b => Maybe n -> Maybe n -> Bool
+checkAlign childNode parentNode 
+    | isNothing childNode || isNothing parentNode = False
+    | otherwise = 
+        let checkLen = zipWith (\align preAlign -> if numChars align > numChars preAlign then True else False) (preliminaryAlign $ fromJust childNode) (getForAlign $ fromJust parentNode)
+        in or checkLen
 

@@ -8,32 +8,30 @@
 -- Stability   :  provisional
 -- Portability :  portable
 --
--- Exploritory types for Graph representations
+-- Instances and other stuff for a Graph representation
 --
 -----------------------------------------------------------------------------
 
 {-# LANGUAGE MultiParamTypeClasses, TypeSynonymInstances, FlexibleInstances #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
-module Bio.Phylogeny.Graph where
+module Bio.Phylogeny.Graph (Graph(..), Tree(..), EdgeSet(..), EdgeInfo(..), Identifier, Sequence, CharInfo, NodeInfo) where
 
 import Prelude hiding (length)
 
-import Data.IntMap (IntMap, size, insert, foldWithKey)
-import Data.IntSet (IntSet, fromList)
+import Bio.Phylogeny.Graph.Class
+
+import Data.IntMap (size, insert, foldWithKey)
+import Data.IntSet (fromList)
 import qualified Data.IntSet as IS (map)
-import Data.HashMap.Strict (HashMap)
 import qualified Data.HashMap.Strict as H (insert)
 import Data.Monoid
-import Data.Vector (Vector, (//), length, singleton, elemIndex, (!))
+import Data.Vector ((//), length, singleton, elemIndex, (!))
 import qualified Data.Vector as V ((++), map)
-import Data.Int
-import Data.BitVector (BitVector)
 
 import Data.Keyed hiding ((!))
 import Safe
 
-import Bio.Phylogeny.PhyloCharacter
 import Bio.Phylogeny.Tree.Node
 import Bio.Phylogeny.Forest
 import Bio.Phylogeny.Tree.Rose
@@ -43,42 +41,6 @@ import qualified Bio.Phylogeny.Tree.Edge.Standard  as E
 import qualified Bio.Phylogeny.Tree.EdgeAware      as ET
 import qualified Bio.Phylogeny.Tree.CharacterAware as CT
 import qualified Bio.Phylogeny.Tree.Referential    as RT
-
-
--- | Standard graph types defined
-type Identifier = String
-type Sequence   = Vector [String]
-type CharInfo   = PhyloCharacter Int64
-type NodeInfo   = Node BitVector
-
--- | Edge type: info is stored at the out connections of a node
-data EdgeSet
-   = EdgeSet
-   { inNodes  :: IntSet
-   , outNodes :: IntMap EdgeInfo
-   } deriving (Eq,Show)
-
--- | Edge info type holding length, origin, and terminal
-data EdgeInfo 
-   = EdgeInfo
-   { len :: Float
-   , origin :: NodeInfo
-   , terminal :: NodeInfo
-   } deriving (Eq, Show)
-
--- | Tree structure holding nodes, their original sequences, their edges, and a root reference
-data Tree
-   = Tree
-   { taxaNodes  :: IntMap  Identifier
-   , taxaSeqs   :: HashMap Identifier Sequence
-   , characters :: Vector  CharInfo
-   , nodes      :: Vector  NodeInfo
-   , edges      :: Vector  EdgeSet
-   , root       :: Int
-   } deriving (Eq,Show)
-
--- | A graph is defined as a list of trees
-newtype Graph = Graph [Tree] deriving (Show)
 
 -- | Make all types instances of monoid to allow for mempty and mappend usage
 instance Monoid Graph where
@@ -173,3 +135,4 @@ instance CT.CharacterTree Tree CharInfo where
 -- | This particular tree is referential
 instance RT.ReferentialTree Tree NodeInfo where
   code node tree = elemIndex node (nodes tree)
+  getNthNode tree pos = nodes tree ! pos

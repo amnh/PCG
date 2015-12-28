@@ -19,3 +19,4 @@ module Bio.Phylogeny.Tree.Referential where
 
 class ReferentialTree t n | t -> n where
     code :: n -> t -> Maybe Int
+    getNthNode :: t -> Int -> n

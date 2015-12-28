@@ -132,6 +132,9 @@ executable pcg
                        PCG.Script
                        PCG.Script.Parser
                        PCG.Script.Types
+                       Analysis.GenericFitch
+                       Analysis.DirectOptimization.Naive
+                       Analysis.DirectOptimization.ImpliedAlign
 
   
 library

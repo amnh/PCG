@@ -103,6 +103,6 @@ instance N.Network NewickNode NewickNode where
     where
       tallyNodes :: NewickNode -> Int
       tallyNodes n = 1 + (sum $ (fmap tallyNodes (descendants n)))
-  addNode = undefined
+  addNode t n = t {descendants = n : (descendants t)}
 
 
