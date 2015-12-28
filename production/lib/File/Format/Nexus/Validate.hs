@@ -34,12 +34,15 @@ import           Text.Megaparsec.Custom
 -- Note that nos. 4--6, below, are only dependent on 3, so are simply done as nested ifs. This may
 -- or may not be best practice.                                                             coded as
 -- Errors currently caught: # error                                       dependency   inde- or de- pendant    finished
---  1. Too many taxa blocks                                                    -              indep              done
+
 --  ** removed ** too many sequence blocks                                     -              indep              done
 --     There are actually two subcases here:
 --        too many aligned, too many unaligned
 --  ** removed ** No sequence blocks                                           -              indep              done
---  2. No usable blocks                                                        -              indep
+
+--  1. No usable blocks                                                        -              indep              done
+-----------------------------------  Everything below this relies on 1  -------------------------------------
+--  2. Too many taxa blocks                                                    -              indep              done
 --  4. No seqMatrix in some sequence block                                     3              indep              done
 --  5. No dimensions in some sequence block                                    3              indep              done
 --  6. Non-data sequence block with "nolabels", 
@@ -50,14 +53,14 @@ import           Text.Megaparsec.Custom
 --  9. "nolabels" but labels actually present--subsumed under 10, 11, 12       3                dep
 -- 10. Matrix has alphabet values not specified                                3,4              dep
 -- 11. Aligned block not Aligned                                               3,4              dep
--- 12. Matrix has non-spec'ed taxa                                             1,3,4,5          dep              done
--- 13. Matrix interleaved, but some blocks missing taxa                        1,3,4,5          dep              done
+-- 12. Matrix has non-spec'ed taxa                                             2,3,4,5          dep              done
+-- 13. Matrix interleaved, but some blocks missing taxa                        2,3,4,5          dep              done
 --     ---for aligned matrices, caught by 10
 --     ---for unaligned, caught by combo of 12 & 22
--- 14. Matrix interleaved, unlabeled, but length not a multiple of # of taxa   1,3,4            dep              done
+-- 14. Matrix interleaved, unlabeled, but length not a multiple of # of taxa   2,3,4            dep              done
 -- 15. Character count is incorrect                                            3,4,5            dep
--- 16. Taxa count is incorrect                                                 1,3,5            dep              done
--- 17. "nolabels" but there is a taxa block and newtaxa in seq block,          1,3,7,8          dep
+-- 16. Taxa count is incorrect                                                 2,3,5            dep              done
+-- 17. "nolabels" but there is a taxa block and newtaxa in seq block,          2,3,7,8          dep
 --     so order of sequences is unclear
 -- 18. Missing semicolons                                                      -              indep              caught in parse
 -- 19. Equate or symbols strings missing their closing quotes                  3                dep              done
@@ -68,10 +71,12 @@ import           Text.Megaparsec.Custom
 --     ---for aligned, should be caught by 16
 --     ---for unaligned, caught by combo of 12 & 22
 -- 22. In unaligned, interleaved block, a taxon is repeated                    3                dep              done
+
 validateNexusParseResult :: (Show s, MonadParsec s m Char) => NexusParseResult -> m Nexus
-validateNexusParseResult (NexusParseResult sequences taxas _treeSet assumptions _ignored)
-  | not (null independentErrors) = fails independentErrors
-  | not (null dependentErrors)   = fails dependentErrors
+validateNexusParseResult (NexusParseResult sequences taxas treeSet assumptions _ignored)
+  | null sequences && null taxas && null treeSet = fails ["There are no usable blocks in this file."]
+  | not (null independentErrors)                 = fails independentErrors
+  | not (null dependentErrors)                   = fails dependentErrors
   -- TODO: first arg to Nexus was commented out before first push to Grace
   -- TODO: unalignedTaxaSeqMap was commented out before first push to Grace.
   -- When it's added back, downstream (i.e. Nexus) fns will need to be modified
@@ -84,7 +89,7 @@ validateNexusParseResult (NexusParseResult sequences taxas _treeSet assumptions 
         costMatrix = head assumptions
         dependentErrors = catMaybes $ incorrectTaxaCount : (missingCloseQuotes ++ seqTaxaCountErrors ++ interleaveErrors ++ seqTaxonCountErrors ++ incorrectCharCount)
         equates = foldr (\x acc -> getEquates x : acc) [] sequences
-        independentErrors = catMaybes $ noTaxaError : multipleTaxaBlocks : sequenceBlockErrors
+        independentErrors = catMaybes $ noTaxaError : multipleTaxaBlocks : seqMatrixDimsErrors -- sequenceBlockErrors
         f [x] = Just x
         f _   = Nothing
 
@@ -115,13 +120,15 @@ validateNexusParseResult (NexusParseResult sequences taxas _treeSet assumptions 
                             else []
         -- taxaSeqVector = V.fromList [(taxon, alignedTaxaSeqMap M.! taxon) | taxon <- taxaLst]
         --unalignedTaxaSeqMap = getSeqFromMatrix (getBlock "unaligned" sequences) taxaLst
-        sequenceBlockErrors = case sequences of
-                                 []        -> [Just "No characters or unaligned blocks provided.\n"] -- error 3
-                                 (_:_:_:_) -> [Just "Too many sequence blocks provided. Only one each of characters and unaligned blocks are allowed.\n"] -- error 2
-                                 (x:y:_) | aligned x && aligned y       -> [Just "More than one characters block provided."]
-                                         | not (aligned x || aligned y) -> [Just "More than one unaligned block provided.\n"]
-                                         | otherwise                    -> seqMatrixDimsErrors
-                                 _         -> seqMatrixDimsErrors
+
+        ------ To be deleted ------
+        --sequenceBlockErrors = case sequences of
+        --                         []        -> [Just "No characters or unaligned blocks provided.\n"] -- error 3
+        --                         (_:_:_:_) -> [Just "Too many sequence blocks provided. Only one each of characters and unaligned blocks are allowed.\n"] -- error 2
+        --                         (x:y:_) | alignedSeq x && alignedSeq y       -> [Just "More than one characters block provided."]
+        --                                 | not (alignedSeq x || alignedSeq y) -> [Just "More than one unaligned block provided.\n"]
+        --                                 | otherwise                    -> seqMatrixDimsErrors
+        --                         _         -> seqMatrixDimsErrors
         --taxaFromSeqMatrix = foldr (\x acc -> (getTaxaFromMatrix x) ++ acc) [] sequences
         -- convertSeqs = ( concatSeqs . cleanSeqs sequences  -- convert each sequence, then
 
@@ -195,24 +202,24 @@ findAmbiguousNoTokens (x:xs) acc amb =
 
 -- Maybe this and dimsMissing could be conflated.
 seqMatrixMissing :: PhyloSequence -> Maybe String
-seqMatrixMissing seq'
+seqMatrixMissing phyloSeq
   | numMatrices < 1 = tooFew
   | numMatrices > 1 = tooMany
   | otherwise       = Nothing
   where
-    numMatrices = length $ seqMatrix seq'
-    tooFew      = Just $ name seq' ++ " block has no sequence matrix.\n"
-    tooMany     = Just $ name seq' ++ " block has more than one sequence matrix.\n"
+    numMatrices = length $ seqMatrix phyloSeq
+    tooFew      = Just $ name phyloSeq ++ " block has no sequence matrix.\n"
+    tooMany     = Just $ name phyloSeq ++ " block has more than one sequence matrix.\n"
 
 dimsMissing :: PhyloSequence -> Maybe String
-dimsMissing seq'
+dimsMissing phyloSeq
   | numDims < 1 = tooFew
   | numDims > 1 = tooMany
   | otherwise   = Nothing
   where
-    numDims = length $ charDims seq'
-    tooFew  = Just $ name seq' ++ " block has no dimensions.\n"
-    tooMany = Just $ name seq' ++ " block has more than one dimension.\n"
+    numDims = length $ charDims phyloSeq
+    tooFew  = Just $ name phyloSeq ++ " block has no dimensions.\n"
+    tooMany = Just $ name phyloSeq ++ " block has more than one dimension.\n"
 
 findAmbiguousTokens :: [String] -> [String] -> Bool -> [[String]]
 findAmbiguousTokens [] _ _ = []
@@ -249,16 +256,14 @@ findInterleaveError taxaLst seq' =
         noLabels    = formatted && unlabeled  (head $ format seq')
         taxaCount   = length taxaLst
         lineCount   = length . head $ seqMatrix seq'
-        which = if aligned seq'
-                    then "Characters"
-                    else "Unaligned"
+        which = name seq'
 
 -- TODO: Review this function's functionality. Seems like it can be improved!
 getBlock :: String -> [PhyloSequence] -> [PhyloSequence]
 getBlock _ [] = []
 getBlock which phyloSeqs = f (which == "aligned") phyloSeqs
   where
-    f xBool _ = let block = headMay $ filter (\s -> xBool == aligned s) phyloSeqs
+    f xBool _ = let block = headMay $ filter (\s -> xBool == alignedSeq s) phyloSeqs
                 in maybeToList block
 
 
@@ -366,9 +371,7 @@ checkForNewTaxa phyloSeq = case charDims phyloSeq of
                                         else Nothing
                                else Nothing
   where
-    which = if aligned phyloSeq
-            then "characters"
-            else "unaligned"
+    which = name phyloSeq
 
 getTaxaFromSeq :: PhyloSequence -> [String]
 getTaxaFromSeq phyloSeq 
