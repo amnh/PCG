@@ -40,12 +40,12 @@ iaMainPreorder fullTree subTree subtrees inNode
             in recursiveIA updatedTree subtrees left right inNode isLonger
     | leftCheck = 
         let
-            (leftAlign, curAlign, isLonger) = naiveDOTwo (fromJust left) (fromJust inNode)
+            (leftAlign, curAlign, _, isLonger) = naiveDOTwo (fromJust left) (fromJust inNode)
             updatedTree = fullTree `update` [leftAlign, curAlign]
             in recursiveIA updatedTree subtrees left right inNode isLonger
     | rightCheck = 
         let
-            (rightAlign, curAlign, isLonger) = naiveDOTwo (fromJust right) (fromJust inNode)
+            (rightAlign, curAlign, _, isLonger) = naiveDOTwo (fromJust right) (fromJust inNode)
             updatedTree = fullTree `update` [rightAlign, curAlign]
         in recursiveIA updatedTree subtrees left right inNode isLonger
     | otherwise = recursiveIA fullTree subtrees left right inNode False
@@ -81,7 +81,7 @@ iaPostorder inTree curNode
     | isAligned = iaPostorder inTree curParent
     | otherwise = 
         let
-           (parentAlign, curAlign, isLonger) = naiveDOTwo (fromJust curNode) (fromJust curParent) 
+           (parentAlign, curAlign, _, isLonger) = naiveDOTwo (fromJust curNode) (fromJust curParent) 
            updatedTree = inTree `update` [parentAlign, curAlign]
         in iaPostorder updatedTree curParent
         where

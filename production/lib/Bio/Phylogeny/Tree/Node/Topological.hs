@@ -30,12 +30,12 @@ data TopoNode b = TopoNode
                     , isLeaf :: Bool
                     , name :: String
                     , children :: [TopoNode b]
-                    , encoded :: Vector (EncodedSeq b)
-                    , packed :: Vector (EncodedSeq b)
-                    , preliminary :: Vector (EncodedSeq b)
-                    , final :: Vector (EncodedSeq b)
-                    , temporary :: Vector (EncodedSeq b)
-                    , aligned :: Vector (EncodedSeq b)
+                    , encoded :: EncodedSequences b
+                    , packed :: EncodedSequences b
+                    , preliminary :: EncodedSequences b
+                    , final :: EncodedSequences b
+                    , temporary :: EncodedSequences b
+                    , aligned :: EncodedSequences b
                     , cost :: Float} deriving (Eq, Show)
 
 data EdgeInfo = EdgeInfo {len :: Float} deriving (Eq, Show)

@@ -1,6 +1,6 @@
 {-# LANGUAGE ConstraintKinds #-}
 
-module Analysis.DirectOptimization.Naive (naiveDOThree, naiveDOTwo) where
+module Analysis.DirectOptimization.Naive (naiveDOThree, naiveDOTwo, naiveDO) where
 
 import Prelude hiding (length, zipWith, or)
 import Data.Maybe
@@ -19,6 +19,8 @@ import Bio.Sequence.Coded
 
 import Analysis.DirectOptimization.Utilities
 
+import Debug.Trace
+
 
 data Direction = LeftDir | RightDir | DiagDir | DownDir deriving (Eq, Show)
 
@@ -34,24 +36,25 @@ subCost = 1
 naiveDOThree :: NodeConstraint n s b => n -> n -> n -> (n, n, n, Bool)
 naiveDOThree node1 node2 node3 = 
     let
-        (aligned1, aligned3, isLonger1) = naiveDOTwo node1 node3
-        (aligned2, aligned3b, isLonger2) = naiveDOTwo node2 aligned3
-    in (aligned1, aligned2, aligned3b, isLonger1 || isLonger2)
+        (newNode1, newNode2, gapped, isLonger) = naiveDOTwo node1 node3
+    in (newNode1, newNode2, setAlign gapped node3, isLonger)
 
 -- | Performs a two-way alignment, assigns to both nodes, and returns those and whether it is longer
-naiveDOTwo :: NodeConstraint n s b => n -> n -> (n, n, Bool)
+naiveDOTwo :: NodeConstraint n s b => n -> n -> (n, n, Vector s, Bool)
 naiveDOTwo node1 node2 =
     let
-        result = zipWith naiveDO (getForAlign node2) (getForAlign node2) 
-        gapped = foldr (\(_, _, g, _, _) acc -> g `cons` acc) empty result
+        operateSeqs = checkForAlign node1 node2
+        result = zipWith naiveDO (fst operateSeqs) (snd operateSeqs)
+        (gapped, left, right) = foldr (\(_, _, g, l, r) (a, b, c) -> (g `cons` a, l `cons` b, r `cons` c)) mempty result
         checkLen = zipWith (\align preAlign -> if numChars align > numChars preAlign then True else False) gapped (getForAlign node2)
         foldCheck = or checkLen
-    in (setAlign gapped node1, setAlign gapped node2, foldCheck)
+    in (setAlign left node1, setAlign right node2, gapped, foldCheck)
 
 -- | Performs a naive direct optimization
 naiveDO :: SeqConstraint s b => s -> s -> (s, Float, s, s, s)
+--naiveDO s1 s2 | trace ("Sequences of length " ++ show (numChars s1) ++ show (numChars s2)) False = undefined
 naiveDO seq1 seq2 
-    | isEmpty seq1 || isEmpty seq2 = (emptySeq, 0, emptySeq, emptySeq, emptySeq)
+    | isEmpty seq1 || isEmpty seq2 || numChars seq1 == 0 || numChars seq2 == 0 = (emptySeq, 0, emptySeq, emptySeq, emptySeq)
     | otherwise = 
         let
             seq1Len = numChars seq1
@@ -59,12 +62,15 @@ naiveDO seq1 seq2
             (shorter, shortlen, longer, longlen) = if seq1Len > seq2Len
                                                    then (seq2, seq2Len, seq1, seq1Len)
                                                    else (seq1, seq1Len, seq2, seq2Len)
-            firstMatRow = firstAlignRow indelCost shorter shortlen 0 0 
-            traversalMat = firstMatRow `joinMat` getAlignRows seq1 seq2 (indelCost, subCost) 1 firstMatRow
+            firstMatRow = firstAlignRow indelCost longer longlen 0 0 
+            traversalMat = firstMatRow `joinMat` getAlignRows longer shorter (indelCost, subCost) 1 firstMatRow
             cost = getMatrixCost traversalMat
-            (gapped, left, right) = traceback traversalMat seq1 seq2
+            (gapped, left, right) = traceback traversalMat longer shorter
             ungapped = filterSeq gapped (gapChar /=)
-        in (ungapped, cost, gapped, left, right)
+            (out1, out2) = if seq1Len > seq2Len
+                                then (right, left)
+                                else (left, right)
+        in (ungapped, cost, gapped, out1, out2)
 
         where
             getMatrixCost :: SeqConstraint s b => AlignMatrix s -> Float
@@ -80,6 +86,7 @@ joinMat (inCosts, inSeq, directions) inMat = AlignMatrix (inCosts `joinRow` cost
 
 -- | Gets the initial row of a naive alignment matrix
 firstAlignRow :: SeqConstraint s b => Float -> s -> Int -> Int -> Float -> AlignRow s
+--firstAlignRow indelCost inSeq rowLength position prevCost | trace ("firstAlignRow " ++ show inSeq) False = undefined
 firstAlignRow indelCost inSeq rowLength position prevCost
     | position == (rowLength + 1) = (mempty, mempty, mempty)
     | position == 0 = (singleton 0, charToSeq gapChar, singleton DiagDir) <> firstAlignRow indelCost inSeq rowLength (position + 1) 0
@@ -108,6 +115,7 @@ getAlignRows seq1 seq2 costs rowNum prevRow
 -- | Generates a single alignment row
 generateRow :: SeqConstraint s b => s -> s -> Costs -> Int -> AlignRow s -> (Int, Float) -> AlignRow s
 generateRow seq1 seq2 costvals@(indelCost, subCost) rowNum prevRow@(costs, _, _) (position, prevCost) 
+    | length costs < (position - 2) = error "Problem with row generation, previous costs not generated"
     | position == (numChars seq1 + 1) = (empty, emptySeq, empty)
     | position == 0 && newState /= gapChar = (singleton $ upValue + indelCost, charToSeq newState, singleton DownDir) <> nextCall (upValue + indelCost)
     | position == 0 = (singleton upValue, charToSeq newState, singleton DownDir) <> nextCall upValue
@@ -142,6 +150,7 @@ traceback alignMat seq1 seq2 = tracebackInternal alignMat seq1 seq2 (nrows $ tra
     where
         tracebackInternal :: SeqConstraint s b => AlignMatrix s -> s -> s -> (Int, Int) -> (s, s, s)
         tracebackInternal alignMat seq1 seq2 (row, col) 
+            | (length $ seqs alignMat) < row - 1 || (nrows $ traversal alignMat) < row || (ncols $ traversal alignMat) < col = error "Traceback cannot function because matrix is incomplete"
             | row == 0 && col == 0 = (emptySeq, emptySeq, emptySeq)
             | curDirect == LeftDir = (curState, charToSeq gapChar, charToUnMaybe $ seq2 `grabSubChar` (col - 1)) <> tracebackInternal alignMat seq1 seq2 (row, col - 1)
             | curDirect == DownDir = (curState, charToUnMaybe $ seq1 `grabSubChar` (row - 1), charToSeq gapChar) <> tracebackInternal alignMat seq1 seq2 (row - 1, col)

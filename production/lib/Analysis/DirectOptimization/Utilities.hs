@@ -2,9 +2,11 @@
 
 module Analysis.DirectOptimization.Utilities where
 
+import Prelude hiding (length, filter)
+
 import Data.Matrix (Matrix, nrows, ncols, setElem, zero, elementwise, getRow)
 import Data.Bits
-import Data.Vector (Vector)
+import Data.Vector (Vector, length, filter)
 import Data.Maybe
 
 import Bio.Phylogeny.Tree.Node.Preliminary
@@ -33,6 +35,24 @@ getForAlign node
     | (null $ preliminaryAlign node) && (null $ preliminary node) = encoded node
     | null $ preliminaryAlign node = preliminary node
     | otherwise = preliminaryAlign node 
+
+-- | Screening function to get sequences that are alignable from two nodes
+checkForAlign :: NodeConstraint n s b => n -> n -> (Vector s, Vector s)
+checkForAlign node1 node2
+    | getMatch pa1 pa2 && checkLens pa1 pa2 = (screen pa1, screen pa2)
+    | getMatch p1 p2 && checkLens p1 p2 = (screen p1, screen p2)
+    | getMatch e1 e2 && checkLens e1 e2 = (screen e1, screen e2)
+    | otherwise = (mempty, mempty)
+        where
+            pa1 = preliminaryAlign node1
+            pa2 = preliminaryAlign node2
+            p1 = preliminary node1
+            p2 = preliminary node2
+            e1 = encoded node1
+            e2 = encoded node2
+            getMatch s1 s2 = (not $ null s1) && (not $ null s2)
+            screen = filter isEmpty
+            checkLens s1 s2 = (length $ screen s1) == (length $ screen s2)
 
 -- | Create a subtree matrix to find all sub nodes
 getSubtrees :: TreeConstraint t n s b => t -> Subtrees

@@ -24,6 +24,8 @@ import Data.Vector    (map, length, zipWith, empty, null, foldr, Vector, head, (
 import Data.Bits
 import Data.Maybe
 import Bio.Sequence.Coded.Class
+import Bio.Sequence.Character.Coded
+import Bio.Sequence.Multi
 
 -- | An encoded sequence is stored as a Maybe of an encoded sequence character
 type EncodedSequences b = Vector (EncodedSeq b)
@@ -90,3 +92,6 @@ instance Bits b => Bits (Maybe b) where
     isSigned        = maybe False isSigned
     popCount        = maybe 0 popCount
     testBit  bits i = maybe False (`testBit` i) bits
+
+instance Bits b => MultiSequence (EncodedSequences b) (EncodedSeq b) where
+    filterMulti seqs condition = filter condition seqs
