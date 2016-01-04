@@ -4,6 +4,7 @@ module File.Format.TNT.Parser where
 {-- TODO:
   - Robust tests
   - Good documentation
+  - Deinterleave function with DList construction
   -}
 
 import Data.Bifunctor         (second)
