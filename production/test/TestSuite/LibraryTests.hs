@@ -11,6 +11,7 @@ import qualified File.Format.Fastc.Test                as Fastc
 import qualified File.Format.Newick.Test               as Newick
 import qualified File.Format.TransitionCostMatrix.Test as TCM
 import qualified File.Format.VertexEdgeRoot.Test       as VER
+import qualified Analysis.DirectOptimization.Test      as DO
 
 main :: IO ()
 main = defaultMain testSuite
@@ -24,5 +25,6 @@ testSuite = testGroup "Library Test Suite"
   , Newick.testSuite
   , TCM.testSuite
   , VER.testSuite
+  , DO.testSuite
   ]
 

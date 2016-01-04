@@ -16,8 +16,10 @@
 
 module Bio.Sequence.Coded.Class where
 
+import Bio.Sequence.Character.Coded
+
 -- | A coded sequence allows grabbing of a character, filtering, and some standard types
-class Monoid s => CodedSequence s b | s -> b where
+class (Monoid s, CodedChar b) => CodedSequence s b | s -> b where
     numChars :: s -> Int
     emptySeq :: s
     isEmpty :: s -> Bool
@@ -25,6 +27,6 @@ class Monoid s => CodedSequence s b | s -> b where
     filterSeq :: s -> (b -> Bool) -> s
     charToSeq :: b -> s
 
--- | A coded character is a character of a sequence (allows for standard chars like gap)
-class CodedChar b where
-    gapChar :: b
+
+
+

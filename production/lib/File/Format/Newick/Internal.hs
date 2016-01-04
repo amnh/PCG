@@ -24,6 +24,8 @@ module File.Format.Newick.Internal
 import Data.Maybe (isJust,isNothing)
 import qualified Bio.Phylogeny.Network as N
 import Data.List
+import Data.Monoid
+import Control.Applicative (liftA2)
 
 {----
   - The Newick file format was developed by an informal committee meeting at
@@ -63,8 +65,10 @@ instance Show NewickNode where
       name = maybe "Node" show n
       len  = maybe "" (\x -> ':' : show x) b
 
---treeFoldr :: (f 
---treeFoldr f b t =
+instance Monoid NewickNode where
+  mempty = NewickNode [] Nothing Nothing
+  mappend (NewickNode des1 label1 len1) (NewickNode des2 label2 len2) = NewickNode (des1 <> des2) (label1 <> label2) (liftA2 (+) len1 len2)
+
 
 -- | Smart constructor for a 'NewickNode' preseriving the invariant:
 --
@@ -95,5 +99,10 @@ instance N.Network NewickNode NewickNode where
     where
       match newNode t = newickLabel t == newickLabel newNode
       upOne newNode t = t {descendants = descendants newNode, branchLength = branchLength newNode}
+  numNodes t = tallyNodes t
+    where
+      tallyNodes :: NewickNode -> Int
+      tallyNodes n = 1 + (sum $ (fmap tallyNodes (descendants n)))
+  addNode t n = t {descendants = n : (descendants t)}
 
 

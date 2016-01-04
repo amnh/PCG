@@ -85,11 +85,15 @@ executable pcg
                        Bio.Phylogeny.Tree.EdgeAware.Class
                        Bio.Phylogeny.Tree.Rose.Class
                        Bio.Sequence.Coded.Class
+                       Bio.Phylogeny.Tree.Referential
                        Data.List.Utility
                        File.Format.Fasta.Converter
                        File.Format.Fasta.Internal
                        File.Format.Fasta.Parser
                        File.Format.Fastc.Parser
+                       File.Format.Nexus.Data
+                       File.Format.Nexus.Partition
+                       File.Format.Nexus.Validate
                        File.Format.Newick.Internal
                        File.Format.Newick.Parser
                        File.Format.TransitionCostMatrix.Parser
@@ -128,6 +132,9 @@ executable pcg
                        PCG.Script
                        PCG.Script.Parser
                        PCG.Script.Types
+                       Analysis.GenericFitch
+                       Analysis.DirectOptimization.Naive
+                       Analysis.DirectOptimization.ImpliedAlign
 
   
 library
@@ -212,7 +219,10 @@ library
                        File.Format.Fastc.Parser
                        File.Format.Newick.Internal
                        File.Format.Newick.Parser
+                       File.Format.Nexus.Data
                        File.Format.Nexus.Parser
+                       File.Format.Nexus.Partition
+                       File.Format.Nexus.Validate
                        File.Format.TransitionCostMatrix.Parser
                        File.Format.VertexEdgeRoot.Parser
                        Text.Megaparsec.Custom
