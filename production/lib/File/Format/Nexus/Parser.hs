@@ -32,12 +32,7 @@
 module File.Format.Nexus.Parser where
 
 import           Data.Char              (isSpace,toLower)
-import           Data.DList             (DList,append)
-import qualified Data.DList as DL       (toList,fromList,empty)
-import           Data.Either            (lefts)
-import           Data.List              (sort)
-import qualified Data.Map.Lazy as M
-import           Data.Maybe             (isJust, fromJust, catMaybes, maybeToList)
+import           Data.Maybe             (isJust)
 import qualified Data.Set as S
 --import Debug.Trace
 import           File.Format.Newick
@@ -45,20 +40,13 @@ import           File.Format.Nexus.Data
 import           File.Format.Nexus.Partition
 import           File.Format.Nexus.Validate
 import           File.Format.TransitionCostMatrix.Parser hiding (symbol)
-import           Safe
 import           Text.Megaparsec hiding (label)
 import           Text.Megaparsec.Lexer  (integer)
 import           Text.Megaparsec.Prim   (MonadParsec)
 import           Text.Megaparsec.Custom
-import qualified Data.Vector as V
 
 parseNexusStream :: String -> Either ParseError Nexus
 parseNexusStream = parse (validateNexusParseResult =<< parseNexus <* eof) "PCG encountered a Nexus file parsing error it could not overcome:"
-
-
-
-
-
 
 parseNexus :: (Show s, MonadParsec s m Char) => m NexusParseResult
 parseNexus = nexusFileDefinition
