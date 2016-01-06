@@ -4,6 +4,8 @@ module Analysis.DirectOptimization.Naive (naiveDOThree, naiveDOTwo, naiveDO) whe
 
 import Prelude hiding (length, zipWith, or)
 import Data.Maybe
+import Data.Ord      (comparing)
+import Data.Foldable (minimumBy)
 import Data.Vector (Vector, singleton, length, zipWith, cons, empty, toList, (!), or)
 import qualified Data.Vector as V (foldr)
 import Data.Bits
@@ -143,8 +145,8 @@ generateRow seq1 seq2 costvals@(indelCost, subCost) rowNum prevRow@(costs, _, _)
             (diagCost, diagState) = if intersect == zeroBits then (diagVal + subCost, union)
                                         else (diagVal, intersect)
             (minCost, minState, minDir) = --trace ("get minimum choice " ++ show [(leftCost, char1, LeftDir), (diagCost, diagState, DiagDir), (downCost, char2, DownDir)])
-                                            foldr1 (\(c, a, b) (ca, aa, ba) -> if c < ca then (c, a, b) else (ca, aa, ba)) 
-                                                ([(leftCost, iuChar1, LeftDir), (downCost, iuChar2, DownDir), (diagCost, diagState, DiagDir)])
+                                           minimumBy (comparing (\(a,b,c) -> a))
+                                                [(leftCost, iuChar1, LeftDir), (downCost, iuChar2, DownDir), (diagCost, diagState, DiagDir)]
 
             overlapCost :: CharConstraint b => b -> Float -> Float
             overlapCost char cost 
