@@ -17,6 +17,7 @@
 
 module Bio.Phylogeny.Tree.Referential where
 
+-- | The referential tree class just means that each node has a code you can use to get it from a iterable
 class ReferentialTree t n | t -> n where
     code :: n -> t -> Maybe Int
     getNthNode :: t -> Int -> n

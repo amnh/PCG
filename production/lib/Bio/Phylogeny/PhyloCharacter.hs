@@ -29,6 +29,7 @@ data PhyloCharacter b = DNA {aligned :: Bool, masks :: (Vector b, Vector b), alp
                       | Custom {aligned :: Bool, masks :: (Vector b, Vector b), alphabet :: Vector String, tcm :: CostMatrix} 
                             deriving (Show, Eq, Generic)
 
+-- | A cost matrix is just a matrix of floats
 type CostMatrix = Matrix Float
 
 

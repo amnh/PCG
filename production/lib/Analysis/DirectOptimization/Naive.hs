@@ -140,10 +140,8 @@ generateRow seq1 seq2 costvals@(indelCost, subCost) rowNum prevRow@(costs, _, _)
             intersect = char1 .&. char2
             union = char1 .|. char2
 
-            (diagCost, diagState) = if intersect == zeroBits then --trace ("intersect " ++ show intersect) $ 
-                                        (diagVal + subCost, union)
-                                        else --trace ("diagonal " ++ show intersect) 
-                                            (diagVal, intersect)
+            (diagCost, diagState) = if intersect == zeroBits then (diagVal + subCost, union)
+                                        else (diagVal, intersect)
             (minCost, minState, minDir) = --trace ("get minimum choice " ++ show [(leftCost, char1, LeftDir), (diagCost, diagState, DiagDir), (downCost, char2, DownDir)])
                                             foldr1 (\(c, a, b) (ca, aa, ba) -> if c < ca then (c, a, b) else (ca, aa, ba)) 
                                                 ([(leftCost, iuChar1, LeftDir), (downCost, iuChar2, DownDir), (diagCost, diagState, DiagDir)])

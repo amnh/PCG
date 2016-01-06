@@ -43,14 +43,17 @@ instance EN.EncodedNode (Node b) (EncodedSeq b) where
     encoded = encoded
     setEncoded n s = n {encoded = s}
 
+-- | Nodes can hold final assignment
 instance FN.FinalNode (Node b) (EncodedSeq b) where
     final = final
     setFinal f n = n {final = f}
 
+-- | Nodes can hold packed data
 instance PN.PackedNode (Node b) (EncodedSeq b) where
     packed = packed
     setPacked n s = n {packed = s}
 
+-- | Nodes hold all preliminary info
 instance RN.PreliminaryNode (Node b) (EncodedSeq b) where
     preliminary = preliminary
     setPreliminary s n = n {preliminary = s}

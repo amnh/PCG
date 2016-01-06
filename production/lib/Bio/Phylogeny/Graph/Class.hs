@@ -28,10 +28,13 @@ import Bio.Phylogeny.PhyloCharacter
 import Bio.Phylogeny.Tree.Node
 
 
--- | Standard graph types defined
+-- | Identifier is just a string name
 type Identifier = String
+-- | An un-coded sequence is a vector of list of strings
 type Sequence   = Vector [String]
+-- | CharInfo is PhyloCharacter for now
 type CharInfo   = PhyloCharacter Int64
+-- | Nodes can store with bitvectors for now
 type NodeInfo   = Node BitVector
 
 -- | Edge type: info is stored at the out connections of a node
