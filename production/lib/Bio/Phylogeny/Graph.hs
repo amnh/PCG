@@ -12,35 +12,30 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE MultiParamTypeClasses, TypeSynonymInstances, FlexibleInstances #-}
+{-# LANGUAGE FlexibleInstances, MultiParamTypeClasses, NoImplicitPrelude, TypeSynonymInstances #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
 module Bio.Phylogeny.Graph (Graph(..), Tree(..), EdgeSet(..), EdgeInfo(..), Identifier, Sequence, CharInfo, NodeInfo) where
 
-import Prelude hiding (length)
-
-import Bio.Phylogeny.Graph.Class
-
-import Data.IntMap (size, insert, foldWithKey)
-import Data.IntSet (fromList)
-import qualified Data.IntSet as IS (map)
-import qualified Data.HashMap.Strict as H (insert)
-import Data.Monoid
-import Data.Vector ((//), length, singleton, elemIndex, (!))
-import qualified Data.Vector as V ((++), map)
-
-import Data.Keyed hiding ((!))
-import Safe
-
-import Bio.Phylogeny.Tree.Node
-import Bio.Phylogeny.Forest
-import Bio.Phylogeny.Tree.Rose
-import Bio.Phylogeny.Tree.Binary
-import qualified Bio.Phylogeny.Network as N
+import           Bio.Phylogeny.Forest
+import           Bio.Phylogeny.Graph.Class
+import           Bio.Phylogeny.Tree.Binary
+import qualified Bio.Phylogeny.Tree.CharacterAware as CT
 import qualified Bio.Phylogeny.Tree.Edge.Standard  as E
 import qualified Bio.Phylogeny.Tree.EdgeAware      as ET
-import qualified Bio.Phylogeny.Tree.CharacterAware as CT
+import           Bio.Phylogeny.Tree.Node
 import qualified Bio.Phylogeny.Tree.Referential    as RT
+import           Bio.Phylogeny.Tree.Rose
+import qualified Bio.Phylogeny.Network             as N
+import qualified Data.HashMap.Strict               as H  (insert)
+import           Data.IntMap                             (size, insert, foldWithKey)
+import           Data.IntSet                             (fromList)
+import qualified Data.IntSet                       as IS (map)
+import           Data.Key                                (lookup)
+import           Data.Monoid
+import           Prelude                       hiding    ((++),length,lookup)
+import           Safe
+import           Data.Vector                             ((++),(//), length, singleton, elemIndex, (!))
 
 -- | Make all types instances of monoid to allow for mempty and mappend usage
 instance Monoid Graph where
@@ -53,8 +48,8 @@ instance Monoid Tree where
   mappend (Tree a b c d e f) (Tree a' b' c' d' e' _) = 
     let 
       shift = length d
-      allNodes = d V.++ recodeAll d' shift
-      allEdges = e V.++ recodeEdges shift e'
+      allNodes = d ++ recodeAll d' shift
+      allEdges = e ++ recodeEdges shift e'
       allNames = a <> shiftNames a' shift
     in Tree allNames (b <> b') (c <> c') allNodes allEdges f
 
@@ -62,10 +57,10 @@ instance Monoid Tree where
       shiftFun shift list = pure ((+) shift) <*> list
       newEdge val shift = EdgeInfo 0 (recodeFun (origin val) shift) (recodeFun (terminal val) shift)
       recodeFun node shift = node {code = (code node + shift), children = shiftFun shift (children node), parents = shiftFun shift (parents node)}
-      recodeAll innodes shift = V.map (\node -> recodeFun node shift) innodes
-      shiftEdges shift set = EdgeSet (IS.map ((+) shift) (inNodes set)) 
+      recodeAll innodes shift = (\node -> recodeFun node shift) <$> innodes
+      shiftEdges shift set = EdgeSet (IS.map ((+) shift) (inNodes set))
                               (foldWithKey (\k val acc -> insert (k + shift) (newEdge val shift) acc) mempty (outNodes set))
-      recodeEdges shift vec = V.map (shiftEdges shift) vec
+      recodeEdges shift vec = (shiftEdges shift) <$> vec
       shiftNames names shift = foldWithKey (\k val acc -> insert (k + shift) val acc) mempty names
 
 -- | Edge Sets are monoids
@@ -82,28 +77,25 @@ instance N.Network Tree NodeInfo where
   isRoot n _    = isRoot n
   update t new  = t {nodes = nodes t // map (\n -> (code n, n)) new}
   numNodes      = length . nodes 
-  addNode t n   = 
-    let
+  addNode t n   = Tree names2 seqs2 (characters t) nodes2 edges2 (root t)
+    where
       addPos = (size $ taxaNodes t)
       names2 = insert addPos (show addPos) (taxaNodes t)
-      seqs2 = H.insert (show addPos) mempty (taxaSeqs t)
-      nodes2 = (nodes t) V.++ singleton n
-      edges2 = (edges t) V.++ singleton (makeEdges n t)
-    in Tree names2 seqs2 (characters t) nodes2 edges2 (root t)
+      seqs2  = H.insert (show addPos) mempty (taxaSeqs t)
+      nodes2 = (nodes t) ++ singleton n
+      edges2 = (edges t) ++ singleton (makeEdges n t)
 
 makeEdges :: NodeInfo -> Tree -> EdgeSet
-makeEdges node inTree = 
-  let 
+makeEdges node inTree = EdgeSet (fromList $ parents node) out
+  where
+    out  = foldr (\i acc -> insert i (info $ (nodes inTree) ! i) acc) mempty (children node)
     info = EdgeInfo 0 node 
-    out = foldr (\i acc -> insert i (info $ (nodes inTree) ! i) acc) mempty (children node)
-  in EdgeSet (fromList $ parents node) out
-
 
 -- | This tree can be a binary tree
 instance BinaryTree Tree NodeInfo where
   parent     n t = headMay $ map (\i -> nodes t ! i) (parents n)
-  leftChild  n t = map (\i -> nodes t ! i) (children n) !? 0
-  rightChild n t = map (\i -> nodes t ! i) (children n) !? 1
+  leftChild  n t = lookup 0 $ (\i -> nodes t ! i) <$> (children n)
+  rightChild n t = lookup 1 $ (\i -> nodes t ! i) <$> (children n)
 
 -- | Or this tree can be a rose tree
 instance RoseTree Tree NodeInfo where

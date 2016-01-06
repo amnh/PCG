@@ -44,7 +44,7 @@ executable pcg
                      , either               -any
                      , Glob                 -any
                      , hashable             -any
-                     , keyed                -any
+                     , keys                 -any
                      , matrix               -any
                      , megaparsec           >=4.2
                      , parallel             >=3.2  && <3.3
@@ -152,7 +152,7 @@ library
                      , deepseq              >=1.4  && <1.5
                      , dlist                -any
                      , either               -any
-                     , keyed                -any
+                     , keys                 -any
                      , matrix               -any
                      , megaparsec           >=4.2
                      , parallel             >=3.2  && <3.3
@@ -248,7 +248,7 @@ Test-Suite testsuite
                      , dlist                -any
                      , hashable             -any
                      , either               -any
-                     , keyed                -any
+                     , keys                 -any
                      , matrix               -any
                      , megaparsec           >=4.2
                      , parallel             >=3.2  && <3.3
