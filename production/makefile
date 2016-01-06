@@ -8,10 +8,13 @@ all: stack-build
 cabal-build: phylocomgraph.cabal
 	cabal install --dependencies-only && cabal configure --enable-tests --enable-profiling && cabal build && cabal haddock --executables --html --hyperlink-source && cabal test
 
-stack-build: setup rebuild
+stack-build: install-stack setup rebuild
+
+install-stack:
+	stack upgrade || (cabal update && cabal install stack)
 
 setup: phylocomgraph.cabal stack.yaml
-	cabal update && cabal install stack && stack setup
+	stack setup
 
 rebuild: phylocomgraph.cabal stack.yaml
 	stack build --haddock --test
