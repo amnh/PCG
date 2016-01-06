@@ -133,10 +133,8 @@ generateRow seq1 seq2 costvals@(indelCost, subCost) rowNum prevRow@(costs, _, _)
             intersect = char1 .&. char2
             union = char1 .|. char2
 
-            -- TODO: Ask Alex why this is broken!!!
             (diagCost, diagState) = case intersect of
                                         zeroBits -> (diagVal + subCost, union)
-                                        _        -> (diagVal, intersect)
             (minCost, minState, minDir) = foldr (\(c, a, b) (ca, aa, ba) -> if c < ca then (c, a, b) else (ca, aa, ba)) (subCost, gapChar, DiagDir)
                                                 [(leftCost, char1, LeftDir), (diagCost, diagState, DiagDir), (downCost, char2, DownDir)]
 
