@@ -133,6 +133,7 @@ generateRow seq1 seq2 costvals@(indelCost, subCost) rowNum prevRow@(costs, _, _)
             intersect = char1 .&. char2
             union = char1 .|. char2
 
+            -- TODO: Ask Alex why this is broken!!!
             (diagCost, diagState) = case intersect of
                                         zeroBits -> (diagVal + subCost, union)
                                         _        -> (diagVal, intersect)
