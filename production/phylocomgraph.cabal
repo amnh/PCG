@@ -102,9 +102,7 @@ executable pcg
                        Bio.Phylogeny.Tree.Rose.Class
                        Bio.Sequence.Coded
                        Bio.Sequence.Coded.Class
-                       Bio.Sequence.Character.Coded
-                       Bio.Sequence.Multi
-                       Bio.Sequence.Multi.Class                       
+                       Bio.Sequence.Character.Coded                     
                        Control.Evaluation
                        Control.Evaluation.Internal
                        Control.Evaluation.Trans
@@ -198,7 +196,6 @@ library
                        Bio.Phylogeny.Tree.Rose
                        Bio.Sequence.Coded
                        Bio.Sequence.Character.Coded
-                       Bio.Sequence.Multi
                        File.Format.Fasta
                        File.Format.Fastc
                        File.Format.Newick
@@ -217,7 +214,6 @@ library
                        Bio.Phylogeny.Tree.EdgeAware.Class
                        Bio.Phylogeny.Tree.Rose.Class
                        Bio.Sequence.Coded.Class
-                       Bio.Sequence.Multi.Class
                        Data.List.Utility
                        File.Format.Fasta.Converter
                        File.Format.Fasta.Internal
@@ -301,8 +297,6 @@ Test-Suite testsuite
                        Bio.Sequence.Character.Coded
                        Bio.Sequence.Coded
                        Bio.Sequence.Coded.Class
-                       Bio.Sequence.Multi
-                       Bio.Sequence.Multi.Class
                        Bio.Sequence.Random
                        Control.Evaluation.Internal
                        Control.Evaluation.Test
