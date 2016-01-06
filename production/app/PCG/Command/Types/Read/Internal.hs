@@ -1,3 +1,5 @@
+{-# LANGUAGE DoAndIfThenElse #-}
+
 module PCG.Command.Types.Read.Internal
   ( CustomAlphabetOptions(..)
   , CustomAlphabetStrategy(..)

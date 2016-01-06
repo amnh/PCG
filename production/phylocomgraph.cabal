@@ -75,54 +75,58 @@ executable pcg
   
   hs-source-dirs:      app, lib
   
-  default-language:    Haskell2010
-
-  other-modules:       Bio.Phylogeny.Forest.Class
-                       Bio.Phylogeny.Network.Class
-                       Bio.Phylogeny.Tree.Binary.Class
-                       Bio.Phylogeny.Tree.CharacterAware.Class
-                       Bio.Phylogeny.Tree.Edge.Standard
-                       Bio.Phylogeny.Tree.EdgeAware.Class
-                       Bio.Phylogeny.Tree.Rose.Class
-                       Bio.Sequence.Coded.Class
-                       Bio.Phylogeny.Tree.Referential
-                       Data.List.Utility
-                       File.Format.Fasta.Converter
-                       File.Format.Fasta.Internal
-                       File.Format.Fasta.Parser
-                       File.Format.Fastc.Parser
-                       File.Format.Nexus.Data
-                       File.Format.Nexus.Partition
-                       File.Format.Nexus.Validate
-                       File.Format.Newick.Internal
-                       File.Format.Newick.Parser
-                       File.Format.TransitionCostMatrix.Parser
-                       File.Format.VertexEdgeRoot.Parser
-                       Text.Megaparsec.Custom
+  other-modules:       Analysis.GenericFitch
+                       Analysis.DirectOptimization.Naive
+                       Analysis.DirectOptimization.ImpliedAlign
                        Bio.Phylogeny.Forest
+                       Bio.Phylogeny.Forest.Class
                        Bio.Phylogeny.Graph
+                       Bio.Phylogeny.Graph.Class
                        Bio.Phylogeny.Network
+                       Bio.Phylogeny.Network.Class
                        Bio.Phylogeny.PhyloCharacter
                        Bio.Phylogeny.Tree.Binary
+                       Bio.Phylogeny.Tree.Binary.Class
                        Bio.Phylogeny.Tree.CharacterAware
+                       Bio.Phylogeny.Tree.CharacterAware.Class
+                       Bio.Phylogeny.Tree.Edge.Standard
                        Bio.Phylogeny.Tree.EdgeAware
+                       Bio.Phylogeny.Tree.EdgeAware.Class
                        Bio.Phylogeny.Tree.Node
                        Bio.Phylogeny.Tree.Node.Encoded
                        Bio.Phylogeny.Tree.Node.Final
                        Bio.Phylogeny.Tree.Node.Packed
                        Bio.Phylogeny.Tree.Node.Preliminary
+                       Bio.Phylogeny.Tree.Referential
                        Bio.Phylogeny.Tree.Rose
+                       Bio.Phylogeny.Tree.Rose.Class
                        Bio.Sequence.Coded
+                       Bio.Sequence.Coded.Class
+                       Bio.Sequence.Character.Coded
+                       Bio.Sequence.Multi
+                       Bio.Sequence.Multi.Class                       
                        Control.Evaluation
                        Control.Evaluation.Internal
                        Control.Evaluation.Trans
                        Control.Evaluation.Unit
                        Data.Either.Custom
+                       Data.List.Utility
                        File.Format.Fasta
+                       File.Format.Fasta.Converter
+                       File.Format.Fasta.Internal
+                       File.Format.Fasta.Parser
                        File.Format.Fastc
+                       File.Format.Fastc.Parser
                        File.Format.Newick
+                       File.Format.Nexus.Data
+                       File.Format.Nexus.Partition
+                       File.Format.Nexus.Validate
+                       File.Format.Newick.Internal
+                       File.Format.Newick.Parser
                        File.Format.TransitionCostMatrix
+                       File.Format.TransitionCostMatrix.Parser
                        File.Format.VertexEdgeRoot
+                       File.Format.VertexEdgeRoot.Parser
                        PCG.Command
                        PCG.Command.Types
                        PCG.Command.Types.Read
@@ -132,11 +136,10 @@ executable pcg
                        PCG.Script
                        PCG.Script.Parser
                        PCG.Script.Types
-                       Analysis.GenericFitch
-                       Analysis.DirectOptimization.Naive
-                       Analysis.DirectOptimization.ImpliedAlign
+                       Text.Megaparsec.Custom
+                         
 
-  
+                         
 library
   -- LANGUAGE extensions used by modules in this package.
   other-extensions:    FlexibleContexts, BangPatterns, DeriveGeneric
@@ -177,8 +180,6 @@ library
   
   hs-source-dirs:      lib
   
-  default-language:    Haskell2010
-  
   -- Modules exported by the library.
   exposed-modules:
                        Bio.Phylogeny.Forest
@@ -193,18 +194,22 @@ library
                        Bio.Phylogeny.Tree.Node.Final
                        Bio.Phylogeny.Tree.Node.Packed
                        Bio.Phylogeny.Tree.Node.Preliminary
+                       Bio.Phylogeny.Tree.Referential
                        Bio.Phylogeny.Tree.Rose
                        Bio.Sequence.Coded
+                       Bio.Sequence.Character.Coded
+                       Bio.Sequence.Multi
                        File.Format.Fasta
                        File.Format.Fastc
                        File.Format.Newick
                        File.Format.Nexus
                        File.Format.VertexEdgeRoot
                        File.Format.TransitionCostMatrix
-  
+
   -- Modules included in this library but not exported.
   other-modules:
                        Bio.Phylogeny.Forest.Class
+                       Bio.Phylogeny.Graph.Class
                        Bio.Phylogeny.Network.Class
                        Bio.Phylogeny.Tree.Binary.Class
                        Bio.Phylogeny.Tree.CharacterAware.Class
@@ -212,6 +217,7 @@ library
                        Bio.Phylogeny.Tree.EdgeAware.Class
                        Bio.Phylogeny.Tree.Rose.Class
                        Bio.Sequence.Coded.Class
+                       Bio.Sequence.Multi.Class
                        Data.List.Utility
                        File.Format.Fasta.Converter
                        File.Format.Fasta.Internal
@@ -262,8 +268,42 @@ Test-Suite testsuite
 
   hs-source-dirs:      test, lib, app
 
-  other-modules:       Bio.Phylogeny.Network
-                       Bio.Phylogeny.Network.Class
+  other-modules:       Analysis.DirectOptimization.ImpliedAlign
+                       Analysis.DirectOptimization.Naive
+                       Analysis.DirectOptimization.Test
+                       Analysis.DirectOptimization.Utilities
+                       Bio.Phylogeny.Forest
+                       Bio.Phylogeny.Forest.Class
+                       Bio.Phylogeny.Graph
+                       Bio.Phylogeny.Graph.Class
+                       Bio.Phylogeny.Graph.Random
+                       Bio.Phylogeny.Graph.Topological
+                       Bio.Phylogeny.Network
+                       Bio.Phylogeny.Network.Class                
+                       Bio.Phylogeny.PhyloCharacter
+                       Bio.Phylogeny.Tree.Binary
+                       Bio.Phylogeny.Tree.Binary.Class
+                       Bio.Phylogeny.Tree.CharacterAware
+                       Bio.Phylogeny.Tree.CharacterAware.Class
+                       Bio.Phylogeny.Tree.Edge.Standard
+                       Bio.Phylogeny.Tree.EdgeAware
+                       Bio.Phylogeny.Tree.EdgeAware.Class
+                       Bio.Phylogeny.Tree.Node
+                       Bio.Phylogeny.Tree.Node.Encoded
+                       Bio.Phylogeny.Tree.Node.Final
+                       Bio.Phylogeny.Tree.Node.Packed
+                       Bio.Phylogeny.Tree.Node.Preliminary
+                       Bio.Phylogeny.Tree.Node.Random
+                       Bio.Phylogeny.Tree.Node.Topological
+                       Bio.Phylogeny.Tree.Referential
+                       Bio.Phylogeny.Tree.Rose
+                       Bio.Phylogeny.Tree.Rose.Class
+                       Bio.Sequence.Character.Coded
+                       Bio.Sequence.Coded
+                       Bio.Sequence.Coded.Class
+                       Bio.Sequence.Multi
+                       Bio.Sequence.Multi.Class
+                       Bio.Sequence.Random
                        Control.Evaluation.Internal
                        Control.Evaluation.Test
                        Control.Evaluation.Unit
@@ -281,7 +321,10 @@ Test-Suite testsuite
                        File.Format.Newick.Parser
                        File.Format.Newick.Test
                        File.Format.Nexus
+                       File.Format.Nexus.Data
                        File.Format.Nexus.Parser
+                       File.Format.Nexus.Partition
+                       File.Format.Nexus.Validate
                        File.Format.TransitionCostMatrix.Parser
                        File.Format.TransitionCostMatrix.Test
                        File.Format.VertexEdgeRoot.Parser
@@ -296,3 +339,5 @@ Test-Suite testsuite
                        TestSuite.LibraryTests
                        Text.Megaparsec.Custom
                        Text.Megaparsec.Custom.Test
+
+                       

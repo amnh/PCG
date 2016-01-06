@@ -6,7 +6,7 @@ module PCG.Command.Types.Read.ReadError
   , unparsable
   ) where
 
-import Data.List.NonEmpty hiding (unlines)
+import Data.List.NonEmpty
 import Data.Maybe                (catMaybes)
 import Data.Semigroup
 import Text.Megaparsec           (ParseError)
