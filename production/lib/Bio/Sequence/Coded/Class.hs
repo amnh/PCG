@@ -18,6 +18,8 @@ module Bio.Sequence.Coded.Class where
 
 import Bio.Sequence.Character.Coded
 
+import Data.Vector
+
 -- | A coded sequence allows grabbing of a character, filtering, and some standard types
 class (Monoid s, CodedChar b) => CodedSequence s b | s -> b where
     numChars :: s -> Int
@@ -26,6 +28,8 @@ class (Monoid s, CodedChar b) => CodedSequence s b | s -> b where
     grabSubChar :: s -> Int -> Maybe b
     filterSeq :: s -> (b -> Bool) -> s
     charToSeq :: b -> s
+    encode :: Vector [String] -> s
+    encodeOverAlphabet :: Vector [String] -> [String] -> s
 
 
 

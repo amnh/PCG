@@ -18,9 +18,11 @@
 
 module Bio.Sequence.Coded (CodedSequence(..), EncodedSeq, EncodedSequences, CodedChar(..)) where
 
-import Prelude hiding (map, length, zipWith, null, foldr, head, filter)
+import Prelude hiding (map, length, zipWith, null, head)
+import Data.List (elemIndex)
 import Control.Applicative  (liftA2, liftA)
-import Data.Vector    (map, length, zipWith, empty, null, foldr, Vector, head, (!), singleton, filter)
+import Data.Vector    (map, length, zipWith, empty, null, Vector, head, (!), singleton)
+import qualified Data.Vector as V (filter)
 import Data.Bits
 import Data.Maybe
 import Bio.Sequence.Coded.Class
@@ -40,7 +42,24 @@ instance Bits b => CodedSequence (EncodedSeq b) b where
     grabSubChar s pos = liftA (! pos) s
     emptySeq = Nothing
     isEmpty = isNothing
-    filterSeq s condition = liftA (filter condition) s
+    filterSeq s condition = liftA (V.filter condition) s
+    encode strSeq = 
+        let 
+            alphabet = foldr (\ambig acc -> filter (not . (flip elem) acc) ambig ++ acc) [] strSeq
+            coded = map (\ambig -> foldr (\c acc -> setElemAt c acc alphabet) zeroBits ambig) strSeq
+            final = if length coded == 0 then Nothing else Just coded
+        in final
+
+    encodeOverAlphabet strSeq alphabet = 
+        let
+            coded = map (\ambig -> foldr (\c acc -> setElemAt c acc alphabet) zeroBits ambig) strSeq
+            final = if length coded == 0 then Nothing else Just coded
+        in final
+
+setElemAt :: (Bits b) => String -> b -> [String] -> b
+setElemAt char orig alphabet = case elemIndex char alphabet of
+                        Nothing -> orig
+                        Just pos -> setBit orig (pos + 2)          
 
 instance Bits b => CodedChar b where
     gapChar = bit 1
@@ -94,4 +113,4 @@ instance Bits b => Bits (Maybe b) where
     testBit  bits i = maybe False (`testBit` i) bits
 
 instance Bits b => MultiSequence (EncodedSequences b) (EncodedSeq b) where
-    filterMulti seqs condition = filter condition seqs
+    filterMulti seqs condition = V.filter condition seqs

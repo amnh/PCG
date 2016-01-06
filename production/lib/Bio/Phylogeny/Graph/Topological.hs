@@ -29,9 +29,9 @@ import Data.BitVector (BitVector, fromBits)
 import Data.Vector (fromList, Vector)
 
 maxDepth, minDepth, maxChildren :: Int
-maxDepth = 20
+maxDepth = 5
 minDepth = 0
-maxChildren = 3
+maxChildren =  2
 
 type TopoTree = TopoNode BitVector
 type MultiSeq = EncodedSequences BitVector
@@ -45,8 +45,8 @@ instance Arbitrary TopoTree where
         seqs <- vectorOf 6 (arbitrary :: Gen MultiSeq)
         cost <- arbitrary :: Gen Float
         let name = show 0 ++ show cost
-        if null children then return $ TopoNode True True name [] (seqs !! 0) (seqs !! 1) (seqs !! 2) (seqs !! 3) (seqs !! 4) (seqs !! 5) cost
-            else return $ TopoNode True False name children (seqs !! 0) (seqs !! 1) (seqs !! 2) (seqs !! 3) (seqs !! 4) (seqs !! 5) cost
+        if null children then return $ TopoNode True True  name [] (seqs !! 0) (seqs !! 1) (seqs !! 2) (seqs !! 3) (seqs !! 4) (seqs !! 5) cost
+                         else return $ TopoNode True False name children (seqs !! 0) (seqs !! 1) (seqs !! 2) (seqs !! 3) (seqs !! 4) (seqs !! 5) cost
 
 internalRandom :: Int -> Gen TopoTree
 --internalRandom depth | trace ("internal random generation " ++ show depth) False = undefined
