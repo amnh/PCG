@@ -6,11 +6,11 @@ import Prelude hiding (length, zipWith, or)
 import Data.Maybe
 import Data.Ord      (comparing)
 import Data.Foldable (minimumBy)
-import Data.Vector (Vector, singleton, length, zipWith, cons, empty, toList, (!), or)
+import Data.Vector (Vector, singleton, length, zipWith, cons, empty, toList, (!), or, generate)
 import qualified Data.Vector as V (foldr)
 import Data.Bits
 import Data.Monoid ((<>))
-import Data.Matrix (fromList, Matrix, (<->), nrows, ncols, getElem, zero, matrix)
+import Data.Matrix (fromList, Matrix, (<->), nrows, ncols, getElem, getRow, zero, matrix)
 
 import Control.Applicative (liftA2)
 
@@ -67,6 +67,8 @@ naiveDO seq1 seq2
                                                    else (seq1, seq1Len, seq2, seq2Len)
             firstMatRow = firstAlignRow indelCost longer longlen 0 0 
             traversalMat = firstMatRow `joinMat` getAlignRows longer shorter (indelCost, subCost) 1 firstMatRow
+-- Alex's Experiment
+--            traversalMat = optMat longer shorter (indelCost, subCost)
             cost = getMatrixCost traversalMat
             (gapped, left, right) = --trace ("get seqs " ++ show traversalMat)
                                     traceback traversalMat shorter longer
@@ -128,22 +130,22 @@ generateRow seq1 seq2 costvals@(indelCost, subCost) rowNum prevRow@(costs, _, _)
     | otherwise = --trace "minimal case" $ 
         (singleton minCost, charToSeq minState, singleton minDir) <> nextCall minCost
         where
-            newState = getOverlapState gapChar (seq2 `grabSubChar` (rowNum - 1))
-            upValue = costs ! position
+            newState      = getOverlapState gapChar (seq2 `grabSubChar` (rowNum - 1))
+            upValue       = costs ! position
             nextCall cost = generateRow seq1 seq2 costvals rowNum prevRow (position + 1, cost)
-            
-            char1 = unwrapSub $ seq1 `grabSubChar` (position - 1)
-            char2 = unwrapSub $ seq2 `grabSubChar` (rowNum - 1)
-            iuChar1 = getOverlapState gapChar (Just char1)
-            iuChar2 = getOverlapState gapChar (Just char2)
-            leftCost = (overlapCost char1 indelCost) + prevCost
-            downCost = (overlapCost char2 indelCost) + upValue
-            diagVal = costs ! (position - 1)
-            intersect = char1 .&. char2
-            union = char1 .|. char2
+            char1         = unwrapSub $ seq1 `grabSubChar` (position - 1)
+            char2         = unwrapSub $ seq2 `grabSubChar` (rowNum - 1)
+            iuChar1       = getOverlapState gapChar (Just char1)
+            iuChar2       = getOverlapState gapChar (Just char2)
+            leftCost      = (overlapCost char1 indelCost) + prevCost
+            downCost      = (overlapCost char2 indelCost) + upValue
+            diagVal       = costs ! (position - 1)
+            intersect     = char1 .&. char2
+            union         = char1 .|. char2
 
-            (diagCost, diagState) = if intersect == zeroBits then (diagVal + subCost, union)
-                                        else (diagVal, intersect)
+            (diagCost, diagState) = if intersect == zeroBits 
+                                    then (diagVal + subCost, union)
+                                    else (diagVal, intersect)
             (minCost, minState, minDir) = --trace ("get minimum choice " ++ show [(leftCost, char1, LeftDir), (diagCost, diagState, DiagDir), (downCost, char2, DownDir)])
                                            minimumBy (comparing (\(a,b,c) -> a))
                                                 [(leftCost, iuChar1, LeftDir), (downCost, iuChar2, DownDir), (diagCost, diagState, DiagDir)]
@@ -155,8 +157,9 @@ generateRow seq1 seq2 costvals@(indelCost, subCost) rowNum prevRow@(costs, _, _)
 
             unwrapSub :: CharConstraint b => Maybe b -> b
             unwrapSub val = case val of
-                Nothing -> error "Cannot access sequence at given position for matrix generation"
-                Just v -> v
+                              Just v  -> v
+                              Nothing -> error "Cannot access sequence at given position for matrix generation"
+
 
 -- | Performs the traceback of an alignment matrix
 traceback :: SeqConstraint s b => AlignMatrix s -> s -> s -> (s, s, s)
@@ -182,3 +185,54 @@ traceback alignMat seq1 seq2 = tracebackInternal alignMat seq1 seq2 (numChars se
                         Just b -> charToSeq b
 
 
+{--
+ - | It's so close I can taste it
+data MatrixEntry s
+   = MatrixEntry
+   { entryCost :: Float
+   , entryChar :: s
+   , entryDir  :: Direction
+   }
+
+optMat :: SeqConstraint s b => s -> s -> Costs -> AlignMatrix s
+optMat seqB seqC (indelCost, subCost) = AlignMatrix costMatrix charVector dirMatrix
+  where
+    costMatrix = entryCost <$> opt
+    charVector :: SeqConstraint s b => Vector (Vector s)
+    charVector = generate m (fmap entryChar . (`getRow` opt))
+    dirMatrix  = entryDir  <$> opt
+    -- Maybe use `matrix` with generating function
+    opt :: SeqConstraint s b => Matrix (MatrixEntry s)
+    opt = fromList m n [ score i j | i <- [0..m], j <- [0..n] ]
+    optCost = entryCost . (opt !!!)
+    m = numChars seqB
+    n = numChars seqC
+    (!!!) matrix (i,j) = getElem i j matrix
+    sigma :: SeqConstraint s b => s -> s -> Float
+    sigma x y
+      |  gapChar == x
+      || gapChar == y = indelCost
+      |  otherwise    = subCost
+    score :: SeqConstraint s b => Int -> Int -> MatrixEntry s
+    score 0 0 = MatrixEntry 0 gapChar DiagDir
+    score i 0 = let charVal = seqB `grabSubChar` i
+                in  MatrixEntry (optCost (i-1,   0) + sigma charVal gapChar) charVal LeftDir
+    score 0 j = let charVal = seqC `grabSubChar` j
+                in  MatrixEntry (optCost (  0, j-1) + sigma charVal gapChar) charVal DownDir
+    score i j = minimumBy (comparing entryCost)
+              [ MatrixEntry costGapB  iuCharB   LeftDir
+              , MatrixEntry costGapC  iuCharC   DownDir
+              , MatrixEntry costAlign diagState DiagDir
+              ]
+      where
+        charB     = seqB `grabSubChar` i
+        charC     = seqC `grabSubChar` j
+        costGapB  = optCost (i  , j-1) + sigma charB gapChar
+        costGapC  = optCost (i-1, j  ) + sigma charB gapChar
+        costAlign = optCost (i-1, j-1) + sigma charB charC
+        iuCharB   = getOverlapState gapChar (Just charB)
+        iuCharC   = getOverlapState gapChar (Just charC)
+        intersect = charB .&. charC
+        union     = charB .|. charC
+        diagState = if intersect == zeroBits then union else intersect
+-}
