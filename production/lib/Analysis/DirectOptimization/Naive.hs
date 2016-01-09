@@ -5,7 +5,7 @@ module Analysis.DirectOptimization.Naive (naiveDOThree, naiveDOTwo, naiveDO) whe
 import Prelude hiding (length, zipWith, or)
 import Data.Maybe
 import Data.Ord      (comparing)
-import Data.Foldable (minimumBy)
+import Data.Foldable (foldl1,minimumBy)
 import Data.Vector (Vector, singleton, length, zipWith, cons, empty, toList, (!), or, generate)
 import qualified Data.Vector as V (foldr)
 import Data.Bits
@@ -186,11 +186,11 @@ traceback alignMat seq1 seq2 = tracebackInternal alignMat seq1 seq2 (numChars se
 
 
 {--
- - | It's so close I can taste it
-data MatrixEntry s
+-- It want's an `Eq` instance?
+data MatrixEntry b
    = MatrixEntry
    { entryCost :: Float
-   , entryChar :: s
+   , entryChar :: b
    , entryDir  :: Direction
    }
 
@@ -198,17 +198,17 @@ optMat :: SeqConstraint s b => s -> s -> Costs -> AlignMatrix s
 optMat seqB seqC (indelCost, subCost) = AlignMatrix costMatrix charVector dirMatrix
   where
     costMatrix = entryCost <$> opt
-    charVector :: SeqConstraint s b => Vector (Vector s)
-    charVector = generate m (fmap entryChar . (`getRow` opt))
+    charVector :: SeqConstraint s b => Vector s
+    charVector = generate m (foldl1 (<>) . fmap (entryChar) . (`getRow` opt))
     dirMatrix  = entryDir  <$> opt
     -- Maybe use `matrix` with generating function
-    opt :: SeqConstraint s b => Matrix (MatrixEntry s)
+    opt :: SeqConstraint s b => Matrix (MatrixEntry b)
     opt = fromList m n [ score i j | i <- [0..m], j <- [0..n] ]
     optCost = entryCost . (opt !!!)
     m = numChars seqB
     n = numChars seqC
     (!!!) matrix (i,j) = getElem i j matrix
-    sigma :: SeqConstraint s b => s -> s -> Float
+    sigma :: CharConstraint b => b -> b -> Float
     sigma x y
       |  gapChar == x
       || gapChar == y = indelCost
@@ -235,4 +235,4 @@ optMat seqB seqC (indelCost, subCost) = AlignMatrix costMatrix charVector dirMat
         intersect = charB .&. charC
         union     = charB .|. charC
         diagState = if intersect == zeroBits then union else intersect
--}
+--}
