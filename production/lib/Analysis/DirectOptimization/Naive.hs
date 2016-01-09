@@ -2,27 +2,23 @@
 
 module Analysis.DirectOptimization.Naive (naiveDOThree, naiveDOTwo, naiveDO) where
 
-import Prelude hiding (length, zipWith, or)
-import Data.Maybe
-import Data.Ord      (comparing)
-import Data.Foldable (foldl1,minimumBy)
-import Data.Vector (Vector, singleton, length, zipWith, cons, empty, toList, (!), or, generate)
-import qualified Data.Vector as V (foldr)
-import Data.Bits
-import Data.Monoid ((<>))
-import Data.Matrix (fromList, Matrix, (<->), nrows, ncols, getElem, getRow, zero, matrix)
+import           Analysis.DirectOptimization.Utilities
+import           Bio.Phylogeny.Network
+import           Bio.Phylogeny.Tree.Node.Encoded
+import           Bio.Phylogeny.Tree.Node.Preliminary
+import           Bio.Sequence.Coded
+import           Control.Applicative        (liftA2)
+import           Data.Bits
+import           Data.Foldable              (foldl1,minimumBy)
+import           Data.Matrix                (fromList, Matrix, (<->), nrows, ncols, getElem, getRow, zero, matrix)
+import           Data.Maybe
+import           Data.Monoid                ((<>))
+import           Data.Ord                   (comparing)
+import           Data.Vector                (Vector, singleton, length, zipWith, cons, empty, toList, (!), or, generate)
+import qualified Data.Vector as V           (foldr)
+import           Prelude             hiding (length, zipWith, or)
 
-import Control.Applicative (liftA2)
-
-import Bio.Phylogeny.Tree.Node.Preliminary
-import Bio.Phylogeny.Network
-import Bio.Phylogeny.Tree.Node.Encoded
-import Bio.Sequence.Coded
-
-import Analysis.DirectOptimization.Utilities
-
-import Debug.Trace
-
+import           Debug.Trace
 
 data Direction = LeftDir | RightDir | DiagDir | DownDir deriving (Eq, Show)
 
@@ -181,8 +177,8 @@ traceback alignMat seq1 seq2 = tracebackInternal alignMat seq1 seq2 (numChars se
 
                     charToUnMaybe :: SeqConstraint s b => Maybe b -> s
                     charToUnMaybe inBit = case inBit of
-                        Nothing -> emptySeq
-                        Just b -> charToSeq b
+                                            Nothing -> emptySeq
+                                            Just b  -> charToSeq b
 
 
 {--
