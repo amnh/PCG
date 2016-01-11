@@ -9,7 +9,7 @@ import qualified Data.Map.Lazy as M
 import Data.List hiding (replicate, zipWith)
 import Bio.Phylogeny.PhyloCharacter
 import Data.Int
-import Data.Matrix (matrix)
+import Data.Matrix.NotStupid (matrix)
 
 dnaAlph, rnaAlph :: [String]
 dnaAlph = ["A", "C", "G", "T", "-"] 

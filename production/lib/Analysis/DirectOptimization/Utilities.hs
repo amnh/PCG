@@ -4,7 +4,7 @@ module Analysis.DirectOptimization.Utilities where
 
 import Prelude hiding (length, filter)
 
-import Data.Matrix (Matrix, nrows, ncols, setElem, zero, elementwise, getRow)
+import Data.Matrix.NotStupid (Matrix, nrows, ncols, setElem, zero, elementwise, getRow)
 import Data.Bits
 import Data.Vector (Vector, length, filter)
 import Data.Maybe

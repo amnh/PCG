@@ -18,7 +18,7 @@ module Bio.Phylogeny.PhyloCharacter where
 
 import Data.Vector
 import GHC.Generics
-import Data.Matrix (Matrix)
+import Data.Matrix.NotStupid (Matrix)
 
 -- | Define a character type as DNA, RNA, Morphology, Continous, or Custom
 -- Let it hold whether its aligned, masks for evaluation, its alphabet, and a cost matrix

@@ -11,7 +11,7 @@ import           Bio.Sequence.Coded
 import           Control.Applicative        (liftA2)
 import           Data.Bits
 import           Data.Foldable              (foldl1,minimumBy)
-import           Data.Matrix                (fromList, Matrix, (<->), nrows, ncols, getElem, getRow, zero, matrix)
+import           Data.Matrix.Stupid         (fromList, Matrix, (<->), nrows, ncols, getElem, getRow, zero, matrix)
 import           Data.Maybe
 import           Data.Monoid                ((<>))
 import           Data.Ord                   (comparing)

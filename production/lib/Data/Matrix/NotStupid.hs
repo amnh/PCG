@@ -2,6 +2,8 @@ module Data.Matrix.NotStupid
   ( matrix
   , getElem
   , (!)
+  , (<->)
+  , (<|>)
   , unsafeGet
   , safeGet
   , getRow
@@ -42,10 +44,6 @@ module Data.Matrix.NotStupid
   , Stupid.setSize
   , Stupid.extendTo
   -- * Submatrices
-  -- ** Splitting blocks
-  , Stupid.submatrix
-  , Stupid.minorMatrix
-  , Stupid.splitBlocks
   -- ** Joining blocks
   , Stupid.joinBlocks
     -- * Matrix operations

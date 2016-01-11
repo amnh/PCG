@@ -21,7 +21,7 @@ import Test.Tasty.QuickCheck
 import Test.Tasty.HUnit
 
 import Data.Vector (length, or, zipWith, singleton, replicate, fromList)
-import Data.Matrix (nrows)
+import Data.Matrix.NotStupid (nrows)
 import Data.BitVector (BitVector)
 import Data.Bits
 import Data.Monoid
