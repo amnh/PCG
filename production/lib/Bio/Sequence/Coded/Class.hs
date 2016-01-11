@@ -36,8 +36,8 @@ class (Monoid s, CodedChar b) => CodedSequence s b | s -> b where
     encode :: Vector [String] -> s
 
 -- This should be translated to:
--- encode :: (Foldable f, Functor f, Foldable t, Foldable c, Ord a) => f (t a) -> s
-    encodeOverAlphabet :: f (t a) -> c a -> s
+-- encode :: (Foldable f, Functor f, Foldable t, Foldable c, Ord a) => f (t a) -> c a-> s
+    encodeOverAlphabet :: Vector [String] -> [String] -> s
 
 
 
