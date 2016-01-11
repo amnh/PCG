@@ -1,4 +1,5 @@
 {-# LANGUAGE ConstraintKinds #-}
+{-# LANGUAGE AllowAmbiguousTypes #-}
 
 module Analysis.DirectOptimization.Naive (naiveDOThree, naiveDOTwo, naiveDO) where
 
@@ -102,10 +103,9 @@ firstAlignRow indelCost inSeq rowLength position prevCost
 
 -- | Gets the overlap state: intersect if possible and union if that's empty
 getOverlapState :: CharConstraint b => b -> Maybe b -> b
-getOverlapState compChar maybeChar
-    | isNothing maybeChar = zeroBits
-    | compChar .&. fromJust maybeChar == zeroBits = compChar .|. fromJust maybeChar
-    | otherwise = compChar .&. fromJust maybeChar
+getOverlapState compChar  Nothing = zeroBits
+getOverlapState compChar (Just x) = compChar `op` x
+  where op = if compChar .&. x == zeroBits then (.|.) else (.&.)
 
 -- | Main recursive function to get alignment rows
 getAlignRows :: SeqConstraint s b => s -> s -> Costs -> Int -> AlignRow s -> AlignMatrix s
@@ -190,45 +190,52 @@ data MatrixEntry b
    , entryDir  :: Direction
    }
 
-optMat :: SeqConstraint s b => s -> s -> Costs -> AlignMatrix s
-optMat seqB seqC (indelCost, subCost) = AlignMatrix costMatrix charVector dirMatrix
+optMat :: SeqConstraint s b => s -> s -> Costs -> Matrix (MatrixEntry b)
+optMat seqB seqC (indelCost, subCost) = opt
   where
-    costMatrix = entryCost <$> opt
-    charVector :: SeqConstraint s b => Vector s
-    charVector = generate m (foldl1 (<>) . fmap (entryChar) . (`getRow` opt))
-    dirMatrix  = entryDir  <$> opt
-    -- Maybe use `matrix` with generating function
-    opt :: SeqConstraint s b => Matrix (MatrixEntry b)
-    opt = fromList m n [ score i j | i <- [0..m], j <- [0..n] ]
-    optCost = entryCost . (opt !!!)
     m = numChars seqB
     n = numChars seqC
-    (!!!) matrix (i,j) = getElem i j matrix
-    sigma :: CharConstraint b => b -> b -> Float
-    sigma x y
-      |  gapChar == x
-      || gapChar == y = indelCost
-      |  otherwise    = subCost
-    score :: SeqConstraint s b => Int -> Int -> MatrixEntry s
-    score 0 0 = MatrixEntry 0 gapChar DiagDir
-    score i 0 = let charVal = seqB `grabSubChar` i
-                in  MatrixEntry (optCost (i-1,   0) + sigma charVal gapChar) charVal LeftDir
-    score 0 j = let charVal = seqC `grabSubChar` j
-                in  MatrixEntry (optCost (  0, j-1) + sigma charVal gapChar) charVal DownDir
-    score i j = minimumBy (comparing entryCost)
-              [ MatrixEntry costGapB  iuCharB   LeftDir
-              , MatrixEntry costGapC  iuCharC   DownDir
-              , MatrixEntry costAlign diagState DiagDir
-              ]
+    seqB' = generate m (fromJust . grabSubChar seqB)
+    seqC' = generate n (fromJust . grabSubChar seqC)
+    optCost :: (Int, Int) -> Float
+    optCost (i,j) = entryCost $ getElem i j opt
+    opt :: SeqConstraint s b => Matrix (MatrixEntry b)
+    opt = matrix (m+1) (n+1) score
       where
-        charB     = seqB `grabSubChar` i
-        charC     = seqC `grabSubChar` j
-        costGapB  = optCost (i  , j-1) + sigma charB gapChar
-        costGapC  = optCost (i-1, j  ) + sigma charB gapChar
-        costAlign = optCost (i-1, j-1) + sigma charB charC
-        iuCharB   = getOverlapState gapChar (Just charB)
-        iuCharC   = getOverlapState gapChar (Just charC)
-        intersect = charB .&. charC
-        union     = charB .|. charC
-        diagState = if intersect == zeroBits then union else intersect
+        sigma :: SeqConstraint s b => b -> b -> Float
+        sigma x y
+          |  gapChar == x || gapChar == y = indelCost
+          |  otherwise                    = subCost
+        overlap :: SeqConstraint s b => b -> b -> b
+        overlap x y
+          | intersection /= zeroBits = intersect
+          | otherwise                = union
+          where
+            intersection = x .&. y
+            union        = x .|. y
+        -- | Matricies are 1-indexed because of library author stupidity
+        score :: SeqConstraint s b => (Int, Int) -> MatrixEntry b
+        score (1,1) = MatrixEntry 0 gapChar DiagDir
+        score (i,1) = let charVal = seqB' ! (i-1)
+                      in MatrixEntry { optCost (i-1, 1) + sigma charVal gapChar
+                                     , charVal
+                                     , LeftDir
+                                     }
+        score (1,j) = let charVal = seqC ! (j-1)
+                      in MatrixEntry { optCost (1, j-1) + sigma charVal gapChar
+                                     , charVal
+                                     , DownDir
+                                     }
+        score (i,j) = minimumBy (comparing entryCost)
+                       [ MatrixEntry costGapB  (overlap charB gapChar) LeftDir
+                       , MatrixEntry costGapC  (overlap charC gapChar) DownDir
+                       , MatrixEntry costAlign (overlap charB charC  ) DiagDir
+                       ]
+          where
+            charB     = seqB' ! (i-1)
+            charC     = seqC' ! (j-1)
+            costGapB  = optCost (i  , j-1) + sigma charB gapChar
+            costGapC  = optCost (i-1, j  ) + sigma charB gapChar
+            costAlign = optCost (i-1, j-1) + sigma charB charC
+
 --}
