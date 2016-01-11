@@ -60,10 +60,10 @@ instance Bits b => CodedSequence (EncodedSeq b) b where
 setElemAt :: (Bits b) => String -> b -> [String] -> b
 setElemAt char orig alphabet = case elemIndex char alphabet of
                         Nothing -> orig
-                        Just pos -> setBit orig (pos + 2)          
+                        Just pos -> setBit orig (pos + 1)     
 
 instance Bits b => CodedChar b where
-    gapChar = bit 1
+    gapChar = setBit zeroBits 0
 
 -- | To make this work, the underlying types are also an instance of bits because a Vector of bits is and a Maybe bits is
 instance Bits b => Bits (Vector b) where
