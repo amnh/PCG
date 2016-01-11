@@ -22,11 +22,31 @@ import Data.Matrix.NotStupid (Matrix)
 
 -- | Define a character type as DNA, RNA, Morphology, Continous, or Custom
 -- Let it hold whether its aligned, masks for evaluation, its alphabet, and a cost matrix
-data PhyloCharacter b = DNA {aligned :: Bool, masks :: (Vector b, Vector b), alphabet :: Vector String, tcm :: CostMatrix}
-                      | RNA {aligned :: Bool, masks :: (Vector b, Vector b), alphabet :: Vector String, tcm :: CostMatrix}
-                      | Morphology {aligned :: Bool, masks :: (Vector b, Vector b), alphabet :: Vector String}
+data PhyloCharacter b = DNA        {aligned :: Bool, 
+                                    masks :: (Vector b, Vector b), 
+                                    alphabet :: Vector String, 
+                                    tcm :: CostMatrix, 
+                                    ignored :: Bool,
+                                    additive :: Bool}
+
+                      | RNA        {aligned :: Bool, 
+                                    masks :: (Vector b, Vector b), 
+                                    alphabet :: Vector String, 
+                                    tcm :: CostMatrix, 
+                                    ignored :: Bool,
+                                    additive :: Bool}
+
+                      | Morphology {aligned :: Bool, 
+                                    masks :: (Vector b, Vector b), 
+                                    alphabet :: Vector String}
                       | Continous 
-                      | Custom {aligned :: Bool, masks :: (Vector b, Vector b), alphabet :: Vector String, tcm :: CostMatrix} 
+                      | Custom     {aligned :: Bool, 
+                                    masks :: (Vector b, Vector b), 
+                                    alphabet :: Vector String, 
+                                    tcm :: CostMatrix, 
+                                    ignored :: Bool,
+                                    additive :: Bool} 
+
                             deriving (Show, Eq, Generic)
 
 -- | A cost matrix is just a matrix of floats

@@ -75,7 +75,7 @@ doVerify = testGroup "Check direct optimization function" [compareWrappers, chec
             where
                 alignLen :: EncodedSeq BitVector -> EncodedSeq BitVector -> Bool
                 alignLen seq1 seq2 = 
-                    let (optimized, _, _, _, _) = naiveDO seq1 seq2
+                    let (_, _, optimized, _, _) = naiveDO seq1 seq2
                     in ((numChars optimized >= numChars seq1) && (numChars optimized >= numChars seq2)) || numChars optimized == 0
 
         checkID = testProperty "Two copies of the same sequence result in an ID result" isID
@@ -88,39 +88,25 @@ doVerify = testGroup "Check direct optimization function" [compareWrappers, chec
 edgeCases :: TestTree
 edgeCases = testGroup "Check function of direct optimization on edge cases" [oneEmpty, lenOne, oneOne, shortCase]
     where
-        -- encode over ACGT
-        seq1a = encodeOverAlphabet (fromList $ [["A"], ["G"], ["T"]]) ["A", "G", "T", "C"] :: EncodedSeq BitVector
-        seq1b = encodeOverAlphabet mempty ["A", "G", "T", "C"] :: EncodedSeq BitVector
+        seq1a = encodeOverAlphabet (fromList $ [["A"], ["G"], ["T"]]) ["A", "C", "G", "T"] :: EncodedSeq BitVector
+        seq1b = encodeOverAlphabet mempty ["A", "C", "G", "T"] :: EncodedSeq BitVector
         (align, _, gapped, a, b) = naiveDO seq1a seq1b
         oneEmpty = testCase "Good behavior with one sequence empty" (Nothing @=? gapped)
 
-        seq2a = encodeOverAlphabet (singleton ["T"]) ["A", "G", "T", "C"] :: EncodedSeq BitVector
-        seq2b = encodeOverAlphabet (singleton ["G"]) ["A", "G", "T", "C"] :: EncodedSeq BitVector
+        seq2a = encodeOverAlphabet (singleton ["T"]) ["A", "C", "G", "T"] :: EncodedSeq BitVector
+        seq2b = encodeOverAlphabet (singleton ["G"]) ["A", "C", "G", "T"] :: EncodedSeq BitVector
         (_, _, _, a2, b2) = naiveDO seq2a seq2b
         lenOne = testCase "Good behavior with two sequences of length one" (a2 @=? seq2a)
 
-        (_, _, _, _, b3) = trace ("encoding of test seqs " ++ show seq1a ++ show seq2b) $ naiveDO seq1a seq2b
-        expected = (charToSeq gapChar) <> (encodeOverAlphabet (singleton ["G"]) ["A", "G", "T", "C"]) <> (charToSeq gapChar) :: EncodedSeq BitVector
+        (_, _, _, _, b3) = naiveDO seq1a seq2b
+        expected = (charToSeq gapChar) <> (encodeOverAlphabet (singleton ["G"]) ["A", "C", "G", "T"]) <> (charToSeq gapChar) :: EncodedSeq BitVector
         oneOne = testCase "Good behavior where one sequence is much shorter" (expected @=? b3)
 
-        seq3a = encodeOverAlphabet (fromList $ [["A"], ["C", "T"], ["G"], ["C"], ["T"]]) ["A", "G", "T", "C"] :: EncodedSeq BitVector
-        seq3b = encodeOverAlphabet (fromList $ [["T"], ["G"], ["C"], ["T"]]) ["A", "G", "T", "C"] :: EncodedSeq BitVector
+        seq3a = encodeOverAlphabet (fromList $ [["A"], ["C", "T"], ["G"], ["C"], ["T"]]) ["A", "C", "G", "T"] :: EncodedSeq BitVector
+        seq3b = encodeOverAlphabet (fromList $ [["T"], ["G"], ["C"], ["T"]]) ["A", "C", "G", "T"] :: EncodedSeq BitVector
         (result, _, _, _, _) = naiveDO seq3a seq3b
-        trueval = (charToSeq gapChar) <> (encode $ fromList [["T"], ["G"], ["C"], ["T"]]) :: EncodedSeq BitVector
+        trueval = encodeOverAlphabet (fromList [["A", "-"], ["T"], ["G"], ["C"], ["T"]]) ["A", "C", "G", "T"] :: EncodedSeq BitVector
         shortCase = testCase "Expected result from a small test case" (trueval @=? result)
-
-
---matrixVerify :: TestTree
---matrixVerify = testGroup "Check the basic functionality of the traversal matrix generation" [checkDirs]
---    where
---        seq1 = encodeOverAlphabet (fromList $ [["A"], ["G"], ["T"]]) ["A", "G", "T", "C"] :: EncodedSeq BitVector
---        seq2 = (encodeOverAlphabet (singleton ["G"]) ["A", "G", "T", "C"]) :: EncodedSeq BitVector
---        prevRow = (fromList [0, 1, 2, 3], mempty, mempty)
---        (costs, seqs, dirs) = generateRow seq1 seq2 (1, 1) 2 prevRow (0, 0)
---        correctDirs = fromList [DownDir, LeftDir, DiagDir, LeftDir]
-
---        checkDirs = testCase "Row evaluates correct directions" (correctDirs @=? dirs)
-
 
 iaVerify :: TestTree
 iaVerify = testGroup "Check implied alignment function" [checkLen]
@@ -133,7 +119,7 @@ iaVerify = testGroup "Check implied alignment function" [checkLen]
                     in checkLens tree result
 
                 checkLens :: Tree -> Tree -> Bool
-                checkLens tree1 tree2 | trace ("checkLens " ++ show (length $ nodes tree1) ++ " " ++ show (length $ nodes tree2)) False = undefined
+                --checkLens tree1 tree2 | trace ("checkLens " ++ show (length $ nodes tree1) ++ " " ++ show (length $ nodes tree2)) False = undefined
                 checkLens tree1 tree2 = 
                     let compVals = zipWith (\n1 n2 -> (length $ aligned n2) >= (length $ encoded n1) || (length $ aligned n2) == 0) (nodes tree1) (nodes tree2)
                     in trace (show compVals) 

@@ -4,14 +4,16 @@
 module Analysis.DirectOptimization.Naive (naiveDOThree, naiveDOTwo, naiveDO) where
 
 import           Analysis.DirectOptimization.Utilities
+
 import           Bio.Phylogeny.Network
 import           Bio.Phylogeny.Tree.Node.Encoded
 import           Bio.Phylogeny.Tree.Node.Preliminary
 import           Bio.Sequence.Coded
+
 import           Control.Applicative        (liftA2)
 import           Data.Bits
 import           Data.Foldable              (foldl1,minimumBy)
-import           Data.Matrix.Stupid         (fromList, Matrix, (<->), nrows, ncols, getElem, getRow, zero, matrix)
+import           Data.Matrix.NotStupid      (fromList, Matrix, (<->), nrows, ncols, getElem, getRow, zero, matrix)
 import           Data.Maybe
 import           Data.Monoid                ((<>))
 import           Data.Ord                   (comparing)
@@ -64,8 +66,6 @@ naiveDO seq1 seq2
                                                    else (seq1, seq1Len, seq2, seq2Len)
             firstMatRow = firstAlignRow indelCost longer longlen 0 0 
             traversalMat = firstMatRow `joinMat` getAlignRows longer shorter (indelCost, subCost) 1 firstMatRow
--- Alex's Experiment
---            traversalMat = optMat longer shorter (indelCost, subCost)
             cost = getMatrixCost traversalMat
             (gapped, left, right) = --trace ("get seqs " ++ show traversalMat)
                                     traceback traversalMat shorter longer
@@ -94,9 +94,9 @@ firstAlignRow :: SeqConstraint s b => Float -> s -> Int -> Int -> Float -> Align
 firstAlignRow indelCost inSeq rowLength position prevCost
     | position == (rowLength + 1) = (mempty, mempty, mempty)
     | position == 0 = (singleton 0, charToSeq gapChar, singleton DiagDir) <> firstAlignRow indelCost inSeq rowLength (position + 1) 0
-    | newState /= gapChar = trace ("new state on first row " ++ show newState) $ -- if there's no indel overlap
+    | newState /= gapChar = --trace ("new state on first row " ++ show newState) $ -- if there's no indel overlap
         (singleton $ prevCost + indelCost, charToSeq newState, singleton LeftDir) <> firstAlignRow indelCost inSeq rowLength (position + 1) (prevCost + indelCost)
-    | otherwise = trace ("new state on first row, otherwise " ++ show newState) $ -- matching indel so no cost
+    | otherwise = --trace ("new state on first row, otherwise " ++ show newState) $ -- matching indel so no cost
         (singleton prevCost, charToSeq newState, singleton LeftDir) <> firstAlignRow indelCost inSeq rowLength (position + 1) prevCost
         where
             newState = getOverlapState gapChar (inSeq `grabSubChar` (position - 1))
@@ -159,84 +159,24 @@ generateRow seq1 seq2 costvals@(indelCost, subCost) rowNum prevRow@(costs, _, _)
 
 -- | Performs the traceback of an alignment matrix
 traceback :: SeqConstraint s b => AlignMatrix s -> s -> s -> (s, s, s)
-traceback alignMat seq1 seq2 | trace ("traceback with matrix " ++ show alignMat) False = undefined
+--traceback alignMat seq1 seq2 | trace ("traceback with matrix " ++ show alignMat) False = undefined
 traceback alignMat seq1 seq2 = tracebackInternal alignMat seq1 seq2 (numChars seq1, numChars seq2)
     where
         -- read it from the matrix instead of grabbing
         tracebackInternal :: SeqConstraint s b => AlignMatrix s -> s -> s -> (Int, Int) -> (s, s, s)
-        tracebackInternal alignMat seq1 seq2 (row, col)  | trace ("traceback " ++ show (traversal alignMat) ++ show (getElem row col (traversal alignMat))++ " with position " ++ show (row, col)) False = undefined
+        --tracebackInternal alignMat seq1 seq2 (row, col)  | trace ("traceback " ++ show (traversal alignMat) ++ show (getElem row col (traversal alignMat))++ " with position " ++ show (row, col)) False = undefined
         tracebackInternal alignMat seq1 seq2 (row, col) 
             | (length $ seqs alignMat) < row - 1 || (nrows $ traversal alignMat) < row - 1 || (ncols $ traversal alignMat) < col - 1 = error "Traceback cannot function because matrix is incomplete"
-            | row == 1 && col == 1 = (emptySeq, emptySeq, emptySeq)
+            | row == 0 && col == 0 = (emptySeq, emptySeq, emptySeq)
             | curDirect == LeftDir = tracebackInternal alignMat seq1 seq2 (row, col - 1) <> (curState, charToSeq gapChar, charToUnMaybe $ seq2 `grabSubChar` (col - 1)) 
             | curDirect == DownDir = tracebackInternal alignMat seq1 seq2 (row - 1, col) <> (curState, charToUnMaybe $ seq1 `grabSubChar` (row - 1), charToSeq gapChar) 
             | curDirect == DiagDir = tracebackInternal alignMat seq1 seq2 (row - 1, col - 1) <> (curState, charToUnMaybe $ seq1 `grabSubChar` (row - 1), charToUnMaybe $ seq2 `grabSubChar` (col - 1))
             | otherwise = error "Incorrect direction in matrix traversal for alignment"
                 where
-                    curDirect = getElem (row + 1) (col + 1) (traversal alignMat)
+                    curDirect = getElem row col (traversal alignMat)
                     curState = charToUnMaybe $ ((seqs alignMat) ! row) `grabSubChar` col
 
                     charToUnMaybe :: SeqConstraint s b => Maybe b -> s
                     charToUnMaybe inBit = case inBit of
                                             Nothing -> emptySeq
                                             Just b  -> charToSeq b
-
-
-{--
--- It want's an `Eq` instance?
-data MatrixEntry b
-   = MatrixEntry
-   { entryCost :: Float
-   , entryChar :: b
-   , entryDir  :: Direction
-   }
-
-optMat :: SeqConstraint s b => s -> s -> Costs -> Matrix (MatrixEntry b)
-optMat seqB seqC (indelCost, subCost) = opt
-  where
-    m = numChars seqB
-    n = numChars seqC
-    seqB' = generate m (fromJust . grabSubChar seqB)
-    seqC' = generate n (fromJust . grabSubChar seqC)
-    optCost :: (Int, Int) -> Float
-    optCost (i,j) = entryCost $ getElem i j opt
-    opt :: SeqConstraint s b => Matrix (MatrixEntry b)
-    opt = matrix (m+1) (n+1) score
-      where
-        sigma :: SeqConstraint s b => b -> b -> Float
-        sigma x y
-          |  gapChar == x || gapChar == y = indelCost
-          |  otherwise                    = subCost
-        overlap :: SeqConstraint s b => b -> b -> b
-        overlap x y
-          | intersection /= zeroBits = intersect
-          | otherwise                = union
-          where
-            intersection = x .&. y
-            union        = x .|. y
-        -- | Matricies are 1-indexed because of library author stupidity
-        score :: SeqConstraint s b => (Int, Int) -> MatrixEntry b
-        score (1,1) = MatrixEntry 0 gapChar DiagDir
-        score (i,1) = let charVal = seqB' ! (i-1)
-                      in MatrixEntry { optCost (i-1, 1) + sigma charVal gapChar
-                                     , charVal
-                                     , LeftDir
-                                     }
-        score (1,j) = let charVal = seqC ! (j-1)
-                      in MatrixEntry { optCost (1, j-1) + sigma charVal gapChar
-                                     , charVal
-                                     , DownDir
-                                     }
-        score (i,j) = minimumBy (comparing entryCost)
-                       [ MatrixEntry costGapB  (overlap charB gapChar) LeftDir
-                       , MatrixEntry costGapC  (overlap charC gapChar) DownDir
-                       , MatrixEntry costAlign (overlap charB charC  ) DiagDir
-                       ]
-          where
-            charB     = seqB' ! (i-1)
-            charC     = seqC' ! (j-1)
-            costGapB  = optCost (i  , j-1) + sigma charB gapChar
-            costGapC  = optCost (i-1, j  ) + sigma charB gapChar
-            costAlign = optCost (i-1, j-1) + sigma charB charC
-
---}

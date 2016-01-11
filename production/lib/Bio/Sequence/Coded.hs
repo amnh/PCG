@@ -58,7 +58,9 @@ instance Bits b => CodedSequence (EncodedSeq b) b where
         in final
 
 setElemAt :: (Bits b) => String -> b -> [String] -> b
-setElemAt char orig alphabet = case elemIndex char alphabet of
+setElemAt char orig alphabet
+    | char == "-" = setBit orig 0
+    | otherwise = case elemIndex char alphabet of
                         Nothing -> orig
                         Just pos -> setBit orig (pos + 1)     
 
