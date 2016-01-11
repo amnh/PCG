@@ -14,7 +14,7 @@ import Analysis.DirectOptimization.Utilities
 import Analysis.DirectOptimization.Naive
 
 import Prelude hiding (zipWith)
-import Data.Matrix (Matrix, zero, elementwise, nrows, ncols, getRow)
+import Data.Matrix.NotStupid (Matrix, zero, elementwise, nrows, ncols, getRow)
 import Data.Bits
 import Data.Maybe
 import Data.Vector (zipWith)

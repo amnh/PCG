@@ -1,26 +1,25 @@
 {-# LANGUAGE ConstraintKinds #-}
+{-# LANGUAGE AllowAmbiguousTypes #-}
 
 module Analysis.DirectOptimization.Naive (naiveDOThree, naiveDOTwo, naiveDO) where
 
-import Prelude hiding (length, zipWith, or)
-import Data.Maybe
-import Data.Vector (Vector, singleton, length, zipWith, cons, empty, toList, (!), or)
-import qualified Data.Vector as V (foldr)
-import Data.Bits
-import Data.Monoid ((<>))
-import Data.Matrix (fromList, Matrix, (<->), nrows, ncols, getElem, zero, matrix)
+import           Analysis.DirectOptimization.Utilities
+import           Bio.Phylogeny.Network
+import           Bio.Phylogeny.Tree.Node.Encoded
+import           Bio.Phylogeny.Tree.Node.Preliminary
+import           Bio.Sequence.Coded
+import           Control.Applicative        (liftA2)
+import           Data.Bits
+import           Data.Foldable              (foldl1,minimumBy)
+import           Data.Matrix.Stupid         (fromList, Matrix, (<->), nrows, ncols, getElem, getRow, zero, matrix)
+import           Data.Maybe
+import           Data.Monoid                ((<>))
+import           Data.Ord                   (comparing)
+import           Data.Vector                (Vector, singleton, length, zipWith, cons, empty, toList, (!), or, generate)
+import qualified Data.Vector as V           (foldr)
+import           Prelude             hiding (length, zipWith, or)
 
-import Control.Applicative (liftA2)
-
-import Bio.Phylogeny.Tree.Node.Preliminary
-import Bio.Phylogeny.Network
-import Bio.Phylogeny.Tree.Node.Encoded
-import Bio.Sequence.Coded
-
-import Analysis.DirectOptimization.Utilities
-
-import Debug.Trace
-
+import           Debug.Trace
 
 data Direction = LeftDir | DiagDir | DownDir deriving (Eq, Show)
 
@@ -65,6 +64,8 @@ naiveDO seq1 seq2
                                                    else (seq1, seq1Len, seq2, seq2Len)
             firstMatRow = firstAlignRow indelCost longer longlen 0 0 
             traversalMat = firstMatRow `joinMat` getAlignRows longer shorter (indelCost, subCost) 1 firstMatRow
+-- Alex's Experiment
+--            traversalMat = optMat longer shorter (indelCost, subCost)
             cost = getMatrixCost traversalMat
             (gapped, left, right) = --trace ("get seqs " ++ show traversalMat)
                                     traceback traversalMat shorter longer
@@ -102,10 +103,9 @@ firstAlignRow indelCost inSeq rowLength position prevCost
 
 -- | Gets the overlap state: intersect if possible and union if that's empty
 getOverlapState :: CharConstraint b => b -> Maybe b -> b
-getOverlapState compChar maybeChar
-    | isNothing maybeChar = zeroBits
-    | compChar .&. fromJust maybeChar == zeroBits = compChar .|. fromJust maybeChar
-    | otherwise = compChar .&. fromJust maybeChar
+getOverlapState compChar  Nothing = zeroBits
+getOverlapState compChar (Just x) = compChar `op` x
+  where op = if compChar .&. x == zeroBits then (.|.) else (.&.)
 
 -- | Main recursive function to get alignment rows
 getAlignRows :: SeqConstraint s b => s -> s -> Costs -> Int -> AlignRow s -> AlignMatrix s
@@ -126,26 +126,25 @@ generateRow seq1 seq2 costvals@(indelCost, subCost) rowNum prevRow@(costs, _, _)
     | otherwise = --trace "minimal case" $ 
         (singleton minCost, charToSeq minState, singleton minDir) <> nextCall minCost
         where
-            newState = --trace ("newState in generate row " ++ show (getOverlapState gapChar (seq2 `grabSubChar` (rowNum - 1)))) $ 
-                        getOverlapState gapChar (seq2 `grabSubChar` (rowNum - 1))
-            upValue = costs ! position
+            newState      = getOverlapState gapChar (seq2 `grabSubChar` (rowNum - 1))
+            upValue       = costs ! position
             nextCall cost = generateRow seq1 seq2 costvals rowNum prevRow (position + 1, cost)
-            
-            char1 = unwrapSub $ seq1 `grabSubChar` (position - 1)
-            char2 = unwrapSub $ seq2 `grabSubChar` (rowNum - 1)
-            iuChar1 = getOverlapState gapChar (Just char1)
-            iuChar2 = getOverlapState gapChar (Just char2)
-            leftCost = (overlapCost char1 indelCost) + prevCost
-            downCost = (overlapCost char2 indelCost) + upValue
-            diagVal = costs ! (position - 1)
-            intersect = char1 .&. char2
-            union = char1 .|. char2
+            char1         = unwrapSub $ seq1 `grabSubChar` (position - 1)
+            char2         = unwrapSub $ seq2 `grabSubChar` (rowNum - 1)
+            iuChar1       = getOverlapState gapChar (Just char1)
+            iuChar2       = getOverlapState gapChar (Just char2)
+            leftCost      = (overlapCost char1 indelCost) + prevCost
+            downCost      = (overlapCost char2 indelCost) + upValue
+            diagVal       = costs ! (position - 1)
+            intersect     = char1 .&. char2
+            union         = char1 .|. char2
 
-            (diagCost, diagState) = if intersect == zeroBits then (diagVal + subCost, union)
-                                        else (diagVal, intersect)
+            (diagCost, diagState) = if intersect == zeroBits 
+                                    then (diagVal + subCost, union)
+                                    else (diagVal, intersect)
             (minCost, minState, minDir) = --trace ("get minimum choice " ++ show [(leftCost, char1, LeftDir), (diagCost, diagState, DiagDir), (downCost, char2, DownDir)])
-                                            foldr1 (\(c, a, b) (ca, aa, ba) -> if c < ca then (c, a, b) else (ca, aa, ba)) 
-                                                ([(leftCost, iuChar1, LeftDir), (downCost, iuChar2, DownDir), (diagCost, diagState, DiagDir)])
+                                           minimumBy (comparing (\(a,b,c) -> a))
+                                                [(leftCost, iuChar1, LeftDir), (downCost, iuChar2, DownDir), (diagCost, diagState, DiagDir)]
 
             overlapCost :: CharConstraint b => b -> Float -> Float
             overlapCost char cost 
@@ -154,8 +153,9 @@ generateRow seq1 seq2 costvals@(indelCost, subCost) rowNum prevRow@(costs, _, _)
 
             unwrapSub :: CharConstraint b => Maybe b -> b
             unwrapSub val = case val of
-                Nothing -> error "Cannot access sequence at given position for matrix generation"
-                Just v -> v
+                              Just v  -> v
+                              Nothing -> error "Cannot access sequence at given position for matrix generation"
+
 
 -- | Performs the traceback of an alignment matrix
 traceback :: SeqConstraint s b => AlignMatrix s -> s -> s -> (s, s, s)
@@ -178,7 +178,65 @@ traceback alignMat seq1 seq2 = tracebackInternal alignMat seq1 seq2 (numChars se
 
                     charToUnMaybe :: SeqConstraint s b => Maybe b -> s
                     charToUnMaybe inBit = case inBit of
-                        Nothing -> emptySeq
-                        Just b -> charToSeq b
+                                            Nothing -> emptySeq
+                                            Just b  -> charToSeq b
 
 
+{--
+-- It want's an `Eq` instance?
+data MatrixEntry b
+   = MatrixEntry
+   { entryCost :: Float
+   , entryChar :: b
+   , entryDir  :: Direction
+   }
+
+optMat :: SeqConstraint s b => s -> s -> Costs -> Matrix (MatrixEntry b)
+optMat seqB seqC (indelCost, subCost) = opt
+  where
+    m = numChars seqB
+    n = numChars seqC
+    seqB' = generate m (fromJust . grabSubChar seqB)
+    seqC' = generate n (fromJust . grabSubChar seqC)
+    optCost :: (Int, Int) -> Float
+    optCost (i,j) = entryCost $ getElem i j opt
+    opt :: SeqConstraint s b => Matrix (MatrixEntry b)
+    opt = matrix (m+1) (n+1) score
+      where
+        sigma :: SeqConstraint s b => b -> b -> Float
+        sigma x y
+          |  gapChar == x || gapChar == y = indelCost
+          |  otherwise                    = subCost
+        overlap :: SeqConstraint s b => b -> b -> b
+        overlap x y
+          | intersection /= zeroBits = intersect
+          | otherwise                = union
+          where
+            intersection = x .&. y
+            union        = x .|. y
+        -- | Matricies are 1-indexed because of library author stupidity
+        score :: SeqConstraint s b => (Int, Int) -> MatrixEntry b
+        score (1,1) = MatrixEntry 0 gapChar DiagDir
+        score (i,1) = let charVal = seqB' ! (i-1)
+                      in MatrixEntry { optCost (i-1, 1) + sigma charVal gapChar
+                                     , charVal
+                                     , LeftDir
+                                     }
+        score (1,j) = let charVal = seqC ! (j-1)
+                      in MatrixEntry { optCost (1, j-1) + sigma charVal gapChar
+                                     , charVal
+                                     , DownDir
+                                     }
+        score (i,j) = minimumBy (comparing entryCost)
+                       [ MatrixEntry costGapB  (overlap charB gapChar) LeftDir
+                       , MatrixEntry costGapC  (overlap charC gapChar) DownDir
+                       , MatrixEntry costAlign (overlap charB charC  ) DiagDir
+                       ]
+          where
+            charB     = seqB' ! (i-1)
+            charC     = seqC' ! (j-1)
+            costGapB  = optCost (i  , j-1) + sigma charB gapChar
+            costGapC  = optCost (i-1, j  ) + sigma charB gapChar
+            costAlign = optCost (i-1, j-1) + sigma charB charC
+
+--}

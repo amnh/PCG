@@ -16,17 +16,17 @@
 
 module File.Format.TransitionCostMatrix.Parser where
 
-import           Data.Char                (isSpace)
-import           Data.Foldable            (toList)
-import           Data.List.NonEmpty       (NonEmpty)
-import qualified Data.List.NonEmpty as NE (fromList)
-import           Data.List.Utility        (duplicates,mostCommon)
-import           Data.Matrix              (Matrix,ncols,nrows)
-import qualified Data.Matrix        as M  (fromList)
-import           Data.Maybe               (catMaybes,fromJust)
+import           Data.Char                   (isSpace)
+import           Data.Foldable               (toList)
+import           Data.List.NonEmpty          (NonEmpty)
+import qualified Data.List.NonEmpty    as NE (fromList)
+import           Data.List.Utility           (duplicates,mostCommon)
+import           Data.Matrix.NotStupid       (Matrix,ncols,nrows)
+import qualified Data.Matrix.NotStupid as M  (fromList)
+import           Data.Maybe                  (catMaybes,fromJust)
 import           Text.Megaparsec
 import           Text.Megaparsec.Custom
-import           Text.Megaparsec.Prim     (MonadParsec)
+import           Text.Megaparsec.Prim        (MonadParsec)
 
 -- | Intermediate parse result prior to consistancy validation
 data TCMParseResult 
