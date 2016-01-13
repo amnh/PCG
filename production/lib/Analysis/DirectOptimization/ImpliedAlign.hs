@@ -23,6 +23,8 @@ import Control.Monad (join)
 import Control.Applicative (liftA2)
 import Data.Monoid
 
+import Debug.Trace
+
 -- | implyMain performs an implied alignment on a tree
 implyMain :: TreeConstraint t n s b => t -> t
 implyMain inTree = iaMainPreorder inTree inTree subMat (Just $ root inTree)
@@ -31,24 +33,26 @@ implyMain inTree = iaMainPreorder inTree inTree subMat (Just $ root inTree)
 
 -- | Main implied alignment function to save info to a tree
 iaMainPreorder :: TreeConstraint t n s b => t -> t -> Subtrees -> Maybe n -> t
+iaMainPreorder fullTree subTree subtrees inNode | trace ("iaMainPreorder on subtree matrix " ++ show subtrees) False = undefined
 iaMainPreorder fullTree subTree subtrees inNode 
     | isNothing inNode = subTree
-    | leftCheck && rightCheck = 
+    | leftCheck && rightCheck = --trace "left and right" $
         let
             (leftAlign, rightAlign, curAlign, isLonger) = naiveDOThree (fromJust left) (fromJust right) (fromJust inNode)
             updatedTree = fullTree `update` [leftAlign, rightAlign, curAlign]
             in recursiveIA updatedTree subtrees left right inNode isLonger
-    | leftCheck = 
+    | leftCheck = --trace "left" $
         let
             (leftAlign, curAlign, _, isLonger) = naiveDOTwo (fromJust left) (fromJust inNode)
             updatedTree = fullTree `update` [leftAlign, curAlign]
             in recursiveIA updatedTree subtrees left right inNode isLonger
-    | rightCheck = 
+    | rightCheck = --trace "right" $
         let
             (rightAlign, curAlign, _, isLonger) = naiveDOTwo (fromJust right) (fromJust inNode)
             updatedTree = fullTree `update` [rightAlign, curAlign]
         in recursiveIA updatedTree subtrees left right inNode isLonger
-    | otherwise = recursiveIA fullTree subtrees left right inNode False
+    | otherwise = --trace "neither" $ 
+        recursiveIA fullTree subtrees left right inNode False
 
         where
             left = join $ (flip leftChild) subTree <$> inNode
@@ -58,6 +62,7 @@ iaMainPreorder fullTree subTree subtrees inNode
 
             -- | Common recursive call for an implied alignment
             recursiveIA :: TreeConstraint t n s b => t -> Subtrees -> Maybe n -> Maybe n -> Maybe n -> Bool -> t
+            --recursiveIA updatedTree subtrees leftNode rightNode inNode isLonger | trace ("recursiveIA " ++ show updatedTree) False = undefined
             recursiveIA updatedTree subtrees leftNode rightNode inNode isLonger 
                 | isLonger = implyMain $ iaPostorder updatedTree inNode
                 | otherwise = merged
@@ -70,6 +75,7 @@ iaMainPreorder fullTree subTree subtrees inNode
 
             -- | Function to merge two subtrees under their parent node
             mergeSubtrees :: TreeConstraint t n s b => t -> t -> Maybe n -> t
+            mergeSubtrees left right node | trace ("merge subtrees " ++ show left ++ show right) False = undefined
             mergeSubtrees left right node 
                 | isNothing node = mempty
                 | otherwise = (left <> right) `addNode` fromJust node

@@ -109,6 +109,7 @@ executable pcg
                        Control.Evaluation.Unit
                        Data.Either.Custom
                        Data.List.Utility
+                       File.Format.Conversion.ToInternal
                        File.Format.Fasta
                        File.Format.Fasta.Converter
                        File.Format.Fasta.Internal
@@ -215,6 +216,7 @@ library
                        Bio.Phylogeny.Tree.Rose.Class
                        Bio.Sequence.Coded.Class
                        Data.List.Utility
+                       File.Format.Conversion.ToInternal
                        File.Format.Fasta.Converter
                        File.Format.Fasta.Internal
                        File.Format.Fasta.Parser

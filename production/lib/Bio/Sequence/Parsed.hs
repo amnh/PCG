@@ -12,6 +12,11 @@
 --
 -----------------------------------------------------------------------------
 
-module Bio.Sequence.Parsed where
+module Bio.Sequence.Parsed (ParsedSeq, TreeSeqs) where
+
+import Data.Vector
+import Data.Map.Lazy
 
 type ParsedSeq = Vector [String]
+
+type TreeSeqs = Map String ParsedSeq

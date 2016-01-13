@@ -40,7 +40,7 @@ import Analysis.DirectOptimization.Utilities
 import Debug.Trace
 
 testSuite :: TestTree
-testSuite = testGroup "Direct Optimization" [subtreeVerify, doVerify, edgeCases]
+testSuite = testGroup "Direct Optimization" [subtreeVerify, doVerify, edgeCases, iaVerify]
 
 subtreeVerify :: TestTree
 subtreeVerify = testGroup "Check correct generation of subtrees for recursion" [subLength, correctOnes]
@@ -58,7 +58,7 @@ subtreeVerify = testGroup "Check correct generation of subtrees for recursion" [
                     let 
                         numOnes = foldr (+) 0 (getSubtrees tree)
                         n = length $ nodes tree
-                    in numOnes == (2 * n) - 4 || numOnes == 0
+                    in numOnes == (2 * n) - 4
 
 doVerify :: TestTree
 doVerify = testGroup "Check direct optimization function" [compareWrappers, checkLen]
@@ -116,7 +116,7 @@ iaVerify = testGroup "Check implied alignment function" [checkLen]
                 alignLen :: Tree -> Bool
                 alignLen tree = 
                     let result = implyMain tree
-                    in checkLens tree result
+                    in trace ("out tree " ++ show result) $ checkLens tree result
 
                 checkLens :: Tree -> Tree -> Bool
                 --checkLens tree1 tree2 | trace ("checkLens " ++ show (length $ nodes tree1) ++ " " ++ show (length $ nodes tree2)) False = undefined
