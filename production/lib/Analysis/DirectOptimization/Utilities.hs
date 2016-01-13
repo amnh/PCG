@@ -4,7 +4,8 @@ module Analysis.DirectOptimization.Utilities where
 
 import Prelude hiding (length, filter)
 
-import Data.Matrix.NotStupid (Matrix, nrows, ncols, setElem, zero, elementwise, getRow)
+import Control.Arrow ((***))
+import Data.Matrix.NotStupid (Matrix, (!), nrows, ncols, setElem, zero, elementwise, getRow, matrix)
 import Data.Bits
 import Data.Vector (Vector, length, filter)
 import Data.Maybe
@@ -17,7 +18,7 @@ import Bio.Phylogeny.Tree.Binary
 
 import Bio.Sequence.Coded
 
-type TreeConstraint t n s b = (Network t n, NodeConstraint n s b, ReferentialTree t n, BinaryTree t n, Show t)
+type TreeConstraint t n s b = (Eq n, Network t n, NodeConstraint n s b, ReferentialTree t n, BinaryTree t n, Show t)
 type NodeConstraint n s b = (PreliminaryNode n s, EncodedNode n s, SeqConstraint s b)
 type SeqConstraint s b = (CodedSequence s b, Eq s, CharConstraint b, Show s)
 type CharConstraint b = (Bits b, Eq b, CodedChar b, Show b)
@@ -55,16 +56,17 @@ checkForAlign node1 node2
             checkLens s1 s2 = (length $ screen s1) == (length $ screen s2)
 
 -- | Create a subtree matrix to find all sub nodes
-getSubtrees :: TreeConstraint t n s b => t -> Subtrees
-getSubtrees tree = fst $ innerSubtree tree (zero (numNodes tree) (numNodes tree)) (root tree)
+getSubtrees''' :: TreeConstraint t n s b => t -> Subtrees
+getSubtrees''' tree = fst $ innerSubtree tree zeroMatrix (root tree)
     where
+        zeroMatrix = zero (numNodes tree) (numNodes tree)
         innerSubtree :: TreeConstraint t n s b => t -> Subtrees -> n -> (Subtrees, [n])
         innerSubtree inTree curSubtrees curNode
             | isLeaf curNode inTree = (curSubtrees, [curNode])
             | otherwise = 
                 let
                     lowersubs = fmap (innerSubtree inTree curSubtrees) (children curNode inTree)
-                    totalSubs = foldr sumSubs (zero (nrows curSubtrees) (ncols curSubtrees), []) lowersubs
+                    totalSubs = foldr sumSubs (zeroMatrix, []) lowersubs
                 in (accum totalSubs curNode inTree, curNode : (snd totalSubs))
 
         sumMat = elementwise (+)
@@ -75,6 +77,32 @@ getSubtrees tree = fst $ innerSubtree tree (zero (numNodes tree) (numNodes tree)
         accum :: TreeConstraint t n s b => (Subtrees, [n]) -> n -> t -> Subtrees
         accum (struc, nodes) curNode inTree = foldr (\n acc -> setElemSafe 1 (code n inTree, curCode) acc) struc nodes
             where curCode = code curNode inTree
+
+-- | Create a subtree matrix to find all sub nodes
+getSubtrees :: TreeConstraint t n s b => t -> Subtrees
+getSubtrees tree = subtreeMatrix -- fst $ innerSubtree tree (zero (numNodes tree) (numNodes tree)) (root tree)
+  where
+    n = numNodes tree
+    subtreeMatrix = matrix n n omega
+    omega :: (Int, Int) -> Int
+    omega (i,j)
+      | i == j            = 0
+      | isLeaf nodeI tree = 0
+      | isJust lChild
+        && nodeJ == (fromJust lChild) = 1
+      | isJust rChild
+        && nodeJ == (fromJust rChild) = 1
+      | otherwise          =
+          case (lChild, rChild) of
+             (Nothing, Nothing) -> 0
+             (Nothing, Just y ) -> subtreeMatrix ! (fromJust $ code y tree, j)
+             (Just x , Nothing) -> subtreeMatrix ! (fromJust $ code x tree, j)
+             (Just x , Just y ) -> max (subtreeMatrix ! (fromJust $ code x tree, j)) (subtreeMatrix ! (fromJust $ code y tree, j))
+      where
+        nodeI  = getNthNode tree i 
+        nodeJ  = getNthNode tree j
+        (lChild, rChild) = bothChildren nodeI tree
+
 
 -- | Helper function to grab a subtree from the node at the given position
 grabSubtree :: TreeConstraint t n s b => t -> Maybe Int -> Subtrees -> t
