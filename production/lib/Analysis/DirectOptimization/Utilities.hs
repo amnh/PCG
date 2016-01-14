@@ -56,8 +56,8 @@ checkForAlign node1 node2
             checkLens s1 s2 = (length $ screen s1) == (length $ screen s2)
 
 -- | Create a subtree matrix to find all sub nodes
-getSubtrees''' :: TreeConstraint t n s b => t -> Subtrees
-getSubtrees''' tree = fst $ innerSubtree tree zeroMatrix (root tree)
+getSubtreesOrig :: TreeConstraint t n s b => t -> Subtrees
+getSubtreesOrig tree = fst $ innerSubtree tree zeroMatrix (root tree)
     where
         zeroMatrix = zero (numNodes tree) (numNodes tree)
         innerSubtree :: TreeConstraint t n s b => t -> Subtrees -> n -> (Subtrees, [n])
@@ -89,13 +89,14 @@ getSubtrees tree = subtreeMatrix
       | i == j              = 0
       | null childs         = 0
       | nodeJ `elem` childs = 1
-      | otherwise           = maximum $ (\n -> subtreeMatrix ! (pointer n, j)) <$> childs
+      | any indexSet childs = 1
+      | otherwise           = 0
       where
-        nodeI   = getNthNode tree i
-        nodeJ   = getNthNode tree j
-        childs  = children nodeI tree
-        pointer = fromJust . flip code tree
-
+        nodeI      = getNthNode tree i
+        nodeJ      = getNthNode tree j
+        childs     = children nodeI tree
+        pointer    = fromJust . flip code tree
+        indexSet n = subtreeMatrix ! (pointer n, j) /= 0
 
 -- | Helper function to grab a subtree from the node at the given position
 grabSubtree :: TreeConstraint t n s b => t -> Maybe Int -> Subtrees -> t
