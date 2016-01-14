@@ -1,4 +1,4 @@
-7{-# LANGUAGE ConstraintKinds #-}
+{-# LANGUAGE ConstraintKinds #-}
 
 module Analysis.DirectOptimization.Utilities where
 
