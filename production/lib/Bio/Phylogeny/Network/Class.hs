@@ -25,3 +25,4 @@ class Monoid t => Network t n | t -> n where
     update :: t -> [n] -> t
     numNodes :: t -> Int
     addNode :: t -> n -> t
+    -- add tree breaking at node, delete node, cut tree at condition, delete edge, delete edges, add edge

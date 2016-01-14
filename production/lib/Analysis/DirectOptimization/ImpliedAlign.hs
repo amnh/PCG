@@ -33,7 +33,7 @@ implyMain inTree = iaMainPreorder inTree inTree subMat (Just $ root inTree)
 
 -- | Main implied alignment function to save info to a tree
 iaMainPreorder :: TreeConstraint t n s b => t -> t -> Subtrees -> Maybe n -> t
-iaMainPreorder fullTree subTree subtrees inNode | trace ("iaMainPreorder on subtree matrix " ++ show subtrees) False = undefined
+--iaMainPreorder fullTree subTree subtrees inNode | trace ("iaMainPreorder on subtree matrix " ++ show subtrees) False = undefined
 iaMainPreorder fullTree subTree subtrees inNode 
     | isNothing inNode = subTree
     | leftCheck && rightCheck = --trace "left and right" $

@@ -40,7 +40,7 @@ import Analysis.DirectOptimization.Utilities
 import Debug.Trace
 
 testSuite :: TestTree
-testSuite = testGroup "Direct Optimization" [subtreeVerify, doVerify, edgeCases, iaVerify]
+testSuite = testGroup "Direct Optimization" [subtreeVerify, doVerify, edgeCases]
 
 subtreeVerify :: TestTree
 subtreeVerify = testGroup "Check correct generation of subtrees for recursion" [subLength, correctOnes]

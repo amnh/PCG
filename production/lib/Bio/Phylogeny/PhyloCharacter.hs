@@ -22,35 +22,38 @@ import Data.Matrix.NotStupid (Matrix)
 
 -- | Define a character type as DNA, RNA, Morphology, Continous, or Custom
 -- Let it hold whether its aligned, masks for evaluation, its alphabet, and a cost matrix
+-- add a name to all of these, character state names (maybe make a map?) - be considerate of whether it's a seq or singleton
+-- add an isSeq field?
 data PhyloCharacter b = DNA        {aligned :: Bool, 
-                                    masks :: (Vector b, Vector b), 
+                                    masks :: (Vector b, Vector b), --rename to fitch masks
                                     alphabet :: Vector String, 
                                     tcm :: CostMatrix, 
-                                    ignored :: Bool,
-                                    additive :: Bool}
+                                    ignored :: Bool}
 
                       | RNA        {aligned :: Bool, 
                                     masks :: (Vector b, Vector b), 
                                     alphabet :: Vector String, 
                                     tcm :: CostMatrix, 
-                                    ignored :: Bool,
-                                    additive :: Bool}
+                                    ignored :: Bool}
 
-                      | Morphology {aligned :: Bool, 
+                      | Morphology {aligned :: Bool, -- call this qualitative
                                     masks :: (Vector b, Vector b), 
-                                    alphabet :: Vector String}
-                      | Continous 
+                                    alphabet :: Vector String} -- add a tcm, additive, ignored
+
+                      | Continous -- add ignored, tcm
                       | Custom     {aligned :: Bool, 
                                     masks :: (Vector b, Vector b), 
                                     alphabet :: Vector String, 
                                     tcm :: CostMatrix, 
                                     ignored :: Bool,
                                     additive :: Bool} 
+                     -- add amino acid
+                     -- add an aligned DNA, RNA, AA, Custom 
 
                             deriving (Show, Eq, Generic)
 
 -- | A cost matrix is just a matrix of floats
-type CostMatrix = Matrix Float
+type CostMatrix = Matrix Double
 
 
 --class PhyloCharacter a b | a -> b where

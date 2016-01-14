@@ -36,6 +36,6 @@ data TopoNode b = TopoNode
                     , final :: EncodedSequences b
                     , temporary :: EncodedSequences b
                     , aligned :: EncodedSequences b
-                    , cost :: Float} deriving (Eq, Show)
+                    , cost :: Double} deriving (Eq, Show)
 
-data EdgeInfo = EdgeInfo {len :: Float} deriving (Eq, Show)
+data EdgeInfo = EdgeInfo {len :: Double} deriving (Eq, Show)

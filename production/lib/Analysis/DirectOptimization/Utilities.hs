@@ -18,8 +18,15 @@ import Bio.Phylogeny.Tree.Binary
 
 import Bio.Sequence.Coded
 
+<<<<<<< HEAD
+import Debug.Trace
+
+type TreeConstraint t n s b = (Network t n, NodeConstraint n s b, ReferentialTree t n, BinaryTree t n, Show t)
+type NodeConstraint n s b = (PreliminaryNode n s, EncodedNode n s, SeqConstraint s b, Show n)
+=======
 type TreeConstraint t n s b = (Eq n, Network t n, NodeConstraint n s b, ReferentialTree t n, BinaryTree t n, Show t)
 type NodeConstraint n s b = (PreliminaryNode n s, EncodedNode n s, SeqConstraint s b)
+>>>>>>> b0368f95f5cded4a72f73f51d7ac0466f5c585cc
 type SeqConstraint s b = (CodedSequence s b, Eq s, CharConstraint b, Show s)
 type CharConstraint b = (Bits b, Eq b, CodedChar b, Show b)
 type Subtrees = Matrix Int
@@ -61,12 +68,14 @@ getSubtreesOrig tree = fst $ innerSubtree tree zeroMatrix (root tree)
     where
         zeroMatrix = zero (numNodes tree) (numNodes tree)
         innerSubtree :: TreeConstraint t n s b => t -> Subtrees -> n -> (Subtrees, [n])
+        --innerSubtree inTree curSubtrees curNode | trace ("Inner subtree on leaf " ++ show (isLeaf curNode inTree)) False = undefined
         innerSubtree inTree curSubtrees curNode
             | isLeaf curNode inTree = (curSubtrees, [curNode])
-            | otherwise = 
+            | otherwise = --trace "not leaf" $
                 let
                     lowersubs = fmap (innerSubtree inTree curSubtrees) (children curNode inTree)
-                    totalSubs = foldr sumSubs (zeroMatrix, []) lowersubs
+                    totalSubs = --trace ("summing from lower subs " ++ show lowersubs)
+                                foldr sumSubs (zero (nrows curSubtrees) (ncols curSubtrees), []) lowersubs
                 in (accum totalSubs curNode inTree, curNode : (snd totalSubs))
 
         sumMat = elementwise (+)
