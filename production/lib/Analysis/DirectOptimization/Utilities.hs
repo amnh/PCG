@@ -1,4 +1,4 @@
-{-# LANGUAGE ConstraintKinds #-}
+7{-# LANGUAGE ConstraintKinds #-}
 
 module Analysis.DirectOptimization.Utilities where
 
@@ -86,11 +86,11 @@ getSubtrees tree = subtreeMatrix
     subtreeMatrix = matrix n n omega
     omega :: (Int, Int) -> Int
     omega (i,j)
-      | i == j              = 0
-      | null childs         = 0
-      | nodeJ `elem` childs = 1
-      | any indexSet childs = 1
-      | otherwise           = 0
+      | i == j              = 0 -- On diagonal
+      | null childs         = 0 -- Node `i` is a leaf node
+      | nodeJ `elem` childs = 1 -- Node `j` is a direct child of node `i`
+      | any indexSet childs = 1 -- Node `j` is in a subtree of node `i` (memoization)
+      | otherwise           = 0 -- Node `j` is not in a subtree of node `i`
       where
         nodeI      = getNthNode tree i
         nodeJ      = getNthNode tree j
