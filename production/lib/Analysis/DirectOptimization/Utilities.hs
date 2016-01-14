@@ -83,25 +83,19 @@ getSubtrees :: TreeConstraint t n s b => t -> Subtrees
 getSubtrees tree = subtreeMatrix -- fst $ innerSubtree tree (zero (numNodes tree) (numNodes tree)) (root tree)
   where
     n = numNodes tree
+    contains  may e = maybe False (==e) may
+    justIndex x = fromJust $ code x tree
     subtreeMatrix = matrix n n omega
     omega :: (Int, Int) -> Int
     omega (i,j)
-      | i == j            = 0
-      | isLeaf nodeI tree = 0
-      | isJust lChild
-        && nodeJ == (fromJust lChild) = 1
-      | isJust rChild
-        && nodeJ == (fromJust rChild) = 1
-      | otherwise          =
-          case (lChild, rChild) of
-             (Nothing, Nothing) -> 0
-             (Nothing, Just y ) -> subtreeMatrix ! (fromJust $ code y tree, j)
-             (Just x , Nothing) -> subtreeMatrix ! (fromJust $ code x tree, j)
-             (Just x , Just y ) -> max (subtreeMatrix ! (fromJust $ code x tree, j)) (subtreeMatrix ! (fromJust $ code y tree, j))
+      | i == j              = 0
+      | null childs         = 0
+      | nodeJ `elem` childs = 1
+      | otherwise           = maximum $ (\n -> subtreeMatrix ! (justIndex n, j)) <$> childs
       where
-        nodeI  = getNthNode tree i 
+        nodeI  = getNthNode tree i
         nodeJ  = getNthNode tree j
-        (lChild, rChild) = bothChildren nodeI tree
+        childs = children nodeI tree
 
 
 -- | Helper function to grab a subtree from the node at the given position
