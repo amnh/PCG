@@ -247,8 +247,8 @@ taxonSequence = (,) <$> (symbol taxonName) <*> taxonSeq
     taxonName     = some  validNameChar
     taxonSeq      = some (seqChar <|> ambiguity)
     seqChar       = pure <$> validSeqChar <* whitespaceInline
-    ambiguity     = char '[' *> some (validSeqChar <* whitespaceInline) <* char ']'
-    validNameChar = satisfy (\x -> (not . isSpace) x && x /= ';') -- <* whitespaceInline
+    ambiguity     = char '[' *> some (validSeqChar <* whitespaceInline) <* char ']' <* whitespaceInline
+    validNameChar = satisfy (\x -> (not . isSpace) x && x /= ';')
     validSeqChar  = oneOf $ ['0'..'9'] ++ ['A'..'Z'] ++ ['a'..'z'] ++ "-?"
 
 -- | Parses an positive integer from a variety of representations.
