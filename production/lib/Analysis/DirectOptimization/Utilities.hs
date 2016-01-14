@@ -4,7 +4,8 @@ module Analysis.DirectOptimization.Utilities where
 
 import Prelude hiding (length, filter)
 
-import Data.Matrix.NotStupid (Matrix, nrows, ncols, setElem, zero, elementwise, getRow)
+import Control.Arrow ((***))
+import Data.Matrix.NotStupid (Matrix, (!), nrows, ncols, setElem, zero, elementwise, getRow, matrix)
 import Data.Bits
 import Data.Vector (Vector, length, filter)
 import Data.Maybe
@@ -17,10 +18,15 @@ import Bio.Phylogeny.Tree.Binary
 
 import Bio.Sequence.Coded
 
+<<<<<<< HEAD
 import Debug.Trace
 
 type TreeConstraint t n s b = (Network t n, NodeConstraint n s b, ReferentialTree t n, BinaryTree t n, Show t)
 type NodeConstraint n s b = (PreliminaryNode n s, EncodedNode n s, SeqConstraint s b, Show n)
+=======
+type TreeConstraint t n s b = (Eq n, Network t n, NodeConstraint n s b, ReferentialTree t n, BinaryTree t n, Show t)
+type NodeConstraint n s b = (PreliminaryNode n s, EncodedNode n s, SeqConstraint s b)
+>>>>>>> b0368f95f5cded4a72f73f51d7ac0466f5c585cc
 type SeqConstraint s b = (CodedSequence s b, Eq s, CharConstraint b, Show s)
 type CharConstraint b = (Bits b, Eq b, CodedChar b, Show b)
 type Subtrees = Matrix Int
@@ -57,10 +63,10 @@ checkForAlign node1 node2
             checkLens s1 s2 = (length $ screen s1) == (length $ screen s2)
 
 -- | Create a subtree matrix to find all sub nodes
-getSubtrees :: TreeConstraint t n s b => t -> Subtrees
---getSubtrees tree | trace ("get subtree" ++ show tree) False = undefined
-getSubtrees tree = fst $ innerSubtree tree (zero (numNodes tree) (numNodes tree)) (root tree)
+getSubtreesOrig :: TreeConstraint t n s b => t -> Subtrees
+getSubtreesOrig tree = fst $ innerSubtree tree zeroMatrix (root tree)
     where
+        zeroMatrix = zero (numNodes tree) (numNodes tree)
         innerSubtree :: TreeConstraint t n s b => t -> Subtrees -> n -> (Subtrees, [n])
         --innerSubtree inTree curSubtrees curNode | trace ("Inner subtree on leaf " ++ show (isLeaf curNode inTree)) False = undefined
         innerSubtree inTree curSubtrees curNode
@@ -80,6 +86,24 @@ getSubtrees tree = fst $ innerSubtree tree (zero (numNodes tree) (numNodes tree)
         accum :: TreeConstraint t n s b => (Subtrees, [n]) -> n -> t -> Subtrees
         accum (struc, nodes) curNode inTree = foldr (\n acc -> setElemSafe 1 (code n inTree, curCode) acc) struc nodes
             where curCode = code curNode inTree
+
+-- | Create a subtree matrix to find all sub nodes
+getSubtrees :: TreeConstraint t n s b => t -> Subtrees
+getSubtrees tree = subtreeMatrix
+  where
+    n = numNodes tree
+    subtreeMatrix = matrix n n omega
+    omega :: (Int, Int) -> Int
+    omega (i,j)
+      | nodeJ `elem` childs = 1 -- Node `j` is a direct child of node `i` (base case)
+      | any indexSet childs = 1 -- Node `j` is in a subtree of node `i`   (memoization)
+      | otherwise           = 0 -- Node `j` is not in a subtree of node `i`
+      where
+        nodeI      = getNthNode tree i
+        nodeJ      = getNthNode tree j
+        childs     = children nodeI tree
+        pointer    = fromJust . flip code tree
+        indexSet n = subtreeMatrix ! (pointer n, j) /= 0
 
 -- | Helper function to grab a subtree from the node at the given position
 grabSubtree :: TreeConstraint t n s b => t -> Maybe Int -> Subtrees -> t
