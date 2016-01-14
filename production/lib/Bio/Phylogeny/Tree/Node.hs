@@ -24,7 +24,7 @@ import qualified Bio.Phylogeny.Tree.Node.Preliminary as RN
 
 import Data.Vector
 
--- | A node data structure holding all the necessary info
+-- | A node data structure holding all the necessary info (add verbose statement about what each field is)
 data Node b = Node  { code :: Int
                     , isRoot :: Bool
                     , isLeaf :: Bool
@@ -34,9 +34,11 @@ data Node b = Node  { code :: Int
                     , packed :: Vector (EncodedSeq b)
                     , preliminary :: Vector (EncodedSeq b)
                     , final :: Vector (EncodedSeq b)
-                    , temporary :: Vector (EncodedSeq b)
-                    , aligned :: Vector (EncodedSeq b)
-                    , cost :: Float} deriving (Eq, Show)
+                    , temporary :: Vector (EncodedSeq b) -- is this necessary? rename to fitch scratch? 
+                    , aligned :: Vector (EncodedSeq b) -- rename to implied alignment
+                    , cost :: Double} deriving (Eq, Show)
+                    -- subtree representation?
+                    -- add a current 
 
 -- | Make it an instance of encoded, final, packed, and preliminary
 instance EN.EncodedNode (Node b) (EncodedSeq b) where

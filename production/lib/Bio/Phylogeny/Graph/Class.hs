@@ -47,8 +47,9 @@ data EdgeSet
 -- | Edge info type holding length, origin, and terminal
 data EdgeInfo 
    = EdgeInfo
-   { len :: Float
-   , origin :: NodeInfo
+   { len      :: Double
+   -- add virtual node
+   , origin   :: NodeInfo
    , terminal :: NodeInfo
    } deriving (Eq, Show)
 
@@ -62,6 +63,8 @@ data Tree
    , edges      :: Vector  EdgeSet
    , root       :: Int
    } deriving (Eq,Show)
+   -- add structure that knows if a section is already optimized (possibly store at node?)
 
 -- | A graph is defined as a list of trees
 newtype Graph = Graph [Tree] deriving (Show)
+

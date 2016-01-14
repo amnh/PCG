@@ -42,14 +42,14 @@ convertTopo :: TopoTree -> Int -> Maybe Int -> Tree
 --convertTopo topo numNodes parentCode | trace ("Conversion from topo to normal " ++ show topo) False = undefined
 convertTopo topo numNodes parentCode
     | isLeaf topo = 
-        let myNode = N.Node curCode (isRoot topo) True [] (maybeToList parentCode) (encoded topo) (packed topo) (preliminary topo) (final topo) (temporary topo) (aligned topo) (cost topo)
+        let myNode = N.Node curCode (isRoot topo) (isLeaf topo) [] (maybeToList parentCode) (encoded topo) (packed topo) (preliminary topo) (final topo) (temporary topo) (aligned topo) (cost topo)
         in mempty `NW.addNode` myNode
     | otherwise = 
         let 
             childTrees = foldr (\n acc -> convertTopo n curCode (Just curCode) <> acc) mempty (children topo)
             myChildren = toList $ filter (\n -> curCode == N.code n) (nodes childTrees)
             childCodes = map N.code myChildren
-            myNode = N.Node curCode (isRoot topo) False childCodes (maybeToList parentCode) (encoded topo) (packed topo) (preliminary topo) (final topo) (temporary topo) (aligned topo) (cost topo)
+            myNode = N.Node curCode (isRoot topo) (isLeaf topo) childCodes (maybeToList parentCode) (encoded topo) (packed topo) (preliminary topo) (final topo) (temporary topo) (aligned topo) (cost topo)
         in childTrees `NW.addNode` myNode
 
         where curCode = numNodes + 1

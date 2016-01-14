@@ -27,6 +27,7 @@ import Data.Bits
 import Data.Maybe
 import Bio.Sequence.Coded.Class
 import Bio.Sequence.Character.Coded
+import Bio.Sequence.Packed.Class
 
 -- | EncodedSequences is short for a vector of EncodedSeq
 type EncodedSequences b = Vector (EncodedSeq b)
@@ -44,6 +45,7 @@ instance Bits b => CodedSequence (EncodedSeq b) b where
     emptySeq = Nothing
     isEmpty = isNothing
     filterSeq s condition = liftA (V.filter condition) s
+    -- This works over minimal alphabet
     encode strSeq = 
         let 
             alphabet = foldr (\ambig acc -> filter (not . (flip elem) acc) ambig ++ acc) [] strSeq
@@ -56,6 +58,9 @@ instance Bits b => CodedSequence (EncodedSeq b) b where
             coded = map (\ambig -> foldr (\c acc -> setElemAt c acc alphabet) zeroBits ambig) strSeq
             final = if length coded == 0 then Nothing else Just coded
         in final
+
+instance Bits b => PackedSequence (EncodedSeq b) b where
+    packOverAlphabet = undefined
 
 setElemAt :: (Bits b) => String -> b -> [String] -> b
 setElemAt char orig alphabet
