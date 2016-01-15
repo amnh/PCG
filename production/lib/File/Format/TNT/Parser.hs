@@ -52,6 +52,15 @@ data CharacterSet
 
 data CharacterChange = Change CharacterState (NonEmpty CharacterSet) deriving (Show)
 
+data CharacterMetaData
+   = CharMeta
+   { aligned :: Bool
+   , active  :: Bool
+   , sankoff :: Bool
+   , weight  :: Int
+   , steps   :: Int
+   } deriving (Show)
+
 -- TODO: make the types better
 henningStreamParser :: MonadParsec s m Char => m (NonEmpty TaxonInfo, [CharacterChange])
 henningStreamParser = do
