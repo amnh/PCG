@@ -12,66 +12,67 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE DeriveGeneric, TypeSynonymInstances, FlexibleInstances #-}
+{-# OPTIONS_GHC -fno-warn-orphans #-}
 
 module Bio.Phylogeny.PhyloCharacter where
 
-import Data.Vector
+import Data.Vector (Vector)
 import GHC.Generics
-import Data.Matrix.NotStupid (Matrix)
+import Data.Matrix.NotStupid (Matrix, fromList, (<|>))
 
 -- | Define a character type as DNA, RNA, Morphology, Continous, or Custom
--- Let it hold whether its aligned, masks for evaluation, its alphabet, and a cost matrix
--- add a name to all of these, character state names (maybe make a map?) - be considerate of whether it's a seq or singleton
--- add an isSeq field?
-data PhyloCharacter b = DNA        {aligned :: Bool, 
-                                    masks :: (Vector b, Vector b), --rename to fitch masks
+-- Fields differ based on the constructor, but in general all hold a name, ignored, and tcm
+data PhyloCharacter b = DNA        {name :: String, -- The character name if it has one
+                                    aligned :: Bool, -- Whether the character represents an aligned or unaligned sequence
+                                    fitchMasks :: (Vector b, Vector b), 
+                                    stateNames :: Vector String,
                                     alphabet :: Vector String, 
                                     tcm :: CostMatrix, 
                                     ignored :: Bool}
 
-                      | RNA        {aligned :: Bool, 
-                                    masks :: (Vector b, Vector b), 
+                      | RNA        {name :: String,
+                                    aligned :: Bool, 
+                                    fitchMasks :: (Vector b, Vector b), 
+                                    stateNames :: Vector String,
                                     alphabet :: Vector String, 
                                     tcm :: CostMatrix, 
                                     ignored :: Bool}
 
-                      | Morphology {aligned :: Bool, -- call this qualitative
-                                    masks :: (Vector b, Vector b), 
-                                    alphabet :: Vector String} -- add a tcm, additive, ignored
+                      | Qualitative {name :: String,
+                                    aligned :: Bool,
+                                    fitchMasks :: (Vector b, Vector b), 
+                                    stateNames :: Vector String,
+                                    alphabet :: Vector String,
+                                    tcm :: CostMatrix,
+                                    additive :: Bool,
+                                    ignored :: Bool} 
 
-                      | Continous -- add ignored, tcm
-                      | Custom     {aligned :: Bool, 
+                      | Continous  {name :: String,
+                                    ignored :: Bool,
+                                    tcm :: CostMatrix}
+                      | Custom     {name :: String,
+                                    aligned :: Bool, 
                                     masks :: (Vector b, Vector b), 
                                     alphabet :: Vector String, 
+                                    stateNames :: Vector String,
                                     tcm :: CostMatrix, 
                                     ignored :: Bool,
                                     additive :: Bool} 
-                     -- add amino acid
-                     -- add an aligned DNA, RNA, AA, Custom 
+                      | AminoAcid   {name :: String,
+                                    aligned :: Bool, 
+                                    fitchMasks :: (Vector b, Vector b), 
+                                    alphabet :: Vector String,
+                                    stateNames :: Vector String, 
+                                    tcm :: CostMatrix, 
+                                    ignored :: Bool}
 
                             deriving (Show, Eq, Generic)
 
 -- | A cost matrix is just a matrix of floats
 type CostMatrix = Matrix Double
 
-
---class PhyloCharacter a b | a -> b where
---    aligned     :: a -> Bool
---    setAligned  :: a -> Bool -> a
---    masks       :: a -> Maybe (Vector b, Vector b)
---    setMasks    :: a -> Maybe (Vector b, Vector b) -> a
---    alphabet    :: a -> Vector String
---    setAlphabet :: a -> Vector String -> a
---    charType    :: a -> RF.CharType
---    setCharType :: a -> RF.CharType -> a
-
---instance PhyloCharacter RF.CharInfo Int64 where
---    aligned n = True
---    setAligned n _ = n
---    alphabet n = fromList $ RF.alphabet n
---    setAlphabet n alph = n {RF.alphabet = toList alph}
---    charType = RF.charType
---    setCharType n val = n {RF.charType = val}
---    masks = const Nothing
---    setMasks n _ = n
+-- For convenience have a monoid instance even though mappend is somewhat arbitrary
+instance Monoid CostMatrix where
+  mempty = fromList 0 0 []
+  mappend = (<|>)

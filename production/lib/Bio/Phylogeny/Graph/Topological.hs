@@ -29,9 +29,9 @@ import Data.BitVector (BitVector, fromBits)
 import Data.Vector (fromList, Vector)
 
 maxDepth, minDepth, maxChildren :: Int
-maxDepth = 10
+maxDepth = 3
 minDepth = 0
-maxChildren =  3
+maxChildren =  2
 
 type TopoTree = TopoNode BitVector
 type MultiSeq = EncodedSequences BitVector

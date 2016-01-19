@@ -26,7 +26,7 @@ testSuite = testGroup "Library Test Suite"
   , Newick.testSuite
   , TCM.testSuite
   , VER.testSuite
-  , DO.testSuite
   , Graph.testSuite
+  , DO.testSuite
   ]
 

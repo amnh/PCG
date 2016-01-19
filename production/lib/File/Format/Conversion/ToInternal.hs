@@ -40,14 +40,14 @@ convertBoth inTree seqs =
                     name = case (newickLabel node) of
                                 Nothing -> show pos
                                 Just n -> n
-                    newTaxa = insert pos name (taxaNodes initTree)
+                    newTaxa = insert pos name (nodeNames initTree)
                     mySeq = case M.member name inSeqs of
                                 True -> inSeqs M.! name
                                 False -> mempty
                     myEncode = encodeIt mySeq metadata
                     myPack = packIt mySeq metadata
                     newNode = Node pos (isRoot node node) (isLeaf node node) ([pos..pos+(length $ descendants node)]) [parentPos] (singleton myEncode) (singleton myPack) mempty mempty mempty mempty 0
-                    newTree = initTree {nodes = (nodes initTree) ++ (singleton newNode), taxaNodes = newTaxa}
+                    newTree = initTree {nodes = (nodes initTree) ++ (singleton newNode), nodeNames = newTaxa}
 
         makeEncodeInfo :: TreeSeqs -> SimpleMetadata
         makeEncodeInfo inSeqs = M.foldr (\nseq acc -> getNodeAlph nseq acc) mempty inSeqs
@@ -78,9 +78,9 @@ convertTree inTree = internalConvert inTree 0 mempty 0
                     name = case (newickLabel node) of
                                 Nothing -> show pos
                                 Just n -> n
-                    newTaxa = insert pos name (taxaNodes initTree)
+                    newTaxa = insert pos name (nodeNames initTree)
                     newNode = Node pos (isRoot node node) (isLeaf node node) ([pos..pos+(length $ descendants node)]) [parentPos] mempty mempty mempty mempty mempty mempty 0
-                    newTree = initTree {nodes = (nodes initTree) ++ (singleton newNode), taxaNodes = newTaxa}
+                    newTree = initTree {nodes = (nodes initTree) ++ (singleton newNode), nodeNames = newTaxa}
 
 --convertSequences :: [ParsedSeq] -> Graph
 --convertSequences = Graph . fmap convertSeq

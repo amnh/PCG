@@ -15,18 +15,14 @@ import Bio.Phylogeny.Tree.Node.Encoded
 import Bio.Phylogeny.Network
 import Bio.Phylogeny.Tree.Referential
 import Bio.Phylogeny.Tree.Binary
+import Bio.Phylogeny.Network.Subsettable
 
 import Bio.Sequence.Coded
 
-<<<<<<< HEAD
 import Debug.Trace
 
-type TreeConstraint t n s b = (Network t n, NodeConstraint n s b, ReferentialTree t n, BinaryTree t n, Show t)
-type NodeConstraint n s b = (PreliminaryNode n s, EncodedNode n s, SeqConstraint s b, Show n)
-=======
-type TreeConstraint t n s b = (Eq n, Network t n, NodeConstraint n s b, ReferentialTree t n, BinaryTree t n, Show t)
-type NodeConstraint n s b = (PreliminaryNode n s, EncodedNode n s, SeqConstraint s b)
->>>>>>> b0368f95f5cded4a72f73f51d7ac0466f5c585cc
+type TreeConstraint t n s b = (Network t n, NodeConstraint n s b, ReferentialTree t n, BinaryTree t n, Show t, SubsettableNetwork t n)
+type NodeConstraint n s b = (PreliminaryNode n s, EncodedNode n s, SeqConstraint s b, Show n, Eq n)
 type SeqConstraint s b = (CodedSequence s b, Eq s, CharConstraint b, Show s)
 type CharConstraint b = (Bits b, Eq b, CodedChar b, Show b)
 type Subtrees = Matrix Int
@@ -61,54 +57,3 @@ checkForAlign node1 node2
             getMatch s1 s2 = (not $ null s1) && (not $ null s2)
             screen = filter isEmpty
             checkLens s1 s2 = (length $ screen s1) == (length $ screen s2)
-
--- | Create a subtree matrix to find all sub nodes
-getSubtreesOrig :: TreeConstraint t n s b => t -> Subtrees
-getSubtreesOrig tree = fst $ innerSubtree tree zeroMatrix (root tree)
-    where
-        zeroMatrix = zero (numNodes tree) (numNodes tree)
-        innerSubtree :: TreeConstraint t n s b => t -> Subtrees -> n -> (Subtrees, [n])
-        --innerSubtree inTree curSubtrees curNode | trace ("Inner subtree on leaf " ++ show (isLeaf curNode inTree)) False = undefined
-        innerSubtree inTree curSubtrees curNode
-            | isLeaf curNode inTree = (curSubtrees, [curNode])
-            | otherwise = --trace "not leaf" $
-                let
-                    lowersubs = fmap (innerSubtree inTree curSubtrees) (children curNode inTree)
-                    totalSubs = --trace ("summing from lower subs " ++ show lowersubs)
-                                foldr sumSubs (zero (nrows curSubtrees) (ncols curSubtrees), []) lowersubs
-                in (accum totalSubs curNode inTree, curNode : (snd totalSubs))
-
-        sumMat = elementwise (+)
-
-        sumSubs :: NodeConstraint n s b => (Subtrees, [n]) -> (Subtrees, [n]) -> (Subtrees, [n])
-        sumSubs (struc1, list1) (struc2, list2) = (struc1 `sumMat` struc2, list1 ++ list2)
-
-        accum :: TreeConstraint t n s b => (Subtrees, [n]) -> n -> t -> Subtrees
-        accum (struc, nodes) curNode inTree = foldr (\n acc -> setElemSafe 1 (code n inTree, curCode) acc) struc nodes
-            where curCode = code curNode inTree
-
--- | Create a subtree matrix to find all sub nodes
-getSubtrees :: TreeConstraint t n s b => t -> Subtrees
-getSubtrees tree = subtreeMatrix
-  where
-    n = numNodes tree
-    subtreeMatrix = matrix n n omega
-    omega :: (Int, Int) -> Int
-    omega (i,j)
-      | nodeJ `elem` childs = 1 -- Node `j` is a direct child of node `i` (base case)
-      | any indexSet childs = 1 -- Node `j` is in a subtree of node `i`   (memoization)
-      | otherwise           = 0 -- Node `j` is not in a subtree of node `i`
-      where
-        nodeI      = getNthNode tree i
-        nodeJ      = getNthNode tree j
-        childs     = children nodeI tree
-        pointer    = fromJust . flip code tree
-        indexSet n = subtreeMatrix ! (pointer n, j) /= 0
-
--- | Helper function to grab a subtree from the node at the given position
-grabSubtree :: TreeConstraint t n s b => t -> Maybe Int -> Subtrees -> t
-grabSubtree inTree inPos subtreeMat
-    | isNothing inPos = mempty
-    | otherwise = 
-        let positions = getRow (fromJust inPos) subtreeMat
-        in foldr (\i acc -> acc `addNode` getNthNode inTree i) mempty positions

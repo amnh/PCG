@@ -18,7 +18,7 @@ import Test.Tasty.QuickCheck
 
 import Prelude hiding (filter)
 
-import Debug.Trace
+--import Debug.Trace
 
 import Bio.Phylogeny.Graph
 import Bio.Phylogeny.Graph.Topological
@@ -36,20 +36,14 @@ instance Arbitrary Graph where
 instance Arbitrary Tree where
     arbitrary = do
         topo <- arbitrary :: Gen TopoTree
-        return $ convertTopo topo 0 Nothing
+        return $ convertTopo topo
 
-convertTopo :: TopoTree -> Int -> Maybe Int -> Tree
---convertTopo topo numNodes parentCode | trace ("Conversion from topo to normal " ++ show topo) False = undefined
-convertTopo topo numNodes parentCode
-    | isLeaf topo = 
-        let myNode = N.Node curCode (isRoot topo) (isLeaf topo) [] (maybeToList parentCode) (encoded topo) (packed topo) (preliminary topo) (final topo) (temporary topo) (aligned topo) (cost topo)
-        in mempty `NW.addNode` myNode
-    | otherwise = 
-        let 
-            childTrees = foldr (\n acc -> convertTopo n curCode (Just curCode) <> acc) mempty (children topo)
-            myChildren = toList $ filter (\n -> curCode == N.code n) (nodes childTrees)
-            childCodes = map N.code myChildren
-            myNode = N.Node curCode (isRoot topo) (isLeaf topo) childCodes (maybeToList parentCode) (encoded topo) (packed topo) (preliminary topo) (final topo) (temporary topo) (aligned topo) (cost topo)
-        in childTrees `NW.addNode` myNode
+convertTopo :: TopoTree -> Tree
+convertTopo topo
+    | isLeaf topo = myTree
+    | otherwise = foldr (\n acc -> acc <> convertTopo n) myTree (children topo)
 
-        where curCode = numNodes + 1
+        where
+            myNode = N.Node 0 (isRoot topo) (isLeaf topo) [] [] (encoded topo) (packed topo) (preliminary topo) (final topo) (temporary topo) (aligned topo) (cost topo)
+            myTree = mempty `NW.addNode` myNode
+

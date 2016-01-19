@@ -56,8 +56,8 @@ data EdgeInfo
 -- | Tree structure holding nodes, their original sequences, their edges, and a root reference
 data Tree
    = Tree
-   { taxaNodes  :: IntMap  Identifier
-   , taxaSeqs   :: HashMap Identifier Sequence
+   { nodeNames  :: IntMap  Identifier
+   , parsedSeqs :: HashMap Identifier Sequence
    , characters :: Vector  CharInfo
    , nodes      :: Vector  NodeInfo
    , edges      :: Vector  EdgeSet
