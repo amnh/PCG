@@ -18,13 +18,16 @@ import Bio.Phylogeny.Graph
 import Bio.Phylogeny.Tree.Node
 import qualified Bio.Phylogeny.Network as N
 import Bio.Phylogeny.PhyloCharacter
+import Bio.Phylogeny.Network.Subsettable
+import Bio.Phylogeny.Graph.Random
 
 import Test.Tasty
 import Test.Tasty.HUnit
+import Test.Tasty.QuickCheck
 
 import qualified Data.IntMap       as IM  (insert, singleton, fromList)
 import qualified Data.HashMap.Lazy as HM  (insert, fromList, singleton)
-import Data.Vector                        (singleton, fromList, cons)
+import Data.Vector                        (singleton, fromList, cons, (!))
 import qualified Data.Vector       as V   ((++))
 import qualified Data.IntSet       as IS  (singleton)
 import Data.Monoid
@@ -32,7 +35,7 @@ import Data.Monoid
 -- import Debug.Trace
 
 testSuite :: TestTree
-testSuite = testGroup "Graph operations" [joinOps]
+testSuite = testGroup "Graph operations" [joinOps, subsetting]
 
 joinOps :: TestTree
 joinOps = testGroup "Check correct joining of trees" [nulladd, smalladd, nullJoin, twoJoin, threeJoin, seqJoin]
@@ -92,4 +95,22 @@ joinOps = testGroup "Check correct joining of trees" [nulladd, smalladd, nullJoi
         tree6b = Tree (IM.fromList [(0, "0")]) (HM.fromList [("0", mempty)]) chars2 (fromList [node6b]) mempty 0
         result6 = tree6a <> tree6b
 
+subsetting :: TestTree
+subsetting = testGroup "Check correct subsetting of trees" [twoNode, smallerThan]
+    where
+        smallerThan = testProperty "The subset of a tree is always smaller or the same" checkSmall
+            where
+                checkSmall :: Tree -> Bool
+                checkSmall myTree
+                    | null $ nodes myTree = True
+                    | otherwise = 
+                        let result = accessSubtree myTree (nodes myTree ! 0)
+                        in (length $ nodes result) <= (length $ nodes myTree)
 
+        twoNode = testCase "Subtree of a two node tree gives expected result" (expected0 @=? result0)
+        node0a = Node 0 True False [] [1] mempty mempty mempty mempty mempty mempty 0 :: NodeInfo
+        node0b = Node 1 False True [0] [] mempty mempty mempty mempty mempty mempty 0 :: NodeInfo
+        edges0 = fromList $ [EdgeSet mempty (IM.singleton 1 (EdgeInfo 0 node0a node0b)), EdgeSet (IS.singleton 0) mempty]
+        tree0 = Tree mempty mempty mempty (fromList [node0a, node0b]) edges0 0
+        result0 = accessSubtree tree0 node0b
+        expected0 = Tree mempty mempty mempty (singleton node0b) mempty 0
