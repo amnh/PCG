@@ -28,6 +28,7 @@ module Text.Megaparsec.Custom
  ) where
 
 import Data.Char             (isSpace)
+import Data.Maybe            (maybe)
 import Text.Megaparsec
 import Text.Megaparsec.Prim  (MonadParsec)
 import Text.Megaparsec.Lexer (float,integer,signed)
@@ -109,3 +110,27 @@ comment start end = commentDefinition' False
           if enquote
           then [prefix,before,comments,suffix,after]
           else [before,comments,after]
+
+-- | Takes a 'Stream' of 'Char's and returns a String
+-- with EOL sequences standardized to the Unix EOL sequence.
+--
+--  * @"\\r\\n"@ -> @\'\\n\'@ (Windows EOL sequence)
+--
+--  * @"\\r"@ -> @\'\\n\'@ (Old Mac EOL sequence
+--
+--  * @"\\n"@ -> @\'\\n\'@ (Unix EOL sequence)
+unifyNewlines :: Stream s Char => s -> String
+unifyNewlines xs =
+  case (curr, next) of
+    (Nothing  , _        ) -> []
+    (Just '\r', Just '\n') -> '\n' : maybe [] unifyNewlines less
+    (Just '\r', _        ) -> '\n' : maybe [] unifyNewlines more
+    (Just tok , Just _   ) -> tok  : maybe [] unifyNewlines more
+    (Just tok , Nothing  ) -> [tok]
+  where
+    (curr, more) = seqTuple $ uncons xs
+    (next, less) = seqTuple $ uncons =<< more
+    seqTuple may = case may of
+                     Just (x,y) -> (Just x, Just y)
+                     Nothing    -> (Nothing,Nothing)
+                     

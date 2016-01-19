@@ -52,6 +52,15 @@ data CharacterSet
 
 data CharacterChange = Change CharacterState (NonEmpty CharacterSet) deriving (Show)
 
+data CharacterMetaData
+   = CharMeta
+   { aligned :: Bool
+   , active  :: Bool
+   , sankoff :: Bool
+   , weight  :: Int
+   , steps   :: Int
+   } deriving (Show)
+
 -- TODO: make the types better
 henningStreamParser :: MonadParsec s m Char => m (NonEmpty TaxonInfo, [CharacterChange])
 henningStreamParser = do
@@ -183,6 +192,11 @@ procFastaFile = symbol (char '&') *> procCommandFile
 procCloseFile :: MonadParsec s m Char => m ()
 procCloseFile = symbol (char '/') *> symbol (char ';') *> pure ()
 
+-- | Parses a CCODE command that consists of:
+--
+--  * A single specification of the character state change
+--
+--  * One or more character indicies or index ranges of affected characters
 ccodeCommand :: MonadParsec s m Char => m CharacterChange
 ccodeCommand = ccodeHeader *> ccodeBody
   where
@@ -199,6 +213,7 @@ ccodeCommand = ccodeHeader *> ccodeBody
 ccodeHeader :: MonadParsec s m Char => m ()
 ccodeHeader = symbol $ string' "cc" *> optional (string' "ode") *> pure ()
 
+-- | Parses a single character index or a contiguous character range
 ccodeIndicies :: MonadParsec a m Char => m CharacterSet
 ccodeIndicies = do
     start    <- symbol nonNegInt
@@ -207,20 +222,38 @@ ccodeIndicies = do
              Just end -> Range  start end
              Nothing  -> Single start
 
+-- | A Uitility function for creating 'CharacterChange' combinators
 ccodeMetaChange :: MonadParsec s m Char => Char -> CharacterState -> m CharacterChange
 ccodeMetaChange c s = do
     _ <- symbol (char c)
     i <- NE.fromList <$> some ccodeIndicies
     pure $ Change s i
 
-ccodeAdditive, ccodeNonAdditive, ccodeActive, ccodeNonActive, ccodeSankoff, ccodeNonSankoff :: MonadParsec s m Char => m CharacterChange
+-- | Parses a _Additive_ specification `CharacterChange`
+ccodeAdditive    :: MonadParsec s m Char => m CharacterChange
 ccodeAdditive    = ccodeMetaChange '+' Additive
+
+-- | Parses a _Non-Additive_ specification `CharacterChange`
+ccodeNonAdditive :: MonadParsec s m Char => m CharacterChange
 ccodeNonAdditive = ccodeMetaChange '-' NonAdditive
+
+-- | Parses a _Active_ specification `CharacterChange`
+ccodeActive      :: MonadParsec s m Char => m CharacterChange
 ccodeActive      = ccodeMetaChange '[' Active
+
+-- | Parses a _Non-Active_ specification `CharacterChange`
+ccodeNonActive   :: MonadParsec s m Char => m CharacterChange
 ccodeNonActive   = ccodeMetaChange ']' NonActive
+
+-- | Parses a _Sankoff_ specification `CharacterChange`
+ccodeSankoff     :: MonadParsec s m Char => m CharacterChange
 ccodeSankoff     = ccodeMetaChange '(' Sankoff
+
+-- | Parses a _Non-Sankoff_ specification `CharacterChange`
+ccodeNonSankoff :: MonadParsec s m Char => m CharacterChange
 ccodeNonSankoff  = ccodeMetaChange ')' NonSankoff
 
+-- | Parses a _weight_ specification `CharacterChange`
 ccodeWeight :: MonadParsec s m Char => m CharacterChange
 ccodeWeight = do
     _ <- symbol (char '/')
@@ -228,6 +261,7 @@ ccodeWeight = do
     i <- NE.fromList <$> some ccodeIndicies
     pure $ Change w i
 
+-- | Parses a _step_ specification `CharacterChange`
 ccodeSteps :: MonadParsec s m Char => m CharacterChange
 ccodeSteps = do
     _ <- symbol (char '=')
@@ -235,6 +269,7 @@ ccodeSteps = do
     i <- NE.fromList <$> some ccodeIndicies
     pure $ Change w i
 
+-- | Parses an Int which is non-negative.
 nonNegInt :: MonadParsec s m Char => m Int
 nonNegInt = fromIntegral <$> integer
 
@@ -247,8 +282,8 @@ taxonSequence = (,) <$> (symbol taxonName) <*> taxonSeq
     taxonName     = some  validNameChar
     taxonSeq      = some (seqChar <|> ambiguity)
     seqChar       = pure <$> validSeqChar <* whitespaceInline
-    ambiguity     = char '[' *> some (validSeqChar <* whitespaceInline) <* char ']'
-    validNameChar = satisfy (\x -> (not . isSpace) x && x /= ';') -- <* whitespaceInline
+    ambiguity     = char '[' *> some (validSeqChar <* whitespaceInline) <* char ']' <* whitespaceInline
+    validNameChar = satisfy (\x -> (not . isSpace) x && x /= ';')
     validSeqChar  = oneOf $ ['0'..'9'] ++ ['A'..'Z'] ++ ['a'..'z'] ++ "-?"
 
 -- | Parses an positive integer from a variety of representations.
