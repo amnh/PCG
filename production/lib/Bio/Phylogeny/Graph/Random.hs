@@ -14,21 +14,20 @@
 
 module Bio.Phylogeny.Graph.Random where
 
-import Test.Tasty.QuickCheck
+import           Bio.Phylogeny.Graph
+import           Bio.Phylogeny.Graph.Topological
+import qualified Bio.Phylogeny.Tree.Node as N
+import           Bio.Phylogeny.Tree.Node.Topological
+import qualified Bio.Phylogeny.Network   as NW
 
-import Prelude hiding (filter)
+import           Data.Maybe
+import           Data.Monoid
+import           Data.Vector    (filter, toList)
+
+import           Prelude hiding (filter)
+import           Test.Tasty.QuickCheck
 
 --import Debug.Trace
-
-import Bio.Phylogeny.Graph
-import Bio.Phylogeny.Graph.Topological
-import Bio.Phylogeny.Tree.Node.Topological
-import qualified Bio.Phylogeny.Tree.Node as N
-import qualified Bio.Phylogeny.Network as NW
-
-import Data.Maybe
-import Data.Monoid
-import Data.Vector (filter, toList)
 
 instance Arbitrary Graph where
     arbitrary = Graph <$> listOf (arbitrary :: Gen Tree)
