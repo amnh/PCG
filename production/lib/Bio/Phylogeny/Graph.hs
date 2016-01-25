@@ -33,10 +33,10 @@ import           Prelude                       hiding    ((++),length,lookup, re
 import qualified Prelude                           as P  ((++))              
 
 import qualified Data.HashMap.Strict               as H  (insert, foldrWithKey, (!))
-import           Data.IntMap                             (insert, foldWithKey, IntMap)
+import           Data.IntMap                             (insert, foldWithKey, IntMap, member)
 import qualified Data.IntMap                       as IM (singleton, map, (!))
 import           Data.IntSet                             (fromList)
-import qualified Data.IntSet                       as IS (singleton, map, insert)
+import qualified Data.IntSet                       as IS (singleton, map, insert, foldr)
 import           Data.Key                                (lookup)
 import           Data.Monoid
 import           Safe
@@ -116,33 +116,54 @@ grabAt :: Tree -> NodeInfo -> Tree
 grabAt inTree1 rootNode = fst $ internalGrab inTree1 rootNode mempty mempty 0
   where
     internalGrab :: Tree -> NodeInfo -> KeyMap -> Tree -> Int -> (Tree, KeyMap)
-    internalGrab inTree@(Tree names seqs chars _ e _) curNode keyShift soFar@(Tree names' seqs' _ n' _ _) curKey
+    --internalGrab (Tree _ _ _ n _ _) _ _ _ _ | trace ("internalGrab " P.++ show n) False = undefined
+    internalGrab inTree@(Tree names seqs chars n e _) curNode keyShift soFar@(Tree names' seqs' _ n' _ _) curKey
+      | isLeaf curNode && curKey == 0 = 
+        let
+          breakNode = curNode {parents = []} 
+          brokenNodes = n' ++ (singleton breakNode)
+        in (recodeEdges (newTree {nodes = brokenNodes}) insertShift, insertShift)
       | isLeaf curNode = (newTree, insertShift)
-      | curKey == 0 = (recodeEdges foldWithMe insertShift, mempty)
+      | curKey == 0 = 
+        let
+          breakNode = curNode {parents = []} 
+          brokenNodes = n' ++ (singleton breakNode)
+          foldBreak = foldr (\(child, _) acc -> simpleAppend acc child curNode) (newTree {nodes = brokenNodes}) childResults
+        in (recodeEdges foldBreak insertShift, mempty)
       | otherwise = (foldWithMe, insertShift)
         where
-          reCode = curNode {code = curKey}
           prevCode = code curNode
-          myName = names IM.! prevCode
-          newNames = insert curKey myName names'
-          newSeqs = H.insert myName (seqs H.! myName) seqs'
-          newNodes = n' ++ (singleton reCode)
+          newNames = case null names of
+                      True -> mempty
+                      False -> insert curKey (names IM.! prevCode) names'
+          newSeqs = case null seqs || null names of
+                      True -> mempty
+                      False -> H.insert (names IM.! prevCode) (seqs H.! (names IM.! prevCode)) seqs'
+          newNodes = n' ++ (singleton curNode)
           newTree = Tree newNames newSeqs chars newNodes e 0
-          childResults = zipWith (\c i -> internalGrab inTree ((nodes inTree) ! c) keyShift soFar i) (children curNode) [curKey + 1..]
-          foldWithMe = foldr (\(child, _) acc -> simpleAppend acc child reCode) newTree childResults
+          childResults = zipWith (\c i -> internalGrab inTree (n ! c) keyShift soFar i) (children curNode) [curKey + 1..]
+          foldWithMe = --trace ("fold with me " P.++ show childResults) 
+                        foldr (\(child, _) acc -> simpleAppend acc child curNode) newTree childResults
           foldMaps = foldr (\(_, m) acc -> m <> acc) keyShift childResults
           insertShift = insert prevCode curKey foldMaps
 
           recodeEdges :: Tree -> KeyMap -> Tree
-          recodeEdges rTree@(Tree _ _ _ inN inEdges _) reMap = rTree {edges = newEdges}
-            where
-              newEdges = foldr (\n acc -> (codeOne $ inEdges ! (reMap IM.! (code n))) `cons` acc) mempty inN
-              codeOne :: EdgeSet -> EdgeSet
-              codeOne inSet = 
-                let
-                  newIn = IS.map (\i -> reMap IM.! i) (inNodes inSet)
-                  newOut = foldWithKey (\i info -> insert (reMap IM.! i) (EdgeInfo (len info) (inN ! (reMap IM.! (code $ origin info))) (inN ! (reMap IM.! (code $ terminal info))))) mempty (outNodes inSet)
-                in EdgeSet newIn newOut
+          --recodeEdges (Tree _ _ _ inN _ _) reMap | trace ("recodeEdges " P.++ show reMap P.++ show (length inN)) False = undefined
+          recodeEdges rTree@(Tree _ _ _ inN inEdges _) reMap 
+            | length inN <= 1 = rTree {edges = mempty, nodes = recodeNodes}
+            | otherwise = rTree {edges = newEdges, nodes = recodeNodes}
+              where
+                newEdges = foldr (\n0 acc -> (codeOne $ inEdges ! (code n0)) `cons` acc) mempty inN
+                recodeNodes = V.map (\n0 -> n0 {code = reMap IM.! (code n0)}) inN
+                codeOne :: EdgeSet -> EdgeSet
+                codeOne inSet = 
+                  let
+                    newIn = IS.foldr (\i acc -> if i `member` reMap then IS.insert (reMap IM.! i) acc else acc) mempty (inNodes inSet)
+                    oCode = code . origin
+                    tCode = code . terminal
+                    oneInfo info = EdgeInfo (len info) ((inN ! (oCode info)) {code = reMap IM.! oCode info}) ((inN ! (tCode info)) {code = reMap IM.! tCode info})
+                    newOut = foldWithKey (\i curInfo acc -> if i `member` reMap then insert (reMap IM.! i) (oneInfo curInfo) acc else acc) mempty (outNodes inSet)
+                  in EdgeSet newIn newOut
 
 
 ---- | Create a subtree matrix to find all sub nodes

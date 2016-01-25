@@ -96,7 +96,7 @@ joinOps = testGroup "Check correct joining of trees" [nulladd, smalladd, nullJoi
         result6 = tree6a <> tree6b
 
 subsetting :: TestTree
-subsetting = testGroup "Check correct subsetting of trees" [twoNode, smallerThan]
+subsetting = testGroup "Check correct subsetting of trees" [twoNode, smallerThan, threeNode]
     where
         smallerThan = testProperty "The subset of a tree is always smaller or the same" checkSmall
             where
@@ -113,4 +113,14 @@ subsetting = testGroup "Check correct subsetting of trees" [twoNode, smallerThan
         edges0 = fromList $ [EdgeSet mempty (IM.singleton 1 (EdgeInfo 0 node0a node0b)), EdgeSet (IS.singleton 0) mempty]
         tree0 = Tree mempty mempty mempty (fromList [node0a, node0b]) edges0 0
         result0 = accessSubtree tree0 node0b
-        expected0 = Tree mempty mempty mempty (singleton node0b) mempty 0
+        expected0 = Tree mempty mempty mempty (singleton $ node0b {code = 0, parents = []}) mempty 0
+
+        threeNode = testCase "Subtree of a three node tree gives expected result" (expected1 @=? result1)
+        node1a = Node 0 True False [] [1] mempty mempty mempty mempty mempty mempty 0 :: NodeInfo
+        node1b = Node 1 False False [0] [2] mempty mempty mempty mempty mempty mempty 0 :: NodeInfo
+        node1c = Node 2 False True [1] [] mempty mempty mempty mempty mempty mempty 0 :: NodeInfo
+        edges1 = fromList $ [EdgeSet mempty (IM.singleton 1 (EdgeInfo 0 node1a node1b)), EdgeSet (IS.singleton 0) (IM.singleton 2 (EdgeInfo 0 node1b node1c)), EdgeSet (IS.singleton 1) mempty]
+        tree1 = Tree mempty mempty mempty (fromList [node1a, node1b, node1c]) edges1 0
+        edgeExpect1 = fromList $ [EdgeSet mempty (IM.singleton 1 (EdgeInfo 0 node1b node1c)), EdgeSet (IS.singleton 0) mempty]
+        result1 = accessSubtree tree1 node1b
+        expected1 = Tree mempty mempty mempty (fromList [node1b {code = 0, parents = []}, node1c {code = 1, parents = [0]}]) edgeExpect1 0

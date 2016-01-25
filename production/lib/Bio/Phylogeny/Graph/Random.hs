@@ -25,6 +25,7 @@ import Bio.Phylogeny.Graph.Topological
 import Bio.Phylogeny.Tree.Node.Topological
 import qualified Bio.Phylogeny.Tree.Node as N
 import qualified Bio.Phylogeny.Network as NW
+import qualified Bio.Phylogeny.Graph.Conversion as C
 
 import Data.Maybe
 import Data.Monoid
@@ -36,14 +37,7 @@ instance Arbitrary Graph where
 instance Arbitrary Tree where
     arbitrary = do
         topo <- arbitrary :: Gen TopoTree
-        return $ convertTopo topo
+        return $ C.fromTopo topo
 
-convertTopo :: TopoTree -> Tree
-convertTopo topo
-    | isLeaf topo = myTree
-    | otherwise = foldr (\n acc -> acc <> convertTopo n) myTree (children topo)
 
-        where
-            myNode = N.Node 0 (isRoot topo) (isLeaf topo) [] [] (encoded topo) (packed topo) (preliminary topo) (final topo) (temporary topo) (aligned topo) (cost topo)
-            myTree = mempty `NW.addNode` myNode
 
