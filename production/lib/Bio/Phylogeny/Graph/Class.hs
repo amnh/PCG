@@ -47,21 +47,24 @@ data EdgeSet
 -- | Edge info type holding length, origin, and terminal
 data EdgeInfo 
    = EdgeInfo
-   { len :: Float
-   , origin :: NodeInfo
+   { len      :: Double
+   -- add virtual node
+   , origin   :: NodeInfo
    , terminal :: NodeInfo
    } deriving (Eq, Show)
 
 -- | Tree structure holding nodes, their original sequences, their edges, and a root reference
 data Tree
    = Tree
-   { taxaNodes  :: IntMap  Identifier
-   , taxaSeqs   :: HashMap Identifier Sequence
+   { nodeNames  :: IntMap  Identifier
+   , parsedSeqs :: HashMap Identifier Sequence
    , characters :: Vector  CharInfo
    , nodes      :: Vector  NodeInfo
    , edges      :: Vector  EdgeSet
    , root       :: Int
    } deriving (Eq,Show)
+   -- add structure that knows if a section is already optimized (possibly store at node?)
 
 -- | A graph is defined as a list of trees
 newtype Graph = Graph [Tree] deriving (Show)
+

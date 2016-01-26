@@ -29,7 +29,7 @@ import Data.BitVector (BitVector, fromBits)
 import Data.Vector (fromList, Vector)
 
 maxDepth, minDepth, maxChildren :: Int
-maxDepth = 5
+maxDepth = 3
 minDepth = 0
 maxChildren =  2
 
@@ -43,7 +43,7 @@ instance Arbitrary TopoTree where
         numChildren <- choose (1, maxChildren) :: Gen Int
         children <- vectorOf numChildren (internalRandom 0)
         seqs <- vectorOf 6 (arbitrary :: Gen MultiSeq)
-        cost <- arbitrary :: Gen Float
+        cost <- arbitrary :: Gen Double
         let name = show 0 ++ show cost
         if null children then return $ TopoNode True True  name [] (seqs !! 0) (seqs !! 1) (seqs !! 2) (seqs !! 3) (seqs !! 4) (seqs !! 5) cost
                          else return $ TopoNode True False name children (seqs !! 0) (seqs !! 1) (seqs !! 2) (seqs !! 3) (seqs !! 4) (seqs !! 5) cost
@@ -54,7 +54,7 @@ internalRandom myDepth = do
     numChildren <- choose (1, maxChildren) :: Gen Int
     children <- vectorOf numChildren (internalRandom (myDepth + 1))
     seqs <- vectorOf 6 (arbitrary :: Gen MultiSeq)
-    cost <- arbitrary :: Gen Float
+    cost <- arbitrary :: Gen Double
     let name = show myDepth ++ show cost
     rand <- choose (0, maxDepth)
     let terminate = chooseTerminate myDepth rand

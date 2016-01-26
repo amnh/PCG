@@ -1,6 +1,6 @@
 -----------------------------------------------------------------------------
 -- |
--- Module      :  Bio.Sequence.Multi
+-- Module      :  Bio.Sequence.Parsed
 -- Copyright   :  (c) 2015-2015 Ward Wheeler
 -- License     :  BSD-style
 --
@@ -8,10 +8,15 @@
 -- Stability   :  provisional
 -- Portability :  portable
 --
--- Actual creation of a MultiSequence
+-- Module holding the data type for a parsed sequence
 --
 -----------------------------------------------------------------------------
 
-module Bio.Sequence.Multi (MultiSequence (..)) where
+module Bio.Sequence.Parsed (ParsedSeq, TreeSeqs) where
 
-import Bio.Sequence.Multi.Class 
+import Data.Vector
+import Data.Map.Lazy
+
+type ParsedSeq = Vector [String]
+
+type TreeSeqs = Map String ParsedSeq

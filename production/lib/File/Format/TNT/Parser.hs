@@ -11,6 +11,8 @@ import           Data.Bifunctor           (second)
 import           Data.Char                (isSpace)
 import           Data.DList               (DList,append)
 import qualified Data.DList         as DL (toList,fromList)
+import           Data.IntSet              (IntSet, singleton)
+import qualified Data.IntSet        as IS (fromList)
 import           Data.List                (intersperse)
 import           Data.List.NonEmpty       (NonEmpty)
 import qualified Data.List.NonEmpty as NE (filter,fromList,length)
@@ -30,7 +32,43 @@ type TaxonInfo     = (TaxonName, TaxonSequence)
 type TaxonName     = String
 
 -- | The naive sequence of a taxon in a TNT files' XREAD command.
-type TaxonSequence = String
+type TaxonSequence = [[Char]]
+
+data CharacterState
+   = Additive
+   | NonAdditive
+   | Active
+   | NonActive
+   | Sankoff
+   | NonSankoff
+   | Weight Int
+   | Steps  Int
+   deriving (Show)
+     
+data CharacterSet
+   = Single Int
+   | Range  Int Int
+   deriving (Show)
+
+data CharacterChange = Change CharacterState (NonEmpty CharacterSet) deriving (Show)
+
+data CharacterMetaData
+   = CharMeta
+   { aligned :: Bool
+   , active  :: Bool
+   , sankoff :: Bool
+   , weight  :: Int
+   , steps   :: Int
+   } deriving (Show)
+
+-- TODO: make the types better
+henningStreamParser :: MonadParsec s m Char => m (NonEmpty TaxonInfo, [CharacterChange])
+henningStreamParser = do
+  leading   <- many $ symbol ccodeCommand
+  taxaStuff <- symbol xreadCommand
+  trailing  <- many $ symbol ccodeCommand
+  pure (taxaStuff, leading ++ trailing)
+  
 
 -- | Parses an XREAD command. Correctly validates for taxa count
 -- and character sequence length. Produces one or more taxa sequences.
@@ -117,7 +155,7 @@ xreadSequences = NE.fromList . deinterleaveTaxa <$> symbol (taxonSequence `sepEn
     deinterleaveTaxa :: [TaxonInfo] -> [TaxonInfo]
     deinterleaveTaxa = M.toList . fmap DL.toList . foldr f mempty
       where
-        f :: TaxonInfo -> Map TaxonName (DList Char) -> Map TaxonName (DList Char)
+        f :: TaxonInfo -> Map TaxonName (DList [Char]) -> Map TaxonName (DList [Char])
         f (taxonName, taxonSequence) = insertWith append taxonName (DL.fromList taxonSequence)
 
 -- | Parses an PROCEDURE command that consisits of exacty
@@ -153,16 +191,99 @@ procFastaFile = symbol (char '&') *> procCommandFile
 -- properly formated TNT input files.
 procCloseFile :: MonadParsec s m Char => m ()
 procCloseFile = symbol (char '/') *> symbol (char ';') *> pure ()
-    
+
+-- | Parses a CCODE command that consists of:
+--
+--  * A single specification of the character state change
+--
+--  * One or more character indicies or index ranges of affected characters
+ccodeCommand :: MonadParsec s m Char => m CharacterChange
+ccodeCommand = ccodeHeader *> ccodeBody
+  where
+    ccodeBody = ccodeAdditive
+            <|> ccodeNonAdditive
+            <|> ccodeActive
+            <|> ccodeNonActive
+            <|> ccodeSankoff
+            <|> ccodeNonSankoff
+            <|> ccodeWeight
+            <|> ccodeSteps
+
+-- | Consumes the superflous heading for a CCODE command.
+ccodeHeader :: MonadParsec s m Char => m ()
+ccodeHeader = symbol $ string' "cc" *> optional (string' "ode") *> pure ()
+
+-- | Parses a single character index or a contiguous character range
+ccodeIndicies :: MonadParsec a m Char => m CharacterSet
+ccodeIndicies = do
+    start    <- symbol nonNegInt
+    rangeEnd <- optional $ try $ symbol (char '.') *> symbol nonNegInt
+    pure $ case rangeEnd of
+             Just end -> Range  start end
+             Nothing  -> Single start
+
+-- | A Uitility function for creating 'CharacterChange' combinators
+ccodeMetaChange :: MonadParsec s m Char => Char -> CharacterState -> m CharacterChange
+ccodeMetaChange c s = do
+    _ <- symbol (char c)
+    i <- NE.fromList <$> some ccodeIndicies
+    pure $ Change s i
+
+-- | Parses a _Additive_ specification `CharacterChange`
+ccodeAdditive    :: MonadParsec s m Char => m CharacterChange
+ccodeAdditive    = ccodeMetaChange '+' Additive
+
+-- | Parses a _Non-Additive_ specification `CharacterChange`
+ccodeNonAdditive :: MonadParsec s m Char => m CharacterChange
+ccodeNonAdditive = ccodeMetaChange '-' NonAdditive
+
+-- | Parses a _Active_ specification `CharacterChange`
+ccodeActive      :: MonadParsec s m Char => m CharacterChange
+ccodeActive      = ccodeMetaChange '[' Active
+
+-- | Parses a _Non-Active_ specification `CharacterChange`
+ccodeNonActive   :: MonadParsec s m Char => m CharacterChange
+ccodeNonActive   = ccodeMetaChange ']' NonActive
+
+-- | Parses a _Sankoff_ specification `CharacterChange`
+ccodeSankoff     :: MonadParsec s m Char => m CharacterChange
+ccodeSankoff     = ccodeMetaChange '(' Sankoff
+
+-- | Parses a _Non-Sankoff_ specification `CharacterChange`
+ccodeNonSankoff :: MonadParsec s m Char => m CharacterChange
+ccodeNonSankoff  = ccodeMetaChange ')' NonSankoff
+
+-- | Parses a _weight_ specification `CharacterChange`
+ccodeWeight :: MonadParsec s m Char => m CharacterChange
+ccodeWeight = do
+    _ <- symbol (char '/')
+    w <- Weight <$> (symbol nonNegInt)
+    i <- NE.fromList <$> some ccodeIndicies
+    pure $ Change w i
+
+-- | Parses a _step_ specification `CharacterChange`
+ccodeSteps :: MonadParsec s m Char => m CharacterChange
+ccodeSteps = do
+    _ <- symbol (char '=')
+    w <- Steps <$> (symbol nonNegInt)
+    i <- NE.fromList <$> some ccodeIndicies
+    pure $ Change w i
+
+-- | Parses an Int which is non-negative.
+nonNegInt :: MonadParsec s m Char => m Int
+nonNegInt = fromIntegral <$> integer
+
 -- | Parses a taxon name and sequence of characters for a given character.
 -- Character values can be one of 64 states ordered @[0..9,A..Z,a..z]@ and also the Chars @\'-\'@ & @\'?\'@.
 -- Taxon name cannot contain spaces or the @\';\'@ character.
 taxonSequence :: MonadParsec s m Char => m TaxonInfo
 taxonSequence = (,) <$> (symbol taxonName) <*> taxonSeq
   where
-    taxonName     = some validNameChar
-    taxonSeq      = some validSeqChar
-    validNameChar = satisfy (\x -> (not . isSpace) x && x /= ';') -- <* whitespaceInline
+    taxonName     = some  validNameChar
+    taxonSeq      = some (seqChar <|> ambiguity)
+    seqChar       = pure <$> validSeqChar <* whitespaceInline
+    ambiguity     = char '[' *> some (validSeqChar <* whitespaceInline) <* char ']' <* whitespaceInline
+    validNameChar = satisfy (\x -> (not . isSpace) x && x /= ';')
     validSeqChar  = oneOf $ ['0'..'9'] ++ ['A'..'Z'] ++ ['a'..'z'] ++ "-?"
 
 -- | Parses an positive integer from a variety of representations.
