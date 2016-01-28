@@ -14,19 +14,19 @@
 -----------------------------------------------------------------------------
 
 {-# LANGUAGE TypeSynonymInstances, FlexibleInstances #-}
+{-# OPTIONS_GHC -fno-warn-orphans #-}
 
 module Bio.Phylogeny.Graph.Topological where
 
 import Test.Tasty.QuickCheck
 
-import Debug.Trace
+-- import Debug.Trace
 
 import Bio.Phylogeny.Tree.Node.Topological
 import Bio.Sequence.Coded
-import Bio.Sequence.Random
+import Bio.Sequence.Random ()
 
-import Data.BitVector (BitVector, fromBits)
-import Data.Vector (fromList, Vector)
+import Data.BitVector (BitVector)
 
 maxDepth, minDepth, maxChildren :: Int
 maxDepth = 3
@@ -41,27 +41,27 @@ newtype TopoGraph = TopoGraph [TopoTree]
 instance Arbitrary TopoTree where
     arbitrary = do
         numChildren <- choose (1, maxChildren) :: Gen Int
-        children <- vectorOf numChildren (internalRandom 0)
+        randChildren <- vectorOf numChildren (internalRandom 0)
         seqs <- vectorOf 6 (arbitrary :: Gen MultiSeq)
-        cost <- arbitrary :: Gen Double
-        let name = show 0 ++ show cost
-        if null children then return $ TopoNode True True  name [] (seqs !! 0) (seqs !! 1) (seqs !! 2) (seqs !! 3) (seqs !! 4) (seqs !! 5) cost
-                         else return $ TopoNode True False name children (seqs !! 0) (seqs !! 1) (seqs !! 2) (seqs !! 3) (seqs !! 4) (seqs !! 5) cost
+        randCost <- arbitrary :: Gen Double
+        let randName = (show (0 :: Int)) ++ show randCost
+        if null randChildren then return $ TopoNode True True  randName [] (seqs !! 0) (seqs !! 1) (seqs !! 2) (seqs !! 3) (seqs !! 4) (seqs !! 5) randCost
+                         else return $ TopoNode True False randName randChildren (seqs !! 0) (seqs !! 1) (seqs !! 2) (seqs !! 3) (seqs !! 4) (seqs !! 5) randCost
 
 internalRandom :: Int -> Gen TopoTree
 --internalRandom depth | trace ("internal random generation " ++ show depth) False = undefined
 internalRandom myDepth = do
     numChildren <- choose (1, maxChildren) :: Gen Int
-    children <- vectorOf numChildren (internalRandom (myDepth + 1))
+    randChildren <- vectorOf numChildren (internalRandom (myDepth + 1))
     seqs <- vectorOf 6 (arbitrary :: Gen MultiSeq)
-    cost <- arbitrary :: Gen Double
-    let name = show myDepth ++ show cost
+    randCost <- arbitrary :: Gen Double
+    let randName = show myDepth ++ show randCost
     rand <- choose (0, maxDepth)
     let terminate = chooseTerminate myDepth rand
     if terminate then --trace "terminate" 
-            (return $ TopoNode False True name [] (seqs !! 0) (seqs !! 1) (seqs !! 2) (seqs !! 3) (seqs !! 4) (seqs !! 5) cost)
+            (return $ TopoNode False True randName [] (seqs !! 0) (seqs !! 1) (seqs !! 2) (seqs !! 3) (seqs !! 4) (seqs !! 5) randCost)
         else --trace "continue" 
-            (return $ TopoNode False False name children (seqs !! 0) (seqs !! 1) (seqs !! 2) (seqs !! 3) (seqs !! 4) (seqs !! 5) cost)
+            (return $ TopoNode False False randName randChildren (seqs !! 0) (seqs !! 1) (seqs !! 2) (seqs !! 3) (seqs !! 4) (seqs !! 5) randCost)
 
 chooseTerminate :: Int -> Int -> Bool
 chooseTerminate curDepth rand
