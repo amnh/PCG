@@ -43,7 +43,7 @@ ccodeCommand = ccodeHeader *> ccodeBody
 
 -- | Consumes the superflous heading for a CCODE command.
 ccodeHeader :: MonadParsec s m Char => m ()
-ccodeHeader = symbol $ string' "cc" *> optional (string' "ode") *> pure ()
+ccodeHeader = abreviatable "ccode" 2 *> pure ()
 
 -- | Parses a single character index or a contiguous character range
 ccodeIndicies :: MonadParsec a m Char => m CharacterSet
