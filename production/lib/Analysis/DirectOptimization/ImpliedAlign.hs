@@ -61,22 +61,23 @@ iaMainPreorder fullTree subTree inNode
 
             -- | Common recursive call for an implied alignment
             recursiveIA :: TreeConstraint t n s b => t -> Maybe n -> Maybe n -> Maybe n -> Bool -> t
-            --recursiveIA updatedTree subtrees leftNode rightNode inNode isLonger | trace ("recursiveIA " ++ show updatedTree) False = undefined
+            recursiveIA updatedTree leftNode rightNode inNode isLonger | trace ("recursiveIA " ++ show isLonger ++ show leftNode ++ show rightNode) False = undefined
             recursiveIA updatedTree leftNode rightNode inNode isLonger 
                 | isLonger = implyMain $ iaPostorder updatedTree inNode
-                | isNothing leftNode = rightEval
-                | isNothing rightNode = leftEval
-                | otherwise = merged
+                | isNothing leftNode && isNothing rightNode = updatedTree
+                | isNothing leftNode = mergeSubtrees leftTree rightEval inNode
+                | isNothing rightNode = mergeSubtrees leftEval rightTree inNode
+                | otherwise = trace ("merging on " ++ show leftTree ++ show rightTree) 
+                                mergeSubtrees leftEval rightEval inNode
                     where
                         leftTree = accessSubtree updatedTree (fromJust leftNode)
                         leftEval = iaMainPreorder updatedTree leftTree leftNode
                         rightTree = accessSubtree updatedTree (fromJust rightNode)
                         rightEval = iaMainPreorder updatedTree rightTree rightNode
-                        merged = mergeSubtrees leftEval rightEval inNode
 
             -- | Function to merge two subtrees under their parent node
             mergeSubtrees :: TreeConstraint t n s b => t -> t -> Maybe n -> t
-            --mergeSubtrees left right node | trace ("merge subtrees " ++ show left ++ show right) False = undefined
+            mergeSubtrees left right node | trace ("merge subtrees " ++ show left ++ show right) False = undefined
             mergeSubtrees left right node 
                 | isNothing node = mempty
                 | otherwise = mempty `addNode` fromJust node <> left <> right

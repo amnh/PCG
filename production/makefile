@@ -22,5 +22,5 @@ rebuild: phylocomgraph.cabal stack.yaml
 clean:
 	find . -type f -name '*.o' -delete && find . -type f -name '*.hi' -delete
 
-test: lib/Analysis/DirectOptimization/Test.hs
-	ghc $< -o $@ -main-is Analysis.DirectOptimization.Test $(linking) $(sanity) -ilib
+quick: phylocomgraph.cabal stack.yaml
+	stack build --test
