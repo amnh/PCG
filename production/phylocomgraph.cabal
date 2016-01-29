@@ -208,6 +208,7 @@ library
   other-modules:
                        Bio.Phylogeny.Forest.Class
                        Bio.Phylogeny.Graph.Class
+                       Bio.Phylogeny.Graph.Output
                        Bio.Phylogeny.Network.Class
                        Bio.Phylogeny.Tree.Binary.Class
                        Bio.Phylogeny.Tree.CharacterAware.Class

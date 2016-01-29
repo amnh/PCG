@@ -24,6 +24,7 @@ import qualified Bio.Phylogeny.Tree.Node.Preliminary as RN
 
 import Data.Vector
 import Data.Monoid
+import Data.Ord ()
 
 -- | A node data structure holding all the necessary info (add verbose statement about what each field is)
 data Node b = Node  { code :: Int
@@ -72,3 +73,6 @@ instance RN.PreliminaryNode (Node b) (EncodedSeq b) where
     setTemporary s n = n {temporary = s}
     cost = cost
     setCost c n = n {cost = c}
+
+instance Eq b => Ord (Node b) where
+    compare n1 n2 = compare (code n1) (code n2)

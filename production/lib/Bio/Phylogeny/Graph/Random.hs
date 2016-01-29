@@ -35,14 +35,7 @@ instance Arbitrary Graph where
 instance Arbitrary Tree where
     arbitrary = do
         topo <- arbitrary :: Gen TopoTree
-        return $ convertTopo topo
+        return $ fromTopo topo
 
-convertTopo :: TopoTree -> Tree
-convertTopo topo
-    | isLeaf topo = myTree
-    | otherwise = foldr (\n acc -> acc <> convertTopo n) myTree (children topo)
 
-        where
-            myNode = N.Node 0 (isRoot topo) (isLeaf topo) [] [] (encoded topo) (packed topo) (preliminary topo) (final topo) (temporary topo) (aligned topo) (cost topo)
-            myTree = mempty `NW.addNode` myNode
 
