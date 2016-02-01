@@ -41,7 +41,7 @@ procCommand =  procHeader *> procBody
 
 -- | Consumes the superflous heading for a PROCEDURE command.
 procHeader :: MonadParsec s m Char => m ()
-procHeader = keyword "procedure" 4
+procHeader = symbol $ keyword "procedure" 4
 
 -- | A directive to interpret a file. We throw this info away later.
 -- Interpreting a file kinda sucks, this ins't Lisp.
