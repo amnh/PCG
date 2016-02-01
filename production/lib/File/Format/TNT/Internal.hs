@@ -28,33 +28,6 @@ type TaxonName     = String
 -- | The naive sequence of a taxon in a TNT files' XREAD command.
 type TaxonSequence = [[Char]]
 
-data CharacterState
-   = Additive
-   | NonAdditive
-   | Active
-   | NonActive
-   | Sankoff
-   | NonSankoff
-   | Weight Int
-   | Steps  Int
-   deriving (Show)
-     
-data CharacterSet
-   = Single Int
-   | Range  Int Int
-   deriving (Show)
-
-data CharacterChange = Change CharacterState (NonEmpty CharacterSet) deriving (Show)
-
-data CharacterMetaData
-   = CharMeta
-   { aligned :: Bool
-   , active  :: Bool
-   , sankoff :: Bool
-   , weight  :: Int
-   , steps   :: Int
-   } deriving (Show)
-
 -- | Parses an Int which is non-negative.
 nonNegInt :: MonadParsec s m Char => m Int
 nonNegInt = fromIntegral <$> integer
@@ -122,8 +95,8 @@ whitespaceInline :: MonadParsec s m Char => m ()
 whitespaceInline =  inlineSpace
 
 -- | Consumes a TNT keyword flexibly.
---   @keyword fullName minChars@ will parse the _longest prefix of_ @fullName@
---   requiring that _at least_ the first @minChars@ of @fullName@ are in the prefix.
+--   @keyword fullName minChars@ will parse the __longest prefix of__ @fullName@
+--   requiring that __at least__ the first @minChars@ of @fullName@ are in the prefix.
 --   Keyword prefixes are terminated with an `inlineSpace` which is not consumed by the combinator.
 keyword x y = abreviatable x y *> pure ()
   where
@@ -135,6 +108,6 @@ keyword x y = abreviatable x y *> pure ()
       where
         thenInlineSpace = notFollowedBy notInlineSpace
         notInlineSpace  = satisfy $ \x -> not (isSpace x) || x == '\n' || x ==  '\r'
-        (req,opt)  = splitAt minimumChars fullName
-        tailOpts   = fmap (\suffix -> try (string' (req ++ suffix) <* thenInlineSpace)) $ inits opt
-        combinator = choice tailOpts *> pure fullName
+        (req,opt)       = splitAt minimumChars fullName
+        tailOpts        = (\suffix -> try (string' (req ++ suffix) <* thenInlineSpace)) <$> inits opt
+        combinator      = choice tailOpts *> pure fullName

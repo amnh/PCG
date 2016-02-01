@@ -68,7 +68,7 @@ xreadPreamble = xreadHeader *> ((,) <$> xreadCharCount <*> xreadTaxaCount)
 -- Consumes the XREAD string identifier and zero or more comments
 -- preceeding the taxa count and character cound parameters
 xreadHeader :: MonadParsec s m Char => m ()
-xreadHeader =  symbol (string' "xread")
+xreadHeader =  keyword "xread" 2
             *> many simpleComment
             *> pure ()
   where
