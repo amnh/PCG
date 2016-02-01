@@ -76,13 +76,13 @@ ccodeHeader :: MonadParsec s m Char => m ()
 ccodeHeader = keyword "ccode" 2
 
 -- | Parses a single character index or a contiguous character range
-ccodeIndicies :: MonadParsec a m Char => m CharacterSet
+ccodeIndicies :: MonadParsec s m Char => m CharacterSet
 ccodeIndicies = choice $ try <$> [range, fromStart, single, toEnd, whole]
   where
-    range     = Range     <$> num *> dot <*> num
-    fromStart = FromStart <$> num *> dot
+    range     = Range     <$> num <* dot <*> num
+    fromStart = FromStart <$> num <* dot
     single    = Single    <$> num
-    toEnd     = dot *> ToEnd <$> num
+    toEnd     = dot *> (ToEnd <$> num)
     whole     = dot *> pure Whole
     num       = symbol nonNegInt
     dot       = symbol (char '.')

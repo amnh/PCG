@@ -107,7 +107,7 @@ keyword x y = abreviatable x y *> pure ()
       else combinator 
       where
         thenInlineSpace = notFollowedBy notInlineSpace
-        notInlineSpace  = satisfy $ \x -> not (isSpace x) || x == '\n' || x ==  '\r'
+        notInlineSpace  = satisfy (not . isSpace)
         (req,opt)       = splitAt minimumChars fullName
         tailOpts        = (\suffix -> try (string' (req ++ suffix) <* thenInlineSpace)) <$> inits opt
         combinator      = choice tailOpts *> pure fullName
