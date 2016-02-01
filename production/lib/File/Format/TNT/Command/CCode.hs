@@ -24,6 +24,36 @@ import           Text.Megaparsec.Custom
 import           Text.Megaparsec.Lexer    (integer,number,signed)
 import           Text.Megaparsec.Prim     (MonadParsec)
 
+data CharacterState
+     = Additive
+     | NonAdditive
+     | Active
+     | NonActive
+     | Sankoff
+     | NonSankoff
+     | Weight Int
+     | Steps  Int
+     deriving (Show)
+
+data CharacterSet
+   = Single    Int
+   | Range     Int Int
+   | FromStart Int
+   | ToEnd     Int
+   | Whole
+   deriving (Show)
+
+data CharacterChange = Change CharacterState (NonEmpty CharacterSet) deriving (Show)
+
+data CharacterMetaData
+   = CharMeta
+   { aligned :: Bool
+   , active  :: Bool
+   , sankoff :: Bool
+   , weight  :: Int
+   , steps   :: Int
+   } deriving (Show)
+
 -- | Parses a CCODE command that consists of:
 --
 --  * A single specification of the character state change
@@ -47,12 +77,15 @@ ccodeHeader = abreviatable "ccode" 2 *> pure ()
 
 -- | Parses a single character index or a contiguous character range
 ccodeIndicies :: MonadParsec a m Char => m CharacterSet
-ccodeIndicies = do
-    start    <- symbol nonNegInt
-    rangeEnd <- optional $ try $ symbol (char '.') *> symbol nonNegInt
-    pure $ case rangeEnd of
-             Just end -> Range  start end
-             Nothing  -> Single start
+ccodeIndicies = choice $ try <$> [range, fromStart, single, toEnd, whole]
+  where
+    range     = Range     <$> num *> dot <*> num
+    fromStart = FromStart <$> num *> dot
+    single    = Single    <$> num
+    toEnd     = dot *> ToEnd <$> num
+    whole     = dot *> pure Whole
+    num       = symbol nonNegInt
+    dot       = symbol (char '.')
 
 -- | A Uitility function for creating 'CharacterChange' combinators
 ccodeMetaChange :: MonadParsec s m Char => Char -> CharacterState -> m CharacterChange
