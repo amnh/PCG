@@ -121,7 +121,7 @@ whitespace = space
 whitespaceInline :: MonadParsec s m Char => m ()
 whitespaceInline =  inlineSpace
 
-keyword x y = abreviatable x y *> lookAhead inlineSpace *> pure ()
+keyword x y = abreviatable x y *> pure ()
 
 abreviatable :: MonadParsec s m Char => String -> Int -> m String
 abreviatable fullName minimumChars =
@@ -132,7 +132,5 @@ abreviatable fullName minimumChars =
     thenInlineSpace = notFollowedBy notInlineSpace
     notInlineSpace  = satisfy $ \x -> not (isSpace x) || x == '\n' || x ==  '\r'
     (req,opt)  = splitAt minimumChars fullName
-    tailOpts   = fmap (try . (<*) (thenInlineSpace) . string') . reverse . tail $ inits opt
-    combinator = (string' req <* thenInlineSpace)
-             <|> (string' req *> choice tailOpts)
-              *> pure fullName
+    tailOpts   = fmap (\suffix -> try (string' (req ++ suffix) <* thenInlineSpace)) $ inits opt
+    combinator = choice tailOpts *> pure fullName
