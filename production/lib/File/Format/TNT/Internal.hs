@@ -121,16 +121,20 @@ whitespace = space
 whitespaceInline :: MonadParsec s m Char => m ()
 whitespaceInline =  inlineSpace
 
+-- | Consumes a TNT keyword flexibly.
+--   @keyword fullName minChars@ will parse the _longest prefix of_ @fullName@
+--   requiring that _at least_ the first @minChars@ of @fullName@ are in the prefix.
+--   Keyword prefixes are terminated with an `inlineSpace` which is not consumed by the combinator.
 keyword x y = abreviatable x y *> pure ()
-
-abreviatable :: MonadParsec s m Char => String -> Int -> m String
-abreviatable fullName minimumChars =
-  if minimumChars < 1
-  then fail "Nonpositive abreviation prefix supplied to abreviatable combinator"
-  else combinator 
   where
-    thenInlineSpace = notFollowedBy notInlineSpace
-    notInlineSpace  = satisfy $ \x -> not (isSpace x) || x == '\n' || x ==  '\r'
-    (req,opt)  = splitAt minimumChars fullName
-    tailOpts   = fmap (\suffix -> try (string' (req ++ suffix) <* thenInlineSpace)) $ inits opt
-    combinator = choice tailOpts *> pure fullName
+    abreviatable :: MonadParsec s m Char => String -> Int -> m String
+    abreviatable fullName minimumChars =
+      if minimumChars < 1
+      then fail "Nonpositive abreviation prefix supplied to abreviatable combinator"
+      else combinator 
+      where
+        thenInlineSpace = notFollowedBy notInlineSpace
+        notInlineSpace  = satisfy $ \x -> not (isSpace x) || x == '\n' || x ==  '\r'
+        (req,opt)  = splitAt minimumChars fullName
+        tailOpts   = fmap (\suffix -> try (string' (req ++ suffix) <* thenInlineSpace)) $ inits opt
+        combinator = choice tailOpts *> pure fullName
