@@ -10,6 +10,8 @@ import           Data.Bifunctor           (second)
 import           Data.Char                (isSpace)
 import           Data.DList               (DList,append)
 import qualified Data.DList         as DL (toList,fromList)
+import           Data.IntMap              (IntMap)
+import qualified Data.IntMap        as IM (fromList)
 import           Data.IntSet              (IntSet, singleton)
 import qualified Data.IntSet        as IS (fromList)
 import           Data.List                (intersperse)
@@ -47,12 +49,51 @@ data CharacterChange = Change CharacterState (NonEmpty CharacterSet) deriving (S
 
 data CharacterMetaData
    = CharMeta
-   { aligned :: Bool
-   , active  :: Bool
-   , sankoff :: Bool
-   , weight  :: Int
-   , steps   :: Int
+   { additive :: Bool --- Mutually exclusive sankoff
+   , active   :: Bool
+   , sankoff  :: Bool
+   , weight   :: Int
+   , steps    :: Int
    } deriving (Show)
+
+initialMetaData :: CharacterMetaData
+initialMetaData = CharMeta False True False 1 1
+
+metaDataTemplate state = modifyMetaDataState state initialMetaData
+
+modifyMetaDataState  NonAdditive  old = old { additive = False }
+modifyMetaDataState  Active       old = old { active   = True  }
+modifyMetaDataState  NonActive    old = old { active   = False }
+modifyMetaDataState  Sankoff      old = old { additive = False, sankoff = True  }
+modifyMetaDataState  NonSankoff   old = old { sankoff  = False }
+modifyMetaDataState (Weight n)    old = old { weight   = n     }
+modifyMetaDataState (Steps  n)    old = old { steps    = n     }
+
+{- TODO: Fix it
+
+-- | Coalesces many CCODE commands respecting thier structural order
+--   into a single index ordered mapping.
+ccodeCoalesce :: Foldable t => Int -> t CharacterChange -> IntMap CharacterMetaData
+ccodeCoalesce charCount = foldl addChangeSet mempty
+  where
+    addChangeSet :: IntMap CharacterState -> CharacterChange -> IntMap CharacterMetaData
+    addChangeSet mapping (Change state indicies) = foldl applyChanges mapping indicies
+      where
+        applyChanges :: Foldable t => IntMap CharacterState -> t CharacterSet -> IntMap CharacterMetaData
+        applyChanges mapping' changeSet = foldl (insertState state) mapping' range
+          where range = case changeSet of
+                         Single    i   -> [i..i]
+                         Range     i j -> [i..j]
+                         FromStart   j -> [0..j]
+                         ToEnd     i   -> [i..charCount]
+                         Whole         -> [0..charCount]
+    insertState :: CharacterState -> IntMap CharacterMetaData ->  Int -> IntMap CharacterMetaData
+    insertState state mapping index = insertWith translation index defaultValue mapping 
+      where
+        defaultValue = metaDataTemplate state
+        translation  = const (modifyMetaDataState state)
+
+-}
 
 -- | Parses a CCODE command that consists of:
 --
