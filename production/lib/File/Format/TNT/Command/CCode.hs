@@ -10,15 +10,13 @@ import           Data.Bifunctor           (second)
 import           Data.Char                (isSpace)
 import           Data.DList               (DList,append)
 import qualified Data.DList         as DL (toList,fromList)
-import           Data.IntMap              (IntMap)
+import           Data.IntMap              (IntMap,insertWith)
 import qualified Data.IntMap        as IM (fromList)
 import           Data.IntSet              (IntSet, singleton)
 import qualified Data.IntSet        as IS (fromList)
 import           Data.List                (intersperse)
 import           Data.List.NonEmpty       (NonEmpty)
 import qualified Data.List.NonEmpty as NE (filter,fromList,length)
-import           Data.Map.Strict          (Map,insertWith)
-import qualified Data.Map.Strict    as M  (toList)
 import           Data.Maybe               (catMaybes)
 import           File.Format.TNT.Internal
 import           Text.Megaparsec
@@ -69,31 +67,28 @@ modifyMetaDataState  NonSankoff   old = old { sankoff  = False }
 modifyMetaDataState (Weight n)    old = old { weight   = n     }
 modifyMetaDataState (Steps  n)    old = old { steps    = n     }
 
-{- TODO: Fix it
-
 -- | Coalesces many CCODE commands respecting thier structural order
 --   into a single index ordered mapping.
 ccodeCoalesce :: Foldable t => Int -> t CharacterChange -> IntMap CharacterMetaData
 ccodeCoalesce charCount = foldl addChangeSet mempty
   where
-    addChangeSet :: IntMap CharacterState -> CharacterChange -> IntMap CharacterMetaData
+    addChangeSet :: IntMap CharacterMetaData -> CharacterChange -> IntMap CharacterMetaData
     addChangeSet mapping (Change state indicies) = foldl applyChanges mapping indicies
       where
-        applyChanges :: Foldable t => IntMap CharacterState -> t CharacterSet -> IntMap CharacterMetaData
+        applyChanges :: IntMap CharacterMetaData -> CharacterSet -> IntMap CharacterMetaData
         applyChanges mapping' changeSet = foldl (insertState state) mapping' range
-          where range = case changeSet of
-                         Single    i   -> [i..i]
-                         Range     i j -> [i..j]
-                         FromStart   j -> [0..j]
-                         ToEnd     i   -> [i..charCount]
-                         Whole         -> [0..charCount]
+          where
+            range = case changeSet of
+                     Single    i   -> [i..i]
+                     Range     i j -> [i..j]
+                     FromStart   j -> [0..j]
+                     ToEnd     i   -> [i..charCount]
+                     Whole         -> [0..charCount]
     insertState :: CharacterState -> IntMap CharacterMetaData ->  Int -> IntMap CharacterMetaData
     insertState state mapping index = insertWith translation index defaultValue mapping 
       where
         defaultValue = metaDataTemplate state
         translation  = const (modifyMetaDataState state)
-
--}
 
 -- | Parses a CCODE command that consists of:
 --
