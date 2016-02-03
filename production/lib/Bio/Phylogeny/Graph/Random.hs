@@ -25,7 +25,6 @@ import Bio.Phylogeny.Graph.Topological
 import Bio.Phylogeny.Tree.Node.Topological
 import qualified Bio.Phylogeny.Tree.Node as N
 import qualified Bio.Phylogeny.Network as NW
-import qualified Bio.Phylogeny.Graph.Conversion as C
 
 import Data.Maybe
 import Data.Monoid
@@ -37,7 +36,7 @@ instance Arbitrary Graph where
 instance Arbitrary Tree where
     arbitrary = do
         topo <- arbitrary :: Gen TopoTree
-        return $ C.fromTopo topo
+        return $ fromTopo topo
 
 
 
