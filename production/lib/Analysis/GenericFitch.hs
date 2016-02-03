@@ -199,7 +199,7 @@ grabAligned :: NodeConstraint n s b => n -> V.Vector s
 grabAligned node = V.ifilter (\i b -> aligned $ (characters node) V.! i) (preliminaryAlign node)
 
 -- | Convenience function for bit ops
-blockShiftAndFold :: (SeqConstraint s b => String -> String -> V.Vector (PhyloCharacter b) -> V.Vector s -> V.Vector s -> V.Vector s
+blockShiftAndFold :: SeqConstraint s b => String -> String -> V.Vector (PhyloCharacter b) -> V.Vector s -> V.Vector s -> V.Vector s
 blockShiftAndFold sideMode foldMode chars inbits initVal 
     | isNothing inbits || isNothing initVal = Nothing
     | sideMode == "L" && foldMode == "&" = f (.&.)

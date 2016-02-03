@@ -32,10 +32,9 @@
 module File.Format.Nexus.Parser where
 
 import           Data.Char              (isSpace,toLower)
-import           Data.DList             (DList,append)
-import qualified Data.DList as DL       (toList,fromList,empty)
 import           Data.Either            (lefts)
 import           Data.List              (sort)
+import           Data.List.Split        (splitOneOf)
 import qualified Data.Map.Lazy as M
 import           Data.Maybe             (isJust, fromJust, catMaybes, maybeToList)
 import qualified Data.Set as S
@@ -52,13 +51,10 @@ import           Text.Megaparsec.Prim   (MonadParsec)
 import           Text.Megaparsec.Custom
 import qualified Data.Vector as V
 
-parseNexusStream :: String -> Either ParseError Nexus
-parseNexusStream = parse (validateNexusParseResult =<< parseNexus <* eof) "PCG encountered a Nexus file parsing error it could not overcome:"
-
-
-
-
-
+parseNexusStream :: String -> String -> Either ParseError Nexus
+parseNexusStream filePath = parse (validateNexusParseResult fileName =<< parseNexus <* eof) filePath
+    where
+        fileName = last $ splitOneOf "/\\" filePath
 
 parseNexus :: (Show s, MonadParsec s m Char) => m NexusParseResult
 parseNexus = nexusFileDefinition
@@ -110,9 +106,9 @@ characterBlockDefinition :: (Show s, MonadParsec s m Char) => String -> Bool -> 
 characterBlockDefinition which isAlignedSequence = {-do
     x <- getInput
     trace ("characterBlockDefinition "  ++ show x) $ -}do
-    _           <- symbol (string' $ which ++ ";")
-    (v,w,x,y,z) <- partitionSequenceBlock <$> some seqSubBlock
-    pure $ PhyloSequence isAlignedSequence v w x y z which
+    _             <- symbol (string' $ which ++ ";")
+    (v,w,x,y,z,a) <- partitionSequenceBlock <$> some seqSubBlock
+    pure $ PhyloSequence isAlignedSequence v w x y z a which
 
 taxaBlockDefinition :: (Show s, MonadParsec s m Char) => m TaxaSpecification
 taxaBlockDefinition = {-do
@@ -184,12 +180,13 @@ seqSubBlock = {-do
     x <- getInput
     trace ("seqSubBlock" ++ (show x)) $ -}symbol block
     where
-        block =  (Dims      <$> try dimensionsDefinition)
-             <|> (Format    <$> try formatDefinition)
-             <|> (Eliminate <$> try (stringDefinition "eliminate"))
-             <|> (Matrix    <$> try seqMatrixDefinition)
-             <|> (Taxa      <$> try (stringListDefinition "taxlabels"))
-             <|> (IgnSSB    <$> try (ignoredSubBlockDef ';'))
+        block =  (Dims        <$> try dimensionsDefinition)
+             <|> (Format      <$> try formatDefinition)
+             <|> (Eliminate   <$> try (stringDefinition "eliminate"))
+             <|> (Matrix      <$> try seqMatrixDefinition)
+             <|> (Taxa        <$> try (stringListDefinition "taxlabels"))
+             <|> (CharLabels) <$> try (stringListDefinition "charlabels")
+             <|> (IgnSSB      <$> try (ignoredSubBlockDef ';'))
 
 dimensionsDefinition :: (Show s, MonadParsec s m Char) => m DimensionsFormat
 dimensionsDefinition = {-do 
