@@ -4,8 +4,7 @@ module Analysis.DirectOptimization.Utilities where
 
 import Prelude hiding (length, filter)
 
-import Control.Arrow ((***))
-import Data.Matrix.NotStupid (Matrix, (!), nrows, ncols, setElem, zero, elementwise, getRow, matrix)
+import Data.Matrix.NotStupid (Matrix, nrows, ncols, setElem)
 import Data.Bits
 import Data.Vector (Vector, length, filter)
 import Data.Maybe
@@ -19,7 +18,7 @@ import Bio.Phylogeny.Network.Subsettable
 
 import Bio.Sequence.Coded
 
-import Debug.Trace
+--import Debug.Trace
 
 type TreeConstraint t n s b = (Network t n, NodeConstraint n s b, ReferentialTree t n, BinaryTree t n, Show t, SubsettableNetwork t n)
 type NodeConstraint n s b = (PreliminaryNode n s, EncodedNode n s, SeqConstraint s b, Show n, Eq n)

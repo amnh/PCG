@@ -7,6 +7,7 @@ module File.Format.TNT.Test
 import           Control.Monad              (join)
 import           Data.Char
 import           Data.Either.Combinators    (isLeft,isRight)
+import           Data.List                  (inits)
 import qualified Data.Map as M
 import           Data.Set                   (toList)
 import           File.Format.TNT.Parser
@@ -22,8 +23,8 @@ import           Text.Megaparsec            (char,eof,parse,string)
 
 testSuite :: TestTree
 testSuite = testGroup "TNT Format"
-  [ testGroup "TNT Combinators" [ xreadHeader'
-                                , flexiblePositiveInt'
+  [ testGroup "TNT Combinators" [ internalCombinators
+                                , xreadHeader'
                                 , procedureTests
                                 , ccodeExamples
                                 ] 
@@ -39,17 +40,6 @@ xreadHeader' = testGroup "XREAD header" [beginsWithXREAD, possibleComment]
           where
             input   = "XREAD '" ++ comment ++ "'"
             comment = filter (/= '\'') $ getNonEmpty x
-
-flexiblePositiveInt' = testGroup "Positive Int parsed flexibly" [parsesInts, parsesIntegralDoubles]
-  where
-    parsesInts = testProperty "Parses positive, signed Integer literals" f
-      where
-        f :: Int -> Bool
-        f x = (x > 0) == isRight (parse (flexiblePositiveInt "") "" $ show x)
-    parsesIntegralDoubles = testProperty "Parses positive, signed integral valued Doubles" f
-      where
-        f :: Int -> Bool
-        f x = (x > 0) == isRight (parse (flexiblePositiveInt "") "" $ show (fromIntegral x :: Double))
 
 procedureTests = testGroup "PROCEDURE command tests" [shortProcedureHeader, longProcedureHeader, closeFilesDirective, commandFile, fastaFile, generalEnding]
   where
@@ -114,3 +104,32 @@ ccodeExamples = testGroup "CCODE command tests" [testExamples]
                , "ccode /4 67;ccode /4 68;ccode /4 69;ccode /4 70;ccode /4 71;ccode /4 72;"
                , "ccode /4 73;ccode /4 74;ccode /4 75;ccode /4 76;ccode /4 77;ccode /4 78;"
                ]
+
+internalCombinators :: TestTree
+internalCombinators = testGroup "General combinators used amongst TNT commands" [flexiblePositiveInt', keyword']
+  where
+    keyword' = testGroup "Kewords parsed flexibly" [prefixesMatching] 
+      where
+        prefixesMatching = testProperty "Parses all prefixes after requisite characters" f
+          where
+            f :: String -> Int -> Bool
+            f str n = length str >= n || propertyLogic `all` targets
+              where
+                propertyLogic x = matchesCleanly x && matchesPadded x && failsOnDirty x
+                matchesCleanly  = isRight . parse'
+                matchesPadded   = isRight . parse' . (++" ")
+                failsOnDirty    = isLeft  . parse' . (++"z")
+                parse'          = parse (keyword str n) ""
+                (req,rem)       = splitAt n str
+                targets         = (req++) <$> inits rem
+    flexiblePositiveInt' = testGroup "Positive Int parsed flexibly" [parsesInts, parsesIntegralDoubles]
+      where
+        parsesInts = testProperty "Parses positive, signed Integer literals" f
+          where
+            f :: Int -> Bool
+            f x = (x > 0) == isRight (parse (flexiblePositiveInt "") "" $ show x)
+        parsesIntegralDoubles = testProperty "Parses positive, signed integral valued Doubles" f
+          where
+            f :: Int -> Bool
+            f x = (x > 0) == isRight (parse (flexiblePositiveInt "") "" $ show (fromIntegral x :: Double))
+

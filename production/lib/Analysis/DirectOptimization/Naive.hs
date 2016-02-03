@@ -4,24 +4,21 @@
 module Analysis.DirectOptimization.Naive (naiveDOThree, naiveDOTwo, naiveDO) where
 
 import           Analysis.DirectOptimization.Utilities
-
-import           Bio.Phylogeny.Network
-import           Bio.Phylogeny.Tree.Node.Encoded
 import           Bio.Phylogeny.Tree.Node.Preliminary
 import           Bio.Sequence.Coded
 
 import           Control.Applicative        (liftA2)
 import           Data.Bits
-import           Data.Foldable              (foldl1,minimumBy)
-import           Data.Matrix.NotStupid      (fromList, Matrix, (<->), nrows, ncols, getElem, getRow, zero, matrix)
+import           Data.Foldable              (minimumBy)
+import           Data.Matrix.NotStupid      (fromList, Matrix, (<->), nrows, ncols, getElem, zero, matrix)
 import           Data.Maybe
 import           Data.Monoid                ((<>))
 import           Data.Ord                   (comparing)
-import           Data.Vector                (Vector, singleton, length, zipWith, cons, empty, toList, (!), or, generate)
+import           Data.Vector                (Vector, singleton, length, zipWith, cons, empty, toList, (!), or)
 import qualified Data.Vector as V           (foldr)
 import           Prelude             hiding (length, zipWith, or)
 
-import           Debug.Trace
+-- import           Debug.Trace
 
 data Direction = LeftDir | DiagDir | DownDir deriving (Eq, Show)
 
@@ -30,6 +27,7 @@ data AlignMatrix s = AlignMatrix {costs :: Matrix Float, seqs :: Vector s, trave
 
 type Costs = (Float, Float)
 
+indelCost, subCost :: Float
 indelCost = 1
 subCost = 1
 
