@@ -59,6 +59,7 @@ initialMetaData = CharMeta False True False 1 1
 
 metaDataTemplate state = modifyMetaDataState state initialMetaData
 
+modifyMetaDataState  Additive     old = old { additive = True , sankoff = False }
 modifyMetaDataState  NonAdditive  old = old { additive = False }
 modifyMetaDataState  Active       old = old { active   = True  }
 modifyMetaDataState  NonActive    old = old { active   = False }
