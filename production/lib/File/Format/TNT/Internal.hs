@@ -28,33 +28,6 @@ type TaxonName     = String
 -- | The naive sequence of a taxon in a TNT files' XREAD command.
 type TaxonSequence = [[Char]]
 
-data CharacterState
-   = Additive
-   | NonAdditive
-   | Active
-   | NonActive
-   | Sankoff
-   | NonSankoff
-   | Weight Int
-   | Steps  Int
-   deriving (Show)
-     
-data CharacterSet
-   = Single Int
-   | Range  Int Int
-   deriving (Show)
-
-data CharacterChange = Change CharacterState (NonEmpty CharacterSet) deriving (Show)
-
-data CharacterMetaData
-   = CharMeta
-   { aligned :: Bool
-   , active  :: Bool
-   , sankoff :: Bool
-   , weight  :: Int
-   , steps   :: Int
-   } deriving (Show)
-
 -- | Parses an Int which is non-negative.
 nonNegInt :: MonadParsec s m Char => m Int
 nonNegInt = fromIntegral <$> integer
@@ -121,18 +94,20 @@ whitespace = space
 whitespaceInline :: MonadParsec s m Char => m ()
 whitespaceInline =  inlineSpace
 
-keyword x y = abreviatable x y *> lookAhead inlineSpace *> pure ()
-
-abreviatable :: MonadParsec s m Char => String -> Int -> m String
-abreviatable fullName minimumChars =
-  if minimumChars < 1
-  then fail "Nonpositive abreviation prefix supplied to abreviatable combinator"
-  else combinator 
+-- | Consumes a TNT keyword flexibly.
+--   @keyword fullName minChars@ will parse the __longest prefix of__ @fullName@
+--   requiring that __at least__ the first @minChars@ of @fullName@ are in the prefix.
+--   Keyword prefixes are terminated with an `inlineSpace` which is not consumed by the combinator.
+keyword x y = abreviatable x y *> pure ()
   where
-    thenInlineSpace = notFollowedBy notInlineSpace
-    notInlineSpace  = satisfy $ \x -> not (isSpace x) || x == '\n' || x ==  '\r'
-    (req,opt)  = splitAt minimumChars fullName
-    tailOpts   = fmap (try . (<*) (thenInlineSpace) . string') . reverse . tail $ inits opt
-    combinator = (string' req <* thenInlineSpace)
-             <|> (string' req *> choice tailOpts)
-              *> pure fullName
+    abreviatable :: MonadParsec s m Char => String -> Int -> m String
+    abreviatable fullName minimumChars =
+      if minimumChars < 1
+      then fail "Nonpositive abreviation prefix supplied to abreviatable combinator"
+      else combinator 
+      where
+        thenInlineSpace = notFollowedBy notInlineSpace
+        notInlineSpace  = satisfy (not . isSpace)
+        (req,opt)       = splitAt minimumChars fullName
+        tailOpts        = (\suffix -> try (string' (req ++ suffix) <* thenInlineSpace)) <$> inits opt
+        combinator      = choice tailOpts *> pure fullName

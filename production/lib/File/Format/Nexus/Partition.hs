@@ -27,15 +27,16 @@ partitionAssumptionBlock = foldr f ([])
         f (TCMMat n) vs = n:vs
         f (IgnAF  _) vs = vs
 
-partitionSequenceBlock :: [SeqSubBlock] -> ([[String]],[CharacterFormat],[DimensionsFormat],[String],[[String]])
-partitionSequenceBlock = foldr f ([],[],[],[],[])
+partitionSequenceBlock :: [SeqSubBlock] -> ([[String]],[CharacterFormat],[DimensionsFormat],[String],[[String]],[[String]])
+partitionSequenceBlock = foldr f ([],[],[],[],[],[])
     where
-        f (Matrix    e)  (v,w,x,y,z) = (e:v,   w,   x,   y,   z)
-        f (Format    e)  (v,w,x,y,z) = (  v, e:w,   x,   y,   z)
-        f (Dims      e)  (v,w,x,y,z) = (  v,   w, e:x,   y,   z)
-        f (Eliminate e)  (v,w,x,y,z) = (  v,   w,   x, e:y,   z)
-        f (Taxa      e)  (v,w,x,y,z) = (  v,   w,   x,   y, e:z)
-        f _                       ws = ws
+        f (Matrix      e)  (v,w,x,y,z,a) = (e:v,   w,   x,   y,   z,   a)
+        f (Format      e)  (v,w,x,y,z,a) = (  v, e:w,   x,   y,   z,   a)
+        f (Dims        e)  (v,w,x,y,z,a) = (  v,   w, e:x,   y,   z,   a)
+        f (Eliminate   e)  (v,w,x,y,z,a) = (  v,   w,   x, e:y,   z,   a)
+        f (Taxa        e)  (v,w,x,y,z,a) = (  v,   w,   x,   y, e:z,   a)
+        f (CharLabels  e)  (v,w,x,y,z,a) = (  v,   w,   x,   y,   z, e:a)
+        f _                           ws = ws
 
 partitionTaxaBlock :: [SeqSubBlock] -> (Int, [String])
 partitionTaxaBlock = foldr f (0,[])

@@ -17,6 +17,7 @@ module File.Format.Nexus.Data where
 import qualified Data.Map.Lazy as M
 import qualified Data.Vector as V
 import           File.Format.Newick
+import           File.Format.TransitionCostMatrix
 import           File.Format.TransitionCostMatrix.Parser hiding (symbol)
 
 
@@ -25,10 +26,9 @@ import           File.Format.TransitionCostMatrix.Parser hiding (symbol)
 ----------------- Types for sending data out -----------------
 --------------------------------------------------------------
 
-type Sequences = [( [TaxonIdentifier]
-                  , TaxonSequenceMap
-                  , CharacterMetadata
-                  )]
+type Sequences = ( TaxonSequenceMap
+                 , V.Vector CharacterMetadata
+                 )
 
 type AlphabetSymbol = String
 
@@ -38,24 +38,29 @@ type TaxonIdentifier = String
 
 data CharacterMetadata 
    = CharacterMetadata
-   { isAligned :: Bool
+   { name      :: String
+   , isAligned :: Bool
    , charType  :: CharDataType
-   , alphabet  :: [AlphabetSymbol]
-   , seqLength :: Maybe Int
-   , ignored   :: Bool  -- This is a problem, as input may interleave ignored and non-ignored chars, so given seqs will need to bbroken up
-                       -- into separate seqs during validation (also true for TNT?).
-                       -- That means that order of items in Sequences is important for IA output, I think. Maybe check with Ward?
+   , alphabet  :: AmbiguityGroup
+   , ignored   :: Bool
+   , costM     :: Maybe TCM
    } deriving (Show)
 
-type Sequence = V.Vector AmbiguityGroup
+-- Character is Maybe, because some chars might not be present for some taxa
+-- if unaligned, multiple characters are treated as a single "character", so V.length >= 1
+-- if aligned, each character is a "character", so V.length == 1
+type Character = Maybe (V.Vector AmbiguityGroup)
+
+-- This is a Vector, because Character may have length /= 1 
+-- (see explanation at Character)
+type Sequence = V.Vector Character
 
 type TaxonSequenceMap = M.Map TaxonIdentifier Sequence
 
---type Sequences = [([TaxonIdentifier], TaxonSequenceMap, CharacterMetadata)]
 
----------------------------------------------------------------
---------------- Types for parsing and validation --------------
----------------------------------------------------------------
+--------------------------------------------------------------
+-------------- Types for parsing and validation --------------
+--------------------------------------------------------------
 
 -- | AssumptionBlock is a spec'd block in Nexus format. We're only interested in a single entity in this block
 -- for now, the step matrix, but this datatype is included for later extensibility
@@ -97,6 +102,8 @@ data CharStateFormat
    } deriving (Show)
 
 -- | CharacterFormat 
+-- Note that symbols may or may not be space-delimited. I work under the assumption that it is iff
+-- Tokens is spec'd, as well.
 data CharacterFormat
    = CharacterFormat
    { charDataType :: String
@@ -143,7 +150,7 @@ data Nexus
    -- TODO: taxa was commented out before first push to Grace
    { {- taxa :: [TaxonIdentifier]
    ,-} sequences :: Sequences
-   , stepMatrices :: AssumptionBlock
+   {- , stepMatrices :: AssumptionBlock -}
    } deriving (Show)
 
 -- | Types blocks in the Nexus file and their accompanying data.
@@ -173,7 +180,8 @@ data PhyloSequence
    , charDims      :: [DimensionsFormat] -- holds length of sequence, as well as info on new taxa
    , elims         :: [String]
    , seqTaxaLabels :: [[String]]
-   , name          :: String -- characters, taxa or data
+   , charLabels    :: [[String]]
+   , blockType     :: String -- characters, taxa or data
    } deriving (Show)
 
 -- | SeqSubBlock is list of fields available in sequence blocks. It's set up as an enumeration
@@ -186,6 +194,7 @@ data SeqSubBlock
    -- | Items           ItemType
    | Eliminate       String
    | CharStateLabels [CharStateFormat]
+   | CharLabels      [String]
    | IgnSSB          String
    | Taxa            [String]
    deriving (Show)

@@ -16,13 +16,16 @@
 
 module File.Format.Nexus.Validate where
 
-import           Data.Char              (toLower)
+import           Data.Char              (isSpace,toLower)
 import           Data.Either            (lefts)
-import           Data.List              (sort)
+import           Data.List              (break, reverse, sort, sortBy)
+import           Data.List.Split        (splitOn)
 import qualified Data.Map.Lazy as M
 import           Data.Maybe             (fromJust, catMaybes, maybeToList)
+import           Data.Ord               (comparing)
 import qualified Data.Vector as V
 import           File.Format.Nexus.Data
+import           File.Format.TransitionCostMatrix
 import           Safe
 import           Text.Megaparsec.Prim   (MonadParsec)
 import           Text.Megaparsec.Custom
@@ -68,36 +71,37 @@ import           Text.Megaparsec.Custom
 -- 17. "nolabels" but there is a taxa block and newtaxa in seq block,   error         7,8              dep          not done
 --     so order of sequences is unclear  
 -- 18. Missing semicolons                                               error         -              indep         caught in parse
--- 19. Equate or symbols strings missing their closing quotes           error         3                dep         caught in parse
+-- 19. Equate or symbols strings missing their closing quotes           error         3                dep         caught in parse (but ignored?)
 -- 20. Match character can't be a space                                 error         3                dep          not done
 -- 21. Space in taxon name                                              error         5,6              dep              done
 --     ---for aligned, should be caught by 16
 --     ---for unaligned, caught by combo of 12 & 22
 -- 22. In unaligned, interleaved block, a taxon is repeated             error         3                dep              done
+-- TODO: check tcm for size
+-- TODO: check for chars that aren't in alphabet
+-- TODO: fail on wrong datatype
 
-validateNexusParseResult :: (Show s, MonadParsec s m Char) => NexusParseResult -> m Nexus
-validateNexusParseResult (NexusParseResult sequences taxas treeSet assumptions _ignored)
+validateNexusParseResult :: (Show s, MonadParsec s m Char) => String -> NexusParseResult -> m Nexus
+validateNexusParseResult fileName (NexusParseResult sequences taxas treeSet assumptions _ignored) 
   | null sequences && null taxas && null treeSet = fails ["There are no usable blocks in this file."] -- error 1
   | not (null independentErrors)                 = fails independentErrors
   | not (null dependentErrors)                   = fails dependentErrors
-  -- TODO: first arg to Nexus was commented out before first push to Grace
-  | otherwise                  = pure $ Nexus {-taxaLst-} seqs costMatrix 
+  | otherwise                                    = pure $ Nexus {-taxaLst-} seqs 
   where
-        seqs :: Sequences
-        seqs = map (\seq -> ( V.toList taxaLst
-                            , getSeqFromMatrix seq taxaLst
-                            , getCharMetadata seq
-                            )) sequences
+        listOfSeqs = map (\seq -> ( getSeqFromMatrix fileName seq taxaLst
+                                  , getCharMetadata costMatrix seq
+                                  )) sequences
+        (seqs,_) = foldSeqs listOfSeqs
         --TODO: dependentErrors & independentErrors becomes :: String error, String warning => [Maybe (Either error warning)]
         -- then partitionEithers . catMaybes, etc., etc.
-        costMatrix = head assumptions
+        costMatrix = headMay . tcm $ head assumptions
         dependentErrors = catMaybes $ incorrectTaxaCount : (missingCloseQuotes ++ seqTaxaCountErrors ++ interleaveErrors ++ seqTaxonCountErrors ++ incorrectCharCount)
         equates = foldr (\x acc -> getEquates x : acc) [] sequences
         independentErrors = catMaybes $ noTaxaError : multipleTaxaBlocks : seqMatrixDimsErrors -- sequenceBlockErrors
         
 
-        incorrectCharCount  = checkSeqLength (getBlock "aligned" sequences) seqs
-        incorrectTaxaCount  = f taxas >>= \(TaxaSpecification num taxons) -> 
+        incorrectCharCount = checkSeqLength (getBlock "aligned" sequences) seqs
+        incorrectTaxaCount = f taxas >>= \(TaxaSpecification num taxons) -> 
             if num /= length taxons
                 then Just $ "Incorrect number of taxa in taxa block.\n" {- ++ (show num) ++ " " ++ (show taxons) -} -- half of error 16
                 else Nothing
@@ -139,23 +143,66 @@ validateNexusParseResult (NexusParseResult sequences taxas treeSet assumptions _
         --taxaFromSeqMatrix = foldr (\x acc -> (getTaxaFromMatrix x) ++ acc) [] sequences
         -- convertSeqs = ( concatSeqs . cleanSeqs sequences  -- convert each sequence, then
 
-checkSeqLength :: [PhyloSequence] -> TaxonSequenceMap -> [Maybe String]
-checkSeqLength [] _        = [Nothing]
-checkSeqLength seq' seqMap =
+
+-- | foldSeqs takes a list of tuples of sequence maps and character metadata, and
+-- returns a single Sequences tuple
+foldSeqs :: [(TaxonSequenceMap,V.Vector CharacterMetadata)] -> (Sequences, Int)
+foldSeqs []     = ((M.empty, V.empty), 0)
+foldSeqs ((taxSeqMap,charMDataVec):xs) = ((newSeqMap, newMetadata), totLength)
+    where 
+        ((curMap,curMetadata),curLength) = foldSeqs xs
+        newSeqMap                        = M.unionWith (updateSeqInMap curLength) taxSeqMap curMap
+        newMetadata                      = charMDataVec V.++ if length curMetadata < curLength -- This shouldn't be possible. Only seqs should have missing data.
+                                                                                        -- TODO: Error out here?
+                                                      then V.fromList [] V.++ curMetadata
+                                                      else curMetadata
+        totLength                        = curLength + (V.length charMDataVec)
+    
+
+-- | updateSeqInMap takes in a TaxonSequenceMap, a length (the length of the longest sequence in the map), a taxon name and a sequence
+-- It updates the first map by adding the new seq using the taxon name as a key. If the seq us shorter than the max, it is first
+-- buffered by a vector of Nothing
+updateSeqInMap :: Int -> Sequence -> Sequence -> Sequence
+updateSeqInMap curLength inputSeq curSeq = newSeq
+    where
+        newSeq        = seqToAdd V.++ curSeq
+        missingLength = curLength - (length curSeq)
+        emptySeq      = V.replicate missingLength Nothing
+        seqToAdd      = inputSeq V.++ emptySeq
+
+-- | checkSeqLength takes in the list of sequences and
+checkSeqLength :: [PhyloSequence] -> Sequences -> [Maybe String]
+checkSeqLength [] _            = [Nothing]
+checkSeqLength seq' (seqMap,_) = 
     M.foldrWithKey (\key val acc -> (if length val == len
                                      then Nothing
                                      else Just (key ++ "'s sequence is the wrong length in an aligned block. It should be " ++ show len ++ ", but is " ++ show (length val) {- ++ ":\n" ++ show val -} ++ "\n")) : acc) [] seqMap
     where
         len = numChars . head . charDims $ head seq'
 
-getCharMetadata :: PhyloSequence -> CharacterMetadata
-getCharMetadata = undefined
+getCharMetadata :: Maybe StepMatrix -> PhyloSequence -> V.Vector CharacterMetadata
+getCharMetadata mayMtx seq = 
+    V.replicate len $ CharacterMetadata "" aligned cType alph False mayTCM
+    where 
+        aligned     = alignedSeq seq
+        cType       = read (charDataType form) :: CharDataType
+        alph        = if areTokens form
+                      then syms
+                      else g $ headMay syms
+        syms        = f $ symbols form
+        f (Right x) = x
+        f _         = [""] -- Shouldn't be possible, but leaving it in for completeness.
+        g (Just s)  = foldr (\x acc -> [x] : acc) [] s
+        g Nothing   = [""]
+        form        = head $ format seq
+        len         = numChars . head $ charDims seq
+        mayTCM      = matrixData <$> mayMtx
 
 getSeqTaxonCountErrors :: V.Vector String -> PhyloSequence -> [Maybe String]
 getSeqTaxonCountErrors taxaLst seq' = extraTaxonErrors ++ wrongCountErrors
     where
-        seqTaxaMap = getTaxaFromMatrix seq'
-        listedTaxaMap = M.fromList $ zip (V.toList taxaLst) ([1..] :: [Int])
+        seqTaxaMap       = getTaxaFromMatrix seq'
+        listedTaxaMap    = M.fromList $ zip (V.toList taxaLst) ([1..] :: [Int])
         extraTaxonErrors = M.foldrWithKey
                                 (\key _ acc -> (if M.member key listedTaxaMap
                                                 then Nothing
@@ -166,7 +213,7 @@ getSeqTaxonCountErrors taxaLst seq' = extraTaxonErrors ++ wrongCountErrors
                                                                    then Just ("\"" ++ key ++ "\" appears the wrong number of times in a sequence block matrix.\n")
                                                                    else Nothing) : acc
                                           ) [] seqTaxaMap
-        median = findMedian $ M.elems seqTaxaMap
+        median           = findMedian $ M.elems seqTaxaMap
 
 findMedian :: Ord a => [a] -> a
 findMedian xs = sort xs !! quot (length xs) 2
@@ -181,7 +228,7 @@ getTaxaFromMatrix seq' = {-trace (show taxa) $ -}
         then M.empty
         else taxaMap
     where
-        (noLabels, _interleaved, _tkns, _cont, _matchChar') = getFormatInfo seq'
+        (_, noLabels, _interleaved, _tkns, _cont, _matchChar') = getFormatInfo seq'
         mtx     = head $ seqMatrix seq' -- I've already checked to make sure there's a matrix
         taxaMap = foldr (\x acc -> M.insert x (succ (M.findWithDefault 0 x acc)) acc) M.empty taxa
         taxa    = foldr (\x acc -> takeWhile (`notElem` " \t") x : acc) [] mtx
@@ -190,24 +237,34 @@ getTaxaFromMatrix seq' = {-trace (show taxa) $ -}
 getSymbols :: PhyloSequence -> Either String [String]
 getSymbols = maybe (Right [""]) symbols . headMay . format
 
-splitSequence :: Bool -> Bool -> String -> V.Vector [String]
-splitSequence isTokens isContinuous seq' = V.fromList $
-    if isTokens || isContinuous
-        then findAmbiguousTokens (words seq') [] False
-        else findAmbiguousNoTokens (strip seq') [] False
+splitSequence :: Bool -> Bool -> Bool -> String -> Sequence
+splitSequence isTokens isContinuous isAligned seq' = finalList
+    where 
+        finalList = 
+            if isAligned 
+            then V.fromList $ Just <$> V.singleton <$> chars -- aligned, so each item in vector of ambiguity groups is single char
+            else V.singleton $ Just $ V.fromList chars -- not aligned, so whole vector of ambiguity groups is single char
+        chars = 
+            if isTokens || isContinuous
+            then findAmbiguousTokens (words seq') [] False
+            else findAmbiguousNoTokens (strip seq') [] False
 
+-- | findAmbiguousNoTokens takes a sequence as a String. If it encounters a '{' or '(', it translates
+-- the characters inside the delimiters into a list of Strings. It then outputs the original input
+-- with all ambiguous sequences replaced by these lists
 -- Parens and curly braces are treated the same
-findAmbiguousNoTokens :: String -> [String] -> Bool -> [[String]]
+findAmbiguousNoTokens :: String -> AmbiguityGroup -> Bool -> [AmbiguityGroup]
 findAmbiguousNoTokens [] _ _ = []
-findAmbiguousNoTokens (x:xs) acc amb =
+findAmbiguousNoTokens (x:xs) acc isAmb =
               case x of
+                ' ' -> findAmbiguousNoTokens xs acc isAmb
                 '{' -> findAmbiguousNoTokens xs [] True
                 '}' -> acc : findAmbiguousNoTokens xs [] False
                 '(' -> findAmbiguousNoTokens xs [] True
                 ')' -> acc : findAmbiguousNoTokens xs [] False
-                _   -> if amb
-                           then findAmbiguousNoTokens xs (acc ++ [[x]]) amb
-                           else [[x]] : findAmbiguousNoTokens xs [] amb
+                _   -> if isAmb
+                           then findAmbiguousNoTokens xs (acc ++ [[x]]) isAmb
+                           else [[x]] : findAmbiguousNoTokens xs [] isAmb
 
 -- Maybe this and dimsMissing could be conflated.
 seqMatrixMissing :: PhyloSequence -> Maybe String
@@ -217,8 +274,8 @@ seqMatrixMissing phyloSeq
   | otherwise       = Nothing
   where
     numMatrices = length $ seqMatrix phyloSeq
-    tooFew      = Just $ name phyloSeq ++ " block has no sequence matrix.\n"
-    tooMany     = Just $ name phyloSeq ++ " block has more than one sequence matrix.\n"
+    tooFew      = Just $ blockType phyloSeq ++ " block has no sequence matrix.\n"
+    tooMany     = Just $ blockType phyloSeq ++ " block has more than one sequence matrix.\n"
 
 dimsMissing :: PhyloSequence -> Maybe String
 dimsMissing phyloSeq
@@ -227,10 +284,14 @@ dimsMissing phyloSeq
   | otherwise   = Nothing
   where
     numDims = length $ charDims phyloSeq
-    tooFew  = Just $ name phyloSeq ++ " block has no dimensions.\n"
-    tooMany = Just $ name phyloSeq ++ " block has more than one dimension.\n"
+    tooFew  = Just $ blockType phyloSeq ++ " block has no dimensions.\n"
+    tooMany = Just $ blockType phyloSeq ++ " block has more than one dimension.\n"
 
-findAmbiguousTokens :: [String] -> [String] -> Bool -> [[String]]
+-- | findAmbiguousTokens is similar to findAmbiguousNoTokens. It takes a sequence as a String. 
+-- If it encounters a '{' or '(', it translates 
+-- the characters inside the delimiters into a list of Strings. It then outputs the original input
+-- with all ambiguous sequences replaced by these lists
+findAmbiguousTokens :: [String] -> AmbiguityGroup -> Bool -> [AmbiguityGroup]
 findAmbiguousTokens [] _ _ = []
 findAmbiguousTokens (x:xs) acc amb
   | xHead == "{" || xHead == "(" = findAmbiguousTokens xs [xTail] True
@@ -266,7 +327,7 @@ findInterleaveError taxaLst seq'
             noLabels    = formatted && unlabeled  (head $ format seq')
             taxaCount   = length taxaLst
             lineCount   = length . head $ seqMatrix seq'
-            which       = name seq'
+            which       = blockType seq'
 
 -- TODO: Review this function's functionality. Seems like it can be improved!
 getBlock :: String -> [PhyloSequence] -> [PhyloSequence]
@@ -277,40 +338,42 @@ getBlock which phyloSeqs = f (which == "aligned") phyloSeqs
                 in maybeToList block
 
 
-getFormatInfo :: PhyloSequence -> (Bool, Bool, Bool, Bool, String)
+getFormatInfo :: PhyloSequence -> (Bool, Bool, Bool, Bool, Bool, String)
 getFormatInfo phyloSeq = case headMay $ format phyloSeq of
-                       Nothing -> (False, False, False, False, "")
-                       Just x  -> ( unlabeled x
+                       Nothing -> (False, False, False, False, False, "")
+                       Just x  -> ( alignedSeq phyloSeq 
+                                  , unlabeled x
                                   , interleave x
                                   , areTokens x
                                   , map toLower (charDataType x) == "continuous"
                                   , matchChar x
                                   )
 
-getSeqFromMatrix :: PhyloSequence -> V.Vector String -> TaxonSequenceMap
+getSeqFromMatrix :: String -> PhyloSequence -> V.Vector String -> TaxonSequenceMap
 -- getSeqFromMatrix [] _ = V.empty
-getSeqFromMatrix seq taxaLst =
-    M.map (splitSequence tkns cont) matchCharsReplaced
+getSeqFromMatrix fileName seq taxaLst =
+    M.map (splitSequence tkns cont aligned) matchCharsReplaced
     where
-        (noLabels, interleaved, tkns, cont, matchChar') = getFormatInfo $ seq
+        (aligned, noLabels, interleaved, tkns, cont, matchChar') = getFormatInfo $ seq
         taxaCount  = length taxaLst
-        taxaMap    = M.fromList . zip taxaLst $ repeat ""
+        taxaMap    = M.fromList . zip (V.toList taxaLst) $ repeat ""
         mtx        = head $ seqMatrix $ seq -- I've already checked to make sure there's a matrix
         entireSeqs = if noLabels    -- this will be a list of tuples (taxon, concatted seq)
                      then if interleaved
-                          then concatMap (zip taxaLst) (chunksOf taxaCount mtx)
-                          else zip taxaLst mtx
+                          then concatMap (zip $ V.toList taxaLst) (chunksOf taxaCount mtx)
+                          else zip (V.toList taxaLst) mtx
                      else getTaxonAndSeqFromMatrixRow <$> mtx
         entireDeinterleavedSeqs = if interleaved
                                   then deInterleave taxaMap entireSeqs
                                   else M.fromList entireSeqs
         firstSeq = fromJust $ M.lookup (if noLabels
-                                        then head taxaLst
+                                        then taxaLst V.! 0
                                         else takeWhile (`notElem` " \t") $ head mtx)
                             entireDeinterleavedSeqs
         matchCharsReplaced = if matchChar' /= ""
                              then M.map (replaceMatches (head matchChar') firstSeq) entireDeinterleavedSeqs
                              else entireDeinterleavedSeqs
+        --vectorized = V.fromList 
         -- equatesReplaced = if eqChar /= ""
         --                    then M.map (replaceEquates (head eqChar)) matchCharsReplaced
 
@@ -355,13 +418,13 @@ chunksOf n xs = f : chunksOf n s
 
 areNewTaxa :: PhyloSequence -> Bool
 areNewTaxa phyloSeq
-    | name phyloSeq == "data" = True
-    | otherwise          =
-      case charDims phyloSeq of
-        []  -> False
-        xs  -> case seqTaxaLabels phyloSeq of
-                [] -> False
-                _  -> newTaxa $ head xs
+    | blockType phyloSeq == "data" = True
+    | otherwise =
+          case charDims phyloSeq of
+            []  -> False
+            xs  -> case seqTaxaLabels phyloSeq of
+                    [] -> False
+                    _  -> newTaxa $ head xs
 
 --checkDims :: Phylosequence -> Maybe String
 --checkDims seq = let dim = numchars $ head (charDims seq)
@@ -381,7 +444,7 @@ checkForNewTaxa phyloSeq = case charDims phyloSeq of
                                         else Nothing
                                else Nothing
   where
-    which = name phyloSeq
+    which = blockType phyloSeq
 
 getTaxaFromSeq :: PhyloSequence -> [String]
 getTaxaFromSeq phyloSeq 
@@ -392,6 +455,57 @@ getTaxaFromSeq phyloSeq
     where
         keys = M.keys $ getTaxaFromMatrix phyloSeq
 
+-- | createElimTups takes the output of sortElimsStr (so a list of strings) and returns a list of tuples of form (Bool, Int)
+-- This will be used to determine whether a given character in an aligned sequence is to be ignored. However, because 
+-- the elim clause in a Nexus file is of the form x,y-z,a,... it's possible to be within a range. So if a single number is given
+-- The tuple will be (True,that number :: Int), otherwise, it will be (False, ending number of range :: Int)
+createElimTups :: [String] -> [(Bool,Int)]
+createElimTups = foldr (\x acc -> f x ++ acc) []
+    where 
+        f inStr = if secondNumStr /= ""
+                      then (True,firstNum) : (False,secondNum) : []
+                      else [(True,firstNum)]
+            where
+                (firstNumStr,secondNumStr) = break (== '-') inStr
+                firstNum = {- trace ("first: " ++ firstNumStr) $ -}read firstNumStr :: Int
+                secondNum = {- trace ("second: " ++ secondNumStr) $ -}read (tail secondNumStr) :: Int
+
+-- | getNext takes as input an index of a character in an aligned sequence, as well as the current index in a list of tuples 
+-- as described in the output of createElimTups. It then determines whether the input character index should be ignored or not
+-- and returns that determination as a Bool (ignored---or eliminated, in Nexus terminology---is True), 
+-- along with an Int giving the updated index to check at when getNext is next run.
+-- This could probably be done more nicely with a state monad, but I don't know, yet, how to use those.
+-- Note that sequences are indexed starting at 1, but Haskell Vectors are indexed starting at 0.
+getNext :: Int -> Int -> V.Vector (Bool,Int) -> (Bool, Int)
+getNext seqIdx elimsIdx elims
+    | elimsIdx >= V.length elims           = (False, elimsIdx) -- there are no more things to eliminate
+    | seqIdx == (snd $ elims V.! elimsIdx) = (True, succ elimsIdx) -- The given input is specifically listed, and should be eliminated
+    | seqIdx >  (snd $ elims V.! elimsIdx) = (False, succ elimsIdx) -- The sequence index is > the current index, so we need to move forward in elims
+    | otherwise                            = if fst $ elims V.! elimsIdx -- The given input is not specifically listed, 
+                                                                         -- so check to see if we're in a range (fst tup == False)
+                                                                         -- Also, the seqIdx must be lower than the elimsIdx
+                                                 then (False, elimsIdx) -- we're not in a range, and the seq idx is not spec'ed
+                                                 else (True, elimsIdx)  -- we are in a range, so seqIdx should be eliminated, but we don't want to move to the next elim
+
+-- | sortElimsStr takes a String of digits, commas and hyphens and returns a list of strings, broken on the commas
+-- and sorted by the value of the Int representation of any numbers before a hyphen. The input and output of this fn are
+-- described in the Haddock comments for createElimTups
+sortElimsStr :: String -> [String]
+sortElimsStr start = 
+    result
+        where 
+            unsortedList = splitOn "," start
+            result       = sortBy (comparing pert) unsortedList
+            pert x       = read (dropWhile isSpace $ takeWhile (/= '-') x) :: Int
+
+-- | setIgnores iterates from x to y (ints), determining at each index whether that index should be "ignored". If so, it
+-- flags True, otherwise it flags false. It accumulates all of these Booleans into a list
+setIgnores :: Int -> Int -> V.Vector (Bool,Int) -> Int -> [Bool] -> [Bool]
+setIgnores seqIdx curElimIdx elims length acc
+    | seqIdx >= length = reverse acc
+    | otherwise        = setIgnores (succ seqIdx) next elims length (val : acc)
+        where
+            (val, next) = getNext seqIdx curElimIdx elims
 
 
 ----------------------------------------------

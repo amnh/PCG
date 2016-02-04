@@ -17,6 +17,7 @@ module File.Format.Nexus.Data where
 import qualified Data.Map.Lazy as M
 import qualified Data.Vector as V
 import           File.Format.Newick
+import           File.Format.TransitionCostMatrix
 import           File.Format.TransitionCostMatrix.Parser hiding (symbol)
 
 
@@ -25,7 +26,9 @@ import           File.Format.TransitionCostMatrix.Parser hiding (symbol)
 ----------------- Types for sending data out -----------------
 --------------------------------------------------------------
 
-type Sequences = [([TaxonIdentifier], TaxonSequenceMap, CharacterMetadata)]
+type Sequences = ( TaxonSequenceMap
+                 , V.Vector CharacterMetadata
+                 )
 
 type AlphabetSymbol = String
 
@@ -35,24 +38,29 @@ type TaxonIdentifier = String
 
 data CharacterMetadata 
    = CharacterMetadata
-   { isAligned :: Bool
+   { name      :: String
+   , isAligned :: Bool
    , charType  :: CharDataType
-   , alphabet  :: [AlphabetSymbol]
-   , seqLength    :: Maybe Int
-   , ignored   :: Bool  -- This is a problem, as input may interleave ignored and non-ignored chars, so given seqs will need to bbroken up
-                       -- into separate seqs during validation (also true for TNT?).
-                       -- That means that order of items in Sequences is important for IA output, I think. Maybe check with Ward?
+   , alphabet  :: AmbiguityGroup
+   , ignored   :: Bool
+   , costM     :: Maybe TCM
    } deriving (Show)
 
-type Sequence = V.Vector AmbiguityGroup
+-- Character is Maybe, because some chars might not be present for some taxa
+-- if unaligned, multiple characters are treated as a single "character", so V.length >= 1
+-- if aligned, each character is a "character", so V.length == 1
+type Character = Maybe (V.Vector AmbiguityGroup)
+
+-- This is a Vector, because Character may have length /= 1 
+-- (see explanation at Character)
+type Sequence = V.Vector Character
 
 type TaxonSequenceMap = M.Map TaxonIdentifier Sequence
 
---type Sequences = [([TaxonIdentifier], TaxonSequenceMap, CharacterMetadata)]
 
----------------------------------------------------------------
---------------- Types for parsing and validation --------------
----------------------------------------------------------------
+--------------------------------------------------------------
+-------------- Types for parsing and validation --------------
+--------------------------------------------------------------
 
 -- | AssumptionBlock is a spec'd block in Nexus format. We're only interested in a single entity in this block
 -- for now, the step matrix, but this datatype is included for later extensibility
@@ -94,6 +102,8 @@ data CharStateFormat
    } deriving (Show)
 
 -- | CharacterFormat 
+-- Note that symbols may or may not be space-delimited. I work under the assumption that it is iff
+-- Tokens is spec'd, as well.
 data CharacterFormat
    = CharacterFormat
    { charDataType :: String
@@ -113,7 +123,14 @@ data CharacterFormat
 -- | The types of data which can be present in a Nexus file.
 -- This type might get scrapped and another type imported from
 -- different module, or preserved but moved to another module.
-data CharDataType = Standard | DNA | RNA | Nucleotide | Protein | Continuous deriving (Read, Show)
+data CharDataType 
+    = Standard 
+    | DNA 
+    | RNA 
+    | Nucleotide 
+    | Protein 
+    | Continuous 
+    deriving (Read, Show)
 
 -- | DimensionsFormat is format of dimensions field in characters and unaligned nexus blocks.
 -- It could also actually be used for the dimensions in the taxa block, with newTaxa = False
@@ -131,9 +148,9 @@ data IgnBlock = IgnBlock {ignoredName :: String} deriving (Show)
 data Nexus
    = Nexus
    -- TODO: taxa was commented out before first push to Grace
-   { {- taxa :: [String]
-   ,-} characters :: M.Map String (V.Vector [String])
-   , stepMatrices :: AssumptionBlock
+   { {- taxa :: [TaxonIdentifier]
+   ,-} sequences :: Sequences
+   {- , stepMatrices :: AssumptionBlock -}
    } deriving (Show)
 
 -- | Types blocks in the Nexus file and their accompanying data.
@@ -145,7 +162,14 @@ data NexusBlock
    | AssumptionsBlock AssumptionBlock
    deriving (Show)
 
-data NexusParseResult = NexusParseResult [PhyloSequence] [TaxaSpecification] [TreeBlock] [AssumptionBlock] [IgnBlock] deriving (Show)
+data NexusParseResult 
+   = NexusParseResult 
+   { pSeqs   :: [PhyloSequence]
+   , spec    :: [TaxaSpecification]
+   , treeB   :: [TreeBlock]
+   , assumpB :: [AssumptionBlock]
+   , ign     :: [IgnBlock]
+   } deriving (Show)
 
 -- | Phylosequence is general sequence type, to be used for both characters and data blocks (aligned) and unaligned blocks.
 data PhyloSequence
@@ -156,7 +180,8 @@ data PhyloSequence
    , charDims      :: [DimensionsFormat] -- holds length of sequence, as well as info on new taxa
    , elims         :: [String]
    , seqTaxaLabels :: [[String]]
-   , name          :: String -- characters, taxa or data
+   , charLabels    :: [[String]]
+   , blockType     :: String -- characters, taxa or data
    } deriving (Show)
 
 -- | SeqSubBlock is list of fields available in sequence blocks. It's set up as an enumeration
@@ -169,6 +194,7 @@ data SeqSubBlock
    -- | Items           ItemType
    | Eliminate       String
    | CharStateLabels [CharStateFormat]
+   | CharLabels      [String]
    | IgnSSB          String
    | Taxa            [String]
    deriving (Show)
@@ -209,3 +235,86 @@ data SequenceBlock
    , elimList :: String
    , seqs     :: [V.Vector (String, [String])]
    } deriving (Show)
+
+standardAlphabet :: [String]
+standardAlphabet = ["0","1"]
+
+dna :: M.Map String [String]
+dna = M.fromList [ ("A",["A"])
+                 , ("C",["C"])
+                 , ("G",["G"])
+                 , ("T",["T"])
+                 , ("R",["A","G"])
+                 , ("Y",["C","T"])
+                 , ("M",["A","C"])
+                 , ("K",["G","T"])
+                 , ("S",["C","G"])
+                 , ("W",["A","T"])
+                 , ("H",["A","C","T"])
+                 , ("B",["C","G","T"])
+                 , ("V",["A","C","G"])
+                 , ("D",["A","G","T"])
+                 , ("N",["A","C","G","T"])
+                 , ("X",["A","C","G","T"])
+                 ]
+
+
+dnaAlphabet :: [String]
+dnaAlphabet = M.keys dna
+
+rna :: M.Map String [String]
+rna = M.fromList [ ("A",["A"])
+                 , ("C",["C"])
+                 , ("G",["G"])
+                 , ("U",["U"])
+                 , ("R",["A","G"])
+                 , ("Y",["C","U"])
+                 , ("M",["A","C"])
+                 , ("K",["G","U"])
+                 , ("S",["C","G"])
+                 , ("W",["A","U"])
+                 , ("H",["A","C","U"])
+                 , ("B",["C","G","U"])
+                 , ("V",["A","C","G"])
+                 , ("D",["A","G","U"])
+                 , ("N",["A","C","G","U"])
+                 , ("X",["A","C","G","U"])
+                 ]
+
+rnaAlphabet :: [String]
+rnaAlphabet = M.keys rna
+
+nucleotide :: M.Map String [String]
+nucleotide = M.insert "U" ["T"] dna 
+
+nucleotideAlphabet :: [String]
+nucleotideAlphabet = "U" : dnaAlphabet
+
+protein :: M.Map String [String]
+protein = M.fromList [ ("A",["A"])
+                     , ("C",["C"])
+                     , ("D",["D"])
+                     , ("E",["E"])
+                     , ("F",["F"])
+                     , ("G",["G"])
+                     , ("H",["H"])
+                     , ("I",["I"])
+                     , ("K",["K"])
+                     , ("L",["L"])
+                     , ("M",["M"])
+                     , ("N",["N"])
+                     , ("P",["P"])
+                     , ("Q",["Q"])
+                     , ("R",["R"])
+                     , ("S",["S"])
+                     , ("T",["T"])
+                     , ("V",["V"])
+                     , ("W",["W"])
+                     , ("Y",["Y"])
+                     , ("*",["*"])
+                     , ("B",["D","N"])
+                     , ("Z",["E","Q"])
+                     ]
+
+proteinAlphabet :: [String]
+proteinAlphabet = M.keys protein
