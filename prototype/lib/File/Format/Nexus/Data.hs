@@ -32,7 +32,7 @@ type Sequences = ( TaxonSequenceMap
 
 type AlphabetSymbol = String
 
-type AmbiguityGroup = Maybe [AlphabetSymbol]
+type AmbiguityGroup = [AlphabetSymbol]
 
 type TaxonIdentifier = String
 
@@ -41,20 +41,26 @@ data CharacterMetadata
    { name      :: String
    , isAligned :: Bool
    , charType  :: CharDataType
-   , alphabet  :: [AlphabetSymbol]
-   , seqLength :: Maybe Int
+   , alphabet  :: AmbiguityGroup
    , ignored   :: Bool
    , costM     :: Maybe TCM
    } deriving (Show)
 
-type Sequence = V.Vector AmbiguityGroup
+-- Character is Maybe, because some chars might not be present for some taxa
+-- if unaligned, multiple characters are treated as a single "character", so V.length >= 1
+-- if aligned, each character is a "character", so V.length == 1
+type Character = Maybe (V.Vector AmbiguityGroup)
+
+-- This is a Vector, because Character may have length /= 1 
+-- (see explanation at Character)
+type Sequence = V.Vector Character
 
 type TaxonSequenceMap = M.Map TaxonIdentifier Sequence
 
 
----------------------------------------------------------------
---------------- Types for parsing and validation --------------
----------------------------------------------------------------
+--------------------------------------------------------------
+-------------- Types for parsing and validation --------------
+--------------------------------------------------------------
 
 -- | AssumptionBlock is a spec'd block in Nexus format. We're only interested in a single entity in this block
 -- for now, the step matrix, but this datatype is included for later extensibility
@@ -96,6 +102,8 @@ data CharStateFormat
    } deriving (Show)
 
 -- | CharacterFormat 
+-- Note that symbols may or may not be space-delimited. I work under the assumption that it is iff
+-- Tokens is spec'd, as well.
 data CharacterFormat
    = CharacterFormat
    { charDataType :: String

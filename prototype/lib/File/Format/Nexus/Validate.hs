@@ -25,6 +25,7 @@ import           Data.Maybe             (fromJust, catMaybes, maybeToList)
 import           Data.Ord               (comparing)
 import qualified Data.Vector as V
 import           File.Format.Nexus.Data
+import           File.Format.TransitionCostMatrix
 import           Safe
 import           Text.Megaparsec.Prim   (MonadParsec)
 import           Text.Megaparsec.Custom
@@ -70,12 +71,15 @@ import           Text.Megaparsec.Custom
 -- 17. "nolabels" but there is a taxa block and newtaxa in seq block,   error         7,8              dep          not done
 --     so order of sequences is unclear  
 -- 18. Missing semicolons                                               error         -              indep         caught in parse
--- 19. Equate or symbols strings missing their closing quotes           error         3                dep         caught in parse
+-- 19. Equate or symbols strings missing their closing quotes           error         3                dep         caught in parse (but ignored?)
 -- 20. Match character can't be a space                                 error         3                dep          not done
 -- 21. Space in taxon name                                              error         5,6              dep              done
 --     ---for aligned, should be caught by 16
 --     ---for unaligned, caught by combo of 12 & 22
 -- 22. In unaligned, interleaved block, a taxon is repeated             error         3                dep              done
+-- TODO: check tcm for size
+-- TODO: check for chars that aren't in alphabet
+-- TODO: fail on wrong datatype
 
 validateNexusParseResult :: (Show s, MonadParsec s m Char) => String -> NexusParseResult -> m Nexus
 validateNexusParseResult fileName (NexusParseResult sequences taxas treeSet assumptions _ignored) 
@@ -85,19 +89,19 @@ validateNexusParseResult fileName (NexusParseResult sequences taxas treeSet assu
   | otherwise                                    = pure $ Nexus {-taxaLst-} seqs 
   where
         listOfSeqs = map (\seq -> ( getSeqFromMatrix fileName seq taxaLst
-                            , getCharMetadata seq costMatrix
-                            )) sequences
+                                  , getCharMetadata costMatrix seq
+                                  )) sequences
         (seqs,_) = foldSeqs listOfSeqs
         --TODO: dependentErrors & independentErrors becomes :: String error, String warning => [Maybe (Either error warning)]
         -- then partitionEithers . catMaybes, etc., etc.
-        costMatrix = headMay $ tcm $ head assumptions
+        costMatrix = headMay . tcm $ head assumptions
         dependentErrors = catMaybes $ incorrectTaxaCount : (missingCloseQuotes ++ seqTaxaCountErrors ++ interleaveErrors ++ seqTaxonCountErrors ++ incorrectCharCount)
         equates = foldr (\x acc -> getEquates x : acc) [] sequences
         independentErrors = catMaybes $ noTaxaError : multipleTaxaBlocks : seqMatrixDimsErrors -- sequenceBlockErrors
         
 
-        incorrectCharCount  = checkSeqLength (getBlock "aligned" sequences) seqs
-        incorrectTaxaCount  = f taxas >>= \(TaxaSpecification num taxons) -> 
+        incorrectCharCount = checkSeqLength (getBlock "aligned" sequences) seqs
+        incorrectTaxaCount = f taxas >>= \(TaxaSpecification num taxons) -> 
             if num /= length taxons
                 then Just $ "Incorrect number of taxa in taxa block.\n" {- ++ (show num) ++ " " ++ (show taxons) -} -- half of error 16
                 else Nothing
@@ -169,21 +173,36 @@ updateSeqInMap curLength inputSeq curSeq = newSeq
 -- | checkSeqLength takes in the list of sequences and
 checkSeqLength :: [PhyloSequence] -> Sequences -> [Maybe String]
 checkSeqLength [] _            = [Nothing]
-checkSeqLength seq' (seqMap,_) =
+checkSeqLength seq' (seqMap,_) = 
     M.foldrWithKey (\key val acc -> (if length val == len
                                      then Nothing
                                      else Just (key ++ "'s sequence is the wrong length in an aligned block. It should be " ++ show len ++ ", but is " ++ show (length val) {- ++ ":\n" ++ show val -} ++ "\n")) : acc) [] seqMap
     where
         len = numChars . head . charDims $ head seq'
 
-getCharMetadata :: PhyloSequence -> Maybe StepMatrix -> V.Vector CharacterMetadata
-getCharMetadata = undefined
+getCharMetadata :: Maybe StepMatrix -> PhyloSequence -> V.Vector CharacterMetadata
+getCharMetadata mayMtx seq = 
+    V.replicate len $ CharacterMetadata "" aligned cType alph False mayTCM
+    where 
+        aligned     = alignedSeq seq
+        cType       = read (charDataType form) :: CharDataType
+        alph        = if areTokens form
+                      then syms
+                      else g $ headMay syms
+        syms        = f $ symbols form
+        f (Right x) = x
+        f _         = [""] -- Shouldn't be possible, but leaving it in for completeness.
+        g (Just s)  = foldr (\x acc -> [x] : acc) [] s
+        g Nothing   = [""]
+        form        = head $ format seq
+        len         = numChars . head $ charDims seq
+        mayTCM      = matrixData <$> mayMtx
 
 getSeqTaxonCountErrors :: V.Vector String -> PhyloSequence -> [Maybe String]
 getSeqTaxonCountErrors taxaLst seq' = extraTaxonErrors ++ wrongCountErrors
     where
-        seqTaxaMap = getTaxaFromMatrix seq'
-        listedTaxaMap = M.fromList $ zip (V.toList taxaLst) ([1..] :: [Int])
+        seqTaxaMap       = getTaxaFromMatrix seq'
+        listedTaxaMap    = M.fromList $ zip (V.toList taxaLst) ([1..] :: [Int])
         extraTaxonErrors = M.foldrWithKey
                                 (\key _ acc -> (if M.member key listedTaxaMap
                                                 then Nothing
@@ -194,7 +213,7 @@ getSeqTaxonCountErrors taxaLst seq' = extraTaxonErrors ++ wrongCountErrors
                                                                    then Just ("\"" ++ key ++ "\" appears the wrong number of times in a sequence block matrix.\n")
                                                                    else Nothing) : acc
                                           ) [] seqTaxaMap
-        median = findMedian $ M.elems seqTaxaMap
+        median           = findMedian $ M.elems seqTaxaMap
 
 findMedian :: Ord a => [a] -> a
 findMedian xs = sort xs !! quot (length xs) 2
@@ -209,7 +228,7 @@ getTaxaFromMatrix seq' = {-trace (show taxa) $ -}
         then M.empty
         else taxaMap
     where
-        (noLabels, _interleaved, _tkns, _cont, _matchChar') = getFormatInfo seq'
+        (_, noLabels, _interleaved, _tkns, _cont, _matchChar') = getFormatInfo seq'
         mtx     = head $ seqMatrix seq' -- I've already checked to make sure there's a matrix
         taxaMap = foldr (\x acc -> M.insert x (succ (M.findWithDefault 0 x acc)) acc) M.empty taxa
         taxa    = foldr (\x acc -> takeWhile (`notElem` " \t") x : acc) [] mtx
@@ -218,11 +237,17 @@ getTaxaFromMatrix seq' = {-trace (show taxa) $ -}
 getSymbols :: PhyloSequence -> Either String [String]
 getSymbols = maybe (Right [""]) symbols . headMay . format
 
-splitSequence :: Bool -> Bool -> String -> Sequence
-splitSequence isTokens isContinuous seq' = V.fromList $
-    if isTokens || isContinuous
-        then findAmbiguousTokens (words seq') (Just []) False
-        else findAmbiguousNoTokens (strip seq') (Just []) False
+splitSequence :: Bool -> Bool -> Bool -> String -> Sequence
+splitSequence isTokens isContinuous isAligned seq' = finalList
+    where 
+        finalList = 
+            if isAligned 
+            then V.fromList $ Just <$> V.singleton <$> chars -- aligned, so each item in vector of ambiguity groups is single char
+            else V.singleton $ Just $ V.fromList chars -- not aligned, so whole vector of ambiguity groups is single char
+        chars = 
+            if isTokens || isContinuous
+            then findAmbiguousTokens (words seq') [] False
+            else findAmbiguousNoTokens (strip seq') [] False
 
 -- | findAmbiguousNoTokens takes a sequence as a String. If it encounters a '{' or '(', it translates
 -- the characters inside the delimiters into a list of Strings. It then outputs the original input
@@ -230,15 +255,16 @@ splitSequence isTokens isContinuous seq' = V.fromList $
 -- Parens and curly braces are treated the same
 findAmbiguousNoTokens :: String -> AmbiguityGroup -> Bool -> [AmbiguityGroup]
 findAmbiguousNoTokens [] _ _ = []
-findAmbiguousNoTokens (x:xs) acc amb =
+findAmbiguousNoTokens (x:xs) acc isAmb =
               case x of
-                '{' -> findAmbiguousNoTokens xs (Just []) True
-                '}' -> acc : findAmbiguousNoTokens xs (Just []) False
-                '(' -> findAmbiguousNoTokens xs (Just []) True
-                ')' -> acc : findAmbiguousNoTokens xs (Just []) False
-                _   -> if amb
-                           then findAmbiguousNoTokens xs ((++ [[x]]) <$> acc) amb
-                           else Just [[x]] : findAmbiguousNoTokens xs (Just []) amb
+                ' ' -> findAmbiguousNoTokens xs acc isAmb
+                '{' -> findAmbiguousNoTokens xs [] True
+                '}' -> acc : findAmbiguousNoTokens xs [] False
+                '(' -> findAmbiguousNoTokens xs [] True
+                ')' -> acc : findAmbiguousNoTokens xs [] False
+                _   -> if isAmb
+                           then findAmbiguousNoTokens xs (acc ++ [[x]]) isAmb
+                           else [[x]] : findAmbiguousNoTokens xs [] isAmb
 
 -- Maybe this and dimsMissing could be conflated.
 seqMatrixMissing :: PhyloSequence -> Maybe String
@@ -268,10 +294,10 @@ dimsMissing phyloSeq
 findAmbiguousTokens :: [String] -> AmbiguityGroup -> Bool -> [AmbiguityGroup]
 findAmbiguousTokens [] _ _ = []
 findAmbiguousTokens (x:xs) acc amb
-  | xHead == "{" || xHead == "(" = findAmbiguousTokens xs (Just [xTail]) True
-  | xLast == "}" || xLast == ")" = ((++ [takeWhile (\ y -> y /= '}' && y /= ')') x]) <$> acc) : findAmbiguousTokens xs (Just []) False
-  | amb                          = findAmbiguousTokens xs ((++ [x]) <$> acc) amb
-  | otherwise                    = (Just [x]) : findAmbiguousTokens xs (Just []) amb
+  | xHead == "{" || xHead == "(" = findAmbiguousTokens xs [xTail] True
+  | xLast == "}" || xLast == ")" = (acc ++ [takeWhile (\ y -> y /= '}' && y /= ')') x]) : findAmbiguousTokens xs [] False
+  | amb                          = findAmbiguousTokens xs (acc ++ [x]) amb
+  | otherwise                    = [x] : findAmbiguousTokens xs [] amb
   where
     xHead = safeHead x
     xTail = safeTail x
@@ -312,10 +338,11 @@ getBlock which phyloSeqs = f (which == "aligned") phyloSeqs
                 in maybeToList block
 
 
-getFormatInfo :: PhyloSequence -> (Bool, Bool, Bool, Bool, String)
+getFormatInfo :: PhyloSequence -> (Bool, Bool, Bool, Bool, Bool, String)
 getFormatInfo phyloSeq = case headMay $ format phyloSeq of
-                       Nothing -> (False, False, False, False, "")
-                       Just x  -> ( unlabeled x
+                       Nothing -> (False, False, False, False, False, "")
+                       Just x  -> ( alignedSeq phyloSeq 
+                                  , unlabeled x
                                   , interleave x
                                   , areTokens x
                                   , map toLower (charDataType x) == "continuous"
@@ -325,9 +352,9 @@ getFormatInfo phyloSeq = case headMay $ format phyloSeq of
 getSeqFromMatrix :: String -> PhyloSequence -> V.Vector String -> TaxonSequenceMap
 -- getSeqFromMatrix [] _ = V.empty
 getSeqFromMatrix fileName seq taxaLst =
-    M.map (splitSequence tkns cont) matchCharsReplaced
+    M.map (splitSequence tkns cont aligned) matchCharsReplaced
     where
-        (noLabels, interleaved, tkns, cont, matchChar') = getFormatInfo $ seq
+        (aligned, noLabels, interleaved, tkns, cont, matchChar') = getFormatInfo $ seq
         taxaCount  = length taxaLst
         taxaMap    = M.fromList . zip (V.toList taxaLst) $ repeat ""
         mtx        = head $ seqMatrix $ seq -- I've already checked to make sure there's a matrix
