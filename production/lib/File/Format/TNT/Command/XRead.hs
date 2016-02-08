@@ -27,15 +27,15 @@ import           Text.Megaparsec.Prim     (MonadParsec)
 
 -- | Parses an XREAD command. Correctly validates for taxa count
 -- and character sequence length. Produces one or more taxa sequences.
-xreadCommand :: MonadParsec s m Char => m (NonEmpty TaxonInfo)
+xreadCommand :: MonadParsec s m Char => m XRead
 xreadCommand = xreadValidation =<< xreadDefinition
   where
     xreadDefinition :: MonadParsec s m Char => m (Int, Int, NonEmpty TaxonInfo)
     xreadDefinition = uncurry (,,) <$> xreadPreamble <*> xreadSequences <* symbol (char ';')
 
-    xreadValidation :: MonadParsec s m Char => (Int, Int, NonEmpty TaxonInfo) -> m (NonEmpty TaxonInfo)
+    xreadValidation :: MonadParsec s m Char => (Int, Int, NonEmpty TaxonInfo) -> m XRead
     xreadValidation (charCount, taxaCount, taxaSeqs)
-      | null errors = pure taxaSeqs
+      | null errors = pure $ XRead charCount taxaCount taxaSeqs
       | otherwise   = fails errors
       where
         errors = catMaybes [taxaCountError, charCountError]

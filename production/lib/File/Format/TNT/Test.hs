@@ -43,10 +43,10 @@ xreadHeader' = testGroup "XREAD header" [beginsWithXREAD, possibleComment]
 
 procedureTests = testGroup "PROCEDURE command tests" [shortProcedureHeader, longProcedureHeader, closeFilesDirective, commandFile, fastaFile, generalEnding]
   where
-    shortProcedureHeader = testCase "Parses component \"proc\""      $ parseSuccess procHeader    "proc"
-    longProcedureHeader  = testCase "Parses component \"procedure\"" $ parseSuccess procHeader    "procedure"
-    closeFilesDirective  = testCase "Parses component \"/;\""        $ parseSuccess procCloseFile "/;"
-    generalEnding        = testCase "Parses \"proc /;\""             $ parseSuccess procCommand   "proc /;"                                              
+    shortProcedureHeader = testCase "Parses component \"proc\""      $ parseSuccess procHeader       "proc"
+    longProcedureHeader  = testCase "Parses component \"procedure\"" $ parseSuccess procHeader       "procedure"
+    closeFilesDirective  = testCase "Parses component \"/;\""        $ parseSuccess procCloseFile    "/;"
+    generalEnding        = testCase "Parses \"proc /;\""             $ parseSuccess procedureCommand "proc /;"
     commandFile = testProperty "parses arbitrary command file" f
       where
          f :: NonEmptyList Char -> Bool

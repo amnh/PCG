@@ -13,10 +13,30 @@ import qualified Data.List.NonEmpty as NE (filter,fromList,length)
 import           Data.Map.Strict          (Map,insertWith)
 import qualified Data.Map.Strict    as M  (toList)
 import           Data.Maybe               (catMaybes)
+import           Data.Vector              (Vector)
 import           Text.Megaparsec
 import           Text.Megaparsec.Custom
 import           Text.Megaparsec.Lexer    (integer,number,signed)
 import           Text.Megaparsec.Prim     (MonadParsec)
+
+--Export types
+
+data Hennig
+   = Hennig
+   { taxaCount    :: Int
+   , sequences    :: NonEmpty TaxonInfo
+   , charMetaData :: Vector CharacterMetaData
+   }
+
+--XRead types
+--------------------------------------------------------------------------------
+
+data XRead
+   = XRead
+   { charCountx   :: Int
+   , taxaCountx   :: Int
+   , sequencesx :: NonEmpty TaxonInfo
+   } deriving (Show)
 
 -- | The sequence information for a taxon within the TNT file's XREAD command.
 -- Contains the 'TaxonName' and the naive 'TaxonSequence' 
@@ -27,6 +47,43 @@ type TaxonName     = String
 
 -- | The naive sequence of a taxon in a TNT files' XREAD command.
 type TaxonSequence = [[Char]]
+
+-- CCode types
+--------------------------------------------------------------------------------
+
+data CCode
+   = CCode
+   { charState :: CharacterState
+   , charSet   :: NonEmpty CharacterSet
+   } deriving (Show)
+
+data CharacterState
+   = Additive
+   | NonAdditive
+   | Active
+   | NonActive
+   | Sankoff
+   | NonSankoff
+   | Weight Int
+   | Steps  Int
+   deriving (Show)
+
+data CharacterSet
+   = Single    Int
+   | Range     Int Int
+   | FromStart Int
+   | ToEnd     Int
+   | Whole
+   deriving (Show)
+
+data CharacterMetaData
+   = CharMeta
+   { additive :: Bool --- Mutually exclusive sankoff
+   , active   :: Bool
+   , sankoff  :: Bool
+   , weight   :: Int
+   , steps    :: Int
+   } deriving (Show)
 
 -- | Parses an Int which is non-negative.
 nonNegInt :: MonadParsec s m Char => m Int
