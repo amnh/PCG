@@ -51,7 +51,8 @@ executable pcg
                      , QuickCheck           -any
                      , safe                 -any
                      , semigroups           -any
-                     , smallcheck           -any 
+                     , smallcheck           -any
+                     , split                -any 
                      , tasty                -any
                      , tasty-hunit          -any
                      , tasty-quickcheck     -any
@@ -157,6 +158,7 @@ library
                      , safe                 -any
                      , semigroups           -any
                      , smallcheck           -any 
+                     , split                -any 
                      , tasty                -any
                      , tasty-hunit          -any
                      , tasty-quickcheck     -any
@@ -253,6 +255,7 @@ Test-Suite testsuite
                      , safe                 -any
                      , semigroups           -any
                      , smallcheck           -any 
+                     , split                -any 
                      , tasty                -any
                      , tasty-hunit          -any
                      , tasty-quickcheck     -any
