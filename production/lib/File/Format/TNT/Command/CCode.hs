@@ -72,7 +72,7 @@ ccodeCoalesce charCount ccodeCommands = generate charCount f
 --
 --  * One or more character indicies or index ranges of affected characters
 ccodeCommand :: MonadParsec s m Char => m CCode
-ccodeCommand = ccodeHeader *> ccodeBody
+ccodeCommand = ccodeHeader *> ccodeBody <* symbol (char ';')
   where
     ccodeBody = ccodeAdditive
             <|> ccodeNonAdditive

@@ -26,7 +26,7 @@ data Hennig
    { taxaCount    :: Int
    , sequences    :: NonEmpty TaxonInfo
    , charMetaData :: Vector CharacterMetaData
-   }
+   } deriving (Show)
 
 --XRead types
 --------------------------------------------------------------------------------
