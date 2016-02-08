@@ -7,12 +7,11 @@ import File.Format.Newick.Internal  hiding (isLeaf)
 import Bio.Phylogeny.Graph
 import Data.BitVector               (BitVector)
 import Data.IntMap                  hiding (null, foldr, singleton)
-import Data.Vector                  ((++), singleton)
+import Data.Vector                  (Vector,(++), singleton)
 import qualified Data.Vector as V   (foldr, zipWith)
-import Data.Maybe                   (fromJust)
+import Data.Maybe                   (fromJust,fromMaybe)
 import Data.Monoid
 import Data.List                    (elemIndex)
-import Data.Vector                  (Vector)
 
 import Bio.Phylogeny.Graph.Topological
 import Bio.Phylogeny.Tree.Node      hiding (isLeaf, isRoot)
@@ -39,22 +38,20 @@ convertBoth inTree seqs =
             | null $ descendants node = newTree
             | otherwise = 
                 let recurseTrees = fmap (\n -> internalConvert n (pos + (fromJust $ n `elemIndex` (descendants node))) initTree pos seqs metadata) (descendants node)
-                in newTree <> foldr (\t acc -> acc <> t) mempty recurseTrees 
+                in newTree <> foldr (flip (<>)) mempty recurseTrees 
                 where
-                    name = case (newickLabel node) of
-                                Nothing -> show pos
-                                Just n -> n
-                    newTaxa = insert pos name (nodeNames initTree)
-                    mySeq = case M.member name inSeqs of
-                                True -> inSeqs M.! name
-                                False -> mempty
+                    name     = fromMaybe (show pos) (newickLabel node)
+                    newTaxa  = insert pos name (nodeNames initTree)
+                    mySeq    = if M.member name inSeqs
+                               then inSeqs M.! name
+                               else mempty
                     myEncode = encodeIt mySeq metadata
-                    myPack = packIt mySeq metadata
-                    newNode = Node pos (isRoot node node) (isLeaf node node) ([pos..pos+(length $ descendants node)]) [parentPos] (singleton myEncode) (singleton myPack) mempty mempty mempty mempty 0
-                    newTree = initTree {nodes = (nodes initTree) ++ (singleton newNode), nodeNames = newTaxa}
+                    myPack   = packIt mySeq metadata
+                    newNode  = Node pos (isRoot node node) (isLeaf node node) [pos..pos + length (descendants node)] [parentPos] (singleton myEncode) (singleton myPack) mempty mempty mempty mempty 0
+                    newTree  = initTree {nodes = nodes initTree ++ singleton newNode, nodeNames = newTaxa}
 
         makeEncodeInfo :: TreeSeqs -> Vector SimpleMetadata
-        makeEncodeInfo inSeqs = M.foldr (\nseq acc -> getNodeAlph nseq acc) mempty inSeqs
+        makeEncodeInfo = M.foldr getNodeAlph mempty
             where
                 getNodeAlph :: ParsedSequences -> Vector SimpleMetadata -> Vector SimpleMetadata
                 getNodeAlph = V.zipWith getNodeAlphAt

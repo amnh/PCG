@@ -134,7 +134,7 @@ ccodeNonSankoff  = ccodeMetaChange ')' NonSankoff
 ccodeWeight :: MonadParsec s m Char => m CCode
 ccodeWeight = do
     _ <- symbol (char '/')
-    w <- Weight <$> (symbol nonNegInt)
+    w <- Weight <$> symbol nonNegInt
     i <- NE.fromList <$> some ccodeIndicies
     pure $ CCode w i
 
@@ -142,6 +142,6 @@ ccodeWeight = do
 ccodeSteps :: MonadParsec s m Char => m CCode
 ccodeSteps = do
     _ <- symbol (char '=')
-    w <- Steps <$> (symbol nonNegInt)
+    w <- Steps <$> symbol nonNegInt
     i <- NE.fromList <$> some ccodeIndicies
     pure $ CCode w i

@@ -86,7 +86,7 @@ nexusBlock :: (Show s, MonadParsec s m Char) => m NexusBlock
 nexusBlock = do
         _      <- symbol $ string' "BEGIN"
         block' <- symbol block
-        _      <- symbol $ blockend
+        _      <- symbol blockend
         pure block'
     where
         block =  (CharacterBlock   <$> try (characterBlockDefinition "characters" True))
@@ -156,7 +156,7 @@ tcmMatrixDefinition = {-do
         matrixName   <- symbol $ somethingTill spaceChar
         _            <- symbol $ optional $ try (string' "(stepmatrix)") <|> try (string' "(realmatrix)")
         _            <- symbol $ char '='
-        cardinality  <- symbol $ integer 
+        cardinality  <- symbol   integer 
         mtxAlphabet  <- symbol $ alphabetLine whitespaceNoNewlines
         assumpMatrix <- symbol $ matrixBlock whitespaceNoNewlines
         _            <- symbol $ char ';'
@@ -180,8 +180,8 @@ seqSubBlock = {-do
              <|> (Eliminate   <$> try (stringDefinition "eliminate"))
              <|> (Matrix      <$> try seqMatrixDefinition)
              <|> (Taxa        <$> try (stringListDefinition "taxlabels"))
-             <|> (CharLabels) <$> try (stringListDefinition "charlabels")
-             <|> (IgnSSB      <$> try (ignoredSubBlockDef ';'))
+             <|>  CharLabels  <$> try (stringListDefinition "charlabels")
+             <|>  IgnSSB      <$> try (ignoredSubBlockDef ';')
 
 dimensionsDefinition :: (Show s, MonadParsec s m Char) => m DimensionsFormat
 dimensionsDefinition = {-do 

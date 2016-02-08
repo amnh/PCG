@@ -46,7 +46,7 @@ type TaxonInfo     = (TaxonName, TaxonSequence)
 type TaxonName     = String
 
 -- | The naive sequence of a taxon in a TNT files' XREAD command.
-type TaxonSequence = [[Char]]
+type TaxonSequence = [String]
 
 -- CCode types
 --------------------------------------------------------------------------------
@@ -129,7 +129,7 @@ flexiblePositiveInt labeling = either coerceIntegral coerceFloating
       | null errors = pure $ fromEnum rounded
       | otherwise   = fails errors
       where
-        errors      = catMaybes $ [posError,intError]
+        errors      = catMaybes [posError,intError]
         posError    = if x >= 1  then Nothing else Just $ concat ["The ",labeling," value (",show x,") is not a positive integer"]
         intError    = if isInt x then Nothing else Just $ concat ["The ",labeling," value (",show x,") is a real value, not an integral value"]
         isInt n     = n == fromInteger rounded
