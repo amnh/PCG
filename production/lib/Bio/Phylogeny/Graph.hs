@@ -40,6 +40,7 @@ import           Data.Key                                (lookup)
 import           Data.Monoid
 import           Data.Vector                             ((++),(//), length, singleton, elemIndex, (!), Vector, replicate, ifoldr, replicate, cons)
 import qualified Data.Vector                       as V  (map, fromList)
+import           Data.BitVector                           (BitVector)
 
 import           Prelude                       hiding    ((++), length, lookup, replicate)
 import qualified Prelude                           as P  ((++))              
@@ -212,29 +213,35 @@ grabAt inTree1 rootNode = recodeEdges2 $ internalGrab2 inTree1 rootNode mempty
 --        indexSet n = subtreeMatrix ! (pointer n, j) /= 0
 
 fromTopo :: TG.TopoTree -> Tree
-fromTopo topo
-    | TN.isLeaf topo = myTree
-    | otherwise = foldr (\n acc -> acc <> fromTopo n) myTree (TN.children topo)
+fromTopo (TG.TopoTree inTopo _) = internalFromTopo inTopo
+  where
+    internalFromTopo :: TN.TopoNode BitVector -> Tree
+    internalFromTopo topo
+      | TN.isLeaf topo = myTree
+      | otherwise = foldr (\n acc -> acc <> internalFromTopo n) myTree (TN.children topo)
 
-        where
-            myNode = Node 0 (TN.isRoot topo) (TN.isLeaf topo) [] [] (TN.encoded topo) (TN.packed topo) (TN.preliminary topo) 
-                        (TN.final topo) (TN.temporary topo) (TN.aligned topo) (TN.cost topo)
-            myTree = mempty `N.addNode` myNode
+          where
+              myNode = Node 0 (TN.isRoot topo) (TN.isLeaf topo) [] [] (TN.encoded topo) (TN.packed topo) (TN.preliminary topo) 
+                          (TN.final topo) (TN.temporary topo) (TN.aligned topo) (TN.cost topo)
+              myTree = mempty `N.addNode` myNode
 
 toTopo :: Tree -> TG.TopoTree
 toTopo tree = nodeToTopo tree (nodes tree ! root tree)
 
 nodeToTopo :: Tree -> NodeInfo -> TG.TopoTree
-nodeToTopo inTree curNode
-    | isLeaf curNode = leaf
-    | otherwise = 
-        let childTrees = map (\i -> nodeToTopo inTree (nodes inTree ! i)) (children curNode)
-        in leaf {TN.children = childTrees}
-        where
-            leaf = TN.TopoNode (isRoot curNode) (isLeaf curNode) (safeName) [] (encoded curNode) (packed curNode) (preliminary curNode) 
-                    (final curNode) (temporary curNode) (aligned curNode) (cost curNode)
-            safeName = if (code curNode) `member` nodeNames inTree then nodeNames inTree IM.! (code curNode)
-                        else ""
+nodeToTopo topTree topNode = TG.TopoTree (internalFromTopo topTree topNode) (characters topTree)
+  where
+    internalFromTopo :: Tree -> NodeInfo -> TN.TopoNode BitVector
+    internalFromTopo inTree curNode 
+      | isLeaf curNode = leaf
+      | otherwise = 
+          let childTrees = map (\i -> internalFromTopo inTree (nodes inTree ! i)) (children curNode)
+          in leaf {TN.children = childTrees}
+          where
+              leaf = TN.TopoNode (isRoot curNode) (isLeaf curNode) (safeName) [] (encoded curNode) (packed curNode) (preliminary curNode) 
+                      (final curNode) (temporary curNode) (aligned curNode) (cost curNode)
+              safeName = if (code curNode) `member` nodeNames inTree then nodeNames inTree IM.! (code curNode)
+                          else ""
 
 instance Monoid Graph where
   mempty = Graph []
