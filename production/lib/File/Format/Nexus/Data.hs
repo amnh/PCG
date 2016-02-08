@@ -18,7 +18,6 @@ import qualified Data.Map.Lazy as M
 import qualified Data.Vector as V
 import           File.Format.Newick
 import           File.Format.TransitionCostMatrix
-import           File.Format.TransitionCostMatrix.Parser hiding (symbol)
 
 
 

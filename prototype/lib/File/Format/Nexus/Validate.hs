@@ -18,14 +18,13 @@ module File.Format.Nexus.Validate where
 
 import           Data.Char              (isSpace,toLower)
 import           Data.Either            (lefts)
-import           Data.List              (break, reverse, sort, sortBy)
+import           Data.List              (sort, sortBy)
 import           Data.List.Split        (splitOn)
 import qualified Data.Map.Lazy as M
 import           Data.Maybe             (fromJust, catMaybes, maybeToList)
 import           Data.Ord               (comparing)
 import qualified Data.Vector as V
 import           File.Format.Nexus.Data
-import           File.Format.TransitionCostMatrix
 import           Safe
 import           Text.Megaparsec.Prim   (MonadParsec)
 import           Text.Megaparsec.Custom
@@ -82,25 +81,25 @@ import           Text.Megaparsec.Custom
 -- TODO: fail on wrong datatype
 
 validateNexusParseResult :: (Show s, MonadParsec s m Char) => String -> NexusParseResult -> m Nexus
-validateNexusParseResult fileName (NexusParseResult sequences taxas treeSet assumptions _ignored) 
-  | null sequences && null taxas && null treeSet = fails ["There are no usable blocks in this file."] -- error 1
+validateNexusParseResult fileName (NexusParseResult inputSeqBlocks taxas treeSet assumptions _ignored) 
+  | null inputSeqBlocks && null taxas && null treeSet = fails ["There are no usable blocks in this file."] -- error 1
   | not (null independentErrors)                 = fails independentErrors
   | not (null dependentErrors)                   = fails dependentErrors
-  | otherwise                                    = pure $ Nexus {-taxaLst-} seqs 
+  | otherwise                                    = pure $ Nexus {-taxaLst-} outputSeqTups 
   where
-        listOfSeqs = map (\seq -> ( getSeqFromMatrix fileName seq taxaLst
-                                  , getCharMetadata costMatrix seq
-                                  )) sequences
-        (seqs,_) = foldSeqs listOfSeqs
+        seqMetadataTuples = map (\singleSeq -> ( getSeqFromMatrix fileName singleSeq taxaLst
+                                  , getCharMetadata costMatrix singleSeq
+                                  )) inputSeqBlocks
+        (outputSeqTups,_) = foldSeqs seqMetadataTuples
         --TODO: dependentErrors & independentErrors becomes :: String error, String warning => [Maybe (Either error warning)]
         -- then partitionEithers . catMaybes, etc., etc.
         costMatrix = headMay . tcm $ head assumptions
         dependentErrors = catMaybes $ incorrectTaxaCount : (missingCloseQuotes ++ seqTaxaCountErrors ++ interleaveErrors ++ seqTaxonCountErrors ++ incorrectCharCount)
-        equates = foldr (\x acc -> getEquates x : acc) [] sequences
+        equates = foldr (\x acc -> getEquates x : acc) [] inputSeqBlocks
         independentErrors = catMaybes $ noTaxaError : multipleTaxaBlocks : seqMatrixDimsErrors -- sequenceBlockErrors
         
 
-        incorrectCharCount = checkSeqLength (getBlock "aligned" sequences) seqs
+        incorrectCharCount = checkSeqLength (getBlock "aligned" inputSeqBlocks) outputSeqTups
         incorrectTaxaCount = f taxas >>= \(TaxaSpecification num taxons) -> 
             if num /= length taxons
                 then Just $ "Incorrect number of taxa in taxa block.\n" {- ++ (show num) ++ " " ++ (show taxons) -} -- half of error 16
@@ -108,40 +107,40 @@ validateNexusParseResult fileName (NexusParseResult sequences taxas treeSet assu
             where
                 f [x] = Just x
                 f _   = Nothing
-        interleaveErrors = foldr (\x acc -> findInterleaveError taxaLst x : acc) [] sequences -- error 14
-        seqMatrixDimsErrors = foldr (\x acc -> seqMatrixMissing x : acc) [] sequences ++
-                           foldr (\x acc -> dimsMissing   x : acc) [] sequences
+        interleaveErrors = foldr (\x acc -> findInterleaveError taxaLst x : acc) [] inputSeqBlocks -- error 14
+        seqMatrixDimsErrors = foldr (\x acc -> seqMatrixMissing x : acc) [] inputSeqBlocks ++
+                           foldr (\x acc -> dimsMissing   x : acc) [] inputSeqBlocks
         missingCloseQuotes = map Just (lefts equates) ++ map Just (lefts symbols') -- error 19
         multipleTaxaBlocks = case taxas of
                             (_:_:_) -> Just "Multiple taxa blocks supplied.\n"  -- error 1
                             _       -> Nothing
-        noTaxaError =  if null taxas && not (foldr (\x acc -> acc || areNewTaxa x) False sequences) -- will register as False if sequences is empty
-                       then Just $ "Taxa are never specified. \n"  {-++ (show taxas) ++ " " ++ (show sequences) -} -- error 6
+        noTaxaError =  if null taxas && not (foldr (\x acc -> acc || areNewTaxa x) False inputSeqBlocks) -- will register as False if inputSeqBlocks is empty
+                       then Just $ "Taxa are never specified. \n"  {-++ (show taxas) ++ " " ++ (show inputSeqBlocks) -} -- error 6
                        else Nothing
-        seqTaxaCountErrors = foldr (\x acc -> checkForNewTaxa x : acc) [] sequences -- errors 7, 8 half of 16
-        seqTaxonCountErrors = foldr (\x acc -> getSeqTaxonCountErrors taxaLst x ++ acc) [] sequences -- errors 12, 22
+        seqTaxaCountErrors = foldr (\x acc -> checkForNewTaxa x : acc) [] inputSeqBlocks -- errors 7, 8 half of 16
+        seqTaxonCountErrors = foldr (\x acc -> getSeqTaxonCountErrors taxaLst x ++ acc) [] inputSeqBlocks -- errors 12, 22
         
         --correctCharCount = foldr (\x acc -> if isJust checkDims x
         --                                      then
         --                                      else ) Nothing convertSeqs ! 0
-        symbols' = foldr (\x acc -> getSymbols x : acc) [] sequences
-        taxaLst  = V.fromList $ foldr (\x acc -> acc ++ getTaxaFromSeq x) [] sequences ++
+        symbols' = foldr (\x acc -> getSymbols x : acc) [] inputSeqBlocks
+        taxaLst  = V.fromList $ foldr (\x acc -> acc ++ getTaxaFromSeq x) [] inputSeqBlocks ++
                             if   (not . null) taxas
                             then taxaLabels $ head taxas
                             else []
         -- taxaSeqVector = V.fromList [(taxon, alignedTaxaSeqMap M.! taxon) | taxon <- taxaLst]
-        --unalignedTaxaSeqMap = getSeqFromMatrix (getBlock "unaligned" sequences) taxaLst
+        --unalignedTaxaSeqMap = getSeqFromMatrix (getBlock "unaligned" inputSeqBlocks) taxaLst
 
         ------ To be deleted ------
-        --sequenceBlockErrors = case sequences of
+        --sequenceBlockErrors = case inputSeqBlocks of
         --                         []        -> [Just "No characters or unaligned blocks provided.\n"] -- error 3
         --                         (_:_:_:_) -> [Just "Too many sequence blocks provided. Only one each of characters and unaligned blocks are allowed.\n"] -- error 2
         --                         (x:y:_) | alignedSeq x && alignedSeq y       -> [Just "More than one characters block provided."]
         --                                 | not (alignedSeq x || alignedSeq y) -> [Just "More than one unaligned block provided.\n"]
         --                                 | otherwise                    -> seqMatrixDimsErrors
         --                         _         -> seqMatrixDimsErrors
-        --taxaFromSeqMatrix = foldr (\x acc -> (getTaxaFromMatrix x) ++ acc) [] sequences
-        -- convertSeqs = ( concatSeqs . cleanSeqs sequences  -- convert each sequence, then
+        --taxaFromSeqMatrix = foldr (\x acc -> (getTaxaFromMatrix x) ++ acc) [] inputSeqBlocks
+        -- convertSeqs = ( concatSeqs . cleanSeqs inputSeqBlocks  -- convert each sequence, then
 
 
 -- | foldSeqs takes a list of tuples of sequence maps and character metadata, and
@@ -173,19 +172,19 @@ updateSeqInMap curLength inputSeq curSeq = newSeq
 -- | checkSeqLength takes in the list of sequences and
 checkSeqLength :: [PhyloSequence] -> Sequences -> [Maybe String]
 checkSeqLength [] _            = [Nothing]
-checkSeqLength seq' (seqMap,_) = 
+checkSeqLength seqBlockLst (seqMap,_) = 
     M.foldrWithKey (\key val acc -> (if length val == len
                                      then Nothing
                                      else Just (key ++ "'s sequence is the wrong length in an aligned block. It should be " ++ show len ++ ", but is " ++ show (length val) {- ++ ":\n" ++ show val -} ++ "\n")) : acc) [] seqMap
     where
-        len = numChars . head . charDims $ head seq'
+        len = numChars . head . charDims $ head seqBlockLst -- TODO: fix this line
 
 getCharMetadata :: Maybe StepMatrix -> PhyloSequence -> V.Vector CharacterMetadata
-getCharMetadata mayMtx seq = 
+getCharMetadata mayMtx seqBlock = 
     V.replicate len $ CharacterMetadata "" aligned cType alph False mayTCM
     where 
-        aligned     = alignedSeq seq
-        cType       = read (charDataType form) :: CharDataType
+        aligned     = alignedSeq seqBlock
+        cType       = DNA
         alph        = if areTokens form
                       then syms
                       else g $ headMay syms
@@ -194,8 +193,8 @@ getCharMetadata mayMtx seq =
         f _         = [""] -- Shouldn't be possible, but leaving it in for completeness.
         g (Just s)  = foldr (\x acc -> [x] : acc) [] s
         g Nothing   = [""]
-        form        = head $ format seq
-        len         = numChars . head $ charDims seq
+        form        = head $ format seqBlock
+        len         = numChars . head $ charDims seqBlock
         mayTCM      = matrixData <$> mayMtx
 
 getSeqTaxonCountErrors :: V.Vector String -> PhyloSequence -> [Maybe String]
@@ -238,10 +237,10 @@ getSymbols :: PhyloSequence -> Either String [String]
 getSymbols = maybe (Right [""]) symbols . headMay . format
 
 splitSequence :: Bool -> Bool -> Bool -> String -> Sequence
-splitSequence isTokens isContinuous isAligned seq' = finalList
+splitSequence isTokens isContinuous isAlign seq' = finalList
     where 
         finalList = 
-            if isAligned 
+            if isAlign 
             then V.fromList $ Just <$> V.singleton <$> chars -- aligned, so each item in vector of ambiguity groups is single char
             else V.singleton $ Just $ V.fromList chars -- not aligned, so whole vector of ambiguity groups is single char
         chars = 
@@ -351,13 +350,13 @@ getFormatInfo phyloSeq = case headMay $ format phyloSeq of
 
 getSeqFromMatrix :: String -> PhyloSequence -> V.Vector String -> TaxonSequenceMap
 -- getSeqFromMatrix [] _ = V.empty
-getSeqFromMatrix fileName seq taxaLst =
+getSeqFromMatrix fileName seqBlock taxaLst = -- TODO: name chars
     M.map (splitSequence tkns cont aligned) matchCharsReplaced
     where
-        (aligned, noLabels, interleaved, tkns, cont, matchChar') = getFormatInfo $ seq
+        (aligned, noLabels, interleaved, tkns, cont, matchChar') = getFormatInfo $ seqBlock
         taxaCount  = length taxaLst
         taxaMap    = M.fromList . zip (V.toList taxaLst) $ repeat ""
-        mtx        = head $ seqMatrix $ seq -- I've already checked to make sure there's a matrix
+        mtx        = head $ seqMatrix $ seqBlock -- I've already checked to make sure there's a matrix
         entireSeqs = if noLabels    -- this will be a list of tuples (taxon, concatted seq)
                      then if interleaved
                           then concatMap (zip $ V.toList taxaLst) (chunksOf taxaCount mtx)
@@ -477,11 +476,11 @@ createElimTups = foldr (\x acc -> f x ++ acc) []
 -- This could probably be done more nicely with a state monad, but I don't know, yet, how to use those.
 -- Note that sequences are indexed starting at 1, but Haskell Vectors are indexed starting at 0.
 getNext :: Int -> Int -> V.Vector (Bool,Int) -> (Bool, Int)
-getNext seqIdx elimsIdx elims
-    | elimsIdx >= V.length elims           = (False, elimsIdx) -- there are no more things to eliminate
-    | seqIdx == (snd $ elims V.! elimsIdx) = (True, succ elimsIdx) -- The given input is specifically listed, and should be eliminated
-    | seqIdx >  (snd $ elims V.! elimsIdx) = (False, succ elimsIdx) -- The sequence index is > the current index, so we need to move forward in elims
-    | otherwise                            = if fst $ elims V.! elimsIdx -- The given input is not specifically listed, 
+getNext seqIdx elimsIdx toElim
+    | elimsIdx >= V.length toElim           = (False, elimsIdx) -- there are no more things to eliminate
+    | seqIdx == (snd $ toElim V.! elimsIdx) = (True, succ elimsIdx) -- The given input is specifically listed, and should be eliminated
+    | seqIdx >  (snd $ toElim V.! elimsIdx) = (False, succ elimsIdx) -- The sequence index is > the current index, so we need to move forward in toElim
+    | otherwise                            = if fst $ toElim V.! elimsIdx -- The given input is not specifically listed, 
                                                                          -- so check to see if we're in a range (fst tup == False)
                                                                          -- Also, the seqIdx must be lower than the elimsIdx
                                                  then (False, elimsIdx) -- we're not in a range, and the seq idx is not spec'ed
@@ -501,11 +500,11 @@ sortElimsStr start =
 -- | setIgnores iterates from x to y (ints), determining at each index whether that index should be "ignored". If so, it
 -- flags True, otherwise it flags false. It accumulates all of these Booleans into a list
 setIgnores :: Int -> Int -> V.Vector (Bool,Int) -> Int -> [Bool] -> [Bool]
-setIgnores seqIdx curElimIdx elims length acc
-    | seqIdx >= length = reverse acc
-    | otherwise        = setIgnores (succ seqIdx) next elims length (val : acc)
+setIgnores seqIdx curElimIdx toElim seqLength acc
+    | seqIdx >= seqLength = reverse acc
+    | otherwise           = setIgnores (succ seqIdx) next toElim seqLength (val : acc)
         where
-            (val, next) = getNext seqIdx curElimIdx elims
+            (val, next) = getNext seqIdx curElimIdx toElim
 
 
 ----------------------------------------------
