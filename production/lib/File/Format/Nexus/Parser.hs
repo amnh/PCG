@@ -46,9 +46,10 @@ import           Text.Megaparsec.Lexer  (integer)
 import           Text.Megaparsec.Prim   (MonadParsec)
 import           Text.Megaparsec.Custom
 
-parseNexusStream :: String -> String -> Either ParseError Nexus
-parseNexusStream filePath = parse (validateNexusParseResult fileName =<< parseNexus <* eof) filePath
+parseNexusStream :: FilePath -> String -> Either ParseError Nexus
+parseNexusStream filePath = insertDefaultCharacterNames fileName <$> parse (validateNexusParseResult =<< parseNexus <* eof) filePath
     where
+        insertDefaultCharacterNames _ = id
         fileName = last $ splitOneOf "/\\" filePath
 
 parseNexus :: (Show s, MonadParsec s m Char) => m NexusParseResult
