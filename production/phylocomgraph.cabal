@@ -117,6 +117,7 @@ executable pcg
                        File.Format.Fastc
                        File.Format.Fastc.Parser
                        File.Format.Newick
+                       File.Format.Newick.Converter
                        File.Format.Nexus.Data
                        File.Format.Nexus.Partition
                        File.Format.Nexus.Validate
@@ -222,6 +223,7 @@ library
                        File.Format.Fasta.Internal
                        File.Format.Fasta.Parser
                        File.Format.Fastc.Parser
+                       File.Format.Newick.Converter
                        File.Format.Newick.Internal
                        File.Format.Newick.Parser
                        File.Format.Nexus.Data
@@ -316,6 +318,7 @@ Test-Suite testsuite
                        File.Format.Fastc.Parser
                        File.Format.Fastc.Test
                        File.Format.Newick
+                       File.Format.Newick.Converter
                        File.Format.Newick.Internal
                        File.Format.Newick.Parser
                        File.Format.Newick.Test

@@ -14,5 +14,9 @@
 
 module File.Format.TransitionCostMatrix.Converter where
 
+import Bio.Phylogeny.Graph
+
+import File.Format.TransitionCostMatrix.Parser
+
 incorporateTCM :: Graph -> Graph
 incorporateTCM = undefined
