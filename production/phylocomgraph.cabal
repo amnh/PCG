@@ -117,6 +117,7 @@ executable pcg
                        File.Format.Fastc
                        File.Format.Fastc.Parser
                        File.Format.Newick
+                       File.Format.Newick.Converter
                        File.Format.Nexus.Data
                        File.Format.Nexus.Partition
                        File.Format.Nexus.Validate
@@ -125,6 +126,7 @@ executable pcg
                        File.Format.TransitionCostMatrix
                        File.Format.TransitionCostMatrix.Parser
                        File.Format.VertexEdgeRoot
+                       File.Format.VertexEdgeRoot.Converter
                        File.Format.VertexEdgeRoot.Parser
                        PCG.Command
                        PCG.Command.Types
@@ -222,6 +224,7 @@ library
                        File.Format.Fasta.Internal
                        File.Format.Fasta.Parser
                        File.Format.Fastc.Parser
+                       File.Format.Newick.Converter
                        File.Format.Newick.Internal
                        File.Format.Newick.Parser
                        File.Format.Nexus.Data
@@ -229,6 +232,7 @@ library
                        File.Format.Nexus.Partition
                        File.Format.Nexus.Validate
                        File.Format.TransitionCostMatrix.Parser
+                       File.Format.VertexEdgeRoot.Converter
                        File.Format.VertexEdgeRoot.Parser
                        Text.Megaparsec.Custom
 
@@ -316,6 +320,7 @@ Test-Suite testsuite
                        File.Format.Fastc.Parser
                        File.Format.Fastc.Test
                        File.Format.Newick
+                       File.Format.Newick.Converter
                        File.Format.Newick.Internal
                        File.Format.Newick.Parser
                        File.Format.Newick.Test
@@ -326,6 +331,7 @@ Test-Suite testsuite
                        File.Format.Nexus.Validate
                        File.Format.TransitionCostMatrix.Parser
                        File.Format.TransitionCostMatrix.Test
+                       File.Format.VertexEdgeRoot.Converter
                        File.Format.VertexEdgeRoot.Parser
                        File.Format.VertexEdgeRoot.Test
                        Test.Custom
