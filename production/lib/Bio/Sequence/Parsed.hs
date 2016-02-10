@@ -12,15 +12,15 @@
 --
 -----------------------------------------------------------------------------
 
-module Bio.Sequence.Parsed (ParsedSeq, TreeSeqs, Alphabet) where
+module Bio.Sequence.Parsed (ParsedSeq, TreeSeqs, Alphabet, ParsedSequences) where
 
 import Data.Vector
 import Data.Map.Lazy
 
-type Character = Maybe (Vector [String])
+type ParsedSeq = Vector [String]
 
-type ParsedSeq = Vector Character
+type ParsedSequences = Vector ParsedSeq
 
-type TreeSeqs = Map String ParsedSeq
+type TreeSeqs = Map String ParsedSequences
 
 type Alphabet = Vector [String]

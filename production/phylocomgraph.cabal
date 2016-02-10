@@ -34,11 +34,11 @@ cabal-version: >= 1.8
 executable pcg
   main-is:             Main.hs
 
-  build-depends:       base                 >=4.8  && <4.9
-                     , bv                   >=0.3  && <0.4
-                     , containers           >=0.5  && <0.6
-                     , criterion            >=1.1  && <1.2
-                     , deepseq              >=1.4  && <1.5
+  build-depends:       base                 >=4.8 && < 4.9
+                     , bv                   -any
+                     , containers           -any
+                     , criterion            -any
+                     , deepseq              -any
                      , directory            -any
                      , dlist                -any
                      , either               -any
@@ -47,22 +47,23 @@ executable pcg
                      , keys                 -any
                      , matrix               -any
                      , megaparsec           >=4.2
-                     , parallel             >=3.2  && <3.3
+                     , parallel             -any
                      , QuickCheck           -any
-                     , safe                 >=0.3  && <0.4
+                     , safe                 -any
                      , semigroups           -any
-                     , smallcheck           -any 
+                     , smallcheck           -any
+                     , split                -any 
                      , tasty                -any
                      , tasty-hunit          -any
                      , tasty-quickcheck     -any
                      , tasty-smallcheck     -any
-                     , text                 >=1.2  && <1.3
+                     , text                 -any
                      , time                 -any
                      , transformers         -any
                      , unordered-containers -any
                      , vector               -any
 
-  ghc-options:         -O2 -Wall -Werror
+  ghc-options:         -O2 -Wall 
                        -fwarn-duplicate-exports
                        -fwarn-incomplete-patterns
                        -fwarn-missing-signatures
@@ -75,9 +76,9 @@ executable pcg
   
   hs-source-dirs:      app, lib
   
-  other-modules:       Analysis.GenericFitch
-                       Analysis.DirectOptimization.Naive
+  other-modules:       Analysis.DirectOptimization.Naive
                        Analysis.DirectOptimization.ImpliedAlign
+                       Analysis.GenericFitch
                        Bio.Phylogeny.Forest
                        Bio.Phylogeny.Forest.Class
                        Bio.Phylogeny.Graph
@@ -109,7 +110,6 @@ executable pcg
                        Control.Evaluation.Unit
                        Data.Either.Custom
                        Data.List.Utility
-                       File.Format.Conversion.ToInternal
                        File.Format.Fasta
                        File.Format.Fasta.Converter
                        File.Format.Fasta.Internal
@@ -117,6 +117,7 @@ executable pcg
                        File.Format.Fastc
                        File.Format.Fastc.Parser
                        File.Format.Newick
+                       File.Format.Newick.Converter
                        File.Format.Nexus.Data
                        File.Format.Nexus.Partition
                        File.Format.Nexus.Validate
@@ -125,6 +126,7 @@ executable pcg
                        File.Format.TransitionCostMatrix
                        File.Format.TransitionCostMatrix.Parser
                        File.Format.VertexEdgeRoot
+                       File.Format.VertexEdgeRoot.Converter
                        File.Format.VertexEdgeRoot.Parser
                        PCG.Command
                        PCG.Command.Types
@@ -144,29 +146,30 @@ library
   other-extensions:    FlexibleContexts, BangPatterns, DeriveGeneric
   
   -- Other library packages from which modules are imported.
-  build-depends:       base                 >=4.8  && <4.9
-                     , bv                   >=0.3  && <0.4
-                     , containers           >=0.5  && <0.6
-                     , criterion            >=1.1  && <1.2
-                     , deepseq              >=1.4  && <1.5
+  build-depends:       base                 >=4.8 && < 4.9
+                     , bv                   -any
+                     , containers           -any
+                     , criterion            -any
+                     , deepseq              -any
                      , dlist                -any
                      , either               -any
                      , keys                 -any
                      , matrix               -any
                      , megaparsec           >=4.2
-                     , parallel             >=3.2  && <3.3
-                     , safe                 >=0.3  && <0.4
+                     , parallel             -any
+                     , safe                 -any
                      , semigroups           -any
                      , smallcheck           -any 
+                     , split                -any 
                      , tasty                -any
                      , tasty-hunit          -any
                      , tasty-quickcheck     -any
                      , tasty-smallcheck     -any
-                     , text                 >=1.2  && <1.3
+                     , text                 -any
                      , unordered-containers -any
                      , vector               -any
 
-  ghc-options:         -O2 -Wall -Werror
+  ghc-options:         -O2 -Wall 
                        -fwarn-duplicate-exports
                        -fwarn-incomplete-patterns
                        -fwarn-missing-signatures
@@ -217,11 +220,11 @@ library
                        Bio.Phylogeny.Tree.Rose.Class
                        Bio.Sequence.Coded.Class
                        Data.List.Utility
-                       File.Format.Conversion.ToInternal
                        File.Format.Fasta.Converter
                        File.Format.Fasta.Internal
                        File.Format.Fasta.Parser
                        File.Format.Fastc.Parser
+                       File.Format.Newick.Converter
                        File.Format.Newick.Internal
                        File.Format.Newick.Parser
                        File.Format.Nexus.Data
@@ -229,6 +232,7 @@ library
                        File.Format.Nexus.Partition
                        File.Format.Nexus.Validate
                        File.Format.TransitionCostMatrix.Parser
+                       File.Format.VertexEdgeRoot.Converter
                        File.Format.VertexEdgeRoot.Parser
                        Text.Megaparsec.Custom
 
@@ -238,28 +242,29 @@ Test-Suite testsuite
 
   main-is:             Main.hs
 
-  build-depends:       base                 >=4.8 && <4.9
-                     , bv                   >=0.3  && <0.4
-                     , containers           >=0.5  && <0.6
-                     , criterion            >=1.1  && <1.2
-                     , deepseq              >=1.4  && <1.5
+  build-depends:       base                 >=4.8 && < 4.9
+                     , bv                   -any
+                     , containers           -any
+                     , criterion            -any
+                     , deepseq              -any
                      , directory            -any
                      , dlist                -any
                      , hashable             -any
                      , either               -any
                      , keys                 -any
                      , matrix               -any
-                     , megaparsec           >=4.2
-                     , parallel             >=3.2  && <3.3
+                     , megaparsec           -any
+                     , parallel             -any
                      , QuickCheck           -any
-                     , safe                 >=0.3  && <0.4
+                     , safe                 -any
                      , semigroups           -any
                      , smallcheck           -any 
+                     , split                -any 
                      , tasty                -any
                      , tasty-hunit          -any
                      , tasty-quickcheck     -any
                      , tasty-smallcheck     -any
-                     , text                 >=1.2  && <1.3
+                     , text                 -any
                      , time                 -any
                      , transformers         -any
                      , unordered-containers -any
@@ -271,6 +276,7 @@ Test-Suite testsuite
                        Analysis.DirectOptimization.Naive
                        Analysis.DirectOptimization.Test
                        Analysis.DirectOptimization.Utilities
+                       Analysis.GenericFitch
                        Bio.Phylogeny.Forest
                        Bio.Phylogeny.Forest.Class
                        Bio.Phylogeny.Graph
@@ -314,6 +320,7 @@ Test-Suite testsuite
                        File.Format.Fastc.Parser
                        File.Format.Fastc.Test
                        File.Format.Newick
+                       File.Format.Newick.Converter
                        File.Format.Newick.Internal
                        File.Format.Newick.Parser
                        File.Format.Newick.Test
@@ -324,6 +331,7 @@ Test-Suite testsuite
                        File.Format.Nexus.Validate
                        File.Format.TransitionCostMatrix.Parser
                        File.Format.TransitionCostMatrix.Test
+                       File.Format.VertexEdgeRoot.Converter
                        File.Format.VertexEdgeRoot.Parser
                        File.Format.VertexEdgeRoot.Test
                        Test.Custom

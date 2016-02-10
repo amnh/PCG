@@ -32,11 +32,8 @@
 module File.Format.Nexus.Parser where
 
 import           Data.Char              (isSpace,toLower)
-import           Data.Either            (lefts)
-import           Data.List              (sort)
 import           Data.List.Split        (splitOneOf)
-import qualified Data.Map.Lazy as M
-import           Data.Maybe             (isJust, fromJust, catMaybes, maybeToList)
+import           Data.Maybe             (isJust)
 import qualified Data.Set as S
 --import Debug.Trace
 import           File.Format.Newick
@@ -44,16 +41,15 @@ import           File.Format.Nexus.Data
 import           File.Format.Nexus.Partition
 import           File.Format.Nexus.Validate
 import           File.Format.TransitionCostMatrix.Parser hiding (symbol)
-import           Safe
 import           Text.Megaparsec hiding (label)
 import           Text.Megaparsec.Lexer  (integer)
 import           Text.Megaparsec.Prim   (MonadParsec)
 import           Text.Megaparsec.Custom
-import qualified Data.Vector as V
 
-parseNexusStream :: String -> String -> Either ParseError Nexus
-parseNexusStream filePath = parse (validateNexusParseResult fileName =<< parseNexus <* eof) filePath
+parseNexusStream :: FilePath -> String -> Either ParseError Nexus
+parseNexusStream filePath = insertDefaultCharacterNames fileName <$> parse (validateNexusParseResult =<< parseNexus <* eof) filePath
     where
+        insertDefaultCharacterNames _ = id
         fileName = last $ splitOneOf "/\\" filePath
 
 parseNexus :: (Show s, MonadParsec s m Char) => m NexusParseResult
@@ -91,7 +87,7 @@ nexusBlock :: (Show s, MonadParsec s m Char) => m NexusBlock
 nexusBlock = do
         _      <- symbol $ string' "BEGIN"
         block' <- symbol block
-        _      <- symbol $ blockend
+        _      <- symbol blockend
         pure block'
     where
         block =  (CharacterBlock   <$> try (characterBlockDefinition "characters" True))
@@ -161,7 +157,7 @@ tcmMatrixDefinition = {-do
         matrixName   <- symbol $ somethingTill spaceChar
         _            <- symbol $ optional $ try (string' "(stepmatrix)") <|> try (string' "(realmatrix)")
         _            <- symbol $ char '='
-        cardinality  <- symbol $ integer 
+        cardinality  <- symbol   integer 
         mtxAlphabet  <- symbol $ alphabetLine whitespaceNoNewlines
         assumpMatrix <- symbol $ matrixBlock whitespaceNoNewlines
         _            <- symbol $ char ';'
@@ -185,8 +181,8 @@ seqSubBlock = {-do
              <|> (Eliminate   <$> try (stringDefinition "eliminate"))
              <|> (Matrix      <$> try seqMatrixDefinition)
              <|> (Taxa        <$> try (stringListDefinition "taxlabels"))
-             <|> (CharLabels) <$> try (stringListDefinition "charlabels")
-             <|> (IgnSSB      <$> try (ignoredSubBlockDef ';'))
+             <|>  CharLabels  <$> try (stringListDefinition "charlabels")
+             <|>  IgnSSB      <$> try (ignoredSubBlockDef ';')
 
 dimensionsDefinition :: (Show s, MonadParsec s m Char) => m DimensionsFormat
 dimensionsDefinition = {-do 

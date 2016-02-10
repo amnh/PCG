@@ -99,10 +99,10 @@ instance N.Network NewickNode NewickNode where
     where
       match newNode t = newickLabel t == newickLabel newNode
       upOne newNode t = t {descendants = descendants newNode, branchLength = branchLength newNode}
-  numNodes t = tallyNodes t
+  numNodes = tallyNodes
     where
       tallyNodes :: NewickNode -> Int
-      tallyNodes n = 1 + (sum $ (fmap tallyNodes (descendants n)))
-  addNode t n = t {descendants = n : (descendants t)}
+      tallyNodes = succ . sum . fmap tallyNodes . descendants
+  addNode t n = t { descendants = n : descendants t }
 
 
