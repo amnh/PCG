@@ -14,9 +14,11 @@
 
 module File.Format.TransitionCostMatrix.Converter where
 
-import Bio.Phylogeny.Graph
+--import Bio.Phylogeny.Graph
 
-import File.Format.TransitionCostMatrix.Parser
+--import File.Format.TransitionCostMatrix.Parser
 
-incorporateTCM :: Graph -> Graph
-incorporateTCM = undefined
+--incorporateTCM :: Tree -> TCM -> Tree
+--incorporateTCM initTree inTCM = 
+--    let
+--        initChars = characters initTree
