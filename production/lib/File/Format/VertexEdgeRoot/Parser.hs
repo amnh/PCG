@@ -48,7 +48,7 @@ data VertexEdgeRoot
    { vertices   :: Set VertexLabel
    , edges       :: Set EdgeInfo
    , roots       :: Set VertexLabel
-   } deriving (Show)
+   } deriving (Show, Eq)
 
 -- | Returns the `EdgeInfo as a tuple of 'VertexLabel's satisfying the constraint:
 --
