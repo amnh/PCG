@@ -19,8 +19,8 @@ import           Text.Megaparsec.Lexer                    (integer,number,signed
 import           Text.Megaparsec.Prim                     (MonadParsec)
 
 -- TODO: make the types better
-henningStreamParser :: MonadParsec s m Char => m Hennig
-henningStreamParser = do
+tntStreamParser :: MonadParsec s m Char => m Hennig
+tntStreamParser = do
     (xreads,ccodes,_) <- gatherCommands
     xread             <- singleXRead xreads
     pure . Hennig (taxaCountx xread) (sequencesx xread) $ ccodeCoalesce (charCountx xread) ccodes
