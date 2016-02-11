@@ -44,14 +44,16 @@ data TNTTree
 
 -- | Parses an TREAD command. Correctly validates for taxa count
 -- and character sequence length. Produces one or more taxa sequences.
-treadCommand :: MonadParsec s m Char => m TRead
+treadCommand :: MonadParsec s m Char => m (NonEmpty TRead)
 treadCommand = treadValidation =<< treadDefinition
   where
-    treadDefinition :: MonadParsec s m Char => m Int
-    treadDefinition = undefined
+    treadDefinition :: MonadParsec s m Char => m (NonEmpty TRead)
+    treadDefinition = symbol treadHeader
+                   *> symbol treadForest
+                   <* symbol (char ';')
 
-    treadValidation :: MonadParsec s m Char => Int -> m TRead
-    treadValidation = undefined
+    treadValidation :: MonadParsec s m Char => (NonEmpty TRead) -> m (NonEmpty TRead)
+    treadValidation = pure
 {-
       | null errors = pure $ XRead charCount taxaCount taxaSeqs
       | otherwise   = fails errors
@@ -115,6 +117,7 @@ treadSubtree = between open close body
   where
     open      = symbol (char '(')
     close     = symbol (char ')')
-    body      = Node <$> (treadTree `sepBy1` delimiter)
-    delimiter = choice [try commaJunk, whitespace]
-    commaJunk = trim (char ',') *> pure ()
+    body      = Node <$> some (symbol treadTree)
+
+treadForest :: MonadParsec s m Char => m (NonEmpty TRead)
+treadForest = fmap NE.fromList $ symbol treadTree `sepBy1` symbol (char '*')
