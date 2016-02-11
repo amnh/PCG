@@ -123,6 +123,6 @@ taxonSequence = (,) <$> symbol taxonName <*> taxonSeq
     taxonSeq      = some (seqChar <|> ambiguity)
     seqChar       = pure <$> validSeqChar <* whitespaceInline
     ambiguity     = char '[' *> some (validSeqChar <* whitespaceInline) <* char ']' <* whitespaceInline
-    validNameChar = satisfy (\x -> (not . isSpace) x && x /= ';')
+    validNameChar = satisfy (\x -> (not . isSpace) x && x `notElem` "(),;")
     validSeqChar  = oneOf $ ['0'..'9'] ++ ['A'..'Z'] ++ ['a'..'z'] ++ "-?"
     
