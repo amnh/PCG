@@ -106,7 +106,7 @@ treadLeaf = Leaf <$> choice [try index, try prefix, name]
    index       = Index  <$>  flexiblePositiveInt "taxon reference index"
    prefix      = Prefix <$> (taxaLabel >>= checkTail) 
    name        = Name   <$>  taxaLabel
-   taxaLabel   = many labelChar
+   taxaLabel   = some labelChar
    labelChar   = satisfy (\x -> not (isSpace x) && x `notElem` "(),;")
    checkTail x = if "..." `isSuffixOf` x then pure x else fail "oops"
 
