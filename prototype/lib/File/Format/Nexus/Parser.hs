@@ -47,9 +47,7 @@ import           Text.Megaparsec.Prim   (MonadParsec)
 import           Text.Megaparsec.Custom
 
 parseNexusStream :: String -> String -> Either ParseError Nexus
-parseNexusStream filePath = parse (validateNexusParseResult fileName =<< parseNexus <* eof) filePath
-    where
-        fileName = last $ splitOneOf "/\\" filePath
+parseNexusStream filePath = parse (validateNexusParseResult =<< parseNexus <* eof) filePath
 
 parseNexus :: (Show s, MonadParsec s m Char) => m NexusParseResult
 parseNexus = nexusFileDefinition

@@ -80,14 +80,14 @@ import           Text.Megaparsec.Custom
 -- TODO: check for chars that aren't in alphabet
 -- TODO: fail on wrong datatype
 
-validateNexusParseResult :: (Show s, MonadParsec s m Char) => String -> NexusParseResult -> m Nexus
-validateNexusParseResult fileName (NexusParseResult inputSeqBlocks taxas treeSet assumptions _ignored) 
+validateNexusParseResult :: (Show s, MonadParsec s m Char) => NexusParseResult -> m Nexus
+validateNexusParseResult (NexusParseResult inputSeqBlocks taxas treeSet assumptions _ignored) 
   | null inputSeqBlocks && null taxas && null treeSet = fails ["There are no usable blocks in this file."] -- error 1
   | not (null independentErrors)                 = fails independentErrors
   | not (null dependentErrors)                   = fails dependentErrors
   | otherwise                                    = pure $ Nexus {-taxaLst-} outputSeqTups 
   where
-        seqMetadataTuples = map (\singleSeq -> ( getSeqFromMatrix fileName singleSeq taxaLst
+        seqMetadataTuples = map (\singleSeq -> ( getSeqFromMatrix singleSeq taxaLst
                                   , getCharMetadata costMatrix singleSeq
                                   )) inputSeqBlocks
         (outputSeqTups,_) = foldSeqs seqMetadataTuples
@@ -348,9 +348,9 @@ getFormatInfo phyloSeq = case headMay $ format phyloSeq of
                                   , matchChar x
                                   )
 
-getSeqFromMatrix :: String -> PhyloSequence -> V.Vector String -> TaxonSequenceMap
+getSeqFromMatrix :: PhyloSequence -> V.Vector String -> TaxonSequenceMap
 -- getSeqFromMatrix [] _ = V.empty
-getSeqFromMatrix fileName seqBlock taxaLst = -- TODO: name chars
+getSeqFromMatrix seqBlock taxaLst = -- TODO: name chars
     M.map (splitSequence tkns cont aligned) matchCharsReplaced
     where
         (aligned, noLabels, interleaved, tkns, cont, matchChar') = getFormatInfo $ seqBlock
