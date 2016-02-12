@@ -37,7 +37,7 @@ type VertexLabel   = String
 type EdgeLength    = Maybe Double
 
 -- | The two types of sets of nodes present in a VER file
-data VertexSetType = Verticies | Roots deriving (Eq,Show)
+data VertexSetType = Vertices | Roots deriving (Eq,Show)
 
 -- | Connection between two nodes in the graph along with the distance of the connection
 data EdgeInfo      = EdgeInfo (VertexLabel,VertexLabel) EdgeLength deriving (Show,Eq,Ord)
@@ -45,10 +45,10 @@ data EdgeInfo      = EdgeInfo (VertexLabel,VertexLabel) EdgeLength deriving (Sho
 -- | Collection of Vericies, roots, and edges representing a "Phylogenetic Forest"
 data VertexEdgeRoot
    = VER
-   { verticies   :: Set VertexLabel
+   { vertices   :: Set VertexLabel
    , edges       :: Set EdgeInfo
    , roots       :: Set VertexLabel
-   } deriving (Show)
+   } deriving (Show, Eq)
 
 -- | Returns the `EdgeInfo as a tuple of 'VertexLabel's satisfying the constraint:
 --
@@ -91,12 +91,12 @@ verDefinition = do
       case (typeA, typeB) of
         (Nothing       , Nothing       ) -> let [m,n] = sortBy (comparing size) [setA,setB]
                                             in pure $ VER n    edges' m
-        (Nothing       , Just Verticies) ->    pure $ VER setB edges' setA
+        (Nothing       , Just Vertices) ->    pure $ VER setB edges' setA
         (Nothing       , Just Roots    ) ->    pure $ VER setA edges' setB
-        (Just Verticies, Nothing       ) ->    pure $ VER setA edges' setB
+        (Just Vertices, Nothing       ) ->    pure $ VER setA edges' setB
         (Just Roots    , Nothing       ) ->    pure $ VER setB edges' setA
-        (Just Verticies, Just Roots    ) ->    pure $ VER setA edges' setB 
-        (Just Roots    , Just Verticies) ->    pure $ VER setB edges' setA
+        (Just Vertices, Just Roots    ) ->    pure $ VER setA edges' setB 
+        (Just Roots    , Just Vertices) ->    pure $ VER setB edges' setA
         (_             , _             ) -> runFail $ vertexSetMessages [x,y]
     runFail [x] = fail x
     runFail xs  = fails xs
@@ -143,7 +143,7 @@ vertexSetType :: MonadParsec s m Char => m VertexSetType
 vertexSetType = do
     value <- optional (try (symbol (string' "VertexSet")))
     case value of
-      Just _  -> pure Verticies
+      Just _  -> pure Vertices
       Nothing -> symbol (string' "RootSet") *> pure Roots
 
 -- | A vertex set with an optional set label enclosed in braces.

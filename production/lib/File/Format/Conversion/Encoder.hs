@@ -1,17 +1,17 @@
 module File.Format.Conversion.Encoder where
 
-import Prelude hiding (replicate, zipWith)
-import Bio.Phylogeny.Graph
-import Data.Vector hiding ((++), length, head, elem, foldr, map)
-import qualified Data.Vector as V (foldr)
-import Data.BitVector hiding (foldr, replicate)
-import qualified Data.Map.Lazy as M
-import Data.List hiding (replicate, zipWith)
-import Bio.Phylogeny.PhyloCharacter
-import Data.Int
-import Data.Matrix.NotStupid (matrix)
-import Bio.Sequence.Parsed
-import Bio.Sequence.Coded
+import           Bio.Phylogeny.Graph
+import           Bio.Phylogeny.PhyloCharacter
+import           Bio.Sequence.Coded
+import           Bio.Sequence.Parsed
+import           Data.BitVector        hiding (foldr, replicate)
+import           Data.Int
+import           Data.List             hiding (replicate, zipWith)
+import qualified Data.Map.Lazy         as M
+import           Data.Matrix.NotStupid              (matrix)
+import           Data.Vector           hiding ((++), length, head, elem, foldr, map)
+import qualified Data.Vector           as V   (foldr)
+import           Prelude               hiding (replicate, zipWith)
 
 dnaAlph, rnaAlph :: [String]
 dnaAlph = ["A", "C", "G", "T", "-"] 
@@ -24,18 +24,16 @@ makeEncodeInfo seqs = makeOneInfo alphabets firstSeq
         firstSeq = head $ M.elems seqs
 
 developAlphabets :: TreeSeqs -> Alphabet
-developAlphabets seqs = V.foldr (\node acc -> zipWith develop node acc) (replicate numChars []) (fromList $ M.elems seqs)
-
+developAlphabets seqs = V.foldr (zipWith develop) (replicate numChars []) (fromList $ M.elems seqs)
     where
-        numChars = length $ head $ M.elems seqs
-
+        numChars = length . head $ M.elems seqs
         develop :: Alphabet -> [String] -> [String]
         develop inSeq inAlph = 
-            let alph = foldr (\char acc -> foldr (\c acc2 -> if c `elem` acc2 then acc2 else c : acc2) acc char) [] inSeq
+            let alph = foldr (flip foldr (\c acc -> if c `elem` acc then acc else c : acc)) [] inSeq
             in nub (alph ++ inAlph)
 
 makeOneInfo :: Alphabet -> ParsedSeq -> Vector (PhyloCharacter Int64)
-makeOneInfo alphabets mySeq = zipWith charInfo alphabets mySeq
+makeOneInfo = zipWith charInfo
     where
         charInfo :: [String] -> Vector [String] -> PhyloCharacter Int64
         charInfo alph _ 
@@ -45,17 +43,16 @@ makeOneInfo alphabets mySeq = zipWith charInfo alphabets mySeq
                 where defaultMat = matrix (length alph) (length alph) (const 1)
 
 subsetOf :: (Ord a) => [a] -> [a] -> Bool
-subsetOf list1 list2 = foldr (\l acc -> if l `elem` list2 then acc else False) True list1
+subsetOf list1 list2 = foldr (\e acc -> acc && e `elem` list2) True list1
 
 encodeIt :: ParsedSequences -> Vector CharInfo -> EncodedSequences BitVector
 encodeIt inSeqs inInfos = zipWith encodeOne inSeqs inInfos
     where
         encodeOne :: ParsedSeq -> CharInfo -> EncodedSeq BitVector
-        encodeOne inSeq info = 
-            let tfList = foldr (\pos acc -> map (\a -> if a `elem` pos then True else False) alph ++ acc) [] inSeq
-            in Just $ singleton $ fromBits tfList
+        encodeOne inSeq info = Just . singleton $ fromBits tfList
             where
-                alph = toList $ alphabet info 
+                tfList = foldr (\pos acc -> map (`elem` pos) alph ++ acc) [] inSeq
+                alph   = toList $ alphabet info 
 
 packIt :: ParsedSequences -> Vector CharInfo -> EncodedSequences BitVector
 packIt = encodeIt

@@ -6,10 +6,11 @@ module File.Format.VertexEdgeRoot.Test
 
 import Data.List                         (intercalate)
 import File.Format.VertexEdgeRoot.Parser
-import Test.Custom                       (parseEquals,parseFailure,parseSuccess)
+import File.Format.VertexEdgeRoot.Converter
+import Test.Custom                       (parseEquals,parseFailure,parseSuccess, convertEquals)
 import Test.Tasty                        (TestTree,testGroup)
 import Test.Tasty.HUnit
-import Text.Megaparsec                   (eof)
+import Text.Megaparsec                   (eof, parse)
 
 testSuite :: TestTree
 testSuite = testGroup "VER Format"
@@ -19,13 +20,13 @@ testSuite = testGroup "VER Format"
   , testGroup "VER Parser" 
       [verStreamParser']
   , testGroup "VER Converter"
-      []
+      [verSimpleConvert]
   ]
 
 validSetLabels :: [(VertexSetType,String)]
 validSetLabels =
   [ (Roots,"RootSet")
-  , (Verticies,"VertexSet")
+  , (Vertices,"VertexSet")
   , (Roots,"rOotsEt")
   ]
 
@@ -170,3 +171,9 @@ verStreamParser' = testGroup "verStreamParser" [valid,invalid]
       [ "{a,b,c}{(a,b),(a,c),(b,c)}{a}" -- contains a cycle
       , "{a,b,c}{(a,b),(a,c)}{a,c}"     -- root nodes are connected
       ]
+
+verSimpleConvert :: TestTree
+verSimpleConvert = testGroup "verSimpleConvert" [empty]
+  where
+    empty = testCase "An empty ver makes an empty graph" (convertEquals (verStreamParser <* eof) "EdgeSet={}" mempty convert)
+

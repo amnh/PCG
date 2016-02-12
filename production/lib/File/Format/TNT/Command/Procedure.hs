@@ -32,8 +32,8 @@ import           Text.Megaparsec.Prim     (MonadParsec)
 --  * Fasta file to read-in
 --
 --  * Command file to be interpreted
-procCommand :: MonadParsec s m Char => m ()
-procCommand =  procHeader *> procBody
+procedureCommand :: MonadParsec s m Char => m ()
+procedureCommand =  procHeader *> procBody
   where
     procBody = (try procFastaFile   *> pure ())
            <|> (try procCommandFile *> pure ())

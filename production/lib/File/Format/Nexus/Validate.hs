@@ -80,14 +80,14 @@ import           Text.Megaparsec.Custom
 -- TODO: check for chars that aren't in alphabet
 -- TODO: fail on wrong datatype
 
-validateNexusParseResult :: (Show s, MonadParsec s m Char) => String -> NexusParseResult -> m Nexus
-validateNexusParseResult fileName (NexusParseResult inputSeqBlocks taxas treeSet assumptions _ignored) 
+validateNexusParseResult :: (Show s, MonadParsec s m Char) => NexusParseResult -> m Nexus
+validateNexusParseResult (NexusParseResult inputSeqBlocks taxas treeSet assumptions _ignored) 
   | null inputSeqBlocks && null taxas && null treeSet = fails ["There are no usable blocks in this file."] -- error 1
   | not (null independentErrors)                 = fails independentErrors
   | not (null dependentErrors)                   = fails dependentErrors
   | otherwise                                    = pure $ Nexus {-taxaLst-} outputSeqTups 
   where
-        seqMetadataTuples = map (\singleSeq -> ( getSeqFromMatrix fileName singleSeq taxaLst
+        seqMetadataTuples = map (\singleSeq -> ( getSeqFromMatrix singleSeq taxaLst
                                   , getCharMetadata costMatrix singleSeq
                                   )) inputSeqBlocks
         (outputSeqTups,_) = foldSeqs seqMetadataTuples
@@ -102,7 +102,7 @@ validateNexusParseResult fileName (NexusParseResult inputSeqBlocks taxas treeSet
         incorrectCharCount = checkSeqLength (getBlock "aligned" inputSeqBlocks) outputSeqTups
         incorrectTaxaCount = f taxas >>= \(TaxaSpecification num taxons) -> 
             if num /= length taxons
-                then Just $ "Incorrect number of taxa in taxa block.\n" {- ++ (show num) ++ " " ++ (show taxons) -} -- half of error 16
+                then Just "Incorrect number of taxa in taxa block.\n" {- ++ (show num) ++ " " ++ (show taxons) -} -- half of error 16
                 else Nothing
             where
                 f [x] = Just x
@@ -115,7 +115,7 @@ validateNexusParseResult fileName (NexusParseResult inputSeqBlocks taxas treeSet
                             (_:_:_) -> Just "Multiple taxa blocks supplied.\n"  -- error 1
                             _       -> Nothing
         noTaxaError =  if null taxas && not (foldr (\x acc -> acc || areNewTaxa x) False inputSeqBlocks) -- will register as False if inputSeqBlocks is empty
-                       then Just $ "Taxa are never specified. \n"  {-++ (show taxas) ++ " " ++ (show inputSeqBlocks) -} -- error 6
+                       then Just "Taxa are never specified. \n"  {-++ (show taxas) ++ " " ++ (show inputSeqBlocks) -} -- error 6
                        else Nothing
         seqTaxaCountErrors = foldr (\x acc -> checkForNewTaxa x : acc) [] inputSeqBlocks -- errors 7, 8 half of 16
         seqTaxonCountErrors = foldr (\x acc -> getSeqTaxonCountErrors taxaLst x ++ acc) [] inputSeqBlocks -- errors 12, 22
@@ -155,7 +155,7 @@ foldSeqs ((taxSeqMap,charMDataVec):xs) = ((newSeqMap, newMetadata), totLength)
                                                                                         -- TODO: Error out here?
                                                       then V.fromList [] V.++ curMetadata
                                                       else curMetadata
-        totLength                        = curLength + (V.length charMDataVec)
+        totLength                        = curLength +  V.length charMDataVec
     
 
 -- | updateSeqInMap takes in a TaxonSequenceMap, a length (the length of the longest sequence in the map), a taxon name and a sequence
@@ -165,7 +165,7 @@ updateSeqInMap :: Int -> Sequence -> Sequence -> Sequence
 updateSeqInMap curLength inputSeq curSeq = newSeq
     where
         newSeq        = seqToAdd V.++ curSeq
-        missingLength = curLength - (length curSeq)
+        missingLength = curLength - length curSeq
         emptySeq      = V.replicate missingLength Nothing
         seqToAdd      = inputSeq V.++ emptySeq
 
@@ -241,8 +241,8 @@ splitSequence isTokens isContinuous isAlign seq' = finalList
     where 
         finalList = 
             if isAlign 
-            then V.fromList $ Just <$> V.singleton <$> chars -- aligned, so each item in vector of ambiguity groups is single char
-            else V.singleton $ Just $ V.fromList chars -- not aligned, so whole vector of ambiguity groups is single char
+            then V.fromList  $ (Just . V.singleton) <$> chars -- aligned, so each item in vector of ambiguity groups is single char
+            else V.singleton . Just $ V.fromList chars -- not aligned, so whole vector of ambiguity groups is single char
         chars = 
             if isTokens || isContinuous
             then findAmbiguousTokens (words seq') [] False
@@ -348,15 +348,15 @@ getFormatInfo phyloSeq = case headMay $ format phyloSeq of
                                   , matchChar x
                                   )
 
-getSeqFromMatrix :: String -> PhyloSequence -> V.Vector String -> TaxonSequenceMap
+getSeqFromMatrix :: PhyloSequence -> V.Vector String -> TaxonSequenceMap
 -- getSeqFromMatrix [] _ = V.empty
-getSeqFromMatrix fileName seqBlock taxaLst = -- TODO: name chars
+getSeqFromMatrix seqBlock taxaLst = -- TODO: name chars, Nope don't do that here, just Maybe them!
     M.map (splitSequence tkns cont aligned) matchCharsReplaced
     where
-        (aligned, noLabels, interleaved, tkns, cont, matchChar') = getFormatInfo $ seqBlock
+        (aligned, noLabels, interleaved, tkns, cont, matchChar') = getFormatInfo seqBlock
         taxaCount  = length taxaLst
         taxaMap    = M.fromList . zip (V.toList taxaLst) $ repeat ""
-        mtx        = head $ seqMatrix $ seqBlock -- I've already checked to make sure there's a matrix
+        mtx        = head $ seqMatrix seqBlock -- I've already checked to make sure there's a matrix
         entireSeqs = if noLabels    -- this will be a list of tuples (taxon, concatted seq)
                      then if interleaved
                           then concatMap (zip $ V.toList taxaLst) (chunksOf taxaCount mtx)
@@ -462,7 +462,7 @@ createElimTups :: [String] -> [(Bool,Int)]
 createElimTups = foldr (\x acc -> f x ++ acc) []
     where 
         f inStr = if secondNumStr /= ""
-                      then (True,firstNum) : (False,secondNum) : []
+                      then [(True,firstNum),(False,secondNum)]
                       else [(True,firstNum)]
             where
                 (firstNumStr,secondNumStr) = break (== '-') inStr
@@ -477,14 +477,15 @@ createElimTups = foldr (\x acc -> f x ++ acc) []
 -- Note that sequences are indexed starting at 1, but Haskell Vectors are indexed starting at 0.
 getNext :: Int -> Int -> V.Vector (Bool,Int) -> (Bool, Int)
 getNext seqIdx elimsIdx toElim
-    | elimsIdx >= V.length toElim           = (False, elimsIdx) -- there are no more things to eliminate
-    | seqIdx == (snd $ toElim V.! elimsIdx) = (True, succ elimsIdx) -- The given input is specifically listed, and should be eliminated
-    | seqIdx >  (snd $ toElim V.! elimsIdx) = (False, succ elimsIdx) -- The sequence index is > the current index, so we need to move forward in toElim
-    | otherwise                            = if fst $ toElim V.! elimsIdx -- The given input is not specifically listed, 
-                                                                         -- so check to see if we're in a range (fst tup == False)
-                                                                         -- Also, the seqIdx must be lower than the elimsIdx
-                                                 then (False, elimsIdx) -- we're not in a range, and the seq idx is not spec'ed
-                                                 else (True, elimsIdx)  -- we are in a range, so seqIdx should be eliminated, but we don't want to move to the next elim
+    | elimsIdx >= V.length toElim         = (False, elimsIdx) -- there are no more things to eliminate
+    | seqIdx == snd (toElim V.! elimsIdx) = (True, succ elimsIdx) -- The given input is specifically listed, and should be eliminated
+    | seqIdx >  snd (toElim V.! elimsIdx) = (False, succ elimsIdx) -- The sequence index is > the current index, so we need to move forward in toElim
+    | otherwise                           = (not . fst $ toElim V.! elimsIdx, elimsIdx)
+                                            -- The given input is not specifically listed, 
+                                            -- so check to see if we're in a range (fst tup == False)
+                                            -- Also, the seqIdx must be lower than the elimsIdx
+                                            -- we're not in a range, and the seq idx is not spec'ed
+                                            -- we are in a range, so seqIdx should be eliminated, but we don't want to move to the next elim
 
 -- | sortElimsStr takes a String of digits, commas and hyphens and returns a list of strings, broken on the commas
 -- and sorted by the value of the Int representation of any numbers before a hyphen. The input and output of this fn are

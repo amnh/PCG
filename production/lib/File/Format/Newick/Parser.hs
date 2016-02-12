@@ -154,7 +154,7 @@ joinNonUniqueLabeledNodes root = joinNonUniqueLabeledNodes' [] root
         labeledNodes           = filter (isJust . newickLabel) $ toList' root 
         joinNodes :: Map String [NewickNode] -> NewickNode -> Map String [NewickNode]
         joinNodes mapping node = insertWith (++) (fromJust $ newickLabel node) (descendants node) mapping
-        toList' node = node : (concat . fmap toList' . descendants) node
+        toList' node = node : (concatMap toList' . descendants) node
     -- When transforming the Newick Tree to the Newick Network by joining 
     -- identically labeled nodes, there exists the possiblily that a directed 
     -- cycle is defined in the tree which will result in infinite recursion 

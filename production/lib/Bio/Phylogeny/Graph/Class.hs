@@ -66,5 +66,5 @@ data Tree
    -- add structure that knows if a section is already optimized (possibly store at node?)
 
 -- | A graph is defined as a list of trees
-newtype Graph = Graph [Tree] deriving (Show)
+newtype Graph = Graph [Tree] deriving (Show, Eq)
 

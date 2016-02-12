@@ -1,3 +1,17 @@
+-----------------------------------------------------------------------------
+-- |
+-- Module      :  File.Format.Nweick.Converter
+-- Copyright   :  (c) 2015-2015 Ward Wheeler
+-- License     :  BSD-style
+--
+-- Maintainer  :  wheeler@amnh.org
+-- Stability   :  provisional
+-- Portability :  portable
+--
+-- Functionality for converting a newick parsed format into an internal graph format
+--
+-----------------------------------------------------------------------------
+
 {-# OPTIONS_GHC -fno-warn-unused-binds #-}
 
 module File.Format.Newick.Converter (convertGraph) where
@@ -6,18 +20,13 @@ import Prelude                      hiding ((++))
 import File.Format.Newick.Internal  hiding (isLeaf)
 import Bio.Phylogeny.Graph
 import Data.BitVector               (BitVector)
-import Data.IntMap                  hiding (null, foldr, singleton)
-import Data.Vector                  ((++), singleton)
-import qualified Data.Vector as V   (foldr, zipWith)
-import Data.Maybe                   (fromJust)
-import Data.Monoid
-import Data.List                    (elemIndex)
 import Data.Vector                  (Vector)
+import qualified Data.Vector as V   (foldr, zipWith)
+import Data.Monoid                  ()
 
 import Bio.Phylogeny.Graph.Topological
-import Bio.Phylogeny.Tree.Node      hiding (isLeaf, isRoot)
 import qualified Bio.Phylogeny.Tree.Node.Topological as TN
-import Bio.Phylogeny.Network        (isRoot, isLeaf)
+import Bio.Phylogeny.Network        ()
 import Bio.Sequence.Parsed
 import Bio.Sequence.Coded
 -- import File.Format.Conversion.Encoder
@@ -25,75 +34,71 @@ import qualified Data.Map.Lazy as M
 
 type SimpleMetadata = [String]
 
+-- | Convert a newick graph with associated sequences
 convertBothForest :: NewickForest -> [TreeSeqs] -> Graph
 convertBothForest forest seqs = Graph $ zipWith convertBoth forest seqs
 
+-- | Convert a newick tree with associated sequences
 convertBoth :: NewickNode -> TreeSeqs -> Tree
-convertBoth inTree seqs = 
-    let metadata = makeEncodeInfo seqs
-    in internalConvert inTree 0 mempty 0 seqs metadata
+convertBoth inTree seqs = fromTopo $ convertBothTopo inTree seqs
 
+-- | If encoding info is not already present, functionality to scrape it from sequences
+makeEncodeInfo :: TreeSeqs -> Vector SimpleMetadata
+makeEncodeInfo = M.foldr getNodeAlph mempty
     where
-        internalConvert :: NewickNode -> Int -> Tree -> Int -> TreeSeqs -> Vector SimpleMetadata -> Tree
-        internalConvert node pos initTree parentPos inSeqs metadata
-            | null $ descendants node = newTree
-            | otherwise = 
-                let recurseTrees = fmap (\n -> internalConvert n (pos + (fromJust $ n `elemIndex` (descendants node))) initTree pos seqs metadata) (descendants node)
-                in newTree <> foldr (\t acc -> acc <> t) mempty recurseTrees 
-                where
-                    name = case (newickLabel node) of
-                                Nothing -> show pos
-                                Just n -> n
-                    newTaxa = insert pos name (nodeNames initTree)
-                    mySeq = case M.member name inSeqs of
-                                True -> inSeqs M.! name
-                                False -> mempty
-                    myEncode = encodeIt mySeq metadata
-                    myPack = packIt mySeq metadata
-                    newNode = Node pos (isRoot node node) (isLeaf node node) ([pos..pos+(length $ descendants node)]) [parentPos] (singleton myEncode) (singleton myPack) mempty mempty mempty mempty 0
-                    newTree = initTree {nodes = (nodes initTree) ++ (singleton newNode), nodeNames = newTaxa}
+        getNodeAlph :: ParsedSequences -> Vector SimpleMetadata -> Vector SimpleMetadata
+        getNodeAlph = V.zipWith getNodeAlphAt
 
-        makeEncodeInfo :: TreeSeqs -> Vector SimpleMetadata
-        makeEncodeInfo inSeqs = M.foldr (\nseq acc -> getNodeAlph nseq acc) mempty inSeqs
-            where
-                getNodeAlph :: ParsedSequences -> Vector SimpleMetadata -> Vector SimpleMetadata
-                getNodeAlph = V.zipWith getNodeAlphAt
+        getNodeAlphAt :: ParsedSeq -> SimpleMetadata -> SimpleMetadata
+        getNodeAlphAt inSeq soFar = V.foldr (\cIn cPrev -> foldr (\sIn prev -> if sIn `elem` prev then prev else sIn : prev) cPrev cIn) soFar inSeq
 
-                getNodeAlphAt :: ParsedSeq -> SimpleMetadata -> SimpleMetadata
-                getNodeAlphAt inSeq soFar = V.foldr (\cIn cPrev -> foldr (\sIn prev -> if sIn `elem` prev then prev else sIn : prev) cPrev cIn) soFar inSeq
+-- | Wrapper for encoding to get types right
+encodeIt :: ParsedSequences -> Alphabet -> EncodedSequences BitVector
+encodeIt inSeqs alphs = V.zipWith encodeOverAlphabet inSeqs alphs 
 
+-- | Wrapper for packing to get types right
+packIt :: ParsedSequences -> Alphabet -> EncodedSequences BitVector
+packIt inSeqs alphs = V.zipWith encodeOverAlphabet inSeqs alphs 
 
-        encodeIt :: ParsedSequences -> Vector SimpleMetadata -> EncodedSeq BitVector
-        encodeIt = encodeOverAlphabet
+-- | Convert a newick tree and associated sequences to a topo tree (where funcionality is located)
+convertBothTopo :: NewickNode -> TreeSeqs -> TopoTree
+convertBothTopo rootTree inSeqs = internalConvert True rootTree
+    where 
+        metadata = makeEncodeInfo inSeqs
 
-        packIt :: ParsedSequences -> Vector SimpleMetadata -> EncodedSeq BitVector
-        packIt = encodeOverAlphabet
+        internalConvert :: Bool -> NewickNode -> TopoTree
+        internalConvert atRoot inTree = 
+            let 
+                recurse = fmap (tree . internalConvert False) (descendants inTree) 
+                myName = case newickLabel inTree of
+                            Just label -> label
+                            Nothing -> ""
+                myCost = case branchLength inTree of
+                            Just l -> l
+                            Nothing -> 0
+                mySeq = if M.member myName inSeqs
+                            then inSeqs M.! myName
+                            else mempty
+                myEncode = encodeIt mySeq metadata
+                myPack   = packIt mySeq metadata
+                node = TN.TopoNode atRoot (null $ descendants inTree) myName recurse myEncode myPack mempty mempty mempty mempty myCost
+            in TopoTree node mempty
 
+-- | Converts a graph topology without sequences
 convertGraph :: NewickForest -> Graph
 convertGraph = Graph . fmap convertTree
 
+-- | Converts a tree without sequences
 convertTree :: NewickNode -> Tree
-convertTree inTree = internalConvert inTree 0 mempty 0
-    where
-        internalConvert :: NewickNode -> Int -> Tree -> Int -> Tree
-        internalConvert node pos initTree parentPos 
-            | null $ descendants node = newTree
-            | otherwise = 
-                let recurseTrees = fmap (\n -> internalConvert n (pos + (fromJust $ n `elemIndex` (descendants node))) initTree pos) (descendants node)
-                in newTree <> foldr (\t acc -> acc <> t) mempty recurseTrees 
-                where
-                    name = case (newickLabel node) of
-                                Nothing -> show pos
-                                Just n -> n
-                    newTaxa = insert pos name (nodeNames initTree)
-                    newNode = Node pos (isRoot node node) (isLeaf node node) ([pos..pos+(length $ descendants node)]) [parentPos] mempty mempty mempty mempty mempty mempty 0
-                    newTree = initTree {nodes = (nodes initTree) ++ (singleton newNode), nodeNames = newTaxa}
+convertTree = fromTopo . convertTopoTree
 
+-- | Converts into a topo graph without sequences
 convertTopo :: NewickForest -> TopoGraph 
 convertTopo = TopoGraph . fmap convertTopoTree
 
+-- | Converts into a topo tree without sequences (main funcionality in newick conversion)
 convertTopoTree :: NewickNode -> TopoTree
-convertTopoTree inTree = internalConvert inTree True
+convertTopoTree tree0 = internalConvert tree0 True
     where
         internalConvert :: NewickNode -> Bool -> TopoTree
         internalConvert inTree atRoot = 
@@ -103,7 +108,7 @@ convertTopoTree inTree = internalConvert inTree True
                             Just label -> label
                             Nothing -> ""
                 myCost = case branchLength inTree of
-                            Just len -> len
+                            Just l -> l
                             Nothing -> 0
                 node = TN.TopoNode atRoot (null $ descendants inTree) myName recurse mempty mempty mempty mempty mempty mempty myCost
             in TopoTree node mempty
