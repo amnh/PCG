@@ -84,15 +84,18 @@ progressiveParse (filePath, fileContent) =
   case snd . partitionEithers $ parseTryOrderForSequences <*> [fileContent] of
     parsed:_ -> pure . pure $ Graph [mempty { parsedSeqs = mapsToHashMap [parsed] }]
     []       ->
-      case parse newickStreamParser filePath fileContent of
-        Right _ -> pure mempty
-        Left  _ ->
-          case parse tcmStreamParser  filePath fileContent of
+--      case parse nexusStreamParser filePath fileContent of
+--        Right _ -> pure mempty
+--        Left  _ ->
+          case parse newickStreamParser filePath fileContent of
             Right _ -> pure mempty
             Left  _ ->
-              case parse verStreamParser filePath fileContent of
+              case parse tcmStreamParser  filePath fileContent of
                 Right _ -> pure mempty
-                Left  _ -> fail $ "Could not determine the file type of '"++filePath++"'. Try annotating the expected file data in the 'read' for more explicit error message on file parsing failures."
+                Left  _ ->
+                  case parse verStreamParser filePath fileContent of
+                    Right _ -> pure mempty
+                    Left  _ -> fail $ "Could not determine the file type of '" ++ filePath ++ "'. Try annotating the expected file data in the 'read' for more explicit error message on file parsing failures."
   where
     parseTryOrderForSequences :: [FileContent -> Either ParseError TaxonSequenceMap]
     parseTryOrderForSequences =
