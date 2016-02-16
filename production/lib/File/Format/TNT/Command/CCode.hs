@@ -6,30 +6,23 @@ module File.Format.TNT.Command.CCode where
   - Good documentation
   -}
 
-import           Data.Bifunctor           (second)
-import           Data.Char                (isSpace)
-import           Data.DList               (DList,append)
-import qualified Data.DList         as DL (toList,fromList)
-import           Data.IntMap.Strict       (IntMap,insertWith)
-import qualified Data.IntMap.Strict as IM (fromList,lookup)
-import           Data.IntSet              (IntSet, singleton)
-import qualified Data.IntSet        as IS (fromList)
-import           Data.List                (intersperse)
-import           Data.List.NonEmpty       (NonEmpty)
-import qualified Data.List.NonEmpty as NE (filter,fromList,length)
-import           Data.Maybe               (catMaybes,fromMaybe)
+
+import           Data.IntMap              (IntMap,insertWith)
+import qualified Data.IntMap        as IM (lookup)
+import qualified Data.List.NonEmpty as NE (fromList)
+import           Data.Maybe               (fromMaybe)
 import           Data.Vector              (Vector,generate)
 import           File.Format.TNT.Internal
 import           Text.Megaparsec
-import           Text.Megaparsec.Custom
-import           Text.Megaparsec.Lexer    (integer,number,signed)
 import           Text.Megaparsec.Prim     (MonadParsec)
 
 initialMetaData :: CharacterMetaData
 initialMetaData = CharMeta False True False 1 1
 
+metaDataTemplate :: CharacterState -> CharacterMetaData
 metaDataTemplate state = modifyMetaDataState state initialMetaData
 
+modifyMetaDataState :: CharacterState -> CharacterMetaData -> CharacterMetaData
 modifyMetaDataState  Additive     old = old { additive = True , sankoff = False }
 modifyMetaDataState  NonAdditive  old = old { additive = False }
 modifyMetaDataState  Active       old = old { active   = True  }
