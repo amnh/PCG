@@ -82,7 +82,7 @@ executable pcg
                        Bio.Phylogeny.Forest
                        Bio.Phylogeny.Forest.Class
                        Bio.Phylogeny.Graph
-                       Bio.Phylogeny.Graph.Class
+                       Bio.Phylogeny.Graph.Data
                        Bio.Phylogeny.Network
                        Bio.Phylogeny.Network.Class
                        Bio.Phylogeny.PhyloCharacter
@@ -210,7 +210,7 @@ library
   -- Modules included in this library but not exported.
   other-modules:
                        Bio.Phylogeny.Forest.Class
-                       Bio.Phylogeny.Graph.Class
+                       Bio.Phylogeny.Graph.Data
                        Bio.Phylogeny.Graph.Output
                        Bio.Phylogeny.Network.Class
                        Bio.Phylogeny.Tree.Binary.Class
@@ -280,7 +280,7 @@ Test-Suite testsuite
                        Bio.Phylogeny.Forest
                        Bio.Phylogeny.Forest.Class
                        Bio.Phylogeny.Graph
-                       Bio.Phylogeny.Graph.Class
+                       Bio.Phylogeny.Graph.Data
                        Bio.Phylogeny.Graph.Random
                        Bio.Phylogeny.Graph.Topological
                        Bio.Phylogeny.Network
