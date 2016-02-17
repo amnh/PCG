@@ -1,17 +1,9 @@
 {-# LANGUAGE FlexibleContexts #-}
 module File.Format.TNT.Internal where
 
-import           Data.Bifunctor           (second)
 import           Data.Char                (isSpace)
-import           Data.DList               (DList,append)
-import qualified Data.DList         as DL (toList,fromList)
-import           Data.IntSet              (IntSet, singleton)
-import qualified Data.IntSet        as IS (fromList)
-import           Data.List                (intersperse,inits)
+import           Data.List                (inits)
 import           Data.List.NonEmpty       (NonEmpty)
-import qualified Data.List.NonEmpty as NE (filter,fromList,length)
-import           Data.Map.Strict          (Map,insertWith)
-import qualified Data.Map.Strict    as M  (toList)
 import           Data.Maybe               (catMaybes)
 import           Data.Vector              (Vector)
 import           Text.Megaparsec
@@ -155,6 +147,7 @@ whitespaceInline =  inlineSpace
 --   @keyword fullName minChars@ will parse the __longest prefix of__ @fullName@
 --   requiring that __at least__ the first @minChars@ of @fullName@ are in the prefix.
 --   Keyword prefixes are terminated with an `inlineSpace` which is not consumed by the combinator.
+keyword :: MonadParsec s m Char => String -> Int -> m ()
 keyword x y = abreviatable x y *> pure ()
   where
     abreviatable :: MonadParsec s m Char => String -> Int -> m String

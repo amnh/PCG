@@ -7,15 +7,11 @@ module File.Format.TNT.Parser where
   - Deinterleave function with DList construction
   -}
 
-import           Data.List.NonEmpty                hiding (head)
 import           File.Format.TNT.Command.CCode
-import           File.Format.TNT.Command.Procedure
-import           File.Format.TNT.Command.XRead
+--import           File.Format.TNT.Command.Procedure
+--import           File.Format.TNT.Command.XRead
 import           File.Format.TNT.Internal
 import           File.Format.TNT.Partitioning
-import           Text.Megaparsec
-import           Text.Megaparsec.Custom
-import           Text.Megaparsec.Lexer                    (integer,number,signed)
 import           Text.Megaparsec.Prim                     (MonadParsec)
 
 -- TODO: make the types better
@@ -31,5 +27,6 @@ singleXRead xreads
   | (not.isSingleton) xreads = error "Multiple XREAD commands found in source, expecting a single XREAD command."
   | otherwise                = pure $ head xreads 
 
-isSingleton [x] = True
+isSingleton :: [a] -> Bool
+isSingleton [_] = True
 isSingleton _   = False
