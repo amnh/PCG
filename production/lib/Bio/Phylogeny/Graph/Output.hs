@@ -14,7 +14,7 @@
 
 module Bio.Phylogeny.Graph.Output where
 
-import Bio.Phylogeny.Graph.Class
+import Bio.Phylogeny.Graph.Data
 import Bio.Phylogeny.Tree.Node
 
 import qualified Data.IntMap as IM (elems, (!))

@@ -175,5 +175,5 @@ verStreamParser' = testGroup "verStreamParser" [valid,invalid]
 verSimpleConvert :: TestTree
 verSimpleConvert = testGroup "verSimpleConvert" [empty]
   where
-    empty = testCase "An empty ver makes an empty graph" (convertEquals (verStreamParser <* eof) "EdgeSet={}" mempty convert)
+    empty = testCase "An empty ver makes an empty graph" (convertEquals (verStreamParser <* eof) "{}{}{}" mempty convert)
 

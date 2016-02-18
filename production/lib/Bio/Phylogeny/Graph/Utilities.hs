@@ -3,7 +3,7 @@
 
 module Bio.Phylogeny.Graph.Utilities where
 
-import Bio.Phylogeny.Graph.Class
+import Bio.Phylogeny.Graph.Data
 import qualified Bio.Phylogeny.Graph.Topological as TG
 import qualified Bio.Phylogeny.Tree.Node.Topological as TN
 import qualified Bio.Phylogeny.Network as N
@@ -119,20 +119,20 @@ reCodeChars (nodes1, nodes2) (chars1, chars2)
       intersectChars1 = ifoldr (\i c acc -> if c `elem` chars2 then i `cons` acc else acc) mempty chars1
       complement1 = ifoldr (\i c acc -> if c `elem` chars2 then acc else i `cons` acc) mempty chars1
       complement2 = ifoldr (\i c acc -> if c `elem` chars1 then acc else i `cons` acc) mempty chars2
-      reorderFill items indices = foldr (\i acc -> if (length items - 1) < i then Nothing `cons` acc else items ! i `cons` acc) mempty indices
       justFill items indices = foldr (\i acc-> items ! i `cons` acc) mempty indices
+      reorderFill items indices = foldr (\i acc -> if (length items - 1) < i then Nothing `cons` acc else items ! i `cons` acc) mempty indices
       fill1 seqs = if null seqs then seqs
                     else reorderFill seqs intersectChars1 V.++ reorderFill seqs complement1 V.++ V.replicate (length complement2) Nothing
       fill2 seqs = if null seqs then seqs
                     else reorderFill seqs intersectChars1 V.++ V.replicate (length complement1) Nothing V.++ reorderFill seqs complement2
-      allChars = justFill chars1 intersectChars1 V.++ justFill chars1 complement1 V.++ justFill chars2 complement2
       update1 node = node {encoded = fill1 (encoded node), packed = fill1 (packed node), preliminary = fill1 (preliminary node), final = fill1 (final node), temporary = fill1 (temporary node), aligned = fill1 (aligned node)}
       update2 node = node {encoded = fill2 (encoded node), packed = fill2 (packed node), preliminary = fill2 (preliminary node), final = fill2 (final node), temporary = fill2 (temporary node), aligned = fill2 (aligned node)}
+      allChars = justFill chars1 intersectChars1 V.++ justFill chars1 complement1 V.++ justFill chars2 complement2
     in --trace ("finish " P.++ show complement1 P.++ show (V.map update1 nodes1))
         (V.map update1 nodes1, V.map update2 nodes2, allChars)
 
 -- | makeEdges is a small function assisting appendAt
--- it creates the edge set for a 
+-- it creates the edge set for a given node in the given tree
 makeEdges :: NodeInfo -> Tree -> EdgeSet
 makeEdges node inTree = EdgeSet (IS.fromList $ parents node) out
   where
@@ -162,6 +162,10 @@ addConnections newNode myNodes =
 instance Monoid Tree where
   mempty = Tree mempty mempty mempty mempty mempty 0
   mappend tree1 tree2 = appendAt tree1 tree2 (N.root tree1)
+
+instance Monoid Graph where
+  mempty = Graph mempty
+  mappend (Graph ts1) (Graph ts2) = Graph (ts1 <> ts2)
 
 instance N.Network Tree NodeInfo where
   parents n t   = map (\i -> nodes t ! i) (parents n)

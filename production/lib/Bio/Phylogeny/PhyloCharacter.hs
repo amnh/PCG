@@ -29,7 +29,8 @@ data PhyloCharacter b = DNA        {name :: String, -- The character name if it 
                                     stateNames :: Vector String,
                                     alphabet :: Vector String, 
                                     tcm :: CostMatrix, 
-                                    ignored :: Bool}
+                                    ignored :: Bool,
+                                    weight :: Float}
 
                       | RNA        {name :: String,
                                     aligned :: Bool, 
@@ -37,7 +38,8 @@ data PhyloCharacter b = DNA        {name :: String, -- The character name if it 
                                     stateNames :: Vector String,
                                     alphabet :: Vector String, 
                                     tcm :: CostMatrix, 
-                                    ignored :: Bool}
+                                    ignored :: Bool,
+                                    weight :: Float}
 
                       | Qualitative {name :: String,
                                     aligned :: Bool,
@@ -46,11 +48,13 @@ data PhyloCharacter b = DNA        {name :: String, -- The character name if it 
                                     alphabet :: Vector String,
                                     tcm :: CostMatrix,
                                     additive :: Bool,
-                                    ignored :: Bool} 
+                                    ignored :: Bool,
+                                    weight :: Float} 
 
                       | Continous  {name :: String,
                                     ignored :: Bool,
-                                    tcm :: CostMatrix}
+                                    tcm :: CostMatrix,
+                                    weight :: Float}
                       | Custom     {name :: String,
                                     aligned :: Bool, 
                                     masks :: (Vector b, Vector b), 
@@ -58,14 +62,16 @@ data PhyloCharacter b = DNA        {name :: String, -- The character name if it 
                                     stateNames :: Vector String,
                                     tcm :: CostMatrix, 
                                     ignored :: Bool,
-                                    additive :: Bool} 
+                                    additive :: Bool,
+                                    weight :: Float} 
                       | AminoAcid   {name :: String,
                                     aligned :: Bool, 
                                     fitchMasks :: (Vector b, Vector b), 
                                     alphabet :: Vector String,
                                     stateNames :: Vector String, 
                                     tcm :: CostMatrix, 
-                                    ignored :: Bool}
+                                    ignored :: Bool,
+                                    weight :: Float}
 
                             deriving (Show, Eq, Generic)
 
