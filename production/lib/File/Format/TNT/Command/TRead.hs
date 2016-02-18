@@ -1,5 +1,5 @@
 {-# LANGUAGE FlexibleContexts #-}
-module File.Format.TNT.Command.XRead where
+module File.Format.TNT.Command.TRead where
 
 {-- TODO:
   - Robust tests
@@ -31,16 +31,13 @@ data NodeType
    | Prefix String
    deriving (Show)
 
-data TRead
-   = Leaf NodeType
-   | Node [TRead]
-   deriving (Show)
+data TerminalTree a
+   = Leaf a
+   | Branch [TerminalTree a]
+   deriving (Show)   
 
-{-
-data TNTTree
-   = Leaf (TaxonInfo)
-   | Branch [TNTTree]
--}
+data TRead   = TerminalTree NodeType
+data TNTTree = TerminalTree TaxononInfo
 
 -- | Parses an TREAD command. Correctly validates for taxa count
 -- and character sequence length. Produces one or more taxa sequences.
@@ -99,6 +96,10 @@ treadHeader =  symbol (keyword "tread" 2)
       where
         delimiter = char '\''
 
+-- | One or more '*' seperated trees in parenthetical notationy
+treadForest :: MonadParsec s m Char => m (NonEmpty TRead)
+treadForest = fmap NE.fromList $ symbol treadTree `sepBy1` symbol (char '*')
+
 treadTree :: MonadParsec s m Char => m TRead
 treadTree = treadSubtree <|> treadLeaf
 
@@ -118,6 +119,3 @@ treadSubtree = between open close body
     open      = symbol (char '(')
     close     = symbol (char ')')
     body      = Node <$> some (symbol treadTree)
-
-treadForest :: MonadParsec s m Char => m (NonEmpty TRead)
-treadForest = fmap NE.fromList $ symbol treadTree `sepBy1` symbol (char '*')

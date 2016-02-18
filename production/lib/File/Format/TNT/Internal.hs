@@ -20,6 +20,18 @@ data Hennig
    , charMetaData :: Vector CharacterMetaData
    } deriving (Show)
 
+type TntResult = Either TreeOnlyData WithTaxonData
+
+data WithTaxonData
+   = WithTaxonData
+   { sequences    :: Vector TaxonInfo
+   , charMetaData :: Vector CharacterMetaData
+   , trees        :: [TRead TaxonInfo]
+   }
+
+type Yucky = String
+type TreeDataOnly = [TRead Yucky]
+
 --XRead types
 --------------------------------------------------------------------------------
 
