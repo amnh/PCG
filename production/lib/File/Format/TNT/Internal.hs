@@ -12,33 +12,32 @@ import           Text.Megaparsec.Lexer    (integer,number,signed)
 import           Text.Megaparsec.Prim     (MonadParsec)
 
 --Export types
-
+{-
 data Hennig
    = Hennig
    { taxaCount    :: Int
    , sequences    :: NonEmpty TaxonInfo
    , charMetaData :: Vector CharacterMetaData
    } deriving (Show)
+-}
 
-type TntResult = Either TreeOnlyData WithTaxonData
-
-data WithTaxonData
-   = WithTaxonData
+type TntResult = Either TreeOnly WithTaxa
+type TreeOnly  = [TRead]
+type Yucky     = String
+data WithTaxa
+   = WithTaxa
    { sequences    :: Vector TaxonInfo
    , charMetaData :: Vector CharacterMetaData
-   , trees        :: [TRead TaxonInfo]
+   , trees        :: [LeafyTree TaxonInfo]
    }
-
-type Yucky = String
-type TreeDataOnly = [TRead Yucky]
 
 --XRead types
 --------------------------------------------------------------------------------
 
 data XRead
    = XRead
-   { charCountx   :: Int
-   , taxaCountx   :: Int
+   { charCountx :: Int
+   , taxaCountx :: Int
    , sequencesx :: NonEmpty TaxonInfo
    } deriving (Show)
 
@@ -88,6 +87,23 @@ data CharacterMetaData
    , weight   :: Int
    , steps    :: Int
    } deriving (Show)
+
+-- TRead types
+--------------------------------------------------------------------------------
+
+type TNTTree = LeafyTree TaxonInfo
+type TRead   = LeafyTree NodeType
+
+data LeafyTree a
+   = Leaf a
+   | Branch [LeafyTree a]
+   deriving (Show)
+
+data NodeType
+   = Index  Int
+   | Name   String
+   | Prefix String
+   deriving (Show)
 
 -- | Parses an Int which is non-negative.
 nonNegInt :: MonadParsec s m Char => m Int
