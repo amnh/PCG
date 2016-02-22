@@ -1,12 +1,8 @@
 {-# LANGUAGE FlexibleContexts #-}
 module File.Format.TNT.Parser where
 
-{-- TODO:
-  - Robust tests
-  - Good documentation
-  - Deinterleave function with DList construction
-  -}
-
+import           Data.List.NonEmpty (toList)
+import           Data.Vector (fromList)
 import           File.Format.TNT.Command.CCode
 --import           File.Format.TNT.Command.Procedure
 --import           File.Format.TNT.Command.XRead
@@ -15,12 +11,12 @@ import           File.Format.TNT.Partitioning
 import           Text.Megaparsec.Prim                     (MonadParsec)
 
 -- TODO: make the types better
-tntStreamParser :: MonadParsec s m Char => m Hennig
+tntStreamParser :: MonadParsec s m Char => m TntResult
 tntStreamParser = do
     (xreads,ccodes,_) <- gatherCommands
     xread             <- singleXRead xreads
-    pure . Hennig (taxaCountx xread) (sequencesx xread) $ ccodeCoalesce (charCountx xread) ccodes
-    
+    pure . Right $ WithTaxa (fromList . toList $ sequencesx xread) (ccodeCoalesce (charCountx xread) ccodes) mempty
+  
 singleXRead :: MonadParsec s m Char => [XRead] -> m XRead
 singleXRead xreads
   | null xreads              = error "No XREAD command found in source."
