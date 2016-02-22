@@ -83,51 +83,50 @@ import           Text.Megaparsec.Custom
 validateNexusParseResult :: (Show s, MonadParsec s m Char) => NexusParseResult -> m Nexus
 validateNexusParseResult (NexusParseResult inputSeqBlocks taxas treeSet assumptions _ignored) 
   | null inputSeqBlocks && null taxas && null treeSet = fails ["There are no usable blocks in this file."] -- error 1
-  | not (null independentErrors)                 = fails independentErrors
-  | not (null dependentErrors)                   = fails dependentErrors
-  | otherwise                                    = pure $ Nexus {-taxaLst-} outputSeqTups 
+  | not (null independentErrors)                      = fails independentErrors
+  | not (null dependentErrors)                        = fails dependentErrors
+  | otherwise                                         = pure $ Nexus {-taxaLst-} outputSeqTups 
   where
-        seqMetadataTuples = map (\singleSeq -> ( getSeqFromMatrix singleSeq taxaLst
-                                  , getCharMetadata costMatrix singleSeq
-                                  )) inputSeqBlocks
-        (outputSeqTups,_) = foldSeqs seqMetadataTuples
+        seqMetadataTuples   = map (\singleSeq -> ( getSeqFromMatrix singleSeq taxaLst
+                                    , getCharMetadata costMatrix singleSeq
+                                    )) inputSeqBlocks
+        (outputSeqTups,_)   = foldSeqs seqMetadataTuples
         --TODO: dependentErrors & independentErrors becomes :: String error, String warning => [Maybe (Either error warning)]
         -- then partitionEithers . catMaybes, etc., etc.
-        costMatrix = headMay . tcm $ head assumptions
-        dependentErrors = catMaybes $ incorrectTaxaCount : (missingCloseQuotes ++ seqTaxaCountErrors ++ interleaveErrors ++ seqTaxonCountErrors ++ incorrectCharCount)
-        equates = foldr (\x acc -> getEquates x : acc) [] inputSeqBlocks
-        independentErrors = catMaybes $ noTaxaError : multipleTaxaBlocks : seqMatrixDimsErrors -- sequenceBlockErrors
-        
-
-        incorrectCharCount = checkSeqLength (getBlock "aligned" inputSeqBlocks) outputSeqTups
-        incorrectTaxaCount = f taxas >>= \(TaxaSpecification num taxons) -> 
-            if num /= length taxons
-                then Just $ "Incorrect number of taxa in taxa block.\n" {- ++ (show num) ++ " " ++ (show taxons) -} -- half of error 16
-                else Nothing
-            where
-                f [x] = Just x
-                f _   = Nothing
-        interleaveErrors = foldr (\x acc -> findInterleaveError taxaLst x : acc) [] inputSeqBlocks -- error 14
-        seqMatrixDimsErrors = foldr (\x acc -> seqMatrixMissing x : acc) [] inputSeqBlocks ++
-                           foldr (\x acc -> dimsMissing   x : acc) [] inputSeqBlocks
-        missingCloseQuotes = map Just (lefts equates) ++ map Just (lefts symbols') -- error 19
-        multipleTaxaBlocks = case taxas of
-                            (_:_:_) -> Just "Multiple taxa blocks supplied.\n"  -- error 1
-                            _       -> Nothing
-        noTaxaError =  if null taxas && not (foldr (\x acc -> acc || areNewTaxa x) False inputSeqBlocks) -- will register as False if inputSeqBlocks is empty
-                       then Just $ "Taxa are never specified. \n"  {-++ (show taxas) ++ " " ++ (show inputSeqBlocks) -} -- error 6
-                       else Nothing
-        seqTaxaCountErrors = foldr (\x acc -> checkForNewTaxa x : acc) [] inputSeqBlocks -- errors 7, 8 half of 16
+        costMatrix          = headMay . tcm $ head assumptions
+        dependentErrors     = catMaybes $ incorrectTaxaCount : (missingCloseQuotes ++ seqTaxaCountErrors ++ interleaveErrors ++ 
+                                                                seqTaxonCoun tErrors ++ incorrectCharCount)
+        equates             = foldr (\x acc -> getEquates x : acc) [] inputSeqBlocks
+        independentErrors   = catMaybes $ noTaxaError : multipleTaxaBlocks : seqMatrixDimsErrors -- sequenceBlockErrors
+        incorrectCharCount  = checkSeqLength (getBlock "aligned" inputSeqBlocks) outputSeqTups
+        incorrectTaxaCount  = f taxas >>= \(TaxaSpecification num taxons) -> 
+                                 if num /= length taxons
+                                     then Just $ "Incorrect number of taxa in taxa block.\n" {- ++ (show num) ++ " " ++ (show taxons) -} -- half of error                       6
+                                     else Nothing
+                                 where
+                                     f [x] = Just x
+                                     f _   = Nothing
+        interleaveErrors    = foldr (\x acc -> findInterleaveError taxaLst x : acc) [] inputSeqBlocks -- error 14
+        seqMatrixDimsErrors = foldr (\x acc -> seqMatrixMissing x : acc) [] inputSeqBlocks ++ 
+                                  foldr (\x acc -> dimsMissing   x : acc) [] inputSeqBlocks
+        missingCloseQuotes  = map Just (lefts equates) ++ map Just (lefts symbols') -- error 19
+        multipleTaxaBlocks  = case taxas of
+                                  (_:_:_) -> Just "Multiple taxa blocks supplied.\n"  -- error 1
+                                  _       -> Nothing
+        noTaxaError         =  if null taxas && not (foldr (\x acc -> acc || areNewTaxa x) False inputSeqBlocks) -- will register as False if inputSeqBlocks is empty
+                                   then Just $ "Taxa are never specified. \n"  {-++ (show taxas) ++ " " ++ (show inputSeqBlocks) -} -- error 6
+                                   else Nothing
+        seqTaxaCountErrors  = foldr (\x acc -> checkForNewTaxa x : acc) [] inputSeqBlocks -- errors 7, 8 half of 16
         seqTaxonCountErrors = foldr (\x acc -> getSeqTaxonCountErrors taxaLst x ++ acc) [] inputSeqBlocks -- errors 12, 22
         
         --correctCharCount = foldr (\x acc -> if isJust checkDims x
         --                                      then
         --                                      else ) Nothing convertSeqs ! 0
-        symbols' = foldr (\x acc -> getSymbols x : acc) [] inputSeqBlocks
-        taxaLst  = V.fromList $ foldr (\x acc -> acc ++ getTaxaFromSeq x) [] inputSeqBlocks ++
-                            if   (not . null) taxas
-                            then taxaLabels $ head taxas
-                            else []
+        symbols'            = foldr (\x acc -> getSymbols x : acc) [] inputSeqBlocks
+        taxaLst             = V.fromList $ foldr (\x acc -> acc ++ getTaxaFromSeq x) [] inputSeqBlocks ++
+                                       if   (not . null) taxas
+                                       then taxaLabels $ head taxas
+                                       else []
         -- taxaSeqVector = V.fromList [(taxon, alignedTaxaSeqMap M.! taxon) | taxon <- taxaLst]
         --unalignedTaxaSeqMap = getSeqFromMatrix (getBlock "unaligned" inputSeqBlocks) taxaLst
 
@@ -171,13 +170,14 @@ updateSeqInMap curLength inputSeq curSeq = newSeq
 
 -- | checkSeqLength takes in the list of sequences and
 checkSeqLength :: [PhyloSequence] -> Sequences -> [Maybe String]
-checkSeqLength [] _            = [Nothing]
+checkSeqLength [] _                   = [Nothing]
 checkSeqLength seqBlockLst (seqMap,_) = 
     M.foldrWithKey (\key val acc -> (if length val == len
                                      then Nothing
-                                     else Just (key ++ "'s sequence is the wrong length in an aligned block. It should be " ++ show len ++ ", but is " ++ show (length val) {- ++ ":\n" ++ show val -} ++ "\n")) : acc) [] seqMap
+                                     else Just (key ++ "'s sequence is the wrong length in an aligned block. It should be " ++ 
+                                                show len ++ ", but is " ++ show (length val) ++ "\n")) : acc) [] seqMap
     where
-        len = numChars . head . charDims $ head seqBlockLst -- TODO: fix this line
+        len = numChars . head . charDims <$> (headMay seqBlockLst) -- TODO: fix this line
 
 getCharMetadata :: Maybe StepMatrix -> PhyloSequence -> V.Vector CharacterMetadata
 getCharMetadata mayMtx seqBlock = 
@@ -448,9 +448,9 @@ checkForNewTaxa phyloSeq = case charDims phyloSeq of
 getTaxaFromSeq :: PhyloSequence -> [String]
 getTaxaFromSeq phyloSeq 
     | areNewTaxa phyloSeq = case seqTaxaLabels phyloSeq of
-                         []    -> {- trace (show keys) $ -} keys
-                         (x:_) -> x
-    | otherwise        = []
+                            []    -> {- trace (show keys) $ -} keys
+                            (x:_) -> x
+    | otherwise           = []
     where
         keys = M.keys $ getTaxaFromMatrix phyloSeq
 
@@ -466,8 +466,8 @@ createElimTups = foldr (\x acc -> f x ++ acc) []
                       else [(True,firstNum)]
             where
                 (firstNumStr,secondNumStr) = break (== '-') inStr
-                firstNum = {- trace ("first: " ++ firstNumStr) $ -}read firstNumStr :: Int
-                secondNum = {- trace ("second: " ++ secondNumStr) $ -}read (tail secondNumStr) :: Int
+                firstNum  = read firstNumStr :: Int
+                secondNum = read (tail secondNumStr) :: Int -- tail here should be safe, as it's guarded by if, above
 
 -- | getNext takes as input an index of a character in an aligned sequence, as well as the current index in a list of tuples 
 -- as described in the output of createElimTups. It then determines whether the input character index should be ignored or not
