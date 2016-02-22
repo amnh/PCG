@@ -14,5 +14,5 @@
 
 --module Bio.Phylogeny.Graph.Subset where
 
---import Bio.Phylogeny.Graph.Class
+--import Bio.Phylogeny.Graph.Data
 

@@ -11,6 +11,11 @@ import Test.Custom                       (parseEquals,parseFailure,parseSuccess,
 import Test.Tasty                        (TestTree,testGroup)
 import Test.Tasty.HUnit
 import Text.Megaparsec                   (eof, parse)
+import qualified Data.IntMap as IM
+import qualified Data.HashMap.Lazy as HM
+import qualified Data.Vector as V
+import Bio.Phylogeny.Graph        hiding (EdgeInfo)
+import Bio.Phylogeny.Tree.Node
 
 testSuite :: TestTree
 testSuite = testGroup "VER Format"
@@ -173,7 +178,8 @@ verStreamParser' = testGroup "verStreamParser" [valid,invalid]
       ]
 
 verSimpleConvert :: TestTree
-verSimpleConvert = testGroup "verSimpleConvert" [empty]
+verSimpleConvert = testGroup "verSimpleConvert" [single]
   where
-    empty = testCase "An empty ver makes an empty graph" (convertEquals (verStreamParser <* eof) "EdgeSet={}" mempty convert)
+    single = testCase "A one node input makes a one node graph" (convertEquals (verStreamParser <* eof) "RootSet={a}VertexSet={a}EdgeSet={}" singleGraph convert)
+    singleGraph = Graph [Tree (IM.singleton 0 "a") (HM.singleton "a" mempty) mempty (V.singleton $ Node 0 True True [] [] mempty mempty mempty mempty mempty mempty 0) (V.singleton $ EdgeSet mempty mempty) 0]
 

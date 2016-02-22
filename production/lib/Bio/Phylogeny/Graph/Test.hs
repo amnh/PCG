@@ -38,6 +38,12 @@ import Debug.Trace
 testSuite :: TestTree
 testSuite = testGroup "Graph operations" [joinOps, subsetting]
 
+conversion :: TestTree 
+conversion = testGroup "Conversion to and from topological trees" [nullTo]
+    where
+        nullTo = testCase "An empty referential tree gives an empty topo tree" (mempty @=? fromTopo mempty)
+
+
 joinOps :: TestTree
 joinOps = testGroup "Check correct joining of trees" [nulladd, smalladd, nullJoin, twoJoin, threeJoin, seqJoin]
     where
@@ -84,8 +90,8 @@ joinOps = testGroup "Check correct joining of trees" [nulladd, smalladd, nullJoi
         result5 = result4 <> tree4a
 
         seqJoin = testCase "Two one node trees with sequences join properly" (expected6 @=? result6)
-        chars1 = singleton $ DNA "" True (mempty, mempty) (fromList ["A", "C", "G", "T", "-"]) mempty mempty False
-        chars2 = singleton $ DNA "" True (mempty, mempty) (fromList ["A", "C", "G"]) mempty mempty False
+        chars1 = singleton $ DNA "" True (mempty, mempty) (fromList ["A", "C", "G", "T", "-"]) mempty mempty False 0
+        chars2 = singleton $ DNA "" True (mempty, mempty) (fromList ["A", "C", "G"]) mempty mempty False 0
         node6a = Node 0 True True [] [] (singleton $ Just $ fromList [4, 8, 1]) mempty mempty mempty mempty mempty 2
         node6b = Node 0 True True [] [] (singleton $ Just $ fromList [16]) mempty mempty mempty mempty mempty 2
         node6aUpadate = node6a {isLeaf = False, children = [1], encoded = (encoded node6a) V.++ (singleton Nothing)}

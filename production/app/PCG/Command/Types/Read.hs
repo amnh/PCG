@@ -1,11 +1,11 @@
 {-# LANGUAGE FlexibleContexts #-}
 
 module PCG.Command.Types.Read
-  ( evaluate
-  , validate
+  ( validate
   ) where
 
 import Bio.Phylogeny.Graph
+import Bio.Sequence.Parsed
 import Control.Arrow              ((&&&))
 import Control.Monad              (liftM2,when)
 import Control.Monad.IO.Class
@@ -38,32 +38,32 @@ import PCG.Command.Types.Read.Internal
 import PCG.Script.Types
 
 
-evaluate :: Command -> SearchState -> SearchState
-evaluate (READ fileSpecs) old = do
-    when (null fileSpecs) $ fail "No files specified in 'read()' command"
-    result <- liftIO . runEitherT . eitherTValidation $ parseSpecifiedFile <$> fileSpecs
-    case result of
-      Left err -> fail $ show err
-      Right xs -> foldl (<>) old xs
-evaluate _ _ = fail "Invalid READ command binding"
+--evaluate :: Command -> SearchState -> SearchState
+--evaluate (READ fileSpecs) old = do
+--    when (null fileSpecs) $ fail "No files specified in 'read()' command"
+--    result <- liftIO . runEitherT . eitherTValidation $ parseSpecifiedFile <$> fileSpecs
+--    case result of
+--      Left err -> fail $ show err
+--      Right xs -> foldl (<>) old xs
+--evaluate _ _ = fail "Invalid READ command binding"
 
-parseSpecifiedFile  :: FileSpecification -> EitherT ReadError IO SearchState
--- Currently ignoring TCM
-parseSpecifiedFile      (PrealignedFile     x _  ) = parseSpecifiedFile x
--- Currently ignoring TCM
-parseSpecifiedFile spec@(CustomAlphabetFile{}    ) = 
-  parseSpecifiedFileSimple  fastcStreamParser (setTaxaSeqs . customToHashMap) spec
-parseSpecifiedFile spec@(AminoAcidFile      _    ) =
-  parseSpecifiedFileSimple (fastaStreamConverter AminoAcid =<< fastaStreamParser) (setTaxaSeqs . mapsToHashMap) spec
-parseSpecifiedFile spec@(NucleotideFile     _    ) =
-  parseSpecifiedFileSimple (fastaStreamConverter DNA       =<< fastaStreamParser) (setTaxaSeqs . mapsToHashMap) spec
-parseSpecifiedFile spec@(UnspecifiedFile    _    ) =
-  getSpecifiedContent spec >>= fmap (foldl (<>) mempty) . eitherTValidation . fmap progressiveParse . dataFiles
-parseSpecifiedFile      (AnnotatedFile      _    ) = fail "Annotated file specification is not implemented"
-parseSpecifiedFile      (ChromosomeFile     _    ) = fail "Chromosome file specification is not implemented"
-parseSpecifiedFile      (GenomeFile         _    ) = fail "Genome file specification is not implemented"
+--parseSpecifiedFile  :: FileSpecification -> EitherT ReadError IO SearchState
+---- Currently ignoring TCM
+--parseSpecifiedFile      (PrealignedFile     x _  ) = parseSpecifiedFile x
+---- Currently ignoring TCM
+--parseSpecifiedFile spec@(CustomAlphabetFile{}    ) = 
+--  parseSpecifiedFileSimple  fastcStreamParser (setTaxaSeqs . customToHashMap) spec
+--parseSpecifiedFile spec@(AminoAcidFile      _    ) =
+--  parseSpecifiedFileSimple (fastaStreamConverter AminoAcid =<< fastaStreamParser) (setTaxaSeqs . mapsToHashMap) spec
+--parseSpecifiedFile spec@(NucleotideFile     _    ) =
+--  parseSpecifiedFileSimple (fastaStreamConverter DNA       =<< fastaStreamParser) (setTaxaSeqs . mapsToHashMap) spec
+--parseSpecifiedFile spec@(UnspecifiedFile    _    ) =
+--  getSpecifiedContent spec >>= fmap (foldl (<>) mempty) . eitherTValidation . fmap progressiveParse . dataFiles
+--parseSpecifiedFile      (AnnotatedFile      _    ) = fail "Annotated file specification is not implemented"
+--parseSpecifiedFile      (ChromosomeFile     _    ) = fail "Chromosome file specification is not implemented"
+--parseSpecifiedFile      (GenomeFile         _    ) = fail "Genome file specification is not implemented"
 
-setTaxaSeqs :: HashMap Identifier Sequence -> SearchState
+setTaxaSeqs :: HashMap Identifier ParsedSequences -> SearchState
 setTaxaSeqs x = pure $ Graph [mempty { parsedSeqs = x }]
 
 mapsToHashMap :: (Eq k, Hashable k) => [Map k v] -> HashMap k v
@@ -79,30 +79,30 @@ parseSpecifiedFileSimple comb toState spec = getSpecifiedContent spec >>= (hoist
     parseSpecifiedContent = fmap toState . eitherValidation . fmap (first unparsable . parse') . dataFiles
     parse' (path,content) = parse comb path content
 
-progressiveParse :: FileResult -> EitherT ReadError IO SearchState
-progressiveParse (filePath, fileContent) =
-  case snd . partitionEithers $ parseTryOrderForSequences <*> [fileContent] of
-    parsed:_ -> pure . pure $ Graph [mempty { parsedSeqs = mapsToHashMap [parsed] }]
-    []       ->
---      case parse nexusStreamParser filePath fileContent of
---        Right _ -> pure mempty
---        Left  _ ->
-          case parse newickStreamParser filePath fileContent of
-            Right _ -> pure mempty
-            Left  _ ->
-              case parse tcmStreamParser  filePath fileContent of
-                Right _ -> pure mempty
-                Left  _ ->
-                  case parse verStreamParser filePath fileContent of
-                    Right _ -> pure mempty
-                    Left  _ -> fail $ "Could not determine the file type of '" ++ filePath ++ "'. Try annotating the expected file data in the 'read' for more explicit error message on file parsing failures."
-  where
-    parseTryOrderForSequences :: [FileContent -> Either ParseError TaxonSequenceMap]
-    parseTryOrderForSequences =
-      [ parse (fastaStreamConverter DNA       =<< fastaStreamParser) filePath
-      , parse (fastaStreamConverter RNA       =<< fastaStreamParser) filePath
-      , parse (fastaStreamConverter AminoAcid =<< fastaStreamParser) filePath
-      ]
+--progressiveParse :: FileResult -> EitherT ReadError IO SearchState
+--progressiveParse (filePath, fileContent) =
+--  case snd . partitionEithers $ parseTryOrderForSequences <*> [fileContent] of
+--    parsed:_ -> pure . pure $ Graph [mempty { parsedSeqs = mapsToHashMap [parsed] }]
+--    []       ->
+----      case parse nexusStreamParser filePath fileContent of
+----        Right _ -> pure mempty
+----        Left  _ ->
+--          case parse newickStreamParser filePath fileContent of
+--            Right _ -> pure mempty
+--            Left  _ ->
+--              case parse tcmStreamParser  filePath fileContent of
+--                Right _ -> pure mempty
+--                Left  _ ->
+--                  case parse verStreamParser filePath fileContent of
+--                    Right _ -> pure mempty
+--                    Left  _ -> fail $ "Could not determine the file type of '" ++ filePath ++ "'. Try annotating the expected file data in the 'read' for more explicit error message on file parsing failures."
+--  where
+--    parseTryOrderForSequences :: [FileContent -> Either ParseError TaxonSequenceMap]
+--    parseTryOrderForSequences =
+--      [ parse (fastaStreamConverter DNA       =<< fastaStreamParser) filePath
+--      , parse (fastaStreamConverter RNA       =<< fastaStreamParser) filePath
+--      , parse (fastaStreamConverter AminoAcid =<< fastaStreamParser) filePath
+--      ]
 
 validate :: [Argument] -> Either String Command
 validate xs =

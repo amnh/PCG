@@ -14,5 +14,5 @@ testSuite = testGroup "Dynamically generated tests"
              [ Fasta.testSuite
              , Fastc.testSuite
              , Nexus.testSuite
---             , TNT.testSuite
+             -- , TNT.testSuite
              ]

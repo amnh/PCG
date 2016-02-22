@@ -1,17 +1,9 @@
 {-# LANGUAGE FlexibleContexts #-}
 module File.Format.TNT.Internal where
 
-import           Data.Bifunctor           (second)
 import           Data.Char                (isSpace)
-import           Data.DList               (DList,append)
-import qualified Data.DList         as DL (toList,fromList)
-import           Data.IntSet              (IntSet, singleton)
-import qualified Data.IntSet        as IS (fromList)
-import           Data.List                (intersperse,inits)
+import           Data.List                (inits)
 import           Data.List.NonEmpty       (NonEmpty)
-import qualified Data.List.NonEmpty as NE (filter,fromList,length)
-import           Data.Map.Strict          (Map,insertWith)
-import qualified Data.Map.Strict    as M  (toList)
 import           Data.Maybe               (catMaybes)
 import           Data.Vector              (Vector)
 import           Text.Megaparsec
@@ -20,21 +12,32 @@ import           Text.Megaparsec.Lexer    (integer,number,signed)
 import           Text.Megaparsec.Prim     (MonadParsec)
 
 --Export types
-
+{-
 data Hennig
    = Hennig
    { taxaCount    :: Int
    , sequences    :: NonEmpty TaxonInfo
    , charMetaData :: Vector CharacterMetaData
    } deriving (Show)
+-}
+
+type TntResult = Either TreeOnly WithTaxa
+type TreeOnly  = [TRead]
+type Yucky     = String
+data WithTaxa
+   = WithTaxa
+   { sequences    :: Vector TaxonInfo
+   , charMetaData :: Vector CharacterMetaData
+   , trees        :: [LeafyTree TaxonInfo]
+   }
 
 --XRead types
 --------------------------------------------------------------------------------
 
 data XRead
    = XRead
-   { charCountx   :: Int
-   , taxaCountx   :: Int
+   { charCountx :: Int
+   , taxaCountx :: Int
    , sequencesx :: NonEmpty TaxonInfo
    } deriving (Show)
 
@@ -84,6 +87,23 @@ data CharacterMetaData
    , weight   :: Int
    , steps    :: Int
    } deriving (Show)
+
+-- TRead types
+--------------------------------------------------------------------------------
+
+type TNTTree = LeafyTree TaxonInfo
+type TRead   = LeafyTree NodeType
+
+data LeafyTree a
+   = Leaf a
+   | Branch [LeafyTree a]
+   deriving (Show)
+
+data NodeType
+   = Index  Int
+   | Name   String
+   | Prefix String
+   deriving (Show)
 
 -- | Parses an Int which is non-negative.
 nonNegInt :: MonadParsec s m Char => m Int
@@ -155,6 +175,7 @@ whitespaceInline =  inlineSpace
 --   @keyword fullName minChars@ will parse the __longest prefix of__ @fullName@
 --   requiring that __at least__ the first @minChars@ of @fullName@ are in the prefix.
 --   Keyword prefixes are terminated with an `inlineSpace` which is not consumed by the combinator.
+keyword :: MonadParsec s m Char => String -> Int -> m ()
 keyword x y = abreviatable x y *> pure ()
   where
     abreviatable :: MonadParsec s m Char => String -> Int -> m String
