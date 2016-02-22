@@ -25,20 +25,6 @@ import           Text.Megaparsec.Custom
 import           Text.Megaparsec.Lexer    (integer,number,signed)
 import           Text.Megaparsec.Prim     (MonadParsec)
 
-data NodeType
-   = Index  Int
-   | Name   String
-   | Prefix String
-   deriving (Show)
-
-data TerminalTree a
-   = Leaf a
-   | Branch [TerminalTree a]
-   deriving (Show)   
-
-data TRead   = TerminalTree NodeType
-data TNTTree = TerminalTree TaxononInfo
-
 -- | Parses an TREAD command. Correctly validates for taxa count
 -- and character sequence length. Produces one or more taxa sequences.
 treadCommand :: MonadParsec s m Char => m (NonEmpty TRead)
