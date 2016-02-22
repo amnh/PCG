@@ -41,7 +41,8 @@ fromTopo (TG.TopoTree inTopo _) = internalFromTopo inTopo
           where
               myNode = Node 0 (TN.isRoot topo) (TN.isLeaf topo) [] [] (TN.encoded topo) (TN.packed topo) (TN.preliminary topo) 
                           (TN.final topo) (TN.temporary topo) (TN.aligned topo) (TN.cost topo)
-              myTree = mempty `N.addNode` myNode
+              appendTree = mempty `N.addNode` myNode
+              myTree = appendTree {nodeNames = IM.singleton 0 (TN.name topo), parsedSeqs = HM.singleton (TN.name topo) (TN.parsed topo)}
 
 -- | Conversion function from an indexed tree to a TopoTree
 toTopo :: Tree -> TG.TopoTree
@@ -58,10 +59,12 @@ nodeToTopo topTree topNode = TG.TopoTree (internalFromTopo topTree topNode) (cha
           let childTrees = map (\i -> internalFromTopo inTree (nodes inTree ! i)) (children curNode)
           in leaf {TN.children = childTrees}
           where
-              leaf = TN.TopoNode (isRoot curNode) (isLeaf curNode) (safeName) [] (encoded curNode) (packed curNode) (preliminary curNode) 
+              leaf = TN.TopoNode (isRoot curNode) (isLeaf curNode) safeName safeParsed [] (encoded curNode) (packed curNode) (preliminary curNode) 
                       (final curNode) (temporary curNode) (aligned curNode) (cost curNode)
               safeName = if (code curNode) `IM.member` nodeNames inTree then nodeNames inTree IM.! (code curNode)
                           else ""
+              safeParsed = if safeName `HM.member` parsedSeqs inTree then parsedSeqs inTree HM.! safeName
+                          else mempty
 
 -- | Function to append two trees at a given node
 -- Properly updates all of the edges to connect the two there

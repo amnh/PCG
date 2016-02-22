@@ -18,11 +18,13 @@
 module Bio.Phylogeny.Tree.Node.Topological (TopoNode(..)) where
 
 import Bio.Sequence.Coded
+import Bio.Sequence.Parsed
 
 data TopoNode b = TopoNode
                     { isRoot :: Bool
                     , isLeaf :: Bool
                     , name :: String
+                    , parsed :: ParsedSequences
                     , children :: [TopoNode b]
                     , encoded :: EncodedSequences b
                     , packed :: EncodedSequences b
@@ -37,5 +39,5 @@ data TopoNode b = TopoNode
 -- | In a monoid instance, we take mappend to mean a joining of the two subtrees
 -- where the second subtree passed becomes a child of the first
 instance Monoid (TopoNode b) where
-     mempty = TopoNode False False mempty mempty mempty mempty mempty mempty mempty mempty 0
+     mempty = TopoNode False False mempty mempty mempty mempty mempty mempty mempty mempty mempty 0
      mappend n1 n2 = n1 {children = n2 : children n1}

@@ -11,16 +11,22 @@
 -- Module holding the data type for a parsed sequence
 --
 -----------------------------------------------------------------------------
+{-# LANGUAGE TypeSynonymInstances, FlexibleInstances #-}
+{-# OPTIONS_GHC -fno-warn-orphans #-}
 
 module Bio.Sequence.Parsed (ParsedSeq, TreeSeqs, Alphabet, ParsedSequences) where
 
-import Data.Vector
-import Data.Map.Lazy
+import Data.Vector (Vector, fromList)
+import Data.Map.Lazy (Map)
+import Test.Tasty.QuickCheck
 
 type ParsedSeq = Vector [String]
 
-type ParsedSequences = Vector ParsedSeq
+type ParsedSequences = Vector (Maybe ParsedSeq)
 
 type TreeSeqs = Map String ParsedSequences
 
 type Alphabet = Vector [String]
+
+--instance Arbitrary ParsedSeq where
+--    arbitrary = fromList <$> listOf (listOf (arbitrary :: Gen String))

@@ -16,11 +16,12 @@
 {-# LANGUAGE TypeSynonymInstances, FlexibleInstances, MultiParamTypeClasses, UndecidableInstances #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
-module Bio.Sequence.Coded (CodedSequence(..), EncodedSeq, EncodedSequences, CodedChar(..)) where
+module Bio.Sequence.Coded (CodedSequence(..), EncodedSeq, EncodedSequences, CodedChar(..), encodeAll) where
 
 import Prelude hiding (map, length, zipWith, null, head)
 import Data.List (elemIndex)
 import Control.Applicative  (liftA2, liftA)
+import Control.Monad
 import Data.Vector    (map, length, zipWith, empty, null, Vector, head, (!), singleton)
 import qualified Data.Vector as V (filter)
 import Data.Bits
@@ -28,6 +29,7 @@ import Data.Maybe
 import Bio.Sequence.Coded.Class
 import Bio.Sequence.Character.Coded
 import Bio.Sequence.Packed.Class
+import Bio.Sequence.Parsed
 
 -- | EncodedSequences is short for a vector of EncodedSeq
 type EncodedSequences b = Vector (EncodedSeq b)
@@ -58,6 +60,10 @@ instance Bits b => CodedSequence (EncodedSeq b) b where
             coded = map (\ambig -> foldr (\c acc -> setElemAt c acc alphabet) zeroBits ambig) strSeq
             final = if length coded == 0 then Nothing else Just coded
         in final
+
+-- | Sequence to map encoding over ParsedSequences
+encodeAll :: Bits b => ParsedSequences -> EncodedSequences b
+encodeAll = fmap (\s -> join $ encode <$> s)
 
 instance Bits b => PackedSequence (EncodedSeq b) b where
     packOverAlphabet = undefined

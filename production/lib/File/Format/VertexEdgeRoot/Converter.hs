@@ -25,10 +25,12 @@ import qualified Data.IntMap    as IM (IntMap, insert, (!))
 import qualified Data.Vector    as V  (Vector, fromList, (!))
 import qualified Data.IntSet    as IS (fromList)
 
+import Debug.Trace
+
 data IntEdge = IntEdge (Int, Int) VER.EdgeLength deriving (Eq, Show, Ord)
 
 convert :: VER.VertexEdgeRoot -> Graph
-convert inVer = splitConnected outTree
+convert inVer = trace ("convert " ++ show outTree) (splitConnected outTree)
     where
         nameDicts = accumNames 0 (VER.vertices inVer)
         rootList = S.toList $ VER.roots inVer
@@ -49,7 +51,8 @@ convert inVer = splitConnected outTree
 
         -- | Now we accumulate as many nodes as we had names
         accumNodes :: S.Set VER.EdgeInfo -> (IM.IntMap Identifier, HM.HashMap Identifier Int) -> V.Vector NodeInfo
-        accumNodes inEdges (toNames, fromNames) = fmap makeNode (V.fromList [0..S.size (VER.vertices inVer)])
+        --accumNodes inEdges (toNames, fromNames) | trace ("accumNodes with names " ++ show toNames) False = undefined
+        accumNodes inEdges (toNames, fromNames) = fmap makeNode (V.fromList [0..S.size (VER.vertices inVer) - 1])
             where
                 makeNode :: Int -> NodeInfo
                 makeNode index = 

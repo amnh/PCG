@@ -123,7 +123,6 @@ executable pcg
                        File.Format.Nexus.Validate
                        File.Format.Newick.Internal
                        File.Format.Newick.Parser
-                       File.Format.TNT
                        File.Format.TransitionCostMatrix
                        File.Format.TransitionCostMatrix.Parser
                        File.Format.VertexEdgeRoot
@@ -232,7 +231,6 @@ library
                        File.Format.Nexus.Parser
                        File.Format.Nexus.Partition
                        File.Format.Nexus.Validate
-                       File.Format.TNT
                        File.Format.TransitionCostMatrix.Parser
                        File.Format.VertexEdgeRoot.Converter
                        File.Format.VertexEdgeRoot.Parser
@@ -331,7 +329,6 @@ Test-Suite testsuite
                        File.Format.Nexus.Parser
                        File.Format.Nexus.Partition
                        File.Format.Nexus.Validate
-                       File.Format.TNT
                        File.Format.TransitionCostMatrix.Parser
                        File.Format.TransitionCostMatrix.Test
                        File.Format.VertexEdgeRoot.Converter

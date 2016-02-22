@@ -19,9 +19,11 @@ module File.Format.Newick.Converter (convertGraph) where
 import Prelude                      hiding ((++))
 import File.Format.Newick.Internal  hiding (isLeaf)
 import Bio.Phylogeny.Graph
+import Control.Monad
 import Data.BitVector               (BitVector)
 import Data.Vector                  (Vector)
 import qualified Data.Vector as V   (foldr, zipWith)
+import Data.Maybe
 import Data.Monoid                  ()
 
 import Bio.Phylogeny.Graph.Topological
@@ -49,16 +51,18 @@ makeEncodeInfo = M.foldr getNodeAlph mempty
         getNodeAlph :: ParsedSequences -> Vector SimpleMetadata -> Vector SimpleMetadata
         getNodeAlph = V.zipWith getNodeAlphAt
 
-        getNodeAlphAt :: ParsedSeq -> SimpleMetadata -> SimpleMetadata
-        getNodeAlphAt inSeq soFar = V.foldr (\cIn cPrev -> foldr (\sIn prev -> if sIn `elem` prev then prev else sIn : prev) cPrev cIn) soFar inSeq
+        getNodeAlphAt :: Maybe ParsedSeq -> SimpleMetadata -> SimpleMetadata
+        getNodeAlphAt inSeq soFar
+            | isNothing inSeq = mempty
+            | otherwise =  V.foldr (\cIn cPrev -> foldr (\sIn prev -> if sIn `elem` prev then prev else sIn : prev) cPrev cIn) soFar (fromJust inSeq)
 
 -- | Wrapper for encoding to get types right
 encodeIt :: ParsedSequences -> Alphabet -> EncodedSequences BitVector
-encodeIt inSeqs alphs = V.zipWith encodeOverAlphabet inSeqs alphs 
+encodeIt inSeqs alphs = V.zipWith (\s a -> join $ (flip encodeOverAlphabet) a <$> s) inSeqs alphs 
 
 -- | Wrapper for packing to get types right
 packIt :: ParsedSequences -> Alphabet -> EncodedSequences BitVector
-packIt inSeqs alphs = V.zipWith encodeOverAlphabet inSeqs alphs 
+packIt inSeqs alphs = V.zipWith (\s a -> join $ (flip encodeOverAlphabet) a <$> s) inSeqs alphs
 
 -- | Convert a newick tree and associated sequences to a topo tree (where funcionality is located)
 convertBothTopo :: NewickNode -> TreeSeqs -> TopoTree
@@ -81,7 +85,7 @@ convertBothTopo rootTree inSeqs = internalConvert True rootTree
                             else mempty
                 myEncode = encodeIt mySeq metadata
                 myPack   = packIt mySeq metadata
-                node = TN.TopoNode atRoot (null $ descendants inTree) myName recurse myEncode myPack mempty mempty mempty mempty myCost
+                node = TN.TopoNode atRoot (null $ descendants inTree) myName mySeq recurse myEncode myPack mempty mempty mempty mempty myCost
             in TopoTree node mempty
 
 -- | Converts a graph topology without sequences
@@ -110,5 +114,5 @@ convertTopoTree tree0 = internalConvert tree0 True
                 myCost = case branchLength inTree of
                             Just l -> l
                             Nothing -> 0
-                node = TN.TopoNode atRoot (null $ descendants inTree) myName recurse mempty mempty mempty mempty mempty mempty myCost
+                node = TN.TopoNode atRoot (null $ descendants inTree) myName mempty recurse mempty mempty mempty mempty mempty mempty myCost
             in TopoTree node mempty

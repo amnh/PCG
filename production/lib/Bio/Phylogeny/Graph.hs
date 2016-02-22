@@ -15,7 +15,7 @@
 {-# LANGUAGE FlexibleInstances, MultiParamTypeClasses, NoImplicitPrelude, TypeSynonymInstances #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
-module Bio.Phylogeny.Graph (Graph(..), Tree(..), EdgeSet(..), EdgeInfo(..), Identifier, Sequence, CharInfo, NodeInfo, toTopo, simpleAppend, fromTopo) where
+module Bio.Phylogeny.Graph (Graph(..), Tree(..), EdgeSet(..), EdgeInfo(..), Identifier, CharInfo, NodeInfo, toTopo, simpleAppend, fromTopo) where
 
 import           Bio.Phylogeny.Forest
 import           Bio.Phylogeny.Graph.Data

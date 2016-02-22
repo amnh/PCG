@@ -25,6 +25,7 @@ import Test.Tasty.QuickCheck
 import Bio.Phylogeny.Tree.Node.Topological
 import Bio.Sequence.Coded
 import Bio.Sequence.Random ()
+import Bio.Sequence.Parsed
 import Bio.Phylogeny.Graph.Data
 
 import Data.BitVector (BitVector)
@@ -53,10 +54,12 @@ instance Arbitrary TopoTree where
     arbitrary = do
         numChildren <- choose (1, maxChildren) :: Gen Int
         randChildren <- vectorOf numChildren (internalRandom 0)
-        seqs <- vectorOf 6 (arbitrary :: Gen MultiSeq)
+        randSeq <- arbitrary :: Gen ParsedSequences
+        let encodedRand = encodeAll randSeq
+        seqs <- vectorOf 5 (arbitrary :: Gen MultiSeq)
         randCost <- arbitrary :: Gen Double
         let randName = (show (0 :: Int)) ++ show randCost
-        let outNode = TopoNode True True  randName [] (seqs !! 0) (seqs !! 1) (seqs !! 2) (seqs !! 3) (seqs !! 4) (seqs !! 5) randCost
+        let outNode = TopoNode True True randName randSeq [] encodedRand (seqs !! 0) (seqs !! 1) (seqs !! 2) (seqs !! 3) (seqs !! 4) randCost
         if null randChildren then return $ TopoTree outNode mempty
                          else return $ TopoTree (outNode {isLeaf = False, children = randChildren}) mempty
 
@@ -70,12 +73,14 @@ internalRandom :: Int -> Gen (TopoNode BitVector)
 internalRandom myDepth = do
     numChildren <- choose (1, maxChildren) :: Gen Int
     randChildren <- vectorOf numChildren (internalRandom (myDepth + 1))
-    seqs <- vectorOf 6 (arbitrary :: Gen MultiSeq)
+    seqs <- vectorOf 5 (arbitrary :: Gen MultiSeq)
     randCost <- arbitrary :: Gen Double
     let randName = show myDepth ++ show randCost
     rand <- choose (0, maxDepth)
+    randSeq <- arbitrary :: Gen ParsedSequences
+    let encodedRand = encodeAll randSeq
     let terminate = chooseTerminate myDepth rand
-    let outNode = TopoNode False True randName [] (seqs !! 0) (seqs !! 1) (seqs !! 2) (seqs !! 3) (seqs !! 4) (seqs !! 5) randCost
+    let outNode = TopoNode False True randName randSeq [] encodedRand (seqs !! 0) (seqs !! 1) (seqs !! 2) (seqs !! 3) (seqs !! 4) randCost
     if terminate then --trace "terminate" 
             return outNode
         else --trace "continue" 

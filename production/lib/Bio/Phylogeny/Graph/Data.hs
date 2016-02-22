@@ -15,7 +15,7 @@
 {-# LANGUAGE MultiParamTypeClasses, TypeSynonymInstances, FlexibleInstances #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
-module Bio.Phylogeny.Graph.Data (Graph(..), Tree(..), EdgeSet(..), EdgeInfo(..), Identifier, Sequence, CharInfo, NodeInfo) where
+module Bio.Phylogeny.Graph.Data (Graph(..), Tree(..), EdgeSet(..), EdgeInfo(..), Identifier, CharInfo, NodeInfo) where
 
 import Data.Vector 
 import Data.Int
@@ -26,12 +26,11 @@ import Data.HashMap.Strict
 
 import Bio.Phylogeny.PhyloCharacter
 import Bio.Phylogeny.Tree.Node
+import Bio.Sequence.Parsed
 
 
 -- | Identifier is just a string name
 type Identifier = String
--- | An un-coded sequence is a vector of list of strings
-type Sequence   = Vector [String]
 -- | CharInfo is PhyloCharacter for now
 type CharInfo   = PhyloCharacter Int64
 -- | Nodes can store with bitvectors for now
@@ -57,7 +56,7 @@ data EdgeInfo
 data Tree
    = Tree
    { nodeNames  :: IntMap  Identifier
-   , parsedSeqs :: HashMap Identifier Sequence
+   , parsedSeqs :: HashMap Identifier ParsedSequences
    , characters :: Vector  CharInfo
    , nodes      :: Vector  NodeInfo
    , edges      :: Vector  EdgeSet
