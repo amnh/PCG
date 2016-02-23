@@ -91,8 +91,9 @@ data CharacterMetaData
 -- TRead types
 --------------------------------------------------------------------------------
 
-type TNTTree = LeafyTree TaxonInfo
-type TRead   = LeafyTree NodeType
+type TRead     = NonEmpty  TReadTree
+type TReadTree = LeafyTree NodeType
+type TNTTree   = LeafyTree TaxonInfo
 
 data LeafyTree a
    = Leaf a

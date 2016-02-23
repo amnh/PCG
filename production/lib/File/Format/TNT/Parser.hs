@@ -13,9 +13,9 @@ import           Text.Megaparsec.Prim                     (MonadParsec)
 -- TODO: make the types better
 tntStreamParser :: MonadParsec s m Char => m TntResult
 tntStreamParser = do
-    _                 <- whitespace
-    (xreads,ccodes,_) <- gatherCommands
-    xread             <- singleXRead xreads
+    _                      <- whitespace
+    (ccodes,treads,xreads) <- gatherCommands
+    xread                  <- singleXRead xreads
     pure . Right $ WithTaxa (fromList . toList $ sequencesx xread) (ccodeCoalesce (charCountx xread) ccodes) mempty
   
 singleXRead :: MonadParsec s m Char => [XRead] -> m XRead

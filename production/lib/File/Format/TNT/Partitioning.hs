@@ -3,14 +3,14 @@ module File.Format.TNT.Partitioning where
 
 import           File.Format.TNT.Command.CCode
 import           File.Format.TNT.Command.Procedure
+import           File.Format.TNT.Command.TRead
 import           File.Format.TNT.Command.XRead
 import           File.Format.TNT.Internal
 import           Text.Megaparsec
 import           Text.Megaparsec.Prim (MonadParsec)
 
 data Part
-   =
-   | CC CCode
+   = CC CCode
    | TR TRead 
    | XR XRead
    | Ignore
