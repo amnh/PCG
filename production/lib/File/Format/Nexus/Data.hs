@@ -220,12 +220,12 @@ type SerializedTree = String
 data TreeBlock
    = TreeBlock
    { translate :: [[String]]
-   , trees     :: [(TreeName, [NewickForest])]
+   , trees     :: [(TreeName, NewickForest)]
    } deriving (Show)
 
 data TreeField
    = Translation [String]
-   | Tree        (TreeName, [NewickForest])
+   | Tree        (TreeName, NewickForest)
    | IgnTF       String
 
 data SequenceBlock

@@ -314,7 +314,7 @@ delimitedStringListDefinition label delimiter = {-do
 -- and returns the tuple of (<label>, '[NewickForest']). Label consists on one or more
 -- non-space, non-equal-sign characters. For the proper definition of a 'NewickForest'
 -- see the module for the Newick parser.
-treeDefinition :: (Show s, MonadParsec s m Char) => m (String, [NewickForest])
+treeDefinition :: (Show s, MonadParsec s m Char) => m (String, NewickForest)
 treeDefinition = {-do
     x <- getInput
     trace ("treeDefinition"  ++ show x) $ -}do
