@@ -1,4 +1,4 @@
-{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE DeriveFunctor, FlexibleContexts #-}
 module File.Format.TNT.Internal where
 
 import           Data.Char                (isSpace)
@@ -22,7 +22,7 @@ data Hennig
 -}
 
 type TntResult = Either TreeOnly WithTaxa
-type TreeOnly  = [TRead]
+type TreeOnly  = TRead
 type Yucky     = String
 data WithTaxa
    = WithTaxa
@@ -98,7 +98,7 @@ type TNTTree   = LeafyTree TaxonInfo
 data LeafyTree a
    = Leaf a
    | Branch [LeafyTree a]
-   deriving (Show)
+   deriving (Show,Functor)
 
 data NodeType
    = Index  Int

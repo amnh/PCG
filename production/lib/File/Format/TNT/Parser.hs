@@ -1,8 +1,9 @@
 {-# LANGUAGE FlexibleContexts #-}
 module File.Format.TNT.Parser where
 
-import           Data.List.NonEmpty (toList)
-import           Data.Vector (fromList)
+--import Data.Foldable 
+import           Data.List.NonEmpty (NonEmpty,fromList, toList)
+-- import           Data.Vector (fromList)
 import           File.Format.TNT.Command.CCode
 --import           File.Format.TNT.Command.Procedure
 --import           File.Format.TNT.Command.XRead
@@ -12,18 +13,17 @@ import           Text.Megaparsec.Prim                     (MonadParsec)
 
 -- TODO: make the types better
 tntStreamParser :: MonadParsec s m Char => m TntResult
-tntStreamParser = do
-    _                      <- whitespace
-    (ccodes,treads,xreads) <- gatherCommands
-    xread                  <- singleXRead xreads
-    pure . Right $ WithTaxa (fromList . toList $ sequencesx xread) (ccodeCoalesce (charCountx xread) ccodes) mempty
-  
-singleXRead :: MonadParsec s m Char => [XRead] -> m XRead
-singleXRead xreads
-  | null xreads              = fail "No XREAD command found in source."
-  | (not.isSingleton) xreads = fail "Multiple XREAD commands found in source, expecting a single XREAD command."
-  | otherwise                = pure $ head xreads 
+tntStreamParser = colateResult  =<< (whitespace *> gatherCommands)
+  where
+    colateResult (     _,     _,  x:y:z) = fail "Multiple XREAD commands found in source, expecting a single XREAD command."
+    colateResult (     _,    [],     []) = fail "No XREAD command or TRead command, expecting either a single XREAD command or one or more TRead commands."
+    colateResult (     _,treads,     []) = pure . Left $ concatTReads treads
+    colateResult (ccodes,treads,[xread])
+      | charCountx xread == 0 = pure . Left . fmap (fmap (Name . fst)) . fromList . matchTaxaInTree xread $ concatTReads treads
+--      | otherwise             = pure . Right . WithTaxa xread (ccodeCoalesce ccodes) (matchTaxaInTree xread $ concatTreads treads)
+      where
+        matchTaxaInTree :: XRead -> TRead -> [LeafyTree TaxonInfo]
+        matchTaxaInTree = undefined
 
-isSingleton :: [a] -> Bool
-isSingleton [_] = True
-isSingleton _   = False
+concatTReads :: Foldable f => f TRead -> TRead
+concatTReads = fromList . concatMap toList
