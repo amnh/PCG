@@ -9,16 +9,24 @@ import           Text.Megaparsec
 import           Text.Megaparsec.Prim (MonadParsec)
 
 data Part
-   = XR XRead
+   =
    | CC CCode
-   | PR
+   | TR TRead 
+   | XR XRead
+   | Ignore
 
-gatherCommands :: MonadParsec s m Char => m ([XRead],[CCode],[()])
+gatherCommands :: MonadParsec s m Char => m ([CCode],[TRead],[XRead])
 gatherCommands = partition <$> many commands
   where
-    commands = choice [XR <$> xreadCommand, CC <$> ccodeCommand, PR <$ procedureCommand]
+    commands  = choice
+              [ CC     <$> ccodeCommand
+              , TR     <$> treadCommand
+              , XR     <$> xreadCommand
+              , Ignore <$  procedureCommand
+              ]
     partition = foldr f ([],[],[])
       where
-        f (XR e) (x,y,z) = (e:x,  y,   z)
-        f (CC e) (x,y,z) = (  x,e:y,   z)
-        f  PR    (x,y,z) = (  x,  y,():z)
+        f (CC e) (x,y,z) = (e:x,  y,  z)
+        f (TR e) (x,y,z) = (  x,e:y,  z)
+        f (XR e) (x,y,z) = (  x,  y,e:z)
+        f Ignore x       = x

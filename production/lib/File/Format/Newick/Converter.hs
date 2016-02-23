@@ -14,7 +14,7 @@
 
 {-# OPTIONS_GHC -fno-warn-unused-binds #-}
 
-module File.Format.Newick.Converter (convertGraph) where
+module File.Format.Newick.Converter where
 
 import Prelude                      hiding ((++))
 import File.Format.Newick.Internal  hiding (isLeaf)

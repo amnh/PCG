@@ -29,7 +29,7 @@ data WithTaxa
    { sequences    :: Vector TaxonInfo
    , charMetaData :: Vector CharacterMetaData
    , trees        :: [LeafyTree TaxonInfo]
-   }
+   } deriving (Show)
 
 --XRead types
 --------------------------------------------------------------------------------
@@ -182,7 +182,7 @@ keyword x y = abreviatable x y *> pure ()
     abreviatable fullName minimumChars =
       if minimumChars < 1
       then fail "Nonpositive abreviation prefix supplied to abreviatable combinator"
-      else combinator 
+      else combinator <?> "keyword '" ++ fullName ++ "'"
       where
         thenInlineSpace = notFollowedBy notInlineSpace
         notInlineSpace  = satisfy (not . isSpace)
