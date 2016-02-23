@@ -18,14 +18,15 @@
 module Bio.Phylogeny.PhyloCharacter where
 
 import Data.Vector (Vector)
+import Bio.Sequence.Coded
 import GHC.Generics
 import Data.Matrix.NotStupid (Matrix, fromList, (<|>))
 
 -- | Define a character type as DNA, RNA, Morphology, Continous, or Custom
 -- Fields differ based on the constructor, but in general all hold a name, ignored, and tcm
-data PhyloCharacter b = DNA         { name :: String -- The character name if it has one
+data PhyloCharacter s = DNA         { name :: String -- The character name if it has one
                                     , aligned :: Bool -- Whether the character represents an aligned or unaligned, sequence
-                                    , fitchMasks :: (Vector b, Vector b)
+                                    , fitchMasks :: (s, s)
                                     , stateNames :: Vector String
                                     , alphabet :: Vector String
                                     , tcm :: CostMatrix
@@ -34,7 +35,7 @@ data PhyloCharacter b = DNA         { name :: String -- The character name if it
  
                       | RNA         { name :: String
                                     , aligned :: Bool
-                                    , fitchMasks :: (Vector b, Vector b)
+                                    , fitchMasks :: (s, s)
                                     , stateNames :: Vector String
                                     , alphabet :: Vector String
                                     , tcm :: CostMatrix
@@ -43,7 +44,7 @@ data PhyloCharacter b = DNA         { name :: String -- The character name if it
 
                       | Qualitative { name :: String
                                     , aligned :: Bool
-                                    , fitchMasks :: (Vector b, Vector b)
+                                    , fitchMasks :: (s, s)
                                     , stateNames :: Vector String
                                     , alphabet :: Vector String
                                     , tcm :: CostMatrix
@@ -58,7 +59,7 @@ data PhyloCharacter b = DNA         { name :: String -- The character name if it
  
                       | Custom      { name :: String
                                     , aligned :: Bool
-                                    , masks :: (Vector b, Vector b)
+                                    , masks :: (s, s)
                                     , alphabet :: Vector String
                                     , stateNames :: Vector String
                                     , tcm :: CostMatrix
@@ -68,7 +69,7 @@ data PhyloCharacter b = DNA         { name :: String -- The character name if it
  
                       | AminoAcid   { name :: String
                                     , aligned :: Bool
-                                    , fitchMasks :: (Vector b, Vector b)
+                                    , fitchMasks :: (s, s)
                                     , alphabet :: Vector String
                                     , stateNames :: Vector String
                                     , tcm :: CostMatrix

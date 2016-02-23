@@ -27,14 +27,16 @@ import Data.HashMap.Strict
 import Bio.Phylogeny.PhyloCharacter
 import Bio.Phylogeny.Tree.Node
 import Bio.Sequence.Parsed
+import Bio.Sequence.Coded
 
 
 -- | Identifier is just a string name
 type Identifier = String
 -- | CharInfo is PhyloCharacter for now
-type CharInfo   = PhyloCharacter Int64
+type CharInfo   = PhyloCharacter (EncodedSeq BitVector)
 -- | Nodes can store with bitvectors for now
 type NodeInfo   = Node BitVector
+-- TODO: rename NodeInfo
 
 -- | Edge type: info is stored at the out connections of a node
 data EdgeSet
@@ -47,9 +49,9 @@ data EdgeSet
 data EdgeInfo 
    = EdgeInfo
    { len      :: Double
-   -- add virtual node
    , origin   :: NodeInfo
    , terminal :: NodeInfo
+   , virtualNode :: Maybe NodeInfo
    } deriving (Eq, Show)
 
 -- | Tree structure holding nodes, their original sequences, their edges, and a root reference
@@ -62,7 +64,9 @@ data Tree
    , edges      :: Vector  EdgeSet
    , root       :: Int
    } deriving (Eq,Show)
-   -- add structure that knows if a section is already optimized (possibly store at node?)
+   -- TODO add structure that knows if a section is already optimized (possibly store at node?)
+   -- TODO rename this to DAG (DirectedAcyclicGraph) - make aliases
+   -- TODO make phylogenetic sanity requirement typeclass or refinement type
 
 -- | A graph is defined as a list of trees
 newtype Graph = Graph [Tree] deriving (Show, Eq)

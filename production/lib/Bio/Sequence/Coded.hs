@@ -31,6 +31,10 @@ import Bio.Sequence.Character.Coded
 import Bio.Sequence.Packed.Class
 import Bio.Sequence.Parsed
 
+-- TODO: Change EncodedSeq/Sequences to EncodedCharacters
+        -- Make a missing a null vector
+        -- Think about a nonempty type class or a refinement type for this
+
 -- | EncodedSequences is short for a vector of EncodedSeq
 type EncodedSequences b = Vector (EncodedSeq b)
 

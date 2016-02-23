@@ -36,11 +36,11 @@ data Node b = Node  { code :: Int
                     , packed :: Vector (EncodedSeq b)
                     , preliminary :: Vector (EncodedSeq b)
                     , final :: Vector (EncodedSeq b)
-                    , temporary :: Vector (EncodedSeq b) -- is this necessary? rename to fitch scratch? 
-                    , aligned :: Vector (EncodedSeq b) -- rename to implied alignment
+                    , temporary :: Vector (EncodedSeq b) -- TODO: is this necessary? rename to fitch scratch? 
+                    , aligned :: Vector (EncodedSeq b) -- TODO: rename to implied alignment
                     , cost :: Double} deriving (Eq, Show)
-                    -- subtree representation?
-                    -- add a current 
+                    -- TODO: subtree representation?
+                    -- TODO: add a current 
 
 instance Monoid (Node b) where
     mempty = Node 0 False False mempty mempty mempty mempty mempty mempty mempty mempty 0

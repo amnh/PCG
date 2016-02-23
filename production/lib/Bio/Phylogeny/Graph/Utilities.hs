@@ -88,9 +88,11 @@ appendAt t1@(Tree names seqs chars n e r) t2@(Tree names' seqs' chars' n' e' r')
       allNodes = --trace ("finished nodes " P.++ show hungNodes P.++ show connectN) $ 
                   connectN V.++ hungNodes
       -- Now update the names and sequences
-      shiftNames = IM.foldWithKey (\k val acc -> IM.insert (k + shift) (val ++ "a" ++ show shift) acc) mempty names'
+      checkNames insName old = if insName `elem` (IM.elems old) then insName ++ "a" ++ show shift
+                                  else insName
+      shiftNames = IM.foldWithKey (\k val acc -> IM.insert (k + shift) (checkNames val names) acc) mempty names'
       allNames = names <> shiftNames
-      shiftSeqs = HM.foldrWithKey (\k val acc -> HM.insert (k ++ "a" ++ show shift) val acc) mempty seqs'
+      shiftSeqs = HM.foldrWithKey (\k val acc -> HM.insert (checkNames k names) val acc) mempty seqs'
       allSeqs = --trace ("finished seqs " P.++ show shiftSeqs) $ 
                   seqs <> shiftSeqs
       -- Finally update the edges and add a connecting edge to old nodes
@@ -99,8 +101,8 @@ appendAt t1@(Tree names seqs chars n e r) t2@(Tree names' seqs' chars' n' e' r')
       reMapInfo eInfo = eInfo {origin = allNodes ! code (origin eInfo), terminal = allNodes ! code (terminal eInfo)}
       newEdges = V.map shiftEdge e'
       newRootEdge = EdgeSet (IS.singleton hCode) mempty
-      oldRootEdge = EdgeSet mempty (IM.singleton (r' + shift) (EdgeInfo 0 (allNodes ! hCode) (allNodes ! (r' + shift))))
-      oldRootUpdate = EdgeSet mempty (IM.insert (r' + shift) (EdgeInfo 0 (allNodes ! hCode) (allNodes ! (r' + shift))) (updateOrigin $ outNodes $ e ! hCode))
+      oldRootEdge = EdgeSet mempty (IM.singleton (r' + shift) (EdgeInfo 0 (allNodes ! hCode) (allNodes ! (r' + shift)) Nothing))
+      oldRootUpdate = EdgeSet mempty (IM.insert (r' + shift) (EdgeInfo 0 (allNodes ! hCode) (allNodes ! (r' + shift)) Nothing) (updateOrigin $ outNodes $ e ! hCode))
       updateOrigin outs = IM.map (\eInfo -> eInfo {origin = allNodes ! hCode}) outs
       newRootUpdate = EdgeSet (IS.insert hCode (inNodes $ newEdges ! r')) mempty
       connectEdges =  let 
@@ -140,7 +142,7 @@ makeEdges :: NodeInfo -> Tree -> EdgeSet
 makeEdges node inTree = EdgeSet (IS.fromList $ parents node) out
   where
     out  = foldr (\i acc -> IM.insert i (info $ nodes inTree ! i) acc) mempty (children node)
-    info = EdgeInfo 0 node 
+    info input = EdgeInfo 0 node input Nothing
 
 -- | resetPos is a small function assisting the joining of two subtrees
 -- simple function to reset positioning of a node

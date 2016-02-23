@@ -19,18 +19,18 @@ import qualified File.Format.VertexEdgeRoot.Parser as VER
 import Bio.Phylogeny.Tree.Node
 import Bio.Phylogeny.Graph.Utilities
 
-import qualified Data.Set       as S  (Set, elemAt, deleteAt, toList, size, filter)
+import qualified Data.Set       as S  (Set, elemAt, toList, size, filter)
 import qualified Data.HashMap.Lazy   as HM (HashMap, insert, (!))
 import qualified Data.IntMap    as IM (IntMap, insert, (!))
 import qualified Data.Vector    as V  (Vector, fromList, (!))
 import qualified Data.IntSet    as IS (fromList)
 
-import Debug.Trace
+--import Debug.Trace
 
 data IntEdge = IntEdge (Int, Int) VER.EdgeLength deriving (Eq, Show, Ord)
 
 convert :: VER.VertexEdgeRoot -> Graph
-convert inVer = trace ("convert " ++ show outTree) (splitConnected outTree)
+convert inVer = (splitConnected outTree)
     where
         nameDicts = accumNames 0 (VER.vertices inVer)
         rootList = S.toList $ VER.roots inVer
@@ -40,11 +40,12 @@ convert inVer = trace ("convert " ++ show outTree) (splitConnected outTree)
 
         -- | First we correspond the names to indices in both directions
         accumNames :: Int -> S.Set VER.VertexLabel -> (IM.IntMap Identifier, HM.HashMap Identifier Int)
+        --accumNames curPos labels | trace ("accumNames at pos " ++ show curPos ++ " with labels " ++ show labels) False = undefined
         accumNames curPos labels 
-            | null labels = (mempty, mempty)
+            | curPos == S.size labels = (mempty, mempty)
             | otherwise = 
                 let 
-                    recursion = accumNames (curPos + 1) (S.deleteAt curPos labels)
+                    recursion = accumNames (curPos + 1) labels
                     fromInt = IM.insert curPos (S.elemAt curPos labels) (fst $ recursion)
                     toInt = HM.insert (S.elemAt curPos labels) curPos (snd $ recursion)
                 in (fromInt, toInt)
@@ -79,6 +80,6 @@ convert inVer = trace ("convert " ++ show outTree) (splitConnected outTree)
                     let
                         myI = code inNode
                         inE = IS.fromList $ parents inNode
-                        outInfo = map (\i -> EdgeInfo (getLen myI i) (madeNodes V.! myI) (madeNodes V.! i)) (children inNode)
+                        outInfo = map (\i -> EdgeInfo (getLen myI i) (madeNodes V.! myI) (madeNodes V.! i) Nothing) (children inNode)
                         outMap = foldr (\info acc -> IM.insert (code $ terminal info) info acc) mempty outInfo
                     in EdgeSet inE outMap

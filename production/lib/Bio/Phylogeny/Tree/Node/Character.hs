@@ -20,6 +20,6 @@ import Data.Vector
 import Bio.Phylogeny.PhyloCharacter
 
 -- | A character node stores its character info
-class CharacterNode a b | a -> b where
-    characters :: a -> Vector (PhyloCharacter b)
-    setCharacters :: a -> Vector (PhyloCharacter b) -> a
+class CharacterNode a s | a -> s where
+    characters :: a -> Vector (PhyloCharacter s)
+    setCharacters :: a -> Vector (PhyloCharacter s) -> a
