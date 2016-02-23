@@ -28,7 +28,9 @@ import qualified Bio.Phylogeny.Tree.Referential    as RT
 import           Bio.Phylogeny.Tree.Rose
 import qualified Bio.Phylogeny.Network.Subsettable as SN
 import           Bio.Phylogeny.Graph.Utilities
+import           Bio.Sequence.Coded
 
+import           Data.BitVector
 import           Data.Key                                (lookup)
 import           Data.Monoid
 import           Data.Vector                             ((++),(//), elemIndex, (!))
@@ -73,7 +75,7 @@ instance ET.EdgedTree Tree NodeInfo EdgeSet where
   setEdges n t e = t {edges = edges t // [(code n, e)]}
 
 -- | And the tree is aware of its character info
-instance CT.CharacterTree Tree CharInfo where
+instance CT.CharacterTree Tree (EncodedSeq BitVector) where
   characters = characters
   setCharacters t c = t {characters = c} 
 
