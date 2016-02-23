@@ -5,9 +5,9 @@ module Analysis.GenericFitch where
 
 -- imports 
 import Bio.Phylogeny.Tree.Binary
+import Bio.Phylogeny.Tree.CharacterAware
 import Bio.Phylogeny.Tree.Node.Encoded
 import Bio.Phylogeny.Tree.Node.Preliminary
-import Bio.Phylogeny.Tree.Node.Character
 import Bio.Phylogeny.Tree.Node.Final
 import Bio.Phylogeny.Network
 import Bio.Sequence.Coded
@@ -21,8 +21,8 @@ import Safe
 import Data.Bits
 import Control.Monad
 
-type TreeConstraint t n s b = (BinaryTree t n, Show t, NodeConstraint n s b)
-type NodeConstraint n s b = (EncodedNode n s, PreliminaryNode n s, CharacterNode n s, FinalNode n s, SeqConstraint s b)
+type TreeConstraint t n s b = (BinaryTree t n, Show t, NodeConstraint n s b, CharacterTree t s)
+type NodeConstraint n s b = (EncodedNode n s, PreliminaryNode n s, FinalNode n s, SeqConstraint s b)
 type SeqConstraint s b = (Bits b, CodedSequence s b, Bits s)
 
 -- | Unified function to perform both the first and second passes of fitch
@@ -63,7 +63,7 @@ optimizationPreorder weight tree
         let 
             nodes1 = internalPreorder weight (fromJust $ rightChild (root tree) tree) tree 
             nodes2 = internalPreorder weight (fromJust $ leftChild (root tree) tree) tree
-            myNode = preorderBitOps weight (root tree) (head nodes1) (head nodes2)
+            myNode = preorderBitOps weight (root tree) (head nodes1) (head nodes2) (characters tree)
             newNodes = myNode : (nodes1 ++ nodes2)
         in tree `update` newNodes
 
@@ -96,7 +96,7 @@ internalPreorder weight node tree
         let 
             nodes1 = internalPreorder weight (fromJust $ rightChild node tree) tree 
             nodes2 = internalPreorder weight (fromJust $ leftChild node tree) tree
-            myNode = preorderBitOps weight node (head nodes1) (head nodes2)
+            myNode = preorderBitOps weight node (head nodes1) (head nodes2) (characters tree)
         in myNode : (nodes1 ++ nodes2)
 
         where
@@ -105,12 +105,12 @@ internalPreorder weight node tree
 
 -- | Bit operations for the down pass: basically creats a mask for union and intersection areas and then takes them
 -- returns the new assignment, the union/intersect mask, and the new total cost
-preorderBitOps :: NodeConstraint n s b => Double -> n -> n -> n -> n
-preorderBitOps weight curNode lNode rNode =
+preorderBitOps :: NodeConstraint n s b => Double -> n -> n -> n -> V.Vector (PhyloCharacter s) -> n
+preorderBitOps weight curNode lNode rNode treeChars =
     let
-        lbit = grabAligned lNode
-        chars = V.filter aligned (characters lNode)
-        rbit = grabAligned rNode
+        lbit = grabAligned lNode treeChars
+        chars = V.filter aligned treeChars
+        rbit = grabAligned rNode treeChars
         notOr = complement $ lbit .&. rbit
         union = lbit .|. rbit
         fbit = notOr .&. (V.map (snd . masks) chars)
@@ -163,7 +163,7 @@ internalPostorder weight node tree
         let 
             nodes1 = internalPostorder weight (fromJust $ rightChild node tree) tree
             nodes2 = internalPostorder weight (fromJust $ leftChild node tree) tree
-            newNode = postorderBitOps weight node (fromJust $ leftChild node tree) (fromJust $ rightChild node tree) (parent node tree)
+            newNode = postorderBitOps weight node (fromJust $ leftChild node tree) (fromJust $ rightChild node tree) (parent node tree) (characters tree)
         in newNode : (nodes1 ++ nodes2)
 
         where
@@ -172,18 +172,18 @@ internalPostorder weight node tree
 
 
 -- | Bit operations for the up pass
-postorderBitOps :: NodeConstraint n s b => Double -> n -> n -> n -> Maybe n -> n
-postorderBitOps weight myNode lNode rNode pNodeMaybe 
+postorderBitOps :: NodeConstraint n s b => Double -> n -> n -> n -> Maybe n -> V.Vector (PhyloCharacter s) -> n
+postorderBitOps weight myNode lNode rNode pNodeMaybe treeChars
     | isNothing pNodeMaybe = error "No parent node on postorder bit operations"
     | otherwise =  
         let
             pNode = fromJust pNodeMaybe
-            lBit = grabAligned lNode
-            chars = V.filter aligned (characters lNode)
-            rBit = grabAligned rNode
-            myBit = grabAligned myNode
-            fBit = V.ifilter (\i b -> aligned $ (characters myNode) V.! i) (temporary myNode)
-            pBit = grabAligned pNode 
+            lBit = grabAligned lNode treeChars
+            chars = V.filter aligned treeChars
+            rBit = grabAligned rNode treeChars
+            myBit = grabAligned myNode treeChars
+            fBit = V.ifilter (\i b -> aligned $ chars V.! i) (temporary myNode)
+            pBit = grabAligned pNode treeChars
             setX = complement myBit .&. pBit
             notX = complement setX
             setG = notX .&. (V.map (snd . masks) chars)
@@ -198,8 +198,8 @@ postorderBitOps weight myNode lNode rNode pNodeMaybe
         in setFinal thdS myNode
 
 -- | Grabs the aligned portions of a node's encoded sequence
-grabAligned :: NodeConstraint n s b => n -> V.Vector s
-grabAligned node = V.ifilter (\i b -> aligned $ (characters node) V.! i) (preliminaryAlign node)
+grabAligned :: NodeConstraint n s b => n -> V.Vector (PhyloCharacter s) -> V.Vector s
+grabAligned node treeChars = V.ifilter (\i b -> aligned $ treeChars V.! i) (preliminaryAlign node)
 
 -- | Convenience function for bit ops
 blockShiftAndFold :: SeqConstraint s b => String -> String -> V.Vector (PhyloCharacter s) -> V.Vector s -> V.Vector s -> V.Vector s
