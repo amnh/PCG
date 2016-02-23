@@ -23,57 +23,59 @@ import Data.Matrix.NotStupid (Matrix, fromList, (<|>))
 
 -- | Define a character type as DNA, RNA, Morphology, Continous, or Custom
 -- Fields differ based on the constructor, but in general all hold a name, ignored, and tcm
-data PhyloCharacter b = DNA        {name :: String, -- The character name if it has one
-                                    aligned :: Bool, -- Whether the character represents an aligned or unaligned sequence
-                                    fitchMasks :: (Vector b, Vector b), 
-                                    stateNames :: Vector String,
-                                    alphabet :: Vector String, 
-                                    tcm :: CostMatrix, 
-                                    ignored :: Bool,
-                                    weight :: Float}
+data PhyloCharacter b = DNA         { name :: String -- The character name if it has one
+                                    , aligned :: Bool -- Whether the character represents an aligned or unaligned, sequence
+                                    , fitchMasks :: (Vector b, Vector b)
+                                    , stateNames :: Vector String
+                                    , alphabet :: Vector String
+                                    , tcm :: CostMatrix
+                                    , ignored :: Bool
+                                    }
+ 
+                      | RNA         { name :: String
+                                    , aligned :: Bool
+                                    , fitchMasks :: (Vector b, Vector b)
+                                    , stateNames :: Vector String
+                                    , alphabet :: Vector String
+                                    , tcm :: CostMatrix
+                                    , ignored :: Bool
+                                    }
 
-                      | RNA        {name :: String,
-                                    aligned :: Bool, 
-                                    fitchMasks :: (Vector b, Vector b), 
-                                    stateNames :: Vector String,
-                                    alphabet :: Vector String, 
-                                    tcm :: CostMatrix, 
-                                    ignored :: Bool,
-                                    weight :: Float}
+                      | Qualitative { name :: String
+                                    , aligned :: Bool
+                                    , fitchMasks :: (Vector b, Vector b)
+                                    , stateNames :: Vector String
+                                    , alphabet :: Vector String
+                                    , tcm :: CostMatrix
+                                    , additive :: Bool
+                                    , ignored :: Bool
+                                    } 
 
-                      | Qualitative {name :: String,
-                                    aligned :: Bool,
-                                    fitchMasks :: (Vector b, Vector b), 
-                                    stateNames :: Vector String,
-                                    alphabet :: Vector String,
-                                    tcm :: CostMatrix,
-                                    additive :: Bool,
-                                    ignored :: Bool,
-                                    weight :: Float} 
+                      | Continous   { name :: String
+                                    , ignored :: Bool
+                                    , tcm :: CostMatrix
+                                    }
+ 
+                      | Custom      { name :: String
+                                    , aligned :: Bool
+                                    , masks :: (Vector b, Vector b)
+                                    , alphabet :: Vector String
+                                    , stateNames :: Vector String
+                                    , tcm :: CostMatrix
+                                    , ignored :: Bool
+                                    , additive :: Bool
+                                    } 
+ 
+                      | AminoAcid   { name :: String
+                                    , aligned :: Bool
+                                    , fitchMasks :: (Vector b, Vector b)
+                                    , alphabet :: Vector String
+                                    , stateNames :: Vector String
+                                    , tcm :: CostMatrix
+                                    , ignored :: Bool
+                                    }
 
-                      | Continous  {name :: String,
-                                    ignored :: Bool,
-                                    tcm :: CostMatrix,
-                                    weight :: Float}
-                      | Custom     {name :: String,
-                                    aligned :: Bool, 
-                                    masks :: (Vector b, Vector b), 
-                                    alphabet :: Vector String, 
-                                    stateNames :: Vector String,
-                                    tcm :: CostMatrix, 
-                                    ignored :: Bool,
-                                    additive :: Bool,
-                                    weight :: Float} 
-                      | AminoAcid   {name :: String,
-                                    aligned :: Bool, 
-                                    fitchMasks :: (Vector b, Vector b), 
-                                    alphabet :: Vector String,
-                                    stateNames :: Vector String, 
-                                    tcm :: CostMatrix, 
-                                    ignored :: Bool,
-                                    weight :: Float}
-
-                            deriving (Show, Eq, Generic)
+                       deriving (Show, Eq, Generic)
 
 -- | A cost matrix is just a matrix of floats
 type CostMatrix = Matrix Double
