@@ -21,3 +21,5 @@ badReadGraph fastaPath newickPath = do
     (Right x, Right y) -> pure $ convertBothForest y [coerceFasta x]
   where
     coerceFasta = fmap (singleton . Just)
+
+maddness = allOptimization 1 <$> badReadGraph "../../TestDat/fakeArtmor.fas" "../../TestDat/artmor.tre"
