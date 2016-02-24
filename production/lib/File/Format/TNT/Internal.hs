@@ -5,7 +5,7 @@ import           Data.Char                (isSpace)
 import           Data.List                (inits)
 import           Data.List.NonEmpty       (NonEmpty)
 import           Data.Maybe               (catMaybes)
-import           Data.Vector              (Vector)
+import           Data.Vector              (Vector,fromList)
 import           Text.Megaparsec
 import           Text.Megaparsec.Custom
 import           Text.Megaparsec.Lexer    (integer,number,signed)
@@ -30,26 +30,6 @@ data WithTaxa
    , charMetaData :: Vector CharacterMetaData
    , trees        :: [LeafyTree TaxonInfo]
    } deriving (Show)
-
---XRead types
---------------------------------------------------------------------------------
-
-data XRead
-   = XRead
-   { charCountx :: Int
-   , taxaCountx :: Int
-   , sequencesx :: NonEmpty TaxonInfo
-   } deriving (Show)
-
--- | The sequence information for a taxon within the TNT file's XREAD command.
--- Contains the 'TaxonName' and the naive 'TaxonSequence' 
-type TaxonInfo     = (TaxonName, TaxonSequence)
-
--- | The name of a taxon in a TNT file's XREAD command.
-type TaxonName     = String
-
--- | The naive sequence of a taxon in a TNT files' XREAD command.
-type TaxonSequence = [String]
 
 -- CCode types
 --------------------------------------------------------------------------------
@@ -79,6 +59,18 @@ data CharacterSet
    | Whole
    deriving (Show)
 
+-- CNames types
+--------------------------------------------------------------------------------
+
+type CNames = NonEmpty CharacterName
+
+data CharacterName
+   = CharacterName
+   { sequenceIndex       :: Int
+   , characterId         :: String
+   , characterStateNames :: [String]
+   } deriving (Show)
+
 -- TRead types
 --------------------------------------------------------------------------------
 
@@ -96,6 +88,26 @@ data NodeType
    | Name   String
    | Prefix String
    deriving (Show)
+
+--XRead types
+--------------------------------------------------------------------------------
+
+data XRead
+   = XRead
+   { charCountx :: Int
+   , taxaCountx :: Int
+   , sequencesx :: NonEmpty TaxonInfo
+   } deriving (Show)
+
+-- | The sequence information for a taxon within the TNT file's XREAD command.
+-- Contains the 'TaxonName' and the naive 'TaxonSequence' 
+type TaxonInfo     = (TaxonName, TaxonSequence)
+
+-- | The name of a taxon in a TNT file's XREAD command.
+type TaxonName     = String
+
+-- | The naive sequence of a taxon in a TNT files' XREAD command.
+type TaxonSequence = [String]
 
 -- CharacterMetaData types
 --------------------------------------------------------------------------------
@@ -127,7 +139,8 @@ modifyMetaDataState  NonSankoff   old = old { sankoff  = False }
 modifyMetaDataState (Weight n)    old = old { weight   = n     }
 modifyMetaDataState (Steps  n)    old = old { steps    = n     }
 
-
+modifyMetaDataNames :: CharacterName -> CharacterMetaData -> CharacterMetaData
+modifyMetaDataNames charName old = old { characterName = characterId charName, characterStates = fromList $ characterStateNames charName }
 
 -- | Parses an Int which is non-negative.
 nonNegInt :: MonadParsec s m Char => m Int

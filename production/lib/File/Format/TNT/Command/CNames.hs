@@ -34,27 +34,32 @@ cnamesCommand = cnamesValidation =<< cnamesDefinition
     -- | Make sure indicies are unique
     cnamesValidation :: MonadParsec s m Char => CNames -> m CNames
     cnamesValidation cnames
-      | not (null duplicateIndicies) = fails duplicateIndexErrors
-      | otherwise                    = pure cnames
+      | not (null duplicateIndexErrors) = fails duplicateIndexErrors
+      | otherwise                       = pure cnames
       where
-        duplicateIndicies   = filter (not.isSingleton) . toList $ foldr mapBuild mempty cnames
+        duplicateIndexErrors = duplicateIndexMessages cnames
+
+duplicateIndexMessages :: CNames -> [String]
+duplicateIndexMessages cnames = duplicateIndexErrors
+  where
+    duplicateIndicies   = filter (not.isSingleton) . toList $ foldr mapBuild mempty cnames
+      where
+        isSingleton [x] = True
+        isSingleton _   = False
+        mapBuild x = insertWith f (sequenceIndex x) [x]
           where
-            isSingleton [x] = True
-            isSingleton _   = False
-            mapBuild x = insertWith f (sequenceIndex x) [x]
-              where
-                f [new] old = new:old
-        duplicateIndexErrors = toList $ fmap getErrorMessage duplicateIndicies
+            f [new] old = new:old
+    duplicateIndexErrors = toList $ fmap getErrorMessage duplicateIndicies
+      where
+        getErrorMessage xs = unwords
+                           [ "Multiple character names defined for the index '" ++ show indexValue ++ "',"
+                           , "expecting at most one character name for each index."
+                           , "The following character names were found for index '" ++ show indexValue ++ "':"
+                           , show (sort nameValues)
+                           ]
           where
-            getErrorMessage xs = unwords
-                               [ "Multiple character names defined for the index '" ++ show indexValue ++ "',"
-                               , "expecting at most one character name for each index."
-                               , "The following character names were found for index '" ++ show indexValue ++ "':"
-                               , show (sort nameValues)
-                               ]
-              where
-                indexValue   = sequenceIndex $ head xs
-                nameValues   = characterId <$> xs
+            indexValue   = sequenceIndex $ head xs
+            nameValues   = characterId <$> xs
 
 {-
       | null errors = pure $ XRead charCount taxaCount taxaSeqs
@@ -100,14 +105,6 @@ cnamesHeader = symbol (keyword "cnames" 2)
     simpleComment = delimiter *> anythingTill delimiter <* symbol delimiter
       where
         delimiter = char '\''
-
-type CNames = NonEmpty CharacterName
-data CharacterName
-   = CharacterName
-   { sequenceIndex   :: Int
-   , characterId     :: String
-   , characterStates :: [String]
-   } deriving (Show)
      
 cnamesBody :: MonadParsec s m Char => m CNames
 cnamesBody = NE.fromList . normalize <$> some cnamesStateName
