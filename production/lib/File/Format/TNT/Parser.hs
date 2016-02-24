@@ -33,7 +33,7 @@ tntStreamParser = (colateResult <=< collapseStructures) =<< (whitespace *> gathe
       | otherwise             = pure . Right
                               $ WithTaxa
                                   (vectorizeTaxa xread)
-                                  (ccodeCoalesce (taxaCountx xread) ccodes)
+                                  (applyCNames cnames $ ccodeCoalesce (taxaCountx xread) ccodes)
                                   (matchTaxaInTree xread treads)
       where
         matchTaxaInTree :: XRead -> [TReadTree] -> [LeafyTree TaxonInfo]

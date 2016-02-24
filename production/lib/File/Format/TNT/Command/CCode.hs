@@ -1,12 +1,6 @@
 {-# LANGUAGE FlexibleContexts #-}
 module File.Format.TNT.Command.CCode where
 
-{-- TODO:
-  - Robust tests
-  - Good documentation
-  -}
-
-
 import           Data.IntMap              (IntMap,insertWith)
 import qualified Data.IntMap        as IM (lookup)
 import qualified Data.List.NonEmpty as NE (fromList)
