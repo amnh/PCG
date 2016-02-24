@@ -79,15 +79,6 @@ data CharacterSet
    | Whole
    deriving (Show)
 
-data CharacterMetaData
-   = CharMeta
-   { additive :: Bool --- Mutually exclusive sankoff
-   , active   :: Bool
-   , sankoff  :: Bool
-   , weight   :: Int
-   , steps    :: Int
-   } deriving (Show)
-
 -- TRead types
 --------------------------------------------------------------------------------
 
@@ -105,6 +96,38 @@ data NodeType
    | Name   String
    | Prefix String
    deriving (Show)
+
+-- CharacterMetaData types
+--------------------------------------------------------------------------------
+
+data CharacterMetaData
+   = CharMeta
+   { characterName   :: String
+   , characterStates :: Vector String
+   , additive        :: Bool --- Mutually exclusive sankoff
+   , active          :: Bool
+   , sankoff         :: Bool
+   , weight          :: Int
+   , steps           :: Int
+   } deriving (Show)
+
+initialMetaData :: CharacterMetaData
+initialMetaData = CharMeta "" mempty False True False 1 1
+
+metaDataTemplate :: CharacterState -> CharacterMetaData
+metaDataTemplate state = modifyMetaDataState state initialMetaData
+
+modifyMetaDataState :: CharacterState -> CharacterMetaData -> CharacterMetaData
+modifyMetaDataState  Additive     old = old { additive = True , sankoff = False }
+modifyMetaDataState  NonAdditive  old = old { additive = False }
+modifyMetaDataState  Active       old = old { active   = True  }
+modifyMetaDataState  NonActive    old = old { active   = False }
+modifyMetaDataState  Sankoff      old = old { additive = False, sankoff = True  }
+modifyMetaDataState  NonSankoff   old = old { sankoff  = False }
+modifyMetaDataState (Weight n)    old = old { weight   = n     }
+modifyMetaDataState (Steps  n)    old = old { steps    = n     }
+
+
 
 -- | Parses an Int which is non-negative.
 nonNegInt :: MonadParsec s m Char => m Int
