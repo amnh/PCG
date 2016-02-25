@@ -1,12 +1,6 @@
 {-# LANGUAGE FlexibleContexts #-}
 module File.Format.TNT.Command.CCode where
 
-{-- TODO:
-  - Robust tests
-  - Good documentation
-  -}
-
-
 import           Data.IntMap              (IntMap,insertWith)
 import qualified Data.IntMap        as IM (lookup)
 import qualified Data.List.NonEmpty as NE (fromList)
@@ -15,49 +9,6 @@ import           Data.Vector              (Vector,generate)
 import           File.Format.TNT.Internal
 import           Text.Megaparsec
 import           Text.Megaparsec.Prim     (MonadParsec)
-
-initialMetaData :: CharacterMetaData
-initialMetaData = CharMeta False True False 1 1
-
-metaDataTemplate :: CharacterState -> CharacterMetaData
-metaDataTemplate state = modifyMetaDataState state initialMetaData
-
-modifyMetaDataState :: CharacterState -> CharacterMetaData -> CharacterMetaData
-modifyMetaDataState  Additive     old = old { additive = True , sankoff = False }
-modifyMetaDataState  NonAdditive  old = old { additive = False }
-modifyMetaDataState  Active       old = old { active   = True  }
-modifyMetaDataState  NonActive    old = old { active   = False }
-modifyMetaDataState  Sankoff      old = old { additive = False, sankoff = True  }
-modifyMetaDataState  NonSankoff   old = old { sankoff  = False }
-modifyMetaDataState (Weight n)    old = old { weight   = n     }
-modifyMetaDataState (Steps  n)    old = old { steps    = n     }
-
--- | Coalesces many CCODE commands respecting thier structural order
---   into a single index ordered mapping.
-ccodeCoalesce :: Foldable t => Int -> t CCode -> Vector CharacterMetaData
-ccodeCoalesce charCount ccodeCommands = generate charCount f
-  where
-    f :: Int -> CharacterMetaData
-    f = fromMaybe initialMetaData . (`IM.lookup` stateMapping)
-    stateMapping :: IntMap CharacterMetaData
-    stateMapping = foldl addChangeSet mempty ccodeCommands
-    addChangeSet :: IntMap CharacterMetaData -> CCode -> IntMap CharacterMetaData
-    addChangeSet mapping (CCode state indicies) = foldl applyChanges mapping indicies
-      where
-        applyChanges :: IntMap CharacterMetaData -> CharacterSet -> IntMap CharacterMetaData
-        applyChanges mapping' changeSet = foldl (insertState state) mapping' range
-          where
-            range = case changeSet of
-                     Single    i   -> [i..i]
-                     Range     i j -> [i..j]
-                     FromStart   j -> [0..j]
-                     ToEnd     i   -> [i..charCount]
-                     Whole         -> [0..charCount]
-    insertState :: CharacterState -> IntMap CharacterMetaData ->  Int -> IntMap CharacterMetaData
-    insertState state mapping index = insertWith translation index defaultValue mapping 
-      where
-        defaultValue = metaDataTemplate state
-        translation  = const (modifyMetaDataState state)
 
 -- | Parses a CCODE command that consists of:
 --
@@ -89,7 +40,7 @@ ccodeIndicies = choice $ try <$> [range, fromStart, single, toEnd, whole]
     single    = Single    <$> num
     toEnd     = dot *> (ToEnd <$> num)
     whole     = dot *> pure Whole
-    num       = symbol nonNegInt
+    num       = symbol (flexibleNonNegativeInt "sequence index value")
     dot       = symbol (char '.')
 
 -- | A Uitility function for creating 'CCode' combinators
@@ -127,7 +78,7 @@ ccodeNonSankoff  = ccodeMetaChange ')' NonSankoff
 ccodeWeight :: MonadParsec s m Char => m CCode
 ccodeWeight = do
     _ <- symbol (char '/')
-    w <- Weight <$> symbol nonNegInt
+    w <- Weight <$> symbol (flexibleNonNegativeInt "weight value")
     i <- NE.fromList <$> some ccodeIndicies
     pure $ CCode w i
 
@@ -135,6 +86,6 @@ ccodeWeight = do
 ccodeSteps :: MonadParsec s m Char => m CCode
 ccodeSteps = do
     _ <- symbol (char '=')
-    w <- Steps <$> symbol nonNegInt
+    w <- Steps <$> symbol (flexibleNonNegativeInt "step value")
     i <- NE.fromList <$> some ccodeIndicies
     pure $ CCode w i

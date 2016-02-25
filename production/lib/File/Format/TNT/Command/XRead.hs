@@ -78,9 +78,9 @@ xreadTaxaCount :: MonadParsec s m Char => m Int
 xreadTaxaCount = symbol $ flexiblePositiveInt "taxa count" 
 
 -- | The number of characters in a taxon sequence for this XREAD command.
--- __Naturally__ this number must be a positive integer.
+-- __Naturally__ this number must be a non-negative integer.
 xreadCharCount :: MonadParsec s m Char => m Int
-xreadCharCount = symbol $ flexiblePositiveInt "char count"
+xreadCharCount = symbol $ flexibleNonNegativeInt "character count"
 
 -- | Reads one or more taxon sequences.
 -- Performs deinterleaving of identically named taxon sequences. 
@@ -113,10 +113,10 @@ xreadSequences = NE.fromList . deinterleaveTaxa <$> symbol (taxonSequence `sepEn
 -- Character values can be one of 64 states ordered @[0..9,A..Z,a..z]@ and also the Chars @\'-\'@ & @\'?\'@.
 -- Taxon name cannot contain spaces or the @\';\'@ character.
 taxonSequence :: MonadParsec s m Char => m TaxonInfo
-taxonSequence = (,) <$> symbol taxonName <*> taxonSeq
+taxonSequence = (,) <$> (taxonName <* whitespaceInline) <*> taxonSeq
   where
     taxonName     = some  validNameChar
-    taxonSeq      = some (seqChar <|> ambiguity)
+    taxonSeq      = many (seqChar <|> ambiguity)
     seqChar       = pure <$> validSeqChar <* whitespaceInline
     ambiguity     = char '[' *> some (validSeqChar <* whitespaceInline) <* char ']' <* whitespaceInline
     validNameChar = satisfy (\x -> (not . isSpace) x && x `notElem` "(),;")

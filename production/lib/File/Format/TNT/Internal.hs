@@ -1,11 +1,11 @@
-{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE DeriveFoldable, DeriveFunctor, DeriveTraversable, FlexibleContexts #-}
 module File.Format.TNT.Internal where
 
-import           Data.Char                (isSpace)
+import           Data.Char                (isAlpha,isSpace)
 import           Data.List                (inits)
 import           Data.List.NonEmpty       (NonEmpty)
 import           Data.Maybe               (catMaybes)
-import           Data.Vector              (Vector)
+import           Data.Vector              (Vector,fromList)
 import           Text.Megaparsec
 import           Text.Megaparsec.Custom
 import           Text.Megaparsec.Lexer    (integer,number,signed)
@@ -22,7 +22,7 @@ data Hennig
 -}
 
 type TntResult = Either TreeOnly WithTaxa
-type TreeOnly  = [TRead]
+type TreeOnly  = TRead
 type Yucky     = String
 data WithTaxa
    = WithTaxa
@@ -30,26 +30,6 @@ data WithTaxa
    , charMetaData :: Vector CharacterMetaData
    , trees        :: [LeafyTree TaxonInfo]
    } deriving (Show)
-
---XRead types
---------------------------------------------------------------------------------
-
-data XRead
-   = XRead
-   { charCountx :: Int
-   , taxaCountx :: Int
-   , sequencesx :: NonEmpty TaxonInfo
-   } deriving (Show)
-
--- | The sequence information for a taxon within the TNT file's XREAD command.
--- Contains the 'TaxonName' and the naive 'TaxonSequence' 
-type TaxonInfo     = (TaxonName, TaxonSequence)
-
--- | The name of a taxon in a TNT file's XREAD command.
-type TaxonName     = String
-
--- | The naive sequence of a taxon in a TNT files' XREAD command.
-type TaxonSequence = [String]
 
 -- CCode types
 --------------------------------------------------------------------------------
@@ -79,13 +59,16 @@ data CharacterSet
    | Whole
    deriving (Show)
 
-data CharacterMetaData
-   = CharMeta
-   { additive :: Bool --- Mutually exclusive sankoff
-   , active   :: Bool
-   , sankoff  :: Bool
-   , weight   :: Int
-   , steps    :: Int
+-- CNames types
+--------------------------------------------------------------------------------
+
+type CNames = NonEmpty CharacterName
+
+data CharacterName
+   = CharacterName
+   { sequenceIndex       :: Int
+   , characterId         :: String
+   , characterStateNames :: [String]
    } deriving (Show)
 
 -- TRead types
@@ -98,7 +81,7 @@ type TNTTree   = LeafyTree TaxonInfo
 data LeafyTree a
    = Leaf a
    | Branch [LeafyTree a]
-   deriving (Show)
+   deriving (Foldable,Functor,Show,Traversable)
 
 data NodeType
    = Index  Int
@@ -106,9 +89,85 @@ data NodeType
    | Prefix String
    deriving (Show)
 
+--XRead types
+--------------------------------------------------------------------------------
+
+data XRead
+   = XRead
+   { charCountx :: Int
+   , taxaCountx :: Int
+   , sequencesx :: NonEmpty TaxonInfo
+   } deriving (Show)
+
+-- | The sequence information for a taxon within the TNT file's XREAD command.
+-- Contains the 'TaxonName' and the naive 'TaxonSequence' 
+type TaxonInfo     = (TaxonName, TaxonSequence)
+
+-- | The name of a taxon in a TNT file's XREAD command.
+type TaxonName     = String
+
+-- | The naive sequence of a taxon in a TNT files' XREAD command.
+type TaxonSequence = [String]
+
+-- CharacterMetaData types
+--------------------------------------------------------------------------------
+
+data CharacterMetaData
+   = CharMeta
+   { characterName   :: String
+   , characterStates :: Vector String
+   , additive        :: Bool --- Mutually exclusive sankoff
+   , active          :: Bool
+   , sankoff         :: Bool
+   , weight          :: Int
+   , steps           :: Int
+   } deriving (Show)
+
+initialMetaData :: CharacterMetaData
+initialMetaData = CharMeta "" mempty False True False 1 1
+
+metaDataTemplate :: CharacterState -> CharacterMetaData
+metaDataTemplate state = modifyMetaDataState state initialMetaData
+
+modifyMetaDataState :: CharacterState -> CharacterMetaData -> CharacterMetaData
+modifyMetaDataState  Additive     old = old { additive = True , sankoff = False }
+modifyMetaDataState  NonAdditive  old = old { additive = False }
+modifyMetaDataState  Active       old = old { active   = True  }
+modifyMetaDataState  NonActive    old = old { active   = False }
+modifyMetaDataState  Sankoff      old = old { additive = False, sankoff = True  }
+modifyMetaDataState  NonSankoff   old = old { sankoff  = False }
+modifyMetaDataState (Weight n)    old = old { weight   = n     }
+modifyMetaDataState (Steps  n)    old = old { steps    = n     }
+
+modifyMetaDataNames :: CharacterName -> CharacterMetaData -> CharacterMetaData
+modifyMetaDataNames charName old = old { characterName = characterId charName, characterStates = fromList $ characterStateNames charName }
+
 -- | Parses an Int which is non-negative.
 nonNegInt :: MonadParsec s m Char => m Int
 nonNegInt = fromIntegral <$> integer
+
+-- | Parses an non-negative integer from a variety of representations.
+-- Parses both signed integral values and signed floating values
+-- if the value is non-negative and an integer.
+--
+flexibleNonNegativeInt :: MonadParsec s m Char => String -> m Int
+flexibleNonNegativeInt labeling = either coerceIntegral coerceFloating
+                             =<< signed whitespace number <?> ("positive integer for " ++ labeling)
+  where
+    coerceIntegral :: MonadParsec s m Char => Integer -> m Int
+    coerceIntegral x
+      | x <  0      = fail $ concat ["The ",labeling," value (",show x,") is a negative number"]
+      | otherwise   = pure $ fromEnum x
+    coerceFloating :: MonadParsec s m Char => Double -> m Int
+    coerceFloating x
+      | null errors = pure $ fromEnum rounded
+      | otherwise   = fails errors
+      where
+        errors      = catMaybes [posError,intError]
+        posError    = if x >= 0  then Nothing else Just $ concat ["The ",labeling," value (",show x,") is a negative value"]
+        intError    = if isInt x then Nothing else Just $ concat ["The ",labeling," value (",show x,") is a real value, not an integral value"]
+        isInt n     = n == fromInteger rounded
+        rounded     = round x
 
 -- | Parses an positive integer from a variety of representations.
 -- Parses both signed integral values and signed floating values
@@ -186,7 +245,7 @@ keyword x y = abreviatable x y *> pure ()
       else combinator <?> "keyword '" ++ fullName ++ "'"
       where
         thenInlineSpace = notFollowedBy notInlineSpace
-        notInlineSpace  = satisfy (not . isSpace)
+        notInlineSpace  = satisfy (not . isAlpha)
         (req,opt)       = splitAt minimumChars fullName
         tailOpts        = (\suffix -> try (string' (req ++ suffix) <* thenInlineSpace)) <$> inits opt
         combinator      = choice tailOpts *> pure fullName
