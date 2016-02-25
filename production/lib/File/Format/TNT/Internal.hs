@@ -146,6 +146,29 @@ modifyMetaDataNames charName old = old { characterName = characterId charName, c
 nonNegInt :: MonadParsec s m Char => m Int
 nonNegInt = fromIntegral <$> integer
 
+-- | Parses an non-negative integer from a variety of representations.
+-- Parses both signed integral values and signed floating values
+-- if the value is non-negative and an integer.
+--
+flexibleNonNegativeInt :: MonadParsec s m Char => String -> m Int
+flexibleNonNegativeInt labeling = either coerceIntegral coerceFloating
+                             =<< signed whitespace number <?> ("positive integer for " ++ labeling)
+  where
+    coerceIntegral :: MonadParsec s m Char => Integer -> m Int
+    coerceIntegral x
+      | x <  0      = fail $ concat ["The ",labeling," value (",show x,") is a negative number"]
+      | otherwise   = pure $ fromEnum x
+    coerceFloating :: MonadParsec s m Char => Double -> m Int
+    coerceFloating x
+      | null errors = pure $ fromEnum rounded
+      | otherwise   = fails errors
+      where
+        errors      = catMaybes [posError,intError]
+        posError    = if x >= 0  then Nothing else Just $ concat ["The ",labeling," value (",show x,") is a negative value"]
+        intError    = if isInt x then Nothing else Just $ concat ["The ",labeling," value (",show x,") is a real value, not an integral value"]
+        isInt n     = n == fromInteger rounded
+        rounded     = round x
+
 -- | Parses an positive integer from a variety of representations.
 -- Parses both signed integral values and signed floating values
 -- if the value is positive and an integer.

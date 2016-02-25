@@ -81,7 +81,7 @@ cnamesStateName = symbol (char '{') *> cnameCharacterName <* symbol terminator
     lineToken :: MonadParsec s m Char => m String
     lineToken          = symbol $ somethingTill (inlineSpaceChar <|> terminator)
     cnameCharacterName = CharacterName
-                     <$> symbol nonNegInt
+                     <$> symbol (flexibleNonNegativeInt "character name's sequence index")
                      <*> lineToken
                      <*> many lineToken
 

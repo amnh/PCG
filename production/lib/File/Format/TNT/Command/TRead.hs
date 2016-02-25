@@ -54,7 +54,7 @@ treadTree = treadSubtree <|> treadLeaf
 treadLeaf :: MonadParsec s m Char => m TReadTree
 treadLeaf = Leaf <$> choice [try index, try prefix, name] 
  where
-   index       = Index  <$>  flexiblePositiveInt "taxon reference index"
+   index       = Index  <$>  flexibleNonNegativeInt "taxon reference index"
    prefix      = Prefix <$> (taxaLabel >>= checkTail) 
    name        = Name   <$>  taxaLabel
    taxaLabel   = some labelChar

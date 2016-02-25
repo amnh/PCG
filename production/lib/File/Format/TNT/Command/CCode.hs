@@ -40,7 +40,7 @@ ccodeIndicies = choice $ try <$> [range, fromStart, single, toEnd, whole]
     single    = Single    <$> num
     toEnd     = dot *> (ToEnd <$> num)
     whole     = dot *> pure Whole
-    num       = symbol nonNegInt
+    num       = symbol (flexibleNonNegativeInt "sequence index value")
     dot       = symbol (char '.')
 
 -- | A Uitility function for creating 'CCode' combinators
@@ -78,7 +78,7 @@ ccodeNonSankoff  = ccodeMetaChange ')' NonSankoff
 ccodeWeight :: MonadParsec s m Char => m CCode
 ccodeWeight = do
     _ <- symbol (char '/')
-    w <- Weight <$> symbol nonNegInt
+    w <- Weight <$> symbol (flexibleNonNegativeInt "weight value")
     i <- NE.fromList <$> some ccodeIndicies
     pure $ CCode w i
 
@@ -86,6 +86,6 @@ ccodeWeight = do
 ccodeSteps :: MonadParsec s m Char => m CCode
 ccodeSteps = do
     _ <- symbol (char '=')
-    w <- Steps <$> symbol nonNegInt
+    w <- Steps <$> symbol (flexibleNonNegativeInt "step value")
     i <- NE.fromList <$> some ccodeIndicies
     pure $ CCode w i

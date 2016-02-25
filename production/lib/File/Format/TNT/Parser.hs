@@ -46,8 +46,8 @@ tntStreamParser = (colateResult <=< collapseStructures) =<< (whitespace *> gathe
             interpolateLeafs :: MonadParsec s m Char => TReadTree -> m TNTTree
             interpolateLeafs = traverse substituteLeaf
             substituteLeaf (Index i)
-              | 0 > i || i >= limit = fail $ "Index '" ++ show i ++ "' in TREAD tree is outside the range of taxa [0," ++ show limit ++ "]."
-              | otherwise           = pure (vseqs ! i)
+              | 0 > i || i > limit = fail $ "Index '" ++ show i ++ "' in TREAD tree is outside the range of taxa [0," ++ show limit ++ "]."
+              | otherwise          = pure (vseqs ! i)
             substituteLeaf (Name name) =
               case name `M.lookup` mseqs of
                 Nothing -> fail $ "Name '" ++ show name ++ "' in TREAD tree is not in the list of taxa from the XREAD commands."

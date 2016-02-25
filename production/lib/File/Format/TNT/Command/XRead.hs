@@ -78,9 +78,9 @@ xreadTaxaCount :: MonadParsec s m Char => m Int
 xreadTaxaCount = symbol $ flexiblePositiveInt "taxa count" 
 
 -- | The number of characters in a taxon sequence for this XREAD command.
--- __Naturally__ this number must be a positive integer.
+-- __Naturally__ this number must be a non-negative integer.
 xreadCharCount :: MonadParsec s m Char => m Int
-xreadCharCount = symbol nonNegInt <?> "character count"
+xreadCharCount = symbol $ flexibleNonNegativeInt "character count"
 
 -- | Reads one or more taxon sequences.
 -- Performs deinterleaving of identically named taxon sequences. 
