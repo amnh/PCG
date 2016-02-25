@@ -1,7 +1,7 @@
 {-# LANGUAGE DeriveFoldable, DeriveFunctor, DeriveTraversable, FlexibleContexts #-}
 module File.Format.TNT.Internal where
 
-import           Data.Char                (isSpace)
+import           Data.Char                (isAlpha,isSpace)
 import           Data.List                (inits)
 import           Data.List.NonEmpty       (NonEmpty)
 import           Data.Maybe               (catMaybes)
@@ -245,7 +245,7 @@ keyword x y = abreviatable x y *> pure ()
       else combinator <?> "keyword '" ++ fullName ++ "'"
       where
         thenInlineSpace = notFollowedBy notInlineSpace
-        notInlineSpace  = satisfy (not . isSpace)
+        notInlineSpace  = satisfy (not . isAlpha)
         (req,opt)       = splitAt minimumChars fullName
         tailOpts        = (\suffix -> try (string' (req ++ suffix) <* thenInlineSpace)) <$> inits opt
         combinator      = choice tailOpts *> pure fullName

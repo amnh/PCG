@@ -8,6 +8,7 @@ import           File.Format.TNT.Command.TRead
 import           File.Format.TNT.Command.XRead
 import           File.Format.TNT.Internal
 import           Text.Megaparsec
+import           Text.Megaparsec.Custom
 import           Text.Megaparsec.Prim (MonadParsec)
 
 data Part
@@ -26,6 +27,7 @@ gatherCommands = partition <$> many commands
               , TR     <$> treadCommand
               , XR     <$> xreadCommand
               , Ignore <$  procedureCommand
+              , Ignore <$  ignoredCommand
               ]
     partition = foldr f ([],[],[],[])
       where
@@ -34,3 +36,10 @@ gatherCommands = partition <$> many commands
         f (TR e) (w,x,y,z) = (  w,  x,e:y,  z)
         f (XR e) (w,x,y,z) = (  w,  x,  y,e:z)
         f Ignore x         = x
+
+ignoredCommand :: MonadParsec s m Char => m String
+ignoredCommand = commandKeyword <* commandBody <* symbol terminal
+  where
+    commandKeyword = somethingTill inlineSpaceChar
+    commandBody    = trim $ somethingTill terminal
+    terminal       = char ';'
