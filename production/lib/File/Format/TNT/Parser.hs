@@ -30,8 +30,7 @@ tntStreamParser = (colateResult <=< collapseStructures) =<< (whitespace *> gathe
     colateResult (     _,     _,treads,     []) = pure . Left $ NE.fromList treads
     colateResult (ccodes,cnames,treads,[xread])
       | charCountx xread == 0 = (Left . fmap (fmap (Name . fst)) . NE.fromList) <$> matchTaxaInTree xread treads
-      | otherwise             = fmap Right
-                              $ liftM3 (WithTaxa)
+      | otherwise             = Right <$> liftM3 WithTaxa
                                   (pure $ vectorizeTaxa xread)
                                   (pure . applyCNames cnames $ ccodeCoalesce (taxaCountx xread) ccodes)
                                   (matchTaxaInTree xread treads)
@@ -52,7 +51,7 @@ tntStreamParser = (colateResult <=< collapseStructures) =<< (whitespace *> gathe
             substituteLeaf (Name name) =
               case name `M.lookup` mseqs of
                 Nothing -> fail $ "Name '" ++ show name ++ "' in TREAD tree is not in the list of taxa from the XREAD commands."
-                Just x  -> pure $ (name, x)
+                Just x  -> pure (name, x)
             substituteLeaf (Prefix pref) = undefined
 
 collapseStructures :: MonadParsec s m Char => ([CCode],[CNames],[TRead],[XRead]) -> m ([CCode],[CharacterName],[TReadTree],[XRead])
@@ -68,7 +67,7 @@ collapseStructures (ccodes,cnames,treads,xreads)
                       else duplicateIndexMessages $ NE.fromList collapsedCNames
 
 applyCNames :: Foldable f => f CharacterName -> Vector CharacterMetaData -> Vector CharacterMetaData
-applyCNames charNames metaData = metaData // (foldl f [] charNames)
+applyCNames charNames metaData = metaData // foldl f [] charNames
   where
     f :: [(Int, CharacterMetaData)] -> CharacterName -> [(Int, CharacterMetaData)]
     f xs name = (i, modifyMetaDataNames name (metaData ! i)) : xs
