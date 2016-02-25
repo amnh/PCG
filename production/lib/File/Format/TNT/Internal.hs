@@ -1,4 +1,4 @@
-{-# LANGUAGE DeriveFunctor, FlexibleContexts #-}
+{-# LANGUAGE DeriveFoldable, DeriveFunctor, DeriveTraversable, FlexibleContexts #-}
 module File.Format.TNT.Internal where
 
 import           Data.Char                (isSpace)
@@ -81,7 +81,7 @@ type TNTTree   = LeafyTree TaxonInfo
 data LeafyTree a
    = Leaf a
    | Branch [LeafyTree a]
-   deriving (Show,Functor)
+   deriving (Foldable,Functor,Show,Traversable)
 
 data NodeType
    = Index  Int

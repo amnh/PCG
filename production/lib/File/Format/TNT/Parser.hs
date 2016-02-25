@@ -1,10 +1,11 @@
 {-# LANGUAGE FlexibleContexts #-}
 module File.Format.TNT.Parser where
 
-import           Control.Monad            ((<=<))
+import           Control.Monad            ((<=<),liftM3)
 import           Data.Foldable            (toList)
 import           Data.IntMap              (IntMap,insertWith)
 import qualified Data.IntMap        as IM (lookup)
+import qualified Data.Map           as M  (fromList,lookup)
 import           Data.List.NonEmpty       (NonEmpty)
 import qualified Data.List.NonEmpty as NE (fromList)
 import           Data.Maybe               (fromMaybe)
@@ -20,7 +21,6 @@ import           File.Format.TNT.Partitioning
 import           Text.Megaparsec.Custom
 import           Text.Megaparsec.Prim                     (MonadParsec)
 
--- TODO: make the types better
 tntStreamParser :: MonadParsec s m Char => m TntResult
 tntStreamParser = (colateResult <=< collapseStructures) =<< (whitespace *> gatherCommands)
   where
@@ -29,16 +29,31 @@ tntStreamParser = (colateResult <=< collapseStructures) =<< (whitespace *> gathe
     colateResult (     _,     _,    [],     []) = fail "No XREAD command or TREAD command, expecting either a single XREAD command or one or more TRead commands."
     colateResult (     _,     _,treads,     []) = pure . Left $ NE.fromList treads
     colateResult (ccodes,cnames,treads,[xread])
-      | charCountx xread == 0 = pure . Left . fmap (fmap (Name . fst)) . NE.fromList $ matchTaxaInTree xread treads
-      | otherwise             = pure . Right
-                              $ WithTaxa
-                                  (vectorizeTaxa xread)
-                                  (applyCNames cnames $ ccodeCoalesce (taxaCountx xread) ccodes)
+      | charCountx xread == 0 = (Left . fmap (fmap (Name . fst)) . NE.fromList) <$> matchTaxaInTree xread treads
+      | otherwise             = fmap Right
+                              $ liftM3 (WithTaxa)
+                                  (pure $ vectorizeTaxa xread)
+                                  (pure . applyCNames cnames $ ccodeCoalesce (taxaCountx xread) ccodes)
                                   (matchTaxaInTree xread treads)
       where
-        matchTaxaInTree :: XRead -> [TReadTree] -> [LeafyTree TaxonInfo]
-        matchTaxaInTree = undefined
         vectorizeTaxa   = V.fromList . toList . sequencesx
+        matchTaxaInTree :: MonadParsec s m Char => XRead -> [TReadTree] -> m [LeafyTree TaxonInfo]
+        matchTaxaInTree xread = traverse interpolateLeafs
+          where
+            seqs  = sequencesx xread
+            vseqs = V.fromList $ toList seqs
+            mseqs = M.fromList $ toList seqs
+            limit = length vseqs - 1
+            interpolateLeafs :: MonadParsec s m Char => TReadTree -> m TNTTree
+            interpolateLeafs = traverse substituteLeaf
+            substituteLeaf (Index i)
+              | 0 > i || i >= limit = fail $ "Index '" ++ show i ++ "' in TREAD tree is outside the range of taxa [0," ++ show limit ++ "]."
+              | otherwise           = pure (vseqs ! i)
+            substituteLeaf (Name name) =
+              case name `M.lookup` mseqs of
+                Nothing -> fail $ "Name '" ++ show name ++ "' in TREAD tree is not in the list of taxa from the XREAD commands."
+                Just x  -> pure $ (name, x)
+            substituteLeaf (Prefix pref) = undefined
 
 collapseStructures :: MonadParsec s m Char => ([CCode],[CNames],[TRead],[XRead]) -> m ([CCode],[CharacterName],[TReadTree],[XRead])
 collapseStructures (ccodes,cnames,treads,xreads)
