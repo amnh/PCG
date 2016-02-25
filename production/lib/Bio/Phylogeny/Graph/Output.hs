@@ -30,7 +30,7 @@ outPutDot inGraph fileName = writeFile fileName (toDot inGraph)
                 header = "digraph G { \n" ++ "\trankdir = LR;\n" ++ "\tnode [shape = rect];"
                 footer = "}"
 
-        treeToDot :: Tree -> String -> String
+        treeToDot :: DAG -> String -> String
         treeToDot inTree curString = foldr printEdge curString (edges inTree)
             where 
                 printEdge :: EdgeSet -> String -> String

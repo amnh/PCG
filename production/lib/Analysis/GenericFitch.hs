@@ -3,7 +3,7 @@
 
 module Analysis.GenericFitch where
 
--- imports 
+-- imports
 import Bio.Phylogeny.Tree.Binary
 import Bio.Phylogeny.Tree.CharacterAware
 import Bio.Phylogeny.Tree.Node.Encoded
@@ -22,12 +22,12 @@ import Data.Bits
 import Control.Monad
 
 type TreeConstraint t n s b = (BinaryTree t n, Show t, NodeConstraint n s b, CharacterTree t s)
-type NodeConstraint n s b = (EncodedNode n s, PreliminaryNode n s, FinalNode n s, SeqConstraint s b)
-type SeqConstraint s b = (Bits b, CodedSequence s b, Bits s)
+type NodeConstraint n s b = (EncodedNode n s, PreliminaryNode n s, FinalNode n s, SeqConstraint s b, Show n)
+type SeqConstraint s b = (Bits b, CodedSequence s b, Bits s, Show s)
 
 -- | Unified function to perform both the first and second passes of fitch
 allOptimization :: TreeConstraint t n s b => Double -> t -> t
---allOptimization weight inTree | trace ("allOptimization " ++ show inTree) False = undefined
+allOptimization weight inTree | trace ("allOptimization " ++ show (inTree)) False = undefined
 allOptimization weight inTree = 
     let 
         downPass = optimizationPreorder weight inTree
@@ -106,6 +106,7 @@ internalPreorder weight node tree
 -- | Bit operations for the down pass: basically creats a mask for union and intersection areas and then takes them
 -- returns the new assignment, the union/intersect mask, and the new total cost
 preorderBitOps :: NodeConstraint n s b => Double -> n -> n -> n -> V.Vector (PhyloCharacter s) -> n
+preorderBitOps weight curNode lNode rNode treeChars | trace ("preorderBitOps " ++ show treeChars ++ show lNode) False = undefined
 preorderBitOps weight curNode lNode rNode treeChars =
     let
         lbit = grabAligned lNode treeChars
@@ -121,7 +122,8 @@ preorderBitOps weight curNode lNode rNode treeChars =
         weightCost = weight * myCost
         totalCost = cost lNode + cost rNode + weightCost
         outbit = (maskF .&. union) .|. (lbit .&. rbit)
-    in setPreliminary outbit $ setAlign outbit $ setTemporary finalF $ setCost totalCost curNode
+        outNode = setPreliminary outbit $ setAlign outbit $ setTemporary finalF $ setCost totalCost curNode
+    in outNode
 
     where
         fetchCost :: SeqConstraint s b => V.Vector s -> V.Vector (PhyloCharacter s) -> Double

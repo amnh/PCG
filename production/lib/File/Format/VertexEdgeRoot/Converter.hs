@@ -36,7 +36,7 @@ convert inVer = (splitConnected outTree)
         rootList = S.toList $ VER.roots inVer
         finalNodes = accumNodes (VER.edges inVer) nameDicts
         outEdges = accumEdges finalNodes (VER.edges inVer) (fst nameDicts)
-        outTree = Tree (fst nameDicts) mempty mempty finalNodes outEdges 0
+        outTree = DAG (fst nameDicts) mempty mempty finalNodes outEdges 0
 
         -- | First we correspond the names to indices in both directions
         accumNames :: Int -> S.Set VER.VertexLabel -> (IM.IntMap Identifier, HM.HashMap Identifier Int)

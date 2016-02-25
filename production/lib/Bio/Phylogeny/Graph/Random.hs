@@ -30,9 +30,9 @@ import           Test.Tasty.QuickCheck
 --import Debug.Trace
 
 instance Arbitrary Graph where
-    arbitrary = Graph <$> listOf (arbitrary :: Gen Tree)
+    arbitrary = Graph <$> listOf (arbitrary :: Gen DAG)
 
-instance Arbitrary Tree where
+instance Arbitrary DAG where
     arbitrary = do
         topo <- arbitrary :: Gen TopoTree
         return $ fromTopo topo

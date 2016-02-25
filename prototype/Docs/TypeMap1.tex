@@ -1,0 +1,60 @@
+\documentclass{standalone}
+\usepackage{tikz}
+\usetikzlibrary{shapes.geometric, arrows}
+
+\begin{document}
+
+%set different styles for types and typeclasses, and for arrows
+\tikzstyle{typeclass} = [rectangle, rounded corners, text centered, draw=black, fill=blue!50, text width = 5em]
+\tikzstyle{infotype} = [rectangle, rounded corners, text centered, draw=black, fill=purple!50, text width = 5em]
+\tikzstyle{type}=[circle, text centered, draw=black, fill=orange!50, text width= 5em]
+\tikzstyle{blank}=[circle, draw=black,fill=white]
+\tikzstyle{instance} = [thick,->,>=stealth]
+\tikzstyle{subtype} = [dashed, ->, thick]
+\tikzstyle{contains}=[thick, -]
+
+\begin{tikzpicture}[node distance = 2.5cm]
+
+%position all of the nodes
+\node (forest) [typeclass] {Forest};
+\node (network) [typeclass, below of = forest] {Network};
+\node (node) [typeclass, below of = network] {Node};
+\node (graph) [type, right of=forest] {Graph};
+\node (dag) [type, below of= graph] {DAG};
+\node (tree) [typeclass, left of = network] {Tree (Rose)};
+\node (bintree) [typeclass, left of = tree] {Binary Tree};
+\node (ref) [typeclass, left of = bintree] {Referential Tree};
+\node (topo) [typeclass, left of = ref] {Topological Tree};
+\node (parsed) [infotype, right of = dag] {Parsed Tree (Parsed Seqs Stored)};
+\node (edged) [infotype, right of = parsed] {Edge Aware (Edges Stored)};
+\node (chartree) [infotype, right of = edged] {Character Aware (Metadata Stored)};
+\node (nodet) [type, right of = node] {Node};
+\node (charnode) [infotype, right of = nodet] {Character Node (Metadata Stored)};
+\node (packnode) [infotype, right of = charnode] {Packed Node (Packed Data)};
+\node (encodenode) [infotype, right of = packnode] {Encoded Node};
+\node (final) [infotype, left of = node] {Final Node (Final Sequence)};
+\node (prelim) [infotype, left of = final] {Preliminary Node (Preliminary inferred)};
+\node (toponode) [typeclass, left of = prelim] {Topological Node (with pointers)};
+\node (pseqt) [typeclass, below of = nodet] {Parsed Sequence};
+\node (pseq) [type, right of = pseqt] {Parsed Sequence};
+\node (cseqt) [typeclass, below of = node] {Coded Sequence};
+\node (cseq) [type, left of = cseqt] {Coded Sequence};
+\node (metadata) [type, below of = cseqt] {Phylo Character: Character Metadata};
+
+
+
+%now do edges
+\draw [instance] (network) -- (dag);
+\draw [instance] (forest) -- (graph);
+\draw [contains] (graph) -- (dag);
+\draw[contains] (network) -- (forest);
+\draw[contains] (network) -- (node);
+\draw[instance] (node) -- (nodet);
+\draw[contains] (cseqt) -- (node);
+\draw[contains] (pseqt) -- (node);
+\draw[instance] (cseqt) -- (cseq);
+\draw[instance] (pseqt) -- (pseq);
+
+\end{tikzpicture}
+
+\end{document}

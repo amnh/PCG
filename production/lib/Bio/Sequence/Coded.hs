@@ -19,10 +19,11 @@
 module Bio.Sequence.Coded (CodedSequence(..), EncodedSeq, EncodedSequences, CodedChar(..), encodeAll) where
 
 import Prelude hiding (map, length, zipWith, null, head)
+import qualified Prelude as P (length, map)
 import Data.List (elemIndex)
 import Control.Applicative  (liftA2, liftA)
 import Control.Monad
-import Data.Vector    (map, length, zipWith, empty, null, Vector, head, (!), singleton)
+import Data.Vector    (map, length, zipWith, empty, null, Vector, head, (!), singleton, ifoldr, slice)
 import qualified Data.Vector as V (filter)
 import Data.Bits
 import Data.Maybe
@@ -30,6 +31,8 @@ import Bio.Sequence.Coded.Class
 import Bio.Sequence.Character.Coded
 import Bio.Sequence.Packed.Class
 import Bio.Sequence.Parsed
+
+import Debug.Trace
 
 -- TODO: Change EncodedSeq/Sequences to EncodedCharacters
         -- Make a missing a null vector
@@ -61,9 +64,23 @@ instance Bits b => CodedSequence (EncodedSeq b) b where
 
     encodeOverAlphabet strSeq alphabet = 
         let
+            alphWidth = P.length alphabet
             coded = map (\ambig -> foldr (\c acc -> setElemAt c acc alphabet) zeroBits ambig) strSeq
             final = if length coded == 0 then Nothing else Just coded
         in final
+
+---- | Function to encode into minimal bits
+--encodeMinimal :: Bits b => ParsedSeq -> Alphabet -> EncodedSeq b
+--encodeMinimal strSeq alphabet = 
+--    let
+--        alphWidth = P.length alphabet
+--        bitWidth = bitSizeMaybe gapChar
+--        coded = map (\ambig -> foldr (\c acc -> setElemAt c acc alphabet) zeroBits ambig) strSeq
+--        regroup = case bitWidth of
+--                    Nothing -> ifoldr (\i val acc -> shift val (i * alphWidth) + acc) zeroBits coded
+--                    Just width -> let grouped = foldr (\i acc -> (slice i alphWidth coded) ++ acc) mempty [alphWidth, 2 * alphWidth..width - alphWidth]
+--                                  in P.map (\g -> ifoldr (\i val acc -> shift val (i * alphWidth) + acc)) grouped
+--    in undefined
 
 -- | Sequence to map encoding over ParsedSequences
 encodeAll :: Bits b => ParsedSequences -> EncodedSequences b

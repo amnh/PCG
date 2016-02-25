@@ -15,7 +15,7 @@
 {-# LANGUAGE MultiParamTypeClasses, TypeSynonymInstances, FlexibleInstances #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
-module Bio.Phylogeny.Graph.Data (Graph(..), Tree(..), EdgeSet(..), EdgeInfo(..), Identifier, CharInfo, NodeInfo) where
+module Bio.Phylogeny.Graph.Data (Graph(..), DAG(..), EdgeSet(..), EdgeInfo(..), Identifier, CharInfo, NodeInfo) where
 
 import Data.Vector 
 import Data.Int
@@ -54,9 +54,9 @@ data EdgeInfo
    , virtualNode :: Maybe NodeInfo
    } deriving (Eq, Show)
 
--- | Tree structure holding nodes, their original sequences, their edges, and a root reference
-data Tree
-   = Tree
+-- | Graph structure holding nodes, their original sequences, their edges, and a root reference
+data DAG
+   = DAG
    { nodeNames  :: IntMap  Identifier
    , parsedSeqs :: HashMap Identifier ParsedSequences
    , characters :: Vector  CharInfo
@@ -65,9 +65,9 @@ data Tree
    , root       :: Int
    } deriving (Eq,Show)
    -- TODO add structure that knows if a section is already optimized (possibly store at node?)
-   -- TODO rename this to DAG (DirectedAcyclicGraph) - make aliases
    -- TODO make phylogenetic sanity requirement typeclass or refinement type
+   -- TODO change auto name to HTU(index) and make sure it's unique- don't worry about updating as index changes
 
 -- | A graph is defined as a list of trees
-newtype Graph = Graph [Tree] deriving (Show, Eq)
+newtype Graph = Graph [DAG] deriving (Show, Eq)
 

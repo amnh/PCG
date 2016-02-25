@@ -52,7 +52,7 @@ data PhyloCharacter s = DNA         { name :: String -- The character name if it
                                     , ignored :: Bool
                                     } 
 
-                      | Continous   { name :: String
+                      | Continous   { name :: String -- TODO: Add step values
                                     , ignored :: Bool
                                     , tcm :: CostMatrix
                                     }

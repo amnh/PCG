@@ -113,12 +113,12 @@ iaVerify = testGroup "Check implied alignment function" [checkLen]
     where
         checkLen = testProperty "Length of IA result is the same or longer than inputs" alignLen
             where
-                alignLen :: Tree -> Bool
+                alignLen :: DAG -> Bool
                 alignLen tree = 
                     let result = implyMain tree
                     in trace ("out tree " ++ show result) $ checkLens tree result
 
-                checkLens :: Tree -> Tree -> Bool
+                checkLens :: DAG -> DAG -> Bool
                 checkLens tree1 tree2 | trace ("checkLens " ++ show (nodes tree1) ++ "\n" ++ show (nodes tree2)) False = undefined
                 checkLens tree1 tree2 = 
                     let compVals = zipWith (\n1 n2 -> (length $ aligned n2) >= (length $ encoded n1) || (length $ aligned n2) == 0) (nodes tree1) (nodes tree2)

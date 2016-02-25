@@ -15,7 +15,7 @@
 {-# LANGUAGE FlexibleInstances, MultiParamTypeClasses, NoImplicitPrelude, TypeSynonymInstances #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
-module Bio.Phylogeny.Graph (Graph(..), Tree(..), EdgeSet(..), EdgeInfo(..), Identifier, CharInfo, NodeInfo, toTopo, simpleAppend, fromTopo) where
+module Bio.Phylogeny.Graph (Graph(..), DAG(..), EdgeSet(..), EdgeInfo(..), Identifier, CharInfo, NodeInfo, toTopo, simpleAppend, fromTopo) where
 
 import           Bio.Phylogeny.Forest
 import           Bio.Phylogeny.Graph.Data
@@ -47,17 +47,17 @@ instance Monoid EdgeSet where
   mappend (EdgeSet in1 out1) (EdgeSet in2 out2) = EdgeSet (in1 <> in2) (out1 <> out2)
 
 -- | This tree can be a binary tree
-instance BinaryTree Tree NodeInfo where
+instance BinaryTree DAG NodeInfo where
   parent     n t = headMay $ map (\i -> nodes t ! i) (parents n)
   leftChild  n t = lookup 0 $ (\i -> nodes t ! i) <$> children n
   rightChild n t = lookup 1 $ (\i -> nodes t ! i) <$> children n
 
 -- | Or this tree can be a rose tree
-instance RoseTree Tree NodeInfo where
+instance RoseTree DAG NodeInfo where
   parent n t = headMay $ map (\i -> nodes t ! i) (parents n)
 
 -- | Make the graph structure an instance of a forest
-instance Forest Graph Tree where
+instance Forest Graph DAG where
   trees (Graph f) = f
   setTrees _ = Graph
   filterTrees (Graph f) func = Graph $ filter func f
@@ -70,29 +70,29 @@ instance E.StandardEdge EdgeInfo NodeInfo where
   terminal = terminal
 
 -- | This tree knows its edges
-instance ET.EdgedTree Tree NodeInfo EdgeSet where
+instance ET.EdgedTree DAG NodeInfo EdgeSet where
   edges    n t   = edges t ! code n
   setEdges n t e = t {edges = edges t // [(code n, e)]}
 
 -- | And the tree is aware of its character info
-instance CT.CharacterTree Tree (EncodedSeq BitVector) where
+instance CT.CharacterTree DAG (EncodedSeq BitVector) where
   characters = characters
   setCharacters t c = t {characters = c} 
 
 -- | This particular tree is referential
-instance RT.ReferentialTree Tree NodeInfo where
+instance RT.ReferentialTree DAG NodeInfo where
   code node tree = elemIndex node (nodes tree)
   getNthNode tree pos = nodes tree ! pos
 
-instance SN.SubsettableNetwork Tree NodeInfo where
+instance SN.SubsettableNetwork DAG NodeInfo where
   appendSubtree = appendAt
   accessSubtree = grabAt
 
 -- | Simply add in the offending nodes without updating edges or characters
-simpleAppend :: Tree -> Tree -> NodeInfo -> Tree
-simpleAppend (Tree names seqs chars n e r) (Tree names' seqs' _ n' e' r') hangNode = 
+simpleAppend :: DAG -> DAG -> NodeInfo -> DAG
+simpleAppend (DAG names seqs chars n e r) (DAG names' seqs' _ n' e' r') hangNode = 
   let resetRoot = n' // [(r', (n' ! r') {isRoot = False, parents = [code hangNode]})]
-  in Tree (names <> names') (seqs <> seqs') chars (n ++ resetRoot) (e ++ e') r
+  in DAG (names <> names') (seqs <> seqs') chars (n ++ resetRoot) (e ++ e') r
 
-grabAt :: Tree -> NodeInfo -> Tree
+grabAt :: DAG -> NodeInfo -> DAG
 grabAt inTree hangNode = fromTopo $ nodeToTopo inTree hangNode
