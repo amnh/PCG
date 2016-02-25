@@ -22,4 +22,4 @@ badReadGraph fastaPath newickPath = do
   where
     coerceFasta = fmap (singleton . Just)
 
-maddness = allOptimization 1 <$> badReadGraph "../../TestDat/fakeArtmor.fas" "../../TestDat/artmor.tre"
+-- maddness = allOptimization 1 <$> badReadGraph "../../TestDat/fakeArtmor.fas" "../../TestDat/artmor.tre"
