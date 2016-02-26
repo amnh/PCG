@@ -11,7 +11,7 @@ import File.Format.Newick
 import File.Format.Newick.Converter
 import Text.Megaparsec
 
-badReadGraph :: FilePath -> FilePath -> IO Tree
+badReadGraph :: FilePath -> FilePath -> IO DAG
 badReadGraph fastaPath newickPath = do
   fastaResult  <- parse (fastaStreamConverter DNA =<< fastaStreamParser)  fastaPath  <$> readFile fastaPath
   newickResult <- parse  newickStreamParser newickPath <$> readFile newickPath
