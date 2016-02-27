@@ -239,13 +239,12 @@ keyword :: MonadParsec s m Char => String -> Int -> m ()
 keyword x y = abreviatable x y *> pure ()
   where
     abreviatable :: MonadParsec s m Char => String -> Int -> m String
-    abreviatable fullName minimumChars =
-      if minimumChars < 1
-      then fail "Nonpositive abreviation prefix supplied to abreviatable combinator"
-      else combinator <?> "keyword '" ++ fullName ++ "'"
+    abreviatable fullName minimumChars
+      | minimumChars < 1             = fail $ "Nonpositive abreviation prefix (" ++ show minimumChars ++ ") supplied to abreviatable combinator"
+      | any (not . isAlpha) fullName = fail $ "A keywork containing a non alphabetic character: '" ++ show fullName ++ "' supplied to abreviateable combinator"
+      | otherwise                    = combinator <?> "keyword '" ++ fullName ++ "'"
       where
-        thenInlineSpace = notFollowedBy notInlineSpace
-        notInlineSpace  = satisfy (not . isAlpha)
-        (req,opt)       = splitAt minimumChars fullName
-        tailOpts        = (\suffix -> try (string' (req ++ suffix) <* thenInlineSpace)) <$> inits opt
-        combinator      = choice tailOpts *> pure fullName
+        combinator      = choice partialOptions *> pure fullName
+        partialOptions  = makePartial <$> drop minimumChars (inits fullName)
+        makePartial opt = try $ string' opt <* terminator
+        terminator      = lookAhead $ satisfy (not . isAlpha) 
