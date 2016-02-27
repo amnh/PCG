@@ -40,7 +40,7 @@ ccodeIndicies = choice $ try <$> [range, fromStart, single, toEnd, whole]
     single    = Single    <$> num
     toEnd     = dot *> (ToEnd <$> num)
     whole     = dot *> pure Whole
-    num       = symbol (flexibleNonNegativeInt "sequence index value")
+    num       = symbol (nonNegInt<?> "sequence index value")
     dot       = symbol (char '.')
 
 -- | A Uitility function for creating 'CCode' combinators
