@@ -82,13 +82,13 @@ type TNTTree   = LeafyTree TaxonInfo
 data LeafyTree a
    = Leaf a
    | Branch [LeafyTree a]
-   deriving (Foldable,Functor,Show,Traversable)
+   deriving (Eq,Foldable,Functor,Show,Traversable)
 
 data NodeType
    = Index  Int
    | Name   String
    | Prefix String
-   deriving (Show)
+   deriving (Eq,Show)
 
 --XRead types
 --------------------------------------------------------------------------------

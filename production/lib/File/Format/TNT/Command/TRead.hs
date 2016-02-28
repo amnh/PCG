@@ -30,7 +30,7 @@ treadCommand = treadValidation =<< treadDefinition
                    <* symbol (char ';')
 
     treadValidation :: MonadParsec s m Char => TRead -> m TRead
-    treadValidation = pure
+    treadValidation = pure -- No validation yet (what to validate?)
 
 -- | The superflous information of an XREAD command.
 -- Consumes the XREAD string identifier and zero or more comments

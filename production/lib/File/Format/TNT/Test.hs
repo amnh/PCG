@@ -29,6 +29,7 @@ testSuite = testGroup "TNT Format"
                                 , testCommandCCode
                                 , testCommandCNames
                                 , testCommandProcedure
+                                , testCommandTRead
                                 , testCommandXRead
                                 ] 
   ]
@@ -243,6 +244,39 @@ testCommandProcedure = testGroup "PROCEDURE command tests" [shortProcedureHeader
          f :: NonEmptyList Char -> Bool
          f x = isRight . parse procCommandFile "" $ "&" ++ fileName ++ ";" 
            where fileName = takeWhile (not . isSpace) $ getNonEmpty x
+
+testCommandTRead :: TestTree
+testCommandTRead = testGroup "TREAD command tests" [treadHeader',treadLeaf',treadTree']
+  where
+    treadHeader' = testGroup "TREAD command header options" headers
+      where
+        headers = header <$> (drop 2 $ inits "tread")
+        header str = testCase ("Parses component \"" ++ str ++ "\"") $ parseSuccess treadHeader (str ++ " ")
+    treadLeaf' = testGroup "TREAD leaf options" [indexLeaf,prefixLeaf,nameLeaf]
+      where
+        indexLeaf = testProperty "Index leaf format" f
+          where
+            f :: NonNegative Int -> Bool
+            f n = parse treadLeaf "" (show idx) == Right (Leaf (Index idx))
+              where
+                idx = getNonNegative n
+        prefixLeaf = testProperty "Prefix leaf format" f
+          where
+            f :: WordToken -> Bool
+            f tok = parse treadLeaf "" str == Right (Leaf (Prefix str))
+              where
+                str = getWordToken tok ++ "..."
+        nameLeaf = testProperty "Name leaf format" f
+          where
+            f :: WordToken -> Bool
+            f tok = parse treadLeaf "" str == Right (Leaf (Name str))
+              where
+                str = getWordToken tok
+    treadTree' = testGroup "TREAD tree format" examples
+      where
+        examples        = makeExample <$> exampleTrees
+        makeExample str = testCase ("Parses component \"" ++ str ++ "\"") $ parseSuccess treadTree str
+        exampleTrees    = ["(a )","(a(b(c)))","((a b)(c d))"]
 
 testCommandXRead :: TestTree
 testCommandXRead = testGroup "XREAD command test" [xreadHeader']
