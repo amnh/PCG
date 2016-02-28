@@ -61,8 +61,10 @@ procedureTests = testGroup "PROCEDURE command tests" [shortProcedureHeader, long
 ccodeExamples :: TestTree
 ccodeExamples = testGroup "CCODE command tests" [testExamples]
   where
-    testExamples = testCase "Example strings" . sequence_ $ parseSuccess ccodeCommand <$> examples
-    examples = [ "cc (.) ;"
+    testExamples = testGroup "Example CCODE commands " $ testExample <$> examples
+    testExample (desc,str)  = testCase desc $ parseSuccess ccodeCommand str
+    examples = zip [ "CCODE example command #"++ show x | x <- [1..]]
+               [ "cc (.) ;"
                , "cc - 0.96;"
                , "cc - 0.1317;"
                , "cc + 82 98 101 104 106 139 147 155 174 179 215 244 245 251 262 265 269 286 289 313 323 346 359 383 386 398 399 435 448 453 479 484 496 497 516 545 546 551 574 591 625 638 639 646 648 661 662 669 687 758 768.773 782 821.825 894 896 897 903 906 1026 1081 1086 1094 1111 1149 1176 1179 1188 1203 1206 1207 1210 1213 1216 1219 1220 1240;"
@@ -132,4 +134,3 @@ internalCombinators = testGroup "General combinators used amongst TNT commands" 
           where
             f :: Int -> Bool
             f x = (x > 0) == isRight (parse (flexiblePositiveInt "") "" $ show (fromIntegral x :: Double))
-
