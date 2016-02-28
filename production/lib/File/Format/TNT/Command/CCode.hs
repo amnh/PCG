@@ -40,7 +40,7 @@ ccodeIndicies = choice $ try <$> [range, fromStart, single, toEnd, whole]
     single    = Single    <$> num
     toEnd     = dot *> (ToEnd <$> num)
     whole     = dot *> pure Whole
-    num       = symbol (nonNegInt<?> "sequence index value")
+    num       = symbol (nonNegInt <?> "sequence index value")
     dot       = symbol (char '.')
 
 -- | A Uitility function for creating 'CCode' combinators
@@ -60,7 +60,7 @@ ccodeNonAdditive = ccodeMetaChange '-' NonAdditive
 
 -- | Parses a _Active_ specification `CCode`
 ccodeActive      :: MonadParsec s m Char => m CCode
-ccodeActive      = ccodeMetaChange '[' Active
+ccodeActive      = ccodeMetaChange '[' Active <* allowIncorrectSuffix ']'
 
 -- | Parses a _Non-Active_ specification `CCode`
 ccodeNonActive   :: MonadParsec s m Char => m CCode
@@ -68,7 +68,7 @@ ccodeNonActive   = ccodeMetaChange ']' NonActive
 
 -- | Parses a _Sankoff_ specification `CCode`
 ccodeSankoff     :: MonadParsec s m Char => m CCode
-ccodeSankoff     = ccodeMetaChange '(' Sankoff <* symbol (char ')') -- we add the '(' because humans don't understand the grammar :(
+ccodeSankoff     = ccodeMetaChange '(' Sankoff <* allowIncorrectSuffix ')'
 
 -- | Parses a _Non-Sankoff_ specification `CCode`
 ccodeNonSankoff :: MonadParsec s m Char => m CCode
@@ -89,3 +89,6 @@ ccodeSteps = do
     w <- Steps <$> symbol (flexibleNonNegativeInt "step value")
     i <- NE.fromList <$> some ccodeIndicies
     pure $ CCode w i
+
+allowIncorrectSuffix :: MonadParsec s m Char => Char -> m (Maybe Char)
+allowIncorrectSuffix = optional . symbol . char

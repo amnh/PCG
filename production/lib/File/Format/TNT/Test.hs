@@ -4,7 +4,7 @@ module File.Format.TNT.Test
   ( testSuite
   ) where
 
-import           Control.Monad              (join)
+import           Control.Monad              (filterM,join)
 import           Data.Char
 import           Data.Either.Combinators    (isLeft,isRight)
 import           Data.List                  (inits)
@@ -76,8 +76,91 @@ internalCombinators = testGroup "General combinators used amongst TNT commands" 
             f x = (x >= 0) == isRight (parse nonNegInt "" $ show x)
 
 testCommandCCode :: TestTree
-testCommandCCode = testGroup "CCODE command tests" [ccodeExamples]
+testCommandCCode = testGroup "CCODE command tests" [ccodeHeader',ccodeIndicies',ccodeAdditive',ccodeNonAdditive',ccodeActive',ccodeNonActive',ccodeSankoff',ccodeNonSankoff',ccodeWeight',ccodeStep',ccodeExamples]
   where
+    indicies = [ "42", "3.", ".3", "2.5", "." ]
+    ccodeHeader' = testGroup "CCODE command header options" headers
+      where
+        headers = header <$> (drop 2 $ inits "ccode")
+        header str = testCase ("Parses component \"" ++ str ++ "\"") $ parseSuccess ccodeHeader (str ++ " ")
+    ccodeIndicies' = testGroup "CCODE indexing format" indexFormats
+      where
+        indexFormats = zipWith makeFormat descriptions indicies
+        makeFormat str idx = testCase ("Parse " ++ str ++ " format: \"" ++ idx ++ "\"") $ parseSuccess ccodeIndicies idx
+        descriptions = [ "single index"
+                       , "index to end of sequence"
+                       , "start of sequence to index"
+                       , "from index to index"
+                       , "entire sequence"
+                       ]
+    ccodeAdditive' = testGroup "CCODE make character(s) additive" additiveExamples
+      where
+        additiveExamples = makeAdditive <$> targets
+        makeAdditive str = testCase ("Additive example: \"" ++ str ++ "\"") $ parseSuccess ccodeAdditive str
+        targets = [ "+" ++ pad ++ unwords idxs
+                  | idxs <- tail (powerSet indicies)
+                  , pad  <- [""," "]
+                  ]
+    ccodeNonAdditive' = testGroup "CCODE make character(s) non-additive" nonAdditiveExamples
+      where
+        nonAdditiveExamples = makeNonAdditive <$> targets
+        makeNonAdditive str = testCase ("Non-additive example: \"" ++ str ++ "\"") $ parseSuccess ccodeNonAdditive str
+        targets = [ "-" ++ pad ++ unwords idxs
+                  | idxs <- tail (powerSet indicies)
+                  , pad  <- [""," "]
+                  ]
+    ccodeActive' = testGroup "CCODE make character(s) active" activeExamples
+      where
+        activeExamples = makeActive <$> targets
+        makeActive str = testCase ("active example: \"" ++ str ++ "\"") $ parseSuccess ccodeActive str
+        targets = [ prefix ++ suffix
+                  | prefix <- [ "[" ++ pad ++ unwords idxs
+                              | idxs <- tail (powerSet indicies)
+                              , pad  <- [""," "]]
+                  , suffix <- ["","]"," ]"]
+                  ]
+    ccodeNonActive' = testGroup "CCODE make character(s) non-active" nonActiveExamples
+      where
+        nonActiveExamples = makeNonActive <$> targets
+        makeNonActive str = testCase ("Non-active example: \"" ++ str ++ "\"") $ parseSuccess ccodeNonActive str
+        targets = [ "]" ++ pad ++ unwords idxs
+                  | idxs <- tail (powerSet indicies)
+                  , pad  <- [""," "]
+                  ]
+    ccodeSankoff' = testGroup "CCODE make character(s) sankoff" sankoffExamples
+      where
+        sankoffExamples = makeSankoff <$> targets
+        makeSankoff str = testCase ("Sankoff example: \"" ++ str ++ "\"") $ parseSuccess ccodeSankoff str
+        targets = [ prefix ++ suffix
+                  | prefix <- [ "(" ++ pad ++ unwords idxs
+                              | idxs <- tail (powerSet indicies)
+                              , pad  <- [""," "]]
+                  , suffix <- ["",")"," )"]
+                  ]
+    ccodeNonSankoff' = testGroup "CCODE make character(s) non-sankoff" nonSankoffExamples
+      where
+        nonSankoffExamples = makeNonSankoff <$> targets
+        makeNonSankoff str = testCase ("Non-sankoff example: \"" ++ str ++ "\"") $ parseSuccess ccodeNonSankoff str
+        targets = [ ")" ++ pad ++ unwords idxs
+                  | idxs <- tail (powerSet indicies)
+                  , pad  <- [""," "]
+                  ]
+    ccodeWeight' = testGroup "CCODE set character(s) weight" weightExamples
+      where
+        weightExamples = makeWeight <$> targets
+        makeWeight str = testCase ("Weight example: \"" ++ str ++ "\"") $ parseSuccess ccodeWeight str
+        targets = [ "/" ++ pad ++ "1 " ++ unwords idxs
+                  | idxs <- tail (powerSet indicies)
+                  , pad  <- [""," "]
+                  ]
+    ccodeStep' = testGroup "CCODE set character(s) step value" stepExamples
+      where
+        stepExamples = makeStep <$> targets
+        makeStep str = testCase ("Step example: \"" ++ str ++ "\"") $ parseSuccess ccodeSteps str
+        targets = [ "=" ++ pad ++ "1 " ++ unwords idxs
+                  | idxs <- tail (powerSet indicies)
+                  , pad  <- [""," "]
+                  ]
     ccodeExamples = testGroup "Example CCODE commands" $ testExample <$> examples
       where
         testExample (desc,str) = testCase desc $ parseSuccess ccodeCommand str
@@ -157,3 +240,6 @@ testCommandXRead = testGroup "XREAD command test" [xreadHeader']
                 input   = "XREAD '" ++ comment ++ "'"
                 comment = filter (/= '\'') $ getNonEmpty x
 
+
+powerSet :: [a] -> [[a]]
+powerSet = filterM (const [False,True])
