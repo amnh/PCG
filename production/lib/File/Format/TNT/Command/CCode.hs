@@ -68,7 +68,7 @@ ccodeNonActive   = ccodeMetaChange ']' NonActive
 
 -- | Parses a _Sankoff_ specification `CCode`
 ccodeSankoff     :: MonadParsec s m Char => m CCode
-ccodeSankoff     = ccodeMetaChange '(' Sankoff
+ccodeSankoff     = ccodeMetaChange '(' Sankoff <* symbol (char ')') -- we add the '(' because humans don't understand the grammar :(
 
 -- | Parses a _Non-Sankoff_ specification `CCode`
 ccodeNonSankoff :: MonadParsec s m Char => m CCode
