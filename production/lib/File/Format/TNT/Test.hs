@@ -12,7 +12,9 @@ import qualified Data.Map as M
 import           Data.Set                   (toList)
 import           File.Format.TNT.Parser
 import           File.Format.TNT.Command.CCode
+import           File.Format.TNT.Command.CNames
 import           File.Format.TNT.Command.Procedure
+import           File.Format.TNT.Command.TRead
 import           File.Format.TNT.Command.XRead
 import           File.Format.TNT.Internal
 import           Test.Custom
@@ -25,6 +27,7 @@ testSuite :: TestTree
 testSuite = testGroup "TNT Format"
   [ testGroup "TNT Combinators" [ internalCombinators
                                 , testCommandCCode
+                                , testCommandCNames
                                 , testCommandProcedure
                                 , testCommandXRead
                                 ] 
@@ -208,6 +211,21 @@ testCommandCCode = testGroup "CCODE command tests" [ccodeHeader',ccodeIndicies',
                    , "ccode /4 73;ccode /4 74;ccode /4 75;ccode /4 76;ccode /4 77;ccode /4 78;"
                    ]
 
+testCommandCNames :: TestTree
+testCommandCNames = testGroup "CNAMES command tests" [cnamesHeader',cnamesStateName',cnamesValidation]
+  where
+    cnamesHeader' = testGroup "CNAMES command header options" headers
+      where
+        headers = header <$> (drop 2 $ inits "cnames")
+        header str = testCase ("Parses component \"" ++ str ++ "\"") $ parseSuccess cnamesHeader (str ++ " ")
+    cnamesStateName' = testGroup "CNAMES naming format" [nameOnly,nameAndStates]
+      where
+        nameOnly      = testCase "Parses character name only"            $ parseSuccess cnamesStateName "{42 character_name;"
+        nameAndStates = testCase "Parses character name and state names" $ parseSuccess cnamesStateName "{15 character_name first_state second_state;"
+    cnamesValidation = testGroup "CNAMES validation" [overNamedIndex]
+      where
+        overNamedIndex = testCase "Multiple names for the same index fails" $ parseFailure cnamesCommand "cn {1 alpha;{1 beta"
+
 testCommandProcedure :: TestTree
 testCommandProcedure = testGroup "PROCEDURE command tests" [shortProcedureHeader, longProcedureHeader, closeFilesDirective, commandFile, fastaFile, generalEnding]
   where
@@ -215,12 +233,12 @@ testCommandProcedure = testGroup "PROCEDURE command tests" [shortProcedureHeader
     longProcedureHeader  = testCase "Parses component \"procedure\"" $ parseSuccess procHeader       "procedure "
     closeFilesDirective  = testCase "Parses component \"/;\""        $ parseSuccess procCloseFile    "/;"
     generalEnding        = testCase "Parses \"proc/;\""              $ parseSuccess procedureCommand "proc /;"
-    commandFile = testProperty "parses arbitrary command file" f
+    commandFile = testProperty "parses arbitrary command file reference" f
       where
          f :: NonEmptyList Char -> Bool
          f x = isRight . parse procCommandFile "" $ fileName ++ ";" 
            where fileName = takeWhile (not . isSpace) $ getNonEmpty x
-    fastaFile = testProperty "parses arbitrary command file" f
+    fastaFile = testProperty "parses arbitrary 'fasta' file reference" f
       where
          f :: NonEmptyList Char -> Bool
          f x = isRight . parse procCommandFile "" $ "&" ++ fileName ++ ";" 

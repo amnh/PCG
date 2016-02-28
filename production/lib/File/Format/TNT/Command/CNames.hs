@@ -84,6 +84,3 @@ cnamesStateName = symbol (char '{') *> cnameCharacterName <* symbol terminator
                      <$> symbol (flexibleNonNegativeInt "character name's sequence index")
                      <*> lineToken
                      <*> many lineToken
-
-
-
