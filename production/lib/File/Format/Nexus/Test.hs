@@ -20,8 +20,6 @@ import           Test.Tasty.HUnit
 import           Test.Tasty.QuickCheck
 import           Text.Megaparsec            (char,eof,parse,string)
 
-import Debug.Trace (trace)
-
 testSuite :: TestTree
 testSuite = testGroup "Nexus Format"
   [ testGroup "Nexus Combinators" [ assumptionFieldDef'
