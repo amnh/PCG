@@ -1,6 +1,7 @@
 {-# LANGUAGE DeriveFoldable, DeriveFunctor, DeriveTraversable, FlexibleContexts #-}
 module File.Format.TNT.Internal where
 
+import           Control.Monad            ((<=<))
 import           Data.Char                (isAlpha,isSpace)
 import           Data.List                (inits)
 import           Data.List.NonEmpty       (NonEmpty)
@@ -152,22 +153,18 @@ nonNegInt = fromIntegral <$> integer
 --
 flexibleNonNegativeInt :: MonadParsec s m Char => String -> m Int
 flexibleNonNegativeInt labeling = either coerceIntegral coerceFloating
-                             =<< signed whitespace number <?> ("positive integer for " ++ labeling)
+                              =<< signed whitespace number <?> ("positive integer for " ++ labeling)
   where
     coerceIntegral :: MonadParsec s m Char => Integer -> m Int
     coerceIntegral x
       | x <  0      = fail $ concat ["The ",labeling," value (",show x,") is a negative number"]
       | otherwise   = pure $ fromEnum x
     coerceFloating :: MonadParsec s m Char => Double -> m Int
-    coerceFloating x
-      | null errors = pure $ fromEnum rounded
-      | otherwise   = fails errors
+    coerceFloating = assertNonNegative <=< assertIntegral labeling
       where
-        errors      = catMaybes [posError,intError]
-        posError    = if x >= 0  then Nothing else Just $ concat ["The ",labeling," value (",show x,") is a negative value"]
-        intError    = if isInt x then Nothing else Just $ concat ["The ",labeling," value (",show x,") is a real value, not an integral value"]
-        isInt n     = n == fromInteger rounded
-        rounded     = round x
+        assertNonNegative x
+          | x >= 0    = pure x
+          | otherwise = fail $ concat ["The ",labeling," value (",show x,") is a negative value"]
 
 -- | Parses an positive integer from a variety of representations.
 -- Parses both signed integral values and signed floating values
@@ -205,15 +202,19 @@ flexiblePositiveInt labeling = either coerceIntegral coerceFloating
       | x <= 0      = fail $ concat ["The ",labeling," value (",show x,") is not a positive number"]
       | otherwise   = pure $ fromEnum x
     coerceFloating :: MonadParsec s m Char => Double -> m Int
-    coerceFloating x
-      | null errors = pure $ fromEnum rounded
-      | otherwise   = fails errors
+    coerceFloating = assertPositive <=< assertIntegral labeling
       where
-        errors      = catMaybes [posError,intError]
-        posError    = if x >= 1  then Nothing else Just $ concat ["The ",labeling," value (",show x,") is not a positive integer"]
-        intError    = if isInt x then Nothing else Just $ concat ["The ",labeling," value (",show x,") is a real value, not an integral value"]
-        isInt n     = n == fromInteger rounded
-        rounded     = round x
+        assertPositive x
+          | x > 0     = pure x
+          | otherwise = fail $ concat ["The ",labeling," value (",show x,") is not a positive integer"]
+
+assertIntegral :: MonadParsec s m Char => String -> Double -> m Int
+assertIntegral labeling x
+  | isInt x   = pure $ fromEnum rounded
+  | otherwise = fail $ concat ["The ",labeling," value (",show x,") is a real value, not an integral value"]
+  where
+    isInt n = n == fromInteger rounded
+    rounded = round x
 
 -- | Consumes trailing whitespace after the parameter combinator.
 symbol :: MonadParsec s m Char => m a -> m a
