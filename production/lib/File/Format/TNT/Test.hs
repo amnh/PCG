@@ -31,8 +31,18 @@ testSuite = testGroup "TNT Format"
   ]
 
 internalCombinators :: TestTree
-internalCombinators = testGroup "General combinators used amongst TNT commands" [flexiblePositiveInt', keyword']
+internalCombinators = testGroup "General combinators used amongst TNT commands" [flexibleNonNegativeInt', flexiblePositiveInt', nonNegInt', keyword']
   where
+    flexibleNonNegativeInt' = testGroup "Non-negative Int parsed flexibly" [parsesInts, parsesIntegralDoubles]
+      where
+        parsesInts = testProperty "Parses positive, signed Integer literals" f
+          where
+            f :: Int -> Bool
+            f x = (x >= 0) == isRight (parse (flexibleNonNegativeInt "") "" $ show x)
+        parsesIntegralDoubles = testProperty "Parses positive, signed integral valued Doubles" f
+          where
+            f :: Int -> Bool
+            f x = (x >= 0) == isRight (parse (flexibleNonNegativeInt "") "" $ show (fromIntegral x :: Double))
     flexiblePositiveInt' = testGroup "Positive Int parsed flexibly" [parsesInts, parsesIntegralDoubles]
       where
         parsesInts = testProperty "Parses positive, signed Integer literals" f
@@ -58,6 +68,12 @@ internalCombinators = testGroup "General combinators used amongst TNT commands" 
                 parse'          = parse (keyword str n) ""
                 (req,rem)       = splitAt n str
                 targets         = (req++) <$> inits rem
+    nonNegInt'  = testGroup "Non-negative Int without flexibility" [parsesInts]
+      where
+        parsesInts = testProperty "Parses non-negative, unsigned Integer literals" f
+          where
+            f :: Int -> Bool
+            f x = (x >= 0) == isRight (parse nonNegInt "" $ show x)
 
 testCommandCCode :: TestTree
 testCommandCCode = testGroup "CCODE command tests" [ccodeExamples]
