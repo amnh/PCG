@@ -276,7 +276,10 @@ testCommandTRead = testGroup "TREAD command tests" [treadHeader',treadLeaf',trea
       where
         examples        = makeExample <$> exampleTrees
         makeExample str = testCase ("Parses component \"" ++ str ++ "\"") $ parseSuccess treadTree str
-        exampleTrees    = ["(a )","(a(b(c)))","((a b)(c d))"]
+        exampleTrees    = [ "(a)"
+                          , "(a(b(c)))"
+                          , "((a b)(c d))"
+                          ]
 
 testCommandXRead :: TestTree
 testCommandXRead = testGroup "XREAD command test" [xreadHeader']
