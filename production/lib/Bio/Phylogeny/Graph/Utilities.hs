@@ -49,7 +49,7 @@ toTopo tree = nodeToTopo tree (nodes tree ! root tree)
 singletonDAG :: TN.TopoNode BitVector -> DAG
 singletonDAG topo = 
   let myNode = Node 0 (TN.isRoot topo) (TN.isLeaf topo) [] [] (TN.encoded topo) (TN.packed topo) (TN.preliminary topo) 
-                          (TN.final topo) (TN.temporary topo) (TN.aligned topo) (TN.cost topo)
+                          (TN.final topo) (TN.temporary topo) (TN.aligned topo) (TN.localCost topo) (TN.totalCost topo)
   in DAG (IM.singleton 0 (TN.name topo)) (HM.singleton (TN.name topo) (TN.parsed topo)) mempty (singleton myNode) mempty 0
 
 -- | Conversion from an indexed tree to a TopoDAG, starting at the given node
@@ -64,7 +64,7 @@ nodeToTopo topDAG topNode = TG.TopoTree (internalFromTopo topDAG topNode) (chara
           in leaf {TN.children = childDAGs}
           where
               leaf = TN.TopoNode (isRoot curNode) (isLeaf curNode) safeName safeParsed [] (encoded curNode) (packed curNode) (preliminary curNode) 
-                      (final curNode) (temporary curNode) (aligned curNode) (cost curNode)
+                      (final curNode) (temporary curNode) (aligned curNode) (localCost curNode) (totalCost curNode)
               safeName = if code curNode `IM.member` nodeNames inDAG then nodeNames inDAG IM.! code curNode
                           else ""
               safeParsed = if safeName `HM.member` parsedSeqs inDAG then parsedSeqs inDAG HM.! safeName
@@ -170,7 +170,7 @@ addConnections newNode myNodes =
 
 -- | rootCost obviously grabs the cost at the root of a tree
 rootCost :: DAG -> Double
-rootCost inDAG = cost $ nodes inDAG ! root inDAG
+rootCost inDAG = totalCost $ nodes inDAG ! root inDAG
 
 instance Monoid DAG where
   mempty = DAG mempty mempty mempty mempty mempty 0

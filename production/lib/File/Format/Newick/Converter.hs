@@ -70,7 +70,7 @@ convertBothTopo rootTree inSeqs = internalConvert True rootTree
                             else mempty
                 myEncode = encodeIt mySeq fullMetadata
                 myPack   = packIt mySeq fullMetadata
-                node = TN.TopoNode atRoot (null $ descendants inTree) myName mySeq recurse myEncode myPack mempty mempty mempty mempty myCost
+                node = TN.TopoNode atRoot (null $ descendants inTree) myName mySeq recurse myEncode myPack mempty mempty mempty mempty myCost 0
             in --trace ("internalConvert with metadata " ++ show fullMetadata)
                 TopoTree node fullMetadata
 
@@ -96,5 +96,5 @@ convertTopoTree tree0 = internalConvert tree0 True
                 recurse = fmap (tree . flip internalConvert False) (descendants inTree) 
                 myName = fromMaybe "" (newickLabel inTree)
                 myCost = fromMaybe 0 (branchLength inTree)
-                node = TN.TopoNode atRoot (null $ descendants inTree) myName mempty recurse mempty mempty mempty mempty mempty mempty myCost
+                node = TN.TopoNode atRoot (null $ descendants inTree) myName mempty recurse mempty mempty mempty mempty mempty mempty myCost 0
             in TopoTree node mempty
