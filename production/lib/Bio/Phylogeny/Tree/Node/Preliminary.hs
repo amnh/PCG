@@ -27,5 +27,7 @@ class PreliminaryNode n s | n -> s where
     setAlign         ::Vector s -> n -> n
     temporary        :: n ->Vector s
     setTemporary     ::Vector s -> n -> n
-    cost             :: n -> Double
-    setCost          :: Double -> n -> n
+    localCost        :: n -> Double
+    setLocalCost     :: Double -> n -> n
+    totalCost        :: n -> Double
+    setTotalCost     :: Double -> n -> n

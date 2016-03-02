@@ -38,15 +38,16 @@ data Node b = Node  { code :: Int
                     , final :: Vector (EncodedSeq b)
                     , temporary :: Vector (EncodedSeq b) -- TODO: is this necessary? rename to fitch scratch? 
                     , aligned :: Vector (EncodedSeq b) -- TODO: rename to implied alignment
-                    , cost :: Double} deriving (Eq, Show)
+                    , localCost :: Double
+                    , totalCost :: Double} deriving (Eq, Show)
                     -- TODO: subtree representation?
                     -- TODO: add a current 
 
 instance Monoid (Node b) where
-    mempty = Node 0 False False mempty mempty mempty mempty mempty mempty mempty mempty 0
+    mempty = Node 0 False False mempty mempty mempty mempty mempty mempty mempty mempty 0 0
     mappend n1 n2 = Node (code n1) (isRoot n1 || isRoot n2) (isLeaf n1 || isLeaf n2) (children n1 <> children n2) (parents n1 <> parents n2) (encoded n1 <> encoded n2) 
                         (packed n1 <> packed n2) (preliminary n1 <> preliminary n2) (final n1 <> final n2) 
-                        (temporary n1 <> temporary n2) (aligned n1 <> aligned n2) (cost n1 + cost n2)
+                        (temporary n1 <> temporary n2) (aligned n1 <> aligned n2) (localCost n1 + localCost n2) (totalCost n1 + totalCost n2)
 
 -- | Make it an instance of encoded, final, packed, and preliminary
 instance EN.EncodedNode (Node b) (EncodedSeq b) where
@@ -71,8 +72,10 @@ instance RN.PreliminaryNode (Node b) (EncodedSeq b) where
     setAlign s n = n {aligned = s}
     temporary = temporary
     setTemporary s n = n {temporary = s}
-    cost = cost
-    setCost c n = n {cost = c}
+    localCost = localCost
+    setLocalCost c n = n {localCost = c}
+    totalCost = totalCost
+    setTotalCost c n = n {totalCost = c}
 
 instance Eq b => Ord (Node b) where
     compare n1 n2 = compare (code n1) (code n2)

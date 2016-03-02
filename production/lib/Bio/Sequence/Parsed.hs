@@ -23,7 +23,10 @@ import Test.Tasty.QuickCheck
 -- TODO do ambiguity group types: more aliasing
 -- TODO Add a definition for ParsedSeq for single characters
 -- TODO change to ParsedChar
-type ParsedSeq = Vector [String]
+
+type AmbiguityGroup = [String]
+
+type ParsedSeq = Vector AmbiguityGroup
 -- TODO change to ParsedCharacters
 type ParsedSequences = Vector (Maybe ParsedSeq)
 -- TODO change to TaxaCharacters???

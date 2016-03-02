@@ -10,6 +10,7 @@ import           Bio.Sequence.Coded
 import           Control.Applicative        (liftA2)
 import           Data.Bits
 import           Data.Foldable              (minimumBy)
+import           Data.Function              (on)
 import           Data.Matrix.NotStupid      (fromList, Matrix, (<->), nrows, ncols, getElem, zero, matrix)
 import           Data.Maybe
 import           Data.Monoid                ((<>))
@@ -46,7 +47,7 @@ naiveDOTwo node1 node2 =
         operateSeqs = checkForAlign node1 node2
         result = zipWith naiveDO (fst operateSeqs) (snd operateSeqs)
         (gapped, left, right) = foldr (\(_, _, g, l, r) (a, b, c) -> (g `cons` a, l `cons` b, r `cons` c)) mempty result
-        checkLen = zipWith (\align preAlign -> if numChars align > numChars preAlign then True else False) gapped (getForAlign node2)
+        checkLen = zipWith ((>) `on` numChars) gapped (getForAlign node2)
         foldCheck = or checkLen
     in (setAlign left node1, setAlign right node2, gapped, foldCheck)
 
@@ -78,13 +79,13 @@ naiveDO seq1 seq2
             --getMatrixCost inAlign | trace ("Get cost " ++ show (nrows $ costs inAlign) ++ " " ++ show (ncols $ costs inAlign)) False = undefined
             getMatrixCost inAlign = 
                 let mat = costs inAlign
-                in getElem ((nrows mat) - 1) ((ncols mat) - 1) mat
+                in getElem (nrows mat - 1) (ncols mat - 1) mat
 
 -- | Joins an alignment row to the rest of a matrix
 joinMat :: SeqConstraint s b => AlignRow s -> AlignMatrix s -> AlignMatrix s
 joinMat (inCosts, inSeq, directions) inMat = AlignMatrix (inCosts `joinRow` costs inMat) (inSeq `cons` seqs inMat) (directions `joinRow` traversal inMat) 
     where
-        joinRow vec mat = (fromList 1 (length vec) (toList vec)) <-> mat
+        joinRow vec mat = fromList 1 (length vec) (toList vec) <-> mat
 
 -- | Gets the initial row of a naive alignment matrix
 firstAlignRow :: SeqConstraint s b => Float -> s -> Int -> Int -> Float -> AlignRow s
@@ -131,8 +132,8 @@ generateRow seq1 seq2 costvals@(indelCost, subCost) rowNum prevRow@(costs, _, _)
             char2         = unwrapSub $ seq2 `grabSubChar` (rowNum - 1)
             iuChar1       = getOverlapState gapChar (Just char1)
             iuChar2       = getOverlapState gapChar (Just char2)
-            leftCost      = (overlapCost char1 indelCost) + prevCost
-            downCost      = (overlapCost char2 indelCost) + upValue
+            leftCost      = overlapCost char1 indelCost + prevCost
+            downCost      = overlapCost char2 indelCost + upValue
             diagVal       = costs ! (position - 1)
             intersect     = char1 .&. char2
             union         = char1 .|. char2
@@ -150,10 +151,7 @@ generateRow seq1 seq2 costvals@(indelCost, subCost) rowNum prevRow@(costs, _, _)
                 | otherwise = 0 
 
             unwrapSub :: CharConstraint b => Maybe b -> b
-            unwrapSub val = case val of
-                              Just v  -> v
-                              Nothing -> error "Cannot access sequence at given position for matrix generation"
-
+            unwrapSub = fromMaybe (error "Cannot access sequence at given position for matrix generation")
 
 -- | Performs the traceback of an alignment matrix
 traceback :: SeqConstraint s b => AlignMatrix s -> s -> s -> (s, s, s)
@@ -164,7 +162,7 @@ traceback alignMat seq1 seq2 = tracebackInternal alignMat seq1 seq2 (numChars se
         tracebackInternal :: SeqConstraint s b => AlignMatrix s -> s -> s -> (Int, Int) -> (s, s, s)
         --tracebackInternal alignMat seq1 seq2 (row, col)  | trace ("traceback " ++ show (traversal alignMat) ++ show (getElem row col (traversal alignMat))++ " with position " ++ show (row, col)) False = undefined
         tracebackInternal alignMat seq1 seq2 (row, col) 
-            | (length $ seqs alignMat) < row - 1 || (nrows $ traversal alignMat) < row - 1 || (ncols $ traversal alignMat) < col - 1 = error "Traceback cannot function because matrix is incomplete"
+            | length (seqs alignMat) < row - 1 || nrows (traversal alignMat) < row - 1 || ncols (traversal alignMat) < col - 1 = error "Traceback cannot function because matrix is incomplete"
             | row == 0 && col == 0 = (emptySeq, emptySeq, emptySeq)
             | curDirect == LeftDir = tracebackInternal alignMat seq1 seq2 (row, col - 1) <> (curState, charToSeq gapChar, charToUnMaybe $ seq2 `grabSubChar` (col - 1)) 
             | curDirect == DownDir = tracebackInternal alignMat seq1 seq2 (row - 1, col) <> (curState, charToUnMaybe $ seq1 `grabSubChar` (row - 1), charToSeq gapChar) 
@@ -172,7 +170,7 @@ traceback alignMat seq1 seq2 = tracebackInternal alignMat seq1 seq2 (numChars se
             | otherwise = error "Incorrect direction in matrix traversal for alignment"
                 where
                     curDirect = getElem row col (traversal alignMat)
-                    curState = charToUnMaybe $ ((seqs alignMat) ! row) `grabSubChar` col
+                    curState = charToUnMaybe $ seqs alignMat ! row `grabSubChar` col
 
                     charToUnMaybe :: SeqConstraint s b => Maybe b -> s
                     charToUnMaybe inBit = case inBit of

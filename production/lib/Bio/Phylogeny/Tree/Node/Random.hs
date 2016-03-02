@@ -27,8 +27,9 @@ instance Arbitrary b => Arbitrary (Node b) where
         c <- arbitrary :: Gen Int
         root <- arbitrary :: Gen Bool
         leaf <- arbitrary :: Gen Bool
-        child <- listOf $ (arbitrary :: Gen Int)
-        parent <- listOf $ (suchThat arbitrary (not . (flip elem) child))
+        child <- listOf (arbitrary :: Gen Int)
+        parent <- listOf $ suchThat arbitrary (not . flip elem child)
         seqs <- vectorOf 6 arbitrary 
         c2 <- arbitrary :: Gen Double
-        return $ Node c root leaf child parent (seqs !! 0) (seqs !! 1) (seqs !! 2) (seqs !! 3) (seqs !! 4) (seqs !! 5) c2
+        c3 <- arbitrary :: Gen Double
+        return $ Node c root leaf child parent (head seqs) (seqs !! 1) (seqs !! 2) (seqs !! 3) (seqs !! 4) (seqs !! 5) c2 c3

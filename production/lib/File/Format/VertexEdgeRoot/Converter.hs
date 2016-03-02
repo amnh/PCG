@@ -30,7 +30,7 @@ import qualified Data.IntSet    as IS (fromList)
 data IntEdge = IntEdge (Int, Int) VER.EdgeLength deriving (Eq, Show, Ord)
 
 convert :: VER.VertexEdgeRoot -> Graph
-convert inVer = (splitConnected outTree)
+convert inVer = splitConnected outTree
     where
         nameDicts = accumNames 0 (VER.vertices inVer)
         rootList = S.toList $ VER.roots inVer
@@ -46,8 +46,8 @@ convert inVer = (splitConnected outTree)
             | otherwise = 
                 let 
                     recursion = accumNames (curPos + 1) labels
-                    fromInt = IM.insert curPos (S.elemAt curPos labels) (fst $ recursion)
-                    toInt = HM.insert (S.elemAt curPos labels) curPos (snd $ recursion)
+                    fromInt = IM.insert curPos (S.elemAt curPos labels) (fst recursion)
+                    toInt = HM.insert (S.elemAt curPos labels) curPos (snd recursion)
                 in (fromInt, toInt)
 
         -- | Now we accumulate as many nodes as we had names
@@ -62,7 +62,7 @@ convert inVer = (splitConnected outTree)
                         myParents = foldr (\(VER.EdgeInfo (o, t) _) acc -> if t == myName then (fromNames HM.! o) : acc else acc) mempty inEdges
                         myChildren = foldr (\(VER.EdgeInfo (o, t) _) acc -> if o == myName then (fromNames HM.! t) : acc else acc) mempty inEdges
                         atRoot = myName `elem` rootList
-                    in Node index atRoot (null myChildren) myParents myChildren mempty mempty mempty mempty mempty mempty 0
+                    in Node index atRoot (null myChildren) myParents myChildren mempty mempty mempty mempty mempty mempty 0 0
 
         -- | Now we can generate the edges
         accumEdges :: V.Vector NodeInfo -> S.Set VER.EdgeInfo -> IM.IntMap Identifier -> V.Vector EdgeSet

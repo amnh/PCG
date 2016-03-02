@@ -19,6 +19,7 @@ module Bio.Phylogeny.PhyloCharacter where
 
 import Data.Vector (Vector)
 import Bio.Sequence.Coded
+import Bio.Sequence.Parsed
 import GHC.Generics
 import Data.Matrix.NotStupid (Matrix, fromList, (<|>))
 
@@ -28,7 +29,7 @@ data PhyloCharacter s = DNA         { name :: String -- The character name if it
                                     , aligned :: Bool -- Whether the character represents an aligned or unaligned, sequence
                                     , fitchMasks :: (s, s)
                                     , stateNames :: Vector String
-                                    , alphabet :: Vector String
+                                    , alphabet :: Alphabet
                                     , tcm :: CostMatrix
                                     , ignored :: Bool
                                     }
@@ -37,7 +38,7 @@ data PhyloCharacter s = DNA         { name :: String -- The character name if it
                                     , aligned :: Bool
                                     , fitchMasks :: (s, s)
                                     , stateNames :: Vector String
-                                    , alphabet :: Vector String
+                                    , alphabet :: Alphabet
                                     , tcm :: CostMatrix
                                     , ignored :: Bool
                                     }
@@ -46,7 +47,7 @@ data PhyloCharacter s = DNA         { name :: String -- The character name if it
                                     , aligned :: Bool
                                     , fitchMasks :: (s, s)
                                     , stateNames :: Vector String
-                                    , alphabet :: Vector String
+                                    , alphabet :: Alphabet
                                     , tcm :: CostMatrix
                                     , additive :: Bool
                                     , ignored :: Bool
@@ -55,12 +56,13 @@ data PhyloCharacter s = DNA         { name :: String -- The character name if it
                       | Continous   { name :: String -- TODO: Add step values
                                     , ignored :: Bool
                                     , tcm :: CostMatrix
+                                    , alphabet :: Alphabet
                                     }
  
                       | Custom      { name :: String
                                     , aligned :: Bool
-                                    , masks :: (s, s)
-                                    , alphabet :: Vector String
+                                    , fitchMasks :: (s, s)
+                                    , alphabet :: Alphabet
                                     , stateNames :: Vector String
                                     , tcm :: CostMatrix
                                     , ignored :: Bool
@@ -70,7 +72,7 @@ data PhyloCharacter s = DNA         { name :: String -- The character name if it
                       | AminoAcid   { name :: String
                                     , aligned :: Bool
                                     , fitchMasks :: (s, s)
-                                    , alphabet :: Vector String
+                                    , alphabet :: Alphabet
                                     , stateNames :: Vector String
                                     , tcm :: CostMatrix
                                     , ignored :: Bool
