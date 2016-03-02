@@ -92,11 +92,13 @@ appendAt t1@(DAG names seqs chars n e r) t2@(DAG names' seqs' chars' n' e' r') h
       allNodes = --trace ("finished nodes " P.++ show hungNodes P.++ show connectN) $ 
                   connectN V.++ hungNodes
       -- Now update the names and sequences
-      checkNames insName old = if insName `elem` IM.elems old then insName ++ "a" ++ show shift
+      replaceStr insName old = insName `elem` IM.elems old || null insName || (take 3 insName) == "HTU"
+      checkNames insName old i = if replaceStr insName old then "HTU " ++ show (shift + i)
                                   else insName
-      shiftNames = IM.foldWithKey (\k val acc -> IM.insert (k + shift) (checkNames val names) acc) mempty names'
+      namesMap = IM.foldWithKey (\k val acc -> HM.insert val (checkNames val names k) acc) mempty names'
+      shiftNames = IM.foldWithKey (\k val acc -> IM.insert (k + shift) (namesMap HM.! val) acc) mempty names'
       allNames = names <> shiftNames
-      shiftSeqs = HM.foldrWithKey (\k val acc -> HM.insert (checkNames k names) val acc) mempty seqs'
+      shiftSeqs = HM.foldrWithKey (\k val acc -> HM.insert (namesMap HM.! k) val acc) mempty seqs'
       allSeqs = --trace ("finished seqs " P.++ show shiftSeqs) $ 
                   seqs <> shiftSeqs
       -- Finally update the edges and add a connecting edge to old nodes
