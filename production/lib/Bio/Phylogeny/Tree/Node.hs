@@ -72,8 +72,10 @@ instance RN.PreliminaryNode (Node b) (EncodedSeq b) where
     setAlign s n = n {aligned = s}
     temporary = temporary
     setTemporary s n = n {temporary = s}
-    cost = totalCost
-    setCost c n = n {totalCost = c}
+    localCost = localCost
+    setLocalCost c n = n {localCost = c}
+    totalCost = totalCost
+    setTotalCost c n = n {totalCost = c}
 
 instance Eq b => Ord (Node b) where
     compare n1 n2 = compare (code n1) (code n2)
