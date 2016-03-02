@@ -1,6 +1,7 @@
 {-# LANGUAGE DeriveFoldable, DeriveFunctor, DeriveTraversable, FlexibleContexts #-}
 module File.Format.TNT.Internal where
 
+import           Control.Monad            ((<=<))
 import           Data.Char                (isAlpha,isSpace)
 import           Data.List                (inits)
 import           Data.List.NonEmpty       (NonEmpty)
@@ -81,13 +82,13 @@ type TNTTree   = LeafyTree TaxonInfo
 data LeafyTree a
    = Leaf a
    | Branch [LeafyTree a]
-   deriving (Foldable,Functor,Show,Traversable)
+   deriving (Eq,Foldable,Functor,Show,Traversable)
 
 data NodeType
    = Index  Int
    | Name   String
    | Prefix String
-   deriving (Show)
+   deriving (Eq,Show)
 
 --XRead types
 --------------------------------------------------------------------------------
@@ -142,32 +143,24 @@ modifyMetaDataState (Steps  n)    old = old { steps    = n     }
 modifyMetaDataNames :: CharacterName -> CharacterMetaData -> CharacterMetaData
 modifyMetaDataNames charName old = old { characterName = characterId charName, characterStates = fromList $ characterStateNames charName }
 
--- | Parses an Int which is non-negative.
-nonNegInt :: MonadParsec s m Char => m Int
-nonNegInt = fromIntegral <$> integer
-
 -- | Parses an non-negative integer from a variety of representations.
 -- Parses both signed integral values and signed floating values
 -- if the value is non-negative and an integer.
 --
 flexibleNonNegativeInt :: MonadParsec s m Char => String -> m Int
 flexibleNonNegativeInt labeling = either coerceIntegral coerceFloating
-                             =<< signed whitespace number <?> ("positive integer for " ++ labeling)
+                              =<< signed whitespace number <?> ("positive integer for " ++ labeling)
   where
     coerceIntegral :: MonadParsec s m Char => Integer -> m Int
     coerceIntegral x
       | x <  0      = fail $ concat ["The ",labeling," value (",show x,") is a negative number"]
       | otherwise   = pure $ fromEnum x
     coerceFloating :: MonadParsec s m Char => Double -> m Int
-    coerceFloating x
-      | null errors = pure $ fromEnum rounded
-      | otherwise   = fails errors
+    coerceFloating = assertNonNegative <=< assertIntegral labeling
       where
-        errors      = catMaybes [posError,intError]
-        posError    = if x >= 0  then Nothing else Just $ concat ["The ",labeling," value (",show x,") is a negative value"]
-        intError    = if isInt x then Nothing else Just $ concat ["The ",labeling," value (",show x,") is a real value, not an integral value"]
-        isInt n     = n == fromInteger rounded
-        rounded     = round x
+        assertNonNegative x
+          | x >= 0    = pure x
+          | otherwise = fail $ concat ["The ",labeling," value (",show x,") is a negative value"]
 
 -- | Parses an positive integer from a variety of representations.
 -- Parses both signed integral values and signed floating values
@@ -205,15 +198,60 @@ flexiblePositiveInt labeling = either coerceIntegral coerceFloating
       | x <= 0      = fail $ concat ["The ",labeling," value (",show x,") is not a positive number"]
       | otherwise   = pure $ fromEnum x
     coerceFloating :: MonadParsec s m Char => Double -> m Int
-    coerceFloating x
-      | null errors = pure $ fromEnum rounded
-      | otherwise   = fails errors
+    coerceFloating = assertPositive <=< assertIntegral labeling
       where
-        errors      = catMaybes [posError,intError]
-        posError    = if x >= 1  then Nothing else Just $ concat ["The ",labeling," value (",show x,") is not a positive integer"]
-        intError    = if isInt x then Nothing else Just $ concat ["The ",labeling," value (",show x,") is a real value, not an integral value"]
-        isInt n     = n == fromInteger rounded
-        rounded     = round x
+        assertPositive x
+          | x > 0     = pure x
+          | otherwise = fail $ concat ["The ",labeling," value (",show x,") is not a positive integer"]
+
+-- | Consumes a TNT keyword flexibly.
+--   @keyword fullName minChars@ will parse the __longest prefix of__ @fullName@
+--   requiring that __at least__ the first @minChars@ of @fullName@ are in the prefix.
+--   Keyword prefixes are terminated with an `inlineSpace` which is not consumed by the combinator.
+-- ==== __Examples__
+--
+-- Basic usage:
+--
+-- >>> parse (keyword "abrakadabra" 4) "" "abrakadabra"
+-- Right "abrakadabra"
+--
+-- >>> parse (keyword "abrakadabra" 4) "" "abrakad"
+-- Right "abrakadabra"
+--
+-- >>> parse (keyword "abrakadabra" 4) "" "abra"
+-- Right "abrakadabra"
+--
+-- >>> parse (keyword "abrakadabra" 4) "" "abr"
+-- Left 1:1:
+-- unexpected "abr"
+-- expecting keyword 'abrakadabra'
+keyword :: MonadParsec s m Char => String -> Int -> m ()
+keyword x y = abreviatable x y *> pure ()
+  where
+    abreviatable :: MonadParsec s m Char => String -> Int -> m String
+    abreviatable fullName minimumChars
+      | minimumChars < 1             = fail $ "Nonpositive abreviation prefix (" ++ show minimumChars ++ ") supplied to abreviatable combinator"
+      | any (not . isAlpha) fullName = fail $ "A keywork containing a non alphabetic character: '" ++ show fullName ++ "' supplied to abreviateable combinator"
+      | otherwise                    = combinator <?> "keyword '" ++ fullName ++ "'"
+      where
+        combinator      = choice partialOptions *> pure fullName
+        partialOptions  = makePartial <$> drop minimumChars (inits fullName)
+        makePartial opt = try $ string' opt <* terminator
+        terminator      = lookAhead $ satisfy (not . isAlpha) 
+
+-- | Parses an Int which is non-negative. This Int is not parsed flexibly.
+--   Will fail integral valued Double literals. Use this in preference to 'flexibleNonNegativeInt'
+--   when expecting one of these chars ".eE" adjacent to the Int value.
+nonNegInt :: MonadParsec s m Char => m Int
+nonNegInt = fromIntegral <$> integer
+
+assertIntegral :: MonadParsec s m Char => String -> Double -> m Int
+assertIntegral labeling x
+  | isInt x   = pure $ fromEnum rounded
+  | otherwise = fail $ concat ["The ",labeling," value (",show x,") is a real value, not an integral value"]
+  where
+    isInt n = n == fromInteger rounded
+    rounded = round x
 
 -- | Consumes trailing whitespace after the parameter combinator.
 symbol :: MonadParsec s m Char => m a -> m a
@@ -230,22 +268,3 @@ whitespace = space
 -- | Consumes zero or more whitespace characters that are not line breaks.
 whitespaceInline :: MonadParsec s m Char => m ()
 whitespaceInline =  inlineSpace
-
--- | Consumes a TNT keyword flexibly.
---   @keyword fullName minChars@ will parse the __longest prefix of__ @fullName@
---   requiring that __at least__ the first @minChars@ of @fullName@ are in the prefix.
---   Keyword prefixes are terminated with an `inlineSpace` which is not consumed by the combinator.
-keyword :: MonadParsec s m Char => String -> Int -> m ()
-keyword x y = abreviatable x y *> pure ()
-  where
-    abreviatable :: MonadParsec s m Char => String -> Int -> m String
-    abreviatable fullName minimumChars =
-      if minimumChars < 1
-      then fail "Nonpositive abreviation prefix supplied to abreviatable combinator"
-      else combinator <?> "keyword '" ++ fullName ++ "'"
-      where
-        thenInlineSpace = notFollowedBy notInlineSpace
-        notInlineSpace  = satisfy (not . isAlpha)
-        (req,opt)       = splitAt minimumChars fullName
-        tailOpts        = (\suffix -> try (string' (req ++ suffix) <* thenInlineSpace)) <$> inits opt
-        combinator      = choice tailOpts *> pure fullName

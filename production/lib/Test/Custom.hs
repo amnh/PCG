@@ -5,8 +5,10 @@ module Test.Custom
   , parseFailure
   , parseSuccess
   , convertEquals
+  , module Test.Custom.Types
   ) where
 
+import Test.Custom.Types
 import Test.Tasty.HUnit
 import Text.Megaparsec (Parsec,parse)
 import Bio.Phylogeny.Graph
@@ -35,6 +37,7 @@ parseSuccess parser str =
   where
     result = parse parser "" str
 
+-- TODO: determine if this should be included in this module, adds very many dependacies just to import `Graph`
 convertEquals :: (Eq a, Show a) => Parsec String a -> String -> Graph -> (a -> Graph) -> Assertion
 convertEquals parser str expected converter =
   case result of
