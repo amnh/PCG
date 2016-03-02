@@ -30,7 +30,7 @@ import qualified Data.IntSet    as IS (fromList)
 data IntEdge = IntEdge (Int, Int) VER.EdgeLength deriving (Eq, Show, Ord)
 
 convert :: VER.VertexEdgeRoot -> Graph
-convert inVer = (splitConnected outTree)
+convert inVer = splitConnected outTree
     where
         nameDicts = accumNames 0 (VER.vertices inVer)
         rootList = S.toList $ VER.roots inVer
@@ -46,8 +46,8 @@ convert inVer = (splitConnected outTree)
             | otherwise = 
                 let 
                     recursion = accumNames (curPos + 1) labels
-                    fromInt = IM.insert curPos (S.elemAt curPos labels) (fst $ recursion)
-                    toInt = HM.insert (S.elemAt curPos labels) curPos (snd $ recursion)
+                    fromInt = IM.insert curPos (S.elemAt curPos labels) (fst recursion)
+                    toInt = HM.insert (S.elemAt curPos labels) curPos (snd recursion)
                 in (fromInt, toInt)
 
         -- | Now we accumulate as many nodes as we had names

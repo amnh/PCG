@@ -18,6 +18,8 @@ import qualified Data.IntMap as IM
 import qualified Data.IntSet as IS
 import qualified Data.HashMap.Lazy as HM
 
+import Debug.Trace
+
 -- | Splits a tree into connected components, forming a graph
 splitConnected :: DAG -> Graph
 splitConnected inDAG = 
@@ -35,18 +37,20 @@ fromTopo (TG.TopoTree inTopo chars) = (internalFromTopo inTopo) {characters = ch
   where
     internalFromTopo :: TN.TopoNode BitVector -> DAG
     internalFromTopo topo
-      | TN.isLeaf topo = myDAG
-      | otherwise = foldr (\n acc -> acc <> internalFromTopo n) myDAG (TN.children topo)
-
-          where
-              myNode = Node 0 (TN.isRoot topo) (TN.isLeaf topo) [] [] (TN.encoded topo) (TN.packed topo) (TN.preliminary topo) 
-                          (TN.final topo) (TN.temporary topo) (TN.aligned topo) (TN.cost topo)
-              appendDAG = mempty `N.addNode` myNode
-              myDAG = appendDAG {nodeNames = IM.singleton 0 (TN.name topo), parsedSeqs = HM.singleton (TN.name topo) (TN.parsed topo)}
+      | TN.isLeaf topo = (singletonDAG topo)
+      | otherwise = --trace ("internalFromTopo folds over " ++ show (singletonDAG topo))
+                      foldr (\n acc -> acc <> internalFromTopo n) (singletonDAG topo) (TN.children topo)
 
 -- | Conversion function from an indexed tree to a TopoDAG
 toTopo :: DAG -> TG.TopoTree
 toTopo tree = nodeToTopo tree (nodes tree ! root tree)
+
+-- | Function to convert a node to a tree for folding
+singletonDAG :: TN.TopoNode BitVector -> DAG
+singletonDAG topo = 
+  let myNode = Node 0 (TN.isRoot topo) (TN.isLeaf topo) [] [] (TN.encoded topo) (TN.packed topo) (TN.preliminary topo) 
+                          (TN.final topo) (TN.temporary topo) (TN.aligned topo) (TN.cost topo)
+  in DAG (IM.singleton 0 (TN.name topo)) (HM.singleton (TN.name topo) (TN.parsed topo)) mempty (singleton myNode) mempty 0
 
 -- | Conversion from an indexed tree to a TopoDAG, starting at the given node
 nodeToTopo :: DAG -> NodeInfo -> TG.TopoTree
@@ -61,7 +65,7 @@ nodeToTopo topDAG topNode = TG.TopoTree (internalFromTopo topDAG topNode) (chara
           where
               leaf = TN.TopoNode (isRoot curNode) (isLeaf curNode) safeName safeParsed [] (encoded curNode) (packed curNode) (preliminary curNode) 
                       (final curNode) (temporary curNode) (aligned curNode) (cost curNode)
-              safeName = if (code curNode) `IM.member` nodeNames inDAG then nodeNames inDAG IM.! (code curNode)
+              safeName = if code curNode `IM.member` nodeNames inDAG then nodeNames inDAG IM.! code curNode
                           else ""
               safeParsed = if safeName `HM.member` parsedSeqs inDAG then parsedSeqs inDAG HM.! safeName
                           else mempty
@@ -88,7 +92,7 @@ appendAt t1@(DAG names seqs chars n e r) t2@(DAG names' seqs' chars' n' e' r') h
       allNodes = --trace ("finished nodes " P.++ show hungNodes P.++ show connectN) $ 
                   connectN V.++ hungNodes
       -- Now update the names and sequences
-      checkNames insName old = if insName `elem` (IM.elems old) then insName ++ "a" ++ show shift
+      checkNames insName old = if insName `elem` IM.elems old then insName ++ "a" ++ show shift
                                   else insName
       shiftNames = IM.foldWithKey (\k val acc -> IM.insert (k + shift) (checkNames val names) acc) mempty names'
       allNames = names <> shiftNames
@@ -97,13 +101,13 @@ appendAt t1@(DAG names seqs chars n e r) t2@(DAG names' seqs' chars' n' e' r') h
                   seqs <> shiftSeqs
       -- Finally update the edges and add a connecting edge to old nodes
       shiftEdge edge = edge {inNodes = IS.map (shift +) (inNodes edge), outNodes = reMapOut (outNodes edge)}
-      reMapOut outEdge = IM.foldWithKey (\k val acc -> IM.insert (k + shift) (reMapInfo val) acc) mempty outEdge
+      reMapOut = IM.foldWithKey (\k val acc -> IM.insert (k + shift) (reMapInfo val) acc) mempty
       reMapInfo eInfo = eInfo {origin = allNodes ! code (origin eInfo), terminal = allNodes ! code (terminal eInfo)}
       newEdges = V.map shiftEdge e'
       newRootEdge = EdgeSet (IS.singleton hCode) mempty
       oldRootEdge = EdgeSet mempty (IM.singleton (r' + shift) (EdgeInfo 0 (allNodes ! hCode) (allNodes ! (r' + shift)) Nothing))
       oldRootUpdate = EdgeSet mempty (IM.insert (r' + shift) (EdgeInfo 0 (allNodes ! hCode) (allNodes ! (r' + shift)) Nothing) (updateOrigin $ outNodes $ e ! hCode))
-      updateOrigin outs = IM.map (\eInfo -> eInfo {origin = allNodes ! hCode}) outs
+      updateOrigin = IM.map (\eInfo -> eInfo {origin = allNodes ! hCode})
       newRootUpdate = EdgeSet (IS.insert hCode (inNodes $ newEdges ! r')) mempty
       connectEdges =  let 
                         outE  | null e && null newEdges = V.fromList [oldRootEdge, newRootEdge]
@@ -111,7 +115,7 @@ appendAt t1@(DAG names seqs chars n e r) t2@(DAG names' seqs' chars' n' e' r') h
                               | null newEdges || (length e' < r' - 1) = (e // [(hCode, oldRootUpdate)]) V.++ singleton newRootEdge
                               | otherwise = (e V.++ newEdges) // [(hCode, oldRootUpdate), (r', newRootUpdate)]
                       in outE 
-    in --trace ("edges on tree join " P.++ show connectEdges)
+    in trace ("edges on tree join " ++ show connectEdges)
         DAG allNames allSeqs newChars allNodes connectEdges r
 
 -- | Minor functions to help with appendAt include: reCodeChars, makeEdges, and resetPos
@@ -124,8 +128,8 @@ reCodeChars (nodes1, nodes2) (chars1, chars2)
       intersectChars1 = ifoldr (\i c acc -> if c `elem` chars2 then i `cons` acc else acc) mempty chars1
       complement1 = ifoldr (\i c acc -> if c `elem` chars2 then acc else i `cons` acc) mempty chars1
       complement2 = ifoldr (\i c acc -> if c `elem` chars1 then acc else i `cons` acc) mempty chars2
-      justFill items indices = foldr (\i acc-> items ! i `cons` acc) mempty indices
-      reorderFill items indices = foldr (\i acc -> if (length items - 1) < i then Nothing `cons` acc else items ! i `cons` acc) mempty indices
+      justFill items = foldr (\i acc-> items ! i `cons` acc) mempty
+      reorderFill items = foldr (\i acc -> if (length items - 1) < i then Nothing `cons` acc else items ! i `cons` acc) mempty
       fill1 seqs = if null seqs then seqs
                     else reorderFill seqs intersectChars1 V.++ reorderFill seqs complement1 V.++ V.replicate (length complement2) Nothing
       fill2 seqs = if null seqs then seqs
@@ -166,7 +170,7 @@ addConnections newNode myNodes =
 
 -- | rootCost obviously grabs the cost at the root of a tree
 rootCost :: DAG -> Double
-rootCost inDAG = cost $ (nodes inDAG) ! (root inDAG)
+rootCost inDAG = cost $ nodes inDAG ! root inDAG
 
 instance Monoid DAG where
   mempty = DAG mempty mempty mempty mempty mempty 0

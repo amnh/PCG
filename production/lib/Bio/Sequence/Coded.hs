@@ -57,21 +57,19 @@ instance Bits b => CodedSequence (EncodedSeq b) b where
     -- This works over minimal alphabet
     encode strSeq = 
         let 
-            alphabet = foldr (\ambig acc -> filter (not . (flip elem) acc) ambig ++ acc) [] strSeq
-            coded = map (\ambig -> foldr (\c acc -> setElemAt c acc alphabet) zeroBits ambig) strSeq
-            final = if length coded == 0 then Nothing else Just coded
+            alphabet = foldr (\ambig acc -> filter (not . flip elem acc) ambig ++ acc) [] strSeq
+            coded = map (foldr (\c acc -> setElemAt c acc alphabet) zeroBits) strSeq
+            final = if null coded then Nothing else Just coded
         in final
 
-    encodeOverAlphabet strSeq alphabet = 
+    encodeOverAlphabet strSeq inAlphabet = 
         let
-            alphWidth = P.length alphabet
-            coded = map (\ambig -> foldr (\c acc -> setElemAt c acc alphabet) zeroBits ambig) strSeq
-            final = if length coded == 0 then Nothing else Just coded
-        in final
+            alphabet = inAlphabet
+            coded = map (foldr (\c acc -> setElemAt c acc alphabet) zeroBits) strSeq
+            final = if null coded then Nothing else Just coded
+        in trace ("encoded strSeq " ++ show strSeq) final
 
----- | Function to encode into minimal bits
---encodeMinimal :: Bits b => ParsedSeq -> Alphabet -> EncodedSeq b
---encodeMinimal strSeq alphabet = 
+----  = 
 --    let
 --        alphWidth = P.length alphabet
 --        bitWidth = bitSizeMaybe gapChar
@@ -102,7 +100,7 @@ instance Bits b => CodedChar b where
 -- | To make this work, the underlying types are also an instance of bits because a Vector of bits is and a Maybe bits is
 instance Bits b => Bits (Vector b) where
     (.&.) bit1 bit2     
-        | length bit1 /= length bit2 = error "Attempt to take and of bits of different length"
+        | length bit1 /= length bit2 = error ("Attempt to take and of bits of different length " ++ show (length bit1) ++ " and " ++ show (length bit2))
         | otherwise = zipWith (.&.) bit1 bit2
     (.|.) bit1 bit2 
         | length bit1 /= length bit2 = error "Attempt to take or of bits of different length"

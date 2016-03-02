@@ -42,6 +42,7 @@ import Debug.Trace
 
 type SimpleMetadata = [String]
 
+-- TODO: add functionality to detect if some terminal has no sequence
 
 -- | Convert a newick graph with associated sequences
 convertBothForest :: NewickForest -> [TreeSeqs] -> Graph
@@ -49,8 +50,8 @@ convertBothForest forest seqs = Graph $ zipWith convertBoth forest seqs
 
 -- | Convert a newick tree with associated sequences
 convertBoth :: NewickNode -> TreeSeqs -> DAG
---convertBoth inTree seqs | trace ("convertBoth " ++ show (characters inTree)) False = undefined
-convertBoth inTree seqs = (fromTopo $ convertBothTopo inTree seqs)
+--convertBoth inTree seqs | trace ("convertBoth " ++ show (convertBothTopo inTree seqs)) False = undefined
+convertBoth inTree seqs = fromTopo $ convertBothTopo inTree seqs
 
 -- | Convert a newick tree and associated sequences to a topo tree (where funcionality is located)
 convertBothTopo :: NewickNode -> TreeSeqs -> TopoTree
@@ -62,19 +63,15 @@ convertBothTopo rootTree inSeqs = internalConvert True rootTree
         internalConvert atRoot inTree = 
             let 
                 recurse = fmap (tree . internalConvert False) (descendants inTree) 
-                myName = case newickLabel inTree of
-                            Just label -> label
-                            Nothing -> ""
-                myCost = case branchLength inTree of
-                            Just l -> l
-                            Nothing -> 0
+                myName = fromMaybe "" (newickLabel inTree)
+                myCost = fromMaybe 0 (branchLength inTree)
                 mySeq = if M.member myName inSeqs
                             then inSeqs M.! myName
                             else mempty
                 myEncode = encodeIt mySeq fullMetadata
                 myPack   = packIt mySeq fullMetadata
                 node = TN.TopoNode atRoot (null $ descendants inTree) myName mySeq recurse myEncode myPack mempty mempty mempty mempty myCost
-            in trace ("internalConvert with metadata " ++ show fullMetadata)
+            in --trace ("internalConvert with metadata " ++ show fullMetadata)
                 TopoTree node fullMetadata
 
 -- | Converts a graph topology without sequences
@@ -97,11 +94,7 @@ convertTopoTree tree0 = internalConvert tree0 True
         internalConvert inTree atRoot = 
             let 
                 recurse = fmap (tree . flip internalConvert False) (descendants inTree) 
-                myName = case newickLabel inTree of
-                            Just label -> label
-                            Nothing -> ""
-                myCost = case branchLength inTree of
-                            Just l -> l
-                            Nothing -> 0
+                myName = fromMaybe "" (newickLabel inTree)
+                myCost = fromMaybe 0 (branchLength inTree)
                 node = TN.TopoNode atRoot (null $ descendants inTree) myName mempty recurse mempty mempty mempty mempty mempty mempty myCost
             in TopoTree node mempty

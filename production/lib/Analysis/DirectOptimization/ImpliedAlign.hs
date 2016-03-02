@@ -14,6 +14,7 @@ import Bio.Phylogeny.Network.Subsettable
 import Analysis.DirectOptimization.Utilities
 import Analysis.DirectOptimization.Naive
 
+import           Data.Function              (on)
 import Prelude hiding (zipWith)
 import Data.Matrix.NotStupid (Matrix, zero, elementwise, nrows, ncols, getRow)
 import Data.Bits
@@ -54,8 +55,8 @@ iaMainPreorder fullTree subTree inNode
         recursiveIA fullTree left right inNode False
 
         where
-            left = join $ (flip leftChild) subTree <$> inNode
-            right = join $ (flip rightChild) subTree <$> inNode
+            left = join $ flip leftChild subTree <$> inNode
+            right = join $ flip rightChild subTree <$> inNode
             leftCheck = checkAlign left inNode
             rightCheck = checkAlign right inNode
 
@@ -93,7 +94,7 @@ iaPostorder inTree curNode
            updatedTree = inTree `update` [parentAlign, curAlign]
         in iaPostorder updatedTree curParent
         where
-            curParent = join $ (flip parent) inTree <$> curNode
+            curParent = join $ flip parent inTree <$> curNode
             isAligned = checkAlign curParent curNode
 
 -- | Helper function to check whether two nodes have the same length sequences
@@ -101,6 +102,6 @@ checkAlign :: NodeConstraint n s b => Maybe n -> Maybe n -> Bool
 checkAlign childNode parentNode 
     | isNothing childNode || isNothing parentNode = False
     | otherwise = 
-        let checkLen = zipWith (\align preAlign -> if numChars align > numChars preAlign then True else False) (preliminaryAlign $ fromJust childNode) (getForAlign $ fromJust parentNode)
+        let checkLen = zipWith ((>) `on` numChars) (preliminaryAlign $ fromJust childNode) (getForAlign $ fromJust parentNode)
         in or checkLen
 
