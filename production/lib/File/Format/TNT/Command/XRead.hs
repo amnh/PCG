@@ -117,8 +117,7 @@ taxonSequence = (,) <$> (taxonName <* whitespaceInline) <*> taxonSeq
   where
     taxonName     = some  validNameChar
     taxonSeq      = many (seqChar <|> ambiguity)
-    seqChar       = pure <$> validSeqChar <* whitespaceInline
-    ambiguity     = char '[' *> some (validSeqChar <* whitespaceInline) <* char ']' <* whitespaceInline
+    seqChar       = pure <$> characterStateChar <* whitespaceInline
+    ambiguity     = char '[' *> some (characterStateChar <* whitespaceInline) <* char ']' <* whitespaceInline
     validNameChar = satisfy (\x -> (not . isSpace) x && x `notElem` "(),;")
-    validSeqChar  = oneOf $ ['0'..'9'] ++ ['A'..'Z'] ++ ['a'..'z'] ++ "-?"
     

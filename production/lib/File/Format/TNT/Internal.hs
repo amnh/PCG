@@ -3,8 +3,10 @@ module File.Format.TNT.Internal where
 
 import           Control.Monad            ((<=<))
 import           Data.Char                (isAlpha,isSpace)
+import           Data.Foldable            (toList)
 import           Data.List                (inits)
 import           Data.List.NonEmpty       (NonEmpty)
+import           Data.Matrix.NotStupid    (Matrix)
 import           Data.Maybe               (catMaybes)
 import           Data.Vector              (Vector,fromList)
 import           Text.Megaparsec
@@ -58,7 +60,7 @@ data CharacterSet
    | FromStart Int
    | ToEnd     Int
    | Whole
-   deriving (Show)
+   deriving (Eq,Show)
 
 -- CNames types
 --------------------------------------------------------------------------------
@@ -71,6 +73,15 @@ data CharacterName
    , characterId         :: String
    , characterStateNames :: [String]
    } deriving (Show)
+
+-- Cost types
+--------------------------------------------------------------------------------
+
+data Cost
+   = Cost
+   { costIndicies :: CharacterSet
+   , costMatrix   :: Matrix Double
+   } deriving (Eq,Show)
 
 -- TRead types
 --------------------------------------------------------------------------------
@@ -122,10 +133,11 @@ data CharacterMetaData
    , sankoff         :: Bool
    , weight          :: Int
    , steps           :: Int
+   , costTCM         :: Maybe (Matrix Double)
    } deriving (Show)
 
 initialMetaData :: CharacterMetaData
-initialMetaData = CharMeta "" mempty False True False 1 1
+initialMetaData = CharMeta "" mempty False True False 1 1 Nothing
 
 metaDataTemplate :: CharacterState -> CharacterMetaData
 metaDataTemplate state = modifyMetaDataState state initialMetaData
@@ -142,6 +154,9 @@ modifyMetaDataState (Steps  n)    old = old { steps    = n     }
 
 modifyMetaDataNames :: CharacterName -> CharacterMetaData -> CharacterMetaData
 modifyMetaDataNames charName old = old { characterName = characterId charName, characterStates = fromList $ characterStateNames charName }
+
+modifyMetaDataTCM :: Matrix Double -> CharacterMetaData -> CharacterMetaData
+modifyMetaDataTCM mat old = old { costTCM = Just mat }
 
 -- | Parses an non-negative integer from a variety of representations.
 -- Parses both signed integral values and signed floating values
@@ -252,6 +267,26 @@ assertIntegral labeling x
   where
     isInt n = n == fromInteger rounded
     rounded = round x
+
+-- | Parses a single character index or a contiguous character range
+characterIndicies :: MonadParsec s m Char => m CharacterSet
+characterIndicies = choice $ try <$> [range, fromStart, single, toEnd, whole]
+  where
+    range     = Range     <$> num <* dot <*> num
+    fromStart = FromStart <$> num <* dot
+    single    = Single    <$> num
+    toEnd     = dot *> (ToEnd <$> num)
+    whole     = dot *> pure Whole
+    num       = symbol (nonNegInt <?> "sequence index value")
+    dot       = symbol (char '.')
+
+-- | Parses one of the valid character states for a TNT file
+characterStateChar :: MonadParsec s m Char => m Char
+characterStateChar = oneOf (toList characterStateValues)
+
+-- | The only 64 valid state characters for a TNT file
+characterStateValues :: Vector Char
+characterStateValues = fromList $ ['0'..'9'] ++ ['A'..'Z'] ++ ['a'..'z'] ++ "-?"
 
 -- | Consumes trailing whitespace after the parameter combinator.
 symbol :: MonadParsec s m Char => m a -> m a
