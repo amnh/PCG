@@ -8,6 +8,7 @@ module File.Format.TNT.Command.XRead where
   -}
 
 import           Data.Bifunctor           (second)
+import           Data.Bits
 import           Data.Char                (isSpace)
 import           Data.DList               (DList,append)
 import qualified Data.DList         as DL (toList,fromList)
@@ -16,6 +17,7 @@ import qualified Data.List.NonEmpty as NE (filter,fromList,length)
 import           Data.Map.Strict          (Map,insertWith)
 import qualified Data.Map.Strict    as M  (toList)
 import           Data.Maybe               (catMaybes)
+import           Data.Word                (Int64)
 import           File.Format.TNT.Internal
 import           Text.Megaparsec
 import           Text.Megaparsec.Custom
@@ -115,9 +117,82 @@ xreadSequences = NE.fromList . deinterleaveTaxa <$> symbol (taxonSequence `sepEn
 taxonSequence :: MonadParsec s m Char => m TaxonInfo
 taxonSequence = (,) <$> (taxonName <* whitespaceInline) <*> taxonSeq
   where
-    taxonName     = some  validNameChar
     taxonSeq      = many (seqChar <|> ambiguity)
     seqChar       = pure <$> characterStateChar <* whitespaceInline
     ambiguity     = char '[' *> some (characterStateChar <* whitespaceInline) <* char ']' <* whitespaceInline
+
+taxonName :: MonadParsec s m Char => m String
+taxonName = some validNameChar
+  where
     validNameChar = satisfy (\x -> (not . isSpace) x && x `notElem` "(),;")
-    
+
+-- | Different character types are deserialized from sequences segments.
+--   After all segments are collected they are de-interleaved into a single
+--   'TaxonSequence'.
+type TaxonSequenceSegment = (TaxonName, [TntCharacter])
+type ContinuousSegment = (TaxonName, [TntContinuousCharacter])
+type DiscreteSegment   = (TaxonName, [TntDiscreteCharacter  ])
+type TntCharacter
+   = Continuous Double
+   | Discrete   Int64
+   | Dna        Int8
+
+type TaxonInterleaveBlock = NonEmpty TaxonSequenceSegment
+
+
+taxonSequenceSegment :: MonadParsec s m Char => m TaxonSequenceSegment
+taxonSequenceSegment = choice [ try continuousInterleaveBlock
+                              , try numericInterleaveBlock
+                              , try dnaInterleaveBlock
+                              , defaultInterleaveBlock
+                              ]
+
+continuousInterleaveBlock :: MonadParsec s m Char => m TaxonInterleaveBlock
+continuousInterleaveBlock = continuousIdentifierTag *> (NE.fromList <$> some continuousSegment
+  where
+    continuousIdentifierTag = tagIdentifier $ keyword "continuous" 4
+    continuousSegment       = second Left <$> ((,) <$> symbol taxonName <*> many (symbol double))
+
+numericInterleaveBlock :: MonadParsec s m Char => m TaxonInterleaveBlock
+numericInterleaveBlock = numericIdentifierTag *> (NE.fromList <$> some numericSegment)
+  where
+    numericIdentifierTag = tagIdentifier $keyword "numeric" 3
+
+numericSegment :: MonadParsec s m Char => m TaxonInterLeaveBlock
+numericSegment = second Right <$> ((,) <$> symbol taxonName <*> many numericCharacter)
+  where
+    numericCharacter     = singletonCharacter <|> ambiguityCharacter
+    singltonCharacter    = bitPack . pure <$> stateToken
+    ambiguityCharacter   = bitPack <$> withinBraces (some stateToken)
+    stateToken           = characterStateChar <* whitespaceInline
+    bitPack              = toBits characterStateValues
+
+dnaInterleaveBlock :: MonadParsec s m Char => m TaxonInterleaveBlock
+dnaInterleaveBlock = dnaIdentifierTag *> (NE.fromList <$> some dnaSegment)
+  where
+    dnaIdentifierTag = tagIdentifier $ keyword "dna" 3 -- use keyword, handles lookAhead after the 'a'
+    dnaSegment       = second Right <$> ((,) <$> symbol taxonName <*> many dnaCharacter)
+    dnaCharactervalues = "ATCG-?"
+    dnaCharacter       = singletonCharacter <|> ambiguityCharacter
+    singltonCharacter  = bitPack . pure <$> stateToken
+    ambiguityCharacter = bitPack <$> withinBraces (some stateToken)
+    stateToken         = oneOf' dnaCharacterValues <* whitespaceInline
+    bitPack            = toBits dnaCharacterValues
+
+defaultInterleaveBlock :: MonadParsec s m Char => m TaxonInterleaveBlock
+defaultInterleaveBlock = numericSegment
+
+toBits :: Foldable f => f Char -> String -> Int64
+toBits xs = foldr (.|.) zeroBits . fmap (bit . (`getIndex` xs))
+  where
+    getIndex e = fromJust . snd . foldl f 0 
+      f a@(_,Just _ ) _) = a
+      f a@(i,Nothing) x)
+        | e == x    = (i  ,Just i )
+        | otherwise = (i+1,Nothing) 
+
+tagIdentifier :: MonadParsec s m Char => m a -> m ()
+tagIdentifier c = symbol (char '&') *> withinBraces c $> ()
+  
+withinBraces :: MonadParsec s m Char => m  -> m a
+withinBraces = between (symbol (char '[')) (symbol (char ']'))
