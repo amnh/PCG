@@ -1,15 +1,11 @@
 {-# LANGUAGE FlexibleContexts #-}
 module File.Format.TNT.Command.Procedure where
 
-{-- TODO:
-  - Robust tests
-  - Good documentation
-  -}
-
-import           File.Format.TNT.Internal
-import           Text.Megaparsec
-import           Text.Megaparsec.Custom
-import           Text.Megaparsec.Prim     (MonadParsec)
+import Data.Functor (($>))
+import File.Format.TNT.Internal
+import Text.Megaparsec
+import Text.Megaparsec.Custom
+import Text.Megaparsec.Prim     (MonadParsec)
 
 -- | Parses an PROCEDURE command that consisits of exacty
 -- one of the following:
@@ -22,8 +18,8 @@ import           Text.Megaparsec.Prim     (MonadParsec)
 procedureCommand :: MonadParsec s m Char => m ()
 procedureCommand =  procHeader *> procBody
   where
-    procBody = (try procFastaFile   *> pure ())
-           <|> (try procCommandFile *> pure ())
+    procBody = (try procFastaFile   $> ())
+           <|> (try procCommandFile $> ())
            <|>      procCloseFile
 
 -- | Consumes the superflous heading for a PROCEDURE command.
