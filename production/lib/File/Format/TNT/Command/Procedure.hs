@@ -18,9 +18,11 @@ import Text.Megaparsec.Prim     (MonadParsec)
 procedureCommand :: MonadParsec s m Char => m ()
 procedureCommand =  procHeader *> procBody
   where
-    procBody = (try procFastaFile   $> ())
-           <|> (try procCommandFile $> ())
-           <|>      procCloseFile
+    procBody = choice
+             [ try procFastaFile   $> ()
+             , try procCommandFile $> ()
+             , procCloseFile
+             ]
 
 -- | Consumes the superflous heading for a PROCEDURE command.
 procHeader :: MonadParsec s m Char => m ()
