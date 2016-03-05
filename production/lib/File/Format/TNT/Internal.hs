@@ -9,7 +9,7 @@ import           Data.List.NonEmpty       (NonEmpty)
 import           Data.Matrix.NotStupid    (Matrix)
 import           Data.Maybe               (catMaybes)
 import           Data.Vector              (Vector,fromList)
-import           Data.Word                (Int64)
+import           Data.Word                (Word8,Word64)
 import           Text.Megaparsec
 import           Text.Megaparsec.Custom
 import           Text.Megaparsec.Lexer    (integer,number,signed)
@@ -125,19 +125,22 @@ type TaxonSequence = [TntCharacter]
 -- | Different character types are deserialized from sequences segments.
 --   After all segments are collected they are de-interleaved into a single
 --   'TaxonSequence'.
-type TaxonSequenceSegment = (TaxonName, Either [TntContinuousCharacter] [TntDiscreteCharacter])
+data TntCharacter
+   = Continuous TntContinuousCharacter
+   | Discrete   TntDiscreteCharacter
+   | Dna        TntDnaCharacter
+   deriving (Show)
 
--- | A TNT character is either a continuous value represented by a 'Double'
-type TntCharacter = Either TntContinuousCharacter TntDiscreteCharacter
+type TntContinuousCharacter = Double
 
 -- | A TntDiscreteCharacter is an integral value in the range [0..63]. Discrete
 --   values are serialized textualy as one of the 64  values:
 --   '[0..9] ++ [\'A\'..\'B\'] ++ [\'a\'..\'z\'] ++ "-?"'.
 --   Each value coresponds to it's respective bit in the 'Int64'. Ambiguity groups
 --   are represented byt 'Int64' values with multiple set bits.
-type TntDiscreteCharacter = Int64
 
-type TntContinuousCharacter = Double
+type TntDiscreteCharacter   = Word64
+type TntDnaCharacter        = Word8
 
 -- CharacterMetaData types
 --------------------------------------------------------------------------------
