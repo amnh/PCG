@@ -156,7 +156,7 @@ dnaInterleaveBlock = dnaIdentifierTag *> (DL.fromList <$> symbol (dnaSegment `se
   where
     dnaIdentifierTag   = tagIdentifier $ keyword "dna" 3 -- use keyword, handles lookAhead after the 'a'
     dnaSegment         = (,) <$> symbol taxonName <*> many dnaCharacter
-    dnaCharacterValues = "ATCG-?"
+    dnaCharacterValues = "AGCT-?"
     dnaCharacter       = Dna <$> (singletonCharacter <|> ambiguityCharacter) <* whitespaceInline
     singletonCharacter = bitPack . pure <$> stateToken
     ambiguityCharacter = bitPack <$> withinBraces (some stateToken)
