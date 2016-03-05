@@ -84,6 +84,17 @@ data Cost
    , costMatrix   :: Matrix Double
    } deriving (Eq,Show)
 
+
+-- NStates types
+--------------------------------------------------------------------------------
+
+data NStates
+   = DnaStates     Bool
+   | NumericStates Int
+   | ProteinStates
+   | ContinuousStates
+   deriving (Show)
+                                  
 -- TRead types
 --------------------------------------------------------------------------------
 

@@ -7,13 +7,6 @@ import Text.Megaparsec
 import Text.Megaparsec.Custom
 import Text.Megaparsec.Prim     (MonadParsec)
 
-data NStates
-   = DnaStates     Bool
-   | NumericStates Int
-   | ProteinStates
-   | ContinuousStates
-   deriving (Show)
-
 -- | Parses NSTATES command
 nstatesCommand :: MonadParsec s m Char => m NStates
 nstatesCommand =  nstatesHeader *> nstatesBody <* symbol (char ';')

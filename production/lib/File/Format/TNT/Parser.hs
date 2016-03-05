@@ -25,11 +25,11 @@ import           Text.Megaparsec.Prim                     (MonadParsec)
 tntStreamParser :: MonadParsec s m Char => m TntResult
 tntStreamParser = (colateResult <=< collapseStructures) =<< (whitespace *> gatherCommands)
   where
-    colateResult :: MonadParsec s m Char => ([CCode],[CharacterName],[Cost],[TReadTree],[XRead]) -> m TntResult
-    colateResult (     _,     _,     _,    _,  x:y:z) = fail "Multiple XREAD commands found in source, expecting a single XREAD command."
-    colateResult (     _,     _,     _,   [],     []) = fail "No XREAD command or TREAD command, expecting either a single XREAD command or one or more TRead commands."
-    colateResult (     _,     _,    _,treads,     []) = pure . Left $ NE.fromList treads
-    colateResult (ccodes,cnames,costs,treads,[xread])
+    colateResult :: MonadParsec s m Char => ([CCode],[CharacterName],[Cost],[NStates],[TReadTree],[XRead]) -> m TntResult
+    colateResult (     _,     _,     _,     _,     _,  x:y:z) = fail "Multiple XREAD commands found in source, expecting a single XREAD command."
+    colateResult (     _,     _,     _,     _,    [],     []) = fail "No XREAD command or TREAD command, expecting either a single XREAD command or one or more TRead commands."
+    colateResult (     _,     _,    _,      _,treads,     []) = pure . Left $ NE.fromList treads
+    colateResult (ccodes,cnames,costs,nstates,treads,[xread])
       | charCountx xread == 0 = (Left . fmap (fmap (Name . fst)) . NE.fromList) <$> matchTaxaInTree xread treads
       | otherwise             = Right <$> liftM3 WithTaxa
                                   (pure $ vectorizeTaxa xread)
@@ -55,10 +55,10 @@ tntStreamParser = (colateResult <=< collapseStructures) =<< (whitespace *> gathe
                 Just x  -> pure (name, x)
             substituteLeaf (Prefix pref) = undefined
 
-collapseStructures :: MonadParsec s m Char => Commands -> m ([CCode],[CharacterName],[Cost],[TReadTree],[XRead])
-collapseStructures (ccodes,cnames,costs,treads,xreads)
+collapseStructures :: MonadParsec s m Char => Commands -> m ([CCode],[CharacterName],[Cost],[NStates],[TReadTree],[XRead])
+collapseStructures (ccodes,cnames,costs,nstates,treads,xreads)
   | not (null errors) = fails errors
-  | otherwise         = pure (ccodes,collapsedCNames,costs,collapsedTReads,xreads)
+  | otherwise         = pure (ccodes,collapsedCNames,costs,nstates,collapsedTReads,xreads)
   where
     errors          = cnamesErrors 
     collapsedTReads = concatMap toList treads 
