@@ -1,6 +1,7 @@
 {-# LANGUAGE FlexibleContexts #-}
 module File.Format.TNT.Partitioning where
 
+import Data.Char (isAlpha)
 import File.Format.TNT.Command.CCode
 import File.Format.TNT.Command.CNames
 import File.Format.TNT.Command.Cost
@@ -28,14 +29,14 @@ gatherCommands :: MonadParsec s m Char => m Commands
 gatherCommands = partition <$> many commands
   where
     commands  = choice
-              [ CC     <$> ccodeCommand
-              , CN     <$> cnamesCommand
-              , CO     <$> costCommand
-              , NS     <$> nstatesCommand
-              , TR     <$> treadCommand
-              , XR     <$> xreadCommand
-              , Ignore <$  procedureCommand
-              , Ignore <$  ignoredCommand
+              [ CC     <$> try ccodeCommand
+              , CN     <$> try cnamesCommand
+              , CO     <$> try costCommand
+              , NS     <$> try nstatesCommand
+              , TR     <$> try treadCommand
+              , XR     <$> try xreadCommand
+              , Ignore <$  try procedureCommand
+              , Ignore <$      ignoredCommand
               ]
     partition = foldr f ([],[],[],[],[],[])
       where
@@ -48,8 +49,8 @@ gatherCommands = partition <$> many commands
         f Ignore x           = x
 
 ignoredCommand :: MonadParsec s m Char => m String
-ignoredCommand = commandKeyword <* commandBody <* symbol terminal
+ignoredCommand = commandKeyword <* optional (commandBody) <* terminal
   where
-    commandKeyword = somethingTill inlineSpaceChar
-    commandBody    = trim $ somethingTill terminal
-    terminal       = char ';'
+    commandKeyword = somethingTill $ satisfy (not . isAlpha)
+    commandBody    = trim $ anythingTill terminal
+    terminal       = symbol $ char ';'
