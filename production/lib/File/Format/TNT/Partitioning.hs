@@ -33,9 +33,9 @@ gatherCommands = partition <$> many commands
               , CN     <$> try cnamesCommand
               , CO     <$> try costCommand
               , NS     <$> try nstatesCommand
-              , TR     <$> try treadCommand
-              , XR     <$> try xreadCommand
-              , Ignore <$  try procedureCommand
+              , TR     <$>     treadCommand
+              , XR     <$>     xreadCommand
+              , Ignore <$      procedureCommand
               , Ignore <$      ignoredCommand
               ]
     partition = foldr f ([],[],[],[],[],[])

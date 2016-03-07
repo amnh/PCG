@@ -133,7 +133,7 @@ continuousInterleaveBlock :: MonadParsec s m Char => m (DList TaxonInfo)
 continuousInterleaveBlock = continuousIdentifierTag *> (DL.fromList <$> symbol (continuousSegment `sepEndBy1` segmentTerminal))
   where
     continuousIdentifierTag = tagIdentifier $ keyword "continuous" 4
-    continuousSegment       = (,) <$> symbol taxonName <*> many stateToken
+    continuousSegment       = (,) <$> (taxonName <* whitespaceInline) <*> many stateToken
     stateToken              = Continuous <$> double <* whitespaceInline
 
 numericInterleaveBlock :: MonadParsec s m Char => m (DList TaxonInfo)
@@ -144,8 +144,8 @@ numericInterleaveBlock = numericIdentifierTag *> numericSegments
 numericSegments :: MonadParsec s m Char => m (DList TaxonInfo)
 numericSegments = DL.fromList <$> symbol (numericSegment `sepEndBy1` segmentTerminal)
   where
-    numericSegment       = (,) <$> symbol taxonName <*> many numericCharacter
-    numericCharacter     = Discrete <$> (singletonCharacter <|> ambiguityCharacter) <* whitespaceInline
+    numericSegment       = (,) <$> (taxonName <* whitespaceInline) <*> many numericCharacter
+    numericCharacter     = Discrete <$> (ambiguityCharacter <|> singletonCharacter) <* whitespaceInline
     singletonCharacter   = bitPack . pure <$> stateToken
     ambiguityCharacter   = bitPack <$> withinBraces (some stateToken)
     stateToken           = characterStateChar <* whitespaceInline
@@ -155,7 +155,7 @@ dnaInterleaveBlock :: MonadParsec s m Char => m (DList TaxonInfo)
 dnaInterleaveBlock = dnaIdentifierTag *> (DL.fromList <$> symbol (dnaSegment `sepEndBy1` segmentTerminal))
   where
     dnaIdentifierTag   = tagIdentifier $ keyword "dna" 3 -- use keyword, handles lookAhead after the 'a'
-    dnaSegment         = (,) <$> symbol taxonName <*> many dnaCharacter
+    dnaSegment         = (,) <$> (taxonName <* whitespaceInline) <*> many dnaCharacter
     dnaCharacterValues = "AGCT-?"
     dnaCharacter       = Dna <$> (singletonCharacter <|> ambiguityCharacter) <* whitespaceInline
     singletonCharacter = bitPack . pure <$> stateToken
@@ -184,4 +184,4 @@ tagIdentifier :: MonadParsec s m Char => m a -> m ()
 tagIdentifier c = symbol (char '&') *> symbol (withinBraces c) $> ()
   
 withinBraces :: MonadParsec s m Char => m a -> m a
-withinBraces = between (symbol (char '[')) (symbol (char ']'))
+withinBraces = between (char '[' <* whitespaceInline) (char ']' <* whitespaceInline)

@@ -33,7 +33,7 @@ tntStreamParser = (colateResult <=< collapseStructures) =<< (whitespace *> gathe
       | charCountx xread == 0 = (Left . fmap (fmap (Name . fst)) . NE.fromList) <$> matchTaxaInTree xread treads
       | otherwise             = Right <$> liftM3 WithTaxa
                                   (pure $ vectorizeTaxa xread)
-                                  (pure . applyCosts costs . applyCNames cnames $ ccodeCoalesce (taxaCountx xread) ccodes)
+                                  (pure . applyCosts costs . applyCNames cnames $ ccodeCoalesce (charCountx xread) ccodes)
                                   (matchTaxaInTree xread treads)
       where
         vectorizeTaxa   = V.fromList . toList . sequencesx
