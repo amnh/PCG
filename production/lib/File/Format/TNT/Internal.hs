@@ -2,14 +2,20 @@
 module File.Format.TNT.Internal where
 
 import           Control.Monad            ((<=<))
-import           Data.Char                (isAlpha,isSpace)
+import           Data.Bits
+import           Data.Char                (isAlpha,isSpace,toLower)
 import           Data.Foldable            (toList)
+import           Data.Key                 ((!))
 import           Data.List                (inits)
 import           Data.List.NonEmpty       (NonEmpty)
 import           Data.Matrix.NotStupid    (Matrix)
+import           Data.Map                 (Map,assocs,insert,keys)
+import qualified Data.Map            as M (fromList)
 import           Data.Maybe               (catMaybes)
-import           Data.Vector              (Vector,fromList)
-import           Data.Word                (Word8,Word64)
+import           Data.Tuple               (swap)
+import           Data.Vector              (Vector)
+import qualified Data.Vector         as V (fromList)
+import           Data.Word                (Word8,Word32,Word64)
 import           Text.Megaparsec
 import           Text.Megaparsec.Custom
 import           Text.Megaparsec.Lexer    (integer,number,signed)
@@ -170,6 +176,12 @@ type TntDnaCharacter        = Word8
 --   the empty ambiguity group.
 type TntProteinCharacter    = Word32
 
+{-
+instance Show TntCharacter where
+  show (Continuous x) = show x
+  show (Discrete   x) = show x
+-}
+
 -- CharacterMetaData types
 --------------------------------------------------------------------------------
 
@@ -202,7 +214,7 @@ modifyMetaDataState (Weight n)    old = old { weight   = n     }
 modifyMetaDataState (Steps  n)    old = old { steps    = n     }
 
 modifyMetaDataNames :: CharacterName -> CharacterMetaData -> CharacterMetaData
-modifyMetaDataNames charName old = old { characterName = characterId charName, characterStates = fromList $ characterStateNames charName }
+modifyMetaDataNames charName old = old { characterName = characterId charName, characterStates = V.fromList $ characterStateNames charName }
 
 modifyMetaDataTCM :: Matrix Double -> CharacterMetaData -> CharacterMetaData
 modifyMetaDataTCM mat old = old { costTCM = Just mat }
@@ -331,11 +343,74 @@ characterIndicies = choice $ try <$> [range, fromStart, single, toEnd, whole]
 
 -- | Parses one of the valid character states for a TNT file
 characterStateChar :: MonadParsec s m Char => m Char
-characterStateChar = oneOf (toList characterStateValues)
+characterStateChar = oneOf (toList discreteStateValues)
 
 -- | The only 64 valid state characters for a TNT file
-characterStateValues :: Vector Char
-characterStateValues = fromList $ ['0'..'9'] ++ ['A'..'Z'] ++ ['a'..'z'] ++ "-?"
+discreteStateValues :: Vector Char
+discreteStateValues = V.fromList $ ['0'..'9'] ++ ['A'..'Z'] ++ ['a'..'z'] ++ "-?"
+
+dnaStateValues :: Vector Char
+dnaStateValues = V.fromList $ keys deserializeStateDna
+
+proteinStateValues :: Vector Char
+proteinStateValues = V.fromList "ACDEFGHIKLMNPQRSTVWY-?"
+
+serializeStateDiscrete :: Map TntDiscreteCharacter Char
+serializeStateDiscrete = swapMap deserializeStateDiscrete
+
+deserializeStateDiscrete :: Map Char TntDiscreteCharacter
+deserializeStateDiscrete = (insert '?' zeroBits) . M.fromList $ zip (toList discreteStateValues) (bit <$> [0..])
+
+serializeStateDna :: Map TntDnaCharacter Char
+serializeStateDna = swapMap deserializeStateDna
+
+-- | The only  valid state characters for a TNT file
+deserializeStateDna :: Map Char TntDnaCharacter
+deserializeStateDna = casei core
+  where
+    casei m = foldl (\m (k,v) -> insert (toLower k) v m) m $ assocs m
+    ref     = (core !)
+    core    = M.fromList
+            [ ('?', zeroBits)
+            , ('A', bit 0   )
+            , ('G', bit 1   )
+            , ('C', bit 2   )
+            , ('T', bit 3   )
+            , ('-', bit 4   ) -- assume 5th state
+            , ('U', ref 'T' )
+            , ('R', ref 'A' .|. ref 'G')
+            , ('M', ref 'A' .|. ref 'C')
+            , ('W', ref 'A' .|. ref 'T')
+            , ('S', ref 'G' .|. ref 'C')
+            , ('K', ref 'G' .|. ref 'T')
+            , ('T', ref 'C' .|. ref 'T')
+            , ('V', ref 'A' .|. ref 'G' .|. ref 'C')
+            , ('D', ref 'A' .|. ref 'G' .|. ref 'T')
+            , ('H', ref 'A' .|. ref 'C' .|. ref 'T')
+            , ('B', ref 'G' .|. ref 'C' .|. ref 'T')
+            , ('N', ref 'A' .|. ref 'G' .|. ref 'C' .|. ref 'T')
+            ]
+
+serializeStateProtein :: Map TntProteinCharacter Char
+serializeStateProtein = swapMap deserializeStateProtein
+
+deserializeStateProtein :: Map Char TntProteinCharacter
+deserializeStateProtein = (insert '?' zeroBits) . M.fromList $ zip (toList proteinStateValues) (bit <$> [0..])
+
+
+
+bitsToFlags :: FiniteBits b => b -> [b]
+bitsToFlags b
+  | zeroBits == b = []
+  | otherwise     = bit i : bitsToFlags (b `clearBit` i)
+  where
+    i = findFirstSet b
+
+findFirstSet :: FiniteBits b => b -> Int
+findFirstSet = countTrailingZeros
+
+swapMap :: (Ord k, Ord a) => Map k a -> Map a k
+swapMap = M.fromList . fmap swap . assocs 
 
 -- | Consumes trailing whitespace after the parameter combinator.
 symbol :: MonadParsec s m Char => m a -> m a

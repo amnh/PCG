@@ -7,6 +7,7 @@ module File.Format.TNT.Command.XRead where
   - Deinterleave function with DList construction
   -}
 
+import           Control.Monad            ((<=<))
 import           Data.Bifunctor           (second)
 import           Data.Bits
 import           Data.Char                (isSpace)
@@ -14,12 +15,16 @@ import           Data.DList               (DList,append)
 import qualified Data.DList         as DL (concat,fromList)
 import           Data.Foldable            (toList)
 import           Data.Functor             (($>))
+import           Data.Key                 ((!))
 import           Data.List.NonEmpty       (NonEmpty)
 import qualified Data.List.NonEmpty as NE (filter,fromList,length)
-import           Data.Map.Strict          (Map,assocs,insertWith)
+import           Data.List.Utility
+import           Data.Map                 (Map,assocs,insertWith,lookup)
 import           Data.Maybe               (catMaybes,fromJust,isJust)
+import           Data.Traversable
 import           Data.Word                (Word8,Word64)
 import           File.Format.TNT.Internal
+import           Prelude           hiding (lookup)
 import           Text.Megaparsec
 import           Text.Megaparsec.Custom
 import           Text.Megaparsec.Prim     (MonadParsec)
@@ -126,6 +131,7 @@ taxonSequenceSegment :: MonadParsec s m Char => m (DList TaxonInfo)
 taxonSequenceSegment = choice [ try continuousInterleaveBlock
                               , try numericInterleaveBlock
                               , try dnaInterleaveBlock
+                              , try proteinInterleaveBlock
                               , defaultInterleaveBlock
                               ]
 
@@ -144,27 +150,61 @@ numericInterleaveBlock = numericIdentifierTag *> numericSegments
 numericSegments :: MonadParsec s m Char => m (DList TaxonInfo)
 numericSegments = DL.fromList <$> symbol (numericSegment `sepEndBy1` segmentTerminal)
   where
-    numericSegment       = (,) <$> (taxonName <* whitespaceInline) <*> many numericCharacter
-    numericCharacter     = Discrete <$> (ambiguityCharacter <|> singletonCharacter) <* whitespaceInline
-    singletonCharacter   = bitPack . pure <$> stateToken
-    ambiguityCharacter   = bitPack <$> withinBraces (some stateToken)
-    stateToken           = characterStateChar <* whitespaceInline
-    bitPack              = toBits (zeroBits :: Word64) characterStateValues
+    numericSegment       = (,) <$> (taxonName <* whitespaceInline) <*> (fmap Discrete <$> discreteSequence)
 
 dnaInterleaveBlock :: MonadParsec s m Char => m (DList TaxonInfo)
 dnaInterleaveBlock = dnaIdentifierTag *> (DL.fromList <$> symbol (dnaSegment `sepEndBy1` segmentTerminal))
   where
     dnaIdentifierTag   = tagIdentifier $ keyword "dna" 3 -- use keyword, handles lookAhead after the 'a'
-    dnaSegment         = (,) <$> (taxonName <* whitespaceInline) <*> many dnaCharacter
-    dnaCharacterValues = "AGCT-?"
-    dnaCharacter       = Dna <$> (singletonCharacter <|> ambiguityCharacter) <* whitespaceInline
-    singletonCharacter = bitPack . pure <$> stateToken
-    ambiguityCharacter = bitPack <$> withinBraces (some stateToken)
-    stateToken         = oneOf' dnaCharacterValues <* whitespaceInline
-    bitPack            = toBits (zeroBits :: Word8) dnaCharacterValues
+    dnaSegment         = (,) <$> (taxonName <* whitespaceInline) <*> (fmap Dna <$> dnaSequence)
+
+proteinInterleaveBlock :: MonadParsec s m Char => m (DList TaxonInfo)
+proteinInterleaveBlock = proteinIdentifierTag *> (DL.fromList <$> symbol (proteinSegment `sepEndBy1` segmentTerminal))
+  where
+    proteinIdentifierTag   = tagIdentifier $ keyword "protein" 4
+    proteinSegment         = (,) <$> (taxonName <* whitespaceInline) <*> (fmap Protein <$> proteinSequence)
 
 defaultInterleaveBlock :: MonadParsec s m Char => m (DList TaxonInfo)
 defaultInterleaveBlock = numericSegments
+
+discreteSequence :: MonadParsec s m Char => m [TntDiscreteCharacter]
+discreteSequence = many discreteCharacter
+  where
+    discreteCharacter         = (ambiguityCharacter <|> singletonCharacter) <* whitespaceInline
+    singletonCharacter        = bitPack . pure <$> stateToken
+    ambiguityCharacter        = bitPack <$> (validateAmbiguityGroup =<< withinBraces (many stateToken))
+    stateToken                = characterStateChar <* whitespaceInline
+    bitPack                   = foldr (.|.) zeroBits . catMaybes . fmap (`lookup` deserializeStateDiscrete)
+    validateAmbiguityGroup [] = fail "An ambiguity group containing no characters was found."
+    validateAmbiguityGroup xs
+      | null dupes = pure xs
+      | otherwise  = fail $ "An ambiguity group contains duplicate characters: " ++ show dupes ++ "."
+      where
+        dupes = duplicates xs
+
+dnaSequence :: MonadParsec s m Char => m [TntDnaCharacter]
+dnaSequence = mapM discreteToDna =<< discreteSequence
+
+discreteToDna :: MonadParsec s m Char => TntDiscreteCharacter -> m TntDnaCharacter
+discreteToDna character = foldl (.|.) zeroBits <$> mapM f flags
+  where
+    flags = bitsToFlags character
+    toDna = (`lookup` deserializeStateDna) . (serializeStateDiscrete !)
+    f x   = case toDna x of
+              Nothing -> fail $ "The character state '" ++ [serializeStateDiscrete ! x] ++ "' is not a valid DNA character state." 
+              Just b  -> pure b
+
+proteinSequence :: MonadParsec s m Char => m [TntProteinCharacter]
+proteinSequence = mapM discreteToProtein =<< discreteSequence
+
+discreteToProtein :: MonadParsec s m Char => TntDiscreteCharacter -> m TntProteinCharacter
+discreteToProtein character = foldl (.|.) zeroBits <$> mapM f flags
+  where
+    flags     = bitsToFlags character
+    toProtein = (`lookup` deserializeStateProtein) . (serializeStateDiscrete !)
+    f x       = case toProtein x of
+                  Nothing -> fail $ "The character state '" ++ [serializeStateDiscrete ! x] ++ "' is not a valid amino acid character state." 
+                  Just b  -> pure b
 
 segmentTerminal :: MonadParsec s m Char => m Char
 segmentTerminal = whitespaceInline *> endOfLine <* whitespace
@@ -184,4 +224,6 @@ tagIdentifier :: MonadParsec s m Char => m a -> m ()
 tagIdentifier c = symbol (char '&') *> symbol (withinBraces c) $> ()
   
 withinBraces :: MonadParsec s m Char => m a -> m a
-withinBraces = between (char '[' <* whitespaceInline) (char ']' <* whitespaceInline)
+withinBraces = between (f '[') (f ']')
+  where
+    f c = char c <* whitespaceInline 

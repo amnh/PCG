@@ -2,7 +2,7 @@
 module File.Format.TNT.Command.Cost where
 
 import           Data.Functor             (($>))
-import           Data.Foldable            (maximumBy)
+import           Data.Foldable            (toList,maximumBy)
 import           Data.DList               (DList,append)
 import qualified Data.DList         as DL (toList,fromList)
 import           Data.IntMap              (IntMap,insertWith)
@@ -48,14 +48,14 @@ costBody = do
 condenseToMatrix :: (Foldable f, Functor f) => f TransitionCost -> Matrix Double
 condenseToMatrix costs = matrix dimensions dimensions value
   where
-    dimensions   = succ . fromJust $ maximumState `indexOf` characterStateValues
+    dimensions   = succ . fromJust $ maximumState `indexOf` discreteStateValues
     maximumState = maximum $ f <$> costs
       where
         f tc = max (maximum $ origins tc) (maximum $ terminals tc)
     value (i,j) = fromMaybe 1 $ foldl f Nothing costs
       where
-        i' = characterStateValues ! i
-        j' = characterStateValues ! j
+        i' = discreteStateValues ! i
+        j' = discreteStateValues ! j
         f m x
           | inject || (symetric x && surject) = Just $ costValue x
           | otherwise                         = m
