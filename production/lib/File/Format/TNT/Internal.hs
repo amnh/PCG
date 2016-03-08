@@ -140,18 +140,35 @@ data TntCharacter
    = Continuous TntContinuousCharacter
    | Discrete   TntDiscreteCharacter
    | Dna        TntDnaCharacter
+   | Protein    TntProteinCharacter
    deriving (Show)
 
+-- | A 'TntContinuousCharacter' is an real valued character. Continuous
+--   characters can have negative values. Continuous values are serialized
+--   textually as decimal values or integral values, scientific notation supported.
 type TntContinuousCharacter = Double
 
--- | A TntDiscreteCharacter is an integral value in the range [0..63]. Discrete
+-- | A 'TntDiscreteCharacter' is an integral value in the range '[0..63]'. Discrete
 --   values are serialized textualy as one of the 64  values:
 --   '[0..9] ++ [\'A\'..\'B\'] ++ [\'a\'..\'z\'] ++ "-?"'.
 --   Each value coresponds to it's respective bit in the 'Int64'. Ambiguity groups
 --   are represented byt 'Int64' values with multiple set bits.
-
 type TntDiscreteCharacter   = Word64
+
+-- | A 'TntDnaCharacter' is an integral value in the range '[0..3]', or if gap
+--   characters are treated as a fifth state, then values are in the range [0..4]. 
+--   Discrete values are serialized textualy as the DNA IUPAC codes case-insensitively,
+--   along with \'-\' & \'?\' characters representing gap or missing data respecitively.
+--   Gap represents an ambiguity group of all possible proteins unless gaps are
+--   treated as a fifth state. Missing represents the empty ambiguity group.
 type TntDnaCharacter        = Word8
+
+-- | A 'TntProteinCharacter' is an integral value in the range '[0..20]'. 
+--   Discrete values are serialized textualy as the protein IUPAC codes case-insensitively,
+--   along with \'-\' & \'?\' characters representing gap or missing data respecitively.
+--   Gap represents an ambiguity group of all possible proteins. Missing represents
+--   the empty ambiguity group.
+type TntProteinCharacter    = Word32
 
 -- CharacterMetaData types
 --------------------------------------------------------------------------------
