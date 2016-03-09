@@ -26,11 +26,11 @@ import Test.Tasty
 import Test.Tasty.HUnit
 import Test.Tasty.QuickCheck
 
-import qualified Data.IntMap       as IM  (insert, singleton, fromList)
+import qualified Data.IntMap       as IM  (insert, keys, singleton, fromList)
 import qualified Data.HashMap.Lazy as HM  (insert, fromList, singleton)
 import Data.Vector                        (singleton, fromList, cons, (!))
 import qualified Data.Vector       as V   ((++), zipWith, and)
-import qualified Data.IntSet       as IS  (singleton)
+import qualified Data.IntSet       as IS  (singleton, toList)
 import Data.Monoid
 
 import Debug.Trace
@@ -131,8 +131,8 @@ joinProperties = testGroup "Properties hold" [enoughEdges, outEdgesGood]
                 matchEdges tree1 tree2 = 
                     let
                         result = tree1 <> tree2
-                        checkParents = V.zipWith (\n e -> (IS.toList $ inNodes e) == (parents n)) (nodes result) (edges result)
-                        checkChildren = V.zipWith (\n e -> (IM.keys $ outNodes e) == (children n)) (nodes result) (edges result)
+                        checkParents  = V.zipWith (\n e -> (IS.toList $ inNodes  e) == (parents  n)) (nodes result) (edges result)
+                        checkChildren = V.zipWith (\n e -> (IM.keys   $ outNodes e) == (children n)) (nodes result) (edges result)
                     in V.and checkParents && V.and checkChildren
 
 subsetting :: TestTree
