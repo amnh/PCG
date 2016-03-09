@@ -180,6 +180,7 @@ newtype TntProteinCharacter    = TntPro Word32 deriving (Bits,Eq,FiniteBits,Ord)
 
 instance Show TntDiscreteCharacter where
   show x
+    | null str        = [serializeStateDiscrete ! zeroBits]
     | isSingleton str = str
     | otherwise       = "[" ++ str ++ "]"
     where
@@ -190,6 +191,7 @@ instance Show TntDnaCharacter where
 
 instance Show TntProteinCharacter where
   show x
+    | x == zeroBits   = [serializeStateDiscrete ! x]
     | isSingleton str = str
     | otherwise       = "[" ++ str ++ "]"
     where
