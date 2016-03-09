@@ -125,6 +125,16 @@ joinProperties = testGroup "Properties hold" [enoughEdges, outEdgesGood]
                     in trace ("result of edge check " ++ show result)
                         V.and checks
 
+        allEdgeCheck = testProperty "Parent/children relationships match edge relationships" matchEdges
+            where
+                matchEdges :: DAG -> DAG -> Bool
+                matchEdges tree1 tree2 = 
+                    let
+                        result = tree1 <> tree2
+                        checkParents = V.zipWith (\n e -> (IS.toList $ inNodes e) == (parents n)) (nodes result) (edges result)
+                        checkChildren = V.zipWith (\n e -> (IM.keys $ outNodes e) == (children n)) (nodes result) (edges result)
+                    in V.and checkParents && V.and checkChildren
+
 subsetting :: TestTree
 subsetting = testGroup "Check correct subsetting of trees" [twoNode, smallerThan, threeNode, conservesChars, identity]
     where
