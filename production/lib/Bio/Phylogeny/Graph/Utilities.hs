@@ -113,7 +113,7 @@ appendAt t1@(DAG names seqs chars n e r) t2@(DAG names' seqs' chars' n' e' r') h
                     (allEdges ! hCode) <> (EdgeSet mempty (IM.singleton (r' + shift) (EdgeInfo 0 (allNodes ! hCode) (allNodes ! (r' + shift)) Nothing)))
       hangedUpdate = --trace ("update hanged node " ++ show newEdges ++ " " ++ show r')
                       (allEdges ! (r' + shift)) <> (EdgeSet (IS.singleton hCode) mempty) 
-      updateAbove edge index = edge {outNodes = IM.update (\val -> Just $ val {terminal = allNodes ! index}) index (outNodes e)}
+      --updateAbove edge index = edge {outNodes = IM.update (\val -> Just $ val {terminal = allNodes ! index}) index (outNodes e)}
       connectEdges = allEdges // [(hCode, hangUpdate), (r' + shift, hangedUpdate)]
       --newRootEdge = EdgeSet (IS.singleton hCode) mempty
       --oldRootEdge = EdgeSet mempty (IM.singleton (r' + shift) (EdgeInfo 0 (allNodes ! hCode) (allNodes ! (r' + shift)) Nothing))
