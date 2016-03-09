@@ -110,11 +110,8 @@ xreadCharCount = symbol $ flexibleNonNegativeInt "character count"
 xreadSequences :: MonadParsec s m Char => m (NonEmpty TaxonInfo)
 xreadSequences = NE.fromList . deinterleaveTaxa <$> taxonSequence
   where
---    deinterleaveTaxa :: [TaxonInfo] -> [TaxonInfo]
     deinterleaveTaxa = assocs . fmap toList . foldr f mempty
-      where
---        f :: TaxonInfo -> Map TaxonName (DList String) -> Map TaxonName (DList String)
-        f (taxonName, taxonSeq) = insertWith append taxonName (DL.fromList taxonSeq)
+    f (taxonName, taxonSeq) = insertWith append taxonName (DL.fromList taxonSeq)
 
 -- | Parses a taxon name and sequence of characters for a given character.
 -- Character values can be one of 64 states ordered @[0..9,A..Z,a..z]@ and also the Chars @\'-\'@ & @\'?\'@.
@@ -132,46 +129,6 @@ taxonSequenceSegment = choice [ try taggedInterleaveBlock
                               ,    defaultInterleaveBlock
                               ]
 
-{-
-continuousInterleaveBlock :: MonadParsec s m Char => m (DList TaxonInfo)
-continuousInterleaveBlock = continuousIdentifierTag *> (DL.fromList <$> symbol (continuousSegment `sepEndBy1` segmentTerminal))
-  where
-    continuousIdentifierTag = tagIdentifier $ keyword "continuous" 4
-    continuousSegment       = (,) <$> (taxonName <* whitespaceInline) <*> many stateToken
-    stateToken              = Continuous <$> double <* whitespaceInline
-
-numericInterleaveBlock :: MonadParsec s m Char => m (DList TaxonInfo)
-numericInterleaveBlock = numericIdentifierTag *> numericSegments
-  where
-    numericIdentifierTag = tagIdentifier $ keyword "numeric" 3
-
-numericSegments :: MonadParsec s m Char => m (DList TaxonInfo)
-numericSegments = DL.fromList <$> symbol (numericSegment `sepEndBy1` segmentTerminal)
-  where
-    numericSegment       = (,) <$> (taxonName <* whitespaceInline) <*> (fmap Discrete <$> discreteSequence)
-
-dnaInterleaveBlock :: MonadParsec s m Char => m (DList TaxonInfo)
-dnaInterleaveBlock = dnaIdentifierTag *> dnaSegments
-  where
-    dnaIdentifierTag   = tagIdentifier $ keyword "dna" 3 -- use keyword, handles lookAhead after the 'a'
-
-gapsInterleaveBlock :: MonadParsec s m Char => m (DList TaxonInfo)
-gapsInterleaveBlock = gapsIdentifierTag *> dnaSegments
-  where
-    gapsIdentifierTag   = tagIdentifier $ keyword "gaps" 3
-
-nogapsInterleaveBlock :: MonadParsec s m Char => m (DList TaxonInfo)
-nogapsInterleaveBlock = nogapsIdentifierTag *> (dnaGapsToMissings <$> dnaSegments)
-  where
-    nogapsIdentifierTag = tagIdentifier $ keyword "nogaps" 5
-
-proteinInterleaveBlock :: MonadParsec s m Char => m (DList TaxonInfo)
-proteinInterleaveBlock = proteinIdentifierTag *> (DL.fromList <$> symbol (proteinSegment `sepEndBy1` segmentTerminal))
-  where
-    proteinIdentifierTag   = tagIdentifier $ keyword "protein" 4
-    proteinSegment         = (,) <$> (taxonName <* whitespaceInline) <*> (fmap Protein <$> proteinSequence)
-
--}
 defaultInterleaveBlock :: MonadParsec s m Char => m (DList TaxonInfo)
 defaultInterleaveBlock = discreteSegments
 
