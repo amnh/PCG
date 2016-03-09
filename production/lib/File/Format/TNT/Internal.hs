@@ -1,4 +1,4 @@
-{-# LANGUAGE DeriveFoldable, DeriveFunctor, DeriveTraversable, FlexibleContexts #-}
+{-# LANGUAGE BangPatterns, DeriveFoldable, DeriveFunctor, DeriveTraversable, FlexibleContexts, GeneralizedNewtypeDeriving #-}
 module File.Format.TNT.Internal where
 
 import           Control.Monad            ((<=<))
@@ -8,6 +8,7 @@ import           Data.Foldable            (toList)
 import           Data.Key                 ((!))
 import           Data.List                (inits)
 import           Data.List.NonEmpty       (NonEmpty)
+import           Data.List.Utility
 import           Data.Matrix.NotStupid    (Matrix)
 import           Data.Map                 (Map,assocs,insert,keys)
 import qualified Data.Map            as M (fromList)
@@ -154,33 +155,45 @@ data TntCharacter
 --   textually as decimal values or integral values, scientific notation supported.
 type TntContinuousCharacter = Double
 
--- | A 'TntDiscreteCharacter' is an integral value in the range '[0..63]'. Discrete
+-- | A 'TntDiscreteCharacter' is an integral value in the range '[0..62]'. Discrete
 --   values are serialized textualy as one of the 64  values:
 --   '[0..9] ++ [\'A\'..\'B\'] ++ [\'a\'..\'z\'] ++ "-?"'.
+--   Missing \'?\' represents the empty ambiguity group.
 --   Each value coresponds to it's respective bit in the 'Int64'. Ambiguity groups
---   are represented byt 'Int64' values with multiple set bits.
-type TntDiscreteCharacter   = Word64
+--   are represented by 'Int64' values with multiple set bits.
+newtype TntDiscreteCharacter   = TntDis Word64 deriving (Bits,Eq,Ord,FiniteBits)
 
--- | A 'TntDnaCharacter' is an integral value in the range '[0..3]', or if gap
---   characters are treated as a fifth state, then values are in the range [0..4]. 
+-- | A 'TntDnaCharacter' represents a nucleotide ('"ACGT"') as an integral value
+--   in the range '[0..3]' respectively. If gap characters (\'-\') are treated as a fifth
+--   state then values the additional value '4' is added to the integral range. 
 --   Discrete values are serialized textualy as the DNA IUPAC codes case-insensitively,
 --   along with \'-\' & \'?\' characters representing gap or missing data respecitively.
 --   Gap represents an ambiguity group of all possible proteins unless gaps are
 --   treated as a fifth state. Missing represents the empty ambiguity group.
-type TntDnaCharacter        = Word8
+newtype TntDnaCharacter        = TntDna Word8 deriving (Bits,Eq,FiniteBits,Ord)
 
 -- | A 'TntProteinCharacter' is an integral value in the range '[0..20]'. 
 --   Discrete values are serialized textualy as the protein IUPAC codes case-insensitively,
 --   along with \'-\' & \'?\' characters representing gap or missing data respecitively.
---   Gap represents an ambiguity group of all possible proteins. Missing represents
---   the empty ambiguity group.
-type TntProteinCharacter    = Word32
+--   Missing represents the empty ambiguity group.
+newtype TntProteinCharacter    = TntPro Word32 deriving (Bits,Eq,FiniteBits,Ord)
 
-{-
-instance Show TntCharacter where
-  show (Continuous x) = show x
-  show (Discrete   x) = show x
--}
+instance Show TntDiscreteCharacter where
+  show x
+    | isSingleton str = str
+    | otherwise       = "[" ++ str ++ "]"
+    where
+      str = (serializeStateDiscrete !) <$> bitsToFlags x
+
+instance Show TntDnaCharacter where
+  show x = [serializeStateDna ! x]
+
+instance Show TntProteinCharacter where
+  show x
+    | isSingleton str = str
+    | otherwise       = "[" ++ str ++ "]"
+    where
+      str = (serializeStateProtein !) <$> bitsToFlags x
 
 -- CharacterMetaData types
 --------------------------------------------------------------------------------
@@ -398,7 +411,6 @@ deserializeStateProtein :: Map Char TntProteinCharacter
 deserializeStateProtein = (insert '?' zeroBits) . M.fromList $ zip (toList proteinStateValues) (bit <$> [0..])
 
 
-
 bitsToFlags :: FiniteBits b => b -> [b]
 bitsToFlags b
   | zeroBits == b = []
@@ -410,7 +422,8 @@ findFirstSet :: FiniteBits b => b -> Int
 findFirstSet = countTrailingZeros
 
 swapMap :: (Ord k, Ord a) => Map k a -> Map a k
-swapMap = M.fromList . fmap swap . assocs 
+swapMap x = let !tups = assocs x
+            in M.fromList $ swap <$> tups
 
 -- | Consumes trailing whitespace after the parameter combinator.
 symbol :: MonadParsec s m Char => m a -> m a

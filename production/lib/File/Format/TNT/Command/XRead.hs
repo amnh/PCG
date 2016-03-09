@@ -175,12 +175,17 @@ discreteSequence = many discreteCharacter
     ambiguityCharacter        = bitPack <$> (validateAmbiguityGroup =<< withinBraces (many stateToken))
     stateToken                = characterStateChar <* whitespaceInline
     bitPack                   = foldr (.|.) zeroBits . catMaybes . fmap (`lookup` deserializeStateDiscrete)
-    validateAmbiguityGroup [] = fail "An ambiguity group containing no characters was found."
     validateAmbiguityGroup xs
-      | null dupes = pure xs
-      | otherwise  = fail $ "An ambiguity group contains duplicate characters: " ++ show dupes ++ "."
+      | null xs    = fail   "An ambiguity group containing no character states was found."
+      | hasDupes   = fail $ "An ambiguity group contains duplicate character states: " ++ show dupes ++ "."
+      | hasMissing = fail   "An ambiguity group contains a \"missing data\" character state: '?'."
+      | hasGap     = fail   "An ambiguity group contains a \"gap\" character state: '-'."
+      | otherwise  = pure xs
       where
-        dupes = duplicates xs
+        hasDupes   = not $ null dupes
+        dupes      = duplicates xs
+        hasMissing = any (=='?') xs && not (isSingleton xs)
+        hasGap     = any (=='-') xs && not (isSingleton xs)
 
 dnaSequence :: MonadParsec s m Char => m [TntDnaCharacter]
 dnaSequence = mapM discreteToDna =<< discreteSequence

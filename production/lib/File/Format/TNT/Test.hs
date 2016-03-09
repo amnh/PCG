@@ -309,17 +309,20 @@ testCommandXRead = testGroup "XREAD command test" [xreadHeader',xreadDiscreteSeq
         nonEmptyAmbiguityGroup = testProperty "Parses non-empty ambiguity group" f
           where
             f :: (DiscreteCharacters, DiscreteCharacters) -> Bool
-            f (dcs,amb) = all isRight $ parse discreteSequence "" <$> opts
+            f (dcs,amb) = all (`notElem` notAmbiguous) grp && all isRight res
+                       || any (`elem`    notAmbiguous) grp && all isLeft  res
               where
-                str  = getDiscreteCharacters dcs
+                notAmbiguous = "-?"
+                res  = parse discreteSequence "" <$> opts
                 grp  = "[" ++ nub (getDiscreteCharacters amb) ++ "]"
+                str  = getDiscreteCharacters dcs
                 n    = length str
                 opts = [ p ++ grp ++ s | i <- [0..n], (p,s) <- pure $ splitAt i str ]
         onlyDiscreteValues = testProperty "Parses only appropriate characters" f
           where
             f :: WordToken -> Bool
-            f tok = (all (`elem`    discreteStateValues) str && isRight res)
-                 || (any (`notElem` discreteStateValues) str && isLeft  res)
+            f tok = all (`elem`    discreteStateValues) str && isRight res
+                 || any (`notElem` discreteStateValues) str && isLeft  res
               where
                 res  = parse (discreteSequence <* eof) "" str
                 str  = getWordToken tok
@@ -328,8 +331,8 @@ testCommandXRead = testGroup "XREAD command test" [xreadHeader',xreadDiscreteSeq
         onlyDnaValues = testProperty "Parses only appropriate characters" f
           where
             f :: WordToken -> Bool
-            f tok = (all (`elem`    dnaStateValues) str && isRight res)
-                 || (any (`notElem` dnaStateValues) str && isLeft  res)
+            f tok = all (`elem`    dnaStateValues) str && isRight res
+                 || any (`notElem` dnaStateValues) str && isLeft  res
               where
                 res  = parse (dnaSequence <* eof) "" str
                 str  = getWordToken tok
