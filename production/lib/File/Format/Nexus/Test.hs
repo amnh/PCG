@@ -14,7 +14,7 @@ import           Data.Set                   (toList)
 import           File.Format.Nexus.Data
 import           File.Format.Nexus.Parser
 import           File.Format.Nexus.Validate
-import           Test.Custom
+import           Test.Custom.Parse
 import           Test.Tasty                 (TestTree,testGroup)
 import           Test.Tasty.HUnit
 import           Test.Tasty.QuickCheck

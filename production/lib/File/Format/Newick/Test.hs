@@ -7,7 +7,7 @@ module File.Format.Newick.Test
 import Data.Either.Combinators    (isRight,rightToMaybe)
 import File.Format.Newick.Internal
 import File.Format.Newick.Parser
-import Test.Custom                (parseEquals,parseFailure,parseSuccess)
+import Test.Custom.Parse          (parseEquals,parseFailure,parseSuccess)
 import Test.Tasty                 (TestTree,testGroup)
 import Test.Tasty.HUnit
 import Test.Tasty.QuickCheck

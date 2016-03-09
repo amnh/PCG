@@ -131,6 +131,8 @@ taxonSequenceSegment :: MonadParsec s m Char => m (DList TaxonInfo)
 taxonSequenceSegment = choice [ try continuousInterleaveBlock
                               , try numericInterleaveBlock
                               , try dnaInterleaveBlock
+                              , try gapsInterleaveBlock
+                              , try nogapsInterleaveBlock
                               , try proteinInterleaveBlock
                               , defaultInterleaveBlock
                               ]
@@ -153,10 +155,31 @@ numericSegments = DL.fromList <$> symbol (numericSegment `sepEndBy1` segmentTerm
     numericSegment       = (,) <$> (taxonName <* whitespaceInline) <*> (fmap Discrete <$> discreteSequence)
 
 dnaInterleaveBlock :: MonadParsec s m Char => m (DList TaxonInfo)
-dnaInterleaveBlock = dnaIdentifierTag *> (DL.fromList <$> symbol (dnaSegment `sepEndBy1` segmentTerminal))
+dnaInterleaveBlock = dnaIdentifierTag *> dnaSegments
   where
     dnaIdentifierTag   = tagIdentifier $ keyword "dna" 3 -- use keyword, handles lookAhead after the 'a'
-    dnaSegment         = (,) <$> (taxonName <* whitespaceInline) <*> (fmap Dna <$> dnaSequence)
+
+gapsInterleaveBlock :: MonadParsec s m Char => m (DList TaxonInfo)
+gapsInterleaveBlock = gapsIdentifierTag *> dnaSegments
+  where
+    gapsIdentifierTag   = tagIdentifier $ keyword "gaps" 3
+
+nogapsInterleaveBlock :: MonadParsec s m Char => m (DList TaxonInfo)
+nogapsInterleaveBlock = nogapsIdentifierTag *> (gapsToMissings <$> dnaSegments)
+  where
+    nogapsIdentifierTag = tagIdentifier $ keyword "nogaps" 5
+    gapsToMissings      = fmap (second (fmap gapToMissing))
+      where
+        gapToMissing e@(Dna x)
+          | x `testBit` gapBit = Dna missing
+          | otherwise          = e
+        gapBit  = findFirstSet $ deserializeStateDna ! '-'
+        missing = deserializeStateDna ! '?'
+
+dnaSegments :: MonadParsec s m Char => m (DList TaxonInfo)
+dnaSegments = DL.fromList <$> symbol (dnaSegment `sepEndBy1` segmentTerminal)
+  where
+    dnaSegment = (,) <$> (taxonName <* whitespaceInline) <*> (fmap Dna <$> dnaSequence)
 
 proteinInterleaveBlock :: MonadParsec s m Char => m (DList TaxonInfo)
 proteinInterleaveBlock = proteinIdentifierTag *> (DL.fromList <$> symbol (proteinSegment `sepEndBy1` segmentTerminal))
@@ -232,3 +255,7 @@ withinBraces :: MonadParsec s m Char => m a -> m a
 withinBraces = between (f '[') (f ']')
   where
     f c = char c <* whitespaceInline 
+
+-- | 
+--nightmare :: MonadParsec s m Char => m (DList TaxonInfo)
+--nightmare
