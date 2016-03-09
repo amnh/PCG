@@ -26,8 +26,8 @@ isSingleton = f . toList
     f  _  = False
 
 -- | Returns the list of elements which are not unique in the input list.
-duplicates :: Ord a => [a] -> [a]
-duplicates = duplicates' . sort
+duplicates :: (Foldable t, Ord a) => t a -> [a]
+duplicates = duplicates' . sort . toList
   where 
     duplicates' []       = []
     duplicates' [_]      = []
