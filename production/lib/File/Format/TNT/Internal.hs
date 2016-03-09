@@ -3,14 +3,14 @@ module File.Format.TNT.Internal where
 
 import           Control.Monad            ((<=<))
 import           Data.Bits
-import           Data.Char                (isAlpha,isSpace,toLower)
+import           Data.Char                (isAlpha,isLower,isSpace,isUpper,toLower,toUpper)
 import           Data.Foldable            (toList)
 import           Data.Key                 ((!))
 import           Data.List                (inits)
 import           Data.List.NonEmpty       (NonEmpty)
 import           Data.List.Utility
 import           Data.Matrix.NotStupid    (Matrix)
-import           Data.Map                 (Map,assocs,insert,keys)
+import           Data.Map                 (Map,assocs,insert,keys,union)
 import qualified Data.Map            as M (fromList)
 import           Data.Maybe               (catMaybes)
 import           Data.Tuple               (swap)
@@ -191,7 +191,7 @@ instance Show TntDnaCharacter where
 
 instance Show TntProteinCharacter where
   show x
-    | x == zeroBits   = [serializeStateDiscrete ! x]
+    | x == zeroBits   = [serializeStateProtein ! x]
     | isSingleton str = str
     | otherwise       = "[" ++ str ++ "]"
     where
@@ -362,19 +362,22 @@ characterStateChar = oneOf (toList discreteStateValues)
 
 -- | The only 64 valid state characters for a TNT file
 discreteStateValues :: Vector Char
-discreteStateValues = V.fromList $ ['0'..'9'] ++ ['A'..'Z'] ++ ['a'..'z'] ++ "-?"
+discreteStateValues = V.fromList $ keys deserializeStateDiscrete
 
 dnaStateValues :: Vector Char
 dnaStateValues = V.fromList $ keys deserializeStateDna
 
 proteinStateValues :: Vector Char
-proteinStateValues = V.fromList "ACDEFGHIKLMNPQRSTVWY-?"
+proteinStateValues = V.fromList $ keys deserializeStateProtein
 
 serializeStateDiscrete :: Map TntDiscreteCharacter Char
 serializeStateDiscrete = swapMap deserializeStateDiscrete
 
 deserializeStateDiscrete :: Map Char TntDiscreteCharacter
-deserializeStateDiscrete = (insert '?' zeroBits) . M.fromList $ zip (toList discreteStateValues) (bit <$> [0..])
+deserializeStateDiscrete = insert '?' allBits core
+  where
+    allBits = foldl (.|.) zeroBits core
+    core    = M.fromList $ zip (['0'..'9'] ++ ['A'..'Z'] ++ ['a'..'z'] ++ "-") (bit <$> [0..])
 
 serializeStateDna :: Map TntDnaCharacter Char
 serializeStateDna = swapMap deserializeStateDna
@@ -383,36 +386,49 @@ serializeStateDna = swapMap deserializeStateDna
 deserializeStateDna :: Map Char TntDnaCharacter
 deserializeStateDna = casei core
   where
-    casei m = foldl (\m (k,v) -> insert (toLower k) v m) m $ assocs m
-    ref     = (core !)
-    core    = M.fromList
-            [ ('?', zeroBits)
-            , ('A', bit 0   )
-            , ('G', bit 1   )
-            , ('C', bit 2   )
-            , ('T', bit 3   )
-            , ('-', bit 4   ) -- assume 5th state
-            , ('U', ref 'T' )
-            , ('R', ref 'A' .|. ref 'G')
-            , ('M', ref 'A' .|. ref 'C')
-            , ('W', ref 'A' .|. ref 'T')
-            , ('S', ref 'G' .|. ref 'C')
-            , ('K', ref 'G' .|. ref 'T')
-            , ('T', ref 'C' .|. ref 'T')
-            , ('V', ref 'A' .|. ref 'G' .|. ref 'C')
-            , ('D', ref 'A' .|. ref 'G' .|. ref 'T')
-            , ('H', ref 'A' .|. ref 'C' .|. ref 'T')
-            , ('B', ref 'G' .|. ref 'C' .|. ref 'T')
-            , ('N', ref 'A' .|. ref 'G' .|. ref 'C' .|. ref 'T')
-            ]
+    ref  = (core !)
+    core = M.fromList
+         [ ('A', bit 0   )
+         , ('G', bit 1   )
+         , ('C', bit 2   )
+         , ('T', bit 3   )
+         , ('-', bit 4   ) -- assume 5th state
+         , ('U', ref 'T' )
+         , ('R', ref 'A' .|. ref 'G')
+         , ('M', ref 'A' .|. ref 'C')
+         , ('W', ref 'A' .|. ref 'T')
+         , ('S', ref 'G' .|. ref 'C')
+         , ('K', ref 'G' .|. ref 'T')
+         , ('T', ref 'C' .|. ref 'T')
+         , ('V', ref 'A' .|. ref 'G' .|. ref 'C')
+         , ('D', ref 'A' .|. ref 'G' .|. ref 'T')
+         , ('H', ref 'A' .|. ref 'C' .|. ref 'T')
+         , ('B', ref 'G' .|. ref 'C' .|. ref 'T')
+         , ('N', ref 'A' .|. ref 'G' .|. ref 'C' .|. ref 'T')
+         , ('X', ref 'N')
+         , ('?', ref 'A' .|. ref 'G' .|. ref 'C' .|. ref 'T' .|. ref '-')
+         ]
 
 serializeStateProtein :: Map TntProteinCharacter Char
 serializeStateProtein = swapMap deserializeStateProtein
 
 deserializeStateProtein :: Map Char TntProteinCharacter
-deserializeStateProtein = (insert '?' zeroBits) . M.fromList $ zip (toList proteinStateValues) (bit <$> [0..])
+deserializeStateProtein = insert '?' allBits . casei $ core `union` multi
+  where
+    core    = M.fromList $ zip "ACDEFGHIKLMNPQRSTVWY-" (bit <$> [0..])
+    multi   = M.fromList [('B', ref 'D' .|. ref 'N'), ('Z', ref 'E' .|. ref 'Q'), ('X', allBits `clearBit` gapBit )]
+    ref     = (core !)
+    allBits = foldl (.|.) zeroBits core
+    gapBit  = findFirstSet $ core ! '-'
 
-
+casei :: Map Char v -> Map Char v 
+casei x = foldl f x $ assocs x
+  where
+    f m (k,v)
+      | isLower k = insert (toUpper k) v m
+      | isUpper k = insert (toLower k) v m
+      | otherwise = m
+                    
 bitsToFlags :: FiniteBits b => b -> [b]
 bitsToFlags b
   | zeroBits == b = []
