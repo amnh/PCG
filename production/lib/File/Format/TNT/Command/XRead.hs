@@ -128,8 +128,8 @@ taxonName = notFollowedBy (string "&[") *> some validNameChar
     validNameChar = satisfy (\x -> (not . isSpace) x && x `notElem` "(),;")
 
 taxonSequenceSegment :: MonadParsec s m Char => m (DList TaxonInfo)
-taxonSequenceSegment = choice [  taggedInterleaveBlock
-                              , defaultInterleaveBlock
+taxonSequenceSegment = choice [ try taggedInterleaveBlock
+                              ,    defaultInterleaveBlock
                               ]
 
 {-
