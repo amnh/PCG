@@ -31,23 +31,11 @@ ccodeCommand = ccodeHeader *> ccodeBody <* symbol (char ';')
 ccodeHeader :: MonadParsec s m Char => m ()
 ccodeHeader = symbol $ keyword "ccode" 2
 
--- | Parses a single character index or a contiguous character range
-ccodeIndicies :: MonadParsec s m Char => m CharacterSet
-ccodeIndicies = choice $ try <$> [range, fromStart, single, toEnd, whole]
-  where
-    range     = Range     <$> num <* dot <*> num
-    fromStart = FromStart <$> num <* dot
-    single    = Single    <$> num
-    toEnd     = dot *> (ToEnd <$> num)
-    whole     = dot *> pure Whole
-    num       = symbol (nonNegInt <?> "sequence index value")
-    dot       = symbol (char '.')
-
 -- | A Uitility function for creating 'CCode' combinators
 ccodeMetaChange :: MonadParsec s m Char => Char -> CharacterState -> m CCode
 ccodeMetaChange c s = do
     _ <- symbol (char c)
-    i <- NE.fromList <$> some ccodeIndicies
+    i <- NE.fromList <$> some characterIndicies
     pure $ CCode s i
 
 -- | Parses a _Additive_ specification `CCode`
@@ -79,7 +67,7 @@ ccodeWeight :: MonadParsec s m Char => m CCode
 ccodeWeight = do
     _ <- symbol (char '/')
     w <- Weight <$> symbol (flexibleNonNegativeInt "weight value")
-    i <- NE.fromList <$> some ccodeIndicies
+    i <- NE.fromList <$> some characterIndicies
     pure $ CCode w i
 
 -- | Parses a _step_ specification `CCode`
@@ -87,7 +75,7 @@ ccodeSteps :: MonadParsec s m Char => m CCode
 ccodeSteps = do
     _ <- symbol (char '=')
     w <- Steps <$> symbol (flexibleNonNegativeInt "step value")
-    i <- NE.fromList <$> some ccodeIndicies
+    i <- NE.fromList <$> some characterIndicies
     pure $ CCode w i
 
 allowIncorrectSuffix :: MonadParsec s m Char => Char -> m (Maybe Char)

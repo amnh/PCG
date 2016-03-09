@@ -20,7 +20,10 @@ rebuild: phylocomgraph.cabal stack.yaml
 	stack build --haddock --test
 
 clean:
-	find . -type f -name '*.o' -delete && find . -type f -name '*.hi' -delete
+	find . -type f -name '*.o'  -delete
+	find . -type f -name '*.hi' -delete
+	find . -type f -name '*.*~' -delete
+	find . -type f -name '#*.*' -delete
 
 quick: phylocomgraph.cabal stack.yaml
 	stack build --test

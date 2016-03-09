@@ -7,9 +7,11 @@ module File.Format.TNT.Test
 import           Control.Monad              (filterM,join)
 import           Data.Char
 import           Data.Either.Combinators    (isLeft,isRight)
-import           Data.List                  (inits)
+import           Data.Foldable
+import           Data.List                  (inits,nub)
+import           Data.List.NonEmpty         (NonEmpty)
+import qualified Data.List.NonEmpty   as NE (fromList)
 import qualified Data.Map as M
-import           Data.Set                   (toList)
 import           File.Format.TNT.Parser
 import           File.Format.TNT.Command.CCode
 import           File.Format.TNT.Command.CNames
@@ -90,7 +92,7 @@ testCommandCCode = testGroup "CCODE command tests" [ccodeHeader',ccodeIndicies',
     ccodeIndicies' = testGroup "CCODE indexing format" indexFormats
       where
         indexFormats = zipWith makeFormat descriptions indicies
-        makeFormat str idx = testCase ("Parse " ++ str ++ " format: \"" ++ idx ++ "\"") $ parseSuccess ccodeIndicies idx
+        makeFormat str idx = testCase ("Parse " ++ str ++ " format: \"" ++ idx ++ "\"") $ parseSuccess characterIndicies idx
         descriptions = [ "single index"
                        , "index to end of sequence"
                        , "start of sequence to index"
@@ -282,7 +284,7 @@ testCommandTRead = testGroup "TREAD command tests" [treadHeader',treadLeaf',trea
                           ]
 
 testCommandXRead :: TestTree
-testCommandXRead = testGroup "XREAD command test" [xreadHeader']
+testCommandXRead = testGroup "XREAD command test" [xreadHeader',xreadDiscreteSequence,xreadDnaSequence,xreadProteinSequence]
   where
     xreadHeader' = testGroup "XREAD header" [beginsWithXREAD, possibleComment]
       where
@@ -294,7 +296,65 @@ testCommandXRead = testGroup "XREAD command test" [xreadHeader']
               where
                 input   = "XREAD '" ++ comment ++ "'"
                 comment = filter (/= '\'') $ getNonEmpty x
+    xreadDiscreteSequence = testGroup "XREAD discrete sequence" [emptyAmbiguityGroup, nonEmptyAmbiguityGroup, onlyDiscreteValues]
+      where
+        emptyAmbiguityGroup = testProperty "Fails to parse empty ambiguity group" f
+          where
+            f :: DiscreteCharacters -> Bool
+            f dcs = all isLeft $ parse discreteSequence "" <$> opts
+              where
+                str  = getDiscreteCharacters dcs
+                n    = length str
+                opts = [ p ++ "[]" ++ s | i <- [0..n], (p,s) <- pure $ splitAt i str ]
+        nonEmptyAmbiguityGroup = testProperty "Parses non-empty ambiguity group" f
+          where
+            f :: (DiscreteCharacters, DiscreteCharacters) -> Bool
+            f (dcs,amb) = all (`notElem` notAmbiguous) grp && all isRight res
+                       || any (`elem`    notAmbiguous) grp && all isLeft  res
+              where
+                notAmbiguous = "-?"
+                res  = parse discreteSequence "" <$> opts
+                grp  = "[" ++ nub (getDiscreteCharacters amb) ++ "]"
+                str  = getDiscreteCharacters dcs
+                n    = length str
+                opts = [ p ++ grp ++ s | i <- [0..n], (p,s) <- pure $ splitAt i str ]
+        onlyDiscreteValues = testProperty "Parses only appropriate characters" f
+          where
+            f :: WordToken -> Bool
+            f tok = all (`elem`    discreteStateValues) str && isRight res
+                 || any (`notElem` discreteStateValues) str && isLeft  res
+              where
+                res  = parse (discreteSequence <* eof) "" str
+                str  = getWordToken tok
+    xreadDnaSequence = testGroup "XREAD dna sequence" [onlyDnaValues]
+      where
+        onlyDnaValues = testProperty "Parses only appropriate characters" f
+          where
+            f :: WordToken -> Bool
+            f tok = all (`elem`    dnaStateValues) str && isRight res
+                 || any (`notElem` dnaStateValues) str && isLeft  res
+              where
+                res  = parse (dnaSequence <* eof) "" str
+                str  = getWordToken tok
+    xreadProteinSequence = testGroup "XREAD protein sequence" [onlyProteinValues]
+      where
+        onlyProteinValues = testProperty "Parses only appropriate characters" f
+          where
+            f :: WordToken -> Bool
+            f tok = (all (`elem`    proteinStateValues) str && isRight res)
+                 || (any (`notElem` proteinStateValues) str && isLeft  res)
+              where
+                res  = parse (proteinSequence <* eof) "" str
+                str  = getWordToken tok
+        
+        
 
+newtype DiscreteCharacters = DC (NonEmpty Char) deriving (Eq,Show)
+
+instance Arbitrary DiscreteCharacters where
+  arbitrary = fmap (DC . NE.fromList) . listOf1 . elements $ toList discreteStateValues
+
+getDiscreteCharacters (DC x) = toList x
 
 powerSet :: [a] -> [[a]]
 powerSet = filterM (const [False,True])
