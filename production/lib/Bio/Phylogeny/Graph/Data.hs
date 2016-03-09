@@ -71,3 +71,6 @@ data DAG
 -- | A graph is defined as a list of trees
 newtype Graph = Graph [DAG] deriving (Show, Eq)
 
+-- TODO decide the best way of storing the root edge (so info is maintained as root changes)
+-- possibly add it to the DAG structure (tuple as root)
+

@@ -29,7 +29,7 @@ import Test.Tasty.QuickCheck
 import qualified Data.IntMap       as IM  (insert, singleton, fromList)
 import qualified Data.HashMap.Lazy as HM  (insert, fromList, singleton)
 import Data.Vector                        (singleton, fromList, cons, (!))
-import qualified Data.Vector       as V   ((++))
+import qualified Data.Vector       as V   ((++), zipWith, and)
 import qualified Data.IntSet       as IS  (singleton)
 import Data.Monoid
 
@@ -45,7 +45,10 @@ conversion = testGroup "Conversion to and from topological trees" [nullTo]
 
 
 joinOps :: TestTree
-joinOps = testGroup "Check correct joining of trees" [nulladd, smalladd, nullJoin, twoJoin, threeJoin, seqJoin]
+joinOps = testGroup "Check correct joining of trees" [joinCases, joinProperties]
+
+joinCases :: TestTree
+joinCases = testGroup "Small test cases function" [nulladd, smalladd, nullJoin, twoJoin, threeJoin, seqJoin]
     where
         nulladd = testCase "New node added to empty tree gives a one node tree" (expectedTree @=? result)
         newNode = Node 0 True True [] [] mempty mempty mempty mempty mempty mempty 0 0
@@ -70,11 +73,11 @@ joinOps = testGroup "Check correct joining of trees" [nulladd, smalladd, nullJoi
         node4bUpdate = node4b {code = 1, isRoot = False, parents = [0]}
         node4aUpdate = node4a {children = [1], isLeaf = False}
         edges4 = fromList [EdgeSet mempty (IM.singleton 1 (EdgeInfo 0 node4aUpdate node4bUpdate Nothing)), EdgeSet (IS.singleton 0) mempty]
-        names4 = IM.fromList [(0, "0"), (1, "0a1")]
-        seqs4 = HM.fromList [("0", mempty), ("0a1", mempty)]
+        names4 = IM.fromList [(0, "0"), (1, "HTU 1")]
+        seqs4 = HM.fromList [("0", mempty), ("HTU 1", mempty)]
         expected4 = DAG names4 seqs4 mempty (fromList [node4aUpdate, node4bUpdate]) edges4 0
-        tree4a = DAG (IM.fromList [(0, "0")]) (HM.fromList [("0", mempty)]) mempty (fromList [node4a]) mempty 0
-        tree4b = DAG (IM.fromList [(0, "0")]) (HM.fromList [("0", mempty)]) mempty (fromList [node4b]) mempty 0
+        tree4a = DAG (IM.fromList [(0, "0")]) (HM.fromList [("0", mempty)]) mempty (fromList [node4a]) (singleton mempty) 0
+        tree4b = DAG (IM.fromList [(0, "0")]) (HM.fromList [("0", mempty)]) mempty (fromList [node4b]) (singleton mempty) 0
         result4 = tree4a <> tree4b
 
         nullJoin = testCase "Two node tree joined to empty tree gives a two node tree" (expected4 @=? result3)
@@ -84,8 +87,8 @@ joinOps = testGroup "Check correct joining of trees" [nulladd, smalladd, nullJoi
         node5aUpdate = node4a {code = 2, isRoot = False, parents = [0]}
         node4aUpdate' = node4a {children = [2, 1], isLeaf = False}
         edges5 = fromList [EdgeSet mempty (IM.fromList [(1, EdgeInfo 0 node4aUpdate' node4bUpdate Nothing), (2, EdgeInfo 0 node4aUpdate' node5aUpdate Nothing)]), EdgeSet (IS.singleton 0) mempty, EdgeSet (IS.singleton 0) mempty]
-        names5 = IM.insert 2 "0a2" names4
-        seqs5 = HM.insert "0a2" mempty seqs4
+        names5 = IM.insert 2 "HTU 2" names4
+        seqs5 = HM.insert "HTU 2" mempty seqs4
         expected5 = DAG names5 seqs5 mempty (fromList [node4aUpdate', node4bUpdate, node5aUpdate]) edges5 0
         result5 = result4 <> tree4a
 
@@ -101,6 +104,26 @@ joinOps = testGroup "Check correct joining of trees" [nulladd, smalladd, nullJoi
         tree6a = DAG (IM.fromList [(0, "0")]) (HM.fromList [("0", mempty)]) chars1 (fromList [node6a]) mempty 0
         tree6b = DAG (IM.fromList [(0, "0")]) (HM.fromList [("0", mempty)]) chars2 (fromList [node6b]) mempty 0
         result6 = tree6a <> tree6b
+
+joinProperties :: TestTree
+joinProperties = testGroup "Properties hold" [enoughEdges, outEdgesGood]
+    where
+        enoughEdges = testProperty "There are the same number of edges and nodes" checkEdgeNum
+            where
+                checkEdgeNum :: DAG -> DAG -> Bool
+                checkEdgeNum tree1 tree2 = 
+                    let result = tree1 <> tree2
+                    in (length $ nodes result) == (length $ edges result)
+
+        outEdgesGood = testProperty "There are out edges present at non-leaf nodes" checkEdges
+            where
+                checkEdges :: DAG -> DAG -> Bool
+                checkEdges tree1 tree2 = 
+                    let 
+                        result = tree1 <> tree2
+                        checks = V.zipWith (\n e -> not $ (isLeaf n) && null (outNodes e)) (nodes result) (edges result)
+                    in trace ("result of edge check " ++ show result)
+                        V.and checks
 
 subsetting :: TestTree
 subsetting = testGroup "Check correct subsetting of trees" [twoNode, smallerThan, threeNode, conservesChars, identity]

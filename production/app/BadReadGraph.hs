@@ -3,8 +3,9 @@ module BadReadGraph where
 import Analysis.GenericFitch
 import Bio.Phylogeny.Graph
 import Bio.Phylogeny.Graph.Utilities
+import Bio.Phylogeny.Graph.Output
 import Bio.Phylogeny.Tree.Node
-import Control.Monad                (sequence_)
+import Control.Monad                (sequence_, liftM2)
 import Data.Functor                 ((<$))
 import Data.Vector                  (singleton)
 import qualified Data.IntMap as IM
@@ -27,6 +28,8 @@ badReadGraph fastaPath newickPath = do
     coerceFasta = fmap (singleton . Just)
 
 madRead = badReadGraph "../../TestDat/fakeArtmor.fas" "../../TestDat/artmor.tre"
-badNodes = (V.filter (\n -> isLeaf n && null (encoded n))) <$> (nodes <$> madRead)
-badNames = (V.map (\n -> (IM.! (code n)) <$> (nodeNames <$> madRead))) <$> badNodes
-madness = rootCost <$> allOptimization 1 <$> madRead
+--badNodes = (V.filter (\n -> isLeaf n && null (encoded n))) <$> (nodes <$> madRead)
+--badNames = (V.map (\n -> (IM.! (code n)) <$> (nodeNames <$> madRead))) <$> badNodes
+madness = rootCost . allOptimization 1 <$> madRead
+outputMad = outPutDot "TestArtmor.dot" =<< ((Graph . pure) <$> madRead) 
+checkOuts = liftM2 (V.zipWith (\n e -> not (isLeaf n) && null (outNodes e))) (nodes <$> madRead) (edges <$> madRead)

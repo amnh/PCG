@@ -40,8 +40,10 @@ data Node b = Node  { code :: Int
                     , aligned :: Vector (EncodedSeq b) -- TODO: rename to implied alignment
                     , localCost :: Double
                     , totalCost :: Double} deriving (Eq, Show)
-                    -- TODO: subtree representation?
-                    -- TODO: add a current 
+                    -- TODO: subtree representation to say if something is done
+                    -- TODO: add a union labeling
+                    -- TODO: add a single labeling
+                    -- TODO: annotate fields with purpose
 
 instance Monoid (Node b) where
     mempty = Node 0 False False mempty mempty mempty mempty mempty mempty mempty mempty 0 0

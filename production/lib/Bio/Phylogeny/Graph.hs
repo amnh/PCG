@@ -41,10 +41,7 @@ import           Safe
 
 --import Debug.Trace
 
--- | Edge Sets are monoids
-instance Monoid EdgeSet where
-  mempty = EdgeSet mempty mempty
-  mappend (EdgeSet in1 out1) (EdgeSet in2 out2) = EdgeSet (in1 <> in2) (out1 <> out2)
+
 
 -- | This tree can be a binary tree
 instance BinaryTree DAG NodeInfo where

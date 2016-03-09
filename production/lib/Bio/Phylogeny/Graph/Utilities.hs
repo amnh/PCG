@@ -37,7 +37,7 @@ fromTopo (TG.TopoTree inTopo chars) = (internalFromTopo inTopo) {characters = ch
   where
     internalFromTopo :: TN.TopoNode BitVector -> DAG
     internalFromTopo topo
-      | TN.isLeaf topo = (singletonDAG topo)
+      | TN.isLeaf topo = singletonDAG topo
       | otherwise = --trace ("internalFromTopo folds over " ++ show (singletonDAG topo))
                       foldr (\n acc -> acc <> internalFromTopo n) (singletonDAG topo) (TN.children topo)
 
@@ -50,7 +50,7 @@ singletonDAG :: TN.TopoNode BitVector -> DAG
 singletonDAG topo = 
   let myNode = Node 0 (TN.isRoot topo) (TN.isLeaf topo) [] [] (TN.encoded topo) (TN.packed topo) (TN.preliminary topo) 
                           (TN.final topo) (TN.temporary topo) (TN.aligned topo) (TN.localCost topo) (TN.totalCost topo)
-  in DAG (IM.singleton 0 (TN.name topo)) (HM.singleton (TN.name topo) (TN.parsed topo)) mempty (singleton myNode) mempty 0
+  in DAG (IM.singleton 0 (TN.name topo)) (HM.singleton (TN.name topo) (TN.parsed topo)) mempty (singleton myNode) (singleton mempty) 0
 
 -- | Conversion from an indexed tree to a TopoDAG, starting at the given node
 nodeToTopo :: DAG -> NodeInfo -> TG.TopoTree
@@ -73,7 +73,7 @@ nodeToTopo topDAG topNode = TG.TopoTree (internalFromTopo topDAG topNode) (chara
 -- | Function to append two trees at a given node
 -- Properly updates all of the edges to connect the two there
 appendAt :: DAG -> DAG -> NodeInfo -> DAG
---appendAt (DAG _ _ _ n _ r) (DAG _ _ _ _ _ r') _ | trace ("appendAt " P.++ show r P.++ show r' P.++ show (length n)) False = undefined
+--appendAt (DAG _ _ _ n e r) (DAG _ _ _ _ e' r') _ | trace ("appendAt " ++ show e ++ show e') False = undefined
 appendAt t1@(DAG names seqs chars n e r) t2@(DAG names' seqs' chars' n' e' r') hangNode 
   | null n  = t2
   | null n' = t1
@@ -92,7 +92,7 @@ appendAt t1@(DAG names seqs chars n e r) t2@(DAG names' seqs' chars' n' e' r') h
       allNodes = --trace ("finished nodes " P.++ show hungNodes P.++ show connectN) $ 
                   connectN V.++ hungNodes
       -- Now update the names and sequences
-      replaceStr insName old = insName `elem` IM.elems old || null insName || (take 3 insName) == "HTU"
+      replaceStr insName old = insName `elem` IM.elems old || null insName || take 3 insName == "HTU"
       checkNames insName old i = if replaceStr insName old then "HTU " ++ show (shift + i)
                                   else insName
       namesMap = IM.foldWithKey (\k val acc -> HM.insert val (checkNames val names k) acc) mempty names'
@@ -102,22 +102,31 @@ appendAt t1@(DAG names seqs chars n e r) t2@(DAG names' seqs' chars' n' e' r') h
       allSeqs = --trace ("finished seqs " P.++ show shiftSeqs) $ 
                   seqs <> shiftSeqs
       -- Finally update the edges and add a connecting edge to old nodes
-      shiftEdge edge = edge {inNodes = IS.map (shift +) (inNodes edge), outNodes = reMapOut (outNodes edge)}
       reMapOut = IM.foldWithKey (\k val acc -> IM.insert (k + shift) (reMapInfo val) acc) mempty
       reMapInfo eInfo = eInfo {origin = allNodes ! code (origin eInfo), terminal = allNodes ! code (terminal eInfo)}
-      newEdges = V.map shiftEdge e'
-      newRootEdge = EdgeSet (IS.singleton hCode) mempty
-      oldRootEdge = EdgeSet mempty (IM.singleton (r' + shift) (EdgeInfo 0 (allNodes ! hCode) (allNodes ! (r' + shift)) Nothing))
-      oldRootUpdate = EdgeSet mempty (IM.insert (r' + shift) (EdgeInfo 0 (allNodes ! hCode) (allNodes ! (r' + shift)) Nothing) (updateOrigin $ outNodes $ e ! hCode))
-      updateOrigin = IM.map (\eInfo -> eInfo {origin = allNodes ! hCode})
-      newRootUpdate = EdgeSet (IS.insert hCode (inNodes $ newEdges ! r')) mempty
-      connectEdges =  let 
-                        outE  | null e && null newEdges = V.fromList [oldRootEdge, newRootEdge]
-                              | null e || (length e < r - 1) = oldRootEdge `cons` (newEdges // [(r', newRootUpdate)])
-                              | null newEdges || (length e' < r' - 1) = (e // [(hCode, oldRootUpdate)]) V.++ singleton newRootEdge
-                              | otherwise = (e V.++ newEdges) // [(hCode, oldRootUpdate), (r', newRootUpdate)]
-                      in outE 
-    in trace ("edges on tree join " ++ show connectEdges)
+      shiftEdge edge = edge {inNodes = IS.map (shift +) (inNodes edge), outNodes = reMapOut (outNodes edge)}
+      newEdges = --trace ("hang node " ++ show hCode ++ "hanged node " ++ show r' ++ ", " ++ show e') 
+                  V.map shiftEdge e'
+      allEdges = e V.++ newEdges
+
+      hangUpdate = --trace ("update hanging node " ++ show hCode)
+                    (allEdges ! hCode) <> (EdgeSet mempty (IM.singleton (r' + shift) (EdgeInfo 0 (allNodes ! hCode) (allNodes ! (r' + shift)) Nothing)))
+      hangedUpdate = --trace ("update hanged node " ++ show newEdges ++ " " ++ show r')
+                      (allEdges ! (r' + shift)) <> (EdgeSet (IS.singleton hCode) mempty) 
+      updateAbove edge index = edge {outNodes = IM.update (\val -> Just $ val {terminal = allNodes ! index}) index (outNodes e)}
+      connectEdges = allEdges // [(hCode, hangUpdate), (r' + shift, hangedUpdate)]
+      --newRootEdge = EdgeSet (IS.singleton hCode) mempty
+      --oldRootEdge = EdgeSet mempty (IM.singleton (r' + shift) (EdgeInfo 0 (allNodes ! hCode) (allNodes ! (r' + shift)) Nothing))
+      --oldRootUpdate = EdgeSet mempty (IM.insert (r' + shift) (EdgeInfo 0 (allNodes ! hCode) (allNodes ! (r' + shift)) Nothing) (updateOrigin $ outNodes $ e ! hCode))
+      --updateOrigin = IM.map (\eInfo -> eInfo {origin = allNodes ! hCode})
+      --newRootUpdate = EdgeSet (IS.insert hCode (inNodes $ newEdges ! r')) mempty
+      --connectEdges =  let 
+      --                  outE  | null e && null newEdges = V.fromList [oldRootEdge, newRootEdge]
+      --                        | null e || (length e < r - 1) = oldRootEdge `cons` (newEdges // [(r', newRootUpdate)])
+      --                        | null newEdges || (length e' < r' - 1) = (e // [(hCode, oldRootUpdate)]) V.++ singleton newRootEdge
+      --                        | otherwise = (e V.++ newEdges) // [(hCode, oldRootUpdate), (r', newRootUpdate)]
+      --                in outE 
+    in --trace ("edges on tree join " ++ show connectEdges)
         DAG allNames allSeqs newChars allNodes connectEdges r
 
 -- | Minor functions to help with appendAt include: reCodeChars, makeEdges, and resetPos
@@ -173,6 +182,11 @@ addConnections newNode myNodes =
 -- | rootCost obviously grabs the cost at the root of a tree
 rootCost :: DAG -> Double
 rootCost inDAG = totalCost $ nodes inDAG ! root inDAG
+
+-- | Edge Sets are monoids
+instance Monoid EdgeSet where
+  mempty = EdgeSet mempty mempty
+  mappend (EdgeSet in1 out1) (EdgeSet in2 out2) = EdgeSet (in1 <> in2) (out1 <> out2)
 
 instance Monoid DAG where
   mempty = DAG mempty mempty mempty mempty mempty 0
