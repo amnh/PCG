@@ -7,7 +7,8 @@ module File.Format.Newick.Test
 import Data.Either.Combinators    (isRight,rightToMaybe)
 import File.Format.Newick.Internal
 import File.Format.Newick.Parser
-import Test.Custom                (parseEquals,parseFailure,parseSuccess)
+import File.Format.Newick.Converter
+import Test.Custom                (parseEquals,parseFailure,parseSuccess,convertEquals)
 import Test.Tasty                 (TestTree,testGroup)
 import Test.Tasty.HUnit
 import Test.Tasty.QuickCheck
@@ -23,8 +24,6 @@ testSuite = testGroup "Newick Format"
       [newickExtendedDefinition']
   , testGroup "Forest Newick Parser"
       [newickForestDefinition']
-  , testGroup "Newick Converter"
-      []
   ]
 
 validUnquotedLabels :: [String]
@@ -163,3 +162,4 @@ newickForestDefinition' = testGroup "newickForestDefinition" [valid,invalid]
       [ "(((1,2),X),((3,4)X,5));" -- no angle braces
       ]
 
+    
