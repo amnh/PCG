@@ -1,8 +1,8 @@
 module SimpleGPUTest where
 
-import qualified Data.Array.Accelerate as A
+import Data.Array.Accelerate as A
 -- to run on CUDA GPUs, replace Data.Array.Accelerate.Interpreter with Data.Array.Accelerate.CUDA
-import qualified Data.Array.Accelerate.Interpreter as AI
+import Data.Array.Accelerate.Interpreter as AI
 import qualified Data.Vector as V
 import Data.Word
 import Data.Bits
@@ -21,3 +21,5 @@ simpleTest bit1 bit2 =
 
 -- test1 should return [2, 0, 4, 2, 2] (possibly, not sure)
 test1 = simpleTest (V.fromList [2, 3, 4, 2, 6]) (V.fromList [2, 4, 6, 2, 3])
+
+bookTest = run $ A.map (+1) (use (fromList (Z:.3:.5) [1..] :: Array DIM2 Int))
