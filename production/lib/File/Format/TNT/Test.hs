@@ -19,7 +19,7 @@ import           File.Format.TNT.Command.Procedure
 import           File.Format.TNT.Command.TRead
 import           File.Format.TNT.Command.XRead
 import           File.Format.TNT.Internal
-import           Test.Custom
+import           Test.Custom.Parse
 import           Test.Tasty                 (TestTree,testGroup)
 import           Test.Tasty.HUnit
 import           Test.Tasty.QuickCheck

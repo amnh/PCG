@@ -10,7 +10,7 @@ import           Data.List                (inits)
 import           Data.List.NonEmpty       (NonEmpty)
 import           Data.List.Utility
 import           Data.Matrix.NotStupid    (Matrix)
-import           Data.Map                 (Map,assocs,insert,keys,union)
+import           Data.Map                 (Map,assocs,insert,keys,union )
 import qualified Data.Map            as M (fromList)
 import           Data.Maybe               (catMaybes)
 import           Data.Tuple               (swap)
@@ -153,7 +153,7 @@ data TntCharacter
 -- | A 'TntContinuousCharacter' is an real valued character. Continuous
 --   characters can have negative values. Continuous values are serialized
 --   textually as decimal values or integral values, scientific notation supported.
-type TntContinuousCharacter = Double
+type TntContinuousCharacter = Maybe Double
 
 -- | A 'TntDiscreteCharacter' is an integral value in the range '[0..62]'. Discrete
 --   values are serialized textualy as one of the 64  values:

@@ -28,17 +28,21 @@ procedureCommand =  procHeader *> procBody
 procHeader :: MonadParsec s m Char => m ()
 procHeader = symbol $ keyword "procedure" 4
 
--- | A directive to interpret a file. We throw this info away later.
--- Interpreting a file kinda sucks, this ins't Lisp.
+-- | A directive to load and interpret the specified TNT file.
+--   This interpretation is beyond the scope of this software.
+--   We ignore PROCEDURE commands of this form .
 procCommandFile :: MonadParsec s m Char => m FilePath
 procCommandFile = anythingTill (whitespace *> char ';') <* trim (char ';')
 
 -- | A directive to read in a FASTA file as aligned, non-addative data.
--- Not sure if we should ignore this or acturally process additional files.
+--   This interpretation is beyond the scope of this software.
+--   We ignore PROCEDURE commands of this form. 
 procFastaFile :: MonadParsec s m Char => m FilePath
 procFastaFile = symbol (char '&') *> procCommandFile
 
 -- | A close file directive. Closes all open files. Found at the end of all
--- properly formated TNT input files.
+--   properly formated TNT input files.
+--   This software does not open files for interpretation from a TNT file,
+--   so this command will have no effect and be ignored.
 procCloseFile :: MonadParsec s m Char => m ()
 procCloseFile = symbol (char '/') *> symbol (char ';') *> pure ()

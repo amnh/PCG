@@ -4,7 +4,7 @@ module File.Format.TNT.Command.XRead where
 {-- TODO:
   - Robust tests
   - Good documentation
-  - Deinterleave function with DList construction
+  - Organize this jumbled monolith
   -}
 
 import           Control.Monad            ((<=<))
@@ -110,11 +110,8 @@ xreadCharCount = symbol $ flexibleNonNegativeInt "character count"
 xreadSequences :: MonadParsec s m Char => m (NonEmpty TaxonInfo)
 xreadSequences = NE.fromList . deinterleaveTaxa <$> taxonSequence
   where
---    deinterleaveTaxa :: [TaxonInfo] -> [TaxonInfo]
     deinterleaveTaxa = assocs . fmap toList . foldr f mempty
-      where
---        f :: TaxonInfo -> Map TaxonName (DList String) -> Map TaxonName (DList String)
-        f (taxonName, taxonSeq) = insertWith append taxonName (DL.fromList taxonSeq)
+    f (taxonName, taxonSeq) = insertWith append taxonName (DL.fromList taxonSeq)
 
 -- | Parses a taxon name and sequence of characters for a given character.
 -- Character values can be one of 64 states ordered @[0..9,A..Z,a..z]@ and also the Chars @\'-\'@ & @\'?\'@.
@@ -128,44 +125,22 @@ taxonName = notFollowedBy (string "&[") *> some validNameChar
     validNameChar = satisfy (\x -> (not . isSpace) x && x `notElem` "(),;")
 
 taxonSequenceSegment :: MonadParsec s m Char => m (DList TaxonInfo)
-taxonSequenceSegment = choice [ try continuousInterleaveBlock
-                              , try numericInterleaveBlock
-                              , try dnaInterleaveBlock
-                              , try proteinInterleaveBlock
-                              , defaultInterleaveBlock
+taxonSequenceSegment = choice [ try taggedInterleaveBlock
+                              ,    defaultInterleaveBlock
                               ]
 
-continuousInterleaveBlock :: MonadParsec s m Char => m (DList TaxonInfo)
-continuousInterleaveBlock = continuousIdentifierTag *> (DL.fromList <$> symbol (continuousSegment `sepEndBy1` segmentTerminal))
-  where
-    continuousIdentifierTag = tagIdentifier $ keyword "continuous" 4
-    continuousSegment       = (,) <$> (taxonName <* whitespaceInline) <*> many stateToken
-    stateToken              = Continuous <$> double <* whitespaceInline
-
-numericInterleaveBlock :: MonadParsec s m Char => m (DList TaxonInfo)
-numericInterleaveBlock = numericIdentifierTag *> numericSegments
-  where
-    numericIdentifierTag = tagIdentifier $ keyword "numeric" 3
-
-numericSegments :: MonadParsec s m Char => m (DList TaxonInfo)
-numericSegments = DL.fromList <$> symbol (numericSegment `sepEndBy1` segmentTerminal)
-  where
-    numericSegment       = (,) <$> (taxonName <* whitespaceInline) <*> (fmap Discrete <$> discreteSequence)
-
-dnaInterleaveBlock :: MonadParsec s m Char => m (DList TaxonInfo)
-dnaInterleaveBlock = dnaIdentifierTag *> (DL.fromList <$> symbol (dnaSegment `sepEndBy1` segmentTerminal))
-  where
-    dnaIdentifierTag   = tagIdentifier $ keyword "dna" 3 -- use keyword, handles lookAhead after the 'a'
-    dnaSegment         = (,) <$> (taxonName <* whitespaceInline) <*> (fmap Dna <$> dnaSequence)
-
-proteinInterleaveBlock :: MonadParsec s m Char => m (DList TaxonInfo)
-proteinInterleaveBlock = proteinIdentifierTag *> (DL.fromList <$> symbol (proteinSegment `sepEndBy1` segmentTerminal))
-  where
-    proteinIdentifierTag   = tagIdentifier $ keyword "protein" 4
-    proteinSegment         = (,) <$> (taxonName <* whitespaceInline) <*> (fmap Protein <$> proteinSequence)
-
 defaultInterleaveBlock :: MonadParsec s m Char => m (DList TaxonInfo)
-defaultInterleaveBlock = numericSegments
+defaultInterleaveBlock = discreteSegments
+
+-- Sequence definitions
+--------------------------------------------------------------------------------
+
+continuousSequence :: MonadParsec s m Char => m [TntContinuousCharacter]
+continuousSequence = many (missingValue <|> presentValue)
+  where
+    presentValue = Just       <$> double   <* whitespaceInline
+    missingValue = Nothing    <$  char '?' <* whitespaceInline
+
 
 discreteSequence :: MonadParsec s m Char => m [TntDiscreteCharacter]
 discreteSequence = many discreteCharacter
@@ -190,6 +165,12 @@ discreteSequence = many discreteCharacter
 dnaSequence :: MonadParsec s m Char => m [TntDnaCharacter]
 dnaSequence = mapM discreteToDna =<< discreteSequence
 
+proteinSequence :: MonadParsec s m Char => m [TntProteinCharacter]
+proteinSequence = mapM discreteToProtein =<< discreteSequence
+
+-- Sequence normalization & support
+--------------------------------------------------------------------------------
+
 discreteToDna :: MonadParsec s m Char => TntDiscreteCharacter -> m TntDnaCharacter
 discreteToDna character = foldl (.|.) zeroBits <$> mapM f flags
   where
@@ -198,9 +179,6 @@ discreteToDna character = foldl (.|.) zeroBits <$> mapM f flags
     f x   = case toDna x of
               Nothing -> fail $ "The character state '" ++ [serializeStateDiscrete ! x] ++ "' is not a valid DNA character state." 
               Just b  -> pure b
-
-proteinSequence :: MonadParsec s m Char => m [TntProteinCharacter]
-proteinSequence = mapM discreteToProtein =<< discreteSequence
 
 discreteToProtein :: MonadParsec s m Char => TntDiscreteCharacter -> m TntProteinCharacter
 discreteToProtein character = foldl (.|.) zeroBits <$> mapM f flags
@@ -232,3 +210,169 @@ withinBraces :: MonadParsec s m Char => m a -> m a
 withinBraces = between (f '[') (f ']')
   where
     f c = char c <* whitespaceInline 
+
+
+
+
+type TntCharacterSegment = DList TntCharacter
+
+data XReadTag
+   = TagContinuous
+   | TagDna
+   | TagProtein
+   | TagNumeric
+   | TagGaps
+   | TagNoGaps
+   | TagTrimHead
+   | TagTrimTail
+   deriving (Eq,Ord,Show)
+
+data XReadParseType
+   = ParseContinuous
+   | ParseDna
+   | ParseNumeric
+   | ParseProtein
+   deriving (Eq)
+
+data XReadInterpretation
+   = XReadInterpretation
+   { parseType     :: XReadParseType
+   , parseGaps     :: Bool
+   , parseTrimHead :: Bool
+   , parseTrimTail :: Bool
+   } deriving (Eq)
+
+taggedInterleaveBlock :: MonadParsec s m Char => m (DList TaxonInfo)
+taggedInterleaveBlock = nightmare =<< xreadTags
+
+-- | “Beware that, when ~~fighting monsters~~ writing parsers,
+--    you yourself do not become a monster...
+--    for when you gaze long into the abyss,
+--    the abyss gazes also into you.”
+nightmare :: MonadParsec s m Char => XReadInterpretation -> m (DList TaxonInfo)
+nightmare interpretation = (gapsToMissings . trimTail . trimHead) <$> segment
+  where
+    segment = case parseType interpretation of
+                ParseContinuous -> continuousSegments
+                ParseDna        -> dnaSegments
+                ParseNumeric    -> discreteSegments
+                ParseProtein    -> proteinSegments
+
+continuousSegments :: MonadParsec s m Char => m (DList TaxonInfo)
+continuousSegments = segmentsOf (fmap Continuous <$> continuousSequence)
+
+dnaSegments :: MonadParsec s m Char => m (DList TaxonInfo)
+dnaSegments = segmentsOf (fmap Dna <$> dnaSequence)
+
+discreteSegments :: MonadParsec s m Char => m (DList TaxonInfo)
+discreteSegments = segmentsOf (fmap Discrete <$> discreteSequence)
+
+proteinSegments :: MonadParsec s m Char => m (DList TaxonInfo)
+proteinSegments = segmentsOf (fmap Protein <$> proteinSequence)
+
+{-
+discreteSegments :: MonadParsec s m Char => m (DList TaxonInfo)
+discreteSegments = DL.fromList <$> symbol (discreteSegment `sepEndBy1` segmentTerminal)
+  where
+    discreteSegment = (,) <$> (taxonName <* whitespaceInline) <*> (fmap Discrete <$> discreteSequence)
+-}
+
+segmentsOf :: MonadParsec s m Char => m [TntCharacter] -> m (DList TaxonInfo)
+segmentsOf seqDef = DL.fromList <$> symbol (segment `sepEndBy1` segmentTerminal)
+  where
+    segment = (,) <$> (taxonName <* whitespaceInline) <*> seqDef
+
+gapsToMissings :: DList TaxonInfo -> DList TaxonInfo
+gapsToMissings = fmap (second (fmap gapToMissing))
+  where
+    gapToMissing e@(Continuous _ ) = e
+    gapToMissing e@(Dna x)
+      | x `testBit` gapBit = Dna missing
+      | otherwise          = e
+      where
+        gapBit  = findFirstSet $ deserializeStateDna ! '-'
+        missing = deserializeStateDna ! '?'
+    gapToMissing e@(Discrete x)
+      | x `testBit` gapBit = Discrete missing
+      | otherwise          = e
+      where
+        gapBit  = findFirstSet $ deserializeStateDiscrete ! '-'
+        missing = deserializeStateDiscrete ! '?'
+    gapToMissing e@(Protein x)
+      | x `testBit` gapBit = Protein missing
+      | otherwise          = e
+      where
+        gapBit  = findFirstSet $ deserializeStateProtein ! '-'
+        missing = deserializeStateProtein ! '?'
+
+trimHead :: DList TaxonInfo -> DList TaxonInfo
+trimHead = fmap (second f)
+  where
+    f xs = (toMissing <$> gaps) ++ chars
+      where
+        (gaps,chars) = span isGap xs
+
+trimTail :: DList TaxonInfo -> DList TaxonInfo
+trimTail = fmap (second f)
+  where
+    f xs = reverse $ (toMissing <$> gaps) ++ chars
+      where
+        (gaps,chars) = span isGap $ reverse xs
+
+isGap (Dna      x) | deserializeStateDna      ! '-' == x = True 
+isGap (Discrete x) | deserializeStateDiscrete ! '-' == x = True 
+isGap (Protein  x) | deserializeStateProtein  ! '-' == x = True 
+isGap _ = False
+
+toMissing (Dna      x) = Dna      $ deserializeStateDna      ! '?'
+toMissing (Discrete x) = Discrete $ deserializeStateDiscrete ! '?'
+toMissing (Protein  x) = Protein  $ deserializeStateProtein  ! '?'
+toMissing e = e
+
+xreadTags :: MonadParsec s m Char => m XReadInterpretation
+xreadTags = validateXReadTags =<< xreadTagsDef
+  where
+    xreadTagsDef :: MonadParsec s m Char => m (NonEmpty XReadTag)
+    xreadTagsDef = symbol (char '&') *> symbol (withinBraces tags)
+    tags         :: MonadParsec s m Char => m (NonEmpty XReadTag)
+    tags         = NE.fromList <$> (tagOptions `sepBy1` whitespaceInline)
+    tagOptions   :: MonadParsec s m Char => m XReadTag
+    tagOptions   = choice
+                 [      keyword "continuous" 4  $> TagContinuous
+                 ,      keyword "dna"        3  $> TagDna
+                 ,      keyword "protein"    4  $> TagProtein
+                 , try (keyword "numeric"    3) $> TagNumeric
+                 ,      keyword "gaps"       3  $> TagGaps
+                 ,      keyword "nogaps"     5  $> TagNoGaps
+                 , try (keyword "trimhead"   5) $> TagTrimHead
+                 ,      keyword "trimtail"   5  $> TagTrimTail
+                 ]
+    validateXReadTags :: MonadParsec s m Char => NonEmpty XReadTag -> m XReadInterpretation
+    validateXReadTags xs
+      | not (null dupes)                      = fail $ "You got duplicate tags man! Like only one's allowed. For realz! " ++ show dupes
+      | manyTags allTypeTags                  = fail $ "You can't have multiple character type tags: " ++ show allTypeTags
+      | manyTags allGapTags                   = fail $ "You can't have multiple gap specification tags: " ++ show allGapTags
+      | isContinuous && not (null allGapTags) = fail   "You can't have gaps or nogaps specified for continuous data"
+      | isNumeric    && not (null allGapTags) = fail   "You can't have gaps or nogaps specified for numeric data"
+      | not pGaps && (pTrimHead || pTrimTail) = fail   "You can't have trimhead or trimTail along with nogaps"
+      | otherwise                             = pure $ XReadInterpretation pType pGaps pTrimHead pTrimTail
+      where
+        dupes        = duplicates xs
+        allTypeTags  = filter (`elem` typeTags) $ toList xs
+        allGapTags   = filter (`elem` gapTags ) $ toList xs
+        typeTags     = [TagContinuous, TagDna, TagProtein, TagNumeric]
+        gapTags      = [TagGaps, TagNoGaps]
+        manyTags     = (>1) . length
+        isContinuous = TagContinuous `elem` allTypeTags
+        isNumeric    = TagNumeric    `elem` allTypeTags
+        pType        = case allTypeTags of
+                         [TagContinuous] -> ParseContinuous
+                         [TagDna       ] -> ParseDna
+                         [TagProtein   ] -> ParseProtein
+                         _               -> ParseNumeric
+        pGaps        = case allGapTags of
+                         [TagNoGaps] -> False
+                         _           -> True
+        pTrimHead    = TagTrimHead `elem` xs
+        pTrimTail    = TagTrimTail `elem` xs
+

@@ -9,7 +9,7 @@ import qualified Data.List.NonEmpty as NE (fromList)
 import Data.Vector              (Vector,fromList)
 import File.Format.Fasta.Test   (validTaxonLines)
 import File.Format.Fastc.Parser
-import Test.Custom              (parseEquals)
+import Test.Custom.Parse        (parseEquals)
 import Test.Tasty               (TestTree,testGroup)
 import Test.Tasty.HUnit
 
