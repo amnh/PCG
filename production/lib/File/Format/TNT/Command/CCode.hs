@@ -25,6 +25,7 @@ ccodeAugment :: MonadParsec s m Char => m CCodeAugment
 ccodeAugment = CCodeAugment
            <$> (validateStates =<< nonEmpty ccodeCharacterState)
            <*> nonEmpty characterIndicies
+           <*  allowIncorrectSuffixes
   where
     makeError str = fail $ concat ["Specified both '",str,"' and 'non-",str,"' states for character set in CCODE command"]
     validateStates xs
@@ -47,5 +48,5 @@ ccodeCharacterState = choice states
               , Steps       <$> (state '=' *> symbol (flexibleNonNegativeInt "step value"  ))
               ]
 
-allowIncorrectSuffix :: MonadParsec s m Char => Char -> m (Maybe Char)
-allowIncorrectSuffix = optional . symbol . char
+allowIncorrectSuffixes :: MonadParsec s m Char => m (Maybe Char)
+allowIncorrectSuffixes = optional . symbol $ oneOf "])"
