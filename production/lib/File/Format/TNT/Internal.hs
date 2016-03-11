@@ -46,9 +46,11 @@ data WithTaxa
 -- CCode types
 --------------------------------------------------------------------------------
 
-data CCode
-   = CCode
-   { charState :: CharacterState
+type CCode = NonEmpty CCodeAugment
+
+data CCodeAugment
+   = CCodeAugment
+   { charState :: NonEmpty CharacterState
    , charSet   :: NonEmpty CharacterSet
    } deriving (Show)
 
@@ -61,7 +63,7 @@ data CharacterState
    | NonSankoff
    | Weight Int
    | Steps  Int
-   deriving (Show)
+   deriving (Eq,Show)
 
 data CharacterSet
    = Single    Int
