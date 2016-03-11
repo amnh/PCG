@@ -5,7 +5,7 @@ import           Control.Monad            ((<=<))
 import           Data.Bits
 import           Data.Char                (isAlpha,isLower,isSpace,isUpper,toLower,toUpper)
 import           Data.Foldable            (toList)
-import           Data.Key                 ((!))
+import           Data.Key                 ((!),lookup)
 import           Data.List                (inits)
 import           Data.List.NonEmpty       (NonEmpty)
 import           Data.List.Utility
@@ -17,6 +17,7 @@ import           Data.Tuple               (swap)
 import           Data.Vector              (Vector)
 import qualified Data.Vector         as V (fromList)
 import           Data.Word                (Word8,Word32,Word64)
+import           Prelude           hiding (lookup)
 import           Text.Megaparsec
 import           Text.Megaparsec.Custom
 import           Text.Megaparsec.Lexer    (integer,number,signed)
@@ -179,10 +180,10 @@ newtype TntDnaCharacter        = TntDna Word8 deriving (Bits,Eq,FiniteBits,Ord)
 newtype TntProteinCharacter    = TntPro Word32 deriving (Bits,Eq,FiniteBits,Ord)
 
 instance Show TntDiscreteCharacter where
-  show x
-    | null str        = [serializeStateDiscrete ! zeroBits]
-    | isSingleton str = str
-    | otherwise       = "[" ++ str ++ "]"
+  show x =
+    case x `lookup` serializeStateDiscrete of
+      Just c  -> [c]
+      Nothing -> "[" ++ str ++ "]"
     where
       str = (serializeStateDiscrete !) <$> bitsToFlags x
 
@@ -190,10 +191,10 @@ instance Show TntDnaCharacter where
   show x = [serializeStateDna ! x]
 
 instance Show TntProteinCharacter where
-  show x
-    | x == zeroBits   = [serializeStateProtein ! x]
-    | isSingleton str = str
-    | otherwise       = "[" ++ str ++ "]"
+  show x =
+    case x `lookup` serializeStateProtein of
+      Just c  -> [c]
+      Nothing -> "[" ++ str ++ "]"
     where
       str = (serializeStateProtein !) <$> bitsToFlags x
 
