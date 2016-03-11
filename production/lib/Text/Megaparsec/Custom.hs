@@ -24,10 +24,12 @@ module Text.Megaparsec.Custom
  , fails
  , inlineSpaceChar 
  , inlineSpace
+ , nonEmpty
  , somethingTill
  ) where
 
 import Data.Char             (isSpace)
+import Data.List.NonEmpty    (NonEmpty,fromList)
 import Text.Megaparsec
 import Text.Megaparsec.Prim  (MonadParsec)
 import Text.Megaparsec.Lexer (float,integer,signed)
@@ -39,6 +41,10 @@ import Text.Megaparsec.Lexer (float,integer,signed)
 -- | Concatenate the result of two list producing combinators
 (<++>) :: Applicative f => f [a] -> f [a] -> f [a]
 (<++>) a b = (++) <$> a <*> b
+
+-- | 
+nonEmpty :: MonadParsec s m Char => m a -> m (NonEmpty a)
+nonEmpty c = fromList <$> some c
 
 -- | @anythingTill end@ consumes zero or more characters until @end@ is matched, leaving @end@ in the stream
 anythingTill :: MonadParsec s m Char => m a -> m String
