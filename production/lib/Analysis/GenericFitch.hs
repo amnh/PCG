@@ -119,7 +119,8 @@ preorderBitOps weight curNode lNode rNode treeChars =
         finalF = blockShiftAndFold "L" "|" chars rightF rightF
         maskF = V.map (fst . fitchMasks) chars .&. finalF
         myCost = fetchCost maskF chars
-        weightCost = weight * myCost
+        weightCost = --trace ("Cost of bit ops " ++ show myCost) 
+                        weight * myCost
         finalCost = totalCost lNode + totalCost rNode + weightCost
         outbit = (maskF .&. union) .|. (lbit .&. rbit)
         outNode = setPreliminary outbit $ setAlign outbit $ setTemporary finalF $ setLocalCost weightCost $ setTotalCost finalCost curNode
@@ -163,9 +164,9 @@ internalPostorder node tree
     | leftOnly = internalPostorder (fromJust $ leftChild node tree) tree
     | otherwise = 
         let 
+            newNode = postorderBitOps node (fromJust $ leftChild node tree) (fromJust $ rightChild node tree) (parent node tree) (characters tree)
             nodes1 = internalPostorder (fromJust $ rightChild node tree) tree
             nodes2 = internalPostorder (fromJust $ leftChild node tree) tree
-            newNode = postorderBitOps node (fromJust $ leftChild node tree) (fromJust $ rightChild node tree) (parent node tree) (characters tree)
         in newNode : (nodes1 ++ nodes2)
 
         where
@@ -175,6 +176,7 @@ internalPostorder node tree
 
 -- | Bit operations for the up pass
 postorderBitOps :: NodeConstraint n s b => n -> n -> n -> Maybe n -> V.Vector (PhyloCharacter s) -> n
+--postorderBitOps myNode _ _ _ _ | trace ("postorder on node " ++ show myNode) False = undefined
 postorderBitOps myNode lNode rNode pNodeMaybe treeChars
     | isNothing pNodeMaybe = error "No parent node on postorder bit operations"
     | otherwise =  
@@ -212,10 +214,10 @@ grabAligned treeChars inNode
 -- | Convenience function for bit ops
 blockShiftAndFold :: SeqConstraint s b => String -> String -> V.Vector (PhyloCharacter s) -> V.Vector s -> V.Vector s -> V.Vector s
 blockShiftAndFold sideMode foldMode chars inbits initVal 
-    | sideMode == "L" && foldMode == "&" = f (.&.)
-    | sideMode == "R" && foldMode == "&" = f (.&.)
-    | sideMode == "L" && foldMode == "|" = f (.|.)
-    | sideMode == "R" && foldMode == "|" = f (.|.)
+    | sideMode == "L" && foldMode == "&" = f (.&.) shiftL 
+    | sideMode == "R" && foldMode == "&" = f (.&.) shiftR
+    | sideMode == "L" && foldMode == "|" = f (.|.) shiftL
+    | sideMode == "R" && foldMode == "|" = f (.|.) shiftR
     | otherwise = error "incorrect input for block shift and fold"
     where
-      f g = V.zipWith3 (\b c iVal -> foldr (\s acc -> g acc (shiftL b s)) iVal [1 .. length (alphabet c) - 1]) inbits chars initVal
+      f g dir = V.zipWith3 (\b c iVal -> foldr (\s acc -> g acc (dir b s)) iVal [1 .. length (alphabet c) - 1]) inbits chars initVal

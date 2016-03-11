@@ -88,7 +88,7 @@ appendAt t1@(DAG names seqs chars n e r) t2@(DAG names' seqs' chars' n' e' r') h
       recodeFun node = node {code = code node + shift, children = map (shift +) (children node), parents = map (shift +) (parents node)}
       recodeNew = V.map recodeFun charNodes2
       hungNodes = recodeNew // [(r', (recodeNew ! r') {isRoot = False, parents = [hCode]})]
-      connectN = charNodes1 // [(code hangNode, (charNodes1 ! hCode) {children = (shift + r') : children hangNode, isLeaf = False})]
+      connectN = charNodes1 // [(hCode, (charNodes1 ! hCode) {children = (shift + r') : children hangNode, isLeaf = False})]
       allNodes = --trace ("finished nodes " P.++ show hungNodes P.++ show connectN) $ 
                   connectN V.++ hungNodes
       -- Now update the names and sequences
@@ -103,18 +103,19 @@ appendAt t1@(DAG names seqs chars n e r) t2@(DAG names' seqs' chars' n' e' r') h
                   seqs <> shiftSeqs
       -- Finally update the edges and add a connecting edge to old nodes
       reMapOut = IM.foldWithKey (\k val acc -> IM.insert (k + shift) (reMapInfo val) acc) mempty
-      reMapInfo eInfo = eInfo {origin = allNodes ! code (origin eInfo), terminal = allNodes ! code (terminal eInfo)}
+      reMapInfo eInfo = eInfo {origin = allNodes ! (code (origin eInfo) + shift), terminal = allNodes ! (code (terminal eInfo) + shift)}
       shiftEdge edge = edge {inNodes = IS.map (shift +) (inNodes edge), outNodes = reMapOut (outNodes edge)}
       newEdges = --trace ("hang node " ++ show hCode ++ "hanged node " ++ show r' ++ ", " ++ show e') 
                   V.map shiftEdge e'
       allEdges = e V.++ newEdges
 
-      hangUpdate = --trace ("update hanging node " ++ show hCode)
-                    (allEdges ! hCode) <> (EdgeSet mempty (IM.singleton (r' + shift) (EdgeInfo 0 (allNodes ! hCode) (allNodes ! (r' + shift)) Nothing)))
+      hangUpdate = (allEdges ! hCode) {outNodes = IM.map (\info -> info {origin = allNodes ! hCode}) (outNodes $ (allEdges ! hCode))}
+      hangAdd = --trace ("update hanging node " ++ show hCode)
+                    hangUpdate <> (EdgeSet (inNodes $ e ! hCode) (IM.insert (r' + shift) (EdgeInfo 0 (allNodes ! hCode) (allNodes ! (r' + shift)) Nothing) (outNodes $ e ! hCode)))
       hangedUpdate = --trace ("update hanged node " ++ show newEdges ++ " " ++ show r')
                       (allEdges ! (r' + shift)) <> (EdgeSet (IS.singleton hCode) mempty) 
       --updateAbove edge index = edge {outNodes = IM.update (\val -> Just $ val {terminal = allNodes ! index}) index (outNodes e)}
-      connectEdges = allEdges // [(hCode, hangUpdate), (r' + shift, hangedUpdate)]
+      connectEdges = allEdges // [(hCode, hangAdd), (r' + shift, hangedUpdate)]
       --newRootEdge = EdgeSet (IS.singleton hCode) mempty
       --oldRootEdge = EdgeSet mempty (IM.singleton (r' + shift) (EdgeInfo 0 (allNodes ! hCode) (allNodes ! (r' + shift)) Nothing))
       --oldRootUpdate = EdgeSet mempty (IM.insert (r' + shift) (EdgeInfo 0 (allNodes ! hCode) (allNodes ! (r' + shift)) Nothing) (updateOrigin $ outNodes $ e ! hCode))

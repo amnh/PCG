@@ -16,7 +16,7 @@
 {-# LANGUAGE TypeSynonymInstances, FlexibleInstances, MultiParamTypeClasses, UndecidableInstances #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
-module Bio.Sequence.Coded (CodedSequence(..), EncodedSeq, EncodedSequences, CodedChar(..), encodeAll) where
+module Bio.Sequence.Coded (CodedSequence(..), EncodedSeq, EncodedSequences, CodedChar(..), encodeAll, unencodeMany) where
 
 import Prelude hiding (map, length, zipWith, null, head)
 import qualified Prelude as P (length, map)
@@ -26,6 +26,7 @@ import Control.Monad
 import Data.Vector    (map, length, zipWith, empty, null, Vector, head, (!), singleton, ifoldr, slice)
 import qualified Data.Vector as V (filter)
 import Data.Bits
+import Data.BitVector (BitVector, size)
 import Data.Maybe
 import Bio.Sequence.Coded.Class
 import Bio.Sequence.Character.Coded
@@ -92,7 +93,20 @@ setElemAt char orig alphabet
     | char == "-" = setBit orig 0
     | otherwise = case elemIndex char alphabet of
                         Nothing -> orig
-                        Just pos -> setBit orig (pos + 1)     
+                        Just pos -> setBit orig (pos + 1)    
+
+-- | Added functionality for unencoded
+unencodeOverAlphabet :: EncodedSeq BitVector -> Alphabet -> ParsedSeq 
+unencodeOverAlphabet encoded alph = 
+    let 
+        alphLen = P.length alph
+        oneBit inBit = foldr (\i acc -> if testBit inBit i then alph !! (i `mod` alphLen) : acc else acc) mempty [0..size inBit]
+        allBits = fmap oneBit <$> encoded
+    in fromMaybe mempty allBits
+
+-- | Functionality to unencode many
+unencodeMany :: EncodedSequences BitVector -> Alphabet -> ParsedSequences
+unencodeMany seqs alph = fmap (Just . flip unencodeOverAlphabet alph) seqs
 
 instance Bits b => CodedChar b where
     gapChar = setBit zeroBits 0

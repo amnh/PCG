@@ -14,6 +14,7 @@ import File.Format.Fasta
 import qualified File.Format.Newick as N
 import File.Format.Newick.Converter
 import Text.Megaparsec
+import Bio.Sequence.Coded
 
 badReadGraph :: FilePath -> FilePath -> IO DAG
 badReadGraph fastaPath newickPath = do
@@ -33,3 +34,12 @@ madRead = badReadGraph "../../TestDat/fakeArtmor.fas" "../../TestDat/artmor.tre"
 madness = rootCost . allOptimization 1 <$> madRead
 outputMad = outPutDot "TestArtmor.dot" =<< ((Graph . pure) <$> madRead) 
 checkOuts = liftM2 (V.zipWith (\n e -> not (isLeaf n) && null (outNodes e))) (nodes <$> madRead) (edges <$> madRead)
+
+smallRead = badReadGraph "../../TestDat/ThreeNode.fas" "../../TestDat/ThreeNode.tre"
+smallNum = allOptimization 1 <$> smallRead
+showSeqs inDag = fmap (\n -> flip unencodeMany ["A", "C", "G", "T", "-"] $ final n) (nodes inDag) 
+smallShow = showSeqs <$> smallNum
+
+fiveRead = badReadGraph "../../TestDat/FiveNode.fas" "../../TestDat/FiveNode.tre"
+fiveNum = allOptimization 1 <$> fiveRead
+fiveShow = showSeqs <$> fiveNum

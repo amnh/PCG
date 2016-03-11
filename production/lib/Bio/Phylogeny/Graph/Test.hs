@@ -26,11 +26,11 @@ import Test.Tasty
 import Test.Tasty.HUnit
 import Test.Tasty.QuickCheck
 
-import qualified Data.IntMap       as IM  (insert, keys, singleton, fromList)
+import qualified Data.IntMap       as IM  
 import qualified Data.HashMap.Lazy as HM  (insert, fromList, singleton)
 import Data.Vector                        (singleton, fromList, cons, (!))
 import qualified Data.Vector       as V   ((++), zipWith, and)
-import qualified Data.IntSet       as IS  (singleton, toList)
+import qualified Data.IntSet       as IS  
 import Data.Monoid
 
 import Debug.Trace
@@ -90,7 +90,7 @@ joinCases = testGroup "Small test cases function" [nulladd, smalladd, nullJoin, 
         names5 = IM.insert 2 "HTU 2" names4
         seqs5 = HM.insert "HTU 2" mempty seqs4
         expected5 = DAG names5 seqs5 mempty (fromList [node4aUpdate', node4bUpdate, node5aUpdate]) edges5 0
-        result5 = result4 <> tree4a
+        result5 = expected4 <> tree4a
 
         seqJoin = testCase "Two one node trees with sequences join properly" (expected6 @=? result6)
         chars1 = singleton $ DNA "" True (mempty, mempty) (fromList ["A", "C", "G", "T", "-"]) mempty mempty False
@@ -106,7 +106,7 @@ joinCases = testGroup "Small test cases function" [nulladd, smalladd, nullJoin, 
         result6 = tree6a <> tree6b
 
 joinProperties :: TestTree
-joinProperties = testGroup "Properties hold" [enoughEdges, outEdgesGood]
+joinProperties = testGroup "Properties hold" [enoughEdges, outEdgesGood, allEdgeCheck]
     where
         enoughEdges = testProperty "There are the same number of edges and nodes" checkEdgeNum
             where
@@ -122,7 +122,7 @@ joinProperties = testGroup "Properties hold" [enoughEdges, outEdgesGood]
                     let 
                         result = tree1 <> tree2
                         checks = V.zipWith (\n e -> not $ (isLeaf n) && null (outNodes e)) (nodes result) (edges result)
-                    in trace ("result of edge check " ++ show result)
+                    in --trace ("result of edge check " ++ show result)
                         V.and checks
 
         allEdgeCheck = testProperty "Parent/children relationships match edge relationships" matchEdges

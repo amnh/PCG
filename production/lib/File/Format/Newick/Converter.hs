@@ -88,13 +88,16 @@ convertTopo = TopoGraph . fmap convertTopoTree
 
 -- | Converts into a topo tree without sequences (main funcionality in newick conversion)
 convertTopoTree :: NewickNode -> TopoTree
+--convertTopoTree tree0 | trace ("NewickNode to topo " ++ show tree0) False = undefined
 convertTopoTree tree0 = internalConvert tree0 True
     where
         internalConvert :: NewickNode -> Bool -> TopoTree
+        --internalConvert inTree atRoot | trace ("internalConvert newick to topo " ++ show (descendants inTree)) False = undefined
         internalConvert inTree atRoot = 
             let 
                 recurse = fmap (tree . flip internalConvert False) (descendants inTree) 
-                myName = fromMaybe "" (newickLabel inTree)
+                myName = fromMaybe "HTU 0" (newickLabel inTree)
                 myCost = fromMaybe 0 (branchLength inTree)
                 node = TN.TopoNode atRoot (null $ descendants inTree) myName mempty recurse mempty mempty mempty mempty mempty mempty myCost 0
-            in TopoTree node mempty
+            in --trace ("out from Newick to topo " ++ show node)
+                TopoTree node mempty

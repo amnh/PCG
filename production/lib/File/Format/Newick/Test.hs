@@ -23,8 +23,6 @@ testSuite = testGroup "Newick Format"
       [newickExtendedDefinition']
   , testGroup "Forest Newick Parser"
       [newickForestDefinition']
-  , testGroup "Newick Converter"
-      []
   ]
 
 validUnquotedLabels :: [String]
@@ -163,3 +161,4 @@ newickForestDefinition' = testGroup "newickForestDefinition" [valid,invalid]
       [ "(((1,2),X),((3,4)X,5));" -- no angle braces
       ]
 
+    
