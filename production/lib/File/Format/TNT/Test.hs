@@ -87,7 +87,7 @@ testCommandCCode = testGroup "CCODE command tests" [ccodeHeader',ccodeIndicies',
     indicies = [ "42", "3.", ".3", "2.5", "." ]
     ccodeHeader' = testGroup "CCODE command header options" headers
       where
-        headers = header <$> (drop 2 $ inits "ccode")
+        headers = header <$> drop 2 (inits "ccode")
         header str = testCase ("Parses component \"" ++ str ++ "\"") $ parseSuccess ccodeHeader (str ++ " ")
     ccodeIndicies' = testGroup "CCODE indexing format" indexFormats
       where
@@ -219,7 +219,7 @@ testCommandCNames = testGroup "CNAMES command tests" [cnamesHeader',cnamesStateN
   where
     cnamesHeader' = testGroup "CNAMES command header options" headers
       where
-        headers = header <$> (drop 2 $ inits "cnames")
+        headers = header <$> drop 2 (inits "cnames")
         header str = testCase ("Parses component \"" ++ str ++ "\"") $ parseSuccess cnamesHeader (str ++ " ")
     cnamesStateName' = testGroup "CNAMES naming format" [nameOnly,nameAndStates]
       where
@@ -252,7 +252,7 @@ testCommandTRead = testGroup "TREAD command tests" [treadHeader',treadLeaf',trea
   where
     treadHeader' = testGroup "TREAD command header options" headers
       where
-        headers = header <$> (drop 2 $ inits "tread")
+        headers = header <$> drop 2 (inits "tread")
         header str = testCase ("Parses component \"" ++ str ++ "\"") $ parseSuccess treadHeader (str ++ " ")
     treadLeaf' = testGroup "TREAD leaf options" [indexLeaf,prefixLeaf,nameLeaf]
       where

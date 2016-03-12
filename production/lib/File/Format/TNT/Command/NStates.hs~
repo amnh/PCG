@@ -1,0 +1,35 @@
+{-# LANGUAGE FlexibleContexts #-}
+module File.Format.TNT.Command.NStates where
+
+import Data.Functor (($>))
+import File.Format.TNT.Internal
+import Text.Megaparsec
+import Text.Megaparsec.Custom
+import Text.Megaparsec.Prim     (MonadParsec)
+
+-- | Parses NSTATES command
+nstatesCommand :: MonadParsec s m Char => m ()
+nstatesCommand =  procHeader *> procBody
+  where
+    procBody = (try procFastaFile   $> ())
+           <|> (try procCommandFile $> ())
+           <|>      procCloseFile
+
+-- | Consumes the superflous heading for a NSTATES command.
+nstatesHeader :: MonadParsec s m Char => m ()
+nstatesHeader = symbol $ keyword "nstates" 2
+
+-- | A directive to interpret a file. We throw this info away later.
+-- Interpreting a file kinda sucks, this ins't Lisp.
+procCommandFile :: MonadParsec s m Char => m FilePath
+procCommandFile = anythingTill (whitespace *> char ';') <* trim (char ';')
+
+-- | A directive to read in a FASTA file as aligned, non-addative data.
+-- Not sure if we should ignore this or acturally process additional files.
+procFastaFile :: MonadParsec s m Char => m FilePath
+procFastaFile = symbol (char '&') *> procCommandFile
+
+-- | A close file directive. Closes all open files. Found at the end of all
+-- properly formated TNT input files.
+procCloseFile :: MonadParsec s m Char => m ()
+procCloseFile = symbol (char '/') *> symbol (char ';') *> pure ()
