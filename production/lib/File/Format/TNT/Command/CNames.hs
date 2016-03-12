@@ -4,6 +4,7 @@ module File.Format.TNT.Command.CNames where
 import           Data.Bifunctor           (second)
 import           Data.Char                (isSpace)
 import           Data.Foldable            (toList)
+import           Data.Functor             (($>))
 import           Data.IntMap              (IntMap,singleton,insertWith)
 import qualified Data.IntMap        as IM (fromList)
 import           Data.List                (isSuffixOf,intersperse,sort,sortBy)
@@ -61,7 +62,7 @@ duplicateIndexMessages cnames = duplicateIndexErrors
 cnamesHeader :: MonadParsec s m Char => m ()
 cnamesHeader = symbol (keyword "cnames" 2)
             *> many (symbol simpleComment)
-            *> pure ()
+            $> ()
   where
     simpleComment = delimiter *> anythingTill delimiter <* symbol delimiter
       where

@@ -74,7 +74,7 @@ xreadPreamble = xreadHeader *> ((,) <$> xreadCharCount <*> xreadTaxaCount)
 xreadHeader :: MonadParsec s m Char => m ()
 xreadHeader =  symbol (keyword "xread" 2)
             *> many simpleComment
-            *> pure ()
+            $> ()
   where
     simpleComment = delimiter *> anythingTill delimiter <* symbol delimiter
       where

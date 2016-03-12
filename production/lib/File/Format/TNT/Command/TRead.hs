@@ -5,6 +5,7 @@ import           Data.Bifunctor           (second)
 import           Data.Char                (isSpace)
 import           Data.DList               (DList,append)
 import qualified Data.DList         as DL (toList,fromList)
+import           Data.Functor             (($>))
 import           Data.IntSet              (IntSet, singleton)
 import qualified Data.IntSet        as IS (fromList)
 import           Data.List                (isSuffixOf,intersperse)
@@ -38,7 +39,7 @@ treadCommand = treadValidation =<< treadDefinition
 treadHeader :: MonadParsec s m Char => m ()
 treadHeader =  symbol (keyword "tread" 2)
             *> many simpleComment
-            *> pure ()
+            $> ()
   where
     simpleComment = delimiter *> anythingTill delimiter <* symbol delimiter
       where

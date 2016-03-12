@@ -38,11 +38,11 @@ nstatesNumeric = identifier *> stateCount
     stateCount = NumericStates <$> symbol nonNegInt
 
 nstatesProtein :: MonadParsec s m Char => m NStates
-nstatesProtein = identifier *> pure ProteinStates
+nstatesProtein = identifier $> ProteinStates
   where
     identifier = symbol $ keyword "protein" 4
 
 nstatesContinuous :: MonadParsec s m Char => m NStates
-nstatesContinuous = identifier *> pure ContinuousStates
+nstatesContinuous = identifier $> ContinuousStates
   where
     identifier  = symbol $ keyword "continuous" 4
