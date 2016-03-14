@@ -88,7 +88,7 @@ doVerify = testGroup "Check direct optimization function" [compareWrappers, chec
 edgeCases :: TestTree
 edgeCases = testGroup "Check function of direct optimization on edge cases" [oneEmpty, lenOne, oneOne, shortCase]
     where
-        seq1a = encodeOverAlphabet (fromList $ [["A"], ["G"], ["T"]]) ["A", "C", "G", "T"] :: EncodedSeq BitVector
+        seq1a = encodeOverAlphabet (fromList [["A"], ["G"], ["T"]]) ["A", "C", "G", "T"] :: EncodedSeq BitVector
         seq1b = encodeOverAlphabet mempty ["A", "C", "G", "T"] :: EncodedSeq BitVector
         (align, _, gapped, a, b) = naiveDO seq1a seq1b
         oneEmpty = testCase "Good behavior with one sequence empty" (Nothing @=? gapped)
@@ -99,11 +99,11 @@ edgeCases = testGroup "Check function of direct optimization on edge cases" [one
         lenOne = testCase "Good behavior with two sequences of length one" (a2 @=? seq2a)
 
         (_, _, _, _, b3) = naiveDO seq1a seq2b
-        expected = (charToSeq gapChar) <> (encodeOverAlphabet (singleton ["G"]) ["A", "C", "G", "T"]) <> (charToSeq gapChar) :: EncodedSeq BitVector
+        expected = charToSeq gapChar <> encodeOverAlphabet (singleton ["G"]) ["A", "C", "G", "T"] <> charToSeq gapChar :: EncodedSeq BitVector
         oneOne = testCase "Good behavior where one sequence is much shorter" (expected @=? b3)
 
-        seq3a = encodeOverAlphabet (fromList $ [["A"], ["C", "T"], ["G"], ["C"], ["T"]]) ["A", "C", "G", "T"] :: EncodedSeq BitVector
-        seq3b = encodeOverAlphabet (fromList $ [["T"], ["G"], ["C"], ["T"]]) ["A", "C", "G", "T"] :: EncodedSeq BitVector
+        seq3a = encodeOverAlphabet (fromList [["A"], ["C", "T"], ["G"], ["C"], ["T"]]) ["A", "C", "G", "T"] :: EncodedSeq BitVector
+        seq3b = encodeOverAlphabet (fromList [["T"], ["G"], ["C"], ["T"]]) ["A", "C", "G", "T"] :: EncodedSeq BitVector
         (result, _, _, _, _) = naiveDO seq3a seq3b
         trueval = encodeOverAlphabet (fromList [["A", "-"], ["T"], ["G"], ["C"], ["T"]]) ["A", "C", "G", "T"] :: EncodedSeq BitVector
         shortCase = testCase "Expected result from a small test case" (trueval @=? result)
@@ -113,15 +113,15 @@ iaVerify = testGroup "Check implied alignment function" [checkLen]
     where
         checkLen = testProperty "Length of IA result is the same or longer than inputs" alignLen
             where
-                alignLen :: Tree -> Bool
+                alignLen :: DAG -> Bool
                 alignLen tree = 
                     let result = implyMain tree
                     in trace ("out tree " ++ show result) $ checkLens tree result
 
-                checkLens :: Tree -> Tree -> Bool
+                checkLens :: DAG -> DAG -> Bool
                 checkLens tree1 tree2 | trace ("checkLens " ++ show (nodes tree1) ++ "\n" ++ show (nodes tree2)) False = undefined
                 checkLens tree1 tree2 = 
-                    let compVals = zipWith (\n1 n2 -> (length $ aligned n2) >= (length $ encoded n1) || (length $ aligned n2) == 0) (nodes tree1) (nodes tree2)
+                    let compVals = zipWith (\n1 n2 -> length (aligned n2) >= length (encoded n1) || null (aligned n2)) (nodes tree1) (nodes tree2)
                     in trace (show compVals) 
                         and compVals
 

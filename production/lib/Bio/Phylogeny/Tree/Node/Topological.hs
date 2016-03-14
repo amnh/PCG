@@ -32,12 +32,13 @@ data TopoNode b = TopoNode
                     , final :: EncodedSequences b
                     , temporary :: EncodedSequences b
                     , aligned :: EncodedSequences b
-                    , cost :: Double} deriving (Eq, Show)
+                    , localCost :: Double
+                    , totalCost :: Double} deriving (Eq, Show)
 
 -- data EdgeInfo = EdgeInfo {len :: Double} deriving (Eq, Show)
 
 -- | In a monoid instance, we take mappend to mean a joining of the two subtrees
 -- where the second subtree passed becomes a child of the first
 instance Monoid (TopoNode b) where
-     mempty = TopoNode False False mempty mempty mempty mempty mempty mempty mempty mempty mempty 0
+     mempty = TopoNode False False mempty mempty mempty mempty mempty mempty mempty mempty mempty 0 0
      mappend n1 n2 = n1 {children = n2 : children n1}

@@ -1,15 +1,11 @@
 {-# LANGUAGE FlexibleContexts #-}
 module File.Format.TNT.Command.Procedure where
 
-{-- TODO:
-  - Robust tests
-  - Good documentation
-  -}
-
-import           File.Format.TNT.Internal
-import           Text.Megaparsec
-import           Text.Megaparsec.Custom
-import           Text.Megaparsec.Prim     (MonadParsec)
+import Data.Functor (($>))
+import File.Format.TNT.Internal
+import Text.Megaparsec
+import Text.Megaparsec.Custom
+import Text.Megaparsec.Prim     (MonadParsec)
 
 -- | Parses an PROCEDURE command that consisits of exacty
 -- one of the following:
@@ -22,25 +18,31 @@ import           Text.Megaparsec.Prim     (MonadParsec)
 procedureCommand :: MonadParsec s m Char => m ()
 procedureCommand =  procHeader *> procBody
   where
-    procBody = (try procFastaFile   *> pure ())
-           <|> (try procCommandFile *> pure ())
-           <|>      procCloseFile
+    procBody = choice
+             [ try procFastaFile   $> ()
+             , try procCommandFile $> ()
+             , procCloseFile
+             ]
 
 -- | Consumes the superflous heading for a PROCEDURE command.
 procHeader :: MonadParsec s m Char => m ()
 procHeader = symbol $ keyword "procedure" 4
 
--- | A directive to interpret a file. We throw this info away later.
--- Interpreting a file kinda sucks, this ins't Lisp.
+-- | A directive to load and interpret the specified TNT file.
+--   This interpretation is beyond the scope of this software.
+--   We ignore PROCEDURE commands of this form .
 procCommandFile :: MonadParsec s m Char => m FilePath
 procCommandFile = anythingTill (whitespace *> char ';') <* trim (char ';')
 
 -- | A directive to read in a FASTA file as aligned, non-addative data.
--- Not sure if we should ignore this or acturally process additional files.
+--   This interpretation is beyond the scope of this software.
+--   We ignore PROCEDURE commands of this form. 
 procFastaFile :: MonadParsec s m Char => m FilePath
 procFastaFile = symbol (char '&') *> procCommandFile
 
 -- | A close file directive. Closes all open files. Found at the end of all
--- properly formated TNT input files.
+--   properly formated TNT input files.
+--   This software does not open files for interpretation from a TNT file,
+--   so this command will have no effect and be ignored.
 procCloseFile :: MonadParsec s m Char => m ()
 procCloseFile = symbol (char '/') *> symbol (char ';') *> pure ()

@@ -14,13 +14,20 @@
 
 module Data.List.Utility where
 
+import Data.Foldable
 import Data.List     (sort,sortBy)
-import Data.Map      (empty,insertWith,toList)
+import Data.Map      (assocs,empty,insertWith)
 import Data.Ord      (comparing)
 
+isSingleton :: Foldable t => t a -> Bool
+isSingleton = f . toList
+  where
+    f [_] = True
+    f  _  = False
+
 -- | Returns the list of elements which are not unique in the input list.
-duplicates :: Ord a => [a] -> [a]
-duplicates = duplicates' . sort
+duplicates :: (Foldable t, Ord a) => t a -> [a]
+duplicates = duplicates' . sort . toList
   where 
     duplicates' []       = []
     duplicates' [_]      = []
@@ -42,7 +49,7 @@ occurances = collateOccuranceMap . buildOccuranceMap
     buildOccuranceMap = foldr occurance empty 
       where
         occurance e = insertWith (const succ) e 1
-    collateOccuranceMap = sortBy comparator . toList
+    collateOccuranceMap = sortBy comparator . assocs
       where
         comparator x y = descending $ comparing snd x y
         descending LT  = GT

@@ -20,13 +20,20 @@ import Data.Vector (Vector, fromList)
 import Data.Map.Lazy (Map)
 import Test.Tasty.QuickCheck
 
-type ParsedSeq = Vector [String]
+-- TODO do ambiguity group types: more aliasing
+-- TODO Add a definition for ParsedSeq for single characters
+-- TODO change to ParsedChar
 
+type AmbiguityGroup = [String]
+
+type ParsedSeq = Vector AmbiguityGroup
+-- TODO change to ParsedCharacters
 type ParsedSequences = Vector (Maybe ParsedSeq)
-
+-- TODO change to TaxaCharacters???
+-- TODO add a TaxonIdentifier or TerminalName as type string - lots of aliasing
 type TreeSeqs = Map String ParsedSequences
-
-type Alphabet = Vector [String]
+-- TODO think about this type: change to a vector (or maybe list) of strings
+type Alphabet = [String]
 
 --instance Arbitrary ParsedSeq where
 --    arbitrary = fromList <$> listOf (listOf (arbitrary :: Gen String))

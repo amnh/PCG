@@ -153,11 +153,6 @@ validateNexusParseResult (NexusParseResult inputSeqBlocks taxas treeSet assumpti
 
       -- these are still dependencies for dependent errors, but they're also the beginning of the output gathering.                  
         (outputSeqTups,_) = foldSeqs seqMetadataTuples
-        x = case someVar of
-              Left str ->
-              Right y  -> map (\singleSeq -> ( getSeqFromMatrix singleSeq taxaLst
-                                  , getCharMetadata costMatrix singleSeq
-                                  )) inputSeqBlocks
         seqMetadataTuples = map (\singleSeq -> ( getSeqFromMatrix singleSeq taxaLst
                                   , getCharMetadata costMatrix singleSeq
                                   )) inputSeqBlocks -- TODO: replace getSeqFromMatrix blah blah with someVar

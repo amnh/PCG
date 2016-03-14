@@ -18,6 +18,8 @@
 module Bio.Phylogeny.PhyloCharacter where
 
 import Data.Vector (Vector)
+import Bio.Sequence.Coded
+import Bio.Sequence.Parsed
 import GHC.Generics
 import Data.Matrix.NotStupid (Matrix, fromList, (<|>))
 
@@ -45,43 +47,44 @@ makeContinuous name' ignored' tcm' stateNames' =
 
 -- | Define a character type as DNA, RNA, Morphology, Continous, or Custom
 -- Fields differ based on the constructor, but in general all hold a name, ignored, and tcm
-data PhyloCharacter b = DNA         { name :: String -- The character name if it has one
+data PhyloCharacter s = DNA         { name :: String -- The character name if it has one
                                     , aligned :: Bool -- Whether the character represents an aligned or unaligned, sequence
-                                    , fitchMasks :: (Vector b, Vector b)
+                                    , fitchMasks :: (s, s)
                                     , stateNames :: Vector String
-                                    , alphabet :: Vector String
+                                    , alphabet :: Alphabet
                                     , tcm :: CostMatrix
                                     , ignored :: Bool
                                     }
  
                       | RNA         { name :: String
                                     , aligned :: Bool
-                                    , fitchMasks :: (Vector b, Vector b)
+                                    , fitchMasks :: (s, s)
                                     , stateNames :: Vector String
-                                    , alphabet :: Vector String
+                                    , alphabet :: Alphabet
                                     , tcm :: CostMatrix
                                     , ignored :: Bool
                                     }
 
                       | Qualitative { name :: String
                                     , aligned :: Bool
-                                    , fitchMasks :: (Vector b, Vector b)
+                                    , fitchMasks :: (s, s)
                                     , stateNames :: Vector String
-                                    , alphabet :: Vector String
+                                    , alphabet :: Alphabet
                                     , tcm :: CostMatrix
                                     , additive :: Bool
                                     , ignored :: Bool
                                     } 
 
-                      | Continous   { name :: String
+                      | Continous   { name :: String -- TODO: Add step values
                                     , ignored :: Bool
                                     , tcm :: CostMatrix
+                                    , alphabet :: Alphabet
                                     }
  
                       | Custom      { name :: String
                                     , aligned :: Bool
-                                    , masks :: (Vector b, Vector b)
-                                    , alphabet :: Vector String
+                                    , fitchMasks :: (s, s)
+                                    , alphabet :: Alphabet
                                     , stateNames :: Vector String
                                     , tcm :: CostMatrix
                                     , ignored :: Bool
@@ -90,14 +93,18 @@ data PhyloCharacter b = DNA         { name :: String -- The character name if it
  
                       | AminoAcid   { name :: String
                                     , aligned :: Bool
-                                    , fitchMasks :: (Vector b, Vector b)
-                                    , alphabet :: Vector String
+                                    , fitchMasks :: (s, s)
+                                    , alphabet :: Alphabet
                                     , stateNames :: Vector String
                                     , tcm :: CostMatrix
                                     , ignored :: Bool
                                     }
 
                        deriving (Show, Eq, Generic)
+
+                        -- TODO: add a structure to track the root position for every character where it was optimized
+                        -- TODO: reduce number of constructors
+                        -- TODO: think about how this may change over time to track optimization type
 
 -- | A cost matrix is just a matrix of floats
 type CostMatrix = Matrix Double
