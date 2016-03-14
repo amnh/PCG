@@ -61,8 +61,8 @@ collapseStructures (ccodes,cnames,costs,nstates,treads,xreads)
   | otherwise         = pure (ccodes,collapsedCNames,costs,nstates,collapsedTReads,xreads)
   where
     errors          = cnamesErrors 
-    collapsedTReads = concatMap toList treads 
     collapsedCNames = concatMap toList cnames
+    collapsedTReads = concatMap toList treads 
     cnamesErrors    = if null collapsedCNames
                       then []
                       else duplicateIndexMessages $ NE.fromList collapsedCNames
@@ -87,17 +87,19 @@ ccodeCoalesce charCount ccodeCommands = generate charCount f
     f :: Int -> CharacterMetaData
     f = fromMaybe initialMetaData . (`IM.lookup` stateMapping)
     stateMapping :: IntMap CharacterMetaData
-    stateMapping = foldl addChangeSet mempty ccodeCommands
-    addChangeSet :: IntMap CharacterMetaData -> CCode -> IntMap CharacterMetaData
-    addChangeSet mapping (CCode state indicies) = foldl applyChanges mapping indicies
+    stateMapping = foldl (\mapping ccode -> foldl addChangeSet mapping ccode) mempty ccodeCommands
+    addChangeSet :: IntMap CharacterMetaData -> CCodeAugment -> IntMap CharacterMetaData
+    addChangeSet mapping (CCodeAugment states indicies) = foldl applyChanges mapping indicies
       where
         applyChanges :: IntMap CharacterMetaData -> CharacterSet -> IntMap CharacterMetaData
-        applyChanges mapping' changeSet = foldl (insertState state) mapping' (range charCount changeSet)
-    insertState :: CharacterState -> IntMap CharacterMetaData ->  Int -> IntMap CharacterMetaData
-    insertState state mapping index = insertWith translation index defaultValue mapping
+        applyChanges mapping' changeSet = foldl (insertStates states) mapping' (range charCount changeSet)
+    insertStates :: Foldable t => t CharacterState -> IntMap CharacterMetaData ->  Int -> IntMap CharacterMetaData
+    insertStates states mapping index = foldl insertState mapping states
       where
-        defaultValue = metaDataTemplate state
-        translation  = const (modifyMetaDataState state)
+        insertState mapping' state = insertWith translation index defaultValue mapping'
+          where
+            defaultValue = metaDataTemplate state
+            translation  = const (modifyMetaDataState state)
 
 cnamesCoalesce :: Foldable f => f CharacterName -> IntMap CharacterName
 cnamesCoalesce = foldl f mempty
