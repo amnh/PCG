@@ -28,10 +28,10 @@ struct retType {
     char* alignment;
 };
 
-int trueWt(struct align *path, int a, int b);
+int trueWt(struct align*, int, int);
 
 // EDIT: rectified with .c file.
-int f(/*char *seq1, char *seq2, int wtInsertDel, int wtSub, struct retType* retAlign*/);
+int aligner(char*, char*, int, int, struct retType*);
 
 
 #endif /* Header_h */

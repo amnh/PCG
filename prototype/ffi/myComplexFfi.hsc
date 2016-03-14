@@ -1,10 +1,10 @@
 {-# LANGUAGE ForeignFunctionInterface, BangPatterns #-}
 
-import System.IO.Unsafe
 import Foreign
 import Foreign.Ptr
 import Foreign.C.String
 import Foreign.C.Types
+import System.IO.Unsafe
 
 #include "myComplexTestC.h"
 
@@ -18,7 +18,7 @@ data AlignResult = AlignResult { val      :: CInt
 -- Because we're using a struct we need to make a Storable instance
 instance Storable AlignResult where
     sizeOf    _ = (#size struct align)
-    alignment _ = alignment (undefined :: CDouble)
+    alignment _ = alignment (undefined :: CChar)
     peek ptr = do
         value    <- (#peek struct align, finalWt) ptr
         sequence <- (#peek struct align, finalStr) ptr
@@ -32,11 +32,6 @@ instance Storable AlignResult where
 -- This is the declaration of the Haskell wrapper for the C function we're calling.
 foreign import ccall unsafe "myComplexTestC.h testFn"
     callExtFn_c :: CString -> CString -> CInt -> CInt -> Ptr AlignResult -> CInt
-
--- Just for testing from CLI outside of ghci.
-main :: IO ()
-main = putStrLn $ show testFn
-
 
 testFn :: Either String (Int, String) 
 testFn = unsafePerformIO $ 
@@ -59,4 +54,6 @@ testFn = unsafePerformIO $
             else do
                 pure $ Left "Out of memory"
         
-        
+-- Just for testing from CLI outside of ghci.
+main :: IO ()
+main = putStrLn $ show testFn
