@@ -34,12 +34,20 @@ madRead = badReadGraph "../../TestDat/fakeArtmor.fas" "../../TestDat/artmor.tre"
 madness = rootCost . allOptimization 1 <$> madRead
 outputMad = outPutDot "TestArtmor.dot" =<< ((Graph . pure) <$> madRead) 
 checkOuts = liftM2 (V.zipWith (\n e -> not (isLeaf n) && null (outNodes e))) (nodes <$> madRead) (edges <$> madRead)
+bigShow = showSeqs . allOptimization 1 <$> madRead
+madNames = nodeNames <$> madRead
 
 smallRead = badReadGraph "../../TestDat/ThreeNode.fas" "../../TestDat/ThreeNode.tre"
 smallNum = allOptimization 1 <$> smallRead
-showSeqs inDag = fmap (\n -> flip unencodeMany ["A", "C", "G", "T", "-"] $ final n) (nodes inDag) 
+showSeqs inDag = fmap (\n -> show (code n) ++ ": " ++ (show $ flip unencodeMany ["A", "C", "G", "T", "-"] $ encoded n)) (nodes inDag) 
 smallShow = showSeqs <$> smallNum
 
 fiveRead = badReadGraph "../../TestDat/FiveNode.fas" "../../TestDat/FiveNode.tre"
 fiveNum = allOptimization 1 <$> fiveRead
 fiveShow = showSeqs <$> fiveNum
+
+singleMad = rootCost . allOptimization 1 <$> badReadGraph "../../TestDat/fakeArtmor.fas" "../../TestDat/SingleArtmor.tre"
+
+mediumTest = allOptimization 1 <$> badReadGraph "../../TestDat/MediumCooked.fas" "../../TestDat/MediumCooked.tre"
+
+checkNewick = parse N.newickStreamParser "../../TestDat/MediumCooked.tre" <$> readFile "../../TestDat/MediumCooked.tre"

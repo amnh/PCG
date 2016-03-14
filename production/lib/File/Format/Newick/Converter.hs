@@ -63,7 +63,7 @@ convertBothTopo rootTree inSeqs = internalConvert True rootTree
         internalConvert atRoot inTree = 
             let 
                 recurse = fmap (tree . internalConvert False) (descendants inTree) 
-                myName = fromMaybe "" (newickLabel inTree)
+                myName = fromMaybe ("HTU " ++ show 0) (newickLabel inTree)
                 myCost = fromMaybe 0 (branchLength inTree)
                 mySeq = if M.member myName inSeqs
                             then inSeqs M.! myName
