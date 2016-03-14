@@ -22,8 +22,8 @@ badReadGraph fastaPath newickPath = do
   newickResult <- parse N.newickStreamParser newickPath <$> readFile newickPath
   case (fastaResult, newickResult) of
     (Left  x, Left  y) -> mempty <$ sequence_ (putStrLn <$> [show x, show y])
-    (Left  x, _      ) -> mempty <$ putStrLn (show x)
-    (_      , Left  y) -> mempty <$ putStrLn (show y)
+    (Left  x, _      ) -> mempty <$ print x
+    (_      , Left  y) -> mempty <$ print y
     (Right x, Right y) -> pure $ convertBoth (head y) (coerceFasta x)
   where
     coerceFasta = fmap (singleton . Just)
@@ -39,7 +39,7 @@ madNames = nodeNames <$> madRead
 
 smallRead = badReadGraph "../../TestDat/ThreeNode.fas" "../../TestDat/ThreeNode.tre"
 smallNum = allOptimization 1 <$> smallRead
-showSeqs inDag = fmap (\n -> show (code n) ++ ": " ++ (show $ flip unencodeMany ["A", "C", "G", "T", "-"] $ encoded n)) (nodes inDag) 
+showSeqs inDag = fmap (\n -> show (code n) ++ ": " ++ show (flip unencodeMany ["A", "C", "G", "T", "-"] $ encoded n)) (nodes inDag) 
 smallShow = showSeqs <$> smallNum
 
 fiveRead = badReadGraph "../../TestDat/FiveNode.fas" "../../TestDat/FiveNode.tre"
