@@ -16,20 +16,28 @@
 {-# LANGUAGE TypeSynonymInstances, FlexibleInstances, MultiParamTypeClasses, UndecidableInstances #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
-module Bio.Sequence.Coded (CodedSequence(..), EncodedSeq, EncodedSequences, CodedChar(..), encodeAll) where
+module Bio.Sequence.Coded (CodedSequence(..), EncodedSeq, EncodedSequences, CodedChar(..), encodeAll, unencodeMany) where
 
 import Prelude hiding (map, length, zipWith, null, head)
+import qualified Prelude as P (length, map)
 import Data.List (elemIndex)
 import Control.Applicative  (liftA2, liftA)
 import Control.Monad
-import Data.Vector    (map, length, zipWith, empty, null, Vector, head, (!), singleton)
+import Data.Vector    (map, length, zipWith, empty, null, Vector, head, (!), singleton, ifoldr, slice)
 import qualified Data.Vector as V (filter)
 import Data.Bits
+import Data.BitVector (BitVector, size)
 import Data.Maybe
 import Bio.Sequence.Coded.Class
 import Bio.Sequence.Character.Coded
 import Bio.Sequence.Packed.Class
 import Bio.Sequence.Parsed
+
+import Debug.Trace
+
+-- TODO: Change EncodedSeq/Sequences to EncodedCharacters
+        -- Make a missing a null vector
+        -- Think about a nonempty type class or a refinement type for this
 
 -- | EncodedSequences is short for a vector of EncodedSeq
 type EncodedSequences b = Vector (EncodedSeq b)
@@ -50,16 +58,28 @@ instance Bits b => CodedSequence (EncodedSeq b) b where
     -- This works over minimal alphabet
     encode strSeq = 
         let 
-            alphabet = foldr (\ambig acc -> filter (not . (flip elem) acc) ambig ++ acc) [] strSeq
-            coded = map (\ambig -> foldr (\c acc -> setElemAt c acc alphabet) zeroBits ambig) strSeq
-            final = if length coded == 0 then Nothing else Just coded
+            alphabet = foldr (\ambig acc -> filter (not . flip elem acc) ambig ++ acc) [] strSeq
+            coded = map (foldr (\c acc -> setElemAt c acc alphabet) zeroBits) strSeq
+            final = if null coded then Nothing else Just coded
         in final
 
-    encodeOverAlphabet strSeq alphabet = 
+    encodeOverAlphabet strSeq inAlphabet = 
         let
-            coded = map (\ambig -> foldr (\c acc -> setElemAt c acc alphabet) zeroBits ambig) strSeq
-            final = if length coded == 0 then Nothing else Just coded
-        in final
+            alphabet = inAlphabet
+            coded = map (foldr (\c acc -> setElemAt c acc alphabet) zeroBits) strSeq
+            final = if null coded then Nothing else Just coded
+        in trace ("encoded strSeq " ++ show strSeq) final
+
+----  = 
+--    let
+--        alphWidth = P.length alphabet
+--        bitWidth = bitSizeMaybe gapChar
+--        coded = map (\ambig -> foldr (\c acc -> setElemAt c acc alphabet) zeroBits ambig) strSeq
+--        regroup = case bitWidth of
+--                    Nothing -> ifoldr (\i val acc -> shift val (i * alphWidth) + acc) zeroBits coded
+--                    Just width -> let grouped = foldr (\i acc -> (slice i alphWidth coded) ++ acc) mempty [alphWidth, 2 * alphWidth..width - alphWidth]
+--                                  in P.map (\g -> ifoldr (\i val acc -> shift val (i * alphWidth) + acc)) grouped
+--    in undefined
 
 -- | Sequence to map encoding over ParsedSequences
 encodeAll :: Bits b => ParsedSequences -> EncodedSequences b
@@ -73,7 +93,20 @@ setElemAt char orig alphabet
     | char == "-" = setBit orig 0
     | otherwise = case elemIndex char alphabet of
                         Nothing -> orig
-                        Just pos -> setBit orig (pos + 1)     
+                        Just pos -> setBit orig (pos + 1)    
+
+-- | Added functionality for unencoded
+unencodeOverAlphabet :: EncodedSeq BitVector -> Alphabet -> ParsedSeq 
+unencodeOverAlphabet encoded alph = 
+    let 
+        alphLen = P.length alph
+        oneBit inBit = foldr (\i acc -> if testBit inBit i then alph !! (i `mod` alphLen) : acc else acc) mempty [0..size inBit]
+        allBits = fmap oneBit <$> encoded
+    in fromMaybe mempty allBits
+
+-- | Functionality to unencode many
+unencodeMany :: EncodedSequences BitVector -> Alphabet -> ParsedSequences
+unencodeMany seqs alph = fmap (Just . flip unencodeOverAlphabet alph) seqs
 
 instance Bits b => CodedChar b where
     gapChar = setBit zeroBits 0
@@ -81,7 +114,7 @@ instance Bits b => CodedChar b where
 -- | To make this work, the underlying types are also an instance of bits because a Vector of bits is and a Maybe bits is
 instance Bits b => Bits (Vector b) where
     (.&.) bit1 bit2     
-        | length bit1 /= length bit2 = error "Attempt to take and of bits of different length"
+        | length bit1 /= length bit2 = error ("Attempt to take and of bits of different length " ++ show (length bit1) ++ " and " ++ show (length bit2))
         | otherwise = zipWith (.&.) bit1 bit2
     (.|.) bit1 bit2 
         | length bit1 /= length bit2 = error "Attempt to take or of bits of different length"

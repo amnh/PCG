@@ -35,7 +35,7 @@ setElemSafe value (row, col) matrix
 -- | Simple function to get the aligned if available, the encoded if not
 getForAlign :: NodeConstraint n s b => n -> Vector s
 getForAlign node 
-    | (null $ preliminaryAlign node) && (null $ preliminary node) = encoded node
+    | null (preliminaryAlign node) && null (preliminary node) = encoded node
     | null $ preliminaryAlign node = preliminary node
     | otherwise = preliminaryAlign node 
 
@@ -53,6 +53,6 @@ checkForAlign node1 node2
             p2 = preliminary node2
             e1 = encoded node1
             e2 = encoded node2
-            getMatch s1 s2 = (not $ null s1) && (not $ null s2)
+            getMatch s1 s2 = not (null s1) && not (null s2)
             screen = filter isEmpty
-            checkLens s1 s2 = (length $ screen s1) == (length $ screen s2)
+            checkLens s1 s2 = length (screen s1) == length (screen s2)

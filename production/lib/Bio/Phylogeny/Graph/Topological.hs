@@ -27,7 +27,6 @@ import Bio.Sequence.Coded
 import Bio.Sequence.Random ()
 import Bio.Sequence.Parsed
 import Bio.Phylogeny.Graph.Data
-
 import Data.BitVector (BitVector)
 import Data.Vector    (Vector)
 import qualified Data.Vector as V (filter)
@@ -48,20 +47,24 @@ instance Monoid TopoTree where
         let
             (recoded1, recoded2) = recodeTopoChars t1 t2
             topNode = tree recoded1
-        in recoded1 {tree = topNode {children = (tree recoded2) : children topNode}}
+        in recoded1 {tree = topNode {children = tree recoded2 : children topNode}}
+
+--instance Arbitrary TopoTree where
+--    arbitrary = do
+--        numChildren <- choose (1, maxChildren) :: Gen Int
+--        randChildren <- vectorOf numChildren (internalRandom 0)
+--        randSeq <- arbitrary :: Gen ParsedSequences
+--        let encodedRand = encodeAll randSeq
+--        seqs <- vectorOf 5 (arbitrary :: Gen MultiSeq)
+--        randCost <- arbitrary :: Gen Double
+--        randTotal <- arbitrary :: Gen Double
+--        let randName = show (0 :: Int) ++ show randCost
+--        let outNode = TopoNode True True randName randSeq [] encodedRand (head seqs) (seqs !! 1) (seqs !! 2) (seqs !! 3) (seqs !! 4) randCost randTotal
+--        if null randChildren then return $ TopoTree outNode mempty
+--                         else return $ TopoTree (outNode {isLeaf = False, children = randChildren}) mempty
 
 instance Arbitrary TopoTree where
-    arbitrary = do
-        numChildren <- choose (1, maxChildren) :: Gen Int
-        randChildren <- vectorOf numChildren (internalRandom 0)
-        randSeq <- arbitrary :: Gen ParsedSequences
-        let encodedRand = encodeAll randSeq
-        seqs <- vectorOf 5 (arbitrary :: Gen MultiSeq)
-        randCost <- arbitrary :: Gen Double
-        let randName = (show (0 :: Int)) ++ show randCost
-        let outNode = TopoNode True True randName randSeq [] encodedRand (seqs !! 0) (seqs !! 1) (seqs !! 2) (seqs !! 3) (seqs !! 4) randCost
-        if null randChildren then return $ TopoTree outNode mempty
-                         else return $ TopoTree (outNode {isLeaf = False, children = randChildren}) mempty
+    arbitrary = flip TopoTree mempty <$> (internalRandom 0)
 
 -- | Function to recode characters in a topoTree
 -- allows for coherent joining of trees over different alphabets
@@ -75,12 +78,13 @@ internalRandom myDepth = do
     randChildren <- vectorOf numChildren (internalRandom (myDepth + 1))
     seqs <- vectorOf 5 (arbitrary :: Gen MultiSeq)
     randCost <- arbitrary :: Gen Double
+    randTotal <- arbitrary :: Gen Double
     let randName = show myDepth ++ show randCost
     rand <- choose (0, maxDepth)
     randSeq <- arbitrary :: Gen ParsedSequences
     let encodedRand = encodeAll randSeq
     let terminate = chooseTerminate myDepth rand
-    let outNode = TopoNode False True randName randSeq [] encodedRand (seqs !! 0) (seqs !! 1) (seqs !! 2) (seqs !! 3) (seqs !! 4) randCost
+    let outNode = TopoNode (myDepth == 0) True randName randSeq [] encodedRand (head seqs) (seqs !! 1) (seqs !! 2) (seqs !! 3) (seqs !! 4) randCost randTotal
     if terminate then --trace "terminate" 
             return outNode
         else --trace "continue" 

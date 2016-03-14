@@ -11,7 +11,7 @@ import Data.Maybe                 (fromMaybe)
 import File.Format.Fasta.Internal
 import File.Format.Fasta.Parser
 import Safe                       (headMay)
-import Test.Custom                (parseEquals,parseFailure)
+import Test.Custom.Parse          (parseEquals,parseFailure)
 import Test.Tasty                 (TestTree,testGroup)
 import Test.Tasty.HUnit
 import Test.Tasty.QuickCheck

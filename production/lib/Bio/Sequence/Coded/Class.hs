@@ -21,6 +21,7 @@ module Bio.Sequence.Coded.Class where
 import Bio.Sequence.Character.Coded
 import Bio.Sequence.Parsed
 
+-- TODO: require instance of foldable to remove some of these
 
 -- | A coded sequence allows grabbing of a character, filtering, and some standard types
 class (Monoid s, CodedChar b) => CodedSequence s b | s -> b where

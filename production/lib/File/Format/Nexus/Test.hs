@@ -14,13 +14,11 @@ import           Data.Set                   (toList)
 import           File.Format.Nexus.Data
 import           File.Format.Nexus.Parser
 import           File.Format.Nexus.Validate
-import           Test.Custom                (parseEquals,parseFailure,parseSuccess)
+import           Test.Custom.Parse
 import           Test.Tasty                 (TestTree,testGroup)
 import           Test.Tasty.HUnit
 import           Test.Tasty.QuickCheck
 import           Text.Megaparsec            (char,eof,parse,string)
-
-import Debug.Trace (trace)
 
 testSuite :: TestTree
 testSuite = testGroup "Nexus Format"
@@ -363,41 +361,6 @@ stringTypeList =
 stringTypeListPerms = [(string ++ " " ++ string', [result, result']) | (string, result) <- stringTypeList, (string', result') <- stringTypeList]
 
 validtcmMatrix = "usertype name  = 4\n [a]A B C D\n 0 1 2 3\n 1 0 2 3\n 1 2 0 3\n 1 2 3 0\n;"
-
-
-newtype AsciiAlphaNum    = AsciiAlphaNum    { getAsciiAlphaNum    :: Char } deriving (Eq)
-newtype AsciiNonAlphaNum = AsciiNonAlphaNum { getAsciiNonAlphaNum :: Char } deriving (Eq)
-newtype Whitespace       = Whitespace       { getWhitespaceChar   :: Char } deriving (Eq)
-newtype InlineSpace      = InlineSpace      { getInlineSpaceChar  :: Char } deriving (Eq)
-
-nonSpaceChars    = fmap AsciiAlphaNum    . filter        isAlphaNum  $ chr <$> [0..128]
-nonAlphaNumChars = fmap AsciiNonAlphaNum . filter (not . isAlphaNum) $ chr <$> [0..128]
-whitespaceChars  = fmap Whitespace " \t\n\r\f\v"
-inlineSpaceChars = fmap InlineSpace " \t"
-
-instance Arbitrary AsciiAlphaNum where
-  arbitrary = elements nonSpaceChars
-
-instance Show AsciiAlphaNum where
-  show (AsciiAlphaNum c) = show c
-
-instance Arbitrary AsciiNonAlphaNum where
-  arbitrary = elements nonAlphaNumChars
-
-instance Show AsciiNonAlphaNum where
-  show (AsciiNonAlphaNum c) = show c
-
-instance Arbitrary Whitespace where
-  arbitrary = elements whitespaceChars
-
-instance Show Whitespace where
-  show (Whitespace c) = show c
-
-instance Arbitrary InlineSpace where
-  arbitrary = elements inlineSpaceChars
-
-instance Show InlineSpace where
-  show (InlineSpace c) = show c
 
 newtype NexusKeyword = NexusKeyword String deriving (Eq)
 

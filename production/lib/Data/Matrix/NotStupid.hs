@@ -19,7 +19,7 @@ module Data.Matrix.NotStupid
   , combineRows
   , switchRows
   , switchCols
-  , Stupid.Matrix
+  , Stupid.Matrix ()
   , Stupid.prettyMatrix
   , Stupid.nrows
   , Stupid.ncols

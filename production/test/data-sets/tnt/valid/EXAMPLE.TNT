@@ -98,7 +98,7 @@ cnames
 {  3 eye_tubercle abs pres;
 {  4 clypeus wide narrow;
 {  5 PE_row recurved procurved;
-{  6 AME_and_PME AMEðPME AME>>PME;
+{  6 AME_and_PME AME\F0PME AME>>PME;
 {  7 pubescence abs light dense;
 {  8 sternum_shape rastelloid tuberculote;
 {  9 sternum wide normal long;

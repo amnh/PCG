@@ -1,69 +1,69 @@
 {-# LANGUAGE ConstraintKinds #-}
 {- Module for non-additive optimization of a bit packed tree-}
 
-module Analysis.OldStructureFitch where
+module Analysis.GenericFitch where
 
--- imports 
+-- imports
 import Bio.Phylogeny.Tree.Binary
+import Bio.Phylogeny.Tree.CharacterAware
 import Bio.Phylogeny.Tree.Node.Encoded
 import Bio.Phylogeny.Tree.Node.Preliminary
-import Bio.Phylogeny.Tree.Node.Character
 import Bio.Phylogeny.Tree.Node.Final
 import Bio.Phylogeny.Network
 import Bio.Sequence.Coded
 import Bio.Phylogeny.PhyloCharacter
 
+
 import qualified Data.Vector as V
 import Debug.Trace
-import Data.Int
 import Data.Maybe
-import Safe
 import Data.Bits
-import Control.Monad
+import qualified Data.IntMap as IM
 
-type TreeConstraint t n s b = (BinaryTree t n, Show t, NodeConstraint n s b)
-type NodeConstraint n s b = (EncodedNode n s, PreliminaryNode n s, CharacterNode n b, FinalNode n s, SeqConstraint s b)
-type SeqConstraint s b = (Bits b, CodedSequence s b, Bits s)
+type TreeConstraint t n s b = (BinaryTree t n, Show t, NodeConstraint n s b, CharacterTree t s)
+type NodeConstraint n s b = (EncodedNode n s, PreliminaryNode n s, FinalNode n s, SeqConstraint s b, Show n)
+type SeqConstraint s b = (Bits b, CodedSequence s b, Bits s, Show s)
+
+-- TODO: modify to map over characters to make sure we can combine?????
 
 -- | Unified function to perform both the first and second passes of fitch
-allOptimization :: TreeConstraint t n s b => Float -> t -> t
---allOptimization weight inTree | trace ("allOptimization " ++ show inTree) False = undefined
+allOptimization :: TreeConstraint t n s b => Double -> t -> t
+--allOptimization _ inTree | trace ("allOptimization " ++ show (names inTree IM.! 63)) False = undefined
 allOptimization weight inTree = 
     let 
-        downPass = optimizationDownPass weight inTree
-        upPass = optimizationUpPass weight downPass
+        downPass = optimizationPreorder weight inTree
+        upPass = optimizationPostorder downPass
     in upPass
 
 -- | Optimization down pass warpper for recursion from root
-optimizationDownPass :: TreeConstraint t n s b => Float -> t -> t
-optimizationDownPass weight tree
+optimizationPreorder :: TreeConstraint t n s b => Double -> t -> t
+optimizationPreorder weight tree
     | isLeaf (root tree) tree = -- if the root is a terminal, give the whole tree a cost of zero, do not reassign nodes
         let 
-            newNode = setCost 0.0 (root tree)
+            newNode = setLocalCost 0.0 $ setTotalCost 0.0 (root tree)
             newTree = tree `update` [newNode]
         in newTree
     | leftOnly && rightOnly = error "Problem with binary tree structure: non-terminal has no children"
     | rightOnly = -- if there is only one child, continue recursion down and resolve
         let 
-            nodes1 = internalDownPass weight (fromJust $ rightChild (root tree) tree) tree -- with only one child, assignment and cost is simply carried up
+            nodes1 = internalPreorder weight (fromJust $ rightChild (root tree) tree) tree -- with only one child, assignment and cost is simply carried up
             carryNode = head nodes1
-            myNode = setTemporary (temporary carryNode) $ setAlign (preliminaryAlign carryNode) 
-                        $ setPreliminary (preliminary carryNode) $ setCost (cost carryNode) (root tree)
-            newNodes = myNode : nodes1
+            newNodes = (setTemporary (temporary carryNode) $ setAlign (preliminaryAlign carryNode) 
+                        $ setPreliminary (preliminary carryNode) $ setTotalCost (totalCost carryNode) $ setLocalCost (localCost carryNode) (root tree)) : nodes1
         in tree `update` newNodes
     | leftOnly = 
         let 
-            nodes1 = internalDownPass weight (fromJust $ leftChild (root tree) tree) tree -- with only one child, assignment and cost is simply carried up
+            nodes1 = internalPreorder weight (fromJust $ leftChild (root tree) tree) tree -- with only one child, assignment and cost is simply carried up
             carryNode = head nodes1
             myNode = setTemporary (temporary carryNode) $ setAlign (preliminaryAlign carryNode) 
-                        $ setPreliminary (preliminary carryNode) $ setCost (cost carryNode) (root tree)
+                        $ setPreliminary (preliminary carryNode) $ setTotalCost (totalCost carryNode) $ setLocalCost (localCost carryNode) (root tree)
             newNodes = myNode : nodes1
         in tree `update` newNodes
     | otherwise = 
         let 
-            nodes1 = internalDownPass weight (fromJust $ rightChild (root tree) tree) tree 
-            nodes2 = internalDownPass weight (fromJust $ leftChild (root tree) tree) tree
-            myNode = downBitOps weight (root tree) (head nodes1) (head nodes2)
+            nodes1 = internalPreorder weight (fromJust $ rightChild (root tree) tree) tree 
+            nodes2 = internalPreorder weight (fromJust $ leftChild (root tree) tree) tree
+            myNode = preorderBitOps weight (root tree) (head nodes1) (head nodes2) (characters tree)
             newNodes = myNode : (nodes1 ++ nodes2)
         in tree `update` newNodes
 
@@ -72,31 +72,31 @@ optimizationDownPass weight tree
             rightOnly = isNothing $ leftChild (root tree) tree
 
 -- | Internal down pass that creates new rows without combining, making the algorithm faster
-internalDownPass :: TreeConstraint t n s b => Float -> n -> t -> [n]
-internalDownPass weight node tree 
+internalPreorder :: TreeConstraint t n s b => Double -> n -> t -> [n]
+internalPreorder weight node tree 
     | isLeaf node tree = -- if the root is a terminal, give the whole tree a cost of zero, do not reassign nodes
-        let newNode = setCost 0.0 node
+        let newNode = setTotalCost 0.0 $ setLocalCost 0.0 node
         in [newNode]
     | rightOnly && leftOnly = error "Problem with binary tree structure: non-terminal has no children"
     | rightOnly = -- if there is only one child, continue recursion down and resolve
         let 
-            nodes1 = internalDownPass weight (fromJust $ rightChild node tree) tree -- with only one child, assignment and cost is simply carried up
+            nodes1 = internalPreorder weight (fromJust $ rightChild node tree) tree -- with only one child, assignment and cost is simply carried up
             carryNode = head nodes1
             myNode = setTemporary (temporary carryNode) $ setAlign (preliminaryAlign carryNode) 
-                        $ setPreliminary (preliminary carryNode) $ setCost (cost carryNode) node
+                        $ setPreliminary (preliminary carryNode) $ setTotalCost (totalCost carryNode) $ setLocalCost (localCost carryNode) node
         in myNode : nodes1
     | leftOnly = 
         let 
-            nodes1 = internalDownPass weight (fromJust $ leftChild node tree) tree -- with only one child, assignment and cost is simply carried up
+            nodes1 = internalPreorder weight (fromJust $ leftChild node tree) tree -- with only one child, assignment and cost is simply carried up
             carryNode = head nodes1
             myNode = setTemporary (temporary carryNode) $ setAlign (preliminaryAlign carryNode) 
-                        $ setPreliminary (preliminary carryNode) $ setCost (cost carryNode) node
+                        $ setPreliminary (preliminary carryNode) $ setTotalCost (totalCost carryNode) $ setLocalCost (localCost carryNode) node
         in myNode : nodes1
     | otherwise = 
         let 
-            nodes1 = internalDownPass weight (fromJust $ rightChild node tree) tree 
-            nodes2 = internalDownPass weight (fromJust $ leftChild node tree) tree
-            myNode = downBitOps weight node (head nodes1) (head nodes2)
+            nodes1 = internalPreorder weight (fromJust $ rightChild node tree) tree 
+            nodes2 = internalPreorder weight (fromJust $ leftChild node tree) tree
+            myNode = preorderBitOps weight node (head nodes1) (head nodes2) (characters tree)
         in myNode : (nodes1 ++ nodes2)
 
         where
@@ -105,47 +105,50 @@ internalDownPass weight node tree
 
 -- | Bit operations for the down pass: basically creats a mask for union and intersection areas and then takes them
 -- returns the new assignment, the union/intersect mask, and the new total cost
-downBitOps :: NodeConstraint n s b => Float -> n -> n -> n -> n
-downBitOps weight curNode lNode rNode =
+preorderBitOps :: NodeConstraint n s b => Double -> n -> n -> n -> V.Vector (PhyloCharacter s) -> n
+--preorderBitOps _ _ lNode _ treeChars | trace ("preorderBitOps " ++ show treeChars ++ show lNode) False = undefined
+preorderBitOps weight curNode lNode rNode treeChars =
     let
-        lbit = grabAligned lNode
-        chars = V.filter aligned (characters lNode)
-        rbit = grabAligned rNode
+        lbit = grabAligned treeChars lNode
+        chars = V.filter aligned treeChars
+        rbit = grabAligned treeChars rNode
         notOr = complement $ lbit .&. rbit
         union = lbit .|. rbit
-        fbit = notOr .&. (V.map (snd . masks) chars)
+        fbit = notOr .&. V.map (snd . fitchMasks) chars
         rightF = blockShiftAndFold "R" "&" chars notOr fbit
         finalF = blockShiftAndFold "L" "|" chars rightF rightF
-        maskF = (V.map (fst . masks) chars) .&. finalF
+        maskF = V.map (fst . fitchMasks) chars .&. finalF
         myCost = fetchCost maskF chars
-        weightCost = weight * myCost
-        totalCost = cost lNode + cost rNode + weightCost
+        weightCost = --trace ("Cost of bit ops " ++ show myCost) 
+                        weight * myCost
+        finalCost = totalCost lNode + totalCost rNode + weightCost
         outbit = (maskF .&. union) .|. (lbit .&. rbit)
-    in setPreliminary outbit $ setAlign outbit $ setTemporary finalF $ setCost totalCost curNode
+        outNode = setPreliminary outbit $ setAlign outbit $ setTemporary finalF $ setLocalCost weightCost $ setTotalCost finalCost curNode
+    in outNode
 
     where
-        fetchCost :: SeqConstraint s b => s -> V.Vector (PhyloCharacter b) -> Float
-        fetchCost encoded chars 
-            | isNothing encoded || V.length chars /= V.length (fromJust encoded) = 0
+        fetchCost :: SeqConstraint s b => V.Vector s -> V.Vector (PhyloCharacter s) -> Double
+        fetchCost encodeIn chars 
+            | V.length chars /= V.length encodeIn = 0
             | otherwise = 
-                let val = V.ifoldr (\i char acc -> div (popCount char) (V.length $ alphabet $ chars V.! i)) 0 (fromJust encoded)
-                in (fromIntegral val :: Float)
+                let val = V.ifoldr (\i char acc -> div (popCount char) (length $ alphabet $ chars V.! i) + acc) 0 encodeIn
+                in (fromIntegral val :: Double)
 
 -- | Wrapper for up pass recursion to deal with root
-optimizationUpPass :: TreeConstraint t n s b => Float -> t -> t
-optimizationUpPass weight tree 
+optimizationPostorder :: TreeConstraint t n s b => t -> t
+optimizationPostorder tree 
     | isLeaf (root tree) tree = tree
     | rightOnly && leftOnly = error "Problem with binary tree structure: non-terminal has no children"
     | rightOnly = 
-        let nodes1 = internalUpPass weight (fromJust $ rightChild (root tree) tree) tree
+        let nodes1 = internalPostorder (fromJust $ rightChild (root tree) tree) tree
         in tree `update` nodes1
     | leftOnly = 
-        let nodes1 = internalUpPass weight (fromJust $ leftChild (root tree) tree) tree
+        let nodes1 = internalPostorder (fromJust $ leftChild (root tree) tree) tree
         in tree `update` nodes1
     | otherwise = 
         let
-            nodes1 = internalUpPass weight (fromJust $ rightChild (root tree) tree) tree
-            nodes2 = internalUpPass weight (fromJust $ leftChild (root tree) tree) tree
+            nodes1 = internalPostorder (fromJust $ rightChild (root tree) tree) tree
+            nodes2 = internalPostorder (fromJust $ leftChild (root tree) tree) tree
         in tree `update` (nodes1 ++ nodes2)
 
         where
@@ -153,17 +156,17 @@ optimizationUpPass weight tree
             rightOnly = isNothing $ leftChild (root tree) tree
 
 -- | Internal up pass that performs most of the recursion
-internalUpPass :: TreeConstraint t n s b => Float -> n -> t -> [n]
-internalUpPass weight node tree 
+internalPostorder :: TreeConstraint t n s b => n -> t -> [n]
+internalPostorder node tree 
     | isLeaf node tree = []
     | rightOnly && leftOnly = error "Problem with binary tree structure: non-terminal has no children"
-    | rightOnly = internalUpPass weight (fromJust $ rightChild node tree) tree
-    | leftOnly = internalUpPass weight (fromJust $ leftChild node tree) tree
+    | rightOnly = internalPostorder (fromJust $ rightChild node tree) tree
+    | leftOnly = internalPostorder (fromJust $ leftChild node tree) tree
     | otherwise = 
         let 
-            nodes1 = internalUpPass weight (fromJust $ rightChild node tree) tree
-            nodes2 = internalUpPass weight (fromJust $ leftChild node tree) tree
-            newNode = upPassBitOps weight node (fromJust $ leftChild node tree) (fromJust $ rightChild node tree) (parent node tree)
+            newNode = postorderBitOps node (fromJust $ leftChild node tree) (fromJust $ rightChild node tree) (parent node tree) (characters tree)
+            nodes1 = internalPostorder (fromJust $ rightChild node tree) tree
+            nodes2 = internalPostorder (fromJust $ leftChild node tree) tree
         in newNode : (nodes1 ++ nodes2)
 
         where
@@ -172,40 +175,49 @@ internalUpPass weight node tree
 
 
 -- | Bit operations for the up pass
-upPassBitOps :: NodeConstraint n s b => Float -> n -> n -> n -> Maybe n -> n
-upPassBitOps weight myNode lNode rNode pNode = 
-    let
-        lBit = grabAligned lNode
-        chars = V.filter aligned (characters lNode)
-        rBit = grabAligned rNode
-        myBit = grabAligned myNode
-        fBit = V.ifilter (\i b -> aligned $ (characters myNode) V.! i) (temporary myNode)
-        pBit = fmap grabAligned pNode 
-        setX = complement myBit .&. pBit
-        notX = complement setX
-        setG = notX .&. (V.map (snd . masks) chars)
-        rightG = blockShiftAndFold "R" "&" chars notX setG
-        finalG = blockShiftAndFold "L" "|" chars rightG rightG
-        fstMask = V.map (fst . masks) chars
-        maskedNotG = complement finalG .&. fstMask
-        maskedNotF = complement fBit   .&. fstMask
-        setS = myBit .&. (pBit .|. maskedNotG)
-        sndS = setS .|. (pBit .&. fBit)
-        thdS = sndS .|. (maskedNotG .&. (maskedNotF .&. (pBit .&. (lBit .|. rBit))))
-    in setFinal thdS myNode
+postorderBitOps :: NodeConstraint n s b => n -> n -> n -> Maybe n -> V.Vector (PhyloCharacter s) -> n
+--postorderBitOps myNode _ _ _ _ | trace ("postorder on node " ++ show myNode) False = undefined
+postorderBitOps myNode lNode rNode pNodeMaybe treeChars
+    | isNothing pNodeMaybe = error "No parent node on postorder bit operations"
+    | otherwise =  
+        let
+            pNode = fromJust pNodeMaybe
+            lBit = grabAligned treeChars lNode
+            chars = V.filter aligned treeChars
+            rBit = grabAligned treeChars rNode
+            myBit = grabAligned treeChars myNode
+            fBit = V.ifilter (\i _ -> aligned $ chars V.! i) (temporary myNode)
+            pBit = grabAligned treeChars pNode
+            setX = complement myBit .&. pBit
+            notX = complement setX
+            setG = notX .&. V.map (snd . fitchMasks) chars
+            rightG = blockShiftAndFold "R" "&" chars notX setG
+            finalG = blockShiftAndFold "L" "|" chars rightG rightG
+            fstMask = V.map (fst . fitchMasks) chars
+            maskedNotG = complement finalG .&. fstMask
+            maskedNotF = complement fBit   .&. fstMask
+            setS = myBit .&. (pBit .|. maskedNotG)
+            sndS = setS .|. (pBit .&. fBit)
+            thdS = sndS .|. (maskedNotG .&. (maskedNotF .&. (pBit .&. (lBit .|. rBit))))
+        in setFinal thdS myNode
 
 -- | Grabs the aligned portions of a node's encoded sequence
-grabAligned :: NodeConstraint n s b => n -> V.Vector s
-grabAligned node = V.ifilter (\i b -> aligned $ (characters node) V.! i) (preliminaryAlign node)
+grabAligned :: NodeConstraint n s b => V.Vector (PhyloCharacter s) -> n -> V.Vector s
+--grabAligned node treeChars | trace ("grab aligned " ++ show node ++ show treeChars) False = undefined
+grabAligned treeChars inNode
+    | not $ null (preliminary inNode) = filt (preliminary inNode)
+    | not $ null (encoded inNode)     = filt (encoded inNode)
+    | otherwise = error ("Node " ++ show inNode ++ " has no sequence for Fitch")
+    where
+        filt = V.ifilter (\i _ -> aligned $ treeChars V.! i)
 
 -- | Convenience function for bit ops
-blockShiftAndFold :: SeqConstraint s b => String -> String -> V.Vector (PhyloCharacter b) -> V.Vector s -> V.Vector s -> V.Vector s
+blockShiftAndFold :: SeqConstraint s b => String -> String -> V.Vector (PhyloCharacter s) -> V.Vector s -> V.Vector s -> V.Vector s
 blockShiftAndFold sideMode foldMode chars inbits initVal 
-    | isNothing inbits || isNothing initVal = Nothing
-    | sideMode == "L" && foldMode == "&" = f (.&.)
-    | sideMode == "R" && foldMode == "&" = f (.&.)
-    | sideMode == "L" && foldMode == "|" = f (.|.)
-    | sideMode == "R" && foldMode == "|" = f (.|.)
+    | sideMode == "L" && foldMode == "&" = f (.&.) shiftL 
+    | sideMode == "R" && foldMode == "&" = f (.&.) shiftR
+    | sideMode == "L" && foldMode == "|" = f (.|.) shiftL
+    | sideMode == "R" && foldMode == "|" = f (.|.) shiftR
     | otherwise = error "incorrect input for block shift and fold"
     where
-      f g = Just $ V.zipWith3 (\b c iVal -> foldr (\s acc -> g acc (shiftL b s)) iVal [1 .. V.length (alphabet c) - 1]) (fromJust inbits) chars (fromJust initVal)
+      f g dir = V.zipWith3 (\b c iVal -> foldr (\s acc -> g acc (dir b s)) iVal [1 .. length (alphabet c) - 1]) inbits chars initVal

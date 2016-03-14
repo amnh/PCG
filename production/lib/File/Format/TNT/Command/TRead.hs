@@ -1,12 +1,6 @@
 {-# LANGUAGE FlexibleContexts #-}
 module File.Format.TNT.Command.TRead where
 
-{-- TODO:
-  - Robust tests
-  - Good documentation
-  - Deinterleave function with DList construction
-  -}
-
 import           Data.Bifunctor           (second)
 import           Data.Char                (isSpace)
 import           Data.DList               (DList,append)
@@ -27,48 +21,16 @@ import           Text.Megaparsec.Prim     (MonadParsec)
 
 -- | Parses an TREAD command. Correctly validates for taxa count
 -- and character sequence length. Produces one or more taxa sequences.
-treadCommand :: MonadParsec s m Char => m (NonEmpty TRead)
+treadCommand :: MonadParsec s m Char => m TRead
 treadCommand = treadValidation =<< treadDefinition
   where
-    treadDefinition :: MonadParsec s m Char => m (NonEmpty TRead)
+    treadDefinition :: MonadParsec s m Char => m TRead
     treadDefinition = symbol treadHeader
                    *> symbol treadForest
                    <* symbol (char ';')
 
-    treadValidation :: MonadParsec s m Char => (NonEmpty TRead) -> m (NonEmpty TRead)
-    treadValidation = pure
-{-
-      | null errors = pure $ XRead charCount taxaCount taxaSeqs
-      | otherwise   = fails errors
-      where
-        errors = catMaybes [taxaCountError, charCountError]
-        taxaCountError = let taxaLength = NE.length taxaSeqs
-                         in if taxaCount == taxaLength
-                            then Nothing
-                            else Just $ concat
-                              [ "The number of taxa specified ("
-                              , show taxaCount
-                              , ") does not match the number of taxa found ("
-                              , show $ length taxaSeqs
-                              , ")"
-                              ]
-        charCountError = case NE.filter ((/= charCount) . snd) . fmap (second length) $ taxaSeqs of
-                           [] -> Nothing
-                           xs -> Just $ concat
-                              [ "The number of characters specified ("
-                              , show charCount
-                              , ") does not match the number of chararacters found for the following taxa:\n"
-                              , unlines $ prettyPrint <$> xs
-                              ]                            
-        prettyPrint (name, count) = concat ["\t",show name," found (",show count,") characters"]
--}
-
-{-
--- | Consumes everything in the XREAD command prior to the taxa sequences.
--- Produces the expected taxa count and the length of the character sequences.
-xreadPreamble :: MonadParsec s m Char => m (Int, Int)
-xreadPreamble = treadHeader *> ((,) <$> xreadCharCount <*> xreadTaxaCount)
--}
+    treadValidation :: MonadParsec s m Char => TRead -> m TRead
+    treadValidation = pure -- No validation yet (what to validate?)
 
 -- | The superflous information of an XREAD command.
 -- Consumes the XREAD string identifier and zero or more comments
@@ -83,25 +45,25 @@ treadHeader =  symbol (keyword "tread" 2)
         delimiter = char '\''
 
 -- | One or more '*' seperated trees in parenthetical notationy
-treadForest :: MonadParsec s m Char => m (NonEmpty TRead)
+treadForest :: MonadParsec s m Char => m TRead
 treadForest = fmap NE.fromList $ symbol treadTree `sepBy1` symbol (char '*')
 
-treadTree :: MonadParsec s m Char => m TRead
+treadTree :: MonadParsec s m Char => m TReadTree
 treadTree = treadSubtree <|> treadLeaf
 
-treadLeaf :: MonadParsec s m Char => m TRead
+treadLeaf :: MonadParsec s m Char => m TReadTree
 treadLeaf = Leaf <$> choice [try index, try prefix, name] 
  where
-   index       = Index  <$>  flexiblePositiveInt "taxon reference index"
+   index       = Index  <$>  flexibleNonNegativeInt "taxon reference index"
    prefix      = Prefix <$> (taxaLabel >>= checkTail) 
    name        = Name   <$>  taxaLabel
    taxaLabel   = some labelChar
    labelChar   = satisfy (\x -> not (isSpace x) && x `notElem` "(),;")
    checkTail x = if "..." `isSuffixOf` x then pure x else fail "oops"
 
-treadSubtree :: MonadParsec s m Char => m TRead
+treadSubtree :: MonadParsec s m Char => m TReadTree
 treadSubtree = between open close body
   where
     open      = symbol (char '(')
     close     = symbol (char ')')
-    body      = Node <$> some (symbol treadTree)
+    body      = Branch <$> some (symbol treadTree)

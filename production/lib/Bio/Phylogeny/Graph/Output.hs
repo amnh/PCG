@@ -20,8 +20,8 @@ import Bio.Phylogeny.Tree.Node
 import qualified Data.IntMap as IM (elems, (!))
 import System.IO ()
 
-outPutDot :: Graph -> String -> IO ()
-outPutDot inGraph fileName = writeFile fileName (toDot inGraph)
+outPutDot :: String -> Graph -> IO ()
+outPutDot fileName inGraph = writeFile fileName (toDot inGraph)
     
     where
         toDot :: Graph -> String
@@ -30,7 +30,7 @@ outPutDot inGraph fileName = writeFile fileName (toDot inGraph)
                 header = "digraph G { \n" ++ "\trankdir = LR;\n" ++ "\tnode [shape = rect];"
                 footer = "}"
 
-        treeToDot :: Tree -> String -> String
+        treeToDot :: DAG -> String -> String
         treeToDot inTree curString = foldr printEdge curString (edges inTree)
             where 
                 printEdge :: EdgeSet -> String -> String
@@ -40,3 +40,6 @@ outPutDot inGraph fileName = writeFile fileName (toDot inGraph)
                         origins = map (getName . origin) (IM.elems $ outNodes curEdge)
                         terminals = map (getName . terminal) (IM.elems $ outNodes curEdge)
                         printOne o t = o ++ " -> " ++ t ++ ";\n"
+
+
+                        

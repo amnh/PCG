@@ -17,8 +17,9 @@
 module Bio.Phylogeny.Tree.CharacterAware.Class where
 
 import Data.Vector
+import Bio.Phylogeny.PhyloCharacter
 
 -- | A character aware tree can get the character info used in the tree
-class CharacterTree a c | a -> c where
-    characters :: a -> Vector c
-    setCharacters :: a -> Vector c -> a
+class CharacterTree a s | a -> s where
+    characters :: a -> Vector (PhyloCharacter s)
+    setCharacters :: a -> Vector (PhyloCharacter s) -> a
