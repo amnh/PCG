@@ -49,7 +49,7 @@ nonEmpty c = fromList <$> some c
 -- | @anythingTill end@ consumes zero or more characters until @end@ is matched, leaving @end@ in the stream
 anythingTill :: MonadParsec s m Char => m a -> m String
 anythingTill c = do 
-    ahead <- optional $ try $ lookAhead c
+    ahead <- optional . try $ lookAhead c
     case ahead of
       Just _  -> pure []
       Nothing -> somethingTill c
@@ -68,7 +68,7 @@ double = try (signed space float)
 
 -- | Custom 'eol' combinator to account for /very/ old Mac file formats ending lines in a single @\'\\r\'@
 endOfLine :: MonadParsec s m Char => m Char
-endOfLine = (try eol <|> string "\r") *> pure '\n'
+endOfLine = (try eol <|> string "\r") $> '\n'
 
 -- | Accepts zero or more Failure messages
 fails :: MonadParsec s m Char => [String] -> m a
