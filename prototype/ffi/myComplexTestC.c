@@ -36,6 +36,7 @@ int testFn(char* seqA, char* seqB, int wt1, int wt2, struct align* result) {
     return 0;
 }
 
+/**
 int main() {
     char* buffer; 
     struct align* emptyStc = malloc(sizeof(char*) + sizeof(int));
@@ -48,3 +49,4 @@ int main() {
     free( emptyStc );
     return 1;
 }
+/**/

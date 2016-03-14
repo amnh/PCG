@@ -15,19 +15,8 @@
 {-# LANGUAGE DoAndIfThenElse, FlexibleContexts #-}
 
 -- TODOs:
--- • Attempt to optimize sequence reading: concatting, character replacement, etc.
--- • Reconceive and reorder current validations. Keep in mind next bullet point.
--- • Check for info on spaces in seqs. Remove them from non-continuous data.
--- • Verify character metadata, especially alphabets
--- • Verify step matrices
--- • deal with special chars in step matrices
--- • Split verification & parsing into two modules, maybe three (one for data types)
--- • check for and eliminate thusly noted characters (in at least two places?)
--- • update output datatypes: nest vectors, add character metadata, trees, step matrices
--- • replace equate chars 
--- • ignore case
--- • check alignment and length of aligned blocks, check alphabet, think about 12 and 20, below, make each sequence a vector, not a list
--- • Something else?
+-- • Get char weights from assumtions block
+
 
 module File.Format.Nexus.Parser where
 
