@@ -105,7 +105,9 @@ validateNexusParseResult (NexusParseResult inputSeqBlocks taxas treeSet assumpti
   | null inputSeqBlocks && null taxas && null treeSet = fails ["There are no usable blocks in this file."] -- error 1
   | not (null independentErrors)                      = fails independentErrors
   | not (null dependentErrors)                        = fails dependentErrors
-  | otherwise                                         = pure $ Nexus {-taxaLst-} outputSeqTups 
+  | otherwise                                         = case maybeThing of
+                                                              Left   err               -> fail err
+                                                              Right (outputSeqTups, _) -> pure $ Nexus {-taxaLst-} outputSeqTups 
   where
       -- Ordered by call, so first independentErrors, then dependentErrors, then outputSeqTups. Dependencies are subgrouped according to calling fn.
       
@@ -126,7 +128,7 @@ validateNexusParseResult (NexusParseResult inputSeqBlocks taxas treeSet assumpti
                               foldr (\x acc -> seqDimsMissing x : acc) [] inputSeqBlocks 
 
       -- Dependent errors
-        dependentErrors = catMaybes $ incorrectTaxaBlockCount : ({- seqDimsError ++ -} missingCloseQuotes ++ seqTaxaCountErrors ++ {- mtxTaxonCountErrors ++ TODO: decide if I can really delete this and seqDimsError. -} incorrectCharCount)
+        dependentErrors = catMaybes $ incorrectTaxaBlockCount : ({- seqDimsError ++ -} missingCloseQuotes ++ seqTaxaCountErrors {- ++ {- mtxTaxonCountErrors ++ TODO: decide if I can really delete this and seqDimsError and incorrectCharCount. -} incorrectCharCount -} )
       
       -- types of dependent errors
         incorrectTaxaBlockCount = f taxas >>= \(TaxaSpecification num listedTaxa) -> 
@@ -142,7 +144,7 @@ validateNexusParseResult (NexusParseResult inputSeqBlocks taxas treeSet assumpti
         missingCloseQuotes  = map Just (lefts equates) ++ map Just (lefts symbols') -- error 19
         seqTaxaCountErrors  = foldr (\x acc -> checkForNewTaxa x : acc) [] inputSeqBlocks -- errors 7, 8, 16b
         mtxTaxonCountErrors = foldr (\x acc -> getMatrixTaxonRecurrenceErrors x ++ acc) [] inputSeqBlocks -- errors 12, 22
-        incorrectCharCount  = checkSeqLength (filter (\x -> alignedSeq x) inputSeqBlocks) outputSeqTups -- TODO: This doesn't work, because it takes an entire list of PhyloSequence blocks and the complete, concatted sequences. It needs to take place at a different point in the process.
+ --       incorrectCharCount  = checkSeqLength (filter (\x -> alignedSeq x) inputSeqBlocks) outputSeqTups -- TODO: This doesn't work, because it takes an entire list of PhyloSequence blocks and the complete, concatted sequences. It needs to take place at a different point in the process.
 
       -- dependencies for dependent errors
         equates = foldr (\x acc -> getEquates x : acc) [] inputSeqBlocks
@@ -152,13 +154,15 @@ validateNexusParseResult (NexusParseResult inputSeqBlocks taxas treeSet assumpti
                       else V.empty
 
       -- these are still dependencies for dependent errors, but they're also the beginning of the output gathering.                  
-        (outputSeqTups,_) = foldSeqs seqMetadataTuples
-        seqMetadataTuples = map (\singleSeq -> ( getSeqFromMatrix singleSeq taxaLst
-                                  , getCharMetadata costMatrix singleSeq
-                                  )) inputSeqBlocks -- TODO: replace getSeqFromMatrix blah blah with someVar
-        costMatrix = headMay . tcm $ head assumptions
+        maybeThing = foldSeqs <$> seqMetadataTuples
+        --seqMetadataTuples = map (\singleSeq -> ( getSeqFromMatrix singleSeq taxaLst
+        --                          , getCharMetadata costMatrix singleSeq
+        --                          )) inputSeqBlocks -- TODO: replace getSeqFromMatrix blah blah with parsedSeqs
+        costMatrix = head . tcm <$> headMay assumptions -- TODO: why does this work?
         
-        someVar = decisionTree inputSeqBlocks taxaLst
+        seqMetadataTuples = something <$> parsedSeqs
+        something = map (\(taxonSeqMap,rawSequence) -> (taxonSeqMap, getCharMetadata costMatrix rawSequence)) . (`zip` inputSeqBlocks)
+        parsedSeqs = decisionTree inputSeqBlocks taxaLst
         -- taxaSeqVector = V.fromList [(taxon, alignedTaxaSeqMap M.! taxon) | taxon <- taxaLst]
         --unalignedTaxaSeqMap = getSeqFromMatrix (getBlock "unaligned" inputSeqBlocks) taxaLst
 
@@ -232,7 +236,7 @@ handleUnlabeledCheckTaxaCardinality block taxaLst =
 -- returns a tuple containing a single Sequences tuple and an Int. (The Int is only used for recursive calls.)
 foldSeqs :: [(TaxonSequenceMap,V.Vector CharacterMetadata)] -> (Sequences, Int)
 foldSeqs []     = ((M.empty, V.empty), 0)
-foldSeqs ((taxSeqMap,charMDataVec):xs) = ((newSeqMap, newMetadata), totLength)
+foldSeqs ((taxSeqMap,charMDataVec):xs)   = ((newSeqMap, newMetadata), totLength)
     where 
         ((curMap,curMetadata),curLength) = foldSeqs xs
         newSeqMap                        = M.unionWith (updateSeqInMap curLength) taxSeqMap curMap
@@ -497,7 +501,7 @@ getSeqFromMatrix seqBlock taxaLst =
     M.map (splitSequenceReplaceAmbiguities tkns cont aligned) equatesReplaced
     where
         (aligned, noLabels, interleaved, tkns, cont, matchChar') = getFormatInfo seqBlock
-        seqLen = numChars $ head $ charDims seqBlock
+        seqLen = numChars $ head $ charDims seqBlock -- I've already checked to make sure there's a dimensions in the block
         taxaCount  = length taxaLst
         taxaMap    = M.fromList . zip (V.toList taxaLst) $ repeat ""
         mtx        = head $ seqMatrix seqBlock -- I've already checked to make sure there's a matrix
