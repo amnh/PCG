@@ -37,12 +37,15 @@ import           File.Format.VertexEdgeRoot
 -- currently we pack and unpack codes, make parsers dumber in the future. Read below!
 
 -- | Instances provide a method to extract Character sequences from raw parsed results.
---   The 'TreeSeqs' are agnostic of character data types. Characters of types DNA, RNA,
---   protein, and amino acid will *not* have thier IUPAc codes translated to ambiguity
---   the apropriate groups. This abiguity group translation will occur later during the
---   rectification with the character metadata. Parsers who produce expanded ambiguity
---   groups for these character types will be collapsed back to the IUPAC code for the
---   ambiguity group.
+--   The 'TreeSeqs' are agnostic of character data types. "Tree-only" return values from
+--   files will extract the taxa labels from leaf nodes only with empty sequences.
+--
+--   Characters of types DNA, RNA, protein, and amino acid will *not* have thier IUPAC
+--   codes translated to the apropriate groups. This abiguity group translation will
+--   occur later during the rectification process with the character metadata. Parsers
+--   which produce expanded ambiguity groups for these character types will be collapsed
+--   back to the IUPAC code for the ambiguity group during the type-class's extraction
+--   process.
 --
 --   It is expected that parsers will altered to return simpler character literals for
 --   time efficientcy in the future.
