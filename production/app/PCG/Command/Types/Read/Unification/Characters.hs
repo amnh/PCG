@@ -1,0 +1,13 @@
+-----------------------------------------------------------------------------
+-- |
+-- Module      :  PCG.Command.Read.Unification.Characters
+-- Copyright   :  (c) 2015-2015 Ward Wheeler
+-- License     :  BSD-style
+--
+-- Maintainer  :  wheeler@amnh.org
+-- Stability   :  provisional
+-- Portability :  portable
+--
+-- Functionality for bringing parsed characters into an internal data structure
+--
+-----------------------------------------------------------------------------
