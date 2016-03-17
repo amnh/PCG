@@ -49,7 +49,7 @@ gatherCommands = partition <$> many commands
         f Ignore x           = x
 
 ignoredCommand :: MonadParsec s m Char => m String
-ignoredCommand = commandKeyword <* optional (commandBody) <* terminal
+ignoredCommand = commandKeyword <* optional commandBody <* terminal
   where
     commandKeyword = somethingTill $ satisfy (not . isAlpha)
     commandBody    = trim $ anythingTill terminal

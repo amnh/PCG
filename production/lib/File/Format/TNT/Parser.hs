@@ -87,7 +87,7 @@ ccodeCoalesce charCount ccodeCommands = generate charCount f
     f :: Int -> CharacterMetaData
     f = fromMaybe initialMetaData . (`IM.lookup` stateMapping)
     stateMapping :: IntMap CharacterMetaData
-    stateMapping = foldl (\mapping ccode -> foldl addChangeSet mapping ccode) mempty ccodeCommands
+    stateMapping = foldl (foldl addChangeSet) mempty ccodeCommands
     addChangeSet :: IntMap CharacterMetaData -> CCodeAugment -> IntMap CharacterMetaData
     addChangeSet mapping (CCodeAugment states indicies) = foldl applyChanges mapping indicies
       where
@@ -104,17 +104,17 @@ ccodeCoalesce charCount ccodeCommands = generate charCount f
 cnamesCoalesce :: Foldable f => f CharacterName -> IntMap CharacterName
 cnamesCoalesce = foldl f mempty
   where
-    f mapping name = insertWith (\n _ -> n) (sequenceIndex name) name mapping
+    f mapping name = insertWith const (sequenceIndex name) name mapping
 
 costsCoalesce :: Foldable f => Int -> f Cost -> IntMap (Matrix Double)
 costsCoalesce charCount = foldl addTCMs mempty
   where
-    insertTCM mat mapping index = insertWith (\n _ -> n) index mat mapping
+    insertTCM mat mapping index = insertWith const index mat mapping
     addTCMs mapping (Cost changeSet mat) = foldl (insertTCM mat) mapping (range charCount changeSet)
 
 range _ (Single    i  ) = [i..i]
 range _ (Range     i j) = [i..j]
 range _ (FromStart   j) = [0..j]
 range j (ToEnd     i  ) = [i..j]
-range j (Whole        ) = [0..j]        
+range j  Whole          = [0..j]
     
