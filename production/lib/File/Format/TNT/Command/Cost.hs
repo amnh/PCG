@@ -60,8 +60,8 @@ condenseToMatrix costs = matrix dimensions dimensions value
           | inject || (symetric x && surject) = Just $ costValue x
           | otherwise                         = m
           where
-            inject  = i' `elem` (origins x) && j' `elem` (terminals x)
-            surject = j' `elem` (origins x) && i' `elem` (terminals x)
+            inject  = i' `elem` origins x && j' `elem` terminals x
+            surject = j' `elem` origins x && i' `elem` terminals x
     indexOf :: (Eq a, Foldable f) => a -> f a -> Maybe Int
     indexOf e = snd . foldl f (0, Nothing)
       where

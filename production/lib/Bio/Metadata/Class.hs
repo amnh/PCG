@@ -15,28 +15,29 @@
 
 module Bio.Metadata.Class where
 
-import Bio.Sequence.Parsed
-import Bio.Sequence.Parsed.Class
-import Bio.Phylogeny.PhyloCharacter
+import           Bio.Sequence.Parsed
+import           Bio.Sequence.Parsed.Class
+import           Bio.Phylogeny.PhyloCharacter
 import           Data.Foldable
-import Data.Vector (Vector)
+import           Data.List
+import qualified Data.Map    as M
+import           Data.Matrix       (matrix)
+import           Data.Maybe
+import           Data.Set          (intersection)
+import qualified Data.Set    as S  (fromList)
+import           Data.Vector       (Vector)
 import qualified Data.Vector as V
-import Data.Maybe
-import Data.Matrix (matrix)
-import Data.List
-import qualified Data.Map as M
-import File.Format.Fasta (FastaParseResult)
-import File.Format.Fastc
-import File.Format.Newick
-import File.Format.TNT
-import File.Format.TransitionCostMatrix
-import File.Format.VertexEdgeRoot
-
+import           File.Format.Fasta (FastaParseResult)
+import           File.Format.Fastc
+import           File.Format.Newick
+import           File.Format.TNT
+import           File.Format.TransitionCostMatrix
+import           File.Format.VertexEdgeRoot
 
 dnaAlph, rnaAlph, aaAlph :: [String]
-dnaAlph = ["A", "C", "G", "T", "-"] 
+dnaAlph = ["A", "C", "G", "T", "-"]
 rnaAlph = ["A", "C", "G", "U", "-"]
-aaAlph = ["R", "H", "K", "D", "E", "S", "T", "N", "Q", "C", "U", "G", "P", "A", "V", "L", "I", "M", "F", "Y", "W", "-"]
+aaAlph  = ["R", "H", "K", "D", "E", "S", "T", "N", "Q", "C", "U", "G", "P", "A", "V", "L", "I", "M", "F", "Y", "W", "-"]
 
 class Metadata a where
     unifyMetadata :: Monoid b => a -> [Vector (PhyloCharacter b)]
@@ -83,9 +84,8 @@ developAlphabets inSeqs = V.map setGapChar $ V.map sort $ M.foldr (V.zipWith get
 
         getNodeAlphAt :: Maybe ParsedSeq -> Alphabet -> Alphabet
         --getNodeAlphAt inSeq soFar | trace ("getNodeAlphAt " ++ show inSeq ++ " with accum " ++ show soFar) False = undefined
-        getNodeAlphAt inSeq soFar
-            | isNothing inSeq = mempty
-            | otherwise =  V.foldr (flip $ foldr (\sIn prev -> if sIn `elem` prev then prev else sIn : prev)) soFar (fromJust inSeq)
+        getNodeAlphAt  Nothing     _     = mempty
+        getNodeAlphAt (Just inSeq) soFar = V.foldr (flip $ foldr (\sIn prev -> if sIn `elem` prev then prev else sIn : prev)) soFar inSeq
 
         -- | Ensure that the gap char is present and correctly positioned in an alphabet
         setGapChar :: Alphabet -> Alphabet
@@ -94,11 +94,11 @@ developAlphabets inSeqs = V.map setGapChar $ V.map sort $ M.foldr (V.zipWith get
             Nothing -> inAlph ++ ["-"]
 
 -- | Internal function to make one character info
-makeOneInfo :: Monoid b => Alphabet -> (PhyloCharacter b)
+makeOneInfo :: Monoid b => Alphabet -> PhyloCharacter b
 makeOneInfo inAlph
-    | inAlph `subsetOf` dnaAlph = DNA "" False mempty mempty inAlph defaultMat False
-    | inAlph `subsetOf` rnaAlph = RNA "" False mempty mempty inAlph defaultMat False
-    | inAlph `subsetOf` aaAlph = AminoAcid "" False mempty inAlph mempty defaultMat False
+    | inAlph `subsetOf` dnaAlph = DNA       "" False mempty mempty inAlph defaultMat False
+    | inAlph `subsetOf` rnaAlph = RNA       "" False mempty mempty inAlph defaultMat False
+    | inAlph `subsetOf`  aaAlph = AminoAcid "" False mempty inAlph mempty defaultMat False
     | otherwise = Custom "" False mempty inAlph mempty defaultMat False False
         where 
             defaultMat = matrix (length inAlph) (length inAlph) (const 1)
@@ -133,5 +133,10 @@ checkAlignLens = M.foldr matchLens mempty
                     makeVal v = if isNothing v then (False, 0)
                                     else (True, V.length $ fromJust v)
 
-subsetOf :: (Ord a) => [a] -> [a] -> Bool
-subsetOf list1 list2 = foldr (\e acc -> acc && e `elem` list2) True list1
+-- | /O(n*log n)/. The expression 'lhs `subsetOf` rhs' is 'True' /iff/
+--   every element in 'lhs' is also an element is 'rhs'.
+subsetOf :: Ord a => [a] -> [a] -> Bool
+subsetOf list1 list2 = lhs `intersection` rhs == lhs
+  where
+    lhs = S.fromList list1
+    rhs = S.fromList list2

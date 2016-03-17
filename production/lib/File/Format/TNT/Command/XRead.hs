@@ -159,8 +159,8 @@ discreteSequence = many discreteCharacter
       where
         hasDupes   = not $ null dupes
         dupes      = duplicates xs
-        hasMissing = any (=='?') xs && not (isSingleton xs)
-        hasGap     = any (=='-') xs && not (isSingleton xs)
+        hasMissing = '?' `elem` xs && not (isSingleton xs)
+        hasGap     = '-' `elem` xs && not (isSingleton xs)
 
 dnaSequence :: MonadParsec s m Char => m [TntDnaCharacter]
 dnaSequence = mapM discreteToDna =<< discreteSequence
