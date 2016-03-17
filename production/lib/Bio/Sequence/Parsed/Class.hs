@@ -19,7 +19,7 @@ import           Bio.Sequence.Parsed
 import           Data.Bifunctor   (second)
 import           Data.Foldable
 import           Data.Key
-import           Data.Map         (insert)
+import           Data.Map         (insert, empty)
 import qualified Data.Map    as M (fromList)
 import           Data.Maybe
 import           Data.Monoid

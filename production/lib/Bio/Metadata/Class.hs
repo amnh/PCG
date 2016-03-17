@@ -47,6 +47,10 @@ addOtherCases (x:xs)
   | isUpper x = x : (toLower x) : casei xs
   | otherwise = x : casei xs
 
+data MetadataType = Empty | Inferred | Given deriving (Eq, Show)
+
+type PreferenceMetadata a = (MetadataType, a)
+
 class Metadata a where
     unifyMetadata :: Monoid b => a -> [Vector (PhyloCharacter b)]
 
