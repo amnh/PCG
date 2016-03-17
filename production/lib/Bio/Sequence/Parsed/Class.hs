@@ -71,4 +71,3 @@ instance ParsedCharacters NewickForest where
               where
                   name = fromMaybe "" $ newickLabel node
 
-
