@@ -105,3 +105,5 @@ instance ParsedCharacters VertexEdgeRoot where
             buildTree name = Node name kids
                 where
                     kids = fmap (buildTree . snd) . filter ((==name) . fst) $ edgeConnection <$> es
+
+
