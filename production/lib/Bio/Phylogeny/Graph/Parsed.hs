@@ -39,7 +39,7 @@ import qualified Data.Vector    as V  (Vector, fromList, (!))
 import qualified Data.IntSet    as IS (fromList)
 
 class ParseGraph a where
-    unifyGraph :: a -> Graph 
+    unifyGraph :: a -> Graph
 
 instance ParseGraph NewickForest where
     unifyGraph = convertNewickToGraph

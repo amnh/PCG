@@ -40,16 +40,10 @@ type Alphabet = [String]
 --instance Arbitrary ParsedSeq where
 --    arbitrary = fromList <$> listOf (listOf (arbitrary :: Gen String))
 
-instance Monoid TreeSeqs where
-    mempty = empty
-    mappend lhs rhs = 
-        --let
-        --    sameSets = intersectionWith (++) seqSet1 seqSet2
-        --    differenceLeft = fmap (`cons` Nothing) (difference seqSet1 seqSet2)
-        --    differenceRight = fmap ((++) (pure Nothing)) (difference seqSet2 seqSet1)
-        --in unions [sameSets, differenceLeft, differenceRight]
-        let
-            leftSide = intersectionWith (++) (lhs \\ rhs) rhs
-            rightSide = intersectionWith (++) (rhs \\ lhs) lhs
-            middle = intersectionWith (++) lhs rhs
-        in unions [leftSide, middle, rightSide]
+rectifySeqs :: TreeSeqs -> TreeSeqs -> TreeSeqs
+rectifySeqs lhs rhs = 
+    let
+        leftSide = intersectionWith (++) (lhs \\ rhs) rhs
+        rightSide = intersectionWith (++) (rhs \\ lhs) lhs
+        middle = intersectionWith (++) lhs rhs
+    in unions [leftSide, middle, rightSide]

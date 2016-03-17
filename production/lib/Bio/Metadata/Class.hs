@@ -38,6 +38,10 @@ dnaAlph = ["A", "C", "G", "T", "-"]
 rnaAlph = ["A", "C", "G", "U", "-"]
 aaAlph = ["R", "H", "K", "D", "E", "S", "T", "N", "Q", "C", "U", "G", "P", "A", "V", "L", "I", "M", "F", "Y", "W", "-"]
 
+data MetadataType = Empty | Inferred | Given deriving (Eq, Show)
+
+type PreferenceMetadata a = (MetadataType, a)
+
 class Metadata a where
     unifyMetadata :: Monoid b => a -> [Vector (PhyloCharacter b)]
 
