@@ -18,6 +18,7 @@ module Bio.Metadata.Class where
 import           Bio.Sequence.Parsed
 import           Bio.Sequence.Parsed.Class
 import           Bio.Phylogeny.PhyloCharacter
+import           Data.Char
 import           Data.Foldable
 import           Data.List
 import qualified Data.Map    as M
@@ -35,9 +36,16 @@ import           File.Format.TransitionCostMatrix
 import           File.Format.VertexEdgeRoot
 
 dnaAlph, rnaAlph, aaAlph :: [String]
-dnaAlph = ["A", "C", "G", "T", "-"]
-rnaAlph = ["A", "C", "G", "U", "-"]
-aaAlph  = ["R", "H", "K", "D", "E", "S", "T", "N", "Q", "C", "U", "G", "P", "A", "V", "L", "I", "M", "F", "Y", "W", "-"]
+dnaAlph = pure <$> addOtherCases "AGCTRMWSKTVDHBNX?-"
+rnaAlph = pure <$> addOtherCases "AGCURMWSKTVDHBNX?-"
+aaAlph  = pure <$> addOtherCases "ABCDEFGHIKLMNPQRSTVWXYZ-"
+
+addOtherCases :: String -> String
+addOtherCases [] = []
+addOtherCases (x:xs)
+  | isLower x = (toUpper x) : x : casei xs
+  | isUpper x = x : (toLower x) : casei xs
+  | otherwise = x : casei xs
 
 class Metadata a where
     unifyMetadata :: Monoid b => a -> [Vector (PhyloCharacter b)]
@@ -85,7 +93,9 @@ developAlphabets inSeqs = V.map setGapChar $ V.map sort $ M.foldr (V.zipWith get
         getNodeAlphAt :: Maybe ParsedSeq -> Alphabet -> Alphabet
         --getNodeAlphAt inSeq soFar | trace ("getNodeAlphAt " ++ show inSeq ++ " with accum " ++ show soFar) False = undefined
         getNodeAlphAt  Nothing     _     = mempty
-        getNodeAlphAt (Just inSeq) soFar = V.foldr (flip $ foldr (\sIn prev -> if sIn `elem` prev then prev else sIn : prev)) soFar inSeq
+        getNodeAlphAt (Just inSeq) soFar = foldr f soFar inSeq
+          where
+            f = (flip $ foldr (\sIn prev -> if sIn `elem` prev then prev else sIn : prev)) 
 
         -- | Ensure that the gap char is present and correctly positioned in an alphabet
         setGapChar :: Alphabet -> Alphabet
