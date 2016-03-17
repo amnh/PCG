@@ -18,6 +18,7 @@ module Bio.Metadata.Class where
 import Bio.Sequence.Parsed
 import Bio.Sequence.Parsed.Class
 import Bio.Phylogeny.PhyloCharacter
+import           Data.Foldable
 import Data.Vector (Vector)
 import qualified Data.Vector as V
 import Data.Maybe
@@ -28,6 +29,8 @@ import File.Format.Fasta (FastaParseResult)
 import File.Format.Fastc
 import File.Format.Newick
 import File.Format.TNT
+import File.Format.TransitionCostMatrix
+import File.Format.VertexEdgeRoot
 
 
 dnaAlph, rnaAlph, aaAlph :: [String]
@@ -52,12 +55,20 @@ instance Metadata TntResult where
     unifyMetadata (Right withSeq) = pure $ V.map convertMeta (charMetaData withSeq)
         where
             convertMeta inMeta = 
-                let defaultMeta = makeOneInfo (V.toList $ characterStates inMeta) (True, 0)
-                in defaultMeta {name = characterName inMeta, stateNames = characterStates inMeta}
+                let defaultMeta = makeOneInfo (V.toList $ characterStates inMeta) --(True, 0)
+                in defaultMeta {name = characterName inMeta, stateNames = characterStates inMeta, tcm = fromMaybe (tcm defaultMeta) (costTCM inMeta)}
+
+instance Metadata TCM where
+    unifyMetadata (TCM alph mat) = 
+        let defaultMeta = makeOneInfo (toList alph)
+        in pure $ pure (defaultMeta {tcm = mat})
+
+instance Metadata VertexEdgeRoot where
+    unifyMetadata _ = mempty
 
 -- | Functionality to make char info from tree seqs
 makeEncodeInfo :: Monoid b => TreeSeqs -> Vector (PhyloCharacter b)
-makeEncodeInfo seqs = V.zipWith makeOneInfo alphabets allChecks
+makeEncodeInfo seqs = V.map makeOneInfo alphabets --allChecks
     where
         alphabets = developAlphabets seqs
         allChecks = checkAlignLens seqs
@@ -83,12 +94,12 @@ developAlphabets inSeqs = V.map setGapChar $ V.map sort $ M.foldr (V.zipWith get
             Nothing -> inAlph ++ ["-"]
 
 -- | Internal function to make one character info
-makeOneInfo :: Monoid b => Alphabet -> (Bool, Int) -> (PhyloCharacter b)
-makeOneInfo inAlph (isAligned, seqLen)
-    | inAlph `subsetOf` dnaAlph = DNA "" isAligned mempty mempty inAlph defaultMat False
-    | inAlph `subsetOf` rnaAlph = RNA "" isAligned mempty mempty inAlph defaultMat False
-    | inAlph `subsetOf` aaAlph = AminoAcid "" isAligned mempty inAlph mempty defaultMat False
-    | otherwise = Custom "" isAligned mempty inAlph mempty defaultMat False False
+makeOneInfo :: Monoid b => Alphabet -> (PhyloCharacter b)
+makeOneInfo inAlph
+    | inAlph `subsetOf` dnaAlph = DNA "" False mempty mempty inAlph defaultMat False
+    | inAlph `subsetOf` rnaAlph = RNA "" False mempty mempty inAlph defaultMat False
+    | inAlph `subsetOf` aaAlph = AminoAcid "" False mempty inAlph mempty defaultMat False
+    | otherwise = Custom "" False mempty inAlph mempty defaultMat False False
         where 
             defaultMat = matrix (length inAlph) (length inAlph) (const 1)
             --masks = generateMasks (length inAlph) seqLen isAligned
