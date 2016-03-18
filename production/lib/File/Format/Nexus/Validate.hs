@@ -101,6 +101,7 @@ import           Text.Megaparsec.Custom
      -- then partitionEithers . catMaybes, etc., etc. (talk to Alex)
 -- • warn that eliminate doesn't work on unaligned data
 -- • capture data on ordered chars
+-- • check for gap treatment, possibly replace with missing
 
 validateNexusParseResult :: (Show s, MonadParsec s m Char) => NexusParseResult -> m Nexus
 validateNexusParseResult (NexusParseResult inputSeqBlocks taxas treeSet assumptions _ignored) 
@@ -320,7 +321,7 @@ taxaDimsMissing taxas inputSeqBlocks = taxaProblems ++ seqProblems
 -- Note that these last four will all need the same functionality under the hood.
 getCharMetadata :: Maybe StepMatrix -> PhyloSequence -> V.Vector CharacterMetadata
 getCharMetadata mayMtx seqBlock = 
-    V.replicate len $ CharacterMetadata "" aligned cType alph False mayTCM additivity wt gapmode
+    V.replicate len $ CharacterMetadata "" aligned cType alph False mayTCM additivity wt
     where 
         aligned     = alignedSeq seqBlock
         cType       = DNA
@@ -337,7 +338,6 @@ getCharMetadata mayMtx seqBlock =
         mayTCM      = matrixData <$> mayMtx
         additivity  = False
         wt          = 1
-        gapmode     = True
 
 
 -- | getMatrixTaxonRecurrenceErrors takes a Phylosequence. It reads throught the PhyloSequence matrix to see if there are any taxa

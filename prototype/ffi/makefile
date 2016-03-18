@@ -22,6 +22,7 @@ clean :
 
 #################### Yu's case, structs, pointers, etc.
 # Extremely similar to complex case, above.
+# may need to make use of  --cross-compile in final builds
 my_ffi : yuAlign.c yuAlign.h haskellYuAlign.hsc
 	hsc2hs haskellYuAlign.hsc
 	clang -c yuAlign.c

@@ -45,7 +45,6 @@ data CharacterMetadata
    , costM      :: Maybe TCM
    , additive   :: Bool
    , weight     :: Int
-   , gapIsFifth :: Bool
    } deriving (Show)
 
 -- Character is Maybe, because some chars might not be present for some taxa
