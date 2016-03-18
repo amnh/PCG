@@ -17,10 +17,13 @@ module PCG.Command.Types.Read.Unification.Master where
 import PCG.Command.Types.Read.Unification.UnificationError
 import Bio.Phylogeny.Graph.Parsed
 import Bio.Metadata.Class
+import Bio.Sequence.Parsed
 import Bio.Sequence.Parsed.Class
 import Bio.Phylogeny.Graph
 import Data.IntMap ((\\), elems)
 import Data.Monoid
+import Data.Vector (Vector)
+import File.Format.TransitionCostMatrix
 
 data FracturedParseResult
    = FPR
