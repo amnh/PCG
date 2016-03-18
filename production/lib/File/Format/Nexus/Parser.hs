@@ -120,15 +120,17 @@ assumptionsBlockDefinition :: (Show s, MonadParsec s m Char) => m AssumptionBloc
 assumptionsBlockDefinition = {-do
     x <- getInput
     trace ("assumptionsBlockDefinition"  ++ show x) $ -}do
-        _   <- symbol (string' "assumptions;")
-        goodStuff <- partitionAssumptionBlock <$> many assumptionFieldDef
-        pure $ AssumptionBlock goodStuff
+        _                <- symbol (string' "assumptions;")
+        (tcms,additives) <- partitionAssumptionBlock <$> many assumptionFieldDef
+        pure $ AssumptionBlock tcms additives
 
+-- TODO: complete Add typeset (additive, nonadditive), also capture exset, wtset, deftype and gapmode in options field
 assumptionFieldDef :: (Show s, MonadParsec s m Char) => m AssumptionField
 assumptionFieldDef = {-do
     x <- getInput
     trace ("assumptionFieldDef"  ++ show x) $ -}symbol block
     where block =  (TCMMat <$> try tcmMatrixDefinition)
+               -- <|> (Add    <$> try )
                <|> (IgnAF  <$> try (ignoredSubBlockDef ';'))
 
 -- | tcmMatrixDefinition expects a string of format 
@@ -281,6 +283,9 @@ quotedStringDefinition blockTitle = {-do
     -- _ <- symbol $ char '"'
     --pure $ Right value
 
+-- | stringListDefinition is similar to quotedStringDefinition, but in this case the format is
+-- TITLE val1 val2 val3 ...; In other words, there is no '=' and the list of values is whitepace-separated. 
+-- Those values are captured and returned. 
 stringListDefinition :: (Show s, MonadParsec s m Char) => String -> m [String]
 stringListDefinition label = {-do
     x <- getInputs
@@ -290,6 +295,10 @@ stringListDefinition label = {-do
     _        <- symbol $ char ';'
     pure theItems
 
+-- | delimitedStringListDefinition is similar to stringListDefinition, but in this case the format is
+-- TITLE val1, val2, val3, ...; Again, there is no '='' after the title of the block. However, in this
+-- case values are separated by a Char which is passed in as an argument. (In the given example the separator
+-- is ','. The values are captured and returned. 
 delimitedStringListDefinition :: (Show s, MonadParsec s m Char) => String -> Char -> m [String]
 delimitedStringListDefinition label delimiter = {-do
     x <- getInput

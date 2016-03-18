@@ -37,12 +37,15 @@ type TaxonIdentifier = String
 
 data CharacterMetadata 
    = CharacterMetadata
-   { name      :: String
-   , isAligned :: Bool
-   , charType  :: CharDataType
-   , alphabet  :: AmbiguityGroup
-   , ignored   :: Bool
-   , costM     :: Maybe TCM
+   { name       :: String
+   , isAligned  :: Bool
+   , charType   :: CharDataType
+   , alphabet   :: AmbiguityGroup
+   , ignored    :: Bool
+   , costM      :: Maybe TCM
+   , additive   :: Bool
+   , weight     :: Int
+   , gapIsFifth :: Bool
    } deriving (Show)
 
 -- Character is Maybe, because some chars might not be present for some taxa
@@ -65,11 +68,14 @@ type TaxonSequenceMap = M.Map TaxonIdentifier Sequence
 -- for now, the step matrix, but this datatype is included for later extensibility
 data AssumptionBlock
    = AssumptionBlock
-   { tcm :: [StepMatrix] } deriving (Show)
+   { tcm :: [StepMatrix]
+   , add :: [Bool] 
+   } deriving (Show)
 
 -- | AssumptionField is a list of fields in the Assumptions block.
 data AssumptionField
    = TCMMat StepMatrix
+   | Add    Bool
    | IgnAF  String
 
 -- | The different subfields of the Format field in the sequence blocks.

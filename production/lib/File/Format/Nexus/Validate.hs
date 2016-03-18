@@ -99,6 +99,8 @@ import           Text.Megaparsec.Custom
 -- • fail on incorrrect datatype
 -- • dependentErrors & independentErrors become :: String error, String warning => [Maybe (Either error warning)]
      -- then partitionEithers . catMaybes, etc., etc. (talk to Alex)
+-- • warn that eliminate doesn't work on unaligned data
+-- • capture data on ordered chars
 
 validateNexusParseResult :: (Show s, MonadParsec s m Char) => NexusParseResult -> m Nexus
 validateNexusParseResult (NexusParseResult inputSeqBlocks taxas treeSet assumptions _ignored) 
@@ -158,10 +160,10 @@ validateNexusParseResult (NexusParseResult inputSeqBlocks taxas treeSet assumpti
         --seqMetadataTuples = map (\singleSeq -> ( getSeqFromMatrix singleSeq taxaLst
         --                          , getCharMetadata costMatrix singleSeq
         --                          )) inputSeqBlocks -- TODO: replace getSeqFromMatrix blah blah with parsedSeqs
-        costMatrix = head . tcm <$> headMay assumptions -- TODO: why does this work?
+        costMatrix = headMay . tcm =<< headMay assumptions -- TODO: why does this work?
         
-        seqMetadataTuples = something <$> parsedSeqs
-        something = map (\(taxonSeqMap,rawSequence) -> (taxonSeqMap, getCharMetadata costMatrix rawSequence)) . (`zip` inputSeqBlocks)
+        seqMetadataTuples = createSeqMetaTuples <$> parsedSeqs
+        createSeqMetaTuples = map (\(taxonSeqMap,rawSequence) -> (taxonSeqMap, getCharMetadata costMatrix rawSequence)) . (`zip` inputSeqBlocks)
         parsedSeqs = decisionTree inputSeqBlocks taxaLst
         -- taxaSeqVector = V.fromList [(taxon, alignedTaxaSeqMap M.! taxon) | taxon <- taxaLst]
         --unalignedTaxaSeqMap = getSeqFromMatrix (getBlock "unaligned" inputSeqBlocks) taxaLst
@@ -240,16 +242,18 @@ foldSeqs ((taxSeqMap,charMDataVec):xs)   = ((newSeqMap, newMetadata), totLength)
     where 
         ((curMap,curMetadata),curLength) = foldSeqs xs
         newSeqMap                        = M.unionWith (updateSeqInMap curLength) taxSeqMap curMap
-        newMetadata                      = charMDataVec V.++ if length curMetadata < curLength -- This shouldn't be possible. Only seqs should have missing data.
-                                                                                        -- TODO: Error out here?
-                                                      then V.fromList [] V.++ curMetadata
-                                                      else curMetadata
+                                           -- This condition shouldn't ever be True. Only seqs should have missing data.
+        newMetadata                      = charMDataVec V.++ if length curMetadata < curLength 
+                                                                then V.fromList [] V.++ curMetadata -- TODO: Error out here?
+                                                                else curMetadata
         totLength                        = curLength +  V.length charMDataVec
     
 
--- | updateSeqInMap takes in a TaxonSequenceMap, a length (the length of the longest sequence in the map), a taxon name and a sequence
+-- | updateSeqInMap takes in a TaxonSequenceMap, a length (the length of the longest sequence in the map), a taxon name and a sequence.
 -- It updates the first map by adding the new seq using the taxon name as a key. If the seq us shorter than the max, it is first
--- buffered by a vector of Nothing
+-- buffered by a vector of Nothing.
+-- This buffering is okay because unaligned sequences, under dynamic homology, are treated as a single sequences. Therefore the buffering 
+-- does not cause and "alignment". TODO: Make sure the reasoning is right in this, regarding buffering
 updateSeqInMap :: Int -> Sequence -> Sequence -> Sequence
 updateSeqInMap curLength inputSeq curSeq = newSeq
     where
@@ -258,7 +262,8 @@ updateSeqInMap curLength inputSeq curSeq = newSeq
         emptySeq      = V.replicate missingLength Nothing
         seqToAdd      = inputSeq V.++ emptySeq
 
--- | checkSeqLength takes in the list of PhyloSequences and the 
+-- | checkSeqLength takes in the list of PhyloSequences and the final map of sequences and checks each sequence to see whether it's
+-- aligned, and if so whether it 
 checkSeqLength :: [PhyloSequence] -> Sequences -> [Maybe String]
 checkSeqLength [] _            = [Nothing]
 checkSeqLength seqBlockLst (seqMap,_) = 
@@ -305,11 +310,17 @@ taxaDimsMissing taxas inputSeqBlocks = taxaProblems ++ seqProblems
 
 
 
--- TODO: name chars, Nope don't do that here, just Maybe them!
--- TODO: make sure I've dealt with dynamic & static homology correctly here.
+-- TODOs: 
+-- • name chars, Nope don't do that here, just Maybe them!
+-- • make sure I've dealt with dynamic & static homology correctly here.
+-- • fix elims
+-- • deal with additivity
+-- • deal with weight
+-- • deal with gapmode 
+-- Note that these last four will all need the same functionality under the hood.
 getCharMetadata :: Maybe StepMatrix -> PhyloSequence -> V.Vector CharacterMetadata
 getCharMetadata mayMtx seqBlock = 
-    V.replicate len $ CharacterMetadata "" aligned cType alph False mayTCM
+    V.replicate len $ CharacterMetadata "" aligned cType alph False mayTCM additivity wt gapmode
     where 
         aligned     = alignedSeq seqBlock
         cType       = DNA
@@ -324,6 +335,10 @@ getCharMetadata mayMtx seqBlock =
         form        = head $ format seqBlock
         len         = numChars . head $ charDims seqBlock
         mayTCM      = matrixData <$> mayMtx
+        additivity  = False
+        wt          = 1
+        gapmode     = True
+
 
 -- | getMatrixTaxonRecurrenceErrors takes a Phylosequence. It reads throught the PhyloSequence matrix to see if there are any taxa
 -- that appear the incorrect number of times (all should appear the same number of times)
@@ -736,7 +751,7 @@ sortElimsStr start =
             pert x       = read (dropWhile isSpace $ takeWhile (/= '-') x) :: Int
 
 -- | setIgnores iterates from x to y (ints), determining at each index whether that index should be "ignored". If so, it
--- flags True, otherwise it flags false. It accumulates all of these Booleans into a list
+-- flags True, otherwise it flags False. It accumulates all of these Booleans into a list
 setIgnores :: Int -> Int -> V.Vector (Bool,Int) -> Int -> [Bool] -> [Bool]
 setIgnores seqIdx curElimIdx toElim seqLength acc
     | seqIdx >= seqLength = reverse acc
