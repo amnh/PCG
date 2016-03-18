@@ -22,6 +22,16 @@ import Bio.Phylogeny.Graph
 import Data.IntMap ((\\), elems)
 import Data.Monoid
 
+data FracturedParseResult
+   = FPR
+   { parsedChars  :: [TreeSeqs]
+   , parsedMetas  :: [Vector CharInfo]
+   , parsedTrees  :: Graph
+   , relatedTcm   :: Maybe TCM
+   , sourceFile   :: FilePath
+   } deriving (Show)
+          
+
 -- | Takes in a list of parse results and outputs 
 masterUnify :: (Metadata p, ParsedCharacters p, ParseGraph p) => [p] -> Either UnificationError Graph
 masterUnify inResults = 
