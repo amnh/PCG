@@ -94,7 +94,7 @@ instance N.Network NewickNode NewickNode where
   update tree new = 
     let 
         updateHere = foldr (\n acc -> if match n acc then upOne n acc else acc) tree new
-        updateRest = updateHere {descendants = map (`N.update` new) (descendants updateHere)}
+        updateRest = updateHere { descendants = (`N.update` new) <$> descendants updateHere }
     in updateRest
     where
       match newNode t = newickLabel t == newickLabel newNode

@@ -29,10 +29,10 @@ ccodeAugment = CCodeAugment
   where
     makeError str = fail $ concat ["Specified both '",str,"' and 'non-",str,"' states for character set in CCODE command"]
     validateStates xs
-      | any (== Additive) xs && any (== NonAdditive) xs = makeError "additive"
-      | any (== Active  ) xs && any (== NonActive  ) xs = makeError "active"
-      | any (== Sankoff ) xs && any (== NonSankoff ) xs = makeError "sankoff" 
-      | otherwise                                       = pure xs
+      | Additive `elem` xs && NonAdditive `elem` xs = makeError "additive"
+      | Active   `elem` xs && NonActive   `elem` xs = makeError "active"
+      | Sankoff  `elem` xs && NonSankoff  `elem` xs = makeError "sankoff" 
+      | otherwise                                   = pure xs
 
 ccodeCharacterState :: MonadParsec s m Char => m CharacterState
 ccodeCharacterState = choice states

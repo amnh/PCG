@@ -35,6 +35,7 @@ data FileSpecificationContent
    } deriving (Eq)
 
 type TcmReference = Maybe FilePath
+
 data FileSpecification
    = UnspecifiedFile    [FilePath] --Try to parse them all?
    | AminoAcidFile      [FilePath]
