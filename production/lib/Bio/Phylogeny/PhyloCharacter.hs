@@ -74,7 +74,7 @@ data PhyloCharacter s = DNA         { name :: String -- The character name if it
                                     , additive :: Bool
                                     , ignored :: Bool
                                     } 
-
+                        -- TODO: fix spelling below
                       | Continous   { name :: String -- TODO: Add step values
                                     , ignored :: Bool
                                     , tcm :: CostMatrix
@@ -105,6 +105,8 @@ data PhyloCharacter s = DNA         { name :: String -- The character name if it
                         -- TODO: add a structure to track the root position for every character where it was optimized
                         -- TODO: reduce number of constructors
                         -- TODO: think about how this may change over time to track optimization type
+                        -- TODO: add weight
+                        -- TODO: make sure character names track with file name (parser?)
 
 -- | A cost matrix is just a matrix of floats
 type CostMatrix = Matrix Double

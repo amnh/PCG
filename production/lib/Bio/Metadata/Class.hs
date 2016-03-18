@@ -18,6 +18,7 @@ module Bio.Metadata.Class where
 import           Bio.Sequence.Parsed
 import           Bio.Sequence.Parsed.Class
 import           Bio.Phylogeny.PhyloCharacter
+import           Bio.Phylogeny.Graph.Data
 import           Data.Char
 import           Data.Foldable
 import           Data.List
@@ -31,6 +32,8 @@ import qualified Data.Vector as V
 import           File.Format.Fasta (FastaParseResult)
 import           File.Format.Fastc
 import           File.Format.Newick
+import           File.Format.Nexus hiding (DNA, RNA)
+import qualified File.Format.Nexus.Data as Nex
 import           File.Format.TNT
 import           File.Format.TransitionCostMatrix
 import           File.Format.VertexEdgeRoot
@@ -43,16 +46,13 @@ aaAlph  = pure <$> addOtherCases "ABCDEFGHIKLMNPQRSTVWXYZ-"
 addOtherCases :: String -> String
 addOtherCases [] = []
 addOtherCases (x:xs)
-  | isLower x = (toUpper x) : x : casei xs
-  | isUpper x = x : (toLower x) : casei xs
-  | otherwise = x : casei xs
+  | isLower x = (toUpper x) : x : addOtherCases xs
+  | isUpper x = x : (toLower x) : addOtherCases xs
+  | otherwise = x : addOtherCases xs
 
-data MetadataType = Empty | Inferred | Given deriving (Eq, Show)
-
-type PreferenceMetadata a = (MetadataType, a)
 
 class Metadata a where
-    unifyMetadata :: Monoid b => a -> [Vector (PhyloCharacter b)]
+    unifyMetadata :: a -> [Vector CharInfo]
 
 instance Metadata FastaParseResult where
     unifyMetadata inChars = map makeEncodeInfo (unifyCharacters inChars)
@@ -61,7 +61,7 @@ instance Metadata FastcParseResult where
     unifyMetadata inChars = map makeEncodeInfo (unifyCharacters inChars)
 
 instance Metadata NewickForest where
-    unifyMetadata = mempty
+    unifyMetadata _ = mempty
 
 instance Metadata TntResult where
     unifyMetadata (Left _) = mempty
@@ -79,8 +79,17 @@ instance Metadata TCM where
 instance Metadata VertexEdgeRoot where
     unifyMetadata _ = mempty
 
+instance Metadata Nexus where
+    unifyMetadata (Nexus (_, metas)) = pure $ V.map convertNexusMeta metas
+        where
+            convertNexusMeta inMeta = 
+                let defaultMeta = makeOneInfo (Nex.alphabet inMeta)
+                in  defaultMeta {name = Nex.name inMeta, aligned = Nex.isAligned inMeta, ignored = Nex.ignored inMeta, 
+                                    tcm = fromMaybe (tcm defaultMeta) (transitionCosts <$> Nex.costM inMeta)}
+
+-- TODO: Consider default metadata from the command structure
 -- | Functionality to make char info from tree seqs
-makeEncodeInfo :: Monoid b => TreeSeqs -> Vector (PhyloCharacter b)
+makeEncodeInfo :: TreeSeqs -> Vector CharInfo
 makeEncodeInfo seqs = V.map makeOneInfo alphabets --allChecks
     where
         alphabets = developAlphabets seqs
@@ -108,7 +117,7 @@ developAlphabets inSeqs = V.map setGapChar $ V.map sort $ M.foldr (V.zipWith get
             Nothing -> inAlph ++ ["-"]
 
 -- | Internal function to make one character info
-makeOneInfo :: Monoid b => Alphabet -> PhyloCharacter b
+makeOneInfo :: Alphabet -> CharInfo
 makeOneInfo inAlph
     | inAlph `subsetOf` dnaAlph = DNA       "" False mempty mempty inAlph defaultMat False
     | inAlph `subsetOf` rnaAlph = RNA       "" False mempty mempty inAlph defaultMat False

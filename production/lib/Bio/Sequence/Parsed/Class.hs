@@ -74,7 +74,7 @@ instance ParsedCharacters NewickForest where
                   name = fromMaybe "" $ newickLabel node
 
 instance ParsedCharacters Nexus where
-    unifyCharacters _ = mempty
+  unifyCharacters (Nexus (seqMap, _)) = pure seqMap
 
 instance ParsedCharacters TntResult where
     unifyCharacters (Left trees) = foldl f mempty trees

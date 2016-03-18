@@ -23,6 +23,7 @@ import File.Format.Fasta
 import File.Format.Fastc hiding (Identifier)
 import           Data.Foldable
 import File.Format.Newick
+import File.Format.Nexus
 import File.Format.TNT
 import File.Format.TransitionCostMatrix
 import qualified File.Format.VertexEdgeRoot.Parser as VER
@@ -63,6 +64,9 @@ instance ParseGraph TCM where
 
 instance ParseGraph VER.VertexEdgeRoot where
     unifyGraph = convertVER
+
+instance ParseGraph Nexus where
+    unifyGraph = mempty
 
 -- | Converts into a topo tree without sequences (main funcionality in newick conversion)
 convertNewickToTopo :: NewickNode -> TopoTree
