@@ -9,6 +9,7 @@ module PCG.Command.Types.Read.Internal
   , FileSpecification(..)
   , FileSpecificationContent(..)
   , getSpecifiedContent
+  , getSpecifiedTcm
   , eitherTValidation
   ) where
 

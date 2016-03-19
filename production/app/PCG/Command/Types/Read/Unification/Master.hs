@@ -21,6 +21,7 @@ import Bio.Phylogeny.Graph.Parsed
 import Control.Monad
 import Data.List.NonEmpty (fromList)
 import Bio.Metadata.Class
+import Bio.Sequence.Parsed
 import Bio.Sequence.Parsed.Class
 import Bio.Sequence.Parsed
 import Bio.Phylogeny.Graph
