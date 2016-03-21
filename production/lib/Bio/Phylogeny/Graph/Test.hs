@@ -93,8 +93,8 @@ joinCases = testGroup "Small test cases function" [nulladd, smalladd, nullJoin, 
         result5 = expected4 <> tree4a
 
         seqJoin = testCase "Two one node trees with sequences join properly" (expected6 @=? result6)
-        chars1 = singleton $ DNA "" True (mempty, mempty) (fromList ["A", "C", "G", "T", "-"]) mempty mempty False
-        chars2 = singleton $ DNA "" True (mempty, mempty) (fromList ["A", "C", "G"]) mempty mempty False
+        chars1 = singleton $ DNA "" True (mempty, mempty) (fromList ["A", "C", "G", "T", "-"]) mempty mempty False 1
+        chars2 = singleton $ DNA "" True (mempty, mempty) (fromList ["A", "C", "G"]) mempty mempty False 1
         node6a = Node 0 True True [] [] (singleton $ Just $ fromList [4, 8, 1]) mempty mempty mempty mempty mempty 2 0
         node6b = Node 0 True True [] [] (singleton $ Just $ fromList [16]) mempty mempty mempty mempty mempty 2 0
         node6aUpadate = node6a {isLeaf = False, children = [1], encoded = encoded node6a V.++ singleton Nothing}

@@ -24,6 +24,7 @@ import Data.List.NonEmpty (fromList)
 import Bio.Metadata.Class
 import Bio.Sequence.Coded
 import Bio.Sequence.Parsed
+import File.Format.Conversion.Encoder
 import Bio.Sequence.Parsed.Class
 import Bio.Phylogeny.Graph
 import Bio.Phylogeny.Tree.Node
@@ -133,12 +134,8 @@ encodeGraph inGraph = eitherAction inGraph id (Right . onGraph)
       let
         curNode = (nodes curDAG) ! curPos
         curSeqs = (parsedSeqs curDAG) HM.! curName
-        newNode = curNode {encoded = encodeOverMetadata curSeqs (characters curDAG)}
+        newNode = curNode {encoded = encodeIt curSeqs (characters curDAG)}
       in curDAG {nodes = (nodes curDAG) // [(curPos, newNode)]}
-
-    -- | Functionality to encode over characters
-    encodeOverMetadata :: ParsedSequences -> Vector CharInfo -> EncodedSequences BitVector
-    encodeOverMetadata = V.zipWith (\s c -> join $ flip encodeOverAlphabet (alphabet c) <$> s)
 
 -- | Simple helper function for partitioning either
 eitherAction :: Either a b -> (a -> a) -> (b -> Either a b) -> Either a b
