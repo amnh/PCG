@@ -15,29 +15,29 @@
 
 module Bio.Phylogeny.Graph.Parsed where
 
-import Prelude hiding ((++))
-import qualified Data.IntMap as IM
-import Data.Maybe
-import Data.Vector ((++))
-import File.Format.Fasta
-import File.Format.Fastc hiding (Identifier)
-import           Data.Foldable
-import File.Format.Newick
-import File.Format.Nexus
-import File.Format.TNT
-import File.Format.TransitionCostMatrix
-import qualified File.Format.VertexEdgeRoot.Parser as VER
-import Bio.Phylogeny.Graph.Data
-import Bio.Phylogeny.Graph.Utilities
-import Bio.Phylogeny.Graph.Topological
-import qualified Bio.Phylogeny.Tree.Node as N
-import Bio.Phylogeny.Tree.Node.Topological (TopoNode(..))
 
-import qualified Data.Set       as S  (Set, elemAt, toList, size, filter)
-import qualified Data.HashMap.Lazy   as HM (HashMap, insert, (!))
-import qualified Data.IntMap    as IM (IntMap, insert, (!))
-import qualified Data.Vector    as V  (Vector, fromList, (!))
-import qualified Data.IntSet    as IS (fromList)
+import           Bio.Phylogeny.Graph.Data
+import           Bio.Phylogeny.Graph.Topological
+import           Bio.Phylogeny.Graph.Utilities
+import qualified Bio.Phylogeny.Tree.Node as N
+import           Bio.Phylogeny.Tree.Node.Topological (TopoNode(..))
+import           Data.Foldable
+import qualified Data.HashMap.Lazy  as HM (HashMap, insert, (!))
+import qualified Data.Set           as S  (Set, elemAt, toList, size, filter)
+import qualified Data.IntMap        as IM
+import qualified Data.IntMap        as IM (IntMap, insert, (!))
+import qualified Data.IntSet        as IS (fromList)
+import           Data.Maybe
+import qualified Data.Vector        as V  (Vector, fromList, (!))
+import           Data.Vector              ((++))
+import           File.Format.Fasta
+import           File.Format.Fastc hiding (Identifier)
+import           File.Format.Newick
+import           File.Format.Nexus
+import           File.Format.TNT
+import           File.Format.TransitionCostMatrix
+import qualified File.Format.VertexEdgeRoot.Parser as VER
+import           Prelude           hiding ((++))
 
 class ParseGraph a where
     unifyGraph :: a -> Graph
