@@ -20,7 +20,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
-#include "yuAlign.h"
+#include "seqAlign_ffi.h"
 
 int main() {
     

@@ -50,7 +50,6 @@ addOtherCases (x:xs)
   | isUpper x = x : (toLower x) : addOtherCases xs
   | otherwise = x : addOtherCases xs
 
-
 class Metadata a where
     unifyMetadata :: a -> [Vector CharInfo]
 

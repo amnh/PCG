@@ -6,7 +6,7 @@ all : my_ffi
 
 clean :
 	rm -f *.o *.hi
-	rm -f yuAlignForHaskell.c
+	rm -f seqAlignForHaskell.c
 
 ############ more simple case, structs, pointers, etc.
 # my_ffi : mySimpleTestC.c mySimpleTestC.h mySimpleFfi.hs
@@ -26,8 +26,8 @@ clean :
 #################### Yu's case, structs, pointers, etc.
 # Extremely similar to complex case, above.
 # may need to make use of  --cross-compile in final builds
-my_ffi : yuAlign.c yuAlign.h haskellYuAlign.hsc processYuAlignForHaskell.py
-	python3 processYuAlignForHaskell.py
-	hsc2hs haskellYuAlign.hsc
-	clang -c yuAlignForHaskell.c
-	ghc -O --make haskellYuAlign.hs yuAlignForHaskell.o
+my_ffi : seqAlign_ffi.c seqAlign_ffi.h FFI.hsc processSeqAlignCCode.py
+	python3 processSeqAlignCCode.py
+	hsc2hs FFI.hsc
+	clang -c seqAlignForHaskell.c
+	ghc -O --make FFI.hs seqAlignForHaskell.o
