@@ -24,7 +24,7 @@ type TreeConstraint t n s b = (BinaryTree t n, Show t, NodeConstraint n s b, Cha
 type NodeConstraint n s b = (EncodedNode n s, PreliminaryNode n s, FinalNode n s, SeqConstraint s b, Show n)
 type SeqConstraint s b = (Bits b, CodedSequence s b, Bits s, Show s)
 
--- TODO: modify to map over characters to make sure we can combine?????
+-- TODO: Remove this file in favor of binary wrapper
 
 -- | Unified function to perform both the first and second passes of fitch
 allOptimization :: TreeConstraint t n s b => Double -> t -> t
