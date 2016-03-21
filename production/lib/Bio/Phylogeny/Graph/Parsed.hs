@@ -24,12 +24,11 @@ import           Bio.Phylogeny.Tree.Node.Topological (TopoNode(..))
 import           Data.Foldable
 import qualified Data.HashMap.Lazy  as HM (HashMap, insert, (!))
 import qualified Data.Set           as S  (Set, elemAt, toList, size, filter)
-import qualified Data.IntMap        as IM
-import qualified Data.IntMap        as IM (IntMap, insert, (!))
+import qualified Data.IntMap        as IM (IntMap, insert, size, (!))
 import qualified Data.IntSet        as IS (fromList)
+import           Data.Map                 (keys)
 import           Data.Maybe
 import qualified Data.Vector        as V  (Vector, fromList, (!))
-import           Data.Vector              ((++))
 import           File.Format.Fasta
 import           File.Format.Fastc hiding (Identifier)
 import           File.Format.Newick
@@ -50,13 +49,18 @@ instance ParseGraph FastaParseResult where
         let makeNames = foldr (\(FastaSequence label _) acc -> IM.insert (IM.size acc) label acc) mempty fasta
         in Graph $ pure $ mempty {nodeNames = makeNames}
 
+instance ParseGraph TaxonSequenceMap where
+    unifyGraph fasta = 
+        let makeNames = foldr (\label acc -> IM.insert (IM.size acc) label acc) mempty $ keys fasta
+        in Graph $ pure $ mempty {nodeNames = makeNames}
+
 instance ParseGraph FastcParseResult where
     unifyGraph fastc = 
         let makeNames = foldr (\(FastcSequence label _) acc -> IM.insert (IM.size acc) label acc) mempty fastc
         in Graph $ pure $ mempty {nodeNames = makeNames}
 
 instance ParseGraph TntResult where
-    unifyGraph (Left tree) = Graph $ toList $ fmap (fromTopo . flip TopoTree mempty . convertTNTToTopo True getTNTName) tree
+    unifyGraph (Left forest) = Graph $ toList $ fmap (fromTopo . flip TopoTree mempty . convertTNTToTopo True getTNTName) forest
     unifyGraph (Right (WithTaxa _ _ taxaTree)) = Graph $ toList $ fmap (fromTopo . flip TopoTree mempty . (convertTNTToTopo True fst)) taxaTree
 
 instance ParseGraph TCM where

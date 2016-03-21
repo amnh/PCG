@@ -29,7 +29,7 @@ import           Data.Set          (intersection)
 import qualified Data.Set    as S  (fromList)
 import           Data.Vector       (Vector)
 import qualified Data.Vector as V
-import           File.Format.Fasta (FastaParseResult)
+import           File.Format.Fasta (FastaParseResult,TaxonSequenceMap)
 import           File.Format.Fastc
 import           File.Format.Newick
 import           File.Format.Nexus hiding (DNA, RNA)
@@ -54,10 +54,13 @@ class Metadata a where
     unifyMetadata :: a -> [Vector CharInfo]
 
 instance Metadata FastaParseResult where
-    unifyMetadata inChars = map makeEncodeInfo (unifyCharacters inChars)
+    unifyMetadata = fmap makeEncodeInfo . unifyCharacters
+
+instance Metadata TaxonSequenceMap where
+    unifyMetadata = fmap makeEncodeInfo . unifyCharacters
 
 instance Metadata FastcParseResult where
-    unifyMetadata inChars = map makeEncodeInfo (unifyCharacters inChars)
+    unifyMetadata = fmap makeEncodeInfo . unifyCharacters
 
 instance Metadata NewickForest where
     unifyMetadata _ = mempty

@@ -18,8 +18,7 @@ module Bio.Sequence.Parsed.Class where
 import           Bio.Sequence.Parsed
 import           Data.Bifunctor   (second)
 import           Data.Foldable
-import           Data.Key
-import           Data.Map         (insert, empty)
+import           Data.Map         (insert)
 import qualified Data.Map    as M (fromList)
 import           Data.Maybe
 import           Data.Monoid
@@ -58,6 +57,9 @@ instance ParsedCharacters FastaParseResult where
             convertSeq = V.fromList . map (Just . pure . pure . pure)
             f (FastaSequence n s) = insert n (convertSeq s)
 
+instance ParsedCharacters TaxonSequenceMap where
+    unifyCharacters = pure . fmap (pure . pure)
+
 instance ParsedCharacters FastcParseResult where
     unifyCharacters = pure . foldl f mempty
         where
@@ -77,14 +79,14 @@ instance ParsedCharacters Nexus where
   unifyCharacters (Nexus (seqMap, _)) = pure seqMap
 
 instance ParsedCharacters TntResult where
-    unifyCharacters (Left trees) = foldl f mempty trees
+    unifyCharacters (Left forest) = foldl f mempty forest
       where
           f xs tree = foldl g mempty tree : xs
           g m (Index  i) = insert (show i) mempty m
           g m (Name   n) = insert n mempty m
           g m (Prefix p) = insert p mempty m
-    unifyCharacters (Right (WithTaxa seqs _ []   )) = pure . M.fromList . toList $ second tntToTheSuperSequence   <$> seqs
-    unifyCharacters (Right (WithTaxa seqs _ trees)) = (M.fromList . toList . fmap (second tntToTheSuperSequence)) <$> trees
+    unifyCharacters (Right (WithTaxa seqs _ []    )) = pure . M.fromList . toList $ second tntToTheSuperSequence   <$> seqs
+    unifyCharacters (Right (WithTaxa _    _ forest)) = (M.fromList . toList . fmap (second tntToTheSuperSequence)) <$> forest
 
 tntToTheSuperSequence :: TaxonSequence -> ParsedSequences
 tntToTheSuperSequence inSeq = V.fromList $ (Just . pure . f . show) <$> inSeq
@@ -96,7 +98,7 @@ instance ParsedCharacters TCM where
     unifyCharacters _ = mempty
 
 instance ParsedCharacters VertexEdgeRoot where
-    unifyCharacters (VER v e r) = f . buildTree <$> toList r
+    unifyCharacters (VER _ e r) = f . buildTree <$> toList r
         where
             es = toList e
             f node 
