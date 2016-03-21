@@ -1,7 +1,7 @@
 #! /usr/bin/env python3
 
-infile = open('./yuAlign.c')
-outfile = open('./yuAlignForHaskell.c', 'w')
+infile = open('./seqAlign_ffi.c')
+outfile = open('./seqAlignForHaskell.c', 'w')
 inMain = False
 done = False
 braceCtr = 0
