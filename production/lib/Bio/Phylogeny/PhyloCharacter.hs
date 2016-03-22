@@ -17,11 +17,12 @@
 
 module Bio.Phylogeny.PhyloCharacter where
 
-import Data.Vector (Vector)
 import Bio.Sequence.Coded
 import Bio.Sequence.Parsed
 import GHC.Generics
 import Data.Matrix.NotStupid (Matrix, fromList, (<|>))
+import Data.Monoid           ((<>))
+import Data.Vector           (Vector)
 
 
 
@@ -112,6 +113,10 @@ data PhyloCharacter s = DNA         { name :: String -- The character name if it
                         -- TODO: reduce number of constructors
                         -- TODO: think about how this may change over time to track optimization type
                         -- TODO: make sure character names track with file name (parser?)
+
+prependName    n x = x { name     = n <> ":" <> name x }
+updateAlphabet a x = x { alphabet = a }
+updateTcm      t x = x { tcm      = t }
 
 -- | A cost matrix is just a matrix of floats
 type CostMatrix = Matrix Double

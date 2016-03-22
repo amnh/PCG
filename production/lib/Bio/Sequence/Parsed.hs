@@ -14,7 +14,7 @@
 {-# LANGUAGE TypeSynonymInstances, FlexibleInstances #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
-module Bio.Sequence.Parsed (ParsedSeq, TreeSeqs, Alphabet, ParsedSequences) where
+module Bio.Sequence.Parsed (AmbiguityGroup, ParsedSeq, TreeSeqs, Alphabet, ParsedSequences) where
 
 import Prelude hiding ((++))
 import Data.Monoid
