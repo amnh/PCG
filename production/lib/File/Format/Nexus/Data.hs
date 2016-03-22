@@ -110,7 +110,7 @@ data CharStateFormat
 -- Tokens is spec'd, as well.
 data CharacterFormat
    = CharacterFormat
-   { charDataType :: String
+   { charDataType :: String    -- see CharDataType for options
    , symbols      :: Either String [String]
    , equate       :: Either String [String]
    , missing      :: String

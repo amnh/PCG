@@ -93,7 +93,7 @@ removeAmbDNA x = case x of
     _   ->  x
 
 -- Just for testing from CLI outside of ghci.
-main :: IO ()
-main = 
-    putStrLn $ show $ sequentialAlign 1 1 "CE" "GCT"
+--main :: IO ()
+--main = 
+--    putStrLn $ show $ sequentialAlign 1 1 "CE" "GCT"
 

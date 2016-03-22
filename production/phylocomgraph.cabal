@@ -248,7 +248,7 @@ executable brg
                        Text.Megaparsec.Custom
 
 executable qdh
-  main-is:             BadReadGraphQDh.hs
+  main-is:             BadReadGraphQDH.hs
 
   build-depends:       base                 >=4.8 && < 4.9
                      , bv                   -any

@@ -6,8 +6,7 @@ module Analysis.Parsimony.Binary.SequentialAlign (sequentialAlign) where
 import           Analysis.DirectOptimization.Utilities
 import           Bio.Phylogeny.Tree.Node.Preliminary
 import           Bio.Sequence.Coded
-import           Analysis.Parsimony.Binary.SequentialAlign.FFI (sequentialAlign)
-
+import qualified Analysis.Parsimony.Binary.SequentialAlign.FFI as FFI (sequentialAlign)
 import           Control.Applicative        (liftA2)
 import           Data.Bits
 import           Data.Foldable              (minimumBy)
@@ -36,7 +35,7 @@ subCost = 1
 
 -- | sequentialAlign is similar to DO, but uses Yu's and Vahid's information theoretical sequential alignment algorithm to produce the alignment
 sequentialAlign :: SeqConstraint s b => s -> s -> (s, Float, s, s, s)
-sequentialAlign s1 s2 = (inferredParent', cost, alignedParent', alignment1', alignment2')
+sequentialAlign s1 s2 = (inferredParent', (fromIntegral intValue :: Doublecost), alignedParent', alignment1', alignment2')
     where
         (inferredParent, alignedParent) = foldr (\(x, y) acc -> createParentSeqs x y acc) ([],[]) zip alignment1 alignment2
         createParentSeqs x y (xs, ys)
@@ -51,7 +50,7 @@ sequentialAlign s1 s2 = (inferredParent', cost, alignedParent', alignment1', ali
         alignedParent'  = encodeAll alignedParent
         alignment1'     = encodeAll alignment1
         alignment2'     = encodeAll alignment2
-        (cost, alignment1, alignment2) = case sequentialAlign 1 1 alignment1 alignment2 of
+        (cost, alignment1, alignment2) = case FFI.sequentialAlign 1 1 alignment1 alignment2 of
             Left e -> error e -- Better error handling later
             Right r -> r
         
