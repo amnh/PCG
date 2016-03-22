@@ -52,7 +52,7 @@ instance Show ReadError where
         case unopenables of
           []  -> Nothing
           [x] -> Just $ "The file "  ++ show x ++ " can not be openned"
-          xs  -> Just $ "The following files could not be oppened: \n" ++ unlines (show <$> xs)
+          xs  -> Just $ "The following files could not be openned: \n" ++ unlines (show <$> xs)
       unparsableMessage =
         case unparsables of
           []  -> Nothing
