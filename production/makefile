@@ -20,7 +20,7 @@ rebuild: ffi-submakes phylocomgraph.cabal stack.yaml
 	stack build --haddock --test
 
 ffi-submakes: ffi/Analysis/Parsimony/Binary/SequentialAlign/makefile
-	cd ffi/Analysis/Parsimony/Binary/SequentialAlign && $(MAKE) && cd ../../../../../
+	$(MAKE) -C ffi/Analysis/Parsimony/Binary/SequentialAlign all
 
 clean:
 	find . -type f -name '*.o'  -delete
