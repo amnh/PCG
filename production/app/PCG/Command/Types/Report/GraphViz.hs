@@ -1,6 +1,6 @@
 -----------------------------------------------------------------------------
 -- |
--- Module      :  Bio.Phylogeny.Graph.Output
+-- Module      :  PCG.Command.Types.Report.Graphviz
 -- Copyright   :  (c) 2015-2015 Ward Wheeler
 -- License     :  BSD-style
 --
@@ -8,11 +8,11 @@
 -- Stability   :  provisional
 -- Portability :  portable
 --
--- Functionality to output a graph
+-- Functionality to output a graphviz format from a Graph
 --
 -----------------------------------------------------------------------------
 
-module Bio.Phylogeny.Graph.Output where
+module PCG.Command.Types.Report.GraphViz where
 
 import Bio.Phylogeny.Graph.Data
 import Bio.Phylogeny.Tree.Node
