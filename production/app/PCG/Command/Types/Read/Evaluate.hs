@@ -4,24 +4,35 @@ module PCG.Command.Types.Read.Evaluate
   ( evaluate
   ) where
 
+import           Bio.Phylogeny.Graph
 import           Bio.Phylogeny.Graph.Parsed
+import           Bio.Phylogeny.PhyloCharacter
 import           Bio.Metadata.Class
+import           Bio.Sequence.Parsed
 import           Bio.Sequence.Parsed.Class
 import           Control.Monad              (when)
 import           Control.Monad.IO.Class
 import           Control.Monad.Trans.Either
 import           Control.Evaluation
 import           Data.Bifunctor             (bimap,first)
+import           Data.Char                  (isLower,toLower,isUpper,toUpper)
 import           Data.Either.Custom
 import           Data.Foldable
+import           Data.Key                   ((!))
+import           Data.Map                   (Map,assocs,insert,union)
+import qualified Data.Map              as M (fromList)
+import           Data.Monoid                ((<>))
 --import           Data.Hashable
 --import           Data.HashMap.Strict        (HashMap)
 --import qualified Data.HashMap.Strict  as HM (fromList)
-import           File.Format.Fasta
+import           Data.Vector                (Vector)
+import qualified Data.Vector           as V (fromList,zipWith)
+import           File.Format.Fasta   hiding   (FastaSequenceType(..))
+import qualified File.Format.Fasta   as Fasta (FastaSequenceType(..))
 import           File.Format.Fastc   hiding (Identifier)
 import           File.Format.Newick
 import           File.Format.Nexus          (nexusStreamParser)
-import           File.Format.TNT
+import           File.Format.TNT     hiding (casei)
 import           File.Format.TransitionCostMatrix
 import           File.Format.VertexEdgeRoot
 -- import File.Format.Conversion.ToInternal
@@ -39,8 +50,9 @@ evaluate (READ fileSpecs) old = do
     result <- liftIO . runEitherT . eitherTValidation $ parseSpecifiedFile <$> fileSpecs
     case result of
       Left err -> fail $ show err   -- Report structural errors here.
-      Right xs -> mempty -- foldl (<>) old xs -- Here we validate more
-{--}
+      Right xs -> let transformation = expandIUPAC . prependFilenamesToCharacterNames . applyReferencedTCM
+                      z = (transformation <$> concat xs) -- foldl (<>) old xs -- Here we validate more
+{--}              in  mempty 
 evaluate _ _ = fail "Invalid READ command binding"
 {--}
 parseSpecifiedFile  :: FileSpecification -> EitherT ReadError IO [FracturedParseResult]
@@ -75,7 +87,7 @@ fastaDNA spec = getSpecifiedContent spec >>= (hoistEither . parseSpecifiedConten
     parse' (path,content) = toFractured Nothing path <$> parseResult
       where
         parseResult = first unparsable $ parse combinator path content
-        combinator  = (\x -> fastaStreamConverter DNA x <|> fastaStreamConverter RNA x) =<< fastaStreamParser
+        combinator  = (\x -> fastaStreamConverter Fasta.DNA x <|> fastaStreamConverter Fasta.RNA x) =<< fastaStreamParser
 
 -- TODO: abstract these two (three) v^
 fastaAminoAcid :: FileSpecification -> EitherT ReadError IO [FracturedParseResult]
@@ -87,7 +99,7 @@ fastaAminoAcid spec = getSpecifiedContent spec >>= (hoistEither . parseSpecified
     parse' (path,content) = toFractured Nothing path <$> parseResult
       where
         parseResult = first unparsable $ parse combinator path content
-        combinator  = fastaStreamConverter AminoAcid =<< fastaStreamParser
+        combinator  = fastaStreamConverter Fasta.AminoAcid =<< fastaStreamParser
 
 parseCustomAlphabet :: FileSpecification -> EitherT ReadError IO [FracturedParseResult]
 parseCustomAlphabet spec = getSpecifiedContent spec >>= (hoistEither . parseSpecifiedContent)
@@ -102,7 +114,36 @@ parseCustomAlphabet spec = getSpecifiedContent spec >>= (hoistEither . parseSpec
       where
         parseResult = first unparsable $ parse fastcStreamParser path content
 
+applyReferencedTCM :: FracturedParseResult -> FracturedParseResult
+applyReferencedTCM fpr =
+  case relatedTcm fpr of
+     Nothing -> fpr
+     Just x  -> let newAlphabet = toList $ customAlphabet x
+                    newTcm      = transitionCosts x
+                in  fpr { parsedMetas = fmap (fmap (updateAlphabet newAlphabet . updateTcm newTcm)) $ parsedMetas fpr }
 
+prependFilenamesToCharacterNames :: FracturedParseResult -> FracturedParseResult
+prependFilenamesToCharacterNames fpr = fpr { parsedMetas = fmap (fmap (prependName (sourceFile fpr))) $ parsedMetas fpr }
+
+expandIUPAC :: FracturedParseResult -> FracturedParseResult
+expandIUPAC fpr = fpr { parsedChars = newTreeSeqs }
+  where
+    newTreeSeqs = zipWith f (parsedChars fpr) (parsedMetas fpr)
+    f :: TreeSeqs -> Vector CharInfo -> TreeSeqs
+    f mapping meta = g <$> mapping
+      where
+        g :: ParsedSequences -> ParsedSequences
+        g = V.zipWith h meta 
+          where
+            h :: CharInfo -> Maybe ParsedSeq -> Maybe ParsedSeq
+            h info seqMay = expandCodes <$> seqMay
+              where
+                expandCodes x =
+                  case info of
+                    DNA{}       -> (nucleotideIUPAC !) <$> x
+                    RNA{}       -> (nucleotideIUPAC !) <$> x
+                    AminoAcid{} -> (aminoAcidIUPAC  !) <$> x
+                    _           -> x
 
 --setTaxaSeqs :: HashMap Identifier ParsedSequences -> SearchState
 --setTaxaSeqs x = pure $ Graph [mempty { parsedSeqs = x }]
@@ -123,12 +164,12 @@ parseSpecifiedFileSimple comb toState spec = getSpecifiedContent spec >>= (hoist
 
 progressiveParse :: FilePath -> EitherT ReadError IO FracturedParseResult
 progressiveParse inputPath = do
-    res0 <- liftIO . runEitherT . parseSpecifiedFile $ NucleotideFile [inputPath]
-    case res0 of
+    nukeResult <- liftIO . runEitherT . parseSpecifiedFile $ NucleotideFile [inputPath]
+    case nukeResult of
       Right x -> pure $ head x
       Left  _ -> do
-        res1 <- liftIO . runEitherT . parseSpecifiedFile $ AminoAcidFile [inputPath]
-        case res1 of
+        aminoAcidResult <- liftIO . runEitherT . parseSpecifiedFile $ AminoAcidFile [inputPath]
+        case aminoAcidResult of
           Right x -> pure $ head x
           Left  _ -> do
             (filePath, fileContent) <- head . dataFiles <$> getSpecifiedContent (UnspecifiedFile [inputPath])
@@ -148,3 +189,55 @@ progressiveParse inputPath = do
 toFractured :: (Metadata a, ParsedCharacters a, ParseGraph a) => Maybe TCM -> FilePath -> a -> FracturedParseResult
 toFractured tcmMat path = FPR <$> unifyCharacters  <*> unifyMetadata <*> unifyGraph <*> const tcmMat <*> const path
 {--}
+
+nucleotideIUPAC :: Map AmbiguityGroup AmbiguityGroup
+nucleotideIUPAC = casei core
+  where
+    ref  = (core !)
+    core = M.fromList
+         [ (["A"], ["A"]     )
+         , (["G"], ["G"]     )
+         , (["C"], ["C"]     )
+         , (["T"], ["T"]     )
+         , (["-"], ["-"]     ) -- assume 5th state (TODO: fix this)
+         , (["U"], ref ["T"] )
+         , (["R"], ref ["A"] <> ref ["G"])
+         , (["M"], ref ["A"] <> ref ["C"])
+         , (["W"], ref ["A"] <> ref ["T"])
+         , (["S"], ref ["G"] <> ref ["C"])
+         , (["K"], ref ["G"] <> ref ["T"])
+         , (["T"], ref ["C"] <> ref ["T"])
+         , (["V"], ref ["A"] <> ref ["G"] <> ref ["C"])
+         , (["D"], ref ["A"] <> ref ["G"] <> ref ["T"])
+         , (["H"], ref ["A"] <> ref ["C"] <> ref ["T"])
+         , (["B"], ref ["G"] <> ref ["C"] <> ref ["T"])
+         , (["N"], ref ["A"] <> ref ["G"] <> ref ["C"] <> ref ["T"])
+         , (["X"], ref ["N"])
+         , (["?"], ref ["A"] <> ref ["G"] <> ref ["C"] <> ref ["T"] <> ref ["-"])
+         ]
+
+aminoAcidIUPAC :: Map AmbiguityGroup AmbiguityGroup
+aminoAcidIUPAC = casei $ core `union` multi
+  where
+    core         = M.fromList $ zip symbolGroups symbolGroups
+    symbolGroups = pure . pure <$> "ACDEFGHIKLMNPQRSTVWY-"
+    ref          = (core !)
+    allSymbols   = foldl1 (<>) symbolGroups
+    allAcids     = foldl1 (<>) $ init symbolGroups
+    multi        = M.fromList
+                 [ (["B"], ref ["D"] <> ref ["N"])
+                 , (["Z"], ref ["E"] <> ref ["Q"])
+                 , (["X"], allAcids  )
+                 , (["?"], allSymbols)
+                 ]
+
+casei :: Map AmbiguityGroup v -> Map AmbiguityGroup v
+casei x = foldl f x $ assocs x
+  where
+    f m ([[k]],v)
+      | isLower k = insert [[(toUpper k)]] v m
+      | isUpper k = insert [[(toLower k)]] v m
+      | otherwise = m
+    f m (_    ,v) = m
+
+                                                                    
