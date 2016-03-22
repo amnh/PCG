@@ -3,8 +3,7 @@ module Main where
 import Analysis.GenericFitch
 import Bio.Phylogeny.Graph
 import Bio.Phylogeny.Graph.Utilities
-import PCG.Command.Types.Report.GraphViz
-import PCG.Command.Types.Report.Newick
+import Bio.Phylogeny.Graph.Output
 import Bio.Phylogeny.Tree.Node
 import Control.Monad                (sequence_, liftM2)
 import Data.Functor                 ((<$))
@@ -36,7 +35,6 @@ madRead = badReadGraph "../../TestDat/fakeArtmor.fas" "../../TestDat/artmor.tre"
 --badNames = (V.map (\n -> (IM.! (code n)) <$> (nodeNames <$> madRead))) <$> badNodes
 madness = rootCost . allOptimization 1 <$> madRead
 outputMad = outPutDot "TestArtmor.dot" =<< ((Graph . pure) <$> madRead) 
-madNewick = outPutNewick "TestArtmorNewick.new" =<< ((Graph . pure) <$> madRead)
 checkOuts = liftM2 (V.zipWith (\n e -> not (isLeaf n) && null (outNodes e))) (nodes <$> madRead) (edges <$> madRead)
 bigShow = showSeqs . allOptimization 1 <$> madRead
 madNames = nodeNames <$> madRead
