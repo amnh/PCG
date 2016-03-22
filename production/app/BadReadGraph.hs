@@ -35,7 +35,7 @@ badReadGraph fastaPath newickPath = do
 forceUnaligned :: DAG -> DAG
 forceUnaligned inDAG = inDAG {characters = map (\c -> c {aligned = False}) (characters inDAG)}
 
-madRead = badReadGraph "../../TestDat/fakeArtmor.fas" "../../TestDat/artmor.tre"
+madRead = forceUnaligned <$> badReadGraph "../../TestDat/fakeArtmor.fas" "../../TestDat/artmor.tre"
 --badNodes = (V.filter (\n -> isLeaf n && null (encoded n))) <$> (nodes <$> madRead)
 --badNames = (V.map (\n -> (IM.! (code n)) <$> (nodeNames <$> madRead))) <$> badNodes
 madness = rootCost . allOptimization 1 <$> madRead

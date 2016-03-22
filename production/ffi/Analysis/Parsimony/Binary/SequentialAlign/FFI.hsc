@@ -1,5 +1,7 @@
 {-# LANGUAGE ForeignFunctionInterface, BangPatterns #-}
 
+module Analysis.Parsimony.Binary.SequentialAlign.FFI where
+
 import System.IO.Unsafe
 import Foreign
 import Foreign.Ptr
