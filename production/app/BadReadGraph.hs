@@ -17,6 +17,7 @@ import qualified File.Format.Newick as N
 import File.Format.Newick.Converter
 import Text.Megaparsec
 import Bio.Sequence.Coded
+import qualified Bio.Phylogeny.PhyloCharacter as Char
 
 main = print =<< madness
 
@@ -33,7 +34,7 @@ badReadGraph fastaPath newickPath = do
     coerceFasta = fmap (singleton . Just)
 
 forceUnaligned :: DAG -> DAG
-forceUnaligned inDAG = inDAG {characters = map (\c -> c {aligned = False}) (characters inDAG)}
+forceUnaligned inDAG = inDAG {characters = V.map (\c -> c {Char.aligned = False}) (characters inDAG)}
 
 madRead = forceUnaligned <$> badReadGraph "../../TestDat/fakeArtmor.fas" "../../TestDat/artmor.tre"
 --badNodes = (V.filter (\n -> isLeaf n && null (encoded n))) <$> (nodes <$> madRead)
