@@ -34,10 +34,10 @@ subCost = 1
 
 
 -- | sequentialAlign is similar to DO, but uses Yu's and Vahid's information theoretical sequential alignment algorithm to produce the alignment
-sequentialAlign :: SeqConstraint s b => s -> s -> (s, Float, s, s, s)
-sequentialAlign s1 s2 = (inferredParent', (fromIntegral intValue :: Doublecost), alignedParent', alignment1', alignment2')
+sequentialAlign :: SeqConstraint s b => s -> s -> (s, Double, s, s, s)
+sequentialAlign s1 s2 = (inferredParent', (fromIntegral cost :: Double), alignedParent', alignment1', alignment2')
     where
-        (inferredParent, alignedParent) = foldr (\(x, y) acc -> createParentSeqs x y acc) ([],[]) zip alignment1 alignment2
+        (inferredParent, alignedParent) = foldr (\(x, y) acc -> createParentSeqs x y acc) ([],[]) (zip alignment1 alignment2)
         createParentSeqs x y (xs, ys)
             | x == '-' && y == '-' = (xs    , '-' : ys)
             | x == '-'             = (xs, x : ys) -- So I'm prioritizing gap over everything else
