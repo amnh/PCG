@@ -1,6 +1,7 @@
 module BadReadGraph where
 
-import Analysis.GenericFitch
+--import Analysis.GenericFitch
+import Analysis.Parsimony.Binary.Optimization
 import Bio.Phylogeny.Graph
 import Bio.Phylogeny.Graph.Utilities
 import PCG.Command.Types.Report.GraphViz
@@ -29,6 +30,9 @@ badReadGraph fastaPath newickPath = do
   where
     coerceFasta = fmap (singleton . Just)
 
+forceUnaligned :: DAG -> DAG
+forceUnaligned inDAG = inDAG {characters = map (\c -> c {aligned = False}) (characters inDAG)}
+
 madRead = badReadGraph "../../TestDat/fakeArtmor.fas" "../../TestDat/artmor.tre"
 --badNodes = (V.filter (\n -> isLeaf n && null (encoded n))) <$> (nodes <$> madRead)
 --badNames = (V.map (\n -> (IM.! (code n)) <$> (nodeNames <$> madRead))) <$> badNodes
@@ -53,3 +57,4 @@ singleMad = rootCost . allOptimization 1 <$> badReadGraph "../../TestDat/fakeArt
 mediumTest = allOptimization 1 <$> badReadGraph "../../TestDat/MediumCooked.fas" "../../TestDat/MediumCooked.tre"
 
 checkNewick = parse N.newickStreamParser "../../TestDat/MediumCooked.tre" <$> readFile "../../TestDat/MediumCooked.tre"
+
