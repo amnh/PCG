@@ -1,11 +1,9 @@
 module Main where
 
---import Analysis.GenericFitch
-import Analysis.Parsimony.Binary.Optimization
+import Analysis.GenericFitch
 import Bio.Phylogeny.Graph
 import Bio.Phylogeny.Graph.Utilities
-import PCG.Command.Types.Report.GraphViz
-import PCG.Command.Types.Report.Newick
+import Bio.Phylogeny.Graph.Output
 import Bio.Phylogeny.Tree.Node
 import Control.Monad                (sequence_, liftM2)
 import Data.Functor                 ((<$))
@@ -17,7 +15,6 @@ import qualified File.Format.Newick as N
 import File.Format.Newick.Converter
 import Text.Megaparsec
 import Bio.Sequence.Coded
-import qualified Bio.Phylogeny.PhyloCharacter as Char
 
 main = print =<< madness
 
@@ -33,15 +30,11 @@ badReadGraph fastaPath newickPath = do
   where
     coerceFasta = fmap (singleton . Just)
 
-forceUnaligned :: DAG -> DAG
-forceUnaligned inDAG = inDAG {characters = V.map (\c -> c {Char.aligned = False}) (characters inDAG)}
-
-madRead = forceUnaligned <$> badReadGraph "../../TestDat/fakeArtmor.fas" "../../TestDat/artmor.tre"
+madRead = badReadGraph "../../TestDat/fakeArtmor.fas" "../../TestDat/artmor.tre"
 --badNodes = (V.filter (\n -> isLeaf n && null (encoded n))) <$> (nodes <$> madRead)
 --badNames = (V.map (\n -> (IM.! (code n)) <$> (nodeNames <$> madRead))) <$> badNodes
 madness = rootCost . allOptimization 1 <$> madRead
 outputMad = outPutDot "TestArtmor.dot" =<< ((Graph . pure) <$> madRead) 
-madNewick = outPutNewick "TestArtmorNewick.new" =<< ((Graph . pure) <$> madRead)
 checkOuts = liftM2 (V.zipWith (\n e -> not (isLeaf n) && null (outNodes e))) (nodes <$> madRead) (edges <$> madRead)
 bigShow = showSeqs . allOptimization 1 <$> madRead
 madNames = nodeNames <$> madRead
@@ -60,4 +53,3 @@ singleMad = rootCost . allOptimization 1 <$> badReadGraph "../../TestDat/fakeArt
 mediumTest = allOptimization 1 <$> badReadGraph "../../TestDat/MediumCooked.fas" "../../TestDat/MediumCooked.tre"
 
 checkNewick = parse N.newickStreamParser "../../TestDat/MediumCooked.tre" <$> readFile "../../TestDat/MediumCooked.tre"
-

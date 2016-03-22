@@ -16,8 +16,11 @@ install-stack:
 setup: phylocomgraph.cabal stack.yaml
 	stack setup
 
-rebuild: phylocomgraph.cabal stack.yaml
+rebuild: ffi-submakes phylocomgraph.cabal stack.yaml
 	stack build --haddock --test
+
+ffi-submakes: ffi/Analysis/Parsimony/Binary/SequentialAlign/makefile
+	$(MAKE) -C ffi/Analysis/Parsimony/Binary/SequentialAlign all
 
 clean:
 	find . -type f -name '*.o'  -delete

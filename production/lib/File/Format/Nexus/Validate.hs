@@ -115,7 +115,7 @@ validateNexusParseResult (NexusParseResult inputSeqBlocks taxas treeSet assumpti
       -- Ordered by call, so first independentErrors, then dependentErrors, then outputSeqTups. Dependencies are subgrouped according to calling fn.
       
       -- Independent errors
-        independentErrors  = catMaybes $ noTaxaError : multipleTaxaBlocks : seqMatrixDimsErrors -- sequenceBlockErrors
+        independentErrors  = catMaybes $ noTaxaError : multipleTaxaBlocks : seqMatrixDimsErrors ++ wrongDataTypeErrors-- sequenceBlockErrors
       -- types of independent errors
         taxaDimsMissingError = taxaDimsMissing taxas inputSeqBlocks
         noTaxaError        = if null taxas && not (foldr (\x acc -> acc || areNewTaxa x) False inputSeqBlocks) -- will register as False if inputSeqBlocks is empty
@@ -129,6 +129,7 @@ validateNexusParseResult (NexusParseResult inputSeqBlocks taxas treeSet assumpti
                                                                                                -- This allows us to do tree manipulations in their absence.
         
                               foldr (\x acc -> seqDimsMissing x : acc) [] inputSeqBlocks 
+        wrongDataTypeErrors = foldr (\x acc -> wrongDataType x : acc) [] inputSeqBlocks
 
       -- Dependent errors
         dependentErrors = catMaybes $ incorrectTaxaBlockCount : ({- seqDimsError ++ -} missingCloseQuotes ++ seqTaxaCountErrors {- ++ {- mtxTaxonCountErrors ++ TODO: decide if I can really delete this and seqDimsError and incorrectCharCount. -} incorrectCharCount -} )
@@ -263,6 +264,18 @@ updateSeqInMap curLength inputSeq curSeq = newSeq
         emptySeq      = V.replicate missingLength Nothing
         seqToAdd      = inputSeq V.++ emptySeq
 
+-- | wrongDataType looks at a PhyloSequence block and determines if it has a valid data type. If the datatype is missing, it will return Nothing, as
+-- results in default behavior ("standard" is default).
+-- TODO: ask Ward if mixed datatype is allowed (hope to god no).
+wrongDataType :: PhyloSequence -> Maybe String
+wrongDataType inSeq =
+    if (map toLower dataType) `elem` ["standard", "dna", "rna", "nucleotide", "protein", "continuous"]
+        then Nothing
+        else Just $ dataType ++ " is not an accepted type of data.\n"
+    where
+        (_, _noLabels, _interleaved, _tkns, dataType, _matchChar') = getFormatInfo inSeq
+
+
 -- | checkSeqLength takes in the list of PhyloSequences and the final map of sequences and checks each sequence to see whether it's
 -- aligned, and if so whether it 
 checkSeqLength :: [PhyloSequence] -> Sequences -> [Maybe String]
@@ -324,7 +337,7 @@ getCharMetadata mayMtx seqBlock =
     V.replicate len $ CharacterMetadata "" aligned cType alph False mayTCM additivity wt
     where 
         aligned     = alignedSeq seqBlock
-        cType       = DNA
+        cType       = read (charDataType form) :: CharDataType
         alph        = if areTokens form
                       then syms
                       else g $ headMay syms
@@ -338,6 +351,7 @@ getCharMetadata mayMtx seqBlock =
         mayTCM      = matrixData <$> mayMtx
         additivity  = False
         wt          = 1
+
 
 
 -- | getMatrixTaxonRecurrenceErrors takes a Phylosequence. It reads throught the PhyloSequence matrix to see if there are any taxa
@@ -369,7 +383,7 @@ getTaxaFromMatrix seq' = {-trace (show taxa) $ -}
         then M.empty
         else taxaMap
     where
-        (_, noLabels, _interleaved, _tkns, _cont, _matchChar') = getFormatInfo seq'
+        (_, noLabels, _interleaved, _tkns, _type, _matchChar') = getFormatInfo seq'
         mtx     = head $ seqMatrix seq' -- I've already checked to make sure there's a matrix
         taxaMap = foldr (\x acc -> M.insert x (succ (M.findWithDefault 0 x acc)) acc) M.empty taxa
         taxa    = foldr (\x acc -> takeWhile (`notElem` " \t") x : acc) [] mtx
@@ -481,14 +495,14 @@ findInterleaveError taxaLst seq'
             lineCount   = length . head $ seqMatrix seq'
             which       = blockType seq'
 
-getFormatInfo :: PhyloSequence -> (Bool, Bool, Bool, Bool, Bool, String)
+getFormatInfo :: PhyloSequence -> (Bool, Bool, Bool, Bool, String, String)
 getFormatInfo phyloSeq = case headMay $ format phyloSeq of
-                       Nothing -> (False, False, False, False, False, "")
+                       Nothing -> (False, False, False, False, "", "")
                        Just x  -> ( alignedSeq phyloSeq 
                                   , unlabeled x
                                   , interleave x
                                   , areTokens x
-                                  , map toLower (charDataType x) == "continuous"
+                                  , map toLower (charDataType x)
                                   , matchChar x
                                   )
 
@@ -513,9 +527,9 @@ getFormatInfo phyloSeq = case headMay $ format phyloSeq of
 getSeqFromMatrix :: PhyloSequence -> V.Vector String -> TaxonSequenceMap
 -- getSeqFromMatrix [] _ = V.empty
 getSeqFromMatrix seqBlock taxaLst =
-    M.map (splitSequenceReplaceAmbiguities tkns cont aligned) equatesReplaced
+    M.map (splitSequenceReplaceAmbiguities tkns isCont aligned) equatesReplaced
     where
-        (aligned, noLabels, interleaved, tkns, cont, matchChar') = getFormatInfo seqBlock
+        (aligned, noLabels, interleaved, tkns, charType, matchChar') = getFormatInfo seqBlock
         seqLen = numChars $ head $ charDims seqBlock -- I've already checked to make sure there's a dimensions in the block
         taxaCount  = length taxaLst
         taxaMap    = M.fromList . zip (V.toList taxaLst) $ repeat ""
@@ -526,7 +540,7 @@ getSeqFromMatrix seqBlock taxaLst =
                               then -- Cases 1 and 2: Alignment will be checked in splitSequenceReplaceAmbiguities
                                   getTaxonAndSeqFromMatrixRow <$> mtx 
                               else -- Case 3: To get here, we must have already errored out unaligned in "handle" fns
-                                  getTaxaAndSeqsFromEntireMatrix (cont || tkns) seqLen mtx -- TODO: need to add custom alphabet to condition here?
+                                  getTaxaAndSeqsFromEntireMatrix (isCont || tkns) seqLen mtx -- TODO: need to add custom alphabet to condition here?
         entireDeinterleavedSeqs = if interleaved
                                   then deInterleave taxaMap entireSeqs
                                   else M.fromList entireSeqs
@@ -538,11 +552,12 @@ getSeqFromMatrix seqBlock taxaLst =
                              then M.map (replaceMatches (head matchChar') firstSeq) entireDeinterleavedSeqs
                              else entireDeinterleavedSeqs
         --vectorized = V.fromList 
-        equatesReplaced = if head eqStr /= "" && not tkns && not cont -- TODO: Also don't do on custom alphabets?
+        equatesReplaced = if head eqStr /= "" && not tkns && not isCont -- TODO: Also don't do on custom alphabets?
                             then M.map (replaceEquates eqMap) matchCharsReplaced
                             else matchCharsReplaced
         eqStr = either (\x -> [""]) (\x -> id x) $ getEquates seqBlock
         eqMap = M.fromList $ map (\xs -> (head xs, tail $ dropWhile (\x -> not $ '=' == x) xs) ) eqStr -- TODO: force equates string to be properly formatted
+        isCont = charType == "continuous"
 
 -- | deInterleave takes in a Map String String, where the first String is a taxon label, as well as an 
 -- interleaved seqMatrix in the form [(taxon,sequence)] and returns

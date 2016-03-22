@@ -3,21 +3,21 @@
 
 module Analysis.Parsimony.Binary.SequentialAlign (sequentialAlign) where
 
-import           Analysis.DirectOptimization.Utilities
+import           Analysis.Parsimony.Binary.Internal
 import           Bio.Phylogeny.Tree.Node.Preliminary
 import           Bio.Sequence.Coded
-import           Analysis.Parsimony.Binary.SequentialAlign.FFI (sequentialAlign)
-
+import qualified Analysis.Parsimony.Binary.SequentialAlign.FFI as FFI (sequentialAlign)
 import           Control.Applicative        (liftA2)
 import           Data.Bits
 import           Data.Foldable              (minimumBy)
 import           Data.Function              (on)
+import           Data.List                  (elemIndex)
 import           Data.Matrix.NotStupid      (fromList, Matrix, (<->), nrows, ncols, getElem, zero, matrix)
 import           Data.Maybe
 import           Data.Monoid                ((<>))
 import           Data.Ord                   (comparing)
-import           Data.Vector                (Vector, singleton, length, zipWith, cons, empty, toList, (!), or)
-import qualified Data.Vector as V           (foldr)
+import           Data.Vector                (Vector, singleton, length, zipWith, cons, empty, toList, (!), or, ifoldr)
+import qualified Data.Vector as V           (foldr, fromList)
 import           Prelude             hiding (length, zipWith, or)
 
 -- import           Debug.Trace
@@ -35,10 +35,10 @@ subCost = 1
 
 
 -- | sequentialAlign is similar to DO, but uses Yu's and Vahid's information theoretical sequential alignment algorithm to produce the alignment
-sequentialAlign :: SeqConstraint s b => s -> s -> (s, Float, s, s, s)
-sequentialAlign s1 s2 = (inferredParent', cost, alignedParent', alignment1', alignment2')
+sequentialAlign :: SeqConstraint s b => s -> s -> (s, Double, s, s, s)
+sequentialAlign s1 s2 = (inferredParent', (fromIntegral cost :: Double), alignedParent', alignment1', alignment2')
     where
-        (inferredParent, alignedParent) = foldr (\(x, y) acc -> createParentSeqs x y acc) ([],[]) zip alignment1 alignment2
+        (inferredParent, alignedParent) = foldr (\(x, y) acc -> createParentSeqs x y acc) ([],[]) (zip alignment1 alignment2)
         createParentSeqs x y (xs, ys)
             | x == '-' && y == '-' = (xs    , '-' : ys)
             | x == '-'             = (xs, x : ys) -- So I'm prioritizing gap over everything else
@@ -47,17 +47,25 @@ sequentialAlign s1 s2 = (inferredParent', cost, alignedParent', alignment1', ali
             | x < y                = (x : xs, x : ys)
             | y < x                = (y : xs, y : ys)
             | otherwise            = (x : xs, x : ys) -- they must be equal, so choose x
-        inferredParent' = encodeAll inferredParent
-        alignedParent'  = encodeAll alignedParent
-        alignment1'     = encodeAll alignment1
-        alignment2'     = encodeAll alignment2
-        (cost, alignment1, alignment2) = case sequentialAlign 1 1 alignment1 alignment2 of
+        inferredParent' = simpleEncode inferredParent
+        alignedParent'  = simpleEncode alignedParent
+        alignment1'     = simpleEncode alignment1
+        alignment2'     = simpleEncode alignment2
+        (cost, alignment1, alignment2) = case FFI.sequentialAlign 1 1 alignment1 alignment2 of
             Left e -> error e -- Better error handling later
             Right r -> r
-        
-        
 
-
+        -- | Simple encoding over a string just for you
+        simpleEncode :: Bits s => String -> s
+        simpleEncode inStr = 
+            let vecStr = V.fromList inStr
+            in ifoldr simpleSetElem zeroBits vecStr
+        
+        -- | Simple functionality to set an element in a bitvector
+        simpleSetElem :: Bits b => Int -> Char -> b -> b
+        simpleSetElem i char curBit = case elemIndex char "ACGT-" of
+                                            Nothing -> curBit
+                                            Just pos -> setBit curBit (pos + (i * 5))
 
 -- | Joins an alignment row to the rest of a matrix
 joinMat :: SeqConstraint s b => AlignRow s -> AlignMatrix s -> AlignMatrix s
