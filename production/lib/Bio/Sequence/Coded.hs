@@ -33,7 +33,7 @@ import Bio.Sequence.Character.Coded
 import Bio.Sequence.Packed.Class
 import Bio.Sequence.Parsed
 
-import Debug.Trace
+-- import Debug.Trace
 
 -- TODO: Change EncodedSeq/Sequences to EncodedCharacters
         -- Make a missing a null vector
@@ -68,7 +68,7 @@ instance Bits b => CodedSequence (EncodedSeq b) b where
             alphabet = inAlphabet
             coded = map (foldr (\c acc -> setElemAt c acc alphabet) zeroBits) strSeq
             final = if null coded then Nothing else Just coded
-        in trace ("encoded strSeq " ++ show strSeq) final
+        in {- trace ("encoded strSeq " ++ show strSeq) -} final
 
 ----  = 
 --    let
