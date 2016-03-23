@@ -15,6 +15,7 @@
 module PCG.Command.Types.Read.Unification.Master where
 
 import Prelude hiding ((++))
+import qualified Prelude as P
 
 import PCG.Command.Types.Read.Unification.UnificationError
 import Bio.Phylogeny.Graph.Parsed
@@ -41,6 +42,8 @@ import qualified Data.List as L ((\\), (++))
 import Data.Bits
 import Bio.Phylogeny.PhyloCharacter
 
+import Debug.Trace
+
 data FracturedParseResult
    = FPR
    { parsedChars  :: [TreeSeqs]
@@ -57,20 +60,26 @@ data FracturedParseResult
 masterUnify :: [FracturedParseResult] -> Either UnificationError Graph
 masterUnify inResults = 
     let
-      graphMetadata = Graph $ map (enforceGraph . mergeParsedMetadata . parsedMetas) inResults
-      firstTopo = foldr (mergeParsedGraphs . parsedTrees) (Right graphMetadata) inResults
+      --graphMetadata = Graph $ map (enforceGraph . mergeParsedMetadata . parsedMetas) inResults
+      firstTopo = foldr (mergeParsedGraphs . parsedTrees) (Right mempty) inResults
+      withMetadata = enforceGraph firstTopo $ map (mergeParsedMetadata . parsedMetas) inResults
       withSeqs = foldr (mergeParsedChars . parsedChars) firstTopo inResults
       encoded = encodeGraph withSeqs
     in firstTopo
 
     where
       -- | Simple function to shove metadata in a tree structure
-      enforceGraph :: Vector CharInfo -> DAG
-      enforceGraph c = mempty {characters = c}
+      enforceGraph :: Either UnificationError Graph -> [Vector CharInfo] -> Either UnificationError Graph
+      enforceGraph graph chars = eitherAction graph id (Right . Graph . shoveIt)
+        where
+          shoveIt (Graph dags) = zipWith (\d c -> d {characters = c}) dags chars
 
 -- | Verify that between two graphs, the taxa names are the same
 checkTaxaMatch :: Graph -> Graph -> ([String], [String])
-checkTaxaMatch (Graph g1) (Graph g2) = 
+--checkTaxaMatch (Graph g1) (Graph g2) | trace ("checking taxa match " P.++ show g1 P.++ "\n" P.++ show g2) False = undefined
+checkTaxaMatch (Graph g1) (Graph g2) 
+  | null g1 || null g2 = (mempty, mempty)
+  | otherwise =  
     let
         allNames1 = foldr1 (<>) (map nodeNames g1)
         allNames2 = foldr1 (<>) (map nodeNames g2)
@@ -98,10 +107,10 @@ mergeParsedChars inSeqs carry = eitherAction carry id addEncodeSeqs
     where
       addEncodeSeqs :: Graph -> Either UnificationError Graph
       addEncodeSeqs accumDag@(Graph accumDags)
-        | null matchCheck = 
+        | null (fst matchCheck) && null (snd matchCheck) = 
           let outSeqs = map (foldWithKey addIn mempty) inSeqs
           in Right (Graph $ zipWith (\d s -> d {parsedSeqs = s}) accumDags outSeqs)
-        | otherwise = Left (UnificationError (pure (NonMatchingTaxa ({-fromList $-} fst matchCheck) ({-fromList $-} snd matchCheck))))
+        | otherwise = Left (UnificationError (pure (NonMatchingTaxaSeqs ({-fromList $-} fst matchCheck) ({-fromList $-} snd matchCheck))))
         where
           matchCheck = checkTaxaSeqs accumDag inSeqs
           addIn :: String -> ParsedSequences -> HM.HashMap String ParsedSequences -> HM.HashMap String ParsedSequences
@@ -115,7 +124,7 @@ mergeParsedGraphs graph1@(Graph newGraph) carry = eitherAction carry id matchThe
   where
     matchThese :: Graph -> Either UnificationError Graph
     matchThese in2@(Graph accumGraph)
-      | null matchCheck = 
+      | null (fst matchCheck) && null (snd matchCheck) = 
         let notNull = filter (not . null . nodes) newGraph
         in Right $ Graph (accumGraph <> notNull)
       | otherwise = Left (UnificationError (pure (NonMatchingTaxa ({-fromList $-} fst matchCheck) ({-fromList $-} snd matchCheck)))) 
