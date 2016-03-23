@@ -7,6 +7,7 @@ import Bio.Phylogeny.Graph.Utilities
 import PCG.Command.Types.Report.CharacterMatrix
 import PCG.Command.Types.Report.GraphViz
 import PCG.Command.Types.Report.Newick
+import PCG.Command.Types.Report.Metadata
 import Bio.Phylogeny.Tree.Node
 import Control.Monad                (sequence_, liftM2)
 import Data.Functor                 ((<$))
@@ -44,6 +45,7 @@ madness = rootCost . allOptimization 1 <$> madRead
 outputMad = outPutDot "TestArtmor.dot" =<< ((Graph . pure) <$> madRead) 
 madNewick = outPutNewick "TestArtmorNewick.new" =<< ((Graph . pure) <$> madRead)
 madMatrix = outPutMatrix "TestArtmorCharacterMat.csv" =<< ((Graph . pure) <$> madRead)
+madMetadata = outPutMetadata "TestArtmorMetadata.csv" =<< ((Graph . pure) <$> madRead)
 checkOuts = liftM2 (V.zipWith (\n e -> not (isLeaf n) && null (outNodes e))) (nodes <$> madRead) (edges <$> madRead)
 bigShow = showSeqs . allOptimization 1 <$> madRead
 madNames = nodeNames <$> madRead
