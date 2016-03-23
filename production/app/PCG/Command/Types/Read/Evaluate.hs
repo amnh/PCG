@@ -83,7 +83,7 @@ parseSpecifiedFile spec@(UnspecifiedFile    _    ) =
   getSpecifiedContent spec >>= eitherTValidation . fmap (progressiveParse . fst) . dataFiles
 
 fastaDNA :: FileSpecification -> EitherT ReadError IO [FracturedParseResult]
-fastaDNA spec = getSpecifiedContent spec >>= (hoistEither . parseSpecifiedContent)
+fastaDNA spec = getSpecifiedContent spec >>= (hoistEither . parseSpecifiedContent parse')
   where
     parse' :: FileResult -> Either ReadError FracturedParseResult
     parse' (path,content) = toFractured Nothing path <$> parseResult
@@ -93,7 +93,7 @@ fastaDNA spec = getSpecifiedContent spec >>= (hoistEither . parseSpecifiedConten
 
 -- TODO: abstract these two (three) v^
 fastaAminoAcid :: FileSpecification -> EitherT ReadError IO [FracturedParseResult]
-fastaAminoAcid spec = getSpecifiedContent spec >>= (hoistEither . parseSpecifiedContent)
+fastaAminoAcid spec = getSpecifiedContent spec >>= (hoistEither . parseSpecifiedContent parse')
   where
     parse' :: FileResult -> Either ReadError FracturedParseResult
     parse' (path,content) = toFractured Nothing path <$> parseResult
@@ -101,8 +101,8 @@ fastaAminoAcid spec = getSpecifiedContent spec >>= (hoistEither . parseSpecified
         parseResult = first unparsable $ parse combinator path content
         combinator  = fastaStreamConverter Fasta.AminoAcid =<< fastaStreamParser
 
-parseSpecifiedContent :: FileSpecificationContent -> Either ReadError [FracturedParseResult]
-parseSpecifiedContent = eitherValidation . fmap parse' . dataFiles
+parseSpecifiedContent :: (FileResult -> Either ReadError FracturedParseResult) -> FileSpecificationContent -> Either ReadError [FracturedParseResult]
+parseSpecifiedContent parse' = eitherValidation . fmap parse' . dataFiles
 
 parseCustomAlphabet :: FileSpecification -> EitherT ReadError IO [FracturedParseResult]
 parseCustomAlphabet spec = getSpecifiedContent spec >>= (hoistEither . parseSpecifiedContent)
