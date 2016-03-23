@@ -18,15 +18,15 @@ import           Data.Bifunctor             (bimap,first)
 import           Data.Char                  (isLower,toLower,isUpper,toUpper)
 import           Data.Either.Custom
 import           Data.Foldable
-import           Data.Key                   ((!))
+import           Data.Key                   ((!),lookup)
 import           Data.Map                   (Map,assocs,insert,union)
 import qualified Data.Map              as M (fromList)
-import           Data.Monoid                ((<>))
+import           Data.Maybe                 (fromMaybe)
 --import           Data.Hashable
 --import           Data.HashMap.Strict        (HashMap)
 --import qualified Data.HashMap.Strict  as HM (fromList)
 import           Data.Vector                (Vector)
-import qualified Data.Vector           as V (fromList,zipWith)
+import qualified Data.Vector           as V (zipWith)
 import           File.Format.Fasta   hiding   (FastaSequenceType(..))
 import qualified File.Format.Fasta   as Fasta (FastaSequenceType(..))
 import           File.Format.Fastc   hiding (Identifier)
@@ -60,20 +60,20 @@ evaluate (READ fileSpecs) old = do
 evaluate _ _ = fail "Invalid READ command binding"
 {--}
 parseSpecifiedFile  :: FileSpecification -> EitherT ReadError IO [FracturedParseResult]
-parseSpecifiedFile      (AnnotatedFile      _    ) = fail "Annotated file specification is not implemented"
-parseSpecifiedFile      (ChromosomeFile     _    ) = fail "Chromosome file specification is not implemented"
-parseSpecifiedFile      (GenomeFile         _    ) = fail "Genome file specification is not implemented"
-parseSpecifiedFile spec@(AminoAcidFile      _    ) = fastaAminoAcid spec
-parseSpecifiedFile spec@(NucleotideFile     _    ) = fastaDNA       spec
-parseSpecifiedFile spec@(CustomAlphabetFile{}    ) = parseCustomAlphabet spec
-parseSpecifiedFile      (PrealignedFile     x tcmRef) = do
-    tcm <- getSpecifiedTcm tcmRef
-    res <- parseSpecifiedFile x
-    case tcm of
-      Nothing             -> pure res
+parseSpecifiedFile      AnnotatedFile     {}     = fail "Annotated file specification is not implemented"
+parseSpecifiedFile      ChromosomeFile    {}     = fail "Chromosome file specification is not implemented"
+parseSpecifiedFile      GenomeFile        {}     = fail "Genome file specification is not implemented"
+parseSpecifiedFile spec@AminoAcidFile     {}     = fastaAminoAcid spec
+parseSpecifiedFile spec@NucleotideFile    {}     = fastaDNA       spec
+parseSpecifiedFile spec@CustomAlphabetFile{}     = parseCustomAlphabet spec
+parseSpecifiedFile     (PrealignedFile x tcmRef) = do
+    tcmContent <- getSpecifiedTcm tcmRef
+    subContent <- parseSpecifiedFile x
+    case tcmContent of
+      Nothing             -> pure subContent
       Just (path,content) -> do
         tcmMat <- hoistEither . first unparsable $ parse tcmStreamParser path content
-        traverse (setTcm tcmMat) res 
+        traverse (setTcm tcmMat) subContent
   where
     setTcm :: TCM -> FracturedParseResult -> EitherT ReadError IO FracturedParseResult
     setTcm t fpr = case relatedTcm fpr of
@@ -85,8 +85,6 @@ parseSpecifiedFile spec@(UnspecifiedFile    _    ) =
 fastaDNA :: FileSpecification -> EitherT ReadError IO [FracturedParseResult]
 fastaDNA spec = getSpecifiedContent spec >>= (hoistEither . parseSpecifiedContent)
   where
-    parseSpecifiedContent :: FileSpecificationContent -> Either ReadError [FracturedParseResult]
-    parseSpecifiedContent = eitherValidation . fmap parse' . dataFiles
     parse' :: FileResult -> Either ReadError FracturedParseResult
     parse' (path,content) = toFractured Nothing path <$> parseResult
       where
@@ -97,13 +95,14 @@ fastaDNA spec = getSpecifiedContent spec >>= (hoistEither . parseSpecifiedConten
 fastaAminoAcid :: FileSpecification -> EitherT ReadError IO [FracturedParseResult]
 fastaAminoAcid spec = getSpecifiedContent spec >>= (hoistEither . parseSpecifiedContent)
   where
-    parseSpecifiedContent :: FileSpecificationContent -> Either ReadError [FracturedParseResult]
-    parseSpecifiedContent = eitherValidation . fmap parse' . dataFiles
     parse' :: FileResult -> Either ReadError FracturedParseResult
     parse' (path,content) = toFractured Nothing path <$> parseResult
       where
         parseResult = first unparsable $ parse combinator path content
         combinator  = fastaStreamConverter Fasta.AminoAcid =<< fastaStreamParser
+
+parseSpecifiedContent :: FileSpecificationContent -> Either ReadError [FracturedParseResult]
+parseSpecifiedContent = eitherValidation . fmap parse' . dataFiles
 
 parseCustomAlphabet :: FileSpecification -> EitherT ReadError IO [FracturedParseResult]
 parseCustomAlphabet spec = getSpecifiedContent spec >>= (hoistEither . parseSpecifiedContent)
@@ -124,10 +123,10 @@ applyReferencedTCM fpr =
      Nothing -> fpr
      Just x  -> let newAlphabet = toList $ customAlphabet x
                     newTcm      = transitionCosts x
-                in  fpr { parsedMetas = fmap (fmap (updateAlphabet newAlphabet . updateTcm newTcm)) $ parsedMetas fpr }
+                in  fpr { parsedMetas = fmap (updateAlphabet newAlphabet . updateTcm newTcm) <$> parsedMetas fpr }
 
 prependFilenamesToCharacterNames :: FracturedParseResult -> FracturedParseResult
-prependFilenamesToCharacterNames fpr = fpr { parsedMetas = fmap (fmap (prependName (sourceFile fpr))) $ parsedMetas fpr }
+prependFilenamesToCharacterNames fpr = fpr { parsedMetas = fmap (prependName (sourceFile fpr)) <$> parsedMetas fpr }
 
 expandIUPAC :: FracturedParseResult -> FracturedParseResult
 expandIUPAC fpr = fpr { parsedChars = newTreeSeqs }
@@ -140,14 +139,15 @@ expandIUPAC fpr = fpr { parsedChars = newTreeSeqs }
         g = V.zipWith h meta 
           where
             h :: CharInfo -> Maybe ParsedSeq -> Maybe ParsedSeq
-            h info seqMay = expandCodes <$> seqMay
+            h cInfo seqMay = expandCodes <$> seqMay
               where
                 expandCodes x =
-                  case info of
-                    DNA{}       -> (nucleotideIUPAC !) <$> x
-                    RNA{}       -> (nucleotideIUPAC !) <$> x
-                    AminoAcid{} -> (aminoAcidIUPAC  !) <$> x
+                  case cInfo of
+                    DNA{}       -> expandOrId nucleotideIUPAC <$> x
+                    RNA{}       -> expandOrId nucleotideIUPAC <$> x
+                    AminoAcid{} -> expandOrId aminoAcidIUPAC  <$> x
                     _           -> x
+    expandOrId m x = fromMaybe x $ x `lookup` m
 
 --setTaxaSeqs :: HashMap Identifier ParsedSequences -> SearchState
 --setTaxaSeqs x = pure $ Graph [mempty { parsedSeqs = x }]
@@ -238,10 +238,10 @@ aminoAcidIUPAC = casei $ core `union` multi
 casei :: Map AmbiguityGroup v -> Map AmbiguityGroup v
 casei x = foldl f x $ assocs x
   where
-    f m ([[k]],v)
-      | isLower k = insert [[(toUpper k)]] v m
-      | isUpper k = insert [[(toLower k)]] v m
-      | otherwise = m
-    f m (_    ,v) = m
+    f m ([[k]], v)
+      | isLower k  = insert [[toUpper k]] v m
+      | isUpper k  = insert [[toLower k]] v m
+      | otherwise  = m
+    f m (_    , _) = m
 
                                                                     
