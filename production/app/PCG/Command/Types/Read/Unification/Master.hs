@@ -108,7 +108,8 @@ mergeParsedChars inSeqs carry = eitherAction carry id addEncodeSeqs
           addIn k v acc = if k `elem` (HM.keys acc) then HM.adjust (++ v) k acc
                             else HM.insert k v acc
 
--- | Specialized functionality to merge parsed graphs (topological structure only)
+-- | Specialized functionality to merge parsed graphs
+-- merge is performed only on node-related info, the list of nodes and the taxa map
 mergeParsedGraphs :: Graph -> Either UnificationError Graph -> Either UnificationError Graph
 mergeParsedGraphs graph1@(Graph newGraph) carry = eitherAction carry id matchThese
   where
