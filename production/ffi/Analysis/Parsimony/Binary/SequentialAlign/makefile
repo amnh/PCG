@@ -29,5 +29,5 @@ clean :
 my_ffi : seqAlign_ffi.c seqAlign_ffi.h FFI.hsc processSeqAlignCCode.py
 	python3 processSeqAlignCCode.py
 	hsc2hs FFI.hsc
-	clang -c seqAlignForHaskell.c
+	gcc -c seqAlignForHaskell.c
 	ghc -O --make FFI.hs seqAlignForHaskell.o
