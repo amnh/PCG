@@ -1,9 +1,10 @@
 module Main where
 
---import Analysis.GenericFitch
-import Analysis.Parsimony.Binary.Optimization
+import Analysis.GenericFitch
+--import Analysis.Parsimony.Binary.Optimization
 import Bio.Phylogeny.Graph
 import Bio.Phylogeny.Graph.Utilities
+import PCG.Command.Types.Report.CharacterMatrix
 import PCG.Command.Types.Report.GraphViz
 import PCG.Command.Types.Report.Newick
 import Bio.Phylogeny.Tree.Node
@@ -36,12 +37,13 @@ badReadGraph fastaPath newickPath = do
 forceUnaligned :: DAG -> DAG
 forceUnaligned inDAG = inDAG {characters = V.map (\c -> c {Char.aligned = False}) (characters inDAG)}
 
-madRead = forceUnaligned <$> badReadGraph "../../TestDat/fakeArtmor.fas" "../../TestDat/artmor.tre"
+madRead = badReadGraph "../../TestDat/fakeArtmor.fas" "../../TestDat/artmor.tre"
 --badNodes = (V.filter (\n -> isLeaf n && null (encoded n))) <$> (nodes <$> madRead)
 --badNames = (V.map (\n -> (IM.! (code n)) <$> (nodeNames <$> madRead))) <$> badNodes
 madness = rootCost . allOptimization 1 <$> madRead
 outputMad = outPutDot "TestArtmor.dot" =<< ((Graph . pure) <$> madRead) 
 madNewick = outPutNewick "TestArtmorNewick.new" =<< ((Graph . pure) <$> madRead)
+madMatrix = outPutMatrix "TestArtmorCharacterMat.csv" =<< ((Graph . pure) <$> madRead)
 checkOuts = liftM2 (V.zipWith (\n e -> not (isLeaf n) && null (outNodes e))) (nodes <$> madRead) (edges <$> madRead)
 bigShow = showSeqs . allOptimization 1 <$> madRead
 madNames = nodeNames <$> madRead
