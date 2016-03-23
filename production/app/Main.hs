@@ -15,5 +15,5 @@ main = getContents
    >>= checkInput . parse scriptStreamParser "STDIN stream"
    where
      checkInput (Left  err) = print err
-     checkInput (Right val) = print "Main not functional"-- =<< runEvaluation (evaluate =<< (state . evalEither . interpret) val)
+     checkInput (Right val) = print =<< runEvaluation (evaluate =<< (state . evalEither . interpret) val)
 {--}

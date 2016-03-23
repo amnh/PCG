@@ -101,7 +101,7 @@ mergeParsedChars inSeqs carry = eitherAction carry id addEncodeSeqs
         | null matchCheck = 
           let outSeqs = map (foldWithKey addIn mempty) inSeqs
           in Right (Graph $ zipWith (\d s -> d {parsedSeqs = s}) accumDags outSeqs)
-        | otherwise = Left (UnificationError (pure (NonMatchingTaxa (fromList $ fst matchCheck) (fromList $ snd matchCheck))))
+        | otherwise = Left (UnificationError (pure (NonMatchingTaxa ({-fromList $-} fst matchCheck) ({-fromList $-} snd matchCheck))))
         where
           matchCheck = checkTaxaSeqs accumDag inSeqs
           addIn :: String -> ParsedSequences -> HM.HashMap String ParsedSequences -> HM.HashMap String ParsedSequences
@@ -117,7 +117,7 @@ mergeParsedGraphs graph1@(Graph newGraph) carry = eitherAction carry id matchThe
       | null matchCheck = 
         let notNull = filter (not . null . nodes) newGraph
         in Right $ Graph (accumGraph <> notNull)
-      | otherwise = Left (UnificationError (pure (NonMatchingTaxa (fromList $ fst matchCheck) (fromList $ snd matchCheck)))) 
+      | otherwise = Left (UnificationError (pure (NonMatchingTaxa ({-fromList $-} fst matchCheck) ({-fromList $-} snd matchCheck)))) 
         where
           matchCheck = checkTaxaMatch graph1 in2
 

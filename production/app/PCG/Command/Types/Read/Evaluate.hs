@@ -49,10 +49,14 @@ evaluate (READ fileSpecs) old = do
     when (null fileSpecs) $ fail "No files specified in 'read()' command"
     result <- liftIO . runEitherT . eitherTValidation $ parseSpecifiedFile <$> fileSpecs
     case result of
-      Left err -> fail $ show err   -- Report structural errors here.
-      Right xs -> let transformation = expandIUPAC . prependFilenamesToCharacterNames . applyReferencedTCM
-                      z = (transformation <$> concat xs) -- foldl (<>) old xs -- Here we validate more
-{--}              in  mempty 
+      Left pErr -> fail $ show pErr   -- Report structural errors here.
+      Right xs ->
+        case masterUnify $ transformation <$> concat xs of
+          Left uErr -> fail $ show uErr -- Report rectification errors here.
+          Right g   -> old <> pure g  -- TODO: rectify against 'old' SearchState, don't just blindly merge
+  where
+    transformation = expandIUPAC . prependFilenamesToCharacterNames . applyReferencedTCM
+    
 evaluate _ _ = fail "Invalid READ command binding"
 {--}
 parseSpecifiedFile  :: FileSpecification -> EitherT ReadError IO [FracturedParseResult]
