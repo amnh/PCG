@@ -17,30 +17,32 @@ module PCG.Command.Types.Read.Unification.Master where
 import Prelude hiding ((++))
 import qualified Prelude as P
 
+import File.Format.Conversion.Encoder
+import File.Format.TransitionCostMatrix
 import PCG.Command.Types.Read.Unification.UnificationError
-import Bio.Phylogeny.Graph.Parsed
-import Control.Monad
-import Data.BitVector (BitVector)
-import Data.List.NonEmpty (fromList)
+
 import Bio.Metadata.Class
+import Bio.Phylogeny.Graph
+import Bio.Phylogeny.Graph.Parsed
 import Bio.Sequence.Coded
 import Bio.Sequence.Parsed
-import File.Format.Conversion.Encoder
 import Bio.Sequence.Parsed.Class
-import Bio.Phylogeny.Graph
+import Bio.Phylogeny.PhyloCharacter
 import Bio.Phylogeny.Tree.Node
+
+import Control.Monad
+import Data.Bits
+import Data.BitVector (BitVector)
+import qualified Data.HashMap.Lazy as HM
 import Data.IntMap (elems)
 import qualified Data.IntMap as IM (foldWithKey, assocs, filter)
-import Data.Monoid
+import qualified Data.List as L ((\\), (++), isPrefixOf)
+import Data.List.NonEmpty (fromList)
 import Data.Map (keys, adjust, insert, foldWithKey)
-import qualified Data.HashMap.Lazy as HM
+import Data.Monoid
+import qualified Data.Set as S
 import Data.Vector (Vector, (++), (!), (//), cons)
 import qualified Data.Vector as V (zipWith, replicate, length)
-import File.Format.TransitionCostMatrix
-import qualified Data.Set as S
-import qualified Data.List as L ((\\), (++), isPrefixOf)
-import Data.Bits
-import Bio.Phylogeny.PhyloCharacter
 
 import Debug.Trace
 
@@ -63,11 +65,11 @@ masterUnify inResults =
     let
       --graphMetadata = Graph $ map (enforceGraph . mergeParsedMetadata . parsedMetas) inResults
       firstTopo = foldr (mergeParsedGraphs . parsedTrees) (Right mempty) inResults
-      withMetadata = trace ("initial graph " P.++ show firstTopo)
+      withMetadata = --trace ("initial graph " P.++ show firstTopo)
                     enforceGraph firstTopo $ map (mergeParsedMetadata . parsedMetas) inResults
-      withSeqs = trace ("graph with meatadata " P.++ show withMetadata)
+      withSeqs = --trace ("graph with meatadata " P.++ show withMetadata)
                   foldr (mergeParsedChars . parsedChars) withMetadata inResults
-      encoded = trace ("graph with seqs " P.++ show withSeqs)
+      encoded = --trace ("graph with seqs " P.++ show withSeqs)
                 encodeGraph withSeqs
     in encoded
 
