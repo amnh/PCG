@@ -1,6 +1,6 @@
 #! /usr/bin/env python3
 
-infile = open('./seqAlign_ffi.c')
+infile = open('./seqAlign_ffi_c.c')
 outfile = open('./seqAlignForHaskell.c', 'w')
 inMain = False
 done = False

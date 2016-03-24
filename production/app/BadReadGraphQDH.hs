@@ -1,5 +1,6 @@
 module Main where
 
+import Analysis.Parsimony.Binary.Optimization
 import Analysis.GenericFitch
 import Bio.Phylogeny.Graph
 import Bio.Phylogeny.Graph.Utilities

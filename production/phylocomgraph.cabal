@@ -184,9 +184,13 @@ executable brg
   
   hs-source-dirs:      app, lib, ffi
   
-  other-modules:       Analysis.DirectOptimization.Naive
-                       Analysis.DirectOptimization.ImpliedAlign
-                       Analysis.GenericFitch
+  other-modules:       Analysis.DirectOptimization.ImpliedAlign
+                       Analysis.DirectOptimization.Naive
+                       Analysis.Parsimony.Binary.DirectOptimization
+                       Analysis.Parsimony.Binary.Fitch
+                       Analysis.Parsimony.Binary.Optimization
+                       Analysis.Parsimony.Binary.SequentialAlign
+                       Analysis.Parsimony.Binary.SequentialAlign.SeqAlignFFI
                        Bio.Phylogeny.Forest
                        Bio.Phylogeny.Forest.Class
                        Bio.Phylogeny.Graph
@@ -398,6 +402,13 @@ library
   
   -- Modules exported by the library.
   exposed-modules:
+                       Analysis.DirectOptimization.ImpliedAlign
+                       Analysis.DirectOptimization.Naive
+                       Analysis.Parsimony.Binary.DirectOptimization
+                       Analysis.Parsimony.Binary.Fitch
+                       Analysis.Parsimony.Binary.Optimization
+                       Analysis.Parsimony.Binary.SequentialAlign
+                       Analysis.Parsimony.Binary.SequentialAlign.SeqAlignFFI
                        Bio.Phylogeny.Forest
                        Bio.Phylogeny.Graph
                        Bio.Phylogeny.Network
