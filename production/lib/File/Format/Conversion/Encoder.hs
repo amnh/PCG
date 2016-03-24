@@ -146,16 +146,17 @@ encodeMaximal strSeq alphabet =
 
 -- | Function to encode given metadata information
 encodeOverMetadata :: (Bits b, Num b, Show b) => ParsedSeq -> PhyloCharacter (EncodedSeq b) -> EncodedSeq b
-encodeOverMetadata strSeq metadata = case metadata of
-    DNA         _ align _ _ _ _ _ _     -> if align then minEncode else maxEncode
-    RNA         _ align _ _ _ _ _ _     -> if align then minEncode else maxEncode
-    Qualitative _ align _ _ _ _ add _ _ -> if align && not add then minEncode else maxEncode
-    AminoAcid   _ align _ _ _ _ _ _     -> if align then minEncode else maxEncode
-    Custom      _ align _ _ _ _ _ add _ -> if align && not add then minEncode else maxEncode
-    _                                   -> maxEncode
-    where
-        minEncode = encodeMinimal strSeq (alphabet metadata)
-        maxEncode = encodeMaximal strSeq (alphabet metadata)
+encodeOverMetadata strSeq metadata = encodeMinimal strSeq (alphabet metadata)
+    --case metadata of
+    --DNA         _ align _ _ _ _ _ _     -> if align then minEncode else maxEncode
+    --RNA         _ align _ _ _ _ _ _     -> if align then minEncode else maxEncode
+    --Qualitative _ align _ _ _ _ add _ _ -> if align && not add then minEncode else maxEncode
+    --AminoAcid   _ align _ _ _ _ _ _     -> if align then minEncode else maxEncode
+    --Custom      _ align _ _ _ _ _ add _ -> if align && not add then minEncode else maxEncode
+    --_                                   -> maxEncode
+    --where
+    --    minEncode = encodeMinimal strSeq (alphabet metadata)
+    --    maxEncode = encodeMaximal strSeq (alphabet metadata)
 
 -- Function to set a single element
 setSingleElem :: Bits b => String -> b -> Alphabet -> b
