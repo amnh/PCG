@@ -72,7 +72,7 @@ validateReadArg (LidentNamedArg (Lident identifier) (ArgumentList xs)) | (\x -> 
     badOption = any isNothing options
     tcmFile' = case suffix of
                 LidentNamedArg (Lident y) ys :_ -> if "tcm" == (toLower <$> y)
-                                                   then either (const Nothing) Just $ primativeString ys
+                                                   then either (const Nothing) Just $ primativeString =<< (getSingltonArgumentList ys)
                                                    else Nothing
                 _                               -> Nothing
 
@@ -136,6 +136,10 @@ primativeString (LidentArg      (Lident i)     ) = Left $ "Identifier '"       +
 primativeString (LidentNamedArg (Lident i) _   ) = Left $ "Labeled argument '" ++ i ++ "' " ++ primativeStringErrorSuffix
 primativeString (CommandArg     _              ) = Left $ "Command argument "  ++              primativeStringErrorSuffix
 primativeString (ArgumentList   _              ) = Left $ "Argument list "     ++              primativeStringErrorSuffix
+
+-- TODO: Make this have many different descriptive messages
+getSingltonArgumentList (ArgumentList   [x]     ) = Right x
+getSingltonArgumentList _  = Left "Not a singlton argument list"
 
 primativeStringErrorSuffix :: String
 primativeStringErrorSuffix = "found where a string argument containing a file path was expected"

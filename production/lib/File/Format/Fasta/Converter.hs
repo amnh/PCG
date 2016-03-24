@@ -90,6 +90,7 @@ iupacNucleotideSubstitutions =
   , ('-', "-")
   , ('.', "-")
   , ('?', "?")
+  , ('#', "#")
   ]
 
 -- | Substitutions for converting to an RNA sequence based on IUPAC codes.
