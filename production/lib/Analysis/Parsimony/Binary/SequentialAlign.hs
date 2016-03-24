@@ -55,7 +55,7 @@ sequentialAlign inpSeq1 inpSeq2 = (inferredParent', (fromIntegral cost :: Double
 
 -- | Simple encoding over a string just for you
 simpleEncode :: Bits s => String -> s
-simpleEncode inStr = pure $ ifoldr simpleSetElem zeroBits vecStr
+simpleEncode inStr = ifoldr simpleSetElem zeroBits vecStr
     where
         vecStr = V.fromList inStr
 
