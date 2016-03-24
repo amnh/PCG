@@ -30,11 +30,11 @@ import Bio.Sequence.Parsed.Class
 import Bio.Phylogeny.Graph
 import Bio.Phylogeny.Tree.Node
 import Data.IntMap ((\\), elems)
-import qualified Data.IntMap as IM (foldWithKey)
+import qualified Data.IntMap as IM (foldWithKey, assocs)
 import Data.Monoid
 import Data.Map (keys, adjust, insert, foldWithKey)
 import qualified Data.HashMap.Lazy as HM
-import Data.Vector (Vector, (++), (!), (//))
+import Data.Vector (Vector, (++), (!), (//), cons)
 import qualified Data.Vector as V (zipWith, replicate, length)
 import File.Format.TransitionCostMatrix
 import qualified Data.Set as S
@@ -142,18 +142,28 @@ mergeParsedGraphs graph1@(Graph newGraph) carry = eitherAction carry id matchThe
 encodeGraph :: Either UnificationError Graph -> Either UnificationError Graph
 encodeGraph inGraph = eitherAction inGraph id (Right . onGraph)
   where
-    overDAG startG = IM.foldWithKey encodeNode startG (nodeNames startG)
-    onGraph (Graph g) = Graph $ map overDAG g 
+    onGraph (Graph g) = Graph $ map determineBuild g
+    determineBuild inDAG = if null $ nodes inDAG then encodeOver inDAG buildWithSeqs 
+                            else encodeOver inDAG encodeNode
+    encodeOver startDAG f = foldr f startDAG (IM.assocs $ nodeNames startDAG)
 
     -- | Wrapper to allow encoding on a node
-    encodeNode :: Int -> Identifier -> DAG -> DAG
+    -- assumes that the correct amount of nodes is already present
+    encodeNode :: (Int,Identifier) -> DAG -> DAG
     --encodeNode curPos curName curDAG | trace ("trying to encode " P.++ show (parsedSeqs curDAG)) False = undefined
-    encodeNode curPos curName curDAG = 
+    encodeNode (curPos,curName) curDAG = 
       let
         curNode = (nodes curDAG) ! curPos
         curSeqs = (parsedSeqs curDAG) HM.! curName
         newNode = curNode {encoded = encodeIt curSeqs (characters curDAG)}
       in curDAG {nodes = (nodes curDAG) // [(curPos, newNode)]}
+
+    -- | Encodes a bunch of disconnected nodes given the sequences
+    buildWithSeqs :: (Int,Identifier) -> DAG -> DAG
+    buildWithSeqs (curPos,curName) curDAG = curDAG {nodes = generatedNode `cons` (nodes curDAG)}
+      where
+          curSeqs = (parsedSeqs curDAG) HM.! curName
+          generatedNode = mempty {code = curPos, encoded = encodeIt curSeqs (characters curDAG)}
 
 -- | Simple helper function for partitioning either
 eitherAction :: Either a b -> (a -> a) -> (b -> Either a b) -> Either a b
