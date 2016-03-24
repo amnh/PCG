@@ -63,10 +63,11 @@ masterUnify inResults =
     let
       --graphMetadata = Graph $ map (enforceGraph . mergeParsedMetadata . parsedMetas) inResults
       firstTopo = foldr (mergeParsedGraphs . parsedTrees) (Right mempty) inResults
-      withMetadata = enforceGraph firstTopo $ map (mergeParsedMetadata . parsedMetas) inResults
-      withSeqs = --trace ("graph with meatadata " P.++ show withMetadata)
+      withMetadata = trace ("initial graph " P.++ show firstTopo)
+                    enforceGraph firstTopo $ map (mergeParsedMetadata . parsedMetas) inResults
+      withSeqs = trace ("graph with meatadata " P.++ show withMetadata)
                   foldr (mergeParsedChars . parsedChars) withMetadata inResults
-      encoded = --trace ("graph with seqs " P.++ show withSeqs)
+      encoded = trace ("graph with seqs " P.++ show withSeqs)
                 encodeGraph withSeqs
     in encoded
 
@@ -76,7 +77,8 @@ masterUnify inResults =
       --enforceGraph graph chars | trace ("enforce graph on " P.++ show chars) False = undefined
       enforceGraph graph chars = eitherAction graph id (Right . Graph . shoveIt)
         where
-          shoveIt (Graph dags) = zipWith (\d c -> d {characters = c}) dags chars
+          shoveIt (Graph dags) = if null chars then dags
+                                  else zipWith (\d c -> d {characters = c}) dags chars
 
 -- | Verify that between two graphs, the taxa names are the same
 checkTaxaMatch :: Graph -> Graph -> ([String], [String])
@@ -100,11 +102,14 @@ mergeParsedMetadata inMeta = foldr (flip (++)) mempty inMeta
 
 -- | Verify that between a graph and parsed sequences, the taxa names match
 checkTaxaSeqs :: Graph -> [TreeSeqs] -> ([String], [String])
-checkTaxaSeqs (Graph g) inSeqs = 
-  let
-    graphNames = elems $ foldr1 (<>) (map nodeNames g)
-    seqNames = foldr (\s acc -> acc L.++ keys s) mempty inSeqs
-  in (graphNames L.\\ seqNames, seqNames L.\\ graphNames)
+--checkTaxaSeqs (Graph g) inSeqs | trace ("taxa seqs on match check " P.++ show inSeqs) False = undefined
+checkTaxaSeqs (Graph g) inSeqs 
+  | null g || null inSeqs = (mempty, mempty)
+  | otherwise = 
+    let
+      graphNames = elems $ foldr1 (<>) (map nodeNames g)
+      seqNames = foldr (\s acc -> acc L.++ keys s) mempty inSeqs
+    in (graphNames L.\\ seqNames, seqNames L.\\ graphNames)
 
 -- | Specialized merge to join sequences to an existing graph
 mergeParsedChars :: [TreeSeqs] -> Either UnificationError Graph -> Either UnificationError Graph
@@ -112,6 +117,7 @@ mergeParsedChars inSeqs carry = eitherAction carry id addEncodeSeqs
     where
       addEncodeSeqs :: Graph -> Either UnificationError Graph
       addEncodeSeqs g@(Graph accumDags)
+        | null (fst matchCheck) && null (snd matchCheck) && null inSeqs = Right g
         | null (fst matchCheck) && null (snd matchCheck) = 
           let 
             curSeqLen = map (getLen . parsedSeqs) accumDags
@@ -160,7 +166,7 @@ encodeGraph inGraph = eitherAction inGraph id (Right . onGraph)
 
     -- | Encodes a bunch of disconnected nodes given the sequences
     buildWithSeqs :: (Int,Identifier) -> DAG -> DAG
-    buildWithSeqs (curPos,curName) curDAG = curDAG {nodes = generatedNode `cons` (nodes curDAG)}
+    buildWithSeqs (curPos,curName) curDAG = curDAG {nodes = generatedNode `cons` (nodes curDAG), edges = mempty `cons` (edges curDAG)}
       where
           curSeqs = (parsedSeqs curDAG) HM.! curName
           generatedNode = mempty {code = curPos, encoded = encodeIt curSeqs (characters curDAG)}
