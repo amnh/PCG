@@ -29,8 +29,8 @@ import File.Format.Conversion.Encoder
 import Bio.Sequence.Parsed.Class
 import Bio.Phylogeny.Graph
 import Bio.Phylogeny.Tree.Node
-import Data.IntMap ((\\), elems)
-import qualified Data.IntMap as IM (foldWithKey, assocs)
+import Data.IntMap (elems)
+import qualified Data.IntMap as IM (foldWithKey, assocs, filter)
 import Data.Monoid
 import Data.Map (keys, adjust, insert, foldWithKey)
 import qualified Data.HashMap.Lazy as HM
@@ -38,7 +38,7 @@ import Data.Vector (Vector, (++), (!), (//), cons)
 import qualified Data.Vector as V (zipWith, replicate, length)
 import File.Format.TransitionCostMatrix
 import qualified Data.Set as S
-import qualified Data.List as L ((\\), (++))
+import qualified Data.List as L ((\\), (++), isPrefixOf)
 import Data.Bits
 import Bio.Phylogeny.PhyloCharacter
 
@@ -84,12 +84,24 @@ masterUnify inResults =
 checkTaxaMatch :: Graph -> Graph -> ([String], [String])
 --checkTaxaMatch (Graph g1) (Graph g2) | trace ("checking taxa match " P.++ show g1 P.++ "\n" P.++ show g2) False = undefined
 checkTaxaMatch (Graph g1) (Graph g2) 
-  | null g1 || null g2 = (mempty, mempty)
-  | otherwise =  
-    let
-        allNames1 = foldr1 (<>) (map nodeNames g1)
-        allNames2 = foldr1 (<>) (map nodeNames g2)
-    in (elems $ allNames1 \\ allNames2, elems $ allNames2 \\ allNames1)
+  | null allNames1 || null allNames2 = (mempty, mempty)
+  | otherwise = (allNames1 L.\\ allNames2, allNames2 L.\\ allNames1)
+    where
+        allNames1 = elems $ nonInternal $ foldr (<>) mempty (map nodeNames g1)
+        allNames2 = elems $ nonInternal $ foldr (<>) mempty (map nodeNames g2)
+        nonInternal = IM.filter (not . L.isPrefixOf "HTU")
+
+-- | Specialized functionality to merge parsed graphs, simply adding the lists of dags together
+mergeParsedGraphs :: Graph -> Either UnificationError Graph -> Either UnificationError Graph
+mergeParsedGraphs graph1@(Graph newGraph) carry = eitherAction carry id matchThese
+  where
+    matchThese :: Graph -> Either UnificationError Graph
+    matchThese in2@(Graph accumGraph)
+      | doesMatch = Right $ Graph (accumGraph <> newGraph)
+      | otherwise = Left (UnificationError (pure (NonMatchingTaxa (fst matchCheck) (snd matchCheck)))) 
+        where
+          matchCheck = checkTaxaMatch graph1 in2
+          doesMatch = null (fst matchCheck) && null (snd matchCheck)
 
 -- | Functionality to fully merge sets of metadata
 -- we make a lot of assumptions about whether the metadata agrees and assume:
@@ -103,22 +115,22 @@ mergeParsedMetadata inMeta = foldr (flip (++)) mempty inMeta
 -- | Verify that between a graph and parsed sequences, the taxa names match
 checkTaxaSeqs :: Graph -> [TreeSeqs] -> ([String], [String])
 --checkTaxaSeqs (Graph g) inSeqs | trace ("taxa seqs on match check " P.++ show inSeqs) False = undefined
-checkTaxaSeqs (Graph g) inSeqs 
-  | null g || null inSeqs = (mempty, mempty)
-  | otherwise = 
-    let
-      graphNames = elems $ foldr1 (<>) (map nodeNames g)
+checkTaxaSeqs (Graph g) inSeqs = (graphNames L.\\ seqNames, seqNames L.\\ graphNames)
+    where
+      nonInternal = filter (not . L.isPrefixOf "HTU")
+      graphNames = nonInternal $ elems $ foldr1 (<>) (map nodeNames g)
       seqNames = foldr (\s acc -> acc L.++ keys s) mempty inSeqs
-    in (graphNames L.\\ seqNames, seqNames L.\\ graphNames)
+      
 
 -- | Specialized merge to join sequences to an existing graph
 mergeParsedChars :: [TreeSeqs] -> Either UnificationError Graph -> Either UnificationError Graph
 mergeParsedChars inSeqs carry = eitherAction carry id addEncodeSeqs
     where
       addEncodeSeqs :: Graph -> Either UnificationError Graph
+      --addEncodeSeqs g@(Graph accumDags) | trace ("addEncodeSeqs on accumDags " P.++ show accumDags) False = undefined
       addEncodeSeqs g@(Graph accumDags)
-        | null (fst matchCheck) && null (snd matchCheck) && null inSeqs = Right g
-        | null (fst matchCheck) && null (snd matchCheck) = 
+        | null inSeqs = Right g
+        | doesMatch = 
           let 
             curSeqLen = map (getLen . parsedSeqs) accumDags
             outSeqs = zipWith (\s l -> foldWithKey (addIn l) mempty s) inSeqs curSeqLen
@@ -126,23 +138,14 @@ mergeParsedChars inSeqs carry = eitherAction carry id addEncodeSeqs
         | otherwise = Left (UnificationError (pure (NonMatchingTaxaSeqs ({-fromList $-} fst matchCheck) ({-fromList $-} snd matchCheck))))
         where
           matchCheck = checkTaxaSeqs g inSeqs
+          doesMatch = null (fst matchCheck) && null (snd matchCheck)
+
           addIn :: Int -> String -> ParsedSequences -> HM.HashMap String ParsedSequences -> HM.HashMap String ParsedSequences
           addIn curLen k v acc = if k `elem` (HM.keys acc) then HM.adjust (++ v) k acc
                             else HM.insert k (V.replicate curLen Nothing ++ v) acc
-          getLen :: HM.HashMap Identifier ParsedSequences -> Int
-          getLen inSeqs = HM.foldr (\s acc -> if (V.length s /= acc) || acc == 0 then error "Uneven sequence length" else V.length s) 0 inSeqs
 
--- | Specialized functionality to merge parsed graphs, simply adding the lists of dags together
-mergeParsedGraphs :: Graph -> Either UnificationError Graph -> Either UnificationError Graph
-mergeParsedGraphs graph1@(Graph newGraph) carry = eitherAction carry id matchThese
-  where
-    matchThese :: Graph -> Either UnificationError Graph
-    matchThese in2@(Graph accumGraph)
-      | null (fst matchCheck) && null (snd matchCheck) = Right $ Graph (accumGraph <> newGraph)
-        --let notNull = filter (not . null . nodes) newGraph 
-      | otherwise = Left (UnificationError (pure (NonMatchingTaxa ({-fromList $-} fst matchCheck) ({-fromList $-} snd matchCheck)))) 
-        where
-          matchCheck = checkTaxaMatch graph1 in2
+          getLen :: HM.HashMap Identifier ParsedSequences -> Int
+          getLen inSeqs = HM.foldr (\s acc -> if (V.length s /= acc) then error "Uneven sequence length" else V.length s) 0 inSeqs
 
 -- | Finally, functionality to do an encoding over a graph
 encodeGraph :: Either UnificationError Graph -> Either UnificationError Graph
@@ -157,12 +160,13 @@ encodeGraph inGraph = eitherAction inGraph id (Right . onGraph)
     -- assumes that the correct amount of nodes is already present
     encodeNode :: (Int,Identifier) -> DAG -> DAG
     --encodeNode curPos curName curDAG | trace ("trying to encode " P.++ show (parsedSeqs curDAG)) False = undefined
-    encodeNode (curPos,curName) curDAG = 
-      let
-        curNode = (nodes curDAG) ! curPos
-        curSeqs = (parsedSeqs curDAG) HM.! curName
-        newNode = curNode {encoded = encodeIt curSeqs (characters curDAG)}
-      in curDAG {nodes = (nodes curDAG) // [(curPos, newNode)]}
+    encodeNode (curPos,curName) curDAG 
+      | isLeaf curNode = curDAG {nodes = (nodes curDAG) // [(curPos, newNode)]}
+      | otherwise = curDAG 
+        where
+          curNode = (nodes curDAG) ! curPos
+          curSeqs = (parsedSeqs curDAG) HM.! curName
+          newNode = curNode {encoded = encodeIt curSeqs (characters curDAG)}
 
     -- | Encodes a bunch of disconnected nodes given the sequences
     buildWithSeqs :: (Int,Identifier) -> DAG -> DAG
