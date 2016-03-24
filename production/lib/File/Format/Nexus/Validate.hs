@@ -87,7 +87,6 @@ import           Text.Megaparsec.Custom
 --     character matrix. In that specific case, I can't
 
 -- TODOs:
--- • Check for info on spaces in seqs. Remove them from non-continuous data.
 -- • Verify character metadata, especially alphabets
 -- • deal with special chars in step matrices
 -- • check for and eliminate thusly noted characters (in at least two places?)
@@ -99,8 +98,8 @@ import           Text.Megaparsec.Custom
 -- • fail on incorrrect datatype
 -- • dependentErrors & independentErrors become :: String error, String warning => [Maybe (Either error warning)]
      -- then partitionEithers . catMaybes, etc., etc. (talk to Alex)
--- • warn that eliminate doesn't work on unaligned data
--- • capture data on ordered chars
+-- • warn that eliminate (among several other things: match, additive, weight(, etc.?)) doesn't work on unaligned data
+-- • capture data on ordered (additive) chars
 -- • check for gap treatment, possibly replace with missing
 
 validateNexusParseResult :: (Show s, MonadParsec s m Char) => NexusParseResult -> m Nexus
@@ -202,6 +201,7 @@ handleLabeledSeqs block taxaLst =
         then Right $ getSeqFromMatrix block taxaLst
         else handleLabeledNotInterleavedSeqs block taxaLst
 
+-- TODO: This means that no unaligned block can be parsed. Fix this pronto.
 handleLabeledNotInterleavedSeqs :: PhyloSequence -> V.Vector String -> Either String TaxonSequenceMap
 handleLabeledNotInterleavedSeqs block taxaLst =
     if alignedSeq block
@@ -269,7 +269,7 @@ updateSeqInMap curLength inputSeq curSeq = newSeq
 -- TODO: ask Ward if mixed datatype is allowed (hope to god no).
 wrongDataType :: PhyloSequence -> Maybe String
 wrongDataType inSeq =
-    if (map toLower dataType) `elem` ["standard", "dna", "rna", "nucleotide", "protein", "continuous"]
+    if (map toLower dataType) `elem` ["standard", "dna", "rna", "nucleotide", "protein", "continuous", ""]
         then Nothing
         else Just $ dataType ++ " is not an accepted type of data.\n"
     where
@@ -301,7 +301,7 @@ taxaDimsMissing taxas inputSeqBlocks = taxaProblems ++ seqProblems
                 then Nothing
                 else Just $ "ntax incorrect in Taxa block. Found: " ++ show len' ++ ", but ntax is given as " ++ show len ++ ".\n"
         g (PhyloSequence _ _ _ dimensions _ _ _ blockType' ) = 
-            if blockType' == "data" -- TODO: check for case-insensitivity problems
+            if blockType' == "data" -- TODO: double-check for case-insensitivity problems
                 then
                     if not (null dimensions)
                         then 
@@ -337,7 +337,9 @@ getCharMetadata mayMtx seqBlock =
     V.replicate len $ CharacterMetadata "" aligned cType alph False mayTCM additivity wt
     where 
         aligned     = alignedSeq seqBlock
-        cType       = read (charDataType form) :: CharDataType
+        cType       = if null (charDataType form) 
+                           then Standard
+                           else read (charDataType form) :: CharDataType
         alph        = if areTokens form
                       then syms
                       else g $ headMay syms
@@ -441,7 +443,7 @@ seqMatrixMissing phyloSeq
 -- | seqDimsMissing checks a PhyloSequence to make sure it has the requisite sequence dims. 
 seqDimsMissing :: PhyloSequence -> Maybe String
 seqDimsMissing phyloSeq
-  | numDims < 1 = tooFew
+  | numDims < 1 && (blockType phyloSeq) /= "unaligned" = tooFew
   | numDims > 1 = tooMany
   | otherwise   = Nothing
   where
@@ -610,12 +612,12 @@ getTaxaAndSeqsFromEntireMatrix :: Bool -> Int -> [String] -> [(String, String)]
 getTaxaAndSeqsFromEntireMatrix tokenized seqLen mtx =
     getTaxaAndSeqsFromEntireMatrixHelper tokenized seqLen curLen (tail mtx) accLst
     where
-        accLst = [(taxon,seq)]
+        accLst = [(taxon,seq')]
         curLen = if tokenized
                     then length $ tail line
-                    else length seq -- this removes extra spaces in non-tokenized lines
+                    else length seq' -- this removes extra spaces in non-tokenized lines
         taxon = head line
-        seq = if tokenized
+        seq' = if tokenized
                  then unwords $ tail line
                  else concat $ tail line
         line = words $ head mtx -- Should already have failed if mtx is empty
@@ -628,22 +630,22 @@ getTaxaAndSeqsFromEntireMatrixHelper tokenized seqLen curLen mtx acc
             newAcc = newTup : tail acc
             newLen = curLen + if tokenized
                                  then length line
-                                 else length seq -- this removes extra spaces in non-tokenized lines
-            seq = if tokenized 
+                                 else length seq' -- this removes extra spaces in non-tokenized lines
+            seq' = if tokenized 
                      then ' ' : unwords line
                      else concat line
             line = words $ head mtx -- Safe because of first pattern match.
             newTup = (fst $ head acc, headSeq)
-            headSeq = (snd $ head acc) ++ seq
+            headSeq = (snd $ head acc) ++ seq'
         in getTaxaAndSeqsFromEntireMatrixHelper tokenized seqLen newLen (tail mtx) newAcc
     | otherwise = 
         let 
-            newTup = (taxon,seq)
+            newTup = (taxon, seq')
             newLen = if tokenized
                         then length $ tail line
-                        else length seq -- this removes extra spaces in non-tokenized lines
+                        else length seq' -- this removes extra spaces in non-tokenized lines
             taxon = head line
-            seq = if tokenized 
+            seq' = if tokenized 
                      then ' ' : (unwords $ tail line)
                      else concat $ tail line
             line = words $ head mtx -- Safe because of first pattern match

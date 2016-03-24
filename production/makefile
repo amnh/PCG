@@ -22,7 +22,8 @@ rebuild: phylocomgraph.cabal stack.yaml
 ffi-submakes: ffi/Analysis/Parsimony/Binary/SequentialAlign/makefile
 	$(MAKE) -C ffi/Analysis/Parsimony/Binary/SequentialAlign
 
-clean:
+clean: phylocomgraph.cabal stack.yaml
+	stack clean
 	find . -type f -name '*.o'  -delete
 	find . -type f -name '*.hi' -delete
 	find . -type f -name '*.*~' -delete
