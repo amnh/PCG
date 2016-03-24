@@ -6,8 +6,8 @@
 //  Copyright © 2016 Yu Xiang. All rights reserved.
 //
 
-#ifndef yuAlign_h
-#define yuAlign_h
+#ifndef seqAlignForHaskell_h
+#define seqAlignForHaskell_h
 
 struct align {
     int partialWt;

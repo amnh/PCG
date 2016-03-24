@@ -44,6 +44,8 @@ import           PCG.Script.Types
 import           Prelude             hiding (lookup)
 import           Text.Megaparsec
 
+import Debug.Trace (trace)
+
 evaluate :: Command -> SearchState -> SearchState
 {--}
 evaluate (READ fileSpecs) old = do
@@ -54,10 +56,18 @@ evaluate (READ fileSpecs) old = do
       Right xs ->
         case masterUnify $ transformation <$> concat xs of
           Left uErr -> fail $ show uErr -- Report rectification errors here.
-          Right g   -> old <> pure g  -- TODO: rectify against 'old' SearchState, don't just blindly merge
+          Right g   -> old <> pure g    -- TODO: rectify against 'old' SearchState, don't just blindly merge
   where
-    transformation = expandIUPAC . prependFilenamesToCharacterNames . applyReferencedTCM
-    
+
+    -- !IMPORTANT! prints out, then fails to terminate
+    transformation x = let y = prependFilenamesToCharacterNames . applyReferencedTCM $ x
+                       in  trace (show y) $ expandIUPAC y
+    -- !IMPORTANT! never prints, fails to terminate
+{-
+    transformation x = let y = expandIUPAC . prependFilenamesToCharacterNames . applyReferencedTCM $ x
+                       in  trace (show y) y
+-}
+
 evaluate _ _ = fail "Invalid READ command binding"
 {--}
 parseSpecifiedFile  :: FileSpecification -> EitherT ReadError IO [FracturedParseResult]
@@ -90,8 +100,8 @@ fastaDNA spec = getSpecifiedContent spec >>= (hoistEither . parseSpecifiedConten
     parse' :: FileResult -> Either ReadError FracturedParseResult
     parse' (path,content) = toFractured Nothing path <$> parseResult
       where
-        parseResult = first unparsable $ parse combinator path content
-        combinator  = (\x -> fastaStreamConverter Fasta.DNA x <|> fastaStreamConverter Fasta.RNA x) =<< fastaStreamParser
+        parseResult = {- (\x -> trace (show x) x) . -} first unparsable $ parse combinator path content
+        combinator  = (\x -> try (fastaStreamConverter Fasta.DNA x) <|> fastaStreamConverter Fasta.RNA x) =<< fastaStreamParser
 
 -- TODO: abstract these two (three) v^
 fastaAminoAcid :: FileSpecification -> EitherT ReadError IO [FracturedParseResult]
@@ -143,6 +153,7 @@ expandIUPAC fpr = fpr { parsedChars = newTreeSeqs }
             h :: CharInfo -> Maybe ParsedSeq -> Maybe ParsedSeq
             h cInfo seqMay = expandCodes <$> seqMay
               where
+                expandCodes :: ParsedSeq -> ParsedSeq
                 expandCodes x =
                   case cInfo of
                     DNA{}       -> expandOrId nucleotideIUPAC <$> x
@@ -193,7 +204,7 @@ progressiveParse inputPath = do
                           Left  _ -> fail $ "Could not determine the file type of '" ++ filePath ++ "'. Try annotating the expected file data in the 'read' for more explicit error message on file parsing failures."
 
 toFractured :: (Metadata a, ParsedCharacters a, ParseGraph a) => Maybe TCM -> FilePath -> a -> FracturedParseResult
-toFractured tcmMat path = FPR <$> unifyCharacters  <*> unifyMetadata <*> unifyGraph <*> const tcmMat <*> const path
+toFractured tcmMat path = FPR <$> unifyCharacters <*> unifyMetadata <*> unifyGraph <*> const tcmMat <*> const path
 {--}
 
 nucleotideIUPAC :: Map AmbiguityGroup AmbiguityGroup

@@ -4,20 +4,21 @@
 module Analysis.Parsimony.Binary.SequentialAlign (sequentialAlign) where
 
 import           Analysis.Parsimony.Binary.Internal
-import           Bio.Phylogeny.Tree.Node.Preliminary
+--import           Bio.Phylogeny.Tree.Node.Preliminary
 import           Bio.Sequence.Coded
-import qualified Analysis.Parsimony.Binary.SequentialAlign.FFI as FFI (sequentialAlign)
-import           Control.Applicative        (liftA2)
+import qualified Analysis.Parsimony.Binary.SequentialAlign.SeqAlignFFI as FF (sequentialAlign)
+--import           Control.Applicative        (liftA2)
 import           Data.Bits
 import           Data.Foldable              (minimumBy)
-import           Data.Function              (on)
+--import           Data.Function              (on)
 import           Data.List                  (elemIndex)
+import           Data.List.Split            (chunksOf)
 import           Data.Matrix.NotStupid      (fromList, Matrix, (<->), nrows, ncols, getElem, zero, matrix)
 import           Data.Maybe
 import           Data.Monoid                ((<>))
 import           Data.Ord                   (comparing)
-import           Data.Vector                (Vector, singleton, length, zipWith, cons, empty, toList, (!), or, ifoldr)
-import qualified Data.Vector as V           (foldr, fromList)
+import           Data.Vector                (Vector, singleton, length, cons, empty, toList, (!), ifoldr)
+import qualified Data.Vector as V           (fromList)
 import           Prelude             hiding (length, zipWith, or)
 
 -- import           Debug.Trace
@@ -29,14 +30,9 @@ data AlignMatrix s = AlignMatrix {costs :: Matrix Float, seqs :: Vector s, trave
 
 type Costs = (Float, Float)
 
-indelCost, subCost :: Float
-indelCost = 1
-subCost = 1
-
-
 -- | sequentialAlign is similar to DO, but uses Yu's and Vahid's information theoretical sequential alignment algorithm to produce the alignment
 sequentialAlign :: SeqConstraint s b => s -> s -> (s, Double, s, s, s)
-sequentialAlign s1 s2 = (inferredParent', (fromIntegral cost :: Double), alignedParent', alignment1', alignment2')
+sequentialAlign inpSeq1 inpSeq2 = (inferredParent', (fromIntegral cost :: Double), alignedParent', alignment1', alignment2')
     where
         (inferredParent, alignedParent) = foldr (\(x, y) acc -> createParentSeqs x y acc) ([],[]) (zip alignment1 alignment2)
         createParentSeqs x y (xs, ys)
@@ -51,7 +47,9 @@ sequentialAlign s1 s2 = (inferredParent', (fromIntegral cost :: Double), aligned
         alignedParent'  = simpleEncode alignedParent
         alignment1'     = simpleEncode alignment1
         alignment2'     = simpleEncode alignment2
-        (cost, alignment1, alignment2) = case FFI.sequentialAlign 1 1 alignment1 alignment2 of
+        inpSeq1'        = simpleDecode inpSeq1
+        inpSeq2'        = simpleDecode inpSeq2
+        (cost, alignment1, alignment2) = case FF.sequentialAlign 1 1 inpSeq1' inpSeq2' of
             Left e -> error e -- Better error handling later
             Right r -> r
 
@@ -67,9 +65,44 @@ simpleEncode inStr = pure $ ifoldr simpleSetElem zeroBits vecStr
                                             Nothing -> curBit
                                             Just pos -> setBit curBit (pos + (i * 5))
 
--- | Simple decoding over a string just for you
+
+-- | Hardcoded decode FTW
 simpleDecode :: Bits s => s -> String
-simpleDecode inSeq = undefined
+simpleDecode inVec = foldr (\x acc -> acc ++ [makeAmbDNA x]) [] chunks
+    where
+        tehBitz = showTehBit <$> toBitStream inVec
+        chunks  = chunksOf 5 tehBitz
+        showTehBit True  = '1'
+        showTehBit False = '0'
+
+        toBitStream :: Bits b => b -> [Bool]
+        toBitStream = f 0
+            where
+                f :: Bits b => Int -> b -> [Bool]
+                f i xs
+                    | zeroBits == xs = []
+                    | otherwise      = xs `testBit` i : f (i+1) (xs `clearBit` i) 
+
+        -- TODO: order these by popularity?
+        makeAmbDNA :: String -> Char
+        makeAmbDNA x = case x of
+            "10000" -> 'A'
+            "01000" -> 'C'
+            "00100" -> 'G'
+            "00010" -> 'T'
+            "00001" -> '-'
+            "01110" -> 'B'
+            "10110" -> 'D'
+            "11010" -> 'H'
+            "00110" -> 'K'
+            "11000" -> 'M'
+            "11110" -> 'N'
+            "10100" -> 'R'
+            "01100" -> 'S'
+            "11100" -> 'V'
+            "10010" -> 'W'
+            "01010" -> 'Y'
+            _       -> '-'
 
 -- | Joins an alignment row to the rest of a matrix
 joinMat :: SeqConstraint s b => AlignRow s -> AlignMatrix s -> AlignMatrix s

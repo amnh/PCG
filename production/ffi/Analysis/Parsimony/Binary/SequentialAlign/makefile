@@ -26,8 +26,8 @@ clean :
 #################### Yu's case, structs, pointers, etc.
 # Extremely similar to complex case, above.
 # may need to make use of  --cross-compile in final builds
-my_ffi : seqAlign_ffi.c seqAlign_ffi.h FFI.hsc processSeqAlignCCode.py
+my_ffi : seqAlign_ffi_c.c seqAlignForHaskell.h SeqAlignFFI.hsc processSeqAlignCCode.py
 	python3 processSeqAlignCCode.py
-	hsc2hs FFI.hsc
-	gcc -c seqAlignForHaskell.c
-	ghc -O --make FFI.hs seqAlignForHaskell.o
+	hsc2hs SeqAlignFFI.hsc
+	clang -c seqAlignForHaskell.c
+	ghc -O --make SeqAlignFFI.hs seqAlignForHaskell.o

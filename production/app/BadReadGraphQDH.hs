@@ -1,6 +1,7 @@
 module Main where
 
-import Analysis.GenericFitch
+import Analysis.Parsimony.Binary.Optimization
+import Analysis.GenericFitch hiding (allOptimization)
 import Bio.Phylogeny.Graph
 import Bio.Phylogeny.Graph.Utilities
 import Bio.Phylogeny.Graph.Output

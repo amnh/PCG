@@ -58,15 +58,15 @@ data FracturedParseResult
 -- accumulates in metadata, then topological structure, then sequences 
 -- before encoding and outputting
 masterUnify :: [FracturedParseResult] -> Either UnificationError Graph
-masterUnify inResults | trace ("initial input " P.++ show (map parsedMetas inResults)) False = undefined
+--masterUnify inResults | trace ("initial input " P.++ show (map parsedMetas inResults)) False = undefined
 masterUnify inResults = 
     let
       --graphMetadata = Graph $ map (enforceGraph . mergeParsedMetadata . parsedMetas) inResults
       firstTopo = foldr (mergeParsedGraphs . parsedTrees) (Right mempty) inResults
       withMetadata = enforceGraph firstTopo $ map (mergeParsedMetadata . parsedMetas) inResults
-      withSeqs = trace ("graph with meatadata " P.++ show withMetadata)
+      withSeqs = --trace ("graph with meatadata " P.++ show withMetadata)
                   foldr (mergeParsedChars . parsedChars) withMetadata inResults
-      encoded = trace ("graph with seqs " P.++ show withSeqs)
+      encoded = --trace ("graph with seqs " P.++ show withSeqs)
                 encodeGraph withSeqs
     in encoded
 
