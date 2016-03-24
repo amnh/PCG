@@ -71,7 +71,7 @@ getSpecifiedContent (CustomAlphabetFile xs tcm _) = liftM2 SpecContent (getSpeci
 getSpecifiedContent (PrealignedFile     fs tcm  ) = do 
     specifiedContent <- getSpecifiedContent fs
     case tcmFile specifiedContent of
-      Nothing -> liftM (SpecContent (dataFiles specifiedContent)) (getSpecifiedTcm tcm)
+      Nothing -> (SpecContent (dataFiles specifiedContent)) <$> (getSpecifiedTcm tcm)
       Just _  -> pure specifiedContent 
 
 getSpecifiedTcm :: Maybe FilePath -> EitherT ReadError IO (Maybe (FilePath, FileContent))

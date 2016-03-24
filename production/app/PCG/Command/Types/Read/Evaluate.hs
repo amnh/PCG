@@ -4,24 +4,35 @@ module PCG.Command.Types.Read.Evaluate
   ( evaluate
   ) where
 
+import           Bio.Phylogeny.Graph
 import           Bio.Phylogeny.Graph.Parsed
+import           Bio.Phylogeny.PhyloCharacter
 import           Bio.Metadata.Class
+import           Bio.Sequence.Parsed
 import           Bio.Sequence.Parsed.Class
 import           Control.Monad              (when)
 import           Control.Monad.IO.Class
 import           Control.Monad.Trans.Either
 import           Control.Evaluation
 import           Data.Bifunctor             (bimap,first)
+import           Data.Char                  (isLower,toLower,isUpper,toUpper)
 import           Data.Either.Custom
 import           Data.Foldable
+import           Data.Key                   ((!),lookup)
+import           Data.Map                   (Map,assocs,insert,union)
+import qualified Data.Map              as M (fromList)
+import           Data.Maybe                 (fromMaybe)
 --import           Data.Hashable
 --import           Data.HashMap.Strict        (HashMap)
 --import qualified Data.HashMap.Strict  as HM (fromList)
-import           File.Format.Fasta
+import           Data.Vector                (Vector)
+import qualified Data.Vector           as V (zipWith)
+import           File.Format.Fasta   hiding   (FastaSequenceType(..))
+import qualified File.Format.Fasta   as Fasta (FastaSequenceType(..))
 import           File.Format.Fastc   hiding (Identifier)
 import           File.Format.Newick
 import           File.Format.Nexus          (nexusStreamParser)
-import           File.Format.TNT
+import           File.Format.TNT     hiding (casei)
 import           File.Format.TransitionCostMatrix
 import           File.Format.VertexEdgeRoot
 -- import File.Format.Conversion.ToInternal
@@ -32,32 +43,47 @@ import           PCG.Script.Types
 import           Prelude             hiding (lookup)
 import           Text.Megaparsec
 
+import Debug.Trace (trace)
+
 evaluate :: Command -> SearchState -> SearchState
 {--}
 evaluate (READ fileSpecs) old = do
     when (null fileSpecs) $ fail "No files specified in 'read()' command"
     result <- liftIO . runEitherT . eitherTValidation $ parseSpecifiedFile <$> fileSpecs
     case result of
-      Left err -> fail $ show err   -- Report structural errors here.
-      Right xs -> mempty -- foldl (<>) old xs -- Here we validate more
-{--}
+      Left pErr -> fail $ show pErr   -- Report structural errors here.
+      Right xs ->
+        case masterUnify $ transformation <$> concat xs of
+          Left uErr -> fail $ show uErr -- Report rectification errors here.
+          Right g   -> old <> pure g    -- TODO: rectify against 'old' SearchState, don't just blindly merge
+  where
+
+    -- !IMPORTANT! prints out, then fails to terminate
+    transformation x = let y = prependFilenamesToCharacterNames . applyReferencedTCM $ x
+                       in  trace (show y) $ expandIUPAC y
+    -- !IMPORTANT! never prints, fails to terminate
+{-
+    transformation x = let y = expandIUPAC . prependFilenamesToCharacterNames . applyReferencedTCM $ x
+                       in  trace (show y) y
+-}
+
 evaluate _ _ = fail "Invalid READ command binding"
 {--}
 parseSpecifiedFile  :: FileSpecification -> EitherT ReadError IO [FracturedParseResult]
-parseSpecifiedFile      (AnnotatedFile      _    ) = fail "Annotated file specification is not implemented"
-parseSpecifiedFile      (ChromosomeFile     _    ) = fail "Chromosome file specification is not implemented"
-parseSpecifiedFile      (GenomeFile         _    ) = fail "Genome file specification is not implemented"
-parseSpecifiedFile spec@(AminoAcidFile      _    ) = fastaAminoAcid spec
-parseSpecifiedFile spec@(NucleotideFile     _    ) = fastaDNA       spec
-parseSpecifiedFile spec@(CustomAlphabetFile{}    ) = parseCustomAlphabet spec
-parseSpecifiedFile      (PrealignedFile     x tcmRef) = do
-    tcm <- getSpecifiedTcm tcmRef
-    res <- parseSpecifiedFile x
-    case tcm of
-      Nothing             -> pure res
+parseSpecifiedFile      AnnotatedFile     {}     = fail "Annotated file specification is not implemented"
+parseSpecifiedFile      ChromosomeFile    {}     = fail "Chromosome file specification is not implemented"
+parseSpecifiedFile      GenomeFile        {}     = fail "Genome file specification is not implemented"
+parseSpecifiedFile spec@AminoAcidFile     {}     = fastaAminoAcid spec
+parseSpecifiedFile spec@NucleotideFile    {}     = fastaDNA       spec
+parseSpecifiedFile spec@CustomAlphabetFile{}     = parseCustomAlphabet spec
+parseSpecifiedFile     (PrealignedFile x tcmRef) = do
+    tcmContent <- getSpecifiedTcm tcmRef
+    subContent <- parseSpecifiedFile x
+    case tcmContent of
+      Nothing             -> pure subContent
       Just (path,content) -> do
         tcmMat <- hoistEither . first unparsable $ parse tcmStreamParser path content
-        traverse (setTcm tcmMat) res 
+        traverse (setTcm tcmMat) subContent
   where
     setTcm :: TCM -> FracturedParseResult -> EitherT ReadError IO FracturedParseResult
     setTcm t fpr = case relatedTcm fpr of
@@ -67,27 +93,26 @@ parseSpecifiedFile spec@(UnspecifiedFile    _    ) =
   getSpecifiedContent spec >>= eitherTValidation . fmap (progressiveParse . fst) . dataFiles
 
 fastaDNA :: FileSpecification -> EitherT ReadError IO [FracturedParseResult]
-fastaDNA spec = getSpecifiedContent spec >>= (hoistEither . parseSpecifiedContent)
+fastaDNA spec = getSpecifiedContent spec >>= (hoistEither . parseSpecifiedContent parse')
   where
-    parseSpecifiedContent :: FileSpecificationContent -> Either ReadError [FracturedParseResult]
-    parseSpecifiedContent = eitherValidation . fmap parse' . dataFiles
     parse' :: FileResult -> Either ReadError FracturedParseResult
     parse' (path,content) = toFractured Nothing path <$> parseResult
       where
-        parseResult = first unparsable $ parse combinator path content
-        combinator  = (\x -> fastaStreamConverter DNA x <|> fastaStreamConverter RNA x) =<< fastaStreamParser
+        parseResult = {- (\x -> trace (show x) x) . -} first unparsable $ parse combinator path content
+        combinator  = (\x -> try (fastaStreamConverter Fasta.DNA x) <|> fastaStreamConverter Fasta.RNA x) =<< fastaStreamParser
 
 -- TODO: abstract these two (three) v^
 fastaAminoAcid :: FileSpecification -> EitherT ReadError IO [FracturedParseResult]
-fastaAminoAcid spec = getSpecifiedContent spec >>= (hoistEither . parseSpecifiedContent)
+fastaAminoAcid spec = getSpecifiedContent spec >>= (hoistEither . parseSpecifiedContent parse')
   where
-    parseSpecifiedContent :: FileSpecificationContent -> Either ReadError [FracturedParseResult]
-    parseSpecifiedContent = eitherValidation . fmap parse' . dataFiles
     parse' :: FileResult -> Either ReadError FracturedParseResult
     parse' (path,content) = toFractured Nothing path <$> parseResult
       where
         parseResult = first unparsable $ parse combinator path content
-        combinator  = fastaStreamConverter AminoAcid =<< fastaStreamParser
+        combinator  = fastaStreamConverter Fasta.AminoAcid =<< fastaStreamParser
+
+parseSpecifiedContent :: (FileResult -> Either ReadError FracturedParseResult) -> FileSpecificationContent -> Either ReadError [FracturedParseResult]
+parseSpecifiedContent parse' = eitherValidation . fmap parse' . dataFiles
 
 parseCustomAlphabet :: FileSpecification -> EitherT ReadError IO [FracturedParseResult]
 parseCustomAlphabet spec = getSpecifiedContent spec >>= (hoistEither . parseSpecifiedContent)
@@ -102,7 +127,38 @@ parseCustomAlphabet spec = getSpecifiedContent spec >>= (hoistEither . parseSpec
       where
         parseResult = first unparsable $ parse fastcStreamParser path content
 
+applyReferencedTCM :: FracturedParseResult -> FracturedParseResult
+applyReferencedTCM fpr =
+  case relatedTcm fpr of
+     Nothing -> fpr
+     Just x  -> let newAlphabet = toList $ customAlphabet x
+                    newTcm      = transitionCosts x
+                in  fpr { parsedMetas = fmap (updateAlphabet newAlphabet . updateTcm newTcm) <$> parsedMetas fpr }
 
+prependFilenamesToCharacterNames :: FracturedParseResult -> FracturedParseResult
+prependFilenamesToCharacterNames fpr = fpr { parsedMetas = fmap (prependName (sourceFile fpr)) <$> parsedMetas fpr }
+
+expandIUPAC :: FracturedParseResult -> FracturedParseResult
+expandIUPAC fpr = fpr { parsedChars = newTreeSeqs }
+  where
+    newTreeSeqs = zipWith f (parsedChars fpr) (parsedMetas fpr)
+    f :: TreeSeqs -> Vector CharInfo -> TreeSeqs
+    f mapping meta = g <$> mapping
+      where
+        g :: ParsedSequences -> ParsedSequences
+        g = V.zipWith h meta 
+          where
+            h :: CharInfo -> Maybe ParsedSeq -> Maybe ParsedSeq
+            h cInfo seqMay = expandCodes <$> seqMay
+              where
+                expandCodes :: ParsedSeq -> ParsedSeq
+                expandCodes x =
+                  case cInfo of
+                    DNA{}       -> expandOrId nucleotideIUPAC <$> x
+                    RNA{}       -> expandOrId nucleotideIUPAC <$> x
+                    AminoAcid{} -> expandOrId aminoAcidIUPAC  <$> x
+                    _           -> x
+    expandOrId m x = fromMaybe x $ x `lookup` m
 
 --setTaxaSeqs :: HashMap Identifier ParsedSequences -> SearchState
 --setTaxaSeqs x = pure $ Graph [mempty { parsedSeqs = x }]
@@ -123,12 +179,12 @@ parseSpecifiedFileSimple comb toState spec = getSpecifiedContent spec >>= (hoist
 
 progressiveParse :: FilePath -> EitherT ReadError IO FracturedParseResult
 progressiveParse inputPath = do
-    res0 <- liftIO . runEitherT . parseSpecifiedFile $ NucleotideFile [inputPath]
-    case res0 of
+    nukeResult <- liftIO . runEitherT . parseSpecifiedFile $ NucleotideFile [inputPath]
+    case nukeResult of
       Right x -> pure $ head x
       Left  _ -> do
-        res1 <- liftIO . runEitherT . parseSpecifiedFile $ AminoAcidFile [inputPath]
-        case res1 of
+        aminoAcidResult <- liftIO . runEitherT . parseSpecifiedFile $ AminoAcidFile [inputPath]
+        case aminoAcidResult of
           Right x -> pure $ head x
           Left  _ -> do
             (filePath, fileContent) <- head . dataFiles <$> getSpecifiedContent (UnspecifiedFile [inputPath])
@@ -146,5 +202,57 @@ progressiveParse inputPath = do
                           Left  _ -> fail $ "Could not determine the file type of '" ++ filePath ++ "'. Try annotating the expected file data in the 'read' for more explicit error message on file parsing failures."
 
 toFractured :: (Metadata a, ParsedCharacters a, ParseGraph a) => Maybe TCM -> FilePath -> a -> FracturedParseResult
-toFractured tcmMat path = FPR <$> unifyCharacters  <*> unifyMetadata <*> unifyGraph <*> const tcmMat <*> const path
+toFractured tcmMat path = FPR <$> unifyCharacters <*> unifyMetadata <*> unifyGraph <*> const tcmMat <*> const path
 {--}
+
+nucleotideIUPAC :: Map AmbiguityGroup AmbiguityGroup
+nucleotideIUPAC = casei core
+  where
+    ref  = (core !)
+    core = M.fromList
+         [ (["A"], ["A"]     )
+         , (["G"], ["G"]     )
+         , (["C"], ["C"]     )
+         , (["T"], ["T"]     )
+         , (["-"], ["-"]     ) -- assume 5th state (TODO: fix this)
+         , (["U"], ref ["T"] )
+         , (["R"], ref ["A"] <> ref ["G"])
+         , (["M"], ref ["A"] <> ref ["C"])
+         , (["W"], ref ["A"] <> ref ["T"])
+         , (["S"], ref ["G"] <> ref ["C"])
+         , (["K"], ref ["G"] <> ref ["T"])
+         , (["T"], ref ["C"] <> ref ["T"])
+         , (["V"], ref ["A"] <> ref ["G"] <> ref ["C"])
+         , (["D"], ref ["A"] <> ref ["G"] <> ref ["T"])
+         , (["H"], ref ["A"] <> ref ["C"] <> ref ["T"])
+         , (["B"], ref ["G"] <> ref ["C"] <> ref ["T"])
+         , (["N"], ref ["A"] <> ref ["G"] <> ref ["C"] <> ref ["T"])
+         , (["X"], ref ["N"])
+         , (["?"], ref ["A"] <> ref ["G"] <> ref ["C"] <> ref ["T"] <> ref ["-"])
+         ]
+
+aminoAcidIUPAC :: Map AmbiguityGroup AmbiguityGroup
+aminoAcidIUPAC = casei $ core `union` multi
+  where
+    core         = M.fromList $ zip symbolGroups symbolGroups
+    symbolGroups = pure . pure <$> "ACDEFGHIKLMNPQRSTVWY-"
+    ref          = (core !)
+    allSymbols   = foldl1 (<>) symbolGroups
+    allAcids     = foldl1 (<>) $ init symbolGroups
+    multi        = M.fromList
+                 [ (["B"], ref ["D"] <> ref ["N"])
+                 , (["Z"], ref ["E"] <> ref ["Q"])
+                 , (["X"], allAcids  )
+                 , (["?"], allSymbols)
+                 ]
+
+casei :: Map AmbiguityGroup v -> Map AmbiguityGroup v
+casei x = foldl f x $ assocs x
+  where
+    f m ([[k]], v)
+      | isLower k  = insert [[toUpper k]] v m
+      | isUpper k  = insert [[toLower k]] v m
+      | otherwise  = m
+    f m (_    , _) = m
+
+                                                                    

@@ -138,7 +138,37 @@ executable pcg
                        PCG.Script.Parser
                        PCG.Script.Types
                        Text.Megaparsec.Custom
-                         
+
+                       Bio.Metadata.Class
+                       Bio.Phylogeny.Graph.Parsed
+                       Bio.Phylogeny.Graph.Topological
+                       Bio.Phylogeny.Graph.Utilities
+                       Bio.Phylogeny.Network.Subsettable
+                       Bio.Phylogeny.Tree.Node.Topological
+                       Bio.Sequence.Packed.Class
+                       Bio.Sequence.Parsed
+                       Bio.Sequence.Parsed.Class
+                       Bio.Sequence.Random
+                       Data.Matrix.NotStupid
+                       File.Format.Conversion.Encoder
+                       File.Format.Nexus
+                       File.Format.Nexus.Parser
+                       File.Format.TNT
+                       File.Format.TNT.Command.CCode
+                       File.Format.TNT.Command.CNames
+                       File.Format.TNT.Command.Cost
+                       File.Format.TNT.Command.NStates
+                       File.Format.TNT.Command.Procedure
+                       File.Format.TNT.Command.TRead
+                       File.Format.TNT.Command.XRead
+                       File.Format.TNT.Internal
+                       File.Format.TNT.Parser
+                       File.Format.TNT.Partitioning
+                       PCG.Command.Types.Read.Evaluate
+                       PCG.Command.Types.Read.Unification.Master
+                       PCG.Command.Types.Read.Unification.UnificationError
+                       PCG.Command.Types.Read.Validate
+                                                
 executable brg
   main-is:             BadReadGraph.hs
 
@@ -251,6 +281,20 @@ executable brg
                        PCG.Script.Types
                        Text.Megaparsec.Custom
 
+                       Bio.Phylogeny.Graph.Topological
+                       Bio.Phylogeny.Graph.Utilities
+                       Bio.Phylogeny.Network.Subsettable
+                       Bio.Phylogeny.Tree.Node.Topological
+                       Bio.Sequence.Packed.Class
+                       Bio.Sequence.Parsed
+                       Bio.Sequence.Random
+                       Data.Matrix.NotStupid
+                       File.Format.Conversion.Encoder
+                       PCG.Command.Types.Report.CharacterMatrix
+                       PCG.Command.Types.Report.GraphViz
+                       PCG.Command.Types.Report.Metadata
+                       PCG.Command.Types.Report.Newick
+
 executable qdh
   main-is:             BadReadGraphQDH.hs
 
@@ -358,6 +402,17 @@ executable qdh
                        PCG.Script.Parser
                        PCG.Script.Types
                        Text.Megaparsec.Custom
+
+                       Bio.Phylogeny.Graph.Output
+                       Bio.Phylogeny.Graph.Topological
+                       Bio.Phylogeny.Graph.Utilities
+                       Bio.Phylogeny.Network.Subsettable
+                       Bio.Phylogeny.Tree.Node.Topological
+                       Bio.Sequence.Packed.Class
+                       Bio.Sequence.Parsed
+                       Bio.Sequence.Random
+                       Data.Matrix.NotStupid
+                       File.Format.Conversion.Encoder
                          
 library
   -- LANGUAGE extensions used by modules in this package.
@@ -438,14 +493,23 @@ library
                        Bio.Phylogeny.Forest.Class
                        Bio.Phylogeny.Graph.Data
                        Bio.Phylogeny.Graph.Output
+                       Bio.Phylogeny.Graph.Topological
+                       Bio.Phylogeny.Graph.Utilities
                        Bio.Phylogeny.Network.Class
+                       Bio.Phylogeny.Network.Subsettable
                        Bio.Phylogeny.Tree.Binary.Class
                        Bio.Phylogeny.Tree.CharacterAware.Class
                        Bio.Phylogeny.Tree.Edge.Standard
                        Bio.Phylogeny.Tree.EdgeAware.Class
+                       Bio.Phylogeny.Tree.Node.Topological
                        Bio.Phylogeny.Tree.Rose.Class
                        Bio.Sequence.Coded.Class
+                       Bio.Sequence.Packed.Class
+                       Bio.Sequence.Parsed
+                       Bio.Sequence.Random
                        Data.List.Utility
+                       Data.Matrix.NotStupid
+                       File.Format.Conversion.Encoder
                        File.Format.Fasta.Converter
                        File.Format.Fasta.Internal
                        File.Format.Fasta.Parser
@@ -571,4 +635,27 @@ Test-Suite testsuite
                        Text.Megaparsec.Custom
                        Text.Megaparsec.Custom.Test
 
-                       
+                       Bio.Phylogeny.Graph.Output
+                       Bio.Phylogeny.Graph.Test
+                       Bio.Phylogeny.Graph.Utilities
+                       Bio.Phylogeny.Network.Subsettable
+                       Bio.Sequence.Packed.Class
+                       Bio.Sequence.Parsed
+                       Data.Matrix.NotStupid
+                       File.Format.Conversion.Encoder
+                       File.Format.Conversion.Test
+                       File.Format.TNT
+                       File.Format.TNT.Command.CCode
+                       File.Format.TNT.Command.CNames
+                       File.Format.TNT.Command.Cost
+                       File.Format.TNT.Command.NStates
+                       File.Format.TNT.Command.Procedure
+                       File.Format.TNT.Command.TRead
+                       File.Format.TNT.Command.XRead
+                       File.Format.TNT.Internal
+                       File.Format.TNT.Parser
+                       File.Format.TNT.Partitioning
+                       Test.Custom.Graph
+                       Test.Custom.Parse
+                       Test.Custom.Types
+                       TestSuite.GeneratedTests.TNT                       

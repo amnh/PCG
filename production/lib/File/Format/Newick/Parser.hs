@@ -16,7 +16,6 @@
 
 module File.Format.Newick.Parser where
 
-import Control.Monad              (liftM)
 import Data.Char                  (isSpace)
 import Data.List                  (intercalate)
 import Data.Map            hiding (filter,foldl,foldr,null)
