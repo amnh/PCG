@@ -27,6 +27,7 @@ import           Data.Maybe                 (fromMaybe)
 --import qualified Data.HashMap.Strict  as HM (fromList)
 import           Data.Vector                (Vector)
 import qualified Data.Vector           as V (zipWith)
+import           Debug.Trace
 import           File.Format.Fasta   hiding   (FastaSequenceType(..))
 import qualified File.Format.Fasta   as Fasta (FastaSequenceType(..))
 import           File.Format.Fastc   hiding (Identifier)
@@ -83,6 +84,7 @@ parseSpecifiedFile spec@(UnspecifiedFile    _    ) =
   getSpecifiedContent spec >>= eitherTValidation . fmap (progressiveParse . fst) . dataFiles
 
 fastaDNA :: FileSpecification -> EitherT ReadError IO [FracturedParseResult]
+fastaDNA spec | trace ("fasta DNA parser with spec " ++ show spec) False = undefined
 fastaDNA spec = getSpecifiedContent spec >>= (hoistEither . parseSpecifiedContent parse')
   where
     parse' :: FileResult -> Either ReadError FracturedParseResult
@@ -210,7 +212,7 @@ nucleotideIUPAC = casei core
          , (["W"], ref ["A"] <> ref ["T"])
          , (["S"], ref ["G"] <> ref ["C"])
          , (["K"], ref ["G"] <> ref ["T"])
-         , (["T"], ref ["C"] <> ref ["T"])
+         , (["Y"], ref ["C"] <> ref ["T"])
          , (["V"], ref ["A"] <> ref ["G"] <> ref ["C"])
          , (["D"], ref ["A"] <> ref ["G"] <> ref ["T"])
          , (["H"], ref ["A"] <> ref ["C"] <> ref ["T"])
