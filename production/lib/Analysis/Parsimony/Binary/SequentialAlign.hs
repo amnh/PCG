@@ -55,17 +55,21 @@ sequentialAlign s1 s2 = (inferredParent', (fromIntegral cost :: Double), aligned
             Left e -> error e -- Better error handling later
             Right r -> r
 
-        -- | Simple encoding over a string just for you
-        simpleEncode :: Bits s => String -> s
-        simpleEncode inStr = 
-            let vecStr = V.fromList inStr
-            in ifoldr simpleSetElem zeroBits vecStr
-        
+-- | Simple encoding over a string just for you
+simpleEncode :: Bits s => String -> s
+simpleEncode inStr = pure $ ifoldr simpleSetElem zeroBits vecStr
+    where
+        vecStr = V.fromList inStr
+
         -- | Simple functionality to set an element in a bitvector
         simpleSetElem :: Bits b => Int -> Char -> b -> b
         simpleSetElem i char curBit = case elemIndex char "ACGT-" of
                                             Nothing -> curBit
                                             Just pos -> setBit curBit (pos + (i * 5))
+
+-- | Simple decoding over a string just for you
+simpleDecode :: Bits s => s -> String
+simpleDecode inSeq = undefined
 
 -- | Joins an alignment row to the rest of a matrix
 joinMat :: SeqConstraint s b => AlignRow s -> AlignMatrix s -> AlignMatrix s
