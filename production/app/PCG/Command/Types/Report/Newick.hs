@@ -27,11 +27,16 @@ outPutNewick fileName inGraph = writeFile fileName (toNewick inGraph)
         toNewick :: Graph -> String
         toNewick graph = 
             let (TopoGraph trees) = toTopoGraph graph
-            in "<" ++ init (foldr (terminateTree . printNewick . tree) mempty trees) ++ ">"
+            in "<" ++ init (foldr (\g acc -> withRootCost (tree g) acc $ printNewick $ tree g) mempty trees) ++ ">"
 
         -- | Allows output of forests by wrapping up a tree
         terminateTree :: String -> String -> String
-        terminateTree treeStr accStr = accStr ++ init treeStr ++ ";\n"
+        terminateTree treeStr accStr = accStr ++ init treeStr
+
+        -- | Adds a root cost to the end of a tree
+        withRootCost :: TopoNode b -> String -> String -> String
+        withRootCost rootTopo accStr treeStr = accStr ++ init treeStr ++ "[" ++ rCost ++ "];\n" 
+            where rCost = show $ totalCost rootTopo
             
 -- | Most important functionality to turn a topoNode into a string
 printNewick :: TopoNode b -> String
