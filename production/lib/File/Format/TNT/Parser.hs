@@ -116,5 +116,6 @@ range _ (Single    i  ) = [i..i]
 range _ (Range     i j) = [i..j]
 range _ (FromStart   j) = [0..j]
 range j (ToEnd     i  ) = [i..j]
-range j  Whole          = [0..j]   
+range j  Whole          = [0..j]
+
     

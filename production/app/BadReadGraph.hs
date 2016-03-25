@@ -1,9 +1,13 @@
-module BadReadGraph where
+module Main where
 
 import Analysis.GenericFitch
+--import Analysis.Parsimony.Binary.Optimization
 import Bio.Phylogeny.Graph
 import Bio.Phylogeny.Graph.Utilities
-import Bio.Phylogeny.Graph.Output
+import PCG.Command.Types.Report.CharacterMatrix
+import PCG.Command.Types.Report.GraphViz
+import PCG.Command.Types.Report.Newick
+import PCG.Command.Types.Report.Metadata
 import Bio.Phylogeny.Tree.Node
 import Control.Monad                (sequence_, liftM2)
 import Data.Functor                 ((<$))
@@ -15,6 +19,9 @@ import qualified File.Format.Newick as N
 import File.Format.Newick.Converter
 import Text.Megaparsec
 import Bio.Sequence.Coded
+import qualified Bio.Phylogeny.PhyloCharacter as Char
+
+main = print =<< madness
 
 badReadGraph :: FilePath -> FilePath -> IO DAG
 badReadGraph fastaPath newickPath = do
@@ -22,24 +29,39 @@ badReadGraph fastaPath newickPath = do
   newickResult <- parse N.newickStreamParser newickPath <$> readFile newickPath
   case (fastaResult, newickResult) of
     (Left  x, Left  y) -> mempty <$ sequence_ (putStrLn <$> [show x, show y])
-    (Left  x, _      ) -> mempty <$ putStrLn (show x)
-    (_      , Left  y) -> mempty <$ putStrLn (show y)
+    (Left  x, _      ) -> mempty <$ print x
+    (_      , Left  y) -> mempty <$ print y
     (Right x, Right y) -> pure $ convertBoth (head y) (coerceFasta x)
   where
     coerceFasta = fmap (singleton . Just)
+
+forceUnaligned :: DAG -> DAG
+forceUnaligned inDAG = inDAG {characters = V.map (\c -> c {Char.aligned = False}) (characters inDAG)}
 
 madRead = badReadGraph "../../TestDat/fakeArtmor.fas" "../../TestDat/artmor.tre"
 --badNodes = (V.filter (\n -> isLeaf n && null (encoded n))) <$> (nodes <$> madRead)
 --badNames = (V.map (\n -> (IM.! (code n)) <$> (nodeNames <$> madRead))) <$> badNodes
 madness = rootCost . allOptimization 1 <$> madRead
 outputMad = outPutDot "TestArtmor.dot" =<< ((Graph . pure) <$> madRead) 
+madNewick = outPutNewick "TestArtmorNewick.new" =<< ((Graph . pure) <$> madRead)
+madMatrix = outPutMatrix "TestArtmorCharacterMat.csv" =<< ((Graph . pure) <$> madRead)
+madMetadata = outPutMetadata "TestArtmorMetadata.csv" =<< ((Graph . pure) <$> madRead)
 checkOuts = liftM2 (V.zipWith (\n e -> not (isLeaf n) && null (outNodes e))) (nodes <$> madRead) (edges <$> madRead)
+bigShow = showSeqs . allOptimization 1 <$> madRead
+madNames = nodeNames <$> madRead
 
 smallRead = badReadGraph "../../TestDat/ThreeNode.fas" "../../TestDat/ThreeNode.tre"
 smallNum = allOptimization 1 <$> smallRead
-showSeqs inDag = fmap (\n -> flip unencodeMany ["A", "C", "G", "T", "-"] $ final n) (nodes inDag) 
+showSeqs inDag = fmap (\n -> show (code n) ++ ": " ++ show (flip unencodeMany ["A", "C", "G", "T", "-"] $ encoded n)) (nodes inDag) 
 smallShow = showSeqs <$> smallNum
 
 fiveRead = badReadGraph "../../TestDat/FiveNode.fas" "../../TestDat/FiveNode.tre"
 fiveNum = allOptimization 1 <$> fiveRead
 fiveShow = showSeqs <$> fiveNum
+
+singleMad = rootCost . allOptimization 1 <$> badReadGraph "../../TestDat/fakeArtmor.fas" "../../TestDat/SingleArtmor.tre"
+
+mediumTest = allOptimization 1 <$> badReadGraph "../../TestDat/MediumCooked.fas" "../../TestDat/MediumCooked.tre"
+
+checkNewick = parse N.newickStreamParser "../../TestDat/MediumCooked.tre" <$> readFile "../../TestDat/MediumCooked.tre"
+

@@ -44,3 +44,7 @@ simplestNewick = testGroup "Simplest Newick files" [threeNode]
         --                            , ]
 
         --twoSeqs = 
+
+-- topology tests:
+    -- make sure all given names from Newick become leaves
+    -- check for correct num of nodes

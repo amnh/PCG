@@ -21,11 +21,12 @@ import File.Format.Newick
 import File.Format.Nexus.Data
 
 
-partitionAssumptionBlock :: [AssumptionField] -> [StepMatrix]
-partitionAssumptionBlock = foldr f ([])
+partitionAssumptionBlock :: [AssumptionField] -> ([StepMatrix],[Bool])
+partitionAssumptionBlock = foldr f ([],[])
     where
-        f (TCMMat n) vs = n:vs
-        f (IgnAF  _) vs = vs
+        f (TCMMat n) (a,b) = (n:a,   b)
+        f (Add    n) (a,b) = (  a, n:b)
+        f (IgnAF  _)    vs = vs
 
 partitionSequenceBlock :: [SeqSubBlock] -> ([[String]],[CharacterFormat],[DimensionsFormat],[String],[[String]],[[String]])
 partitionSequenceBlock = foldr f ([],[],[],[],[],[])

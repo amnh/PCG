@@ -16,7 +16,6 @@
 
 module File.Format.Newick.Parser where
 
-import Control.Monad              (liftM)
 import Data.Char                  (isSpace)
 import Data.List                  (intercalate)
 import Data.Map            hiding (filter,foldl,foldr,null)
@@ -154,7 +153,7 @@ joinNonUniqueLabeledNodes root = joinNonUniqueLabeledNodes' [] root
         labeledNodes           = filter (isJust . newickLabel) $ toList' root 
         joinNodes :: Map String [NewickNode] -> NewickNode -> Map String [NewickNode]
         joinNodes mapping node = insertWith (++) (fromJust $ newickLabel node) (descendants node) mapping
-        toList' node = node : (concatMap toList' . descendants) node
+        toList' node = node : ((=<<) toList' . descendants) node
     -- When transforming the Newick Tree to the Newick Network by joining 
     -- identically labeled nodes, there exists the possiblily that a directed 
     -- cycle is defined in the tree which will result in infinite recursion 
@@ -174,7 +173,7 @@ joinNonUniqueLabeledNodes root = joinNonUniqueLabeledNodes' [] root
         joinedList = label >>= (`lookup` joinedNodes)
         children   = fromMaybe (descendants node) joinedList
         gatherList = sequence . fmap (joinNonUniqueLabeledNodes' stack')
-        resultNode = liftM newNode . gatherList
+        resultNode = fmap newNode . gatherList
         newNode x  = NewickNode x label (branchLength node)
         stack'     = label : stack
         hasCycle   = isJust label

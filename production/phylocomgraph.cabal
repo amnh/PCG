@@ -74,7 +74,7 @@ executable pcg
                        -fwarn-unused-imports
                        -fwarn-unused-matches
   
-  hs-source-dirs:      app, lib
+  hs-source-dirs:      app, lib, ffi
   
   other-modules:       Analysis.DirectOptimization.Naive
                        Analysis.DirectOptimization.ImpliedAlign
@@ -138,8 +138,284 @@ executable pcg
                        PCG.Script.Parser
                        PCG.Script.Types
                        Text.Megaparsec.Custom
-                         
 
+                       Bio.Metadata.Class
+                       Bio.Phylogeny.Graph.Parsed
+                       Bio.Phylogeny.Graph.Topological
+                       Bio.Phylogeny.Graph.Utilities
+                       Bio.Phylogeny.Network.Subsettable
+                       Bio.Phylogeny.Tree.Node.Topological
+                       Bio.Sequence.Packed.Class
+                       Bio.Sequence.Parsed
+                       Bio.Sequence.Parsed.Class
+                       Bio.Sequence.Random
+                       Data.Matrix.NotStupid
+                       File.Format.Conversion.Encoder
+                       File.Format.Nexus
+                       File.Format.Nexus.Parser
+                       File.Format.TNT
+                       File.Format.TNT.Command.CCode
+                       File.Format.TNT.Command.CNames
+                       File.Format.TNT.Command.Cost
+                       File.Format.TNT.Command.NStates
+                       File.Format.TNT.Command.Procedure
+                       File.Format.TNT.Command.TRead
+                       File.Format.TNT.Command.XRead
+                       File.Format.TNT.Internal
+                       File.Format.TNT.Parser
+                       File.Format.TNT.Partitioning
+                       PCG.Command.Types.Read.Evaluate
+                       PCG.Command.Types.Read.Unification.Master
+                       PCG.Command.Types.Read.Unification.UnificationError
+                       PCG.Command.Types.Read.Validate
+                                                
+executable brg
+  main-is:             BadReadGraph.hs
+
+  build-depends:       base                 >=4.8 && < 4.9
+                     , bv                   -any
+                     , containers           -any
+                     , criterion            -any
+                     , deepseq              -any
+                     , directory            -any
+                     , dlist                -any
+                     , either               -any
+                     , Glob                 -any
+                     , hashable             -any
+                     , keys                 -any
+                     , matrix               -any
+                     , megaparsec           >=4.2
+                     , parallel             -any
+                     , QuickCheck           -any
+                     , safe                 -any
+                     , semigroups           -any
+                     , smallcheck           -any
+                     , split                -any 
+                     , tasty                -any
+                     , tasty-hunit          -any
+                     , tasty-quickcheck     -any
+                     , tasty-smallcheck     -any
+                     , text                 -any
+                     , time                 -any
+                     , transformers         -any
+                     , unordered-containers -any
+                     , vector               -any
+
+  ghc-options:         -O2 -Wall 
+                       -fwarn-duplicate-exports
+                       -fwarn-incomplete-patterns
+                       -fwarn-missing-signatures
+                       -fwarn-overlapping-patterns
+                       -fwarn-tabs
+                       -fwarn-unused-binds
+                       -fwarn-unused-do-bind
+                       -fwarn-unused-imports
+                       -fwarn-unused-matches
+  
+  hs-source-dirs:      app, lib, ffi
+  
+  other-modules:       Analysis.DirectOptimization.ImpliedAlign
+                       Analysis.DirectOptimization.Naive
+                       Analysis.Parsimony.Binary.DirectOptimization
+                       Analysis.Parsimony.Binary.Fitch
+                       Analysis.Parsimony.Binary.Optimization
+                       Analysis.Parsimony.Binary.SequentialAlign
+                       Analysis.Parsimony.Binary.SequentialAlign.SeqAlignFFI
+                       Bio.Phylogeny.Forest
+                       Bio.Phylogeny.Forest.Class
+                       Bio.Phylogeny.Graph
+                       Bio.Phylogeny.Graph.Data
+                       Bio.Phylogeny.Network
+                       Bio.Phylogeny.Network.Class
+                       Bio.Phylogeny.PhyloCharacter
+                       Bio.Phylogeny.Tree.Binary
+                       Bio.Phylogeny.Tree.Binary.Class
+                       Bio.Phylogeny.Tree.CharacterAware
+                       Bio.Phylogeny.Tree.CharacterAware.Class
+                       Bio.Phylogeny.Tree.Edge.Standard
+                       Bio.Phylogeny.Tree.EdgeAware
+                       Bio.Phylogeny.Tree.EdgeAware.Class
+                       Bio.Phylogeny.Tree.Node
+                       Bio.Phylogeny.Tree.Node.Encoded
+                       Bio.Phylogeny.Tree.Node.Final
+                       Bio.Phylogeny.Tree.Node.Packed
+                       Bio.Phylogeny.Tree.Node.Preliminary
+                       Bio.Phylogeny.Tree.Referential
+                       Bio.Phylogeny.Tree.Rose
+                       Bio.Phylogeny.Tree.Rose.Class
+                       Bio.Sequence.Coded
+                       Bio.Sequence.Coded.Class
+                       Bio.Sequence.Character.Coded                     
+                       Control.Evaluation
+                       Control.Evaluation.Internal
+                       Control.Evaluation.Trans
+                       Control.Evaluation.Unit
+                       Data.Either.Custom
+                       Data.List.Utility
+                       File.Format.Fasta
+                       File.Format.Fasta.Converter
+                       File.Format.Fasta.Internal
+                       File.Format.Fasta.Parser
+                       File.Format.Fastc
+                       File.Format.Fastc.Parser
+                       File.Format.Newick
+                       File.Format.Newick.Converter
+                       File.Format.Nexus.Data
+                       File.Format.Nexus.Partition
+                       File.Format.Nexus.Validate
+                       File.Format.Newick.Internal
+                       File.Format.Newick.Parser
+                       File.Format.TransitionCostMatrix
+                       File.Format.TransitionCostMatrix.Parser
+                       File.Format.VertexEdgeRoot
+                       File.Format.VertexEdgeRoot.Converter
+                       File.Format.VertexEdgeRoot.Parser
+                       PCG.Command
+                       PCG.Command.Types
+                       PCG.Command.Types.Read
+                       PCG.Command.Types.Read.Internal
+                       PCG.Command.Types.Read.ReadError
+                       PCG.Computation.Internal
+                       PCG.Script
+                       PCG.Script.Parser
+                       PCG.Script.Types
+                       Text.Megaparsec.Custom
+
+                       Bio.Phylogeny.Graph.Topological
+                       Bio.Phylogeny.Graph.Utilities
+                       Bio.Phylogeny.Network.Subsettable
+                       Bio.Phylogeny.Tree.Node.Topological
+                       Bio.Sequence.Packed.Class
+                       Bio.Sequence.Parsed
+                       Bio.Sequence.Random
+                       Data.Matrix.NotStupid
+                       File.Format.Conversion.Encoder
+                       PCG.Command.Types.Report.CharacterMatrix
+                       PCG.Command.Types.Report.GraphViz
+                       PCG.Command.Types.Report.Metadata
+                       PCG.Command.Types.Report.Newick
+
+executable qdh
+  main-is:             BadReadGraphQDH.hs
+
+  build-depends:       base                 >=4.8 && < 4.9
+                     , bv                   -any
+                     , containers           -any
+                     , criterion            -any
+                     , deepseq              -any
+                     , directory            -any
+                     , dlist                -any
+                     , either               -any
+                     , Glob                 -any
+                     , hashable             -any
+                     , keys                 -any
+                     , matrix               -any
+                     , megaparsec           >=4.2
+                     , parallel             -any
+                     , QuickCheck           -any
+                     , safe                 -any
+                     , semigroups           -any
+                     , smallcheck           -any
+                     , split                -any 
+                     , tasty                -any
+                     , tasty-hunit          -any
+                     , tasty-quickcheck     -any
+                     , tasty-smallcheck     -any
+                     , text                 -any
+                     , time                 -any
+                     , transformers         -any
+                     , unordered-containers -any
+                     , vector               -any
+
+  ghc-options:         -O2 -Wall 
+                       -fwarn-duplicate-exports
+                       -fwarn-incomplete-patterns
+                       -fwarn-missing-signatures
+                       -fwarn-overlapping-patterns
+                       -fwarn-tabs
+                       -fwarn-unused-binds
+                       -fwarn-unused-do-bind
+                       -fwarn-unused-imports
+                       -fwarn-unused-matches
+  
+  hs-source-dirs:      app, lib, ffi
+
+  c-sources:
+    ffi/Analysis/Parsimony/Binary/SequentialAlign/seqAlignForHaskell.c
+  
+  other-modules:       Analysis.DirectOptimization.Naive
+                       Analysis.DirectOptimization.ImpliedAlign
+                       Analysis.GenericFitch
+                       Bio.Phylogeny.Forest
+                       Bio.Phylogeny.Forest.Class
+                       Bio.Phylogeny.Graph
+                       Bio.Phylogeny.Graph.Data
+                       Bio.Phylogeny.Network
+                       Bio.Phylogeny.Network.Class
+                       Bio.Phylogeny.PhyloCharacter
+                       Bio.Phylogeny.Tree.Binary
+                       Bio.Phylogeny.Tree.Binary.Class
+                       Bio.Phylogeny.Tree.CharacterAware
+                       Bio.Phylogeny.Tree.CharacterAware.Class
+                       Bio.Phylogeny.Tree.Edge.Standard
+                       Bio.Phylogeny.Tree.EdgeAware
+                       Bio.Phylogeny.Tree.EdgeAware.Class
+                       Bio.Phylogeny.Tree.Node
+                       Bio.Phylogeny.Tree.Node.Encoded
+                       Bio.Phylogeny.Tree.Node.Final
+                       Bio.Phylogeny.Tree.Node.Packed
+                       Bio.Phylogeny.Tree.Node.Preliminary
+                       Bio.Phylogeny.Tree.Referential
+                       Bio.Phylogeny.Tree.Rose
+                       Bio.Phylogeny.Tree.Rose.Class
+                       Bio.Sequence.Coded
+                       Bio.Sequence.Coded.Class
+                       Bio.Sequence.Character.Coded                     
+                       Control.Evaluation
+                       Control.Evaluation.Internal
+                       Control.Evaluation.Trans
+                       Control.Evaluation.Unit
+                       Data.Either.Custom
+                       Data.List.Utility
+                       File.Format.Fasta
+                       File.Format.Fasta.Converter
+                       File.Format.Fasta.Internal
+                       File.Format.Fasta.Parser
+                       File.Format.Fastc
+                       File.Format.Fastc.Parser
+                       File.Format.Newick
+                       File.Format.Newick.Converter
+                       File.Format.Nexus.Data
+                       File.Format.Nexus.Partition
+                       File.Format.Nexus.Validate
+                       File.Format.Newick.Internal
+                       File.Format.Newick.Parser
+                       File.Format.TransitionCostMatrix
+                       File.Format.TransitionCostMatrix.Parser
+                       File.Format.VertexEdgeRoot
+                       File.Format.VertexEdgeRoot.Converter
+                       File.Format.VertexEdgeRoot.Parser
+                       PCG.Command
+                       PCG.Command.Types
+                       PCG.Command.Types.Read
+                       PCG.Command.Types.Read.Internal
+                       PCG.Command.Types.Read.ReadError
+                       PCG.Computation.Internal
+                       PCG.Script
+                       PCG.Script.Parser
+                       PCG.Script.Types
+                       Text.Megaparsec.Custom
+
+                       Bio.Phylogeny.Graph.Output
+                       Bio.Phylogeny.Graph.Topological
+                       Bio.Phylogeny.Graph.Utilities
+                       Bio.Phylogeny.Network.Subsettable
+                       Bio.Phylogeny.Tree.Node.Topological
+                       Bio.Sequence.Packed.Class
+                       Bio.Sequence.Parsed
+                       Bio.Sequence.Random
+                       Data.Matrix.NotStupid
+                       File.Format.Conversion.Encoder
                          
 library
   -- LANGUAGE extensions used by modules in this package.
@@ -180,10 +456,17 @@ library
                        -fwarn-unused-imports
                        -fwarn-unused-matches
   
-  hs-source-dirs:      lib
+  hs-source-dirs:      lib, ffi
   
   -- Modules exported by the library.
   exposed-modules:
+                       Analysis.DirectOptimization.ImpliedAlign
+                       Analysis.DirectOptimization.Naive
+                       Analysis.Parsimony.Binary.DirectOptimization
+                       Analysis.Parsimony.Binary.Fitch
+                       Analysis.Parsimony.Binary.Optimization
+                       Analysis.Parsimony.Binary.SequentialAlign
+                       Analysis.Parsimony.Binary.SequentialAlign.SeqAlignFFI
                        Bio.Phylogeny.Forest
                        Bio.Phylogeny.Graph
                        Bio.Phylogeny.Network
@@ -213,14 +496,23 @@ library
                        Bio.Phylogeny.Forest.Class
                        Bio.Phylogeny.Graph.Data
                        Bio.Phylogeny.Graph.Output
+                       Bio.Phylogeny.Graph.Topological
+                       Bio.Phylogeny.Graph.Utilities
                        Bio.Phylogeny.Network.Class
+                       Bio.Phylogeny.Network.Subsettable
                        Bio.Phylogeny.Tree.Binary.Class
                        Bio.Phylogeny.Tree.CharacterAware.Class
                        Bio.Phylogeny.Tree.Edge.Standard
                        Bio.Phylogeny.Tree.EdgeAware.Class
+                       Bio.Phylogeny.Tree.Node.Topological
                        Bio.Phylogeny.Tree.Rose.Class
                        Bio.Sequence.Coded.Class
+                       Bio.Sequence.Packed.Class
+                       Bio.Sequence.Parsed
+                       Bio.Sequence.Random
                        Data.List.Utility
+                       Data.Matrix.NotStupid
+                       File.Format.Conversion.Encoder
                        File.Format.Fasta.Converter
                        File.Format.Fasta.Internal
                        File.Format.Fasta.Parser
@@ -271,7 +563,7 @@ Test-Suite testsuite
                      , unordered-containers -any
                      , vector               -any
 
-  hs-source-dirs:      test, lib, app
+  hs-source-dirs:      test, lib, app, ffi
 
   other-modules:       Analysis.DirectOptimization.ImpliedAlign
                        Analysis.DirectOptimization.Naive
@@ -346,4 +638,27 @@ Test-Suite testsuite
                        Text.Megaparsec.Custom
                        Text.Megaparsec.Custom.Test
 
-                       
+                       Bio.Phylogeny.Graph.Output
+                       Bio.Phylogeny.Graph.Test
+                       Bio.Phylogeny.Graph.Utilities
+                       Bio.Phylogeny.Network.Subsettable
+                       Bio.Sequence.Packed.Class
+                       Bio.Sequence.Parsed
+                       Data.Matrix.NotStupid
+                       File.Format.Conversion.Encoder
+                       File.Format.Conversion.Test
+                       File.Format.TNT
+                       File.Format.TNT.Command.CCode
+                       File.Format.TNT.Command.CNames
+                       File.Format.TNT.Command.Cost
+                       File.Format.TNT.Command.NStates
+                       File.Format.TNT.Command.Procedure
+                       File.Format.TNT.Command.TRead
+                       File.Format.TNT.Command.XRead
+                       File.Format.TNT.Internal
+                       File.Format.TNT.Parser
+                       File.Format.TNT.Partitioning
+                       Test.Custom.Graph
+                       Test.Custom.Parse
+                       Test.Custom.Types
+                       TestSuite.GeneratedTests.TNT                       

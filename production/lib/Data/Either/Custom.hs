@@ -16,6 +16,7 @@ module Data.Either.Custom where
 
 import Control.Monad.Trans.Either
 import Data.Either                (partitionEithers)
+import Data.Foldable
 import Data.Semigroup
 
 -- | Allows for the coalescence of 'Left' values that form a 'Semigroup'.
@@ -39,12 +40,12 @@ import Data.Semigroup
 --
 -- >>> eitherValidation [Left ("Love", "Hate"), Left (" you", " me")]
 -- Left ("Love you", "Hate me")
-eitherValidation :: Semigroup e => [Either e a] -> Either e [a]
+eitherValidation :: (Foldable t, Semigroup e) => t (Either e a) -> Either e [a]
 eitherValidation xs =
-  case partitionEithers xs of
-    ([] , res) -> pure res
-    (err, _  ) -> Left $ foldl1 (<>) err
+  case partitionEithers $ toList xs of
+    ([] , r) -> Right r
+    (err, _) -> Left $ foldl1 (<>) err
 
 -- | Works similarly to 'eitherValidation' but within the 'MonadTrans' context.
-eitherTValidation :: (Monad m, Semigroup e) => [EitherT e m a] -> EitherT e m [a]
-eitherTValidation = EitherT . fmap eitherValidation . sequence . fmap runEitherT
+eitherTValidation :: (Foldable t, Monad m, Semigroup e) => t (EitherT e m a) -> EitherT e m [a]
+eitherTValidation = EitherT . fmap eitherValidation . sequence . fmap runEitherT . toList

@@ -1,9 +1,12 @@
 ### Note I changed original gcc calls to clang, because ghc calls ld which relies on clang.
+## Remember when doing this to have .hsc file named differently from .c file, because otherwise
+## .o files overwrite each other and you end up with weird linking errors.
 
 all : my_ffi
 
 clean :
 	rm -f *.o *.hi
+	rm -f yuAlignForHaskell.c
 
 ############ more simple case, structs, pointers, etc.
 # my_ffi : mySimpleTestC.c mySimpleTestC.h mySimpleFfi.hs
@@ -22,7 +25,9 @@ clean :
 
 #################### Yu's case, structs, pointers, etc.
 # Extremely similar to complex case, above.
-my_ffi : yuAlign.c yuAlign.h haskellYuAlign.hsc
+# may need to make use of  --cross-compile in final builds
+my_ffi : yuAlign.c yuAlign.h haskellYuAlign.hsc processYuAlignForHaskell.py
+	python3 processYuAlignForHaskell.py
 	hsc2hs haskellYuAlign.hsc
-	clang -c yuAlign.c
-	ghc -O --make haskellYuAlign.hs yuAlign.o
+	clang -c yuAlignForHaskell.c
+	ghc -O --make haskellYuAlign.hs yuAlignForHaskell.o

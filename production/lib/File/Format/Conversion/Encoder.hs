@@ -69,10 +69,10 @@ developAlphabets inSeqs = V.map setGapChar $ V.map sort $ M.foldr (zipWith getNo
 -- | Internal function to make one character info
 makeOneInfo :: Alphabet -> (Bool, Int) -> CharInfo
 makeOneInfo inAlph (isAligned, seqLen)
-    | inAlph `subsetOf` dnaAlph = DNA "" isAligned masks mempty inAlph defaultMat False
-    | inAlph `subsetOf` rnaAlph = RNA "" isAligned masks mempty inAlph defaultMat False
-    | inAlph `subsetOf` aaAlph = AminoAcid "" isAligned masks inAlph mempty defaultMat False
-    | otherwise = Custom "" isAligned masks inAlph mempty defaultMat False False
+    | inAlph `subsetOf` dnaAlph = DNA "" isAligned masks mempty inAlph defaultMat False 1
+    | inAlph `subsetOf` rnaAlph = RNA "" isAligned masks mempty inAlph defaultMat False 1
+    | inAlph `subsetOf` aaAlph = AminoAcid "" isAligned masks inAlph mempty defaultMat False 1
+    | otherwise = Custom "" isAligned masks inAlph mempty defaultMat False False 1
         where 
             defaultMat = matrix (length inAlph) (length inAlph) (const 1)
             masks = generateMasks (length inAlph) seqLen isAligned
@@ -146,16 +146,17 @@ encodeMaximal strSeq alphabet =
 
 -- | Function to encode given metadata information
 encodeOverMetadata :: (Bits b, Num b, Show b) => ParsedSeq -> PhyloCharacter (EncodedSeq b) -> EncodedSeq b
-encodeOverMetadata strSeq metadata = case metadata of
-    DNA         _ align _ _ _ _ _       -> if align then minEncode else maxEncode
-    RNA         _ align _ _ _ _ _       -> if align then minEncode else maxEncode
-    Qualitative _ align _ _ _ _ add _   -> if align && not add then minEncode else maxEncode
-    AminoAcid   _ align _ _ _ _ _       -> if align then minEncode else maxEncode
-    Custom      _ align _ _ _ _ _ add   -> if align && not add then minEncode else maxEncode
-    _                                   -> maxEncode
-    where
-        minEncode = encodeMinimal strSeq (alphabet metadata)
-        maxEncode = encodeMaximal strSeq (alphabet metadata)
+encodeOverMetadata strSeq metadata = encodeMinimal strSeq (alphabet metadata)
+    --case metadata of
+    --DNA         _ align _ _ _ _ _ _     -> if align then minEncode else maxEncode
+    --RNA         _ align _ _ _ _ _ _     -> if align then minEncode else maxEncode
+    --Qualitative _ align _ _ _ _ add _ _ -> if align && not add then minEncode else maxEncode
+    --AminoAcid   _ align _ _ _ _ _ _     -> if align then minEncode else maxEncode
+    --Custom      _ align _ _ _ _ _ add _ -> if align && not add then minEncode else maxEncode
+    --_                                   -> maxEncode
+    --where
+    --    minEncode = encodeMinimal strSeq (alphabet metadata)
+    --    maxEncode = encodeMaximal strSeq (alphabet metadata)
 
 -- Function to set a single element
 setSingleElem :: Bits b => String -> b -> Alphabet -> b

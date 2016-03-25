@@ -13,6 +13,7 @@ struct align {
     int partialWt;
     int partialTrueWt;
     char* partialAlign; // EDIT: made it dynamically allocable.
+   // char partialAlign[20];
     int posStringA;   // position at stringA
     int posStringB;   // position at stringB
     int posTrueA;     // position without gap
@@ -25,10 +26,12 @@ struct align {
 
 struct retType {
     int weight;
-    char* alignment;
+    char* seq1;
+    char* seq2;
+    long int alignmentLength;
 };
 
-int trueWt(struct align*, int, int);
+int trueWt(struct align*, int, int, int);
 
 // EDIT: rectified with .c file.
 int aligner(char*, char*, int, int, struct retType*);

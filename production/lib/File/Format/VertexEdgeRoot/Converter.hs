@@ -80,6 +80,6 @@ convert inVer = splitConnected outTree
                     let
                         myI = code inNode
                         inE = IS.fromList $ parents inNode
-                        outInfo = map (\i -> EdgeInfo (getLen myI i) (madeNodes V.! myI) (madeNodes V.! i) Nothing) (children inNode)
+                        outInfo = (\i -> EdgeInfo (getLen myI i) (madeNodes V.! myI) (madeNodes V.! i) Nothing) <$> children inNode
                         outMap = foldr (\info acc -> IM.insert (code $ terminal info) info acc) mempty outInfo
                     in EdgeSet inE outMap

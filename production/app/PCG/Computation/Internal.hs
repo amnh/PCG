@@ -16,11 +16,11 @@ interpret (Script xs) =
     ([]    , actions) -> Right $ Computation actions
     (errors, _      ) -> Left errors
 
---evaluate :: Computation -> SearchState
---evaluate (Computation []    ) = pure mempty
---evaluate (Computation (x:xs)) = f x $ evaluate (Computation xs)
+evaluate :: Computation -> SearchState
+evaluate (Computation []    ) = pure mempty
+evaluate (Computation (x:xs)) = f x $ evaluate (Computation xs)
 
   
---f :: Command -> SearchState -> SearchState
---f x@(READ _) = Read.evaluate x
---f _ = error "NOT YET IMPLEMENTED"
+f :: Command -> SearchState -> SearchState
+f x@(READ _) = Read.evaluate x
+f _ = error "NOT YET IMPLEMENTED"

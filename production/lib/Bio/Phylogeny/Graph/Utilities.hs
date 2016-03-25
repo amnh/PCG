@@ -1,7 +1,7 @@
 {-# LANGUAGE FlexibleInstances, MultiParamTypeClasses, NoImplicitPrelude, TypeSynonymInstances #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
-module Bio.Phylogeny.Graph.Utilities (rootCost, appendAt, fromTopo, nodeToTopo, toTopo, splitConnected) where
+module Bio.Phylogeny.Graph.Utilities (rootCost, appendAt, fromTopo, nodeToTopo, toTopo, splitConnected, toTopoGraph) where
 
 import Bio.Phylogeny.Graph.Data
 import qualified Bio.Phylogeny.Graph.Topological as TG
@@ -44,6 +44,10 @@ fromTopo (TG.TopoTree inTopo chars) = (internalFromTopo inTopo) {characters = ch
 -- | Conversion function from an indexed tree to a TopoDAG
 toTopo :: DAG -> TG.TopoTree
 toTopo tree = nodeToTopo tree (nodes tree ! root tree)
+
+-- | Conversion function from an indexed graph to a TopoGraph
+toTopoGraph :: Graph -> TG.TopoGraph
+toTopoGraph (Graph dags) = TG.TopoGraph $ map toTopo dags 
 
 -- | Function to convert a node to a tree for folding
 singletonDAG :: TN.TopoNode BitVector -> DAG

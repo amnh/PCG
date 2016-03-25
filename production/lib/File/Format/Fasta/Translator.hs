@@ -51,6 +51,7 @@ iupacNucleotideSubstitutions =
   , ('-', "-")
   , ('.', "-")
   , ('?', "?")
+  , ('#', "#")
   ]
 
 iupacRNASubstitutions :: Map Char [String]

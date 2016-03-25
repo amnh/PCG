@@ -17,11 +17,12 @@
 
 module Bio.Phylogeny.PhyloCharacter where
 
-import Data.Vector (Vector)
 import Bio.Sequence.Coded
 import Bio.Sequence.Parsed
 import GHC.Generics
 import Data.Matrix.NotStupid (Matrix, fromList, (<|>))
+import Data.Monoid           ((<>))
+import Data.Vector           (Vector)
 
 
 
@@ -54,6 +55,7 @@ data PhyloCharacter s = DNA         { name :: String -- The character name if it
                                     , alphabet :: Alphabet
                                     , tcm :: CostMatrix
                                     , ignored :: Bool
+                                    , weight :: Double
                                     }
  
                       | RNA         { name :: String
@@ -63,6 +65,7 @@ data PhyloCharacter s = DNA         { name :: String -- The character name if it
                                     , alphabet :: Alphabet
                                     , tcm :: CostMatrix
                                     , ignored :: Bool
+                                    , weight :: Double
                                     }
 
                       | Qualitative { name :: String
@@ -73,12 +76,14 @@ data PhyloCharacter s = DNA         { name :: String -- The character name if it
                                     , tcm :: CostMatrix
                                     , additive :: Bool
                                     , ignored :: Bool
+                                    , weight :: Double
                                     } 
-
+                        -- TODO: fix spelling below
                       | Continous   { name :: String -- TODO: Add step values
                                     , ignored :: Bool
                                     , tcm :: CostMatrix
                                     , alphabet :: Alphabet
+                                    , weight :: Double
                                     }
  
                       | Custom      { name :: String
@@ -89,6 +94,7 @@ data PhyloCharacter s = DNA         { name :: String -- The character name if it
                                     , tcm :: CostMatrix
                                     , ignored :: Bool
                                     , additive :: Bool
+                                    , weight :: Double
                                     } 
  
                       | AminoAcid   { name :: String
@@ -98,6 +104,7 @@ data PhyloCharacter s = DNA         { name :: String -- The character name if it
                                     , stateNames :: Vector String
                                     , tcm :: CostMatrix
                                     , ignored :: Bool
+                                    , weight :: Double
                                     }
 
                        deriving (Show, Eq, Generic)
@@ -105,6 +112,11 @@ data PhyloCharacter s = DNA         { name :: String -- The character name if it
                         -- TODO: add a structure to track the root position for every character where it was optimized
                         -- TODO: reduce number of constructors
                         -- TODO: think about how this may change over time to track optimization type
+                        -- TODO: make sure character names track with file name (parser?)
+
+prependName    n x = x { name     = n <> ":" <> name x }
+updateAlphabet a x = x { alphabet = a }
+updateTcm      t x = x { tcm      = t }
 
 -- | A cost matrix is just a matrix of floats
 type CostMatrix = Matrix Double
