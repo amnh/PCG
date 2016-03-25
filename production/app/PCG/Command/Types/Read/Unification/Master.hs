@@ -36,7 +36,7 @@ import Data.BitVector (BitVector)
 import qualified Data.HashMap.Lazy as HM
 import Data.IntMap (elems)
 import qualified Data.IntMap as IM (foldWithKey, assocs, filter)
-import qualified Data.List as L ((\\), (++), isPrefixOf)
+import qualified Data.List as L ((\\), (++), isPrefixOf, nub)
 import Data.List.NonEmpty (fromList)
 import Data.Map (keys, adjust, insert, foldWithKey)
 import Data.Monoid
@@ -60,15 +60,14 @@ data FracturedParseResult
 -- accumulates in metadata, then topological structure, then sequences 
 -- before encoding and outputting
 masterUnify :: [FracturedParseResult] -> Either UnificationError Graph
---masterUnify inResults | trace ("initial input " P.++ show (map parsedMetas inResults)) False = undefined
+masterUnify inResults | trace ("initial input " P.++ show (map parsedMetas inResults)) False = undefined
 masterUnify inResults = 
     let
-      --graphMetadata = Graph $ map (enforceGraph . mergeParsedMetadata . parsedMetas) inResults
       firstTopo = foldr (mergeParsedGraphs . parsedTrees) (Right mempty) inResults
       withMetadata = --trace ("initial graph " P.++ show firstTopo)
                     enforceGraph firstTopo $ map (mergeParsedMetadata . parsedMetas) inResults
       withSeqs = --trace ("graph with meatadata " P.++ show withMetadata)
-                  foldr (mergeParsedChars . parsedChars) withMetadata inResults
+                  verifyTaxaSeqs $ foldr (mergeParsedChars . parsedChars) withMetadata inResults
       encoded = --trace ("graph with seqs " P.++ show withSeqs)
                 encodeGraph withSeqs
     in encoded
@@ -114,33 +113,38 @@ mergeParsedMetadata :: [Vector CharInfo] -> Vector CharInfo
 --mergeParsedMetadata inMeta | trace ("merge metadata " P.++ show inMeta) False = undefined
 mergeParsedMetadata inMeta = foldr (flip (++)) mempty inMeta
 
--- | Verify that between a graph and parsed sequences, the taxa names match
-checkTaxaSeqs :: Graph -> [TreeSeqs] -> ([String], [String])
---checkTaxaSeqs (Graph g) inSeqs | trace ("taxa seqs on match check " P.++ show inSeqs) False = undefined
-checkTaxaSeqs (Graph g) inSeqs = (graphNames L.\\ seqNames, seqNames L.\\ graphNames)
-    where
-      nonInternal = filter (not . L.isPrefixOf "HTU")
-      graphNames = nonInternal $ elems $ foldr1 (<>) (map nodeNames g)
-      seqNames = foldr (\s acc -> acc L.++ keys s) mempty inSeqs
+-- | Verify that after all the parsed sequences have been merged in, taxa names match
+verifyTaxaSeqs :: Either UnificationError Graph -> Either UnificationError Graph
+verifyTaxaSeqs inGraph = eitherAction inGraph id verifySeqs
+  where
+    verifySeqs :: Graph -> Either UnificationError Graph
+    verifySeqs (Graph g)
+      | doesMatch = Right (Graph g)
+      | otherwise = Left (UnificationError (pure (NonMatchingTaxaSeqs (fst checkTuple) (snd checkTuple))))
+      where
+        nonInternal = filter (not . L.isPrefixOf "HTU")
+        graphNames = nonInternal $ elems $ foldr1 (<>) (map nodeNames g)
+        seqNames = L.nub $ foldr (\g acc -> acc L.++ HM.keys (parsedSeqs g)) mempty g
+        checkTuple = (graphNames L.\\ seqNames, seqNames L.\\ graphNames)
+        doesMatch = null (fst checkTuple) && null (snd checkTuple)
       
 
 -- | Specialized merge to join sequences to an existing graph
 mergeParsedChars :: [TreeSeqs] -> Either UnificationError Graph -> Either UnificationError Graph
-mergeParsedChars inSeqs carry = eitherAction carry id addEncodeSeqs
+mergeParsedChars inSeqs carry = eitherAction carry id addSeqs
     where
-      addEncodeSeqs :: Graph -> Either UnificationError Graph
+      addSeqs :: Graph -> Either UnificationError Graph
       --addEncodeSeqs g@(Graph accumDags) | trace ("addEncodeSeqs on accumDags " P.++ show accumDags) False = undefined
-      addEncodeSeqs g@(Graph accumDags)
+      addSeqs g@(Graph accumDags)
         | null inSeqs = Right g
-        | doesMatch = 
-          let 
-            curSeqLen = map (getLen . parsedSeqs) accumDags
-            outSeqs = zipWith (\s l -> foldWithKey (addIn l) mempty s) inSeqs curSeqLen
-          in Right (Graph $ zipWith (\d s -> d {parsedSeqs = s}) accumDags outSeqs)
-        | otherwise = Left (UnificationError (pure (NonMatchingTaxaSeqs ({-fromList $-} fst matchCheck) ({-fromList $-} snd matchCheck))))
+        | otherwise = Right (Graph $ zipWith (\d s -> d {parsedSeqs = s}) accumDags outSeqs)
+        -- otherwise = Left (UnificationError (pure (NonMatchingTaxaSeqs ({-fromList $-} fst matchCheck) ({-fromList $-} snd matchCheck))))
         where
-          matchCheck = checkTaxaSeqs g inSeqs
-          doesMatch = null (fst matchCheck) && null (snd matchCheck)
+        --  matchCheck = checkTaxaSeqs g inSeqs
+        --  doesMatch = null (fst matchCheck) && null (snd matchCheck)
+
+          curSeqLen = map (getLen . parsedSeqs) accumDags
+          outSeqs = zipWith (\s l -> foldWithKey (addIn l) mempty s) inSeqs curSeqLen
 
           addIn :: Int -> String -> ParsedSequences -> HM.HashMap String ParsedSequences -> HM.HashMap String ParsedSequences
           addIn curLen k v acc = if k `elem` (HM.keys acc) then HM.adjust (++ v) k acc

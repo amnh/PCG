@@ -58,6 +58,7 @@ singletonDAG topo =
 
 -- | Conversion from an indexed tree to a TopoDAG, starting at the given node
 nodeToTopo :: DAG -> NodeInfo -> TG.TopoTree
+--nodeToTopo topDAG topNode | trace ("node to topo " ++ show topDAG) False = undefined
 nodeToTopo topDAG topNode = TG.TopoTree (internalFromTopo topDAG topNode) (characters topDAG)
   where
     internalFromTopo :: DAG -> NodeInfo -> TN.TopoNode BitVector
