@@ -468,9 +468,16 @@ library
   
   hs-source-dirs:      lib, ffi
 
+  -- We must provide the full relative path to every C file that the project depends on.
   c-sources:
     ffi/Analysis/Parsimony/Binary/SequentialAlign/seqAlignForHaskell.c
 
+  -- Here we list all directories that contain C header files that the FFI tools will need
+  -- to locate when preprocessing the C files. Without listing the directories containing
+  -- the C header files here, the FFI preprocession (hsc2hs, c2hs,etc.) will fail to locate
+  -- the requisite files.
+  -- Note also, that the parent directory of the nessicary C header files must be specified.
+  -- The preprocesser will not recursively look in subdirectories for C header files!
   include-dirs:
     ffi/Analysis/Parsimony/Binary/SequentialAlign
       
