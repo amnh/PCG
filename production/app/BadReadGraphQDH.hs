@@ -1,23 +1,27 @@
 module Main where
 
-import Analysis.Parsimony.Binary.Optimization
-import Analysis.GenericFitch hiding (allOptimization)
+import Analysis.Parsimony.Binary.Optimization (allOptimization)
+--import Analysis.GenericFitch hiding (allOptimization)
 import Bio.Phylogeny.Graph
 import Bio.Phylogeny.Graph.Utilities
 import Bio.Phylogeny.Graph.Output
+import qualified Bio.Phylogeny.PhyloCharacter as Char
+import           Bio.Sequence.Coded
 import Bio.Phylogeny.Tree.Node
 import Control.Monad                (sequence_, liftM2)
-import Data.Functor                 ((<$))
+import Data.Functor                 ((<$),($>))
 import Data.Vector                  (singleton)
 import qualified Data.IntMap as IM
 import qualified Data.Vector as V
+import Debug.Trace
 import File.Format.Fasta
 import qualified File.Format.Newick as N
 import File.Format.Newick.Converter
+import PCG.Command.Types.Report.Metadata
 import Text.Megaparsec
-import Bio.Sequence.Coded
 
-main = print =<< madness
+
+main = print =<< (madness <* madMetadata)
 
 badReadGraph :: FilePath -> FilePath -> IO DAG
 badReadGraph fastaPath newickPath = do
@@ -31,10 +35,18 @@ badReadGraph fastaPath newickPath = do
   where
     coerceFasta = fmap (singleton . Just)
 
-madRead = badReadGraph "../../TestDat/fakeArtmor.fas" "../../TestDat/artmor.tre"
+madness :: IO Double
+madness = rootCost . allOptimization 1 <$> madRead
+
+madRead :: IO DAG
+madRead = forceUnaligned <$> badReadGraph "../../TestDat/fakeArtmor.fas" "../../TestDat/artmor.tre"
 --badNodes = (V.filter (\n -> isLeaf n && null (encoded n))) <$> (nodes <$> madRead)
 --badNames = (V.map (\n -> (IM.! (code n)) <$> (nodeNames <$> madRead))) <$> badNodes
-madness = rootCost . allOptimization 1 <$> madRead
+
+forceUnaligned :: DAG -> DAG
+forceUnaligned inDAG = inDAG {characters = V.map (\c -> c {Char.aligned = False}) (characters inDAG)}
+
+madMetadata = outPutMetadata "TestArtmorMetadata.csv" =<< ((Graph . pure) <$> madRead)
 outputMad = outPutDot "TestArtmor.dot" =<< ((Graph . pure) <$> madRead) 
 checkOuts = liftM2 (V.zipWith (\n e -> not (isLeaf n) && null (outNodes e))) (nodes <$> madRead) (edges <$> madRead)
 bigShow = showSeqs . allOptimization 1 <$> madRead

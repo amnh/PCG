@@ -21,8 +21,9 @@ import Data.Foldable (foldr)
 import Bio.Phylogeny.Graph
 import Bio.Phylogeny.PhyloCharacter
 
+-- TODO: use spreadsheet library for tabular output files
 -- | Wrapper function to output a metadata csv
-outPutMetadata :: String -> Graph -> IO ()
+outPutMetadata :: FilePath -> Graph -> IO ()
 outPutMetadata fileName inGraph = writeFile fileName (toMetaCSV inGraph)
     where
         toMetaCSV :: Graph -> String
@@ -43,7 +44,7 @@ outPutMetadata fileName inGraph = writeFile fileName (toMetaCSV inGraph)
                     (Qualitative n _ a s alph _ add i w)-> "Qualitative" ++ ", " ++ n ++ ", " ++ show a ++ ", " ++ show add ++ ", " ++ foldInfo s ++ ", " ++ foldInfo alph ++ ", " ++ show i ++ ", " ++ show w
                     (Continous n i _ alph w)            -> "Continuous" ++ ", " ++ n ++ ",,,, " ++ foldInfo alph ++ ", " ++ show i ++ ", " ++ show w
                     (Custom n a _ alph s _ i add w)     -> "Custom" ++ ", " ++ n ++ ", " ++ show a ++ ", " ++ show add ++ ", " ++ foldInfo s ++ ", " ++ foldInfo alph ++ ", " ++ show i ++ ", " ++ show w
-                    (AminoAcid n a _ alph s _ i w)      -> "AminoAcid" ++ ", " ++ n ++ ", " ++ show a ++ ",, " ++ foldInfo s ++ ", " ++ foldInfo alph ++ ", " ++ show i ++ ", " ++ show w
+                    (AminoAcid n a _ alph s _ i w)      -> "Amino Acid" ++ ", " ++ n ++ ", " ++ show a ++ ",, " ++ foldInfo s ++ ", " ++ foldInfo alph ++ ", " ++ show i ++ ", " ++ show w
 
                 foldInfo :: (Foldable t, Show a) => t a -> String  
                 foldInfo = foldl (\acc val -> acc ++ " " ++ show val) mempty 
