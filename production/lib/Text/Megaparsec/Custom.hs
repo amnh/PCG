@@ -29,6 +29,7 @@ module Text.Megaparsec.Custom
  ) where
 
 import Data.Char             (isSpace)
+import Data.Functor          (($>))
 import Data.List.NonEmpty    (NonEmpty,fromList)
 import Text.Megaparsec
 import Text.Megaparsec.Prim  (MonadParsec)
