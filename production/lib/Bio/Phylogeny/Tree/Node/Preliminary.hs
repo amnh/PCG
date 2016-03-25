@@ -22,11 +22,11 @@ import Data.Vector
 -- Associated data: aligned preliminary, temporary, and cost
 class PreliminaryNode n s | n -> s where
     preliminary      :: n -> Vector s
-    setPreliminary   ::Vector s -> n -> n
-    preliminaryAlign :: n ->Vector s
-    setAlign         ::Vector s -> n -> n
-    temporary        :: n ->Vector s
-    setTemporary     ::Vector s -> n -> n
+    setPreliminary   :: Vector s -> n -> n
+    preliminaryAlign :: n -> Vector s
+    setAlign         :: Vector s -> n -> n
+    temporary        :: n -> Vector s
+    setTemporary     :: Vector s -> n -> n
     localCost        :: n -> Double
     setLocalCost     :: Double -> n -> n
     totalCost        :: n -> Double
