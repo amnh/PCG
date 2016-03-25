@@ -41,9 +41,9 @@ forceUnaligned inDAG = inDAG {characters = V.map (\c -> c {Char.aligned = False}
 madRead = badReadGraph "../../TestDat/fakeArtmor.fas" "../../TestDat/artmor.tre"
 --badNodes = (V.filter (\n -> isLeaf n && null (encoded n))) <$> (nodes <$> madRead)
 --badNames = (V.map (\n -> (IM.! (code n)) <$> (nodeNames <$> madRead))) <$> badNodes
-madness = rootCost . allOptimization 1 <$> madRead
+madness = allOptimization 1 <$> madRead
 outputMad = outPutDot "TestArtmor.dot" =<< ((Graph . pure) <$> madRead) 
-madNewick = outPutNewick "TestArtmorNewick.new" =<< ((Graph . pure) <$> madRead)
+madNewick = outPutNewick "TestArtmorNewick.new" =<< ((Graph . pure) <$> madness)
 madMatrix = outPutMatrix "TestArtmorCharacterMat.csv" =<< ((Graph . pure) <$> madRead)
 madMetadata = outPutMetadata "TestArtmorMetadata.csv" =<< ((Graph . pure) <$> madRead)
 checkOuts = liftM2 (V.zipWith (\n e -> not (isLeaf n) && null (outNodes e))) (nodes <$> madRead) (edges <$> madRead)

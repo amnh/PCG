@@ -2,13 +2,16 @@
 
 module File.Format.Fasta.Translator where
 
-import           Data.Map                   hiding (foldr,fromList,partition)
+import           Data.Map                   hiding (foldr,fromList,partition, (!))
+import           Data.Key                          ((!), lookup)
 import qualified Data.Map                   as M   (fromList)
 import qualified Data.Vector                as V   (fromList)
 import           File.Format.Fasta.Internal
 import           File.Format.Fasta.Parser
 import           Text.Parsec
 --import           Text.Parsec.Custom                (fails)
+
+import Debug.Trace
 
 data FastaSequenceType = DNA | RNA | AminoAcid deriving (Bounded,Eq,Enum,Read,Show)
 
@@ -24,11 +27,13 @@ validateInterpretedStream :: FastaSequenceType -> FastaParseResult -> ParsecT s 
 validateInterpretedStream = undefined
 
 seqCharMapping :: FastaSequenceType -> String -> CharacterSequence 
+--seqCharMapping seqType | trace ("seqCharMapping " ++ show seqType) False = undefined
 seqCharMapping seqType = V.fromList . fmap (f seqType)
   where 
+    expandOrId x m = fromMaybe x $ x `lookup` m
     f AminoAcid = pure . pure
-    f DNA       = (!) iupacNucleotideSubstitutions
-    f RNA       = (!) iupacRNASubstitutions 
+    f DNA       = expandOrId iupacNucleotideSubstitutions
+    f RNA       = expandOrId iupacRNASubstitutions 
 
 iupacNucleotideSubstitutions :: Map Char [String]
 iupacNucleotideSubstitutions = 
