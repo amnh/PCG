@@ -75,10 +75,14 @@ executable pcg
                        -fwarn-unused-matches
   
   hs-source-dirs:      app, lib, ffi
-  
+
+  include-dirs:
+    ffi/Analysis/Parsimony/Binary/SequentialAlign
+    
   other-modules:       Analysis.DirectOptimization.Naive
                        Analysis.DirectOptimization.ImpliedAlign
                        Analysis.GenericFitch
+                       Analysis.Parsimony.Binary.SequentialAlign.SeqAlignFFI
                        Bio.Phylogeny.Forest
                        Bio.Phylogeny.Forest.Class
                        Bio.Phylogeny.Graph
@@ -213,7 +217,11 @@ executable brg
                        -fwarn-unused-matches
   
   hs-source-dirs:      app, lib, ffi
-  
+
+  include-dirs:
+    ffi/Analysis/Parsimony/Binary/SequentialAlign
+
+    
   other-modules:       Analysis.DirectOptimization.ImpliedAlign
                        Analysis.DirectOptimization.Naive
                        Analysis.Parsimony.Binary.DirectOptimization
@@ -296,7 +304,9 @@ executable brg
                        PCG.Command.Types.Report.Newick
 
 executable qdh
+           
   main-is:             BadReadGraphQDH.hs
+
 
   build-depends:       base                 >=4.8 && < 4.9
                      , bv                   -any
@@ -342,10 +352,14 @@ executable qdh
 
   c-sources:
     ffi/Analysis/Parsimony/Binary/SequentialAlign/seqAlignForHaskell.c
-  
+
+  include-dirs:
+    ffi/Analysis/Parsimony/Binary/SequentialAlign
+      
   other-modules:       Analysis.DirectOptimization.Naive
                        Analysis.DirectOptimization.ImpliedAlign
                        Analysis.GenericFitch
+                       Analysis.Parsimony.Binary.SequentialAlign.SeqAlignFFI
                        Bio.Phylogeny.Forest
                        Bio.Phylogeny.Forest.Class
                        Bio.Phylogeny.Graph
@@ -457,7 +471,20 @@ library
                        -fwarn-unused-matches
   
   hs-source-dirs:      lib, ffi
-  
+
+  -- We must provide the full relative path to every C file that the project depends on.
+  c-sources:
+    ffi/Analysis/Parsimony/Binary/SequentialAlign/seqAlignForHaskell.c
+
+  -- Here we list all directories that contain C header files that the FFI tools will need
+  -- to locate when preprocessing the C files. Without listing the directories containing
+  -- the C header files here, the FFI preprocession (hsc2hs, c2hs,etc.) will fail to locate
+  -- the requisite files.
+  -- Note also, that the parent directory of the nessicary C header files must be specified.
+  -- The preprocesser will not recursively look in subdirectories for C header files!
+  include-dirs:
+    ffi/Analysis/Parsimony/Binary/SequentialAlign
+      
   -- Modules exported by the library.
   exposed-modules:
                        Analysis.DirectOptimization.ImpliedAlign
