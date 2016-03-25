@@ -16,10 +16,10 @@ install-stack:
 setup: phylocomgraph.cabal stack.yaml
 	stack setup
 
-rebuild: phylocomgraph.cabal stack.yaml
+rebuild: ffi-code-cleaning phylocomgraph.cabal stack.yaml
 	stack build --haddock --test
 
-ffi-submakes: ffi/Analysis/Parsimony/Binary/SequentialAlign/makefile
+ffi-code-cleaning: ffi/Analysis/Parsimony/Binary/SequentialAlign/makefile
 	$(MAKE) -C ffi/Analysis/Parsimony/Binary/SequentialAlign
 
 clean: phylocomgraph.cabal stack.yaml
