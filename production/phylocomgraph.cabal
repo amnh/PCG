@@ -75,10 +75,14 @@ executable pcg
                        -fwarn-unused-matches
   
   hs-source-dirs:      app, lib, ffi
-  
+
+  include-dirs:
+    ffi/Analysis/Parsimony/Binary/SequentialAlign
+    
   other-modules:       Analysis.DirectOptimization.Naive
                        Analysis.DirectOptimization.ImpliedAlign
                        Analysis.GenericFitch
+                       Analysis.Parsimony.Binary.SequentialAlign.SeqAlignFFI
                        Bio.Phylogeny.Forest
                        Bio.Phylogeny.Forest.Class
                        Bio.Phylogeny.Graph
@@ -213,7 +217,11 @@ executable brg
                        -fwarn-unused-matches
   
   hs-source-dirs:      app, lib, ffi
-  
+
+  include-dirs:
+    ffi/Analysis/Parsimony/Binary/SequentialAlign
+
+    
   other-modules:       Analysis.DirectOptimization.ImpliedAlign
                        Analysis.DirectOptimization.Naive
                        Analysis.Parsimony.Binary.DirectOptimization
@@ -342,10 +350,14 @@ executable qdh
 
   c-sources:
     ffi/Analysis/Parsimony/Binary/SequentialAlign/seqAlignForHaskell.c
-  
+
+  include-dirs:
+    ffi/Analysis/Parsimony/Binary/SequentialAlign
+      
   other-modules:       Analysis.DirectOptimization.Naive
                        Analysis.DirectOptimization.ImpliedAlign
                        Analysis.GenericFitch
+                       Analysis.Parsimony.Binary.SequentialAlign.SeqAlignFFI
                        Bio.Phylogeny.Forest
                        Bio.Phylogeny.Forest.Class
                        Bio.Phylogeny.Graph
@@ -457,7 +469,13 @@ library
                        -fwarn-unused-matches
   
   hs-source-dirs:      lib, ffi
-  
+
+  c-sources:
+    ffi/Analysis/Parsimony/Binary/SequentialAlign/seqAlignForHaskell.c
+
+  include-dirs:
+    ffi/Analysis/Parsimony/Binary/SequentialAlign
+      
   -- Modules exported by the library.
   exposed-modules:
                        Analysis.DirectOptimization.ImpliedAlign
