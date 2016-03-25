@@ -303,6 +303,10 @@ executable brg
                        PCG.Command.Types.Report.Metadata
                        PCG.Command.Types.Report.Newick
 
+executable qdh
+           
+  main-is:             BadReadGraphQDH.hs
+
 
   build-depends:       base                 >=4.8 && < 4.9
                      , bv                   -any
