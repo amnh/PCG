@@ -19,12 +19,13 @@ import           Bio.Phylogeny.PhyloCharacter
 import           Bio.Sequence.Coded
 import           Bio.Sequence.Parsed
 import           Control.Monad
-import           Data.BitVector        hiding (foldr, replicate, join, concat, not)
+import           Data.Bits
+import           Data.BitVector               (BitVector,fromBits)
 import           Data.Int
 import           Data.List             hiding (zipWith)
 import qualified Data.Map.Lazy         as M
 import           Data.Maybe
-import           Data.Matrix.NotStupid              (matrix)
+import           Data.Matrix.NotStupid        (matrix)
 import           Data.Vector                  (Vector, ifoldr, zipWith, cons)
 import qualified Data.Vector           as V   
 import           Prelude               hiding (zipWith)

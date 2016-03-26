@@ -15,18 +15,15 @@
 
 module Analysis.Parsimony.Binary.Fitch where
 
-import Prelude hiding (foldr)
-import qualified Prelude as P (foldr)
-import Data.Bits
-import Data.Vector hiding (length)
 import Analysis.Parsimony.Binary.Internal
 import Bio.Phylogeny.PhyloCharacter
+import Data.Bits
 
 -- | Preorder Fitch operation on bit-packed sequences
 -- Output five-tuple is the preliminary assignment, the aligned preliminary assignment
 -- the temporary storage bit, and the local cost
 preorderFitchBit :: SeqConstraint s b => Double -> s -> s -> PhyloCharacter s -> (s, s, Double)
-preorderFitchBit weight lbit rbit inChar =
+preorderFitchBit weightValue lbit rbit inChar =
     let
         alphLen = length $ alphabet inChar
         notOr = complement $ lbit .&. rbit
@@ -37,7 +34,7 @@ preorderFitchBit weight lbit rbit inChar =
         maskF = (fst $ fitchMasks inChar) .&. finalF
         myCost = fromIntegral $ div (popCount maskF) alphLen
         weightCost = --trace ("Cost of bit ops " ++ show myCost) 
-                        weight * myCost
+                        weightValue * myCost
         outbit = (maskF .&. union) .|. (lbit .&. rbit)
     in (outbit, finalF, weightCost)
 
@@ -51,7 +48,7 @@ blockShiftAndFold sideMode foldMode alphLen inbits initVal
     | sideMode == "R" && foldMode == "|" = f (.|.) shiftR
     | otherwise = error "incorrect input for block shift and fold"
     where
-      f g dir = P.foldr (\s acc -> g acc (dir inbits s)) initVal [1 .. alphLen - 1]
+      f g dir = foldr (\s acc -> g acc (dir inbits s)) initVal [1 .. alphLen - 1]
 
 -- | Postorder Fitch operation on bit-packed sequences
 -- returns the final assignment sequence

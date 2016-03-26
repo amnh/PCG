@@ -15,11 +15,6 @@
 
 module Analysis.Parsimony.Binary.Internal where
 
-import Data.Matrix.NotStupid (Matrix, nrows, ncols, setElem)
-import Data.Bits
-import Data.Vector (Vector, length, filter, ifoldr)
-import Data.Maybe
-
 import Bio.Phylogeny.Tree.Node.Preliminary
 import Bio.Phylogeny.Tree.Node.Encoded
 import Bio.Phylogeny.Tree.Node.Final
@@ -28,8 +23,11 @@ import Bio.Phylogeny.Tree.Referential
 import Bio.Phylogeny.Tree.Binary
 import Bio.Phylogeny.Network.Subsettable
 import Bio.Sequence.Coded
-import Bio.Phylogeny.PhyloCharacter
 import Bio.Phylogeny.Tree.CharacterAware
+import Data.Bits
+import Data.Matrix.NotStupid (Matrix, nrows, ncols, setElem)
+import Data.Maybe
+import Data.Vector           (Vector)
 
 
 type TreeConstraint t n s b = (Network t n, NodeConstraint n s b, ReferentialTree t n, BinaryTree t n, Show t, SubsettableNetwork t n, CharacterTree t s)
