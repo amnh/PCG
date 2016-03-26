@@ -1,14 +1,10 @@
 {-# LANGUAGE FlexibleContexts #-}
 module File.Format.TNT.Command.CCode where
 
-import           Data.IntMap              (IntMap,insertWith)
-import qualified Data.IntMap        as IM (lookup)
-import           Data.Maybe               (fromMaybe)
-import           Data.Vector              (Vector,generate)
-import           File.Format.TNT.Internal
-import           Text.Megaparsec
-import           Text.Megaparsec.Custom   (nonEmpty)
-import           Text.Megaparsec.Prim     (MonadParsec)
+import File.Format.TNT.Internal
+import Text.Megaparsec
+import Text.Megaparsec.Custom   (nonEmpty)
+import Text.Megaparsec.Prim     (MonadParsec)
 
 -- | Parses a CCODE command that consists of:
 --

@@ -3,17 +3,15 @@ module File.Format.TNT.Internal where
 
 import           Control.Monad            ((<=<))
 import           Data.Bits
-import           Data.Char                (isAlpha,isLower,isSpace,isUpper,toLower,toUpper)
+import           Data.Char                (isAlpha,isLower,isUpper,toLower,toUpper)
 import           Data.Functor             (($>))
 import           Data.Foldable            (toList)
 import           Data.Key                 ((!),lookup)
 import           Data.List                (inits)
 import           Data.List.NonEmpty       (NonEmpty)
-import           Data.List.Utility
 import           Data.Matrix.NotStupid    (Matrix)
 import           Data.Map                 (Map,assocs,insert,keys,union )
 import qualified Data.Map            as M (fromList)
-import           Data.Maybe               (catMaybes)
 import           Data.Tuple               (swap)
 import           Data.Vector              (Vector)
 import qualified Data.Vector         as V (fromList)

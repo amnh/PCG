@@ -1,6 +1,6 @@
 -----------------------------------------------------------------------------
 -- |
--- Module      :  Bio.Phylogeny.Graph.Random
+-- Module      :  Bio.Phylogeny.Graph.Topological
 -- Copyright   :  (c) 2015-2015 Ward Wheeler
 -- License     :  BSD-style
 --
@@ -29,7 +29,6 @@ import Bio.Sequence.Parsed
 import Bio.Phylogeny.Graph.Data
 import Data.BitVector (BitVector)
 import Data.Vector    (Vector)
-import qualified Data.Vector as V (filter)
 
 maxDepth, minDepth, maxChildren :: Int
 maxDepth = 3
@@ -69,7 +68,7 @@ instance Arbitrary TopoTree where
 -- | Function to recode characters in a topoTree
 -- allows for coherent joining of trees over different alphabets
 recodeTopoChars :: TopoTree -> TopoTree -> (TopoTree, TopoTree)
-recodeTopoChars t1 t2 = undefined
+recodeTopoChars _ _ = undefined
 
 internalRandom :: Int -> Gen (TopoNode BitVector)
 --internalRandom depth | trace ("internal random generation " ++ show depth) False = undefined

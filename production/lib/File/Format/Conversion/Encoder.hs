@@ -29,8 +29,6 @@ import           Data.Vector                  (Vector, ifoldr, zipWith, cons)
 import qualified Data.Vector           as V   
 import           Prelude               hiding (zipWith)
 
-import Debug.Trace
-
 type Encoded = EncodedSeq BitVector
 
 dnaAlph, rnaAlph, aaAlph :: [String]
@@ -78,8 +76,8 @@ makeOneInfo inAlph (isAligned, seqLen)
             masks = generateMasks (length inAlph) seqLen isAligned
 
             generateMasks :: Int -> Int -> Bool -> (Encoded, Encoded)
-            generateMasks alphLen sLen isAligned 
-                | isAligned = 
+            generateMasks alphLen sLen alignedStatus 
+                | alignedStatus = 
                     let 
                         periodic = fromBits $ concat (replicate sLen unit)
                         occupancy = fromBits $ replicate (alphLen * sLen) True
@@ -125,23 +123,23 @@ chunksOf n xs
 -- | Function to encode into minimal bits
 encodeMinimal :: (Bits b, Num b, Show b) => ParsedSeq -> Alphabet -> EncodedSeq b
 --encodeMinimal strSeq alphabet | trace ("encodeMinimal over alphabet " ++ show alphabet ++ " of seq " ++ show strSeq) False = undefined
-encodeMinimal strSeq alphabet = 
+encodeMinimal strSeq symbolAlphabet = 
     let 
         z = zeroBits
         bigBit = shift (bit (alphLen * V.length strSeq - 1)) 1
-        alphLen = length alphabet
-        foldAmbig = foldr (\c acc -> setSingleElem c acc alphabet)
+        alphLen = length symbolAlphabet
+        foldAmbig = foldr (\c acc -> setSingleElem c acc symbolAlphabet)
         groupEncode = ifoldr (\i ambig acc -> shift (foldAmbig z ambig) (i * alphLen) .|. acc) z
         coded = case bitSizeMaybe z of
                 Nothing -> V.singleton $ ifoldr (\i ambig acc -> shift (foldAmbig bigBit ambig) (i * alphLen) .|. acc) bigBit strSeq
-                Just width -> let groupParsed = chunksOf (width `div` alphLen) strSeq
+                Just bitWidth -> let groupParsed = chunksOf (bitWidth `div` alphLen) strSeq
                               in V.map groupEncode groupParsed
     in if null coded then Nothing else Just coded
 
 -- | Function to encode over maximal bits
 encodeMaximal :: Bits b => ParsedSeq -> Alphabet -> EncodedSeq b
-encodeMaximal strSeq alphabet = 
-    let coded = V.map (foldr (\c acc -> setSingleElem c acc alphabet) zeroBits) strSeq
+encodeMaximal strSeq symbolAlphabet = 
+    let coded = V.map (foldr (\c acc -> setSingleElem c acc symbolAlphabet) zeroBits) strSeq
     in if null coded then Nothing else Just coded
 
 -- | Function to encode given metadata information
@@ -160,7 +158,7 @@ encodeOverMetadata strSeq metadata = encodeMinimal strSeq (alphabet metadata)
 
 -- Function to set a single element
 setSingleElem :: Bits b => String -> b -> Alphabet -> b
-setSingleElem char orig alphabet = case elemIndex char alphabet of
+setSingleElem char orig symbolAlphabet = case elemIndex char symbolAlphabet of
     Nothing -> orig
     Just pos -> setBit orig pos  
 

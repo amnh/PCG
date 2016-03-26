@@ -13,14 +13,14 @@ module PCG.Command.Types.Read.Internal
   , eitherTValidation
   ) where
 
-import Control.Monad      (liftM,liftM2)
+import Control.Monad              (liftM2)
 import Control.Monad.IO.Class
 import Control.Monad.Trans.Either
-import Data.Either.Custom (eitherTValidation)
+import Data.Either.Custom         (eitherTValidation)
 import Data.Int
-import Data.Text.Lazy     (Text)
-import Data.Text.Lazy.IO  (readFile)
-import Prelude     hiding (readFile)
+import Data.Text.Lazy             (Text)
+import Data.Text.Lazy.IO          (readFile)
+import Prelude             hiding (readFile)
 import System.Directory
 import System.FilePath.Glob
 

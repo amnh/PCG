@@ -1,22 +1,16 @@
 {-# LANGUAGE FlexibleContexts #-}
 module File.Format.TNT.Command.CNames where
 
-import           Data.Bifunctor           (second)
-import           Data.Char                (isSpace)
 import           Data.Foldable            (toList)
 import           Data.Functor             (($>))
-import           Data.IntMap              (IntMap,singleton,insertWith)
-import qualified Data.IntMap        as IM (fromList)
-import           Data.List                (isSuffixOf,intersperse,sort,sortBy)
-import           Data.List.NonEmpty       (NonEmpty)
-import qualified Data.List.NonEmpty as NE (filter,fromList,length)
+import           Data.IntMap              (insertWith)
+import           Data.List                (sort,sortBy)
+import qualified Data.List.NonEmpty as NE (fromList)
 import           Data.List.Utility
-import           Data.Maybe               (catMaybes)
 import           Data.Ord                 (comparing)
 import           File.Format.TNT.Internal
 import           Text.Megaparsec
 import           Text.Megaparsec.Custom
-import           Text.Megaparsec.Lexer    (integer,number)
 import           Text.Megaparsec.Prim     (MonadParsec)
 
 -- | Parses an CNAMES command. Correctly validates that there is no
@@ -45,6 +39,7 @@ duplicateIndexMessages cnames = duplicateIndexErrors
         mapBuild x = insertWith f (sequenceIndex x) [x]
           where
             f [new] old = new:old
+            f _     old = old -- TODO: Check this reasoning in "catch-all" case
     duplicateIndexErrors = toList $ fmap getErrorMessage duplicateIndicies
       where
         getErrorMessage xs = unwords

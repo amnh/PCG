@@ -18,7 +18,6 @@
 module Bio.Phylogeny.Graph.Data (Graph(..), DAG(..), EdgeSet(..), EdgeInfo(..), Identifier, CharInfo, NodeInfo) where
 
 import Data.Vector 
-import Data.Int
 import Data.BitVector
 import Data.IntSet
 import Data.IntMap

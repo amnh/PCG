@@ -16,11 +16,10 @@
 
 module Bio.Sequence.Parsed (AmbiguityGroup, ParsedSeq, TreeSeqs, Alphabet, ParsedSequences) where
 
-import Prelude hiding ((++))
-import Data.Monoid
-import Data.Vector (Vector, fromList, cons, (++))
-import Data.Map.Lazy (Map, intersectionWith, difference, unions, (\\), empty)
-import Test.Tasty.QuickCheck
+--import Data.Monoid
+import Data.Vector   (Vector)
+import Data.Map      (Map)
+--import Data.Map.Lazy (Map, intersectionWith, unions, (\\))
 
 -- TODO do ambiguity group types: more aliasing
 -- TODO Add a definition for ParsedSeq for single characters
@@ -39,11 +38,12 @@ type Alphabet = [String]
 
 --instance Arbitrary ParsedSeq where
 --    arbitrary = fromList <$> listOf (listOf (arbitrary :: Gen String))
-
+{-
 rectifySeqs :: TreeSeqs -> TreeSeqs -> TreeSeqs
 rectifySeqs lhs rhs = 
     let
-        leftSide = intersectionWith (++) (lhs \\ rhs) rhs
-        rightSide = intersectionWith (++) (rhs \\ lhs) lhs
-        middle = intersectionWith (++) lhs rhs
+        leftSide = intersectionWith (<>) (lhs \\ rhs) rhs
+        rightSide = intersectionWith (<>) (rhs \\ lhs) lhs
+        middle = intersectionWith (<>) lhs rhs
     in unions [leftSide, middle, rightSide]
+-}

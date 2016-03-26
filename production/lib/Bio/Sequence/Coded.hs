@@ -1,6 +1,6 @@
 -----------------------------------------------------------------------------
 -- |
--- Module      :  Text.Megaparsec.Custom
+-- Module      :  Bio.Sequences.Coded
 -- Copyright   :  (c) 2015-2015 Ward Wheeler
 -- License     :  BSD-style
 --
@@ -18,12 +18,12 @@
 
 module Bio.Sequence.Coded (CodedSequence(..), EncodedSeq, EncodedSequences, CodedChar(..), encodeAll, unencodeMany) where
 
-import Prelude hiding (map, length, zipWith, null, head)
-import qualified Prelude as P (length, map)
+import Prelude hiding (map, zipWith, null, head)
 import Data.List (elemIndex)
 import Control.Applicative  (liftA2, liftA)
 import Control.Monad
-import Data.Vector    (map, length, zipWith, empty, null, Vector, head, (!), singleton, ifoldr, slice)
+import Data.Foldable
+import Data.Vector    (map, zipWith, empty, Vector, head, (!), singleton)
 import qualified Data.Vector as V (filter)
 import Data.Bits
 import Data.BitVector (BitVector, size)
@@ -72,7 +72,7 @@ instance Bits b => CodedSequence (EncodedSeq b) b where
 
 ----  = 
 --    let
---        alphWidth = P.length alphabet
+--        alphWidth = length alphabet
 --        bitWidth = bitSizeMaybe gapChar
 --        coded = map (\ambig -> foldr (\c acc -> setElemAt c acc alphabet) zeroBits ambig) strSeq
 --        regroup = case bitWidth of
@@ -99,7 +99,7 @@ setElemAt char orig alphabet
 unencodeOverAlphabet :: EncodedSeq BitVector -> Alphabet -> ParsedSeq 
 unencodeOverAlphabet encoded alph = 
     let 
-        alphLen = P.length alph
+        alphLen = length alph
         oneBit inBit = foldr (\i acc -> if testBit inBit i then alph !! (i `mod` alphLen) : acc else acc) mempty [0..size inBit]
         allBits = fmap oneBit <$> encoded
     in fromMaybe mempty allBits

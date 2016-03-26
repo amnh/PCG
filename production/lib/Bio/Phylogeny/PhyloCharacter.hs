@@ -1,6 +1,6 @@
 -----------------------------------------------------------------------------
 -- |
--- Module      :  Text.Megaparsec.Custom
+-- Module      :  Bio.Phylogeny.PhyloCharacter
 -- Copyright   :  (c) 2015-2015 Ward Wheeler
 -- License     :  BSD-style
 --
@@ -17,7 +17,7 @@
 
 module Bio.Phylogeny.PhyloCharacter where
 
-import Bio.Sequence.Coded
+--import Bio.Sequence.Coded
 import Bio.Sequence.Parsed
 import GHC.Generics
 import Data.Matrix.NotStupid (Matrix, fromList, (<|>))
@@ -114,8 +114,15 @@ data PhyloCharacter s = DNA         { name :: String -- The character name if it
                         -- TODO: think about how this may change over time to track optimization type
                         -- TODO: make sure character names track with file name (parser?)
 
+
+-- TODO: Replace calls with lenses!
+prependName :: String -> PhyloCharacter s -> PhyloCharacter s
 prependName    n x = x { name     = n <> ":" <> name x }
+
+updateAlphabet :: Alphabet -> PhyloCharacter s -> PhyloCharacter s
 updateAlphabet a x = x { alphabet = a }
+
+updateTcm :: CostMatrix -> PhyloCharacter s -> PhyloCharacter s
 updateTcm      t x = x { tcm      = t }
 
 -- | A cost matrix is just a matrix of floats
