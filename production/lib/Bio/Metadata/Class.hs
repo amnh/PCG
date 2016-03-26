@@ -95,7 +95,7 @@ makeEncodeInfo :: TreeSeqs -> Vector CharInfo
 makeEncodeInfo seqs = V.map makeOneInfo alphabets --allChecks
     where
         alphabets = developAlphabets seqs
-        allChecks = checkAlignLens seqs
+--        allChecks = checkAlignLens seqs
 
 -- | Internal function to create alphabets
 developAlphabets :: TreeSeqs -> Vector Alphabet

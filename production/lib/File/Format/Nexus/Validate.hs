@@ -18,13 +18,13 @@ module File.Format.Nexus.Validate where
 
 import           Data.Char              (isSpace,toLower)
 import           Data.Either            (lefts) 
-import           Data.Foldable          (toList)
-import           Data.List              (sort, sortBy)
+--import           Data.Foldable          (toList)
+import           Data.List              (sort,sortBy)
 import           Data.List.Split        (splitOn)
 import qualified Data.Map.Lazy     as M
-import           Data.Maybe             (fromJust, catMaybes, maybeToList)
+import           Data.Maybe             (catMaybes,fromJust)
 import           Data.Ord               (comparing)
-import qualified Data.Set          as S (fromList, union)
+--import qualified Data.Set          as S (fromList, union)
 import qualified Data.Vector       as V
 import           File.Format.Nexus.Data
 import           Safe
@@ -116,7 +116,8 @@ validateNexusParseResult (NexusParseResult inputSeqBlocks taxas treeSet assumpti
       -- Independent errors
         independentErrors  = catMaybes $ noTaxaError : multipleTaxaBlocks : seqMatrixDimsErrors ++ wrongDataTypeErrors-- sequenceBlockErrors
       -- types of independent errors
-        taxaDimsMissingError = taxaDimsMissing taxas inputSeqBlocks
+--        DEFINED BUT NOT USED: (taxaDimsMissingError)
+--        taxaDimsMissingError = taxaDimsMissing taxas inputSeqBlocks
         noTaxaError        = if null taxas && not (foldr (\x acc -> acc || areNewTaxa x) False inputSeqBlocks) -- will register as False if inputSeqBlocks is empty
                              then Just "Taxa are never specified. \n"  {-++ (show taxas) ++ " " ++ (show inputSeqBlocks) -} -- error 6
                              else Nothing
@@ -146,7 +147,10 @@ validateNexusParseResult (NexusParseResult inputSeqBlocks taxas treeSet assumpti
           --   f (PhyloSequence _ mat _ dim _ _ _) = mat 
         missingCloseQuotes  = map Just (lefts equates) ++ map Just (lefts symbols') -- error 19
         seqTaxaCountErrors  = foldr (\x acc -> checkForNewTaxa x : acc) [] inputSeqBlocks -- errors 7, 8, 16b
-        mtxTaxonCountErrors = foldr (\x acc -> getMatrixTaxonRecurrenceErrors x ++ acc) [] inputSeqBlocks -- errors 12, 22
+
+--        DEFINED BUT NOT USED: (mtxTaxonCountErrors)
+--        mtxTaxonCountErrors = foldr (\x acc -> getMatrixTaxonRecurrenceErrors x ++ acc) [] inputSeqBlocks -- errors 12, 22
+
  --       incorrectCharCount  = checkSeqLength (filter (\x -> alignedSeq x) inputSeqBlocks) outputSeqTups -- TODO: This doesn't work, because it takes an entire list of PhyloSequence blocks and the complete, concatted sequences. It needs to take place at a different point in the process.
 
       -- dependencies for dependent errors
@@ -531,9 +535,9 @@ getSeqFromMatrix :: PhyloSequence -> V.Vector String -> TaxonSequenceMap
 getSeqFromMatrix seqBlock taxaLst =
     M.map (splitSequenceReplaceAmbiguities tkns isCont aligned) equatesReplaced
     where
-        (aligned, noLabels, interleaved, tkns, charType, matchChar') = getFormatInfo seqBlock
+        (aligned, noLabels, interleaved, tkns, characterType, matchChar') = getFormatInfo seqBlock
         seqLen = numChars $ head $ charDims seqBlock -- I've already checked to make sure there's a dimensions in the block
-        taxaCount  = length taxaLst
+--        taxaCount  = length taxaLst
         taxaMap    = M.fromList . zip (V.toList taxaLst) $ repeat ""
         mtx        = head $ seqMatrix seqBlock -- I've already checked to make sure there's a matrix
         entireSeqs = if noLabels    -- entireSeqs will be a list of tuples (taxon, concatted seq)
@@ -557,9 +561,9 @@ getSeqFromMatrix seqBlock taxaLst =
         equatesReplaced = if head eqStr /= "" && not tkns && not isCont -- TODO: Also don't do on custom alphabets?
                             then M.map (replaceEquates eqMap) matchCharsReplaced
                             else matchCharsReplaced
-        eqStr = either (\x -> [""]) (\x -> id x) $ getEquates seqBlock
+        eqStr = either (const [""]) (\x -> id x) $ getEquates seqBlock
         eqMap = M.fromList $ map (\xs -> (head xs, tail $ dropWhile (\x -> not $ '=' == x) xs) ) eqStr -- TODO: force equates string to be properly formatted
-        isCont = charType == "continuous"
+        isCont = characterType == "continuous"
 
 -- | deInterleave takes in a Map String String, where the first String is a taxon label, as well as an 
 -- interleaved seqMatrix in the form [(taxon,sequence)] and returns

@@ -3,12 +3,9 @@
 module Analysis.DirectOptimization.ImpliedAlign (implyMain) where
 
 import Bio.Phylogeny.Network
-import Bio.Phylogeny.Tree.CharacterAware
 import Bio.Phylogeny.Tree.Node.Preliminary
-import Bio.Phylogeny.Tree.Node.Encoded
 import Bio.Phylogeny.Tree.Binary
 import Bio.Sequence.Coded
-import Bio.Phylogeny.Tree.Referential
 import Bio.Phylogeny.Network.Subsettable
 
 import Analysis.DirectOptimization.Utilities
@@ -16,16 +13,11 @@ import Analysis.DirectOptimization.Naive
 
 import           Data.Function              (on)
 import Prelude hiding (zipWith)
-import Data.Matrix.NotStupid (Matrix, zero, elementwise, nrows, ncols, getRow)
-import Data.Bits
 import Data.Maybe
 import Data.Vector (zipWith)
 
 import Control.Monad (join)
-import Control.Applicative (liftA2)
 import Data.Monoid
-
---import Debug.Trace
 
 -- | implyMain performs an implied alignment on a tree
 implyMain :: TreeConstraint t n s b => t -> t
@@ -62,26 +54,26 @@ iaMainPreorder fullTree subTree inNode
 
             -- | Common recursive call for an implied alignment
             recursiveIA :: TreeConstraint t n s b => t -> Maybe n -> Maybe n -> Maybe n -> Bool -> t
---            recursiveIA updatedTree leftNode rightNode inNode isLonger | trace ("recursiveIA " ++ show isLonger ++ show leftNode ++ show rightNode) False = undefined
-            recursiveIA updatedTree leftNode rightNode inNode isLonger 
-                | isLonger = implyMain $ iaPostorder updatedTree inNode
+--            recursiveIA updatedTree leftNode rightNode inputNode isLonger | trace ("recursiveIA " ++ show isLonger ++ show leftNode ++ show rightNode) False = undefined
+            recursiveIA updatedTree leftNode rightNode inputNode isLonger 
+                | isLonger = implyMain $ iaPostorder updatedTree inputNode
                 | isNothing leftNode && isNothing rightNode = updatedTree
-                | isNothing leftNode = mergeSubtrees leftTree rightEval inNode
-                | isNothing rightNode = mergeSubtrees leftEval rightTree inNode
+                | isNothing leftNode = mergeSubtrees leftTree rightEval inputNode
+                | isNothing rightNode = mergeSubtrees leftEval rightTree inputNode
                 | otherwise = -- trace ("merging on " ++ show leftTree ++ show rightTree) 
-                                mergeSubtrees leftEval rightEval inNode
+                                mergeSubtrees leftEval rightEval inputNode
                     where
-                        leftTree = accessSubtree updatedTree (fromJust leftNode)
-                        leftEval = iaMainPreorder updatedTree leftTree leftNode
-                        rightTree = accessSubtree updatedTree (fromJust rightNode)
-                        rightEval = iaMainPreorder updatedTree rightTree rightNode
+                        leftTree  = accessSubtree  updatedTree $ fromJust leftNode
+                        leftEval  = iaMainPreorder updatedTree   leftTree leftNode
+                        rightTree = accessSubtree  updatedTree $ fromJust rightNode
+                        rightEval = iaMainPreorder updatedTree  rightTree rightNode
 
             -- | Function to merge two subtrees under their parent node
             mergeSubtrees :: TreeConstraint t n s b => t -> t -> Maybe n -> t
 --            mergeSubtrees left right node | trace ("merge subtrees " ++ show left ++ show right) False = undefined
-            mergeSubtrees left right node 
+            mergeSubtrees leftTree rightTree node 
                 | isNothing node = mempty
-                | otherwise = mempty `addNode` fromJust node <> left <> right
+                | otherwise = mempty `addNode` fromJust node <> leftTree <> rightTree
 
 -- | Postorder traversal of the implied alignment, started at the given node on the given tree
 iaPostorder :: TreeConstraint t n s b => t -> Maybe n -> t
@@ -90,7 +82,7 @@ iaPostorder inTree curNode
     | isAligned = iaPostorder inTree curParent
     | otherwise = 
         let
-           (parentAlign, curAlign, _, isLonger) = naiveDOTwo (fromJust curNode) (fromJust curParent) 
+           (parentAlign, curAlign, _, _) = naiveDOTwo (fromJust curNode) (fromJust curParent) 
            updatedTree = inTree `update` [parentAlign, curAlign]
         in iaPostorder updatedTree curParent
         where

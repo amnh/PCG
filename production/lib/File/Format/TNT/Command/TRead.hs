@@ -1,23 +1,13 @@
 {-# LANGUAGE FlexibleContexts #-}
 module File.Format.TNT.Command.TRead where
 
-import           Data.Bifunctor           (second)
 import           Data.Char                (isSpace)
-import           Data.DList               (DList,append)
-import qualified Data.DList         as DL (toList,fromList)
 import           Data.Functor             (($>))
-import           Data.IntSet              (IntSet, singleton)
-import qualified Data.IntSet        as IS (fromList)
-import           Data.List                (isSuffixOf,intersperse)
-import           Data.List.NonEmpty       (NonEmpty)
-import qualified Data.List.NonEmpty as NE (filter,fromList,length)
-import           Data.Map.Strict          (Map,insertWith)
-import qualified Data.Map.Strict    as M  (toList)
-import           Data.Maybe               (catMaybes)
+import           Data.List                (isSuffixOf)
+import qualified Data.List.NonEmpty as NE (fromList)
 import           File.Format.TNT.Internal
 import           Text.Megaparsec
 import           Text.Megaparsec.Custom
-import           Text.Megaparsec.Lexer    (integer,number,signed)
 import           Text.Megaparsec.Prim     (MonadParsec)
 
 -- | Parses an TREAD command. Correctly validates for taxa count

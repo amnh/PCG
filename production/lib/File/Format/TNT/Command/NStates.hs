@@ -4,7 +4,6 @@ module File.Format.TNT.Command.NStates where
 import Data.Functor (($>))
 import File.Format.TNT.Internal
 import Text.Megaparsec
-import Text.Megaparsec.Custom
 import Text.Megaparsec.Prim     (MonadParsec)
 
 -- | Parses NSTATES command

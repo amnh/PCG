@@ -37,14 +37,12 @@ import           File.Format.TNT     hiding (casei)
 import           File.Format.TransitionCostMatrix
 import           File.Format.VertexEdgeRoot
 -- import File.Format.Conversion.ToInternal
-import           PCG.Command.Types
+import           PCG.Command.Types (Command(..))
 import           PCG.Command.Types.Read.Internal
 import           PCG.Command.Types.Read.Unification.Master
-import           PCG.Script.Types
+--import           PCG.Script.Types
 import           Prelude             hiding (lookup)
 import           Text.Megaparsec
-
-import Debug.Trace (trace)
 
 evaluate :: Command -> SearchState -> SearchState
 {--}
@@ -117,10 +115,10 @@ parseSpecifiedContent :: (FileResult -> Either ReadError FracturedParseResult) -
 parseSpecifiedContent parse' = eitherValidation . fmap parse' . dataFiles
 
 parseCustomAlphabet :: FileSpecification -> EitherT ReadError IO [FracturedParseResult]
-parseCustomAlphabet spec = getSpecifiedContent spec >>= (hoistEither . parseSpecifiedContent)
+parseCustomAlphabet spec = getSpecifiedContent spec >>= (hoistEither . parseSpecifiedContentWithTcm)
   where
-    parseSpecifiedContent :: FileSpecificationContent -> Either ReadError [FracturedParseResult]
-    parseSpecifiedContent specContent = do
+    parseSpecifiedContentWithTcm :: FileSpecificationContent -> Either ReadError [FracturedParseResult]
+    parseSpecifiedContentWithTcm specContent = do
         tcmMay <- case tcmFile specContent of
                     Nothing             -> pure Nothing
                     Just (path,content) -> bimap unparsable Just $ parse tcmStreamParser path content
