@@ -58,10 +58,12 @@ stack-build-prof: ffi-code-cleaning phylocomgraph.cabal stack.yaml
 # Cleans up artefact files after a build
 clean: phylocomgraph.cabal stack.yaml
 	stack clean
+	mv .stack-work ../
 	find . -type f -name '*.o'  -delete
 	find . -type f -name '*.hi' -delete
 	find . -type f -name '*.*~' -delete
 	find . -type f -name '#*.*' -delete
+	mv ../.stack-work .
 
 # Calls other make files to pre-process FFI files
 ffi-code-cleaning: ffi/Analysis/Parsimony/Binary/SequentialAlign/makefile

@@ -31,6 +31,156 @@ extra-source-files:  README.md
 
 cabal-version: >= 1.22
 
+library
+  -- LANGUAGE extensions used by modules in this package.
+  other-extensions:    FlexibleContexts, BangPatterns, DeriveGeneric
+  
+  -- Other library packages from which modules are imported.
+  build-depends:       base                 >=4.8 && < 4.9
+                     , bv                   -any
+                     , containers           -any
+                     , criterion            -any
+                     , deepseq              -any
+                     , dlist                -any
+                     , either               -any
+                     , keys                 -any
+                     , matrix               -any
+                     , megaparsec           >=4.2
+                     , parallel             -any
+                     , QuickCheck           -any
+                     , safe                 -any
+                     , semigroups           -any
+                     , smallcheck           -any 
+                     , split                -any 
+                     , tasty                -any
+                     , tasty-hunit          -any
+                     , tasty-quickcheck     -any
+                     , tasty-smallcheck     -any
+                     , text                 -any
+                     , transformers         -any
+                     , unordered-containers -any
+                     , vector               -any
+
+  default-language:    Haskell2010
+
+  ghc-options:         -O2 -Wall 
+                       -fwarn-duplicate-exports
+                       -fwarn-incomplete-patterns
+                       -fwarn-missing-signatures
+                       -fwarn-overlapping-patterns
+                       -fwarn-tabs
+                       -fwarn-unused-binds
+                       -fwarn-unused-do-bind
+                       -fwarn-unused-imports
+                       -fwarn-unused-matches
+  
+  hs-source-dirs:      lib, ffi
+
+  -- We must provide the full relative path to every C file that the project depends on.
+  c-sources:
+    ffi/Analysis/Parsimony/Binary/SequentialAlign/seqAlignForHaskell.c
+
+  -- Here we list all directories that contain C header files that the FFI tools will need
+  -- to locate when preprocessing the C files. Without listing the directories containing
+  -- the C header files here, the FFI preprocession (hsc2hs, c2hs,etc.) will fail to locate
+  -- the requisite files.
+  -- Note also, that the parent directory of the nessicary C header files must be specified.
+  -- The preprocesser will not recursively look in subdirectories for C header files!
+  include-dirs:
+    ffi/Analysis/Parsimony/Binary/SequentialAlign
+      
+  -- Modules exported by the library.
+  exposed-modules:     Analysis.DirectOptimization.ImpliedAlign
+                       Analysis.DirectOptimization.Naive
+                       Analysis.Parsimony.Binary.DirectOptimization
+                       Analysis.Parsimony.Binary.Fitch
+                       Analysis.Parsimony.Binary.Internal
+                       Analysis.Parsimony.Binary.Optimization
+                       Analysis.Parsimony.Binary.SequentialAlign
+                       Analysis.Parsimony.Binary.SequentialAlign.SeqAlignFFI
+                       Bio.Phylogeny.Forest
+                       Bio.Phylogeny.Graph
+                       Bio.Phylogeny.Network
+                       Bio.Phylogeny.PhyloCharacter
+                       Bio.Phylogeny.Tree.Binary
+                       Bio.Phylogeny.Tree.CharacterAware
+                       Bio.Phylogeny.Tree.EdgeAware
+                       Bio.Phylogeny.Tree.Node
+                       Bio.Phylogeny.Tree.Node.Encoded
+                       Bio.Phylogeny.Tree.Node.Final
+                       Bio.Phylogeny.Tree.Node.Packed
+                       Bio.Phylogeny.Tree.Node.Preliminary
+                       Bio.Phylogeny.Tree.Referential
+                       Bio.Phylogeny.Tree.Rose
+                       Bio.Sequence.Coded
+                       Bio.Sequence.Character.Coded
+                       Control.Evaluation
+                       Data.Either.Custom
+                       File.Format.Fasta
+                       File.Format.Fastc
+                       File.Format.Newick
+                       File.Format.Nexus
+                       File.Format.VertexEdgeRoot
+                       File.Format.TNT
+                       File.Format.TransitionCostMatrix
+
+  -- Modules included in this library but not exported.
+--  other-modules:
+
+                       Analysis.GenericFitch
+                       Bio.Metadata.Class
+                       Bio.Phylogeny.Forest.Class
+                       Bio.Phylogeny.Graph.Data
+                       Bio.Phylogeny.Graph.Output
+                       Bio.Phylogeny.Graph.Parsed
+                       Bio.Phylogeny.Graph.Topological
+                       Bio.Phylogeny.Graph.Utilities
+                       Bio.Phylogeny.Network.Class
+                       Bio.Phylogeny.Network.Subsettable
+                       Bio.Phylogeny.Tree.Binary.Class
+                       Bio.Phylogeny.Tree.CharacterAware.Class
+                       Bio.Phylogeny.Tree.Edge.Standard
+                       Bio.Phylogeny.Tree.EdgeAware.Class
+                       Bio.Phylogeny.Tree.Node.Topological
+                       Bio.Phylogeny.Tree.Rose.Class
+                       Bio.Sequence.Coded.Class
+                       Bio.Sequence.Packed.Class
+                       Bio.Sequence.Parsed
+                       Bio.Sequence.Parsed.Class
+                       Bio.Sequence.Random
+                       Control.Evaluation.Internal
+                       Control.Evaluation.Trans
+                       Control.Evaluation.Unit
+                       Data.List.Utility
+                       Data.Matrix.NotStupid
+                       File.Format.Conversion.Encoder
+                       File.Format.Fasta.Converter
+                       File.Format.Fasta.Internal
+                       File.Format.Fasta.Parser
+                       File.Format.Fastc.Parser
+                       File.Format.Newick.Converter
+                       File.Format.Newick.Internal
+                       File.Format.Newick.Parser
+                       File.Format.Nexus.Data
+                       File.Format.Nexus.Parser
+                       File.Format.Nexus.Partition
+                       File.Format.Nexus.Validate
+                       File.Format.TNT.Command.CCode
+                       File.Format.TNT.Command.CNames
+                       File.Format.TNT.Command.Cost
+                       File.Format.TNT.Command.NStates
+                       File.Format.TNT.Command.Procedure
+                       File.Format.TNT.Command.TRead
+                       File.Format.TNT.Command.XRead
+                       File.Format.TNT.Parser
+                       File.Format.TNT.Partitioning
+                       File.Format.TNT.Internal
+                       File.Format.TransitionCostMatrix.Parser
+                       File.Format.VertexEdgeRoot.Converter
+                       File.Format.VertexEdgeRoot.Parser
+                       Text.Megaparsec.Custom
+
+               
 executable pcg
   main-is:             Main.hs
 
@@ -48,6 +198,7 @@ executable pcg
                      , matrix               -any
                      , megaparsec           >=4.2
                      , parallel             -any
+                     , phylocomgraph        -any
                      , QuickCheck           -any
                      , safe                 -any
                      , semigroups           -any
@@ -62,7 +213,6 @@ executable pcg
                      , transformers         -any
                      , unordered-containers -any
                      , vector               -any
-                     , phylocomgraph        -any
 
   default-language:    Haskell2010
                      
@@ -77,10 +227,10 @@ executable pcg
                        -fwarn-unused-imports
                        -fwarn-unused-matches
   
-  hs-source-dirs:      app, lib, ffi
+  hs-source-dirs:      app
 
-  include-dirs:
-    ffi/Analysis/Parsimony/Binary/SequentialAlign
+--  include-dirs:
+--    ffi/Analysis/Parsimony/Binary/SequentialAlign
     
   other-modules:
                        PCG.Command
@@ -114,6 +264,7 @@ executable brg
                      , matrix               -any
                      , megaparsec           >=4.2
                      , parallel             -any
+                     , phylocomgraph        -any
                      , QuickCheck           -any
                      , safe                 -any
                      , semigroups           -any
@@ -142,92 +293,26 @@ executable brg
                        -fwarn-unused-imports
                        -fwarn-unused-matches
   
-  hs-source-dirs:      app, lib, ffi
+  hs-source-dirs:      app
 
   include-dirs:
     ffi/Analysis/Parsimony/Binary/SequentialAlign
 
     
-  other-modules:       Analysis.DirectOptimization.ImpliedAlign
-                       Analysis.DirectOptimization.Naive
-                       Analysis.Parsimony.Binary.DirectOptimization
-                       Analysis.Parsimony.Binary.Fitch
-                       Analysis.Parsimony.Binary.Optimization
-                       Analysis.Parsimony.Binary.SequentialAlign
-                       Analysis.Parsimony.Binary.SequentialAlign.SeqAlignFFI
-                       Bio.Phylogeny.Forest
-                       Bio.Phylogeny.Forest.Class
-                       Bio.Phylogeny.Graph
-                       Bio.Phylogeny.Graph.Data
-                       Bio.Phylogeny.Network
-                       Bio.Phylogeny.Network.Class
-                       Bio.Phylogeny.PhyloCharacter
-                       Bio.Phylogeny.Tree.Binary
-                       Bio.Phylogeny.Tree.Binary.Class
-                       Bio.Phylogeny.Tree.CharacterAware
-                       Bio.Phylogeny.Tree.CharacterAware.Class
-                       Bio.Phylogeny.Tree.Edge.Standard
-                       Bio.Phylogeny.Tree.EdgeAware
-                       Bio.Phylogeny.Tree.EdgeAware.Class
-                       Bio.Phylogeny.Tree.Node
-                       Bio.Phylogeny.Tree.Node.Encoded
-                       Bio.Phylogeny.Tree.Node.Final
-                       Bio.Phylogeny.Tree.Node.Packed
-                       Bio.Phylogeny.Tree.Node.Preliminary
-                       Bio.Phylogeny.Tree.Referential
-                       Bio.Phylogeny.Tree.Rose
-                       Bio.Phylogeny.Tree.Rose.Class
-                       Bio.Sequence.Coded
-                       Bio.Sequence.Coded.Class
-                       Bio.Sequence.Character.Coded                     
-                       Control.Evaluation
-                       Control.Evaluation.Internal
-                       Control.Evaluation.Trans
-                       Control.Evaluation.Unit
-                       Data.Either.Custom
-                       Data.List.Utility
-                       File.Format.Fasta
-                       File.Format.Fasta.Converter
-                       File.Format.Fasta.Internal
-                       File.Format.Fasta.Parser
-                       File.Format.Fastc
-                       File.Format.Fastc.Parser
-                       File.Format.Newick
-                       File.Format.Newick.Converter
-                       File.Format.Nexus.Data
-                       File.Format.Nexus.Partition
-                       File.Format.Nexus.Validate
-                       File.Format.Newick.Internal
-                       File.Format.Newick.Parser
-                       File.Format.TransitionCostMatrix
-                       File.Format.TransitionCostMatrix.Parser
-                       File.Format.VertexEdgeRoot
-                       File.Format.VertexEdgeRoot.Converter
-                       File.Format.VertexEdgeRoot.Parser
-                       PCG.Command
+  other-modules:       PCG.Command
                        PCG.Command.Types
                        PCG.Command.Types.Read
                        PCG.Command.Types.Read.Internal
                        PCG.Command.Types.Read.ReadError
-                       PCG.Computation.Internal
-                       PCG.Script
-                       PCG.Script.Parser
-                       PCG.Script.Types
-                       Text.Megaparsec.Custom
-
-                       Bio.Phylogeny.Graph.Topological
-                       Bio.Phylogeny.Graph.Utilities
-                       Bio.Phylogeny.Network.Subsettable
-                       Bio.Phylogeny.Tree.Node.Topological
-                       Bio.Sequence.Packed.Class
-                       Bio.Sequence.Parsed
-                       Bio.Sequence.Random
-                       Data.Matrix.NotStupid
-                       File.Format.Conversion.Encoder
                        PCG.Command.Types.Report.CharacterMatrix
                        PCG.Command.Types.Report.GraphViz
                        PCG.Command.Types.Report.Metadata
                        PCG.Command.Types.Report.Newick
+                       PCG.Computation.Internal
+                       PCG.Script
+                       PCG.Script.Parser
+                       PCG.Script.Types
+
 
 executable qdh
            
@@ -247,6 +332,7 @@ executable qdh
                      , matrix               -any
                      , megaparsec           >=4.2
                      , parallel             -any
+                     , phylocomgraph        -any
                      , QuickCheck           -any
                      , safe                 -any
                      , semigroups           -any
@@ -275,68 +361,9 @@ executable qdh
                        -fwarn-unused-imports
                        -fwarn-unused-matches
   
-  hs-source-dirs:      app, lib, ffi
+  hs-source-dirs:      app
 
-  c-sources:
-    ffi/Analysis/Parsimony/Binary/SequentialAlign/seqAlignForHaskell.c
-
-  include-dirs:
-    ffi/Analysis/Parsimony/Binary/SequentialAlign
-      
-  other-modules:       Analysis.DirectOptimization.Naive
-                       Analysis.DirectOptimization.ImpliedAlign
-                       Analysis.GenericFitch
-                       Analysis.Parsimony.Binary.SequentialAlign.SeqAlignFFI
-                       Bio.Phylogeny.Forest
-                       Bio.Phylogeny.Forest.Class
-                       Bio.Phylogeny.Graph
-                       Bio.Phylogeny.Graph.Data
-                       Bio.Phylogeny.Network
-                       Bio.Phylogeny.Network.Class
-                       Bio.Phylogeny.PhyloCharacter
-                       Bio.Phylogeny.Tree.Binary
-                       Bio.Phylogeny.Tree.Binary.Class
-                       Bio.Phylogeny.Tree.CharacterAware
-                       Bio.Phylogeny.Tree.CharacterAware.Class
-                       Bio.Phylogeny.Tree.Edge.Standard
-                       Bio.Phylogeny.Tree.EdgeAware
-                       Bio.Phylogeny.Tree.EdgeAware.Class
-                       Bio.Phylogeny.Tree.Node
-                       Bio.Phylogeny.Tree.Node.Encoded
-                       Bio.Phylogeny.Tree.Node.Final
-                       Bio.Phylogeny.Tree.Node.Packed
-                       Bio.Phylogeny.Tree.Node.Preliminary
-                       Bio.Phylogeny.Tree.Referential
-                       Bio.Phylogeny.Tree.Rose
-                       Bio.Phylogeny.Tree.Rose.Class
-                       Bio.Sequence.Coded
-                       Bio.Sequence.Coded.Class
-                       Bio.Sequence.Character.Coded                     
-                       Control.Evaluation
-                       Control.Evaluation.Internal
-                       Control.Evaluation.Trans
-                       Control.Evaluation.Unit
-                       Data.Either.Custom
-                       Data.List.Utility
-                       File.Format.Fasta
-                       File.Format.Fasta.Converter
-                       File.Format.Fasta.Internal
-                       File.Format.Fasta.Parser
-                       File.Format.Fastc
-                       File.Format.Fastc.Parser
-                       File.Format.Newick
-                       File.Format.Newick.Converter
-                       File.Format.Nexus.Data
-                       File.Format.Nexus.Partition
-                       File.Format.Nexus.Validate
-                       File.Format.Newick.Internal
-                       File.Format.Newick.Parser
-                       File.Format.TransitionCostMatrix
-                       File.Format.TransitionCostMatrix.Parser
-                       File.Format.VertexEdgeRoot
-                       File.Format.VertexEdgeRoot.Converter
-                       File.Format.VertexEdgeRoot.Parser
-                       PCG.Command
+  other-modules:       PCG.Command
                        PCG.Command.Types
                        PCG.Command.Types.Read
                        PCG.Command.Types.Read.Internal
@@ -345,146 +372,6 @@ executable qdh
                        PCG.Script
                        PCG.Script.Parser
                        PCG.Script.Types
-                       Text.Megaparsec.Custom
-
-                       Bio.Phylogeny.Graph.Output
-                       Bio.Phylogeny.Graph.Topological
-                       Bio.Phylogeny.Graph.Utilities
-                       Bio.Phylogeny.Network.Subsettable
-                       Bio.Phylogeny.Tree.Node.Topological
-                       Bio.Sequence.Packed.Class
-                       Bio.Sequence.Parsed
-                       Bio.Sequence.Random
-                       Data.Matrix.NotStupid
-                       File.Format.Conversion.Encoder
-                         
-library
-  -- LANGUAGE extensions used by modules in this package.
-  other-extensions:    FlexibleContexts, BangPatterns, DeriveGeneric
-  
-  -- Other library packages from which modules are imported.
-  build-depends:       base                 >=4.8 && < 4.9
-                     , bv                   -any
-                     , containers           -any
-                     , criterion            -any
-                     , deepseq              -any
-                     , dlist                -any
-                     , either               -any
-                     , keys                 -any
-                     , matrix               -any
-                     , megaparsec           >=4.2
-                     , parallel             -any
-                     , safe                 -any
-                     , semigroups           -any
-                     , smallcheck           -any 
-                     , split                -any 
-                     , tasty                -any
-                     , tasty-hunit          -any
-                     , tasty-quickcheck     -any
-                     , tasty-smallcheck     -any
-                     , text                 -any
-                     , unordered-containers -any
-                     , vector               -any
-
-  default-language:    Haskell2010
-
-  ghc-options:         -O2 -Wall 
-                       -fwarn-duplicate-exports
-                       -fwarn-incomplete-patterns
-                       -fwarn-missing-signatures
-                       -fwarn-overlapping-patterns
-                       -fwarn-tabs
-                       -fwarn-unused-binds
-                       -fwarn-unused-do-bind
-                       -fwarn-unused-imports
-                       -fwarn-unused-matches
-  
-  hs-source-dirs:      lib, ffi
-
-  -- We must provide the full relative path to every C file that the project depends on.
-  c-sources:
-    ffi/Analysis/Parsimony/Binary/SequentialAlign/seqAlignForHaskell.c
-
-  -- Here we list all directories that contain C header files that the FFI tools will need
-  -- to locate when preprocessing the C files. Without listing the directories containing
-  -- the C header files here, the FFI preprocession (hsc2hs, c2hs,etc.) will fail to locate
-  -- the requisite files.
-  -- Note also, that the parent directory of the nessicary C header files must be specified.
-  -- The preprocesser will not recursively look in subdirectories for C header files!
-  include-dirs:
-    ffi/Analysis/Parsimony/Binary/SequentialAlign
-      
-  -- Modules exported by the library.
-  exposed-modules:
-                       Analysis.DirectOptimization.ImpliedAlign
-                       Analysis.DirectOptimization.Naive
-                       Analysis.Parsimony.Binary.DirectOptimization
-                       Analysis.Parsimony.Binary.Fitch
-                       Analysis.Parsimony.Binary.Optimization
-                       Analysis.Parsimony.Binary.SequentialAlign
-                       Analysis.Parsimony.Binary.SequentialAlign.SeqAlignFFI
-                       Bio.Phylogeny.Forest
-                       Bio.Phylogeny.Graph
-                       Bio.Phylogeny.Network
-                       Bio.Phylogeny.PhyloCharacter
-                       Bio.Phylogeny.Tree.Binary
-                       Bio.Phylogeny.Tree.CharacterAware
-                       Bio.Phylogeny.Tree.EdgeAware
-                       Bio.Phylogeny.Tree.Node
-                       Bio.Phylogeny.Tree.Node.Encoded
-                       Bio.Phylogeny.Tree.Node.Final
-                       Bio.Phylogeny.Tree.Node.Packed
-                       Bio.Phylogeny.Tree.Node.Preliminary
-                       Bio.Phylogeny.Tree.Referential
-                       Bio.Phylogeny.Tree.Rose
-                       Bio.Sequence.Coded
-                       Bio.Sequence.Character.Coded
-                       File.Format.Fasta
-                       File.Format.Fastc
-                       File.Format.Newick
-                       File.Format.Nexus
-                       File.Format.VertexEdgeRoot
-                       File.Format.TransitionCostMatrix
-
-                       Analysis.GenericFitch
-                       Bio.Phylogeny.Forest.Class
-                       Bio.Phylogeny.Graph.Data
-                       Bio.Phylogeny.Graph.Output
-                       Bio.Phylogeny.Graph.Topological
-                       Bio.Phylogeny.Graph.Utilities
-                       Bio.Phylogeny.Network.Class
-                       Bio.Phylogeny.Network.Subsettable
-                       Bio.Phylogeny.Tree.Binary.Class
-                       Bio.Phylogeny.Tree.CharacterAware.Class
-                       Bio.Phylogeny.Tree.Edge.Standard
-                       Bio.Phylogeny.Tree.EdgeAware.Class
-                       Bio.Phylogeny.Tree.Node.Topological
-                       Bio.Phylogeny.Tree.Rose.Class
-                       Bio.Sequence.Coded.Class
-                       Bio.Sequence.Packed.Class
-                       Bio.Sequence.Parsed
-                       Bio.Sequence.Random
-                       Data.List.Utility
-                       Data.Matrix.NotStupid
-                       File.Format.Conversion.Encoder
-                       File.Format.Fasta.Converter
-                       File.Format.Fasta.Internal
-                       File.Format.Fasta.Parser
-                       File.Format.Fastc.Parser
-                       File.Format.Newick.Converter
-                       File.Format.Newick.Internal
-                       File.Format.Newick.Parser
-                       File.Format.Nexus.Data
-                       File.Format.Nexus.Parser
-                       File.Format.Nexus.Partition
-                       File.Format.Nexus.Validate
-                       File.Format.TransitionCostMatrix.Parser
-                       File.Format.VertexEdgeRoot.Converter
-                       File.Format.VertexEdgeRoot.Parser
-                       Text.Megaparsec.Custom
-
-  -- Modules included in this library but not exported.
---  other-modules:
 
 Test-Suite testsuite
   type:                exitcode-stdio-1.0
