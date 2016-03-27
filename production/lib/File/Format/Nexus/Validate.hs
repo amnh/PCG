@@ -21,6 +21,7 @@ import           Data.Either            (lefts)
 import           Data.Foldable          (toList)
 import           Data.List              (sort, sortBy)
 import           Data.List.Split        (splitOn)
+import           Data.List.Utility      (chunksOf)
 import qualified Data.Map.Lazy     as M
 import           Data.Maybe             (fromJust, catMaybes, maybeToList)
 import           Data.Ord               (comparing)
@@ -671,13 +672,6 @@ replaceMatches matchTarget canonical toReplace = {- trace (canonical ++"\n" ++ t
         f x y = if y == matchTarget
                 then x
                 else y
-
--- | chunksOf is based on Text.chunksOf, but is more general.
-chunksOf :: Int -> [a] -> [[a]]
-chunksOf _ [] = []
-chunksOf n xs = f : chunksOf n s
-  where
-    (f,s) = splitAt n xs
 
 -- | areNewTaxa takes in a PhyloSequence (character, unaligned or data block) and returns 
 -- True if that PhyloSequence contains new taxa, False otherwise.
