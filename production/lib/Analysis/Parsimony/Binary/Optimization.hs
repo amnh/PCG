@@ -12,18 +12,20 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE ConstraintKinds, FlexibleContexts #-}
+{-# LANGUAGE BangPatterns, ConstraintKinds, FlexibleContexts #-}
 
 module Analysis.Parsimony.Binary.Optimization where
 
 import Analysis.Parsimony.Binary.Internal
 import Analysis.Parsimony.Binary.Fitch
-import Analysis.Parsimony.Binary.DirectOptimization
+--import Analysis.Parsimony.Binary.DirectOptimization
 import Analysis.Parsimony.Binary.SequentialAlign
 
 import Data.Maybe
-import Data.Vector (Vector, ifoldr, (!))
+import Data.Vector (Vector, ifoldl', ifoldr, (!))
 import Data.Monoid
+
+
 
 import Bio.Phylogeny.Network
 import Bio.Phylogeny.Tree.Binary
@@ -32,6 +34,8 @@ import Bio.Phylogeny.Tree.Node.Preliminary
 import Bio.Phylogeny.Tree.Node.Encoded
 import Bio.Phylogeny.Tree.CharacterAware
 import Bio.Phylogeny.PhyloCharacter
+
+import Debug.Trace
 
 -- | Unified function to perform both the first and second passes
 allOptimization :: TreeConstraint t n s b => Double -> t -> t
@@ -107,7 +111,7 @@ internalPreorder weight node tree
         in myNode : (nodes1 ++ nodes2)
 
         where
-            leftOnly = isNothing $ rightChild node tree
+            leftOnly  = isNothing $ rightChild node tree
             rightOnly = isNothing $ leftChild node tree
 
 -- | Wrapper for up pass recursion to deal with root
@@ -137,39 +141,55 @@ internalPostorder node tree
     | isLeaf node tree = []
     | rightOnly && leftOnly = error "Problem with binary tree structure: non-terminal has no children"
     | rightOnly = internalPostorder (fromJust $ rightChild node tree) tree
-    | leftOnly = internalPostorder (fromJust $ leftChild node tree) tree
+    | leftOnly  = internalPostorder (fromJust $ leftChild node tree) tree
     | otherwise = 
-        let 
-            newNode = postorderNodeOptimize node (fromJust $ leftChild node tree) (fromJust $ rightChild node tree) (parent node tree) (characters tree)
-            nodes1 = internalPostorder (fromJust $ rightChild node tree) tree
-            nodes2 = internalPostorder (fromJust $ leftChild node tree) tree
+        let newNode = postorderNodeOptimize node (fromJust $ leftChild node tree) (fromJust $ rightChild node tree) (parent node tree) (characters tree)
+            nodes1  = internalPostorder (fromJust $ rightChild node tree) tree
+            nodes2  = internalPostorder (fromJust $ leftChild node tree) tree
         in newNode : (nodes1 ++ nodes2)
 
         where
-            leftOnly = isNothing $ rightChild node tree
+            leftOnly  = isNothing $ rightChild node tree
             rightOnly = isNothing $ leftChild node tree
 
 -- | Wrapper function to preform optimization on a node (preorder)
 preorderNodeOptimize :: NodeConstraint n s b => Double -> n -> n -> n -> Vector (PhyloCharacter s) -> n
-preorderNodeOptimize weight curNode lNode rNode treeChars = 
-    let foldResult = ifoldr chooseOptimization curNode treeChars
-    in setTotalCost (totalCost foldResult + totalCost lNode + totalCost rNode) foldResult
+preorderNodeOptimize !weight !curNode !lNode !rNode !treeChars = setTotalCost summedTotalCost res 
     where
+        summedTotalCost = sum $ totalCost <$> [res,lNode,rNode] --totalCost res + totalCost lNode + totalCost rNode
+        !res             = ifoldr chooseOptimization curNode treeChars
+--        chooseOptimization :: NodeConstraint n s b => Int -> n -> n -> n 
+
         chooseOptimization curPos curCharacter setNode
-            | aligned curCharacter = 
-                let (assign, temp, local) = preorderFitchBit weight (getForAlign lNode ! curPos) (getForAlign rNode ! curPos) curCharacter
+            -- TODO: Compiler error maybe below with comment structuers and 'lets'
+             | aligned curCharacter =     
+                let (assign, temp, local) = trace (show curCharacter) $ preorderFitchBit weight (getForAlign lNode ! curPos) (getForAlign rNode ! curPos) curCharacter 
                 in addLocalCost local $ addTotalCost local $ addAlign assign $ addPreliminary assign setNode
-            | otherwise = 
+             | otherwise =
+            
                 --let (ungapped, cost, gapped, leftGapped, rightGapped) = naiveDO (getForAlign lNode ! curPos) (getForAlign rNode ! curPos)
                 --in addLocalCost cost $ addTotalCost cost $ addAlign gapped $ addPreliminary ungapped setNode
-                let (ungapped, cost, gapped, leftGapped, rightGapped) = sequentialAlign (getForAlign lNode ! curPos) (getForAlign rNode ! curPos)
-                in addLocalCost cost $ addTotalCost cost $ addAlign gapped $ addPreliminary ungapped setNode
 
-        addPreliminary addVal inNode = addToField setPreliminary preliminary addVal inNode
-        addAlign addVal inNode = addToField setAlign preliminaryAlign addVal inNode
-        addTotalCost addVal node = setTotalCost (addVal + totalCost node) node
-        addLocalCost addVal node = setLocalCost (addVal + localCost node) node
+                -- getForAlign returns a node, either encoded, preliminary or preliminary align. It's in Analysis.Parsimony.Binary.Internal
+                -- the return type is a vector of encoded sequences, 
+                -- where an EncodedSeq (encoded sequence) is a maybe vector of some type from Bio/Sequence/Coded.hs
+                let (!ungapped, !cost, !gapped, !leftGapped, !rightGapped) = sequentialAlign (getForAlign lNode ! curPos) (getForAlign rNode ! curPos)
+                in  trace (show ungapped ++ " " ++ (show gapped)) $ addLocalCost cost $ addTotalCost cost $ addAlign gapped $ addPreliminary ungapped setNode
 
+      {-  chooseOptimization' !setNode !curPos !curCharacter = addLocalCost cost . addTotalCost cost . addAlign gapped $ addPreliminary ungapped setNode
+            where
+                -- getForAlign returns a node, either encoded, preliminary or preliminary align. It's in Analysis.Parsimony.Binary.Internal
+                -- the return type is a vector of encoded sequences, 
+                -- where an EncodedSeq (encoded sequence) is a maybe vector of some type from Bio/Sequence/Coded.hs
+                (!ungapped, !cost, !gapped, _leftGapped, _rightGapped) = sequentialAlign (getForAlign lNode ! curPos) (getForAlign rNode ! curPos)
+      -}
+
+        addPreliminary addVal inNode = addToField setPreliminary preliminary      addVal inNode
+        addAlign       addVal inNode = addToField setAlign       preliminaryAlign addVal inNode
+        addTotalCost   addVal node   = setTotalCost (addVal + totalCost node) node
+        addLocalCost   addVal node   = setLocalCost (addVal + localCost node) node
+
+-- I think this is the problem. In ll. 173 & 175 it's adding the new Vectors of bits to something that's empty? See <> in l. 183
 -- | Functionality to help add to node
 addToField :: NodeConstraint n s b => (Vector s -> n -> n) -> (n -> Vector s) -> s -> n -> n
 addToField setter getter val node = setter (pure val <> getter node) node

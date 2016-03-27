@@ -69,13 +69,13 @@ developAlphabets inSeqs = V.map setGapChar $ V.map sort $ M.foldr (zipWith getNo
 -- | Internal function to make one character info
 makeOneInfo :: Alphabet -> (Bool, Int) -> CharInfo
 makeOneInfo inAlph (isAligned, seqLen)
-    | inAlph `subsetOf` dnaAlph = DNA "" isAligned masks mempty inAlph defaultMat False 1
-    | inAlph `subsetOf` rnaAlph = RNA "" isAligned masks mempty inAlph defaultMat False 1
-    | inAlph `subsetOf` aaAlph = AminoAcid "" isAligned masks inAlph mempty defaultMat False 1
-    | otherwise = Custom "" isAligned masks inAlph mempty defaultMat False False 1
+    | inAlph `subsetOf` dnaAlph = DNA "" isAligned mempty mempty inAlph defaultMat False 1
+    | inAlph `subsetOf` rnaAlph = RNA "" isAligned mempty mempty inAlph defaultMat False 1
+    | inAlph `subsetOf` aaAlph = AminoAcid "" isAligned mempty inAlph mempty defaultMat False 1
+    | otherwise = Custom "" isAligned mempty inAlph mempty defaultMat False False 1
         where 
             defaultMat = matrix (length inAlph) (length inAlph) (const 1)
-            masks = generateMasks (length inAlph) seqLen isAligned
+            --masks = generateMasks (length inAlph) seqLen isAligned
 
             generateMasks :: Int -> Int -> Bool -> (Encoded, Encoded)
             generateMasks alphLen sLen isAligned 
@@ -110,7 +110,7 @@ subsetOf :: (Ord a) => [a] -> [a] -> Bool
 subsetOf list1 list2 = foldr (\e acc -> acc && e `elem` list2) True list1
 
 encodeIt :: ParsedSequences -> Vector CharInfo -> EncodedSequences BitVector
-encodeIt = zipWith (\s info -> join $ flip encodeOverMetadata info <$> s)
+encodeIt = zipWith (\s info -> (`encodeOverMetadata` info) =<< s)
 
 packIt :: ParsedSequences -> Vector CharInfo -> EncodedSequences BitVector
 packIt = encodeIt
@@ -124,7 +124,7 @@ chunksOf n xs
 
 -- | Function to encode into minimal bits
 encodeMinimal :: (Bits b, Num b, Show b) => ParsedSeq -> Alphabet -> EncodedSeq b
---encodeMinimal strSeq alphabet | trace ("encodeMinimal over alphabet " ++ show alphabet ++ " of seq " ++ show strSeq) False = undefined
+-- encodeMinimal strSeq alphabet | trace ("encodeMinimal over alphabet " ++ show alphabet ++ " of seq " ++ show strSeq) False = undefined
 encodeMinimal strSeq alphabet = 
     let 
         z = zeroBits
@@ -146,7 +146,7 @@ encodeMaximal strSeq alphabet =
 
 -- | Function to encode given metadata information
 encodeOverMetadata :: (Bits b, Num b, Show b) => ParsedSeq -> PhyloCharacter (EncodedSeq b) -> EncodedSeq b
-encodeOverMetadata strSeq metadata = encodeMinimal strSeq (alphabet metadata)
+encodeOverMetadata strSeq metadata = encodeMinimal strSeq (alphabet metadata) -- encodeMinimal strSeq (alphabet metadata)
     --case metadata of
     --DNA         _ align _ _ _ _ _ _     -> if align then minEncode else maxEncode
     --RNA         _ align _ _ _ _ _ _     -> if align then minEncode else maxEncode
@@ -155,6 +155,7 @@ encodeOverMetadata strSeq metadata = encodeMinimal strSeq (alphabet metadata)
     --Custom      _ align _ _ _ _ _ add _ -> if align && not add then minEncode else maxEncode
     --_                                   -> maxEncode
     --where
+    --    -- minimum is for 
     --    minEncode = encodeMinimal strSeq (alphabet metadata)
     --    maxEncode = encodeMaximal strSeq (alphabet metadata)
 
