@@ -50,7 +50,7 @@ validateReadArg (LidentNamedArg (Lident identifier) (ArgumentList xs)) | (\x -> 
     badOption = any isNothing options
     tcmFile' = case suffix of
                 LidentNamedArg (Lident y) ys :_ -> if "tcm" == (toLower <$> y)
-                                                   then either (const Nothing) Just $ primativeString =<< (getSingltonArgumentList ys)
+                                                   then either (const Nothing) Just $ primativeString =<< getSingltonArgumentList ys
                                                    else Nothing
                 _                               -> Nothing
 

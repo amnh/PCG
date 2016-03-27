@@ -19,7 +19,7 @@ import Bio.Phylogeny.Tree.Node
 import Data.Char
 
 import qualified Data.IntMap as IM (elems, (!))
-import System.IO ()
+import System.IO () -- Why?
 
 outPutDot :: String -> Graph -> IO ()
 outPutDot fileName inGraph = writeFile fileName (toDot inGraph)
@@ -38,10 +38,8 @@ outPutDot fileName inGraph = writeFile fileName (toDot inGraph)
                 printEdge curEdge accum = foldr (++) accum (zipWith printOne origins terminals)
                     where 
                         getName n = nodeNames inTree IM.! code n
-                        origins = map (replaceSpaces . getName . origin) (IM.elems $ outNodes curEdge)
-                        terminals = map (replaceSpaces . getName . terminal) (IM.elems $ outNodes curEdge)
+                        origins = replaceSpaces . getName . origin <$> IM.elems (outNodes curEdge)
+                        terminals = replaceSpaces . getName . terminal <$> IM.elems (outNodes curEdge)
                         printOne o t = "\t" ++ o ++ " -> " ++ t ++ ";\n"
-                        replaceSpaces = map (\c -> if isSpace c then '_' else c)
+                        replaceSpaces = fmap (\c -> if isSpace c then '_' else c)
 
-
-                        

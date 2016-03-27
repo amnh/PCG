@@ -50,7 +50,7 @@ masterUnify inResults =
     let
       firstTopo    = foldr (mergeParsedGraphs . parsedTrees) (Right mempty) inResults
       withMetadata = --trace ("initial graph " <> show firstTopo)
-                     enforceGraph firstTopo $ map (mergeParsedMetadata . parsedMetas) inResults
+                     enforceGraph firstTopo $ (mergeParsedMetadata . parsedMetas) <$> inResults
       withSeqs     = --trace ("graph with meatadata " <> show withMetadata)
                      verifyTaxaSeqs $ foldr (mergeParsedChars . parsedChars) withMetadata inResults
       encodedRes   = --trace ("graph with seqs " <> show withSeqs)
@@ -73,9 +73,10 @@ checkTaxaMatch (Graph g1) (Graph g2)
   | null allNames1 || null allNames2 = (mempty, mempty)
   | otherwise = (allNames1 \\ allNames2, allNames2 \\ allNames1)
     where
-        allNames1 = elems $ nonInternal $ foldr (<>) mempty (map nodeNames g1)
-        allNames2 = elems $ nonInternal $ foldr (<>) mempty (map nodeNames g2)
+        allNames1 = gatherNames g1
+        allNames2 = gatherNames g2
         nonInternal = IM.filter (not . isPrefixOf "HTU")
+        gatherNames = elems . nonInternal . foldr ((<>) . nodeNames) mempty
 
 -- | Specialized functionality to merge parsed graphs, simply adding the lists of dags together
 mergeParsedGraphs :: Graph -> Either UnificationError Graph -> Either UnificationError Graph
@@ -84,10 +85,10 @@ mergeParsedGraphs graph1@(Graph newGraph) carry = eitherAction carry id matchThe
     matchThese :: Graph -> Either UnificationError Graph
     matchThese in2@(Graph accumGraph)
       | doesMatch = Right $ Graph (accumGraph <> newGraph)
-      | otherwise = Left (UnificationError (pure (NonMatchingTaxa (fst matchCheck) (snd matchCheck)))) 
+      | otherwise = Left . UnificationError . pure  $ uncurry NonMatchingTaxa matchCheck
         where
           matchCheck = checkTaxaMatch graph1 in2
-          doesMatch = null (fst matchCheck) && null (snd matchCheck)
+          doesMatch  = null (fst matchCheck) && null (snd matchCheck)
 
 -- | Functionality to fully merge sets of metadata
 -- we make a lot of assumptions about whether the metadata agrees and assume:
@@ -96,19 +97,21 @@ mergeParsedGraphs graph1@(Graph newGraph) carry = eitherAction carry id matchThe
 -- if either of these assumptions are violated, this thing becomes more complicated
 mergeParsedMetadata :: [Vector CharInfo] -> Vector CharInfo
 --mergeParsedMetadata inMeta | trace ("merge metadata " <> show inMeta) False = undefined
-mergeParsedMetadata inMeta = foldr (flip (<>)) mempty inMeta
-
+mergeParsedMetadata = foldr (flip (<>)) mempty
+                   -- foldl (<>) mempty <-- I think this is equivelent
+                   -- TODO: Investigate above claim
+                      
 -- | Verify that after all the parsed sequences have been merged in, taxa names match
 verifyTaxaSeqs :: Either UnificationError Graph -> Either UnificationError Graph
 verifyTaxaSeqs inGraph = eitherAction inGraph id verifySeqs
   where
     verifySeqs :: Graph -> Either UnificationError Graph
     verifySeqs (Graph g)
-      | doesMatch = Right (Graph g)
-      | otherwise = Left (UnificationError (pure (NonMatchingTaxaSeqs (fst checkTuple) (snd checkTuple))))
+      | doesMatch = Right $ Graph g
+      | otherwise = Left  . UnificationError . pure $ uncurry NonMatchingTaxaSeqs checkTuple
       where
         nonInternal = filter (not . isPrefixOf "HTU")
-        graphNames = nonInternal $ elems $ foldr1 (<>) (map nodeNames g)
+        graphNames = nonInternal . elems $ foldr1 (<>) (fmap nodeNames g)
         seqNames = nub $ foldr (\e acc -> acc <> HM.keys (parsedSeqs e)) mempty g
         checkTuple = (graphNames \\ seqNames, seqNames \\ graphNames)
         doesMatch = null (fst checkTuple) && null (snd checkTuple)
@@ -128,21 +131,23 @@ mergeParsedChars inSeqs carry = eitherAction carry id addSeqs
         --  matchCheck = checkTaxaSeqs g inSeqs
         --  doesMatch = null (fst matchCheck) && null (snd matchCheck)
 
-          curSeqLen = map (getLen . parsedSeqs) accumDags
-          outSeqs = zipWith (\s l -> foldWithKey (addIn l) mempty s) inSeqs curSeqLen
+          curSeqLen = getLen . parsedSeqs <$> accumDags
+          outSeqs   = zipWith (\s l -> foldWithKey (addIn l) mempty s) inSeqs curSeqLen
 
           addIn :: Int -> String -> ParsedSequences -> HM.HashMap String ParsedSequences -> HM.HashMap String ParsedSequences
-          addIn curLen k v acc = if k `elem` (HM.keys acc) then HM.adjust (<> v) k acc
-                            else HM.insert k (V.replicate curLen Nothing <> v) acc
+          addIn curLen k v acc = if k `elem` HM.keys acc
+                                 then HM.adjust (<> v) k acc
+                                 else HM.insert k (V.replicate curLen Nothing <> v) acc
 
           getLen :: HM.HashMap Identifier ParsedSequences -> Int
-          getLen seqs = HM.foldr (\s acc -> if (length s /= acc) then error "Uneven sequence length" else length s) 0 seqs
+          getLen = HM.foldr (\s acc -> if   length s /= acc
+                                       then error "Uneven sequence length"                                      else length s) 0
 
 -- | Finally, functionality to do an encoding over a graph
 encodeGraph :: Either UnificationError Graph -> Either UnificationError Graph
 encodeGraph inGraph = eitherAction inGraph id (Right . onGraph)
   where
-    onGraph (Graph g) = Graph $ map determineBuild g
+    onGraph (Graph g) = Graph $ fmap determineBuild g
     determineBuild inDAG = if null $ nodes inDAG then encodeOver inDAG buildWithSeqs 
                             else encodeOver inDAG encodeNode
     encodeOver startDAG f = foldr f startDAG (IM.assocs $ nodeNames startDAG)
@@ -152,19 +157,19 @@ encodeGraph inGraph = eitherAction inGraph id (Right . onGraph)
     encodeNode :: (Int,Identifier) -> DAG -> DAG
     --encodeNode curPos curName curDAG | trace ("trying to encode " <> show (parsedSeqs curDAG)) False = undefined
     encodeNode (curPos,curName) curDAG 
-      | isLeaf curNode = curDAG {nodes = (nodes curDAG) // [(curPos, newNode)]}
+      | isLeaf curNode = curDAG { nodes = nodes curDAG // [(curPos, newNode)] }
       | otherwise = curDAG 
         where
-          curNode = (nodes curDAG) ! curPos
-          curSeqs = (parsedSeqs curDAG) HM.! curName
+          curNode = nodes curDAG ! curPos
+          curSeqs = parsedSeqs curDAG HM.! curName
           newNode = curNode {encoded = encodeIt curSeqs (characters curDAG)}
 
     -- | Encodes a bunch of disconnected nodes given the sequences
     buildWithSeqs :: (Int,Identifier) -> DAG -> DAG
-    buildWithSeqs (curPos,curName) curDAG = curDAG {nodes = generatedNode `cons` (nodes curDAG), edges = mempty `cons` (edges curDAG)}
+    buildWithSeqs (curPos,curName) curDAG = curDAG { nodes = generatedNode `cons` nodes curDAG, edges = mempty `cons` edges curDAG }
       where
-          curSeqs = (parsedSeqs curDAG) HM.! curName
-          generatedNode = mempty {code = curPos, encoded = encodeIt curSeqs (characters curDAG)}
+          curSeqs = parsedSeqs curDAG HM.! curName
+          generatedNode = mempty { code = curPos, encoded = encodeIt curSeqs (characters curDAG) }
 
 -- | Simple helper function for partitioning either
 eitherAction :: Either a b -> (a -> a) -> (b -> Either a b) -> Either a b

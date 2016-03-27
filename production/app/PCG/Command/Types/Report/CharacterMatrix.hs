@@ -41,7 +41,7 @@ outPutMatrix fileName inGraph = writeFile fileName (toCharMat inGraph)
         makeMat inDAG = 
             let
                 charFileNames = imap (\i c -> separateNames i $ name c) (characters inDAG)
-                addIt val acc = if elem val acc then acc else val `cons` acc
+                addIt val acc = if val `elem` acc then acc else val `cons` acc
                 uniqueChars = foldr (\p acc -> addIt (fst p) acc) mempty charFileNames
                 uniqueFiles = foldr (\p acc -> addIt (snd p) acc) mempty charFileNames
                 emptyMat = matrix (length uniqueChars) (length uniqueFiles) (const False)
@@ -50,9 +50,9 @@ outPutMatrix fileName inGraph = writeFile fileName (toCharMat inGraph)
 
         -- | custom unsafe indexing
         myIndex :: Eq a => a -> Vector a -> Int
-        myIndex val vec = case V.elemIndex val vec of
-                                Nothing -> error "Problem folding characters into matrix"
-                                Just i -> i
+        myIndex val vec = fromMaybe errMsg $ V.elemIndex val vec
+          where
+            errMsg = error "Problem folding characters into matrix"
 
         -- | In combining two CharFileMatrices, we assume that there are no common files between DAGS,
         -- but that there might be common characters.
@@ -77,7 +77,7 @@ outPutMatrix fileName inGraph = writeFile fileName (toCharMat inGraph)
         printMat (CFMat chars files mat) = foldr  (\i acc -> acc ++ printFullRow i) printHeader [0..length chars - 1]
             where
                 printHeader = foldr (\e acc -> acc ++ e ++ ", ") mempty files ++ "\n"
-                printFullRow index = (chars ! index) ++ ", " ++ (printBools $ getRow index mat) ++ "\n"
+                printFullRow index = (chars ! index) ++ ", " ++ printBools (getRow index mat) ++ "\n"
                 printBools = foldr (\e acc -> acc ++ (if e then "+" else "-") ++ ", ") mempty
 
         -- | Separates the file and character names, defaulting character name as needed

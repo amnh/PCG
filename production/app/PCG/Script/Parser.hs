@@ -22,7 +22,7 @@ commandDefinition = do
   _         <- whitespace
   lident    <- lidentDefinition
   arguments <- argumentListDefinition
-  return $ DubiousCommand lident arguments
+  pure $ DubiousCommand lident arguments
 
 lidentDefinition :: MonadParsec s m Char => m Lident
 lidentDefinition = try $ Lident <$> symbol lident
@@ -43,7 +43,7 @@ argumentDefinition =
       lident   <- lidentDefinition
       _        <- trimmed $ char ':' 
       argument <- argumentDefinition
-      return $ LidentNamedArg lident argument
+      pure $ LidentNamedArg lident argument
 
 argumentListDefinition :: MonadParsec s m Char => m [Argument]
 argumentListDefinition = 
