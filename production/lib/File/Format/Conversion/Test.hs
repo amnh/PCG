@@ -48,3 +48,18 @@ simplestNewick = testGroup "Simplest Newick files" [threeNode]
 -- topology tests:
     -- make sure all given names from Newick become leaves
     -- check for correct num of nodes
+
+-- makeEncodeInfo     :: TreeSeqs -> Vector CharInfo
+-- developAlphabets   :: TreeSeqs -> Vector Alphabet
+-- makeOneInfo        :: Alphabet -> (Bool, Int) -> CharInfo
+-- checkAlignLens     :: TreeSeqs -> Vector (Bool, Int)
+-- subsetOf           :: (Ord a) => [a] -> [a] -> Bool
+-- encodeIt           :: ParsedSequences -> Vector CharInfo -> EncodedSequences BitVector
+-- packIt             :: ParsedSequences -> Vector CharInfo -> EncodedSequences BitVector
+-- encodeMinimal      :: (Bits b, Num b, Show b) => ParsedSeq -> Alphabet -> EncodedSeq b
+-- encodeMaximal      :: Bits b => ParsedSeq -> Alphabet -> EncodedSeq b
+-- encodeOverMetadata :: (Bits b, Num b, Show b) => ParsedSeq -> PhyloCharacter (EncodedSeq b) -> EncodedSeq b
+-- setSingleElem      :: Bits b => String -> b -> Alphabet -> b
+
+--utilityTests :: TestTree
+--utilityTests = testGroup "Utility function tests" []
