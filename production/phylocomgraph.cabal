@@ -29,7 +29,7 @@ category:            Biology
 build-type:          Simple
 extra-source-files:  README.md
 
-cabal-version: >= 1.8
+cabal-version: >= 1.22
 
 executable pcg
   main-is:             Main.hs
@@ -62,7 +62,10 @@ executable pcg
                      , transformers         -any
                      , unordered-containers -any
                      , vector               -any
+                     , phylocomgraph        -any
 
+  default-language:    Haskell2010
+                     
   ghc-options:         -O2 -Wall 
                        -fwarn-duplicate-exports
                        -fwarn-incomplete-patterns
@@ -79,59 +82,7 @@ executable pcg
   include-dirs:
     ffi/Analysis/Parsimony/Binary/SequentialAlign
     
-  other-modules:       Analysis.DirectOptimization.Naive
-                       Analysis.DirectOptimization.ImpliedAlign
-                       Analysis.GenericFitch
-                       Analysis.Parsimony.Binary.SequentialAlign.SeqAlignFFI
-                       Bio.Phylogeny.Forest
-                       Bio.Phylogeny.Forest.Class
-                       Bio.Phylogeny.Graph
-                       Bio.Phylogeny.Graph.Data
-                       Bio.Phylogeny.Network
-                       Bio.Phylogeny.Network.Class
-                       Bio.Phylogeny.PhyloCharacter
-                       Bio.Phylogeny.Tree.Binary
-                       Bio.Phylogeny.Tree.Binary.Class
-                       Bio.Phylogeny.Tree.CharacterAware
-                       Bio.Phylogeny.Tree.CharacterAware.Class
-                       Bio.Phylogeny.Tree.Edge.Standard
-                       Bio.Phylogeny.Tree.EdgeAware
-                       Bio.Phylogeny.Tree.EdgeAware.Class
-                       Bio.Phylogeny.Tree.Node
-                       Bio.Phylogeny.Tree.Node.Encoded
-                       Bio.Phylogeny.Tree.Node.Final
-                       Bio.Phylogeny.Tree.Node.Packed
-                       Bio.Phylogeny.Tree.Node.Preliminary
-                       Bio.Phylogeny.Tree.Referential
-                       Bio.Phylogeny.Tree.Rose
-                       Bio.Phylogeny.Tree.Rose.Class
-                       Bio.Sequence.Coded
-                       Bio.Sequence.Coded.Class
-                       Bio.Sequence.Character.Coded                     
-                       Control.Evaluation
-                       Control.Evaluation.Internal
-                       Control.Evaluation.Trans
-                       Control.Evaluation.Unit
-                       Data.Either.Custom
-                       Data.List.Utility
-                       File.Format.Fasta
-                       File.Format.Fasta.Converter
-                       File.Format.Fasta.Internal
-                       File.Format.Fasta.Parser
-                       File.Format.Fastc
-                       File.Format.Fastc.Parser
-                       File.Format.Newick
-                       File.Format.Newick.Converter
-                       File.Format.Nexus.Data
-                       File.Format.Nexus.Partition
-                       File.Format.Nexus.Validate
-                       File.Format.Newick.Internal
-                       File.Format.Newick.Parser
-                       File.Format.TransitionCostMatrix
-                       File.Format.TransitionCostMatrix.Parser
-                       File.Format.VertexEdgeRoot
-                       File.Format.VertexEdgeRoot.Converter
-                       File.Format.VertexEdgeRoot.Parser
+  other-modules:
                        PCG.Command
                        PCG.Command.Types
                        PCG.Command.Types.Read
@@ -141,33 +92,6 @@ executable pcg
                        PCG.Script
                        PCG.Script.Parser
                        PCG.Script.Types
-                       Text.Megaparsec.Custom
-
-                       Bio.Metadata.Class
-                       Bio.Phylogeny.Graph.Parsed
-                       Bio.Phylogeny.Graph.Topological
-                       Bio.Phylogeny.Graph.Utilities
-                       Bio.Phylogeny.Network.Subsettable
-                       Bio.Phylogeny.Tree.Node.Topological
-                       Bio.Sequence.Packed.Class
-                       Bio.Sequence.Parsed
-                       Bio.Sequence.Parsed.Class
-                       Bio.Sequence.Random
-                       Data.Matrix.NotStupid
-                       File.Format.Conversion.Encoder
-                       File.Format.Nexus
-                       File.Format.Nexus.Parser
-                       File.Format.TNT
-                       File.Format.TNT.Command.CCode
-                       File.Format.TNT.Command.CNames
-                       File.Format.TNT.Command.Cost
-                       File.Format.TNT.Command.NStates
-                       File.Format.TNT.Command.Procedure
-                       File.Format.TNT.Command.TRead
-                       File.Format.TNT.Command.XRead
-                       File.Format.TNT.Internal
-                       File.Format.TNT.Parser
-                       File.Format.TNT.Partitioning
                        PCG.Command.Types.Read.Evaluate
                        PCG.Command.Types.Read.Unification.Master
                        PCG.Command.Types.Read.Unification.UnificationError
@@ -204,6 +128,8 @@ executable brg
                      , transformers         -any
                      , unordered-containers -any
                      , vector               -any
+
+  default-language:    Haskell2010
 
   ghc-options:         -O2 -Wall 
                        -fwarn-duplicate-exports
@@ -336,6 +262,8 @@ executable qdh
                      , unordered-containers -any
                      , vector               -any
 
+  default-language:    Haskell2010
+
   ghc-options:         -O2 -Wall 
                        -fwarn-duplicate-exports
                        -fwarn-incomplete-patterns
@@ -458,6 +386,8 @@ library
                      , unordered-containers -any
                      , vector               -any
 
+  default-language:    Haskell2010
+
   ghc-options:         -O2 -Wall 
                        -fwarn-duplicate-exports
                        -fwarn-incomplete-patterns
@@ -516,8 +446,6 @@ library
                        File.Format.VertexEdgeRoot
                        File.Format.TransitionCostMatrix
 
-  -- Modules included in this library but not exported.
-  other-modules:
                        Analysis.GenericFitch
                        Bio.Phylogeny.Forest.Class
                        Bio.Phylogeny.Graph.Data
@@ -555,6 +483,8 @@ library
                        File.Format.VertexEdgeRoot.Parser
                        Text.Megaparsec.Custom
 
+  -- Modules included in this library but not exported.
+--  other-modules:
 
 Test-Suite testsuite
   type:                exitcode-stdio-1.0
@@ -588,6 +518,8 @@ Test-Suite testsuite
                      , transformers         -any
                      , unordered-containers -any
                      , vector               -any
+
+  default-language:    Haskell2010
 
   hs-source-dirs:      test, lib, app, ffi
 

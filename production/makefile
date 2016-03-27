@@ -1,27 +1,61 @@
+#Flags for GHC
 linking       = --make
 warnings      = -w -W -Wall -Werror
 sanity        = -fwarn-duplicate-exports -fwarn-incomplete-patterns -fwarn-missing-signatures -fwarn-overlapping-patterns -fwarn-tabs -fwarn-unused-binds -fwarn-unused-imports -fwarn-unused-matches -fwarn-unused-do-bind
-stack         = -prof -auto-all -caf-all
+stacktracing  = -prof -auto-all -caf-all
 
-all: stack-build
+#Flags for `stack`
+haddoc        = --haddock --haddock-deps
+profiling     = --executable-profiling --library-profiling
 
-cabal-build: phylocomgraph.cabal
-	cabal install --dependencies-only && cabal configure --enable-tests --enable-profiling && cabal build && cabal haddock --executables --html --hyperlink-source && cabal test
 
-stack-build: install-stack setup rebuild
+# Target aliases for easy CLI use
+################################################################################
 
+
+# Default build target
+all: standard-build
+
+# Rebuilds with profiling
+prof: stack-build-profiling
+
+# Builds fast as possible
+quick: stack-build-quick
+
+# Rebuilds as fast as possible
+rebuild: quick
+
+# Clean then rebuild
+rebuild-full: clean rebuild
+
+
+# Target Definitions
+################################################################################
+
+
+# Builds with useful features for a standard user of the package
+standard-build: install-stack stack-setup ffi-code-cleaning
+	stack install --test $(haddoc)
+
+# Builds with all useful options for package power users
+full-build: install-stack clean stack-setup stack-build-prof
+
+# Upgrade stack if installed or install stack if not installed
 install-stack:
 	stack upgrade || (cabal update && cabal install stack)
 
-setup: phylocomgraph.cabal stack.yaml
+stack-setup: phylocomgraph.cabal stack.yaml
 	stack setup
 
-rebuild: ffi-code-cleaning phylocomgraph.cabal stack.yaml
-	stack build --haddock --test
+# Builds with no extra generated features and no optimizations
+stack-build-quick: ffi-code-cleaning phylocomgraph.cabal stack.yaml
+	stack build --fast
 
-ffi-code-cleaning: ffi/Analysis/Parsimony/Binary/SequentialAlign/makefile
-	$(MAKE) -C ffi/Analysis/Parsimony/Binary/SequentialAlign
+# Builds with profiling enabled
+stack-build-prof: ffi-code-cleaning phylocomgraph.cabal stack.yaml
+	stack build --test $(haddoc) $(profiling)
 
+# Cleans up artefact files after a build
 clean: phylocomgraph.cabal stack.yaml
 	stack clean
 	find . -type f -name '*.o'  -delete
@@ -29,5 +63,11 @@ clean: phylocomgraph.cabal stack.yaml
 	find . -type f -name '*.*~' -delete
 	find . -type f -name '#*.*' -delete
 
-quick: phylocomgraph.cabal stack.yaml
-	stack build --test
+# Calls other make files to pre-process FFI files
+ffi-code-cleaning: ffi/Analysis/Parsimony/Binary/SequentialAlign/makefile
+	$(MAKE) -C ffi/Analysis/Parsimony/Binary/SequentialAlign
+
+# Legacy cabal build option
+cabal-build: phylocomgraph.cabal
+	cabal install --dependencies-only && cabal configure --enable-tests --enable-profiling && cabal build && cabal haddock --executables --html --hyperlink-source && cabal test
+
