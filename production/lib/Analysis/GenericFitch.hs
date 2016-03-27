@@ -14,11 +14,9 @@ import Bio.Sequence.Coded
 import Bio.Phylogeny.PhyloCharacter
 
 
+import           Data.Bits
+import           Data.Maybe
 import qualified Data.Vector as V
-import Debug.Trace
-import Data.Maybe
-import Data.Bits
-import qualified Data.IntMap as IM
 
 type TreeConstraint t n s b = (BinaryTree t n, Show t, NodeConstraint n s b, CharacterTree t s)
 type NodeConstraint n s b = (EncodedNode n s, PreliminaryNode n s, FinalNode n s, SeqConstraint s b, Show n)
@@ -29,15 +27,15 @@ type SeqConstraint s b = (Bits b, CodedSequence s b, Bits s, Show s)
 -- | Unified function to perform both the first and second passes of fitch
 allOptimization :: TreeConstraint t n s b => Double -> t -> t
 --allOptimization _ inTree | trace ("allOptimization " ++ show (names inTree IM.! 63)) False = undefined
-allOptimization weight inTree = 
+allOptimization weighting inTree = 
     let 
-        downPass = optimizationPreorder weight inTree
+        downPass = optimizationPreorder weighting inTree
         upPass = optimizationPostorder downPass
     in upPass
 
 -- | Optimization down pass warpper for recursion from root
 optimizationPreorder :: TreeConstraint t n s b => Double -> t -> t
-optimizationPreorder weight tree
+optimizationPreorder weighting tree
     | isLeaf (root tree) tree = -- if the root is a terminal, give the whole tree a cost of zero, do not reassign nodes
         let 
             newNode = setLocalCost 0.0 $ setTotalCost 0.0 (root tree)
@@ -46,14 +44,14 @@ optimizationPreorder weight tree
     | leftOnly && rightOnly = error "Problem with binary tree structure: non-terminal has no children"
     | rightOnly = -- if there is only one child, continue recursion down and resolve
         let 
-            nodes1 = internalPreorder weight (fromJust $ rightChild (root tree) tree) tree -- with only one child, assignment and cost is simply carried up
+            nodes1 = internalPreorder weighting (fromJust $ rightChild (root tree) tree) tree -- with only one child, assignment and cost is simply carried up
             carryNode = head nodes1
             newNodes = (setTemporary (temporary carryNode) $ setAlign (preliminaryAlign carryNode) 
                         $ setPreliminary (preliminary carryNode) $ setTotalCost (totalCost carryNode) $ setLocalCost (localCost carryNode) (root tree)) : nodes1
         in tree `update` newNodes
     | leftOnly = 
         let 
-            nodes1 = internalPreorder weight (fromJust $ leftChild (root tree) tree) tree -- with only one child, assignment and cost is simply carried up
+            nodes1 = internalPreorder weighting (fromJust $ leftChild (root tree) tree) tree -- with only one child, assignment and cost is simply carried up
             carryNode = head nodes1
             myNode = setTemporary (temporary carryNode) $ setAlign (preliminaryAlign carryNode) 
                         $ setPreliminary (preliminary carryNode) $ setTotalCost (totalCost carryNode) $ setLocalCost (localCost carryNode) (root tree)
@@ -61,66 +59,66 @@ optimizationPreorder weight tree
         in tree `update` newNodes
     | otherwise = 
         let 
-            nodes1 = internalPreorder weight (fromJust $ rightChild (root tree) tree) tree 
-            nodes2 = internalPreorder weight (fromJust $ leftChild (root tree) tree) tree
-            myNode = preorderBitOps weight (root tree) (head nodes1) (head nodes2) (characters tree)
+            nodes1 = internalPreorder weighting (fromJust $ rightChild (root tree) tree) tree 
+            nodes2 = internalPreorder weighting (fromJust $ leftChild (root tree) tree) tree
+            myNode = preorderBitOps   weighting (root tree) (head nodes1) (head nodes2) (characters tree)
             newNodes = myNode : (nodes1 ++ nodes2)
         in tree `update` newNodes
 
         where
-            leftOnly = isNothing $ rightChild (root tree) tree
-            rightOnly = isNothing $ leftChild (root tree) tree
+            leftOnly  = isNothing $ rightChild (root tree) tree
+            rightOnly = isNothing $ leftChild  (root tree) tree
 
 -- | Internal down pass that creates new rows without combining, making the algorithm faster
 internalPreorder :: TreeConstraint t n s b => Double -> n -> t -> [n]
-internalPreorder weight node tree 
+internalPreorder weighting node tree 
     | isLeaf node tree = -- if the root is a terminal, give the whole tree a cost of zero, do not reassign nodes
         let newNode = setTotalCost 0.0 $ setLocalCost 0.0 node
         in [newNode]
     | rightOnly && leftOnly = error "Problem with binary tree structure: non-terminal has no children"
     | rightOnly = -- if there is only one child, continue recursion down and resolve
         let 
-            nodes1 = internalPreorder weight (fromJust $ rightChild node tree) tree -- with only one child, assignment and cost is simply carried up
+            nodes1 = internalPreorder weighting (fromJust $ rightChild node tree) tree -- with only one child, assignment and cost is simply carried up
             carryNode = head nodes1
             myNode = setTemporary (temporary carryNode) $ setAlign (preliminaryAlign carryNode) 
                         $ setPreliminary (preliminary carryNode) $ setTotalCost (totalCost carryNode) $ setLocalCost (localCost carryNode) node
         in myNode : nodes1
     | leftOnly = 
         let 
-            nodes1 = internalPreorder weight (fromJust $ leftChild node tree) tree -- with only one child, assignment and cost is simply carried up
+            nodes1 = internalPreorder weighting (fromJust $ leftChild node tree) tree -- with only one child, assignment and cost is simply carried up
             carryNode = head nodes1
             myNode = setTemporary (temporary carryNode) $ setAlign (preliminaryAlign carryNode) 
                         $ setPreliminary (preliminary carryNode) $ setTotalCost (totalCost carryNode) $ setLocalCost (localCost carryNode) node
         in myNode : nodes1
     | otherwise = 
         let 
-            nodes1 = internalPreorder weight (fromJust $ rightChild node tree) tree 
-            nodes2 = internalPreorder weight (fromJust $ leftChild node tree) tree
-            myNode = preorderBitOps weight node (head nodes1) (head nodes2) (characters tree)
+            nodes1 = internalPreorder weighting (fromJust $ rightChild node tree) tree 
+            nodes2 = internalPreorder weighting (fromJust $ leftChild node tree) tree
+            myNode = preorderBitOps   weighting node (head nodes1) (head nodes2) (characters tree)
         in myNode : (nodes1 ++ nodes2)
 
         where
-            leftOnly = isNothing $ rightChild node tree
-            rightOnly = isNothing $ leftChild node tree
+            leftOnly  = isNothing $ rightChild node tree
+            rightOnly = isNothing $ leftChild  node tree
 
 -- | Bit operations for the down pass: basically creats a mask for union and intersection areas and then takes them
 -- returns the new assignment, the union/intersect mask, and the new total cost
 preorderBitOps :: NodeConstraint n s b => Double -> n -> n -> n -> V.Vector (PhyloCharacter s) -> n
 --preorderBitOps _ _ lNode _ treeChars | trace ("preorderBitOps " ++ show treeChars ++ show lNode) False = undefined
-preorderBitOps weight curNode lNode rNode treeChars =
+preorderBitOps weighting curNode lNode rNode treeChars =
     let
-        lbit = grabAligned treeChars lNode
-        chars = V.filter aligned treeChars
-        rbit = grabAligned treeChars rNode
-        notOr = complement $ lbit .&. rbit
-        union = lbit .|. rbit
-        fbit = notOr .&. V.map (snd . fitchMasks) chars
-        rightF = blockShiftAndFold "R" "&" chars notOr fbit
-        finalF = blockShiftAndFold "L" "|" chars rightF rightF
-        maskF = V.map (fst . fitchMasks) chars .&. finalF
-        myCost = fetchCost maskF chars
+        lbit       = grabAligned treeChars lNode
+        chars      = V.filter aligned treeChars
+        rbit       = grabAligned treeChars rNode
+        notOr      = complement $ lbit .&. rbit
+        union      = lbit .|. rbit
+        fbit       = notOr .&. V.map (snd . fitchMasks) chars
+        rightF     = blockShiftAndFold "R" "&" chars notOr fbit
+        finalF     = blockShiftAndFold "L" "|" chars rightF rightF
+        maskF      = V.map (fst . fitchMasks) chars .&. finalF
+        myCost     = fetchCost maskF chars
         weightCost = --trace ("Cost of bit ops " ++ show myCost) 
-                        weight * myCost
+                        weighting * myCost
         finalCost = totalCost lNode + totalCost rNode + weightCost
         outbit = (maskF .&. union) .|. (lbit .&. rbit)
         outNode = setPreliminary outbit $ setAlign outbit $ setTemporary finalF $ setLocalCost weightCost $ setTotalCost finalCost curNode

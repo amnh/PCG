@@ -2,16 +2,11 @@
 module File.Format.TNT.Command.Cost where
 
 import           Data.Functor             (($>))
-import           Data.Foldable            (toList,maximumBy)
-import           Data.DList               (DList,append)
-import qualified Data.DList         as DL (toList,fromList)
-import           Data.IntMap              (IntMap,insertWith)
-import qualified Data.IntMap        as IM (lookup)
 import           Data.List.NonEmpty       (NonEmpty)
 import qualified Data.List.NonEmpty as NE (fromList)
 import           Data.Matrix.NotStupid    (Matrix,matrix)
 import           Data.Maybe               (fromJust,fromMaybe)
-import           Data.Ord                 (comparing)
+--import           Data.Ord                 (comparing)
 import           Data.Vector              ((!))
 import           File.Format.TNT.Internal
 import           Text.Megaparsec
@@ -66,7 +61,7 @@ condenseToMatrix costs = matrix dimensions dimensions value
     indexOf e = snd . foldl f (0, Nothing)
       where
         f a@(_, Just _ ) _ = a
-        f a@(i, Nothing) x
+        f   (i, Nothing) x
           | x == e    = (i  , Just i )
           | otherwise = (i+1, Nothing)
 

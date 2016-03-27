@@ -4,7 +4,6 @@ module File.Format.TNT.Command.NStates where
 import Data.Functor (($>))
 import File.Format.TNT.Internal
 import Text.Megaparsec
-import Text.Megaparsec.Custom
 import Text.Megaparsec.Prim     (MonadParsec)
 
 -- | Parses NSTATES command
@@ -38,11 +37,11 @@ nstatesNumeric = identifier *> stateCount
     stateCount = NumericStates <$> symbol nonNegInt
 
 nstatesProtein :: MonadParsec s m Char => m NStates
-nstatesProtein = identifier *> pure ProteinStates
+nstatesProtein = identifier $> ProteinStates
   where
     identifier = symbol $ keyword "protein" 4
 
 nstatesContinuous :: MonadParsec s m Char => m NStates
-nstatesContinuous = identifier *> pure ContinuousStates
+nstatesContinuous = identifier $> ContinuousStates
   where
     identifier  = symbol $ keyword "continuous" 4

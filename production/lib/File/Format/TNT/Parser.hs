@@ -6,7 +6,6 @@ import           Data.Foldable            (toList)
 import           Data.IntMap              (IntMap,insertWith,mapWithKey,toAscList)
 import qualified Data.IntMap        as IM (lookup)
 import qualified Data.Map           as M  (fromList,lookup)
-import           Data.List.NonEmpty       (NonEmpty)
 import qualified Data.List.NonEmpty as NE (fromList)
 import           Data.Matrix.NotStupid    (Matrix)
 import           Data.Maybe               (fromMaybe)
@@ -26,10 +25,10 @@ tntStreamParser :: MonadParsec s m Char => m TntResult
 tntStreamParser = (colateResult <=< collapseStructures) =<< (whitespace *> gatherCommands)
   where
     colateResult :: MonadParsec s m Char => ([CCode],[CharacterName],[Cost],[NStates],[TReadTree],[XRead]) -> m TntResult
-    colateResult (     _,     _,     _,     _,     _,  x:y:z) = fail "Multiple XREAD commands found in source, expecting a single XREAD command."
-    colateResult (     _,     _,     _,     _,    [],     []) = fail "No XREAD command or TREAD command, expecting either a single XREAD command or one or more TRead commands."
-    colateResult (     _,     _,    _,      _,treads,     []) = pure . Left $ NE.fromList treads
-    colateResult (ccodes,cnames,costs,nstates,treads,[xread])
+    colateResult (     _,     _,     _,      _,     _,  _:_:_) = fail "Multiple XREAD commands found in source, expecting a single XREAD command."
+    colateResult (     _,     _,     _,      _,    [],     []) = fail "No XREAD command or TREAD command, expecting either a single XREAD command or one or more TRead commands."
+    colateResult (     _,     _,    _,       _,treads,     []) = pure . Left $ NE.fromList treads
+    colateResult (ccodes,cnames,costs,_nstates,treads,[xread])
       | charCountx xread == 0 = (Left . fmap (fmap (Name . fst)) . NE.fromList) <$> matchTaxaInTree xread treads
       | otherwise             = Right <$> liftM3 WithTaxa
                                   (pure $ vectorizeTaxa xread)
@@ -38,9 +37,9 @@ tntStreamParser = (colateResult <=< collapseStructures) =<< (whitespace *> gathe
       where
         vectorizeTaxa   = V.fromList . toList . sequencesx
         matchTaxaInTree :: MonadParsec s m Char => XRead -> [TReadTree] -> m [LeafyTree TaxonInfo]
-        matchTaxaInTree xread = traverse interpolateLeafs
+        matchTaxaInTree xreadCommand = traverse interpolateLeafs
           where
-            seqs  = sequencesx xread
+            seqs  = sequencesx xreadCommand
             vseqs = V.fromList $ toList seqs
             mseqs = M.fromList $ toList seqs
             limit = length vseqs - 1
@@ -53,7 +52,7 @@ tntStreamParser = (colateResult <=< collapseStructures) =<< (whitespace *> gathe
               case name `M.lookup` mseqs of
                 Nothing -> fail $ "Name '" ++ show name ++ "' in TREAD tree is not in the list of taxa from the XREAD commands."
                 Just x  -> pure (name, x)
-            substituteLeaf (Prefix pref) = undefined
+            substituteLeaf (Prefix _) = undefined
 
 collapseStructures :: MonadParsec s m Char => Commands -> m ([CCode],[CharacterName],[Cost],[NStates],[TReadTree],[XRead])
 collapseStructures (ccodes,cnames,costs,nstates,treads,xreads)
@@ -112,9 +111,11 @@ costsCoalesce charCount = foldl addTCMs mempty
     insertTCM mat mapping index = insertWith const index mat mapping
     addTCMs mapping (Cost changeSet mat) = foldl (insertTCM mat) mapping (range charCount changeSet)
 
+range :: Int -> CharacterSet -> [Int]
 range _ (Single    i  ) = [i..i]
 range _ (Range     i j) = [i..j]
 range _ (FromStart   j) = [0..j]
 range j (ToEnd     i  ) = [i..j]
 range j  Whole          = [0..j]
+
     

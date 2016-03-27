@@ -1,6 +1,6 @@
 -----------------------------------------------------------------------------
 -- |
--- Module      :  Text.Megaparsec.Custom
+-- Module      :  Bio.Sequences.Coded
 -- Copyright   :  (c) 2015-2015 Ward Wheeler
 -- License     :  BSD-style
 --
@@ -18,20 +18,19 @@
 
 module Bio.Sequence.Coded (CodedSequence(..), EncodedSeq, EncodedSequences, CodedChar(..), encodeAll, unencodeMany) where
 
-import           Prelude hiding      (map, length, zipWith, null, head)
-import qualified Prelude as P        (length, map)
-import           Data.List           (elemIndex)
-import           Control.Applicative (liftA2, liftA)
-import           Control.Monad
-import           Data.Vector         (map, zipWith, empty, Vector, head, (!), singleton, ifoldr, slice)
-import qualified Data.Vector as V    (filter)
-import           Data.Bits
-import           Data.BitVector      (BitVector, size)
-import           Data.Maybe
+import           Prelude hiding (map, zipWith, null, head)
 import           Bio.Sequence.Coded.Class
 import           Bio.Sequence.Character.Coded
 import           Bio.Sequence.Packed.Class
-import Bio.Sequence.Parsed
+import           Bio.Sequence.Parsed
+import           Control.Applicative  (liftA2, liftA)
+import           Control.Monad
+import           Data.Bits
+import           Data.BitVector (BitVector, size)
+import           Data.List (elemIndex)
+import           Data.Maybe
+import           Data.Vector    (map, zipWith, empty, Vector, head, (!), singleton)
+import qualified Data.Vector as V (filter)
 
 import GHC.Stack
 import Data.Foldable
@@ -74,7 +73,7 @@ instance Bits b => CodedSequence (EncodedSeq b) b where
 
 ----  = 
 --    let
---        alphWidth = P.length alphabet
+--        alphWidth = length alphabet
 --        bitWidth = bitSizeMaybe gapChar
 --        coded = map (\ambig -> foldr (\c acc -> setElemAt c acc alphabet) zeroBits ambig) strSeq
 --        regroup = case bitWidth of
@@ -101,7 +100,7 @@ setElemAt char orig alphabet
 unencodeOverAlphabet :: EncodedSeq BitVector -> Alphabet -> ParsedSeq 
 unencodeOverAlphabet encoded alph = 
     let 
-        alphLen = P.length alph
+        alphLen = length alph
         oneBit inBit = foldr (\i acc -> if testBit inBit i then alph !! (i `mod` alphLen) : acc else acc) mempty [0..size inBit]
         allBits = fmap oneBit <$> encoded
     in fromMaybe mempty allBits
@@ -129,7 +128,7 @@ instance Bits b => Bits (Vector b) where
     bit    pos    = pure $ bit pos
     bitSize       = foldl' (\a b -> fromMaybe 0 (bitSizeMaybe b) + a) 0
     bitSizeMaybe  = foldlM (\a b -> (a+) <$> bitSizeMaybe b) 0 
-    isSigned bits = False
+    isSigned _    = False
     popCount      = foldr (\b acc -> acc + popCount b) 0
     testBit bits index
         | null bits = False

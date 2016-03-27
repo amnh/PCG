@@ -3,16 +3,15 @@ module File.Format.TNT.Internal where
 
 import           Control.Monad            ((<=<))
 import           Data.Bits
-import           Data.Char                (isAlpha,isLower,isSpace,isUpper,toLower,toUpper)
+import           Data.Char                (isAlpha,isLower,isUpper,toLower,toUpper)
+import           Data.Functor             (($>))
 import           Data.Foldable            (toList)
 import           Data.Key                 ((!),lookup)
 import           Data.List                (inits)
 import           Data.List.NonEmpty       (NonEmpty)
-import           Data.List.Utility
 import           Data.Matrix.NotStupid    (Matrix)
 import           Data.Map                 (Map,assocs,insert,keys,union )
 import qualified Data.Map            as M (fromList)
-import           Data.Maybe               (catMaybes)
 import           Data.Tuple               (swap)
 import           Data.Vector              (Vector)
 import qualified Data.Vector         as V (fromList)
@@ -320,7 +319,7 @@ flexiblePositiveInt labeling = either coerceIntegral coerceFloating
 -- unexpected "abr"
 -- expecting keyword 'abrakadabra'
 keyword :: MonadParsec s m Char => String -> Int -> m ()
-keyword x y = abreviatable x y *> pure ()
+keyword x y = abreviatable x y $> ()
   where
     abreviatable :: MonadParsec s m Char => String -> Int -> m String
     abreviatable fullName minimumChars
@@ -328,7 +327,7 @@ keyword x y = abreviatable x y *> pure ()
       | any (not . isAlpha) fullName = fail $ "A keywork containing a non alphabetic character: '" ++ show fullName ++ "' supplied to abreviateable combinator"
       | otherwise                    = combinator <?> "keyword '" ++ fullName ++ "'"
       where
-        combinator      = choice partialOptions *> pure fullName
+        combinator      = choice partialOptions $> fullName
         partialOptions  = makePartial <$> drop minimumChars (inits fullName)
         makePartial opt = try $ string' opt <* terminator
         terminator      = lookAhead $ satisfy (not . isAlpha) 
@@ -355,7 +354,7 @@ characterIndicies = choice $ try <$> [range, fromStart, single, toEnd, whole]
     fromStart = FromStart <$> num <* dot
     single    = Single    <$> num
     toEnd     = dot *> (ToEnd <$> num)
-    whole     = dot *> pure Whole
+    whole     = dot $>  Whole
     num       = symbol (nonNegInt <?> "sequence index value")
     dot       = symbol (char '.')
 

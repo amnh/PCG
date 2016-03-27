@@ -10,21 +10,20 @@ import qualified Bio.Phylogeny.Network as N
 import Bio.Phylogeny.Tree.Node
 
 import Prelude      hiding          (filter)
-import Data.Vector                  (filter, (!), toList, (//), cons, singleton, Vector, ifoldr)
-import qualified Data.Vector as V   (map, fromList, (++), replicate)
+import Data.Foldable
+import Data.Vector                  (filter, (!), (//), cons, singleton, Vector, ifoldr)
+import qualified Data.Vector as V   ((++), replicate)
 import Data.Monoid
 import Data.BitVector               (BitVector)
 import qualified Data.IntMap as IM
 import qualified Data.IntSet as IS
 import qualified Data.HashMap.Lazy as HM
 
-import Debug.Trace
-
 -- | Splits a tree into connected components, forming a graph
 splitConnected :: DAG -> Graph
 splitConnected inDAG = 
     let roots = filter isRoot (nodes inDAG)
-    in Graph $ toList $ V.map (grabConnected inDAG) roots
+    in Graph $ toList $ fmap (grabConnected inDAG) roots
 
 -- | Grabs connected nodes, assuming that they are isolated 
 -- from the rest of the network.
@@ -91,7 +90,7 @@ appendAt t1@(DAG names seqs chars n e r) t2@(DAG names' seqs' chars' n' e' r') h
       (charNodes1, charNodes2, newChars) = reCodeChars (n, n') (chars, chars')
       -- Then update nodes to recode them and re-hang
       recodeFun node = node {code = code node + shift, children = map (shift +) (children node), parents = map (shift +) (parents node)}
-      recodeNew = V.map recodeFun charNodes2
+      recodeNew = fmap recodeFun charNodes2
       hungNodes = recodeNew // [(r', (recodeNew ! r') {isRoot = False, parents = [hCode]})]
       connectN = charNodes1 // [(hCode, (charNodes1 ! hCode) {children = (shift + r') : children hangNode, isLeaf = False})]
       allNodes = --trace ("finished nodes " P.++ show hungNodes P.++ show connectN) $ 
@@ -111,7 +110,7 @@ appendAt t1@(DAG names seqs chars n e r) t2@(DAG names' seqs' chars' n' e' r') h
       reMapInfo eInfo = eInfo {origin = allNodes ! (code (origin eInfo) + shift), terminal = allNodes ! (code (terminal eInfo) + shift)}
       shiftEdge edge = edge {inNodes = IS.map (shift +) (inNodes edge), outNodes = reMapOut (outNodes edge)}
       newEdges = --trace ("hang node " ++ show hCode ++ "hanged node " ++ show r' ++ ", " ++ show e') 
-                  V.map shiftEdge e'
+                  fmap shiftEdge e'
       allEdges = e V.++ newEdges
 
       hangUpdate = (allEdges ! hCode) {outNodes = IM.map (\info -> info {origin = allNodes ! hCode}) (outNodes $ (allEdges ! hCode))}
@@ -154,8 +153,8 @@ reCodeChars (nodes1, nodes2) (chars1, chars2)
       update1 node = node {encoded = fill1 (encoded node), packed = fill1 (packed node), preliminary = fill1 (preliminary node), final = fill1 (final node), temporary = fill1 (temporary node), aligned = fill1 (aligned node)}
       update2 node = node {encoded = fill2 (encoded node), packed = fill2 (packed node), preliminary = fill2 (preliminary node), final = fill2 (final node), temporary = fill2 (temporary node), aligned = fill2 (aligned node)}
       allChars = justFill chars1 intersectChars1 V.++ justFill chars1 complement1 V.++ justFill chars2 complement2
-    in --trace ("finish " P.++ show complement1 P.++ show (V.map update1 nodes1))
-        (V.map update1 nodes1, V.map update2 nodes2, allChars)
+    in --trace ("finish " P.++ show complement1 P.++ show (fmap update1 nodes1))
+        (fmap update1 nodes1, fmap update2 nodes2, allChars)
 
 -- | makeEdges is a small function assisting appendAt
 -- it creates the edge set for a given node in the given tree
