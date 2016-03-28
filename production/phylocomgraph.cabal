@@ -197,6 +197,7 @@ executable pcg
                      , keys                 -any
                      , matrix               -any
                      , megaparsec           >=4.2
+                     , mtl                  -any
                      , parallel             -any
                      , phylocomgraph        -any
                      , QuickCheck           -any
@@ -246,7 +247,12 @@ executable pcg
                        PCG.Command.Types.Read.Unification.Master
                        PCG.Command.Types.Read.Unification.UnificationError
                        PCG.Command.Types.Read.Validate
-                                                
+                       PCG.Command.Types.Report
+                       PCG.Command.Types.Report.CharacterMatrix
+                       PCG.Command.Types.Report.Evaluate
+                       PCG.Command.Types.Report.Internal
+                       PCG.Command.Types.Report.Validate                                                
+
 executable brg
   main-is:             BadReadGraph.hs
 

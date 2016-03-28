@@ -11,7 +11,8 @@ import Prelude hiding (lookup)
 import PCG.Command.Types
 import PCG.Script.Types
 
-import qualified PCG.Command.Types.Read as Read
+import qualified PCG.Command.Types.Read   as Read
+import qualified PCG.Command.Types.Report as Report
 
 rebukeDubiousness :: DubiousCommand -> Either String Command
 rebukeDubiousness dubious = fromMaybe (Left $ "Command not found: " ++ show dubious) $ commandInterpretation dubious
@@ -21,7 +22,8 @@ commandInterpretation (DubiousCommand (Lident name) args) = (toLower <$> name) `
 
 validCommands :: Map String ([Argument] -> Either String Command)
 validCommands = fromList
-  [ ("read", Read.validate)
+  [ ("read"  , Read.validate)
+  , ("report", Report.validate)
   ]
   
 --commandEvaluations :: Command -> Evaluation IO ()

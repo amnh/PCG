@@ -5,7 +5,8 @@ import Data.Either    (partitionEithers)
 import PCG.Command
 import PCG.Script
 
-import qualified PCG.Command.Types.Read as Read
+import qualified PCG.Command.Types.Read   as Read
+import qualified PCG.Command.Types.Report as Report
 
 data Computation = Computation [Command]
   deriving (Show)
@@ -22,5 +23,6 @@ evaluate (Computation (x:xs)) = f x $ evaluate (Computation xs)
 
   
 f :: Command -> SearchState -> SearchState
-f x@(READ _) = Read.evaluate x
+f x@READ   {} = Read.evaluate   x
+f x@REPORT {} = Report.evaluate x
 f _ = error "NOT YET IMPLEMENTED"

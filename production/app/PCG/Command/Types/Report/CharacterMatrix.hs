@@ -16,12 +16,13 @@
 
 module PCG.Command.Types.Report.CharacterMatrix where
 
-import Bio.Phylogeny.Graph
-import Bio.Phylogeny.PhyloCharacter
-import Data.Matrix.NotStupid ((<->), (<|>), matrix, getElem, setElem, Matrix, getRow)
-import Data.Monoid
-import           Data.Vector      (Vector, (!), imap, cons)
-import qualified Data.Vector as V (elemIndex)
+import           Bio.Phylogeny.Graph
+import           Bio.Phylogeny.PhyloCharacter
+import           Data.Matrix.NotStupid        ((<->), (<|>), matrix, getElem, setElem, Matrix, getRow)
+import           Data.Maybe                   (fromMaybe)
+import           Data.Monoid
+import           Data.Vector                  (Vector, (!), imap, cons)
+import qualified Data.Vector             as V (elemIndex)
 
 data CharFileMatrix = CFMat {charNames :: Vector String, fileNames :: Vector String, presence :: Matrix Bool}
 
@@ -29,16 +30,12 @@ instance Monoid CharFileMatrix where
     mempty = CFMat mempty mempty (matrix 0 0 (const False))
     mappend (CFMat cn1 fn1 m1) (CFMat cn2 fn2 m2) = CFMat (cn1 <> cn2) (fn1 <> fn2) (m1 <-> m2)
 
--- | Wrapper function to put a graph in a character matrix
-outPutMatrix :: String -> Graph -> IO ()
-outPutMatrix fileName inGraph = writeFile fileName (toCharMat inGraph)
-    where
-        toCharMat :: Graph -> String
-        toCharMat (Graph dags) = printMat $ foldr (combineMats . makeMat) mempty dags
-
+crossReferenceOutput :: Graph -> String
+crossReferenceOutput (Graph dags) = printMat $ foldr (combineMats . makeMat) mempty dags
         -- | Most important function to make a single matrix to be folded
+  where
         makeMat :: DAG -> CharFileMatrix
-        makeMat inDAG = 
+        makeMat inDAG =
             let
                 charFileNames = imap (\i c -> separateNames i $ name c) (characters inDAG)
                 addIt val acc = if val `elem` acc then acc else val `cons` acc
@@ -86,4 +83,8 @@ outPutMatrix fileName inGraph = writeFile fileName (toCharMat inGraph)
           case span (/=':') fullName of
             (             _,             []) -> (show curPos        , fullName)
             (fileNamePrefix, charNameSuffix) -> (tail charNameSuffix, fileNamePrefix) --tail to remove leading ':'
+
+-- | Wrapper function to put a graph in a character matrix
+outPutMatrix :: String -> Graph -> IO ()
+outPutMatrix fileName = writeFile fileName . crossReferenceOutput
 

@@ -23,8 +23,8 @@ import qualified Data.IntMap       as IM (assocs, filter)
 import           Data.List               ((\\), isPrefixOf, nub)
 import           Data.Map                (foldWithKey)
 import           Data.Monoid
-import           Data.Vector            (Vector, (!), (//), cons)
-import qualified Data.Vector       as V (replicate)
+import           Data.Vector             (Vector, (!), (//), cons)
+import qualified Data.Vector       as V  (replicate)
 import           File.Format.Conversion.Encoder
 import           File.Format.TransitionCostMatrix
 import           PCG.Command.Types.Read.Unification.UnificationError

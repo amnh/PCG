@@ -1,1 +1,2 @@
 read(nucleotides:("28S_trimal.fas"))
+report("test-output.data",cross_references)
