@@ -17,7 +17,7 @@ setup: phylocomgraph.cabal stack.yaml
 	stack setup
 
 rebuild: phylocomgraph.cabal stack.yaml
-	stack build --haddock --test
+	stack build --executable-profiling --library-profiling --ghc-options="-fprof-auto -rtsopts" --haddock --test 
 
 ffi-submakes: ffi/Analysis/Parsimony/Binary/SequentialAlign/makefile
 	$(MAKE) -C ffi/Analysis/Parsimony/Binary/SequentialAlign

@@ -19,7 +19,7 @@ module Analysis.Parsimony.Binary.Optimization where
 import Analysis.Parsimony.Binary.Internal
 import Analysis.Parsimony.Binary.Fitch
 import Analysis.Parsimony.Binary.DirectOptimization
-import Analysis.Parsimony.Binary.SequentialAlign
+--import Analysis.Parsimony.Binary.SequentialAlign
 
 import Data.Maybe
 import Data.Vector (Vector, ifoldr, (!))
@@ -160,10 +160,10 @@ preorderNodeOptimize weight curNode lNode rNode treeChars =
                 let (assign, temp, local) = preorderFitchBit weight (getForAlign lNode ! curPos) (getForAlign rNode ! curPos) curCharacter
                 in addLocalCost local $ addTotalCost local $ addAlign assign $ addPreliminary assign setNode
             | otherwise = 
-                --let (ungapped, cost, gapped, leftGapped, rightGapped) = naiveDO (getForAlign lNode ! curPos) (getForAlign rNode ! curPos)
-                --in addLocalCost cost $ addTotalCost cost $ addAlign gapped $ addPreliminary ungapped setNode
-                let (ungapped, cost, gapped, leftGapped, rightGapped) = sequentialAlign (getForAlign lNode ! curPos) (getForAlign rNode ! curPos)
+                let (ungapped, cost, gapped, leftGapped, rightGapped) = naiveDO (getForAlign lNode ! curPos) (getForAlign rNode ! curPos)
                 in addLocalCost cost $ addTotalCost cost $ addAlign gapped $ addPreliminary ungapped setNode
+                --let (ungapped, cost, gapped, leftGapped, rightGapped) = sequentialAlign (getForAlign lNode ! curPos) (getForAlign rNode ! curPos)
+                --in addLocalCost cost $ addTotalCost cost $ addAlign gapped $ addPreliminary ungapped setNode
 
         addPreliminary addVal inNode = addToField setPreliminary preliminary addVal inNode
         addAlign addVal inNode = addToField setAlign preliminaryAlign addVal inNode

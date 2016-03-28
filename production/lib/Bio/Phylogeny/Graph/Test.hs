@@ -28,6 +28,7 @@ import Test.Tasty.QuickCheck
 
 import qualified Data.IntMap       as IM  
 import qualified Data.HashMap.Lazy as HM  (insert, fromList, singleton)
+import           Data.List                ((\\))
 import Data.Vector                        (singleton, fromList, cons, (!))
 import qualified Data.Vector       as V   ((++), zipWith, and)
 import qualified Data.IntSet       as IS  
@@ -101,8 +102,8 @@ joinCases = testGroup "Small test cases function" [nulladd, smalladd, nullJoin, 
         node6bUpdate = node6b {isRoot = False, parents = [0], code = 1, encoded = Nothing `cons` encoded node6b}
         edges6 = fromList [EdgeSet mempty (IM.singleton 1 (EdgeInfo 0 node6aUpadate node6bUpdate Nothing)), EdgeSet (IS.singleton 0) mempty]
         expected6 = DAG names4 seqs4 (chars1 V.++ chars2) (fromList [node6aUpadate, node6bUpdate]) edges6 0
-        tree6a = DAG (IM.fromList [(0, "0")]) (HM.fromList [("0", mempty)]) chars1 (fromList [node6a]) mempty 0
-        tree6b = DAG (IM.fromList [(0, "0")]) (HM.fromList [("0", mempty)]) chars2 (fromList [node6b]) mempty 0
+        tree6a = DAG (IM.fromList [(0, "0")]) (HM.fromList [("0", mempty)]) chars1 (fromList [node6a]) (pure mempty) 0
+        tree6b = DAG (IM.fromList [(0, "0")]) (HM.fromList [("0", mempty)]) chars2 (fromList [node6b]) (pure mempty) 0
         result6 = tree6a <> tree6b
 
 joinProperties :: TestTree
@@ -121,8 +122,8 @@ joinProperties = testGroup "Properties hold" [enoughEdges, outEdgesGood, allEdge
                 checkEdges tree1 tree2 = 
                     let 
                         result = tree1 <> tree2
-                        checks = V.zipWith (\n e -> not $ (isLeaf n) && null (outNodes e)) (nodes result) (edges result)
-                    in --trace ("result of edge check " ++ show result)
+                        checks = V.zipWith (\n e -> (not (isLeaf n)) || (null (outNodes e))) (nodes result) (edges result)
+                    in --trace ("result of edge check " ++ show checks ++ show result)
                         V.and checks
 
         allEdgeCheck = testProperty "Parent/children relationships match edge relationships" matchEdges
@@ -131,12 +132,14 @@ joinProperties = testGroup "Properties hold" [enoughEdges, outEdgesGood, allEdge
                 matchEdges tree1 tree2 = 
                     let
                         result = tree1 <> tree2
-                        checkParents  = V.zipWith (\n e -> (IS.toList $ inNodes  e) == (parents  n)) (nodes result) (edges result)
-                        checkChildren = V.zipWith (\n e -> (IM.keys   $ outNodes e) == (children n)) (nodes result) (edges result)
-                    in V.and checkParents && V.and checkChildren
+                        elemsEqual l1 l2 = null (l1 \\ l2) && null (l2 \\ l1)
+                        checkParents  = V.zipWith (\n e -> (IS.toList $ inNodes  e) `elemsEqual` (parents  n)) (nodes result) (edges result)
+                        checkChildren = V.zipWith (\n e -> (IM.keys   $ outNodes e) `elemsEqual` (children n)) (nodes result) (edges result)
+                    in --trace ("result of edge match check " ++ show checkParents ++ show checkChildren ++ show result)
+                        V.and checkParents && V.and checkChildren
 
 subsetting :: TestTree
-subsetting = testGroup "Check correct subsetting of trees" [twoNode, smallerThan, threeNode, conservesChars, identity]
+subsetting = testGroup "Check correct subsetting of trees" [twoNode, smallerThan, threeNode]
     where
         smallerThan = testProperty "The subset of a tree is always smaller or the same" checkSmall
             where
@@ -153,7 +156,7 @@ subsetting = testGroup "Check correct subsetting of trees" [twoNode, smallerThan
         edges0 = fromList [EdgeSet mempty (IM.singleton 1 (EdgeInfo 0 node0a node0b Nothing)), EdgeSet (IS.singleton 0) mempty]
         tree0 = DAG mempty mempty mempty (fromList [node0a, node0b]) edges0 0
         result0 = accessSubtree tree0 node0b
-        expected0 = DAG (IM.fromList [(0, "0")]) (HM.fromList [("0", mempty)]) mempty (singleton $ node0b {code = 0, parents = [], isRoot = True}) (singleton mempty) 0
+        expected0 = DAG (IM.fromList [(0, "")]) (HM.fromList [("", mempty)]) mempty (singleton $ node0b {code = 0, parents = [], isRoot = True}) (singleton mempty) 0
 
         threeNode = testCase "Subtree of a three node tree gives expected result" (expected1 @=? result1)
         node1a = Node 0 True False [] [1] mempty mempty mempty mempty mempty mempty 0 0 :: NodeInfo
@@ -165,25 +168,25 @@ subsetting = testGroup "Check correct subsetting of trees" [twoNode, smallerThan
         node1b' = node1b {code = 0, parents = [], children = [1], isRoot = True}
         node1c' = node1c {code = 1, parents = [0]}
         edgeExpect1 = fromList [EdgeSet mempty (IM.singleton 1 (EdgeInfo 0 node1b' node1c' Nothing)), EdgeSet (IS.singleton 0) mempty]
-        expected1 = DAG (IM.fromList [(0, "0"), (1, "0a1")]) (HM.fromList [("0", mempty), ("0a1", mempty)]) mempty (fromList [node1b', node1c']) edgeExpect1 0
+        expected1 = DAG (IM.fromList [(0, ""), (1, "HTU 1")]) (HM.fromList [("", mempty), ("HTU 1", mempty)]) mempty (fromList [node1b', node1c']) edgeExpect1 0
 
-        conservesChars = testProperty "The subset conserves the same sequence values" checkSeqs
-            where
-                checkSeqs :: DAG -> Bool
-                checkSeqs myTree
-                    | null $ nodes myTree = True
-                    | otherwise = 
-                        let 
-                            result = accessSubtree myTree (nodes myTree ! 0)
-                            newRoot = nodes result ! root result
-                            oldRoot = nodes myTree ! root myTree
-                        in encoded newRoot == encoded oldRoot && packed newRoot == packed oldRoot && preliminary newRoot == preliminary oldRoot
+        -- Commented out to avoid hilarious runtimes
+        --conservesChars = testProperty "The subset conserves the same sequence values" checkSeqs
+        --    where
+        --        checkSeqs :: DAG -> Bool
+        --        checkSeqs myTree
+        --            | null $ nodes myTree = True
+        --            | otherwise = 
+        --                let 
+        --                    result = accessSubtree myTree (nodes myTree ! 0)
+        --                    newRoot = nodes result ! root result
+        --                    oldRoot = nodes myTree ! root myTree
+        --                in encoded newRoot == encoded oldRoot && packed newRoot == packed oldRoot && preliminary newRoot == preliminary oldRoot
 
-        identity = testProperty "Subset of a tree taken at the root has the same topological structure" checkID
-            where
-                checkID :: DAG -> Bool
-                checkID myTree = 
-                    let result = accessSubtree myTree (nodes myTree ! root myTree)
-                    in --trace ("checkID " ++ show result)
-                        toTopo myTree == toTopo result
+        --identity = testProperty "Subset of a tree taken at the root has the same topological structure" checkID
+        --    where
+        --        checkID :: DAG -> Bool
+        --        checkID myTree = 
+        --            let result = accessSubtree myTree (nodes myTree ! root myTree)
+        --            in toTopo myTree == toTopo result
 

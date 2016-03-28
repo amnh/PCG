@@ -1,7 +1,7 @@
 module Main where
 
-import Analysis.GenericFitch
---import Analysis.Parsimony.Binary.Optimization
+--import Analysis.GenericFitch
+import Analysis.Parsimony.Binary.Optimization
 import Bio.Phylogeny.Graph
 import Bio.Phylogeny.Graph.Utilities
 import PCG.Command.Types.Report.CharacterMatrix
@@ -65,3 +65,18 @@ mediumTest = allOptimization 1 <$> badReadGraph "../../TestDat/MediumCooked.fas"
 
 checkNewick = parse N.newickStreamParser "../../TestDat/MediumCooked.tre" <$> readFile "../../TestDat/MediumCooked.tre"
 
+
+-- | More formal section to run a few tests
+test :: IO ()
+test = do
+    eric1 <- rootCost . allOptimization 1 <$> badReadGraph "../../TestDat/OptimizationTests/EricFasta1.fas" "../../TestDat/OptimizationTests/EricTree1.tre"
+    eric2 <- rootCost . allOptimization 1 <$> badReadGraph "../../TestDat/OptimizationTests/EricFasta1.fas" "../../TestDat/OptimizationTests/EricTree2.tre"
+    eric3 <- rootCost . allOptimization 1 <$> badReadGraph "../../TestDat/OptimizationTests/EricFasta1.fas" "../../TestDat/OptimizationTests/EricTree3.tre"
+    eric4 <- rootCost . allOptimization 1 <$> badReadGraph "../../TestDat/OptimizationTests/EricFasta1.fas" "../../TestDat/OptimizationTests/EricTree4.tre"
+    putStrLn("Test results: ")
+    putStrLn("  Eric 1, cost should be 267: " ++ show eric1)
+    putStrLn("  Eric 2, cost should be 266: " ++ show eric2)
+    putStrLn("  Eric 3, cost should be 267: " ++ show eric3)
+    putStrLn("  Eric 4, cost should be 267: " ++ show eric4)
+    artmor <- rootCost . allOptimization 1 <$> badReadGraph "../../TestDat/fakeArtmor.fas" "../../TestDat/SingleArtmor.tre"
+    putStrLn("  Fake Artmor, cost should be 5861: " ++ show artmor)
