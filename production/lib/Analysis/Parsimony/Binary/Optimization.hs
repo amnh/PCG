@@ -18,8 +18,8 @@ module Analysis.Parsimony.Binary.Optimization where
 
 import Analysis.Parsimony.Binary.Internal
 import Analysis.Parsimony.Binary.Fitch
---import Analysis.Parsimony.Binary.DirectOptimization
-import Analysis.Parsimony.Binary.SequentialAlign
+import Analysis.Parsimony.Binary.DirectOptimization
+--import Analysis.Parsimony.Binary.SequentialAlign
 
 import Data.Maybe
 import Data.Vector (Vector, ifoldl', ifoldr, (!))
@@ -165,16 +165,17 @@ preorderNodeOptimize !weight !curNode !lNode !rNode !treeChars = setTotalCost su
              | aligned curCharacter =     
                 let (assign, temp, local) = {- trace (show curCharacter) $ -} preorderFitchBit weight (getForAlign lNode ! curPos) (getForAlign rNode ! curPos) curCharacter 
                 in addLocalCost local $ addTotalCost local $ addAlign assign $ addPreliminary assign setNode
-             | otherwise =
-            
-                --let (ungapped, cost, gapped, leftGapped, rightGapped) = naiveDO (getForAlign lNode ! curPos) (getForAlign rNode ! curPos)
+            | otherwise = 
+                let (ungapped, cost, gapped, leftGapped, rightGapped) = naiveDO (getForAlign lNode ! curPos) (getForAlign rNode ! curPos)
+                in addLocalCost cost $ addTotalCost cost $ addAlign gapped $ addPreliminary ungapped setNode
+                --let (ungapped, cost, gapped, leftGapped, rightGapped) = sequentialAlign (getForAlign lNode ! curPos) (getForAlign rNode ! curPos)
                 --in addLocalCost cost $ addTotalCost cost $ addAlign gapped $ addPreliminary ungapped setNode
 
                 -- getForAlign returns a node, either encoded, preliminary or preliminary align. It's in Analysis.Parsimony.Binary.Internal
                 -- the return type is a vector of encoded sequences, 
                 -- where an EncodedSeq (encoded sequence) is a maybe vector of some type from Bio/Sequence/Coded.hs
-                let (!ungapped, !cost, !gapped, !leftGapped, !rightGapped) = sequentialAlign (getForAlign lNode ! curPos) (getForAlign rNode ! curPos)
-                in  {- trace (show ungapped ++ " " ++ (show gapped)) $ -} addLocalCost cost $ addTotalCost cost $ addAlign gapped $ addPreliminary ungapped setNode
+                --let (!ungapped, !cost, !gapped, !leftGapped, !rightGapped) = sequentialAlign (getForAlign lNode ! curPos) (getForAlign rNode ! curPos)
+                --in  trace (show ungapped ++ " " ++ (show gapped)) $ addLocalCost cost $ addTotalCost cost $ addAlign gapped $ addPreliminary ungapped setNode
 
       {-  chooseOptimization' !setNode !curPos !curCharacter = addLocalCost cost . addTotalCost cost . addAlign gapped $ addPreliminary ungapped setNode
             where

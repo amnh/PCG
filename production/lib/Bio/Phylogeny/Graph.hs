@@ -19,11 +19,13 @@ module Bio.Phylogeny.Graph (Graph(..), DAG(..), EdgeSet(..), EdgeInfo(..), Ident
 
 import           Bio.Phylogeny.Forest
 import           Bio.Phylogeny.Graph.Data
+import qualified Bio.Phylogeny.Graph.Topological as TG
 import           Bio.Phylogeny.Tree.Binary
 import qualified Bio.Phylogeny.Tree.CharacterAware as CT
 import qualified Bio.Phylogeny.Tree.Edge.Standard  as E
 import qualified Bio.Phylogeny.Tree.EdgeAware      as ET
 import           Bio.Phylogeny.Tree.Node
+import qualified Bio.Phylogeny.Tree.Node.Topological as TN
 import qualified Bio.Phylogeny.Tree.Referential    as RT
 import           Bio.Phylogeny.Tree.Rose
 import qualified Bio.Phylogeny.Network.Subsettable as SN
@@ -92,4 +94,7 @@ simpleAppend (DAG names seqs chars n e r) (DAG names' seqs' _ n' e' r') hangNode
   in DAG (names <> names') (seqs <> seqs') chars (n ++ resetRoot) (e ++ e') r
 
 grabAt :: DAG -> NodeInfo -> DAG
-grabAt inTree hangNode = fromTopo $ nodeToTopo inTree hangNode
+grabAt inTree hangNode = fromTopo rootedTopo
+  where 
+    topo = nodeToTopo inTree hangNode
+    rootedTopo = TG.TopoTree ((TG.tree topo) {TN.isRoot = True}) (TG.characters topo)

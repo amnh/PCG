@@ -56,11 +56,8 @@ evaluate (READ fileSpecs) old = do
           Left uErr -> fail $ show uErr -- Report rectification errors here.
           Right g   -> old <> pure g    -- TODO: rectify against 'old' SearchState, don't just blindly merge
   where
-
-    -- !IMPORTANT! prints out, then fails to terminate
     transformation x = let y = prependFilenamesToCharacterNames . applyReferencedTCM $ x
                        in  trace (show y) $ expandIUPAC y
-    -- !IMPORTANT! never prints, fails to terminate
 {-
     transformation x = let y = expandIUPAC . prependFilenamesToCharacterNames . applyReferencedTCM $ x
                        in  trace (show y) y
