@@ -33,7 +33,7 @@ evaluate _ _ = fail "Invalid READ command binding"
 
 generateOutput :: Graph -> OutputFormat -> Either String String
 -- Don't ignore names later
-generateOutput g CrossReferences {} = Right $ crossReferenceOutput g
+generateOutput g CrossReferences {} = Right $ taxonReferenceOutput g mempty
 generateOutput g Data            {} = Right $ newickReport g
 generateOutput g DotFile         {} = Right $ dotOutput g
 generateOutput g Metadata        {} = Right $ metadataCsvOutput g
