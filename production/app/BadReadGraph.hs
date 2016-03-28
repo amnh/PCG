@@ -1,25 +1,7 @@
 module Main where
 
 
---import Analysis.GenericFitch
---import Analysis.Parsimony.Binary.Optimization
---import Bio.Phylogeny.Graph
---import Bio.Phylogeny.Graph.Utilities
---import PCG.Command.Types.Report.CharacterMatrix
---import PCG.Command.Types.Report.GraphViz
---import PCG.Command.Types.Report.Newick
---import PCG.Command.Types.Report.Metadata
---import Bio.Phylogeny.Tree.Node
---import Control.Monad                (sequence_, liftM2)
---import Data.Functor                 ((<$))
---import Data.Vector                  (singleton)
---import qualified Data.IntMap as IM
---import qualified Data.Vector as V
---import File.Format.Fasta
---import qualified File.Format.Newick as N
---import File.Format.Newick.Converter
---import Text.Megaparsec
---import Bio.Sequence.Coded
+
 import           Analysis.GenericFitch
 --import Analysis.Parsimony.Binary.Optimization
 import           Bio.Phylogeny.Graph
@@ -38,6 +20,7 @@ import           PCG.Command.Types.Report.CharacterMatrix
 import           PCG.Command.Types.Report.GraphViz
 import           PCG.Command.Types.Report.Newick
 import           PCG.Command.Types.Report.Metadata
+import           PCG.Command.Types.Report.TaxonMatrix
 import           Text.Megaparsec
 
 main :: IO ()

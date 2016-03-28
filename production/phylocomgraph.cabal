@@ -251,6 +251,7 @@ executable pcg
                        PCG.Command.Types.Report.CharacterMatrix
                        PCG.Command.Types.Report.Evaluate
                        PCG.Command.Types.Report.Internal
+                       PCG.Command.Types.Report.TaxonMatrix
                        PCG.Command.Types.Report.Validate                                                
 
 executable brg
@@ -311,6 +312,7 @@ executable brg
                        PCG.Command.Types.Read.Internal
                        PCG.Command.Types.Read.ReadError
                        PCG.Command.Types.Report.CharacterMatrix
+                       PCG.Command.Types.Report.TaxonMatrix
                        PCG.Command.Types.Report.GraphViz
                        PCG.Command.Types.Report.Metadata
                        PCG.Command.Types.Report.Newick
