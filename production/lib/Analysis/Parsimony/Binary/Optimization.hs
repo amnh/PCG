@@ -163,7 +163,7 @@ preorderNodeOptimize !weight !curNode !lNode !rNode !treeChars = setTotalCost su
         chooseOptimization curPos curCharacter setNode
             -- TODO: Compiler error maybe below with comment structuers and 'lets'
              | aligned curCharacter =     
-                let (assign, temp, local) = trace (show curCharacter) $ preorderFitchBit weight (getForAlign lNode ! curPos) (getForAlign rNode ! curPos) curCharacter 
+                let (assign, temp, local) = {- trace (show curCharacter) $ -} preorderFitchBit weight (getForAlign lNode ! curPos) (getForAlign rNode ! curPos) curCharacter 
                 in addLocalCost local $ addTotalCost local $ addAlign assign $ addPreliminary assign setNode
              | otherwise =
             
@@ -174,7 +174,7 @@ preorderNodeOptimize !weight !curNode !lNode !rNode !treeChars = setTotalCost su
                 -- the return type is a vector of encoded sequences, 
                 -- where an EncodedSeq (encoded sequence) is a maybe vector of some type from Bio/Sequence/Coded.hs
                 let (!ungapped, !cost, !gapped, !leftGapped, !rightGapped) = sequentialAlign (getForAlign lNode ! curPos) (getForAlign rNode ! curPos)
-                in  trace (show ungapped ++ " " ++ (show gapped)) $ addLocalCost cost $ addTotalCost cost $ addAlign gapped $ addPreliminary ungapped setNode
+                in  {- trace (show ungapped ++ " " ++ (show gapped)) $ -} addLocalCost cost $ addTotalCost cost $ addAlign gapped $ addPreliminary ungapped setNode
 
       {-  chooseOptimization' !setNode !curPos !curCharacter = addLocalCost cost . addTotalCost cost . addAlign gapped $ addPreliminary ungapped setNode
             where
