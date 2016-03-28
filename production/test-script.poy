@@ -1,1 +1,1 @@
-read(nucleotides:("28S_trimal.fas"))
+read(nucleotides:("fakeArtmor.fas"), "artmor.tre")

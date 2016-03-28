@@ -9,7 +9,7 @@ import Foreign
 import Foreign.C.String
 import Foreign.C.Types
 
-#include "/Users/eric/Dropbox-AMNH/phylocomgraph/production/ffi/Analysis/Parsimony/Binary/SequentialAlign/seqAlignForHaskell.h"
+#include "/Users/gnewman/Documents/Research/phylocomgraph/production/ffi/Analysis/Parsimony/Binary/SequentialAlign/seqAlignForHaskell.h"
 
 -- Includes a struct (actually, a pointer thereto), and that struct, in turn, has a string
 -- in it, so Ptr CChar
