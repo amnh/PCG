@@ -1,6 +1,6 @@
 -----------------------------------------------------------------------------
 -- |
--- Module      :  Text.Megaparsec.Custom
+-- Module      :  Bio.Sequences.Coded
 -- Copyright   :  (c) 2015-2015 Ward Wheeler
 -- License     :  BSD-style
 --
@@ -18,21 +18,22 @@
 
 module Bio.Sequence.Coded (CodedSequence(..), EncodedSeq, EncodedSequences, CodedChar(..), encodeAll, unencodeMany) where
 
-import Prelude hiding (map, length, zipWith, null, head)
-import qualified Prelude as P (length, map)
-import Data.List (elemIndex)
-import Control.Applicative  (liftA2, liftA)
-import Control.Monad
-import Data.Vector    (map, length, zipWith, empty, null, Vector, head, (!), singleton, ifoldr, slice)
+import           Prelude hiding (map, zipWith, null, head)
+import           Bio.Sequence.Coded.Class
+import           Bio.Sequence.Character.Coded
+import           Bio.Sequence.Packed.Class
+import           Bio.Sequence.Parsed
+import           Control.Applicative  (liftA2, liftA)
+import           Control.Monad
+import           Data.Bits
+import           Data.BitVector (BitVector, size)
+import           Data.List (elemIndex)
+import           Data.Maybe
+import           Data.Vector    (map, zipWith, empty, Vector, head, (!), singleton)
 import qualified Data.Vector as V (filter)
-import Data.Bits
-import Data.BitVector (BitVector, size)
-import Data.Maybe
-import Bio.Sequence.Coded.Class
-import Bio.Sequence.Character.Coded
-import Bio.Sequence.Packed.Class
-import Bio.Sequence.Parsed
 
+import GHC.Stack
+import Data.Foldable
 -- import Debug.Trace
 
 -- TODO: Change EncodedSeq/Sequences to EncodedCharacters
@@ -72,7 +73,7 @@ instance Bits b => CodedSequence (EncodedSeq b) b where
 
 ----  = 
 --    let
---        alphWidth = P.length alphabet
+--        alphWidth = length alphabet
 --        bitWidth = bitSizeMaybe gapChar
 --        coded = map (\ambig -> foldr (\c acc -> setElemAt c acc alphabet) zeroBits ambig) strSeq
 --        regroup = case bitWidth of
@@ -99,7 +100,7 @@ setElemAt char orig alphabet
 unencodeOverAlphabet :: EncodedSeq BitVector -> Alphabet -> ParsedSeq 
 unencodeOverAlphabet encoded alph = 
     let 
-        alphLen = P.length alph
+        alphLen = length alph
         oneBit inBit = foldr (\i acc -> if testBit inBit i then alph !! (i `mod` alphLen) : acc else acc) mempty [0..size inBit]
         allBits = fmap oneBit <$> encoded
     in fromMaybe mempty allBits
@@ -114,35 +115,33 @@ instance Bits b => CodedChar b where
 -- | To make this work, the underlying types are also an instance of bits because a Vector of bits is and a Maybe bits is
 instance Bits b => Bits (Vector b) where
     (.&.) bit1 bit2     
-        | length bit1 /= length bit2 = error ("Attempt to take and of bits of different length " ++ show (length bit1) ++ " and " ++ show (length bit2))
+        | length bit1 /= length bit2 = errorWithStackTrace $ "Attempt to take and of bits of different length " ++ show (length bit1) ++ " and " ++ show (length bit2)
         | otherwise = zipWith (.&.) bit1 bit2
     (.|.) bit1 bit2 
         | length bit1 /= length bit2 = error "Attempt to take or of bits of different length"
         | otherwise = zipWith (.|.) bit1 bit2
     xor bit1 bit2 = (.&.) ((.|.) bit1 bit2) (complement ((.&.) bit1 bit2))
-    complement = map complement
+    complement    = map complement
     shift  bits s = (`shift`  s) <$> bits
     rotate bits r = (`rotate` r) <$> bits
-    setBit _ _= empty -- these methods are not meaningful so they just wipe it
-    bit _ = empty
-    bitSize bits 
-        | null bits = 0
-        | otherwise = length bits * (fromMaybe 0 . bitSizeMaybe $ head bits)
-    bitSizeMaybe bits 
-        | null bits = Just 0
-        | otherwise = (length bits *) <$> bitSizeMaybe (head bits)
-    isSigned bits 
-        | null bits = True
-        | otherwise = isSigned $ head bits
-    popCount = foldr (\b acc -> acc + popCount b) 0
+    setBit _    _ = empty -- these methods are not meaningful so they just wipe it
+    bit    pos    = pure $ bit pos
+    bitSize       = foldl' (\a b -> fromMaybe 0 (bitSizeMaybe b) + a) 0
+    bitSizeMaybe  = foldlM (\a b -> (a+) <$> bitSizeMaybe b) 0 
+    isSigned _    = False
+    popCount      = foldr (\b acc -> acc + popCount b) 0
     testBit bits index
         | null bits = False
         | otherwise =
           case bitSizeMaybe $ head bits of
             Nothing      -> False
-            Just numBits -> let myBit = div index numBits
-                                myPos = rem index numBits
+            Just numBits -> let (myBit, myPos) = index `divMod` numBits
                             in testBit (bits ! myBit) myPos
+     -- zeroBits = clearBit (bit 0) 0
+     --          = (bit 0) .&. complement (bit 0)
+     --          = (bit 0) .&. (bit 0)
+     --          = empty .&. empty 
+     --          = empty
 
 instance Bits b => Bits (Maybe b) where
     (.&.)           = liftA2 (.&.)

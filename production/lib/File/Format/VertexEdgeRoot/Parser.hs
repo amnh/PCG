@@ -18,6 +18,7 @@
 module File.Format.VertexEdgeRoot.Parser where
 
 import Data.Char              (isSpace)
+import Data.Functor           (($>))
 import Data.Either            (partitionEithers)
 import Data.List              (delete,partition,maximumBy,sortBy)
 import Data.List.Utility      (duplicates)
@@ -144,7 +145,7 @@ vertexSetType = do
     value <- optional (try (symbol (string' "VertexSet")))
     case value of
       Just _  -> pure Vertices
-      Nothing -> symbol (string' "RootSet") *> pure Roots
+      Nothing -> symbol (string' "RootSet") $> Roots
 
 -- | A vertex set with an optional set label enclosed in braces.
 -- A vertex set cannot have duplicate verticies

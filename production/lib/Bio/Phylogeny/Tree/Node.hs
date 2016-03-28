@@ -27,19 +27,20 @@ import Data.Monoid
 import Data.Ord ()
 
 -- | A node data structure holding all the necessary info (add verbose statement about what each field is)
-data Node b = Node  { code :: Int
-                    , isRoot :: Bool
-                    , isLeaf :: Bool
-                    , parents :: [Int]
-                    , children :: [Int]
-                    , encoded :: Vector (EncodedSeq b)
-                    , packed :: Vector (EncodedSeq b)
+data Node b = Node  { code        :: Int
+                    , isRoot      :: Bool
+                    , isLeaf      :: Bool
+                    , parents     :: [Int]
+                    , children    :: [Int]
+                    , encoded     :: Vector (EncodedSeq b)
+                    , packed      :: Vector (EncodedSeq b)
                     , preliminary :: Vector (EncodedSeq b)
-                    , final :: Vector (EncodedSeq b)
-                    , temporary :: Vector (EncodedSeq b) -- TODO: is this necessary? rename to fitch scratch? 
-                    , aligned :: Vector (EncodedSeq b) -- TODO: rename to implied alignment
-                    , localCost :: Double
-                    , totalCost :: Double} deriving (Eq, Show)
+                    , final       :: Vector (EncodedSeq b)
+                    , temporary   :: Vector (EncodedSeq b) -- TODO: is this necessary? rename to fitch scratch? 
+                    , aligned     :: Vector (EncodedSeq b) -- TODO: rename to implied alignment
+                    , localCost   :: Double
+                    , totalCost   :: Double
+                    } deriving (Eq, Show)
                     -- TODO: subtree representation to say if something is done
                     -- TODO: add a union labeling
                     -- TODO: add a single labeling
@@ -47,9 +48,20 @@ data Node b = Node  { code :: Int
 
 instance Monoid (Node b) where
     mempty = Node 0 False False mempty mempty mempty mempty mempty mempty mempty mempty 0 0
-    mappend n1 n2 = Node (code n1) (isRoot n1 || isRoot n2) (isLeaf n1 || isLeaf n2) (children n1 <> children n2) (parents n1 <> parents n2) (encoded n1 <> encoded n2) 
-                        (packed n1 <> packed n2) (preliminary n1 <> preliminary n2) (final n1 <> final n2) 
-                        (temporary n1 <> temporary n2) (aligned n1 <> aligned n2) (localCost n1 + localCost n2) (totalCost n1 + totalCost n2)
+    mappend n1 n2 = Node { code        = code n1
+                         , isRoot      = isRoot n1 || isRoot n2
+                         , isLeaf      = isLeaf n1 || isLeaf n2
+                         , parents     = parents     n1 <> parents     n2
+                         , children    = children    n1 <> children    n2
+                         , encoded     = encoded     n1 <> encoded     n2 
+                         , packed      = packed      n1 <> packed      n2
+                         , preliminary = preliminary n1 <> preliminary n2
+                         , final       = final       n1 <> final       n2 
+                         , temporary   = temporary   n1 <> temporary   n2
+                         , aligned     = aligned     n1 <> aligned     n2
+                         , localCost   = localCost n1 + localCost n2
+                         , totalCost   = totalCost n1 + totalCost n2
+                         }
 
 -- | Make it an instance of encoded, final, packed, and preliminary
 instance EN.EncodedNode (Node b) (EncodedSeq b) where

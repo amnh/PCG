@@ -1,6 +1,6 @@
 -----------------------------------------------------------------------------
--- |
--- Module      :  Text.Megaparsec.Custom
+--
+-- Module      :  Bio.Sequence.Coded.Class
 -- Copyright   :  (c) 2015-2015 Ward Wheeler
 -- License     :  BSD-style
 --
@@ -25,15 +25,15 @@ import Bio.Sequence.Parsed
 
 -- | A coded sequence allows grabbing of a character, filtering, and some standard types
 class (Monoid s, CodedChar b) => CodedSequence s b | s -> b where
-    numChars :: s -> Int
-    emptySeq :: s
-    isEmpty :: s -> Bool
+    numChars    :: s -> Int
+    emptySeq    :: s
+    isEmpty     :: s -> Bool
     grabSubChar :: s -> Int -> Maybe b
-    filterSeq :: s -> (b -> Bool) -> s
-    charToSeq :: b -> s
+    filterSeq   :: s -> (b -> Bool) -> s
+    charToSeq   :: b -> s
 -- This should be translated to:
 -- encode :: (Foldable f, Functor f, Foldable t, Ord a) => f (t a) -> s
-    encode :: ParsedSeq -> s
+    encode      :: ParsedSeq -> s
 
 -- This should be translated to:
 -- encode :: (Foldable f, Functor f, Foldable t, Foldable c, Ord a) => f (t a) -> c a-> s

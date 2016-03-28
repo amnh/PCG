@@ -45,4 +45,4 @@ procFastaFile = symbol (char '&') *> procCommandFile
 --   This software does not open files for interpretation from a TNT file,
 --   so this command will have no effect and be ignored.
 procCloseFile :: MonadParsec s m Char => m ()
-procCloseFile = symbol (char '/') *> symbol (char ';') *> pure ()
+procCloseFile = symbol (char '/') *> symbol (char ';') $> ()

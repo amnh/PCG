@@ -1,6 +1,6 @@
 -----------------------------------------------------------------------------
 -- |
--- Module      :  File.Format.Nweick.Converter
+-- Module      :  File.Format.Newick.Converter
 -- Copyright   :  (c) 2015-2015 Ward Wheeler
 -- License     :  BSD-style
 --
@@ -16,29 +16,18 @@
 
 module File.Format.Newick.Converter where
 
-import Prelude                      hiding ((++))
-import File.Format.Conversion.Encoder
-import File.Format.Newick.Internal  hiding (isLeaf)
-import Bio.Phylogeny.Graph
-import Control.Monad
-import Data.BitVector               (BitVector, fromBits)
-import Data.Vector                  (Vector)
-import qualified Data.Vector as V   (foldr, zipWith3, map, fromList, zipWith, length, singleton)
-import Data.Maybe
-import Data.Monoid                  ()
-import Data.List                    ((++))
-
-import Bio.Phylogeny.Graph.Topological
+import           Bio.Phylogeny.Graph
+import           Bio.Phylogeny.Graph.Topological
 import qualified Bio.Phylogeny.Tree.Node.Topological as TN
-import qualified Bio.Phylogeny.Graph.Topological as TG
-import Bio.Phylogeny.PhyloCharacter
-import Bio.Phylogeny.Network        ()
-import Bio.Sequence.Parsed
-import Bio.Sequence.Coded
--- import File.Format.Conversion.Encoder
-import qualified Data.Map.Lazy as M 
+import           Bio.Phylogeny.Network                     ()
+import           Bio.Sequence.Parsed
+import qualified Data.Map.Lazy                      as M 
+import           Data.Maybe
+import           Data.Monoid                               ()
+import           File.Format.Conversion.Encoder
+import           File.Format.Newick.Internal        hiding (isLeaf)
 
-import Debug.Trace
+--import Debug.Trace
 
 type SimpleMetadata = [String]
 
@@ -50,7 +39,6 @@ convertBothForest forest seqs = Graph $ zipWith convertBoth forest seqs
 
 -- | Convert a newick tree with associated sequences
 convertBoth :: NewickNode -> TreeSeqs -> DAG
---convertBoth inTree seqs | trace ("convertBoth " ++ show (convertBothTopo inTree seqs)) False = undefined
 convertBoth inTree seqs = fromTopo $ convertBothTopo inTree seqs
 
 -- | Convert a newick tree and associated sequences to a topo tree (where funcionality is located)
@@ -63,8 +51,8 @@ convertBothTopo rootTree inSeqs = internalConvert True rootTree
         internalConvert atRoot inTree = 
             let 
                 recurse = fmap (tree . internalConvert False) (descendants inTree) 
-                myName = fromMaybe ("HTU " ++ show 0) (newickLabel inTree)
-                myCost = fromMaybe 0 (branchLength inTree)
+                myName = fromMaybe "HTU 0" $ newickLabel  inTree
+                myCost = fromMaybe 0       $ branchLength inTree
                 mySeq = if M.member myName inSeqs
                             then inSeqs M.! myName
                             else mempty

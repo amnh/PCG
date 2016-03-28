@@ -55,3 +55,11 @@ occurances = collateOccuranceMap . buildOccuranceMap
         descending LT  = GT
         descending GT  = LT
         descending x   = x
+
+-- | chunksOf is based on Text.chunksOf, but is more general.
+chunksOf :: (Foldable t) => Int -> t a -> [[a]]
+chunksOf x = chunksOf' x . toList
+  where
+    chunksOf' n xs = f : chunksOf' n s
+      where
+        (f,s) = splitAt n xs

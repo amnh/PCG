@@ -13,14 +13,14 @@ module PCG.Command.Types.Read.Internal
   , eitherTValidation
   ) where
 
-import Control.Monad      (liftM,liftM2)
+import Control.Monad              (liftM2)
 import Control.Monad.IO.Class
 import Control.Monad.Trans.Either
-import Data.Either.Custom (eitherTValidation)
+import Data.Either.Custom         (eitherTValidation)
 import Data.Int
-import Data.Text.Lazy     (Text)
-import Data.Text.Lazy.IO  (readFile)
-import Prelude     hiding (readFile)
+import Data.Text.Lazy             (Text)
+import Data.Text.Lazy.IO          (readFile)
+import Prelude             hiding (readFile)
 import System.Directory
 import System.FilePath.Glob
 
@@ -71,7 +71,7 @@ getSpecifiedContent (CustomAlphabetFile xs tcm _) = liftM2 SpecContent (getSpeci
 getSpecifiedContent (PrealignedFile     fs tcm  ) = do 
     specifiedContent <- getSpecifiedContent fs
     case tcmFile specifiedContent of
-      Nothing -> (SpecContent (dataFiles specifiedContent)) <$> (getSpecifiedTcm tcm)
+      Nothing -> SpecContent (dataFiles specifiedContent) <$> getSpecifiedTcm tcm
       Just _  -> pure specifiedContent 
 
 getSpecifiedTcm :: Maybe FilePath -> EitherT ReadError IO (Maybe (FilePath, FileContent))

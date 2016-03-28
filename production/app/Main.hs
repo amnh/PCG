@@ -2,7 +2,7 @@ module Main (main) where
 
 --import Data.Bifunctor
 import Text.Megaparsec
-import Data.Functor ((<$))
+--import Data.Functor ((<$))
 import PCG.Computation.Internal
 import Control.Evaluation
 import PCG.Script
