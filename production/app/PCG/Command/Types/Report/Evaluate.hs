@@ -1,4 +1,4 @@
-{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE BangPatterns, FlexibleContexts #-}
 
 module PCG.Command.Types.Report.Evaluate
   ( evaluate
@@ -20,7 +20,9 @@ evaluate (REPORT target format) old = do
      Right output ->
        case target of
          OutputToStdout -> old <> info output
-         OutputToFile f -> stateValue <$ (liftIO $ writeFile f output)
+         OutputToFile f -> do
+                             !_ <- liftIO $ writeFile f output
+                             old
 
 evaluate _ _ = fail "Invalid READ command binding"
 {--}
