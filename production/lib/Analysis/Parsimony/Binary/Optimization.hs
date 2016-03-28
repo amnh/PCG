@@ -163,7 +163,7 @@ preorderNodeOptimize !weight !curNode !lNode !rNode !treeChars = setTotalCost su
         chooseOptimization curPos curCharacter setNode
             -- TODO: Compiler error maybe below with comment structuers and 'lets'
              | aligned curCharacter =     
-                let (assign, temp, local) = trace (show curCharacter) $ preorderFitchBit weight (getForAlign lNode ! curPos) (getForAlign rNode ! curPos) curCharacter 
+                let (assign, temp, local) = {- trace (show curCharacter) $ -} preorderFitchBit weight (getForAlign lNode ! curPos) (getForAlign rNode ! curPos) curCharacter 
                 in addLocalCost local $ addTotalCost local $ addAlign assign $ addPreliminary assign setNode
             | otherwise = 
                 let (ungapped, cost, gapped, leftGapped, rightGapped) = naiveDO (getForAlign lNode ! curPos) (getForAlign rNode ! curPos)

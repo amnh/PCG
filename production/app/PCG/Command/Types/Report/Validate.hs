@@ -21,6 +21,7 @@ validate xs =
     (  [], ys) ->
       case partitionEithers ys of
         (    [], [format]) -> Right $ REPORT  OutputToStdout     format
+        ([path],       []) -> Right $ REPORT (OutputToFile path) Data
         ([path], [format]) -> Right $ REPORT (OutputToFile path) format
         _                  -> Left $ "SO BAD, BETTER ERROR LATER. In Report."
 
@@ -34,6 +35,15 @@ validateReportArg (LidentNamedArg (Lident identifier) (LidentNamedArg (Lident to
     case partitionEithers $ primativeString <$> xs of
       ([]    , fileNames) -> Right . Right $ CrossReferences fileNames 
       (errors, _        ) -> Left $ unlines errors
+validateReportArg (LidentArg (Lident identifier))
+  |  "data" == (toLower <$> identifier) = Right $ Right Data
+validateReportArg (LidentArg (Lident identifier))
+  |  "dot"      == (toLower <$> identifier)
+  || "graphviz" == (toLower <$> identifier) = Right $ Right DotFile
+validateReportArg (LidentArg (Lident identifier))
+  |  "metadata" == (toLower <$> identifier) = Right $ Right Metadata
+
+validateReportArg _ = Left "Unrecognized report commands."
 
 primativeString :: Argument -> Either String FilePath
 primativeString (PrimativeArg   (TextValue str)) = Right str

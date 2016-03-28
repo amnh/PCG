@@ -9,7 +9,10 @@ import           Control.Monad.IO.Class
 import           Control.Evaluation
 import           PCG.Command.Types (Command(..))
 import           PCG.Command.Types.Report.TaxonMatrix
+import           PCG.Command.Types.Report.GraphViz
 import           PCG.Command.Types.Report.Internal
+import           PCG.Command.Types.Report.Metadata
+import           PCG.Command.Types.Report.Newick
 
 import Debug.Trace
 
@@ -23,15 +26,15 @@ evaluate (REPORT target format) old = do
      Right output ->
        case target of
          OutputToStdout -> old <> info output
-         OutputToFile f -> do
-                             !_ <- liftIO $ writeFile f output
-                             old
+         OutputToFile f -> old <* liftIO (writeFile f output)
 
 evaluate _ _ = fail "Invalid READ command binding"
 {--}
 
 generateOutput :: Graph -> OutputFormat -> Either String String
 -- Don't ignore names later
---generateOutput g _ | trace ("generate output on g " ++ show g) False = undefined
-generateOutput g (CrossReferences _) = Right $ taxonReferenceOutput g mempty
+generateOutput g CrossReferences {} = Right $ crossReferenceOutput g
+generateOutput g Data            {} = Right $ newickReport g
+generateOutput g DotFile         {} = Right $ dotOutput g
+generateOutput g Metadata        {} = Right $ metadataCsvOutput g
 generateOutput _ _ = Left "Unrecognized 'report' command"
