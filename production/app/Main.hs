@@ -1,8 +1,7 @@
 module Main (main) where
 
---import Data.Bifunctor
 import Text.Megaparsec
---import Data.Functor ((<$))
+import Data.Functor ((<$))
 import PCG.Computation.Internal
 import Control.Evaluation
 import PCG.Script
@@ -15,7 +14,7 @@ main = getContents
    >>= checkInput . parse scriptStreamParser "STDIN stream"
    where
      checkInput (Left  err) = print err
-     checkInput (Right val) = print =<< runEvaluation (evaluate =<< (state . evalEither . interpret) val)
-                             -- () <$ runEvaluation (evaluate =<< (state . evalEither . interpret) val)
+     checkInput (Right val) = --print =<< runEvaluation (evaluate =<< (state . evalEither . interpret) val)
+                              () <$ runEvaluation (evaluate =<< (state . evalEither . interpret) val)
        {--}
       

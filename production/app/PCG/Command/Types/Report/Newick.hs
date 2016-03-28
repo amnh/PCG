@@ -19,25 +19,28 @@ import Bio.Phylogeny.Graph.Topological
 import Bio.Phylogeny.Graph.Utilities
 import Bio.Phylogeny.Tree.Node.Topological
 
--- | Wrapper function to output a graph to a newick
-outPutNewick :: String -> Graph -> IO ()
-outPutNewick fileName inGraph = writeFile fileName (toNewick inGraph)
-    where
-        -- | Main fold over a graph
-        toNewick :: Graph -> String
-        toNewick graph = 
-            let (TopoGraph trees) = toTopoGraph graph
-            in "<" ++ init (foldr (\g acc -> withRootCost (tree g) acc . printNewick $ tree g) mempty trees) ++ ">"
-
+-- | Main fold over a graph
+newickReport :: Graph -> String
+newickReport graph =
+  case toTopoGraph graph of
+    (TopoGraph []   ) -> "There were no trees. Check inoput data for inconsitencies?"
+    (TopoGraph trees) -> concat ["<", foldr appendTree "" trees, ">"]
+  where
+    appendTree t str  = concat [printNewick t', renderRootCost t', ";\n"]
+      where
+        t' = tree t
 {-
         -- | Allows output of forests by wrapping up a tree
         terminateTree :: String -> String -> String
         terminateTree treeStr accStr = accStr ++ init treeStr
 -}
         -- | Adds a root cost to the end of a tree
-        withRootCost :: TopoNode b -> String -> String -> String
-        withRootCost rootTopo accStr treeStr = accStr ++ init treeStr ++ "[" ++ rCost ++ "];\n" 
-            where rCost = show $ totalCost rootTopo
+    renderRootCost :: TopoNode b -> String
+    renderRootCost rootTopo = concat ["[", show $ totalCost rootTopo, "]"]
+
+-- | Wrapper function to output a graph to a newick
+outPutNewick :: String -> Graph -> IO ()
+outPutNewick fileName = writeFile fileName . newickReport
             
 -- | Most important functionality to turn a topoNode into a string
 printNewick :: TopoNode b -> String

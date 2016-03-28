@@ -24,12 +24,12 @@ import Bio.Phylogeny.PhyloCharacter
 -- TODO: use spreadsheet library for tabular output files
 -- | Wrapper function to output a metadata csv
 outPutMetadata :: FilePath -> Graph -> IO ()
-outPutMetadata fileName inGraph = writeFile fileName (toMetaCSV inGraph)
+outPutMetadata fileName = writeFile fileName . metadataCsvOutput
+
+metadataCsvOutput :: Graph -> String
+metadataCsvOutput (Graph dags) = ifoldr oneCSV header (fromList dags)
     where
-        toMetaCSV :: Graph -> String
-        toMetaCSV (Graph dags) = ifoldr oneCSV header (fromList dags)
-            where
-                header = "DAG, Type, Name, Aligned, Additive, State Names, Alphabet, Ignored, Weight \n"
+        header = "DAG, Type, Name, Aligned, Additive, State Names, Alphabet, Ignored, Weight \n"
 
         -- | Main creation functionality
         oneCSV :: Int -> DAG -> String -> String

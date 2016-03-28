@@ -18,9 +18,7 @@ interpret (Script xs) =
     (errors, _      ) -> Left errors
 
 evaluate :: Computation -> SearchState
-evaluate (Computation []    ) = pure mempty
-evaluate (Computation (x:xs)) = f x $ evaluate (Computation xs)
-
+evaluate (Computation xs) = foldl (flip f) (pure mempty) xs
   
 f :: Command -> SearchState -> SearchState
 f x@READ   {} = Read.evaluate   x

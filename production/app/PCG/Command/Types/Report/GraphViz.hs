@@ -19,17 +19,14 @@ import Bio.Phylogeny.Tree.Node
 import Data.Char
 
 import qualified Data.IntMap as IM (elems, (!))
-import System.IO () -- Why?
+--import System.IO () -- Why?
 
-outPutDot :: String -> Graph -> IO ()
-outPutDot fileName inGraph = writeFile fileName (toDot inGraph)
-    
+
+dotOutput :: Graph -> String
+dotOutput (Graph trees) = header ++ foldr treeToDot "" trees ++ footer
     where
-        toDot :: Graph -> String
-        toDot (Graph trees) = header ++ foldr treeToDot "" trees ++ footer
-            where
-                header = "digraph G { \n" ++ "\trankdir = LR;\n" ++ "\tnode [shape = rect];\n"
-                footer = "}"
+        header = "digraph G { \n" ++ "\trankdir = LR;\n" ++ "\tnode [shape = rect];\n"
+        footer = "}"
 
         treeToDot :: DAG -> String -> String
         treeToDot inTree curString = foldr printEdge curString (edges inTree)
@@ -43,3 +40,5 @@ outPutDot fileName inGraph = writeFile fileName (toDot inGraph)
                         printOne o t = "\t" ++ o ++ " -> " ++ t ++ ";\n"
                         replaceSpaces = fmap (\c -> if isSpace c then '_' else c)
 
+outPutDot :: String -> Graph -> IO ()
+outPutDot fileName = writeFile fileName . dotOutput
