@@ -26,7 +26,7 @@ import           Bio.Sequence.Parsed
 import           Control.Applicative  (liftA2, liftA)
 import           Control.Monad
 import           Data.Bits
-import           Data.BitVector (BitVector, size)
+import           Data.BitVector (BitVector, size, )
 import           Data.List (elemIndex)
 import           Data.Maybe
 import           Data.Vector    (map, zipWith, empty, Vector, head, (!), singleton)
@@ -41,16 +41,16 @@ import Data.Foldable
         -- Think about a nonempty type class or a refinement type for this
 
 -- | EncodedSequences is short for a vector of EncodedSeq
-type EncodedSequences b = Vector (EncodedSeq b)
+type EncodedSequences = Vector EncodedSeq
 
 -- | An EncodedSeq (encoded sequence) is a maybe vector of characters
-type EncodedSeq b = Maybe (Vector b)
+type EncodedSeq = Maybe BitVector
 
 -- | Make a coded sequence and coded character instances of bits
-instance Bits b => CodedSequence (EncodedSeq b) b where
+instance Bits b => CodedSequence EncodedSeq where
     numChars s = case s of 
         Nothing -> 0
-        Just vec -> length vec
+        Just vec -> width vec
     charToSeq = Just . singleton
     grabSubChar s pos = liftA (! pos) s
     emptySeq = Nothing
