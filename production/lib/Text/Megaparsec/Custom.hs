@@ -43,7 +43,7 @@ import Text.Megaparsec.Lexer (float,integer,signed)
 (<++>) :: Applicative f => f [a] -> f [a] -> f [a]
 (<++>) a b = (++) <$> a <*> b
 
--- | 
+-- | Collects one or more of the arguments into a `NonEmpty` list.
 nonEmpty :: MonadParsec s m Char => m a -> m (NonEmpty a)
 nonEmpty c = fromList <$> some c
 
