@@ -18,22 +18,22 @@
 
 module Bio.Sequence.Coded (CodedSequence(..), EncodedSeq, EncodedSequences, CodedChar(..), encodeAll, unencodeMany) where
 
-import           Prelude hiding (map, zipWith, null, head)
+import           Prelude        hiding (and, head, map, or, zipWith)
 import           Bio.Sequence.Coded.Class
 import           Bio.Sequence.Character.Coded
 import           Bio.Sequence.Packed.Class
 import           Bio.Sequence.Parsed
-import           Control.Applicative  (liftA2, liftA)
+import           Control.Applicative   (liftA2, liftA)
 import           Control.Monad
 import           Data.Bits
-import           Data.BitVector (BitVector, size, )
-import           Data.List (elemIndex)
+import           Data.BitVector hiding (foldr, join, not)
+import           Data.List             (elemIndex)
 import           Data.Maybe
-import           Data.Vector    (map, zipWith, empty, Vector, head, (!), singleton)
-import qualified Data.Vector as V (filter)
+import           Data.Vector           (map, zipWith, empty, Vector, head, (!), singleton)
+import qualified Data.Vector as V      (filter)
 
 import GHC.Stack
-import Data.Foldable
+-- import Data.Foldable
 -- import Debug.Trace
 
 -- TODO: Change EncodedSeq/Sequences to EncodedCharacters
@@ -41,21 +41,16 @@ import Data.Foldable
         -- Think about a nonempty type class or a refinement type for this
 
 -- | EncodedSequences is short for a vector of EncodedSeq
+-- TODO: change name to make clear the difference between a CodedSequence and an EncodedSequence
 type EncodedSequences = Vector EncodedSeq
 
 -- | An EncodedSeq (encoded sequence) is a maybe vector of characters
 type EncodedSeq = Maybe BitVector
 
 -- | Make a coded sequence and coded character instances of bits
-instance Bits b => CodedSequence EncodedSeq where
-    numChars s = case s of 
-        Nothing -> 0
-        Just vec -> width vec
-    charToSeq = Just . singleton
-    grabSubChar s pos = liftA (! pos) s
-    emptySeq = Nothing
-    isEmpty = isNothing
-    filterSeq s condition = liftA (V.filter condition) s
+instance CodedSequence EncodedSeq b where
+    charToSeq = Just . bitVec 1 0
+    emptySeq = nil
     -- This works over minimal alphabet
     encode strSeq = 
         let 
@@ -70,6 +65,15 @@ instance Bits b => CodedSequence EncodedSeq where
             coded = map (foldr (\c acc -> setElemAt c acc alphabet) zeroBits) strSeq
             final = if null coded then Nothing else Just coded
         in {- trace ("encoded strSeq " ++ show strSeq) -} final
+    filterSeq s condition = liftA (V.filter condition) s
+    grabSubChar s pos = liftA (@. pos) s
+    isEmpty = isNothing
+    numChars s = case s of 
+        Nothing -> 0
+        Just vec -> width vec
+    
+    
+    
 
 ----  = 
 --    let
@@ -83,10 +87,10 @@ instance Bits b => CodedSequence EncodedSeq where
 --    in undefined
 
 -- | Sequence to map encoding over ParsedSequences
-encodeAll :: Bits b => ParsedSequences -> EncodedSequences b
+encodeAll :: ParsedSequences -> EncodedSequences
 encodeAll = fmap (\s -> join $ encode <$> s)
 
-instance Bits b => PackedSequence (EncodedSeq b) b where
+instance PackedSequence EncodedSeq b where
     packOverAlphabet = undefined
 
 setElemAt :: (Bits b) => String -> b -> [String] -> b
@@ -97,55 +101,25 @@ setElemAt char orig alphabet
                         Just pos -> setBit orig (pos + 1)    
 
 -- | Added functionality for unencoded
-unencodeOverAlphabet :: EncodedSeq BitVector -> Alphabet -> ParsedSeq 
+unencodeOverAlphabet :: EncodedSeq -> Alphabet -> ParsedSeq 
 unencodeOverAlphabet encoded alph = 
     let 
         alphLen = length alph
-        oneBit inBit = foldr (\i acc -> if testBit inBit i then alph !! (i `mod` alphLen) : acc else acc) mempty [0..size inBit]
+        oneBit inBit = foldr (\i acc -> if testBit inBit i then alph !! (i `mod` alphLen) : acc else acc) mempty [0..width inBit]
         allBits = fmap oneBit <$> encoded
     in fromMaybe mempty allBits
 
 -- | Functionality to unencode many
-unencodeMany :: EncodedSequences BitVector -> Alphabet -> ParsedSequences
+unencodeMany :: EncodedSequences -> Alphabet -> ParsedSequences
 unencodeMany seqs alph = fmap (Just . flip unencodeOverAlphabet alph) seqs
 
 instance Bits b => CodedChar b where
     gapChar = setBit zeroBits 0
 
--- | To make this work, the underlying types are also an instance of bits because a Vector of bits is and a Maybe bits is
-instance Bits b => Bits (Vector b) where
-    (.&.) bit1 bit2     
-        | length bit1 /= length bit2 = errorWithStackTrace $ "Attempt to take and of bits of different length " ++ show (length bit1) ++ " and " ++ show (length bit2)
-        | otherwise = zipWith (.&.) bit1 bit2
-    (.|.) bit1 bit2 
-        | length bit1 /= length bit2 = error "Attempt to take or of bits of different length"
-        | otherwise = zipWith (.|.) bit1 bit2
-    xor bit1 bit2 = (.&.) ((.|.) bit1 bit2) (complement ((.&.) bit1 bit2))
-    complement    = map complement
-    shift  bits s = (`shift`  s) <$> bits
-    rotate bits r = (`rotate` r) <$> bits
-    setBit _    _ = empty -- these methods are not meaningful so they just wipe it
-    bit    pos    = pure $ bit pos
-    bitSize       = foldl' (\a b -> fromMaybe 0 (bitSizeMaybe b) + a) 0
-    bitSizeMaybe  = foldlM (\a b -> (a+) <$> bitSizeMaybe b) 0 
-    isSigned _    = False
-    popCount      = foldr (\b acc -> acc + popCount b) 0
-    testBit bits index
-        | null bits = False
-        | otherwise =
-          case bitSizeMaybe $ head bits of
-            Nothing      -> False
-            Just numBits -> let (myBit, myPos) = index `divMod` numBits
-                            in testBit (bits ! myBit) myPos
-     -- zeroBits = clearBit (bit 0) 0
-     --          = (bit 0) .&. complement (bit 0)
-     --          = (bit 0) .&. (bit 0)
-     --          = empty .&. empty 
-     --          = empty
 
-instance Bits b => Bits (Maybe b) where
-    (.&.)           = liftA2 (.&.)
-    (.|.)           = liftA2 (.|.)
+instance Bits EncodedSeq where
+    (.&.)           = liftA2 and
+    (.|.)           = liftA2 or
     xor             = liftA2 xor
     complement      = fmap complement
     shift  bits s   = fmap (`shift`  s) bits

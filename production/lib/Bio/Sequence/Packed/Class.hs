@@ -19,6 +19,6 @@ module Bio.Sequence.Packed.Class where
 import Bio.Sequence.Parsed
 import Bio.Sequence.Coded.Class
 
--- | A coded sequence allows grabbing of a character, filtering, and some standard types
-class (Monoid s, CodedSequence s b) => PackedSequence s b | s -> b where
+
+class (Monoid s, CodedSequence s b) => PackedSequence s b where
     packOverAlphabet :: ParsedSeq -> [String] -> s
