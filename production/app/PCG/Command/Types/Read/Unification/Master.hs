@@ -22,18 +22,11 @@ import qualified Data.HashMap.Lazy as HM
 import           Data.IntMap             (elems)
 import qualified Data.IntMap       as IM 
 import           Data.List               ((\\), isPrefixOf, nub)
-<<<<<<< HEAD
-import           Data.Map                (foldWithKey)
+import           Data.Map                (foldWithKey, difference, intersectionWith)
 import qualified Data.Map          as M 
 import           Data.Monoid
-import           Data.Vector             (Vector, (!), (//), cons)
-import qualified Data.Vector       as V  (replicate, foldr)
-=======
-import           Data.Map                (difference,foldWithKey,intersectionWith)
-import           Data.Monoid
 import           Data.Vector             (Vector, (!), (//), cons, generate)
-import qualified Data.Vector       as V  (replicate)
->>>>>>> 953958ab9f3efd569c4e21ffbe33b0d6ffa33e6f
+import qualified Data.Vector       as V  (replicate, foldr)
 import           File.Format.Conversion.Encoder
 import           File.Format.TransitionCostMatrix
 import           PCG.Command.Types.Read.Unification.UnificationError
@@ -191,7 +184,7 @@ eitherAction inVal fun1 fun2 = case inVal of
 -- | New master unification function
 masterUnify' :: [FracturedParseResult] -> Either UnificationError Graph
 --masterUnify inResults | trace ("initial input " <> show (map parsedChars inResults)) False = undefined
-masterUnify' inResults = undefined
+masterUnify' inResults = encoded
   where
     -- union taxa names
     namesFromOne = foldr ((<>) . M.keys) mempty
@@ -202,6 +195,12 @@ masterUnify' inResults = undefined
 
     -- check names
     namesVerified = verifyNaming topoStruc allNames
+
+    -- merge metadata and sequences
+    seqInfo = joinSequences inResults
+
+    -- encode into the existing nodes
+    encoded = encodeGraph' seqInfo namesVerified
 
 -- | Get a graph with a topological structure from a result
 -- defaults or errors as needed
@@ -235,6 +234,7 @@ verifyNaming eGraph seqNames = undefined
                       else ((l1 \\ l2), (l1 \\ l2))
     --between g = doMatch (gatherNames g) seqNames
 
+-- | Joins the sequences of a fractured parse result
 joinSequences :: [FracturedParseResult] -> (Vector CharInfo, TreeSeqs)
 joinSequences =  foldl' f (mempty, mempty) . filter (not . null . parsedChars)
   where
@@ -249,3 +249,7 @@ joinSequences =  foldl' f (mempty, mempty) . filter (not . null . parsedChars)
         inBoth       = intersectionWith (<>) oldTreeSeqs nextTreeSeqs
         inOnlyOld    = fmap (<> nextPad) $  oldTreeSeqs `difference` nextTreeSeqs
         inOnlyNext   = fmap (oldPad  <>) $ nextTreeSeqs `difference`  oldTreeSeqs
+
+-- | New functionality to encode into a graph
+encodeGraph' :: (Vector CharInfo, TreeSeqs) -> Either UnificationError Graph -> Either UnificationError Graph
+encodeGraph' = undefined
