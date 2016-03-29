@@ -10,7 +10,9 @@ data UnificationError
    deriving (Show)
 
 data UnificationErrorMessage
-   = NonMatchingTaxa [TaxaName] [TaxaName] | NonMatchingTaxaSeqs [TaxaName] [TaxaName] 
+   = NonMatchingTaxa [TaxaName] [TaxaName] 
+   | NonMatchingTaxaSeqs [TaxaName] [TaxaName] 
+   | TooManyTrees [FilePath]
    deriving (Show)
 
 instance Semigroup UnificationError where

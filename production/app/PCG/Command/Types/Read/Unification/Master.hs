@@ -19,17 +19,18 @@ import           Bio.Sequence.Parsed
 import           Bio.Phylogeny.Tree.Node
 import qualified Data.HashMap.Lazy as HM
 import           Data.IntMap             (elems)
-import qualified Data.IntMap       as IM (assocs, filter)
+import qualified Data.IntMap       as IM 
 import           Data.List               ((\\), isPrefixOf, nub)
 import           Data.Map                (foldWithKey)
+import qualified Data.Map          as M 
 import           Data.Monoid
 import           Data.Vector             (Vector, (!), (//), cons)
-import qualified Data.Vector       as V  (replicate)
+import qualified Data.Vector       as V  (replicate, foldr)
 import           File.Format.Conversion.Encoder
 import           File.Format.TransitionCostMatrix
 import           PCG.Command.Types.Read.Unification.UnificationError
 
---import Debug.Trace
+import Debug.Trace
 
 data FracturedParseResult
    = FPR
@@ -45,7 +46,7 @@ data FracturedParseResult
 -- accumulates in metadata, then topological structure, then sequences 
 -- before encoding and outputting
 masterUnify :: [FracturedParseResult] -> Either UnificationError Graph
-masterUnify inResults | trace ("initial input " <> show (map parsedChars inResults)) False = undefined
+--masterUnify inResults | trace ("initial input " <> show (map parsedChars inResults)) False = undefined
 masterUnify inResults = 
     let
       firstTopo    = foldr (mergeParsedGraphs . parsedTrees) (Right mempty) inResults
@@ -53,7 +54,7 @@ masterUnify inResults =
                      enforceGraph firstTopo $ (mergeParsedMetadata . parsedMetas) <$> inResults
       withSeqs     = --trace ("graph with meatadata " <> show withMetadata)
                      verifyTaxaSeqs $ foldr (mergeParsedChars . parsedChars) withMetadata inResults
-      encodedRes   = trace ("graph with seqs " <> show withSeqs)
+      encodedRes   = --trace ("graph with seqs " <> show withSeqs)
                      encodeGraph withSeqs
     in encodedRes
 
@@ -82,9 +83,10 @@ checkTaxaMatch (Graph g1) (Graph g2)
 mergeParsedGraphs :: Graph -> Either UnificationError Graph -> Either UnificationError Graph
 mergeParsedGraphs graph1@(Graph newGraph) carry = eitherAction carry id matchThese
   where
+    filterEmpty = filter (null . nodes) newGraph
     matchThese :: Graph -> Either UnificationError Graph
     matchThese in2@(Graph accumGraph)
-      | doesMatch = Right $ Graph (accumGraph <> newGraph)
+      | doesMatch = Right $ Graph (accumGraph <> filterEmpty)
       | otherwise = Left . UnificationError . pure  $ uncurry NonMatchingTaxa matchCheck
         where
           matchCheck = checkTaxaMatch graph1 in2
@@ -106,12 +108,13 @@ verifyTaxaSeqs :: Either UnificationError Graph -> Either UnificationError Graph
 verifyTaxaSeqs inGraph = eitherAction inGraph id verifySeqs
   where
     verifySeqs :: Graph -> Either UnificationError Graph
+    verifySeqs (Graph g) | trace ("verify seq match " ++ show g) False = undefined
     verifySeqs (Graph g)
       | doesMatch = Right $ Graph g
       | otherwise = Left  . UnificationError . pure $ uncurry NonMatchingTaxaSeqs checkTuple
       where
         nonInternal = filter (not . isPrefixOf "HTU")
-        graphNames = nonInternal . elems $ foldr1 (<>) (fmap nodeNames g)
+        graphNames = nub $ nonInternal . elems $ foldr ((<>) . nodeNames) mempty g
         seqNames = nonInternal $ nub $ foldr (\e acc -> acc <> HM.keys (parsedSeqs e)) mempty g
         checkTuple = (graphNames \\ seqNames, seqNames \\ graphNames)
         doesMatch = null (fst checkTuple) && null (snd checkTuple)
@@ -122,7 +125,7 @@ mergeParsedChars :: [TreeSeqs] -> Either UnificationError Graph -> Either Unific
 mergeParsedChars inSeqs carry = eitherAction carry id addSeqs
     where
       addSeqs :: Graph -> Either UnificationError Graph
-      --addEncodeSeqs g@(Graph accumDags) | trace ("addEncodeSeqs on accumDags " <> show accumDags) False = undefined
+      addEncodeSeqs g@(Graph accumDags) | trace ("addEncodeSeqs on accumDags " <> show accumDags) False = undefined
       addSeqs g@(Graph accumDags)
         | null inSeqs = Right g
         | otherwise = Right (Graph $ zipWith (\d s -> d {parsedSeqs = s}) accumDags outSeqs)
@@ -140,8 +143,8 @@ mergeParsedChars inSeqs carry = eitherAction carry id addSeqs
                                  else HM.insert k (V.replicate curLen Nothing <> v) acc
 
           getLen :: HM.HashMap Identifier ParsedSequences -> Int
-          getLen = HM.foldr (\s acc -> if   length s /= acc
-                                       then error "Uneven sequence length"                                      else length s) 0
+          getLen = HM.foldr (\s acc -> if   length s /= acc && acc /= 0
+                                       then error "Uneven sequence length" else length s) 0
 
 -- | Finally, functionality to do an encoding over a graph
 encodeGraph :: Either UnificationError Graph -> Either UnificationError Graph
@@ -176,3 +179,50 @@ eitherAction :: Either a b -> (a -> a) -> (b -> Either a b) -> Either a b
 eitherAction inVal fun1 fun2 = case inVal of
   Left x -> Left $ fun1 x
   Right y -> fun2 y
+
+-- | New master unification function
+masterUnify' :: [FracturedParseResult] -> Either UnificationError Graph
+--masterUnify inResults | trace ("initial input " <> show (map parsedChars inResults)) False = undefined
+masterUnify' inResults = undefined
+  where
+    -- union taxa names
+    namesFromOne = foldr ((<>) . M.keys) mempty
+    allNames = nub $ foldr ((<>) . namesFromOne . parsedChars) mempty inResults
+
+    -- grab the graph with an actual topology
+    topoStruc = grabTopo inResults allNames
+
+    -- check names
+    namesVerified = verifyNaming topoStruc allNames
+
+-- | Get a graph with a topological structure from a result
+-- defaults or errors as needed
+grabTopo :: [FracturedParseResult] -> [String] -> Either UnificationError Graph
+grabTopo results names
+  | length filtered > 1 = Left $ UnificationError $ pure $ TooManyTrees (map sourceFile filtered)
+  | length filtered == 1 = Right $ parsedTrees $ head $ filtered
+  | otherwise = Right $ makeEmptyNodes names
+  where
+    hasNodes (Graph g) = not $ null $ filter (not . null . nodes) g
+    filtered = filter (hasNodes . parsedTrees) results
+
+-- | Make empty nodes with matching names and shove into graph
+-- creates a graph with node names, edges, and nodes, but nothing else
+makeEmptyNodes :: [String] -> Graph
+makeEmptyNodes names = Graph $ pure oneDAG
+  where
+    withCodes = foldr (\n acc -> IM.insert (IM.size acc) n acc) mempty names
+    emptyNodes = V.replicate (IM.size withCodes) mempty
+    emptyEdges = V.replicate (IM.size withCodes) mempty
+    oneDAG = DAG withCodes mempty mempty emptyNodes emptyEdges 0
+
+-- | Check that names match between dags and with seqs
+verifyNaming :: Either UnificationError Graph -> [String] -> Either UnificationError Graph
+verifyNaming eGraph seqNames = undefined
+  where
+    nonInternal = IM.filter (not . isPrefixOf "HTU")
+    namesList = map (elems . nodeNames)
+    -- gatherNames = nub . elems . nonInternal . foldr ((<>) . nodeNames) mempty
+    doMatch l1 l2 = if null l1 || null l2 then (mempty, mempty)
+                      else ((l1 \\ l2), (l1 \\ l2))
+    --between g = doMatch (gatherNames g) seqNames
