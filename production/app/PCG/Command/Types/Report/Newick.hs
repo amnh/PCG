@@ -19,14 +19,17 @@ import Bio.Phylogeny.Graph.Topological
 import Bio.Phylogeny.Graph.Utilities
 import Bio.Phylogeny.Tree.Node.Topological
 
+import Debug.Trace
+
 -- | Main fold over a graph
 newickReport :: Graph -> String
 newickReport graph =
   case toTopoGraph graph of
-    (TopoGraph []   ) -> "There were no trees. Check inoput data for inconsitencies?"
+    (TopoGraph []   ) -> "There were no trees. Check input data for inconsistencies?"
     (TopoGraph trees) -> concat ["<", foldr appendTree "" trees, ">"]
   where
-    appendTree t str  = concat [init $ printNewick t', renderRootCost t', ";\n"]
+    appendTree t str  = if null $ printNewick t' then "\n"
+                            else concat [init $ printNewick t', renderRootCost t', ";\n"]
       where
         t' = tree t
 {-
@@ -43,9 +46,10 @@ outPutNewick :: String -> Graph -> IO ()
 outPutNewick fileName = writeFile fileName . newickReport
             
 -- | Most important functionality to turn a topoNode into a string
-printNewick :: TopoNode b -> String
+printNewick :: Show b => TopoNode b -> String
+--printNewick curNode | trace ("printNewick " ++ show curNode) False = undefined
 printNewick curNode
-    | isLeaf curNode = name curNode ++ ","
+    | isLeaf curNode || null (children curNode) = name curNode ++ ","
     | otherwise = 
         let childStr = foldr (\c acc -> acc ++ printNewick c) mempty (children curNode)
         in "(" ++ init childStr ++ ")," 

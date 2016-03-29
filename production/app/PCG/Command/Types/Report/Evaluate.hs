@@ -34,6 +34,7 @@ evaluate _ _ = fail "Invalid READ command binding"
 {--}
 
 -- | Function to add optimization to the newick reporting
+-- TODO: change this trace into a warning
 addOptimization :: Graph -> Graph
 addOptimization g@(Graph inDags) 
   | allBinary = graphOptimization 1 g

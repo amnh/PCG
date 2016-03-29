@@ -51,6 +51,7 @@ allOptimization weight inTree =
     in upPass
 
 -- | Optimization down pass warpper for recursion from root
+-- TODO: add a warning here if an internal node has no children (for all traversals)
 optimizationPreorder :: TreeConstraint t n s b => Double -> t -> t
 optimizationPreorder weight tree
     | isLeaf (root tree) tree = -- if the root is a terminal, give the whole tree a cost of zero, do not reassign nodes
@@ -58,7 +59,7 @@ optimizationPreorder weight tree
             newNode = setLocalCost 0.0 $ setTotalCost 0.0 (root tree)
             newTree = tree `update` [newNode]
         in newTree
-    | leftOnly && rightOnly = error "Problem with binary tree structure: non-terminal has no children"
+    | leftOnly && rightOnly = tree --error "Problem with binary tree structure: non-terminal has no children"
     | rightOnly = -- if there is only one child, continue recursion down and resolve
         let 
             nodes1 = internalPreorder weight (fromJust $ rightChild (root tree) tree) tree -- with only one child, assignment and cost is simply carried up
@@ -92,7 +93,7 @@ internalPreorder weight node tree
     | isLeaf node tree = -- if the root is a terminal, give the whole tree a cost of zero, do not reassign nodes
         let newNode = setTotalCost 0.0 $ setLocalCost 0.0 node
         in [newNode]
-    | rightOnly && leftOnly = error "Problem with binary tree structure: non-terminal has no children"
+    | rightOnly && leftOnly = [] --error "Problem with binary tree structure: non-terminal has no children"
     | rightOnly = -- if there is only one child, continue recursion down and resolve
         let 
             nodes1 = internalPreorder weight (fromJust $ rightChild node tree) tree -- with only one child, assignment and cost is simply carried up
@@ -122,7 +123,7 @@ internalPreorder weight node tree
 optimizationPostorder :: TreeConstraint t n s b => t -> t
 optimizationPostorder tree 
     | isLeaf (root tree) tree = tree
-    | rightOnly && leftOnly = error "Problem with binary tree structure: non-terminal has no children"
+    | rightOnly && leftOnly = tree --error "Problem with binary tree structure: non-terminal has no children"
     | rightOnly = 
         let nodes1 = internalPostorder (fromJust $ rightChild (root tree) tree) tree
         in tree `update` nodes1
@@ -143,7 +144,7 @@ optimizationPostorder tree
 internalPostorder :: TreeConstraint t n s b => n -> t -> [n]
 internalPostorder node tree 
     | isLeaf node tree = []
-    | rightOnly && leftOnly = error "Problem with binary tree structure: non-terminal has no children"
+    | rightOnly && leftOnly = [] --error "Problem with binary tree structure: non-terminal has no children"
     | rightOnly = internalPostorder (fromJust $ rightChild node tree) tree
     | leftOnly  = internalPostorder (fromJust $ leftChild node tree) tree
     | otherwise = 
