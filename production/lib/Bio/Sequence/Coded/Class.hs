@@ -25,7 +25,7 @@ import Bio.Sequence.Parsed
 
 -- | A coded sequence allows grabbing of a character, filtering, and some standard types
 class Monoid s => CodedSequence s b where
-    charToSeq   :: b -> s
+    charToSeq   :: b -> s  -- What is the purpose of this?
     numChars    :: s -> Int
     -- TODO: This should be translated to:
     -- encode :: (Foldable f, Functor f, Foldable t, Ord a) => f (t a) -> s

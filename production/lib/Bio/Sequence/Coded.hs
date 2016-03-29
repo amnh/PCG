@@ -52,19 +52,19 @@ instance CodedSequence EncodedSeq b where
     charToSeq = Just . bitVec 1 0
     emptySeq = nil
     -- This works over minimal alphabet
-    encode strSeq = 
-        let 
+    encode strSeq = final
+        where 
             alphabet = foldr (\ambig acc -> filter (not . flip elem acc) ambig ++ acc) [] strSeq
             coded = map (foldr (\c acc -> setElemAt c acc alphabet) zeroBits) strSeq
-            final = if null coded then Nothing else Just coded
-        in final
+            final = if null coded 
+                        then Nothing 
+                        else Just coded
 
-    encodeOverAlphabet strSeq inAlphabet = 
-        let
+    encodeOverAlphabet strSeq inAlphabet = final
+        where
             alphabet = inAlphabet
             coded = map (foldr (\c acc -> setElemAt c acc alphabet) zeroBits) strSeq
             final = if null coded then Nothing else Just coded
-        in {- trace ("encoded strSeq " ++ show strSeq) -} final
     filterSeq s condition = liftA (V.filter condition) s
     grabSubChar s pos = liftA (@. pos) s
     isEmpty = isNothing
