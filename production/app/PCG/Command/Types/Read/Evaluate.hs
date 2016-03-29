@@ -27,7 +27,7 @@ import           Data.Maybe                 (fromMaybe)
 --import qualified Data.HashMap.Strict  as HM (fromList)
 import           Data.Vector                (Vector)
 import qualified Data.Vector           as V (zipWith)
-import           Debug.Trace
+--import           Debug.Trace
 import           File.Format.Fasta   hiding   (FastaSequenceType(..))
 import qualified File.Format.Fasta   as Fasta (FastaSequenceType(..))
 import           File.Format.Fastc   hiding (Identifier)
@@ -199,7 +199,11 @@ progressiveParse inputPath = do
                           Left  _ -> fail $ "Could not determine the file type of '" ++ filePath ++ "'. Try annotating the expected file data in the 'read' for more explicit error message on file parsing failures."
 
 toFractured :: (Metadata a, ParsedCharacters a, ParseGraph a) => Maybe TCM -> FilePath -> a -> FracturedParseResult
-toFractured tcmMat path = FPR <$> unifyCharacters <*> unifyMetadata <*> unifyGraph <*> const tcmMat <*> const path
+toFractured tcmMat path = FPR <$> unifyCharacters
+                              <*> unifyMetadata
+                              <*> unifyGraph
+                              <*> const tcmMat
+                              <*> const path
 {--}
 
 nucleotideIUPAC :: Map AmbiguityGroup AmbiguityGroup

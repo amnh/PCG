@@ -20,7 +20,7 @@ import           Bio.Sequence.Coded
 import           Bio.Sequence.Parsed
 import           Control.Monad
 import           Data.Bits
-import           Data.BitVector               (BitVector,fromBits)
+import           Data.BitVector               (BitVector {- ,fromBits -})
 import           Data.Int
 import           Data.List             hiding (zipWith)
 import qualified Data.Map.Lazy         as M
@@ -65,7 +65,7 @@ developAlphabets inSeqs = V.map setGapChar $ V.map sort $ M.foldr (zipWith getNo
 
 -- | Internal function to make one character info
 makeOneInfo :: Alphabet -> (Bool, Int) -> CharInfo
-makeOneInfo inAlph (isAligned, seqLen)
+makeOneInfo inAlph (isAligned, _seqLen)
     | inAlph `subsetOf` dnaAlph = DNA "" isAligned mempty mempty inAlph defaultMat False 1
     | inAlph `subsetOf` rnaAlph = RNA "" isAligned mempty mempty inAlph defaultMat False 1
     | inAlph `subsetOf` aaAlph = AminoAcid "" isAligned mempty inAlph mempty defaultMat False 1
@@ -74,6 +74,7 @@ makeOneInfo inAlph (isAligned, seqLen)
             defaultMat = matrix (length inAlph) (length inAlph) (const 1)
             --masks = generateMasks (length inAlph) seqLen isAligned
 
+{-
             generateMasks :: Int -> Int -> Bool -> (Encoded, Encoded)
             generateMasks alphLen sLen alignedStatus 
                 | alignedStatus = 
@@ -88,7 +89,7 @@ makeOneInfo inAlph (isAligned, seqLen)
                     in (Just $ V.fromList occupancy, Just $ V.fromList periodic)
                     where
                         unit = replicate (alphLen - 1) False ++ [True]
-
+-}
 
 checkAlignLens :: TreeSeqs -> Vector (Bool, Int)
 checkAlignLens = M.foldr matchLens mempty

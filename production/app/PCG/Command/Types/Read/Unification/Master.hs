@@ -60,7 +60,7 @@ masterUnify inResults =
     where
       -- | Simple function to shove metadata in a tree structure
       enforceGraph :: Either UnificationError Graph -> [Vector CharInfo] -> Either UnificationError Graph
-      enforceGraph graph chars | trace ("enforce graph on " <> show chars) False = undefined
+      enforceGraph _graph chars | trace ("enforce graph on " <> show chars) False = undefined
       enforceGraph graph chars = eitherAction graph id (Right . Graph . shoveIt)
         where
           shoveIt (Graph dags) = if null chars then dags

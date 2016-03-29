@@ -20,7 +20,7 @@ import           PCG.Command.Types.Report.CharacterMatrix
 import           PCG.Command.Types.Report.GraphViz
 import           PCG.Command.Types.Report.Newick
 import           PCG.Command.Types.Report.Metadata
-import           PCG.Command.Types.Report.TaxonMatrix
+--import           PCG.Command.Types.Report.TaxonMatrix
 import           Text.Megaparsec
 
 main :: IO ()

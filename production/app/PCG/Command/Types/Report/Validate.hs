@@ -57,11 +57,6 @@ primativeString (LidentNamedArg (Lident i) _   ) = Left $ "Labeled argument '" <
 primativeString (CommandArg     _              ) = Left $ "Command argument "  <>              primativeStringErrorSuffix
 primativeString (ArgumentList   _              ) = Left $ "Argument list "     <>              primativeStringErrorSuffix
 
--- TODO: Make this have many different descriptive messages
-getSingltonArgumentList :: Argument -> Either String Argument
-getSingltonArgumentList (ArgumentList   [x]     ) = Right x
-getSingltonArgumentList _  = Left "Not a singlton argument list"
-
 primativeStringErrorSuffix :: String
 primativeStringErrorSuffix = "found where a string argument containing a file path was expected"
 

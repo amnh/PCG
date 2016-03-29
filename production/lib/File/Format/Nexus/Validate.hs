@@ -21,7 +21,7 @@ import           Data.Either            (lefts)
 --import           Data.Foldable          (toList)
 import           Data.List              (sort,sortBy)
 import           Data.List.Split        (splitOn)
-import           Data.List.Utility      (chunksOf)
+--import           Data.List.Utility      (chunksOf)
 import qualified Data.Map.Lazy     as M
 import           Data.Maybe             (catMaybes,fromJust)
 import           Data.Ord               (comparing)

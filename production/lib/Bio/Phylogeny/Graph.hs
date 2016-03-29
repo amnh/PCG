@@ -41,10 +41,7 @@ import qualified Data.Vector as V                        (foldr)
 import           Prelude                       hiding    ((++), lookup, replicate)          
 import           Safe
 
-
 --import Debug.Trace
-
-
 
 -- | This tree can be a binary tree
 instance BinaryTree DAG NodeInfo where
@@ -60,7 +57,7 @@ instance RoseTree DAG NodeInfo where
 -- | Make the graph structure an instance of a forest
 instance Forest Graph DAG where
   trees (Graph f) = f
-  setTrees _ trees = Graph trees
+  setTrees _ forest = Graph forest
   filterTrees (Graph f) func = Graph $ filter func f
 
 -- | Make it an instance of data storage type classes

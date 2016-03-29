@@ -17,17 +17,17 @@ module PCG.Command.Types.Report.TaxonMatrix where
 import Bio.Phylogeny.Graph
 import Bio.Phylogeny.PhyloCharacter
 import Bio.Phylogeny.Tree.Node
-import PCG.Command.Types.Report.CharacterMatrix
+--import PCG.Command.Types.Report.CharacterMatrix
 
-import qualified Data.HashMap.Lazy as HM
+--import qualified Data.HashMap.Lazy as HM
 import qualified Data.IntMap as IM
 import Data.List
 import Data.Matrix.NotStupid hiding (trace)
-import Data.Vector (ifoldr, imap, ifilter, Vector)
+import Data.Vector (ifoldr, ifilter, Vector)
 import qualified Data.Vector as V
 import Data.Maybe
 
-import Debug.Trace
+--import Debug.Trace
 
 type Presence = Matrix Bool
 type TaxaPresence = (Presence, [String], [String])
@@ -66,8 +66,8 @@ taxonReferenceOutput (Graph dags) filterFiles = printIt dags $ combineTaxa $ map
                 files = getFileNames inDAG
                 internalPos = ifoldr (\i f acc -> if isPrefixOf "HTU" f then i : acc else acc) mempty (V.fromList files)
                 selectPos = foldr (\f acc -> if f `elem` files then fromJust (elemIndex f files) : acc else acc) mempty filterFiles
-                filterGiven = ifilter (\i val -> i `elem` selectPos && not (i `elem` internalPos))
-                filterNotGiven = ifilter (\i val -> not (i `elem` internalPos))
+                filterGiven = ifilter (\i _val -> i `elem` selectPos && not (i `elem` internalPos))
+                filterNotGiven = ifilter (\i _val -> not (i `elem` internalPos))
                 filterRow = if null filterFiles then filterGiven else filterNotGiven
                 filteredNames = if null filterFiles then filter (not . isPrefixOf "HTU") files
                                     else filter (\f -> f `elem` filterFiles && not (isPrefixOf "HTU" f)) files
@@ -82,17 +82,17 @@ taxonReferenceOutput (Graph dags) filterFiles = printIt dags $ combineTaxa $ map
                 oneRow curNode = V.map (not . isNothing) (encoded curNode)
 
                 getTaxaNames :: DAG -> [String]
-                getTaxaNames inDAG = IM.fold (:) mempty (nodeNames inDAG)
+                getTaxaNames = IM.fold (:) mempty . nodeNames
 
                 getFileNames :: DAG -> [String]
                 --getFileNames inDAG | trace ("getFileNames " ++ show (characters inDAG)) False = undefined
-                getFileNames inDAG = V.toList $ V.map (\c -> fst $ span (/=':') (name c)) (characters inDAG) 
+                getFileNames = V.toList . V.map (\c -> fst $ span (/=':') (name c)) . characters
 
 
         printIt :: [DAG] -> TaxaPresence -> String
         --printIt dags (mat, taxa, files) | trace ("printing " ++ show (length taxa) ++ " " ++ show (nrows mat)) False = undefined
-        printIt dags (mat, taxa, files) = header ++ ifoldr (\i name acc -> acc ++ "\n" ++ name ++ printRow (getRow i mat)) mempty (V.fromList taxa)
+        printIt _dags (mat, taxa, files) = header ++ ifoldr (\i taxaName acc -> acc ++ "\n" ++ taxaName ++ printRow (getRow i mat)) mempty (V.fromList taxa)
             where
-                header = foldr (\name acc -> acc ++ ", " ++ name) "Taxa" files
+                header = foldr (\fileName acc -> acc ++ ", " ++ fileName) "Taxa" files
                 printRow = V.foldr (\b acc -> if b then ", +" ++ acc else ", -" ++ acc) mempty
 

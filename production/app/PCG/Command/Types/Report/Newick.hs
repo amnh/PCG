@@ -18,8 +18,9 @@ import Bio.Phylogeny.Graph
 import Bio.Phylogeny.Graph.Topological
 import Bio.Phylogeny.Graph.Utilities
 import Bio.Phylogeny.Tree.Node.Topological
+import Data.Monoid ((<>))
 
-import Debug.Trace
+--import Debug.Trace
 
 -- | Main fold over a graph
 newickReport :: Graph -> String
@@ -28,8 +29,9 @@ newickReport graph =
     (TopoGraph []   ) -> "There were no trees. Check input data for inconsistencies?"
     (TopoGraph trees) -> concat ["<", foldr appendTree "" trees, ">"]
   where
-    appendTree t str  = if null $ printNewick t' then "\n"
-                            else concat [init $ printNewick t', renderRootCost t', ";\n"]
+    appendTree t str  = str <> if null $ printNewick t'
+                               then ""
+                               else concat [init $ printNewick t', renderRootCost t', ";\n"]
       where
         t' = tree t
 {-
