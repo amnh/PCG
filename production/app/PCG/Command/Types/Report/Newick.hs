@@ -26,7 +26,7 @@ newickReport graph =
     (TopoGraph []   ) -> "There were no trees. Check inoput data for inconsitencies?"
     (TopoGraph trees) -> concat ["<", foldr appendTree "" trees, ">"]
   where
-    appendTree t str  = concat [printNewick t', renderRootCost t', ";\n"]
+    appendTree t str  = concat [init $ printNewick t', renderRootCost t', ";\n"]
       where
         t' = tree t
 {-
