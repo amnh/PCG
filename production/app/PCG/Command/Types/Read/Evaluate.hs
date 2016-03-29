@@ -8,6 +8,7 @@ import           Bio.Phylogeny.Graph
 import           Bio.Phylogeny.Graph.Parsed
 import           Bio.Phylogeny.PhyloCharacter
 import           Bio.Metadata.Class
+import           Bio.Metadata.MaskGenerator
 import           Bio.Sequence.Parsed
 import           Bio.Sequence.Parsed.Class
 import           Control.Monad              (when)
@@ -51,7 +52,7 @@ evaluate (READ fileSpecs) old = do
     result <- liftIO . runEitherT . eitherTValidation $ parseSpecifiedFile <$> fileSpecs
     case result of
       Left pErr -> fail $ show pErr   -- Report structural errors here.
-      Right xs ->
+      Right xs -> fmap addMasks $
         case masterUnify $ transformation <$> concat xs of
           Left uErr -> fail $ show uErr -- Report rectification errors here.
           Right g   -> old <> pure g    -- TODO: rectify against 'old' SearchState, don't just blindly merge
