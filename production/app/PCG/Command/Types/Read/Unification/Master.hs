@@ -45,7 +45,7 @@ data FracturedParseResult
 -- accumulates in metadata, then topological structure, then sequences 
 -- before encoding and outputting
 masterUnify :: [FracturedParseResult] -> Either UnificationError Graph
---masterUnify inResults | trace ("initial input " <> show (map parsedMetas inResults)) False = undefined
+masterUnify inResults | trace ("initial input " <> show (map parsedChars inResults)) False = undefined
 masterUnify inResults = 
     let
       firstTopo    = foldr (mergeParsedGraphs . parsedTrees) (Right mempty) inResults
@@ -53,14 +53,14 @@ masterUnify inResults =
                      enforceGraph firstTopo $ (mergeParsedMetadata . parsedMetas) <$> inResults
       withSeqs     = --trace ("graph with meatadata " <> show withMetadata)
                      verifyTaxaSeqs $ foldr (mergeParsedChars . parsedChars) withMetadata inResults
-      encodedRes   = --trace ("graph with seqs " <> show withSeqs)
+      encodedRes   = trace ("graph with seqs " <> show withSeqs)
                      encodeGraph withSeqs
     in encodedRes
 
     where
       -- | Simple function to shove metadata in a tree structure
       enforceGraph :: Either UnificationError Graph -> [Vector CharInfo] -> Either UnificationError Graph
-      enforceGraph _graph chars | trace ("enforce graph on " <> show chars) False = undefined
+      --enforceGraph _graph chars | trace ("enforce graph on " <> show chars) False = undefined
       enforceGraph graph chars = eitherAction graph id (Right . Graph . shoveIt)
         where
           shoveIt (Graph dags) = if null chars then dags
@@ -96,7 +96,7 @@ mergeParsedGraphs graph1@(Graph newGraph) carry = eitherAction carry id matchThe
 -- and each element of the vector CORRECTLY identifies a single character in that file
 -- if either of these assumptions are violated, this thing becomes more complicated
 mergeParsedMetadata :: [Vector CharInfo] -> Vector CharInfo
-mergeParsedMetadata inMeta | trace ("merge metadata " <> show inMeta) False = undefined
+--mergeParsedMetadata inMeta | trace ("merge metadata " <> show inMeta) False = undefined
 mergeParsedMetadata inMeta = foldl (<>) mempty inMeta
                    -- TODO: Investigate above claim
                       
