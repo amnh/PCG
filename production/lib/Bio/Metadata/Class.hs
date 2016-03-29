@@ -71,12 +71,12 @@ instance Metadata TntResult where
     unifyMetadata (Right withSeq) = pure $ V.map convertMeta (charMetaData withSeq)
         where
             convertMeta inMeta = 
-                let defaultMeta = makeOneInfo (V.toList $ characterStates inMeta) (False, 0)
+                let defaultMeta = makeOneInfo (V.toList $ characterStates inMeta)
                 in defaultMeta {name = characterName inMeta, stateNames = characterStates inMeta, tcm = fromMaybe (tcm defaultMeta) (costTCM inMeta)}
 
 instance Metadata TCM where
     unifyMetadata (TCM alph mat) = 
-        let defaultMeta = makeOneInfo (toList alph) (False, 0)
+        let defaultMeta = makeOneInfo (toList alph)
         in pure $ pure (defaultMeta {tcm = mat})
 
 instance Metadata VertexEdgeRoot where
@@ -88,7 +88,7 @@ instance Metadata Nexus where
             seqLen = M.foldr (\val acc -> V.length val) 0 seqs
 
             convertNexusMeta inMeta = 
-                let defaultMeta = makeOneInfo (Nex.alphabet inMeta) (Nex.isAligned inMeta, seqLen)
+                let defaultMeta = makeOneInfo (Nex.alphabet inMeta)
                 in  defaultMeta {name = Nex.name inMeta, ignored = Nex.ignored inMeta, 
                                     tcm = fromMaybe (tcm defaultMeta) (transitionCosts <$> Nex.costM inMeta)}
 

@@ -42,10 +42,10 @@ aaAlph = ["R", "H", "K", "D", "E", "S", "T", "N", "Q", "C", "U", "G", "P", "A", 
 -- | Functionality to make char info from tree seqs
 makeEncodeInfo :: TreeSeqs -> Vector CharInfo
 makeEncodeInfo seqs = --trace ("makeEncodeInfo " ++ show alphabets)
-                        zipWith makeOneInfo alphabets allChecks
+                        V.map makeOneInfo alphabets
     where
         alphabets = developAlphabets seqs
-        allChecks = checkAlignLens seqs
+        --allChecks = checkAlignLens seqs
 
 -- | Internal function to create alphabets
 developAlphabets :: TreeSeqs -> Vector Alphabet
@@ -67,15 +67,15 @@ setGapChar inAlph | trace ("setGapChar " ++ show inAlph) False = undefined
 setGapChar inAlph = filter (/= "-") inAlph ++ ["-"]
 
 -- | Internal function to make one character info
-makeOneInfo :: Alphabet -> (Bool, Int) -> CharInfo
-makeOneInfo inAlph (isAligned, seqLen)
-    | inAlph `subsetOf` dnaAlph = DNA "" isAligned masks mempty (setGapChar inAlph) defaultMat False 1
-    | inAlph `subsetOf` rnaAlph = RNA "" isAligned masks mempty (setGapChar inAlph) defaultMat False 1
-    | inAlph `subsetOf` aaAlph = AminoAcid "" isAligned masks (setGapChar inAlph) mempty defaultMat False 1
-    | otherwise = Custom "" isAligned masks inAlph mempty defaultMat False False 1
+makeOneInfo :: Alphabet -> CharInfo
+makeOneInfo inAlph
+    | inAlph `subsetOf` dnaAlph = DNA "" False mempty mempty (setGapChar inAlph) defaultMat False 1
+    | inAlph `subsetOf` rnaAlph = RNA "" False mempty mempty (setGapChar inAlph) defaultMat False 1
+    | inAlph `subsetOf` aaAlph = AminoAcid "" False mempty (setGapChar inAlph) mempty defaultMat False 1
+    | otherwise = Custom "" False mempty inAlph mempty defaultMat False False 1
         where 
             defaultMat = matrix (length inAlph) (length inAlph) (const 1)
-            masks = generateMasks (length inAlph) seqLen isAligned
+            --masks = generateMasks (length inAlph) seqLen isAligned
 
             generateMasks :: Int -> Int -> Bool -> (Encoded, Encoded)
             generateMasks alphLen sLen alignedStatus 
