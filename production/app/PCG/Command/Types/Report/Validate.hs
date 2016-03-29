@@ -4,11 +4,9 @@ module PCG.Command.Types.Report.Validate
   ( validate
   ) where
 
-import Control.Monad              (liftM2)
 import Data.Char                  (toLower)
 import Data.Either                (partitionEithers)
-import Data.Either.Combinators    (isRight, rightToMaybe)
-import Data.Maybe                 (fromJust,isNothing)
+import Data.Monoid                ((<>))
 import PCG.Command.Types
 import PCG.Command.Types.Report.Internal
 import PCG.Script.Types           (Argument(..),Lident(..),Primative(..))
@@ -20,11 +18,17 @@ validate xs =
     (y:ys,  _) -> Left  $ unlines (y:ys)
     (  [], ys) ->
       case partitionEithers ys of
+        (    [],       []) -> Right $ REPORT  OutputToStdout     Data
         (    [], [format]) -> Right $ REPORT  OutputToStdout     format
         ([path],       []) -> Right $ REPORT (OutputToFile path) Data
         ([path], [format]) -> Right $ REPORT (OutputToFile path) format
-        _                  -> Left $ "SO BAD, BETTER ERROR LATER. In Report."
-
+        (    ps,       fs) -> let psErr = if moreThanSingleton ps then "Found multiple file paths for output: "    <> show ps else [] 
+                                  fsErr = if moreThanSingleton fs then "Found multiple output formats specified: " <> show fs else []
+                              in Left $ unlines [psErr,fsErr]
+  where
+    moreThanSingleton (_:_:_) = True
+    moreThanSingleton _       = False
+  
 validateReportArg :: Argument -> Either String (Either FileName OutputFormat)
 validateReportArg (PrimativeArg   (TextValue str))   = Right $ Left str
 validateReportArg (LidentArg (Lident identifier))
@@ -47,11 +51,11 @@ validateReportArg _ = Left "Unrecognized report commands."
 
 primativeString :: Argument -> Either String FilePath
 primativeString (PrimativeArg   (TextValue str)) = Right str
-primativeString (PrimativeArg   _              ) = Left $ "A primative value that is not a file path " ++ primativeStringErrorSuffix
-primativeString (LidentArg      (Lident i)     ) = Left $ "Identifier '"       ++ i ++ "' " ++ primativeStringErrorSuffix
-primativeString (LidentNamedArg (Lident i) _   ) = Left $ "Labeled argument '" ++ i ++ "' " ++ primativeStringErrorSuffix
-primativeString (CommandArg     _              ) = Left $ "Command argument "  ++              primativeStringErrorSuffix
-primativeString (ArgumentList   _              ) = Left $ "Argument list "     ++              primativeStringErrorSuffix
+primativeString (PrimativeArg   _              ) = Left $ "A primative value that is not a file path " <> primativeStringErrorSuffix
+primativeString (LidentArg      (Lident i)     ) = Left $ "Identifier '"       <> i <> "' " <> primativeStringErrorSuffix
+primativeString (LidentNamedArg (Lident i) _   ) = Left $ "Labeled argument '" <> i <> "' " <> primativeStringErrorSuffix
+primativeString (CommandArg     _              ) = Left $ "Command argument "  <>              primativeStringErrorSuffix
+primativeString (ArgumentList   _              ) = Left $ "Argument list "     <>              primativeStringErrorSuffix
 
 -- TODO: Make this have many different descriptive messages
 getSingltonArgumentList :: Argument -> Either String Argument
