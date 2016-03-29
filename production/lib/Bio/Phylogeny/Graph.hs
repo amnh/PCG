@@ -36,8 +36,9 @@ import           Data.BitVector
 import           Data.Key                                (lookup)
 import           Data.Monoid
 import           Data.Vector                             ((++),(//), elemIndex, (!))
+import qualified Data.Vector as V                        (foldr)
 
-import           Prelude                       hiding    ((++), length, lookup, replicate)          
+import           Prelude                       hiding    ((++), lookup, replicate)          
 import           Safe
 
 
@@ -50,6 +51,7 @@ instance BinaryTree DAG NodeInfo where
   parent     n t = headMay $ map (\i -> nodes t ! i) (parents n)
   leftChild  n t = lookup 0 $ (\i -> nodes t ! i) <$> children n
   rightChild n t = lookup 1 $ (\i -> nodes t ! i) <$> children n
+  verifyBinary t = V.foldr (\n acc -> length (children n) <= 2 && acc) True (nodes t)
 
 -- | Or this tree can be a rose tree
 instance RoseTree DAG NodeInfo where
@@ -58,7 +60,7 @@ instance RoseTree DAG NodeInfo where
 -- | Make the graph structure an instance of a forest
 instance Forest Graph DAG where
   trees (Graph f) = f
-  setTrees _ = Graph
+  setTrees _ trees = Graph trees
   filterTrees (Graph f) func = Graph $ filter func f
 
 -- | Make it an instance of data storage type classes

@@ -4,7 +4,9 @@ module PCG.Command.Types.Report.Evaluate
   ( evaluate
   ) where
 
+import           Analysis.Parsimony.Binary.Optimization
 import           Bio.Phylogeny.Graph
+import           Bio.Phylogeny.Tree.Binary
 import           Control.Monad.IO.Class
 import           Control.Evaluation
 import           PCG.Command.Types (Command(..))
@@ -31,10 +33,17 @@ evaluate (REPORT target format) old = do
 evaluate _ _ = fail "Invalid READ command binding"
 {--}
 
+-- | Function to add optimization to the newick reporting
+addOptimization :: Graph -> Graph
+addOptimization g@(Graph inDags) 
+  | allBinary = graphOptimization 1 g
+  | otherwise = trace ("Cannot perform optimization because graph is not binary, outputting zero cost") g
+    where allBinary = foldr (\d acc -> acc && verifyBinary d) True inDags
+
 generateOutput :: Graph -> OutputFormat -> Either String String
 -- Don't ignore names later
 generateOutput g (CrossReferences filterFiles)  = Right $ taxonReferenceOutput g filterFiles
-generateOutput g Data            {}             = Right $ newickReport g
+generateOutput g Data            {}             = Right $ newickReport (addOptimization g)
 generateOutput g DotFile         {}             = Right $ dotOutput g
 generateOutput g Metadata        {}             = Right $ metadataCsvOutput g
 generateOutput _ _ = Left "Unrecognized 'report' command"

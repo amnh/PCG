@@ -18,7 +18,7 @@ module Bio.Phylogeny.Forest.Class where
 
 -- | A forest is simply a list of trees that can be filtered or set.
 -- change to a more generic array type (foldable functor etc)
-class Forest f t | t -> f where
+class Forest f t | f -> t where
     trees :: f -> [t]
     setTrees :: f -> [t] -> f
     filterTrees :: f -> (t -> Bool) -> f

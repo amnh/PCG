@@ -12,7 +12,7 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE BangPatterns, ConstraintKinds, FlexibleContexts #-}
+{-# LANGUAGE BangPatterns, ConstraintKinds, FlexibleContexts, AllowAmbiguousTypes #-}
 
 module Analysis.Parsimony.Binary.Optimization where
 
@@ -26,7 +26,7 @@ import Data.Vector (Vector, ifoldl', ifoldr, (!))
 import Data.Monoid
 
 
-
+import Bio.Phylogeny.Forest
 import Bio.Phylogeny.Network
 import Bio.Phylogeny.Tree.Binary
 import Bio.Phylogeny.Tree.Node.Final
@@ -36,6 +36,10 @@ import Bio.Phylogeny.Tree.CharacterAware
 import Bio.Phylogeny.PhyloCharacter
 
 import Debug.Trace
+
+-- | Mapping function to optimize over a forest
+graphOptimization :: GraphConstraint g t n s b => Double -> g -> g
+graphOptimization weight inGraph = setTrees inGraph (map (allOptimization weight) (trees inGraph))
 
 -- | Unified function to perform both the first and second passes
 allOptimization :: TreeConstraint t n s b => Double -> t -> t
