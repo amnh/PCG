@@ -29,7 +29,7 @@ import           File.Format.Conversion.Encoder
 import           File.Format.TransitionCostMatrix
 import           PCG.Command.Types.Read.Unification.UnificationError
 
-import Debug.Trace
+--import Debug.Trace
 
 data FracturedParseResult
    = FPR
@@ -60,7 +60,7 @@ masterUnify inResults =
     where
       -- | Simple function to shove metadata in a tree structure
       enforceGraph :: Either UnificationError Graph -> [Vector CharInfo] -> Either UnificationError Graph
-      enforceGraph _graph chars | trace ("enforce graph on " <> show chars) False = undefined
+--      enforceGraph _graph chars | trace ("enforce graph on " <> show chars) False = undefined
       enforceGraph graph chars = eitherAction graph id (Right . Graph . shoveIt)
         where
           shoveIt (Graph dags) = if null chars then dags
@@ -96,7 +96,7 @@ mergeParsedGraphs graph1@(Graph newGraph) carry = eitherAction carry id matchThe
 -- and each element of the vector CORRECTLY identifies a single character in that file
 -- if either of these assumptions are violated, this thing becomes more complicated
 mergeParsedMetadata :: [Vector CharInfo] -> Vector CharInfo
-mergeParsedMetadata inMeta | trace ("merge metadata " <> show inMeta) False = undefined
+--mergeParsedMetadata inMeta | trace ("merge metadata " <> show inMeta) False = undefined
 mergeParsedMetadata inMeta = foldl (<>) mempty inMeta
                    -- TODO: Investigate above claim
                       

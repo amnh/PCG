@@ -57,12 +57,7 @@ evaluate (READ fileSpecs) old = do
           Left uErr -> fail $ show uErr -- Report rectification errors here.
           Right g   -> old <> pure g    -- TODO: rectify against 'old' SearchState, don't just blindly merge
   where
-    transformation x = let y = prependFilenamesToCharacterNames . applyReferencedTCM $ x
-                       in  expandIUPAC y
-{-
-    transformation x = let y = expandIUPAC . prependFilenamesToCharacterNames . applyReferencedTCM $ x
-                       in  trace (show y) y
--}
+    transformation = expandIUPAC . prependFilenamesToCharacterNames . applyReferencedTCM
 
 evaluate _ _ = fail "Invalid READ command binding"
 {--}
