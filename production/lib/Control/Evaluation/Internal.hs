@@ -9,7 +9,6 @@ import Control.Evaluation.Unit
 --import Control.Monad.Trans.Class
 --import Control.Monad.Trans.Except (ExceptT(..))
 import Data.DList                (DList,append,singleton,toList)
-import qualified Data.DList as D (empty)
 import Data.Monoid
 import Test.QuickCheck
 
@@ -25,6 +24,9 @@ data Evaluation a
 notifications :: Evaluation a -> [Notification]
 notifications (Evaluation ms _) = toList ms
 
+evaluationResult :: Evaluation a -> EvalUnit a
+evaluationResult (Evaluation _ x) = x
+                                  
 instance Arbitrary a => Arbitrary (Evaluation a) where
   arbitrary = oneof [pure mempty, pure $ fail "Error Description", pure <$> arbitrary]
 
@@ -40,12 +42,12 @@ instance Functor Evaluation where
   fmap f (Evaluation ms x) = Evaluation ms (f <$> x)
 
 instance Applicative Evaluation where
-  pure = Evaluation D.empty . pure
+  pure = Evaluation mempty . pure
   (<*>) (Evaluation ms x) (Evaluation ns y) = Evaluation (ms `append` ns) (x <*> y)
 
 instance Monad Evaluation where
   return = pure
-  fail   = Evaluation D.empty . Error
+  fail   = Evaluation mempty . Error
   (>>)  (Evaluation ms x) (Evaluation ns y) = Evaluation (ms `append` ns) (x>>y)
   (>>=) (Evaluation ms  NoOp    ) _ = Evaluation ms NoOp
   (>>=) (Evaluation ms (Error x)) _ = Evaluation ms $ Error x
@@ -56,7 +58,7 @@ instance MonadPlus Evaluation where
   mplus = (<>)
   
 instance Monoid (Evaluation a) where
-  mempty = Evaluation D.empty NoOp
+  mempty = Evaluation mempty NoOp
   mappend (Evaluation ms x) (Evaluation ns y) = Evaluation (ms `append` ns) (x<>y)
 
 -- Maybe add error strings Notifications list also?

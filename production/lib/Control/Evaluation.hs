@@ -1,7 +1,7 @@
 module Control.Evaluation
   ( EvaluationT()
   , Evaluation()
-  , EvalUnit()
+  , EvalUnit(..)
   , SearchState
   , Alternative(..)
   , Monoid(..)
@@ -10,6 +10,7 @@ module Control.Evaluation
   , (<?>)
   , evalEither
   , evalIO
+  , evaluationResult
   , info
   , notifications
   , runEvaluation
