@@ -130,6 +130,7 @@ library
                        Analysis.GenericFitch
                        Analysis.DirectOptimization.Utilities
                        Bio.Metadata.Class
+                       Bio.Metadata.MaskGenerator
                        Bio.Phylogeny.Forest.Class
                        Bio.Phylogeny.Graph.Data
                        Bio.Phylogeny.Graph.Output

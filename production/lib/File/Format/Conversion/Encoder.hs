@@ -77,22 +77,6 @@ makeOneInfo inAlph
             defaultMat = matrix (length inAlph) (length inAlph) (const 1)
             --masks = generateMasks (length inAlph) seqLen isAligned
 
-{-
-            generateMasks :: Int -> Int -> Bool -> (Encoded, Encoded)
-            generateMasks alphLen sLen alignedStatus 
-                | alignedStatus = 
-                    let 
-                        periodic = fromBits $ concat (replicate sLen unit)
-                        occupancy = fromBits $ replicate (alphLen * sLen) True
-                    in (Just $ V.singleton occupancy, Just $ V.singleton periodic)
-                | otherwise = 
-                    let
-                        periodic = fromBits <$> replicate sLen unit
-                        occupancy = fromBits <$> replicate sLen (replicate alphLen True)
-                    in (Just $ V.fromList occupancy, Just $ V.fromList periodic)
-                    where
-                        unit = replicate (alphLen - 1) False ++ [True]
--}
 
 checkAlignLens :: TreeSeqs -> Vector (Bool, Int)
 checkAlignLens = M.foldr matchLens mempty
