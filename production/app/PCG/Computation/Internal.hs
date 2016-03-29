@@ -15,9 +15,17 @@ data Computation = Computation [Command]
 interpret :: Script -> Either [String] Computation
 interpret (Script xs) =
   case partitionEithers $ rebukeDubiousness <$> xs of
-    ([]    , actions) -> Right $ Computation actions
+    ([]    , actions) -> Right . optimizeComputation $ Computation actions
     (errors, _      ) -> Left errors
 
+optimizeComputation :: Computation -> Computation
+optimizeComputation (Computation commands) = Computation $ collapseReadCommands commands
+
+collapseReadCommands :: [Command] -> [Command]
+collapseReadCommands [] = []
+collapseReadCommands ((READ x1):(READ x2):xs) = READ (x1<>x2) : collapseReadCommands xs
+collapseReadCommands (x:xs) = x : collapseReadCommands xs
+    
 evaluate :: Computation -> SearchState
 evaluate (Computation xs) = foldl (flip f) (pure mempty) xs
   
