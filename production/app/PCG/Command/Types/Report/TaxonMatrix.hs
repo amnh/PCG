@@ -37,7 +37,7 @@ taxonReferenceOutput :: Graph -> [FilePath] -> String
 taxonReferenceOutput (Graph dags) filterFiles = printIt dags $ combineTaxa $ map makeRef dags
     where
         combineTaxa :: [TaxaPresence] -> TaxaPresence
-        combineTaxa inPres | trace ("combining taxa") False = undefined
+        --combineTaxa inPres | trace ("combining taxa") False = undefined
         combineTaxa inPres
             | null inPres = (matrix 0 0 (\_ -> False), mempty, mempty)
             | otherwise = foldr1 combineTwo inPres
@@ -74,7 +74,7 @@ taxonReferenceOutput (Graph dags) filterFiles = printIt dags $ combineTaxa $ map
                 getTaxaNames inDAG = IM.fold (:) mempty (nodeNames inDAG)
 
                 getFileNames :: DAG -> [String]
-                getFileNames inDAG | trace ("getFileNames " ++ show (characters inDAG)) False = undefined
+                --getFileNames inDAG | trace ("getFileNames " ++ show (characters inDAG)) False = undefined
                 getFileNames inDAG = filter (flip elem filterFiles) unfiltered
                     where unfiltered = V.toList $ V.map (\c -> fst $ span (/=':') (name c)) (characters inDAG) 
 

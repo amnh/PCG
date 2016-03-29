@@ -57,7 +57,7 @@ evaluate (READ fileSpecs) old = do
           Right g   -> old <> pure g    -- TODO: rectify against 'old' SearchState, don't just blindly merge
   where
     transformation x = let y = prependFilenamesToCharacterNames . applyReferencedTCM $ x
-                       in  trace (show y) $ expandIUPAC y
+                       in  expandIUPAC y
 {-
     transformation x = let y = expandIUPAC . prependFilenamesToCharacterNames . applyReferencedTCM $ x
                        in  trace (show y) y
@@ -89,7 +89,7 @@ parseSpecifiedFile spec@(UnspecifiedFile    _    ) =
   getSpecifiedContent spec >>= eitherTValidation . fmap (progressiveParse . fst) . dataFiles
 
 fastaDNA :: FileSpecification -> EitherT ReadError IO [FracturedParseResult]
-fastaDNA spec | trace ("fasta DNA parser with spec " ++ show spec) False = undefined
+--fastaDNA spec | trace ("fasta DNA parser with spec " ++ show spec) False = undefined
 fastaDNA spec = getSpecifiedContent spec >>= (hoistEither . parseSpecifiedContent parse')
   where
     parse' :: FileResult -> Either ReadError FracturedParseResult
