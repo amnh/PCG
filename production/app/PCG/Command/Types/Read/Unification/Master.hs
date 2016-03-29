@@ -17,15 +17,23 @@ module PCG.Command.Types.Read.Unification.Master where
 import           Bio.Phylogeny.Graph
 import           Bio.Sequence.Parsed
 import           Bio.Phylogeny.Tree.Node
+import           Data.Foldable
 import qualified Data.HashMap.Lazy as HM
 import           Data.IntMap             (elems)
 import qualified Data.IntMap       as IM 
 import           Data.List               ((\\), isPrefixOf, nub)
+<<<<<<< HEAD
 import           Data.Map                (foldWithKey)
 import qualified Data.Map          as M 
 import           Data.Monoid
 import           Data.Vector             (Vector, (!), (//), cons)
 import qualified Data.Vector       as V  (replicate, foldr)
+=======
+import           Data.Map                (difference,foldWithKey,intersectionWith)
+import           Data.Monoid
+import           Data.Vector             (Vector, (!), (//), cons, generate)
+import qualified Data.Vector       as V  (replicate)
+>>>>>>> 953958ab9f3efd569c4e21ffbe33b0d6ffa33e6f
 import           File.Format.Conversion.Encoder
 import           File.Format.TransitionCostMatrix
 import           PCG.Command.Types.Read.Unification.UnificationError
@@ -226,3 +234,18 @@ verifyNaming eGraph seqNames = undefined
     doMatch l1 l2 = if null l1 || null l2 then (mempty, mempty)
                       else ((l1 \\ l2), (l1 \\ l2))
     --between g = doMatch (gatherNames g) seqNames
+
+joinSequences :: [FracturedParseResult] -> (Vector CharInfo, TreeSeqs)
+joinSequences =  foldl' f (mempty, mempty) . filter (not . null . parsedChars)
+  where
+    f :: (Vector CharInfo, TreeSeqs) -> FracturedParseResult -> (Vector CharInfo, TreeSeqs)
+    f acc fpr = g acc $ foldl' g (mempty, mempty) $ zip (parsedMetas fpr) (parsedChars fpr)
+
+    g :: (Vector CharInfo, TreeSeqs) -> (Vector CharInfo, TreeSeqs) -> (Vector CharInfo, TreeSeqs)
+    g (oldMetaData, oldTreeSeqs) (nextMetaData, nextTreeSeqs) = (oldMetaData <> nextMetaData, inOnlyOld <> inBoth <> inOnlyNext)
+      where
+        oldPad       = generate (length  oldMetaData) (const Nothing) 
+        nextPad      = generate (length nextMetaData) (const Nothing)
+        inBoth       = intersectionWith (<>) oldTreeSeqs nextTreeSeqs
+        inOnlyOld    = fmap (<> nextPad) $  oldTreeSeqs `difference` nextTreeSeqs
+        inOnlyNext   = fmap (oldPad  <>) $ nextTreeSeqs `difference`  oldTreeSeqs
