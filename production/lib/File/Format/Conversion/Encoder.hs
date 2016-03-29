@@ -30,6 +30,8 @@ import           Data.Vector                  (Vector, ifoldr, zipWith, cons)
 import qualified Data.Vector           as V   
 import           Prelude               hiding (zipWith)
 
+import Debug.Trace
+
 type Encoded = EncodedSeq BitVector
 
 dnaAlph, rnaAlph, aaAlph :: [String]
@@ -59,20 +61,21 @@ developAlphabets inSeqs = V.map setGapChar $ V.map sort $ M.foldr (zipWith getNo
             | isNothing inSeq = mempty
             | otherwise =  V.foldr (flip $ foldr (\sIn prev -> if sIn `elem` prev then prev else sIn : prev)) soFar (fromJust inSeq)
 
-        -- | Ensure that the gap char is present and correctly positioned in an alphabet
-        setGapChar :: Alphabet -> Alphabet
-        setGapChar inAlph = filter (/= "-") inAlph ++ ["-"]
+-- | Ensure that the gap char is present and correctly positioned in an alphabet
+setGapChar :: Alphabet -> Alphabet
+setGapChar inAlph | trace ("setGapChar " ++ show inAlph) False = undefined
+setGapChar inAlph = filter (/= "-") inAlph ++ ["-"]
 
 -- | Internal function to make one character info
 makeOneInfo :: Alphabet -> (Bool, Int) -> CharInfo
 makeOneInfo inAlph (isAligned, seqLen)
-    | inAlph `subsetOf` dnaAlph = DNA "" isAligned mempty mempty inAlph defaultMat False 1
-    | inAlph `subsetOf` rnaAlph = RNA "" isAligned mempty mempty inAlph defaultMat False 1
-    | inAlph `subsetOf` aaAlph = AminoAcid "" isAligned mempty inAlph mempty defaultMat False 1
-    | otherwise = Custom "" isAligned mempty inAlph mempty defaultMat False False 1
+    | inAlph `subsetOf` dnaAlph = DNA "" isAligned masks mempty (setGapChar inAlph) defaultMat False 1
+    | inAlph `subsetOf` rnaAlph = RNA "" isAligned masks mempty (setGapChar inAlph) defaultMat False 1
+    | inAlph `subsetOf` aaAlph = AminoAcid "" isAligned masks (setGapChar inAlph) mempty defaultMat False 1
+    | otherwise = Custom "" isAligned masks inAlph mempty defaultMat False False 1
         where 
             defaultMat = matrix (length inAlph) (length inAlph) (const 1)
-            --masks = generateMasks (length inAlph) seqLen isAligned
+            masks = generateMasks (length inAlph) seqLen isAligned
 
             generateMasks :: Int -> Int -> Bool -> (Encoded, Encoded)
             generateMasks alphLen sLen alignedStatus 
