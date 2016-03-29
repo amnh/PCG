@@ -17,13 +17,14 @@ module PCG.Command.Types.Read.Unification.Master where
 import           Bio.Phylogeny.Graph
 import           Bio.Sequence.Parsed
 import           Bio.Phylogeny.Tree.Node
+import           Data.Foldable
 import qualified Data.HashMap.Lazy as HM
 import           Data.IntMap             (elems)
 import qualified Data.IntMap       as IM (assocs, filter)
 import           Data.List               ((\\), isPrefixOf, nub)
-import           Data.Map                (foldWithKey)
+import           Data.Map                (difference,foldWithKey,intersectionWith)
 import           Data.Monoid
-import           Data.Vector             (Vector, (!), (//), cons)
+import           Data.Vector             (Vector, (!), (//), cons, generate)
 import qualified Data.Vector       as V  (replicate)
 import           File.Format.Conversion.Encoder
 import           File.Format.TransitionCostMatrix
@@ -176,3 +177,19 @@ eitherAction :: Either a b -> (a -> a) -> (b -> Either a b) -> Either a b
 eitherAction inVal fun1 fun2 = case inVal of
   Left x -> Left $ fun1 x
   Right y -> fun2 y
+
+
+joinSequences :: [FracturedParseResult] -> (Vector CharInfo, TreeSeqs)
+joinSequences =  foldl' f (mempty, mempty) . filter (not . null . parsedChars)
+  where
+    f :: (Vector CharInfo, TreeSeqs) -> FracturedParseResult -> (Vector CharInfo, TreeSeqs)
+    f acc fpr = g acc $ foldl' g (mempty, mempty) $ zip (parsedMetas fpr) (parsedChars fpr)
+
+    g :: (Vector CharInfo, TreeSeqs) -> (Vector CharInfo, TreeSeqs) -> (Vector CharInfo, TreeSeqs)
+    g (oldMetaData, oldTreeSeqs) (nextMetaData, nextTreeSeqs) = (oldMetaData <> nextMetaData, inOnlyOld <> inBoth <> inOnlyNext)
+      where
+        oldPad       = generate (length  oldMetaData) (const Nothing) 
+        nextPad      = generate (length nextMetaData) (const Nothing)
+        inBoth       = intersectionWith (<>) oldTreeSeqs nextTreeSeqs
+        inOnlyOld    = fmap (<> nextPad) $  oldTreeSeqs `difference` nextTreeSeqs
+        inOnlyNext   = fmap (oldPad  <>) $ nextTreeSeqs `difference`  oldTreeSeqs

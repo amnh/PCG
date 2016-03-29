@@ -35,7 +35,7 @@ metadataCsvOutput (Graph dags) = ifoldr oneCSV header (fromList dags)
         -- | Main creation functionality
         oneCSV :: Int -> DAG -> String -> String
 --        oneCSV _index inDAG _curStr | trace ("oneCSV " ++ show (characters inDAG)) False = undefined
-        oneCSV index inDAG curStr = foldr (\c acc -> acc ++ show index ++ ", " ++ fetchInfo c ++ "\n") curStr myMeta
+        oneCSV index inDAG curStr = foldl (\acc c -> acc ++ show index ++ ", " ++ fetchInfo c ++ "\n") curStr myMeta
             where
                 myMeta = characters inDAG
 
