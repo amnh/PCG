@@ -21,6 +21,8 @@ import Data.Foldable (foldr)
 import Bio.Phylogeny.Graph
 import Bio.Phylogeny.PhyloCharacter
 
+import Debug.Trace
+
 -- TODO: use spreadsheet library for tabular output files
 -- | Wrapper function to output a metadata csv
 outPutMetadata :: FilePath -> Graph -> IO ()
@@ -33,6 +35,7 @@ metadataCsvOutput (Graph dags) = ifoldr oneCSV header (fromList dags)
 
         -- | Main creation functionality
         oneCSV :: Int -> DAG -> String -> String
+        oneCSV index inDAG curStr | trace ("oneCSV " ++ show (characters inDAG)) False = undefined
         oneCSV index inDAG curStr = foldr (\c acc -> acc ++ show index ++ ", " ++ fetchInfo c ++ "\n") curStr myMeta
             where
                 myMeta = characters inDAG
