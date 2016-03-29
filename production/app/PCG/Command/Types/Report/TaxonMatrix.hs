@@ -23,7 +23,7 @@ import qualified Data.HashMap.Lazy as HM
 import qualified Data.IntMap as IM
 import Data.List
 import Data.Matrix.NotStupid hiding (trace)
-import Data.Vector (ifoldr, imap)
+import Data.Vector (ifoldr, imap, ifilter, Vector)
 import qualified Data.Vector as V
 import Data.Maybe
 
@@ -61,25 +61,28 @@ taxonReferenceOutput (Graph dags) filterFiles = printIt dags $ combineTaxa $ map
         makeRef :: DAG -> TaxaPresence
         makeRef inDAG 
             | null $ nodes inDAG = (matrix (length $ getTaxaNames inDAG) (length $ getFileNames inDAG) (\_ -> False) , getTaxaNames inDAG, getFileNames inDAG)
-            | otherwise = (V.foldr1 ((<->)) $ V.map oneRow (nodes inDAG), getTaxaNames inDAG, getFileNames inDAG)
+            | otherwise = (V.foldr1 ((<->)) $ V.map (rowVector . filterRow . oneRow) (nodes inDAG), getTaxaNames inDAG, files)
             where
-                oneRow :: NodeInfo -> Presence
-                oneRow curNode = rowVector $ V.map (not . isNothing) (encoded curNode)
+                files = getFileNames inDAG
+                filterPos = foldr (\f acc -> if f `elem` files then fromJust (elemIndex f files) : acc else acc) mempty filterFiles
+                filterRow inRow = ifilter (\i val -> i `elem` filterPos) inRow
+
+                oneRow :: NodeInfo -> Vector Bool
+                oneRow curNode = V.map (not . isNothing) (encoded curNode)
 
                 getTaxaNames :: DAG -> [String]
                 getTaxaNames inDAG = IM.fold (:) mempty (nodeNames inDAG)
 
                 getFileNames :: DAG -> [String]
                 getFileNames inDAG | trace ("getFileNames " ++ show (characters inDAG)) False = undefined
-                getFileNames inDAG = V.toList $ V.map (\c -> fst $ span (/=':') (name c)) (characters inDAG) 
+                getFileNames inDAG = filter (flip elem filterFiles) unfiltered
+                    where unfiltered = V.toList $ V.map (\c -> fst $ span (/=':') (name c)) (characters inDAG) 
 
 
         printIt :: [DAG] -> TaxaPresence -> String
-        printIt dags (mat, taxa, files) | trace ("printing " ++ show (length taxa) ++ " " ++ show (nrows mat)) False = undefined
-        printIt dags (mat, taxa, files) = header ++ ifoldr (\i name acc -> acc ++ "\n" ++ name ++ ", " ++ printRow (getRow i mat)) mempty (V.fromList taxa)
+        --printIt dags (mat, taxa, files) | trace ("printing " ++ show (length taxa) ++ " " ++ show (nrows mat)) False = undefined
+        printIt dags (mat, taxa, files) = header ++ ifoldr (\i name acc -> acc ++ "\n" ++ name ++ printRow (getRow i mat)) mempty (V.fromList taxa)
             where
-                header = foldr (\name acc -> name ++ ", " ++ acc) "Taxa, " files
+                header = foldr (\name acc -> acc ++ ", " ++ name) "Taxa" files
                 printRow = V.foldr (\b acc -> if b then ", +" ++ acc else ", -" ++ acc) mempty
-
-
 
