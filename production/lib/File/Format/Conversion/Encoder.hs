@@ -30,6 +30,8 @@ import           Data.Vector                  (Vector, ifoldr, zipWith, cons)
 import qualified Data.Vector           as V   
 import           Prelude               hiding (zipWith)
 
+import Debug.Trace
+
 type Encoded = EncodedSeq BitVector
 
 dnaAlph, rnaAlph, aaAlph :: [String]
@@ -40,10 +42,10 @@ aaAlph = ["R", "H", "K", "D", "E", "S", "T", "N", "Q", "C", "U", "G", "P", "A", 
 -- | Functionality to make char info from tree seqs
 makeEncodeInfo :: TreeSeqs -> Vector CharInfo
 makeEncodeInfo seqs = --trace ("makeEncodeInfo " ++ show alphabets)
-                        zipWith makeOneInfo alphabets allChecks
+                        V.map makeOneInfo alphabets
     where
         alphabets = developAlphabets seqs
-        allChecks = checkAlignLens seqs
+        --allChecks = checkAlignLens seqs
 
 -- | Internal function to create alphabets
 developAlphabets :: TreeSeqs -> Vector Alphabet
@@ -59,17 +61,18 @@ developAlphabets inSeqs = V.map setGapChar $ V.map sort $ M.foldr (zipWith getNo
             | isNothing inSeq = mempty
             | otherwise =  V.foldr (flip $ foldr (\sIn prev -> if sIn `elem` prev then prev else sIn : prev)) soFar (fromJust inSeq)
 
-        -- | Ensure that the gap char is present and correctly positioned in an alphabet
-        setGapChar :: Alphabet -> Alphabet
-        setGapChar inAlph = filter (/= "-") inAlph ++ ["-"]
+-- | Ensure that the gap char is present and correctly positioned in an alphabet
+setGapChar :: Alphabet -> Alphabet
+setGapChar inAlph | trace ("setGapChar " ++ show inAlph) False = undefined
+setGapChar inAlph = filter (/= "-") inAlph ++ ["-"]
 
 -- | Internal function to make one character info
-makeOneInfo :: Alphabet -> (Bool, Int) -> CharInfo
-makeOneInfo inAlph (isAligned, _seqLen)
-    | inAlph `subsetOf` dnaAlph = DNA "" isAligned mempty mempty inAlph defaultMat False 1
-    | inAlph `subsetOf` rnaAlph = RNA "" isAligned mempty mempty inAlph defaultMat False 1
-    | inAlph `subsetOf` aaAlph = AminoAcid "" isAligned mempty inAlph mempty defaultMat False 1
-    | otherwise = Custom "" isAligned mempty inAlph mempty defaultMat False False 1
+makeOneInfo :: Alphabet -> CharInfo
+makeOneInfo inAlph
+    | inAlph `subsetOf` dnaAlph = DNA "" False mempty mempty (setGapChar inAlph) defaultMat False 1
+    | inAlph `subsetOf` rnaAlph = RNA "" False mempty mempty (setGapChar inAlph) defaultMat False 1
+    | inAlph `subsetOf` aaAlph = AminoAcid "" False mempty (setGapChar inAlph) mempty defaultMat False 1
+    | otherwise = Custom "" False mempty inAlph mempty defaultMat False False 1
         where 
             defaultMat = matrix (length inAlph) (length inAlph) (const 1)
             --masks = generateMasks (length inAlph) seqLen isAligned
