@@ -29,7 +29,7 @@ import           File.Format.Conversion.Encoder
 import           File.Format.TransitionCostMatrix
 import           PCG.Command.Types.Read.Unification.UnificationError
 
---import Debug.Trace
+import Debug.Trace
 
 data FracturedParseResult
    = FPR
@@ -60,7 +60,7 @@ masterUnify inResults =
     where
       -- | Simple function to shove metadata in a tree structure
       enforceGraph :: Either UnificationError Graph -> [Vector CharInfo] -> Either UnificationError Graph
-      --enforceGraph graph chars | trace ("enforce graph on " <> show chars) False = undefined
+      enforceGraph graph chars | trace ("enforce graph on " <> show chars) False = undefined
       enforceGraph graph chars = eitherAction graph id (Right . Graph . shoveIt)
         where
           shoveIt (Graph dags) = if null chars then dags
@@ -96,13 +96,13 @@ mergeParsedGraphs graph1@(Graph newGraph) carry = eitherAction carry id matchThe
 -- and each element of the vector CORRECTLY identifies a single character in that file
 -- if either of these assumptions are violated, this thing becomes more complicated
 mergeParsedMetadata :: [Vector CharInfo] -> Vector CharInfo
---mergeParsedMetadata inMeta | trace ("merge metadata " <> show inMeta) False = undefined
-mergeParsedMetadata = foldr (flip (<>)) mempty
-                   -- foldl (<>) mempty <-- I think this is equivelent
+mergeParsedMetadata inMeta | trace ("merge metadata " <> show inMeta) False = undefined
+mergeParsedMetadata inMeta = foldl (<>) mempty inMeta
                    -- TODO: Investigate above claim
                       
 -- | Verify that after all the parsed sequences have been merged in, taxa names match
 verifyTaxaSeqs :: Either UnificationError Graph -> Either UnificationError Graph
+--verifyTaxaSeqs inGraph | trace ("verifyTaxaSeqs on " ++ show inGraph) False = undefined
 verifyTaxaSeqs inGraph = eitherAction inGraph id verifySeqs
   where
     verifySeqs :: Graph -> Either UnificationError Graph
@@ -112,7 +112,7 @@ verifyTaxaSeqs inGraph = eitherAction inGraph id verifySeqs
       where
         nonInternal = filter (not . isPrefixOf "HTU")
         graphNames = nonInternal . elems $ foldr1 (<>) (fmap nodeNames g)
-        seqNames = nub $ foldr (\e acc -> acc <> HM.keys (parsedSeqs e)) mempty g
+        seqNames = nonInternal $ nub $ foldr (\e acc -> acc <> HM.keys (parsedSeqs e)) mempty g
         checkTuple = (graphNames \\ seqNames, seqNames \\ graphNames)
         doesMatch = null (fst checkTuple) && null (snd checkTuple)
       

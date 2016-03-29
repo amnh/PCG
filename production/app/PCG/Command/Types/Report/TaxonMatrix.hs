@@ -61,11 +61,22 @@ taxonReferenceOutput (Graph dags) filterFiles = printIt dags $ combineTaxa $ map
         makeRef :: DAG -> TaxaPresence
         makeRef inDAG 
             | null $ nodes inDAG = (matrix (length $ getTaxaNames inDAG) (length $ getFileNames inDAG) (\_ -> False) , getTaxaNames inDAG, getFileNames inDAG)
-            | otherwise = (V.foldr1 ((<->)) $ V.map (rowVector . filterRow . oneRow) (nodes inDAG), getTaxaNames inDAG, files)
+            | otherwise = (V.foldr1 ((<->)) $ V.map (rowVector . filterRow . oneRow) (nodes inDAG), getTaxaNames inDAG, filteredNames)
             where
                 files = getFileNames inDAG
-                filterPos = foldr (\f acc -> if f `elem` files then fromJust (elemIndex f files) : acc else acc) mempty filterFiles
-                filterRow inRow = ifilter (\i val -> i `elem` filterPos) inRow
+                internalPos = ifoldr (\i f acc -> if isPrefixOf "HTU" f then i : acc else acc) mempty (V.fromList files)
+                selectPos = foldr (\f acc -> if f `elem` files then fromJust (elemIndex f files) : acc else acc) mempty filterFiles
+                filterGiven = ifilter (\i val -> i `elem` selectPos && not (i `elem` internalPos))
+                filterNotGiven = ifilter (\i val -> not (i `elem` internalPos))
+                filterRow = if null filterFiles then filterGiven else filterNotGiven
+                filteredNames = if null filterFiles then filter (not . isPrefixOf "HTU") files
+                                    else filter (\f -> f `elem` filterFiles && not (isPrefixOf "HTU" f)) files
+                --internalPos = ifoldr (\i f acc -> if not isPrefixOf "HTU" f then i : acc else acc) (V.toList files)
+                --filterPos = if null filterFiles then [0..length files] 
+                --            else foldr (\f acc -> if f `elem` files then fromJust (elemIndex f files) : acc else acc) mempty filterFiles
+                --filterRow inRow = ifilter (\i val -> i `elem` filterPos) inRow
+                --filteredNames = if null filterFiles then files
+                --                    else filter (flip elem filterFiles) files
 
                 oneRow :: NodeInfo -> Vector Bool
                 oneRow curNode = V.map (not . isNothing) (encoded curNode)
@@ -75,8 +86,7 @@ taxonReferenceOutput (Graph dags) filterFiles = printIt dags $ combineTaxa $ map
 
                 getFileNames :: DAG -> [String]
                 --getFileNames inDAG | trace ("getFileNames " ++ show (characters inDAG)) False = undefined
-                getFileNames inDAG = filter (flip elem filterFiles) unfiltered
-                    where unfiltered = V.toList $ V.map (\c -> fst $ span (/=':') (name c)) (characters inDAG) 
+                getFileNames inDAG = V.toList $ V.map (\c -> fst $ span (/=':') (name c)) (characters inDAG) 
 
 
         printIt :: [DAG] -> TaxaPresence -> String

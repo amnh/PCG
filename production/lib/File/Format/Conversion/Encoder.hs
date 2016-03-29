@@ -61,9 +61,7 @@ developAlphabets inSeqs = V.map setGapChar $ V.map sort $ M.foldr (zipWith getNo
 
         -- | Ensure that the gap char is present and correctly positioned in an alphabet
         setGapChar :: Alphabet -> Alphabet
-        setGapChar inAlph = case elemIndex "-" inAlph of
-            Just i -> take i inAlph ++ drop i inAlph ++ ["-"]
-            Nothing -> inAlph ++ ["-"]
+        setGapChar inAlph = filter (/= "-") inAlph ++ ["-"]
 
 -- | Internal function to make one character info
 makeOneInfo :: Alphabet -> (Bool, Int) -> CharInfo
