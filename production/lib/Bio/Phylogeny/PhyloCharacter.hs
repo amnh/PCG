@@ -125,6 +125,9 @@ updateAlphabet a x = x { alphabet = a }
 updateTcm :: CostMatrix -> PhyloCharacter s -> PhyloCharacter s
 updateTcm      t x = x { tcm      = t }
 
+updateAligned :: Bool -> PhyloCharacter s -> PhyloCharacter s
+updateAligned a x = x { aligned = a }
+
 -- | A cost matrix is just a matrix of floats
 type CostMatrix = Matrix Double
 
