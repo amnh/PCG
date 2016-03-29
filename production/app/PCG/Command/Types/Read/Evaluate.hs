@@ -75,11 +75,12 @@ parseSpecifiedFile spec@CustomAlphabetFile{}     = parseCustomAlphabet spec
 parseSpecifiedFile     (PrealignedFile x tcmRef) = do
     tcmContent <- getSpecifiedTcm tcmRef
     subContent <- parseSpecifiedFile x
-    case tcmContent of
-      Nothing             -> pure subContent
-      Just (path,content) -> do
-        tcmMat <- hoistEither . first unparsable $ parse tcmStreamParser path content
-        traverse (setTcm tcmMat) subContent
+    fmap (fmap setCharactersToAligned) $
+      case tcmContent of
+        Nothing             -> pure subContent
+        Just (path,content) -> do
+          tcmMat <- hoistEither . first unparsable $ parse tcmStreamParser path content
+          traverse (setTcm tcmMat) subContent
   where
     setTcm :: TCM -> FracturedParseResult -> EitherT ReadError IO FracturedParseResult
     setTcm t fpr = case relatedTcm fpr of
@@ -134,6 +135,9 @@ applyReferencedTCM fpr =
 
 prependFilenamesToCharacterNames :: FracturedParseResult -> FracturedParseResult
 prependFilenamesToCharacterNames fpr = fpr { parsedMetas = fmap (prependName (sourceFile fpr)) <$> parsedMetas fpr }
+
+setCharactersToAligned :: FracturedParseResult -> FracturedParseResult
+setCharactersToAligned fpr = fpr { parsedMetas = fmap (updateAligned True) <$> parsedMetas fpr }
 
 expandIUPAC :: FracturedParseResult -> FracturedParseResult
 expandIUPAC fpr = fpr { parsedChars = newTreeSeqs }
