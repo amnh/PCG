@@ -36,7 +36,7 @@ import Debug.Trace
 
 data FracturedParseResult
    = FPR
-   { parsedChars  :: [TreeSeqs]
+   { parsedChars  :: TreeSeqs
    , parsedMetas  :: [Vector CharInfo]
    , parsedTrees  :: Graph
    , relatedTcm   :: Maybe TCM
