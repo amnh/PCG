@@ -143,7 +143,7 @@ convertVER inVer = splitConnected outTree
                         myParents = foldr (\(VER.EdgeInfo (o, t) _) acc -> if t == myName then (fromNames HM.! o) : acc else acc) mempty inEdges
                         myChildren = foldr (\(VER.EdgeInfo (o, t) _) acc -> if o == myName then (fromNames HM.! t) : acc else acc) mempty inEdges
                         atRoot = myName `elem` rootList
-                    in N.Node index atRoot (null myChildren) myParents myChildren mempty mempty mempty mempty mempty mempty 0 0
+                    in N.Node index (toNames IM.! index) atRoot (null myChildren) myParents myChildren mempty mempty mempty mempty mempty mempty 0 0
 
         -- | Now we can generate the edges
         accumEdges :: V.Vector NodeInfo -> S.Set VER.EdgeInfo -> IM.IntMap Identifier -> V.Vector EdgeSet

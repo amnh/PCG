@@ -51,7 +51,7 @@ toTopoGraph (Graph dags) = TG.TopoGraph $ map toTopo dags
 -- | Function to convert a node to a tree for folding
 singletonDAG :: TN.TopoNode BitVector -> DAG
 singletonDAG topo = 
-  let myNode = Node 0 (TN.isRoot topo) (TN.isLeaf topo) [] [] (TN.encoded topo) (TN.packed topo) (TN.preliminary topo) 
+  let myNode = Node 0 (TN.name topo) (TN.isRoot topo) (TN.isLeaf topo) [] [] (TN.encoded topo) (TN.packed topo) (TN.preliminary topo) 
                           (TN.final topo) (TN.temporary topo) (TN.aligned topo) (TN.localCost topo) (TN.totalCost topo)
   in DAG (IM.singleton 0 (TN.name topo)) (HM.singleton (TN.name topo) (TN.parsed topo)) mempty (singleton myNode) (singleton mempty) 0
 

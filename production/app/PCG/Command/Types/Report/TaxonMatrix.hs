@@ -16,7 +16,7 @@ module PCG.Command.Types.Report.TaxonMatrix where
 
 import Bio.Phylogeny.Graph
 import Bio.Phylogeny.PhyloCharacter
-import Bio.Phylogeny.Tree.Node
+import Bio.Phylogeny.Tree.Node hiding (name)
 --import PCG.Command.Types.Report.CharacterMatrix
 
 --import qualified Data.HashMap.Lazy as HM

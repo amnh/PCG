@@ -22,12 +22,13 @@ import qualified Bio.Phylogeny.Tree.Node.Final as FN
 import qualified Bio.Phylogeny.Tree.Node.Packed as PN
 import qualified Bio.Phylogeny.Tree.Node.Preliminary as RN
 
-import Data.Vector
+import Data.Vector (Vector)
 import Data.Monoid
 import Data.Ord ()
 
 -- | A node data structure holding all the necessary info (add verbose statement about what each field is)
 data Node b = Node  { code        :: Int
+                    , name        :: String
                     , isRoot      :: Bool
                     , isLeaf      :: Bool
                     , parents     :: [Int]
@@ -47,8 +48,9 @@ data Node b = Node  { code        :: Int
                     -- TODO: annotate fields with purpose
 
 instance Monoid (Node b) where
-    mempty = Node 0 False False mempty mempty mempty mempty mempty mempty mempty mempty 0 0
+    mempty = Node 0 mempty False False mempty mempty mempty mempty mempty mempty mempty mempty 0 0
     mappend n1 n2 = Node { code        = code n1
+                         , name        = name n1 ++ " joinedTo " ++ name n2
                          , isRoot      = isRoot n1 || isRoot n2
                          , isLeaf      = isLeaf n1 || isLeaf n2
                          , parents     = parents     n1 <> parents     n2
