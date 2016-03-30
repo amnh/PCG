@@ -100,6 +100,8 @@ library
                        Bio.Phylogeny.Graph
                        Bio.Phylogeny.Network
                        Bio.Phylogeny.PhyloCharacter
+                       Bio.Phylogeny.Solution
+                       Bio.Phylogeny.Solution.Class
                        Bio.Phylogeny.Tree.Binary
                        Bio.Phylogeny.Tree.CharacterAware
                        Bio.Phylogeny.Tree.EdgeAware
@@ -127,6 +129,7 @@ library
 
                        Analysis.GenericFitch
                        Bio.Metadata.Class
+                       Bio.Metadata.MaskGenerator
                        Bio.Phylogeny.Forest.Class
                        Bio.Phylogeny.Graph.Data
                        Bio.Phylogeny.Graph.Output
@@ -248,8 +251,11 @@ executable pcg
                        PCG.Command.Types.Report
                        PCG.Command.Types.Report.CharacterMatrix
                        PCG.Command.Types.Report.Evaluate
+                       PCG.Command.Types.Report.GraphViz
                        PCG.Command.Types.Report.Internal
-                       PCG.Command.Types.Report.Validate                                                
+                       PCG.Command.Types.Report.TaxonMatrix
+                       PCG.Command.Types.Report.Newick
+                       PCG.Command.Types.Report.Validate
 
 executable brg
   main-is:             BadReadGraph.hs
@@ -309,6 +315,7 @@ executable brg
                        PCG.Command.Types.Read.Internal
                        PCG.Command.Types.Read.ReadError
                        PCG.Command.Types.Report.CharacterMatrix
+                       PCG.Command.Types.Report.TaxonMatrix
                        PCG.Command.Types.Report.GraphViz
                        PCG.Command.Types.Report.Metadata
                        PCG.Command.Types.Report.Newick
@@ -376,11 +383,12 @@ executable qdh
                        PCG.Script
                        PCG.Script.Parser
                        PCG.Script.Types
-
+                       PCG.Command.Types.Report.Metadata
+                       
 Test-Suite testsuite
   type:                exitcode-stdio-1.0
 
-  main-is:             Main.hs
+  main-is:             TestAll.hs
 
   build-depends:       base                 >=4.8 && < 4.9
                      , bv                   -any
@@ -483,6 +491,9 @@ Test-Suite testsuite
                        Text.Megaparsec.Custom
                        Text.Megaparsec.Custom.Test
 
+                       Analysis.Parsimony.Binary.DirectOptimization
+                       Analysis.Parsimony.Binary.Internal
+                       Analysis.Parsimony.Binary.Test
                        Bio.Phylogeny.Graph.Output
                        Bio.Phylogeny.Graph.Test
                        Bio.Phylogeny.Graph.Utilities

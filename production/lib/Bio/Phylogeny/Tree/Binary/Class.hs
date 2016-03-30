@@ -24,4 +24,5 @@ class RoseTree t n => BinaryTree t n | t -> n where
   bothChildren x t = (leftChild x t, rightChild x t)
   leftChild    x t = fst $ bothChildren x t
   rightChild   x t = snd $ bothChildren x t
+  verifyBinary :: t -> Bool
 

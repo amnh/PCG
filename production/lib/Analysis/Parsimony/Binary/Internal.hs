@@ -1,6 +1,6 @@
 -----------------------------------------------------------------------------
 -- |
--- Module      :  Analysis.Parsimony.Binary.Optimization
+-- Module      :  Analysis.Parsimony.Binary.Internal
 -- Copyright   :  (c) 2015-2015 Ward Wheeler
 -- License     :  BSD-style
 --
@@ -8,13 +8,15 @@
 -- Stability   :  provisional
 -- Portability :  portable
 --
--- General wrapper for all forms of optimization on binary trees
+-- Functions used accross optimization modules
 --
 -----------------------------------------------------------------------------
 {-# LANGUAGE ConstraintKinds, AllowAmbiguousTypes #-}
 
 module Analysis.Parsimony.Binary.Internal where
 
+import Bio.Phylogeny.Forest
+import Bio.Phylogeny.Solution.Class
 import Bio.Phylogeny.Tree.Node.Preliminary
 import Bio.Phylogeny.Tree.Node.Encoded
 import Bio.Phylogeny.Tree.Node.Final

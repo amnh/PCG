@@ -7,7 +7,9 @@ type FileName = String
 data OutputFormat
    = CrossReferences [FileName]
    | Data
+   | DotFile
    | LikelihoodModel
+   | Metadata
    | SearchStats
    | SequenceStats
    | Terminals

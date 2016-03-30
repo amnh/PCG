@@ -15,7 +15,7 @@ type SearchState = EvaluationT IO Graph
 newtype EvaluationT m a
       = EvaluationT
       { runEvaluation :: m (Evaluation a)
-      }
+      } 
 
 instance Functor m => Functor (EvaluationT m) where
   fmap f x = EvaluationT . fmap (fmap f) $ runEvaluation x

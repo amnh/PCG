@@ -19,11 +19,13 @@ module Bio.Phylogeny.Graph (Graph(..), DAG(..), EdgeSet(..), EdgeInfo(..), Ident
 
 import           Bio.Phylogeny.Forest
 import           Bio.Phylogeny.Graph.Data
+import qualified Bio.Phylogeny.Graph.Topological as TG
 import           Bio.Phylogeny.Tree.Binary
 import qualified Bio.Phylogeny.Tree.CharacterAware as CT
 import qualified Bio.Phylogeny.Tree.Edge.Standard  as E
 import qualified Bio.Phylogeny.Tree.EdgeAware      as ET
 import           Bio.Phylogeny.Tree.Node
+import qualified Bio.Phylogeny.Tree.Node.Topological as TN
 import qualified Bio.Phylogeny.Tree.Referential    as RT
 import           Bio.Phylogeny.Tree.Rose
 import qualified Bio.Phylogeny.Network.Subsettable as SN
@@ -34,20 +36,19 @@ import           Bio.Sequence.Coded
 import           Data.Key                                (lookup)
 import           Data.Monoid
 import           Data.Vector                             ((++),(//), elemIndex, (!))
+import qualified Data.Vector as V                        (foldr)
 
-import           Prelude                       hiding    ((++), length, lookup, replicate)          
+import           Prelude                       hiding    ((++), lookup, replicate)          
 import           Safe
 
-
 --import Debug.Trace
-
-
 
 -- | This tree can be a binary tree
 instance BinaryTree DAG NodeInfo where
   parent     n t = headMay $ map (\i -> nodes t ! i) (parents n)
   leftChild  n t = lookup 0 $ (\i -> nodes t ! i) <$> children n
   rightChild n t = lookup 1 $ (\i -> nodes t ! i) <$> children n
+  verifyBinary t = V.foldr (\n acc -> length (children n) <= 2 && acc) True (nodes t)
 
 -- | Or this tree can be a rose tree
 instance RoseTree DAG NodeInfo where
@@ -56,7 +57,7 @@ instance RoseTree DAG NodeInfo where
 -- | Make the graph structure an instance of a forest
 instance Forest Graph DAG where
   trees (Graph f) = f
-  setTrees _ = Graph
+  setTrees _ forest = Graph forest
   filterTrees (Graph f) func = Graph $ filter func f
 
 -- | Make it an instance of data storage type classes
@@ -92,4 +93,7 @@ simpleAppend (DAG names seqs chars n e r) (DAG names' seqs' _ n' e' r') hangNode
   in DAG (names <> names') (seqs <> seqs') chars (n ++ resetRoot) (e ++ e') r
 
 grabAt :: DAG -> NodeInfo -> DAG
-grabAt inTree hangNode = fromTopo $ nodeToTopo inTree hangNode
+grabAt inTree hangNode = fromTopo rootedTopo
+  where 
+    topo = nodeToTopo inTree hangNode
+    rootedTopo = TG.TopoTree ((TG.tree topo) {TN.isRoot = True}) (TG.characters topo)

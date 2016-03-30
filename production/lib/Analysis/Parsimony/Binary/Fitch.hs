@@ -22,8 +22,8 @@ import Data.Bits
 -- TODO: Make all of this take weight, ignored, maybe other metadata into consideration.
 
 -- | Preorder Fitch operation on bit-packed sequences
--- Output five-tuple is the preliminary assignment, the aligned preliminary assignment
--- the temporary storage bit, and the local cost
+--   Output five-tuple is the preliminary assignment, the aligned preliminary assignment
+--   the temporary storage bit, and the local cost
 preorderFitchBit :: SeqConstraint s b => Double -> s -> s -> PhyloCharacter s -> (s, s, Double)
 preorderFitchBit weightValue lbit rbit inChar =
     let
@@ -53,7 +53,7 @@ blockShiftAndFold sideMode foldMode alphLen inbits initVal
       f g dir = foldr (\s acc -> g acc (dir inbits s)) initVal [1 .. alphLen - 1]
 
 -- | Postorder Fitch operation on bit-packed sequences
--- returns the final assignment sequence
+--   returns the final assignment sequence
 postorderFitchBit :: SeqConstraint s b => s -> s -> s -> s -> s -> PhyloCharacter s -> s
 postorderFitchBit myBit lBit rBit fBit pBit inChar = 
     let

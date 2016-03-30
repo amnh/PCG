@@ -8,6 +8,7 @@ import           Bio.Phylogeny.Graph
 import           Bio.Phylogeny.Graph.Parsed
 import           Bio.Phylogeny.PhyloCharacter
 import           Bio.Metadata.Class
+import           Bio.Metadata.MaskGenerator
 import           Bio.Sequence.Parsed
 import           Bio.Sequence.Parsed.Class
 import           Control.Monad              (when)
@@ -27,7 +28,7 @@ import           Data.Maybe                 (fromMaybe)
 --import qualified Data.HashMap.Strict  as HM (fromList)
 import           Data.Vector                (Vector)
 import qualified Data.Vector           as V (zipWith)
-import           Debug.Trace
+--import           Debug.Trace
 import           File.Format.Fasta   hiding   (FastaSequenceType(..))
 import qualified File.Format.Fasta   as Fasta (FastaSequenceType(..))
 import           File.Format.Fastc   hiding (Identifier)
@@ -51,20 +52,12 @@ evaluate (READ fileSpecs) old = do
     result <- liftIO . runEitherT . eitherTValidation $ parseSpecifiedFile <$> fileSpecs
     case result of
       Left pErr -> fail $ show pErr   -- Report structural errors here.
-      Right xs ->
-        case masterUnify $ transformation <$> concat xs of
+      Right xs -> fmap addMasks $
+        case masterUnify' $ transformation <$> concat xs of
           Left uErr -> fail $ show uErr -- Report rectification errors here.
           Right g   -> old <> pure g    -- TODO: rectify against 'old' SearchState, don't just blindly merge
   where
-
-    -- !IMPORTANT! prints out, then fails to terminate
-    transformation x = let y = prependFilenamesToCharacterNames . applyReferencedTCM $ x
-                       in  trace (show y) $ expandIUPAC y
-    -- !IMPORTANT! never prints, fails to terminate
-{-
-    transformation x = let y = expandIUPAC . prependFilenamesToCharacterNames . applyReferencedTCM $ x
-                       in  trace (show y) y
--}
+    transformation = expandIUPAC . prependFilenamesToCharacterNames . applyReferencedTCM
 
 evaluate _ _ = fail "Invalid READ command binding"
 {--}
@@ -78,11 +71,12 @@ parseSpecifiedFile spec@CustomAlphabetFile{}     = parseCustomAlphabet spec
 parseSpecifiedFile     (PrealignedFile x tcmRef) = do
     tcmContent <- getSpecifiedTcm tcmRef
     subContent <- parseSpecifiedFile x
-    case tcmContent of
-      Nothing             -> pure subContent
-      Just (path,content) -> do
-        tcmMat <- hoistEither . first unparsable $ parse tcmStreamParser path content
-        traverse (setTcm tcmMat) subContent
+    fmap (fmap setCharactersToAligned) $
+      case tcmContent of
+        Nothing             -> pure subContent
+        Just (path,content) -> do
+          tcmMat <- hoistEither . first unparsable $ parse tcmStreamParser path content
+          traverse (setTcm tcmMat) subContent
   where
     setTcm :: TCM -> FracturedParseResult -> EitherT ReadError IO FracturedParseResult
     setTcm t fpr = case relatedTcm fpr of
@@ -92,7 +86,7 @@ parseSpecifiedFile spec@(UnspecifiedFile    _    ) =
   getSpecifiedContent spec >>= eitherTValidation . fmap (progressiveParse . fst) . dataFiles
 
 fastaDNA :: FileSpecification -> EitherT ReadError IO [FracturedParseResult]
-fastaDNA spec | trace ("fasta DNA parser with spec " ++ show spec) False = undefined
+--fastaDNA spec | trace ("fasta DNA parser with spec " ++ show spec) False = undefined
 fastaDNA spec = getSpecifiedContent spec >>= (hoistEither . parseSpecifiedContent parse')
   where
     parse' :: FileResult -> Either ReadError FracturedParseResult
@@ -137,6 +131,9 @@ applyReferencedTCM fpr =
 
 prependFilenamesToCharacterNames :: FracturedParseResult -> FracturedParseResult
 prependFilenamesToCharacterNames fpr = fpr { parsedMetas = fmap (prependName (sourceFile fpr)) <$> parsedMetas fpr }
+
+setCharactersToAligned :: FracturedParseResult -> FracturedParseResult
+setCharactersToAligned fpr = fpr { parsedMetas = fmap (updateAligned True) <$> parsedMetas fpr }
 
 expandIUPAC :: FracturedParseResult -> FracturedParseResult
 expandIUPAC fpr = fpr { parsedChars = newTreeSeqs }
@@ -202,7 +199,11 @@ progressiveParse inputPath = do
                           Left  _ -> fail $ "Could not determine the file type of '" ++ filePath ++ "'. Try annotating the expected file data in the 'read' for more explicit error message on file parsing failures."
 
 toFractured :: (Metadata a, ParsedCharacters a, ParseGraph a) => Maybe TCM -> FilePath -> a -> FracturedParseResult
-toFractured tcmMat path = FPR <$> unifyCharacters <*> unifyMetadata <*> unifyGraph <*> const tcmMat <*> const path
+toFractured tcmMat path = FPR <$> unifyCharacters
+                              <*> unifyMetadata
+                              <*> unifyGraph
+                              <*> const tcmMat
+                              <*> const path
 {--}
 
 nucleotideIUPAC :: Map AmbiguityGroup AmbiguityGroup

@@ -1,2 +1,3 @@
-read(nucleotides:("28S_trimal.fas"))
-report("test-output.data",cross_references)
+read(nucleotides:("fakeArtmor.fas"), "artmor.tre")
+report("testCrossOutput.csv",cross_references)
+report("testNewickOutput.phy",data)

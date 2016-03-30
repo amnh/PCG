@@ -75,15 +75,13 @@ internalRandom :: Int -> Gen (TopoNode BitVector)
 internalRandom myDepth = do
     numChildren <- choose (1, maxChildren) :: Gen Int
     randChildren <- vectorOf numChildren (internalRandom (myDepth + 1))
-    seqs <- vectorOf 5 (arbitrary :: Gen MultiSeq)
+    seqs <- vectorOf 6 (arbitrary :: Gen MultiSeq)
     randCost <- arbitrary :: Gen Double
     randTotal <- arbitrary :: Gen Double
     let randName = show myDepth ++ show randCost
     rand <- choose (0, maxDepth)
-    randSeq <- arbitrary :: Gen ParsedSequences
-    let encodedRand = encodeAll randSeq
     let terminate = chooseTerminate myDepth rand
-    let outNode = TopoNode (myDepth == 0) True randName randSeq [] encodedRand (head seqs) (seqs !! 1) (seqs !! 2) (seqs !! 3) (seqs !! 4) randCost randTotal
+    let outNode = TopoNode (myDepth == 0) True randName [] (head seqs) (seqs !! 1) (seqs !! 2) (seqs !! 3) (seqs !! 4) (seqs !! 5) randCost randTotal
     if terminate then --trace "terminate" 
             return outNode
         else --trace "continue" 

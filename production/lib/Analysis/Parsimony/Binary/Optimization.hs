@@ -12,22 +12,23 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE BangPatterns, ConstraintKinds, FlexibleContexts #-}
+{-# LANGUAGE BangPatterns, ConstraintKinds, FlexibleContexts, AllowAmbiguousTypes #-}
 
 module Analysis.Parsimony.Binary.Optimization where
 
 import Analysis.Parsimony.Binary.Internal
 import Analysis.Parsimony.Binary.Fitch
---import Analysis.Parsimony.Binary.DirectOptimization
-import Analysis.Parsimony.Binary.SequentialAlign
+import Analysis.Parsimony.Binary.DirectOptimization
+--import Analysis.Parsimony.Binary.SequentialAlign
 
 import Data.Maybe
 import Data.Vector (Vector, ifoldl', ifoldr, (!))
 import Data.Monoid
 
 
-
+import Bio.Phylogeny.Forest
 import Bio.Phylogeny.Network
+import Bio.Phylogeny.Solution.Class
 import Bio.Phylogeny.Tree.Binary
 import Bio.Phylogeny.Tree.Node.Final
 import Bio.Phylogeny.Tree.Node.Preliminary
@@ -36,6 +37,14 @@ import Bio.Phylogeny.Tree.CharacterAware
 import Bio.Phylogeny.PhyloCharacter
 
 import Debug.Trace
+
+-- | Additional wrapper to optimize over a solution
+solutionOptimization :: SolutionConstraint r f t n s b => Double -> r -> r
+solutionOptimization weight inSolution = setForests inSolution (map (graphOptimization weight) (forests inSolution))
+
+-- | Mapping function to optimize over a forest
+graphOptimization :: ForestConstraint f t n s b => Double -> f -> f
+graphOptimization weight inGraph = setTrees inGraph (map (allOptimization weight) (trees inGraph))
 
 -- | Unified function to perform both the first and second passes
 allOptimization :: TreeConstraint t n s b => Double -> t -> t
@@ -47,6 +56,7 @@ allOptimization weight inTree =
     in upPass
 
 -- | Optimization down pass warpper for recursion from root
+-- TODO: add a warning here if an internal node has no children (for all traversals)
 optimizationPreorder :: TreeConstraint t n s b => Double -> t -> t
 optimizationPreorder weight tree
     | isLeaf (root tree) tree = -- if the root is a terminal, give the whole tree a cost of zero, do not reassign nodes
@@ -54,7 +64,7 @@ optimizationPreorder weight tree
             newNode = setLocalCost 0.0 $ setTotalCost 0.0 (root tree)
             newTree = tree `update` [newNode]
         in newTree
-    | leftOnly && rightOnly = error "Problem with binary tree structure: non-terminal has no children"
+    | leftOnly && rightOnly = tree --error "Problem with binary tree structure: non-terminal has no children"
     | rightOnly = -- if there is only one child, continue recursion down and resolve
         let 
             nodes1 = internalPreorder weight (fromJust $ rightChild (root tree) tree) tree -- with only one child, assignment and cost is simply carried up
@@ -88,7 +98,7 @@ internalPreorder weight node tree
     | isLeaf node tree = -- if the root is a terminal, give the whole tree a cost of zero, do not reassign nodes
         let newNode = setTotalCost 0.0 $ setLocalCost 0.0 node
         in [newNode]
-    | rightOnly && leftOnly = error "Problem with binary tree structure: non-terminal has no children"
+    | rightOnly && leftOnly = [] --error "Problem with binary tree structure: non-terminal has no children"
     | rightOnly = -- if there is only one child, continue recursion down and resolve
         let 
             nodes1 = internalPreorder weight (fromJust $ rightChild node tree) tree -- with only one child, assignment and cost is simply carried up
@@ -118,7 +128,7 @@ internalPreorder weight node tree
 optimizationPostorder :: TreeConstraint t n s b => t -> t
 optimizationPostorder tree 
     | isLeaf (root tree) tree = tree
-    | rightOnly && leftOnly = error "Problem with binary tree structure: non-terminal has no children"
+    | rightOnly && leftOnly = tree --error "Problem with binary tree structure: non-terminal has no children"
     | rightOnly = 
         let nodes1 = internalPostorder (fromJust $ rightChild (root tree) tree) tree
         in tree `update` nodes1
@@ -139,7 +149,7 @@ optimizationPostorder tree
 internalPostorder :: TreeConstraint t n s b => n -> t -> [n]
 internalPostorder node tree 
     | isLeaf node tree = []
-    | rightOnly && leftOnly = error "Problem with binary tree structure: non-terminal has no children"
+    | rightOnly && leftOnly = [] --error "Problem with binary tree structure: non-terminal has no children"
     | rightOnly = internalPostorder (fromJust $ rightChild node tree) tree
     | leftOnly  = internalPostorder (fromJust $ leftChild node tree) tree
     | otherwise = 
@@ -163,10 +173,9 @@ preorderNodeOptimize weight curNode lNode rNode tree = setTotalCost summedTotalC
         chooseOptimization curPos curCharacter setNode
             -- TODO: Compiler error maybe below with comment structuers and 'lets'
              | aligned curCharacter =     
-                let (assign, temp, local) = trace (show curCharacter) $ preorderFitchBit weight (getForAlign lNode ! curPos) (getForAlign rNode ! curPos) curCharacter 
+                let (assign, temp, local) = {- trace (show curCharacter) $ -} preorderFitchBit weight (getForAlign lNode ! curPos) (getForAlign rNode ! curPos) curCharacter 
                 in addLocalCost local $ addTotalCost local $ addAlign assign $ addPreliminary assign setNode
-             | otherwise =
-            
+            | otherwise = 
                 --let (ungapped, cost, gapped, leftGapped, rightGapped) = naiveDO (getForAlign lNode ! curPos) (getForAlign rNode ! curPos)
                 --in addLocalCost cost $ addTotalCost cost $ addAlign gapped $ addPreliminary ungapped setNode
 
@@ -175,6 +184,7 @@ preorderNodeOptimize weight curNode lNode rNode tree = setTotalCost summedTotalC
                 -- where an EncodedSeq (encoded sequence) is a maybe vector of some type from Bio/Sequence/Coded.hs
                 let (ungapped, cost, gapped, leftGapped, rightGapped) = sequentialAlign (getForAlign lNode ! curPos) (getForAlign rNode ! curPos)
                 in  trace (show ungapped ++ " " ++ (show gapped)) $ addLocalCost cost $ addTotalCost cost $ addAlign gapped $ addPreliminary ungapped setNode
+
 
       {-  chooseOptimization' !setNode !curPos !curCharacter = addLocalCost cost . addTotalCost cost . addAlign gapped $ addPreliminary ungapped setNode
             where
@@ -189,8 +199,6 @@ preorderNodeOptimize weight curNode lNode rNode tree = setTotalCost summedTotalC
         addTotalCost   addVal node   = setTotalCost (addVal + totalCost node) node
         addLocalCost   addVal node   = setLocalCost (addVal + localCost node) node
 
--- I think this is the problem. In ll. 173 & 175 it's adding the new Vectors of bits to something that's empty? See <> in l. 183
--- | Functionality to help add to node
 addToField :: NodeConstraint n s b => (Vector s -> n -> n) -> (n -> Vector s) -> s -> n -> n
 addToField setter getter val node = setter (pure val <> getter node) node
 

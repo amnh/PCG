@@ -6,7 +6,6 @@ import           Bio.Phylogeny.Graph.Utilities
 import           File.Format.Fasta
 import qualified File.Format.Newick as N
 import           File.Format.Newick.Converter
-import           PCG.Command.Types.Report.Metadata
 import           Text.Megaparsec
 
 
