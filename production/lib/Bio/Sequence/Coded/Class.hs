@@ -17,7 +17,7 @@
 
 module Bio.Sequence.Coded.Class where
 
-import Bio.Sequence.Character.Coded
+--import Bio.Sequence.Character.Coded
 import Bio.Sequence.Parsed
 
 import Data.BitVector

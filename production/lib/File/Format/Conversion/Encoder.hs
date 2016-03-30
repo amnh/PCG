@@ -67,7 +67,7 @@ developAlphabets inSeqs = V.map setGapChar $ V.map sort $ M.foldr (zipWith getNo
 
 -- | Internal function to make one character info
 makeOneInfo :: Alphabet -> (Bool, Int) -> CharInfo
-makeOneInfo inAlph (isAligned, seqLen)
+makeOneInfo inAlph (isAligned, _seqLen)
     | inAlph `subsetOf` dnaAlph = DNA "" isAligned mempty mempty inAlph defaultMat False 1
     | inAlph `subsetOf` rnaAlph = RNA "" isAligned mempty mempty inAlph defaultMat False 1
     | inAlph `subsetOf` aaAlph = AminoAcid "" isAligned mempty inAlph mempty defaultMat False 1

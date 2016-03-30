@@ -30,7 +30,7 @@ import qualified Bio.Phylogeny.Network.Subsettable as SN
 import           Bio.Phylogeny.Graph.Utilities
 import           Bio.Sequence.Coded
 
-import           Data.BitVector
+--import           Data.BitVector
 import           Data.Key                                (lookup)
 import           Data.Monoid
 import           Data.Vector                             ((++),(//), elemIndex, (!))
