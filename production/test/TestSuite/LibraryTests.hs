@@ -30,6 +30,6 @@ testSuite = testGroup "Library Test Suite"
   , TCM.testSuite
   , VER.testSuite
   , Graph.testSuite
-  --, Parsimony.testSuite
+  -- , Parsimony.testSuite
   ]
 

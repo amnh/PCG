@@ -17,6 +17,11 @@ module Analysis.Parsimony.Binary.Test where
 import Analysis.Parsimony.Binary.DirectOptimization
 import Analysis.Parsimony.Binary.Internal
 
+import Bio.Sequence.Coded
+import Bio.Phylogeny.Graph
+
+import Data.BitVector
+
 import Test.Tasty
 import Test.Tasty.HUnit
 import Test.Tasty.QuickCheck
@@ -30,6 +35,6 @@ doProperties = undefined --testGroup "Properties of the DO algorithm" [idHolds]
     --where
     --    idHolds = testProperty "When DO runs a sequence against itself, get input as result" checkID
     --        where
-    --            checkID :: s -> Bool
+    --            checkID :: EncodedSeq BitVector -> Bool
     --            checkID inSeq = main == inSeq && cost == 0 && gapped == inSeq && left == inSeq && right == inSeq
     --                where (main, cost, gapped, left, right) = naiveDO inSeq inSeq
