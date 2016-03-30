@@ -18,6 +18,7 @@ module Bio.Phylogeny.Solution where
 import qualified Bio.Phylogeny.Forest           as FC
 import qualified Bio.Phylogeny.Network          as N
 import qualified Bio.Phylogeny.Network.Subsettable as SN
+import qualified Bio.Phylogeny.Solution.Class as SC
 import           Bio.Phylogeny.Solution.Data 
 import           Bio.Phylogeny.Tree.Binary
 import qualified Bio.Phylogeny.Tree.Edge.Standard  as E
@@ -83,6 +84,15 @@ instance RT.ReferentialTree DAG NodeInfo where
 instance SN.SubsettableNetwork DAG NodeInfo where
   appendSubtree = appendAt
   accessSubtree = grabAt
+
+instance FC.Forest (Forest d) d where
+    trees = id
+    setTrees _ new = new
+    filterTrees forest f = filter f forest
+
+instance SC.Solution (Solution d) (Forest d) where
+    forests = forests
+    setForests s f = s {forests = f} 
 
 instance Monoid EdgeSet where
   mempty = EdgeSet mempty mempty

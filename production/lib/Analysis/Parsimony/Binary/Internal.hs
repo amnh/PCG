@@ -16,6 +16,7 @@
 module Analysis.Parsimony.Binary.Internal where
 
 import Bio.Phylogeny.Forest
+import Bio.Phylogeny.Solution.Class
 import Bio.Phylogeny.Tree.Node.Preliminary
 import Bio.Phylogeny.Tree.Node.Encoded
 import Bio.Phylogeny.Tree.Node.Final
@@ -31,7 +32,8 @@ import Data.Maybe
 import Data.Vector           (Vector)
 
 
-type GraphConstraint g t n s b = (Forest g t, TreeConstraint t n s b)
+type SolutionConstraint r f t n s b = (Solution r f, ForestConstraint f t n s b)
+type ForestConstraint f t n s b = (Forest f t, TreeConstraint t n s b)
 type TreeConstraint t n s b = (Network t n, NodeConstraint n s b, ReferentialTree t n, BinaryTree t n, Show t, SubsettableNetwork t n, CharacterTree t s)
 type NodeConstraint n s b = (PreliminaryNode n s, EncodedNode n s, SeqConstraint s b, Show n, Eq n, FinalNode n s)
 type SeqConstraint s b = (CodedSequence s b, Eq s, CharConstraint b, Show s, Bits s, Monoid s)

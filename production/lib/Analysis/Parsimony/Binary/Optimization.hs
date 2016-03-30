@@ -28,6 +28,7 @@ import Data.Monoid
 
 import Bio.Phylogeny.Forest
 import Bio.Phylogeny.Network
+import Bio.Phylogeny.Solution.Class
 import Bio.Phylogeny.Tree.Binary
 import Bio.Phylogeny.Tree.Node.Final
 import Bio.Phylogeny.Tree.Node.Preliminary
@@ -37,8 +38,12 @@ import Bio.Phylogeny.PhyloCharacter
 
 import Debug.Trace
 
+-- | Additional wrapper to optimize over a solution
+solutionOptimization :: SolutionConstraint r f t n s b => Double -> r -> r
+solutionOptimization weight inSolution = setForests inSolution (map (graphOptimization weight) (forests inSolution))
+
 -- | Mapping function to optimize over a forest
-graphOptimization :: GraphConstraint g t n s b => Double -> g -> g
+graphOptimization :: ForestConstraint f t n s b => Double -> f -> f
 graphOptimization weight inGraph = setTrees inGraph (map (allOptimization weight) (trees inGraph))
 
 -- | Unified function to perform both the first and second passes
