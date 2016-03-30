@@ -52,23 +52,23 @@ addOtherCases (x:xs)
   | otherwise = x : addOtherCases xs
 
 class Metadata a where
-    unifyMetadata :: a -> [Vector CharInfo]
+    unifyMetadata :: a -> Vector CharInfo
 
 instance Metadata FastaParseResult where
-    unifyMetadata = fmap makeEncodeInfo . unifyCharacters
+    unifyMetadata = makeEncodeInfo . unifyCharacters
 
 instance Metadata TaxonSequenceMap where
-    unifyMetadata = fmap makeEncodeInfo . unifyCharacters
+    unifyMetadata = makeEncodeInfo . unifyCharacters
 
 instance Metadata FastcParseResult where
-    unifyMetadata = fmap makeEncodeInfo . unifyCharacters
+    unifyMetadata = makeEncodeInfo . unifyCharacters
 
 instance Metadata NewickForest where
     unifyMetadata _ = mempty
 
 instance Metadata TntResult where
     unifyMetadata (Left _) = mempty
-    unifyMetadata (Right withSeq) = pure $ V.map convertMeta (charMetaData withSeq)
+    unifyMetadata (Right withSeq) = V.map convertMeta (charMetaData withSeq)
         where
             convertMeta inMeta = 
                 let defaultMeta = makeOneInfo (V.toList $ characterStates inMeta)
@@ -77,13 +77,13 @@ instance Metadata TntResult where
 instance Metadata TCM where
     unifyMetadata (TCM alph mat) = 
         let defaultMeta = makeOneInfo (toList alph)
-        in pure $ pure (defaultMeta {tcm = mat})
+        in  pure (defaultMeta {tcm = mat})
 
 instance Metadata VertexEdgeRoot where
     unifyMetadata _ = mempty
 
 instance Metadata Nexus where
-    unifyMetadata (Nexus (seqs, metas)) = pure $ V.map convertNexusMeta metas
+    unifyMetadata (Nexus (seqs, metas)) = V.map convertNexusMeta metas
         where
             seqLen = M.foldr (\val acc -> V.length val) 0 seqs
 
