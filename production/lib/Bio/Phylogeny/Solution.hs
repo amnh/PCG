@@ -102,9 +102,32 @@ instance Monoid (Solution d) where
         Solution (chars1 <> chars2) (meta1 <> meta2) (forests1 <> forests2)
 
 -- | Function to append two dags
--- TODO define this
 appendAt :: DAG -> DAG -> NodeInfo -> DAG
-appendAt = undefined
+appendAt d1@(DAG n e r) d2@(DAG n' e' r') hangNode
+    | null n = d2
+    | null n' = d1
+    | r > length n - 1 || r' > length n' - 1 = error "Root out of bounds when trying to append trees"
+    | otherwise = DAG allNodes connectEdges r
+        where
+            shift = length n
+            hCode = code hangNode
+            -- hang and shift the nodes
+            hungNodes = n' // [(r', (n' ! r') {isRoot = False, parents = [hCode]})]
+            connectN = n // [(hCode, hangNode {children = (shift + r') : children hangNode, isLeaf = False})]
+            recodeNew = fmap recodeFun hungNodes
+            recodeFun n = n {code = code n + shift, children = map (shift +) (children n), parents = map (shift +) (parents n)}
+            allNodes = connectN V.++ recodeNew
+            -- update edges and add connecting edge
+            reMapOut = IM.foldWithKey (\k val acc -> IM.insert (k + shift) (reMapInfo val) acc) mempty
+            reMapInfo eInfo = eInfo {origin = allNodes ! (code (origin eInfo) + shift), terminal = allNodes ! (code (terminal eInfo) + shift)}
+            shiftEdge edge = edge {inNodes = IS.map (shift +) (inNodes edge), outNodes = reMapOut (outNodes edge)}
+            newEdges = fmap shiftEdge e'
+            allEdges = e V.++ newEdges
+            hangUpdate = (allEdges ! hCode) {outNodes = IM.map (\info -> info {origin = allNodes ! hCode}) (outNodes $ (allEdges ! hCode))}
+            hangAdd = hangUpdate <> (EdgeSet (inNodes $ e ! hCode) (IM.insert (r' + shift) (EdgeInfo 0 (allNodes ! hCode) (allNodes ! (r' + shift)) Nothing) (outNodes $ e ! hCode)))
+            hangedUpdate = (allEdges ! (r' + shift)) <> (EdgeSet (IS.singleton hCode) mempty) 
+            connectEdges = allEdges // [(hCode, hangAdd), (r' + shift, hangedUpdate)]
+
 
 -- | Function to grab from a DAG
 grabAt :: DAG -> NodeInfo -> DAG
