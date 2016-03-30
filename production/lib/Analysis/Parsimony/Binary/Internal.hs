@@ -29,7 +29,8 @@ import Data.Matrix.NotStupid (Matrix, nrows, ncols, setElem)
 import Data.Maybe
 import Data.Vector           (Vector)
 
-
+type SolutionConstraint r f t n s b = (Solution r f, ForestConstraint f t n s b)
+type ForestConstraint f t n s b = (Forest f t, TreeConstraint t n s b)
 type TreeConstraint t n s b = (Network t n, NodeConstraint n s b, ReferentialTree t n, BinaryTree t n, Show t, SubsettableNetwork t n, CharacterTree t s)
 type NodeConstraint n s b = (PreliminaryNode n s, EncodedNode n s, SeqConstraint s b, Show n, Eq n, FinalNode n s)
 type SeqConstraint s b = (CodedSequence s, Eq s, CharConstraint b, Show s, Bits s, Monoid s)
