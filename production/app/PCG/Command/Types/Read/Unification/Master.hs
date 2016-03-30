@@ -23,9 +23,11 @@ import           Data.IntMap             (elems)
 import qualified Data.IntMap       as IM 
 import           Data.Key                ((!))
 import           Data.List               ((\\), isPrefixOf, nub)
-import           Data.Map                (foldWithKey, difference, intersectionWith)
+import           Data.Map                (foldWithKey, difference, intersectionWith, keys)
 import qualified Data.Map          as M 
 import           Data.Monoid
+import           Data.Set                (union)
+import qualified Data.Set          as S  (fromList)
 import           Data.Vector             (Vector, (//), cons, generate, imap)
 import qualified Data.Vector       as V  (replicate, foldr, (!))
 import           File.Format.Conversion.Encoder
@@ -68,6 +70,21 @@ masterUnify inResults =
         where
           shoveIt (Graph dags) = if null chars then dags
                                   else zipWith (\d c -> d {characters = c}) dags chars
+
+-- Step 1: Gather all the taxa
+--------------------------------------------------
+taxaSet :: [FracturedParseResult] -> Set String
+taxaSet = mconcat . fmap (S.fromList . keys . parsedChars) . filter (not fromTreeOnlyFile)
+  where
+    fromTreeOnlyFile fpr = null chars || all null chars
+      where
+        chars = parsedChars fpr
+
+-- Step 2:
+--------------------------------------------------
+
+
+
 
 -- | Verify that between two graphs, the taxa names are the same
 checkTaxaMatch :: Graph -> Graph -> ([String], [String])
