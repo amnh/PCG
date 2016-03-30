@@ -34,6 +34,7 @@ type ParsedSequences = Vector (Maybe ParsedSeq)
 -- TODO add a TaxonIdentifier or TerminalName as type string - lots of aliasing
 type TreeSeqs = Map String ParsedSequences
 -- TODO think about this type: change to a vector (or maybe list) of strings
+-- Should definitely be a Vector, so length is readily available.
 type Alphabet = [String]
 
 --instance Arbitrary ParsedSeq where

@@ -19,6 +19,8 @@ import Analysis.Parsimony.Binary.Internal
 import Bio.Phylogeny.PhyloCharacter
 import Data.Bits
 
+-- TODO: Make all of this take weight, ignored, maybe other metadata into consideration.
+
 -- | Preorder Fitch operation on bit-packed sequences
 -- Output five-tuple is the preliminary assignment, the aligned preliminary assignment
 -- the temporary storage bit, and the local cost

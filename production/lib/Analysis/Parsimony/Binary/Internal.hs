@@ -46,6 +46,6 @@ setElemSafe value (row, col) matrix
 getForAlign :: NodeConstraint n s b => n -> Vector s
 getForAlign node 
     | null (preliminaryAlign node) && null (preliminary node) = encoded node
-    | null $ preliminaryAlign node = preliminary node
-    | otherwise = preliminaryAlign node 
+    | null $ preliminaryAlign node                            = preliminary node
+    | otherwise                                               = preliminaryAlign node 
 

@@ -20,13 +20,13 @@ import           Bio.Sequence.Coded
 import           Bio.Sequence.Parsed
 import           Control.Monad
 import           Data.Bits
-import           Data.BitVector               (BitVector,fromBits)
+--import           Data.BitVector               (BitVector, fromBits)
 import           Data.Int
 import           Data.List             hiding (zipWith)
 import qualified Data.Map.Lazy         as M
 import           Data.Maybe
 import           Data.Matrix.NotStupid        (matrix)
-import           Data.Vector                  (Vector, ifoldr, zipWith, cons)
+import           Data.Vector                  (Vector, zipWith, cons)
 import qualified Data.Vector           as V   
 import           Prelude               hiding (zipWith)
 
@@ -74,9 +74,9 @@ makeOneInfo inAlph (isAligned, seqLen)
     | otherwise = Custom "" isAligned mempty inAlph mempty defaultMat False False 1
         where 
             defaultMat = matrix (length inAlph) (length inAlph) (const 1)
-            --masks = generateMasks (length inAlph) seqLen isAligned
+            {- masks = generateMasks (length inAlph) seqLen isAligned
 
-            generateMasks :: Int -> Int -> Bool -> (Encoded, Encoded)
+            generateMasks :: Int -> Int -> Bool -> (EncodedSequences, EncodedSequences)
             generateMasks alphLen sLen alignedStatus 
                 | alignedStatus = 
                     let 
@@ -90,7 +90,7 @@ makeOneInfo inAlph (isAligned, seqLen)
                     in (Just $ V.fromList occupancy, Just $ V.fromList periodic)
                     where
                         unit = replicate (alphLen - 1) False ++ [True]
-
+            -}
 
 checkAlignLens :: TreeSeqs -> Vector (Bool, Int)
 checkAlignLens = M.foldr matchLens mempty
@@ -121,7 +121,10 @@ chunksOf n xs
       where
         (f,s) = V.splitAt n xs
 
--- | Function to encode into minimal bits
+-- | Function to encode into minimal bits, where minimal bits is Vector of maximal number of BitVectors.
+-- I.e., each of the BVs is as short as possible, but there are a bunch of them.
+-- For now, unused
+{-
 encodeMinimal :: ParsedSeq -> Alphabet -> EncodedSeq
 -- encodeMinimal strSeq alphabet | trace ("encodeMinimal over alphabet " ++ show alphabet ++ " of seq " ++ show strSeq) False = undefined
 encodeMinimal strSeq symbolAlphabet = 
@@ -136,16 +139,22 @@ encodeMinimal strSeq symbolAlphabet =
                 Just bitWidth -> let groupParsed = chunksOf (bitWidth `div` alphLen) strSeq
                               in V.map groupEncode groupParsed
     in if null coded then Nothing else Just coded
+-}
 
--- | Function to encode over maximal bits
+-- | Function to encode over maximal bits, which means that each singleton character is encoded
+-- using the same number of bits. This is currently the default for both dynamic and static homologies,
+-- although for static homologies we *could* use encodeMinimal, above.
+-- Currently unused.
+{-
 encodeMaximal :: ParsedSeq -> Alphabet -> EncodedSeq
 encodeMaximal strSeq symbolAlphabet = 
     let coded = V.map (foldr (\c acc -> setSingleElem c acc symbolAlphabet) zeroBits) strSeq
     in if null coded then Nothing else Just coded
+-}
 
 -- | Function to encode given metadata information
 encodeOverMetadata :: ParsedSeq -> PhyloCharacter EncodedSeq -> EncodedSeq
-encodeOverMetadata strSeq metadata = encodeMinimal strSeq (alphabet metadata) -- encodeMinimal strSeq (alphabet metadata)
+encodeOverMetadata inSeq metadata = encodeOverAlphabet inSeq (alphabet metadata)
     --case metadata of
     --DNA         _ align _ _ _ _ _ _     -> if align then minEncode else maxEncode
     --RNA         _ align _ _ _ _ _ _     -> if align then minEncode else maxEncode

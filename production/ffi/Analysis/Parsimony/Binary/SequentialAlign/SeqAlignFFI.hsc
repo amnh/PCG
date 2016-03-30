@@ -34,8 +34,6 @@ instance Storable AlignResult where
         seq2Fin <- (#peek struct retType, seq2) ptr
         algnLen <- (#peek struct retType, alignmentLength) ptr
         return  AlignResult { val = value, seq1 = seq1Fin, seq2 = seq2Fin, seqLen = algnLen }
-------------- Don't need this part, but left in for completion ---------------
------ Will get compiler warning if left out, because of missing instances ----
     poke ptr (AlignResult value seq1Fin seq2Fin alignLen) = do
         (#poke struct retType, weight) ptr value
         (#poke struct retType, seq1) ptr seq1Fin
