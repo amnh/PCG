@@ -30,7 +30,7 @@ import           Data.Vector                  (Vector, ifoldr, zipWith, cons)
 import qualified Data.Vector           as V   
 import           Prelude               hiding (zipWith)
 
-type Encoded = EncodedSeq BitVector
+type Encoded = EncodedSeq
 
 dnaAlph, rnaAlph, aaAlph :: [String]
 dnaAlph = ["A", "C", "G", "T", "-"] 
@@ -108,10 +108,10 @@ checkAlignLens = M.foldr matchLens mempty
 subsetOf :: (Ord a) => [a] -> [a] -> Bool
 subsetOf list1 list2 = foldr (\e acc -> acc && e `elem` list2) True list1
 
-encodeIt :: ParsedSequences -> Vector CharInfo -> EncodedSequences BitVector
+encodeIt :: ParsedSequences -> Vector CharInfo -> EncodedSequences
 encodeIt = zipWith (\s info -> (`encodeOverMetadata` info) =<< s)
 
-packIt :: ParsedSequences -> Vector CharInfo -> EncodedSequences BitVector
+packIt :: ParsedSequences -> Vector CharInfo -> EncodedSequences
 packIt = encodeIt
 
 chunksOf :: Int -> Vector a -> Vector (Vector a)
@@ -122,7 +122,7 @@ chunksOf n xs
         (f,s) = V.splitAt n xs
 
 -- | Function to encode into minimal bits
-encodeMinimal :: (Bits b, Num b, Show b) => ParsedSeq -> Alphabet -> EncodedSeq b
+encodeMinimal :: ParsedSeq -> Alphabet -> EncodedSeq
 -- encodeMinimal strSeq alphabet | trace ("encodeMinimal over alphabet " ++ show alphabet ++ " of seq " ++ show strSeq) False = undefined
 encodeMinimal strSeq symbolAlphabet = 
     let 
@@ -138,13 +138,13 @@ encodeMinimal strSeq symbolAlphabet =
     in if null coded then Nothing else Just coded
 
 -- | Function to encode over maximal bits
-encodeMaximal :: Bits b => ParsedSeq -> Alphabet -> EncodedSeq b
+encodeMaximal :: ParsedSeq -> Alphabet -> EncodedSeq
 encodeMaximal strSeq symbolAlphabet = 
     let coded = V.map (foldr (\c acc -> setSingleElem c acc symbolAlphabet) zeroBits) strSeq
     in if null coded then Nothing else Just coded
 
 -- | Function to encode given metadata information
-encodeOverMetadata :: (Bits b, Num b, Show b) => ParsedSeq -> PhyloCharacter (EncodedSeq b) -> EncodedSeq b
+encodeOverMetadata :: ParsedSeq -> PhyloCharacter EncodedSeq -> EncodedSeq
 encodeOverMetadata strSeq metadata = encodeMinimal strSeq (alphabet metadata) -- encodeMinimal strSeq (alphabet metadata)
     --case metadata of
     --DNA         _ align _ _ _ _ _ _     -> if align then minEncode else maxEncode

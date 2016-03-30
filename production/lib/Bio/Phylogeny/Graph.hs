@@ -72,7 +72,7 @@ instance ET.EdgedTree DAG NodeInfo EdgeSet where
   setEdges n t e = t {edges = edges t // [(code n, e)]}
 
 -- | And the tree is aware of its character info
-instance CT.CharacterTree DAG (EncodedSeq BitVector) where
+instance CT.CharacterTree DAG EncodedSeq where
   characters = characters
   setCharacters t c = t {characters = c} 
 

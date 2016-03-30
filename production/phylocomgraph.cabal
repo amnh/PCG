@@ -90,9 +90,7 @@ library
     ffi/Analysis/Parsimony/Binary/SequentialAlign
       
   -- Modules exported by the library.
-  exposed-modules:     Analysis.DirectOptimization.ImpliedAlign
-                       Analysis.DirectOptimization.Naive
-                       Analysis.Parsimony.Binary.DirectOptimization
+  exposed-modules:     Analysis.Parsimony.Binary.DirectOptimization
                        Analysis.Parsimony.Binary.Fitch
                        Analysis.Parsimony.Binary.Internal
                        Analysis.Parsimony.Binary.Optimization
@@ -416,11 +414,7 @@ Test-Suite testsuite
 
   hs-source-dirs:      test, lib, app, ffi
 
-  other-modules:       Analysis.DirectOptimization.ImpliedAlign
-                       Analysis.DirectOptimization.Naive
-                       Analysis.DirectOptimization.Test
-                       Analysis.DirectOptimization.Utilities
-                       Analysis.GenericFitch
+  other-modules:       Analysis.GenericFitch
                        Bio.Phylogeny.Forest
                        Bio.Phylogeny.Forest.Class
                        Bio.Phylogeny.Graph
