@@ -24,6 +24,7 @@ import Data.Matrix (Matrix, getElem, nrows, ncols, (<->), zero, matrix, fromList
 import Data.Maybe
 import Data.Monoid
 
+import Bio.Metadata.Class (InternalMetadata(..))
 import Bio.Sequence.Coded
 
 data Direction = LeftDir | DiagDir | DownDir deriving (Eq, Show)
@@ -37,9 +38,9 @@ defaultCosts :: Costs
 defaultCosts = (1,1)
 
 -- | Performs a naive direct optimization
-naiveDO :: SeqConstraint s b => s -> s -> (s, Double, s, s, s)
+naiveDO :: (SeqConstraint s b, InternalMetadata m s) => s -> s -> m -> (s, Double, s, s, s)
 --naiveDO s1 s2 | trace ("Sequences of length " ++ show (numChars s1) ++ show (numChars s2)) False = undefined
-naiveDO seq1 seq2 
+naiveDO seq1 seq2 meta
     | isEmpty seq1 || isEmpty seq2 || numChars seq1 == 0 || numChars seq2 == 0 = (emptySeq, 0, emptySeq, emptySeq, emptySeq)
     | otherwise = 
         let

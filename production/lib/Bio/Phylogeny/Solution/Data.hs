@@ -38,7 +38,9 @@ type NodeInfo   = Node BitVector
 
 type Topo   = TopoNode BitVector
 
-type CharacterMetadata = PhyloCharacter (EncodedSeq BitVector)
+type CharacterMetadata = PhyloCharacter StandardCharacters
+
+type StandardCharacters = EncodedSeq BitVector
 
 type StandardSolution = Solution DAG
 
