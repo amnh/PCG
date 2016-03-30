@@ -11,7 +11,7 @@
 -- Fitch operations for binary optimization
 --
 -----------------------------------------------------------------------------
-{-# LANGUAGE ConstraintKinds #-}
+{-# LANGUAGE ConstraintKinds, AllowAmbiguousTypes #-}
 
 module Analysis.Parsimony.Binary.Fitch where
 

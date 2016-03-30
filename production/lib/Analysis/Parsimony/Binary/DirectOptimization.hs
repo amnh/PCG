@@ -53,7 +53,7 @@ naiveDO seq1 seq2
             cost = getMatrixCost traversalMat
             (gapped, left, right) = --trace ("get seqs " ++ show traversalMat)
                                     traceback traversalMat shorter longer
-            ungapped = filterSeq gapped (gapChar /=)
+            ungapped = filterGaps gapped gapChar alphabet
             (out1, out2) = if seq1Len > seq2Len
                                 then (right, left)
                                 else (left, right)

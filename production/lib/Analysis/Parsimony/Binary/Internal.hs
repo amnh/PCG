@@ -11,7 +11,7 @@
 -- General wrapper for all forms of optimization on binary trees
 --
 -----------------------------------------------------------------------------
-{-# LANGUAGE ConstraintKinds #-}
+{-# LANGUAGE ConstraintKinds, AllowAmbiguousTypes #-}
 
 module Analysis.Parsimony.Binary.Internal where
 
