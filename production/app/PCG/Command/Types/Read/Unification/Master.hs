@@ -21,12 +21,13 @@ import           Data.Foldable
 import qualified Data.HashMap.Lazy as HM
 import           Data.IntMap             (elems)
 import qualified Data.IntMap       as IM 
+import           Data.Key                ((!))
 import           Data.List               ((\\), isPrefixOf, nub)
 import           Data.Map                (foldWithKey, difference, intersectionWith)
 import qualified Data.Map          as M 
 import           Data.Monoid
-import           Data.Vector             (Vector, (!), (//), cons, generate)
-import qualified Data.Vector       as V  (replicate, foldr)
+import           Data.Vector             (Vector, (//), cons, generate, imap)
+import qualified Data.Vector       as V  (replicate, foldr, (!))
 import           File.Format.Conversion.Encoder
 import           File.Format.TransitionCostMatrix
 import           PCG.Command.Types.Read.Unification.UnificationError
@@ -164,7 +165,7 @@ encodeGraph inGraph = eitherAction inGraph id (Right . onGraph)
       | isLeaf curNode = curDAG { nodes = nodes curDAG // [(curPos, newNode)] }
       | otherwise = curDAG 
         where
-          curNode = nodes curDAG ! curPos
+          curNode = nodes curDAG V.! curPos
           curSeqs = parsedSeqs curDAG HM.! curName
           newNode = curNode {encoded = encodeIt curSeqs (characters curDAG)}
 
@@ -225,14 +226,12 @@ makeEmptyNodes names = Graph $ pure oneDAG
 
 -- | Check that names match between dags and with seqs
 verifyNaming :: Either UnificationError Graph -> [String] -> Either UnificationError Graph
-verifyNaming eGraph seqNames = undefined
+verifyNaming eGraph seqNames = eGraph
   where
     nonInternal = IM.filter (not . isPrefixOf "HTU")
     namesList = map (elems . nodeNames)
-    -- gatherNames = nub . elems . nonInternal . foldr ((<>) . nodeNames) mempty
     doMatch l1 l2 = if null l1 || null l2 then (mempty, mempty)
                       else ((l1 \\ l2), (l1 \\ l2))
-    --between g = doMatch (gatherNames g) seqNames
 
 -- | Joins the sequences of a fractured parse result
 joinSequences :: [FracturedParseResult] -> (Vector CharInfo, TreeSeqs)
@@ -252,4 +251,16 @@ joinSequences =  foldl' f (mempty, mempty) . filter (not . null . parsedChars)
 
 -- | New functionality to encode into a graph
 encodeGraph' :: (Vector CharInfo, TreeSeqs) -> Either UnificationError Graph -> Either UnificationError Graph
-encodeGraph' = undefined
+encodeGraph' (metadata, taxaSeqs) inGraph = case inGraph of
+  Left e -> Left e
+  Right g -> Right $ encodeGraph g
+  where
+    encodeGraph (Graph g) = Graph $ map setNodes g
+    setNodes d = d {nodes = makeNodes d}
+    makeNodes d = imap (\i n -> if isLeaf n then encodeSeq i n d else n) (nodes d)
+    encodeSeq pos node d = node {encoded = encodeIt (getSeq pos d) metadata}
+    -- TODO: figure out why we need this stopgap check
+    getName pos d = if pos `IM.member` nodeNames d then nodeNames d ! pos
+                      else mempty
+    getSeq pos d = if (getName pos d) `M.member` taxaSeqs then taxaSeqs ! (getName pos d)
+                    else mempty

@@ -63,7 +63,7 @@ developAlphabets inSeqs = V.map setGapChar $ V.map sort $ M.foldr (zipWith getNo
 
 -- | Ensure that the gap char is present and correctly positioned in an alphabet
 setGapChar :: Alphabet -> Alphabet
-setGapChar inAlph | trace ("setGapChar " ++ show inAlph) False = undefined
+--setGapChar inAlph | trace ("setGapChar " ++ show inAlph) False = undefined
 setGapChar inAlph = filter (/= "-") inAlph ++ ["-"]
 
 -- | Internal function to make one character info

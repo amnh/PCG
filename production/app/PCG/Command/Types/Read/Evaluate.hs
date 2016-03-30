@@ -53,7 +53,7 @@ evaluate (READ fileSpecs) old = do
     case result of
       Left pErr -> fail $ show pErr   -- Report structural errors here.
       Right xs -> fmap addMasks $
-        case masterUnify $ transformation <$> concat xs of
+        case masterUnify' $ transformation <$> concat xs of
           Left uErr -> fail $ show uErr -- Report rectification errors here.
           Right g   -> old <> pure g    -- TODO: rectify against 'old' SearchState, don't just blindly merge
   where

@@ -20,10 +20,11 @@ import Bio.Phylogeny.Graph.Utilities
 import Bio.Phylogeny.Tree.Node.Topological
 import Data.Monoid ((<>))
 
---import Debug.Trace
+import Debug.Trace
 
 -- | Main fold over a graph
 newickReport :: Graph -> String
+newickReport graph | trace ("graph to report " ++ show graph) False = undefined
 newickReport graph =
   case toTopoGraph graph of
     (TopoGraph []   ) -> "There were no trees. Check input data for inconsistencies?"
