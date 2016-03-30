@@ -21,11 +21,14 @@ import           Bio.Phylogeny.Graph.Topological
 import qualified Bio.Phylogeny.Tree.Node.Topological as TN
 import           Bio.Phylogeny.Network                     ()
 import           Bio.Sequence.Parsed
+import           Data.Key                                   (lookup)
 import qualified Data.Map.Lazy                      as M 
 import           Data.Maybe
 import           Data.Monoid                               ()
 import           File.Format.Conversion.Encoder
 import           File.Format.Newick.Internal        hiding (isLeaf)
+
+import Prelude hiding (lookup)
 
 --import Debug.Trace
 
@@ -53,12 +56,12 @@ convertBothTopo rootTree inSeqs = internalConvert True rootTree
                 recurse = fmap (tree . internalConvert False) (descendants inTree) 
                 myName = fromMaybe "HTU 0" $ newickLabel  inTree
                 myCost = fromMaybe 0       $ branchLength inTree
-                mySeq = if M.member myName inSeqs
-                            then inSeqs M.! myName
-                            else mempty
+                mySeq = case lookup myName inSeqs of
+                            Just s -> s
+                            Nothing -> mempty
                 myEncode = encodeIt mySeq fullMetadata
                 myPack   = packIt mySeq fullMetadata
-                node = TN.TopoNode atRoot (null $ descendants inTree) myName mySeq recurse myEncode myPack mempty mempty mempty mempty myCost 0
+                node = TN.TopoNode atRoot (null $ descendants inTree) myName recurse myEncode myPack mempty mempty mempty mempty myCost 0
             in --trace ("internalConvert with metadata " ++ show fullMetadata)
                 TopoTree node fullMetadata
 
@@ -86,6 +89,6 @@ convertTopoTree tree0 = internalConvert tree0 True
                 recurse = fmap (tree . flip internalConvert False) (descendants inTree) 
                 myName = fromMaybe "HTU 0" (newickLabel inTree)
                 myCost = fromMaybe 0 (branchLength inTree)
-                node = TN.TopoNode atRoot (null $ descendants inTree) myName mempty recurse mempty mempty mempty mempty mempty mempty myCost 0
+                node = TN.TopoNode atRoot (null $ descendants inTree) myName recurse mempty mempty mempty mempty mempty mempty myCost 0
             in --trace ("out from Newick to topo " ++ show node)
                 TopoTree node mempty

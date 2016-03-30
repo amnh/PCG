@@ -83,7 +83,7 @@ convertNewickToTopo tree0 = internalConvert tree0 True
                 recurse = fmap (tree . flip internalConvert False) (descendants inTree) 
                 myName = fromMaybe "HTU 0" (newickLabel inTree)
                 myCost = fromMaybe 0 (branchLength inTree)
-                node = TopoNode atRoot (null $ descendants inTree) myName mempty recurse mempty mempty mempty mempty mempty mempty myCost 0
+                node = TopoNode atRoot (null $ descendants inTree) myName recurse mempty mempty mempty mempty mempty mempty myCost 0
             in --trace ("out from Newick to topo " ++ show node)
                 TopoTree node mempty
 
@@ -97,8 +97,8 @@ convertNewickToTree = fromTopo . convertNewickToTopo
 
 -- | Converts a tnt tree into a topological form
 convertTNTToTopo :: Bool -> (n -> String) -> LeafyTree n -> TopoNode b
-convertTNTToTopo atRoot f (Leaf info) = TopoNode atRoot True (f info) mempty mempty mempty mempty mempty mempty mempty mempty 0 0
-convertTNTToTopo atRoot f (Branch subtrees) = TopoNode atRoot False mempty mempty (map (convertTNTToTopo False f) subtrees) mempty mempty mempty mempty mempty mempty 0 0
+convertTNTToTopo atRoot f (Leaf info) = TopoNode atRoot True (f info) mempty mempty mempty mempty mempty mempty mempty 0 0
+convertTNTToTopo atRoot f (Branch subtrees) = TopoNode atRoot False mempty (map (convertTNTToTopo False f) subtrees) mempty mempty mempty mempty mempty mempty 0 0
 
 -- | Conversion function for NodeType to string
 getTNTName :: NodeType -> String

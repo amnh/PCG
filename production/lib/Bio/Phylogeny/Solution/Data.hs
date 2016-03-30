@@ -40,6 +40,8 @@ type Topo   = TopoNode BitVector
 
 type CharacterMetadata = PhyloCharacter (EncodedSeq BitVector)
 
+type StandardSolution = Solution DAG
+
 -- | Edge type: info is stored at the out connections of a node
 data EdgeSet
    = EdgeSet

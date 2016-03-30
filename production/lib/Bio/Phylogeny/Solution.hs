@@ -17,17 +17,22 @@ module Bio.Phylogeny.Solution where
 
 import qualified Bio.Phylogeny.Forest           as FC
 import qualified Bio.Phylogeny.Network          as N
+import qualified Bio.Phylogeny.Network.Subsettable as SN
 import           Bio.Phylogeny.Solution.Data 
 import           Bio.Phylogeny.Tree.Binary
+import qualified Bio.Phylogeny.Tree.Edge.Standard  as E
+import qualified Bio.Phylogeny.Tree.EdgeAware      as ET
 import           Bio.Phylogeny.Tree.Node
+import qualified Bio.Phylogeny.Tree.Node.Topological as TN
 import           Bio.Phylogeny.Tree.Rose
+import qualified Bio.Phylogeny.Tree.Referential    as RT
 
 import           Data.Foldable
 import qualified Data.IntSet                    as IS
 import qualified Data.IntMap                    as IM
 import           Data.Key                       (lookup)
 import           Data.Monoid
-import           Data.Vector                    ((!), (//), Vector)
+import           Data.Vector                    ((!), (//), Vector, elemIndex)
 import qualified Data.Vector                    as V
 import           Safe
 import           Prelude                        hiding (lookup)
@@ -58,6 +63,27 @@ instance N.Network DAG NodeInfo where
             nodes2 = addConnections newNode (nodes t) V.++ pure newNode
             reroot = if isRoot n && null (nodes t) then addPos else root t
 
+-- | Make it an instance of data storage type classes
+instance E.StandardEdge EdgeInfo NodeInfo where
+  edgeLen  = len
+  setEdgeLen e f = e {len = f}
+  origin   = origin
+  terminal = terminal
+
+-- | This tree knows its edges
+instance ET.EdgedTree DAG NodeInfo EdgeSet where
+  edges    n t   = edges t ! code n
+  setEdges n t e = t {edges = edges t // [(code n, e)]}
+
+-- | This particular tree is referential
+instance RT.ReferentialTree DAG NodeInfo where
+  code node tree = elemIndex node (nodes tree)
+  getNthNode tree pos = nodes tree ! pos
+
+instance SN.SubsettableNetwork DAG NodeInfo where
+  appendSubtree = appendAt
+  accessSubtree = grabAt
+
 instance Monoid EdgeSet where
   mempty = EdgeSet mempty mempty
   mappend (EdgeSet in1 out1) (EdgeSet in2 out2) = EdgeSet (in1 <> in2) (out1 <> out2)
@@ -66,10 +92,57 @@ instance Monoid DAG where
     mempty = DAG mempty mempty 0
     mappend dag1 dag2 = appendAt dag1 dag2 (N.root dag1)
 
+instance Monoid TopoDAG where
+    mempty = TopoDAG mempty
+    mappend (TopoDAG topo1) (TopoDAG topo2) = TopoDAG $ topo1 {TN.children = topo2 : (TN.children topo1)}
+
+instance Monoid (Solution d) where
+    mempty = Solution mempty mempty mempty
+    mappend (Solution chars1 meta1 forests1) (Solution chars2 meta2 forests2) = 
+        Solution (chars1 <> chars2) (meta1 <> meta2) (forests1 <> forests2)
+
 -- | Function to append two dags
 -- TODO define this
 appendAt :: DAG -> DAG -> NodeInfo -> DAG
 appendAt = undefined
+
+-- | Function to grab from a DAG
+grabAt :: DAG -> NodeInfo -> DAG
+grabAt inTree hangNode = fromTopo rootedTopo
+  where 
+    topo = nodeToTopo inTree hangNode
+    rootedTopo = TopoDAG topo
+
+-- | Function to go from referential to topo
+-- TODO define all these conversion functions
+fromTopo :: TopoDAG -> DAG
+fromTopo (TopoDAG inTopo) = internalFromTopo inTopo
+    where
+        internalFromTopo :: Topo -> DAG
+        internalFromTopo topo
+            | TN.isLeaf topo = singletonDAG topo 
+            | otherwise = foldr (\n acc -> acc <> internalFromTopo n) (singletonDAG topo) (TN.children topo)
+                where
+                    -- | Function to convert a node to a tree for folding
+                    singletonDAG :: Topo -> DAG
+                    singletonDAG topo = 
+                      let myNode = Node 0 (TN.name topo) (TN.isRoot topo) (TN.isLeaf topo) [] [] (TN.encoded topo) (TN.packed topo) (TN.preliminary topo) 
+                                              (TN.final topo) (TN.temporary topo) (TN.aligned topo) (TN.localCost topo) (TN.totalCost topo)
+                      in DAG (pure myNode) (pure mempty) 0 
+
+-- | Function to go from topo to referential
+toTopo :: DAG -> TopoDAG
+toTopo tree = TopoDAG $ nodeToTopo tree (nodes tree ! root tree)
+
+-- | convert a given node to topo
+nodeToTopo :: DAG -> NodeInfo -> Topo
+nodeToTopo inDAG curNode
+    | isLeaf curNode = leaf
+    | otherwise = leaf {TN.children = childDAGs}
+      where
+          childDAGs = map (\i -> nodeToTopo inDAG (nodes inDAG ! i)) (children curNode)
+          leaf = TN.TopoNode (isRoot curNode) (isLeaf curNode) (name curNode) mempty (encoded curNode) (packed curNode) (preliminary curNode) 
+                  (final curNode) (temporary curNode) (aligned curNode) (localCost curNode) (totalCost curNode)
 
 -- | makeEdges is a small function assisting appendAt
 -- it creates the edge set for a given node in the given tree
