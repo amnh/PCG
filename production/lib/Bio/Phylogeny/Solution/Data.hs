@@ -16,17 +16,24 @@ module Bio.Phylogeny.Solution.Data where
 
 import Bio.Sequence.Parsed
 import Bio.Sequence.Coded
+import Bio.Phylogeny.Tree.Node
+import Bio.Phylogeny.Tree.Node.Topological
+import Bio.Phylogeny.PhyloCharacter
 
 import Data.BitVector
 import Data.HashMap.Strict
+import Data.IntSet
+import Data.IntMap
 import Data.Vector
 
+-- | A forest is a list of dag structures where dags can be referential or topological
 type Forest d = [d]
 
 type Identifier = String
 
 type Sequences = ParsedSequences
 
+-- | We'll have two types of node: topological and referential
 type NodeInfo   = Node BitVector
 
 type Topo   = TopoNode BitVector
@@ -49,13 +56,16 @@ data EdgeInfo
    , virtualNode :: Maybe NodeInfo
    } deriving (Eq, Show)
 
+-- | A solution is an array of forests
+-- character data and names are common across all forests and so stored at this level
 data Solution d 
     = Solution
-    { parsedSeqs :: HashMap Identifier Sequences
+    { parsedChars :: HashMap Identifier Sequences
     , metadata   :: Vector CharacterMetadata
     , forests    :: [Forest d]
     } deriving (Eq, Show)
 
+-- | A dag is an element of a forest, stored referentially
 data DAG 
     = DAG
     { nodes :: Vector NodeInfo 
@@ -63,6 +73,7 @@ data DAG
     , root  :: Int
     } deriving (Eq, Show)
 
+-- | A topodag is an alternative forest element stored topologically
 data TopoDAG 
     = TopoDAG 
-    { root :: Topo}
+    { structure :: Topo}

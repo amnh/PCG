@@ -102,6 +102,7 @@ library
                        Bio.Phylogeny.Graph
                        Bio.Phylogeny.Network
                        Bio.Phylogeny.PhyloCharacter
+                       Bio.Phylogeny.Solution
                        Bio.Phylogeny.Tree.Binary
                        Bio.Phylogeny.Tree.CharacterAware
                        Bio.Phylogeny.Tree.EdgeAware
