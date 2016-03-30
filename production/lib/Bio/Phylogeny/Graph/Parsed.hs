@@ -19,6 +19,7 @@ module Bio.Phylogeny.Graph.Parsed where
 import           Bio.Phylogeny.Graph.Data
 import           Bio.Phylogeny.Graph.Topological
 import           Bio.Phylogeny.Graph.Utilities
+--import           Bio.Phylogeny.Solution
 import qualified Bio.Phylogeny.Tree.Node as N
 import           Bio.Phylogeny.Tree.Node.Topological (TopoNode(..))
 import           Data.Foldable
@@ -40,6 +41,8 @@ import           Prelude           hiding ((++))
 
 class ParseGraph a where
     unifyGraph :: a -> Graph
+--  Change to '(a -> Forest DAG2)' later
+--  unifyGraph :: a -> Graph
 
 instance ParseGraph NewickForest where
     unifyGraph = convertNewickToGraph

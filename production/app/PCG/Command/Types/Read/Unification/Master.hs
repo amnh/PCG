@@ -238,7 +238,7 @@ joinSequences :: [FracturedParseResult] -> (Vector CharInfo, TreeSeqs)
 joinSequences =  foldl' f (mempty, mempty) . filter (not . null . parsedChars)
   where
     f :: (Vector CharInfo, TreeSeqs) -> FracturedParseResult -> (Vector CharInfo, TreeSeqs)
-    f acc fpr = g acc $ foldl' g (mempty, mempty) $ zip (parsedMetas fpr) (parsedChars fpr)
+    f acc fpr = g acc $ (parsedMetas fpr, parsedChars fpr)
 
     g :: (Vector CharInfo, TreeSeqs) -> (Vector CharInfo, TreeSeqs) -> (Vector CharInfo, TreeSeqs)
     g (oldMetaData, oldTreeSeqs) (nextMetaData, nextTreeSeqs) = (oldMetaData <> nextMetaData, inOnlyOld <> inBoth <> inOnlyNext)

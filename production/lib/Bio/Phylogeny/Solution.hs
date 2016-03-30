@@ -12,6 +12,8 @@
 --
 -----------------------------------------------------------------------------
 
-module Bio.Phylogeny.Solution where
+module Bio.Phylogeny.Solution
+  ( module Bio.Phylogeny.Solution.Data
+  ) where
 
 import Bio.Phylogeny.Solution.Data
