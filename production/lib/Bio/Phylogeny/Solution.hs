@@ -19,6 +19,7 @@ import qualified Bio.Phylogeny.Forest           as FC
 import qualified Bio.Phylogeny.Network          as N
 import qualified Bio.Phylogeny.Network.Subsettable as SN
 import qualified Bio.Phylogeny.Solution.Class as SC
+import qualified Bio.Phylogeny.Solution.Metadata as MS
 import           Bio.Phylogeny.Solution.Data 
 import           Bio.Phylogeny.Tree.Binary
 import qualified Bio.Phylogeny.Tree.Edge.Standard  as E
@@ -93,6 +94,10 @@ instance FC.Forest (Forest d) d where
 instance SC.Solution (Solution d) (Forest d) where
     forests = forests
     setForests s f = s {forests = f} 
+
+instance MS.MetadataSolution (Solution d) CharacterMetadata where
+    metadata = metadata
+    setMetadata solution meta = solution {metadata = meta}
 
 instance Monoid EdgeSet where
   mempty = EdgeSet mempty mempty

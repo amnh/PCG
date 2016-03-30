@@ -11,13 +11,14 @@
 -- Typeclass for a set of metadata
 --
 -----------------------------------------------------------------------------
-{-# LANGUAGE TypeSynonymInstances, FlexibleInstances #-}
+{-# LANGUAGE TypeSynonymInstances, FlexibleInstances, MultiParamTypeClasses, FunctionalDependencies #-}
 
 module Bio.Metadata.Class where
 
+import           Bio.Sequence.Coded
 import           Bio.Sequence.Parsed
 import           Bio.Sequence.Parsed.Class
-import           Bio.Phylogeny.PhyloCharacter
+import qualified Bio.Phylogeny.PhyloCharacter as PC
 import           Bio.Phylogeny.Graph.Data
 import           Data.Char
 import           Data.Foldable
@@ -35,7 +36,7 @@ import           File.Format.Fastc
 import           File.Format.Newick
 import           File.Format.Nexus hiding (DNA, RNA)
 import qualified File.Format.Nexus.Data as Nex
-import           File.Format.TNT
+import qualified File.Format.TNT as TNT
 import           File.Format.TransitionCostMatrix
 import           File.Format.VertexEdgeRoot
 
@@ -54,6 +55,30 @@ addOtherCases (x:xs)
 class Metadata a where
     unifyMetadata :: a -> [Vector CharInfo]
 
+class StoredMetadata v m s | v -> m where
+    allMetadata :: v -> Vector m
+
+class InternalMetadata m s | m -> s where
+    weight :: m -> Double
+    ignored :: m -> Bool
+    alphabet :: m -> Alphabet
+    tcm :: m -> PC.CostMatrix
+    fitchMasks :: m -> (s, s)
+    aligned :: m -> Bool
+
+instance Monoid s => InternalMetadata (PC.PhyloCharacter s) s where
+    weight = weight
+    ignored = ignored
+    alphabet = alphabet
+    tcm = tcm
+    aligned = aligned
+    fitchMasks (PC.DNA         _ _ o _ _ _ _ _)   = o
+    fitchMasks (PC.RNA         _ _ o _ _ _ _ _)   = o
+    fitchMasks (PC.Qualitative _ _ o _ _ _ _ _ _) = o
+    fitchMasks (PC.Continous _ _ _ _ _)           = (mempty, mempty)
+    fitchMasks (PC.Custom      _ _ o _ _ _ _ _ _) = o
+    fitchMasks (PC.AminoAcid   _ _ o _ _ _ _ _)   = o
+
 instance Metadata FastaParseResult where
     unifyMetadata = fmap makeEncodeInfo . unifyCharacters
 
@@ -66,18 +91,18 @@ instance Metadata FastcParseResult where
 instance Metadata NewickForest where
     unifyMetadata _ = mempty
 
-instance Metadata TntResult where
+instance Metadata TNT.TntResult where
     unifyMetadata (Left _) = mempty
-    unifyMetadata (Right withSeq) = pure $ V.map convertMeta (charMetaData withSeq)
+    unifyMetadata (Right withSeq) = pure $ V.map convertMeta (TNT.charMetaData withSeq)
         where
             convertMeta inMeta = 
-                let defaultMeta = makeOneInfo (V.toList $ characterStates inMeta)
-                in defaultMeta {name = characterName inMeta, stateNames = characterStates inMeta, tcm = fromMaybe (tcm defaultMeta) (costTCM inMeta)}
+                let defaultMeta = makeOneInfo (V.toList $ TNT.characterStates inMeta)
+                in defaultMeta {PC.name = TNT.characterName inMeta, PC.stateNames = TNT.characterStates inMeta, PC.tcm = fromMaybe (tcm defaultMeta) (TNT.costTCM inMeta)}
 
 instance Metadata TCM where
     unifyMetadata (TCM alph mat) = 
         let defaultMeta = makeOneInfo (toList alph)
-        in pure $ pure (defaultMeta {tcm = mat})
+        in pure $ pure (defaultMeta {PC.tcm = mat})
 
 instance Metadata VertexEdgeRoot where
     unifyMetadata _ = mempty
@@ -89,8 +114,8 @@ instance Metadata Nexus where
 
             convertNexusMeta inMeta = 
                 let defaultMeta = makeOneInfo (Nex.alphabet inMeta)
-                in  defaultMeta {name = Nex.name inMeta, ignored = Nex.ignored inMeta, 
-                                    tcm = fromMaybe (tcm defaultMeta) (transitionCosts <$> Nex.costM inMeta)}
+                in  defaultMeta {PC.name = Nex.name inMeta, PC.ignored = Nex.ignored inMeta, 
+                                    PC.tcm = fromMaybe (tcm defaultMeta) (transitionCosts <$> Nex.costM inMeta)}
 
 ---- TODO: Consider default metadata from the command structure
 ---- | Functionality to make char info from tree seqs

@@ -16,7 +16,7 @@
 module Analysis.Parsimony.Binary.Fitch where
 
 import Analysis.Parsimony.Binary.Internal
-import Bio.Phylogeny.PhyloCharacter
+import Bio.Metadata.Class (InternalMetadata(..))
 import Data.Bits
 
 -- TODO: Make all of this take weight, ignored, maybe other metadata into consideration.
@@ -24,7 +24,7 @@ import Data.Bits
 -- | Preorder Fitch operation on bit-packed sequences
 --   Output five-tuple is the preliminary assignment, the aligned preliminary assignment
 --   the temporary storage bit, and the local cost
-preorderFitchBit :: SeqConstraint s b => Double -> s -> s -> PhyloCharacter s -> (s, s, Double)
+preorderFitchBit :: (SeqConstraint s b, InternalMetadata m s) => Double -> s -> s -> m -> (s, s, Double)
 preorderFitchBit weightValue lbit rbit inChar =
     let
         alphLen = length $ alphabet inChar
@@ -54,7 +54,7 @@ blockShiftAndFold sideMode foldMode alphLen inbits initVal
 
 -- | Postorder Fitch operation on bit-packed sequences
 --   returns the final assignment sequence
-postorderFitchBit :: SeqConstraint s b => s -> s -> s -> s -> s -> PhyloCharacter s -> s
+postorderFitchBit :: (SeqConstraint s b, InternalMetadata m s) => s -> s -> s -> s -> s -> m -> s
 postorderFitchBit myBit lBit rBit fBit pBit inChar = 
     let
         alphLen = length $ alphabet inChar
