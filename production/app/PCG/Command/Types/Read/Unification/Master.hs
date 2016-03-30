@@ -14,22 +14,26 @@
 
 module PCG.Command.Types.Read.Unification.Master where
 
-import           Bio.Phylogeny.Graph
+--import           Bio.Phylogeny.Graph
+import           Bio.Phylogeny.Solution
 import           Bio.Sequence.Parsed
 import           Bio.Phylogeny.Tree.Node
+import           Control.Arrow            ((&&&))
 import           Data.Foldable
-import qualified Data.HashMap.Lazy as HM
-import           Data.IntMap             (elems)
-import qualified Data.IntMap       as IM 
-import           Data.Key                ((!))
-import           Data.List               ((\\), isPrefixOf, nub)
-import           Data.Map                (foldWithKey, difference, intersectionWith, keys)
-import qualified Data.Map          as M 
+import qualified Data.HashMap.Lazy  as HM
+import           Data.IntMap              (elems)
+import qualified Data.IntMap        as IM 
+import           Data.Key                 ((!))
+import           Data.List                ((\\), isPrefixOf, nub)
+import qualified Data.List.NonEmpty as NE (fromList)
+import           Data.List.Utility        (duplicates)
+import           Data.Map                 (foldWithKey, difference, intersectionWith, keys)
+import qualified Data.Map           as M 
 import           Data.Monoid
-import           Data.Set                (union)
-import qualified Data.Set          as S  (fromList)
-import           Data.Vector             (Vector, (//), cons, generate, imap)
-import qualified Data.Vector       as V  (replicate, foldr, (!))
+import           Data.Set                 (union)
+import qualified Data.Set           as S  (fromList,(\\))
+import           Data.Vector              (Vector, (//), cons, generate, imap)
+import qualified Data.Vector        as V  (replicate, foldr, (!))
 import           File.Format.Conversion.Encoder
 import           File.Format.TransitionCostMatrix
 import           PCG.Command.Types.Read.Unification.UnificationError
@@ -40,11 +44,57 @@ data FracturedParseResult
    = FPR
    { parsedChars  :: TreeSeqs
    , parsedMetas  :: Vector CharInfo
-   , parsedTrees  :: Graph
+   , parsedTrees  :: Forest NewickNode
    , relatedTcm   :: Maybe TCM
    , sourceFile   :: FilePath
    } deriving (Show)
           
+
+rectifyResults :: [FracturedParseResult] -> Either UnificationError (Solution DAG)
+rectifyResults fprs
+  | not (null errors) = Left $ foldl1 (<>) errors
+  | otherwise         = Right mempty
+  where
+    -- Step 1: Gather data file contents
+    dataSeqs        = (parsedChars &&& parsedMetas) $ filter (not fromTreeOnlyFile) fprs
+    -- Step 2: Union the taxa names together into total terminal set
+    taxaSet         = mconcat $ (S.fromList . keys . fst) <$> dataSeqs
+    -- Step 3: Gather forest file data
+    forests         = filter (not . null . parsedTrees) <$> fprs
+    -- Step 4: Gather the taxa names for each forest from terminal nodes
+    forestTaxa      = (mconcat . fmap terminalNames . parsedTrees &&& id) <$> forests
+    -- Step 5: Assert that each terminal node name is unique in the forest
+    duplicateNames  = filter (null . fst) $ (duplicates *** id) <$> forestTaxa
+    -- Step 6: Assert that each forest's terminal node set is exactly the same as the taxa set from "data files"
+    extraForests    = filter ((taxaSet \\) . fst) $ (S.fromList *** id) <$> forestTaxa
+    missingForests  = filter ((\\ taxaSet) . fst) $ (S.fromList *** id) <$> forestTaxa
+    -- Step 7: Combine disparte sequences from many sources  into single metadata & character sequence.
+    (metadata, charSeqs) = joinSequences dataSeqs
+    -- Step 8: Convert topological forests to DAGs (using reference indexing from #7 results)
+
+    errors         = catMaybes [duplicateError, extraError, missingError]
+    duplicateError =
+      if null duplicateNames
+      then Nothing
+      else Just . UnificationError . pure $ uncurry ForestDuplicateTaxa . (NE.fromList *** sourceFile) <$> duplicateNames
+    extraError =
+      if null extraNames
+      then Nothing
+      else Just . UnificationError . pure $ uncurry ForestExtraTaxa     . (NE.fromList *** sourceFile) <$> extraNames
+    missingError =
+      if null missingNames
+      then Nothing
+      else Just . UnificationError . pure $ uncurry ForestMissingTaxa   . (NE.fromList *** sourceFile) <$> missingNames
+
+fromTreeOnlyFile :: FracturedParseResult -> Bool
+fromTreeOnlyFile fpr = null chars || all null chars
+  where
+    chars = parsedChars fpr
+
+terminalNames :: NewickNode -> [Identifier]
+terminalNames n
+  | isLeaf n  = [newickLabel n]
+  | otherwise = mconcat $ terminalNames <$> descendants n
 
 -- | Takes in a list of parse results and outputs 
 -- accumulates in metadata, then topological structure, then sequences 
@@ -82,6 +132,8 @@ taxaSet = mconcat . fmap (S.fromList . keys . parsedChars) . filter (not fromTre
 
 -- Step 2:
 --------------------------------------------------
+
+
 
 
 
@@ -251,14 +303,14 @@ verifyNaming eGraph seqNames = eGraph
                       else ((l1 \\ l2), (l1 \\ l2))
 
 -- | Joins the sequences of a fractured parse result
-joinSequences :: [FracturedParseResult] -> (Vector CharInfo, TreeSeqs)
+joinSequences :: [FracturedParseResult] -> (TreeSeqs, Vector CharInfo)
 joinSequences =  foldl' f (mempty, mempty) . filter (not . null . parsedChars)
   where
-    f :: (Vector CharInfo, TreeSeqs) -> FracturedParseResult -> (Vector CharInfo, TreeSeqs)
+    f :: (TreeSeq, Vector CharInfo) -> FracturedParseResult -> (TreeSeqs, Vector CharInfo)
     f acc fpr = g acc $ (parsedMetas fpr, parsedChars fpr)
 
-    g :: (Vector CharInfo, TreeSeqs) -> (Vector CharInfo, TreeSeqs) -> (Vector CharInfo, TreeSeqs)
-    g (oldMetaData, oldTreeSeqs) (nextMetaData, nextTreeSeqs) = (oldMetaData <> nextMetaData, inOnlyOld <> inBoth <> inOnlyNext)
+    g :: (TreeSeqs, Vector CharInfo) -> (TreeSeqs, Vector CharInfo) -> (TreeSeqs, Vector CharInfo)
+    g (oldTreeSeqs, oldMetaData) (nextTreeSeqs, nextMetaData) = (inOnlyOld <> inBoth <> inOnlyNext, oldMetaData <> nextMetaData)
       where
         oldPad       = generate (length  oldMetaData) (const Nothing) 
         nextPad      = generate (length nextMetaData) (const Nothing)

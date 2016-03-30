@@ -66,8 +66,8 @@ data Solution d
    } deriving (Eq, Show)
 
 -- | A dag is an element of a forest, stored referentially
-data DAG2 
-   = DAG2
+data DAG 
+   = DAG
    { nodes :: Vector NodeInfo 
    , edges :: Vector EdgeSet
    , root  :: Int
