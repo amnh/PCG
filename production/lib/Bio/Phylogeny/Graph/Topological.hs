@@ -36,7 +36,7 @@ minDepth = 0
 maxChildren =  2
 
 data TopoTree = TopoTree {tree :: TopoNode BitVector, characters :: Vector CharInfo} deriving (Eq, Show)
-type MultiSeq = EncodedSequences BitVector
+type MultiSeq = EncodedSequences
 
 newtype TopoGraph = TopoGraph [TopoTree]
 

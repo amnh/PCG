@@ -16,7 +16,9 @@
 
 module Bio.Sequence.Character.Coded where
 
+import Data.Bits
+
 -- | A coded character is a character of a sequence (allows for standard chars like gap)
 -- TODO: add missing?
-class CodedChar b where
+class Bits b => CodedChar b where
     gapChar :: b

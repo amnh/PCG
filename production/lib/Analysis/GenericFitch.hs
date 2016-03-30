@@ -20,7 +20,7 @@ import qualified Data.Vector as V
 
 type TreeConstraint t n s b = (BinaryTree t n, Show t, NodeConstraint n s b, CharacterTree t s)
 type NodeConstraint n s b = (EncodedNode n s, PreliminaryNode n s, FinalNode n s, SeqConstraint s b, Show n)
-type SeqConstraint s b = (Bits b, CodedSequence s b, Bits s, Show s)
+type SeqConstraint s b = (Bits b, CodedSequence s, Bits s, Show s)
 
 -- TODO: Remove this file in favor of binary wrapper
 

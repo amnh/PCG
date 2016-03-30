@@ -22,7 +22,7 @@ import Bio.Sequence.Coded
 
 type TreeConstraint t n s b = (Network t n, NodeConstraint n s b, ReferentialTree t n, BinaryTree t n, Show t, SubsettableNetwork t n)
 type NodeConstraint n s b = (PreliminaryNode n s, EncodedNode n s, SeqConstraint s b, Show n, Eq n)
-type SeqConstraint s b = (CodedSequence s b, Eq s, CharConstraint b, Show s)
+type SeqConstraint s b = (CodedSequence s, Eq s, CharConstraint b, Show s)
 type CharConstraint b = (Bits b, Eq b, CodedChar b, Show b)
 type Subtrees = Matrix Int
 

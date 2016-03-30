@@ -32,7 +32,7 @@ import Bio.Sequence.Coded
 -- | Identifier is just a string name
 type Identifier = String
 -- | CharInfo is PhyloCharacter for now
-type CharInfo   = PhyloCharacter (EncodedSeq BitVector)
+type CharInfo   = PhyloCharacter EncodedSeq
 -- | Nodes can store with bitvectors for now
 type NodeInfo   = Node BitVector
 -- TODO: rename NodeInfo

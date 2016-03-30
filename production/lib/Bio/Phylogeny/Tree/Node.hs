@@ -32,12 +32,12 @@ data Node b = Node  { code        :: Int
                     , isLeaf      :: Bool
                     , parents     :: [Int]
                     , children    :: [Int]
-                    , encoded     :: Vector (EncodedSeq b)
-                    , packed      :: Vector (EncodedSeq b)
-                    , preliminary :: Vector (EncodedSeq b)
-                    , final       :: Vector (EncodedSeq b)
-                    , temporary   :: Vector (EncodedSeq b) -- TODO: is this necessary? rename to fitch scratch? 
-                    , aligned     :: Vector (EncodedSeq b) -- TODO: rename to implied alignment
+                    , encoded     :: Vector EncodedSeq
+                    , packed      :: Vector EncodedSeq
+                    , preliminary :: Vector EncodedSeq
+                    , final       :: Vector EncodedSeq
+                    , temporary   :: Vector EncodedSeq -- TODO: is this necessary? rename to fitch scratch? 
+                    , aligned     :: Vector EncodedSeq -- TODO: rename to implied alignment
                     , localCost   :: Double
                     , totalCost   :: Double
                     } deriving (Eq, Show)
@@ -64,22 +64,22 @@ instance Monoid (Node b) where
                          }
 
 -- | Make it an instance of encoded, final, packed, and preliminary
-instance EN.EncodedNode (Node b) (EncodedSeq b) where
+instance EN.EncodedNode (Node b) EncodedSeq where
     encoded = encoded
     setEncoded n s = n {encoded = s}
 
 -- | Nodes can hold final assignment
-instance FN.FinalNode (Node b) (EncodedSeq b) where
+instance FN.FinalNode (Node b) EncodedSeq where
     final = final
     setFinal f n = n {final = f}
 
 -- | Nodes can hold packed data
-instance PN.PackedNode (Node b) (EncodedSeq b) where
+instance PN.PackedNode (Node b) EncodedSeq where
     packed = packed
     setPacked n s = n {packed = s}
 
 -- | Nodes hold all preliminary info
-instance RN.PreliminaryNode (Node b) (EncodedSeq b) where
+instance RN.PreliminaryNode (Node b) EncodedSeq where
     preliminary = preliminary
     setPreliminary s n = n {preliminary = s}
     preliminaryAlign = aligned

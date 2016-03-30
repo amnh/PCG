@@ -20,5 +20,5 @@ import Bio.Sequence.Parsed
 import Bio.Sequence.Coded.Class
 
 
-class (Monoid s, CodedSequence s b) => PackedSequence s b where
-    packOverAlphabet :: ParsedSeq -> [String] -> s
+class CodedSequence s => PackedSequence s where
+    packOverAlphabet :: ParsedSeq -> AmbiguityGroup -> s

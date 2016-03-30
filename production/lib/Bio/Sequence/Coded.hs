@@ -18,21 +18,21 @@
 
 module Bio.Sequence.Coded (CodedSequence(..), EncodedSeq, EncodedSequences, CodedChar(..), encodeAll, unencodeMany) where
 
-import           Prelude        hiding (and, head, map, or, zipWith)
+import           Prelude        hiding (and, head, or)
 import           Bio.Sequence.Coded.Class
 import           Bio.Sequence.Character.Coded
 import           Bio.Sequence.Packed.Class
 import           Bio.Sequence.Parsed
-import           Control.Applicative   (liftA2, liftA)
+import           Control.Applicative   (liftA2)
 import           Control.Monad
 import           Data.Bits
-import           Data.BitVector hiding (foldr, join, not)
+import           Data.BitVector hiding (foldl, foldr, join, not)
 import           Data.List             (elemIndex)
 import           Data.Maybe
-import           Data.Vector           (map, zipWith, empty, Vector, head, (!), singleton)
-import qualified Data.Vector as V      (filter)
+import           Data.Vector           (ifoldl, fromList, foldr, Vector, (!))
+-- import qualified Data.Vector as V      (filter)
 
-import GHC.Stack
+-- import GHC.Stack
 -- import Data.Foldable
 -- import Debug.Trace
 
@@ -47,52 +47,59 @@ type EncodedSequences = Vector EncodedSeq
 -- | An EncodedSeq (encoded sequence) is a maybe vector of characters
 type EncodedSeq = Maybe BitVector
 
--- | Make a coded sequence and coded character instances of bits
-instance CodedSequence EncodedSeq b where
-    charToSeq = Just . bitVec 1 0
-    emptySeq = nil
+-- | Make EncodedSeq and instance of CodedSequence
+-- TODO: Change so alphabet length doesn't need to be computed?
+instance CodedSequence EncodedSeq where
+    charToSeq x = Just x
+    decode = undefined
+    emptySeq = Nothing -- TODO: Should this be Just $ bitVec 1 0
     -- This works over minimal alphabet
-    encode strSeq = final
-        where 
-            alphabet = foldr (\ambig acc -> filter (not . flip elem acc) ambig ++ acc) [] strSeq
-            coded = map (foldr (\c acc -> setElemAt c acc alphabet) zeroBits) strSeq
-            final = if null coded 
-                        then Nothing 
-                        else Just coded
-
-    encodeOverAlphabet strSeq inAlphabet = final
+    encode inSeq = encodeOverAlphabet inSeq alphabet 
         where
-            alphabet = inAlphabet
-            coded = map (foldr (\c acc -> setElemAt c acc alphabet) zeroBits) strSeq
-            final = if null coded then Nothing else Just coded
-    filterSeq s condition = liftA (V.filter condition) s
-    grabSubChar s pos = liftA (@. pos) s
-    isEmpty = isNothing
-    numChars s = case s of 
-        Nothing -> 0
-        Just vec -> width vec
-    
-    
-    
+            alphabet = Data.Vector.foldr (\ambig acc -> filter (not . flip elem acc) ambig ++ acc) [] inSeq
 
-----  = 
---    let
---        alphWidth = length alphabet
---        bitWidth = bitSizeMaybe gapChar
---        coded = map (\ambig -> foldr (\c acc -> setElemAt c acc alphabet) zeroBits ambig) strSeq
---        regroup = case bitWidth of
---                    Nothing -> ifoldr (\i val acc -> shift val (i * alphWidth) + acc) zeroBits coded
---                    Just width -> let grouped = foldr (\i acc -> (slice i alphWidth coded) ++ acc) mempty [alphWidth, 2 * alphWidth..width - alphWidth]
---                                  in P.map (\g -> ifoldr (\i val acc -> shift val (i * alphWidth) + acc)) grouped
---    in undefined
+    encodeOverAlphabet inSeq alphabet 
+        | null inSeq = Nothing
+        | otherwise  = Just $ Data.Vector.foldr (\x acc -> (createSingletonChar alphabet x) # acc ) zeroBits inSeq 
+            
+    filterSeq s condition = undefined -- liftA (V.filter condition) s
+    grabSubChar s pos = undefined -- liftA (@. pos) s
+    isEmpty seqs = case seqs of
+        Nothing -> True
+        Just x  -> x /= zeroBits
+    numChars s = case s of 
+        Nothing  -> 0
+        Just vec -> width vec
 
 -- | Sequence to map encoding over ParsedSequences
 encodeAll :: ParsedSequences -> EncodedSequences
 encodeAll = fmap (\s -> join $ encode <$> s)
 
-instance PackedSequence EncodedSeq b where
+-- TODO: Does this belong in this module?
+instance PackedSequence EncodedSeq where
     packOverAlphabet = undefined
 
+-- | Simple functionality to set a single element in a BitVector
+-- That element is a singleton character, but may be ambiguous
+-- For quickness, hardcoded as BV, so I could use fromBits.
+-- If we generalize later, I'll have to update this.
+createSingletonChar :: Alphabet -> AmbiguityGroup -> BitVector 
+createSingletonChar alphabet inChar = bitRepresentation
+    where 
+        bits = map (flip elem inChar) alphabet
+        bitRepresentation = fromBits bits
+
+{-
+-- | Simple functionality to set a single element in a bitvector
+-- That element is a singleton character, but may be ambiguous
+setElem :: Bits b => Alphabet -> b -> Int -> AmbiguityGroup -> b 
+setElem alphabet curBit charNum ambChar = foldl g curBit ambChar
+    where g curSeq char = case elemIndex char alphabet of
+                       Nothing -> curSeq
+                       Just idx -> setBit curSeq (idx + (charNum * alphLen))
+-}
+
+-- TODO: make sure this works under current, BV scheme
 setElemAt :: (Bits b) => String -> b -> [String] -> b
 setElemAt char orig alphabet
     | char == "-" = setBit orig 0
@@ -102,12 +109,16 @@ setElemAt char orig alphabet
 
 -- | Added functionality for unencoded
 unencodeOverAlphabet :: EncodedSeq -> Alphabet -> ParsedSeq 
-unencodeOverAlphabet encoded alph = 
-    let 
-        alphLen = length alph
-        oneBit inBit = foldr (\i acc -> if testBit inBit i then alph !! (i `mod` alphLen) : acc else acc) mempty [0..width inBit]
-        allBits = fmap oneBit <$> encoded
-    in fromMaybe mempty allBits
+unencodeOverAlphabet encoded alphabet = case encoded of 
+    Nothing        -> mempty
+    (Just allBits) -> decodedSeq
+        where 
+            alphLen = length alphabet
+            decodeOneChar inBits = Prelude.foldr (\(charValExists, char) acc -> if charValExists 
+                                                                               then char : acc 
+                                                                               else acc
+                                                ) [] (zip inBits alphabet)
+            decodedSeq = fromList $ Prelude.foldr (\x acc -> (decodeOneChar (toBits x)) : acc) [] (group alphLen allBits)
 
 -- | Functionality to unencode many
 unencodeMany :: EncodedSequences -> Alphabet -> ParsedSequences
@@ -118,8 +129,8 @@ instance Bits b => CodedChar b where
 
 
 instance Bits EncodedSeq where
-    (.&.)           = liftA2 and
-    (.|.)           = liftA2 or
+    (.&.)           = liftA2 (.&.)
+    (.|.)           = liftA2 (.|.)
     xor             = liftA2 xor
     complement      = fmap complement
     shift  bits s   = fmap (`shift`  s) bits

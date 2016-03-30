@@ -26,12 +26,12 @@ data TopoNode b = TopoNode
                     , name :: String
                     , parsed :: ParsedSequences
                     , children :: [TopoNode b]
-                    , encoded :: EncodedSequences b
-                    , packed :: EncodedSequences b
-                    , preliminary :: EncodedSequences b
-                    , final :: EncodedSequences b
-                    , temporary :: EncodedSequences b
-                    , aligned :: EncodedSequences b
+                    , encoded :: EncodedSequences
+                    , packed :: EncodedSequences
+                    , preliminary :: EncodedSequences
+                    , final :: EncodedSequences
+                    , temporary :: EncodedSequences
+                    , aligned :: EncodedSequences
                     , localCost :: Double
                     , totalCost :: Double} deriving (Eq, Show)
 
