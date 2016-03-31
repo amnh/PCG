@@ -4,17 +4,17 @@ module PCG.Command.Types.Report.Evaluate
   ( evaluate
   ) where
 
-import           Analysis.Parsimony.Binary.Optimization
+--import           Analysis.Parsimony.Binary.Optimization
 import           Bio.Phylogeny.Solution
-import           Bio.Phylogeny.Tree.Binary
+--import           Bio.Phylogeny.Tree.Binary
 import           Control.Monad.IO.Class
 import           Control.Evaluation
 import           PCG.Command.Types (Command(..))
-import           PCG.Command.Types.Report.TaxonMatrix
-import           PCG.Command.Types.Report.GraphViz
+--import           PCG.Command.Types.Report.TaxonMatrix
+--import           PCG.Command.Types.Report.GraphViz
 import           PCG.Command.Types.Report.Internal
-import           PCG.Command.Types.Report.Metadata
-import           PCG.Command.Types.Report.Newick
+--import           PCG.Command.Types.Report.Metadata
+--import           PCG.Command.Types.Report.Newick
 
 evaluate :: Command -> SearchState -> SearchState
 evaluate (REPORT target format) old = do

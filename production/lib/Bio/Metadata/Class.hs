@@ -15,16 +15,16 @@
 
 module Bio.Metadata.Class where
 
-import           Bio.Sequence.Coded
+--import           Bio.Sequence.Coded
 import           Bio.Sequence.Parsed
 import           Bio.Sequence.Parsed.Class
 import qualified Bio.Phylogeny.PhyloCharacter as PC
 import           Bio.Phylogeny.Graph.Data
 import           Data.Char
 import           Data.Foldable
-import           Data.List
-import qualified Data.Map    as M
-import           Data.Matrix       (matrix)
+--import           Data.List
+--import qualified Data.Map    as M
+--import           Data.Matrix.NotStupid       (matrix)
 import           Data.Maybe
 import           Data.Set          (intersection)
 import qualified Data.Set    as S  (fromList)
@@ -105,14 +105,12 @@ instance Metadata VertexEdgeRoot where
     unifyMetadata _ = mempty
 
 instance Metadata Nexus where
-    unifyMetadata (Nexus (seqs, metas)) = V.map convertNexusMeta metas
+    unifyMetadata (Nexus (_, metas)) = V.map convertNexusMeta metas
         where
-            seqLen = M.foldr (\val acc -> V.length val) 0 seqs
-
             convertNexusMeta inMeta = 
                 let defaultMeta = makeOneInfo (Nex.alphabet inMeta)
-                in  defaultMeta {PC.name = Nex.name inMeta, PC.ignored = Nex.ignored inMeta, 
-                                    PC.tcm = fromMaybe (tcm defaultMeta) (transitionCosts <$> Nex.costM inMeta)}
+                in  defaultMeta { PC.name = Nex.name inMeta, PC.ignored = Nex.ignored inMeta, 
+                                  PC.tcm  = fromMaybe (tcm defaultMeta) (transitionCosts <$> Nex.costM inMeta)}
 
 ---- TODO: Consider default metadata from the command structure
 ---- | Functionality to make char info from tree seqs

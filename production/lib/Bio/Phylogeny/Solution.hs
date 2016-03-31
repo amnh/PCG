@@ -12,6 +12,7 @@
 --
 -----------------------------------------------------------------------------
 {-# LANGUAGE TypeSynonymInstances, FlexibleInstances, MultiParamTypeClasses #-}
+{-# OPTIONS_GHC -fno-warn-orphans #-}
 
 module Bio.Phylogeny.Solution
   ( module Bio.Phylogeny.Solution
@@ -125,7 +126,7 @@ instance Monoid (Solution d) where
 -- | Function to append two dags
 appendAt :: DAG -> DAG -> NodeInfo -> DAG
 appendAt d1@(DAG n e r) d2@(DAG n' e' r') hangNode
-    | null n = d2
+    | null n  = d2
     | null n' = d1
     | r > length n - 1 || r' > length n' - 1 = error "Root out of bounds when trying to append trees"
     | otherwise = DAG allNodes connectEdges r
@@ -136,7 +137,7 @@ appendAt d1@(DAG n e r) d2@(DAG n' e' r') hangNode
             hungNodes = n' // [(r', (n' ! r') {isRoot = False, parents = [hCode]})]
             connectN = n // [(hCode, hangNode {children = (shift + r') : children hangNode, isLeaf = False})]
             recodeNew = fmap recodeFun hungNodes
-            recodeFun n = n {code = code n + shift, children = map (shift +) (children n), parents = map (shift +) (parents n)}
+            recodeFun m = m {code = code m + shift, children = map (shift +) (children m), parents = map (shift +) (parents m) }
             allNodes = connectN V.++ recodeNew
             -- update edges and add connecting edge
             reMapOut = IM.foldWithKey (\k val acc -> IM.insert (k + shift) (reMapInfo val) acc) mempty
@@ -169,9 +170,9 @@ fromTopo (TopoDAG inTopo) = internalFromTopo inTopo
                 where
                     -- | Function to convert a node to a tree for folding
                     singletonDAG :: Topo -> DAG
-                    singletonDAG topo = 
-                      let myNode = Node 0 (TN.name topo) (TN.isRoot topo) (TN.isLeaf topo) [] [] (TN.encoded topo) (TN.packed topo) (TN.preliminary topo) 
-                                              (TN.final topo) (TN.temporary topo) (TN.aligned topo) (TN.localCost topo) (TN.totalCost topo)
+                    singletonDAG topoNode = 
+                      let myNode = Node 0 (TN.name topoNode) (TN.isRoot topoNode) (TN.isLeaf topoNode) [] [] (TN.encoded topoNode) (TN.packed topoNode) (TN.preliminary topoNode) 
+                                              (TN.final topoNode) (TN.temporary topoNode) (TN.aligned topoNode) (TN.localCost topoNode) (TN.totalCost topoNode)
                       in DAG (pure myNode) (pure mempty) 0 
 
 -- | Function to go from topo to referential

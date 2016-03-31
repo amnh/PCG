@@ -1,8 +1,6 @@
 module Main where
 
-import           Analysis.Parsimony.Binary.Optimization
 import           Bio.Phylogeny.Graph
-import           Bio.Phylogeny.Graph.Utilities
 import           File.Format.Fasta
 import qualified File.Format.Newick as N
 import           File.Format.Newick.Converter

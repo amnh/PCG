@@ -96,7 +96,7 @@ tntToTheSuperSequence inSeq = V.fromList $ (Just . pure . f . show) <$> inSeq
     f e        = pure e
 
 mergeMaps :: (Foldable t, Ord k) => t (Map k v) -> Map k v
-mergeMaps = foldl (mergeWithKey (\k a b -> Just b) id id) mempty
+mergeMaps = foldl (mergeWithKey (\_ _ b -> Just b) id id) mempty
 
 instance ParsedCharacters TCM where
     unifyCharacters _ = mempty

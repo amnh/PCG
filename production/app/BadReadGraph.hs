@@ -1,11 +1,9 @@
 module Main where
 
-
-
-import           Analysis.GenericFitch
+--import           Analysis.GenericFitch
 --import Analysis.Parsimony.Binary.Optimization
 import           Bio.Phylogeny.Graph
-import           Bio.Phylogeny.Graph.Utilities
+--import           Bio.Phylogeny.Graph.Utilities
 import qualified Bio.Phylogeny.PhyloCharacter as Char
 import           Bio.Phylogeny.Tree.Node
 import           Bio.Sequence.Coded

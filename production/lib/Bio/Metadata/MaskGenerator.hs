@@ -22,7 +22,7 @@ import Bio.Sequence.Coded
 import Data.BitVector (fromBits, BitVector)
 import Data.Key
 import Data.Maybe
-import Data.Vector (imap, singleton, fromList)
+import Data.Vector (imap, singleton)
 import qualified Data.Vector as V
 
 type Encoded = EncodedSeq BitVector

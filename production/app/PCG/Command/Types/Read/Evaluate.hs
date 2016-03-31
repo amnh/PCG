@@ -8,7 +8,7 @@ import           Bio.Phylogeny.Graph
 import           Bio.Phylogeny.Graph.Parsed
 import           Bio.Phylogeny.PhyloCharacter
 import           Bio.Metadata.Class
-import           Bio.Metadata.MaskGenerator
+--import           Bio.Metadata.MaskGenerator
 import           Bio.Sequence.Parsed
 import           Bio.Sequence.Parsed.Class
 import           Control.Monad              (when)
@@ -47,7 +47,7 @@ import           Text.Megaparsec
 
 evaluate :: Command -> SearchState -> SearchState
 {--}
-evaluate (READ fileSpecs) old = do
+evaluate (READ fileSpecs) _old = do
     when (null fileSpecs) $ fail "No files specified in 'read()' command"
     result <- liftIO . runEitherT . eitherTValidation $ parseSpecifiedFile <$> fileSpecs
     case result of
@@ -55,7 +55,7 @@ evaluate (READ fileSpecs) old = do
       Right xs ->
         case masterUnify' $ transformation <$> concat xs of
           Left uErr -> fail $ show uErr -- Report rectification errors here.
-          Right g   -> pure g    -- TODO: rectify against 'old' SearchState, don't just blindly merge
+          Right g   -> pure g           -- TODO: rectify against 'old' SearchState, don't just blindly merge or ignore old state
   where
     transformation = expandIUPAC . prependFilenamesToCharacterNames . applyReferencedTCM
 
