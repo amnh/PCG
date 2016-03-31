@@ -1,0 +1,2 @@
+DAG, Type, Name, Aligned, Additive, State Names, Alphabet, Ignored, Weight 
+0, DNA, , True,, ,  "A" "C" "G" "T" "-", False, 1.0

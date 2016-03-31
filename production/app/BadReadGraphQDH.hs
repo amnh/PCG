@@ -28,4 +28,4 @@ madRead :: IO DAG
 madRead = badReadGraph "../../TestDat/fakeArtmor.fas" "../../TestDat/artmor.tre"
 
 madness :: IO Double
-madness = rootCost . allOptimization 1 <$> madRead
+madness = undefined --rootCost . allOptimization 1 mempty <$> madRead

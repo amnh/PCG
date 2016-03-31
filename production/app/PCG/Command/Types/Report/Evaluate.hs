@@ -32,7 +32,7 @@ evaluate _ _ = fail "Invalid READ command binding"
 -- TODO: change this error into a warning
 addOptimization :: Graph -> Graph
 addOptimization g@(Graph inDags) 
-  | allBinary = graphOptimization 1 g
+  | allBinary = graphOptimization 1 (characters $ head $ inDags) g
   | otherwise = error ("Cannot perform optimization because graph is not binary, outputting zero cost") g
     where allBinary = foldr (\d acc -> acc && verifyBinary d) True inDags
 

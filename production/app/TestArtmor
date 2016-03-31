@@ -1,0 +1,25 @@
+digraph G { 
+	rankdir = LR;
+	node [shape = rect]; -> HTU 1;
+ -> Daphnia;
+ -> HTU 1;
+ -> HTU 2;
+ -> HTU 1;
+ -> HTU 10;
+ -> HTU 1;
+ -> HTU 2;
+ -> HTU 1;
+ -> HTU 2;
+ -> HTU 1;
+ -> HTU 2;
+ -> HTU 1;
+ -> HTU 2;
+ -> HTU 1;
+ -> HTU 2;
+ -> HTU 1;
+ -> HTU 4;
+ -> HTU 1;
+ -> HTU 8;
+ -> HTU 1;
+ -> HTU 8;
+}

@@ -35,7 +35,7 @@ import Bio.Phylogeny.Tree.Node.Final
 import Bio.Phylogeny.Tree.Node.Preliminary
 import Bio.Phylogeny.Tree.Node.Encoded
 import Bio.Phylogeny.Tree.CharacterAware
-import Bio.Metadata.Class (InternalMetadata(..), StoredMetadata(..))
+import Bio.Metadata.Class (InternalMetadata(..))
 
 import Debug.Trace
 
@@ -46,11 +46,11 @@ solutionOptimization weight inSolution = setForests inSolution (map (graphOptimi
         meta = metadata inSolution
 
 -- | Mapping function to optimize over a forest
-graphOptimization :: (ForestConstraint f t n s b, Metadata v m s) => Double -> v -> f -> f
+graphOptimization :: (ForestConstraint f t n s b, Metadata m s) => Double -> Vector m -> f -> f
 graphOptimization weight meta inGraph = setTrees inGraph (map (allOptimization weight meta) (trees inGraph))
 
 -- | Unified function to perform both the first and second passes
-allOptimization :: (TreeConstraint t n s b, Metadata v m s) => Double -> v -> t -> t
+allOptimization :: (TreeConstraint t n s b, Metadata m s) => Double -> Vector m -> t -> t
 --allOptimization _ inTree | trace ("allOptimization " ++ show (names inTree IM.! 63)) False = undefined
 allOptimization weight meta inTree = 
     let 
@@ -60,7 +60,7 @@ allOptimization weight meta inTree =
 
 -- | Optimization down pass warpper for recursion from root
 -- TODO: add a warning here if an internal node has no children (for all traversals)
-optimizationPreorder :: (TreeConstraint t n s b, Metadata v m s) => Double -> t -> v -> t
+optimizationPreorder :: (TreeConstraint t n s b, Metadata m s) => Double -> t -> Vector m -> t
 optimizationPreorder weight tree meta
     | isLeaf (root tree) tree = -- if the root is a terminal, give the whole tree a cost of zero, do not reassign nodes
         let 
@@ -96,7 +96,7 @@ optimizationPreorder weight tree meta
             rightOnly = isNothing $ leftChild (root tree) tree
 
 -- | Internal down pass that creates new rows without combining, making the algorithm faster
-internalPreorder :: (TreeConstraint t n s b, Metadata v m s) => Double -> n -> t -> v -> [n]
+internalPreorder :: (TreeConstraint t n s b, Metadata m s) => Double -> n -> t -> Vector m -> [n]
 internalPreorder weight node tree meta
     | isLeaf node tree = -- if the root is a terminal, give the whole tree a cost of zero, do not reassign nodes
         let newNode = setTotalCost 0.0 $ setLocalCost 0.0 node
@@ -128,7 +128,7 @@ internalPreorder weight node tree meta
             rightOnly = isNothing $ leftChild node tree
 
 -- | Wrapper for up pass recursion to deal with root
-optimizationPostorder :: (TreeConstraint t n s b, Metadata v m s) => t -> v -> t
+optimizationPostorder :: (TreeConstraint t n s b, Metadata m s) => t -> Vector m -> t
 optimizationPostorder tree meta
     | isLeaf (root tree) tree = tree
     | rightOnly && leftOnly = tree --error "Problem with binary tree structure: non-terminal has no children"
@@ -149,7 +149,7 @@ optimizationPostorder tree meta
             rightOnly = isNothing $ leftChild (root tree) tree
 
 -- | Internal up pass that performs most of the recursion
-internalPostorder :: (TreeConstraint t n s b, Metadata v m s) => n -> t -> v -> [n]
+internalPostorder :: (TreeConstraint t n s b, Metadata m s) => n -> t -> Vector m -> [n]
 internalPostorder node tree meta
     | isLeaf node tree = []
     | rightOnly && leftOnly = [] --error "Problem with binary tree structure: non-terminal has no children"
@@ -166,11 +166,11 @@ internalPostorder node tree meta
             rightOnly = isNothing $ leftChild node tree
 
 -- | Wrapper function to preform optimization on a node (preorder)
-preorderNodeOptimize :: (NodeConstraint n s b, Metadata v m s) => Double -> n -> n -> n -> v -> n
+preorderNodeOptimize :: (NodeConstraint n s b, Metadata m s) => Double -> n -> n -> n -> Vector m -> n
 preorderNodeOptimize !weight !curNode !lNode !rNode meta = setTotalCost summedTotalCost res 
     where
         summedTotalCost = sum $ totalCost <$> [res,lNode,rNode] --totalCost res + totalCost lNode + totalCost rNode
-        !res             = ifoldr chooseOptimization curNode (allMetadata meta)
+        !res             = ifoldr chooseOptimization curNode meta
 --        chooseOptimization :: NodeConstraint n s b => Int -> n -> n -> n 
 
         chooseOptimization curPos curCharacter setNode
@@ -209,10 +209,10 @@ addToField :: NodeConstraint n s b => (Vector s -> n -> n) -> (n -> Vector s) ->
 addToField setter getter val node = setter (pure val <> getter node) node
 
 -- | Wrapper function to preform optimization on a node (postorder)
-postorderNodeOptimize :: (NodeConstraint n s b, Metadata v m s) => n -> n -> n -> Maybe n -> v -> n
+postorderNodeOptimize :: (NodeConstraint n s b, Metadata m s) => n -> n -> n -> Maybe n -> Vector m -> n
 postorderNodeOptimize curNode lNode rNode pNode meta
     | isNothing pNode = error "No parent node on postorder traversal"
-    | otherwise = ifoldr chooseOptimization curNode (allMetadata meta)
+    | otherwise = ifoldr chooseOptimization curNode meta
     where
         chooseOptimization i curCharacter setNode
             | aligned curCharacter = 

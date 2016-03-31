@@ -55,9 +55,6 @@ addOtherCases (x:xs)
 class Metadata a where
     unifyMetadata :: a -> [Vector CharInfo]
 
-class StoredMetadata v m s | v -> m where
-    allMetadata :: v -> Vector m
-
 class InternalMetadata m s | m -> s where
     weight :: m -> Double
     ignored :: m -> Bool

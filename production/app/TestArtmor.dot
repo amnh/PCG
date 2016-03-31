@@ -1,0 +1,19 @@
+digraph G { 
+	rankdir = LR;
+	node [shape = rect];
+	HTU_0 -> HTU_1;
+	HTU_0 -> HTU_4;
+	HTU_0 -> HTU_7;
+	HTU_0 -> HTU_10;
+	HTU_0 -> HTU_13;
+	HTU_1 -> 10;
+	HTU_1 -> 9;
+	HTU_4 -> 8;
+	HTU_4 -> 7;
+	HTU_7 -> 6;
+	HTU_7 -> 5;
+	HTU_10 -> 4;
+	HTU_10 -> 3;
+	HTU_13 -> 2;
+	HTU_13 -> 1;
+}

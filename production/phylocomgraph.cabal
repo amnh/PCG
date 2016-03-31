@@ -133,6 +133,7 @@ library
                        Analysis.DirectOptimization.Utilities
                        Bio.Metadata.Class
                        Bio.Metadata.MaskGenerator
+                       Bio.Phylogeny.Solution.Metadata
                        Bio.Phylogeny.Forest.Class
                        Bio.Phylogeny.Graph.Data
                        Bio.Phylogeny.Graph.Output
