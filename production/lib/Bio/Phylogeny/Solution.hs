@@ -15,6 +15,8 @@
 
 module Bio.Phylogeny.Solution where
 
+import qualified File.Format.Newick as New
+
 import qualified Bio.Phylogeny.Forest           as FC
 import qualified Bio.Phylogeny.Network          as N
 import qualified Bio.Phylogeny.Network.Subsettable as SN
@@ -33,6 +35,7 @@ import           Data.Foldable
 import qualified Data.IntSet                    as IS
 import qualified Data.IntMap                    as IM
 import           Data.Key                       (lookup)
+import           Data.Maybe
 import           Data.Monoid
 import           Data.Vector                    ((!), (//), Vector, elemIndex)
 import qualified Data.Vector                    as V
@@ -209,3 +212,20 @@ addConnections newNode myNodes =
     setOut curPos curNodes = curNodes // [(curPos, (curNodes ! curPos) {parents = code newNode : parents (curNodes ! curPos), isRoot = False})]
     withOut = foldr setOut withIn (children newNode)
   in withOut 
+
+-- | Convert from a Newick format to a current DAG
+fromNewick :: New.NewickForest -> Forest DAG
+fromNewick = fmap oneNewick
+  where
+    oneNewick :: New.NewickNode -> DAG
+    oneNewick = fromTopo . newickTopo
+    
+    newickTopo :: New.NewickNode -> TopoDAG
+    newickTopo tree0 = TopoDAG $ internalNewick tree0 True
+      where
+        internalNewick :: New.NewickNode -> Bool -> Topo
+        internalNewick inTree atRoot = TN.TopoNode atRoot (null $ New.descendants inTree) myName recurse mempty mempty mempty mempty mempty mempty myCost 0
+          where
+            recurse = fmap (flip internalNewick False) (New.descendants inTree) 
+            myName = fromMaybe "HTU 0" (New.newickLabel inTree)
+            myCost = fromMaybe 0 (New.branchLength inTree)
