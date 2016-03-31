@@ -35,6 +35,7 @@ import qualified Bio.Phylogeny.Tree.Node.Topological as TN
 import           Bio.Phylogeny.Tree.Rose
 import qualified Bio.Phylogeny.Tree.Referential    as RT
 
+import           Data.Bifunctor
 import           Data.Foldable
 import qualified Data.IntSet                    as IS
 import qualified Data.IntMap                    as IM
@@ -222,19 +223,22 @@ addConnections newNode myNodes =
 -- | Convert from a Newick format to a current DAG
 fromNewick :: New.NewickForest -> Forest DAG
 --fromNewick forest | trace ("fromNewick on forest " ++ show forest) False = undefined
-fromNewick forest = fmap oneNewick forest
+fromNewick forest = fst $ foldr (\d (acc, counter) -> first (: acc) $ oneNewick counter d) ([], 0) forest
   where
-    oneNewick :: New.NewickNode -> DAG
+    oneNewick :: Int -> New.NewickNode -> (DAG, Int)
     --oneNewick new | trace ("oneNewick on tree " ++ show new) False = undefined
-    oneNewick new = fromTopo $ newickTopo new
+    oneNewick count new = first fromTopo $ newickTopo count new
     
-    newickTopo :: New.NewickNode -> TopoDAG
+    newickTopo :: Int -> New.NewickNode -> (TopoDAG, Int)
     --newickTopo tree0 | trace ("newickTopo on tree " ++ show tree0) False = undefined
-    newickTopo tree0 = TopoDAG $ internalNewick tree0 True
+    newickTopo count tree0 = first (TopoDAG . (\x -> x {TN.isRoot = True})) $ internalNewick count tree0 
       where
-        internalNewick :: New.NewickNode -> Bool -> Topo
-        internalNewick inTree atRoot = TN.TopoNode atRoot (null $ New.descendants inTree) myName recurse mempty mempty mempty mempty mempty mempty myCost 0
+        internalNewick :: Int -> New.NewickNode -> (Topo, Int)
+        internalNewick nameCount inTree = (outNode, nextNameCount)
           where
-            recurse = fmap (flip internalNewick False) (New.descendants inTree) 
-            myName = fromMaybe "HTU 0" (New.newickLabel inTree)
+            myName = fromMaybe ("HTU " ++ show nameCount) (New.newickLabel inTree)
+            baseCase = ([], if isNothing $ New.newickLabel inTree then nameCount + 1 else nameCount)
             myCost = fromMaybe 0 (New.branchLength inTree)
+            --recurse = V.toList $ V.imap (\i n -> internalNewick n (nameCount + i + 1)) (V.fromList $ New.descendants inTree) 
+            (recurse,nextNameCount) = foldr (\n (acc,i) -> first (: acc) $ internalNewick i n) baseCase (New.descendants inTree) 
+            outNode = TN.TopoNode False (null $ New.descendants inTree) myName recurse mempty mempty mempty mempty mempty mempty myCost 0
