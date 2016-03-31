@@ -50,7 +50,7 @@ instance BinaryTree DAG NodeInfo where
     parent     n t = headMay $ map (\i -> nodes t ! i) (parents n)
     leftChild  n t = lookup 0 $ (\i -> nodes t ! i) <$> children n
     rightChild n t = lookup 1 $ (\i -> nodes t ! i) <$> children n
-    verifyBinary t = V.foldr (\n acc -> length (children n) <= 2 && acc) True (nodes t)
+    verifyBinary   = all ((2 >=) . length . children) . nodes
 
 instance RoseTree DAG NodeInfo where
     parent n t = headMay $ map (\i -> nodes t ! i) (parents n)

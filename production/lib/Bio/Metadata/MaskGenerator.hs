@@ -14,15 +14,10 @@
 
 module Bio.Metadata.MaskGenerator where
 
---import Bio.Phylogeny.Graph
 import Bio.Phylogeny.Solution
 import Bio.Phylogeny.PhyloCharacter
-import Bio.Phylogeny.Tree.Node hiding (aligned)
-import Bio.Sequence.Coded
-
-import Data.BitVector (fromBits, BitVector)
+import Data.BitVector (fromBits)
 import Data.HashMap.Strict (elems)
-import Data.Key
 import Data.Maybe
 import Data.Vector (imap, singleton)
 import qualified Data.Vector as V

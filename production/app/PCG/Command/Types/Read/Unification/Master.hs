@@ -35,8 +35,8 @@ import           Data.Maybe               (catMaybes, fromJust)
 import           Data.Semigroup           ((<>))
 import           Data.Set                 ((\\))
 import qualified Data.Set           as S  (fromList)
-import           Data.Vector              (Vector, (//), cons, generate, imap)
-import qualified Data.Vector        as V  (replicate, foldr, (!), find, length)
+import           Data.Vector              (Vector, (!), (//), cons, generate)
+import qualified Data.Vector        as V  (find)
 import           File.Format.Conversion.Encoder
 --import qualified Data.Vector        as V  (replicate, foldr, (!))
 --import           File.Format.Conversion.Encoder
@@ -121,12 +121,12 @@ encodeSolution inVal@(Solution taxaSeqs metadata inForests) = inVal {forests = H
         comboSet :: DAG -> DAG -> DAG
         comboSet dag1 dag2 = dag1 {nodes = foldr (\i acc -> (chooseNode (nodes dag1) (nodes dag2) i) `cons` acc) mempty [0..nodeLen-1]}
           where
-            nodeLen = V.length $ nodes  dag1
+            nodeLen = length $ nodes  dag1
             chooseNode :: Vector NodeInfo -> Vector NodeInfo -> Int -> NodeInfo
             chooseNode nodes1 nodes2 pos 
-              | not $ null $ encoded $ nodes1 V.! pos = nodes1 V.! pos
-              | not $ null $ encoded $ nodes2 V.! pos = nodes2 V.! pos
-              | otherwise = nodes1 V.! pos
+              | not . null . encoded $ nodes1 ! pos = nodes1 ! pos
+              | not . null . encoded $ nodes2 ! pos = nodes2 ! pos
+              | otherwise = nodes1 ! pos
     --encodeAndSet :: Identifier -> Sequences -> [Forest DAG]
     --encodeAndSet name s = fmap (overForests name (encodeIt s metadata)) forests
     --overForests :: Identifier -> Sequences -> [Forest DAG] -> [Forest DAG]
@@ -276,7 +276,7 @@ encodeGraph inGraph = eitherAction inGraph id (Right . onGraph)
       | isLeaf curNode = curDAG { nodes = nodes curDAG // [(curPos, newNode)] }
       | otherwise = curDAG 
         where
-          curNode = nodes curDAG V.! curPos
+          curNode = nodes curDAG ! curPos
           curSeqs = parsedSeqs curDAG HM.! curName
           newNode = curNode {encoded = encodeIt curSeqs (characters curDAG)}
 
