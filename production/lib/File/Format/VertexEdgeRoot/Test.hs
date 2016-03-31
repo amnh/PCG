@@ -179,6 +179,7 @@ verStreamParser' = testGroup "verStreamParser" [valid,invalid]
       , "{a,b,c}{(a,b),(a,c)}{a,c}"     -- root nodes are connected
       ]
 
+{-
 verSimpleConvert :: TestTree
 verSimpleConvert = testGroup "verSimpleConvert" [single, double]
   where
@@ -191,4 +192,4 @@ verSimpleConvert = testGroup "verSimpleConvert" [single, double]
     doubleGraph = Graph [DAG (IM.insert 0 "a" $ IM.insert 1 "b" mempty) (HM.insert "a" mempty $ HM.insert "b" mempty mempty) 
                             mempty doubleNodes
                             (V.fromList [EdgeSet mempty (IM.singleton 1 (G.EdgeInfo 0 (doubleNodes V.! 0) (doubleNodes V.! 1) Nothing)), EdgeSet (IS.singleton 0) mempty]) 0]
-
+-}
