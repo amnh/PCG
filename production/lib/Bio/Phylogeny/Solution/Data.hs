@@ -34,7 +34,7 @@ type Identifier = String
 type Sequences = ParsedSequences
 
 -- | We'll have two types of node: topological and referential
-type NodeInfo   = Node BitVector
+type NodeInfo = Node
 
 type Topo   = TopoNode BitVector
 

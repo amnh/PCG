@@ -31,6 +31,7 @@ import Bio.Phylogeny.Network
 import Bio.Phylogeny.Solution.Class
 import Bio.Phylogeny.Solution.Metadata
 import Bio.Phylogeny.Tree.Binary
+import Bio.Phylogeny.Tree.Node (Node)
 import Bio.Phylogeny.Tree.Node.Final
 import Bio.Phylogeny.Tree.Node.Preliminary
 import Bio.Phylogeny.Tree.Node.Encoded
@@ -40,7 +41,7 @@ import Bio.Metadata.Class (InternalMetadata(..))
 import Debug.Trace
 
 -- | Additional wrapper to optimize over a solution
-solutionOptimization :: SolutionConstraint' r f t n s m => Double -> r -> r
+solutionOptimization :: (FinalNode n s) => SolutionConstraint' r f t n s m => Double -> r -> r
 solutionOptimization weight inSolution = setForests inSolution (map (graphOptimization weight meta) (forests inSolution))
     where
         meta = metadata inSolution
@@ -146,7 +147,7 @@ optimizationPostorder tree meta
         in tree `update` (nodes1 ++ nodes2)
 
         where
-            leftOnly = isNothing $ rightChild (root tree) tree
+            leftOnly  = isNothing $ rightChild (root tree) tree
             rightOnly = isNothing $ leftChild (root tree) tree
 
 -- | Internal up pass that performs most of the recursion
@@ -168,13 +169,13 @@ internalPostorder node tree meta
 
 
 -- | Wrapper function to preform optimization on a node (preorder)
-preorderNodeOptimize :: (NodeConstraint' n s, Metadata m s) => Double -> n -> n -> n -> Vector m -> n
+preorderNodeOptimize :: (Metadata m s) => Double -> Node -> Node -> Node -> Vector m -> Node
 preorderNodeOptimize weight curNode lNode rNode meta = setTotalCost summedTotalCost res 
     where
         summedTotalCost = sum $ totalCost <$> [res,lNode,rNode] --totalCost res + totalCost lNode + totalCost rNode
-        res             = ifoldr chooseOptimization curNode (allMetadata meta)
-        chooseOptimization :: (FinalNode n s, NodeConstraint' n s, Metadata m s) => Int -> n -> m -> n
-        chooseOptimization curPos setNode curCharacter
+        res             = ifoldr chooseOptimization curNode meta
+        chooseOptimization :: (NodeConstraint' n s, Metadata m s) => Int -> m -> n -> n
+        chooseOptimization curPos curCharacter setNode
             -- TODO: Compiler error maybe below with comment structuers and 'lets'
             | aligned curCharacter =     
                 let (assign, temp, local) = {- trace (show curCharacter) $ -} preorderFitchBit weight (getForAlign lNode ! curPos) (getForAlign rNode ! curPos) curCharacter
@@ -206,10 +207,9 @@ postorderNodeOptimize curNode lNode rNode pNode meta
     | isNothing pNode = error "No parent node on postorder traversal"
     | otherwise       = ifoldr chooseOptimization curNode meta
     where
-        chooseOptimization :: (FinalNode n s, NodeConstraint' n s, Metadata v m s) => Int -> n -> m -> n 
-        chooseOptimization i setNode curCharacter
+        chooseOptimization :: (NodeConstraint' n s, Metadata m s) => Int -> m -> n -> n 
+        chooseOptimization i curCharacter setNode
             | aligned curCharacter = 
-                let finalAssign :: (FinalNode n s) => n
-                    finalAssign = postorderFitchBit (getForAlign curNode ! i) (getForAlign lNode ! i) (getForAlign rNode ! i) (getForAlign (fromJust pNode) ! i) (temporary curNode ! i) curCharacter
+                let finalAssign = postorderFitchBit (getForAlign curNode ! i) (getForAlign lNode ! i) (getForAlign rNode ! i) (getForAlign (fromJust pNode) ! i) (temporary curNode ! i) curCharacter
                 in addToField setFinal final finalAssign setNode
             | otherwise = setNode

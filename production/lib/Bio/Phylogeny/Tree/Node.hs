@@ -27,27 +27,27 @@ import Data.Monoid
 import Data.Ord ()
 
 -- | A node data structure holding all the necessary info (add verbose statement about what each field is)
-data Node b = Node  { code        :: Int
-                    , name        :: String
-                    , isRoot      :: Bool
-                    , isLeaf      :: Bool
-                    , parents     :: [Int]
-                    , children    :: [Int]
-                    , encoded     :: Vector EncodedSeq
-                    , packed      :: Vector EncodedSeq
-                    , preliminary :: Vector EncodedSeq
-                    , final       :: Vector EncodedSeq
-                    , temporary   :: Vector EncodedSeq -- TODO: is this necessary? rename to fitch scratch? 
-                    , aligned     :: Vector EncodedSeq -- TODO: rename to implied alignment
-                    , localCost   :: Double
-                    , totalCost   :: Double
-                    } deriving (Eq, Show)
+data Node = Node  { code        :: Int
+                  , name        :: String
+                  , isRoot      :: Bool
+                  , isLeaf      :: Bool
+                  , parents     :: [Int]
+                  , children    :: [Int]
+                  , encoded     :: Vector EncodedSeq
+                  , packed      :: Vector EncodedSeq
+                  , preliminary :: Vector EncodedSeq
+                  , final       :: Vector EncodedSeq
+                  , temporary   :: Vector EncodedSeq -- TODO: is this necessary? rename to fitch scratch? 
+                  , aligned     :: Vector EncodedSeq -- TODO: rename to implied alignment
+                  , localCost   :: Double
+                  , totalCost   :: Double
+                  } deriving (Eq, Show)
                     -- TODO: subtree representation to say if something is done
                     -- TODO: add a union labeling
                     -- TODO: add a single labeling
                     -- TODO: annotate fields with purpose
 
-instance Monoid (Node b) where
+instance Monoid Node where
     mempty = Node 0 mempty False False mempty mempty mempty mempty mempty mempty mempty mempty 0 0
     mappend n1 n2 = Node { code        = code n1
                          , name        = name n1 ++ " joinedTo " ++ name n2
@@ -66,22 +66,22 @@ instance Monoid (Node b) where
                          }
 
 -- | Make it an instance of encoded, final, packed, and preliminary
-instance EN.EncodedNode (Node b) EncodedSeq where
+instance EN.EncodedNode Node EncodedSeq where
     encoded = encoded
     setEncoded n s = n {encoded = s}
 
 -- | Nodes can hold final assignment
-instance FN.FinalNode (Node b) EncodedSeq where
+instance FN.FinalNode Node EncodedSeq where
     final = final
     setFinal f n = n {final = f}
 
 -- | Nodes can hold packed data
-instance PN.PackedNode (Node b) EncodedSeq where
+instance PN.PackedNode Node EncodedSeq where
     packed = packed
     setPacked n s = n {packed = s}
 
 -- | Nodes hold all preliminary info
-instance RN.PreliminaryNode (Node b) EncodedSeq where
+instance RN.PreliminaryNode Node EncodedSeq where
     preliminary = preliminary
     setPreliminary s n = n {preliminary = s}
     preliminaryAlign = aligned
@@ -93,5 +93,5 @@ instance RN.PreliminaryNode (Node b) EncodedSeq where
     totalCost = totalCost
     setTotalCost c n = n {totalCost = c}
 
-instance Eq b => Ord (Node b) where
+instance Ord Node where
     compare n1 n2 = compare (code n1) (code n2)

@@ -16,6 +16,7 @@ module Bio.Metadata.MaskGenerator where
 
 import Bio.Phylogeny.Solution
 import Bio.Phylogeny.PhyloCharacter
+import Bio.Sequence.Coded
 import Data.BitVector (fromBits)
 import Data.HashMap.Strict (elems)
 import Data.Maybe

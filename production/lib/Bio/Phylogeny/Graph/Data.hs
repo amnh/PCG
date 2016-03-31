@@ -34,9 +34,9 @@ type Identifier = String
 -- | CharInfo is PhyloCharacter for now
 type CharInfo   = PhyloCharacter EncodedSeq
 -- | Nodes can store with bitvectors for now
-type NodeInfo   = Node BitVector
+type NodeInfo   = Node
 -- TODO: rename NodeInfo
-type Encoded = EncodedSeq
+type Encoded    = EncodedSeq
 
 -- | Edge type: info is stored at the out connections of a node
 data EdgeSet
