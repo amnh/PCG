@@ -90,7 +90,7 @@ instance ParsedCharacters TntResult where
     unifyCharacters (Right (WithTaxa _    _ forest)) = mergeMaps $ (M.fromList . toList . fmap (second tntToTheSuperSequence)) <$> forest
 
 tntToTheSuperSequence :: TaxonSequence -> ParsedSequences
-tntToTheSuperSequence inSeq = V.fromList $ (Just . pure . f . show) <$> inSeq
+tntToTheSuperSequence = V.fromList . fmap (Just . pure . f . show)
   where
     f ('[':xs) = pure <$> init xs
     f e        = pure e

@@ -26,11 +26,12 @@ import           Data.Foldable
 --import qualified Data.Map    as M
 --import           Data.Matrix.NotStupid       (matrix)
 import           Data.Maybe
+import           Data.Monoid       ((<>))
 import           Data.Set          (intersection)
 import qualified Data.Set    as S  (fromList)
 import           Data.Vector       (Vector)
 import qualified Data.Vector as V
-import           File.Format.Conversion.Encoder
+import           File.Format.Conversion.Encoder hiding (dnaAlph,aaAlph)
 import           File.Format.Fasta (FastaParseResult,TaxonSequenceMap)
 import           File.Format.Fastc
 import           File.Format.Newick
@@ -44,6 +45,7 @@ dnaAlph, rnaAlph, aaAlph :: [String]
 dnaAlph = pure <$> addOtherCases "AGCTRMWSKTVDHBNX?-"
 rnaAlph = pure <$> addOtherCases "AGCURMWSKTVDHBNX?-"
 aaAlph  = pure <$> addOtherCases "ABCDEFGHIKLMNPQRSTVWXYZ-"
+disAlph = pure <$> (['0'..'9'] <> ['A'..'Z'] <> ['a'..'z'] <> "-" <> "?")
 
 addOtherCases :: String -> String
 addOtherCases [] = []
@@ -90,12 +92,24 @@ instance Metadata NewickForest where
 
 instance Metadata TNT.TntResult where
     unifyMetadata (Left _) = mempty
-    unifyMetadata (Right withSeq) = V.map convertMeta (TNT.charMetaData withSeq)
+    unifyMetadata (Right withSeq) = V.fromList $ zipWith f (toList $ TNT.charMetaData withSeq) (snd . head . toList $ TNT.sequences withSeq)
         where
+           f :: TNT.CharacterMetaData -> TNT.TntCharacter -> CharInfo
+           f inMeta inChar =  let defaultMeta = makeOneInfo $ tntAlphabet inChar
+                    in  defaultMeta { PC.name       = TNT.characterName   inMeta
+                                    , PC.stateNames = TNT.characterStates inMeta
+                                    , PC.tcm        = fromMaybe (tcm defaultMeta) (TNT.costTCM inMeta)
+                                    }
+           tntAlphabet TNT.Continuous {} = mempty
+           tntAlphabet TNT.Discrete   {} = disAlph -- TODO: get subset of maximum alphabet by doing a columwise set collection
+           tntAlphabet TNT.Dna        {} = dnaAlph
+           tntAlphabet TNT.Protein    {} = aaAlph
+{-
+
             convertMeta inMeta = 
                 let defaultMeta = makeOneInfo (V.toList $ TNT.characterStates inMeta)
-                in defaultMeta {PC.name = TNT.characterName inMeta, PC.stateNames = TNT.characterStates inMeta, PC.tcm = fromMaybe (tcm defaultMeta) (TNT.costTCM inMeta)}
-
+                in  defaultMeta {PC.name = TNT.characterName inMeta, PC.stateNames = TNT.characterStates inMeta, PC.tcm = fromMaybe (tcm defaultMeta) (TNT.costTCM inMeta)}
+-}
 instance Metadata TCM where
     unifyMetadata (TCM alph mat) = 
         let defaultMeta = makeOneInfo (toList alph)

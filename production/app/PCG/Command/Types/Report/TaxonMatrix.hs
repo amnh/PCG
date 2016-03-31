@@ -27,13 +27,14 @@ import Control.Arrow ((***))
 import Data.Foldable
 import Data.Key
 import Data.List
+import Data.List.Utility
 import Data.Matrix.NotStupid hiding (trace, (!), toList)
 import Data.Ord    (comparing)
 import Data.Vector (ifoldr, ifilter, Vector, cons, imap)
 import qualified Data.Vector as V
 import Data.Maybe
 
-import Debug.Trace
+--import Debug.Trace
 
 type Presence = Matrix Bool
 type TaxaPresence = (Presence, [String], [String])
@@ -43,7 +44,6 @@ instance Monoid Presence where
     mappend = (<|>)
 
 taxonReferenceOutput :: StandardSolution -> [FilePath] -> String
---taxonReferenceOutput sol files | trace (show (fmap length (toList $ parsedChars sol))) False = undefined
 taxonReferenceOutput sol files = printIt $ makeRef sol files
     where
         makeRef :: StandardSolution -> [FilePath] -> TaxaPresence
