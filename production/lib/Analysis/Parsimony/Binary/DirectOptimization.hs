@@ -27,6 +27,8 @@ import Data.Monoid
 import Bio.Metadata.Class (InternalMetadata(..))
 import Bio.Sequence.Coded
 
+import Debug.Trace
+
 data Direction = LeftDir | DiagDir | DownDir deriving (Eq, Show)
 
 type AlignRow s = (Vector Double, s, Vector Direction)
@@ -39,7 +41,7 @@ defaultCosts = (1,1)
 
 -- | Performs a naive direct optimization
 naiveDO :: (SeqConstraint s b, InternalMetadata m s) => s -> s -> m -> (s, Double, s, s, s)
---naiveDO s1 s2 | trace ("Sequences of length " ++ show (numChars s1) ++ show (numChars s2)) False = undefined
+--naiveDO s1 s2 _ | trace ("Sequences of length " ++ show s1 ++ show s2) False = undefined
 naiveDO seq1 seq2 _meta
     | isEmpty seq1 || isEmpty seq2 || numChars seq1 == 0 || numChars seq2 == 0 = (emptySeq, 0, emptySeq, emptySeq, emptySeq)
     | otherwise = 

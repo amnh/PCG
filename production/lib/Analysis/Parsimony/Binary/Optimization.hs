@@ -37,10 +37,11 @@ import Bio.Phylogeny.Tree.Node.Encoded
 import Bio.Phylogeny.Tree.CharacterAware
 import Bio.Metadata.Class (InternalMetadata(..))
 
-import Debug.Trace
+--import Debug.Trace
 
 -- | Additional wrapper to optimize over a solution
 solutionOptimization :: SolutionConstraint r f t n s b m => Double -> r -> r
+--solutionOptimization _ _ | trace "solutionOptimization" False = undefined
 solutionOptimization weight inSolution = setForests inSolution (map (graphOptimization weight meta) (forests inSolution))
     where
         meta = metadata inSolution
@@ -51,7 +52,7 @@ graphOptimization weight meta inGraph = setTrees inGraph (map (allOptimization w
 
 -- | Unified function to perform both the first and second passes
 allOptimization :: (TreeConstraint t n s b, Metadata m s) => Double -> Vector m -> t -> t
---allOptimization _ inTree | trace ("allOptimization " ++ show (names inTree IM.! 63)) False = undefined
+--allOptimization _ _ inTree | trace ("allOptimization ") False = undefined
 allOptimization weight meta inTree = 
     let 
         downPass = optimizationPreorder weight inTree meta
@@ -61,6 +62,7 @@ allOptimization weight meta inTree =
 -- | Optimization down pass warpper for recursion from root
 -- TODO: add a warning here if an internal node has no children (for all traversals)
 optimizationPreorder :: (TreeConstraint t n s b, Metadata m s) => Double -> t -> Vector m -> t
+--optimizationPreorder weight tree meta | trace "optimizationPreorder" False = undefined
 optimizationPreorder weight tree meta
     | isLeaf (root tree) tree = -- if the root is a terminal, give the whole tree a cost of zero, do not reassign nodes
         let 
@@ -97,6 +99,7 @@ optimizationPreorder weight tree meta
 
 -- | Internal down pass that creates new rows without combining, making the algorithm faster
 internalPreorder :: (TreeConstraint t n s b, Metadata m s) => Double -> n -> t -> Vector m -> [n]
+--internalPreorder weight node tree meta | trace "internalPreorder" False = undefined
 internalPreorder weight node tree meta
     | isLeaf node tree = -- if the root is a terminal, give the whole tree a cost of zero, do not reassign nodes
         let newNode = setTotalCost 0.0 $ setLocalCost 0.0 node
@@ -167,18 +170,20 @@ internalPostorder node tree meta
 
 -- | Wrapper function to preform optimization on a node (preorder)
 preorderNodeOptimize :: (NodeConstraint n s b, Metadata m s) => Double -> n -> n -> n -> Vector m -> n
-preorderNodeOptimize !weight !curNode !lNode !rNode meta = setTotalCost summedTotalCost res 
+--preorderNodeOptimize weight curNode lNode rNode meta | trace ("preorderNodeOptimize" ++ show curNode ++ show meta) False = undefined
+preorderNodeOptimize weight curNode lNode rNode meta = setTotalCost summedTotalCost res 
     where
         summedTotalCost = sum $ totalCost <$> [res,lNode,rNode] --totalCost res + totalCost lNode + totalCost rNode
-        !res             = ifoldr chooseOptimization curNode meta
---        chooseOptimization :: NodeConstraint n s b => Int -> n -> n -> n 
+        res             = ifoldr chooseOptimization curNode meta
 
+--        chooseOptimization :: NodeConstraint n s b => Int -> m -> n -> n 
+        --chooseOptimization curPos curCharacter setNode | trace ("chooseOptimization" ++ show curCharacter) False = undefined
         chooseOptimization curPos curCharacter setNode
             -- TODO: Compiler error maybe below with comment structuers and 'lets'
-            | aligned curCharacter =     
+            | aligned curCharacter = --trace "calling fitch" $ 
                 let (assign, temp, local) = {- trace (show curCharacter) $ -} preorderFitchBit weight (getForAlign lNode ! curPos) (getForAlign rNode ! curPos) curCharacter
                 in addLocalCost local $ addTotalCost local $ addAlign assign $ addPreliminary assign setNode
-            | otherwise = 
+            | otherwise = --trace "calling DO" $
                 let (ungapped, cost, gapped, leftGapped, rightGapped) = naiveDO (getForAlign lNode ! curPos) (getForAlign rNode ! curPos) curCharacter
                 in addLocalCost cost $ addTotalCost cost $ addAlign gapped $ addPreliminary ungapped setNode
                 --let (ungapped, cost, gapped, leftGapped, rightGapped) = sequentialAlign (getForAlign lNode ! curPos) (getForAlign rNode ! curPos)
