@@ -33,7 +33,9 @@ addMasks :: StandardSolution -> StandardSolution
 addMasks inSolution = inSolution {metadata = imap changeMetadata (metadata inSolution)}
     where
         changeMetadata :: Int -> CharacterMetadata -> CharacterMetadata
-        changeMetadata pos curChar = curChar {fitchMasks = generateMasks (length $ alphabet curChar) (getSeqLen pos)}
+        changeMetadata pos curChar 
+            | aligned curChar = curChar {fitchMasks = generateMasks (length $ alphabet curChar) (getSeqLen pos)}
+            | otherwise = curChar
 
 --addMasks :: Graph -> Graph
 --addMasks (Graph dags) = Graph $ map addToDAG dags
