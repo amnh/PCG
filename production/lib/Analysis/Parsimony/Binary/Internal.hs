@@ -33,7 +33,7 @@ import Data.Maybe
 import Data.Vector           (Vector)
 
 
-type SolutionConstraint r f t n s b m v = (Solution r f, ForestConstraint f t n s b, MetadataSolution r m, Metadata m s)
+type SolutionConstraint r f t n s b m = (Solution r f, ForestConstraint f t n s b, MetadataSolution r m, Metadata m s)
 type ForestConstraint f t n s b = (Forest f t, TreeConstraint t n s b)
 type TreeConstraint t n s b = (Network t n, NodeConstraint n s b, ReferentialTree t n, BinaryTree t n, Show t, SubsettableNetwork t n)
 type NodeConstraint n s b = (PreliminaryNode n s, EncodedNode n s, SeqConstraint s b, Show n, Eq n, FinalNode n s)

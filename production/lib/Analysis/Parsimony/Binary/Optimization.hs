@@ -40,7 +40,7 @@ import Bio.Metadata.Class (InternalMetadata(..))
 import Debug.Trace
 
 -- | Additional wrapper to optimize over a solution
-solutionOptimization :: SolutionConstraint r f t n s b m v => Double -> r -> r
+solutionOptimization :: SolutionConstraint r f t n s b m => Double -> r -> r
 solutionOptimization weight inSolution = setForests inSolution (map (graphOptimization weight meta) (forests inSolution))
     where
         meta = metadata inSolution
