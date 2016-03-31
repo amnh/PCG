@@ -126,7 +126,8 @@ library
                        File.Format.TransitionCostMatrix
 
   -- Modules included in this library but not exported.
---  other-modules:     Bio.Metadata.Class
+--  other-modules:     
+                       Bio.Metadata.Class
                        Bio.Metadata.MaskGenerator
                        Bio.Phylogeny.Solution.Metadata
                        Bio.Phylogeny.Forest.Class
@@ -421,7 +422,8 @@ Test-Suite testsuite
 
   hs-source-dirs:      test, lib, app, ffi
 
-  other-modules:       Bio.Phylogeny.Forest
+  other-modules:       Bio.Metadata.Class
+                       Bio.Phylogeny.Forest
                        Bio.Phylogeny.Forest.Class
                        Bio.Phylogeny.Graph
                        Bio.Phylogeny.Graph.Data

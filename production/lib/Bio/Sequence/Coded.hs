@@ -28,9 +28,11 @@ import           Bio.Sequence.Parsed
 import           Control.Applicative   (liftA2)
 import           Control.Monad
 import           Data.Bits
-import           Data.BitVector hiding (foldl, foldr, join, not)
+import           Data.BitVector hiding (foldr, foldl, join, not)
+import           Data.Foldable
 import           Data.Maybe
-import           Data.Vector           (fromList, foldr, Vector)
+import           Data.Monoid           ((<>))
+import           Data.Vector           (fromList, Vector)
 -- import qualified Data.Vector as V      (filter)
 
 -- import GHC.Stack
@@ -57,26 +59,29 @@ instance CodedSequence EncodedSeq where
         (Just allBits) -> decodedSeq
             where 
                 alphLen = length alphabet
-                decodedSeq = fromList $ Prelude.foldr (\theseBits acc -> (decodeOneChar theseBits alphabet) : acc) [] (group alphLen allBits)
+                decodedSeq = fromList $ foldr (\theseBits acc -> (decodeOneChar theseBits alphabet) : acc) [] (group alphLen allBits)
     emptySeq = Nothing -- TODO: Should this be Just $ bitVec alphLen 0?
     -- This works over minimal alphabet
     encode inSeq = encodeOverAlphabet inSeq alphabet 
         where
             -- Get the alphabet from the sequence (if for some reason it's not previously defined).
-            alphabet = Data.Vector.foldr (\ambig acc -> filter (not . flip elem acc) ambig ++ acc) [] inSeq
+            alphabet = foldr (\ambig acc -> filter (not . flip elem acc) ambig <> acc) [] inSeq
     encodeOverAlphabet inSeq alphabet 
         | null inSeq = Nothing
-        | otherwise  = Just $ Data.Vector.foldr (\x acc -> (createSingletonChar alphabet x) # acc ) zeroBits inSeq 
-    filterGaps inSeq gap alphabet = case gap of 
-        Nothing       -> inSeq
-        (Just gapVal) -> case inSeq of
-                            Nothing        -> inSeq
-                            (Just bitsVal) -> Just $ Prelude.foldr (\x acc -> if x ==. gapVal
-                                                                       then x # acc
-                                                                       else acc
-                                                            ) zeroBits (group alphLen bitsVal)
-            where 
-                alphLen = length alphabet
+        | otherwise  = Just $ foldr (\x acc -> (createSingletonChar alphabet x) <> acc ) zeroBits inSeq 
+    filterGaps inSeq gap alphabet = 
+        case gap of 
+          Nothing     -> inSeq
+          Just gapVal -> 
+            case inSeq of
+              Nothing      -> inSeq
+              Just bitsVal -> Just . foldr (f gapVal) zeroBits $ group alphLen bitsVal
+        where 
+            alphLen = length alphabet
+            f gapVal x acc = if   x ==. gapVal
+                             then x <> acc
+                             else acc
+
     grabSubChar inSeq pos alphLen = extract pos alphLen <$> inSeq
     isEmpty seqs = case seqs of
         Nothing -> True
@@ -99,12 +104,11 @@ instance Bits EncodedSeq where
     bitSizeMaybe    = (bitSizeMaybe =<<)
     isSigned        = maybe False isSigned
     popCount        = maybe 0 popCount
-    testBit  bits i = maybe False (`testBit` i) bits
+    testBit bits i  = maybe False (`testBit` i) bits
 
 
 instance PackedSequence EncodedSeq where
     packOverAlphabet = undefined
-
 
 instance CodedChar EncodedSeq where
     gapChar alphLen = Just $ gapChar alphLen
@@ -154,7 +158,7 @@ setElemAt char orig alphabet
 
 -- | Takes a single 
 decodeOneChar :: BitVector -> Alphabet -> [String] 
-decodeOneChar inBV alphabet = Prelude.foldr (\(charValExists, char) acc -> if charValExists 
+decodeOneChar inBV alphabet = foldr (\(charValExists, char) acc -> if charValExists 
                                                                    then char : acc 
                                                                    else acc
                                               ) [] (zip (toBits inBV) alphabet)

@@ -137,7 +137,7 @@ encodeSolution inVal@(Solution taxaSeqs metadata inForests) = inVal {forests = H
     encodeAndSet name s inForests = fmap (fmap (applyToDAG name coded)) inForests
       where coded = encodeIt s metadata
 
-    applyToDAG :: Identifier -> EncodedSequences BitVector -> DAG -> DAG
+    applyToDAG :: Identifier -> EncodedSequences -> DAG -> DAG
     applyToDAG inName coded inD@(DAG inNodes _ _) = case matching of
       Nothing -> inD
       Just matching -> inD {nodes = inNodes // [(code matching, matching {encoded = coded})]}

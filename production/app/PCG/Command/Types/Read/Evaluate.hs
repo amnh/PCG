@@ -8,7 +8,7 @@ import           Bio.Phylogeny.Graph
 import           Bio.Phylogeny.Graph.Parsed
 import           Bio.Phylogeny.PhyloCharacter
 import           Bio.Metadata.Class
---import           Bio.Metadata.MaskGenerator
+import           Bio.Metadata.MaskGenerator
 import           Bio.Sequence.Parsed
 import           Bio.Sequence.Parsed.Class
 import           Control.Monad              (when)

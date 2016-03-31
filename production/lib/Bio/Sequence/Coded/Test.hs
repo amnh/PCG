@@ -1,4 +1,6 @@
-module Bio.Sequence.Coded.Test where
+module Bio.Sequence.Coded.Test 
+  ( testSuite
+  ) where
 
 import Bio.Sequence.Coded
 import Data.Bits
@@ -10,18 +12,15 @@ import Test.Tasty.HUnit
 import Test.Tasty.QuickCheck
 
 testSuite :: TestTree
-testSuite = testGroup "Custom Bits instances" [testVectorBits]
+testSuite = testGroup "Custom Bits instances" [testVectorBits, testCodeSequenceInstance]
 
 testVectorBits :: TestTree
 testVectorBits = testGroup "Properties of instance Bits b => Bits (Vector b)" 
-        [ testZeroBitProperties         zeroBitsFinite  "finite"
-        , testZeroBitProperties         zeroBitsDynamic "dynamic"
-        , testBitConstructionProperties zeroBitsFinite  "finite"
+        [ testZeroBitProperties         zeroBitsDynamic "dynamic"
         , testBitConstructionProperties zeroBitsDynamic "dynamic"
         ]
     where
-        zeroBitsFinite  = zeroBits :: Vector Int
-        zeroBitsDynamic = zeroBits :: Vector BitVector
+        zeroBitsDynamic = zeroBits :: EncodedSeq
 
 testZeroBitProperties :: Bits b => b -> String -> TestTree
 testZeroBitProperties z label = testGroup ("zeroBit properties (" <> label <> ")") 
@@ -72,4 +71,10 @@ testBitConstructionProperties z label = testGroup ("Bit toggling properties (" <
                 f :: NonNegative Int -> Bool
                 f n = let i = getNonNegative n
                       in  clearBit (bit i) i == z
+
+testCodeSequenceInstance :: TestTree
+testCodeSequenceInstance = testGroup "Properties of instance CodedSequence EncodedSeq" 
+        [
+        ]
+
 

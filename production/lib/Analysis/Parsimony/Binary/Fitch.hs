@@ -42,7 +42,7 @@ preorderFitchBit weightValue lbit rbit inChar =
 
 
 -- | Convenience function for bit ops
-blockShiftAndFold :: (Bits s, Monoid s) => String -> String -> Int -> s -> s -> s
+blockShiftAndFold :: SeqConstraint' s => String -> String -> Int -> s -> s -> s
 blockShiftAndFold sideMode foldMode alphLen inbits initVal 
     | sideMode == "L" && foldMode == "&" = f (.&.) shiftL 
     | sideMode == "R" && foldMode == "&" = f (.&.) shiftR

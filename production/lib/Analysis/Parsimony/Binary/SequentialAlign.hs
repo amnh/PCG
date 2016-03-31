@@ -49,7 +49,7 @@ type Costs = (Float, Float)
 -- The particular version of SeqConstraint used here is found in Analysis.Parsimony.Binary.Internal
 -- and has these constraints: (CodedSequence s b, Eq s, CharConstraint b, Show s, Bits s, Monoid s)
 -- 
-sequentialAlign :: EncodedSeq -> EncodedSeq -> (EncodedSeq, Double, EncodedSeq, EncodedSeq, EncodedSeq)
+sequentialAlign :: (CodedSequence s) => s -> s -> (s, Double, s, s, s)
 sequentialAlign inpSeq1 inpSeq2 = (inferredParent', (fromIntegral cost :: Double), alignedParent', alignment1', alignment2')
     where
         (inferredParent, alignedParent) = foldr (\(x, y) acc -> createParentSeqs x y acc) ([],[]) (zip alignment1 alignment2)

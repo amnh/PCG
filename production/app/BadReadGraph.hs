@@ -78,7 +78,7 @@ smallNum :: IO DAG
 smallNum = undefined --allOptimization 1 <$> smallRead
 
 showSeqs :: DAG -> Vector String
-showSeqs inDag = fmap (\n -> show (code n) ++ ": " ++ show (flip unencodeMany ["A", "C", "G", "T", "-"] $ encoded n)) (nodes inDag) 
+showSeqs inDag = fmap (\n -> show (code n) ++ ": " ++ show (flip decodeMany ["A", "C", "G", "T", "-"] $ encoded n)) (nodes inDag) 
 
 smallShow :: IO (Vector String)
 smallShow = showSeqs <$> smallNum
