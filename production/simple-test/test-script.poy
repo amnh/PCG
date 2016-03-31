@@ -1,0 +1,5 @@
+read(nucleotides:("ThreeNode.fas"))
+read("ThreeNode.tre")
+report("testCrossOutput.csv",cross_references)
+report("testMetadata.csv",metadata)
+report("testNewickOutput.phy",data)

@@ -42,7 +42,7 @@ addOptimization result
 generateOutput :: StandardSolution -> OutputFormat -> Either String String
 --generateOutput _ f | trace (show f) False = undefined
 generateOutput g (CrossReferences fileNames) = Right $ taxonReferenceOutput g fileNames
-generateOutput g Data            {}          = Right $ newickReport (addOptimization g)
+generateOutput g Data            {}          = let !x = (addOptimization g) in Right $ newickReport x
 generateOutput g DotFile         {}          = Right $ dotOutput g
 generateOutput g Metadata        {}          = Right $ metadataCsvOutput g
 generateOutput _ _ = Left "Unrecognized 'report' command"
