@@ -10,7 +10,7 @@ import           Bio.Phylogeny.Solution
 import           Control.Monad.IO.Class
 import           Control.Evaluation
 import           PCG.Command.Types (Command(..))
---import           PCG.Command.Types.Report.TaxonMatrix
+import           PCG.Command.Types.Report.TaxonMatrix
 --import           PCG.Command.Types.Report.GraphViz
 import           PCG.Command.Types.Report.Internal
 --import           PCG.Command.Types.Report.Metadata
@@ -40,7 +40,7 @@ addOptimization result
 
 -- TODO: Redo reporting
 generateOutput :: StandardSolution -> OutputFormat -> Either String String
---generateOutput g (CrossReferences fileNames) = Right $ taxonReferenceOutput g fileNames
+generateOutput g (CrossReferences fileNames) = Right $ taxonReferenceOutput g fileNames
 --generateOutput g Data            {}          = Right $ newickReport (addOptimization g)
 --generateOutput g DotFile         {}          = Right $ dotOutput g
 --generateOutput g Metadata        {}          = Right $ metadataCsvOutput g
