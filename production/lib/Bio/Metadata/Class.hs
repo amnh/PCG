@@ -90,7 +90,7 @@ instance Metadata NewickForest where
 
 instance Metadata TNT.TntResult where
     unifyMetadata (Left _) = mempty
-    unifyMetadata (Right withSeq) = V.map convertMeta (charMetaData withSeq)
+    unifyMetadata (Right withSeq) = V.map convertMeta (TNT.charMetaData withSeq)
         where
             convertMeta inMeta = 
                 let defaultMeta = makeOneInfo (V.toList $ TNT.characterStates inMeta)
@@ -99,7 +99,7 @@ instance Metadata TNT.TntResult where
 instance Metadata TCM where
     unifyMetadata (TCM alph mat) = 
         let defaultMeta = makeOneInfo (toList alph)
-        in  pure (defaultMeta {tcm = mat})
+        in  pure (defaultMeta {PC.tcm = mat})
 
 instance Metadata VertexEdgeRoot where
     unifyMetadata _ = mempty

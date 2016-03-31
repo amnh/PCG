@@ -52,10 +52,10 @@ evaluate (READ fileSpecs) old = do
     result <- liftIO . runEitherT . eitherTValidation $ parseSpecifiedFile <$> fileSpecs
     case result of
       Left pErr -> fail $ show pErr   -- Report structural errors here.
-      Right xs -> fmap addMasks $
+      Right xs ->
         case masterUnify' $ transformation <$> concat xs of
           Left uErr -> fail $ show uErr -- Report rectification errors here.
-          Right g   -> old <> pure g    -- TODO: rectify against 'old' SearchState, don't just blindly merge
+          Right g   -> pure g    -- TODO: rectify against 'old' SearchState, don't just blindly merge
   where
     transformation = expandIUPAC . prependFilenamesToCharacterNames . applyReferencedTCM
 
@@ -127,18 +127,18 @@ applyReferencedTCM fpr =
      Nothing -> fpr
      Just x  -> let newAlphabet = toList $ customAlphabet x
                     newTcm      = transitionCosts x
-                in  fpr { parsedMetas = fmap (updateAlphabet newAlphabet . updateTcm newTcm) <$> parsedMetas fpr }
+                in  fpr { parsedMetas = updateAlphabet newAlphabet . updateTcm newTcm <$> parsedMetas fpr }
 
 prependFilenamesToCharacterNames :: FracturedParseResult -> FracturedParseResult
-prependFilenamesToCharacterNames fpr = fpr { parsedMetas = fmap (prependName (sourceFile fpr)) <$> parsedMetas fpr }
+prependFilenamesToCharacterNames fpr = fpr { parsedMetas = prependName (sourceFile fpr) <$> parsedMetas fpr }
 
 setCharactersToAligned :: FracturedParseResult -> FracturedParseResult
-setCharactersToAligned fpr = fpr { parsedMetas = fmap (updateAligned True) <$> parsedMetas fpr }
+setCharactersToAligned fpr = fpr { parsedMetas = updateAligned True <$> parsedMetas fpr }
 
 expandIUPAC :: FracturedParseResult -> FracturedParseResult
 expandIUPAC fpr = fpr { parsedChars = newTreeSeqs }
   where
-    newTreeSeqs = zipWith f (parsedChars fpr) (parsedMetas fpr)
+    newTreeSeqs = f (parsedChars fpr) (parsedMetas fpr)
     f :: TreeSeqs -> Vector CharInfo -> TreeSeqs
     f mapping meta = g <$> mapping
       where

@@ -99,7 +99,7 @@ getTNTName node = case node of
     (Name n) -> n
     (Prefix s) -> s
 
-
+{-
 -- | Converts into a topo tree without sequences (main funcionality in newick conversion)
 convertNewickToTopo :: NewickNode -> TopoTree
 convertNewickToTopo tree0 = internalConvert tree0 True
@@ -184,7 +184,7 @@ convertVER inVer = splitConnected outTree
                         outInfo = map (\i -> G.EdgeInfo (getLen myI i) (madeNodes V.! myI) (madeNodes V.! i) Nothing) (N.children inNode)
                         outMap = foldr (\info acc -> IM.insert (N.code $ G.terminal info) info acc) mempty outInfo
                     in G.EdgeSet inE outMap
-
+-}
 
 toNewDag :: G.Graph -> Forest DAG
 toNewDag (G.Graph xs) = f <$> xs

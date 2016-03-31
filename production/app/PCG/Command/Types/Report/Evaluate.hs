@@ -5,7 +5,7 @@ module PCG.Command.Types.Report.Evaluate
   ) where
 
 import           Analysis.Parsimony.Binary.Optimization
-import           Bio.Phylogeny.Graph
+import           Bio.Phylogeny.Solution
 import           Bio.Phylogeny.Tree.Binary
 import           Control.Monad.IO.Class
 import           Control.Evaluation
@@ -30,15 +30,18 @@ evaluate _ _ = fail "Invalid READ command binding"
 
 -- | Function to add optimization to the newick reporting
 -- TODO: change this error into a warning
-addOptimization :: Graph -> Graph
-addOptimization g@(Graph inDags) 
-  | allBinary = graphOptimization 1 (characters $ head $ inDags) g
-  | otherwise = error ("Cannot perform optimization because graph is not binary, outputting zero cost") g
-    where allBinary = foldr (\d acc -> acc && verifyBinary d) True inDags
+{-
+addOptimization :: StandardSolution -> StandardSolution --Graph -> Graph
+addOptimization result
+  | allBinary = solutionOptimization result
+  | otherwise = error ("Cannot perform optimization because graph is not binary, outputting zero cost") result
+    where allBinary = all (all verifyBinary) (forests result)
+-}
 
-generateOutput :: Graph -> OutputFormat -> Either String String
-generateOutput g (CrossReferences fileNames) = Right $ taxonReferenceOutput g fileNames
-generateOutput g Data            {}          = Right $ newickReport (addOptimization g)
-generateOutput g DotFile         {}          = Right $ dotOutput g
-generateOutput g Metadata        {}          = Right $ metadataCsvOutput g
+-- TODO: Redo reporting
+generateOutput :: StandardSolution -> OutputFormat -> Either String String
+--generateOutput g (CrossReferences fileNames) = Right $ taxonReferenceOutput g fileNames
+--generateOutput g Data            {}          = Right $ newickReport (addOptimization g)
+--generateOutput g DotFile         {}          = Right $ dotOutput g
+--generateOutput g Metadata        {}          = Right $ metadataCsvOutput g
 generateOutput _ _ = Left "Unrecognized 'report' command"

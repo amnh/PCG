@@ -27,7 +27,7 @@ import           Data.Key                 ((!))
 import           Data.List                (isPrefixOf, nub)
 import qualified Data.List.NonEmpty as NE (fromList)
 import           Data.List.Utility        (duplicates)
-import           Data.Map                 (foldWithKey, difference, intersectionWith, keys)
+import           Data.Map                 (assocs, foldWithKey, difference, intersectionWith, keys)
 import qualified Data.Map           as M
 import           Data.Maybe               (catMaybes, fromJust)
 import           Data.Monoid       hiding ((<>))
@@ -53,12 +53,13 @@ data FracturedParseResult
    , sourceFile   :: FilePath
    } deriving (Show)
 
+masterUnify' :: [FracturedParseResult] -> Either UnificationError (Solution DAG)
 masterUnify' = rectifyResults
 
 rectifyResults :: [FracturedParseResult] -> Either UnificationError (Solution DAG)
 rectifyResults fprs
-  | not (null errors) = Left $ foldl1 (<>) errors
-  | otherwise         = Right $ Solution mempty mempty []
+  | not (null errors) = Left  $ foldl1 (<>) errors
+  | otherwise         = Right $ Solution (HM.fromList $ assocs charSeqs) metadata dagForests
   where
     -- Step 1: Gather data file contents
     dataSeqs        = (parsedChars &&& parsedMetas) <$> filter (not . fromTreeOnlyFile) fprs
@@ -74,8 +75,12 @@ rectifyResults fprs
     extraNames      = filter (not . null . (taxaSet \\) . fst) $ (S.fromList *** id) <$> forestTaxa
     missingNames    = filter (not . null . (\\ taxaSet) . fst) $ (S.fromList *** id) <$> forestTaxa
     -- Step 7: Combine disparte sequences from many sources  into single metadata & character sequence.
-    (metadata, charSeqs) = joinSequences dataSeqs
+    (charSeqs,metadata) = joinSequences dataSeqs
     -- Step 8: Convert topological forests to DAGs (using reference indexing from #7 results)
+    dagForests      = fromNewick . parsedTrees <$> forests
+    -- Step 9:  TODO: Node encoding
+    -- Step 10: TODO: masking for the nodes
+    
 
     errors         = catMaybes [duplicateError, extraError, missingError]
     duplicateError =
