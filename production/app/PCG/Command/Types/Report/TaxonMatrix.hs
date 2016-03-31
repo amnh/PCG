@@ -43,7 +43,7 @@ instance Monoid Presence where
     mappend = (<|>)
 
 taxonReferenceOutput :: StandardSolution -> [FilePath] -> String
---taxonReferenceOutput sol files | trace (show sol) False = undefined
+--taxonReferenceOutput sol files | trace (show (fmap length (toList $ parsedChars sol))) False = undefined
 taxonReferenceOutput sol files = printIt $ makeRef sol files
     where
         makeRef :: StandardSolution -> [FilePath] -> TaxaPresence
@@ -52,6 +52,7 @@ taxonReferenceOutput sol files = printIt $ makeRef sol files
             where
                 presenceMatrix = matrix (length allNodes) (length checkPos) gen
                 gen :: (Int,Int) -> Bool
+                --gen (i,j) | trace ("gen on row " ++ show i ++ " " ++ show (length (allSeqs ! (allNodes V.! i))) ++ " " ++ show (checkPos V.! j)) False = undefined
                 gen (i,j) = isJust $ (allSeqs ! (allNodes V.! i)) V.! (checkPos V.! j)
                   
                 filterNames name = null inFilter || name `elem` inFilter
