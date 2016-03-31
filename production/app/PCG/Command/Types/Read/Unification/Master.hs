@@ -29,6 +29,7 @@ import qualified Data.HashMap.Lazy  as HM
 --import           Data.List                (isPrefixOf, nub)
 import qualified Data.List.NonEmpty as NE (fromList)
 import           Data.List.Utility        (duplicates)
+import           Bio.Metadata.MaskGenerator
 import           Data.Map                 (assocs, difference, intersectionWith, keys)
 import           Data.Maybe               (catMaybes, fromJust)
 import           Data.Semigroup           ((<>))
@@ -60,7 +61,7 @@ masterUnify' = rectifyResults
 rectifyResults :: [FracturedParseResult] -> Either UnificationError (Solution DAG)
 rectifyResults fprs
   | not (null errors) = Left  $ foldl1 (<>) errors
-  | otherwise         = Right $ Solution (HM.fromList $ assocs charSeqs) combinedMetadata dagForests
+  | otherwise         = Right maskedSolution
   where
     -- Step 1: Gather data file contents
     dataSeqs        = (parsedChars &&& parsedMetas) <$> filter (not . fromTreeOnlyFile) fprs
@@ -79,8 +80,11 @@ rectifyResults fprs
     (charSeqs,combinedMetadata) = joinSequences dataSeqs
     -- Step 8: Convert topological forests to DAGs (using reference indexing from #7 results)
     dagForests      = fromNewick . parsedTrees <$> allForests
+    combinedData    = Solution (HM.fromList $ assocs charSeqs) combinedMetadata dagForests
     -- Step 9:  TODO: Node encoding
+    encodedSolution = encodeSolution combinedData
     -- Step 10: TODO: masking for the nodes
+    maskedSolution = addMasks encodedSolution
     
 
     errors         = catMaybes [duplicateError, extraError, missingError]
