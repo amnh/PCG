@@ -166,6 +166,7 @@ internalPostorder node tree meta
             leftOnly  = isNothing $ rightChild node tree
             rightOnly = isNothing $ leftChild node tree
 
+
 -- | Wrapper function to preform optimization on a node (preorder)
 preorderNodeOptimize :: (NodeConstraint' n s, Metadata v m s) => Double -> n -> n -> n -> v -> n
 preorderNodeOptimize weight curNode lNode rNode meta = setTotalCost summedTotalCost res 
