@@ -15,16 +15,16 @@
 
 module Bio.Metadata.Class where
 
-import           Bio.Sequence.Coded
+--import           Bio.Sequence.Coded
 import           Bio.Sequence.Parsed
 import           Bio.Sequence.Parsed.Class
 import qualified Bio.Phylogeny.PhyloCharacter as PC
 import           Bio.Phylogeny.Graph.Data
 import           Data.Char
 import           Data.Foldable
-import           Data.List
-import qualified Data.Map    as M
-import           Data.Matrix       (matrix)
+--import           Data.List
+--import qualified Data.Map    as M
+--import           Data.Matrix.NotStupid       (matrix)
 import           Data.Maybe
 import           Data.Set          (intersection)
 import qualified Data.Set    as S  (fromList)
@@ -53,10 +53,7 @@ addOtherCases (x:xs)
   | otherwise = x : addOtherCases xs
 
 class Metadata a where
-    unifyMetadata :: a -> [Vector CharInfo]
-
-class StoredMetadata v m | v -> m where
-    allMetadata :: v -> Vector m
+    unifyMetadata :: a -> Vector CharInfo
 
 class InternalMetadata m s | m -> s where
     weight :: m -> Double
@@ -80,20 +77,20 @@ instance Monoid s => InternalMetadata (PC.PhyloCharacter s) s where
     fitchMasks (PC.AminoAcid   _ _ o _ _ _ _ _)   = o
 
 instance Metadata FastaParseResult where
-    unifyMetadata = fmap makeEncodeInfo . unifyCharacters
+    unifyMetadata = makeEncodeInfo . unifyCharacters
 
 instance Metadata TaxonSequenceMap where
-    unifyMetadata = fmap makeEncodeInfo . unifyCharacters
+    unifyMetadata = makeEncodeInfo . unifyCharacters
 
 instance Metadata FastcParseResult where
-    unifyMetadata = fmap makeEncodeInfo . unifyCharacters
+    unifyMetadata = makeEncodeInfo . unifyCharacters
 
 instance Metadata NewickForest where
     unifyMetadata _ = mempty
 
 instance Metadata TNT.TntResult where
     unifyMetadata (Left _) = mempty
-    unifyMetadata (Right withSeq) = pure $ V.map convertMeta (TNT.charMetaData withSeq)
+    unifyMetadata (Right withSeq) = V.map convertMeta (TNT.charMetaData withSeq)
         where
             convertMeta inMeta = 
                 let defaultMeta = makeOneInfo (V.toList $ TNT.characterStates inMeta)
@@ -102,20 +99,18 @@ instance Metadata TNT.TntResult where
 instance Metadata TCM where
     unifyMetadata (TCM alph mat) = 
         let defaultMeta = makeOneInfo (toList alph)
-        in pure $ pure (defaultMeta {PC.tcm = mat})
+        in  pure (defaultMeta {PC.tcm = mat})
 
 instance Metadata VertexEdgeRoot where
     unifyMetadata _ = mempty
 
 instance Metadata Nexus where
-    unifyMetadata (Nexus (seqs, metas)) = pure $ V.map convertNexusMeta metas
+    unifyMetadata (Nexus (_, metas)) = V.map convertNexusMeta metas
         where
-            seqLen = M.foldr (\val acc -> V.length val) 0 seqs
-
             convertNexusMeta inMeta = 
                 let defaultMeta = makeOneInfo (Nex.alphabet inMeta)
-                in  defaultMeta {PC.name = Nex.name inMeta, PC.ignored = Nex.ignored inMeta, 
-                                    PC.tcm = fromMaybe (tcm defaultMeta) (transitionCosts <$> Nex.costM inMeta)}
+                in  defaultMeta { PC.name = Nex.name inMeta, PC.ignored = Nex.ignored inMeta, 
+                                  PC.tcm  = fromMaybe (tcm defaultMeta) (transitionCosts <$> Nex.costM inMeta)}
 
 ---- TODO: Consider default metadata from the command structure
 ---- | Functionality to make char info from tree seqs

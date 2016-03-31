@@ -1,8 +1,6 @@
 module Main where
 
-import           Analysis.Parsimony.Binary.Optimization
 import           Bio.Phylogeny.Graph
-import           Bio.Phylogeny.Graph.Utilities
 import           File.Format.Fasta
 import qualified File.Format.Newick as N
 import           File.Format.Newick.Converter
@@ -28,4 +26,4 @@ madRead :: IO DAG
 madRead = badReadGraph "../../TestDat/fakeArtmor.fas" "../../TestDat/artmor.tre"
 
 madness :: IO Double
-madness = rootCost . allOptimization 1 <$> madRead
+madness = undefined --rootCost . allOptimization 1 mempty <$> madRead

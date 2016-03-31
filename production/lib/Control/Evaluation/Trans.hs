@@ -1,7 +1,8 @@
 {-# LANGUAGE FlexibleInstances, MultiParamTypeClasses #-}
 module Control.Evaluation.Trans where
 
-import Bio.Phylogeny.Graph
+--import Bio.Phylogeny.Graph
+import Bio.Phylogeny.Solution
 import Control.Applicative
 import Control.Evaluation.Internal
 import Control.Evaluation.Unit
@@ -10,7 +11,7 @@ import Control.Monad.IO.Class
 import Control.Monad.Trans.Class
 import Data.Monoid
 
-type SearchState = EvaluationT IO Graph
+type SearchState = EvaluationT IO StandardSolution
 
 newtype EvaluationT m a
       = EvaluationT

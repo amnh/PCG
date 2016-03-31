@@ -18,7 +18,7 @@ module Bio.Sequence.Parsed.Class where
 import           Bio.Sequence.Parsed
 import           Data.Bifunctor   (second)
 import           Data.Foldable
-import           Data.Map         (insert)
+import           Data.Map         (Map,insert,mergeWithKey)
 import qualified Data.Map    as M (fromList)
 import           Data.Maybe
 import           Data.Monoid
@@ -49,24 +49,24 @@ import           File.Format.VertexEdgeRoot
 --   It is expected that parsers will altered to return simpler character literals for
 --   time efficientcy in the future.
 class ParsedCharacters a where
-    unifyCharacters :: a -> [TreeSeqs]
+    unifyCharacters :: a -> TreeSeqs
 
 instance ParsedCharacters FastaParseResult where
-    unifyCharacters = pure . foldr f mempty
+    unifyCharacters = foldr f mempty
         where
             convertSeq = V.fromList . map (Just . pure . pure . pure)
             f (FastaSequence n s) = insert n (convertSeq s)
 
 instance ParsedCharacters TaxonSequenceMap where
-    unifyCharacters = pure . fmap (pure . pure)
+    unifyCharacters = fmap (pure . pure)
 
 instance ParsedCharacters FastcParseResult where
-    unifyCharacters = pure . foldl f mempty
+    unifyCharacters = foldl f mempty
         where
             f m (FastcSequence label symbols) = insert label (pure $ pure symbols) m
 
 instance ParsedCharacters NewickForest where
-    unifyCharacters = map f 
+    unifyCharacters = mergeMaps . fmap f
         where
             f :: NewickNode -> TreeSeqs
             f node 
@@ -76,17 +76,18 @@ instance ParsedCharacters NewickForest where
                   name = fromMaybe "" $ newickLabel node
 
 instance ParsedCharacters Nexus where
-  unifyCharacters (Nexus (seqMap, _)) = pure seqMap
+  unifyCharacters (Nexus (seqMap, _)) = seqMap
 
 instance ParsedCharacters TntResult where
-    unifyCharacters (Left forest) = foldl f mempty forest
+    unifyCharacters (Left forest) = mergeMaps $ foldl f mempty forest
       where
           f xs tree = foldl g mempty tree : xs
           g m (Index  i) = insert (show i) mempty m
           g m (Name   n) = insert n mempty m
           g m (Prefix p) = insert p mempty m
-    unifyCharacters (Right (WithTaxa seqs _ []    )) = pure . M.fromList . toList $ second tntToTheSuperSequence   <$> seqs
-    unifyCharacters (Right (WithTaxa _    _ forest)) = (M.fromList . toList . fmap (second tntToTheSuperSequence)) <$> forest
+    unifyCharacters (Right (WithTaxa seqs _ []    )) = M.fromList . toList $ second tntToTheSuperSequence   <$> seqs
+    -- maybe just use the seq vaiable like above and remove this case?
+    unifyCharacters (Right (WithTaxa _    _ forest)) = mergeMaps $ (M.fromList . toList . fmap (second tntToTheSuperSequence)) <$> forest
 
 tntToTheSuperSequence :: TaxonSequence -> ParsedSequences
 tntToTheSuperSequence inSeq = V.fromList $ (Just . pure . f . show) <$> inSeq
@@ -94,11 +95,14 @@ tntToTheSuperSequence inSeq = V.fromList $ (Just . pure . f . show) <$> inSeq
     f ('[':xs) = pure <$> init xs
     f e        = pure e
 
+mergeMaps :: (Foldable t, Ord k) => t (Map k v) -> Map k v
+mergeMaps = foldl (mergeWithKey (\_ _ b -> Just b) id id) mempty
+
 instance ParsedCharacters TCM where
     unifyCharacters _ = mempty
 
 instance ParsedCharacters VertexEdgeRoot where
-    unifyCharacters (VER _ e r) = f . buildTree <$> toList r
+    unifyCharacters (VER _ e r) = mergeMaps $ f . buildTree <$> toList r
         where
             es = toList e
             f node 

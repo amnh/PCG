@@ -17,7 +17,6 @@
 module Bio.Phylogeny.Solution.Metadata where
 
 import Data.Vector
-import Bio.Phylogeny.PhyloCharacter
 
 class MetadataSolution r m | r -> m where
     metadata :: r -> Vector m

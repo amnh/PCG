@@ -25,7 +25,6 @@ import Test.Tasty.QuickCheck
 import Bio.Phylogeny.Tree.Node.Topological
 import Bio.Sequence.Coded
 import Bio.Sequence.Random ()
-import Bio.Sequence.Parsed
 import Bio.Phylogeny.Graph.Data
 import Data.BitVector (BitVector)
 import Data.Vector    (Vector)

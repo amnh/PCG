@@ -101,6 +101,7 @@ library
                        Bio.Phylogeny.Network
                        Bio.Phylogeny.PhyloCharacter
                        Bio.Phylogeny.Solution
+                       Bio.Phylogeny.Solution.Data
                        Bio.Phylogeny.Solution.Class
                        Bio.Phylogeny.Tree.Binary
                        Bio.Phylogeny.Tree.CharacterAware
@@ -127,6 +128,7 @@ library
   -- Modules included in this library but not exported.
 --  other-modules:     Bio.Metadata.Class
                        Bio.Metadata.MaskGenerator
+                       Bio.Phylogeny.Solution.Metadata
                        Bio.Phylogeny.Forest.Class
                        Bio.Phylogeny.Graph.Data
                        Bio.Phylogeny.Graph.Output

@@ -18,7 +18,6 @@
 module Bio.Phylogeny.Tree.Node.Topological (TopoNode(..)) where
 
 import Bio.Sequence.Coded
-import Bio.Sequence.Parsed
 
 data TopoNode b = TopoNode
                     { isRoot :: Bool

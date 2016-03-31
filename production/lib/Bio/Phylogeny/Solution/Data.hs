@@ -61,21 +61,21 @@ data EdgeInfo
 -- | A solution is an array of forests
 -- character data and names are common across all forests and so stored at this level
 data Solution d 
-    = Solution
-    { parsedChars :: HashMap Identifier Sequences
-    , metadata   :: Vector CharacterMetadata
-    , forests    :: [Forest d]
-    } deriving (Eq, Show)
+   = Solution
+   { parsedChars :: HashMap Identifier Sequences
+   , metadata   :: Vector CharacterMetadata
+   , forests    :: [Forest d]
+   } deriving (Eq, Show)
 
 -- | A dag is an element of a forest, stored referentially
 data DAG 
-    = DAG
-    { nodes :: Vector NodeInfo 
-    , edges :: Vector EdgeSet
-    , root  :: Int
-    } deriving (Eq, Show)
+   = DAG
+   { nodes :: Vector NodeInfo 
+   , edges :: Vector EdgeSet
+   , root  :: Int
+   } deriving (Eq, Show)
 
 -- | A topodag is an alternative forest element stored topologically
 data TopoDAG 
-    = TopoDAG 
-    { structure :: Topo}
+   = TopoDAG 
+   { structure :: Topo}

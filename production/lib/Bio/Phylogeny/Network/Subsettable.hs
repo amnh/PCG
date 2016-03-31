@@ -18,6 +18,6 @@ module Bio.Phylogeny.Network.Subsettable where
 
 
 -- | A subsettable network is one where subtrees can be appended or accessed with their topology intact
-class SubsettableNetwork t n | n -> t where
+class SubsettableNetwork t n | t -> n where
     appendSubtree :: t -> t -> n -> t
     accessSubtree :: t -> n -> t

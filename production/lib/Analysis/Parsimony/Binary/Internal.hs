@@ -15,7 +15,7 @@
 
 module Analysis.Parsimony.Binary.Internal where
 
-import Bio.Metadata.Class (InternalMetadata, StoredMetadata)
+import Bio.Metadata.Class (InternalMetadata)
 import Bio.Phylogeny.Forest
 import Bio.Phylogeny.Solution.Class
 import Bio.Phylogeny.Solution.Metadata
@@ -27,14 +27,13 @@ import Bio.Phylogeny.Tree.Referential
 import Bio.Phylogeny.Tree.Binary
 import Bio.Phylogeny.Network.Subsettable
 import Bio.Sequence.Coded
-import Bio.Phylogeny.Tree.CharacterAware
 import Data.Bits
 import Data.Matrix.NotStupid (Matrix, nrows, ncols, setElem)
 import Data.Maybe
 import Data.Vector           (Vector)
 
-type SolutionConstraint r f t n s b m v = (Solution r f, ForestConstraint f t n s b, MetadataSolution r m, Metadata v m s)
-type SolutionConstraint' r f t n s m v = (Solution r f, ForestConstraint' f t n s, MetadataSolution r m, Metadata v m s)
+type SolutionConstraint r f t n s b m = (Solution r f, ForestConstraint f t n s b, MetadataSolution r m, Metadata m s)
+type SolutionConstraint' r f t n s m = (Solution r f, ForestConstraint' f t n s, MetadataSolution r m, Metadata m s)
 type ForestConstraint f t n s b = (Forest f t, TreeConstraint t n s b)
 type ForestConstraint' f t n s = (Forest f t, TreeConstraint' t n s)
 type TreeConstraint t n s b = (Network t n, NodeConstraint n s b, ReferentialTree t n, BinaryTree t n, Show t, SubsettableNetwork t n)
@@ -44,7 +43,7 @@ type NodeConstraint' n s = (PreliminaryNode n s, EncodedNode n s, CodedSequence 
 type SeqConstraint s b = (CodedSequence s, Eq s, CharConstraint b, Show s, Bits s, Monoid s)
 type CharConstraint b = (Bits b, Eq b, CodedChar b, Show b)
 type Subtrees = Matrix Int
-type Metadata v m s = (StoredMetadata v m, InternalMetadata m s)
+type Metadata m s = (InternalMetadata m s)
 
 setElemSafe :: (Num a) => a -> (Maybe Int, Maybe Int) -> Matrix a -> Matrix a
 setElemSafe value (row, col) matrix

@@ -12,8 +12,14 @@
 --
 -----------------------------------------------------------------------------
 {-# LANGUAGE TypeSynonymInstances, FlexibleInstances, MultiParamTypeClasses #-}
+{-# OPTIONS_GHC -fno-warn-orphans #-}
 
-module Bio.Phylogeny.Solution where
+module Bio.Phylogeny.Solution
+  ( module Bio.Phylogeny.Solution
+  , module Bio.Phylogeny.Solution.Data
+  ) where
+
+import qualified File.Format.Newick as New
 
 import qualified Bio.Phylogeny.Forest           as FC
 import qualified Bio.Phylogeny.Network          as N
@@ -33,6 +39,7 @@ import           Data.Foldable
 import qualified Data.IntSet                    as IS
 import qualified Data.IntMap                    as IM
 import           Data.Key                       (lookup)
+import           Data.Maybe
 import           Data.Monoid
 import           Data.Vector                    ((!), (//), Vector, elemIndex)
 import qualified Data.Vector                    as V
@@ -43,7 +50,7 @@ instance BinaryTree DAG NodeInfo where
     parent     n t = headMay $ map (\i -> nodes t ! i) (parents n)
     leftChild  n t = lookup 0 $ (\i -> nodes t ! i) <$> children n
     rightChild n t = lookup 1 $ (\i -> nodes t ! i) <$> children n
-    verifyBinary t = V.foldr (\n acc -> length (children n) <= 2 && acc) True (nodes t)
+    verifyBinary   = all ((2 >=) . length . children) . nodes
 
 instance RoseTree DAG NodeInfo where
     parent n t = headMay $ map (\i -> nodes t ! i) (parents n)
@@ -119,7 +126,7 @@ instance Monoid (Solution d) where
 -- | Function to append two dags
 appendAt :: DAG -> DAG -> NodeInfo -> DAG
 appendAt d1@(DAG n e r) d2@(DAG n' e' r') hangNode
-    | null n = d2
+    | null n  = d2
     | null n' = d1
     | r > length n - 1 || r' > length n' - 1 = error "Root out of bounds when trying to append trees"
     | otherwise = DAG allNodes connectEdges r
@@ -130,7 +137,7 @@ appendAt d1@(DAG n e r) d2@(DAG n' e' r') hangNode
             hungNodes = n' // [(r', (n' ! r') {isRoot = False, parents = [hCode]})]
             connectN = n // [(hCode, hangNode {children = (shift + r') : children hangNode, isLeaf = False})]
             recodeNew = fmap recodeFun hungNodes
-            recodeFun n = n {code = code n + shift, children = map (shift +) (children n), parents = map (shift +) (parents n)}
+            recodeFun m = m {code = code m + shift, children = map (shift +) (children m), parents = map (shift +) (parents m) }
             allNodes = connectN V.++ recodeNew
             -- update edges and add connecting edge
             reMapOut = IM.foldWithKey (\k val acc -> IM.insert (k + shift) (reMapInfo val) acc) mempty
@@ -163,9 +170,9 @@ fromTopo (TopoDAG inTopo) = internalFromTopo inTopo
                 where
                     -- | Function to convert a node to a tree for folding
                     singletonDAG :: Topo -> DAG
-                    singletonDAG topo = 
-                      let myNode = Node 0 (TN.name topo) (TN.isRoot topo) (TN.isLeaf topo) [] [] (TN.encoded topo) (TN.packed topo) (TN.preliminary topo) 
-                                              (TN.final topo) (TN.temporary topo) (TN.aligned topo) (TN.localCost topo) (TN.totalCost topo)
+                    singletonDAG topoNode = 
+                      let myNode = Node 0 (TN.name topoNode) (TN.isRoot topoNode) (TN.isLeaf topoNode) [] [] (TN.encoded topoNode) (TN.packed topoNode) (TN.preliminary topoNode) 
+                                              (TN.final topoNode) (TN.temporary topoNode) (TN.aligned topoNode) (TN.localCost topoNode) (TN.totalCost topoNode)
                       in DAG (pure myNode) (pure mempty) 0 
 
 -- | Function to go from topo to referential
@@ -209,3 +216,20 @@ addConnections newNode myNodes =
     setOut curPos curNodes = curNodes // [(curPos, (curNodes ! curPos) {parents = code newNode : parents (curNodes ! curPos), isRoot = False})]
     withOut = foldr setOut withIn (children newNode)
   in withOut 
+
+-- | Convert from a Newick format to a current DAG
+fromNewick :: New.NewickForest -> Forest DAG
+fromNewick = fmap oneNewick
+  where
+    oneNewick :: New.NewickNode -> DAG
+    oneNewick = fromTopo . newickTopo
+    
+    newickTopo :: New.NewickNode -> TopoDAG
+    newickTopo tree0 = TopoDAG $ internalNewick tree0 True
+      where
+        internalNewick :: New.NewickNode -> Bool -> Topo
+        internalNewick inTree atRoot = TN.TopoNode atRoot (null $ New.descendants inTree) myName recurse mempty mempty mempty mempty mempty mempty myCost 0
+          where
+            recurse = fmap (flip internalNewick False) (New.descendants inTree) 
+            myName = fromMaybe "HTU 0" (New.newickLabel inTree)
+            myCost = fromMaybe 0 (New.branchLength inTree)
