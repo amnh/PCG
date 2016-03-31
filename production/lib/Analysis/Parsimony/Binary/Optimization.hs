@@ -40,17 +40,17 @@ import Bio.Metadata.Class (InternalMetadata(..), StoredMetadata(..))
 import Debug.Trace
 
 -- | Additional wrapper to optimize over a solution
-solutionOptimization :: SolutionConstraint r f t n s b m v => Double -> r -> r
+solutionOptimization :: SolutionConstraint' r f t n s m v => Double -> r -> r
 solutionOptimization weight inSolution = setForests inSolution (map (graphOptimization weight meta) (forests inSolution))
     where
         meta = metadata inSolution
 
 -- | Mapping function to optimize over a forest
-graphOptimization :: (ForestConstraint f t n s b, Metadata v m s) => Double -> v -> f -> f
+graphOptimization :: (ForestConstraint' f t n s, Metadata v m s) => Double -> v -> f -> f
 graphOptimization weight meta inGraph = setTrees inGraph (map (allOptimization weight meta) (trees inGraph))
 
 -- | Unified function to perform both the first and second passes
-allOptimization :: (TreeConstraint t n s b, Metadata v m s) => Double -> v -> t -> t
+allOptimization :: (TreeConstraint' t n s, Metadata v m s) => Double -> v -> t -> t
 --allOptimization _ inTree | trace ("allOptimization " ++ show (names inTree IM.! 63)) False = undefined
 allOptimization weight meta inTree = 
     let 
@@ -60,7 +60,7 @@ allOptimization weight meta inTree =
 
 -- | Optimization down pass warpper for recursion from root
 -- TODO: add a warning here if an internal node has no children (for all traversals)
-optimizationPreorder :: (TreeConstraint t n s b, Metadata v m s) => Double -> t -> v -> t
+optimizationPreorder :: (TreeConstraint' t n s, Metadata v m s) => Double -> t -> v -> t
 optimizationPreorder weight tree meta
     | isLeaf (root tree) tree = -- if the root is a terminal, give the whole tree a cost of zero, do not reassign nodes
         let 
@@ -96,7 +96,7 @@ optimizationPreorder weight tree meta
             rightOnly = isNothing $ leftChild (root tree) tree
 
 -- | Internal down pass that creates new rows without combining, making the algorithm faster
-internalPreorder :: (TreeConstraint t n s b, Metadata v m s) => Double -> n -> t -> v -> [n]
+internalPreorder :: (TreeConstraint' t n s, Metadata v m s) => Double -> n -> t -> v -> [n]
 internalPreorder weight node tree meta
     | isLeaf node tree = -- if the root is a terminal, give the whole tree a cost of zero, do not reassign nodes
         let newNode = setTotalCost 0.0 $ setLocalCost 0.0 node
@@ -129,7 +129,7 @@ internalPreorder weight node tree meta
             rightOnly = isNothing $ leftChild node tree
 
 -- | Wrapper for up pass recursion to deal with root
-optimizationPostorder :: (TreeConstraint t n s b, Metadata v m s) => t -> v -> t
+optimizationPostorder :: (TreeConstraint' t n s, Metadata v m s) => t -> v -> t
 optimizationPostorder tree meta
     | isLeaf (root tree) tree = tree
     | rightOnly && leftOnly = tree --error "Problem with binary tree structure: non-terminal has no children"
@@ -150,7 +150,7 @@ optimizationPostorder tree meta
             rightOnly = isNothing $ leftChild (root tree) tree
 
 -- | Internal up pass that performs most of the recursion
-internalPostorder :: (TreeConstraint t n s b, Metadata v m s) => n -> t -> v -> [n]
+internalPostorder :: (TreeConstraint' t n s, Metadata v m s) => n -> t -> v -> [n]
 internalPostorder node tree meta
     | isLeaf node tree = []
     | rightOnly && leftOnly = [] --error "Problem with binary tree structure: non-terminal has no children"
@@ -172,7 +172,7 @@ preorderNodeOptimize weight curNode lNode rNode meta = setTotalCost summedTotalC
     where
         summedTotalCost = sum $ totalCost <$> [res,lNode,rNode] --totalCost res + totalCost lNode + totalCost rNode
         res             = ifoldr chooseOptimization curNode (allMetadata meta)
-        chooseOptimization :: (NodeConstraint' n s, Metadata v m s) => Int -> n -> m -> v 
+        chooseOptimization :: (FinalNode n s, NodeConstraint' n s, Metadata v m s) => Int -> n -> m -> n
         chooseOptimization curPos setNode curCharacter
             -- TODO: Compiler error maybe below with comment structuers and 'lets'
             | aligned curCharacter =     
@@ -193,6 +193,9 @@ preorderNodeOptimize weight curNode lNode rNode meta = setTotalCost summedTotalC
         addTotalCost   addVal node   = setTotalCost (addVal + totalCost node) node
         addLocalCost   addVal node   = setLocalCost (addVal + localCost node) node
 
+-- | addToField takes in a setter fn, a getter fn, a value and a node.
+-- It then gets the related value from the node, adds to it the passed value, 
+-- and sets that value on the node. It returns a new node with the newly computed value set.
 addToField :: NodeConstraint' n s => (Vector s -> n -> n) -> (n -> Vector s) -> s -> n -> n
 addToField setter getter val node = setter (pure val <> getter node) node
 
@@ -202,9 +205,10 @@ postorderNodeOptimize curNode lNode rNode pNode meta
     | isNothing pNode = error "No parent node on postorder traversal"
     | otherwise       = ifoldr chooseOptimization curNode (allMetadata meta)
     where
-        chooseOptimization :: (NodeConstraint' n s, Metadata v m s) => Int -> n -> m -> v 
+        chooseOptimization :: (FinalNode n s, NodeConstraint' n s, Metadata v m s) => Int -> n -> m -> n 
         chooseOptimization i setNode curCharacter
             | aligned curCharacter = 
-                let finalAssign = postorderFitchBit (getForAlign curNode ! i) (getForAlign lNode ! i) (getForAlign rNode ! i) (getForAlign (fromJust pNode) ! i) (temporary curNode ! i) curCharacter
+                let finalAssign :: (FinalNode n s) => n
+                    finalAssign = postorderFitchBit (getForAlign curNode ! i) (getForAlign lNode ! i) (getForAlign rNode ! i) (getForAlign (fromJust pNode) ! i) (temporary curNode ! i) curCharacter
                 in addToField setFinal final finalAssign setNode
             | otherwise = setNode

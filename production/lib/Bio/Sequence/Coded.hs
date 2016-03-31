@@ -107,7 +107,10 @@ instance PackedSequence EncodedSeq where
 
 
 instance CodedChar EncodedSeq where
-    gapChar alphLen = Just $ setBit (bitVec alphLen 0) 0
+    gapChar alphLen = Just $ gapChar alphLen
+
+instance CodedChar BitVector where
+    gapChar alphLen = setBit (bitVec alphLen 0) 0
 
 -- | Get parsed sequenceS, return encoded sequenceS.
 -- Recall that each is Vector of Maybes, to this type is actually
