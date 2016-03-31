@@ -3,6 +3,7 @@ module Main where
 --import           Analysis.GenericFitch
 --import Analysis.Parsimony.Binary.Optimization
 import           Bio.Phylogeny.Graph
+--import           Bio.Phylogeny.Solution
 --import           Bio.Phylogeny.Graph.Utilities
 import qualified Bio.Phylogeny.PhyloCharacter as Char
 import           Bio.Phylogeny.Tree.Node
@@ -16,7 +17,7 @@ import qualified File.Format.Newick as N
 import           File.Format.Newick.Converter
 import           PCG.Command.Types.Report.CharacterMatrix
 import           PCG.Command.Types.Report.GraphViz
-import           PCG.Command.Types.Report.Newick
+--import           PCG.Command.Types.Report.Newick
 import           PCG.Command.Types.Report.Metadata
 --import           PCG.Command.Types.Report.TaxonMatrix
 import           Text.Megaparsec
@@ -50,8 +51,8 @@ madness = undefined --allOptimization 1 <$> madRead
 outputMad :: IO ()
 outputMad = outPutDot "TestArtmor.dot" =<< ((Graph . pure) <$> madRead) 
 
-madNewick :: IO ()
-madNewick = outPutNewick "TestArtmorNewick.new" =<< ((Graph . pure) <$> madness)
+--madNewick :: IO ()
+--madNewick = outPutNewick "TestArtmorNewick.new" =<< ((Solution . pure) <$> madness)
 
 madMatrix :: IO ()
 madMatrix = outPutMatrix "TestArtmorCharacterMat.csv" =<< ((Graph . pure) <$> madRead)
