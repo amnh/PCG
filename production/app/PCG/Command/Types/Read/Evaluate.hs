@@ -52,10 +52,10 @@ evaluate (READ fileSpecs) old = do
     result <- liftIO . runEitherT . eitherTValidation $ parseSpecifiedFile <$> fileSpecs
     case result of
       Left pErr -> fail $ show pErr   -- Report structural errors here.
-      Right xs -> fmap addMasks $
+      Right xs ->
         case masterUnify' $ transformation <$> concat xs of
           Left uErr -> fail $ show uErr -- Report rectification errors here.
-          Right g   -> old <> pure g    -- TODO: rectify against 'old' SearchState, don't just blindly merge
+          Right g   -> pure g    -- TODO: rectify against 'old' SearchState, don't just blindly merge
   where
     transformation = expandIUPAC . prependFilenamesToCharacterNames . applyReferencedTCM
 
