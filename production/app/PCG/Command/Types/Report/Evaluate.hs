@@ -16,6 +16,8 @@ import           PCG.Command.Types.Report.Internal
 import           PCG.Command.Types.Report.Metadata
 import           PCG.Command.Types.Report.Newick
 
+import Debug.Trace
+
 evaluate :: Command -> SearchState -> SearchState
 evaluate (REPORT target format) old = do
     stateValue <- old
@@ -38,6 +40,7 @@ addOptimization result
 
 -- TODO: Redo reporting
 generateOutput :: StandardSolution -> OutputFormat -> Either String String
+generateOutput _ f | trace (show f) False = undefined
 generateOutput g (CrossReferences fileNames) = Right $ taxonReferenceOutput g fileNames
 generateOutput g Data            {}          = Right $ newickReport (addOptimization g)
 generateOutput g DotFile         {}          = Right $ dotOutput g

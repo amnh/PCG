@@ -18,8 +18,8 @@ import Bio.Phylogeny.Solution
 import Bio.Phylogeny.PhyloCharacter
 import Data.Foldable
 import Data.List   (intercalate)
-import Data.Vector (fromList, ifoldr, Vector, cons)
-import qualified Data.Vector as V
+import Data.Monoid ((<>))
+import Data.Vector (Vector)
 
 --import Debug.Trace
 
@@ -29,11 +29,11 @@ outPutMetadata :: FilePath -> StandardSolution -> IO ()
 outPutMetadata fileName = writeFile fileName . metadataCsvOutput
 
 metadataCsvOutput :: StandardSolution -> String
-metadataCsvOutput solution = header ++ mainExport (metadata solution)
+metadataCsvOutput solution = header <> mainExport (metadata solution)
     where
         header = "DAG, Type, Name, Aligned, Additive, State Names, Alphabet, Ignored, Weight \n"
         mainExport :: Vector CharacterMetadata -> String
-        mainExport metadata = (V.foldr ((++) . fetchInfo) mempty metadata) ++ "\n"
+        mainExport = intercalate "\n" . fmap fetchInfo . toList 
 
 --metadataCsvOutput :: Graph -> String
 --metadataCsvOutput (Graph dags) = ifoldr oneCSV header (fromList dags)
