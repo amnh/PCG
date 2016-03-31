@@ -56,8 +56,8 @@ madNewick = outPutNewick "TestArtmorNewick.new" =<< ((Graph . pure) <$> madness)
 madMatrix :: IO ()
 madMatrix = outPutMatrix "TestArtmorCharacterMat.csv" =<< ((Graph . pure) <$> madRead)
 
-madMetadata :: IO ()
-madMetadata = outPutMetadata "TestArtmorMetadata.csv" =<< ((Graph . pure) <$> madRead)
+--madMetadata :: IO ()
+--madMetadata = outPutMetadata "TestArtmorMetadata.csv" =<< ((Graph . pure) <$> madRead)
 
 checkOuts :: IO (Vector Bool)
 checkOuts = liftM2 (V.zipWith (\n e -> not (isLeaf n) && null (outNodes e))) (nodes <$> madRead) (edges <$> madRead)

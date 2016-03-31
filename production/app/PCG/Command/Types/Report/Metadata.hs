@@ -14,30 +14,38 @@
 
 module PCG.Command.Types.Report.Metadata where
 
-import Bio.Phylogeny.Graph
+import Bio.Phylogeny.Solution
 import Bio.Phylogeny.PhyloCharacter
 import Data.Foldable
 import Data.List   (intercalate)
-import Data.Vector (fromList, ifoldr)
+import Data.Vector (fromList, ifoldr, Vector, cons)
+import qualified Data.Vector as V
 
 --import Debug.Trace
 
 -- TODO: use spreadsheet library for tabular output files
 -- | Wrapper function to output a metadata csv
-outPutMetadata :: FilePath -> Graph -> IO ()
+outPutMetadata :: FilePath -> StandardSolution -> IO ()
 outPutMetadata fileName = writeFile fileName . metadataCsvOutput
 
-metadataCsvOutput :: Graph -> String
-metadataCsvOutput (Graph dags) = ifoldr oneCSV header (fromList dags)
+metadataCsvOutput :: StandardSolution -> String
+metadataCsvOutput solution = header ++ mainExport (metadata solution)
     where
         header = "DAG, Type, Name, Aligned, Additive, State Names, Alphabet, Ignored, Weight \n"
+        mainExport :: Vector CharacterMetadata -> String
+        mainExport metadata = (V.foldr ((++) . fetchInfo) mempty metadata) ++ "\n"
 
-        -- | Main creation functionality
-        oneCSV :: Int -> DAG -> String -> String
---        oneCSV _index inDAG _curStr | trace ("oneCSV " ++ show (characters inDAG)) False = undefined
-        oneCSV index inDAG curStr = foldl (\acc c -> acc ++ show index ++ ", " ++ fetchInfo c ++ "\n") curStr myMeta
-            where
-                myMeta = characters inDAG
+--metadataCsvOutput :: Graph -> String
+--metadataCsvOutput (Graph dags) = ifoldr oneCSV header (fromList dags)
+--    where
+--        header = "DAG, Type, Name, Aligned, Additive, State Names, Alphabet, Ignored, Weight \n"
+
+--        -- | Main creation functionality
+--        oneCSV :: Int -> DAG -> String -> String
+----        oneCSV _index inDAG _curStr | trace ("oneCSV " ++ show (characters inDAG)) False = undefined
+--        oneCSV index inDAG curStr = foldl (\acc c -> acc ++ show index ++ ", " ++ fetchInfo c ++ "\n") curStr myMeta
+--            where
+--                myMeta = characters inDAG
 
 fetchInfo :: Show s => PhyloCharacter s -> String
 fetchInfo c = intercalate ", " $

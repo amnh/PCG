@@ -11,9 +11,9 @@ import           Control.Monad.IO.Class
 import           Control.Evaluation
 import           PCG.Command.Types (Command(..))
 import           PCG.Command.Types.Report.TaxonMatrix
---import           PCG.Command.Types.Report.GraphViz
+import           PCG.Command.Types.Report.GraphViz
 import           PCG.Command.Types.Report.Internal
---import           PCG.Command.Types.Report.Metadata
+import           PCG.Command.Types.Report.Metadata
 --import           PCG.Command.Types.Report.Newick
 
 evaluate :: Command -> SearchState -> SearchState
@@ -42,6 +42,6 @@ addOptimization result
 generateOutput :: StandardSolution -> OutputFormat -> Either String String
 generateOutput g (CrossReferences fileNames) = Right $ taxonReferenceOutput g fileNames
 --generateOutput g Data            {}          = Right $ newickReport (addOptimization g)
---generateOutput g DotFile         {}          = Right $ dotOutput g
---generateOutput g Metadata        {}          = Right $ metadataCsvOutput g
+generateOutput g DotFile         {}          = Right $ dotOutput g
+generateOutput g Metadata        {}          = Right $ metadataCsvOutput g
 generateOutput _ _ = Left "Unrecognized 'report' command"
