@@ -46,6 +46,8 @@ import qualified Data.Vector                    as V
 import           Safe
 import           Prelude                        hiding (lookup)
 
+import Debug.Trace
+
 instance BinaryTree DAG NodeInfo where
     parent     n t = headMay $ map (\i -> nodes t ! i) (parents n)
     leftChild  n t = lookup 0 $ (\i -> nodes t ! i) <$> children n
@@ -219,12 +221,15 @@ addConnections newNode myNodes =
 
 -- | Convert from a Newick format to a current DAG
 fromNewick :: New.NewickForest -> Forest DAG
-fromNewick = fmap oneNewick
+--fromNewick forest | trace ("fromNewick on forest " ++ show forest) False = undefined
+fromNewick forest = fmap oneNewick forest
   where
     oneNewick :: New.NewickNode -> DAG
-    oneNewick = fromTopo . newickTopo
+    --oneNewick new | trace ("oneNewick on tree " ++ show new) False = undefined
+    oneNewick new = fromTopo $ newickTopo new
     
     newickTopo :: New.NewickNode -> TopoDAG
+    --newickTopo tree0 | trace ("newickTopo on tree " ++ show tree0) False = undefined
     newickTopo tree0 = TopoDAG $ internalNewick tree0 True
       where
         internalNewick :: New.NewickNode -> Bool -> Topo

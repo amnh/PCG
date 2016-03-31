@@ -23,9 +23,13 @@ import qualified Bio.Phylogeny.Tree.Node as N
 
 import qualified Data.HashMap.Strict as HM
 import qualified Data.IntMap as IM
+import Control.Arrow ((***))
+import Data.Foldable
 import Data.Key
 import Data.List
-import Data.Matrix.NotStupid hiding (trace, (!))
+import Data.List.Utility
+import Data.Matrix.NotStupid hiding (trace, (!), toList)
+import Data.Ord    (comparing)
 import Data.Vector (ifoldr, ifilter, Vector, cons, imap)
 import qualified Data.Vector as V
 import Data.Maybe
@@ -43,14 +47,23 @@ taxonReferenceOutput :: StandardSolution -> [FilePath] -> String
 taxonReferenceOutput sol files = printIt $ makeRef sol files
     where
         makeRef :: StandardSolution -> [FilePath] -> TaxaPresence
-        makeRef inSolution inFilter = (V.foldr (\n acc -> acc <-> rowVector (oneRow n)) mempty (V.fromList allNodes), allNodes, files)
+        makeRef inSolution inFilter = (presenceMatrix, toList allNodes, toList finalFiles)
+                                    --(V.foldr (\n acc -> acc <-> rowVector (oneRow n)) mempty (V.fromList allNodes), allNodes, files)
             where
-                filterNames name = if null inFilter then True
-                                    else name `elem` inFilter
-                fileNames = fmap (fst . span (/=':') . name) (metadata inSolution)
-                filt@(checkPos, finalFiles) = unzip $ V.toList $ V.ifoldr (\i n acc -> if filterNames n then (i, n) `cons` acc else acc) mempty fileNames
+                presenceMatrix = matrix (length allNodes) (length checkPos) gen
+                gen :: (Int,Int) -> Bool
+                --gen (i,j) | trace ("gen on row " ++ show i ++ " " ++ show (length (allSeqs ! (allNodes V.! i))) ++ " " ++ show (checkPos V.! j)) False = undefined
+                gen (i,j) = isJust $ (allSeqs ! (allNodes V.! i)) V.! (checkPos V.! j)
+                  
+                filterNames name = null inFilter || name `elem` inFilter
+                fileNames = fst . span (/=':') . name <$> metadata inSolution
+                filt@(checkPos, finalFiles) = (V.fromList *** V.fromList)
+                                            . unzip
+                                            . nubBy (\x y -> snd x == snd y)
+                                            . toList
+                                            $ V.ifoldr (\i n acc -> if filterNames n then (i, n) `cons` acc else acc) mempty fileNames
                 allSeqs = parsedChars inSolution
-                allNodes = HM.keys allSeqs
+                allNodes = V.fromList $ HM.keys allSeqs
                 oneRow curNode = ifoldr (\i s acc -> if i `elem` checkPos then (not (isNothing s)) `cons` acc else acc) mempty (allSeqs ! curNode)
 
 --taxonReferenceOutput :: StandardSolution -> [FilePath] -> String

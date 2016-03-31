@@ -11,6 +11,7 @@
 -- Functionality to output a Newick format from a Graph
 --
 -----------------------------------------------------------------------------
+{-# LANGUAGE BangPatterns #-}
 
 module PCG.Command.Types.Report.Newick where
 
@@ -39,7 +40,7 @@ newickRenderDag dag = concat [ newickRenderNode rootNode, "[", show treeCost, "]
   where
     rootNode = structure $ toTopo dag
     treeCost = totalCost rootNode
-    newickRenderNode :: TopoNode b -> String
+    newickRenderNode :: Show b => TopoNode b -> String
     newickRenderNode node
       | null (children node) = name node
       | otherwise = (\x -> "(" <> x <> ")") . intercalate "," $ newickRenderNode <$> children node

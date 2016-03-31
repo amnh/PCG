@@ -44,7 +44,7 @@ import           File.Format.Newick
 import           File.Format.TransitionCostMatrix
 import           PCG.Command.Types.Read.Unification.UnificationError
 
---import Debug.Trace
+import Debug.Trace
 
 data FracturedParseResult
    = FPR
@@ -61,7 +61,7 @@ masterUnify' = rectifyResults
 rectifyResults :: [FracturedParseResult] -> Either UnificationError (Solution DAG)
 rectifyResults fprs
   | not (null errors) = Left  $ foldl1 (<>) errors
-  | otherwise         = Right maskedSolution
+  | otherwise         = Right $ {- (\x -> trace ("Called one (maybe?) " <> show x) x) -} maskedSolution
   where
     -- Step 1: Gather data file contents
     dataSeqs        = (parsedChars &&& parsedMetas) <$> filter (not . fromTreeOnlyFile) fprs
@@ -72,10 +72,10 @@ rectifyResults fprs
     -- Step 4: Gather the taxa names for each forest from terminal nodes
     forestTaxa      = (mconcat . fmap terminalNames . parsedTrees &&& id) <$> allForests
     -- Step 5: Assert that each terminal node name is unique in the forest
-    duplicateNames  = filter (null . fst) $ (duplicates *** id) <$> forestTaxa
+    duplicateNames  = filter (not . null . fst) $ (duplicates *** id) <$> forestTaxa
     -- Step 6: Assert that each forest's terminal node set is exactly the same as the taxa set from "data files"
-    extraNames      = filter (not . null . (taxaSet \\) . fst) $ (S.fromList *** id) <$> forestTaxa
-    missingNames    = filter (not . null . (\\ taxaSet) . fst) $ (S.fromList *** id) <$> forestTaxa
+    extraNames      = filter (not . null . fst) $ ((\\ taxaSet) . S.fromList *** id) <$> forestTaxa
+    missingNames    = {- (\x -> trace (show x) x) . -} filter (not . null . fst) $ ((taxaSet \\) . S.fromList *** id) <$> forestTaxa
     -- Step 7: Combine disparte sequences from many sources  into single metadata & character sequence.
     (charSeqs,combinedMetadata) = joinSequences dataSeqs
     -- Step 8: Convert topological forests to DAGs (using reference indexing from #7 results)

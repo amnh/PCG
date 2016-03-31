@@ -44,7 +44,8 @@ type SeqConstraint               s b   = (CodedSequence s, Eq s, CharConstraint 
 type SeqConstraint'              s     = (CodedSequence s, Eq s, Show s, Bits s, Monoid s)
 type CharConstraint                b   = (Bits b, Eq b, CodedChar b, Show b)
 type Subtrees                          = Matrix Int
-type Metadata m s                      = (InternalMetadata m s)
+type Metadata m s                      = (InternalMetadata m s, Show m)
+
 
 setElemSafe :: (Num a) => a -> (Maybe Int, Maybe Int) -> Matrix a -> Matrix a
 setElemSafe value (row, col) matrix

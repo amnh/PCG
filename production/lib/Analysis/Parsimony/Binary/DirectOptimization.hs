@@ -27,6 +27,8 @@ import Data.Monoid
 import Bio.Metadata.Class (InternalMetadata(..))
 import Bio.Sequence.Coded
 
+--import Debug.Trace
+
 data Direction = LeftDir | DiagDir | DownDir deriving (Eq, Show)
 
 type AlignRow s = (Vector Double, s, Vector Direction)

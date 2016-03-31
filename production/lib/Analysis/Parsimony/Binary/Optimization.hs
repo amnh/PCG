@@ -38,7 +38,7 @@ import Bio.Phylogeny.Tree.Node.Encoded
 import Bio.Phylogeny.Tree.CharacterAware
 import Bio.Metadata.Class (InternalMetadata(..))
 
-import Debug.Trace
+--import Debug.Trace
 
 -- | Additional wrapper to optimize over a solution
 solutionOptimization :: SolutionConstraint' r f t n s m => Double -> r -> r
@@ -178,7 +178,7 @@ preorderNodeOptimize weight curNode lNode rNode meta = setTotalCost summedTotalC
         chooseOptimization curPos curCharacter setNode
             -- TODO: Compiler error maybe below with comment structuers and 'lets'
             | aligned curCharacter =
-                let (assign, temp, local) = {- trace (show curCharacter) $ -} preorderFitchBit weight (getForAlign lNode ! curPos) (getForAlign rNode ! curPos) curCharacter
+                let (assign, temp, local) =  preorderFitchBit weight (getForAlign lNode ! curPos) (getForAlign rNode ! curPos) curCharacter
                 in addLocalCost local $ addTotalCost local $ addAlign assign $ addPreliminary assign setNode
             | otherwise =
                 --let (ungapped, cost, gapped, leftGapped, rightGapped) = naiveDO (getForAlign lNode ! curPos) (getForAlign rNode ! curPos) curCharacter
@@ -188,7 +188,7 @@ preorderNodeOptimize weight curNode lNode rNode meta = setTotalCost summedTotalC
                 -- the return type is a vector of encoded sequences,
                 -- where an EncodedSeq (encoded sequence) is a maybe vector of some type from Bio/Sequence/Coded.hs
                 let (ungapped, cost, gapped, leftGapped, rightGapped) = sequentialAlign (getForAlign lNode ! curPos) (getForAlign rNode ! curPos)
-                in  trace (show ungapped ++ " " ++ (show gapped)) $ addLocalCost cost $ addTotalCost cost $ addAlign gapped $ addPreliminary ungapped setNode
+                in  addLocalCost cost $ addTotalCost cost $ addAlign gapped $ addPreliminary ungapped setNode
 
         addPreliminary addVal inNode = addToField setPreliminary preliminary      addVal inNode
         addAlign       addVal inNode = addToField setAlign       preliminaryAlign addVal inNode
