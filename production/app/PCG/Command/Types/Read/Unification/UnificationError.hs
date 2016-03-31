@@ -12,9 +12,9 @@ data UnificationError
 data UnificationErrorMessage
    = NonMatchingTaxa     [TaxaName] [TaxaName] 
    | NonMatchingTaxaSeqs [TaxaName] [TaxaName]
-   | ForestDuplicateTaxa   (NonEmpty TaxaName) FilePath
-   | ForestExtraTaxa       (NonEmpty TaxaName) FilePath
-   | ForestMissingTaxa     (NonEmpty TaxaName) FilePath
+   | ForestDuplicateTaxa (NonEmpty TaxaName) FilePath
+   | ForestExtraTaxa     (NonEmpty TaxaName) FilePath
+   | ForestMissingTaxa   (NonEmpty TaxaName) FilePath
 
 instance Show UnificationErrorMessage where
   show (NonMatchingTaxa xs ys) =
