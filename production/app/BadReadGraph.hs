@@ -48,8 +48,8 @@ madRead = badReadGraph "../../TestDat/fakeArtmor.fas" "../../TestDat/artmor.tre"
 madness :: IO DAG
 madness = undefined --allOptimization 1 <$> madRead
 
-outputMad :: IO ()
-outputMad = outPutDot "TestArtmor.dot" =<< ((Graph . pure) <$> madRead) 
+--outputMad :: IO ()
+--outputMad = outPutDot "TestArtmor.dot" =<< ((Graph . pure) <$> madRead) 
 
 --madNewick :: IO ()
 --madNewick = outPutNewick "TestArtmorNewick.new" =<< ((Solution . pure) <$> madness)
