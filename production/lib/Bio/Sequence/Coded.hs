@@ -42,11 +42,11 @@ import           Data.Vector           (fromList, foldr, Vector)
         -- Think about a nonempty type class or a refinement type for this
 
 -- | EncodedSequences is short for a vector of EncodedSeq
--- TODO: change name to make clear the difference between a CodedSequence and an EncodedSequence
 type EncodedSequences = Vector EncodedSeq
 
 -- | An EncodedSeq (encoded sequence) is a maybe vector of characters
 -- TODO: Can we get rid of this Maybe, and just set to [0]0, instead?
+-- TODO: change name to make clear the difference between a CodedSequence and an EncodedSeq
 type EncodedSeq = Maybe BitVector
 
 -- | Make EncodedSeq an instance of CodedSequence
@@ -77,7 +77,7 @@ instance CodedSequence EncodedSeq where
                                                             ) zeroBits (group alphLen bitsVal)
             where 
                 alphLen = length alphabet
-    grabSubChar inSeq pos alphabet = extract pos (length alphabet) <$> inSeq
+    grabSubChar inSeq pos alphLen = extract pos alphLen <$> inSeq
     isEmpty seqs = case seqs of
         Nothing -> True
         Just x  -> x /= zeroBits -- TODO: Is this right?

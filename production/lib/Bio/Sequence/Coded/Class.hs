@@ -37,7 +37,7 @@ class Monoid s => CodedSequence s where
     encodeOverAlphabet   :: ParsedSeq -> Alphabet -> s
     emptySeq             :: s
     filterGaps           :: s -> s -> Alphabet -> s
-    grabSubChar          :: s -> Int -> Alphabet -> s
+    grabSubChar          :: s -> Int -> Int -> s
     isEmpty              :: s -> Bool
     numChars             :: s -> Int
     

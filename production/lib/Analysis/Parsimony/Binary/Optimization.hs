@@ -173,7 +173,6 @@ preorderNodeOptimize weight curNode lNode rNode meta = setTotalCost summedTotalC
         summedTotalCost = sum $ totalCost <$> [res,lNode,rNode] --totalCost res + totalCost lNode + totalCost rNode
         res             = ifoldr chooseOptimization curNode (allMetadata meta)
         chooseOptimization :: (NodeConstraint n s b, Metadata v m s) => Int -> n -> n -> v 
-
         chooseOptimization curPos setNode curCharacter
             -- TODO: Compiler error maybe below with comment structuers and 'lets'
             | aligned curCharacter =     
