@@ -20,18 +20,14 @@ import Bio.Phylogeny.Tree.Node.Topological (TopoNode(..))
 import Data.Monoid            ((<>))
 import Data.List              (intercalate)
 
-import Debug.Trace
-
 -- | Main fold over a graph
 newickReport :: StandardSolution -> String
-newickReport _ | trace "newicklReport called!!" False = undefined
 newickReport solution =
   case newickRenderForest <$> forests solution of
     []   -> "There were no trees. Check input data for inconsistencies?"
     strs -> intercalate ";\n" strs
 
 newickRenderForest :: Forest DAG -> String
-newickRenderForest _ | trace "newickRenderForest Called" False = undefined
 newickRenderForest []   = ""
 newickRenderForest dags =
   case concat $ newickRenderDag <$> dags of
@@ -40,13 +36,11 @@ newickRenderForest dags =
 
 -- Probably doesn't handle a tree with a single node well since Newick format sucks at specifying that...
 newickRenderDag :: DAG -> String
-newickRenderDag dag | trace ("newickRenderDag called: ") False = undefined
 newickRenderDag dag = concat [ newickRenderNode rootNode, "[", show treeCost, "];" ]
   where
     rootNode = structure $ toTopo dag
     treeCost = totalCost rootNode
     newickRenderNode :: Show b => TopoNode b -> String
-    newickRenderNode n | trace ("neickRenderNode called (!)" <> show n) False = undefined
     newickRenderNode node
       | null (children node) = name node
       | otherwise = (\x -> "(" <> x <> ")") . intercalate "," $ newickRenderNode <$> children node
