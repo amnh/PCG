@@ -318,6 +318,22 @@ joinSequences =  foldl' g (mempty, mempty)
         inOnlyOld    = fmap (`mappend` nextPad) $  oldTreeSeqs `difference` nextTreeSeqs
         inOnlyNext   = fmap (oldPad  `mappend`) $ nextTreeSeqs `difference`  oldTreeSeqs
 
+-- | Functionality to encode into a solution
+encodeSolution :: StandardSolution -> StandardSolution
+encodeSolution (Solution taxaSeqs metadata forests) = mapWithKey encodeAndSet taxaSeqs
+  where
+    encodeIt curSeq = encodeOverMetadata curSeq metadata
+    encodeAndSet name s = applyToAll name (encodeIt curSeq)
+    applyToAll name coded = fmap (applyToForest name coded) forests
+    applyToForest name coded forest = fmap (applyToDAG name coded) forest
+
+    applyToForest :: Identifier -> EncodedSequences BitVector -> DAG -> DAG
+    applyToForest inName coded inD@(DAG nodes _ _) = case matching of
+      Nothing -> inD
+      Just matching -> inD {nodes = (nodes inD) // [(code matching, matching {encoded = coded})]}
+      where
+        matching = find (inName == name) nodes
+
 {-
 -- | New functionality to encode into a graph
 encodeGraph' :: (Vector CharInfo, TreeSeqs) -> Either UnificationError Graph -> Either UnificationError Graph
