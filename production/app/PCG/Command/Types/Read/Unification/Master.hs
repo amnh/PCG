@@ -44,7 +44,7 @@ import           File.Format.Newick
 import           File.Format.TransitionCostMatrix
 import           PCG.Command.Types.Read.Unification.UnificationError
 
---import Debug.Trace
+import Debug.Trace
 
 data FracturedParseResult
    = FPR
@@ -61,7 +61,7 @@ masterUnify' = rectifyResults
 rectifyResults :: [FracturedParseResult] -> Either UnificationError (Solution DAG)
 rectifyResults fprs
   | not (null errors) = Left  $ foldl1 (<>) errors
-  | otherwise         = Right maskedSolution
+  | otherwise         = Right $ {- (\x -> trace ("Called one (maybe?) " <> show x) x) -} maskedSolution
   where
     -- Step 1: Gather data file contents
     dataSeqs        = (parsedChars &&& parsedMetas) <$> filter (not . fromTreeOnlyFile) fprs

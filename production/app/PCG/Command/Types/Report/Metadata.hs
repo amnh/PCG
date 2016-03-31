@@ -31,7 +31,7 @@ outPutMetadata fileName = writeFile fileName . metadataCsvOutput
 metadataCsvOutput :: StandardSolution -> String
 metadataCsvOutput solution = header <> mainExport (metadata solution)
     where
-        header = "DAG, Type, Name, Aligned, Additive, State Names, Alphabet, Ignored, Weight \n"
+        header = "Type, Name, Aligned, Additive, State Names, Alphabet, Ignored, Weight \n"
         mainExport :: Vector CharacterMetadata -> String
         mainExport = intercalate "\n" . fmap fetchInfo . toList 
 

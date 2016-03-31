@@ -28,7 +28,7 @@ import           Data.Maybe                 (fromMaybe)
 --import qualified Data.HashMap.Strict  as HM (fromList)
 import           Data.Vector                (Vector)
 import qualified Data.Vector           as V (zipWith)
---import           Debug.Trace
+import           Debug.Trace
 import           File.Format.Fasta   hiding   (FastaSequenceType(..))
 import qualified File.Format.Fasta   as Fasta (FastaSequenceType(..))
 import           File.Format.Fastc   hiding (Identifier)
@@ -47,6 +47,7 @@ import           Text.Megaparsec
 
 evaluate :: Command -> SearchState -> SearchState
 {--}
+--evaluate (READ fileSpecs) _old | trace ("Evaluated called: " <> show fileSpecs) False = undefined
 evaluate (READ fileSpecs) _old = do
     when (null fileSpecs) $ fail "No files specified in 'read()' command"
     result <- liftIO . runEitherT . eitherTValidation $ parseSpecifiedFile <$> fileSpecs
