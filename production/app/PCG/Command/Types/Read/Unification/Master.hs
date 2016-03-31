@@ -16,9 +16,11 @@ module PCG.Command.Types.Read.Unification.Master where
 
 import           Bio.Phylogeny.Graph      (CharInfo)
 import           Bio.Phylogeny.Solution hiding (parsedChars)
+import           Bio.Sequence.Coded
 import           Bio.Sequence.Parsed
 import           Bio.Phylogeny.Tree.Node hiding (isLeaf)
 import           Control.Arrow            ((***),(&&&))
+import           Data.BitVector hiding (not, foldr)
 import           Data.Foldable
 import qualified Data.HashMap.Lazy  as HM
 import           Data.IntMap              (elems)
@@ -36,7 +38,7 @@ import           Data.Set                 (union)
 import           Data.Set                 ((\\))
 import qualified Data.Set           as S  (fromList)
 import           Data.Vector              (Vector, (//), cons, generate, imap)
-import qualified Data.Vector        as V  (replicate, foldr, (!))
+import qualified Data.Vector        as V  (replicate, foldr, (!), find, length)
 import           File.Format.Conversion.Encoder
 import           File.Format.Newick
 import           File.Format.TransitionCostMatrix
@@ -105,6 +107,39 @@ terminalNames :: NewickNode -> [Identifier]
 terminalNames n
   | isLeaf n  = [fromJust $ newickLabel n]
   | otherwise = mconcat $ terminalNames <$> descendants n
+
+-- | Functionality to encode into a solution
+encodeSolution :: StandardSolution -> StandardSolution
+encodeSolution inVal@(Solution taxaSeqs metadata inForests) = inVal {forests = HM.foldrWithKey encodeAndSet inForests taxaSeqs}
+  where
+    combineWithSet :: [Forest DAG] -> [Forest DAG] -> [Forest DAG]
+    combineWithSet = zipWith (zipWith comboSet)
+      where
+        comboSet :: DAG -> DAG -> DAG
+        comboSet dag1 dag2 = dag1 {nodes = foldr (\i acc -> (chooseNode (nodes dag1) (nodes dag2) i) `cons` acc) mempty [0..nodeLen-1]}
+          where
+            nodeLen = V.length $ nodes  dag1
+            chooseNode :: Vector NodeInfo -> Vector NodeInfo -> Int -> NodeInfo
+            chooseNode nodes1 nodes2 pos 
+              | not $ null $ encoded $ nodes1 V.! pos = nodes1 V.! pos
+              | not $ null $ encoded $ nodes2 V.! pos = nodes2 V.! pos
+              | otherwise = nodes1 V.! pos
+    --encodeAndSet :: Identifier -> Sequences -> [Forest DAG]
+    --encodeAndSet name s = fmap (overForests name (encodeIt s metadata)) forests
+    --overForests :: Identifier -> Sequences -> [Forest DAG] -> [Forest DAG]
+    --overForests name coded forests = fmap (applyToForest name coded) forests
+    --applyToForest :: Identifier -> EncodedSequences BitVector -> Forest DAG -> Forest DAG
+    --applyToForest name coded forest = fmap (applyToDAG name coded) forest
+    encodeAndSet :: Identifier -> Sequences -> [Forest DAG] -> [Forest DAG]
+    encodeAndSet name s inForests = fmap (fmap (applyToDAG name coded)) inForests
+      where coded = encodeIt s metadata
+
+    applyToDAG :: Identifier -> EncodedSequences BitVector -> DAG -> DAG
+    applyToDAG inName coded inD@(DAG inNodes _ _) = case matching of
+      Nothing -> inD
+      Just matching -> inD {nodes = inNodes // [(code matching, matching {encoded = coded})]}
+      where
+        matching = V.find (\n -> name n == inName) inNodes
 
 {-
 -- | Takes in a list of parse results and outputs 
@@ -323,21 +358,7 @@ joinSequences =  foldl' g (mempty, mempty)
         inOnlyOld    = fmap (`mappend` nextPad) $  oldTreeSeqs `difference` nextTreeSeqs
         inOnlyNext   = fmap (oldPad  `mappend`) $ nextTreeSeqs `difference`  oldTreeSeqs
 
--- | Functionality to encode into a solution
-encodeSolution :: StandardSolution -> StandardSolution
-encodeSolution (Solution taxaSeqs metadata forests) = mapWithKey encodeAndSet taxaSeqs
-  where
-    encodeIt curSeq = encodeOverMetadata curSeq metadata
-    encodeAndSet name s = applyToAll name (encodeIt curSeq)
-    applyToAll name coded = fmap (applyToForest name coded) forests
-    applyToForest name coded forest = fmap (applyToDAG name coded) forest
 
-    applyToForest :: Identifier -> EncodedSequences BitVector -> DAG -> DAG
-    applyToForest inName coded inD@(DAG nodes _ _) = case matching of
-      Nothing -> inD
-      Just matching -> inD {nodes = (nodes inD) // [(code matching, matching {encoded = coded})]}
-      where
-        matching = find (inName == name) nodes
 
 {-
 -- | New functionality to encode into a graph
