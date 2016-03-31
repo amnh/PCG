@@ -59,6 +59,15 @@ edgeConnection (EdgeInfo (a,b) _)
   | a <= b    = (a,b)
   | otherwise = (b,a)
 
+edgeOrigin :: EdgeInfo -> VertexLabel
+edgeOrigin (EdgeInfo (e,_) _) = e
+
+edgeTarget :: EdgeInfo -> VertexLabel
+edgeTarget (EdgeInfo (_,e) _) = e
+
+edgeLength :: EdgeInfo -> Maybe Double
+edgeLength (EdgeInfo (_,_) n) = n
+                               
 -- | Reads two vertex sets and an edge set, conditionally infers the root set
 -- when vertex sets are unlabeled. Ensures that the elements of the root set
 -- are not connected in the forest. Ensures that the rooted trees in the
@@ -90,15 +99,15 @@ verDefinition = do
   where
     formVertexEdgeRoot x@(typeA, setA) y@(typeB, setB) edges' =
       case (typeA, typeB) of
-        (Nothing       , Nothing       ) -> let [m,n] = sortBy (comparing size) [setA,setB]
-                                            in pure $ VER n    edges' m
+        (Nothing       , Nothing      ) -> let [m,n] = sortBy (comparing size) [setA,setB]
+                                           in pure $ VER n    edges' m
         (Nothing       , Just Vertices) ->    pure $ VER setB edges' setA
-        (Nothing       , Just Roots    ) ->    pure $ VER setA edges' setB
-        (Just Vertices, Nothing       ) ->    pure $ VER setA edges' setB
-        (Just Roots    , Nothing       ) ->    pure $ VER setB edges' setA
-        (Just Vertices, Just Roots    ) ->    pure $ VER setA edges' setB 
+        (Nothing       , Just Roots   ) ->    pure $ VER setA edges' setB
+        (Just Vertices , Nothing      ) ->    pure $ VER setA edges' setB
+        (Just Roots    , Nothing      ) ->    pure $ VER setB edges' setA
+        (Just Vertices , Just Roots   ) ->    pure $ VER setA edges' setB 
         (Just Roots    , Just Vertices) ->    pure $ VER setB edges' setA
-        (_             , _             ) -> runFail $ vertexSetMessages [x,y]
+        (_             , _            ) -> runFail $ vertexSetMessages [x,y]
     runFail [x] = fail x
     runFail xs  = fails xs
     vertexSetMessages xs    = rootSetMessages roots' ++ vertSetMessages verticies'

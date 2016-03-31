@@ -14,21 +14,31 @@
 
 module PCG.Command.Types.Read.Unification.Master where
 
-import           Bio.Phylogeny.Graph
+import           Bio.Phylogeny.Graph      (CharInfo)
+import           Bio.Phylogeny.Solution hiding (parsedChars)
 import           Bio.Sequence.Parsed
-import           Bio.Phylogeny.Tree.Node
+import           Bio.Phylogeny.Tree.Node hiding (isLeaf)
+import           Control.Arrow            ((***),(&&&))
 import           Data.Foldable
-import qualified Data.HashMap.Lazy as HM
-import           Data.IntMap             (elems)
-import qualified Data.IntMap       as IM 
-import           Data.Key                ((!))
-import           Data.List               ((\\), isPrefixOf, nub)
-import           Data.Map                (foldWithKey, difference, intersectionWith)
-import qualified Data.Map          as M 
-import           Data.Monoid
-import           Data.Vector             (Vector, (//), cons, generate, imap)
-import qualified Data.Vector       as V  (replicate, foldr, (!))
+import qualified Data.HashMap.Lazy  as HM
+import           Data.IntMap              (elems)
+import qualified Data.IntMap        as IM 
+import           Data.Key                 ((!))
+import           Data.List                (isPrefixOf, nub)
+import qualified Data.List.NonEmpty as NE (fromList)
+import           Data.List.Utility        (duplicates)
+import           Data.Map                 (foldWithKey, difference, intersectionWith, keys)
+import qualified Data.Map           as M
+import           Data.Maybe               (catMaybes, fromJust)
+import           Data.Monoid       hiding ((<>))
+import           Data.Semigroup           ((<>))
+import           Data.Set                 (union)
+import           Data.Set                 ((\\))
+import qualified Data.Set           as S  (fromList)
+import           Data.Vector              (Vector, (//), cons, generate, imap)
+import qualified Data.Vector        as V  (replicate, foldr, (!))
 import           File.Format.Conversion.Encoder
+import           File.Format.Newick
 import           File.Format.TransitionCostMatrix
 import           PCG.Command.Types.Read.Unification.UnificationError
 
@@ -36,14 +46,62 @@ import Debug.Trace
 
 data FracturedParseResult
    = FPR
-   { parsedChars  :: [TreeSeqs]
-   , parsedMetas  :: [Vector CharInfo]
-   , parsedTrees  :: Graph
+   { parsedChars  :: TreeSeqs
+   , parsedMetas  :: Vector CharInfo
+   , parsedTrees  :: Forest NewickNode
    , relatedTcm   :: Maybe TCM
    , sourceFile   :: FilePath
    } deriving (Show)
-          
 
+masterUnify' = rectifyResults
+
+rectifyResults :: [FracturedParseResult] -> Either UnificationError (Solution DAG)
+rectifyResults fprs
+  | not (null errors) = Left $ foldl1 (<>) errors
+  | otherwise         = Right $ Solution mempty mempty []
+  where
+    -- Step 1: Gather data file contents
+    dataSeqs        = (parsedChars &&& parsedMetas) <$> filter (not . fromTreeOnlyFile) fprs
+    -- Step 2: Union the taxa names together into total terminal set
+    taxaSet         = mconcat $ (S.fromList . keys . fst) <$> dataSeqs
+    -- Step 3: Gather forest file data
+    forests         = filter (not . null . parsedTrees) fprs
+    -- Step 4: Gather the taxa names for each forest from terminal nodes
+    forestTaxa      = (mconcat . fmap terminalNames . parsedTrees &&& id) <$> forests
+    -- Step 5: Assert that each terminal node name is unique in the forest
+    duplicateNames  = filter (null . fst) $ (duplicates *** id) <$> forestTaxa
+    -- Step 6: Assert that each forest's terminal node set is exactly the same as the taxa set from "data files"
+    extraNames      = filter (not . null . (taxaSet \\) . fst) $ (S.fromList *** id) <$> forestTaxa
+    missingNames    = filter (not . null . (\\ taxaSet) . fst) $ (S.fromList *** id) <$> forestTaxa
+    -- Step 7: Combine disparte sequences from many sources  into single metadata & character sequence.
+    (metadata, charSeqs) = joinSequences dataSeqs
+    -- Step 8: Convert topological forests to DAGs (using reference indexing from #7 results)
+
+    errors         = catMaybes [duplicateError, extraError, missingError]
+    duplicateError =
+      if null duplicateNames
+      then Nothing
+      else Just . UnificationError . NE.fromList $ uncurry ForestDuplicateTaxa . (NE.fromList . toList *** sourceFile) <$> duplicateNames
+    extraError =
+      if null extraNames
+      then Nothing
+      else Just . UnificationError . NE.fromList $ uncurry ForestExtraTaxa     . (NE.fromList . toList *** sourceFile) <$> extraNames
+    missingError =
+      if null missingNames
+      then Nothing
+      else Just . UnificationError . NE.fromList $ uncurry ForestMissingTaxa   . (NE.fromList . toList *** sourceFile) <$> missingNames
+
+fromTreeOnlyFile :: FracturedParseResult -> Bool
+fromTreeOnlyFile fpr = null chars || all null chars
+  where
+    chars = parsedChars fpr
+
+terminalNames :: NewickNode -> [Identifier]
+terminalNames n
+  | isLeaf n  = [fromJust $ newickLabel n]
+  | otherwise = mconcat $ terminalNames <$> descendants n
+
+{-
 -- | Takes in a list of parse results and outputs 
 -- accumulates in metadata, then topological structure, then sequences 
 -- before encoding and outputting
@@ -68,6 +126,16 @@ masterUnify inResults =
         where
           shoveIt (Graph dags) = if null chars then dags
                                   else zipWith (\d c -> d {characters = c}) dags chars
+
+
+taxaSet :: [FracturedParseResult] -> Set String
+taxaSet = mconcat . fmap (S.fromList . keys . parsedChars) . filter (not fromTreeOnlyFile)
+  where
+    fromTreeOnlyFile fpr = null chars || all null chars
+      where
+        chars = parsedChars fpr
+
+
 
 -- | Verify that between two graphs, the taxa names are the same
 checkTaxaMatch :: Graph -> Graph -> ([String], [String])
@@ -232,23 +300,25 @@ verifyNaming eGraph seqNames = eGraph
     namesList = map (elems . nodeNames)
     doMatch l1 l2 = if null l1 || null l2 then (mempty, mempty)
                       else ((l1 \\ l2), (l1 \\ l2))
+-}
 
 -- | Joins the sequences of a fractured parse result
-joinSequences :: [FracturedParseResult] -> (Vector CharInfo, TreeSeqs)
-joinSequences =  foldl' f (mempty, mempty) . filter (not . null . parsedChars)
+joinSequences :: Foldable t => t (TreeSeqs, Vector CharInfo) -> (TreeSeqs, Vector CharInfo)
+joinSequences =  foldl' g (mempty, mempty)
   where
-    f :: (Vector CharInfo, TreeSeqs) -> FracturedParseResult -> (Vector CharInfo, TreeSeqs)
-    f acc fpr = g acc $ foldl' g (mempty, mempty) $ zip (parsedMetas fpr) (parsedChars fpr)
+--    f :: (TreeSeqs, Vector CharInfo) -> FracturedParseResult -> (TreeSeqs, Vector CharInfo)
+--    f acc fpr = g acc $ (parsedMetas fpr, parsedChars fpr)
 
-    g :: (Vector CharInfo, TreeSeqs) -> (Vector CharInfo, TreeSeqs) -> (Vector CharInfo, TreeSeqs)
-    g (oldMetaData, oldTreeSeqs) (nextMetaData, nextTreeSeqs) = (oldMetaData <> nextMetaData, inOnlyOld <> inBoth <> inOnlyNext)
+    g :: (TreeSeqs, Vector CharInfo) -> (TreeSeqs, Vector CharInfo) -> (TreeSeqs, Vector CharInfo)
+    g (oldTreeSeqs, oldMetaData) (nextTreeSeqs, nextMetaData) = (inOnlyOld `mappend` inBoth `mappend` inOnlyNext, oldMetaData `mappend` nextMetaData)
       where
         oldPad       = generate (length  oldMetaData) (const Nothing) 
         nextPad      = generate (length nextMetaData) (const Nothing)
-        inBoth       = intersectionWith (<>) oldTreeSeqs nextTreeSeqs
-        inOnlyOld    = fmap (<> nextPad) $  oldTreeSeqs `difference` nextTreeSeqs
-        inOnlyNext   = fmap (oldPad  <>) $ nextTreeSeqs `difference`  oldTreeSeqs
+        inBoth       = intersectionWith mappend oldTreeSeqs nextTreeSeqs
+        inOnlyOld    = fmap (`mappend` nextPad) $  oldTreeSeqs `difference` nextTreeSeqs
+        inOnlyNext   = fmap (oldPad  `mappend`) $ nextTreeSeqs `difference`  oldTreeSeqs
 
+{-
 -- | New functionality to encode into a graph
 encodeGraph' :: (Vector CharInfo, TreeSeqs) -> Either UnificationError Graph -> Either UnificationError Graph
 encodeGraph' (metadata, taxaSeqs) inGraph = case inGraph of
@@ -264,3 +334,4 @@ encodeGraph' (metadata, taxaSeqs) inGraph = case inGraph of
                       else mempty
     getSeq pos d = if (getName pos d) `M.member` taxaSeqs then taxaSeqs ! (getName pos d)
                     else mempty
+-}

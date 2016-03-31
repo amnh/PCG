@@ -13,7 +13,9 @@
 -----------------------------------------------------------------------------
 {-# LANGUAGE TypeSynonymInstances, FlexibleInstances, MultiParamTypeClasses #-}
 
-module Bio.Phylogeny.Solution where
+module Bio.Phylogeny.Solution
+  ( module Bio.Phylogeny.Solution.Data
+  ) where
 
 import qualified File.Format.Newick as New
 
