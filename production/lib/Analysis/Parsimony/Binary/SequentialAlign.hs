@@ -22,7 +22,7 @@ import           Data.Maybe
 --import           Data.Monoid                ((<>))
 import           Data.Ord                   (comparing)
 import           Data.Vector                (Vector, singleton, length, cons, empty, toList, (!), ifoldr)
-import qualified Data.Vector as V           (fromList)
+import qualified Data.Vector as V           (concat, fromList)
 import           Prelude             hiding (length, zipWith, or)
 
 import Data.Monoid ((<>))
@@ -49,7 +49,7 @@ type Costs = (Float, Float)
 -- The particular version of SeqConstraint used here is found in Analysis.Parsimony.Binary.Internal
 -- and has these constraints: (CodedSequence s b, Eq s, CharConstraint b, Show s, Bits s, Monoid s)
 -- 
-sequentialAlign :: SeqConstraint s b => s -> s -> (s, Double, s, s, s)
+sequentialAlign :: EncodedSeq -> EncodedSeq -> (EncodedSeq, Double, EncodedSeq, EncodedSeq, EncodedSeq)
 sequentialAlign inpSeq1 inpSeq2 = (inferredParent', (fromIntegral cost :: Double), alignedParent', alignment1', alignment2')
     where
         (inferredParent, alignedParent) = foldr (\(x, y) acc -> createParentSeqs x y acc) ([],[]) (zip alignment1 alignment2)
@@ -61,108 +61,15 @@ sequentialAlign inpSeq1 inpSeq2 = (inferredParent', (fromIntegral cost :: Double
             | x < y                = (x : xs, x : ys)
             | y < x                = (y : xs, y : ys)
             | otherwise            = (x : xs, x : ys) -- they must be equal, so choose x
-        inferredParent' = simpleEncode inferredParent
-        alignedParent'  = simpleEncode alignedParent
-        alignment1'     = simpleEncode alignment1
-        alignment2'     = simpleEncode alignment2
-        inpSeq1'        = simpleDecode inpSeq1
-        inpSeq2'        = simpleDecode inpSeq2
+        inferredParent' = encode inferredParent
+        alignedParent'  = encode alignedParent
+        alignment1'     = encode alignment1
+        alignment2'     = encode alignment2
+        inpSeq1'        = decode inpSeq1
+        inpSeq2'        = decode inpSeq2
         (cost, alignment1, alignment2) = case FF.sequentialAlign 1 1 inpSeq1' inpSeq2' of
             Left e -> error e -- Better error handling later
             Right r -> r
-
--- | Simple encoding over a string just for you
-simpleEncode :: (Monoid s, Show s, Bits s) => String -> s
-simpleEncode inStr = (\x -> trace (show x) x) $ foldl simpleSetElem zeroBits vecStr
-    where
-        vecStr = V.fromList inStr
-
-        ---- | Simple functionality to set an element in a bitvector
-        --simpleSetElem :: Bits b => Int -> Char -> b -> b
-        --simpleSetElem i char curBit = case elemIndex char "ACGT-" of
-        --                                    Nothing -> curBit
-        --                                    Just pos -> setBit curBit (pos + (i * 5))
-
-                -- | Simple functionality to set an element in a bitvector
-        simpleSetElem :: (Monoid b, Bits b) => b -> Char -> b
-        simpleSetElem acc char = acc <> next 
-          where
-              next = case elemIndex char "ACGT-" of
-                          Nothing  -> zeroBits
-                          Just pos -> bit pos
-
-simpleDecode :: (Show s, Bits s) => s -> String
-simpleDecode = either (const "") id . parse escapeAllTheData "" . (\x -> trace x x) . show 
-
-escapeAllTheData :: (MonadParsec s m Char) => m String
-escapeAllTheData = (string' "Nothing" $> []) <|> (string' "Just " *> theVectorOfBitVectors)
-  where
-      theVectorOfBitVectors :: MonadParsec s m Char => m String
-      theVectorOfBitVectors = between (char '[') (char ']') (bitVectorCombinator `sepBy1` char ',')
-      bitVectorCombinator :: MonadParsec s m Char => m Char
-      bitVectorCombinator = do 
-            (_,integralValue) <- (,) <$> (char '[' *> integer <* char ']') <*> integer
-            pure $ case (testBit integralValue) <$> [0..4] of
-                    [True , False, False, False, False] -> 'A'
-                    [False, True , False, False, False] -> 'C'
-                    [False, False, True , False, False] -> 'G'
-                    [False, False, False, True , False] -> 'T'
-                    [False, False, False, False, True ] -> '-'
-                    [False, True , True , True , False] -> 'B'
-                    [True , False, True , True , False] -> 'D'
-                    [True , True , False, True , False] -> 'H'
-                    [False, False, True , True , False] -> 'K'
-                    [True , True , False, False, False] -> 'M'
-                    [True , True , True , True , False] -> 'N'
-                    [True , False, True , False, False] -> 'R'
-                    [False, True , True , False, False] -> 'S'
-                    [True , True , True , False, False] -> 'V'
-                    [True , False, False, True , False] -> 'W'
-                    [False, True , False, True , False] -> 'Y'
-                    _                                   -> '-'    
-
--- Handles any encoding scheme
-{- simpleDecode''' :: SeqConstraint s b => s -> String
-simpleDecode''' codedSeq = concat $ toDnaStream <$> bitValues
-  where
-    n           = numChars codedSeq
-    bitValues :: CodedSequence s b => [b]
-    bitValues   = willItCompile <$> [0..n-1]
-    
-    willItCompile :: CodedSequence s b => s -> Int -> b
-    willItCompile s i =
-        case grabSubChar s i of
-            Nothing -> zeroBits
-            Just b  -> b
-
-    toDnaStream :: Bits b => b -> String
-    toDnaStream = fmap decodeDNA . chunksOf 5 . toBitStream
-
-    toBitStream :: Bits b => b -> [Bool]
-    toBitStream = f 0
-        where
-            f :: Bits b => Int -> b -> [Bool]
-            f i xs
-                | zeroBits == xs = []
-                | otherwise      = xs `testBit` i : f (i+1) (xs `clearBit` i)
-
-    decodeDNA :: [Bool] -> Char
-    decodeDNA x = case x of
-                [True , False, False, False, False] -> 'A'
-                [False, True , False, False, False] -> 'C'
-                [False, False, True , False, False] -> 'G'
-                [False, False, False, True , False] -> 'T'
-                [False, False, False, False, True ] -> '-'
-                [False, True , True , True , False] -> 'B'
-                [True , False, True , True , False] -> 'D'
-                [True , True , False, True , False] -> 'H'
-                [False, False, True , True , False] -> 'K'
-                [True , True , False, False, False] -> 'M'
-                [True , True , True , True , False] -> 'N'
-                [True , False, True , False, False] -> 'R'
-                [False, True , True , False, False] -> 'S'
-                [True , True , True , False, False] -> 'V'
-                [True , False, False, True , False] -> 'W'
-                [False, True , False, True , False] -> 'Y'
-                _                                   -> '-'
--}
+        alphabet = ["A", "C", "G", "T", "-"]
+        encode x = encodeOverAlphabet (singleton (chunksOf 1 x)) alphabet
+        decode x = Prelude.concat . Prelude.concat $ foldr (\x acc -> x : acc) [] $ decodeOverAlphabet x alphabet

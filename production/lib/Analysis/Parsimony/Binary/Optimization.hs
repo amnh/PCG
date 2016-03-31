@@ -19,7 +19,7 @@ module Analysis.Parsimony.Binary.Optimization where
 import Analysis.Parsimony.Binary.Internal
 import Analysis.Parsimony.Binary.Fitch
 import Analysis.Parsimony.Binary.DirectOptimization
---import Analysis.Parsimony.Binary.SequentialAlign
+import Analysis.Parsimony.Binary.SequentialAlign
 
 import Data.Maybe
 import Data.Vector (Vector, ifoldl', ifoldr, (!))
@@ -167,12 +167,12 @@ internalPostorder node tree meta
             rightOnly = isNothing $ leftChild node tree
 
 -- | Wrapper function to preform optimization on a node (preorder)
-preorderNodeOptimize :: (NodeConstraint n s b, Metadata v m s) => Double -> n -> n -> n -> v -> n
+preorderNodeOptimize :: (NodeConstraint' n s, Metadata v m s) => Double -> n -> n -> n -> v -> n
 preorderNodeOptimize weight curNode lNode rNode meta = setTotalCost summedTotalCost res 
     where
         summedTotalCost = sum $ totalCost <$> [res,lNode,rNode] --totalCost res + totalCost lNode + totalCost rNode
         res             = ifoldr chooseOptimization curNode (allMetadata meta)
-        chooseOptimization :: (NodeConstraint n s b, Metadata v m s) => Int -> n -> n -> v 
+        chooseOptimization :: (NodeConstraint' n s, Metadata v m s) => Int -> n -> m -> v 
         chooseOptimization curPos setNode curCharacter
             -- TODO: Compiler error maybe below with comment structuers and 'lets'
             | aligned curCharacter =     
@@ -185,7 +185,7 @@ preorderNodeOptimize weight curNode lNode rNode meta = setTotalCost summedTotalC
                 -- getForAlign returns a node, either encoded, preliminary or preliminary align. It's in Analysis.Parsimony.Binary.Internal
                 -- the return type is a vector of encoded sequences, 
                 -- where an EncodedSeq (encoded sequence) is a maybe vector of some type from Bio/Sequence/Coded.hs
-                let (ungapped, cost, gapped, leftGapped, rightGapped) = sequentialAlign (getForAlign lNode ! curPos) (getForAlign rNode ! curPos) curCharacter
+                let (ungapped, cost, gapped, leftGapped, rightGapped) = sequentialAlign (getForAlign lNode ! curPos) (getForAlign rNode ! curPos) 
                 in  trace (show ungapped ++ " " ++ (show gapped)) $ addLocalCost cost $ addTotalCost cost $ addAlign gapped $ addPreliminary ungapped setNode
 
         addPreliminary addVal inNode = addToField setPreliminary preliminary      addVal inNode
@@ -193,16 +193,17 @@ preorderNodeOptimize weight curNode lNode rNode meta = setTotalCost summedTotalC
         addTotalCost   addVal node   = setTotalCost (addVal + totalCost node) node
         addLocalCost   addVal node   = setLocalCost (addVal + localCost node) node
 
-addToField :: NodeConstraint n s b => (Vector s -> n -> n) -> (n -> Vector s) -> s -> n -> n
+addToField :: NodeConstraint' n s => (Vector s -> n -> n) -> (n -> Vector s) -> s -> n -> n
 addToField setter getter val node = setter (pure val <> getter node) node
 
 -- | Wrapper function to preform optimization on a node (postorder)
-postorderNodeOptimize :: (NodeConstraint n s b, Metadata v m s) => n -> n -> n -> Maybe n -> v -> n
+postorderNodeOptimize :: (NodeConstraint' n s, Metadata v m s) => n -> n -> n -> Maybe n -> v -> n
 postorderNodeOptimize curNode lNode rNode pNode meta
     | isNothing pNode = error "No parent node on postorder traversal"
-    | otherwise = ifoldr chooseOptimization curNode (allMetadata meta)
+    | otherwise       = ifoldr chooseOptimization curNode (allMetadata meta)
     where
-        chooseOptimization i curCharacter setNode
+        chooseOptimization :: (NodeConstraint' n s, Metadata v m s) => Int -> n -> m -> v 
+        chooseOptimization i setNode curCharacter
             | aligned curCharacter = 
                 let finalAssign = postorderFitchBit (getForAlign curNode ! i) (getForAlign lNode ! i) (getForAlign rNode ! i) (getForAlign (fromJust pNode) ! i) (temporary curNode ! i) curCharacter
                 in addToField setFinal final finalAssign setNode
