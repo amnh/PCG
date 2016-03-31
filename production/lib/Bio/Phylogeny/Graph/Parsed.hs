@@ -17,19 +17,19 @@ module Bio.Phylogeny.Graph.Parsed where
 
 
 import qualified Bio.Phylogeny.Graph.Data as G
-import           Bio.Phylogeny.Graph.Topological
-import           Bio.Phylogeny.Graph.Utilities
+--import           Bio.Phylogeny.Graph.Topological
+--import           Bio.Phylogeny.Graph.Utilities
 import           Bio.Phylogeny.Solution
-import qualified Bio.Phylogeny.Tree.Node as N
-import           Bio.Phylogeny.Tree.Node.Topological (TopoNode(..))
+--import qualified Bio.Phylogeny.Tree.Node as N
+--import           Bio.Phylogeny.Tree.Node.Topological (TopoNode(..))
 import           Data.Foldable
-import qualified Data.HashMap.Lazy  as HM (HashMap, insert, (!))
-import qualified Data.Set           as S  (Set, elemAt, toList, size, filter)
-import qualified Data.IntMap        as IM (IntMap, insert, size, (!))
-import qualified Data.IntSet        as IS (fromList)
-import           Data.Map                 (keys)
+--import qualified Data.HashMap.Lazy  as HM (HashMap, insert, (!))
+--import qualified Data.Set           as S  (Set, elemAt, toList, size, filter)
+--import qualified Data.IntMap        as IM (IntMap, insert, size, (!))
+--import qualified Data.IntSet        as IS (fromList)
+--import           Data.Map                 (keys)
 import           Data.Maybe
-import qualified Data.Vector        as V  (Vector, fromList, (!))
+--import qualified Data.Vector        as V  (Vector, fromList, (!))
 import           File.Format.Fasta
 import           File.Format.Fastc hiding (Identifier)
 import           File.Format.Newick
@@ -80,7 +80,7 @@ instance ParseGraph Nexus where
     unifyGraph = mempty -- Will also be newick forest at somepoint
 
 convertVerToNewick :: VertexEdgeRoot -> Forest NewickNode
-convertVerToNewick (VER v e r) = buildNewickTree Nothing <$> toList r
+convertVerToNewick (VER _ e r) = buildNewickTree Nothing <$> toList r
   where
     buildNewickTree :: Maybe Double -> VertexLabel -> NewickNode
     buildNewickTree c n = fromJust $ newickNode kids (Just n) c

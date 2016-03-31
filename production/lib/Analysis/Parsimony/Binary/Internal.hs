@@ -27,7 +27,6 @@ import Bio.Phylogeny.Tree.Referential
 import Bio.Phylogeny.Tree.Binary
 import Bio.Phylogeny.Network.Subsettable
 import Bio.Sequence.Coded
-import Bio.Phylogeny.Tree.CharacterAware
 import Data.Bits
 import Data.Matrix.NotStupid (Matrix, nrows, ncols, setElem)
 import Data.Maybe

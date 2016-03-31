@@ -22,7 +22,6 @@ import qualified Bio.Phylogeny.Tree.Node.Topological as TN
 import           Bio.Phylogeny.Network                     ()
 import           Bio.Sequence.Parsed
 import           Data.Key                                   (lookup)
-import qualified Data.Map.Lazy                      as M 
 import           Data.Maybe
 import           Data.Monoid                               ()
 import           File.Format.Conversion.Encoder

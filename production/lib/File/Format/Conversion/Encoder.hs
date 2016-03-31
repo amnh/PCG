@@ -30,7 +30,7 @@ import           Data.Vector                  (Vector, ifoldr, zipWith, cons)
 import qualified Data.Vector           as V   
 import           Prelude               hiding (zipWith)
 
-import Debug.Trace
+--import Debug.Trace
 
 type Encoded = EncodedSeq BitVector
 
