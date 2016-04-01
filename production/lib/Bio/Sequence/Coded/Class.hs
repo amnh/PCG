@@ -39,5 +39,5 @@ class Monoid s => CodedSequence s where
     filterGaps           :: s -> s -> Alphabet -> s
     grabSubChar          :: s -> Int -> Int -> s
     isEmpty              :: s -> Bool
-    numChars             :: s -> Int
+    numChars             :: s -> Int -> Int
     

@@ -86,9 +86,9 @@ instance CodedSequence EncodedSeq where
     isEmpty seqs = case seqs of
         Nothing -> True
         Just x  -> x /= zeroBits -- TODO: Is this right?
-    numChars s = case s of 
+    numChars s alphLen = case s of 
         Nothing  -> 0
-        Just vec -> width vec
+        Just vec -> width vec `div` alphLen
     
 
 instance Bits EncodedSeq where
