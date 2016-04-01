@@ -43,7 +43,7 @@ defaultCosts = (1,1)
 -- TODO: add weighting 
 
 -- | Performs a naive direct optimization
-naiveDO :: (InternalMetadata m s, SeqConstraint' s, CodedChar s) => s -> s -> m -> (s, Double, s, s, s)
+naiveDO :: (InternalMetadata m s, SeqConstraint' s) => s -> s -> m -> (s, Double, s, s, s)
 --naiveDO s1 s2 | trace ("Sequences of length " ++ show (numChars s1) ++ show (numChars s2)) False = undefined
 naiveDO seq1 seq2 meta
     | isEmpty seq1 || isEmpty seq2 || numChars seq1 == 0 || numChars seq2 == 0 = (emptySeq, 0, emptySeq, emptySeq, emptySeq)
