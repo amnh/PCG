@@ -20,7 +20,8 @@ import Data.Char
 --import Data.Vector
 
 import qualified Data.IntMap as IM (elems)
---import System.IO () -- Why?
+
+import Debug.Trace
 
 dotOutput :: StandardSolution -> String
 dotOutput solution = header ++ foldr (\f acc -> acc ++ foldr treeToDot mempty f) mempty (forests solution) ++ footer
@@ -32,11 +33,12 @@ dotOutput solution = header ++ foldr (\f acc -> acc ++ foldr treeToDot mempty f)
         treeToDot inTree curString = foldr printEdge curString (edges inTree)
             where 
                 printEdge :: EdgeSet -> String -> String
+                --printEdge curEdge accum | trace ("printEdge " ++ show curEdge) False = undefined
                 printEdge curEdge accum = foldr (++) accum (zipWith printOne origins terminals)
                     where 
                         origins = replaceSpaces . name . origin <$> IM.elems (outNodes curEdge)
                         terminals = replaceSpaces . name . terminal <$> IM.elems (outNodes curEdge)
-                        printOne o t = "\t" ++ o ++ " -> " ++ t ++ ";\n"
+                        printOne o t = "\t\"" ++ o ++ "\" -> \"" ++ t ++ "\";\n"
                         replaceSpaces = fmap (\c -> if isSpace c then '_' else c)
 
 --dotOutput :: Graph -> String
