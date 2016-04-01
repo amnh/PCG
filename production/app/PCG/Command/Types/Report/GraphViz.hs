@@ -26,7 +26,7 @@ import Debug.Trace
 dotOutput :: StandardSolution -> String
 dotOutput solution = header ++ foldr (\f acc -> acc ++ foldr treeToDot mempty f) mempty (forests solution) ++ footer
     where
-        header = "digraph G { \n" ++ "\trankdir = LR;\n" ++ "\tnode [shape = rect];\n"
+        header = "digraph G { \n" ++ "\tnode [shape = rect];\n"
         footer = "}"
 
         treeToDot :: DAG -> String -> String
