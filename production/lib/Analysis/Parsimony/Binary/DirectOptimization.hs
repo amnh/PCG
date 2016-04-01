@@ -39,8 +39,11 @@ type Costs = (Double, Double)
 defaultCosts :: Costs
 defaultCosts = (1,1)
 
+
+-- TODO: add weighting 
+
 -- | Performs a naive direct optimization
-naiveDO :: (InternalMetadata m s) => EncodedSeq -> EncodedSeq -> m -> (EncodedSeq, Double, EncodedSeq, EncodedSeq, EncodedSeq)
+naiveDO :: (InternalMetadata m s, SeqConstraint' s, CodedChar s) => s -> s -> m -> (s, Double, s, s, s)
 --naiveDO s1 s2 | trace ("Sequences of length " ++ show (numChars s1) ++ show (numChars s2)) False = undefined
 naiveDO seq1 seq2 meta
     | isEmpty seq1 || isEmpty seq2 || numChars seq1 == 0 || numChars seq2 == 0 = (emptySeq, 0, emptySeq, emptySeq, emptySeq)
@@ -60,7 +63,7 @@ naiveDO seq1 seq2 meta
             (out1, out2) = if seq1Len > seq2Len
                                 then (right, left)
                                 else (left, right)
-        in (ungapped, cost, gapped, out1, out2)
+        in (ungapped, cost * (weight meta), gapped, out1, out2)
 
         where
             alphLen = (length $ alphabet meta)
@@ -71,13 +74,13 @@ naiveDO seq1 seq2 meta
                 in getElem (nrows mat - 1) (ncols mat - 1) mat
 
 -- | Joins an alignment row to the rest of a matrix
-joinMat :: CodedSequence s => AlignRow s -> AlignMatrix s -> AlignMatrix s
+joinMat :: (SeqConstraint' s, CodedChar s) => AlignRow s -> AlignMatrix s -> AlignMatrix s
 joinMat (inCosts, inSeq, directions) inMat = AlignMatrix (inCosts `joinRow` costs inMat) (inSeq `cons` seqs inMat) (directions `joinRow` traversal inMat) 
     where
         joinRow vec mat = fromList 1 (length vec) (toList vec) <-> mat
 
 -- | Gets the initial row of a naive alignment matrix
-firstAlignRow :: Double -> EncodedSeq -> Int -> Int -> Double -> Int -> AlignRow EncodedSeq
+firstAlignRow :: (SeqConstraint' s, CodedChar s) => Double -> s -> Int -> Int -> Double -> Int -> AlignRow s
 --firstAlignRow indelCost inSeq rowLength position prevCost | trace ("firstAlignRow " ++ show inSeq) False = undefined
 firstAlignRow indelCost inSeq rowLength position prevCost alphLen
     | position == (rowLength + 1) = (mempty, mempty, mempty)
@@ -90,14 +93,12 @@ firstAlignRow indelCost inSeq rowLength position prevCost alphLen
             newState = getOverlapState (gapChar alphLen) (grabSubChar inSeq (position - 1) alphLen)
 
 -- | Gets the overlap state: intersect if possible and union if that's empty
-getOverlapState :: EncodedSeq -> EncodedSeq -> EncodedSeq
-getOverlapState        _  Nothing = Nothing
-getOverlapState  Nothing  _       = Nothing
-getOverlapState  char1    char2   = char1 `op` char2
+getOverlapState :: (SeqConstraint' s, CodedChar s) => s -> s -> s
+getOverlapState  char1    char2   = if isEmpty char1 || isEmpty char2 then emptySeq else char1 `op` char2
         where op = if char1 .&. char2 == zeroBits then (.|.) else (.&.)
 
 -- | Main recursive function to get alignment rows
-getAlignRows :: EncodedSeq -> EncodedSeq -> Costs -> Int -> AlignRow EncodedSeq -> Int -> AlignMatrix EncodedSeq
+getAlignRows :: (SeqConstraint' s, CodedChar s) => s -> s -> Costs -> Int -> AlignRow s -> Int -> AlignMatrix s
 getAlignRows seq1 seq2 costValues rowNum prevRow alphLen
     | rowNum == numChars seq2 + 1 = AlignMatrix (zero 0 0) mempty (matrix 0 0 (const LeftDir))
     | otherwise = 
@@ -105,7 +106,7 @@ getAlignRows seq1 seq2 costValues rowNum prevRow alphLen
         in thisRow `joinMat` getAlignRows seq1 seq2 costValues (rowNum + 1) thisRow alphLen
 
 -- | Generates a single alignment row
-generateRow :: EncodedSeq -> EncodedSeq -> Costs -> Int -> AlignRow EncodedSeq -> (Int, Double) -> Int -> AlignRow EncodedSeq
+generateRow :: (SeqConstraint' s, CodedChar s) => s -> s -> Costs -> Int -> AlignRow s -> (Int, Double) -> Int -> AlignRow s
 --generateRow seq1 seq2 costvals@(indelCost, subCost) rowNum prevRow@(costs, _, _) (position, prevCost)  | trace ("generateRow " ++ show seq1 ++ show seq2) False = undefined
 generateRow seq1 seq2 costvals@(indelCost, subCost) rowNum prevRow@(costValues, _, _) (position, prevCost) alphLen
     | length costValues < (position - 1) = error "Problem with row generation, previous costs not generated"
@@ -144,12 +145,12 @@ generateRow seq1 seq2 costvals@(indelCost, subCost) rowNum prevRow@(costValues, 
             unwrapSub = fromMaybe (error "Cannot access sequence at given position for matrix generation")
 
 -- | Performs the traceback of an alignment matrix
-traceback :: AlignMatrix EncodedSeq -> EncodedSeq -> EncodedSeq -> Int -> (EncodedSeq, EncodedSeq, EncodedSeq)
+traceback :: (SeqConstraint' s, CodedChar s) => AlignMatrix s -> s -> s -> Int -> (s, s, s)
 --traceback alignMat seq1 seq2 | trace ("traceback with matrix " ++ show alignMat) False = undefined
 traceback alignMat' seq1' seq2' alphLen = tracebackInternal alignMat' seq1' seq2' (numChars seq1', numChars seq2')
     where
         -- read it from the matrix instead of grabbing
-        tracebackInternal :: AlignMatrix EncodedSeq -> EncodedSeq -> EncodedSeq -> (Int, Int) -> (EncodedSeq, EncodedSeq, EncodedSeq)
+        tracebackInternal :: (SeqConstraint' s, CodedChar s) => AlignMatrix s -> s -> s -> (Int, Int) -> (s, s, s)
         --tracebackInternal alignMat seq1 seq2 (row, col)  | trace ("traceback " ++ show (traversal alignMat) ++ show (getElem row col (traversal alignMat))++ " with position " ++ show (row, col)) False = undefined
         tracebackInternal alignMat seq1 seq2 (row, col) 
             | length (seqs alignMat) < row - 1 || nrows (traversal alignMat) < row - 1 || ncols (traversal alignMat) < col - 1 = error "Traceback cannot function because matrix is incomplete"

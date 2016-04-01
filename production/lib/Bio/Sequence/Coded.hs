@@ -18,7 +18,7 @@
 -- TODO: fix and remove this ghc option:
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
-module Bio.Sequence.Coded (CodedSequence(..), EncodedSeq, EncodedSequences, CodedChar(..), encodeAll, decodeMany) where
+module Bio.Sequence.Coded (CodedSequence(..), EncodedSeq, EncodedSequences, encodeAll, decodeMany) where
 
 import           Prelude        hiding (and, head, or)
 import           Bio.Sequence.Coded.Class
