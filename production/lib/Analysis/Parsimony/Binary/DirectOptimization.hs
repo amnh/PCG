@@ -40,13 +40,8 @@ defaultCosts :: Costs
 defaultCosts = (1,1)
 
 -- | Performs a naive direct optimization
-<<<<<<< HEAD
-naiveDO :: (InternalMetadata m s, SeqConstraint' s) => s -> s -> m -> (s, Double, s, s, s)
---naiveDO s1 s2 | trace ("Sequences of length " ++ show (numChars s1) ++ show (numChars s2)) False = undefined
-=======
 naiveDO :: (InternalMetadata m s, SeqConstraint' s, CodedChar s) => s -> s -> m -> (s, Double, s, s, s)
 --naiveDO s1 s2 | trace ("Sequences of length " ++ show (numChars s1 alphLen) ++ show (numChars s2 alphLen)) False = undefined
->>>>>>> 6a1df15e9644c6e4f7c415b80e8a8e3cd88d3f9e
 naiveDO seq1 seq2 meta
     | isEmpty seq1 || isEmpty seq2 || numChars seq1 alphLen == 0 || numChars seq2 alphLen == 0 = (emptySeq, 0, emptySeq, emptySeq, emptySeq)
     | otherwise = 
@@ -142,12 +137,12 @@ generateRow seq1 seq2 costvals@(indelCost, subCost) rowNum prevRow@(costValues, 
                                            minimumBy (comparing (\(a,_,_) -> a))
                                                 [(leftCost, iuChar1, LeftDir), (downCost, iuChar2, DownDir), (diagCost, diagState, DiagDir)]
 
-            overlapCost :: CharConstraint b => b -> Double -> Double
+            --overlapCost :: CharConstraint s => s -> Double -> Double
             overlapCost char cost 
                 | (gapChar alphLen) .&. char == zeroBits = cost
                 | otherwise                    = 0 
 
-            unwrapSub :: CharConstraint b => Maybe b -> b
+            --unwrapSub :: CharConstraint s => Maybe s -> s
             unwrapSub = fromMaybe (error "Cannot access sequence at given position for matrix generation")
 
 -- | Performs the traceback of an alignment matrix

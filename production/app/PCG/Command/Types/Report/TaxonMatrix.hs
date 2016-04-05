@@ -24,7 +24,7 @@ import qualified Bio.Phylogeny.Tree.Node as N
 import qualified Data.HashMap.Strict as HM
 import qualified Data.IntMap as IM
 import Control.Arrow ((***))
-import Data.Functon (on)
+import Data.Function (on)
 import Data.Foldable
 import Data.Key
 import Data.List
