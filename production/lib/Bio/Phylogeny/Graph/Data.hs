@@ -17,17 +17,14 @@
 
 module Bio.Phylogeny.Graph.Data (Graph(..), DAG(..), EdgeSet(..), EdgeInfo(..), Identifier, CharInfo, NodeInfo) where
 
-import Data.Vector 
-import Data.BitVector
-import Data.IntSet
-import Data.IntMap
-import Data.HashMap.Strict
-
 import Bio.Phylogeny.PhyloCharacter
 import Bio.Phylogeny.Tree.Node
 import Bio.Sequence.Parsed
 import Bio.Sequence.Coded
-
+import Data.IntSet
+import Data.IntMap
+import Data.HashMap.Strict
+import Data.Vector 
 
 -- | Identifier is just a string name
 type Identifier = String
@@ -36,7 +33,7 @@ type CharInfo   = PhyloCharacter EncodedSeq
 -- | Nodes can store with bitvectors for now
 type NodeInfo   = Node
 -- TODO: rename NodeInfo
-type Encoded    = EncodedSeq
+--type Encoded    = EncodedSeq
 
 -- | Edge type: info is stored at the out connections of a node
 data EdgeSet

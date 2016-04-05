@@ -29,7 +29,6 @@ import           Control.Applicative   (liftA2)
 import           Control.Monad
 import           Data.Bits
 import           Data.BitVector hiding (foldr, foldl, join, not)
-import           Data.Foldable
 import           Data.Maybe
 import           Data.Monoid           ((<>))
 import           Data.Vector           (fromList, Vector)
@@ -114,7 +113,7 @@ instance CodedChar EncodedSeq where
     gapChar alphLen = Just $ gapChar alphLen
 
 instance CodedChar BitVector where
-    gapChar alphLen = setBit (bitVec alphLen 0) 0
+    gapChar alphLen = setBit (bitVec alphLen (0 :: Int)) 0
 
 -- | Get parsed sequenceS, return encoded sequenceS.
 -- Recall that each is Vector of Maybes, to this type is actually

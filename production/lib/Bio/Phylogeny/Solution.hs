@@ -47,8 +47,6 @@ import qualified Data.Vector                    as V
 import           Safe
 import           Prelude                        hiding (lookup)
 
-import Debug.Trace
-
 instance BinaryTree DAG NodeInfo where
     parent     n t = headMay $ map (\i -> nodes t ! i) (parents n)
     leftChild  n t = lookup 0 $ (\i -> nodes t ! i) <$> children n
