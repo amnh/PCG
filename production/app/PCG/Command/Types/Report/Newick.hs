@@ -11,7 +11,6 @@
 -- Functionality to output a Newick format from a Graph
 --
 -----------------------------------------------------------------------------
-{-# LANGUAGE BangPatterns #-}
 
 module PCG.Command.Types.Report.Newick where
 
