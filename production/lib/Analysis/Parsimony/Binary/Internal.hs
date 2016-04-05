@@ -60,6 +60,3 @@ getForAlign node
     | null $ preliminaryAlign node                            = preliminary node
     | otherwise                                               = preliminaryAlign node 
 
-gapChar :: Int -> BitVector
-gapChar alphLen = setBit (bitVec alphLen 0) 0
-

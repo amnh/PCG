@@ -66,7 +66,7 @@ class InternalMetadata m s | m -> s where
     aligned :: m -> Bool
 
 instance Monoid s => InternalMetadata (PC.PhyloCharacter s) s where
-    weight = PC.weight'
+    weight = weight
     ignored = ignored
     alphabet = alphabet
     tcm = tcm

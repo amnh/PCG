@@ -37,7 +37,6 @@ import Bio.Phylogeny.Tree.Node.Preliminary
 import Bio.Phylogeny.Tree.Node.Encoded
 import Bio.Phylogeny.Tree.CharacterAware
 import Bio.Metadata.Class (InternalMetadata(..))
-import Bio.Sequence.Coded
 
 --import Debug.Trace
 
@@ -175,11 +174,11 @@ preorderNodeOptimize weight curNode lNode rNode meta = setTotalCost summedTotalC
     where
         summedTotalCost = sum $ totalCost <$> [res,lNode,rNode] --totalCost res + totalCost lNode + totalCost rNode
         res             = ifoldr chooseOptimization curNode meta
-        chooseOptimization :: (NodeConstraint' n s, CodedChar s) => Int -> m -> n -> n
+        --chooseOptimization :: (NodeConstraint' n s, Metadata m s) => Int -> m -> n -> n
         chooseOptimization curPos curCharacter setNode
             -- TODO: Compiler error maybe below with comment structuers and 'lets'
             | aligned curCharacter =
-                let (assign, temp, local) =  preorderFitchBit weight (getForAlign lNode ! curPos) (getForAlign rNode ! curPos) curCharacter
+                let (assign, temp, local) = preorderFitchBit weight (getForAlign lNode ! curPos) (getForAlign rNode ! curPos) curCharacter
                 in addLocalCost local $ addTotalCost local $ addAlign assign $ addPreliminary assign setNode
             | otherwise =
                 let (ungapped, cost, gapped, leftGapped, rightGapped) = naiveDO (getForAlign lNode ! curPos) (getForAlign rNode ! curPos) curCharacter

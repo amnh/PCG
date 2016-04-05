@@ -36,7 +36,7 @@ preorderFitchBit weightValue lbit rbit inChar =
         maskF = (fst $ fitchMasks inChar) .&. finalF
         myCost = fromIntegral $ div (popCount maskF) alphLen
         weightCost = --trace ("Cost of bit ops " ++ show myCost) 
-                        weightValue * myCost * (weight inChar)
+                        weightValue * myCost
         outbit = (maskF .&. union) .|. (lbit .&. rbit)
     in (outbit, finalF, weightCost)
 

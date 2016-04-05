@@ -135,11 +135,3 @@ type CostMatrix = Matrix Double
 instance Monoid CostMatrix where
   mempty = fromList 0 0 []
   mappend = (<|>)
-
-weight'  :: PhyloCharacter b -> Double
-weight' (DNA           _ _ _ _ _ _ _ w)   = w
-weight' (RNA           _ _ _ _ _ _ _ w)   = w
-weight' (Qualitative _ _ _ _ _ _ _ _ w)   = w
-weight' (Continous           _ _ _ _ w)   = w
-weight' (Custom      _ _ _ _ _ _ _ _ w)   = w
-weight' (AminoAcid     _ _ _ _ _ _ _ w)   = w

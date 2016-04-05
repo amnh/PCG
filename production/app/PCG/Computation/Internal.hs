@@ -23,7 +23,7 @@ optimizeComputation (Computation commands) = Computation $ collapseReadCommands 
 
 collapseReadCommands :: [Command] -> [Command]
 collapseReadCommands []                       = []
-collapseReadCommands ((READ x1):(READ x2):xs) = collapseReadCommands ((READ (x1<>x2)):xs)
+collapseReadCommands (READ x1 : READ x2 : xs) = collapseReadCommands (READ (x1<>x2) : xs)
 collapseReadCommands (x:xs)                   = x : collapseReadCommands xs
     
 evaluate :: Computation -> SearchState

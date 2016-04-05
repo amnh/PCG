@@ -18,7 +18,7 @@
 -- TODO: fix and remove this ghc option:
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
-module Bio.Sequence.Coded (CodedSequence(..), EncodedSeq, EncodedSequences, encodeAll, decodeMany) where
+module Bio.Sequence.Coded (CodedSequence(..), EncodedSeq, EncodedSequences, CodedChar(..), encodeAll, decodeMany) where
 
 import           Prelude        hiding (and, head, or)
 import           Bio.Sequence.Coded.Class
@@ -29,7 +29,6 @@ import           Control.Applicative   (liftA2)
 import           Control.Monad
 import           Data.Bits
 import           Data.BitVector hiding (foldr, foldl, join, not)
-import           Data.Foldable
 import           Data.Maybe
 import           Data.Monoid           ((<>))
 import           Data.Vector           (fromList, Vector)
@@ -86,9 +85,9 @@ instance CodedSequence EncodedSeq where
     isEmpty seqs = case seqs of
         Nothing -> True
         Just x  -> x /= zeroBits -- TODO: Is this right?
-    numChars s = case s of 
+    numChars s alphLen = case s of 
         Nothing  -> 0
-        Just vec -> width vec
+        Just vec -> width vec `div` alphLen
     
 
 instance Bits EncodedSeq where
@@ -114,7 +113,7 @@ instance CodedChar EncodedSeq where
     gapChar alphLen = Just $ gapChar alphLen
 
 instance CodedChar BitVector where
-    gapChar alphLen = setBit (bitVec alphLen 0) 0
+    gapChar alphLen = setBit (bitVec alphLen (0 :: Int)) 0
 
 -- | Get parsed sequenceS, return encoded sequenceS.
 -- Recall that each is Vector of Maybes, to this type is actually

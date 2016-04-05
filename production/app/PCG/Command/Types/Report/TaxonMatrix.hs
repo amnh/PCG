@@ -24,6 +24,7 @@ import qualified Bio.Phylogeny.Tree.Node as N
 import qualified Data.HashMap.Strict as HM
 import qualified Data.IntMap as IM
 import Control.Arrow ((***))
+import Data.Functon (on)
 import Data.Foldable
 import Data.Key
 import Data.List
@@ -56,15 +57,15 @@ taxonReferenceOutput sol files = printIt $ makeRef sol files
                 gen (i,j) = isJust $ (allSeqs ! (allNodes V.! i)) V.! (checkPos V.! j)
                   
                 filterNames name = null inFilter || name `elem` inFilter
-                fileNames = fst . span (/=':') . name <$> metadata inSolution
+                fileNames = takeWhile (/=':') . name <$> metadata inSolution
                 filt@(checkPos, finalFiles) = (V.fromList *** V.fromList)
                                             . unzip
-                                            . nubBy (\x y -> snd x == snd y)
+                                            . nubBy ((==) `on` snd)
                                             . toList
                                             $ V.ifoldr (\i n acc -> if filterNames n then (i, n) `cons` acc else acc) mempty fileNames
                 allSeqs = parsedChars inSolution
                 allNodes = V.fromList $ HM.keys allSeqs
-                oneRow curNode = ifoldr (\i s acc -> if i `elem` checkPos then (not (isNothing s)) `cons` acc else acc) mempty (allSeqs ! curNode)
+                oneRow curNode = ifoldr (\i s acc -> if i `elem` checkPos then isJust s `cons` acc else acc) mempty (allSeqs ! curNode)
 
 --taxonReferenceOutput :: StandardSolution -> [FilePath] -> String
 --taxonReferenceOutput sol files = printIt $ makeRef sol files

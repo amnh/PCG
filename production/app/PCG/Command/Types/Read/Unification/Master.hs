@@ -15,28 +15,29 @@
 module PCG.Command.Types.Read.Unification.Master where
 
 import           Bio.Phylogeny.Graph      (CharInfo)
-import           Bio.Phylogeny.Solution hiding (parsedChars)
+import           Bio.Phylogeny.Solution  hiding (parsedChars)
 import           Bio.Sequence.Coded
 import           Bio.Sequence.Parsed
 import           Bio.Phylogeny.Tree.Node hiding (isLeaf)
-import           Control.Arrow            ((***),(&&&))
-import           Data.BitVector hiding (not, foldr)
+import           Control.Arrow                  ((***),(&&&))
+import           Data.Bifunctor                 (first)
+import           Data.BitVector          hiding (not, foldr)
 import           Data.Foldable
-import qualified Data.HashMap.Lazy  as HM
+import qualified Data.HashMap.Lazy       as HM
 --import           Data.IntMap              (elems)
 --import qualified Data.IntMap        as IM 
 --import           Data.Key                 ((!))
 --import           Data.List                (isPrefixOf, nub)
-import qualified Data.List.NonEmpty as NE (fromList)
-import           Data.List.Utility        (duplicates)
+import qualified Data.List.NonEmpty      as NE (fromList)
+import           Data.List.Utility             (duplicates)
 import           Bio.Metadata.MaskGenerator
-import           Data.Map                 (assocs, difference, intersectionWith, keys)
-import           Data.Maybe               (catMaybes, fromJust)
-import           Data.Semigroup           ((<>))
-import           Data.Set                 ((\\))
-import qualified Data.Set           as S  (fromList)
-import           Data.Vector              (Vector, (!), (//), cons, generate)
-import qualified Data.Vector        as V  (find)
+import           Data.Map                      (assocs, difference, intersectionWith, keys)
+import           Data.Maybe                    (catMaybes, fromJust)
+import           Data.Semigroup                ((<>))
+import           Data.Set                      ((\\))
+import qualified Data.Set                as S  (fromList)
+import           Data.Vector                   (Vector, (!), (//), cons, generate)
+import qualified Data.Vector             as V  (find)
 import           File.Format.Conversion.Encoder
 --import qualified Data.Vector        as V  (replicate, foldr, (!))
 --import           File.Format.Conversion.Encoder
@@ -61,7 +62,7 @@ masterUnify' = rectifyResults
 rectifyResults :: [FracturedParseResult] -> Either UnificationError (Solution DAG)
 rectifyResults fprs
   | not (null errors) = Left  $ foldl1 (<>) errors
-  | otherwise         = Right $ {- (\x -> trace ("Called one (maybe?) " <> show x) x) -} maskedSolution
+  | otherwise         = Right {- $ (\x -> trace ("Called one (maybe?) " <> show x) x) -} maskedSolution
   where
     -- Step 1: Gather data file contents
     dataSeqs        = (parsedChars &&& parsedMetas) <$> filter (not . fromTreeOnlyFile) fprs
@@ -72,10 +73,10 @@ rectifyResults fprs
     -- Step 4: Gather the taxa names for each forest from terminal nodes
     forestTaxa      = (mconcat . fmap terminalNames . parsedTrees &&& id) <$> allForests
     -- Step 5: Assert that each terminal node name is unique in the forest
-    duplicateNames  = filter (not . null . fst) $ (duplicates *** id) <$> forestTaxa
+    duplicateNames  = filter (not . null . fst) $ first duplicates <$> forestTaxa
     -- Step 6: Assert that each forest's terminal node set is exactly the same as the taxa set from "data files"
-    extraNames      = filter (not . null . fst) $ ((\\ taxaSet) . S.fromList *** id) <$> forestTaxa
-    missingNames    = {- (\x -> trace (show x) x) . -} filter (not . null . fst) $ ((taxaSet \\) . S.fromList *** id) <$> forestTaxa
+    extraNames      = filter (not . null . fst) $ first ((\\ taxaSet) . S.fromList) <$> forestTaxa
+    missingNames    = filter (not . null . fst) $ first ((taxaSet \\) . S.fromList) <$> forestTaxa
     -- Step 7: Combine disparte sequences from many sources  into single metadata & character sequence.
     (charSeqs,combinedMetadata) = joinSequences dataSeqs
     -- Step 8: Convert topological forests to DAGs (using reference indexing from #7 results)
@@ -84,11 +85,10 @@ rectifyResults fprs
     -- Step 9:  TODO: Node encoding
     encodedSolution = encodeSolution combinedData
     -- Step 10: TODO: masking for the nodes
-    maskedSolution = addMasks encodedSolution
-    
+    maskedSolution  = addMasks encodedSolution
 
-    errors         = catMaybes [duplicateError, extraError, missingError]
-    duplicateError =
+    errors          = catMaybes [duplicateError, extraError, missingError]
+    duplicateError  =
       if null duplicateNames
       then Nothing
       else Just . UnificationError . NE.fromList $ uncurry ForestDuplicateTaxa . (NE.fromList . toList *** sourceFile) <$> duplicateNames
@@ -119,7 +119,7 @@ encodeSolution inVal@(Solution taxaSeqs metadata inForests) = inVal {forests = H
     combineWithSet = zipWith (zipWith comboSet)
       where
         comboSet :: DAG -> DAG -> DAG
-        comboSet dag1 dag2 = dag1 {nodes = foldr (\i acc -> (chooseNode (nodes dag1) (nodes dag2) i) `cons` acc) mempty [0..nodeLen-1]}
+        comboSet dag1 dag2 = dag1 {nodes = foldr (\i acc -> chooseNode (nodes dag1) (nodes dag2) i `cons` acc) mempty [0..nodeLen-1]}
           where
             nodeLen = length $ nodes  dag1
             chooseNode :: Vector NodeInfo -> Vector NodeInfo -> Int -> NodeInfo
@@ -134,7 +134,7 @@ encodeSolution inVal@(Solution taxaSeqs metadata inForests) = inVal {forests = H
     --applyToForest :: Identifier -> EncodedSequences BitVector -> Forest DAG -> Forest DAG
     --applyToForest name coded forest = fmap (applyToDAG name coded) forest
     encodeAndSet :: Identifier -> Sequences -> [Forest DAG] -> [Forest DAG]
-    encodeAndSet name s inForests = fmap (fmap (applyToDAG name coded)) inForests
+    encodeAndSet name s = fmap (fmap (applyToDAG name coded))
       where coded = encodeIt s metadata
 
     applyToDAG :: Identifier -> EncodedSequences -> DAG -> DAG
