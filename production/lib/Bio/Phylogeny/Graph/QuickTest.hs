@@ -4,4 +4,4 @@ import Bio.Phylogeny.Graph.Random
 
 main = do
     randTree <- arbitrary :: Tree
-    hPutStrLn("bye now")
+    hPutStrLn "bye now"

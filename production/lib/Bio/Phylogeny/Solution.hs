@@ -48,21 +48,21 @@ import           Safe
 import           Prelude                        hiding (lookup)
 
 instance BinaryTree DAG NodeInfo where
-    parent     n t = headMay $ map (\i -> nodes t ! i) (parents n)
+    parent     n t = headMay $ fmap (\i -> nodes t ! i) (parents n)
     leftChild  n t = lookup 0 $ (\i -> nodes t ! i) <$> children n
     rightChild n t = lookup 1 $ (\i -> nodes t ! i) <$> children n
     verifyBinary   = all ((2 >=) . length . children) . nodes
 
 instance RoseTree DAG NodeInfo where
-    parent n t = headMay $ map (\i -> nodes t ! i) (parents n)
+    parent n t = headMay $ fmap (\i -> nodes t ! i) (parents n)
 
 instance N.Network DAG NodeInfo where
-    parents n t   = map (\i -> nodes t ! i) (parents n)
+    parents n t   = fmap (\i -> nodes t ! i) (parents n)
     root t        = nodes t ! root t
-    children n t  = map (\i -> nodes t ! i) (children n)
+    children n t  = fmap (\i -> nodes t ! i) (children n)
     isLeaf n _    = isLeaf n
     isRoot n _    = isRoot n
-    update t new  = t {nodes = nodes t // map (\n -> (code n, n)) new}
+    update t new  = t {nodes = nodes t // fmap (\n -> (code n, n)) new}
     numNodes      = length . nodes 
     addNode t n   = DAG nodes2 edges2 reroot
         where
@@ -117,7 +117,7 @@ instance Monoid DAG where
 
 instance Monoid TopoDAG where
     mempty = TopoDAG mempty
-    mappend (TopoDAG topo1) (TopoDAG topo2) = TopoDAG $ topo1 {TN.children = topo2 : (TN.children topo1)}
+    mappend (TopoDAG topo1) (TopoDAG topo2) = TopoDAG $ topo1 { TN.children = topo2 : TN.children topo1 }
 
 instance Monoid (Solution d) where
     mempty = Solution mempty mempty mempty
@@ -138,7 +138,7 @@ appendAt d1@(DAG n e r) d2@(DAG n' e' r') hangNode
             hungNodes = n' // [(r', (n' ! r') {isRoot = False, parents = [hCode]})]
             connectN = n // [(hCode, hangNode {children = (shift + r') : children hangNode, isLeaf = False})]
             recodeNew = fmap recodeFun hungNodes
-            recodeFun m = m {code = code m + shift, children = map (shift +) (children m), parents = map (shift +) (parents m) }
+            recodeFun m = m { code = code m + shift, children = fmap (shift +) (children m), parents = fmap (shift +) (parents m) }
             allNodes = connectN V.++ recodeNew
             -- update edges and add connecting edge
             reMapOut = IM.foldWithKey (\k val acc -> IM.insert (k + shift) (reMapInfo val) acc) mempty
@@ -146,9 +146,9 @@ appendAt d1@(DAG n e r) d2@(DAG n' e' r') hangNode
             shiftEdge edge = edge {inNodes = IS.map (shift +) (inNodes edge), outNodes = reMapOut (outNodes edge)}
             newEdges = fmap shiftEdge e'
             allEdges = e V.++ newEdges
-            hangUpdate = (allEdges ! hCode) {outNodes = IM.map (\info -> info {origin = allNodes ! hCode}) (outNodes $ (allEdges ! hCode))}
-            hangAdd = hangUpdate <> (EdgeSet (inNodes $ e ! hCode) (IM.insert (r' + shift) (EdgeInfo 0 (allNodes ! hCode) (allNodes ! (r' + shift)) Nothing) (outNodes $ e ! hCode)))
-            hangedUpdate = (allEdges ! (r' + shift)) <> (EdgeSet (IS.singleton hCode) mempty) 
+            hangUpdate = (allEdges ! hCode) {outNodes = fmap (\info -> info {origin = allNodes ! hCode}) (outNodes (allEdges ! hCode))}
+            hangAdd = hangUpdate <> EdgeSet (inNodes $ e ! hCode) (IM.insert (r' + shift) (EdgeInfo 0 (allNodes ! hCode) (allNodes ! (r' + shift)) Nothing) (outNodes $ e ! hCode))
+            hangedUpdate = (allEdges ! (r' + shift)) <> EdgeSet (IS.singleton hCode) mempty
             connectEdges = allEdges // [(hCode, hangAdd), (r' + shift, hangedUpdate)]
 
 
@@ -186,7 +186,7 @@ nodeToTopo inDAG curNode
     | isLeaf curNode = leaf
     | otherwise = leaf {TN.children = childDAGs}
       where
-          childDAGs = map (\i -> nodeToTopo inDAG (nodes inDAG ! i)) (children curNode)
+          childDAGs = fmap (\i -> nodeToTopo inDAG (nodes inDAG ! i)) (children curNode)
           leaf = TN.TopoNode (isRoot curNode) (isLeaf curNode) (name curNode) mempty (encoded curNode) (packed curNode) (preliminary curNode) 
                   (final curNode) (temporary curNode) (aligned curNode) (localCost curNode) (totalCost curNode)
 

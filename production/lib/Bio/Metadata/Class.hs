@@ -50,36 +50,36 @@ disAlph = pure <$> (['0'..'9'] <> ['A'..'Z'] <> ['a'..'z'] <> "-" <> "?")
 addOtherCases :: String -> String
 addOtherCases [] = []
 addOtherCases (x:xs)
-  | isLower x = (toUpper x) : x : addOtherCases xs
-  | isUpper x = x : (toLower x) : addOtherCases xs
+  | isLower x = toUpper x : x : addOtherCases xs
+  | isUpper x = x : toLower x : addOtherCases xs
   | otherwise = x : addOtherCases xs
 
 class Metadata a where
     unifyMetadata :: a -> Vector CharInfo
 
 class InternalMetadata m s | m -> s where
-    weight :: m -> Double
-    ignored :: m -> Bool
-    alphabet :: m -> Alphabet
-    tcm :: m -> PC.CostMatrix
+    weight     :: m -> Double
+    ignored    :: m -> Bool
+    alphabet   :: m -> Alphabet
+    tcm        :: m -> PC.CostMatrix
     fitchMasks :: m -> (s, s)
-    aligned :: m -> Bool
+    aligned    :: m -> Bool
 
 instance Monoid s => InternalMetadata (PC.PhyloCharacter s) s where
-    weight = weight
-    ignored = ignored
+    weight   = weight
+    ignored  = ignored
     alphabet = alphabet
-    tcm = tcm
-    aligned (PC.DNA         _ a _ _ _ _ _ _)   = a
-    aligned (PC.RNA         _ a _ _ _ _ _ _)   = a
-    aligned (PC.Qualitative _ a _ _ _ _ _ _ _) = a
-    aligned (PC.Continous _ _ _ _ _)           = True
-    aligned (PC.Custom      _ a _ _ _ _ _ _ _) = a
-    aligned (PC.AminoAcid   _ a _ _ _ _ _ _)   = a
+    tcm      = tcm
+    aligned    (PC.DNA         _ a _ _ _ _ _ _)   = a
+    aligned    (PC.RNA         _ a _ _ _ _ _ _)   = a
+    aligned    (PC.Qualitative _ a _ _ _ _ _ _ _) = a
+    aligned     PC.Continous {}                   = True
+    aligned    (PC.Custom      _ a _ _ _ _ _ _ _) = a
+    aligned    (PC.AminoAcid   _ a _ _ _ _ _ _)   = a
     fitchMasks (PC.DNA         _ _ o _ _ _ _ _)   = o
     fitchMasks (PC.RNA         _ _ o _ _ _ _ _)   = o
     fitchMasks (PC.Qualitative _ _ o _ _ _ _ _ _) = o
-    fitchMasks (PC.Continous _ _ _ _ _)           = (mempty, mempty)
+    fitchMasks  PC.Continous {}                   = (mempty, mempty)
     fitchMasks (PC.Custom      _ _ o _ _ _ _ _ _) = o
     fitchMasks (PC.AminoAcid   _ _ o _ _ _ _ _)   = o
 

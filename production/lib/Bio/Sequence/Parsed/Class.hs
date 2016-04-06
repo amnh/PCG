@@ -54,7 +54,7 @@ class ParsedCharacters a where
 instance ParsedCharacters FastaParseResult where
     unifyCharacters = foldr f mempty
         where
-            convertSeq = V.fromList . map (Just . pure . pure . pure)
+            convertSeq = V.fromList . fmap (Just . pure . pure . pure)
             f (FastaSequence n s) = insert n (convertSeq s)
 
 instance ParsedCharacters TaxonSequenceMap where

@@ -21,6 +21,7 @@ import           Bio.Sequence.Parsed
 import           Control.Monad
 import           Data.Bits
 --import           Data.BitVector               (BitVector, fromBits)
+import           Data.Foldable
 import           Data.Int
 import           Data.List             hiding (zipWith)
 import qualified Data.Map.Lazy         as M
@@ -34,27 +35,27 @@ import           Prelude               hiding (zipWith)
 
 type Encoded = EncodedSeq 
 
-
 dnaAlph, rnaAlph, aaAlph :: [String]
 dnaAlph = ["A", "C", "G", "T", "-"] 
 rnaAlph = ["A", "C", "G", "U", "-"]
-aaAlph = ["R", "H", "K", "D", "E", "S", "T", "N", "Q", "C", "U", "G", "P", "A", "V", "L", "I", "M", "F", "Y", "W", "-"]
+aaAlph  = ["R", "H", "K", "D", "E", "S", "T", "N", "Q", "C", "U", "G", "P", "A", "V", "L", "I", "M", "F", "Y", "W", "-"]
 
 -- | Functionality to make char info from tree seqs
 makeEncodeInfo :: TreeSeqs -> Vector CharInfo
 makeEncodeInfo seqs = --trace ("makeEncodeInfo " ++ show alphabets)
-                        V.map makeOneInfo alphabets
+                        fmap makeOneInfo alphabets
     where
         alphabets = developAlphabets seqs
         --allChecks = checkAlignLens seqs
 
 -- | Internal function to create alphabets
 developAlphabets :: TreeSeqs -> Vector Alphabet
-developAlphabets inSeqs = V.map setGapChar $ V.map sort $ M.foldr (zipWith getNodeAlphAt) initializer inSeqs
+developAlphabets inSeqs = fmap setGapChar . fmap sort $ M.foldr (zipWith getNodeAlphAt) initializer inSeqs
     where
-        someSeq = head $ M.elems inSeqs
-        initializer = if null someSeq then mempty
-                        else V.replicate (V.length someSeq) mempty
+        someSeq = head $ toList inSeqs
+        initializer = if null someSeq
+                      then mempty
+                      else V.replicate (length someSeq) mempty
 
         getNodeAlphAt :: Maybe ParsedSeq -> Alphabet -> Alphabet
         --getNodeAlphAt inSeq soFar | trace ("getNodeAlphAt " ++ show inSeq ++ " with accum " ++ show soFar) False = undefined

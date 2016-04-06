@@ -45,19 +45,19 @@ import           Safe
 
 -- | This tree can be a binary tree
 instance BinaryTree DAG NodeInfo where
-  parent     n t = headMay $ map (\i -> nodes t ! i) (parents n)
+  parent     n t = headMay $ fmap (\i -> nodes t ! i) (parents n)
   leftChild  n t = lookup 0 $ (\i -> nodes t ! i) <$> children n
   rightChild n t = lookup 1 $ (\i -> nodes t ! i) <$> children n
   verifyBinary t = V.foldr (\n acc -> length (children n) <= 2 && acc) True (nodes t)
 
 -- | Or this tree can be a rose tree
 instance RoseTree DAG NodeInfo where
-  parent n t = headMay $ map (\i -> nodes t ! i) (parents n)
+  parent n t = headMay $ fmap (\i -> nodes t ! i) (parents n)
 
 -- | Make the graph structure an instance of a forest
 instance Forest Graph DAG where
   trees (Graph f) = f
-  setTrees _ forest = Graph forest
+  setTrees _ = Graph
   filterTrees (Graph f) func = Graph $ filter func f
 
 -- | Make it an instance of data storage type classes

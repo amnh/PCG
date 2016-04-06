@@ -96,8 +96,8 @@ joinCases = testGroup "Small test cases function" [nulladd, smalladd, nullJoin, 
         seqJoin = testCase "Two one node trees with sequences join properly" (expected6 @=? result6)
         chars1 = singleton $ DNA "" True (mempty, mempty) (fromList ["A", "C", "G", "T", "-"]) mempty mempty False 1
         chars2 = singleton $ DNA "" True (mempty, mempty) (fromList ["A", "C", "G"]) mempty mempty False 1
-        node6a = Node 0 True True [] [] (singleton $ Just $ fromList [4, 8, 1]) mempty mempty mempty mempty mempty 2 0
-        node6b = Node 0 True True [] [] (singleton $ Just $ fromList [16]) mempty mempty mempty mempty mempty 2 0
+        node6a = Node 0 True True [] [] (singleton . Just $ fromList [4, 8, 1]) mempty mempty mempty mempty mempty 2 0
+        node6b = Node 0 True True [] [] (singleton . Just $ fromList [16]) mempty mempty mempty mempty mempty 2 0
         node6aUpadate = node6a {isLeaf = False, children = [1], encoded = encoded node6a V.++ singleton Nothing}
         node6bUpdate = node6b {isRoot = False, parents = [0], code = 1, encoded = Nothing `cons` encoded node6b}
         edges6 = fromList [EdgeSet mempty (IM.singleton 1 (EdgeInfo 0 node6aUpadate node6bUpdate Nothing)), EdgeSet (IS.singleton 0) mempty]
@@ -114,7 +114,7 @@ joinProperties = testGroup "Properties hold" [enoughEdges, outEdgesGood, allEdge
                 checkEdgeNum :: DAG -> DAG -> Bool
                 checkEdgeNum tree1 tree2 = 
                     let result = tree1 <> tree2
-                    in (length $ nodes result) == (length $ edges result)
+                    in length (nodes result) == length (edges result)
 
         outEdgesGood = testProperty "There are out edges present at non-leaf nodes" checkEdges
             where
@@ -122,7 +122,7 @@ joinProperties = testGroup "Properties hold" [enoughEdges, outEdgesGood, allEdge
                 checkEdges tree1 tree2 = 
                     let 
                         result = tree1 <> tree2
-                        checks = V.zipWith (\n e -> (not (isLeaf n)) || (null (outNodes e))) (nodes result) (edges result)
+                        checks = V.zipWith (\n e -> not (isLeaf n) || null (outNodes e)) (nodes result) (edges result)
                     in --trace ("result of edge check " ++ show checks ++ show result)
                         V.and checks
 
@@ -133,8 +133,8 @@ joinProperties = testGroup "Properties hold" [enoughEdges, outEdgesGood, allEdge
                     let
                         result = tree1 <> tree2
                         elemsEqual l1 l2 = null (l1 \\ l2) && null (l2 \\ l1)
-                        checkParents  = V.zipWith (\n e -> (IS.toList $ inNodes  e) `elemsEqual` (parents  n)) (nodes result) (edges result)
-                        checkChildren = V.zipWith (\n e -> (IM.keys   $ outNodes e) `elemsEqual` (children n)) (nodes result) (edges result)
+                        checkParents  = V.zipWith (\n e -> IS.toList (inNodes  e) `elemsEqual` parents  n) (nodes result) (edges result)
+                        checkChildren = V.zipWith (\n e -> IM.keys   (outNodes e) `elemsEqual` children n) (nodes result) (edges result)
                     in --trace ("result of edge match check " ++ show checkParents ++ show checkChildren ++ show result)
                         V.and checkParents && V.and checkChildren
 

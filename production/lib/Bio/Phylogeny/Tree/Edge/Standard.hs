@@ -11,8 +11,7 @@
 -- Standard edge structure for phylogenetic trees
 --
 -----------------------------------------------------------------------------
-
-{-# LANGUAGE FunctionalDependencies #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
 
 module Bio.Phylogeny.Tree.Edge.Standard where
 
@@ -23,7 +22,6 @@ class StandardEdge e n where
     origin :: e -> n
     terminal :: e -> n
     connection :: e -> (n, n)
-
     connection edge = (origin edge, terminal edge)
     origin edge = fst $ connection edge
     terminal edge = snd $ connection edge

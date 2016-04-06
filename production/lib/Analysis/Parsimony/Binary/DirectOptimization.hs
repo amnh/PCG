@@ -55,14 +55,14 @@ naiveDO seq1 seq2 meta
             cost = getMatrixCost traversalMat
             (gapped, left, right) = --trace ("get seqs " ++ show traversalMat)
                                     traceback traversalMat shorter longer alphLen
-            ungapped = filterGaps gapped (gapChar $ length $ alphabet meta) (alphabet meta)
+            ungapped = filterGaps gapped (gapChar . length $ alphabet meta) (alphabet meta)
             (out1, out2) = if seq1Len > seq2Len
                                 then (right, left)
                                 else (left, right)
         in (ungapped, cost, gapped, out1, out2)
 
         where
-            alphLen = (length $ alphabet meta)
+            alphLen = length $ alphabet meta
             getMatrixCost :: (SeqConstraint' s) => AlignMatrix s -> Double
             --getMatrixCost inAlign | trace ("Get cost " ++ show (nrows $ costs inAlign) ++ " " ++ show (ncols $ costs inAlign)) False = undefined
             getMatrixCost inAlign = 
@@ -100,7 +100,7 @@ getOverlapState char1 char2 = if isEmpty char1 || isEmpty char2
 -- | Main recursive function to get alignment rows
 getAlignRows :: (SeqConstraint' s, CodedChar s) => s -> s -> Costs -> Int -> AlignRow s -> Int -> AlignMatrix s
 getAlignRows seq1 seq2 costValues rowNum prevRow alphLen
-    | rowNum == (numChars seq2 alphLen) + 1 = AlignMatrix (zero 0 0) mempty (matrix 0 0 (const LeftDir))
+    | rowNum == numChars seq2 alphLen + 1 = AlignMatrix (zero 0 0) mempty (matrix 0 0 (const LeftDir))
     | otherwise = 
         let thisRow = generateRow seq1 seq2 costValues rowNum prevRow (0, 0) alphLen
         in thisRow `joinMat` getAlignRows seq1 seq2 costValues (rowNum + 1) thisRow alphLen
@@ -110,8 +110,8 @@ generateRow :: (SeqConstraint' s, CodedChar s) => s -> s -> Costs -> Int -> Alig
 --generateRow seq1 seq2 costvals@(indelCost, subCost) rowNum prevRow@(costs, _, _) (position, prevCost)  | trace ("generateRow " ++ show seq1 ++ show seq2) False = undefined
 generateRow seq1 seq2 costvals@(indelCost, subCost) rowNum prevRow@(costValues, _, _) (position, prevCost) alphLen
     | length costValues < (position - 1) = error "Problem with row generation, previous costs not generated"
-    | position == ((numChars seq1 alphLen) + 1) = (mempty, emptySeq, mempty)
-    | position == 0 && newState /= (gapChar alphLen) = (singleton $ upValue + indelCost, newState, singleton DownDir) <> nextCall (upValue + indelCost)
+    | position == numChars seq1 alphLen + 1 = (mempty, emptySeq, mempty)
+    | position == 0 && newState /= gapChar alphLen = (singleton $ upValue + indelCost, newState, singleton DownDir) <> nextCall (upValue + indelCost)
     | position == 0 = (singleton upValue, newState, singleton DownDir) <> nextCall upValue
     | otherwise = --trace "minimal case" $ 
         (singleton minCost, minState, singleton minDir) <> nextCall minCost
@@ -138,8 +138,8 @@ generateRow seq1 seq2 costvals@(indelCost, subCost) rowNum prevRow@(costValues, 
 
             --overlapCost :: CharConstraint s => s -> Double -> Double
             overlapCost char cost 
-                | (gapChar alphLen) .&. char == zeroBits = cost
-                | otherwise                    = 0 
+                | gapChar alphLen .&. char == zeroBits = cost
+                | otherwise = 0 
 
             --unwrapSub :: CharConstraint s => Maybe s -> s
             --unwrapSub = fromMaybe (error "Cannot access sequence at given position for matrix generation")

@@ -23,7 +23,7 @@ import qualified Data.HashMap.Lazy as HM
 splitConnected :: DAG -> Graph
 splitConnected inDAG = 
     let roots = filter isRoot (nodes inDAG)
-    in Graph $ toList $ fmap (grabConnected inDAG) roots
+    in Graph . toList $ fmap (grabConnected inDAG) roots
 
 -- | Grabs connected nodes, assuming that they are isolated 
 -- from the rest of the network.
@@ -46,7 +46,7 @@ toTopo tree = nodeToTopo tree (nodes tree ! root tree)
 
 -- | Conversion function from an indexed graph to a TopoGraph
 toTopoGraph :: Graph -> TG.TopoGraph
-toTopoGraph (Graph dags) = TG.TopoGraph $ map toTopo dags 
+toTopoGraph (Graph dags) = TG.TopoGraph $ fmap toTopo dags 
 
 -- | Function to convert a node to a tree for folding
 singletonDAG :: TN.TopoNode BitVector -> DAG
@@ -64,7 +64,7 @@ nodeToTopo topDAG topNode = TG.TopoTree (internalFromTopo topDAG topNode) (chara
     internalFromTopo inDAG curNode 
       | isLeaf curNode = leaf
       | otherwise = 
-          let childDAGs = map (\i -> internalFromTopo inDAG (nodes inDAG ! i)) (children curNode)
+          let childDAGs = fmap (\i -> internalFromTopo inDAG (nodes inDAG ! i)) (children curNode)
           in leaf {TN.children = childDAGs}
           where
               leaf = TN.TopoNode (isRoot curNode) (isLeaf curNode) safeName [] (encoded curNode) (packed curNode) (preliminary curNode) 
@@ -87,7 +87,7 @@ appendAt t1@(DAG names seqs chars n e r) t2@(DAG names' seqs' chars' n' e' r') h
       -- First, update the nodes to hold the new characters
       (charNodes1, charNodes2, newChars) = reCodeChars (n, n') (chars, chars')
       -- Then update nodes to recode them and re-hang
-      recodeFun node = node {code = code node + shift, children = map (shift +) (children node), parents = map (shift +) (parents node)}
+      recodeFun node = node {code = code node + shift, children = fmap (shift +) (children node), parents = fmap (shift +) (parents node)}
       recodeNew = fmap recodeFun charNodes2
       hungNodes = recodeNew // [(r', (recodeNew ! r') {isRoot = False, parents = [hCode]})]
       connectN = charNodes1 // [(hCode, (charNodes1 ! hCode) {children = (shift + r') : children hangNode, isLeaf = False})]
@@ -111,11 +111,11 @@ appendAt t1@(DAG names seqs chars n e r) t2@(DAG names' seqs' chars' n' e' r') h
                   fmap shiftEdge e'
       allEdges = e V.++ newEdges
 
-      hangUpdate = (allEdges ! hCode) {outNodes = IM.map (\info -> info {origin = allNodes ! hCode}) (outNodes $ (allEdges ! hCode))}
+      hangUpdate = (allEdges ! hCode) {outNodes = IM.map (\info -> info {origin = allNodes ! hCode}) (outNodes (allEdges ! hCode))}
       hangAdd = --trace ("update hanging node " ++ show hCode)
-                    hangUpdate <> (EdgeSet (inNodes $ e ! hCode) (IM.insert (r' + shift) (EdgeInfo 0 (allNodes ! hCode) (allNodes ! (r' + shift)) Nothing) (outNodes $ e ! hCode)))
+                    hangUpdate <> EdgeSet (inNodes $ e ! hCode) (IM.insert (r' + shift) (EdgeInfo 0 (allNodes ! hCode) (allNodes ! (r' + shift)) Nothing) (outNodes $ e ! hCode))
       hangedUpdate = --trace ("update hanged node " ++ show newEdges ++ " " ++ show r')
-                      (allEdges ! (r' + shift)) <> (EdgeSet (IS.singleton hCode) mempty) 
+                      (allEdges ! (r' + shift)) <> EdgeSet (IS.singleton hCode) mempty
       --updateAbove edge index = edge {outNodes = IM.update (\val -> Just $ val {terminal = allNodes ! index}) index (outNodes e)}
       connectEdges = allEdges // [(hCode, hangAdd), (r' + shift, hangedUpdate)]
       --newRootEdge = EdgeSet (IS.singleton hCode) mempty
@@ -200,12 +200,12 @@ instance Monoid Graph where
   mappend (Graph ts1) (Graph ts2) = Graph (ts1 <> ts2)
 
 instance N.Network DAG NodeInfo where
-  parents n t   = map (\i -> nodes t ! i) (parents n)
+  parents n t   = fmap (\i -> nodes t ! i) (parents n)
   root t        = nodes t ! root t
-  children n t  = map (\i -> nodes t ! i) (children n)
+  children n t  = fmap (\i -> nodes t ! i) (children n)
   isLeaf n _    = isLeaf n
   isRoot n _    = isRoot n
-  update t new  = t {nodes = nodes t // map (\n -> (code n, n)) new}
+  update t new  = t {nodes = nodes t // fmap (\n -> (code n, n)) new}
   numNodes      = length . nodes 
   addNode t n   = DAG names2 seqs2 (characters t) nodes2 edges2 reroot
     where

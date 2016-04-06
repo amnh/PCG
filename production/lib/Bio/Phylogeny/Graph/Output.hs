@@ -22,7 +22,6 @@ import System.IO ()
 
 outPutDot :: String -> Graph -> IO ()
 outPutDot fileName inGraph = writeFile fileName (toDot inGraph)
-    
     where
         toDot :: Graph -> String
         toDot (Graph trees) = header ++ foldr treeToDot "" trees ++ footer
@@ -36,9 +35,9 @@ outPutDot fileName inGraph = writeFile fileName (toDot inGraph)
                 printEdge :: EdgeSet -> String -> String
                 printEdge curEdge accum = foldr (++) accum (zipWith printOne origins terminals)
                     where 
-                        getName n = nodeNames inTree IM.! code n
-                        origins = map (getName . origin) (IM.elems $ outNodes curEdge)
-                        terminals = map (getName . terminal) (IM.elems $ outNodes curEdge)
+                        getName n    = nodeNames inTree IM.! code n
+                        origins      = fmap (getName . origin  ) $ IM.elems (outNodes curEdge)
+                        terminals    = fmap (getName . terminal) $ IM.elems (outNodes curEdge)
                         printOne o t = o ++ " -> " ++ t ++ ";\n"
 
 

@@ -19,15 +19,9 @@ import           Bio.Phylogeny.Graph.Topological
 import qualified Bio.Phylogeny.Tree.Node as N
 import           Bio.Phylogeny.Tree.Node.Topological
 import qualified Bio.Phylogeny.Network   as NW
-
 import           Data.Maybe
 import           Data.Monoid
-import           Data.Vector    (filter, toList)
-
-import           Prelude hiding (filter)
 import           Test.Tasty.QuickCheck
-
---import Debug.Trace
 
 instance Arbitrary Graph where
     arbitrary = Graph <$> listOf (arbitrary :: Gen DAG)
@@ -35,7 +29,4 @@ instance Arbitrary Graph where
 instance Arbitrary DAG where
     arbitrary = do
         topo <- arbitrary :: Gen TopoTree
-        return $ fromTopo topo
-
-
-
+        pure $ fromTopo topo

@@ -62,7 +62,7 @@ instance Monoid TopoTree where
 --                         else return $ TopoTree (outNode {isLeaf = False, children = randChildren}) mempty
 
 instance Arbitrary TopoTree where
-    arbitrary = flip TopoTree mempty <$> (internalRandom 0)
+    arbitrary = (`TopoTree` mempty) <$> internalRandom 0
 
 -- | Function to recode characters in a topoTree
 -- allows for coherent joining of trees over different alphabets
@@ -82,9 +82,9 @@ internalRandom myDepth = do
     let terminate = chooseTerminate myDepth rand
     let outNode = TopoNode (myDepth == 0) True randName [] (head seqs) (seqs !! 1) (seqs !! 2) (seqs !! 3) (seqs !! 4) (seqs !! 5) randCost randTotal
     if terminate then --trace "terminate" 
-            return outNode
+            pure outNode
         else --trace "continue" 
-            return (outNode {isLeaf = False, children = randChildren})
+            pure $ outNode { isLeaf = False, children = randChildren }
 
 chooseTerminate :: Int -> Int -> Bool
 chooseTerminate curDepth rand

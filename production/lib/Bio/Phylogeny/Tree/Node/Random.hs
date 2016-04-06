@@ -17,19 +17,17 @@ module Bio.Phylogeny.Tree.Node.Random where
 import Bio.Phylogeny.Tree.Node
 import Bio.Sequence.Coded
 import Bio.Sequence.Random
-
 import Data.Bits
-
 import Test.Tasty.QuickCheck
 
 instance Arbitrary b => Arbitrary (Node b) where
     arbitrary = do
-        c <- arbitrary :: Gen Int
-        root <- arbitrary :: Gen Bool
-        leaf <- arbitrary :: Gen Bool
-        child <- listOf (arbitrary :: Gen Int)
+        c      <- arbitrary :: Gen Int
+        root   <- arbitrary :: Gen Bool
+        leaf   <- arbitrary :: Gen Bool
+        child  <- listOf (arbitrary :: Gen Int)
         parent <- listOf $ suchThat arbitrary (not . flip elem child)
-        seqs <- vectorOf 6 arbitrary 
-        c2 <- arbitrary :: Gen Double
-        c3 <- arbitrary :: Gen Double
-        return $ Node c root leaf child parent (head seqs) (seqs !! 1) (seqs !! 2) (seqs !! 3) (seqs !! 4) (seqs !! 5) c2 c3
+        seqs   <- vectorOf 6 arbitrary 
+        c2     <- arbitrary :: Gen Double
+        c3     <- arbitrary :: Gen Double
+        pure $ Node c root leaf child parent (head seqs) (seqs !! 1) (seqs !! 2) (seqs !! 3) (seqs !! 4) (seqs !! 5) c2 c3

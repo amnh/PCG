@@ -52,22 +52,22 @@ type EncodedSeq = Maybe BitVector
 
 -- | Make EncodedSeq an instance of CodedSequence
 instance CodedSequence EncodedSeq where
-    charToSeq x = Just x
+    charToSeq = Just
     decodeOverAlphabet encoded alphabet = case encoded of 
         Nothing        -> mempty
         (Just allBits) -> decodedSeq
             where 
                 alphLen = length alphabet
-                decodedSeq = fromList $ foldr (\theseBits acc -> (decodeOneChar theseBits alphabet) : acc) [] (group alphLen allBits)
+                decodedSeq = fromList $ foldr (\theseBits acc -> decodeOneChar theseBits alphabet : acc) [] (group alphLen allBits)
     emptySeq = Nothing -- TODO: Should this be Just $ bitVec alphLen 0?
     -- This works over minimal alphabet
     encode inSeq = encodeOverAlphabet inSeq alphabet 
         where
             -- Get the alphabet from the sequence (if for some reason it's not previously defined).
-            alphabet = foldr (\ambig acc -> filter (not . flip elem acc) ambig <> acc) [] inSeq
+            alphabet = foldr (\ambig acc -> filter (`notElem` acc) ambig <> acc) [] inSeq
     encodeOverAlphabet inSeq alphabet 
         | null inSeq = Nothing
-        | otherwise  = Just $ foldr (\x acc -> (createSingletonChar alphabet x) <> acc ) zeroBits inSeq 
+        | otherwise  = Just $ foldr (\x acc -> createSingletonChar alphabet x <> acc ) zeroBits inSeq 
     filterGaps inSeq gap alphabet = 
         case gap of 
           Nothing     -> inSeq
@@ -131,7 +131,7 @@ createSingletonChar alphabet inChar = bitRepresentation
     where 
         -- For each (yeah, foreach!) letter in (ordered) alphabet, decide whether it's present in the ambiguity group.
         -- Collect into [Bool].
-        bits = map (flip elem inChar) alphabet
+        bits = fmap (`elem` inChar) alphabet
         bitRepresentation = fromBits bits
 
 {-

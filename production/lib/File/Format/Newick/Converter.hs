@@ -52,15 +52,13 @@ convertBothTopo rootTree inSeqs = internalConvert True rootTree
         internalConvert :: Bool -> NewickNode -> TopoTree
         internalConvert atRoot inTree = 
             let 
-                recurse = fmap (tree . internalConvert False) (descendants inTree) 
-                myName = fromMaybe "HTU 0" $ newickLabel  inTree
-                myCost = fromMaybe 0       $ branchLength inTree
-                mySeq = case lookup myName inSeqs of
-                            Just s -> s
-                            Nothing -> mempty
+                recurse  = fmap (tree . internalConvert False) (descendants inTree) 
+                myName   = fromMaybe "HTU 0" $ newickLabel  inTree
+                myCost   = fromMaybe 0       $ branchLength inTree
+                mySeq    = fromMaybe mempty $ lookup myName inSeqs
                 myEncode = encodeIt mySeq fullMetadata
                 myPack   = packIt mySeq fullMetadata
-                node = TN.TopoNode atRoot (null $ descendants inTree) myName recurse myEncode myPack mempty mempty mempty mempty myCost 0
+                node     = TN.TopoNode atRoot (null $ descendants inTree) myName recurse myEncode myPack mempty mempty mempty mempty myCost 0
             in --trace ("internalConvert with metadata " ++ show fullMetadata)
                 TopoTree node fullMetadata
 

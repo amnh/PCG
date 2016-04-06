@@ -65,8 +65,8 @@ instance ParseGraph FastcParseResult where
 --        in G.Graph $ pure $ mempty { G.nodeNames = makeNames}
 
 instance ParseGraph TntResult where
-    unifyGraph (Left                forest ) = (convertTntToNewick getTNTName) <$> toList forest
-    unifyGraph (Right (WithTaxa _ _ forest)) = (convertTntToNewick fst       ) <$> toList forest
+    unifyGraph (Left                forest ) = convertTntToNewick getTNTName <$> toList forest
+    unifyGraph (Right (WithTaxa _ _ forest)) = convertTntToNewick fst        <$> toList forest
 --    unifyGraph (Left                   forest) = toNewDag . G.Graph . toList $ fmap (fromTopo . flip TopoTree mempty . convertTNTToTopo True getTNTName) forest
 --    unifyGraph (Right (WithTaxa _ _ taxaTree)) = toNewDag . G.Graph . toList $ fmap (fromTopo . flip TopoTree mempty . (convertTNTToTopo True fst)) taxaTree
 

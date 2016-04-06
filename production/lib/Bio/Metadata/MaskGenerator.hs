@@ -54,7 +54,7 @@ addMasks inSolution = inSolution {metadata = imap changeMetadata (metadata inSol
         getSeqLen :: Int -> Int
         getSeqLen pos = V.length $ fromMaybe mempty curSeq
             where
-                someSeqs = head $ elems $ parsedChars inSolution
+                someSeqs = head . elems $ parsedChars inSolution
                 curSeq = someSeqs V.! pos
 
         -- | Generate mask pair given proper info

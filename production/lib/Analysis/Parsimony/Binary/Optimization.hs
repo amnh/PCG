@@ -12,7 +12,7 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE BangPatterns, ConstraintKinds, FlexibleContexts, AllowAmbiguousTypes #-}
+{-# LANGUAGE AllowAmbiguousTypes, ConstraintKinds, FlexibleContexts #-}
 
 module Analysis.Parsimony.Binary.Optimization where
 
@@ -42,13 +42,13 @@ import Bio.Metadata.Class (InternalMetadata(..))
 
 -- | Additional wrapper to optimize over a solution
 solutionOptimization :: SolutionConstraint' r f t n s m => Double -> r -> r
-solutionOptimization weighting inSolution = setForests inSolution (map (graphOptimization weighting meta) (forests inSolution))
+solutionOptimization weighting inSolution = setForests inSolution $ fmap (graphOptimization weighting meta) (forests inSolution)
     where
         meta = metadata inSolution
 
 -- | Mapping function to optimize over a forest
 graphOptimization :: (ForestConstraint' f t n s, Metadata m s) => Double -> Vector m -> f -> f
-graphOptimization weighting meta inGraph = setTrees inGraph (map (allOptimization weighting meta) (trees inGraph))
+graphOptimization weighting meta inGraph = setTrees inGraph $ fmap (allOptimization weighting meta) (trees inGraph)
 
 -- | Unified function to perform both the first and second passes
 allOptimization :: (TreeConstraint' t n s, Metadata m s) => Double -> Vector m -> t -> t
@@ -179,10 +179,10 @@ preorderNodeOptimize weighting curNode lNode rNode meta = setTotalCost summedTot
             -- TODO: Compiler error maybe below with comment structuers and 'lets'
             | aligned curCharacter =
                 let (assign, _temp, local) = preorderFitchBit weighting (getForAlign lNode ! curPos) (getForAlign rNode ! curPos) curCharacter
-                in addLocalCost local $ addTotalCost local $ addAlign assign $ addPreliminary assign setNode
+                in addLocalCost local . addTotalCost local . addAlign assign $ addPreliminary assign setNode
             | otherwise =
                 let (ungapped, cost, gapped, _leftGapped, _rightGapped) = naiveDO (getForAlign lNode ! curPos) (getForAlign rNode ! curPos) curCharacter
-                in addLocalCost cost $ addTotalCost cost $ addAlign gapped $ addPreliminary ungapped setNode
+                in addLocalCost cost . addTotalCost cost . addAlign gapped $ addPreliminary ungapped setNode
 
                 -- getForAlign returns a node, either encoded, preliminary or preliminary align. It's in Analysis.Parsimony.Binary.Internal
                 -- the return type is a vector of encoded sequences,
@@ -190,8 +190,8 @@ preorderNodeOptimize weighting curNode lNode rNode meta = setTotalCost summedTot
                 --let (ungapped, cost, gapped, leftGapped, rightGapped) = sequentialAlign (getForAlign lNode ! curPos) (getForAlign rNode ! curPos)
                 --in  addLocalCost cost $ addTotalCost cost $ addAlign gapped $ addPreliminary ungapped setNode
 
-        addPreliminary addVal inNode = addToField setPreliminary preliminary      addVal inNode
-        addAlign       addVal inNode = addToField setAlign       preliminaryAlign addVal inNode
+        addPreliminary = addToField setPreliminary preliminary
+        addAlign       = addToField setAlign       preliminaryAlign
         addTotalCost   addVal node   = setTotalCost (addVal + totalCost node) node
         addLocalCost   addVal node   = setLocalCost (addVal + localCost node) node
 

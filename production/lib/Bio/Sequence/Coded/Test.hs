@@ -48,7 +48,7 @@ testZeroBitProperties z label = testGroup ("zeroBit properties (" <> label <> ")
             where
                 f :: NonNegative Int -> Bool
                 f n = let i = getNonNegative n
-                      in  testBit z i == False
+                      in  not $ testBit z i
 
         popCountZeroBitIs0 :: TestTree
         popCountZeroBitIs0 = testCase "popCount zeroBits == 0" . assert $ popCount z == 0
@@ -64,7 +64,7 @@ testBitConstructionProperties z label = testGroup ("Bit toggling properties (" <
             where
                 f :: NonNegative Int -> Bool
                 f n = let i = getNonNegative n
-                      in  testBit (setBit z i) i == True
+                      in  testBit (setBit z i) i
         bitClearBit :: TestTree
         bitClearBit = testProperty "clearBit (bit i) i == zeroBits" f
             where
