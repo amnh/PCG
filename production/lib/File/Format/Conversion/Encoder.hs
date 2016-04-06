@@ -15,7 +15,6 @@
 module File.Format.Conversion.Encoder where
 
 import           Bio.Phylogeny.Graph
-import           Bio.Phylogeny.PhyloCharacter
 import           Bio.Sequence.Coded
 import           Bio.Sequence.Parsed
 import           Control.Monad
@@ -31,7 +30,7 @@ import qualified Data.Vector           as V
 import           Prelude               hiding (zipWith)
 
 --import Debug.Trace
-
+{-
 type Encoded = EncodedSeq 
 
 
@@ -158,3 +157,4 @@ setSingleElem char orig symbolAlphabet = case elemIndex char symbolAlphabet of
     Nothing -> orig
     Just pos -> setBit orig pos  
 
+-}

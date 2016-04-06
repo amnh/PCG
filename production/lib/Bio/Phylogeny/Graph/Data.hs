@@ -17,7 +17,7 @@
 
 module Bio.Phylogeny.Graph.Data (Graph(..), DAG(..), EdgeSet(..), EdgeInfo(..), Identifier, CharInfo, NodeInfo) where
 
-import Bio.Phylogeny.PhyloCharacter
+import Bio.Metadata
 import Bio.Phylogeny.Tree.Node
 import Bio.Sequence.Parsed
 import Bio.Sequence.Coded
@@ -29,7 +29,7 @@ import Data.Vector
 -- | Identifier is just a string name
 type Identifier = String
 -- | CharInfo is PhyloCharacter for now
-type CharInfo   = PhyloCharacter EncodedSeq
+type CharInfo   = CharacterMetadata EncodedSeq
 -- | Nodes can store with bitvectors for now
 type NodeInfo   = Node
 -- TODO: rename NodeInfo

@@ -99,7 +99,6 @@ library
                        Bio.Phylogeny.Forest
                        Bio.Phylogeny.Graph
                        Bio.Phylogeny.Network
-                       Bio.Phylogeny.PhyloCharacter
                        Bio.Metadata
                        Bio.Phylogeny.Solution
                        Bio.Phylogeny.Solution.Data

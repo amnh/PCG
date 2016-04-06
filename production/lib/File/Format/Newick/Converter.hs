@@ -30,7 +30,7 @@ import           File.Format.Newick.Internal        hiding (isLeaf)
 import Prelude hiding (lookup)
 
 --import Debug.Trace
-
+{-
 type SimpleMetadata = [String]
 
 -- TODO: add functionality to detect if some terminal has no sequence
@@ -91,3 +91,4 @@ convertTopoTree tree0 = internalConvert tree0 True
                 node = TN.TopoNode atRoot (null $ descendants inTree) myName recurse mempty mempty mempty mempty mempty mempty myCost 0
             in --trace ("out from Newick to topo " ++ show node)
                 TopoTree node mempty
+-}
