@@ -19,10 +19,10 @@ module Analysis.Parsimony.Binary.Optimization where
 import Analysis.Parsimony.Binary.Internal
 import Analysis.Parsimony.Binary.Fitch
 import Analysis.Parsimony.Binary.DirectOptimization
-import Analysis.Parsimony.Binary.SequentialAlign
+--import Analysis.Parsimony.Binary.SequentialAlign
 
 import Data.Maybe
-import Data.Vector (Vector, ifoldl', ifoldr, (!))
+import Data.Vector (Vector, ifoldr, (!))
 import Data.Monoid
 
 
@@ -31,38 +31,38 @@ import Bio.Phylogeny.Network
 import Bio.Phylogeny.Solution.Class
 import Bio.Phylogeny.Solution.Metadata
 import Bio.Phylogeny.Tree.Binary
-import Bio.Phylogeny.Tree.Node (Node)
+--import Bio.Phylogeny.Tree.Node (Node)
 import Bio.Phylogeny.Tree.Node.Final
 import Bio.Phylogeny.Tree.Node.Preliminary
-import Bio.Phylogeny.Tree.Node.Encoded
-import Bio.Phylogeny.Tree.CharacterAware
+--import Bio.Phylogeny.Tree.Node.Encoded
+--import Bio.Phylogeny.Tree.CharacterAware
 import Bio.Metadata.Class (InternalMetadata(..))
 
 --import Debug.Trace
 
 -- | Additional wrapper to optimize over a solution
 solutionOptimization :: SolutionConstraint' r f t n s m => Double -> r -> r
-solutionOptimization weight inSolution = setForests inSolution (map (graphOptimization weight meta) (forests inSolution))
+solutionOptimization weighting inSolution = setForests inSolution (map (graphOptimization weighting meta) (forests inSolution))
     where
         meta = metadata inSolution
 
 -- | Mapping function to optimize over a forest
 graphOptimization :: (ForestConstraint' f t n s, Metadata m s) => Double -> Vector m -> f -> f
-graphOptimization weight meta inGraph = setTrees inGraph (map (allOptimization weight meta) (trees inGraph))
+graphOptimization weighting meta inGraph = setTrees inGraph (map (allOptimization weighting meta) (trees inGraph))
 
 -- | Unified function to perform both the first and second passes
 allOptimization :: (TreeConstraint' t n s, Metadata m s) => Double -> Vector m -> t -> t
 --allOptimization _ inTree | trace ("allOptimization " ++ show (names inTree IM.! 63)) False = undefined
-allOptimization weight meta inTree =
+allOptimization weighting meta inTree =
     let
-        downPass = optimizationPreorder weight inTree meta
+        downPass = optimizationPreorder weighting inTree meta
         upPass = optimizationPostorder downPass meta
     in upPass
 
 -- | Optimization down pass warpper for recursion from root
 -- TODO: add a warning here if an internal node has no children (for all traversals)
 optimizationPreorder :: (TreeConstraint' t n s, Metadata m s) => Double -> t -> Vector m -> t
-optimizationPreorder weight tree meta
+optimizationPreorder weighting tree meta
     | isLeaf (root tree) tree = -- if the root is a terminal, give the whole tree a cost of zero, do not reassign nodes
         let
             newNode = setLocalCost 0.0 $ setTotalCost 0.0 (root tree)
@@ -71,14 +71,14 @@ optimizationPreorder weight tree meta
     | leftOnly && rightOnly = tree --error "Problem with binary tree structure: non-terminal has no children"
     | rightOnly = -- if there is only one child, continue recursion down and resolve
         let
-            nodes1 = internalPreorder weight (fromJust $ rightChild (root tree) tree) tree meta -- with only one child, assignment and cost is simply carried up
+            nodes1 = internalPreorder weighting (fromJust $ rightChild (root tree) tree) tree meta -- with only one child, assignment and cost is simply carried up
             carryNode = head nodes1
             newNodes = (setTemporary (temporary carryNode) $ setAlign (preliminaryAlign carryNode)
                         $ setPreliminary (preliminary carryNode) $ setTotalCost (totalCost carryNode) $ setLocalCost (localCost carryNode) (root tree)) : nodes1
         in tree `update` newNodes
     | leftOnly =
         let
-            nodes1 = internalPreorder weight (fromJust $ leftChild (root tree) tree) tree meta -- with only one child, assignment and cost is simply carried up
+            nodes1 = internalPreorder weighting (fromJust $ leftChild (root tree) tree) tree meta -- with only one child, assignment and cost is simply carried up
             carryNode = head nodes1
             myNode = setTemporary (temporary carryNode) $ setAlign (preliminaryAlign carryNode)
                         $ setPreliminary (preliminary carryNode) $ setTotalCost (totalCost carryNode) $ setLocalCost (localCost carryNode) (root tree)
@@ -86,33 +86,33 @@ optimizationPreorder weight tree meta
         in tree `update` newNodes
     | otherwise =
         let
-            nodes1 = internalPreorder weight (fromJust $ rightChild (root tree) tree) tree meta
-            nodes2 = internalPreorder weight (fromJust $ leftChild (root tree) tree) tree meta
-            myNode = preorderNodeOptimize weight (root tree) (head nodes1) (head nodes2) meta
+            nodes1 = internalPreorder weighting (fromJust $ rightChild (root tree) tree) tree meta
+            nodes2 = internalPreorder weighting (fromJust $ leftChild (root tree) tree) tree meta
+            myNode = preorderNodeOptimize weighting (root tree) (head nodes1) (head nodes2) meta
             newNodes = myNode : (nodes1 ++ nodes2)
         in tree `update` newNodes
 
         where
-            leftOnly = isNothing $ rightChild (root tree) tree
-            rightOnly = isNothing $ leftChild (root tree) tree
+            leftOnly  = isNothing $ rightChild (root tree) tree
+            rightOnly = isNothing $ leftChild  (root tree) tree
 
 -- | Internal down pass that creates new rows without combining, making the algorithm faster
 internalPreorder :: (TreeConstraint' t n s, Metadata m s) => Double -> n -> t -> Vector m -> [n]
-internalPreorder weight node tree meta
+internalPreorder weighting node tree meta
     | isLeaf node tree = -- if the root is a terminal, give the whole tree a cost of zero, do not reassign nodes
         let newNode = setTotalCost 0.0 $ setLocalCost 0.0 node
         in [newNode]
     | rightOnly && leftOnly = [] --error "Problem with binary tree structure: non-terminal has no children"
     | rightOnly = -- if there is only one child, continue recursion down and resolve
         let
-            nodes1 = internalPreorder weight (fromJust $ rightChild node tree) tree meta -- with only one child, assignment and cost is simply carried up
+            nodes1 = internalPreorder weighting (fromJust $ rightChild node tree) tree meta -- with only one child, assignment and cost is simply carried up
             carryNode = head nodes1
             myNode = setTemporary (temporary carryNode) $ setAlign (preliminaryAlign carryNode)
                         $ setPreliminary (preliminary carryNode) $ setTotalCost (totalCost carryNode) $ setLocalCost (localCost carryNode) node
         in myNode : nodes1
     | leftOnly =
         let
-            nodes1 = internalPreorder weight (fromJust $ leftChild node tree) tree meta -- with only one child, assignment and cost is simply carried up
+            nodes1 = internalPreorder weighting (fromJust $ leftChild node tree) tree meta -- with only one child, assignment and cost is simply carried up
             carryNode = head nodes1
             myNode = setTemporary (temporary carryNode) $ setAlign (preliminaryAlign carryNode)
                         $ setPreliminary (preliminary carryNode) $ setTotalCost (totalCost carryNode) $ setLocalCost (localCost carryNode) node
@@ -120,9 +120,9 @@ internalPreorder weight node tree meta
     | otherwise =
         let
 
-            nodes1 = internalPreorder weight (fromJust $ rightChild node tree) tree meta
-            nodes2 = internalPreorder weight (fromJust $ leftChild node tree) tree meta
-            myNode = preorderNodeOptimize weight node (head nodes1) (head nodes2) meta
+            nodes1 = internalPreorder weighting (fromJust $ rightChild node tree) tree meta
+            nodes2 = internalPreorder weighting (fromJust $ leftChild node tree) tree meta
+            myNode = preorderNodeOptimize weighting node (head nodes1) (head nodes2) meta
         in myNode : (nodes1 ++ nodes2)
 
         where
@@ -170,7 +170,7 @@ internalPostorder node tree meta
 
 -- | Wrapper function to preform optimization on a node (preorder)
 preorderNodeOptimize :: (NodeConstraint' n s, Metadata m s) => Double -> n -> n -> n -> Vector m -> n
-preorderNodeOptimize weight curNode lNode rNode meta = setTotalCost summedTotalCost res
+preorderNodeOptimize weighting curNode lNode rNode meta = setTotalCost summedTotalCost res
     where
         summedTotalCost = sum $ totalCost <$> [res,lNode,rNode] --totalCost res + totalCost lNode + totalCost rNode
         res             = ifoldr chooseOptimization curNode meta
@@ -178,10 +178,10 @@ preorderNodeOptimize weight curNode lNode rNode meta = setTotalCost summedTotalC
         chooseOptimization curPos curCharacter setNode
             -- TODO: Compiler error maybe below with comment structuers and 'lets'
             | aligned curCharacter =
-                let (assign, temp, local) = preorderFitchBit weight (getForAlign lNode ! curPos) (getForAlign rNode ! curPos) curCharacter
+                let (assign, _temp, local) = preorderFitchBit weighting (getForAlign lNode ! curPos) (getForAlign rNode ! curPos) curCharacter
                 in addLocalCost local $ addTotalCost local $ addAlign assign $ addPreliminary assign setNode
             | otherwise =
-                let (ungapped, cost, gapped, leftGapped, rightGapped) = naiveDO (getForAlign lNode ! curPos) (getForAlign rNode ! curPos) curCharacter
+                let (ungapped, cost, gapped, _leftGapped, _rightGapped) = naiveDO (getForAlign lNode ! curPos) (getForAlign rNode ! curPos) curCharacter
                 in addLocalCost cost $ addTotalCost cost $ addAlign gapped $ addPreliminary ungapped setNode
 
                 -- getForAlign returns a node, either encoded, preliminary or preliminary align. It's in Analysis.Parsimony.Binary.Internal

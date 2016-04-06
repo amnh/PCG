@@ -8,7 +8,6 @@ import           Bio.Phylogeny.Graph
 import           Bio.Phylogeny.Graph.Parsed
 import           Bio.Phylogeny.PhyloCharacter
 import           Bio.Metadata.Class
-import           Bio.Metadata.MaskGenerator
 import           Bio.Sequence.Parsed
 import           Bio.Sequence.Parsed.Class
 import           Control.Monad              (when)
@@ -28,7 +27,7 @@ import           Data.Maybe                 (fromMaybe)
 --import qualified Data.HashMap.Strict  as HM (fromList)
 import           Data.Vector                (Vector)
 import qualified Data.Vector           as V (zipWith)
-import           Debug.Trace
+--import           Debug.Trace
 import           File.Format.Fasta   hiding   (FastaSequenceType(..))
 import qualified File.Format.Fasta   as Fasta (FastaSequenceType(..))
 import           File.Format.Fastc   hiding (Identifier)

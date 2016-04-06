@@ -21,7 +21,7 @@ import Data.Char
 
 import qualified Data.IntMap as IM (elems)
 
-import Debug.Trace
+--import Debug.Trace
 
 dotOutput :: StandardSolution -> String
 dotOutput solution = header ++ foldr (\f acc -> acc ++ foldr treeToDot mempty f) mempty (forests solution) ++ footer

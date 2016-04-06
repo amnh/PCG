@@ -21,7 +21,6 @@ import Data.Vector (Vector, cons, toList, singleton, (!))
 import Data.List (minimumBy)
 import Data.Ord
 import Data.Matrix (Matrix, getElem, nrows, ncols, (<->), zero, matrix, fromList)
-import Data.Maybe
 import Data.Monoid
 
 import Bio.Metadata.Class (InternalMetadata(..))
@@ -143,7 +142,7 @@ generateRow seq1 seq2 costvals@(indelCost, subCost) rowNum prevRow@(costValues, 
                 | otherwise                    = 0 
 
             --unwrapSub :: CharConstraint s => Maybe s -> s
-            unwrapSub = fromMaybe (error "Cannot access sequence at given position for matrix generation")
+            --unwrapSub = fromMaybe (error "Cannot access sequence at given position for matrix generation")
 
 -- | Performs the traceback of an alignment matrix
 traceback :: (SeqConstraint' s, CodedChar s) => AlignMatrix s -> s -> s -> Int -> (s, s, s)

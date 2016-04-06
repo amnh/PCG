@@ -17,21 +17,21 @@ module PCG.Command.Types.Report.TaxonMatrix where
 
 import Bio.Phylogeny.Solution
 import Bio.Phylogeny.PhyloCharacter
-import Bio.Phylogeny.Tree.Node hiding (name)
-import qualified Bio.Phylogeny.Tree.Node as N
+--import Bio.Phylogeny.Tree.Node hiding (name)
+--import qualified Bio.Phylogeny.Tree.Node as N
 --import PCG.Command.Types.Report.CharacterMatrix
 
 import qualified Data.HashMap.Strict as HM
-import qualified Data.IntMap as IM
+--import qualified Data.IntMap as IM
 import Control.Arrow ((***))
 import Data.Function (on)
 import Data.Foldable
 import Data.Key
 import Data.List
-import Data.List.Utility
+--import Data.List.Utility
 import Data.Matrix.NotStupid hiding (trace, (!), toList)
-import Data.Ord    (comparing)
-import Data.Vector (ifoldr, ifilter, Vector, cons, imap)
+--import Data.Ord    (comparing)
+import Data.Vector (cons, ifoldr)
 import qualified Data.Vector as V
 import Data.Maybe
 
@@ -39,10 +39,6 @@ import Data.Maybe
 
 type Presence = Matrix Bool
 type TaxaPresence = (Presence, [String], [String])
-
-instance Monoid Presence where
-    mempty = matrix 0 0 (const False)
-    mappend = (<|>)
 
 taxonReferenceOutput :: StandardSolution -> [FilePath] -> String
 taxonReferenceOutput sol files = printIt $ makeRef sol files
@@ -56,16 +52,16 @@ taxonReferenceOutput sol files = printIt $ makeRef sol files
                 --gen (i,j) | trace ("gen on row " ++ show i ++ " " ++ show (length (allSeqs ! (allNodes V.! i))) ++ " " ++ show (checkPos V.! j)) False = undefined
                 gen (i,j) = isJust $ (allSeqs ! (allNodes V.! i)) V.! (checkPos V.! j)
                   
-                filterNames name = null inFilter || name `elem` inFilter
+                filterNames taxonName = null inFilter || taxonName `elem` inFilter
                 fileNames = takeWhile (/=':') . name <$> metadata inSolution
-                filt@(checkPos, finalFiles) = (V.fromList *** V.fromList)
-                                            . unzip
-                                            . nubBy ((==) `on` snd)
-                                            . toList
-                                            $ V.ifoldr (\i n acc -> if filterNames n then (i, n) `cons` acc else acc) mempty fileNames
+                (checkPos, finalFiles) = (V.fromList *** V.fromList)
+                                       . unzip
+                                       . nubBy ((==) `on` snd)
+                                       . toList
+                                       $ V.ifoldr (\i n acc -> if filterNames n then (i, n) `cons` acc else acc) mempty fileNames
                 allSeqs = parsedChars inSolution
                 allNodes = V.fromList $ HM.keys allSeqs
-                oneRow curNode = ifoldr (\i s acc -> if i `elem` checkPos then isJust s `cons` acc else acc) mempty (allSeqs ! curNode)
+--                oneRow curNode = ifoldr (\i s acc -> if i `elem` checkPos then isJust s `cons` acc else acc) mempty (allSeqs ! curNode)
 
 --taxonReferenceOutput :: StandardSolution -> [FilePath] -> String
 --taxonReferenceOutput sol files = printIt $ makeRef sol files

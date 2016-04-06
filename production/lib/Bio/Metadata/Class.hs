@@ -41,7 +41,7 @@ import qualified File.Format.TNT as TNT
 import           File.Format.TransitionCostMatrix
 import           File.Format.VertexEdgeRoot
 
-dnaAlph, rnaAlph, aaAlph :: [String]
+aaAlph, dnaAlph, disAlph, rnaAlph :: [String]
 dnaAlph = pure <$> addOtherCases "AGCTRMWSKTVDHBNX?-"
 rnaAlph = pure <$> addOtherCases "AGCURMWSKTVDHBNX?-"
 aaAlph  = pure <$> addOtherCases "ABCDEFGHIKLMNPQRSTVWXYZ-"

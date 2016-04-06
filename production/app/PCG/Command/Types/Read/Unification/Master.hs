@@ -21,7 +21,7 @@ import           Bio.Sequence.Parsed
 import           Bio.Phylogeny.Tree.Node hiding (isLeaf)
 import           Control.Arrow                  ((***),(&&&))
 import           Data.Bifunctor                 (first)
-import           Data.BitVector          hiding (not, foldr)
+--import           Data.BitVector          hiding (not, foldr)
 import           Data.Foldable
 import qualified Data.HashMap.Lazy       as HM
 --import           Data.IntMap              (elems)
@@ -36,7 +36,7 @@ import           Data.Maybe                    (catMaybes, fromJust)
 import           Data.Semigroup                ((<>))
 import           Data.Set                      ((\\))
 import qualified Data.Set                as S  (fromList)
-import           Data.Vector                   (Vector, (!), (//), cons, generate)
+import           Data.Vector                   (Vector, (//), generate)
 import qualified Data.Vector             as V  (find)
 import           File.Format.Conversion.Encoder
 --import qualified Data.Vector        as V  (replicate, foldr, (!))
@@ -45,7 +45,7 @@ import           File.Format.Newick
 import           File.Format.TransitionCostMatrix
 import           PCG.Command.Types.Read.Unification.UnificationError
 
-import Debug.Trace
+--import Debug.Trace
 
 data FracturedParseResult
    = FPR
@@ -113,8 +113,9 @@ terminalNames n
 
 -- | Functionality to encode into a solution
 encodeSolution :: StandardSolution -> StandardSolution
-encodeSolution inVal@(Solution taxaSeqs metadata inForests) = inVal {forests = HM.foldrWithKey encodeAndSet inForests taxaSeqs}
+encodeSolution inVal@(Solution taxaSeqs metadataInfo inForests) = inVal {forests = HM.foldrWithKey encodeAndSet inForests taxaSeqs}
   where
+{-
     combineWithSet :: [Forest DAG] -> [Forest DAG] -> [Forest DAG]
     combineWithSet = zipWith (zipWith comboSet)
       where
@@ -127,22 +128,24 @@ encodeSolution inVal@(Solution taxaSeqs metadata inForests) = inVal {forests = H
               | not . null . encoded $ nodes1 ! pos = nodes1 ! pos
               | not . null . encoded $ nodes2 ! pos = nodes2 ! pos
               | otherwise = nodes1 ! pos
+-}
     --encodeAndSet :: Identifier -> Sequences -> [Forest DAG]
-    --encodeAndSet name s = fmap (overForests name (encodeIt s metadata)) forests
+    --encodeAndSet name s = fmap (overForests name (encodeIt s metadataInfo)) forests
     --overForests :: Identifier -> Sequences -> [Forest DAG] -> [Forest DAG]
     --overForests name coded forests = fmap (applyToForest name coded) forests
     --applyToForest :: Identifier -> EncodedSequences BitVector -> Forest DAG -> Forest DAG
     --applyToForest name coded forest = fmap (applyToDAG name coded) forest
     encodeAndSet :: Identifier -> Sequences -> [Forest DAG] -> [Forest DAG]
-    encodeAndSet name s = fmap (fmap (applyToDAG name coded))
-      where coded = encodeIt s metadata
+    encodeAndSet taxonName s = fmap (fmap (applyToDAG taxonName coded))
+      where coded = encodeIt s metadataInfo
 
     applyToDAG :: Identifier -> EncodedSequences -> DAG -> DAG
-    applyToDAG inName coded inD@(DAG inNodes _ _) = case matching of
-      Nothing -> inD
-      Just matching -> inD {nodes = inNodes // [(code matching, matching {encoded = coded})]}
+    applyToDAG inName coded inD =
+      case matching of
+        Nothing    -> inD
+        Just match -> inD {nodes = nodes inD // [(code match, match {encoded = coded})]}
       where
-        matching = V.find (\n -> name n == inName) inNodes
+        matching = V.find (\n -> name n == inName) $ nodes inD
 
 {-
 -- | Takes in a list of parse results and outputs 
