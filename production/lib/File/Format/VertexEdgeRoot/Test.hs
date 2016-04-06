@@ -7,7 +7,6 @@ module File.Format.VertexEdgeRoot.Test
 import Data.List                         (intercalate)
 import qualified Data.IntSet as IS
 import File.Format.VertexEdgeRoot.Parser
-import File.Format.VertexEdgeRoot.Converter
 import Test.Custom                       (parseEquals,parseFailure,parseSuccess, convertEquals)
 import Test.Tasty                        (TestTree,testGroup)
 import Test.Tasty.HUnit
@@ -178,18 +177,3 @@ verStreamParser' = testGroup "verStreamParser" [valid,invalid]
       [ "{a,b,c}{(a,b),(a,c),(b,c)}{a}" -- contains a cycle
       , "{a,b,c}{(a,b),(a,c)}{a,c}"     -- root nodes are connected
       ]
-
-{-
-verSimpleConvert :: TestTree
-verSimpleConvert = testGroup "verSimpleConvert" [single, double]
-  where
-    single = testCase "A one node input makes a one node graph" (convertEquals (verStreamParser <* eof) "RootSet={a}VertexSet={a}EdgeSet={}" singleGraph convert)
-    singleGraph = Graph [DAG (IM.singleton 0 "a") (HM.singleton "a" mempty) mempty (V.singleton $ Node 0 True True [] [] mempty mempty mempty mempty mempty mempty 0 0) (V.singleton $ EdgeSet mempty mempty) 0]
-
-    double = testCase "A two node input works" (convertEquals (verStreamParser <* eof) twoNodeString doubleGraph convert)
-    twoNodeString = "RootSet={a}EdgeSet={(a,b)}VertexSet={a, b}"
-    doubleNodes = V.fromList [Node 0 True False [] [1] mempty mempty mempty mempty mempty mempty 0 0, Node 1 False True [0] [] mempty mempty mempty mempty mempty mempty 0 0]
-    doubleGraph = Graph [DAG (IM.insert 0 "a" $ IM.insert 1 "b" mempty) (HM.insert "a" mempty $ HM.insert "b" mempty mempty) 
-                            mempty doubleNodes
-                            (V.fromList [EdgeSet mempty (IM.singleton 1 (G.EdgeInfo 0 (doubleNodes V.! 0) (doubleNodes V.! 1) Nothing)), EdgeSet (IS.singleton 0) mempty]) 0]
--}

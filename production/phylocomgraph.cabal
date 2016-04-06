@@ -175,7 +175,6 @@ library
                        File.Format.TNT.Partitioning
                        File.Format.TNT.Internal
                        File.Format.TransitionCostMatrix.Parser
-                       File.Format.VertexEdgeRoot.Converter
                        File.Format.VertexEdgeRoot.Parser
                        Text.Megaparsec.Custom
 
@@ -404,7 +403,6 @@ Test-Suite testsuite
                        File.Format.Nexus.Validate
                        File.Format.TransitionCostMatrix.Parser
                        File.Format.TransitionCostMatrix.Test
-                       File.Format.VertexEdgeRoot.Converter
                        File.Format.VertexEdgeRoot.Parser
                        File.Format.VertexEdgeRoot.Test
                        Test.Custom
