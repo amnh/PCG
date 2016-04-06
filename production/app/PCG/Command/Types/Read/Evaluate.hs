@@ -8,8 +8,7 @@ import           Bio.Metadata
 import           Bio.Metadata.MaskGenerator
 import           Bio.Sequence.Parsed
 import           Bio.Sequence.Parsed.Class
-import           Bio.Phylogeny.Graph.Parsed
-import           Bio.Phylogeny.Graph
+import           Bio.Phylogeny.Solution.Parsed
 import           Bio.Phylogeny.Solution (StandardMetadata)
 import           Control.Monad              (when)
 import           Control.Monad.IO.Class
@@ -23,9 +22,6 @@ import           Data.Key                   ((!),lookup)
 import           Data.Map                   (Map,assocs,insert,union)
 import qualified Data.Map              as M (fromList)
 import           Data.Maybe                 (fromMaybe)
---import           Data.Hashable
---import           Data.HashMap.Strict        (HashMap)
---import qualified Data.HashMap.Strict  as HM (fromList)
 import           Data.Vector                (Vector)
 import qualified Data.Vector           as V (zipWith)
 import           Debug.Trace
@@ -37,11 +33,9 @@ import           File.Format.Nexus          (nexusStreamParser)
 import           File.Format.TNT     hiding (casei)
 import           File.Format.TransitionCostMatrix
 import           File.Format.VertexEdgeRoot
--- import File.Format.Conversion.ToInternal
 import           PCG.Command.Types (Command(..))
 import           PCG.Command.Types.Read.Internal
 import           PCG.Command.Types.Read.Unification.Master
---import           PCG.Script.Types
 import           Prelude             hiding (lookup)
 import           Text.Megaparsec
 
@@ -157,23 +151,6 @@ expandIUPAC fpr = fpr { parsedChars = newTreeSeqs }
                   | cType == AminoAcid = expandOrId aminoAcidIUPAC  <$> x
                   | otherwise = x
     expandOrId m x = fromMaybe x $ x `lookup` m
-
---setTaxaSeqs :: HashMap Identifier ParsedSequences -> SearchState
---setTaxaSeqs x = pure $ Graph [mempty { parsedSeqs = x }]
-
---mapToHashMap :: (Eq k, Hashable k) => Map k v -> HashMap k v
---mapToHashMap = fromList . M.toList
-
---customToHashMap :: [FastcParseResult] -> HashMap Identifier CharacterSequence
---customToHashMap = fromList . concatMap (fmap (fastcLabel &&& fastcSymbols) . toList)
-{-
-parseSpecifiedFileSimple :: Parsec Text a -> (a -> FracturedParseResult-) -> FileSpecification -> EitherT ReadError IO SearchState
-parseSpecifiedFileSimple comb toState spec = getSpecifiedContent spec >>= (hoistEither . parseSpecifiedContent)
-  where
-    parseSpecifiedContent :: FileSpecificationContent -> Either ReadError SearchState
-    parseSpecifiedContent = fmap toState . eitherValidation . fmap (first unparsable . parse') . dataFiles
-    parse' (path,content) = parse comb path content
--}
 
 progressiveParse :: FilePath -> EitherT ReadError IO FracturedParseResult
 progressiveParse inputPath = do

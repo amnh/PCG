@@ -1,6 +1,5 @@
 module Main where
 
-import           Bio.Phylogeny.Graph
 import           File.Format.Fasta
 import qualified File.Format.Newick as N
 --import           File.Format.Newick.Converter

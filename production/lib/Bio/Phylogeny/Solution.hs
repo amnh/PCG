@@ -16,7 +16,7 @@
 
 module Bio.Phylogeny.Solution
   ( module Bio.Phylogeny.Solution
-  , module Bio.Phylogeny.Solution.Data
+  , module Bio.Phylogeny.Solution.Internal
   ) where
 
 import qualified File.Format.Newick as New
@@ -26,7 +26,7 @@ import qualified Bio.Phylogeny.Network          as N
 import qualified Bio.Phylogeny.Network.Subsettable as SN
 import qualified Bio.Phylogeny.Solution.Class as SC
 import qualified Bio.Phylogeny.Solution.Metadata as MS
-import           Bio.Phylogeny.Solution.Data 
+import           Bio.Phylogeny.Solution.Internal
 import           Bio.Phylogeny.Tree.Binary
 import qualified Bio.Phylogeny.Tree.Edge.Standard  as E
 import qualified Bio.Phylogeny.Tree.EdgeAware      as ET

@@ -41,23 +41,5 @@ dotOutput solution = header ++ foldr (\f acc -> acc ++ foldr treeToDot mempty f)
                         printOne o t = "\t\"" ++ o ++ "\" -> \"" ++ t ++ "\";\n"
                         replaceSpaces = fmap (\c -> if isSpace c then '_' else c)
 
---dotOutput :: Graph -> String
---dotOutput (Graph trees) = header ++ foldr treeToDot "" trees ++ footer
---    where
---        header = "digraph G { \n" ++ "\trankdir = LR;\n" ++ "\tnode [shape = rect];\n"
---        footer = "}"
-
---        treeToDot :: DAG -> String -> String
---        treeToDot inTree curString = foldr printEdge curString (edges inTree)
---            where 
---                printEdge :: EdgeSet -> String -> String
---                printEdge curEdge accum = foldr (++) accum (zipWith printOne origins terminals)
---                    where 
---                        getName n = nodeNames inTree IM.! code n
---                        origins = replaceSpaces . getName . origin <$> IM.elems (outNodes curEdge)
---                        terminals = replaceSpaces . getName . terminal <$> IM.elems (outNodes curEdge)
---                        printOne o t = "\t" ++ o ++ " -> " ++ t ++ ";\n"
---                        replaceSpaces = fmap (\c -> if isSpace c then '_' else c)
-
 outPutDot :: String -> StandardSolution -> IO ()
 outPutDot fileName = writeFile fileName . dotOutput

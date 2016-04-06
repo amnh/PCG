@@ -35,18 +35,6 @@ metadataCsvOutput solution = header <> mainExport (metadata solution)
         mainExport :: Vector StandardMetadata -> String
         mainExport = intercalate "\n" . fmap fetchInfo . toList 
 
---metadataCsvOutput :: Graph -> String
---metadataCsvOutput (Graph dags) = ifoldr oneCSV header (fromList dags)
---    where
---        header = "DAG, Type, Name, Aligned, Additive, State Names, Alphabet, Ignored, Weight \n"
-
---        -- | Main creation functionality
---        oneCSV :: Int -> DAG -> String -> String
-----        oneCSV _index inDAG _curStr | trace ("oneCSV " ++ show (characters inDAG)) False = undefined
---        oneCSV index inDAG curStr = foldl (\acc c -> acc ++ show index ++ ", " ++ fetchInfo c ++ "\n") curStr myMeta
---            where
---                myMeta = characters inDAG
-
 fetchInfo :: Show s => CharacterMetadata s -> String
 fetchInfo c = intercalate ", " [show $ charType c, name c, show $ isAligned c, show $ isAdditive c, show $ stateNames c, show $ alphabet c, show $ isIgnored c, show $ weight c]
 

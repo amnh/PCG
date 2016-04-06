@@ -14,8 +14,6 @@ import Text.Megaparsec                   (eof, parse)
 import qualified Data.IntMap as IM
 import qualified Data.HashMap.Lazy as HM
 import qualified Data.Vector as V
-import Bio.Phylogeny.Graph        hiding (EdgeInfo)
-import qualified Bio.Phylogeny.Graph as G 
 import Bio.Phylogeny.Tree.Node
 
 testSuite :: TestTree

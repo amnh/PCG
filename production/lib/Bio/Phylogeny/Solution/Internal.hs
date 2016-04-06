@@ -12,7 +12,7 @@
 --
 -----------------------------------------------------------------------------
 
-module Bio.Phylogeny.Solution.Data where
+module Bio.Phylogeny.Solution.Internal where
 
 import Bio.Sequence.Parsed
 import Bio.Sequence.Coded
