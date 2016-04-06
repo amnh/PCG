@@ -35,8 +35,7 @@ import Bio.Phylogeny.Tree.Node (Node)
 import Bio.Phylogeny.Tree.Node.Final
 import Bio.Phylogeny.Tree.Node.Preliminary
 import Bio.Phylogeny.Tree.Node.Encoded
-import Bio.Phylogeny.Tree.CharacterAware
-import Bio.Metadata.Class (InternalMetadata(..))
+import Bio.Metadata
 
 --import Debug.Trace
 
@@ -177,7 +176,7 @@ preorderNodeOptimize weight curNode lNode rNode meta = setTotalCost summedTotalC
         --chooseOptimization :: (NodeConstraint' n s, Metadata m s) => Int -> m -> n -> n
         chooseOptimization curPos curCharacter setNode
             -- TODO: Compiler error maybe below with comment structuers and 'lets'
-            | aligned curCharacter =
+            | getAligned curCharacter =
                 let (assign, temp, local) = preorderFitchBit weight (getForAlign lNode ! curPos) (getForAlign rNode ! curPos) curCharacter
                 in addLocalCost local $ addTotalCost local $ addAlign assign $ addPreliminary assign setNode
             | otherwise =
@@ -209,7 +208,7 @@ postorderNodeOptimize curNode lNode rNode pNode meta
     where
         --chooseOptimization :: (NodeConstraint' n s, Metadata m s) => Int -> m -> n -> n
         chooseOptimization i curCharacter setNode
-            | aligned curCharacter =
+            | getAligned curCharacter =
                 let finalAssign = postorderFitchBit (getForAlign curNode ! i) (getForAlign lNode ! i) (getForAlign rNode ! i) (getForAlign (fromJust pNode) ! i) (temporary curNode ! i) curCharacter
                 in addToField setFinal final finalAssign setNode
             | otherwise = setNode

@@ -103,7 +103,7 @@ instance SC.Solution (Solution d) (Forest d) where
     forests = forests
     setForests s f = s {forests = f} 
 
-instance MS.MetadataSolution (Solution d) CharacterMetadata where
+instance MS.MetadataSolution (Solution d) StandardMetadata where
     metadata = metadata
     setMetadata solution meta = solution {metadata = meta}
 

@@ -100,11 +100,11 @@ library
                        Bio.Phylogeny.Graph
                        Bio.Phylogeny.Network
                        Bio.Phylogeny.PhyloCharacter
+                       Bio.Metadata
                        Bio.Phylogeny.Solution
                        Bio.Phylogeny.Solution.Data
                        Bio.Phylogeny.Solution.Class
                        Bio.Phylogeny.Tree.Binary
-                       Bio.Phylogeny.Tree.CharacterAware
                        Bio.Phylogeny.Tree.EdgeAware
                        Bio.Phylogeny.Tree.Node
                        Bio.Phylogeny.Tree.Node.Encoded
@@ -128,6 +128,8 @@ library
   -- Modules included in this library but not exported.
 --  other-modules:     
                        Bio.Metadata.Class
+                       Bio.Metadata.Internal
+                       Bio.Metadata.Parsed
                        Bio.Metadata.MaskGenerator
                        Bio.Phylogeny.Solution.Metadata
                        Bio.Phylogeny.Forest.Class
@@ -139,7 +141,6 @@ library
                        Bio.Phylogeny.Network.Class
                        Bio.Phylogeny.Network.Subsettable
                        Bio.Phylogeny.Tree.Binary.Class
-                       Bio.Phylogeny.Tree.CharacterAware.Class
                        Bio.Phylogeny.Tree.Edge.Standard
                        Bio.Phylogeny.Tree.EdgeAware.Class
                        Bio.Phylogeny.Tree.Node.Topological
@@ -257,74 +258,6 @@ executable pcg
                        PCG.Command.Types.Report.Newick
                        PCG.Command.Types.Report.Validate
 
-executable brg
-  main-is:             BadReadGraph.hs
-
-  build-depends:       base                 >=4.8 && < 4.9
-                     , bv                   -any
-                     , containers           -any
-                     , criterion            -any
-                     , deepseq              -any
-                     , directory            -any
-                     , dlist                -any
-                     , either               -any
-                     , Glob                 -any
-                     , hashable             -any
-                     , keys                 -any
-                     , matrix               -any
-                     , megaparsec           >=4.2
-                     , parallel             -any
-                     , phylocomgraph        -any
-                     , QuickCheck           -any
-                     , safe                 -any
-                     , semigroups           -any
-                     , smallcheck           -any
-                     , split                -any 
-                     , tasty                -any
-                     , tasty-hunit          -any
-                     , tasty-quickcheck     -any
-                     , tasty-smallcheck     -any
-                     , text                 -any
-                     , time                 -any
-                     , transformers         -any
-                     , unordered-containers -any
-                     , vector               -any
-
-  default-language:    Haskell2010
-
-  ghc-options:         -O2 -Wall 
-                       -fwarn-duplicate-exports
-                       -fwarn-incomplete-patterns
-                       -fwarn-missing-signatures
-                       -fwarn-overlapping-patterns
-                       -fwarn-tabs
-                       -fwarn-unused-binds
-                       -fwarn-unused-do-bind
-                       -fwarn-unused-imports
-                       -fwarn-unused-matches
-  
-  hs-source-dirs:      app
-
-  include-dirs:
-    ffi/Analysis/Parsimony/Binary/SequentialAlign
-
-    
-  other-modules:       PCG.Command
-                       PCG.Command.Types
-                       PCG.Command.Types.Read
-                       PCG.Command.Types.Read.Internal
-                       PCG.Command.Types.Read.ReadError
-                       PCG.Command.Types.Report.CharacterMatrix
-                       PCG.Command.Types.Report.TaxonMatrix
-                       PCG.Command.Types.Report.GraphViz
-                       PCG.Command.Types.Report.Metadata
-                       PCG.Command.Types.Report.Newick
-                       PCG.Computation.Internal
-                       PCG.Script
-                       PCG.Script.Parser
-                       PCG.Script.Types
-
-
 executable qdh
            
   main-is:             BadReadGraphQDH.hs
@@ -431,11 +364,9 @@ Test-Suite testsuite
                        Bio.Phylogeny.Graph.Topological
                        Bio.Phylogeny.Network
                        Bio.Phylogeny.Network.Class                
-                       Bio.Phylogeny.PhyloCharacter
+                       Bio.Metadata.Internal
                        Bio.Phylogeny.Tree.Binary
                        Bio.Phylogeny.Tree.Binary.Class
-                       Bio.Phylogeny.Tree.CharacterAware
-                       Bio.Phylogeny.Tree.CharacterAware.Class
                        Bio.Phylogeny.Tree.Edge.Standard
                        Bio.Phylogeny.Tree.EdgeAware
                        Bio.Phylogeny.Tree.EdgeAware.Class

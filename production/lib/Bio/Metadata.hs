@@ -1,6 +1,6 @@
 -----------------------------------------------------------------------------
 -- |
--- Module      :  Bio.Phylogeny.Graph
+-- Module      :  Bio.Metadata
 -- Copyright   :  (c) 2015-2015 Ward Wheeler
 -- License     :  BSD-style
 --
@@ -8,10 +8,12 @@
 -- Stability   :  provisional
 -- Portability :  portable
 --
--- Module for a tree that knows the info for its characters
+-- Wrapper for all the metadata types
 --
 -----------------------------------------------------------------------------
 
-module Bio.Phylogeny.Tree.CharacterAware (CharacterTree(..)) where
+module Bio.Metadata (module Bio.Metadata.Internal, module Bio.Metadata.Class, module Bio.Metadata.Parsed) where
 
-import Bio.Phylogeny.Tree.CharacterAware.Class
+import Bio.Metadata.Internal
+import Bio.Metadata.Class
+import Bio.Metadata.Parsed

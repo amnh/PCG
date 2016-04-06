@@ -4,13 +4,13 @@ module PCG.Command.Types.Read.Evaluate
   ( evaluate
   ) where
 
-import           Bio.Phylogeny.Graph
-import           Bio.Phylogeny.Graph.Parsed
-import           Bio.Phylogeny.PhyloCharacter
-import           Bio.Metadata.Class
+import           Bio.Metadata
 import           Bio.Metadata.MaskGenerator
 import           Bio.Sequence.Parsed
 import           Bio.Sequence.Parsed.Class
+import           Bio.Phylogeny.Graph.Parsed
+import           Bio.Phylogeny.Graph
+import           Bio.Phylogeny.Solution (StandardMetadata)
 import           Control.Monad              (when)
 import           Control.Monad.IO.Class
 import           Control.Monad.Trans.Either
@@ -140,22 +140,22 @@ expandIUPAC :: FracturedParseResult -> FracturedParseResult
 expandIUPAC fpr = fpr { parsedChars = newTreeSeqs }
   where
     newTreeSeqs = f (parsedChars fpr) (parsedMetas fpr)
-    f :: TreeSeqs -> Vector CharInfo -> TreeSeqs
+    f :: TreeSeqs -> Vector StandardMetadata -> TreeSeqs
     f mapping meta = g <$> mapping
       where
         g :: ParsedSequences -> ParsedSequences
         g = V.zipWith h meta 
           where
-            h :: CharInfo -> Maybe ParsedSeq -> Maybe ParsedSeq
+            h :: StandardMetadata -> Maybe ParsedSeq -> Maybe ParsedSeq
             h cInfo seqMay = expandCodes <$> seqMay
               where
+                cType = charType cInfo
+                
                 expandCodes :: ParsedSeq -> ParsedSeq
-                expandCodes x =
-                  case cInfo of
-                    DNA{}       -> expandOrId nucleotideIUPAC <$> x
-                    RNA{}       -> expandOrId nucleotideIUPAC <$> x
-                    AminoAcid{} -> expandOrId aminoAcidIUPAC  <$> x
-                    _           -> x
+                expandCodes x 
+                  | cType == DNA || cType == RNA  = expandOrId nucleotideIUPAC <$> x
+                  | cType == AminoAcid = expandOrId aminoAcidIUPAC  <$> x
+                  | otherwise = x
     expandOrId m x = fromMaybe x $ x `lookup` m
 
 --setTaxaSeqs :: HashMap Identifier ParsedSequences -> SearchState
@@ -199,7 +199,7 @@ progressiveParse inputPath = do
                           Right x -> pure $ toFractured Nothing filePath x
                           Left  _ -> fail $ "Could not determine the file type of '" ++ filePath ++ "'. Try annotating the expected file data in the 'read' for more explicit error message on file parsing failures."
 
-toFractured :: (Metadata a, ParsedCharacters a, ParseGraph a) => Maybe TCM -> FilePath -> a -> FracturedParseResult
+toFractured :: (ParsedMetadata a, ParsedCharacters a, ParseGraph a) => Maybe TCM -> FilePath -> a -> FracturedParseResult
 toFractured tcmMat path = FPR <$> unifyCharacters
                               <*> unifyMetadata
                               <*> unifyGraph

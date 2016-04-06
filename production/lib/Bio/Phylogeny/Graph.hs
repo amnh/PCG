@@ -21,7 +21,6 @@ import           Bio.Phylogeny.Forest
 import           Bio.Phylogeny.Graph.Data
 import qualified Bio.Phylogeny.Graph.Topological as TG
 import           Bio.Phylogeny.Tree.Binary
-import qualified Bio.Phylogeny.Tree.CharacterAware as CT
 import qualified Bio.Phylogeny.Tree.Edge.Standard  as E
 import qualified Bio.Phylogeny.Tree.EdgeAware      as ET
 import           Bio.Phylogeny.Tree.Node
@@ -71,11 +70,6 @@ instance E.StandardEdge EdgeInfo NodeInfo where
 instance ET.EdgedTree DAG NodeInfo EdgeSet where
   edges    n t   = edges t ! code n
   setEdges n t e = t {edges = edges t // [(code n, e)]}
-
--- | And the tree is aware of its character info
-instance CT.CharacterTree DAG EncodedSeq where
-  characters = characters
-  setCharacters t c = t {characters = c} 
 
 -- | This particular tree is referential
 instance RT.ReferentialTree DAG NodeInfo where

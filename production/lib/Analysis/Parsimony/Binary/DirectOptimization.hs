@@ -24,7 +24,7 @@ import Data.Matrix (Matrix, getElem, nrows, ncols, (<->), zero, matrix, fromList
 import Data.Maybe
 import Data.Monoid
 
-import Bio.Metadata.Class (InternalMetadata(..))
+import Bio.Metadata
 import Bio.Sequence.Coded
 
 --import Debug.Trace
@@ -40,7 +40,7 @@ defaultCosts :: Costs
 defaultCosts = (1,1)
 
 -- | Performs a naive direct optimization
-naiveDO :: (InternalMetadata m s, SeqConstraint' s, CodedChar s) => s -> s -> m -> (s, Double, s, s, s)
+naiveDO :: (Metadata m s, SeqConstraint' s, CodedChar s) => s -> s -> m -> (s, Double, s, s, s)
 --naiveDO s1 s2 | trace ("Sequences of length " ++ show (numChars s1 alphLen) ++ show (numChars s2 alphLen)) False = undefined
 naiveDO seq1 seq2 meta
     | isEmpty seq1 || isEmpty seq2 || numChars seq1 alphLen == 0 || numChars seq2 alphLen == 0 = (emptySeq, 0, emptySeq, emptySeq, emptySeq)
@@ -52,18 +52,18 @@ naiveDO seq1 seq2 meta
                                                    then (seq2, seq2Len, seq1, seq1Len)
                                                    else (seq1, seq1Len, seq2, seq2Len)
             firstMatRow = firstAlignRow (fst defaultCosts) longer longlen 0 0 alphLen
-            traversalMat = firstMatRow `joinMat` getAlignRows longer shorter defaultCosts 1 firstMatRow (length $ alphabet meta)
+            traversalMat = firstMatRow `joinMat` getAlignRows longer shorter defaultCosts 1 firstMatRow alphLen
             cost = getMatrixCost traversalMat
             (gapped, left, right) = --trace ("get seqs " ++ show traversalMat)
                                     traceback traversalMat shorter longer alphLen
-            ungapped = filterGaps gapped (gapChar $ length $ alphabet meta) (alphabet meta)
+            ungapped = filterGaps gapped (gapChar alphLen) (getAlphabet meta)
             (out1, out2) = if seq1Len > seq2Len
                                 then (right, left)
                                 else (left, right)
         in (ungapped, cost, gapped, out1, out2)
 
         where
-            alphLen = (length $ alphabet meta)
+            alphLen = (length $ getAlphabet meta)
             getMatrixCost :: (SeqConstraint' s) => AlignMatrix s -> Double
             --getMatrixCost inAlign | trace ("Get cost " ++ show (nrows $ costs inAlign) ++ " " ++ show (ncols $ costs inAlign)) False = undefined
             getMatrixCost inAlign = 

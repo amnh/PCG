@@ -17,7 +17,7 @@
 module PCG.Command.Types.Report.CharacterMatrix where
 
 import           Bio.Phylogeny.Graph
-import           Bio.Phylogeny.PhyloCharacter
+import           Bio.Metadata.Internal
 import           Data.Matrix.NotStupid        ((<->), (<|>), matrix, getElem, setElem, Matrix, getRow, nrows, ncols)
 import           Data.Maybe                   (fromMaybe)
 import           Data.Monoid

@@ -16,7 +16,7 @@
 module PCG.Command.Types.Report.TaxonMatrix where
 
 import Bio.Phylogeny.Solution
-import Bio.Phylogeny.PhyloCharacter
+import Bio.Metadata
 import Bio.Phylogeny.Tree.Node hiding (name)
 import qualified Bio.Phylogeny.Tree.Node as N
 --import PCG.Command.Types.Report.CharacterMatrix

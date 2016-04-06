@@ -18,7 +18,7 @@ import Bio.Sequence.Parsed
 import Bio.Sequence.Coded
 import Bio.Phylogeny.Tree.Node
 import Bio.Phylogeny.Tree.Node.Topological
-import Bio.Phylogeny.PhyloCharacter
+import Bio.Metadata.Internal
 
 import Data.BitVector
 import Data.HashMap.Strict
@@ -38,7 +38,7 @@ type NodeInfo = Node
 
 type Topo   = TopoNode BitVector
 
-type CharacterMetadata = PhyloCharacter EncodedSeq
+type StandardMetadata = CharacterMetadata EncodedSeq
 
 type StandardSolution = Solution DAG
 
@@ -63,7 +63,7 @@ data EdgeInfo
 data Solution d 
    = Solution
    { parsedChars :: HashMap Identifier Sequences
-   , metadata   :: Vector CharacterMetadata
+   , metadata   :: Vector StandardMetadata
    , forests    :: [Forest d]
    } deriving (Eq, Show)
 
