@@ -154,12 +154,10 @@ library
                        Control.Evaluation.Unit
                        Data.List.Utility
                        Data.Matrix.NotStupid
-                       File.Format.Conversion.Encoder
                        File.Format.Fasta.Converter
                        File.Format.Fasta.Internal
                        File.Format.Fasta.Parser
                        File.Format.Fastc.Parser
-                       File.Format.Newick.Converter
                        File.Format.Newick.Internal
                        File.Format.Newick.Parser
                        File.Format.Nexus.Data
@@ -396,7 +394,6 @@ Test-Suite testsuite
                        File.Format.Fastc.Parser
                        File.Format.Fastc.Test
                        File.Format.Newick
-                       File.Format.Newick.Converter
                        File.Format.Newick.Internal
                        File.Format.Newick.Parser
                        File.Format.Newick.Test
@@ -431,8 +428,6 @@ Test-Suite testsuite
                        Bio.Sequence.Packed.Class
                        Bio.Sequence.Parsed
                        Data.Matrix.NotStupid
-                       File.Format.Conversion.Encoder
-                       File.Format.Conversion.Test
                        File.Format.TNT
                        File.Format.TNT.Command.CCode
                        File.Format.TNT.Command.CNames
