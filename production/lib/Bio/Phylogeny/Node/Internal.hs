@@ -66,30 +66,30 @@ instance Monoid Node where
 
 -- | Make it an instance of encoded, final, packed, and preliminary
 instance EN.EncodedNode Node EncodedSeq where
-    encoded = encoded
+    getEncoded = encoded
     setEncoded n s = n {encoded = s}
 
 -- | Nodes can hold final assignment
 instance FN.FinalNode Node EncodedSeq where
-    final = final
+    getFinal = final
     setFinal f n = n {final = f}
 
 -- | Nodes can hold packed data
 instance PN.PackedNode Node EncodedSeq where
-    packed = packed
+    getPacked = packed
     setPacked n s = n {packed = s}
 
 -- | Nodes hold all preliminary info
 instance RN.PreliminaryNode Node EncodedSeq where
-    preliminary = preliminary
+    getPreliminary = preliminary
     setPreliminary s n = n {preliminary = s}
-    preliminaryAlign = aligned
+    getPreliminaryAlign = aligned
     setAlign s n = n {aligned = s}
-    temporary = temporary
+    getTemporary = temporary
     setTemporary s n = n {temporary = s}
-    localCost = localCost
+    getLocalCost = localCost
     setLocalCost c n = n {localCost = c}
-    totalCost = totalCost
+    getTotalCost = totalCost
     setTotalCost c n = n {totalCost = c}
 
 instance Ord Node where

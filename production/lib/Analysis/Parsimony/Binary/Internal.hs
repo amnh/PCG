@@ -55,7 +55,7 @@ setElemSafe value (row, col) matrix
 -- | Simple function to get the aligned if available, the encoded if not
 getForAlign :: (PreliminaryNode n s, EncodedNode n s, SeqConstraint' s) => n -> Vector s
 getForAlign node 
-    | null (preliminaryAlign node) && null (preliminary node) = encoded node
-    | null $ preliminaryAlign node                            = preliminary node
-    | otherwise                                               = preliminaryAlign node 
+    | null (getPreliminaryAlign node) && null (getPreliminary node) = getEncoded node
+    | null $ getPreliminaryAlign node                            = getPreliminary node
+    | otherwise                                               = getPreliminaryAlign node 
 

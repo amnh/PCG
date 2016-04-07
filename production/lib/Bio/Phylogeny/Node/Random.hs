@@ -1,6 +1,6 @@
 -----------------------------------------------------------------------------
 -- |
--- Module      :  Bio.Phylogeny.Tree.Node.Random
+-- Module      :  Bio.Phylogeny.Node.Random
 -- Copyright   :  (c) 2015-2015 Ward Wheeler
 -- License     :  BSD-style
 --
@@ -14,7 +14,7 @@
 
 module Bio.Phylogeny.Node.Random where
 
-import Bio.Phylogeny.Node.Class
+import Bio.Phylogeny.Node.Internal
 import Bio.Sequence.Coded
 import Bio.Sequence.Random
 

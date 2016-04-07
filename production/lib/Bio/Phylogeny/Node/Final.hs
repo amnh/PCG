@@ -20,5 +20,5 @@ import Data.Vector
 
 -- | A final node has its final assignment
 class FinalNode n s | n -> s where
-    final :: n -> Vector s
+    getFinal :: n -> Vector s
     setFinal :: Vector s -> n -> n

@@ -14,7 +14,7 @@ import Text.Megaparsec                   (eof, parse)
 import qualified Data.IntMap as IM
 import qualified Data.HashMap.Lazy as HM
 import qualified Data.Vector as V
-import Bio.Phylogeny.Tree.Node
+import Bio.Phylogeny.Node
 
 testSuite :: TestTree
 testSuite = testGroup "VER Format"

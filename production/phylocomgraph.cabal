@@ -108,6 +108,7 @@ library
                        Bio.Phylogeny.Node
                        Bio.Phylogeny.Node.Encoded
                        Bio.Phylogeny.Node.Final
+                       Bio.Phylogeny.Node.Internal
                        Bio.Phylogeny.Node.Packed
                        Bio.Phylogeny.Node.Preliminary
                        Bio.Phylogeny.Tree.Referential

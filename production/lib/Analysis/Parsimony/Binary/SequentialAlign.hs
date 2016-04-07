@@ -8,7 +8,6 @@
 module Analysis.Parsimony.Binary.SequentialAlign (sequentialAlign) where
 
 import           Analysis.Parsimony.Binary.Internal
---import           Bio.Phylogeny.Tree.Node.Preliminary
 import           Bio.Sequence.Coded
 import qualified Analysis.Parsimony.Binary.SequentialAlign.SeqAlignFFI as FF (sequentialAlign)
 --import           Control.Applicative        (liftA2)

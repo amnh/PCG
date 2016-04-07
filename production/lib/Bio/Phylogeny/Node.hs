@@ -19,6 +19,7 @@ module Bio.Phylogeny.Node (Node(..)
                                 , module Bio.Phylogeny.Node.Final
                                 , module Bio.Phylogeny.Node.Packed
                                 , module Bio.Phylogeny.Node.Preliminary
+                                , module Bio.Phylogeny.Node.Internal
                                 ) where
 
 import Bio.Phylogeny.Node.Encoded 

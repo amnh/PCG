@@ -72,15 +72,15 @@ optimizationPreorder weight tree meta
         let
             nodes1 = internalPreorder weight (fromJust $ rightChild (root tree) tree) tree meta -- with only one child, assignment and cost is simply carried up
             carryNode = head nodes1
-            newNodes = (setTemporary (temporary carryNode) $ setAlign (preliminaryAlign carryNode)
-                        $ setPreliminary (preliminary carryNode) $ setTotalCost (totalCost carryNode) $ setLocalCost (localCost carryNode) (root tree)) : nodes1
+            newNodes = (setTemporary (getTemporary carryNode) $ setAlign (getPreliminaryAlign carryNode)
+                        $ setPreliminary (getPreliminary carryNode) $ setTotalCost (getTotalCost carryNode) $ setLocalCost (getLocalCost carryNode) (root tree)) : nodes1
         in tree `update` newNodes
     | leftOnly =
         let
             nodes1 = internalPreorder weight (fromJust $ leftChild (root tree) tree) tree meta -- with only one child, assignment and cost is simply carried up
             carryNode = head nodes1
-            myNode = setTemporary (temporary carryNode) $ setAlign (preliminaryAlign carryNode)
-                        $ setPreliminary (preliminary carryNode) $ setTotalCost (totalCost carryNode) $ setLocalCost (localCost carryNode) (root tree)
+            myNode = setTemporary (getTemporary carryNode) $ setAlign (getPreliminaryAlign carryNode)
+                        $ setPreliminary (getPreliminary carryNode) $ setTotalCost (getTotalCost carryNode) $ setLocalCost (getLocalCost carryNode) (root tree)
             newNodes = myNode : nodes1
         in tree `update` newNodes
     | otherwise =
@@ -106,15 +106,15 @@ internalPreorder weight node tree meta
         let
             nodes1 = internalPreorder weight (fromJust $ rightChild node tree) tree meta -- with only one child, assignment and cost is simply carried up
             carryNode = head nodes1
-            myNode = setTemporary (temporary carryNode) $ setAlign (preliminaryAlign carryNode)
-                        $ setPreliminary (preliminary carryNode) $ setTotalCost (totalCost carryNode) $ setLocalCost (localCost carryNode) node
+            myNode = setTemporary (getTemporary carryNode) $ setAlign (getPreliminaryAlign carryNode)
+                        $ setPreliminary (getPreliminary carryNode) $ setTotalCost (getTotalCost carryNode) $ setLocalCost (getLocalCost carryNode) node
         in myNode : nodes1
     | leftOnly =
         let
             nodes1 = internalPreorder weight (fromJust $ leftChild node tree) tree meta -- with only one child, assignment and cost is simply carried up
             carryNode = head nodes1
-            myNode = setTemporary (temporary carryNode) $ setAlign (preliminaryAlign carryNode)
-                        $ setPreliminary (preliminary carryNode) $ setTotalCost (totalCost carryNode) $ setLocalCost (localCost carryNode) node
+            myNode = setTemporary (getTemporary carryNode) $ setAlign (getPreliminaryAlign carryNode)
+                        $ setPreliminary (getPreliminary carryNode) $ setTotalCost (getTotalCost carryNode) $ setLocalCost (getLocalCost carryNode) node
         in myNode : nodes1
     | otherwise =
         let
@@ -171,7 +171,7 @@ internalPostorder node tree meta
 preorderNodeOptimize :: (NodeConstraint' n s, Metadata m s) => Double -> n -> n -> n -> Vector m -> n
 preorderNodeOptimize weight curNode lNode rNode meta = setTotalCost summedTotalCost res
     where
-        summedTotalCost = sum $ totalCost <$> [res,lNode,rNode] --totalCost res + totalCost lNode + totalCost rNode
+        summedTotalCost = sum $ getTotalCost <$> [res,lNode,rNode] --getTotalCost res + getTotalCost lNode + getTotalCost rNode
         res             = ifoldr chooseOptimization curNode meta
         --chooseOptimization :: (NodeConstraint' n s, Metadata m s) => Int -> m -> n -> n
         chooseOptimization curPos curCharacter setNode
@@ -183,16 +183,16 @@ preorderNodeOptimize weight curNode lNode rNode meta = setTotalCost summedTotalC
                 let (ungapped, cost, gapped, leftGapped, rightGapped) = naiveDO (getForAlign lNode ! curPos) (getForAlign rNode ! curPos) curCharacter
                 in addLocalCost cost $ addTotalCost cost $ addAlign gapped $ addPreliminary ungapped setNode
 
-                -- getForAlign returns a node, either encoded, preliminary or preliminary align. It's in Analysis.Parsimony.Binary.Internal
+                -- getForAlign returns a node, either encoded, getPreliminary or getPreliminary align. It's in Analysis.Parsimony.Binary.Internal
                 -- the return type is a vector of encoded sequences,
                 -- where an EncodedSeq (encoded sequence) is a maybe vector of some type from Bio/Sequence/Coded.hs
                 --let (ungapped, cost, gapped, leftGapped, rightGapped) = sequentialAlign (getForAlign lNode ! curPos) (getForAlign rNode ! curPos)
                 --in  addLocalCost cost $ addTotalCost cost $ addAlign gapped $ addPreliminary ungapped setNode
 
-        addPreliminary addVal inNode = addToField setPreliminary preliminary      addVal inNode
-        addAlign       addVal inNode = addToField setAlign       preliminaryAlign addVal inNode
-        addTotalCost   addVal node   = setTotalCost (addVal + totalCost node) node
-        addLocalCost   addVal node   = setLocalCost (addVal + localCost node) node
+        addPreliminary addVal inNode = addToField setPreliminary getPreliminary      addVal inNode
+        addAlign       addVal inNode = addToField setAlign       getPreliminaryAlign addVal inNode
+        addTotalCost   addVal node   = setTotalCost (addVal + getTotalCost node) node
+        addLocalCost   addVal node   = setLocalCost (addVal + getLocalCost node) node
 
 -- | addToField takes in a setter fn, a getter fn, a value and a node.
 -- It then gets the related value from the node, adds to it the passed value,
@@ -209,6 +209,6 @@ postorderNodeOptimize curNode lNode rNode pNode meta
         --chooseOptimization :: (NodeConstraint' n s, Metadata m s) => Int -> m -> n -> n
         chooseOptimization i curCharacter setNode
             | getAligned curCharacter =
-                let finalAssign = postorderFitchBit (getForAlign curNode ! i) (getForAlign lNode ! i) (getForAlign rNode ! i) (getForAlign (fromJust pNode) ! i) (temporary curNode ! i) curCharacter
-                in addToField setFinal final finalAssign setNode
+                let finalAssign = postorderFitchBit (getForAlign curNode ! i) (getForAlign lNode ! i) (getForAlign rNode ! i) (getForAlign (fromJust pNode) ! i) (getTemporary curNode ! i) curCharacter
+                in addToField setFinal getFinal finalAssign setNode
             | otherwise = setNode

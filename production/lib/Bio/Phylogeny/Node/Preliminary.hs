@@ -21,13 +21,13 @@ import Data.Vector
 -- | A preliminary node has a preliminary assignment as well as associated data
 -- Associated data: aligned preliminary, temporary, and cost
 class PreliminaryNode n s | n -> s where
-    preliminary      :: n -> Vector s
+    getPreliminary      :: n -> Vector s
     setPreliminary   :: Vector s -> n -> n
-    preliminaryAlign :: n -> Vector s
+    getPreliminaryAlign :: n -> Vector s
     setAlign         :: Vector s -> n -> n
-    temporary        :: n -> Vector s
+    getTemporary        :: n -> Vector s
     setTemporary     :: Vector s -> n -> n
-    localCost        :: n -> Double
+    getLocalCost        :: n -> Double
     setLocalCost     :: Double -> n -> n
-    totalCost        :: n -> Double
+    getTotalCost        :: n -> Double
     setTotalCost     :: Double -> n -> n
