@@ -16,8 +16,8 @@ module Bio.Phylogeny.Solution.Internal where
 
 import Bio.Sequence.Parsed
 import Bio.Sequence.Coded
-import Bio.Phylogeny.Tree.Node
-import Bio.Phylogeny.Tree.Node.Topological
+import Bio.Phylogeny.Node
+import Bio.Phylogeny.Node.Topological
 import Bio.Metadata.Internal
 
 import Data.BitVector

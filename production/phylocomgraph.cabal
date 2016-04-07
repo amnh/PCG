@@ -97,19 +97,19 @@ library
                        Analysis.Parsimony.Binary.SequentialAlign
                        Analysis.Parsimony.Binary.SequentialAlign.SeqAlignFFI
                        Bio.Phylogeny.Forest
-                       Bio.Phylogeny.Graph
                        Bio.Phylogeny.Network
                        Bio.Metadata
                        Bio.Phylogeny.Solution
-                       Bio.Phylogeny.Solution.Data
+                       Bio.Phylogeny.Solution.Internal
                        Bio.Phylogeny.Solution.Class
+                       Bio.Phylogeny.Solution.Parsed
                        Bio.Phylogeny.Tree.Binary
                        Bio.Phylogeny.Tree.EdgeAware
-                       Bio.Phylogeny.Tree.Node
-                       Bio.Phylogeny.Tree.Node.Encoded
-                       Bio.Phylogeny.Tree.Node.Final
-                       Bio.Phylogeny.Tree.Node.Packed
-                       Bio.Phylogeny.Tree.Node.Preliminary
+                       Bio.Phylogeny.Node
+                       Bio.Phylogeny.Node.Encoded
+                       Bio.Phylogeny.Node.Final
+                       Bio.Phylogeny.Node.Packed
+                       Bio.Phylogeny.Node.Preliminary
                        Bio.Phylogeny.Tree.Referential
                        Bio.Phylogeny.Tree.Rose
                        Bio.Sequence.Coded
@@ -132,22 +132,18 @@ library
                        Bio.Metadata.MaskGenerator
                        Bio.Phylogeny.Solution.Metadata
                        Bio.Phylogeny.Forest.Class
-                       Bio.Phylogeny.Graph.Data
-                       Bio.Phylogeny.Graph.Output
-                       Bio.Phylogeny.Graph.Parsed
-                       Bio.Phylogeny.Graph.Topological
-                       Bio.Phylogeny.Graph.Utilities
                        Bio.Phylogeny.Network.Class
                        Bio.Phylogeny.Network.Subsettable
                        Bio.Phylogeny.Tree.Binary.Class
                        Bio.Phylogeny.Tree.Edge.Standard
                        Bio.Phylogeny.Tree.EdgeAware.Class
-                       Bio.Phylogeny.Tree.Node.Topological
+                       Bio.Phylogeny.Node.Topological
                        Bio.Phylogeny.Tree.Rose.Class
                        Bio.Sequence.Coded.Class
                        Bio.Sequence.Packed.Class
                        Bio.Sequence.Parsed
                        Bio.Sequence.Parsed.Class
+                       Bio.Sequence.Parsed.Internal
                        Bio.Sequence.Random
                        Control.Evaluation.Internal
                        Control.Evaluation.Trans
@@ -250,6 +246,7 @@ executable pcg
                        PCG.Command.Types.Report.Evaluate
                        PCG.Command.Types.Report.GraphViz
                        PCG.Command.Types.Report.Internal
+                       PCG.Command.Types.Report.Metadata
                        PCG.Command.Types.Report.TaxonMatrix
                        PCG.Command.Types.Report.Newick
                        PCG.Command.Types.Report.Validate
@@ -354,10 +351,6 @@ Test-Suite testsuite
   other-modules:       Bio.Metadata.Class
                        Bio.Phylogeny.Forest
                        Bio.Phylogeny.Forest.Class
-                       Bio.Phylogeny.Graph
-                       Bio.Phylogeny.Graph.Data
-                       Bio.Phylogeny.Graph.Random
-                       Bio.Phylogeny.Graph.Topological
                        Bio.Phylogeny.Network
                        Bio.Phylogeny.Network.Class                
                        Bio.Metadata.Internal
@@ -366,13 +359,13 @@ Test-Suite testsuite
                        Bio.Phylogeny.Tree.Edge.Standard
                        Bio.Phylogeny.Tree.EdgeAware
                        Bio.Phylogeny.Tree.EdgeAware.Class
-                       Bio.Phylogeny.Tree.Node
-                       Bio.Phylogeny.Tree.Node.Encoded
-                       Bio.Phylogeny.Tree.Node.Final
-                       Bio.Phylogeny.Tree.Node.Packed
-                       Bio.Phylogeny.Tree.Node.Preliminary
-                       Bio.Phylogeny.Tree.Node.Random
-                       Bio.Phylogeny.Tree.Node.Topological
+                       Bio.Phylogeny.Node
+                       Bio.Phylogeny.Node.Encoded
+                       Bio.Phylogeny.Node.Final
+                       Bio.Phylogeny.Node.Packed
+                       Bio.Phylogeny.Node.Preliminary
+                       Bio.Phylogeny.Node.Random
+                       Bio.Phylogeny.Node.Topological
                        Bio.Phylogeny.Tree.Referential
                        Bio.Phylogeny.Tree.Rose
                        Bio.Phylogeny.Tree.Rose.Class
@@ -419,9 +412,6 @@ Test-Suite testsuite
                        Analysis.Parsimony.Binary.DirectOptimization
                        Analysis.Parsimony.Binary.Internal
                        Analysis.Parsimony.Binary.Test
-                       Bio.Phylogeny.Graph.Output
-                       Bio.Phylogeny.Graph.Test
-                       Bio.Phylogeny.Graph.Utilities
                        Bio.Phylogeny.Network.Subsettable
                        Bio.Sequence.Packed.Class
                        Bio.Sequence.Parsed
@@ -437,7 +427,6 @@ Test-Suite testsuite
                        File.Format.TNT.Internal
                        File.Format.TNT.Parser
                        File.Format.TNT.Partitioning
-                       Test.Custom.Graph
                        Test.Custom.Parse
                        Test.Custom.Types
                        TestSuite.GeneratedTests.TNT                       

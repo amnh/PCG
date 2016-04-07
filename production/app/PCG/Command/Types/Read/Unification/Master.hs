@@ -18,7 +18,7 @@ import           Bio.Phylogeny.Solution  hiding (parsedChars)
 import           Bio.Metadata hiding (name)
 import           Bio.Sequence.Coded
 import           Bio.Sequence.Parsed
-import           Bio.Phylogeny.Tree.Node hiding (isLeaf)
+import           Bio.Phylogeny.Node hiding (isLeaf)
 import           Control.Arrow                  ((***),(&&&))
 import           Data.Bifunctor                 (first)
 import           Data.BitVector          hiding (not, foldr)

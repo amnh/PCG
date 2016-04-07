@@ -8,18 +8,18 @@
 -- Stability   :  provisional
 -- Portability :  portable
 --
--- Class for nodes with encoded data
+-- Class for nodes with their packed data
 --
 -----------------------------------------------------------------------------
 
 
 {-# LANGUAGE FunctionalDependencies #-}
 
-module Bio.Phylogeny.Tree.Node.Encoded where
-    
+module Bio.Phylogeny.Node.Packed where
+
 import Data.Vector
 
--- | An encoded node allows getting and setting on encoded data
-class EncodedNode n s | n -> s where
-  encoded :: n -> Vector s
-  setEncoded :: n -> Vector s -> n
+-- | A packed node has its packed data
+class PackedNode a s | a -> s where
+    packed :: a -> Vector s
+    setPacked :: a -> Vector s -> a

@@ -12,9 +12,9 @@
 --
 -----------------------------------------------------------------------------
 
-module Bio.Phylogeny.Tree.Node.Random where
+module Bio.Phylogeny.Node.Random where
 
-import Bio.Phylogeny.Tree.Node
+import Bio.Phylogeny.Node.Class
 import Bio.Sequence.Coded
 import Bio.Sequence.Random
 

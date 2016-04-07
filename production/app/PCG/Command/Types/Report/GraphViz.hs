@@ -15,7 +15,7 @@
 module PCG.Command.Types.Report.GraphViz where
 
 import Bio.Phylogeny.Solution
-import Bio.Phylogeny.Tree.Node
+import Bio.Phylogeny.Node
 import Data.Char
 --import Data.Vector
 

@@ -8,16 +8,18 @@
 -- Stability   :  provisional
 -- Portability :  portable
 --
--- Class for nodes that can access their connected edges
+-- Class for nodes with encoded data
 --
 -----------------------------------------------------------------------------
 
 
 {-# LANGUAGE FunctionalDependencies #-}
 
-module Bio.Phylogeny.Tree.Node.EdgeAware where
+module Bio.Phylogeny.Node.Encoded where
+    
+import Data.Vector
 
--- | An edge aware node can get a list of its edges
-class EdgedNode a e | a -> e where
-  edges :: a -> [e]
-  setEdges :: a -> [e] -> a
+-- | An encoded node allows getting and setting on encoded data
+class EncodedNode n s | n -> s where
+  encoded :: n -> Vector s
+  setEncoded :: n -> Vector s -> n

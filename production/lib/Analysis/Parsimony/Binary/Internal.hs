@@ -19,9 +19,9 @@ import Bio.Metadata
 import Bio.Phylogeny.Forest
 import Bio.Phylogeny.Solution.Class
 import Bio.Phylogeny.Solution.Metadata
-import Bio.Phylogeny.Tree.Node.Preliminary
-import Bio.Phylogeny.Tree.Node.Encoded
-import Bio.Phylogeny.Tree.Node.Final
+import Bio.Phylogeny.Node.Preliminary
+import Bio.Phylogeny.Node.Encoded
+import Bio.Phylogeny.Node.Final
 import Bio.Phylogeny.Network
 import Bio.Phylogeny.Tree.Referential
 import Bio.Phylogeny.Tree.Binary

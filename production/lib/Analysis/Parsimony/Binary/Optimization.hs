@@ -31,10 +31,10 @@ import Bio.Phylogeny.Network
 import Bio.Phylogeny.Solution.Class
 import Bio.Phylogeny.Solution.Metadata
 import Bio.Phylogeny.Tree.Binary
-import Bio.Phylogeny.Tree.Node (Node)
-import Bio.Phylogeny.Tree.Node.Final
-import Bio.Phylogeny.Tree.Node.Preliminary
-import Bio.Phylogeny.Tree.Node.Encoded
+import Bio.Phylogeny.Node (Node)
+import Bio.Phylogeny.Node.Final
+import Bio.Phylogeny.Node.Preliminary
+import Bio.Phylogeny.Node.Encoded
 import Bio.Metadata
 
 --import Debug.Trace

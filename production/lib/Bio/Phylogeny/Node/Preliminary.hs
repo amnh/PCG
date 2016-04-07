@@ -14,7 +14,7 @@
 
 {-# LANGUAGE FunctionalDependencies #-}
 
-module Bio.Phylogeny.Tree.Node.Preliminary where
+module Bio.Phylogeny.Node.Preliminary where
 
 import Data.Vector
 

@@ -15,7 +15,7 @@
 
 {-# LANGUAGE TypeSynonymInstances, FlexibleInstances, MultiParamTypeClasses #-}
 
-module Bio.Phylogeny.Tree.Node.Topological (TopoNode(..)) where
+module Bio.Phylogeny.Node.Topological (TopoNode(..)) where
 
 import Bio.Sequence.Coded
 

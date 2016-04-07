@@ -30,8 +30,8 @@ import           Bio.Phylogeny.Solution.Internal
 import           Bio.Phylogeny.Tree.Binary
 import qualified Bio.Phylogeny.Tree.Edge.Standard  as E
 import qualified Bio.Phylogeny.Tree.EdgeAware      as ET
-import           Bio.Phylogeny.Tree.Node
-import qualified Bio.Phylogeny.Tree.Node.Topological as TN
+import           Bio.Phylogeny.Node
+import qualified Bio.Phylogeny.Node.Topological as TN
 import           Bio.Phylogeny.Tree.Rose
 import qualified Bio.Phylogeny.Tree.Referential    as RT
 

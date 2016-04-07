@@ -8,18 +8,16 @@
 -- Stability   :  provisional
 -- Portability :  portable
 --
--- Class for nodes with their packed data
+-- Class for nodes that can access their connected edges
 --
 -----------------------------------------------------------------------------
 
 
 {-# LANGUAGE FunctionalDependencies #-}
 
-module Bio.Phylogeny.Tree.Node.Packed where
+module Bio.Phylogeny.Node.EdgeAware where
 
-import Data.Vector
-
--- | A packed node has its packed data
-class PackedNode a s | a -> s where
-    packed :: a -> Vector s
-    setPacked :: a -> Vector s -> a
+-- | An edge aware node can get a list of its edges
+class EdgedNode a e | a -> e where
+  edges :: a -> [e]
+  setEdges :: a -> [e] -> a
