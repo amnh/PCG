@@ -1,18 +1,23 @@
+{-# LANGUAGE FlexibleInstances #-}
+
 module Bio.Sequence.Coded.Test 
   ( testSuite
   ) where
 
 import Bio.Sequence.Coded
+import Bio.Sequence.Parsed
 import Data.Bits
-import Data.BitVector (BitVector)
+import Data.BitVector (BitVector, toBits, width)
 import Data.Monoid    ((<>))
-import Data.Vector    (Vector)
+import Data.Vector    (Vector, fromList)
 import Test.Tasty                 
 import Test.Tasty.HUnit
 import Test.Tasty.QuickCheck
 
+import Debug.Trace
+
 testSuite :: TestTree
-testSuite = testGroup "Custom Bits instances" [testVectorBits, testCodeSequenceInstance]
+testSuite = testGroup "Custom Bits instances" [testVectorBits, testCodedSequenceInstance]
 
 testVectorBits :: TestTree
 testVectorBits = testGroup "Properties of instance Bits b => Bits (Vector b)" 
@@ -72,9 +77,49 @@ testBitConstructionProperties z label = testGroup ("Bit toggling properties (" <
                 f n = let i = getNonNegative n
                       in  clearBit (bit i) i == z
 
-testCodeSequenceInstance :: TestTree
-testCodeSequenceInstance = testGroup "Properties of instance CodedSequence EncodedSeq" 
-        [
+testCodedSequenceInstance :: TestTree
+testCodedSequenceInstance = testGroup "Properties of instance CodedSequence EncodedSeq" 
+        [ --decodeOverAlphabet
+        encodeOverAlphabetTest
+        --, filterGaps
+        --, grabSubChar
+        --, isEmpty
+        --, numChars
         ]
 
+encodeOverAlphabetTest :: TestTree
+encodeOverAlphabetTest = testGroup "encodeOverAlphabet"
+    [ testWidth
+    , testValue
+    ] 
+    where
+        testWidth = testProperty "Make sure width of encoded seq == len(alphabet) * len(parsed seq)." f
+            where
+                f :: (ParsedSeq', Alphabet) -> Bool
+                f (inSeq, alph) = width (encodeOverAlphabet (getParsedSeq inSeq) alph :: EncodedSeq) == length alph * (length $ getParsedSeq inSeq)
+        testValue = testProperty "Make sure encoded value matches position in alphabet." f
+            where
+                f :: (ParsedSeq', Alphabet) -> Bool
+                f (inSeq, alph) = toBits (encodeOverAlphabet (getParsedSeq inSeq) alph :: EncodedSeq) == fmap (alph `elem`) inSeq
 
+type ParsedSeq' = Vector (NonEmptyList (NonEmptyList Char))
+
+getParsedSeq :: ParsedSeq' -> ParsedSeq
+getParsedSeq = fmap (fmap getNonEmpty . getNonEmpty)
+
+--decodeOverAlphabetTest :: TestTree
+--decodeOverAlphabetTest = testProperty "decodeOverAlphabet" f
+--    where 
+--        f :: CodedSequence s -> Alphabet -> ParsedSeq
+--        f inSeq alph = 
+
+instance (Arbitrary a) => Arbitrary (Vector a) where
+    arbitrary = do 
+        i <- arbitrary :: Gen Int
+        fmap fromList . sequence . fmap (const arbitrary) . take i $ repeat () 
+
+instance Arbitrary (ParsedSeq', Alphabet) where
+    arbitrary = do
+        alphabet <- (fmap (:[]) . getNonEmpty) <$> (arbitrary :: (Gen (NonEmptyList Char)))
+        vector   <- fmap (fmap (NonEmpty . (:[]) . NonEmpty) . fromList) . listOf1 $ elements alphabet
+        pure (vector, alphabet)

@@ -13,6 +13,8 @@
 --
 -----------------------------------------------------------------------------
 
+{- This is Sequence/Coded/Class module, which should be renamed. -}
+
 {-# LANGUAGE MultiParamTypeClasses, FunctionalDependencies #-}
 
 module Bio.Sequence.Coded.Class where
@@ -27,17 +29,17 @@ import Data.BitVector
 
 -- | A coded sequence allows grabbing of a character, filtering, and some standard types
 class Monoid s => CodedSequence s where
-    charToSeq            :: BitVector -> s  -- TODO: make this not hardcoded BV. This encodes a singleton character as a sequence?
     decodeOverAlphabet   :: s -> Alphabet -> ParsedSeq
-    -- TODO: This should be translated to:
-    -- encode :: (Foldable f, Functor f, Foldable t, Ord a) => f (t a) -> s
-    encode               :: ParsedSeq -> s
+    decodeOneChar        :: s -> Alphabet -> ParsedSeq 
     -- TODO: This should be translated to:
     -- encode :: (Foldable f, Functor f, Foldable t, Foldable c, Ord a) => f (t a) -> c a-> s
     encodeOverAlphabet   :: ParsedSeq -> Alphabet -> s
+    encodeOneChar        :: Alphabet -> AmbiguityGroup -> s 
     emptySeq             :: s
     filterGaps           :: s -> s -> Alphabet -> s
     grabSubChar          :: s -> Int -> Int -> s
     isEmpty              :: s -> Bool
     numChars             :: s -> Int -> Int
+    mapChars             :: s -> Int -> (s -> s) -> s
+    foldChars            :: s -> Int -> b -> (s -> b -> b) -> b
     

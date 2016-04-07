@@ -11,6 +11,7 @@
 -- Module holding the data type for a parsed sequence
 --
 -----------------------------------------------------------------------------
+
 {-# LANGUAGE TypeSynonymInstances, FlexibleInstances #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
@@ -24,7 +25,7 @@ import Data.Map      (Map)
 -- TODO do ambiguity group types: more aliasing
 -- TODO Add a definition for ParsedSeq for single characters
 -- TODO change to ParsedChar
-
+-- TODO: make AmbiguityGroup a nonempty list
 type AmbiguityGroup = [String]
 
 type ParsedSeq = Vector AmbiguityGroup
@@ -48,3 +49,4 @@ rectifySeqs lhs rhs =
         middle = intersectionWith (<>) lhs rhs
     in unions [leftSide, middle, rightSide]
 -}
+
