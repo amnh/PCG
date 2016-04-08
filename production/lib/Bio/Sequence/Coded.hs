@@ -95,14 +95,9 @@ instance CodedSequence EncodedSeq where
     numChars inSeq alphLen 
         | width inSeq == 0 = 0
         | otherwise        = width inSeq `div` alphLen
-    mapChars s a f = Just $ BV.join $ mapMaybe f $ customGroup s a
-    foldChars s a acc f = foldr f acc $ customGroup s a
-
-
-customGroup :: EncodedSeq -> Int -> [EncodedSeq]
-customGroup inS alphLen = case inS of 
-    Nothing -> pure Nothing
-    Just s -> map Just $ group alphLen s
+    -- TODO: For next two fns, make instance of functor and (foldable?), traversable, instead. Make point-free?
+    mapChars f alphLen inSeq = fmap f $ group alphLen inSeq
+    foldrChars f acc alphLen inSeq = foldr f acc $ group alphLen inSeq
 
 {-
 instance Bits EncodedSeq where

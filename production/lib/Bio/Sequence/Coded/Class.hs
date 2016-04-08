@@ -40,6 +40,6 @@ class Monoid s => CodedSequence s where
     grabSubChar          :: s -> Int -> Int -> s
     isEmpty              :: s -> Bool
     numChars             :: s -> Int -> Int
-    mapChars             :: s -> Int -> (s -> s) -> s
-    foldChars            :: s -> Int -> b -> (s -> b -> b) -> b
+    mapChars             :: functor f => (a -> b) -> Int -> s -> f b
+    foldrChars           :: (a -> b -> b) -> b -> Int -> s -> b
     
