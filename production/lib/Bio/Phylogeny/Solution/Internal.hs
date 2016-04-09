@@ -42,6 +42,8 @@ type StandardMetadata = CharacterMetadata EncodedSeq
 
 type StandardSolution = Solution DAG
 
+-- TODO: Move edge concrete type
+-- TODO: discuss this further
 -- | Edge type: info is stored at the out connections of a node
 data EdgeSet
    = EdgeSet

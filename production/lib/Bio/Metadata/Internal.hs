@@ -24,7 +24,7 @@ data CharacterMetadata s
     = CharMeta
     { charType   :: CharDataType
     , alphabet   :: Alphabet
-    , name       :: String
+    , name       :: String -- TODO: make this a tuple to avoid ambiguity
     , isAligned  :: Bool
     , isAdditive :: Bool
     , isIgnored  :: Bool
@@ -33,7 +33,10 @@ data CharacterMetadata s
     , stateNames :: Vector String
     , fitchMasks :: (s, s)
     } deriving (Eq, Show)
+    -- TODO: Add a root cost 
 
+-- TODO: merge DNA and RNA (name it nucleotide maybe)
+-- TODO: Do additive/nonadditive constructor instead of flag, creates one less check
 data CharDataType = DNA | RNA | AminoAcid | Continuous | Custom | Qualitative | Unknown deriving (Eq, Show)
 
 -- | A cost matrix is just a matrix of floats

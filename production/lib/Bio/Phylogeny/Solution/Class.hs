@@ -14,6 +14,7 @@
 {-# LANGUAGE MultiParamTypeClasses, FunctionalDependencies #-}
 
 module Bio.Phylogeny.Solution.Class where
+-- TODO: Add validity checks
 
 class Solution s f | s -> f where
     forests :: s -> [f]

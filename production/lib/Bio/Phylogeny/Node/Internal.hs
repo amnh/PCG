@@ -37,13 +37,14 @@ data Node = Node  { code        :: Int
                   , preliminary :: Vector EncodedSeq
                   , final       :: Vector EncodedSeq
                   , temporary   :: Vector EncodedSeq -- TODO: is this necessary? rename to fitch scratch? 
-                  , aligned     :: Vector EncodedSeq -- TODO: rename to implied alignment
+                  , aligned     :: Vector EncodedSeq -- the aligned parents
                   , localCost   :: Double
                   , totalCost   :: Double
                   } deriving (Eq, Show)
-                    -- TODO: subtree representation to say if something is done
+                    -- TODO: add a random labeling
                     -- TODO: add a union labeling
-                    -- TODO: add a single labeling
+                    -- TODO: add a single labeling 
+                    -- TODO: add gapped label
                     -- TODO: annotate fields with purpose
 
 instance Monoid Node where
