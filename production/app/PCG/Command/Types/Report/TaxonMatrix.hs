@@ -21,15 +21,12 @@ import Bio.Phylogeny.Node hiding (name)
 import qualified Bio.Phylogeny.Node as N
 
 import qualified Data.HashMap.Strict as HM
---import qualified Data.IntMap as IM
 import Control.Arrow ((***))
 import Data.Function (on)
 import Data.Foldable
 import Data.Key
 import Data.List
---import Data.List.Utility
 import Data.Matrix.NotStupid hiding (trace, (!), toList)
---import Data.Ord    (comparing)
 import Data.Vector (cons, ifoldr)
 import qualified Data.Vector as V
 import Data.Maybe
