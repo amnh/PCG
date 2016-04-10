@@ -1,7 +1,6 @@
 {-# LANGUAGE FlexibleInstances, MultiParamTypeClasses #-}
 module Control.Evaluation.Trans where
 
---import Bio.Phylogeny.Graph
 import Bio.Phylogeny.Solution
 import Control.Applicative
 import Control.Evaluation.Internal

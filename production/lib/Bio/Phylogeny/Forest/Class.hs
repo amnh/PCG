@@ -16,6 +16,8 @@
 
 module Bio.Phylogeny.Forest.Class where
 
+-- TODO: Add restrictions for a valid forest
+
 -- | A forest is simply a list of trees that can be filtered or set.
 -- change to a more generic array type (foldable functor etc)
 class Forest f t | f -> t where

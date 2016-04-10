@@ -8,18 +8,17 @@
 -- Stability   :  provisional
 -- Portability :  portable
 --
--- Class for nodes with encoded data
+-- Class for nodes with a final assignment
 --
 -----------------------------------------------------------------------------
 
-
 {-# LANGUAGE FunctionalDependencies #-}
 
-module Bio.Phylogeny.Tree.Node.Encoded where
-    
+module Bio.Phylogeny.Node.Final where
+
 import Data.Vector
 
--- | An encoded node allows getting and setting on encoded data
-class EncodedNode n s | n -> s where
-  encoded :: n -> Vector s
-  setEncoded :: n -> Vector s -> n
+-- | A final node has its final assignment
+class FinalNode n s | n -> s where
+    getFinal :: n -> Vector s
+    setFinal :: Vector s -> n -> n

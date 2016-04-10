@@ -1,6 +1,6 @@
 -----------------------------------------------------------------------------
 -- |
--- Module      :  Text.Megaparsec.Custom
+-- Module      :  Bio.Metadata
 -- Copyright   :  (c) 2015-2015 Ward Wheeler
 -- License     :  BSD-style
 --
@@ -8,17 +8,12 @@
 -- Stability   :  provisional
 -- Portability :  portable
 --
--- Class for nodes with a final assignment
+-- Wrapper for all the metadata types
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE FunctionalDependencies #-}
+module Bio.Metadata (module Bio.Metadata.Internal, module Bio.Metadata.Class, module Bio.Metadata.Parsed) where
 
-module Bio.Phylogeny.Tree.Node.Final where
-
-import Data.Vector
-
--- | A final node has its final assignment
-class FinalNode n s | n -> s where
-    final :: n -> Vector s
-    setFinal :: Vector s -> n -> n
+import Bio.Metadata.Internal
+import Bio.Metadata.Class
+import Bio.Metadata.Parsed

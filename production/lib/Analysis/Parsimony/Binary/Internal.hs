@@ -15,13 +15,13 @@
 
 module Analysis.Parsimony.Binary.Internal where
 
-import Bio.Metadata.Class (InternalMetadata)
+import Bio.Metadata
 import Bio.Phylogeny.Forest
 import Bio.Phylogeny.Solution.Class
 import Bio.Phylogeny.Solution.Metadata
-import Bio.Phylogeny.Tree.Node.Preliminary
-import Bio.Phylogeny.Tree.Node.Encoded
-import Bio.Phylogeny.Tree.Node.Final
+import Bio.Phylogeny.Node.Preliminary
+import Bio.Phylogeny.Node.Encoded
+import Bio.Phylogeny.Node.Final
 import Bio.Phylogeny.Network
 import Bio.Phylogeny.Tree.Referential
 import Bio.Phylogeny.Tree.Binary
@@ -44,7 +44,6 @@ type SeqConstraint               s b   = (CodedSequence s, Eq s, CharConstraint 
 type SeqConstraint'              s     = (CodedSequence s, Eq s, Show s, Bits s, Monoid s, CodedChar s)
 type CharConstraint                b   = (Bits b, Eq b, Show b)
 type Subtrees                          = Matrix Int
-type Metadata m s                      = (InternalMetadata m s, Show m)
 
 
 setElemSafe :: (Num a) => a -> (Maybe Int, Maybe Int) -> Matrix a -> Matrix a
@@ -56,7 +55,7 @@ setElemSafe value (row, col) matrix
 -- | Simple function to get the aligned if available, the encoded if not
 getForAlign :: (PreliminaryNode n s, EncodedNode n s, SeqConstraint' s) => n -> Vector s
 getForAlign node 
-    | null (preliminaryAlign node) && null (preliminary node) = encoded node
-    | null $ preliminaryAlign node                            = preliminary node
-    | otherwise                                               = preliminaryAlign node 
+    | null (getPreliminaryAlign node) && null (getPreliminary node) = getEncoded node
+    | null $ getPreliminaryAlign node                            = getPreliminary node
+    | otherwise                                               = getPreliminaryAlign node 
 

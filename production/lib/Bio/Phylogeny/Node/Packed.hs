@@ -1,6 +1,6 @@
 -----------------------------------------------------------------------------
 -- |
--- Module      :  Bio.Phylogeny.Graph
+-- Module      :  Text.Megaparsec.Custom
 -- Copyright   :  (c) 2015-2015 Ward Wheeler
 -- License     :  BSD-style
 --
@@ -8,10 +8,18 @@
 -- Stability   :  provisional
 -- Portability :  portable
 --
--- Module for a tree that knows the info for its characters
+-- Class for nodes with their packed data
 --
 -----------------------------------------------------------------------------
 
-module Bio.Phylogeny.Tree.CharacterAware (CharacterTree(..)) where
 
-import Bio.Phylogeny.Tree.CharacterAware.Class
+{-# LANGUAGE FunctionalDependencies #-}
+
+module Bio.Phylogeny.Node.Packed where
+
+import Data.Vector
+
+-- | A packed node has its packed data
+class PackedNode a s | a -> s where
+    getPacked :: a -> Vector s
+    setPacked :: a -> Vector s -> a

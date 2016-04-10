@@ -15,7 +15,7 @@
 
 {-# LANGUAGE TypeSynonymInstances, FlexibleInstances, MultiParamTypeClasses #-}
 
-module Bio.Phylogeny.Tree.Node.Topological (TopoNode(..)) where
+module Bio.Phylogeny.Node.Topological (TopoNode(..)) where
 
 import Bio.Sequence.Coded
 
@@ -33,7 +33,6 @@ data TopoNode b = TopoNode
                     , localCost :: Double
                     , totalCost :: Double} deriving (Eq, Show)
 
--- data EdgeInfo = EdgeInfo {len :: Double} deriving (Eq, Show)
 
 -- | In a monoid instance, we take mappend to mean a joining of the two subtrees
 -- where the second subtree passed becomes a child of the first

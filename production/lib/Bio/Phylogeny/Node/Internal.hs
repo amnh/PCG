@@ -1,6 +1,6 @@
 -----------------------------------------------------------------------------
 -- |
--- Module      :  Bio.Phylogeny.Graph
+-- Module      :  Bio.Phylogeny.Node.Internal
 -- Copyright   :  (c) 2015-2015 Ward Wheeler
 -- License     :  BSD-style
 --
@@ -8,19 +8,18 @@
 -- Stability   :  provisional
 -- Portability :  portable
 --
--- Types for the representation of a node
+-- Type for a node
 --
 -----------------------------------------------------------------------------
+{-# LANGUAGE TypeSynonymInstances, FlexibleInstances, MultiParamTypeClasses #-}
 
-{-# LANGUAGE FlexibleInstances, MultiParamTypeClasses #-}
-
-module Bio.Phylogeny.Tree.Node where
+module Bio.Phylogeny.Node.Internal where
 
 import Bio.Sequence.Coded
-import qualified Bio.Phylogeny.Tree.Node.Encoded as EN
-import qualified Bio.Phylogeny.Tree.Node.Final as FN
-import qualified Bio.Phylogeny.Tree.Node.Packed as PN
-import qualified Bio.Phylogeny.Tree.Node.Preliminary as RN
+import qualified Bio.Phylogeny.Node.Encoded as EN
+import qualified Bio.Phylogeny.Node.Final as FN
+import qualified Bio.Phylogeny.Node.Packed as PN
+import qualified Bio.Phylogeny.Node.Preliminary as RN
 
 import Data.Vector (Vector)
 import Data.Monoid
@@ -38,59 +37,60 @@ data Node = Node  { code        :: Int
                   , preliminary :: Vector EncodedSeq
                   , final       :: Vector EncodedSeq
                   , temporary   :: Vector EncodedSeq -- TODO: is this necessary? rename to fitch scratch? 
-                  , aligned     :: Vector EncodedSeq -- TODO: rename to implied alignment
+                  , aligned     :: Vector EncodedSeq -- the aligned parents
                   , localCost   :: Double
                   , totalCost   :: Double
                   } deriving (Eq, Show)
-                    -- TODO: subtree representation to say if something is done
+                    -- TODO: add a random labeling
                     -- TODO: add a union labeling
-                    -- TODO: add a single labeling
+                    -- TODO: add a single labeling 
+                    -- TODO: add gapped label
                     -- TODO: annotate fields with purpose
 
 instance Monoid Node where
-    mempty = Node 0 mempty False False mempty mempty mempty mempty mempty mempty mempty mempty 0 0
-    mappend n1 n2 = Node { code        = code n1
-                         , name        = name n1 ++ " joinedTo " ++ name n2
-                         , isRoot      = isRoot n1 || isRoot n2
-                         , isLeaf      = isLeaf n1 || isLeaf n2
-                         , parents     = parents     n1 <> parents     n2
-                         , children    = children    n1 <> children    n2
-                         , encoded     = encoded     n1 <> encoded     n2 
-                         , packed      = packed      n1 <> packed      n2
-                         , preliminary = preliminary n1 <> preliminary n2
-                         , final       = final       n1 <> final       n2 
-                         , temporary   = temporary   n1 <> temporary   n2
-                         , aligned     = aligned     n1 <> aligned     n2
-                         , localCost   = localCost n1 + localCost n2
-                         , totalCost   = totalCost n1 + totalCost n2
-                         }
+  mempty = Node 0 mempty False False mempty mempty mempty mempty mempty mempty mempty mempty 0 0
+  mappend n1 n2 = Node { code        = code n1
+                       , name        = name n1 ++ " joinedTo " ++ name n2
+                       , isRoot      = isRoot n1 || isRoot n2
+                       , isLeaf      = isLeaf n1 || isLeaf n2
+                       , parents     = parents     n1 <> parents     n2
+                       , children    = children    n1 <> children    n2
+                       , encoded     = encoded     n1 <> encoded     n2 
+                       , packed      = packed      n1 <> packed      n2
+                       , preliminary = preliminary n1 <> preliminary n2
+                       , final       = final       n1 <> final       n2 
+                       , temporary   = temporary   n1 <> temporary   n2
+                       , aligned     = aligned     n1 <> aligned     n2
+                       , localCost   = localCost n1 + localCost n2
+                       , totalCost   = totalCost n1 + totalCost n2
+                       }
 
 -- | Make it an instance of encoded, final, packed, and preliminary
 instance EN.EncodedNode Node EncodedSeq where
-    encoded = encoded
+    getEncoded = encoded
     setEncoded n s = n {encoded = s}
 
 -- | Nodes can hold final assignment
 instance FN.FinalNode Node EncodedSeq where
-    final = final
+    getFinal = final
     setFinal f n = n {final = f}
 
 -- | Nodes can hold packed data
 instance PN.PackedNode Node EncodedSeq where
-    packed = packed
+    getPacked = packed
     setPacked n s = n {packed = s}
 
 -- | Nodes hold all preliminary info
 instance RN.PreliminaryNode Node EncodedSeq where
-    preliminary = preliminary
+    getPreliminary = preliminary
     setPreliminary s n = n {preliminary = s}
-    preliminaryAlign = aligned
+    getPreliminaryAlign = aligned
     setAlign s n = n {aligned = s}
-    temporary = temporary
+    getTemporary = temporary
     setTemporary s n = n {temporary = s}
-    localCost = localCost
+    getLocalCost = localCost
     setLocalCost c n = n {localCost = c}
-    totalCost = totalCost
+    getTotalCost = totalCost
     setTotalCost c n = n {totalCost = c}
 
 instance Ord Node where

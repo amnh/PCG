@@ -15,7 +15,7 @@
 
 module Bio.Sequence.Parsed.Class where
 
-import           Bio.Sequence.Parsed
+import           Bio.Sequence.Parsed.Internal
 import           Data.Bifunctor   (second)
 import           Data.Foldable
 import           Data.Map         (Map,insert,mergeWithKey)

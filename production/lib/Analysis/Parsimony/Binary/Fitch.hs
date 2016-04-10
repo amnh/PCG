@@ -16,7 +16,7 @@
 module Analysis.Parsimony.Binary.Fitch where
 
 import Analysis.Parsimony.Binary.Internal
-import Bio.Metadata.Class (InternalMetadata(..))
+import Bio.Metadata
 import Data.Bits
 
 -- TODO: Make all of this take weight, ignored, maybe other metadata into consideration.
@@ -24,17 +24,17 @@ import Data.Bits
 -- | Preorder Fitch operation on bit-packed sequences
 --   Output five-tuple is the preliminary assignment, the aligned preliminary assignment
 --   the temporary storage bit, and the local cost
-preorderFitchBit :: (SeqConstraint' s, InternalMetadata m s) => Double -> s -> s -> m -> (s, s, Double)
+preorderFitchBit :: (SeqConstraint' s, Metadata m s) => Double -> s -> s -> m -> (s, s, Double)
 preorderFitchBit weightValue lbit rbit inChar =
     let
-        alphLen = length $ alphabet inChar
-        notOr   = complement $ lbit .&. rbit
-        union   = lbit .|. rbit
-        fbit    = notOr .&. snd (fitchMasks inChar)
-        rightF  = blockShiftAndFold "R" "&" alphLen notOr fbit
-        finalF  = blockShiftAndFold "L" "|" alphLen rightF rightF
-        maskF   = fst (fitchMasks inChar) .&. finalF
-        myCost  = fromIntegral $ div (popCount maskF) alphLen
+        alphLen = length $ getAlphabet inChar
+        notOr = complement $ lbit .&. rbit
+        union = lbit .|. rbit
+        fbit = notOr .&. (snd $ getFitchMasks inChar)
+        rightF = blockShiftAndFold "R" "&" alphLen notOr fbit
+        finalF = blockShiftAndFold "L" "|" alphLen rightF rightF
+        maskF = (fst $ getFitchMasks inChar) .&. finalF
+        myCost = fromIntegral $ div (popCount maskF) alphLen
         weightCost = --trace ("Cost of bit ops " ++ show myCost) 
                         weightValue * myCost
         outbit = (maskF .&. union) .|. (lbit .&. rbit)
@@ -54,16 +54,16 @@ blockShiftAndFold sideMode foldMode alphLen inbits initVal
 
 -- | Postorder Fitch operation on bit-packed sequences
 --   returns the final assignment sequence
-postorderFitchBit :: (SeqConstraint' s, InternalMetadata m s) => s -> s -> s -> s -> s -> m -> s
+postorderFitchBit :: (SeqConstraint' s, Metadata m s) => s -> s -> s -> s -> s -> m -> s
 postorderFitchBit myBit lBit rBit fBit pBit inChar = 
     let
-        alphLen = length $ alphabet inChar
+        alphLen = length $ getAlphabet inChar
         setX = complement myBit .&. pBit
         notX = complement setX
-        setG = notX .&. snd (fitchMasks inChar)
+        setG = notX .&. (snd $ getFitchMasks inChar)
         rightG = blockShiftAndFold "R" "&" alphLen notX setG
         finalG = blockShiftAndFold "L" "|" alphLen rightG rightG
-        fstMask = fst $ fitchMasks inChar
+        fstMask = fst $ getFitchMasks inChar
         maskedNotG = complement finalG .&. fstMask
         maskedNotF = complement fBit   .&. fstMask
         setS = myBit .&. (pBit .|. maskedNotG)
