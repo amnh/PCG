@@ -1,6 +1,6 @@
 -----------------------------------------------------------------------------
 -- |
--- Module      :  Text.Megaparsec.Custom
+-- Module      :  Bio.Phylogeny.Edge.Class
 -- Copyright   :  (c) 2015-2015 Ward Wheeler
 -- License     :  BSD-style
 --
@@ -14,16 +14,16 @@
 
 {-# LANGUAGE FunctionalDependencies #-}
 
-module Bio.Phylogeny.Tree.Edge.Standard where
+module Bio.Phylogeny.Edge.Class where
 
 -- | A standard edge allows you to get and set length as well as get the origin and terminal
 class StandardEdge e n where
-    edgeLen :: e -> Double
+    getEdgeLen :: e -> Double
     setEdgeLen :: e -> Double -> e
-    origin :: e -> n
-    terminal :: e -> n
-    connection :: e -> (n, n)
+    getOrigin :: e -> n
+    getTerminal :: e -> n
+    getConnection :: e -> (n, n)
 
-    connection edge = (origin edge, terminal edge)
-    origin edge = fst $ connection edge
-    terminal edge = snd $ connection edge
+    getConnection edge = (getOrigin edge, getTerminal edge)
+    getOrigin edge = fst $ getConnection edge
+    getTerminal edge = snd $ getConnection edge

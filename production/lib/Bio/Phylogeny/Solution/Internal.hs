@@ -14,6 +14,7 @@
 
 module Bio.Phylogeny.Solution.Internal where
 
+import Bio.Phylogeny.Edge
 import Bio.Sequence.Parsed
 import Bio.Sequence.Coded
 import Bio.Phylogeny.Node
@@ -41,24 +42,6 @@ type Topo   = TopoNode BitVector
 type StandardMetadata = CharacterMetadata EncodedSeq
 
 type StandardSolution = Solution DAG
-
--- TODO: Move edge concrete type
--- TODO: discuss this further
--- | Edge type: info is stored at the out connections of a node
-data EdgeSet
-   = EdgeSet
-   { inNodes  :: IntSet
-   , outNodes :: IntMap EdgeInfo
-   } deriving (Eq,Show)
-
--- | Edge info type holding length, origin, and terminal
-data EdgeInfo 
-   = EdgeInfo
-   { len      :: Double
-   , origin   :: NodeInfo
-   , terminal :: NodeInfo
-   , virtualNode :: Maybe NodeInfo
-   } deriving (Eq, Show)
 
 -- | A solution is an array of forests
 -- character data and names are common across all forests and so stored at this level

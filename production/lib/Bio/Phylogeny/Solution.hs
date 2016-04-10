@@ -21,6 +21,7 @@ module Bio.Phylogeny.Solution
 
 import qualified File.Format.Newick as New
 
+import           Bio.Phylogeny.Edge
 import qualified Bio.Phylogeny.Forest           as FC
 import qualified Bio.Phylogeny.Network          as N
 import qualified Bio.Phylogeny.Network.Subsettable as SN
@@ -28,7 +29,6 @@ import qualified Bio.Phylogeny.Solution.Class as SC
 import qualified Bio.Phylogeny.Solution.Metadata as MS
 import           Bio.Phylogeny.Solution.Internal
 import           Bio.Phylogeny.Tree.Binary
-import qualified Bio.Phylogeny.Tree.Edge.Standard  as E
 import qualified Bio.Phylogeny.Tree.EdgeAware      as ET
 import           Bio.Phylogeny.Node
 import qualified Bio.Phylogeny.Node.Topological as TN
@@ -74,11 +74,6 @@ instance N.Network DAG NodeInfo where
             reroot = if isRoot n && null (nodes t) then addPos else root t
 
 -- | Make it an instance of data storage type classes
-instance E.StandardEdge EdgeInfo NodeInfo where
-  edgeLen  = len
-  setEdgeLen e f = e {len = f}
-  origin   = origin
-  terminal = terminal
 
 -- | This tree knows its edges
 instance ET.EdgedTree DAG NodeInfo EdgeSet where

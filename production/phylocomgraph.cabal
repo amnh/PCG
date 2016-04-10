@@ -96,6 +96,7 @@ library
                        Analysis.Parsimony.Binary.Optimization
                        Analysis.Parsimony.Binary.SequentialAlign
                        Analysis.Parsimony.Binary.SequentialAlign.SeqAlignFFI
+                       Bio.Phylogeny.Edge
                        Bio.Phylogeny.Forest
                        Bio.Phylogeny.Network
                        Bio.Metadata
@@ -136,7 +137,8 @@ library
                        Bio.Phylogeny.Network.Class
                        Bio.Phylogeny.Network.Subsettable
                        Bio.Phylogeny.Tree.Binary.Class
-                       Bio.Phylogeny.Tree.Edge.Standard
+                       Bio.Phylogeny.Edge.Internal
+                       Bio.Phylogeny.Edge.Class
                        Bio.Phylogeny.Tree.EdgeAware.Class
                        Bio.Phylogeny.Node.Topological
                        Bio.Phylogeny.Tree.Rose.Class
@@ -357,7 +359,7 @@ Test-Suite testsuite
                        Bio.Metadata.Internal
                        Bio.Phylogeny.Tree.Binary
                        Bio.Phylogeny.Tree.Binary.Class
-                       Bio.Phylogeny.Tree.Edge.Standard
+                       Bio.Phylogeny.Edge.Class
                        Bio.Phylogeny.Tree.EdgeAware
                        Bio.Phylogeny.Tree.EdgeAware.Class
                        Bio.Phylogeny.Node
