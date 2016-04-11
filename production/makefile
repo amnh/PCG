@@ -5,7 +5,7 @@ sanity        = -fwarn-duplicate-exports -fwarn-incomplete-patterns -fwarn-missi
 stacktracing  = -prof -auto-all -caf-all
 
 #Flags for `stack`
-haddock       = # --haddock --haddock-deps
+haddock       = --haddock --haddock-deps
 profiling     = --executable-profiling --library-profiling
 
 

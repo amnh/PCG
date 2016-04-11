@@ -18,10 +18,7 @@ import Analysis.Parsimony.Binary.DirectOptimization
 import Analysis.Parsimony.Binary.Internal
 
 import Bio.Sequence.Coded
-import Bio.Phylogeny.Graph
-
 import Data.BitVector
-
 import Test.Tasty
 import Test.Tasty.HUnit
 import Test.Tasty.QuickCheck

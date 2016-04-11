@@ -4,27 +4,26 @@ module File.Format.VertexEdgeRoot.Test
   ( testSuite
   ) where
 
-import Data.List                         (intercalate)
-import qualified Data.IntSet as IS
-import File.Format.VertexEdgeRoot.Parser
-import Test.Custom                       (parseEquals,parseFailure,parseSuccess, convertEquals)
-import Test.Tasty                        (TestTree,testGroup)
-import Test.Tasty.HUnit
-import Text.Megaparsec                   (eof, parse)
-import qualified Data.IntMap as IM
-import qualified Data.HashMap.Lazy as HM
-import qualified Data.Vector as V
-import Bio.Phylogeny.Node
+import           Bio.Phylogeny.Node
+import           Data.List                         (intercalate)
+import           File.Format.VertexEdgeRoot.Parser
+import           Test.Custom                       (parseEquals,parseFailure,parseSuccess)
+import           Test.Tasty                        (TestTree,testGroup)
+import           Test.Tasty.HUnit
+import           Text.Megaparsec                   (eof, parse)
 
 testSuite :: TestTree
 testSuite = testGroup "VER Format"
   [ testGroup "VER Combinators"
-      [vertexSetType',vertexLabelDefinition',unlabeledVertexSetDefinition'
-      ,labeledVertexSetDefinition',edgeDefinition',edgeSetDefinition']
+      [ vertexSetType'
+      , vertexLabelDefinition'
+      , unlabeledVertexSetDefinition'
+      , labeledVertexSetDefinition'
+      , edgeDefinition'
+      , edgeSetDefinition'
+      ]
   , testGroup "VER Parser" 
-      [verStreamParser']
-  , testGroup "VER Converter"
-      [verSimpleConvert]
+      [ verStreamParser' ]
   ]
 
 validSetLabels :: [(VertexSetType,String)]
