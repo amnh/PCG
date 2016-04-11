@@ -15,21 +15,23 @@
 
 module Bio.Metadata.Class where
 
-import qualified Bio.Metadata.Internal as CM
-import           Bio.Sequence.Parsed
+import Bio.Metadata.Internal 
+import Bio.Sequence.Parsed
 
 class Metadata m s | m -> s where
     getWeight :: m -> Double
     getIgnored :: m -> Bool
     getAlphabet :: m -> Alphabet
-    getTcm :: m -> CM.CostMatrix
+    getTcm :: m -> CostMatrix
     getFitchMasks :: m -> (s, s)
     getAligned :: m -> Bool
+    getAdditive :: m -> Bool
 
-instance Monoid s => Metadata (CM.CharacterMetadata s) s where
-    getWeight =        CM.weight
-    getIgnored =       CM.isIgnored
-    getAlphabet =      CM.alphabet
-    getTcm =           CM.tcm
-    getAligned =       CM.isAligned
-    getFitchMasks =    CM.fitchMasks
+instance Monoid s => Metadata (CharacterMetadata s) s where
+    getWeight =        weight
+    getIgnored =       isIgnored
+    getAlphabet =      alphabet
+    getTcm =           tcm
+    getAligned =       isAligned
+    getFitchMasks =    fitchMasks
+    getAdditive m =    charType m == Additive

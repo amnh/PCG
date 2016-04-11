@@ -147,7 +147,7 @@ expandIUPAC fpr = fpr { parsedChars = newTreeSeqs }
                 
                 expandCodes :: ParsedSeq -> ParsedSeq
                 expandCodes x 
-                  | cType == DNA || cType == RNA  = expandOrId nucleotideIUPAC <$> x
+                  | cType == Nucleotide  = expandOrId nucleotideIUPAC <$> x
                   | cType == AminoAcid = expandOrId aminoAcidIUPAC  <$> x
                   | otherwise = x
     expandOrId m x = fromMaybe x $ x `lookup` m

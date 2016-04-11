@@ -22,22 +22,20 @@ import Data.Vector (Vector)
 
 data CharacterMetadata s
     = CharMeta
-    { charType   :: CharDataType
-    , alphabet   :: Alphabet
-    , name       :: String -- TODO: make this a tuple to avoid ambiguity
-    , isAligned  :: Bool
-    , isAdditive :: Bool
-    , isIgnored  :: Bool
-    , weight     :: Double
-    , tcm        :: CostMatrix
-    , stateNames :: Vector String
-    , fitchMasks :: (s, s)
+    { charType   :: CharDataType -- Stores the type of character
+    , alphabet   :: Alphabet -- Alphabet as a list of strings
+    , name       :: String -- Name (give name : file name) TODO: make this a tuple to avoid ambiguity
+    , isAligned  :: Bool -- Whether this character is aligned
+    , isIgnored  :: Bool -- Whether this character is ignored
+    , weight     :: Double -- The weight of this character, should default to 1
+    , tcm        :: CostMatrix -- The tcm expressing transition weights between values for this character
+    , stateNames :: Vector String -- The names of the states of this character (corresponds to the alphabet elements)
+    , fitchMasks :: (s, s) -- Masks for fitch, should be mempty for anything but NonAdditive
+    , rootCost   :: Double -- Cost of the root for this character
     } deriving (Eq, Show)
-    -- TODO: Add a root cost 
 
--- TODO: merge DNA and RNA (name it nucleotide maybe)
--- TODO: Do additive/nonadditive constructor instead of flag, creates one less check
-data CharDataType = DNA | RNA | AminoAcid | Continuous | Custom | Qualitative | Unknown deriving (Eq, Show)
+-- | Different types of characters are stored here
+data CharDataType = Nucleotide | AminoAcid | Continuous | Custom | Additive | NonAdditive | Unknown deriving (Eq, Show)
 
 -- | A cost matrix is just a matrix of floats
 type CostMatrix = Matrix Double

@@ -57,7 +57,6 @@ allOptimization weighting meta inTree =
     in upPass
 
 -- | Optimization down pass warpper for recursion from root
--- TODO: add a warning here if an internal node has no children (for all traversals)
 optimizationPreorder :: (TreeConstraint' t n s, Metadata m s) => Double -> t -> Vector m -> t
 optimizationPreorder weighting tree meta
     | isLeaf (root tree) tree = -- if the root is a terminal, give the whole tree a cost of zero, do not reassign nodes
@@ -171,15 +170,19 @@ preorderNodeOptimize weighting curNode lNode rNode meta = setTotalCost summedTot
     where
         summedTotalCost = sum $ getTotalCost <$> [res,lNode,rNode] --getTotalCost res + getTotalCost lNode + getTotalCost rNode
         res             = ifoldr chooseOptimization curNode meta
+
         --chooseOptimization :: (NodeConstraint' n s, Metadata m s) => Int -> m -> n -> n
         chooseOptimization curPos curCharacter setNode
             -- TODO: Compiler error maybe below with comment structuers and 'lets'
-            | getAligned curCharacter =
+            | getIgnored curCharacter = setNode
+            | getAligned curCharacter && not (getAdditive curCharacter) =
                 let (assign, temp, local) = preorderFitchBit weighting (getForAlign lNode ! curPos) (getForAlign rNode ! curPos) curCharacter
-                in addTemporary temp $ addLocalCost local $ addTotalCost local $ addAlign assign $ addPreliminary assign setNode
+                in addLocalCost (local * curWeight) $ addTotalCost (local * curWeight) $ addAlign assign $ addPreliminary assign setNode
             | otherwise =
                 let (ungapped, cost, gapped, _leftGapped, _rightGapped) = naiveDO (getForAlign lNode ! curPos) (getForAlign rNode ! curPos) curCharacter
-                in addLocalCost cost . addTotalCost cost . addAlign gapped $ addPreliminary ungapped setNode
+                in addLocalCost (cost * curWeight) . addTotalCost (cost * curWeight) . addAlign gapped $ addPreliminary ungapped setNode
+
+                where curWeight = getWeight curCharacter
 
                 -- getForAlign returns a node, either encoded, getPreliminary or getPreliminary align. It's in Analysis.Parsimony.Binary.Internal
                 -- the return type is a vector of encoded sequences,

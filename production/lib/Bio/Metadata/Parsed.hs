@@ -31,7 +31,7 @@ import qualified Data.Vector as V
 import           File.Format.Fasta (FastaParseResult,TaxonSequenceMap)
 import           File.Format.Fastc
 import           File.Format.Newick
-import           File.Format.Nexus hiding (DNA, RNA)
+import           File.Format.Nexus hiding (DNA, RNA, Nucleotide)
 import qualified File.Format.Nexus.Data as Nex
 import qualified File.Format.TNT as TNT
 import           File.Format.TransitionCostMatrix
@@ -103,11 +103,10 @@ subsetOf list1 list2 = foldr (\e acc -> acc && e `elem` list2) True list1
 -- | Make a single info given an alphabet
 makeOneInfo :: Monoid s => Alphabet -> CharacterMetadata s
 makeOneInfo alph 
-    | alph `subsetOf` dnaAlph = def {charType = DNA}
-    | alph `subsetOf` rnaAlph = def {charType = RNA}
+    | alph `subsetOf` dnaAlph || alph `subsetOf` rnaAlph = def {charType = Nucleotide}
     | alph `subsetOf` aaAlph = def {charType = AminoAcid}
     | otherwise = def {charType = Custom}
-        where def = CharMeta Unknown alph mempty False False False 0 mempty mempty (mempty, mempty)
+        where def = CharMeta Unknown alph mempty False False 1 mempty mempty (mempty, mempty) 1
 
 -- | Functionality to make char info from tree seqs
 makeEncodeInfo :: Monoid s => TreeSeqs -> Vector (CharacterMetadata s)

@@ -31,12 +31,12 @@ outPutMetadata fileName = writeFile fileName . metadataCsvOutput
 metadataCsvOutput :: StandardSolution -> String
 metadataCsvOutput solution = header <> mainExport (metadata solution)
     where
-        header = "Type, Name, Aligned, Additive, State Names, Alphabet, Ignored, Weight \n"
+        header = "Type, Name, Aligned, State Names, Alphabet, Ignored, Weight \n"
         mainExport :: Vector StandardMetadata -> String
         mainExport = intercalate "\n" . fmap fetchInfo . toList 
 
 fetchInfo :: Show s => CharacterMetadata s -> String
-fetchInfo c = intercalate ", " [show $ charType c, name c, show $ isAligned c, show $ isAdditive c, show $ stateNames c, show $ alphabet c, show $ isIgnored c, show $ weight c]
+fetchInfo c = intercalate ", " [show $ charType c, name c, show $ isAligned c, show $ stateNames c, show $ alphabet c, show $ isIgnored c, show $ weight c]
 
 foldInfo :: (Foldable t, Show a) => t a -> String  
 foldInfo = unwords . fmap show . toList
