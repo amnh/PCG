@@ -41,6 +41,8 @@ type EdgeLength    = Maybe Double
 data VertexSetType = Vertices | Roots deriving (Eq,Show)
 
 -- | Connection between two nodes in the graph along with the distance of the connection
+--   Edges are interpred as bidirectional when read in and given direction when interpreted
+--   relative to the root of the tree.
 data EdgeInfo      = EdgeInfo (VertexLabel,VertexLabel) EdgeLength deriving (Show,Eq,Ord)
 
 -- | Collection of Vericies, roots, and edges representing a "Phylogenetic Forest"
