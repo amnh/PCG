@@ -32,23 +32,22 @@ data Node = Node  { code        :: Int
                   , isLeaf      :: Bool
                   , parents     :: [Int]
                   , children    :: [Int]
-                  , encoded     :: Vector EncodedSeq
-                  , packed      :: Vector EncodedSeq
-                  , preliminary :: Vector EncodedSeq
-                  , final       :: Vector EncodedSeq
-                  , temporary   :: Vector EncodedSeq -- TODO: is this necessary? rename to fitch scratch? 
-                  , aligned     :: Vector EncodedSeq -- the aligned parents
-                  , localCost   :: Double
-                  , totalCost   :: Double
+                  , encoded     :: Vector EncodedSeq -- encoded version of original assignment
+                  , packed      :: Vector EncodedSeq -- packed version of the sequence
+                  , preliminary :: Vector EncodedSeq -- preliminary assignment at a node
+                  , final       :: Vector EncodedSeq -- final assignment at a node
+                  , temporary   :: Vector EncodedSeq -- multipurpose temporary assignment 
+                  , aligned     :: Vector EncodedSeq -- the alignment between the children
+                  , random      :: Vector EncodedSeq -- the assignment with a single state randomly selected to remove ambiguity
+                  , union       :: Vector EncodedSeq -- the union assignment
+                  , single      :: Vector EncodedSeq -- the single assignment
+                  , gapped      :: Vector EncodedSeq -- the final assignment with gaps for alignment
+                  , localCost   :: Double            -- cost of assignment at this node alone
+                  , totalCost   :: Double            -- sum cost of this node and its subtree
                   } deriving (Eq, Show)
-                    -- TODO: add a random labeling
-                    -- TODO: add a union labeling
-                    -- TODO: add a single labeling 
-                    -- TODO: add gapped label
-                    -- TODO: annotate fields with purpose
 
 instance Monoid Node where
-  mempty = Node 0 mempty False False mempty mempty mempty mempty mempty mempty mempty mempty 0 0
+  mempty = Node 0 mempty False False mempty mempty mempty mempty mempty mempty mempty mempty mempty mempty mempty mempty 0 0
   mappend n1 n2 = Node { code        = code n1
                        , name        = name n1 ++ " joinedTo " ++ name n2
                        , isRoot      = isRoot n1 || isRoot n2
