@@ -59,7 +59,6 @@ allOptimization weight meta inTree =
     in upPass
 
 -- | Optimization down pass warpper for recursion from root
--- TODO: add a warning here if an internal node has no children (for all traversals)
 optimizationPreorder :: (TreeConstraint' t n s, Metadata m s) => Double -> t -> Vector m -> t
 optimizationPreorder weight tree meta
     | isLeaf (root tree) tree = -- if the root is a terminal, give the whole tree a cost of zero, do not reassign nodes
