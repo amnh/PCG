@@ -19,6 +19,7 @@ import Data.List     (sort,sortBy)
 import Data.Map      (assocs,empty,insertWith)
 import Data.Ord      (comparing)
 
+-- | Determines whether a foldable structure contains a single element.
 isSingleton :: Foldable t => t a -> Bool
 isSingleton = f . toList
   where

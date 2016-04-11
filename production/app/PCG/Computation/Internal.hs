@@ -3,6 +3,7 @@ module PCG.Computation.Internal where
 import Control.Evaluation
 import Data.Char      (isSpace)
 import Data.Either    (partitionEithers)
+import Data.Monoid
 import PCG.Command
 import PCG.Script
 

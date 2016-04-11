@@ -1,11 +1,22 @@
+-----------------------------------------------------------------------------
+-- |
+-- Module      :  Control.Evaluation
+-- Copyright   :  (c) 2015-2015 Ward Wheeler
+-- License     :  BSD-style
+--
+-- Maintainer  :  wheeler@amnh.org
+-- Stability   :  provisional
+-- Portability :  portable
+--
+-- The Evaluation type for representing a computational context.
+--
+-----------------------------------------------------------------------------
+
 module Control.Evaluation
   ( EvaluationT()
   , Evaluation()
   , EvalUnit(..)
   , SearchState
-  , Alternative(..)
-  , Monoid(..)
-  , (<>)
   , (<!>)
   , (<?>)
   , evalEither
@@ -18,9 +29,6 @@ module Control.Evaluation
   , showRun
   , warn
   ) where
-
-import Control.Applicative (Alternative(..))
-import Data.Monoid         ((<>))
 
 import Control.Evaluation.Internal
 import Control.Evaluation.Trans

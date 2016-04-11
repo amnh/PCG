@@ -22,6 +22,7 @@ import           Data.Key                   ((!),lookup)
 import           Data.Map                   (Map,assocs,insert,union)
 import qualified Data.Map              as M (fromList)
 import           Data.Maybe                 (fromMaybe)
+import           Data.Monoid                ((<>))
 import           Data.Vector                (Vector)
 import qualified Data.Vector           as V (zipWith)
 --import           Debug.Trace

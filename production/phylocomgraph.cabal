@@ -148,9 +148,6 @@ library
                        Bio.Sequence.Parsed.Class
                        Bio.Sequence.Parsed.Internal
                        Bio.Sequence.Random
-                       Control.Evaluation.Internal
-                       Control.Evaluation.Trans
-                       Control.Evaluation.Unit
                        Data.List.Utility
                        Data.Matrix.NotStupid
                        File.Format.Fasta.Converter
@@ -176,7 +173,10 @@ library
                        File.Format.TransitionCostMatrix.Parser
                        File.Format.VertexEdgeRoot.Parser
                        Text.Megaparsec.Custom
-
+  other-modules:     
+                       Control.Evaluation.Unit
+                       Control.Evaluation.Internal
+                       Control.Evaluation.Trans
                
 executable pcg
   main-is:             Main.hs

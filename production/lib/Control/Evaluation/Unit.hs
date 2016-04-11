@@ -5,6 +5,9 @@ import Control.Monad (MonadPlus(mzero, mplus))
 import Data.Monoid
 import Test.QuickCheck
 
+
+-- | The internal state of the computation. A short-circuiting evaluation unit
+--   which returns a value, and error, or indicated that no work was done
 data EvalUnit a
    = NoOp
    | Error String 
