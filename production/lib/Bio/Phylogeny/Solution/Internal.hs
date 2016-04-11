@@ -20,11 +20,8 @@ import Bio.Sequence.Coded
 import Bio.Phylogeny.Node
 import Bio.Phylogeny.Node.Topological
 import Bio.Metadata.Internal
-
 import Data.BitVector
 import Data.HashMap.Strict
-import Data.IntSet
-import Data.IntMap
 import Data.Vector
 
 -- | A forest is a list of dag structures where dags can be referential or topological

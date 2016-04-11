@@ -47,7 +47,25 @@ data Node = Node  { code        :: Int
                   } deriving (Eq, Show)
 
 instance Monoid Node where
-  mempty = Node 0 mempty False False mempty mempty mempty mempty mempty mempty mempty mempty mempty mempty mempty mempty 0 0
+  mempty = Node        { code        = 0
+                       , name        = mempty
+                       , isRoot      = False
+                       , isLeaf      = False
+                       , parents     = mempty
+                       , children    = mempty
+                       , encoded     = mempty
+                       , packed      = mempty
+                       , preliminary = mempty
+                       , final       = mempty
+                       , temporary   = mempty
+                       , aligned     = mempty
+                       , random      = mempty
+                       , union       = mempty
+                       , single      = mempty
+                       , gapped      = mempty
+                       , localCost   = 0
+                       , totalCost   = 0
+                       }
   mappend n1 n2 = Node { code        = code n1
                        , name        = name n1 ++ " joinedTo " ++ name n2
                        , isRoot      = isRoot n1 || isRoot n2
@@ -60,6 +78,10 @@ instance Monoid Node where
                        , final       = final       n1 <> final       n2 
                        , temporary   = temporary   n1 <> temporary   n2
                        , aligned     = aligned     n1 <> aligned     n2
+                       , random      = random      n1 <> random      n2
+                       , union       = union       n1 <> union       n2
+                       , single      = single      n1 <> single      n2
+                       , gapped      = gapped      n1 <> gapped      n2
                        , localCost   = localCost n1 + localCost n2
                        , totalCost   = totalCost n1 + totalCost n2
                        }

@@ -32,7 +32,7 @@ import           Data.Maybe                    (catMaybes, fromJust)
 import           Data.Semigroup                ((<>))
 import           Data.Set                      ((\\))
 import qualified Data.Set                as S  (fromList)
-import           Data.Vector                   (Vector, (!), (//), cons, generate)
+import           Data.Vector                   (Vector, (//), generate)
 import qualified Data.Vector             as V  (find, zipWith)
 import           File.Format.Newick
 import           File.Format.TransitionCostMatrix
@@ -139,7 +139,7 @@ joinSequences =  foldl' g (mempty, mempty)
 
 -- | Function to encode given metadata information
 encodeOverMetadata :: ParsedSeq -> StandardMetadata -> EncodedSeq
-encodeOverMetadata inSeq metadata = encodeOverAlphabet inSeq (alphabet metadata)
+encodeOverMetadata inSeq inMetadata = encodeOverAlphabet inSeq (alphabet inMetadata)
 
 -- | Wrapper for encoding
 encodeIt :: ParsedSequences -> Vector StandardMetadata -> EncodedSequences

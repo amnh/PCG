@@ -41,8 +41,9 @@ data CharDataType = Nucleotide | AminoAcid | Continuous | Custom | Additive | No
 type CostMatrix = Matrix Double
 
 -- For convenience have a monoid instance even though mappend is somewhat arbitrary
+-- TODO: This instance is probably a bad idea, doesn't follow monoid laws
 instance Monoid CostMatrix where
-  mempty = fromList 0 0 []
+  mempty  = fromList 0 0 []
   mappend = (<|>)
 
 prependName :: String -> CharacterMetadata s -> CharacterMetadata s

@@ -5,9 +5,9 @@ module PCG.Command.Types.Read.Evaluate
   ) where
 
 import           Bio.Metadata
-import           Bio.Metadata.MaskGenerator
+--import           Bio.Metadata.MaskGenerator
 import           Bio.Sequence.Parsed
-import           Bio.Sequence.Parsed.Class
+--import           Bio.Sequence.Parsed.Class
 import           Bio.Phylogeny.Solution.Parsed
 import           Bio.Phylogeny.Solution (StandardMetadata)
 import           Control.Monad              (when)

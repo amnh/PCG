@@ -4,9 +4,9 @@
 
 module Analysis.Parsimony.Binary.SequentialAlign (sequentialAlign) where
 
-import           Analysis.Parsimony.Binary.Internal
-import           Bio.Sequence.Coded
+--import           Analysis.Parsimony.Binary.Internal
 import qualified Analysis.Parsimony.Binary.SequentialAlign.SeqAlignFFI as FF (sequentialAlign)
+import           Bio.Sequence.Coded
 import           Data.Foldable
 import           Data.List.Split (chunksOf)
 

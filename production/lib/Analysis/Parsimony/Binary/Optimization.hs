@@ -176,7 +176,7 @@ preorderNodeOptimize weighting curNode lNode rNode meta = setTotalCost summedTot
             -- TODO: Compiler error maybe below with comment structuers and 'lets'
             | getIgnored curCharacter = setNode
             | getAligned curCharacter && not (getAdditive curCharacter) =
-                let (assign, temp, local) = preorderFitchBit weighting (getForAlign lNode ! curPos) (getForAlign rNode ! curPos) curCharacter
+                let (assign, _temp, local) = preorderFitchBit weighting (getForAlign lNode ! curPos) (getForAlign rNode ! curPos) curCharacter
                 in addLocalCost (local * curWeight) $ addTotalCost (local * curWeight) $ addAlign assign $ addPreliminary assign setNode
             | otherwise =
                 let (ungapped, cost, gapped, _leftGapped, _rightGapped) = naiveDO (getForAlign lNode ! curPos) (getForAlign rNode ! curPos) curCharacter
@@ -192,7 +192,7 @@ preorderNodeOptimize weighting curNode lNode rNode meta = setTotalCost summedTot
 
         addPreliminary addVal inNode = addToField setPreliminary getPreliminary      addVal inNode
         addAlign       addVal inNode = addToField setAlign       getPreliminaryAlign addVal inNode
-        addTemporary   addVal inNode = addToField setTemporary   getTemporary        addVal inNode
+--        addTemporary   addVal inNode = addToField setTemporary   getTemporary        addVal inNode
         addTotalCost   addVal node   = setTotalCost (addVal + getTotalCost node) node
         addLocalCost   addVal node   = setLocalCost (addVal + getLocalCost node) node
 

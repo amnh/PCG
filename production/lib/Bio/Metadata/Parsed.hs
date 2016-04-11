@@ -83,7 +83,7 @@ instance ParsedMetadata Nexus where
                 in  defaultMeta { name = Nex.name inMeta, isIgnored = Nex.ignored inMeta, 
                                   tcm  = fromMaybe (tcm defaultMeta) (transitionCosts <$> Nex.costM inMeta)}
 
-dnaAlph, rnaAlph, aaAlph :: [String]
+disAlph, dnaAlph, rnaAlph, aaAlph :: [String]
 dnaAlph = pure <$> addOtherCases "AGCTRMWSKTVDHBNX?-"
 rnaAlph = pure <$> addOtherCases "AGCURMWSKTVDHBNX?-"
 aaAlph  = pure <$> addOtherCases "ABCDEFGHIKLMNPQRSTVWXYZ-"

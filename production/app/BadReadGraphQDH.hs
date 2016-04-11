@@ -1,9 +1,9 @@
 module Main where
 
-import           File.Format.Fasta
-import qualified File.Format.Newick as N
+--import           File.Format.Fasta
+--import qualified File.Format.Newick as N
 --import           File.Format.Newick.Converter
-import           Text.Megaparsec
+--import           Text.Megaparsec
 
 
 main :: IO ()

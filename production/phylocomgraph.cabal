@@ -433,3 +433,19 @@ Test-Suite testsuite
                        Test.Custom.Parse
                        Test.Custom.Types
                        TestSuite.GeneratedTests.TNT                       
+
+                       Bio.Metadata
+                       Bio.Metadata.Parsed
+                       Bio.Phylogeny.Edge
+                       Bio.Phylogeny.Edge.Internal
+                       Bio.Phylogeny.Node.Internal
+                       Bio.Phylogeny.Solution
+                       Bio.Phylogeny.Solution.Class
+                       Bio.Phylogeny.Solution.Internal
+                       Bio.Phylogeny.Solution.Metadata
+                       Bio.Sequence.Parsed.Class
+                       Bio.Sequence.Parsed.Internal
+                       File.Format.TransitionCostMatrix
+                       File.Format.VertexEdgeRoot
+
+                       
