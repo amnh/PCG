@@ -81,7 +81,10 @@ instance CodedSequence EncodedSeq where
                              then x <> acc
                              else acc
 
-    grabSubChar inSeq pos alphLen = extract pos alphLen <$> inSeq
+    grabSubChar inSeq pos alphLen = extract left right <$> inSeq
+        where
+            left = ((pos + 1) * alphLen) - 1
+            right = pos * alphLen
     isEmpty seqs = case seqs of
         Nothing -> True
         Just x  -> x /= zeroBits -- TODO: Is this right?
