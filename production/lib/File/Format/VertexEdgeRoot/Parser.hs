@@ -61,12 +61,17 @@ edgeConnection (EdgeInfo (a,b) _)
   | a <= b    = (a,b)
   | otherwise = (b,a)
 
-edgeOrigin :: EdgeInfo -> VertexLabel
-edgeOrigin (EdgeInfo (e,_) _) = e
+-- | For a given vertex, attempts to get the connected vertex from the 'EdgeInfo'.
+--   If the input vertex was present in the 'EdgeInfo', returns 'Just v' where
+--   'v' is the corresponsing 'VertexLabel'. If the input vertex was not present
+--   in the 'EdgeInfo'.
+connectedVertex :: VertexLabel -> EdgeInfo -> Maybe VertexLabel
+connectedVertex v (EdgeInfo (a,b) _)
+  | v == a    = Just b
+  | v == b    = Just a
+  | otherwise = Nothing
 
-edgeTarget :: EdgeInfo -> VertexLabel
-edgeTarget (EdgeInfo (_,e) _) = e
-
+-- | Extract the edge length value from the 'EdgeInfo'.
 edgeLength :: EdgeInfo -> Maybe Double
 edgeLength (EdgeInfo (_,_) n) = n
                                
