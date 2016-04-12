@@ -183,7 +183,7 @@ nodeToTopo inDAG curNode
       where
           childDAGs = map (\i -> nodeToTopo inDAG (nodes inDAG ! i)) (children curNode)
           leaf = TN.TopoNode (isRoot curNode) (isLeaf curNode) (name curNode) mempty (encoded curNode) (packed curNode) (preliminary curNode) 
-                  (final curNode) (temporary curNode) (aligned curNode) (localCost curNode) (totalCost curNode)
+                  (final curNode) (temporary curNode) (aligned curNode) (random curNode) (union curNode) (single curNode) (gapped curNode) (localCost curNode) (totalCost curNode)
 
 -- | makeEdges is a small function assisting appendAt
 -- it creates the edge set for a given node in the given tree
@@ -234,4 +234,4 @@ fromNewick forest = fst $ foldr (\d (acc, counter) -> first (: acc) $ oneNewick 
             myCost = fromMaybe 0 (New.branchLength inTree)
             --recurse = V.toList $ V.imap (\i n -> internalNewick n (nameCount + i + 1)) (V.fromList $ New.descendants inTree) 
             (recurse,nextNameCount) = foldr (\n (acc,i) -> first (: acc) $ internalNewick i n) baseCase (New.descendants inTree) 
-            outNode = TN.TopoNode False (null $ New.descendants inTree) myName recurse mempty mempty mempty mempty mempty mempty myCost 0
+            outNode = TN.TopoNode False (null $ New.descendants inTree) myName recurse mempty mempty mempty mempty mempty mempty mempty mempty mempty mempty myCost 0
