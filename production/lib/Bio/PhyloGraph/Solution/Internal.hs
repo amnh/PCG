@@ -15,13 +15,9 @@
 module Bio.PhyloGraph.Solution.Internal where
 
 import Bio.PhyloGraph.DAG
-import Bio.PhyloGraph.Edge
 import Bio.Sequence.Parsed
 import Bio.Sequence.Coded
-import Bio.PhyloGraph.Node
-import Bio.PhyloGraph.Node.Topological
 import Bio.Metadata.Internal
-import Data.BitVector
 import Data.HashMap.Strict
 import Data.Vector
 

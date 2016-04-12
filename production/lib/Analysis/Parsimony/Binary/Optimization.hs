@@ -31,10 +31,10 @@ import Bio.PhyloGraph.Solution.Class
 import Bio.PhyloGraph.Solution.Metadata
 import Bio.PhyloGraph.Tree.Binary
 import Bio.PhyloGraph.Tree.Rose
-import Bio.PhyloGraph.Node (Node)
+import Bio.PhyloGraph.Node ()
 import Bio.PhyloGraph.Node.Final
 import Bio.PhyloGraph.Node.Preliminary
-import Bio.PhyloGraph.Node.Encoded
+import Bio.PhyloGraph.Node.Encoded ()
 import Bio.Metadata
 
 --import Debug.Trace
@@ -179,10 +179,10 @@ preorderNodeOptimize weighting curNode lNode rNode meta = setTotalCost summedTot
             | getIgnored curCharacter = setNode
             | getType curCharacter == Fitch =
                 let (assign, temp, local) = preorderFitchBit curWeight (getForAlign lNode ! curPos) (getForAlign rNode ! curPos) curCharacter
-                in addLocalCost (local * curWeight) $ addTotalCost (local * curWeight) $ addAlign assign $ addPreliminary assign setNode
+                in addTemporary temp $ addLocalCost (local * curWeight * weighting) $ addTotalCost (local * curWeight * weighting) $ addAlign assign $ addPreliminary assign setNode
             | getType curCharacter == DirectOptimization =
-                let (ungapped, cost, gapped, leftGapped, rightGapped) = naiveDO (getForAlign lNode ! curPos) (getForAlign rNode ! curPos) curCharacter
-                in addLocalCost (cost * curWeight) $ addTotalCost (cost * curWeight) $ addAlign gapped $ addPreliminary ungapped setNode
+                let (ungapped, cost, gapped, _, _) = naiveDO (getForAlign lNode ! curPos) (getForAlign rNode ! curPos) curCharacter
+                in addLocalCost (cost * curWeight * weighting) $ addTotalCost (cost * curWeight * weighting) $ addAlign gapped $ addPreliminary ungapped setNode
             | otherwise = error "Unrecognized optimization type"
 
                 where curWeight = getWeight curCharacter
@@ -195,7 +195,7 @@ preorderNodeOptimize weighting curNode lNode rNode meta = setTotalCost summedTot
 
         addPreliminary addVal inNode = addToField setPreliminary getPreliminary      addVal inNode
         addAlign       addVal inNode = addToField setAlign       getPreliminaryAlign addVal inNode
---        addTemporary   addVal inNode = addToField setTemporary   getTemporary        addVal inNode
+        addTemporary   addVal inNode = addToField setTemporary   getTemporary        addVal inNode
         addTotalCost   addVal node   = setTotalCost (addVal + getTotalCost node) node
         addLocalCost   addVal node   = setLocalCost (addVal + getLocalCost node) node
 
