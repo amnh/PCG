@@ -9,6 +9,7 @@ import           Bio.Phylogeny.Solution
 import           Bio.Phylogeny.Tree.Binary.Class
 import           Control.Monad.IO.Class
 import           Control.Evaluation
+import           Control.Monad.Logger
 import           Data.Monoid ((<>))
 import           PCG.Command.Types (Command(..))
 import           PCG.Command.Types.Report.TaxonMatrix

@@ -17,17 +17,13 @@ module Control.Evaluation
   , Evaluation()
   , EvalUnit(..)
   , SearchState
-  , (<!>)
-  , (<?>)
   , evalEither
   , evalIO
   , evaluationResult
-  , info
   , notifications
   , runEvaluation
   , state
   , showRun
-  , warn
   ) where
 
 import Control.Evaluation.Internal

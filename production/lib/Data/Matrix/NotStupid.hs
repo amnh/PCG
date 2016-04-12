@@ -106,6 +106,7 @@ getElem :: Int      -- ^ Row
 {-# INLINE getElem #-}
 getElem i j = Stupid.getElem (i+1) (j+1)
 
+-- | An infix alias for 'getElem' which takes a tuple.
 (!) :: Matrix a -> (Int,Int) -> a
 {-# INLINE (!) #-}
 m ! (i,j) = getElem i j m

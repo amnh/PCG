@@ -117,6 +117,7 @@ library
                        Bio.Sequence.Coded
                        Bio.Sequence.Character.Coded
                        Control.Evaluation
+                       Control.Monad.Logger
                        Data.Either.Custom
                        File.Format.Fasta
                        File.Format.Fastc
