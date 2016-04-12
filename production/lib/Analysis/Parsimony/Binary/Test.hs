@@ -18,7 +18,7 @@ import Analysis.Parsimony.Binary.DirectOptimization
 import Analysis.Parsimony.Binary.Internal
 
 import Bio.Sequence.Coded
-import Bio.Phylogeny.Graph
+import Bio.PhyloGraph.Graph
 
 import Data.BitVector
 

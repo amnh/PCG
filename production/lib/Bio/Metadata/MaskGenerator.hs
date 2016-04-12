@@ -14,7 +14,7 @@
 
 module Bio.Metadata.MaskGenerator where
 
-import           Bio.Phylogeny.Solution
+import           Bio.PhyloGraph.Solution
 import           Bio.Metadata
 import           Bio.Sequence.Coded
 import           Data.BitVector      (fromBits)

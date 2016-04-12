@@ -17,7 +17,7 @@ module Bio.Metadata.Parsed where
 
 import           Bio.Metadata.Internal
 import           Bio.Sequence.Parsed
-import           Bio.Phylogeny.Solution
+import           Bio.PhyloGraph.Solution
 
 import           Data.Char
 import           Data.Foldable

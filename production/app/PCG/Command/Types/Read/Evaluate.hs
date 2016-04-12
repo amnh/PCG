@@ -8,8 +8,8 @@ import           Bio.Metadata
 import           Bio.Metadata.MaskGenerator
 import           Bio.Sequence.Parsed
 import           Bio.Sequence.Parsed.Class
-import           Bio.Phylogeny.Solution.Parsed
-import           Bio.Phylogeny.Solution (StandardMetadata)
+import           Bio.PhyloGraph.Solution.Parsed
+import           Bio.PhyloGraph.Solution (StandardMetadata)
 import           Control.Monad              (when)
 import           Control.Monad.IO.Class
 import           Control.Monad.Trans.Either

@@ -16,16 +16,16 @@
 module Analysis.Parsimony.Binary.Internal where
 
 import Bio.Metadata
-import Bio.Phylogeny.Forest
-import Bio.Phylogeny.Solution.Class
-import Bio.Phylogeny.Solution.Metadata
-import Bio.Phylogeny.Node.Preliminary
-import Bio.Phylogeny.Node.Encoded
-import Bio.Phylogeny.Node.Final
-import Bio.Phylogeny.Network
-import Bio.Phylogeny.Tree.Referential
-import Bio.Phylogeny.Tree.Binary
-import Bio.Phylogeny.Network.Subsettable
+import Bio.PhyloGraph.Forest
+import Bio.PhyloGraph.Solution.Class
+import Bio.PhyloGraph.Solution.Metadata
+import Bio.PhyloGraph.Node.Preliminary
+import Bio.PhyloGraph.Node.Encoded
+import Bio.PhyloGraph.Node.Final
+import Bio.PhyloGraph.Network
+import Bio.PhyloGraph.Tree.Referential
+import Bio.PhyloGraph.Tree.Binary
+import Bio.PhyloGraph.Network.Subsettable
 import Bio.Sequence.Coded
 import Data.Bits
 import Data.Matrix.NotStupid (Matrix, nrows, ncols, setElem)

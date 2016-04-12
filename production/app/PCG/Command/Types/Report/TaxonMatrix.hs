@@ -15,10 +15,10 @@
 
 module PCG.Command.Types.Report.TaxonMatrix where
 
-import Bio.Phylogeny.Solution
+import Bio.PhyloGraph.Solution
 import Bio.Metadata
-import Bio.Phylogeny.Node hiding (name)
-import qualified Bio.Phylogeny.Node as N
+import Bio.PhyloGraph.Node hiding (name)
+import qualified Bio.PhyloGraph.Node as N
 --import PCG.Command.Types.Report.CharacterMatrix
 
 import qualified Data.HashMap.Strict as HM

@@ -14,8 +14,8 @@
 
 module PCG.Command.Types.Report.Newick where
 
-import Bio.Phylogeny.Solution
-import Bio.Phylogeny.Node.Topological (TopoNode(..))
+import Bio.PhyloGraph.Solution
+import Bio.PhyloGraph.Node.Topological (TopoNode(..))
 import Data.Monoid            ((<>))
 import Data.List              (intercalate)
 

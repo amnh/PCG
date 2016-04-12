@@ -26,15 +26,15 @@ import Data.Vector (Vector, ifoldl', ifoldr, (!))
 import Data.Monoid
 
 
-import Bio.Phylogeny.Forest
-import Bio.Phylogeny.Network
-import Bio.Phylogeny.Solution.Class
-import Bio.Phylogeny.Solution.Metadata
-import Bio.Phylogeny.Tree.Binary
-import Bio.Phylogeny.Node (Node)
-import Bio.Phylogeny.Node.Final
-import Bio.Phylogeny.Node.Preliminary
-import Bio.Phylogeny.Node.Encoded
+import Bio.PhyloGraph.Forest
+import Bio.PhyloGraph.Network
+import Bio.PhyloGraph.Solution.Class
+import Bio.PhyloGraph.Solution.Metadata
+import Bio.PhyloGraph.Tree.Binary
+import Bio.PhyloGraph.Node (Node)
+import Bio.PhyloGraph.Node.Final
+import Bio.PhyloGraph.Node.Preliminary
+import Bio.PhyloGraph.Node.Encoded
 import Bio.Metadata
 
 --import Debug.Trace
