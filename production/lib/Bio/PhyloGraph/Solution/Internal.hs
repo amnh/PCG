@@ -14,6 +14,7 @@
 
 module Bio.PhyloGraph.Solution.Internal where
 
+import Bio.PhyloGraph.DAG
 import Bio.PhyloGraph.Edge
 import Bio.Sequence.Parsed
 import Bio.Sequence.Coded
@@ -35,9 +36,6 @@ type Identifier = String
 type Sequences = ParsedSequences
 
 -- | We'll have two types of node: topological and referential
-type NodeInfo = Node
-
-type Topo   = TopoNode BitVector
 
 type StandardMetadata = CharacterMetadata EncodedSeq
 
@@ -52,15 +50,4 @@ data Solution d
    , forests    :: [Forest d]
    } deriving (Eq, Show)
 
--- | A dag is an element of a forest, stored referentially
-data DAG 
-   = DAG
-   { nodes :: Vector NodeInfo 
-   , edges :: Vector EdgeSet
-   , root  :: Int
-   } deriving (Eq, Show)
 
--- | A topodag is an alternative forest element stored topologically
-data TopoDAG 
-   = TopoDAG 
-   { structure :: Topo}

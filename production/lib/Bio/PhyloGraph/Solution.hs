@@ -22,6 +22,7 @@ module Bio.PhyloGraph.Solution
 import qualified File.Format.Newick as New
 
 import           Bio.PhyloGraph.Edge
+import           Bio.PhyloGraph.DAG
 import qualified Bio.PhyloGraph.Forest           as FC
 import qualified Bio.PhyloGraph.Network          as N
 import qualified Bio.PhyloGraph.Network.Subsettable as SN

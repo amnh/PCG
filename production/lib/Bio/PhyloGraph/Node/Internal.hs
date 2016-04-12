@@ -60,6 +60,10 @@ instance Monoid Node where
                        , final       = final       n1 <> final       n2 
                        , temporary   = temporary   n1 <> temporary   n2
                        , aligned     = aligned     n1 <> aligned     n2
+                       , random      = random      n1 <> random      n2
+                       , union       = union       n1 <> union       n2
+                       , single      = single      n1 <> single      n2
+                       , gapped      = gapped      n1 <> gapped      n2
                        , localCost   = localCost n1 + localCost n2
                        , totalCost   = totalCost n1 + totalCost n2
                        }

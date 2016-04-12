@@ -96,6 +96,7 @@ library
                        Analysis.Parsimony.Binary.Optimization
                        Analysis.Parsimony.Binary.SequentialAlign
                        Analysis.Parsimony.Binary.SequentialAlign.SeqAlignFFI
+                       Bio.PhyloGraph.DAG
                        Bio.PhyloGraph.Edge
                        Bio.PhyloGraph.Forest
                        Bio.PhyloGraph.Network
@@ -132,6 +133,8 @@ library
                        Bio.Metadata.Internal
                        Bio.Metadata.Parsed
                        Bio.Metadata.MaskGenerator
+                       Bio.PhyloGraph.DAG.Internal
+                       Bio.PhyloGraph.DAG.Class
                        Bio.PhyloGraph.Solution.Metadata
                        Bio.PhyloGraph.Forest.Class
                        Bio.PhyloGraph.Network.Class

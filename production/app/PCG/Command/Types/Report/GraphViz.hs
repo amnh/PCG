@@ -14,6 +14,7 @@
 
 module PCG.Command.Types.Report.GraphViz where
 
+import Bio.PhyloGraph.DAG
 import Bio.PhyloGraph.Edge
 import Bio.PhyloGraph.Solution
 import Bio.PhyloGraph.Node
