@@ -35,7 +35,8 @@ data CharacterMetadata s
     } deriving (Eq, Show)
 
 -- | Different types of characters are stored here
-data CharDataType = Nucleotide | AminoAcid | Continuous | Custom | Additive | NonAdditive | Unknown deriving (Eq, Show)
+--data CharDataType = Nucleotide | AminoAcid | Continuous | Custom | Additive | NonAdditive | Unknown deriving (Eq, Show)
+data CharDataType = DirectOptimization | Fitch | InfoTheoretic | Unknown deriving (Eq, Show)
 
 -- | A cost matrix is just a matrix of floats
 type CostMatrix = Matrix Double
@@ -55,4 +56,4 @@ updateTcm :: CostMatrix -> CharacterMetadata s -> CharacterMetadata s
 updateTcm      t x = x { tcm      = t }
 
 updateAligned :: Bool -> CharacterMetadata s -> CharacterMetadata s
-updateAligned a x = x { isAligned = a }
+updateAligned a x = x { isAligned = a, charType = Fitch }

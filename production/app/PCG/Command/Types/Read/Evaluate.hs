@@ -19,7 +19,7 @@ import           Data.Char                  (isLower,toLower,isUpper,toUpper)
 import           Data.Either.Custom
 import           Data.Foldable
 import           Data.Key                   ((!),lookup)
-import           Data.Map                   (Map,assocs,insert,union)
+import           Data.Map                   (Map,assocs,insert,union, keys)
 import qualified Data.Map              as M (fromList)
 import           Data.Maybe                 (fromMaybe)
 import           Data.Vector                (Vector)
@@ -143,12 +143,12 @@ expandIUPAC fpr = fpr { parsedChars = newTreeSeqs }
             h :: StandardMetadata -> Maybe ParsedSeq -> Maybe ParsedSeq
             h cInfo seqMay = expandCodes <$> seqMay
               where
-                cType = charType cInfo
+                cAlph = alphabet cInfo
                 
                 expandCodes :: ParsedSeq -> ParsedSeq
                 expandCodes x 
-                  | cType == Nucleotide  = expandOrId nucleotideIUPAC <$> x
-                  | cType == AminoAcid = expandOrId aminoAcidIUPAC  <$> x
+                  | cAlph `subsetOf` (concat $ keys nucleotideIUPAC) = expandOrId nucleotideIUPAC <$> x
+                  | cAlph `subsetOf` (concat $ keys aminoAcidIUPAC) = expandOrId aminoAcidIUPAC  <$> x
                   | otherwise = x
     expandOrId m x = fromMaybe x $ x `lookup` m
 

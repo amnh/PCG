@@ -178,13 +178,13 @@ preorderNodeOptimize weight curNode lNode rNode meta = setTotalCost summedTotalC
         chooseOptimization curPos curCharacter setNode
             -- TODO: Compiler error maybe below with comment structuers and 'lets'
             | getIgnored curCharacter = setNode
-            | getAligned curCharacter && not (getAdditive curCharacter) =
+            | getType curCharacter == Fitch =
                 let (assign, temp, local) = preorderFitchBit weight (getForAlign lNode ! curPos) (getForAlign rNode ! curPos) curCharacter
                 in addLocalCost (local * curWeight) $ addTotalCost (local * curWeight) $ addAlign assign $ addPreliminary assign setNode
-            | otherwise =
+            | getType curCharacter == DirectOptimization =
                 let (ungapped, cost, gapped, leftGapped, rightGapped) = naiveDO (getForAlign lNode ! curPos) (getForAlign rNode ! curPos) curCharacter
                 in addLocalCost (cost * curWeight) $ addTotalCost (cost * curWeight) $ addAlign gapped $ addPreliminary ungapped setNode
-
+            | otherwise = error "Unrecognized optimization type"
                 where curWeight = getWeight curCharacter
 
                 -- getForAlign returns a node, either encoded, getPreliminary or getPreliminary align. It's in Analysis.Parsimony.Binary.Internal
