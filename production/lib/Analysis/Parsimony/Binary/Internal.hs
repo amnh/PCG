@@ -16,16 +16,17 @@
 module Analysis.Parsimony.Binary.Internal where
 
 import Bio.Metadata
-import Bio.Phylogeny.Forest
-import Bio.Phylogeny.Solution.Class
-import Bio.Phylogeny.Solution.Metadata
-import Bio.Phylogeny.Node.Preliminary
-import Bio.Phylogeny.Node.Encoded
-import Bio.Phylogeny.Node.Final
-import Bio.Phylogeny.Network
-import Bio.Phylogeny.Tree.Referential
-import Bio.Phylogeny.Tree.Binary
-import Bio.Phylogeny.Network.Subsettable
+import Bio.PhyloGraph.Forest
+import Bio.PhyloGraph.Solution.Class
+import Bio.PhyloGraph.Solution.Metadata
+import Bio.PhyloGraph.Node.Preliminary
+import Bio.PhyloGraph.Node.Encoded
+import Bio.PhyloGraph.Node.Final
+import Bio.PhyloGraph.Network
+import Bio.PhyloGraph.Tree.Referential
+import Bio.PhyloGraph.Tree.Binary
+import Bio.PhyloGraph.Tree.Rose
+import Bio.PhyloGraph.Network.Subsettable
 import Bio.Sequence.Coded
 import Data.Bits
 import Data.Matrix.NotStupid (Matrix, nrows, ncols, setElem)
@@ -37,7 +38,7 @@ type SolutionConstraint' r f t n s   m = (Solution r f, ForestConstraint' f t n 
 type ForestConstraint      f t n s b   = (Forest f t, TreeConstraint t n s b)
 type ForestConstraint'     f t n s     = (Forest f t, TreeConstraint' t n s)
 type TreeConstraint          t n s b   = (Network t n, NodeConstraint n s b, ReferentialTree t n, BinaryTree t n, Show t, SubsettableNetwork t n)
-type TreeConstraint'         t n s     = (Network t n, NodeConstraint' n s, ReferentialTree t n, BinaryTree t n, Show t, SubsettableNetwork t n)
+type TreeConstraint'         t n s     = (Network t n, NodeConstraint' n s, ReferentialTree t n, BinaryTree t n, Show t, SubsettableNetwork t n, RoseTree t n)
 type NodeConstraint            n s b   = (PreliminaryNode n s, EncodedNode n s, FinalNode n s, SeqConstraint s b, Show n, Eq n)
 type NodeConstraint'           n s     = (PreliminaryNode n s, EncodedNode n s, FinalNode n s, SeqConstraint' s)
 type SeqConstraint               s b   = (CodedSequence s, Eq s, CharConstraint b, Show s, Bits s, Monoid s)

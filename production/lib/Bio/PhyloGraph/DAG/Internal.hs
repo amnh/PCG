@@ -1,0 +1,50 @@
+-----------------------------------------------------------------------------
+-- |
+-- Module      :  Bio.PhyloGraph.DAG.Internal
+-- Copyright   :  (c) 2015-2015 Ward Wheeler
+-- License     :  BSD-style
+--
+-- Maintainer  :  wheeler@amnh.org
+-- Stability   :  provisional
+-- Portability :  portable
+--
+-- Types for DAG representation
+--
+-----------------------------------------------------------------------------
+{-# LANGUAGE TypeSynonymInstances, MultiParamTypeClasses #-}
+
+module Bio.PhyloGraph.DAG.Internal where
+
+import Bio.PhyloGraph.DAG.Class
+import Bio.PhyloGraph.Edge
+import Bio.PhyloGraph.Node
+import Bio.PhyloGraph.Node.Topological
+
+import Data.BitVector
+import Data.Vector
+
+-- Set aliases for types used
+
+type NodeInfo = Node
+
+type Topo   = TopoNode BitVector
+
+-- | A dag is an element of a forest, stored referentially
+data DAG 
+   = DAG
+   { nodes :: Vector NodeInfo 
+   , edges :: Vector EdgeSet
+   , root  :: Int
+   } deriving (Eq, Show)
+
+-- | A topodag is an alternative forest element stored topologically
+data TopoDAG 
+   = TopoDAG 
+   { structure :: Topo}
+
+instance StandardDAG DAG NodeInfo EdgeSet where
+    getNodes = nodes
+    setNodes inD n = inD {nodes = n}
+    getEdges = edges
+    setEdges inD e = inD {edges = e}
+    getRoot inD = (nodes inD) ! (root inD)

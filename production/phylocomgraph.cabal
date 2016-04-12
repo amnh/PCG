@@ -96,24 +96,26 @@ library
                        Analysis.Parsimony.Binary.Optimization
                        Analysis.Parsimony.Binary.SequentialAlign
                        Analysis.Parsimony.Binary.SequentialAlign.SeqAlignFFI
-                       Bio.Phylogeny.Edge
-                       Bio.Phylogeny.Forest
-                       Bio.Phylogeny.Network
+                       Bio.PhyloGraph
+                       Bio.PhyloGraph.DAG
+                       Bio.PhyloGraph.Edge
+                       Bio.PhyloGraph.Forest
+                       Bio.PhyloGraph.Network
                        Bio.Metadata
-                       Bio.Phylogeny.Solution
-                       Bio.Phylogeny.Solution.Internal
-                       Bio.Phylogeny.Solution.Class
-                       Bio.Phylogeny.Solution.Parsed
-                       Bio.Phylogeny.Tree.Binary
-                       Bio.Phylogeny.Tree.EdgeAware
-                       Bio.Phylogeny.Node
-                       Bio.Phylogeny.Node.Encoded
-                       Bio.Phylogeny.Node.Final
-                       Bio.Phylogeny.Node.Internal
-                       Bio.Phylogeny.Node.Packed
-                       Bio.Phylogeny.Node.Preliminary
-                       Bio.Phylogeny.Tree.Referential
-                       Bio.Phylogeny.Tree.Rose
+                       Bio.PhyloGraph.Solution
+                       Bio.PhyloGraph.Solution.Internal
+                       Bio.PhyloGraph.Solution.Class
+                       Bio.PhyloGraph.Solution.Parsed
+                       Bio.PhyloGraph.Tree.Binary
+                       Bio.PhyloGraph.Tree.EdgeAware
+                       Bio.PhyloGraph.Node
+                       Bio.PhyloGraph.Node.Encoded
+                       Bio.PhyloGraph.Node.Final
+                       Bio.PhyloGraph.Node.Internal
+                       Bio.PhyloGraph.Node.Packed
+                       Bio.PhyloGraph.Node.Preliminary
+                       Bio.PhyloGraph.Tree.Referential
+                       Bio.PhyloGraph.Tree.Rose
                        Bio.Sequence.Coded
                        Bio.Sequence.Character.Coded
                        Control.Evaluation
@@ -133,16 +135,18 @@ library
                        Bio.Metadata.Internal
                        Bio.Metadata.Parsed
                        Bio.Metadata.MaskGenerator
-                       Bio.Phylogeny.Solution.Metadata
-                       Bio.Phylogeny.Forest.Class
-                       Bio.Phylogeny.Network.Class
-                       Bio.Phylogeny.Network.Subsettable
-                       Bio.Phylogeny.Tree.Binary.Class
-                       Bio.Phylogeny.Edge.Internal
-                       Bio.Phylogeny.Edge.Class
-                       Bio.Phylogeny.Tree.EdgeAware.Class
-                       Bio.Phylogeny.Node.Topological
-                       Bio.Phylogeny.Tree.Rose.Class
+                       Bio.PhyloGraph.DAG.Internal
+                       Bio.PhyloGraph.DAG.Class
+                       Bio.PhyloGraph.Solution.Metadata
+                       Bio.PhyloGraph.Forest.Class
+                       Bio.PhyloGraph.Network.Class
+                       Bio.PhyloGraph.Network.Subsettable
+                       Bio.PhyloGraph.Tree.Binary.Class
+                       Bio.PhyloGraph.Edge.Internal
+                       Bio.PhyloGraph.Edge.Class
+                       Bio.PhyloGraph.Tree.EdgeAware.Class
+                       Bio.PhyloGraph.Node.Topological
+                       Bio.PhyloGraph.Tree.Rose.Class
                        Bio.Sequence.Coded.Class
                        Bio.Sequence.Packed.Class
                        Bio.Sequence.Parsed
@@ -353,26 +357,26 @@ Test-Suite testsuite
   hs-source-dirs:      test, lib, app, ffi
 
   other-modules:       Bio.Metadata.Class
-                       Bio.Phylogeny.Forest
-                       Bio.Phylogeny.Forest.Class
-                       Bio.Phylogeny.Network
-                       Bio.Phylogeny.Network.Class                
+                       Bio.PhyloGraph.Forest
+                       Bio.PhyloGraph.Forest.Class
+                       Bio.PhyloGraph.Network
+                       Bio.PhyloGraph.Network.Class                
                        Bio.Metadata.Internal
-                       Bio.Phylogeny.Tree.Binary
-                       Bio.Phylogeny.Tree.Binary.Class
-                       Bio.Phylogeny.Edge.Class
-                       Bio.Phylogeny.Tree.EdgeAware
-                       Bio.Phylogeny.Tree.EdgeAware.Class
-                       Bio.Phylogeny.Node
-                       Bio.Phylogeny.Node.Encoded
-                       Bio.Phylogeny.Node.Final
-                       Bio.Phylogeny.Node.Packed
-                       Bio.Phylogeny.Node.Preliminary
-                       Bio.Phylogeny.Node.Random
-                       Bio.Phylogeny.Node.Topological
-                       Bio.Phylogeny.Tree.Referential
-                       Bio.Phylogeny.Tree.Rose
-                       Bio.Phylogeny.Tree.Rose.Class
+                       Bio.PhyloGraph.Tree.Binary
+                       Bio.PhyloGraph.Tree.Binary.Class
+                       Bio.PhyloGraph.Edge.Class
+                       Bio.PhyloGraph.Tree.EdgeAware
+                       Bio.PhyloGraph.Tree.EdgeAware.Class
+                       Bio.PhyloGraph.Node
+                       Bio.PhyloGraph.Node.Encoded
+                       Bio.PhyloGraph.Node.Final
+                       Bio.PhyloGraph.Node.Packed
+                       Bio.PhyloGraph.Node.Preliminary
+                       Bio.PhyloGraph.Node.Random
+                       Bio.PhyloGraph.Node.Topological
+                       Bio.PhyloGraph.Tree.Referential
+                       Bio.PhyloGraph.Tree.Rose
+                       Bio.PhyloGraph.Tree.Rose.Class
                        Bio.Sequence.Character.Coded
                        Bio.Sequence.Coded
                        Bio.Sequence.Coded.Class
@@ -416,7 +420,7 @@ Test-Suite testsuite
                        Analysis.Parsimony.Binary.DirectOptimization
                        Analysis.Parsimony.Binary.Internal
                        Analysis.Parsimony.Binary.Test
-                       Bio.Phylogeny.Network.Subsettable
+                       Bio.PhyloGraph.Network.Subsettable
                        Bio.Sequence.Packed.Class
                        Bio.Sequence.Parsed
                        Data.Matrix.NotStupid

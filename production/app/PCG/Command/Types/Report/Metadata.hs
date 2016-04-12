@@ -14,7 +14,7 @@
 
 module PCG.Command.Types.Report.Metadata where
 
-import Bio.Phylogeny.Solution
+import Bio.PhyloGraph.Solution
 import Bio.Metadata
 import Data.Foldable
 import Data.List   (intercalate)

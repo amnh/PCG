@@ -25,7 +25,7 @@ class Metadata m s | m -> s where
     getTcm :: m -> CostMatrix
     getFitchMasks :: m -> (s, s)
     getAligned :: m -> Bool
-    getAdditive :: m -> Bool
+    getType :: m -> CharDataType
 
 instance Monoid s => Metadata (CharacterMetadata s) s where
     getWeight =        weight
@@ -34,4 +34,4 @@ instance Monoid s => Metadata (CharacterMetadata s) s where
     getTcm =           tcm
     getAligned =       isAligned
     getFitchMasks =    fitchMasks
-    getAdditive m =    charType m == Additive
+    getType m =        charType m

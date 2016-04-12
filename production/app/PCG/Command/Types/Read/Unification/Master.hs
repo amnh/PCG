@@ -14,11 +14,12 @@
 
 module PCG.Command.Types.Read.Unification.Master where
 
-import           Bio.Phylogeny.Solution  hiding (parsedChars)
+import           Bio.PhyloGraph.Solution  hiding (parsedChars)
+import           Bio.PhyloGraph.DAG
 import           Bio.Metadata hiding (name)
 import           Bio.Sequence.Coded
 import           Bio.Sequence.Parsed
-import           Bio.Phylogeny.Node hiding (isLeaf)
+import           Bio.PhyloGraph.Node hiding (isLeaf)
 import           Control.Arrow                  ((***),(&&&))
 import           Data.Bifunctor                 (first)
 --import           Data.BitVector          hiding (not, foldr)
