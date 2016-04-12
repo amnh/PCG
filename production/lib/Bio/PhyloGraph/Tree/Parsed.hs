@@ -11,6 +11,7 @@
 -- Class for a parsed tree with function to go from encoded to parsed
 --
 -----------------------------------------------------------------------------
+{-# LANGUAGE MultiParamTypeClasses, FunctionalDependencies #-}
 
 module Bio.PhyloGraph.Tree.Parsed where
 

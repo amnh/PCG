@@ -49,7 +49,6 @@ import           Safe
 import           Prelude                        hiding (lookup)
 
 instance BinaryTree DAG NodeInfo where
-    parent     n t = headMay $ map (\i -> nodes t ! i) (parents n)
     leftChild  n t = lookup 0 $ (\i -> nodes t ! i) <$> children n
     rightChild n t = lookup 1 $ (\i -> nodes t ! i) <$> children n
     verifyBinary   = all ((2 >=) . length . children) . nodes

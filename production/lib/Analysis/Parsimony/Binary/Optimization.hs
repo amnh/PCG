@@ -31,6 +31,7 @@ import Bio.PhyloGraph.Network
 import Bio.PhyloGraph.Solution.Class
 import Bio.PhyloGraph.Solution.Metadata
 import Bio.PhyloGraph.Tree.Binary
+import Bio.PhyloGraph.Tree.Rose
 import Bio.PhyloGraph.Node (Node)
 import Bio.PhyloGraph.Node.Final
 import Bio.PhyloGraph.Node.Preliminary
