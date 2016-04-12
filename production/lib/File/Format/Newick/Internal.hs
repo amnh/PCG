@@ -22,7 +22,7 @@ module File.Format.Newick.Internal
   ) where
 
 import Data.Maybe (isJust,isNothing)
-import qualified Bio.Phylogeny.Network as N
+import qualified Bio.PhyloGraph.Network as N
 import Data.List
 import Data.Monoid
 import Control.Applicative (liftA2)

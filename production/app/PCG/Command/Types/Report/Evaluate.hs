@@ -5,8 +5,8 @@ module PCG.Command.Types.Report.Evaluate
   ) where
 
 import           Analysis.Parsimony.Binary.Optimization
-import           Bio.Phylogeny.Solution
-import           Bio.Phylogeny.Tree.Binary.Class
+import           Bio.PhyloGraph.Solution
+import           Bio.PhyloGraph.Tree.Binary.Class
 import           Control.Monad.IO.Class
 import           Control.Evaluation
 import           Data.Monoid ((<>))

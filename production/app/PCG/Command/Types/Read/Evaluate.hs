@@ -7,9 +7,8 @@ module PCG.Command.Types.Read.Evaluate
 import           Bio.Metadata
 --import           Bio.Metadata.MaskGenerator
 import           Bio.Sequence.Parsed
---import           Bio.Sequence.Parsed.Class
-import           Bio.Phylogeny.Solution.Parsed
-import           Bio.Phylogeny.Solution (StandardMetadata)
+import           Bio.PhyloGraph.Solution.Parsed
+import           Bio.PhyloGraph.Solution (StandardMetadata)
 import           Control.Monad              (when)
 import           Control.Monad.IO.Class
 import           Control.Monad.Trans.Either
@@ -19,7 +18,7 @@ import           Data.Char                  (isLower,toLower,isUpper,toUpper)
 import           Data.Either.Custom
 import           Data.Foldable
 import           Data.Key                   ((!),lookup)
-import           Data.Map                   (Map,assocs,insert,union)
+import           Data.Map                   (Map,assocs,insert,union, keys)
 import qualified Data.Map              as M (fromList)
 import           Data.Maybe                 (fromMaybe)
 import           Data.Monoid                ((<>))
@@ -144,12 +143,12 @@ expandIUPAC fpr = fpr { parsedChars = newTreeSeqs }
             h :: StandardMetadata -> Maybe ParsedSeq -> Maybe ParsedSeq
             h cInfo seqMay = expandCodes <$> seqMay
               where
-                cType = charType cInfo
+                cAlph = alphabet cInfo
                 
                 expandCodes :: ParsedSeq -> ParsedSeq
                 expandCodes x 
-                  | cType == Nucleotide  = expandOrId nucleotideIUPAC <$> x
-                  | cType == AminoAcid = expandOrId aminoAcidIUPAC  <$> x
+                  | cAlph `subsetOf` (concat $ keys nucleotideIUPAC) = expandOrId nucleotideIUPAC <$> x
+                  | cAlph `subsetOf` (concat $ keys aminoAcidIUPAC) = expandOrId aminoAcidIUPAC  <$> x
                   | otherwise = x
     expandOrId m x = fromMaybe x $ x `lookup` m
 

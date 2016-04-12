@@ -25,14 +25,16 @@ import Data.Maybe
 import Data.Vector (Vector, ifoldr, (!))
 import Data.Monoid
 
-
-import Bio.Phylogeny.Forest
-import Bio.Phylogeny.Network
-import Bio.Phylogeny.Solution.Class
-import Bio.Phylogeny.Solution.Metadata
-import Bio.Phylogeny.Tree.Binary
-import Bio.Phylogeny.Node.Final
-import Bio.Phylogeny.Node.Preliminary
+import Bio.PhyloGraph.Forest
+import Bio.PhyloGraph.Network
+import Bio.PhyloGraph.Solution.Class
+import Bio.PhyloGraph.Solution.Metadata
+import Bio.PhyloGraph.Tree.Binary
+import Bio.PhyloGraph.Tree.Rose
+import Bio.PhyloGraph.Node (Node)
+import Bio.PhyloGraph.Node.Final
+import Bio.PhyloGraph.Node.Preliminary
+import Bio.PhyloGraph.Node.Encoded
 import Bio.Metadata
 
 --import Debug.Trace
@@ -175,12 +177,13 @@ preorderNodeOptimize weighting curNode lNode rNode meta = setTotalCost summedTot
         chooseOptimization curPos curCharacter setNode
             -- TODO: Compiler error maybe below with comment structuers and 'lets'
             | getIgnored curCharacter = setNode
-            | getAligned curCharacter && not (getAdditive curCharacter) =
-                let (assign, _temp, local) = preorderFitchBit weighting (getForAlign lNode ! curPos) (getForAlign rNode ! curPos) curCharacter
+            | getType curCharacter == Fitch =
+                let (assign, temp, local) = preorderFitchBit curWeight (getForAlign lNode ! curPos) (getForAlign rNode ! curPos) curCharacter
                 in addLocalCost (local * curWeight) $ addTotalCost (local * curWeight) $ addAlign assign $ addPreliminary assign setNode
-            | otherwise =
-                let (ungapped, cost, gapped, _leftGapped, _rightGapped) = naiveDO (getForAlign lNode ! curPos) (getForAlign rNode ! curPos) curCharacter
-                in addLocalCost (cost * curWeight) . addTotalCost (cost * curWeight) . addAlign gapped $ addPreliminary ungapped setNode
+            | getType curCharacter == DirectOptimization =
+                let (ungapped, cost, gapped, leftGapped, rightGapped) = naiveDO (getForAlign lNode ! curPos) (getForAlign rNode ! curPos) curCharacter
+                in addLocalCost (cost * curWeight) $ addTotalCost (cost * curWeight) $ addAlign gapped $ addPreliminary ungapped setNode
+            | otherwise = error "Unrecognized optimization type"
 
                 where curWeight = getWeight curCharacter
 

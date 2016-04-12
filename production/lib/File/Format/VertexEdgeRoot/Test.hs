@@ -4,7 +4,7 @@ module File.Format.VertexEdgeRoot.Test
   ( testSuite
   ) where
 
-import           Bio.Phylogeny.Node
+import           Bio.PhyloGraph.Node
 import           Data.List                         (intercalate)
 import           File.Format.VertexEdgeRoot.Parser
 import           Test.Custom                       (parseEquals,parseFailure,parseSuccess)
