@@ -103,10 +103,12 @@ subsetOf list1 list2 = foldr (\e acc -> acc && e `elem` list2) True list1
 -- | Make a single info given an alphabet
 makeOneInfo :: Monoid s => Alphabet -> CharacterMetadata s
 makeOneInfo alph = CharMeta DirectOptimization alph mempty False False 1 mempty mempty (mempty, mempty) 1
-    -- | alph `subsetOf` dnaAlph || alph `subsetOf` rnaAlph = def {charType = Nucleotide}
-    -- | alph `subsetOf` aaAlph = def {charType = AminoAcid}
-    -- | otherwise = def {charType = Custom}
-        --where def = CharMeta Unknown alph mempty False False 1 mempty mempty (mempty, mempty) 1
+{-
+     | alph `subsetOf` dnaAlph || alph `subsetOf` rnaAlph = def {charType = Nucleotide}
+     | alph `subsetOf` aaAlph = def {charType = AminoAcid}
+     | otherwise = def {charType = Custom}
+     where def = CharMeta Unknown alph mempty False False 1 mempty mempty (mempty, mempty) 1
+-}
 
 -- | Functionality to make char info from tree seqs
 makeEncodeInfo :: Monoid s => TreeSeqs -> Vector (CharacterMetadata s)

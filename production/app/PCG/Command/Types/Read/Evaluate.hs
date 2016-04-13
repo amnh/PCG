@@ -30,7 +30,7 @@ import qualified File.Format.Fasta   as Fasta (FastaSequenceType(..))
 import           File.Format.Fastc   hiding (Identifier)
 import           File.Format.Newick
 import           File.Format.Nexus          (nexusStreamParser)
-import           File.Format.TNT     hiding (casei)
+import           File.Format.TNT
 import           File.Format.TransitionCostMatrix
 import           File.Format.VertexEdgeRoot
 import           PCG.Command.Types (Command(..))

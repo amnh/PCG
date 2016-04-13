@@ -165,6 +165,13 @@ library
                        File.Format.Nexus.Parser
                        File.Format.Nexus.Partition
                        File.Format.Nexus.Validate
+                       File.Format.TransitionCostMatrix.Parser
+                       File.Format.VertexEdgeRoot.Parser
+                       Text.Megaparsec.Custom
+  other-modules:     
+                       Control.Evaluation.Unit
+                       Control.Evaluation.Internal
+                       Control.Evaluation.Trans
                        File.Format.TNT.Command.CCode
                        File.Format.TNT.Command.CNames
                        File.Format.TNT.Command.Cost
@@ -175,13 +182,6 @@ library
                        File.Format.TNT.Parser
                        File.Format.TNT.Partitioning
                        File.Format.TNT.Internal
-                       File.Format.TransitionCostMatrix.Parser
-                       File.Format.VertexEdgeRoot.Parser
-                       Text.Megaparsec.Custom
-  other-modules:     
-                       Control.Evaluation.Unit
-                       Control.Evaluation.Internal
-                       Control.Evaluation.Trans
                
 executable pcg
   main-is:             Main.hs
