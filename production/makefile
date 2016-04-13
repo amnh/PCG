@@ -53,7 +53,7 @@ stack-build-quick: ffi-code-cleaning phylocomgraph.cabal stack.yaml
 
 # Builds with profiling enabled
 stack-build-profiling: ffi-code-cleaning phylocomgraph.cabal stack.yaml
-	stack build --test $(haddock) $(profiling)
+	stack build --test $(haddock) $(profiling) --ghc-options -fprof-cafs
 
 # Cleans up artefact files after a build
 clean: phylocomgraph.cabal stack.yaml
