@@ -108,12 +108,6 @@ subsetOf list1 list2 = foldr (\e acc -> acc && e `elem` list2) True list1
 -- | Make a single info given an alphabet
 makeOneInfo :: Monoid s => Alphabet -> CharacterMetadata s
 makeOneInfo alph = CharMeta DirectOptimization alph mempty False False 1 mempty mempty (mempty, mempty) 1
-{-
-     | alph `subsetOf` dnaAlph || alph `subsetOf` rnaAlph = def {charType = Nucleotide}
-     | alph `subsetOf` aaAlph = def {charType = AminoAcid}
-     | otherwise = def {charType = Custom}
-     where def = CharMeta Unknown alph mempty False False 1 mempty mempty (mempty, mempty) 1
--}
 
 -- | Functionality to make char info from tree seqs
 makeEncodeInfo :: Monoid s => TreeSeqs -> Vector (CharacterMetadata s)
@@ -129,12 +123,10 @@ developAlphabets inSeqs = V.map setGapChar $ V.map sort $ M.foldr (V.zipWith get
                         else V.replicate (V.length someSeq) mempty
 
         getNodeAlphAt :: Maybe ParsedSeq -> Alphabet -> Alphabet
-        --getNodeAlphAt inSeq soFar | trace ("getNodeAlphAt " ++ show inSeq ++ " with accum " ++ show soFar) False = undefined
         getNodeAlphAt inSeq soFar
             | isNothing inSeq = mempty
             | otherwise =  V.foldr (flip $ foldr (\sIn prev -> if sIn `elem` prev then prev else sIn : prev)) soFar (fromJust inSeq)
 
 -- | Ensure that the gap char is present and correctly positioned in an alphabet
 setGapChar :: Alphabet -> Alphabet
---setGapChar inAlph | trace ("setGapChar " ++ show inAlph) False = undefined
 setGapChar inAlph = filter (/= "-") inAlph ++ ["-"]

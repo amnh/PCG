@@ -32,7 +32,7 @@ data Direction = LeftDir | DiagDir | DownDir deriving (Eq, Show)
 -- | A row of the 'AlingMatrix'.
 type AlignRow s = (Vector Double, s, Vector Direction)
 
--- TODO: Just one matrix `Matrix (Double.Direction)` to show that the dimensionality is the same
+-- TODO: Just one matrix `Matrix (Double, Direction)` to show that the dimensionality is the same
 -- | A matrix of the costs and directions regarding to alignment.
 data AlignMatrix s
    = AlignMatrix
@@ -151,9 +151,6 @@ generateRow seq1 seq2 costvals@(indelCost, subCost) rowNum prevRow@(costValues, 
                 | gapChar alphLen .&. char == zeroBits = cost
                 | otherwise = 0 
 
-            --unwrapSub :: CharConstraint s => Maybe s -> s
-            --unwrapSub = fromMaybe (error "Cannot access sequence at given position for matrix generation")
-
 -- | Performs the traceback of an alignment matrix
 traceback :: (SeqConstraint' s, CodedChar s) => AlignMatrix s -> s -> s -> Int -> (s, s, s)
 --traceback alignMat seq1 seq2 | trace ("traceback with matrix " ++ show alignMat) False = undefined
@@ -173,9 +170,3 @@ traceback alignMat' seq1' seq2' alphLen = tracebackInternal alignMat' seq1' seq2
                     curDirect = getElem row col (traversal alignMat)
                     curState  = grabSubChar (seqs alignMat ! row) col alphLen
 
-{-
-                    charToUnMaybe :: SeqConstraint s b => Maybe b -> s
-                    charToUnMaybe inBit = case inBit of
-                                            Nothing -> emptySeq
-                                            Just b  -> charToSeq b
--}
