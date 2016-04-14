@@ -6,7 +6,7 @@ module PCG.Command.Types.Read.Evaluate
 
 import           Bio.Metadata
 import           Bio.Sequence.Parsed
-import           Bio.PhyloGraph.Solution.Parsed
+import           Bio.PhyloGraph.Forest.Parsed
 import           Bio.PhyloGraph.Solution    (SearchState,StandardMetadata)
 import           Control.Monad              (when)
 import           Control.Monad.IO.Class
@@ -174,7 +174,7 @@ progressiveParse inputPath = do
                           Right x -> pure $ toFractured Nothing filePath x
                           Left  _ -> fail $ "Could not determine the file type of '" ++ filePath ++ "'. Try annotating the expected file data in the 'read' for more explicit error message on file parsing failures."
 
-toFractured :: (ParsedMetadata a, ParsedCharacters a, ParseGraph a) => Maybe TCM -> FilePath -> a -> FracturedParseResult
+toFractured :: (ParsedMetadata a, ParsedCharacters a, ParsedForest a) => Maybe TCM -> FilePath -> a -> FracturedParseResult
 toFractured tcmMat path = FPR <$> unifyCharacters
                               <*> unifyMetadata
                               <*> unifyGraph
