@@ -36,7 +36,7 @@ testSuite = testGroup "Binary optimization" [doProperties]
 
 -- | Check properties of the DO algorithm
 doProperties :: TestTree
-doProperties = testGroup "Properties of the DO algorithm" [idHolds, firstRow, checkEmpty]
+doProperties = testGroup "Properties of the DO algorithm" [idHolds, firstRow, empties]
     where
         idHolds = testProperty "When DO runs a sequence against itself, get input as result" checkID
             where
@@ -54,7 +54,7 @@ doProperties = testGroup "Properties of the DO algorithm" [idHolds, firstRow, ch
                         (costs, seqs, dirs) = firstAlignRow 1 inSeq rowLen 0 0 alphLen
                         allLeft = V.all ((==) LeftDir)
 
-        empties = testProperty "NaiveDO correctly handles an empty sequence"
+        empties = testProperty "NaiveDO correctly handles an empty sequence" checkEmpty
             where
                 checkEmpty :: EncodedSeq -> Bool
                 checkEmpty inSeq = main == inSeq && cost == 0
