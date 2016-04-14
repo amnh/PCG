@@ -148,6 +148,7 @@ library
                        Bio.PhyloGraph.Node.Topological
                        Bio.PhyloGraph.Tree.Rose.Class
                        Bio.Sequence.Coded.Class
+                       Bio.Sequence.Coded.Internal
                        Bio.Sequence.Packed.Class
                        Bio.Sequence.Parsed
                        Bio.Sequence.Parsed.Class

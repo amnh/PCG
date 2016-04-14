@@ -72,9 +72,18 @@ testBitConstructionProperties z label = testGroup ("Bit toggling properties (" <
                 f n = let i = getNonNegative n
                       in  clearBit (bit i) i == z
 
-testCodeSequenceInstance :: TestTree
-testCodeSequenceInstance = testGroup "Properties of instance CodedSequence EncodedSeq" 
-        [
+testCodedSequenceInstance :: TestTree
+testCodedSequenceInstance = testGroup "Properties of instance CodedSequence EncodedSeq" 
+        [ --decodeOverAlphabet
+        encodeOverAlphabetTest
+        --, filterGaps
+        --, grabSubChar
+        --, isEmpty
+        --, numChars
         ]
+encodeOverAlphabetTest :: TestTree
+encodeOverAlphabetTest = testGroup "encodeOverAlphabet"
+    [ 
+    ] 
 
 
