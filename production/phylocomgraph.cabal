@@ -101,11 +101,11 @@ library
                        Bio.PhyloGraph.DAG
                        Bio.PhyloGraph.Edge
                        Bio.PhyloGraph.Forest
+                       Bio.PhyloGraph.Forest.Parsed
                        Bio.PhyloGraph.Network
                        Bio.PhyloGraph.Solution
                        Bio.PhyloGraph.Solution.Internal
                        Bio.PhyloGraph.Solution.Class
-                       Bio.PhyloGraph.Solution.Parsed
                        Bio.PhyloGraph.Tree.Binary
                        Bio.PhyloGraph.Tree.EdgeAware
                        Bio.PhyloGraph.Node
@@ -360,6 +360,7 @@ Test-Suite testsuite
   other-modules:       Bio.Metadata.Class
                        Bio.PhyloGraph.Forest
                        Bio.PhyloGraph.Forest.Class
+                       Bio.PhyloGraph.Forest.Parsed
                        Bio.PhyloGraph.Network
                        Bio.PhyloGraph.Network.Class                
                        Bio.Metadata.Internal
