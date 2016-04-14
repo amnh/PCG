@@ -1,3 +1,16 @@
+----------------------------------------------------------------------------
+-- |
+-- Module      :  File.Format.TNT.Partitioning
+-- Copyright   :  (c) 2015-2015 Ward Wheeler
+-- License     :  BSD-style
+--
+-- Maintainer  :  wheeler@amnh.org
+-- Stability   :  provisional
+-- Portability :  portable
+--
+-- Collects a subset of all TNT commands representing the set of commands
+-- relevant to processing character data.
+-----------------------------------------------------------------------------
 {-# LANGUAGE FlexibleContexts #-}
 module File.Format.TNT.Partitioning where
 
@@ -14,6 +27,7 @@ import Text.Megaparsec
 import Text.Megaparsec.Custom
 import Text.Megaparsec.Prim (MonadParsec)
 
+-- | The TNT command subset which is parsed.
 data Part
    = CC CCode
    | CN CNames
@@ -23,8 +37,11 @@ data Part
    | XR XRead
    | Ignore
 
+-- | A collection of the TNT commands found in the file.
 type Commands = ([CCode],[CNames],[Cost],[NStates],[TRead],[XRead])
 
+-- | Collects the subset of the TNT commands related to processing character
+--   sequences. Returns the relavent commands in a tuple.
 gatherCommands :: MonadParsec s m Char => m Commands
 gatherCommands = partition <$> many commands
   where
@@ -46,8 +63,10 @@ gatherCommands = partition <$> many commands
         f (NS e) (u,v,w,x,y,z) = (  u,  v,  w,e:x,  y,  z)
         f (TR e) (u,v,w,x,y,z) = (  u,  v,  w,  x,e:y,  z)
         f (XR e) (u,v,w,x,y,z) = (  u,  v,  w,  x,  y,e:z)
-        f Ignore x           = x
+        f Ignore x             = x
 
+-- | A parser for consuming a command that is not part of the subset of TNT
+--   commands relavent to Character sequence processing.
 ignoredCommand :: MonadParsec s m Char => m String
 ignoredCommand = commandKeyword <* optional commandBody <* terminal
   where

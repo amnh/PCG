@@ -19,6 +19,7 @@ module File.Format.Fastc.Parser
   , FastcParseResult
   , FastcSequence(..)
   , Identifier
+  , Symbol
   , fastcStreamParser
   , fastcSymbolSequence
   , fastcTaxonSequenceDefinition

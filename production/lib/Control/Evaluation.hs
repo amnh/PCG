@@ -15,11 +15,12 @@
 module Control.Evaluation
   ( EvaluationT()
   , Evaluation()
-  , EvalUnit(..)
-  , SearchState
+  , EvalUnit(..) -- TODO: Restructure so we don't export this internal structure!
+  , Notification()
   , evalEither
   , evalIO
   , evaluationResult
+  , impure
   , notifications
   , runEvaluation
   , state
@@ -30,9 +31,11 @@ import Control.Evaluation.Internal
 import Control.Evaluation.Trans
 import Control.Evaluation.Unit
 
+-- | Synonym for 'impure'
 evalIO :: IO a -> EvaluationT IO a
 evalIO = impure
 
-evalEither :: Show a => Either a b -> Evaluation b
+-- | Lifts an 'Either' with a `Show` error condition into the 'Evaluation' context.
+evalEither :: Show s => Either s b -> Evaluation b
 evalEither (Left  e) = fail $ show e
 evalEither (Right x) = pure x

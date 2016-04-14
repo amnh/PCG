@@ -17,15 +17,15 @@ module Analysis.Parsimony.Binary.Test where
 import Analysis.Parsimony.Binary.DirectOptimization
 import Analysis.Parsimony.Binary.Internal
 
-import Bio.Metadata
-import Bio.Sequence.Coded
-import Bio.Sequence.Random
-import Bio.PhyloGraph.Solution
-import Data.BitVector
+import           Bio.Metadata
+import           Bio.Sequence.Coded
+import           Bio.Sequence.Random
+import           Bio.PhyloGraph.Solution
+import           Data.BitVector
 import qualified Data.Vector as V
-import Test.Tasty
-import Test.Tasty.HUnit
-import Test.Tasty.QuickCheck
+import           Test.Tasty
+import           Test.Tasty.HUnit
+import           Test.Tasty.QuickCheck
 
 doMeta, fitchMeta :: CharacterMetadata EncodedSeq
 doMeta = CharMeta DirectOptimization ["A", "C", "G", "T", "-"] "" False False 1 mempty mempty mempty 0

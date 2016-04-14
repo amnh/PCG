@@ -18,6 +18,7 @@ module Bio.PhyloGraph.Solution.Metadata where
 
 import Data.Vector
 
+-- | A type from which ordered metadata retreived and stored.
 class MetadataSolution r m | r -> m where
-    metadata :: r -> Vector m
+    metadata    :: r -> Vector m
     setMetadata :: r -> Vector m -> r

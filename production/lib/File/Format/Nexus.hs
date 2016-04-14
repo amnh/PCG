@@ -20,8 +20,16 @@
 {-# LANGUAGE FlexibleContexts #-}
 
 module File.Format.Nexus
-  ( CharDataType(..)
+  ( AlphabetSymbol
+  , AmbiguityGroup
+  , Character
+  , CharacterMetadata
+  , CharDataType(..)
   , Nexus(..)
+  , Sequence
+  , Sequences
+  , TaxonIdentifier
+  , TaxonSequenceMap
   , nexusStreamParser
   ) where
 

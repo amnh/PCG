@@ -18,20 +18,21 @@ module Bio.Metadata.Class where
 import Bio.Metadata.Internal 
 import Bio.Sequence.Parsed
 
+-- | Represents a type from which character information can be queried.
 class Metadata m s | m -> s where
-    getWeight :: m -> Double
-    getIgnored :: m -> Bool
-    getAlphabet :: m -> Alphabet
-    getTcm :: m -> CostMatrix
+    getWeight     :: m -> Double
+    getIgnored    :: m -> Bool
+    getAlphabet   :: m -> Alphabet
+    getTcm        :: m -> CostMatrix
     getFitchMasks :: m -> (s, s)
-    getAligned :: m -> Bool
-    getType :: m -> CharDataType
+    getAligned    :: m -> Bool
+    getType       :: m -> CharDataType
 
 instance Monoid s => Metadata (CharacterMetadata s) s where
-    getWeight =        weight
-    getIgnored =       isIgnored
-    getAlphabet =      alphabet
-    getTcm =           tcm
-    getAligned =       isAligned
-    getFitchMasks =    fitchMasks
-    getType m =        charType m
+    getWeight     = weight
+    getIgnored    = isIgnored
+    getAlphabet   = alphabet
+    getTcm        = tcm
+    getAligned    = isAligned
+    getFitchMasks = fitchMasks
+    getType       = charType

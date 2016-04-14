@@ -15,26 +15,36 @@
 module Analysis.Parsimony.Binary.DirectOptimization where
 
 import Analysis.Parsimony.Binary.Internal
-
-import Data.Bits
-import Data.Vector (Vector, cons, toList, singleton, (!))
-import Data.List (minimumBy)
-import Data.Ord
-import Data.Matrix (Matrix, getElem, nrows, ncols, (<->), zero, matrix, fromList)
-import Data.Monoid
-
 import Bio.Metadata
 import Bio.Sequence.Coded
+import Data.Bits
+import Data.Vector   (Vector, cons, toList, singleton, (!))
+import Data.Foldable (minimumBy)
+import Data.Ord
+import Data.Matrix   (Matrix, getElem, nrows, ncols, (<->), zero, matrix, fromList)
+import Data.Monoid
 
 --import Debug.Trace
 
+-- | The direction to align the character at a given matirx point.
 data Direction = LeftDir | DiagDir | DownDir deriving (Eq, Show)
 
+-- | A row of the 'AlingMatrix'.
 type AlignRow s = (Vector Double, s, Vector Direction)
-data AlignMatrix s = AlignMatrix {costs :: Matrix Double, seqs :: Vector s, traversal :: Matrix Direction} deriving (Eq, Show)
 
+-- TODO: Just one matrix `Matrix (Double, Direction)` to show that the dimensionality is the same
+-- | A matrix of the costs and directions regarding to alignment.
+data AlignMatrix s
+   = AlignMatrix
+   { costs     :: Matrix Double
+   , seqs      :: Vector s
+   , traversal :: Matrix Direction
+   } deriving (Eq, Show)
+
+-- | The weighing criteria for the characters?
 type Costs = (Double, Double)
 
+-- | The default weighting criteria probably...
 defaultCosts :: Costs
 defaultCosts = (1,1)
 

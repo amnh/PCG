@@ -1,6 +1,6 @@
 -----------------------------------------------------------------------------
 -- |
--- Module      :  Bio.PhyloGraph.Solution.Data
+-- Module      :  Bio.PhyloGraph.Solution.Internal
 -- Copyright   :  (c) 2015-2015 Ward Wheeler
 -- License     :  BSD-style
 --
@@ -18,24 +18,34 @@ import Bio.PhyloGraph.DAG
 import Bio.Sequence.Parsed
 import Bio.Sequence.Coded
 import Bio.Metadata.Internal
+import Control.Evaluation
 import Data.HashMap.Strict
 import Data.Vector
 
--- | A forest is a list of dag structures where dags can be referential or topological
+-- | A forest is a list of dag structures where dags can be referential or
+--   topological.
 type Forest d = [d]
 
+-- | The equatable identifier for a node in the graph.
 type Identifier = String
 
+-- | The sequence of characters associated with a taxon.
 type Sequences = ParsedSequences
 
--- | We'll have two types of node: topological and referential
+-- We'll have two types of node: topological and referential
 
+-- | The character metadata reference structure.
 type StandardMetadata = CharacterMetadata EncodedSeq
 
+-- | A simple storable computation state value.
 type StandardSolution = Solution DAG
 
--- | A solution is an array of forests
--- character data and names are common across all forests and so stored at this level
+-- | A computational evaluation state which can be modified monoidally or
+--   monadically.
+type SearchState = EvaluationT IO StandardSolution
+
+-- | A solution is an array of forests character data and names are common
+--   across all forests and so stored at this level
 data Solution d 
    = Solution
    { parsedChars :: HashMap Identifier Sequences

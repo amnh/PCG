@@ -242,7 +242,21 @@ instance Show TntProteinCharacter where
 
 -- | The metadata of a character specifying the attributes of the character
 --   specified in the file.
---   The default values are specified in 'initialMetaData'
+--
+-- Default 'CharacterMetaData values:
+--
+-- >>> defaultMetaData
+-- CharMeta
+--   { characterName   = ""
+--   , characterStates = mempty
+--   , additive        = False
+--   , active          = True
+--   , sankoff         = False
+--   , weight          = 1
+--   , steps           = 1
+--   , costTCM         = Nothing
+--   }
+--
 data CharacterMetaData
    = CharMeta
    { characterName   :: String

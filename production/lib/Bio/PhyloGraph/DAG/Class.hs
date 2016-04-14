@@ -17,6 +17,7 @@ module Bio.PhyloGraph.DAG.Class where
 
 import Data.Vector
 
+-- | Accessor & mutator instance for types that expose nodes & edges.
 class StandardDAG d n e where
     getNodes :: d -> Vector n
     setNodes :: d -> Vector n -> d

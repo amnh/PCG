@@ -155,18 +155,6 @@ library
                        Bio.Sequence.Random
                        Data.List.Utility
                        Data.Matrix.NotStupid
-                       File.Format.Fasta.Converter
-                       File.Format.Fasta.Internal
-                       File.Format.Fasta.Parser
-                       File.Format.Fastc.Parser
-                       File.Format.Newick.Internal
-                       File.Format.Newick.Parser
-                       File.Format.Nexus.Data
-                       File.Format.Nexus.Parser
-                       File.Format.Nexus.Partition
-                       File.Format.Nexus.Validate
-                       File.Format.TransitionCostMatrix.Parser
-                       File.Format.VertexEdgeRoot.Parser
                        Text.Megaparsec.Custom
   other-modules:     
                        Control.Evaluation.Unit
@@ -182,6 +170,18 @@ library
                        File.Format.TNT.Parser
                        File.Format.TNT.Partitioning
                        File.Format.TNT.Internal
+                       File.Format.Fasta.Converter
+                       File.Format.Fasta.Internal
+                       File.Format.Fasta.Parser
+                       File.Format.Fastc.Parser
+                       File.Format.Newick.Internal
+                       File.Format.Newick.Parser
+                       File.Format.Nexus.Data
+                       File.Format.Nexus.Parser
+                       File.Format.Nexus.Partition
+                       File.Format.Nexus.Validate
+                       File.Format.TransitionCostMatrix.Parser
+                       File.Format.VertexEdgeRoot.Parser
                
 executable pcg
   main-is:             Main.hs
@@ -453,4 +453,9 @@ Test-Suite testsuite
                        File.Format.TransitionCostMatrix
                        File.Format.VertexEdgeRoot
 
-                       
+                       Bio.PhyloGraph.DAG
+                       Bio.PhyloGraph.DAG.Class
+                       Bio.PhyloGraph.DAG.Internal
+                       Control.Evaluation
+                       Control.Evaluation.Trans
+                       Control.Monad.Logger

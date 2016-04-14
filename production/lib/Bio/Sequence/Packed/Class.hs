@@ -19,6 +19,7 @@ module Bio.Sequence.Packed.Class where
 import Bio.Sequence.Parsed
 import Bio.Sequence.Coded.Class
 
-
+-- | Defines type for which a sequence can be converted into compact bit-valued
+--   representation.
 class CodedSequence s => PackedSequence s where
     packOverAlphabet :: ParsedSeq -> AmbiguityGroup -> s
