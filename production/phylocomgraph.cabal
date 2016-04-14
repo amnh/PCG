@@ -96,12 +96,12 @@ library
                        Analysis.Parsimony.Binary.Optimization
                        Analysis.Parsimony.Binary.SequentialAlign
                        Analysis.Parsimony.Binary.SequentialAlign.SeqAlignFFI
+                       Bio.Metadata
                        Bio.PhyloGraph
                        Bio.PhyloGraph.DAG
                        Bio.PhyloGraph.Edge
                        Bio.PhyloGraph.Forest
                        Bio.PhyloGraph.Network
-                       Bio.Metadata
                        Bio.PhyloGraph.Solution
                        Bio.PhyloGraph.Solution.Internal
                        Bio.PhyloGraph.Solution.Class
@@ -119,6 +119,7 @@ library
                        Bio.Sequence.Coded
                        Bio.Sequence.Character.Coded
                        Control.Evaluation
+                       Control.Monad.Logger
                        Data.Either.Custom
                        File.Format.Fasta
                        File.Format.Fastc
@@ -164,6 +165,13 @@ library
                        File.Format.Nexus.Parser
                        File.Format.Nexus.Partition
                        File.Format.Nexus.Validate
+                       File.Format.TransitionCostMatrix.Parser
+                       File.Format.VertexEdgeRoot.Parser
+                       Text.Megaparsec.Custom
+  other-modules:     
+                       Control.Evaluation.Unit
+                       Control.Evaluation.Internal
+                       Control.Evaluation.Trans
                        File.Format.TNT.Command.CCode
                        File.Format.TNT.Command.CNames
                        File.Format.TNT.Command.Cost
@@ -174,13 +182,6 @@ library
                        File.Format.TNT.Parser
                        File.Format.TNT.Partitioning
                        File.Format.TNT.Internal
-                       File.Format.TransitionCostMatrix.Parser
-                       File.Format.VertexEdgeRoot.Parser
-                       Text.Megaparsec.Custom
-  other-modules:     
-                       Control.Evaluation.Unit
-                       Control.Evaluation.Internal
-                       Control.Evaluation.Trans
                
 executable pcg
   main-is:             Main.hs
@@ -317,7 +318,7 @@ executable qdh
                        PCG.Script.Parser
                        PCG.Script.Types
                        PCG.Command.Types.Report.Metadata
-                       
+
 Test-Suite testsuite
   type:                exitcode-stdio-1.0
 

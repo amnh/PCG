@@ -7,6 +7,7 @@ import Control.Evaluation.Internal
 import Control.Evaluation.Unit
 import Control.Monad          (MonadPlus(mzero, mplus), join, liftM2)
 import Control.Monad.IO.Class
+import Control.Monad.Logger
 import Control.Monad.Trans.Class
 import Data.Monoid
 

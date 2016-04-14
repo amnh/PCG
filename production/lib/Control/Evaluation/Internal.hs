@@ -2,8 +2,9 @@
 module Control.Evaluation.Internal where
 
 import Control.Applicative
-import Control.Monad             (MonadPlus(mzero, mplus))
 import Control.Evaluation.Unit
+import Control.Monad             (MonadPlus(mzero, mplus))
+import Control.Monad.Logger
 import Data.DList                (DList, toList)
 import Data.Monoid
 import Test.QuickCheck
@@ -71,24 +72,6 @@ instance Alternative Evaluation where
   (<|>) v@(Evaluation _ (Value _)) _                    = v
   (<|>) (Evaluation ms e)          (Evaluation ns NoOp) = Evaluation (ms <> ns) e
   (<|>) (Evaluation ms _)          (Evaluation ns e   ) = Evaluation (ms <> ns) e
-
-{-|
-'Typeclass Laws:
-
-Failure nullification:
-  fail x >> info y === fail x
-  fail x >> warn y === fail x
-
-Assocativity:
-  info x >> (info y >> info z) === (info x >> info y) >> info z
-  warn x >> (warn y >> warn z) === (warn x >> warn y) >> warn z
-
--}
-class Monad m => Logger m a where
-  info, warn   :: String -> m a
-  (<?>), (<!>) :: m a -> String -> m a
-  (<?>) x s = x >> info s
-  (<!>) x s = x >> warn s
 
 instance Logger Evaluation a where
   info s = Evaluation (pure $ Information s) mempty

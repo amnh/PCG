@@ -72,8 +72,10 @@ convertVerToNewick (VER _ e r) = buildNewickTree Nothing <$> toList r
     buildNewickTree :: Maybe Double -> VertexLabel -> NewickNode
     buildNewickTree c n = fromJust $ newickNode kids (Just n) c
       where
-        kids = fmap f . filter ((==n) . VER.edgeOrigin) $ toList e
-        f    = buildNewickTree <$> VER.edgeLength <*> VER.edgeTarget
+        kids = fmap (uncurry buildNewickTree) . catMaybes $ kidMay n <$> toList e
+        kidMay vertex edge = do
+          other <- VER.connectedVertex vertex edge
+          pure (VER.edgeLength edge, other)
 
 convertTntToNewick :: (n -> String) -> LeafyTree n -> NewickNode
 convertTntToNewick f (Leaf   x ) = fromJust $ newickNode [] (Just $ f x) Nothing -- Scary use of fromJust?

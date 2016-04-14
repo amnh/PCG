@@ -15,7 +15,7 @@ data EvalUnit a
    deriving (Eq,Show)
 
 instance Arbitrary a => Arbitrary (EvalUnit a) where
-    arbitrary = oneof [pure mempty, pure $ fail "Error Description", pure <$> arbitrary]
+  arbitrary = oneof [pure mempty, pure $ fail "Error Description", pure <$> arbitrary]
 
 instance Functor EvalUnit where
   _ `fmap` NoOp    = NoOp
