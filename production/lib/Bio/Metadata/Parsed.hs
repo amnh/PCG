@@ -18,25 +18,25 @@ module Bio.Metadata.Parsed where
 import           Bio.Metadata.Internal
 import           Bio.Sequence.Parsed
 import           Bio.PhyloGraph.Solution
-
 import           Data.Char
 import           Data.Foldable
 import           Data.List
-import qualified Data.Map.Lazy as M
+import qualified Data.Map.Lazy          as M
 import           Data.Maybe
 import           Data.Monoid
-import           Data.Vector (fromList, Vector)
-import qualified Data.Vector as V
-
-import           File.Format.Fasta (FastaParseResult,TaxonSequenceMap)
+import           Data.Vector                   (fromList, Vector)
+import qualified Data.Vector            as V
+import           File.Format.Fasta             (FastaParseResult,TaxonSequenceMap)
 import           File.Format.Fastc
 import           File.Format.Newick
-import           File.Format.Nexus hiding (DNA, RNA, Nucleotide)
+import           File.Format.Nexus      hiding (CharacterMetadata, DNA, RNA, Nucleotide, TaxonSequenceMap)
 import qualified File.Format.Nexus.Data as Nex
-import qualified File.Format.TNT as TNT
+import qualified File.Format.TNT        as TNT
 import           File.Format.TransitionCostMatrix
 import           File.Format.VertexEdgeRoot
 
+-- | Represents a parser result type which can have a character metadata
+--   structure extracted from it.
 class ParsedMetadata a where
     unifyMetadata :: a -> Vector StandardMetadata
 
@@ -84,16 +84,21 @@ instance ParsedMetadata Nexus where
                                   tcm  = fromMaybe (tcm defaultMeta) (transitionCosts <$> Nex.costM inMeta)}
 
 disAlph, dnaAlph, rnaAlph, aaAlph :: [String]
+-- | The acceptable DNA character values (with IUPAC codes).
 dnaAlph = pure <$> addOtherCases "AGCTRMWSKTVDHBNX?-"
+-- | The acceptable RNA character values (with IUPAC codes).
 rnaAlph = pure <$> addOtherCases "AGCURMWSKTVDHBNX?-"
+-- | The acceptable amino acid/protein character values (with IUPAC codes).
 aaAlph  = pure <$> addOtherCases "ABCDEFGHIKLMNPQRSTVWXYZ-"
+-- | The acceptable discrete character values.
 disAlph = pure <$> (['0'..'9'] <> ['A'..'Z'] <> ['a'..'z'] <> "-" <> "?")
 
+-- | Adds case insensitive values to a 'String'.
 addOtherCases :: String -> String
 addOtherCases [] = []
 addOtherCases (x:xs)
-  | isLower x = (toUpper x) : x : addOtherCases xs
-  | isUpper x = x : (toLower x) : addOtherCases xs
+  | isLower x && toUpper x `notElem` xs = (toUpper x) : x : addOtherCases xs
+  | isUpper x && toLower x `notElem` xs = x : (toLower x) : addOtherCases xs
   | otherwise = x : addOtherCases xs
 
 -- | Useful function to check subsets of lists

@@ -1,3 +1,15 @@
+-----------------------------------------------------------------------------
+-- |
+-- Module      :  Analysis.Parsimony.Binary.SequentialAlign
+-- Copyright   :  (c) 2015-2015 Ward Wheeler
+-- License     :  BSD-style
+--
+-- Maintainer  :  wheeler@amnh.org
+-- Stability   :  provisional
+-- Portability :  portable
+--
+-- Module exposing an alignment optimization fro Yu Xiang's research at Harvard.
+-----------------------------------------------------------------------------
 {-# LANGUAGE ConstraintKinds #-}
 {-# LANGUAGE AllowAmbiguousTypes #-}
 {-# LANGUAGE FlexibleContexts #-}

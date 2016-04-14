@@ -14,19 +14,18 @@
 
 module Bio.Metadata.MaskGenerator where
 
-import           Bio.PhyloGraph.Solution
-import           Bio.Metadata
-import           Bio.Sequence.Coded
-import           Data.BitVector      (fromBits)
-import           Data.HashMap.Strict (elems)
-import           Data.Maybe
-import           Data.Vector         (imap)
-import qualified Data.Vector as V
+import Bio.PhyloGraph.Solution
+import Bio.Metadata
+import Bio.Sequence.Coded
+import Data.BitVector      (fromBits)
+import Data.HashMap.Strict (elems)
+import Data.Maybe
+import Data.Monoid
+import Data.Vector         ((!), imap)
 
---type Encoded = EncodedSeq BitVector
-
+-- | Mutate a 'StandardSolution' to include masks in the metadata structure
 addMasks :: StandardSolution -> StandardSolution
-addMasks inSolution = inSolution {metadata = imap changeMetadata (metadata inSolution)}
+addMasks inSolution = inSolution { metadata = imap changeMetadata (metadata inSolution) }
     where
         changeMetadata :: Int -> StandardMetadata -> StandardMetadata
         changeMetadata pos curChar 
@@ -35,17 +34,17 @@ addMasks inSolution = inSolution {metadata = imap changeMetadata (metadata inSol
 
         -- | Get length of a sample sequence, operating under assumption they're all the same
         getSeqLen :: Int -> Int
-        getSeqLen pos = V.length $ fromMaybe mempty curSeq
+        getSeqLen pos = length $ fromMaybe mempty curSeq
             where
                 someSeqs = head . elems $ parsedChars inSolution
-                curSeq = someSeqs V.! pos
+                curSeq = someSeqs ! pos
 
         -- | Generate mask pair given proper info
         generateMasks :: Int -> Int -> (EncodedSeq, EncodedSeq)
         generateMasks alphLen sLen = (Just occupancy, Just periodic)
             where
-                unit = replicate (alphLen - 1) False ++ [True]
-                periodic = fromBits $ concat (replicate sLen unit)
+                unit      = replicate (alphLen - 1) False <> [True]
+                periodic  = fromBits $ concat (replicate sLen unit)
                 occupancy = fromBits $ replicate (alphLen * sLen) True
 
 

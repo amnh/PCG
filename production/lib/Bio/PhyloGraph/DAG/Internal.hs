@@ -19,15 +19,14 @@ import Bio.PhyloGraph.DAG.Class
 import Bio.PhyloGraph.Edge
 import Bio.PhyloGraph.Node
 import Bio.PhyloGraph.Node.Topological
-
 import Data.BitVector
 import Data.Vector
 
--- Set aliases for types used
-
+-- | Alias for Node used in 'DAG'
 type NodeInfo = Node
 
-type Topo   = TopoNode BitVector
+-- | Alias for Node used in 'TopoDAG'
+type Topo = TopoNode BitVector
 
 -- | A dag is an element of a forest, stored referentially
 data DAG 
@@ -40,11 +39,12 @@ data DAG
 -- | A topodag is an alternative forest element stored topologically
 data TopoDAG 
    = TopoDAG 
-   { structure :: Topo}
+   { structure :: Topo
+   }
 
 instance StandardDAG DAG NodeInfo EdgeSet where
-    getNodes = nodes
+    getNodes       = nodes
     setNodes inD n = inD {nodes = n}
-    getEdges = edges
+    getEdges       = edges
     setEdges inD e = inD {edges = e}
-    getRoot inD = (nodes inD) ! (root inD)
+    getRoot  inD   = (nodes inD) ! (root inD)

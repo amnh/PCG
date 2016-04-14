@@ -1,6 +1,6 @@
 -----------------------------------------------------------------------------
 -- |
--- Module      :  Bio.PhyloGraph.Graph.Parsed
+-- Module      :  Bio.PhyloGraph.Solution.Parsed
 -- Copyright   :  (c) 2015-2015 Ward Wheeler
 -- License     :  BSD-style
 --
@@ -15,20 +15,21 @@
 
 module Bio.PhyloGraph.Solution.Parsed where
 
-
 import           Bio.PhyloGraph.Solution
 import           Data.Foldable
 import           Data.Maybe
 import           File.Format.Fasta
-import           File.Format.Fastc hiding (Identifier)
+import           File.Format.Fastc                 hiding (Identifier)
 import           File.Format.Newick
-import           File.Format.Nexus
+import           File.Format.Nexus                 hiding (TaxonSequenceMap)
 import           File.Format.TNT
 import           File.Format.TransitionCostMatrix
-import           File.Format.VertexEdgeRoot.Parser    (VertexEdgeRoot(..),VertexLabel)
+import           File.Format.VertexEdgeRoot.Parser        (VertexEdgeRoot(..),VertexLabel)
 import qualified File.Format.VertexEdgeRoot.Parser as VER
-import           Prelude           hiding ((++))
 
+-- TODO: Rename ParsedForest
+-- | Represents a parser result type which can have a possibly empty forest
+--   extracted from it.
 class ParseGraph a where
     unifyGraph :: a -> Forest NewickNode
 
@@ -37,21 +38,12 @@ instance ParseGraph NewickForest where
 
 instance ParseGraph FastaParseResult where
     unifyGraph = const mempty
---    unifyGraph fasta = 
---        let makeNames = foldr (\(FastaSequence label _) acc -> IM.insert (IM.size acc) label acc) mempty fasta
---        in G.Graph $ pure $ mempty { G.nodeNames = makeNames}
 
 instance ParseGraph TaxonSequenceMap where
     unifyGraph = const mempty
---    unifyGraph fasta = 
---        let makeNames = foldr (\label acc -> IM.insert (IM.size acc) label acc) mempty $ keys fasta
---        in G.Graph $ pure $ mempty { G.nodeNames = makeNames}
 
 instance ParseGraph FastcParseResult where
     unifyGraph = const mempty
---    unifyGraph fastc = 
---        let makeNames = foldr (\(FastcSequence label _) acc -> IM.insert (IM.size acc) label acc) mempty fastc
---        in G.Graph $ pure $ mempty { G.nodeNames = makeNames}
 
 instance ParseGraph TntResult where
     unifyGraph (Left                forest ) = (convertTntToNewick getTNTName) <$> toList forest
@@ -66,6 +58,8 @@ instance ParseGraph VER.VertexEdgeRoot where
 instance ParseGraph Nexus where
     unifyGraph = mempty -- Will also be newick forest at somepoint
 
+-- | Convert the referential forests defined by sets of verticies, edges, and
+--   roots into a forest of topological tree structure.
 convertVerToNewick :: VertexEdgeRoot -> Forest NewickNode
 convertVerToNewick (VER _ e r) = buildNewickTree Nothing <$> toList r
   where
@@ -77,6 +71,8 @@ convertVerToNewick (VER _ e r) = buildNewickTree Nothing <$> toList r
           other <- VER.connectedVertex vertex edge
           pure (VER.edgeLength edge, other)
 
+-- | Convert the topological 'LeafyTree' structure into a forest of topological
+--   tree structures with nodes that hold additional information.
 convertTntToNewick :: (n -> String) -> LeafyTree n -> NewickNode
 convertTntToNewick f (Leaf   x ) = fromJust $ newickNode [] (Just $ f x) Nothing -- Scary use of fromJust?
 convertTntToNewick f (Branch xs) = fromJust $ newickNode (convertTntToNewick f <$> xs) Nothing Nothing

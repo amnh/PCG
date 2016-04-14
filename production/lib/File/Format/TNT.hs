@@ -25,7 +25,12 @@ module File.Format.TNT
   , TreeOnly
   , NodeType(..)
   , WithTaxa(..)
+  , TaxonName
   , TaxonSequence
+  , TntContinuousCharacter
+  , TntDiscreteCharacter
+  , TntDnaCharacter
+  , TntProteinCharacter
   , tntStreamParser
   ) where
 

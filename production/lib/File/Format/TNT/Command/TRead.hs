@@ -1,3 +1,16 @@
+----------------------------------------------------------------------------
+-- |
+-- Module      :  File.Format.TNT.Command.TRead
+-- Copyright   :  (c) 2015-2015 Ward Wheeler
+-- License     :  BSD-style
+--
+-- Maintainer  :  wheeler@amnh.org
+-- Stability   :  provisional
+-- Portability :  portable
+--
+-- Parser for the TREAD command specifying how to read a forests of trees.
+-- No validation currently takes place.
+----------------------------------------------------------------------------- 
 {-# LANGUAGE FlexibleContexts #-}
 module File.Format.TNT.Command.TRead where
 
@@ -39,9 +52,12 @@ treadHeader =  symbol (keyword "tread" 2)
 treadForest :: MonadParsec s m Char => m TRead
 treadForest = fmap NE.fromList $ symbol treadTree `sepBy1` symbol (char '*')
 
+-- | A bifurcating, rooted tree with data only on the leaf nodes.
 treadTree :: MonadParsec s m Char => m TReadTree
 treadTree = treadSubtree <|> treadLeaf
 
+-- | A leaf node of the TREAD tree, representing one of the three possible
+--   identifier types used for matching with a taxon from the taxa set.
 treadLeaf :: MonadParsec s m Char => m TReadTree
 treadLeaf = Leaf <$> choice [try index, try prefix, name] 
  where
@@ -52,6 +68,7 @@ treadLeaf = Leaf <$> choice [try index, try prefix, name]
    labelChar   = satisfy (\x -> not (isSpace x) && x `notElem` "(),;")
    checkTail x = if "..." `isSuffixOf` x then pure x else fail "oops"
 
+-- | A branch of the TREAD tree. each brach can be either a leaf or a sub tree.
 treadSubtree :: MonadParsec s m Char => m TReadTree
 treadSubtree = between open close body
   where

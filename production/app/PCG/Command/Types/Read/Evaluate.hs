@@ -5,14 +5,12 @@ module PCG.Command.Types.Read.Evaluate
   ) where
 
 import           Bio.Metadata
---import           Bio.Metadata.MaskGenerator
 import           Bio.Sequence.Parsed
 import           Bio.PhyloGraph.Solution.Parsed
-import           Bio.PhyloGraph.Solution (StandardMetadata)
+import           Bio.PhyloGraph.Solution    (SearchState,StandardMetadata)
 import           Control.Monad              (when)
 import           Control.Monad.IO.Class
 import           Control.Monad.Trans.Either
-import           Control.Evaluation
 import           Data.Bifunctor             (bimap,first)
 import           Data.Char                  (isLower,toLower,isUpper,toUpper)
 import           Data.Either.Custom
