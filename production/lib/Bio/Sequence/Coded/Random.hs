@@ -18,11 +18,11 @@ module Bio.Sequence.Coded.Random where
 import Bio.Sequence.Coded.Class
 import Bio.Sequence.Coded.Internal
 import Bio.Sequence.Parsed
-
-import Data.Vector (fromList)
-
+import Data.Vector                 (fromList)
 import Test.Tasty.QuickCheck
 
+-- | A composite type representing an sequence encoded over an alphabet and
+--   the coresponding encoding alphabet.
 type FromParsed = (EncodedSeq, Alphabet)
 
 instance Arbitrary FromParsed where
