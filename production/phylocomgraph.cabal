@@ -154,7 +154,6 @@ library
                        Bio.Sequence.Parsed
                        Bio.Sequence.Parsed.Class
                        Bio.Sequence.Parsed.Internal
-                       Bio.Sequence.Random
                        Data.List.Utility
                        Data.Matrix.NotStupid
                        Text.Megaparsec.Custom
@@ -374,7 +373,6 @@ Test-Suite testsuite
                        Bio.PhyloGraph.Node.Final
                        Bio.PhyloGraph.Node.Packed
                        Bio.PhyloGraph.Node.Preliminary
-                       Bio.PhyloGraph.Node.Random
                        Bio.PhyloGraph.Node.Topological
                        Bio.PhyloGraph.Tree.Referential
                        Bio.PhyloGraph.Tree.Rose
@@ -382,7 +380,6 @@ Test-Suite testsuite
                        Bio.Sequence.Character.Coded
                        Bio.Sequence.Coded
                        Bio.Sequence.Coded.Class
-                       Bio.Sequence.Random
                        Control.Evaluation.Internal
                        Control.Evaluation.Test
                        Control.Evaluation.Unit

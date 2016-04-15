@@ -136,27 +136,6 @@ createSingletonChar alphabet inChar = bitRepresentation
         bits = fmap (`elem` inChar) alphabet
         bitRepresentation = fromBits bits
 
-{-
--- | Simple functionality to set a single element in a bitvector
--- That element is a singleton character, but may be ambiguous
-setElem :: Bits b => Alphabet -> b -> Int -> AmbiguityGroup -> b 
-setElem alphabet curBit charNum ambChar = foldl g curBit ambChar
-    where g curSeq char = case elemIndex char alphabet of
-                       Nothing -> curSeq
-                       Just idx -> setBit curSeq (idx + (charNum * alphLen))
--}
-
--- TODO: make sure this works under current, BV scheme
--- Actually, it's unused. Do we even need it?
-{-
-setElemAt :: (Bits b) => String -> b -> [String] -> b
-setElemAt char orig alphabet
-    | char == "-" = setBit orig 0
-    | otherwise = case elemIndex char alphabet of
-                        Nothing -> orig
-                        Just pos -> setBit orig (pos + 1)    
--}
-
 -- | Takes a single 
 decodeOneChar :: BitVector -> Alphabet -> [String] 
 decodeOneChar inBV alphabet = foldr (\(charValExists, char) acc -> if charValExists 
