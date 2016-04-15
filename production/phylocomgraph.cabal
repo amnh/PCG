@@ -101,6 +101,7 @@ library
                        Bio.PhyloGraph.DAG
                        Bio.PhyloGraph.Edge
                        Bio.PhyloGraph.Forest
+                       Bio.PhyloGraph.Forest.Parsed
                        Bio.PhyloGraph.Network
                        Bio.PhyloGraph.Solution
                        Bio.PhyloGraph.Solution.Internal
