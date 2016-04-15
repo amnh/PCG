@@ -15,6 +15,7 @@
 module Analysis.Parsimony.Binary.Test where
 
 import Analysis.Parsimony.Binary.DirectOptimization
+import Analysis.Parsimony.Binary.Fitch
 import Analysis.Parsimony.Binary.Internal
 
 import           Bio.Metadata
@@ -28,11 +29,11 @@ import           Test.Tasty.HUnit
 import           Test.Tasty.QuickCheck
 
 doMeta, fitchMeta :: CharacterMetadata EncodedSeq
-doMeta = CharMeta DirectOptimization ["A", "C", "G", "T", "-"] "" False False 1 mempty mempty mempty 0
-fitchMeta = CharMeta Fitch ["A", "C", "G", "T", "-"] "" False False 1 mempty mempty mempty 0
+doMeta = CharMeta DirectOptimization ["A", "C", "G", "T", "-"] "" False False 1 mempty mempty mempty 0 1 1 1
+fitchMeta = CharMeta Fitch ["A", "C", "G", "T", "-"] "" False False 1 mempty mempty mempty 0 1 1 1
 
 testSuite :: TestTree
-testSuite = testGroup "Binary optimization" [doProperties]
+testSuite = testGroup "Binary optimization" [doProperties, fitchProperties, traversalProperties]
 
 -- | Check properties of the DO algorithm
 doProperties :: TestTree
@@ -47,12 +48,12 @@ doProperties = testGroup "Properties of the DO algorithm" [idHolds, firstRow, em
         firstRow = testProperty "First row of alignment matrix has expected directions" checkRow
             where
                 checkRow :: EncodedSeq -> Bool
-                checkRow inSeq = (V.head dirs) == DiagDir && allLeft (V.tail dirs) && V.length costs == rowLen
+                checkRow inSeq = (snd $ V.head result) == DiagDir && allLeft (V.tail result) && V.length result == rowLen
                     where
                         alphLen = 5
                         rowLen = numChars inSeq alphLen
-                        (costs, seqs, dirs) = firstAlignRow 1 inSeq rowLen 0 0 alphLen
-                        allLeft = V.all ((==) LeftDir)
+                        (result, seqs) = firstAlignRow 1 inSeq rowLen 0 0 alphLen
+                        allLeft = V.all (\val -> snd val == LeftDir)
 
         empties = testProperty "NaiveDO correctly handles an empty sequence" checkEmpty
             where
@@ -62,7 +63,13 @@ doProperties = testGroup "Properties of the DO algorithm" [idHolds, firstRow, em
 
 -- | Check properties of the Fitch algorithm
 fitchProperties :: TestTree
-fitchProperties = undefined
+fitchProperties = testGroup "Properties of the Fitch algorithm" [idHolds]
+    where
+        idHolds = testProperty "When Fitch runs a sequence against itself, get input as result" checkID
+            where
+                checkID :: EncodedSeq -> Bool
+                checkID inSeq = result == inSeq && cost == 0
+                    where (result, _, cost) = preorderFitchBit 1 inSeq inSeq fitchMeta
 
 -- | Check properties of the traversal
 traversalProperties :: TestTree

@@ -24,6 +24,7 @@ import qualified Bio.PhyloGraph.Node.Preliminary as RN
 import Data.Vector (Vector)
 import Data.Monoid
 import Data.Ord ()
+import Test.Tasty.QuickCheck
 
 -- | A node data structure holding all the necessary info (add verbose statement about what each field is)
 data Node = Node  { code        :: Int
@@ -116,3 +117,17 @@ instance RN.PreliminaryNode Node EncodedSeq where
 
 instance Ord Node where
     compare n1 n2 = compare (code n1) (code n2)
+
+instance Arbitrary Node where
+    arbitrary = do
+        c      <- arbitrary :: Gen Int
+        n      <- arbitrary :: Gen String
+        root   <- arbitrary :: Gen Bool
+        leaf   <- arbitrary :: Gen Bool
+        child  <- listOf (arbitrary :: Gen Int)
+        parent <- listOf $ suchThat arbitrary (not . flip elem child)
+        seqs   <- vectorOf 10 arbitrary 
+        c2     <- arbitrary :: Gen Double
+        c3     <- arbitrary :: Gen Double
+        pure $ Node c n root leaf child parent (seqs !! 0) (seqs !! 1) (seqs !! 2) (seqs !! 3) (seqs !! 4) (seqs !! 5) (seqs !! 6) (seqs !! 7) (seqs !! 8) (seqs !! 9) c2 c3
+

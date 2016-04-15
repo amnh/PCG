@@ -29,6 +29,7 @@ import           Data.BitVector hiding (foldr, foldl, join, not)
 import           Data.Maybe
 import           Data.Monoid           ((<>))
 import           Data.Vector           (fromList, Vector)
+import           Test.Tasty.QuickCheck (Arbitrary, arbitrary, listOf, Gen)
 
 -- TODO: Change EncodedSeq/Sequences to EncodedCharacters
         -- Make a missing a null vector
@@ -109,6 +110,12 @@ instance CodedChar EncodedSeq where
 
 instance CodedChar BitVector where
     gapChar alphLen = setBit (bitVec alphLen (0 :: Int)) 0
+
+instance Arbitrary BitVector where
+    arbitrary = fromBits <$> listOf (arbitrary :: Gen Bool)
+
+instance Arbitrary b => Arbitrary (Vector b) where
+    arbitrary = fromList <$> listOf arbitrary
 
 -- | Get parsed sequenceS, return encoded sequenceS.
 -- Recall that each is Vector of Maybes, to this type is actually

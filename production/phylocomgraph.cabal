@@ -139,6 +139,7 @@ library
                        Bio.PhyloGraph.DAG.Class
                        Bio.PhyloGraph.Solution.Metadata
                        Bio.PhyloGraph.Forest.Class
+                       Bio.PhyloGraph.Forest.Internal
                        Bio.PhyloGraph.Network.Class
                        Bio.PhyloGraph.Network.Subsettable
                        Bio.PhyloGraph.Tree.Binary.Class

@@ -15,6 +15,7 @@
 module PCG.Command.Types.Report.Newick where
 
 import Bio.PhyloGraph.DAG
+import Bio.PhyloGraph.Forest
 import Bio.PhyloGraph.Solution
 import Bio.PhyloGraph.Node.Topological (TopoNode(..))
 import Data.Monoid            ((<>))

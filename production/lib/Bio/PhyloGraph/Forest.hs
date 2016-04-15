@@ -13,6 +13,7 @@
 -----------------------------------------------------------------------------
 
 
-module Bio.PhyloGraph.Forest (Forest (..)) where
+module Bio.PhyloGraph.Forest (module Bio.PhyloGraph.Forest.Class, module Bio.PhyloGraph.Forest.Internal) where
 
 import Bio.PhyloGraph.Forest.Class
+import Bio.PhyloGraph.Forest.Internal

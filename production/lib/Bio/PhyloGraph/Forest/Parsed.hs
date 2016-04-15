@@ -15,7 +15,7 @@
 
 module Bio.PhyloGraph.Forest.Parsed where
 
-import           Bio.PhyloGraph.Solution
+import           Bio.PhyloGraph.Forest.Internal
 import           Data.Foldable
 import           Data.Maybe
 import           File.Format.Fasta

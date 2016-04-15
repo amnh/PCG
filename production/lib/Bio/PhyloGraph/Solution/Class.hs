@@ -17,6 +17,6 @@ module Bio.PhyloGraph.Solution.Class where
 -- TODO: Add validity checks
 
 -- | Accessor and mutator for types which store a collection of 'Forest'.
-class Solution s f | s -> f where
-    forests    :: s -> [f]
+class GeneralSolution s f | s -> f where
+    getForests    :: s -> [f]
     setForests :: s -> [f] -> s

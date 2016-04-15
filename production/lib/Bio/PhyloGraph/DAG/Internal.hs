@@ -15,7 +15,6 @@
 
 module Bio.PhyloGraph.DAG.Internal where
 
-import Bio.PhyloGraph.DAG.Class
 import Bio.PhyloGraph.Edge
 import Bio.PhyloGraph.Node
 import Bio.PhyloGraph.Node.Topological
@@ -41,10 +40,3 @@ data TopoDAG
    = TopoDAG 
    { structure :: Topo
    }
-
-instance StandardDAG DAG NodeInfo EdgeSet where
-    getNodes       = nodes
-    setNodes inD n = inD {nodes = n}
-    getEdges       = edges
-    setEdges inD e = inD {edges = e}
-    getRoot  inD   = (nodes inD) ! (root inD)

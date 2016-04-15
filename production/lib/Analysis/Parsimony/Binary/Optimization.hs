@@ -43,7 +43,7 @@ import Bio.Metadata
 -- Takes in an overall weight and a solution
 -- Returns a solution with any relevant values assigned (root cost, node assignments, etc. depending on optimization types)
 solutionOptimization :: SolutionConstraint' r f t n s m => Double -> r -> r
-solutionOptimization weighting inSolution = setForests inSolution $ fmap (graphOptimization weighting meta) (forests inSolution)
+solutionOptimization weighting inSolution = setForests inSolution $ fmap (graphOptimization weighting meta) (getForests inSolution)
     where
         meta = metadata inSolution
 

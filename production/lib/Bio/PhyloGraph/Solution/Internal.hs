@@ -15,16 +15,13 @@
 module Bio.PhyloGraph.Solution.Internal where
 
 import Bio.PhyloGraph.DAG
+import Bio.PhyloGraph.Forest
 import Bio.Sequence.Parsed
 import Bio.Sequence.Coded
 import Bio.Metadata.Internal
 import Control.Evaluation
 import Data.HashMap.Strict
 import Data.Vector
-
--- | A forest is a list of dag structures where dags can be referential or
---   topological.
-type Forest d = [d]
 
 -- | The equatable identifier for a node in the graph.
 type Identifier = String

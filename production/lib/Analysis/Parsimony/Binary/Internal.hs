@@ -17,7 +17,7 @@ module Analysis.Parsimony.Binary.Internal where
 
 import Bio.Metadata
 import Bio.PhyloGraph.Forest
-import Bio.PhyloGraph.Solution.Class
+import Bio.PhyloGraph.Solution
 import Bio.PhyloGraph.Solution.Metadata
 import Bio.PhyloGraph.Node.Preliminary
 import Bio.PhyloGraph.Node.Encoded
@@ -33,10 +33,10 @@ import Data.Matrix.NotStupid (Matrix, nrows, ncols, setElem)
 import Data.Maybe
 import Data.Vector           (Vector)
 
-type SolutionConstraint  r f t n s b m = (Solution r f, ForestConstraint f t n s b, MetadataSolution r m, Metadata m s)
-type SolutionConstraint' r f t n s   m = (Solution r f, ForestConstraint' f t n s, MetadataSolution r m, Metadata m s)
-type ForestConstraint      f t n s b   = (Forest f t, TreeConstraint t n s b)
-type ForestConstraint'     f t n s     = (Forest f t, TreeConstraint' t n s)
+type SolutionConstraint  r f t n s b m = (GeneralSolution r f, ForestConstraint f t n s b, MetadataSolution r m, Metadata m s)
+type SolutionConstraint' r f t n s   m = (GeneralSolution r f, ForestConstraint' f t n s, MetadataSolution r m, Metadata m s)
+type ForestConstraint      f t n s b   = (GeneralForest f t, TreeConstraint t n s b)
+type ForestConstraint'     f t n s     = (GeneralForest f t, TreeConstraint' t n s)
 type TreeConstraint          t n s b   = (Network t n, NodeConstraint n s b, ReferentialTree t n, BinaryTree t n, Show t, SubsettableNetwork t n)
 type TreeConstraint'         t n s     = (Network t n, NodeConstraint' n s, ReferentialTree t n, BinaryTree t n, Show t, SubsettableNetwork t n, RoseTree t n)
 type NodeConstraint            n s b   = (PreliminaryNode n s, EncodedNode n s, FinalNode n s, SeqConstraint s b, Show n, Eq n)

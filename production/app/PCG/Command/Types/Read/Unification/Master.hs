@@ -16,6 +16,7 @@ module PCG.Command.Types.Read.Unification.Master where
 
 import           Bio.PhyloGraph.Solution  hiding (parsedChars)
 import           Bio.PhyloGraph.DAG
+import           Bio.PhyloGraph.Forest
 import           Bio.Metadata hiding (name)
 import           Bio.Sequence.Coded
 import           Bio.Sequence.Parsed
