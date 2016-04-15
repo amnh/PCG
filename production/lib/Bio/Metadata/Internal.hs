@@ -55,7 +55,6 @@ data CharacterMetadata s
    } deriving (Eq, Show)
 
 -- | Different types of characters are stored here
--- TODO: rename to optimization type or heuristic type
 -- TODO: Add AffineDO, 3dDO, OptimizedDO
 data CharDataType = DirectOptimization | Fitch | InfoTheoretic | Unknown deriving (Eq, Show)
 --data CharDataType = Nucleotide | AminoAcid | Continuous | Custom | Additive | NonAdditive | Unknown deriving (Eq, Show)
