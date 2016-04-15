@@ -1,6 +1,22 @@
+-----------------------------------------------------------------------------
+-- |
+-- Module      :  Analysis.Parsimony.Binary.SequentialAlign.SeqAlignFFI
+-- Copyright   :  (c) 2015-2015 Ward Wheeler
+-- License     :  BSD-style
+--
+-- Maintainer  :  wheeler@amnh.org
+-- Stability   :  provisional
+-- Portability :  portable
+--
+-- An FFI export module of the sequential alignment heuristic developed by
+-- Yu Xiang from Harvard.
+--
+-----------------------------------------------------------------------------
 {-# LANGUAGE ForeignFunctionInterface, BangPatterns #-}
 
-module Analysis.Parsimony.Binary.SequentialAlign.SeqAlignFFI where
+module Analysis.Parsimony.Binary.SequentialAlign.SeqAlignFFI
+  ( sequentialAlign
+  ) where
 
 import Data.Char (toUpper)
 import System.IO.Unsafe
@@ -11,9 +27,9 @@ import Foreign.C.Types
 
 #include "seqAlignForHaskell.h"
 
--- Includes a struct (actually, a pointer thereto), and that struct, in turn, has a string
--- in it, so Ptr CChar
--- Modified from code samples here: https://en.wikibooks.org/wiki/Haskell/FFI#Working_with_C_Structures
+-- | Includes a struct (actually, a pointer thereto), and that struct, in turn, has a string
+--   in it, so Ptr CChar.
+--   Modified from code samples here: https://en.wikibooks.org/wiki/Haskell/FFI#Working_with_C_Structures
 data AlignResult = AlignResult { val    :: CInt
                                , seq1   :: CString 
                                , seq2   :: CString
@@ -40,6 +56,7 @@ instance Storable AlignResult where
         (#poke struct retType, seq2) ptr seq2Fin
         (#poke struct retType, alignmentLength) ptr alignLen -- need to be able to pass in length of alignemnt string
 
+-- | A pure FFI call to YU Xiang's sequential alignment algorithm.
 sequentialAlign :: Int -> Int -> String -> String -> Either String (Int, String, String) 
 sequentialAlign indelCst subCst inpStr1 inpStr2 = unsafePerformIO $ 
     -- have to allocate memory. Note that we're allocating to a lambda fn. I 
