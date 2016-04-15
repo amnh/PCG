@@ -458,6 +458,8 @@ Test-Suite testsuite
                        Bio.PhyloGraph.DAG
                        Bio.PhyloGraph.DAG.Class
                        Bio.PhyloGraph.DAG.Internal
+                       Bio.Sequence.Coded.Internal
+                       Bio.Sequence.Coded.Random
                        Control.Evaluation
                        Control.Evaluation.Trans
                        Control.Monad.Logger
