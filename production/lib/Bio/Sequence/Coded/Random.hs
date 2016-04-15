@@ -15,8 +15,10 @@
 
 module Bio.Sequence.Coded.Random where
 
+import Bio.Sequence.Coded.Class
 import Bio.Sequence.Coded.Internal
 import Bio.Sequence.Parsed
+import Data.Vector                 (fromList)
 import Test.Tasty.QuickCheck
 
 -- | A composite type representing an sequence encoded over an alphabet and
@@ -27,4 +29,6 @@ instance Arbitrary FromParsed where
     arbitrary = do
         let charGen = resize 3 (arbitrary :: Gen String)
         alph <- vectorOf 5 charGen
-        return undefined
+        strSeq <- listOf (elements alph)
+        let codedSeq = encodeOverAlphabet (fromList $ pure strSeq) alph
+        return (codedSeq, alph)

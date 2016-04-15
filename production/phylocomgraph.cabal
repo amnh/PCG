@@ -360,7 +360,6 @@ Test-Suite testsuite
   other-modules:       Bio.Metadata.Class
                        Bio.PhyloGraph.Forest
                        Bio.PhyloGraph.Forest.Class
-                       Bio.PhyloGraph.Forest.Parsed
                        Bio.PhyloGraph.Network
                        Bio.PhyloGraph.Network.Class                
                        Bio.Metadata.Internal
