@@ -44,10 +44,6 @@ data AlignMatrix s
 -- | The weighing criteria for the characters?
 type Costs = (Double, Double)
 
--- | The default weighting criteria probably...
-defaultCosts :: Costs
-defaultCosts = (1,1)
-
 -- | Performs a naive direct optimization
 naiveDO :: (Metadata m s, SeqConstraint' s, CodedChar s) => s -> s -> m -> (s, Double, s, s, s)
 --naiveDO s1 s2 | trace ("Sequences of length " ++ show (numChars s1 alphLen) ++ show (numChars s2 alphLen)) False = undefined
@@ -60,8 +56,8 @@ naiveDO seq1 seq2 meta
             (shorter, _, longer, longlen) = if seq1Len > seq2Len
                                                    then (seq2, seq2Len, seq1, seq1Len)
                                                    else (seq1, seq1Len, seq2, seq2Len)
-            firstMatRow = firstAlignRow (fst defaultCosts) longer longlen 0 0 alphLen
-            traversalMat = firstMatRow `joinMat` getAlignRows longer shorter defaultCosts 1 firstMatRow alphLen
+            firstMatRow = firstAlignRow (getIndelCost meta) longer longlen 0 0 alphLen
+            traversalMat = firstMatRow `joinMat` getAlignRows longer shorter (getIndelCost meta, getSubCost meta) 1 firstMatRow alphLen
             cost = getMatrixCost traversalMat
             (gapped, left, right) = --trace ("get seqs " ++ show traversalMat)
                                     traceback traversalMat shorter longer alphLen
@@ -118,29 +114,29 @@ getAlignRows seq1 seq2 costValues rowNum prevRow alphLen
 -- | Generates a single alignment row
 generateRow :: (SeqConstraint' s, CodedChar s) => s -> s -> Costs -> Int -> AlignRow s -> (Int, Double) -> Int -> AlignRow s
 --generateRow seq1 seq2 costvals@(indelCost, subCost) rowNum prevRow@(costs, _, _) (position, prevCost)  | trace ("generateRow " ++ show seq1 ++ show seq2) False = undefined
-generateRow seq1 seq2 costvals@(indelCost, subCost) rowNum prevRow@(costValues, _, _) (position, prevCost) alphLen
+generateRow seq1 seq2 weights@(indCost, sCost) rowNum prevRow@(costValues, _, _) (position, prevCost) alphLen
     | length costValues < (position - 1) = error "Problem with row generation, previous costs not generated"
     | position == numChars seq1 alphLen + 1 = (mempty, emptySeq, mempty)
-    | position == 0 && newState /= gapChar alphLen = (singleton $ upValue + indelCost, newState, singleton DownDir) <> nextCall (upValue + indelCost)
+    | position == 0 && newState /= gapChar alphLen = (singleton $ upValue + indCost, newState, singleton DownDir) <> nextCall (upValue + indCost)
     | position == 0 = (singleton upValue, newState, singleton DownDir) <> nextCall upValue
     | otherwise = --trace "minimal case" $ 
         (singleton minCost, minState, singleton minDir) <> nextCall minCost
         where
             newState      = getOverlapState (gapChar alphLen) (grabSubChar seq2 (rowNum - 1) alphLen)
             upValue       = costValues ! position
-            nextCall cost = generateRow seq1 seq2 costvals rowNum prevRow (position + 1, cost) alphLen
+            nextCall cost = generateRow seq1 seq2 weights rowNum prevRow (position + 1, cost) alphLen
             char1         = grabSubChar seq1 (position - 1) alphLen
             char2         = grabSubChar seq2 (rowNum - 1) alphLen
             iuChar1       = getOverlapState (gapChar alphLen) char1
             iuChar2       = getOverlapState (gapChar alphLen) char2
-            leftCost      = overlapCost char1 indelCost + prevCost
-            downCost      = overlapCost char2 indelCost + upValue
+            leftCost      = overlapCost char1 indCost + prevCost
+            downCost      = overlapCost char2 indCost + upValue
             diagVal       = costValues ! (position - 1)
             intersect     = char1 .&. char2
             union         = char1 .|. char2
 
             (diagCost, diagState) = if intersect == zeroBits 
-                                    then (diagVal + subCost, union)
+                                    then (diagVal + sCost, union)
                                     else (diagVal, intersect)
             (minCost, minState, minDir) = --trace ("get minimum choice " ++ show [(leftCost, char1, LeftDir), (diagCost, diagState, DiagDir), (downCost, char2, DownDir)])
                                            minimumBy (comparing (\(a,_,_) -> a))

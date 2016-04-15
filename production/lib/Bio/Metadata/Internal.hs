@@ -46,9 +46,17 @@ data CharacterMetadata s
    , fitchMasks :: (s, s)
      -- | Cost of the root for this character
    , rootCost   :: Double
+   -- | Cost to open a gap (will only be relevant for some optimization types)
+   , indelOpenCost :: Double
+   -- | Cost to continue a gap, or when affine is not used, the general gapCost
+   , indelCost :: Double
+   -- | Cost to do a substitution at this character
+   , subCost :: Double
    } deriving (Eq, Show)
 
 -- | Different types of characters are stored here
+-- TODO: rename to optimization type or heuristic type
+-- TODO: Add AffineDO, 3dDO, OptimizedDO
 data CharDataType = DirectOptimization | Fitch | InfoTheoretic | Unknown deriving (Eq, Show)
 --data CharDataType = Nucleotide | AminoAcid | Continuous | Custom | Additive | NonAdditive | Unknown deriving (Eq, Show)
 
@@ -56,7 +64,7 @@ data CharDataType = DirectOptimization | Fitch | InfoTheoretic | Unknown derivin
 type CostMatrix = Matrix Double
 
 -- For convenience have a monoid instance even though mappend is somewhat arbitrary
--- TODO: This instance is probably a bad idea, doesn't follow monoid laws
+-- TODO: This instance is probably a bad idea, doesn't follow monoid laws (killjoy)
 -- | Does not folow 'Monoid' laws. Should be revised or removed.
 instance Monoid CostMatrix where
   mempty  = fromList 0 0 []

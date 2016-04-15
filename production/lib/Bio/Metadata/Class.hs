@@ -27,6 +27,8 @@ class Metadata m s | m -> s where
     getFitchMasks :: m -> (s, s)
     getAligned    :: m -> Bool
     getType       :: m -> CharDataType
+    getIndelCost  :: m -> Double
+    getSubCost    :: m -> Double
 
 instance Monoid s => Metadata (CharacterMetadata s) s where
     getWeight     = weight
@@ -36,3 +38,5 @@ instance Monoid s => Metadata (CharacterMetadata s) s where
     getAligned    = isAligned
     getFitchMasks = fitchMasks
     getType       = charType
+    getIndelCost  = indelCost
+    getSubCost    = subCost
