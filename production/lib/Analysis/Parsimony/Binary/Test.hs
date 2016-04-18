@@ -14,13 +14,11 @@
 
 module Analysis.Parsimony.Binary.Test where
 
-import Analysis.Parsimony.Binary.DirectOptimization
-import Analysis.Parsimony.Binary.Fitch
-import Analysis.Parsimony.Binary.Internal
-
+import           Analysis.Parsimony.Binary.DirectOptimization
+import           Analysis.Parsimony.Binary.Fitch
+import           Analysis.Parsimony.Binary.Internal
 import           Bio.Metadata
 import           Bio.Sequence.Coded
-import           Bio.Sequence.Random
 import           Bio.PhyloGraph.Solution
 import           Data.BitVector
 import qualified Data.Vector as V
@@ -33,7 +31,7 @@ doMeta = CharMeta DirectOptimization ["A", "C", "G", "T", "-"] "" False False 1 
 fitchMeta = CharMeta Fitch ["A", "C", "G", "T", "-"] "" False False 1 mempty mempty mempty 0 1 1 1
 
 testSuite :: TestTree
-testSuite = testGroup "Binary optimization" [doProperties, fitchProperties, traversalProperties]
+testSuite = testGroup "Binary optimization" [doProperties, fitchProperties {- , traversalProperties -} ]
 
 -- | Check properties of the DO algorithm
 doProperties :: TestTree
@@ -72,5 +70,5 @@ fitchProperties = testGroup "Properties of the Fitch algorithm" [idHolds]
                     where (result, _, cost) = preorderFitchBit 1 inSeq inSeq fitchMeta
 
 -- | Check properties of the traversal
-traversalProperties :: TestTree
-traversalProperties = undefined
+--traversalProperties :: TestTree
+--traversalProperties = undefined
