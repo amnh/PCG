@@ -13,10 +13,9 @@
 --
 -----------------------------------------------------------------------------
 
-module Bio.Sequence.Coded (CodedSequence(..), EncodedSeq, EncodedSequences, CodedChar(..), encodeAll, decodeMany, module Bio.Sequence.Coded.Random) where
+module Bio.Sequence.Coded (CodedSequence(..), EncodedSeq, EncodedSequences, CodedChar(..), encodeAll, decodeMany) where
 
 import Bio.Sequence.Coded.Internal
 import Bio.Sequence.Coded.Class
-import Bio.Sequence.Coded.Random
 import Bio.Sequence.Character.Coded
 

@@ -20,7 +20,6 @@ import Analysis.Parsimony.Binary.Internal
 
 import           Bio.Metadata
 import           Bio.Sequence.Coded
-import           Bio.Sequence.Random
 import           Bio.PhyloGraph.Solution
 import           Data.BitVector
 import qualified Data.Vector as V
