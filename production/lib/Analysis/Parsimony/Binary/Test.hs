@@ -28,8 +28,8 @@ import           Test.Tasty.HUnit
 import           Test.Tasty.QuickCheck
 
 doMeta, fitchMeta :: CharacterMetadata EncodedSeq
-doMeta = CharMeta DirectOptimization ["A", "C", "G", "T", "-"] "" False False 1 mempty mempty mempty 0 1 1 1
-fitchMeta = CharMeta Fitch ["A", "C", "G", "T", "-"] "" False False 1 mempty mempty mempty 0 1 1 1
+doMeta = CharMeta DirectOptimization ["A", "C", "G", "T", "-"] "" False False 1 mempty mempty 0 (GeneralCost 1 1)
+fitchMeta = CharMeta Fitch ["A", "C", "G", "T", "-"] "" False False 1 mempty mempty 0 (GeneralCost 1 1)
 
 testSuite :: TestTree
 testSuite = testGroup "Binary optimization" [doProperties, fitchProperties, traversalProperties]
@@ -49,9 +49,8 @@ doProperties = testGroup "Properties of the DO algorithm" [idHolds, firstRow, em
                 checkRow :: EncodedSeq -> Bool
                 checkRow inSeq = (snd $ V.head result) == DiagDir && allLeft (V.tail result) && V.length result == rowLen
                     where
-                        alphLen = 5
-                        rowLen = numChars inSeq alphLen
-                        (result, seqs) = firstAlignRow 1 inSeq rowLen 0 0 alphLen
+                        rowLen = numChars inSeq 5
+                        (result, seqs) = firstAlignRow inSeq rowLen 0 0 doMeta
                         allLeft = V.all (\val -> snd val == LeftDir)
 
         empties = testProperty "NaiveDO correctly handles an empty sequence" checkEmpty

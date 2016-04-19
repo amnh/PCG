@@ -26,6 +26,7 @@ import           Control.Applicative   (liftA2)
 import           Control.Monad
 import           Data.Bits
 import           Data.BitVector hiding (foldr, foldl, join, not)
+import           Data.Function.Memoize
 import           Data.Maybe
 import           Data.Monoid           ((<>))
 import           Data.Vector           (fromList, Vector)
@@ -101,6 +102,9 @@ instance Bits EncodedSeq where
     popCount        = maybe 0 popCount
     testBit bits i  = maybe False (`testBit` i) bits
 
+instance Memoizable BitVector where
+    memoize f char = memoize (f . bitVec w) (nat char)
+                        where w = width char
 
 instance PackedSequence EncodedSeq where
     packOverAlphabet = undefined

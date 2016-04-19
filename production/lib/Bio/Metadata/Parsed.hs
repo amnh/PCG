@@ -32,7 +32,7 @@ import           File.Format.Newick
 import           File.Format.Nexus      hiding (CharacterMetadata, DNA, RNA, Nucleotide, TaxonSequenceMap)
 import qualified File.Format.Nexus.Data as Nex
 import qualified File.Format.TNT        as TNT
-import           File.Format.TransitionCostMatrix
+import qualified File.Format.TransitionCostMatrix as F
 import           File.Format.VertexEdgeRoot
 
 -- | Represents a parser result type which can have a character metadata
@@ -60,17 +60,17 @@ instance ParsedMetadata TNT.TntResult where
            f inMeta inChar =  let defaultMeta = makeOneInfo $ tntAlphabet inChar
                     in  defaultMeta { name       = TNT.characterName   inMeta
                                     , stateNames = TNT.characterStates inMeta
-                                    , tcm        = fromMaybe (tcm defaultMeta) (TNT.costTCM inMeta)
+                                    , costs      = maybe (costs defaultMeta) TCM (TNT.costTCM inMeta)
                                     }
            tntAlphabet TNT.Continuous {} = mempty
            tntAlphabet TNT.Discrete   {} = disAlph -- TODO: get subset of maximum alphabet by doing a columwise set collection
            tntAlphabet TNT.Dna        {} = dnaAlph
            tntAlphabet TNT.Protein    {} = aaAlph
 
-instance ParsedMetadata TCM where
-    unifyMetadata (TCM alph mat) = 
+instance ParsedMetadata F.TCM where
+    unifyMetadata (F.TCM alph mat) = 
         let defaultMeta = makeOneInfo (toList alph)
-        in  pure (defaultMeta {tcm = mat})
+        in  pure (defaultMeta {costs = TCM mat})
 
 instance ParsedMetadata VertexEdgeRoot where
     unifyMetadata _ = mempty
@@ -81,7 +81,7 @@ instance ParsedMetadata Nexus where
             convertNexusMeta inMeta = 
                 let defaultMeta = makeOneInfo (Nex.alphabet inMeta)
                 in  defaultMeta { name = Nex.name inMeta, isIgnored = Nex.ignored inMeta, 
-                                  tcm  = fromMaybe (tcm defaultMeta) (transitionCosts <$> Nex.costM inMeta)}
+                                  costs  = maybe (costs defaultMeta) (TCM . F.transitionCosts) (Nex.costM inMeta)}
 
 disAlph, dnaAlph, rnaAlph, aaAlph :: [String]
 -- | The acceptable DNA character values (with IUPAC codes).
@@ -107,7 +107,7 @@ subsetOf list1 list2 = foldr (\e acc -> acc && e `elem` list2) True list1
 
 -- | Make a single info given an alphabet
 makeOneInfo :: Monoid s => Alphabet -> CharacterMetadata s
-makeOneInfo alph = CharMeta DirectOptimization alph mempty False False 1 mempty mempty (mempty, mempty) 1 1 1 1
+makeOneInfo alph = CharMeta DirectOptimization alph mempty False False 1 mempty (mempty, mempty) 1 (GeneralCost 1 1)
 
 -- | Functionality to make char info from tree seqs
 makeEncodeInfo :: Monoid s => TreeSeqs -> Vector (CharacterMetadata s)

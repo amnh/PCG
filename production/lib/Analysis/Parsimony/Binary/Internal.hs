@@ -29,6 +29,7 @@ import Bio.PhyloGraph.Tree.Rose
 import Bio.PhyloGraph.Network.Subsettable
 import Bio.Sequence.Coded
 import Data.Bits
+import Data.Function.Memoize
 import Data.Matrix.NotStupid (Matrix, nrows, ncols, setElem)
 import Data.Maybe
 import Data.Vector           (Vector)
@@ -42,7 +43,7 @@ type TreeConstraint'         t n s     = (Network t n, NodeConstraint' n s, Refe
 type NodeConstraint            n s b   = (PreliminaryNode n s, EncodedNode n s, FinalNode n s, SeqConstraint s b, Show n, Eq n)
 type NodeConstraint'           n s     = (PreliminaryNode n s, EncodedNode n s, FinalNode n s, SeqConstraint' s)
 type SeqConstraint               s b   = (CodedSequence s, Eq s, CharConstraint b, Show s, Bits s, Monoid s)
-type SeqConstraint'              s     = (CodedSequence s, Eq s, Show s, Bits s, Monoid s, CodedChar s)
+type SeqConstraint'              s     = (CodedSequence s, Eq s, Show s, Bits s, Monoid s, CodedChar s, Memoizable s)
 type CharConstraint                b   = (Bits b, Eq b, Show b)
 type Subtrees                          = Matrix Int
 

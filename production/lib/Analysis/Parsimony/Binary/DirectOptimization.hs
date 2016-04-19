@@ -20,6 +20,7 @@ import Bio.Sequence.Coded
 import Data.Bits
 import Data.Vector   (Vector, cons, toList, singleton, (!))
 import Data.Foldable (minimumBy)
+import Data.Function.Memoize
 import Data.Ord
 import Data.Matrix   (Matrix, getElem, nrows, ncols, (<->), matrix, fromList)
 import Data.Monoid
@@ -42,9 +43,6 @@ data AlignMatrix s
    , seqs      :: Vector s
    } deriving (Eq, Show)
 
--- | The weighing criteria for the characters?
-type Costs = (Double, Double)
-
 -- | Performs a naive direct optimization
 -- Takes in two sequences to run DO on and a metadata object
 -- Returns an assignment sequence, the cost of that assignment, the assignment sequence with gaps included, 
@@ -61,8 +59,8 @@ naiveDO seq1 seq2 meta
             (shorter, _, longer, longlen) = if seq1Len > seq2Len
                                                    then (seq2, seq2Len, seq1, seq1Len)
                                                    else (seq1, seq1Len, seq2, seq2Len)
-            firstMatRow = firstAlignRow (getIndelCost meta) longer longlen 0 0 alphLen
-            traversalMat = firstMatRow `joinMat` getAlignRows longer shorter (getIndelCost meta, getSubCost meta) 1 firstMatRow alphLen
+            firstMatRow = firstAlignRow longer longlen 0 0 meta
+            traversalMat = firstMatRow `joinMat` getAlignRows longer shorter 1 firstMatRow meta
             cost = getMatrixCost traversalMat
             (gapped, left, right) = --trace ("get seqs " ++ show traversalMat)
                                     traceback traversalMat shorter longer alphLen
@@ -91,76 +89,96 @@ joinMat (inRow, inSeq) inMat = AlignMatrix (inRow `joinRow` mat inMat) (inSeq `c
 -- Returns an alignment row
 -- This row will have a diagonal at the leftmost position and will otherwise have only lefts
 -- the cost is just added to every time there's a gap
-firstAlignRow :: (SeqConstraint' s, CodedChar s) => Double -> s -> Int -> Int -> Double -> Int -> AlignRow s
+firstAlignRow :: (SeqConstraint' s, CodedChar s, Metadata m s) => s -> Int -> Int -> Double -> m -> AlignRow s
 --firstAlignRow indelCost inSeq rowLength position prevCost | trace ("firstAlignRow " ++ show inSeq) False = undefined
-firstAlignRow indCost inSeq rowLength position prevCost alphLen
+firstAlignRow inSeq rowLength position prevCost meta
     | position == (rowLength + 1) = (mempty, mempty)
-    | position == 0 = (singleton (0, DiagDir), gapChar alphLen) <> firstAlignRow indCost inSeq rowLength (position + 1) 0 alphLen
+    | position == 0 = (singleton (0, DiagDir), gapChar alphLen) <> firstAlignRow inSeq rowLength (position + 1) 0 meta
     | newState /= gapChar alphLen = --trace ("new state on first row " ++ show newState) $ -- if there's no indel overlap
-        (singleton (prevCost + indCost, LeftDir), newState) <> firstAlignRow indCost inSeq rowLength (position + 1) (prevCost + indCost) alphLen
+        (singleton (prevCost + indCost, LeftDir), newState) <> firstAlignRow inSeq rowLength (position + 1) (prevCost + indCost) meta
     | otherwise = --trace ("new state on first row, otherwise " ++ show newState) $ -- matching indel so no cost
-        (singleton (prevCost, LeftDir), newState) <> firstAlignRow indCost inSeq rowLength (position + 1) prevCost alphLen
+        (singleton (prevCost, LeftDir), newState) <> firstAlignRow inSeq rowLength (position + 1) prevCost meta
         where
-            newState = getOverlapState (gapChar alphLen) (grabSubChar inSeq (position - 1) alphLen)
+            newState = fst $ getOverlap (gapChar alphLen) (grabSubChar inSeq (position - 1) alphLen) meta
+            alphLen = length $ getAlphabet meta
+            indCost = getGapCost meta
 
--- | Gets the overlap state: intersect if possible and union if that's empty
--- Takes two sequences and returns another
-getOverlapState :: SeqConstraint' s => s -> s -> s
-getOverlapState char1 char2 = if isEmpty char1 || isEmpty char2 
-                                  then emptySeq 
-                                  else char1 `op` char2
-              where op = if char1 .&. char2 == zeroBits 
-                    then (.|.) 
-                    else (.&.)
+-- | Memoized wrapper of the overlap function
+getOverlap :: (SeqConstraint' s, Metadata m s) => s -> s -> m -> (s, Double)
+getOverlap inChar1 inChar2 meta = memoize2 (overlap meta) inChar1 inChar2
+    where
+        -- | Gets the overlap state: intersect if possible and union if that's empty
+        -- Takes two sequences and returns another
+        overlap :: (SeqConstraint' s, Metadata m s) => m -> s -> s -> (s, Double)
+        overlap inMeta char1 char2
+            | isEmpty char1 || isEmpty char2 = (emptySeq, 0)
+            | char1 .&. char2 == zeroBits = foldr1 ambigChoice allPossible
+            | otherwise = (char1 .&. char2, 0)
+            where
+                gap:: SeqConstraint' s => s
+                gap = gapChar (length $ getAlphabet inMeta)
+                alphLen = length $ getAlphabet inMeta
+                -- Given characters without ambiguity, determine the cost
+                getCost :: SeqConstraint' s => CostStructure -> (Int, s) -> (Int, s) -> (s, Double)
+                getCost (TCM mat) (pos1, c1) (pos2, c2) = (c1 .|. c2, getElem pos1 pos2 mat)
+                getCost (GeneralCost indel sub) (_, c1) (_, c2) = if c1 == gap || c2 == gap then (c1 .|. c2, indel) else (c1 .|. c2, sub)
+                getCost (AffineCost _ _ _) _ _ = error "Cannot apply DO algorithm on affine cost"
+
+                -- get single character subsets from both
+                getSubs fullChar = foldr (\i acc -> if testBit fullChar i then (i, bit i) : acc else acc) mempty [0..alphLen]
+                -- make possible combinations with a double fold
+                matchSubs subList oneSub = foldr (\c acc -> getCost (getCosts inMeta) c oneSub : acc) mempty subList
+                matchBoth list1 list2 = foldr (\e acc -> matchSubs list1 e ++ acc) mempty list2
+                allPossible = matchBoth (getSubs char1) (getSubs char2)
+                -- now take an ambiguous minimum
+                ambigChoice (val1, cost1) (val2, cost2)
+                    | cost1 == cost2 = (val1 .|. val2, cost1)
+                    | cost1 < cost2 = (val1, cost1)
+                    | otherwise = (val2, cost2)
 
 -- | Main recursive function to get alignment rows
 -- Takes two sequence, the indel and sub costs, the current row number, the previous row, and the alphabet length
 -- returns an alignment matrix
-getAlignRows :: (SeqConstraint' s, CodedChar s) => s -> s -> Costs -> Int -> AlignRow s -> Int -> AlignMatrix s
-getAlignRows seq1 seq2 costValues rowNum prevRow alphLen
+getAlignRows :: (SeqConstraint' s, CodedChar s, Metadata m s) => s -> s -> Int -> AlignRow s -> m -> AlignMatrix s
+getAlignRows seq1 seq2 rowNum prevRow meta
     | rowNum == numChars seq2 alphLen + 1 = AlignMatrix (matrix 0 0 (const (0, LeftDir))) mempty 
-    | otherwise = 
-        let thisRow = generateRow seq1 seq2 costValues rowNum prevRow (0, 0) alphLen
-        in thisRow `joinMat` getAlignRows seq1 seq2 costValues (rowNum + 1) thisRow alphLen
+    | otherwise = thisRow `joinMat` getAlignRows seq1 seq2 (rowNum + 1) thisRow meta
+        where
+            alphLen = length $ getAlphabet meta
+            thisRow = generateRow seq1 seq2 rowNum prevRow (0, 0) meta 
 
 -- | Generates a single alignment row
 -- Takes two sequences, the indel and sub costs, the current row number, the previous row, the position and previous cost, and the alphabet length
 -- returns an alignment row
 -- Essentially gets values for left, down, and diagonal moves using overlap functionality
 -- then selects the minimum value to set the correct value at the given positions
-generateRow :: (SeqConstraint' s, CodedChar s) => s -> s -> Costs -> Int -> AlignRow s -> (Int, Double) -> Int -> AlignRow s
+generateRow :: (SeqConstraint' s, CodedChar s, Metadata m s) => s -> s -> Int -> AlignRow s -> (Int, Double) -> m -> AlignRow s
 --generateRow seq1 seq2 costvals@(indelCost, subCost) rowNum prevRow@(costs, _, _) (position, prevCost)  | trace ("generateRow " ++ show seq1 ++ show seq2) False = undefined
-generateRow seq1 seq2 weights@(indCost, sCost) rowNum prevRow@(vals, _) (position, prevCost) alphLen
+generateRow seq1 seq2 rowNum prevRow@(vals, _) (position, prevCost) meta
     | length vals < (position - 1) = error "Problem with row generation, previous costs not generated"
     | position == numChars seq1 alphLen + 1 = (mempty, emptySeq)
-    | position == 0 && newState /= gapChar alphLen = (singleton (upValue + indCost, DownDir), newState) <> nextCall (upValue + indCost)
-    | position == 0 = (singleton (upValue, DownDir), newState) <> nextCall upValue
+    | position == 0 && downChar /= gapChar alphLen = (singleton (upValue + indCost, DownDir), downChar) <> nextCall (upValue + indCost)
+    | position == 0 = (singleton (upValue, DownDir), downChar) <> nextCall upValue
     | otherwise = --trace "minimal case" $ 
         (singleton (minCost, minDir), minState) <> nextCall minCost
         where
-            newState      = getOverlapState (gapChar alphLen) (grabSubChar seq2 (rowNum - 1) alphLen)
-            upValue       = fst $ vals ! position
-            nextCall cost = generateRow seq1 seq2 weights rowNum prevRow (position + 1, cost) alphLen
-            char1         = grabSubChar seq1 (position - 1) alphLen
-            char2         = grabSubChar seq2 (rowNum - 1) alphLen
-            iuChar1       = getOverlapState (gapChar alphLen) char1
-            iuChar2       = getOverlapState (gapChar alphLen) char2
-            leftCost      = overlapCost char1 indCost + prevCost
-            downCost      = overlapCost char2 indCost + upValue
-            diagVal       = fst $ vals ! (position - 1)
-            intersect     = char1 .&. char2
-            union         = char1 .|. char2
+            indCost            = getGapCost meta
+            alphLen            = length $ getAlphabet meta
+            char1              = grabSubChar seq1 (position - 1) alphLen
+            char2              = grabSubChar seq2 (rowNum - 1) alphLen
+            upValue            = fst $ vals ! position
+            diagVal            = fst $ vals ! (position - 1)
+            (downChar, dCost)  = getOverlap (gapChar alphLen) char2 meta
+            downCost           = dCost + upValue
+            (leftChar, lCost)  = getOverlap (gapChar alphLen) char1 meta
+            leftCost           = lCost + prevCost
+            (diagChar, dgCost) = getOverlap char1 char2 meta
+            diagCost           = diagVal + dgCost
 
-            (diagCost, diagState) = if intersect == zeroBits 
-                                    then (diagVal + sCost, union)
-                                    else (diagVal, intersect)
+            nextCall cost      = generateRow seq1 seq2 rowNum prevRow (position + 1, cost) meta
+   
             (minCost, minState, minDir) = minimumBy (comparing (\(a,_,_) -> a))
-                                                [(leftCost, iuChar1, LeftDir), (downCost, iuChar2, DownDir), (diagCost, diagState, DiagDir)]
-
-            --overlapCost :: CharConstraint s => s -> Double -> Double
-            overlapCost char cost 
-                | gapChar alphLen .&. char == zeroBits = cost
-                | otherwise = 0 
+                                                [(leftCost, leftChar, LeftDir), (downCost, downChar, DownDir), (diagCost, diagChar, DiagDir)]
 
 -- | Performs the traceback of an alignment matrix
 -- Takes in an alignment matrix, two sequences, and the alphabet length

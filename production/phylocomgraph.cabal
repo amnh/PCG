@@ -201,6 +201,7 @@ executable pcg
                      , keys                 -any
                      , matrix               -any
                      , megaparsec           >=4.2
+                     , memoize              -any
                      , mtl                  -any
                      , parallel             -any
                      , phylocomgraph        -any
@@ -338,6 +339,7 @@ Test-Suite testsuite
                      , keys                 -any
                      , matrix               -any
                      , megaparsec           -any
+                     , memoize              -any
                      , parallel             -any
                      , QuickCheck           -any
                      , safe                 -any
