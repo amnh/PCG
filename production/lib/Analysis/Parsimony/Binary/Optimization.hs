@@ -237,7 +237,10 @@ postorderNodeOptimize curNode lNode rNode pNode meta
     where
         --chooseOptimization :: (NodeConstraint' n s, Metadata m s) => Int -> m -> n -> n
         chooseOptimization i curCharacter setNode
-            | getAligned curCharacter =
+            | getType curCharacter == Fitch =
                 let finalAssign = postorderFitchBit (getForAlign curNode ! i) (getForAlign lNode ! i) (getForAlign rNode ! i) (getForAlign (fromJust pNode) ! i) (getTemporary curNode ! i) curCharacter
                 in addToField setFinal getFinal finalAssign setNode
-            | otherwise = setNode
+            | getType curCharacter == DirectOptimization =
+                let (final, _, _, _, _) = naiveDO (getForAlign curNode ! i) (getForAlign (fromJust pNode) ! i) curCharacter
+                in addToField setFinal getFinal final setNode
+            | otherwise = error "Unrecognized optimization type"

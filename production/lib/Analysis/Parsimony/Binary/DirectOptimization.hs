@@ -201,4 +201,3 @@ traceback alignMat' seq1' seq2' alphLen = tracebackInternal alignMat' seq1' seq2
                 where
                     curDirect = snd $ getElem row col (mat alignMat)
                     curState  = grabSubChar (seqs alignMat ! row) col alphLen
-
