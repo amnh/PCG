@@ -18,7 +18,8 @@ module Bio.PhyloGraph.Node.ImpliedAlign where
 
 import Data.Vector
 
-type HomologyTrace = Vector (Vector Int)
+type Homologies    = Vector Int -- there's a homology trace for every character in the sequence
+type HomologyTrace = Vector Homologies -- there's a Homologies vector for every character at the node
 
 class IANode n where
     getHomologies :: n -> HomologyTrace

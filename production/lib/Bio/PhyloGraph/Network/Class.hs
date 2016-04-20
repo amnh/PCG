@@ -20,8 +20,8 @@ class Monoid t => Network t n | t -> n where
     parents :: n -> t -> [n] 
     children :: n -> t -> [n]
     root :: t -> n
-    isLeaf :: n -> t -> Bool
-    isRoot :: n -> t -> Bool
+    nodeIsLeaf :: n -> t -> Bool
+    nodeIsRoot :: n -> t -> Bool
     update :: t -> [n] -> t
     numNodes :: t -> Int
     addNode :: t -> n -> t

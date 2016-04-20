@@ -70,7 +70,7 @@ allOptimization weighting meta inTree =
 -- Correctly handles roots, leaves, and nodes with only one child
 optimizationPreorder :: (TreeConstraint' t n s, Metadata m s) => Double -> t -> Vector m -> t
 optimizationPreorder weighting tree meta
-    | isLeaf (root tree) tree = -- if the root is a terminal, give the whole tree a cost of zero, do not reassign nodes
+    | nodeIsLeaf (root tree) tree = -- if the root is a terminal, give the whole tree a cost of zero, do not reassign nodes
         let
             newNode = setLocalCost 0.0 $ setTotalCost 0.0 (root tree)
             newTree = tree `update` [newNode]
@@ -109,7 +109,7 @@ optimizationPreorder weighting tree meta
 -- By using this node accumulation scheme, we save some complexity over simply always dealing with a tree
 internalPreorder :: (TreeConstraint' t n s, Metadata m s) => Double -> n -> t -> Vector m -> [n]
 internalPreorder weighting node tree meta
-    | isLeaf node tree = -- if the root is a terminal, give the whole tree a cost of zero, do not reassign nodes
+    | nodeIsLeaf node tree = -- if the root is a terminal, give the whole tree a cost of zero, do not reassign nodes
         let newNode = setTotalCost 0.0 $ setLocalCost 0.0 node
         in [newNode]
     | rightOnly && leftOnly = [] --error "Problem with binary tree structure: non-terminal has no children"
@@ -145,7 +145,7 @@ internalPreorder weighting node tree meta
 -- This wrapper allows us to deal correctly with root passing to postorder algorithms
 optimizationPostorder :: (TreeConstraint' t n s, Metadata m s) => t -> Vector m -> t
 optimizationPostorder tree meta
-    | isLeaf (root tree) tree = tree
+    | nodeIsLeaf (root tree) tree = tree
     | rightOnly && leftOnly = tree --error "Problem with binary tree structure: non-terminal has no children"
     | rightOnly =
         let nodes1 = internalPostorder (fromJust $ rightChild (root tree) tree) tree meta
@@ -169,7 +169,7 @@ optimizationPostorder tree meta
 -- As in the preorder, this method saves on some time complexity
 internalPostorder :: (TreeConstraint' t n s, Metadata m s) => n -> t -> Vector m -> [n]
 internalPostorder node tree meta
-    | isLeaf node tree = []
+    | nodeIsLeaf node tree = []
     | rightOnly && leftOnly = [] 
     | rightOnly = internalPostorder (fromJust $ rightChild node tree) tree meta
     | leftOnly  = internalPostorder (fromJust $ leftChild node tree) tree meta
