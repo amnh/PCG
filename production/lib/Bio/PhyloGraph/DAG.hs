@@ -150,7 +150,7 @@ fromTopo (TopoDAG inTopo) = internalFromTopo inTopo
                     singletonDAG :: Topo -> DAG
                     singletonDAG topoNode = 
                       let myNode = Node 0 (TN.name topoNode) (TN.isRoot topoNode) (TN.isLeaf topoNode) [] [] (TN.encoded topoNode) (TN.packed topoNode) (TN.preliminary topoNode) 
-                                              (TN.final topoNode) (TN.temporary topoNode) (TN.aligned topoNode) mempty mempty mempty mempty (TN.localCost topoNode) (TN.totalCost topoNode)
+                                              (TN.final topoNode) (TN.temporary topoNode) (TN.aligned topoNode) mempty mempty mempty mempty mempty (TN.localCost topoNode) (TN.totalCost topoNode)
                       in DAG (pure myNode) (pure mempty) 0 
 
 -- | Function to go from topo to referential

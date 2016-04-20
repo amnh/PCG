@@ -1,6 +1,6 @@
 -----------------------------------------------------------------------------
 -- |
--- Module      :  Text.Megaparsec.Custom
+-- Module      :  Bio.PhyloGraph.Node.ImpliedAlign
 -- Copyright   :  (c) 2015-2015 Ward Wheeler
 -- License     :  BSD-style
 --
@@ -8,19 +8,18 @@
 -- Stability   :  provisional
 -- Portability :  portable
 --
--- Class for nodes with a final assignment
+-- Class for nodes that work with the implied alignment
 --
 -----------------------------------------------------------------------------
 
 {-# LANGUAGE FunctionalDependencies #-}
 
-module Bio.PhyloGraph.Node.Final where
+module Bio.PhyloGraph.Node.ImpliedAlign where
 
 import Data.Vector
 
--- | A final node has its final assignment
-class FinalNode n s | n -> s where
-    getFinal :: n -> Vector s
-    setFinal :: Vector s -> n -> n
-    getFinalGapped :: n -> Vector s
-    setFinalGapped :: Vector s -> n -> n
+type HomologyTrace = Vector (Vector Int)
+
+class IANode n where
+    getHomologies :: n -> HomologyTrace
+    setHomologies :: n -> HomologyTrace -> n

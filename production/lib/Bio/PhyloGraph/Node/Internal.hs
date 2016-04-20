@@ -18,6 +18,7 @@ module Bio.PhyloGraph.Node.Internal where
 import Bio.Sequence.Coded
 import qualified Bio.PhyloGraph.Node.Encoded as EN
 import qualified Bio.PhyloGraph.Node.Final as FN
+import qualified Bio.PhyloGraph.Node.ImpliedAlign as IN
 import qualified Bio.PhyloGraph.Node.Packed as PN
 import qualified Bio.PhyloGraph.Node.Preliminary as RN
 
@@ -43,6 +44,7 @@ data Node = Node  { code        :: Int
                   , union       :: Vector EncodedSeq -- the union assignment
                   , single      :: Vector EncodedSeq -- the single assignment
                   , gapped      :: Vector EncodedSeq -- the final assignment with gaps for alignment
+                  , iaHomology  :: IN.HomologyTrace  -- the homology traces for an implied alignment (the matrix is numChars by charLength)
                   , localCost   :: Double            -- cost of assignment at this node alone
                   , totalCost   :: Double            -- sum cost of this node and its subtree
                   } deriving (Eq, Show)
@@ -64,6 +66,7 @@ instance Monoid Node where
                        , union       = mempty
                        , single      = mempty
                        , gapped      = mempty
+                       , iaHomology  = mempty
                        , localCost   = 0
                        , totalCost   = 0
                        }
@@ -83,6 +86,7 @@ instance Monoid Node where
                        , union       = union       n1 <> union       n2
                        , single      = single      n1 <> single      n2
                        , gapped      = gapped      n1 <> gapped      n2
+                       , iaHomology  = iaHomology  n1 <> iaHomology  n2
                        , localCost   = localCost n1 + localCost n2
                        , totalCost   = totalCost n1 + totalCost n2
                        }
@@ -96,6 +100,8 @@ instance EN.EncodedNode Node EncodedSeq where
 instance FN.FinalNode Node EncodedSeq where
     getFinal = final
     setFinal f n = n {final = f}
+    getFinalGapped = gapped
+    setFinalGapped f n = n {gapped = f}
 
 -- | Nodes can hold packed data
 instance PN.PackedNode Node EncodedSeq where
@@ -115,6 +121,10 @@ instance RN.PreliminaryNode Node EncodedSeq where
     getTotalCost = totalCost
     setTotalCost c n = n {totalCost = c}
 
+instance IN.IANode Node where
+  getHomologies = iaHomology
+  setHomologies n h = n {iaHomology = h}
+
 instance Ord Node where
     compare n1 n2 = compare (code n1) (code n2)
 
@@ -129,5 +139,5 @@ instance Arbitrary Node where
         seqs   <- vectorOf 10 arbitrary 
         c2     <- arbitrary :: Gen Double
         c3     <- arbitrary :: Gen Double
-        pure $ Node c n root leaf child parent (seqs !! 0) (seqs !! 1) (seqs !! 2) (seqs !! 3) (seqs !! 4) (seqs !! 5) (seqs !! 6) (seqs !! 7) (seqs !! 8) (seqs !! 9) c2 c3
+        pure $ Node c n root leaf child parent (seqs !! 0) (seqs !! 1) (seqs !! 2) (seqs !! 3) (seqs !! 4) (seqs !! 5) (seqs !! 6) (seqs !! 7) (seqs !! 8) (seqs !! 9) mempty c2 c3
 

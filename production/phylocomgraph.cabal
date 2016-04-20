@@ -112,6 +112,7 @@ library
                        Bio.PhyloGraph.Node
                        Bio.PhyloGraph.Node.Encoded
                        Bio.PhyloGraph.Node.Final
+                       Bio.PhyloGraph.Node.ImpliedAlign
                        Bio.PhyloGraph.Node.Internal
                        Bio.PhyloGraph.Node.Packed
                        Bio.PhyloGraph.Node.Preliminary
