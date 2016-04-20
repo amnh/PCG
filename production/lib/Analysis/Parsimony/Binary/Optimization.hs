@@ -45,7 +45,7 @@ import Bio.Metadata
 solutionOptimization :: SolutionConstraint' r f t n s m => Double -> r -> r
 solutionOptimization weighting inSolution = setForests inSolution $ fmap (graphOptimization weighting meta) (getForests inSolution)
     where
-        meta = metadata inSolution
+        meta = getMetadata inSolution
 
 -- | Mapping function to optimize over a forest
 -- Takes in an overall weight, a vector of metadata, and a forest

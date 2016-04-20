@@ -91,7 +91,9 @@ library
     ffi/Analysis/Parsimony/Binary/SequentialAlign
       
   -- Modules exported by the library.
-  exposed-modules:     Analysis.Parsimony.Binary.DirectOptimization
+  exposed-modules:     Analysis.ImpliedAlignment.Internal
+                       Analysis.ImpliedAlignment.Standard
+                       Analysis.Parsimony.Binary.DirectOptimization
                        Analysis.Parsimony.Binary.Fitch
                        Analysis.Parsimony.Binary.Internal
                        Analysis.Parsimony.Binary.Optimization

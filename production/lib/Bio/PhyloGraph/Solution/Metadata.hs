@@ -20,5 +20,5 @@ import Data.Vector
 
 -- | A type from which ordered metadata retreived and stored.
 class MetadataSolution r m | r -> m where
-    metadata    :: r -> Vector m
+    getMetadata    :: r -> Vector m
     setMetadata :: r -> Vector m -> r
