@@ -11,8 +11,6 @@ import           File.Format.Fasta.Parser
 import           Text.Parsec
 --import           Text.Parsec.Custom                (fails)
 
-import Debug.Trace
-
 data FastaSequenceType = DNA | RNA | AminoAcid deriving (Bounded,Eq,Enum,Read,Show)
 
 colate :: FastaSequenceType -> FastaParseResult -> TaxonSequenceMap
@@ -27,7 +25,6 @@ validateInterpretedStream :: FastaSequenceType -> FastaParseResult -> ParsecT s 
 validateInterpretedStream = undefined
 
 seqCharMapping :: FastaSequenceType -> String -> CharacterSequence 
---seqCharMapping seqType | trace ("seqCharMapping " ++ show seqType) False = undefined
 seqCharMapping seqType = V.fromList . fmap (f seqType)
   where 
     expandOrId x m = fromMaybe x $ x `lookup` m

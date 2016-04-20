@@ -24,15 +24,52 @@ import Bio.Sequence.Parsed
 
 import Data.BitVector
 
--- TODO: require instance of foldable to remove some of these
--- TODO: clear up naming confusion.  
+{- LAWS:
+ - decodeChar alphabet . encodeChar alphabet . toList == id
+ - encodeChar alphabet [alphabet !! i] == bit i
+ - encodeChar alphabet alphabet == compliment zeroBits
+ - decodeChar alphabet (encodeChar alphabet xs .|. encodeChar alphabet ys) == toList alphabet `Data.List.intersect` (toList xs `Data.List.union` toList ys)
+ - decodeChar alphabet (encodeChar alphabet xs .&. encodeChar alphabet ys) == toList alphabet `Data.List.intersect` (toList xs `Data.List.intersect` toList ys)
+ - finiteBitSize . encodeChar alphabet == const (length alphabet)
+ -}
 
+class FiniteBits b => StaticCoded b where
+  decodeChar ::  Eq a              => Alphabet a -> b   -> [a]
+  encodeChar :: (Eq a, Foldable t) => Alphabet a -> t a -> b
+  gapChar    :: b
+
+{- LAWS:
+ - decodeMany alphabet . encodeMany alphabet . fmap toList . toList = id
+ - TODO: Add more laws here
+ -}
+class ( Bits s
+      , StaticCoded (Element s)
+      , Monoid s
+      , MonoTraversable s
+      ) => DynamicCoded s where
+  -- All default instances can be "overidden" for efficientcy.
+  decodeMany ::  Eq a => Alphabet a -> s -> [[a]]
+  decodeMany alphabet = ofoldr (\e acc -> decodeChar alphabet e : acc) []
+
+  encodeMany :: (Eq a, Foldable t, Foldable c) => Alphabet a -> c (t a) -> s
+  encodeMany alphabet = ofoldl' (\acc e -> acc <> encodeChar alphabet e) mempty
+
+  indexChar  :: s -> Int -> s
+  indexChar = fromJust . lookupChar
+
+  lookupChar :: s -> Int -> Maybe s
+  lookupChar xs i = fst $ ofoldl' f (Nothing, 0) xs
+    where
+      f (Nothing, n) e = if n == i then (Just e, n) else (Nothing, n + 1)
+      f acc          _ = acc
+
+-- OLD structure
 -- | A coded sequence allows grabbing of a character, filtering, and some standard types
 class Monoid s => CodedSequence s where
     decodeOverAlphabet   :: s -> Alphabet -> ParsedSeq
     decodeOneChar        :: s -> Alphabet -> ParsedSeq 
     -- TODO: This should be translated to:
-    -- encode :: (Foldable f, Functor f, Foldable t, Foldable c, Ord a) => f (t a) -> c a-> s
+    -- encode :: (Foldable f, Functor f, Foldable t, Foldable c, Ord a) => f (t a) -> c a -> s
     encodeOverAlphabet   :: ParsedSeq -> Alphabet -> s
     encodeOneChar        :: Alphabet -> AmbiguityGroup -> s 
     emptySeq             :: s
@@ -40,6 +77,6 @@ class Monoid s => CodedSequence s where
     grabSubChar          :: s -> Int -> Int -> s
     isEmpty              :: s -> Bool
     numChars             :: s -> Int -> Int
-    mapChars             :: functor f => (a -> b) -> Int -> s -> f b
+    mapChars             :: Functor f => (a -> b) -> Int -> s -> f b
     foldrChars           :: (a -> b -> b) -> b -> Int -> s -> b
     
