@@ -13,7 +13,7 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE TypeSynonymInstances, FlexibleInstances, MultiParamTypeClasses, UndecidableInstances #-}
+{-# LANGUAGE TypeSynonymInstances, FlexibleInstances, MultiParamTypeClasses, UndecidableInstances, ExistentialQuantification #-}
 -- TODO: fix and remove this ghc option:
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
@@ -50,19 +50,31 @@ type EncodedSequences = Vector EncodedSeq
 -- TODO: change name to make clear the difference between a CodedSequence and an EncodedSeq
 type EncodedSeq = BitVector
 
+data EncodedSequenceOverAlphabet a = forall a. Bits a => BBV Int a
+
+instance Foldable EncodedSequenceOverAlphabet where
+    foldr f e (BBV n bv) = foldr f e $ g <$> [0 .. len-1]
+      where
+        len = bv `div` n
+        g i = (clearBit (setBit zeroBits (n - 1)) (n - 1)) .|. (shiftR b right)
+          where
+            left  = ((i + 1) * n) - 1
+            right = i * n
+        g' i = (compliment (clearBit (setBit zeroBits (n - 1)) (n - 1))) .|. (shiftR b right)
+
 -- | Make EncodedSeq an instance of CodedSequence
 instance CodedSequence EncodedSeq where
     decodeOverAlphabet encoded alphabet 
         | length alphabet == 0 = mempty
-        | width  encoded == 0  = mempty
+        | width  encoded  == 0 = mempty
         | otherwise            = decodedSeq
             where 
                 alphLen    = length alphabet
                 decodedSeq = foldr (\theseBits acc -> (decodeOneChar theseBits alphabet) <> acc) mempty (group alphLen encoded)
     decodeOneChar inSeq alphabet = singleton $ foldr (\(charValExists, char) acc -> if charValExists 
-                                                                        then char : acc 
-                                                                        else acc
-                                         ) [] (zip (toBits inSeq) alphabet)
+                                                                                    then char : acc 
+                                                                                    else acc
+                                                     ) [] (zip (toBits inSeq) alphabet)
     emptySeq = bitVec 0 0 -- TODO: Should this be bitVec alphLen 0?
     -- This works over minimal alphabet
     encodeOverAlphabet inSeq alphabet 
@@ -84,7 +96,7 @@ instance CodedSequence EncodedSeq where
                 f gapVal x acc = if   x ==. gapVal
                                  then x <> acc
                                  else acc
-
+    gapChar alphLen = setBit (bitVec alphLen 0) 0
     grabSubChar inSeq pos alphLen = extract left right <$> inSeq
         where
             left = ((pos + 1) * alphLen) - 1
@@ -95,9 +107,6 @@ instance CodedSequence EncodedSeq where
     numChars inSeq alphLen 
         | width inSeq == 0 = 0
         | otherwise        = width inSeq `div` alphLen
-    -- TODO: For next two fns, make instance of functor and (foldable?), traversable, instead. Make point-free?
-    mapChars f alphLen inSeq = fmap f $ group alphLen inSeq
-    foldrChars f acc alphLen inSeq = foldr f acc $ group alphLen inSeq
 
 {-
 instance Bits EncodedSeq where
@@ -118,9 +127,6 @@ instance Bits EncodedSeq where
 
 instance PackedSequence EncodedSeq where
     packOverAlphabet = undefined
-
-instance CodedChar BitVector where
-    gapChar alphLen = setBit (bitVec alphLen 0) 0
 
 {-
 -- | Get parsed sequenceS, return encoded sequenceS.
