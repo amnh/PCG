@@ -118,6 +118,7 @@ library
                        Bio.PhyloGraph.Node.Internal
                        Bio.PhyloGraph.Node.Packed
                        Bio.PhyloGraph.Node.Preliminary
+                       Bio.PhyloGraph.Node.Referential
                        Bio.PhyloGraph.Tree.Referential
                        Bio.PhyloGraph.Tree.Rose
                        Bio.Sequence.Coded

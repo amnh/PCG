@@ -21,6 +21,7 @@ import qualified Bio.PhyloGraph.Node.Final as FN
 import qualified Bio.PhyloGraph.Node.ImpliedAlign as IN
 import qualified Bio.PhyloGraph.Node.Packed as PN
 import qualified Bio.PhyloGraph.Node.Preliminary as RN
+import           Bio.PhyloGraph.Node.Referential
 
 import Data.Vector (Vector)
 import Data.Monoid
@@ -127,6 +128,9 @@ instance IN.IANode Node where
 
 instance Ord Node where
     compare n1 n2 = compare (code n1) (code n2)
+
+instance RefNode Node where
+  getCode = code
 
 instance Arbitrary Node where
     arbitrary = do

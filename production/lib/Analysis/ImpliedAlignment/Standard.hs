@@ -16,16 +16,22 @@ module Analysis.ImpliedAlignment.Standard where
 import Analysis.ImpliedAlignment.Internal
 import Analysis.Parsimony.Binary.DirectOptimization
 import Bio.Metadata
+import Bio.PhyloGraph.DAG
 import Bio.PhyloGraph.Network
 import Bio.PhyloGraph.Node
-import Bio.PhyloGraph.Tree
+import Bio.PhyloGraph.Tree hiding (code)
 import Bio.Sequence.Coded
 
+import Data.IntMap (IntMap, insert)
 import Data.Maybe
-import Data.Vector (foldr, zip3, cons, fromList, zipWith5, unzip, Vector, imap, (!), zipWith3, generate)
-import Prelude hiding (foldr, zip3, unzip, zipWith3)
+import Data.Monoid
+import Data.Vector (foldr, zip3, cons, fromList, zipWith5, unzip, Vector, imap, (!), zipWith3, generate, replicate, filter)
+import Prelude hiding (foldr, zip3, unzip, zipWith3, replicate, filter)
 
+-- The counts are a vector of ints
 type Counts = Vector Int
+-- An alignment object is an intmap from the node code to a vector of aligned coded sequences
+type Alignment s = IntMap (Vector s)
 
 -- | Function to do a numeration on an entire node
 -- given the ancestor node, ancestor node, current counter vector, and vector of metadata
@@ -57,7 +63,7 @@ numerateOne ancestorSeq ancestorHomologies childSeq initCounter meta = foldr det
 -- takes in a tree, a current node, a vector of metadata, and a vector of counters
 -- outputs a resulting vector of counters and a tree with the assignments
 -- TODO: something seems off about doing the DO twice here
-numeratePreorder :: (TreeConstraint t n s, NodeConstraint n s, Metadata m s) => t -> n -> Vector m -> Counts -> (Counts, t)
+numeratePreorder :: (TreeConstraint t n e s, Metadata m s) => t -> n -> Vector m -> Counts -> (Counts, t)
 numeratePreorder inTree curNode metadata curCounts 
     | nodeIsRoot curNode inTree = (curCounts, inTree `update` [setHomologies curNode defaultHomologs])
     | leftOnly && rightOnly = (curCounts, inTree)
@@ -101,3 +107,19 @@ numeratePreorder inTree curNode metadata curCounts
                     allDO = zipWith3 doOne (getFinalGapped node1) (getFinalGapped node2) metadata
                     doOne s1 s2 m = (gapped1, gapped2)
                         where (_, _, _, gapped1, gapped2) = naiveDO s1 s2 m
+
+
+-- | Function to perform an implied alignment on all the leaves of a tree
+-- takes a tree and some metadata
+-- returns an alignment object (an intmap from the leaf codes to the aligned sequence)
+impliedAlign :: (TreeConstraint t n e s, Metadata m s) => t -> Vector m -> Alignment s
+impliedAlign inTree metadata = foldr (\n acc -> insert (getCode n) (makeAlignment n) acc) mempty allLeaves
+    where
+        (_, curTree) = numeratePreorder inTree (getRoot inTree) metadata (replicate (length metadata) 0)
+        allLeaves = filter (flip nodeIsLeaf curTree) (getNodes curTree)
+        --oneTrace :: s -> Homologies -> m -> s
+        oneTrace oneSeq homolog meta = foldr (\pos acc -> grabSubChar oneSeq pos (length $ getAlphabet meta) <> acc) mempty homolog
+        --makeAlign :: Vector s -> HomologyTrace -> Vector s
+        makeAlign seqs homologies = zipWith3 oneTrace seqs homologies metadata
+        --makeAlignment :: n -> Vector s
+        makeAlignment n = makeAlign (getFinalGapped n) (getHomologies n)

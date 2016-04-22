@@ -11,14 +11,14 @@
 -- Class for DAG representation
 --
 -----------------------------------------------------------------------------
-{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE MultiParamTypeClasses, FunctionalDependencies #-}
 
 module Bio.PhyloGraph.DAG.Class where
 
 import Data.Vector
 
 -- | Accessor & mutator instance for types that expose nodes & edges.
-class StandardDAG d n e where
+class StandardDAG d n e | d -> n, d -> e where
     getNodes :: d -> Vector n
     setNodes :: d -> Vector n -> d
     getEdges :: d -> Vector e
