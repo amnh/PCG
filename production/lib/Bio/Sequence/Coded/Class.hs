@@ -15,7 +15,7 @@
 
 {- This is Sequence/Coded/Class module, which should be renamed. -}
 
-{-# LANGUAGE MultiParamTypeClasses, FunctionalDependencies #-}
+{-# LANGUAGE FlexibleContexts, FunctionalDependencies, MultiParamTypeClasses #-}
 
 module Bio.Sequence.Coded.Class where
 
@@ -23,6 +23,10 @@ module Bio.Sequence.Coded.Class where
 import Bio.Sequence.Parsed
 
 import Data.BitVector
+import Data.Maybe           (fromJust)
+import Data.Monoid          ((<>))
+import Data.MonoTraversable
+import Data.Vector          (Vector)
 
 {- LAWS:
  - decodeChar alphabet . encodeChar alphabet . toList == id
@@ -33,10 +37,12 @@ import Data.BitVector
  - finiteBitSize . encodeChar alphabet == const (length alphabet)
  -}
 
-class FiniteBits b => StaticCoded b where
-  decodeChar ::  Eq a              => Alphabet a -> b   -> [a]
-  encodeChar :: (Eq a, Foldable t) => Alphabet a -> t a -> b
-  gapChar    :: b
+type Alphabet' a = Vector a
+
+class Bits b => StaticCoded b where
+--  gapChar    ::  Eq a              => Alphabet a -> b
+  decodeChar ::  Eq a              => Alphabet' a -> b   -> [a]
+  encodeChar :: (Eq a, Foldable t) => Alphabet' a -> t a -> b
 
 {- LAWS:
  - decodeMany alphabet . encodeMany alphabet . fmap toList . toList = id
@@ -48,16 +54,19 @@ class ( Bits s
       , MonoTraversable s
       ) => DynamicCoded s where
   -- All default instances can be "overidden" for efficientcy.
-  decodeMany ::  Eq a => Alphabet a -> s -> [[a]]
+  decodeMany ::  Eq a => Alphabet' a -> s -> [[a]]
   decodeMany alphabet = ofoldr (\e acc -> decodeChar alphabet e : acc) []
 
-  encodeMany :: (Eq a, Foldable t, Foldable c) => Alphabet a -> c (t a) -> s
+  encodeMany :: (Eq a, Foldable t, Foldable c) => Alphabet' a -> c (t a) -> s
   encodeMany alphabet = ofoldl' (\acc e -> acc <> encodeChar alphabet e) mempty
+    where
+      f :: Foldable t => t a -> Element s
+      f acc e = acc <> encodeChar alphabet e) mempty
 
-  indexChar  :: s -> Int -> s
-  indexChar = fromJust . lookupChar
+  indexChar  :: s -> Int -> (Element s)
+  indexChar i = fromJust . lookupChar i
 
-  lookupChar :: s -> Int -> Maybe s
+  lookupChar :: s -> Int -> Maybe (Element s)
   lookupChar xs i = fst $ ofoldl' f (Nothing, 0) xs
     where
       f (Nothing, n) e = if n == i then (Just e, n) else (Nothing, n + 1)

@@ -46,6 +46,7 @@ library
                      , keys                 -any
                      , matrix               -any
                      , megaparsec           >=4.2
+                     , mono-traversable     -any
                      , parallel             -any
                      , QuickCheck           -any
                      , safe                 -any
