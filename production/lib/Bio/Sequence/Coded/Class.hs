@@ -71,12 +71,11 @@ class Monoid s => CodedSequence s where
     -- TODO: This should be translated to:
     -- encode :: (Foldable f, Functor f, Foldable t, Foldable c, Ord a) => f (t a) -> c a -> s
     encodeOverAlphabet   :: ParsedSeq -> Alphabet -> s
-    encodeOneChar        :: Alphabet -> AmbiguityGroup -> s 
+    encodeOneChar        :: Alphabet -> AmbiguityGroup -> s
     emptySeq             :: s
     filterGaps           :: s -> s -> Alphabet -> s
+    gapChar              :: Int -> s
     grabSubChar          :: s -> Int -> Int -> s
     isEmpty              :: s -> Bool
     numChars             :: s -> Int -> Int
-    mapChars             :: Functor f => (a -> b) -> Int -> s -> f b
-    foldrChars           :: (a -> b -> b) -> b -> Int -> s -> b
-    
+

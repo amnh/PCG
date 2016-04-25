@@ -102,6 +102,7 @@ import           Text.Megaparsec.Custom
 -- • warn that eliminate (among several other things: match, additive, weight(, etc.?)) doesn't work on unaligned data
 -- • capture data on ordered (additive) chars
 -- • check for gap treatment, possibly replace with missing
+-- • symbol order in TCM should be the same as symbol order in alphabet representation
 
 validateNexusParseResult :: (Show s, MonadParsec s m Char) => NexusParseResult -> m Nexus
 validateNexusParseResult (NexusParseResult inputSeqBlocks taxas treeSet assumptions _ignored) 
