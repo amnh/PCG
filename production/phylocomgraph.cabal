@@ -46,6 +46,7 @@ library
                      , keys                 -any
                      , matrix               -any
                      , megaparsec           >=4.2
+                     , memoize              -any
                      , parallel             -any
                      , QuickCheck           -any
                      , safe                 -any
@@ -90,7 +91,9 @@ library
     ffi/Analysis/Parsimony/Binary/SequentialAlign
       
   -- Modules exported by the library.
-  exposed-modules:     Analysis.Parsimony.Binary.DirectOptimization
+  exposed-modules:     Analysis.ImpliedAlignment.Internal
+                       Analysis.ImpliedAlignment.Standard
+                       Analysis.Parsimony.Binary.DirectOptimization
                        Analysis.Parsimony.Binary.Fitch
                        Analysis.Parsimony.Binary.Internal
                        Analysis.Parsimony.Binary.Optimization
@@ -111,9 +114,11 @@ library
                        Bio.PhyloGraph.Node
                        Bio.PhyloGraph.Node.Encoded
                        Bio.PhyloGraph.Node.Final
+                       Bio.PhyloGraph.Node.ImpliedAlign
                        Bio.PhyloGraph.Node.Internal
                        Bio.PhyloGraph.Node.Packed
                        Bio.PhyloGraph.Node.Preliminary
+                       Bio.PhyloGraph.Node.Referential
                        Bio.PhyloGraph.Tree.Referential
                        Bio.PhyloGraph.Tree.Rose
                        Bio.Sequence.Coded
@@ -200,6 +205,7 @@ executable pcg
                      , keys                 -any
                      , matrix               -any
                      , megaparsec           >=4.2
+                     , memoize              -any
                      , mtl                  -any
                      , parallel             -any
                      , phylocomgraph        -any
@@ -337,6 +343,7 @@ Test-Suite testsuite
                      , keys                 -any
                      , matrix               -any
                      , megaparsec           -any
+                     , memoize              -any
                      , parallel             -any
                      , QuickCheck           -any
                      , safe                 -any

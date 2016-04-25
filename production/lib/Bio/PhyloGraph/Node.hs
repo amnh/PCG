@@ -20,6 +20,8 @@ module Bio.PhyloGraph.Node (Node(..)
                                 , module Bio.PhyloGraph.Node.Packed
                                 , module Bio.PhyloGraph.Node.Preliminary
                                 , module Bio.PhyloGraph.Node.Internal
+                                , module Bio.PhyloGraph.Node.ImpliedAlign
+                                , module Bio.PhyloGraph.Node.Referential
                                 ) where
 
 import Bio.PhyloGraph.Node.Encoded 
@@ -27,3 +29,5 @@ import Bio.PhyloGraph.Node.Final
 import Bio.PhyloGraph.Node.Packed 
 import Bio.PhyloGraph.Node.Preliminary 
 import Bio.PhyloGraph.Node.Internal
+import Bio.PhyloGraph.Node.ImpliedAlign
+import Bio.PhyloGraph.Node.Referential

@@ -17,26 +17,29 @@ module Bio.Metadata.Class where
 
 import Bio.Metadata.Internal 
 import Bio.Sequence.Parsed
+import Data.Matrix (getElem)
 
 -- | Represents a type from which character information can be queried.
 class Metadata m s | m -> s where
-    getWeight     :: m -> Double
-    getIgnored    :: m -> Bool
-    getAlphabet   :: m -> Alphabet
-    getTcm        :: m -> CostMatrix
-    getFitchMasks :: m -> (s, s)
-    getAligned    :: m -> Bool
-    getType       :: m -> CharDataType
-    getIndelCost  :: m -> Double
-    getSubCost    :: m -> Double
+    getWeight         :: m -> Double
+    getIgnored        :: m -> Bool
+    getAlphabet       :: m -> Alphabet
+    getCosts          :: m -> CostStructure
+    getFitchMasks     :: m -> (s, s)
+    getAligned        :: m -> Bool
+    getType           :: m -> CharDataType
+    getGapCost        :: m -> Double
 
 instance Monoid s => Metadata (CharacterMetadata s) s where
-    getWeight     = weight
-    getIgnored    = isIgnored
-    getAlphabet   = alphabet
-    getTcm        = tcm
-    getAligned    = isAligned
-    getFitchMasks = fitchMasks
-    getType       = charType
-    getIndelCost  = indelCost
-    getSubCost    = subCost
+    getWeight         = weight
+    getIgnored        = isIgnored
+    getAlphabet       = alphabet
+    getCosts          = costs
+    getAligned        = isAligned
+    getFitchMasks     = fitchMasks
+    getType           = charType
+    getGapCost      m = case costs m of
+                            TCM mat             -> if (length $ alphabet m) > 1 then getElem 0 1 mat else 1
+                            AffineCost g _ _  -> g
+                            GeneralCost g _   -> g
+    
