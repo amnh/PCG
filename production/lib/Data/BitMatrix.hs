@@ -30,7 +30,6 @@ instance MonoFunctor BitMatrix where
   omap f bm = BitMatrix (numCols bm) . mconcat $ f <$> rows bm
 
 instance MonoFoldable BitMatrix where
-
   -- | Map each element of a monomorphic container to a 'Monoid'
   -- and combine the results.
   ofoldMap f = ofoldr (mappend . f) mempty
@@ -62,3 +61,17 @@ instance MonoFoldable BitMatrix where
   -- /See 'Data.MinLen.ofoldl1Ex'' from "Data.MinLen" for a total version of this function./
   ofoldl1Ex' f = foldl1 f . rows
   {-# INLINE ofoldl1Ex' #-}
+
+-- | Monomorphic containers that can be traversed from left to right.
+instance MonoTraversable BitMatrix where
+  -- | Map each element of a monomorphic container to an action,
+    -- evaluate these actions from left to right, and
+    -- collect the results.
+    otraverse f bm = fmap (BitMatrix (numCols bm) . mconcat) . traverse f $ rows bm
+    {-# INLINE otraverse #-}
+
+    -- | Map each element of a monomorphic container to a monadic action,
+    -- evaluate these actions from left to right, and
+    -- collect the results.
+    omapM = otraverse
+    {-# INLINE omapM #-}
