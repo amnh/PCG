@@ -54,14 +54,14 @@ class ( Bits s
       , MonoTraversable s
       ) => DynamicCoded s where
   -- All default instances can be "overidden" for efficientcy.
-  decodeMany ::  Eq a => Alphabet' a -> s -> [[a]]
-  decodeMany alphabet = ofoldr (\e acc -> decodeChar alphabet e : acc) []
+  decodeDynamic ::  Eq a => Alphabet' a -> s -> [[a]]
+  decodeDynamic alphabet = ofoldr (\e acc -> decodeChar alphabet e : acc) []
 
-  encodeMany :: (Eq a, Foldable t, Foldable c) => Alphabet' a -> c (t a) -> s
-  encodeMany alphabet = ofoldl' (\acc e -> acc <> encodeChar alphabet e) mempty
-    where
-      f :: Foldable t => t a -> Element s
-      f acc e = acc <> encodeChar alphabet e) mempty
+--  encodeDynamic :: (Eq a, Foldable t, Foldable c) => Alphabet' a -> c (t a) -> s
+--  encodeDynamic alphabet = ofoldl' (\acc e -> acc <> encodeChar alphabet e) mempty
+--    where
+--      f :: Foldable t => t a -> Element s
+--      f acc e = acc <> encodeChar alphabet e
 
   indexChar  :: s -> Int -> (Element s)
   indexChar i = fromJust . lookupChar i
@@ -83,7 +83,7 @@ class Monoid s => CodedSequence s where
     encodeOneChar        :: Alphabet -> AmbiguityGroup -> s
     emptySeq             :: s
     filterGaps           :: s -> s -> Alphabet -> s
-    gapChar              :: Int -> s
+--    gapChar              :: Int -> s
     grabSubChar          :: s -> Int -> Int -> s
     isEmpty              :: s -> Bool
     numChars             :: s -> Int -> Int
