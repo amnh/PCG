@@ -13,11 +13,17 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE TypeSynonymInstances, FlexibleInstances, MultiParamTypeClasses, UndecidableInstances, ExistentialQuantification #-}
+{-# LANGUAGE TypeSynonymInstances, FlexibleInstances, MultiParamTypeClasses, TypeFamilies #-}
 -- TODO: fix and remove this ghc option:
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
-module Bio.Sequence.Coded (CodedSequence(..), EncodedSeq, EncodedSequences, CodedChar(..), encodeAll, decodeMany) where
+module Bio.Sequence.Coded
+  ( CodedSequence(..)
+  , EncodedSeq
+  , EncodedSequences
+  , CodedChar(..)
+--  , encodeAll
+  , decodeMany) where
 
 import           Prelude        hiding (and, head, or)
 import           Bio.Sequence.Coded.Class
@@ -31,6 +37,7 @@ import           Data.BitVector hiding (foldr, foldl, join, not)
 import           Data.Foldable
 import           Data.Maybe
 import           Data.Monoid           ((<>))
+import           Data.MonoTraversable
 import           Data.Vector           (Vector, fromList, singleton)
 -- import qualified Data.Vector as V      (filter)
 
@@ -50,8 +57,57 @@ type EncodedSequences = Vector EncodedSeq
 -- TODO: change name to make clear the difference between a CodedSequence and an EncodedSeq
 type EncodedSeq = BitVector
 
-data EncodedSequenceOverAlphabet a = forall a. Bits a => BBV Int a
+--data EncodedSequenceOverAlphabet a = forall a. Bits a => BBV Int a
 
+type instance Element DynamicCharacterBV = BitVector
+data DynamicCharacterBV
+   = DynamicBV Int BitVector
+   deriving (Show)
+
+unpackCharacters :: DynamicCharacterBV -> [Element DynamicCharacterBV]
+unpackCharacters (DynamicBV n bv) = (bv @@) <$> [((c+1)*m-1,c*m) | c <- [0..n-1]]
+  where
+    m = width bv `div` n
+
+instance MonoFunctor DynamicCharacterBV where
+  omap f t@(DynamicBV n bv) = DynamicBV n . mconcat $ f <$> unpackCharacters t
+
+instance MonoFoldable DynamicCharacterBV where
+  -- | Map each element of a monomorphic container to a 'Monoid'
+  -- and combine the results.
+  ofoldMap f xs = ofoldr mempty (mappend . f)
+  {-# INLINE ofoldMap #-}
+
+  -- | Right-associative fold of a monomorphic container.
+  ofoldr f e xs = foldr f e $ unpackCharacters xs
+  {-# INLINE ofoldr #-}
+
+  -- | Strict left-associative fold of a monomorphic container.
+  ofoldl' f e xs = foldl' f e $ unpackCharacters xs
+  {-# INLINE ofoldl' #-}
+
+  -- | Right-associative fold of a monomorphic container with no base element.
+  --
+  -- Note: this is a partial function. On an empty 'MonoFoldable', it will
+  -- throw an exception.
+  --
+  -- /See 'Data.MinLen.ofoldr1Ex' from "Data.MinLen" for a total version of this function./
+  ofoldr1Ex f e xs = foldr1 f e $ unpackCharacters xs
+  {-# INLINE ofoldr1Ex #-}
+
+  -- | Strict left-associative fold of a monomorphic container with no base
+  -- element.
+  --
+  -- Note: this is a partial function. On an empty 'MonoFoldable', it will
+  -- throw an exception.
+  --
+  -- /See 'Data.MinLen.ofoldl1Ex'' from "Data.MinLen" for a total version of this function./
+  ofoldl1Ex' f e xs = foldl1 f e $ unpackCharacters xs
+  {-# INLINE ofoldl1Ex' #-}
+
+
+  
+{-
 instance Foldable EncodedSequenceOverAlphabet where
     foldr f e (BBV n bv) = foldr f e $ g <$> [0 .. len-1]
       where
@@ -61,6 +117,7 @@ instance Foldable EncodedSequenceOverAlphabet where
             left  = ((i + 1) * n) - 1
             right = i * n
         g' i = (compliment (clearBit (setBit zeroBits (n - 1)) (n - 1))) .|. (shiftR b right)
+-}
 
 -- | Make EncodedSeq an instance of CodedSequence
 instance CodedSequence EncodedSeq where
@@ -96,8 +153,8 @@ instance CodedSequence EncodedSeq where
                 f gapVal x acc = if   x ==. gapVal
                                  then x <> acc
                                  else acc
-    gapChar alphLen = setBit (bitVec alphLen 0) 0
-    grabSubChar inSeq pos alphLen = extract left right <$> inSeq
+--    gapChar alphLen = setBit (bitVec alphLen 0) 0
+    grabSubChar inSeq pos alphLen = extract left right inSeq
         where
             left = ((pos + 1) * alphLen) - 1
             right = pos * alphLen
