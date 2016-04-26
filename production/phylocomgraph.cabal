@@ -118,6 +118,7 @@ library
                        Bio.Sequence.Character.Coded
                        Control.Evaluation
                        Data.Either.Custom
+                       Data.BitMatrix
                        File.Format.Fasta
                        File.Format.Fastc
                        File.Format.Newick
