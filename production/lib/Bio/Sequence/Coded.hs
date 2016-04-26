@@ -17,7 +17,7 @@
 -- TODO: fix and remove this ghc option:
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
-module Bio.Sequence.Coded (CodedSequence(..), EncodedSeq, EncodedSequences, CodedChar(..), encodeAll, decodeMany) where
+module Bio.Sequence.Coded (CodedSequence(..), EncodedChar, EncodedChars, CodedChar(..), encodeAll, decodeMany) where
 
 import           Prelude        hiding (and, head, or)
 import           Bio.Sequence.Coded.Class
@@ -38,21 +38,20 @@ import           Data.Vector           (Vector, fromList, singleton)
 -- import Data.Foldable
 -- import Debug.Trace
 
--- TODO: Change EncodedSeq/Sequences to EncodedCharacters
+-- TODO: Change EncodedChar/Sequences to EncodedCharacters
         -- Make a missing a null vector
         -- Think about a nonempty type class or a refinement type for this
 
--- | EncodedSequences is short for a vector of EncodedSeq
-type EncodedSequences = Vector EncodedSeq
+-- | EncodedChars is short for a vector of EncodedChar
+type EncodedChars = Vector EncodedChar
 
--- | An EncodedSeq (encoded sequence) is a maybe vector of characters
--- TODO: Can we get rid of this Maybe, and just set to [0]0, instead?
--- TODO: change name to make clear the difference between a CodedSequence and an EncodedSeq
-type EncodedSeq = BitVector
+-- | An EncodedChar (encoded sequence) is a maybe vector of characters
+-- TODO: change name to make clear the difference between a CodedSequence and an EncodedChar
+type EncodedChar = BitVector
 
-data EncodedSequenceOverAlphabet a = forall a. Bits a => BBV Int a
+data EncodedCharOverAlphabet a = forall a. Bits a => BBV Int a
 
-instance Foldable EncodedSequenceOverAlphabet where
+instance Foldable EncodedCharOverAlphabet where
     foldr f e (BBV n bv) = foldr f e $ g <$> [0 .. len-1]
       where
         len = bv `div` n
@@ -62,8 +61,8 @@ instance Foldable EncodedSequenceOverAlphabet where
             right = i * n
         g' i = (compliment (clearBit (setBit zeroBits (n - 1)) (n - 1))) .|. (shiftR b right)
 
--- | Make EncodedSeq an instance of CodedSequence
-instance CodedSequence EncodedSeq where
+-- | Make EncodedChar an instance of CodedSequence
+instance CodedChar EncodedChar where
     decodeOverAlphabet encoded alphabet 
         | length alphabet == 0 = mempty
         | width  encoded  == 0 = mempty
@@ -109,7 +108,7 @@ instance CodedSequence EncodedSeq where
         | otherwise        = width inSeq `div` alphLen
 
 {-
-instance Bits EncodedSeq where
+instance Bits EncodedChar where
     (.&.)           = liftA2 (.&.)
     (.|.)           = liftA2 (.|.)
     xor             = liftA2 xor
@@ -125,7 +124,7 @@ instance Bits EncodedSeq where
     testBit bits i  = maybe False (`testBit` i) bits
 -}
 
-instance PackedSequence EncodedSeq where
+instance PackedSequence EncodedChar where
     packOverAlphabet = undefined
 
 {-
@@ -133,7 +132,7 @@ instance PackedSequence EncodedSeq where
 -- Recall that each is Vector of Maybes, to this type is actually
 -- Vector Maybe Vector [String] -> Vector Maybe BV.
 -- (I only wish I were kidding.)
-encodeAll :: ParsedSequences -> EncodedSequences
+encodeAll :: ParsedSequences -> EncodedChars
 encodeAll = fmap (\s -> join $ encode <$> s)
 -}
 
@@ -161,5 +160,5 @@ setElemAt char orig alphabet
 
 
 -- | Functionality to unencode many encoded sequences
-decodeMany :: EncodedSequences -> Alphabet -> ParsedSequences
+decodeMany :: EncodedChars -> Alphabet -> ParsedSequences
 decodeMany seqs alph = fmap (Just . flip decodeOverAlphabet alph) seqs
