@@ -24,7 +24,6 @@ import Bio.Sequence.Parsed
 
 import Data.BitVector
 import Data.Maybe           (fromJust)
-import Data.Monoid          ((<>))
 import Data.MonoTraversable
 import Data.Vector          (Vector)
 
@@ -74,17 +73,16 @@ class ( Bits s
 
 -- OLD structure
 -- | A coded sequence allows grabbing of a character, filtering, and some standard types
-class Monoid s => CodedSequence s where
-    decodeOverAlphabet   :: s -> Alphabet -> ParsedSeq
-    decodeOneChar        :: s -> Alphabet -> ParsedSeq 
-    -- TODO: This should be translated to:
-    -- encode :: (Foldable f, Functor f, Foldable t, Foldable c, Ord a) => f (t a) -> c a -> s
-    encodeOverAlphabet   :: ParsedSeq -> Alphabet -> s
+class EncodableDynamicCharacter s where
+    -- TODO: I switched the order of input args in decode fns and encodeOver...
+    decodeOverAlphabet   :: Alphabet -> s -> ParsedSeq
+    decodeOneChar        :: Alphabet -> s -> ParsedSeq 
+    encodeOverAlphabet   :: Alphabet -> ParsedSeq -> s
     encodeOneChar        :: Alphabet -> AmbiguityGroup -> s
     emptySeq             :: s
-    filterGaps           :: s -> s -> Alphabet -> s
---    gapChar              :: Int -> s
-    grabSubChar          :: s -> Int -> Int -> s
+    filterGaps           :: s -> s
+    gapChar              :: s -> s
+    grabSubChar          :: s -> Int -> s
     isEmpty              :: s -> Bool
-    numChars             :: s -> Int -> Int
+    numChars             :: s -> Int
 

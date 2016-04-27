@@ -20,5 +20,5 @@ import Bio.Sequence.Parsed
 import Bio.Sequence.Coded.Class
 
 
-class CodedSequence s => PackedSequence s where
+class EncodableDynamicCharacter s => PackedSequence s where
     packOverAlphabet :: ParsedSeq -> AmbiguityGroup -> s
