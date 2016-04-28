@@ -1,5 +1,5 @@
 -----------------------------------------------------------------------------
---
+-- |
 -- Module      :  Bio.Sequence.Coded.Class
 -- Copyright   :  (c) 2015-2015 Ward Wheeler
 -- License     :  BSD-style
@@ -13,7 +13,6 @@
 --
 -----------------------------------------------------------------------------
 
-{- This is Sequence/Coded/Class module, which should be renamed. -}
 
 {-# LANGUAGE FlexibleContexts, FunctionalDependencies, MultiParamTypeClasses #-}
 
@@ -85,4 +84,3 @@ class EncodableDynamicCharacter s where
     grabSubChar          :: s -> Int -> s
     isEmpty              :: s -> Bool
     numChars             :: s -> Int
-

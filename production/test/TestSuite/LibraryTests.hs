@@ -12,9 +12,6 @@ import qualified File.Format.Newick.Test               as Newick
 import qualified File.Format.TransitionCostMatrix.Test as TCM
 import qualified File.Format.VertexEdgeRoot.Test       as VER
 import qualified Analysis.Parsimony.Binary.Test        as Parsimony
---import qualified Analysis.DirectOptimization.Test      as DO
-import qualified Bio.Phylogeny.Graph.Test              as Graph
-import qualified File.Format.Conversion.Test           as Conversion
 
 main :: IO ()
 main = defaultMain testSuite
@@ -26,10 +23,8 @@ testSuite = testGroup "Library Test Suite"
   , Fasta.testSuite
   , Fastc.testSuite
   , Newick.testSuite
-  , Conversion.testSuite
   , TCM.testSuite
   , VER.testSuite
-  , Graph.testSuite
-  -- , Parsimony.testSuite
+  , Parsimony.testSuite
   ]
 

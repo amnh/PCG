@@ -1,15 +1,14 @@
 module Main where
 
-import           Bio.Phylogeny.Graph
-import           File.Format.Fasta
-import qualified File.Format.Newick as N
-import           File.Format.Newick.Converter
-import           Text.Megaparsec
+--import           File.Format.Fasta
+--import qualified File.Format.Newick as N
+--import           File.Format.Newick.Converter
+--import           Text.Megaparsec
 
 
 main :: IO ()
-main = print =<< madness
-
+main = undefined --print =<< madness
+{-}
 badReadGraph :: FilePath -> FilePath -> IO DAG
 badReadGraph fastaPath newickPath = do
   fastaResult  <- parse (fastaStreamConverter DNA =<< fastaStreamParser)  fastaPath  <$> readFile fastaPath
@@ -27,3 +26,4 @@ madRead = badReadGraph "../../TestDat/fakeArtmor.fas" "../../TestDat/artmor.tre"
 
 madness :: IO Double
 madness = undefined --rootCost . allOptimization 1 mempty <$> madRead
+-}

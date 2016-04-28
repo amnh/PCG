@@ -53,7 +53,7 @@ testZeroBitProperties z label = testGroup ("zeroBit properties (" <> label <> ")
             where
                 f :: NonNegative Int -> Bool
                 f n = let i = getNonNegative n
-                      in  testBit z i == False
+                      in  not $ testBit z i
 
         popCountZeroBitIs0 :: TestTree
         popCountZeroBitIs0 = testCase "popCount zeroBits == 0" . assert $ popCount z == 0
@@ -69,7 +69,7 @@ testBitConstructionProperties z label = testGroup ("Bit toggling properties (" <
             where
                 f :: NonNegative Int -> Bool
                 f n = let i = getNonNegative n
-                      in  testBit (setBit z i) i == True
+                      in  testBit (setBit z i) i
         bitClearBit :: TestTree
         bitClearBit = testProperty "clearBit (bit i) i == zeroBits" f
             where
@@ -86,6 +86,10 @@ testCodedSequenceInstance = testGroup "Properties of instance CodedSequence Enco
         --, isEmpty
         --, numChars
         ]
+encodeOverAlphabetTest :: TestTree
+encodeOverAlphabetTest = testGroup "encodeOverAlphabet"
+    [ 
+    ] 
 
 encodeOverAlphabetTest :: TestTree
 encodeOverAlphabetTest = testGroup "encodeOverAlphabet"
@@ -123,3 +127,9 @@ instance Arbitrary (ParsedSeq', Alphabet) where
         alphabet <- (fmap (:[]) . getNonEmpty) <$> (arbitrary :: (Gen (NonEmptyList Char)))
         vector   <- fmap (fmap (NonEmpty . (:[]) . NonEmpty) . fromList) . listOf1 $ elements alphabet
         pure (vector, alphabet)
+
+instance Arbitrary BitVector where
+    arbitrary = fromBits <$> listOf (arbitrary :: Gen Bool)
+
+instance Arbitrary b => Arbitrary (Vector b) where
+    arbitrary = fromList <$> listOf arbitrary

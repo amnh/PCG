@@ -1,3 +1,16 @@
+----------------------------------------------------------------------------
+-- |
+-- Module      :  File.Format.TNT.Command.Procedure
+-- Copyright   :  (c) 2015-2015 Ward Wheeler
+-- License     :  BSD-style
+--
+-- Maintainer  :  wheeler@amnh.org
+-- Stability   :  provisional
+-- Portability :  portable
+--
+-- Parser for the procedure command. The parse results of the procedure parser
+-- are usually ignored by the calling combinators.
+-----------------------------------------------------------------------------
 {-# LANGUAGE FlexibleContexts #-}
 module File.Format.TNT.Command.Procedure where
 

@@ -1,18 +1,31 @@
+----------------------------------------------------------------------------
+-- |
+-- Module      :  File.Format.TNT.Command.Cost
+-- Copyright   :  (c) 2015-2015 Ward Wheeler
+-- License     :  BSD-style
+--
+-- Maintainer  :  wheeler@amnh.org
+-- Stability   :  provisional
+-- Portability :  portable
+--
+-- Parser for the COST command specifying custom TCM constructions for certain
+-- chasracter indicies. 
+----------------------------------------------------------------------------- 
 {-# LANGUAGE FlexibleContexts #-}
 module File.Format.TNT.Command.Cost where
 
-import           Data.Functor             (($>))
-import           Data.List.NonEmpty       (NonEmpty)
-import qualified Data.List.NonEmpty as NE (fromList)
-import           Data.Matrix.NotStupid    (Matrix,matrix)
-import           Data.Maybe               (fromJust,fromMaybe)
---import           Data.Ord                 (comparing)
-import           Data.Vector              ((!))
-import           File.Format.TNT.Internal
-import           Text.Megaparsec
-import           Text.Megaparsec.Custom   (double)
-import           Text.Megaparsec.Prim     (MonadParsec)
+import Data.Functor             (($>))
+import Data.List.NonEmpty       (NonEmpty)
+import Data.Matrix.NotStupid    (Matrix,matrix)
+import Data.Maybe               (fromJust,fromMaybe)
+import Data.Vector              ((!))
+import File.Format.TNT.Internal
+import Text.Megaparsec
+import Text.Megaparsec.Custom   (double, nonEmpty)
+import Text.Megaparsec.Prim     (MonadParsec)
 
+-- | The attributes necessary for constructing a custom TCM.
+--   Many 'TransitionCost' are expected to be folded together to form a TCm.
 data TransitionCost
    = TransitionCost
    { origins   :: NonEmpty Char
@@ -33,13 +46,16 @@ costCommand = costHeader *> costBody <* symbol (char ';')
 costHeader :: MonadParsec s m Char => m ()
 costHeader = symbol $ keyword "cost" 2
 
+-- | The nonempty body of a COST command which represents the indicies to apply
+--   a custom TCM to.
 costBody :: MonadParsec s m Char => m Cost
 costBody = do
       idx <- symbol characterIndicies
       _   <- symbol $ char '='
-      transitions <- NE.fromList <$> some costDefinition
+      transitions <- nonEmpty costDefinition
       pure . Cost idx $ condenseToMatrix transitions
 
+-- | Fold over a nonmepty structure of 'Transition' costs to create a custom TCM.
 condenseToMatrix :: (Foldable f, Functor f) => f TransitionCost -> Matrix Double
 condenseToMatrix costs = matrix dimensions dimensions value
   where
@@ -65,6 +81,10 @@ condenseToMatrix costs = matrix dimensions dimensions value
           | x == e    = (i  , Just i )
           | otherwise = (i+1, Nothing)
 
+-- | Parses a 'TransitionCost' from within the body of a COST command.
+--   Must contain a nonempty list of character state values and a transition
+--   cost value. The transitional cost is interpreted as directed by default but
+--   may optionally be specified as a symetric relation.
 costDefinition :: MonadParsec s m Char => m TransitionCost
 costDefinition = TransitionCost
              <$> symbol costStates
@@ -75,10 +95,10 @@ costDefinition = TransitionCost
     costRelation :: MonadParsec s m Char => m Bool
     costRelation = (char '>' $> False) <|> (char '/' $> True )
     costStates :: MonadParsec s m Char => m (NonEmpty Char)
-    costStates = NE.fromList <$> (singleState <|> manyStates)
+    costStates = singleState <|> manyStates
       where
         singleState = pure <$> characterStateChar
-        manyStates  = between open close (some characterStateChar)
+        manyStates  = between open close (nonEmpty characterStateChar)
         open  = symbol $ char '['
         close = symbol $ char ']'
 

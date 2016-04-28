@@ -16,8 +16,8 @@
 
 module PCG.Command.Types.Report.CharacterMatrix where
 
-import           Bio.Phylogeny.Graph
-import           Bio.Phylogeny.PhyloCharacter
+import           Bio.Solution
+import           Bio.Metadata.Internal
 import           Data.Matrix.NotStupid        ((<->), (<|>), matrix, getElem, setElem, Matrix, getRow, nrows, ncols)
 import           Data.Maybe                   (fromMaybe)
 import           Data.Monoid
@@ -39,6 +39,10 @@ instance Monoid CharFileMatrix where
         lowerLeftEmptyBlock  = matrix (nrows m2) (ncols m1) (const False)
         newMat =  (m1 <|> upperRightEmptyBlock) <-> (lowerLeftEmptyBlock <|> m2)
 
+crossReferenceOutput :: Solution -> String
+crossReferenceOutput = error "Cross reference output is not yet implemented"
+
+{-
 crossReferenceOutput :: Graph -> String
 crossReferenceOutput (Graph dags) = printMat $ foldr (combineMats . makeMat) mempty dags
         -- | Most important function to make a single matrix to be folded
@@ -96,4 +100,4 @@ crossReferenceOutput (Graph dags) = printMat $ foldr (combineMats . makeMat) mem
 -- | Wrapper function to put a graph in a character matrix
 outPutMatrix :: String -> Graph -> IO ()
 outPutMatrix fileName = writeFile fileName . crossReferenceOutput
-
+-}

@@ -8,43 +8,12 @@
 -- Stability   :  provisional
 -- Portability :  portable
 --
--- Module holding the data type for a parsed sequence
+-- Export of parsed character
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE TypeSynonymInstances, FlexibleInstances #-}
-{-# OPTIONS_GHC -fno-warn-orphans #-}
 
-module Bio.Sequence.Parsed (AmbiguityGroup, ParsedSeq, TreeSeqs, Alphabet, ParsedSequences) where
+module Bio.Sequence.Parsed (module Bio.Sequence.Parsed.Internal, module Bio.Sequence.Parsed.Class) where
 
---import Data.Monoid
-import Data.Vector   (Vector)
-import Data.Map      (Map)
---import Data.Map.Lazy (Map, intersectionWith, unions, (\\))
-
--- TODO do ambiguity group types: more aliasing
--- TODO Add a definition for ParsedSeq for single characters
--- TODO change to ParsedChar
--- TODO: make AmbiguityGroup a nonempty list
-type AmbiguityGroup = [String]
-
-type ParsedSeq = Vector AmbiguityGroup
--- TODO change to ParsedCharacters
-type ParsedSequences = Vector (Maybe ParsedSeq)
--- TODO change to TaxaCharacters???
--- TODO add a TaxonIdentifier or TerminalName as type string - lots of aliasing
-type TreeSeqs = Map String ParsedSequences
-type Alphabet = Vector String
-
---instance Arbitrary ParsedSeq where
---    arbitrary = fromList <$> listOf (listOf (arbitrary :: Gen String))
-{-
-rectifySeqs :: TreeSeqs -> TreeSeqs -> TreeSeqs
-rectifySeqs lhs rhs = 
-    let
-        leftSide = intersectionWith (<>) (lhs \\ rhs) rhs
-        rightSide = intersectionWith (<>) (rhs \\ lhs) lhs
-        middle = intersectionWith (<>) lhs rhs
-    in unions [leftSide, middle, rightSide]
--}
-
+import Bio.Sequence.Parsed.Class
+import Bio.Sequence.Parsed.Internal

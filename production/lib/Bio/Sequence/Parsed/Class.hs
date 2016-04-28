@@ -15,19 +15,19 @@
 
 module Bio.Sequence.Parsed.Class where
 
-import           Bio.Sequence.Parsed
-import           Data.Bifunctor   (second)
+import           Bio.Sequence.Parsed.Internal
+import           Data.Bifunctor           (second)
 import           Data.Foldable
-import           Data.Map         (Map,insert,mergeWithKey)
-import qualified Data.Map    as M (fromList)
+import           Data.Map                 (Map,insert,mergeWithKey)
+import qualified Data.Map        as M     (fromList)
 import           Data.Maybe
 import           Data.Monoid
 import           Data.Tree
-import qualified Data.Vector as V
+import qualified Data.Vector      as V
 import           File.Format.Fasta
 import           File.Format.Fastc
 import           File.Format.Newick
-import           File.Format.Nexus
+import           File.Format.Nexus hiding (TaxonSequenceMap)
 import           File.Format.TNT
 import           File.Format.TransitionCostMatrix
 import           File.Format.VertexEdgeRoot
@@ -54,7 +54,7 @@ class ParsedCharacters a where
 instance ParsedCharacters FastaParseResult where
     unifyCharacters = foldr f mempty
         where
-            convertSeq = V.fromList . map (Just . pure . pure . pure)
+            convertSeq = V.fromList . fmap (Just . pure . pure . pure)
             f (FastaSequence n s) = insert n (convertSeq s)
 
 instance ParsedCharacters TaxonSequenceMap where
@@ -89,12 +89,17 @@ instance ParsedCharacters TntResult where
     -- maybe just use the seq vaiable like above and remove this case?
     unifyCharacters (Right (WithTaxa _    _ forest)) = mergeMaps $ (M.fromList . toList . fmap (second tntToTheSuperSequence)) <$> forest
 
+-- | Coalesce the 'TaxonSequence' to the larger type 'ParsedSequences'
 tntToTheSuperSequence :: TaxonSequence -> ParsedSequences
 tntToTheSuperSequence = V.fromList . fmap (Just . pure . f . show)
   where
     f ('[':xs) = pure <$> init xs
     f e        = pure e
 
+-- | Takes a 'Foldable' structure of 'Map's and returns the union 'Map'
+--   containing all the key value pairs. This fold is right biased with respect
+--   to duplicate keys. When identical keys occur in multiple 'Map's, the value
+--   occuring last in the 'Foldable' structure is returned.
 mergeMaps :: (Foldable t, Ord k) => t (Map k v) -> Map k v
 mergeMaps = foldl (mergeWithKey (\_ _ b -> Just b) id id) mempty
 

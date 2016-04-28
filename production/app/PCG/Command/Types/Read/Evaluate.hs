@@ -4,44 +4,36 @@ module PCG.Command.Types.Read.Evaluate
   ( evaluate
   ) where
 
-import           Bio.Phylogeny.Graph
-import           Bio.Phylogeny.Graph.Parsed
-import           Bio.Phylogeny.PhyloCharacter
-import           Bio.Metadata.Class
-import           Bio.Metadata.MaskGenerator
+import           Bio.Metadata
 import           Bio.Sequence.Parsed
-import           Bio.Sequence.Parsed.Class
+import           Bio.PhyloGraph.Forest.Parsed
+import           Bio.PhyloGraph.Solution    (SearchState,StandardMetadata)
 import           Control.Monad              (when)
 import           Control.Monad.IO.Class
 import           Control.Monad.Trans.Either
-import           Control.Evaluation
 import           Data.Bifunctor             (bimap,first)
 import           Data.Char                  (isLower,toLower,isUpper,toUpper)
 import           Data.Either.Custom
 import           Data.Foldable
 import           Data.Key                   ((!),lookup)
-import           Data.Map                   (Map,assocs,insert,union)
+import           Data.Map                   (Map,assocs,insert,union, keys)
 import qualified Data.Map              as M (fromList)
 import           Data.Maybe                 (fromMaybe)
---import           Data.Hashable
---import           Data.HashMap.Strict        (HashMap)
---import qualified Data.HashMap.Strict  as HM (fromList)
+import           Data.Monoid                ((<>))
 import           Data.Vector                (Vector)
 import qualified Data.Vector           as V (zipWith)
-import           Debug.Trace
+--import           Debug.Trace
 import           File.Format.Fasta   hiding   (FastaSequenceType(..))
 import qualified File.Format.Fasta   as Fasta (FastaSequenceType(..))
 import           File.Format.Fastc   hiding (Identifier)
 import           File.Format.Newick
 import           File.Format.Nexus          (nexusStreamParser)
-import           File.Format.TNT     hiding (casei)
+import           File.Format.TNT
 import           File.Format.TransitionCostMatrix
 import           File.Format.VertexEdgeRoot
--- import File.Format.Conversion.ToInternal
 import           PCG.Command.Types (Command(..))
 import           PCG.Command.Types.Read.Internal
 import           PCG.Command.Types.Read.Unification.Master
---import           PCG.Script.Types
 import           Prelude             hiding (lookup)
 import           Text.Megaparsec
 
@@ -140,40 +132,23 @@ expandIUPAC :: FracturedParseResult -> FracturedParseResult
 expandIUPAC fpr = fpr { parsedChars = newTreeSeqs }
   where
     newTreeSeqs = f (parsedChars fpr) (parsedMetas fpr)
-    f :: TreeSeqs -> Vector CharInfo -> TreeSeqs
+    f :: TreeSeqs -> Vector StandardMetadata -> TreeSeqs
     f mapping meta = g <$> mapping
       where
         g :: ParsedSequences -> ParsedSequences
         g = V.zipWith h meta 
           where
-            h :: CharInfo -> Maybe ParsedSeq -> Maybe ParsedSeq
+            h :: StandardMetadata -> Maybe ParsedSeq -> Maybe ParsedSeq
             h cInfo seqMay = expandCodes <$> seqMay
               where
+                cAlph = alphabet cInfo
+                
                 expandCodes :: ParsedSeq -> ParsedSeq
-                expandCodes x =
-                  case cInfo of
-                    DNA{}       -> expandOrId nucleotideIUPAC <$> x
-                    RNA{}       -> expandOrId nucleotideIUPAC <$> x
-                    AminoAcid{} -> expandOrId aminoAcidIUPAC  <$> x
-                    _           -> x
+                expandCodes x 
+                  | cAlph `subsetOf` (concat $ keys nucleotideIUPAC) = expandOrId nucleotideIUPAC <$> x
+                  | cAlph `subsetOf` (concat $ keys aminoAcidIUPAC) = expandOrId aminoAcidIUPAC  <$> x
+                  | otherwise = x
     expandOrId m x = fromMaybe x $ x `lookup` m
-
---setTaxaSeqs :: HashMap Identifier ParsedSequences -> SearchState
---setTaxaSeqs x = pure $ Graph [mempty { parsedSeqs = x }]
-
---mapToHashMap :: (Eq k, Hashable k) => Map k v -> HashMap k v
---mapToHashMap = fromList . M.toList
-
---customToHashMap :: [FastcParseResult] -> HashMap Identifier CharacterSequence
---customToHashMap = fromList . concatMap (fmap (fastcLabel &&& fastcSymbols) . toList)
-{-
-parseSpecifiedFileSimple :: Parsec Text a -> (a -> FracturedParseResult-) -> FileSpecification -> EitherT ReadError IO SearchState
-parseSpecifiedFileSimple comb toState spec = getSpecifiedContent spec >>= (hoistEither . parseSpecifiedContent)
-  where
-    parseSpecifiedContent :: FileSpecificationContent -> Either ReadError SearchState
-    parseSpecifiedContent = fmap toState . eitherValidation . fmap (first unparsable . parse') . dataFiles
-    parse' (path,content) = parse comb path content
--}
 
 progressiveParse :: FilePath -> EitherT ReadError IO FracturedParseResult
 progressiveParse inputPath = do
@@ -199,7 +174,7 @@ progressiveParse inputPath = do
                           Right x -> pure $ toFractured Nothing filePath x
                           Left  _ -> fail $ "Could not determine the file type of '" ++ filePath ++ "'. Try annotating the expected file data in the 'read' for more explicit error message on file parsing failures."
 
-toFractured :: (Metadata a, ParsedCharacters a, ParseGraph a) => Maybe TCM -> FilePath -> a -> FracturedParseResult
+toFractured :: (ParsedMetadata a, ParsedCharacters a, ParsedForest a) => Maybe TCM -> FilePath -> a -> FracturedParseResult
 toFractured tcmMat path = FPR <$> unifyCharacters
                               <*> unifyMetadata
                               <*> unifyGraph
