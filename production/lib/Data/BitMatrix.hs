@@ -1,5 +1,11 @@
 {-# LANGUAGE TypeFamilies #-}
-module Data.BitMatrix where
+module Data.BitMatrix
+  ( BitMatrix()
+  , numCols
+  , numRows
+  , rows
+  , row
+  ) where
 
 import Data.Bifunctor
 import Data.Bits
@@ -14,6 +20,9 @@ data BitMatrix
 
 type instance Element BitMatrix = BitVector
 
+bitMatrix :: Int -> Int -> ((Int,Int) -> Bool) -> BitMatrix
+bitMatrix = undefined
+
 numCols :: BitMatrix -> Int
 numCols (BitMatrix n _) = n
 
@@ -25,7 +34,13 @@ rows bm@(BitMatrix n bv) = (bv @@) <$> slices
   where
     m = numRows bm
     slices = take m $ iterate ((+n) `bimap` (+n)) (n-1, 0)
-        
+
+row :: BitMatrix -> Int -> BitVector
+row bm@(BitMatrix n bv) i = bv @@ ((n+1) * i - 1, n * i)
+
+col :: BitMatrix -> Int -> BitVector
+col = undefined -- bit twiddle or math
+
 instance MonoFunctor BitMatrix where
   omap f bm = BitMatrix (numCols bm) . mconcat $ f <$> rows bm
 
