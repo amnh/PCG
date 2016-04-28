@@ -21,4 +21,3 @@ module Bio.Sequence.Coded
 
 import Bio.Sequence.Coded.Internal
 import Bio.Sequence.Coded.Class
-import Bio.Sequence.Character.Coded

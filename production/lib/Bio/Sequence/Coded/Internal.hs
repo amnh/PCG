@@ -24,19 +24,15 @@ module Bio.Sequence.Coded.Internal where
 
 import           Prelude        hiding (and, head, or)
 import           Bio.Sequence.Coded.Class
-import           Bio.Sequence.Character.Coded
 import           Bio.Sequence.Packed.Class
 import           Bio.Sequence.Parsed
-import           Control.Applicative   (liftA2)
-import           Control.Monad
 import           Data.Bits
 import           Data.BitVector hiding (foldr, foldl, join, not)
 import           Data.Foldable
 import           Data.Function.Memoize
-import           Data.Maybe
 import           Data.Monoid           ((<>))
-import           Data.MonoTraversable
-import           Data.Vector           (Vector, fromList, ifilter, singleton)
+--import           Data.MonoTraversable
+import           Data.Vector           (Vector, ifilter)
 
 -- TODO: Change DynamicChar/Sequences to DynamicCharacters
         -- Make a missing a null vector
@@ -81,14 +77,14 @@ instance EncodableDynamicCharacter DynamicChar where
             where
                 decodedSeq = foldr (\theseBits acc -> (decodeOneChar alphabet (DynamicChar n theseBits gc)) <> acc) mempty (group n inChar)
 
-    decodeOneChar alphabet (DynamicChar n inChar gc) = pure . toList $ ifilter (\i _ -> inChar `testBit` i) alphabet
+    decodeOneChar alphabet (DynamicChar _ inChar _) = pure . toList $ ifilter (\i _ -> inChar `testBit` i) alphabet
 
-    emptySeq = DynamicChar 0 (bitVec 0 0) (bitVec 0 0) -- TODO: Should this be bitVec alphLen 0?
+    emptySeq = DynamicChar 0 zeroBitVec zeroBitVec -- TODO: Should this be bitVec alphLen 0?
 
     -- This works over minimal alphabet
     encodeOverAlphabet alphabet inSeq = foldl' concatCharacter emptySeq $ encodeOneChar alphabet <$> inSeq
 
-    encodeOneChar alphabet inChar = DynamicChar alphabetLen bitRepresentation (bitVec alphabetLen 0 `setBit` (alphabetLen - 1))
+    encodeOneChar alphabet inChar = DynamicChar alphabetLen bitRepresentation (bitVec alphabetLen (0 :: Integer) `setBit` (alphabetLen - 1))
         where
         -- For each (yeah, foreach!) letter in (ordered) alphabet, decide whether it's present in the ambiguity group.
         -- Collect into [Bool].
@@ -96,12 +92,12 @@ instance EncodableDynamicCharacter DynamicChar where
             bits = (`elem` inChar) <$> alphabet
             bitRepresentation = fromBits $ toList bits
 
-    filterGaps (DynamicChar n inChar g) = DynamicChar n (foldl' f (bitVec 0 0) $ group n inChar) g
+    filterGaps (DynamicChar n inChar g) = DynamicChar n ((foldl' f zeroBitVec) $ group n inChar) g
         where
             f acc x = if   x ==. g
                       then acc <> x
                       else acc
-    gapChar (DynamicChar n inChar g) = DynamicChar n g g
+    gapChar (DynamicChar n _ g) = DynamicChar n g g
 
     grabSubChar (DynamicChar n inChar g) pos = DynamicChar n (extract high low inChar) g
         where
@@ -113,6 +109,9 @@ instance EncodableDynamicCharacter DynamicChar where
     numChars (DynamicChar n inChar _)
         | n == 0    = 0
         | otherwise = width inChar `div` n
+
+zeroBitVec :: BitVector
+zeroBitVec = bitVec 0 (0 :: Integer)
 
 {-
 instance Bits DynamicChar where

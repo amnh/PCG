@@ -46,11 +46,8 @@ library
                      , keys                 -any
                      , matrix               -any
                      , megaparsec           >=4.2
-<<<<<<< HEAD
                      , mono-traversable     -any
-=======
                      , memoize              -any
->>>>>>> master
                      , parallel             -any
                      , QuickCheck           -any
                      , safe                 -any
@@ -126,7 +123,6 @@ library
                        Bio.PhyloGraph.Tree.Referential
                        Bio.PhyloGraph.Tree.Rose
                        Bio.Sequence.Coded
-                       Bio.Sequence.Character.Coded
                        Control.Evaluation
                        Control.Monad.Logger
                        Data.Either.Custom
@@ -242,9 +238,6 @@ executable pcg
                        -fwarn-unused-matches
   
   hs-source-dirs:      app
-
---  include-dirs:
---    ffi/Analysis/Parsimony/Binary/SequentialAlign
     
   other-modules:
                        PCG.Command
@@ -388,7 +381,6 @@ Test-Suite testsuite
                        Bio.PhyloGraph.Tree.Referential
                        Bio.PhyloGraph.Tree.Rose
                        Bio.PhyloGraph.Tree.Rose.Class
-                       Bio.Sequence.Character.Coded
                        Bio.Sequence.Coded
                        Bio.Sequence.Coded.Class
                        Control.Evaluation.Internal
