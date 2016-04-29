@@ -22,6 +22,7 @@ module Bio.Sequence.Coded.Class where
 --import Bio.Sequence.Character.Coded
 import Bio.Sequence.Parsed
 
+import Data.Alphabet
 import Data.BitVector
 import Data.Maybe           (fromJust)
 import Data.Monoid          ((<>))
@@ -36,9 +37,6 @@ import Data.Vector          (Vector)
  - decodeChar alphabet (encodeChar alphabet xs .&. encodeChar alphabet ys) == toList alphabet `Data.List.intersect` (toList xs `Data.List.intersect` toList ys)
  - finiteBitSize . encodeChar alphabet == const (length alphabet)
  -}
-
-type Alphabet' a = Vector a
-
 class Bits b => StaticCoded b where
 --  gapChar    ::  Eq a              => Alphabet a -> b
   decodeChar ::  Eq a              => Alphabet' a -> b   -> [a]
@@ -48,9 +46,7 @@ class Bits b => StaticCoded b where
  - decodeMany alphabet . encodeMany alphabet . fmap toList . toList = id
  - TODO: Add more laws here
  -}
-class ( Bits s
-      , StaticCoded (Element s)
-      , Monoid s
+class ( StaticCoded (Element s)
       , MonoTraversable s
       ) => DynamicCoded s where
   -- All default instances can be "overidden" for efficientcy.
