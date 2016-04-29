@@ -19,15 +19,14 @@
 
 module Bio.Sequence.Coded
   ( CodedSequence(..)
-  , EncodedChar
-  , EncodedChars
+  , EncodedSeq
+  , EncodedSequences
   , CodedSequence(..)
 --  , encodeAll
   , decodeMany) where
 
 import           Prelude        hiding (and, head, or)
 import           Bio.Sequence.Coded.Class
-import           Bio.Sequence.Character.Coded
 import           Bio.Sequence.Packed.Class
 import           Bio.Sequence.Parsed
 import           Control.Applicative   (liftA2)
@@ -39,22 +38,17 @@ import           Data.Maybe
 import           Data.Monoid           ((<>))
 import           Data.MonoTraversable
 import           Data.Vector           (Vector, fromList, singleton)
--- import qualified Data.Vector as V      (filter)
-
--- import GHC.Stack
--- import Data.Foldable
--- import Debug.Trace
 
 -- TODO: Change EncodedChar/Sequences to EncodedCharacters
         -- Make a missing a null vector
         -- Think about a nonempty type class or a refinement type for this
 
 -- | EncodedChars is short for a vector of EncodedChar
-type EncodedChars = Vector EncodedChar
+type EncodedSequences = Vector EncodedSeq
 
 -- | An EncodedChar (encoded sequence) is a maybe vector of characters
 -- TODO: change name to make clear the difference between a CodedSequence and an EncodedChar
-type EncodedChar = BitVector
+type EncodedSeq = BitVector
 
 type instance Element DynamicCharacterBV = BitVector
 data DynamicCharacterBV
@@ -104,7 +98,7 @@ instance MonoFoldable DynamicCharacterBV where
 
 
 -- | Make EncodedChar an instance of CodedSequence
-instance CodedSequence EncodedChar where
+instance CodedSequence EncodedSeq where
     decodeOverAlphabet encoded alphabet 
         | length alphabet == 0 = mempty
         | width  encoded  == 0 = mempty
@@ -166,7 +160,7 @@ instance Bits EncodedChar where
     testBit bits i  = maybe False (`testBit` i) bits
 -}
 
-instance PackedSequence EncodedChar where
+instance PackedSequence EncodedSeq where
     packOverAlphabet = undefined
 
 {-
@@ -202,5 +196,6 @@ setElemAt char orig alphabet
 
 
 -- | Functionality to unencode many encoded sequences
-decodeMany :: EncodedChars -> Alphabet -> ParsedSequences
+decodeMany :: EncodedSequences -> Alphabet -> ParsedSequences
 decodeMany seqs alph = fmap (Just . flip decodeOverAlphabet alph) seqs
+y
