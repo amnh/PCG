@@ -15,6 +15,12 @@ import           Data.Vector        (Vector, (!?))
 import qualified Data.Vector as V
 import           Prelude     hiding (lookup)
 
+-- TODO: Alphabetize alphabets so that
+--       'constructAlphabet "ACGT" == constructAlphabet "GATC === True'
+--       This is okay as long as Additive characters have their additive
+--       properties are captured in a TCM. Make sure that the additive character
+--       TCMs are being generated properly in the rectification process.
+
 -- Newtyped to ensure that there are no repeats.
 {- | An 'Alphabet' represents an ordered list of unique symbols with constant
      time random access. Symbols are any data type which are coercable from a
