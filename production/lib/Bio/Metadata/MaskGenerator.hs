@@ -14,22 +14,22 @@
 
 module Bio.Metadata.MaskGenerator where
 
-import Bio.PhyloGraph.Solution
 import Bio.Metadata
+import Bio.PhyloGraph.Solution
 import Bio.Sequence.Coded
-import Data.BitVector      (fromBits)
-import Data.HashMap.Strict (elems)
+import Bio.Sequence.Parsed
+import Data.Foldable
+import Data.HashMap.Strict        (elems)
 import Data.Maybe
-import Data.Monoid
-import Data.Vector         ((!), imap)
+import qualified Data.Vector as V 
 
 -- | Mutate a 'StandardSolution' to include masks in the metadata structure
 addMasks :: StandardSolution -> StandardSolution
-addMasks inSolution = inSolution { metadata = imap changeMetadata (metadata inSolution) }
+addMasks inSolution = inSolution { metadata = V.imap changeMetadata (metadata inSolution) }
     where
         changeMetadata :: Int -> StandardMetadata -> StandardMetadata
         changeMetadata pos curChar 
-            | isAligned curChar = curChar {fitchMasks = generateMasks (length $ alphabet curChar) (getSeqLen pos)}
+            | isAligned curChar = curChar {fitchMasks = generateMasks (alphabet curChar) (getSeqLen pos)}
             | otherwise = curChar
 
         -- | Get length of a sample sequence, operating under assumption they're all the same
@@ -37,17 +37,24 @@ addMasks inSolution = inSolution { metadata = imap changeMetadata (metadata inSo
         getSeqLen pos = length $ fromMaybe mempty curSeq
             where
                 someSeqs = head . elems $ parsedChars inSolution
-                curSeq = someSeqs ! pos
+                curSeq   = someSeqs V.! pos
 
         -- | Generate mask pair given proper info
-        generateMasks :: Int -> Int -> (EncodedSeq, EncodedSeq)
-        generateMasks alphLen sLen = (Just occupancy, Just periodic)
+       {- generateMasks :: Int -> Int -> (DynamicChar, DynamicChar)
+        generateMasks alphLen sLen = (DynamicChar alphLen occupancy gapChar, DynamicChar alphLen periodic gapChar)
             where
                 unit      = replicate (alphLen - 1) False <> [True]
                 periodic  = fromBits $ concat (replicate sLen unit)
                 occupancy = fromBits $ replicate (alphLen * sLen) True
-
-
+                gapChar   = (bitVec alphLen (0 :: Integer)) (alphLen - 1)
+        -}
+        -- | Generate mask pair given proper info
+        generateMasks :: Alphabet -> Int -> (DynamicChar, DynamicChar)
+        generateMasks inAlphabet sLen = (encodeOverAlphabet inAlphabet occupancy, encodeOverAlphabet inAlphabet periodic)
+            where
+                unit      = [inAlphabet V.! (length inAlphabet - 1)]
+                periodic  = V.replicate sLen unit
+                occupancy = V.replicate sLen (toList inAlphabet) 
 
 
 

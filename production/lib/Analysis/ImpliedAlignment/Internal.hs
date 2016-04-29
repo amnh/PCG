@@ -30,4 +30,4 @@ type SolutionConstraint r m f t n e s = (GeneralSolution r f, MetadataSolution r
 type ForestConstraint       f t n e s = (GeneralForest f t, TreeConstraint t n e s)
 type TreeConstraint           t n e s = (BinaryTree t n, Network t n, StandardDAG t n e, NodeConstraint n s)
 type NodeConstraint             n   s = (FinalNode n s, IANode n, RefNode n, SeqConstraint s)
-type SeqConstraint                  s = (CodedSequence s, Bits s, CodedChar s, Show s, Memoizable s, Monoid s)
+type SeqConstraint                  s = (EncodableDynamicCharacter s, Bits s, Show s, Memoizable s, Monoid s)

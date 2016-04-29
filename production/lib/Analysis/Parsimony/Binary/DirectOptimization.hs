@@ -158,15 +158,15 @@ generateRow char1 char2 rowNum prevRow@(vals, _) (position, prevCost) meta
         (singleton (minCost, minDir), minState) <> nextCall minCost
         where
             indCost            = getGapCost meta
-            char1              = grabSubChar char1 (position - 1)
-            char2              = grabSubChar char2 (rowNum - 1)
+            subChar1           = grabSubChar char1 (position - 1)
+            subChar2           = grabSubChar char2 (rowNum - 1)
             upValue            = fst $ vals ! position
             diagVal            = fst $ vals ! (position - 1)
-            (downChar, dCost)  = getOverlap (gapChar char2) char2 meta
+            (downChar, dCost)  = getOverlap (gapChar char2) subChar2 meta
             downCost           = dCost + upValue
-            (leftChar, lCost)  = getOverlap (gapChar char1) char1 meta
+            (leftChar, lCost)  = getOverlap (gapChar char1) subChar1 meta
             leftCost           = lCost + prevCost
-            (diagChar, dgCost) = getOverlap char1 char2 meta
+            (diagChar, dgCost) = getOverlap subChar1 subChar2 meta
             diagCost           = diagVal + dgCost
 
             nextCall cost      = generateRow char1 char2 rowNum prevRow (position + 1, cost) meta

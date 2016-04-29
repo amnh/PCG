@@ -61,7 +61,7 @@ impliedAlign inTree metadata = foldr (\n acc -> insert (getCode n) (makeAlignmen
         (_, curTree) = numeratePreorder inTree (getRoot inTree) metadata (replicate (length metadata) 0)
         allLeaves = filter (flip nodeIsLeaf curTree) (getNodes curTree)
         --oneTrace :: s -> Homologies -> m -> s
-        oneTrace oneSeq homolog meta = foldr (\pos acc -> grabSubChar oneSeq pos (length $ getAlphabet meta) <> acc) mempty homolog
+        oneTrace oneSeq homolog meta = foldr (\pos acc -> grabSubChar oneSeq pos <> acc) mempty homolog
         --makeAlign :: Vector s -> HomologyTrace -> Vector s
         makeAlign seqs homologies = zipWith3 oneTrace seqs homologies metadata
         --makeAlignment :: n -> Vector s
@@ -105,7 +105,7 @@ numeratePreorder inTree curNode metadata curCounts
             leftOnly = isNothing $ rightChild curNode inTree
             rightOnly = isNothing $ leftChild curNode inTree
             -- TODO: check if this is really the default
-            defaultHomologs = imap (\i m -> generate (numChars (curSeqs ! i) (length $ getAlphabet m)) (+ 1)) metadata
+            defaultHomologs = imap (\i m -> generate (numChars (curSeqs ! i)) (+ 1)) metadata
 
             -- Simple wrapper to align and assign using DO
             --alignAndAssign :: NodeConstraint n s => n -> n -> (n, n)
@@ -131,13 +131,12 @@ numerateNode ancestorNode childNode initCounters metadata = (setHomologies child
 numerateOne :: (SeqConstraint s, Metadata m s) => s -> Homologies -> s -> Int -> m -> (Homologies, Int)
 numerateOne ancestorSeq ancestorHomologies childSeq initCounter meta = foldr determineHomology (mempty, initCounter) foldIn
     where
-        alphLen = length $ getAlphabet meta
-        getAllSubs s = foldr (\p acc -> grabSubChar s p alphLen `cons` acc) mempty (fromList [0..(numChars s alphLen)])
+        getAllSubs s = foldr (\p acc -> grabSubChar s p `cons` acc) mempty (fromList [0..(numChars s)])
         foldIn = zip3 (getAllSubs childSeq) (getAllSubs ancestorSeq) ancestorHomologies
 
         -- Finds the homology position between any two characters
         determineHomology :: SeqConstraint s => (s, s, Int) -> (Homologies, Int) -> (Homologies, Int)
         determineHomology (childChar, ancestorChar, ancestorHomolog) (homologSoFar, counterSoFar)
-            | ancestorChar == gapChar alphLen = (counterSoFar `cons` homologSoFar, counterSoFar)
-            | childChar /= gapChar alphLen    = (ancestorHomolog `cons` homologSoFar, counterSoFar + 1)
+            | ancestorChar == gapChar childChar = (counterSoFar `cons` homologSoFar, counterSoFar)
+            | childChar /= gapChar ancestorChar    = (ancestorHomolog `cons` homologSoFar, counterSoFar + 1)
             | otherwise                       = (counterSoFar `cons` homologSoFar, counterSoFar + 1) --TODO: check this case
