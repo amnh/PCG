@@ -1,6 +1,8 @@
 {-# LANGUAGE TypeFamilies #-}
 module Data.BitMatrix
   ( BitMatrix()
+  , bitMatrix
+  , fromRows
   , numCols
   , numRows
   , rows
@@ -8,7 +10,6 @@ module Data.BitMatrix
   ) where
 
 import Data.Bifunctor
-import Data.Bits
 import Data.BitVector hiding (foldr)
 import Data.Foldable
 import Data.Monoid
@@ -21,7 +22,33 @@ data BitMatrix
 type instance Element BitMatrix = BitVector
 
 bitMatrix :: Int -> Int -> ((Int,Int) -> Bool) -> BitMatrix
-bitMatrix = undefined
+bitMatrix m n f =
+  case errorMsg m n of
+    Just msg -> error msg
+    Nothing  -> BitMatrix n . bitVec (m*n) . snd . foldl' g initialAccumulator $ [(i,j) | i <- [0..m-1], j <- [0..n-1]]
+  where
+    initialAccumulator :: (Integer, Integer)
+    initialAccumulator = (1,0)
+    g (exponent, summation) index
+      | f index   = (exponent `shiftL` 1, exponent + summation)
+      | otherwise = (exponent `shiftL` 1,            summation)
+    errorMsg m n
+      | m <= 0 && n <= 0 = Just $ unwords [errorPrefix, errorRowCount, "also", errorColCount] <> "."
+      | m <= 0           = Just $ unwords [errorPrefix, errorRowCount] <> "."
+      | n <= 0           = Just $ unwords [errorPrefix, errorColCount] <> "."
+      | otherwise        = Nothing
+      where
+        errorPrefix   = mconcat ["The call to bitMatrix ", show m, " ", show n, "f is malformed,"]
+        errorRowCount = mconcat ["the number of rows "   , show m, "is a non-positive number"]
+        errorColCount = mconcat ["the number of columns ", show n, "is a non-positive number"]
+
+fromRows :: Foldable t => t BitVector -> BitMatrix
+fromRows xs
+  | null xs   = error "The call to fromRows was given an empty Foldabble structure."
+  | otherwise = BitMatrix n $ mconcat xs'
+  where
+    xs' = toList xs
+    n   = width $ head xs'
 
 numCols :: BitMatrix -> Int
 numCols (BitMatrix n _) = n
@@ -36,10 +63,12 @@ rows bm@(BitMatrix n bv) = (bv @@) <$> slices
     slices = take m $ iterate ((+n) `bimap` (+n)) (n-1, 0)
 
 row :: BitMatrix -> Int -> BitVector
-row bm@(BitMatrix n bv) i = bv @@ ((n+1) * i - 1, n * i)
+row (BitMatrix n bv) i = bv @@ ((n+1) * i - 1, n * i)
 
+{-
 col :: BitMatrix -> Int -> BitVector
 col = undefined -- bit twiddle or math
+-}
 
 instance MonoFunctor BitMatrix where
   omap f bm = BitMatrix (numCols bm) . mconcat $ f <$> rows bm
