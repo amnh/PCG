@@ -86,18 +86,13 @@ instance StaticCoded BitVector where
   encodeChar alphabet ambiguity = fromBits $ (`elem` ambiguity) <$> toList alphabet
 
 instance DynamicCoded DynamicCharacter where
-    -- All default instances can be "overidden" for efficientcy.
+
   decodeDynamic alphabet (DC bm) = ofoldMap (pure . decodeChar alphabet) $ rows bm
 
---  encodeDynamic :: (Eq a, Foldable t, Foldable c) => Alphabet' a -> c (t a) -> s
---  encodeDynamic alphabet = ofoldl' (\acc e -> acc <> encodeChar alphabet e) mempty
---    where
---      f :: Foldable t => t a -> Element s
---      f acc e = acc <> encodeChar alphabet e
+  encodeDynamic alphabet = DC . fromRows . fmap (encodeChar alphabet) . toList
 
   indexChar i = fromJust . lookupChar i
 
   lookupChar (DC bm) i
     | numRows bm <= i = Just $ bm `row` i
     | otherwise       = Nothing
-

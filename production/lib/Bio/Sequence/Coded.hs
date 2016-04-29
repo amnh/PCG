@@ -19,9 +19,9 @@
 
 module Bio.Sequence.Coded
   ( CodedSequence(..)
-  , EncodedSeq
-  , EncodedSequences
-  , CodedChar(..)
+  , EncodedChar
+  , EncodedChars
+  , CodedSequence(..)
 --  , encodeAll
   , decodeMany) where
 
@@ -56,8 +56,6 @@ type EncodedChars = Vector EncodedChar
 -- TODO: change name to make clear the difference between a CodedSequence and an EncodedChar
 type EncodedChar = BitVector
 
---data EncodedSequenceOverAlphabet a = forall a. Bits a => BBV Int a
-
 type instance Element DynamicCharacterBV = BitVector
 data DynamicCharacterBV
    = DynamicBV Int BitVector
@@ -74,7 +72,7 @@ instance MonoFunctor DynamicCharacterBV where
 instance MonoFoldable DynamicCharacterBV where
   -- | Map each element of a monomorphic container to a 'Monoid'
   -- and combine the results.
-  ofoldMap f xs = ofoldr mempty (mappend . f)
+  ofoldMap f xs = ofoldr (mappend . f) mempty $ unpackCharacters xs
   {-# INLINE ofoldMap #-}
 
   -- | Right-associative fold of a monomorphic container.
@@ -91,7 +89,7 @@ instance MonoFoldable DynamicCharacterBV where
   -- throw an exception.
   --
   -- /See 'Data.MinLen.ofoldr1Ex' from "Data.MinLen" for a total version of this function./
-  ofoldr1Ex f e xs = foldr1 f e $ unpackCharacters xs
+  ofoldr1Ex f xs = foldr1 f $ unpackCharacters xs
   {-# INLINE ofoldr1Ex #-}
 
   -- | Strict left-associative fold of a monomorphic container with no base
@@ -101,25 +99,12 @@ instance MonoFoldable DynamicCharacterBV where
   -- throw an exception.
   --
   -- /See 'Data.MinLen.ofoldl1Ex'' from "Data.MinLen" for a total version of this function./
-  ofoldl1Ex' f e xs = foldl1 f e $ unpackCharacters xs
+  ofoldl1Ex' f xs = foldl1 f $ unpackCharacters xs
   {-# INLINE ofoldl1Ex' #-}
 
 
-  
-{-
-instance Foldable EncodedSequenceOverAlphabet where
-    foldr f e (BBV n bv) = foldr f e $ g <$> [0 .. len-1]
-      where
-        len = bv `div` n
-        g i = (clearBit (setBit zeroBits (n - 1)) (n - 1)) .|. (shiftR b right)
-          where
-            left  = ((i + 1) * n) - 1
-            right = i * n
-        g' i = (compliment (clearBit (setBit zeroBits (n - 1)) (n - 1))) .|. (shiftR b right)
--}
-
 -- | Make EncodedChar an instance of CodedSequence
-instance CodedChar EncodedChar where
+instance CodedSequence EncodedChar where
     decodeOverAlphabet encoded alphabet 
         | length alphabet == 0 = mempty
         | width  encoded  == 0 = mempty

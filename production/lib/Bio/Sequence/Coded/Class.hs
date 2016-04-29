@@ -25,9 +25,8 @@ import Bio.Sequence.Parsed
 import Data.Alphabet
 import Data.BitVector
 import Data.Maybe           (fromJust)
-import Data.Monoid          ((<>))
+import Data.Monoid
 import Data.MonoTraversable
-import Data.Vector          (Vector)
 
 {- LAWS:
  - decodeChar alphabet . encodeChar alphabet . toList == id
@@ -53,11 +52,7 @@ class ( StaticCoded (Element s)
   decodeDynamic ::  Eq a => Alphabet' a -> s -> [[a]]
   decodeDynamic alphabet = ofoldr (\e acc -> decodeChar alphabet e : acc) []
 
---  encodeDynamic :: (Eq a, Foldable t, Foldable c) => Alphabet' a -> c (t a) -> s
---  encodeDynamic alphabet = ofoldl' (\acc e -> acc <> encodeChar alphabet e) mempty
---    where
---      f :: Foldable t => t a -> Element s
---      f acc e = acc <> encodeChar alphabet e
+  encodeDynamic :: (Eq a, Foldable t, Foldable c) => Alphabet' a -> c (t a) -> s
 
   indexChar  :: s -> Int -> (Element s)
   indexChar i = fromJust . lookupChar i
