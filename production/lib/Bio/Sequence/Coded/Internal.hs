@@ -17,7 +17,7 @@
 
 -- TODO: are all of these necessary?
 {-# LANGUAGE TypeSynonymInstances, FlexibleInstances, MultiParamTypeClasses, UndecidableInstances, TypeFamilies #-}
--- TODO: fix and remove this ghc option:
+-- TODO: fix and remove this ghc option (is it needed for Arbitrary?):
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
 module Bio.Sequence.Coded.Internal where
@@ -32,7 +32,8 @@ import           Data.Foldable
 import           Data.Function.Memoize
 import           Data.Monoid           ((<>))
 --import           Data.MonoTraversable
-import           Data.Vector           (Vector, ifilter)
+import           Data.Vector           (Vector, fromList, ifilter)
+import           Test.Tasty.QuickCheck
 
 -- TODO: Change DynamicChar/Sequences to DynamicCharacters
         -- Make a missing a null vector
@@ -48,7 +49,7 @@ data DynamicChar
    { alphLen   :: Int
    , character :: BitVector
    , gap       :: BitVector
-   } deriving (Show)
+   } deriving (Eq, Show)
 
 concatCharacter :: DynamicChar -> DynamicChar -> DynamicChar
 concatCharacter (DynamicChar len bv1 g) (DynamicChar _ bv2 _) = DynamicChar len (bv1 <> bv2) g
@@ -79,10 +80,10 @@ instance EncodableDynamicCharacter DynamicChar where
 
     decodeOneChar alphabet (DynamicChar _ inChar _) = pure . toList $ ifilter (\i _ -> inChar `testBit` i) alphabet
 
-    emptySeq = DynamicChar 0 zeroBitVec zeroBitVec -- TODO: Should this be bitVec alphLen 0?
+    emptyChar = DynamicChar 0 zeroBitVec zeroBitVec -- TODO: Should this be bitVec alphLen 0?
 
     -- This works over minimal alphabet
-    encodeOverAlphabet alphabet inSeq = foldl' concatCharacter emptySeq $ encodeOneChar alphabet <$> inSeq
+    encodeOverAlphabet alphabet inChar = foldl' concatCharacter emptyChar $ encodeOneChar alphabet <$> inChar
 
     encodeOneChar alphabet inChar = DynamicChar alphabetLen bitRepresentation (bitVec alphabetLen (0 :: Integer) `setBit` (alphabetLen - 1))
         where
@@ -98,6 +99,8 @@ instance EncodableDynamicCharacter DynamicChar where
                       then acc <> x
                       else acc
     gapChar (DynamicChar n _ g) = DynamicChar n g g
+
+    getAlphLen (DynamicChar n _ _) = n
 
     grabSubChar (DynamicChar n inChar g) pos = DynamicChar n (extract high low inChar) g
         where
@@ -173,3 +176,16 @@ setElemAt char orig alphabet
 decodeMany :: DynamicChars -> Alphabet -> ParsedSequences
 decodeMany seqs alph = fmap (Just . decodeOverAlphabet alph) seqs
 
+instance Arbitrary BitVector where
+    arbitrary = fromBits <$> listOf (arbitrary :: Gen Bool)
+
+instance Arbitrary b => Arbitrary (Vector b) where
+    arbitrary = fromList <$> listOf arbitrary
+
+instance Arbitrary DynamicChar where
+    arbitrary = do 
+        len    <- arbitrary :: Gen Int
+        charCt <- arbitrary :: Gen Int
+        charBv <- vector (charCt * len) :: Gen [Bool]
+        let gapBv = setBit (bitVec len (0 :: Integer)) (len - 1)
+        pure $ DynamicChar len (fromBits charBv) gapBv

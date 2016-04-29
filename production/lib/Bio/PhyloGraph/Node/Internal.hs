@@ -35,16 +35,16 @@ data Node = Node  { code        :: Int
                   , isLeaf      :: Bool
                   , parents     :: [Int]
                   , children    :: [Int]
-                  , encoded     :: Vector EncodedSeq -- encoded version of original assignment
-                  , packed      :: Vector EncodedSeq -- packed version of the sequence
-                  , preliminary :: Vector EncodedSeq -- preliminary assignment at a node
-                  , final       :: Vector EncodedSeq -- final assignment at a node
-                  , temporary   :: Vector EncodedSeq -- multipurpose temporary assignment 
-                  , aligned     :: Vector EncodedSeq -- the alignment between the children
-                  , random      :: Vector EncodedSeq -- the assignment with a single state randomly selected to remove ambiguity
-                  , union       :: Vector EncodedSeq -- the union assignment
-                  , single      :: Vector EncodedSeq -- the single assignment
-                  , gapped      :: Vector EncodedSeq -- the final assignment with gaps for alignment
+                  , encoded     :: Vector DynamicChar -- encoded version of original assignment
+                  , packed      :: Vector DynamicChar -- packed version of the sequence
+                  , preliminary :: Vector DynamicChar -- preliminary assignment at a node
+                  , final       :: Vector DynamicChar -- final assignment at a node
+                  , temporary   :: Vector DynamicChar -- multipurpose temporary assignment 
+                  , aligned     :: Vector DynamicChar -- the alignment between the children
+                  , random      :: Vector DynamicChar -- the assignment with a single state randomly selected to remove ambiguity
+                  , union       :: Vector DynamicChar -- the union assignment
+                  , single      :: Vector DynamicChar -- the single assignment
+                  , gapped      :: Vector DynamicChar -- the final assignment with gaps for alignment
                   , iaHomology  :: IN.HomologyTrace  -- the homology traces for an implied alignment (the matrix is numChars by charLength)
                   , localCost   :: Double            -- cost of assignment at this node alone
                   , totalCost   :: Double            -- sum cost of this node and its subtree
@@ -93,24 +93,24 @@ instance Monoid Node where
                        }
 
 -- | Make it an instance of encoded, final, packed, and preliminary
-instance EN.EncodedNode Node EncodedSeq where
+instance EN.EncodedNode Node DynamicChar where
     getEncoded = encoded
     setEncoded n s = n {encoded = s}
 
 -- | Nodes can hold final assignment
-instance FN.FinalNode Node EncodedSeq where
+instance FN.FinalNode Node DynamicChar where
     getFinal = final
     setFinal f n = n {final = f}
     getFinalGapped = gapped
     setFinalGapped f n = n {gapped = f}
 
 -- | Nodes can hold packed data
-instance PN.PackedNode Node EncodedSeq where
+instance PN.PackedNode Node DynamicChar where
     getPacked = packed
     setPacked n s = n {packed = s}
 
 -- | Nodes hold all preliminary info
-instance RN.PreliminaryNode Node EncodedSeq where
+instance RN.PreliminaryNode Node DynamicChar where
     getPreliminary = preliminary
     setPreliminary s n = n {preliminary = s}
     getPreliminaryAlign = aligned

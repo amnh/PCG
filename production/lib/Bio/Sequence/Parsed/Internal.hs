@@ -31,6 +31,7 @@ type AmbiguityGroup = [String]
 type ParsedSeq = Vector AmbiguityGroup
 
 -- TODO: change to ParsedCharacters
+-- TODO: Remove Maybe?
 -- | Represents a charcter sequence containing possibly missing character data.
 type ParsedSequences = Vector (Maybe ParsedSeq)
 

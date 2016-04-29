@@ -18,7 +18,6 @@ module Bio.PhyloGraph.Solution
   , module Bio.PhyloGraph.Solution.Metadata
   ) where
 
-import           Bio.PhyloGraph.Forest           
 import           Bio.PhyloGraph.Solution.Class
 import           Bio.PhyloGraph.Solution.Metadata
 import           Bio.PhyloGraph.Solution.Internal

@@ -29,16 +29,16 @@ data TopoNode b
    , isLeaf       :: Bool
    , name         :: String
    , children     :: [TopoNode b]
-   , encoded      :: Vector EncodedSeq -- | Encoded version of original assignment.
-   , packed       :: Vector EncodedSeq -- | Packed version of the sequence.
-   , preliminary  :: Vector EncodedSeq -- | Preliminary assignment at a node.
-   , final        :: Vector EncodedSeq -- | Final assignment at a node.
-   , temporary    :: Vector EncodedSeq -- | Multipurpose temporary assignment.
-   , aligned      :: Vector EncodedSeq -- | The alignment between the children.
-   , random       :: Vector EncodedSeq -- | The assignment with a single state randomly selected to remove ambiguity.
-   , union        :: Vector EncodedSeq -- | The union assignment.
-   , single       :: Vector EncodedSeq -- | The single assignment.
-   , gapped       :: Vector EncodedSeq -- | The final assignment with gaps for alignment.
+   , encoded      :: Vector DynamicChar -- | Encoded version of original assignment.
+   , packed       :: Vector DynamicChar -- | Packed version of the sequence.
+   , preliminary  :: Vector DynamicChar -- | Preliminary assignment at a node.
+   , final        :: Vector DynamicChar -- | Final assignment at a node.
+   , temporary    :: Vector DynamicChar -- | Multipurpose temporary assignment.
+   , aligned      :: Vector DynamicChar -- | The alignment between the children.
+   , random       :: Vector DynamicChar -- | The assignment with a single state randomly selected to remove ambiguity.
+   , union        :: Vector DynamicChar -- | The union assignment.
+   , single       :: Vector DynamicChar -- | The single assignment.
+   , gapped       :: Vector DynamicChar -- | The final assignment with gaps for alignment.
    , localCost    :: Double
    , totalCost    :: Double
    } deriving (Eq, Show)

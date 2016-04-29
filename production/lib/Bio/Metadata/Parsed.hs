@@ -16,14 +16,14 @@
 module Bio.Metadata.Parsed where
 
 import           Bio.Metadata.Internal
+import           Bio.Sequence.Coded
 import           Bio.Sequence.Parsed
 import           Bio.PhyloGraph.Solution
 import           Data.Char
 import           Data.Foldable
-import           Data.List
-import qualified Data.Map.Lazy          as M
-import           Data.Maybe
+import           Data.List              hiding (insert)
 import           Data.Monoid
+import           Data.Set                      (Set, insert)
 import           Data.Vector                   (fromList, Vector)
 import qualified Data.Vector            as V
 import           File.Format.Fasta             (FastaParseResult,TaxonSequenceMap)
@@ -56,7 +56,7 @@ instance ParsedMetadata TNT.TntResult where
     unifyMetadata (Left _) = mempty
     unifyMetadata (Right withSeq) = fromList $ zipWith f (toList $ TNT.charMetaData withSeq) (snd . head . toList $ TNT.sequences withSeq)
         where
-           f :: Monoid s => TNT.CharacterMetaData -> TNT.TntCharacter -> (CharacterMetadata s)
+           f :: EncodableDynamicCharacter s => TNT.CharacterMetaData -> TNT.TntCharacter -> (CharacterMetadata s)
            f inMeta inChar =  let defaultMeta = makeOneInfo $ tntAlphabet inChar
                     in  defaultMeta { name       = TNT.characterName   inMeta
                                     , stateNames = TNT.characterStates inMeta
@@ -69,7 +69,7 @@ instance ParsedMetadata TNT.TntResult where
 
 instance ParsedMetadata F.TCM where
     unifyMetadata (F.TCM alph mat) = 
-        let defaultMeta = makeOneInfo (toList alph)
+        let defaultMeta = makeOneInfo . fromList $ toList alph
         in  pure (defaultMeta {costs = TCM mat})
 
 instance ParsedMetadata VertexEdgeRoot where
@@ -79,19 +79,19 @@ instance ParsedMetadata Nexus where
     unifyMetadata (Nexus (_, metas)) = V.map convertNexusMeta metas
         where
             convertNexusMeta inMeta = 
-                let defaultMeta = makeOneInfo (Nex.alphabet inMeta)
+                let defaultMeta = makeOneInfo (fromList $ Nex.alphabet inMeta)
                 in  defaultMeta { name = Nex.name inMeta, isIgnored = Nex.ignored inMeta, 
                                   costs  = maybe (costs defaultMeta) (TCM . F.transitionCosts) (Nex.costM inMeta)}
 
-disAlph, dnaAlph, rnaAlph, aaAlph :: [String]
+disAlph, dnaAlph, rnaAlph, aaAlph :: Vector String
 -- | The acceptable DNA character values (with IUPAC codes).
-dnaAlph = pure <$> addOtherCases "AGCTRMWSKTVDHBNX?-"
+dnaAlph = fromList $ pure <$> addOtherCases "AGCTRMWSKTVDHBNX?-"
 -- | The acceptable RNA character values (with IUPAC codes).
-rnaAlph = pure <$> addOtherCases "AGCURMWSKTVDHBNX?-"
+rnaAlph = fromList $ pure <$> addOtherCases "AGCURMWSKTVDHBNX?-"
 -- | The acceptable amino acid/protein character values (with IUPAC codes).
-aaAlph  = pure <$> addOtherCases "ABCDEFGHIKLMNPQRSTVWXYZ-"
+aaAlph  = fromList $ pure <$> addOtherCases "ABCDEFGHIKLMNPQRSTVWXYZ-"
 -- | The acceptable discrete character values.
-disAlph = pure <$> (['0'..'9'] <> ['A'..'Z'] <> ['a'..'z'] <> "-" <> "?")
+disAlph = fromList $ pure <$> (['0'..'9'] <> ['A'..'Z'] <> ['a'..'z'] <> "-" <> "?")
 
 -- | Adds case insensitive values to a 'String'.
 addOtherCases :: String -> String
@@ -106,27 +106,40 @@ subsetOf :: (Ord a) => [a] -> [a] -> Bool
 subsetOf list1 list2 = foldr (\e acc -> acc && e `elem` list2) True list1
 
 -- | Make a single info given an alphabet
-makeOneInfo :: Monoid s => Alphabet -> CharacterMetadata s
-makeOneInfo alph = CharMeta DirectOptimization alph mempty False False 1 mempty (mempty, mempty) 1 (GeneralCost 1 1)
+makeOneInfo :: (EncodableDynamicCharacter s) => Alphabet -> CharacterMetadata s
+makeOneInfo alph = CharMeta DirectOptimization alph mempty False False 1 mempty (emptyChar, emptyChar) 1 (GeneralCost 1 1)
 
 -- | Functionality to make char info from tree seqs
-makeEncodeInfo :: Monoid s => TreeSeqs -> Vector (CharacterMetadata s)
+makeEncodeInfo :: EncodableDynamicCharacter s => TreeSeqs -> Vector (CharacterMetadata s)
 makeEncodeInfo seqs = V.map makeOneInfo alphabets
     where alphabets = developAlphabets seqs
 
--- | Internal function to create alphabets
-developAlphabets :: TreeSeqs -> Vector Alphabet
-developAlphabets inSeqs = V.map setGapChar $ V.map sort $ M.foldr (V.zipWith getNodeAlphAt) initializer inSeqs
-    where
-        someSeq = head $ M.elems inSeqs
-        initializer = if null someSeq then mempty
-                        else V.replicate (V.length someSeq) mempty
+-- | Internal function(s) to create alphabets
+-- First is the new version. Following is the old version, which looks like it tosses the accumulator every once in a while.
+-- Notes on data types follow
+-- TreeSeqs :: Map String Maybe Vector [String]
+-- bases are ambiguous, possibly multi-Char containers, hence [String]
+-- characters are ordered groups of bases, hence Vector [String]
+-- characters may be missing, hence Maybe Vector [String]
+-- each taxon may have a sequence (multiple characters), hence Vector Maybe Vector [String]
+-- sequences are values mapped to using taxon names as keys, hence Map String Vector Maybe Vector [String]
+--developAlphabets :: TreeSeqs -> Vector Alphabet
 
-        getNodeAlphAt :: Maybe ParsedSeq -> Alphabet -> Alphabet
-        getNodeAlphAt inSeq soFar
-            | isNothing inSeq = mempty
-            | otherwise =  V.foldr (flip $ foldr (\sIn prev -> if sIn `elem` prev then prev else sIn : prev)) soFar (fromJust inSeq)
+--old version
+developAlphabets :: TreeSeqs -> Vector Alphabet
+developAlphabets inTaxSeqMap = fmap (setGapChar . V.fromList . sort . toList) $ foldr (V.zipWith getNodeAlphAt) partialAlphabets inTaxSeqMap
+    where
+        seqLength        = length $ head $ toList inTaxSeqMap
+        partialAlphabets = V.replicate seqLength mempty
+
+        getNodeAlphAt :: Maybe ParsedSeq -> Set String -> Set String
+        getNodeAlphAt inCharMay partialAlphabet =
+          case inCharMay of
+            Nothing     -> partialAlphabet
+            Just inChar -> foldr (flip $ foldr insert  -- this is set insertion
+                                 ) partialAlphabet inChar
+
 
 -- | Ensure that the gap char is present and correctly positioned in an alphabet
 setGapChar :: Alphabet -> Alphabet
-setGapChar inAlph = filter (/= "-") inAlph ++ ["-"]
+setGapChar inAlph = V.filter (/= "-") inAlph <> pure "-"

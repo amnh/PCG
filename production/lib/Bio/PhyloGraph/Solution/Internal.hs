@@ -37,7 +37,7 @@ type Sequences = ParsedSequences
 -- We'll have two types of node: topological and referential
 
 -- | The character metadata reference structure.
-type StandardMetadata = CharacterMetadata EncodedSeq
+type StandardMetadata = CharacterMetadata DynamicChar
 
 -- | A simple storable computation state value.
 type StandardSolution = Solution DAG

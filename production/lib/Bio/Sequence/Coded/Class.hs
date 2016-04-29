@@ -78,9 +78,10 @@ class EncodableDynamicCharacter s where
     decodeOneChar        :: Alphabet -> s -> ParsedSeq 
     encodeOverAlphabet   :: Alphabet -> ParsedSeq -> s
     encodeOneChar        :: Alphabet -> AmbiguityGroup -> s
-    emptySeq             :: s
+    emptyChar            :: s
     filterGaps           :: s -> s
     gapChar              :: s -> s
+    getAlphLen           :: s -> Int
     grabSubChar          :: s -> Int -> s
     isEmpty              :: s -> Bool
     numChars             :: s -> Int

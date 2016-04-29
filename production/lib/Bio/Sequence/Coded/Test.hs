@@ -127,9 +127,3 @@ instance Arbitrary (ParsedSeq', Alphabet) where
         alphabet <- (fmap (:[]) . getNonEmpty) <$> (arbitrary :: (Gen (NonEmptyList Char)))
         vector   <- fmap (fmap (NonEmpty . (:[]) . NonEmpty) . fromList) . listOf1 $ elements alphabet
         pure (vector, alphabet)
-
-instance Arbitrary BitVector where
-    arbitrary = fromBits <$> listOf (arbitrary :: Gen Bool)
-
-instance Arbitrary b => Arbitrary (Vector b) where
-    arbitrary = fromList <$> listOf arbitrary
