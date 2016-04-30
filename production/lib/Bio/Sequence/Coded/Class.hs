@@ -74,9 +74,9 @@ class ( Bits s
 -- | A coded sequence allows grabbing of a character, filtering, and some standard types
 class EncodableDynamicCharacter s where
     -- TODO: I switched the order of input args in decode fns and encodeOver...
-    decodeOverAlphabet   :: Alphabet -> s -> ParsedSeq
-    decodeOneChar        :: Alphabet -> s -> ParsedSeq 
-    encodeOverAlphabet   :: Alphabet -> ParsedSeq -> s
+    decodeOverAlphabet   :: Alphabet -> s -> ParsedDynChar
+    decodeOneChar        :: Alphabet -> s -> ParsedDynChar 
+    encodeOverAlphabet   :: Alphabet -> ParsedDynChar -> s
     encodeOneChar        :: Alphabet -> AmbiguityGroup -> s
     emptyChar            :: s
     filterGaps           :: s -> s

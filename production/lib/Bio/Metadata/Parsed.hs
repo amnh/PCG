@@ -110,29 +110,29 @@ makeOneInfo :: (EncodableDynamicCharacter s) => Alphabet -> CharacterMetadata s
 makeOneInfo alph = CharMeta DirectOptimization alph mempty False False 1 mempty (emptyChar, emptyChar) 1 (GeneralCost 1 1)
 
 -- | Functionality to make char info from tree seqs
-makeEncodeInfo :: EncodableDynamicCharacter s => TreeSeqs -> Vector (CharacterMetadata s)
+makeEncodeInfo :: EncodableDynamicCharacter s => TreeChars -> Vector (CharacterMetadata s)
 makeEncodeInfo seqs = V.map makeOneInfo alphabets
     where alphabets = developAlphabets seqs
 
 -- | Internal function(s) to create alphabets
 -- First is the new version. Following is the old version, which looks like it tosses the accumulator every once in a while.
 -- Notes on data types follow
--- TreeSeqs :: Map String Maybe Vector [String]
+-- TreeChars :: Map String Maybe Vector [String]
 -- bases are ambiguous, possibly multi-Char containers, hence [String]
 -- characters are ordered groups of bases, hence Vector [String]
 -- characters may be missing, hence Maybe Vector [String]
 -- each taxon may have a sequence (multiple characters), hence Vector Maybe Vector [String]
 -- sequences are values mapped to using taxon names as keys, hence Map String Vector Maybe Vector [String]
---developAlphabets :: TreeSeqs -> Vector Alphabet
+--developAlphabets :: TreeChars -> Vector Alphabet
 
 --old version
-developAlphabets :: TreeSeqs -> Vector Alphabet
+developAlphabets :: TreeChars -> Vector Alphabet
 developAlphabets inTaxSeqMap = fmap (setGapChar . V.fromList . sort . toList) $ foldr (V.zipWith getNodeAlphAt) partialAlphabets inTaxSeqMap
     where
         seqLength        = length $ head $ toList inTaxSeqMap
         partialAlphabets = V.replicate seqLength mempty
 
-        getNodeAlphAt :: Maybe ParsedSeq -> Set String -> Set String
+        getNodeAlphAt :: Maybe ParsedDynChar -> Set String -> Set String
         getNodeAlphAt inCharMay partialAlphabet =
           case inCharMay of
             Nothing     -> partialAlphabet

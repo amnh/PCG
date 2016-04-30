@@ -21,5 +21,5 @@ import Bio.Sequence.Coded.Class
 
 -- | Defines type for which a sequence can be converted into compact bit-valued
 --   representation.
-class EncodableDynamicCharacter s => PackedSequence s where
-    packOverAlphabet :: ParsedSeq -> AmbiguityGroup -> s
+class EncodableDynamicCharacter s => PackedDynChar s where
+    packOverAlphabet :: ParsedDynChar -> AmbiguityGroup -> s

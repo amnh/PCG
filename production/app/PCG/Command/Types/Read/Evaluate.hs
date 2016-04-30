@@ -21,7 +21,7 @@ import qualified Data.Map              as M (fromList)
 import           Data.Maybe                 (fromMaybe)
 import           Data.Monoid                ((<>))
 import           Data.Vector                (Vector)
-import qualified Data.Vector           as V (zipWith)
+import qualified Data.Vector           as V (fromList,zipWith)
 --import           Debug.Trace
 import           File.Format.Fasta   hiding   (FastaSequenceType(..))
 import qualified File.Format.Fasta   as Fasta (FastaSequenceType(..))
@@ -118,7 +118,7 @@ applyReferencedTCM :: FracturedParseResult -> FracturedParseResult
 applyReferencedTCM fpr =
   case relatedTcm fpr of
      Nothing -> fpr
-     Just x  -> let newAlphabet = toList $ customAlphabet x
+     Just x  -> let newAlphabet = V.fromList . toList $ customAlphabet x
                     newTcm      = transitionCosts x
                 in  fpr { parsedMetas = updateAlphabet newAlphabet . updateTcm newTcm <$> parsedMetas fpr }
 
@@ -129,21 +129,21 @@ setCharactersToAligned :: FracturedParseResult -> FracturedParseResult
 setCharactersToAligned fpr = fpr { parsedMetas = updateAligned True <$> parsedMetas fpr }
 
 expandIUPAC :: FracturedParseResult -> FracturedParseResult
-expandIUPAC fpr = fpr { parsedChars = newTreeSeqs }
+expandIUPAC fpr = fpr { parsedChars = newTreeChars }
   where
-    newTreeSeqs = f (parsedChars fpr) (parsedMetas fpr)
-    f :: TreeSeqs -> Vector StandardMetadata -> TreeSeqs
+    newTreeChars = f (parsedChars fpr) (parsedMetas fpr)
+    f :: TreeChars -> Vector StandardMetadata -> TreeChars
     f mapping meta = g <$> mapping
       where
-        g :: ParsedSequences -> ParsedSequences
+        g :: ParsedDynChars -> ParsedDynChars
         g = V.zipWith h meta 
           where
-            h :: StandardMetadata -> Maybe ParsedSeq -> Maybe ParsedSeq
+            h :: StandardMetadata -> Maybe ParsedDynChar -> Maybe ParsedDynChar
             h cInfo seqMay = expandCodes <$> seqMay
               where
-                cAlph = alphabet cInfo
+                cAlph = toList $ alphabet cInfo
                 
-                expandCodes :: ParsedSeq -> ParsedSeq
+                expandCodes :: ParsedDynChar -> ParsedDynChar
                 expandCodes x 
                   | cAlph `subsetOf` (concat $ keys nucleotideIUPAC) = expandOrId nucleotideIUPAC <$> x
                   | cAlph `subsetOf` (concat $ keys aminoAcidIUPAC) = expandOrId aminoAcidIUPAC  <$> x

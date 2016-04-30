@@ -12,30 +12,34 @@
 --
 -----------------------------------------------------------------------------
 
+-- TODO: I was forced to hard code DynamicChar, because it's hard coded in Bio.Phylograph.Node.Internal --> Node.encoded
+
 module PCG.Command.Types.Read.Unification.Master where
 
+import           Bio.Metadata             hiding (name)
+import           Bio.Metadata.MaskGenerator
 import           Bio.PhyloGraph.Solution  hiding (parsedChars)
 import           Bio.PhyloGraph.DAG
 import           Bio.PhyloGraph.Forest
-import           Bio.Metadata hiding (name)
+import           Bio.PhyloGraph.Node      hiding (isLeaf)
 import           Bio.Sequence.Coded
 import           Bio.Sequence.Parsed
-import           Bio.PhyloGraph.Node hiding (isLeaf)
+
 import           Control.Arrow                  ((***),(&&&))
+
 import           Data.Bifunctor                 (first)
---import           Data.BitVector          hiding (not, foldr)
 import           Data.Foldable
-import qualified Data.HashMap.Lazy       as HM
-import qualified Data.List.NonEmpty      as NE (fromList)
-import           Data.List.Utility             (duplicates)
-import           Bio.Metadata.MaskGenerator
-import           Data.Map                      (assocs, difference, intersectionWith, keys)
-import           Data.Maybe                    (catMaybes, fromJust)
-import           Data.Semigroup                ((<>))
-import           Data.Set                      ((\\))
-import qualified Data.Set                as S  (fromList)
-import           Data.Vector                   (Vector, (//), generate)
-import qualified Data.Vector             as V  (find, zipWith)
+import qualified Data.HashMap.Lazy        as HM
+import qualified Data.List.NonEmpty       as NE (fromList)
+import           Data.List.Utility              (duplicates)
+import           Data.Map                       (assocs, difference, intersectionWith, keys)
+import           Data.Maybe                     (catMaybes, fromJust)
+import           Data.Semigroup                 ((<>))
+import           Data.Set                       ((\\))
+import qualified Data.Set                 as S  (fromList)
+import           Data.Vector                    (Vector, (//), generate)
+import qualified Data.Vector              as V  (find, zipWith)
+
 import           File.Format.Newick
 import           File.Format.TransitionCostMatrix
 import           PCG.Command.Types.Read.Unification.UnificationError
@@ -44,7 +48,7 @@ import           PCG.Command.Types.Read.Unification.UnificationError
 
 data FracturedParseResult
    = FPR
-   { parsedChars  :: TreeSeqs
+   { parsedChars  :: TreeChars
    , parsedMetas  :: Vector StandardMetadata
    , parsedTrees  :: Forest NewickNode
    , relatedTcm   :: Maybe TCM
@@ -111,38 +115,42 @@ encodeSolution :: StandardSolution -> StandardSolution
 encodeSolution inVal@(Solution taxaSeqs metadataInfo inForests) = inVal {forests = HM.foldrWithKey encodeAndSet inForests taxaSeqs}
   where
     encodeAndSet :: Identifier -> Sequences -> [Forest DAG] -> [Forest DAG]
-    encodeAndSet taxonName s = fmap (fmap (applyToDAG taxonName coded))
-      where coded = encodeIt s metadataInfo
+    encodeAndSet taxonName inSeqs = fmap (fmap (applyToDAG taxonName coded))
+      where coded = encodeIt inSeqs metadataInfo
 
-    applyToDAG :: Identifier -> EncodedSequences -> DAG -> DAG
-    applyToDAG inName coded inD =
+    applyToDAG :: Identifier -> Vector DynamicChar -> DAG -> DAG
+    applyToDAG inName coded inDAG =
       case matching of
-        Nothing    -> inD
-        Just match -> inD {nodes = nodes inD // [(code match, match {encoded = coded})]}
+        Nothing    -> inDAG
+        Just match -> inDAG {nodes = nodes inDAG // [(code match, match {encoded = coded})]}
       where
-        matching = V.find (\n -> name n == inName) $ nodes inD
+        matching = V.find (\n -> name n == inName) $ nodes inDAG
 
 
 -- | Joins the sequences of a fractured parse result
-joinSequences :: Foldable t => t (TreeSeqs, Vector StandardMetadata) -> (TreeSeqs, Vector StandardMetadata)
+joinSequences :: Foldable t => t (TreeChars, Vector StandardMetadata) -> (TreeChars, Vector StandardMetadata)
 joinSequences =  foldl' g (mempty, mempty)
   where
---    f :: (TreeSeqs, Vector StandardMetadata) -> FracturedParseResult -> (TreeSeqs, Vector StandardMetadata)
+--    f :: (TreeChars, Vector StandardMetadata) -> FracturedParseResult -> (TreeChars, Vector StandardMetadata)
 --    f acc fpr = g acc $ (parsedMetas fpr, parsedChars fpr)
 
-    g :: (TreeSeqs, Vector StandardMetadata) -> (TreeSeqs, Vector StandardMetadata) -> (TreeSeqs, Vector StandardMetadata)
-    g (oldTreeSeqs, oldMetaData) (nextTreeSeqs, nextMetaData) = (inOnlyOld `mappend` inBoth `mappend` inOnlyNext, oldMetaData `mappend` nextMetaData)
+    g :: (TreeChars, Vector StandardMetadata) -> (TreeChars, Vector StandardMetadata) -> (TreeChars, Vector StandardMetadata)
+    g (oldTreeChars, oldMetaData) (nextTreeChars, nextMetaData) = (inOnlyOld `mappend` inBoth `mappend` inOnlyNext, oldMetaData `mappend` nextMetaData)
       where
         oldPad       = generate (length  oldMetaData) (const Nothing) 
         nextPad      = generate (length nextMetaData) (const Nothing)
-        inBoth       = intersectionWith mappend oldTreeSeqs nextTreeSeqs
-        inOnlyOld    = fmap (`mappend` nextPad) $  oldTreeSeqs `difference` nextTreeSeqs
-        inOnlyNext   = fmap (oldPad  `mappend`) $ nextTreeSeqs `difference`  oldTreeSeqs
+        inBoth       = intersectionWith mappend oldTreeChars nextTreeChars
+        inOnlyOld    = fmap (`mappend` nextPad) $  oldTreeChars `difference` nextTreeChars
+        inOnlyNext   = fmap (oldPad  `mappend`) $ nextTreeChars `difference` oldTreeChars
 
 -- | Function to encode given metadata information
-encodeOverMetadata :: ParsedSeq -> StandardMetadata -> EncodedSeq
-encodeOverMetadata inSeq inMetadata = encodeOverAlphabet inSeq (alphabet inMetadata)
+-- TODO: Remove tight coupling of DynamicChar here
+encodeOverMetadata :: Maybe ParsedDynChar -> StandardMetadata -> DynamicChar
+encodeOverMetadata maybeInChar inMeta =
+    case maybeInChar of
+        Just inChar -> encodeOverAlphabet (alphabet inMeta) inChar
+        Nothing     -> encodeOverAlphabet mempty mempty
 
 -- | Wrapper for encoding
-encodeIt :: ParsedSequences -> Vector StandardMetadata -> EncodedSequences
-encodeIt = V.zipWith (\s info -> (`encodeOverMetadata` info) =<< s)
+encodeIt :: ParsedDynChars -> Vector StandardMetadata -> Vector DynamicChar
+encodeIt = V.zipWith (\inMeta info -> encodeOverMetadata inMeta info)

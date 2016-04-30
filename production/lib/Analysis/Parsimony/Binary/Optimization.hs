@@ -61,7 +61,7 @@ allOptimization :: (TreeConstraint' t n s, Metadata m s) => Double -> Vector m -
 allOptimization weighting meta inTree =
     let
         downPass = optimizationPreorder weighting inTree meta
-        upPass = optimizationPostorder downPass meta
+        upPass   = optimizationPostorder downPass meta
     in upPass
 
 -- | Optimization preorder wrapper to perform relevant algorithm at all nodes
@@ -78,24 +78,24 @@ optimizationPreorder weighting tree meta
     | leftOnly && rightOnly = tree 
     | rightOnly = -- if there is only one child, continue recursion down and resolve
         let
-            nodes1 = internalPreorder weighting (fromJust $ rightChild (root tree) tree) tree meta -- with only one child, assignment and cost is simply carried up
+            nodes1    = internalPreorder weighting (fromJust $ rightChild (root tree) tree) tree meta -- with only one child, assignment and cost is simply carried up
             carryNode = head nodes1
-            newNodes = (setTemporary (getTemporary carryNode) $ setAlign (getPreliminaryAlign carryNode)
+            newNodes  = (setTemporary (getTemporary carryNode) $ setAlign (getPreliminaryAlign carryNode)
                         $ setPreliminary (getPreliminary carryNode) $ setTotalCost (getTotalCost carryNode) $ setLocalCost (getLocalCost carryNode) (root tree)) : nodes1
         in tree `update` newNodes
     | leftOnly =
         let
-            nodes1 = internalPreorder weighting (fromJust $ leftChild (root tree) tree) tree meta -- with only one child, assignment and cost is simply carried up
+            nodes1    = internalPreorder weighting (fromJust $ leftChild (root tree) tree) tree meta -- with only one child, assignment and cost is simply carried up
             carryNode = head nodes1
-            myNode = setTemporary (getTemporary carryNode) $ setAlign (getPreliminaryAlign carryNode)
+            myNode    = setTemporary (getTemporary carryNode) $ setAlign (getPreliminaryAlign carryNode)
                         $ setPreliminary (getPreliminary carryNode) $ setTotalCost (getTotalCost carryNode) $ setLocalCost (getLocalCost carryNode) (root tree)
-            newNodes = myNode : nodes1
+            newNodes  = myNode : nodes1
         in tree `update` newNodes
     | otherwise =
         let
-            nodes1 = internalPreorder weighting (fromJust $ rightChild (root tree) tree) tree meta
-            nodes2 = internalPreorder weighting (fromJust $ leftChild (root tree) tree) tree meta
-            myNode = preorderNodeOptimize weighting (root tree) (head nodes1) (head nodes2) meta
+            nodes1   = internalPreorder weighting (fromJust $ rightChild (root tree) tree) tree meta
+            nodes2   = internalPreorder weighting (fromJust $ leftChild (root tree) tree) tree meta
+            myNode   = preorderNodeOptimize weighting (root tree) (head nodes1) (head nodes2) meta
             newNodes = myNode : (nodes1 ++ nodes2)
         in tree `update` newNodes
 
@@ -115,16 +115,16 @@ internalPreorder weighting node tree meta
     | rightOnly && leftOnly = [] --error "Problem with binary tree structure: non-terminal has no children"
     | rightOnly = -- if there is only one child, continue recursion down and resolve
         let
-            nodes1 = internalPreorder weighting (fromJust $ rightChild node tree) tree meta -- with only one child, assignment and cost is simply carried up
+            nodes1    = internalPreorder weighting (fromJust $ rightChild node tree) tree meta -- with only one child, assignment and cost is simply carried up
             carryNode = head nodes1
-            myNode = setTemporary (getTemporary carryNode) $ setAlign (getPreliminaryAlign carryNode)
+            myNode    = setTemporary (getTemporary carryNode) $ setAlign (getPreliminaryAlign carryNode)
                         $ setPreliminary (getPreliminary carryNode) $ setTotalCost (getTotalCost carryNode) $ setLocalCost (getLocalCost carryNode) node
         in myNode : nodes1
     | leftOnly =
         let
-            nodes1 = internalPreorder weighting (fromJust $ leftChild node tree) tree meta -- with only one child, assignment and cost is simply carried up
+            nodes1    = internalPreorder weighting (fromJust $ leftChild node tree) tree meta -- with only one child, assignment and cost is simply carried up
             carryNode = head nodes1
-            myNode = setTemporary (getTemporary carryNode) $ setAlign (getPreliminaryAlign carryNode)
+            myNode    = setTemporary (getTemporary carryNode) $ setAlign (getPreliminaryAlign carryNode)
                         $ setPreliminary (getPreliminary carryNode) $ setTotalCost (getTotalCost carryNode) $ setLocalCost (getLocalCost carryNode) node
         in myNode : nodes1
     | otherwise =

@@ -27,8 +27,8 @@ import Bio.Sequence.Coded
 import Data.IntMap (IntMap, insert)
 import Data.Maybe
 import Data.Monoid
-import Data.Vector (foldr, zip3, cons, fromList, zipWith5, unzip, Vector, imap, (!), zipWith3, generate, replicate, filter)
-import Prelude hiding (foldr, zip3, unzip, zipWith3, replicate, filter)
+import Data.Vector (Vector, (!), cons, filter, foldr, fromList, generate, imap, replicate, unzip, zip3, zipWith, zipWith3, zipWith4)
+import Prelude hiding (filter, foldr, replicate, unzip, zip3, zipWith, zipWith3)
 
 -- The counts are a vector of ints
 type Counts = Vector Int
@@ -56,14 +56,14 @@ iaForest inForest inMeta = fmap (flip impliedAlign inMeta) (trees inForest)
 -- takes a tree and some metadata
 -- returns an alignment object (an intmap from the leaf codes to the aligned sequence)
 impliedAlign :: (TreeConstraint t n e s, Metadata m s) => t -> Vector m -> Alignment s
-impliedAlign inTree metadata = foldr (\n acc -> insert (getCode n) (makeAlignment n) acc) mempty allLeaves
+impliedAlign inTree inMeta = foldr (\n acc -> insert (getCode n) (makeAlignment n) acc) mempty allLeaves
     where
-        (_, curTree) = numeratePreorder inTree (getRoot inTree) metadata (replicate (length metadata) 0)
+        (_, curTree) = numeratePreorder inTree (getRoot inTree) inMeta (replicate (length inMeta) 0)
         allLeaves = filter (flip nodeIsLeaf curTree) (getNodes curTree)
         --oneTrace :: s -> Homologies -> m -> s
-        oneTrace oneSeq homolog meta = foldr (\pos acc -> grabSubChar oneSeq pos <> acc) mempty homolog
+        oneTrace dynChar homolog = foldr (\pos acc -> grabSubChar dynChar pos <> acc) mempty homolog
         --makeAlign :: Vector s -> HomologyTrace -> Vector s
-        makeAlign seqs homologies = zipWith3 oneTrace seqs homologies metadata
+        makeAlign dynChar homologies = zipWith oneTrace dynChar homologies
         --makeAlignment :: n -> Vector s
         makeAlignment n = makeAlign (getFinalGapped n) (getHomologies n)
 
@@ -72,32 +72,32 @@ impliedAlign inTree metadata = foldr (\n acc -> insert (getCode n) (makeAlignmen
 -- outputs a resulting vector of counters and a tree with the assignments
 -- TODO: something seems off about doing the DO twice here
 numeratePreorder :: (TreeConstraint t n e s, Metadata m s) => t -> n -> Vector m -> Counts -> (Counts, t)
-numeratePreorder inTree curNode metadata curCounts 
+numeratePreorder inTree curNode inMeta curCounts 
     | nodeIsRoot curNode inTree = (curCounts, inTree `update` [setHomologies curNode defaultHomologs])
     | leftOnly && rightOnly = (curCounts, inTree)
     | leftOnly = 
         let
             (curLeftAligned, leftWithAligned)     = alignAndAssign curNode (fromJust $ leftChild curNode inTree)
-            (curLeftHomolog, counterLeft)         = numerateNode curLeftAligned leftWithAligned curCounts metadata
+            (curLeftHomolog, counterLeft)         = numerateNode curLeftAligned leftWithAligned curCounts 
             editedTreeLeft                        = inTree `update` [curLeftHomolog, leftWithAligned]
-            (leftRecurseCount, leftRecurseTree)   = numeratePreorder editedTreeLeft (fromJust $ leftChild curNode inTree) metadata counterLeft
+            (leftRecurseCount, leftRecurseTree)   = numeratePreorder editedTreeLeft (fromJust $ leftChild curNode inTree) inMeta counterLeft
         in (leftRecurseCount, leftRecurseTree)
     | rightOnly = 
         let
             (curRightAligned, rightWithAligned)   = alignAndAssign curNode (fromJust $ rightChild curNode inTree)
-            (curRightHomolog, counterRight)       = numerateNode curRightAligned rightWithAligned curCounts metadata
+            (curRightHomolog, counterRight)       = numerateNode curRightAligned rightWithAligned curCounts 
             editedTreeRight                       = inTree `update` [curRightHomolog, rightWithAligned]
-            (rightRecurseCount, rightRecurseTree) = numeratePreorder editedTreeRight (fromJust $ rightChild curNode inTree) metadata counterRight
+            (rightRecurseCount, rightRecurseTree) = numeratePreorder editedTreeRight (fromJust $ rightChild curNode inTree) inMeta counterRight
         in (rightRecurseCount, rightRecurseTree)
     | otherwise = 
         let
             (curLeftAligned, leftWithAligned)     = alignAndAssign curNode (fromJust $ leftChild curNode inTree)
-            (curLeftHomolog, counterLeft)         = numerateNode curLeftAligned leftWithAligned curCounts metadata
+            (curLeftHomolog, counterLeft)         = numerateNode curLeftAligned leftWithAligned curCounts 
             (curBothAligned, rightBothAligned)    = alignAndAssign curLeftHomolog (fromJust $ rightChild curNode inTree)
-            (curBothHomolog, counterBoth)         = numerateNode curBothAligned rightBothAligned counterLeft metadata
+            (curBothHomolog, counterBoth)         = numerateNode curBothAligned rightBothAligned counterLeft 
             editedTreeBoth                        = inTree `update` [curBothHomolog, leftWithAligned, rightBothAligned]
-            (leftRecurseCount, leftRecurseTree)   = numeratePreorder editedTreeBoth (fromJust $ rightChild curBothHomolog editedTreeBoth) metadata counterBoth
-            output                                = numeratePreorder leftRecurseTree (fromJust $ leftChild curBothHomolog leftRecurseTree) metadata leftRecurseCount
+            (leftRecurseCount, leftRecurseTree)   = numeratePreorder editedTreeBoth (fromJust $ rightChild curBothHomolog editedTreeBoth) inMeta counterBoth
+            output                                = numeratePreorder leftRecurseTree (fromJust $ leftChild curBothHomolog leftRecurseTree) inMeta leftRecurseCount
         in output
 
         where
@@ -105,31 +105,31 @@ numeratePreorder inTree curNode metadata curCounts
             leftOnly = isNothing $ rightChild curNode inTree
             rightOnly = isNothing $ leftChild curNode inTree
             -- TODO: check if this is really the default
-            defaultHomologs = imap (\i m -> generate (numChars (curSeqs ! i)) (+ 1)) metadata
+            defaultHomologs = imap (\i _ -> generate (numChars (curSeqs ! i)) (+ 1)) inMeta
 
             -- Simple wrapper to align and assign using DO
             --alignAndAssign :: NodeConstraint n s => n -> n -> (n, n)
             alignAndAssign node1 node2 = (setFinalGapped (fst allUnzip) node1, setFinalGapped (snd allUnzip) node2)
                 where 
                     allUnzip = unzip allDO
-                    allDO = zipWith3 doOne (getFinalGapped node1) (getFinalGapped node2) metadata
+                    allDO = zipWith3 doOne (getFinalGapped node1) (getFinalGapped node2) inMeta
                     doOne s1 s2 m = (gapped1, gapped2)
                         where (_, _, _, gapped1, gapped2) = naiveDO s1 s2 m
 
 -- | Function to do a numeration on an entire node
 -- given the ancestor node, ancestor node, current counter vector, and vector of metadata
 -- returns a tuple with the node with homologies incorporated, and a returned vector of counters
-numerateNode :: (NodeConstraint n s, Metadata m s) => n -> n -> Counts -> Vector m -> (n, Counts)
-numerateNode ancestorNode childNode initCounters metadata = (setHomologies childNode homologs, counts)
+numerateNode :: (NodeConstraint n s) => n -> n -> Counts -> (n, Counts)
+numerateNode ancestorNode childNode initCounters = (setHomologies childNode homologs, counts)
         where
-            numeration = zipWith5 numerateOne (getFinalGapped ancestorNode) (getHomologies ancestorNode) (getFinalGapped childNode) initCounters metadata
+            numeration = zipWith4 numerateOne (getFinalGapped ancestorNode) (getHomologies ancestorNode) (getFinalGapped childNode) initCounters
             (homologs, counts) = unzip numeration
 
 -- | Function to do a numeration on one character at a node
 -- given the ancestor sequence, ancestor homologies, child sequence, and current counter for position matching
 -- returns a tuple of the Homologies vector and an integer count
-numerateOne :: (SeqConstraint s, Metadata m s) => s -> Homologies -> s -> Int -> m -> (Homologies, Int)
-numerateOne ancestorSeq ancestorHomologies childSeq initCounter meta = foldr determineHomology (mempty, initCounter) foldIn
+numerateOne :: (SeqConstraint s) => s -> Homologies -> s -> Int -> (Homologies, Int)
+numerateOne ancestorSeq ancestorHomologies childSeq initCounter = foldr determineHomology (mempty, initCounter) foldIn
     where
         getAllSubs s = foldr (\p acc -> grabSubChar s p `cons` acc) mempty (fromList [0..(numChars s)])
         foldIn = zip3 (getAllSubs childSeq) (getAllSubs ancestorSeq) ancestorHomologies

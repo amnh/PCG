@@ -19,25 +19,23 @@ import Data.Map      (Map)
 
 -- TODO: do ambiguity group types: more aliasing
 -- TODO: Add a definition for ParsedSeq for single characters
--- TODO: change to ParsedChar
 
 -- TODO: make AmbiguityGroup a nonempty list
 -- | A (nonempty) collection of possible character values. Singleton lists
 --   represent a unambiguous character value.
 type AmbiguityGroup = [String]
 
--- | An ordered sequence of ambiguity groups. This represents a dynamic
+-- | An ordered dynamic character of ambiguity groups. This represents a dynamic
 --   homology character.
-type ParsedSeq = Vector AmbiguityGroup
+type ParsedDynChar = Vector AmbiguityGroup
 
--- TODO: change to ParsedCharacters
 -- TODO: Remove Maybe?
 -- | Represents a charcter sequence containing possibly missing character data.
-type ParsedSequences = Vector (Maybe ParsedSeq)
+type ParsedDynChars = Vector (Maybe ParsedDynChar)
 
 -- TODO: add a TaxonIdentifier or TerminalName as type string - lots of aliasing
 -- | A mapping from taxon identifiers to thier corresponding sequences.
-type TreeSeqs = Map String ParsedSequences
+type TreeChars = Map String ParsedDynChars
 
 -- | An ordered list of possible character values.
 type Alphabet = Vector String

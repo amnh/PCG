@@ -94,33 +94,33 @@ instance Monoid Node where
 
 -- | Make it an instance of encoded, final, packed, and preliminary
 instance EN.EncodedNode Node DynamicChar where
-    getEncoded = encoded
+    getEncoded     = encoded
     setEncoded n s = n {encoded = s}
 
 -- | Nodes can hold final assignment
 instance FN.FinalNode Node DynamicChar where
-    getFinal = final
-    setFinal f n = n {final = f}
-    getFinalGapped = gapped
+    getFinal           = final
+    setFinal f n       = n {final = f}
+    getFinalGapped     = gapped
     setFinalGapped f n = n {gapped = f}
 
 -- | Nodes can hold packed data
 instance PN.PackedNode Node DynamicChar where
-    getPacked = packed
+    getPacked     = packed
     setPacked n s = n {packed = s}
 
 -- | Nodes hold all preliminary info
 instance RN.PreliminaryNode Node DynamicChar where
-    getPreliminary = preliminary
-    setPreliminary s n = n {preliminary = s}
+    getPreliminary      = preliminary
+    setPreliminary s n  = n {preliminary = s}
     getPreliminaryAlign = aligned
-    setAlign s n = n {aligned = s}
-    getTemporary = temporary
-    setTemporary s n = n {temporary = s}
-    getLocalCost = localCost
-    setLocalCost c n = n {localCost = c}
-    getTotalCost = totalCost
-    setTotalCost c n = n {totalCost = c}
+    setAlign s n        = n {aligned = s}
+    getTemporary        = temporary
+    setTemporary s n    = n {temporary = s}
+    getLocalCost        = localCost
+    setLocalCost c n    = n {localCost = c}
+    getTotalCost        = totalCost
+    setTotalCost c n    = n {totalCost = c}
 
 instance IN.IANode Node where
   getHomologies = iaHomology

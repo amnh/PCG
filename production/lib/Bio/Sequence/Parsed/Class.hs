@@ -49,7 +49,7 @@ import           File.Format.VertexEdgeRoot
 --   It is expected that parsers will altered to return simpler character literals for
 --   time efficientcy in the future.
 class ParsedCharacters a where
-    unifyCharacters :: a -> TreeSeqs
+    unifyCharacters :: a -> TreeChars
 
 instance ParsedCharacters FastaParseResult where
     unifyCharacters = foldr f mempty
@@ -68,7 +68,7 @@ instance ParsedCharacters FastcParseResult where
 instance ParsedCharacters NewickForest where
     unifyCharacters = mergeMaps . fmap f
         where
-            f :: NewickNode -> TreeSeqs
+            f :: NewickNode -> TreeChars
             f node 
               | null (descendants node) = insert name mempty mempty
               | otherwise = foldl1 (<>) $ f <$> descendants node
@@ -90,7 +90,7 @@ instance ParsedCharacters TntResult where
     unifyCharacters (Right (WithTaxa _    _ forest)) = mergeMaps $ (M.fromList . toList . fmap (second tntToTheSuperSequence)) <$> forest
 
 -- | Coalesce the 'TaxonSequence' to the larger type 'ParsedSequences'
-tntToTheSuperSequence :: TaxonSequence -> ParsedSequences
+tntToTheSuperSequence :: TaxonSequence -> ParsedDynChars
 tntToTheSuperSequence = V.fromList . fmap (Just . pure . f . show)
   where
     f ('[':xs) = pure <$> init xs

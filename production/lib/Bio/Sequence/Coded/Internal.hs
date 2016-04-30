@@ -22,18 +22,19 @@
 
 module Bio.Sequence.Coded.Internal where
 
-import           Prelude        hiding (and, head, or)
-import           Bio.Sequence.Coded.Class
-import           Bio.Sequence.Packed.Class
-import           Bio.Sequence.Parsed
-import           Data.Bits
-import           Data.BitVector hiding (foldr, foldl, join, not)
-import           Data.Foldable
-import           Data.Function.Memoize
-import           Data.Monoid           ((<>))
---import           Data.MonoTraversable
-import           Data.Vector           (Vector, fromList, ifilter)
-import           Test.Tasty.QuickCheck
+import Prelude                hiding (and, head, or)
+import Bio.Sequence.Coded.Class
+import Bio.Sequence.Packed.Class
+import Bio.Sequence.Parsed
+import Data.Bits
+import Data.BitVector         hiding (foldr, foldl, join, not)
+import Data.Foldable
+import Data.Function.Memoize
+import Data.Maybe                    (fromMaybe)
+import Data.Monoid                   ((<>))
+--import Data.MonoTraversable
+import Data.Vector                   (Vector, fromList, ifilter)
+import Test.Tasty.QuickCheck  hiding ((.&.))
 
 -- TODO: Change DynamicChar/Sequences to DynamicCharacters
         -- Make a missing a null vector
@@ -116,29 +117,39 @@ instance EncodableDynamicCharacter DynamicChar where
 zeroBitVec :: BitVector
 zeroBitVec = bitVec 0 (0 :: Integer)
 
-{-
+
 instance Bits DynamicChar where
-    (.&.)           = liftA2 (.&.)
-    (.|.)           = liftA2 (.|.)
-    xor             = liftA2 xor
-    complement      = fmap complement
-    shift  bits s   = fmap (`shift`  s) bits
-    rotate bits r   = fmap (`rotate` r) bits
-    setBit bits s   = fmap (`setBit` s) bits
-    bit             = Just . bit
-    bitSize         = fromMaybe 0 . (bitSizeMaybe =<<)
-    bitSizeMaybe    = (bitSizeMaybe =<<)
-    isSigned        = maybe False isSigned
-    popCount        = maybe 0 popCount
-    testBit bits i  = maybe False (`testBit` i) bits
--}
+    (.&.) (DynamicChar n l g) (DynamicChar _ r _) = DynamicChar n ((.&.) l r) g
+    (.|.) (DynamicChar n l g) (DynamicChar _ r _) = DynamicChar n ((.|.) l r) g
+    xor (DynamicChar n l g) (DynamicChar _ r _)   = DynamicChar n (xor l r) g
+    complement (DynamicChar n l g)                = DynamicChar n (complement l) g
+    shift  (DynamicChar n l g) s                  = DynamicChar n ((`shift`  s) l) g
+    rotate (DynamicChar n l g) r                  = DynamicChar n ((`rotate` r) l) g
+    setBit (DynamicChar n l g) s                  = DynamicChar n ((`setBit` s) l) g
+    bit n                                         = DynamicChar n (bit n) (bitVec n (0 :: Integer))
+    bitSize                                       = fromMaybe 0 . bitSizeMaybe
+    bitSizeMaybe (DynamicChar _ l _)              = bitSizeMaybe l
+    isSigned (DynamicChar _ l _)                  = isSigned l
+    popCount (DynamicChar _ l _)                  = popCount l
+    testBit (DynamicChar _ l _) i                 = testBit l i
+
 
 instance Memoizable BitVector where
     memoize f char = memoize (f . bitVec w) (nat char)
                         where w = width char
 
-instance PackedSequence DynamicChar where
+instance PackedDynChar DynamicChar where
     packOverAlphabet = undefined
+
+-- TODO: remove these two instances. I was forced to create them by a compilation error at PCG/Command/Types/Report/Evaluate.hs:36:17.
+-- Arising from SeqConstraint' in solutionOptimization in Analysis/Binary/Parsimony/Optimization
+instance Monoid DynamicChar where
+    mempty = DynamicChar 0 mempty mempty
+    mappend = undefined
+
+instance Memoizable DynamicChar where
+    memoize f char = undefined
+
 
 {-
 -- | Get parsed sequenceS, return encoded sequenceS.
@@ -173,7 +184,7 @@ setElemAt char orig alphabet
 
 
 -- | Functionality to unencode many encoded sequences
-decodeMany :: DynamicChars -> Alphabet -> ParsedSequences
+decodeMany :: DynamicChars -> Alphabet -> ParsedDynChars
 decodeMany seqs alph = fmap (Just . decodeOverAlphabet alph) seqs
 
 instance Arbitrary BitVector where
