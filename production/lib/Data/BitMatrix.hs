@@ -33,14 +33,19 @@ bitMatrix m n f =
       | f index   = (exponent `shiftL` 1, exponent + summation)
       | otherwise = (exponent `shiftL` 1,            summation)
     errorMsg m n
-      | m <= 0 && n <= 0 = Just $ unwords [errorPrefix, errorRowCount, "also", errorColCount] <> "."
-      | m <= 0           = Just $ unwords [errorPrefix, errorRowCount] <> "."
-      | n <= 0           = Just $ unwords [errorPrefix, errorColCount] <> "."
+      | m <  0 && n <  0 = Just $ unwords [errorPrefix, errorRowCount, "also", errorColCount] <> "."
+      | m <  0           = Just $ unwords [errorPrefix, errorRowCount] <> "."
+      | n <  0           = Just $ unwords [errorPrefix, errorColCount] <> "."
+      | m == 0 && n != 0 = Just $ unwords [errorPrefix, errorzeroRows, errorZeroSuffix] <> "."
+      | m != 0 && n == 0 = Just $ unwords [errorPrefix, errorzeroCols, errorZeroSuffix] <> "."
       | otherwise        = Nothing
       where
-        errorPrefix   = mconcat ["The call to bitMatrix ", show m, " ", show n, "f is malformed,"]
-        errorRowCount = mconcat ["the number of rows "   , show m, "is a non-positive number"]
-        errorColCount = mconcat ["the number of columns ", show n, "is a non-positive number"]
+        errorPrefix     = mconcat ["The call to bitMatrix ", show m, " ", show n, "f is malformed,"]
+        errorRowCount   = mconcat ["the number of rows "   , show m, "is a negative number"]
+        errorColCount   = mconcat ["the number of columns ", show n, "is a negative number"]
+        errorZeroRows   = mconcat ["the number of rows was 0 but the number of columns ", show n, " was positive."]
+        errorZeroCols   = mconcat ["the number of columns was 0 but the number of rows ", show m, " was positive."]
+        errorZeroSuffix = "To construct the empty matrix, both rows and columns must be zero"
 
 fromRows :: Foldable t => t BitVector -> BitMatrix
 fromRows xs
