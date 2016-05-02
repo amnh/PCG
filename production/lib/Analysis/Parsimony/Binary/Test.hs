@@ -26,9 +26,9 @@ import           Test.Tasty
 import           Test.Tasty.HUnit
 import           Test.Tasty.QuickCheck
 
-doMeta, fitchMeta :: CharacterMetadata EncodedSeq
-doMeta = CharMeta DirectOptimization ["A", "C", "G", "T", "-"] "" False False 1 mempty mempty 0 (GeneralCost 1 1)
-fitchMeta = CharMeta Fitch ["A", "C", "G", "T", "-"] "" False False 1 mempty mempty 0 (GeneralCost 1 1)
+doMeta, fitchMeta :: CharacterMetadata DynamicChar
+doMeta    = CharMeta DirectOptimization (V.fromList ["A", "C", "G", "T", "-"]) "" False False 1 mempty mempty 0 (GeneralCost 1 1)
+fitchMeta = CharMeta Fitch              (V.fromList ["A", "C", "G", "T", "-"]) "" False False 1 mempty mempty 0 (GeneralCost 1 1)
 
 testSuite :: TestTree
 testSuite = testGroup "Binary optimization" [doProperties, fitchProperties {- , traversalProperties -} ]
@@ -39,22 +39,22 @@ doProperties = testGroup "Properties of the DO algorithm" [idHolds, firstRow, em
     where
         idHolds = testProperty "When DO runs a sequence against itself, get input as result" checkID
             where
-                checkID :: EncodedSeq -> Bool
+                checkID :: DynamicChar -> Bool
                 checkID inSeq = main == inSeq && cost == 0 && gapped == inSeq && left == inSeq && right == inSeq
                     where (main, cost, gapped, left, right) = naiveDO inSeq inSeq doMeta
 
         firstRow = testProperty "First row of alignment matrix has expected directions" checkRow
             where
-                checkRow :: EncodedSeq -> Bool
+                checkRow :: DynamicChar -> Bool
                 checkRow inSeq = (snd $ V.head result) == DiagDir && allLeft (V.tail result) && V.length result == rowLen
                     where
-                        rowLen = numChars inSeq 5
+                        rowLen = numChars inSeq
                         (result, seqs) = firstAlignRow inSeq rowLen 0 0 doMeta
                         allLeft = V.all (\val -> snd val == LeftDir)
 
         empties = testProperty "NaiveDO correctly handles an empty sequence" checkEmpty
             where
-                checkEmpty :: EncodedSeq -> Bool
+                checkEmpty :: DynamicChar -> Bool
                 checkEmpty inSeq = main == inSeq && cost == 0
                     where (main, cost, gapped, left, right) = naiveDO inSeq mempty doMeta
 
@@ -64,7 +64,7 @@ fitchProperties = testGroup "Properties of the Fitch algorithm" [idHolds]
     where
         idHolds = testProperty "When Fitch runs a sequence against itself, get input as result" checkID
             where
-                checkID :: EncodedSeq -> Bool
+                checkID :: DynamicChar -> Bool
                 checkID inSeq = result == inSeq && cost == 0
                     where (result, _, cost) = preorderFitchBit 1 inSeq inSeq fitchMeta
 
