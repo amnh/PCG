@@ -62,20 +62,6 @@ data DynamicChar
 concatCharacter :: DynamicChar -> DynamicChar -> DynamicChar
 concatCharacter (DynamicChar len bv1 g) (DynamicChar _ bv2 _) = DynamicChar len (bv1 <> bv2) g
 
---data EncodedSequenceOverAlphabet a = forall a. Bits a => BBV Int a
-
-{-
-instance Foldable EncodedSequenceOverAlphabet where
-    foldr f e (BBV n bv) = foldr f e $ g <$> [0 .. len-1]
-      where
-        len = bv `div` n
-        g i = (clearBit (setBit zeroBits (n - 1)) (n - 1)) .|. (shiftR b right)
-          where
-            left  = ((i + 1) * n) - 1
-            right = i * n
-        g' i = (compliment (clearBit (setBit zeroBits (n - 1)) (n - 1))) .|. (shiftR b right)
--}
-
 -- | Make DynamicChar an instance of EncodableDynamicCharacter
 instance EncodableDynamicCharacter DynamicChar where
     decodeOverAlphabet alphabet (DynamicChar n inChar gc) -- n is alphabet length
