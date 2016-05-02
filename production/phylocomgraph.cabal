@@ -155,7 +155,6 @@ library
                        Bio.PhyloGraph.Tree.Rose.Class
                        Bio.Sequence.Coded.Class
                        Bio.Sequence.Coded.Internal
-                       Bio.Sequence.Packed.Class
                        Bio.Sequence.Parsed
                        Bio.Sequence.Parsed.Class
                        Bio.Sequence.Parsed.Internal
@@ -423,7 +422,6 @@ Test-Suite testsuite
                        Analysis.Parsimony.Binary.Internal
                        Analysis.Parsimony.Binary.Test
                        Bio.PhyloGraph.Network.Subsettable
-                       Bio.Sequence.Packed.Class
                        Bio.Sequence.Parsed
                        Data.Matrix.NotStupid
                        File.Format.TNT

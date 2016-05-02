@@ -24,7 +24,6 @@ module Bio.Sequence.Coded.Internal where
 
 import Prelude                hiding (and, head, or)
 import Bio.Sequence.Coded.Class
-import Bio.Sequence.Packed.Class
 import Bio.Sequence.Parsed
 import Data.Bits
 import Data.BitVector         hiding (foldr, foldl, join, not)
@@ -138,17 +137,16 @@ instance Memoizable BitVector where
     memoize f char = memoize (f . bitVec w) (nat char)
                         where w = width char
 
-instance PackedDynChar DynamicChar where
-    packOverAlphabet = undefined
+instance Memoizable DynamicChar where
+    memoize f (DynamicChar n char g) = memoize (f . (\x -> DynamicChar n x g)) char
+
 
 -- TODO: remove these two instances. I was forced to create them by a compilation error at PCG/Command/Types/Report/Evaluate.hs:36:17.
--- Arising from SeqConstraint' in solutionOptimization in Analysis/Binary/Parsimony/Optimization
+-- Arising from SeqConstraint' in solutionOptimization in Analysis/Binary/Parsimony/Optimization.
+-- 
 instance Monoid DynamicChar where
     mempty = DynamicChar 0 mempty mempty
     mappend = undefined
-
-instance Memoizable DynamicChar where
-    memoize f char = undefined
 
 
 {-
