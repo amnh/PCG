@@ -3,12 +3,14 @@
 module Data.Alphabet
   ( Alphabet'()
   , constructAlphabet
+  , constructAlphabetWithTCM
   , gapCharacter
   ) where
 
 import           Data.Foldable
 import           Data.Key
 import           Data.List          (intercalate, nub)
+import           Data.Matrix.NotStupid
 import           Data.Monoid
 import           Data.String
 import           Data.Vector        (Vector, (!?))
@@ -92,7 +94,8 @@ instance Show a => Show (Alphabet' a) where
                                , "}"
                                ]
 
-
+-- TODO: Chagne constraint EQ a to Ord a and alphabetize Alphabet with sort
+-- | Constructs an 'Alphabet' from a 'Foldable structure of 'IsString' values.
 constructAlphabet :: (Eq a, IsString a, Foldable t) => t a -> Alphabet' a
 constructAlphabet = Alphabet' . V.fromList . appendGapSymbol . nub . removeSpecialSymbols . toList
   where
@@ -102,6 +105,13 @@ constructAlphabet = Alphabet' . V.fromList . appendGapSymbol . nub . removeSpeci
     gapSymbol     = fromString "-"
     missingSymbol = fromString "?"
 
-
+-- | Retreives the "gap character" from the alphabet.
 gapCharacter :: Alphabet' a -> a
 gapCharacter alphabet = alphabet ! (length alphabet - 1)
+
+
+-- | Constructs an 'Alphabet' with a corresponding TCM. Permutes TCM rows and
+--   columns as the 'Alphabet' is reordered. Deletes TCM rows and columns where
+--   'Alphabet' symbols are eliminated.
+constructAlphabetWithTCM :: (Eq a, IsString a, Foldable t) => t a -> Matrix b -> (Alphabet' a, Matrix b)
+constructAlphabetWithTCM = undefined
