@@ -153,8 +153,6 @@ library
                        Bio.PhyloGraph.Tree.EdgeAware.Class
                        Bio.PhyloGraph.Node.Topological
                        Bio.PhyloGraph.Tree.Rose.Class
-                       Bio.Sequence.Coded.Class
-                       Bio.Sequence.Coded.Internal
                        Bio.Sequence.Packed.Class
                        Bio.Sequence.Parsed
                        Bio.Sequence.Parsed.Class
@@ -165,6 +163,8 @@ library
   other-modules:     
                        Bio.PhyloGraph.Tree
                        Bio.PhyloGraph.Tree.Parsed
+                       Bio.Sequence.Coded.Class
+                       Bio.Sequence.Coded.Internal
                        Control.Evaluation.Unit
                        Control.Evaluation.Internal
                        Control.Evaluation.Trans
