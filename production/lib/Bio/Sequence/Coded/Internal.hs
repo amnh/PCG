@@ -20,11 +20,14 @@
 -- TODO: fix and remove this ghc option (is it needed for Arbitrary?):
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
-module Bio.Sequence.Coded.Internal where
+module Bio.Sequence.Coded.Internal
+  ( DynamicChar()
+  , DynamicChars
+  , decodeMany
+  ) where
 
 import Prelude                hiding (and, head, or)
 import Bio.Sequence.Coded.Class
-import Bio.Sequence.Packed.Class
 import Bio.Sequence.Parsed
 import Data.Bits
 import Data.BitVector         hiding (foldr, foldl, join, not)
@@ -52,22 +55,11 @@ data DynamicChar
    , gap       :: BitVector
    } deriving (Eq, Show)
 
+-- | Used internally for concatenating two 'DynamicChar' values. Should not be
+--   exported, for internal use only where invariant of equal alphabet length
+--   can be asserted.
 concatCharacter :: DynamicChar -> DynamicChar -> DynamicChar
 concatCharacter (DynamicChar len bv1 g) (DynamicChar _ bv2 _) = DynamicChar len (bv1 <> bv2) g
-
---data EncodedSequenceOverAlphabet a = forall a. Bits a => BBV Int a
-
-{-
-instance Foldable EncodedSequenceOverAlphabet where
-    foldr f e (BBV n bv) = foldr f e $ g <$> [0 .. len-1]
-      where
-        len = bv `div` n
-        g i = (clearBit (setBit zeroBits (n - 1)) (n - 1)) .|. (shiftR b right)
-          where
-            left  = ((i + 1) * n) - 1
-            right = i * n
-        g' i = (compliment (clearBit (setBit zeroBits (n - 1)) (n - 1))) .|. (shiftR b right)
--}
 
 -- | Make DynamicChar an instance of EncodableDynamicCharacter
 instance EncodableDynamicCharacter DynamicChar where
@@ -114,6 +106,8 @@ instance EncodableDynamicCharacter DynamicChar where
         | n == 0    = 0
         | otherwise = width inChar `div` n
 
+-- | A 'BitVector of length zero. This nullary 'BitVector' is used internally as
+--   an identity element in opetrations involving an  empty 'DynamicChar'.
 zeroBitVec :: BitVector
 zeroBitVec = bitVec 0 (0 :: Integer)
 
@@ -138,17 +132,16 @@ instance Memoizable BitVector where
     memoize f char = memoize (f . bitVec w) (nat char)
                         where w = width char
 
-instance PackedDynChar DynamicChar where
-    packOverAlphabet = undefined
+instance Memoizable DynamicChar where
+    memoize f (DynamicChar n char g) = memoize (f . (\x -> DynamicChar n x g)) char
+
 
 -- TODO: remove these two instances. I was forced to create them by a compilation error at PCG/Command/Types/Report/Evaluate.hs:36:17.
--- Arising from SeqConstraint' in solutionOptimization in Analysis/Binary/Parsimony/Optimization
+-- Arising from SeqConstraint' in solutionOptimization in Analysis/Binary/Parsimony/Optimization.
+-- 
 instance Monoid DynamicChar where
     mempty = DynamicChar 0 mempty mempty
     mappend = undefined
-
-instance Memoizable DynamicChar where
-    memoize f char = undefined
 
 
 {-
