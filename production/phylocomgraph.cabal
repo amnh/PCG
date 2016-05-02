@@ -163,6 +163,8 @@ library
                        Data.Matrix.NotStupid
                        Text.Megaparsec.Custom
   other-modules:     
+                       Bio.PhyloGraph.Tree
+                       Bio.PhyloGraph.Tree.Parsed
                        Control.Evaluation.Unit
                        Control.Evaluation.Internal
                        Control.Evaluation.Trans
@@ -424,6 +426,10 @@ Test-Suite testsuite
                        Analysis.Parsimony.Binary.DirectOptimization
                        Analysis.Parsimony.Binary.Internal
                        Analysis.Parsimony.Binary.Test
+                       Analysis.Parsimony.Binary.Fitch
+                       Bio.PhyloGraph.Forest.Internal
+                       Bio.PhyloGraph.Node.ImpliedAlign
+                       Bio.PhyloGraph.Node.Referential
                        Bio.PhyloGraph.Network.Subsettable
                        Bio.Sequence.Packed.Class
                        Bio.Sequence.Parsed
