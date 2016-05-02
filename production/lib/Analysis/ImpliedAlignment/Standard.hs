@@ -24,21 +24,11 @@ import Bio.PhyloGraph.Solution
 import Bio.PhyloGraph.Tree hiding (code)
 import Bio.Sequence.Coded
 
-import Data.IntMap (IntMap, insert)
+import Data.IntMap (insert)
 import Data.Maybe
 import Data.Monoid
 import Data.Vector (Vector, (!), cons, filter, foldr, fromList, generate, imap, replicate, unzip, zip3, zipWith, zipWith3, zipWith4)
 import Prelude hiding (filter, foldr, replicate, unzip, zip3, zipWith, zipWith3)
-
--- The counts are a vector of ints
-type Counts = Vector Int
--- | An alignment object is an intmap from the node code to a vector of aligned coded sequences
-type Alignment s = IntMap (Vector s)
--- | An alignment over a forest is then a list of alignments
-type AlignmentForest s = [Alignment s]
--- | And an alignment over a solution is a list of forest alignments
-type AlignmentSolution s = [AlignmentForest s]
-
 
 -- | Top level wrapper to do an IA over an entire solution
 -- takes a solution

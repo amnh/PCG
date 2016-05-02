@@ -255,6 +255,7 @@ executable pcg
                        PCG.Command.Types.Read.Unification.UnificationError
                        PCG.Command.Types.Read.Validate
                        PCG.Command.Types.Report
+                       PCG.Command.Types.Report.Fasta
                        PCG.Command.Types.Report.CharacterMatrix
                        PCG.Command.Types.Report.Evaluate
                        PCG.Command.Types.Report.GraphViz
