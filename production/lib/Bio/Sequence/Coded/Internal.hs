@@ -117,9 +117,9 @@ instance Bits DynamicChar where
     (.|.) (DynamicChar n l g) (DynamicChar _ r _) = DynamicChar n ((.|.) l r) g
     xor (DynamicChar n l g) (DynamicChar _ r _)   = DynamicChar n (xor l r) g
     complement (DynamicChar n l g)                = DynamicChar n (complement l) g
-    shift  (DynamicChar n l g) s                  = DynamicChar n ((`shift`  s) l) g
-    rotate (DynamicChar n l g) r                  = DynamicChar n ((`rotate` r) l) g
-    setBit (DynamicChar n l g) s                  = DynamicChar n ((`setBit` s) l) g
+    shift  (DynamicChar n l g) s                  = DynamicChar n (shift l s) g
+    rotate (DynamicChar n l g) r                  = DynamicChar n (rotate l r) g
+    setBit (DynamicChar n l g) s                  = DynamicChar n (setBit l s) g
     bit n                                         = DynamicChar n (bit n) (bitVec n (0 :: Integer))
     bitSize                                       = fromMaybe 0 . bitSizeMaybe
     bitSizeMaybe (DynamicChar _ l _)              = bitSizeMaybe l
@@ -189,7 +189,7 @@ instance Arbitrary b => Arbitrary (Vector b) where
 instance Arbitrary DynamicChar where
     arbitrary = do 
         len    <- arbitrary :: Gen Int
-        charCt <- arbitrary :: Gen Int
+        charCt <- if len == 0 then 0 else arbitrary :: Gen Int -- If the alphabet has length 0 nothing can be encoded
         charBv <- vector (charCt * len) :: Gen [Bool]
         let gapBv = setBit (bitVec len (0 :: Integer)) (len - 1)
         pure $ DynamicChar len (fromBits charBv) gapBv
