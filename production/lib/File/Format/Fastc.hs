@@ -19,6 +19,7 @@ module File.Format.Fastc
   , FastcParseResult
   , FastcSequence(..)
   , Identifier
+  , Symbol
   , fastcStreamParser
   ) where
 

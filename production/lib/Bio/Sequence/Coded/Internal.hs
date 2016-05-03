@@ -1,29 +1,56 @@
-{-# LANGUAGE TypeFamilies, TypeSynonymInstances #-}
-module Bio.Sequence.Coded.Internal where
+-----------------------------------------------------------------------------
+-- |
+-- Module      :  Bio.Sequences.Coded.Internal
+-- Copyright   :  (c) 2015-2015 Ward Wheeler
+-- License     :  BSD-style
+--
+-- Maintainer  :  wheeler@amnh.org
+-- Stability   :  provisional
+-- Portability :  portable
+--
+-- Data structures and instances for coded characters
+-- TODO: Explain what the heck a coded character is, and what it's used for.
+--
+-----------------------------------------------------------------------------
 
-import Data.Bifunctor
+-- TODO: Remove all commented-out code.
+
+-- TODO: are all of these necessary?
+{-# LANGUAGE TypeSynonymInstances, FlexibleInstances, MultiParamTypeClasses, UndecidableInstances, TypeFamilies #-}
+-- TODO: fix and remove this ghc option (is it needed for Arbitrary?):
+{-# OPTIONS_GHC -fno-warn-orphans #-}
+
+module Bio.Sequence.Coded.Internal
+  ( DynamicChar()
+  , DynamicChars
+  , decodeMany
+  ) where
+
+import Bio.Sequence.Coded.Class
+import Bio.Sequence.Parsed
+import Data.Alphabet
+import Data.BitMatrix
+import Data.Key
 import Data.Bits
-import Data.BitVector hiding (foldr)
+import Data.BitVector         hiding (join, replicate)
 import Data.Foldable
-import Data.Monoid
+import Data.Function.Memoize
+import Data.Maybe                    (fromJust, fromMaybe)
 import Data.MonoTraversable
+import Data.Vector                   (Vector, fromList)
+import Test.Tasty.QuickCheck  hiding ((.&.))
 
-import           Bio.Sequence.Coded.Class
-import           Data.Alphabet
-import           Data.BitMatrix
-import           Data.BitVector
-import           Data.Key
-import           Data.List            (intercalate,nub)
-import           Data.Maybe           (fromJust)
-import           Data.Monoid
-import           Data.MonoTraversable
-import           Data.Vector          (Vector, (!?))
-import qualified Data.Vector     as V (fromList, imap)
+-- TODO: Change DynamicChar/Sequences to DynamicCharacters
+        -- Make a missing a null vector
+        -- Think about a nonempty type class or a refinement type for this
 
 newtype DynamicChar
       = DC BitMatrix
+      deriving (Eq, Show)
 
 type instance Element DynamicChar = BitVector
+
+type DynamicChars = Vector DynamicChar
 
 instance MonoFunctor DynamicChar where
   omap f (DC bm) = DC $ omap f bm
@@ -63,7 +90,7 @@ instance MonoFoldable DynamicChar where
 
 -- | Monomorphic containers that can be traversed from left to right.
 instance MonoTraversable DynamicChar where
-  -- | Map each element of a monomorphic container to an action,
+    -- | Map each element of a monomorphic container to an action,
     -- evaluate these actions from left to right, and
     -- collect the results.
     otraverse f (DC bm) = DC <$> otraverse f bm
@@ -79,9 +106,9 @@ instance StaticCoded BitVector where
 
   decodeChar alphabet character = foldMapWithKey f alphabet
     where
-      f index symbol
-        | character `testBit` index = [symbol]
-        | otherwise                 = []
+      f i symbol
+        | character `testBit` i = [symbol]
+        | otherwise             = []
                                   
   encodeChar alphabet ambiguity = fromBits $ (`elem` ambiguity) <$> toList alphabet
 
@@ -97,39 +124,93 @@ instance DynamicCoded DynamicChar where
     | numRows bm <= i = Just $ bm `row` i
     | otherwise       = Nothing
 
-instance EncodableDynamicChar DynamicChar where
+instance EncodableDynamicCharacter DynamicChar where
       -- TODO: I switched the order of input args in decode fns and encodeOver...
-    decodeOverAlphabet :: Alphabet -> s -> ParsedDynChar
-    decodeOverAlphabet alphabet = decodeDynamic (constructAlphabet alphabet)
+--    decodeOverAlphabet :: Alphabet -> s -> ParsedDynChar
+    decodeOverAlphabet alphabet = fromList . decodeDynamic (constructAlphabet alphabet)
 
-    decodeOneChar      :: Alphabet -> s -> ParsedDynChar
+--    decodeOneChar      :: Alphabet -> s -> ParsedDynChar
     decodeOneChar = decodeOverAlphabet
 
-    encodeOverAlphabet :: Alphabet -> ParsedDynChar -> s
+--    encodeOverAlphabet :: Alphabet -> ParsedDynChar -> s
     encodeOverAlphabet alphabet = encodeDynamic (constructAlphabet alphabet)
     
-    encodeOneChar      :: Alphabet -> AmbiguityGroup -> s
+--    encodeOneChar      :: Alphabet -> AmbiguityGroup -> s
     encodeOneChar alphabet = encodeOverAlphabet alphabet . pure
     
-    emptyChar          :: s
-    emptyChar = DC $ bitMatrix 0 0 (const 0)
+--    emptyChar          :: s
+    emptyChar = DC $ bitMatrix 0 0 (const False)
     
-    filterGaps         :: s -> s
+--    filterGaps         :: s -> s
     filterGaps c@(DC bm) = DC . fromRows . filter (== gapBV) $ rows bm
       where
-        gapBV = head . (\(DC bm) -> fromRows bm) gapChar c
+        gapBV = head . toList . rows . (\(DC x) -> x) $ gapChar c
     
-    gapChar            :: s -> s
+--    gapChar            :: s -> s
     gapChar (DC bm) = DC $ fromRows [zeroBits `setBit` (numCols bm - 1)] 
     
-    getAlphLen         :: s -> Int
+--    getAlphLen         :: s -> Int
     getAlphLen (DC bm) = numCols bm
 
-    grabSubChar        :: s -> Int -> s
-    grabSubChar = indexChar
+--   grabSubChar        :: s -> Int -> s
+    grabSubChar char i = DC $ fromRows [char `indexChar` i]
     
-    isEmpty            :: s -> Bool
+--    isEmpty            :: s -> Bool
     isEmpty = (0 ==) . numChars
 
-    numChars           :: s -> Int
+--    numChars           :: s -> Int
     numChars (DC bm) = numRows bm
+
+instance Bits DynamicChar where
+    (.&.) (DC lhs) (DC rhs)  = DC $ lhs  .&.  rhs
+    (.|.) (DC lhs) (DC rhs)  = DC $ lhs  .|.  rhs
+    xor   (DC lhs) (DC rhs)  = DC $ lhs `xor` rhs
+    complement (DC b)        = DC $ complement b
+    shift   (DC b) n         = DC $ b `shift`  n
+    rotate  (DC b) n         = DC $ b `rotate` n
+    setBit  (DC b) i         = DC $ b `setBit` i
+    testBit (DC b) i         = b `testBit` i
+    bit i                    = DC $ fromRows [bit i]
+    bitSize                  = fromMaybe 0 . bitSizeMaybe
+    bitSizeMaybe (DC b)      = bitSizeMaybe b
+    isSigned     (DC b)      = isSigned b
+    popCount     (DC b)      = popCount b
+
+instance Memoizable DynamicChar where
+    memoize f (DC bm) = memoize (f . DC) bm
+
+-- TODO: remove these two instances. I was forced to create them by a compilation error at PCG/Command/Types/Report/Evaluate.hs:36:17.
+-- Arising from SeqConstraint' in solutionOptimization in Analysis/Binary/Parsimony/Optimization.
+-- 
+instance Monoid DynamicChar where
+    mempty  = emptyChar
+    mappend = undefined
+
+
+{-
+-- | Get parsed sequenceS, return encoded sequenceS.
+-- Recall that each is Vector of Maybes, to this type is actually
+-- Vector Maybe Vector [String] -> Vector Maybe BV.
+-- (I only wish I were kidding.)
+encodeAll :: ParsedSequences -> DynamicChars
+encodeAll = fmap (\s -> join $ encode <$> s)
+-}
+
+
+-- | Functionality to unencode many encoded sequences
+decodeMany :: DynamicChars -> Alphabet -> ParsedDynChars
+decodeMany seqs alph = fmap (Just . decodeOverAlphabet alph) seqs
+
+instance Arbitrary BitVector where
+    arbitrary = fromBits <$> listOf (arbitrary :: Gen Bool)
+
+instance Arbitrary b => Arbitrary (Vector b) where
+    arbitrary = fromList <$> listOf arbitrary
+
+instance Arbitrary DynamicChar where
+    arbitrary = do 
+        nRows   <- arbitrary :: Gen Int
+        nCols   <- arbitrary :: Gen Int
+        let genRow = fromBits <$> vector nCols
+        rowVals <- sequence $ replicate nRows genRow
+        pure . DC $ fromRows rowVals

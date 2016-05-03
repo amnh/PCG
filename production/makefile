@@ -5,7 +5,7 @@ sanity        = -fwarn-duplicate-exports -fwarn-incomplete-patterns -fwarn-missi
 stacktracing  = -prof -auto-all -caf-all
 
 #Flags for `stack`
-haddock       = # --haddock --haddock-deps
+haddock       = --haddock --haddock-deps
 profiling     = --executable-profiling --library-profiling
 
 
@@ -34,7 +34,7 @@ rebuild-full: clean rebuild
 
 
 # Builds with useful features for a standard user of the package
-standard-build: install-stack stack-setup ffi-code-cleaning
+standard-build: install-stack stack-setup
 	stack install --test $(haddock)
 
 # Builds with all useful options for package power users
@@ -48,12 +48,12 @@ stack-setup: phylocomgraph.cabal stack.yaml
 	stack setup
 
 # Builds with no extra generated features and no optimizations
-stack-build-quick: ffi-code-cleaning phylocomgraph.cabal stack.yaml
+stack-build-quick: phylocomgraph.cabal stack.yaml
 	stack build --fast
 
 # Builds with profiling enabled
-stack-build-prof: ffi-code-cleaning phylocomgraph.cabal stack.yaml
-	stack build --test $(haddock) $(profiling)
+stack-build-profiling: phylocomgraph.cabal stack.yaml
+	stack build --test $(haddock) $(profiling) --ghc-options -fprof-cafs
 
 # Cleans up artefact files after a build
 clean: phylocomgraph.cabal stack.yaml

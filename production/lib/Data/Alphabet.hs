@@ -1,3 +1,28 @@
+-----------------------------------------------------------------------------
+-- |
+-- Module      :  Data.Alphabet
+-- Copyright   :  (c) 2015-2015 Ward Wheeler
+-- License     :  BSD-style
+--
+-- Maintainer  :  wheeler@amnh.org
+-- Stability   :  provisional
+-- Portability :  portable
+--
+-- An 'Alphabet' represents an ordered list of unique symbols with constant
+-- time random access. Symbols are any data type which are coercable from a
+-- 'String' through the 'IsString' type-class.
+--
+-- An 'Alphabet is constructed by supplying a `Foldable` structure of symbols
+-- which are 'IsString' instances to the 'constructAlphabet' function.
+--
+-- Every 'Alphabet' contains a "gap" symbol denoted by the 'fromString "-"'
+-- expression. The "gap" character is always the last element in the ordered
+-- list regardless of it's presence or position in the construction structure.
+--
+-- An 'Alphabet' will never contain the "missing" symbol denoted by the
+-- 'fromString "?"' expression. This symbol will be removed from the 'Alpahbet'
+-- if it is present in the construction structure.
+-----------------------------------------------------------------------------   
 {-# LANGUAGE TypeFamilies #-}
 
 module Data.Alphabet
@@ -10,10 +35,10 @@ module Data.Alphabet
 import           Data.Foldable
 import           Data.Key
 import           Data.List          (intercalate, nub)
-import           Data.Matrix.NotStupid
+import           Data.Matrix.NotStupid (Matrix)
 import           Data.Monoid
 import           Data.String
-import           Data.Vector        (Vector, (!?))
+import           Data.Vector        (Vector)
 import qualified Data.Vector as V
 import           Prelude     hiding (lookup)
 

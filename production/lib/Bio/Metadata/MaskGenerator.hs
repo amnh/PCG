@@ -14,58 +14,47 @@
 
 module Bio.Metadata.MaskGenerator where
 
-import           Bio.Phylogeny.Solution
-import           Bio.Phylogeny.PhyloCharacter
-import           Bio.Sequence.Coded
-import           Data.BitVector      (fromBits)
-import           Data.HashMap.Strict (elems)
-import           Data.Maybe
-import           Data.Vector         (imap)
-import qualified Data.Vector as V
+import Bio.Metadata
+import Bio.PhyloGraph.Solution
+import Bio.Sequence.Coded
+import Bio.Sequence.Parsed
+import Data.Foldable
+import Data.HashMap.Strict        (elems)
+import Data.Maybe
+import qualified Data.Vector as V 
 
---type Encoded = EncodedSeq BitVector
-
+-- | Mutate a 'StandardSolution' to include masks in the metadata structure
 addMasks :: StandardSolution -> StandardSolution
-addMasks inSolution = inSolution {metadata = imap changeMetadata (metadata inSolution)}
+addMasks inSolution = inSolution { metadata = V.imap changeMetadata (metadata inSolution) }
     where
-        changeMetadata :: Int -> CharacterMetadata -> CharacterMetadata
+        changeMetadata :: Int -> StandardMetadata -> StandardMetadata
         changeMetadata pos curChar 
-            | aligned curChar = curChar {fitchMasks = generateMasks (length $ alphabet curChar) (getSeqLen pos)}
+            | isAligned curChar = curChar {fitchMasks = generateMasks (alphabet curChar) (getSeqLen pos)}
             | otherwise = curChar
-
---addMasks :: Graph -> Graph
---addMasks (Graph dags) = Graph $ map addToDAG dags
---    where
---        addToDAG :: DAG -> DAG
---        addToDAG inDAG = inDAG {characters = imap (\i c -> if aligned c then addToChar i c inDAG else c) (characters inDAG)}
-
---        addToChar :: Int -> CharInfo -> DAG -> CharInfo
---        addToChar pos char curDAG = char {fitchMasks = generateMasks (length $ alphabet char) (getSeqLen pos curDAG)}
-
---        -- | Get length of a sample sequence, assume they're all the same
---        getSeqLen :: Int -> DAG -> Int
---        getSeqLen curPos curDAG = V.length $ fromMaybe mempty curSeq 
---            where
---                someTerminal = code $ V.head $ V.filter isLeaf (nodes curDAG)
---                someSeqs = (parsedSeqs curDAG) ! ((nodeNames curDAG) ! someTerminal)
---                curSeq = someSeqs V.! curPos
 
         -- | Get length of a sample sequence, operating under assumption they're all the same
         getSeqLen :: Int -> Int
-        getSeqLen pos = V.length $ fromMaybe mempty curSeq
+        getSeqLen pos = length $ fromMaybe mempty curSeq
             where
-                someSeqs = head $ elems $ parsedChars inSolution
-                curSeq = someSeqs V.! pos
+                someSeqs = head . elems $ parsedChars inSolution
+                curSeq   = someSeqs V.! pos
 
         -- | Generate mask pair given proper info
-        generateMasks :: Int -> Int -> (EncodedSeq, EncodedSeq)
-        generateMasks alphLen sLen = (Just occupancy, Just periodic)
+       {- generateMasks :: Int -> Int -> (DynamicChar, DynamicChar)
+        generateMasks alphLen sLen = (DynamicChar alphLen occupancy gapChar, DynamicChar alphLen periodic gapChar)
             where
-                unit = replicate (alphLen - 1) False ++ [True]
-                periodic = fromBits $ concat (replicate sLen unit)
+                unit      = replicate (alphLen - 1) False <> [True]
+                periodic  = fromBits $ concat (replicate sLen unit)
                 occupancy = fromBits $ replicate (alphLen * sLen) True
-
-
+                gapChar   = (bitVec alphLen (0 :: Integer)) (alphLen - 1)
+        -}
+        -- | Generate mask pair given proper info
+        generateMasks :: Alphabet -> Int -> (DynamicChar, DynamicChar)
+        generateMasks inAlphabet sLen = (encodeOverAlphabet inAlphabet occupancy, encodeOverAlphabet inAlphabet periodic)
+            where
+                unit      = [inAlphabet V.! (length inAlphabet - 1)]
+                periodic  = V.replicate sLen unit
+                occupancy = V.replicate sLen (toList inAlphabet) 
 
 
 

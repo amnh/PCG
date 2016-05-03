@@ -22,7 +22,7 @@ module File.Format.Newick.Internal
   ) where
 
 import Data.Maybe (isJust,isNothing)
-import qualified Bio.Phylogeny.Network as N
+import qualified Bio.PhyloGraph.Network as N
 import Data.List
 import Data.Monoid
 import Control.Applicative (liftA2)
@@ -86,8 +86,8 @@ isLeaf node = (null . descendants) node && (isJust . newickLabel) node
 instance N.Network NewickNode NewickNode where
   root     t   = t
   children n _ = descendants n
-  isLeaf   n _ = isLeaf n
-  isRoot   n t = null $ N.parents n t
+  nodeIsLeaf   n _ = isLeaf n
+  nodeIsRoot   n t = null $ N.parents n t
   parents node tree 
     | node `elem` descendants tree = nub $ tree : foldr (\n acc -> N.parents node n ++ acc) [] (descendants tree)
     | otherwise = nub $ foldr (\n acc -> N.parents node n ++ acc) [] (descendants tree)

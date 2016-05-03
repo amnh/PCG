@@ -1,5 +1,5 @@
 -----------------------------------------------------------------------------
---
+-- |
 -- Module      :  Bio.Sequence.Coded.Class
 -- Copyright   :  (c) 2015-2015 Ward Wheeler
 -- License     :  BSD-style
@@ -13,7 +13,6 @@
 --
 -----------------------------------------------------------------------------
 
-{- This is Sequence/Coded/Class module, which should be renamed. -}
 
 {-# LANGUAGE FlexibleContexts, FunctionalDependencies, MultiParamTypeClasses #-}
 
@@ -25,7 +24,7 @@ import Bio.Sequence.Parsed
 import Data.Alphabet
 import Data.BitVector
 import Data.Maybe           (fromJust)
-import Data.Monoid
+--import Data.Monoid
 import Data.MonoTraversable
 
 {- LAWS:
@@ -66,14 +65,14 @@ class ( StaticCoded (Element s)
 -- | A coded sequence allows grabbing of a character, filtering, and some standard types
 class EncodableDynamicCharacter s where
     -- TODO: I switched the order of input args in decode fns and encodeOver...
-    decodeOverAlphabet :: Alphabet -> s -> ParsedDynChar
-    decodeOneChar      :: Alphabet -> s -> ParsedDynChar
-    encodeOverAlphabet :: Alphabet -> ParsedDynChar -> s
-    encodeOneChar      :: Alphabet -> AmbiguityGroup -> s
-    emptyChar          :: s
-    filterGaps         :: s -> s
-    gapChar            :: s -> s
-    getAlphLen         :: s -> Int
-    grabSubChar        :: s -> Int -> s
-    isEmpty            :: s -> Bool
-    numChars           :: s -> Int
+  decodeOverAlphabet :: Alphabet -> s -> ParsedDynChar
+  decodeOneChar      :: Alphabet -> s -> ParsedDynChar
+  encodeOverAlphabet :: Alphabet -> ParsedDynChar -> s
+  encodeOneChar      :: Alphabet -> AmbiguityGroup -> s
+  emptyChar          :: s
+  filterGaps         :: s -> s
+  gapChar            :: s -> s
+  getAlphLen         :: s -> Int
+  grabSubChar        :: s -> Int -> s
+  isEmpty            :: s -> Bool
+  numChars           :: s -> Int

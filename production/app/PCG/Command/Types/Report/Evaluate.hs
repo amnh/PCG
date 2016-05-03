@@ -5,10 +5,11 @@ module PCG.Command.Types.Report.Evaluate
   ) where
 
 import           Analysis.Parsimony.Binary.Optimization
-import           Bio.Phylogeny.Solution
-import           Bio.Phylogeny.Tree.Binary.Class
+import           Bio.PhyloGraph.Solution
+import           Bio.PhyloGraph.Tree.Binary.Class
 import           Control.Monad.IO.Class
-import           Control.Evaluation
+import           Control.Monad.Logger
+import           Data.Monoid ((<>))
 import           PCG.Command.Types (Command(..))
 import           PCG.Command.Types.Report.TaxonMatrix
 import           PCG.Command.Types.Report.GraphViz
@@ -30,7 +31,7 @@ evaluate _ _ = fail "Invalid READ command binding"
 
 -- | Function to add optimization to the newick reporting
 -- TODO: change this error into a warning
-addOptimization :: StandardSolution -> StandardSolution --Graph -> Graph
+addOptimization :: StandardSolution -> StandardSolution 
 addOptimization result
   | allBinary = solutionOptimization 1 result
   | otherwise = error "Cannot perform optimization because graph is not binary, outputting zero cost"

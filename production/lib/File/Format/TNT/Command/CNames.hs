@@ -1,3 +1,15 @@
+----------------------------------------------------------------------------
+-- |
+-- Module      :  File.Format.TNT.Command.CNames
+-- Copyright   :  (c) 2015-2015 Ward Wheeler
+-- License     :  BSD-style
+--
+-- Maintainer  :  wheeler@amnh.org
+-- Stability   :  provisional
+-- Portability :  portable
+--
+-- Parser for the CNames command.
+-----------------------------------------------------------------------------
 {-# LANGUAGE FlexibleContexts #-}
 module File.Format.TNT.Command.CNames where
 
@@ -31,6 +43,8 @@ cnamesCommand = cnamesValidation =<< cnamesDefinition
       where
         duplicateIndexErrors = duplicateIndexMessages cnames
 
+-- | Validation functions to ensure that character names are not specified
+--   for a given character index multiple times.
 duplicateIndexMessages :: CNames -> [String]
 duplicateIndexMessages cnames = duplicateIndexErrors
   where
@@ -52,7 +66,7 @@ duplicateIndexMessages cnames = duplicateIndexErrors
             indexValue   = sequenceIndex $ head xs
             nameValues   = characterId <$> xs
 
--- |  Consumes the XREAD string identifier and zero or more comments
+-- |  Consumes the CNAMES string identifier and zero or more comments
 --    preceeding the taxa count and character cound parameters
 cnamesHeader :: MonadParsec s m Char => m ()
 cnamesHeader = symbol (keyword "cnames" 2)
@@ -62,12 +76,18 @@ cnamesHeader = symbol (keyword "cnames" 2)
     simpleComment = delimiter *> anythingTill delimiter <* symbol delimiter
       where
         delimiter = char '\''
-     
+
+-- | Parses the body of a CNAMES command and returns a list of character names
+--   sorted in ascending order of the character index that the names correspond
+--   to.
 cnamesBody :: MonadParsec s m Char => m CNames
 cnamesBody = NE.fromList . normalize <$> some cnamesStateName
   where
     normalize = sortBy (comparing sequenceIndex)
 
+-- | Parses an individual CNAMES character name specification for a character
+--   index allong with the character name and names of the state values for the
+--   character.
 cnamesStateName :: MonadParsec s m Char => m CharacterName
 cnamesStateName = symbol (char '{') *> cnameCharacterName <* symbol terminator
   where

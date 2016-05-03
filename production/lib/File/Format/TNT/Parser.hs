@@ -1,3 +1,17 @@
+----------------------------------------------------------------------------
+-- |
+-- Module      :  File.Format.TNT.Parser
+-- Copyright   :  (c) 2015-2015 Ward Wheeler
+-- License     :  BSD-style
+--
+-- Maintainer  :  wheeler@amnh.org
+-- Stability   :  provisional
+-- Portability :  portable
+--
+-- Parser for the entire TNT file which returns a colated result of TNT
+-- taxa and their possible corresponding character sequences allong with a
+-- possible forest of trees defined for the taxa set.
+-----------------------------------------------------------------------------
 {-# LANGUAGE FlexibleContexts #-}
 module File.Format.TNT.Parser where
 
@@ -11,16 +25,20 @@ import           Data.Matrix.NotStupid    (Matrix)
 import           Data.Maybe               (fromMaybe)
 import           Data.Vector              (Vector,(!),(//),generate)
 import qualified Data.Vector        as V  (fromList)
--- import           Data.Vector (fromList)
---import           File.Format.TNT.Command.CCode
 import           File.Format.TNT.Command.CNames
---import           File.Format.TNT.Command.Procedure
---import           File.Format.TNT.Command.XRead
 import           File.Format.TNT.Internal
 import           File.Format.TNT.Partitioning
 import           Text.Megaparsec.Custom
 import           Text.Megaparsec.Prim                     (MonadParsec)
 
+-- | Parses the contents of a TNT file stream into a 'TntResult'. A file stream
+--   can contain either:
+--
+--   * Only a forest of trees with labeled leaf nodes and the set of leaf nodes
+--     is the same across the forest.
+--
+--   * A collection of taxa sequences with coresponsing metadata and possibly
+--     corresponding forest of trees whose leaf sets are equal to the taxa set.
 tntStreamParser :: MonadParsec s m Char => m TntResult
 tntStreamParser = (colateResult <=< collapseStructures) =<< (whitespace *> gatherCommands)
   where
@@ -54,6 +72,8 @@ tntStreamParser = (colateResult <=< collapseStructures) =<< (whitespace *> gathe
                 Just x  -> pure (name, x)
             substituteLeaf (Prefix _) = undefined
 
+-- | Performs an inital structural collapse to the various type lists to make
+--   subsequent folding easier.
 collapseStructures :: MonadParsec s m Char => Commands -> m ([CCode],[CharacterName],[Cost],[NStates],[TReadTree],[XRead])
 collapseStructures (ccodes,cnames,costs,nstates,treads,xreads)
   | not (null errors) = fails errors
@@ -66,17 +86,30 @@ collapseStructures (ccodes,cnames,costs,nstates,treads,xreads)
                       then []
                       else duplicateIndexMessages $ NE.fromList collapsedCNames
 
+-- | Mutate the metadata structure by replacing the default character naming
+--   information with information defined in CNAME command(s).
 applyCNames :: Foldable f => f CharacterName -> Vector CharacterMetaData -> Vector CharacterMetaData
 applyCNames charNames metaData = metaData // toAscList names
   where
     names = f `mapWithKey` cnamesCoalesce charNames
     f i name = modifyMetaDataNames name $ metaData ! i
+    cnamesCoalesce :: Foldable f => f CharacterName -> IntMap CharacterName
+    cnamesCoalesce = foldl g mempty
+      where
+        g mapping name = insertWith const (sequenceIndex name) name mapping
 
+-- | Mutate the metadata structure by replacing the default TCM costs with
+--   custom TCMs defined in COST command(s).
 applyCosts :: Foldable f => f Cost -> Vector CharacterMetaData -> Vector CharacterMetaData
 applyCosts charCosts metaData = metaData // toAscList matricies
   where
     matricies = f `mapWithKey` costsCoalesce (length metaData - 1) charCosts
     f i mat = modifyMetaDataTCM mat $ metaData ! i
+    costsCoalesce :: Foldable f => Int -> f Cost -> IntMap (Matrix Double)
+    costsCoalesce charCount = foldl addTCMs mempty
+      where
+        insertTCM mat mapping index = insertWith const index mat mapping
+        addTCMs mapping (Cost changeSet mat) = foldl (insertTCM mat) mapping (range charCount changeSet)
 
 -- | Coalesces many CCODE commands respecting thier structural order
 --   into a single index ordered mapping.
@@ -100,17 +133,7 @@ ccodeCoalesce charCount ccodeCommands = generate charCount f
             defaultValue = metaDataTemplate state
             translation  = const (modifyMetaDataState state)
 
-cnamesCoalesce :: Foldable f => f CharacterName -> IntMap CharacterName
-cnamesCoalesce = foldl f mempty
-  where
-    f mapping name = insertWith const (sequenceIndex name) name mapping
-
-costsCoalesce :: Foldable f => Int -> f Cost -> IntMap (Matrix Double)
-costsCoalesce charCount = foldl addTCMs mempty
-  where
-    insertTCM mat mapping index = insertWith const index mat mapping
-    addTCMs mapping (Cost changeSet mat) = foldl (insertTCM mat) mapping (range charCount changeSet)
-
+-- | Derive an ascending sequence of indicies from a specified index range.
 range :: Int -> CharacterSet -> [Int]
 range _ (Single    i  ) = [i..i]
 range _ (Range     i j) = [i..j]

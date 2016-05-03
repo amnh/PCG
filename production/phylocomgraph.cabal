@@ -47,6 +47,7 @@ library
                      , matrix               -any
                      , megaparsec           >=4.2
                      , mono-traversable     -any
+                     , memoize              -any
                      , parallel             -any
                      , QuickCheck           -any
                      , safe                 -any
@@ -91,33 +92,41 @@ library
     ffi/Analysis/Parsimony/Binary/SequentialAlign
       
   -- Modules exported by the library.
-  exposed-modules:     Analysis.Parsimony.Binary.DirectOptimization
+  exposed-modules:     Analysis.ImpliedAlignment.Internal
+                       Analysis.ImpliedAlignment.Standard
+                       Analysis.Parsimony.Binary.DirectOptimization
                        Analysis.Parsimony.Binary.Fitch
                        Analysis.Parsimony.Binary.Internal
                        Analysis.Parsimony.Binary.Optimization
                        Analysis.Parsimony.Binary.SequentialAlign
                        Analysis.Parsimony.Binary.SequentialAlign.SeqAlignFFI
-                       Bio.Phylogeny.Forest
-                       Bio.Phylogeny.Graph
-                       Bio.Phylogeny.Network
-                       Bio.Phylogeny.PhyloCharacter
-                       Bio.Phylogeny.Solution
-                       Bio.Phylogeny.Solution.Data
-                       Bio.Phylogeny.Solution.Class
-                       Bio.Phylogeny.Tree.Binary
-                       Bio.Phylogeny.Tree.CharacterAware
-                       Bio.Phylogeny.Tree.EdgeAware
-                       Bio.Phylogeny.Tree.Node
-                       Bio.Phylogeny.Tree.Node.Encoded
-                       Bio.Phylogeny.Tree.Node.Final
-                       Bio.Phylogeny.Tree.Node.Packed
-                       Bio.Phylogeny.Tree.Node.Preliminary
-                       Bio.Phylogeny.Tree.Referential
-                       Bio.Phylogeny.Tree.Rose
+                       Bio.Metadata
+                       Bio.PhyloGraph
+                       Bio.PhyloGraph.DAG
+                       Bio.PhyloGraph.Edge
+                       Bio.PhyloGraph.Forest
+                       Bio.PhyloGraph.Forest.Parsed
+                       Bio.PhyloGraph.Network
+                       Bio.PhyloGraph.Solution
+                       Bio.PhyloGraph.Solution.Internal
+                       Bio.PhyloGraph.Solution.Class
+                       Bio.PhyloGraph.Tree.Binary
+                       Bio.PhyloGraph.Tree.EdgeAware
+                       Bio.PhyloGraph.Node
+                       Bio.PhyloGraph.Node.Encoded
+                       Bio.PhyloGraph.Node.Final
+                       Bio.PhyloGraph.Node.ImpliedAlign
+                       Bio.PhyloGraph.Node.Internal
+                       Bio.PhyloGraph.Node.Packed
+                       Bio.PhyloGraph.Node.Preliminary
+                       Bio.PhyloGraph.Node.Referential
+                       Bio.PhyloGraph.Tree.Referential
+                       Bio.PhyloGraph.Tree.Rose
                        Bio.Sequence.Coded
-                       Bio.Sequence.Character.Coded
                        Control.Evaluation
+                       Control.Monad.Logger
                        Data.Either.Custom
+                       Data.Alphabet
                        Data.BitMatrix
                        File.Format.Fasta
                        File.Format.Fastc
@@ -130,44 +139,36 @@ library
   -- Modules included in this library but not exported.
 --  other-modules:     
                        Bio.Metadata.Class
+                       Bio.Metadata.Internal
+                       Bio.Metadata.Parsed
                        Bio.Metadata.MaskGenerator
-                       Bio.Phylogeny.Solution.Metadata
-                       Bio.Phylogeny.Forest.Class
-                       Bio.Phylogeny.Graph.Data
-                       Bio.Phylogeny.Graph.Output
-                       Bio.Phylogeny.Graph.Parsed
-                       Bio.Phylogeny.Graph.Topological
-                       Bio.Phylogeny.Graph.Utilities
-                       Bio.Phylogeny.Network.Class
-                       Bio.Phylogeny.Network.Subsettable
-                       Bio.Phylogeny.Tree.Binary.Class
-                       Bio.Phylogeny.Tree.CharacterAware.Class
-                       Bio.Phylogeny.Tree.Edge.Standard
-                       Bio.Phylogeny.Tree.EdgeAware.Class
-                       Bio.Phylogeny.Tree.Node.Topological
-                       Bio.Phylogeny.Tree.Rose.Class
-                       Bio.Sequence.Coded.Class
-                       Bio.Sequence.Packed.Class
+                       Bio.PhyloGraph.DAG.Internal
+                       Bio.PhyloGraph.DAG.Class
+                       Bio.PhyloGraph.Solution.Metadata
+                       Bio.PhyloGraph.Forest.Class
+                       Bio.PhyloGraph.Forest.Internal
+                       Bio.PhyloGraph.Network.Class
+                       Bio.PhyloGraph.Network.Subsettable
+                       Bio.PhyloGraph.Tree.Binary.Class
+                       Bio.PhyloGraph.Edge.Internal
+                       Bio.PhyloGraph.Edge.Class
+                       Bio.PhyloGraph.Tree.EdgeAware.Class
+                       Bio.PhyloGraph.Node.Topological
+                       Bio.PhyloGraph.Tree.Rose.Class
                        Bio.Sequence.Parsed
                        Bio.Sequence.Parsed.Class
-                       Bio.Sequence.Random
-                       Control.Evaluation.Internal
-                       Control.Evaluation.Trans
-                       Control.Evaluation.Unit
+                       Bio.Sequence.Parsed.Internal
                        Data.List.Utility
                        Data.Matrix.NotStupid
-                       File.Format.Conversion.Encoder
-                       File.Format.Fasta.Converter
-                       File.Format.Fasta.Internal
-                       File.Format.Fasta.Parser
-                       File.Format.Fastc.Parser
-                       File.Format.Newick.Converter
-                       File.Format.Newick.Internal
-                       File.Format.Newick.Parser
-                       File.Format.Nexus.Data
-                       File.Format.Nexus.Parser
-                       File.Format.Nexus.Partition
-                       File.Format.Nexus.Validate
+                       Text.Megaparsec.Custom
+  other-modules:     
+                       Bio.PhyloGraph.Tree
+                       Bio.PhyloGraph.Tree.Parsed
+                       Bio.Sequence.Coded.Class
+                       Bio.Sequence.Coded.Internal
+                       Control.Evaluation.Unit
+                       Control.Evaluation.Internal
+                       Control.Evaluation.Trans
                        File.Format.TNT.Command.CCode
                        File.Format.TNT.Command.CNames
                        File.Format.TNT.Command.Cost
@@ -178,11 +179,18 @@ library
                        File.Format.TNT.Parser
                        File.Format.TNT.Partitioning
                        File.Format.TNT.Internal
+                       File.Format.Fasta.Converter
+                       File.Format.Fasta.Internal
+                       File.Format.Fasta.Parser
+                       File.Format.Fastc.Parser
+                       File.Format.Newick.Internal
+                       File.Format.Newick.Parser
+                       File.Format.Nexus.Data
+                       File.Format.Nexus.Parser
+                       File.Format.Nexus.Partition
+                       File.Format.Nexus.Validate
                        File.Format.TransitionCostMatrix.Parser
-                       File.Format.VertexEdgeRoot.Converter
                        File.Format.VertexEdgeRoot.Parser
-                       Text.Megaparsec.Custom
-
                
 executable pcg
   main-is:             Main.hs
@@ -200,6 +208,8 @@ executable pcg
                      , keys                 -any
                      , matrix               -any
                      , megaparsec           >=4.2
+                     , memoize              -any
+                     , mono-traversable     -any
                      , mtl                  -any
                      , parallel             -any
                      , phylocomgraph        -any
@@ -232,9 +242,6 @@ executable pcg
                        -fwarn-unused-matches
   
   hs-source-dirs:      app
-
---  include-dirs:
---    ffi/Analysis/Parsimony/Binary/SequentialAlign
     
   other-modules:
                        PCG.Command
@@ -251,81 +258,15 @@ executable pcg
                        PCG.Command.Types.Read.Unification.UnificationError
                        PCG.Command.Types.Read.Validate
                        PCG.Command.Types.Report
+                       PCG.Command.Types.Report.Fasta
                        PCG.Command.Types.Report.CharacterMatrix
                        PCG.Command.Types.Report.Evaluate
                        PCG.Command.Types.Report.GraphViz
                        PCG.Command.Types.Report.Internal
+                       PCG.Command.Types.Report.Metadata
                        PCG.Command.Types.Report.TaxonMatrix
                        PCG.Command.Types.Report.Newick
                        PCG.Command.Types.Report.Validate
-
-executable brg
-  main-is:             BadReadGraph.hs
-
-  build-depends:       base                 >=4.8 && < 4.9
-                     , bv                   -any
-                     , containers           -any
-                     , criterion            -any
-                     , deepseq              -any
-                     , directory            -any
-                     , dlist                -any
-                     , either               -any
-                     , Glob                 -any
-                     , hashable             -any
-                     , keys                 -any
-                     , matrix               -any
-                     , megaparsec           >=4.2
-                     , parallel             -any
-                     , phylocomgraph        -any
-                     , QuickCheck           -any
-                     , safe                 -any
-                     , semigroups           -any
-                     , smallcheck           -any
-                     , split                -any 
-                     , tasty                -any
-                     , tasty-hunit          -any
-                     , tasty-quickcheck     -any
-                     , tasty-smallcheck     -any
-                     , text                 -any
-                     , time                 -any
-                     , transformers         -any
-                     , unordered-containers -any
-                     , vector               -any
-
-  default-language:    Haskell2010
-
-  ghc-options:         -O2 -Wall 
-                       -fwarn-duplicate-exports
-                       -fwarn-incomplete-patterns
-                       -fwarn-missing-signatures
-                       -fwarn-overlapping-patterns
-                       -fwarn-tabs
-                       -fwarn-unused-binds
-                       -fwarn-unused-do-bind
-                       -fwarn-unused-imports
-                       -fwarn-unused-matches
-  
-  hs-source-dirs:      app
-
-  include-dirs:
-    ffi/Analysis/Parsimony/Binary/SequentialAlign
-
-    
-  other-modules:       PCG.Command
-                       PCG.Command.Types
-                       PCG.Command.Types.Read
-                       PCG.Command.Types.Read.Internal
-                       PCG.Command.Types.Read.ReadError
-                       PCG.Command.Types.Report.CharacterMatrix
-                       PCG.Command.Types.Report.TaxonMatrix
-                       PCG.Command.Types.Report.GraphViz
-                       PCG.Command.Types.Report.Metadata
-                       PCG.Command.Types.Report.Newick
-                       PCG.Computation.Internal
-                       PCG.Script
-                       PCG.Script.Parser
-                       PCG.Script.Types
-
 
 executable qdh
            
@@ -386,7 +327,7 @@ executable qdh
                        PCG.Script.Parser
                        PCG.Script.Types
                        PCG.Command.Types.Report.Metadata
-                       
+
 Test-Suite testsuite
   type:                exitcode-stdio-1.0
 
@@ -404,6 +345,8 @@ Test-Suite testsuite
                      , keys                 -any
                      , matrix               -any
                      , megaparsec           -any
+                     , memoize              -any
+                     , mono-traversable     -any
                      , parallel             -any
                      , QuickCheck           -any
                      , safe                 -any
@@ -425,36 +368,27 @@ Test-Suite testsuite
   hs-source-dirs:      test, lib, app, ffi
 
   other-modules:       Bio.Metadata.Class
-                       Bio.Phylogeny.Forest
-                       Bio.Phylogeny.Forest.Class
-                       Bio.Phylogeny.Graph
-                       Bio.Phylogeny.Graph.Data
-                       Bio.Phylogeny.Graph.Random
-                       Bio.Phylogeny.Graph.Topological
-                       Bio.Phylogeny.Network
-                       Bio.Phylogeny.Network.Class                
-                       Bio.Phylogeny.PhyloCharacter
-                       Bio.Phylogeny.Tree.Binary
-                       Bio.Phylogeny.Tree.Binary.Class
-                       Bio.Phylogeny.Tree.CharacterAware
-                       Bio.Phylogeny.Tree.CharacterAware.Class
-                       Bio.Phylogeny.Tree.Edge.Standard
-                       Bio.Phylogeny.Tree.EdgeAware
-                       Bio.Phylogeny.Tree.EdgeAware.Class
-                       Bio.Phylogeny.Tree.Node
-                       Bio.Phylogeny.Tree.Node.Encoded
-                       Bio.Phylogeny.Tree.Node.Final
-                       Bio.Phylogeny.Tree.Node.Packed
-                       Bio.Phylogeny.Tree.Node.Preliminary
-                       Bio.Phylogeny.Tree.Node.Random
-                       Bio.Phylogeny.Tree.Node.Topological
-                       Bio.Phylogeny.Tree.Referential
-                       Bio.Phylogeny.Tree.Rose
-                       Bio.Phylogeny.Tree.Rose.Class
-                       Bio.Sequence.Character.Coded
+                       Bio.PhyloGraph.Forest
+                       Bio.PhyloGraph.Forest.Class
+                       Bio.PhyloGraph.Network
+                       Bio.PhyloGraph.Network.Class                
+                       Bio.Metadata.Internal
+                       Bio.PhyloGraph.Tree.Binary
+                       Bio.PhyloGraph.Tree.Binary.Class
+                       Bio.PhyloGraph.Edge.Class
+                       Bio.PhyloGraph.Tree.EdgeAware
+                       Bio.PhyloGraph.Tree.EdgeAware.Class
+                       Bio.PhyloGraph.Node
+                       Bio.PhyloGraph.Node.Encoded
+                       Bio.PhyloGraph.Node.Final
+                       Bio.PhyloGraph.Node.Packed
+                       Bio.PhyloGraph.Node.Preliminary
+                       Bio.PhyloGraph.Node.Topological
+                       Bio.PhyloGraph.Tree.Referential
+                       Bio.PhyloGraph.Tree.Rose
+                       Bio.PhyloGraph.Tree.Rose.Class
                        Bio.Sequence.Coded
                        Bio.Sequence.Coded.Class
-                       Bio.Sequence.Random
                        Control.Evaluation.Internal
                        Control.Evaluation.Test
                        Control.Evaluation.Unit
@@ -468,7 +402,6 @@ Test-Suite testsuite
                        File.Format.Fastc.Parser
                        File.Format.Fastc.Test
                        File.Format.Newick
-                       File.Format.Newick.Converter
                        File.Format.Newick.Internal
                        File.Format.Newick.Parser
                        File.Format.Newick.Test
@@ -479,7 +412,6 @@ Test-Suite testsuite
                        File.Format.Nexus.Validate
                        File.Format.TransitionCostMatrix.Parser
                        File.Format.TransitionCostMatrix.Test
-                       File.Format.VertexEdgeRoot.Converter
                        File.Format.VertexEdgeRoot.Parser
                        File.Format.VertexEdgeRoot.Test
                        Test.Custom
@@ -496,15 +428,13 @@ Test-Suite testsuite
                        Analysis.Parsimony.Binary.DirectOptimization
                        Analysis.Parsimony.Binary.Internal
                        Analysis.Parsimony.Binary.Test
-                       Bio.Phylogeny.Graph.Output
-                       Bio.Phylogeny.Graph.Test
-                       Bio.Phylogeny.Graph.Utilities
-                       Bio.Phylogeny.Network.Subsettable
-                       Bio.Sequence.Packed.Class
+                       Analysis.Parsimony.Binary.Fitch
+                       Bio.PhyloGraph.Forest.Internal
+                       Bio.PhyloGraph.Node.ImpliedAlign
+                       Bio.PhyloGraph.Node.Referential
+                       Bio.PhyloGraph.Network.Subsettable
                        Bio.Sequence.Parsed
                        Data.Matrix.NotStupid
-                       File.Format.Conversion.Encoder
-                       File.Format.Conversion.Test
                        File.Format.TNT
                        File.Format.TNT.Command.CCode
                        File.Format.TNT.Command.CNames
@@ -516,7 +446,30 @@ Test-Suite testsuite
                        File.Format.TNT.Internal
                        File.Format.TNT.Parser
                        File.Format.TNT.Partitioning
-                       Test.Custom.Graph
                        Test.Custom.Parse
                        Test.Custom.Types
                        TestSuite.GeneratedTests.TNT                       
+
+                       Bio.Metadata
+                       Bio.Metadata.Parsed
+                       Bio.PhyloGraph.Edge
+                       Bio.PhyloGraph.Edge.Internal
+                       Bio.PhyloGraph.Node.Internal
+                       Bio.PhyloGraph.Solution
+                       Bio.PhyloGraph.Solution.Class
+                       Bio.PhyloGraph.Solution.Internal
+                       Bio.PhyloGraph.Solution.Metadata
+                       Bio.Sequence.Parsed.Class
+                       Bio.Sequence.Parsed.Internal
+                       File.Format.TransitionCostMatrix
+                       File.Format.VertexEdgeRoot
+
+                       Bio.PhyloGraph.DAG
+                       Bio.PhyloGraph.DAG.Class
+                       Bio.PhyloGraph.DAG.Internal
+                       Bio.Sequence.Coded.Internal
+                       Data.Alphabet
+                       Data.BitMatrix
+                       Control.Evaluation
+                       Control.Evaluation.Trans
+                       Control.Monad.Logger

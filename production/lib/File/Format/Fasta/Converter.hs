@@ -25,6 +25,7 @@ import           File.Format.Fasta.Parser
 import           Text.Megaparsec.Custom            (fails)
 import           Text.Megaparsec.Prim              (MonadParsec)
 
+
 -- | Different forms a 'FastaSequence' can be interpreted as.
 data FastaSequenceType = DNA | RNA | AminoAcid deriving (Bounded,Eq,Enum,Read,Show)
 
