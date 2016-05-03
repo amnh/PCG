@@ -19,6 +19,7 @@ import           Analysis.Parsimony.Binary.Fitch
 import           Analysis.Parsimony.Binary.Internal
 import           Bio.Metadata
 import           Bio.Sequence.Coded
+import           Bio.Sequence.Parsed
 import           Bio.PhyloGraph.Solution
 import           Data.BitVector
 import qualified Data.Vector as V
@@ -26,9 +27,15 @@ import           Test.Tasty
 import           Test.Tasty.HUnit
 import           Test.Tasty.QuickCheck
 
+standardAlph :: Alphabet
+standardAlph = V.fromList ["A", "C", "G", "T", "-"]
+
 doMeta, fitchMeta :: CharacterMetadata DynamicChar
-doMeta    = CharMeta DirectOptimization (V.fromList ["A", "C", "G", "T", "-"]) "" False False 1 mempty mempty 0 (GeneralCost 1 1)
-fitchMeta = CharMeta Fitch              (V.fromList ["A", "C", "G", "T", "-"]) "" False False 1 mempty mempty 0 (GeneralCost 1 1)
+doMeta    = CharMeta DirectOptimization standardAlph "" False False 1 mempty mempty 0 (GeneralCost 1 1)
+fitchMeta = CharMeta Fitch              standardAlph "" False False 1 mempty mempty 0 (GeneralCost 1 1)
+
+decodeIt :: DynamicChar -> ParsedDynChar
+decodeIt = decodeOverAlphabet standardAlph
 
 testSuite :: TestTree
 testSuite = testGroup "Binary optimization" [doProperties, fitchProperties {- , traversalProperties -} ]
@@ -58,15 +65,30 @@ doProperties = testGroup "Properties of the DO algorithm" [idHolds, firstRow, em
                 checkEmpty inSeq = main == inSeq && cost == 0
                     where (main, cost, gapped, left, right) = naiveDO inSeq mempty doMeta
 
+        --overlap = testGroup "Overlap test cases" [overlap1]
+
+        --chara = encodeOverAlphabet $ V.fromList [["G", "C"]]
+        --charb = encodeOverAlphabet $ V.fromList [["C"]]
+        --andOverlap = decodeIt $ getOverlap chara charb doMeta
+        --andOverlapResult = V.fromList [["C"]]
+        --overlap1 = testCase "Given characters with overlap, gives zero cost" (andOverlapResult @=? andOverlap)
+
 -- | Check properties of the Fitch algorithm
 fitchProperties :: TestTree
-fitchProperties = testGroup "Properties of the Fitch algorithm" [idHolds]
+fitchProperties = testGroup "Properties of the Fitch algorithm" [preIdHolds]
     where
-        idHolds = testProperty "When Fitch runs a sequence against itself, get input as result" checkID
+        preIdHolds = testProperty "When Preorder Fitch runs a sequence against itself, get input as result" checkID
             where
                 checkID :: DynamicChar -> Bool
                 checkID inSeq = result == inSeq && cost == 0
                     where (result, _, cost) = preorderFitchBit 1 inSeq inSeq fitchMeta
+
+        --postIdHolds = testProperty "When Postorder Fitch runs a sequence against itself, get input as result" checkID
+        --    where
+        --        checkID :: DynamicChar -> Bool
+        --        checkID inSeq = result == inSeq && cost == 0
+        --            where (result, _, cost) = postorderFitchBit inSeq inSeq inSeq inSeq inSeq fitchMeta
+
 
 -- | Check properties of the traversal
 --traversalProperties :: TestTree

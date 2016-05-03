@@ -34,7 +34,7 @@ rebuild-full: clean rebuild
 
 
 # Builds with useful features for a standard user of the package
-standard-build: install-stack stack-setup ffi-code-cleaning
+standard-build: install-stack stack-setup
 	stack install --test $(haddock)
 
 # Builds with all useful options for package power users
@@ -48,11 +48,11 @@ stack-setup: phylocomgraph.cabal stack.yaml
 	stack setup
 
 # Builds with no extra generated features and no optimizations
-stack-build-quick: ffi-code-cleaning phylocomgraph.cabal stack.yaml
+stack-build-quick: phylocomgraph.cabal stack.yaml
 	stack build --fast
 
 # Builds with profiling enabled
-stack-build-profiling: ffi-code-cleaning phylocomgraph.cabal stack.yaml
+stack-build-profiling: phylocomgraph.cabal stack.yaml
 	stack build --test $(haddock) $(profiling) --ghc-options -fprof-cafs
 
 # Cleans up artefact files after a build

@@ -126,6 +126,8 @@ library
                        Control.Evaluation
                        Control.Monad.Logger
                        Data.Either.Custom
+                       Data.Alphabet
+                       Data.BitMatrix
                        File.Format.Fasta
                        File.Format.Fastc
                        File.Format.Newick
@@ -465,6 +467,9 @@ Test-Suite testsuite
                        Bio.PhyloGraph.DAG
                        Bio.PhyloGraph.DAG.Class
                        Bio.PhyloGraph.DAG.Internal
+                       Bio.Sequence.Coded.Internal
+                       Data.Alphabet
+                       Data.BitMatrix
                        Control.Evaluation
                        Control.Evaluation.Trans
                        Control.Monad.Logger

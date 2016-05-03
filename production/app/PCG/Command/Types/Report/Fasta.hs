@@ -19,6 +19,7 @@ import Bio.Sequence.Coded.Internal
 import Data.Vector
 import qualified Data.Vector as V
 
+-- TODO: change this to generating multiple files
 iaOutput :: AlignmentSolution DynamicChar -> Solution -> String
 iaOutput align (Solution _ meta inForests) = concat $ zipWith (iaForest meta) align inForests
     where
