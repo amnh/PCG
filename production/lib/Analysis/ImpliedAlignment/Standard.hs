@@ -122,6 +122,7 @@ numerateOne :: (SeqConstraint s) => s -> Homologies -> s -> Int -> (Homologies, 
 numerateOne ancestorSeq ancestorHomologies childSeq initCounter = foldr determineHomology (mempty, initCounter) foldIn
     where
         getAllSubs s = foldr (\p acc -> grabSubChar s p `cons` acc) mempty (fromList [0..(numChars s)])
+        -- TODO: verify that ancestorHomologies has the correct length as the allSubs
         foldIn = zip3 (getAllSubs childSeq) (getAllSubs ancestorSeq) ancestorHomologies
 
         -- Finds the homology position between any two characters

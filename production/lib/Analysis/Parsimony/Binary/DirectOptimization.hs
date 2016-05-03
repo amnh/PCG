@@ -25,7 +25,7 @@ import Data.Ord
 import Data.Matrix   (Matrix, getElem, nrows, ncols, (<->), matrix, fromList)
 import Data.Monoid
 
---import Debug.Trace
+import Debug.Trace
 
 -- | The direction to align the character at a given matrix point.
 data Direction = LeftDir | DiagDir | DownDir deriving (Eq, Show)
@@ -49,7 +49,7 @@ data AlignMatrix s
 -- the aligned version of the first input character, and the aligned version of the second input character
 -- The process for this algorithm is to generate a traversal matrix, then perform a traceback.
 naiveDO :: (Metadata m s, SeqConstraint' s) => s -> s -> m -> (s, Double, s, s, s)
---naiveDO s1 s2 | trace ("Sequences of length " ++ show (numChars s1) ++ show (numChars s2)) False = undefined
+naiveDO s1 s2 _ | trace ("Sequences of length " ++ show (numChars s1) ++ show (numChars s2)) False = undefined
 naiveDO char1 char2 meta
     | isEmpty char1 || isEmpty char2 || numChars char1 == 0 || numChars char2 == 0 = (emptyChar, 0, emptyChar, emptyChar, emptyChar)
     | otherwise = 
@@ -89,7 +89,7 @@ joinMat (inRow, inChar) inMat = AlignMatrix (inRow `joinRow` mat inMat) (inChar 
 -- This row will have a diagonal at the leftmost position and will otherwise have only lefts
 -- the cost is just added to every time there's a gap
 firstAlignRow :: (SeqConstraint' s, Metadata m s) => s -> Int -> Int -> Double -> m -> AlignRow s
---firstAlignRow indelCost inChar rowLength position prevCost | trace ("firstAlignRow " ++ show inChar) False = undefined
+firstAlignRow indelCost inChar rowLength position prevCost | trace ("firstAlignRow " ++ show inChar) False = undefined
 firstAlignRow inChar rowLength position prevCost meta
     | position == (rowLength + 1) = (mempty, emptyChar)
     | position == 0 = (singleton (0, DiagDir), gapChar inChar) <> firstAlignRow inChar rowLength (position + 1) 0 meta
@@ -103,6 +103,7 @@ firstAlignRow inChar rowLength position prevCost meta
 
 -- | Memoized wrapper of the overlap function
 getOverlap :: (SeqConstraint' s, Metadata m s) => s -> s -> m -> (s, Double)
+getOverlap inChar1 inChar2 meta | trace ("getOverlap") False = undefined
 getOverlap inChar1 inChar2 meta = memoize2 (overlap meta) inChar1 inChar2
     where
         -- | Gets the overlap state: intersect if possible and union if that's empty
@@ -149,7 +150,7 @@ getAlignRows char1 char2 rowNum prevRow meta
 --   Essentially gets values for left, down, and diagonal moves using overlap functionality
 --   then selects the minimum value to set the correct value at the given positions
 generateRow :: (SeqConstraint' s, Metadata m s) => s -> s -> Int -> AlignRow s -> (Int, Double) -> m -> AlignRow s
---generateRow char1 char2 costvals@(indelCost, subCost) rowNum prevRow@(costs, _, _) (position, prevCost)  | trace ("generateRow " ++ show char1 ++ show char2) False = undefined
+generateRow char1 char2 _ _ _ _  | trace ("generateRow " ++ show char1 ++ show char2) False = undefined
 generateRow char1 char2 rowNum prevRow@(vals, _) (position, prevCost) meta
     | length vals < (position - 1) = error "Problem with row generation, previous costs not generated"
     | position == numChars char1 + 1 = (mempty, emptyChar)
