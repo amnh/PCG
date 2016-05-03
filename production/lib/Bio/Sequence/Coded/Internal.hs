@@ -23,12 +23,12 @@ import qualified Data.Vector     as V (fromList, imap)
 newtype DynamicChar
       = DC BitMatrix
 
-type instance Element DynamicCharacter = BitVector
+type instance Element DynamicChar = BitVector
 
-instance MonoFunctor DynamicCharacter where
+instance MonoFunctor DynamicChar where
   omap f (DC bm) = DC $ omap f bm
 
-instance MonoFoldable DynamicCharacter where
+instance MonoFoldable DynamicChar where
   -- | Map each element of a monomorphic container to a 'Monoid'
   -- and combine the results.
   ofoldMap f (DC bm) = ofoldMap f bm
@@ -62,7 +62,7 @@ instance MonoFoldable DynamicCharacter where
   {-# INLINE ofoldl1Ex' #-}
 
 -- | Monomorphic containers that can be traversed from left to right.
-instance MonoTraversable DynamicCharacter where
+instance MonoTraversable DynamicChar where
   -- | Map each element of a monomorphic container to an action,
     -- evaluate these actions from left to right, and
     -- collect the results.
@@ -85,7 +85,7 @@ instance StaticCoded BitVector where
                                   
   encodeChar alphabet ambiguity = fromBits $ (`elem` ambiguity) <$> toList alphabet
 
-instance DynamicCoded DynamicCharacter where
+instance DynamicCoded DynamicChar where
 
   decodeDynamic alphabet (DC bm) = ofoldMap (pure . decodeChar alphabet) $ rows bm
 
@@ -97,10 +97,10 @@ instance DynamicCoded DynamicCharacter where
     | numRows bm <= i = Just $ bm `row` i
     | otherwise       = Nothing
 
-instance EncodableDynamicCharacter DynamicChar where
+instance EncodableDynamicChar DynamicChar where
       -- TODO: I switched the order of input args in decode fns and encodeOver...
     decodeOverAlphabet :: Alphabet -> s -> ParsedDynChar
-    decodeOverAlphabet
+    decodeOverAlphabet alphabet = decodeDynamic (constructAlphabet alphabet)
 
     decodeOneChar      :: Alphabet -> s -> ParsedDynChar
     decodeOneChar = decodeOverAlphabet
