@@ -121,8 +121,9 @@ instance DynamicCoded DynamicChar where
   indexChar i = fromJust . lookupChar i
 
   lookupChar (DC bm) i
-    | i < numRows bm - 1 = Just $ bm `row` i
-    | otherwise          = Nothing
+    |  0 <= i
+    && i <  numRows bm = Just $ bm `row` i
+    | otherwise        = Nothing
 
 instance EncodableDynamicCharacter DynamicChar where
       -- TODO: I switched the order of input args in decode fns and encodeOver...
