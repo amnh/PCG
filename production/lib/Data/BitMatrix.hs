@@ -64,9 +64,7 @@ bitMatrix m n f =
         errorZeroSuffix = "To construct the empty matrix, both rows and columns must be zero"
 
 fromRows :: Foldable t => t BitVector -> BitMatrix
-fromRows xs
-  | null xs   = error "The call to fromRows was given an empty Foldabble structure."
-  | otherwise = BitMatrix n $ mconcat xs'
+fromRows xs = BitMatrix n $ mconcat xs'
   where
     xs' = toList xs
     n   = width $ head xs'
