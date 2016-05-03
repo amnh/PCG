@@ -20,7 +20,7 @@ import           Data.MonoTraversable
 import           Data.Vector          (Vector, (!?))
 import qualified Data.Vector     as V (fromList, imap)
 
-newtype DynamicCharacter
+newtype DynamicChar
       = DC BitMatrix
 
 type instance Element DynamicCharacter = BitVector
@@ -96,3 +96,32 @@ instance DynamicCoded DynamicCharacter where
   lookupChar (DC bm) i
     | numRows bm <= i = Just $ bm `row` i
     | otherwise       = Nothing
+
+instance EncodableDynamicCharacter DynamicChar where
+      -- TODO: I switched the order of input args in decode fns and encodeOver...
+    decodeOverAlphabet :: Alphabet -> s -> ParsedDynChar
+    decodeOneChar      :: Alphabet -> s -> ParsedDynChar
+    encodeOverAlphabet :: Alphabet -> ParsedDynChar -> s
+    encodeOneChar      :: Alphabet -> AmbiguityGroup -> s
+    emptyChar          :: s
+    emptyChar = 
+    
+    filterGaps         :: s -> s
+    filterGaps c@(DC bm) = DC . fromRows . filter (== gapBV) $ rows bm
+      where
+        gapBV = head . (\(DC bm) -> fromRows bm) gapChar c
+    
+    gapChar            :: s -> s
+    gapChar (DC bm) = DC $ fromRows [zeroBits `setBit` (numCols bm - 1)] 
+    
+    getAlphLen         :: s -> Int
+    getAlphLen (DC bm) = numCols bm
+
+    grabSubChar        :: s -> Int -> s
+    grabSubChar = indexChar
+    
+    isEmpty            :: s -> Bool
+    isEmpty = (0 ==) . numChars
+
+    numChars           :: s -> Int
+    numChars (DC bm) = numRows bm

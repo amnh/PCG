@@ -63,19 +63,17 @@ class ( StaticCoded (Element s)
       f (Nothing, n) e = if n == i then (Just e, n) else (Nothing, n + 1)
       f acc          _ = acc
 
--- OLD structure
 -- | A coded sequence allows grabbing of a character, filtering, and some standard types
-class Monoid s => CodedSequence s where
-    decodeOverAlphabet   :: s -> Alphabet -> ParsedSeq
-    decodeOneChar        :: s -> Alphabet -> ParsedSeq 
-    -- TODO: This should be translated to:
-    -- encode :: (Foldable f, Functor f, Foldable t, Foldable c, Ord a) => f (t a) -> c a -> s
-    encodeOverAlphabet   :: ParsedSeq -> Alphabet -> s
-    encodeOneChar        :: Alphabet -> AmbiguityGroup -> s
-    emptySeq             :: s
-    filterGaps           :: s -> s -> Alphabet -> s
---    gapChar              :: Int -> s
-    grabSubChar          :: s -> Int -> Int -> s
-    isEmpty              :: s -> Bool
-    numChars             :: s -> Int -> Int
-
+class EncodableDynamicCharacter s where
+    -- TODO: I switched the order of input args in decode fns and encodeOver...
+    decodeOverAlphabet :: Alphabet -> s -> ParsedDynChar
+    decodeOneChar      :: Alphabet -> s -> ParsedDynChar
+    encodeOverAlphabet :: Alphabet -> ParsedDynChar -> s
+    encodeOneChar      :: Alphabet -> AmbiguityGroup -> s
+    emptyChar          :: s
+    filterGaps         :: s -> s
+    gapChar            :: s -> s
+    getAlphLen         :: s -> Int
+    grabSubChar        :: s -> Int -> s
+    isEmpty            :: s -> Bool
+    numChars           :: s -> Int
