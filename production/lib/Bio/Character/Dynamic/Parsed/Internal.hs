@@ -1,6 +1,6 @@
 -----------------------------------------------------------------------------
 -- |
--- Module      :  Bio.Sequence.Parsed.Internal
+-- Module      :  Bio.Character.Parsed.Internal
 -- Copyright   :  (c) 2015-2015 Ward Wheeler
 -- License     :  BSD-style
 --
@@ -12,13 +12,12 @@
 --
 -----------------------------------------------------------------------------
 
-module Bio.Sequence.Parsed.Internal where
+module Bio.Character.Parsed.Internal where
 
 import Data.Vector   (Vector)
 import Data.Map      (Map)
 
 -- TODO: do ambiguity group types: more aliasing
--- TODO: Add a definition for ParsedSeq for single characters
 
 -- TODO: make AmbiguityGroup a nonempty list
 -- | A (nonempty) collection of possible character values. Singleton lists

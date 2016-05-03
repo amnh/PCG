@@ -1,6 +1,6 @@
 -----------------------------------------------------------------------------
 -- |
--- Module      :  Bio.Sequences.Coded.Internal
+-- Module      :  Bio.Character.Dynamic.Coded.Internal
 -- Copyright   :  (c) 2015-2015 Ward Wheeler
 -- License     :  BSD-style
 --
@@ -9,7 +9,7 @@
 -- Portability :  portable
 --
 -- Data structures and instances for coded characters
--- TODO: Explain what the heck a coded character is, and what it's used for.
+-- Coded characters are characters 
 --
 -----------------------------------------------------------------------------
 
@@ -20,29 +20,28 @@
 -- TODO: fix and remove this ghc option (is it needed for Arbitrary?):
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
-module Bio.Sequence.Coded.Internal
+module Bio.Character.Dynamic.Coded.Internal
   ( DynamicChar()
   , DynamicChars
   , decodeMany
   ) where
 
-import Bio.Sequence.Coded.Class
-import Bio.Sequence.Parsed
+import Bio.Character.Dynamic.Coded.Class
+import Bio.Character.Dynamic.Parsed
 import Data.Alphabet
 import Data.BitMatrix
 import Data.Key
 import Data.Bits
-import Data.BitVector         hiding (join, replicate)
+import Data.BitVector        hiding (join, replicate)
 import Data.Foldable
 import Data.Function.Memoize
-import Data.Maybe                    (fromJust, fromMaybe)
+import Data.Maybe                   (fromJust, fromMaybe)
 import Data.MonoTraversable
 import Data.Vector                   (Vector, fromList)
-import Test.Tasty.QuickCheck  hiding ((.&.))
+import Test.Tasty.QuickCheck hiding ((.&.))
 
--- TODO: Change DynamicChar/Sequences to DynamicCharacters
-        -- Make a missing a null vector
-        -- Think about a nonempty type class or a refinement type for this
+-- TODO: Make a missing a null vector
+-- Think about a nonempty type class or a refinement type for this
 
 newtype DynamicChar
       = DC BitMatrix
@@ -162,19 +161,19 @@ instance EncodableDynamicCharacter DynamicChar where
     numChars (DC bm) = numRows bm
 
 instance Bits DynamicChar where
-    (.&.) (DC lhs) (DC rhs)  = DC $ lhs  .&.  rhs
-    (.|.) (DC lhs) (DC rhs)  = DC $ lhs  .|.  rhs
-    xor   (DC lhs) (DC rhs)  = DC $ lhs `xor` rhs
-    complement (DC b)        = DC $ complement b
-    shift   (DC b) n         = DC $ b `shift`  n
-    rotate  (DC b) n         = DC $ b `rotate` n
-    setBit  (DC b) i         = DC $ b `setBit` i
-    testBit (DC b) i         = b `testBit` i
-    bit i                    = DC $ fromRows [bit i]
-    bitSize                  = fromMaybe 0 . bitSizeMaybe
-    bitSizeMaybe (DC b)      = bitSizeMaybe b
-    isSigned     (DC b)      = isSigned b
-    popCount     (DC b)      = popCount b
+    (.&.)        (DC lhs) (DC rhs)  = DC $ lhs  .&.  rhs
+    (.|.)        (DC lhs) (DC rhs)  = DC $ lhs  .|.  rhs
+    xor          (DC lhs) (DC rhs)  = DC $ lhs `xor` rhs
+    complement   (DC b)             = DC $ complement b
+    shift        (DC b)   n         = DC $ b `shift`  n
+    rotate       (DC b)   n         = DC $ b `rotate` n
+    setBit       (DC b)   i         = DC $ b `setBit` i
+    testBit      (DC b)   i         = b `testBit` i
+    bit i                           = DC $ fromRows [bit i]
+    bitSize                         = fromMaybe 0 . bitSizeMaybe
+    bitSizeMaybe (DC b)             = bitSizeMaybe b
+    isSigned     (DC b)             = isSigned b
+    popCount     (DC b)             = popCount b
 
 instance Memoizable DynamicChar where
     memoize f (DC bm) = memoize (f . DC) bm
@@ -185,17 +184,6 @@ instance Memoizable DynamicChar where
 instance Monoid DynamicChar where
     mempty  = emptyChar
     mappend = undefined
-
-
-{-
--- | Get parsed sequenceS, return encoded sequenceS.
--- Recall that each is Vector of Maybes, to this type is actually
--- Vector Maybe Vector [String] -> Vector Maybe BV.
--- (I only wish I were kidding.)
-encodeAll :: ParsedSequences -> DynamicChars
-encodeAll = fmap (\s -> join $ encode <$> s)
--}
-
 
 -- | Functionality to unencode many encoded sequences
 decodeMany :: DynamicChars -> Alphabet -> ParsedDynChars

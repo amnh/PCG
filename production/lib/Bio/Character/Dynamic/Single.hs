@@ -1,6 +1,6 @@
 -----------------------------------------------------------------------------
 -- |
--- Module      :  Bio.Sequence.Parsed
+-- Module      :  Bio.Character.Dynamic.BiologicalSub
 -- Copyright   :  (c) 2015-2015 Ward Wheeler
 -- License     :  BSD-style
 --
@@ -8,12 +8,12 @@
 -- Stability   :  provisional
 -- Portability :  portable
 --
--- Export of parsed character
+-- Class for a sequence that is not allowed to have ambiguity
 --
 -----------------------------------------------------------------------------
 
+module Bio.Character.Dynamic.BiologicalSub where
 
-module Bio.Sequence.Parsed (module Bio.Sequence.Parsed.Internal, module Bio.Sequence.Parsed.Class) where
-
-import Bio.Sequence.Parsed.Class
-import Bio.Sequence.Parsed.Internal
+-- | A sub-dynamic character may have no ambiguity, so it's capable of checking that condition
+class BiologicalSub s where
+    checkAmbiguous :: s -> Bool

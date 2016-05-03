@@ -1,6 +1,6 @@
 -----------------------------------------------------------------------------
 -- |
--- Module      :  Text.Megaparsec.Custom
+-- Module      :  Bio.Character.Dynamic.Parsed
 -- Copyright   :  (c) 2015-2015 Ward Wheeler
 -- License     :  BSD-style
 --
@@ -8,12 +8,12 @@
 -- Stability   :  provisional
 -- Portability :  portable
 --
--- Class for a sequence that is not allowed to have ambiguity
+-- Export of parsed character
 --
 -----------------------------------------------------------------------------
 
-module Bio.Sequence.Single where
 
--- | A single sequence may have no ambiguity, so it's capable of checking that condition
-class SingleSequence s where
-    checkAmbiguous :: s -> Bool
+module Bio.Character.Dynamic.Parsed (module Bio.Character.Dynamic.Parsed.Internal, module Bio.Character.Dynamic.Parsed.Class) where
+
+import Bio.Character.Dynamic.Parsed.Class
+import Bio.Character.Dynamic.Parsed.Internal

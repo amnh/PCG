@@ -1,6 +1,6 @@
 -----------------------------------------------------------------------------
 -- |
--- Module      :  Bio.Sequences.Coded
+-- Module      :  Bio.Character.Dynamic.Coded
 -- Copyright   :  (c) 2015-2015 Ward Wheeler
 -- License     :  BSD-style
 --
@@ -12,13 +12,13 @@
 --
 -----------------------------------------------------------------------------
 
-module Bio.Sequence.Coded
+module Bio.Character.Dynamic.Coded
   ( EncodableDynamicCharacter(..)
   , DynamicChar
   , DynamicChars
 --  , encodeAll
   , decodeMany) where
 
-import Bio.Sequence.Coded.Internal
-import Bio.Sequence.Coded.Class
+import Bio.Character.Dynamic.Coded.Internal
+import Bio.Character.Dynamic.Coded.Class
 

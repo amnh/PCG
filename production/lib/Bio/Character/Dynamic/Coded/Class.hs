@@ -1,6 +1,6 @@
 -----------------------------------------------------------------------------
 -- |
--- Module      :  Bio.Sequence.Coded.Class
+-- Module      :  Bio.Character.Dynamic.Coded.Class
 -- Copyright   :  (c) 2015-2015 Ward Wheeler
 -- License     :  BSD-style
 --
@@ -9,17 +9,17 @@
 -- Portability :  portable
 --
 -- Class for needed operations of coded sequences and characters
--- 
+--
 --
 -----------------------------------------------------------------------------
 
 
 {-# LANGUAGE FlexibleContexts, FunctionalDependencies, MultiParamTypeClasses #-}
 
-module Bio.Sequence.Coded.Class where
+module Bio.Character.Dynamic.Coded.Class where
 
---import Bio.Sequence.Character.Coded
-import Bio.Sequence.Parsed
+--import Bio.Character.Dynamic.Character.Coded
+import Bio.Character.Dynamic.Parsed
 
 import Data.Alphabet
 import Data.BitVector
