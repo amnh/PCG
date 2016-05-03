@@ -100,11 +100,19 @@ instance DynamicCoded DynamicCharacter where
 instance EncodableDynamicCharacter DynamicChar where
       -- TODO: I switched the order of input args in decode fns and encodeOver...
     decodeOverAlphabet :: Alphabet -> s -> ParsedDynChar
+    decodeOverAlphabet
+
     decodeOneChar      :: Alphabet -> s -> ParsedDynChar
+    decodeOneChar = decodeOverAlphabet
+
     encodeOverAlphabet :: Alphabet -> ParsedDynChar -> s
+    encodeOverAlphabet alphabet = encodeDynamic (constructAlphabet alphabet)
+    
     encodeOneChar      :: Alphabet -> AmbiguityGroup -> s
+    encodeOneChar alphabet = encodeOverAlphabet alphabet . pure
+    
     emptyChar          :: s
-    emptyChar = 
+    emptyChar = DC $ bitMatrix 0 0 (const 0)
     
     filterGaps         :: s -> s
     filterGaps c@(DC bm) = DC . fromRows . filter (== gapBV) $ rows bm
