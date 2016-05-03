@@ -26,121 +26,164 @@ module Bio.Sequence.Coded.Internal
   , decodeMany
   ) where
 
-import Prelude                hiding (and, head, or)
 import Bio.Sequence.Coded.Class
 import Bio.Sequence.Parsed
+import Data.Alphabet
+import Data.BitMatrix
+import Data.Key
 import Data.Bits
-import Data.BitVector         hiding (foldr, foldl, join, not)
+import Data.BitVector         hiding (join, replicate)
 import Data.Foldable
 import Data.Function.Memoize
-import Data.Maybe                    (fromMaybe)
-import Data.Monoid                   ((<>))
---import Data.MonoTraversable
-import Data.Vector                   (Vector, fromList, ifilter)
+import Data.Maybe                    (fromJust, fromMaybe)
+import Data.MonoTraversable
+import Data.Vector                   (Vector, fromList)
 import Test.Tasty.QuickCheck  hiding ((.&.))
 
 -- TODO: Change DynamicChar/Sequences to DynamicCharacters
         -- Make a missing a null vector
         -- Think about a nonempty type class or a refinement type for this
 
--- | DynamicChars is short for a vector of DynamicChar
+newtype DynamicChar
+      = DC BitMatrix
+      deriving (Eq, Show)
+
+type instance Element DynamicChar = BitVector
+
 type DynamicChars = Vector DynamicChar
 
--- | An DynamicChar (encoded sequence) is a maybe vector of characters
--- TODO: change name to make clear the difference between a CodedSequence and an DynamicChar
-data DynamicChar
-   = DynamicChar
-   { alphLen   :: Int
-   , character :: BitVector
-   , gap       :: BitVector
-   } deriving (Eq, Show)
+instance MonoFunctor DynamicChar where
+  omap f (DC bm) = DC $ omap f bm
 
--- | Used internally for concatenating two 'DynamicChar' values. Should not be
---   exported, for internal use only where invariant of equal alphabet length
---   can be asserted.
-concatCharacter :: DynamicChar -> DynamicChar -> DynamicChar
-concatCharacter (DynamicChar len bv1 g) (DynamicChar _ bv2 _) = DynamicChar len (bv1 <> bv2) g
+instance MonoFoldable DynamicChar where
+  -- | Map each element of a monomorphic container to a 'Monoid'
+  -- and combine the results.
+  ofoldMap f (DC bm) = ofoldMap f bm
+  {-# INLINE ofoldMap #-}
 
--- | Make DynamicChar an instance of EncodableDynamicCharacter
+  -- | Right-associative fold of a monomorphic container.
+  ofoldr f e (DC bm) = ofoldr f e bm
+  {-# INLINE ofoldr #-}
+
+  -- | Strict left-associative fold of a monomorphic container.
+  ofoldl' f e (DC bm) = ofoldl' f e bm
+  {-# INLINE ofoldl' #-}
+
+  -- | Right-associative fold of a monomorphic container with no base element.
+  --
+  -- Note: this is a partial function. On an empty 'MonoFoldable', it will
+  -- throw an exception.
+  --
+  -- /See 'Data.MinLen.ofoldr1Ex' from "Data.MinLen" for a total version of this function./
+  ofoldr1Ex f (DC bm) = ofoldr1Ex f bm
+  {-# INLINE ofoldr1Ex #-}
+
+  -- | Strict left-associative fold of a monomorphic container with no base
+  -- element.
+  --
+  -- Note: this is a partial function. On an empty 'MonoFoldable', it will
+  -- throw an exception.
+  --
+  -- /See 'Data.MinLen.ofoldl1Ex'' from "Data.MinLen" for a total version of this function./
+  ofoldl1Ex' f (DC bm) = ofoldl1Ex' f bm
+  {-# INLINE ofoldl1Ex' #-}
+
+-- | Monomorphic containers that can be traversed from left to right.
+instance MonoTraversable DynamicChar where
+    -- | Map each element of a monomorphic container to an action,
+    -- evaluate these actions from left to right, and
+    -- collect the results.
+    otraverse f (DC bm) = DC <$> otraverse f bm
+    {-# INLINE otraverse #-}
+
+    -- | Map each element of a monomorphic container to a monadic action,
+    -- evaluate these actions from left to right, and
+    -- collect the results.
+    omapM = otraverse
+    {-# INLINE omapM #-}
+
+instance StaticCoded BitVector where
+
+  decodeChar alphabet character = foldMapWithKey f alphabet
+    where
+      f i symbol
+        | character `testBit` i = [symbol]
+        | otherwise             = []
+                                  
+  encodeChar alphabet ambiguity = fromBits $ (`elem` ambiguity) <$> toList alphabet
+
+instance DynamicCoded DynamicChar where
+
+  decodeDynamic alphabet (DC bm) = ofoldMap (pure . decodeChar alphabet) $ rows bm
+
+  encodeDynamic alphabet = DC . fromRows . fmap (encodeChar alphabet) . toList
+
+  indexChar i = fromJust . lookupChar i
+
+  lookupChar (DC bm) i
+    | numRows bm <= i = Just $ bm `row` i
+    | otherwise       = Nothing
+
 instance EncodableDynamicCharacter DynamicChar where
-    decodeOverAlphabet alphabet (DynamicChar n inChar gc) -- n is alphabet length
-        | length alphabet == 0 = mempty
-        | width inChar    == 0 = mempty
-        | length alphabet /= n = error "Alphabet lengths don't match in a CodedChar instance."
-        | otherwise            = decodedSeq
-            where
-                decodedSeq = foldr (\theseBits acc -> (decodeOneChar alphabet (DynamicChar n theseBits gc)) <> acc) mempty (group n inChar)
+      -- TODO: I switched the order of input args in decode fns and encodeOver...
+--    decodeOverAlphabet :: Alphabet -> s -> ParsedDynChar
+    decodeOverAlphabet alphabet = fromList . decodeDynamic (constructAlphabet alphabet)
 
-    decodeOneChar alphabet (DynamicChar _ inChar _) = pure . toList $ ifilter (\i _ -> inChar `testBit` i) alphabet
+--    decodeOneChar      :: Alphabet -> s -> ParsedDynChar
+    decodeOneChar = decodeOverAlphabet
 
-    emptyChar = DynamicChar 0 zeroBitVec zeroBitVec -- TODO: Should this be bitVec alphLen 0?
+--    encodeOverAlphabet :: Alphabet -> ParsedDynChar -> s
+    encodeOverAlphabet alphabet = encodeDynamic (constructAlphabet alphabet)
+    
+--    encodeOneChar      :: Alphabet -> AmbiguityGroup -> s
+    encodeOneChar alphabet = encodeOverAlphabet alphabet . pure
+    
+--    emptyChar          :: s
+    emptyChar = DC $ bitMatrix 0 0 (const False)
+    
+--    filterGaps         :: s -> s
+    filterGaps c@(DC bm) = DC . fromRows . filter (== gapBV) $ rows bm
+      where
+        gapBV = head . toList . rows . (\(DC x) -> x) $ gapChar c
+    
+--    gapChar            :: s -> s
+    gapChar (DC bm) = DC $ fromRows [zeroBits `setBit` (numCols bm - 1)] 
+    
+--    getAlphLen         :: s -> Int
+    getAlphLen (DC bm) = numCols bm
 
-    -- This works over minimal alphabet
-    encodeOverAlphabet alphabet inChar = foldl' concatCharacter emptyChar $ encodeOneChar alphabet <$> inChar
+--   grabSubChar        :: s -> Int -> s
+    grabSubChar char i = DC $ fromRows [char `indexChar` i]
+    
+--    isEmpty            :: s -> Bool
+    isEmpty = (0 ==) . numChars
 
-    encodeOneChar alphabet inChar = DynamicChar alphabetLen bitRepresentation (bitVec alphabetLen (0 :: Integer) `setBit` (alphabetLen - 1))
-        where
-        -- For each (yeah, foreach!) letter in (ordered) alphabet, decide whether it's present in the ambiguity group.
-        -- Collect into [Bool].
-            alphabetLen = (length alphabet)
-            bits = (`elem` inChar) <$> alphabet
-            bitRepresentation = fromBits $ toList bits
-
-    filterGaps (DynamicChar n inChar g) = DynamicChar n ((foldl' f zeroBitVec) $ group n inChar) g
-        where
-            f acc x = if   x ==. g
-                      then acc <> x
-                      else acc
-    gapChar (DynamicChar n _ g) = DynamicChar n g g
-
-    getAlphLen (DynamicChar n _ _) = n
-
-    grabSubChar (DynamicChar n inChar g) pos = DynamicChar n (extract high low inChar) g
-        where
-            high = ((pos + 1) * n) - 1
-            low  = pos * n
-
-    isEmpty (DynamicChar _ inChar _) = width inChar == 0
-
-    numChars (DynamicChar n inChar _)
-        | n == 0    = 0
-        | otherwise = width inChar `div` n
-
--- | A 'BitVector of length zero. This nullary 'BitVector' is used internally as
---   an identity element in opetrations involving an  empty 'DynamicChar'.
-zeroBitVec :: BitVector
-zeroBitVec = bitVec 0 (0 :: Integer)
-
+--    numChars           :: s -> Int
+    numChars (DC bm) = numRows bm
 
 instance Bits DynamicChar where
-    (.&.) (DynamicChar n l g) (DynamicChar _ r _) = DynamicChar n ((.&.) l r) g
-    (.|.) (DynamicChar n l g) (DynamicChar _ r _) = DynamicChar n ((.|.) l r) g
-    xor (DynamicChar n l g) (DynamicChar _ r _)   = DynamicChar n (xor l r) g
-    complement (DynamicChar n l g)                = DynamicChar n (complement l) g
-    shift  (DynamicChar n l g) s                  = DynamicChar n ((`shift`  s) l) g
-    rotate (DynamicChar n l g) r                  = DynamicChar n ((`rotate` r) l) g
-    setBit (DynamicChar n l g) s                  = DynamicChar n ((`setBit` s) l) g
-    bit n                                         = DynamicChar n (bit n) (bitVec n (0 :: Integer))
-    bitSize                                       = fromMaybe 0 . bitSizeMaybe
-    bitSizeMaybe (DynamicChar _ l _)              = bitSizeMaybe l
-    isSigned (DynamicChar _ l _)                  = isSigned l
-    popCount (DynamicChar _ l _)                  = popCount l
-    testBit (DynamicChar _ l _) i                 = testBit l i
-
-
-instance Memoizable BitVector where
-    memoize f char = memoize (f . bitVec w) (nat char)
-                        where w = width char
+    (.&.) (DC lhs) (DC rhs)  = DC $ lhs  .&.  rhs
+    (.|.) (DC lhs) (DC rhs)  = DC $ lhs  .|.  rhs
+    xor   (DC lhs) (DC rhs)  = DC $ lhs `xor` rhs
+    complement (DC b)        = DC $ complement b
+    shift   (DC b) n         = DC $ b `shift`  n
+    rotate  (DC b) n         = DC $ b `rotate` n
+    setBit  (DC b) i         = DC $ b `setBit` i
+    testBit (DC b) i         = b `testBit` i
+    bit i                    = DC $ fromRows [bit i]
+    bitSize                  = fromMaybe 0 . bitSizeMaybe
+    bitSizeMaybe (DC b)      = bitSizeMaybe b
+    isSigned     (DC b)      = isSigned b
+    popCount     (DC b)      = popCount b
 
 instance Memoizable DynamicChar where
-    memoize f (DynamicChar n char g) = memoize (f . (\x -> DynamicChar n x g)) char
-
+    memoize f (DC bm) = memoize (f . DC) bm
 
 -- TODO: remove these two instances. I was forced to create them by a compilation error at PCG/Command/Types/Report/Evaluate.hs:36:17.
 -- Arising from SeqConstraint' in solutionOptimization in Analysis/Binary/Parsimony/Optimization.
 -- 
 instance Monoid DynamicChar where
-    mempty = DynamicChar 0 mempty mempty
+    mempty  = emptyChar
     mappend = undefined
 
 
@@ -151,28 +194,6 @@ instance Monoid DynamicChar where
 -- (I only wish I were kidding.)
 encodeAll :: ParsedSequences -> DynamicChars
 encodeAll = fmap (\s -> join $ encode <$> s)
--}
-
-
-{-
--- | Simple functionality to set a single element in a bitvector
--- That element is a singleton character, but may be ambiguous
-setElem :: Bits b => Alphabet -> b -> Int -> AmbiguityGroup -> b
-setElem alphabet curBit charNum ambChar = foldl g curBit ambChar
-    where g curSeq char = case elemIndex char alphabet of
-                       Nothing -> curSeq
-                       Just idx -> setBit curSeq (idx + (charNum * alphLen))
--}
-
--- TODO: make sure this works under current, BV scheme
--- Actually, it's unused. Do we even need it?
-{-
-setElemAt :: (Bits b) => String -> b -> [String] -> b
-setElemAt char orig alphabet
-    | char == "-" = setBit orig 0
-    | otherwise = case elemIndex char alphabet of
-                        Nothing -> orig
-                        Just pos -> setBit orig (pos + 1)
 -}
 
 
@@ -188,8 +209,8 @@ instance Arbitrary b => Arbitrary (Vector b) where
 
 instance Arbitrary DynamicChar where
     arbitrary = do 
-        len    <- arbitrary :: Gen Int
-        charCt <- arbitrary :: Gen Int
-        charBv <- vector (charCt * len) :: Gen [Bool]
-        let gapBv = setBit (bitVec len (0 :: Integer)) (len - 1)
-        pure $ DynamicChar len (fromBits charBv) gapBv
+        nRows   <- arbitrary :: Gen Int
+        nCols   <- arbitrary :: Gen Int
+        let genRow = fromBits <$> vector nCols
+        rowVals <- sequence $ replicate nRows genRow
+        pure . DC $ fromRows rowVals

@@ -21,10 +21,11 @@ module Bio.Sequence.Coded.Class where
 --import Bio.Sequence.Character.Coded
 import Bio.Sequence.Parsed
 
+import Data.Alphabet
 import Data.BitVector
 import Data.Maybe           (fromJust)
+--import Data.Monoid
 import Data.MonoTraversable
-import Data.Vector          (Vector)
 
 {- LAWS:
  - decodeChar alphabet . encodeChar alphabet . toList == id
@@ -34,9 +35,6 @@ import Data.Vector          (Vector)
  - decodeChar alphabet (encodeChar alphabet xs .&. encodeChar alphabet ys) == toList alphabet `Data.List.intersect` (toList xs `Data.List.intersect` toList ys)
  - finiteBitSize . encodeChar alphabet == const (length alphabet)
  -}
-
-type Alphabet' a = Vector a
-
 class Bits b => StaticCoded b where
 --  gapChar    ::  Eq a              => Alphabet a -> b
   decodeChar ::  Eq a              => Alphabet' a -> b   -> [a]
@@ -46,20 +44,14 @@ class Bits b => StaticCoded b where
  - decodeMany alphabet . encodeMany alphabet . fmap toList . toList = id
  - TODO: Add more laws here
  -}
-class ( Bits s
-      , StaticCoded (Element s)
-      , Monoid s
+class ( StaticCoded (Element s)
       , MonoTraversable s
       ) => DynamicCoded s where
   -- All default instances can be "overidden" for efficientcy.
   decodeDynamic ::  Eq a => Alphabet' a -> s -> [[a]]
   decodeDynamic alphabet = ofoldr (\e acc -> decodeChar alphabet e : acc) []
 
---  encodeDynamic :: (Eq a, Foldable t, Foldable c) => Alphabet' a -> c (t a) -> s
---  encodeDynamic alphabet = ofoldl' (\acc e -> acc <> encodeChar alphabet e) mempty
---    where
---      f :: Foldable t => t a -> Element s
---      f acc e = acc <> encodeChar alphabet e
+  encodeDynamic :: (Eq a, Foldable t, Foldable c) => Alphabet' a -> c (t a) -> s
 
   indexChar  :: s -> Int -> (Element s)
   indexChar i = fromJust . lookupChar i
@@ -70,18 +62,17 @@ class ( Bits s
       f (Nothing, n) e = if n == i then (Just e, n) else (Nothing, n + 1)
       f acc          _ = acc
 
--- OLD structure
 -- | A coded sequence allows grabbing of a character, filtering, and some standard types
 class EncodableDynamicCharacter s where
     -- TODO: I switched the order of input args in decode fns and encodeOver...
-    decodeOverAlphabet   :: Alphabet -> s -> ParsedDynChar
-    decodeOneChar        :: Alphabet -> s -> ParsedDynChar 
-    encodeOverAlphabet   :: Alphabet -> ParsedDynChar -> s
-    encodeOneChar        :: Alphabet -> AmbiguityGroup -> s
-    emptyChar            :: s
-    filterGaps           :: s -> s
-    gapChar              :: s -> s
-    getAlphLen           :: s -> Int
-    grabSubChar          :: s -> Int -> s
-    isEmpty              :: s -> Bool
-    numChars             :: s -> Int
+  decodeOverAlphabet :: Alphabet -> s -> ParsedDynChar
+  decodeOneChar      :: Alphabet -> s -> ParsedDynChar
+  encodeOverAlphabet :: Alphabet -> ParsedDynChar -> s
+  encodeOneChar      :: Alphabet -> AmbiguityGroup -> s
+  emptyChar          :: s
+  filterGaps         :: s -> s
+  gapChar            :: s -> s
+  getAlphLen         :: s -> Int
+  grabSubChar        :: s -> Int -> s
+  isEmpty            :: s -> Bool
+  numChars           :: s -> Int

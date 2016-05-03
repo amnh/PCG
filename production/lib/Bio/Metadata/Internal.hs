@@ -16,9 +16,9 @@
 module Bio.Metadata.Internal where
 
 import Bio.Sequence.Parsed
-import Data.Matrix.NotStupid (Matrix, fromList)
+import Data.Matrix.NotStupid (Matrix)
 import Data.Monoid
-import Data.Vector (Vector)
+import Data.Vector           (Vector)
 
 -- TODO: Make 'name' a record type with 2 string fields, fileName and
 --       characterName, to avoid ambiguity when retreiving the file in which
