@@ -121,8 +121,8 @@ instance DynamicCoded DynamicChar where
   indexChar i = fromJust . lookupChar i
 
   lookupChar (DC bm) i
-    | numRows bm <= i = Just $ bm `row` i
-    | otherwise       = Nothing
+    | i < numRows bm - 1 = Just $ bm `row` i
+    | otherwise          = Nothing
 
 instance EncodableDynamicCharacter DynamicChar where
       -- TODO: I switched the order of input args in decode fns and encodeOver...
@@ -209,8 +209,8 @@ instance Arbitrary b => Arbitrary (Vector b) where
 
 instance Arbitrary DynamicChar where
     arbitrary = do 
-        nRows   <- arbitrary :: Gen (Positive Int)
-        nCols   <- arbitrary :: Gen (Positive Int)
+        nRows   <- getPositive <$> (arbitrary :: Gen (Positive Int))
+        nCols   <- getPositive <$> (arbitrary :: Gen (Positive Int))
         let genRow = fromBits <$> vector nCols
         rowVals <- sequence $ replicate nRows genRow
         pure . DC $ fromRows rowVals
