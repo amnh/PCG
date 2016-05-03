@@ -209,8 +209,8 @@ instance Arbitrary b => Arbitrary (Vector b) where
 
 instance Arbitrary DynamicChar where
     arbitrary = do 
-        nRows   <- arbitrary :: Gen Int
-        nCols   <- arbitrary :: Gen Int
+        nRows   <- arbitrary :: Gen (Positive Int)
+        nCols   <- arbitrary :: Gen (Positive Int)
         let genRow = fromBits <$> vector nCols
         rowVals <- sequence $ replicate nRows genRow
         pure . DC $ fromRows rowVals
