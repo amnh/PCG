@@ -59,12 +59,6 @@ data Solution d
    , forests     :: [Forest d]
    } deriving (Eq, Show)
 
--- TODO: lose this.
-instance Monoid StandardSolution where
-    mempty = Solution mempty mempty []
-    mappend = undefined
-
-
 -- | Make it an instance of data storage type classes
 
 instance GeneralSolution (Solution d) (Forest d) where
@@ -74,10 +68,3 @@ instance GeneralSolution (Solution d) (Forest d) where
 instance MS.MetadataSolution (Solution d) StandardMetadata where
     getMetadata               = metadata
     setMetadata solution meta = solution {metadata = meta}
-
-{-
-instance Monoid (Solution d) where
-    mempty = Solution mempty mempty mempty
-    mappend (Solution chars1 meta1 forests1) (Solution chars2 meta2 forests2) = 
-        Solution (chars1 <> chars2) (meta1 <> meta2) (forests1 <> forests2)
--}

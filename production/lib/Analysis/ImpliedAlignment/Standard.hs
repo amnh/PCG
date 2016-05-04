@@ -51,7 +51,7 @@ impliedAlign inTree inMeta = foldr (\n acc -> insert (getCode n) (makeAlignment 
         (_, curTree) = numeratePreorder inTree (getRoot inTree) inMeta (replicate (length inMeta) 0)
         allLeaves = filter (flip nodeIsLeaf curTree) (getNodes curTree)
         --oneTrace :: s -> Homologies -> m -> s
-        oneTrace dynChar homolog = foldr (\pos acc -> grabSubChar dynChar pos <> acc) mempty homolog
+        oneTrace dynChar homolog = foldr (\pos acc -> unsafeAppend (grabSubChar dynChar pos) acc) emptyChar homolog
         --makeAlign :: Vector s -> HomologyTrace -> Vector s
         makeAlign dynChar homologies = zipWith oneTrace dynChar homologies
         --makeAlignment :: n -> Vector s

@@ -14,6 +14,7 @@
 
 module Bio.Sequence.Coded
   ( EncodableDynamicCharacter(..)
+  , DynamicCoded(..)
   , DynamicChar
   , DynamicChars
 --  , encodeAll

@@ -92,11 +92,15 @@ firstAlignRow :: (SeqConstraint' s, Metadata m s) => s -> Int -> Int -> Double -
 --firstAlignRow indelCost inChar rowLength position prevCost | trace ("firstAlignRow " ++ show inChar) False = undefined
 firstAlignRow inChar rowLength position prevCost meta
     | position == (rowLength + 1) = (mempty, emptyChar)
-    | position == 0 = (singleton (0, DiagDir), gapChar inChar) <> firstAlignRow inChar rowLength (position + 1) 0 meta
+    | position == 0 = 
+        let recurse0 = firstAlignRow inChar rowLength (position + 1) 0 meta
+        in ((0, DiagDir) `cons` (fst recurse0), unsafeAppend (gapChar inChar) (snd recurse0))
     | newState /= gapChar inChar = --trace ("new state on first row " ++ show newState) $ -- if there's no indel overlap
-        (singleton (prevCost + indCost, LeftDir), newState) <> firstAlignRow inChar rowLength (position + 1) (prevCost + indCost) meta
+        let recurse1 = firstAlignRow inChar rowLength (position + 1) (prevCost + indCost) meta
+        in ((prevCost + indCost, LeftDir) `cons` (fst recurse1), unsafeAppend newState (snd recurse1))
     | otherwise = --trace ("new state on first row, otherwise " ++ show newState) $ -- matching indel so no cost
-        (singleton (prevCost, LeftDir), newState) <> firstAlignRow inChar rowLength (position + 1) prevCost meta
+        let recurse2 = firstAlignRow inChar rowLength (position + 1) prevCost meta
+        in ((prevCost, LeftDir) `cons` (fst recurse2), unsafeAppend newState (snd recurse2))
         where
             newState = fst $ getOverlap (gapChar inChar) (grabSubChar inChar (position - 1)) meta
             indCost = getGapCost meta
@@ -154,10 +158,12 @@ generateRow char1 char2 _ _ _ _  | trace ("generateRow " ++ show char1 ++ show c
 generateRow char1 char2 rowNum prevRow@(vals, _) (position, prevCost) meta
     | length vals < (position - 1) = error "Problem with row generation, previous costs not generated"
     | position == numChars char1 + 1 = (mempty, emptyChar)
-    | position == 0 && downChar /= gapChar char1 = (singleton (upValue + indCost, DownDir), downChar) <> nextCall (upValue + indCost)
-    | position == 0 = (singleton (upValue, DownDir), downChar) <> nextCall upValue
+    | position == 0 && downChar /= gapChar char1 = 
+        ((upValue + indCost, DownDir)`cons` (fst $ nextCall (upValue + indCost)), unsafeAppend downChar (snd $ nextCall (upValue + indCost)))
+    | position == 0 = 
+        ((upValue, DownDir) `cons` (fst $ nextCall upValue), unsafeAppend downChar (snd $ nextCall upValue))
     | otherwise = --trace "minimal case" $ 
-        (singleton (minCost, minDir), minState) <> nextCall minCost
+        ((minCost, minDir) `cons` (fst $ nextCall minCost), unsafeAppend minState (snd $ nextCall minCost))
         where
             indCost            = getGapCost meta
             subChar1           = grabSubChar char1 (position - 1)
@@ -190,7 +196,9 @@ traceback alignMat' char1' char2' = tracebackInternal alignMat' char1' char2' (n
         tracebackInternal alignMat char1 char2 (row, col) 
             | length (seqs alignMat) < row - 1 || nrows (mat alignMat) < row - 1 || ncols (mat alignMat) < col - 1 = error "Traceback cannot function because matrix is incomplete"
             | row == 0 && col == 0 = (emptyChar, emptyChar, emptyChar)
-            | otherwise = tracebackInternal alignMat char1 char2 (i, j) <> (curState, leftCharacter, rightCharacter)
+            | otherwise = 
+                let (trace1, trace2, trace3) = tracebackInternal alignMat char1 char2 (i, j)
+                in (unsafeAppend trace1 curState, unsafeAppend trace2 leftCharacter, unsafeAppend trace3 rightCharacter)
             where
               curDirect      = snd $ getElem row col (mat alignMat)
               curState       = grabSubChar (seqs alignMat ! row) col
