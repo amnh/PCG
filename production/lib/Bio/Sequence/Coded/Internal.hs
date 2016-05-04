@@ -125,7 +125,7 @@ instance EncodableDynamicCharacter DynamicChar where
     && i <  numRows bm = Just $ bm `row` i
     | otherwise        = Nothing
 
-  unsafePrepend dynamic static = undefined 
+  unsafePrepend static (DC dynamic) = DC $ fromRows $ static : (rows dynamic)
 
 instance OldEncodableDynamicCharacterToBeRemoved DynamicChar where
       -- TODO: I switched the order of input args in decode fns and encodeOver...
