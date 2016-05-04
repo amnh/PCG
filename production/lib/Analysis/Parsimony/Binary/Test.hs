@@ -31,8 +31,8 @@ standardAlph :: Alphabet
 standardAlph = V.fromList ["A", "C", "G", "T", "-"]
 
 doMeta, fitchMeta :: CharacterMetadata DynamicChar
-doMeta    = CharMeta DirectOptimization standardAlph "" False False 1 mempty mempty 0 (GeneralCost 1 1)
-fitchMeta = CharMeta Fitch              standardAlph "" False False 1 mempty mempty 0 (GeneralCost 1 1)
+doMeta    = CharMeta DirectOptimization standardAlph "" False False 1 mempty (emptyChar, emptyChar) 0 (GeneralCost 1 1)
+fitchMeta = CharMeta Fitch              standardAlph "" False False 1 mempty (emptyChar, emptyChar) 0 (GeneralCost 1 1)
 
 decodeIt :: DynamicChar -> ParsedDynChar
 decodeIt = decodeOverAlphabet standardAlph
@@ -63,7 +63,7 @@ doProperties = testGroup "Properties of the DO algorithm" [idHolds, firstRow, em
             where
                 checkEmpty :: DynamicChar -> Bool
                 checkEmpty inSeq = main == inSeq && cost == 0
-                    where (main, cost, gapped, left, right) = naiveDO inSeq mempty doMeta
+                    where (main, cost, gapped, left, right) = naiveDO inSeq emptyChar doMeta
 
         --overlap = testGroup "Overlap test cases" [overlap1]
 
