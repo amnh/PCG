@@ -12,9 +12,11 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE FunctionalDependencies #-}
+{-# LANGUAGE FunctionalDependencies, FlexibleInstances, MultiParamTypeClasses, TypeSynonymInstances #-}
 
 module Bio.PhyloGraph.Forest.Class where
+
+import Bio.PhyloGraph.Forest.Internal
 
 -- TODO: Add restrictions for a valid forest
 
@@ -24,4 +26,10 @@ class GeneralForest f t | f -> t where
     trees :: f -> [t]
     setTrees :: f -> [t] -> f
     filterTrees :: f -> (t -> Bool) -> f
-    -- transfer subtree 
+    -- transfer subtree
+
+instance GeneralForest (Forest d) d where
+    trees = id
+    setTrees _ new = new
+    filterTrees forest f = filter f forest
+                                                      
