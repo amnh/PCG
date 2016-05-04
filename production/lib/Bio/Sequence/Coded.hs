@@ -13,9 +13,10 @@
 -----------------------------------------------------------------------------
 
 module Bio.Sequence.Coded
-  ( EncodableDynamicCharacter(..)
-  , DynamicChar
+  ( DynamicChar
   , DynamicChars
+  , EncodableDynamicCharacter(..)
+  , OldEncodableDynamicCharacterToBeRemoved(..)
 --  , encodeAll
   , decodeMany) where
 

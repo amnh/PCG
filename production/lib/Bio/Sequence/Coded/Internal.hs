@@ -102,7 +102,7 @@ instance MonoTraversable DynamicChar where
     omapM = otraverse
     {-# INLINE omapM #-}
 
-instance StaticCoded BitVector where
+instance EncodableStaticCharacter BitVector where
 
   decodeChar alphabet character = foldMapWithKey f alphabet
     where
@@ -112,7 +112,7 @@ instance StaticCoded BitVector where
                                   
   encodeChar alphabet ambiguity = fromBits $ (`elem` ambiguity) <$> toList alphabet
 
-instance DynamicCoded DynamicChar where
+instance EncodableDynamicCharacter DynamicChar where
 
   decodeDynamic alphabet (DC bm) = ofoldMap (pure . decodeChar alphabet) $ rows bm
 
@@ -127,7 +127,7 @@ instance DynamicCoded DynamicChar where
 
   unsafePrepend dynamic static = undefined 
 
-instance EncodableDynamicCharacter DynamicChar where
+instance OldEncodableDynamicCharacterToBeRemoved DynamicChar where
       -- TODO: I switched the order of input args in decode fns and encodeOver...
 --    decodeOverAlphabet :: Alphabet -> s -> ParsedDynChar
     decodeOverAlphabet alphabet = fromList . decodeDynamic (constructAlphabet alphabet)

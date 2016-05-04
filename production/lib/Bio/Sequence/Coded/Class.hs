@@ -35,7 +35,7 @@ import Data.MonoTraversable
  - decodeChar alphabet (encodeChar alphabet xs .&. encodeChar alphabet ys) == toList alphabet `Data.List.intersect` (toList xs `Data.List.intersect` toList ys)
  - finiteBitSize . encodeChar alphabet == const (length alphabet)
  -}
-class Bits b => StaticCoded b where
+class Bits b => EncodableStaticCharacter b where
 --  gapChar    ::  Eq a              => Alphabet a -> b
   decodeChar ::  Eq a              => Alphabet' a -> b   -> [a]
   encodeChar :: (Eq a, Foldable t) => Alphabet' a -> t a -> b
@@ -44,9 +44,10 @@ class Bits b => StaticCoded b where
  - decodeMany alphabet . encodeMany alphabet . fmap toList . toList = id
  - TODO: Add more laws here
  -}
-class ( StaticCoded (Element s)
+class ( EncodableStaticCharacter (Element s)
       , MonoTraversable s
-      ) => DynamicCoded s where
+      , OldEncodableDynamicCharacterToBeRemoved s
+      ) => EncodableDynamicCharacter s where
   -- All default instances can be "overidden" for efficientcy.
   decodeDynamic ::  Eq a => Alphabet' a -> s -> [[a]]
   decodeDynamic alphabet = ofoldr (\e acc -> decodeChar alphabet e : acc) []
@@ -64,11 +65,12 @@ class ( StaticCoded (Element s)
 
   unsafeAppend  :: s -> Element s -> s
   unsafeAppend  = flip unsafePrepend
+
   unsafePrepend :: Element s -> s -> s
   unsafePrepend = flip unsafeAppend
 
 -- | A coded sequence allows grabbing of a character, filtering, and some standard types
-class EncodableDynamicCharacter s where
+class OldEncodableDynamicCharacterToBeRemoved s where
     -- TODO: I switched the order of input args in decode fns and encodeOver...
   decodeOverAlphabet :: Alphabet -> s -> ParsedDynChar
   decodeOneChar      :: Alphabet -> s -> ParsedDynChar
