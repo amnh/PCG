@@ -18,5 +18,5 @@ module Bio.PhyloGraph.Solution.Class where
 
 -- | Accessor and mutator for types which store a collection of 'Forest'.
 class GeneralSolution s f | s -> f where
-    getForests    :: s -> [f]
+    getForests :: s -> [f]
     setForests :: s -> [f] -> s

@@ -29,7 +29,7 @@ collapseReadCommands (READ x1 : READ x2 : xs) = collapseReadCommands (READ (x1<>
 collapseReadCommands (x:xs)                   = x : collapseReadCommands xs
     
 evaluate :: Computation -> SearchState
-evaluate (Computation xs) = foldl (flip f) (pure mempty) xs
+evaluate (Computation xs) = foldl (flip f) mempty xs
   
 f :: Command -> SearchState -> SearchState
 f x@READ   {} = Read.evaluate   x

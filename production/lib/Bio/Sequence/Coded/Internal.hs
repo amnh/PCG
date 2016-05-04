@@ -125,7 +125,10 @@ instance EncodableDynamicCharacter DynamicChar where
     && i <  numRows bm = Just $ bm `row` i
     | otherwise        = Nothing
 
-  unsafePrepend static (DC dynamic) = DC $ fromRows $ static : (rows dynamic)
+  -- TODO: Think about the efficiency of this
+  unsafeCons static (DC dynamic) = DC $ fromRows $ static : (rows dynamic)
+
+  unsafeAppend (DC dynamic1) (DC dynamic2) = DC $ fromRows $ (rows dynamic1) ++ (rows dynamic2)
 
 instance OldEncodableDynamicCharacterToBeRemoved DynamicChar where
       -- TODO: I switched the order of input args in decode fns and encodeOver...
@@ -181,13 +184,6 @@ instance Bits DynamicChar where
 
 instance Memoizable DynamicChar where
     memoize f (DC bm) = memoize (f . DC) bm
-
--- TODO: remove these two instances. I was forced to create them by a compilation error at PCG/Command/Types/Report/Evaluate.hs:36:17.
--- Arising from SeqConstraint' in solutionOptimization in Analysis/Binary/Parsimony/Optimization.
--- 
-instance Monoid DynamicChar where
-    mempty  = emptyChar
-    mappend = undefined
 
 
 {-
