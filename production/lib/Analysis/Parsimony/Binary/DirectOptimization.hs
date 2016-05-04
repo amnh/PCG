@@ -49,7 +49,7 @@ data AlignMatrix s
 -- the aligned version of the first input character, and the aligned version of the second input character
 -- The process for this algorithm is to generate a traversal matrix, then perform a traceback.
 naiveDO :: (Metadata m s, SeqConstraint' s) => s -> s -> m -> (s, Double, s, s, s)
-naiveDO s1 s2 _ | trace ("Sequences of length " ++ show (numChars s1) ++ show (numChars s2)) False = undefined
+--naiveDO s1 s2 _ | trace ("Sequences of length " ++ show (numChars s1) ++ show (numChars s2)) False = undefined
 naiveDO char1 char2 meta
     | isEmpty char1 || isEmpty char2 || numChars char1 == 0 || numChars char2 == 0 = (emptyChar, 0, emptyChar, emptyChar, emptyChar)
     | otherwise = 
@@ -89,7 +89,7 @@ joinMat (inRow, inChar) inMat = AlignMatrix (inRow `joinRow` mat inMat) (inChar 
 -- This row will have a diagonal at the leftmost position and will otherwise have only lefts
 -- the cost is just added to every time there's a gap
 firstAlignRow :: (SeqConstraint' s, Metadata m s) => s -> Int -> Int -> Double -> m -> AlignRow s
-firstAlignRow indelCost inChar rowLength position prevCost | trace ("firstAlignRow " ++ show inChar) False = undefined
+--firstAlignRow indelCost inChar rowLength position prevCost | trace ("firstAlignRow " ++ show inChar) False = undefined
 firstAlignRow inChar rowLength position prevCost meta
     | position == (rowLength + 1) = (mempty, emptyChar)
     | position == 0 = (singleton (0, DiagDir), gapChar inChar) <> firstAlignRow inChar rowLength (position + 1) 0 meta
@@ -103,7 +103,7 @@ firstAlignRow inChar rowLength position prevCost meta
 
 -- | Memoized wrapper of the overlap function
 getOverlap :: (SeqConstraint' s, Metadata m s) => s -> s -> m -> (s, Double)
-getOverlap inChar1 inChar2 meta | trace ("getOverlap") False = undefined
+--getOverlap inChar1 inChar2 meta | trace ("getOverlap") False = undefined
 getOverlap inChar1 inChar2 meta = memoize2 (overlap meta) inChar1 inChar2
     where
         -- | Gets the overlap state: intersect if possible and union if that's empty
@@ -111,7 +111,7 @@ getOverlap inChar1 inChar2 meta = memoize2 (overlap meta) inChar1 inChar2
         overlap :: (SeqConstraint' s, Metadata m s) => m -> s -> s -> (s, Double)
         overlap inMeta char1 char2
             | isEmpty char1 || isEmpty char2 = (emptyChar, 0)
-            | char1 .&. char2 == zeroBits = foldr1 ambigChoice allPossible
+            | char1 .&. char2 == zeroBits = foldr ambigChoice (zeroBits, 0) allPossible
             | otherwise = (char1 .&. char2, 0)
             where
                 gap = gapChar char1

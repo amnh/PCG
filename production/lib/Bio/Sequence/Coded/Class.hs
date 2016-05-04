@@ -62,6 +62,11 @@ class ( StaticCoded (Element s)
       f (Nothing, n) e = if n == i then (Just e, n) else (Nothing, n + 1)
       f acc          _ = acc
 
+  unsafeAppend  :: s -> Element s -> s
+  unsafeAppend  = flip unsafePrepend
+  unsafePrepend :: Element s -> s -> s
+  unsafePrepend = flip unsafeAppend
+
 -- | A coded sequence allows grabbing of a character, filtering, and some standard types
 class EncodableDynamicCharacter s where
     -- TODO: I switched the order of input args in decode fns and encodeOver...

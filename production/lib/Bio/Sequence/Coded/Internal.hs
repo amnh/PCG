@@ -125,6 +125,8 @@ instance DynamicCoded DynamicChar where
     && i <  numRows bm = Just $ bm `row` i
     | otherwise        = Nothing
 
+  unsafePrepend dynamic static = undefined 
+
 instance EncodableDynamicCharacter DynamicChar where
       -- TODO: I switched the order of input args in decode fns and encodeOver...
 --    decodeOverAlphabet :: Alphabet -> s -> ParsedDynChar
