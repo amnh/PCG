@@ -31,11 +31,10 @@ evaluate _ _ = fail "Invalid READ command binding"
 -- | Function to add optimization to the newick reporting
 -- TODO: change this error into a warning
 addOptimization :: StandardSolution -> StandardSolution 
---addOptimization result
---  | allBinary = solutionOptimization 1 result
---  | otherwise = error "Cannot perform optimization because graph is not binary, outputting zero cost"
---    where allBinary = all (all verifyBinary) (forests result)
-addOptimization result = solutionOptimization 1 result
+addOptimization result
+  | allBinary = solutionOptimization 1 result
+  | otherwise = error "Cannot perform optimization because graph is not binary, outputting zero cost"
+    where allBinary = all (all verifyBinary) (forests result)
 
 -- TODO: Redo reporting
 generateOutput :: StandardSolution -> OutputFormat -> Either String String

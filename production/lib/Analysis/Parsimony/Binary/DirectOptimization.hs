@@ -18,12 +18,11 @@ import Analysis.Parsimony.Binary.Internal
 import Bio.Metadata
 import Bio.Sequence.Coded
 import Data.Bits
-import Data.Vector   (Vector, cons, toList, singleton, (!))
+import Data.Vector   (Vector, cons, toList, (!))
 import Data.Foldable (minimumBy)
 import Data.Function.Memoize
 import Data.Ord
 import Data.Matrix   (Matrix, getElem, nrows, ncols, (<->), matrix, fromList)
-import Data.Monoid
 
 import Debug.Trace
 
