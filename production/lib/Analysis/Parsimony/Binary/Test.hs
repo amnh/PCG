@@ -27,6 +27,8 @@ import           Test.Tasty
 import           Test.Tasty.HUnit
 import           Test.Tasty.QuickCheck
 
+import Debug.Trace
+
 standardAlph :: Alphabet
 standardAlph = V.fromList ["A", "C", "G", "T", "-"]
 
@@ -53,9 +55,10 @@ doProperties = testGroup "Properties of the DO algorithm" [idHolds, firstRow, em
         firstRow = testProperty "First row of alignment matrix has expected directions" checkRow
             where
                 checkRow :: DynamicChar -> Bool
-                checkRow inSeq = (snd $ V.head result) == DiagDir && allLeft (V.tail result) && V.length result == rowLen
+                checkRow inSeq = --trace ("checkRow " ++ show result ++ show rowLen) $ 
+                                    (snd $ V.head result) == DiagDir && allLeft (V.tail result) && V.length result == rowLen
                     where
-                        rowLen = numChars inSeq
+                        rowLen = numChars inSeq + 1
                         (result, seqs) = firstAlignRow inSeq rowLen 0 0 doMeta
                         allLeft = V.all (\val -> snd val == LeftDir)
 
