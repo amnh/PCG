@@ -5,7 +5,7 @@ module PCG.Command.Types.Read.Evaluate
   ) where
 
 import           Bio.Metadata
-import           Bio.Sequence.Parsed
+import           Bio.Character.Parsed
 import           Bio.PhyloGraph.Forest.Parsed
 import           Bio.PhyloGraph.Solution    (SearchState,StandardMetadata)
 import           Control.Monad              (when)
@@ -136,15 +136,15 @@ expandIUPAC fpr = fpr { parsedChars = newTreeChars }
     f mapping meta = g <$> mapping
       where
         g :: ParsedDynChars -> ParsedDynChars
-        g = V.zipWith h meta 
+        g = V.zipWith h meta
           where
             h :: StandardMetadata -> Maybe ParsedDynChar -> Maybe ParsedDynChar
             h cInfo seqMay = expandCodes <$> seqMay
               where
                 cAlph = toList $ alphabet cInfo
-                
+
                 expandCodes :: ParsedDynChar -> ParsedDynChar
-                expandCodes x 
+                expandCodes x
                   | cAlph `subsetOf` (concat $ keys nucleotideIUPAC) = expandOrId nucleotideIUPAC <$> x
                   | cAlph `subsetOf` (concat $ keys aminoAcidIUPAC) = expandOrId aminoAcidIUPAC  <$> x
                   | otherwise = x
@@ -232,4 +232,4 @@ casei x = foldl f x $ assocs x
       | otherwise  = m
     f m (_    , _) = m
 
-                                                                    
+

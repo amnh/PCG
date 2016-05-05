@@ -15,7 +15,7 @@
 
 module Bio.Metadata.Internal where
 
-import Bio.Sequence.Parsed
+import Bio.Character.Parsed
 import Data.Matrix.NotStupid (Matrix)
 import Data.Monoid
 import Data.Vector           (Vector)
@@ -29,7 +29,7 @@ data CharacterMetadata s
    { -- | Stores the type of character
      charType   :: CharDataType
      -- | Alphabet as a list of strings
-   , alphabet   :: Alphabet      
+   , alphabet   :: Alphabet
      -- | Name (give name : file name)
    , name       :: String
      -- | Whether this character is aligned
@@ -56,20 +56,20 @@ data CharDataType = DirectOptimization | Fitch | InfoTheoretic | Unknown derivin
 -- | A cost structure can either be a TCM, an affine cost group, or a general cost group
 -- AffineCost stores a gap opening, gap continuing, and substitution cost
 -- GeneralCost just stores an indelCost and a subCost
-data CostStructure = TCM CostMatrix 
-                      | AffineCost {gapOpenCost :: Double, gapContinueCost :: Double, subCost :: Double} 
+data CostStructure = TCM CostMatrix
+                      | AffineCost {gapOpenCost :: Double, gapContinueCost :: Double, subCost :: Double}
                       | GeneralCost {indelCost :: Double, subCost :: Double} deriving (Eq, Show)
 
 -- | A cost matrix is just a matrix of floats
 type CostMatrix = Matrix Double
 
 -- TODO: replace these calls with lenses
--- | Prepends a 'String' to the existing character name. 
+-- | Prepends a 'String' to the existing character name.
 prependName :: String -> CharacterMetadata s -> CharacterMetadata s
 prependName n x = x { name     = n <> ":" <> name x }
 
 -- TODO: replace these calls with lenses
--- | Overwrites the existing character alpahbet. 
+-- | Overwrites the existing character alpahbet.
 updateAlphabet :: Alphabet -> CharacterMetadata s -> CharacterMetadata s
 updateAlphabet a x = x { alphabet = a }
 

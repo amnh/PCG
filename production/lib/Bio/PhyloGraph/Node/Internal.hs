@@ -15,7 +15,7 @@
 
 module Bio.PhyloGraph.Node.Internal where
 
-import Bio.Sequence.Coded
+import Bio.Character.Dynamic.Coded
 import qualified Bio.PhyloGraph.Node.Encoded as EN
 import qualified Bio.PhyloGraph.Node.Final as FN
 import qualified Bio.PhyloGraph.Node.ImpliedAlign as IN
@@ -39,7 +39,7 @@ data Node = Node  { code        :: Int
                   , packed      :: Vector DynamicChar -- packed version of the sequence
                   , preliminary :: Vector DynamicChar -- preliminary assignment at a node
                   , final       :: Vector DynamicChar -- final assignment at a node
-                  , temporary   :: Vector DynamicChar -- multipurpose temporary assignment 
+                  , temporary   :: Vector DynamicChar -- multipurpose temporary assignment
                   , aligned     :: Vector DynamicChar -- the alignment between the children
                   , random      :: Vector DynamicChar -- the assignment with a single state randomly selected to remove ambiguity
                   , union       :: Vector DynamicChar -- the union assignment
@@ -77,10 +77,10 @@ instance Monoid Node where
                        , isLeaf      = isLeaf n1 || isLeaf n2
                        , parents     = parents     n1 <> parents     n2
                        , children    = children    n1 <> children    n2
-                       , encoded     = encoded     n1 <> encoded     n2 
+                       , encoded     = encoded     n1 <> encoded     n2
                        , packed      = packed      n1 <> packed      n2
                        , preliminary = preliminary n1 <> preliminary n2
-                       , final       = final       n1 <> final       n2 
+                       , final       = final       n1 <> final       n2
                        , temporary   = temporary   n1 <> temporary   n2
                        , aligned     = aligned     n1 <> aligned     n2
                        , random      = random      n1 <> random      n2
@@ -140,7 +140,7 @@ instance Arbitrary Node where
         leaf   <- arbitrary :: Gen Bool
         child  <- listOf (arbitrary :: Gen Int)
         parent <- listOf $ suchThat arbitrary (not . flip elem child)
-        seqs   <- vectorOf 10 arbitrary 
+        seqs   <- vectorOf 10 arbitrary
         c2     <- arbitrary :: Gen Double
         c3     <- arbitrary :: Gen Double
         pure $ Node c n root leaf child parent (seqs !! 0) (seqs !! 1) (seqs !! 2) (seqs !! 3) (seqs !! 4) (seqs !! 5) (seqs !! 6) (seqs !! 7) (seqs !! 8) (seqs !! 9) mempty c2 c3

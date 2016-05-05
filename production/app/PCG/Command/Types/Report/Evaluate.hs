@@ -22,7 +22,7 @@ evaluate (REPORT target format) old = do
     stateValue <- old
     case generateOutput stateValue format of
      ErrorCase    errMsg  -> fail errMsg
-     MultiStream  streams -> old <* sequenceA (liftIO . uncurry writeFile <$> stream)
+     MultiStream  streams -> old <* sequenceA (liftIO . uncurry writeFile <$> streams)
      SingleStream output  ->
        case target of
          OutputToStdout -> old <* info output

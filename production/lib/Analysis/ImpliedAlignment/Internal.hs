@@ -21,7 +21,7 @@ import Bio.PhyloGraph.Network
 import Bio.PhyloGraph.Node
 import Bio.PhyloGraph.Solution
 import Bio.PhyloGraph.Tree
-import Bio.Sequence.Coded
+import Bio.Character.Dynamic.Coded
 
 import Data.Bits
 import Data.Function.Memoize

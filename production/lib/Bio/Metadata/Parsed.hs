@@ -16,8 +16,8 @@
 module Bio.Metadata.Parsed where
 
 import           Bio.Metadata.Internal
-import           Bio.Sequence.Coded
-import           Bio.Sequence.Parsed
+import           Bio.Character.Dynamic.Coded
+import           Bio.Character.Parsed
 import           Bio.PhyloGraph.Solution
 import           Data.Char
 import           Data.Foldable
@@ -68,7 +68,7 @@ instance ParsedMetadata TNT.TntResult where
            tntAlphabet TNT.Protein    {} = aaAlph
 
 instance ParsedMetadata F.TCM where
-    unifyMetadata (F.TCM alph mat) = 
+    unifyMetadata (F.TCM alph mat) =
         let defaultMeta = makeOneInfo . fromList $ toList alph
         in  pure (defaultMeta {costs = TCM mat})
 
@@ -78,9 +78,9 @@ instance ParsedMetadata VertexEdgeRoot where
 instance ParsedMetadata Nexus where
     unifyMetadata (Nexus (_, metas)) = V.map convertNexusMeta metas
         where
-            convertNexusMeta inMeta = 
+            convertNexusMeta inMeta =
                 let defaultMeta = makeOneInfo (fromList $ Nex.alphabet inMeta)
-                in  defaultMeta { name = Nex.name inMeta, isIgnored = Nex.ignored inMeta, 
+                in  defaultMeta { name = Nex.name inMeta, isIgnored = Nex.ignored inMeta,
                                   costs  = maybe (costs defaultMeta) (TCM . F.transitionCosts) (Nex.costM inMeta)}
 
 disAlph, dnaAlph, rnaAlph, aaAlph :: Vector String

@@ -15,7 +15,7 @@ module PCG.Command.Types.Report.Fasta where
 
 import Analysis.ImpliedAlignment.Internal
 import Bio.PhyloGraph.Solution
-import Bio.Sequence.Coded.Internal
+import Bio.Character.Dynamic.Coded.Internal
 import Data.Vector
 import qualified Data.Vector as V
 

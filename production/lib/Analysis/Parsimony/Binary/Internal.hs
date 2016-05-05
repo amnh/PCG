@@ -26,7 +26,7 @@ import Bio.PhyloGraph.Tree.Referential
 import Bio.PhyloGraph.Tree.Binary
 import Bio.PhyloGraph.Tree.Rose
 import Bio.PhyloGraph.Network.Subsettable
-import Bio.Sequence.Coded
+import Bio.Character.Dynamic.Coded
 import Data.Bits
 import Data.Function.Memoize
 import Data.Matrix.NotStupid (Matrix, nrows, ncols, setElem)
@@ -55,8 +55,8 @@ setElemSafe value (row, col) matrix
 
 -- | Simple function to get the aligned if available, the encoded if not
 getForAlign :: (PreliminaryNode n s, EncodedNode n s, SeqConstraint' s) => n -> Vector s
-getForAlign node 
+getForAlign node
     | null (getPreliminaryAlign node) && null (getPreliminary node) = getEncoded node
     | null $ getPreliminaryAlign node                            = getPreliminary node
-    | otherwise                                               = getPreliminaryAlign node 
+    | otherwise                                               = getPreliminaryAlign node
 

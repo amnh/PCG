@@ -122,7 +122,7 @@ library
                        Bio.PhyloGraph.Node.Referential
                        Bio.PhyloGraph.Tree.Referential
                        Bio.PhyloGraph.Tree.Rose
-                       Bio.Sequence.Coded
+                       Bio.Character.Dynamic.Coded
                        Control.Evaluation
                        Control.Monad.Logger
                        Data.Either.Custom
@@ -155,17 +155,17 @@ library
                        Bio.PhyloGraph.Tree.EdgeAware.Class
                        Bio.PhyloGraph.Node.Topological
                        Bio.PhyloGraph.Tree.Rose.Class
-                       Bio.Sequence.Parsed
-                       Bio.Sequence.Parsed.Class
-                       Bio.Sequence.Parsed.Internal
+                       Bio.Character.Parsed
+                       Bio.Character.Parsed.Class
+                       Bio.Character.Parsed.Internal
                        Data.List.Utility
                        Data.Matrix.NotStupid
                        Text.Megaparsec.Custom
   other-modules:     
                        Bio.PhyloGraph.Tree
                        Bio.PhyloGraph.Tree.Parsed
-                       Bio.Sequence.Coded.Class
-                       Bio.Sequence.Coded.Internal
+                       Bio.Character.Dynamic.Coded.Class
+                       Bio.Character.Dynamic.Coded.Internal
                        Control.Evaluation.Unit
                        Control.Evaluation.Internal
                        Control.Evaluation.Trans
@@ -387,8 +387,8 @@ Test-Suite testsuite
                        Bio.PhyloGraph.Tree.Referential
                        Bio.PhyloGraph.Tree.Rose
                        Bio.PhyloGraph.Tree.Rose.Class
-                       Bio.Sequence.Coded
-                       Bio.Sequence.Coded.Class
+                       Bio.Character.Dynamic.Coded
+                       Bio.Character.Dynamic.Coded.Class
                        Control.Evaluation.Internal
                        Control.Evaluation.Test
                        Control.Evaluation.Unit
@@ -433,7 +433,7 @@ Test-Suite testsuite
                        Bio.PhyloGraph.Node.ImpliedAlign
                        Bio.PhyloGraph.Node.Referential
                        Bio.PhyloGraph.Network.Subsettable
-                       Bio.Sequence.Parsed
+                       Bio.Character.Parsed
                        Data.Matrix.NotStupid
                        File.Format.TNT
                        File.Format.TNT.Command.CCode
@@ -459,15 +459,15 @@ Test-Suite testsuite
                        Bio.PhyloGraph.Solution.Class
                        Bio.PhyloGraph.Solution.Internal
                        Bio.PhyloGraph.Solution.Metadata
-                       Bio.Sequence.Parsed.Class
-                       Bio.Sequence.Parsed.Internal
+                       Bio.Character.Parsed.Class
+                       Bio.Character.Parsed.Internal
                        File.Format.TransitionCostMatrix
                        File.Format.VertexEdgeRoot
 
                        Bio.PhyloGraph.DAG
                        Bio.PhyloGraph.DAG.Class
                        Bio.PhyloGraph.DAG.Internal
-                       Bio.Sequence.Coded.Internal
+                       Bio.Character.Dynamic.Coded.Internal
                        Data.Alphabet
                        Data.BitMatrix
                        Control.Evaluation

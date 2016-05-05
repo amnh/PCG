@@ -22,8 +22,8 @@ import           Bio.PhyloGraph.Solution  hiding (parsedChars)
 import           Bio.PhyloGraph.DAG
 import           Bio.PhyloGraph.Forest
 import           Bio.PhyloGraph.Node      hiding (isLeaf)
-import           Bio.Sequence.Coded
-import           Bio.Sequence.Parsed
+import           Bio.Character.Dynamic.Coded
+import           Bio.Character.Parsed
 
 import           Control.Arrow                  ((***),(&&&))
 
@@ -137,7 +137,7 @@ joinSequences =  foldl' g (mempty, mempty)
     g :: (TreeChars, Vector StandardMetadata) -> (TreeChars, Vector StandardMetadata) -> (TreeChars, Vector StandardMetadata)
     g (oldTreeChars, oldMetaData) (nextTreeChars, nextMetaData) = (inOnlyOld `mappend` inBoth `mappend` inOnlyNext, oldMetaData `mappend` nextMetaData)
       where
-        oldPad       = generate (length  oldMetaData) (const Nothing) 
+        oldPad       = generate (length  oldMetaData) (const Nothing)
         nextPad      = generate (length nextMetaData) (const Nothing)
         inBoth       = intersectionWith mappend oldTreeChars nextTreeChars
         inOnlyOld    = fmap (`mappend` nextPad) $  oldTreeChars `difference` nextTreeChars
