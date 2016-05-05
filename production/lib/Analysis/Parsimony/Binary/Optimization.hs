@@ -25,6 +25,7 @@ import Data.Maybe
 import Data.Vector (Vector, ifoldr, (!))
 import Data.Monoid
 
+import Bio.Metadata
 import Bio.PhyloGraph.Forest
 import Bio.PhyloGraph.Network
 import Bio.PhyloGraph.Solution.Class
@@ -35,7 +36,6 @@ import Bio.PhyloGraph.Node ()
 import Bio.PhyloGraph.Node.Final
 import Bio.PhyloGraph.Node.Preliminary
 import Bio.PhyloGraph.Node.Encoded ()
-import Bio.Metadata
 
 --import Debug.Trace
 

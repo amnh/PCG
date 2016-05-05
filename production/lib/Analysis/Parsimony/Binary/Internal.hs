@@ -41,8 +41,8 @@ type TreeConstraint          t n s b   = (Network t n, NodeConstraint n s b, Ref
 type TreeConstraint'         t n s     = (Network t n, NodeConstraint' n s, ReferentialTree t n, BinaryTree t n, Show t, SubsettableNetwork t n, RoseTree t n)
 type NodeConstraint            n s b   = (PreliminaryNode n s, EncodedNode n s, FinalNode n s, SeqConstraint s b, Show n, Eq n)
 type NodeConstraint'           n s     = (PreliminaryNode n s, EncodedNode n s, FinalNode n s, SeqConstraint' s)
-type SeqConstraint               s b   = (EncodableDynamicCharacter s, Eq s, CharConstraint b, Show s, Bits s, Monoid s)
-type SeqConstraint'              s     = (EncodableDynamicCharacter s, Eq s, Show s, Bits s, Monoid s, Memoizable s)
+type SeqConstraint               s b   = (EncodableDynamicCharacter s, Eq s, CharConstraint b, Show s, Bits s)
+type SeqConstraint'              s     = (EncodableDynamicCharacter s, Eq s, Show s, Bits s, Memoizable s)
 type CharConstraint                b   = (Bits b, Eq b, Show b)
 type Subtrees                          = Matrix Int
 

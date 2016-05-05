@@ -81,7 +81,7 @@ instance MonadPlus Evaluation where
 -- | (✔)
 instance Monoid (Evaluation a) where
   mempty = Evaluation mempty NoOp
-  mappend (Evaluation ms x) (Evaluation ns y) = Evaluation (ms <> ns) (x<>y)
+  mappend (Evaluation ms x) (Evaluation ns y) = Evaluation (ms <> ns) (x <> y)
 
 -- Maybe add error strings Notifications list also?
 -- Currently we throw this information away,

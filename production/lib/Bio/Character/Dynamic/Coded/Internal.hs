@@ -101,7 +101,7 @@ instance MonoTraversable DynamicChar where
     omapM = otraverse
     {-# INLINE omapM #-}
 
-instance StaticCoded BitVector where
+instance EncodableStaticCharacter BitVector where
 
   decodeChar alphabet character = foldMapWithKey f alphabet
     where
@@ -111,7 +111,7 @@ instance StaticCoded BitVector where
                                   
   encodeChar alphabet ambiguity = fromBits $ (`elem` ambiguity) <$> toList alphabet
 
-instance DynamicCoded DynamicChar where
+instance EncodableDynamicCharacter DynamicChar where
 
   decodeDynamic alphabet (DC bm) = ofoldMap (pure . decodeChar alphabet) $ rows bm
 
@@ -120,10 +120,16 @@ instance DynamicCoded DynamicChar where
   indexChar i = fromJust . lookupChar i
 
   lookupChar (DC bm) i
-    | numRows bm <= i = Just $ bm `row` i
-    | otherwise       = Nothing
+    |  0 <= i
+    && i <  numRows bm = Just $ bm `row` i
+    | otherwise        = Nothing
 
-instance EncodableDynamicCharacter DynamicChar where
+  -- TODO: Think about the efficiency of this
+  unsafeCons static (DC dynamic) = DC $ fromRows $ static : (rows dynamic)
+
+  unsafeAppend (DC dynamic1) (DC dynamic2) = DC $ fromRows $ (rows dynamic1) ++ (rows dynamic2)
+
+instance OldEncodableDynamicCharacterToBeRemoved DynamicChar where
       -- TODO: I switched the order of input args in decode fns and encodeOver...
 --    decodeOverAlphabet :: Alphabet -> s -> ParsedDynChar
     decodeOverAlphabet alphabet = fromList . decodeDynamic (constructAlphabet alphabet)
@@ -178,13 +184,6 @@ instance Bits DynamicChar where
 instance Memoizable DynamicChar where
     memoize f (DC bm) = memoize (f . DC) bm
 
--- TODO: remove these two instances. I was forced to create them by a compilation error at PCG/Command/Types/Report/Evaluate.hs:36:17.
--- Arising from SeqConstraint' in solutionOptimization in Analysis/Binary/Parsimony/Optimization.
--- 
-instance Monoid DynamicChar where
-    mempty  = emptyChar
-    mappend = undefined
-
 -- | Functionality to unencode many encoded sequences
 decodeMany :: DynamicChars -> Alphabet -> ParsedDynChars
 decodeMany seqs alph = fmap (Just . decodeOverAlphabet alph) seqs
@@ -197,8 +196,8 @@ instance Arbitrary b => Arbitrary (Vector b) where
 
 instance Arbitrary DynamicChar where
     arbitrary = do 
-        nRows   <- arbitrary :: Gen Int
-        nCols   <- arbitrary :: Gen Int
+        nRows   <- getPositive <$> (arbitrary :: Gen (Positive Int))
+        nCols   <- getPositive <$> (arbitrary :: Gen (Positive Int))
         let genRow = fromBits <$> vector nCols
         rowVals <- sequence $ replicate nRows genRow
         pure . DC $ fromRows rowVals

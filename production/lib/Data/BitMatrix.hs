@@ -64,9 +64,7 @@ bitMatrix m n f =
         errorZeroSuffix = "To construct the empty matrix, both rows and columns must be zero"
 
 fromRows :: Foldable t => t BitVector -> BitMatrix
-fromRows xs
-  | null xs   = error "The call to fromRows was given an empty Foldabble structure."
-  | otherwise = BitMatrix n $ mconcat xs'
+fromRows xs = BitMatrix n $ mconcat xs'
   where
     xs' = toList xs
     n   = width $ head xs'
@@ -75,7 +73,9 @@ numCols :: BitMatrix -> Int
 numCols (BitMatrix n _) = n
 
 numRows :: BitMatrix -> Int
-numRows (BitMatrix n bv) = width bv `div` n
+numRows (BitMatrix n bv)
+  | n == 0    = 0
+  | otherwise = width bv `div` n
 
 rows :: BitMatrix -> [BitVector]
 rows bm@(BitMatrix n bv) = (bv @@) <$> slices
@@ -84,7 +84,11 @@ rows bm@(BitMatrix n bv) = (bv @@) <$> slices
     slices = take m $ iterate ((+n) `bimap` (+n)) (n-1, 0)
 
 row :: BitMatrix -> Int -> BitVector
-row (BitMatrix n bv) i = bv @@ ((n+1) * i - 1, n * i)
+row (BitMatrix n bv) i = bv @@ (big, small)
+  where
+    -- It couldn't be more clear
+    small = (n * (i + 0))  - 0
+    big   = (n * (i + 1)) - 1
 
 {-
 col :: BitMatrix -> Int -> BitVector

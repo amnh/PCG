@@ -18,14 +18,13 @@ import Analysis.Parsimony.Binary.Internal
 import Bio.Metadata
 import Bio.Sequence.Coded
 import Data.Bits
-import Data.Vector   (Vector, cons, toList, singleton, (!))
+import Data.Vector   (Vector, cons, toList, (!))
 import Data.Foldable (minimumBy)
 import Data.Function.Memoize
 import Data.Ord
 import Data.Matrix   (Matrix, getElem, nrows, ncols, (<->), matrix, fromList)
-import Data.Monoid
 
---import Debug.Trace
+import Debug.Trace
 
 -- | The direction to align the character at a given matrix point.
 data Direction = LeftDir | DiagDir | DownDir deriving (Eq, Show)
@@ -49,7 +48,7 @@ data AlignMatrix s
 -- the aligned version of the first input character, and the aligned version of the second input character
 -- The process for this algorithm is to generate a traversal matrix, then perform a traceback.
 naiveDO :: (Metadata m s, SeqConstraint' s) => s -> s -> m -> (s, Double, s, s, s)
---naiveDO s1 s2 | trace ("Sequences of length " ++ show (numChars s1) ++ show (numChars s2)) False = undefined
+--naiveDO s1 s2 _ | trace ("Sequences of length " ++ show (numChars s1) ++ show (numChars s2)) False = undefined
 naiveDO char1 char2 meta
     | isEmpty char1 || isEmpty char2 || numChars char1 == 0 || numChars char2 == 0 = (emptyChar, 0, emptyChar, emptyChar, emptyChar)
     | otherwise = 
@@ -92,17 +91,22 @@ firstAlignRow :: (SeqConstraint' s, Metadata m s) => s -> Int -> Int -> Double -
 --firstAlignRow indelCost inChar rowLength position prevCost | trace ("firstAlignRow " ++ show inChar) False = undefined
 firstAlignRow inChar rowLength position prevCost meta
     | position == (rowLength + 1) = (mempty, emptyChar)
-    | position == 0 = (singleton (0, DiagDir), gapChar inChar) <> firstAlignRow inChar rowLength (position + 1) 0 meta
+    | position == 0 = 
+        let recurse0 = firstAlignRow inChar rowLength (position + 1) 0 meta
+        in ((0, DiagDir) `cons` (fst recurse0), unsafeAppend (gapChar inChar) (snd recurse0))
     | newState /= gapChar inChar = --trace ("new state on first row " ++ show newState) $ -- if there's no indel overlap
-        (singleton (prevCost + indCost, LeftDir), newState) <> firstAlignRow inChar rowLength (position + 1) (prevCost + indCost) meta
+        let recurse1 = firstAlignRow inChar rowLength (position + 1) (prevCost + indCost) meta
+        in ((prevCost + indCost, LeftDir) `cons` (fst recurse1), unsafeAppend newState (snd recurse1))
     | otherwise = --trace ("new state on first row, otherwise " ++ show newState) $ -- matching indel so no cost
-        (singleton (prevCost, LeftDir), newState) <> firstAlignRow inChar rowLength (position + 1) prevCost meta
+        let recurse2 = firstAlignRow inChar rowLength (position + 1) prevCost meta
+        in ((prevCost, LeftDir) `cons` (fst recurse2), unsafeAppend newState (snd recurse2))
         where
             newState = fst $ getOverlap (gapChar inChar) (grabSubChar inChar (position - 1)) meta
             indCost = getGapCost meta
 
 -- | Memoized wrapper of the overlap function
 getOverlap :: (SeqConstraint' s, Metadata m s) => s -> s -> m -> (s, Double)
+--getOverlap inChar1 inChar2 meta | trace ("getOverlap") False = undefined
 getOverlap inChar1 inChar2 meta = memoize2 (overlap meta) inChar1 inChar2
     where
         -- | Gets the overlap state: intersect if possible and union if that's empty
@@ -110,7 +114,7 @@ getOverlap inChar1 inChar2 meta = memoize2 (overlap meta) inChar1 inChar2
         overlap :: (SeqConstraint' s, Metadata m s) => m -> s -> s -> (s, Double)
         overlap inMeta char1 char2
             | isEmpty char1 || isEmpty char2 = (emptyChar, 0)
-            | char1 .&. char2 == zeroBits = foldr1 ambigChoice allPossible
+            | char1 .&. char2 == zeroBits = foldr ambigChoice (zeroBits, 0) allPossible
             | otherwise = (char1 .&. char2, 0)
             where
                 gap = gapChar char1
@@ -149,14 +153,16 @@ getAlignRows char1 char2 rowNum prevRow meta
 --   Essentially gets values for left, down, and diagonal moves using overlap functionality
 --   then selects the minimum value to set the correct value at the given positions
 generateRow :: (SeqConstraint' s, Metadata m s) => s -> s -> Int -> AlignRow s -> (Int, Double) -> m -> AlignRow s
---generateRow char1 char2 costvals@(indelCost, subCost) rowNum prevRow@(costs, _, _) (position, prevCost)  | trace ("generateRow " ++ show char1 ++ show char2) False = undefined
+generateRow char1 char2 _ _ _ _  | trace ("generateRow " ++ show char1 ++ show char2) False = undefined
 generateRow char1 char2 rowNum prevRow@(vals, _) (position, prevCost) meta
     | length vals < (position - 1) = error "Problem with row generation, previous costs not generated"
     | position == numChars char1 + 1 = (mempty, emptyChar)
-    | position == 0 && downChar /= gapChar char1 = (singleton (upValue + indCost, DownDir), downChar) <> nextCall (upValue + indCost)
-    | position == 0 = (singleton (upValue, DownDir), downChar) <> nextCall upValue
+    | position == 0 && downChar /= gapChar char1 = 
+        ((upValue + indCost, DownDir)`cons` (fst $ nextCall (upValue + indCost)), unsafeAppend downChar (snd $ nextCall (upValue + indCost)))
+    | position == 0 = 
+        ((upValue, DownDir) `cons` (fst $ nextCall upValue), unsafeAppend downChar (snd $ nextCall upValue))
     | otherwise = --trace "minimal case" $ 
-        (singleton (minCost, minDir), minState) <> nextCall minCost
+        ((minCost, minDir) `cons` (fst $ nextCall minCost), unsafeAppend minState (snd $ nextCall minCost))
         where
             indCost            = getGapCost meta
             subChar1           = grabSubChar char1 (position - 1)
@@ -189,7 +195,9 @@ traceback alignMat' char1' char2' = tracebackInternal alignMat' char1' char2' (n
         tracebackInternal alignMat char1 char2 (row, col) 
             | length (seqs alignMat) < row - 1 || nrows (mat alignMat) < row - 1 || ncols (mat alignMat) < col - 1 = error "Traceback cannot function because matrix is incomplete"
             | row == 0 && col == 0 = (emptyChar, emptyChar, emptyChar)
-            | otherwise = tracebackInternal alignMat char1 char2 (i, j) <> (curState, leftCharacter, rightCharacter)
+            | otherwise = 
+                let (trace1, trace2, trace3) = tracebackInternal alignMat char1 char2 (i, j)
+                in (unsafeAppend trace1 curState, unsafeAppend trace2 leftCharacter, unsafeAppend trace3 rightCharacter)
             where
               curDirect      = snd $ getElem row col (mat alignMat)
               curState       = grabSubChar (seqs alignMat ! row) col

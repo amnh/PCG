@@ -22,22 +22,22 @@ validate xs =
         (    [], [format]) -> Right $ REPORT  OutputToStdout     format
         ([path],       []) -> Right $ REPORT (OutputToFile path) Data
         ([path], [format]) -> Right $ REPORT (OutputToFile path) format
-        (    ps,       fs) -> let psErr = if moreThanSingleton ps then "Found multiple file paths for output: "    <> show ps else [] 
+        (    ps,       fs) -> let psErr = if moreThanSingleton ps then "Found multiple file paths for output: "    <> show ps else []
                                   fsErr = if moreThanSingleton fs then "Found multiple output formats specified: " <> show fs else []
                               in Left $ unlines [psErr,fsErr]
   where
     moreThanSingleton (_:_:_) = True
     moreThanSingleton _       = False
-  
+
 validateReportArg :: Argument -> Either String (Either FileName OutputFormat)
 validateReportArg (PrimativeArg   (TextValue str))   = Right $ Left str
 validateReportArg (LidentArg (Lident identifier))
   | (=="cross_references") $ toLower <$> identifier = Right . Right $ CrossReferences []
 validateReportArg (LidentNamedArg (Lident identifier) (LidentNamedArg (Lident tok) (ArgumentList xs)))
-  |  "cross_references" == (toLower <$> identifier) 
+  |  "cross_references" == (toLower <$> identifier)
   && "names"            == (toLower <$> tok) =
     case partitionEithers $ primativeString <$> xs of
-      ([]    , fileNames) -> Right . Right $ CrossReferences fileNames 
+      ([]    , fileNames) -> Right . Right $ CrossReferences fileNames
       (errors, _        ) -> Left $ unlines errors
 validateReportArg (LidentArg (Lident identifier))
   |  "data" == (toLower <$> identifier) = Right $ Right Data
@@ -46,6 +46,8 @@ validateReportArg (LidentArg (Lident identifier))
   || "graphviz" == (toLower <$> identifier) = Right $ Right DotFile
 validateReportArg (LidentArg (Lident identifier))
   |  "metadata" == (toLower <$> identifier) = Right $ Right Metadata
+validateReportArg (LidentArg (Lident identifier))
+  |  "implied_alignment" == (toLower <$> identifier) = Right $ Right ImpliedAlignmentCharacters
 
 validateReportArg _ = Left "Unrecognized report commands."
 
@@ -59,4 +61,3 @@ primativeString (ArgumentList   _              ) = Left $ "Argument list "     <
 
 primativeStringErrorSuffix :: String
 primativeStringErrorSuffix = "found where a string argument containing a file path was expected"
-

@@ -51,7 +51,7 @@ impliedAlign inTree inMeta = foldr (\n acc -> insert (getCode n) (makeAlignment 
         (_, curTree) = numeratePreorder inTree (getRoot inTree) inMeta (replicate (length inMeta) 0)
         allLeaves = filter (flip nodeIsLeaf curTree) (getNodes curTree)
         --oneTrace :: s -> Homologies -> m -> s
-        oneTrace dynChar homolog = foldr (\pos acc -> grabSubChar dynChar pos <> acc) mempty homolog
+        oneTrace dynChar homolog = foldr (\pos acc -> unsafeAppend (grabSubChar dynChar pos) acc) emptyChar homolog
         --makeAlign :: Vector s -> HomologyTrace -> Vector s
         makeAlign dynChar homologies = zipWith oneTrace dynChar homologies
         --makeAlignment :: n -> Vector s
@@ -122,6 +122,7 @@ numerateOne :: (SeqConstraint s) => s -> Homologies -> s -> Int -> (Homologies, 
 numerateOne ancestorSeq ancestorHomologies childSeq initCounter = foldr determineHomology (mempty, initCounter) foldIn
     where
         getAllSubs s = foldr (\p acc -> grabSubChar s p `cons` acc) mempty (fromList [0..(numChars s)])
+        -- TODO: verify that ancestorHomologies has the correct length as the allSubs
         foldIn = zip3 (getAllSubs childSeq) (getAllSubs ancestorSeq) ancestorHomologies
 
         -- Finds the homology position between any two characters
