@@ -9,7 +9,7 @@
 -- Portability :  portable
 --
 -- Data structures and instances for coded characters
--- Coded characters are characters 
+-- Coded characters are dynamic characters recoded as 
 --
 -----------------------------------------------------------------------------
 
@@ -27,7 +27,7 @@ module Bio.Character.Dynamic.Coded.Internal
   ) where
 
 import Bio.Character.Dynamic.Coded.Class
-import Bio.Character.Dynamic.Parsed
+import Bio.Character.Parsed
 import Data.Alphabet
 import Data.BitMatrix
 import Data.Key
@@ -38,7 +38,7 @@ import Data.Function.Memoize
 import Data.Maybe                   (fromJust, fromMaybe)
 import Data.MonoTraversable
 import Data.Vector                   (Vector, fromList)
-import Test.Tasty.QuickCheck hiding ((.&.))
+import Test.Tasty.QuickCheck  hiding ((.&.))
 
 -- TODO: Make a missing a null vector
 -- Think about a nonempty type class or a refinement type for this

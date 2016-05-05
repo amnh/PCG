@@ -18,8 +18,7 @@
 
 module Bio.Character.Dynamic.Coded.Class where
 
---import Bio.Character.Dynamic.Character.Coded
-import Bio.Character.Dynamic.Parsed
+import Bio.Character.Parsed
 
 import Data.Alphabet
 import Data.BitVector
