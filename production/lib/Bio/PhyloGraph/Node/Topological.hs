@@ -15,9 +15,11 @@
 
 {-# LANGUAGE TypeSynonymInstances, FlexibleInstances, MultiParamTypeClasses #-}
 
-module Bio.PhyloGraph.Node.Topological (TopoNode(..)) where
+module Bio.PhyloGraph.Node.Topological (TopoNode(..), arbitraryTopoGivenCAL) where
 
 import Bio.Character.Dynamic.Coded
+import Bio.Character.Dynamic.Coded.Internal
+import Data.Alphabet
 import Data.Vector
 import Test.Tasty.QuickCheck
 
@@ -52,12 +54,19 @@ instance Monoid (TopoNode b) where
 
 instance Arbitrary (TopoNode b) where
    arbitrary = do
+    arbAlph <- arbitrary :: Gen (Alphabet' String)
+    nc <- arbitrary :: Gen Int
+    arbitraryTopoGivenCAL nc arbAlph (0, 1)
+
+arbitraryTopoGivenCAL :: Int -> Alphabet' String -> (Int, Int) -> Gen (TopoNode b)
+arbitraryTopoGivenCAL maxChildren inAlph (curLevel, maxLevel) = do
      n        <- arbitrary :: Gen String
      root     <- arbitrary :: Gen Bool
      leaf     <- arbitrary :: Gen Bool
-     chillens <- listOf arbitrary
-     seqs     <- vectorOf 10 arbitrary
+     nc <- (arbitrary :: Gen Int) `suchThat` (<= maxChildren)
+     let ncFinal = if curLevel == maxLevel then 0 else nc
+     chillens <- vectorOf ncFinal (arbitraryTopoGivenCAL maxChildren inAlph (curLevel + 1, maxLevel))
+     seqs     <- vectorOf 10 (arbitraryDynamicsGA inAlph)
      c2       <- arbitrary :: Gen Double
      c3       <- arbitrary :: Gen Double
      pure $ TopoNode root leaf n chillens (seqs !! 0) (seqs !! 1) (seqs !! 2) (seqs !! 3) (seqs !! 4) (seqs !! 5) (seqs !! 6) (seqs !! 7) (seqs !! 8) (seqs !! 9) c2 c3
-

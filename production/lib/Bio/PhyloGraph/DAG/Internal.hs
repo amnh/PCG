@@ -15,17 +15,17 @@
 
 module Bio.PhyloGraph.DAG.Internal where
 
+import Bio.Character.Dynamic.Coded
 import Bio.PhyloGraph.Edge
 import Bio.PhyloGraph.Node
 import Bio.PhyloGraph.Node.Topological
-import Data.BitVector
 import Data.Vector
 
 -- | Alias for Node used in 'DAG'
 type NodeInfo = Node
 
 -- | Alias for Node used in 'TopoDAG'
-type Topo = TopoNode BitVector
+type Topo = TopoNode DynamicChar
 
 -- | A dag is an element of a forest, stored referentially
 data DAG 

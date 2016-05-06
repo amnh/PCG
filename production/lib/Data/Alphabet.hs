@@ -26,7 +26,7 @@
 {-# LANGUAGE TypeFamilies #-}
 
 module Data.Alphabet
-  ( Alphabet'()
+  ( Alphabet'(..)
   , constructAlphabet
   , constructAlphabetWithTCM
   , gapCharacter

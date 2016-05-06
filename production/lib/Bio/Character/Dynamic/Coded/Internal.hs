@@ -24,6 +24,7 @@ module Bio.Character.Dynamic.Coded.Internal
   ( DynamicChar()
   , DynamicChars
   , decodeMany
+  , arbitraryDynamicsGA
   ) where
 
 import Bio.Character.Dynamic.Coded.Class
@@ -197,8 +198,18 @@ instance Arbitrary b => Arbitrary (Vector b) where
 
 instance Arbitrary DynamicChar where
     arbitrary = do 
-        nRows   <- getPositive <$> (arbitrary :: Gen (Positive Int))
-        nCols   <- getPositive <$> (arbitrary :: Gen (Positive Int))
-        let genRow = fromBits <$> vector nCols
-        rowVals <- sequence $ replicate nRows genRow
-        pure . DC $ fromRows rowVals
+      arbAlph <- arbitrary :: Gen (Alphabet' String)
+      arbitraryDynamicGivenAlph arbAlph
+
+instance Arbitrary (Alphabet' String) where
+  arbitrary = Alphabet' <$> (arbitrary :: Gen (Vector String))
+
+-- | Function to generate an arbitrary DynamicChar given an alphabet
+arbitraryDynamicGivenAlph :: Alphabet' String -> Gen DynamicChar
+arbitraryDynamicGivenAlph inAlph = do
+  arbParsed <- arbitrary :: Gen ParsedDynChar
+  return $ encodeDynamic inAlph arbParsed
+
+-- | Generate many dynamic characters using the above
+arbitraryDynamicsGA :: Alphabet' String -> Gen DynamicChars
+arbitraryDynamicsGA inAlph = fromList <$> listOf (arbitraryDynamicGivenAlph inAlph)
