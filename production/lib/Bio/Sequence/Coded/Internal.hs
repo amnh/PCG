@@ -40,6 +40,8 @@ import Data.MonoTraversable
 import Data.Vector                   (Vector, fromList)
 import Test.Tasty.QuickCheck  hiding ((.&.))
 
+import Debug.Trace
+
 -- TODO: Change DynamicChar/Sequences to DynamicCharacters
         -- Make a missing a null vector
         -- Think about a nonempty type class or a refinement type for this
@@ -159,7 +161,7 @@ instance OldEncodableDynamicCharacterToBeRemoved DynamicChar where
     getAlphLen (DC bm) = numCols bm
 
 --   grabSubChar        :: s -> Int -> s
-    grabSubChar char i = DC $ fromRows [char `indexChar` i]
+    grabSubChar char i = {-trace ("grabSubChar " ++ show char ++ " " ++ show i) -}(DC $ fromRows [char `indexChar` i])
     
 --    isEmpty            :: s -> Bool
     isEmpty = (0 ==) . numChars

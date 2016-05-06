@@ -49,16 +49,17 @@ doProperties = testGroup "Properties of the DO algorithm" [idHolds, firstRow, em
         idHolds = testProperty "When DO runs a sequence against itself, get input as result" checkID
             where
                 checkID :: DynamicChar -> Bool
-                checkID inSeq = main == inSeq && cost == 0 && gapped == inSeq && left == inSeq && right == inSeq
+                checkID inSeq = trace ("main result of DO " ++ show main ++ " " ++ show cost)
+                                main == inSeq && cost == 0 && gapped == inSeq && left == inSeq && right == inSeq
                     where (main, cost, gapped, left, right) = naiveDO inSeq inSeq doMeta
 
         firstRow = testProperty "First row of alignment matrix has expected directions" checkRow
             where
                 checkRow :: DynamicChar -> Bool
                 checkRow inSeq = --trace ("checkRow " ++ show result ++ show rowLen) $ 
-                                    (snd $ V.head result) == DiagDir && allLeft (V.tail result) && V.length result == rowLen
+                                    (snd $ V.head result) == DiagDir && allLeft (V.tail result) && V.length result == (rowLen + 1)
                     where
-                        rowLen = numChars inSeq + 1
+                        rowLen = numChars inSeq
                         (result, seqs) = firstAlignRow inSeq rowLen 0 0 doMeta
                         allLeft = V.all (\val -> snd val == LeftDir)
 

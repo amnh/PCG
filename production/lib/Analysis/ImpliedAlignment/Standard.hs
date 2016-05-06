@@ -45,6 +45,7 @@ iaForest inForest inMeta = fmap (flip impliedAlign inMeta) (trees inForest)
 -- | Function to perform an implied alignment on all the leaves of a tree
 -- takes a tree and some metadata
 -- returns an alignment object (an intmap from the leaf codes to the aligned sequence)
+-- TODO: Consider building the alignment at each step of a postorder rather than grabbing wholesale
 impliedAlign :: (TreeConstraint t n e s, Metadata m s) => t -> Vector m -> Alignment s
 impliedAlign inTree inMeta = foldr (\n acc -> insert (getCode n) (makeAlignment n) acc) mempty allLeaves
     where
@@ -81,12 +82,14 @@ numeratePreorder inTree curNode inMeta curCounts
         in (rightRecurseCount, rightRecurseTree)
     | otherwise = 
         let
+            -- TODO: should I switch the order of align and numerate? probs
             (curLeftAligned, leftWithAligned)     = alignAndAssign curNode (fromJust $ leftChild curNode inTree)
             (curLeftHomolog, counterLeft)         = numerateNode curLeftAligned leftWithAligned curCounts 
             (curBothAligned, rightBothAligned)    = alignAndAssign curLeftHomolog (fromJust $ rightChild curNode inTree)
             (curBothHomolog, counterBoth)         = numerateNode curBothAligned rightBothAligned counterLeft 
             editedTreeBoth                        = inTree `update` [curBothHomolog, leftWithAligned, rightBothAligned]
             (leftRecurseCount, leftRecurseTree)   = numeratePreorder editedTreeBoth (fromJust $ rightChild curBothHomolog editedTreeBoth) inMeta counterBoth
+            -- TODO: need another align and assign between the left and right as a last step?
             output                                = numeratePreorder leftRecurseTree (fromJust $ leftChild curBothHomolog leftRecurseTree) inMeta leftRecurseCount
         in output
 
@@ -99,6 +102,7 @@ numeratePreorder inTree curNode inMeta curCounts
 
             -- Simple wrapper to align and assign using DO
             --alignAndAssign :: NodeConstraint n s => n -> n -> (n, n)
+            -- TODO: Don't use the gapped here
             alignAndAssign node1 node2 = (setFinalGapped (fst allUnzip) node1, setFinalGapped (snd allUnzip) node2)
                 where 
                     allUnzip = unzip allDO
@@ -109,7 +113,7 @@ numeratePreorder inTree curNode inMeta curCounts
 -- | Function to do a numeration on an entire node
 -- given the ancestor node, ancestor node, current counter vector, and vector of metadata
 -- returns a tuple with the node with homologies incorporated, and a returned vector of counters
-numerateNode :: (NodeConstraint n s) => n -> n -> Counts -> (n, Counts)
+numerateNode :: (NodeConstraint n s) => n -> n -> Counts -> (n, Counts) 
 numerateNode ancestorNode childNode initCounters = (setHomologies childNode homologs, counts)
         where
             numeration = zipWith4 numerateOne (getFinalGapped ancestorNode) (getHomologies ancestorNode) (getFinalGapped childNode) initCounters

@@ -49,7 +49,7 @@ data AlignMatrix s
 -- the aligned version of the first input character, and the aligned version of the second input character
 -- The process for this algorithm is to generate a traversal matrix, then perform a traceback.
 naiveDO :: (Metadata m s, SeqConstraint' s) => s -> s -> m -> (s, Double, s, s, s)
---naiveDO s1 s2 _ | trace ("Sequences of length " ++ show (numChars s1) ++ show (numChars s2)) False = undefined
+--naiveDO s1 s2 _ | trace ("Sequences of length " ++ show s1 ++ show s2) False = undefined
 naiveDO char1 char2 meta
     | isEmpty char1 || isEmpty char2 || numChars char1 == 0 || numChars char2 == 0 = (emptyChar, 0, emptyChar, emptyChar, emptyChar)
     | otherwise = 
@@ -154,7 +154,7 @@ getAlignRows char1 char2 rowNum prevRow meta
 --   Essentially gets values for left, down, and diagonal moves using overlap functionality
 --   then selects the minimum value to set the correct value at the given positions
 generateRow :: (SeqConstraint' s, Metadata m s) => s -> s -> Int -> AlignRow s -> (Int, Double) -> m -> AlignRow s
-generateRow char1 char2 _ _ _ _  | trace ("generateRow " ++ show char1 ++ show char2) False = undefined
+--generateRow char1 char2 _ _ (position, _)  _ | trace ("generateRow " ++ show char1 ++ show char2 ++ show position) False = undefined
 generateRow char1 char2 rowNum prevRow@(vals, _) (position, prevCost) meta
     | length vals < (position - 1) = error "Problem with row generation, previous costs not generated"
     | position == numChars char1 + 1 = (mempty, emptyChar)
