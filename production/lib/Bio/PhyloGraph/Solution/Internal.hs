@@ -28,6 +28,7 @@ import           Control.Evaluation
 import           Data.HashMap.Strict
 --import           Data.Monoid
 import           Data.Vector
+import           Test.Tasty.QuickCheck
 
 -- | The equatable identifier for a node in the graph.
 type Identifier = String
@@ -68,3 +69,6 @@ instance GeneralSolution (Solution d) (Forest d) where
 instance MS.MetadataSolution (Solution d) StandardMetadata where
     getMetadata               = metadata
     setMetadata solution meta = solution {metadata = meta}
+
+instance Arbitrary d => Arbitrary (Solution d) where
+    arbitrary = undefined

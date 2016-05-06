@@ -129,9 +129,9 @@ numerateOne ancestorSeq ancestorHomologies childSeq initCounter = foldr determin
         -- TODO: verify that ancestorHomologies has the correct length as the allSubs
         foldIn = zip3 (getAllSubs childSeq) (getAllSubs ancestorSeq) ancestorHomologies
 
-        -- Finds the homology position between any two characters
-        determineHomology :: SeqConstraint s => (s, s, Int) -> (Homologies, Int) -> (Homologies, Int)
-        determineHomology (childChar, ancestorChar, ancestorHomolog) (homologSoFar, counterSoFar)
-            | ancestorChar == gapChar childChar = (counterSoFar `cons` homologSoFar, counterSoFar)
-            | childChar /= gapChar ancestorChar    = (ancestorHomolog `cons` homologSoFar, counterSoFar + 1)
-            | otherwise                       = (counterSoFar `cons` homologSoFar, counterSoFar + 1) --TODO: check this case
+-- Finds the homology position between any two characters
+determineHomology :: SeqConstraint s => (s, s, Int) -> (Homologies, Int) -> (Homologies, Int)
+determineHomology (childChar, ancestorChar, ancestorHomolog) (homologSoFar, counterSoFar)
+    | ancestorChar == gapChar childChar = (counterSoFar `cons` homologSoFar, counterSoFar)
+    | childChar /= gapChar ancestorChar    = (ancestorHomolog `cons` homologSoFar, counterSoFar + 1)
+    | otherwise                       = (counterSoFar `cons` homologSoFar, counterSoFar + 1) --TODO: check this case

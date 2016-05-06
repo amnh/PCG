@@ -94,6 +94,7 @@ library
   -- Modules exported by the library.
   exposed-modules:     Analysis.ImpliedAlignment.Internal
                        Analysis.ImpliedAlignment.Standard
+                       Analysis.ImpliedAlignment.Test
                        Analysis.Parsimony.Binary.DirectOptimization
                        Analysis.Parsimony.Binary.Fitch
                        Analysis.Parsimony.Binary.Internal
@@ -425,6 +426,9 @@ Test-Suite testsuite
                        Text.Megaparsec.Custom
                        Text.Megaparsec.Custom.Test
 
+                       Analysis.ImpliedAlignment.Internal
+                       Analysis.ImpliedAlignment.Standard
+                       Analysis.ImpliedAlignment.Test
                        Analysis.Parsimony.Binary.DirectOptimization
                        Analysis.Parsimony.Binary.Internal
                        Analysis.Parsimony.Binary.Test
