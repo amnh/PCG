@@ -4,6 +4,7 @@ module PCG.Command.Types.Report.Evaluate
   ( evaluate
   ) where
 
+import           Analysis.ImpliedAlignment.Standard
 import           Analysis.Parsimony.Binary.Optimization
 import           Bio.PhyloGraph.Solution
 import           Bio.PhyloGraph.Tree.Binary.Class
@@ -16,6 +17,7 @@ import           PCG.Command.Types.Report.GraphViz
 import           PCG.Command.Types.Report.Internal
 import           PCG.Command.Types.Report.Metadata
 import           PCG.Command.Types.Report.Newick
+import           PCG.Command.Types.Report.ImpliedAlignmentFasta
 
 evaluate :: Command -> SearchState -> SearchState
 evaluate (REPORT target format) old = do
@@ -40,10 +42,12 @@ addOptimization result
 -- TODO: Redo reporting
 generateOutput :: StandardSolution -> OutputFormat -> FileStreamContext
 generateOutput g (CrossReferences fileNames)   = SingleStream $ taxonReferenceOutput g fileNames
-generateOutput g Data            {}            = SingleStream . newickReport $ addOptimization g
-generateOutput g DotFile         {}            = SingleStream $ dotOutput g
-generateOutput g Metadata        {}            = SingleStream $ metadataCsvOutput g
-generateOutput g ImpliedAlignmentCharacters {} = MultiStream  $ undefined
+generateOutput g Data                       {} = SingleStream . newickReport $ addOptimization g
+generateOutput g DotFile                    {} = SingleStream $ dotOutput g
+generateOutput g Metadata                   {} = SingleStream $ metadataCsvOutput g
+generateOutput g ImpliedAlignmentCharacters {} = case iaOutput (iaSolution g) g of
+                                                   [] -> ErrorCase "There were no Dynamic homology characters on which to perform an implied alignment."
+                                                   xs -> MultiStream $ fromList xs 
 generateOutput _ _ = ErrorCase "Unrecognized 'report' command"
 
 type FileContent = String

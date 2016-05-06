@@ -14,7 +14,13 @@
 {-# LANGUAGE TypeSynonymInstances, FlexibleInstances, MultiParamTypeClasses #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
-module Bio.PhyloGraph.DAG (module Bio.PhyloGraph.DAG.Internal, module Bio.PhyloGraph.DAG.Class, fromNewick, fromTopo, toTopo) where
+module Bio.PhyloGraph.DAG
+  ( module Bio.PhyloGraph.DAG.Internal
+  , module Bio.PhyloGraph.DAG.Class
+  , fromNewick
+  , fromTopo
+  , toTopo
+  ) where
 
 import           Bio.PhyloGraph.DAG.Internal
 import           Bio.PhyloGraph.DAG.Class
