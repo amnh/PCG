@@ -49,7 +49,7 @@ validateReportArg (LidentArg (Lident identifier))
 validateReportArg (LidentArg (Lident identifier))
   |  "implied_alignment" == (toLower <$> identifier) = Right $ Right ImpliedAlignmentCharacters
 
-validateReportArg _ = Left "Unrecognized report commands."
+validateReportArg x = Left $ "Unrecognized report command(s): " <> show x
 
 primativeString :: Argument -> Either String FilePath
 primativeString (PrimativeArg   (TextValue str)) = Right str

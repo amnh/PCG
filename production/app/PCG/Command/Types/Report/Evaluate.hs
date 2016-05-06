@@ -45,7 +45,8 @@ generateOutput g (CrossReferences fileNames)   = SingleStream $ taxonReferenceOu
 generateOutput g Data                       {} = SingleStream . newickReport $ addOptimization g
 generateOutput g DotFile                    {} = SingleStream $ dotOutput g
 generateOutput g Metadata                   {} = SingleStream $ metadataCsvOutput g
-generateOutput g ImpliedAlignmentCharacters {} = case iaOutput (iaSolution g) g of
+generateOutput g ImpliedAlignmentCharacters {} = let g' = addOptimization g
+                                                 in case iaOutput (iaSolution g') g' of
                                                    [] -> ErrorCase "There were no Dynamic homology characters on which to perform an implied alignment."
                                                    xs -> MultiStream $ fromList xs 
 generateOutput _ _ = ErrorCase "Unrecognized 'report' command"

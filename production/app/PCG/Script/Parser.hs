@@ -98,4 +98,6 @@ symbol  :: MonadParsec s m Char => m a -> m a
 symbol  x = x <* whitespace
 
 whitespace :: MonadParsec s m Char => m ()
-whitespace = try (comment (string "(*") (string "*)") >> pure ()) <|> space
+whitespace = try commentBlock <|> space
+  where
+    commentBlock = comment (string "(*") (string "*)") *> pure ()
