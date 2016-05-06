@@ -19,7 +19,7 @@ module Bio.PhyloGraph.Node.Topological (TopoNode(..), arbitraryTopoGivenCAL) whe
 
 import Bio.Character.Dynamic.Coded
 import Bio.Character.Dynamic.Coded.Internal
-import Data.Alphabet
+import Bio.Character.Parsed
 import Data.Vector
 import Test.Tasty.QuickCheck
 
@@ -54,11 +54,11 @@ instance Monoid (TopoNode b) where
 
 instance Arbitrary (TopoNode b) where
    arbitrary = do
-    arbAlph <- arbitrary :: Gen (Alphabet' String)
+    arbAlph <- arbitrary :: Gen Alphabet
     nc <- arbitrary :: Gen Int
     arbitraryTopoGivenCAL nc arbAlph (0, 1)
 
-arbitraryTopoGivenCAL :: Int -> Alphabet' String -> (Int, Int) -> Gen (TopoNode b)
+arbitraryTopoGivenCAL :: Int -> Alphabet -> (Int, Int) -> Gen (TopoNode b)
 arbitraryTopoGivenCAL maxChildren inAlph (curLevel, maxLevel) = do
      n        <- arbitrary :: Gen String
      root     <- arbitrary :: Gen Bool
