@@ -153,4 +153,4 @@ encodeOverMetadata maybeInChar inMeta =
 
 -- | Wrapper for encoding
 encodeIt :: ParsedDynChars -> Vector StandardMetadata -> Vector DynamicChar
-encodeIt = V.zipWith (\inMeta info -> encodeOverMetadata inMeta info)
+encodeIt = V.zipWith encodeOverMetadata

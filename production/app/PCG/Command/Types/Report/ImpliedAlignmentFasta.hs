@@ -99,5 +99,5 @@ iaOutput align solution = foldMapWithKey characterToFastaFile dynamicCharacterIn
             titleLine     = "> " <> nodeName
             sequenceLines = chunksOf 50 . concatMap renderAmbiguityGroup . toList . decodeOverAlphabet alpha $ characters ! i
             renderAmbiguityGroup [x] = show x
-            renderAmbiguityGroup xs  = "[" <> (concatMap show xs) <> "]"
+            renderAmbiguityGroup xs  = "[" <> concatMap show xs <> "]"
             
