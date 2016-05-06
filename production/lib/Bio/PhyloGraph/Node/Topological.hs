@@ -17,7 +17,7 @@
 
 module Bio.PhyloGraph.Node.Topological (TopoNode(..)) where
 
-import Bio.Sequence.Coded
+import Bio.Character.Dynamic.Coded
 import Data.Vector
 import Test.Tasty.QuickCheck
 
@@ -50,13 +50,13 @@ instance Monoid (TopoNode b) where
      mempty = TopoNode False False mempty mempty mempty mempty mempty mempty mempty mempty mempty mempty mempty mempty 0 0
      mappend n1 n2 = n1 {children = n2 : children n1}
 
-instance Arbitrary (TopoNode b) where 
+instance Arbitrary (TopoNode b) where
    arbitrary = do
      n        <- arbitrary :: Gen String
      root     <- arbitrary :: Gen Bool
      leaf     <- arbitrary :: Gen Bool
      chillens <- listOf arbitrary
-     seqs     <- vectorOf 10 arbitrary 
+     seqs     <- vectorOf 10 arbitrary
      c2       <- arbitrary :: Gen Double
      c3       <- arbitrary :: Gen Double
      pure $ TopoNode root leaf n chillens (seqs !! 0) (seqs !! 1) (seqs !! 2) (seqs !! 3) (seqs !! 4) (seqs !! 5) (seqs !! 6) (seqs !! 7) (seqs !! 8) (seqs !! 9) c2 c3

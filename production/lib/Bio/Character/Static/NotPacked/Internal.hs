@@ -1,6 +1,6 @@
 -----------------------------------------------------------------------------
 -- |
--- Module      :  Bio.Sequence.Parsed
+-- Module      :  Bio.Character.Static.NotPacked.Internal
 -- Copyright   :  (c) 2015-2015 Ward Wheeler
 -- License     :  BSD-style
 --
@@ -8,12 +8,9 @@
 -- Stability   :  provisional
 -- Portability :  portable
 --
--- Export of parsed character
+-- Module holding the data type for a static character that can't be packed
 --
 -----------------------------------------------------------------------------
 
+module Bio.Character.Static.NotPacked.Internal where
 
-module Bio.Sequence.Parsed (module Bio.Sequence.Parsed.Internal, module Bio.Sequence.Parsed.Class) where
-
-import Bio.Sequence.Parsed.Class
-import Bio.Sequence.Parsed.Internal

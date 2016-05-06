@@ -8,6 +8,7 @@ data OutputFormat
    = CrossReferences [FileName]
    | Data
    | DotFile
+   | ImpliedAlignmentCharacters
    | LikelihoodModel
    | Metadata
    | SearchStats

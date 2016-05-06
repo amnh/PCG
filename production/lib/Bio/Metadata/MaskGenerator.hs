@@ -16,19 +16,19 @@ module Bio.Metadata.MaskGenerator where
 
 import Bio.Metadata
 import Bio.PhyloGraph.Solution
-import Bio.Sequence.Coded
-import Bio.Sequence.Parsed
+import Bio.Character.Dynamic.Coded
+import Bio.Character.Parsed
 import Data.Foldable
 import Data.HashMap.Strict        (elems)
 import Data.Maybe
-import qualified Data.Vector as V 
+import qualified Data.Vector as V
 
 -- | Mutate a 'StandardSolution' to include masks in the metadata structure
 addMasks :: StandardSolution -> StandardSolution
 addMasks inSolution = inSolution { metadata = V.imap changeMetadata (metadata inSolution) }
     where
         changeMetadata :: Int -> StandardMetadata -> StandardMetadata
-        changeMetadata pos curChar 
+        changeMetadata pos curChar
             | isAligned curChar = curChar {fitchMasks = generateMasks (alphabet curChar) (getSeqLen pos)}
             | otherwise = curChar
 
@@ -54,7 +54,7 @@ addMasks inSolution = inSolution { metadata = V.imap changeMetadata (metadata in
             where
                 unit      = [inAlphabet V.! (length inAlphabet - 1)]
                 periodic  = V.replicate sLen unit
-                occupancy = V.replicate sLen (toList inAlphabet) 
+                occupancy = V.replicate sLen (toList inAlphabet)
 
 
 

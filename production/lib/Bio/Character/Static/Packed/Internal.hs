@@ -1,6 +1,6 @@
 -----------------------------------------------------------------------------
 -- |
--- Module      :  Bio.Sequences.Coded
+-- Module      :  Bio.Character.Static.Packed.Internal
 -- Copyright   :  (c) 2015-2015 Ward Wheeler
 -- License     :  BSD-style
 --
@@ -8,18 +8,9 @@
 -- Stability   :  provisional
 -- Portability :  portable
 --
--- Export of coded characters
+-- Module holding the data type for a static character that can be packed
 --
 -----------------------------------------------------------------------------
 
-module Bio.Sequence.Coded
-  ( DynamicChar
-  , DynamicChars
-  , EncodableDynamicCharacter(..)
-  , OldEncodableDynamicCharacterToBeRemoved(..)
---  , encodeAll
-  , decodeMany) where
-
-import Bio.Sequence.Coded.Internal
-import Bio.Sequence.Coded.Class
+module Bio.Character.Static.Packed.Internal where
 

@@ -1,6 +1,6 @@
 -----------------------------------------------------------------------------
 -- |
--- Module      :  Bio.Sequence.Parsed.Class
+-- Module      :  Bio.Character.Parsed.Class
 -- Copyright   :  (c) 2015-2015 Ward Wheeler
 -- License     :  BSD-style
 --
@@ -13,17 +13,17 @@
 -----------------------------------------------------------------------------
 {-# LANGUAGE TypeSynonymInstances, FlexibleInstances #-}
 
-module Bio.Sequence.Parsed.Class where
+module Bio.Character.Parsed.Class where
 
-import           Bio.Sequence.Parsed.Internal
-import           Data.Bifunctor           (second)
+import           Bio.Character.Parsed.Internal
+import           Data.Bifunctor             (second)
 import           Data.Foldable
-import           Data.Map                 (Map,insert,mergeWithKey)
-import qualified Data.Map        as M     (fromList)
+import           Data.Map                   (Map,insert,mergeWithKey)
+import qualified Data.Map          as M     (fromList)
 import           Data.Maybe
 import           Data.Monoid
 import           Data.Tree
-import qualified Data.Vector      as V
+import qualified Data.Vector       as V
 import           File.Format.Fasta
 import           File.Format.Fastc
 import           File.Format.Newick
@@ -48,6 +48,10 @@ import           File.Format.VertexEdgeRoot
 --
 --   It is expected that parsers will altered to return simpler character literals for
 --   time efficientcy in the future.
+--
+-- I need to think about how this might interact with some things in Nexus, but it seems
+-- to make sense. It might make verification in the parsers more difficult... thinking...
+
 class ParsedCharacters a where
     unifyCharacters :: a -> TreeChars
 
@@ -76,7 +80,7 @@ instance ParsedCharacters NewickForest where
                   name = fromMaybe "" $ newickLabel node
 
 instance ParsedCharacters Nexus where
-  unifyCharacters (Nexus (seqMap, _)) = seqMap
+    unifyCharacters (Nexus (seqMap, _)) = seqMap
 
 instance ParsedCharacters TntResult where
     unifyCharacters (Left forest) = mergeMaps $ foldl f mempty forest
@@ -92,9 +96,9 @@ instance ParsedCharacters TntResult where
 -- | Coalesce the 'TaxonSequence' to the larger type 'ParsedSequences'
 tntToTheSuperSequence :: TaxonSequence -> ParsedDynChars
 tntToTheSuperSequence = V.fromList . fmap (Just . pure . f . show)
-  where
-    f ('[':xs) = pure <$> init xs
-    f e        = pure e
+    where
+        f ('[':xs) = pure <$> init xs
+        f e        = pure e
 
 -- | Takes a 'Foldable' structure of 'Map's and returns the union 'Map'
 --   containing all the key value pairs. This fold is right biased with respect

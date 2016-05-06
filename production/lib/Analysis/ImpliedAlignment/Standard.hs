@@ -22,7 +22,7 @@ import Bio.PhyloGraph.Network
 import Bio.PhyloGraph.Node
 import Bio.PhyloGraph.Solution
 import Bio.PhyloGraph.Tree hiding (code)
-import Bio.Sequence.Coded
+import Bio.Character.Dynamic.Coded
 
 import Data.IntMap (insert)
 import Data.Maybe
@@ -63,30 +63,30 @@ impliedAlign inTree inMeta = foldr (\n acc -> insert (getCode n) (makeAlignment 
 -- outputs a resulting vector of counters and a tree with the assignments
 -- TODO: something seems off about doing the DO twice here
 numeratePreorder :: (TreeConstraint t n e s, Metadata m s) => t -> n -> Vector m -> Counts -> (Counts, t)
-numeratePreorder inTree curNode inMeta curCounts 
+numeratePreorder inTree curNode inMeta curCounts
     | nodeIsRoot curNode inTree = (curCounts, inTree `update` [setHomologies curNode defaultHomologs])
     | leftOnly && rightOnly = (curCounts, inTree)
-    | leftOnly = 
+    | leftOnly =
         let
             (curLeftAligned, leftWithAligned)     = alignAndAssign curNode (fromJust $ leftChild curNode inTree)
-            (curLeftHomolog, counterLeft)         = numerateNode curLeftAligned leftWithAligned curCounts 
+            (curLeftHomolog, counterLeft)         = numerateNode curLeftAligned leftWithAligned curCounts
             editedTreeLeft                        = inTree `update` [curLeftHomolog, leftWithAligned]
             (leftRecurseCount, leftRecurseTree)   = numeratePreorder editedTreeLeft (fromJust $ leftChild curNode inTree) inMeta counterLeft
         in (leftRecurseCount, leftRecurseTree)
-    | rightOnly = 
+    | rightOnly =
         let
             (curRightAligned, rightWithAligned)   = alignAndAssign curNode (fromJust $ rightChild curNode inTree)
-            (curRightHomolog, counterRight)       = numerateNode curRightAligned rightWithAligned curCounts 
+            (curRightHomolog, counterRight)       = numerateNode curRightAligned rightWithAligned curCounts
             editedTreeRight                       = inTree `update` [curRightHomolog, rightWithAligned]
             (rightRecurseCount, rightRecurseTree) = numeratePreorder editedTreeRight (fromJust $ rightChild curNode inTree) inMeta counterRight
         in (rightRecurseCount, rightRecurseTree)
-    | otherwise = 
+    | otherwise =
         let
             -- TODO: should I switch the order of align and numerate? probs
             (curLeftAligned, leftWithAligned)     = alignAndAssign curNode (fromJust $ leftChild curNode inTree)
-            (curLeftHomolog, counterLeft)         = numerateNode curLeftAligned leftWithAligned curCounts 
+            (curLeftHomolog, counterLeft)         = numerateNode curLeftAligned leftWithAligned curCounts
             (curBothAligned, rightBothAligned)    = alignAndAssign curLeftHomolog (fromJust $ rightChild curNode inTree)
-            (curBothHomolog, counterBoth)         = numerateNode curBothAligned rightBothAligned counterLeft 
+            (curBothHomolog, counterBoth)         = numerateNode curBothAligned rightBothAligned counterLeft
             editedTreeBoth                        = inTree `update` [curBothHomolog, leftWithAligned, rightBothAligned]
             (leftRecurseCount, leftRecurseTree)   = numeratePreorder editedTreeBoth (fromJust $ rightChild curBothHomolog editedTreeBoth) inMeta counterBoth
             -- TODO: need another align and assign between the left and right as a last step?
@@ -104,7 +104,7 @@ numeratePreorder inTree curNode inMeta curCounts
             --alignAndAssign :: NodeConstraint n s => n -> n -> (n, n)
             -- TODO: Don't use the gapped here
             alignAndAssign node1 node2 = (setFinalGapped (fst allUnzip) node1, setFinalGapped (snd allUnzip) node2)
-                where 
+                where
                     allUnzip = unzip allDO
                     allDO = zipWith3 doOne (getFinalGapped node1) (getFinalGapped node2) inMeta
                     doOne s1 s2 m = (gapped1, gapped2)

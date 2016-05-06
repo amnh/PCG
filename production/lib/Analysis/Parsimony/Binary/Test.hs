@@ -18,8 +18,8 @@ import           Analysis.Parsimony.Binary.DirectOptimization
 import           Analysis.Parsimony.Binary.Fitch
 import           Analysis.Parsimony.Binary.Internal
 import           Bio.Metadata
-import           Bio.Sequence.Coded
-import           Bio.Sequence.Parsed
+import           Bio.Character.Dynamic.Coded
+import           Bio.Character.Parsed
 import           Bio.PhyloGraph.Solution
 import           Data.BitVector
 import qualified Data.Vector as V
@@ -56,8 +56,8 @@ doProperties = testGroup "Properties of the DO algorithm" [idHolds, firstRow, em
         firstRow = testProperty "First row of alignment matrix has expected directions" checkRow
             where
                 checkRow :: DynamicChar -> Bool
-                checkRow inSeq = --trace ("checkRow " ++ show result ++ show rowLen) $ 
-                                    (snd $ V.head result) == DiagDir && allLeft (V.tail result) && V.length result == (rowLen + 1)
+                checkRow inSeq = --trace ("checkRow " ++ show result ++ show rowLen) $
+                                    (snd $ V.head result) == DiagDir && allLeft (V.tail result) && V.length result == rowLen
                     where
                         rowLen = numChars inSeq
                         (result, seqs) = firstAlignRow inSeq rowLen 0 0 doMeta

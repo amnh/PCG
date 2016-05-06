@@ -1,6 +1,6 @@
 -----------------------------------------------------------------------------
 -- |
--- Module      :  Bio.Sequence.Metadata.Class
+-- Module      :  Bio.Metadata.Class
 -- Copyright   :  (c) 2015-2015 Ward Wheeler
 -- License     :  BSD-style
 --
@@ -15,8 +15,8 @@
 
 module Bio.Metadata.Class where
 
-import Bio.Metadata.Internal 
-import Bio.Sequence.Parsed
+import Bio.Metadata.Internal
+import Bio.Character.Parsed
 import Data.Matrix (getElem)
 
 -- | Represents a type from which character information can be queried.
@@ -42,4 +42,4 @@ instance Metadata (CharacterMetadata s) s where
                             TCM mat           -> if (length $ alphabet m) > 1 then getElem 0 1 mat else 1
                             AffineCost  g _ _ -> g
                             GeneralCost g _   -> g
-    
+

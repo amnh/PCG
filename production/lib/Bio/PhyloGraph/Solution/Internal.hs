@@ -20,8 +20,8 @@ import           Bio.PhyloGraph.DAG
 import           Bio.PhyloGraph.Forest
 import           Bio.PhyloGraph.Solution.Class
 import qualified Bio.PhyloGraph.Solution.Metadata as MS
-import           Bio.Sequence.Parsed
-import           Bio.Sequence.Coded
+import           Bio.Character.Parsed
+import           Bio.Character.Dynamic.Coded
 import           Bio.Metadata.Internal
 
 import           Control.Evaluation
@@ -52,7 +52,7 @@ type SearchState = EvaluationT IO StandardSolution
 
 -- | A solution is an array of forests character data and names are common
 --   across all forests and so stored at this level
-data Solution d 
+data Solution d
    = Solution
    { parsedChars :: HashMap Identifier Sequences
    , metadata    :: Vector StandardMetadata
@@ -63,7 +63,7 @@ data Solution d
 
 instance GeneralSolution (Solution d) (Forest d) where
     getForests     = forests
-    setForests s f = s {forests = f} 
+    setForests s f = s {forests = f}
 
 instance MS.MetadataSolution (Solution d) StandardMetadata where
     getMetadata               = metadata

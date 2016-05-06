@@ -18,7 +18,7 @@ module Analysis.Parsimony.Binary.SequentialAlign (sequentialAlign) where
 
 --import           Analysis.Parsimony.Binary.Internal
 import qualified Analysis.Parsimony.Binary.SequentialAlign.SeqAlignFFI as FF (sequentialAlign)
-import           Bio.Sequence.Coded
+import           Bio.Character.Dynamic.Coded
 import           Data.Vector (fromList)
 import           Data.Foldable
 import           Data.List.Split (chunksOf)
@@ -27,7 +27,7 @@ import           Data.List.Split (chunksOf)
 -- It gets called from Analysis.Parsimony.Binary.Optimization:preorderNodeOptimize
 -- The particular version of SeqConstraint used here is found in Analysis.Parsimony.Binary.Internal
 -- and has these constraints: (EncodableDynamicCharacter s b, Eq s, CharConstraint b, Show s, Bits s, Monoid s)
--- 
+--
 sequentialAlign :: (EncodableDynamicCharacter s) => s -> s -> (s, Double, s, s, s)
 sequentialAlign inpSeq1 inpSeq2 = (inferredParent', fromIntegral cost :: Double, alignedParent', alignment1', alignment2')
     where
@@ -35,7 +35,7 @@ sequentialAlign inpSeq1 inpSeq2 = (inferredParent', fromIntegral cost :: Double,
         createParentSeqs x y (xs, ys)
             | x == '-' && y == '-' = (xs    , '-' : ys)
             | x == '-'             = (xs, x : ys) -- So I'm prioritizing gap over everything else
-            | y == '-'             = (xs, y : ys) -- Note that '-' comes before letters alphabetically, 
+            | y == '-'             = (xs, y : ys) -- Note that '-' comes before letters alphabetically,
                                                   -- but I still have to do this to deal with gap removal in inferred Parent
             | x < y                = (x : xs, x : ys)
             | y < x                = (y : xs, y : ys)
