@@ -20,7 +20,7 @@ module Bio.PhyloGraph.Node.Topological (TopoNode(..), arbitraryTopoGivenCAL) whe
 import Bio.Character.Dynamic.Coded
 import Bio.Character.Dynamic.Coded.Internal
 import Bio.Character.Parsed
-import Data.Vector
+import Data.Vector hiding (head)
 import Test.Tasty.QuickCheck
 
 -- | A tree construction which stores it's children as pointers. Tree traversal
@@ -69,4 +69,4 @@ arbitraryTopoGivenCAL maxChildren inAlph (curLevel, maxLevel) = do
      seqs     <- vectorOf 10 (arbitraryDynamicsGA inAlph)
      c2       <- arbitrary :: Gen Double
      c3       <- arbitrary :: Gen Double
-     pure $ TopoNode root leaf n chillens (seqs !! 0) (seqs !! 1) (seqs !! 2) (seqs !! 3) (seqs !! 4) (seqs !! 5) (seqs !! 6) (seqs !! 7) (seqs !! 8) (seqs !! 9) c2 c3
+     pure $ TopoNode root leaf n chillens (head seqs) (seqs !! 1) (seqs !! 2) (seqs !! 3) (seqs !! 4) (seqs !! 5) (seqs !! 6) (seqs !! 7) (seqs !! 8) (seqs !! 9) c2 c3

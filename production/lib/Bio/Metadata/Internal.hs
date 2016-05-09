@@ -96,12 +96,12 @@ instance Arbitrary s => Arbitrary (CharacterMetadata s) where
     w <- arbitrary :: Gen Double
     sn <- arbitrary
     fm <- vectorOf 2 arbitrary
-    let masks = (fm !! 0, fm !! 1)
+    let masks = (head fm, fm !! 1)
     r <- arbitrary :: Gen Double
     randCosts <- vectorOf 3 arbitrary 
     c <- elements [ TCM $ tcmOfSize (length a)
-                  , AffineCost  (randCosts !! 0) (randCosts !! 1) (randCosts !! 2)
-                  , GeneralCost (randCosts !! 0) (randCosts !! 1)
+                  , AffineCost  (head randCosts) (randCosts !! 1) (randCosts !! 2)
+                  , GeneralCost (head randCosts) (randCosts !! 1)
                   ]
     pure $ CharMeta t a n align ignore w sn masks r c
 

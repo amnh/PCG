@@ -12,8 +12,6 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE FunctionalDependencies #-}
-
 module Bio.PhyloGraph.Node.Referential where
 
 class RefNode n where

@@ -139,9 +139,6 @@ library
                        File.Format.TransitionCostMatrix
 
   -- probably can be moved to other-modules:
-                       Bio.Metadata.Class
-                       Bio.Metadata.Internal
-                       Bio.Metadata.Parsed
                        Bio.Metadata.MaskGenerator
                        Bio.PhyloGraph.DAG.Internal
                        Bio.PhyloGraph.DAG.Class
@@ -164,6 +161,9 @@ library
                        Text.Megaparsec.Custom
   -- Modules included in this library but not exported.
   other-modules:     
+                       Bio.Metadata.Class
+                       Bio.Metadata.Internal
+                       Bio.Metadata.Parsed
                        Bio.PhyloGraph.Tree
                        Bio.PhyloGraph.Tree.Parsed
                        Bio.Character.Dynamic.Coded.Class

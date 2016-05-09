@@ -54,7 +54,7 @@ instance StandardDAG DAG NodeInfo EdgeSet where
     setNodes inD n = inD {nodes = n}
     getEdges       = edges
     setEdges inD e = inD {edges = e}
-    getRoot  inD   = (nodes inD) ! (root inD)
+    getRoot  inD   = nodes inD ! root inD
 
 instance Arbitrary DAG where
   arbitrary = fromTopo <$> (arbitrary :: Gen TopoDAG)

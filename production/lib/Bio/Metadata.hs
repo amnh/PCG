@@ -13,9 +13,18 @@
 -----------------------------------------------------------------------------
 
 module Bio.Metadata
-  ( module X
+  ( CharacterMetadata(..)
+  , CharDataType(..)
+  , CostStructure(..)
+  , CostMatrix
+  , Metadata(..)
+  , ParsedMetadata(..)
+  , prependName
+  , updateAligned
+  , updateAlphabet
+  , updateTcm
   ) where
 
-import Bio.Metadata.Class    as X
-import Bio.Metadata.Internal as X
-import Bio.Metadata.Parsed   as X
+import Bio.Metadata.Class
+import Bio.Metadata.Internal
+import Bio.Metadata.Parsed

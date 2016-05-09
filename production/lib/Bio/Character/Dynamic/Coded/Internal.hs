@@ -37,9 +37,10 @@ import Data.BitVector        hiding (join, replicate)
 import Data.Foldable
 import Data.Function.Memoize
 import Data.Maybe                   (fromJust, fromMaybe)
+import Data.Monoid                  ((<>))
 import Data.MonoTraversable
-import Data.Vector                   (Vector, fromList)
-import Test.Tasty.QuickCheck  hiding ((.&.))
+import Data.Vector                  (Vector, fromList)
+import Test.Tasty.QuickCheck hiding ((.&.))
 
 -- TODO: Change DynamicChar/Sequences to DynamicCharacters
         -- Make a missing a null vector
@@ -127,9 +128,9 @@ instance EncodableDynamicCharacter DynamicChar where
     | otherwise        = Nothing
 
   -- TODO: Think about the efficiency of this
-  unsafeCons static (DC dynamic) = DC $ fromRows $ static : (rows dynamic)
+  unsafeCons static (DC dynamic) = DC . fromRows $ static : rows dynamic
 
-  unsafeAppend (DC dynamic1) (DC dynamic2) = DC $ fromRows $ (rows dynamic1) ++ (rows dynamic2)
+  unsafeAppend (DC dynamic1) (DC dynamic2) = DC . fromRows $ rows dynamic1 <> rows dynamic2
 
 instance OldEncodableDynamicCharacterToBeRemoved DynamicChar where
       -- TODO: I switched the order of input args in decode fns and encodeOver...
@@ -160,7 +161,7 @@ instance OldEncodableDynamicCharacterToBeRemoved DynamicChar where
     getAlphLen (DC bm) = numCols bm
 
 --   grabSubChar        :: s -> Int -> s
-    grabSubChar char i = {-trace ("grabSubChar " ++ show char ++ " " ++ show i) -}(DC $ fromRows [char `indexChar` i])
+    grabSubChar char i = {-trace ("grabSubChar " ++ show char ++ " " ++ show i) $ -} DC (fromRows [char `indexChar` i])
     
 --    isEmpty            :: s -> Bool
     isEmpty = (0 ==) . numChars
@@ -205,7 +206,7 @@ instance Arbitrary (Alphabet' String) where
 arbitraryDynamicGivenAlph :: Alphabet -> Gen DynamicChar
 arbitraryDynamicGivenAlph inAlph = do
   arbParsed <- arbitrary :: Gen ParsedChar
-  return $ encodeOverAlphabet inAlph arbParsed
+  pure $ encodeOverAlphabet inAlph arbParsed
 
 -- | Generate many dynamic characters using the above
 arbitraryDynamicsGA :: Alphabet -> Gen DynamicChars
