@@ -145,8 +145,8 @@ expandIUPAC fpr = fpr { parsedChars = newTreeChars }
 
                 expandCodes :: ParsedChar -> ParsedChar
                 expandCodes x
-                  | cAlph `subsetOf` (concat $ keys nucleotideIUPAC) = expandOrId nucleotideIUPAC <$> x
-                  | cAlph `subsetOf` (concat $ keys aminoAcidIUPAC) = expandOrId aminoAcidIUPAC  <$> x
+                  | cAlph `subsetOf` concat (keys nucleotideIUPAC) = expandOrId nucleotideIUPAC <$> x
+                  | cAlph `subsetOf` concat (keys aminoAcidIUPAC ) = expandOrId aminoAcidIUPAC  <$> x
                   | otherwise = x
     expandOrId m x = fromMaybe x $ x `lookup` m
 

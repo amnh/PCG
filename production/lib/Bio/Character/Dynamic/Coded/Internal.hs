@@ -24,6 +24,7 @@ module Bio.Character.Dynamic.Coded.Internal
   ( DynamicChar()
   , DynamicChars
   , decodeMany
+  , arbitraryDynamicsGA
   ) where
 
 import Bio.Character.Dynamic.Coded.Class
@@ -40,8 +41,9 @@ import Data.MonoTraversable
 import Data.Vector                   (Vector, fromList)
 import Test.Tasty.QuickCheck  hiding ((.&.))
 
--- TODO: Make a missing a null vector
--- Think about a nonempty type class or a refinement type for this
+-- TODO: Change DynamicChar/Sequences to DynamicCharacters
+        -- Make a missing a null vector
+        -- Think about a nonempty type class or a refinement type for this
 
 newtype DynamicChar
       = DC BitMatrix
@@ -158,7 +160,7 @@ instance OldEncodableDynamicCharacterToBeRemoved DynamicChar where
     getAlphLen (DC bm) = numCols bm
 
 --   grabSubChar        :: s -> Int -> s
-    grabSubChar char i = DC $ fromRows [char `indexChar` i]
+    grabSubChar char i = {-trace ("grabSubChar " ++ show char ++ " " ++ show i) -}(DC $ fromRows [char `indexChar` i])
     
 --    isEmpty            :: s -> Bool
     isEmpty = (0 ==) . numChars
@@ -193,8 +195,18 @@ instance Arbitrary b => Arbitrary (Vector b) where
 
 instance Arbitrary DynamicChar where
     arbitrary = do 
-        nRows   <- getPositive <$> (arbitrary :: Gen (Positive Int))
-        nCols   <- getPositive <$> (arbitrary :: Gen (Positive Int))
-        let genRow = fromBits <$> vector nCols
-        rowVals <- sequence $ replicate nRows genRow
-        pure . DC $ fromRows rowVals
+      arbAlph <- arbitrary :: Gen Alphabet
+      arbitraryDynamicGivenAlph arbAlph
+
+instance Arbitrary (Alphabet' String) where
+  arbitrary = Alphabet' <$> (arbitrary :: Gen (Vector String))
+
+-- | Function to generate an arbitrary DynamicChar given an alphabet
+arbitraryDynamicGivenAlph :: Alphabet -> Gen DynamicChar
+arbitraryDynamicGivenAlph inAlph = do
+  arbParsed <- arbitrary :: Gen ParsedDynChar
+  return $ encodeOverAlphabet inAlph arbParsed
+
+-- | Generate many dynamic characters using the above
+arbitraryDynamicsGA :: Alphabet -> Gen DynamicChars
+arbitraryDynamicsGA inAlph = fromList <$> listOf (arbitraryDynamicGivenAlph inAlph)

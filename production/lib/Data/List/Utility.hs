@@ -37,14 +37,15 @@ duplicates = duplicates' . sort . toList
                            else duplicates (y:ys)
 
 -- | Returns the element that occurs the most often in the list.
-mostCommon :: Ord a => [a] -> Maybe a
-mostCommon [] = Nothing
-mostCommon xs = Just . fst . head $ occurances xs
+mostCommon :: (Foldable t, Ord a) => t a -> Maybe a
+mostCommon xs
+  | null xs   = Nothing
+  | otherwise = Just . fst . head $ occurances xs
 
 
 -- | Returns a mapping of each unique element in the list
--- paired with how often the element occurs in the list.
-occurances :: Ord a => [a] -> [(a,Int)]
+--   paired with how often the element occurs in the list.
+occurances :: (Foldable t, Ord a) => t a -> [(a,Int)]
 occurances = collateOccuranceMap . buildOccuranceMap
   where
     buildOccuranceMap = foldr occurance empty 
@@ -64,3 +65,12 @@ chunksOf x = chunksOf' x . toList
     chunksOf' n xs = f : chunksOf' n s
       where
         (f,s) = splitAt n xs
+
+-- | Applies a transformation to each element fo the structure and asserts that
+--   transformed values are equal for all elements of the structure.
+equalityOf :: (Eq b, Foldable t) => (a -> b) -> t a -> Bool
+equalityOf f xs =
+  case toList xs of
+    []   -> True
+    [_]  -> True
+    y:ys -> all (\e -> f y == f e) ys

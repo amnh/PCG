@@ -14,8 +14,15 @@
 {-# LANGUAGE TypeSynonymInstances, FlexibleInstances, MultiParamTypeClasses #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
-module Bio.PhyloGraph.DAG (module Bio.PhyloGraph.DAG.Internal, module Bio.PhyloGraph.DAG.Class, fromNewick, fromTopo, toTopo) where
+module Bio.PhyloGraph.DAG
+  ( module Bio.PhyloGraph.DAG.Internal
+  , module Bio.PhyloGraph.DAG.Class
+  , fromNewick
+  , fromTopo
+  , toTopo
+  ) where
 
+import           Bio.Character.Parsed
 import           Bio.PhyloGraph.DAG.Internal
 import           Bio.PhyloGraph.DAG.Class
 import           Bio.PhyloGraph.Edge
@@ -28,6 +35,7 @@ import qualified Bio.PhyloGraph.Tree.EdgeAware as ET
 import           Bio.PhyloGraph.Tree.Binary
 import qualified Bio.PhyloGraph.Tree.Referential as RT
 import           Bio.PhyloGraph.Tree.Rose
+import           Data.Alphabet
 import           Data.Bifunctor
 import qualified Data.IntSet as IS
 import qualified Data.IntMap as IM
@@ -52,7 +60,18 @@ instance Arbitrary DAG where
   arbitrary = fromTopo <$> (arbitrary :: Gen TopoDAG)
 
 instance Arbitrary TopoDAG where
-  arbitrary = undefined
+  arbitrary = do
+    arbAlph <- arbitrary :: Gen Alphabet
+    arbitraryTopoDAGGA arbAlph
+
+-- TODO: For DAGS, we'll need a testing flag to set the maximum depth and number of children
+-- for now we default to 10
+maxLevels = 10
+maxChildren = 4
+
+-- | Generate an arbitrary TopoDAG given an alphabet
+arbitraryTopoDAGGA :: Alphabet -> Gen TopoDAG 
+arbitraryTopoDAGGA inAlph = TopoDAG <$> TN.arbitraryTopoGivenCAL maxChildren inAlph (0, maxLevels)
 
 instance Monoid DAG where
     mempty = DAG mempty mempty 0

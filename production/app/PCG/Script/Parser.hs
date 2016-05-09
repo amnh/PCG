@@ -1,6 +1,7 @@
 {-# LANGUAGE FlexibleContexts #-}
 module PCG.Script.Parser where
 
+import Data.Functor           (($>))
 import Data.Char              (toLower)
 import Data.Maybe             (fromJust)
 import Data.Time.Clock        (secondsToDiffTime)
@@ -98,4 +99,6 @@ symbol  :: MonadParsec s m Char => m a -> m a
 symbol  x = x <* whitespace
 
 whitespace :: MonadParsec s m Char => m ()
-whitespace = try (comment (string "(*") (string "*)") >> pure ()) <|> space
+whitespace = try commentBlock <|> space
+  where
+    commentBlock = comment (string "(*") (string "*)") $> ()
