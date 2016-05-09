@@ -203,7 +203,7 @@ instance Arbitrary BV where
 
 instance Arbitrary BitMatrix where
     arbitrary = do 
-        alphLen <- getPositive <$> (arbitrary :: Gen (Positive Int))
-        numRows <- getPositive <$> (arbitrary :: Gen (Positive Int))
-        boolV   <- take (alphLen * numRows) <$> infiniteListOf (arbitrary :: Gen Bool)
+        alphLen  <- getPositive <$> (arbitrary :: Gen (Positive Int))
+        rowCount <- getPositive <$> (arbitrary :: Gen (Positive Int))
+        boolV    <- take (alphLen * rowCount) <$> infiniteListOf (arbitrary :: Gen Bool)
         pure (BitMatrix alphLen $ fromBits boolV)
