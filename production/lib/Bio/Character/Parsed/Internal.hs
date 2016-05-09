@@ -8,7 +8,9 @@
 -- Stability   :  provisional
 -- Portability :  portable
 --
--- Module holding the data type for a parsed character
+-- Module holding the data type for a parsed character, which is the type
+-- that comes from the parsers, and is then coverted into our various internal
+-- character types
 --
 -----------------------------------------------------------------------------
 
@@ -25,16 +27,17 @@ import Data.Map      (Map)
 type AmbiguityGroup = [String]
 
 -- | An ordered dynamic character of ambiguity groups. This represents a dynamic
---   homology character.
-type ParsedDynChar = Vector AmbiguityGroup
+--   homology character when it comes from the parser (so is not yet encoded
+---  or packed, if those are options.)
+type ParsedChar = Vector AmbiguityGroup
 
 -- TODO: Remove Maybe?
--- | Represents a charcter sequence containing possibly missing character data.
-type ParsedDynChars = Vector (Maybe ParsedDynChar)
+-- | Represents a character sequence containing possibly missing character data.
+type ParsedChars = Vector (Maybe ParsedChar)
 
 -- TODO: add a TaxonIdentifier or TerminalName as type string - lots of aliasing
 -- | A mapping from taxon identifiers to thier corresponding sequences.
-type TreeChars = Map String ParsedDynChars
+type TreeChars = Map String ParsedChars
 
 -- | An ordered list of possible character values.
 type Alphabet = Vector String

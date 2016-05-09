@@ -68,9 +68,9 @@ class ( EncodableStaticCharacter (Element s)
 -- | A coded sequence allows grabbing of a character, filtering, and some standard types
 class OldEncodableDynamicCharacterToBeRemoved s where
     -- TODO: I switched the order of input args in decode fns and encodeOver...
-  decodeOverAlphabet :: Alphabet -> s -> ParsedDynChar
-  decodeOneChar      :: Alphabet -> s -> ParsedDynChar
-  encodeOverAlphabet :: Alphabet -> ParsedDynChar -> s
+  decodeOverAlphabet :: Alphabet -> s -> ParsedChar
+  decodeOneChar      :: Alphabet -> s -> ParsedChar
+  encodeOverAlphabet :: Alphabet -> ParsedChar -> s
   encodeOneChar      :: Alphabet -> AmbiguityGroup -> s
   emptyChar          :: s
   filterGaps         :: s -> s

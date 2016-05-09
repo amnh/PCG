@@ -26,13 +26,15 @@ module Data.BitMatrix
   ) where
 
 import Data.Bifunctor
-import Data.BitVector hiding (foldr)
-import Data.List.Utility     (equalityOf)
+import Data.BitVector hiding  (foldr)
+import Data.List.Utility      (equalityOf)
 import Data.Function.Memoize
 import Data.Foldable
-import Data.Maybe            (fromMaybe)
+import Data.Maybe             (fromMaybe)
 import Data.Monoid
 import Data.MonoTraversable
+
+import Test.QuickCheck hiding ((.&.))
 
 -- | A data structure for storing a two dimensional array of bits.
 --   Exposes row based monomorphic mapping & folding.
@@ -42,7 +44,6 @@ data BitMatrix
 
 -- | The row based element for monomorphic maps & folds.
 type instance Element BitMatrix = BitVector
-
 
 -- | A generating function for a 'BitMatrix'. Efficiently constructs a
 --   'BitMatrix' of the specified dimensions with each bit defined by the result
@@ -69,11 +70,11 @@ bitMatrix m n f =
       | m /= 0 && n == 0 = Just $ unwords [errorPrefix, errorZeroCols, errorZeroSuffix] <> "."
       | otherwise        = Nothing
       where
-        errorPrefix     = mconcat ["The call to bitMatrix ", show m, " ", show n, "f is malformed,"]
-        errorRowCount   = mconcat ["the number of rows "   , show m, "is a negative number"]
-        errorColCount   = mconcat ["the number of columns ", show n, "is a negative number"]
-        errorZeroRows   = mconcat ["the number of rows was 0 but the number of columns ", show n, " was positive."]
-        errorZeroCols   = mconcat ["the number of columns was 0 but the number of rows ", show m, " was positive."]
+        errorPrefix     = mconcat ["The call to bitMatrix ", show m, " ", show n, " f is malformed,"]
+        errorRowCount   = mconcat ["the number of rows, "   , show m, ", is a negative number"]
+        errorColCount   = mconcat ["the number of columns, ", show n, ", is a negative number"]
+        errorZeroRows   = mconcat ["the number of rows was 0 but the number of columns, ", show n, ", was positive."]
+        errorZeroCols   = mconcat ["the number of columns was 0 but the number of rows, ", show m, ", was positive."]
         errorZeroSuffix = "To construct the empty matrix, both rows and columns must be zero"
 
 -- | Construct a 'BitMatrix' from a list of rows. 
@@ -196,3 +197,13 @@ instance Bits BitMatrix where
     bitSizeMaybe (BitMatrix _ b)                     = bitSizeMaybe b
     isSigned     (BitMatrix _ b)                     = isSigned b
     popCount     (BitMatrix _ b)                     = popCount b
+
+instance Arbitrary BV where
+    arbitrary = fromBits <$> listOf (arbitrary :: Gen Bool)
+
+instance Arbitrary BitMatrix where
+    arbitrary = do 
+        alphLen <- getPositive <$> (arbitrary :: Gen (Positive Int))
+        numRows <- getPositive <$> (arbitrary :: Gen (Positive Int))
+        boolV   <- take (alphLen * numRows) <$> infiniteListOf (arbitrary :: Gen Bool)
+        pure (BitMatrix alphLen $ fromBits boolV)
