@@ -16,6 +16,7 @@ import           Data.Char                  (isLower,toLower,isUpper,toUpper)
 import           Data.Either.Custom
 import           Data.Foldable
 import           Data.Key                   ((!),lookup)
+import           Data.List.Utility          (subsetOf)
 import           Data.Map                   (Map,assocs,insert,union, keys)
 import qualified Data.Map              as M (fromList)
 import           Data.Maybe                 (fromMaybe)

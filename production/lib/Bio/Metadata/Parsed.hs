@@ -101,10 +101,6 @@ addOtherCases (x:xs)
   | isUpper x && toLower x `notElem` xs = x : (toLower x) : addOtherCases xs
   | otherwise = x : addOtherCases xs
 
--- | Useful function to check subsets of lists
-subsetOf :: (Ord a) => [a] -> [a] -> Bool
-subsetOf list1 list2 = foldr (\e acc -> acc && e `elem` list2) True list1
-
 -- | Make a single info given an alphabet
 makeOneInfo :: (EncodableDynamicCharacter s) => Alphabet -> CharacterMetadata s
 makeOneInfo alph = CharMeta DirectOptimization alph mempty False False 1 mempty (emptyChar, emptyChar) 1 (GeneralCost 1 1)
