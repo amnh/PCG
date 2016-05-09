@@ -74,7 +74,7 @@ arbitraryTopoGivenCAL maxChildren inAlph (curLevel, maxLevel) = do
      c3       <- arbitrary :: Gen Double
      pure $ TopoNode root leaf n chillens (seqs !! 0) (seqs !! 1) (seqs !! 2) (seqs !! 3) (seqs !! 4) (seqs !! 5) (seqs !! 6) (seqs !! 7) (seqs !! 8) (seqs !! 9) c2 c3
 
-arbitraryTopoGivenCSNA :: Int -> [(String, ParsedDynChars)] -> Vector (CharacterMetadata DynamicChar) -> (Int, Int) -> Gen (TopoNode b)
+arbitraryTopoGivenCSNA :: Int -> [(String, ParsedChars)] -> Vector (CharacterMetadata DynamicChar) -> (Int, Int) -> Gen (TopoNode b)
 arbitraryTopoGivenCSNA maxChildren namesAndSeqs inMeta (curLevel, maxLevel) 
   | length namesAndSeqs <= 1 = do
       c2       <- arbitrary :: Gen Double
@@ -97,5 +97,3 @@ arbitraryTopoGivenCSNA maxChildren namesAndSeqs inMeta (curLevel, maxLevel)
       encodeIt m s = case s of 
                       Nothing -> emptyChar
                       Just c  -> encodeOverAlphabet (alphabet m) c 
-
-    

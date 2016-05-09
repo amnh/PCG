@@ -16,6 +16,7 @@ import           Data.Char                  (isLower,toLower,isUpper,toUpper)
 import           Data.Either.Custom
 import           Data.Foldable
 import           Data.Key                   ((!),lookup)
+import           Data.List.Utility          (subsetOf)
 import           Data.Map                   (Map,assocs,insert,union, keys)
 import qualified Data.Map              as M (fromList)
 import           Data.Maybe                 (fromMaybe)
@@ -135,15 +136,15 @@ expandIUPAC fpr = fpr { parsedChars = newTreeChars }
     f :: TreeChars -> Vector StandardMetadata -> TreeChars
     f mapping meta = g <$> mapping
       where
-        g :: ParsedDynChars -> ParsedDynChars
+        g :: ParsedChars -> ParsedChars
         g = V.zipWith h meta
           where
-            h :: StandardMetadata -> Maybe ParsedDynChar -> Maybe ParsedDynChar
+            h :: StandardMetadata -> Maybe ParsedChar -> Maybe ParsedChar
             h cInfo seqMay = expandCodes <$> seqMay
               where
                 cAlph = toList $ alphabet cInfo
 
-                expandCodes :: ParsedDynChar -> ParsedDynChar
+                expandCodes :: ParsedChar -> ParsedChar
                 expandCodes x
                   | cAlph `subsetOf` concat (keys nucleotideIUPAC) = expandOrId nucleotideIUPAC <$> x
                   | cAlph `subsetOf` concat (keys aminoAcidIUPAC ) = expandOrId aminoAcidIUPAC  <$> x

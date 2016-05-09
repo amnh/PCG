@@ -38,7 +38,7 @@ import qualified Bio.PhyloGraph.Tree.EdgeAware as ET
 import           Bio.PhyloGraph.Tree.Binary
 import qualified Bio.PhyloGraph.Tree.Referential as RT
 import           Bio.PhyloGraph.Tree.Rose
-import           Data.Alphabet
+-- import           Data.Alphabet
 import           Data.Bifunctor
 import           Data.HashMap.Lazy (HashMap)
 import qualified Data.HashMap.Lazy as H (toList)
@@ -59,7 +59,7 @@ instance StandardDAG DAG NodeInfo EdgeSet where
     setNodes inD n = inD {nodes = n}
     getEdges       = edges
     setEdges inD e = inD {edges = e}
-    getRoot  inD   = (nodes inD) ! (root inD)
+    getRoot  inD   = nodes inD ! root inD
 
 instance Arbitrary DAG where
   arbitrary = fromTopo <$> (arbitrary :: Gen TopoDAG)
@@ -71,7 +71,10 @@ instance Arbitrary TopoDAG where
 
 -- TODO: For DAGS, we'll need a testing flag to set the maximum depth and number of children
 -- for now we default to 10
+maxLevels :: Int
 maxLevels = 10
+
+maxChildren :: Int
 maxChildren = 4
 
 -- | Generate an arbitrary TopoDAG given an alphabet
@@ -79,7 +82,7 @@ arbitraryTopoDAGGA :: Alphabet -> Gen TopoDAG
 arbitraryTopoDAGGA inAlph = TopoDAG <$> TN.arbitraryTopoGivenCAL maxChildren inAlph (0, maxLevels)
 
 -- | Generate an arbitrary DAG given sequences
-arbitraryDAGGS :: HashMap String ParsedDynChars -> Vector (CharacterMetadata DynamicChar) -> Gen DAG
+arbitraryDAGGS :: HashMap String ParsedChars -> Vector (CharacterMetadata DynamicChar) -> Gen DAG
 arbitraryDAGGS allSeqs metadata = fromTopo <$> TopoDAG <$> TN.arbitraryTopoGivenCSNA maxChildren (H.toList allSeqs) metadata (0, maxLevels)
 
 instance Monoid DAG where

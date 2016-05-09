@@ -11,7 +11,7 @@
 -- Typeclass for metadata extracted from parsed results
 --
 -----------------------------------------------------------------------------
-{-# LANGUAGE MultiParamTypeClasses, FunctionalDependencies, TypeSynonymInstances, FlexibleInstances #-}
+{-# LANGUAGE FlexibleInstances, MultiParamTypeClasses, TypeSynonymInstances #-}
 
 module Bio.Metadata.Parsed where
 
@@ -56,7 +56,7 @@ instance ParsedMetadata TNT.TntResult where
     unifyMetadata (Left _) = mempty
     unifyMetadata (Right withSeq) = fromList $ zipWith f (toList $ TNT.charMetaData withSeq) (snd . head . toList $ TNT.sequences withSeq)
         where
-           f :: EncodableDynamicCharacter s => TNT.CharacterMetaData -> TNT.TntCharacter -> (CharacterMetadata s)
+           f :: EncodableDynamicCharacter s => TNT.CharacterMetaData -> TNT.TntCharacter -> CharacterMetadata s
            f inMeta inChar =  let defaultMeta = makeOneInfo $ tntAlphabet inChar
                     in  defaultMeta { name       = TNT.characterName   inMeta
                                     , stateNames = TNT.characterStates inMeta
@@ -97,16 +97,12 @@ disAlph = fromList $ pure <$> (['0'..'9'] <> ['A'..'Z'] <> ['a'..'z'] <> "-" <> 
 addOtherCases :: String -> String
 addOtherCases [] = []
 addOtherCases (x:xs)
-  | isLower x && toUpper x `notElem` xs = (toUpper x) : x : addOtherCases xs
-  | isUpper x && toLower x `notElem` xs = x : (toLower x) : addOtherCases xs
+  | isLower x && toUpper x `notElem` xs = toUpper x : x : addOtherCases xs
+  | isUpper x && toLower x `notElem` xs = x : toLower x : addOtherCases xs
   | otherwise = x : addOtherCases xs
 
--- | Useful function to check subsets of lists
-subsetOf :: (Ord a) => [a] -> [a] -> Bool
-subsetOf list1 list2 = foldr (\e acc -> acc && e `elem` list2) True list1
-
 -- | Make a single info given an alphabet
-makeOneInfo :: (EncodableDynamicCharacter s) => Alphabet -> CharacterMetadata s
+makeOneInfo :: EncodableDynamicCharacter s => Alphabet -> CharacterMetadata s
 makeOneInfo alph = CharMeta DirectOptimization alph mempty False False 1 mempty (emptyChar, emptyChar) 1 (GeneralCost 1 1)
 
 -- | Functionality to make char info from tree seqs
@@ -127,12 +123,12 @@ makeEncodeInfo seqs = V.map makeOneInfo alphabets
 
 --old version
 developAlphabets :: TreeChars -> Vector Alphabet
-developAlphabets inTaxSeqMap = fmap (setGapChar . V.fromList . sort . toList) $ foldr (V.zipWith getNodeAlphAt) partialAlphabets inTaxSeqMap
+developAlphabets inTaxSeqMap = (setGapChar . V.fromList . sort . toList) <$> foldr (V.zipWith getNodeAlphAt) partialAlphabets inTaxSeqMap
     where
-        seqLength        = length $ head $ toList inTaxSeqMap
+        seqLength        = length . head $ toList inTaxSeqMap
         partialAlphabets = V.replicate seqLength mempty
 
-        getNodeAlphAt :: Maybe ParsedDynChar -> Set String -> Set String
+        getNodeAlphAt :: Maybe ParsedChar -> Set String -> Set String
         getNodeAlphAt inCharMay partialAlphabet =
           case inCharMay of
             Nothing     -> partialAlphabet

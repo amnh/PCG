@@ -5,11 +5,11 @@ module Bio.Character.Dynamic.Coded.Test
   ) where
 
 import Bio.Character.Dynamic.Coded
-import Bio.Character.Dynamic.Parsed
+import Bio.Character.Parsed
 import Data.Bits
 import Data.BitVector (BitVector, toBits, width)
 import Data.Monoid    ((<>))
-import Data.Vector    (Vector, fromList)
+import Data.Vector    (Vector, fromList, toList)
 import Test.Tasty
 import Test.Tasty.HUnit
 import Test.Tasty.QuickCheck
@@ -17,7 +17,7 @@ import Test.Tasty.QuickCheck
 import Debug.Trace
 
 testSuite :: TestTree
-testSuite = testGroup "Custom Bits instances" [testVectorBits, testCodedSequenceInstance]
+testSuite = undefined {- testGroup "Custom Bits instances" [testVectorBits, testCodedSequenceInstance]
 
 testVectorBits :: TestTree
 testVectorBits = testGroup "Properties of instance Bits b => Bits (Vector b)"
@@ -25,7 +25,7 @@ testVectorBits = testGroup "Properties of instance Bits b => Bits (Vector b)"
         , testBitConstructionProperties zeroBitsDynamic "dynamic"
         ]
     where
-        zeroBitsDynamic = zeroBits :: EncodedSeq
+        zeroBitsDynamic = zeroBits :: DynamicChar
 
 testZeroBitProperties :: Bits b => b -> String -> TestTree
 testZeroBitProperties z label = testGroup ("zeroBit properties (" <> label <> ")")
@@ -86,44 +86,43 @@ testCodedSequenceInstance = testGroup "Properties of instance CodedSequence Enco
         --, isEmpty
         --, numChars
         ]
-encodeOverAlphabetTest :: TestTree
-encodeOverAlphabetTest = testGroup "encodeOverAlphabet"
-    [
-    ]
 
 encodeOverAlphabetTest :: TestTree
 encodeOverAlphabetTest = testGroup "encodeOverAlphabet"
-    [ testWidth
+    [ testAlphabetLen
     , testValue
     ]
     where
-        testWidth = testProperty "Make sure width of encoded seq == len(alphabet) * len(parsed seq)." f
+        testAlphabetLen = testProperty "Make sure alphabet length of encoded dynamic char == len(alphabet)." f
             where
-                f :: (ParsedSeq', Alphabet) -> Bool
-                f (inSeq, alph) = width (encodeOverAlphabet (getParsedSeq inSeq) alph :: EncodedSeq) == length alph * (length $ getParsedSeq inSeq)
+                f :: (ParsedChar', Alphabet) -> Bool
+                f (inChar, alph) = getAlphLen (encodeOverAlphabet alph (getParsedChar inChar) :: DynamicChar) == length alph
         testValue = testProperty "Make sure encoded value matches position in alphabet." f
             where
-                f :: (ParsedSeq', Alphabet) -> Bool
-                f (inSeq, alph) = toBits (encodeOverAlphabet (getParsedSeq inSeq) alph :: EncodedSeq) == fmap (alph `elem`) inSeq
+                -- for each ambiguity group in inChar, map over the alphabet determining whether each alphabet state exists in the ambiguity group
+                f :: (ParsedChar', Alphabet) -> Bool
+                f (inChar, alph) = toBits controlChar == (fmap (\c -> elem c alph) $ toList charToTest)
+                    where 
+                        charToTest  = getParsedChar inChar
+                        controlChar = (encodeOverAlphabet alph charToTest :: DynamicChar)
 
-type ParsedSeq' = Vector (NonEmptyList (NonEmptyList Char))
+type DynamicChar' = Vector
 
-getParsedSeq :: ParsedSeq' -> ParsedSeq
-getParsedSeq = fmap (fmap getNonEmpty . getNonEmpty)
+type ParsedChar' = Vector (NonEmptyList (NonEmptyList Char))
+
+getParsedChar :: ParsedChar' -> ParsedChar
+getParsedChar = fmap (fmap getNonEmpty . getNonEmpty)
 
 --decodeOverAlphabetTest :: TestTree
 --decodeOverAlphabetTest = testProperty "decodeOverAlphabet" f
 --    where
---        f :: CodedSequence s -> Alphabet -> ParsedSeq
---        f inSeq alph =
+--        f :: CodedSequence s -> Alphabet -> ParsedChar
+--        f inChar alph =
 
-instance (Arbitrary a) => Arbitrary (Vector a) where
-    arbitrary = do
-        i <- arbitrary :: Gen Int
-        fmap fromList . sequence . fmap (const arbitrary) . take i $ repeat ()
-
-instance Arbitrary (ParsedSeq', Alphabet) where
+instance Arbitrary (ParsedChar', Alphabet) where
     arbitrary = do
         alphabet <- (fmap (:[]) . getNonEmpty) <$> (arbitrary :: (Gen (NonEmptyList Char)))
         vector   <- fmap (fmap (NonEmpty . (:[]) . NonEmpty) . fromList) . listOf1 $ elements alphabet
-        pure (vector, alphabet)
+        pure (vector, fromList alphabet)
+
+-}

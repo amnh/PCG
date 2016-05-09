@@ -13,9 +13,16 @@
 -----------------------------------------------------------------------------
 
 module Bio.Metadata
-  ( module Bio.Metadata.Class
-  , module Bio.Metadata.Internal
-  , module Bio.Metadata.Parsed
+  ( CharacterMetadata(..)
+  , CharDataType(..)
+  , CostStructure(..)
+  , CostMatrix
+  , Metadata(..)
+  , ParsedMetadata(..)
+  , prependName
+  , updateAligned
+  , updateAlphabet
+  , updateTcm
   ) where
 
 import Bio.Metadata.Class

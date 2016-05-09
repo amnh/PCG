@@ -17,10 +17,11 @@ module Bio.Metadata.Internal where
 
 import Bio.Character.Parsed
 import Bio.Character.Dynamic.Coded
-import Data.Matrix.NotStupid (Matrix)
+import Data.Foldable                       ()
+import Data.Matrix.NotStupid               (Matrix)
 import Data.Monoid
-import Data.Vector           (Vector, fromList)
-import qualified Data.Vector as V (length)
+import Data.Vector                         (Vector)
+import Test.QuickCheck.Arbitrary.Instances ()
 import Test.Tasty.QuickCheck
 
 -- TODO: Make 'name' a record type with 2 string fields, fileName and
@@ -60,8 +61,8 @@ data CharDataType = DirectOptimization | Fitch | InfoTheoretic | Unknown derivin
 -- AffineCost stores a gap opening, gap continuing, and substitution cost
 -- GeneralCost just stores an indelCost and a subCost
 data CostStructure = TCM CostMatrix
-                      | AffineCost {gapOpenCost :: Double, gapContinueCost :: Double, subCost :: Double}
-                      | GeneralCost {indelCost :: Double, subCost :: Double} deriving (Eq, Show)
+                      | AffineCost  { gapOpenCost :: Double, gapContinueCost :: Double, subCost :: Double }
+                      | GeneralCost { indelCost   :: Double, subCost :: Double } deriving (Eq, Show)
 
 -- | A cost matrix is just a matrix of floats
 type CostMatrix = Matrix Double
@@ -96,10 +97,13 @@ instance Arbitrary s => Arbitrary (CharacterMetadata s) where
     w <- arbitrary :: Gen Double
     sn <- arbitrary
     fm <- vectorOf 2 arbitrary
-    let masks = (fm !! 0, fm !! 1)
+    let masks = (head fm, fm !! 1)
     r <- arbitrary :: Gen Double
     randCosts <- vectorOf 3 arbitrary 
-    c <- elements [TCM $ tcmOfSize (V.length a), AffineCost (randCosts !! 0) (randCosts !! 1) (randCosts !! 2), GeneralCost (randCosts !! 0) (randCosts !! 1)]
+    c <- elements [ TCM $ tcmOfSize (length a)
+                  , AffineCost  (head randCosts) (randCosts !! 1) (randCosts !! 2)
+                  , GeneralCost (head randCosts) (randCosts !! 1)
+                  ]
     pure $ CharMeta t a n align ignore w sn masks r c
 
 tcmOfSize :: Int -> CostMatrix

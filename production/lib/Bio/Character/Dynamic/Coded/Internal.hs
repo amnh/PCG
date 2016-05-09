@@ -37,9 +37,11 @@ import Data.BitVector        hiding (join, replicate)
 import Data.Foldable
 import Data.Function.Memoize
 import Data.Maybe                   (fromJust, fromMaybe)
+import Data.Monoid                  ((<>))
 import Data.MonoTraversable
-import Data.Vector                   (Vector, fromList)
-import Test.Tasty.QuickCheck  hiding ((.&.))
+import Data.Vector                  (Vector, fromList)
+import Test.Tasty.QuickCheck hiding ((.&.))
+import Test.QuickCheck.Arbitrary.Instances
 
 -- TODO: Change DynamicChar/Sequences to DynamicCharacters
         -- Make a missing a null vector
@@ -127,19 +129,19 @@ instance EncodableDynamicCharacter DynamicChar where
     | otherwise        = Nothing
 
   -- TODO: Think about the efficiency of this
-  unsafeCons static (DC dynamic) = DC $ fromRows $ static : (rows dynamic)
+  unsafeCons static (DC dynamic) = DC . fromRows $ static : rows dynamic
 
-  unsafeAppend (DC dynamic1) (DC dynamic2) = DC $ fromRows $ (rows dynamic1) ++ (rows dynamic2)
+  unsafeAppend (DC dynamic1) (DC dynamic2) = DC . fromRows $ rows dynamic1 <> rows dynamic2
 
 instance OldEncodableDynamicCharacterToBeRemoved DynamicChar where
       -- TODO: I switched the order of input args in decode fns and encodeOver...
---    decodeOverAlphabet :: Alphabet -> s -> ParsedDynChar
+--    decodeOverAlphabet :: Alphabet -> s -> ParsedChar
     decodeOverAlphabet alphabet = fromList . decodeDynamic (constructAlphabet alphabet)
 
---    decodeOneChar      :: Alphabet -> s -> ParsedDynChar
+--    decodeOneChar      :: Alphabet -> s -> ParsedChar
     decodeOneChar = decodeOverAlphabet
 
---    encodeOverAlphabet :: Alphabet -> ParsedDynChar -> s
+--    encodeOverAlphabet :: Alphabet -> ParsedChar -> s
     encodeOverAlphabet alphabet = encodeDynamic (constructAlphabet alphabet)
     
 --    encodeOneChar      :: Alphabet -> AmbiguityGroup -> s
@@ -160,7 +162,7 @@ instance OldEncodableDynamicCharacterToBeRemoved DynamicChar where
     getAlphLen (DC bm) = numCols bm
 
 --   grabSubChar        :: s -> Int -> s
-    grabSubChar char i = {-trace ("grabSubChar " ++ show char ++ " " ++ show i) -}(DC $ fromRows [char `indexChar` i])
+    grabSubChar char i = {-trace ("grabSubChar " ++ show char ++ " " ++ show i) $ -} DC (fromRows [char `indexChar` i])
     
 --    isEmpty            :: s -> Bool
     isEmpty = (0 ==) . numChars
@@ -187,14 +189,8 @@ instance Memoizable DynamicChar where
     memoize f (DC bm) = memoize (f . DC) bm
 
 -- | Functionality to unencode many encoded sequences
-decodeMany :: DynamicChars -> Alphabet -> ParsedDynChars
+decodeMany :: DynamicChars -> Alphabet -> ParsedChars
 decodeMany seqs alph = fmap (Just . decodeOverAlphabet alph) seqs
-
-instance Arbitrary BitVector where
-    arbitrary = fromBits <$> listOf (arbitrary :: Gen Bool)
-
-instance Arbitrary b => Arbitrary (Vector b) where
-    arbitrary = fromList <$> listOf arbitrary
 
 instance Arbitrary DynamicChar where
     arbitrary = do 
@@ -207,8 +203,8 @@ instance Arbitrary (Alphabet' String) where
 -- | Function to generate an arbitrary DynamicChar given an alphabet
 arbitraryDynamicGivenAlph :: Alphabet -> Gen DynamicChar
 arbitraryDynamicGivenAlph inAlph = do
-  arbParsed <- arbitrary :: Gen ParsedDynChar
-  return $ encodeOverAlphabet inAlph arbParsed
+  arbParsed <- arbitrary :: Gen ParsedChar
+  pure $ encodeOverAlphabet inAlph arbParsed
 
 -- | Generate many dynamic characters using the above
 arbitraryDynamicsGA :: Alphabet -> Gen DynamicChars

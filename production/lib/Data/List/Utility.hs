@@ -14,8 +14,9 @@
 
 module Data.List.Utility where
 
+import Data.Set      (insert, intersection)
 import Data.Foldable
-import Data.List     (sort,sortBy)
+import Data.List     (sort, sortBy)
 import Data.Map      (assocs,empty,insertWith)
 import Data.Ord      (comparing)
 
@@ -65,6 +66,13 @@ chunksOf x = chunksOf' x . toList
     chunksOf' n xs = f : chunksOf' n s
       where
         (f,s) = splitAt n xs
+
+-- | Useful function to check subsets of lists.
+subsetOf :: (Foldable t, Foldable c, Ord a) => t a -> c a -> Bool
+subsetOf xs ys = xs' `intersection` ys' == xs'
+  where
+    xs' = foldr insert mempty xs 
+    ys' = foldr insert mempty ys 
 
 -- | Applies a transformation to each element fo the structure and asserts that
 --   transformed values are equal for all elements of the structure.

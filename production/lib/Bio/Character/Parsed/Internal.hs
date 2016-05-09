@@ -8,7 +8,9 @@
 -- Stability   :  provisional
 -- Portability :  portable
 --
--- Module holding the data type for a parsed character
+-- Module holding the data type for a parsed character, which is the type
+-- that comes from the parsers, and is then coverted into our various internal
+-- character types
 --
 -----------------------------------------------------------------------------
 
@@ -27,30 +29,31 @@ import Test.Tasty.QuickCheck
 type AmbiguityGroup = [String]
 
 -- | An ordered dynamic character of ambiguity groups. This represents a dynamic
---   homology character.
-type ParsedDynChar = Vector AmbiguityGroup
+--   homology character when it comes from the parser (so is not yet encoded
+---  or packed, if those are options.)
+type ParsedChar = Vector AmbiguityGroup
 
 -- TODO: Remove Maybe?
--- | Represents a charcter sequence containing possibly missing character data.
-type ParsedDynChars = Vector (Maybe ParsedDynChar)
+-- | Represents a character sequence containing possibly missing character data.
+type ParsedChars = Vector (Maybe ParsedChar)
 
 -- TODO: add a TaxonIdentifier or TerminalName as type string - lots of aliasing
 -- | A mapping from taxon identifiers to thier corresponding sequences.
-type TreeChars = Map String ParsedDynChars
+type TreeChars = Map String ParsedChars
 
 -- | An ordered list of possible character values.
 type Alphabet = Vector String
 
 -- | Higher level arbitrary helper
-parsedCharsGivenAlph :: [Alphabet] -> Gen ParsedDynChars
+parsedCharsGivenAlph :: [Alphabet] -> Gen ParsedChars
 parsedCharsGivenAlph inAlphs = fromList <$> sequence (map parsedMaybe inAlphs)
 
 -- | Generates a maybe character
-parsedMaybe :: Alphabet -> Gen (Maybe ParsedDynChar)
+parsedMaybe :: Alphabet -> Gen (Maybe ParsedChar)
 parsedMaybe inAlph = do
     c <- arbParsedGivenAlph inAlph
     elements [Just c, Nothing]
 
 -- | Define an arbitrary helper function to create a parsed sequence over an Alphabet
-arbParsedGivenAlph :: Alphabet -> Gen ParsedDynChar
+arbParsedGivenAlph :: Alphabet -> Gen ParsedChar
 arbParsedGivenAlph inAlph = fromList <$> listOf (sublistOf (toList inAlph))

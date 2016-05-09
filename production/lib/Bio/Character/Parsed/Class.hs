@@ -94,7 +94,7 @@ instance ParsedCharacters TntResult where
     unifyCharacters (Right (WithTaxa _    _ forest)) = mergeMaps $ (M.fromList . toList . fmap (second tntToTheSuperSequence)) <$> forest
 
 -- | Coalesce the 'TaxonSequence' to the larger type 'ParsedSequences'
-tntToTheSuperSequence :: TaxonSequence -> ParsedDynChars
+tntToTheSuperSequence :: TaxonSequence -> ParsedChars
 tntToTheSuperSequence = V.fromList . fmap (Just . pure . f . show)
     where
         f ('[':xs) = pure <$> init xs

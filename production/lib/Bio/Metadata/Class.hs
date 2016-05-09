@@ -39,7 +39,7 @@ instance Metadata (CharacterMetadata s) s where
     getFitchMasks     = fitchMasks
     getType           = charType
     getGapCost      m = case costs m of
-                            TCM mat           -> if (length $ alphabet m) > 1 then getElem 0 1 mat else 1
+                            TCM mat           -> if length (alphabet m) > 1 then getElem 0 1 mat else 1
                             AffineCost  g _ _ -> g
                             GeneralCost g _   -> g
 

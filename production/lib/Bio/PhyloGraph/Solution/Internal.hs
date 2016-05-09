@@ -37,7 +37,7 @@ type Identifier = String
 -- TODO: ParsedDynChars should probably not be hard coded here.
 -- TODO: Actually, why do we need this at all?
 -- | The sequence of characters associated with a taxon.
-type Sequences = ParsedDynChars
+type Sequences = ParsedChars
 
 -- We'll have two types of node: topological and referential
 
@@ -53,13 +53,13 @@ type StandardSolution = Solution DAG
 type SearchState = EvaluationT IO StandardSolution
 
 -- | A structure for storing parsed characters
-type ParsedChars = HashMap Identifier Sequences
+type Parsed = HashMap Identifier Sequences
 
 -- | A solution is an array of forests character data and names are common
 --   across all forests and so stored at this level
 data Solution d
    = Solution
-   { parsedChars :: ParsedChars
+   { parsedChars :: Parsed
    , metadata    :: Vector StandardMetadata
    , forests     :: [Forest d]
    } deriving (Eq, Show)
@@ -81,7 +81,7 @@ instance Arbitrary (Solution DAG) where
       f <- listOf $ listOf (arbitraryDAGGS chars meta)
       pure $ Solution chars meta f
 
-arbitraryCharsGivenMeta :: Vector StandardMetadata -> Gen ParsedChars
+arbitraryCharsGivenMeta :: Vector StandardMetadata -> Gen Parsed
 arbitraryCharsGivenMeta allMeta = do
   names <- listOf (arbitrary :: Gen String)
   let numNodes = length names

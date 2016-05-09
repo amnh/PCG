@@ -138,11 +138,7 @@ library
                        File.Format.TNT
                        File.Format.TransitionCostMatrix
 
-  -- Modules included in this library but not exported.
---  other-modules:     
-                       Bio.Metadata.Class
-                       Bio.Metadata.Internal
-                       Bio.Metadata.Parsed
+  -- probably can be moved to other-modules:
                        Bio.Metadata.MaskGenerator
                        Bio.PhyloGraph.DAG.Internal
                        Bio.PhyloGraph.DAG.Class
@@ -163,7 +159,11 @@ library
                        Data.List.Utility
                        Data.Matrix.NotStupid
                        Text.Megaparsec.Custom
+  -- Modules included in this library but not exported.
   other-modules:     
+                       Bio.Metadata.Class
+                       Bio.Metadata.Internal
+                       Bio.Metadata.Parsed
                        Bio.PhyloGraph.Tree
                        Bio.PhyloGraph.Tree.Parsed
                        Bio.Character.Dynamic.Coded.Class
@@ -193,7 +193,8 @@ library
                        File.Format.Nexus.Validate
                        File.Format.TransitionCostMatrix.Parser
                        File.Format.VertexEdgeRoot.Parser
-               
+                       Test.QuickCheck.Arbitrary.Instances
+                                    
 executable pcg
   main-is:             Main.hs
 
@@ -419,6 +420,9 @@ Test-Suite testsuite
                        File.Format.VertexEdgeRoot.Parser
                        File.Format.VertexEdgeRoot.Test
                        Test.Custom
+                       Test.Custom.Types
+                       Test.Custom.Parse
+                       Test.QuickCheck.Arbitrary.Instances
                        TestSuite.ExecutableTests
                        TestSuite.GeneratedTests
                        TestSuite.GeneratedTests.Fasta
@@ -453,8 +457,6 @@ Test-Suite testsuite
                        File.Format.TNT.Internal
                        File.Format.TNT.Parser
                        File.Format.TNT.Partitioning
-                       Test.Custom.Parse
-                       Test.Custom.Types
                        TestSuite.GeneratedTests.TNT                       
 
                        Bio.Metadata
@@ -480,3 +482,6 @@ Test-Suite testsuite
                        Control.Evaluation
                        Control.Evaluation.Trans
                        Control.Monad.Logger
+                       Bio.PhyloGraph
+                       Bio.PhyloGraph.Tree
+                       Bio.PhyloGraph.Tree.Parsed
