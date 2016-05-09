@@ -20,7 +20,7 @@ import           Bio.PhyloGraph.DAG
 import           Bio.PhyloGraph.Forest
 import           Bio.PhyloGraph.Solution.Class
 import qualified Bio.PhyloGraph.Solution.Metadata as MS
-import           Bio.Character.Parsed
+import           Bio.Character.Parsed.Internal
 import           Bio.Character.Dynamic.Coded
 import           Bio.Metadata.Internal
 
