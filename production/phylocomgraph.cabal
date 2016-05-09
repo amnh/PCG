@@ -101,7 +101,6 @@ library
                        Analysis.Parsimony.Binary.Internal
                        Analysis.Parsimony.Binary.Optimization
                        Analysis.Parsimony.Binary.SequentialAlign
-                       Analysis.Parsimony.Binary.SequentialAlign.SeqAlignFFI
                        Bio.Character.Dynamic.Coded
                        Bio.Character.Parsed
                        Bio.Metadata
@@ -144,6 +143,7 @@ library
                        Text.Megaparsec.Custom
   -- Modules included in this library but not exported.
   other-modules:     
+                       Analysis.Parsimony.Binary.SequentialAlign.SeqAlignFFI
                        Bio.Character.Dynamic.Coded.Class
                        Bio.Character.Dynamic.Coded.Internal
                        Bio.Character.Parsed.Class
