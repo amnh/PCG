@@ -16,6 +16,7 @@
 module Bio.Metadata.Internal where
 
 import Bio.Character.Parsed
+import Bio.Character.Dynamic.Coded
 import Data.Matrix.NotStupid (Matrix)
 import Data.Monoid
 import Data.Vector           (Vector, fromList)
@@ -84,9 +85,6 @@ updateTcm      t x = x { costs      = TCM t }
 -- | Overwrites the existing alignment value and optimization value.
 updateAligned :: Bool -> CharacterMetadata s -> CharacterMetadata s
 updateAligned a x = x { isAligned = a, charType = Fitch }
-
-instance Arbitrary a => Arbitrary (Vector a) where
-  arbitrary = fromList <$> listOf arbitrary
 
 instance Arbitrary s => Arbitrary (CharacterMetadata s) where
   arbitrary = do
