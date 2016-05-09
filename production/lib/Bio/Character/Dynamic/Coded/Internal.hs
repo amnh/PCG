@@ -33,15 +33,15 @@ import Data.Alphabet
 import Data.BitMatrix
 import Data.Key
 import Data.Bits
-import Data.BitVector        hiding (join, replicate)
+import Data.BitVector               hiding (join, replicate)
 import Data.Foldable
 import Data.Function.Memoize
-import Data.Maybe                   (fromJust, fromMaybe)
-import Data.Monoid                  ((<>))
+import Data.Maybe                          (fromJust, fromMaybe)
+import Data.Monoid                         ((<>))
 import Data.MonoTraversable
-import Data.Vector                  (Vector, fromList)
-import Test.Tasty.QuickCheck hiding ((.&.))
-import Test.QuickCheck.Arbitrary.Instances
+import Data.Vector                         (Vector, fromList)
+import Test.Tasty.QuickCheck        hiding ((.&.))
+import Test.QuickCheck.Arbitrary.Instances ()
 
 -- TODO: Change DynamicChar/Sequences to DynamicCharacters
         -- Make a missing a null vector

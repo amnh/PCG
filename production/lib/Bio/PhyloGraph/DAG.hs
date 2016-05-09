@@ -15,12 +15,11 @@
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
 module Bio.PhyloGraph.DAG
-  ( module Bio.PhyloGraph.DAG.Internal
-  , StandardDAG(..)
+  ( StandardDAG(..)
   , NodeInfo
   , Topo
   , DAG(..)
-  , TopoDAG
+  , TopoDAG(..)
   , fromNewick
   , fromTopo
   , toTopo

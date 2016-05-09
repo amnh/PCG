@@ -13,17 +13,14 @@
 
 module Analysis.ImpliedAlignment.Test where
 
-import Analysis.ImpliedAlignment.Internal
-import Analysis.ImpliedAlignment.Standard
-
-import Bio.Character.Dynamic.Coded
-import Bio.PhyloGraph
+import           Analysis.ImpliedAlignment.Standard
+import           Bio.Character.Dynamic.Coded
+import           Bio.PhyloGraph
 import qualified Data.Vector as V
 import qualified Data.IntMap as IM
-
-import Test.Tasty
-import Test.Tasty.HUnit
-import Test.Tasty.QuickCheck
+import           Test.Tasty
+--import           Test.Tasty.HUnit
+import           Test.Tasty.QuickCheck
 
 testSuite :: TestTree
 testSuite = testGroup "Implied Alignment" [numerate]

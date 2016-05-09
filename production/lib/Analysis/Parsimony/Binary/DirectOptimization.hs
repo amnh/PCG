@@ -24,7 +24,7 @@ import Data.Function.Memoize
 import Data.Ord
 import Data.Matrix   (Matrix, getElem, nrows, ncols, (<->), matrix, fromList)
 
-import Debug.Trace
+--import Debug.Trace
 
 -- | The direction to align the character at a given matrix point.
 data Direction = LeftDir | DiagDir | DownDir deriving (Eq, Show)

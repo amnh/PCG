@@ -18,7 +18,6 @@ module Bio.Character.Parsed.Internal where
 
 import Data.Vector   (Vector, fromList, toList)
 import Data.Map      (Map)
-import Data.Maybe
 import Test.Tasty.QuickCheck
 
 -- TODO: do ambiguity group types: more aliasing
