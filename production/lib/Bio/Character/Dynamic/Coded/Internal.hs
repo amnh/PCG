@@ -204,7 +204,7 @@ instance Arbitrary (Alphabet' String) where
 -- | Function to generate an arbitrary DynamicChar given an alphabet
 arbitraryDynamicGivenAlph :: Alphabet -> Gen DynamicChar
 arbitraryDynamicGivenAlph inAlph = do
-  arbParsed <- arbitrary :: Gen ParsedDynChar
+  arbParsed <- arbitrary :: Gen ParsedChar
   return $ encodeOverAlphabet inAlph arbParsed
 
 -- | Generate many dynamic characters using the above

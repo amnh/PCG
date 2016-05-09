@@ -35,7 +35,7 @@ import qualified Bio.PhyloGraph.Tree.EdgeAware as ET
 import           Bio.PhyloGraph.Tree.Binary
 import qualified Bio.PhyloGraph.Tree.Referential as RT
 import           Bio.PhyloGraph.Tree.Rose
-import           Data.Alphabet
+-- import           Data.Alphabet
 import           Data.Bifunctor
 import qualified Data.IntSet as IS
 import qualified Data.IntMap as IM
@@ -66,7 +66,10 @@ instance Arbitrary TopoDAG where
 
 -- TODO: For DAGS, we'll need a testing flag to set the maximum depth and number of children
 -- for now we default to 10
+maxLevels :: Int
 maxLevels = 10
+
+maxChildren :: Int
 maxChildren = 4
 
 -- | Generate an arbitrary TopoDAG given an alphabet
