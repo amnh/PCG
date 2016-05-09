@@ -152,10 +152,6 @@ encodeOverMetadata maybeInChar inMeta =
         Nothing     -> encodeOverAlphabet mempty mempty
 
 -- | Wrapper for encoding
-<<<<<<< HEAD
-encodeIt :: ParsedChars -> Vector StandardMetadata -> Vector DynamicChar
-encodeIt = V.zipWith (\inMeta info -> encodeOverMetadata inMeta info)
-=======
 encodeIt :: ParsedDynChars -> Vector StandardMetadata -> Vector DynamicChar
 encodeIt = V.zipWith encodeOverMetadata
->>>>>>> 80943b6f49b3110def6d408d23546d23b1d97bbe
+
