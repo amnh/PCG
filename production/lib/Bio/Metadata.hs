@@ -13,11 +13,9 @@
 -----------------------------------------------------------------------------
 
 module Bio.Metadata
-  ( module Bio.Metadata.Class
-  , module Bio.Metadata.Internal
-  , module Bio.Metadata.Parsed
+  ( module X
   ) where
 
-import Bio.Metadata.Class
-import Bio.Metadata.Internal
-import Bio.Metadata.Parsed
+import Bio.Metadata.Class    as X
+import Bio.Metadata.Internal as X
+import Bio.Metadata.Parsed   as X
