@@ -1,6 +1,6 @@
 -----------------------------------------------------------------------------
 -- |
--- Module      :  Data.BitVector
+-- Module      :  Data.BitMatrix
 -- Copyright   :  (c) 2015-2015 Ward Wheeler
 -- License     :  BSD-style
 --
@@ -9,7 +9,9 @@
 -- Portability :  portable
 --
 -- A matrix of bits with some useful operations.
--- Even more useful operations are missing!
+-- Exposes row-based monomorphic maps, folds, and traversals.
+-- Intended to be used by multiple datatypes for space efficient character
+-- state encoding and packing.
 -----------------------------------------------------------------------------
 {-# LANGUAGE BangPatterns, TypeFamilies #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
