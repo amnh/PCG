@@ -1,6 +1,6 @@
 -----------------------------------------------------------------------------
 -- |
--- Module      :  Data.BitVector
+-- Module      :  Data.BitMatrix
 -- Copyright   :  (c) 2015-2015 Ward Wheeler
 -- License     :  BSD-style
 --
@@ -9,7 +9,9 @@
 -- Portability :  portable
 --
 -- A matrix of bits with some useful operations.
--- Even more useful operations are missing!
+-- Exposes row-based monomorphic maps, folds, and traversals.
+-- Intended to be used by multiple datatypes for space efficient character
+-- state encoding and packing.
 -----------------------------------------------------------------------------
 {-# LANGUAGE BangPatterns, TypeFamilies #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
@@ -201,7 +203,7 @@ instance Arbitrary BV where
 
 instance Arbitrary BitMatrix where
     arbitrary = do 
-        alphLen <- getPositive <$> (arbitrary :: Gen (Positive Int))
-        numRows <- getPositive <$> (arbitrary :: Gen (Positive Int))
-        boolV   <- take (alphLen * numRows) <$> infiniteListOf (arbitrary :: Gen Bool)
+        alphLen  <- getPositive <$> (arbitrary :: Gen (Positive Int))
+        rowCount <- getPositive <$> (arbitrary :: Gen (Positive Int))
+        boolV    <- take (alphLen * rowCount) <$> infiniteListOf (arbitrary :: Gen Bool)
         pure (BitMatrix alphLen $ fromBits boolV)

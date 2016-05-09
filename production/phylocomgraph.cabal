@@ -480,3 +480,6 @@ Test-Suite testsuite
                        Control.Evaluation
                        Control.Evaluation.Trans
                        Control.Monad.Logger
+                       Bio.PhyloGraph
+                       Bio.PhyloGraph.Tree
+                       Bio.PhyloGraph.Tree.Parsed

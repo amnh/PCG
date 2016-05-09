@@ -28,6 +28,8 @@ rebuild: quick
 # Clean then rebuild
 rebuild-full: clean rebuild
 
+# Rebuilds with optimizations and runs tests
+test: stack-build-test
 
 # Target Definitions
 ################################################################################
@@ -35,7 +37,7 @@ rebuild-full: clean rebuild
 
 # Builds with useful features for a standard user of the package
 standard-build: install-stack stack-setup
-	stack install --test $(haddock)
+	stack install $(haddock)
 
 # Builds with all useful options for package power users
 full-build: install-stack clean stack-setup stack-build-prof
@@ -53,7 +55,12 @@ stack-build-quick: phylocomgraph.cabal stack.yaml
 
 # Builds with profiling enabled
 stack-build-profiling: phylocomgraph.cabal stack.yaml
-	stack build --test $(haddock) $(profiling) --ghc-options -fprof-cafs
+	stack build $(haddock) $(profiling) --ghc-options -fprof-cafs
+
+# Builds with profiling enabled
+stack-build-test: phylocomgraph.cabal stack.yaml
+	stack build --test
+
 
 # Cleans up artefact files after a build
 clean: phylocomgraph.cabal stack.yaml
