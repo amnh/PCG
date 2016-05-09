@@ -1,10 +1,10 @@
 {-# LANGUAGE FlexibleInstances #-}
 
-module Bio.Data.BitMatrix
+module Data.BitMatrix.Test
   ( testSuite
   ) where
 
-import Bio.Data.BitMatrix
+import Data.BitMatrix
 import Data.Bits
 import Data.BitVector
 import Test.Tasty
