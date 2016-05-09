@@ -16,10 +16,11 @@
 module Bio.Metadata.Internal where
 
 import Bio.Character.Parsed
-import Data.Matrix.NotStupid (Matrix)
+import Data.Foldable                       ()
+import Data.Matrix.NotStupid               (Matrix)
 import Data.Monoid
-import Data.Vector           (Vector, fromList)
-import qualified Data.Vector as V (length)
+import Data.Vector                         (Vector)
+import Test.QuickCheck.Arbitrary.Instances ()
 import Test.Tasty.QuickCheck
 
 -- TODO: Make 'name' a record type with 2 string fields, fileName and
@@ -59,8 +60,8 @@ data CharDataType = DirectOptimization | Fitch | InfoTheoretic | Unknown derivin
 -- AffineCost stores a gap opening, gap continuing, and substitution cost
 -- GeneralCost just stores an indelCost and a subCost
 data CostStructure = TCM CostMatrix
-                      | AffineCost {gapOpenCost :: Double, gapContinueCost :: Double, subCost :: Double}
-                      | GeneralCost {indelCost :: Double, subCost :: Double} deriving (Eq, Show)
+                      | AffineCost  { gapOpenCost :: Double, gapContinueCost :: Double, subCost :: Double }
+                      | GeneralCost { indelCost   :: Double, subCost :: Double } deriving (Eq, Show)
 
 -- | A cost matrix is just a matrix of floats
 type CostMatrix = Matrix Double
@@ -85,9 +86,6 @@ updateTcm      t x = x { costs      = TCM t }
 updateAligned :: Bool -> CharacterMetadata s -> CharacterMetadata s
 updateAligned a x = x { isAligned = a, charType = Fitch }
 
-instance Arbitrary a => Arbitrary (Vector a) where
-  arbitrary = fromList <$> listOf arbitrary
-
 instance Arbitrary s => Arbitrary (CharacterMetadata s) where
   arbitrary = do
     t <- elements [DirectOptimization, Fitch, InfoTheoretic, Unknown]
@@ -101,7 +99,10 @@ instance Arbitrary s => Arbitrary (CharacterMetadata s) where
     let masks = (fm !! 0, fm !! 1)
     r <- arbitrary :: Gen Double
     randCosts <- vectorOf 3 arbitrary 
-    c <- elements [TCM $ tcmOfSize (V.length a), AffineCost (randCosts !! 0) (randCosts !! 1) (randCosts !! 2), GeneralCost (randCosts !! 0) (randCosts !! 1)]
+    c <- elements [ TCM $ tcmOfSize (length a)
+                  , AffineCost  (randCosts !! 0) (randCosts !! 1) (randCosts !! 2)
+                  , GeneralCost (randCosts !! 0) (randCosts !! 1)
+                  ]
     pure $ CharMeta t a n align ignore w sn masks r c
 
 tcmOfSize :: Int -> CostMatrix
