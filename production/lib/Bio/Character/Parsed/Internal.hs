@@ -16,8 +16,10 @@
 
 module Bio.Character.Parsed.Internal where
 
-import Data.Vector   (Vector)
+import Data.Vector   (Vector, fromList, toList)
 import Data.Map      (Map)
+import Data.Maybe
+import Test.Tasty.QuickCheck
 
 -- TODO: do ambiguity group types: more aliasing
 
@@ -41,3 +43,17 @@ type TreeChars = Map String ParsedChars
 
 -- | An ordered list of possible character values.
 type Alphabet = Vector String
+
+-- | Higher level arbitrary helper
+parsedCharsGivenAlph :: [Alphabet] -> Gen ParsedChars
+parsedCharsGivenAlph inAlphs = fromList <$> sequence (map parsedMaybe inAlphs)
+
+-- | Generates a maybe character
+parsedMaybe :: Alphabet -> Gen (Maybe ParsedChar)
+parsedMaybe inAlph = do
+    c <- arbParsedGivenAlph inAlph
+    elements [Just c, Nothing]
+
+-- | Define an arbitrary helper function to create a parsed sequence over an Alphabet
+arbParsedGivenAlph :: Alphabet -> Gen ParsedChar
+arbParsedGivenAlph inAlph = fromList <$> listOf (sublistOf (toList inAlph))

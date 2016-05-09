@@ -41,6 +41,7 @@ import Data.Monoid                  ((<>))
 import Data.MonoTraversable
 import Data.Vector                  (Vector, fromList)
 import Test.Tasty.QuickCheck hiding ((.&.))
+import Test.QuickCheck.Arbitrary.Instances
 
 -- TODO: Change DynamicChar/Sequences to DynamicCharacters
         -- Make a missing a null vector
@@ -190,9 +191,6 @@ instance Memoizable DynamicChar where
 -- | Functionality to unencode many encoded sequences
 decodeMany :: DynamicChars -> Alphabet -> ParsedChars
 decodeMany seqs alph = fmap (Just . decodeOverAlphabet alph) seqs
-
-instance Arbitrary b => Arbitrary (Vector b) where
-    arbitrary = fromList <$> listOf arbitrary
 
 instance Arbitrary DynamicChar where
     arbitrary = do 
