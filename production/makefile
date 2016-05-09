@@ -80,3 +80,8 @@ ffi-code-cleaning: ffi/Analysis/Parsimony/Binary/SequentialAlign/makefile
 cabal-build: phylocomgraph.cabal
 	cabal install --dependencies-only && cabal configure --enable-tests --enable-profiling && cabal build && cabal haddock --executables --html --hyperlink-source && cabal test
 
+
+# Legacy cabal build option
+cabal-sandbox: phylocomgraph.cabal
+	cabal update && cabal sandbox delete && cabal sandbox init && cabal install --dependencies-only
+
