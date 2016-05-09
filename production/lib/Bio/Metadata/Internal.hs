@@ -18,7 +18,9 @@ module Bio.Metadata.Internal where
 import Bio.Character.Parsed
 import Data.Matrix.NotStupid (Matrix)
 import Data.Monoid
-import Data.Vector           (Vector)
+import Data.Vector           (Vector, fromList)
+import qualified Data.Vector as V (length)
+import Test.Tasty.QuickCheck
 
 -- TODO: Make 'name' a record type with 2 string fields, fileName and
 --       characterName, to avoid ambiguity when retreiving the file in which
@@ -82,3 +84,25 @@ updateTcm      t x = x { costs      = TCM t }
 -- | Overwrites the existing alignment value and optimization value.
 updateAligned :: Bool -> CharacterMetadata s -> CharacterMetadata s
 updateAligned a x = x { isAligned = a, charType = Fitch }
+
+instance Arbitrary a => Arbitrary (Vector a) where
+  arbitrary = fromList <$> listOf arbitrary
+
+instance Arbitrary s => Arbitrary (CharacterMetadata s) where
+  arbitrary = do
+    t <- elements [DirectOptimization, Fitch, InfoTheoretic, Unknown]
+    a <- arbitrary
+    n <- arbitrary :: Gen String
+    align <- arbitrary :: Gen Bool
+    ignore <- arbitrary :: Gen Bool
+    w <- arbitrary :: Gen Double
+    sn <- arbitrary
+    fm <- vectorOf 2 arbitrary
+    let masks = (fm !! 0, fm !! 1)
+    r <- arbitrary :: Gen Double
+    randCosts <- vectorOf 3 arbitrary 
+    c <- elements [TCM $ tcmOfSize (V.length a), AffineCost (randCosts !! 0) (randCosts !! 1) (randCosts !! 2), GeneralCost (randCosts !! 0) (randCosts !! 1)]
+    pure $ CharMeta t a n align ignore w sn masks r c
+
+tcmOfSize :: Int -> CostMatrix
+tcmOfSize = undefined

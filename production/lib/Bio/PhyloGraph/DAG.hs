@@ -22,6 +22,7 @@ module Bio.PhyloGraph.DAG
   , toTopo
   ) where
 
+import           Bio.Character.Parsed
 import           Bio.PhyloGraph.DAG.Internal
 import           Bio.PhyloGraph.DAG.Class
 import           Bio.PhyloGraph.Edge
@@ -60,8 +61,8 @@ instance Arbitrary DAG where
 
 instance Arbitrary TopoDAG where
   arbitrary = do
-    arbAlph <- arbitrary :: Gen (Alphabet' String)
-    arbitraryTopoDAGGivenAlphabet arbAlph
+    arbAlph <- arbitrary :: Gen Alphabet
+    arbitraryTopoDAGGA arbAlph
 
 -- TODO: For DAGS, we'll need a testing flag to set the maximum depth and number of children
 -- for now we default to 10
@@ -69,7 +70,7 @@ maxLevels = 10
 maxChildren = 4
 
 -- | Generate an arbitrary TopoDAG given an alphabet
-arbitraryTopoDAGGA :: Alphabet' String -> Gen TopoDAG 
+arbitraryTopoDAGGA :: Alphabet -> Gen TopoDAG 
 arbitraryTopoDAGGA inAlph = TopoDAG <$> TN.arbitraryTopoGivenCAL maxChildren inAlph (0, maxLevels)
 
 instance Monoid DAG where
