@@ -13,9 +13,16 @@
 -----------------------------------------------------------------------------
 
 module Bio.PhyloGraph.Solution
-  ( module X
+  ( GeneralSolution (..)
+  , Identifier
+  , MetadataSolution(..)
+  , SearchState
+  , Sequences
+  , Solution        (..)
+  , StandardMetadata
+  , StandardSolution
   ) where
 
-import Bio.PhyloGraph.Solution.Class    as X
-import Bio.PhyloGraph.Solution.Metadata as X
-import Bio.PhyloGraph.Solution.Internal as X
+import Bio.PhyloGraph.Solution.Class
+import Bio.PhyloGraph.Solution.Internal
+import Bio.PhyloGraph.Solution.Metadata

@@ -13,7 +13,14 @@
 -----------------------------------------------------------------------------
 
 
-module Bio.Character.Parsed (module Bio.Character.Parsed.Internal, module Bio.Character.Parsed.Class) where
+module Bio.Character.Parsed
+  ( AmbiguityGroup
+  , ParsedChar
+  , ParsedChars
+  , ParsedCharacters(..)
+  , TreeChars
+  , Alphabet
+  ) where
 
 import Bio.Character.Parsed.Class
 import Bio.Character.Parsed.Internal

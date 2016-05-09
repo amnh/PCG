@@ -7,7 +7,7 @@ module PCG.Command.Types.Report.Evaluate
 import           Analysis.ImpliedAlignment.Standard
 import           Analysis.Parsimony.Binary.Optimization
 import           Bio.PhyloGraph.Solution
-import           Bio.PhyloGraph.Tree.Binary.Class
+import           Bio.PhyloGraph.Tree.Binary
 import           Control.Monad.IO.Class
 import           Control.Monad.Logger
 import           Data.List.NonEmpty

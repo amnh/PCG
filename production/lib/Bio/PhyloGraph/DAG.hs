@@ -16,7 +16,11 @@
 
 module Bio.PhyloGraph.DAG
   ( module Bio.PhyloGraph.DAG.Internal
-  , module Bio.PhyloGraph.DAG.Class
+  , StandardDAG(..)
+  , NodeInfo
+  , Topo
+  , DAG(..)
+  , TopoDAG
   , fromNewick
   , fromTopo
   , toTopo

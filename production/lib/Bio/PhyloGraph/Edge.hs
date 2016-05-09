@@ -12,8 +12,9 @@
 -----------------------------------------------------------------------------
 
 module Bio.PhyloGraph.Edge
-  ( module Bio.PhyloGraph.Edge.Internal
-  , module Bio.PhyloGraph.Edge.Class
+  ( EdgeInfo    (..)
+  , EdgeSet     (..)
+  , StandardEdge(..)
   ) where
 
 import Bio.PhyloGraph.Edge.Internal

@@ -13,6 +13,10 @@
 -----------------------------------------------------------------------------
 
 
-module Bio.PhyloGraph.Network (Network(..)) where
+module Bio.PhyloGraph.Network
+  ( Network(..)
+  , SubsettableNetwork(..)
+  ) where
 
 import Bio.PhyloGraph.Network.Class
+import Bio.PhyloGraph.Network.Subsettable
