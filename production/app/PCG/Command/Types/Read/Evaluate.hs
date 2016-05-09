@@ -135,15 +135,15 @@ expandIUPAC fpr = fpr { parsedChars = newTreeChars }
     f :: TreeChars -> Vector StandardMetadata -> TreeChars
     f mapping meta = g <$> mapping
       where
-        g :: ParsedDynChars -> ParsedDynChars
+        g :: ParsedChars -> ParsedChars
         g = V.zipWith h meta
           where
-            h :: StandardMetadata -> Maybe ParsedDynChar -> Maybe ParsedDynChar
+            h :: StandardMetadata -> Maybe ParsedChar -> Maybe ParsedChar
             h cInfo seqMay = expandCodes <$> seqMay
               where
                 cAlph = toList $ alphabet cInfo
 
-                expandCodes :: ParsedDynChar -> ParsedDynChar
+                expandCodes :: ParsedChar -> ParsedChar
                 expandCodes x
                   | cAlph `subsetOf` (concat $ keys nucleotideIUPAC) = expandOrId nucleotideIUPAC <$> x
                   | cAlph `subsetOf` (concat $ keys aminoAcidIUPAC) = expandOrId aminoAcidIUPAC  <$> x

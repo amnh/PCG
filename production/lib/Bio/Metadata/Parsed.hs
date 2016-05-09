@@ -132,7 +132,7 @@ developAlphabets inTaxSeqMap = fmap (setGapChar . V.fromList . sort . toList) $ 
         seqLength        = length $ head $ toList inTaxSeqMap
         partialAlphabets = V.replicate seqLength mempty
 
-        getNodeAlphAt :: Maybe ParsedDynChar -> Set String -> Set String
+        getNodeAlphAt :: Maybe ParsedChar -> Set String -> Set String
         getNodeAlphAt inCharMay partialAlphabet =
           case inCharMay of
             Nothing     -> partialAlphabet

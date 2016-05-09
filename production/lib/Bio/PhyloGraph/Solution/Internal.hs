@@ -35,7 +35,7 @@ type Identifier = String
 -- TODO: ParsedDynChars should probably not be hard coded here.
 -- TODO: Actually, why do we need this at all?
 -- | The sequence of characters associated with a taxon.
-type Sequences = ParsedDynChars
+type Sequences = ParsedChars
 
 -- We'll have two types of node: topological and referential
 

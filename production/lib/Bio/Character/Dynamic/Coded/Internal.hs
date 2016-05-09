@@ -131,13 +131,13 @@ instance EncodableDynamicCharacter DynamicChar where
 
 instance OldEncodableDynamicCharacterToBeRemoved DynamicChar where
       -- TODO: I switched the order of input args in decode fns and encodeOver...
---    decodeOverAlphabet :: Alphabet -> s -> ParsedDynChar
+--    decodeOverAlphabet :: Alphabet -> s -> ParsedChar
     decodeOverAlphabet alphabet = fromList . decodeDynamic (constructAlphabet alphabet)
 
---    decodeOneChar      :: Alphabet -> s -> ParsedDynChar
+--    decodeOneChar      :: Alphabet -> s -> ParsedChar
     decodeOneChar = decodeOverAlphabet
 
---    encodeOverAlphabet :: Alphabet -> ParsedDynChar -> s
+--    encodeOverAlphabet :: Alphabet -> ParsedChar -> s
     encodeOverAlphabet alphabet = encodeDynamic (constructAlphabet alphabet)
     
 --    encodeOneChar      :: Alphabet -> AmbiguityGroup -> s
@@ -185,11 +185,8 @@ instance Memoizable DynamicChar where
     memoize f (DC bm) = memoize (f . DC) bm
 
 -- | Functionality to unencode many encoded sequences
-decodeMany :: DynamicChars -> Alphabet -> ParsedDynChars
+decodeMany :: DynamicChars -> Alphabet -> ParsedChars
 decodeMany seqs alph = fmap (Just . decodeOverAlphabet alph) seqs
-
-instance Arbitrary BitVector where
-    arbitrary = fromBits <$> listOf (arbitrary :: Gen Bool)
 
 instance Arbitrary b => Arbitrary (Vector b) where
     arbitrary = fromList <$> listOf arbitrary
