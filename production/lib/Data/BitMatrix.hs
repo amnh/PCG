@@ -11,7 +11,7 @@
 -- A matrix of bits with some useful operations.
 -- Even more useful operations are missing!
 -----------------------------------------------------------------------------
-{-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE BangPatterns, TypeFamilies #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 module Data.BitMatrix
   ( BitMatrix()
@@ -25,19 +25,30 @@ module Data.BitMatrix
 
 import Data.Bifunctor
 import Data.BitVector hiding (foldr)
+import Data.List.Utility     (equalityOf)
 import Data.Function.Memoize
 import Data.Foldable
 import Data.Maybe            (fromMaybe)
 import Data.Monoid
 import Data.MonoTraversable
 
+-- | A data structure for storing a two dimensional array of bits.
+--   Exposes row based monomorphic mapping & folding.
 data BitMatrix
    = BitMatrix !Int BitVector
    deriving (Eq, Show)
 
+-- | The row based element for monomorphic maps & folds.
 type instance Element BitMatrix = BitVector
 
-bitMatrix :: Int -> Int -> ((Int,Int) -> Bool) -> BitMatrix
+
+-- | A generating function for a 'BitMatrix'. Efficiently constructs a
+--   'BitMatrix' of the specified dimensions with each bit defined by the result
+--   of the supplied function.
+bitMatrix :: Int                 -- ^ Number of rows in the BitMatrix.
+          -> Int                 -- ^ Number of columns in the BitMatrix.
+          -> ((Int,Int) -> Bool) -- ^ Function to determine if a given index has a set bit.
+          -> BitMatrix
 bitMatrix m n f =
   case errorMsg of
     Just msg -> error msg
@@ -45,7 +56,7 @@ bitMatrix m n f =
   where
     initialAccumulator :: (Integer, Integer)
     initialAccumulator = (1,0)
-    g (shiftRegister, summation) i
+    g (!shiftRegister, !summation) i
       | f i       = (shiftRegister `shiftL` 1, shiftRegister + summation)
       | otherwise = (shiftRegister `shiftL` 1,                 summation)
     errorMsg
@@ -63,41 +74,55 @@ bitMatrix m n f =
         errorZeroCols   = mconcat ["the number of columns was 0 but the number of rows ", show m, " was positive."]
         errorZeroSuffix = "To construct the empty matrix, both rows and columns must be zero"
 
+-- | Construct a 'BitMatrix' from a list of rows. 
 fromRows :: Foldable t => t BitVector -> BitMatrix
-fromRows xs = BitMatrix n $ mconcat xs'
+fromRows xs
+  | equalityOf width xs = BitMatrix n $ mconcat xs'
+  | otherwise           = error $ "fromRows: All the rows did not have the same width!"
   where
     xs' = toList xs
     n   = width $ head xs'
 
+-- | The number of columns in the 'BitMatrix'
 numCols :: BitMatrix -> Int
 numCols (BitMatrix n _) = n
 
+-- | The number of rows in the 'BitMatrix'
 numRows :: BitMatrix -> Int
 numRows (BitMatrix n bv)
   | n == 0    = 0
   | otherwise = width bv `div` n
 
+-- | The rows of the 'BitMatrix'
 rows :: BitMatrix -> [BitVector]
 rows bm@(BitMatrix n bv) = (bv @@) <$> slices
   where
     m = numRows bm
     slices = take m $ iterate ((+n) `bimap` (+n)) (n-1, 0)
 
+-- | Retreives a single row of the 'BitMatrix'.
+--   Allows for unsafe indexing.
 row :: BitMatrix -> Int -> BitVector
-row (BitMatrix n bv) i = bv @@ (big, small)
+row bm@(BitMatrix n bv) i
+  | 0 <= i && i < m = bv @@ (big, small)
+  | otherwise       = error errorMsg
   where
     -- It couldn't be more clear
-    small = (n * (i + 0))  - 0
-    big   = (n * (i + 1)) - 1
-
+    small    = (n * (i + 0)) - 0
+    big      = (n * (i + 1)) - 1
+    m        = numRows bm
+    errorMsg = unwords ["Index", show i, "is outside the range", rangeStr]
+    rangeStr = mconcat ["[0..", show m, "]."]
 {-
 col :: BitMatrix -> Int -> BitVector
 col = undefined -- bit twiddle or math
 -}
 
+-- | Performs a row-wise monomporphic map over ther 'BitMatrix'.
 instance MonoFunctor BitMatrix where
   omap f bm = BitMatrix (numCols bm) . mconcat $ f <$> rows bm
 
+-- | Performs a row-wise monomporphic fold over ther 'BitMatrix'.
 instance MonoFoldable BitMatrix where
   -- | Map each element of a monomorphic container to a 'Monoid'
   -- and combine the results.
@@ -131,7 +156,7 @@ instance MonoFoldable BitMatrix where
   ofoldl1Ex' f = foldl1 f . rows
   {-# INLINE ofoldl1Ex' #-}
 
--- | Monomorphic containers that can be traversed from left to right.
+-- | Performs a row-wise monomporphic traversal over ther 'BitMatrix'.
 instance MonoTraversable BitMatrix where
     -- | Map each element of a monomorphic container to an action,
     -- evaluate these actions from left to right, and

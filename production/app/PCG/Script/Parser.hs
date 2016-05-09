@@ -1,6 +1,7 @@
 {-# LANGUAGE FlexibleContexts #-}
 module PCG.Script.Parser where
 
+import Data.Functor           (($>))
 import Data.Char              (toLower)
 import Data.Maybe             (fromJust)
 import Data.Time.Clock        (secondsToDiffTime)
