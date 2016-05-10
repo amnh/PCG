@@ -55,3 +55,5 @@ numerate = testGroup "Numeration properties" [idHolds, lengthHolds]
                 defaultH = V.fromList [0..numChars seq1]
                 (traces, counter) = numerateOne seq1 defaultH seq2 count
                 maxLen = maximum [numChars seq1, numChars seq2]
+
+        --homologyHolds = testProperty "Homology position has expected properties: homologies has the same length as the sequence, and the counter increases"

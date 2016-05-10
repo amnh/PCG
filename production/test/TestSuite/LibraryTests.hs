@@ -13,6 +13,7 @@ import qualified File.Format.TransitionCostMatrix.Test as TCM
 import qualified File.Format.VertexEdgeRoot.Test       as VER
 import qualified Analysis.Parsimony.Binary.Test        as Parsimony
 import qualified Analysis.ImpliedAlignment.Test        as IA
+import qualified Bio.Character.Dynamic.Coded.Test      as Char
 
 main :: IO ()
 main = defaultMain testSuite
@@ -26,6 +27,7 @@ testSuite = testGroup "Library Test Suite"
   , Newick.testSuite
   , TCM.testSuite
   , VER.testSuite
+  , Char.testSuite
   , Parsimony.testSuite
   , IA.testSuite
   ]

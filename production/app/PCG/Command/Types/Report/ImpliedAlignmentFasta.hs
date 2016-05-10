@@ -32,7 +32,7 @@ import Data.Vector           (Vector)
 import Data.Vector.Instances ()
 import Prelude        hiding (zipWith)
 
---import Debug.Trace (trace)
+import Debug.Trace (trace)
 
 {-
 iaOutput' :: (MetadataSolution s m, GeneralSolution s f) => AlignmentSolution DynamicChar -> s -> [(FilePath, String)]
@@ -51,7 +51,7 @@ iaOutput' align solution = concat $ zipWith iaForest align (getForests solution)
 
 --iaOutput2 :: (MetadataSolution s m, GeneralSolution s f) => AlignmentSolution DynamicChar -> s -> [(FilePath, String)]
 iaOutput :: AlignmentSolution DynamicChar -> StandardSolution -> [(FilePath, String)]
---iaOutput align solution | trace (mconcat [show align, show solution]) False = undefined
+iaOutput align solution | trace (mconcat [show align, show solution]) False = undefined
 iaOutput align solution = foldMapWithKey characterToFastaFile dynamicCharacterIndiciesAndAlphabets 
   where
     -- Here we use the metadata to filter for dynamic character indicies and

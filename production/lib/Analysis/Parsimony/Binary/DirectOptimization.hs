@@ -24,7 +24,7 @@ import Data.Function.Memoize
 import Data.Ord
 import Data.Matrix   (Matrix, getElem, nrows, ncols, (<->), matrix, fromList)
 
---import Debug.Trace
+import Debug.Trace
 
 -- | The direction to align the character at a given matrix point.
 data Direction = LeftDir | DiagDir | DownDir deriving (Eq, Show)
@@ -48,7 +48,7 @@ data AlignMatrix s
 -- the aligned version of the first input character, and the aligned version of the second input character
 -- The process for this algorithm is to generate a traversal matrix, then perform a traceback.
 naiveDO :: (Metadata m s, SeqConstraint' s) => s -> s -> m -> (s, Double, s, s, s)
---naiveDO s1 s2 _ | trace ("Sequences of length " ++ show s1 ++ show s2) False = undefined
+naiveDO s1 s2 _ | trace ("Sequences of length " ++ show s1 ++ show s2) False = undefined
 naiveDO char1 char2 meta
     | isEmpty char1 || isEmpty char2 || numChars char1 == 0 || numChars char2 == 0 = (emptyChar, 0, emptyChar, emptyChar, emptyChar)
     | otherwise =
