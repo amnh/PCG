@@ -18,6 +18,5 @@ module Bio.PhyloGraph.Tree
 
 import Bio.PhyloGraph.Tree.Binary      as X
 import Bio.PhyloGraph.Tree.EdgeAware   as X
-import Bio.PhyloGraph.Tree.Parsed      as X
 import Bio.PhyloGraph.Tree.Referential as X
 import Bio.PhyloGraph.Tree.Rose        as X

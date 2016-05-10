@@ -164,7 +164,6 @@ library
                        Bio.PhyloGraph.Solution.Internal
                        Bio.PhyloGraph.Solution.Metadata
                        Bio.PhyloGraph.Tree
-                       Bio.PhyloGraph.Tree.Parsed
                        Bio.PhyloGraph.Tree.Binary.Class
                        Bio.PhyloGraph.Tree.EdgeAware.Class
                        Bio.PhyloGraph.Tree.Rose.Class
@@ -484,4 +483,3 @@ Test-Suite testsuite
                        Control.Monad.Logger
                        Bio.PhyloGraph
                        Bio.PhyloGraph.Tree
-                       Bio.PhyloGraph.Tree.Parsed
