@@ -4,6 +4,7 @@ import Bio.PhyloGraph.Solution
 import Control.Evaluation
 import Data.Char      (isSpace)
 import Data.Either    (partitionEithers)
+import Data.Foldable
 import Data.Monoid
 import PCG.Command
 import PCG.Script
@@ -29,7 +30,7 @@ collapseReadCommands (READ x1 : READ x2 : xs) = collapseReadCommands (READ (x1<>
 collapseReadCommands (x:xs)                   = x : collapseReadCommands xs
     
 evaluate :: Computation -> SearchState
-evaluate (Computation xs) = foldl (flip f) mempty xs
+evaluate (Computation xs) = foldl' (flip f) mempty xs
   
 f :: Command -> SearchState -> SearchState
 f x@READ   {} = Read.evaluate   x
