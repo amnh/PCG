@@ -24,11 +24,12 @@ import Bio.PhyloGraph.Solution
 import Bio.PhyloGraph.Tree hiding (code)
 import Bio.Character.Dynamic.Coded
 
-import Data.IntMap (insert)
+import Data.BitVector      hiding (foldr, replicate)
+import Data.IntMap                (insert)
 import Data.Maybe
 import Data.Monoid
-import Data.Vector (Vector, (!), cons, filter, foldr, fromList, generate, imap, replicate, unzip, zip3, zipWith, zipWith3, zipWith4)
-import Prelude hiding (filter, foldr, replicate, unzip, zip3, zipWith, zipWith3)
+import Data.Vector                (Vector, (!), cons, filter, foldr, fromList, generate, imap, replicate, unzip, zip3, zipWith, zipWith3, zipWith5)
+import Prelude             hiding (filter, foldr, replicate, unzip, zip3, zipWith, zipWith3)
 
 import Debug.Trace
 
@@ -45,18 +46,21 @@ iaSolution inSolution = fmap (flip iaForest (getMetadata inSolution)) (getForest
 iaForest :: (ForestConstraint f t n e s, Metadata m s) => f -> Vector m -> AlignmentForest s
 iaForest inForest inMeta = fmap (flip impliedAlign inMeta) (trees inForest)
 
+-- TODO: used concrete BitVector type instead of something more appropriate, like EncodableDynamicCharacter. 
+-- This also means that there are a bunch of places below that could be using EDC class methods that are no longer.
+-- The same will be true in DO.
 -- | Function to perform an implied alignment on all the leaves of a tree
 -- takes a tree and some metadata
 -- returns an alignment object (an intmap from the leaf codes to the aligned sequence)
 -- TODO: Consider building the alignment at each step of a postorder rather than grabbing wholesale
 impliedAlign :: (TreeConstraint t n e s, Metadata m s) => t -> Vector m -> Alignment s
-impliedAlign inTree inMeta | trace ("impliedAlign with tree " ++ show inTree) False = undefined
+--impliedAlign inTree inMeta | trace ("impliedAlign with tree " ++ show inTree) False = undefined
 impliedAlign inTree inMeta = foldr (\n acc -> insert (getCode n) (makeAlignment n) acc) mempty allLeaves
     where
         (_, curTree) = numeratePreorder inTree (getRoot inTree) inMeta (replicate (length inMeta) 0)
         allLeaves = filter (flip nodeIsLeaf curTree) (getNodes curTree)
-        --oneTrace :: s -> Homologies -> m -> s
-        oneTrace dynChar homolog = foldr (\pos acc -> unsafeAppend (grabSubChar dynChar pos) acc) emptyChar homolog
+        -- oneTrace :: s -> Homologies -> m -> s
+        oneTrace dynChar homolog = foldr (\pos acc -> unsafeCons (grabSubChar dynChar pos) acc) emptyChar homolog
         --makeAlign :: Vector s -> HomologyTrace -> Vector s
         makeAlign dynChar homologies = zipWith oneTrace dynChar homologies
         --makeAlignment :: n -> Vector s
@@ -73,14 +77,14 @@ numeratePreorder inTree curNode inMeta curCounts
     | leftOnly =
         let
             (curLeftAligned, leftWithAligned)     = alignAndAssign curNode (fromJust $ leftChild curNode inTree)
-            (curLeftHomolog, counterLeft)         = numerateNode curLeftAligned leftWithAligned curCounts
+            (curLeftHomolog, counterLeft)         = numerateNode curLeftAligned leftWithAligned curCounts inMeta
             editedTreeLeft                        = inTree `update` [curLeftHomolog, leftWithAligned]
             (leftRecurseCount, leftRecurseTree)   = numeratePreorder editedTreeLeft (fromJust $ leftChild curNode inTree) inMeta counterLeft
         in (leftRecurseCount, leftRecurseTree)
     | rightOnly =
         let
             (curRightAligned, rightWithAligned)   = alignAndAssign curNode (fromJust $ rightChild curNode inTree)
-            (curRightHomolog, counterRight)       = numerateNode curRightAligned rightWithAligned curCounts
+            (curRightHomolog, counterRight)       = numerateNode curRightAligned rightWithAligned curCounts inMeta
             editedTreeRight                       = inTree `update` [curRightHomolog, rightWithAligned]
             (rightRecurseCount, rightRecurseTree) = numeratePreorder editedTreeRight (fromJust $ rightChild curNode inTree) inMeta counterRight
         in (rightRecurseCount, rightRecurseTree)
@@ -88,9 +92,9 @@ numeratePreorder inTree curNode inMeta curCounts
         let
             -- TODO: should I switch the order of align and numerate? probs
             (curLeftAligned, leftWithAligned)     = alignAndAssign curNode (fromJust $ leftChild curNode inTree)
-            (curLeftHomolog, counterLeft)         = numerateNode curLeftAligned leftWithAligned curCounts
+            (curLeftHomolog, counterLeft)         = numerateNode curLeftAligned leftWithAligned curCounts inMeta
             (curBothAligned, rightBothAligned)    = alignAndAssign curLeftHomolog (fromJust $ rightChild curNode inTree)
-            (curBothHomolog, counterBoth)         = numerateNode curBothAligned rightBothAligned counterLeft
+            (curBothHomolog, counterBoth)         = numerateNode curBothAligned rightBothAligned counterLeft inMeta
             editedTreeBoth                        = inTree `update` [curBothHomolog, leftWithAligned, rightBothAligned]
             (leftRecurseCount, leftRecurseTree)   = numeratePreorder editedTreeBoth (fromJust $ rightChild curBothHomolog editedTreeBoth) inMeta counterBoth
             -- TODO: need another align and assign between the left and right as a last step?
@@ -117,25 +121,26 @@ numeratePreorder inTree curNode inMeta curCounts
 -- | Function to do a numeration on an entire node
 -- given the ancestor node, ancestor node, current counter vector, and vector of metadata
 -- returns a tuple with the node with homologies incorporated, and a returned vector of counters
-numerateNode :: (NodeConstraint n s) => n -> n -> Counts -> (n, Counts) 
-numerateNode ancestorNode childNode initCounters = (setHomologies childNode homologs, counts)
+numerateNode :: (NodeConstraint n s, Metadata m s) => n -> n -> Counts -> Vector m -> (n, Counts) 
+numerateNode ancestorNode childNode initCounters inMeta = (setHomologies childNode homologs, counts)
         where
-            numeration = zipWith4 numerateOne (getFinalGapped ancestorNode) (getHomologies ancestorNode) (getFinalGapped childNode) initCounters
+            numeration = zipWith5 numerateOne (generateGapChar <$> inMeta) (getFinalGapped ancestorNode) (getHomologies ancestorNode) (getFinalGapped childNode) initCounters 
             (homologs, counts) = unzip numeration
+            generateGapChar m = setBit (bitVec 0 (0 :: Integer)) (length (getAlphabet m) - 1)
 
 -- | Function to do a numeration on one character at a node
 -- given the ancestor sequence, ancestor homologies, child sequence, and current counter for position matching
 -- returns a tuple of the Homologies vector and an integer count
-numerateOne :: (SeqConstraint s) => s -> Homologies -> s -> Int -> (Homologies, Int)
-numerateOne ancestorSeq ancestorHomologies childSeq initCounter = foldr determineHomology (mempty, initCounter) foldIn
+numerateOne :: (SeqConstraint s) => BitVector -> s -> Homologies -> s -> Int -> (Homologies, Int)
+numerateOne gapCharacter ancestorSeq ancestorHomologies childSeq initCounter = foldr (determineHomology gapCharacter) (mempty, initCounter) foldIn
     where
         getAllSubs s = foldr (\p acc -> grabSubChar s p `cons` acc) mempty (fromList [0..(numChars s)])
         -- TODO: verify that ancestorHomologies has the correct length as the allSubs
         foldIn = zip3 (getAllSubs childSeq) (getAllSubs ancestorSeq) ancestorHomologies
 
 -- Finds the homology position between any two characters
-determineHomology :: SeqConstraint s => (s, s, Int) -> (Homologies, Int) -> (Homologies, Int)
-determineHomology (childChar, ancestorChar, ancestorHomolog) (homologSoFar, counterSoFar)
-    | ancestorChar == gapChar childChar = (counterSoFar `cons` homologSoFar, counterSoFar)
-    | childChar /= gapChar ancestorChar    = (ancestorHomolog `cons` homologSoFar, counterSoFar + 1)
-    | otherwise                       = (counterSoFar `cons` homologSoFar, counterSoFar + 1) --TODO: check this case
+determineHomology :: BitVector -> (BitVector, BitVector, Int) -> (Homologies, Int) -> (Homologies, Int)
+determineHomology gapCharacter (childChar, ancestorChar, ancestorHomolog) (homologSoFar, counterSoFar)
+    | ancestorChar == gapCharacter = (counterSoFar    `cons` homologSoFar, counterSoFar    )
+    | childChar    /= gapCharacter = (ancestorHomolog `cons` homologSoFar, counterSoFar + 1)
+    | otherwise                    = (counterSoFar    `cons` homologSoFar, counterSoFar + 1) --TODO: check this case
