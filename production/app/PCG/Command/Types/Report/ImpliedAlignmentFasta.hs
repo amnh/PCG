@@ -29,6 +29,8 @@ import Data.List.Utility     (chunksOf)
 import Data.Map              (Map, singleton)
 import Data.Monoid           ((<>))
 import Data.Vector           (Vector)
+-- TODO: Remove this import when Data.Vector.Instances gets fixed
+import qualified Data.Vector as V ((!))
 import Data.Vector.Instances ()
 import Prelude        hiding (zipWith)
 
@@ -97,7 +99,7 @@ iaOutput align solution = foldMapWithKey characterToFastaFile dynamicCharacterIn
         f nodeName characters = unlines $ titleLine : sequenceLines <> [""]
           where
             titleLine     = "> " <> nodeName
-            sequenceLines = chunksOf 50 . concatMap renderAmbiguityGroup . toList . decodeOverAlphabet alpha $ characters ! i
+            sequenceLines = chunksOf 50 . concatMap renderAmbiguityGroup . toList . decodeOverAlphabet alpha $ characters V.! i
             renderAmbiguityGroup [x] = show x
             renderAmbiguityGroup xs  = "[" <> concatMap show xs <> "]"
             

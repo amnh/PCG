@@ -49,7 +49,7 @@ instance Monad m => Monad (EvaluationT m) where
               case y of
                 Evaluation ns  NoOp     -> pure . Evaluation ns $ NoOp
                 Evaluation ns (Error e) -> pure . Evaluation ns $ Error e
-                Evaluation ns (Value v) -> liftM2 prependNotifications (runEvaluation $ f v) (pure ns)
+                Evaluation ns (Value v) -> (`prependNotifications` ns) <$> runEvaluation (f v)
 
 -- | (✔)
 instance MonadIO m => MonadIO (EvaluationT m) where
@@ -72,7 +72,7 @@ instance Monad m => Monoid (EvaluationT m a) where
 -- | (✔)
 instance Monad m => Alternative (EvaluationT m) where
     empty = mempty
-    (<|>) x y = EvaluationT $ liftM2 (<|>) (runEvaluation x)(runEvaluation y)
+    (<|>) x y = EvaluationT $ liftM2 (<|>) (runEvaluation x) (runEvaluation y)
 
 -- | (✔)
 instance Monad m => Logger (EvaluationT m) a where

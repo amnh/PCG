@@ -19,6 +19,7 @@ module Data.BitMatrix
   ( BitMatrix()
   , bitMatrix
   , fromRows
+  , isZeroMatrix
   , numCols
   , numRows
   , rows
@@ -116,6 +117,10 @@ row bm@(BitMatrix n bv) i
     m        = numRows bm
     errorMsg = unwords ["Index", show i, "is outside the range", rangeStr]
     rangeStr = mconcat ["[0..", show m, "]."]
+
+isZeroMatrix :: BitMatrix -> Bool
+isZeroMatrix (BitMatrix _ bv) = nat bv == 0
+
 {-
 col :: BitMatrix -> Int -> BitVector
 col = undefined -- bit twiddle or math

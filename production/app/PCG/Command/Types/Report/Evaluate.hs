@@ -48,7 +48,7 @@ generateOutput g Metadata                   {} = SingleStream $ metadataCsvOutpu
 generateOutput g ImpliedAlignmentCharacters {} =
   case getForests g of
     [] -> ErrorCase "The graph contains an empty forest."
-    xs -> let g' = addOptimization g
+    _  -> let g' = addOptimization g
           in case iaSolution g' of
                [] -> ErrorCase "The result of the Implied Aligmnment returned an empty graph. (No dynamic homology characters?)"
                ys -> case iaOutput ys g' of
