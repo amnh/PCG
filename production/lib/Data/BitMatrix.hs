@@ -81,6 +81,7 @@ bitMatrix m n f =
 -- | Construct a 'BitMatrix' from a list of rows. 
 fromRows :: Foldable t => t BitVector -> BitMatrix
 fromRows xs
+  | null xs             = BitMatrix 0 $ bitVec 0 (0 :: Integer)
   | equalityOf width xs = BitMatrix n $ mconcat xs'
   | otherwise           = error $ "fromRows: All the rows did not have the same width!"
   where
