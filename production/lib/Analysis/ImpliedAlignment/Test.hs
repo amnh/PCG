@@ -13,17 +13,14 @@
 
 module Analysis.ImpliedAlignment.Test where
 
-import Analysis.ImpliedAlignment.Internal
-import Analysis.ImpliedAlignment.Standard
-
-import Bio.Character.Dynamic.Coded
-import Bio.PhyloGraph
+import           Analysis.ImpliedAlignment.Standard
+import           Bio.Character.Dynamic.Coded
+import           Bio.PhyloGraph
 import qualified Data.Vector as V
 import qualified Data.IntMap as IM
-
-import Test.Tasty
-import Test.Tasty.HUnit
-import Test.Tasty.QuickCheck
+import           Test.Tasty
+--import           Test.Tasty.HUnit
+import           Test.Tasty.QuickCheck
 
 testSuite :: TestTree
 testSuite = testGroup "Implied Alignment" [numerate]
@@ -58,3 +55,5 @@ numerate = testGroup "Numeration properties" [idHolds, lengthHolds]
                 defaultH = V.fromList [0..numChars seq1]
                 (traces, counter) = numerateOne seq1 defaultH seq2 count
                 maxLen = maximum [numChars seq1, numChars seq2]
+
+        --homologyHolds = testProperty "Homology position has expected properties: homologies has the same length as the sequence, and the counter increases"

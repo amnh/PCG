@@ -20,15 +20,16 @@ import           Bio.PhyloGraph.DAG
 import           Bio.PhyloGraph.Forest
 import           Bio.PhyloGraph.Solution.Class
 import qualified Bio.PhyloGraph.Solution.Metadata as MS
-import           Bio.Character.Parsed
+import           Bio.Character.Parsed.Internal
 import           Bio.Character.Dynamic.Coded
 import           Bio.Metadata.Internal
 
 import           Control.Evaluation
-import           Data.HashMap.Strict
+import           Data.HashMap.Strict (HashMap, fromList)
 --import           Data.Monoid
-import           Data.Vector
-import           Test.Tasty.QuickCheck
+import           Data.Vector (Vector, toList)
+import qualified Data.Vector as V (map, fromList)
+import           Test.Tasty.QuickCheck 
 
 -- | The equatable identifier for a node in the graph.
 type Identifier = String
@@ -51,11 +52,14 @@ type StandardSolution = Solution DAG
 --   monadically.
 type SearchState = EvaluationT IO StandardSolution
 
+-- | A structure for storing parsed characters
+type Parsed = HashMap Identifier Sequences
+
 -- | A solution is an array of forests character data and names are common
 --   across all forests and so stored at this level
 data Solution d
    = Solution
-   { parsedChars :: HashMap Identifier Sequences
+   { parsedChars :: Parsed
    , metadata    :: Vector StandardMetadata
    , forests     :: [Forest d]
    } deriving (Eq, Show)
@@ -70,5 +74,17 @@ instance MS.MetadataSolution (Solution d) StandardMetadata where
     getMetadata               = metadata
     setMetadata solution meta = solution {metadata = meta}
 
-instance Arbitrary d => Arbitrary (Solution d) where
-    arbitrary = undefined
+instance Arbitrary (Solution DAG) where
+    arbitrary = do
+      meta <- V.fromList <$> listOf (arbitrary :: Gen StandardMetadata)
+      chars <- arbitraryCharsGivenMeta meta
+      f <- listOf $ listOf (arbitraryDAGGS chars meta)
+      pure $ Solution chars meta f
+
+arbitraryCharsGivenMeta :: Vector StandardMetadata -> Gen Parsed
+arbitraryCharsGivenMeta allMeta = do
+  names <- listOf (arbitrary :: Gen String)
+  let numNodes = length names
+  let alphs = toList $ V.map alphabet allMeta
+  parsed <- vectorOf numNodes (parsedCharsGivenAlph alphs)
+  pure $ fromList $ zip names parsed

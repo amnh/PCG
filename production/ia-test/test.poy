@@ -1,0 +1,2 @@
+read ("chel.fasta")
+report (implied_alignment)

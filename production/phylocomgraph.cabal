@@ -101,17 +101,15 @@ library
                        Analysis.Parsimony.Binary.Internal
                        Analysis.Parsimony.Binary.Optimization
                        Analysis.Parsimony.Binary.SequentialAlign
-                       Analysis.Parsimony.Binary.SequentialAlign.SeqAlignFFI
+                       Bio.Character.Dynamic.Coded
+                       Bio.Character.Parsed
                        Bio.Metadata
                        Bio.PhyloGraph
                        Bio.PhyloGraph.DAG
                        Bio.PhyloGraph.Edge
                        Bio.PhyloGraph.Forest
-                       Bio.PhyloGraph.Forest.Parsed
                        Bio.PhyloGraph.Network
                        Bio.PhyloGraph.Solution
-                       Bio.PhyloGraph.Solution.Internal
-                       Bio.PhyloGraph.Solution.Class
                        Bio.PhyloGraph.Tree.Binary
                        Bio.PhyloGraph.Tree.EdgeAware
                        Bio.PhyloGraph.Node
@@ -124,7 +122,6 @@ library
                        Bio.PhyloGraph.Node.Referential
                        Bio.PhyloGraph.Tree.Referential
                        Bio.PhyloGraph.Tree.Rose
-                       Bio.Character.Dynamic.Coded
                        Control.Evaluation
                        Control.Monad.Logger
                        Data.Either.Custom
@@ -139,35 +136,37 @@ library
                        File.Format.TransitionCostMatrix
 
   -- probably can be moved to other-modules:
-                       Bio.Metadata.Class
-                       Bio.Metadata.Internal
-                       Bio.Metadata.Parsed
                        Bio.Metadata.MaskGenerator
-                       Bio.PhyloGraph.DAG.Internal
-                       Bio.PhyloGraph.DAG.Class
-                       Bio.PhyloGraph.Solution.Metadata
-                       Bio.PhyloGraph.Forest.Class
-                       Bio.PhyloGraph.Forest.Internal
-                       Bio.PhyloGraph.Network.Class
-                       Bio.PhyloGraph.Network.Subsettable
-                       Bio.PhyloGraph.Tree.Binary.Class
-                       Bio.PhyloGraph.Edge.Internal
-                       Bio.PhyloGraph.Edge.Class
-                       Bio.PhyloGraph.Tree.EdgeAware.Class
                        Bio.PhyloGraph.Node.Topological
-                       Bio.PhyloGraph.Tree.Rose.Class
-                       Bio.Character.Parsed
-                       Bio.Character.Parsed.Class
-                       Bio.Character.Parsed.Internal
                        Data.List.Utility
                        Data.Matrix.NotStupid
                        Text.Megaparsec.Custom
   -- Modules included in this library but not exported.
   other-modules:     
-                       Bio.PhyloGraph.Tree
-                       Bio.PhyloGraph.Tree.Parsed
+                       Analysis.Parsimony.Binary.SequentialAlign.SeqAlignFFI
                        Bio.Character.Dynamic.Coded.Class
                        Bio.Character.Dynamic.Coded.Internal
+                       Bio.Character.Parsed.Class
+                       Bio.Character.Parsed.Internal
+                       Bio.PhyloGraph.Forest.Class
+                       Bio.PhyloGraph.Forest.Internal
+                       Bio.PhyloGraph.Forest.Parsed
+                       Bio.Metadata.Class
+                       Bio.Metadata.Internal
+                       Bio.Metadata.Parsed
+                       Bio.PhyloGraph.DAG.Internal
+                       Bio.PhyloGraph.DAG.Class
+                       Bio.PhyloGraph.Edge.Internal
+                       Bio.PhyloGraph.Edge.Class
+                       Bio.PhyloGraph.Network.Class
+                       Bio.PhyloGraph.Network.Subsettable
+                       Bio.PhyloGraph.Solution.Class
+                       Bio.PhyloGraph.Solution.Internal
+                       Bio.PhyloGraph.Solution.Metadata
+                       Bio.PhyloGraph.Tree
+                       Bio.PhyloGraph.Tree.Binary.Class
+                       Bio.PhyloGraph.Tree.EdgeAware.Class
+                       Bio.PhyloGraph.Tree.Rose.Class
                        Control.Evaluation.Unit
                        Control.Evaluation.Internal
                        Control.Evaluation.Trans
@@ -372,28 +371,57 @@ Test-Suite testsuite
 
   hs-source-dirs:      test, lib, app, ffi
 
-  other-modules:       Bio.Metadata.Class
+  other-modules:
+                       Analysis.ImpliedAlignment.Internal
+                       Analysis.ImpliedAlignment.Standard
+                       Analysis.ImpliedAlignment.Test
+                       Analysis.Parsimony.Binary.DirectOptimization
+                       Analysis.Parsimony.Binary.Internal
+                       Analysis.Parsimony.Binary.Test
+                       Analysis.Parsimony.Binary.Fitch
+                       Bio.Metadata.Class
+                       Bio.Metadata.Internal
+                       Bio.Character.Dynamic.Coded
+                       Bio.Character.Dynamic.Coded.Class
+                       Bio.Character.Parsed
+                       Bio.Character.Parsed.Class
+                       Bio.Character.Parsed.Internal
+                       Bio.Metadata
+                       Bio.Metadata.Parsed
+                       Bio.PhyloGraph
+                       Bio.PhyloGraph.DAG
+                       Bio.PhyloGraph.DAG.Class
+                       Bio.PhyloGraph.DAG.Internal
+                       Bio.PhyloGraph.Edge
+                       Bio.PhyloGraph.Edge.Internal
+                       Bio.PhyloGraph.Edge.Class
                        Bio.PhyloGraph.Forest
                        Bio.PhyloGraph.Forest.Class
+                       Bio.PhyloGraph.Forest.Internal
                        Bio.PhyloGraph.Network
                        Bio.PhyloGraph.Network.Class                
-                       Bio.Metadata.Internal
-                       Bio.PhyloGraph.Tree.Binary
-                       Bio.PhyloGraph.Tree.Binary.Class
-                       Bio.PhyloGraph.Edge.Class
-                       Bio.PhyloGraph.Tree.EdgeAware
-                       Bio.PhyloGraph.Tree.EdgeAware.Class
+                       Bio.PhyloGraph.Network.Subsettable
                        Bio.PhyloGraph.Node
                        Bio.PhyloGraph.Node.Encoded
                        Bio.PhyloGraph.Node.Final
+                       Bio.PhyloGraph.Node.ImpliedAlign
+                       Bio.PhyloGraph.Node.Internal
                        Bio.PhyloGraph.Node.Packed
                        Bio.PhyloGraph.Node.Preliminary
                        Bio.PhyloGraph.Node.Topological
+                       Bio.PhyloGraph.Node.Referential
+                       Bio.PhyloGraph.Solution
+                       Bio.PhyloGraph.Solution.Class
+                       Bio.PhyloGraph.Solution.Internal
+                       Bio.PhyloGraph.Solution.Metadata
+                       Bio.PhyloGraph.Tree
+                       Bio.PhyloGraph.Tree.Binary
+                       Bio.PhyloGraph.Tree.Binary.Class
+                       Bio.PhyloGraph.Tree.EdgeAware
+                       Bio.PhyloGraph.Tree.EdgeAware.Class
                        Bio.PhyloGraph.Tree.Referential
                        Bio.PhyloGraph.Tree.Rose
                        Bio.PhyloGraph.Tree.Rose.Class
-                       Bio.Character.Dynamic.Coded
-                       Bio.Character.Dynamic.Coded.Class
                        Control.Evaluation.Internal
                        Control.Evaluation.Test
                        Control.Evaluation.Unit
@@ -415,8 +443,21 @@ Test-Suite testsuite
                        File.Format.Nexus.Parser
                        File.Format.Nexus.Partition
                        File.Format.Nexus.Validate
+                       File.Format.TNT
+                       File.Format.TNT.Command.CCode
+                       File.Format.TNT.Command.CNames
+                       File.Format.TNT.Command.Cost
+                       File.Format.TNT.Command.NStates
+                       File.Format.TNT.Command.Procedure
+                       File.Format.TNT.Command.TRead
+                       File.Format.TNT.Command.XRead
+                       File.Format.TNT.Internal
+                       File.Format.TNT.Parser
+                       File.Format.TNT.Partitioning
+                       File.Format.TransitionCostMatrix
                        File.Format.TransitionCostMatrix.Parser
                        File.Format.TransitionCostMatrix.Test
+                       File.Format.VertexEdgeRoot
                        File.Format.VertexEdgeRoot.Parser
                        File.Format.VertexEdgeRoot.Test
                        Test.Custom
@@ -433,55 +474,13 @@ Test-Suite testsuite
                        Text.Megaparsec.Custom
                        Text.Megaparsec.Custom.Test
 
-                       Analysis.ImpliedAlignment.Internal
-                       Analysis.ImpliedAlignment.Standard
-                       Analysis.ImpliedAlignment.Test
-                       Analysis.Parsimony.Binary.DirectOptimization
-                       Analysis.Parsimony.Binary.Internal
-                       Analysis.Parsimony.Binary.Test
-                       Analysis.Parsimony.Binary.Fitch
-                       Bio.PhyloGraph.Forest.Internal
-                       Bio.PhyloGraph.Node.ImpliedAlign
-                       Bio.PhyloGraph.Node.Referential
-                       Bio.PhyloGraph.Network.Subsettable
-                       Bio.Character.Parsed
                        Data.Matrix.NotStupid
-                       File.Format.TNT
-                       File.Format.TNT.Command.CCode
-                       File.Format.TNT.Command.CNames
-                       File.Format.TNT.Command.Cost
-                       File.Format.TNT.Command.NStates
-                       File.Format.TNT.Command.Procedure
-                       File.Format.TNT.Command.TRead
-                       File.Format.TNT.Command.XRead
-                       File.Format.TNT.Internal
-                       File.Format.TNT.Parser
-                       File.Format.TNT.Partitioning
                        TestSuite.GeneratedTests.TNT                       
 
-                       Bio.Metadata
-                       Bio.Metadata.Parsed
-                       Bio.PhyloGraph.Edge
-                       Bio.PhyloGraph.Edge.Internal
-                       Bio.PhyloGraph.Node.Internal
-                       Bio.PhyloGraph.Solution
-                       Bio.PhyloGraph.Solution.Class
-                       Bio.PhyloGraph.Solution.Internal
-                       Bio.PhyloGraph.Solution.Metadata
-                       Bio.Character.Parsed.Class
-                       Bio.Character.Parsed.Internal
-                       File.Format.TransitionCostMatrix
-                       File.Format.VertexEdgeRoot
 
-                       Bio.PhyloGraph.DAG
-                       Bio.PhyloGraph.DAG.Class
-                       Bio.PhyloGraph.DAG.Internal
                        Bio.Character.Dynamic.Coded.Internal
                        Data.Alphabet
                        Data.BitMatrix
                        Control.Evaluation
                        Control.Evaluation.Trans
                        Control.Monad.Logger
-                       Bio.PhyloGraph
-                       Bio.PhyloGraph.Tree
-                       Bio.PhyloGraph.Tree.Parsed

@@ -17,7 +17,7 @@ import Test.Tasty.QuickCheck
 import Debug.Trace
 
 testSuite :: TestTree
-testSuite = undefined {- testGroup "Custom Bits instances" [testVectorBits, testCodedSequenceInstance]
+testSuite = testGroup "Custom Bits instances" [testVectorBits, testCodedSequenceInstance]
 
 testVectorBits :: TestTree
 testVectorBits = testGroup "Properties of instance Bits b => Bits (Vector b)"
@@ -90,21 +90,21 @@ testCodedSequenceInstance = testGroup "Properties of instance CodedSequence Enco
 encodeOverAlphabetTest :: TestTree
 encodeOverAlphabetTest = testGroup "encodeOverAlphabet"
     [ testAlphabetLen
-    , testValue
+    --, testValue
     ]
     where
         testAlphabetLen = testProperty "Make sure alphabet length of encoded dynamic char == len(alphabet)." f
             where
                 f :: (ParsedChar', Alphabet) -> Bool
                 f (inChar, alph) = getAlphLen (encodeOverAlphabet alph (getParsedChar inChar) :: DynamicChar) == length alph
-        testValue = testProperty "Make sure encoded value matches position in alphabet." f
+        {-testValue = testProperty "Make sure encoded value matches position in alphabet." f
             where
                 -- for each ambiguity group in inChar, map over the alphabet determining whether each alphabet state exists in the ambiguity group
                 f :: (ParsedChar', Alphabet) -> Bool
                 f (inChar, alph) = toBits controlChar == (fmap (\c -> elem c alph) $ toList charToTest)
                     where 
                         charToTest  = getParsedChar inChar
-                        controlChar = (encodeOverAlphabet alph charToTest :: DynamicChar)
+                        controlChar = (encodeOverAlphabet alph charToTest :: DynamicChar)-}
 
 type DynamicChar' = Vector
 
@@ -125,4 +125,3 @@ instance Arbitrary (ParsedChar', Alphabet) where
         vector   <- fmap (fmap (NonEmpty . (:[]) . NonEmpty) . fromList) . listOf1 $ elements alphabet
         pure (vector, fromList alphabet)
 
--}

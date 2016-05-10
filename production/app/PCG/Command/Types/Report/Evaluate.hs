@@ -7,7 +7,7 @@ module PCG.Command.Types.Report.Evaluate
 import           Analysis.ImpliedAlignment.Standard
 import           Analysis.Parsimony.Binary.Optimization
 import           Bio.PhyloGraph.Solution
-import           Bio.PhyloGraph.Tree.Binary.Class
+import           Bio.PhyloGraph.Tree.Binary
 import           Control.Monad.IO.Class
 import           Control.Monad.Logger
 import           Data.List.NonEmpty
@@ -45,10 +45,16 @@ generateOutput g (CrossReferences fileNames)   = SingleStream $ taxonReferenceOu
 generateOutput g Data                       {} = SingleStream . newickReport $ addOptimization g
 generateOutput g DotFile                    {} = SingleStream $ dotOutput g
 generateOutput g Metadata                   {} = SingleStream $ metadataCsvOutput g
-generateOutput g ImpliedAlignmentCharacters {} = let g' = addOptimization g
-                                                 in case iaOutput (iaSolution g') g' of
-                                                   [] -> ErrorCase "There were no Dynamic homology characters on which to perform an implied alignment."
-                                                   xs -> MultiStream $ fromList xs 
+generateOutput g ImpliedAlignmentCharacters {} =
+  case getForests g of
+    [] -> ErrorCase "The graph contains an empty forest."
+    xs -> let g' = addOptimization g
+          in case iaSolution g' of
+               [] -> ErrorCase "The result of the Implied Aligmnment returned an empty graph. (No dynamic homology characters?)"
+               ys -> case iaOutput ys g' of
+                       [] -> ErrorCase "There were no Dynamic homology characters on which to perform an implied alignment."
+                       zs -> MultiStream $ fromList zs
+                       
 generateOutput _ _ = ErrorCase "Unrecognized 'report' command"
 
 type FileContent = String

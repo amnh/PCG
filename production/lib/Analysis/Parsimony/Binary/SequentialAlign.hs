@@ -8,7 +8,7 @@
 -- Stability   :  provisional
 -- Portability :  portable
 --
--- Module exposing an alignment optimization fro Yu Xiang's research at Harvard.
+-- Module exposing an alignment optimization from Yu Xiang's research at Harvard.
 -----------------------------------------------------------------------------
 {-# LANGUAGE ConstraintKinds #-}
 {-# LANGUAGE AllowAmbiguousTypes #-}
@@ -17,7 +17,7 @@
 module Analysis.Parsimony.Binary.SequentialAlign (sequentialAlign) where
 
 --import           Analysis.Parsimony.Binary.Internal
-import qualified Analysis.Parsimony.Binary.SequentialAlign.SeqAlignFFI as FF (sequentialAlign)
+import qualified Analysis.Parsimony.Binary.SequentialAlign.SeqAlignFFI as FFI (sequentialAlign)
 import           Bio.Character.Dynamic.Coded
 import           Data.Vector (fromList)
 import           Data.Foldable
@@ -46,7 +46,7 @@ sequentialAlign inpSeq1 inpSeq2 = (inferredParent', fromIntegral cost :: Double,
         alignment2'     = encodeStr alignment2
         inpSeq1'        = decodeStr inpSeq1
         inpSeq2'        = decodeStr inpSeq2
-        (cost, alignment1, alignment2) = case FF.sequentialAlign 1 1 inpSeq1' inpSeq2' of
+        (cost, alignment1, alignment2) = case FFI.sequentialAlign 1 1 inpSeq1' inpSeq2' of
             Left e -> error e -- TODO: Better error handling later
             Right r -> r
         alphabet = fromList ["A", "C", "G", "T", "-"] -- TODO: Eventually this shouldn't be hard-coded.

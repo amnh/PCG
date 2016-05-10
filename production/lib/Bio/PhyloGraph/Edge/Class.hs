@@ -15,14 +15,16 @@
 
 module Bio.PhyloGraph.Edge.Class where
 
+import Control.Arrow ((&&&))
+
 -- | A standard edge allows you to get and set length as well as get the origin and terminal
 class StandardEdge e n where
-    getEdgeLen :: e -> Double
-    setEdgeLen :: e -> Double -> e
-    getOrigin :: e -> n
-    getTerminal :: e -> n
+    getEdgeLen    :: e -> Double
+    setEdgeLen    :: e -> Double -> e
+    getOrigin     :: e -> n
+    getTerminal   :: e -> n
     getConnection :: e -> (n, n)
 
-    getConnection edge = (getOrigin edge, getTerminal edge)
-    getOrigin edge = fst $ getConnection edge
-    getTerminal edge = snd $ getConnection edge
+    getConnection = getOrigin &&& getTerminal
+    getOrigin     = fst . getConnection
+    getTerminal   = snd . getConnection

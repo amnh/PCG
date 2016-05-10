@@ -143,5 +143,5 @@ instance Arbitrary Node where
         seqs   <- vectorOf 10 arbitrary
         c2     <- arbitrary :: Gen Double
         c3     <- arbitrary :: Gen Double
-        pure $ Node c n root leaf child parent (seqs !! 0) (seqs !! 1) (seqs !! 2) (seqs !! 3) (seqs !! 4) (seqs !! 5) (seqs !! 6) (seqs !! 7) (seqs !! 8) (seqs !! 9) mempty c2 c3
+        pure $ Node c n root leaf child parent (head seqs ) (seqs !! 1) (seqs !! 2) (seqs !! 3) (seqs !! 4) (seqs !! 5) (seqs !! 6) (seqs !! 7) (seqs !! 8) (seqs !! 9) mempty c2 c3
 

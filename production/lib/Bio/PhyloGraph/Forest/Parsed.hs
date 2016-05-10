@@ -45,8 +45,8 @@ instance ParsedForest FastcParseResult where
     unifyGraph = const mempty
 
 instance ParsedForest TntResult where
-    unifyGraph (Left                forest ) = (convertTntToNewick getTNTName) <$> toList forest
-    unifyGraph (Right (WithTaxa _ _ forest)) = (convertTntToNewick fst       ) <$> toList forest
+    unifyGraph (Left                forest ) = convertTntToNewick getTNTName <$> toList forest
+    unifyGraph (Right (WithTaxa _ _ forest)) = convertTntToNewick fst        <$> toList forest
 
 instance ParsedForest TCM where
     unifyGraph = mempty

@@ -15,13 +15,16 @@
 
 {-# LANGUAGE TypeSynonymInstances, FlexibleInstances, MultiParamTypeClasses #-}
 
-module Bio.PhyloGraph.Node.Topological (TopoNode(..), arbitraryTopoGivenCAL) where
+module Bio.PhyloGraph.Node.Topological (TopoNode(..), arbitraryTopoGivenCAL, arbitraryTopoGivenCSNA) where
 
-import Bio.Character.Dynamic.Coded
-import Bio.Character.Dynamic.Coded.Internal
-import Bio.Character.Parsed
-import Data.Vector
-import Test.Tasty.QuickCheck
+import           Bio.Character.Dynamic.Coded
+import           Bio.Character.Dynamic.Coded.Internal
+import           Bio.Character.Parsed
+import           Bio.Metadata.Internal
+import           Data.List.Utility
+import           Data.Vector (Vector)
+import qualified Data.Vector as V (zipWith)
+import           Test.Tasty.QuickCheck
 
 -- | A tree construction which stores it's children as pointers. Tree traversal
 --   must start from the root node.
@@ -60,13 +63,37 @@ instance Arbitrary (TopoNode b) where
 
 arbitraryTopoGivenCAL :: Int -> Alphabet -> (Int, Int) -> Gen (TopoNode b)
 arbitraryTopoGivenCAL maxChildren inAlph (curLevel, maxLevel) = do
+     let root = curLevel == 0
      n        <- arbitrary :: Gen String
-     root     <- arbitrary :: Gen Bool
-     leaf     <- arbitrary :: Gen Bool
      nc <- (arbitrary :: Gen Int) `suchThat` (<= maxChildren)
      let ncFinal = if curLevel == maxLevel then 0 else nc
      chillens <- vectorOf ncFinal (arbitraryTopoGivenCAL maxChildren inAlph (curLevel + 1, maxLevel))
+     let leaf = ncFinal == 0
      seqs     <- vectorOf 10 (arbitraryDynamicsGA inAlph)
      c2       <- arbitrary :: Gen Double
      c3       <- arbitrary :: Gen Double
      pure $ TopoNode root leaf n chillens (seqs !! 0) (seqs !! 1) (seqs !! 2) (seqs !! 3) (seqs !! 4) (seqs !! 5) (seqs !! 6) (seqs !! 7) (seqs !! 8) (seqs !! 9) c2 c3
+
+arbitraryTopoGivenCSNA :: Int -> [(String, ParsedChars)] -> Vector (CharacterMetadata DynamicChar) -> (Int, Int) -> Gen (TopoNode b)
+arbitraryTopoGivenCSNA maxChildren namesAndSeqs inMeta (curLevel, maxLevel) 
+  | length namesAndSeqs <= 1 = do
+      c2       <- arbitrary :: Gen Double
+      c3       <- arbitrary :: Gen Double
+      pure $ TopoNode root False myName mempty coded coded mempty mempty mempty mempty mempty mempty mempty mempty c2 c3
+  | otherwise = do
+      nc <- (arbitrary :: Gen Int) `suchThat` (<= maxChildren)
+      let ncFinal = if curLevel == maxLevel then 0 else nc
+      let forChildren = chunksOf ncFinal (tail namesAndSeqs)
+      chillens <- sequence $ map (\ns -> arbitraryTopoGivenCSNA maxChildren ns inMeta (curLevel + 1, maxLevel)) forChildren
+      --chillens <- vectorOf ncFinal (arbitraryTopoGivenCSNA maxChildren (tail namesAndSeqs) inMeta (curLevel + 1, maxLevel))
+      let leaf = ncFinal == 0
+      c2       <- arbitrary :: Gen Double
+      c3       <- arbitrary :: Gen Double
+      pure $ TopoNode root leaf myName chillens coded coded mempty mempty mempty mempty mempty mempty mempty mempty c2 c3
+    where
+      (myName, mySeqs) = head namesAndSeqs
+      root = curLevel == 0
+      coded = V.zipWith encodeIt inMeta mySeqs
+      encodeIt m s = case s of 
+                      Nothing -> emptyChar
+                      Just c  -> encodeOverAlphabet (alphabet m) c 

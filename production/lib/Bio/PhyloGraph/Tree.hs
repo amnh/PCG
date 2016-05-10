@@ -12,14 +12,11 @@
 --
 -----------------------------------------------------------------------------
 
-module Bio.PhyloGraph.Tree   ( module Bio.PhyloGraph.Tree.Binary
-                            , module Bio.PhyloGraph.Tree.EdgeAware
-                            , module Bio.PhyloGraph.Tree.Parsed
-                            , module Bio.PhyloGraph.Tree.Referential
-                            , module Bio.PhyloGraph.Tree.Rose) where
+module Bio.PhyloGraph.Tree
+  ( module X
+  ) where
 
-import Bio.PhyloGraph.Tree.Binary
-import Bio.PhyloGraph.Tree.EdgeAware
-import Bio.PhyloGraph.Tree.Parsed
-import Bio.PhyloGraph.Tree.Referential
-import Bio.PhyloGraph.Tree.Rose
+import Bio.PhyloGraph.Tree.Binary      as X
+import Bio.PhyloGraph.Tree.EdgeAware   as X
+import Bio.PhyloGraph.Tree.Referential as X
+import Bio.PhyloGraph.Tree.Rose        as X

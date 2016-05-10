@@ -12,6 +12,8 @@
 --
 -----------------------------------------------------------------------------
 
-module Bio.PhyloGraph.Tree.Rose (RoseTree (..)) where
+module Bio.PhyloGraph.Tree.Rose
+  ( RoseTree (..)
+  ) where
 
 import Bio.PhyloGraph.Tree.Rose.Class 

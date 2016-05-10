@@ -15,14 +15,20 @@
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
 module Bio.PhyloGraph.DAG
-  ( module Bio.PhyloGraph.DAG.Internal
-  , module Bio.PhyloGraph.DAG.Class
+  ( StandardDAG(..)
+  , NodeInfo
+  , Topo
+  , DAG(..)
+  , TopoDAG(..)
   , fromNewick
   , fromTopo
   , toTopo
+  , arbitraryDAGGS
   ) where
 
 import           Bio.Character.Parsed
+import           Bio.Metadata.Internal hiding (name)
+import           Bio.Character.Dynamic.Coded
 import           Bio.PhyloGraph.DAG.Internal
 import           Bio.PhyloGraph.DAG.Class
 import           Bio.PhyloGraph.Edge
@@ -37,6 +43,8 @@ import qualified Bio.PhyloGraph.Tree.Referential as RT
 import           Bio.PhyloGraph.Tree.Rose
 -- import           Data.Alphabet
 import           Data.Bifunctor
+import           Data.HashMap.Lazy (HashMap)
+import qualified Data.HashMap.Lazy as H (toList)
 import qualified Data.IntSet as IS
 import qualified Data.IntMap as IM
 import           Data.Key (lookup)
@@ -54,7 +62,7 @@ instance StandardDAG DAG NodeInfo EdgeSet where
     setNodes inD n = inD {nodes = n}
     getEdges       = edges
     setEdges inD e = inD {edges = e}
-    getRoot  inD   = (nodes inD) ! (root inD)
+    getRoot  inD   = nodes inD ! root inD
 
 instance Arbitrary DAG where
   arbitrary = fromTopo <$> (arbitrary :: Gen TopoDAG)
@@ -75,6 +83,10 @@ maxChildren = 4
 -- | Generate an arbitrary TopoDAG given an alphabet
 arbitraryTopoDAGGA :: Alphabet -> Gen TopoDAG 
 arbitraryTopoDAGGA inAlph = TopoDAG <$> TN.arbitraryTopoGivenCAL maxChildren inAlph (0, maxLevels)
+
+-- | Generate an arbitrary DAG given sequences
+arbitraryDAGGS :: HashMap String ParsedChars -> Vector (CharacterMetadata DynamicChar) -> Gen DAG
+arbitraryDAGGS allSeqs metadata = fromTopo <$> TopoDAG <$> TN.arbitraryTopoGivenCSNA maxChildren (H.toList allSeqs) metadata (0, maxLevels)
 
 instance Monoid DAG where
     mempty = DAG mempty mempty 0

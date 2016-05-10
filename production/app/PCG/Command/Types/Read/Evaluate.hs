@@ -6,7 +6,7 @@ module PCG.Command.Types.Read.Evaluate
 
 import           Bio.Metadata
 import           Bio.Character.Parsed
-import           Bio.PhyloGraph.Forest.Parsed
+import           Bio.PhyloGraph.Forest
 import           Bio.PhyloGraph.Solution    (SearchState,StandardMetadata)
 import           Control.Monad              (when)
 import           Control.Monad.IO.Class

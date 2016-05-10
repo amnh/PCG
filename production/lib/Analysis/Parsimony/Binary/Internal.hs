@@ -25,7 +25,7 @@ import Bio.PhyloGraph.Network
 import Bio.PhyloGraph.Tree.Referential
 import Bio.PhyloGraph.Tree.Binary
 import Bio.PhyloGraph.Tree.Rose
-import Bio.PhyloGraph.Network.Subsettable
+--import Bio.PhyloGraph.Network.Subsettable
 import Bio.Character.Dynamic.Coded
 import Data.Bits
 import Data.Function.Memoize

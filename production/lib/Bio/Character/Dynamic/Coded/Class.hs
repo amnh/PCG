@@ -13,8 +13,7 @@
 --
 -----------------------------------------------------------------------------
 
-
-{-# LANGUAGE FlexibleContexts, FunctionalDependencies, MultiParamTypeClasses #-}
+{-# LANGUAGE FlexibleContexts, MultiParamTypeClasses #-}
 
 module Bio.Character.Dynamic.Coded.Class where
 
@@ -53,7 +52,7 @@ class ( EncodableStaticCharacter (Element s)
 
   encodeDynamic :: (Eq a, Foldable t, Foldable c) => Alphabet' a -> c (t a) -> s
 
-  indexChar  :: s -> Int -> (Element s)
+  indexChar  :: s -> Int -> Element s
   indexChar i = fromJust . lookupChar i
 
   lookupChar :: s -> Int -> Maybe (Element s)
