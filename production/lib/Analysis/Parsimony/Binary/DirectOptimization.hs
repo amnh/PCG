@@ -18,6 +18,7 @@ import Analysis.Parsimony.Binary.Internal
 import Bio.Metadata
 import Bio.Character.Dynamic.Coded
 import Data.Bits
+import Data.BitVector hiding (foldr)
 import Data.Vector   (Vector, cons, toList, (!))
 import Data.Foldable (minimumBy)
 import Data.Function.Memoize
@@ -93,31 +94,35 @@ firstAlignRow inChar rowLength position prevCost meta
     | position == (rowLength + 1) = (mempty, emptyChar)
     | position == 0 =
         let recurse0 = firstAlignRow inChar rowLength (position + 1) 0 meta
-        in ((0, DiagDir) `cons` (fst recurse0), unsafeAppend (gapChar inChar) (snd recurse0))
+        in ((0, DiagDir) `cons` (fst recurse0), unsafeCons (gapChar inChar) (snd recurse0))
     | newState /= gapChar inChar = --trace ("new state on first row " ++ show newState) $ -- if there's no indel overlap
         let recurse1 = firstAlignRow inChar rowLength (position + 1) (prevCost + indCost) meta
-        in ((prevCost + indCost, LeftDir) `cons` (fst recurse1), unsafeAppend newState (snd recurse1))
+        in ((prevCost + indCost, LeftDir) `cons` (fst recurse1), unsafeCons newState (snd recurse1))
     | otherwise = --trace ("new state on first row, otherwise " ++ show newState) $ -- matching indel so no cost
         let recurse2 = firstAlignRow inChar rowLength (position + 1) prevCost meta
-        in ((prevCost, LeftDir) `cons` (fst recurse2), unsafeAppend newState (snd recurse2))
+        in ((prevCost, LeftDir) `cons` (fst recurse2), unsafeCons newState (snd recurse2))
         where
             newState = fst $ getOverlap (gapChar inChar) (grabSubChar inChar (position - 1)) meta
             indCost = getGapCost meta
 
+-- TODO: used concrete BitVector type instead of something more appropriate, like EncodableDynamicCharacter. 
+-- This also means that there are a bunch of places below that could be using EDC class methods that are no longer.
+-- The same will be true in IA.
 -- | Memoized wrapper of the overlap function
-getOverlap :: (SeqConstraint' s, Metadata m s) => s -> s -> m -> (s, Double)
+getOverlap :: (Metadata m s) => BitVector -> BitVector -> m -> (BitVector, Double)
 --getOverlap inChar1 inChar2 meta | trace ("getOverlap") False = undefined
 getOverlap inChar1 inChar2 meta = memoize2 (overlap meta) inChar1 inChar2
     where
         -- | Gets the overlap state: intersect if possible and union if that's empty
         -- Takes two sequences and returns another
-        overlap :: (SeqConstraint' s, Metadata m s) => m -> s -> s -> (s, Double)
+        overlap :: (Metadata m s) => m -> BitVector -> BitVector -> (BitVector, Double)
         overlap inMeta char1 char2
-            | isEmpty char1 || isEmpty char2 = (emptyChar, 0)
+            | 0 == char1 || 0 == char2 = (bitVec alphLen 0, 0)
             | char1 .&. char2 == zeroBits = foldr ambigChoice (zeroBits, 0) allPossible
             | otherwise = (char1 .&. char2, 0)
             where
-                gap = gapChar char1
+                alphLen = (length $ getAlphabet inMeta)
+                gap = setBit (bitVec alphLen 0) (alphLen - 1)
                 -- Given characters without ambiguity, determine the cost
                 -- getCost :: SeqConstraint' s => CostStructure -> (Int, s) -> (Int, s) -> (s, Double)
                 getCost (TCM mtx) (pos1, c1) (pos2, c2) = (c1 .|. c2, getElem pos1 pos2 mtx)
@@ -125,7 +130,7 @@ getOverlap inChar1 inChar2 meta = memoize2 (overlap meta) inChar1 inChar2
                 getCost (AffineCost _ _ _) _ _ = error "Cannot apply DO algorithm on affine cost"
 
                 -- get single character subsets from both
-                getSubs fullChar = foldr (\i acc -> if testBit fullChar i then (i, bit i) : acc else acc) mempty [0..getAlphLen char1]
+                getSubs fullChar = foldr (\i acc -> if testBit fullChar i then (i, bit i) : acc else acc) mempty [0..(length $ getAlphabet inMeta)]
                 -- make possible combinations with a double fold
                 matchSubs subList oneSub = foldr (\c acc -> getCost (getCosts inMeta) c oneSub : acc) mempty subList
                 matchBoth list1 list2 = foldr (\e acc -> matchSubs list1 e ++ acc) mempty list2
@@ -158,11 +163,11 @@ generateRow char1 char2 rowNum prevRow@(vals, _) (position, prevCost) meta
     | length vals < (position - 1) = error "Problem with row generation, previous costs not generated"
     | position == numChars char1 + 1 = (mempty, emptyChar)
     | position == 0 && downChar /= gapChar char1 =
-        ((upValue + indCost, DownDir)`cons` (fst $ nextCall (upValue + indCost)), unsafeAppend downChar (snd $ nextCall (upValue + indCost)))
+        ((upValue + indCost, DownDir)`cons` (fst $ nextCall (upValue + indCost)), unsafeCons downChar (snd $ nextCall (upValue + indCost)))
     | position == 0 =
-        ((upValue, DownDir) `cons` (fst $ nextCall upValue), unsafeAppend downChar (snd $ nextCall upValue))
+        ((upValue, DownDir) `cons` (fst $ nextCall upValue), unsafeCons downChar (snd $ nextCall upValue))
     | otherwise = --trace "minimal case" $
-        ((minCost, minDir) `cons` (fst $ nextCall minCost), unsafeAppend minState (snd $ nextCall minCost))
+        ((minCost, minDir) `cons` (fst $ nextCall minCost), unsafeCons minState (snd $ nextCall minCost))
         where
             indCost            = getGapCost meta
             subChar1           = grabSubChar char1 (position - 1)

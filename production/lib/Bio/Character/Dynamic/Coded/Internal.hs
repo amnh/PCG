@@ -129,9 +129,9 @@ instance EncodableDynamicCharacter DynamicChar where
     | otherwise        = Nothing
 
   -- TODO: Think about the efficiency of this
-  unsafeCons static (DC dynamic) = DC . fromRows $ static : rows dynamic
+  unsafeCons static (DC dynamic) = DC . fromRows $ [static] <> (rows dynamic)
 
-  unsafeAppend (DC dynamic1) (DC dynamic2) = DC . fromRows $ rows dynamic1 <> rows dynamic2
+  unsafeAppend (DC dynamic1) bv = DC . fromRows $ rows dynamic1 <> [bv]
 
 instance OldEncodableDynamicCharacterToBeRemoved DynamicChar where
       -- TODO: I switched the order of input args in decode fns and encodeOver...
@@ -153,19 +153,19 @@ instance OldEncodableDynamicCharacterToBeRemoved DynamicChar where
 --    filterGaps         :: s -> s
     filterGaps c@(DC bm) = DC . fromRows . filter (== gapBV) $ rows bm
       where
-        gapBV = head . toList . rows . (\(DC x) -> x) $ gapChar c
+        gapBV = gapChar c
     
 --    gapChar            :: s -> s
-    gapChar (DC bm) = DC $ fromRows [zeroBits `setBit` (numCols bm - 1)] 
+    gapChar (DC bm) = zeroBits `setBit` (numCols bm - 1)
     
 --    getAlphLen         :: s -> Int
     getAlphLen (DC bm) = numCols bm
 
 --   grabSubChar        :: s -> Int -> s
-    grabSubChar char i = {-trace ("grabSubChar " ++ show char ++ " " ++ show i) $ -} DC (fromRows [char `indexChar` i])
+    grabSubChar char i = {-trace ("grabSubChar " ++ show char ++ " " ++ show i) $ -} char `indexChar` i
     
 --    isEmpty            :: s -> Bool
-    isEmpty = (0 ==) . numChars
+    isEmpty (DC bv) = (bitVec 0 (0 :: Integer)) == (Data.BitVector.concat $ rows bv)
 
 --    numChars           :: s -> Int
     numChars (DC bm) = numRows bm
@@ -184,6 +184,7 @@ instance Bits DynamicChar where
     bitSizeMaybe (DC b)             = bitSizeMaybe b
     isSigned     (DC b)             = isSigned b
     popCount     (DC b)             = popCount b
+
 
 instance Memoizable DynamicChar where
     memoize f (DC bm) = memoize (f . DC) bm
