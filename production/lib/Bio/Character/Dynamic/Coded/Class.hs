@@ -61,8 +61,8 @@ class ( EncodableStaticCharacter (Element s)
       f (Nothing, n) e = if n == i then (Just e, n) else (Nothing, n + 1)
       f acc          _ = acc
 
-  unsafeAppend  :: s -> s -> s
-  unsafeCons :: Element s -> s -> s
+  unsafeAppend  :: s -> BitVector -> s
+  unsafeCons :: BitVector -> s -> s
 
 -- | A coded sequence allows grabbing of a character, filtering, and some standard types
 class OldEncodableDynamicCharacterToBeRemoved s where
@@ -73,8 +73,8 @@ class OldEncodableDynamicCharacterToBeRemoved s where
   encodeOneChar      :: Alphabet -> AmbiguityGroup -> s
   emptyChar          :: s
   filterGaps         :: s -> s
-  gapChar            :: s -> s
+  gapChar            :: s -> BitVector
   getAlphLen         :: s -> Int
-  grabSubChar        :: s -> Int -> s
+  grabSubChar        :: s -> Int -> BitVector
   isEmpty            :: s -> Bool
   numChars           :: s -> Int

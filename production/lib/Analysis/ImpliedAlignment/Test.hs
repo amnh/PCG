@@ -16,14 +16,17 @@ module Analysis.ImpliedAlignment.Test where
 import           Analysis.ImpliedAlignment.Standard
 import           Bio.Character.Dynamic.Coded
 import           Bio.PhyloGraph
-import qualified Data.Vector as V
-import qualified Data.IntMap as IM
+
+import           Data.BitVector hiding (and)
+import qualified Data.Vector    as V
+import qualified Data.IntMap    as IM
 import           Test.Tasty
 --import           Test.Tasty.HUnit
 import           Test.Tasty.QuickCheck
 
 testSuite :: TestTree
-testSuite = testGroup "Implied Alignment" [numerate]
+testSuite = undefined testGroup "Implied Alignment" [numerate]
+
 
 fullIA :: TestTree
 fullIA = testGroup "Full alignment properties" [lenHolds]
@@ -43,17 +46,19 @@ numerate = testGroup "Numeration properties" [idHolds, lengthHolds]
     where
         idHolds = testProperty "When a sequence is numerated with itself, get indices and the same counter" checkID
         checkID :: DynamicChar -> Bool
-        checkID inSeq = traces == defaultH && counter == 0
+        checkID inChar = traces == defaultH && counter == 0
             where
-                defaultH = V.fromList [0..numChars inSeq] 
-                (traces, counter) = numerateOne inSeq defaultH inSeq 0
+                defaultH = V.fromList [0..numChars inChar] 
+                (traces, counter) = numerateOne gapCharacter inChar defaultH inChar 0
+                gapCharacter = setBit (bitVec 0 (0 :: Integer)) (numChars inChar)
 
         lengthHolds = testProperty "Numerate returns a sequence of the correct length" checkLen
         checkLen :: DynamicChar -> DynamicChar -> Int -> Bool
         checkLen seq1 seq2 count = V.length traces == maxLen && counter >= count
             where 
                 defaultH = V.fromList [0..numChars seq1]
-                (traces, counter) = numerateOne seq1 defaultH seq2 count
+                (traces, counter) = numerateOne gapCharacter seq1 defaultH seq2 count
                 maxLen = maximum [numChars seq1, numChars seq2]
+                gapCharacter = setBit (bitVec 0 (0 :: Integer)) (numChars seq1)
 
         --homologyHolds = testProperty "Homology position has expected properties: homologies has the same length as the sequence, and the counter increases"

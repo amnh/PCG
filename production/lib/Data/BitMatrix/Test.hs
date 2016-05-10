@@ -14,11 +14,77 @@ import Test.Tasty.QuickCheck
 import Debug.Trace
 
 testSuite :: TestTree
-testSuite = testGroup "BitMatrix tests" [testGeneratingFn]
+testSuite = testGroup "BitMatrix tests" [testBitMatrixFn, testFromRowsFn]
 
-testGeneratingFn :: TestTree
-testGeneratingFn = testGroup "BitMatrix generating fn"
-        alphLen <- getPositive <$> (arbitrary :: Gen (Positive Int))
-        numChars <- getPositive <$> (arbitrary :: Gen (Positive Int))
-        let testBM = bitMatrix numChars alphLen $ const True
-        controlBM  = bitVec (alphLen * numChars) (2 ^ (alphLen * numChars) - 1)
+-- both sets of tests on generating functions rely on BitMatrix functions rows, numRows, numCols
+testBitMatrixFn :: TestTree
+testBitMatrixFn = testGroup "bitMatrix generating fn" [ testValue
+                                                       , testWidth
+                                                       , testHeight]
+    where
+        testValue = testProperty "Internal BitVector value is correct." f
+        -- Note that it only tests on a single input function
+            where
+                f :: Positive Int -> Positive Int -> Bool
+                f rowCt colCt = testBM == controlBM
+                    where
+                        testBM = Data.BitVector.concat $ rows (bitMatrix numChars alphLen $ const True)
+                        controlBM = bitVec (alphLen * numChars) (2 ^ (alphLen * numChars) - 1)
+                        numChars  = getPositive rowCt
+                        alphLen   = getPositive colCt
+        testWidth = testProperty "Number of columns is correct." f
+        -- Note that it only tests on a single input function
+            where
+                f :: Positive Int -> Positive Int -> Bool
+                f rowCt colCt = alphLen == numCols testBM
+                    where
+                        testBM   = bitMatrix numChars alphLen $ const True
+                        numChars = getPositive rowCt
+                        alphLen  = getPositive colCt
+        testHeight = testProperty "Number of rows is correct." f
+        -- Note that it only tests on a single input function
+            where
+                f :: Positive Int -> Positive Int -> Bool
+                f rowCt colCt = numChars == numRows testBM
+                    where
+                        testBM   = bitMatrix numChars alphLen $ const True
+                        numChars = getPositive rowCt
+                        alphLen  = getPositive colCt
+
+testFromRowsFn :: TestTree
+testFromRowsFn = testGroup "fromRows generating fn" [ testValue
+                                                      , testWidth
+                                                      , testHeight]
+    where
+        testValue = testProperty "Internal BitVector value is correct." f
+        -- Note that it only tests on a single input function
+        -- Also, relies on `rows` fn.
+            where
+                f :: Positive Int -> Positive Int -> Bool
+                f rowCt colCt = testBM == controlBM
+                    where
+                        testBM = Data.BitVector.concat $ rows (bitMatrix numChars alphLen $ const True)
+                        controlBM = bitVec (alphLen * numChars) (2 ^ (alphLen * numChars) - 1)
+                        numChars  = getPositive rowCt
+                        alphLen   = getPositive colCt
+                        boolList  = do
+                            pure take alphLen <$> infiniteListOf (arbitrary :: Gen Bool)
+                        bitsList  = take numChars repeat boolList
+        testWidth = testProperty "Number of columns is correct." f
+        -- Note that it only tests on a single input function
+            where
+                f :: Positive Int -> Positive Int -> Bool
+                f rowCt colCt = alphLen == numCols testBM
+                    where
+                        testBM = bitMatrix numChars alphLen $ const True
+                        numChars  = getPositive rowCt
+                        alphLen   = getPositive colCt
+        testHeight = testProperty "Number of rows is correct." f
+        -- Note that it only tests on a single input function
+            where
+                f :: Positive Int -> Positive Int -> Bool
+                f rowCt colCt = numChars == numRows testBM
+                    where
+                        testBM = bitMatrix numChars alphLen $ const True
+                        numChars  = getPositive rowCt
+                        alphLen   = getPositive colCt

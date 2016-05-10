@@ -41,8 +41,9 @@ duplicates = duplicates' . sort . toList
 mostCommon :: (Foldable t, Ord a) => t a -> Maybe a
 mostCommon xs
   | null xs   = Nothing
-  | otherwise = Just . fst . head $ occurances xs
-
+  | otherwise = case occurances xs of
+                  []      -> Nothing
+                  (x,_):_ -> Just x
 
 -- | Returns a mapping of each unique element in the list
 --   paired with how often the element occurs in the list.

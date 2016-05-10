@@ -14,10 +14,12 @@
 
 module Bio.Character.Dynamic.Coded
   ( EncodableDynamicCharacter(..)
+  , EncodableStaticCharacter(..)
   , DynamicChar
   , DynamicChars
   , OldEncodableDynamicCharacterToBeRemoved(..)
-  , decodeMany) where
+  , decodeMany
+  ) where
 
 import Bio.Character.Dynamic.Coded.Internal
 import Bio.Character.Dynamic.Coded.Class

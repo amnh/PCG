@@ -19,6 +19,7 @@ module Data.BitMatrix
   ( BitMatrix()
   , bitMatrix
   , fromRows
+  , isZeroMatrix
   , numCols
   , numRows
   , rows
@@ -26,14 +27,13 @@ module Data.BitMatrix
   ) where
 
 import Data.Bifunctor
-import Data.BitVector hiding  (foldr)
+import Data.BitVector  hiding (foldr)
 import Data.List.Utility      (equalityOf)
 import Data.Function.Memoize
 import Data.Foldable
 import Data.Maybe             (fromMaybe)
 import Data.Monoid
 import Data.MonoTraversable
-
 import Test.QuickCheck hiding ((.&.))
 
 -- | A data structure for storing a two dimensional array of bits.
@@ -80,11 +80,12 @@ bitMatrix m n f =
 -- | Construct a 'BitMatrix' from a list of rows. 
 fromRows :: Foldable t => t BitVector -> BitMatrix
 fromRows xs
-  | equalityOf width xs = BitMatrix n $ mconcat xs'
+  | equalityOf width xs = result
   | otherwise           = error $ "fromRows: All the rows did not have the same width!"
   where
-    xs' = toList xs
-    n   = width $ head xs'
+    result = case toList xs of
+               []   -> BitMatrix 0 $ bitVec 0 (0 :: Integer)
+               y:ys -> BitMatrix (width y) . mconcat $ y:ys 
 
 -- | The number of columns in the 'BitMatrix'
 numCols :: BitMatrix -> Int
@@ -116,6 +117,10 @@ row bm@(BitMatrix n bv) i
     m        = numRows bm
     errorMsg = unwords ["Index", show i, "is outside the range", rangeStr]
     rangeStr = mconcat ["[0..", show m, "]."]
+
+isZeroMatrix :: BitMatrix -> Bool
+isZeroMatrix (BitMatrix _ bv) = nat bv == 0
+
 {-
 col :: BitMatrix -> Int -> BitVector
 col = undefined -- bit twiddle or math
