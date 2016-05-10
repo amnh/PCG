@@ -165,7 +165,7 @@ instance OldEncodableDynamicCharacterToBeRemoved DynamicChar where
     grabSubChar char i = {-trace ("grabSubChar " ++ show char ++ " " ++ show i) $ -} DC (fromRows [char `indexChar` i])
     
 --    isEmpty            :: s -> Bool
-    isEmpty = (0 ==) . numChars
+    isEmpty (DC bm) = isZeroMatrix bm
 
 --    numChars           :: s -> Int
     numChars (DC bm) = numRows bm
