@@ -6,7 +6,7 @@ module Data.BitMatrix.Test
 
 import Data.BitMatrix
 import Data.Bits
-import Data.BitVector
+import Data.BitVector 
 import Test.Tasty
 import Test.Tasty.HUnit
 import Test.Tasty.QuickCheck
@@ -63,13 +63,12 @@ testFromRowsFn = testGroup "fromRows generating fn" [ testValue
                 f :: Positive Int -> Positive Int -> Bool
                 f rowCt colCt = testBM == controlBM
                     where
-                        testBM = Data.BitVector.concat $ rows (bitMatrix numChars alphLen $ const True)
-                        controlBM = bitVec (alphLen * numChars) (2 ^ (alphLen * numChars) - 1)
+                        testBM = fromRows bitsList
+                        controlBM = Prelude.concat bitsList
                         numChars  = getPositive rowCt
                         alphLen   = getPositive colCt
-                        boolList  = do
-                            pure take alphLen <$> infiniteListOf (arbitrary :: Gen Bool)
-                        bitsList  = take numChars repeat boolList
+                        boolList  = do pure $ take alphLen <$> infiniteListOf (arbitrary :: Bool)
+                        bitsList  = take numChars $ repeat boolList
         testWidth = testProperty "Number of columns is correct." f
         -- Note that it only tests on a single input function
             where
