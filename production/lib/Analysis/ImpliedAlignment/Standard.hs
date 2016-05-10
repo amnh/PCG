@@ -30,10 +30,13 @@ import Data.Monoid
 import Data.Vector (Vector, (!), cons, filter, foldr, fromList, generate, imap, replicate, unzip, zip3, zipWith, zipWith3, zipWith4)
 import Prelude hiding (filter, foldr, replicate, unzip, zip3, zipWith, zipWith3)
 
+import Debug.Trace
+
 -- | Top level wrapper to do an IA over an entire solution
 -- takes a solution
 -- returns an AlignmentSolution
 iaSolution :: SolutionConstraint r m f t n e s => r -> AlignmentSolution s
+iaSolution inSolution | trace ("iaSolution " ++ show inSolution) False = undefined
 iaSolution inSolution = fmap (flip iaForest (getMetadata inSolution)) (getForests inSolution)
 
 -- | Simple wrapper to do an IA over a forest
@@ -47,6 +50,7 @@ iaForest inForest inMeta = fmap (flip impliedAlign inMeta) (trees inForest)
 -- returns an alignment object (an intmap from the leaf codes to the aligned sequence)
 -- TODO: Consider building the alignment at each step of a postorder rather than grabbing wholesale
 impliedAlign :: (TreeConstraint t n e s, Metadata m s) => t -> Vector m -> Alignment s
+impliedAlign inTree inMeta | trace ("impliedAlign with tree " ++ show inTree) False = undefined
 impliedAlign inTree inMeta = foldr (\n acc -> insert (getCode n) (makeAlignment n) acc) mempty allLeaves
     where
         (_, curTree) = numeratePreorder inTree (getRoot inTree) inMeta (replicate (length inMeta) 0)
