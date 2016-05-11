@@ -122,7 +122,7 @@ instance Show a => Show (Alphabet a) where
                                ]
 
 instance (Arbitrary a, Eq a, IsString a) => Arbitrary (Alphabet a) where
-  arbitrary = constructAlphabet <$> arbitrary
+  arbitrary = constructAlphabet <$> listOf (arbitrary :: Gen a)
 
 -- TODO: Chagne constraint EQ a to Ord a and alphabetize Alphabet with sort
 -- | Constructs an 'Alphabet from a 'Foldable structure of 'IsString' values.
