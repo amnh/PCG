@@ -59,7 +59,7 @@ iaOutput align solution = foldMapWithKey characterToFastaFile dynamicCharacterIn
   where
     -- Here we use the metadata to filter for dynamic character indicies and
     -- thier corresponding alphabets. 
-    dynamicCharacterIndiciesAndAlphabets :: IntMap (Alphabet' String)
+    dynamicCharacterIndiciesAndAlphabets :: IntMap (Alphabet String)
     dynamicCharacterIndiciesAndAlphabets = foldlWithKey dynamicCharFilter mempty (getMetadata solution)
       where
         dynamicCharFilter im i e = if getType e == DirectOptimization

@@ -23,7 +23,7 @@ import Data.Matrix (getElem)
 class Metadata m s | m -> s where
     getWeight         :: m -> Double
     getIgnored        :: m -> Bool
-    getAlphabet       :: m -> Alphabet' String
+    getAlphabet       :: m -> Alphabet String
     getCosts          :: m -> CostStructure
     getFitchMasks     :: m -> (s, s)
     getAligned        :: m -> Bool

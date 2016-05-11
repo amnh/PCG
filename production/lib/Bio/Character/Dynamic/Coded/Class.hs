@@ -33,8 +33,8 @@ import Data.MonoTraversable
  -}
 class Bits b => EncodableStaticCharacter b where
 --  gapChar    ::  Eq a              => Alphabet a -> b
-  decodeChar ::  Eq a              => Alphabet' a -> b   -> [a]
-  encodeChar :: (Eq a, Foldable t) => Alphabet' a -> t a -> b
+  decodeChar ::  Eq a              => Alphabet a -> b   -> [a]
+  encodeChar :: (Eq a, Foldable t) => Alphabet a -> t a -> b
 
 {- LAWS:
  - decodeMany alphabet . encodeMany alphabet . fmap toList . toList = id
@@ -45,10 +45,10 @@ class ( EncodableStaticCharacter (Element s)
       , OldEncodableDynamicCharacterToBeRemoved s
       ) => EncodableDynamicCharacter s where
   -- All default instances can be "overidden" for efficientcy.
-  decodeDynamic ::  Eq a => Alphabet' a -> s -> [[a]]
+  decodeDynamic ::  Eq a => Alphabet a -> s -> [[a]]
   decodeDynamic alphabet = ofoldr (\e acc -> decodeChar alphabet e : acc) []
 
-  encodeDynamic :: (Eq a, Foldable t, Foldable c) => Alphabet' a -> c (t a) -> s
+  encodeDynamic :: (Eq a, Foldable t, Foldable c) => Alphabet a -> c (t a) -> s
 
   indexChar  :: s -> Int -> Element s
   indexChar i = fromJust . lookupChar i

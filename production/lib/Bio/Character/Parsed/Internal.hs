@@ -43,15 +43,15 @@ type ParsedChars = Vector (Maybe ParsedChar)
 type TreeChars = Map String ParsedChars
 
 -- | Higher level arbitrary helper
-parsedCharsGivenAlph :: [Alphabet' String] -> Gen ParsedChars
+parsedCharsGivenAlph :: [Alphabet String] -> Gen ParsedChars
 parsedCharsGivenAlph inAlphs = fromList <$> sequence (map parsedMaybe inAlphs)
 
 -- | Generates a maybe character
-parsedMaybe :: Alphabet' String -> Gen (Maybe ParsedChar)
+parsedMaybe :: Alphabet String -> Gen (Maybe ParsedChar)
 parsedMaybe inAlph = do
     c <- arbParsedGivenAlph inAlph
     elements [Just c, Nothing]
 
 -- | Define an arbitrary helper function to create a parsed sequence over an Alphabet
-arbParsedGivenAlph :: Alphabet' String -> Gen ParsedChar
+arbParsedGivenAlph :: Alphabet String -> Gen ParsedChar
 arbParsedGivenAlph inAlph = fromList <$> listOf (sublistOf (toList inAlph))

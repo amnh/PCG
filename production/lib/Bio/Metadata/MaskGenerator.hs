@@ -49,8 +49,8 @@ addMasks inSolution = inSolution { metadata = V.imap changeMetadata (metadata in
                 gapChar   = (bitVec alphLen (0 :: Integer)) (alphLen - 1)
         -}
         -- | Generate mask pair given proper info
-        generateMasks :: Alphabet' String -> Int -> (DynamicChar, DynamicChar)
-        generateMasks inAlphabet@(Alphabet' a) sLen = (encodeDynamic inAlphabet occupancy, encodeDynamic inAlphabet periodic)
+        generateMasks :: Alphabet String -> Int -> (DynamicChar, DynamicChar)
+        generateMasks inAlphabet@(Alphabet a) sLen = (encodeDynamic inAlphabet occupancy, encodeDynamic inAlphabet periodic)
             where
                 unit      = [a V.! (length a - 1)]
                 periodic  = V.replicate sLen unit

@@ -8,25 +8,25 @@
 -- Stability   :  provisional
 -- Portability :  portable
 --
--- An 'Alphabet' represents an ordered list of unique symbols with constant
+-- An 'Alphabet represents an ordered list of unique symbols with constant
 -- time random access. Symbols are any data type which are coercable from a
 -- 'String' through the 'IsString' type-class.
 --
 -- An 'Alphabet is constructed by supplying a `Foldable` structure of symbols
--- which are 'IsString' instances to the 'constructAlphabet' function.
+-- which are 'IsString' instances to the 'constructAlphabet function.
 --
--- Every 'Alphabet' contains a "gap" symbol denoted by the 'fromString "-"'
+-- Every 'Alphabet contains a "gap" symbol denoted by the 'fromString "-"'
 -- expression. The "gap" character is always the last element in the ordered
 -- list regardless of it's presence or position in the construction structure.
 --
--- An 'Alphabet' will never contain the "missing" symbol denoted by the
+-- An 'Alphabet will never contain the "missing" symbol denoted by the
 -- 'fromString "?"' expression. This symbol will be removed from the 'Alpahbet'
 -- if it is present in the construction structure.
 -----------------------------------------------------------------------------   
 {-# LANGUAGE TypeFamilies #-}
 
 module Data.Alphabet
-  ( Alphabet'(..)
+  ( Alphabet(..)
   , constructAlphabet
   , constructAlphabetWithTCM
   , gapCharacter
@@ -51,29 +51,29 @@ import           Test.QuickCheck.Arbitrary.Instances ()
 --       TCMs are being generated properly in the rectification process.
 
 -- Newtyped to ensure that there are no repeats.
-{- | An 'Alphabet' represents an ordered list of unique symbols with constant
+{- | An 'Alphabet represents an ordered list of unique symbols with constant
      time random access. Symbols are any data type which are coercable from a
      'String' through the 'IsString' type-class.
 
      An 'Alphabet is constructed by supplying a `Foldable` structure of symbols
-     which are 'IsString' instances to the 'constructAlphabet' function.
+     which are 'IsString' instances to the 'constructAlphabet function.
 
-     Every 'Alphabet' contains a "gap" symbol denoted by the 'fromString "-"'
+     Every 'Alphabet contains a "gap" symbol denoted by the 'fromString "-"'
      expression. The "gap" character is always the last element in the ordered list
      regardless of it's presence or position in the construction structure.
 
-     An 'Alphabet' will never contain the "missing" symbol denoted by the
+     An 'Alphabet will never contain the "missing" symbol denoted by the
      'fromString "?"' expression. This symbol will be removed from the 'Alpahbet'
      if it is present in the construction structure. 
  -}
 
-newtype Alphabet' a
-      = Alphabet' (Vector a)
+newtype Alphabet a
+      = Alphabet (Vector a)
       deriving (Eq)
 
-type instance Key Alphabet' = Int
+type instance Key Alphabet = Int
 
-instance Indexable Alphabet' where
+instance Indexable Alphabet where
   {-# INLINE index #-}
   index a i = case i `lookup` a of
                 Just x  -> x
@@ -85,50 +85,50 @@ instance Indexable Alphabet' where
                                    , "]."
                                    ]
 
-instance Lookup Alphabet' where
+instance Lookup Alphabet where
   {-# INLINE lookup #-}
-  lookup i (Alphabet' v) = v V.!? i
+  lookup i (Alphabet v) = v V.!? i
 
 
-instance Foldable Alphabet' where
+instance Foldable Alphabet where
   {-# INLINE foldr #-}
-  foldr  f e (Alphabet' v) = V.foldr f e v
+  foldr  f e (Alphabet v) = V.foldr f e v
 
   {-# INLINE foldl #-}
-  foldl  f e (Alphabet' v) = V.foldl f e v
+  foldl  f e (Alphabet v) = V.foldl f e v
 
   {-# INLINE foldr1 #-}
-  foldr1 f (Alphabet' v) = V.foldr1 f v
+  foldr1 f (Alphabet v) = V.foldr1 f v
 
   {-# INLINE foldl1 #-}
-  foldl1 f (Alphabet' v) = V.foldl1 f v
+  foldl1 f (Alphabet v) = V.foldl1 f v
 
   {-# INLINE length #-}
-  length (Alphabet' v) = V.length v
+  length (Alphabet v) = V.length v
 
 
-instance FoldableWithKey Alphabet' where
+instance FoldableWithKey Alphabet where
   {-# INLINE foldrWithKey #-}
-  foldrWithKey f e (Alphabet' v) = V.ifoldr' f e v
+  foldrWithKey f e (Alphabet v) = V.ifoldr' f e v
 
   {-# INLINE foldlWithKey #-}
-  foldlWithKey f e (Alphabet' v) = V.ifoldl' f e v
+  foldlWithKey f e (Alphabet v) = V.ifoldl' f e v
 
 
-instance Show a => Show (Alphabet' a) where
-  show (Alphabet' v) = mconcat [ "Alphabet: {"
+instance Show a => Show (Alphabet a) where
+  show (Alphabet v) = mconcat [ "Alphabet: {"
                                , intercalate ", " $ show <$> toList v
                                , "}"
                                ]
 
-instance Arbitrary a => Arbitrary (Alphabet' a) where
-  arbitrary = Alphabet' <$> arbitrary
+instance Arbitrary a => Arbitrary (Alphabet a) where
+  arbitrary = Alphabet <$> arbitrary
 
 
 -- TODO: Chagne constraint EQ a to Ord a and alphabetize Alphabet with sort
--- | Constructs an 'Alphabet' from a 'Foldable structure of 'IsString' values.
-constructAlphabet :: (Eq a, IsString a, Foldable t) => t a -> Alphabet' a
-constructAlphabet = Alphabet' . V.fromList . appendGapSymbol . nub . removeSpecialSymbols . toList
+-- | Constructs an 'Alphabet from a 'Foldable structure of 'IsString' values.
+constructAlphabet :: (Eq a, IsString a, Foldable t) => t a -> Alphabet a
+constructAlphabet = Alphabet . V.fromList . appendGapSymbol . nub . removeSpecialSymbols . toList
   where
     appendGapSymbol      = (<> [gapSymbol])
     removeSpecialSymbols = filter (\x -> x /= gapSymbol
@@ -137,15 +137,15 @@ constructAlphabet = Alphabet' . V.fromList . appendGapSymbol . nub . removeSpeci
     missingSymbol = fromString "?"
 
 -- | Retreives the "gap character" from the alphabet.
-gapCharacter :: Alphabet' a -> a
+gapCharacter :: Alphabet a -> a
 gapCharacter alphabet = alphabet ! (length alphabet - 1)
 
 
--- | Constructs an 'Alphabet' with a corresponding TCM. Permutes TCM rows and
---   columns as the 'Alphabet' is reordered. Deletes TCM rows and columns where
---   'Alphabet' symbols are eliminated.
-constructAlphabetWithTCM :: (Eq a, IsString a, Foldable t) => t a -> Matrix b -> (Alphabet' a, Matrix b)
-constructAlphabetWithTCM inAlph inMat = (Alphabet' $ V.fromList $ foldr (\v acc -> fst v : acc) mempty reordered, outCols)
+-- | Constructs an 'Alphabet with a corresponding TCM. Permutes TCM rows and
+--   columns as the 'Alphabet is reordered. Deletes TCM rows and columns where
+--   'Alphabet symbols are eliminated.
+constructAlphabetWithTCM :: (Eq a, IsString a, Foldable t) => t a -> Matrix b -> (Alphabet a, Matrix b)
+constructAlphabetWithTCM inAlph inMat = (Alphabet $ V.fromList $ foldr (\v acc -> fst v : acc) mempty reordered, outCols)
   where
     gapSymbol     = fromString "-"
     missingSymbol = fromString "?"

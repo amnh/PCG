@@ -69,7 +69,7 @@ instance Arbitrary DAG where
 
 instance Arbitrary TopoDAG where
   arbitrary = do
-    arbAlph <- arbitrary :: Gen (Alphabet' String)
+    arbAlph <- arbitrary :: Gen (Alphabet String)
     arbitraryTopoDAGGA arbAlph
 
 -- TODO: For DAGS, we'll need a testing flag to set the maximum depth and number of children
@@ -81,7 +81,7 @@ maxChildren :: Int
 maxChildren = 4
 
 -- | Generate an arbitrary TopoDAG given an alphabet
-arbitraryTopoDAGGA :: Alphabet' String -> Gen TopoDAG 
+arbitraryTopoDAGGA :: Alphabet String -> Gen TopoDAG 
 arbitraryTopoDAGGA inAlph = TopoDAG <$> TN.arbitraryTopoGivenCAL maxChildren inAlph (0, maxLevels)
 
 -- | Generate an arbitrary DAG given sequences

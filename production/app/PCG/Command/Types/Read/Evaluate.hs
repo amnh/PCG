@@ -120,7 +120,7 @@ applyReferencedTCM :: FracturedParseResult -> FracturedParseResult
 applyReferencedTCM fpr =
   case relatedTcm fpr of
      Nothing -> fpr
-     Just x  -> let newAlphabet = Alphabet' . V.fromList . toList $ customAlphabet x
+     Just x  -> let newAlphabet = Alphabet . V.fromList . toList $ customAlphabet x
                     newTcm      = transitionCosts x
                 in  fpr { parsedMetas = updateAlphabet newAlphabet . updateTcm newTcm <$> parsedMetas fpr }
 

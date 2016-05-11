@@ -178,15 +178,15 @@ instance Memoizable DynamicChar where
 
 instance Arbitrary DynamicChar where
     arbitrary = do 
-      arbAlph <- arbitrary :: Gen (Alphabet' String)
+      arbAlph <- arbitrary :: Gen (Alphabet String)
       arbitraryDynamicGivenAlph arbAlph
 
 -- | Function to generate an arbitrary DynamicChar given an alphabet
-arbitraryDynamicGivenAlph :: Alphabet' String -> Gen DynamicChar
+arbitraryDynamicGivenAlph :: Alphabet String -> Gen DynamicChar
 arbitraryDynamicGivenAlph inAlph = do
   arbParsed <- arbitrary :: Gen ParsedChar
   pure $ encodeDynamic inAlph arbParsed
 
 -- | Generate many dynamic characters using the above
-arbitraryDynamicsGA :: Alphabet' String -> Gen DynamicChars
+arbitraryDynamicsGA :: Alphabet String -> Gen DynamicChars
 arbitraryDynamicsGA inAlph = fromList <$> listOf (arbitraryDynamicGivenAlph inAlph)

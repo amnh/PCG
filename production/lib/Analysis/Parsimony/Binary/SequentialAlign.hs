@@ -50,6 +50,6 @@ sequentialAlign inpSeq1 inpSeq2 = (inferredParent', fromIntegral cost :: Double,
         (cost, alignment1, alignment2) = case FFI.sequentialAlign 1 1 inpSeq1' inpSeq2' of
             Left e -> error e -- TODO: Better error handling later
             Right r -> r
-        alphabet = Alphabet' $ fromList ["A", "C", "G", "T", "-"] -- TODO: Eventually this shouldn't be hard-coded.
+        alphabet = Alphabet $ fromList ["A", "C", "G", "T", "-"] -- TODO: Eventually this shouldn't be hard-coded.
         encodeStr x = encodeDynamic alphabet [chunksOf 1 x]
         decodeStr x = concat . concat . toList $ decodeDynamic alphabet x
