@@ -202,9 +202,6 @@ instance Arbitrary DynamicChar where
       arbAlph <- arbitrary :: Gen Alphabet
       arbitraryDynamicGivenAlph arbAlph
 
-instance Arbitrary (Alphabet' String) where
-  arbitrary = Alphabet' <$> (arbitrary :: Gen (Vector String))
-
 -- | Function to generate an arbitrary DynamicChar given an alphabet
 arbitraryDynamicGivenAlph :: Alphabet -> Gen DynamicChar
 arbitraryDynamicGivenAlph inAlph = do

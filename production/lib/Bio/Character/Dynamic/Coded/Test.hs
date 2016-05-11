@@ -8,14 +8,15 @@ import Bio.Character.Dynamic.Coded
 import Bio.Character.Parsed
 import Data.Alphabet
 import Data.Bits
-import Data.BitVector (BitVector, toBits, width)
+import Data.BitVector (BitVector, bitVec, toBits, width)
 import Data.Foldable
-import qualified Data.Set as Set (fromList)
+import Data.Key       ((!))
+import qualified Data.Set as Set (fromList,intersection,union)
 import Data.Monoid    ((<>))
 import Data.Vector    (Vector, fromList)
 import Test.Tasty
 import Test.Tasty.HUnit
-import Test.Tasty.QuickCheck
+import Test.Tasty.QuickCheck hiding ((.&.))
 
 import Debug.Trace
 
@@ -142,17 +143,24 @@ instance Arbitrary (ParsedChar', Alphabet) where
 {- LAWS:
  - decodeChar alphabet . encodeChar alphabet . toList == id
  - encodeChar alphabet [alphabet !! i] == bit i
- - encodeChar alphabet alphabet == compliment zeroBits
+ - encodeChar alphabet alphabet == complement zeroBits
  - decodeChar alphabet (encodeChar alphabet xs .|. encodeChar alphabet ys) == toList alphabet `Data.List.intersect` (toList xs `Data.List.union` toList ys)
  - decodeChar alphabet (encodeChar alphabet xs .&. encodeChar alphabet ys) == toList alphabet `Data.List.intersect` (toList xs `Data.List.intersect` toList ys)
- - finiteBitSize . encodeChar alphabet == const (length alphabet)
  -}
 testEncodableStaticCharacterInstanceBitVector :: TestTree
 testEncodableStaticCharacterInstanceBitVector = testGroup "BitVector instance of EncodableDynamicCharacter" [testLaws]
   where
-    testLaws = testGroup "EncodableDynamicChar Laws" [encodeDecodeIdentity]
+    encodeChar' :: Foldable t => Alphabet' String -> t String -> BitVector
+    encodeChar' = encodeChar
+    testLaws = testGroup "EncodableDynamicChar Laws"
+             [ encodeDecodeIdentity
+             , singleBitConstruction
+             , totalBitConstruction
+             , logicalOrIsomorphismWithSetUnion
+             , logicalAndIsomorphismWithSetIntersection
+             ]
       where
-        encodeDecodeIdentity = testProperty "Set.fromList . decodeChar alphabet . encodeChar alphabet . Set.fromList . toList \n== Set.fromList . toList" f
+        encodeDecodeIdentity = testProperty "Set.fromList . decodeChar alphabet . encodeChar alphabet . Set.fromList . toList == Set.fromList . toList" f
           where
             f :: (Alphabet' String, [String]) -> Bool
             f (alphabet, ambiguityGroup) = lhs ambiguityGroup == rhs ambiguityGroup
@@ -161,7 +169,37 @@ testEncodableStaticCharacterInstanceBitVector = testGroup "BitVector instance of
                 enc = encodeChar alphabet
                 lhs = Set.fromList . decodeChar alphabet . enc . Set.fromList . toList
                 rhs = Set.fromList . toList
-
+        singleBitConstruction = testProperty "encodeChar alphabet [alphabet ! i] == bit i" f
+          where
+            f :: Alphabet' String -> NonNegative Int -> Bool
+            f alphabet (NonNegative n) = encodeChar' alphabet [alphabet ! i] == bit i
+              where
+                i = n `mod` length alphabet
+        totalBitConstruction = testProperty "encodeChar alphabet alphabet == complement (bit (length alphabet - 1) `clearBit` (bit (length alphabet - 1))" f
+          where
+            f :: Alphabet' String -> Bool
+            f alphabet = encodeChar' alphabet alphabet == e
+              where
+                e = complement $ bit i `clearBit` i
+                i = length alphabet - 1
+        logicalOrIsomorphismWithSetUnion = testProperty "Set.fromList (decodeChar alphabet (encodeChar alphabet xs .|. encodeChar alphabet ys)) == Set.fromList (toList alphabet) `Set.intersect` (toList xs `Set.union` toList ys)" f
+          where
+            f :: (Alphabet' String, [String], [String]) -> Bool
+            f (alphabet, xs, ys) = lhs == rhs
+              where
+                lhs = Set.fromList $ decodeChar alphabet (encodeChar' alphabet sxs .|. encodeChar' alphabet sys)
+                rhs = sxs `Set.union` sys
+                sxs = Set.fromList xs
+                sys = Set.fromList ys
+        logicalAndIsomorphismWithSetIntersection = testProperty "Set.fromList (decodeChar alphabet (encodeChar alphabet xs .&. encodeChar alphabet ys)) == Set.fromList (toList alphabet) `Set.intersect` (toList xs `Set.intersection` toList ys)" f
+          where
+            f :: (Alphabet' String, [String], [String]) -> Bool
+            f (alphabet, xs, ys) = lhs == rhs
+              where
+                lhs = Set.fromList $ decodeChar alphabet (encodeChar' alphabet sxs .&. encodeChar' alphabet sys)
+                rhs = sxs `Set.intersection` sys
+                sxs = Set.fromList xs
+                sys = Set.fromList ys
 
 instance Arbitrary (Alphabet' String, [String]) where
   arbitrary = do
@@ -173,9 +211,12 @@ instance Arbitrary (Alphabet' String, [String], [String]) where
     (alphabet,[x,y]) <- alphabetAndAmbiguityGroups 2
     pure (alphabet, x, y)
 
+--instance Arbitrary (Alphabet' String) where
+--  arbitrary = constructAlphabet . getNonEmpty <$> (arbitrary :: Gen (NonEmptyList String))
+
 alphabetAndAmbiguityGroups :: Int -> Gen (Alphabet' String, [[String]])
 alphabetAndAmbiguityGroups n = do
-   alphabet        <- constructAlphabet . getNonEmpty <$> (arbitrary :: Gen (NonEmptyList String))
+   alphabet        <- arbitrary :: Gen (Alphabet' String)
    let ambiguityGroup = listOf . elements $ toList alphabet -- list can be empty, can have duplicates!
    ambiguityGroups <- vectorOf n ambiguityGroup
    pure (constructAlphabet alphabet, ambiguityGroups)
