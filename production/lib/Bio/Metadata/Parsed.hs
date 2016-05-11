@@ -19,6 +19,7 @@ import           Bio.Metadata.Internal
 import           Bio.Character.Dynamic.Coded
 import           Bio.Character.Parsed
 import           Bio.PhyloGraph.Solution
+import           Data.Alphabet
 import           Data.Char
 import           Data.Foldable
 import           Data.List              hiding (insert)
@@ -57,7 +58,7 @@ instance ParsedMetadata TNT.TntResult where
     unifyMetadata (Right withSeq) = fromList $ zipWith f (toList $ TNT.charMetaData withSeq) (snd . head . toList $ TNT.sequences withSeq)
         where
            f :: EncodableDynamicCharacter s => TNT.CharacterMetaData -> TNT.TntCharacter -> CharacterMetadata s
-           f inMeta inChar =  let defaultMeta = makeOneInfo $ tntAlphabet inChar
+           f inMeta inChar =  let defaultMeta = makeOneInfo $ Alphabet $ tntAlphabet inChar
                     in  defaultMeta { name       = TNT.characterName   inMeta
                                     , stateNames = TNT.characterStates inMeta
                                     , costs      = maybe (costs defaultMeta) TCM (TNT.costTCM inMeta)
@@ -69,7 +70,7 @@ instance ParsedMetadata TNT.TntResult where
 
 instance ParsedMetadata F.TCM where
     unifyMetadata (F.TCM alph mat) =
-        let defaultMeta = makeOneInfo . fromList $ toList alph
+        let defaultMeta = makeOneInfo . Alphabet . fromList $ toList alph
         in  pure (defaultMeta {costs = TCM mat})
 
 instance ParsedMetadata VertexEdgeRoot where
@@ -79,7 +80,7 @@ instance ParsedMetadata Nexus where
     unifyMetadata (Nexus (_, metas)) = V.map convertNexusMeta metas
         where
             convertNexusMeta inMeta =
-                let defaultMeta = makeOneInfo (fromList $ Nex.alphabet inMeta)
+                let defaultMeta = makeOneInfo (Alphabet $ fromList $ Nex.alphabet inMeta)
                 in  defaultMeta { name = Nex.name inMeta, isIgnored = Nex.ignored inMeta,
                                   costs  = maybe (costs defaultMeta) (TCM . F.transitionCosts) (Nex.costM inMeta)}
 
@@ -102,7 +103,7 @@ addOtherCases (x:xs)
   | otherwise = x : addOtherCases xs
 
 -- | Make a single info given an alphabet
-makeOneInfo :: EncodableDynamicCharacter s => Alphabet -> CharacterMetadata s
+makeOneInfo :: EncodableDynamicCharacter s => Alphabet String -> CharacterMetadata s
 makeOneInfo alph = CharMeta DirectOptimization alph mempty False False 1 mempty (emptyChar, emptyChar) 1 (GeneralCost 1 1)
 
 -- | Functionality to make char info from tree seqs
@@ -122,8 +123,8 @@ makeEncodeInfo seqs = V.map makeOneInfo alphabets
 --developAlphabets :: TreeChars -> Vector Alphabet
 
 --old version
-developAlphabets :: TreeChars -> Vector Alphabet
-developAlphabets inTaxSeqMap = (setGapChar . V.fromList . sort . toList) <$> foldr (V.zipWith getNodeAlphAt) partialAlphabets inTaxSeqMap
+developAlphabets :: TreeChars -> Vector (Alphabet String)
+developAlphabets inTaxSeqMap = (setGapChar . Alphabet . V.fromList . sort . toList) <$> foldr (V.zipWith getNodeAlphAt) partialAlphabets inTaxSeqMap
     where
         seqLength        = length . head $ toList inTaxSeqMap
         partialAlphabets = V.replicate seqLength mempty
@@ -137,5 +138,5 @@ developAlphabets inTaxSeqMap = (setGapChar . V.fromList . sort . toList) <$> fol
 
 
 -- | Ensure that the gap char is present and correctly positioned in an alphabet
-setGapChar :: Alphabet -> Alphabet
-setGapChar inAlph = V.filter (/= "-") inAlph <> pure "-"
+setGapChar :: Alphabet String -> Alphabet String
+setGapChar (Alphabet inAlph) = Alphabet $ V.filter (/= "-") inAlph <> pure "-"

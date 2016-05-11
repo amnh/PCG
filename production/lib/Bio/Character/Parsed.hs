@@ -19,7 +19,6 @@ module Bio.Character.Parsed
   , ParsedChars
   , ParsedCharacters(..)
   , TreeChars
-  , Alphabet
   ) where
 
 import Bio.Character.Parsed.Class

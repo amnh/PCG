@@ -17,8 +17,6 @@
 
 module Bio.Character.Dynamic.Coded.Class where
 
-import Bio.Character.Parsed
-
 import Data.Alphabet
 import Data.BitVector
 import Data.Maybe           (fromJust)
@@ -33,10 +31,8 @@ import Data.MonoTraversable
  -}
 class Bits b => EncodableStaticCharacter b where
 --  gapChar    ::  Eq a              => Alphabet a -> b
---  decodeChar' ::                       Alphabet -> b   -> [String]
---  encodeChar' :: (Eq a, Foldable t) => Alphabet -> t a -> b
-  decodeChar  ::  Eq a              => Alphabet' a -> b   -> [a]
-  encodeChar  :: (Eq a, Foldable t) => Alphabet' a -> t a -> b
+  decodeChar ::  Eq a              => Alphabet a -> b   -> [a]
+  encodeChar :: (Eq a, Foldable t) => Alphabet a -> t a -> b
 
 {- LAWS:
  - decodeMany alphabet . encodeMany alphabet == fmap toList . toList
@@ -47,10 +43,10 @@ class ( EncodableStaticCharacter (Element s)
       , OldEncodableDynamicCharacterToBeRemoved s
       ) => EncodableDynamicCharacter s where
   -- All default instances can be "overidden" for efficientcy.
-  decodeDynamic ::  Eq a => Alphabet' a -> s -> [[a]]
+  decodeDynamic ::  Eq a => Alphabet a -> s -> [[a]]
   decodeDynamic alphabet = ofoldr (\e acc -> decodeChar alphabet e : acc) []
 
-  encodeDynamic :: (Eq a, Foldable t, Foldable c) => Alphabet' a -> c (t a) -> s
+  encodeDynamic :: (Eq a, Foldable t, Foldable c) => Alphabet a -> c (t a) -> s
 
   indexChar  :: s -> Int -> Element s
   indexChar i = fromJust . lookupChar i
@@ -66,11 +62,6 @@ class ( EncodableStaticCharacter (Element s)
 
 -- | A coded sequence allows grabbing of a character, filtering, and some standard types
 class OldEncodableDynamicCharacterToBeRemoved s where
--- TODO: I switched the order of input args in decode fns and encodeOver...
-  decodeOverAlphabet :: Alphabet -> s -> ParsedChar
-  decodeOneChar      :: Alphabet -> s -> ParsedChar
-  encodeOverAlphabet :: Alphabet -> ParsedChar -> s
-  encodeOneChar      :: Alphabet -> AmbiguityGroup -> s
   emptyChar          :: s
   filterGaps         :: s -> s
   gapChar            :: s -> BitVector

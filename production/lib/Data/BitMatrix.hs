@@ -103,9 +103,9 @@ numRows (BitMatrix n bv)
 -- | The rows of the 'BitMatrix'
 rows :: BitMatrix -> [BitVector]
 rows bm@(BitMatrix nCols bv) 
-    | numRows bm <= 1 = [bv]
-    | nCols == 0      = take (numRows bm) $ repeat $ bitVec 0 (0 :: Integer)
-    | otherwise       = (bv @@) <$> slices
+    | nRows <= 1 = [bv]
+    | nCols == 0 = take nRows $ repeat $ bitVec 0 (0 :: Integer)
+    | otherwise  = (bv @@) <$> slices
           where
             nRows = numRows bm
             slices = take nRows $ iterate ((nCols `subtract`) `bimap` (nCols `subtract`)) (start, end)
@@ -116,16 +116,16 @@ rows bm@(BitMatrix nCols bv)
 -- | Retreives a single row of the 'BitMatrix'.
 --   Allows for unsafe indexing.
 row :: BitMatrix -> Int -> BitVector
-row bm@(BitMatrix n bv) i
-  | 0 <= i && i < m = bv @@ (big, small)
+row bm@(BitMatrix nCols bv) i
+  | 0 <= i && i < nRows = bv @@ (left, right)
   | otherwise       = error errorMsg
   where
     -- It couldn't be more clear
-    small    = (n * (i + 0)) - 0
-    big      = (n * (i + 1)) - 1
-    m        = numRows bm
+    left     = nCols * (i + 1) - 1
+    right    = left - nCols + 1
+    nRows    = numRows bm
     errorMsg = unwords ["Index", show i, "is outside the range", rangeStr]
-    rangeStr = mconcat ["[0..", show m, "]."]
+    rangeStr = mconcat ["[0..", show nRows, "]."]
 
 isZeroMatrix :: BitMatrix -> Bool
 isZeroMatrix (BitMatrix _ bv) = nat bv == 0
@@ -212,6 +212,7 @@ instance Bits BitMatrix where
     isSigned     (BitMatrix _ b)                     = isSigned b
     popCount     (BitMatrix _ b)                     = popCount b
 
+-- TODO: Don't know if this works. It's currently unused, I believe.
 instance Arbitrary BitMatrix where
     arbitrary = do 
         alphLen  <- getPositive <$> (arbitrary :: Gen (Positive Int))

@@ -17,6 +17,7 @@ module Bio.Metadata.Internal where
 
 import Bio.Character.Parsed
 --import Bio.Character.Dynamic.Coded
+import Data.Alphabet
 import Data.Foldable                       ()
 import Data.Matrix.NotStupid               (Matrix)
 import Data.Monoid
@@ -33,7 +34,7 @@ data CharacterMetadata s
    { -- | Stores the type of character
      charType   :: CharDataType
      -- | Alphabet as a list of strings
-   , alphabet   :: Alphabet
+   , alphabet   :: Alphabet String
      -- | Name (give name : file name)
    , name       :: String
      -- | Whether this character is aligned
@@ -74,7 +75,7 @@ prependName n x = x { name     = n <> ":" <> name x }
 
 -- TODO: replace these calls with lenses
 -- | Overwrites the existing character alpahbet.
-updateAlphabet :: Alphabet -> CharacterMetadata s -> CharacterMetadata s
+updateAlphabet :: Alphabet String -> CharacterMetadata s -> CharacterMetadata s
 updateAlphabet a x = x { alphabet = a }
 
 -- TODO: replace these calls with lenses
