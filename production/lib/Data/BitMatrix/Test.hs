@@ -6,7 +6,7 @@ module Data.BitMatrix.Test
 
 import Data.BitMatrix
 import Data.Bits
-import Data.BitVector 
+import Data.BitVector hiding (foldr)
 import Test.Tasty
 import Test.Tasty.HUnit
 import Test.Tasty.QuickCheck
@@ -28,7 +28,9 @@ testRowsFromRows = testProperty "rows $ fromRows x == id" f
 testBitMatrixFn :: TestTree
 testBitMatrixFn = testGroup "bitMatrix generating fn" [ testValue
                                                       , testWidth
-                                                      , testHeight]
+                                                      , testHeight
+                                                      , testRow
+                                                      ]
     where
         testValue = testProperty "Internal BitVector value is correct." f
         -- Note that it only tests on a single input function
@@ -89,7 +91,15 @@ testFromRowsFn = testGroup "fromRows generating fn" [ testValue
                     where
                         testBM = (fromRows bvs)
 
-
+testRow :: TestTree
+testRow = testProperty "row returns correct value" f
+    where
+        f :: (Positive Int, Positive Int, [BitVector]) -> Bool
+        f (_, _, bvList) = retVal 
+            where 
+                -- at each item in the list of bvs, test it againts what ought to be at that index, and accumulate
+                (retVal, _) = foldr (\bv (bool, i) -> ((bv == row testBM i) && bool, i + 1)) (True, 0) bvList
+                testBM      = fromRows bvList
 
 instance Arbitrary (Positive Int, Positive Int, [BitVector]) where
   arbitrary = do
