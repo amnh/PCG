@@ -17,7 +17,7 @@ import Test.Tasty.QuickCheck
 import Debug.Trace
 
 testSuite :: TestTree
-testSuite = testGroup "Custom Bits instances" [testVectorBits, testCodedSequenceInstance]
+testSuite = testGroup "Custom Bits instances" [testVectorBits, testCodedSequenceInstance {-, overEmpties-}]
 
 testVectorBits :: TestTree
 testVectorBits = testGroup "Properties of instance Bits b => Bits (Vector b)"
@@ -105,7 +105,12 @@ encodeOverAlphabetTest = testGroup "encodeOverAlphabet"
                     where 
                         charToTest  = getParsedChar inChar
                         controlChar = (encodeOverAlphabet alph charToTest :: DynamicChar)-}
-
+{-
+overEmpties :: TestTree
+overEmpties = testGroup "Verify function over empty structures" [filt]
+    where
+        filt = testCase "FilterGaps works over empty" ((filterGaps emptyChar) @?= emptyChar)
+-}
 type DynamicChar' = Vector
 
 type ParsedChar' = Vector (NonEmptyList (NonEmptyList Char))

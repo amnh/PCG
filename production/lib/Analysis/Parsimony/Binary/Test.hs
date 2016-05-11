@@ -21,6 +21,7 @@ import           Bio.Metadata
 import           Bio.Character.Dynamic.Coded
 import           Bio.Character.Parsed
 import           Bio.PhyloGraph.Solution
+import           Data.BitMatrix
 import           Data.BitVector
 import qualified Data.Vector as V
 import           Test.Tasty
@@ -71,11 +72,12 @@ doProperties = testGroup "Properties of the DO algorithm" [idHolds, firstRow, em
 
         overlap = testGroup "Overlap test cases" [overlap1]
 
-        chara = encodeOverAlphabet standardAlph $ V.fromList [["G", "C"]]
-        charb = encodeOverAlphabet standardAlph $ V.fromList [["C"]]
-        andOverlap = decodeIt $ fst $ getOverlap chara charb doMeta
+        {-
+        seqa = encodeOverAlphabet standardAlph $ V.fromList [["G", "C"]]
+        seqb =  encodeOverAlphabet standardAlph $ V.fromList [["C"]]
+        andOverlap = decodeIt $ fromRows $ pure $ fst $ getOverlap (grabSubChar seqa 0) (grabSubChar seqb 0) doMeta
         andOverlapResult = V.fromList [["C"]]
-        overlap1 = testCase "Given characters with overlap, gives zero cost" (andOverlapResult @=? andOverlap)
+        overlap1 = testCase "Given characters with overlap, gives zero cost" (andOverlapResult @=? andOverlap)-}
 
 -- | Check properties of the Fitch algorithm
 fitchProperties :: TestTree
