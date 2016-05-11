@@ -45,7 +45,12 @@ testSuite = testGroup "Binary optimization" [doProperties, fitchProperties {- , 
 
 -- | Check properties of the DO algorithm
 doProperties :: TestTree
-doProperties = testGroup "Properties of the DO algorithm" [idHolds, firstRow, empties, overlap]
+doProperties = testGroup "Properties of the DO algorithm"
+      [ idHolds
+      , firstRow
+      , empties
+--      , overlap
+      ]
     where
         idHolds = testProperty "When DO runs a sequence against itself, get input as result" checkID
             where
@@ -70,14 +75,14 @@ doProperties = testGroup "Properties of the DO algorithm" [idHolds, firstRow, em
                 checkEmpty inSeq = main == inSeq && cost == 0
                     where (main, cost, gapped, left, right) = naiveDO inSeq emptyChar doMeta
 
-        overlap = testGroup "Overlap test cases" [overlap1]
-
         {-
+        overlap = testGroup "Overlap test cases" [overlap1]
         seqa = encodeOverAlphabet standardAlph $ V.fromList [["G", "C"]]
         seqb =  encodeOverAlphabet standardAlph $ V.fromList [["C"]]
         andOverlap = decodeIt $ fromRows $ pure $ fst $ getOverlap (grabSubChar seqa 0) (grabSubChar seqb 0) doMeta
         andOverlapResult = V.fromList [["C"]]
-        overlap1 = testCase "Given characters with overlap, gives zero cost" (andOverlapResult @=? andOverlap)-}
+        overlap1 = testCase "Given characters with overlap, gives zero cost" (andOverlapResult @=? andOverlap)
+        -}
 
 -- | Check properties of the Fitch algorithm
 fitchProperties :: TestTree
