@@ -41,7 +41,7 @@ import qualified Bio.PhyloGraph.Tree.EdgeAware as ET
 import           Bio.PhyloGraph.Tree.Binary
 import qualified Bio.PhyloGraph.Tree.Referential as RT
 import           Bio.PhyloGraph.Tree.Rose
--- import           Data.Alphabet
+import           Data.Alphabet
 import           Data.Bifunctor
 import           Data.HashMap.Lazy (HashMap)
 import qualified Data.HashMap.Lazy as H (toList)
@@ -69,7 +69,7 @@ instance Arbitrary DAG where
 
 instance Arbitrary TopoDAG where
   arbitrary = do
-    arbAlph <- arbitrary :: Gen Alphabet
+    arbAlph <- arbitrary :: Gen (Alphabet' String)
     arbitraryTopoDAGGA arbAlph
 
 -- TODO: For DAGS, we'll need a testing flag to set the maximum depth and number of children
@@ -81,7 +81,7 @@ maxChildren :: Int
 maxChildren = 4
 
 -- | Generate an arbitrary TopoDAG given an alphabet
-arbitraryTopoDAGGA :: Alphabet -> Gen TopoDAG 
+arbitraryTopoDAGGA :: Alphabet' String -> Gen TopoDAG 
 arbitraryTopoDAGGA inAlph = TopoDAG <$> TN.arbitraryTopoGivenCAL maxChildren inAlph (0, maxLevels)
 
 -- | Generate an arbitrary DAG given sequences

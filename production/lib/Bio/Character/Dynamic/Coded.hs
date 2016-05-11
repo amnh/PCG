@@ -18,7 +18,6 @@ module Bio.Character.Dynamic.Coded
   , DynamicChar
   , DynamicChars
   , OldEncodableDynamicCharacterToBeRemoved(..)
-  , decodeMany
   ) where
 
 import Bio.Character.Dynamic.Coded.Internal

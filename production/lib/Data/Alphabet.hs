@@ -35,12 +35,14 @@ module Data.Alphabet
 import           Data.Foldable
 import           Data.Key
 import           Data.List          (intercalate, nub)
-import           Data.Matrix.NotStupid (Matrix)
+import           Data.Matrix.NotStupid (Matrix, (<->), (<|>), getRow, rowVector, getCol, colVector)
 import           Data.Monoid
 import           Data.String
 import           Data.Vector        (Vector)
 import qualified Data.Vector as V
-import           Prelude     hiding (lookup)
+import           Prelude     hiding (lookup, zip)
+import           Test.Tasty.QuickCheck
+import           Test.QuickCheck.Arbitrary.Instances ()
 
 -- TODO: Alphabetize alphabets so that
 --       'constructAlphabet "ACGT" == constructAlphabet "GATC === True'
@@ -119,6 +121,10 @@ instance Show a => Show (Alphabet' a) where
                                , "}"
                                ]
 
+instance Arbitrary a => Arbitrary (Alphabet' a) where
+  arbitrary = Alphabet' <$> arbitrary
+
+
 -- TODO: Chagne constraint EQ a to Ord a and alphabetize Alphabet with sort
 -- | Constructs an 'Alphabet' from a 'Foldable structure of 'IsString' values.
 constructAlphabet :: (Eq a, IsString a, Foldable t) => t a -> Alphabet' a
@@ -139,4 +145,16 @@ gapCharacter alphabet = alphabet ! (length alphabet - 1)
 --   columns as the 'Alphabet' is reordered. Deletes TCM rows and columns where
 --   'Alphabet' symbols are eliminated.
 constructAlphabetWithTCM :: (Eq a, IsString a, Foldable t) => t a -> Matrix b -> (Alphabet' a, Matrix b)
-constructAlphabetWithTCM = undefined
+constructAlphabetWithTCM inAlph inMat = (Alphabet' $ V.fromList $ foldr (\v acc -> fst v : acc) mempty reordered, outCols)
+  where
+    gapSymbol     = fromString "-"
+    missingSymbol = fromString "?"
+    withPos = zip (toList inAlph) [0..]
+    withGap = (<> [(gapSymbol, length withPos)])
+    removeMissing = filter (\v -> fst v /= missingSymbol)
+    fstIn e l = foldr (\v acc -> if (fst v) == (fst e) then True else acc) False l 
+    removeDuplicates = foldr (\v acc -> if v `fstIn` acc then v : acc else acc) mempty
+    reordered = removeDuplicates $ withGap $ removeMissing withPos
+    toGrab = foldr (\v acc -> snd v : acc) mempty reordered
+    outRows = foldl (\acc r -> acc <-> rowVector (getRow r inMat)) (rowVector $ getRow (head toGrab) inMat) (tail toGrab)
+    outCols = foldl (\acc r -> acc <|> colVector (getCol r inMat)) (colVector $ getRow (head toGrab) inMat) (tail toGrab)

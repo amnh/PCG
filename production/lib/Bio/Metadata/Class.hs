@@ -16,14 +16,14 @@
 module Bio.Metadata.Class where
 
 import Bio.Metadata.Internal
-import Bio.Character.Parsed
+import Data.Alphabet
 import Data.Matrix (getElem)
 
 -- | Represents a type from which character information can be queried.
 class Metadata m s | m -> s where
     getWeight         :: m -> Double
     getIgnored        :: m -> Bool
-    getAlphabet       :: m -> Alphabet
+    getAlphabet       :: m -> Alphabet' String
     getCosts          :: m -> CostStructure
     getFitchMasks     :: m -> (s, s)
     getAligned        :: m -> Bool

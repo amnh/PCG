@@ -21,6 +21,7 @@ import           Bio.Character.Dynamic.Coded
 import           Bio.Character.Dynamic.Coded.Internal
 import           Bio.Character.Parsed
 import           Bio.Metadata.Internal
+import           Data.Alphabet
 import           Data.List.Utility
 import           Data.Vector (Vector)
 import qualified Data.Vector as V (zipWith)
@@ -57,11 +58,11 @@ instance Monoid (TopoNode b) where
 
 instance Arbitrary (TopoNode b) where
    arbitrary = do
-    arbAlph <- arbitrary :: Gen Alphabet
+    arbAlph <- arbitrary :: Gen (Alphabet' String)
     nc <- arbitrary :: Gen Int
     arbitraryTopoGivenCAL nc arbAlph (0, 1)
 
-arbitraryTopoGivenCAL :: Int -> Alphabet -> (Int, Int) -> Gen (TopoNode b)
+arbitraryTopoGivenCAL :: Int -> Alphabet' String -> (Int, Int) -> Gen (TopoNode b)
 arbitraryTopoGivenCAL maxChildren inAlph (curLevel, maxLevel) = do
      let root = curLevel == 0
      n        <- arbitrary :: Gen String
@@ -96,4 +97,4 @@ arbitraryTopoGivenCSNA maxChildren namesAndSeqs inMeta (curLevel, maxLevel)
       coded = V.zipWith encodeIt inMeta mySeqs
       encodeIt m s = case s of 
                       Nothing -> emptyChar
-                      Just c  -> encodeOverAlphabet (alphabet m) c 
+                      Just c  -> encodeDynamic (alphabet m) c 

@@ -23,7 +23,6 @@
 module Bio.Character.Dynamic.Coded.Internal
   ( DynamicChar()
   , DynamicChars
-  , decodeMany
   , arbitraryDynamicsGA
   ) where
 
@@ -134,18 +133,6 @@ instance EncodableDynamicCharacter DynamicChar where
   unsafeAppend (DC dynamic1) bv = DC . fromRows $ rows dynamic1 <> [bv]
 
 instance OldEncodableDynamicCharacterToBeRemoved DynamicChar where
-      -- TODO: I switched the order of input args in decode fns and encodeOver...
---    decodeOverAlphabet :: Alphabet -> s -> ParsedChar
-    decodeOverAlphabet alphabet = fromList . decodeDynamic (constructAlphabet alphabet)
-
---    decodeOneChar      :: Alphabet -> s -> ParsedChar
-    decodeOneChar = decodeOverAlphabet
-
---    encodeOverAlphabet :: Alphabet -> ParsedChar -> s
-    encodeOverAlphabet alphabet = encodeDynamic (constructAlphabet alphabet)
-    
---    encodeOneChar      :: Alphabet -> AmbiguityGroup -> s
-    encodeOneChar alphabet = encodeOverAlphabet alphabet . pure
     
 --    emptyChar          :: s
     emptyChar = DC $ bitMatrix 0 0 (const False)
@@ -189,24 +176,17 @@ instance Bits DynamicChar where
 instance Memoizable DynamicChar where
     memoize f (DC bm) = memoize (f . DC) bm
 
--- | Functionality to unencode many encoded sequences
-decodeMany :: DynamicChars -> Alphabet -> ParsedChars
-decodeMany seqs alph = fmap (Just . decodeOverAlphabet alph) seqs
-
 instance Arbitrary DynamicChar where
     arbitrary = do 
-      arbAlph <- arbitrary :: Gen Alphabet
+      arbAlph <- arbitrary :: Gen (Alphabet' String)
       arbitraryDynamicGivenAlph arbAlph
 
-instance Arbitrary (Alphabet' String) where
-  arbitrary = Alphabet' <$> (arbitrary :: Gen (Vector String))
-
 -- | Function to generate an arbitrary DynamicChar given an alphabet
-arbitraryDynamicGivenAlph :: Alphabet -> Gen DynamicChar
+arbitraryDynamicGivenAlph :: Alphabet' String -> Gen DynamicChar
 arbitraryDynamicGivenAlph inAlph = do
   arbParsed <- arbitrary :: Gen ParsedChar
-  pure $ encodeOverAlphabet inAlph arbParsed
+  pure $ encodeDynamic inAlph arbParsed
 
 -- | Generate many dynamic characters using the above
-arbitraryDynamicsGA :: Alphabet -> Gen DynamicChars
+arbitraryDynamicsGA :: Alphabet' String -> Gen DynamicChars
 arbitraryDynamicsGA inAlph = fromList <$> listOf (arbitraryDynamicGivenAlph inAlph)
