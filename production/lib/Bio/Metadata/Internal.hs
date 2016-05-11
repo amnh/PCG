@@ -15,8 +15,6 @@
 
 module Bio.Metadata.Internal where
 
-import Bio.Character.Parsed
---import Bio.Character.Dynamic.Coded
 import Data.Alphabet
 import Data.Foldable                       ()
 import Data.Matrix.NotStupid               (Matrix)

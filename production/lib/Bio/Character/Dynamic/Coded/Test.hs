@@ -202,17 +202,12 @@ testEncodableStaticCharacterInstanceBitVector = testGroup "BitVector instance of
 
 {- LAWS:
  - decodeMany alphabet . encodeMany alphabet == fmap toList . toList
- - TODO: Add more laws here
  -}
 testEncodableDynamicCharacterInstanceDynamicChar :: TestTree
-testEncodableDynamicCharacterInstanceDynamicChar = testGroup "BitVector instance of EncodableDynamicCharacter" [testLaws]
+testEncodableDynamicCharacterInstanceDynamicChar = testGroup "DynamicChar instance of EncodableDynamicCharacter" [testLaws]
   where
     testLaws = testGroup "EncodableDynamicChar Laws"
              [ encodeDecodeIdentity
---             , singleBitConstruction
---             , totalBitConstruction
---             , logicalOrIsomorphismWithSetUnion
---             , logicalAndIsomorphismWithSetIntersection
              ]
       where
         encodeDecodeIdentity = testProperty "decodeDynamic alphabet . encodeDynamic alphabet == fmap toList . toList" f
@@ -224,9 +219,6 @@ testEncodableDynamicCharacterInstanceDynamicChar = testGroup "BitVector instance
                 enc = encodeDynamic alphabet
                 lhs = fmap Set.fromList . decodeDynamic alphabet . enc
                 rhs = fmap Set.fromList . toList
-
-
-
 
 instance Arbitrary (Alphabet' String, [String]) where
   arbitrary = do
@@ -244,9 +236,6 @@ instance Arbitrary (Alphabet' String, [[String]]) where
     let ambiguityGroup = listOf . elements $ toList alphabet
     dynamicChar <- listOf1 ambiguityGroup
     pure (alphabet, dynamicChar)
-
---instance Arbitrary (Alphabet' String) where
---  arbitrary = constructAlphabet . getNonEmpty <$> (arbitrary :: Gen (NonEmptyList String))
 
 alphabetAndAmbiguityGroups :: Int -> Gen (Alphabet' String, [[String]])
 alphabetAndAmbiguityGroups n = do
