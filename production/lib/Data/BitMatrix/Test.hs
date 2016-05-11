@@ -14,13 +14,21 @@ import Test.Tasty.QuickCheck
 import Debug.Trace
 
 testSuite :: TestTree
-testSuite = testGroup "BitMatrix tests" [testBitMatrixFn, testFromRowsFn]
+testSuite = testGroup "BitMatrix tests" [testRowsFromRows, testBitMatrixFn, testFromRowsFn]
+
+-- Just to make sure that rows . fromRows == id.
+testRowsFromRows :: TestTree
+testRowsFromRows = testProperty "rows $ fromRows x == id" f
+    where
+        f :: (Positive Int, Positive Int, [BitVector]) -> Bool
+        f (_, _, bvList) = rows (fromRows bvList) == id bvList
+
 
 -- both sets of tests on generating functions rely on BitMatrix functions rows, numRows, numCols
 testBitMatrixFn :: TestTree
 testBitMatrixFn = testGroup "bitMatrix generating fn" [ testValue
-                                                       , testWidth
-                                                       , testHeight]
+                                                      , testWidth
+                                                      , testHeight]
     where
         testValue = testProperty "Internal BitVector value is correct." f
         -- Note that it only tests on a single input function
@@ -61,8 +69,7 @@ testFromRowsFn = testGroup "fromRows generating fn" [ testValue
         -- Also, relies on `rows` fn.
             where
                 f :: (Positive Int, Positive Int, [BitVector]) -> Bool
-                -- f (rowCt, colCt, bvs) | trace ((show rowCt) ++ " " ++ (show colCt) ++ " " ++ (show bvs)) False = undefined
-                f (rowCt, colCt, bvs) = trace ((show bvs) ++ " " ++ (show testBM) ++ " " ++ (show controlBM)) $ testBM == controlBM
+                f (_, _, bvs) = testBM == controlBM
                     where
                         testBM    = mconcat $ rows (fromRows bvs)
                         controlBM = mconcat bvs
@@ -70,21 +77,19 @@ testFromRowsFn = testGroup "fromRows generating fn" [ testValue
         testWidth = testProperty "Number of columns is correct." f
         -- Note that it only tests on a single input function
             where
-                f :: Positive Int -> Positive Int -> Bool
-                f rowCt colCt = alphLen == numCols testBM
+                f :: (Positive Int, Positive Int, [BitVector]) -> Bool
+                f (_, colCt, bvs) = getPositive colCt == numCols testBM
                     where
-                        testBM = bitMatrix numChars alphLen $ const True
-                        numChars  = getPositive rowCt
-                        alphLen   = getPositive colCt
+                        testBM = (fromRows bvs)
         testHeight = testProperty "Number of rows is correct." f
         -- Note that it only tests on a single input function
             where
-                f :: Positive Int -> Positive Int -> Bool
-                f rowCt colCt = numChars == numRows testBM
+                f :: (Positive Int, Positive Int, [BitVector]) -> Bool
+                f (rowCt, _, bvs) = getPositive rowCt == numRows testBM
                     where
-                        testBM = bitMatrix numChars alphLen $ const True
-                        numChars  = getPositive rowCt
-                        alphLen   = getPositive colCt
+                        testBM = (fromRows bvs)
+
+
 
 instance Arbitrary (Positive Int, Positive Int, [BitVector]) where
   arbitrary = do

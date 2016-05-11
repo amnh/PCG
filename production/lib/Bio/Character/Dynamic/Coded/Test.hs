@@ -6,10 +6,13 @@ module Bio.Character.Dynamic.Coded.Test
 
 import Bio.Character.Dynamic.Coded
 import Bio.Character.Parsed
+import Data.Alphabet
 import Data.Bits
 import Data.BitVector (BitVector, toBits, width)
+import Data.Foldable
+import qualified Data.Set as Set (fromList)
 import Data.Monoid    ((<>))
-import Data.Vector    (Vector, fromList, toList)
+import Data.Vector    (Vector, fromList)
 import Test.Tasty
 import Test.Tasty.HUnit
 import Test.Tasty.QuickCheck
@@ -17,7 +20,12 @@ import Test.Tasty.QuickCheck
 import Debug.Trace
 
 testSuite :: TestTree
-testSuite = testGroup "Custom Bits instances" [testVectorBits, testCodedSequenceInstance]
+testSuite = testGroup "Custom Bits instances"
+        [ testVectorBits
+        , testCodedSequenceInstance
+        --, overEmpties
+        , testEncodableStaticCharacterInstanceBitVector
+        ]
 
 testVectorBits :: TestTree
 testVectorBits = testGroup "Properties of instance Bits b => Bits (Vector b)"
@@ -105,7 +113,12 @@ encodeOverAlphabetTest = testGroup "encodeOverAlphabet"
                     where 
                         charToTest  = getParsedChar inChar
                         controlChar = (encodeOverAlphabet alph charToTest :: DynamicChar)-}
-
+{-
+overEmpties :: TestTree
+overEmpties = testGroup "Verify function over empty structures" [filt]
+    where
+        filt = testCase "FilterGaps works over empty" ((filterGaps emptyChar) @?= emptyChar)
+-}
 type DynamicChar' = Vector
 
 type ParsedChar' = Vector (NonEmptyList (NonEmptyList Char))
@@ -125,3 +138,45 @@ instance Arbitrary (ParsedChar', Alphabet) where
         vector   <- fmap (fmap (NonEmpty . (:[]) . NonEmpty) . fromList) . listOf1 $ elements alphabet
         pure (vector, fromList alphabet)
 
+
+{- LAWS:
+ - decodeChar alphabet . encodeChar alphabet . toList == id
+ - encodeChar alphabet [alphabet !! i] == bit i
+ - encodeChar alphabet alphabet == compliment zeroBits
+ - decodeChar alphabet (encodeChar alphabet xs .|. encodeChar alphabet ys) == toList alphabet `Data.List.intersect` (toList xs `Data.List.union` toList ys)
+ - decodeChar alphabet (encodeChar alphabet xs .&. encodeChar alphabet ys) == toList alphabet `Data.List.intersect` (toList xs `Data.List.intersect` toList ys)
+ - finiteBitSize . encodeChar alphabet == const (length alphabet)
+ -}
+testEncodableStaticCharacterInstanceBitVector :: TestTree
+testEncodableStaticCharacterInstanceBitVector = testGroup "BitVector instance of EncodableDynamicCharacter" [testLaws]
+  where
+    testLaws = testGroup "EncodableDynamicChar Laws" [encodeDecodeIdentity]
+      where
+        encodeDecodeIdentity = testProperty "Set.fromList . decodeChar alphabet . encodeChar alphabet . Set.fromList . toList \n== Set.fromList . toList" f
+          where
+            f :: (Alphabet' String, [String]) -> Bool
+            f (alphabet, ambiguityGroup) = lhs ambiguityGroup == rhs ambiguityGroup
+              where
+                enc :: (Foldable t) => t String -> BitVector 
+                enc = encodeChar alphabet
+                lhs = Set.fromList . decodeChar alphabet . enc . Set.fromList . toList
+                rhs = Set.fromList . toList
+
+
+instance Arbitrary (Alphabet' String, [String]) where
+  arbitrary = do
+    (alphabet,[x]) <- alphabetAndAmbiguityGroups 1
+    pure (alphabet, x)
+
+instance Arbitrary (Alphabet' String, [String], [String]) where
+  arbitrary = do
+    (alphabet,[x,y]) <- alphabetAndAmbiguityGroups 2
+    pure (alphabet, x, y)
+
+alphabetAndAmbiguityGroups :: Int -> Gen (Alphabet' String, [[String]])
+alphabetAndAmbiguityGroups n = do
+   alphabet        <- constructAlphabet . getNonEmpty <$> (arbitrary :: Gen (NonEmptyList String))
+   let ambiguityGroup = listOf . elements $ toList alphabet -- list can be empty, can have duplicates!
+   ambiguityGroups <- vectorOf n ambiguityGroup
+   pure (constructAlphabet alphabet, ambiguityGroups)
+                                

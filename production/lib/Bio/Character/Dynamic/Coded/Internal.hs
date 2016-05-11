@@ -33,7 +33,7 @@ import Data.Alphabet
 import Data.BitMatrix
 import Data.Key
 import Data.Bits
-import Data.BitVector               hiding (join, replicate)
+import Data.BitVector               hiding (foldr, join, replicate)
 import Data.Foldable
 import Data.Function.Memoize
 import Data.Maybe                          (fromJust, fromMaybe)
@@ -112,8 +112,12 @@ instance EncodableStaticCharacter BitVector where
       f i symbol
         | character `testBit` i = [symbol]
         | otherwise             = []
-                                  
-  encodeChar alphabet ambiguity = fromBits $ (`elem` ambiguity) <$> toList alphabet
+
+  -- Use foldl here to do an implicit reversal of the alphabet!
+  -- The head element of the list is the most significant bit when calling fromBits.
+  -- We need the first element of the alphabet to correspond to the least significant bit.
+  -- Hence foldl, don't try foldMap or toList & fmap without careful thought.
+  encodeChar alphabet ambiguity = fromBits $ foldl' (\xs x -> (x `elem` ambiguity) : xs) []  alphabet
 
 instance EncodableDynamicCharacter DynamicChar where
 

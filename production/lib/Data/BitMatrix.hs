@@ -85,7 +85,9 @@ fromRows xs
   where
     result = case toList xs of
                []   -> BitMatrix 0 $ bitVec 0 (0 :: Integer)
-               y:ys -> BitMatrix (width y) . mconcat $ y:ys 
+               y:ys -> BitMatrix (width y) (if width y == 0 
+                                            then bitVec (length xs) 0 
+                                            else (mconcat $ y:ys))
 
 -- | The number of columns in the 'BitMatrix'
 numCols :: BitMatrix -> Int
@@ -99,10 +101,16 @@ numRows (BitMatrix n bv)
 
 -- | The rows of the 'BitMatrix'
 rows :: BitMatrix -> [BitVector]
-rows bm@(BitMatrix n bv) = (bv @@) <$> slices
-  where
-    m = numRows bm
-    slices = take m $ iterate ((+n) `bimap` (+n)) (n-1, 0)
+rows bm@(BitMatrix nCols bv) 
+    | numRows bm <= 1 = [bv]
+    | nCols == 0      = take (numRows bm) $ repeat $ bitVec 0 (0 :: Integer)
+    | otherwise       = (bv @@) <$> slices
+          where
+            nRows = numRows bm
+            slices = take nRows $ iterate ((nCols `subtract`) `bimap` (nCols `subtract`)) (start, end)
+            start  = nCols * nRows - 1 -- start at most-significant (left end of bv)
+            end    = (nRows - 1) * nCols -- should eventually become 0
+
 
 -- | Retreives a single row of the 'BitMatrix'.
 --   Allows for unsafe indexing.
