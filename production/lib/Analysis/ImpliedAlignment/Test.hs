@@ -52,6 +52,7 @@ numerate = testGroup "Numeration properties" [idHolds, lengthHolds]
                 (traces, counter) = numerateOne gapCharacter inChar defaultH inChar 0
                 gapCharacter = setBit (bitVec 0 (0 :: Integer)) (numChars inChar)
 
+        -- TODO: make sure that these have the same alphabet
         lengthHolds = testProperty "Numerate returns a sequence of the correct length" checkLen
         checkLen :: DynamicChar -> DynamicChar -> Int -> Bool
         checkLen seq1 seq2 count = V.length traces == maxLen && counter >= count

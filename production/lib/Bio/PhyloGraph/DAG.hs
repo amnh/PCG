@@ -124,7 +124,7 @@ instance N.Network DAG NodeInfo where
     children n t  = fmap (\i -> nodes t ! i) (children n)
     nodeIsLeaf n _    = isLeaf n
     nodeIsRoot n _    = isRoot n
-    update t new  = t {nodes = nodes t // fmap (\n -> (code n, n)) new}
+    update t new  = t {nodes = nodes t // (fmap (\n -> (code n, n)) new)}
     numNodes      = length . nodes 
     addNode t n   = DAG nodes2 edges2 reroot
       where
