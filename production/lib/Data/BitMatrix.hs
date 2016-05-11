@@ -27,20 +27,21 @@ module Data.BitMatrix
   ) where
 
 import Data.Bifunctor
-import Data.BitVector  hiding (foldr)
+import Data.BitVector  hiding (foldl,foldr)
 import Data.List.Utility      (equalityOf)
 import Data.Function.Memoize
 import Data.Foldable
 import Data.Maybe             (fromMaybe)
 import Data.Monoid
 import Data.MonoTraversable
+import Test.QuickCheck.Arbitrary.Instances() -- Nescissary for Arbitrary instances
 import Test.QuickCheck hiding ((.&.))
 
 -- | A data structure for storing a two dimensional array of bits.
 --   Exposes row based monomorphic mapping & folding.
 data BitMatrix
    = BitMatrix !Int BitVector
-   deriving (Eq, Show)
+   deriving (Eq)
 
 -- | The row based element for monomorphic maps & folds.
 type instance Element BitMatrix = BitVector
@@ -85,7 +86,7 @@ fromRows xs
   where
     result = case toList xs of
                []   -> BitMatrix 0 $ bitVec 0 (0 :: Integer)
-               y:ys -> BitMatrix (width y) . mconcat $ y:ys 
+               y:ys -> BitMatrix (width y) . foldr (<>) mempty $ y:ys 
 
 -- | The number of columns in the 'BitMatrix'
 numCols :: BitMatrix -> Int
@@ -203,12 +204,22 @@ instance Bits BitMatrix where
     isSigned     (BitMatrix _ b)                     = isSigned b
     popCount     (BitMatrix _ b)                     = popCount b
 
-instance Arbitrary BV where
-    arbitrary = fromBits <$> listOf (arbitrary :: Gen Bool)
-
 instance Arbitrary BitMatrix where
     arbitrary = do 
         alphLen  <- getPositive <$> (arbitrary :: Gen (Positive Int))
         rowCount <- getPositive <$> (arbitrary :: Gen (Positive Int))
         boolV    <- take (alphLen * rowCount) <$> infiniteListOf (arbitrary :: Gen Bool)
         pure (BitMatrix alphLen $ fromBits boolV)
+
+instance Show BitMatrix where
+    show bm = headerLine <> matrixLines
+      where
+        renderRow   = foldl (\acc e -> (if e then '1' else '0') : acc) "" . toBits
+        matrixLines = unlines $ renderRow <$> rows bm          
+        headerLine  = '\n' : unwords
+                    [ "BitMatrix:"
+                    , show $ numRows bm
+                    , "x"
+                    , show $ numCols bm
+                    , "\n"
+                    ]
