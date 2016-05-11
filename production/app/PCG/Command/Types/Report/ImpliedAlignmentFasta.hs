@@ -17,7 +17,6 @@ module PCG.Command.Types.Report.ImpliedAlignmentFasta where
 
 import Analysis.ImpliedAlignment.Internal
 import Bio.Character.Dynamic.Coded
-import Bio.Character.Parsed
 import Bio.Metadata   hiding (name)
 import Bio.PhyloGraph.DAG
 import Bio.PhyloGraph.Node
@@ -35,24 +34,7 @@ import qualified Data.Vector as V ((!))
 import Data.Vector.Instances ()
 import Prelude        hiding (zipWith)
 
-import Debug.Trace (trace)
-
-{-
-iaOutput' :: (MetadataSolution s m, GeneralSolution s f) => AlignmentSolution DynamicChar -> s -> [(FilePath, String)]
-iaOutput' align solution = concat $ zipWith iaForest align (getForests solution)
-  where
-    meta = getMetadata solution
-    iaForest a f = concat $ zipWith iaDAG a f
-    iaDAG   oa d = concat $ zipWith iaNode (toList oa) (toList $ getNodes d)
-
-    iaNode :: (Int, Vector DynamicChar) -> NodeInfo -> [String]
-    iaNode (pos, alignments) curNode = (fileName, fmap (nodeLine <>) textSeq)
-      where
-        nodeLine = concat ["> ", name curNode, "\n"]
-        textSeq  = zipWith (\m c -> decodeOverAlphabet (alphabet m) c) meta alignments
--}
-
---iaOutput2 :: (MetadataSolution s m, GeneralSolution s f) => AlignmentSolution DynamicChar -> s -> [(FilePath, String)]
+--iaOutput :: (MetadataSolution s m, GeneralSolution s f) => AlignmentSolution DynamicChar -> s -> [(FilePath, String)]
 iaOutput :: AlignmentSolution DynamicChar -> StandardSolution -> [(FilePath, String)]
 --iaOutput align solution | trace (mconcat [show align, show solution]) False = undefined
 iaOutput align solution = foldMapWithKey characterToFastaFile dynamicCharacterIndiciesAndAlphabets 

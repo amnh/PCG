@@ -35,7 +35,7 @@ module Data.Alphabet
 import           Data.Foldable
 import           Data.Key
 import           Data.List          (intercalate, nub)
-import           Data.Matrix.NotStupid (Matrix, (<->), (<|>), getRow, rowVector, getCol, colVector)
+import           Data.Matrix.NotStupid (Matrix, (<|>), getRow, getCol, colVector)
 import           Data.Monoid
 import           Data.String
 import           Data.Vector        (Vector)
@@ -85,6 +85,7 @@ instance Indexable Alphabet where
                                    , "]."
                                    ]
 
+
 instance Lookup Alphabet where
   {-# INLINE lookup #-}
   lookup i (Alphabet v) = v V.!? i
@@ -122,7 +123,7 @@ instance Show a => Show (Alphabet a) where
                                ]
 
 instance (Arbitrary a, Eq a, IsString a) => Arbitrary (Alphabet a) where
-  arbitrary = constructAlphabet <$> arbitrary
+  arbitrary = constructAlphabet <$> listOf1 arbitrary
 
 -- TODO: Chagne constraint EQ a to Ord a and alphabetize Alphabet with sort
 -- | Constructs an 'Alphabet from a 'Foldable structure of 'IsString' values.
@@ -155,5 +156,5 @@ constructAlphabetWithTCM inAlph inMat = (Alphabet $ V.fromList $ foldr (\v acc -
     removeDuplicates = foldr (\v acc -> if v `fstIn` acc then v : acc else acc) mempty
     reordered = removeDuplicates $ withGap $ removeMissing withPos
     toGrab = foldr (\v acc -> snd v : acc) mempty reordered
-    outRows = foldl (\acc r -> acc <-> rowVector (getRow r inMat)) (rowVector $ getRow (head toGrab) inMat) (tail toGrab)
+--    outRows = foldl (\acc r -> acc <-> rowVector (getRow r inMat)) (rowVector $ getRow (head toGrab) inMat) (tail toGrab)
     outCols = foldl (\acc r -> acc <|> colVector (getCol r inMat)) (colVector $ getRow (head toGrab) inMat) (tail toGrab)
