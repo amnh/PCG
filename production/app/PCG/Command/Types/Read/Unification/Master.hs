@@ -148,8 +148,8 @@ joinSequences =  foldl' g (mempty, mempty)
 encodeOverMetadata :: Maybe ParsedChar -> StandardMetadata -> DynamicChar
 encodeOverMetadata maybeInChar inMeta =
     case maybeInChar of
-        Just inChar -> encodeOverAlphabet (alphabet inMeta) inChar
-        Nothing     -> encodeOverAlphabet mempty mempty
+        Just inChar -> encodeDynamic (alphabet inMeta) inChar
+        Nothing     -> encodeDynamic (alphabet inMeta) [[]]
 
 -- | Wrapper for encoding
 encodeIt :: ParsedChars -> Vector StandardMetadata -> Vector DynamicChar

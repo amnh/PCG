@@ -17,7 +17,7 @@ module Bio.Metadata.MaskGenerator where
 import Bio.Metadata
 import Bio.PhyloGraph.Solution
 import Bio.Character.Dynamic.Coded
-import Bio.Character.Parsed
+import Data.Alphabet
 import Data.Foldable
 import Data.HashMap.Strict        (elems)
 import Data.Maybe
@@ -49,10 +49,10 @@ addMasks inSolution = inSolution { metadata = V.imap changeMetadata (metadata in
                 gapChar   = (bitVec alphLen (0 :: Integer)) (alphLen - 1)
         -}
         -- | Generate mask pair given proper info
-        generateMasks :: Alphabet -> Int -> (DynamicChar, DynamicChar)
-        generateMasks inAlphabet sLen = (encodeOverAlphabet inAlphabet occupancy, encodeOverAlphabet inAlphabet periodic)
+        generateMasks :: Alphabet String -> Int -> (DynamicChar, DynamicChar)
+        generateMasks inAlphabet@(Alphabet a) sLen = (encodeDynamic inAlphabet occupancy, encodeDynamic inAlphabet periodic)
             where
-                unit      = [inAlphabet V.! (length inAlphabet - 1)]
+                unit      = [a V.! (length a - 1)]
                 periodic  = V.replicate sLen unit
                 occupancy = V.replicate sLen (toList inAlphabet)
 

@@ -15,7 +15,7 @@ import Text.Megaparsec                         (eof)
 testSuite :: TestTree
 testSuite = testGroup "TCM Format"
   [ testGroup "TCM Combinators"
-      [tcmAlphabet', tcmMatrix']
+      [tcmAlphabet, tcmMatrix']
   , testGroup "TCM Parser" 
       [tcmStreamParser']
   , testGroup "TCM Converter"
@@ -41,8 +41,8 @@ invalidAlphabets = appendNewlines
   , "a b c a b a" -- many duplicate entries
   ]
 
-tcmAlphabet' :: TestTree
-tcmAlphabet' = testGroup "tcmAlphabet" [validLines, invalidLines]
+tcmAlphabet :: TestTree
+tcmAlphabet = testGroup "tcmAlphabet" [validLines, invalidLines]
   where
     validLines   = testGroup "Valid alphabet definition"   $ success <$> validAlphabets
     invalidLines = testGroup "Invalid alphabet definition" $ failure <$> invalidAlphabets

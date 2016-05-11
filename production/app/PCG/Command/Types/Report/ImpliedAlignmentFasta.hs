@@ -22,6 +22,7 @@ import Bio.Metadata   hiding (name)
 import Bio.PhyloGraph.DAG
 import Bio.PhyloGraph.Node
 import Bio.PhyloGraph.Solution
+import Data.Alphabet
 import Data.Foldable
 import Data.IntMap           (IntMap,insert)
 import Data.Key
@@ -53,12 +54,12 @@ iaOutput' align solution = concat $ zipWith iaForest align (getForests solution)
 
 --iaOutput2 :: (MetadataSolution s m, GeneralSolution s f) => AlignmentSolution DynamicChar -> s -> [(FilePath, String)]
 iaOutput :: AlignmentSolution DynamicChar -> StandardSolution -> [(FilePath, String)]
-iaOutput align solution | trace (mconcat [show align, show solution]) False = undefined
+--iaOutput align solution | trace (mconcat [show align, show solution]) False = undefined
 iaOutput align solution = foldMapWithKey characterToFastaFile dynamicCharacterIndiciesAndAlphabets 
   where
     -- Here we use the metadata to filter for dynamic character indicies and
     -- thier corresponding alphabets. 
-    dynamicCharacterIndiciesAndAlphabets :: IntMap Alphabet
+    dynamicCharacterIndiciesAndAlphabets :: IntMap (Alphabet String)
     dynamicCharacterIndiciesAndAlphabets = foldlWithKey dynamicCharFilter mempty (getMetadata solution)
       where
         dynamicCharFilter im i e = if getType e == DirectOptimization
@@ -92,14 +93,14 @@ iaOutput align solution = foldMapWithKey characterToFastaFile dynamicCharacterIn
     -- The type checker can infer the correct (complicated) type alby itself,
     -- so we will let  it do that rather than listen to it complain.
     
---  characterToFastaFile :: Int -> Alphabet -> [(FilePath, String)]
+    -- characterToFastaFile :: Int -> Alphabet -> [(FilePath, String)]
     characterToFastaFile i alpha = [(characterFileName, foldMapWithKey f nodeCharacterMapping)]
       where
         characterFileName = mconcat ["Character", show i, ".fasta"]
         f nodeName characters = unlines $ titleLine : sequenceLines <> [""]
           where
             titleLine     = "> " <> nodeName
-            sequenceLines = chunksOf 50 . concatMap renderAmbiguityGroup . toList . decodeOverAlphabet alpha $ characters V.! i
+            sequenceLines = chunksOf 50 . concatMap renderAmbiguityGroup . toList . decodeDynamic alpha $ characters V.! i
             renderAmbiguityGroup [x] = show x
             renderAmbiguityGroup xs  = "[" <> concatMap show xs <> "]"
             
