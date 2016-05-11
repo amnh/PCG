@@ -22,7 +22,6 @@ import Bio.Character.Parsed
 import Data.Alphabet
 import Data.BitVector
 import Data.Maybe           (fromJust)
---import Data.Monoid
 import Data.MonoTraversable
 
 {- LAWS:
@@ -40,7 +39,7 @@ class Bits b => EncodableStaticCharacter b where
   encodeChar  :: (Eq a, Foldable t) => Alphabet' a -> t a -> b
 
 {- LAWS:
- - decodeMany alphabet . encodeMany alphabet . fmap toList . toList = id
+ - decodeMany alphabet . encodeMany alphabet == fmap toList . toList
  - TODO: Add more laws here
  -}
 class ( EncodableStaticCharacter (Element s)
@@ -67,7 +66,7 @@ class ( EncodableStaticCharacter (Element s)
 
 -- | A coded sequence allows grabbing of a character, filtering, and some standard types
 class OldEncodableDynamicCharacterToBeRemoved s where
-    -- TODO: I switched the order of input args in decode fns and encodeOver...
+-- TODO: I switched the order of input args in decode fns and encodeOver...
   decodeOverAlphabet :: Alphabet -> s -> ParsedChar
   decodeOneChar      :: Alphabet -> s -> ParsedChar
   encodeOverAlphabet :: Alphabet -> ParsedChar -> s

@@ -210,4 +210,3 @@ arbitraryDynamicsGA inAlph = fromList <$> listOf (arbitraryDynamicGivenAlph inAl
 -- | Functionality to unencode many encoded sequences
 -- decodeMany :: DynamicChars -> Alphabet -> ParsedChars
 -- decodeMany seqs alph = fmap (Just . decodeOverAlphabet alph) seqs
-
