@@ -87,7 +87,8 @@ testFromRowsFn = testGroup "fromRows generating fn" [ testValue
 
 instance Arbitrary (Positive Int, Positive Int, [BitVector]) where
   arbitrary = do
-    rowCount   <- getPositive <$> (arbitrary :: Gen (Positive Int))
-    colCount   <- getPositive <$> (arbitrary :: Gen (Positive Int))
-    bitVectors <- fmap (fromBits . take colCount) . vectorOf rowCount $ infiniteListOf (arbitrary :: Gen Bool)
+    rowCount   <- (arbitrary :: Gen (Positive Int))
+    colCount   <- (arbitrary :: Gen (Positive Int))
+    let bvGen  = fromBits <$> vectorOf (getPositive colCount) (arbitrary :: Gen Bool)
+    bitVectors <- vectorOf (getPositive rowCount) bvGen
     pure (rowCount, colCount, bitVectors)
