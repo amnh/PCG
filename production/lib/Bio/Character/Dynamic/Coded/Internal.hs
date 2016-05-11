@@ -23,7 +23,6 @@
 module Bio.Character.Dynamic.Coded.Internal
   ( DynamicChar()
   , DynamicChars
-  , decodeMany
   , arbitraryDynamicsGA
   ) where
 
@@ -174,6 +173,7 @@ instance OldEncodableDynamicCharacterToBeRemoved DynamicChar where
 --    numChars           :: s -> Int
     numChars (DC bm) = numRows bm
 
+-- TODO: Probably remove?
 instance Bits DynamicChar where
     (.&.)        (DC lhs) (DC rhs)  = DC $ lhs  .&.  rhs
     (.|.)        (DC lhs) (DC rhs)  = DC $ lhs  .|.  rhs
@@ -189,21 +189,13 @@ instance Bits DynamicChar where
     isSigned     (DC b)             = isSigned b
     popCount     (DC b)             = popCount b
 
-
 instance Memoizable DynamicChar where
     memoize f (DC bm) = memoize (f . DC) bm
-
--- | Functionality to unencode many encoded sequences
-decodeMany :: DynamicChars -> Alphabet -> ParsedChars
-decodeMany seqs alph = fmap (Just . decodeOverAlphabet alph) seqs
 
 instance Arbitrary DynamicChar where
     arbitrary = do 
       arbAlph <- arbitrary :: Gen Alphabet
       arbitraryDynamicGivenAlph arbAlph
-
-instance Arbitrary (Alphabet' String) where
-  arbitrary = Alphabet' <$> (arbitrary :: Gen (Vector String))
 
 -- | Function to generate an arbitrary DynamicChar given an alphabet
 arbitraryDynamicGivenAlph :: Alphabet -> Gen DynamicChar
@@ -214,3 +206,8 @@ arbitraryDynamicGivenAlph inAlph = do
 -- | Generate many dynamic characters using the above
 arbitraryDynamicsGA :: Alphabet -> Gen DynamicChars
 arbitraryDynamicsGA inAlph = fromList <$> listOf (arbitraryDynamicGivenAlph inAlph)
+
+-- | Functionality to unencode many encoded sequences
+-- decodeMany :: DynamicChars -> Alphabet -> ParsedChars
+-- decodeMany seqs alph = fmap (Just . decodeOverAlphabet alph) seqs
+

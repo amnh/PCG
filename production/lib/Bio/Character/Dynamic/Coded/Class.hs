@@ -27,11 +27,10 @@ import Data.MonoTraversable
 
 {- LAWS:
  - decodeChar alphabet . encodeChar alphabet . toList == id
- - encodeChar alphabet [alphabet !! i] == bit i
- - encodeChar alphabet alphabet == compliment zeroBits
+ - encodeChar alphabet [alphabet ! i] == bit i
+ - encodeChar alphabet alphabet == complement (bit (length alphabet - 1) `clearBit` (bit (length alphabet - 1))
  - decodeChar alphabet (encodeChar alphabet xs .|. encodeChar alphabet ys) == toList alphabet `Data.List.intersect` (toList xs `Data.List.union` toList ys)
  - decodeChar alphabet (encodeChar alphabet xs .&. encodeChar alphabet ys) == toList alphabet `Data.List.intersect` (toList xs `Data.List.intersect` toList ys)
- - finiteBitSize . encodeChar alphabet == const (length alphabet)
  -}
 class Bits b => EncodableStaticCharacter b where
 --  gapChar    ::  Eq a              => Alphabet a -> b

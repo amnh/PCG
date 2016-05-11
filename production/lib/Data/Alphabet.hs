@@ -41,6 +41,7 @@ import           Data.String
 import           Data.Vector        (Vector)
 import qualified Data.Vector as V
 import           Prelude     hiding (lookup)
+import           Test.QuickCheck
 
 -- TODO: Alphabetize alphabets so that
 --       'constructAlphabet "ACGT" == constructAlphabet "GATC === True'
@@ -118,6 +119,9 @@ instance Show a => Show (Alphabet' a) where
                                , intercalate ", " $ show <$> toList v
                                , "}"
                                ]
+
+instance (Arbitrary a, Eq a, IsString a) => Arbitrary (Alphabet' a) where
+    arbitrary = constructAlphabet <$> listOf1 arbitrary
 
 -- TODO: Chagne constraint EQ a to Ord a and alphabetize Alphabet with sort
 -- | Constructs an 'Alphabet' from a 'Foldable structure of 'IsString' values.
