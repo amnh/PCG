@@ -34,8 +34,9 @@ module Data.Alphabet
 
 import           Data.Foldable
 import           Data.Key
-import           Data.List          (intercalate, nub)
-import           Data.Matrix.NotStupid (Matrix, (<|>), getRow, getCol, colVector)
+import           Data.List             (elemIndex, intercalate, nub)
+import           Data.Matrix.NotStupid (Matrix, getElem, matrix)
+import           Data.Maybe
 import           Data.Monoid
 import           Data.String
 import           Data.Vector        (Vector)
@@ -130,31 +131,27 @@ instance (Arbitrary a, Eq a, IsString a) => Arbitrary (Alphabet a) where
 constructAlphabet :: (Eq a, IsString a, Foldable t) => t a -> Alphabet a
 constructAlphabet = Alphabet . V.fromList . appendGapSymbol . nub . removeSpecialSymbols . toList
   where
+    gapSymbol            = fromString "-"
+    missingSymbol        = fromString "?"
     appendGapSymbol      = (<> [gapSymbol])
     removeSpecialSymbols = filter (\x -> x /= gapSymbol
                                       && x /= missingSymbol)
-    gapSymbol     = fromString "-"
-    missingSymbol = fromString "?"
 
 -- | Retreives the "gap character" from the alphabet.
 gapCharacter :: Alphabet a -> a
 gapCharacter alphabet = alphabet ! (length alphabet - 1)
 
-
 -- | Constructs an 'Alphabet with a corresponding TCM. Permutes TCM rows and
 --   columns as the 'Alphabet is reordered. Deletes TCM rows and columns where
 --   'Alphabet symbols are eliminated.
 constructAlphabetWithTCM :: (Eq a, IsString a, Foldable t) => t a -> Matrix b -> (Alphabet a, Matrix b)
-constructAlphabetWithTCM inAlph inMat = (Alphabet $ V.fromList $ foldr (\v acc -> fst v : acc) mempty reordered, outCols)
+constructAlphabetWithTCM symbols originalTcm = (alphabet, permutedTcm)
   where
-    gapSymbol     = fromString "-"
-    missingSymbol = fromString "?"
-    withPos = zip (toList inAlph) [0..]
-    withGap = (<> [(gapSymbol, length withPos)])
-    removeMissing = filter (\v -> fst v /= missingSymbol)
-    fstIn e l = foldr (\v acc -> if (fst v) == (fst e) then True else acc) False l 
-    removeDuplicates = foldr (\v acc -> if v `fstIn` acc then v : acc else acc) mempty
-    reordered = removeDuplicates $ withGap $ removeMissing withPos
-    toGrab = foldr (\v acc -> snd v : acc) mempty reordered
---    outRows = foldl (\acc r -> acc <-> rowVector (getRow r inMat)) (rowVector $ getRow (head toGrab) inMat) (tail toGrab)
-    outCols = foldl (\acc r -> acc <|> colVector (getCol r inMat)) (colVector $ getRow (head toGrab) inMat) (tail toGrab)
+    alphabet    = constructAlphabet symbols
+    len         = length alphabet
+    oldOrdering = toList symbols
+    permutedTcm = matrix len len f
+    f (i,j) = getElem i' j' originalTcm
+      where
+        i' = fromJust $ (alphabet ! i) `elemIndex` oldOrdering
+        j' = fromJust $ (alphabet ! j) `elemIndex` oldOrdering
