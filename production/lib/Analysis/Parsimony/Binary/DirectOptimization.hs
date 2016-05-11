@@ -117,12 +117,13 @@ getOverlap inChar1 inChar2 meta = memoize2 (overlap meta) inChar1 inChar2
         -- Takes two sequences and returns another
         overlap :: (Metadata m s) => m -> BitVector -> BitVector -> (BitVector, Double)
         overlap inMeta char1 char2
-            | 0 == char1 || 0 == char2 = (bitVec alphLen 0, 0)
+            | 0 == char1 || 0 == char2 = (zeroBitVec, 0)
             | char1 .&. char2 == zeroBits = foldr ambigChoice (zeroBits, 0) allPossible
             | otherwise = (char1 .&. char2, 0)
             where
-                alphLen = (length $ getAlphabet inMeta)
-                gap = setBit (bitVec alphLen 0) (alphLen - 1)
+                alphLen    = length $ getAlphabet inMeta
+                zeroBitVec = bitVec alphLen (0 :: Integer)
+                gap = setBit zeroBitVec (alphLen - 1)
                 -- Given characters without ambiguity, determine the cost
                 -- getCost :: SeqConstraint' s => CostStructure -> (Int, s) -> (Int, s) -> (s, Double)
                 getCost (TCM mtx) (pos1, c1) (pos2, c2) = (c1 .|. c2, getElem pos1 pos2 mtx)

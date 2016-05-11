@@ -60,15 +60,13 @@ testFromRowsFn = testGroup "fromRows generating fn" [ testValue
         -- Note that it only tests on a single input function
         -- Also, relies on `rows` fn.
             where
-                f :: Positive Int -> Positive Int -> Bool
-                f rowCt colCt = testBM == controlBM
+                f :: (Positive Int, Positive Int, [BitVector]) -> Bool
+                -- f (rowCt, colCt, bvs) | trace ((show rowCt) ++ " " ++ (show colCt) ++ " " ++ (show bvs)) False = undefined
+                f (rowCt, colCt, bvs) = trace ((show bvs) ++ " " ++ (show testBM) ++ " " ++ (show controlBM)) $ testBM == controlBM
                     where
-                        testBM = fromRows bitsList
-                        controlBM = Prelude.concat bitsList
-                        numChars  = getPositive rowCt
-                        alphLen   = getPositive colCt
-                        boolList  = do pure $ take alphLen <$> infiniteListOf (arbitrary :: Bool)
-                        bitsList  = take numChars $ repeat boolList
+                        testBM    = mconcat $ rows (fromRows bvs)
+                        controlBM = mconcat bvs
+                        
         testWidth = testProperty "Number of columns is correct." f
         -- Note that it only tests on a single input function
             where
@@ -87,3 +85,11 @@ testFromRowsFn = testGroup "fromRows generating fn" [ testValue
                         testBM = bitMatrix numChars alphLen $ const True
                         numChars  = getPositive rowCt
                         alphLen   = getPositive colCt
+
+instance Arbitrary (Positive Int, Positive Int, [BitVector]) where
+  arbitrary = do
+    rowCount   <- (arbitrary :: Gen (Positive Int))
+    colCount   <- (arbitrary :: Gen (Positive Int))
+    let bvGen  =  fromBits <$> vectorOf (getPositive colCount) (arbitrary :: Gen Bool)
+    bitVectors <- vectorOf (getPositive rowCount) bvGen
+    pure (rowCount, colCount, bitVectors)
