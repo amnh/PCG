@@ -132,14 +132,17 @@ numerateNode ancestorNode childNode initCounters inMeta = (setHomologies childNo
 -- given the ancestor sequence, ancestor homologies, child sequence, and current counter for position matching
 -- returns a tuple of the Homologies vector and an integer count
 numerateOne :: (SeqConstraint s) => BitVector -> s -> Homologies -> s -> Int -> (Homologies, Int)
+--numerateOne _ a h c _ | trace ("numerateOne with ancestor " ++ show a ++ " and child " ++ show c) False = undefined
 numerateOne gapCharacter ancestorSeq ancestorHomologies childSeq initCounter = foldr (determineHomology gapCharacter) (mempty, initCounter) foldIn
     where
-        getAllSubs s = foldr (\p acc -> grabSubChar s p `cons` acc) mempty (fromList [0..(numChars s)])
+        getAllSubs s = foldr (\p acc -> grabSubChar s p `cons` acc) mempty (fromList [0..(numChars s) - 1])
         -- TODO: verify that ancestorHomologies has the correct length as the allSubs
-        foldIn = zip3 (getAllSubs childSeq) (getAllSubs ancestorSeq) ancestorHomologies
+        foldIn = --trace ("calls to homology " ++ show (getAllSubs childSeq) ++ show (getAllSubs ancestorSeq)) $
+                    zip3 (getAllSubs childSeq) (getAllSubs ancestorSeq) ancestorHomologies
 
 -- Finds the homology position between any two characters
 determineHomology :: BitVector -> (BitVector, BitVector, Int) -> (Homologies, Int) -> (Homologies, Int)
+--determineHomology _ (c, a, h) _ | trace ("one homology " ++ show c) False = undefined
 determineHomology gapCharacter (childChar, ancestorChar, ancestorHomolog) (homologSoFar, counterSoFar)
     | ancestorChar == gapCharacter = (counterSoFar    `cons` homologSoFar, counterSoFar    )
     | childChar    /= gapCharacter = (ancestorHomolog `cons` homologSoFar, counterSoFar + 1)
