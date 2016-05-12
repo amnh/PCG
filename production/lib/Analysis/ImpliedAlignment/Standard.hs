@@ -11,6 +11,8 @@
 -- Standard algorithm for implied alignment
 -----------------------------------------------------------------------------
 
+-- TODO: Make an AppliedAlignment.hs file for exposure of appropriate functions
+
 module Analysis.ImpliedAlignment.Standard where
 
 import Analysis.ImpliedAlignment.Internal
