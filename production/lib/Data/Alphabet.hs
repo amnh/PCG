@@ -46,26 +46,30 @@ import           Test.Tasty.QuickCheck
 import           Test.QuickCheck.Arbitrary.Instances ()
 
 -- TODO: Alphabetize alphabets so that
---       'constructAlphabet "ACGT" == constructAlphabet "GATC === True'
+--       constructAlphabet "ACGT" == constructAlphabet "GATC" is True.
 --       This is okay as long as Additive characters have their additive
---       properties are captured in a TCM. Make sure that the additive character
+--       properties captured in a TCM. Make sure that the additive character
 --       TCMs are being generated properly in the rectification process.
 
 -- Newtyped to ensure that there are no repeats.
-{- | An 'Alphabet represents an ordered list of unique symbols with constant
+{- | An Alphabet represents an ordered list of unique symbols with constant
      time random access. Symbols are any data type which are coercable from a
-     'String' through the 'IsString' type-class.
+     String through the IsString type-class.
 
-     An 'Alphabet is constructed by supplying a `Foldable` structure of symbols
-     which are 'IsString' instances to the 'constructAlphabet function.
+     An Alphabet is constructed by supplying a Foldable structure of symbols,
+     which must be IsString instances, to the constructAlphabet function.
 
-     Every 'Alphabet contains a "gap" symbol denoted by the 'fromString "-"'
+     Every Alphabet contains a "gap" symbol denoted by the 'fromString "-"'
      expression. The "gap" character is always the last element in the ordered list
-     regardless of it's presence or position in the construction structure.
+     regardless of its presence or position in the construction structure.
 
-     An 'Alphabet will never contain the "missing" symbol denoted by the
-     'fromString "?"' expression. This symbol will be removed from the 'Alpahbet'
+     An Alphabet will never contain the "missing" symbol denoted by the
+     'fromString "?"' expression. This symbol will be removed from the Alphabet
      if it is present in the construction structure. 
+
+    WARNING: PRECONDITION: We must insure that missing and gap are appropriately 
+    code as "-" & "?", respectively, before this module is used, i.e., as output 
+    from either parsers or in unification step.
  -}
 
 newtype Alphabet a

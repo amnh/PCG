@@ -121,7 +121,7 @@ row bm@(BitMatrix nCols bv) i
   | otherwise       = error errorMsg
   where
     -- It couldn't be more clear
-    left     = nCols * (i + 1) - 1
+    left     = nCols * (i + 1) - 1 -- BitVector is big-endian, so left is most-significant. 
     right    = left - nCols + 1
     nRows    = numRows bm
     errorMsg = unwords ["Index", show i, "is outside the range", rangeStr]

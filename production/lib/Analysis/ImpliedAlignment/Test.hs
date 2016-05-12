@@ -25,7 +25,7 @@ import           Test.Tasty
 import           Test.Tasty.QuickCheck
 
 testSuite :: TestTree
-testSuite = undefined testGroup "Implied Alignment" [numerate]
+testSuite = testGroup "Implied Alignment" [numerate]
 
 
 fullIA :: TestTree
