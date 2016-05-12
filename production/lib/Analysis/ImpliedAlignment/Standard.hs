@@ -26,12 +26,13 @@ import Bio.PhyloGraph.Solution
 import Bio.PhyloGraph.Tree hiding (code)
 import Bio.Character.Dynamic.Coded
 
-import Data.BitVector      hiding (foldr, replicate)
+import Data.BitVector      hiding (foldr, replicate, foldl)
 import Data.IntMap                (insert)
 import Data.Maybe
 import Data.Monoid
-import Data.Vector                (Vector, (!), cons, filter, foldr, fromList, generate, imap, replicate, unzip, zip3, zipWith, zipWith3, zipWith5)
-import Prelude             hiding (filter, foldr, replicate, unzip, zip3, zipWith, zipWith3)
+import Data.Vector                (Vector, (!), cons, filter, foldr, fromList, generate, imap, replicate, unzip, zip3, zipWith, zipWith3, zipWith5, foldl)
+import Prelude             hiding (filter, foldr, replicate, unzip, zip3, zipWith, zipWith3, foldl)
+import qualified Data.Vector as V
 
 import Debug.Trace
 
@@ -134,8 +135,8 @@ numerateNode ancestorNode childNode initCounters inMeta = (setHomologies childNo
 -- given the ancestor sequence, ancestor homologies, child sequence, and current counter for position matching
 -- returns a tuple of the Homologies vector and an integer count
 numerateOne :: (SeqConstraint s) => BitVector -> s -> Homologies -> s -> Int -> (Homologies, Int)
---numerateOne _ a h c _ | trace ("numerateOne with ancestor " ++ show a ++ " and child " ++ show c) False = undefined
-numerateOne gapCharacter ancestorSeq ancestorHomologies childSeq initCounter = foldr (determineHomology gapCharacter) (mempty, initCounter) foldIn
+--numerateOne _ a h c _ | trace ("numerateOne with ancestor " ++ show a ++ " and child " ++ show c ++ " and homologies " ++ show h) False = undefined
+numerateOne gapCharacter ancestorSeq ancestorHomologies childSeq initCounter = foldl (determineHomology gapCharacter) (mempty, initCounter) foldIn
     where
         getAllSubs s = foldr (\p acc -> grabSubChar s p `cons` acc) mempty (fromList [0..(numChars s) - 1])
         -- TODO: verify that ancestorHomologies has the correct length as the allSubs
@@ -143,9 +144,9 @@ numerateOne gapCharacter ancestorSeq ancestorHomologies childSeq initCounter = f
                     zip3 (getAllSubs childSeq) (getAllSubs ancestorSeq) ancestorHomologies
 
 -- Finds the homology position between any two characters
-determineHomology :: BitVector -> (BitVector, BitVector, Int) -> (Homologies, Int) -> (Homologies, Int)
---determineHomology _ (c, a, h) _ | trace ("one homology " ++ show c) False = undefined
-determineHomology gapCharacter (childChar, ancestorChar, ancestorHomolog) (homologSoFar, counterSoFar)
-    | ancestorChar == gapCharacter = (counterSoFar    `cons` homologSoFar, counterSoFar    )
-    | childChar    /= gapCharacter = (ancestorHomolog `cons` homologSoFar, counterSoFar + 1)
-    | otherwise                    = (counterSoFar    `cons` homologSoFar, counterSoFar + 1) --TODO: check this case
+determineHomology :: BitVector -> (Homologies, Int) -> (BitVector, BitVector, Int) -> (Homologies, Int)
+--determineHomology _ i (c, a, h) | trace ("one homology " ++ show i ++ " on " ++ show (c, a, h)) False = undefined
+determineHomology gapCharacter (homologSoFar, counterSoFar) (childChar, ancestorChar, ancestorHomolog)
+    | ancestorChar == gapCharacter = (homologSoFar V.++ pure counterSoFar, counterSoFar    )
+    | childChar    /= gapCharacter = (homologSoFar V.++ pure ancestorHomolog, counterSoFar + 1)
+    | otherwise                    = (homologSoFar V.++ pure counterSoFar, counterSoFar + 1) --TODO: check this case
