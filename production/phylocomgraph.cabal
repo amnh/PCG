@@ -95,7 +95,6 @@ library
   -- Modules exported by the library.
   exposed-modules:     Analysis.ImpliedAlignment.Internal
                        Analysis.ImpliedAlignment.Standard
-                       -- Analysis.ImpliedAlignment.Test
                        Analysis.Parsimony.Binary.DirectOptimization
                        Analysis.Parsimony.Binary.Fitch
                        Analysis.Parsimony.Binary.Internal
@@ -426,7 +425,7 @@ Test-Suite testsuite
                        Control.Evaluation.Internal
                        Control.Evaluation.Test
                        Control.Evaluation.Unit
-                       -- Data.BitMatrix
+                       Data.BitMatrix
                        Data.BitMatrix.Test
                        Data.List.Utility
                        File.Format.Fasta
@@ -457,9 +456,9 @@ Test-Suite testsuite
                        File.Format.TNT.Internal
                        File.Format.TNT.Parser
                        File.Format.TNT.Partitioning
-                       -- File.Format.TransitionCostMatrix
-                       -- File.Format.TransitionCostMatrix.Parser
-                       -- File.Format.TransitionCostMatrix.Test
+                       File.Format.TransitionCostMatrix
+                       File.Format.TransitionCostMatrix.Parser
+                       File.Format.TransitionCostMatrix.Test
                        File.Format.VertexEdgeRoot
                        File.Format.VertexEdgeRoot.Parser
                        File.Format.VertexEdgeRoot.Test
