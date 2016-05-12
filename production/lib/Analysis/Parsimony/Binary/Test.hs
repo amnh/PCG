@@ -21,6 +21,7 @@ import           Bio.Metadata
 import           Bio.Character.Dynamic.Coded
 import           Bio.Character.Parsed
 import           Bio.PhyloGraph.Solution
+import           Data.Alphabet
 import           Data.BitMatrix
 import           Data.BitVector
 import qualified Data.Vector as V
@@ -30,15 +31,15 @@ import           Test.Tasty.QuickCheck
 
 import Debug.Trace
 
-standardAlph :: Alphabet
-standardAlph = V.fromList ["A", "C", "G", "T", "-"]
+standardAlph :: Alphabet String
+standardAlph = constructAlphabet $ V.fromList ["A", "C", "G", "T", "-"]
 
 doMeta, fitchMeta :: CharacterMetadata DynamicChar
 doMeta    = CharMeta DirectOptimization standardAlph "" False False 1 mempty (emptyChar, emptyChar) 0 (GeneralCost 1 1)
 fitchMeta = CharMeta Fitch              standardAlph "" False False 1 mempty (emptyChar, emptyChar) 0 (GeneralCost 1 1)
 
-decodeIt :: DynamicChar -> ParsedChar
-decodeIt = decodeOverAlphabet standardAlph
+decodeIt :: DynamicChar -> [[String]]
+decodeIt = decodeDynamic standardAlph
 
 testSuite :: TestTree
 testSuite = testGroup "Binary optimization" [doProperties, fitchProperties {- , traversalProperties -} ]
