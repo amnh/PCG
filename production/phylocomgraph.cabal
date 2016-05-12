@@ -425,7 +425,7 @@ Test-Suite testsuite
                        Control.Evaluation.Internal
                        Control.Evaluation.Test
                        Control.Evaluation.Unit
-                       Data.BitMatrix
+                       -- Data.BitMatrix
                        Data.BitMatrix.Test
                        Data.List.Utility
                        File.Format.Fasta
