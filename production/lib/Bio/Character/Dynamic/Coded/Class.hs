@@ -49,14 +49,15 @@ class ( EncodableStaticCharacter (Element s)
   encodeDynamic :: (Eq a, Foldable t, Foldable c) => Alphabet a -> c (t a) -> s
 
   indexChar  :: s -> Int -> Element s
-  indexChar i = fromJust . lookupChar i
+  indexChar i = lookupChar i
 
-  lookupChar :: s -> Int -> Maybe (Element s)
-  lookupChar xs i = fst $ ofoldl' f (Nothing, 0) xs
+  lookupChar :: s -> Int -> Element s
+  {- lookupChar xs i = fst $ ofoldl' f (Nothing, 0) xs
     where
       f (Nothing, n) e = if n == i then (Just e, n) else (Nothing, n + 1)
       f acc          _ = acc
-
+  -}
+  
   unsafeAppend  :: s -> BitVector -> s
   unsafeCons :: BitVector -> s -> s
 
