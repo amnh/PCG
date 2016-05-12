@@ -64,6 +64,7 @@ class ( EncodableStaticCharacter (Element s)
 -- | A coded sequence allows grabbing of a character, filtering, and some standard types
 class OldEncodableDynamicCharacterToBeRemoved s where
   emptyChar          :: s
+  emptyLike          :: s -> s
   filterGaps         :: s -> s
   gapChar            :: s -> BitVector
   getAlphLen         :: s -> Int

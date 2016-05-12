@@ -15,7 +15,7 @@
 module Bio.Character.Dynamic.Coded
   ( EncodableDynamicCharacter(..)
   , EncodableStaticCharacter(..)
-  , DynamicChar
+  , DynamicChar(DC)
   , DynamicChars
   , OldEncodableDynamicCharacterToBeRemoved(..)
   ) where

@@ -21,6 +21,7 @@ import           Bio.Metadata
 import           Bio.Character.Dynamic.Coded
 import           Bio.Character.Parsed
 import           Bio.PhyloGraph.Solution
+import           Data.Alphabet
 import           Data.BitMatrix
 import           Data.BitVector
 import qualified Data.Vector as V
@@ -30,15 +31,15 @@ import           Test.Tasty.QuickCheck
 
 import Debug.Trace
 
-standardAlph :: Alphabet
-standardAlph = V.fromList ["A", "C", "G", "T", "-"]
+standardAlph :: Alphabet String
+standardAlph = constructAlphabet $ V.fromList ["A", "C", "G", "T", "-"]
 
 doMeta, fitchMeta :: CharacterMetadata DynamicChar
 doMeta    = CharMeta DirectOptimization standardAlph "" False False 1 mempty (emptyChar, emptyChar) 0 (GeneralCost 1 1)
 fitchMeta = CharMeta Fitch              standardAlph "" False False 1 mempty (emptyChar, emptyChar) 0 (GeneralCost 1 1)
 
-decodeIt :: DynamicChar -> ParsedChar
-decodeIt = decodeOverAlphabet standardAlph
+decodeIt :: DynamicChar -> [[String]]
+decodeIt = decodeDynamic standardAlph
 
 testSuite :: TestTree
 testSuite = testGroup "Binary optimization" [doProperties, fitchProperties {- , traversalProperties -} ]
@@ -46,16 +47,16 @@ testSuite = testGroup "Binary optimization" [doProperties, fitchProperties {- , 
 -- | Check properties of the DO algorithm
 doProperties :: TestTree
 doProperties = testGroup "Properties of the DO algorithm"
-      [ idHolds
+      [ overlap
       , firstRow
+      , idHolds
       , empties
---      , overlap
       ]
     where
         idHolds = testProperty "When DO runs a sequence against itself, get input as result" checkID
             where
                 checkID :: DynamicChar -> Bool
-                checkID inSeq = trace ("main result of DO " ++ show main ++ " " ++ show cost)
+                checkID inSeq = trace ("main result of DO " ++ show main ++ " with input " ++ show inSeq)
                                 main == inSeq && cost == 0 && gapped == inSeq && left == inSeq && right == inSeq
                     where (main, cost, gapped, left, right) = naiveDO inSeq inSeq doMeta
 
@@ -75,14 +76,15 @@ doProperties = testGroup "Properties of the DO algorithm"
                 checkEmpty inSeq = main == inSeq && cost == 0
                     where (main, cost, gapped, left, right) = naiveDO inSeq emptyChar doMeta
 
-        {-
+        
         overlap = testGroup "Overlap test cases" [overlap1]
-        seqa = encodeOverAlphabet standardAlph $ V.fromList [["G", "C"]]
-        seqb =  encodeOverAlphabet standardAlph $ V.fromList [["C"]]
-        andOverlap = decodeIt $ fromRows $ pure $ fst $ getOverlap (grabSubChar seqa 0) (grabSubChar seqb 0) doMeta
-        andOverlapResult = V.fromList [["C"]]
-        overlap1 = testCase "Given characters with overlap, gives zero cost" (andOverlapResult @=? andOverlap)
-        -}
+        seqa = encodeDynamic standardAlph [["G", "C"]] :: DynamicChar
+        seqb =  encodeDynamic standardAlph [["C"]] :: DynamicChar
+        initalResult = getOverlap (grabSubChar seqa 0) (grabSubChar seqb 0) doMeta
+        andOverlap = decodeIt $ DC $ fromRows $ V.singleton $ fst initalResult
+        andOverlapResult = [["C"]]
+        overlap1 = testCase "Given characters with overlap, gives expected results" ((andOverlapResult, 0) @=? (andOverlap, snd initalResult))
+        
 
 -- | Check properties of the Fitch algorithm
 fitchProperties :: TestTree

@@ -105,8 +105,8 @@ encodeOverAlphabetTest = testGroup "encodeOverAlphabet"
     where
         testAlphabetLen = testProperty "Make sure alphabet length of encoded dynamic char == len(alphabet)." f
             where
-                f :: (ParsedChar', Alphabet) -> Bool
-                f (inChar, alph) = getAlphLen (encodeOverAlphabet alph (getParsedChar inChar) :: DynamicChar) == length alph
+                f :: (ParsedChar', Alphabet String) -> Bool
+                f (inChar, alph) = getAlphLen (encodeDynamic alph (getParsedChar inChar) :: DynamicChar) == length alph
         {-testValue = testProperty "Make sure encoded value matches position in alphabet." f
             where
                 -- for each ambiguity group in inChar, map over the alphabet determining whether each alphabet state exists in the ambiguity group
@@ -134,11 +134,11 @@ getParsedChar = fmap (fmap getNonEmpty . getNonEmpty)
 --        f :: CodedSequence s -> Alphabet -> ParsedChar
 --        f inChar alph =
 
-instance Arbitrary (ParsedChar', Alphabet) where
+instance Arbitrary (ParsedChar', Alphabet String) where
     arbitrary = do
-        alphabet <- (fmap (:[]) . getNonEmpty) <$> (arbitrary :: (Gen (NonEmptyList Char)))
-        vector   <- fmap (fmap (NonEmpty . (:[]) . NonEmpty) . fromList) . listOf1 $ elements alphabet
-        pure (vector, fromList alphabet)
+        alphabet <- arbitrary :: Gen (Alphabet String)
+        vector   <- fmap (fmap (NonEmpty . (:[]) . NonEmpty) . fromList) . listOf1 . elements . toList $ alphabet
+        pure (vector, alphabet)
 
 
 {- LAWS:
@@ -151,7 +151,7 @@ instance Arbitrary (ParsedChar', Alphabet) where
 testEncodableStaticCharacterInstanceBitVector :: TestTree
 testEncodableStaticCharacterInstanceBitVector = testGroup "BitVector instance of EncodableDynamicCharacter" [testLaws]
   where
-    encodeChar' :: Foldable t => Alphabet' String -> t String -> BitVector
+    encodeChar' :: Foldable t => Alphabet String -> t String -> BitVector
     encodeChar' = encodeChar
     testLaws = testGroup "EncodableDynamicChar Laws"
              [ encodeDecodeIdentity
@@ -163,27 +163,27 @@ testEncodableStaticCharacterInstanceBitVector = testGroup "BitVector instance of
       where
         encodeDecodeIdentity = testProperty "Set.fromList . decodeChar alphabet . encodeChar alphabet . Set.fromList . toList == Set.fromList . toList" f
           where
-            f :: (Alphabet' String, [String]) -> Bool
+            f :: (Alphabet String, [String]) -> Bool
             f (alphabet, ambiguityGroup) = lhs ambiguityGroup == rhs ambiguityGroup
               where
                 lhs = Set.fromList . decodeChar alphabet . encodeChar' alphabet . Set.fromList . toList
                 rhs = Set.fromList . toList
         singleBitConstruction = testProperty "encodeChar alphabet [alphabet ! i] == bit i" f
           where
-            f :: Alphabet' String -> NonNegative Int -> Bool
+            f :: Alphabet String -> NonNegative Int -> Bool
             f alphabet (NonNegative n) = encodeChar' alphabet [alphabet ! i] == bit i
               where
                 i = n `mod` length alphabet
         totalBitConstruction = testProperty "encodeChar alphabet alphabet == complement (bit (length alphabet - 1) `clearBit` (bit (length alphabet - 1))" f
           where
-            f :: Alphabet' String -> Bool
+            f :: Alphabet String -> Bool
             f alphabet = encodeChar' alphabet alphabet == e
               where
                 e = complement $ bit i `clearBit` i
                 i = length alphabet - 1
         logicalOrIsomorphismWithSetUnion = testProperty "Set.fromList (decodeChar alphabet (encodeChar alphabet xs .|. encodeChar alphabet ys)) == Set.fromList (toList alphabet) `Set.intersect` (toList xs `Set.union` toList ys)" f
           where
-            f :: (Alphabet' String, [String], [String]) -> Bool
+            f :: (Alphabet String, [String], [String]) -> Bool
             f (alphabet, xs, ys) = lhs == rhs
               where
                 lhs = Set.fromList $ decodeChar alphabet (encodeChar' alphabet sxs .|. encodeChar' alphabet sys)
@@ -192,7 +192,7 @@ testEncodableStaticCharacterInstanceBitVector = testGroup "BitVector instance of
                 sys = Set.fromList ys
         logicalAndIsomorphismWithSetIntersection = testProperty "Set.fromList (decodeChar alphabet (encodeChar alphabet xs .&. encodeChar alphabet ys)) == Set.fromList (toList alphabet) `Set.intersect` (toList xs `Set.intersection` toList ys)" f
           where
-            f :: (Alphabet' String, [String], [String]) -> Bool
+            f :: (Alphabet String, [String], [String]) -> Bool
             f (alphabet, xs, ys) = lhs == rhs
               where
                 lhs = Set.fromList $ decodeChar alphabet (encodeChar' alphabet sxs .&. encodeChar' alphabet sys)
@@ -212,7 +212,7 @@ testEncodableDynamicCharacterInstanceDynamicChar = testGroup "DynamicChar instan
       where
         encodeDecodeIdentity = testProperty "decodeDynamic alphabet . encodeDynamic alphabet == fmap toList . toList" f
           where
-            f :: (Alphabet' String, [[String]]) -> Bool
+            f :: (Alphabet String, [[String]]) -> Bool
             f (alphabet, dynamicChar) = lhs dynamicChar == rhs dynamicChar
               where
                 enc :: (Foldable t) => t (t String) -> DynamicChar
@@ -220,26 +220,26 @@ testEncodableDynamicCharacterInstanceDynamicChar = testGroup "DynamicChar instan
                 lhs = fmap Set.fromList . decodeDynamic alphabet . enc
                 rhs = fmap Set.fromList . toList
 
-instance Arbitrary (Alphabet' String, [String]) where
+instance Arbitrary (Alphabet String, [String]) where
   arbitrary = do
     (alphabet,[x]) <- alphabetAndAmbiguityGroups 1
     pure (alphabet, x)
 
-instance Arbitrary (Alphabet' String, [String], [String]) where
+instance Arbitrary (Alphabet String, [String], [String]) where
   arbitrary = do
     (alphabet,[x,y]) <- alphabetAndAmbiguityGroups 2
     pure (alphabet, x, y)
 
-instance Arbitrary (Alphabet' String, [[String]]) where
+instance Arbitrary (Alphabet String, [[String]]) where
   arbitrary = do
-    alphabet    <- arbitrary :: Gen (Alphabet' String)
+    alphabet    <- arbitrary :: Gen (Alphabet String)
     let ambiguityGroup = listOf . elements $ toList alphabet
     dynamicChar <- listOf1 ambiguityGroup
     pure (alphabet, dynamicChar)
 
-alphabetAndAmbiguityGroups :: Int -> Gen (Alphabet' String, [[String]])
+alphabetAndAmbiguityGroups :: Int -> Gen (Alphabet String, [[String]])
 alphabetAndAmbiguityGroups n = do
-   alphabet        <- arbitrary :: Gen (Alphabet' String)
+   alphabet        <- arbitrary :: Gen (Alphabet String)
    let ambiguityGroup = listOf . elements $ toList alphabet -- list can be empty, can have duplicates!
    ambiguityGroups <- vectorOf n ambiguityGroup
    pure (constructAlphabet alphabet, ambiguityGroups)

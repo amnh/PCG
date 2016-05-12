@@ -4,6 +4,7 @@ module File.Format.TransitionCostMatrix.Test
   ( testSuite
   ) where
 
+import Data.Alphabet
 import Data.Foldable                           (toList)
 import Data.List.NonEmpty                      (fromList)
 import File.Format.TransitionCostMatrix.Parser
@@ -46,8 +47,8 @@ testTcmAlphabet = testGroup "testTcmAlphabet" [validLines, invalidLines]
   where
     validLines   = testGroup "Valid alphabet definition"   $ success <$> validAlphabets
     invalidLines = testGroup "Invalid alphabet definition" $ failure <$> invalidAlphabets
-    success str  = testCase (show str) $ parseEquals   (testTcmAlphabet <* eof) str (fromList . words $ toList str)
-    failure str  = testCase (show str) $ parseFailure  (testTcmAlphabet <* eof) str
+    success str  = testCase (show str) $ parseEquals   (tcmAlphabet <* eof) str (fromList . words $ toList str)
+    failure str  = testCase (show str) $ parseFailure  (tcmAlphabet <* eof) str
 
 tcmMatrix' :: TestTree
 tcmMatrix' = testGroup "tcmMatrix" [validBlocks, invalidBlocks]
