@@ -21,7 +21,7 @@
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
 module Bio.Character.Dynamic.Coded.Internal
-  ( DynamicChar()
+  ( DynamicChar (DC)
   , DynamicChars
   , arbitraryDynamicsGA
   ) where
@@ -140,6 +140,8 @@ instance OldEncodableDynamicCharacterToBeRemoved DynamicChar where
     
 --    emptyChar          :: s
     emptyChar = DC $ bitMatrix 0 0 (const False)
+
+    emptyLike (DC bm) = DC $ bitMatrix (numRows bm) (numCols bm) (const False)
     
 --    filterGaps         :: s -> s
     filterGaps c@(DC bm) = DC . fromRows . filter (== gapBV) $ rows bm
@@ -153,7 +155,7 @@ instance OldEncodableDynamicCharacterToBeRemoved DynamicChar where
     getAlphLen (DC bm) = numCols bm
 
 --   grabSubChar        :: s -> Int -> s
-    grabSubChar char i = {-trace ("grabSubChar " ++ show char ++ " " ++ show i) $ -} char `indexChar` i
+    grabSubChar char i = char `indexChar` i
     
 --    isEmpty            :: s -> Bool
     isEmpty (DC bm) = isZeroMatrix bm
