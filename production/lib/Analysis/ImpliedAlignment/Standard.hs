@@ -26,12 +26,13 @@ import Bio.PhyloGraph.Solution
 import Bio.PhyloGraph.Tree hiding (code)
 import Bio.Character.Dynamic.Coded
 
-import Data.BitVector      hiding (foldr, replicate)
+import Data.BitVector      hiding (foldr, replicate, foldl)
 import Data.IntMap                (insert)
 import Data.Maybe
 import Data.Monoid
-import Data.Vector                (Vector, (!), cons, filter, foldr, fromList, generate, imap, replicate, unzip, zip3, zipWith, zipWith3, zipWith5)
-import Prelude             hiding (filter, foldr, replicate, unzip, zip3, zipWith, zipWith3)
+import Data.Vector                (Vector, (!), cons, filter, foldr, fromList, generate, imap, replicate, unzip, zip3, zipWith, zipWith3, zipWith5, foldl)
+import Prelude             hiding (filter, foldr, replicate, unzip, zip3, zipWith, zipWith3, foldl)
+import qualified Data.Vector as V
 
 import Debug.Trace
 
@@ -61,18 +62,24 @@ impliedAlign inTree inMeta = foldr (\n acc -> insert (getCode n) (makeAlignment 
     where
         (_, curTree) = numeratePreorder inTree (getRoot inTree) inMeta (replicate (length inMeta) 0)
         allLeaves = filter (flip nodeIsLeaf curTree) (getNodes curTree)
-        -- oneTrace :: s -> Homologies -> m -> s
+
+-- | Simple function to generate an alignment from a numerated node
+-- Takes in a Node
+-- returns a vector of characters
+makeAlignment :: (NodeConstraint n s) => n -> Vector s
+makeAlignment n = makeAlign (getFinalGapped n) (getHomologies n)
+    where
+         -- oneTrace :: s -> Homologies -> m -> s
         oneTrace dynChar homolog = foldr (\pos acc -> unsafeCons (grabSubChar dynChar pos) acc) emptyChar homolog
         --makeAlign :: Vector s -> HomologyTrace -> Vector s
         makeAlign dynChar homologies = zipWith oneTrace dynChar homologies
-        --makeAlignment :: n -> Vector s
-        makeAlignment n = makeAlign (getFinalGapped n) (getHomologies n)
 
 -- | Main recursive function that assigns homology traces to every node
 -- takes in a tree, a current node, a vector of metadata, and a vector of counters
 -- outputs a resulting vector of counters and a tree with the assignments
 -- TODO: something seems off about doing the DO twice here
 numeratePreorder :: (TreeConstraint t n e s, Metadata m s) => t -> n -> Vector m -> Counts -> (Counts, t)
+--numeratePreorder _ curNode _ _ | trace ("numeratePreorder at " ++ show curNode) False = undefined
 numeratePreorder inTree curNode inMeta curCounts
     | nodeIsRoot curNode inTree = (curCounts, inTree `update` [setHomologies curNode defaultHomologs])
     | leftOnly && rightOnly = (curCounts, inTree)
@@ -130,19 +137,46 @@ numerateNode ancestorNode childNode initCounters inMeta = (setHomologies childNo
             (homologs, counts) = unzip numeration
             generateGapChar m = setBit (bitVec 0 (0 :: Integer)) (length (getAlphabet m) - 1)
 
+{-
 -- | Function to do a numeration on one character at a node
 -- given the ancestor sequence, ancestor homologies, child sequence, and current counter for position matching
 -- returns a tuple of the Homologies vector and an integer count
 numerateOne :: (SeqConstraint s) => BitVector -> s -> Homologies -> s -> Int -> (Homologies, Int)
-numerateOne gapCharacter ancestorSeq ancestorHomologies childSeq initCounter = foldr (determineHomology gapCharacter) (mempty, initCounter) foldIn
+--numerateOne _ a h c _ | trace ("numerateOne with ancestor " ++ show a ++ " and child " ++ show c ++ " and homologies " ++ show h) False = undefined
+numerateOne gapCharacter ancestorSeq ancestorHomologies childSeq initCounter = foldl (determineHomology gapCharacter) (mempty, initCounter) foldIn
     where
-        getAllSubs s = foldr (\p acc -> grabSubChar s p `cons` acc) mempty (fromList [0..(numChars s)])
+        getAllSubs s = foldr (\p acc -> grabSubChar s p `cons` acc) mempty (fromList [0..(numChars s) - 1])
         -- TODO: verify that ancestorHomologies has the correct length as the allSubs
-        foldIn = zip3 (getAllSubs childSeq) (getAllSubs ancestorSeq) ancestorHomologies
+        foldIn = --trace ("calls to homology " ++ show (getAllSubs childSeq) ++ show (getAllSubs ancestorSeq)) $
+                    zip3 (getAllSubs childSeq) (getAllSubs ancestorSeq) ancestorHomologies
 
 -- Finds the homology position between any two characters
-determineHomology :: BitVector -> (BitVector, BitVector, Int) -> (Homologies, Int) -> (Homologies, Int)
-determineHomology gapCharacter (childChar, ancestorChar, ancestorHomolog) (homologSoFar, counterSoFar)
-    | ancestorChar == gapCharacter = (counterSoFar    `cons` homologSoFar, counterSoFar    )
-    | childChar    /= gapCharacter = (ancestorHomolog `cons` homologSoFar, counterSoFar + 1)
-    | otherwise                    = (counterSoFar    `cons` homologSoFar, counterSoFar + 1) --TODO: check this case
+determineHomology :: BitVector -> (Homologies, Int) -> (BitVector, BitVector, Int) -> (Homologies, Int)
+--determineHomology _ i (c, a, h) | trace ("one homology " ++ show i ++ " on " ++ show (c, a, h)) False = undefined
+determineHomology gapCharacter (homologSoFar, counterSoFar) (childChar, ancestorChar, ancestorHomolog)
+    | ancestorChar == gapCharacter = (homologSoFar V.++ pure counterSoFar, counterSoFar    )
+    | childChar    /= gapCharacter = (homologSoFar V.++ pure ancestorHomolog, counterSoFar + 1)
+    | otherwise                    = (homologSoFar V.++ pure counterSoFar, counterSoFar + 1) --TODO: check this case
+-}
+
+-- | Function to do a numeration on one character at a node
+-- given the ancestor sequence, ancestor homologies, child sequence, and current counter for position matching
+-- returns a tuple of the Homologies vector and an integer count
+numerateOne :: (SeqConstraint s) => BitVector -> s -> Homologies -> s -> Int -> (Homologies, Int)
+numerateOne gapCharacter aSeq aHomologies cSeq initCounter = (h, c)
+        where 
+            (h, c, _, _) = determineHomology (mempty, initCounter, 0, 0)
+
+            -- | Find the homology at two positions
+            determineHomology :: (Homologies, Int, Int, Int) -> (Homologies, Int, Int, Int)
+            determineHomology cur@(homologSoFar, pCount, cPos, hPos) 
+                | isNothing aChar || isNothing cChar = cur
+                | (fromJust aChar) == gapCharacter = determineHomology (homologSoFar V.++ pure pCount, pCount + 1, cPos + 1, hPos + 1)
+                | (fromJust cChar) /= gapCharacter = determineHomology (homologSoFar V.++ pure (aHomologies V.! hPos), pCount, cPos + 1, hPos + 1)
+                | otherwise                        = determineHomology (homologSoFar, pCount, cPos, hPos + 1) 
+                    where
+                        aChar = safeGrab aSeq cPos
+                        cChar = safeGrab cSeq cPos
+            
+
+

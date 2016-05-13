@@ -63,13 +63,14 @@ naiveDO char1 char2 meta
             firstMatRow = firstAlignRow longerChar longLen 0 0 meta
             traversalMat = firstMatRow `joinMat` getAlignRows longerChar shorterChar 1 firstMatRow meta
             cost = getMatrixCost traversalMat
-            (gapped, left, right) = --trace ("get seqs " ++ show traversalMat)
+            (gapped, left, right) = trace ("get seqs " ++ show traversalMat)
                                     traceback traversalMat shorterChar longerChar
-            ungapped = filterGaps gapped
+            ungapped = trace ("filter gaps of " ++ show gapped) $ filterGaps gapped
             (out1, out2) = if char1Len > char2Len
                                 then (right, left)
                                 else (left, right)
-        in (ungapped, cost, gapped, out1, out2)
+        in trace ("ungapped " ++ show ungapped)
+            (ungapped, cost, gapped, out1, out2)
 
         where
             getMatrixCost :: (SeqConstraint' s) => AlignMatrix s -> Double
@@ -90,21 +91,21 @@ joinMat (inRow, inChar) inMat = AlignMatrix (inRow `joinRow` mat inMat) (inChar 
 -- This row will have a diagonal at the leftmost position and will otherwise have only lefts
 -- the cost is just added to every time there's a gap
 firstAlignRow :: (SeqConstraint' s, Metadata m s) => s -> Int -> Int -> Double -> m -> AlignRow s
-firstAlignRow inChar rowLength position prevCost _ | trace ("firstAlignRow " ++ show inChar ++ " with len " ++ show rowLength) False = undefined
+--firstAlignRow inChar rowLength position prevCost _ | trace ("firstAlignRow " ++ show inChar ++ " with len " ++ show rowLength) False = undefined
 firstAlignRow inChar rowLength position prevCost meta
-    | position == (rowLength + 1) = trace ("terminate ") $
+    | position == (rowLength + 1) = --trace ("terminate ") $
                                     (mempty, emptyLike inChar)
     | position == 0 =
         let recurse0 = firstAlignRow inChar rowLength (position + 1) 0 meta
-        in trace ("cons with gap ") $
+        in --trace ("cons with gap ") $
             ((0, DiagDir) `cons` (fst recurse0), unsafeCons (gapChar inChar) (snd recurse0))
     | newState /= gapChar inChar = --trace ("new state on first row " ++ show newState) $ -- if there's no indel overlap
         let recurse1 = firstAlignRow inChar rowLength (position + 1) (prevCost + indCost) meta
-        in trace ("cons with new ") $
+        in --trace ("cons with new ") $
             ((prevCost + indCost, LeftDir) `cons` (fst recurse1), unsafeCons newState (snd recurse1))
     | otherwise = --trace ("new state on first row, otherwise " ++ show newState) $ -- matching indel so no cost
         let recurse2 = firstAlignRow inChar rowLength (position + 1) prevCost meta
-        in trace ("cons with new 2 ") $
+        in --trace ("cons with new 2 ") $
             ((prevCost, LeftDir) `cons` (fst recurse2), unsafeCons newState (snd recurse2))
         where
             newState = fst $ getOverlap (gapChar inChar) (grabSubChar inChar (position - 1)) meta
@@ -207,13 +208,13 @@ traceback alignMat' char1' char2' = tracebackInternal alignMat' char1' char2' (n
     where
         -- read it from the matrix instead of grabbing
         tracebackInternal :: (SeqConstraint' s) => AlignMatrix s -> s -> s -> (Int, Int) -> (s, s, s)
-        --tracebackInternal alignMat char1 char2 (row, col)  | trace ("traceback " ++ show (traversal alignMat) ++ show (getElem row col (traversal alignMat))++ " with position " ++ show (row, col)) False = undefined
+        tracebackInternal alignMat char1 char2 (row, col)  | trace ("traceback with position " ++ show (row, col)) False = undefined
         tracebackInternal alignMat char1 char2 (row, col)
             | length (seqs alignMat) < row - 1 || nrows (mat alignMat) < row - 1 || ncols (mat alignMat) < col - 1 = error "Traceback cannot function because matrix is incomplete"
             | row == 0 && col == 0 = (emptyLike char1, emptyLike char1, emptyLike char1)
-            | otherwise =
-                let (trace1, trace2, trace3) = tracebackInternal alignMat char1 char2 (i, j)
-                in (unsafeAppend trace1 curState, unsafeAppend trace2 leftCharacter, unsafeAppend trace3 rightCharacter)
+            | otherwise = 
+                let t@(trace1, trace2, trace3) = tracebackInternal alignMat char1 char2 (i, j)
+                in trace ("building trace " ++ show t) $ (unsafeAppend trace1 curState, unsafeAppend trace2 leftCharacter, unsafeAppend trace3 rightCharacter)
             where
               curDirect      = snd $ getElem row col (mat alignMat)
               curState       = grabSubChar (seqs alignMat ! row) col

@@ -17,6 +17,7 @@ module Analysis.Parsimony.Binary.Test where
 import           Analysis.Parsimony.Binary.DirectOptimization
 import           Analysis.Parsimony.Binary.Fitch
 import           Analysis.Parsimony.Binary.Internal
+import           Analysis.Parsimony.Binary.Optimization
 import           Bio.Metadata
 import           Bio.Character.Dynamic.Coded
 import           Bio.Character.Parsed
@@ -64,7 +65,7 @@ doProperties = testGroup "Properties of the DO algorithm"
             where
                 checkRow :: DynamicChar -> Bool
                 checkRow inSeq = --trace ("checkRow " ++ show result ++ show rowLen) $
-                                    (snd $ V.head result) == DiagDir && allLeft (V.tail result) && V.length result == rowLen
+                                    (snd $ V.head result) == DiagDir && allLeft (V.tail result) && V.length result == (rowLen + 1)
                     where
                         rowLen = numChars inSeq
                         (result, seqs) = firstAlignRow inSeq rowLen 0 0 doMeta
@@ -100,9 +101,23 @@ fitchProperties = testGroup "Properties of the Fitch algorithm" [preIdHolds, pos
             where
                 checkID :: DynamicChar -> Bool
                 checkID inSeq = result == inSeq
-                    where result = postorderFitchBit inSeq inSeq inSeq inSeq inSeq fitchMeta
+                    where 
+                        (_, f, _) = preorderFitchBit 1 inSeq inSeq fitchMeta
+                        result = postorderFitchBit inSeq inSeq inSeq f inSeq fitchMeta
 
 
 -- | Check properties of the traversal
---traversalProperties :: TestTree
---traversalProperties = undefined
+traversalProperties :: TestTree
+traversalProperties = testGroup "Properties of the common binary traversal" [opTwice]
+    where
+        opTwice = testProperty "Running an optimization twice returns same result as first time" checkTwice
+            where
+                checkTwice :: StandardSolution -> Bool
+                checkTwice inSol = once == twice
+                    where
+                        once = solutionOptimization 1 inSol
+                        twice = solutionOptimization 1 once
+        {-
+        atLeaf = testProperty "If we start at a leaf, only that node changes" checkSimple
+            where
+                checkSimple :: -}
