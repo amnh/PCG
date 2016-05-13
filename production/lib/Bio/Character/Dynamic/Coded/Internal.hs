@@ -124,10 +124,12 @@ instance EncodableDynamicCharacter DynamicChar where
 
   encodeDynamic alphabet = DC . fromRows . fmap (encodeChar alphabet) . toList
 
+
   -- TODO: Eric added an extra case in lookupChar, for edge case of 0 taxa. He also changed the Maybe to an error case, 
   --       to make diagnosing problems easier for Grace. 
   --       Add Maybe back in? See original code below.
   indexChar i = lookupChar i
+
 
   lookupChar (DC bm) i
     |  nRows == 0 = bm `row` i
@@ -141,8 +143,8 @@ instance EncodableDynamicCharacter DynamicChar where
   lookupChar (DC bm) i
     |  0 <= i
     && i <  numRows bm = Just $ bm `row` i
-    | otherwise        = Nothing
--}
+    | otherwise        = Nothing-}
+
   -- TODO: Think about the efficiency of this
   unsafeCons static (DC dynamic) = DC . fromRows $ [static] <> (rows dynamic)
 
@@ -174,6 +176,10 @@ instance OldEncodableDynamicCharacterToBeRemoved DynamicChar where
 
 --    numChars           :: s -> Int
     numChars (DC bm) = numRows bm
+
+    safeGrab char@(DC bm) i 
+      |  0 <= i && i < numRows bm = Just $ char `indexChar` i
+      | otherwise                 = Nothing
 
 -- TODO: Probably remove?
 instance Bits DynamicChar where

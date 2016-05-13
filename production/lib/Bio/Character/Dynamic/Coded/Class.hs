@@ -71,3 +71,4 @@ class OldEncodableDynamicCharacterToBeRemoved s where
   grabSubChar        :: s -> Int -> BitVector
   isEmpty            :: s -> Bool
   numChars           :: s -> Int
+  safeGrab           :: s -> Int -> Maybe BitVector

@@ -17,6 +17,7 @@ module Analysis.Parsimony.Binary.Test where
 import           Analysis.Parsimony.Binary.DirectOptimization
 import           Analysis.Parsimony.Binary.Fitch
 import           Analysis.Parsimony.Binary.Internal
+import           Analysis.Parsimony.Binary.Optimization
 import           Bio.Metadata
 import           Bio.Character.Dynamic.Coded
 import           Bio.Character.Parsed
@@ -104,5 +105,17 @@ fitchProperties = testGroup "Properties of the Fitch algorithm" [preIdHolds, pos
 
 
 -- | Check properties of the traversal
---traversalProperties :: TestTree
---traversalProperties = undefined
+traversalProperties :: TestTree
+traversalProperties = testGroup "Properties of the common binary traversal" [opTwice]
+    where
+        opTwice = testProperty "Running an optimization twice returns same result as first time" checkTwice
+            where
+                checkTwice :: StandardSolution -> Bool
+                checkTwice inSol = once == twice
+                    where
+                        once = solutionOptimization 1 inSol
+                        twice = solutionOptimization 1 once
+        {-
+        atLeaf = testProperty "If we start at a leaf, only that node changes" checkSimple
+            where
+                checkSimple :: -}

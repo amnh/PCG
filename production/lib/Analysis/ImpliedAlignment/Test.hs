@@ -59,13 +59,13 @@ numerate = testGroup "Numeration properties" [idHolds, lengthHolds, fullLen]
                                         numerateOne gapCharacter inChar defaultH inChar 0
                 gapCharacter = gapChar inChar
 
-        -- TODO: make sure that these have the same alphabet
+        -- TODO: Talk to Eric about numChars ()
         lengthHolds = testProperty "Numerate returns a sequence of the correct length" checkLen
         checkLen :: (ParsedChar, ParsedChar) -> Int -> Bool
-        checkLen inParse count = V.length traces >= maxLen && counter >= count
+        checkLen inParse count = trace ("numerate returns " ++ show traces ++ " versus " ++ show maxLen ++ " , " ++ show counter ++ " versus " ++ show count) $ V.length traces >= maxLen && counter >= count
             where 
                 (seq1, seq2) = encodeArb inParse
-                defaultH = V.fromList [0..numChars seq1]
+                defaultH = V.fromList [0..numChars seq1 - 1]
                 (traces, counter) = numerateOne gapCharacter seq1 defaultH seq2 count
                 maxLen = maximum [numChars seq1, numChars seq2]
                 gapCharacter = gapChar seq1
@@ -87,15 +87,15 @@ fullProperties :: TestTree
 fullProperties = testGroup "Properties of IA traversal" [twoRuns, fullLens, mAlign]
     where
         twoRuns = testProperty "After two runs of IA, assignments are static" twoIA
-            where
-                twoIA :: StandardSolution -> Bool
-                twoIA (Solution _ meta forests) = foldr (\f acc -> foldr checkStatic acc f) True forests
-                    where
-                        counts = (V.replicate (length meta) 0)
-                        oneRun, twoRun :: DAG -> DAG
-                        oneRun t = snd $ numeratePreorder t (getRoot t) meta counts
-                        twoRun t = snd $ numeratePreorder (oneRun t) (getRoot $ oneRun t) meta counts 
-                        checkStatic t acc = acc && (oneRun t == twoRun t)
+                where
+                    twoIA :: StandardSolution -> Bool
+                    twoIA (Solution _ meta forests) = foldr (\f acc -> foldr checkStatic acc f) True forests
+                        where
+                            counts = (V.replicate (length meta) 0)
+                            oneRun, twoRun :: DAG -> DAG
+                            oneRun t = snd $ numeratePreorder t (getRoot t) meta counts
+                            twoRun t = snd $ numeratePreorder (oneRun t) (getRoot $ oneRun t) meta counts 
+                            checkStatic t acc = acc && (oneRun t == twoRun t)
 
         fullLens = testProperty "Get the correct number of alignments and length of alignments" fLen
             where
