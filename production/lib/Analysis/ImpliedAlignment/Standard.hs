@@ -62,18 +62,24 @@ impliedAlign inTree inMeta = foldr (\n acc -> insert (getCode n) (makeAlignment 
     where
         (_, curTree) = numeratePreorder inTree (getRoot inTree) inMeta (replicate (length inMeta) 0)
         allLeaves = filter (flip nodeIsLeaf curTree) (getNodes curTree)
-        -- oneTrace :: s -> Homologies -> m -> s
+
+-- | Simple function to generate an alignment from a numerated node
+-- Takes in a Node
+-- returns a vector of characters
+makeAlignment :: (NodeConstraint n s) => n -> Vector s
+makeAlignment n = makeAlign (getFinalGapped n) (getHomologies n)
+    where
+         -- oneTrace :: s -> Homologies -> m -> s
         oneTrace dynChar homolog = foldr (\pos acc -> unsafeCons (grabSubChar dynChar pos) acc) emptyChar homolog
         --makeAlign :: Vector s -> HomologyTrace -> Vector s
         makeAlign dynChar homologies = zipWith oneTrace dynChar homologies
-        --makeAlignment :: n -> Vector s
-        makeAlignment n = makeAlign (getFinalGapped n) (getHomologies n)
 
 -- | Main recursive function that assigns homology traces to every node
 -- takes in a tree, a current node, a vector of metadata, and a vector of counters
 -- outputs a resulting vector of counters and a tree with the assignments
 -- TODO: something seems off about doing the DO twice here
 numeratePreorder :: (TreeConstraint t n e s, Metadata m s) => t -> n -> Vector m -> Counts -> (Counts, t)
+numeratePreorder _ curNode _ _ | trace ("numeratePreorder at " ++ show curNode) False = undefined
 numeratePreorder inTree curNode inMeta curCounts
     | nodeIsRoot curNode inTree = (curCounts, inTree `update` [setHomologies curNode defaultHomologs])
     | leftOnly && rightOnly = (curCounts, inTree)

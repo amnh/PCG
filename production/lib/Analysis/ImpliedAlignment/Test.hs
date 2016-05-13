@@ -15,9 +15,13 @@ module Analysis.ImpliedAlignment.Test where
 
 import           Analysis.ImpliedAlignment.Standard
 import           Bio.Character.Dynamic.Coded
+import           Bio.Character.Parsed
 import           Bio.PhyloGraph
 
-import           Data.BitVector hiding (and)
+import           Data.Alphabet
+import           Data.BitVector (BitVector, setBit, bitVec)
+import           Data.Foldable
+import           Data.List
 import qualified Data.Vector    as V
 import qualified Data.IntMap    as IM
 import           Test.Tasty
@@ -44,7 +48,7 @@ fullIA = testGroup "Full alignment properties" [lenHolds]
                 checkL n (_, s) = V.and $ V.zipWith (\c1 c2 -> numChars c1 <= numChars c2) (getFinalGapped n) s 
 
 numerate :: TestTree
-numerate = testGroup "Numeration properties" [idHolds]
+numerate = testGroup "Numeration properties" [idHolds, lengthHolds, fullLen]
     where
         idHolds = testProperty "When a sequence is numerated with itself, get indices and the same counter" checkID
         checkID :: DynamicChar -> Bool
@@ -53,16 +57,62 @@ numerate = testGroup "Numeration properties" [idHolds]
                 defaultH = V.fromList [0..numChars inChar - 1] 
                 (traces, counter) = --trace ("numerate counter " ++ show traces) $ 
                                         numerateOne gapCharacter inChar defaultH inChar 0
-                gapCharacter = setBit (bitVec 0 (0 :: Integer)) (numChars inChar)
+                gapCharacter = gapChar inChar
 
         -- TODO: make sure that these have the same alphabet
-        {-lengthHolds = testProperty "Numerate returns a sequence of the correct length" checkLen
-        checkLen :: DynamicChar -> DynamicChar -> Int -> Bool
-        checkLen seq1 seq2 count = V.length traces == maxLen && counter >= count
+        lengthHolds = testProperty "Numerate returns a sequence of the correct length" checkLen
+        checkLen :: (ParsedChar, ParsedChar) -> Int -> Bool
+        checkLen inParse count = V.length traces >= maxLen && counter >= count
             where 
+                (seq1, seq2) = encodeArb inParse
                 defaultH = V.fromList [0..numChars seq1]
                 (traces, counter) = numerateOne gapCharacter seq1 defaultH seq2 count
                 maxLen = maximum [numChars seq1, numChars seq2]
-                gapCharacter = setBit (bitVec 0 (0 :: Integer)) (numChars seq1)-}
+                gapCharacter = gapChar seq1
 
         --homologyHolds = testProperty "Homology position has expected properties: homologies has the same length as the sequence, and the counter increases"
+        
+        fullLen = testProperty "Numeration of a tree increases sequence length" preLen
+            where
+                preLen :: StandardSolution -> Bool
+                preLen (Solution _ meta forests) = foldr (\f acc -> foldr checkAllLens acc f) True forests
+                    where
+                        counts = (V.replicate (length meta) 0)
+                        checkAllLens t acc = acc && (checkNodes (nodes t) $ nodes $ snd $ numeratePreorder t (getRoot t) meta counts)
+                        checkNodes :: V.Vector Node -> V.Vector Node -> Bool
+                        checkNodes oldNodes newNodes = V.and $ V.zipWith (\o n -> checkSeqs (getFinalGapped o) (getFinalGapped n)) oldNodes newNodes
+                        checkSeqs seq1 seq2 = V.and $ V.zipWith (\c1 c2 -> numChars c1 <= numChars c2) seq1 seq2
+
+fullProperties :: TestTree
+fullProperties = testGroup "Properties of IA traversal" [twoRuns, fullLens, mAlign]
+    where
+        twoRuns = testProperty "After two runs of IA, assignments are static" twoIA
+            where
+                twoIA :: StandardSolution -> Bool
+                twoIA (Solution _ meta forests) = foldr (\f acc -> foldr checkStatic acc f) True forests
+                    where
+                        counts = (V.replicate (length meta) 0)
+                        oneRun, twoRun :: DAG -> DAG
+                        oneRun t = snd $ numeratePreorder t (getRoot t) meta counts
+                        twoRun t = snd $ numeratePreorder (oneRun t) (getRoot $ oneRun t) meta counts 
+                        checkStatic t acc = acc && (oneRun t == twoRun t)
+
+        fullLens = testProperty "Get the correct number of alignments and length of alignments" fLen
+            where
+                fLen :: StandardSolution -> Bool
+                fLen (Solution _ meta forests) = foldr (\f acc -> foldr checkAlign acc f) True forests
+                    where
+                        checkAlign t acc = acc && (V.length $ nodes t) == (length $ impliedAlign t meta)
+
+        mAlign = testProperty "Making the alignment makes a longer sequence" ma
+            where
+                ma :: Node -> Bool
+                ma inNode = makeLen (getFinalGapped inNode) (makeAlignment inNode)
+                    where makeLen l1 l2 = V.and $ V.zipWith (\c1 c2 -> numChars c1 == numChars c2) l1 l2
+
+-- | Useful function to convert encoding information to two encoded seqs
+encodeArb :: (ParsedChar, ParsedChar) -> (DynamicChar, DynamicChar)
+encodeArb (parse1, parse2) = (encodeDynamic alph parse1, encodeDynamic alph parse2)
+    where 
+        oneAlph = nub . foldr (\s acc -> foldr (:) acc s) mempty
+        alph = constructAlphabet $ nub $ (oneAlph parse1) ++ (oneAlph parse2)
