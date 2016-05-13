@@ -101,7 +101,9 @@ fitchProperties = testGroup "Properties of the Fitch algorithm" [preIdHolds, pos
             where
                 checkID :: DynamicChar -> Bool
                 checkID inSeq = result == inSeq
-                    where result = postorderFitchBit inSeq inSeq inSeq inSeq inSeq fitchMeta
+                    where 
+                        (_, f, _) = preorderFitchBit 1 inSeq inSeq fitchMeta
+                        result = postorderFitchBit inSeq inSeq inSeq f inSeq fitchMeta
 
 
 -- | Check properties of the traversal

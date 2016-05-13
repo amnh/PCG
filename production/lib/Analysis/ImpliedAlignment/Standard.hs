@@ -79,7 +79,7 @@ makeAlignment n = makeAlign (getFinalGapped n) (getHomologies n)
 -- outputs a resulting vector of counters and a tree with the assignments
 -- TODO: something seems off about doing the DO twice here
 numeratePreorder :: (TreeConstraint t n e s, Metadata m s) => t -> n -> Vector m -> Counts -> (Counts, t)
-numeratePreorder _ curNode _ _ | trace ("numeratePreorder at " ++ show curNode) False = undefined
+--numeratePreorder _ curNode _ _ | trace ("numeratePreorder at " ++ show curNode) False = undefined
 numeratePreorder inTree curNode inMeta curCounts
     | nodeIsRoot curNode inTree = (curCounts, inTree `update` [setHomologies curNode defaultHomologs])
     | leftOnly && rightOnly = (curCounts, inTree)

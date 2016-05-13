@@ -65,9 +65,9 @@ instance Arbitrary (TopoNode b) where
 arbitraryTopoGivenCAL :: Int -> Alphabet String -> (Int, Int) -> Gen (TopoNode b)
 arbitraryTopoGivenCAL maxChildren inAlph (curLevel, maxLevel) = do
      let root = curLevel == 0
-     n        <- arbitrary :: Gen String
+     n  <- arbitrary :: Gen String
      nc <- (arbitrary :: Gen Int) `suchThat` (<= maxChildren)
-     let ncFinal = if curLevel == maxLevel then 0 else nc
+     let ncFinal = if curLevel >= maxLevel then 0 else nc
      chillens <- vectorOf ncFinal (arbitraryTopoGivenCAL maxChildren inAlph (curLevel + 1, maxLevel))
      let leaf = ncFinal == 0
      seqs     <- vectorOf 10 (arbitraryDynamicsGA inAlph)

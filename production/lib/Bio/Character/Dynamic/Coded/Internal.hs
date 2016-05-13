@@ -158,7 +158,7 @@ instance OldEncodableDynamicCharacterToBeRemoved DynamicChar where
     emptyLike (DC bm) = DC $ bitMatrix (numRows bm) (numCols bm) (const False)
     
 --    filterGaps         :: s -> s
-    filterGaps c@(DC bm) = DC . fromRows . filter (== gapBV) $ rows bm
+    filterGaps c@(DC bm) = DC . fromRows . filter (/= gapBV) $ rows bm
       where
         gapBV = gapChar c
     
