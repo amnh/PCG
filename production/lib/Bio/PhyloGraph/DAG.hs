@@ -27,33 +27,33 @@ module Bio.PhyloGraph.DAG
   ) where
 
 import           Bio.Character.Parsed
-import           Bio.Metadata.Internal hiding (name)
+import           Bio.Metadata.Internal              hiding (name)
 import           Bio.Character.Dynamic.Coded
 import           Bio.PhyloGraph.DAG.Internal
 import           Bio.PhyloGraph.DAG.Class
 import           Bio.PhyloGraph.Edge
 import           Bio.PhyloGraph.Forest
-import qualified Bio.PhyloGraph.Network as N
+import qualified Bio.PhyloGraph.Network             as N
 import qualified Bio.PhyloGraph.Network.Subsettable as SN
 import           Bio.PhyloGraph.Node
-import qualified Bio.PhyloGraph.Node.Topological as TN
-import qualified Bio.PhyloGraph.Tree.EdgeAware as ET
+import qualified Bio.PhyloGraph.Node.Topological    as TN
+import qualified Bio.PhyloGraph.Tree.EdgeAware      as ET
 import           Bio.PhyloGraph.Tree.Binary
-import qualified Bio.PhyloGraph.Tree.Referential as RT
+import qualified Bio.PhyloGraph.Tree.Referential    as RT
 import           Bio.PhyloGraph.Tree.Rose
 import           Data.Alphabet
 import           Data.Bifunctor
-import           Data.HashMap.Lazy (HashMap)
-import qualified Data.HashMap.Lazy as H (toList)
-import qualified Data.IntSet as IS
-import qualified Data.IntMap as IM
-import           Data.Key (lookup)
+import           Data.HashMap.Lazy                         (HashMap)
+import qualified Data.HashMap.Lazy                  as H   (toList)
+import qualified Data.IntSet                        as IS
+import qualified Data.IntMap                        as IM
+import           Data.Key                                  (lookup)
 import           Data.Maybe
 import           Data.Monoid
-import           Data.Vector ((//), Vector, elemIndex, (!))
-import qualified Data.Vector as V
-import qualified File.Format.Newick as New
-import           Prelude hiding (lookup)
+import           Data.Vector                               ((//), Vector, elemIndex, (!))
+import qualified Data.Vector                        as V
+import qualified File.Format.Newick                 as New
+import           Prelude                            hiding (lookup)
 import           Safe
 import           Test.Tasty.QuickCheck
 
@@ -90,6 +90,8 @@ arbitraryDAGGS allSeqs metadata = fromTopo <$> TopoDAG <$> TN.arbitraryTopoGiven
 
 instance Monoid DAG where
     mempty = DAG mempty mempty 0
+    -- append is adding dag2 to dag1 just below the root.
+    -- I'm not sure why we'd want to append two DAGs.
     mappend dag1 dag2 = appendAt dag1 dag2 (N.root dag1)
 
 instance Monoid TopoDAG where
@@ -137,30 +139,60 @@ instance N.Network DAG NodeInfo where
 
 -- | Function to append two dags
 appendAt :: DAG -> DAG -> NodeInfo -> DAG
-appendAt d1@(DAG n e r) d2@(DAG n' e' r') hangNode
-    | null n  = d2
-    | null n' = d1
-    | r > length n - 1 || r' > length n' - 1 = error "Root out of bounds when trying to append trees"
-    | otherwise = DAG allNodes connectEdges r
+appendAt d1@(DAG nodes_1 edges_1 root_1) d2@(DAG nodes_2 edges_2 root_2) hangNode
+    | null nodes_1 = d2
+    | null nodes_2 = d1
+    | root_1 > length nodes_1 - 1 || root_2 > length nodes_2 - 1 = error "Root out of bounds when trying to append trees"
+    -- new procedure. Update and accumulate just once into new vector of nodes
+{-    | otherwise = DAG newNodes newEdges root_1
         where
-            shift = length n
-            hCode = code hangNode
+            newNodes   = fromList newNodeList
+            nodes1List = toList nodes_1
+            newNodeList = map 
+-}
+    | otherwise = DAG allNodes connectEdges root_1
+        where
+            shift           = length nodes_1 -- how much to add to the code of each node in DAG_2
+            hCode           = code hangNode
+
+
+
             -- hang and shift the nodes
-            hungNodes = n' // [(r', (n' ! r') {isRoot = False, parents = [hCode]})]
-            connectN = n // [(hCode, hangNode {children = (shift + r') : children hangNode, isLeaf = False})]
-            recodeNew = fmap recodeFun hungNodes
-            recodeFun m = m { code = code m + shift, children = fmap (shift +) (children m), parents = fmap (shift +) (parents m) }
-            allNodes = connectN V.++ recodeNew
+            hungNodes       = nodes_2 // [( root_2
+                                          , (nodes_2 ! root_2) { isRoot = False
+                                                               , parents = [hCode]
+                                                               }
+                                          )]
+    
+            connectN        = nodes_1  // [( hCode
+                                           , hangNode { children = (shift + root_2) : children hangNode
+                                                      , isLeaf = False
+                                                      }
+                                           )]
+    
+            recodeNew       = fmap recodeFun hungNodes
+            recodeFun m     = m { code     = code m + shift
+                                , children = fmap (shift +) (children m)
+                                , parents  = fmap (shift +) (parents m) 
+                                }
+            allNodes        = connectN V.++ recodeNew
+
             -- update edges and add connecting edge
-            reMapOut = IM.foldWithKey (\k val acc -> IM.insert (k + shift) (reMapInfo val) acc) mempty
-            reMapInfo eInfo = eInfo {origin = allNodes ! (code (origin eInfo) + shift), terminal = allNodes ! (code (terminal eInfo) + shift)}
-            shiftEdge edge = edge {inNodes = IS.map (shift +) (inNodes edge), outNodes = reMapOut (outNodes edge)}
-            newEdges = fmap shiftEdge e'
-            allEdges = e V.++ newEdges
-            hangUpdate = (allEdges ! hCode) {outNodes = fmap (\info -> info {origin = allNodes ! hCode}) (outNodes (allEdges ! hCode))}
-            hangAdd = hangUpdate <> EdgeSet (inNodes $ e ! hCode) (IM.insert (r' + shift) (EdgeInfo 0 (allNodes ! hCode) (allNodes ! (r' + shift)) Nothing) (outNodes $ e ! hCode))
-            hangedUpdate = (allEdges ! (r' + shift)) <> EdgeSet (IS.singleton hCode) mempty
-            connectEdges = allEdges // [(hCode, hangAdd), (r' + shift, hangedUpdate)]
+            reMapOut        = IM.foldWithKey (\k val acc -> IM.insert (k + shift) (reMapInfo val) acc) mempty
+            reMapInfo eInfo = eInfo { origin   = allNodes ! (code (origin eInfo) + shift)
+                                    , terminal = allNodes ! (code (terminal eInfo) + shift)
+                                    }
+
+            shiftEdge edge  = edge { inNodes  = IS.map (shift +) (inNodes edge)
+                                   , outNodes = reMapOut (outNodes edge)
+                                   }
+
+            newEdges        = fmap shiftEdge edges_2
+            allEdges        = edges_1 V.++ newEdges
+            hangUpdate      = (allEdges ! hCode) { outNodes = fmap (\info -> info { origin = allNodes ! hCode }) (outNodes (allEdges ! hCode)) }
+            hangAdd         = hangUpdate <> EdgeSet (inNodes $ edges_1 ! hCode) (IM.insert (root_2 + shift) (EdgeInfo 0 (allNodes ! hCode) (allNodes ! (root_2 + shift)) Nothing) (outNodes $ edges_1 ! hCode))
+            hangedUpdate    = (allEdges ! (root_2 + shift)) <> EdgeSet (IS.singleton hCode) mempty
+            connectEdges    = allEdges // [(hCode, hangAdd), (root_2 + shift, hangedUpdate)]
 
 
 -- | Function to grab from a DAG
