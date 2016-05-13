@@ -65,11 +65,12 @@ doProperties = testGroup "Properties of the DO algorithm"
             where
                 checkRow :: DynamicChar -> Bool
                 checkRow inSeq = --trace ("checkRow " ++ show result ++ show rowLen) $
-                                    (snd $ V.head result) == DiagDir && allLeft (V.tail result) && V.length result == (rowLen + 1)
+                                    fDir == DiagDir && allLeft (V.tail result) && V.length result == (rowLen + 1)
                     where
                         rowLen = numChars inSeq
-                        (result, seqs) = firstAlignRow inSeq rowLen 0 0 doMeta
-                        allLeft = V.all (\val -> snd val == LeftDir)
+                        result = firstAlignRow inSeq rowLen 0 0 doMeta
+                        (_, fDir, _) = V.head result
+                        allLeft = V.all (\(_, val, _) -> val == LeftDir)
 
         empties = testProperty "NaiveDO correctly handles an empty sequence" checkEmpty
             where

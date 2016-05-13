@@ -32,16 +32,12 @@ data Direction = LeftDir | DiagDir | DownDir deriving (Eq, Show)
 
 -- | A row of the 'AlignMatrix'
 -- constructed as a tuple of vectors for easy joining to the full matrix
-type AlignRow s = (Vector (Double, Direction), s)
+type AlignRow s = Vector (Double, Direction, BitVector)
 
 -- | A representation of an alignment matrix
 -- The matrix itself stores tuples of the cost and direction at that position.
 -- We also store a vector of characters that are generated.
-data AlignMatrix s
-   = AlignMatrix
-   { mat     :: Matrix (Double, Direction)
-   , seqs      :: Vector s
-   } deriving (Eq, Show)
+type AlignMatrix s = Matrix (Double, Direction, BitVector)
 
 -- | Performs a naive direct optimization
 -- Takes in two characters to run DO on and a metadata object
@@ -73,15 +69,16 @@ naiveDO char1 char2 meta
             (ungapped, cost, gapped, out1, out2)
 
         where
-            getMatrixCost :: (SeqConstraint' s) => AlignMatrix s -> Double
+            getMatrixCost :: AlignMatrix s -> Double
             --getMatrixCost inAlign | trace ("Get cost " ++ show (nrows $ costs inAlign) ++ " " ++ show (ncols $ costs inAlign)) False = undefined
-            getMatrixCost inAlign = fst $ getElem (nrows (mat inAlign) - 1) (ncols (mat inAlign) - 1) (mat inAlign)
+            getMatrixCost inAlign = c
+                where (c, _, _) = getElem (nrows inAlign - 1) (ncols inAlign - 1) inAlign
 
 -- | Joins an alignment row to the rest of a matrix
 -- Takes in an alignment row and an alignment matrix
 -- Returns an alignment matrix with the new row added
-joinMat :: EncodableDynamicCharacter s => AlignRow s -> AlignMatrix s -> AlignMatrix s
-joinMat (inRow, inChar) inMat = AlignMatrix (inRow `joinRow` mat inMat) (inChar `cons` seqs inMat)
+joinMat :: AlignRow s -> AlignMatrix s -> AlignMatrix s
+joinMat inRow inMat = inRow `joinRow` inMat
     where
         joinRow vec curMat = fromList 1 (length vec) (toList vec) <-> curMat
 
@@ -94,19 +91,19 @@ firstAlignRow :: (SeqConstraint' s, Metadata m s) => s -> Int -> Int -> Double -
 --firstAlignRow inChar rowLength position prevCost _ | trace ("firstAlignRow " ++ show inChar ++ " with len " ++ show rowLength) False = undefined
 firstAlignRow inChar rowLength position prevCost meta
     | position == (rowLength + 1) = --trace ("terminate ") $
-                                    (mempty, emptyLike inChar)
+                                    (mempty)
     | position == 0 =
         let recurse0 = firstAlignRow inChar rowLength (position + 1) 0 meta
         in --trace ("cons with gap ") $
-            ((0, DiagDir) `cons` (fst recurse0), unsafeCons (gapChar inChar) (snd recurse0))
+            (0, DiagDir, gapChar inChar) `cons` recurse0
     | newState /= gapChar inChar = --trace ("new state on first row " ++ show newState) $ -- if there's no indel overlap
         let recurse1 = firstAlignRow inChar rowLength (position + 1) (prevCost + indCost) meta
         in --trace ("cons with new ") $
-            ((prevCost + indCost, LeftDir) `cons` (fst recurse1), unsafeCons newState (snd recurse1))
+            (prevCost + indCost, LeftDir, newState) `cons` recurse1
     | otherwise = --trace ("new state on first row, otherwise " ++ show newState) $ -- matching indel so no cost
         let recurse2 = firstAlignRow inChar rowLength (position + 1) prevCost meta
         in --trace ("cons with new 2 ") $
-            ((prevCost, LeftDir) `cons` (fst recurse2), unsafeCons newState (snd recurse2))
+            (prevCost, LeftDir, newState) `cons` recurse2
         where
             newState = fst $ getOverlap (gapChar inChar) (grabSubChar inChar (position - 1)) meta
             indCost = getGapCost meta
@@ -158,7 +155,7 @@ getOverlap inChar1 inChar2 meta = memoize2 (overlap meta) inChar1 inChar2
 -- returns an alignment matrix
 getAlignRows :: (SeqConstraint' s, Metadata m s) => s -> s -> Int -> AlignRow s -> m -> AlignMatrix s
 getAlignRows char1 char2 rowNum prevRow meta
-    | rowNum == numChars char2 + 1 = AlignMatrix (matrix 0 0 (const (0, LeftDir))) mempty
+    | rowNum == numChars char2 + 1 = matrix 0 0 (const (0, LeftDir, mempty))
     | otherwise = thisRow `joinMat` getAlignRows char1 char2 (rowNum + 1) thisRow meta
         where
             thisRow = generateRow char1 char2 rowNum prevRow (0, 0) meta
@@ -171,21 +168,21 @@ getAlignRows char1 char2 rowNum prevRow meta
 --   then selects the minimum value to set the correct value at the given positions
 generateRow :: (SeqConstraint' s, Metadata m s) => s -> s -> Int -> AlignRow s -> (Int, Double) -> m -> AlignRow s
 generateRow char1 char2 _ _ (position, _)  _ | trace ("generateRow " ++ show char1 ++ show char2 ++ show position) False = undefined
-generateRow char1 char2 rowNum prevRow@(vals, _) (position, prevCost) meta
+generateRow char1 char2 rowNum vals (position, prevCost) meta
     | length vals < (position - 1) = error "Problem with row generation, previous costs not generated"
-    | position == numChars char1 + 1 = (mempty, emptyLike char1)
+    | position == numChars char1 + 1 = mempty
     | position == 0 && downChar /= gapChar char1 =
-        ((upValue + indCost, DownDir)`cons` (fst $ nextCall (upValue + indCost)), unsafeCons downChar (snd $ nextCall (upValue + indCost)))
+        (upValue + indCost, DownDir, downChar)`cons` (nextCall (upValue + indCost))
     | position == 0 =
-        ((upValue, DownDir) `cons` (fst $ nextCall upValue), unsafeCons downChar (snd $ nextCall upValue))
+        (upValue, DownDir, downChar) `cons` (nextCall upValue)
     | otherwise = --trace "minimal case" $
-        ((minCost, minDir) `cons` (fst $ nextCall minCost), unsafeCons minState (snd $ nextCall minCost))
+        (minCost, minDir, minState) `cons` nextCall minCost
         where
             indCost            = getGapCost meta
             subChar1           = grabSubChar char1 (position - 1)
             subChar2           = grabSubChar char2 (rowNum - 1)
-            upValue            = fst $ vals ! position
-            diagVal            = fst $ vals ! (position - 1)
+            (upValue, _, _)    = vals ! position
+            (diagVal, _, _)    = vals ! (position - 1)
             (downChar, dCost)  = getOverlap (gapChar char2) subChar2 meta
             downCost           = dCost + upValue
             (leftChar, lCost)  = getOverlap (gapChar char1) subChar1 meta
@@ -193,7 +190,7 @@ generateRow char1 char2 rowNum prevRow@(vals, _) (position, prevCost) meta
             (diagChar, dgCost) = getOverlap subChar1 subChar2 meta
             diagCost           = diagVal + dgCost
 
-            nextCall cost      = generateRow char1 char2 rowNum prevRow (position + 1, cost) meta
+            nextCall cost      = generateRow char1 char2 rowNum vals (position + 1, cost) meta
 
             (minCost, minState, minDir) = trace ("minimum with diag " ++ show (diagCost, diagChar)) $ minimumBy (comparing (\(a,_,_) -> a))
                                                 [(diagCost, diagChar, DiagDir), (leftCost, leftChar, LeftDir), (downCost, downChar, DownDir)]
@@ -210,14 +207,13 @@ traceback alignMat' char1' char2' = tracebackInternal alignMat' char1' char2' (n
         tracebackInternal :: (SeqConstraint' s) => AlignMatrix s -> s -> s -> (Int, Int) -> (s, s, s)
         --tracebackInternal alignMat char1 char2 (row, col)  | trace ("traceback with position " ++ show (row, col)) False = undefined
         tracebackInternal alignMat char1 char2 (row, col)
-            | length (seqs alignMat) < row - 1 || nrows (mat alignMat) < row - 1 || ncols (mat alignMat) < col - 1 = error "Traceback cannot function because matrix is incomplete"
+            | nrows alignMat < row - 1 || ncols alignMat < col - 1 = error "Traceback cannot function because matrix is incomplete"
             | row == 0 && col == 0 = (emptyLike char1, emptyLike char1, emptyLike char1)
             | otherwise = 
                 let t@(trace1, trace2, trace3) = tracebackInternal alignMat char1 char2 (i, j)
                 in {-trace ("building trace " ++ show t) $ -}(unsafeAppend trace1 curState, unsafeAppend trace2 leftCharacter, unsafeAppend trace3 rightCharacter)
             where
-              curDirect      = snd $ getElem row col (mat alignMat)
-              curState       = grabSubChar (seqs alignMat ! row) col
+              (_, curDirect, curState) = getElem row col alignMat
               leftCharacter  = if row == i then gapChar char2 else grabSubChar char1 i
               rightCharacter = if col == j then gapChar char1 else grabSubChar char2 j
               (i, j) =
