@@ -486,3 +486,5 @@ Test-Suite testsuite
                        Control.Evaluation
                        Control.Evaluation.Trans
                        Control.Monad.Logger
+                       Analysis.Parsimony.Binary.Optimization
+                       Bio.PhyloGraph.Forest.Parsed

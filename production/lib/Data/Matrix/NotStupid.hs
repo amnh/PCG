@@ -13,11 +13,12 @@
 -- Everything is /zero/ indexed to provide a consistant indexing API with 'Vector'.
 -- Hence /not stupid/.
 -----------------------------------------------------------------------------
+{-# LANGUAGE TypeFamilies #-}
+{-# OPTIONS_GHC -fno-warn-orphans #-}
 
 module Data.Matrix.NotStupid
   ( matrix
   , getElem
-  , (!)
   , (<->)
   , (<|>)
   , unsafeGet
@@ -90,10 +91,20 @@ module Data.Matrix.NotStupid
   ) where
 
 import           Control.Arrow ((***))
+import           Data.Key
 import           Data.Matrix   (Matrix,(<->),(<|>))
 import qualified Data.Matrix as Stupid 
 import           Data.Vector   (Vector)
 
+type instance Key Matrix = (Int, Int)
+
+instance Indexable Matrix where
+    {-# INLINE index #-}
+    index m (i,j) = getElem i j m
+      
+instance Lookup Matrix where
+    {-# INLINE lookup #-}
+    lookup (i,j) = safeGet i j
 
 -- | /O(rows*cols)/. Generate a matrix from a generator function.
 --   Example of usage:
@@ -121,11 +132,6 @@ getElem :: Int      -- ^ Row
         -> a
 {-# INLINE getElem #-}
 getElem i j = Stupid.getElem (i+1) (j+1)
-
--- | An infix alias for 'getElem' which takes a tuple.
-(!) :: Matrix a -> (Int,Int) -> a
-{-# INLINE (!) #-}
-m ! (i,j) = getElem i j m
 
 -- | /O(1)/. Unsafe variant of 'getElem', without bounds checking.
 unsafeGet :: Int      -- ^ Row
