@@ -23,8 +23,7 @@ import Data.Vector   (Vector, cons, toList, (!))
 import Data.Foldable (minimumBy)
 import Data.Function.Memoize
 import Data.Ord
-import Data.Matrix   (Matrix, getElem, nrows, ncols, (<->), matrix, fromList)
-
+import Data.Matrix.NotStupid   (Matrix, getElem, nrows, ncols, (<->), matrix, fromList)
 import Debug.Trace
 
 -- | The direction to align the character at a given matrix point.
@@ -45,7 +44,7 @@ type AlignMatrix s = Matrix (Double, Direction, BitVector)
 -- the aligned version of the first input character, and the aligned version of the second input character
 -- The process for this algorithm is to generate a traversal matrix, then perform a traceback.
 naiveDO :: (Metadata m s, SeqConstraint' s) => s -> s -> m -> (s, Double, s, s, s)
---naiveDO s1 s2 _ | trace ("Sequences of length " ++ show s1 ++ show s2) False = undefined
+--naiveDO s1 s2 _ | trace ("Sequences of length " ++ show (numChars s1) ++ show (numChars s2)) False = undefined
 naiveDO char1 char2 meta
     | isEmpty char1 = (char1, 0, char1, char1, char1)
     | isEmpty char2 = (char2, 0, char2, char2, char2)
@@ -59,7 +58,7 @@ naiveDO char1 char2 meta
             firstMatRow = firstAlignRow longerChar longLen 0 0 meta
             traversalMat = firstMatRow `joinMat` getAlignRows longerChar shorterChar 1 firstMatRow meta
             cost = getMatrixCost traversalMat
-            (gapped, left, right) = trace ("get seqs " ++ show traversalMat)
+            (gapped, left, right) = --trace ("get seqs " ++ show traversalMat)
                                     traceback traversalMat shorterChar longerChar
             ungapped = {-trace ("filter gaps of " ++ show gapped) $ -}filterGaps gapped
             (out1, out2) = if char1Len > char2Len
@@ -88,10 +87,10 @@ joinMat inRow inMat = inRow `joinRow` inMat
 -- This row will have a diagonal at the leftmost position and will otherwise have only lefts
 -- the cost is just added to every time there's a gap
 firstAlignRow :: (SeqConstraint' s, Metadata m s) => s -> Int -> Int -> Double -> m -> AlignRow s
---firstAlignRow inChar rowLength position prevCost _ | trace ("firstAlignRow " ++ show inChar ++ " with len " ++ show rowLength) False = undefined
+--firstAlignRow inChar rowLength position prevCost _ | trace ("firstAlignRow " ++ show inChar ++ " with len " ++ show rowLength ++ show position) False = undefined
 firstAlignRow inChar rowLength position prevCost meta
     | position == (rowLength + 1) = --trace ("terminate ") $
-                                    (mempty)
+                                    mempty
     | position == 0 =
         let recurse0 = firstAlignRow inChar rowLength (position + 1) 0 meta
         in --trace ("cons with gap ") $
@@ -119,7 +118,7 @@ getOverlap inChar1 inChar2 meta = memoize2 (overlap meta) inChar1 inChar2
         -- | Gets the overlap state: intersect if possible and union if that's empty
         -- Takes two sequences and returns another
         overlap :: (Metadata m s) => m -> BitVector -> BitVector -> (BitVector, Double)
-        overlap _ c1 c2 | trace ("overlap on " ++ show c1 ++ " and " ++ show c2) False = undefined
+        --overlap _ c1 c2 | trace ("overlap on " ++ show c1 ++ " and " ++ show c2) False = undefined
         overlap inMeta char1 char2
             | 0 == char1 || 0 == char2 = --trace ("overlap case 1: equals 0 ") $
                                             (zeroBitVec, 0)
@@ -167,10 +166,11 @@ getAlignRows char1 char2 rowNum prevRow meta
 --   Essentially gets values for left, down, and diagonal moves using overlap functionality
 --   then selects the minimum value to set the correct value at the given positions
 generateRow :: (SeqConstraint' s, Metadata m s) => s -> s -> Int -> AlignRow s -> (Int, Double) -> m -> AlignRow s
-generateRow char1 char2 _ _ (position, _)  _ | trace ("generateRow " ++ show char1 ++ show char2 ++ show position) False = undefined
+--generateRow char1 char2 _ _ (position, _)  _ | trace ("generateRow " ++ show char1 ++ show char2 ++ show position) False = undefined
 generateRow char1 char2 rowNum vals (position, prevCost) meta
     | length vals < (position - 1) = error "Problem with row generation, previous costs not generated"
-    | position == numChars char1 + 1 = mempty
+    | position >= numChars char1 = mempty
+    | rowNum >= numChars char2 = mempty
     | position == 0 && downChar /= gapChar char1 =
         (upValue + indCost, DownDir, downChar)`cons` (nextCall (upValue + indCost))
     | position == 0 =
@@ -192,7 +192,7 @@ generateRow char1 char2 rowNum vals (position, prevCost) meta
 
             nextCall cost      = generateRow char1 char2 rowNum vals (position + 1, cost) meta
 
-            (minCost, minState, minDir) = trace ("minimum with diag " ++ show (diagCost, diagChar)) $ minimumBy (comparing (\(a,_,_) -> a))
+            (minCost, minState, minDir) = {-trace ("minimum with diag " ++ show (diagCost, diagChar)) $ -}minimumBy (comparing (\(a,_,_) -> a))
                                                 [(diagCost, diagChar, DiagDir), (leftCost, leftChar, LeftDir), (downCost, downChar, DownDir)]
 
 -- | Performs the traceback of an alignment matrix
@@ -201,17 +201,18 @@ generateRow char1 char2 rowNum vals (position, prevCost) meta
 -- Essentially follows the arrows from the bottom right corner, accumulating the sequences as it goes
 traceback :: (SeqConstraint' s) => AlignMatrix s -> s -> s -> (s, s, s)
 --traceback alignMat char1 char2 | trace ("traceback with matrix " ++ show alignMat) False = undefined
-traceback alignMat' char1' char2' = tracebackInternal alignMat' char1' char2' (numChars char1', numChars char2')
+traceback alignMat' char1' char2' = (fromChars t1, fromChars t2, fromChars t3)
     where
+        (t1, t2, t3) = tracebackInternal alignMat' char1' char2' (nrows alignMat' - 1, ncols alignMat' - 1)
         -- read it from the matrix instead of grabbing
-        tracebackInternal :: (SeqConstraint' s) => AlignMatrix s -> s -> s -> (Int, Int) -> (s, s, s)
+        tracebackInternal :: (SeqConstraint' s) => AlignMatrix s -> s -> s -> (Int, Int) -> ([BitVector], [BitVector], [BitVector])
         --tracebackInternal alignMat char1 char2 (row, col)  | trace ("traceback with position " ++ show (row, col)) False = undefined
         tracebackInternal alignMat char1 char2 (row, col)
             | nrows alignMat < row - 1 || ncols alignMat < col - 1 = error "Traceback cannot function because matrix is incomplete"
-            | row == 0 && col == 0 = (emptyLike char1, emptyLike char1, emptyLike char1)
+            | row == 0 && col == 0 = (mempty, mempty, mempty)
             | otherwise = 
                 let t@(trace1, trace2, trace3) = tracebackInternal alignMat char1 char2 (i, j)
-                in {-trace ("building trace " ++ show t) $ -}(unsafeAppend trace1 curState, unsafeAppend trace2 leftCharacter, unsafeAppend trace3 rightCharacter)
+                in (curState : trace1, leftCharacter : trace2, rightCharacter : trace3)
             where
               (_, curDirect, curState) = getElem row col alignMat
               leftCharacter  = if row == i then gapChar char2 else grabSubChar char1 i

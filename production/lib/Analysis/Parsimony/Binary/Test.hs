@@ -19,6 +19,7 @@ import           Analysis.Parsimony.Binary.Fitch
 import           Analysis.Parsimony.Binary.Internal
 import           Analysis.Parsimony.Binary.Optimization
 import           Bio.Metadata
+import           Bio.Metadata.MaskGenerator
 import           Bio.Character.Dynamic.Coded
 import           Bio.Character.Parsed
 import           Bio.PhyloGraph.Solution
@@ -57,8 +58,8 @@ doProperties = testGroup "Properties of the DO algorithm"
         idHolds = testProperty "When DO runs a sequence against itself, get input as result" checkID
             where
                 checkID :: DynamicChar -> Bool
-                checkID inSeq = trace ("main result of DO " ++ show main ++ " with input " ++ show inSeq)
-                                main == inSeq && cost == 0 && gapped == inSeq && left == inSeq && right == inSeq
+                checkID inSeq = trace ("main result of DO " ++ show main ++ " with cost " ++ show cost ++ " with right " ++ show right)
+                                main == (filterGaps inSeq) && cost == 0 && gapped == inSeq && left == inSeq && right == inSeq
                     where (main, cost, gapped, left, right) = naiveDO inSeq inSeq doMeta
 
         firstRow = testProperty "First row of alignment matrix has expected directions" checkRow
@@ -95,16 +96,19 @@ fitchProperties = testGroup "Properties of the Fitch algorithm" [preIdHolds, pos
         preIdHolds = testProperty "When Preorder Fitch runs a sequence against itself, get input as result" checkID
             where
                 checkID :: DynamicChar -> Bool
-                checkID inSeq = result == inSeq && cost == 0
-                    where (result, _, cost) = preorderFitchBit 1 inSeq inSeq fitchMeta
+                checkID inSeq = {-trace ("fitch result " ++ show result ++ " with cost " ++ show cost) $ -}result == inSeq && cost == 0
+                    where 
+                        newAlph = constructAlphabet . V.fromList . map pure . take (getAlphLen inSeq) $ '-' : ['A'..'z']
+                        (result, _, cost) = preorderFitchBit 1 inSeq inSeq (fitchMeta {alphabet = newAlph, fitchMasks = generateMasks newAlph (numChars inSeq)})
 
         postIdHolds = testProperty "When Postorder Fitch runs a sequence against itself, get input as result" checkID
             where
                 checkID :: DynamicChar -> Bool
                 checkID inSeq = result == inSeq
                     where 
-                        (_, f, _) = preorderFitchBit 1 inSeq inSeq fitchMeta
-                        result = postorderFitchBit inSeq inSeq inSeq f inSeq fitchMeta
+                        newAlph = constructAlphabet . V.fromList . map pure . take (getAlphLen inSeq) $ '-' : ['A'..'z']
+                        (_, f, _) = preorderFitchBit 1 inSeq inSeq (fitchMeta {alphabet = newAlph, fitchMasks = generateMasks newAlph (numChars inSeq)})
+                        result = postorderFitchBit inSeq inSeq inSeq f inSeq (fitchMeta {alphabet = newAlph, fitchMasks = generateMasks newAlph (numChars inSeq)})
 
 
 -- | Check properties of the traversal

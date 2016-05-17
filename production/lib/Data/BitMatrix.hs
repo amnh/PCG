@@ -215,10 +215,10 @@ instance Bits BitMatrix where
 -- TODO: Don't know if this works. It's currently unused, I believe.
 instance Arbitrary BitMatrix where
     arbitrary = do 
-        alphLen  <- getPositive <$> (arbitrary :: Gen (Positive Int))
-        rowCount <- getPositive <$> (arbitrary :: Gen (Positive Int))
-        boolV    <- take (alphLen * rowCount) <$> infiniteListOf (arbitrary :: Gen Bool)
-        pure (BitMatrix alphLen $ fromBits boolV)
+        alphLen  <- suchThat (arbitrary :: Gen Int) (\x -> 0 < x && x <= 52) 
+        rowCount <- suchThat (arbitrary :: Gen Int) (> 0) 
+        rows  <- vectorOf rowCount $ ((choose (1, 2 ^ alphLen - 1)) :: Gen Integer)
+        pure $ fromRows (fmap (bitVec alphLen) rows)
 
 instance Show BitMatrix where
     show bm = headerLine <> matrixLines
