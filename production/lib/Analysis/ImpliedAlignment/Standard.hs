@@ -30,7 +30,8 @@ import Data.BitVector      hiding (foldr, replicate, foldl)
 import Data.IntMap                (insert)
 import Data.Maybe
 import Data.Monoid
-import Data.Vector                (Vector, (!), cons, filter, foldr, fromList, generate, imap, replicate, unzip, zip3, zipWith, zipWith3, zipWith5, foldl)
+import Data.Vector                (Vector, (!), filter, foldr, generate, imap, replicate, unzip, zipWith, zipWith3, zipWith5)
+--import Data.Vector                (cons, fromList, zip3, foldl)
 import Prelude             hiding (filter, foldr, replicate, unzip, zip3, zipWith, zipWith3, foldl)
 import qualified Data.Vector as V
 

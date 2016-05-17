@@ -35,7 +35,7 @@ import Data.Bits
 import Data.BitVector               hiding (foldr, join, replicate)
 import Data.Foldable
 import Data.Function.Memoize
-import Data.Maybe                          (fromJust, fromMaybe)
+import Data.Maybe                          (fromMaybe)
 import Data.Monoid                         ((<>))
 import Data.MonoTraversable
 import Data.Vector                         (Vector, fromList)

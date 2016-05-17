@@ -19,7 +19,7 @@ module Bio.Character.Dynamic.Coded.Class where
 
 import Data.Alphabet
 import Data.BitVector
-import Data.Maybe           (fromJust)
+--import Data.Maybe           (fromJust)
 import Data.MonoTraversable
 
 {- LAWS:
