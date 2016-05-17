@@ -35,7 +35,7 @@ module Data.Alphabet
 import           Data.Foldable
 import           Data.Key
 import           Data.List                    (elemIndex, intercalate)
-import           Data.Matrix.NotStupid        (Matrix, getElem, matrix)
+import           Data.Matrix.NotStupid        (Matrix, matrix)
 import           Data.Maybe
 import           Data.Monoid
 import           Data.Set                     (delete)
@@ -140,7 +140,4 @@ constructAlphabetWithTCM symbols originalTcm = (alphabet, permutedTcm)
     len         = length alphabet
     oldOrdering = generate len (\x -> fromJust $ (alphabet ! x) `elemIndex` toList symbols)
     permutedTcm = matrix len len f
-    f (i,j) = getElem i' j' originalTcm
-      where
-        i' = oldOrdering V.! i
-        j' = oldOrdering V.! j
+    f (i,j) =  originalTcm ! (oldOrdering V.! i, oldOrdering V.! j)
