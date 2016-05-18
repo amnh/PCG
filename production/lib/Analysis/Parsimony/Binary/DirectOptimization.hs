@@ -55,9 +55,10 @@ naiveDO char1 char2 meta
             (shorterChar, longerChar, longLen) = if char1Len > char2Len
                                          then (char2, char1, char1Len)
                                          else (char1, char2, char2Len)
-            firstMatRow = firstAlignRow longerChar longLen 0 0 meta
-            traversalMat = {-trace ("first row " ++ show firstMatRow) $-} firstMatRow `joinMat` getAlignRows longerChar shorterChar 1 firstMatRow meta
-            cost = {-trace ("get cost on " ++ show traversalMat) $-}
+            --firstMatRow = firstAlignRow longerChar longLen 0 0 meta
+            --traversalMat = {-trace ("first row " ++ show firstMatRow) $-} firstMatRow `joinMat` getAlignRows longerChar shorterChar 1 firstMatRow meta
+            traversalMat = getAlignMat longerChar shorterChar meta
+            cost = --trace ("get cost on " ++ show traversalMat) $
                     getMatrixCost traversalMat
             (gapped, left, right) = --trace ("get seqs " ++ show traversalMat)
                                     traceback traversalMat shorterChar longerChar
@@ -73,41 +74,6 @@ naiveDO char1 char2 meta
             --getMatrixCost inAlign | trace ("Get cost " ++ show (nrows inAlign) ++ " " ++ show (ncols inAlign)) False = undefined
             getMatrixCost inAlign = c
                 where (c, _, _) = getElem (nrows inAlign - 1) (ncols inAlign - 1) inAlign
-
--- | Joins an alignment row to the rest of a matrix
--- Takes in an alignment row and an alignment matrix
--- Returns an alignment matrix with the new row added
-joinMat :: AlignRow s -> AlignMatrix s -> AlignMatrix s
---joinMat inRow inMat | trace ("join mat " ++ show inRow ++ " on " ++ show inMat) False = undefined
-joinMat inRow inMat = inRow `joinRow` inMat
-    where
-        joinRow vec curMat = fromList 1 (length vec) (toList vec) <-> curMat
-
--- | Gets the initial row of a naive alignment matrix
--- Takes in an indelCost, the sequence generating the row, the row length, the current position, the previous cost from the algorithm, and the length of the alphabet
--- Returns an alignment row
--- This row will have a diagonal at the leftmost position and will otherwise have only lefts
--- the cost is just added to every time there's a gap
-firstAlignRow :: (SeqConstraint' s, Metadata m s) => s -> Int -> Int -> Double -> m -> AlignRow s
---firstAlignRow inChar rowLength position prevCost _ | trace ("firstAlignRow " ++ show inChar ++ " with len " ++ show rowLength ++ show position) False = undefined
-firstAlignRow inChar rowLength position prevCost meta
-    | position == (rowLength + 1) = --trace ("terminate ") $
-                                    mempty
-    | position == 0 =
-        let recurse0 = firstAlignRow inChar rowLength (position + 1) 0 meta
-        in --trace ("cons with gap ") $
-            (0, DiagDir, gapChar inChar) `cons` recurse0
-    | newState /= gapChar inChar = --trace ("new state on first row " ++ show newState) $ -- if there's no indel overlap
-        let recurse1 = firstAlignRow inChar rowLength (position + 1) (prevCost + indCost) meta
-        in --trace ("cons with new ") $
-            (prevCost + indCost, LeftDir, newState) `cons` recurse1
-    | otherwise = --trace ("new state on first row, otherwise " ++ show newState) $ -- matching indel so no cost
-        let recurse2 = firstAlignRow inChar rowLength (position + 1) prevCost meta
-        in --trace ("cons with new 2 ") $
-            (prevCost, LeftDir, newState) `cons` recurse2
-        where
-            newState = fst $ getOverlap (gapChar inChar) (grabSubChar inChar (position - 1)) meta
-            indCost = getGapCost meta
 
 -- TODO: used concrete BitVector type instead of something more appropriate, like EncodableDynamicCharacter. 
 -- This also means that there are a bunch of places below that could be using EDC class methods that are no longer.
@@ -152,51 +118,38 @@ getOverlap inChar1 inChar2 meta = memoize2 (overlap meta) inChar1 inChar2
                     | cost1 < cost2 = (val1, cost1)
                     | otherwise = (val2, cost2)
 
--- | Main recursive function to get alignment rows
--- Takes two dynamic characters, the indel and sub costs, the current row number, the previous row, and the alphabet length
--- returns an alignment matrix
--- TODO: Turn this into a matrix generator function with indexing previous elements
-getAlignRows :: (SeqConstraint' s, Metadata m s) => s -> s -> Int -> AlignRow s -> m -> AlignMatrix s
-getAlignRows char1 char2 rowNum prevRow meta
-    | rowNum == numChars char2 + 1 = matrix 0 0 (const (0, LeftDir, mempty))
-    | otherwise = thisRow `joinMat` getAlignRows char1 char2 (rowNum + 1) thisRow meta
-        where
-            thisRow = generateRow char1 char2 rowNum prevRow (0, 0) meta
-
--- | Generates a single alignment row
---   Takes two dynamic chars, the indel and sub costs, the current row number,
---   the previous row, the position and previous cost, and the alphabet length
---   returns an alignment row.
---   Essentially gets values for left, down, and diagonal moves using overlap functionality
---   then selects the minimum value to set the correct value at the given positions
-generateRow :: (SeqConstraint' s, Metadata m s) => s -> s -> Int -> AlignRow s -> (Int, Double) -> m -> AlignRow s
---generateRow char1 char2 _ _ (position, _)  _ | trace ("generateRow " ++ show char1 ++ show char2 ++ show position) False = undefined
-generateRow char1 char2 rowNum vals (position, prevCost) meta
-    | length vals < (position - 1) = error "Problem with row generation, previous costs not generated"
-    | position >= numChars char1 + 1 = mempty
-    | position == 0 && downChar /= gapChar char1 = --trace "case 4" $
-        (upValue + indCost, DownDir, downChar)`cons` (nextCall (upValue + indCost))
-    | position == 0 = --trace "case 5" $
-        (upValue, DownDir, downChar) `cons` (nextCall upValue)
-    | otherwise = --trace "minimal case" $
-        (minCost, minDir, minState) `cons` nextCall minCost
-        where
-            indCost            = getGapCost meta
-            subChar1           = grabSubChar char1 (position - 1)
-            subChar2           = grabSubChar char2 (rowNum - 1)
-            (upValue, _, _)    = vals ! position
-            (diagVal, _, _)    = vals ! (position - 1)
-            (downChar, dCost)  = getOverlap (gapChar char2) subChar2 meta
-            downCost           = dCost + upValue
-            (leftChar, lCost)  = getOverlap (gapChar char1) subChar1 meta
-            leftCost           = lCost + prevCost
-            (diagChar, dgCost) = getOverlap subChar1 subChar2 meta
-            diagCost           = diagVal + dgCost
-
-            nextCall cost      = {-trace "next row" $-} generateRow char1 char2 rowNum vals (position + 1, cost) meta
-
-            (minCost, minState, minDir) = {-trace ("minimum with diag " ++ show (diagCost, diagChar)) $-} minimumBy (comparing (\(a,_,_) -> a))
-                                                [(diagCost, diagChar, DiagDir), (leftCost, leftChar, LeftDir), (downCost, downChar, DownDir)]
+-- | Main function to generate an alignment matrix
+-- Takes in two sequences (the longer first) and the metadata
+-- Returns an alignment matrix
+getAlignMat :: (SeqConstraint' s, Metadata m s) => s -> s -> m -> AlignMatrix s
+getAlignMat char1 char2 meta = result
+    where
+        result = matrix (numChars char1 + 1) (numChars char2 + 1) generateMat
+        -- | Internal generator function for the matrix
+        -- Deals with both first row and other cases, a merge of two previous algorithms
+        generateMat :: (Int, Int) -> (Double, Direction, BitVector)
+        generateMat (row, col)
+            | row == 0 && col == 0                  = (0, DiagDir, gapChar char2)
+            | row == 0 && leftChar /= gapChar char1   = (prevCost + indCost, LeftDir, leftChar)
+            | row == 0                              = (prevCost, LeftDir, leftChar)
+            | col == 0 && downChar /= gapChar char1 = (upValue + indCost, DownDir, downChar)
+            | col == 0                              = (upValue, DownDir, downChar)
+            | otherwise                             = (minCost, minDir, minState)
+                where
+                    indCost             = getGapCost meta
+                    subChar1            = grabSubChar char1 (col - 1)
+                    subChar2            = grabSubChar char2 (row - 1)
+                    (upValue, _, _)     = getElem (row - 1) col result
+                    (diagVal, _, _)     = getElem (row - 1) (col - 1) result
+                    (prevCost, _, _)    = getElem row (col - 1) result
+                    (downChar, dCost)   = getOverlap (gapChar char2) subChar2 meta
+                    downCost            = dCost + upValue
+                    (leftChar, lCost)   = getOverlap (gapChar char1) subChar1 meta
+                    leftCost            = lCost + prevCost
+                    (diagChar, dgCost)  = getOverlap subChar1 subChar2 meta
+                    diagCost            = diagVal + dgCost
+                    (minCost, minState, minDir) = minimumBy (comparing (\(a,_,_) -> a))
+                                                        [(diagCost, diagChar, DiagDir), (leftCost, leftChar, LeftDir), (downCost, downChar, DownDir)]
 
 -- | Performs the traceback of an alignment matrix
 -- Takes in an alignment matrix, two sequences, and the alphabet length

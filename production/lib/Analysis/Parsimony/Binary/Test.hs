@@ -26,6 +26,7 @@ import           Bio.PhyloGraph.Solution
 import           Data.Alphabet
 import           Data.BitMatrix
 import           Data.BitVector
+import           Data.Matrix.NotStupid (getRow)
 import qualified Data.Vector as V
 import           Test.Tasty
 import           Test.Tasty.HUnit
@@ -68,7 +69,8 @@ doProperties = testGroup "Properties of the DO algorithm"
                                     fDir == DiagDir && allLeft (V.tail result) && V.length result == (rowLen + 1)
                     where
                         rowLen = numChars inSeq
-                        result = firstAlignRow inSeq rowLen 0 0 doMeta
+                        fullMat = getAlignMat inSeq inSeq doMeta
+                        result = getRow 0 fullMat
                         (_, fDir, _) = V.head result
                         allLeft = V.all (\(_, val, _) -> val == LeftDir)
 
