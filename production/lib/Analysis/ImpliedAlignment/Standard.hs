@@ -27,10 +27,11 @@ import Bio.PhyloGraph.Tree hiding (code)
 import Bio.Character.Dynamic.Coded
 
 import Data.BitVector      hiding (foldr, replicate, foldl)
-import Data.IntMap                (insert)
+import Data.IntMap                (IntMap, assocs, insert)
 import Data.Maybe
 import Data.Monoid
-import Data.Vector                (Vector, (!), filter, foldr, generate, imap, replicate, unzip, zipWith, zipWith3, zipWith5)
+import Data.MonoTraversable       (ofoldl')
+import Data.Vector                (Vector, (!), (//), filter, foldr, generate, imap, replicate, unzip, zipWith, zipWith3, zipWith5)
 --import Data.Vector                (cons, fromList, zip3, foldl)
 import Prelude             hiding (filter, foldr, replicate, unzip, zip3, zipWith, zipWith3, foldl)
 import qualified Data.Vector as V
@@ -134,7 +135,7 @@ numeratePreorder inTree curNode inMeta curCounts
 numerateNode :: (NodeConstraint n s, Metadata m s) => n -> n -> Counts -> Vector m -> (n, Counts) 
 numerateNode ancestorNode childNode initCounters inMeta = (setHomologies childNode homologs, counts)
         where
-            numeration = zipWith5 numerateOne (generateGapChar <$> inMeta) (getFinalGapped ancestorNode) (getHomologies ancestorNode) (getFinalGapped childNode) initCounters 
+            numeration = zipWith5 numerateOne' (generateGapChar <$> inMeta) (getFinalGapped ancestorNode) (getHomologies ancestorNode) (getFinalGapped childNode) initCounters 
             (homologs, counts) = unzip numeration
             generateGapChar m = setBit (bitVec 0 (0 :: Integer)) (length (getAlphabet m) - 1)
 
@@ -178,6 +179,21 @@ numerateOne gapCharacter aSeq aHomologies cSeq initCounter = (h, c)
                     where
                         aChar = safeGrab aSeq cPos
                         cChar = safeGrab cSeq cPos
-            
 
+type Counter = Int
+newtype MutationAccumulator = Accum (IntMap Int, Counter, Int, Int, Int)
 
+numerateOne' :: (SeqConstraint s) => BitVector -> s -> Homologies -> s -> Counter -> (Homologies, Int)
+numerateOne' _gap aSeq aHomologies cSeq initialCounter = (aHomologies // assocs mutations, counter')
+  where
+    (Accum (mutations, counter', _, _, _)) = ofoldl' f (Accum (mempty, initialCounter, 0, 0, 0)) cSeq
+--    f :: MutationAccumulator -> BitVector -> MutationAccumulator
+    gapCharacter = gapChar cSeq
+    f (Accum (changeSet, counter, i, j, k)) _
+      | ancestorCharacter == gapCharacter = Accum (insert i counter           changeSet, counter + 1, i + 1, j + 1, k    )
+      | childCharacter    /= gapCharacter = Accum (insert j ancestorReference changeSet, counter    , i + 1, j + 1, k    )
+      | otherwise                         = Accum (                           changeSet, counter    , i + 1, j    , k + 1)
+      where
+        childCharacter    = fromJust $ safeGrab cSeq i
+        ancestorCharacter = fromJust $ safeGrab aSeq i 
+        ancestorReference = aHomologies ! k 
