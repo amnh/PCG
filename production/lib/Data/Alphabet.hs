@@ -47,12 +47,12 @@ import           Prelude               hiding (lookup, zip)
 import           Test.Tasty.QuickCheck hiding (generate)
 import           Test.QuickCheck.Arbitrary.Instances ()
 
--- Newtyped to ensure that there are no repeats.
 {- PRECONDITION: We must insure that missing and gap are appropriately 
    code as "-" & "?", respectively, before this module is used, i.e., as output 
    from either parsers or in unification step.
  -}
 
+-- | Newtyped to ensure invariants are preserved.
 newtype Alphabet a
       = Alphabet (Vector a)
       deriving (Eq)
