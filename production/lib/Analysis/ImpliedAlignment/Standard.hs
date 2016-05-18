@@ -164,20 +164,20 @@ determineHomology gapCharacter (homologSoFar, counterSoFar) (childChar, ancestor
 -- given the ancestor sequence, ancestor homologies, child sequence, and current counter for position matching
 -- returns a tuple of the Homologies vector and an integer count
 numerateOne :: (SeqConstraint s) => BitVector -> s -> Homologies -> s -> Int -> (Homologies, Int)
-numerateOne gapCharacter aSeq aHomologies cSeq initCounter = (h, c)
+numerateOne gapCharacter aSeq aHomologies cSeq initCounter = undefined {-(h, c)
         where 
-            (h, c, _, _) = determineHomology (mempty, initCounter, 0, 0)
+            (h, c, _, _) = determineHomology (mempty, initCounter, 0, 0, 0)
 
             -- | Find the homology at two positions
-            determineHomology :: (Homologies, Int, Int, Int) -> (Homologies, Int, Int, Int)
-            determineHomology cur@(homologSoFar, pCount, cPos, hPos) 
+            determineHomology :: (Homologies, Int, Int, Int, Int) -> (Homologies, Int, Int, Int, Int)
+            determineHomology cur@(homologSoFar, counter, i, j, k) 
                 | isNothing aChar || isNothing cChar = cur
-                | (fromJust aChar) == gapCharacter = determineHomology (homologSoFar V.++ pure pCount, pCount + 1, cPos + 1, hPos + 1)
+                | (fromJust aChar) == gapCharacter = determineHomology (homologSoFar V.++ pure counter, counter + 1, i + 1, j + 1, k)
                 | (fromJust cChar) /= gapCharacter = determineHomology (homologSoFar V.++ pure (aHomologies V.! hPos), pCount, cPos + 1, hPos + 1)
                 | otherwise                        = determineHomology (homologSoFar, pCount, cPos, hPos + 1) 
                     where
-                        aChar = safeGrab aSeq cPos
-                        cChar = safeGrab cSeq cPos
+                        aChar = safeGrab aSeq i
+                        cChar = safeGrab cSeq i-}
             
 
 
