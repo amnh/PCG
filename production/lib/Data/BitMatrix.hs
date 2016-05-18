@@ -217,8 +217,8 @@ instance Arbitrary BitMatrix where
     arbitrary = do 
         alphLen  <- suchThat (arbitrary :: Gen Int) (\x -> 0 < x && x <= 52) 
         rowCount <- suchThat (arbitrary :: Gen Int) (> 0) 
-        rows  <- vectorOf rowCount $ ((choose (1, 2 ^ alphLen - 1)) :: Gen Integer)
-        pure $ fromRows (fmap (bitVec alphLen) rows)
+        bitRows  <- vectorOf rowCount $ ((choose (1, 2 ^ alphLen - 1)) :: Gen Integer)
+        pure . fromRows $ bitVec alphLen <$> bitRows
 
 instance Show BitMatrix where
     show bm = headerLine <> matrixLines
