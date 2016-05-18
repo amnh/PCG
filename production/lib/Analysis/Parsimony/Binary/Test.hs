@@ -52,7 +52,6 @@ doProperties = testGroup "Properties of the DO algorithm"
       [ overlap
       , firstRow
       , idHolds
-      , empties
       ]
     where
         idHolds = testProperty "When DO runs a sequence against itself, get input as result" checkID
@@ -72,12 +71,6 @@ doProperties = testGroup "Properties of the DO algorithm"
                         result = firstAlignRow inSeq rowLen 0 0 doMeta
                         (_, fDir, _) = V.head result
                         allLeft = V.all (\(_, val, _) -> val == LeftDir)
-
-        empties = testProperty "NaiveDO correctly handles an empty sequence" checkEmpty
-            where
-                checkEmpty :: DynamicChar -> Bool
-                checkEmpty inSeq = main == inSeq && cost == 0
-                    where (main, cost, gapped, left, right) = naiveDO inSeq emptyChar doMeta
 
         
         overlap = testGroup "Overlap test cases" [overlap1]

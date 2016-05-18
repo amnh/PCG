@@ -155,6 +155,7 @@ getOverlap inChar1 inChar2 meta = memoize2 (overlap meta) inChar1 inChar2
 -- | Main recursive function to get alignment rows
 -- Takes two dynamic characters, the indel and sub costs, the current row number, the previous row, and the alphabet length
 -- returns an alignment matrix
+-- TODO: Turn this into a matrix generator function with indexing previous elements
 getAlignRows :: (SeqConstraint' s, Metadata m s) => s -> s -> Int -> AlignRow s -> m -> AlignMatrix s
 getAlignRows char1 char2 rowNum prevRow meta
     | rowNum == numChars char2 + 1 = matrix 0 0 (const (0, LeftDir, mempty))
