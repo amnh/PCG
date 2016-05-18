@@ -56,8 +56,9 @@ naiveDO char1 char2 meta
                                          then (char2, char1, char1Len)
                                          else (char1, char2, char2Len)
             firstMatRow = firstAlignRow longerChar longLen 0 0 meta
-            traversalMat = firstMatRow `joinMat` getAlignRows longerChar shorterChar 1 firstMatRow meta
-            cost = getMatrixCost traversalMat
+            traversalMat = {-trace ("first row " ++ show firstMatRow) $-} firstMatRow `joinMat` getAlignRows longerChar shorterChar 1 firstMatRow meta
+            cost = {-trace ("get cost on " ++ show traversalMat) $-}
+                    getMatrixCost traversalMat
             (gapped, left, right) = --trace ("get seqs " ++ show traversalMat)
                                     traceback traversalMat shorterChar longerChar
             ungapped = {-trace ("filter gaps of " ++ show gapped) $ -}filterGaps gapped
@@ -69,7 +70,7 @@ naiveDO char1 char2 meta
 
         where
             getMatrixCost :: AlignMatrix s -> Double
-            --getMatrixCost inAlign | trace ("Get cost " ++ show (nrows $ costs inAlign) ++ " " ++ show (ncols $ costs inAlign)) False = undefined
+            --getMatrixCost inAlign | trace ("Get cost " ++ show (nrows inAlign) ++ " " ++ show (ncols inAlign)) False = undefined
             getMatrixCost inAlign = c
                 where (c, _, _) = getElem (nrows inAlign - 1) (ncols inAlign - 1) inAlign
 
@@ -77,6 +78,7 @@ naiveDO char1 char2 meta
 -- Takes in an alignment row and an alignment matrix
 -- Returns an alignment matrix with the new row added
 joinMat :: AlignRow s -> AlignMatrix s -> AlignMatrix s
+--joinMat inRow inMat | trace ("join mat " ++ show inRow ++ " on " ++ show inMat) False = undefined
 joinMat inRow inMat = inRow `joinRow` inMat
     where
         joinRow vec curMat = fromList 1 (length vec) (toList vec) <-> curMat
@@ -112,7 +114,7 @@ firstAlignRow inChar rowLength position prevCost meta
 -- The same will be true in IA.
 -- | Memoized wrapper of the overlap function
 getOverlap :: (Metadata m s) => BitVector -> BitVector -> m -> (BitVector, Double)
---getOverlap inChar1 inChar2 meta | trace ("getOverlap") False = undefined
+--getOverlap inChar1 inChar2 meta | trace ("getOverlap on " ++ show inChar1) False = undefined
 getOverlap inChar1 inChar2 meta = memoize2 (overlap meta) inChar1 inChar2
     where
         -- | Gets the overlap state: intersect if possible and union if that's empty
@@ -133,6 +135,7 @@ getOverlap inChar1 inChar2 meta = memoize2 (overlap meta) inChar1 inChar2
                 gap = setBit zeroBitVec (alphLen - 1)
                 -- Given characters without ambiguity, determine the cost
                 -- getCost :: SeqConstraint' s => CostStructure -> (Int, s) -> (Int, s) -> (s, Double)
+                --getCost c (p1, _) (p2, _) | trace ("getCost on " ++ show c ++ " at pos " ++ show (p1, p2)) False = undefined
                 getCost (TCM mtx) (pos1, c1) (pos2, c2) = (c1 .|. c2, getElem pos1 pos2 mtx)
                 getCost (GeneralCost indel sub) (_, c1) (_, c2) = if c1 == gap || c2 == gap then (c1 .|. c2, indel) else (c1 .|. c2, sub)
                 getCost (AffineCost _ _ _) _ _ = error "Cannot apply DO algorithm on affine cost"
@@ -169,11 +172,10 @@ generateRow :: (SeqConstraint' s, Metadata m s) => s -> s -> Int -> AlignRow s -
 --generateRow char1 char2 _ _ (position, _)  _ | trace ("generateRow " ++ show char1 ++ show char2 ++ show position) False = undefined
 generateRow char1 char2 rowNum vals (position, prevCost) meta
     | length vals < (position - 1) = error "Problem with row generation, previous costs not generated"
-    | position >= numChars char1 = mempty
-    | rowNum >= numChars char2 = mempty
-    | position == 0 && downChar /= gapChar char1 =
+    | position >= numChars char1 + 1 = mempty
+    | position == 0 && downChar /= gapChar char1 = --trace "case 4" $
         (upValue + indCost, DownDir, downChar)`cons` (nextCall (upValue + indCost))
-    | position == 0 =
+    | position == 0 = --trace "case 5" $
         (upValue, DownDir, downChar) `cons` (nextCall upValue)
     | otherwise = --trace "minimal case" $
         (minCost, minDir, minState) `cons` nextCall minCost
@@ -190,9 +192,9 @@ generateRow char1 char2 rowNum vals (position, prevCost) meta
             (diagChar, dgCost) = getOverlap subChar1 subChar2 meta
             diagCost           = diagVal + dgCost
 
-            nextCall cost      = generateRow char1 char2 rowNum vals (position + 1, cost) meta
+            nextCall cost      = {-trace "next row" $-} generateRow char1 char2 rowNum vals (position + 1, cost) meta
 
-            (minCost, minState, minDir) = {-trace ("minimum with diag " ++ show (diagCost, diagChar)) $ -}minimumBy (comparing (\(a,_,_) -> a))
+            (minCost, minState, minDir) = {-trace ("minimum with diag " ++ show (diagCost, diagChar)) $-} minimumBy (comparing (\(a,_,_) -> a))
                                                 [(diagCost, diagChar, DiagDir), (leftCost, leftChar, LeftDir), (downCost, downChar, DownDir)]
 
 -- | Performs the traceback of an alignment matrix
@@ -206,7 +208,7 @@ traceback alignMat' char1' char2' = (fromChars t1, fromChars t2, fromChars t3)
         (t1, t2, t3) = tracebackInternal alignMat' char1' char2' (nrows alignMat' - 1, ncols alignMat' - 1)
         -- read it from the matrix instead of grabbing
         tracebackInternal :: (SeqConstraint' s) => AlignMatrix s -> s -> s -> (Int, Int) -> ([BitVector], [BitVector], [BitVector])
-        --tracebackInternal alignMat char1 char2 (row, col)  | trace ("traceback with position " ++ show (row, col)) False = undefined
+        --tracebackInternal alignMat char1 char2 (row, col)  | trace ("traceback with position " ++ show (row, col) ++ " on mat " ++ show alignMat) False = undefined
         tracebackInternal alignMat char1 char2 (row, col)
             | nrows alignMat < row - 1 || ncols alignMat < col - 1 = error "Traceback cannot function because matrix is incomplete"
             | row == 0 && col == 0 = (mempty, mempty, mempty)
