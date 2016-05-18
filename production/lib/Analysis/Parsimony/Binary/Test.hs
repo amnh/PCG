@@ -58,7 +58,7 @@ doProperties = testGroup "Properties of the DO algorithm"
         idHolds = testProperty "When DO runs a sequence against itself, get input as result" checkID
             where
                 checkID :: DynamicChar -> Bool
-                checkID inSeq = trace ("main result of DO " ++ show main ++ " with cost " ++ show cost ++ " with right " ++ show right)
+                checkID inSeq = --trace ("main result of DO " ++ show main ++ " with cost " ++ show cost ++ " with right " ++ show right)
                                 main == (filterGaps inSeq) && cost == 0 && gapped == inSeq && left == inSeq && right == inSeq
                     where (main, cost, gapped, left, right) = naiveDO inSeq inSeq doMeta
 
