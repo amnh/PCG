@@ -52,28 +52,33 @@ data TopoNode b
 
 -- | In a monoid instance, we take mappend to mean a joining of the two subtrees
 -- where the second subtree passed becomes a child of the first
+-- edit: and the root of the second tree is deleted?
 instance Monoid (TopoNode b) where
      mempty = TopoNode False False mempty mempty mempty mempty mempty mempty mempty mempty mempty mempty mempty mempty 0 0
      mappend n1 n2 = n1 {children = n2 : children n1}
 
 instance Arbitrary (TopoNode b) where
-   arbitrary = do
-    arbAlph <- arbitrary :: Gen (Alphabet String)
-    nc <- arbitrary :: Gen Int
-    arbitraryTopoGivenCAL nc arbAlph (0, 1)
+    arbitrary = do
+        arbAlph <- arbitrary :: Gen (Alphabet String)
+        nc <- arbitrary :: Gen Int
+        arbitraryTopoGivenCAL nc arbAlph (0, 1)
 
 arbitraryTopoGivenCAL :: Int -> Alphabet String -> (Int, Int) -> Gen (TopoNode b)
 arbitraryTopoGivenCAL maxChildren inAlph (curLevel, maxLevel) = do
      let root = curLevel == 0
-     n  <- arbitrary :: Gen String
-     nc <- (arbitrary :: Gen Int) `suchThat` (<= maxChildren)
-     let ncFinal = if curLevel >= maxLevel then 0 else nc
+     name  <- arbitrary :: Gen String
+     numChilds <- elements [0,2] -- for now the trees are binary
+     let ncFinal = if curLevel >= maxLevel 
+                   then 0 
+                   else numChilds
      chillens <- vectorOf ncFinal (arbitraryTopoGivenCAL maxChildren inAlph (curLevel + 1, maxLevel))
      let leaf = ncFinal == 0
+     -- from here, meaningless, as costs are random, and number of seqs is not correlated to the number of taxa
+     -- also, if this is to be used for testing, internal seq assignments and cost assignments are pointless
      seqs     <- vectorOf 10 (arbitraryDynamicsGA inAlph)
-     c2       <- arbitrary :: Gen Double
-     c3       <- arbitrary :: Gen Double
-     pure $ TopoNode root leaf n chillens (seqs !! 0) (seqs !! 1) (seqs !! 2) (seqs !! 3) (seqs !! 4) (seqs !! 5) (seqs !! 6) (seqs !! 7) (seqs !! 8) (seqs !! 9) c2 c3
+     costLoc       <- arbitrary :: Gen Double
+     costTot       <- arbitrary :: Gen Double
+     pure $ TopoNode root leaf name chillens (seqs !! 0) (seqs !! 1) (seqs !! 2) (seqs !! 3) (seqs !! 4) (seqs !! 5) (seqs !! 6) (seqs !! 7) (seqs !! 8) (seqs !! 9) costLoc costTot
 
 arbitraryTopoGivenCSNA :: Int -> [(String, ParsedChars)] -> Vector (CharacterMetadata DynamicChar) -> (Int, Int) -> Gen (TopoNode b)
 arbitraryTopoGivenCSNA maxChildren namesAndSeqs inMeta (curLevel, maxLevel) 

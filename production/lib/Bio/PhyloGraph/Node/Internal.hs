@@ -15,15 +15,18 @@
 
 module Bio.PhyloGraph.Node.Internal where
 
-import Bio.Character.Dynamic.Coded
-import qualified Bio.PhyloGraph.Node.Encoded as EN
-import qualified Bio.PhyloGraph.Node.Final as FN
+import           Bio.Character.Dynamic.Coded
+import qualified Bio.PhyloGraph.Node.Encoded      as EN
+import qualified Bio.PhyloGraph.Node.Final        as FN
 import qualified Bio.PhyloGraph.Node.ImpliedAlign as IN
-import qualified Bio.PhyloGraph.Node.Packed as PN
-import qualified Bio.PhyloGraph.Node.Preliminary as RN
+import qualified Bio.PhyloGraph.Node.Packed       as PN
+import qualified Bio.PhyloGraph.Node.Preliminary  as RN
 import           Bio.PhyloGraph.Node.Referential
 
-import Data.Vector (Vector)
+import Data.Alphabet
+import Data.Foldable
+import Data.Vector (Vector, (!))
+import qualified Data.Vector as V (fromList)
 import Data.Monoid
 import Data.Ord ()
 import Test.Tasty.QuickCheck
@@ -49,48 +52,6 @@ data Node = Node  { code        :: Int
                   , localCost   :: Double            -- cost of assignment at this node alone
                   , totalCost   :: Double            -- sum cost of this node and its subtree
                   } deriving (Eq, Show)
-
-instance Monoid Node where
-  mempty = Node        { code        = 0
-                       , name        = mempty
-                       , isRoot      = False
-                       , isLeaf      = False
-                       , parents     = mempty
-                       , children    = mempty
-                       , encoded     = mempty
-                       , packed      = mempty
-                       , preliminary = mempty
-                       , final       = mempty
-                       , temporary   = mempty
-                       , aligned     = mempty
-                       , random      = mempty
-                       , union       = mempty
-                       , single      = mempty
-                       , gapped      = mempty
-                       , iaHomology  = mempty
-                       , localCost   = 0
-                       , totalCost   = 0
-                       }
-  mappend n1 n2 = Node { code        = code n1
-                       , name        = name n1 ++ " joinedTo " ++ name n2
-                       , isRoot      = isRoot n1 || isRoot n2
-                       , isLeaf      = isLeaf n1 || isLeaf n2
-                       , parents     = parents     n1 <> parents     n2
-                       , children    = children    n1 <> children    n2
-                       , encoded     = encoded     n1 <> encoded     n2
-                       , packed      = packed      n1 <> packed      n2
-                       , preliminary = preliminary n1 <> preliminary n2
-                       , final       = final       n1 <> final       n2
-                       , temporary   = temporary   n1 <> temporary   n2
-                       , aligned     = aligned     n1 <> aligned     n2
-                       , random      = random      n1 <> random      n2
-                       , union       = union       n1 <> union       n2
-                       , single      = single      n1 <> single      n2
-                       , gapped      = gapped      n1 <> gapped      n2
-                       , iaHomology  = iaHomology  n1 <> iaHomology  n2
-                       , localCost   = localCost n1 + localCost n2
-                       , totalCost   = totalCost n1 + totalCost n2
-                       }
 
 -- | Make it an instance of encoded, final, packed, and preliminary
 instance EN.EncodedNode Node DynamicChar where
@@ -126,9 +87,6 @@ instance IN.IANode Node where
   getHomologies = iaHomology
   setHomologies n h = n {iaHomology = h}
 
-instance Ord Node where
-    compare n1 n2 = compare (code n1) (code n2)
-
 instance RefNode Node where
   getCode = code
 
@@ -140,8 +98,40 @@ instance Arbitrary Node where
         leaf   <- arbitrary :: Gen Bool
         child  <- listOf (arbitrary :: Gen Int)
         parent <- listOf $ suchThat arbitrary (not . flip elem child)
-        seqs   <- vectorOf 10 arbitrary
+        groupOfSequences   <- vectorOf 10 arbitrary
         c2     <- arbitrary :: Gen Double
         c3     <- arbitrary :: Gen Double
-        pure $ Node c n root leaf child parent (head seqs ) (seqs !! 1) (seqs !! 2) (seqs !! 3) (seqs !! 4) (seqs !! 5) (seqs !! 6) (seqs !! 7) (seqs !! 8) (seqs !! 9) mempty c2 c3
+        pure $ Node c n root leaf child parent (head groupOfSequences ) (groupOfSequences !! 1) (groupOfSequences !! 2) (groupOfSequences !! 3) (groupOfSequences !! 4) (groupOfSequences !! 5) (groupOfSequences !! 6) (groupOfSequences !! 7) (groupOfSequences !! 8) (groupOfSequences !! 9) mempty c2 c3
 
+generateLeavesDO :: Alphabet String -> Int -> Gen [Node]
+generateLeavesDO alphabet taxaCount = do
+      sequence $ generateLeaf <$> [0..taxaCount-1]
+    where
+        generateDynamicCharacter :: Gen DynamicChar
+        generateDynamicCharacter = do
+            dynamicCharacterLength <- choose (1,100) :: Gen Int
+            fmap (encodeDynamic alphabet) . vectorOf dynamicCharacterLength . sublistOf $ toList alphabet
+        generateLeaf i = do
+            sequenceLength  <- choose (1,25)
+            sequenceOfEncodedDynamicChars <- V.fromList <$> vectorOf sequenceLength generateDynamicCharacter 
+            pure $ Node 
+                 { code        = i
+                 , name        = show i
+                 , isRoot      = False
+                 , isLeaf      = True
+                 , children    = []
+                 , parents     = []
+                 , encoded     = sequenceOfEncodedDynamicChars
+                 , packed      = mempty
+                 , preliminary = mempty
+                 , final       = mempty
+                 , temporary   = mempty
+                 , aligned     = mempty
+                 , random      = mempty
+                 , union       = mempty
+                 , single      = mempty
+                 , gapped      = mempty
+                 , iaHomology  = mempty
+                 , localCost   = 0
+                 , totalCost   = 0
+                 }
