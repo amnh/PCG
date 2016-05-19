@@ -21,9 +21,10 @@ import           Bio.PhyloGraph
 import           Data.Alphabet
 import           Data.BitVector (BitVector, setBit, bitVec)
 import           Data.Foldable
-import           Data.List
-import qualified Data.Vector    as V
 import qualified Data.IntMap    as IM
+import           Data.List
+import           Data.MonoTraversable
+import qualified Data.Vector    as V
 import           Test.Tasty
 --import           Test.Tasty.HUnit
 import           Test.Tasty.QuickCheck
@@ -31,7 +32,10 @@ import           Test.Tasty.QuickCheck
 import Debug.Trace
 
 testSuite :: TestTree
-testSuite = testGroup "Implied Alignment" [numerate]
+testSuite = testGroup "Implied Alignment"
+          [ numerate
+          , fullIA
+          ]
 
 
 fullIA :: TestTree
@@ -52,12 +56,14 @@ numerate = testGroup "Numeration properties" [idHolds, lengthHolds]
     where
         idHolds = testProperty "When a sequence is numerated with itself, get indices and the same counter" checkID
         checkID :: DynamicChar -> Bool
-        checkID inChar = trace (show traces) traces == defaultH {-&& counter <= (numChars inChar) -}
+        checkID inChar = onull inChar' || (traces == defaultH && counter <= numChars inChar')
             where
-                defaultH = V.fromList [0..numChars inChar - 1] 
-                (traces, counter) = --trace ("numerate counter " ++ show traces) $ 
-                                        numerateOne gapCharacter inChar defaultH inChar 0
+                defaultH = V.fromList [0..numChars inChar' - 1] 
+                (traces, counter) =  numerateOne gapCharacter inChar' defaultH inChar' 0
                 gapCharacter = gapChar inChar
+                -- Filter gaps to remove logical inconsistency?
+                -- Confirm with Eric or Ward!
+                inChar' = filterGaps inChar
 
         -- TODO: Talk to Eric about numChars ()
         lengthHolds = testProperty "Numerate returns a sequence of the correct length" checkLen

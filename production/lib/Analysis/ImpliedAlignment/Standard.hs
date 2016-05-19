@@ -32,9 +32,7 @@ import Data.Maybe
 import Data.Monoid
 import Data.MonoTraversable       (ofoldl')
 import Data.Vector                (Vector, (!), (//), filter, foldr, generate, imap, replicate, unzip, zipWith, zipWith3, zipWith5)
---import Data.Vector                (cons, fromList, zip3, foldl)
 import Prelude             hiding (filter, foldr, replicate, unzip, zip3, zipWith, zipWith3, foldl)
-import qualified Data.Vector as V
 
 import Debug.Trace
 
@@ -184,13 +182,15 @@ numerateOne = numerateOne' {-(h, c)
 type Counter = Int
 newtype MutationAccumulator = Accum (IntMap Int, Counter, Int, Int, Int)
 
+-- Do as Ward says (in his paper) not as he does (in POY psuedocode)..?
+-- TODO: _REALLY_ make sure that this is correct!
 numerateOne' :: (SeqConstraint s) => BitVector -> s -> Homologies -> s -> Counter -> (Homologies, Int)
 numerateOne' _gap aSeq aHomologies cSeq initialCounter = (aHomologies // assocs mutations, counter')
   where
     (Accum (mutations, counter', _, _, _)) = ofoldl' f (Accum (mempty, initialCounter, 0, 0, 0)) cSeq
     gapCharacter = gapChar cSeq
     f (Accum (changeSet, counter, i, j, k)) _ -- Ignore the element parameter because the compiler can't make the logical type deduction :(
-      | ancestorCharacter == gapCharacter = Accum (insert i counter           changeSet, counter + 1, i + 1, j + 1, k + 1)
+      | ancestorCharacter == gapCharacter = Accum (insert i counter           changeSet, counter + 1, i + 1, j + 1, k    )
       | childCharacter    /= gapCharacter = Accum (insert j ancestorReference changeSet, counter    , i + 1, j + 1, k + 1)
       | otherwise                         = Accum (                           changeSet, counter    , i + 1, j    , k + 1)
       where
