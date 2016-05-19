@@ -24,6 +24,7 @@ import Data.Vector
 -- | Alias for Node used in 'DAG'
 type NodeInfo = Node
 
+--TODO: This shouldn't be tightly bound to DynamicChar
 -- | Alias for Node used in 'TopoDAG'
 type Topo = TopoNode DynamicChar
 

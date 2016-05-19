@@ -32,17 +32,17 @@ data EdgeSet
 -- | Edge info type holding length, origin, and terminal
 data EdgeInfo 
    = EdgeInfo
-   { len      :: Double
-   , origin   :: Node
-   , terminal :: Node
+   { len         :: Double
+   , origin      :: Node
+   , terminal    :: Node
    , virtualNode :: Maybe Node
    } deriving (Eq, Show)
 
 instance C.StandardEdge EdgeInfo Node where
-  getEdgeLen  = len
+  getEdgeLen     = len
   setEdgeLen e f = e {len = f}
-  getOrigin   = origin
-  getTerminal = terminal
+  getOrigin      = origin
+  getTerminal    = terminal
 
 instance Monoid EdgeSet where
   mempty = EdgeSet mempty mempty
