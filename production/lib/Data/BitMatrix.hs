@@ -173,6 +173,10 @@ instance MonoFoldable BitMatrix where
   ofoldl1Ex' f = foldl1 f . rows
   {-# INLINE ofoldl1Ex' #-}
 
+  onull (BitMatrix 0 _) = True
+  onull  _              = False
+  {-# INLINE onull #-}
+
 -- | Performs a row-wise monomporphic traversal over ther 'BitMatrix'.
 instance MonoTraversable BitMatrix where
     -- | Map each element of a monomorphic container to an action,

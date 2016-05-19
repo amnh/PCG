@@ -91,6 +91,9 @@ instance MonoFoldable DynamicChar where
   ofoldl1Ex' f (DC bm) = ofoldl1Ex' f bm
   {-# INLINE ofoldl1Ex' #-}
 
+  onull (DC bm) = onull bm
+  {-# INLINE onull #-}
+
 -- | Monomorphic containers that can be traversed from left to right.
 instance MonoTraversable DynamicChar where
     -- | Map each element of a monomorphic container to an action,
