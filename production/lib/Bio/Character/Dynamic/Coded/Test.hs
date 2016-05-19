@@ -22,13 +22,15 @@ import Debug.Trace
 
 testSuite :: TestTree
 testSuite = testGroup "Custom Bits instances"
-        [ testVectorBits
-        , testCodedSequenceInstance
+        [-- testVectorBits
+          testCodedSequenceInstance
         --, overEmpties
         , testEncodableStaticCharacterInstanceBitVector
         , testEncodableDynamicCharacterInstanceDynamicChar
         ]
 
+-- TODO: (think) I think that DynamicChar shouldn't be an instance of Bits, just the subcharacters should be...
+{-
 testVectorBits :: TestTree
 testVectorBits = testGroup "Properties of instance Bits b => Bits (Vector b)"
         [ testZeroBitProperties         zeroBitsDynamic "dynamic"
@@ -67,6 +69,7 @@ testZeroBitProperties z label = testGroup ("zeroBit properties (" <> label <> ")
 
         popCountZeroBitIs0 :: TestTree
         popCountZeroBitIs0 = testCase "popCount zeroBits == 0" . assert $ popCount z == 0
+-}
 
 testBitConstructionProperties :: Bits b => b -> String -> TestTree
 testBitConstructionProperties z label = testGroup ("Bit toggling properties (" <> label <> ")")

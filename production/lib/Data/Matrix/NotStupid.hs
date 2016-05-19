@@ -13,11 +13,12 @@
 -- Everything is /zero/ indexed to provide a consistant indexing API with 'Vector'.
 -- Hence /not stupid/.
 -----------------------------------------------------------------------------
+{-# LANGUAGE TypeFamilies #-}
+{-# OPTIONS_GHC -fno-warn-orphans #-}
 
 module Data.Matrix.NotStupid
   ( matrix
   , getElem
-  , (!)
   , (<->)
   , (<|>)
   , unsafeGet
@@ -90,10 +91,23 @@ module Data.Matrix.NotStupid
   ) where
 
 import           Control.Arrow ((***))
+import           Data.Key
 import           Data.Matrix   (Matrix,(<->),(<|>))
-import qualified Data.Matrix as Stupid 
+import qualified Data.Matrix as Stupid
+import           Data.Maybe    (catMaybes)
 import           Data.Vector   (Vector)
 
+import           GHC.Stack     (errorWithStackTrace )
+
+type instance Key Matrix = (Int, Int)
+
+instance Indexable Matrix where
+    {-# INLINE index #-}
+    index m (i,j) = getElem i j m
+      
+instance Lookup Matrix where
+    {-# INLINE lookup #-}
+    lookup (i,j) = safeGet i j
 
 -- | /O(rows*cols)/. Generate a matrix from a generator function.
 --   Example of usage:
@@ -113,6 +127,9 @@ matrix m n f = Stupid.matrix m n (f . (pred *** pred))
 -------------------------------------------------------
 ---- ACCESSING
 
+-- TODO: Think removing the nice error handling to improve efficiency.
+--       Added for better debugging purposes.
+
 -- | /O(1)/. Get an element of a matrix. Indices range from /(1,1)/ to /(n,m)/.
 --   It returns an 'error' if the requested element is outside of range.
 getElem :: Int      -- ^ Row
@@ -120,12 +137,22 @@ getElem :: Int      -- ^ Row
         -> Matrix a -- ^ Matrix
         -> a
 {-# INLINE getElem #-}
-getElem i j = Stupid.getElem (i+1) (j+1)
-
--- | An infix alias for 'getElem' which takes a tuple.
-(!) :: Matrix a -> (Int,Int) -> a
-{-# INLINE (!) #-}
-m ! (i,j) = getElem i j m
+getElem i j mtx =
+  case errorMessage of
+    Just err -> errorWithStackTrace err
+    Nothing  -> Stupid.getElem (i+1) (j+1) mtx
+  where
+    m = Stupid.nrows mtx
+    n = Stupid.ncols mtx
+    errorPrefix      = mconcat ["The call to Matrix indexing at point (" , show i, ",", show j, ") is malformed for the ", show m , "x", show n," matrix,"]
+    errorNegRowCount = if i <  0 then Just $ mconcat ["the row index, "        , show i, ", is less than the lower bound 0"]           else Nothing
+    errorNegColCount = if j <  0 then Just $ mconcat ["the column index, "     , show j, ", is less than the lower bound 0"]           else Nothing
+    errorBigRowCount = if i >= m then Just $ mconcat ["the row index, "        , show i, ", is greater than the upper bound ", show m] else Nothing
+    errorBigColCount = if j >= n then Just $ mconcat ["the columnindex, "      , show j, ", is greater than the upper bound ", show n] else Nothing
+    errorMessage =
+      case catMaybes [errorNegRowCount, errorNegColCount, errorBigRowCount, errorBigColCount] of
+        [] -> Nothing
+        xs -> Just $ mconcat (errorPrefix : xs)
 
 -- | /O(1)/. Unsafe variant of 'getElem', without bounds checking.
 unsafeGet :: Int      -- ^ Row

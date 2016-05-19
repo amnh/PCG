@@ -23,6 +23,8 @@ import Data.HashMap.Strict        (elems)
 import Data.Maybe
 import qualified Data.Vector as V
 
+import Debug.Trace
+
 -- | Mutate a 'StandardSolution' to include masks in the metadata structure
 addMasks :: StandardSolution -> StandardSolution
 addMasks inSolution = inSolution { metadata = V.imap changeMetadata (metadata inSolution) }
@@ -48,13 +50,14 @@ addMasks inSolution = inSolution { metadata = V.imap changeMetadata (metadata in
                 occupancy = fromBits $ replicate (alphLen * sLen) True
                 gapChar   = (bitVec alphLen (0 :: Integer)) (alphLen - 1)
         -}
-        -- | Generate mask pair given proper info
-        generateMasks :: Alphabet String -> Int -> (DynamicChar, DynamicChar)
-        generateMasks inAlphabet@(Alphabet a) sLen = (encodeDynamic inAlphabet occupancy, encodeDynamic inAlphabet periodic)
-            where
-                unit      = [a V.! (length a - 1)]
-                periodic  = V.replicate sLen unit
-                occupancy = V.replicate sLen (toList inAlphabet)
+-- | Generate mask pair given proper info
+generateMasks :: Alphabet String -> Int -> (DynamicChar, DynamicChar)
+generateMasks inAlphabet@(Alphabet a) sLen = --trace ("encode masks " ++ show periodic) $
+                                                (encodeDynamic inAlphabet occupancy, encodeDynamic inAlphabet periodic)
+    where
+        unit      = [a V.! (length a - 1)]
+        periodic  = V.replicate sLen unit
+        occupancy = V.replicate sLen (toList inAlphabet)
 
 
 

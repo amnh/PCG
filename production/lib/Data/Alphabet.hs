@@ -8,19 +8,19 @@
 -- Stability   :  provisional
 -- Portability :  portable
 --
--- An 'Alphabet represents an ordered list of unique symbols with constant
+-- An 'Alphabet' represents an ordered list of unique symbols with constant
 -- time random access. Symbols are any data type which are coercable from a
 -- 'String' through the 'IsString' type-class.
 --
--- An 'Alphabet is constructed by supplying a `Foldable` structure of symbols
--- which are 'IsString' instances to the 'constructAlphabet function.
+-- An 'Alphabet' is constructed by supplying a `Foldable` structure of symbols
+-- which are 'IsString' instances to the 'constructAlphabet' function.
 --
--- Every 'Alphabet contains a "gap" symbol denoted by the 'fromString "-"'
+-- Every 'Alphabet' contains a "gap" symbol denoted by the @'fromString' "-"@
 -- expression. The "gap" character is always the last element in the ordered
 -- list regardless of it's presence or position in the construction structure.
 --
--- An 'Alphabet will never contain the "missing" symbol denoted by the
--- 'fromString "?"' expression. This symbol will be removed from the 'Alpahbet'
+-- An 'Alphabet' will never contain the "missing" symbol denoted by the
+-- @'fromString' "?"@ expression. This symbol will be removed from the 'Alphabet'
 -- if it is present in the construction structure.
 -----------------------------------------------------------------------------   
 {-# LANGUAGE TypeFamilies #-}
@@ -34,44 +34,25 @@ module Data.Alphabet
 
 import           Data.Foldable
 import           Data.Key
-import           Data.List             (elemIndex, intercalate, nub)
-import           Data.Matrix.NotStupid (Matrix, getElem, matrix)
+import           Data.List                    (elemIndex, intercalate)
+import           Data.Matrix.NotStupid        (Matrix, matrix)
 import           Data.Maybe
 import           Data.Monoid
+import           Data.Set                     (delete)
+import           Data.Set              as Set (fromList)
 import           Data.String
-import           Data.Vector        (Vector)
-import qualified Data.Vector as V
-import           Prelude     hiding (lookup, zip)
-import           Test.Tasty.QuickCheck
+import           Data.Vector                  (Vector, generate)
+import qualified Data.Vector           as V
+import           Prelude               hiding (lookup, zip)
+import           Test.Tasty.QuickCheck hiding (generate)
 import           Test.QuickCheck.Arbitrary.Instances ()
 
--- TODO: Alphabetize alphabets so that
---       constructAlphabet "ACGT" == constructAlphabet "GATC" is True.
---       This is okay as long as Additive characters have their additive
---       properties captured in a TCM. Make sure that the additive character
---       TCMs are being generated properly in the rectification process.
-
--- Newtyped to ensure that there are no repeats.
-{- | An Alphabet represents an ordered list of unique symbols with constant
-     time random access. Symbols are any data type which are coercable from a
-     String through the IsString type-class.
-
-     An Alphabet is constructed by supplying a Foldable structure of symbols,
-     which must be IsString instances, to the constructAlphabet function.
-
-     Every Alphabet contains a "gap" symbol denoted by the 'fromString "-"'
-     expression. The "gap" character is always the last element in the ordered list
-     regardless of its presence or position in the construction structure.
-
-     An Alphabet will never contain the "missing" symbol denoted by the
-     'fromString "?"' expression. This symbol will be removed from the Alphabet
-     if it is present in the construction structure. 
-
-    WARNING: PRECONDITION: We must insure that missing and gap are appropriately 
-    code as "-" & "?", respectively, before this module is used, i.e., as output 
-    from either parsers or in unification step.
+{- PRECONDITION: We must insure that missing and gap are appropriately 
+   code as "-" & "?", respectively, before this module is used, i.e., as output 
+   from either parsers or in unification step.
  -}
 
+-- | Newtyped to ensure invariants are preserved.
 newtype Alphabet a
       = Alphabet (Vector a)
       deriving (Eq)
@@ -127,35 +108,36 @@ instance Show a => Show (Alphabet a) where
                                , "}"
                                ]
 
-instance (Arbitrary a, Eq a, IsString a) => Arbitrary (Alphabet a) where
+instance (Arbitrary a, Ord a, IsString a) => Arbitrary (Alphabet a) where
   arbitrary = constructAlphabet <$> listOf1 arbitrary
 
--- TODO: Chagne constraint EQ a to Ord a and alphabetize Alphabet with sort
--- | Constructs an 'Alphabet from a 'Foldable structure of 'IsString' values.
-constructAlphabet :: (Eq a, IsString a, Foldable t) => t a -> Alphabet a
-constructAlphabet = Alphabet . V.fromList . appendGapSymbol . nub . removeSpecialSymbols . toList
+-- | Constructs an 'Alphabet' from a 'Foldable' structure of 'IsString' values.
+--
+--   /O(n*log(n))/
+constructAlphabet :: (Ord a, IsString a, Foldable t) => t a -> Alphabet a
+constructAlphabet = Alphabet . V.fromList . appendGapSymbol . toList . removeSpecialSymbols . Set.fromList . toList
   where
     gapSymbol            = fromString "-"
     missingSymbol        = fromString "?"
     appendGapSymbol      = (<> [gapSymbol])
-    removeSpecialSymbols = filter (\x -> x /= gapSymbol
-                                      && x /= missingSymbol)
-
+    removeSpecialSymbols = delete missingSymbol . delete gapSymbol
+    
 -- | Retreives the "gap character" from the alphabet.
+--
+--   /O(1)/
 gapCharacter :: Alphabet a -> a
 gapCharacter alphabet = alphabet ! (length alphabet - 1)
 
--- | Constructs an 'Alphabet with a corresponding TCM. Permutes TCM rows and
---   columns as the 'Alphabet is reordered. Deletes TCM rows and columns where
---   'Alphabet symbols are eliminated.
-constructAlphabetWithTCM :: (Eq a, IsString a, Foldable t) => t a -> Matrix b -> (Alphabet a, Matrix b)
+-- | Constructs an 'Alphabet' with a corresponding TCM. Permutes TCM rows and
+--   columns as the 'Alphabet' is reordered. Deletes TCM rows and columns where
+--   'Alphabet' symbols are eliminated.
+--
+--   /O(n*log(n) + n^2)/
+constructAlphabetWithTCM :: (Ord a, IsString a, Foldable t) => t a -> Matrix b -> (Alphabet a, Matrix b)
 constructAlphabetWithTCM symbols originalTcm = (alphabet, permutedTcm)
   where
     alphabet    = constructAlphabet symbols
     len         = length alphabet
-    oldOrdering = toList symbols
+    oldOrdering = generate len (\x -> fromJust $ (alphabet ! x) `elemIndex` toList symbols)
     permutedTcm = matrix len len f
-    f (i,j) = getElem i' j' originalTcm
-      where
-        i' = fromJust $ (alphabet ! i) `elemIndex` oldOrdering
-        j' = fromJust $ (alphabet ! j) `elemIndex` oldOrdering
+    f (i,j) =  originalTcm ! (oldOrdering V.! i, oldOrdering V.! j)

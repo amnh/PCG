@@ -35,10 +35,11 @@ import Data.Bits
 import Data.BitVector               hiding (foldr, join, replicate)
 import Data.Foldable
 import Data.Function.Memoize
-import Data.Maybe                          (fromJust, fromMaybe)
+import Data.Maybe                          (fromMaybe)
 import Data.Monoid                         ((<>))
 import Data.MonoTraversable
-import Data.Vector                         (Vector, fromList)
+import Data.Vector                         (Vector)
+import qualified Data.Vector as V          (fromList)
 import Test.Tasty.QuickCheck        hiding ((.&.))
 import Test.QuickCheck.Arbitrary.Instances ()
 
@@ -150,12 +151,14 @@ instance EncodableDynamicCharacter DynamicChar where
 
   unsafeAppend (DC dynamic1) bv = DC . fromRows $ rows dynamic1 <> [bv]
 
+  unsafeConsElem e (DC dynamic) = DC . fromRows $ (pure e) <> (rows dynamic)
+
 instance OldEncodableDynamicCharacterToBeRemoved DynamicChar where
     
 --    emptyChar          :: s
     emptyChar = DC $ bitMatrix 0 0 (const False)
 
-    emptyLike (DC bm) = DC $ bitMatrix (numRows bm) (numCols bm) (const False)
+    emptyLike (DC bm) = DC $ bitMatrix 1 (numCols bm) (const False)
     
 --    filterGaps         :: s -> s
     filterGaps c@(DC bm) = DC . fromRows . filter (/= gapBV) $ rows bm
@@ -181,6 +184,8 @@ instance OldEncodableDynamicCharacterToBeRemoved DynamicChar where
       |  0 <= i && i < numRows bm = Just $ char `indexChar` i
       | otherwise                 = Nothing
 
+    fromChars bvs = DC $ fromRows bvs
+
 -- TODO: Probably remove?
 instance Bits DynamicChar where
     (.&.)        (DC lhs) (DC rhs)  = DC $ lhs  .&.  rhs
@@ -201,9 +206,7 @@ instance Memoizable DynamicChar where
     memoize f (DC bm) = memoize (f . DC) bm
 
 instance Arbitrary DynamicChar where
-    arbitrary = do 
-      arbAlph <- arbitrary :: Gen (Alphabet String)
-      arbitraryDynamicGivenAlph arbAlph
+    arbitrary = DC <$> (arbitrary :: Gen BitMatrix)
 
 -- | Function to generate an arbitrary DynamicChar given an alphabet
 arbitraryDynamicGivenAlph :: Alphabet String -> Gen DynamicChar
@@ -213,8 +216,10 @@ arbitraryDynamicGivenAlph inAlph = do
 
 -- | Generate many dynamic characters using the above
 arbitraryDynamicsGA :: Alphabet String -> Gen DynamicChars
-arbitraryDynamicsGA inAlph = fromList <$> listOf (arbitraryDynamicGivenAlph inAlph)
+arbitraryDynamicsGA inAlph = V.fromList <$> listOf (arbitraryDynamicGivenAlph inAlph)
 
 -- | Functionality to unencode many encoded sequences
 -- decodeMany :: DynamicChars -> Alphabet -> ParsedChars
 -- decodeMany seqs alph = fmap (Just . decodeOverAlphabet alph) seqs
+
+

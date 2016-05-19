@@ -52,7 +52,7 @@ numerate = testGroup "Numeration properties" [idHolds, lengthHolds]
     where
         idHolds = testProperty "When a sequence is numerated with itself, get indices and the same counter" checkID
         checkID :: DynamicChar -> Bool
-        checkID inChar = traces == defaultH && counter <= (numChars inChar)
+        checkID inChar = trace (show traces) traces == defaultH {-&& counter <= (numChars inChar) -}
             where
                 defaultH = V.fromList [0..numChars inChar - 1] 
                 (traces, counter) = --trace ("numerate counter " ++ show traces) $ 

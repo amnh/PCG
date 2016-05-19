@@ -23,7 +23,7 @@ import           Data.Foldable
 import qualified Data.HashMap.Strict as HM
 import           Data.Key
 import           Data.List
-import           Data.Matrix.NotStupid hiding (trace, (!), toList)
+import           Data.Matrix.NotStupid hiding (trace, toList)
 import           Data.Maybe
 import           Data.Vector (cons, ifoldr)
 import qualified Data.Vector as V

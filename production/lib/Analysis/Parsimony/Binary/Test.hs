@@ -19,12 +19,14 @@ import           Analysis.Parsimony.Binary.Fitch
 import           Analysis.Parsimony.Binary.Internal
 import           Analysis.Parsimony.Binary.Optimization
 import           Bio.Metadata
+import           Bio.Metadata.MaskGenerator
 import           Bio.Character.Dynamic.Coded
 import           Bio.Character.Parsed
 import           Bio.PhyloGraph.Solution
 import           Data.Alphabet
 import           Data.BitMatrix
 import           Data.BitVector
+import           Data.Matrix.NotStupid (getRow)
 import qualified Data.Vector as V
 import           Test.Tasty
 import           Test.Tasty.HUnit
@@ -51,31 +53,26 @@ doProperties = testGroup "Properties of the DO algorithm"
       [ overlap
       , firstRow
       , idHolds
-      , empties
       ]
     where
         idHolds = testProperty "When DO runs a sequence against itself, get input as result" checkID
             where
                 checkID :: DynamicChar -> Bool
-                checkID inSeq = trace ("main result of DO " ++ show main ++ " with input " ++ show inSeq)
-                                main == inSeq && cost == 0 && gapped == inSeq && left == inSeq && right == inSeq
+                checkID inSeq = --trace ("main result of DO " ++ show main ++ " with cost " ++ show cost ++ " with right " ++ show right)
+                                main == (filterGaps inSeq) && cost == 0 && gapped == inSeq && left == inSeq && right == inSeq
                     where (main, cost, gapped, left, right) = naiveDO inSeq inSeq doMeta
 
         firstRow = testProperty "First row of alignment matrix has expected directions" checkRow
             where
                 checkRow :: DynamicChar -> Bool
                 checkRow inSeq = --trace ("checkRow " ++ show result ++ show rowLen) $
-                                    (snd $ V.head result) == DiagDir && allLeft (V.tail result) && V.length result == (rowLen + 1)
+                                    fDir == DiagDir && allLeft (V.tail result) && V.length result == (rowLen + 1)
                     where
                         rowLen = numChars inSeq
-                        (result, seqs) = firstAlignRow inSeq rowLen 0 0 doMeta
-                        allLeft = V.all (\val -> snd val == LeftDir)
-
-        empties = testProperty "NaiveDO correctly handles an empty sequence" checkEmpty
-            where
-                checkEmpty :: DynamicChar -> Bool
-                checkEmpty inSeq = main == inSeq && cost == 0
-                    where (main, cost, gapped, left, right) = naiveDO inSeq emptyChar doMeta
+                        fullMat = getAlignMat inSeq inSeq doMeta
+                        result = getRow 0 fullMat
+                        (_, fDir, _) = V.head result
+                        allLeft = V.all (\(_, val, _) -> val == LeftDir)
 
         
         overlap = testGroup "Overlap test cases" [overlap1]
@@ -94,16 +91,19 @@ fitchProperties = testGroup "Properties of the Fitch algorithm" [preIdHolds, pos
         preIdHolds = testProperty "When Preorder Fitch runs a sequence against itself, get input as result" checkID
             where
                 checkID :: DynamicChar -> Bool
-                checkID inSeq = result == inSeq && cost == 0
-                    where (result, _, cost) = preorderFitchBit 1 inSeq inSeq fitchMeta
+                checkID inSeq = {-trace ("fitch result " ++ show result ++ " with cost " ++ show cost) $ -}result == inSeq && cost == 0
+                    where 
+                        newAlph = constructAlphabet . V.fromList . map pure . take (getAlphLen inSeq) $ '-' : ['A'..'z']
+                        (result, _, cost) = preorderFitchBit 1 inSeq inSeq (fitchMeta {alphabet = newAlph, fitchMasks = generateMasks newAlph (numChars inSeq)})
 
         postIdHolds = testProperty "When Postorder Fitch runs a sequence against itself, get input as result" checkID
             where
                 checkID :: DynamicChar -> Bool
                 checkID inSeq = result == inSeq
                     where 
-                        (_, f, _) = preorderFitchBit 1 inSeq inSeq fitchMeta
-                        result = postorderFitchBit inSeq inSeq inSeq f inSeq fitchMeta
+                        newAlph = constructAlphabet . V.fromList . map pure . take (getAlphLen inSeq) $ '-' : ['A'..'z']
+                        (_, f, _) = preorderFitchBit 1 inSeq inSeq (fitchMeta {alphabet = newAlph, fitchMasks = generateMasks newAlph (numChars inSeq)})
+                        result = postorderFitchBit inSeq inSeq inSeq f inSeq (fitchMeta {alphabet = newAlph, fitchMasks = generateMasks newAlph (numChars inSeq)})
 
 
 -- | Check properties of the traversal

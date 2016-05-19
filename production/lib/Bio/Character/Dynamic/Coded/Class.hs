@@ -19,7 +19,7 @@ module Bio.Character.Dynamic.Coded.Class where
 
 import Data.Alphabet
 import Data.BitVector
-import Data.Maybe           (fromJust)
+--import Data.Maybe           (fromJust)
 import Data.MonoTraversable
 
 {- LAWS:
@@ -60,6 +60,7 @@ class ( EncodableStaticCharacter (Element s)
   
   unsafeAppend  :: s -> BitVector -> s
   unsafeCons :: BitVector -> s -> s
+  unsafeConsElem :: Element s -> s -> s
 
 -- | A coded sequence allows grabbing of a character, filtering, and some standard types
 class OldEncodableDynamicCharacterToBeRemoved s where
@@ -72,3 +73,4 @@ class OldEncodableDynamicCharacterToBeRemoved s where
   isEmpty            :: s -> Bool
   numChars           :: s -> Int
   safeGrab           :: s -> Int -> Maybe BitVector
+  fromChars          :: [BitVector] -> s
