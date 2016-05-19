@@ -26,9 +26,9 @@ module Bio.PhyloGraph.DAG
   , arbitraryDAGGS
   ) where
 
-import           Bio.Character.Parsed
-import           Bio.Metadata.Internal              hiding (name)
 import           Bio.Character.Dynamic.Coded
+import           Bio.Character.Parsed
+import           Bio.Metadata.Internal                     (CharacterMetadata)
 import           Bio.PhyloGraph.DAG.Internal
 import           Bio.PhyloGraph.DAG.Class
 import           Bio.PhyloGraph.Edge
@@ -41,11 +41,9 @@ import qualified Bio.PhyloGraph.Tree.EdgeAware      as ET
 import           Bio.PhyloGraph.Tree.Binary
 import qualified Bio.PhyloGraph.Tree.Referential    as RT
 import           Bio.PhyloGraph.Tree.Rose
-
 import           Data.Alphabet
 import           Data.Bifunctor
-import           Data.Bits
-import           Data.BitVector                     hiding (foldr)
+import           Data.BitVector                     hiding (foldr,index)
 import           Data.HashMap.Lazy                         (HashMap)
 import qualified Data.HashMap.Lazy                  as H   (toList)
 import           Data.IntSet                               (IntSet)
@@ -53,7 +51,6 @@ import qualified Data.IntSet                        as IS
 import           Data.IntMap                               (IntMap)
 import qualified Data.IntMap                        as IM
 import           Data.Key                                  ((!),lookup)
-import           Data.List                                 (delete)
 import           Data.Maybe
 import           Data.Monoid
 import           Data.Vector                               ((//), Vector, elemIndex)
@@ -76,12 +73,12 @@ instance Arbitrary DAG where
 
 instance Arbitrary (Positive Int, Positive Int, Alphabet String, [BitVector]) where
   arbitrary = do
-    alphabet   <- (arbitrary :: Gen (Alphabet String))
-    numTaxa    <- (arbitrary :: Gen (Positive Int)) -- this should be limited to <= 10
-    numChars   <- (arbitrary :: Gen (Positive Int))
-    let bvGen  =  fromBits <$> vectorOf ((getPositive numChars) * (length alphabet)) (arbitrary :: Gen Bool)
-    bitVectors <- vectorOf (getPositive numTaxa) bvGen
-    pure (numTaxa, numChars, alphabet, bitVectors)
+    alphabet   <- arbitrary :: Gen (Alphabet String)
+    taxaCount  <- getPositive <$> (arbitrary :: Gen (Positive Int)) -- this should be limited to <= 10
+    charCount  <- getPositive <$> (arbitrary :: Gen (Positive Int))
+    let bvGen  =  fromBits    <$> vectorOf (charCount * length alphabet) (arbitrary :: Gen Bool)
+    bitVectors <- vectorOf taxaCount bvGen
+    pure (Positive taxaCount, Positive charCount, alphabet, bitVectors)
     
 
 data TestingBinaryTree a 
@@ -90,16 +87,16 @@ data TestingBinaryTree a
    deriving (Eq,Show)
 
 type Counter = Int
-type Accumulator = (IM.IntMap NodeInfo, IM.IntMap EdgeSet, Counter)
+type Accumulator = (IntMap NodeInfo, IntMap EdgeSet, Counter)
 
 binaryTreeToDAG :: TestingBinaryTree Node -> DAG
-binaryTreeToDAG root = DAG 
-                     { nodes = V.generate (length totalNodeMap) (\i -> totalNodeMap ! i)
-                     , edges = V.generate (length totalEdgeMap) (\i -> totalEdgeMap ! i)
-                     , root  = 0
-                     }
+binaryTreeToDAG binaryRoot = DAG 
+                           { nodes = V.generate (length totalNodeMap) (totalNodeMap !)
+                           , edges = V.generate (length totalEdgeMap) (totalEdgeMap !)
+                           , root  = 0
+                           }
    where
-       (totalNodeMap, totalEdgeMap, _) = f Nothing root (mempty, mempty, 0)
+       (totalNodeMap, totalEdgeMap, _) = f Nothing binaryRoot (mempty, mempty, 0)
        f :: Maybe Int -> TestingBinaryTree Node -> Accumulator -> Accumulator
        f parentMay (Leaf node) (nodeMap, edgeMap, counter) = 
            ( IM.insert counter node nodeMap
@@ -108,17 +105,16 @@ binaryTreeToDAG root = DAG
            )
            
        f parentMay (Internal left right) (nodeMap, edgeMap, counter) =
-           ( IM.insert counter internalNode nodeMap
-           , IM.insert counter (EdgeSet (inNodeSet parentMay) 
-                                        ( IM.insert counter' (EdgeInfo 0 internalNode (nodeMap' ! counter') Nothing) 
-                                            (IM.insert (counter+1) (EdgeInfo 0 internalNode (nodeMap' ! (counter+1)) Nothing) mempty)
-                                        )
-                               ) edgeMap'
+           ( IM.insert counter internalNode nodeMap'
+           , IM.insert counter (EdgeSet resultingInNodes resultingOutNodes) edgeMap'
            , counter''
            )
          where
-           leftAccumulator@(_, _, counter') = f (Just $ counter) left  (nodeMap, edgeMap, counter + 1)
-           (nodeMap', edgeMap', counter'')  = f (Just $ counter) right leftAccumulator
+           leftAccumulator@(_, _, counter') = f (Just counter) left  (nodeMap, edgeMap, counter + 1)
+           (nodeMap', edgeMap', counter'')  = f (Just counter) right leftAccumulator
+           resultingInNodes  = inNodeSet parentMay
+           resultingOutNodes = IM.insert  counter'   (EdgeInfo 0 internalNode (nodeMap' ! counter'   ) Nothing)
+                              (IM.insert (counter+1) (EdgeInfo 0 internalNode (nodeMap' ! (counter+1)) Nothing) mempty)
            internalNode = Node 
                         { code        = counter
                         , name        = "HTU: " <> show counter
@@ -141,11 +137,11 @@ binaryTreeToDAG root = DAG
                         , totalCost   = 0
                         }
        inNodeSet :: Maybe Int -> IntSet
-       inNodeSet (Just parent) = IS.insert parent mempty
-       inNodeSet  Nothing      =  mempty
+       inNodeSet (Just parentReference) = IS.insert parentReference mempty
+       inNodeSet  Nothing               =  mempty
 
 {-
-instance (Arbitrary a, Eq a) => Arbitrary (TestingBinaryTree a) where
+instance Arbitrary a => Arbitrary (TestingBinaryTree a) where
     arbitrary = do
         leafCount <- (getPositive <$> (arbitrary :: Gen (Positive Int))) `suchThat` (<=10)
         leaves    <- (fmap Leaf) <$> vectorOf leafCount arbitrary
@@ -157,6 +153,7 @@ instance (Arbitrary a, Eq a) => Arbitrary (TestingBinaryTree a) where
             left:right:remaining <- shuffle subTrees 
             f (Internal left right : remaining)
 -}
+
 instance Arbitrary (TestingBinaryTree Node) where
     arbitrary = do
         leafCount <- (getPositive <$> (arbitrary :: Gen (Positive Int))) `suchThat` (\x -> 2 <= x && x <=10)
@@ -182,12 +179,12 @@ maxChildren :: Int
 maxChildren = 2 -- it's a binary tree.
 
 -- | Generate an arbitrary TopoDAG given an alphabet
-arbitraryTopoDAGGA :: Alphabet String -> Gen TopoDAG 
-arbitraryTopoDAGGA inAlph = TopoDAG <$> TN.arbitraryTopoGivenCAL maxChildren inAlph (0, maxTaxa)
+--arbitraryTopoDAGGA :: Alphabet String -> Gen TopoDAG 
+--arbitraryTopoDAGGA inAlph = TopoDAG <$> TN.arbitraryTopoGivenCAL maxChildren inAlph (0, maxTaxa)
 
 -- | Generate an arbitrary DAG given sequences
 arbitraryDAGGS :: HashMap String ParsedChars -> Vector (CharacterMetadata DynamicChar) -> Gen DAG
-arbitraryDAGGS allSeqs metadata = fromTopo <$> TopoDAG <$> TN.arbitraryTopoGivenCSNA maxChildren (H.toList allSeqs) metadata (0, maxTaxa)
+arbitraryDAGGS allSeqs metadata = fromTopo . TopoDAG <$> TN.arbitraryTopoGivenCSNA maxChildren (H.toList allSeqs) metadata (0, maxTaxa)
 
 -- TODO: I'm pretty sure this is also an improper use of monoid, as graphs can't be "appended". Rather, the
 -- can be joined, in various ways.
@@ -228,7 +225,7 @@ instance N.Network DAG NodeInfo where
     children n t  = fmap (\i -> nodes t V.! i) (children n)
     nodeIsLeaf n _    = isLeaf n
     nodeIsRoot n _    = isRoot n
-    update t new  = t {nodes = nodes t // (fmap (\n -> (code n, n)) new)}
+    update t new  = t {nodes = nodes t // fmap (\n -> (code n, n)) new}
     numNodes      = length . nodes 
     addNode t n   = DAG nodes2 edges2 reroot
       where
@@ -257,7 +254,7 @@ attachAt d1@(DAG nodes_1 edges_1 root_1) d2@(DAG nodes_2 edges_2 root_2) node_11
     | root_1 > length nodes_1 - 1 || root_2 > length nodes_2 - 1 = error "Root out of bounds when trying to append trees"
     | otherwise = DAG allNodes connectEdges root_1
         where
-            shift           = length nodes_1 + 1 -- how much to add to the code of each node in DAG_2. Adding one because a new node, node_1new is added to nodes_1
+            shiftNum        = length nodes_1 + 1 -- how much to add to the code of each node in DAG_2. Adding one because a new node, node_1new is added to nodes_1
             hCode           = code node_11
 
             -- hang and shift the nodes
@@ -268,34 +265,34 @@ attachAt d1@(DAG nodes_1 edges_1 root_1) d2@(DAG nodes_2 edges_2 root_2) node_11
                                           )]
     
             connectN        = nodes_1  // [( hCode
-                                           , node_11 { children = (shift + root_2) : children node_11
+                                           , node_11 { children = (shiftNum + root_2) : children node_11
                                                      , isLeaf = False
                                                      }
                                            )]
     
             recodeNew       = fmap recodeFun hungNodes -- this changes the parents of the root, which has already been set in hungNodes
-            recodeFun m     = m { code     = code m + shift
-                                , children = fmap (shift +) (children m)
-                                , parents  = fmap (shift +) (parents m) 
+            recodeFun m     = m { code     = code m + shiftNum
+                                , children = fmap (shiftNum +) (children m)
+                                , parents  = fmap (shiftNum +) (parents m) 
                                 }
             allNodes        = connectN V.++ recodeNew
 
             -- update edges and add connecting edge
-            reMapOut        = IM.foldWithKey (\k val acc -> IM.insert (k + shift) (reMapInfo val) acc) mempty
-            reMapInfo eInfo = eInfo { origin   = allNodes V.! (code (origin eInfo) + shift)
-                                    , terminal = allNodes V.! (code (terminal eInfo) + shift)
+            reMapOut        = IM.foldWithKey (\k val acc -> IM.insert (k + shiftNum) (reMapInfo val) acc) mempty
+            reMapInfo eInfo = eInfo { origin   = allNodes V.! (code (origin   eInfo) + shiftNum)
+                                    , terminal = allNodes V.! (code (terminal eInfo) + shiftNum)
                                     }
 
-            shiftEdge edge  = edge { inNodes  = IS.map (shift +) (inNodes edge)
+            shiftEdge edge  = edge { inNodes  = IS.map (shiftNum +) (inNodes edge)
                                    , outNodes = reMapOut (outNodes edge)
                                    }
 
             newEdges        = fmap shiftEdge edges_2
             allEdges        = edges_1 V.++ newEdges
             hangUpdate      = (allEdges V.! hCode) { outNodes = fmap (\info -> info { origin = allNodes V.! hCode }) (outNodes (allEdges V.! hCode)) }
-            hangAdd         = hangUpdate <> EdgeSet (inNodes $ edges_1 V.! hCode) (IM.insert (root_2 + shift) (EdgeInfo 0 (allNodes V.! hCode) (allNodes V.! (root_2 + shift)) Nothing) (outNodes $ edges_1 V.! hCode))
-            hangedUpdate    = (allEdges V.! (root_2 + shift)) <> EdgeSet (IS.singleton hCode) mempty
-            connectEdges    = allEdges // [(hCode, hangAdd), (root_2 + shift, hangedUpdate)]
+            hangAdd         = hangUpdate <> EdgeSet (inNodes $ edges_1 V.! hCode) (IM.insert (root_2 + shiftNum) (EdgeInfo 0 (allNodes V.! hCode) (allNodes V.! (root_2 + shiftNum)) Nothing) (outNodes $ edges_1 V.! hCode))
+            hangedUpdate    = (allEdges V.! (root_2 + shiftNum)) <> EdgeSet (IS.singleton hCode) mempty
+            connectEdges    = allEdges // [(hCode, hangAdd), (root_2 + shiftNum, hangedUpdate)]
 
 
 -- | Function to grab from a DAG

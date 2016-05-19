@@ -189,7 +189,7 @@ numerateOne' _gap aSeq aHomologies cSeq initialCounter = (aHomologies // assocs 
   where
     (Accum (mutations, counter', _, _, _)) = ofoldl' f (Accum (mempty, initialCounter, 0, 0, 0)) cSeq
     gapCharacter = gapChar cSeq
-    f (Accum (changeSet, counter, i, j, k)) _
+    f (Accum (changeSet, counter, i, j, k)) _ -- Ignore the element parameter because the compiler can't make the logical type deduction :(
       | ancestorCharacter == gapCharacter = Accum (insert i counter           changeSet, counter + 1, i + 1, j + 1, k + 1)
       | childCharacter    /= gapCharacter = Accum (insert j ancestorReference changeSet, counter    , i + 1, j + 1, k + 1)
       | otherwise                         = Accum (                           changeSet, counter    , i + 1, j    , k + 1)
