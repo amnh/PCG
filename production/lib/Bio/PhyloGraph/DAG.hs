@@ -48,7 +48,9 @@ import           Data.Bits
 import           Data.BitVector                     hiding (foldr)
 import           Data.HashMap.Lazy                         (HashMap)
 import qualified Data.HashMap.Lazy                  as H   (toList)
+import           Data.IntSet                               (IntSet)
 import qualified Data.IntSet                        as IS
+import           Data.IntMap                               (IntMap)
 import qualified Data.IntMap                        as IM
 import           Data.Key                                  ((!),lookup)
 import           Data.List                                 (delete)
@@ -101,21 +103,17 @@ binaryTreeToDAG root = DAG
        f :: Maybe Int -> TestingBinaryTree Node -> Accumulator -> Accumulator
        f parentMay (Leaf node) (nodeMap, edgeMap, counter) = 
            ( IM.insert counter node nodeMap
-           , IM.insert counter (EdgeSet (if isJust parentMay 
-                                        then IS.insert (fromJust parentMay) mempty
-                                        else mempty) mempty) edgeMap
+           , IM.insert counter (EdgeSet (inNodeSet parentMay) mempty) edgeMap
            , counter + 1
            )
+           
        f parentMay (Internal left right) (nodeMap, edgeMap, counter) =
            ( IM.insert counter internalNode nodeMap
-           , IM.insert counter (EdgeSet ( if   isJust parentMay 
-                                          then IS.insert (fromJust parentMay) mempty
-                                          else mempty
-                                        ) 
-                                        ( IM.insert counter' (EdgeInfo 0 internalNode (nodeMap ! counter') Nothing) 
-                                            (IM.insert (counter+1) (EdgeInfo 0 internalNode (nodeMap ! (counter+1)) Nothing) mempty)
+           , IM.insert counter (EdgeSet (inNodeSet parentMay) 
+                                        ( IM.insert counter' (EdgeInfo 0 internalNode (nodeMap' ! counter') Nothing) 
+                                            (IM.insert (counter+1) (EdgeInfo 0 internalNode (nodeMap' ! (counter+1)) Nothing) mempty)
                                         )
-                               ) edgeMap
+                               ) edgeMap'
            , counter''
            )
          where
@@ -142,6 +140,9 @@ binaryTreeToDAG root = DAG
                         , localCost   = 0
                         , totalCost   = 0
                         }
+       inNodeSet :: Maybe Int -> IntSet
+       inNodeSet (Just parent) = IS.insert parent mempty
+       inNodeSet  Nothing      =  mempty
 
 {-
 instance (Arbitrary a, Eq a) => Arbitrary (TestingBinaryTree a) where
