@@ -129,22 +129,28 @@ instance EncodableDynamicCharacter DynamicChar where
   -- TODO: Eric added an extra case in lookupChar, for edge case of 0 taxa. He also changed the Maybe to an error case, 
   --       to make diagnosing problems easier for Grace. 
   --       Add Maybe back in? See original code below.
-  indexChar i = lookupChar i
-
+  indexChar dc i =
+    case dc `lookupChar` i of
+      Just x  -> x
+      Nothing -> error
+               $ mconcat [ "Character index out of bounds: Character number "
+                         , show i
+                         , " requested, and there are "
+                         , show $ olength dc
+                         , " taxa."
+                         ]
 
   lookupChar (DC bm) i
-    |  nRows == 0 = bm `row` i
-    |  0 <= i
-    && i <  nRows = bm `row` i
-    | otherwise   = error $ "Character index out of bounds: Character number " ++ (show i) ++ " requested, and there are " ++ (show $ nRows) ++ " taxa."
-        where nRows = numRows bm
+    |  0 <= i && i < numRows bm = Just $ bm `row` i
+    | otherwise                 = Nothing
 {-
   indexChar i = fromJust . lookupChar i
 
   lookupChar (DC bm) i
     |  0 <= i
     && i <  numRows bm = Just $ bm `row` i
-    | otherwise        = Nothing-}
+    | otherwise        = Nothing
+-}
 
   -- TODO: Think about the efficiency of this
   unsafeCons static (DC dynamic) = DC . fromRows $ [static] <> (rows dynamic)

@@ -59,7 +59,7 @@ doProperties = testGroup "Properties of the DO algorithm"
             where
                 checkID :: DynamicChar -> Bool
                 checkID inSeq = --trace ("main result of DO " ++ show main ++ " with cost " ++ show cost ++ " with right " ++ show right)
-                                main == (filterGaps inSeq) && cost == 0 && gapped == inSeq && left == inSeq && right == inSeq
+                                main == filterGaps inSeq && cost == 0 && gapped == inSeq && left == inSeq && right == inSeq
                     where (main, cost, gapped, left, right) = naiveDO inSeq inSeq doMeta
 
         firstRow = testProperty "First row of alignment matrix has expected directions" checkRow
@@ -79,7 +79,7 @@ doProperties = testGroup "Properties of the DO algorithm"
         seqa = encodeDynamic standardAlph [["G", "C"]] :: DynamicChar
         seqb =  encodeDynamic standardAlph [["C"]] :: DynamicChar
         initalResult = getOverlap (grabSubChar seqa 0) (grabSubChar seqb 0) doMeta
-        andOverlap = decodeIt $ DC $ fromRows $ V.singleton $ fst initalResult
+        andOverlap = decodeIt . DC . fromRows . V.singleton $ fst initalResult
         andOverlapResult = [["C"]]
         overlap1 = testCase "Given characters with overlap, gives expected results" ((andOverlapResult, 0) @=? (andOverlap, snd initalResult))
         
@@ -93,7 +93,7 @@ fitchProperties = testGroup "Properties of the Fitch algorithm" [preIdHolds, pos
                 checkID :: DynamicChar -> Bool
                 checkID inSeq = {-trace ("fitch result " ++ show result ++ " with cost " ++ show cost) $ -}result == inSeq && cost == 0
                     where 
-                        newAlph = constructAlphabet . V.fromList . map pure . take (getAlphLen inSeq) $ '-' : ['A'..'z']
+                        newAlph = constructAlphabet . V.fromList . fmap pure . take (getAlphLen inSeq) $ '-' : ['A'..'z']
                         (result, _, cost) = preorderFitchBit 1 inSeq inSeq (fitchMeta {alphabet = newAlph, fitchMasks = generateMasks newAlph (numChars inSeq)})
 
         postIdHolds = testProperty "When Postorder Fitch runs a sequence against itself, get input as result" checkID
@@ -101,7 +101,7 @@ fitchProperties = testGroup "Properties of the Fitch algorithm" [preIdHolds, pos
                 checkID :: DynamicChar -> Bool
                 checkID inSeq = result == inSeq
                     where 
-                        newAlph = constructAlphabet . V.fromList . map pure . take (getAlphLen inSeq) $ '-' : ['A'..'z']
+                        newAlph = constructAlphabet . V.fromList . fmap pure . take (getAlphLen inSeq) $ '-' : ['A'..'z']
                         (_, f, _) = preorderFitchBit 1 inSeq inSeq (fitchMeta {alphabet = newAlph, fitchMasks = generateMasks newAlph (numChars inSeq)})
                         result = postorderFitchBit inSeq inSeq inSeq f inSeq (fitchMeta {alphabet = newAlph, fitchMasks = generateMasks newAlph (numChars inSeq)})
 

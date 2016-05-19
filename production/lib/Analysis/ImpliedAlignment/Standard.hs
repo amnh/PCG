@@ -165,7 +165,7 @@ determineHomology gapCharacter (homologSoFar, counterSoFar) (childChar, ancestor
 -- given the ancestor sequence, ancestor homologies, child sequence, and current counter for position matching
 -- returns a tuple of the Homologies vector and an integer count
 numerateOne :: (SeqConstraint s) => BitVector -> s -> Homologies -> s -> Int -> (Homologies, Int)
-numerateOne gapCharacter aSeq aHomologies cSeq initCounter = undefined {-(h, c)
+numerateOne = numerateOne' {-(h, c)
         where 
             (h, c, _, _) = determineHomology (mempty, initCounter, 0, 0, 0)
 
@@ -188,11 +188,10 @@ numerateOne' :: (SeqConstraint s) => BitVector -> s -> Homologies -> s -> Counte
 numerateOne' _gap aSeq aHomologies cSeq initialCounter = (aHomologies // assocs mutations, counter')
   where
     (Accum (mutations, counter', _, _, _)) = ofoldl' f (Accum (mempty, initialCounter, 0, 0, 0)) cSeq
---    f :: MutationAccumulator -> BitVector -> MutationAccumulator
     gapCharacter = gapChar cSeq
     f (Accum (changeSet, counter, i, j, k)) _
-      | ancestorCharacter == gapCharacter = Accum (insert i counter           changeSet, counter + 1, i + 1, j + 1, k    )
-      | childCharacter    /= gapCharacter = Accum (insert j ancestorReference changeSet, counter    , i + 1, j + 1, k    )
+      | ancestorCharacter == gapCharacter = Accum (insert i counter           changeSet, counter + 1, i + 1, j + 1, k + 1)
+      | childCharacter    /= gapCharacter = Accum (insert j ancestorReference changeSet, counter    , i + 1, j + 1, k + 1)
       | otherwise                         = Accum (                           changeSet, counter    , i + 1, j    , k + 1)
       where
         childCharacter    = fromJust $ safeGrab cSeq i
