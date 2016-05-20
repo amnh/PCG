@@ -8,19 +8,22 @@
 -- Stability   :  provisional
 -- Portability :  portable
 --
--- An 'Alphabet' represents an ordered list of unique symbols with constant
--- time random access. Symbols are any data type which are coercable from a
--- 'String' through the 'IsString' type-class.
+-- An 'Alphabet' represents an /alphabetically ordered/ list of unique symbols
+-- with constant time random access. Symbols are any data type which are
+-- coercable from a 'String' through the 'IsString' type-class.
 --
 -- An 'Alphabet' is constructed by supplying a `Foldable` structure of symbols
 -- which are 'IsString' instances to the 'constructAlphabet' function.
 --
--- Every 'Alphabet' contains a "gap" symbol denoted by the @'fromString' "-"@
--- expression. The "gap" character is always the last element in the ordered
--- list regardless of it's presence or position in the construction structure.
+-- Every 'Alphabet' contains a "gap" symbol denoted by the expression:
+-- > fromString "-"
+-- The "gap" character is always the last element in the ordered
+-- list regardless of its presence or position in the construction structure.
 --
 -- An 'Alphabet' will never contain the "missing" symbol denoted by the
--- @'fromString' "?"@ expression. This symbol will be removed from the 'Alphabet'
+-- expression:
+-- > fromString "?"
+-- This symbol will be removed from the 'Alphabet'
 -- if it is present in the construction structure.
 -----------------------------------------------------------------------------   
 {-# LANGUAGE TypeFamilies #-}
@@ -131,6 +134,8 @@ gapCharacter alphabet = alphabet ! (length alphabet - 1)
 -- | Constructs an 'Alphabet' with a corresponding TCM. Permutes TCM rows and
 --   columns as the 'Alphabet' is reordered. Deletes TCM rows and columns where
 --   'Alphabet' symbols are eliminated.
+--
+--   TODO: Explain why the TCm needs to be permuted.
 --
 --   /O(n*log(n) + n^2)/
 constructAlphabetWithTCM :: (Ord a, IsString a, Foldable t) => t a -> Matrix b -> (Alphabet a, Matrix b)
