@@ -156,7 +156,7 @@ instance Arbitrary a => Arbitrary (TestingBinaryTree a) where
 
 instance Arbitrary (TestingBinaryTree Node) where
     arbitrary = do
-        leafCount <- (getPositive <$> (arbitrary :: Gen (Positive Int))) `suchThat` (\x -> 2 <= x && x <=10)
+        leafCount <- (getPositive <$> (arbitrary :: Gen (Positive Int))) `suchThat` (\x -> 2 <= x && x <= 10)
         alphabet  <- arbitrary :: Gen (Alphabet String)
         leaves    <- generateLeavesDO alphabet leafCount
         generateBinaryTree leaves

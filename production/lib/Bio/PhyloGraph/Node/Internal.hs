@@ -105,14 +105,14 @@ instance Arbitrary Node where
 
 generateLeavesDO :: Alphabet String -> Int -> Gen [Node]
 generateLeavesDO alphabet taxaCount = do
-      sequence $ generateLeaf <$> [0..taxaCount-1]
+      sequenceLength  <- choose (1,2)
+      sequence $ generateLeaf sequenceLength <$> [0..taxaCount-1]
     where
         generateDynamicCharacter :: Gen DynamicChar
         generateDynamicCharacter = do
-            dynamicCharacterLength <- choose (1,100) :: Gen Int
+            dynamicCharacterLength <- choose (1,2) :: Gen Int
             fmap (encodeDynamic alphabet) . vectorOf dynamicCharacterLength . sublistOf $ toList alphabet
-        generateLeaf i = do
-            sequenceLength  <- choose (1,25)
+        generateLeaf sequenceLength i = do
             sequenceOfEncodedDynamicChars <- V.fromList <$> vectorOf sequenceLength generateDynamicCharacter 
             pure $ Node 
                  { code        = i
