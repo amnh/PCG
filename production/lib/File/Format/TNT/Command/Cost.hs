@@ -11,7 +11,7 @@
 -- Parser for the COST command specifying custom TCM constructions for certain
 -- chasracter indicies. 
 ----------------------------------------------------------------------------- 
-{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE FlexibleContexts, TypeFamilies #-}
 module File.Format.TNT.Command.Cost where
 
 import Data.Functor             (($>))
@@ -39,16 +39,16 @@ data TransitionCost
 --  * A single specification of the character state change
 --
 --  * One or more character indicies or index ranges of affected characters
-costCommand :: MonadParsec s m Char => m Cost
+costCommand :: (MonadParsec e s m, Token s ~ Char) => m Cost
 costCommand = costHeader *> costBody <* symbol (char ';')
 
 -- | Consumes the superflous heading for a CCODE command.
-costHeader :: MonadParsec s m Char => m ()
+costHeader :: (MonadParsec e s m, Token s ~ Char) => m ()
 costHeader = symbol $ keyword "cost" 2
 
 -- | The nonempty body of a COST command which represents the indicies to apply
 --   a custom TCM to.
-costBody :: MonadParsec s m Char => m Cost
+costBody :: (MonadParsec e s m, Token s ~ Char) => m Cost
 costBody = do
       idx <- symbol characterIndicies
       _   <- symbol $ char '='
@@ -85,16 +85,16 @@ condenseToMatrix costs = matrix dimensions dimensions value
 --   Must contain a nonempty list of character state values and a transition
 --   cost value. The transitional cost is interpreted as directed by default but
 --   may optionally be specified as a symetric relation.
-costDefinition :: MonadParsec s m Char => m TransitionCost
+costDefinition :: (MonadParsec e s m, Token s ~ Char) => m TransitionCost
 costDefinition = TransitionCost
              <$> symbol costStates
              <*> symbol costRelation
              <*> symbol costStates
              <*> symbol double
   where
-    costRelation :: MonadParsec s m Char => m Bool
+    costRelation :: (MonadParsec e s m, Token s ~ Char) => m Bool
     costRelation = (char '>' $> False) <|> (char '/' $> True )
-    costStates :: MonadParsec s m Char => m (NonEmpty Char)
+    costStates :: (MonadParsec e s m, Token s ~ Char) => m (NonEmpty Char)
     costStates = singleState <|> manyStates
       where
         singleState = pure <$> characterStateChar

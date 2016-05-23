@@ -45,12 +45,13 @@ library
                      , either               -any
                      , keys                 -any
                      , matrix               -any
-                     , megaparsec           >=4.2
+                     , megaparsec           >=5.0
                      , mono-traversable     -any
                      , memoize              -any
                      , parallel             -any
                      , QuickCheck           -any
                      , safe                 -any
+                     , scientific           -any
                      , semigroups           -any
                      , smallcheck           -any 
                      , split                -any 
@@ -208,7 +209,7 @@ executable pcg
                      , hashable             -any
                      , keys                 -any
                      , matrix               -any
-                     , megaparsec           >=4.2
+                     , megaparsec           >=5.0
                      , memoize              -any
                      , mono-traversable     -any
                      , mtl                  -any
@@ -286,7 +287,7 @@ executable qdh
                      , hashable             -any
                      , keys                 -any
                      , matrix               -any
-                     , megaparsec           >=4.2
+                     , megaparsec           >=5.0
                      , parallel             -any
                      , phylocomgraph        -any
                      , QuickCheck           -any
@@ -347,12 +348,13 @@ Test-Suite testsuite
                      , either               -any
                      , keys                 -any
                      , matrix               -any
-                     , megaparsec           -any
+                     , megaparsec           >=5.0
                      , memoize              -any
                      , mono-traversable     -any
                      , parallel             -any
                      , QuickCheck           -any
                      , safe                 -any
+                     , scientific           -any
                      , semigroups           -any
                      , smallcheck           -any 
                      , split                -any 

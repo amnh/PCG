@@ -12,7 +12,7 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE DoAndIfThenElse, FlexibleContexts #-}
+{-# LANGUAGE DoAndIfThenElse, FlexibleContexts, TypeFamilies #-}
 
 -- TODOs:
 -- • Get char weights from assumtions block
@@ -20,31 +20,32 @@
 
 module File.Format.Nexus.Parser where
 
-import           Data.Char              (isSpace,toLower)
-import           Data.List.Split        (splitOneOf)
-import           Data.Maybe             (isJust)
-import qualified Data.Set as S
+import           Data.Char                (isSpace,toLower)
+import qualified Data.List.NonEmpty as NE (head)
+import           Data.List.Split          (splitOneOf)
+import           Data.Maybe               (isJust)
+import qualified Data.Set           as S
 --import Debug.Trace
 import           File.Format.Newick
 import           File.Format.Nexus.Data
 import           File.Format.Nexus.Partition
 import           File.Format.Nexus.Validate
 import           File.Format.TransitionCostMatrix.Parser hiding (symbol)
-import           Text.Megaparsec hiding (label)
-import           Text.Megaparsec.Lexer  (integer)
-import           Text.Megaparsec.Prim   (MonadParsec)
+import           Text.Megaparsec  hiding (label, Tokens)
+import           Text.Megaparsec.Lexer   (integer)
+import           Text.Megaparsec.Prim    (MonadParsec)
 import           Text.Megaparsec.Custom
 
-parseNexusStream :: FilePath -> String -> Either ParseError Nexus
+parseNexusStream :: FilePath -> String -> Either (ParseError (Token String) Dec) Nexus
 parseNexusStream filePath = insertDefaultCharacterNames fileName <$> parse (validateNexusParseResult =<< parseNexus <* eof) filePath
     where
         insertDefaultCharacterNames _ = id
         fileName = last $ splitOneOf "/\\" filePath
 
-parseNexus :: (Show s, MonadParsec s m Char) => m NexusParseResult
+parseNexus :: (Show s, MonadParsec e s m, Token s ~ Char) => m NexusParseResult
 parseNexus = nexusFileDefinition
 
-nexusFileDefinition :: (Show s, MonadParsec s m Char) => m NexusParseResult
+nexusFileDefinition :: (Show s, MonadParsec e s m, Token s ~ Char) => m NexusParseResult
 nexusFileDefinition = {-do
     x <- getInput
     trace ("nexusFileDefinition"  ++ show x) $ -}do
@@ -56,11 +57,11 @@ nexusFileDefinition = {-do
 
 -- TODO: test this 
 -- why is PROTPARS-example.nex failing? It works with end;, but not with endblock;
-ignoredBlockDefinition :: (Show s, MonadParsec s m Char) => m IgnBlock
+ignoredBlockDefinition :: (Show s, MonadParsec e s m, Token s ~ Char) => m IgnBlock
 ignoredBlockDefinition = {-do
     x <- getInput
     trace ("ignoredBlockDefinition"  ++ show x) $ -}do
-    line  <- sourceLine . statePos <$> getParserState
+    line  <- sourceLine . NE.head . statePos <$> getParserState
     title <- many letterChar
     _     <- symbol $ char ';'
     _     <- somethingTill $ lookAhead $ symbol blockend
@@ -69,10 +70,10 @@ ignoredBlockDefinition = {-do
 -- | blockend is a parser than matched the end of a Nexus block.
 -- this should be "end;", but "endblock;" is also accepted, as it was used -- at some point by someone
 -- There is a test in the test suite.
-blockend :: (Show s, MonadParsec s m Char) => m String
+blockend :: (Show s, MonadParsec e s m, Token s ~ Char) => m String
 blockend = string' "end" <* optional (try $ string' "block") <* char ';'
 
-nexusBlock :: (Show s, MonadParsec s m Char) => m NexusBlock
+nexusBlock :: (Show s, MonadParsec e s m, Token s ~ Char) => m NexusBlock
 nexusBlock = do
         _      <- symbol $ string' "BEGIN"
         block' <- symbol block
@@ -87,7 +88,7 @@ nexusBlock = do
              <|> (AssumptionsBlock <$> try assumptionsBlockDefinition)
              <|> (SkippedBlock     <$> try ignoredBlockDefinition)
 
-characterBlockDefinition :: (Show s, MonadParsec s m Char) => String -> Bool -> m PhyloSequence
+characterBlockDefinition :: (Show s, MonadParsec e s m, Token s ~ Char) => String -> Bool -> m PhyloSequence
 characterBlockDefinition which isAlignedSequence = {-do
     x <- getInput
     trace ("characterBlockDefinition "  ++ show x) $ -}do
@@ -95,7 +96,7 @@ characterBlockDefinition which isAlignedSequence = {-do
     (v,w,x,y,z,a) <- partitionSequenceBlock <$> some seqSubBlock
     pure $ PhyloSequence isAlignedSequence v w x y z a which
 
-taxaBlockDefinition :: (Show s, MonadParsec s m Char) => m TaxaSpecification
+taxaBlockDefinition :: (Show s, MonadParsec e s m, Token s ~ Char) => m TaxaSpecification
 taxaBlockDefinition = {-do
     x <- getInput
     trace ("taxaBlockDefinition"  ++ show x) $ -}do
@@ -103,7 +104,7 @@ taxaBlockDefinition = {-do
     (y,z) <- partitionTaxaBlock <$> many taxaSubBlock
     pure $ TaxaSpecification y z
 
-taxaSubBlock :: (Show s, MonadParsec s m Char) => m SeqSubBlock
+taxaSubBlock :: (Show s, MonadParsec e s m, Token s ~ Char) => m SeqSubBlock
 taxaSubBlock = {-do
     x <- getInput
     trace ("many taxaSubBlock"  ++ show x) $ -}do
@@ -116,7 +117,7 @@ taxaSubBlock = {-do
              <|> (IgnSSB <$> try (ignoredSubBlockDef ';'))
 
 -- | assumptionsBlockDefinition 
-assumptionsBlockDefinition :: (Show s, MonadParsec s m Char) => m AssumptionBlock
+assumptionsBlockDefinition :: (Show s, MonadParsec e s m, Token s ~ Char) => m AssumptionBlock
 assumptionsBlockDefinition = {-do
     x <- getInput
     trace ("assumptionsBlockDefinition"  ++ show x) $ -}do
@@ -125,7 +126,7 @@ assumptionsBlockDefinition = {-do
         pure $ AssumptionBlock tcms additives
 
 -- TODO: complete Add typeset (additive, nonadditive), also capture exset, wtset, deftype and gapmode in options field
-assumptionFieldDef :: (Show s, MonadParsec s m Char) => m AssumptionField
+assumptionFieldDef :: (Show s, MonadParsec e s m, Token s ~ Char) => m AssumptionField
 assumptionFieldDef = {-do
     x <- getInput
     trace ("assumptionFieldDef"  ++ show x) $ -}symbol block
@@ -140,7 +141,7 @@ assumptionFieldDef = {-do
 -- etc.
 -- and a StepMatrix, which is some metadata: the matrix name and the cardinality,
 -- as well as a TCMParseResult
-tcmMatrixDefinition :: (Show s, MonadParsec s m Char) => m StepMatrix
+tcmMatrixDefinition :: (Show s, MonadParsec e s m, Token s ~ Char) => m StepMatrix
 tcmMatrixDefinition = {-do
     x <- getInput
     trace ("\n\ntcmMatrixDefinition "  ++ show x) $ -}do
@@ -154,7 +155,7 @@ tcmMatrixDefinition = {-do
         _            <- symbol $ char ';'
         pure $ StepMatrix matrixName (fromEnum cardinality) (TCM mtxAlphabet assumpMatrix)
 
-treeBlockDefinition :: (Show s, MonadParsec s m Char) => m TreeBlock
+treeBlockDefinition :: (Show s, MonadParsec e s m, Token s ~ Char) => m TreeBlock
 treeBlockDefinition = {-do
     x <- getInput
     trace ("\n\ntreeBlockDefinition "  ++ show x) $ -}do
@@ -162,7 +163,7 @@ treeBlockDefinition = {-do
         (x,y) <- partitionTreeBlock <$> many treeFieldDef
         pure $ TreeBlock x y
 
-seqSubBlock :: (Show s, MonadParsec s m Char) => m SeqSubBlock
+seqSubBlock :: (Show s, MonadParsec e s m, Token s ~ Char) => m SeqSubBlock
 seqSubBlock = {-do
     x <- getInput
     trace ("seqSubBlock" ++ (show x)) $ -}symbol block
@@ -175,7 +176,7 @@ seqSubBlock = {-do
              <|>  CharLabels  <$> try (stringListDefinition "charlabels")
              <|>  IgnSSB      <$> try (ignoredSubBlockDef ';')
 
-dimensionsDefinition :: (Show s, MonadParsec s m Char) => m DimensionsFormat
+dimensionsDefinition :: (Show s, MonadParsec e s m, Token s ~ Char) => m DimensionsFormat
 dimensionsDefinition = {-do 
         x         <- getInput 
         trace ("**dimensionsDefinition:  " ++ show x) $ -}do
@@ -198,7 +199,7 @@ dimensionsDefinition = {-do
 -- a space-delimited list of words, each of which can be successfully parsed by 
 -- charFormatFieldDef, and end with a semi-colon.
 -- TODO: An incomplete test exists in the test suite.
-formatDefinition :: (Show s, MonadParsec s m Char) => m CharacterFormat
+formatDefinition :: (Show s, MonadParsec e s m, Token s ~ Char) => m CharacterFormat
 formatDefinition = {-do
         x <- getInput
         trace ("\n\nmany formatDefinition "  ++ show x) $ -}do
@@ -212,7 +213,7 @@ formatDefinition = {-do
 -- by any of the sub-parsers, or if any of those sub-parsers fails.
 -- A test exists in the test suite, although only false positives are tested for, not false negatives.
 -- I deemed this good enough, since each of the called fns is well-tested, and the calling fn is, as well.
-charFormatFieldDef :: (Show s, MonadParsec s m Char) => m [CharFormatField]
+charFormatFieldDef :: (Show s, MonadParsec e s m, Token s ~ Char) => m [CharFormatField]
 charFormatFieldDef = {-do
         x <- getInput
         trace ("many charFormatFieldDef"  ++ show x) $ -}do
@@ -234,7 +235,7 @@ charFormatFieldDef = {-do
              <|> (IgnFF       <$> try (ignoredSubBlockDef     ' '          ))
 
 
-treeFieldDef :: (Show s, MonadParsec s m Char) => m TreeField
+treeFieldDef :: (Show s, MonadParsec e s m, Token s ~ Char) => m TreeField
 treeFieldDef = do
         block' <- block
         pure block'
@@ -247,7 +248,7 @@ treeFieldDef = do
 -- | booleanDefinition takes a string of format KEYWORD;
 -- and returns True if it succeeds in matching. The semicolon is not captured by this fn.
 -- A test exists in the test suite.
-booleanDefinition :: (Show s, MonadParsec s m Char) => String -> m Bool
+booleanDefinition :: (Show s, MonadParsec e s m, Token s ~ Char) => String -> m Bool
 booleanDefinition blockTitle = {-do
         x <- getInput
         trace (("booleanDefinition " ++ blockTitle)  ++ show x) $-} symbol (string' blockTitle) *> pure True
@@ -255,7 +256,7 @@ booleanDefinition blockTitle = {-do
 -- | stringDefinition takes a string of format TITLE=value;
 -- and returns the value. The semicolon is not captured by this fn.
 -- A test exists in the test suite.
-stringDefinition :: (Show s, MonadParsec s m Char) => String -> m String
+stringDefinition :: (Show s, MonadParsec e s m, Token s ~ Char) => String -> m String
 stringDefinition blockTitle = do
     _     <- symbol $ string' blockTitle
     _     <- symbol $ char '='
@@ -268,7 +269,7 @@ stringDefinition blockTitle = do
 -- Fails gracefully if the close quote is missing.
 -- A test exists in the test suite.
 -- TODO?: This doesn't work if they leave off the opening quote mark.
-quotedStringDefinition :: (Show s, MonadParsec s m Char) => String -> m (Either String [String])
+quotedStringDefinition :: (Show s, MonadParsec e s m, Token s ~ Char) => String -> m (Either String [String])
 quotedStringDefinition blockTitle = {-do
     x <- getInput
     trace (("some quotedStringDefinition " ++ blockTitle)  ++ show x) $ -}do
@@ -286,7 +287,7 @@ quotedStringDefinition blockTitle = {-do
 -- | stringListDefinition is similar to quotedStringDefinition, but in this case the format is
 -- TITLE val1 val2 val3 ...; In other words, there is no '=' and the list of values is whitepace-separated. 
 -- Those values are captured and returned. 
-stringListDefinition :: (Show s, MonadParsec s m Char) => String -> m [String]
+stringListDefinition :: (Show s, MonadParsec e s m, Token s ~ Char) => String -> m [String]
 stringListDefinition label = {-do
     x <- getInputs
     trace (("many stringListDefinition " ++ label)  ++ show x) $ -}do
@@ -299,7 +300,7 @@ stringListDefinition label = {-do
 -- TITLE val1, val2, val3, ...; Again, there is no '='' after the title of the block. However, in this
 -- case values are separated by a Char which is passed in as an argument. (In the given example the separator
 -- is ','. The values are captured and returned. 
-delimitedStringListDefinition :: (Show s, MonadParsec s m Char) => String -> Char -> m [String]
+delimitedStringListDefinition :: (Show s, MonadParsec e s m, Token s ~ Char) => String -> Char -> m [String]
 delimitedStringListDefinition label delimiter = {-do
     x <- getInput
     trace (("delimitedStringListDefinition " ++ label)  ++ show x) $ -}do
@@ -312,7 +313,7 @@ delimitedStringListDefinition label delimiter = {-do
 -- and returns the tuple of (<label>, '[NewickForest']). Label consists on one or more
 -- non-space, non-equal-sign characters. For the proper definition of a 'NewickForest'
 -- see the module for the Newick parser.
-treeDefinition :: (Show s, MonadParsec s m Char) => m (String, NewickForest)
+treeDefinition :: (Show s, MonadParsec e s m, Token s ~ Char) => m (String, NewickForest)
 treeDefinition = {-do
     x <- getInput
     trace ("treeDefinition"  ++ show x) $ -}do
@@ -322,7 +323,7 @@ treeDefinition = {-do
     newick <- symbol newickStreamParser
     pure (label, newick)
 
-seqMatrixDefinition :: (Show s, MonadParsec s m Char) => m [String]
+seqMatrixDefinition :: (Show s, MonadParsec e s m, Token s ~ Char) => m [String]
 seqMatrixDefinition = {-do
     x <- getInput
     trace ("\n\nseqMatrixDefinition "  ++ show x) $ -}do
@@ -337,7 +338,7 @@ seqMatrixDefinition = {-do
 -- the passed end character, a semicolon or "end;". It returns that string up to, but
 -- not including, whatever the terminating char is. Also fails if the input is "end;"
 -- A test exists in the test suite.
-ignoredSubBlockDef :: (Show s, MonadParsec s m Char) => Char -> m String
+ignoredSubBlockDef :: (Show s, MonadParsec e s m, Token s ~ Char) => Char -> m String
 ignoredSubBlockDef endChar = {-do
     x <- getInput
     trace (("\n\nignoredSubBlockDef endChar: " ++ [endChar] ++ " ")  ++ show x) $ -}do
@@ -354,28 +355,28 @@ ignoredSubBlockDef endChar = {-do
 -- Utility fns --
 -- TODO: Are these used?
 
-trimmed :: (Show s, MonadParsec s m Char) => m a -> m a
+trimmed :: (Show s, MonadParsec e s m, Token s ~ Char) => m a -> m a
 trimmed x = whitespace *> x <* whitespace
 
 
-symbol :: (Show s, MonadParsec s m Char) => m a -> m a
+symbol :: (Show s, MonadParsec e s m, Token s ~ Char) => m a -> m a
 symbol x = x <* whitespace
 
 -- | whitespace is any combination (zero or more) of whitespace chars (" \t\n\r\v\f") and comments, which in Nexus files
 -- are delimited by square brackets.
 -- TODO: Since this accepts the empty string, it's difficult to test....
-whitespace :: (Show s, MonadParsec s m Char) => m ()
+whitespace :: (Show s, MonadParsec e s m, Token s ~ Char) => m ()
 whitespace = (space *> optional (try $ some $ commentDefinition *> space) *> pure ())
           <?> "comments or whitespace"
 
-whitespaceNoNewlines :: (Show s, MonadParsec s m Char) => m ()
+whitespaceNoNewlines :: (Show s, MonadParsec e s m, Token s ~ Char) => m ()
 whitespaceNoNewlines = (inlineSpace *> optional (try $ some $ commentDefinition *> inlineSpace) *> pure ())
           <?> "comments or non-newline whitespace"
 
-commentDefinition :: (Show s, MonadParsec s m Char) => m String
+commentDefinition :: (Show s, MonadParsec e s m, Token s ~ Char) => m String
 commentDefinition = comment (string "[") (string "]")
 
-space1 :: (Show s, MonadParsec s m Char) => m ()
+space1 :: (Show s, MonadParsec e s m, Token s ~ Char) => m ()
 space1 = skipSome spaceChar
 
 nexusKeywords :: S.Set String
@@ -387,7 +388,7 @@ nexusKeywords = S.fromList ["ancstates", "assumptions", "begin", "changeset", "c
 -- The second argument is a string to parse.
 -- In addition, it checks to make sure that the output is not a Nexus keywords. If the output is
 -- a keyword, the fn fails with an error message.
-notKeywordWord :: (Show s, MonadParsec s m Char) => String -> m String
+notKeywordWord :: (Show s, MonadParsec e s m, Token s ~ Char) => String -> m String
 notKeywordWord avoidChars = do
     word <- lookAhead nextWord
     if (toLower <$> word) `S.member` nexusKeywords

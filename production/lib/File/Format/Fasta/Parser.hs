@@ -12,7 +12,7 @@
 --
 ----------------------------------------------------------------------------- 
 
-{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE FlexibleContexts, TypeFamilies #-}
 
 module File.Format.Fasta.Parser where
 
@@ -39,11 +39,11 @@ type FastaParseResult = [FastaSequence]
 
 -- | Consumes a stream of 'Char's and parses the stream into a 'FastaParseResult' that
 -- has been validated for information consistency
-fastaStreamParser :: MonadParsec s m Char => m FastaParseResult
+fastaStreamParser :: (MonadParsec e s m, Token s ~ Char) => m FastaParseResult
 fastaStreamParser = validate =<< seqTranslation <$> (some fastaTaxonSequenceDefinition <* eof)
 
 -- | Parses a single FASTA defined taxon sequence from a Char stream
-fastaTaxonSequenceDefinition :: MonadParsec s m Char => m FastaSequence
+fastaTaxonSequenceDefinition :: (MonadParsec e s m, Token s ~ Char) => m FastaSequence
 fastaTaxonSequenceDefinition = do
     name <- fastaTaxonName
     seq' <- try fastaSequence <?> ("Unable to read character sequence for taxon: '" ++ name ++ "'")
@@ -51,18 +51,18 @@ fastaTaxonSequenceDefinition = do
     pure $ FastaSequence name seq'
 
 -- | Consumes a line from the Char stream and parses a FASTA identifier
-fastaTaxonName :: MonadParsec s m Char => m String
+fastaTaxonName :: (MonadParsec e s m, Token s ~ Char) => m String
 fastaTaxonName = identifierLine
 
 -- | Consumes one or more lines from the Char stream to produce a list of Chars
 --   constrained to a valid Char alphabet representing possible character states
-fastaSequence :: MonadParsec s m Char => m String
+fastaSequence :: (MonadParsec e s m, Token s ~ Char) => m String
 fastaSequence = symbolSequence $ oneOf alphabet
 
 -- | Takes a symbol combinator and constructs a combinator which matches
 --   many of the symbols seperated by spaces and newlines and the enitire
 --   sequence ends in a new line
-symbolSequence :: MonadParsec s m Char => m a -> m [a]
+symbolSequence :: (MonadParsec e s m, Token s ~ Char) => m a -> m [a]
 symbolSequence sym = space *> fullSequence
   where
     fullSequence = concat <$> some (inlineSpace *> sequenceLine)
@@ -103,12 +103,12 @@ seqTranslation = foldr f []
     f (FastaSequence name seq') a = FastaSequence name (toUpper <$> seq') : a
 
 -- | Ensures that the parsed result has consistent data
-validate :: MonadParsec s m Char => FastaParseResult -> m FastaParseResult
+validate :: (MonadParsec e s m, Token s ~ Char) => FastaParseResult -> m FastaParseResult
 validate = validateSequenceConsistency <=< validateIdentifierConsistency
 
 
 -- | Ensures that there are no duplicate identifiers in the stream
-validateIdentifierConsistency :: MonadParsec s m Char => FastaParseResult -> m FastaParseResult
+validateIdentifierConsistency :: (MonadParsec e s m, Token s ~ Char) => FastaParseResult -> m FastaParseResult
 validateIdentifierConsistency xs =
   case dupes of
     [] -> pure xs
@@ -119,12 +119,12 @@ validateIdentifierConsistency xs =
     errorMessage x = "Multiple taxon labels found identified by: '"++x++"'" 
 
 -- | Ensures that the charcters are all from a consistent alphabet
-validateSequenceConsistency :: MonadParsec s m Char => FastaParseResult -> m FastaParseResult
+validateSequenceConsistency :: (MonadParsec e s m, Token s ~ Char) => FastaParseResult -> m FastaParseResult
 validateSequenceConsistency = validateConsistentPartition <=< validateConsistentAlphabet
 
 -- | Validates that all elements of all sequences are consistent with each other sequence.
 -- Sequences of differing types cannot be mixed.
-validateConsistentAlphabet :: MonadParsec s m Char => FastaParseResult -> m FastaParseResult
+validateConsistentAlphabet :: (MonadParsec e s m, Token s ~ Char) => FastaParseResult -> m FastaParseResult
 validateConsistentAlphabet xs =
   case partition snd results of
     (_,[]) -> pure xs
@@ -144,7 +144,7 @@ validateConsistentAlphabet xs =
                        ]
 
 -- | Validates that sequences partitioned with the '\'#\'' character are all of the same length.
-validateConsistentPartition :: MonadParsec s m Char => FastaParseResult -> m FastaParseResult
+validateConsistentPartition :: (MonadParsec e s m, Token s ~ Char) => FastaParseResult -> m FastaParseResult
 validateConsistentPartition xs
   |  null xs
   || null errors  = pure xs

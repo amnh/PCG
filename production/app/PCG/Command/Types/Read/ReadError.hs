@@ -7,9 +7,9 @@ module PCG.Command.Types.Read.ReadError
   ) where
 
 import Data.List.NonEmpty
-import Data.Maybe                (catMaybes)
+import Data.Maybe            (catMaybes)
 import Data.Semigroup
-import Text.Megaparsec           (ParseError)
+import Text.Megaparsec.Error
 
 -- | The various ways in which a 'Read' 'Command' from a POY script can fail.
 -- A single 'Read' 'Command' can fail in multiple ways simultaneously.
@@ -19,7 +19,7 @@ data ReadError = ReadError (NonEmpty ReadErrorMessage)
 data ReadErrorMessage
    = FileUnfindable FilePath
    | FileUnopenable FilePath
-   | FileUnparsable ParseError
+   | FileUnparsable String
    | FileAmbiguous  FilePath (NonEmpty FilePath)
 
 instance Show ReadErrorMessage where
@@ -78,8 +78,8 @@ unopenable :: FilePath -> ReadError
 unopenable path = ReadError $ FileUnopenable path :| []
 
 -- | Remark that a parsing error occured when reading the file. Note that the 'ParseError' should contain the 'FilePath' information. 
-unparsable :: ParseError -> ReadError
-unparsable pErr = ReadError $ FileUnparsable pErr :| []
+unparsable :: (Ord t, ShowToken t, ShowErrorComponent e) => ParseError t e -> ReadError
+unparsable pErr = ReadError $ FileUnparsable (parseErrorPretty pErr) :| []
 
 -- | Remark that the specified file path matches many possible files.
 -- This should be used when a single file is expected but 'regex matching' or 'file globbing'
