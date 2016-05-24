@@ -62,21 +62,26 @@ iaForest inForest inMeta = fmap (flip impliedAlign inMeta) (trees inForest)
 -- TODO: Consider building the alignment at each step of a postorder rather than grabbing wholesale
 impliedAlign :: (TreeConstraint t n e s, Metadata m s) => t -> Vector m -> Alignment s
 --impliedAlign inTree inMeta | trace ("impliedAlign with tree " ++ show inTree) False = undefined
-impliedAlign inTree inMeta = foldr (\n acc -> insert (getCode n) (makeAlignment n) acc) mempty allLeaves
+impliedAlign inTree inMeta = foldr (\n acc -> insert (getCode n) (makeAlignment n lens) acc) mempty allLeaves
     where
-        (_, curTree) = numeratePreorder inTree (getRoot inTree) inMeta (replicate (length inMeta) 0)
+        (lens, curTree) = numeratePreorder inTree (getRoot inTree) inMeta (replicate (length inMeta) 0)
         allLeaves = filter (flip nodeIsLeaf curTree) (getNodes curTree)
 
 -- | Simple function to generate an alignment from a numerated node
 -- Takes in a Node
 -- returns a vector of characters
-makeAlignment :: (NodeConstraint n s) => n -> Vector s
-makeAlignment n = makeAlign (getFinalGapped n) (getHomologies n)
+makeAlignment :: (NodeConstraint n s) => n -> Counts -> Vector s
+makeAlignment n seqLens = makeAlign (getFinalGapped n) (getHomologies n)
     where
-         -- oneTrace :: s -> Homologies -> m -> s
-        oneTrace dynChar homolog = foldr (\pos acc -> unsafeCons (grabSubChar dynChar pos) acc) emptyChar homolog
+        -- onePos :: s -> Homologies -> Int -> Int -> Int -> s
+        onePos c h l sPos hPos 
+            | sPos > l - 1 = emptyLike c
+            | h ! hPos == sPos = unsafeCons (grabSubChar c (h ! hPos)) (onePos c h l (sPos + 1) (hPos + 1))
+            | otherwise = unsafeCons (gapChar c) (onePos c h l (sPos + 1) hPos)
+        -- makeOne :: s -> Homologies -> Int -> s
+        makeOne char homolog len = onePos char homolog len 0 0
         --makeAlign :: Vector s -> HomologyTrace -> Vector s
-        makeAlign dynChar homologies = zipWith oneTrace dynChar homologies
+        makeAlign dynChar homologies = zipWith3 makeOne dynChar homologies seqLens
 
 -- | Main recursive function that assigns homology traces to every node
 -- takes in a tree, a current node, a vector of metadata, and a vector of counters
@@ -137,9 +142,9 @@ numeratePreorder inTree curNode inMeta curCounts
                         where (_, _, _, gapped1, gapped2) = naiveDO s1 s2 m
 -}
 
-{-
+
 backPropagation :: TreeConstraint t n e s  => t -> n -> Vector IntSet -> t
-backPropagation tree node insertionEvents =
+backPropagation tree node insertionEvents = undefined {-
   | all onull insertionEvents = tree -- nothing to do thank god!
   | otherwise =
   where
