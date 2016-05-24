@@ -17,7 +17,7 @@ module Bio.Metadata.Internal where
 
 import Data.Alphabet
 import Data.Foldable                       ()
-import Data.Matrix.NotStupid               (Matrix)
+import Data.Matrix.NotStupid               (Matrix, matrix)
 import Data.Monoid
 import Data.Vector                         (Vector)
 import Test.QuickCheck.Arbitrary.Instances ()
@@ -106,4 +106,4 @@ instance Arbitrary s => Arbitrary (CharacterMetadata s) where
     pure $ CharMeta t a n align ignore w sn masks r c
 
 tcmOfSize :: Int -> CostMatrix
-tcmOfSize = undefined
+tcmOfSize  n = matrix n n (const 1)
