@@ -12,7 +12,7 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE FlexibleContexts, TypeFamilies #-}
 
 module File.Format.Nexus.Validate where
 
@@ -29,7 +29,8 @@ import           Data.Ord               (comparing)
 import qualified Data.Vector       as V
 import           File.Format.Nexus.Data
 import           Safe
-import           Text.Megaparsec.Prim   (MonadParsec)
+import           Text.Megaparsec.Prim   (MonadParsec,Token)
+--import qualified Text.Megaparsec.Prim as P (Token)
 import           Text.Megaparsec.Custom
 
 
@@ -104,7 +105,7 @@ import           Text.Megaparsec.Custom
 -- • check for gap treatment, possibly replace with missing
 -- • symbol order in TCM should be the same as symbol order in alphabet representation
 
-validateNexusParseResult :: (Show s, MonadParsec s m Char) => NexusParseResult -> m Nexus
+validateNexusParseResult :: (Show s, MonadParsec e s m, Token s ~ Char) => NexusParseResult -> m Nexus
 validateNexusParseResult (NexusParseResult inputSeqBlocks taxas treeSet assumptions _ignored) 
   | null inputSeqBlocks && null taxas && null treeSet = fails ["There are no usable blocks in this file."] -- error 1
   | not (null independentErrors)                      = fails independentErrors

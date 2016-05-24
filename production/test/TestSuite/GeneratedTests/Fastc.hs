@@ -8,6 +8,7 @@ module TestSuite.GeneratedTests.Fastc
 import Data.Map                          (toList)
 import File.Format.Fastc
 import Test.Tasty                        (TestTree,testGroup)
+import Test.Custom.Parse
 import Test.Tasty.HUnit
 import TestSuite.GeneratedTests.Internal
 import Text.Megaparsec                   (parse)
@@ -20,12 +21,8 @@ validFastaFiles = validateFileContents <$> validContents
   where
     validContents          = getFileContentsInDirectory "test/data-sets/fastc/valid"
     validateFileContents   = testGroup "Valid files" . fmap success . toList
-    success (path,content) = testCase (show path) 
-                           $ case result of
-                               Left x  -> assertFailure $ show x
-                               Right _ -> assert True
-      where
-       result = parse fastcStreamParser path content
+    success (path,content) = testCase (show path) $ parseSuccess fastcStreamParser content 
+
 {-
 invalidFastaFiles :: IO TestTree
 invalidFastaFiles = validateFileContents <$> validContents

@@ -13,7 +13,7 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE FlexibleContexts, TypeFamilies #-}
 
 module File.Format.VertexEdgeRoot.Parser where
 
@@ -79,7 +79,7 @@ edgeLength (EdgeInfo (_,_) n) = n
 -- when vertex sets are unlabeled. Ensures that the elements of the root set
 -- are not connected in the forest. Ensures that the rooted trees in the
 -- forest do not contain cycles.
-verStreamParser :: MonadParsec s m Char => m VertexEdgeRoot
+verStreamParser :: (MonadParsec e s m, Token s ~ Char) => m VertexEdgeRoot
 verStreamParser = validateForest =<< verDefinition
     
 -- We have a complicated definition here because we do not want to restrict
@@ -97,7 +97,7 @@ verStreamParser = validateForest =<< verDefinition
 -- labels by comparing the size of the sets; as the set of all verticies is 
 -- surely a superset of the set of root nodes.
 -- | Parses exactly one vertex set, one edge set, and one root set.
-verDefinition :: MonadParsec s m Char => m VertexEdgeRoot
+verDefinition :: (MonadParsec e s m, Token s ~ Char) => m VertexEdgeRoot
 verDefinition = do
     sets <- many setDefinition
     case partitionEithers sets of
@@ -133,7 +133,7 @@ verDefinition = do
 -- If it is a vertex set, it may be labeled as a specific set of verticies or
 -- a set of roots. We use the Either type as a return type to denote the 
 -- conditional type of the result.
-setDefinition :: MonadParsec s m Char => m (Either (Set EdgeInfo) (Maybe VertexSetType, Set VertexLabel))
+setDefinition :: (MonadParsec e s m, Token s ~ Char) => m (Either (Set EdgeInfo) (Maybe VertexSetType, Set VertexLabel))
 setDefinition = do
     result <- optional (try edgeSetDefinition)
     case result of
@@ -143,11 +143,11 @@ setDefinition = do
 -- | A vertex set can be labeled or unlabeled. We first attempt to read in a 
 -- labeled vertex set, and if that fails an unlabeled vertex set. The label
 -- is returned contidionally in a Maybe type.
-vertexSetDefinition :: MonadParsec s m Char => m (Maybe VertexSetType, Set VertexLabel)
+vertexSetDefinition :: (MonadParsec e s m, Token s ~ Char) => m (Maybe VertexSetType, Set VertexLabel)
 vertexSetDefinition = try labeledVertexSetDefinition <|> unlabeledVertexSetDefinition
 
 -- | A labeled vertex set contains a label followed by an unlabeled vertex set
-labeledVertexSetDefinition :: MonadParsec s m Char => m (Maybe VertexSetType, Set VertexLabel )
+labeledVertexSetDefinition :: (MonadParsec e s m, Token s ~ Char) => m (Maybe VertexSetType, Set VertexLabel )
 labeledVertexSetDefinition = do
     setType <- vertexSetType
     _       <- symbol (char '=')
@@ -156,7 +156,7 @@ labeledVertexSetDefinition = do
 
 -- | A vertex set label is one of the following case insensative strings:
 -- "vertexset", rootset"
-vertexSetType :: MonadParsec s m Char => m VertexSetType
+vertexSetType :: (MonadParsec e s m, Token s ~ Char) => m VertexSetType
 vertexSetType = do
     value <- optional (try (symbol (string' "VertexSet")))
     case value of
@@ -165,16 +165,16 @@ vertexSetType = do
 
 -- | A vertex set with an optional set label enclosed in braces.
 -- A vertex set cannot have duplicate verticies
-unlabeledVertexSetDefinition :: MonadParsec s m Char => m (Maybe VertexSetType, Set VertexLabel)
+unlabeledVertexSetDefinition :: (MonadParsec e s m, Token s ~ Char) => m (Maybe VertexSetType, Set VertexLabel)
 unlabeledVertexSetDefinition = validateVertexSet =<< unlabeledVertexSetDefinition'
   where
-    unlabeledVertexSetDefinition' :: MonadParsec s m Char => m (Maybe VertexSetType, [VertexLabel])
+    unlabeledVertexSetDefinition' :: (MonadParsec e s m, Token s ~ Char) => m (Maybe VertexSetType, [VertexLabel])
     unlabeledVertexSetDefinition' = do
         _       <- symbol (char '{')
         labels' <- vertexLabelDefinition `sepBy1` symbol (char ',')
         _       <- symbol (char '}')
         pure (Nothing, labels')
-    validateVertexSet :: MonadParsec s m Char => (Maybe VertexSetType, [VertexLabel]) -> m (Maybe VertexSetType, Set VertexLabel)
+    validateVertexSet :: (MonadParsec e s m, Token s ~ Char) => (Maybe VertexSetType, [VertexLabel]) -> m (Maybe VertexSetType, Set VertexLabel)
     validateVertexSet (t,vs)
       | null dupes = pure (t, fromList vs)
       | otherwise  = fail errorMessage
@@ -183,7 +183,7 @@ unlabeledVertexSetDefinition = validateVertexSet =<< unlabeledVertexSetDefinitio
         errorMessage = "The following verticies were defined multiple times: " ++ show dupes
 
 -- | A vertex label is any non-scpace character that is also not a brace, paren, or comma.
-vertexLabelDefinition :: MonadParsec s m Char => m String
+vertexLabelDefinition :: (MonadParsec e s m, Token s ~ Char) => m String
 vertexLabelDefinition = some validChar
   where
     validChar = satisfy $ \x -> x `notElem` "{}(),"
@@ -192,13 +192,13 @@ vertexLabelDefinition = some validChar
 -- | Parses an edge set with an optional edge set label.
 -- Edges cannot be from one node to the same node.
 -- Edges are undirected, with duplicate edges prohibited.
-edgeSetDefinition :: MonadParsec s m Char => m (Set EdgeInfo)
+edgeSetDefinition :: (MonadParsec e s m, Token s ~ Char) => m (Set EdgeInfo)
 edgeSetDefinition = validateEdgeSet =<< edgeSetDefinition'
   where
-    edgeSetLabel :: MonadParsec s m Char => m String
+    edgeSetLabel :: (MonadParsec e s m, Token s ~ Char) => m String
     edgeSetLabel = symbol (string' "EdgeSet") <* symbol (char '=')
 
-    edgeSetDefinition' :: MonadParsec s m Char => m [EdgeInfo]
+    edgeSetDefinition' :: (MonadParsec e s m, Token s ~ Char) => m [EdgeInfo]
     edgeSetDefinition' = do
         _      <- optional (try edgeSetLabel)
         _      <- symbol (char '{')
@@ -206,7 +206,7 @@ edgeSetDefinition = validateEdgeSet =<< edgeSetDefinition'
         _      <- symbol (char '}')
         pure pairs
 
-    validateEdgeSet :: MonadParsec s m Char => [EdgeInfo] -> m (Set EdgeInfo)
+    validateEdgeSet :: (MonadParsec e s m, Token s ~ Char) => [EdgeInfo] -> m (Set EdgeInfo)
     validateEdgeSet es
       | null errors = pure $ fromList es
       | otherwise   = fails errors
@@ -224,7 +224,7 @@ edgeSetDefinition = validateEdgeSet =<< edgeSetDefinition'
 
 -- | Defines the serialized format of an edge connecting nodes 'a' and 'b' as '"(a,b)"'.
 -- Allows for optional "branch length" annotation as '"(a,b):12.34"'.
-edgeDefinition :: MonadParsec s m Char => m EdgeInfo
+edgeDefinition :: (MonadParsec e s m, Token s ~ Char) => m EdgeInfo
 edgeDefinition = symbol $ do
     _ <- space
     _ <- symbol (char '(') 
@@ -238,7 +238,7 @@ edgeDefinition = symbol $ do
     branchLengthDefinition = symbol (char ':') *> symbol double
 
 -- | Convinence combinator to consume trailing whitespace.
-symbol :: MonadParsec s m Char => m a -> m a
+symbol :: (MonadParsec e s m, Token s ~ Char) => m a -> m a
 symbol x = x <* space
 
 -- | Validates a parse result to ensure that the resulting forest is internally consistent.
@@ -247,7 +247,7 @@ symbol x = x <* space
 --   * Any two root nodes are connected
 --
 --   * Any tree contains a cycle
-validateForest :: MonadParsec s m Char => VertexEdgeRoot -> m VertexEdgeRoot
+validateForest :: (MonadParsec e s m, Token s ~ Char) => VertexEdgeRoot -> m VertexEdgeRoot
 validateForest ver@(VER vs es rs )
   | (not.null) treeEdgeCycles = fails $ edgeCycleErrorMessage <$> treeEdgeCycles
   | (not.null) connectedRoots = fails $ manyRootsErrorMessage <$> connectedRoots

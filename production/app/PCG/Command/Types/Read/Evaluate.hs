@@ -1,4 +1,4 @@
-{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE FlexibleContexts, TypeFamilies #-}
 
 module PCG.Command.Types.Read.Evaluate
   ( evaluate
@@ -39,6 +39,9 @@ import           PCG.Command.Types.Read.Unification.Master
 import           Prelude             hiding (lookup)
 import           Text.Megaparsec
 
+parse' :: Parsec Dec s a -> String -> s -> Either (ParseError (Token s) Dec) a
+parse' = parse
+
 evaluate :: Command -> SearchState -> SearchState
 {--}
 --evaluate (READ fileSpecs) _old | trace ("Evaluated called: " <> show fileSpecs) False = undefined
@@ -70,7 +73,7 @@ parseSpecifiedFile     (PrealignedFile x tcmRef) = do
       case tcmContent of
         Nothing             -> pure subContent
         Just (path,content) -> do
-          tcmMat <- hoistEither . first unparsable $ parse tcmStreamParser path content
+          tcmMat <- hoistEither . first unparsable $ parse' tcmStreamParser path content
           traverse (setTcm tcmMat) subContent
   where
     setTcm :: TCM -> FracturedParseResult -> EitherT ReadError IO FracturedParseResult
@@ -82,26 +85,26 @@ parseSpecifiedFile spec@(UnspecifiedFile    _    ) =
 
 fastaDNA :: FileSpecification -> EitherT ReadError IO [FracturedParseResult]
 --fastaDNA spec | trace ("fasta DNA parser with spec " ++ show spec) False = undefined
-fastaDNA spec = getSpecifiedContent spec >>= (hoistEither . parseSpecifiedContent parse')
+fastaDNA spec = getSpecifiedContent spec >>= (hoistEither . parseSpecifiedContent parse'')
   where
-    parse' :: FileResult -> Either ReadError FracturedParseResult
-    parse' (path,content) = toFractured Nothing path <$> parseResult
+    parse'' :: FileResult -> Either ReadError FracturedParseResult
+    parse'' (path,content) = toFractured Nothing path <$> parseResult
       where
-        parseResult = {- (\x -> trace (show x) x) . -} first unparsable $ parse combinator path content
+        parseResult = {- (\x -> trace (show x) x) . -} first unparsable $ parse' combinator path content
         combinator  = (\x -> try (fastaStreamConverter Fasta.DNA x) <|> fastaStreamConverter Fasta.RNA x) =<< fastaStreamParser
 
 -- TODO: abstract these two (three) v^
 fastaAminoAcid :: FileSpecification -> EitherT ReadError IO [FracturedParseResult]
-fastaAminoAcid spec = getSpecifiedContent spec >>= (hoistEither . parseSpecifiedContent parse')
+fastaAminoAcid spec = getSpecifiedContent spec >>= (hoistEither . parseSpecifiedContent parse'')
   where
-    parse' :: FileResult -> Either ReadError FracturedParseResult
-    parse' (path,content) = toFractured Nothing path <$> parseResult
+    parse'' :: FileResult -> Either ReadError FracturedParseResult
+    parse'' (path,content) = toFractured Nothing path <$> parseResult
       where
-        parseResult = first unparsable $ parse combinator path content
+        parseResult = first unparsable $ parse' combinator path content
         combinator  = fastaStreamConverter Fasta.AminoAcid =<< fastaStreamParser
 
 parseSpecifiedContent :: (FileResult -> Either ReadError FracturedParseResult) -> FileSpecificationContent -> Either ReadError [FracturedParseResult]
-parseSpecifiedContent parse' = eitherValidation . fmap parse' . dataFiles
+parseSpecifiedContent parse'' = eitherValidation . fmap parse'' . dataFiles
 
 parseCustomAlphabet :: FileSpecification -> EitherT ReadError IO [FracturedParseResult]
 parseCustomAlphabet spec = getSpecifiedContent spec >>= (hoistEither . parseSpecifiedContentWithTcm)
@@ -110,11 +113,11 @@ parseCustomAlphabet spec = getSpecifiedContent spec >>= (hoistEither . parseSpec
     parseSpecifiedContentWithTcm specContent = do
         tcmMay <- case tcmFile specContent of
                     Nothing             -> pure Nothing
-                    Just (path,content) -> bimap unparsable Just $ parse tcmStreamParser path content
-        eitherValidation . fmap (parse' tcmMay) $ dataFiles specContent
-    parse' m (path, content) = toFractured m path <$> parseResult
+                    Just (path,content) -> bimap unparsable Just $ parse' tcmStreamParser path content
+        eitherValidation . fmap (parse'' tcmMay) $ dataFiles specContent
+    parse'' m (path, content) = toFractured m path <$> parseResult
       where
-        parseResult = first unparsable $ parse fastcStreamParser path content
+        parseResult = first unparsable $ parse' fastcStreamParser path content
 
 applyReferencedTCM :: FracturedParseResult -> FracturedParseResult
 applyReferencedTCM fpr =
@@ -163,16 +166,16 @@ progressiveParse inputPath = do
           Right x -> pure $ head x
           Left  _ -> do
             (filePath, fileContent) <- head . dataFiles <$> getSpecifiedContent (UnspecifiedFile [inputPath])
-            case parse newickStreamParser filePath fileContent of
+            case parse' newickStreamParser filePath fileContent of
               Right x -> pure $ toFractured Nothing filePath x
               Left  _ ->
-                case parse verStreamParser filePath fileContent of
+                case parse' verStreamParser filePath fileContent of
                   Right x -> pure $ toFractured Nothing filePath x
                   Left  _ ->
-                    case parse tntStreamParser filePath fileContent of
+                    case parse' tntStreamParser filePath fileContent of
                       Right x -> pure $ toFractured Nothing filePath x
                       Left  _ ->
-                        case parse nexusStreamParser filePath fileContent of
+                        case parse' nexusStreamParser filePath fileContent of
                           Right x -> pure $ toFractured Nothing filePath x
                           Left  _ -> fail $ "Could not determine the file type of '" ++ filePath ++ "'. Try annotating the expected file data in the 'read' for more explicit error message on file parsing failures."
 

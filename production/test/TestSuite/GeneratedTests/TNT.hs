@@ -7,6 +7,7 @@ module TestSuite.GeneratedTests.TNT
 import Data.Either.Combinators
 import Data.Map                          (toList)
 import File.Format.TNT
+import Test.Custom.Parse
 import Test.Tasty                        (TestTree,testGroup)
 import Test.Tasty.HUnit
 import TestSuite.GeneratedTests.Internal
@@ -20,18 +21,11 @@ validTNTFiles = validateFileContents <$> validContents
   where
     validContents          = getFileContentsInDirectory "test/data-sets/tnt/valid"
     validateFileContents   = testGroup "Valid files" . fmap success . toList
-    success (path,content) = testCase (show path) . assert $ isRight result
---                           $ case result of
---                               Left x  -> assertFailure $ show x
---                               Right _ -> assert True
-      where
-        result = parse tntStreamParser path content
+    success (path,content) = testCase (show path) $ parseSuccess tntStreamParser content
 
 invalidTNTFiles :: IO TestTree
 invalidTNTFiles = validateFileContents <$> validContents
   where
     validContents          = getFileContentsInDirectory "test/data-sets/tnt/invalid"
     validateFileContents   = testGroup "Invalid files" . fmap failure . toList
-    failure (path,content) = testCase (show path) . assert $ isLeft result
-      where
-        result = parse tntStreamParser path content
+    failure (path,content) = testCase (show path) $ parseFailure tntStreamParser content

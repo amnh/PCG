@@ -10,7 +10,7 @@
 --
 -- CCode command parser.
 -----------------------------------------------------------------------------
-{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE FlexibleContexts, TypeFamilies #-}
 module File.Format.TNT.Command.CCode where
 
 import File.Format.TNT.Internal
@@ -23,18 +23,18 @@ import Text.Megaparsec.Prim     (MonadParsec)
 --  * One ore more specifications of the character state change
 --
 --  * One or more character indicies or index ranges of affected characters
-ccodeCommand :: MonadParsec s m Char => m CCode
+ccodeCommand :: (MonadParsec e s m, Token s ~ Char) => m CCode
 ccodeCommand = ccodeHeader *> nonEmpty ccodeAugment <* symbol (char ';')
 
 -- | The header of a CCODE command.
-ccodeHeader :: MonadParsec s m Char => m ()
+ccodeHeader :: (MonadParsec e s m, Token s ~ Char) => m ()
 ccodeHeader = symbol $ keyword "ccode" 2
 
 -- | A 'CharacterMetadata' mutation specified by the CCODE command.
 --   Mutations are specified for a nonempty set of characrter index ranges
 --   and also a nonempty set of metadata values.
 --   Validates that mutulally exclusive metadata options are not specified.
-ccodeAugment :: MonadParsec s m Char => m CCodeAugment
+ccodeAugment :: (MonadParsec e s m, Token s ~ Char) => m CCodeAugment
 ccodeAugment = CCodeAugment
            <$> (validateStates =<< nonEmpty ccodeCharacterState)
            <*> nonEmpty characterIndicies
@@ -49,7 +49,7 @@ ccodeAugment = CCodeAugment
       | otherwise                                   = pure xs
 
 -- | Parses a metadata value mutation.
-ccodeCharacterState :: MonadParsec s m Char => m CharacterState
+ccodeCharacterState :: (MonadParsec e s m, Token s ~ Char) => m CharacterState
 ccodeCharacterState = choice states
   where
     state c = symbol (char c)
@@ -66,5 +66,5 @@ ccodeCharacterState = choice states
 -- | A deviation from the strict specification to compensate for human tendncies
 --   to close parens and braces even though that is incorrect according to the
 --   grammar specifaction.
-allowIncorrectSuffixes :: MonadParsec s m Char => m (Maybe Char)
+allowIncorrectSuffixes :: (MonadParsec e s m, Token s ~ Char) => m (Maybe Char)
 allowIncorrectSuffixes = optional . symbol $ oneOf "])"

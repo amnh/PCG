@@ -29,7 +29,7 @@
 --
 -----------------------------------------------------------------------------    
 
-{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE FlexibleContexts, TypeFamilies #-}
 
 module File.Format.Newick
   ( NewickForest 
@@ -45,5 +45,5 @@ import Text.Megaparsec
 import Text.Megaparsec.Prim        (MonadParsec)
 
 -- | Parses an entire stream into a zero or more 'NewickForest's.
-newickStreamParser :: MonadParsec s m Char => m NewickForest
+newickStreamParser :: (MonadParsec e s m, Token s ~ Char) => m NewickForest
 newickStreamParser = concat <$> (many (try newickForestDefinition <|> (pure <$> newickExtendedDefinition)) <* eof)

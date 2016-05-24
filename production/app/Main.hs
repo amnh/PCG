@@ -11,10 +11,11 @@ import PCG.Script
 {--}
 main :: IO ()
 main = getContents
-   >>= checkInput . parse scriptStreamParser "STDIN stream"
+   >>= checkInput . parse' scriptStreamParser "STDIN stream"
    where
-     checkInput (Left  err) = print err
+     checkInput (Left  err) = putStrLn $ parseErrorPretty err
      checkInput (Right val) = --print =<< runEvaluation (evaluate =<< (state . evalEither . interpret) val)
                               renderSearchState =<< runEvaluation (evaluate =<< (state . evalEither . interpret) val)
-       {--}
+     parse' :: Parsec Dec s a -> String -> s -> Either (ParseError (Token s) Dec) a
+     parse' = parse
       

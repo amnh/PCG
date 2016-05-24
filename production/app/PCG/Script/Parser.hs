@@ -1,4 +1,4 @@
-{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE FlexibleContexts, TypeFamilies #-}
 module PCG.Script.Parser where
 
 import Data.Functor           (($>))
@@ -12,27 +12,27 @@ import Text.Megaparsec.Lexer  (float,integer,signed)
 
 import PCG.Script.Types
 
-scriptStreamParser :: MonadParsec s m Char => m Script
+scriptStreamParser :: (MonadParsec e s m, Token s ~ Char) => m Script
 scriptStreamParser = scriptDefinition
 
-scriptDefinition :: MonadParsec s m Char => m Script
+scriptDefinition :: (MonadParsec e s m, Token s ~ Char) => m Script
 scriptDefinition = Script <$> (trimmed (some commandDefinition) <* eof)
 
-commandDefinition :: MonadParsec s m Char => m DubiousCommand
+commandDefinition :: (MonadParsec e s m, Token s ~ Char) => m DubiousCommand
 commandDefinition = do
   _         <- whitespace
   lident    <- lidentDefinition
   arguments <- argumentListDefinition
   pure $ DubiousCommand lident arguments
 
-lidentDefinition :: MonadParsec s m Char => m Lident
+lidentDefinition :: (MonadParsec e s m, Token s ~ Char) => m Lident
 lidentDefinition = try $ Lident <$> symbol lident
   where
     lident         = leadingChar <:> many followingChars
     leadingChar    = char '_' <|> lowerChar
     followingChars = char '_' <|> alphaNumChar
 
-argumentDefinition :: MonadParsec s m Char => m Argument
+argumentDefinition :: (MonadParsec e s m, Token s ~ Char) => m Argument
 argumentDefinition =
       try (PrimativeArg <$> primativeDefinition)
   <|> try (CommandArg   <$> commandDefinition)
@@ -46,13 +46,13 @@ argumentDefinition =
       argument <- argumentDefinition
       pure $ LidentNamedArg lident argument
 
-argumentListDefinition :: MonadParsec s m Char => m [Argument]
+argumentListDefinition :: (MonadParsec e s m, Token s ~ Char) => m [Argument]
 argumentListDefinition = 
      symbol (char '(') 
   *> argumentDefinition `sepBy` trimmed (char ',')
   <* symbol (char ')')
 
-primativeDefinition :: MonadParsec s m Char => m Primative
+primativeDefinition :: (MonadParsec e s m, Token s ~ Char) => m Primative
 primativeDefinition = symbol $
       try  timeValue'
   <|> try (RealNum   <$> signed space float)
@@ -92,13 +92,13 @@ primativeDefinition = symbol $
                   ]
 
 -- Other combinators
-trimmed :: MonadParsec s m Char => m a -> m a
+trimmed :: (MonadParsec e s m, Token s ~ Char) => m a -> m a
 trimmed x = whitespace *> x <* whitespace
 
-symbol  :: MonadParsec s m Char => m a -> m a
+symbol  :: (MonadParsec e s m, Token s ~ Char) => m a -> m a
 symbol  x = x <* whitespace
 
-whitespace :: MonadParsec s m Char => m ()
+whitespace :: (MonadParsec e s m, Token s ~ Char) => m ()
 whitespace = try commentBlock <|> space
   where
     commentBlock = comment (string "(*") (string "*)") $> ()

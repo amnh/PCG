@@ -12,7 +12,7 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE FlexibleContexts, TypeFamilies #-}
 
 module File.Format.Fastc.Parser 
   ( CharacterSequence
@@ -45,11 +45,11 @@ data FastcSequence
    } deriving (Eq,Show)
 
 -- | Consumes a stream of 'Char's and parses the stream into a 'FastcParseResult'
-fastcStreamParser :: MonadParsec s m Char => m FastcParseResult
+fastcStreamParser :: (MonadParsec e s m, Token s ~ Char) => m FastcParseResult
 fastcStreamParser = NE.fromList <$> some fastcTaxonSequenceDefinition <* eof
 
 -- | Parses a FASTC 'Identifier' and the associated sequence, discarding any comments
-fastcTaxonSequenceDefinition :: MonadParsec s m Char => m FastcSequence
+fastcTaxonSequenceDefinition :: (MonadParsec e s m, Token s ~ Char) => m FastcSequence
 fastcTaxonSequenceDefinition = do
     name <- identifierLine
     seq' <- try fastcSymbolSequence <?> ("Unable to read symbol sequence for label: '" ++ name ++ "'")
@@ -58,23 +58,23 @@ fastcTaxonSequenceDefinition = do
 
 -- | Parses a sequence of 'Symbol's represneted by a 'CharacterSequence'.
 -- Symbols can be multi-character and are assumed to be seperated by whitespace.
-fastcSymbolSequence :: MonadParsec s m Char => m CharacterSequence
+fastcSymbolSequence :: (MonadParsec e s m, Token s ~ Char) => m CharacterSequence
 fastcSymbolSequence = V.fromList <$> (space *> fullSequence)
   where
     fullSequence = concat <$> some (inlineSpace *> sequenceLine)
     sequenceLine = (symbolGroup <* inlineSpace) `manyTill` endOfLine
 
 -- | parses either an ambiguity group of 'Symbol's or a single, unambiguous 'Symbol'.
-symbolGroup :: MonadParsec s m Char => m [String]
+symbolGroup :: (MonadParsec e s m, Token s ~ Char) => m [String]
 symbolGroup = ambiguityGroup
           <|> (pure <$> validSymbol)
 
 -- | Parses an ambiguity group of symbols. Ambiguity groups are delimited by the '\'|\'' character.
-ambiguityGroup :: MonadParsec s m Char => m [String]
+ambiguityGroup :: (MonadParsec e s m, Token s ~ Char) => m [String]
 ambiguityGroup = validSymbol `sepBy1` (char '|' <* inlineSpace)
 
 -- | Parses a 'Symbol' token ending with whitespace and excluding the forbidden characters: '[\'>\',\'|\']'.
-validSymbol :: MonadParsec s m Char => m String
+validSymbol :: (MonadParsec e s m, Token s ~ Char) => m String
 validSymbol = (validStartChar <:> many validBodyChar) <* inlineSpace
   where
     validStartChar = satisfy $ \x -> x /= '>' -- need to be able to match new taxa lines

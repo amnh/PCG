@@ -7,6 +7,7 @@ module TestSuite.GeneratedTests.Fasta
 import Data.Either.Combinators
 import Data.Map                          (toList)
 import File.Format.Fasta
+import Test.Custom.Parse
 import Test.Tasty                        (TestTree,testGroup)
 import Test.Tasty.HUnit
 import TestSuite.GeneratedTests.Internal
@@ -20,18 +21,11 @@ validFastaFiles = validateFileContents <$> validContents
   where
     validContents          = getFileContentsInDirectory "test/data-sets/fasta/valid"
     validateFileContents   = testGroup "Valid files" . fmap success . toList
-    success (path,content) = testCase (show path) 
-                           $ case result of
-                               Left x  -> assertFailure $ show x
-                               Right _ -> assert True
-      where
-       result = parse fastaStreamParser path content
+    success (path,content) = testCase (show path) $ parseSuccess fastaStreamParser content
 
 invalidFastaFiles :: IO TestTree
 invalidFastaFiles = validateFileContents <$> validContents
   where
     validContents          = getFileContentsInDirectory "test/data-sets/fasta/invalid"
     validateFileContents   = testGroup "Invalid files" . fmap failure . toList
-    failure (path,content) = testCase (show path) . assert $ isLeft result
-      where
-        result = parse fastaStreamParser path content
+    failure (path,content) = testCase (show path) $ parseFailure fastaStreamParser content

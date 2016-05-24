@@ -11,7 +11,7 @@
 -- Collects a subset of all TNT commands representing the set of commands
 -- relevant to processing character data.
 -----------------------------------------------------------------------------
-{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE FlexibleContexts, TypeFamilies #-}
 module File.Format.TNT.Partitioning where
 
 import Data.Char (isAlpha)
@@ -42,7 +42,7 @@ type Commands = ([CCode],[CNames],[Cost],[NStates],[TRead],[XRead])
 
 -- | Collects the subset of the TNT commands related to processing character
 --   sequences. Returns the relavent commands in a tuple.
-gatherCommands :: MonadParsec s m Char => m Commands
+gatherCommands :: (MonadParsec e s m, Token s ~ Char) => m Commands
 gatherCommands = partition <$> many commands
   where
     commands  = choice
@@ -67,7 +67,7 @@ gatherCommands = partition <$> many commands
 
 -- | A parser for consuming a command that is not part of the subset of TNT
 --   commands relavent to Character sequence processing.
-ignoredCommand :: MonadParsec s m Char => m String
+ignoredCommand :: (MonadParsec e s m, Token s ~ Char) => m String
 ignoredCommand = commandKeyword <* optional commandBody <* terminal
   where
     commandKeyword = somethingTill $ satisfy (not . isAlpha)

@@ -10,7 +10,7 @@
 --
 -- Parser for the CNames command.
 -----------------------------------------------------------------------------
-{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE FlexibleContexts, TypeFamilies #-}
 module File.Format.TNT.Command.CNames where
 
 import           Data.Foldable            (toList)
@@ -27,16 +27,16 @@ import           Text.Megaparsec.Prim     (MonadParsec)
 
 -- | Parses an CNAMES command. Correctly validates that there is no
 --   duplicate naming for a single character index in the sequence.
-cnamesCommand :: MonadParsec s m Char => m CNames
+cnamesCommand :: (MonadParsec e s m, Token s ~ Char) => m CNames
 cnamesCommand = cnamesValidation =<< cnamesDefinition
   where
-    cnamesDefinition :: MonadParsec s m Char => m CNames
+    cnamesDefinition :: (MonadParsec e s m, Token s ~ Char) => m CNames
     cnamesDefinition = symbol cnamesHeader
                     *> symbol cnamesBody
                     <* symbol (char ';')
 
     -- | Make sure indicies are unique
-    cnamesValidation :: MonadParsec s m Char => CNames -> m CNames
+    cnamesValidation :: (MonadParsec e s m, Token s ~ Char) => CNames -> m CNames
     cnamesValidation cnames
       | not (null duplicateIndexErrors) = fails duplicateIndexErrors
       | otherwise                       = pure cnames
@@ -68,7 +68,7 @@ duplicateIndexMessages cnames = duplicateIndexErrors
 
 -- |  Consumes the CNAMES string identifier and zero or more comments
 --    preceeding the taxa count and character cound parameters
-cnamesHeader :: MonadParsec s m Char => m ()
+cnamesHeader :: (MonadParsec e s m, Token s ~ Char) => m ()
 cnamesHeader = symbol (keyword "cnames" 2)
             *> many (symbol simpleComment)
             $> ()
@@ -80,7 +80,7 @@ cnamesHeader = symbol (keyword "cnames" 2)
 -- | Parses the body of a CNAMES command and returns a list of character names
 --   sorted in ascending order of the character index that the names correspond
 --   to.
-cnamesBody :: MonadParsec s m Char => m CNames
+cnamesBody :: (MonadParsec e s m, Token s ~ Char) => m CNames
 cnamesBody = NE.fromList . normalize <$> some cnamesStateName
   where
     normalize = sortBy (comparing sequenceIndex)
@@ -88,12 +88,12 @@ cnamesBody = NE.fromList . normalize <$> some cnamesStateName
 -- | Parses an individual CNAMES character name specification for a character
 --   index allong with the character name and names of the state values for the
 --   character.
-cnamesStateName :: MonadParsec s m Char => m CharacterName
+cnamesStateName :: (MonadParsec e s m, Token s ~ Char) => m CharacterName
 cnamesStateName = symbol (char '{') *> cnameCharacterName <* symbol terminator
   where
-    terminator :: MonadParsec s m Char => m Char
+    terminator :: (MonadParsec e s m, Token s ~ Char) => m Char
     terminator         = char ';'
-    lineToken :: MonadParsec s m Char => m String
+    lineToken :: (MonadParsec e s m, Token s ~ Char) => m String
     lineToken          = symbol $ somethingTill (inlineSpaceChar <|> terminator)
     cnameCharacterName = CharacterName
                      <$> symbol (flexibleNonNegativeInt "character name's sequence index")

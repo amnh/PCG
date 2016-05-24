@@ -12,7 +12,7 @@
 -- taxa and their possible corresponding character sequences allong with a
 -- possible forest of trees defined for the taxa set.
 -----------------------------------------------------------------------------
-{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE FlexibleContexts, TypeFamilies #-}
 module File.Format.TNT.Parser where
 
 import           Control.Monad            ((<=<),liftM3)
@@ -29,7 +29,7 @@ import           File.Format.TNT.Command.CNames
 import           File.Format.TNT.Internal
 import           File.Format.TNT.Partitioning
 import           Text.Megaparsec.Custom
-import           Text.Megaparsec.Prim                     (MonadParsec)
+import           Text.Megaparsec.Prim                     (MonadParsec,Token)
 
 -- | Parses the contents of a TNT file stream into a 'TntResult'. A file stream
 --   can contain either:
@@ -39,10 +39,10 @@ import           Text.Megaparsec.Prim                     (MonadParsec)
 --
 --   * A collection of taxa sequences with coresponsing metadata and possibly
 --     corresponding forest of trees whose leaf sets are equal to the taxa set.
-tntStreamParser :: MonadParsec s m Char => m TntResult
+tntStreamParser :: (MonadParsec e s m, Token s ~ Char) => m TntResult
 tntStreamParser = (colateResult <=< collapseStructures) =<< (whitespace *> gatherCommands)
   where
-    colateResult :: MonadParsec s m Char => ([CCode],[CharacterName],[Cost],[NStates],[TReadTree],[XRead]) -> m TntResult
+    colateResult :: (MonadParsec e s m, Token s ~ Char) => ([CCode],[CharacterName],[Cost],[NStates],[TReadTree],[XRead]) -> m TntResult
     colateResult (     _,     _,     _,      _,     _,  _:_:_) = fail "Multiple XREAD commands found in source, expecting a single XREAD command."
     colateResult (     _,     _,     _,      _,    [],     []) = fail "No XREAD command or TREAD command, expecting either a single XREAD command or one or more TRead commands."
     colateResult (     _,     _,    _,       _,treads,     []) = pure . Left $ NE.fromList treads
@@ -54,14 +54,13 @@ tntStreamParser = (colateResult <=< collapseStructures) =<< (whitespace *> gathe
                                   (matchTaxaInTree xread treads)
       where
         vectorizeTaxa   = V.fromList . toList . sequencesx
-        matchTaxaInTree :: MonadParsec s m Char => XRead -> [TReadTree] -> m [LeafyTree TaxonInfo]
+        matchTaxaInTree :: (MonadParsec e s m, Token s ~ Char) => XRead -> [TReadTree] -> m [LeafyTree TaxonInfo]
         matchTaxaInTree xreadCommand = traverse interpolateLeafs
           where
             seqs  = sequencesx xreadCommand
             vseqs = V.fromList $ toList seqs
             mseqs = M.fromList $ toList seqs
             limit = length vseqs - 1
-            interpolateLeafs :: MonadParsec s m Char => TReadTree -> m TNTTree
             interpolateLeafs = traverse substituteLeaf
             substituteLeaf (Index i)
               | 0 > i || i > limit = fail $ "Index '" ++ show i ++ "' in TREAD tree is outside the range of taxa [0," ++ show limit ++ "]."
@@ -74,7 +73,7 @@ tntStreamParser = (colateResult <=< collapseStructures) =<< (whitespace *> gathe
 
 -- | Performs an inital structural collapse to the various type lists to make
 --   subsequent folding easier.
-collapseStructures :: MonadParsec s m Char => Commands -> m ([CCode],[CharacterName],[Cost],[NStates],[TReadTree],[XRead])
+collapseStructures :: (MonadParsec e s m, Token s ~ Char) => Commands -> m ([CCode],[CharacterName],[Cost],[NStates],[TReadTree],[XRead])
 collapseStructures (ccodes,cnames,costs,nstates,treads,xreads)
   | not (null errors) = fails errors
   | otherwise         = pure (ccodes,collapsedCNames,costs,nstates,collapsedTReads,xreads)
