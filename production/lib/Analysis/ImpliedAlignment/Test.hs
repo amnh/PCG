@@ -26,6 +26,7 @@ import           Data.Foldable
 import qualified Data.IntMap    as IM
 import           Data.List
 import           Data.MonoTraversable
+import qualified Data.Set as S
 import qualified Data.Vector    as V
 import           Test.Tasty
 --import           Test.Tasty.HUnit
@@ -57,7 +58,7 @@ numerate = testGroup "Numeration properties" [idHolds, lengthHolds]
     where
         idHolds = testProperty "When a sequence is numerated with itself, get indices and the same counter" checkID
         checkID :: DynamicChar -> Bool
-        checkID inChar = onull inChar' || (traces == defaultH && counter <= numChars inChar')
+        checkID inChar = onull inChar || (traces == defaultH && counter <= numChars inChar)
             where
                 defaultH = V.fromList [0..numChars inChar - 1] 
                 (traces, counter, _) =  numerateOne inChar inChar defaultH 0
@@ -118,8 +119,8 @@ encodeArbSameLen (parse1, parse2) = (encodeDynamic alph (V.take minLen p1), enco
     where
         (p1,p2) = (getGoodness parse1, getGoodness parse2)
         minLen  = minimum [length p1, length p2]
-        oneAlph = nub . foldr (\s acc -> foldr (:) acc s) mempty
-        alph    = constructAlphabet . nub $ (oneAlph p1) ++ (oneAlph p2)
+        oneAlph = foldMap S.fromList
+        alph    = constructAlphabet $ (oneAlph p1) `S.union` (oneAlph p2)
 
 -- | Newtyping ensures that the sequence and ambiguity groups are both non empty.
 newtype GoodParsedChar
