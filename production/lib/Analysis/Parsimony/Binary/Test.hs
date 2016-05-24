@@ -45,7 +45,7 @@ decodeIt :: DynamicChar -> [[String]]
 decodeIt = decodeDynamic standardAlph
 
 testSuite :: TestTree
-testSuite = testGroup "Binary optimization" [doProperties, fitchProperties {- , traversalProperties -} ]
+testSuite = testGroup "Binary optimization" [doProperties, fitchProperties, traversalProperties]
 
 -- | Check properties of the DO algorithm
 doProperties :: TestTree
@@ -108,14 +108,14 @@ fitchProperties = testGroup "Properties of the Fitch algorithm" [preIdHolds, pos
 
 -- | Check properties of the traversal
 traversalProperties :: TestTree
-traversalProperties = testGroup "Properties of the common binary traversal" [opTwice]
+traversalProperties = testGroup "Properties of the common binary traversal" [] -- [opTwice]
     where
         opTwice = testProperty "Running an optimization twice returns same result as first time" checkTwice
             where
                 checkTwice :: StandardSolution -> Bool
                 checkTwice inSol = once == twice
                     where
-                        once = solutionOptimization 1 inSol
+                        once  = solutionOptimization 1 inSol
                         twice = solutionOptimization 1 once
         {-
         atLeaf = testProperty "If we start at a leaf, only that node changes" checkSimple

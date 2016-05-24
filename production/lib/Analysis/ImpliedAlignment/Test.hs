@@ -59,7 +59,7 @@ numerate = testGroup "Numeration properties" [idHolds, lengthHolds]
         checkID inChar = onull inChar' || (traces == defaultH && counter <= numChars inChar')
             where
                 defaultH = V.fromList [0..numChars inChar' - 1] 
-                (traces, counter) =  numerateOne gapCharacter inChar' defaultH inChar' 0
+                (traces, counter, _) =  numerateOne inChar' inChar' defaultH 0
                 gapCharacter = gapChar inChar
                 -- Filter gaps to remove logical inconsistency?
                 -- Confirm with Eric or Ward!
@@ -72,7 +72,7 @@ numerate = testGroup "Numeration properties" [idHolds, lengthHolds]
             where 
                 (seq1, seq2) = encodeArbSameLen inParse
                 defaultH = V.fromList [0..numChars seq1 - 1]
-                (traces, counter) = numerateOne gapCharacter seq1 defaultH seq2 count
+                (traces, counter, _) = numerateOne seq1 seq2 defaultH count
                 maxLen = maximum [numChars seq1, numChars seq2]
                 gapCharacter = gapChar seq1
 

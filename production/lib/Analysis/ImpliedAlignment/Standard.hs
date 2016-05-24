@@ -62,21 +62,26 @@ iaForest inForest inMeta = fmap (flip impliedAlign inMeta) (trees inForest)
 -- TODO: Consider building the alignment at each step of a postorder rather than grabbing wholesale
 impliedAlign :: (TreeConstraint t n e s, Metadata m s) => t -> Vector m -> Alignment s
 --impliedAlign inTree inMeta | trace ("impliedAlign with tree " ++ show inTree) False = undefined
-impliedAlign inTree inMeta = foldr (\n acc -> insert (getCode n) (makeAlignment n) acc) mempty allLeaves
+impliedAlign inTree inMeta = foldr (\n acc -> insert (getCode n) (makeAlignment n lens) acc) mempty allLeaves
     where
-        (_, curTree) = numeratePreorder inTree (getRoot inTree) inMeta (replicate (length inMeta) 0)
+        (lens, curTree) = numeratePreorder inTree (getRoot inTree) inMeta (replicate (length inMeta) 0)
         allLeaves = filter (flip nodeIsLeaf curTree) (getNodes curTree)
 
 -- | Simple function to generate an alignment from a numerated node
 -- Takes in a Node
 -- returns a vector of characters
-makeAlignment :: (NodeConstraint n s) => n -> Vector s
-makeAlignment n = makeAlign (getFinalGapped n) (getHomologies n)
+makeAlignment :: (NodeConstraint n s) => n -> Counts -> Vector s
+makeAlignment n seqLens = makeAlign (getFinalGapped n) (getHomologies n)
     where
-         -- oneTrace :: s -> Homologies -> m -> s
-        oneTrace dynChar homolog = foldr (\pos acc -> unsafeCons (grabSubChar dynChar pos) acc) emptyChar homolog
+        -- onePos :: s -> Homologies -> Int -> Int -> Int -> s
+        onePos c h l sPos hPos 
+            | sPos > l - 1 = emptyLike c
+            | h ! hPos == sPos = unsafeCons (grabSubChar c (h ! hPos)) (onePos c h l (sPos + 1) (hPos + 1))
+            | otherwise = unsafeCons (gapChar c) (onePos c h l (sPos + 1) hPos)
+        -- makeOne :: s -> Homologies -> Int -> s
+        makeOne char homolog len = onePos char homolog len 0 0
         --makeAlign :: Vector s -> HomologyTrace -> Vector s
-        makeAlign dynChar homologies = zipWith oneTrace dynChar homologies
+        makeAlign dynChar homologies = zipWith3 makeOne dynChar homologies seqLens
 
 -- | Main recursive function that assigns homology traces to every node
 -- takes in a tree, a current node, a vector of metadata, and a vector of counters
@@ -140,15 +145,18 @@ numeratePreorder inTree curNode inMeta curCounts
 backPropagation :: TreeConstraint t n e s  => t -> n -> Vector IntSet -> t
 backPropagation tree node insertionEvents
   | all onull insertionEvents = tree
-  | nodeIsLeftChild           = tree'
   | otherwise =
-    case leftChild myParent tree of
-      Nothing        -> tree'
-      Just leftChild -> backPropagationDownward tree' leftChild insertionEvents
+    case parent node tree of
+      Nothing       -> tree -- I am ~groot~ root
+      Just myParent -> let nodeIsLeftChild    = (getCode <$> rightChild myParent tree) == Just (getCode node)
+                           (tree', _)         = accountForInsertionEventsForNode tree myParent insertionEvents
+                       in if   nodeIsLeftChild
+                          then tree'
+                          else
+                            case leftChild myParent tree of
+                              Nothing        -> tree'
+                              Just leftChild -> backPropagationDownward tree' leftChild insertionEvents
   where
-    myParent           = getParent node tree
-    nodeIsLeftChild    = getCode <$> rightChild myParent tree == Just (getCode node)
-    tree'              = accountForInsertionEventsForNode tree myParent insertionEvents
     backPropagationDownward treeContext subTreeRoot insertionEvents = treeContext'''
       where
         (treeContext'  , subTreeRoot'  ) = accountForInsertionEventsForNode treeContext subTreeRoot insertionEvents
@@ -156,26 +164,26 @@ backPropagation tree node insertionEvents
                           Nothing -> treeContext'
                           Just x  -> backPropagationDownward treeContext'  x insertionEvents
         treeContext'''= case rightChild subTreeRoot' treeContext'' of
-                          Nothing -> (treeContext'', subTreeRoot'')
+                          Nothing -> treeContext''
                           Just x  -> backPropagationDownward treeContext'' x insertionEvents
         
 
 accountForInsertionEventsForNode :: TreeConstraint t n e s  => t -> n -> Vector IntSet -> (t, n)
 accountForInsertionEventsForNode tree node insertionEvents = (tree', node')
   where
-    originalHomologies = getHomologies myParent
+    originalHomologies = getHomologies node
     mutatedHomologies  = zipWith accountForInsertionEvents originalHomologies insertionEvents
-    node'              = setHomologies myParent mutatedHomologies
+    node'              = setHomologies node mutatedHomologies
     tree'              = tree `update` [node']
 
 accountForInsertionEvents :: Homologies -> IntSet -> Homologies
-accountForInsertionEvents :: homologies insertionEvents = V.generate (length homologies) f
+accountForInsertionEvents homologies insertionEvents = V.generate (length homologies) f
   where
     f i = newIndexReference
       where
         newIndexReference          = oldIndexReference + insertionEventsBeforeIndex
         oldIndexReference          = homologies ! i
-        insertionEventsBeforeIndex = olength $ filter (<= oldIndexReference) insertionEvents
+        insertionEventsBeforeIndex = olength $ IS.filter (<= oldIndexReference) insertionEvents
 
 -- | Function to do a numeration on an entire node
 -- given the ancestor node, ancestor node, current counter vector, and vector of metadata
@@ -183,7 +191,7 @@ accountForInsertionEvents :: homologies insertionEvents = V.generate (length hom
 numerateNode :: (NodeConstraint n s, Metadata m s) => n -> n -> Counts -> Vector m -> (n, Counts, Vector IntSet) 
 numerateNode ancestorNode childNode initCounters inMeta = (setHomologies childNode homologs, counts, insertionEvents)
         where
-            numeration = zipWith4 numerateForReals (getFinalGapped ancestorNode) (getFinalGapped childNode) (getHomologies ancestorNode) initCounters 
+            numeration = zipWith4 numerateOne (getFinalGapped ancestorNode) (getFinalGapped childNode) (getHomologies ancestorNode) initCounters 
             (homologs, counts, insertionEvents) = unzip3 numeration
             generateGapChar m = setBit (bitVec 0 (0 :: Integer)) (length (getAlphabet m) - 1)
 
@@ -250,10 +258,21 @@ numerateOne' _gap aSeq aHomologies cSeq initialCounter = (aHomologies // assocs 
         ancestorCharacter = fromJust $ safeGrab aSeq i 
         ancestorReference = aHomologies ! k 
 
+
+-- Trying to do as Andres does not as he says
+
+data Align = Insertion | Deletion | Missing
+
+numerateOne'' :: (SeqConstraint s) => BitVector -> s -> s -> Int -> Vector (Int, BitVector, Int, Align, Int) -> Vector (Int, BitVector, Int, Align, Int)
+numerateOne'' ourGap seq1 seq2 i 
+    | isNothing aChar || isNothing bChar = undefined
+        where
+            aChar = safeGrab seq1 i 
+            bChar = safeGrab seq2 i
 -}
 
-numerateForReals :: SeqConstraint s => s -> s -> Homologies -> Counter -> (Homologies, Counter, IntSet)
-numerateForReals ancestorSeq descendantSeq ancestorHomologies initialCounter = (descendantHomologies, counter', insertionEvents)
+numerateOne :: SeqConstraint s => s -> s -> Homologies -> Counter -> (Homologies, Counter, IntSet)
+numerateOne ancestorSeq descendantSeq ancestorHomologies initialCounter = (descendantHomologies, counter', insertionEvents)
   where
     gapCharacter = gapChar descendantSeq
 
@@ -282,4 +301,3 @@ numerateForReals ancestorSeq descendantSeq ancestorHomologies initialCounter = (
             ancestorCharacter = fromJust $ safeGrab ancestorSeq   i 
 --          ancestorReference = ancestorHomologies ! (i + ancestorOffset)
 
-  
