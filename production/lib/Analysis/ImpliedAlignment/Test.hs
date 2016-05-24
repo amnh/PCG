@@ -11,6 +11,8 @@
 -- Unit tests for implied alignment
 -----------------------------------------------------------------------------
 
+{-# LANGUAGE FlexibleInstances, TypeSynonymInstances #-}
+
 module Analysis.ImpliedAlignment.Test where
 
 import           Analysis.ImpliedAlignment.Standard
@@ -28,7 +30,6 @@ import qualified Data.Vector    as V
 import           Test.Tasty
 --import           Test.Tasty.HUnit
 import           Test.Tasty.QuickCheck
-
 import Debug.Trace
 
 testSuite :: TestTree
@@ -58,23 +59,18 @@ numerate = testGroup "Numeration properties" [idHolds, lengthHolds]
         checkID :: DynamicChar -> Bool
         checkID inChar = onull inChar' || (traces == defaultH && counter <= numChars inChar')
             where
-                defaultH = V.fromList [0..numChars inChar' - 1] 
-                (traces, counter, _) =  numerateOne inChar' inChar' defaultH 0
-                gapCharacter = gapChar inChar
-                -- Filter gaps to remove logical inconsistency?
-                -- Confirm with Eric or Ward!
-                inChar' = filterGaps inChar
+                defaultH = V.fromList [0..numChars inChar - 1] 
+                (traces, counter, _) =  numerateOne inChar inChar defaultH 0
 
         -- TODO: Talk to Eric about numChars ()
         lengthHolds = testProperty "Numerate returns a sequence of the correct length" checkLen
-        checkLen :: (ParsedChar, ParsedChar) -> Int -> Bool
-        checkLen inParse count = {-trace ("numerate returns " ++ show traces ++ " versus " ++ show maxLen ++ " , " ++ show counter ++ " versus " ++ show count) $ -} V.length traces >= maxLen && counter >= count
+        checkLen :: (GoodParsedChar, GoodParsedChar) -> Int -> Bool
+        checkLen inParse count = {- trace ("numerate returns " ++ show traces ++ " versus " ++ show maxLen ++ " , " ++ show counter ++ " versus " ++ show count) $ -} V.length traces >= maxLen && counter >= count
             where 
                 (seq1, seq2) = encodeArbSameLen inParse
-                defaultH = V.fromList [0..numChars seq1 - 1]
+                defaultH     = V.fromList [0..numChars seq1 - 1]
                 (traces, counter, _) = numerateOne seq1 seq2 defaultH count
-                maxLen = maximum [numChars seq1, numChars seq2]
-                gapCharacter = gapChar seq1
+                maxLen       = maximum [numChars seq1, numChars seq2]
 
         --homologyHolds = testProperty "Homology position has expected properties: homologies has the same length as the sequence, and the counter increases"
         {-
@@ -117,9 +113,22 @@ fullProperties = testGroup "Properties of IA traversal" [twoRuns, fullLens, mAli
                     where makeLen l1 l2 = V.and $ V.zipWith (\c1 c2 -> numChars c1 == numChars c2) l1 l2
 -}
 -- | Useful function to convert encoding information to two encoded seqs
-encodeArbSameLen :: (ParsedChar, ParsedChar) -> (DynamicChar, DynamicChar)
-encodeArbSameLen (parse1, parse2) = (encodeDynamic alph (V.take minLen parse1), encodeDynamic alph (V.take minLen parse2))
-    where 
-        minLen = minimum [length parse1, length parse2]
+encodeArbSameLen :: (GoodParsedChar, GoodParsedChar) -> (DynamicChar, DynamicChar)
+encodeArbSameLen (parse1, parse2) = (encodeDynamic alph (V.take minLen p1), encodeDynamic alph (V.take minLen p2))
+    where
+        (p1,p2) = (getGoodness parse1, getGoodness parse2)
+        minLen  = minimum [length p1, length p2]
         oneAlph = nub . foldr (\s acc -> foldr (:) acc s) mempty
-        alph = constructAlphabet $ nub $ (oneAlph parse1) ++ (oneAlph parse2)
+        alph    = constructAlphabet . nub $ (oneAlph p1) ++ (oneAlph p2)
+
+-- | Newtyping ensures that the sequence and ambiguity groups are both non empty.
+newtype GoodParsedChar
+      = GoodParsedChar
+      { getGoodness :: ParsedChar
+      } deriving (Eq,Show)
+
+instance Arbitrary GoodParsedChar where
+  arbitrary = do
+    let ambiguityGroupGenerator = listOf1 arbitrary :: Gen [String]
+    someAmbiguityGroups <- listOf1 ambiguityGroupGenerator
+    pure . GoodParsedChar $ V.fromList someAmbiguityGroups

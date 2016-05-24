@@ -20,7 +20,7 @@ import Data.Alphabet
 import Data.Foldable
 import Data.Vector   (Vector, fromList)
 import Data.Map      (Map)
-import Test.Tasty.QuickCheck
+import Test.QuickCheck
 
 -- TODO: do ambiguity group types: more aliasing
 
