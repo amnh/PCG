@@ -34,7 +34,7 @@ import Debug.Trace
 testSuite :: TestTree
 testSuite = testGroup "Implied Alignment"
           [ numerate
-          , fullIA
+          --, fullIA
           ]
 
 
