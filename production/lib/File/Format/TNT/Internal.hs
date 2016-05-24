@@ -11,7 +11,8 @@
 -- Internal types and functions for TNT parseing. Only a subset of types
 -- should be exported from top level module.
 -----------------------------------------------------------------------------
-{-# LANGUAGE BangPatterns, DeriveFoldable, DeriveFunctor, DeriveTraversable, FlexibleContexts, GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE BangPatterns, DeriveFoldable, DeriveFunctor, DeriveTraversable, FlexibleContexts, GeneralizedNewtypeDeriving, TypeFamilies #-}
+
 module File.Format.TNT.Internal where
 
 import           Control.Monad            ((<=<))
@@ -25,6 +26,7 @@ import           Data.List.NonEmpty       (NonEmpty)
 import           Data.Matrix.NotStupid    (Matrix)
 import           Data.Map                 (Map,assocs,insert,insertWith,keys,union)
 import qualified Data.Map            as M (fromList)
+import           Data.Scientific          (floatingOrInteger)
 import           Data.Tuple               (swap)
 import           Data.Vector              (Vector)
 import qualified Data.Vector         as V (fromList)
@@ -311,15 +313,15 @@ modifyMetaDataTCM mat old = old { costTCM = Just mat }
 -- | Parses an non-negative integer from a variety of representations.
 -- Parses both signed integral values and signed floating values
 -- if the value is non-negative and an integer.
-flexibleNonNegativeInt :: MonadParsec s m Char => String -> m Int
-flexibleNonNegativeInt labeling = either coerceIntegral coerceFloating
+flexibleNonNegativeInt :: (MonadParsec e s m, Token s ~ Char) => String -> m Int
+flexibleNonNegativeInt labeling = either coerceFloating coerceIntegral . floatingOrInteger 
                               =<< signed whitespace number <?> ("positive integer for " ++ labeling)
   where
-    coerceIntegral :: MonadParsec s m Char => Integer -> m Int
+    coerceIntegral :: (MonadParsec e s m, Token s ~ Char) => Integer -> m Int
     coerceIntegral x
       | x <  0      = fail $ concat ["The ",labeling," value (",show x,") is a negative number"]
       | otherwise   = pure $ fromEnum x
-    coerceFloating :: MonadParsec s m Char => Double -> m Int
+    coerceFloating :: (MonadParsec e s m, Token s ~ Char) => Double -> m Int
     coerceFloating = assertNonNegative <=< assertIntegral labeling
       where
         assertNonNegative x
@@ -353,15 +355,15 @@ flexibleNonNegativeInt labeling = either coerceIntegral coerceFloating
 -- expecting 'E', 'e', or rest of number
 -- The errorCount value (0.1337) is a real value, not an integral value
 -- The errorCount value (0.1337) is not a positive integer
-flexiblePositiveInt :: MonadParsec s m Char => String -> m Int
-flexiblePositiveInt labeling = either coerceIntegral coerceFloating
+flexiblePositiveInt :: (MonadParsec e s m, Token s ~ Char) => String -> m Int
+flexiblePositiveInt labeling = either coerceFloating coerceIntegral . floatingOrInteger
                              =<< signed whitespace number <?> ("positive integer for " ++ labeling)
   where
-    coerceIntegral :: MonadParsec s m Char => Integer -> m Int
+    coerceIntegral :: (MonadParsec e s m, Token s ~ Char) => Integer -> m Int
     coerceIntegral x
       | x <= 0      = fail $ concat ["The ",labeling," value (",show x,") is not a positive number"]
       | otherwise   = pure $ fromEnum x
-    coerceFloating :: MonadParsec s m Char => Double -> m Int
+    coerceFloating :: (MonadParsec e s m, Token s ~ Char) => Double -> m Int
     coerceFloating = assertPositive <=< assertIntegral labeling
       where
         assertPositive x
@@ -389,10 +391,10 @@ flexiblePositiveInt labeling = either coerceIntegral coerceFloating
 -- Left 1:1:
 -- unexpected "abr"
 -- expecting keyword 'abrakadabra'
-keyword :: MonadParsec s m Char => String -> Int -> m ()
+keyword :: (MonadParsec e s m, Token s ~ Char) => String -> Int -> m ()
 keyword x y = abreviatable x y $> ()
   where
-    abreviatable :: MonadParsec s m Char => String -> Int -> m String
+    abreviatable :: (MonadParsec e s m, Token s ~ Char) => String -> Int -> m String
     abreviatable fullName minimumChars
       | minimumChars < 1             = fail $ "Nonpositive abreviation prefix (" ++ show minimumChars ++ ") supplied to abreviatable combinator"
       | any (not . isAlpha) fullName = fail $ "A keywork containing a non alphabetic character: '" ++ show fullName ++ "' supplied to abreviateable combinator"
@@ -406,13 +408,13 @@ keyword x y = abreviatable x y $> ()
 -- | Parses an Int which is non-negative. This Int is not parsed flexibly.
 --   Will fail integral valued Double literals. Use this in preference to 'flexibleNonNegativeInt'
 --   when expecting one of these chars ".eE" adjacent to the Int value.
-nonNegInt :: MonadParsec s m Char => m Int
+nonNegInt :: (MonadParsec e s m, Token s ~ Char) => m Int
 nonNegInt = fromIntegral <$> integer
 
 -- | Parses an Integral value from a 'Double' value. If the 'Double' is not an
 --   integral value, then a parse error is raised. The first 'String' parameter
 --   is used as a label in the error reporting.
-assertIntegral :: MonadParsec s m Char => String -> Double -> m Int
+assertIntegral :: (MonadParsec e s m, Token s ~ Char) => String -> Double -> m Int
 assertIntegral labeling x
   | isInt x   = pure $ fromEnum rounded
   | otherwise = fail $ concat ["The ",labeling," value (",show x,") is a real value, not an integral value"]
@@ -421,7 +423,7 @@ assertIntegral labeling x
     rounded = round x
 
 -- | Parses a single character index or a contiguous character range.
-characterIndicies :: MonadParsec s m Char => m CharacterSet
+characterIndicies :: (MonadParsec e s m, Token s ~ Char) => m CharacterSet
 characterIndicies = choice $ try <$> [range, fromStart, single, toEnd, whole]
   where
     range     = Range     <$> num <* dot <*> num
@@ -433,7 +435,7 @@ characterIndicies = choice $ try <$> [range, fromStart, single, toEnd, whole]
     dot       = symbol (char '.')
 
 -- | Parses one of the valid character states for a TNT file.
-characterStateChar :: MonadParsec s m Char => m Char
+characterStateChar :: (MonadParsec e s m, Token s ~ Char) => m Char
 characterStateChar = oneOf (toList discreteStateValues)
 
 -- | The only 64 (case-insensitive) valid state values for a TNT file.
@@ -533,17 +535,17 @@ swapMap x = let !tups = assocs x
             in M.fromList $ swap <$> tups
 
 -- | Consumes trailing whitespace after the parameter combinator.
-symbol :: MonadParsec s m Char => m a -> m a
+symbol :: (MonadParsec e s m, Token s ~ Char) => m a -> m a
 symbol c = c <* whitespace
 
 -- | Consumes trailing whitespace after the parameter combinator.
-trim :: MonadParsec s m Char => m a -> m a
+trim :: (MonadParsec e s m, Token s ~ Char) => m a -> m a
 trim c = whitespace *> c <* whitespace
 
 -- | Consumes zero or more whitespace characters __including__ line breaks.
-whitespace :: MonadParsec s m Char => m ()
+whitespace :: (MonadParsec e s m, Token s ~ Char) => m ()
 whitespace = space
 
 -- | Consumes zero or more whitespace characters that are not line breaks.
-whitespaceInline :: MonadParsec s m Char => m ()
+whitespaceInline :: (MonadParsec e s m, Token s ~ Char) => m ()
 whitespaceInline =  inlineSpace

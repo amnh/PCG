@@ -1,4 +1,4 @@
-{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE FlexibleContexts, TypeFamilies #-}
 
 module File.Format.Fasta.Test
   ( testSuite
@@ -11,7 +11,7 @@ import Data.Maybe                 (fromMaybe)
 import File.Format.Fasta.Internal
 import File.Format.Fasta.Parser
 import Safe                       (headMay)
-import Test.Custom.Parse          (parseEquals,parseFailure)
+import Test.Custom.Parse          (parseEquals,parseFailure,parserSatisfies)
 import Test.Tasty                 (TestTree,testGroup)
 import Test.Tasty.HUnit
 import Test.Tasty.QuickCheck
@@ -42,7 +42,8 @@ identifier' = testGroup "identifier" [invariant, valid, invalid]
       ]
     invariant = testProperty "fastaLabel invariant" f
       where 
-        f x = null str || parse identifier "" str == Right res
+--        f x = null str || parseEquals identifier str == res
+        f x = null str || parserSatisfies identifier str (== res)
           where
             str = takeWhile validIdentifierChar x
             res = headOrEmpty $ words str
@@ -64,7 +65,7 @@ commentBody' = testGroup "commentBody" [generalComment, prependedDollarSign, val
       where
         f x = hasLeadingDollarSign 
            || null res
-           || parse commentBody "" x == Right res
+           || parserSatisfies commentBody x (== res)
           where
             res = unwords . words $ takeWhile (not.(`elem`"\n\r")) x
             hasLeadingDollarSign = let y = dropWhile isSpace x
@@ -74,10 +75,10 @@ commentBody' = testGroup "commentBody" [generalComment, prependedDollarSign, val
       where
         prepended :: Char -> String -> Bool
         prepended c x = null x || null line'
-                     || ( parse commentBody "" (            c   : line) == Right line'
-                       && parse commentBody "" (      ' ' : c   : line) == Right line'
-                       && parse commentBody "" (      c   : ' ' : line) == Right line'
-                       && parse commentBody "" (' ' : c   : ' ' : line) == Right line'
+                     || ( parserSatisfies commentBody (            c   : line) (==line')
+                       && parserSatisfies commentBody (      ' ' : c   : line) (==line')
+                       && parserSatisfies commentBody (      c   : ' ' : line) (==line')
+                       && parserSatisfies commentBody (' ' : c   : ' ' : line) (==line')
                         )
           where
             line  = takeWhile (not . (`elem`"\n\r")) x

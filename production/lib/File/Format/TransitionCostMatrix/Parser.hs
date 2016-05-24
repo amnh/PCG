@@ -12,7 +12,7 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE FlexibleContexts, TypeFamilies #-}
 
 module File.Format.TransitionCostMatrix.Parser where
 
@@ -55,7 +55,7 @@ data TCM
 -- The result will contain an Alphabet with no duplicate elements
 -- and a square Matrix with dimension @(n+1) x (n+1)@ where @n@ is
 -- the length of the Alphabet.
-tcmStreamParser :: MonadParsec s m Char => m TCM
+tcmStreamParser :: (MonadParsec e s m, Token s ~ Char) => m TCM
 tcmStreamParser = validateTCMParseResult =<< tcmDefinition <* eof
 
 -- | Parses an intermediary result consisting of an Alphabet and a Matrix.
@@ -63,7 +63,7 @@ tcmStreamParser = validateTCMParseResult =<< tcmDefinition <* eof
 -- consistencey, but no validation has been performed to ensure that the
 -- dimensions of the Matrix and the length of the Alphabet are consistant
 -- with each other. 
-tcmDefinition :: MonadParsec s m Char => m TCMParseResult
+tcmDefinition :: (MonadParsec e s m, Token s ~ Char) => m TCMParseResult
 tcmDefinition = do
     _        <- space
     alphabet <- symbol tcmAlphabet
@@ -72,12 +72,12 @@ tcmDefinition = do
 
 -- | Shorthand for the expected format of the alphabet lin in a TCM file.
 -- The same as 'alphabetLine inlineSpace'.
-tcmAlphabet :: MonadParsec s m Char => m (NonEmpty String)
+tcmAlphabet :: (MonadParsec e s m, Token s ~ Char) => m (NonEmpty String)
 tcmAlphabet = alphabetLine inlineSpace
 
 -- | Shorthand for the expected format of the matrix block in a TCM file
 -- The same as 'matrixBlock inlineSpace'.
-tcmMatrix   :: MonadParsec s m Char => m (Matrix Double)
+tcmMatrix   :: (MonadParsec e s m, Token s ~ Char) => m (Matrix Double)
 tcmMatrix   = matrixBlock  inlineSpace
 
 -- | The 'alphabetLine' function takes a combinator to consume delimiters between
@@ -91,7 +91,7 @@ tcmMatrix   = matrixBlock  inlineSpace
 --
 -- >>> parse (alphabetLine (inlineSpace *> char '|' <* inlineSpace)) "" "2 | 3 | 5 | 7\n"
 -- Right ["2","3","5","7"]
-alphabetLine :: MonadParsec s m Char => m () -> m (NonEmpty String)
+alphabetLine :: (MonadParsec e s m, Token s ~ Char) => m () -> m (NonEmpty String)
 alphabetLine spacing = validateAlphabet =<< NE.fromList <$> ((alphabetSymbol <* spacing) `someTill` endOfLine)
   where
     alphabetSymbol = some nonSpace
@@ -111,7 +111,7 @@ alphabetLine spacing = validateAlphabet =<< NE.fromList <$> ((alphabetSymbol <* 
 -- >>> parse (matrixBlock (char ':') "" "1.0:1.0\n1.0:0.0"
 -- Right (( 1 2 )
 --        ( 3 4 ))
-matrixBlock :: MonadParsec s m Char => m () -> m (Matrix Double)
+matrixBlock :: (MonadParsec e s m, Token s ~ Char) => m () -> m (Matrix Double)
 matrixBlock spacing = validateMatrix =<< many (symbol matrixRow)
   where
     matrixRow   = (spacing *> matrixEntry <* spacing) `manyTill` endOfLine
@@ -119,7 +119,7 @@ matrixBlock spacing = validateMatrix =<< many (symbol matrixRow)
 
 -- | Validates that the dimensions of the Matrix are @(n+1) x (n+1)@
 -- where @n@ is the length of the Alphabet.
-validateTCMParseResult :: MonadParsec s m Char => TCMParseResult -> m TCM
+validateTCMParseResult :: (MonadParsec e s m, Token s ~ Char) => TCMParseResult -> m TCM
 validateTCMParseResult (TCMParseResult alphabet matrix)
   | dimMismatch  = fail errorMessage
   | otherwise    = pure $ TCM alphabet matrix
@@ -151,7 +151,7 @@ validateTCMParseResult (TCMParseResult alphabet matrix)
 --
 --   * Contains no duplicate elements
 --
-validateAlphabet :: MonadParsec s m Char => NonEmpty String -> m (NonEmpty String)
+validateAlphabet :: (MonadParsec e s m, Token s ~ Char) => NonEmpty String -> m (NonEmpty String)
 validateAlphabet alphabet
   | duplicatesExist = fail $ "The following symbols were listed multiple times in the custom alphabet: " ++ show dupes
   | otherwise       = pure alphabet 
@@ -169,7 +169,7 @@ validateAlphabet alphabet
 --
 --   * The number of rows match the number of columns
 --
-validateMatrix :: MonadParsec s m Char => [[Double]] -> m (Matrix Double)
+validateMatrix :: (MonadParsec e s m, Token s ~ Char) => [[Double]] -> m (Matrix Double)
 validateMatrix matrix
   | null matrix        = fail "No matrix specified"
   | null matrixErrors  = pure . M.fromList rows cols $ concat matrix
@@ -193,5 +193,5 @@ validateMatrix matrix
                                 ]
 
 -- | Whitespace consuming combinator wrapper
-symbol  :: MonadParsec s m Char => m a -> m a
+symbol  :: (MonadParsec e s m, Token s ~ Char) => m a -> m a
 symbol  x = x <* space

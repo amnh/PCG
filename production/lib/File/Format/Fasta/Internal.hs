@@ -12,7 +12,7 @@
 --
 ----------------------------------------------------------------------------- 
 
-{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE FlexibleContexts, TypeFamilies #-}
 
 module File.Format.Fasta.Internal where
 
@@ -37,7 +37,7 @@ type CharacterSequence = Vector [Symbol]
 
 -- | Parses a line containing the sequence identifier along with an
 -- optional conmment which is discarded.
-identifierLine :: MonadParsec s m Char => m Identifier
+identifierLine :: (MonadParsec e s m, Token s ~ Char) => m Identifier
 identifierLine = do
     _ <- char '>'
     _ <- inlineSpace
@@ -51,7 +51,7 @@ identifierLine = do
     lineEndMessage x = "There is no end-of-line after label: '" ++ x ++ "'"
 
 -- | 'Identifier' of a sequence
-identifier :: MonadParsec s m Char => m Identifier
+identifier :: (MonadParsec e s m, Token s ~ Char) => m Identifier
 identifier = some $ satisfy validIdentifierChar
 
 -- | Defines if a 'Char' is valid to be contained within a sequence 'Identifier'
@@ -59,7 +59,7 @@ validIdentifierChar :: Char -> Bool
 validIdentifierChar c = (not . isSpace) c && c /= '$'
 
 -- | Defines the comment format which can be expected after an identifier
-commentBody :: MonadParsec s m Char => m String
+commentBody :: (MonadParsec e s m, Token s ~ Char) => m String
 commentBody  = do
     _       <- inlineSpace
     _       <- optional $ char '$'
@@ -68,5 +68,5 @@ commentBody  = do
     pure $ unwords content
 
 -- | Defines the words of a commenty
-commentWord :: MonadParsec s m Char => m String
+commentWord :: (MonadParsec e s m, Token s ~ Char) => m String
 commentWord  = some (satisfy (not . isSpace)) <?> "Non-space characters"

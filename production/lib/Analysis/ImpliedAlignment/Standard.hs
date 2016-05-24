@@ -28,11 +28,15 @@ import Bio.Character.Dynamic.Coded
 
 import Data.BitVector      hiding (foldr, replicate, foldl)
 import Data.IntMap                (IntMap, assocs, insert)
+import qualified Data.IntMap as IM
+import Data.IntSet (IntSet)
+import qualified Data.IntSet as IS
 import Data.Maybe
 import Data.Monoid
-import Data.MonoTraversable       (ofoldl')
-import Data.Vector                (Vector, (!), (//), filter, foldr, generate, imap, replicate, unzip, zipWith, zipWith3, zipWith5)
-import Prelude             hiding (filter, foldr, replicate, unzip, zip3, zipWith, zipWith3, foldl)
+import Data.MonoTraversable
+import Data.Vector                (Vector, (!), (//), filter, foldr, generate, imap, replicate, unzip3, zipWith, zipWith3, zipWith4)
+import qualified Data.Vector as V
+import Prelude             hiding (filter, foldr, lookup, replicate, unzip3, zip3, zipWith, zipWith3, foldl)
 
 import Debug.Trace
 
@@ -82,59 +86,75 @@ numeratePreorder :: (TreeConstraint t n e s, Metadata m s) => t -> n -> Vector m
 --numeratePreorder _ curNode _ _ | trace ("numeratePreorder at " ++ show curNode) False = undefined
 numeratePreorder inTree curNode inMeta curCounts
     | nodeIsRoot curNode inTree = (curCounts, inTree `update` [setHomologies curNode defaultHomologs])
-    | leftOnly && rightOnly = (curCounts, inTree)
+    | isLeafNode = (curCounts, inTree)
     | leftOnly =
         let
-            (curLeftAligned, leftWithAligned)     = alignAndAssign curNode (fromJust $ leftChild curNode inTree)
-            (curLeftHomolog, counterLeft)         = numerateNode curLeftAligned leftWithAligned curCounts inMeta
-            editedTreeLeft                        = inTree `update` [curLeftHomolog, leftWithAligned]
-            (leftRecurseCount, leftRecurseTree)   = numeratePreorder editedTreeLeft (fromJust $ leftChild curNode inTree) inMeta counterLeft
+            (leftChildHomolog, counterLeft, insertionEvents) = numerateNode curNode (fromJust $ leftChild curNode inTree) curCounts inMeta
+            backPropagatedTree                               = backPropagation inTree leftChildHomolog insertionEvents
+            editedTreeLeft                                   = backPropagatedTree `update` [leftChildHomolog]
+            (leftRecurseCount, leftRecurseTree)              = numeratePreorder editedTreeLeft leftChildHomolog inMeta counterLeft
         in (leftRecurseCount, leftRecurseTree)
     | rightOnly =
         let
-            (curRightAligned, rightWithAligned)   = alignAndAssign curNode (fromJust $ rightChild curNode inTree)
-            (curRightHomolog, counterRight)       = numerateNode curRightAligned rightWithAligned curCounts inMeta
-            editedTreeRight                       = inTree `update` [curRightHomolog, rightWithAligned]
-            (rightRecurseCount, rightRecurseTree) = numeratePreorder editedTreeRight (fromJust $ rightChild curNode inTree) inMeta counterRight
+            (rightChildHomolog, counterRight, insertionEvents) = numerateNode curNode (fromJust $ rightChild curNode inTree) curCounts inMeta
+            backPropagatedTree                                 = backPropagation inTree rightChildHomolog insertionEvents
+            editedTreeRight                                    = backPropagatedTree `update` [rightChildHomolog]
+            (rightRecurseCount, rightRecurseTree)              = numeratePreorder editedTreeRight rightChildHomolog inMeta counterRight
         in (rightRecurseCount, rightRecurseTree)
     | otherwise =
         let
             -- TODO: should I switch the order of align and numerate? probs
-            (curLeftAligned, leftWithAligned)     = alignAndAssign curNode (fromJust $ leftChild curNode inTree)
-            (curLeftHomolog, counterLeft)         = numerateNode curLeftAligned leftWithAligned curCounts inMeta
-            (curBothAligned, rightBothAligned)    = alignAndAssign curLeftHomolog (fromJust $ rightChild curNode inTree)
-            (curBothHomolog, counterBoth)         = numerateNode curBothAligned rightBothAligned counterLeft inMeta
-            editedTreeBoth                        = inTree `update` [curBothHomolog, leftWithAligned, rightBothAligned]
-            (leftRecurseCount, leftRecurseTree)   = numeratePreorder editedTreeBoth (fromJust $ rightChild curBothHomolog editedTreeBoth) inMeta counterBoth
+            ( leftChildHomolog, counterLeft , insertionEventsLeft)  = numerateNode curNode (fromJust $ leftChild curNode inTree) curCounts inMeta
+            backPropagatedTree                                      = backPropagation inTree leftChildHomolog insertionEventsLeft
+            (leftRecurseCount, leftRecurseTree)                     = numeratePreorder backPropagatedTree leftChildHomolog inMeta counterLeft
+            leftRectifiedTree                                       = leftRecurseTree `update` [leftChildHomolog]
+            
+            curNode'                                                = leftRectifiedTree `getNthNode` (getCode curNode)
+            (rightChildHomolog, counterRight, insertionEventsRight) = numerateNode curNode' (fromJust $ rightChild curNode' leftRectifiedTree) leftRecurseCount inMeta
+            backPropagatedTree'                                     = backPropagation leftRectifiedTree rightChildHomolog insertionEventsRight
+            rightRectifiedTree                                      = backPropagatedTree' `update` [rightChildHomolog]
             -- TODO: need another align and assign between the left and right as a last step?
-            output                                = numeratePreorder leftRecurseTree (fromJust $ leftChild curBothHomolog leftRecurseTree) inMeta leftRecurseCount
+            output                                                  = numeratePreorder rightRectifiedTree rightChildHomolog inMeta counterRight
         in output
 
         where
             curSeqs = getFinalGapped curNode
-            leftOnly = isNothing $ rightChild curNode inTree
-            rightOnly = isNothing $ leftChild curNode inTree
+            isLeafNode = leftOnly && rightOnly
+            leftOnly   = isNothing $ rightChild curNode inTree
+            rightOnly  = isNothing $ leftChild curNode inTree
             -- TODO: check if this is really the default
             defaultHomologs = imap (\i _ -> generate (numChars (curSeqs ! i)) (+ 1)) inMeta
 
             -- Simple wrapper to align and assign using DO
             --alignAndAssign :: NodeConstraint n s => n -> n -> (n, n)
             -- TODO: Don't use the gapped here
+{-
             alignAndAssign node1 node2 = (setFinalGapped (fst allUnzip) node1, setFinalGapped (snd allUnzip) node2)
                 where
                     allUnzip = unzip allDO
                     allDO = zipWith3 doOne (getFinalGapped node1) (getFinalGapped node2) inMeta
                     doOne s1 s2 m = (gapped1, gapped2)
                         where (_, _, _, gapped1, gapped2) = naiveDO s1 s2 m
+-}
+
+{-
+backPropagation :: TreeConstraint t n e s  => t -> n -> Vector IntSet -> t
+backPropagation tree node insertionEvents =
+  | all onull insertionEvents = tree -- nothing to do thank god!
+  | otherwise =
+  where
+    myParent  = getParent node tree
+    wasIRight = getCode <$> rightChild myParent tree == Just (getCode node)
+-}  
 
 -- | Function to do a numeration on an entire node
 -- given the ancestor node, ancestor node, current counter vector, and vector of metadata
 -- returns a tuple with the node with homologies incorporated, and a returned vector of counters
-numerateNode :: (NodeConstraint n s, Metadata m s) => n -> n -> Counts -> Vector m -> (n, Counts) 
-numerateNode ancestorNode childNode initCounters inMeta = (setHomologies childNode homologs, counts)
+numerateNode :: (NodeConstraint n s, Metadata m s) => n -> n -> Counts -> Vector m -> (n, Counts, Vector IntSet) 
+numerateNode ancestorNode childNode initCounters inMeta = (setHomologies childNode homologs, counts, insertionEvents)
         where
-            numeration = zipWith5 numerateOne' (generateGapChar <$> inMeta) (getFinalGapped ancestorNode) (getHomologies ancestorNode) (getFinalGapped childNode) initCounters 
-            (homologs, counts) = unzip numeration
+            numeration = zipWith4 numerateForReals (getFinalGapped ancestorNode) (getFinalGapped childNode) (getHomologies ancestorNode) initCounters 
+            (homologs, counts, insertionEvents) = unzip3 numeration
             generateGapChar m = setBit (bitVec 0 (0 :: Integer)) (length (getAlphabet m) - 1)
 
 {-
@@ -162,6 +182,7 @@ determineHomology gapCharacter (homologSoFar, counterSoFar) (childChar, ancestor
 -- | Function to do a numeration on one character at a node
 -- given the ancestor sequence, ancestor homologies, child sequence, and current counter for position matching
 -- returns a tuple of the Homologies vector and an integer count
+{-
 numerateOne :: (SeqConstraint s) => BitVector -> s -> Homologies -> s -> Int -> (Homologies, Int)
 numerateOne = numerateOne' {-(h, c)
         where 
@@ -177,11 +198,12 @@ numerateOne = numerateOne' {-(h, c)
                     where
                         aChar = safeGrab aSeq i
                         cChar = safeGrab cSeq i-}
-            
+-}          
 
 type Counter = Int
-newtype MutationAccumulator = Accum (IntMap Int, Counter, Int, Int, Int)
+newtype MutationAccumulator = Accum (IntMap Int, Counter, Int, Int, Int, IntSet)
 
+{-
 -- Do as Ward says (in his paper) not as he does (in POY psuedocode)..?
 -- TODO: _REALLY_ make sure that this is correct!
 numerateOne' :: (SeqConstraint s) => BitVector -> s -> Homologies -> s -> Counter -> (Homologies, Int)
@@ -198,6 +220,7 @@ numerateOne' _gap aSeq aHomologies cSeq initialCounter = (aHomologies // assocs 
         ancestorCharacter = fromJust $ safeGrab aSeq i 
         ancestorReference = aHomologies ! k 
 
+
 -- Trying to do as Andres does not as he says
 
 data Align = Insertion | Deletion | Missing
@@ -208,3 +231,35 @@ numerateOne'' ourGap seq1 seq2 i
         where
             aChar = safeGrab seq1 i 
             bChar = safeGrab seq2 i
+-}
+
+numerateForReals :: SeqConstraint s => s -> s -> Homologies -> Counter -> (Homologies, Counter, IntSet)
+numerateForReals ancestorSeq descendantSeq ancestorHomologies initialCounter = (descendantHomologies, counter', insertionEvents)
+  where
+    gapCharacter = gapChar descendantSeq
+
+    descendantHomologies = V.generate (olength descendantSeq) g
+     where
+       g :: Int -> Int
+       g i =
+         case i `IM.lookup` mapping of
+           Nothing -> error "The aparently not impossible happened!"
+           Just v  -> v
+
+    (Accum (mapping, counter', _, _, _, insertionEvents)) = ofoldl' f (Accum (mempty, initialCounter, 0, 0, 0, mempty)) descendantSeq
+      where
+        f (Accum (indexMapping, counter, i, ancestorOffset, childOffset, insertionEventIndicies)) _ -- Ignore the element parameter because the compiler can't make the logical type deduction :(
+          -- Biological "Nothing" case
+          | ancestorCharacter == gapCharacter && descendantCharacter == gapCharacter = Accum (insert i (i + childOffset    ) indexMapping, counter    , i + 1, ancestorOffset    , childOffset    , insertionEventIndicies)
+          -- Biological deletion event case
+          | ancestorCharacter /= gapCharacter && descendantCharacter == gapCharacter = Accum (insert i (i + childOffset + 1) indexMapping, counter + 1, i + 1, ancestorOffset    , childOffset + 1, insertionEventIndicies)
+          -- Biological insertion event case
+          | ancestorCharacter == gapCharacter && descendantCharacter /= gapCharacter = Accum (insert i (i + childOffset    ) indexMapping, counter + 1, i + 1, ancestorOffset + 1, childOffset    , (i + childOffset) `IS.insert` insertionEventIndicies)
+          -- Biological substitution or non-substitution case
+          | otherwise {- Both not gap -}                                             = Accum (insert i (i + childOffset)     indexMapping, counter    , i + 1, ancestorOffset    , childOffset    , insertionEventIndicies)
+          where
+--          j = i + childOffset
+            descendantCharacter    = fromJust $ safeGrab descendantSeq i
+            ancestorCharacter = fromJust $ safeGrab ancestorSeq   i 
+--          ancestorReference = ancestorHomologies ! (i + ancestorOffset)
+

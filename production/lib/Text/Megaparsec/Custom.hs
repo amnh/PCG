@@ -12,7 +12,7 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE FlexibleContexts, TypeFamilies #-}
 
 module Text.Megaparsec.Custom
  ( (<:>)
@@ -28,12 +28,14 @@ module Text.Megaparsec.Custom
  , somethingTill
  ) where
 
-import Data.Char             (isSpace)
-import Data.Functor          (($>))
-import Data.List.NonEmpty    (NonEmpty,fromList)
-import Text.Megaparsec
-import Text.Megaparsec.Prim  (MonadParsec)
-import Text.Megaparsec.Lexer (float,integer,signed)
+import           Data.Char                (isSpace)
+import           Data.Functor             (($>))
+import           Data.List.NonEmpty       (NonEmpty)
+import qualified Data.List.NonEmpty as NE (fromList)
+import qualified Data.Set           as S  (fromList)
+import           Text.Megaparsec
+import           Text.Megaparsec.Prim     (MonadParsec)
+import           Text.Megaparsec.Lexer    (float,integer,signed)
 
 -- | Prepend a single combinator result element to the combinator result of a list of elements
 (<:>)  :: Applicative f => f a -> f [a] -> f [a]
@@ -44,11 +46,11 @@ import Text.Megaparsec.Lexer (float,integer,signed)
 (<++>) a b = (++) <$> a <*> b
 
 -- | Collects one or more of the arguments into a `NonEmpty` list.
-nonEmpty :: MonadParsec s m Char => m a -> m (NonEmpty a)
-nonEmpty c = fromList <$> some c
+nonEmpty :: MonadParsec e s m => m a -> m (NonEmpty a)
+nonEmpty c = NE.fromList <$> some c
 
 -- | @anythingTill end@ consumes zero or more characters until @end@ is matched, leaving @end@ in the stream
-anythingTill :: MonadParsec s m Char => m a -> m String
+anythingTill :: (MonadParsec e s m, Token s ~ Char) => m a -> m String
 anythingTill c = do 
     ahead <- optional . try $ lookAhead c
     case ahead of
@@ -56,33 +58,33 @@ anythingTill c = do
       Nothing -> somethingTill c
 
 -- | @somethingTill end@ consumes one or more characters until @end@ is matched, leaving @end@ in the stream
-somethingTill :: MonadParsec s m Char => m a -> m String
+somethingTill :: (MonadParsec e s m, Token s ~ Char) => m a -> m String
 somethingTill c = 
     do
     _ <- notFollowedBy c
     anyChar <:> anythingTill c
 
 -- | Flexibly parses a 'Double' value represented in a variety of forms.
-double :: MonadParsec s m Char => m Double
+double :: (MonadParsec e s m, Token s ~ Char) => m Double
 double = try (signed space float)
      <|> fromIntegral <$> signed space integer
 
 -- | Custom 'eol' combinator to account for /very/ old Mac file formats ending lines in a single @\'\\r\'@
-endOfLine :: MonadParsec s m Char => m Char
+endOfLine :: (MonadParsec e s m, Token s ~ Char) => m Char
 endOfLine = (try eol <|> string "\r") $> '\n'
 
 -- | Accepts zero or more Failure messages
-fails :: MonadParsec s m Char => [String] -> m a
-fails = failure . fmap Message
+fails :: MonadParsec e s m => [String] -> m a
+fails = failure mempty mempty . S.fromList . fmap representFail
 
 -- | Consumes a whitespace character that is not a newline character
-inlineSpaceChar :: MonadParsec s m Char => m Char
+inlineSpaceChar :: (MonadParsec e s m, Token s ~ Char) => m Char
 inlineSpaceChar = satisfy $ \x -> isSpace x 
-                           && '\n' /= x
-                           && '\r' /= x
+                               && '\n' /= x
+                               && '\r' /= x
 
 -- | Consumes zero or more whitespace characters that are not newline characters
-inlineSpace :: MonadParsec s m Char => m ()
+inlineSpace :: (MonadParsec e s m, Token s ~ Char) => m ()
 inlineSpace = skipMany inlineSpaceChar
 
 -- | @comment start end@ will parse a /nested/ comment structure which begins with
@@ -99,7 +101,7 @@ inlineSpace = skipMany inlineSpaceChar
 -- Ensure that the following holds for all `x :: String`:
 --
 -- > isRight (parse start "" x) /= isRight (parse end "" x)
-comment :: MonadParsec s m Char => m String -> m String -> m String
+comment :: (MonadParsec e s m, Token s ~ Char) => m String -> m String -> m String
 comment start end = commentDefinition' False
   where
     commentChar    = notFollowedBy (start <|> end) *> anyChar

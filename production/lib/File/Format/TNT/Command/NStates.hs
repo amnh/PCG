@@ -11,7 +11,7 @@
 -- Parser for the NSTATES command specifying how to interpret the character
 -- states for various character types.
 -----------------------------------------------------------------------------
-{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE FlexibleContexts, TypeFamilies #-}
 module File.Format.TNT.Command.NStates where
 
 import Data.Functor (($>))
@@ -20,7 +20,7 @@ import Text.Megaparsec
 import Text.Megaparsec.Prim     (MonadParsec)
 
 -- | Parses NSTATES command.
-nstatesCommand :: MonadParsec s m Char => m NStates
+nstatesCommand :: (MonadParsec e s m, Token s ~ Char) => m NStates
 nstatesCommand =  nstatesHeader *> nstatesBody <* symbol (char ';')
   where
     nstatesBody = choice
@@ -31,11 +31,11 @@ nstatesCommand =  nstatesHeader *> nstatesBody <* symbol (char ';')
                 ]
 
 -- | Consumes the superflous heading for a NSTATES command.
-nstatesHeader :: MonadParsec s m Char => m ()
+nstatesHeader :: (MonadParsec e s m, Token s ~ Char) => m ()
 nstatesHeader = symbol $ keyword "nstates" 2
 
 -- | Parses the specifaction for interpreting dna characters.
-nstatesDna :: MonadParsec s m Char => m NStates
+nstatesDna :: (MonadParsec e s m, Token s ~ Char) => m NStates
 nstatesDna = identifier *> dnaStates
   where
     identifier  = symbol $ keyword "dna" 3
@@ -45,20 +45,20 @@ nstatesDna = identifier *> dnaStates
     dnaStates   = DnaStates <$> (gaps <|> nogaps <|> defaultGaps)
 
 -- | Parses the specification for interpreting numeric/discrete characters.
-nstatesNumeric :: MonadParsec s m Char => m NStates
+nstatesNumeric :: (MonadParsec e s m, Token s ~ Char) => m NStates
 nstatesNumeric = identifier *> stateCount
   where
     identifier = symbol $ keyword "numeric" 3
     stateCount = NumericStates <$> symbol nonNegInt
 
 -- | Parses the specifaction for interpreting protein characters.
-nstatesProtein :: MonadParsec s m Char => m NStates
+nstatesProtein :: (MonadParsec e s m, Token s ~ Char) => m NStates
 nstatesProtein = identifier $> ProteinStates
   where
     identifier = symbol $ keyword "protein" 4
 
 -- | Parses the specifaction for interpreting continuous characters.
-nstatesContinuous :: MonadParsec s m Char => m NStates
+nstatesContinuous :: (MonadParsec e s m, Token s ~ Char) => m NStates
 nstatesContinuous = identifier $> ContinuousStates
   where
     identifier  = symbol $ keyword "continuous" 4

@@ -1,4 +1,4 @@
-{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE FlexibleContexts, TypeFamilies #-}
 
 module File.Format.Newick.Test
   ( testSuite
@@ -7,11 +7,11 @@ module File.Format.Newick.Test
 import Data.Either.Combinators    (isRight,rightToMaybe)
 import File.Format.Newick.Internal
 import File.Format.Newick.Parser
-import Test.Custom.Parse          (parseEquals,parseFailure,parseSuccess)
+import Test.Custom.Parse
 import Test.Tasty                 (TestTree,testGroup)
 import Test.Tasty.HUnit
 import Test.Tasty.QuickCheck
-import Text.Megaparsec            (eof,parse)
+import Text.Megaparsec
 
 testSuite :: TestTree
 testSuite = testGroup "Newick Format"
@@ -74,15 +74,14 @@ quotedLabel' = testGroup "quotedLabel" [validSpecialChars,validEscaping,validEnd
     enquotedInvariant = testProperty "Unquoted label ==> quoted label invariant" f 
       where
         f :: String -> Property
-        f x = parsingSuccess unquotedLabel x ==> parsingSuccess quotedLabel $ "'"++x++"'"
-        parsingSuccess e = isRight . parse (e <* eof) ""
+        f x = parserSatisfies unquotedLabel x (const True) ==> parserSatisfies (quotedLabel <* eof) ("'"++x++"'") (const True)
 
 newickBranchLength' :: TestTree
 newickBranchLength' = testGroup "newickBranchLengthDefinition" [invariant]
   where
     invariant = testProperty "Injective invariant" f
       where
-        f x = Right x == parse (branchLengthDefinition <* eof) "" (':' : show x)
+        f x = parserSatisfies (branchLengthDefinition <* eof) (':' : show x) (== x)
 
 newickLeaf' :: TestTree
 newickLeaf' = testGroup "newickLeafDefinition'" [invariant]
@@ -91,11 +90,10 @@ newickLeaf' = testGroup "newickLeafDefinition'" [invariant]
     f :: (String, Double) -> Property
     f (str,num) = validLabel ==> validLeaf
       where
-        validLabel = isRight labelValue
-        labelValue = parse (newickLabelDefinition <* eof) "" str
-        validLeaf  = parse newickLeafDefinition "" target == result
+        validLabel = parserSatisfies (newickLabelDefinition <* eof) str (const True)
+        labelValue = rightToMaybe $ parse (newickLabelDefinition <* eof :: Parsec Dec String String) "" str 
+        validLeaf  = parserSatisfies newickLeafDefinition target (==(NewickNode [] labelValue (Just num)))
         target     = str ++ ":" ++ show num
-        result     = Right $ NewickNode [] (rightToMaybe labelValue) (Just num) 
     
 descendantList' :: TestTree
 descendantList' = testGroup "descendantListDefinition" [valid,invalid]
