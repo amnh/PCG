@@ -137,15 +137,45 @@ numeratePreorder inTree curNode inMeta curCounts
                         where (_, _, _, gapped1, gapped2) = naiveDO s1 s2 m
 -}
 
-{-
 backPropagation :: TreeConstraint t n e s  => t -> n -> Vector IntSet -> t
-backPropagation tree node insertionEvents =
-  | all onull insertionEvents = tree -- nothing to do thank god!
+backPropagation tree node insertionEvents
+  | all onull insertionEvents = tree
+  | nodeIsLeftChild           = tree'
   | otherwise =
+    case leftChild myParent tree of
+      Nothing        -> tree'
+      Just leftChild -> backPropagationDownward tree' leftChild insertionEvents
   where
-    myParent  = getParent node tree
-    wasIRight = getCode <$> rightChild myParent tree == Just (getCode node)
--}  
+    myParent           = getParent node tree
+    nodeIsLeftChild    = getCode <$> rightChild myParent tree == Just (getCode node)
+    tree'              = accountForInsertionEventsForNode tree myParent insertionEvents
+    backPropagationDownward treeContext subTreeRoot insertionEvents = treeContext'''
+      where
+        (treeContext'  , subTreeRoot'  ) = accountForInsertionEventsForNode treeContext subTreeRoot insertionEvents
+        treeContext'' = case  leftChild subTreeRoot' treeContext' of
+                          Nothing -> treeContext'
+                          Just x  -> backPropagationDownward treeContext'  x insertionEvents
+        treeContext'''= case rightChild subTreeRoot' treeContext'' of
+                          Nothing -> (treeContext'', subTreeRoot'')
+                          Just x  -> backPropagationDownward treeContext'' x insertionEvents
+        
+
+accountForInsertionEventsForNode :: TreeConstraint t n e s  => t -> n -> Vector IntSet -> (t, n)
+accountForInsertionEventsForNode tree node insertionEvents = (tree', node')
+  where
+    originalHomologies = getHomologies myParent
+    mutatedHomologies  = zipWith accountForInsertionEvents originalHomologies insertionEvents
+    node'              = setHomologies myParent mutatedHomologies
+    tree'              = tree `update` [node']
+
+accountForInsertionEvents :: Homologies -> IntSet -> Homologies
+accountForInsertionEvents :: homologies insertionEvents = V.generate (length homologies) f
+  where
+    f i = newIndexReference
+      where
+        newIndexReference          = oldIndexReference + insertionEventsBeforeIndex
+        oldIndexReference          = homologies ! i
+        insertionEventsBeforeIndex = olength $ filter (<= oldIndexReference) insertionEvents
 
 -- | Function to do a numeration on an entire node
 -- given the ancestor node, ancestor node, current counter vector, and vector of metadata
