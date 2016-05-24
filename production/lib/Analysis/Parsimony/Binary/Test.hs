@@ -45,7 +45,7 @@ decodeIt :: DynamicChar -> [[String]]
 decodeIt = decodeDynamic standardAlph
 
 testSuite :: TestTree
-testSuite = testGroup "Binary optimization" [doProperties, fitchProperties {- , traversalProperties -} ]
+testSuite = testGroup "Binary optimization" [doProperties, fitchProperties, traversalProperties]
 
 -- | Check properties of the DO algorithm
 doProperties :: TestTree

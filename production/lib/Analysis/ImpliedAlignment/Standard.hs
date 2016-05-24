@@ -197,3 +197,14 @@ numerateOne' _gap aSeq aHomologies cSeq initialCounter = (aHomologies // assocs 
         childCharacter    = fromJust $ safeGrab cSeq i
         ancestorCharacter = fromJust $ safeGrab aSeq i 
         ancestorReference = aHomologies ! k 
+
+-- Trying to do as Andres does not as he says
+
+data Align = Insertion | Deletion | Missing
+
+numerateOne'' :: (SeqConstraint s) => BitVector -> s -> s -> Int -> Vector (Int, BitVector, Int, Align, Int) -> Vector (Int, BitVector, Int, Align, Int)
+numerateOne'' ourGap seq1 seq2 i 
+    | isNothing aChar || isNothing bChar = undefined
+        where
+            aChar = safeGrab seq1 i 
+            bChar = safeGrab seq2 i
