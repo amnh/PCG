@@ -220,14 +220,14 @@ instance RoseTree DAG NodeInfo where
     parent n t = headMay $ fmap (\i -> nodes t V.! i) (parents n)
 
 instance N.Network DAG NodeInfo where
-    parents n t   = fmap (\i -> nodes t V.! i) (parents n)
-    root t        = nodes t V.! root t
-    children n t  = fmap (\i -> nodes t V.! i) (children n)
-    nodeIsLeaf n _    = isLeaf n
-    nodeIsRoot n _    = isRoot n
-    update t new  = t {nodes = nodes t // fmap (\n -> (code n, n)) new}
-    numNodes      = length . nodes 
-    addNode t n   = DAG nodes2 edges2 reroot
+    parents n t    = fmap (\i -> nodes t V.! i) (parents n)
+    root t         = nodes t V.! root t
+    children n t   = fmap (\i -> nodes t V.! i) (children n)
+    nodeIsLeaf n _ = isLeaf n
+    nodeIsRoot n _ = isRoot n
+    update t new   = t {nodes = nodes t // fmap (\n -> (code n, n)) new}
+    numNodes       = length . nodes 
+    addNode t n    = DAG nodes2 edges2 reroot
       where
           addPos = length $ nodes t
           newNode = resetPos n t addPos

@@ -51,7 +51,7 @@ fullIA = testGroup "Full alignment properties" [lenHolds]
                 checkLS = and $ zipWith checkLF (forests inSolution) alignments
                 checkLF f fa = and $ zipWith checkLD f fa
                 checkLD d a = and $ zipWith checkL (V.toList $ nodes d) (IM.toList a)
-                checkL n (_, s) = V.and $ V.zipWith (\c1 c2 -> numChars c1 <= numChars c2) (getFinalGapped n) s 
+                checkL n (_, s) = V.and $ V.zipWith (\c1 c2 -> numChars c1 <= numChars c2) (getFinalGapped n) s
 
 numerate :: TestTree
 numerate = testGroup "Numeration properties" [idHolds, lengthHolds]
