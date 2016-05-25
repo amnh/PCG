@@ -32,7 +32,7 @@ import Data.Alphabet
 import Data.BitMatrix
 import Data.Key
 import Data.Bits
-import Data.BitVector               hiding (foldr, join, replicate)
+import Data.BitVector               hiding (foldr, join, not, replicate)
 import Data.Foldable
 import Data.Function.Memoize
 import Data.Maybe                          (fromMaybe)
@@ -214,8 +214,10 @@ instance Bits DynamicChar where
 instance Memoizable DynamicChar where
     memoize f (DC bm) = memoize (f . DC) bm
 
+-- We restrict the DynamicChar values generated to be non-empty.
+-- Most algorithms assume a nonempty dynamic character.
 instance Arbitrary DynamicChar where
-    arbitrary = DC <$> (arbitrary :: Gen BitMatrix)
+    arbitrary = DC <$> (arbitrary `suchThat` (not . onull) :: Gen BitMatrix)
 
 -- | Function to generate an arbitrary DynamicChar given an alphabet
 arbitraryDynamicGivenAlph :: Alphabet String -> Gen DynamicChar
