@@ -94,7 +94,8 @@ library
     ffi/Analysis/Parsimony/Binary/SequentialAlign
       
   -- Modules exported by the library.
-  exposed-modules:     Analysis.ImpliedAlignment.Internal
+  exposed-modules:     Analysis.General.NeedlemanWunsch
+                       Analysis.ImpliedAlignment.Internal
                        Analysis.ImpliedAlignment.Standard
                        Analysis.Parsimony.Binary.DirectOptimization
                        Analysis.Parsimony.Binary.Fitch
@@ -373,6 +374,7 @@ Test-Suite testsuite
   hs-source-dirs:      test, lib, app, ffi
 
   other-modules:
+                       Analysis.General.NeedlemanWunsch
                        Analysis.ImpliedAlignment.Internal
                        Analysis.ImpliedAlignment.Standard
                        Analysis.ImpliedAlignment.Test

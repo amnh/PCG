@@ -15,8 +15,8 @@
 
 module Analysis.ImpliedAlignment.Standard where
 
+import Analysis.General.NeedlemanWunsch hiding (SeqConstraint)
 import Analysis.ImpliedAlignment.Internal
-import Analysis.Parsimony.Binary.DirectOptimization
 import Bio.Metadata
 import Bio.PhyloGraph.DAG
 import Bio.PhyloGraph.Forest
@@ -34,11 +34,14 @@ import qualified Data.IntSet as IS
 import Data.Maybe
 import Data.Monoid
 import Data.MonoTraversable
-import Data.Vector                (Vector, (!), (//), filter, foldr, generate, imap, replicate, unzip3, zipWith, zipWith3, zipWith4)
+import Data.Vector                (Vector, (!), filter, foldr, generate, imap, replicate, unzip3, zipWith, zipWith3, zipWith4, unzip)
 import qualified Data.Vector as V
-import Prelude             hiding (filter, foldr, lookup, replicate, unzip3, zip3, zipWith, zipWith3, foldl)
+import Prelude             hiding (filter, foldr, lookup, replicate, unzip3, zip3, zipWith, zipWith3, foldl, unzip)
 
 import Debug.Trace
+
+type Counter = Int
+newtype MutationAccumulator = Accum (IntMap Int, Counter, Int, Int, Int, IntSet)
 
 -- | Top level wrapper to do an IA over an entire solution
 -- takes a solution
@@ -94,14 +97,16 @@ numeratePreorder inTree curNode inMeta curCounts
     | isLeafNode = (curCounts, inTree)
     | leftOnly =
         let
-            (leftChildHomolog, counterLeft, insertionEvents) = numerateNode curNode (fromJust $ leftChild curNode inTree) curCounts inMeta
+            (alignedCur, alignedLeft)                        = alignAndAssign curNode (fromJust $ leftChild curNode inTree)
+            (leftChildHomolog, counterLeft, insertionEvents) = numerateNode alignedCur alignedLeft curCounts inMeta
             backPropagatedTree                               = backPropagation inTree leftChildHomolog insertionEvents
             editedTreeLeft                                   = backPropagatedTree `update` [leftChildHomolog]
             (leftRecurseCount, leftRecurseTree)              = numeratePreorder editedTreeLeft leftChildHomolog inMeta counterLeft
         in (leftRecurseCount, leftRecurseTree)
     | rightOnly =
         let
-            (rightChildHomolog, counterRight, insertionEvents) = numerateNode curNode (fromJust $ rightChild curNode inTree) curCounts inMeta
+            (alignedCur, alignedRight)                         = alignAndAssign curNode (fromJust $ rightChild curNode inTree)
+            (rightChildHomolog, counterRight, insertionEvents) = numerateNode alignedCur alignedRight curCounts inMeta
             backPropagatedTree                                 = backPropagation inTree rightChildHomolog insertionEvents
             editedTreeRight                                    = backPropagatedTree `update` [rightChildHomolog]
             (rightRecurseCount, rightRecurseTree)              = numeratePreorder editedTreeRight rightChildHomolog inMeta counterRight
@@ -109,13 +114,15 @@ numeratePreorder inTree curNode inMeta curCounts
     | otherwise =
         let
             -- TODO: should I switch the order of align and numerate? probs
-            ( leftChildHomolog, counterLeft , insertionEventsLeft)  = numerateNode curNode (fromJust $ leftChild curNode inTree) curCounts inMeta
+            (alignedLCur, alignedLeft)                              = alignAndAssign curNode (fromJust $ leftChild curNode inTree)
+            ( leftChildHomolog, counterLeft , insertionEventsLeft)  = numerateNode alignedLCur alignedLeft curCounts inMeta
             backPropagatedTree                                      = backPropagation inTree leftChildHomolog insertionEventsLeft
             (leftRecurseCount, leftRecurseTree)                     = numeratePreorder backPropagatedTree leftChildHomolog inMeta counterLeft
             leftRectifiedTree                                       = leftRecurseTree `update` [leftChildHomolog]
             
             curNode'                                                = leftRectifiedTree `getNthNode` (getCode curNode)
-            (rightChildHomolog, counterRight, insertionEventsRight) = numerateNode curNode' (fromJust $ rightChild curNode' leftRectifiedTree) leftRecurseCount inMeta
+            (alignedRCur, alignedRight)                             = alignAndAssign curNode' (fromJust $ rightChild curNode' leftRectifiedTree)
+            (rightChildHomolog, counterRight, insertionEventsRight) = numerateNode alignedRCur alignedRight leftRecurseCount inMeta
             backPropagatedTree'                                     = backPropagation leftRectifiedTree rightChildHomolog insertionEventsRight
             rightRectifiedTree                                      = backPropagatedTree' `update` [rightChildHomolog]
             -- TODO: need another align and assign between the left and right as a last step?
@@ -133,14 +140,15 @@ numeratePreorder inTree curNode inMeta curCounts
             -- Simple wrapper to align and assign using DO
             --alignAndAssign :: NodeConstraint n s => n -> n -> (n, n)
             -- TODO: Don't use the gapped here
-{-
+
             alignAndAssign node1 node2 = (setFinalGapped (fst allUnzip) node1, setFinalGapped (snd allUnzip) node2)
                 where
+                    final1 = getFinalGapped node1
+                    final2 = getFinalGapped node2
                     allUnzip = unzip allDO
-                    allDO = zipWith3 doOne (getFinalGapped node1) (getFinalGapped node2) inMeta
-                    doOne s1 s2 m = (gapped1, gapped2)
-                        where (_, _, _, gapped1, gapped2) = naiveDO s1 s2 m
--}
+                    allDO = zipWith3 checkThenAlign final1 final2 inMeta
+                    checkThenAlign s1 s2 m = if numChars s1 == numChars s2 then needlemanWunsch s1 s2 m else (s1, s2)
+
 
 backPropagation :: TreeConstraint t n e s  => t -> n -> Vector IntSet -> t
 backPropagation tree node insertionEvents
@@ -193,83 +201,8 @@ numerateNode ancestorNode childNode initCounters inMeta = (setHomologies childNo
         where
             numeration = zipWith4 numerateOne (getFinalGapped ancestorNode) (getFinalGapped childNode) (getHomologies ancestorNode) initCounters 
             (homologs, counts, insertionEvents) = unzip3 numeration
-            generateGapChar m = setBit (bitVec 0 (0 :: Integer)) (length (getAlphabet m) - 1)
+            generateGapChar m = setBit (bitVec 0 (0 :: Integer)) (length (getAlphabet m) - 1)        
 
-{-
--- | Function to do a numeration on one character at a node
--- given the ancestor sequence, ancestor homologies, child sequence, and current counter for position matching
--- returns a tuple of the Homologies vector and an integer count
-numerateOne :: (SeqConstraint s) => BitVector -> s -> Homologies -> s -> Int -> (Homologies, Int)
---numerateOne _ a h c _ | trace ("numerateOne with ancestor " ++ show a ++ " and child " ++ show c ++ " and homologies " ++ show h) False = undefined
-numerateOne gapCharacter ancestorSeq ancestorHomologies childSeq initCounter = foldl (determineHomology gapCharacter) (mempty, initCounter) foldIn
-    where
-        getAllSubs s = foldr (\p acc -> grabSubChar s p `cons` acc) mempty (fromList [0..(numChars s) - 1])
-        -- TODO: verify that ancestorHomologies has the correct length as the allSubs
-        foldIn = --trace ("calls to homology " ++ show (getAllSubs childSeq) ++ show (getAllSubs ancestorSeq)) $
-                    zip3 (getAllSubs childSeq) (getAllSubs ancestorSeq) ancestorHomologies
-
--- Finds the homology position between any two characters
-determineHomology :: BitVector -> (Homologies, Int) -> (BitVector, BitVector, Int) -> (Homologies, Int)
---determineHomology _ i (c, a, h) | trace ("one homology " ++ show i ++ " on " ++ show (c, a, h)) False = undefined
-determineHomology gapCharacter (homologSoFar, counterSoFar) (childChar, ancestorChar, ancestorHomolog)
-    | ancestorChar == gapCharacter = (homologSoFar V.++ pure counterSoFar, counterSoFar    )
-    | childChar    /= gapCharacter = (homologSoFar V.++ pure ancestorHomolog, counterSoFar + 1)
-    | otherwise                    = (homologSoFar V.++ pure counterSoFar, counterSoFar + 1) --TODO: check this case
--}
-
--- | Function to do a numeration on one character at a node
--- given the ancestor sequence, ancestor homologies, child sequence, and current counter for position matching
--- returns a tuple of the Homologies vector and an integer count
-{-
-numerateOne :: (SeqConstraint s) => BitVector -> s -> Homologies -> s -> Int -> (Homologies, Int)
-numerateOne = numerateOne' {-(h, c)
-        where 
-            (h, c, _, _) = determineHomology (mempty, initCounter, 0, 0, 0)
-
-            -- | Find the homology at two positions
-            determineHomology :: (Homologies, Int, Int, Int, Int) -> (Homologies, Int, Int, Int, Int)
-            determineHomology cur@(homologSoFar, counter, i, j, k) 
-                | isNothing aChar || isNothing cChar = cur
-                | (fromJust aChar) == gapCharacter = determineHomology (homologSoFar V.++ pure counter, counter + 1, i + 1, j + 1, k)
-                | (fromJust cChar) /= gapCharacter = determineHomology (homologSoFar V.++ pure (aHomologies V.! hPos), pCount, cPos + 1, hPos + 1)
-                | otherwise                        = determineHomology (homologSoFar, pCount, cPos, hPos + 1) 
-                    where
-                        aChar = safeGrab aSeq i
-                        cChar = safeGrab cSeq i-}
--}          
-
-type Counter = Int
-newtype MutationAccumulator = Accum (IntMap Int, Counter, Int, Int, Int, IntSet)
-
-{-
--- Do as Ward says (in his paper) not as he does (in POY psuedocode)..?
--- TODO: _REALLY_ make sure that this is correct!
-numerateOne' :: (SeqConstraint s) => BitVector -> s -> Homologies -> s -> Counter -> (Homologies, Int)
-numerateOne' _gap aSeq aHomologies cSeq initialCounter = (aHomologies // assocs mutations, counter')
-  where
-    (Accum (mutations, counter', _, _, _)) = ofoldl' f (Accum (mempty, initialCounter, 0, 0, 0)) cSeq
-    gapCharacter = gapChar cSeq
-    f (Accum (changeSet, counter, i, j, k)) _ -- Ignore the element parameter because the compiler can't make the logical type deduction :(
-      | ancestorCharacter == gapCharacter = Accum (insert i counter           changeSet, counter + 1, i + 1, j + 1, k    )
-      | childCharacter    /= gapCharacter = Accum (insert j ancestorReference changeSet, counter    , i + 1, j + 1, k + 1)
-      | otherwise                         = Accum (                           changeSet, counter    , i + 1, j    , k + 1)
-      where
-        childCharacter    = fromJust $ safeGrab cSeq i
-        ancestorCharacter = fromJust $ safeGrab aSeq i 
-        ancestorReference = aHomologies ! k 
-
-
--- Trying to do as Andres does not as he says
-
-data Align = Insertion | Deletion | Missing
-
-numerateOne'' :: (SeqConstraint s) => BitVector -> s -> s -> Int -> Vector (Int, BitVector, Int, Align, Int) -> Vector (Int, BitVector, Int, Align, Int)
-numerateOne'' ourGap seq1 seq2 i 
-    | isNothing aChar || isNothing bChar = undefined
-        where
-            aChar = safeGrab seq1 i 
-            bChar = safeGrab seq2 i
--}
 
 numerateOne :: SeqConstraint s => s -> s -> Homologies -> Counter -> (Homologies, Counter, IntSet)
 numerateOne ancestorSeq descendantSeq ancestorHomologies initialCounter = (descendantHomologies, counter', insertionEvents)

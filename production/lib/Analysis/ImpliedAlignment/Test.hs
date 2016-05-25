@@ -15,6 +15,7 @@
 
 module Analysis.ImpliedAlignment.Test where
 
+import           Analysis.General.NeedlemanWunsch
 import           Analysis.ImpliedAlignment.Standard
 import           Bio.Character.Dynamic.Coded
 import           Bio.Character.Parsed

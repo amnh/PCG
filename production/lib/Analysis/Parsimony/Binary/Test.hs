@@ -14,6 +14,7 @@
 
 module Analysis.Parsimony.Binary.Test where
 
+import           Analysis.General.NeedlemanWunsch
 import           Analysis.Parsimony.Binary.DirectOptimization
 import           Analysis.Parsimony.Binary.Fitch
 import           Analysis.Parsimony.Binary.Internal
