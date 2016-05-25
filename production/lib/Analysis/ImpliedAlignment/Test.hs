@@ -146,6 +146,5 @@ instance Arbitrary GoodParsedChar where
 type ForIA = (DAG, Node)
 
 instance Arbitrary ForIA where
-    arbitrary = undefined {-do
-        someTree <- arbitrary :: Gen DAG
-        let numNodes = V.length $ nodes someTree-}
+    arbitrary = undefined
+

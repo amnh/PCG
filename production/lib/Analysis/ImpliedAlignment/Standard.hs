@@ -65,7 +65,7 @@ iaForest inForest inMeta = fmap (flip impliedAlign inMeta) (trees inForest)
 -- returns an alignment object (an intmap from the leaf codes to the aligned sequence)
 -- TODO: Consider building the alignment at each step of a postorder rather than grabbing wholesale
 impliedAlign :: (TreeConstraint t n e s, Metadata m s) => t -> Vector m -> Alignment s
-impliedAlign inTree inMeta | trace ("impliedAlign with tree " ++ show inTree) False = undefined
+--impliedAlign inTree inMeta | trace ("impliedAlign with tree " ++ show inTree) False = undefined
 impliedAlign inTree inMeta = foldr (\n acc -> insert (getCode n) (makeAlignment n lens) acc) mempty allLeaves
     where
         (lens, curTree) = numeratePreorder inTree (getRoot inTree) inMeta (replicate (length inMeta) 0)
@@ -79,7 +79,7 @@ makeAlignment n seqLens = makeAlign (getFinalGapped n) (getHomologies n)
     where
         -- onePos :: s -> Homologies -> Int -> Int -> Int -> s
         onePos c h l sPos hPos 
-            | sPos > l - 1 = emptyLike c
+            | sPos > l - 1 || hPos > (V.length h - 1) = emptyLike c
             | h ! hPos == sPos = unsafeCons (grabSubChar c (h ! hPos)) (onePos c h l (sPos + 1) (hPos + 1))
             | otherwise = unsafeCons (gapChar c) (onePos c h l (sPos + 1) hPos)
         -- makeOne :: s -> Homologies -> Int -> s
@@ -92,7 +92,7 @@ makeAlignment n seqLens = makeAlign (getFinalGapped n) (getHomologies n)
 -- outputs a resulting vector of counters and a tree with the assignments
 -- TODO: something seems off about doing the DO twice here
 numeratePreorder :: (TreeConstraint t n e s, Metadata m s) => t -> n -> Vector m -> Counts -> (Counts, t)
-numeratePreorder _ curNode _ _ | trace ("numeratePreorder at " ++ show curNode) False = undefined
+--numeratePreorder _ curNode _ _ | trace ("numeratePreorder at " ++ show curNode) False = undefined
 numeratePreorder inTree curNode inMeta curCounts
     | nodeIsRoot curNode inTree = (curCounts, inTree `update` [setHomologies curNode defaultHomologs])
     | isLeafNode = (curCounts, inTree)
@@ -135,8 +135,8 @@ numeratePreorder inTree curNode inMeta curCounts
             isLeafNode = leftOnly && rightOnly
             leftOnly   = isNothing $ rightChild curNode inTree
             rightOnly  = isNothing $ leftChild curNode inTree
-            -- TODO: check if this is really the default
-            defaultHomologs = imap (\i _ -> generate (numChars (curSeqs ! i)) (+ 1)) inMeta
+            defaultHomologs = if V.length curSeqs == 0 then V.replicate (V.length inMeta) mempty --trace ("defaultHomologs " ++ show (V.length inMeta) ++ show (V.length curSeqs))
+                                else imap (\i _ -> generate (numChars (curSeqs ! i)) (+ 1)) inMeta
 
             -- Simple wrapper to align and assign using DO
             --alignAndAssign :: NodeConstraint n s => n -> n -> (n, n)
@@ -155,7 +155,7 @@ numeratePreorder inTree curNode inMeta curCounts
 -- takes in a tree, a current node, and a vector of insertion event sets
 -- return a tree with the insertion events incorporated
 backPropagation :: TreeConstraint t n e s  => t -> n -> Vector IntSet -> t
-backPropagation tree node insertionEvents | trace ("backPropagation at node " ++ show node) False = undefined
+--backPropagation tree node insertionEvents | trace ("backPropagation at node " ++ show node) False = undefined
 backPropagation tree node insertionEvents
   | all onull insertionEvents = tree
   | otherwise =
@@ -227,7 +227,7 @@ numerateOne ancestorSeq descendantSeq ancestorHomologies initialCounter = (desce
        g :: Int -> Int
        g i =
          case i `IM.lookup` mapping of
-           Nothing -> error "The aparently not impossible happened!"
+           Nothing -> error "The apparently not impossible happened!"
            Just v  -> v
 
     (Accum (mapping, counter', _, _, _, insertionEvents)) = ofoldl' f (Accum (mempty, initialCounter, 0, 0, 0, mempty)) descendantSeq
@@ -245,5 +245,4 @@ numerateOne ancestorSeq descendantSeq ancestorHomologies initialCounter = (desce
 --          j = i + childOffset
             descendantCharacter    = fromJust $ safeGrab descendantSeq i
             ancestorCharacter = fromJust $ safeGrab ancestorSeq   i 
---          ancestorReference = ancestorHomologies ! (i + ancestorOffset)
 
