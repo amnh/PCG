@@ -1,7 +1,7 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module      :  PCG.Command.Types.Read.Unification.Master
--- Copyright   :  (c) 2015-2015 Ward Wheeler
+-- Copyright   :  () 2015-2015 Ward Wheeler
 -- License     :  BSD-style
 --
 -- Maintainer  :  wheeler@amnh.org
@@ -118,6 +118,8 @@ encodeSolution inVal@(Solution taxaSeqs metadataInfo inForests) = inVal {forests
     encodeAndSet taxonName inSeqs = fmap (fmap (applyToDAG taxonName coded))
       where coded = encodeIt inSeqs metadataInfo
 
+    -- TODO: Fix Indexing error in here.
+    --       Resulted from running bantu-big-no-tnt data set
     applyToDAG :: Identifier -> Vector DynamicChar -> DAG -> DAG
     applyToDAG inName coded inDAG =
       case matching of
