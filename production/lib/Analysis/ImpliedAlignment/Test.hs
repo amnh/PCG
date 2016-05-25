@@ -35,7 +35,7 @@ import Debug.Trace
 testSuite :: TestTree
 testSuite = testGroup "Implied Alignment"
           [ numerate
-          --, fullIA
+          , fullIA
           ]
 
 
@@ -57,7 +57,7 @@ numerate = testGroup "Numeration properties" [idHolds, lengthHolds]
     where
         idHolds = testProperty "When a sequence is numerated with itself, get indices and the same counter" checkID
         checkID :: DynamicChar -> Bool
-        checkID inChar = onull inChar' || (traces == defaultH && counter <= numChars inChar')
+        checkID inChar = onull inChar || (traces == defaultH && counter <= numChars inChar)
             where
                 defaultH = V.fromList [0..numChars inChar - 1] 
                 (traces, counter, _) =  numerateOne inChar inChar defaultH 0
