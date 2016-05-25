@@ -14,7 +14,6 @@
 
 module Analysis.Parsimony.Binary.Test where
 
-import           Analysis.General.NeedlemanWunsch
 import           Analysis.Parsimony.Binary.DirectOptimization
 import           Analysis.Parsimony.Binary.Fitch
 import           Analysis.Parsimony.Binary.Internal
@@ -51,9 +50,7 @@ testSuite = testGroup "Binary optimization" [doProperties, fitchProperties, trav
 -- | Check properties of the DO algorithm
 doProperties :: TestTree
 doProperties = testGroup "Properties of the DO algorithm"
-      [ overlap
-      , firstRow
-      , idHolds
+      [ idHolds
       ]
     where
         idHolds = testProperty "When DO runs a sequence against itself, get input as result" checkID
@@ -62,28 +59,6 @@ doProperties = testGroup "Properties of the DO algorithm"
                 checkID inSeq = --trace ("main result of DO " ++ show main ++ " with cost " ++ show cost ++ " with right " ++ show right)
                                 main == filterGaps inSeq && cost == 0 && gapped == inSeq && left == inSeq && right == inSeq
                     where (main, cost, gapped, left, right) = naiveDO inSeq inSeq doMeta
-
-        firstRow = testProperty "First row of alignment matrix has expected directions" checkRow
-            where
-                checkRow :: DynamicChar -> Bool
-                checkRow inSeq = --trace ("checkRow " ++ show result ++ show rowLen) $
-                                    fDir == DiagDir && allLeft (V.tail result) && V.length result == (rowLen + 1)
-                    where
-                        rowLen = numChars inSeq
-                        fullMat = getAlignMat inSeq inSeq doMeta
-                        result = getRow 0 fullMat
-                        (_, fDir, _) = V.head result
-                        allLeft = V.all (\(_, val, _) -> val == LeftDir)
-
-        
-        overlap = testGroup "Overlap test cases" [overlap1]
-        seqa = encodeDynamic standardAlph [["G", "C"]] :: DynamicChar
-        seqb =  encodeDynamic standardAlph [["C"]] :: DynamicChar
-        initalResult = getOverlap (grabSubChar seqa 0) (grabSubChar seqb 0) doMeta
-        andOverlap = decodeIt . DC . fromRows . V.singleton $ fst initalResult
-        andOverlapResult = [["C"]]
-        overlap1 = testCase "Given characters with overlap, gives expected results" ((andOverlapResult, 0) @=? (andOverlap, snd initalResult))
-        
 
 -- | Check properties of the Fitch algorithm
 fitchProperties :: TestTree
