@@ -150,34 +150,41 @@ numeratePreorder inTree curNode inMeta curCounts
                     allDO = zipWith3 checkThenAlign final1 final2 inMeta
                     checkThenAlign s1 s2 m = if numChars s1 == numChars s2 then needlemanWunsch s1 s2 m else (s1, s2)
 
-
+-- | Back propagation to be performed after insertion events occur in a numeration
+-- goes back up and to the left, then downward
+-- takes in a tree, a current node, and a vector of insertion event sets
+-- return a tree with the insertion events incorporated
 backPropagation :: TreeConstraint t n e s  => t -> n -> Vector IntSet -> t
 backPropagation tree node insertionEvents | trace ("backPropagation at node " ++ show node) False = undefined
 backPropagation tree node insertionEvents
   | all onull insertionEvents = tree
   | otherwise =
     case parent node tree of
-      Nothing       -> tree -- I am ~groot~ root
-      Just myParent -> let nodeIsLeftChild    = (getCode <$> rightChild myParent tree) == Just (getCode node)
-                           (tree', _)         = accountForInsertionEventsForNode tree myParent insertionEvents
-                       in if   nodeIsLeftChild
-                          then tree'
-                          else
-                            case leftChild myParent tree of
-                              Nothing        -> tree'
-                              Just leftChild -> backPropagationDownward tree' leftChild insertionEvents
+      Nothing       -> tree -- If at the root, do nothing
+      Just myParent -> let nodeIsLeftChild = (getCode <$> leftChild myParent tree) == Just (getCode node)
+                           (tree', _)      = accountForInsertionEventsForNode tree myParent insertionEvents
+                           tree''          = if   nodeIsLeftChild -- if we are the left child, then we only have to update the current node
+                                              then tree'
+                                              else
+                                                case leftChild myParent tree of -- otherwise we need to propagate down but not at the current node
+                                                  Nothing        -> tree'
+                                                  Just leftChild -> backPropagationDownward tree' leftChild insertionEvents
+                        in backPropagation tree'' myParent insertionEvents
   where
     backPropagationDownward treeContext subTreeRoot insertionEvents = treeContext'''
       where
-        (treeContext'  , subTreeRoot'  ) = accountForInsertionEventsForNode treeContext subTreeRoot insertionEvents
-        treeContext'' = case  leftChild subTreeRoot' treeContext' of
+        (treeContext'  , subTreeRoot'  ) = accountForInsertionEventsForNode treeContext subTreeRoot insertionEvents -- do the current node
+        treeContext'' = case  leftChild subTreeRoot' treeContext' of -- first go down and to the left
                           Nothing -> treeContext'
                           Just x  -> backPropagationDownward treeContext'  x insertionEvents
-        treeContext'''= case rightChild subTreeRoot' treeContext'' of
+        treeContext'''= case rightChild subTreeRoot' treeContext'' of -- then go down and to the right
                           Nothing -> treeContext''
                           Just x  -> backPropagationDownward treeContext'' x insertionEvents
         
-
+-- | Account for any insertion events at the current node by updating homologies
+-- depends on accountForInsertionEvents to do work
+-- takes in a tree, current node, and a vector of insertion event sets
+-- returns an updated tree and an updated node for convenience
 accountForInsertionEventsForNode :: TreeConstraint t n e s  => t -> n -> Vector IntSet -> (t, n)
 accountForInsertionEventsForNode tree node insertionEvents = (tree', node')
   where
@@ -186,12 +193,16 @@ accountForInsertionEventsForNode tree node insertionEvents = (tree', node')
     node'              = setHomologies node mutatedHomologies
     tree'              = tree `update` [node']
 
+-- | Accounts for insertion events by mutating homology trace
+-- essentially increases each homology position by the number of insertions before it
+-- takes in a homologies trace and a set of insertions
+-- returns a mutated homologies trace
 accountForInsertionEvents :: Homologies -> IntSet -> Homologies
 accountForInsertionEvents homologies insertionEvents = V.generate (length homologies) f
   where
     f i = newIndexReference
       where
-        newIndexReference          = oldIndexReference + insertionEventsBeforeIndex
+        newIndexReference          = oldIndexReference + insertionEventsBeforeIndex 
         oldIndexReference          = homologies ! i
         insertionEventsBeforeIndex = olength $ IS.filter (<= oldIndexReference) insertionEvents
 

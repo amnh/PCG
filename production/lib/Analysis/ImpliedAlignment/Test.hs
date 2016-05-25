@@ -25,6 +25,7 @@ import           Data.Alphabet
 import           Data.BitVector (BitVector, setBit, bitVec)
 import           Data.Foldable
 import qualified Data.IntMap    as IM
+import           Data.IntSet     (IntSet)
 import           Data.List
 import           Data.MonoTraversable
 import qualified Data.Set as S
@@ -32,6 +33,7 @@ import qualified Data.Vector    as V
 import           Test.Tasty
 --import           Test.Tasty.HUnit
 import           Test.Tasty.QuickCheck
+import           Test.QuickCheck.Arbitrary.Instances
 import Debug.Trace
 
 testSuite :: TestTree
@@ -64,6 +66,20 @@ fullIA = testGroup "Full alignment properties" [lenHolds, twoRuns]
                         oneRun t = snd $ numeratePreorder t (getRoot t) meta counts
                         twoRun t = snd $ numeratePreorder (oneRun t) (getRoot $ oneRun t) meta counts 
                         checkStatic t acc = acc && (oneRun t == twoRun t)
+
+propagation :: TestTree
+propagation = testGroup "Propagation of insertions along tree" [lenHolds, homologyIncrease]
+    where
+        lenHolds = testProperty "After propagation, homologies have the same length" checkLen
+        checkLen :: ForIA -> V.Vector IntSet -> Bool
+        checkLen (tree, node) insertions = compareLens
+            where
+                resultTree = backPropagation tree node insertions
+                compareLens = V.and $ V.zipWith (\n0 n -> V.length (getHomologies n0) == V.length (getHomologies n)) (nodes tree) (nodes resultTree)
+
+        homologyIncrease = testProperty "After propagation, homologies are larger or the same" checkHomology
+        checkHomology :: ForIA -> V.Vector IntSet -> Bool
+        checkHomology = undefined
 
 numerate :: TestTree
 numerate = testGroup "Numeration properties" [idHolds, lengthHolds, counterIncrease, monotonic]
@@ -126,3 +142,10 @@ instance Arbitrary GoodParsedChar where
     let ambiguityGroupGenerator = listOf1 arbitrary :: Gen [String]
     someAmbiguityGroups <- listOf1 ambiguityGroupGenerator
     pure . GoodParsedChar $ V.fromList someAmbiguityGroups
+
+type ForIA = (DAG, Node)
+
+instance Arbitrary ForIA where
+    arbitrary = undefined {-do
+        someTree <- arbitrary :: Gen DAG
+        let numNodes = V.length $ nodes someTree-}
