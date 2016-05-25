@@ -53,11 +53,12 @@ import qualified Data.IntMap                        as IM
 import           Data.Key                                  ((!),lookup)
 import           Data.Maybe
 import           Data.Monoid
+import           Data.MonoTraversable
 import           Data.Vector                               ((//), Vector, elemIndex)
 import qualified Data.Vector                        as V
 import qualified File.Format.Newick                 as New
 import           Prelude                            hiding (lookup)
-import           Safe
+--import           Safe
 import           Test.Tasty.QuickCheck
 
 instance StandardDAG DAG NodeInfo EdgeSet where
@@ -99,7 +100,7 @@ binaryTreeToDAG binaryRoot = DAG
        (totalNodeMap, totalEdgeMap, _) = f Nothing binaryRoot (mempty, mempty, 0)
        f :: Maybe Int -> TestingBinaryTree Node -> Accumulator -> Accumulator
        f parentMay (Leaf node) (nodeMap, edgeMap, counter) = 
-           ( IM.insert counter node nodeMap
+           ( IM.insert counter (node { code = counter, name = "Taxa: " <> show (code node), parents = otoList (inNodeSet parentMay)} ) nodeMap
            , IM.insert counter (EdgeSet (inNodeSet parentMay) mempty) edgeMap
            , counter + 1
            )
@@ -138,7 +139,7 @@ binaryTreeToDAG binaryRoot = DAG
                         }
        inNodeSet :: Maybe Int -> IntSet
        inNodeSet (Just parentReference) = IS.insert parentReference mempty
-       inNodeSet  Nothing               =  mempty
+       inNodeSet  Nothing               = mempty
 
 {-
 instance Arbitrary a => Arbitrary (TestingBinaryTree a) where

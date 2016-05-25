@@ -42,30 +42,39 @@ testSuite = testGroup "Implied Alignment"
           , fullIA
           ]
 
-
 fullIA :: TestTree
 fullIA = testGroup "Full alignment properties" [lenHolds, twoRuns]
     where
         lenHolds = testProperty "The sequences on a tree are longer or the same at end" checkLen
-        checkLen :: StandardSolution -> Bool
-        checkLen inSolution = checkLS
-            where 
-                alignments = iaSolution inSolution
-                checkLS = and $ zipWith checkLF (forests inSolution) alignments
-                checkLF f fa = and $ zipWith checkLD f fa
-                checkLD d a = and $ zipWith checkL (V.toList $ nodes d) (IM.toList a)
-                checkL n (_, s) = V.and $ V.zipWith (\c1 c2 -> numChars c1 <= numChars c2) (getFinalGapped n) s
 
-        twoRuns = testProperty "After two runs of IA, assignments are static" twoIA
+checkLen :: StandardSolution -> Bool
+checkLen inSolution = checkLS
+            where 
+                alignments   = iaSolution inSolution
+                checkLS      = and $ zipWith checkLF (forests inSolution) alignments
+                  where
+                    checkLF f fa = and $ zipWith checkLD f fa
+                      where
+                        checkLD d a  = and $ zipWith checkL (V.toList $ nodes d) (IM.toList a)
+                          where
+                            checkL n (_, s) = and $ V.zipWith (\c1 c2 -> numChars c1 <= numChars c2) (getFinalGapped n) s
+
+twoRuns = testProperty "After two runs of IA, assignments are static" twoIA
             where
                 twoIA :: StandardSolution -> Bool
                 twoIA (Solution _ meta forests) = foldr (\f acc -> foldr checkStatic acc f) True forests
                     where
                         counts = (V.replicate (length meta) 0)
-                        oneRun, twoRun :: DAG -> DAG
-                        oneRun t = snd $ numeratePreorder t (getRoot t) meta counts
-                        twoRun t = snd $ numeratePreorder (oneRun t) (getRoot $ oneRun t) meta counts 
-                        checkStatic t acc = acc && (oneRun t == twoRun t)
+                        runTwice t = (firstRun, secondRun)
+                          where
+                            firstRun  = run t
+                            secondRun = run firstRun
+                            run :: DAG -> DAG
+                            run t = snd $ numeratePreorder t (getRoot t) meta counts
+--                        twoRun t = (\x -> trace "Here 2" x) $ snd $ numeratePreorder (oneRun t) (getRoot $ oneRun t) meta counts 
+                        checkStatic t acc = acc && f == s
+                          where
+                           (f,s) = runTwice t
 
 propagation :: TestTree
 propagation = testGroup "Propagation of insertions along tree" [lenHolds, homologyIncrease]
@@ -139,9 +148,10 @@ newtype GoodParsedChar
 
 instance Arbitrary GoodParsedChar where
   arbitrary = do
-    let ambiguityGroupGenerator = listOf1 arbitrary :: Gen [String]
-    someAmbiguityGroups <- listOf1 ambiguityGroupGenerator
-    pure . GoodParsedChar $ V.fromList someAmbiguityGroups
+    symbols  <- getNonEmpty <$> arbitrary :: Gen [String]
+    let ambiguityGroupGenerator = sublistOf symbols `suchThat` (not . null)
+    someAmbiguityGroups <- V.fromList <$> listOf1 ambiguityGroupGenerator
+    pure $ GoodParsedChar someAmbiguityGroups
 
 type ForIA = (DAG, Node)
 
