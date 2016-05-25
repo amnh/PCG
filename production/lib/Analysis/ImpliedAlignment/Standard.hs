@@ -47,13 +47,14 @@ newtype MutationAccumulator = Accum (IntMap Int, Counter, Int, Int, Int, IntSet)
 -- takes a solution
 -- returns an AlignmentSolution
 iaSolution :: SolutionConstraint r m f t n e s => r -> AlignmentSolution s
-iaSolution inSolution | trace ("iaSolution " ++ show inSolution) False = undefined
+--iaSolution inSolution | trace ("iaSolution " ++ show inSolution) False = undefined
 iaSolution inSolution = fmap (flip iaForest (getMetadata inSolution)) (getForests inSolution)
 
 -- | Simple wrapper to do an IA over a forest
 -- takes in a forest and some metadata
 -- returns an alignment forest
 iaForest :: (ForestConstraint f t n e s, Metadata m s) => f -> Vector m -> AlignmentForest s
+--iaForest inForest inMeta | trace ("iaForest " ++ show inForest) False = undefined
 iaForest inForest inMeta = fmap (flip impliedAlign inMeta) (trees inForest)
 
 -- TODO: used concrete BitVector type instead of something more appropriate, like EncodableDynamicCharacter. 
@@ -64,7 +65,7 @@ iaForest inForest inMeta = fmap (flip impliedAlign inMeta) (trees inForest)
 -- returns an alignment object (an intmap from the leaf codes to the aligned sequence)
 -- TODO: Consider building the alignment at each step of a postorder rather than grabbing wholesale
 impliedAlign :: (TreeConstraint t n e s, Metadata m s) => t -> Vector m -> Alignment s
---impliedAlign inTree inMeta | trace ("impliedAlign with tree " ++ show inTree) False = undefined
+impliedAlign inTree inMeta | trace ("impliedAlign with tree " ++ show inTree) False = undefined
 impliedAlign inTree inMeta = foldr (\n acc -> insert (getCode n) (makeAlignment n lens) acc) mempty allLeaves
     where
         (lens, curTree) = numeratePreorder inTree (getRoot inTree) inMeta (replicate (length inMeta) 0)
@@ -91,7 +92,7 @@ makeAlignment n seqLens = makeAlign (getFinalGapped n) (getHomologies n)
 -- outputs a resulting vector of counters and a tree with the assignments
 -- TODO: something seems off about doing the DO twice here
 numeratePreorder :: (TreeConstraint t n e s, Metadata m s) => t -> n -> Vector m -> Counts -> (Counts, t)
---numeratePreorder _ curNode _ _ | trace ("numeratePreorder at " ++ show curNode) False = undefined
+numeratePreorder _ curNode _ _ | trace ("numeratePreorder at " ++ show curNode) False = undefined
 numeratePreorder inTree curNode inMeta curCounts
     | nodeIsRoot curNode inTree = (curCounts, inTree `update` [setHomologies curNode defaultHomologs])
     | isLeafNode = (curCounts, inTree)
@@ -151,6 +152,7 @@ numeratePreorder inTree curNode inMeta curCounts
 
 
 backPropagation :: TreeConstraint t n e s  => t -> n -> Vector IntSet -> t
+backPropagation tree node insertionEvents | trace ("backPropagation at node " ++ show node) False = undefined
 backPropagation tree node insertionEvents
   | all onull insertionEvents = tree
   | otherwise =
