@@ -30,6 +30,7 @@ import           Data.List
 import           Data.MonoTraversable
 import qualified Data.Set as S
 import qualified Data.Vector    as V
+import qualified Test.Custom.Types as T
 import           Test.Tasty
 --import           Test.Tasty.HUnit
 import           Test.Tasty.QuickCheck
@@ -46,6 +47,12 @@ fullIA :: TestTree
 fullIA = testGroup "Full alignment properties" [lenHolds, twoRuns]
     where
         lenHolds = testProperty "The sequences on a tree are longer or the same at end" checkLen
+
+        bioAlph = constructAlphabet . V.fromList . fmap pure $ "ACGT-"
+        encodeThem = V.fromList . map (encodeDynamic bioAlph)
+        rootTest = T.TestNode 0 True False [] [1,2] mempty mempty mempty mempty mempty mempty mempty 0 0
+        leftTest = rootTest {T.code = 1, T.isRoot = False, T.isLeaf = True, T.parents = [0], T.children = [], T.encoded = encodeThem $ pure $ V.fromList [["A"], ["T"], ["T"]]}
+        rightTest = leftTest {T.code = 2, T.encoded = encodeThem $ pure $ V.fromList [["A"], ["G"]]}
 
 checkLen :: StandardSolution -> Bool
 checkLen inSolution = checkLS
@@ -76,19 +83,6 @@ twoRuns = testProperty "After two runs of IA, assignments are static" twoIA
                           where
                            (f,s) = runTwice t
 
-propagation :: TestTree
-propagation = testGroup "Propagation of insertions along tree" [lenHolds, homologyIncrease]
-    where
-        lenHolds = testProperty "After propagation, homologies have the same length" checkLen
-        checkLen :: ForIA -> V.Vector IntSet -> Bool
-        checkLen (tree, node) insertions = compareLens
-            where
-                resultTree = backPropagation tree node insertions
-                compareLens = V.and $ V.zipWith (\n0 n -> V.length (getHomologies n0) == V.length (getHomologies n)) (nodes tree) (nodes resultTree)
-
-        homologyIncrease = testProperty "After propagation, homologies are larger or the same" checkHomology
-        checkHomology :: ForIA -> V.Vector IntSet -> Bool
-        checkHomology = undefined
 
 numerate :: TestTree
 numerate = testGroup "Numeration properties" [idHolds, lengthHolds, counterIncrease, monotonic]
@@ -129,7 +123,12 @@ numerate = testGroup "Numeration properties" [idHolds, lengthHolds, counterIncre
                 increases []       = True
                 increases [x]      = True
                 increases (x:y:xs) = x <= y && increases (y:xs)
-
+{-
+-- | Wrapper function to start and then terminate an IA numeration
+partNumerate :: DAG -> Node -> Vector m -> Counts -> Node -> (Counts, t)
+partNumerate inTree curNode inMeta curCounts stopNode
+    | (code curNode) == (code stopNode) = (curCounts, inTree)
+    | otherwise = partNumerate -}
 
 -- | Useful function to convert encoding information to two encoded seqs
 encodeArbSameLen :: (GoodParsedChar, GoodParsedChar) -> (DynamicChar, DynamicChar)
@@ -152,9 +151,4 @@ instance Arbitrary GoodParsedChar where
     let ambiguityGroupGenerator = sublistOf symbols `suchThat` (not . null)
     someAmbiguityGroups <- V.fromList <$> listOf1 ambiguityGroupGenerator
     pure $ GoodParsedChar someAmbiguityGroups
-
-type ForIA = (DAG, Node)
-
-instance Arbitrary ForIA where
-    arbitrary = undefined
 
