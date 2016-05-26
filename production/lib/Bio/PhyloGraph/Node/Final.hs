@@ -20,7 +20,7 @@ import Data.Vector
 
 -- | A final node has its final assignment
 class FinalNode n s | n -> s where
-    getFinal :: n -> Vector s
-    setFinal :: Vector s -> n -> n
+    getFinal       :: n -> Vector s
+    setFinal       :: Vector s -> n -> n
     getFinalGapped :: n -> Vector s
     setFinalGapped :: Vector s -> n -> n

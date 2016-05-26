@@ -100,7 +100,7 @@ binaryTreeToDAG binaryRoot = DAG
        (totalNodeMap, totalEdgeMap, _) = f Nothing binaryRoot (mempty, mempty, 0)
        f :: Maybe Int -> TestingBinaryTree Node -> Accumulator -> Accumulator
        f parentMay (Leaf node) (nodeMap, edgeMap, counter) = 
-           ( IM.insert counter (node { code = counter, name = "Taxa: " <> show (code node), parents = otoList (inNodeSet parentMay)} ) nodeMap
+           ( IM.insert counter (node { code = counter, name = "Taxon: " <> show (code node), parents = otoList (inNodeSet parentMay)} ) nodeMap
            , IM.insert counter (EdgeSet (inNodeSet parentMay) mempty) edgeMap
            , counter + 1
            )
@@ -224,8 +224,6 @@ instance N.Network DAG NodeInfo where
     parents n t    = fmap (\i -> nodes t V.! i) (parents n)
     root t         = nodes t V.! root t
     children n t   = fmap (\i -> nodes t V.! i) (children n)
-    nodeIsLeaf n _ = isLeaf n
-    nodeIsRoot n _ = isRoot n
     update t new   = t {nodes = nodes t // fmap (\n -> (code n, n)) new}
     numNodes       = length . nodes 
     addNode t n    = DAG nodes2 edges2 reroot
@@ -327,11 +325,11 @@ toTopo tree = TopoDAG $ nodeToTopo tree (nodes tree V.! root tree)
 -- | convert a given node to topo
 nodeToTopo :: DAG -> NodeInfo -> Topo
 nodeToTopo inDAG curNode
-    | isLeaf curNode = leaf
-    | otherwise = leaf {TN.children = childDAGs}
+    | N.nodeIsLeaf curNode inDAG = leaf
+    | otherwise                  = leaf { TN.children = childDAGs }
       where
           childDAGs = fmap (\i -> nodeToTopo inDAG (nodes inDAG V.! i)) (children curNode)
-          leaf = TN.TopoNode (isRoot curNode) (isLeaf curNode) (name curNode) mempty (encoded curNode) (packed curNode) (preliminary curNode) 
+          leaf = TN.TopoNode (isRoot curNode) (N.nodeIsLeaf curNode inDAG) (name curNode) mempty (encoded curNode) (packed curNode) (preliminary curNode) 
                   (final curNode) (temporary curNode) (aligned curNode) (random curNode) (union curNode) (single curNode) (gapped curNode) (localCost curNode) (totalCost curNode)
 
 -- | makeEdges is a small function assisting attachAt
