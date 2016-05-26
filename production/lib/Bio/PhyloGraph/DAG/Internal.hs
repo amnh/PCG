@@ -11,7 +11,7 @@
 -- Types for DAG representation
 --
 -----------------------------------------------------------------------------
-{-# LANGUAGE TypeSynonymInstances, FlexibleInstances, MultiParamTypeClasses #-}
+{-# LANGUAGE TypeSynonymInstances, FlexibleInstances, MultiParamTypeClasses, TypeFamilies #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
 
@@ -34,6 +34,7 @@ import           Bio.PhyloGraph.Tree.Rose
 import           Data.Alphabet
 import           Data.Bifunctor
 import           Data.BitVector                     hiding (foldr,index)
+import           Data.Foldable
 import           Data.HashMap.Lazy                         (HashMap)
 import qualified Data.HashMap.Lazy                  as H   (toList)
 import           Data.IntSet                               (IntSet)
@@ -241,6 +242,24 @@ instance N.Network DAG NodeInfo where
           edges2 = edges t V.++ pure newEdge
           nodes2 = addConnections newNode (nodes t) V.++ pure newNode
           reroot = if isRoot n && null (nodes t) then addPos else root t
+
+type instance Element DAG = NodeInfo
+
+instance MonoFoldable DAG where
+    ofoldMap f = foldr (mappend . f) mempty . nodes
+    {-# INLINE ofoldMap #-}
+
+    ofoldr f e = foldr f e . nodes
+    {-# INLINE ofoldr #-}
+
+    ofoldl' f e = foldl' f e . nodes
+    {-# INLINE ofoldl' #-}
+
+    ofoldr1Ex f = foldr1 f . nodes
+    {-# INLINE ofoldr1Ex #-}
+
+    ofoldl1Ex' f = foldl1 f . nodes
+    {-# INLINE ofoldl1Ex' #-}
 
 -- | attachAt is used to build arbitrary trees. It takes two DAGs, d_1, d_2 and a node, node_11 and node_12, that must exist in the first DAG, 
 -- and that must, furthermore, be connected by an edge. 

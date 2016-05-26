@@ -13,6 +13,7 @@
 -----------------------------------------------------------------------------
 
 {-# LANGUAGE MultiParamTypeClasses, FunctionalDependencies #-}
+
 module Bio.PhyloGraph.Network.Class where
 
 {- | Type class Laws:
