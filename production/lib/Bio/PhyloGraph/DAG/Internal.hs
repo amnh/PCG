@@ -11,14 +11,15 @@
 -- Types for DAG representation
 --
 -----------------------------------------------------------------------------
-{-# LANGUAGE TypeSynonymInstances, MultiParamTypeClasses #-}
+{-# LANGUAGE TypeSynonymInstances, FlexibleInstances, MultiParamTypeClasses #-}
+{-# OPTIONS_GHC -fno-warn-orphans #-}
+
 
 module Bio.PhyloGraph.DAG.Internal where
 
 import           Bio.Character.Dynamic.Coded
 import           Bio.Character.Parsed
 import           Bio.Metadata.Internal                     (CharacterMetadata)
-import           Bio.PhyloGraph.DAG.Internal
 import           Bio.PhyloGraph.DAG.Class
 import           Bio.PhyloGraph.Edge
 import           Bio.PhyloGraph.Forest
@@ -55,7 +56,7 @@ type NodeInfo = Node
 
 --TODO: This shouldn't be tightly bound to DynamicChar
 -- | Alias for Node used in 'TopoDAG'
-type Topo = TopoNode DynamicChar
+type Topo = TN.TopoNode DynamicChar
 
 -- | A dag is an element of a forest, stored referentially
 data DAG 
@@ -180,9 +181,9 @@ instance Arbitrary (TestingBinaryTree Node) where
                 left:right:remaining <- shuffle subTrees 
                 f (Internal left right : remaining)
 
-
-maxChildren :: Int
+maxTaxa, maxChildren :: Int
 maxChildren = 2 -- it's a binary tree.
+maxTaxa     = 10
 
 -- | Generate an arbitrary TopoDAG given an alphabet
 --arbitraryTopoDAGGA :: Alphabet String -> Gen TopoDAG 
@@ -230,8 +231,6 @@ instance N.Network DAG NodeInfo where
     parents n t    = fmap (\i -> nodes t V.! i) (parents n)
     root t         = nodes t V.! root t
     children n t   = fmap (\i -> nodes t V.! i) (children n)
-    nodeIsLeaf n _ = isLeaf n
-    nodeIsRoot n _ = isRoot n
     update t new   = t {nodes = nodes t // fmap (\n -> (code n, n)) new}
     numNodes       = length . nodes 
     addNode t n    = DAG nodes2 edges2 reroot
@@ -333,11 +332,11 @@ toTopo tree = TopoDAG $ nodeToTopo tree (nodes tree V.! root tree)
 -- | convert a given node to topo
 nodeToTopo :: DAG -> NodeInfo -> Topo
 nodeToTopo inDAG curNode
-    | isLeaf curNode = leaf
+    | N.nodeIsLeaf curNode inDAG = leaf
     | otherwise = leaf {TN.children = childDAGs}
       where
           childDAGs = fmap (\i -> nodeToTopo inDAG (nodes inDAG V.! i)) (children curNode)
-          leaf = TN.TopoNode (isRoot curNode) (isLeaf curNode) (name curNode) mempty (encoded curNode) (packed curNode) (preliminary curNode) 
+          leaf = TN.TopoNode (isRoot curNode) (N.nodeIsLeaf curNode inDAG) (name curNode) mempty (encoded curNode) (packed curNode) (preliminary curNode) 
                   (final curNode) (temporary curNode) (aligned curNode) (random curNode) (union curNode) (single curNode) (gapped curNode) (localCost curNode) (totalCost curNode)
 
 -- | makeEdges is a small function assisting attachAt

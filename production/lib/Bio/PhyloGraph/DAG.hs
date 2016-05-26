@@ -11,8 +11,6 @@
 -- Instances and other stuff for a DAG
 --
 -----------------------------------------------------------------------------
-{-# LANGUAGE TypeSynonymInstances, FlexibleInstances, MultiParamTypeClasses #-}
-{-# OPTIONS_GHC -fno-warn-orphans #-}
 
 module Bio.PhyloGraph.DAG
   ( StandardDAG(..)
@@ -26,3 +24,5 @@ module Bio.PhyloGraph.DAG
   , arbitraryDAGGS
   ) where
 
+import Bio.PhyloGraph.DAG.Class
+import Bio.PhyloGraph.DAG.Internal
