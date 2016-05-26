@@ -41,8 +41,6 @@ naiveDO char1 char2 meta
             (shorterChar, longerChar, longLen) = if char1Len > char2Len
                                          then (char2, char1, char1Len)
                                          else (char1, char2, char2Len)
-            --firstMatRow = firstAlignRow longerChar longLen 0 0 meta
-            --traversalMat = {-trace ("first row " ++ show firstMatRow) $-} firstMatRow `joinMat` getAlignRows longerChar shorterChar 1 firstMatRow meta
             traversalMat = getAlignMat longerChar shorterChar meta
             cost = --trace ("get cost on " ++ show traversalMat) $
                     getMatrixCost traversalMat
