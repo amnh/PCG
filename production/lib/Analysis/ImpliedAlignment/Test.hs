@@ -15,10 +15,12 @@
 
 module Analysis.ImpliedAlignment.Test where
 
+import           Analysis.Parsimony.Binary.Optimization
 import           Analysis.General.NeedlemanWunsch
 import           Analysis.ImpliedAlignment.Standard
 import           Bio.Character.Dynamic.Coded
 import           Bio.Character.Parsed
+import           Bio.Metadata
 import           Bio.PhyloGraph
 
 import           Data.Alphabet
@@ -32,7 +34,7 @@ import qualified Data.Set as S
 import qualified Data.Vector    as V
 import qualified Test.Custom.Types as T
 import           Test.Tasty
---import           Test.Tasty.HUnit
+import           Test.Tasty.HUnit
 import           Test.Tasty.QuickCheck
 import           Test.QuickCheck.Arbitrary.Instances
 import Debug.Trace
@@ -44,7 +46,7 @@ testSuite = testGroup "Implied Alignment"
           ]
 
 fullIA :: TestTree
-fullIA = testGroup "Full alignment properties" [lenHolds, twoRuns]
+fullIA = testGroup "Full alignment properties" [lenHolds, twoRuns, checkDOResult1]
     where
         lenHolds = testProperty "The sequences on a tree are longer or the same at end" checkLen
 
@@ -53,6 +55,11 @@ fullIA = testGroup "Full alignment properties" [lenHolds, twoRuns]
         rootTest = T.TestNode 0 True False [] [1,2] mempty mempty mempty mempty mempty mempty mempty 0 0
         leftTest = rootTest {T.code = 1, T.isRoot = False, T.isLeaf = True, T.parents = [0], T.children = [], T.encoded = encodeThem $ pure $ V.fromList [["A"], ["T"], ["T"]]}
         rightTest = leftTest {T.code = 2, T.encoded = encodeThem $ pure $ V.fromList [["A"], ["G"]]}
+        cherry1 = V.fromList $ [rootTest, leftTest, rightTest]
+        doMeta    = CharMeta DirectOptimization bioAlph "" False False 1 mempty (emptyChar, emptyChar) 0 (GeneralCost 1 1)
+        doResult1 = allOptimization 1 (pure doMeta) cherry1
+        expectedDO = V.fromList $ [rootTest {T.final = encodeThem $ pure $ V.fromList [["A"], ["-"], ["T", "G"]]}, leftTest, rightTest]
+        checkDOResult1 = testCase "On a simple cherry, DO behaves as expected" (expectedDO @=? doResult1)
 
 checkLen :: StandardSolution -> Bool
 checkLen inSolution = checkLS

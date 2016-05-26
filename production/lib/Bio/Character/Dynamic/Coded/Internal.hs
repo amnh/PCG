@@ -140,7 +140,7 @@ instance EncodableDynamicCharacter DynamicChar where
                          , show i
                          , " requested, and there are "
                          , show $ olength dc
-                         , " taxa."
+                         , " characters."
                          ]
 
   lookupChar (DC bm) i

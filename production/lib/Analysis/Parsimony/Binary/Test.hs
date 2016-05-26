@@ -51,6 +51,7 @@ testSuite = testGroup "Binary optimization" [doProperties, fitchProperties, trav
 doProperties :: TestTree
 doProperties = testGroup "Properties of the DO algorithm"
       [ idHolds
+      , simpleDO1
       ]
     where
         idHolds = testProperty "When DO runs a sequence against itself, get input as result" checkID
@@ -59,6 +60,13 @@ doProperties = testGroup "Properties of the DO algorithm"
                 checkID inSeq = --trace ("main result of DO " ++ show main ++ " with cost " ++ show cost ++ " with right " ++ show right)
                                 main == filterGaps inSeq && cost == 0 && gapped == inSeq && left == inSeq && right == inSeq
                     where (main, cost, gapped, left, right) = naiveDO inSeq inSeq doMeta
+
+        seq1 = encodeDynamic standardAlph (V.fromList [["A"], ["T"], ["T"]])
+        seq2 =  encodeDynamic standardAlph (V.fromList [["A"], ["G"]])
+        result1 = naiveDO seq1 seq2 doMeta
+        --expected1 :: (DynamicChar, Double, DynamicChar, DynamicChar, DynamicChar)
+        expected1 = (encodeDynamic standardAlph (V.fromList [["A"], ["G", "T"]]), 2.0, encodeDynamic standardAlph (V.fromList [["A"], ["-"], ["G", "T"]]), seq1, encodeDynamic standardAlph (V.fromList [["A"], ["-"], ["G"]]))
+        simpleDO1 = testCase "One a simple test, DO gives expected result: ATT and AG -> A-[GT] or AG-" (expected1 @=? result1)
 
 -- | Check properties of the Fitch algorithm
 fitchProperties :: TestTree

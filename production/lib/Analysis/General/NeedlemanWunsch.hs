@@ -25,6 +25,8 @@ import Data.Matrix.NotStupid   (Matrix, getElem, nrows, ncols, (<->), matrix, fr
 import Data.Ord
 import Data.Vector   (Vector, cons, toList, (!))
 
+import Debug.Trace
+
 -- | The direction to align the character at a given matrix point.
 data Direction = LeftDir | DiagDir | DownDir deriving (Eq, Show)
 
@@ -57,12 +59,14 @@ needlemanWunsch char1 char2 meta = (seq1Align, seq2Align)
 -- Takes in two sequences (the longer first) and the metadata
 -- Returns an alignment matrix
 getAlignMat :: (SeqConstraint s, Metadata m s) => s -> s -> m -> AlignMatrix s
+--getAlignMat char1 char2 meta | trace ("get alignment matrix of characters " ++ show char1 ++", " ++ show char2) False = undefined
 getAlignMat char1 char2 meta = result
     where
-        result = matrix (numChars char1 + 1) (numChars char2 + 1) generateMat
+        result = matrix (numChars char2 + 1) (numChars char1 + 1) generateMat
         -- | Internal generator function for the matrix
         -- Deals with both first row and other cases, a merge of two previous algorithms
         generateMat :: (Int, Int) -> (Double, Direction, BitVector)
+        --generateMat (row, col) | trace ("generateMat at " ++ show (row,col)) False = undefined
         generateMat (row, col)
             | row == 0 && col == 0                  = (0, DiagDir, gapChar char2)
             | row == 0 && leftChar /= gapChar char1   = (prevCost + indCost, LeftDir, leftChar)
