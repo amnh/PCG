@@ -98,28 +98,32 @@ numeratePreorder inTree curNode inMeta curCounts
     | isLeafNode = (curCounts, inTree)
     | leftOnly =
         let
-            (alignedCur, alignedLeft)                        = alignAndAssign curNode (fromJust $ leftChild curNode inTree)
-            (leftChildHomolog, counterLeft, insertionEvents) = numerateNode alignedCur alignedLeft curCounts inMeta
-            backPropagatedTree                               = backPropagation inTree leftChildHomolog insertionEvents
-            editedTreeLeft                                   = backPropagatedTree `update` [leftChildHomolog]
+            {-(alignedCur, alignedLeft)                        = alignAndAssign curNode (fromJust $ leftChild curNode inTree)
+            (leftChildHomolog, counterLeft, insertionEvents) = numerateNode alignedCur alignedLeft curCounts inMeta-}
+            (leftChildHomolog, counterLeft, insertionEvents) = alignAndNumerate curNode (fromJust $ leftChild curNode inTree) curCounts inMeta
+            {-backPropagatedTree                               = backPropagation inTree leftChildHomolog insertionEvents
+            editedTreeLeft                                   = backPropagatedTree `update` [leftChildHomolog]-}
+            editedTreeLeft                                   = propagateIt inTree leftChildHomolog insertionEvents
             (leftRecurseCount, leftRecurseTree)              = numeratePreorder editedTreeLeft leftChildHomolog inMeta counterLeft
         in (leftRecurseCount, leftRecurseTree)
     | rightOnly =
         let
-            (alignedCur, alignedRight)                         = alignAndAssign curNode (fromJust $ rightChild curNode inTree)
-            (rightChildHomolog, counterRight, insertionEvents) = numerateNode alignedCur alignedRight curCounts inMeta
-            backPropagatedTree                                 = backPropagation inTree rightChildHomolog insertionEvents
-            editedTreeRight                                    = backPropagatedTree `update` [rightChildHomolog]
+            {-(alignedCur, alignedRight)                         = alignAndAssign curNode (fromJust $ rightChild curNode inTree)
+            (rightChildHomolog, counterRight, insertionEvents) = numerateNode alignedCur alignedRight curCounts inMeta-}
+            (rightChildHomolog, counterRight, insertionEvents) = alignAndNumerate curNode (fromJust $ rightChild curNode inTree) curCounts inMeta
+            {-backPropagatedTree                                 = backPropagation inTree rightChildHomolog insertionEvents
+            editedTreeRight                                    = backPropagatedTree `update` [rightChildHomolog]-}
+            editedTreeRight                                    = propagateIt inTree rightChildHomolog insertionEvents
             (rightRecurseCount, rightRecurseTree)              = numeratePreorder editedTreeRight rightChildHomolog inMeta counterRight
         in (rightRecurseCount, rightRecurseTree)
     | otherwise =
         let
-            -- TODO: should I switch the order of align and numerate? probs
-            (alignedLCur, alignedLeft)                              = alignAndAssign curNode (fromJust $ leftChild curNode inTree)
-            ( leftChildHomolog, counterLeft , insertionEventsLeft)  = numerateNode alignedLCur alignedLeft curCounts inMeta
+            {-(alignedLCur, alignedLeft)                              = alignAndAssign curNode (fromJust $ leftChild curNode inTree)
+            ( leftChildHomolog, counterLeft , insertionEventsLeft)  = numerateNode alignedLCur alignedLeft curCounts inMeta-}
+            ( leftChildHomolog, counterLeft , insertionEventsLeft)  = alignAndNumerate curNode (fromJust $ rightChild curNode inTree) curCounts inMeta
             backPropagatedTree                                      = backPropagation inTree leftChildHomolog insertionEventsLeft
             (leftRecurseCount, leftRecurseTree)                     = numeratePreorder backPropagatedTree leftChildHomolog inMeta counterLeft
-            leftRectifiedTree                                       = leftRecurseTree `update` [leftChildHomolog]
+            leftRectifiedTree                                       = leftRecurseTree `update` [leftChildHomolog] -- TODO: Check this order
             
             curNode'                                                = leftRectifiedTree `getNthNode` (getCode curNode)
             (alignedRCur, alignedRight)                             = alignAndAssign curNode' (fromJust $ rightChild curNode' leftRectifiedTree)
@@ -137,6 +141,10 @@ numeratePreorder inTree curNode inMeta curCounts
             rightOnly  = isNothing $ leftChild curNode inTree
             defaultHomologs = if V.length curSeqs == 0 then V.replicate (V.length inMeta) mempty --trace ("defaultHomologs " ++ show (V.length inMeta) ++ show (V.length curSeqs))
                                 else imap (\i _ -> generate (numChars (curSeqs ! i)) (+ 1)) inMeta
+            propagateIt tree child events = tree' `update` [child]
+                                            where tree' = backPropagation tree child events
+            alignAndNumerate n1 n2 counts m = numerateNode n1Align n2Align counts m
+                                                where (n1Align, n2Align) = alignAndAssign n1 n2
 
             -- Simple wrapper to align and assign using DO
             --alignAndAssign :: NodeConstraint n s => n -> n -> (n, n)
@@ -236,9 +244,9 @@ numerateOne ancestorSeq descendantSeq ancestorHomologies initialCounter = (desce
           -- Biological "Nothing" case
           | ancestorCharacter == gapCharacter && descendantCharacter == gapCharacter = Accum (insert i (i + childOffset    ) indexMapping, counter    , i + 1, ancestorOffset    , childOffset    , insertionEventIndicies)
           -- Biological deletion event case
-          | ancestorCharacter /= gapCharacter && descendantCharacter == gapCharacter = Accum (insert i (i + childOffset + 1) indexMapping, counter + 1, i + 1, ancestorOffset    , childOffset + 1, insertionEventIndicies)
+          | ancestorCharacter /= gapCharacter && descendantCharacter == gapCharacter = Accum (insert i (i + childOffset    ) indexMapping, counter + 1, i + 1, ancestorOffset    , childOffset + 1, insertionEventIndicies)
           -- Biological insertion event case
-          | ancestorCharacter == gapCharacter && descendantCharacter /= gapCharacter = Accum (insert i (i + childOffset    ) indexMapping, counter + 1, i + 1, ancestorOffset + 1, childOffset    , (i + childOffset) `IS.insert` insertionEventIndicies)
+          | ancestorCharacter == gapCharacter && descendantCharacter /= gapCharacter = Accum (insert i (i + childOffset + 1) indexMapping, counter + 1, i + 1, ancestorOffset + 1, childOffset    , (i + childOffset) `IS.insert` insertionEventIndicies)
           -- Biological substitution or non-substitution case
           | otherwise {- Both not gap -}                                             = Accum (insert i (i + childOffset)     indexMapping, counter    , i + 1, ancestorOffset    , childOffset    , insertionEventIndicies)
           where
