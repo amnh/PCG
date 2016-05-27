@@ -149,15 +149,13 @@ instance BinaryTree TestDAG TestNode where
 instance RoseTree TestDAG TestNode where
     parent n t = headMay $ fmap (\i -> t V.! i) (parents n)
 
--- We don't need this and it has partial functions
-{-
+-- TODO: fix this instance, it doesn't make sense, but we need it
 instance StandardDAG TestDAG TestNode Int where
   getNodes  = id
   setNodes _ t = t
   getEdges = error "TestDAG does not have edge structure"
   setEdges = error "TestDAG does not have edge structure"
   getRoot = N.root 
--}
 
 instance RefNode TestNode where
   getCode = code
