@@ -17,7 +17,7 @@ module Bio.Metadata.Class where
 
 import Bio.Metadata.Internal
 import Data.Alphabet
-import Data.Matrix (getElem)
+import Data.Matrix.NotStupid (getElem)
 
 -- | Represents a type from which character information can be queried.
 class Metadata m s | m -> s where
