@@ -11,7 +11,7 @@
 -- Types for DAG representation
 --
 -----------------------------------------------------------------------------
-{-# LANGUAGE TypeSynonymInstances, FlexibleInstances, MultiParamTypeClasses, TypeFamilies #-}
+{-# LANGUAGE BangPatterns, FlexibleInstances, MultiParamTypeClasses, TypeFamilies, TypeSynonymInstances #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
 
@@ -26,11 +26,13 @@ import           Bio.PhyloGraph.Forest
 import qualified Bio.PhyloGraph.Network             as N
 import qualified Bio.PhyloGraph.Network.Subsettable as SN
 import           Bio.PhyloGraph.Node
+import           Bio.PhyloGraph.Node.Topological          (TopoNode)
 import qualified Bio.PhyloGraph.Node.Topological    as TN
 import qualified Bio.PhyloGraph.Tree.EdgeAware      as ET
 import           Bio.PhyloGraph.Tree.Binary
 import qualified Bio.PhyloGraph.Tree.Referential    as RT
 import           Bio.PhyloGraph.Tree.Rose
+import           Control.Arrow                             ((&&&))
 import           Data.Alphabet
 import           Data.Bifunctor
 import           Data.BitVector                     hiding (foldr,index)
@@ -41,14 +43,17 @@ import           Data.IntSet                               (IntSet)
 import qualified Data.IntSet                        as IS
 import           Data.IntMap                               (IntMap)
 import qualified Data.IntMap                        as IM
-import           Data.Key                                  ((!),lookup)
+import           Data.Key
+import           Data.List                                 (sort)
+import           Data.Map                                  (Map)
+import qualified Data.Map                           as M
 import           Data.Maybe
 import           Data.Monoid
 import           Data.MonoTraversable
 import           Data.Vector                               ((//), Vector, elemIndex)
 import qualified Data.Vector                        as V
 import qualified File.Format.Newick                 as New
-import           Prelude                            hiding (lookup)
+import           Prelude                            hiding (lookup, zip)
 import           Test.Tasty.QuickCheck
 
 
@@ -57,7 +62,7 @@ type NodeInfo = Node
 
 --TODO: This shouldn't be tightly bound to DynamicChar
 -- | Alias for Node used in 'TopoDAG'
-type Topo = TN.TopoNode DynamicChar
+type Topo = TopoNode DynamicChar
 
 -- | A dag is an element of a forest, stored referentially
 data DAG 
@@ -152,20 +157,6 @@ binaryTreeToDAG binaryRoot = DAG
        inNodeSet (Just parentReference) = IS.insert parentReference mempty
        inNodeSet  Nothing               = mempty
 
-{-
-instance Arbitrary a => Arbitrary (TestingBinaryTree a) where
-    arbitrary = do
-        leafCount <- (getPositive <$> (arbitrary :: Gen (Positive Int))) `suchThat` (<=10)
-        leaves    <- (fmap Leaf) <$> vectorOf leafCount arbitrary
-        f leaves
-      where
-        f :: Eq a => [TestingBinaryTree a] -> Gen (TestingBinaryTree a)
-        f [x] = pure x
-        f subTrees  = do
-            left:right:remaining <- shuffle subTrees 
-            f (Internal left right : remaining)
--}
-
 instance Arbitrary (TestingBinaryTree Node) where
     arbitrary = do
         leafCount <- (getPositive <$> (arbitrary :: Gen (Positive Int))) `suchThat` (\x -> 2 <= x && x <= 10)
@@ -194,13 +185,6 @@ maxTaxa     = 10
 -- TODO: When you delete this, delete maxChildren, above.
 arbitraryDAGGS :: HashMap String ParsedChars -> Vector (CharacterMetadata DynamicChar) -> Gen DAG
 arbitraryDAGGS allSeqs metadata = fromTopo . TopoDAG <$> TN.arbitraryTopoGivenCSNA maxChildren (H.toList allSeqs) metadata (0, maxTaxa)
-
--- TODO: I'm pretty sure this is also an improper use of monoid, as graphs can't be "appended". Rather, the
--- can be joined, in various ways.
-instance Monoid DAG where
-    mempty = DAG mempty mempty 0
-    -- append is adding dag2 to dag1 just below the root---which isn't actually appending, of course.
-    mappend dag1 dag2 = attachAt dag1 dag2 (N.root dag1)
 
 instance Monoid TopoDAG where
     mempty = TopoDAG mempty
@@ -331,22 +315,87 @@ grabAt inTree hangNode = fromTopo rootedTopo
     topo = nodeToTopo inTree hangNode
     rootedTopo = TopoDAG topo
 
--- | Function to go from referential to topo
--- TODO define all these conversion functions
+-- | Function to go from a topological structure to a DAG
+--   Conversion is performed /strictly/.
 fromTopo :: TopoDAG -> DAG
-fromTopo (TopoDAG inTopo) = internalFromTopo inTopo
-    where
-        internalFromTopo :: Topo -> DAG
-        internalFromTopo topo
-            | TN.isLeaf topo = singletonDAG topo 
-            | otherwise = foldr (\n acc -> acc <> internalFromTopo n) (singletonDAG topo) (TN.children topo)
-                where
-                    -- | Function to convert a node to a tree for folding
-                    singletonDAG :: Topo -> DAG
-                    singletonDAG topoNode = 
-                      let myNode = Node 0 (TN.name topoNode) (TN.isRoot topoNode) (TN.isLeaf topoNode) [] [] (TN.encoded topoNode) (TN.packed topoNode) (TN.preliminary topoNode) 
-                                              (TN.final topoNode) (TN.temporary topoNode) (TN.aligned topoNode) mempty mempty mempty mempty mempty (TN.localCost topoNode) (TN.totalCost topoNode)
-                      in DAG (pure myNode) (pure mempty) 0 
+fromTopo topoDag = DAG
+               { nodes = nodeVector
+               , edges = edgeVector
+               , root  = rootRef
+               }
+  where
+    rootNode = structure topoDag
+    !rootRef = maybe 0 code . find isRoot $ toList nodeVector
+    
+    -- Step 1: We assume that each node in the TopoDAG has a unique 'name' field.
+    -- We collect the names and assign each unique name a unique index in the range [0,|T|-1].
+    nameEnumeration :: Map String Int
+    nameEnumeration = M.fromList $ zip (sort $ getNames rootNode) [0..]
+      where
+        getNames n = (TN.name n :) . concatMap getNames $ TN.children n
+
+    -- Step 2: We create an referential lookup table using the name based indicies.
+    reference :: IntMap (IntSet, Topo, IntSet)
+    reference = f Nothing rootNode
+      where
+        f :: Maybe Int -> Topo -> IntMap (IntSet, Topo, IntSet)
+        f parentMay e = IM.insert nodeIndex (parentSet, e, childSet) $ foldMap (f (Just nodeIndex)) children'
+          where
+            nodeIndex = getIndex e
+            getIndex  = (nameEnumeration !) . TN.name 
+            childSet  = IS.fromList $ getIndex <$> children'
+            children' = TN.children e
+            parentSet = maybe mempty IS.singleton parentMay
+
+    --Step 3: We generate the node vector
+    nodeVector :: Vector NodeInfo
+    !nodeVector = V.generate (length reference) f
+      where
+        f i = Node 
+            { code        = i
+            , name        = TN.name topoRef
+            , isRoot      = null parents'
+            , isLeaf      = null children'
+            , children    = children'
+            , parents     = parents'
+            , encoded     = TN.encoded     topoRef
+            , packed      = TN.packed      topoRef
+            , preliminary = TN.preliminary topoRef
+            , final       = TN.final       topoRef
+            , temporary   = TN.temporary   topoRef
+            , aligned     = TN.aligned     topoRef
+            , random      = TN.random      topoRef
+            , union       = TN.union       topoRef
+            , single      = TN.single      topoRef
+            , gapped      = TN.gapped      topoRef
+            , iaHomology  = mempty
+            , localCost   = TN.localCost   topoRef
+            , totalCost   = TN.totalCost   topoRef
+            }
+          where
+            (parentRefs, topoRef, childRefs) = reference ! i
+            children' = otoList childRefs
+            parents'  = otoList parentRefs
+
+    -- Step 4: We generate the edge set vector
+    edgeVector :: Vector EdgeSet
+    !edgeVector = V.generate (length reference) f
+      where
+        f i = EdgeSet
+            { inNodes  = IS.fromList $ parents nodeData
+            , outNodes = IM.fromList $ (id &&& g) <$> children nodeData
+            }
+          where
+            nodeData = nodeVector V.! i
+            g j = EdgeInfo
+                { len         = localCost nodeData
+                , origin      = nodeData
+                , terminal    = childData
+                , virtualNode = Nothing
+                }
+              where
+                childData = nodeVector V.! j
+
 
 -- | Function to go from topo to referential
 toTopo :: DAG -> TopoDAG
@@ -373,11 +422,11 @@ makeEdges node inDAG = EdgeSet (IS.fromList $ parents node) out
 -- | resetPos is a small function assisting the joining of two subtrees
 -- simple function to reset positioning of a node
 resetPos :: NodeInfo -> DAG -> Int -> NodeInfo
-resetPos node prevDAG index =
+resetPos node prevDAG i =
   let
-    leaf = null $ children node
+    leaf  = null $ children node
     nroot = null (parents node) && null (nodes prevDAG)
-  in node {code = index, isLeaf = leaf, isRoot = nroot}
+  in node {code = i, isLeaf = leaf, isRoot = nroot}
 
 -- | addConnections is a small function assiting subtree joins
 -- it adds edges between a new node and an existing tree
@@ -393,22 +442,22 @@ addConnections newNode myNodes =
 -- | Convert from a Newick format to a current DAG
 fromNewick :: New.NewickForest -> Forest DAG
 --fromNewick forest | trace ("fromNewick on forest " ++ show forest) False = undefined
-fromNewick forest = fst $ foldr (\d (acc, counter) -> first (: acc) $ oneNewick counter d) ([], 0) forest
+fromNewick forest = fst $ foldr convertNewickForest ([], 1) forest
   where
-    oneNewick :: Int -> New.NewickNode -> (DAG, Int)
-    --oneNewick new | trace ("oneNewick on tree " ++ show new) False = undefined
-    oneNewick count new = first fromTopo $ newickTopo count new
-    
-    newickTopo :: Int -> New.NewickNode -> (TopoDAG, Int)
-    --newickTopo tree0 | trace ("newickTopo on tree " ++ show tree0) False = undefined
-    newickTopo count tree0 = first (TopoDAG . (\x -> x {TN.isRoot = True})) $ internalNewick count tree0 
+    convertNewickForest newickRoot (acc, counter) = (newickToDAG counter newickRoot : acc, counter + 1)
+    newickToDAG :: Int            -- ^ The one-indexed location of the DAG in the Forest of DAGs
+                -> New.NewickNode -- ^ The root node of the topological representation of the DAG
+                -> DAG            -- ^ The resulting DAG
+    --newickToDAG tree0 | trace ("newickTopo on tree " ++ show tree0) False = undefined
+    newickToDAG forestCount tree0 = fromTopo . TopoDAG . (\x -> x {TN.isRoot = True}) . fst $ internalNewick 1 tree0 
       where
         internalNewick :: Int -> New.NewickNode -> (Topo, Int)
         internalNewick nameCount inTree = (outNode, nextNameCount)
           where
-            myName = fromMaybe ("HTU " ++ show nameCount) (New.newickLabel inTree)
-            baseCase = ([], if isNothing $ New.newickLabel inTree then nameCount + 1 else nameCount)
-            myCost = fromMaybe 0 (New.branchLength inTree)
+            myName      = fromMaybe defaultName (New.newickLabel inTree)
+            defaultName = "HTU " <> show forestCount <> ":" <> show nameCount
+            baseCase    = ([], if isNothing $ New.newickLabel inTree then nameCount + 1 else nameCount)
+            myCost      = fromMaybe 0 (New.branchLength inTree)
             --recurse = V.toList $ V.imap (\i n -> internalNewick n (nameCount + i + 1)) (V.fromList $ New.descendants inTree) 
-            (recurse,nextNameCount) = foldr (\n (acc,i) -> first (: acc) $ internalNewick i n) baseCase (New.descendants inTree) 
-            outNode = TN.TopoNode False (null $ New.descendants inTree) myName recurse mempty mempty mempty mempty mempty mempty mempty mempty mempty mempty myCost 0
+            (recurse, nextNameCount) = foldr (\n (acc,i) -> first (: acc) $ internalNewick i n) baseCase (New.descendants inTree) 
+            outNode     = TN.TopoNode False (null $ New.descendants inTree) myName recurse mempty mempty mempty mempty mempty mempty mempty mempty mempty mempty myCost 0

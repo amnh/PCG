@@ -57,7 +57,7 @@ graphOptimization weighting meta inGraph = setTrees inGraph $ fmap (allOptimizat
 -- Takes in an overall weight, a vector of metadata, and a tree
 -- Returns a tree with values assigned
 allOptimization :: (TreeConstraint' t n s, Metadata m s) => Double -> Vector m -> t -> t
-allOptimization _ _ inTree | trace ("allOptimization " ++ show inTree) False = undefined
+--allOptimization _ _ inTree | trace ("allOptimization " ++ show inTree) False = undefined
 allOptimization weighting meta inTree =
     let
         downPass = optimizationPreorder weighting inTree meta

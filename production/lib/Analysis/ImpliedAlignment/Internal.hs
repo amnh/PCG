@@ -31,7 +31,7 @@ import Data.Vector
 type SolutionConstraint r m f t n e s = (GeneralSolution r f, MetadataSolution r m, Metadata m s, ForestConstraint f t n e s, Show r)
 type ForestConstraint       f t n e s = (GeneralForest f t, Show f, TreeConstraint t n e s)
 type TreeConstraint           t n e s = (BinaryTree t n, Network t n, ReferentialTree t n, StandardDAG t n e, NodeConstraint n s, Show t)
-type NodeConstraint             n   s = (FinalNode n s, IANode n, RefNode n, SeqConstraint s, Show n)
+type NodeConstraint             n   s = (FinalNode n s, IANode n, RefNode n, SeqConstraint s, Show n, EncodedNode n s, PreliminaryNode n s)
 type SeqConstraint                  s = (EncodableDynamicCharacter s, Bits s, Show s, Memoizable s)
 
 -- The counts are a vector of ints

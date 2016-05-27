@@ -4,7 +4,7 @@ module Test.Custom.Types where
 
 import Data.Char
 import Test.QuickCheck
-
+import Test.Custom.Tree 
 import           Bio.Character.Dynamic.Coded
 import           Bio.PhyloGraph.DAG.Class
 import qualified Bio.PhyloGraph.Network           as N
@@ -98,8 +98,8 @@ data TestNode = TestNode  { code :: Int
                           } deriving (Eq, Show)
 
 instance EN.EncodedNode TestNode DynamicChar where
-  getEncoded = encoded
-  setEncoded n s = n {encoded = s}
+    getEncoded = encoded
+    setEncoded n s = n {encoded = s}
 
 instance FN.FinalNode TestNode DynamicChar where
     getFinal           = final
@@ -149,6 +149,7 @@ instance BinaryTree TestDAG TestNode where
 instance RoseTree TestDAG TestNode where
     parent n t = headMay $ fmap (\i -> t V.! i) (parents n)
 
+-- TODO: fix this instance, it doesn't make sense, but we need it
 instance StandardDAG TestDAG TestNode Int where
   getNodes  = id
   setNodes _ t = t
