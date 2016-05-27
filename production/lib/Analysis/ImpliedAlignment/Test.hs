@@ -46,7 +46,7 @@ testSuite = testGroup "Implied Alignment"
           ]
 
 fullIA :: TestTree
-fullIA = testGroup "Full alignment properties" [checkDOResult1, checkIAResult1, lenHolds, twoRuns]
+fullIA = testGroup "Full alignment properties" [lenHolds, twoRuns, checkDOResult1, checkIAResult1]
     where
         lenHolds = testProperty "The sequences on a tree are longer or the same at end" checkLen
 

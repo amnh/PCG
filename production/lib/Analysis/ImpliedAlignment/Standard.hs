@@ -93,8 +93,8 @@ makeAlignment n seqLens = makeAlign (getFinalGapped n) (getHomologies n)
 -- outputs a resulting vector of counters and a tree with the assignments
 -- TODO: something seems off about doing the DO twice here
 numeratePreorder :: (TreeConstraint t n e s, Metadata m s) => t -> n -> Vector m -> Counts -> (Counts, t)
-numeratePreorder _ curNode _ _ | trace ("numeratePreorder at " ++ show (getCode curNode)) False = undefined
-numeratePreorder initTree initNode inMeta curCounts
+numeratePreorder initTree curNode _ _ | trace ("numeratePreorder at " ++ show initTree) False = undefined
+numeratePreorder initTree Node inMeta curCounts
     | isLeafNode =  trace "leaf case" $ (curCounts, inTree)
     | leftOnly = trace "left only case" $
         let
@@ -136,9 +136,9 @@ numeratePreorder initTree initNode inMeta curCounts
 
         where
             -- Deal with the root case by making sure it gets default homologies
-            inTree = if nodeIsRoot curNode initTree then initTree `update` [setHomologies curNode defaultHomologs]
+            inTree = trace ("at root " ++ show (nodeIsRoot curNode initTree)) $ if nodeIsRoot curNode initTree then initTree `update` [setHomologies initNode defaultHomologs]
                         else initTree
-            curNode = getNthNode inTree (getCode initNode) 
+            curNode = getNthNode inTree (getCode initNode)
             curSeqs = getFinalGapped curNode
             isLeafNode = leftOnly && rightOnly
             leftOnly   = isNothing $ rightChild curNode inTree
@@ -147,7 +147,7 @@ numeratePreorder initTree initNode inMeta curCounts
                                 else imap (\i _ -> generate (numChars (curSeqs ! i)) (+ 1)) inMeta
             propagateIt tree child events = tree' `update` [child]
                                             where tree' = backPropagation tree child events
-            alignAndNumerate n1 n2 counts m = {-trace ("numeration result " ++ show (numerateNode n1Align n2Align counts m)) $-} numerateNode n1Align n2Align counts m
+            alignAndNumerate n1 n2 counts m = trace ("alignment result " ++ show n1Align) $ numerateNode n1Align n2Align counts m
                                                 where (n1Align, n2Align) = alignAndAssign n1 n2
 
             -- Simple wrapper to align and assign using DO
@@ -167,7 +167,7 @@ numeratePreorder initTree initNode inMeta curCounts
 -- takes in a tree, a current node, and a vector of insertion event sets
 -- return a tree with the insertion events incorporated
 backPropagation :: TreeConstraint t n e s  => t -> n -> Vector IntSet -> t
-backPropagation tree node insertionEvents | trace ("backPropagation at node " ++ show (getCode node)) False = undefined
+--backPropagation tree node insertionEvents | trace ("backPropagation at node " ++ show (getCode node)) False = undefined
 backPropagation tree node insertionEvents
   | all onull insertionEvents = tree
   | otherwise =
@@ -222,12 +222,12 @@ accountForInsertionEvents homologies insertionEvents = V.generate (length homolo
 -- given the ancestor node, ancestor node, current counter vector, and vector of metadata
 -- returns a tuple with the node with homologies incorporated, and a returned vector of counters
 numerateNode :: (NodeConstraint n s, Metadata m s) => n -> n -> Counts -> Vector m -> (n, Counts, Vector IntSet) 
-numerateNode ancestorNode childNode _ _ | trace ("numerateNode on " ++ show ancestorNode ++" and " ++ show childNode) False = undefined
+--numerateNode ancestorNode childNode _ _ | trace ("numerateNode on " ++ show ancestorNode ++" and " ++ show childNode) False = undefined
 numerateNode ancestorNode childNode initCounters inMeta = (setHomologies childNode homologs, counts, insertionEvents)
         where
             numeration = --trace ("numeration zip on " ++ show (getForAlign ancestorNode) ++" and " ++ show (getForAlign childNode)) 
                             zipWith4 numerateOne (getForAlign ancestorNode) (getForAlign childNode) (getHomologies ancestorNode) initCounters 
-            (homologs, counts, insertionEvents) = trace ("numerate results " ++ show numeration) $ unzip3 numeration
+            (homologs, counts, insertionEvents) = {-trace ("numerate results " ++ show numeration) $-} unzip3 numeration
             generateGapChar m = setBit (bitVec 0 (0 :: Integer)) (length (getAlphabet m) - 1)   
 
             -- TODO: make sure a sequence always ends up in FinalGapped to avoid this decision tree
@@ -239,7 +239,7 @@ numerateNode ancestorNode childNode initCounters inMeta = (setHomologies childNo
 
 
 numerateOne :: SeqConstraint s => s -> s -> Homologies -> Counter -> (Homologies, Counter, IntSet)
-numerateOne ancestorSeq descendantSeq ancestorHomologies initialCounter | trace ("numerateOne on " ++ show ancestorSeq ++" and " ++ show descendantSeq) False = undefined
+--numerateOne ancestorSeq descendantSeq ancestorHomologies initialCounter | trace ("numerateOne on " ++ show ancestorSeq ++" and " ++ show descendantSeq) False = undefined
 numerateOne ancestorSeq descendantSeq ancestorHomologies initialCounter = (descendantHomologies, counter', insertionEvents)
   where
     gapCharacter = gapChar descendantSeq
