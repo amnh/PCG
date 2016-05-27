@@ -66,7 +66,7 @@ instance Arbitrary (TopoNode b) where
 arbitraryTopoGivenCAL :: Int -> Alphabet String -> (Int, Int) -> Gen (TopoNode b)
 arbitraryTopoGivenCAL maxChildren inAlph (curLevel, maxLevel) = do
      let root = curLevel == 0
-     name  <- arbitrary :: Gen String
+     name'     <- arbitrary :: Gen String
      numChilds <- elements [0,2] -- for now the trees are binary
      let ncFinal = if curLevel >= maxLevel 
                    then 0 
@@ -78,7 +78,7 @@ arbitraryTopoGivenCAL maxChildren inAlph (curLevel, maxLevel) = do
      seqs     <- vectorOf 10 (arbitraryDynamicsGA inAlph)
      costLoc       <- arbitrary :: Gen Double
      costTot       <- arbitrary :: Gen Double
-     pure $ TopoNode root leaf name chillens (seqs !! 0) (seqs !! 1) (seqs !! 2) (seqs !! 3) (seqs !! 4) (seqs !! 5) (seqs !! 6) (seqs !! 7) (seqs !! 8) (seqs !! 9) costLoc costTot
+     pure $ TopoNode root leaf name' chillens (seqs !! 0) (seqs !! 1) (seqs !! 2) (seqs !! 3) (seqs !! 4) (seqs !! 5) (seqs !! 6) (seqs !! 7) (seqs !! 8) (seqs !! 9) costLoc costTot
 
 arbitraryTopoGivenCSNA :: Int -> [(String, ParsedChars)] -> Vector (CharacterMetadata DynamicChar) -> (Int, Int) -> Gen (TopoNode b)
 arbitraryTopoGivenCSNA maxChildren namesAndSeqs inMeta (curLevel, maxLevel) 
