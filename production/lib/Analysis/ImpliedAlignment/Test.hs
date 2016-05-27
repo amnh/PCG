@@ -50,20 +50,20 @@ fullIA = testGroup "Full alignment properties" [lenHolds, twoRuns, checkDOResult
     where
         lenHolds = testProperty "The sequences on a tree are longer or the same at end" checkLen
 
-        bioAlph = constructAlphabet . V.fromList . fmap pure $ "ACGT-"
-        encodeThem = V.fromList . map (encodeDynamic bioAlph)
-        rootTest = T.TestNode 0 True False [] [1,2] mempty mempty mempty mempty mempty mempty mempty 0 0
-        leftTest = rootTest {T.code = 1, T.isRoot = False, T.isLeaf = True, T.parents = [0], T.children = [], T.encoded = encodeThem $ pure $ V.fromList [["A"], ["T"], ["T"]]}
-        rightTest = leftTest {T.code = 2, T.encoded = encodeThem $ pure $ V.fromList [["A"], ["G"]]}
-        cherry1 = V.fromList $ [rootTest, leftTest, rightTest]
-        doMeta    = CharMeta DirectOptimization bioAlph "" False False 1 mempty (emptyChar, emptyChar) 0 (GeneralCost 1 1)
-        doResult1 = allOptimization 1 (pure doMeta) cherry1
-        expectedSeq = encodeThem $ pure $ V.fromList [["A"], ["T", "G"], ["T", "-"]]
-        newRoot = rootTest {T.preliminary = expectedSeq, T.aligned = expectedSeq, T.localCost = 2, T.totalCost = 2}
-        expectedDO = V.fromList $ [newRoot, leftTest, rightTest]
+        bioAlph        = constructAlphabet . V.fromList . fmap pure $ "ACGT-"
+        encodeThem     = V.fromList . map (encodeDynamic bioAlph)
+        rootTest       = T.TestNode 0 True False [] [1,2] mempty mempty mempty mempty mempty mempty mempty 0 0
+        leftTest       = rootTest {T.code = 1, T.isRoot = False, T.isLeaf = True, T.parents = [0], T.children = [], T.encoded = encodeThem $ pure $ V.fromList [["A"], ["T"], ["T"]]}
+        rightTest      = leftTest {T.code = 2, T.encoded = encodeThem $ pure $ V.fromList [["A"], ["G"]]}
+        cherry1        = V.fromList $ [rootTest, leftTest, rightTest]
+        doMeta         = CharMeta DirectOptimization bioAlph "" False False 1 mempty (emptyChar, emptyChar) 0 (GeneralCost 1 1)
+        doResult1      = allOptimization 1 (pure doMeta) cherry1
+        expectedSeq    = encodeThem $ pure $ V.fromList [["A"], ["T", "G"], ["T", "-"]]
+        newRoot        = rootTest {T.preliminary = expectedSeq, T.aligned = expectedSeq, T.localCost = 2, T.totalCost = 2}
+        expectedDO     = V.fromList $ [newRoot, leftTest, rightTest]
         checkDOResult1 = testCase "On a simple cherry, DO behaves as expected" (expectedDO @=? doResult1)
-        iaResult1 = impliedAlign expectedDO (pure doMeta)
-        expectedIA1 = IM.fromList [(1, encodeThem $ pure $ V.fromList [["A"], ["T"], ["T"]]), (2, encodeThem $ pure $ V.fromList [["A"], ["-"], ["G"]])]
+        iaResult1      = impliedAlign expectedDO (pure doMeta)
+        expectedIA1    = IM.fromList [(1, encodeThem $ pure $ V.fromList [["A"], ["T"], ["T"]]), (2, encodeThem $ pure $ V.fromList [["A"], ["-"], ["G"]])]
         checkIAResult1 = testCase "On the same cherry, IA gives the expected result" (expectedIA1 @=? iaResult1)
 
 checkLen :: StandardSolution -> Bool

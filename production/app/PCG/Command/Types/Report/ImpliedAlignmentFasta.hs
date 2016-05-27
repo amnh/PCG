@@ -69,11 +69,11 @@ iaOutput align solution = foldMapWithKey characterToFastaFile dynamicCharacterIn
     --
     -- Because 'dynamicCharacterIndiciesAndAlphabets' contains only dynamic
     -- characters, the resulting list of file content will contain a exactly one
-    -- filt content tuple for each dynamic character.
+    -- file content tuple for each dynamic character.
     --
     -- Type checker doesn't like the Int in this explicit type signature.
-    -- The type checker can infer the correct (complicated) type alby itself,
-    -- so we will let  it do that rather than listen to it complain.
+    -- The type checker *can* infer the correct (complicated) type all by itself,
+    -- so we will let it do that rather than listen to it complain.
     
     -- characterToFastaFile :: Int -> Alphabet -> [(FilePath, String)]
     characterToFastaFile i alpha = [(characterFileName, foldMapWithKey f nodeCharacterMapping)]
