@@ -130,9 +130,10 @@ getMatrixCost inAlign = c
 -- The same will be true in IA.
 -- | Memoized wrapper of the overlap function
 getOverlap :: (Metadata m s) => BitVector -> BitVector -> m -> (BitVector, Double)
---getOverlap inChar1 inChar2 meta | trace ("getOverlap on " ++ show inChar1) False = undefined
-getOverlap inChar1 inChar2 meta = memoize2 (overlap meta) inChar1 inChar2
+--getOverlap inChar1 inChar2 meta | trace ("getOverlap on " ++ show inChar1 ++", " ++ show inChar2) False = undefined
+getOverlap inChar1 inChar2 meta = result
     where
+        result = memoize2 (overlap meta) inChar1 inChar2
         -- | Gets the overlap state: intersect if possible and union if that's empty
         -- Takes two sequences and returns another
         overlap :: (Metadata m s) => m -> BitVector -> BitVector -> (BitVector, Double)
@@ -140,8 +141,8 @@ getOverlap inChar1 inChar2 meta = memoize2 (overlap meta) inChar1 inChar2
         overlap inMeta char1 char2
             | 0 == char1 || 0 == char2 = --trace ("overlap case 1: equals 0 ") $
                                             (zeroBitVec, 0)
-            | char1 .&. char2 == 0 = --trace ("overlap case 2: and empty") $
-                                        foldr ambigChoice (zeroBitVec, 0) allPossible
+            | char1 .&. char2 == 0 = --trace ("overlap case 2: and empty " ++ show allPossible) $
+                                        foldr1 ambigChoice allPossible
             | otherwise = --trace ("overlap case 3: and nonempty") $
                             (char1 .&. char2, 0)
             where
@@ -157,12 +158,13 @@ getOverlap inChar1 inChar2 meta = memoize2 (overlap meta) inChar1 inChar2
                 getCost (AffineCost _ _ _) _ _ = error "Cannot apply DO algorithm on affine cost"
 
                 -- get single character subsets from both
-                getSubs fullChar = foldr (\i acc -> if testBit fullChar i then (i, bit i) : acc else acc) mempty [0..(length $ getAlphabet inMeta)]
+                getSubs fullChar = foldr (\i acc -> if testBit fullChar i then (i, setBit (zeros $ width fullChar) i) : acc else acc) mempty [0..(width fullChar)]
                 -- make possible combinations with a double fold
                 matchSubs subList oneSub = foldr (\c acc -> getCost (getCosts inMeta) c oneSub : acc) mempty subList
                 matchBoth list1 list2 = foldr (\e acc -> matchSubs list1 e ++ acc) mempty list2
                 allPossible = matchBoth (getSubs char1) (getSubs char2)
                 -- now take an ambiguous minimum
+                --ambigChoice (val1, cost1) (val2, cost2) | trace ("ambigChoice on " ++ show val1 ++ show val2) False = undefined
                 ambigChoice (val1, cost1) (val2, cost2)
                     | cost1 == cost2 = (val1 .|. val2, cost1)
                     | cost1 < cost2 = (val1, cost1)

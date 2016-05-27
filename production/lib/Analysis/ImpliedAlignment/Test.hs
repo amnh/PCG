@@ -46,7 +46,7 @@ testSuite = testGroup "Implied Alignment"
           ]
 
 fullIA :: TestTree
-fullIA = testGroup "Full alignment properties" [lenHolds, twoRuns, checkDOResult1]
+fullIA = testGroup "Full alignment properties" [lenHolds, twoRuns, checkDOResult1, checkIAResult1]
     where
         lenHolds = testProperty "The sequences on a tree are longer or the same at end" checkLen
 
@@ -58,13 +58,18 @@ fullIA = testGroup "Full alignment properties" [lenHolds, twoRuns, checkDOResult
         cherry1 = V.fromList $ [rootTest, leftTest, rightTest]
         doMeta    = CharMeta DirectOptimization bioAlph "" False False 1 mempty (emptyChar, emptyChar) 0 (GeneralCost 1 1)
         doResult1 = allOptimization 1 (pure doMeta) cherry1
-        expectedDO = V.fromList $ [rootTest {T.final = encodeThem $ pure $ V.fromList [["A"], ["-"], ["T", "G"]]}, leftTest, rightTest]
+        expectedSeq = encodeThem $ pure $ V.fromList [["A"], ["T", "G"], ["T", "-"]]
+        newRoot = rootTest {T.preliminary = expectedSeq, T.aligned = expectedSeq, T.localCost = 2, T.totalCost = 2}
+        expectedDO = V.fromList $ [newRoot, leftTest, rightTest]
         checkDOResult1 = testCase "On a simple cherry, DO behaves as expected" (expectedDO @=? doResult1)
+        iaResult1 = impliedAlign expectedDO (pure doMeta)
+        expectedIA1 = IM.fromList [(1, encodeThem $ pure $ V.fromList [["A"], ["T"], ["T"]]), (2, encodeThem $ pure $ V.fromList [["A"], ["-"], ["G"]])]
+        checkIAResult1 = testCase "On the same cherry, IA gives the expected result" (expectedIA1 @=? iaResult1)
 
 checkLen :: StandardSolution -> Bool
 checkLen inSolution = checkLS
             where 
-                alignments   = iaSolution inSolution
+                alignments   = iaSolution $ solutionOptimization 1 inSolution
                 checkLS      = and $ zipWith checkLF (forests inSolution) alignments
                   where
                     checkLF f fa = and $ zipWith checkLD f fa
@@ -81,7 +86,7 @@ twoRuns = testProperty "After two runs of IA, assignments are static" twoIA
                         counts = (V.replicate (length meta) 0)
                         runTwice t = (firstRun, secondRun)
                           where
-                            firstRun  = run t
+                            firstRun  = run $ allOptimization 1 meta t
                             secondRun = run firstRun
                             run :: DAG -> DAG
                             run t = snd $ numeratePreorder t (getRoot t) meta counts
