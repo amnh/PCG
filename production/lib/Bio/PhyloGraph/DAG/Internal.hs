@@ -229,19 +229,23 @@ instance RoseTree DAG NodeInfo where
     parent n t = headMay $ fmap (\i -> nodes t V.! i) (parents n)
 
 instance N.Network DAG NodeInfo where
-    parents n t    = fmap (\i -> nodes t V.! i) (parents n)
-    root t         = nodes t V.! root t
-    children n t   = fmap (\i -> nodes t V.! i) (children n)
-    update t new   = t {nodes = nodes t // fmap (\n -> (code n, n)) new}
-    numNodes       = length . nodes 
-    addNode t n    = DAG nodes2 edges2 reroot
+    parents node dag    = fmap (\i -> nodes dag V.! i) (parents node)
+    root dag            = nodes dag V.! root dag
+    children node dag   = fmap (\i -> nodes dag V.! i) (children node)
+    update dag newNodes = dag { nodes = nodes dag // updatedNodes }
+        where
+            updatedNodes = fmap (\n -> (code n, n)) newNodes
+    numNodes            = length . nodes 
+    addNode dag node    = DAG nodes2 edges2 reroot
       where
-          addPos = length $ nodes t
-          newNode = resetPos n t addPos
-          newEdge = makeEdges newNode t
-          edges2 = edges t V.++ pure newEdge
-          nodes2 = addConnections newNode (nodes t) V.++ pure newNode
-          reroot = if isRoot n && null (nodes t) then addPos else root t
+          addPos  = length $ nodes dag
+          newNode = resetPos node dag addPos
+          newEdge = makeEdges newNode dag
+          edges2  = edges dag V.++ pure newEdge
+          nodes2  = addConnections newNode (nodes dag) V.++ pure newNode
+          reroot  = if isRoot node && null (nodes dag) 
+                    then addPos 
+                    else root dag
 
 type instance Element DAG = NodeInfo
 

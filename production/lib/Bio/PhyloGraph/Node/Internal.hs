@@ -23,13 +23,13 @@ import qualified Bio.PhyloGraph.Node.Packed       as PN
 import qualified Bio.PhyloGraph.Node.Preliminary  as RN
 import           Bio.PhyloGraph.Node.Referential
 
-import Data.Alphabet
-import Data.Foldable
-import Data.Vector (Vector, (!))
-import qualified Data.Vector as V (fromList)
-import Data.Monoid
-import Data.Ord ()
-import Test.Tasty.QuickCheck
+import           Data.Alphabet
+import           Data.Foldable
+import           Data.Vector                           (Vector, (!))
+import qualified Data.Vector                      as V (fromList)
+import           Data.Monoid
+import           Data.Ord ()
+import           Test.Tasty.QuickCheck
 
 -- | A node data structure holding all the necessary info (add verbose statement about what each field is)
 data Node = Node  { code        :: Int
