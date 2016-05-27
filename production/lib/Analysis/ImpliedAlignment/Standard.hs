@@ -136,9 +136,10 @@ numeratePreorder initTree initNode inMeta curCounts
 
         where
             -- Deal with the root case by making sure it gets default homologies
-            inTree = if nodeIsRoot curNode initTree then initTree `update` [setHomologies curNode defaultHomologs]
-                        else initTree
-            curNode = getNthNode inTree (getCode initNode) 
+            inTree = if   nodeIsRoot initNode initTree
+                     then initTree `update` [setHomologies initNode defaultHomologs]
+                     else initTree
+            curNode = getNthNode inTree (getCode initNode)
             curSeqs = getFinalGapped curNode
             isLeafNode = leftOnly && rightOnly
             leftOnly   = isNothing $ rightChild curNode inTree
