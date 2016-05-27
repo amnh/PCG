@@ -88,7 +88,8 @@ afterUpdatingSingleNodeNumNodesDoesntChangeTest = testProperty "numNodes (update
               i <- (getNonNegative <$> arbitrary) `suchThat` (< numNodes dag)
               let newDag = update dag [node']
                   node   = nodes dag V.! i
-                  node'  = setEncoded node mempty
+--                  node'  = setEncoded node mempty
+                  node'  = node { encoded = mempty }
               pure $ numNodes dag == numNodes newDag
 
 {- | Type class Laws:
