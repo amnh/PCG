@@ -4,7 +4,7 @@ module Test.Custom.Types where
 
 import Data.Char
 import Test.QuickCheck
-
+import Test.Custom.Tree 
 import           Bio.Character.Dynamic.Coded
 import           Bio.PhyloGraph.DAG.Class
 import qualified Bio.PhyloGraph.Network           as N
@@ -98,8 +98,8 @@ data TestNode = TestNode  { code :: Int
                           } deriving (Eq, Show)
 
 instance EN.EncodedNode TestNode DynamicChar where
-  getEncoded = encoded
-  setEncoded n s = n {encoded = s}
+    getEncoded = encoded
+    setEncoded n s = n {encoded = s}
 
 instance FN.FinalNode TestNode DynamicChar where
     getFinal           = final
@@ -149,12 +149,15 @@ instance BinaryTree TestDAG TestNode where
 instance RoseTree TestDAG TestNode where
     parent n t = headMay $ fmap (\i -> t V.! i) (parents n)
 
+-- We don't need this and it has partial functions
+{-
 instance StandardDAG TestDAG TestNode Int where
   getNodes  = id
   setNodes _ t = t
   getEdges = error "TestDAG does not have edge structure"
   setEdges = error "TestDAG does not have edge structure"
   getRoot = N.root 
+-}
 
 instance RefNode TestNode where
   getCode = code
