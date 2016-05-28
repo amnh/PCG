@@ -72,10 +72,10 @@ bitMatrix m n f =
       | otherwise        = Nothing
       where
         errorPrefix     = mconcat ["The call to bitMatrix ", show m, " ", show n, " f is malformed,"]
-        errorRowCount   = mconcat ["the number of rows, "   , show m, ", is a negative number"]
-        errorColCount   = mconcat ["the number of columns, ", show n, ", is a negative number"]
-        errorZeroRows   = mconcat ["the number of rows was 0 but the number of columns, ", show n, ", was positive."]
-        errorZeroCols   = mconcat ["the number of columns was 0 but the number of rows, ", show m, ", was positive."]
+        errorRowCount   = mconcat ["the number of rows ("   , show m, ") is a negative number"]
+        errorColCount   = mconcat ["the number of columns (", show n, ") is a negative number"]
+        errorZeroRows   = mconcat ["the number of rows was 0 but the number of columns (", show n, ") was positive."]
+        errorZeroCols   = mconcat ["the number of columns was 0 but the number of rows (", show m, ") was positive."]
         errorZeroSuffix = "To construct the empty matrix, both rows and columns must be zero"
 
 -- | Construct a 'BitMatrix' from a list of rows. 
