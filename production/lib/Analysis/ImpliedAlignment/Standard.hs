@@ -79,10 +79,11 @@ makeAlignment n seqLens | trace ("make alignment on n " ++ show n) False = undef
 makeAlignment n seqLens = makeAlign (getFinalGapped n) (getHomologies n)
     where
         -- onePos :: s -> Homologies -> Int -> Int -> Int -> s
+        onePos c h l sPos hPos | trace ("generate a position with c " ++ show c ++ ", h " ++ show h) False = undefined
         onePos c h l sPos hPos 
-            | sPos > l - 1 || hPos > (V.length h - 1) = emptyLike c
-            | h ! hPos == sPos = unsafeCons (grabSubChar c sPos) (onePos c h l (sPos + 1) (hPos + 1))
-            | otherwise = unsafeCons (gapChar c) (onePos c h l (sPos + 1) hPos)
+            | hPos == l || sPos == (numChars c) = trace "base" $ emptyLike c
+            | h ! hPos == sPos = trace "match" $ unsafeCons (grabSubChar c sPos) (onePos c h l (sPos + 1) (hPos + 1))
+            | otherwise = trace "gap" $ unsafeCons (gapChar c) (onePos c h l (sPos + 1) hPos)
         -- makeOne :: s -> Homologies -> Int -> s
         makeOne char homolog len = onePos char homolog len 0 0
         --makeAlign :: Vector s -> HomologyTrace -> Vector s
