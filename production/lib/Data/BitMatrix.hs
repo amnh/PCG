@@ -13,12 +13,15 @@
 -- Intended to be used by multiple datatypes for space efficient character
 -- state encoding and packing.
 -----------------------------------------------------------------------------
+
 {-# LANGUAGE BangPatterns, TypeFamilies #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
+
 module Data.BitMatrix
   ( BitMatrix()
   , bitMatrix
   , fromRows
+  , isSet
   , isZeroMatrix
   , numCols
   , numRows
@@ -28,13 +31,12 @@ module Data.BitMatrix
 
 import Data.Bifunctor
 import Data.BitVector  hiding (foldl,foldr)
-import Data.List.Utility      (equalityOf)
 import Data.Function.Memoize
+import Data.List.Utility      (equalityOf)
 import Data.Foldable
 import Data.Maybe             (fromMaybe)
 import Data.Monoid
 import Data.MonoTraversable
-import Test.QuickCheck.Arbitrary.Instances() -- Nescissary for Arbitrary instances
 import Test.QuickCheck hiding ((.&.))
 
 -- | A data structure for storing a two dimensional array of bits.
@@ -72,10 +74,10 @@ bitMatrix m n f =
       | otherwise        = Nothing
       where
         errorPrefix     = mconcat ["The call to bitMatrix ", show m, " ", show n, " f is malformed,"]
-        errorRowCount   = mconcat ["the number of rows ("   , show m, ") is a negative number"]
-        errorColCount   = mconcat ["the number of columns (", show n, ") is a negative number"]
-        errorZeroRows   = mconcat ["the number of rows was 0 but the number of columns (", show n, ") was positive."]
-        errorZeroCols   = mconcat ["the number of columns was 0 but the number of rows (", show m, ") was positive."]
+        errorRowCount   = mconcat ["the number of rows, "   , show m, ", is a negative number"]
+        errorColCount   = mconcat ["the number of columns, ", show n, ", is a negative number"]
+        errorZeroRows   = mconcat ["the number of rows was 0 but the number of columns, ", show n, ", was positive."]
+        errorZeroCols   = mconcat ["the number of columns was 0 but the number of rows, ", show m, ", was positive."]
         errorZeroSuffix = "To construct the empty matrix, both rows and columns must be zero"
 
 -- | Construct a 'BitMatrix' from a list of rows. 
@@ -102,16 +104,14 @@ numRows (BitMatrix n bv)
 
 -- | The rows of the 'BitMatrix'
 rows :: BitMatrix -> [BitVector]
-rows bm@(BitMatrix nCols bv) 
-    | nRows <= 1 = [bv]
-    | nCols == 0 = take nRows $ repeat $ bitVec 0 (0 :: Integer)
-    | otherwise  = (bv @@) <$> slices
-          where
-            nRows = numRows bm
-            slices = take nRows $ iterate ((nCols `subtract`) `bimap` (nCols `subtract`)) (start, end)
-            start  = nCols * nRows - 1 -- start at most-significant (left end of bv)
-            end    = (nRows - 1) * nCols -- should eventually become 0
-
+rows bm@(BitMatrix nCols bv)
+    |  nRows == 0
+    || nCols == 0 = []
+    |  nRows == 1 = [bv]
+    |  otherwise  = (bv @@) <$> slices
+    where
+      nRows  = numRows bm
+      slices = take nRows $ iterate ((nCols +) `bimap` (nCols +)) (nCols - 1, 0) --(start, end)
 
 -- | Retreives a single row of the 'BitMatrix'.
 --   Allows for unsafe indexing.
@@ -134,6 +134,9 @@ isZeroMatrix (BitMatrix _ bv) = nat bv == 0
 col :: BitMatrix -> Int -> BitVector
 col = undefined -- bit twiddle or math
 -}
+
+isSet :: BitMatrix -> (Int, Int) -> Bool
+(BitMatrix n bv) `isSet` (i,j) = bv `testBit` (n*i + j)
 
 -- | Performs a row-wise monomporphic map over ther 'BitMatrix'.
 instance MonoFunctor BitMatrix where
@@ -193,7 +196,7 @@ instance MonoTraversable BitMatrix where
 
 instance Memoizable BitMatrix where
     memoize f (BitMatrix n bv) = memoize (f . BitMatrix n) bv
-      
+
 instance Memoizable BV where
     memoize f char = memoize (f . bitVec w) (nat char)
       where
@@ -209,20 +212,20 @@ instance Bits BitMatrix where
     shift        (BitMatrix c b) n                   = BitMatrix c $ b `shift`  n
     rotate       (BitMatrix c b) n                   = BitMatrix c $ b `rotate` n
     setBit       (BitMatrix c b) i                   = BitMatrix c $ b `setBit` i
-    testBit      (BitMatrix _ b) i                   = b `testBit` i
+    testBit      (BitMatrix _ b) i                   = b `testBit` i -- (width b - i + 1)
     bit i                                            = BitMatrix 1 $ bit i
     bitSize                                          = fromMaybe 0 . bitSizeMaybe
     bitSizeMaybe (BitMatrix _ b)                     = bitSizeMaybe b
     isSigned     (BitMatrix _ b)                     = isSigned b
     popCount     (BitMatrix _ b)                     = popCount b
 
--- TODO: Don't know if this works. It's currently unused, I believe.
 instance Arbitrary BitMatrix where
     arbitrary = do 
-        alphLen  <- suchThat (arbitrary :: Gen Int) (\x -> 0 < x && x <= 52) 
-        rowCount <- suchThat (arbitrary :: Gen Int) (> 0) 
-        bitRows  <- vectorOf rowCount $ ((choose (1, 2 ^ alphLen - 1)) :: Gen Integer)
-        pure . fromRows $ bitVec alphLen <$> bitRows
+        colCount <- (arbitrary :: Gen Int) `suchThat` (\x -> 0 < x && x <= 20) 
+        rowCount <- (arbitrary :: Gen Int) `suchThat` (\x -> 0 < x && x <= 20)
+        let rVal = choose (0, 2 ^ colCount -1) :: Gen Integer
+        bitRows  <- vectorOf rowCount rVal
+        pure . fromRows $ bitVec colCount <$> bitRows
 
 instance Show BitMatrix where
     show bm = headerLine <> matrixLines

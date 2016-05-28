@@ -217,7 +217,12 @@ instance Memoizable DynamicChar where
 -- We restrict the DynamicChar values generated to be non-empty.
 -- Most algorithms assume a nonempty dynamic character.
 instance Arbitrary DynamicChar where
-    arbitrary = DC <$> (arbitrary `suchThat` (not . onull) :: Gen BitMatrix)
+    arbitrary = do 
+        symbolCount  <- arbitrary `suchThat` (\x -> 0 < x && x <= 62) :: Gen Int
+        characterLen <- arbitrary `suchThat` (> 0) :: Gen Int
+        let randVal  =  choose (1, 2 ^ symbolCount - 1) :: Gen Integer
+        bitRows      <- vectorOf characterLen randVal
+        pure . DC . fromRows $ bitVec symbolCount <$> bitRows
 
 -- | Function to generate an arbitrary DynamicChar given an alphabet
 arbitraryDynamicGivenAlph :: Alphabet String -> Gen DynamicChar
