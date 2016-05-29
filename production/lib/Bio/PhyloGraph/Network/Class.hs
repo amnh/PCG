@@ -16,8 +16,6 @@
 
 module Bio.PhyloGraph.Network.Class where
 
-import Debug.Trace
-
 {- | Type class Laws:
 
      nodeIsRoot (root t) t

@@ -33,7 +33,7 @@ import           Data.Foldable
 import           Data.HashMap.Strict (HashMap, fromList)
 import           Data.Matrix.NotStupid (matrix)
 import           Data.Monoid ((<>))
-import           Data.MonoTraversable
+--import           Data.MonoTraversable
 import           Data.Vector      (Vector, (!))
 import qualified Data.Vector as V
 import           Test.Tasty.QuickCheck 
@@ -92,8 +92,8 @@ instance Arbitrary (Solution DAG) where
            }
 
 deriveDynamicMetadatas :: Forest DAG -> Gen (Vector StandardMetadata)
-deriveDynamicMetadatas []     = pure mempty
-deriveDynamicMetadatas (x:xs) = sequenceA $ V.generate (length sequenceWLOG) f
+deriveDynamicMetadatas []    = pure mempty
+deriveDynamicMetadatas (x:_) = sequenceA $ V.generate (length sequenceWLOG) f
   where
     f :: Int -> Gen StandardMetadata
     f i = do
@@ -131,8 +131,8 @@ deriveDynamicMetadatas (x:xs) = sequenceA $ V.generate (length sequenceWLOG) f
 
 arbitraryCharsGivenMeta :: Vector StandardMetadata -> Gen Parsed
 arbitraryCharsGivenMeta allMeta = do
-  names <- listOf (arbitrary :: Gen String)
-  let numNodes = length names
-  let alphs = toList $ V.map alphabet allMeta
-  parsed <- vectorOf numNodes (parsedCharsGivenAlph alphs)
+  names         <- listOf (arbitrary :: Gen String)
+  let nodeCount = length names
+  let alphs     = toList $ V.map alphabet allMeta
+  parsed        <- vectorOf nodeCount (parsedCharsGivenAlph alphs)
   pure $ fromList $ zip names parsed

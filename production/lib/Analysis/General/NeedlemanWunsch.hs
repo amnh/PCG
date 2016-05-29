@@ -19,13 +19,13 @@ import Bio.Metadata
 import Bio.Character.Dynamic.Coded
 import Data.Bits
 import Data.BitVector hiding (foldr)
-import Data.Foldable (minimumBy)
+import Data.Foldable         (minimumBy)
 import Data.Function.Memoize
-import Data.Matrix.NotStupid   (Matrix, getElem, nrows, ncols, (<->), matrix, fromList)
+import Data.Matrix.NotStupid (Matrix, getElem, nrows, ncols, matrix)
 import Data.Ord
-import Data.Vector   (Vector, cons, toList, (!))
+import Data.Vector           (Vector)
 
-import Debug.Trace
+--import Debug.Trace
 
 -- | The direction to align the character at a given matrix point.
 data Direction = LeftDir | DiagDir | DownDir deriving (Eq, Show)
@@ -49,7 +49,7 @@ needlemanWunsch char1 char2 meta = (seq1Align, seq2Align)
     where
         char1Len = numChars char1
         char2Len = numChars char2
-        (shorterChar, longerChar, longLen) = if char1Len > char2Len
+        (shorterChar, longerChar, _longLen) = if char1Len > char2Len
                                      then (char2, char1, char1Len)
                                      else (char1, char2, char2Len)
         traversalMat = getAlignMat longerChar shorterChar meta
@@ -106,7 +106,7 @@ traceback alignMat' char1' char2' = (fromChars t1, fromChars t2, fromChars t3)
             | nrows alignMat < row - 1 || ncols alignMat < col - 1 = error "Traceback cannot function because matrix is incomplete"
             | row == 0 && col == 0 = (mempty, mempty, mempty)
             | otherwise = 
-                let t@(trace1, trace2, trace3) = tracebackInternal alignMat char1 char2 (i, j)
+                let (trace1, trace2, trace3) = tracebackInternal alignMat char1 char2 (i, j)
                 in (curState : trace1, leftCharacter : trace2, rightCharacter : trace3)
             where
               (_, curDirect, curState) = getElem row col alignMat

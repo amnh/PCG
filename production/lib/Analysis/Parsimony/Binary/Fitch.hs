@@ -17,11 +17,10 @@ module Analysis.Parsimony.Binary.Fitch where
 
 import Analysis.Parsimony.Binary.Internal
 import Bio.Metadata
-import Bio.Character.Dynamic.Coded
 import Data.Bits
 import Data.MonoTraversable
 
-import Debug.Trace
+--import Debug.Trace
 
 -- | Preorder Fitch operation on bit-packed sequences
 --   Output three-tuple is the preliminary assignment, the temporary assignment, and the cost

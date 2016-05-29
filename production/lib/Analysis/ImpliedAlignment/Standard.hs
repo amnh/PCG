@@ -15,30 +15,26 @@
 
 module Analysis.ImpliedAlignment.Standard where
 
-import Analysis.General.NeedlemanWunsch hiding (SeqConstraint)
-import Analysis.ImpliedAlignment.Internal
-import Bio.Metadata
-import Bio.PhyloGraph.DAG
-import Bio.PhyloGraph.Forest
-import Bio.PhyloGraph.Network
-import Bio.PhyloGraph.Node
-import Bio.PhyloGraph.Solution
-import Bio.PhyloGraph.Tree hiding (code)
-import Bio.Character.Dynamic.Coded
-
-import Data.BitVector      hiding (foldr, replicate, foldl, not)
-import Data.IntMap                (IntMap, assocs, insert)
+import           Analysis.General.NeedlemanWunsch hiding (SeqConstraint)
+import           Analysis.ImpliedAlignment.Internal
+import           Bio.Metadata
+import           Bio.PhyloGraph.DAG
+import           Bio.PhyloGraph.Forest
+import           Bio.PhyloGraph.Network
+import           Bio.PhyloGraph.Node
+import           Bio.PhyloGraph.Solution
+import           Bio.PhyloGraph.Tree hiding (code)
+import           Bio.Character.Dynamic.Coded
+import           Data.IntMap                (IntMap, insert)
 import qualified Data.IntMap as IM
-import Data.IntSet (IntSet)
+import           Data.IntSet                (IntSet)
 import qualified Data.IntSet as IS
-import Data.Maybe
-import Data.Monoid
-import Data.MonoTraversable
-import Data.Vector                (Vector, (!), filter, foldr, generate, imap, replicate, unzip3, zipWith, zipWith3, zipWith4, unzip)
+import           Data.Maybe
+import           Data.MonoTraversable
+import           Data.Vector                (Vector, (!), imap)
 import qualified Data.Vector as V
-import Prelude             hiding (filter, foldr, lookup, replicate, unzip3, zip3, zipWith, zipWith3, foldl, unzip)
 
-import Debug.Trace
+import           Debug.Trace
 
 type Counter = Int
 newtype MutationAccumulator = Accum (IntMap Int, Counter, Int, Int, Int, IntSet)
@@ -68,18 +64,18 @@ impliedAlign :: (TreeConstraint t n e s, Metadata m s) => t -> Vector m -> Align
 --impliedAlign inTree inMeta | trace ("impliedAlign with tree " ++ show inTree) False = undefined
 impliedAlign inTree inMeta = foldr (\n acc -> insert (getCode n) (makeAlignment n lens) acc) mempty allLeaves
     where
-        (lens, curTree) = numeratePreorder inTree (getRoot inTree) inMeta (replicate (length inMeta) 0)
-        allLeaves = filter (flip nodeIsLeaf curTree) (getNodes curTree)
+        (lens, curTree) = numeratePreorder inTree (getRoot inTree) inMeta (V.replicate (length inMeta) 0)
+        allLeaves = V.filter (flip nodeIsLeaf curTree) (getNodes curTree)
 
 -- | Simple function to generate an alignment from a numerated node
 -- Takes in a Node
 -- returns a vector of characters
 makeAlignment :: (NodeConstraint n s) => n -> Counts -> Vector s
-makeAlignment n seqLens | trace ("make alignment on n " ++ show n) False = undefined
+makeAlignment n _ | trace ("make alignment on n " ++ show n) False = undefined
 makeAlignment n seqLens = makeAlign (getFinalGapped n) (getHomologies n)
     where
         -- onePos :: s -> Homologies -> Int -> Int -> Int -> s
-        onePos c h l sPos hPos | trace ("generate a position with c " ++ show c ++ ", h " ++ show h) False = undefined
+        onePos c h _ _ _ | trace ("generate a position with c " ++ show c ++ ", h " ++ show h) False = undefined
         onePos c h l sPos hPos 
             | hPos == l || sPos == (numChars c) = trace "base" $ emptyLike c
             | h ! hPos == sPos = trace "match" $ unsafeCons (grabSubChar c sPos) (onePos c h l (sPos + 1) (hPos + 1))
@@ -87,7 +83,7 @@ makeAlignment n seqLens = makeAlign (getFinalGapped n) (getHomologies n)
         -- makeOne :: s -> Homologies -> Int -> s
         makeOne char homolog len = onePos char homolog len 0 0
         --makeAlign :: Vector s -> HomologyTrace -> Vector s
-        makeAlign dynChar homologies = zipWith3 makeOne dynChar homologies seqLens
+        makeAlign dynChar homologies = V.zipWith3 makeOne dynChar homologies seqLens
 
 -- | Main recursive function that assigns homology traces to every node
 -- takes in a tree, a current node, a vector of metadata, and a vector of counters
@@ -146,7 +142,7 @@ numeratePreorder initTree initNode inMeta curCounts
             leftOnly   = isNothing $ rightChild curNode inTree
             rightOnly  = isNothing $ leftChild curNode inTree
             defaultHomologs = if V.length curSeqs == 0 then V.replicate (V.length inMeta) mempty --trace ("defaultHomologs " ++ show (V.length inMeta) ++ show (V.length curSeqs))
-                                else imap (\i _ -> generate (numChars (curSeqs ! i)) (+ 1)) inMeta
+                                else imap (\i _ -> V.generate (numChars (curSeqs ! i)) (+ 1)) inMeta
             propagateIt tree child events = tree' `update` [child]
                                             where tree' = backPropagation tree child events
             alignAndNumerate n1 n2 counts m = {-trace ("alignment result " ++ show n1Align) $-} numerateNode n1Align n2Align counts m
@@ -159,8 +155,8 @@ numeratePreorder initTree initNode inMeta curCounts
                 where
                     final1 = getForAlign node1
                     final2 = getForAlign node2
-                    allUnzip = unzip allDO
-                    allDO = zipWith3 checkThenAlign final1 final2 inMeta
+                    allUnzip = V.unzip allDO
+                    allDO = V.zipWith3 checkThenAlign final1 final2 inMeta
                     checkThenAlign s1 s2 m = if numChars s1 == numChars s2 then (s1, s2) else needlemanWunsch s1 s2 m
 
 -- | Back propagation to be performed after insertion events occur in a numeration
@@ -180,19 +176,19 @@ backPropagation tree node insertionEvents
                                               then tree'
                                               else
                                                 case leftChild myParent tree of -- otherwise we need to propagate down but not at the current node
-                                                  Nothing        -> tree'
-                                                  Just leftChild -> backPropagationDownward tree' leftChild insertionEvents
+                                                  Nothing   -> tree'
+                                                  Just left -> backPropagationDownward tree' left insertionEvents
                         in backPropagation tree'' myParent insertionEvents
   where
-    backPropagationDownward treeContext subTreeRoot insertionEvents = treeContext'''
+    backPropagationDownward treeContext subTreeRoot insertionEvents' = treeContext'''
       where
-        (treeContext'  , subTreeRoot'  ) = accountForInsertionEventsForNode treeContext subTreeRoot insertionEvents -- do the current node
+        (treeContext'  , subTreeRoot'  ) = accountForInsertionEventsForNode treeContext subTreeRoot insertionEvents' -- do the current node
         treeContext'' = case  leftChild subTreeRoot' treeContext' of -- first go down and to the left
                           Nothing -> treeContext'
-                          Just x  -> backPropagationDownward treeContext'  x insertionEvents
+                          Just x  -> backPropagationDownward treeContext'  x insertionEvents'
         treeContext'''= case rightChild subTreeRoot' treeContext'' of -- then go down and to the right
                           Nothing -> treeContext''
-                          Just x  -> backPropagationDownward treeContext'' x insertionEvents
+                          Just x  -> backPropagationDownward treeContext'' x insertionEvents'
         
 -- | Account for any insertion events at the current node by updating homologies
 -- depends on accountForInsertionEvents to do work
@@ -202,7 +198,7 @@ accountForInsertionEventsForNode :: TreeConstraint t n e s  => t -> n -> Vector 
 accountForInsertionEventsForNode tree node insertionEvents = (tree', node')
   where
     originalHomologies = getHomologies node
-    mutatedHomologies  = zipWith accountForInsertionEvents originalHomologies insertionEvents
+    mutatedHomologies  = V.zipWith accountForInsertionEvents originalHomologies insertionEvents
     node'              = setHomologies node mutatedHomologies
     tree'              = tree `update` [node']
 
@@ -224,17 +220,16 @@ accountForInsertionEvents homologies insertionEvents = V.generate (length homolo
 -- returns a tuple with the node with homologies incorporated, and a returned vector of counters
 numerateNode :: (NodeConstraint n s, Metadata m s) => n -> n -> Counts -> Vector m -> (n, Counts, Vector IntSet) 
 numerateNode ancestorNode childNode initCounters _ | trace ("numerateNode on " ++ show (getCode ancestorNode) ++" and " ++ show (getCode childNode) ++ ", " ++ show initCounters) False = undefined
-numerateNode ancestorNode childNode initCounters inMeta = {-trace ("numeration result " ++ show homologs) $-} (setHomologies childNode homologs, counts, insertionEvents)
+numerateNode ancestorNode childNode initCounters _ = {-trace ("numeration result " ++ show homologs) $-} (setHomologies childNode homologs, counts, insertionEvents)
         where
             numeration = --trace ("numeration zip on " ++ show (getForAlign ancestorNode) ++" and " ++ show (getForAlign childNode)) 
-                            zipWith4 numerateOne (getForAlign ancestorNode) (getForAlign childNode) (getHomologies ancestorNode) initCounters 
-            (homologs, counts, insertionEvents) = {-trace ("numerate results " ++ show numeration) $-} unzip3 numeration
-            generateGapChar m = setBit (bitVec 0 (0 :: Integer)) (length (getAlphabet m) - 1)   
+                            V.zipWith4 numerateOne (getForAlign ancestorNode) (getForAlign childNode) (getHomologies ancestorNode) initCounters 
+            (homologs, counts, insertionEvents) = {-trace ("numerate results " ++ show numeration) $-} V.unzip3 numeration
 
 
 numerateOne :: SeqConstraint s => s -> s -> Homologies -> Counter -> (Homologies, Counter, IntSet)
 --numerateOne ancestorSeq descendantSeq ancestorHomologies initialCounter | trace ("numerateOne on " ++ show ancestorSeq ++" and " ++ show descendantSeq) False = undefined
-numerateOne ancestorSeq descendantSeq ancestorHomologies initialCounter = (descendantHomologies, counter', insertionEvents)
+numerateOne ancestorSeq descendantSeq _ancestorHomologies initialCounter = (descendantHomologies, counter', insertionEvents)
   where
     gapCharacter = gapChar descendantSeq
 

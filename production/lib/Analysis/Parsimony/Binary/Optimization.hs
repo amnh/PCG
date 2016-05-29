@@ -37,7 +37,7 @@ import Bio.PhyloGraph.Node.Final
 import Bio.PhyloGraph.Node.Preliminary
 import Bio.PhyloGraph.Node.Encoded ()
 
-import Debug.Trace
+--import Debug.Trace
 
 -- | Top level binary optimization wrapper to optimize over a solution
 -- Takes in an overall weight and a solution

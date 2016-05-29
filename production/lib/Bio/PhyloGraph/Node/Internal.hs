@@ -22,12 +22,10 @@ import qualified Bio.PhyloGraph.Node.ImpliedAlign as IN
 import qualified Bio.PhyloGraph.Node.Packed       as PN
 import qualified Bio.PhyloGraph.Node.Preliminary  as RN
 import           Bio.PhyloGraph.Node.Referential
-
 import           Data.Alphabet
 import           Data.Foldable
-import           Data.Vector                           (Vector, (!))
-import qualified Data.Vector                      as V (fromList)
-import           Data.Monoid
+import           Data.Vector                            (Vector)
+import qualified Data.Vector                      as V  (fromList)
 import           Data.Ord ()
 import           Test.Tasty.QuickCheck
 
