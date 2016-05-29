@@ -52,7 +52,7 @@ nonSingletonNetworkRootIsNotLeafTest :: TestTree
 nonSingletonNetworkRootIsNotLeafTest = testProperty "(numNodes t) > 1 ==> not (nodeIsLeaf (root t) t)" f
     where
         f :: DAG -> Property
-        f dag = (numNodes dag) > 1 ==> property (not (nodeIsLeaf (root dag) dag))
+        f dag = numNodes dag > 1 ==> property (not (nodeIsLeaf (root dag) dag))
 
 allNonrootNodesAreNotRootTest :: TestTree
 allNonrootNodesAreNotRootTest = testProperty "forall a. (root t) /= a ==> not (nodeIsRoot a t)" onlyNodeIsRoot
@@ -60,23 +60,21 @@ allNonrootNodesAreNotRootTest = testProperty "forall a. (root t) /= a ==> not (n
 onlyNodeIsRoot :: DAG -> Bool
 onlyNodeIsRoot dag = oall (\node -> {- trace (show node) $ -} ((root dag) /= node) /= (nodeIsRoot node dag)) dag
                                                                        {- ^^this /= is not working the way I thought it would. -}
--- Alex pulled this out
-{-
-rootConsistency :: DAG -> Bool
-rootConsistency dag = oall (\node -> ((root dag) /= node) /= (nodeIsRoot node dag)) dag
--}
+
+-- Alex pulled this out. Now it's back in?
+rootConsistency dag = oall (\node -> (root dag /= node) /= nodeIsRoot node dag) dag
 
 allRootNodesHaveNoParentsTest :: TestTree
 allRootNodesHaveNoParentsTest = testProperty "forall a. null (parents (nodeIsRoot a t) t)" f
     where
         f :: DAG -> Bool
-        f dag = oall (\node -> (null $ parents node dag) == (nodeIsRoot node dag)) dag
+        f dag = oall (\node -> null (parents node dag) == nodeIsRoot node dag) dag
 
 allLeafNodesHaveNoChildrenTest :: TestTree
 allLeafNodesHaveNoChildrenTest = testProperty "forall a. null (children (nodeIsLeaf a t) t)" f
     where
         f :: DAG -> Bool
-        f dag = oall (\node -> (null $ children node dag) == (nodeIsLeaf node dag)) dag
+        f dag = oall (\node -> null (children node dag) == nodeIsLeaf node dag) dag
 
 -- addNode is unused, so this test is commented out
 {-

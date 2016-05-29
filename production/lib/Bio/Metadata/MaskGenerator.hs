@@ -23,8 +23,6 @@ import Data.HashMap.Strict        (elems)
 import Data.Maybe
 import qualified Data.Vector as V
 
-import Debug.Trace
-
 -- | Mutate a 'StandardSolution' to include masks in the metadata structure
 addMasks :: StandardSolution -> StandardSolution
 addMasks inSolution = inSolution { metadata = V.imap changeMetadata (metadata inSolution) }

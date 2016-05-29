@@ -78,7 +78,7 @@ arbitraryTopoGivenCAL maxChildren inAlph (curLevel, maxLevel) = do
      seqs     <- vectorOf 10 (arbitraryDynamicsGA inAlph)
      costLoc       <- arbitrary :: Gen Double
      costTot       <- arbitrary :: Gen Double
-     pure $ TopoNode root leaf name' chillens (seqs !! 0) (seqs !! 1) (seqs !! 2) (seqs !! 3) (seqs !! 4) (seqs !! 5) (seqs !! 6) (seqs !! 7) (seqs !! 8) (seqs !! 9) costLoc costTot
+     pure $ TopoNode root leaf name' chillens (head seqs) (seqs !! 1) (seqs !! 2) (seqs !! 3) (seqs !! 4) (seqs !! 5) (seqs !! 6) (seqs !! 7) (seqs !! 8) (seqs !! 9) costLoc costTot
 
 arbitraryTopoGivenCSNA :: Int -> [(String, ParsedChars)] -> Vector (CharacterMetadata DynamicChar) -> (Int, Int) -> Gen (TopoNode b)
 arbitraryTopoGivenCSNA maxChildren namesAndSeqs inMeta (curLevel, maxLevel) 
@@ -90,7 +90,7 @@ arbitraryTopoGivenCSNA maxChildren namesAndSeqs inMeta (curLevel, maxLevel)
       nc <- (arbitrary :: Gen Int) `suchThat` (<= maxChildren)
       let ncFinal = if curLevel == maxLevel then 0 else nc
       let forChildren = chunksOf ncFinal (tail namesAndSeqs)
-      chillens <- sequence $ map (\ns -> arbitraryTopoGivenCSNA maxChildren ns inMeta (curLevel + 1, maxLevel)) forChildren
+      chillens <- mapM (\ns -> arbitraryTopoGivenCSNA maxChildren ns inMeta (curLevel + 1, maxLevel)) forChildren
       --chillens <- vectorOf ncFinal (arbitraryTopoGivenCSNA maxChildren (tail namesAndSeqs) inMeta (curLevel + 1, maxLevel))
       let leaf = ncFinal == 0
       c2       <- arbitrary :: Gen Double

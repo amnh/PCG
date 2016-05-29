@@ -160,7 +160,7 @@ binaryTreeToDAG binaryRoot = DAG
 instance Arbitrary (TestingBinaryTree Node) where
     arbitrary = do
         leafCount <- (getPositive <$> (arbitrary :: Gen (Positive Int))) `suchThat` (\x -> 2 <= x && x <= 10)
-        alphabet  <- arbitrary :: Gen (Alphabet String)
+        alphabet  <- arbitrary `suchThat` ((<= 63) . length) :: Gen (Alphabet String)
         leaves    <- generateLeavesDO alphabet leafCount
         generateBinaryTree leaves
       where

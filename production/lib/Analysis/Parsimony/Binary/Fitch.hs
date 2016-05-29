@@ -17,11 +17,10 @@ module Analysis.Parsimony.Binary.Fitch where
 
 import Analysis.Parsimony.Binary.Internal
 import Bio.Metadata
-import Bio.Character.Dynamic.Coded
 import Data.Bits
 import Data.MonoTraversable
 
-import Debug.Trace
+--import Debug.Trace
 
 -- | Preorder Fitch operation on bit-packed sequences
 --   Output three-tuple is the preliminary assignment, the temporary assignment, and the cost
@@ -31,12 +30,12 @@ preorderFitchBit weightValue lbit rbit inChar =
     let
         alphLen = length $ getAlphabet inChar
         notOr = complement $ lbit .&. rbit
-        union = {-trace ("notOr " ++ show notOr ++ " on and " ++ show (lbit .&. rbit)) $ -}lbit .|. rbit
-        fbit = {-trace ("union " ++ show union) $ -}notOr .&. (snd $ getFitchMasks inChar)
+        union = {-trace ("notOr " ++ show notOr ++ " on and " ++ show (lbit .&. rbit)) $ -} lbit .|. rbit
+        fbit = {-trace ("union " ++ show union) $ -} notOr .&. snd (getFitchMasks inChar)
         rightF = {-trace ("fbit " ++ show fbit) $ -}blockShiftAndFold "R" "&" alphLen notOr fbit
         finalF = {-trace ("rightF " ++ show rightF) $ -}blockShiftAndFold "L" "|" alphLen rightF rightF
-        maskF = --trace ("maksed f value " ++ show finalF)
-                    (fst $ getFitchMasks inChar) .&. finalF
+        maskF = --trace ("maksed f value " ++ show finalF) $
+                    fst (getFitchMasks inChar) .&. finalF
         myCost = {-trace ("maskF " ++ show maskF) $ -}fromIntegral $ div (popCount maskF) alphLen
         weightCost = --trace ("Cost of bit ops " ++ show myCost) 
                         weightValue * myCost
@@ -52,10 +51,10 @@ preorderFitchBit weightValue lbit rbit inChar =
 blockShiftAndFold :: SeqConstraint' s => String -> String -> Int -> s -> s -> s
 --blockShiftAndFold _ _ _ b i | trace ("block shift and fold " ++ show b ++ " on " ++ show i) False = undefined
 blockShiftAndFold sideMode foldMode alphLen inbits initVal 
-    | sideMode == "L" && foldMode == "&" = f (.&.) (\s n -> omap (flip shiftL n) s)
-    | sideMode == "R" && foldMode == "&" = f (.&.) (\s n -> omap (flip shiftR n) s)
-    | sideMode == "L" && foldMode == "|" = f (.|.) (\s n -> omap (flip shiftL n) s)
-    | sideMode == "R" && foldMode == "|" = f (.|.) (\s n -> omap (flip shiftR n) s)
+    | sideMode == "L" && foldMode == "&" = f (.&.) (\s n -> omap (`shiftL` n) s)
+    | sideMode == "R" && foldMode == "&" = f (.&.) (\s n -> omap (`shiftR` n) s)
+    | sideMode == "L" && foldMode == "|" = f (.|.) (\s n -> omap (`shiftL` n) s)
+    | sideMode == "R" && foldMode == "|" = f (.|.) (\s n -> omap (`shiftR` n) s)
     | otherwise = error "incorrect input for block shift and fold"
     where
       f g dir = foldr (\s acc -> g acc (dir inbits s)) initVal [1 .. alphLen - 1]
@@ -70,7 +69,7 @@ postorderFitchBit myBit lBit rBit fBit pBit inChar =
         alphLen = length $ getAlphabet inChar
         setX = complement myBit .&. pBit
         notX = complement setX
-        setG = notX .&. (snd $ getFitchMasks inChar)
+        setG = notX .&. snd (getFitchMasks inChar)
         rightG = blockShiftAndFold "R" "&" alphLen notX setG
         finalG = blockShiftAndFold "L" "|" alphLen rightG rightG
         fstMask = fst $ getFitchMasks inChar

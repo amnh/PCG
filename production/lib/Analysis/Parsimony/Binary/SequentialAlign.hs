@@ -18,9 +18,9 @@ module Analysis.Parsimony.Binary.SequentialAlign (sequentialAlign) where
 
 --import           Analysis.Parsimony.Binary.Internal
 import qualified Analysis.Parsimony.Binary.SequentialAlign.SeqAlignFFI as FFI (sequentialAlign)
-import           Bio.Character.Dynamic.Coded hiding (fromList)
+import           Bio.Character.Dynamic.Coded
 import           Data.Alphabet
-import           Data.Vector (fromList)
+import           Data.Vector     (fromList)
 import           Data.Foldable
 import           Data.List.Split (chunksOf)
 
