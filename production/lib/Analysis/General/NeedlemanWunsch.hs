@@ -155,13 +155,13 @@ getOverlap inChar1 inChar2 meta = result
                 --getCost c (p1, _) (p2, _) | trace ("getCost on " ++ show c ++ " at pos " ++ show (p1, p2)) False = undefined
                 getCost (TCM mtx) (pos1, c1) (pos2, c2) = (c1 .|. c2, getElem pos1 pos2 mtx)
                 getCost (GeneralCost indel sub) (_, c1) (_, c2) = if c1 == gap || c2 == gap then (c1 .|. c2, indel) else (c1 .|. c2, sub)
-                getCost (AffineCost _ _ _) _ _ = error "Cannot apply DO algorithm on affine cost"
+                getCost  AffineCost {} _ _ = error "Cannot apply DO algorithm on affine cost"
 
                 -- get single character subsets from both
                 getSubs fullChar = foldr (\i acc -> if testBit fullChar i then (i, setBit (zeros $ width fullChar) i) : acc else acc) mempty [0..(width fullChar)]
                 -- make possible combinations with a double fold
                 matchSubs subList oneSub = foldr (\c acc -> getCost (getCosts inMeta) c oneSub : acc) mempty subList
-                matchBoth list1 list2 = foldr (\e acc -> matchSubs list1 e ++ acc) mempty list2
+                matchBoth list1 = foldr (\e acc -> matchSubs list1 e ++ acc) mempty
                 allPossible = matchBoth (getSubs char1) (getSubs char2)
                 -- now take an ambiguous minimum
                 --ambigChoice (val1, cost1) (val2, cost2) | trace ("ambigChoice on " ++ show val1 ++ show val2) False = undefined

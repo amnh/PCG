@@ -21,7 +21,7 @@ testRowsFromRows :: TestTree
 testRowsFromRows = testProperty "rows $ fromRows x == id" f
     where
         f :: (Positive Int, Positive Int, [BitVector]) -> Bool
-        f (_, _, bvList) = rows (fromRows bvList) == id bvList
+        f (_, _, bvList) = rows (fromRows bvList) == bvList
 
 
 -- both sets of tests on generating functions rely on BitMatrix functions rows, numRows, numCols
@@ -73,7 +73,7 @@ testFromRowsFn = testGroup "fromRows generating fn" [ testValue
                 f :: (Positive Int, Positive Int, [BitVector]) -> Bool
                 f (_, _, bvs) = testBM == controlBM
                     where
-                        testBM    = mconcat $ rows (fromRows bvs)
+                        testBM    = mconcat . rows $ fromRows bvs
                         controlBM = mconcat bvs
                         
         testWidth = testProperty "Number of columns is correct." f
@@ -82,14 +82,15 @@ testFromRowsFn = testGroup "fromRows generating fn" [ testValue
                 f :: (Positive Int, Positive Int, [BitVector]) -> Bool
                 f (_, colCt, bvs) = getPositive colCt == numCols testBM
                     where
-                        testBM = (fromRows bvs)
+                        testBM = fromRows bvs
+                        
         testHeight = testProperty "Number of rows is correct." f
         -- Note that it only tests on a single input function
             where
                 f :: (Positive Int, Positive Int, [BitVector]) -> Bool
                 f (rowCt, _, bvs) = getPositive rowCt == numRows testBM
                     where
-                        testBM = (fromRows bvs)
+                        testBM = fromRows bvs
 
 testRow :: TestTree
 testRow = testProperty "row returns correct value" f
@@ -103,8 +104,8 @@ testRow = testProperty "row returns correct value" f
 
 instance Arbitrary (Positive Int, Positive Int, [BitVector]) where
   arbitrary = do
-    rowCount   <- (arbitrary :: Gen (Positive Int))
-    colCount   <- (arbitrary :: Gen (Positive Int))
-    let bvGen  =  fromBits <$> vectorOf (getPositive colCount) (arbitrary :: Gen Bool)
-    bitVectors <- vectorOf (getPositive rowCount) bvGen
-    pure (rowCount, colCount, bitVectors)
+    rowCount   <- getPositive <$> arbitrary
+    colCount   <- getPositive <$> arbitrary
+    let bvGen  =  fromBits <$> vectorOf colCount (arbitrary :: Gen Bool)
+    bitVectors <- vectorOf rowCount bvGen
+    pure (Positive rowCount, Positive colCount, bitVectors)

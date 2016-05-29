@@ -84,7 +84,7 @@ bitMatrix m n f =
 fromRows :: Foldable t => t BitVector -> BitMatrix
 fromRows xs
   | equalityOf width xs = result
-  | otherwise           = error $ "fromRows: All the rows did not have the same width!"
+  | otherwise           = error "fromRows: All the rows did not have the same width!"
   where
     result = case toList xs of
                []   -> BitMatrix 0 $ bitVec 0 (0 :: Integer)

@@ -85,7 +85,7 @@ instance Arbitrary (Solution DAG) where
     arbitrary = do
       forest    <- pure <$> (arbitrary :: Gen DAG)
       meta      <- deriveDynamicMetadatas forest
-      pure $ Solution
+      pure Solution
            { parsedChars = mempty -- We only use this for outputting, so we ignore it when testing.
            , metadata    = meta
            , forests     = pure forest
@@ -99,7 +99,7 @@ deriveDynamicMetadatas (x:_) = sequenceA $ V.generate (length sequenceWLOG) f
     f i = do
         name'       <- getNonEmpty <$> arbitrary
         stateNames' <- V.fromList <$> vectorOf (length alphabet') (getNonEmpty <$> arbitrary)
-        pure $ CharMeta
+        pure CharMeta
              { charType   = DirectOptimization
              , alphabet   = alphabet'
              , name       = name' 
@@ -135,4 +135,4 @@ arbitraryCharsGivenMeta allMeta = do
   let nodeCount = length names
   let alphs     = toList $ V.map alphabet allMeta
   parsed        <- vectorOf nodeCount (parsedCharsGivenAlph alphs)
-  pure $ fromList $ zip names parsed
+  pure . fromList $ zip names parsed

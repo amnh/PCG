@@ -138,8 +138,8 @@ instance N.Network TestDAG TestNode where
   addNode t n = t V.++ pure (n {code = V.length t})
 
 instance RT.ReferentialTree TestDAG TestNode where
-  code node tree = V.elemIndex node tree
-  getNthNode tree pos = tree V.! pos
+  code       = V.elemIndex
+  getNthNode = (V.!)
 
 instance BinaryTree TestDAG TestNode where
     leftChild  n t = lookup 0 $ (\i -> t V.! i) <$> children n

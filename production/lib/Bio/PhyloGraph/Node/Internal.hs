@@ -112,7 +112,7 @@ generateLeavesDO alphabet taxaCount = do
             fmap (encodeDynamic alphabet) . vectorOf dynamicCharacterLength . sublistOf $ toList alphabet
         generateLeaf sequenceLength i = do
             sequenceOfEncodedDynamicChars <- V.fromList <$> vectorOf sequenceLength generateDynamicCharacter 
-            pure $ Node 
+            pure Node 
                  { code        = i
                  , name        = show i
                  , isRoot      = False

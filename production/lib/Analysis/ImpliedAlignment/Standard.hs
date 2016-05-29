@@ -44,14 +44,14 @@ newtype MutationAccumulator = Accum (IntMap Int, Counter, Int, Int, Int, IntSet)
 -- returns an AlignmentSolution
 iaSolution :: SolutionConstraint r m f t n e s => r -> AlignmentSolution s
 --iaSolution inSolution | trace ("iaSolution " ++ show inSolution) False = undefined
-iaSolution inSolution = fmap (flip iaForest (getMetadata inSolution)) (getForests inSolution)
+iaSolution inSolution = fmap (`iaForest` getMetadata inSolution) (getForests inSolution)
 
 -- | Simple wrapper to do an IA over a forest
 -- takes in a forest and some metadata
 -- returns an alignment forest
 iaForest :: (ForestConstraint f t n e s, Metadata m s) => f -> Vector m -> AlignmentForest s
 --iaForest inForest inMeta | trace ("iaForest " ++ show inForest) False = undefined
-iaForest inForest inMeta = fmap (flip impliedAlign inMeta) (trees inForest)
+iaForest inForest inMeta = fmap (`impliedAlign` inMeta) (trees inForest)
 
 -- TODO: used concrete BitVector type instead of something more appropriate, like EncodableDynamicCharacter. 
 -- This also means that there are a bunch of places below that could be using EDC class methods that are no longer.
@@ -65,7 +65,7 @@ impliedAlign :: (TreeConstraint t n e s, Metadata m s) => t -> Vector m -> Align
 impliedAlign inTree inMeta = foldr (\n acc -> insert (getCode n) (makeAlignment n lens) acc) mempty allLeaves
     where
         (lens, curTree) = numeratePreorder inTree (getRoot inTree) inMeta (V.replicate (length inMeta) 0)
-        allLeaves = V.filter (flip nodeIsLeaf curTree) (getNodes curTree)
+        allLeaves = V.filter (`nodeIsLeaf` curTree) (getNodes curTree)
 
 -- | Simple function to generate an alignment from a numerated node
 -- Takes in a Node
@@ -77,7 +77,7 @@ makeAlignment n seqLens = makeAlign (getFinalGapped n) (getHomologies n)
         -- onePos :: s -> Homologies -> Int -> Int -> Int -> s
         onePos c h _ _ _ | trace ("generate a position with c " ++ show c ++ ", h " ++ show h) False = undefined
         onePos c h l sPos hPos 
-            | hPos == l || sPos == (numChars c) = trace "base" $ emptyLike c
+            | hPos == l || sPos == numChars c = trace "base" $ emptyLike c
             | h ! hPos == sPos = trace "match" $ unsafeCons (grabSubChar c sPos) (onePos c h l (sPos + 1) (hPos + 1))
             | otherwise = trace "gap" $ unsafeCons (gapChar c) (onePos c h l (sPos + 1) hPos)
         -- makeOne :: s -> Homologies -> Int -> s
@@ -122,7 +122,7 @@ numeratePreorder initTree initNode inMeta curCounts
             (leftRecurseCount, leftRecurseTree)                     = numeratePreorder backPropagatedTree leftChildHomolog inMeta counterLeft
             leftRectifiedTree                                       = leftRecurseTree `update` [leftChildHomolog] -- TODO: Check this order
             
-            curNode'                                                = leftRectifiedTree `getNthNode` (getCode curNode)
+            curNode'                                                = leftRectifiedTree `getNthNode` getCode curNode
             (alignedRCur, alignedRight)                             = alignAndAssign curNode' (fromJust $ rightChild curNode' leftRectifiedTree)
             (rightChildHomolog, counterRight, insertionEventsRight) = numerateNode alignedRCur alignedRight leftRecurseCount inMeta
             backPropagatedTree'                                     = backPropagation leftRectifiedTree rightChildHomolog insertionEventsRight
@@ -145,7 +145,7 @@ numeratePreorder initTree initNode inMeta curCounts
                                 else imap (\i _ -> V.generate (numChars (curSeqs ! i)) (+ 1)) inMeta
             propagateIt tree child events = tree' `update` [child]
                                             where tree' = backPropagation tree child events
-            alignAndNumerate n1 n2 counts m = {-trace ("alignment result " ++ show n1Align) $-} numerateNode n1Align n2Align counts m
+            alignAndNumerate n1 n2 = {-trace ("alignment result " ++ show n1Align) $-} numerateNode n1Align n2Align
                                                 where (n1Align, n2Align) = alignAndAssign n1 n2
 
             -- Simple wrapper to align and assign using DO
@@ -236,10 +236,7 @@ numerateOne ancestorSeq descendantSeq _ancestorHomologies initialCounter = (desc
     descendantHomologies = V.generate (olength descendantSeq) g
      where
        g :: Int -> Int
-       g i =
-         case i `IM.lookup` mapping of
-           Nothing -> error "The apparently not impossible happened!"
-           Just v  -> v
+       g i = fromMaybe (error "The apparently not impossible happened!") $ i `IM.lookup` mapping
 
     (Accum (mapping, counter', _, _, _, insertionEvents)) = ofoldl' f (Accum (mempty, initialCounter, 0, 0, 0, mempty)) descendantSeq
       where

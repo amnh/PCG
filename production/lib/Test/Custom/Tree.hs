@@ -229,7 +229,7 @@ instance BinaryTree TestTree TestTree where
         isNotBinaryNode (TT node) = (> 2) . length $ subForest node
 
 instance RoseTree TestTree TestTree where
-    parent node root = findNode isParent root
+    parent node = findNode isParent
       where
         isParent (TT internal) = any (sameRef node . TT) $ subForest internal
 

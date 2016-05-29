@@ -44,7 +44,7 @@ type TreeChars = Map String ParsedChars
 
 -- | Higher level arbitrary helper
 parsedCharsGivenAlph :: [Alphabet String] -> Gen ParsedChars
-parsedCharsGivenAlph inAlphs = fromList <$> sequence (map parsedMaybe inAlphs)
+parsedCharsGivenAlph inAlphs = fromList <$> mapM parsedMaybe inAlphs
 
 -- | Generates a maybe character
 parsedMaybe :: Alphabet String -> Gen (Maybe ParsedChar)

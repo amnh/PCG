@@ -492,3 +492,7 @@ Test-Suite testsuite
                        Control.Monad.Logger
                        Analysis.Parsimony.Binary.Optimization
                        Bio.PhyloGraph.Forest.Parsed
+                       Analysis.General.Test
+                       Bio.Metadata.MaskGenerator
+                       Bio.PhyloGraph.DAG.Test
+                       Test.Custom.Tree

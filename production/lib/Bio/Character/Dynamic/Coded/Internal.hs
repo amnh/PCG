@@ -128,39 +128,16 @@ instance EncodableDynamicCharacter DynamicChar where
 
   encodeDynamic alphabet = DC . fromRows . fmap (encodeChar alphabet) . toList
 
-
-  -- TODO: Eric added an extra case in lookupChar, for edge case of 0 taxa. He also changed the Maybe to an error case, 
-  --       to make diagnosing problems easier for Grace. 
-  --       Add Maybe back in? See original code below.
-  indexChar dc i =
-    case dc `lookupChar` i of
-      Just x  -> x
-      Nothing -> error
-               $ mconcat [ "Character index out of bounds: Character number "
-                         , show i
-                         , " requested, and there are "
-                         , show $ olength dc
-                         , " characters."
-                         ]
-
   lookupChar (DC bm) i
     |  0 <= i && i < numRows bm = Just $ bm `row` i
     | otherwise                 = Nothing
-{-
-  indexChar i = fromJust . lookupChar i
-
-  lookupChar (DC bm) i
-    |  0 <= i
-    && i <  numRows bm = Just $ bm `row` i
-    | otherwise        = Nothing
--}
 
   -- TODO: Think about the efficiency of this
-  unsafeCons static (DC dynamic) = DC . fromRows $ [static] <> (rows dynamic)
+  unsafeCons static (DC dynamic) = DC . fromRows $ [static] <> rows dynamic
 
   unsafeAppend (DC dynamic1) bv = DC . fromRows $ rows dynamic1 <> [bv]
 
-  unsafeConsElem e (DC dynamic) = DC . fromRows $ (pure e) <> (rows dynamic)
+  unsafeConsElem e (DC dynamic) = DC . fromRows $ pure e <> rows dynamic
 
 instance OldEncodableDynamicCharacterToBeRemoved DynamicChar where
     

@@ -52,26 +52,26 @@ nonSingletonNetworkRootIsNotLeafTest :: TestTree
 nonSingletonNetworkRootIsNotLeafTest = testProperty "(numNodes t) > 1 ==> not (nodeIsLeaf (root t) t)" f
     where
         f :: DAG -> Property
-        f dag = (numNodes dag) > 1 ==> property (not (nodeIsLeaf (root dag) dag))
+        f dag = numNodes dag > 1 ==> property (not (nodeIsLeaf (root dag) dag))
 
 allNonrootNodesIsNotRootTest :: TestTree
 allNonrootNodesIsNotRootTest = testProperty "forall a. (root t) /= a ==> not (nodeIsRoot a t)" rootConsistency
 
 -- I pulled this out
 rootConsistency :: DAG -> Bool
-rootConsistency dag = oall (\node -> ((root dag) /= node) /= (nodeIsRoot node dag)) dag
+rootConsistency dag = oall (\node -> (root dag /= node) /= nodeIsRoot node dag) dag
 
 allRootNodesHaveNoParentsTest :: TestTree
 allRootNodesHaveNoParentsTest = testProperty "forall a. null (parents (nodeIsRoot a t) t)" f
     where
         f :: DAG -> Bool
-        f dag = oall (\node -> (null $ parents node dag) == (nodeIsRoot node dag)) dag
+        f dag = oall (\node -> null (parents node dag) == nodeIsRoot node dag) dag
 
 allLeafNodesHaveNoChildrenTest :: TestTree
 allLeafNodesHaveNoChildrenTest = testProperty "forall a. null (children (nodeIsLeaf a t) t)" f
     where
         f :: DAG -> Bool
-        f dag = oall (\node -> (null $ children node dag) == (nodeIsLeaf node dag)) dag
+        f dag = oall (\node -> null (children node dag) == nodeIsLeaf node dag) dag
 
 afterAddingNodeNumNodesIncreasesAppropriatelyTest :: TestTree
 afterAddingNodeNumNodesIncreasesAppropriatelyTest = testProperty "numNodes (addNode t a) == numNodes t + 1" f

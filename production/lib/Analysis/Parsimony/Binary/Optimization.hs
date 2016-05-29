@@ -80,15 +80,24 @@ optimizationPreorder weighting tree meta
         let
             nodes1    = internalPreorder weighting (fromJust $ rightChild (root tree) tree) tree meta -- with only one child, assignment and cost is simply carried up
             carryNode = head nodes1
-            newNodes  = (setTemporary (getTemporary carryNode) $ setAlign (getPreliminaryAlign carryNode)
-                        $ setPreliminary (getPreliminary carryNode) $ setTotalCost (getTotalCost carryNode) $ setLocalCost (getLocalCost carryNode) (root tree)) : nodes1
+            newNodes  = ( setTemporary   (getTemporary        carryNode)
+                        . setAlign       (getPreliminaryAlign carryNode)
+                        . setPreliminary (getPreliminary      carryNode)
+                        . setTotalCost   (getTotalCost        carryNode)
+                        . setLocalCost   (getLocalCost        carryNode)
+                        $ root tree
+                        ) : nodes1
         in tree `update` newNodes
     | leftOnly =
         let
             nodes1    = internalPreorder weighting (fromJust $ leftChild (root tree) tree) tree meta -- with only one child, assignment and cost is simply carried up
             carryNode = head nodes1
-            myNode    = setTemporary (getTemporary carryNode) $ setAlign (getPreliminaryAlign carryNode)
-                        $ setPreliminary (getPreliminary carryNode) $ setTotalCost (getTotalCost carryNode) $ setLocalCost (getLocalCost carryNode) (root tree)
+            myNode    = setTemporary   (getTemporary        carryNode)
+                      . setAlign       (getPreliminaryAlign carryNode)
+                      . setPreliminary (getPreliminary      carryNode)
+                      . setTotalCost   (getTotalCost        carryNode)
+                      . setLocalCost   (getLocalCost        carryNode)
+                      $ root tree
             newNodes  = myNode : nodes1
         in tree `update` newNodes
     | otherwise =
@@ -117,15 +126,23 @@ internalPreorder weighting node tree meta
         let
             nodes1    = internalPreorder weighting (fromJust $ rightChild node tree) tree meta -- with only one child, assignment and cost is simply carried up
             carryNode = head nodes1
-            myNode    = setTemporary (getTemporary carryNode) $ setAlign (getPreliminaryAlign carryNode)
-                        $ setPreliminary (getPreliminary carryNode) $ setTotalCost (getTotalCost carryNode) $ setLocalCost (getLocalCost carryNode) node
+            myNode    = setTemporary   (getTemporary        carryNode)
+                      . setAlign       (getPreliminaryAlign carryNode)
+                      . setPreliminary (getPreliminary      carryNode)
+                      . setTotalCost   (getTotalCost        carryNode)
+                      . setLocalCost   (getLocalCost        carryNode)
+                      $ node
         in myNode : nodes1
     | leftOnly =
         let
             nodes1    = internalPreorder weighting (fromJust $ leftChild node tree) tree meta -- with only one child, assignment and cost is simply carried up
             carryNode = head nodes1
-            myNode    = setTemporary (getTemporary carryNode) $ setAlign (getPreliminaryAlign carryNode)
-                        $ setPreliminary (getPreliminary carryNode) $ setTotalCost (getTotalCost carryNode) $ setLocalCost (getLocalCost carryNode) node
+            myNode    = setTemporary   (getTemporary        carryNode)
+                      . setAlign       (getPreliminaryAlign carryNode)
+                      . setPreliminary (getPreliminary      carryNode)
+                      . setTotalCost   (getTotalCost        carryNode)
+                      . setLocalCost   (getLocalCost        carryNode)
+                      $ node
         in myNode : nodes1
     | otherwise =
         let
@@ -200,10 +217,10 @@ preorderNodeOptimize weighting curNode lNode rNode meta = setTotalCost summedTot
             | getIgnored curCharacter = setNode
             | getType curCharacter == Fitch =
                 let (assign, temp, local) = preorderFitchBit curWeight (getForAlign lNode ! curPos) (getForAlign rNode ! curPos) curCharacter
-                in addTemporary temp $ addLocalCost (local * curWeight * weighting) $ addTotalCost (local * curWeight * weighting) $ addAlign assign $ addPreliminary assign setNode
+                in addTemporary temp . addLocalCost (local * curWeight * weighting) . addTotalCost (local * curWeight * weighting) . addAlign assign $ addPreliminary assign setNode
             | getType curCharacter == DirectOptimization =
                 let (ungapped, cost, gapped, _, _) = naiveDO (getForAlign lNode ! curPos) (getForAlign rNode ! curPos) curCharacter
-                in addLocalCost (cost * curWeight * weighting) $ addTotalCost (cost * curWeight * weighting) $ addAlign gapped $ addPreliminary ungapped setNode
+                in addLocalCost (cost * curWeight * weighting) . addTotalCost (cost * curWeight * weighting) . addAlign gapped $ addPreliminary ungapped setNode
             | otherwise = error "Unrecognized optimization type"
 
                 where curWeight = getWeight curCharacter
@@ -214,9 +231,9 @@ preorderNodeOptimize weighting curNode lNode rNode meta = setTotalCost summedTot
                 --let (ungapped, cost, gapped, leftGapped, rightGapped) = sequentialAlign (getForAlign lNode ! curPos) (getForAlign rNode ! curPos)
                 --in  addLocalCost cost $ addTotalCost cost $ addAlign gapped $ addPreliminary ungapped setNode
 
-        addPreliminary addVal inNode = addToField setPreliminary getPreliminary      addVal inNode
-        addAlign       addVal inNode = addToField setAlign       getPreliminaryAlign addVal inNode
-        addTemporary   addVal inNode = addToField setTemporary   getTemporary        addVal inNode
+        addPreliminary addVal node = addToField setPreliminary getPreliminary      addVal node
+        addAlign       addVal node = addToField setAlign       getPreliminaryAlign addVal node
+        addTemporary   addVal node = addToField setTemporary   getTemporary        addVal node
         addTotalCost   addVal node   = setTotalCost (addVal + getTotalCost node) node
         addLocalCost   addVal node   = setLocalCost (addVal + getLocalCost node) node
 
