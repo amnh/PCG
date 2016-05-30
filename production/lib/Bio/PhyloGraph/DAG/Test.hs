@@ -11,7 +11,7 @@
 -- Test suite for DAGs
 --
 -----------------------------------------------------------------------------
-{-# LANGUAGE TypeSynonymInstances, FlexibleInstances, MultiParamTypeClasses #-}
+{-# LANGUAGE FlexibleContexts, FlexibleInstances, MultiParamTypeClasses, TypeSynonymInstances #-}
 
 
 module Bio.PhyloGraph.DAG.Test

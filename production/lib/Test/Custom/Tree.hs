@@ -1,15 +1,12 @@
 {-# LANGUAGE FlexibleContexts, FlexibleInstances, MultiParamTypeClasses, TypeFamilies, TypeSynonymInstances #-}
 
 module Test.Custom.Tree
-  ( TestTree()
-  , createTestTree
+  ( SimpleTree()
+  , createSimpleTree
   ) where
 
-import Data.Char
-import Test.QuickCheck
-
 import           Bio.Character.Dynamic.Coded
-import           Bio.PhyloGraph.DAG.Class
+--import           Bio.PhyloGraph.DAG.Class
 import qualified Bio.PhyloGraph.Network           as N
 import qualified Bio.PhyloGraph.Node.Encoded      as EN
 import qualified Bio.PhyloGraph.Node.Final        as FN
@@ -22,6 +19,8 @@ import           Bio.PhyloGraph.Tree.Rose
 import           Control.Applicative                     ((<|>))
 import           Control.Monad                           ((<=<))
 import           Data.Alphabet
+import           Data.Bifunctor                          (second)
+import           Data.Char
 import           Data.Foldable
 import           Data.IntMap                             (IntMap, insertWith)
 import qualified Data.IntMap                      as IM
@@ -37,13 +36,14 @@ import           Data.Vector                             (Vector)
 import qualified Data.Vector                      as V
 import           Prelude                          hiding (lookup)
 import           Safe                                    (tailMay)
+import           Test.QuickCheck
 
-createTestTree :: Foldable t
-                => Int      -- ^ Root node reference
-                -> String   -- ^ Alphabet symbols
-                -> t (Int, String, [Int]) -- ^ (Node Reference, sequence of dynamic characters, child nodes)
-                -> TestTree
-createTestTree rootRef symbols xs = TT $ unfoldTree buildTree rootRef
+createSimpleTree :: Foldable t
+               => Int      -- ^ Root node reference
+               -> String   -- ^ Alphabet symbols
+               -> t (Int, String, [Int]) -- ^ (Node Reference, sequence of dynamic characters, child nodes)
+               -> SimpleTree
+createSimpleTree rootRef symbols xs = TT . setRefIds $ unfoldTree buildTree rootRef
   where
     alphabet = constructAlphabet $ pure <$> symbols
 --    mapping :: (Foldable a, Foldable c, Foldable v) => IntMap (v (c (a String)), IntSet)
@@ -56,14 +56,25 @@ createTestTree rootRef symbols xs = TT $ unfoldTree buildTree rootRef
     buildTree i = (def { dEncoded = pure . encodeDynamic alphabet $ (\c -> [[c]]) <$>  seq }, otoList children)
       where
         (seq, children) = mapping ! i
+    setRefIds :: Tree TestingDecoration -> Tree TestingDecoration
+    setRefIds = snd . f 0
+      where
+        f :: Int -> Tree TestingDecoration -> (Int, Tree TestingDecoration)
+        f counter root = (counter', root') 
+          where
+            root' = Node decoration' children'
+            decoration' = (rootLabel root) { refEquality = counter }
+            (counter', children') = foldr g (counter + 1, []) $subForest root
+            g e (n, xs) = second (:xs) $ f n e
+    
     
 
-createCherry :: String -> String -> String -> TestTree
-createCherry rootCharacter leftCharacter rightCharacter = createTestTree 0 alphabet [(0,rootCharacter,[1,2]), (1,leftCharacter,[]), (2,rightCharacter,[])]
+createCherry :: String -> String -> String -> SimpleTree
+createCherry rootCharacter leftCharacter rightCharacter = createSimpleTree 0 alphabet [(0,rootCharacter,[1,2]), (1,leftCharacter,[]), (2,rightCharacter,[])]
   where
     alphabet = toList $ foldMap S.fromList [rootCharacter, leftCharacter, rightCharacter]
 
-data TestTree = TT (Tree TestingDecoration)
+data SimpleTree = TT (Tree TestingDecoration)
   deriving (Eq, Show)
 
 data TestingDecoration
@@ -93,20 +104,50 @@ def = Decorations
     , refEquality  = -1
     }
 
-sameRef :: TestTree -> TestTree -> Bool
+sameRef :: SimpleTree -> SimpleTree -> Bool
 sameRef (TT x) (TT y) = ref x == ref y
   where
     ref = refEquality . rootLabel
 
+instance Arbitrary SimpleTree where
+  -- | Arbitrary Cherry
+    arbitrary = do
+      symbols  <- sublistOf $ ['0'..'9'] <> ['A'..'Z'] <> ['a'..'z']
+      rootSeq  <- sublistOf symbols 
+      leftSeq  <- sublistOf symbols 
+      rightSeq <- sublistOf symbols
+      pure $ createSimpleTree 0 symbols [(0,rootSeq,[1,2]),(1,leftSeq,[]),(2,rightSeq,[])]    
+    
+
 --type instance Element (Tree TestingDecoration) = TestingDecoration
 
-instance EN.EncodedNode TestTree DynamicChar where
+type instance Element SimpleTree = SimpleTree
+
+treeFold x@(TT root) = (x :) . concatMap (treeFold . TT) $ subForest root
+
+instance MonoFoldable SimpleTree where
+    {-# INLINE ofoldMap #-}
+    ofoldMap f = foldr (mappend . f) mempty . treeFold
+
+    {-# INLINE ofoldr #-}
+    ofoldr f e = foldr f e . treeFold
+
+    {-# INLINE ofoldl' #-}
+    ofoldl' f e = foldl' f e . treeFold
+
+    {-# INLINE ofoldr1Ex #-}
+    ofoldr1Ex f = foldr1 f . treeFold
+
+    {-# INLINE ofoldl1Ex' #-}
+    ofoldl1Ex' f = foldl1 f . treeFold
+
+instance EN.EncodedNode SimpleTree DynamicChar where
     getEncoded     (TT n)   = dEncoded $ rootLabel n
     setEncoded     (TT n) x = TT $ n { rootLabel = decoration { dEncoded = x } }
       where
         decoration = rootLabel n
 
-instance FN.FinalNode TestTree DynamicChar where
+instance FN.FinalNode SimpleTree DynamicChar where
     getFinal       (TT n) = dFinal   $ rootLabel n
     setFinal     x (TT n) = TT $ n { rootLabel = decoration { dFinal = x } }
       where
@@ -117,7 +158,7 @@ instance FN.FinalNode TestTree DynamicChar where
       where
         decoration = rootLabel n
 
-instance RN.PreliminaryNode TestTree DynamicChar where
+instance RN.PreliminaryNode SimpleTree DynamicChar where
     getPreliminary   (TT n) = dPreliminary $ rootLabel n
     setPreliminary x (TT n) = TT $ n { rootLabel = decoration { dPreliminary = x } }
       where
@@ -143,14 +184,14 @@ instance RN.PreliminaryNode TestTree DynamicChar where
       where
         decoration = rootLabel n
 
-instance IN.IANode TestTree where
+instance IN.IANode SimpleTree where
     getHomologies     (TT n)   = dIaHomology $ rootLabel n
     setHomologies     (TT n) x = TT $ n { rootLabel = decoration { dIaHomology = x } }
       where
         decoration = rootLabel n
 
 
-instance N.Network TestTree TestTree where
+instance N.Network SimpleTree SimpleTree where
    -- | Not efficient but correct.
    parents (TT node) (TT tree)
      | node == tree = []
@@ -181,10 +222,10 @@ instance N.Network TestTree TestTree where
                 Just (TT x) -> rootLabel x
 
        -- Step 2: We apply the new decorations to the subtrees in the input list of updated nodes
-       nodes' :: [TestTree]
+       nodes' :: [SimpleTree]
        nodes' = f <$> nodes
          where
-           f :: TestTree -> TestTree
+           f :: SimpleTree -> SimpleTree
            f node@(TT internal) = TT $ internal { rootLabel = decoration', subForest = children' }
              where
                children'   = ((\(TT x) -> x) . f . TT) <$> subForest internal
@@ -201,7 +242,7 @@ instance N.Network TestTree TestTree where
              where
                children' = subForest . maybe node (\(TT x) -> x) $ find (sameRef (TT node)) nodes'
          
-instance RT.ReferentialTree TestTree TestTree where
+instance RT.ReferentialTree SimpleTree SimpleTree where
     code (TT node) (TT root) = snd $ foldl' f (0, Nothing) root
       where
         target = refEquality $ rootLabel node
@@ -221,22 +262,22 @@ instance RT.ReferentialTree TestTree TestTree where
           | counter == pos = (counter + 1, Just e  )
           | otherwise      = (counter + 1, Nothing )
 
-instance BinaryTree TestTree TestTree where
+instance BinaryTree SimpleTree SimpleTree where
     leftChild    (TT internal) _ = fmap TT .  headMay $ subForest internal
     rightChild   (TT internal) _ = fmap TT . (headMay <=< tailMay) $ subForest internal
     verifyBinary = isNothing . findNode isNotBinaryNode
       where
         isNotBinaryNode (TT node) = (> 2) . length $ subForest node
 
-instance RoseTree TestTree TestTree where
+instance RoseTree SimpleTree SimpleTree where
     parent node = findNode isParent
       where
         isParent (TT internal) = any (sameRef node . TT) $ subForest internal
 
-idMatches :: Int -> TestTree -> Bool
+idMatches :: Int -> SimpleTree -> Bool
 idMatches target (TT internal) = refEquality (rootLabel internal) == target
 
-findNode :: (TestTree -> Bool) -> TestTree -> Maybe TestTree
+findNode :: (SimpleTree -> Bool) -> SimpleTree -> Maybe SimpleTree
 findNode f tree@(TT x)
   | f tree    = Just tree
   | otherwise = foldl' (<|>) Nothing $ (findNode f. TT) <$> subForest x
