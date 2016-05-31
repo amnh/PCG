@@ -71,17 +71,17 @@ impliedAlign inTree inMeta = foldr (\n acc -> insert (getCode n) (makeAlignment 
 -- Takes in a Node
 -- returns a vector of characters
 makeAlignment :: (NodeConstraint n s) => n -> Counts -> Vector s
---makeAlignment n seqLens | trace ("make alignment on n " ++ show n) False = undefined
+makeAlignment n seqLens | trace ("make alignment on n " ++ show n) False = undefined
 makeAlignment n seqLens = makeAlign (getFinalGapped n) (getHomologies n)
     where
         -- onePos :: s -> Homologies -> Int -> Int -> Int -> s
-        --onePos c h l sPos hPos | trace ("generate a position with c " ++ show c ++ ", h " ++ show h) False = undefined
+        --onePos c h l sPos hPos | trace ("generate a position at sPos " ++ show sPos ++ " and hPos " ++ show hPos ++ " and l " ++ show l) False = undefined
         onePos c h l sPos hPos 
-            | hPos == l || sPos == (numChars c) = {-trace "base" $-} emptyLike c
-            | h ! hPos == sPos = {-trace "match" $-} unsafeCons (grabSubChar c sPos) (onePos c h l (sPos + 1) (hPos + 1))
-            | otherwise = {-trace "gap" $-} unsafeCons (gapChar c) (onePos c h l (sPos + 1) hPos)
+            | hPos == (V.length h - 1) || sPos == (numChars c) = replicate l (gapChar c)
+            | h ! hPos == sPos = {-trace "match" $-} (grabSubChar c sPos) : (onePos c h l (sPos) (hPos + 1))
+            | otherwise = {-trace "gap" $-} (gapChar c) : (onePos c h (l - 1) (sPos + 1) hPos)
         -- makeOne :: s -> Homologies -> Int -> s
-        makeOne char homolog len = onePos char homolog len 0 0
+        makeOne char homolog len = fromChars $ onePos char homolog len 0 0
         --makeAlign :: Vector s -> HomologyTrace -> Vector s
         makeAlign dynChar homologies = V.zipWith3 makeOne dynChar homologies seqLens
 
