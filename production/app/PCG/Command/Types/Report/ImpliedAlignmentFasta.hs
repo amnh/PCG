@@ -42,8 +42,8 @@ iaOutput :: AlignmentSolution DynamicChar -> StandardSolution -> [(FilePath, Str
 --iaOutput align solution | trace (mconcat [show align, show solution]) False = undefined
 iaOutput align solution = (\x -> trace (unlines [ integrityCheckSolution solution
                                                 , renderAlignments align
-                                                , show $ keys dynamicCharacterIndicesAndAlphabets
-                                                , show $ getType <$> getMetadata solution
+                                                , "DynamicChar indicies: "     <> show (keys dynamicCharacterIndicesAndAlphabets)
+                                                , "Metadata character types: " <> show (getType <$> getMetadata solution)
                                                 ]
                                        ) x) $
                          foldMapWithKey characterToFastaFile dynamicCharacterIndicesAndAlphabets 
