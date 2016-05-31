@@ -64,16 +64,15 @@ type instance Key Alphabet = Int
 
 instance Indexable Alphabet where
   {-# INLINE index #-}
-  index a i = case i `lookup` a of
-                Just x  -> x
-                Nothing -> error
-                         $ mconcat ["Error indexing Alphabet at location "
-                                   , show i
-                                   , ", valid inclusive index range is [0, "
-                                   , show $ length a - 1
-                                   , "]."
-                                   ]
-
+  index a i = fromMaybe raiseError $ i `lookup` a
+    where
+      raiseError = error $ mconcat
+                 ["Error indexing Alphabet at location "
+                 , show i
+                 , ", valid inclusive index range is [0, "
+                 , show $ length a - 1
+                 , "]."
+                 ]
 
 instance Lookup Alphabet where
   {-# INLINE lookup #-}

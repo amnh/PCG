@@ -19,7 +19,7 @@ module Bio.Character.Dynamic.Coded.Class where
 
 import Data.Alphabet
 import Data.BitVector
---import Data.Maybe           (fromJust)
+import Data.Maybe           (fromMaybe)
 import Data.MonoTraversable
 
 {- LAWS:
@@ -49,10 +49,9 @@ class ( EncodableStaticCharacter (Element s)
   encodeDynamic :: (Eq a, Foldable t, Foldable c) => Alphabet a -> c (t a) -> s
 
   indexChar  :: s -> Int -> Element s
-  indexChar xs i =
-    case xs `lookupChar` i of
-      Just x  -> x
-      Nothing -> error $ mconcat ["Index ", show i, " is out of range."]
+  indexChar xs i = fromMaybe raiseError $ xs `lookupChar` i
+    where
+      raiseError = error $ mconcat ["Index ", show i, " is out of range [0,", show $ olength xs,"]."] 
 
   lookupChar :: s -> Int -> Maybe (Element s)
   lookupChar xs i = fst $ ofoldl' f (Nothing, 0) xs

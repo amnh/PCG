@@ -24,14 +24,15 @@ import           Bio.Metadata
 import           Bio.PhyloGraph
 
 import           Data.Alphabet
-import           Data.BitVector (BitVector, setBit, bitVec)
+import           Data.BitVector          (BitVector, setBit, bitVec)
 import           Data.Foldable
-import qualified Data.IntMap    as IM
-import           Data.IntSet     (IntSet)
+import           Data.Function           (on)
+import qualified Data.IntMap       as IM
+import           Data.IntSet             (IntSet)
 import           Data.List
 import           Data.MonoTraversable
-import qualified Data.Set as S
-import qualified Data.Vector    as V
+import qualified Data.Set          as S
+import qualified Data.Vector       as V
 import qualified Test.Custom.Types as T
 import           Test.Tasty
 import           Test.Tasty.HUnit
@@ -51,19 +52,19 @@ fullIA = testGroup "Full alignment properties" [lenHolds, twoRuns, checkDOResult
         lenHolds = testProperty "The sequences on a tree are longer or the same at end" checkLen
 
         bioAlph        = constructAlphabet . V.fromList . fmap pure $ "ACGT-"
-        encodeThem     = V.fromList . map (encodeDynamic bioAlph)
+        encodeThem     = V.fromList . fmap (encodeDynamic bioAlph)
         rootTest       = T.TestNode 0 True False [] [1,2] mempty mempty mempty mempty mempty mempty mempty 0 0
-        leftTest       = rootTest {T.code = 1, T.isRoot = False, T.isLeaf = True, T.parents = [0], T.children = [], T.encoded = encodeThem $ pure $ V.fromList [["A"], ["T"], ["T"]]}
-        rightTest      = leftTest {T.code = 2, T.encoded = encodeThem $ pure $ V.fromList [["A"], ["G"]]}
-        cherry1        = V.fromList $ [rootTest, leftTest, rightTest]
+        leftTest       = rootTest {T.code = 1, T.isRoot = False, T.isLeaf = True, T.parents = [0], T.children = [], T.encoded = encodeThem . pure $ V.fromList [["A"], ["T"], ["T"]]}
+        rightTest      = leftTest {T.code = 2, T.encoded = encodeThem . pure $ V.fromList [["A"], ["G"]]}
+        cherry1        = V.fromList [rootTest, leftTest, rightTest]
         doMeta         = CharMeta DirectOptimization bioAlph "" False False 1 mempty (emptyChar, emptyChar) 0 (GeneralCost 1 1)
         doResult1      = allOptimization 1 (pure doMeta) cherry1
-        expectedSeq    = encodeThem $ pure $ V.fromList [["A"], ["T", "G"], ["T", "-"]]
+        expectedSeq    = encodeThem . pure $ V.fromList [["A"], ["T", "G"], ["T", "-"]]
         newRoot        = rootTest {T.preliminary = expectedSeq, T.aligned = expectedSeq, T.localCost = 2, T.totalCost = 2}
-        expectedDO     = V.fromList $ [newRoot, leftTest, rightTest]
+        expectedDO     = V.fromList [newRoot, leftTest, rightTest]
         checkDOResult1 = testCase "On a simple cherry, DO behaves as expected" (expectedDO @=? doResult1)
         iaResult1      = impliedAlign expectedDO (pure doMeta)
-        expectedIA1    = IM.fromList [(1, encodeThem $ pure $ V.fromList [["A"], ["T"], ["T"]]), (2, encodeThem $ pure $ V.fromList [["A"], ["-"], ["G"]])]
+        expectedIA1    = IM.fromList [(1, encodeThem . pure $ V.fromList [["A"], ["T"], ["T"]]), (2, encodeThem . pure $ V.fromList [["A"], ["-"], ["G"]])]
         checkIAResult1 = testCase "On the same cherry, IA gives the expected result" (expectedIA1 @=? iaResult1)
 
 checkLen :: StandardSolution -> Bool
@@ -76,14 +77,14 @@ checkLen inSolution = checkLS
                       where
                         checkLD d a  = and $ zipWith checkL (V.toList $ nodes d) (IM.toList a)
                           where
-                            checkL n (_, s) = and $ V.zipWith (\c1 c2 -> numChars c1 <= numChars c2) (getFinalGapped n) s
+                            checkL n (_, s) = and $ V.zipWith ((<=) `on` numChars) (getFinalGapped n) s
 
 twoRuns = testProperty "After two runs of IA, assignments are static" twoIA
             where
                 twoIA :: StandardSolution -> Bool
-                twoIA (Solution _ meta forests) = foldr (\f acc -> foldr checkStatic acc f) True forests
+                twoIA (Solution _ meta forests) = foldr (flip (foldr checkStatic)) True forests
                     where
-                        counts = (V.replicate (length meta) 0)
+                        counts     = V.replicate (length meta) 0
                         runTwice t = (firstRun, secondRun)
                           where
                             firstRun  = run $ allOptimization 1 meta t
@@ -149,7 +150,7 @@ encodeArbSameLen (parse1, parse2) = (encodeDynamic alph (V.take minLen p1), enco
         (p1,p2) = (getGoodness parse1, getGoodness parse2)
         minLen  = minimum [length p1, length p2]
         oneAlph = foldMap S.fromList
-        alph    = constructAlphabet $ (oneAlph p1) `S.union` (oneAlph p2)
+        alph    = constructAlphabet $ oneAlph p1 `S.union` oneAlph p2
 
 -- | Newtyping ensures that the sequence and ambiguity groups are both non empty.
 newtype GoodParsedChar

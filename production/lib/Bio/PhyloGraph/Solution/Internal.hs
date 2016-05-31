@@ -33,7 +33,7 @@ import           Data.Foldable
 import           Data.HashMap.Strict (HashMap, fromList)
 import           Data.Matrix.NotStupid (matrix)
 import           Data.Monoid ((<>))
-import           Data.MonoTraversable
+--import           Data.MonoTraversable
 import           Data.Vector      (Vector, (!))
 import qualified Data.Vector as V
 import           Test.Tasty.QuickCheck 
@@ -85,21 +85,21 @@ instance Arbitrary (Solution DAG) where
     arbitrary = do
       forest    <- pure <$> (arbitrary :: Gen DAG)
       meta      <- deriveDynamicMetadatas forest
-      pure $ Solution
+      pure Solution
            { parsedChars = mempty -- We only use this for outputting, so we ignore it when testing.
            , metadata    = meta
            , forests     = pure forest
            }
 
 deriveDynamicMetadatas :: Forest DAG -> Gen (Vector StandardMetadata)
-deriveDynamicMetadatas []     = pure mempty
-deriveDynamicMetadatas (x:xs) = sequenceA $ V.generate (length sequenceWLOG) f
+deriveDynamicMetadatas []    = pure mempty
+deriveDynamicMetadatas (x:_) = sequenceA $ V.generate (length sequenceWLOG) f
   where
     f :: Int -> Gen StandardMetadata
     f i = do
         name'       <- getNonEmpty <$> arbitrary
         stateNames' <- V.fromList <$> vectorOf (length alphabet') (getNonEmpty <$> arbitrary)
-        pure $ CharMeta
+        pure CharMeta
              { charType   = DirectOptimization
              , alphabet   = alphabet'
              , name       = name' 
@@ -113,6 +113,7 @@ deriveDynamicMetadatas (x:xs) = sequenceA $ V.generate (length sequenceWLOG) f
              }
       where
         character = sequenceWLOG ! i
+        -- We take one less than the width here to account for the cumpulsory gap character.
         alphabet' = constructAlphabet . ("-":) $ take (alphabetSize - 1) symbols
           where
             -- We don't care about the exact symbol rendering, only that they are unique and there are a correct quantity of them.
@@ -130,8 +131,8 @@ deriveDynamicMetadatas (x:xs) = sequenceA $ V.generate (length sequenceWLOG) f
 
 arbitraryCharsGivenMeta :: Vector StandardMetadata -> Gen Parsed
 arbitraryCharsGivenMeta allMeta = do
-  names <- listOf (arbitrary :: Gen String)
-  let numNodes = length names
-  let alphs = toList $ V.map alphabet allMeta
-  parsed <- vectorOf numNodes (parsedCharsGivenAlph alphs)
-  pure $ fromList $ zip names parsed
+  names         <- listOf (arbitrary :: Gen String)
+  let nodeCount = length names
+  let alphs     = toList $ V.map alphabet allMeta
+  parsed        <- vectorOf nodeCount (parsedCharsGivenAlph alphs)
+  pure . fromList $ zip names parsed

@@ -18,9 +18,7 @@ import Analysis.General.NeedlemanWunsch
 import Analysis.Parsimony.Binary.Internal
 import Bio.Metadata
 import Bio.Character.Dynamic.Coded
-import Data.Bits
-import Data.BitVector hiding (foldr)
-import Debug.Trace
+--import Debug.Trace
 
 
 
@@ -38,7 +36,7 @@ naiveDO char1 char2 meta
         let
             char1Len = numChars char1
             char2Len = numChars char2
-            (shorterChar, longerChar, longLen) = if char1Len > char2Len
+            (shorterChar, longerChar, _longLen) = if char1Len > char2Len
                                          then (char2, char1, char1Len)
                                          else (char1, char2, char2Len)
             traversalMat = getAlignMat longerChar shorterChar meta

@@ -11,7 +11,7 @@
 -- Test suite for DAGs
 --
 -----------------------------------------------------------------------------
-{-# LANGUAGE TypeSynonymInstances, FlexibleInstances, MultiParamTypeClasses #-}
+{-# LANGUAGE FlexibleContexts, FlexibleInstances, MultiParamTypeClasses, TypeSynonymInstances #-}
 
 
 module Bio.PhyloGraph.DAG.Test
@@ -30,36 +30,135 @@ import           Test.Tasty.QuickCheck
 import Debug.Trace
 
 testSuite :: TestTree
-testSuite = testGroup "DAG tests" [typeClassLawsForNetwork]
+testSuite = testGroup "DAG tests" [typeClassLawsForNetwork, updateWorksCorrectlyTests]
 
 typeClassLawsForNetwork :: TestTree
 typeClassLawsForNetwork = testGroup "DAG is an appropriate instance of Network" [ nodeIsRootTest
                                                                                 , nonSingletonNetworkRootIsNotLeafTest
-                                                                                , allNonrootNodesIsNotRootTest
+                                                                                , allNonrootNodesAreNotRootTest
                                                                                 , allRootNodesHaveNoParentsTest
                                                                                 , allLeafNodesHaveNoChildrenTest
-                                                                                , afterAddingNodeNumNodesIncreasesAppropriatelyTest
+                                                                               -- , afterAddingNodeNumNodesIncreasesAppropriatelyTest
                                                                                 , afterUpdatingSingleNodeNumNodesDoesntChangeTest
                                                                                 ]
 
 nodeIsRootTest :: TestTree
-nodeIsRootTest = testProperty "nodeIsRoot (root t) t" f
+nodeIsRootTest = testProperty "nodeIsRoot (root t) t" $ nodeIsRoot'
+
+nodeIsRoot' :: DAG -> Bool
+nodeIsRoot' dag = nodeIsRoot (root dag) dag
+
+nonSingletonNetworkRootIsNotLeafTest :: TestTree
+nonSingletonNetworkRootIsNotLeafTest = testProperty "(numNodes t) > 1 ==> not (nodeIsLeaf (root t) t)" f
+    where
+        f :: DAG -> Property
+        f dag = numNodes dag > 1 ==> property (not (nodeIsLeaf (root dag) dag))
+
+allNonrootNodesAreNotRootTest :: TestTree
+allNonrootNodesAreNotRootTest = testProperty "forall a. (root t) /= a ==> not (nodeIsRoot a t)" onlyNodeIsRoot
+        
+onlyNodeIsRoot :: DAG -> Bool
+onlyNodeIsRoot dag = oall (\node -> {- trace (show node) $ -} ((root dag) /= node) /= (nodeIsRoot node dag)) dag
+                                                                       {- ^^this /= is not working the way I thought it would. -}
+
+-- Alex pulled this out. Now it's back in?
+rootConsistency dag = oall (\node -> (root dag /= node) /= nodeIsRoot node dag) dag
+
+allRootNodesHaveNoParentsTest :: TestTree
+allRootNodesHaveNoParentsTest = testProperty "forall a. null (parents (nodeIsRoot a t) t)" f
     where
         f :: DAG -> Bool
-        f dag = nodeIsRoot (root dag) dag
+        f dag = oall (\node -> null (parents node dag) == nodeIsRoot node dag) dag
 
+allLeafNodesHaveNoChildrenTest :: TestTree
+allLeafNodesHaveNoChildrenTest = testProperty "forall a. null (children (nodeIsLeaf a t) t)" f
+    where
+        f :: DAG -> Bool
+        f dag = oall (\node -> null (children node dag) == nodeIsLeaf node dag) dag
+
+-- addNode is unused, so this test is commented out
+{-
+afterAddingNodeNumNodesIncreasesAppropriatelyTest :: TestTree
+afterAddingNodeNumNodesIncreasesAppropriatelyTest = testProperty "numNodes (addNode t a) == numNodes t + 1" f
+    where
+        f :: DAG -> NodeInfo -> Bool
+        f dag node = numNodes dag + 1 == numNodes newDag
+            where
+                newDag = addNode dag node
+-}
+
+afterUpdatingSingleNodeNumNodesDoesntChangeTest :: TestTree
+afterUpdatingSingleNodeNumNodesDoesntChangeTest = testProperty "numNodes (update  t a) == numNodes t" f
+    where
+        f :: DAG -> Gen Bool
+        f dag = do
+              i <- (getNonNegative <$> arbitrary) `suchThat` (< numNodes dag)
+              let newDag = update dag [node']
+                  node   = nodes dag V.! i
+                  node'  = node { name = "Changed" }
+              pure $ nodeIsRoot' newDag
+
+
+-- TODO: run update and make sure above laws still hold.
+-- remember to add a leaf and add a root.
+
+updateWorksCorrectlyTests :: TestTree
+updateWorksCorrectlyTests = testGroup "update isn't breaking the tree" [ rootIsStillRootTest
+                                                                       , stillNoOtherNodesAreRootTest
+                                                                       , updateDoesSomething
+                                                                      -- , allNonrootNodesAreNotRootTest
+                                                                      -- , allRootNodesHaveNoParentsTest
+                                                                      -- , allLeafNodesHaveNoChildrenTest
+                                                                      ---- , afterAddingNodeNumNodesIncreasesAppropriatelyTest
+                                                                      -- , afterUpdatingSingleNodeNumNodesDoesntChangeTest
+                                                                       ]
+
+rootIsStillRootTest :: TestTree
+rootIsStillRootTest = testProperty "After update making a random node root, nodeIsRoot (root t) t" f
+    where
+        f :: DAG -> Gen Bool
+        f dag = do
+              i <- (getNonNegative <$> arbitrary) `suchThat` (< numNodes dag)
+              let newDag = update dag [node']
+                  node   = nodes dag V.! i
+                  node'  = node { isRoot = True }
+              pure $ nodeIsRoot (root newDag) newDag
+
+stillNoOtherNodesAreRootTest :: TestTree
+stillNoOtherNodesAreRootTest = testProperty 
+    "After update making a random node root, forall a. (root t) /= a ==> not (nodeIsRoot a t)" f
+    where
+        f :: DAG -> Gen Bool
+        f dag = do
+              i <- (getNonNegative <$> arbitrary) `suchThat` (< numNodes dag)
+              let newDag = update dag [node']
+                  node   = nodes dag V.! i
+                  node'  = node { isRoot = True }
+              pure $ {- trace ("New node: " ++ (show node') ++ "\n\nDAG: " ++ (show newDag) ++ "\n\n") $ -} onlyNodeIsRoot newDag
+
+updateDoesSomething :: TestTree
+updateDoesSomething = testProperty "After update, DAG has changed" f
+    where
+        f :: DAG -> Gen Bool
+        f dag = do
+              i <- (getNonNegative <$> arbitrary) `suchThat` (< numNodes dag)
+              let newDag = update dag [node']
+                  node   = nodes dag V.! i
+                  node'  = node { name = "Changed" }
+              pure $ newDag /= dag
+
+{-
 nonSingletonNetworkRootIsNotLeafTest :: TestTree
 nonSingletonNetworkRootIsNotLeafTest = testProperty "(numNodes t) > 1 ==> not (nodeIsLeaf (root t) t)" f
     where
         f :: DAG -> Property
         f dag = (numNodes dag) > 1 ==> property (not (nodeIsLeaf (root dag) dag))
 
-allNonrootNodesIsNotRootTest :: TestTree
-allNonrootNodesIsNotRootTest = testProperty "forall a. (root t) /= a ==> not (nodeIsRoot a t)" rootConsistency
-
--- I pulled this out
-rootConsistency :: DAG -> Bool
-rootConsistency dag = oall (\node -> ((root dag) /= node) /= (nodeIsRoot node dag)) dag
+allNonrootNodesAreNotRootTest :: TestTree
+allNonrootNodesAreNotRootTest = testProperty "forall a. (root t) /= a ==> not (nodeIsRoot a t)" f
+    where
+        f :: DAG -> Bool
+        f dag = oall (\node -> ((root dag) /= node) /= (nodeIsRoot node dag)) dag
 
 allRootNodesHaveNoParentsTest :: TestTree
 allRootNodesHaveNoParentsTest = testProperty "forall a. null (parents (nodeIsRoot a t) t)" f
@@ -72,30 +171,4 @@ allLeafNodesHaveNoChildrenTest = testProperty "forall a. null (children (nodeIsL
     where
         f :: DAG -> Bool
         f dag = oall (\node -> (null $ children node dag) == (nodeIsLeaf node dag)) dag
-
-afterAddingNodeNumNodesIncreasesAppropriatelyTest :: TestTree
-afterAddingNodeNumNodesIncreasesAppropriatelyTest = testProperty "numNodes (addNode t a) == numNodes t + 1" f
-    where
-        f :: DAG -> NodeInfo -> Bool
-        f dag node = numNodes dag + 1 == numNodes newDag
-            where
-                newDag = addNode dag node
-
-afterUpdatingSingleNodeNumNodesDoesntChangeTest :: TestTree
-afterUpdatingSingleNodeNumNodesDoesntChangeTest = testProperty "numNodes (update  t a) == numNodes t" f
-    where
-        f :: DAG -> Gen Bool
-        f dag = do
-              i <- (getNonNegative <$> arbitrary) `suchThat` (< numNodes dag)
-              let newDag = update dag [node']
-                  node   = nodes dag V.! i
---                  node'  = setEncoded node mempty
-                  node'  = node { encoded = mempty }
-              pure $ numNodes dag == numNodes newDag
-
-{- | Type class Laws:
-
-     numNodes (addNode t a) == numNodes t + 1
-     numNodes (update  t a) == numNodes t
-
- -}
+-}

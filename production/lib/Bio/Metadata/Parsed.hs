@@ -58,7 +58,7 @@ instance ParsedMetadata TNT.TntResult where
     unifyMetadata (Right withSeq) = fromList $ zipWith f (toList $ TNT.charMetaData withSeq) (snd . head . toList $ TNT.sequences withSeq)
         where
            f :: EncodableDynamicCharacter s => TNT.CharacterMetaData -> TNT.TntCharacter -> CharacterMetadata s
-           f inMeta inChar =  let defaultMeta = makeOneInfo $ Alphabet $ tntAlphabet inChar
+           f inMeta inChar =  let defaultMeta = makeOneInfo . Alphabet $ tntAlphabet inChar
                     in  defaultMeta { name       = TNT.characterName   inMeta
                                     , stateNames = TNT.characterStates inMeta
                                     , costs      = maybe (costs defaultMeta) TCM (TNT.costTCM inMeta)
@@ -80,7 +80,7 @@ instance ParsedMetadata Nexus where
     unifyMetadata (Nexus (_, metas)) = V.map convertNexusMeta metas
         where
             convertNexusMeta inMeta =
-                let defaultMeta = makeOneInfo (Alphabet $ fromList $ Nex.alphabet inMeta)
+                let defaultMeta = makeOneInfo . Alphabet . fromList $ Nex.alphabet inMeta
                 in  defaultMeta { name = Nex.name inMeta, isIgnored = Nex.ignored inMeta,
                                   costs  = maybe (costs defaultMeta) (TCM . F.transitionCosts) (Nex.costM inMeta)}
 
