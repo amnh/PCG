@@ -59,7 +59,7 @@ fullIA = testGroup "Full alignment properties" [lenHolds, twoRuns, checkDOResult
         cherry1        = V.fromList [rootTest, leftTest, rightTest]
         doMeta         = CharMeta DirectOptimization bioAlph "" False False 1 mempty (emptyChar, emptyChar) 0 (GeneralCost 1 1)
         doResult1      = allOptimization 1 (pure doMeta) cherry1
-        expectedSeq    = encodeThem . pure $ V.fromList [["A"], ["T", "G"], ["T", "-"]]
+        expectedSeq    = encodeThem . pure $ V.fromList [["A"], ["T", "-"], ["T", "G"]]
         newRoot        = rootTest {T.preliminary = expectedSeq, T.aligned = expectedSeq, T.localCost = 2, T.totalCost = 2}
         expectedDO     = V.fromList [newRoot, leftTest, rightTest]
         checkDOResult1 = testCase "On a simple cherry, DO behaves as expected" (expectedDO @=? doResult1)
