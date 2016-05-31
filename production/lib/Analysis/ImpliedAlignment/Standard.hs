@@ -62,26 +62,33 @@ iaForest inForest inMeta = fmap (`impliedAlign` inMeta) (trees inForest)
 -- TODO: Consider building the alignment at each step of a postorder rather than grabbing wholesale
 impliedAlign :: (TreeConstraint t n e s, Metadata m s) => t -> Vector m -> Alignment s
 --impliedAlign inTree inMeta | trace ("impliedAlign with tree " ++ show inTree) False = undefined
-impliedAlign inTree inMeta = foldr (\n acc -> insert (getCode n) (makeAlignment n lens) acc) mempty allLeaves
+impliedAlign inTree inMeta = extractAlign numerated inMeta
     where
-        (lens, curTree) = numeratePreorder inTree (getRoot inTree) inMeta (V.replicate (length inMeta) 0)
-        allLeaves = V.filter (`nodeIsLeaf` curTree) (getNodes curTree)
+        numerated = numeratePreorder inTree (getRoot inTree) inMeta (V.replicate (length inMeta) 0)
+
+extractAlign :: (TreeConstraint t n e s, Metadata m s) => (Counts, t) -> Vector m -> Alignment s
+extractAlign (lens, numeratedTree) inMeta = foldr (\n acc -> insert (getCode n) (makeAlignment n lens) acc) mempty allLeaves
+    where allLeaves = V.filter (`nodeIsLeaf` numeratedTree) (getNodes numeratedTree)
 
 -- | Simple function to generate an alignment from a numerated node
 -- Takes in a Node
 -- returns a vector of characters
 makeAlignment :: (NodeConstraint n s) => n -> Counts -> Vector s
-makeAlignment n seqLens | trace ("make alignment on n " ++ show n) False = undefined
+--makeAlignment n seqLens | trace ("make alignment on n " ++ show n ++ " with lens " ++ show seqLens) False = undefined
 makeAlignment n seqLens = makeAlign (getFinalGapped n) (getHomologies n)
     where
         -- onePos :: s -> Homologies -> Int -> Int -> Int -> s
         --onePos c h l sPos hPos | trace ("generate a position at sPos " ++ show sPos ++ " and hPos " ++ show hPos ++ " and l " ++ show l) False = undefined
-        onePos c h l sPos hPos 
-            | hPos == (V.length h) || sPos == (numChars c) = replicate l (gapChar c)
-            | h ! hPos == sPos = {-trace "match" $-} (grabSubChar c sPos) : (onePos c h l (sPos) (hPos + 1))
-            | otherwise = {-trace "gap" $-} (gapChar c) : (onePos c h (l - 1) (sPos + 1) hPos)
+        --onePos c h l sPos hPos
+        --    | hPos == (V.length h) = replicate l (gapChar c)
+        --    | h ! hPos == sPos = {-trace "match" $-} (grabSubChar c sPos) : (onePos c h l (sPos) (hPos + 1))
+        --    | otherwise = {-trace "gap" $-} (gapChar c) : (onePos c h (l - 1) (sPos + 1) hPos)
+        onePos char homologies outLen outPos hPos gapsAdded
+            | hPos == V.length homologies = replicate (outLen - gapsAdded) (gapChar char)
+            | homologies ! hPos == outPos = grabSubChar char hPos : onePos char homologies outLen (outPos + 1) (hPos + 1) gapsAdded
+            | otherwise                   = gapChar char          : onePos char homologies outLen (outPos + 1) hPos (gapsAdded + 1)
         -- makeOne :: s -> Homologies -> Int -> s
-        makeOne char homolog len = fromChars $ onePos char homolog len 0 0
+        makeOne char homolog len = fromChars $ onePos char homolog len 0 0 0
         --makeAlign :: Vector s -> HomologyTrace -> Vector s
         makeAlign dynChar homologies = V.zipWith3 makeOne dynChar homologies seqLens
 
@@ -220,7 +227,7 @@ accountForInsertionEvents homologies insertionEvents = V.generate (length homolo
 -- returns a tuple with the node with homologies incorporated, and a returned vector of counters
 numerateNode :: (NodeConstraint n s, Metadata m s) => n -> n -> Counts -> Vector m -> (n, Counts, Vector IntSet) 
 --numerateNode ancestorNode childNode initCounters _ | trace ("numerateNode on " ++ show (getCode ancestorNode) ++" and " ++ show (getCode childNode) ++ ", " ++ show initCounters) False = undefined
-numerateNode ancestorNode childNode initCounters inMeta = trace ("numeration result " ++ show homologs) $ (setHomologies childNode homologs, counts, insertionEvents)
+numerateNode ancestorNode childNode initCounters inMeta = {-trace ("numeration result " ++ show homologs) $-} (setHomologies childNode homologs, counts, insertionEvents)
         where
             numeration = --trace ("numeration zip on " ++ show (getForAlign ancestorNode) ++" and " ++ show (getForAlign childNode)) 
                             V.zipWith4 numerateOne (getForAlign ancestorNode) (getForAlign childNode) (getHomologies ancestorNode) initCounters 
@@ -228,7 +235,7 @@ numerateNode ancestorNode childNode initCounters inMeta = trace ("numeration res
 
 
 numerateOne :: SeqConstraint s => s -> s -> Homologies -> Counter -> (Homologies, Counter, IntSet)
-numerateOne ancestorSeq descendantSeq ancestorHomologies initialCounter | trace ("numerateOne on " ++ show ancestorSeq ++" and " ++ show descendantSeq) False = undefined
+--numerateOne ancestorSeq descendantSeq ancestorHomologies initialCounter | trace ("numerateOne on " ++ show ancestorSeq ++" and " ++ show descendantSeq) False = undefined
 numerateOne ancestorSeq descendantSeq _ancestorHomologies initialCounter = (descendantHomologies, counter', insertionEvents)
   where
     gapCharacter = gapChar descendantSeq
