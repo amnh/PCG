@@ -86,11 +86,18 @@ fromRows xs
   | equalityOf width xs = result
   | otherwise           = error "fromRows: All the rows did not have the same width!"
   where
+    -- concatenate the right way, dumb monoid instance of BV
+    lhs `bvCat` rhs = bitVec (n + m) ((b `shiftL` n) + a)
+      where
+        n = width lhs
+        m = width rhs
+        a = nat   lhs
+        b = nat   rhs
     result = case toList xs of
                []   -> BitMatrix 0 $ bitVec 0 (0 :: Integer)
                y:ys -> BitMatrix (width y) (if width y == 0 
                                             then bitVec (length xs) (0 :: Integer)
-                                            else mconcat $ y:ys)
+                                            else foldr1 (bvCat) $ y:ys)
 
 -- | The number of columns in the 'BitMatrix'
 numCols :: BitMatrix -> Int
