@@ -120,7 +120,7 @@ instance EncodableStaticCharacter BitVector where
   -- The head element of the list is the most significant bit when calling fromBits.
   -- We need the first element of the alphabet to correspond to the least significant bit.
   -- Hence foldl, don't try foldMap or toList & fmap without careful thought.
-  encodeChar alphabet ambiguity = fromBits $ foldl' (\xs x -> (x `elem` ambiguity) : xs) []  alphabet
+  encodeChar alphabet ambiguity = fromBits $ foldl' (\xs x -> (x `elem` ambiguity) : xs) [] alphabet
 
 instance EncodableDynamicCharacter DynamicChar where
 
@@ -129,8 +129,8 @@ instance EncodableDynamicCharacter DynamicChar where
   encodeDynamic alphabet = DC . fromRows . fmap (encodeChar alphabet) . toList
 
   lookupChar (DC bm) i
-    |  0 <= i && i < numRows bm = Just $ bm `row` i
-    | otherwise                 = Nothing
+    | 0 <= i && i < numRows bm = Just $ bm `row` i
+    | otherwise                = Nothing
 
   -- TODO: Think about the efficiency of this
   unsafeCons static (DC dynamic) = DC . fromRows $ [static] <> rows dynamic
