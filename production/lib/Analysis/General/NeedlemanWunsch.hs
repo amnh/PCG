@@ -18,14 +18,14 @@ module Analysis.General.NeedlemanWunsch where
 import Bio.Metadata
 import Bio.Character.Dynamic.Coded
 import Data.Bits
-import Data.BitVector hiding (foldr)
+import Data.BitVector hiding (foldr, reverse)
 import Data.Foldable         (minimumBy)
 import Data.Function.Memoize
 import Data.Matrix.NotStupid (Matrix, getElem, nrows, ncols, matrix)
 import Data.Ord
 import Data.Vector           (Vector)
 
---import Debug.Trace
+import Debug.Trace
 
 -- | The direction to align the character at a given matrix point.
 data Direction = LeftDir | DiagDir | DownDir deriving (Eq, Show)
@@ -45,7 +45,8 @@ type SeqConstraint s = (EncodableDynamicCharacter s, Bits s, Show s, Memoizable 
 -- Takes in two sequences and a metadata
 -- returns two aligned sequences
 needlemanWunsch :: (SeqConstraint s, Metadata m s) => s -> s -> m -> (s, s)
-needlemanWunsch char1 char2 meta = (seq1Align, seq2Align)
+--needlemanWunsch char1 char2 meta | trace ("needlemanWunsch on " ++ show char1 ++ " and " ++ show char2) False = undefined
+needlemanWunsch char1 char2 meta = {-trace ("with result " ++ show seq1Align ++ show seq2Align) $-} (seq1Align, seq2Align)
     where
         char1Len = numChars char1
         char2Len = numChars char2
@@ -53,7 +54,10 @@ needlemanWunsch char1 char2 meta = (seq1Align, seq2Align)
                                      then (char2, char1, char1Len)
                                      else (char1, char2, char2Len)
         traversalMat = getAlignMat longerChar shorterChar meta
-        (_, seq1Align, seq2Align) = traceback traversalMat shorterChar longerChar
+        (_, alignL, alignR) = traceback traversalMat shorterChar longerChar
+        (seq1Align, seq2Align) = if char1Len > char2Len
+                                then (alignR, alignL)
+                                else (alignL, alignR)
 
 -- | Main function to generate an alignment matrix
 -- Takes in two sequences (the longer first) and the metadata
@@ -96,7 +100,7 @@ getAlignMat char1 char2 meta = result
 -- Essentially follows the arrows from the bottom right corner, accumulating the sequences as it goes
 traceback :: (SeqConstraint s) => AlignMatrix s -> s -> s -> (s, s, s)
 --traceback alignMat char1 char2 | trace ("traceback with matrix " ++ show alignMat) False = undefined
-traceback alignMat' char1' char2' = (fromChars t1, fromChars t2, fromChars t3)
+traceback alignMat' char1' char2' = (fromChars $ reverse t1, fromChars $ reverse t2, fromChars $ reverse t3)
     where
         (t1, t2, t3) = tracebackInternal alignMat' char1' char2' (nrows alignMat' - 1, ncols alignMat' - 1)
         -- read it from the matrix instead of grabbing

@@ -65,7 +65,7 @@ doProperties = testGroup "Properties of the DO algorithm"
         seq2 =  encodeDynamic standardAlph (V.fromList [["A"], ["G"]])
         result1 = naiveDO seq1 seq2 doMeta
         --expected1 :: (DynamicChar, Double, DynamicChar, DynamicChar, DynamicChar)
-        expected1 = (encodeDynamic standardAlph (V.fromList [["A"], ["G", "T"], ["T", "-"]]), 2.0, encodeDynamic standardAlph (V.fromList [["A"], ["G", "T"], ["T", "-"]]), seq1, encodeDynamic standardAlph (V.fromList [["A"], ["G"], ["-"]]))
+        expected1 = (encodeDynamic standardAlph (V.fromList [["A"], ["T", "-"], ["G", "T"]]), 2.0, encodeDynamic standardAlph (V.fromList [["A"], ["T", "-"], ["G", "T"]]), seq1, encodeDynamic standardAlph (V.fromList [["A"], ["-"], ["G"]]))
         simpleDO1 = testCase "One a simple test, DO gives expected result: ATT and AG -> A-[GT] or AG-" (expected1 @=? result1)
 
 -- | Check properties of the Fitch algorithm
