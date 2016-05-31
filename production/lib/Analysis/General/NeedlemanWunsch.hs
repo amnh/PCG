@@ -45,7 +45,8 @@ type SeqConstraint s = (EncodableDynamicCharacter s, Bits s, Show s, Memoizable 
 -- Takes in two sequences and a metadata
 -- returns two aligned sequences
 needlemanWunsch :: (SeqConstraint s, Metadata m s) => s -> s -> m -> (s, s)
-needlemanWunsch char1 char2 meta = (seq1Align, seq2Align)
+--needlemanWunsch char1 char2 meta | trace ("needlemanWunsch on " ++ show char1 ++ " and " ++ show char2) False = undefined
+needlemanWunsch char1 char2 meta = {-trace ("with result " ++ show seq1Align ++ show seq2Align) $-} (seq1Align, seq2Align)
     where
         char1Len = numChars char1
         char2Len = numChars char2
@@ -53,7 +54,10 @@ needlemanWunsch char1 char2 meta = (seq1Align, seq2Align)
                                      then (char2, char1, char1Len)
                                      else (char1, char2, char2Len)
         traversalMat = getAlignMat longerChar shorterChar meta
-        (_, seq1Align, seq2Align) = traceback traversalMat shorterChar longerChar
+        (_, alignL, alignR) = traceback traversalMat shorterChar longerChar
+        (seq1Align, seq2Align) = if char1Len > char2Len
+                                then (alignR, alignL)
+                                else (alignL, alignR)
 
 -- | Main function to generate an alignment matrix
 -- Takes in two sequences (the longer first) and the metadata

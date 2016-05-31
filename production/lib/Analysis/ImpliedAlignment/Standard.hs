@@ -77,7 +77,7 @@ makeAlignment n seqLens = makeAlign (getFinalGapped n) (getHomologies n)
         -- onePos :: s -> Homologies -> Int -> Int -> Int -> s
         --onePos c h l sPos hPos | trace ("generate a position at sPos " ++ show sPos ++ " and hPos " ++ show hPos ++ " and l " ++ show l) False = undefined
         onePos c h l sPos hPos 
-            | hPos == (V.length h - 1) || sPos == (numChars c) = replicate l (gapChar c)
+            | hPos == (V.length h) || sPos == (numChars c) = replicate l (gapChar c)
             | h ! hPos == sPos = {-trace "match" $-} (grabSubChar c sPos) : (onePos c h l (sPos) (hPos + 1))
             | otherwise = {-trace "gap" $-} (gapChar c) : (onePos c h (l - 1) (sPos + 1) hPos)
         -- makeOne :: s -> Homologies -> Int -> s
@@ -220,7 +220,7 @@ accountForInsertionEvents homologies insertionEvents = V.generate (length homolo
 -- returns a tuple with the node with homologies incorporated, and a returned vector of counters
 numerateNode :: (NodeConstraint n s, Metadata m s) => n -> n -> Counts -> Vector m -> (n, Counts, Vector IntSet) 
 --numerateNode ancestorNode childNode initCounters _ | trace ("numerateNode on " ++ show (getCode ancestorNode) ++" and " ++ show (getCode childNode) ++ ", " ++ show initCounters) False = undefined
-numerateNode ancestorNode childNode initCounters inMeta = {-trace ("numeration result " ++ show homologs) $-} (setHomologies childNode homologs, counts, insertionEvents)
+numerateNode ancestorNode childNode initCounters inMeta = trace ("numeration result " ++ show homologs) $ (setHomologies childNode homologs, counts, insertionEvents)
         where
             numeration = --trace ("numeration zip on " ++ show (getForAlign ancestorNode) ++" and " ++ show (getForAlign childNode)) 
                             V.zipWith4 numerateOne (getForAlign ancestorNode) (getForAlign childNode) (getHomologies ancestorNode) initCounters 
@@ -228,7 +228,7 @@ numerateNode ancestorNode childNode initCounters inMeta = {-trace ("numeration r
 
 
 numerateOne :: SeqConstraint s => s -> s -> Homologies -> Counter -> (Homologies, Counter, IntSet)
---numerateOne ancestorSeq descendantSeq ancestorHomologies initialCounter | trace ("numerateOne on " ++ show ancestorSeq ++" and " ++ show descendantSeq) False = undefined
+numerateOne ancestorSeq descendantSeq ancestorHomologies initialCounter | trace ("numerateOne on " ++ show ancestorSeq ++" and " ++ show descendantSeq) False = undefined
 numerateOne ancestorSeq descendantSeq _ancestorHomologies initialCounter = (descendantHomologies, counter', insertionEvents)
   where
     gapCharacter = gapChar descendantSeq
