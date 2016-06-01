@@ -69,9 +69,13 @@ iaOutput align solution = (\x -> trace (unlines [ integrityCheckSolution solutio
         f alignedForest solutionForest = mconcat $ zipWith g alignedForest solutionForest
         g alignment     dag            = foldMapWithKey h $ toList alignment
           where
-            h :: Int -> Vector DynamicChar -> Map String (Vector DynamicChar)
-            h i characters = singleton (name $ nodeRefs V.! i) characters
             nodeRefs = getNodes dag
+            h :: Int -> Vector DynamicChar -> Map String (Vector DynamicChar)
+            h i characters = if nodeIsLeaf node dag
+                             then singleton (name $ nodeRefs V.! i) characters
+                             else mempty
+              where
+                node = nodeRefs V.! i
 
     -- The folding function for consuming the 'dynamicCharacterIndicesAndAlphabets'
     -- structure above. For each character index and corresponding alphabet this
