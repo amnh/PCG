@@ -33,7 +33,7 @@ import Data.Vector           (Vector)
 -- TODO: Remove this import when Data.Vector.Instances gets fixed
 import qualified Data.Vector as V ((!))
 import Data.Vector.Instances ()
-import Prelude        hiding (zipWith)
+import Prelude        hiding (lookup,zipWith)
 
 import Debug.Trace (trace)
 
@@ -92,15 +92,20 @@ iaOutput align solution = (\x -> trace (intercalate "\n\n"
     characterToFastaFile i alpha = [(characterFileName, foldMapWithKey f nodeCharacterMapping)]
       where
         characterFileName = mconcat ["Character", show i, ".fasta"]
-        f nodeName characters = unlines $ titleLine : sequenceLines <> [""]
+        f nodeName characters =
+          case i `lookup` characters of
+            Nothing        -> titleLine <> "\n (No sequence)\n"
+            Just character -> dynamicCharacterToFastaBlock character
           where
             titleLine     = "> " <> nodeName
-            sequenceLines = chunksOf 50 . concatMap renderAmbiguityGroup . toList . decodeDynamic alpha $ characters V.! i
-            renderAmbiguityGroup [x] = show x
-            renderAmbiguityGroup xs  = "[" <> concatMap show xs <> "]"
+            dynamicCharacterToFastaBlock character = unlines $ titleLine : sequenceLines <> [""]
+              where
+                sequenceLines = chunksOf 50 . concatMap renderAmbiguityGroup . toList $ decodeDynamic alpha character
+                renderAmbiguityGroup [x] = show x
+                renderAmbiguityGroup xs  = "[" <> concatMap show xs <> "]"
 
-    integrityCheckSolution :: StandardSolution -> String
-    integrityCheckSolution sol = ("Solution:\n" <>) . unlines' $ f <#$> getForests sol
+integrityCheckSolution :: StandardSolution -> String
+integrityCheckSolution sol = ("Solution:\n" <>) . unlines' $ f <#$> getForests sol
       where
         f i forest = mconcat ["Forest ", show i, ": \n", unlines' $ g <#$> forest]
           where
@@ -120,7 +125,8 @@ iaOutput align solution = (\x -> trace (intercalate "\n\n"
                                         )
                 wrap x = "[" <> x <> "]"
 
-    renderAlignments alignments = ("Alignments:\n" <>) . unlines' $ f <#$> alignments
+renderAlignments :: AlignmentSolution DynamicChar -> String
+renderAlignments alignments = ("Alignments:\n" <>) . unlines' $ f <#$> alignments
       where
         f i forest = mconcat ["Forest ", show i, ": \n", unlines' $ g <#$> forest]
           where
