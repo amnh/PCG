@@ -52,7 +52,7 @@ iaOutput align solution = (\x -> trace (intercalate "\n\n"
     -- Here we use the metadata to filter for dynamic character indicies and
     -- their corresponding alphabets. 
     dynamicCharacterIndicesAndAlphabets :: IntMap (Alphabet String)
-    dynamicCharacterIndicesAndAlphabets = (\x -> trace (show x) x) $ foldlWithKey dynamicCharFilter mempty (getMetadata solution)
+    dynamicCharacterIndicesAndAlphabets = foldlWithKey dynamicCharFilter mempty (getMetadata solution)
       where
         dynamicCharFilter im i e = if   getType e == DirectOptimization
                                    then insert i (getAlphabet e) im
@@ -73,8 +73,6 @@ iaOutput align solution = (\x -> trace (intercalate "\n\n"
             nodeRefs = getNodes dag
             h :: Int -> Vector DynamicChar -> Map String (Vector DynamicChar)
             h i characters = singleton (name $ nodeRefs V.! i) characters
-              where
-                node = nodeRefs V.! i
 
     -- The folding function for consuming the 'dynamicCharacterIndicesAndAlphabets'
     -- structure above. For each character index and corresponding alphabet this

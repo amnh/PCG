@@ -6,10 +6,12 @@ module PCG.Command.Types.Report.Evaluate
 
 import           Analysis.ImpliedAlignment.Standard
 import           Analysis.Parsimony.Binary.Optimization
+import           Bio.Metadata
 import           Bio.PhyloGraph.Solution
 import           Bio.PhyloGraph.Tree.Binary
 import           Control.Monad.IO.Class
 import           Control.Monad.Logger
+import           Data.Foldable
 import           Data.List.NonEmpty
 import           PCG.Command.Types (Command(..))
 import           PCG.Command.Types.Report.TaxonMatrix
@@ -48,12 +50,17 @@ generateOutput g Metadata                   {} = SingleStream $ metadataCsvOutpu
 generateOutput g ImpliedAlignmentCharacters {} =
   case getForests g of
     [] -> ErrorCase "The graph contains an empty forest."
-    _  -> let g' = addOptimization g
+    _  ->
+      case dynamicCharacterCount g of
+        0 -> ErrorCase "There are no dynamic characters in the graph. Cannot construct an implied alignment on a graph which contains no dynamic characters."
+        _ ->
+          let g' = addOptimization g
           in case iaSolution g' of
                [] -> ErrorCase "The result of the Implied Aligmnment returned an empty graph. (No dynamic homology characters?)"
-               ys -> case iaOutput ys g' of
-                       [] -> ErrorCase "There were no Dynamic homology characters on which to perform an implied alignment."
-                       zs -> MultiStream $ fromList zs
+               ys ->
+                  case iaOutput ys g' of
+                    [] -> ErrorCase "There were no Dynamic homology characters on which to perform an implied alignment."
+                    zs -> MultiStream $ fromList zs
                        
 generateOutput _ _ = ErrorCase "Unrecognized 'report' command"
 
@@ -63,3 +70,10 @@ data FileStreamContext
    = ErrorCase    String
    | SingleStream FileContent
    | MultiStream  (NonEmpty (FilePath,FileContent))
+
+dynamicCharacterCount :: MetadataSolution m StandardMetadata => m -> Int
+dynamicCharacterCount = foldl' f 0 . getMetadata
+  where
+    f n e = if   getType e == DirectOptimization
+            then n + 1
+            else n

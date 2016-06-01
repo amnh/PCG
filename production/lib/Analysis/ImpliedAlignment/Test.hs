@@ -80,7 +80,8 @@ checkLen inSolution = checkLS
                           where
                             checkL n (_, s) = and $ V.zipWith ((<=) `on` numChars) (getFinalGapped n) s
 
-{-twoRuns = testProperty "After two runs of IA, assignments are static" twoIA
+{-
+twoRuns = testProperty "After two runs of IA, assignments are static" twoIA
             where
                 twoIA :: StandardSolution -> Bool
                 twoIA (Solution _ meta forests) = foldr (flip (foldr checkStatic)) True forests
@@ -95,8 +96,8 @@ checkLen inSolution = checkLS
                             --run t | trace ("one test run ") False = undefined
                             run t = numeratePreorder t (getRoot t) meta counts
                         checkStatic :: DAG -> Bool -> Bool
-                        checkStatic t val = (fst (runTwice t) == snd (runTwice t)) && val-}
-
+                        checkStatic t val = (fst (runTwice t) == snd (runTwice t)) && val
+-}
 
 numerate :: TestTree
 numerate = testGroup "Numeration properties" [idHolds, lengthHolds, counterIncrease, monotonic]
