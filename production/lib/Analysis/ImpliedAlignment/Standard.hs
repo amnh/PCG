@@ -39,8 +39,7 @@ import qualified Data.Vector as V
 import           Prelude             hiding (lookup)
 import           Debug.Trace
 
-type Counter = Int
-newtype MutationAccumulator = Accum (IntMap Int, Counter, Int, Int, Int, IntSet)
+newtype MutationAccumulator = Accum (IntMap Int, Int, Int, Int, Int, IntSet)
 
 -- | Top level wrapper to do an IA over an entire solution
 -- takes a solution
@@ -67,7 +66,7 @@ impliedAlign :: (TreeConstraint t n e s, Metadata m s) => t -> Vector m -> Align
 --impliedAlign inTree inMeta | trace ("impliedAlign with tree " ++ show inTree) False = undefined
 impliedAlign inTree inMeta = extractAlign numerated inMeta
     where
-        numerated = numeratePreorder inTree (getRoot inTree) inMeta (V.replicate (length inMeta) 0)
+        numerated = numeratePreorder inTree (getRoot inTree) inMeta (V.replicate (length inMeta) (0, 0))
 
 extractAlign :: (TreeConstraint t n e s, Metadata m s) => (Counts, t) -> Vector m -> Alignment s
 --extractAlign (lens, numeratedTree) inMeta | trace ("extract alignments " ++ show numeratedTree) False = undefined
@@ -81,19 +80,12 @@ makeAlignment :: (NodeConstraint n s) => n -> Counts -> Vector s
 --makeAlignment n seqLens | trace ("make alignment on n " ++ show n ++ " with lens " ++ show seqLens) False = undefined
 makeAlignment n seqLens = makeAlign (getFinalGapped n) (getHomologies n)
     where
-        -- onePos :: s -> Homologies -> Int -> Int -> Int -> s
-        onePos char homologies outLen outPos hPos gapsAdded
-            | hPos == V.length homologies = replicate (outLen - gapsAdded) (gapChar char)
-            | homologies V.! hPos == outPos = grabSubChar char hPos : onePos char homologies outLen (outPos + 1) (hPos + 1) gapsAdded
-            | otherwise                   = gapChar char          : onePos char homologies outLen (outPos + 1) hPos (gapsAdded + 1)
-        -- makeOne :: s -> Homologies -> Int -> s
-        makeOne char homolog len = fromChars $ onePos char homolog len 0 0 0
         --makeAlign :: Vector s -> HomologyTrace -> Vector s
         makeAlign dynChar homologies = V.zipWith3 makeOne' dynChar homologies seqLens
         -- | /O((n+m)*log(n)), could be linear, but at least it terminates!
         makeOne' char homolog len = fromChars . toList $ result
           where
-            result = V.generate (length homolog + len) f
+            result = V.generate (fst len + snd len) f
               where
                 f i = case i `IM.lookup` mapping of
                         Nothing -> gapChar char
@@ -130,7 +122,7 @@ numeratePreorder initTree initNode inMeta curCounts
             curNode'                                                = leftRectifiedTree `getNthNode` getCode curNode
             {-(alignedRCur, alignedRight)                             = alignAndAssign curNode' (fromJust $ rightChild curNode' leftRectifiedTree)
             (rightChildHomolog, counterRight, insertionEventsRight) = numerateNode alignedRCur alignedRight leftRecurseCount inMeta-}
-            (rightChildHomolog, counterRight, insertionEventsRight) = alignAndNumerate curNode' (fromJust $ rightChild curNode' leftRectifiedTree) curCounts inMeta
+            (rightChildHomolog, counterRight, insertionEventsRight) = alignAndNumerate curNode' (fromJust $ rightChild curNode' leftRectifiedTree) counterLeft inMeta
             backPropagatedTree'                                     = backPropagation leftRectifiedTree rightChildHomolog insertionEventsRight
             rightRectifiedTree                                      = backPropagatedTree' `update` [rightChildHomolog]
             -- TODO: need another align and assign between the left and right as a last step?
@@ -235,9 +227,10 @@ numerateNode ancestorNode childNode initCounters inMeta = {-trace ("numeration r
 
 numerateOne :: SeqConstraint s => s -> s -> Counter -> (Homologies, Counter, IntSet)
 --numerateOne ancestorSeq descendantSeq ancestorHomologies initialCounter | trace ("numerateOne on " ++ show ancestorSeq ++" and " ++ show descendantSeq) False = undefined
-numerateOne ancestorSeq descendantSeq initialCounter = (descendantHomologies, counter', insertionEvents)
+numerateOne ancestorSeq descendantSeq (maxLen, initialCounter) = (descendantHomologies, (newLen, counter'), insertionEvents)
   where
     gapCharacter = gapChar descendantSeq
+    newLen = max (numChars descendantSeq) maxLen
 
     descendantHomologies = V.generate (olength descendantSeq) g
      where
@@ -250,9 +243,9 @@ numerateOne ancestorSeq descendantSeq initialCounter = (descendantHomologies, co
           -- Biological "Nothing" case
           | ancestorCharacter == gapCharacter && descendantCharacter == gapCharacter = Accum (insert i (i + childOffset    ) indexMapping, counter    , i + 1, ancestorOffset    , childOffset    , insertionEventIndicies)
           -- Biological deletion event case
-          | ancestorCharacter /= gapCharacter && descendantCharacter == gapCharacter = Accum (insert i (i + childOffset    ) indexMapping, counter + 1, i + 1, ancestorOffset    , childOffset + 1, insertionEventIndicies)
+          | ancestorCharacter /= gapCharacter && descendantCharacter == gapCharacter = Accum (insert i (i + childOffset + 1) indexMapping, counter + 1, i + 1, ancestorOffset    , childOffset + 1, insertionEventIndicies)
           -- Biological insertion event case
-          | ancestorCharacter == gapCharacter && descendantCharacter /= gapCharacter = Accum (insert i (i + childOffset + 1) indexMapping, counter + 1, i + 1, ancestorOffset + 1, childOffset    , (i + childOffset) `IS.insert` insertionEventIndicies)
+          | ancestorCharacter == gapCharacter && descendantCharacter /= gapCharacter = Accum (insert i (i + childOffset    ) indexMapping, counter + 1, i + 1, ancestorOffset + 1, childOffset + 1, (i + childOffset + 1) `IS.insert` insertionEventIndicies)
           -- Biological substitution or non-substitution case
           | otherwise {- Both not gap -}                                             = Accum (insert i (i + childOffset)     indexMapping, counter    , i + 1, ancestorOffset    , childOffset    , insertionEventIndicies)
           where
