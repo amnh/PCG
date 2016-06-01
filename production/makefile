@@ -55,7 +55,7 @@ stack-build-quick: phylocomgraph.cabal stack.yaml
 
 # Builds with profiling enabled
 stack-build-profiling: phylocomgraph.cabal stack.yaml
-	stack build $(haddock) $(profiling) --coverage --ghc-options="-fprof-cafs"
+	stack install $(haddock) $(profiling) --ghc-options="-fprof-cafs"
 
 # Builds with profiling enabled
 stack-build-test: phylocomgraph.cabal stack.yaml
