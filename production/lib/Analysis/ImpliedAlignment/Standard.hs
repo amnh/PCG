@@ -77,7 +77,7 @@ extractAlign (lens, numeratedTree) inMeta = foldr (\n acc -> insert (getCode n) 
 -- Takes in a Node
 -- returns a vector of characters
 makeAlignment :: (NodeConstraint n s) => n -> Counts -> Vector s
-makeAlignment n seqLens | trace ("make alignment on n " ++ show n ++ " with lens " ++ show seqLens) False = undefined
+--makeAlignment n seqLens | trace ("make alignment on n " ++ show n ++ " with lens " ++ show seqLens) False = undefined
 makeAlignment n seqLens = makeAlign (getFinalGapped n) (getHomologies n)
     where
         --makeAlign :: Vector s -> HomologyTrace -> Vector s

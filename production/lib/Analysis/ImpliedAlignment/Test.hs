@@ -82,7 +82,7 @@ fullIA = testGroup "Full alignment properties" [lenHolds, checkDOResult1, checkI
         doResult2      = allOptimization 1 (pure doMeta) longerTest
         checkDOResult2 = testCase "On a slightly larger case, DO behaves as expected" (expectedDO2 @=? doResult2)
         iaResult2      = impliedAlign expectedDO2 (pure doMeta)
-        expectedIA2    = IM.fromList [(2, encodeThem . pure $ V.fromList [["A"], ["-"], ["-"], ["G"]]), (3, encodeThem . pure $ V.fromList [["A"], ["T"], ["T"], ["-"]]), (4, encodeThem . pure $ V.fromList [["A"], ["T"], ["A"], ["G"]])]
+        expectedIA2    = IM.fromList [(2, encodeThem . pure $ V.fromList [["A"], ["-"], ["-"], ["G"], ["-"]]), (3, encodeThem . pure $ V.fromList [["A"], ["T"], ["-"], ["-"], ["T"]]), (4, encodeThem . pure $ V.fromList [["A"], ["T"], ["A"], ["-"], ["G"]])]
         checkIAResult2 = testCase "One that larger case, IA gives the expected result" (expectedIA2 @=? iaResult2)
 
 checkLen :: StandardSolution -> Bool
