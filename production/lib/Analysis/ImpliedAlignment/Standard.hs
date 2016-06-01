@@ -116,8 +116,9 @@ numeratePreorder initTree initNode inMeta curCounts
             leftRectifiedTree                                       = leftRecurseTree `update` [leftChildHomolog] -- TODO: Check this order
             
             curNode'                                                = leftRectifiedTree `getNthNode` getCode curNode
-            (alignedRCur, alignedRight)                             = alignAndAssign curNode' (fromJust $ rightChild curNode' leftRectifiedTree)
-            (rightChildHomolog, counterRight, insertionEventsRight) = numerateNode alignedRCur alignedRight leftRecurseCount inMeta
+            {-(alignedRCur, alignedRight)                             = alignAndAssign curNode' (fromJust $ rightChild curNode' leftRectifiedTree)
+            (rightChildHomolog, counterRight, insertionEventsRight) = numerateNode alignedRCur alignedRight leftRecurseCount inMeta-}
+            (rightChildHomolog, counterRight, insertionEventsRight) = alignAndNumerate curNode' (fromJust $ rightChild curNode' leftRectifiedTree) curCounts inMeta
             backPropagatedTree'                                     = backPropagation leftRectifiedTree rightChildHomolog insertionEventsRight
             rightRectifiedTree                                      = backPropagatedTree' `update` [rightChildHomolog]
             -- TODO: need another align and assign between the left and right as a last step?
@@ -215,14 +216,14 @@ numerateNode :: (NodeConstraint n s, Metadata m s) => n -> n -> Counts -> Vector
 --numerateNode ancestorNode childNode initCounters _ | trace ("numerateNode on " ++ show (getCode ancestorNode) ++" and " ++ show (getCode childNode) ++ ", " ++ show initCounters) False = undefined
 numerateNode ancestorNode childNode initCounters inMeta = {-trace ("numeration result " ++ show homologs) $-} (setHomologies childNode homologs, counts, insertionEvents)
         where
-            numeration = trace ("numeration zip on " ++ show (ancestorNode) ++" and " ++ show (childNode)) 
-                            V.zipWith4 numerateOne (getForAlign ancestorNode) (getForAlign childNode) (getHomologies ancestorNode) initCounters 
+            numeration = --trace ("numeration zip on " ++ show (ancestorNode) ++" and " ++ show (childNode)) 
+                          V.zipWith3 numerateOne (getForAlign ancestorNode) (getForAlign childNode) initCounters 
             (homologs, counts, insertionEvents) = {-trace ("numerate results " ++ show numeration) $-} V.unzip3 numeration
 
 
-numerateOne :: SeqConstraint s => s -> s -> Homologies -> Counter -> (Homologies, Counter, IntSet)
+numerateOne :: SeqConstraint s => s -> s -> Counter -> (Homologies, Counter, IntSet)
 --numerateOne ancestorSeq descendantSeq ancestorHomologies initialCounter | trace ("numerateOne on " ++ show ancestorSeq ++" and " ++ show descendantSeq) False = undefined
-numerateOne ancestorSeq descendantSeq _ancestorHomologies initialCounter = (descendantHomologies, counter', insertionEvents)
+numerateOne ancestorSeq descendantSeq initialCounter = (descendantHomologies, counter', insertionEvents)
   where
     gapCharacter = gapChar descendantSeq
 
@@ -254,4 +255,4 @@ getForAlign n
     | not . null $ getFinalGapped n = getFinalGapped n
     | not . null $ getPreliminary n = getPreliminary n 
     | not . null $ getEncoded     n = getEncoded n 
-    | otherwise = error "No sequence at node for IA to numerate"
+    | otherwise = mempty {-error "No sequence at node for IA to numerate"-}
