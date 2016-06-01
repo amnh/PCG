@@ -11,6 +11,8 @@
 -- Standard algorithm for implied alignment
 -----------------------------------------------------------------------------
 
+{-# LANGUAGE TypeFamilies #-}
+
 -- TODO: Make an AppliedAlignment.hs file for exposure of appropriate functions
 
 module Analysis.ImpliedAlignment.Standard where
@@ -25,15 +27,16 @@ import           Bio.PhyloGraph.Node
 import           Bio.PhyloGraph.Solution
 import           Bio.PhyloGraph.Tree hiding (code)
 import           Bio.Character.Dynamic.Coded
+import           Data.Foldable
 import           Data.IntMap                (IntMap, insert)
 import qualified Data.IntMap as IM
 import           Data.IntSet                (IntSet)
 import qualified Data.IntSet as IS
 import           Data.Maybe
 import           Data.MonoTraversable
-import           Data.Vector                (Vector, (!), imap)
+import           Data.Vector                (Vector, imap)
 import qualified Data.Vector as V
-
+import           Prelude             hiding (lookup)
 import           Debug.Trace
 
 type Counter = Int
@@ -81,12 +84,21 @@ makeAlignment n seqLens = makeAlign (getFinalGapped n) (getHomologies n)
         -- onePos :: s -> Homologies -> Int -> Int -> Int -> s
         onePos char homologies outLen outPos hPos gapsAdded
             | hPos == V.length homologies = replicate (outLen - gapsAdded) (gapChar char)
-            | homologies ! hPos == outPos = grabSubChar char hPos : onePos char homologies outLen (outPos + 1) (hPos + 1) gapsAdded
+            | homologies V.! hPos == outPos = grabSubChar char hPos : onePos char homologies outLen (outPos + 1) (hPos + 1) gapsAdded
             | otherwise                   = gapChar char          : onePos char homologies outLen (outPos + 1) hPos (gapsAdded + 1)
         -- makeOne :: s -> Homologies -> Int -> s
         makeOne char homolog len = fromChars $ onePos char homolog len 0 0 0
         --makeAlign :: Vector s -> HomologyTrace -> Vector s
-        makeAlign dynChar homologies = V.zipWith3 makeOne dynChar homologies seqLens
+        makeAlign dynChar homologies = V.zipWith3 makeOne' dynChar homologies seqLens
+        -- | /O((n+m)*log(n)), could be linear, but at least it terminates!
+        makeOne' char homolog len = fromChars . toList $ result
+          where
+            result = V.generate (length homolog + len) f
+              where
+                f i = case i `IM.lookup` mapping of
+                        Nothing -> gapChar char
+                        Just j  -> char `grabSubChar` j
+                mapping = V.ifoldl' (\im k v -> IM.insert v k im) mempty homolog
 
 -- | Main recursive function that assigns homology traces to every node
 -- takes in a tree, a current node, a vector of metadata, and a vector of counters
@@ -136,7 +148,7 @@ numeratePreorder initTree initNode inMeta curCounts
             leftOnly   = isNothing $ rightChild curNode inTree
             rightOnly  = isNothing $ leftChild curNode inTree
             defaultHomologs = if V.length curSeqs == 0 then V.replicate (V.length inMeta) mempty --trace ("defaultHomologs " ++ show (V.length inMeta) ++ show (V.length curSeqs))
-                                else imap (\i _ -> V.enumFromN 0 (numChars (curSeqs ! i))) inMeta
+                                else imap (\i _ -> V.enumFromN 0 (numChars (curSeqs V.! i))) inMeta
             propagateIt tree child events = tree' `update` [child]
                                             where tree' = backPropagation tree child events
             alignAndNumerate n1 n2 = {-trace ("alignment result " ++ show n1Align) $-} numerateNode n1Align n2Align
@@ -206,7 +218,7 @@ accountForInsertionEvents homologies insertionEvents = V.generate (length homolo
     f i = newIndexReference
       where
         newIndexReference          = oldIndexReference + insertionEventsBeforeIndex 
-        oldIndexReference          = homologies ! i
+        oldIndexReference          = homologies V.! i
         insertionEventsBeforeIndex = olength $ IS.filter (<= oldIndexReference) insertionEvents
 
 -- | Function to do a numeration on an entire node
