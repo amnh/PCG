@@ -16,7 +16,7 @@
 -- TODO: Remove all commented-out code.
 
 -- TODO: are all of these necessary?
-{-# LANGUAGE TypeSynonymInstances, FlexibleInstances, MultiParamTypeClasses, UndecidableInstances, TypeFamilies #-}
+{-# LANGUAGE DeriveGeneric, FlexibleInstances, MultiParamTypeClasses, TypeFamilies, TypeSynonymInstances, UndecidableInstances #-}
 -- TODO: fix and remove this ghc option (is it needed for Arbitrary?):
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
@@ -26,22 +26,24 @@ module Bio.Character.Dynamic.Coded.Internal
   , arbitraryDynamicsGA
   ) where
 
-import Bio.Character.Dynamic.Coded.Class
-import Bio.Character.Parsed
-import Data.Alphabet
-import Data.BitMatrix
-import Data.Key
-import Data.Bits
-import Data.BitVector               hiding (foldr, join, not, replicate)
-import Data.Foldable
-import Data.Function.Memoize
-import Data.Maybe                          (fromMaybe)
-import Data.Monoid                         ((<>))
-import Data.MonoTraversable
-import Data.Vector                         (Vector)
-import qualified Data.Vector as V          (fromList)
-import Test.Tasty.QuickCheck        hiding ((.&.))
-import Test.QuickCheck.Arbitrary.Instances ()
+import           Bio.Character.Dynamic.Coded.Class
+import           Bio.Character.Parsed
+import           Control.DeepSeq
+import           Data.Alphabet
+import           Data.BitMatrix
+import           Data.Key
+import           Data.Bits
+import           Data.BitVector               hiding (foldr, join, not, replicate)
+import           Data.Foldable
+import           Data.Function.Memoize
+import           Data.Maybe                          (fromMaybe)
+import           Data.Monoid                         ((<>))
+import           Data.MonoTraversable
+import           Data.Vector                         (Vector)
+import qualified Data.Vector                    as V (fromList)
+import           GHC.Generics
+import           Test.Tasty.QuickCheck        hiding ((.&.))
+import           Test.QuickCheck.Arbitrary.Instances ()
 
 -- TODO: Change DynamicChar/Sequences to DynamicCharacters
         -- Make a missing a null vector
@@ -49,11 +51,13 @@ import Test.QuickCheck.Arbitrary.Instances ()
 
 newtype DynamicChar
       = DC BitMatrix
-      deriving (Eq, Show)
+      deriving (Eq, Generic, Show)
 
 type instance Element DynamicChar = BitVector
 
 type DynamicChars = Vector DynamicChar
+
+instance NFData DynamicChar
 
 instance MonoFunctor DynamicChar where
   omap f (DC bm) = DC $ omap f bm

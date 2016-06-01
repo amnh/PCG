@@ -14,7 +14,7 @@
 -- state encoding and packing.
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE BangPatterns, TypeFamilies #-}
+{-# LANGUAGE BangPatterns, DeriveGeneric, TypeFamilies #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
 module Data.BitMatrix
@@ -29,6 +29,7 @@ module Data.BitMatrix
   , row
   ) where
 
+import Control.DeepSeq
 import Data.Bifunctor
 import Data.BitVector  hiding (foldl,foldr)
 import Data.Function.Memoize
@@ -37,13 +38,14 @@ import Data.Foldable
 import Data.Maybe             (fromMaybe)
 import Data.Monoid
 import Data.MonoTraversable
+import GHC.Generics
 import Test.QuickCheck hiding ((.&.))
 
 -- | A data structure for storing a two dimensional array of bits.
 --   Exposes row based monomorphic mapping & folding.
 data BitMatrix
    = BitMatrix !Int BitVector
-   deriving (Eq)
+   deriving (Eq, Generic)
 
 -- | The row based element for monomorphic maps & folds.
 type instance Element BitMatrix = BitVector
@@ -144,6 +146,12 @@ col = undefined -- bit twiddle or math
 
 isSet :: BitMatrix -> (Int, Int) -> Bool
 (BitMatrix n bv) `isSet` (i,j) = bv `testBit` (n*i + j)
+
+instance NFData BitMatrix where
+  rnf (BitMatrix !_ !bv) = ()
+    where
+      !_ = nat bv
+      !_ = width bv
 
 -- | Performs a row-wise monomporphic map over ther 'BitMatrix'.
 instance MonoFunctor BitMatrix where
