@@ -34,8 +34,11 @@ type TreeConstraint           t n e s = (BinaryTree t n, Network t n, Referentia
 type NodeConstraint             n   s = (FinalNode n s, IANode n, RefNode n, SeqConstraint s, Show n, EncodedNode n s, PreliminaryNode n s)
 type SeqConstraint                  s = (EncodableDynamicCharacter s, Bits s, Show s, Memoizable s)
 
+
+-- | The counter tracks the max sequence length and the number of gaps added
+type Counter = (Int, Int)
 -- The counts are a vector of ints
-type Counts = Vector Int
+type Counts = Vector Counter
 -- | An alignment object is an intmap from the node code to a vector of aligned coded sequences
 type Alignment s = IntMap (Vector s)
 -- | An alignment over a forest is then a list of alignments
