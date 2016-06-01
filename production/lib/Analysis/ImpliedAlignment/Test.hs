@@ -132,7 +132,7 @@ numerate = testGroup "Numeration properties" [idHolds, lengthHolds, counterIncre
                 increases :: Ord a => [a] -> Bool
                 increases []       = True
                 increases [x]      = True
-                increases (x:y:xs) = x <= y && increases (y:xs)
+                increases (x:y:xs) = x < y && increases (y:xs)
 {-
 -- | Wrapper function to start and then terminate an IA numeration
 partNumerate :: DAG -> Node -> Vector m -> Counts -> Node -> (Counts, t)
