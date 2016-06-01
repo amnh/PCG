@@ -50,7 +50,7 @@ iaSolution inSolution = fmap (`iaForest` getMetadata inSolution) (getForests inS
 -- takes in a forest and some metadata
 -- returns an alignment forest
 iaForest :: (ForestConstraint f t n e s, Metadata m s) => f -> Vector m -> AlignmentForest s
---iaForest inForest inMeta | trace ("iaForest " ++ show inForest) False = undefined
+--iaForest inForest inMeta | trace ("iaForest ")  False = undefined
 iaForest inForest inMeta = fmap (`impliedAlign` inMeta) (trees inForest)
 
 -- TODO: used concrete BitVector type instead of something more appropriate, like EncodableDynamicCharacter. 
@@ -67,6 +67,7 @@ impliedAlign inTree inMeta = extractAlign numerated inMeta
         numerated = numeratePreorder inTree (getRoot inTree) inMeta (V.replicate (length inMeta) 0)
 
 extractAlign :: (TreeConstraint t n e s, Metadata m s) => (Counts, t) -> Vector m -> Alignment s
+--extractAlign (lens, numeratedTree) inMeta | trace ("extract alignments " ++ show numeratedTree) False = undefined
 extractAlign (lens, numeratedTree) inMeta = foldr (\n acc -> insert (getCode n) (makeAlignment n lens) acc) mempty allLeaves
     where allLeaves = V.filter (`nodeIsLeaf` numeratedTree) (getNodes numeratedTree)
 
@@ -78,11 +79,6 @@ makeAlignment :: (NodeConstraint n s) => n -> Counts -> Vector s
 makeAlignment n seqLens = makeAlign (getFinalGapped n) (getHomologies n)
     where
         -- onePos :: s -> Homologies -> Int -> Int -> Int -> s
-        --onePos c h l sPos hPos | trace ("generate a position at sPos " ++ show sPos ++ " and hPos " ++ show hPos ++ " and l " ++ show l) False = undefined
-        --onePos c h l sPos hPos
-        --    | hPos == (V.length h) = replicate l (gapChar c)
-        --    | h ! hPos == sPos = {-trace "match" $-} (grabSubChar c sPos) : (onePos c h l (sPos) (hPos + 1))
-        --    | otherwise = {-trace "gap" $-} (gapChar c) : (onePos c h (l - 1) (sPos + 1) hPos)
         onePos char homologies outLen outPos hPos gapsAdded
             | hPos == V.length homologies = replicate (outLen - gapsAdded) (gapChar char)
             | homologies ! hPos == outPos = grabSubChar char hPos : onePos char homologies outLen (outPos + 1) (hPos + 1) gapsAdded
@@ -102,28 +98,18 @@ numeratePreorder initTree initNode inMeta curCounts
     | isLeafNode =  (curCounts, inTree)
     | leftOnly = --trace "left only case" $
         let
-            {-(alignedCur, alignedLeft)                        = alignAndAssign curNode (fromJust $ leftChild curNode inTree)
-            (leftChildHomolog, counterLeft, insertionEvents) = numerateNode alignedCur alignedLeft curCounts inMeta-}
             (leftChildHomolog, counterLeft, insertionEvents) = alignAndNumerate curNode (fromJust $ leftChild curNode inTree) curCounts inMeta
-            {-backPropagatedTree                               = backPropagation inTree leftChildHomolog insertionEvents
-            editedTreeLeft                                   = backPropagatedTree `update` [leftChildHomolog]-}
             editedTreeLeft                                   = propagateIt inTree leftChildHomolog insertionEvents
             (leftRecurseCount, leftRecurseTree)              = numeratePreorder editedTreeLeft leftChildHomolog inMeta counterLeft
         in (leftRecurseCount, leftRecurseTree)
     | rightOnly = --trace "right only case" $
         let
-            {-(alignedCur, alignedRight)                         = alignAndAssign curNode (fromJust $ rightChild curNode inTree)
-            (rightChildHomolog, counterRight, insertionEvents) = numerateNode alignedCur alignedRight curCounts inMeta-}
             (rightChildHomolog, counterRight, insertionEvents) = alignAndNumerate curNode (fromJust $ rightChild curNode inTree) curCounts inMeta
-            {-backPropagatedTree                                 = backPropagation inTree rightChildHomolog insertionEvents
-            editedTreeRight                                    = backPropagatedTree `update` [rightChildHomolog]-}
             editedTreeRight                                    = propagateIt inTree rightChildHomolog insertionEvents
             (rightRecurseCount, rightRecurseTree)              = numeratePreorder editedTreeRight rightChildHomolog inMeta counterRight
         in (rightRecurseCount, rightRecurseTree)
     | otherwise = --trace "two children case" $
         let
-            {-(alignedLCur, alignedLeft)                              = alignAndAssign curNode (fromJust $ leftChild curNode inTree)
-            ( leftChildHomolog, counterLeft , insertionEventsLeft)  = numerateNode alignedLCur alignedLeft curCounts inMeta-}
             ( leftChildHomolog, counterLeft , insertionEventsLeft)  = alignAndNumerate curNode (fromJust $ leftChild curNode inTree) curCounts inMeta
             backPropagatedTree                                      = backPropagation inTree leftChildHomolog insertionEventsLeft
             (leftRecurseCount, leftRecurseTree)                     = numeratePreorder backPropagatedTree leftChildHomolog inMeta counterLeft
@@ -149,7 +135,7 @@ numeratePreorder initTree initNode inMeta curCounts
             leftOnly   = isNothing $ rightChild curNode inTree
             rightOnly  = isNothing $ leftChild curNode inTree
             defaultHomologs = if V.length curSeqs == 0 then V.replicate (V.length inMeta) mempty --trace ("defaultHomologs " ++ show (V.length inMeta) ++ show (V.length curSeqs))
-                                else imap (\i _ -> V.generate (numChars (curSeqs ! i)) (+ 1)) inMeta
+                                else imap (\i _ -> V.enumFromN 0 (numChars (curSeqs ! i))) inMeta
             propagateIt tree child events = tree' `update` [child]
                                             where tree' = backPropagation tree child events
             alignAndNumerate n1 n2 = {-trace ("alignment result " ++ show n1Align) $-} numerateNode n1Align n2Align
@@ -229,7 +215,7 @@ numerateNode :: (NodeConstraint n s, Metadata m s) => n -> n -> Counts -> Vector
 --numerateNode ancestorNode childNode initCounters _ | trace ("numerateNode on " ++ show (getCode ancestorNode) ++" and " ++ show (getCode childNode) ++ ", " ++ show initCounters) False = undefined
 numerateNode ancestorNode childNode initCounters inMeta = {-trace ("numeration result " ++ show homologs) $-} (setHomologies childNode homologs, counts, insertionEvents)
         where
-            numeration = --trace ("numeration zip on " ++ show (getForAlign ancestorNode) ++" and " ++ show (getForAlign childNode)) 
+            numeration = trace ("numeration zip on " ++ show (ancestorNode) ++" and " ++ show (childNode)) 
                             V.zipWith4 numerateOne (getForAlign ancestorNode) (getForAlign childNode) (getHomologies ancestorNode) initCounters 
             (homologs, counts, insertionEvents) = {-trace ("numerate results " ++ show numeration) $-} V.unzip3 numeration
 
