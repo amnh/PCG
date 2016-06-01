@@ -54,11 +54,12 @@ fullIA = testGroup "Full alignment properties" [lenHolds, checkDOResult1, checkI
 
         bioAlph        = constructAlphabet . V.fromList . fmap pure $ "ACGT-"
         encodeThem     = V.fromList . fmap (encodeDynamic bioAlph)
+        doMeta         = CharMeta DirectOptimization bioAlph "" False False 1 mempty (emptyChar, emptyChar) 0 (GeneralCost 1 1)
+
         rootTest       = T.TestNode 0 True False [] [1,2] mempty mempty mempty mempty mempty mempty mempty 0 0
         leftTest       = rootTest {T.code = 1, T.isRoot = False, T.isLeaf = True, T.parents = [0], T.children = [], T.encoded = encodeThem . pure $ V.fromList [["A"], ["T"], ["T"]]}
         rightTest      = leftTest {T.code = 2, T.encoded = encodeThem . pure $ V.fromList [["A"], ["G"]]}
         cherry1        = V.fromList [rootTest, leftTest, rightTest]
-        doMeta         = CharMeta DirectOptimization bioAlph "" False False 1 mempty (emptyChar, emptyChar) 0 (GeneralCost 1 1)
         doResult1      = allOptimization 1 (pure doMeta) cherry1
         expectedSeq    = encodeThem . pure $ V.fromList [["A"], ["T", "-"], ["T", "G"]]
         newRoot        = rootTest {T.preliminary = expectedSeq, T.aligned = expectedSeq, T.localCost = 2, T.totalCost = 2}
@@ -67,6 +68,12 @@ fullIA = testGroup "Full alignment properties" [lenHolds, checkDOResult1, checkI
         iaResult1      = impliedAlign expectedDO (pure doMeta)
         expectedIA1    = IM.fromList [(1, encodeThem . pure $ V.fromList [["A"], ["T"], ["T"], ["-"]]), (2, encodeThem . pure $ V.fromList [["A"], ["-"], ["-"], ["G"]])]
         checkIAResult1 = testCase "On the same cherry, IA gives the expected result" (expectedIA1 @=? iaResult1)
+
+        leftTest2      = leftTest {T.isLeaf = False, T.children = [3, 4], T.encoded = mempty}
+        node3          = leftTest {T.code = 3, T.parents = [1]}
+        node4          = node3 {T.code = 4, T.encoded = encodeThem . pure $ V.fromList [["A"], ["T"], ["A"], ["G"]]}
+        longerTest     = V.fromList [rootTest, leftTest2, rightTest, node3, node4]
+
 
 checkLen :: StandardSolution -> Bool
 checkLen inSolution = checkLS
@@ -79,24 +86,6 @@ checkLen inSolution = checkLS
                         checkLD d a  = and $ zipWith checkL (V.toList $ nodes d) (IM.toList a)
                           where
                             checkL n (_, s) = and $ V.zipWith ((<=) `on` numChars) (getFinalGapped n) s
-
-{-twoRuns = testProperty "After two runs of IA, assignments are static" twoIA
-            where
-                twoIA :: StandardSolution -> Bool
-                twoIA (Solution _ meta forests) = foldr (flip (foldr checkStatic)) True forests
-                    where
-                        counts     = V.replicate (length meta) 0
-                        runTwice :: DAG -> (Alignment DynamicChar, Alignment DynamicChar)
-                        runTwice t = (extractAlign firstRun meta, extractAlign secondRun meta)
-                          where
-                            firstRun  = run $ allOptimization 1 meta t
-                            secondRun = run $ snd firstRun
-                            run :: DAG -> (Counts, DAG)
-                            --run t | trace ("one test run ") False = undefined
-                            run t = numeratePreorder t (getRoot t) meta counts
-                        checkStatic :: DAG -> Bool -> Bool
-                        checkStatic t val = (fst (runTwice t) == snd (runTwice t)) && val-}
-
 
 numerate :: TestTree
 numerate = testGroup "Numeration properties" [idHolds, lengthHolds, counterIncrease, monotonic]
