@@ -40,14 +40,11 @@ naiveDO char1 char2 meta
                                          then (char2, char1, char1Len)
                                          else (char1, char2, char2Len)
             traversalMat = getAlignMat longerChar shorterChar meta
-            cost = --trace ("get cost on " ++ show traversalMat) $
-                    getMatrixCost traversalMat
-            (gapped, left, right) = --trace ("get seqs " ++ show traversalMat)
-                                    traceback traversalMat shorterChar longerChar
-            ungapped = {-trace ("filter gaps of " ++ show gapped) $ -}filterGaps gapped
+            cost = getMatrixCost traversalMat
+            (gapped, left, right) = traceback traversalMat shorterChar longerChar
+            ungapped = filterGaps gapped
             (out1, out2) = if char1Len > char2Len
                                 then (right, left)
                                 else (left, right)
-        in --trace ("ungapped " ++ show ungapped)
-            (ungapped, cost, gapped, out1, out2)
+        in (ungapped, cost, gapped, out1, out2)
             
