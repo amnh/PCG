@@ -91,8 +91,8 @@ getAlignMat char1 char2 meta = result
                     leftCost            = lCost + prevCost
                     (diagChar, dgCost)  = getOverlap subChar1 subChar2 meta
                     diagCost            = diagVal + dgCost
-                    (minCost, minState, minDir) = minimumBy (comparing (\(a,_,_) -> a))
-                                                        [(diagCost, diagChar, DiagDir), (leftCost, leftChar, LeftDir), (downCost, downChar, DownDir)]
+                    (minCost, minState, minDir) = minimumBy (comparing (\(a,_,_) -> a)) -- This order is important
+                                                        [(leftCost, leftChar, LeftDir), (downCost, downChar, DownDir), (diagCost, diagChar, DiagDir)]
 
 -- | Performs the traceback of an alignment matrix
 -- Takes in an alignment matrix, two sequences, and the alphabet length
