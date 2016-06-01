@@ -1,0 +1,3 @@
+read ("chel.fasta")
+read ("chel_nj_tbr.tre")
+report (implied_alignment)
