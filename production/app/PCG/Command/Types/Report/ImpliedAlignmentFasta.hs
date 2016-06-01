@@ -40,11 +40,12 @@ import Debug.Trace (trace)
 --iaOutput :: (MetadataSolution s m, GeneralSolution s f) => AlignmentSolution DynamicChar -> s -> [(FilePath, String)]
 iaOutput :: AlignmentSolution DynamicChar -> StandardSolution -> [(FilePath, String)]
 --iaOutput align solution | trace (mconcat [show align, show solution]) False = undefined
-iaOutput align solution = (\x -> trace (unlines [ integrityCheckSolution solution
-                                                , renderAlignments align
-                                                , "DynamicChar indicies: "     <> show (keys dynamicCharacterIndicesAndAlphabets)
-                                                , "Metadata character types: " <> show (getType <$> getMetadata solution)
-                                                ]
+iaOutput align solution = (\x -> trace (intercalate "\n\n"
+                                         [ integrityCheckSolution solution
+                                         , renderAlignments align
+                                         , "DynamicChar indicies: "     <> show (keys dynamicCharacterIndicesAndAlphabets)
+                                         , "Metadata character types: " <> show (getType <$> getMetadata solution)
+                                         ]
                                        ) x) $
                          foldMapWithKey characterToFastaFile dynamicCharacterIndicesAndAlphabets 
   where
@@ -99,9 +100,9 @@ iaOutput align solution = (\x -> trace (unlines [ integrityCheckSolution solutio
             renderAmbiguityGroup xs  = "[" <> concatMap show xs <> "]"
 
     integrityCheckSolution :: StandardSolution -> String
-    integrityCheckSolution sol = ("Solution:\n" <>) . unlines $ f <#$> getForests sol
+    integrityCheckSolution sol = ("Solution:\n" <>) . unlines' $ f <#$> getForests sol
       where
-        f i forest = mconcat ["Forest ", show i, ": \n", unlines $ g <#$> forest]
+        f i forest = mconcat ["Forest ", show i, ": \n", unlines' $ g <#$> forest]
           where
             g :: Show a => a -> DAG -> String
             g j dag = prefix
@@ -119,15 +120,17 @@ iaOutput align solution = (\x -> trace (unlines [ integrityCheckSolution solutio
                                         )
                 wrap x = "[" <> x <> "]"
 
-    renderAlignments alignments = ("Alignments:\n" <>) . unlines $ f <#$> alignments
+    renderAlignments alignments = ("Alignments:\n" <>) . unlines' $ f <#$> alignments
       where
-        f i forest = mconcat ["Forest ", show i, ": \n", unlines $ g <#$> forest]
+        f i forest = mconcat ["Forest ", show i, ": \n", unlines' $ g <#$> forest]
           where
             g :: Show a => a -> IntMap (Vector DynamicChar) -> String
             g j intmap = prefix <> suffix
               where
                 prefix = " * IntMap " <> show j <> " : "
                 suffix = wrap . intercalate "," $ foldMapWithKey h intmap
-                h k _ = [show k]
+                h k e  = pure $ mconcat [show k, "{", show $ length e, "}"]
                 wrap x = "[" <> x <> "]" 
-        
+
+unlines' :: [String] -> String
+unlines' = intercalate "\n"
