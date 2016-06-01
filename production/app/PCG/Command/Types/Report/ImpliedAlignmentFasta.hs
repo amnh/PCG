@@ -11,7 +11,7 @@
 -- Standard algorithm for implied alignment
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE FlexibleContexts, TypeFamilies #-}
 
 module PCG.Command.Types.Report.ImpliedAlignmentFasta where
 
@@ -68,13 +68,11 @@ iaOutput align solution = (\x -> trace (intercalate "\n\n"
     nodeCharacterMapping = mconcat $ zipWith f align (getForests solution)
       where
         f alignedForest solutionForest = mconcat $ zipWith g alignedForest solutionForest
-        g alignment     dag            = foldMapWithKey h $ toList alignment
+        g alignment     dag            = foldMapWithKey h alignment
           where
             nodeRefs = getNodes dag
             h :: Int -> Vector DynamicChar -> Map String (Vector DynamicChar)
-            h i characters = if nodeIsLeaf node dag
-                             then singleton (name $ nodeRefs V.! i) characters
-                             else mempty
+            h i characters = singleton (name $ nodeRefs V.! i) characters
               where
                 node = nodeRefs V.! i
 
