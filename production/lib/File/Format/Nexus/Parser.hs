@@ -51,7 +51,7 @@ nexusFileDefinition = {-do
     trace ("nexusFileDefinition"  ++ show x) $ -}do
     _           <- string' "#NEXUS"
     _           <- space
-    _           <- optional $ many $ commentDefinition <* space
+    _           <- optional . many $ commentDefinition <* space
     (v,w,x,y,z) <- partitionNexusBlocks <$> many nexusBlock
     pure $ NexusParseResult v w x y z
 
@@ -64,8 +64,8 @@ ignoredBlockDefinition = {-do
     line  <- sourceLine . NE.head . statePos <$> getParserState
     title <- many letterChar
     _     <- symbol $ char ';'
-    _     <- somethingTill $ lookAhead $ symbol blockend
-    pure $ IgnBlock $ title ++ " at line " ++ show line
+    _     <- somethingTill . lookAhead $ symbol blockend
+    pure . IgnBlock $ title ++ " at line " ++ show line
 
 -- | blockend is a parser than matched the end of a Nexus block.
 -- this should be "end;", but "endblock;" is also accepted, as it was used -- at some point by someone

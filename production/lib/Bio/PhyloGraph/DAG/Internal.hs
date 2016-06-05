@@ -116,7 +116,7 @@ binaryTreeToDAG binaryRoot = DAG
        (totalNodeMap, totalEdgeMap, _) = f Nothing binaryRoot (mempty, mempty, 0)
        f :: Maybe Int -> TestingBinaryTree Node -> Accumulator -> Accumulator
        f parentMay (Leaf node) (nodeMap, edgeMap, counter) = 
-           ( IM.insert counter (node { code = counter, name = "Taxa: " <> show (code node), parents = otoList (inNodeSet parentMay)} ) nodeMap
+           ( IM.insert counter (node { code = counter, name = "Taxon: " <> show (code node), parents = otoList (inNodeSet parentMay)} ) nodeMap
            , IM.insert counter (EdgeSet (inNodeSet parentMay) mempty) edgeMap
            , counter + 1
            )

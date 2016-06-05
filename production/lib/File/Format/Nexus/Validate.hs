@@ -91,7 +91,7 @@ import           Text.Megaparsec.Custom
 -- TODOs:
 -- • Verify character metadata, especially alphabets
 -- • deal with special chars in step matrices
--- • check for and eliminate thusly noted characters (in at least two places?)
+-- • check for and eliminate thusly noted characters (occurs in at least two places in Nexus file?)
 -- • add error checking on equate string (it needs to be of form a=b, [c=d]) ** also, look up Bachus-Naur form again.
 -- • ignore case
 -- • check alignment and length of aligned blocks
@@ -148,7 +148,7 @@ validateNexusParseResult (NexusParseResult inputSeqBlocks taxas treeSet assumpti
         --seqDimsError        = map mtxTax inputSeqBlocks 
           --where
           --   f (PhyloSequence _ mat _ dim _ _ _) = mat 
-        missingCloseQuotes  = map Just (lefts equates) ++ map Just (lefts symbols') -- error 19
+        missingCloseQuotes  = fmap Just (lefts equates) ++ fmap Just (lefts symbols') -- error 19
         seqTaxaCountErrors  = foldr (\x acc -> checkForNewTaxa x : acc) [] inputSeqBlocks -- errors 7, 8, 16b
 
 --        DEFINED BUT NOT USED: (mtxTaxonCountErrors)
@@ -160,7 +160,7 @@ validateNexusParseResult (NexusParseResult inputSeqBlocks taxas treeSet assumpti
         equates = foldr (\x acc -> getEquates x : acc) [] inputSeqBlocks
         symbols' = foldr (\x acc -> getSymbols x : acc) [] inputSeqBlocks
         taxaLst  = if not $ null taxas
-                      then V.fromList $ taxaLabels $ head taxas
+                      then V.fromList . taxaLabels $ head taxas
                       else V.empty
 
       -- these are still dependencies for dependent errors, but they're also the beginning of the output gathering.                  
@@ -171,7 +171,7 @@ validateNexusParseResult (NexusParseResult inputSeqBlocks taxas treeSet assumpti
         costMatrix = headMay . tcm =<< headMay assumptions -- TODO: why does this work?
         
         seqMetadataTuples = createSeqMetaTuples <$> parsedSeqs
-        createSeqMetaTuples = map (\(taxonSeqMap,rawSequence) -> (taxonSeqMap, getCharMetadata costMatrix rawSequence)) . (`zip` inputSeqBlocks)
+        createSeqMetaTuples = fmap (\(taxonSeqMap,rawSequence) -> (taxonSeqMap, getCharMetadata costMatrix rawSequence)) . (`zip` inputSeqBlocks)
         parsedSeqs = decisionTree inputSeqBlocks taxaLst
         -- taxaSeqVector = V.fromList [(taxon, alignedTaxaSeqMap M.! taxon) | taxon <- taxaLst]
         --unalignedTaxaSeqMap = getSeqFromMatrix (getBlock "unaligned" inputSeqBlocks) taxaLst
@@ -180,65 +180,63 @@ validateNexusParseResult (NexusParseResult inputSeqBlocks taxas treeSet assumpti
 -------------------------  Mostly, these fns just check for errors much of the logic is dup'd in getSeqFromMatrix  ------------------------
 
 decisionTree :: [PhyloSequence] -> V.Vector String -> Either String [TaxonSequenceMap]
-decisionTree inputSeqBlocks taxaLst = 
-    if null inputSeqBlocks
-        then Right [M.empty]
-        else mapM (\x -> isItTransposed x taxaLst) inputSeqBlocks
+decisionTree inputSeqBlocks taxaLst 
+    | null inputSeqBlocks = Right [M.empty]
+    | otherwise           = mapM (`isItTransposed` taxaLst) inputSeqBlocks
 
 isItTransposed :: PhyloSequence -> V.Vector String -> Either String TaxonSequenceMap
-isItTransposed block taxaLst  = 
-        if any transpose $ format block
-            then Left "Uh-oh there's a transposed block. That was very sneaky of you but I saw you!!!" -- TODO: Nice errors, handle transposed case
-            else handleNontransposedSeqs block taxaLst
+isItTransposed block taxaLst 
+    | any transpose $ format block = Left "Uh-oh there's a transposed block. That was very sneaky of you but I saw you!!!" -- TODO: Nice errors, handle transposed case
+    | otherwise = handleNontransposedSeqs block taxaLst
 
 handleNontransposedSeqs :: PhyloSequence -> V.Vector String -> Either String TaxonSequenceMap
-handleNontransposedSeqs block taxaLst = 
-    if any unlabeled $ format block
-        then handleUnLabeledSeqs block taxaLst
-        else handleLabeledSeqs   block taxaLst
+handleNontransposedSeqs block taxaLst 
+    | any unlabeled $ format block = handleUnLabeledSeqs block taxaLst
+    | otherwise = handleLabeledSeqs block taxaLst
 
 handleUnLabeledSeqs :: PhyloSequence -> V.Vector String -> Either String TaxonSequenceMap
-handleUnLabeledSeqs block taxaLst = if any interleave $ format block
-        then Left "Interleaved blocks must be labeled.\n"
-        else handleUnlabeledNotInterleavedSeqs block taxaLst
+handleUnLabeledSeqs block taxaLst 
+    | any interleave $ format block = Left "Interleaved blocks must be labeled.\n"
+    | otherwise = handleUnlabeledNotInterleavedSeqs block taxaLst
 
 handleLabeledSeqs :: PhyloSequence -> V.Vector String -> Either String TaxonSequenceMap
-handleLabeledSeqs block taxaLst =
-    if any interleave $ format block
-        then Right $ getSeqFromMatrix block taxaLst
-        else handleLabeledNotInterleavedSeqs block taxaLst
+handleLabeledSeqs block taxaLst
+    | any interleave $ format block = Right $ getSeqFromMatrix block taxaLst
+    | otherwise = handleLabeledNotInterleavedSeqs block taxaLst
 
 -- TODO: This means that no unaligned block can be parsed. Fix this pronto.
 handleLabeledNotInterleavedSeqs :: PhyloSequence -> V.Vector String -> Either String TaxonSequenceMap
-handleLabeledNotInterleavedSeqs block taxaLst =
-    if alignedSeq block
-        then Right $ getSeqFromMatrix block taxaLst
-        else Left $ "The " ++ (blockType block) ++ " block is labeled, not aligned, and not interleaved. Since the Nexus spec dictates that whitespace (hence line returns) in non-interleaved sequence matrices is ignored, it is impossible to discriminate between sequences and taxon names."
+handleLabeledNotInterleavedSeqs block taxaLst 
+    | alignedSeq block = Right $ getSeqFromMatrix block taxaLst
+    | otherwise = Left $ "The " ++ blockType block ++ 
+        " block is labeled, not aligned, and not interleaved. Since the Nexus spec dictates that whitespace (hence line returns) in non-interleaved sequence matrices is ignored, it is impossible to discriminate between sequences and taxon names."
 
 handleUnlabeledNotInterleavedSeqs :: PhyloSequence -> V.Vector String -> Either String TaxonSequenceMap
-handleUnlabeledNotInterleavedSeqs block taxaLst = 
-    if null taxaLst && null taxlabels'
-        then Left $ "In a " ++ (blockType block) ++ " block there is an unlabeled matrix which seems not to have any corresponding taxa.\n"
-        else handleUnlabeledNotInterleavedSeqsWithSepTaxa block taxaLst taxlabels'
+handleUnlabeledNotInterleavedSeqs block taxaLst 
+    | null taxaLst && null taxlabels' =
+        Left $ "In a " ++ blockType block ++ " block there is an unlabeled matrix which seems not to have any corresponding taxa.\n"
+    | otherwise = handleUnlabeledNotInterleavedSeqsWithSepTaxa block taxaLst taxlabels'
     where
         taxlabels' 
             | null $ seqTaxaLabels block = V.empty
-            | otherwise = V.fromList $ head $ seqTaxaLabels block
+            | otherwise = V.fromList . head $ seqTaxaLabels block
 
 handleUnlabeledNotInterleavedSeqsWithSepTaxa :: PhyloSequence -> V.Vector String -> V.Vector String -> Either String TaxonSequenceMap
-handleUnlabeledNotInterleavedSeqsWithSepTaxa block taxaLst taxlabels' =
-    if not (null taxaLst) && not (null taxlabels')
-       then Left $ "In a " ++ (blockType block) ++ " block there is an unlabeled matrix, but there are both newtaxa defined in the block, and there is a separate taxa block. Thus, the ordering of the sequences in this block is unclear.\n"
-       else if null taxaLst
-               then handleUnlabeledCheckTaxaCardinality block taxaLst
-               else handleUnlabeledCheckTaxaCardinality block taxlabels'
+handleUnlabeledNotInterleavedSeqsWithSepTaxa block taxaLst taxlabels'
+    | not (null taxaLst) && not (null taxlabels') = 
+        Left $ "In a " ++ blockType block ++ 
+            " block there is an unlabeled matrix, but there are both newtaxa defined in the block, and there is a separate taxa block. Thus, the ordering of the sequences in this block is unclear.\n"
+    | null taxaLst = handleUnlabeledCheckTaxaCardinality block taxaLst
+    | otherwise    = handleUnlabeledCheckTaxaCardinality block taxlabels'
 
 handleUnlabeledCheckTaxaCardinality :: PhyloSequence -> V.Vector String -> Either String TaxonSequenceMap
-handleUnlabeledCheckTaxaCardinality block taxaLst =
-    if length taxaLst /= mtxLength
-       then Left $ "In a " ++ (blockType block) ++ " block, either the number of taxa or the number of sequences in incorrect. " ++ show (length taxaLst) ++ " are given, but there are " ++ show mtxLength ++ " sequences in the matrix.\n"
-       else Right $ getSeqFromMatrix block taxaLst
-    where mtxLength = length $ head $ seqMatrix block -- this is safe, as we've already checked to make sure this blcok has a matrix.
+handleUnlabeledCheckTaxaCardinality block taxaLst
+    | length taxaLst /= mtxLength = 
+        Left $ "In a " ++ blockType block ++ 
+            " block, either the number of taxa or the number of sequences in incorrect. " ++ 
+            show (length taxaLst) ++ " are given, but there are " ++ show mtxLength ++ " sequences in the matrix.\n"
+    | otherwise = Right $ getSeqFromMatrix block taxaLst
+    where mtxLength = length . head $ seqMatrix block -- this is safe, as we've already checked to make sure this blcok has a matrix.
 
 ------------------------------------------------------  End decision tree logic  ------------------------------------------------------
 
@@ -275,11 +273,12 @@ updateSeqInMap curLength inputSeq curSeq = newSeq
 -- results in default behavior ("standard" is default).
 -- TODO: ask Ward if mixed datatype is allowed (hope to god no).
 wrongDataType :: PhyloSequence -> Maybe String
-wrongDataType inSeq =
-    if (map toLower dataType) `elem` ["standard", "dna", "rna", "nucleotide", "protein", "continuous", ""]
-        then Nothing
-        else Just $ dataType ++ " is not an accepted type of data.\n"
+wrongDataType inSeq 
+    | lowerCased `elem` acceptableTypeStrs = Nothing
+    | otherwise = Just $ dataType ++ " is not an accepted type of data.\n"
     where
+        lowerCased = fmap toLower dataType
+        acceptableTypeStrs = ["standard", "dna", "rna", "nucleotide", "protein", "continuous", ""]
         (_, _noLabels, _interleaved, _tkns, dataType, _matchChar') = getFormatInfo inSeq
 
 
@@ -301,32 +300,31 @@ checkSeqLength seqBlockLst (seqMap,_) =
 taxaDimsMissing :: [TaxaSpecification] -> [PhyloSequence] -> [Maybe String]
 taxaDimsMissing taxas inputSeqBlocks = taxaProblems ++ seqProblems
     where
-        taxaProblems = map f taxas
-        seqProblems = map g inputSeqBlocks
-        f (TaxaSpecification len list) = let len' =length list 
+        taxaProblems = fmap f taxas
+        seqProblems  = fmap g inputSeqBlocks
+        f (TaxaSpecification len list) = let len' = length list 
             in if len == len' 
                 then Nothing
                 else Just $ "ntax incorrect in Taxa block. Found: " ++ show len' ++ ", but ntax is given as " ++ show len ++ ".\n"
-        g (PhyloSequence _ _ _ dimensions _ _ _ blockType' ) = 
-            if blockType' == "data" -- TODO: double-check for case-insensitivity problems
-                then
-                    if not (null dimensions)
-                        then 
-                            let (DimensionsFormat _ ntax' _) = head dimensions
-                            in 
-                                if ntax' == 0 -- 0 is default value if ntax is missing
-                                    then Just "Data block is missing ntax directive.\n" 
-                                    else Nothing
-                        else Just "Data block is missing dimensions.\n"
-                else 
-                    if not (null dimensions)
-                        then 
-                            let (DimensionsFormat newtaxa' ntax' _) = head dimensions
-                            in 
-                                if newtaxa' && ntax' == 0 -- 0 is default value if ntax is missing
-                                    then Just $ blockType' ++ " block is missing ntax directive.\n" 
-                                    else Nothing
-                        else Just $ blockType' ++ "Data block is missing dimensions.\n"
+        g (PhyloSequence _ _ _ dimensions _ _ _ blockType' ) 
+            | blockType' == "data"  = -- TODO: double-check for case-insensitivity problems
+                if not (null dimensions)
+                then 
+                    let (DimensionsFormat _ ntax' _) = head dimensions
+                    in 
+                        if ntax' == 0 -- 0 is default value if ntax is missing
+                        then Just "Data block is missing ntax directive.\n" 
+                        else Nothing
+                else Just "Data block is missing dimensions.\n"
+            | otherwise = 
+                if not (null dimensions)
+                then 
+                    let (DimensionsFormat newtaxa' ntax' _) = head dimensions
+                    in 
+                        if newtaxa' && ntax' == 0 -- 0 is default value if ntax is missing
+                        then Just $ blockType' ++ " block is missing ntax directive.\n" 
+                        else Nothing
+                else Just $ blockType' ++ "Data block is missing dimensions.\n"
 
 
 
@@ -450,7 +448,7 @@ seqMatrixMissing phyloSeq
 -- | seqDimsMissing checks a PhyloSequence to make sure it has the requisite sequence dims. 
 seqDimsMissing :: PhyloSequence -> Maybe String
 seqDimsMissing phyloSeq
-  | numDims < 1 && (blockType phyloSeq) /= "unaligned" = tooFew
+  | numDims < 1 && blockType phyloSeq /= "unaligned" = tooFew
   | numDims > 1 = tooMany
   | otherwise   = Nothing
   where
@@ -511,7 +509,7 @@ getFormatInfo phyloSeq = case headMay $ format phyloSeq of
                                   , unlabeled x
                                   , interleave x
                                   , areTokens x
-                                  , map toLower (charDataType x)
+                                  , fmap toLower (charDataType x)
                                   , matchChar x
                                   )
 
@@ -539,33 +537,33 @@ getSeqFromMatrix seqBlock taxaLst =
     M.map (splitSequenceReplaceAmbiguities tkns isCont aligned) equatesReplaced
     where
         (aligned, noLabels, interleaved, tkns, characterType, matchChar') = getFormatInfo seqBlock
-        seqLen = numChars $ head $ charDims seqBlock -- I've already checked to make sure there's a dimensions in the block
+        seqLen = numChars . head $ charDims seqBlock -- I've already checked to make sure there's a dimensions in the block
 --        taxaCount  = length taxaLst
         taxaMap    = M.fromList . zip (V.toList taxaLst) $ repeat ""
         mtx        = head $ seqMatrix seqBlock -- I've already checked to make sure there's a matrix
-        entireSeqs = if noLabels    -- entireSeqs will be a list of tuples (taxon, concatted seq)
-                         then zip (V.toList taxaLst) mtx -- Cases 4 and 5: Alignment will be checked in splitSequenceReplaceAmbiguities
-                         else if interleaved 
-                              then -- Cases 1 and 2: Alignment will be checked in splitSequenceReplaceAmbiguities
-                                  getTaxonAndSeqFromMatrixRow <$> mtx 
-                              else -- Case 3: To get here, we must have already errored out unaligned in "handle" fns
-                                  getTaxaAndSeqsFromEntireMatrix (isCont || tkns) seqLen mtx -- TODO: need to add custom alphabet to condition here?
-        entireDeinterleavedSeqs = if interleaved
-                                  then deInterleave taxaMap entireSeqs
-                                  else M.fromList entireSeqs
+        entireSeqs -- entireSeqs will be a list of tuples (taxon, concatted seq)
+            | noLabels    = zip (V.toList taxaLst) mtx -- Cases 4 and 5: Alignment will be checked in splitSequenceReplaceAmbiguities
+            | interleaved = getTaxonAndSeqFromMatrixRow <$> mtx -- Cases 1 and 2: Alignment will be checked in splitSequenceReplaceAmbiguities
+            | otherwise   = getTaxaAndSeqsFromEntireMatrix (isCont || tkns) seqLen mtx -- Case 3: To get here, we must have already errored out unaligned in "handle" fns
+            -- TODO: need to add custom alphabet to condition here?
+        entireDeinterleavedSeqs 
+            | interleaved = deInterleave taxaMap entireSeqs
+            | otherwise   = M.fromList entireSeqs
         firstSeq = fromJust $ M.lookup (if noLabels
                                         then taxaLst V.! 0
                                         else takeWhile (`notElem` " \t") $ head mtx)
                             entireDeinterleavedSeqs
-        matchCharsReplaced = if matchChar' /= "" && aligned -- TODO: Do I need to do this on tokens, continuous and custom alphabets?
-                             then M.map (replaceMatches (head matchChar') firstSeq) entireDeinterleavedSeqs
-                             else entireDeinterleavedSeqs
+        matchCharsReplaced 
+            | matchChar' /= "" && aligned = -- TODO: Do I need to do this on tokens, continuous and custom alphabets?
+                M.map (replaceMatches (head matchChar') firstSeq) entireDeinterleavedSeqs
+            | otherwise = entireDeinterleavedSeqs
         --vectorized = V.fromList 
-        equatesReplaced = if head eqStr /= "" && not tkns && not isCont -- TODO: Also don't do on custom alphabets?
-                            then M.map (replaceEquates eqMap) matchCharsReplaced
-                            else matchCharsReplaced
-        eqStr = either (const [""]) (\x -> id x) $ getEquates seqBlock
-        eqMap = M.fromList $ map (\xs -> (head xs, tail $ dropWhile (\x -> not $ '=' == x) xs) ) eqStr -- TODO: force equates string to be properly formatted
+        equatesReplaced 
+            | head eqStr /= "" && not tkns && not isCont = -- TODO: Also don't do on custom alphabets?
+                M.map (replaceEquates eqMap) matchCharsReplaced
+            | otherwise = matchCharsReplaced
+        eqStr = either (const [""]) id $ getEquates seqBlock
+        eqMap = M.fromList $ fmap (\xs -> (head xs, tail $ dropWhile (/= '=') xs) ) eqStr -- TODO: force equates string to be properly formatted
         isCont = characterType == "continuous"
 
 -- | deInterleave takes in a Map String String, where the first String is a taxon label, as well as an 
@@ -643,7 +641,7 @@ getTaxaAndSeqsFromEntireMatrixHelper tokenized seqLen curLen mtx acc
                      else concat line
             line = words $ head mtx -- Safe because of first pattern match.
             newTup = (fst $ head acc, headSeq)
-            headSeq = (snd $ head acc) ++ seq'
+            headSeq = snd (head acc) ++ seq'
         in getTaxaAndSeqsFromEntireMatrixHelper tokenized seqLen newLen (tail mtx) newAcc
     | otherwise = 
         let 
@@ -653,7 +651,7 @@ getTaxaAndSeqsFromEntireMatrixHelper tokenized seqLen curLen mtx acc
                         else length seq' -- this removes extra spaces in non-tokenized lines
             taxon = head line
             seq' = if tokenized 
-                     then ' ' : (unwords $ tail line)
+                     then ' ' : unwords (tail line)
                      else concat $ tail line
             line = words $ head mtx -- Safe because of first pattern match
         in getTaxaAndSeqsFromEntireMatrixHelper tokenized seqLen newLen (tail mtx) (newTup : acc)
@@ -663,7 +661,7 @@ getTaxaAndSeqsFromEntireMatrixHelper tokenized seqLen curLen mtx acc
 -- the map value. Otherwise, the original value remains.
 -- Abstracted Char to a as an exercise.
 replaceEquates :: (Ord a) => M.Map a [a] -> [a] -> [a]
-replaceEquates eqMap inputSeq = foldr (\x acc -> (M.findWithDefault [x] x eqMap) ++ acc) [] inputSeq
+replaceEquates eqMap = foldr (\x acc -> M.findWithDefault [x] x eqMap ++ acc) []
 
 -- | replaceMatches takes a match character and two Strings, 
 -- a canonical String and a String that contains the match character. 
@@ -672,8 +670,8 @@ replaceEquates eqMap inputSeq = foldr (\x acc -> (M.findWithDefault [x] x eqMap)
 -- O(n)
 -- A test exists in the test suite.
 replaceMatches :: Char -> String -> String -> String
-replaceMatches matchTarget canonical toReplace = {- trace (canonical ++"\n" ++ toReplace ++ "\n") $ -}
-    zipWith f canonical toReplace
+replaceMatches matchTarget = {- trace (canonical ++"\n" ++ toReplace ++ "\n") $ -}
+    zipWith f
     where
         f x y = if y == matchTarget
                 then x
