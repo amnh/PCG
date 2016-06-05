@@ -48,7 +48,7 @@ testSuite = testGroup "Implied Alignment"
           ]
 
 fullIA :: TestTree
-fullIA = testGroup "Full alignment properties" [lenHolds, checkDOResult1, checkIAResult1]
+fullIA = testGroup "Full alignment properties" [lenHolds, checkDOResult1, checkIAResult1, checkDOResult2, checkIAResult2]
     where
         lenHolds = testProperty "The sequences on a tree are longer or the same at end" checkLen
 
@@ -73,7 +73,17 @@ fullIA = testGroup "Full alignment properties" [lenHolds, checkDOResult1, checkI
         node3          = leftTest {T.code = 3, T.parents = [1]}
         node4          = node3 {T.code = 4, T.encoded = encodeThem . pure $ V.fromList [["A"], ["T"], ["A"], ["G"]]}
         longerTest     = V.fromList [rootTest, leftTest2, rightTest, node3, node4]
-
+        seq2a          = encodeThem . pure $ V.fromList [["A"], ["T"], ["A", "-"], ["T", "G"]]
+        seq2b          = encodeThem . pure $ V.fromList [["A"], ["T"], ["G"]]
+        seq2c          = encodeThem . pure $ V.fromList [["A"], ["T", "-"], ["G"]]
+        expectedRoot   = rootTest {T.preliminary = seq2c, T.aligned = encodeThem . pure $ V.fromList [["A"], ["T", "-"], ["-"], ["G"]], T.localCost = 1, T.totalCost = 3}
+        expectedLeft   = leftTest2 {T.preliminary = seq2a, T.aligned = seq2a, T.final = seq2b, T.localCost = 2, T.totalCost = 2, T.gapped = encodeThem . pure $ V.fromList [["A"], ["T"], ["-"], ["G"]]}
+        expectedDO2    = V.fromList [expectedRoot, expectedLeft, rightTest, node3, node4]
+        doResult2      = allOptimization 1 (pure doMeta) longerTest
+        checkDOResult2 = testCase "On a slightly larger case, DO behaves as expected" (expectedDO2 @=? doResult2)
+        iaResult2      = impliedAlign expectedDO2 (pure doMeta)
+        expectedIA2    = IM.fromList [(2, encodeThem . pure $ V.fromList [["A"], ["-"], ["-"], ["G"], ["-"]]), (3, encodeThem . pure $ V.fromList [["A"], ["T"], ["-"], ["-"], ["T"]]), (4, encodeThem . pure $ V.fromList [["A"], ["T"], ["A"], ["-"], ["G"]])]
+        checkIAResult2 = testCase "One that larger case, IA gives the expected result" (expectedIA2 @=? iaResult2)
 
 checkLen :: StandardSolution -> Bool
 checkLen inSolution = checkLS
@@ -95,7 +105,7 @@ numerate = testGroup "Numeration properties" [idHolds, lengthHolds, counterIncre
         checkID inChar = onull inChar || (traces == defaultH && counter <= numChars inChar)
             where
                 defaultH = V.fromList [0..numChars inChar - 1] 
-                (traces, counter, _) =  numerateOne inChar inChar defaultH 0
+                (traces, (_, counter), _) =  numerateOne inChar inChar (0, 0)
 
         -- TODO: Talk to Eric about numChars ()
         lengthHolds = testProperty "Numerate returns a sequence of the correct length" checkLen
@@ -103,8 +113,7 @@ numerate = testGroup "Numeration properties" [idHolds, lengthHolds, counterIncre
         checkLen inParse count = V.length traces >= maxLen
             where 
                 (seq1, seq2) = encodeArbSameLen inParse
-                defaultH     = V.fromList [0..numChars seq1 - 1]
-                (traces, counter, _) = numerateOne seq1 seq2 defaultH count
+                (traces, (_, counter), _) = numerateOne seq1 seq2 (numChars seq1, count)
                 maxLen       = maximum [numChars seq1, numChars seq2]
 
         counterIncrease = testProperty "After numerate runs, counter is same or larger" checkCounter
@@ -112,20 +121,18 @@ numerate = testGroup "Numeration properties" [idHolds, lengthHolds, counterIncre
         checkCounter inParse count = counter >= count
             where 
                 (seq1, seq2) = encodeArbSameLen inParse
-                defaultH     = V.fromList [0..numChars seq1 - 1]
-                (traces, counter, _) = numerateOne seq1 seq2 defaultH count
+                (traces, (_, counter), _) = numerateOne seq1 seq2 (numChars seq1, count)
 
         monotonic = testProperty "Numerate produces a monotonically increasing homology" checkIncrease
         checkIncrease :: (GoodParsedChar, GoodParsedChar) -> Int -> Bool
         checkIncrease inParse count = increases $ toList traces
             where 
                 (seq1, seq2) = encodeArbSameLen inParse
-                defaultH     = V.fromList [0..numChars seq1 - 1]
-                (traces, counter, _) = numerateOne seq1 seq2 defaultH count
+                (traces, counter, _) = numerateOne seq1 seq2 (numChars seq1, count)
                 increases :: Ord a => [a] -> Bool
                 increases []       = True
                 increases [x]      = True
-                increases (x:y:xs) = x <= y && increases (y:xs)
+                increases (x:y:xs) = x < y && increases (y:xs)
 {-
 -- | Wrapper function to start and then terminate an IA numeration
 partNumerate :: DAG -> Node -> Vector m -> Counts -> Node -> (Counts, t)

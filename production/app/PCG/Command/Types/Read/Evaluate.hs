@@ -22,6 +22,7 @@ import           Data.Map                   (Map,assocs,insert,union, keys)
 import qualified Data.Map              as M (fromList)
 import           Data.Maybe                 (fromMaybe)
 import           Data.Monoid                ((<>))
+import           Data.Ord                   (comparing)
 import           Data.Vector                (Vector)
 import qualified Data.Vector           as V (fromList,zipWith)
 --import           Debug.Trace
@@ -157,28 +158,44 @@ expandIUPAC fpr = fpr { parsedChars = newTreeChars }
 
 progressiveParse :: FilePath -> EitherT ReadError IO FracturedParseResult
 progressiveParse inputPath = do
-    nukeResult <- liftIO . runEitherT . parseSpecifiedFile $ NucleotideFile [inputPath]
-    case nukeResult of
-      Right x -> pure $ head x
-      Left  _ -> do
-        aminoAcidResult <- liftIO . runEitherT . parseSpecifiedFile $ AminoAcidFile [inputPath]
-        case aminoAcidResult of
-          Right x -> pure $ head x
-          Left  _ -> do
-            (filePath, fileContent) <- head . dataFiles <$> getSpecifiedContent (UnspecifiedFile [inputPath])
+    (filePath, fileContent) <- head . dataFiles <$> getSpecifiedContent (UnspecifiedFile [inputPath])
+    case parse' nukeParser filePath fileContent of
+      Right x    -> pure $ toFractured Nothing filePath x
+      Left  err1 -> do
+        case parse' acidParser filePath fileContent of
+          Right x    -> pure $ toFractured Nothing filePath x
+          Left  err2 -> do
             case parse' newickStreamParser filePath fileContent of
-              Right x -> pure $ toFractured Nothing filePath x
-              Left  _ ->
+              Right x    -> pure $ toFractured Nothing filePath x
+              Left  err3 ->
                 case parse' verStreamParser filePath fileContent of
-                  Right x -> pure $ toFractured Nothing filePath x
-                  Left  _ ->
+                  Right x    -> pure $ toFractured Nothing filePath x
+                  Left  err4 ->
                     case parse' tntStreamParser filePath fileContent of
-                      Right x -> pure $ toFractured Nothing filePath x
-                      Left  _ ->
+                      Right x    -> pure $ toFractured Nothing filePath x
+                      Left  err5 ->
                         case parse' nexusStreamParser filePath fileContent of
-                          Right x -> pure $ toFractured Nothing filePath x
-                          Left  _ -> fail $ "Could not determine the file type of '" ++ filePath ++ "'. Try annotating the expected file data in the 'read' for more explicit error message on file parsing failures."
-
+                          Right x    -> pure $ toFractured Nothing filePath x
+                          Left  err6 ->
+                            let previousErrors      = [(err1,"Fasta"),(err2,"Fasta"),(err3,"Newick tree"),(err4,"VER"),(err5,"Henning/TNT"),(err6,"Nexus")]
+                                (parseErr,_fileType) = maximumBy (comparing (farthestParseErr . fst)) previousErrors
+                            in  left $ unparsable parseErr
+{-
+                                fail $ mconcat [ "Could not parse '"
+                                               , filePath
+                                               , "', appears to be a "
+                                               , fileType
+                                               , " file.\n"
+                                               , parseErrorPretty parseErr
+                                               ]
+-}
+  where
+    -- | We use this to find the parser which got farthest through the stream before failing.
+    farthestParseErr :: ParseError t e -> SourcePos
+    farthestParseErr err = maximum $ errorPos err
+    nukeParser = (\x -> try (fastaStreamConverter Fasta.DNA x) <|> fastaStreamConverter Fasta.RNA x) =<< fastaStreamParser
+    acidParser = fastaStreamConverter Fasta.DNA =<< fastaStreamParser
+    
 toFractured :: (ParsedMetadata a, ParsedCharacters a, ParsedForest a) => Maybe TCM -> FilePath -> a -> FracturedParseResult
 toFractured tcmMat path = FPR <$> unifyCharacters
                               <*> unifyMetadata

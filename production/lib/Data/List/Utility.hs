@@ -17,7 +17,7 @@ module Data.List.Utility where
 import Data.Set      (insert, intersection)
 import Data.Foldable
 import Data.List     (sort, sortBy)
-import Data.Map      (assocs,empty,insertWith)
+import Data.Map      (assocs, empty, insertWith)
 import Data.Ord      (comparing)
 
 -- | Determines whether a foldable structure contains a single element.
@@ -61,12 +61,13 @@ occurances = collateOccuranceMap . buildOccuranceMap
         descending x   = x
 
 -- | chunksOf is based on Text.chunksOf, but is more general.
-chunksOf :: (Foldable t) => Int -> t a -> [[a]]
-chunksOf x = chunksOf' x . toList
+chunksOf :: (Foldable t, Show (t a)) => Int -> t a -> [[a]]
+chunksOf n = chunksOf' . toList
   where
-    chunksOf' n xs = f : chunksOf' n s
-      where
-        (f,s) = splitAt n xs
+    chunksOf' xs =
+      case splitAt n xs of
+        (y,[]) -> [y]
+        (y,ys) -> y : chunksOf' ys
 
 -- | Useful function to check subsets of lists.
 subsetOf :: (Foldable t, Foldable c, Ord a) => t a -> c a -> Bool

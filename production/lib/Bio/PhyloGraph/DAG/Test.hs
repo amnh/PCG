@@ -43,7 +43,7 @@ typeClassLawsForNetwork = testGroup "DAG is an appropriate instance of Network" 
                                                                                 ]
 
 nodeIsRootTest :: TestTree
-nodeIsRootTest = testProperty "nodeIsRoot (root t) t" $ nodeIsRoot'
+nodeIsRootTest = testProperty "nodeIsRoot (root t) t" nodeIsRoot'
 
 nodeIsRoot' :: DAG -> Bool
 nodeIsRoot' dag = nodeIsRoot (root dag) dag
@@ -58,7 +58,7 @@ allNonrootNodesAreNotRootTest :: TestTree
 allNonrootNodesAreNotRootTest = testProperty "forall a. (root t) /= a ==> not (nodeIsRoot a t)" onlyNodeIsRoot
         
 onlyNodeIsRoot :: DAG -> Bool
-onlyNodeIsRoot dag = oall (\node -> {- trace (show node) $ -} ((root dag) /= node) /= (nodeIsRoot node dag)) dag
+onlyNodeIsRoot dag = oall (\node -> {- trace (show node) $ -} (root dag /= node) /= nodeIsRoot node dag) dag
                                                                        {- ^^this /= is not working the way I thought it would. -}
 
 -- Alex pulled this out. Now it's back in?

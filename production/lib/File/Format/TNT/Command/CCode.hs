@@ -45,7 +45,7 @@ ccodeAugment = CCodeAugment
       | Additive `elem` xs && NonAdditive `elem` xs = makeError "additive"
       | Active   `elem` xs && NonActive   `elem` xs = makeError "active"
       | Sankoff  `elem` xs && NonSankoff  `elem` xs = makeError "sankoff"
-      | Additive `elem` xs && Sankoff     `elem` xs = fail $ concat ["Specified both 'additive' and 'sankoffy' states for character set in CCODE command"]
+      | Additive `elem` xs && Sankoff     `elem` xs = fail "Specified both 'additive' and 'sankoffy' states for character set in CCODE command"
       | otherwise                                   = pure xs
 
 -- | Parses a metadata value mutation.

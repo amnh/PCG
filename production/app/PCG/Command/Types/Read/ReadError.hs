@@ -25,7 +25,7 @@ data ReadErrorMessage
 instance Show ReadErrorMessage where
   show (FileUnfindable path        ) = "'" ++ path ++ "'"
   show (FileUnopenable path        ) = "'" ++ path ++ "'"
-  show (FileUnparsable pErr        ) = show pErr
+  show (FileUnparsable pErr        ) = pErr
   show (FileAmbiguous  path matches) = message
     where
       files   = toList matches
@@ -51,12 +51,13 @@ instance Show ReadError where
       unopenableMessage =
         case unopenables of
           []  -> Nothing
-          [x] -> Just $ "The file "  ++ show x ++ " can not be openned"
-          xs  -> Just $ "The following files could not be openned: \n" ++ unlines (show <$> xs)
+          [x] -> Just $ "The file "  ++ show x ++ " can not be opened"
+          xs  -> Just $ "The following files could not be opened: \n" ++ unlines (show <$> xs)
       unparsableMessage =
         case unparsables of
           []  -> Nothing
-          xs  -> Just . unlines $ (\x -> "Parse Error:\n" ++ show x) <$> xs
+          [x] -> Just $  "Could not parse file " <> show x
+          xs  -> Just . ("Could not parse the following files:\n" <>) . unlines $ show <$> xs
       ambiguousMessage  =
         case ambiguity of
           []  -> Nothing
