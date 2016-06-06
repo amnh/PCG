@@ -32,8 +32,6 @@ import           Test.Tasty
 import           Test.Tasty.HUnit
 import           Test.Tasty.QuickCheck
 
-import Debug.Trace
-
 standardAlph :: Alphabet String
 standardAlph = constructAlphabet $ V.fromList ["A", "C", "G", "T", "-"]
 
@@ -57,8 +55,7 @@ doProperties = testGroup "Properties of the DO algorithm"
         idHolds = testProperty "When DO runs a sequence against itself, get input as result" checkID
             where
                 checkID :: DynamicChar -> Bool
-                checkID inSeq = --trace ("main result of DO " ++ show main ++ " with cost " ++ show cost ++ " with right " ++ show right)
-                                main == filterGaps inSeq && cost == 0 && gapped == inSeq && left == inSeq && right == inSeq
+                checkID inSeq = main == filterGaps inSeq && cost == 0 && gapped == inSeq && left == inSeq && right == inSeq
                     where (main, cost, gapped, left, right) = naiveDO inSeq inSeq doMeta
 
         seq1 = encodeDynamic standardAlph (V.fromList [["A"], ["T"], ["T"]])
@@ -66,7 +63,7 @@ doProperties = testGroup "Properties of the DO algorithm"
         result1 = naiveDO seq1 seq2 doMeta
         --expected1 :: (DynamicChar, Double, DynamicChar, DynamicChar, DynamicChar)
         expected1 = (encodeDynamic standardAlph (V.fromList [["A"], ["T", "-"], ["G", "T"]]), 2.0, encodeDynamic standardAlph (V.fromList [["A"], ["T", "-"], ["G", "T"]]), seq1, encodeDynamic standardAlph (V.fromList [["A"], ["-"], ["G"]]))
-        simpleDO1 = testCase "One a simple test, DO gives expected result: ATT and AG -> A-[GT] or AG-" (expected1 @=? result1)
+        simpleDO1 = testCase "On a simple test, DO gives expected result: ATT and AG -> A-[GT] or AG-" (expected1 @=? result1)
 
 -- | Check properties of the Fitch algorithm
 fitchProperties :: TestTree
@@ -75,7 +72,7 @@ fitchProperties = testGroup "Properties of the Fitch algorithm" [preIdHolds, pos
         preIdHolds = testProperty "When Preorder Fitch runs a sequence against itself, get input as result" checkID
             where
                 checkID :: DynamicChar -> Bool
-                checkID inSeq = {-trace ("fitch result " ++ show result ++ " with cost " ++ show cost) $ -}result == inSeq && cost == 0
+                checkID inSeq = result == inSeq && cost == 0
                     where 
                         newAlph = constructAlphabet . V.fromList . fmap pure . take (getAlphLen inSeq) $ '-' : ['A'..'z']
                         (result, _, cost) = preorderFitchBit 1 inSeq inSeq (fitchMeta {alphabet = newAlph, fitchMasks = generateMasks newAlph (numChars inSeq)})
