@@ -15,10 +15,9 @@
 module Analysis.Parsimony.Binary.DirectOptimization where
 
 import Analysis.General.NeedlemanWunsch
-import Analysis.Parsimony.Binary.Internal
+import Analysis.Parsimony.Binary.Constraints
 import Bio.Metadata
 import Bio.Character.Dynamic.Coded
---import Debug.Trace
 
 
 
@@ -28,7 +27,6 @@ import Bio.Character.Dynamic.Coded
 -- the aligned version of the first input character, and the aligned version of the second input character
 -- The process for this algorithm is to generate a traversal matrix, then perform a traceback.
 naiveDO :: (Metadata m s, SeqConstraint' s) => s -> s -> m -> (s, Double, s, s, s)
---naiveDO s1 s2 _ | trace ("Sequences of length " ++ show (numChars s1) ++ show (numChars s2)) False = undefined
 naiveDO char1 char2 meta
     | isEmpty char1 = (char1, 0, char1, char1, char1)
     | isEmpty char2 = (char2, 0, char2, char2, char2)

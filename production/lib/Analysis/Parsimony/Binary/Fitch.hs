@@ -15,7 +15,7 @@
 
 module Analysis.Parsimony.Binary.Fitch where
 
-import Analysis.Parsimony.Binary.Internal
+import Analysis.Parsimony.Binary.Constraints
 import Bio.Metadata
 import Data.Bits
 import Data.MonoTraversable
