@@ -37,13 +37,12 @@ import Bio.PhyloGraph.Node.Final
 import Bio.PhyloGraph.Node.Preliminary
 import Bio.PhyloGraph.Node.Encoded ()
 
-import Debug.Trace
 
 -- | Top level binary optimization wrapper to optimize over a solution
 -- Takes in an overall weight and a solution
 -- Returns a solution with any relevant values assigned (root cost, node assignments, etc. depending on optimization types)
 solutionOptimization :: SolutionConstraint' r f t n s m => Double -> r -> r
-solutionOptimization weighting inSolution = trace ("root costs " ++ show (fmap (\f -> fmap (getTotalCost . root) (trees f)) (getForests outForests))) $ outForests 
+solutionOptimization weighting inSolution = outForests 
     where
         meta = getMetadata inSolution
         outForests = setForests inSolution $ fmap (graphOptimization weighting meta) (getForests inSolution)
@@ -58,7 +57,6 @@ graphOptimization weighting meta inGraph = setTrees inGraph $ fmap (allOptimizat
 -- Takes in an overall weight, a vector of metadata, and a tree
 -- Returns a tree with values assigned
 allOptimization :: (TreeConstraint' t n s, Metadata m s) => Double -> Vector m -> t -> t
---allOptimization _ _ inTree | trace ("allOptimization " ++ show inTree) False = undefined
 allOptimization weighting meta inTree =
     let
         downPass = optimizationPreorder weighting inTree meta

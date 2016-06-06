@@ -76,7 +76,7 @@ bitMatrix :: Int                 -- ^ Number of rows in the BitMatrix.
 bitMatrix m n f =
   case errorMsg of
     Just msg -> error msg
-    Nothing  -> BitMatrix n . bitVec (m*n) . snd . foldl' g initialAccumulator $ [(i,j) | i <- [0..m-1], j <- [0..n-1]]
+    Nothing  -> BitMatrix n . bitVec (m * n) . snd . foldl' g initialAccumulator $ [(i,j) | i <- [0..m-1], j <- [0..n-1]]
   where
     initialAccumulator :: (Integer, Integer)
     initialAccumulator = (1,0)
