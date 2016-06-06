@@ -62,13 +62,13 @@ type instance Element BitMatrix = BitVector
 -- 0010100
 -- 0001000
 --
--- >>> bitMatrix 5 5 $ \(i,j) -> odd i /= even j
--- BitMatrix: 5 x 5
--- 10101
--- 01010
--- 10101
--- 01010
--- 10101
+-- >>> bitMatrix 5 10 $ \(i,j) -> odd i /= even j
+-- BitMatrix: 5 x 10
+-- 1010101010
+-- 0101010101
+-- 1010101010
+-- 0101010101
+-- 1010101010
 bitMatrix :: Int                 -- ^ Number of rows in the BitMatrix.
           -> Int                 -- ^ Number of columns in the BitMatrix.
           -> ((Int,Int) -> Bool) -- ^ Function to determine if a given index has a set bit.
