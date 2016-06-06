@@ -22,6 +22,3 @@ import           Test.QuickCheck
 
 instance Arbitrary a => Arbitrary (Vector a) where
     arbitrary = V.fromList <$> listOf arbitrary
-
-instance Arbitrary IntSet where
-    arbitrary = IS.fromList <$> listOf arbitrary
