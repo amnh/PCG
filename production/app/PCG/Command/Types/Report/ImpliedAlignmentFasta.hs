@@ -21,7 +21,7 @@ import Bio.Metadata   hiding (name)
 import Bio.PhyloGraph.DAG
 import Bio.PhyloGraph.Node
 import Bio.PhyloGraph.Solution
-import Control.DeepSeq       (force)
+--import Control.DeepSeq       (force)
 import Data.Alphabet
 import Data.Foldable
 import Data.IntMap           (IntMap,insert,keys)
@@ -66,7 +66,7 @@ iaOutput align solution = (\x -> trace (intercalate "\n\n"
     -- original (right-hand) structure to the implied alignment sequences within
     -- the new (left-hand) structure.
     nodeCharacterMapping :: Map String (Vector DynamicChar)
-    nodeCharacterMapping = force . mconcat $ zipWith f align (getForests solution)
+    nodeCharacterMapping = mconcat $ zipWith f align (getForests solution)
       where
         f alignedForest solutionForest = mconcat $ zipWith g alignedForest solutionForest
         g alignment     dag            = foldMapWithKey h alignment

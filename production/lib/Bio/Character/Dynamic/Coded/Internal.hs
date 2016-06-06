@@ -41,7 +41,7 @@ import           Data.Monoid                         ((<>))
 import           Data.MonoTraversable
 import           Data.Vector                         (Vector)
 import qualified Data.Vector                    as V (fromList)
-import           GHC.Generics
+--import           GHC.Generics
 import           Test.Tasty.QuickCheck        hiding ((.&.))
 import           Test.QuickCheck.Arbitrary.Instances ()
 
@@ -51,13 +51,13 @@ import           Test.QuickCheck.Arbitrary.Instances ()
 
 newtype DynamicChar
       = DC BitMatrix
-      deriving (Eq, Generic, Show)
+      deriving (Eq, Show)
 
 type instance Element DynamicChar = BitVector
 
 type DynamicChars = Vector DynamicChar
 
-instance NFData DynamicChar
+--instance NFData DynamicChar
 
 instance MonoFunctor DynamicChar where
   omap f (DC bm) = DC $ omap f bm

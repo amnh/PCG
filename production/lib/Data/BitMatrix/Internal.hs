@@ -26,7 +26,16 @@ import Data.MonoTraversable
 import Test.QuickCheck hiding ((.&.))
 
 -- | A data structure for storing a two dimensional array of bits.
---   Exposes row-based monomorphic mapping & folding.
+--   Exposes row based monomorphic mapping & folding.
+--
+--   It is important to note the endianness of 'BitMatrix'.
+--   The bit at position (0,0) is displayed in the upper left hand corner when
+--   the 'BitMatrix' is shown.
+--   The bit at position (i,x) will be of less significance than position (i+1,x),
+--   for the resulting xth 'BitVector' row when calling 'rows' on a 'BitMatrix'.
+--   The bit at position (x,i) will be of less significance than position (x,i+1),
+--   for the resulting xth 'BitVector' column when calling 'cols' on a 'BitMatrix'.
+--
 data BitMatrix
    = BitMatrix !Int BitVector
    deriving (Eq)
@@ -37,6 +46,29 @@ type instance Element BitMatrix = BitVector
 -- | A generating function for a 'BitMatrix'. Efficiently constructs a
 --   'BitMatrix' of the specified dimensions with each bit defined by the result
 --   of the supplied function.
+--
+-- ==== __Examples__
+--
+-- >>> bitMatrix 3 2 $ const True
+-- BitMatrix: 3 x 2
+-- 111
+-- 111
+-- 111
+--
+-- >>> bitMatrix 4 7 $ \(i,j) -> i == j || i + j == 6
+-- BitMatrix: 4 x 7
+-- 1000001
+-- 0100010
+-- 0010100
+-- 0001000
+--
+-- >>> bitMatrix 5 10 $ \(i,j) -> odd i /= even j
+-- BitMatrix: 5 x 10
+-- 1010101010
+-- 0101010101
+-- 1010101010
+-- 0101010101
+-- 1010101010
 bitMatrix :: Int                 -- ^ Number of rows in the BitMatrix.
           -> Int                 -- ^ Number of columns in the BitMatrix.
           -> ((Int,Int) -> Bool) -- ^ Function to determine if a given index has a set bit.
