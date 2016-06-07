@@ -20,12 +20,9 @@ import Bio.Metadata
 import Data.Bits
 import Data.MonoTraversable
 
-import Debug.Trace
-
 -- | Preorder Fitch operation on bit-packed sequences
 --   Output three-tuple is the preliminary assignment, the temporary assignment, and the cost
 preorderFitchBit :: (SeqConstraint' s, Metadata m s) => Double -> s -> s -> m -> (s, s, Double)
-preorderFitchBit _ _ _ c | trace ("masks for fitch " ++ show (getFitchMasks c)) False = undefined
 preorderFitchBit weightValue lbit rbit inChar =
     let
         alphLen = length $ getAlphabet inChar

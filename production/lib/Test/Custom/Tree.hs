@@ -67,8 +67,6 @@ createSimpleTree rootRef symbols xs = TT . setRefIds $ unfoldTree buildTree root
             (counter', children') = foldr g (counter + 1, []) $subForest root
             g e (n, xs) = second (:xs) $ f n e
     
-    
-
 createCherry :: String -> String -> String -> SimpleTree
 createCherry rootCharacter leftCharacter rightCharacter = createSimpleTree 0 alphabet [(0,rootCharacter,[1,2]), (1,leftCharacter,[]), (2,rightCharacter,[])]
   where

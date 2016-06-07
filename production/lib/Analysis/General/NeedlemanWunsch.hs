@@ -21,11 +21,10 @@ import Data.Bits
 import Data.BitVector hiding (foldr, reverse)
 import Data.Foldable         (minimumBy)
 import Data.Function.Memoize
+import Data.Key              ((!))
 import Data.Matrix.NotStupid (Matrix, getElem, nrows, ncols, matrix)
 import Data.Ord
 import Data.Vector           (Vector)
-
-import Debug.Trace
 
 -- | The direction to align the character at a given matrix point.
 data Direction = LeftDir | DiagDir | DownDir deriving (Eq, Show)
@@ -45,8 +44,7 @@ type SeqConstraint s = (EncodableDynamicCharacter s, Bits s, Show s, Memoizable 
 -- Takes in two sequences and a metadata
 -- returns two aligned sequences
 needlemanWunsch :: (SeqConstraint s, Metadata m s) => s -> s -> m -> (s, s)
---needlemanWunsch char1 char2 meta | trace ("needlemanWunsch on " ++ show char1 ++ " and " ++ show char2) False = undefined
-needlemanWunsch char1 char2 meta = {-trace ("with result " ++ show seq1Align ++ show seq2Align) $-} (seq1Align, seq2Align)
+needlemanWunsch char1 char2 meta = (seq1Align, seq2Align)
     where
         char1Len = numChars char1
         char2Len = numChars char2
@@ -63,55 +61,58 @@ needlemanWunsch char1 char2 meta = {-trace ("with result " ++ show seq1Align ++ 
 -- Takes in two sequences (the longer first) and the metadata
 -- Returns an alignment matrix
 getAlignMat :: (SeqConstraint s, Metadata m s) => s -> s -> m -> AlignMatrix s
---getAlignMat char1 char2 meta | trace ("get alignment matrix of characters " ++ show char1 ++", " ++ show char2) False = undefined
 getAlignMat char1 char2 meta = result
-    where
-        result = matrix (numChars char2 + 1) (numChars char1 + 1) generateMat
-        -- | Internal generator function for the matrix
-        -- Deals with both first row and other cases, a merge of two previous algorithms
-        generateMat :: (Int, Int) -> (Double, Direction, BitVector)
-        --generateMat (row, col) | trace ("generateMat at " ++ show (row,col)) False = undefined
-        generateMat (row, col)
-            | row == 0 && col == 0                  = (0, DiagDir, gapChar char2)
-            | row == 0 && leftChar /= gapChar char1   = (prevCost + indCost, LeftDir, leftChar)
-            | row == 0                              = (prevCost, LeftDir, leftChar)
-            | col == 0 && downChar /= gapChar char1 = (upValue + indCost, DownDir, downChar)
-            | col == 0                              = (upValue, DownDir, downChar)
-            | otherwise                             = (minCost, minDir, minState)
-                where
-                    indCost             = getGapCost meta
-                    subChar1            = grabSubChar char1 (col - 1)
-                    subChar2            = grabSubChar char2 (row - 1)
-                    (upValue, _, _)     = getElem (row - 1) col result
-                    (diagVal, _, _)     = getElem (row - 1) (col - 1) result
-                    (prevCost, _, _)    = getElem row (col - 1) result
-                    (downChar, dCost)   = getOverlap (gapChar char2) subChar2 meta
-                    downCost            = dCost + upValue
-                    (leftChar, lCost)   = getOverlap (gapChar char1) subChar1 meta
-                    leftCost            = lCost + prevCost
-                    (diagChar, dgCost)  = getOverlap subChar1 subChar2 meta
-                    diagCost            = diagVal + dgCost
-                    (minCost, minState, minDir) = minimumBy (comparing (\(a,_,_) -> a))
-                                                -- This order is important!
-                                                -- In the event of equal cost we want to
-                                                -- prioritize elements earlier in the list.
-                                                [ (leftCost, leftChar, LeftDir)
-                                                , (downCost, downChar, DownDir)
-                                                , (diagCost, diagChar, DiagDir)
-                                                ]
+  where
+    result = matrix (numChars char2 + 1) (numChars char1 + 1) generateMat
+    -- | Internal generator function for the matrix
+    -- Deals with both first row and other cases, a merge of two previous algorithms
+    generateMat :: (Int, Int) -> (Double, Direction, BitVector)
+    generateMat (row, col)
+      | row == 0 && col == 0        = (0                      , DiagDir, gap     )
+      | row == 0 && riteChar /= gap = (leftwardValue + indCost, LeftDir, riteChar)
+      | row == 0                    = (leftwardValue          , LeftDir, riteChar)
+      | col == 0 && downChar /= gap = (  upwardValue + indCost, DownDir, downChar)
+      | col == 0                    = (  upwardValue          , DownDir, downChar)
+      | otherwise                   = (minCost                , minDir , minState)
+      where
+        indCost                     = getGapCost meta
+        gap                         = gapChar char1
+        subChar1                    = grabSubChar char1 (col - 1)
+        subChar2                    = grabSubChar char2 (row - 1)
+        (leftwardValue, _, _)       = result ! (row    , col - 1)
+        (diagonalValue, _, _)       = result ! (row - 1, col - 1)
+        (  upwardValue, _, _)       = result ! (row - 1, col    )
+        (riteChar, riteOverlapCost) = getOverlap subChar1 gap      meta
+        (diagChar, diagOverlapCost) = getOverlap subChar1 subChar2 meta
+        (downChar, downOverlapCost) = getOverlap gap      subChar2 meta
+        riteCost                    = riteOverlapCost + leftwardValue
+        diagCost                    = diagOverlapCost + diagonalValue
+        downCost                    = downOverlapCost +   upwardValue
+        (minCost, minState, minDir) = minimumBy (comparing (\(a,_,_) -> a))
+                                      -- This order is important!
+                                      -- In the event of equal cost we want to
+                                      -- prioritize elements earlier in the list.
+{-
+                                        [ (diagCost, diagChar, DiagDir)
+                                        , (downCost, downChar, DownDir)
+                                        , (leftCost, leftChar, LeftDir)
+                                        ]
+-}
+                                        [ (riteCost, riteChar, LeftDir)
+                                        , (downCost, downChar, DownDir)
+                                        , (diagCost, diagChar, DiagDir)
+                                        ]
 
 -- | Performs the traceback of an alignment matrix
 -- Takes in an alignment matrix, two sequences, and the alphabet length
 -- returns the assignment sequence and the aligned version of the two inputs
 -- Essentially follows the arrows from the bottom right corner, accumulating the sequences as it goes
 traceback :: (SeqConstraint s) => AlignMatrix s -> s -> s -> (s, s, s)
---traceback alignMat char1 char2 | trace ("traceback with matrix " ++ show alignMat) False = undefined
 traceback alignMat' char1' char2' = (fromChars $ reverse t1, fromChars $ reverse t2, fromChars $ reverse t3)
     where
         (t1, t2, t3) = tracebackInternal alignMat' char1' char2' (nrows alignMat' - 1, ncols alignMat' - 1)
         -- read it from the matrix instead of grabbing
         tracebackInternal :: (SeqConstraint s) => AlignMatrix s -> s -> s -> (Int, Int) -> ([BitVector], [BitVector], [BitVector])
-        --tracebackInternal alignMat char1 char2 (row, col)  | trace ("traceback with position " ++ show (row, col) ++ " on mat " ++ show alignMat) False = undefined
         tracebackInternal alignMat char1 char2 (row, col)
             | nrows alignMat < row - 1 || ncols alignMat < col - 1 = error "Traceback cannot function because matrix is incomplete"
             | row == 0 && col == 0 = (mempty, mempty, mempty)
@@ -125,7 +126,7 @@ traceback alignMat' char1' char2' = (fromChars $ reverse t1, fromChars $ reverse
               (i, j) =
                 case curDirect of
                   LeftDir -> (row    , col - 1)
-                  DownDir -> (row - 1, col    )
+                  DownDir -> (row - 1, col    ) -- Isn't this "up"
                   DiagDir -> (row - 1, col - 1)
 
 -- | Simple function to get the cost from an alignment matrix
@@ -147,7 +148,6 @@ getOverlap inChar1 inChar2 meta = result
         -- | Gets the overlap state: intersect if possible and union if that's empty
         -- Takes two sequences and returns another
         overlap :: (Metadata m s) => m -> BitVector -> BitVector -> (BitVector, Double)
-        --overlap _ c1 c2 | trace ("overlap on " ++ show c1 ++ " and " ++ show c2) False = undefined
         overlap inMeta char1 char2
             | 0 == char1 || 0 == char2 = --trace ("overlap case 1: equals 0 ") $
                                             (zeroBitVec, 0)

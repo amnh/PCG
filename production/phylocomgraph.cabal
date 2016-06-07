@@ -29,7 +29,7 @@ category:            Biology
 build-type:          Simple
 extra-source-files:  README.md
 
-cabal-version: >= 1.22
+cabal-version:       >= 1.22
 
 library
   -- LANGUAGE extensions used by modules in this package.
@@ -143,8 +143,8 @@ library
                        Data.Matrix.NotStupid
                        Text.Megaparsec.Custom
   -- Modules included in this library but not exported.
-  other-modules:     
-                       Analysis.Parsimony.Binary.SequentialAlign.SeqAlignFFI
+  other-modules:       Analysis.Parsimony.Binary.SequentialAlign.SeqAlignFFI
+                       Analysis.Parsimony.Binary.Constraints
                        Bio.Character.Dynamic.Coded.Class
                        Bio.Character.Dynamic.Coded.Internal
                        Bio.Character.Parsed.Class
@@ -354,6 +354,7 @@ Test-Suite testsuite
                      , memoize              -any
                      , mono-traversable     -any
                      , parallel             -any
+                     , phylocomgraph        -any
                      , QuickCheck           -any
                      , safe                 -any
                      , scientific           -any
@@ -430,7 +431,7 @@ Test-Suite testsuite
                        Control.Evaluation.Internal
                        Control.Evaluation.Test
                        Control.Evaluation.Unit
-                       -- Data.BitMatrix
+                       Data.BitMatrix.Internal
                        Data.BitMatrix.Test
                        Data.List.Utility
                        File.Format.Fasta
@@ -469,6 +470,8 @@ Test-Suite testsuite
                        File.Format.VertexEdgeRoot.Test
                        Test.Custom
                        Test.Custom.Types
+                       Test.Custom.Tree
+                       Test.Custom.Tree.Test
                        Test.Custom.Parse
                        Test.QuickCheck.Arbitrary.Instances
                        TestSuite.ExecutableTests
@@ -482,9 +485,7 @@ Test-Suite testsuite
                        Text.Megaparsec.Custom.Test
 
                        Data.Matrix.NotStupid
-                       TestSuite.GeneratedTests.TNT                       
-
-
+                       TestSuite.GeneratedTests.TNT
                        Bio.Character.Dynamic.Coded.Internal
                        Data.Alphabet
                        Data.BitMatrix
@@ -496,4 +497,6 @@ Test-Suite testsuite
                        Analysis.General.Test
                        Bio.Metadata.MaskGenerator
                        Bio.PhyloGraph.DAG.Test
-                       Test.Custom.Tree
+                       Analysis.Parsimony.Binary.Constraints
+                       Analysis.Parsimony.Binary.SequentialAlign
+--                       Analysis.Parsimony.Binary.SequentialAlign.SeqAlignFFI

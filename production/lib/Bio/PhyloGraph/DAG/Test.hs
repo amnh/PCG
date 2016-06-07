@@ -27,8 +27,6 @@ import           Test.Tasty
 import           Test.Tasty.HUnit
 import           Test.Tasty.QuickCheck
 
-import Debug.Trace
-
 testSuite :: TestTree
 testSuite = testGroup "DAG tests" [typeClassLawsForNetwork, updateWorksCorrectlyTests]
 
@@ -58,7 +56,7 @@ allNonrootNodesAreNotRootTest :: TestTree
 allNonrootNodesAreNotRootTest = testProperty "forall a. (root t) /= a ==> not (nodeIsRoot a t)" onlyNodeIsRoot
         
 onlyNodeIsRoot :: DAG -> Bool
-onlyNodeIsRoot dag = oall (\node -> {- trace (show node) $ -} (root dag /= node) /= nodeIsRoot node dag) dag
+onlyNodeIsRoot dag = oall (\node -> (root dag /= node) /= nodeIsRoot node dag) dag
                                                                        {- ^^this /= is not working the way I thought it would. -}
 
 -- Alex pulled this out. Now it's back in?
@@ -134,7 +132,7 @@ stillNoOtherNodesAreRootTest = testProperty
               let newDag = update dag [node']
                   node   = nodes dag V.! i
                   node'  = node { isRoot = True }
-              pure $ {- trace ("New node: " ++ (show node') ++ "\n\nDAG: " ++ (show newDag) ++ "\n\n") $ -} onlyNodeIsRoot newDag
+              pure $ onlyNodeIsRoot newDag
 
 updateDoesSomething :: TestTree
 updateDoesSomething = testProperty "After update, DAG has changed" f
