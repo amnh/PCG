@@ -14,7 +14,7 @@ import Test.Tasty.QuickCheck
 import Debug.Trace
 
 testSuite :: TestTree
-testSuite = testGroup "BitMatrix tests" [testRowsFromRows, testBitMatrixFn, testFromRowsFn]
+testSuite = testGroup "BitMatrix tests" [testRowsFromRows, testBitMatrixFn, testFromRowsFn, testConsistentIndexing]
 
 -- Just to make sure that rows . fromRows == id.
 testRowsFromRows :: TestTree
@@ -102,6 +102,21 @@ testRow = testProperty "row returns correct value" f
                 (retVal, _) = foldr (\bv (bool, i) -> ((bv == row testBM i) && bool, i + 1)) (True, 0) bvList
                 testBM      = fromRows bvList
 
+testConsistentIndexing :: TestTree
+testConsistentIndexing = testProperty "Indexing and generation consistency" f
+    where
+        f :: Blind ((Int,Int) -> Bool) -> Gen Bool
+        f b =
+            do
+                rows <- getPositive <$> (arbitrary :: Gen (Positive Int))
+                cols <- getPositive <$> (arbitrary :: Gen (Positive Int))
+                let bm = bitMatrix rows cols g
+                let indices = [ (x,y) | x <- [0..rows-1], y <- [0..cols-1] ]
+                pure $ all (\x -> g x == bm `isSet` x) indices
+            where
+                g = getBlind b
+
+
 instance Arbitrary (Positive Int, Positive Int, [BitVector]) where
   arbitrary = do
     rowCount   <- getPositive <$> arbitrary
@@ -109,3 +124,4 @@ instance Arbitrary (Positive Int, Positive Int, [BitVector]) where
     let bvGen  =  fromBits <$> vectorOf colCount (arbitrary :: Gen Bool)
     bitVectors <- vectorOf rowCount bvGen
     pure (Positive rowCount, Positive colCount, bitVectors)
+
