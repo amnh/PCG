@@ -21,8 +21,10 @@ testSuite = testGroup "BitMatrix tests" [testRowsFromRows, testBitMatrixFn, test
 testRowsFromRows :: TestTree
 testRowsFromRows = testProperty "rows $ fromRows x == id" f
     where
-        f :: (Positive Int, Positive Int, [BitVector]) -> Bool
-        f (_, _, bvList) = rows (fromRows bvList) == bvList
+        f :: DependantFromRowsParameters -> Bool
+        f params = rows (fromRows bvList) == bvList
+          where
+            (_, _, bvList) = getParameters params
 
 
 -- both sets of tests on generating functions rely on BitMatrix functions rows, numRows, numCols
@@ -73,58 +75,69 @@ testFromRowsFn = testGroup "fromRows generating fn"
         -- Note that it only tests on a single input function
         -- Also, relies on `rows` fn.
             where
-                f :: (Positive Int, Positive Int, [BitVector]) -> Bool
-                f (_, _, bvs) = testBM == controlBM
+                f :: DependantFromRowsParameters -> Bool
+                f params = testBM == controlBM
                     where
-                        testBM    = mconcat . rows $ fromRows bvs
-                        controlBM = mconcat bvs
+                        (_, _, bvs) = getParameters params
+                        testBM      = mconcat . rows $ fromRows bvs
+                        controlBM   = mconcat bvs
                         
         testWidth = testProperty "Number of columns is correct." f
         -- Note that it only tests on a single input function
             where
-                f :: (Positive Int, Positive Int, [BitVector]) -> Bool
-                f (_, colCt, bvs) = getPositive colCt == numCols testBM
+                f :: DependantFromRowsParameters -> Bool
+                f params = colCt == numCols testBM
                     where
+                        (_, colCt, bvs) = getParameters params
                         testBM = fromRows bvs
                         
         testHeight = testProperty "Number of rows is correct." f
         -- Note that it only tests on a single input function
             where
-                f :: (Positive Int, Positive Int, [BitVector]) -> Bool
-                f (rowCt, _, bvs) = getPositive rowCt == numRows testBM
+                f :: DependantFromRowsParameters -> Bool
+                f params = rowCt == numRows testBM
                     where
+                        (rowCt, _, bvs) = getParameters params
                         testBM = fromRows bvs
 
 testRow :: TestTree
 testRow = testProperty "row returns correct value" f
     where
-        f :: (Positive Int, Positive Int, [BitVector]) -> Bool
-        f (_, _, bvList) = retVal 
+        f :: DependantFromRowsParameters -> Bool
+        f params = retVal 
             where 
                 -- at each item in the list of bvs, test it againts what ought to be at that index, and accumulate
-                (retVal, _) = foldl' (\(bool, i) bv -> ((bv == row testBM i) && bool, i + 1)) (True, 0) bvList
-                testBM      = fromRows bvList
+                (retVal, _)    = foldl' (\(bool, i) bv -> ((bv == row testBM i) && bool, i + 1)) (True, 0) bvList
+                (_, _, bvList) = getParameters params
+                testBM         = fromRows bvList
 
 testConsistentIndexing :: TestTree
 testConsistentIndexing = testProperty "Indexing and generation consistency" f
     where
         f :: Blind ((Int,Int) -> Bool) -> Gen Bool
-        f b =
+        f blindFunction =
             do
-                rows <- getPositive <$> (arbitrary :: Gen (Positive Int))
-                cols <- getPositive <$> (arbitrary :: Gen (Positive Int))
-                let bm = bitMatrix rows cols g
-                let indices = [ (x,y) | x <- [0..rows-1], y <- [0..cols-1] ]
+                rowCount    <- getPositive <$> (arbitrary :: Gen (Positive Int))
+                colCount    <- getPositive <$> (arbitrary :: Gen (Positive Int))
+                let bm      =  bitMatrix rowCount colCount g
+                let indices =  [ (i,j) | i <- [0..rowCount-1], j <- [0..colCount-1] ]
+                -- The generating function at a given index is the same as
+                -- the bit tester at that index anfter bitMatrix generation.
                 pure $ all (\x -> g x == bm `isSet` x) indices
             where
-                g = getBlind b
+                g = getBlind blindFunction
+
+newtype DependantFromRowsParameters
+      = DependantFromRowsParameters
+      { getParameters :: (Int, Int, [BitVector])
+      } deriving (Eq, Show)
 
 
-instance Arbitrary (Positive Int, Positive Int, [BitVector]) where
+instance Arbitrary DependantFromRowsParameters where
   arbitrary = do
     rowCount   <- getPositive <$> arbitrary
     colCount   <- getPositive <$> arbitrary
-    let bvGen  =  fromBits <$> vectorOf colCount (arbitrary :: Gen Bool)
+    let bvGen  =  fromBits    <$> vectorOf colCount (arbitrary :: Gen Bool)
     bitVectors <- vectorOf rowCount bvGen
-    pure (Positive rowCount, Positive colCount, bitVectors)
+    pure $ DependantFromRowsParameters (rowCount, colCount, bitVectors)
 
