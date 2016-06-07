@@ -15,6 +15,7 @@
 
 module Analysis.ImpliedAlignment.Test where
 
+import           Analysis.Parsimony.Binary.Internal
 import           Analysis.Parsimony.Binary.Optimization
 import           Analysis.General.NeedlemanWunsch
 import           Analysis.ImpliedAlignment.Internal
