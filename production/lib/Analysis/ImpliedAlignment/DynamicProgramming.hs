@@ -263,8 +263,29 @@ getForAlign n
     | otherwise = mempty {-error "No sequence at node for IA to numerate"-}
 
 
+type AncestorDeletionEvents    = IntSet
+type AncestorInsertionEvents   = IntSet
+type DescendantInsertionEvents = IntSet
 
-numeration :: TreeConstraint t n e s  => t -> (t, n)
+newtype MemoizedEvents = Memoized (AncestorDeletionEvents, AncestorInsertionEvents, DeletionEvents)
+
+instance Monoid MemoizedEvents where
+  mempty  = Memo (mempty, mempty, mempty)
+  (Memo (a,b,c)) mappend (Memo (x,y,z)) = Memo (a<>x, b<>y, c<>z)
+
+newtype DeletionEvents = DE (IntMap Int)
+instance Monoid DeletionEvents where
+  mempty = DE mempty
+  (DE ancestorSet) `mappend` (DE descendantSet) = DE $ incrementedAncestorSet <> descendantSet
+    where
+      incrementedAncestorSet = ofoldlWithKey' f ancestorSet descendantSet 
+      f acc i desc = ofoldlWithKey' g mempty acc
+        where
+          g x
+            | x >= desc = x + 1
+            | otherwise = x
+
+numeration :: TreeConstraint t n e s  => t -> t
 numeration tree =
   where
     root            = getRoot tree
@@ -273,28 +294,41 @@ numeration tree =
     rootIndex       = locateRoot enumeratedNodes root
     childMapping    = gatherChildren enumeratedNodes rootIndex tree
     parentMapping   = gatherParents  childMapping    rootIndex
-    subtreeMapping  = gatherSubtrees childMapping    rootIndex
-    homologyMemoize :: Matrix (IntSet, IntSet)
+    homologyMemoize :: Matrix MemoizedEvents
     homologyMemoize = matrix nodeCount nodeCount opt
       where
         opt (i,j)
           -- Base case with root node
-          | i == rootIndex && j == rootIndex = (mempty, mempty)
-          -- In the lower triange, never referenced
-          | i >  j                           = (mempty, mempty)
-          -- Not a direct descendant
-          | j `onotElem` subtreeMapping ! i  = (mempty, mempty)
-          -- Accumulate insertions & deletions.
-          | i == j                           = ( mempty
-                                               , snd $ homologyMemoize ! (parentMapping ! i, parentMapping ! i)
+          | i == rootIndex && j == rootIndex = Memo (mempty, mempty, allDescendantInsertion)
+          -- Is a child of the root node
+          | i == rootIndex                   = Memo
+                                               ( ancestoralDeletions    <> deletes
+                                               , rootInsertions
+                                               , allDescendantInsertion <> inserts
                                                )
-
-          | otherwise                        = ( mempty
-                                               , deletes <> snd (homologyMemoize ! (parentMapping ! i, parentMapping ! i))
+          -- In the lower triange, never referenced
+          | i >  j                           = Memo (mempty, mempty, mempty)
+          -- Not a direct descendant
+          | j `onotElem` (childMapping ! i)  = Memo (mempty, mempty, mempty)
+          -- Accumulate insertions & deletions.
+          | i == j                           = Memo
+                                               ( ancestoralDeletions
+                                               , ancestoralInsertions
+                                               , mempty
+                                               )
+          | otherwise                        = Memo
+                                               ( ancestoralDeletions    <> deletes
+                                               , ancestoralInsertions   <> inserts
+                                               , allDescendantInsertion <> inserts
                                                )
           where
-            (inserts, deletes) = comparativeNumerate 
-
+            (deletes, inserts) = comparativeNumerate
+            Memo (                  _,                    _, rootInsertions) = homologyMemoize ! (0,0)
+            Memo (ancestoralDeletions, ancestoralInsertions,              _) = homologyMemoize ! (parentMapping ! i, i) 
+            allDescendantInsertion = f `ofoldMap` (childMapping ! i)
+            f x = directChildInsertions
+              where
+                (_,_,directChildInsertions) = homologyMemoize ! (j, x)
 
 enumerateNodes :: TreeConstraint t n e s  => t -> Vector n
 enumerateNodes = undefined
