@@ -123,7 +123,7 @@ instance Show TestingDecoration where
         , g "Temporary"   <$> f dTemporary
         ]
       f x = show <$> headMay (x decoration)
-      g prefix shown = mconcat [prefix, ": ", y, "\n", intercalate "\n" $ ("  " <>) <$> zs]
+      g prefix shown = intercalate "\n" $ (prefix <> ": " <> y) : (("  " <>) <$> zs)
         where
           (x:y:zs) = lines shown :: [String]
     
