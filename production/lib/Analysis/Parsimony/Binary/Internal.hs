@@ -18,7 +18,7 @@ module Analysis.Parsimony.Binary.Internal where
 import Analysis.Parsimony.Binary.Constraints
 import Analysis.Parsimony.Binary.DirectOptimization
 import Analysis.Parsimony.Binary.Fitch
-import Analysis.Parsimony.Binary.SequentialAlign
+--import Analysis.Parsimony.Binary.SequentialAlign
 import Bio.Character.Dynamic.Coded
 import Bio.Metadata
 import Bio.PhyloGraph.Forest
@@ -164,7 +164,7 @@ treeInternalPreorderTraversal weighting node tree meta
 -- returns a tree with relevant nodes assigned.
 -- This wrapper allows us to deal correctly with root passing to postorder algorithms
 treeOptimizePostorder :: (TreeConstraint' t n s, Metadata m s) => t -> Vector m -> t
-treeOptimizePostorder tree meta = tree `update` (treeInternalPostorderTraversal (root tree) tree meta)
+treeOptimizePostorder tree meta = tree `update` treeInternalPostorderTraversal (root tree) tree meta
 
 -- | Internal postorder pass that does the main recursion
 -- Takes in a current node, the tree, and a vector of metadata;
@@ -195,10 +195,17 @@ nodeOptimizePreorder weighting curNode lNode rNode meta = setTotalCost summedTot
             | getIgnored curCharacter = setNode
             | getType curCharacter == Fitch =
                 let (assign, temp, local) = preorderFitchBit curWeight (getForAlign lNode ! curPos) (getForAlign rNode ! curPos) curCharacter
-                in addTemporary temp . addLocalCost (local * curWeight * weighting) . addTotalCost (local * curWeight * weighting) . addAlign assign $ addPreliminary assign setNode
+                in addTemporary temp
+                 . addLocalCost (local * curWeight * weighting)
+                 . addTotalCost (local * curWeight * weighting)
+                 . addAlign assign
+                 $ addPreliminary assign setNode
             | getType curCharacter == DirectOptimization =
                 let (ungapped, cost, gapped, _, _) = naiveDO (getForAlign lNode ! curPos) (getForAlign rNode ! curPos) curCharacter
-                in addLocalCost (cost * curWeight * weighting) . addTotalCost (cost * curWeight * weighting) . addAlign gapped $ addPreliminary ungapped setNode
+                in addLocalCost (cost * curWeight * weighting)
+                 . addTotalCost (cost * curWeight * weighting)
+                 . addAlign gapped
+                 $ addPreliminary ungapped setNode
             | otherwise = error "Unrecognized optimization type"
 
                 where curWeight = getWeight curCharacter
@@ -215,7 +222,7 @@ nodeOptimizePreorder weighting curNode lNode rNode meta = setTotalCost summedTot
 -- returns a node with everything assigned.
 nodeOptimizePostorder :: (NodeConstraint' n s, Metadata m s) => n -> n -> n -> Maybe n -> Vector m -> n
 nodeOptimizePostorder curNode lNode rNode pNode meta
-    | isNothing pNode = error "No parent node on postorder traversal"
+    | isNothing pNode = curNode --error "No parent node on postorder traversal"
     | otherwise       = ifoldr chooseOptimization curNode meta
     where
         --chooseOptimization :: (NodeConstraint' n s, Metadata m s) => Int -> m -> n -> n
@@ -225,7 +232,8 @@ nodeOptimizePostorder curNode lNode rNode pNode meta
                 in addToField setFinal getFinal finalAssign setNode
             | getType curCharacter == DirectOptimization =  --TODO: do we grab the gapped or not?
                 let (final, _, finalAligned, _, _) = naiveDO (getForAlign curNode ! i) (getForAlign (fromJust pNode) ! i) curCharacter
-                in addToField setFinal getFinal final $ addToField setFinalGapped getFinalGapped finalAligned setNode
+                in addToField setFinal getFinal final
+                 $ addToField setFinalGapped getFinalGapped finalAligned setNode
             | otherwise = error "Unrecognized optimization type"
 
 setElemSafe :: (Num a) => a -> (Maybe Int, Maybe Int) -> Matrix a -> Matrix a

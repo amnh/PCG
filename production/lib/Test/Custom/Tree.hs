@@ -2,17 +2,18 @@
 
 module Test.Custom.Tree
   ( SimpleTree()
+  , createBinary
+  , createCherry
   , createSimpleTree
   ) where
 
 import           Bio.Character.Dynamic.Coded
---import           Bio.PhyloGraph.DAG.Class
 import qualified Bio.PhyloGraph.Network           as N
 import qualified Bio.PhyloGraph.Node.Encoded      as EN
 import qualified Bio.PhyloGraph.Node.Final        as FN
 import qualified Bio.PhyloGraph.Node.ImpliedAlign as IN
 import qualified Bio.PhyloGraph.Node.Preliminary  as RN
-import           Bio.PhyloGraph.Node.Referential
+import           Bio.PhyloGraph.Node.Referential ()
 import           Bio.PhyloGraph.Tree.Binary
 import qualified Bio.PhyloGraph.Tree.Referential  as RT
 import           Bio.PhyloGraph.Tree.Rose
@@ -20,21 +21,19 @@ import           Control.Applicative                     ((<|>))
 import           Control.Monad                           ((<=<))
 import           Data.Alphabet
 import           Data.Bifunctor                          (second)
-import           Data.Char
 import           Data.Foldable
 import           Data.IntMap                             (IntMap, insertWith)
 import qualified Data.IntMap                      as IM
-import           Data.IntSet                             (IntSet)
 import qualified Data.IntSet                      as IS
 import           Data.Key
 import           Data.List                               (intercalate)
+import           Data.List.Utility                       (chunksOf)
 import           Data.Maybe
 import           Data.Monoid
 import           Data.MonoTraversable
 import qualified Data.Set                         as S
 import           Data.Tree
 import           Data.Vector                             (Vector)
-import qualified Data.Vector                      as V
 import           Prelude                          hiding (lookup)
 import           Safe                                    (tailMay)
 import           Test.QuickCheck
@@ -50,15 +49,16 @@ createSimpleTree rootRef symbols xs = TT . setRefIds $ unfoldTree buildTree root
 --    mapping :: (Foldable a, Foldable c, Foldable v) => IntMap (v (c (a String)), IntSet)
     mapping = foldl' f mempty xs
       where
-        f m (i, seq, adjacency) = insertWith g i (seq, IS.fromList adjacency) m
+        f m (i, strChar, adjacency) = insertWith g i (strChar, IS.fromList adjacency) m
           where
             g (newSeq, lhs) (_, rhs) = (newSeq, lhs <> rhs)
     buildTree :: Int -> (TestingDecoration, [Int])
-    buildTree i = (def { dEncoded = pure . encodeDynamic alphabet $ (\c -> [[c]]) <$>  seq }, otoList children)
+    buildTree i = (def { dEncoded = pure . encodeDynamic alphabet $ (\c -> [[c]]) <$> strChar }, otoList children)
       where
-        (seq, children) = mapping ! i
-    setRefIds :: Tree TestingDecoration -> Tree TestingDecoration
-    setRefIds = snd . f 0
+        (strChar, children) = mapping ! i
+
+setRefIds :: Tree TestingDecoration -> Tree TestingDecoration
+setRefIds = snd . f 0
       where
         f :: Int -> Tree TestingDecoration -> (Int, Tree TestingDecoration)
         f counter root = (counter', root') 
@@ -66,12 +66,33 @@ createSimpleTree rootRef symbols xs = TT . setRefIds $ unfoldTree buildTree root
             root' = Node decoration' children'
             decoration' = (rootLabel root) { refEquality = counter }
             (counter', children') = foldr g (counter + 1, []) $ subForest root
-            g e (n, xs) = second (:xs) $ f n e
+            g e (n, ys) = second (:ys) $ f n e
     
 createCherry :: String -> String -> String -> SimpleTree
 createCherry rootCharacter leftCharacter rightCharacter = createSimpleTree 0 alphabet [(0,rootCharacter,[1,2]), (1,leftCharacter,[]), (2,rightCharacter,[])]
   where
     alphabet = toList $ foldMap S.fromList [rootCharacter, leftCharacter, rightCharacter]
+
+createBinary :: (Show (t String), Foldable t) => t String -> SimpleTree
+createBinary leafCharacters = TT . setRefIds . createBinary' $ createCherry' <$> chunksOf 2 leafCharacters
+  where
+    symbols  = toList $ foldMap S.fromList leafCharacters
+    alphabet = constructAlphabet $ pure <$> symbols
+
+    strToLeaf :: String -> Tree TestingDecoration
+    strToLeaf str = Node (def { dEncoded = pure . encodeDynamic alphabet $ (\c -> [[c]]) <$> str }) []
+
+    createCherry' :: [String] -> Tree TestingDecoration
+    createCherry' [x] = strToLeaf x
+    createCherry' xs  = Node def (strToLeaf <$> xs)
+
+    createBinary' :: [Tree TestingDecoration] -> Tree TestingDecoration
+    createBinary' [x] = x
+    createBinary' xs  = createBinary' $ f <$> chunksOf 2 xs
+      where
+        f [y] = y
+        f ys  = Node def ys
+    
 
 data SimpleTree = TT (Tree TestingDecoration)
   deriving (Eq)
@@ -90,6 +111,7 @@ data TestingDecoration
    , refEquality  :: Int
    } deriving (Eq)
 
+def :: TestingDecoration
 def = Decorations
     { dEncoded     = mempty
     , dFinal       = mempty
@@ -212,9 +234,9 @@ instance N.Network SimpleTree SimpleTree where
      | node == tree = []
      | otherwise    = foldMap (f tree) $ subForest tree
      where
-       f parent child
-         | child == node = [TT parent]
-         | otherwise     = foldMap (f child) $ subForest child
+       f parentNode childNode
+         | childNode == node = [TT parentNode]
+         | otherwise     = foldMap (f childNode) $ subForest childNode
 
    root tree = tree
 
