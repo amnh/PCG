@@ -199,7 +199,7 @@ instance Memoizable DynamicChar where
 -- Most algorithms assume a nonempty dynamic character.
 instance Arbitrary DynamicChar where
     arbitrary = do 
-        symbolCount  <- arbitrary `suchThat` (\x -> 0 < x && x <= 62) :: Gen Int
+        symbolCount  <- arbitrary `suchThat` (\x -> 0 < x && x <= 63) :: Gen Int
         characterLen <- arbitrary `suchThat` (> 0) :: Gen Int
         let randVal  =  choose (1, 2 ^ symbolCount - 1) :: Gen Integer
         bitRows      <- vectorOf characterLen randVal

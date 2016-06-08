@@ -27,6 +27,7 @@ import           Data.Alphabet
 import           Data.BitMatrix
 import           Data.BitVector
 import           Data.Matrix.NotStupid (getRow)
+import           Data.Monoid
 import qualified Data.Vector as V
 import           Test.Tasty
 import           Test.Tasty.HUnit
@@ -74,7 +75,7 @@ fitchProperties = testGroup "Properties of the Fitch algorithm" [preIdHolds, pos
                 checkID :: DynamicChar -> Bool
                 checkID inSeq = result == inSeq && cost == 0
                     where 
-                        newAlph = constructAlphabet . V.fromList . fmap pure . take (getAlphLen inSeq) $ '-' : ['A'..'z']
+                        newAlph = constructAlphabet $ take (getAlphLen inSeq) abstractSymbols
                         (result, _, cost) = preorderFitchBit 1 inSeq inSeq (fitchMeta {alphabet = newAlph, fitchMasks = generateMasks newAlph (numChars inSeq)})
 
         postIdHolds = testProperty "When Postorder Fitch runs a sequence against itself, get input as result" checkID
@@ -82,10 +83,12 @@ fitchProperties = testGroup "Properties of the Fitch algorithm" [preIdHolds, pos
                 checkID :: DynamicChar -> Bool
                 checkID inSeq = result == inSeq
                     where 
-                        newAlph = constructAlphabet . V.fromList . fmap pure . take (getAlphLen inSeq) $ '-' : ['A'..'z']
+                        newAlph = constructAlphabet $ take (getAlphLen inSeq) abstractSymbols
                         (_, f, _) = preorderFitchBit 1 inSeq inSeq (fitchMeta {alphabet = newAlph, fitchMasks = generateMasks newAlph (numChars inSeq)})
                         result = postorderFitchBit inSeq inSeq inSeq f inSeq (fitchMeta {alphabet = newAlph, fitchMasks = generateMasks newAlph (numChars inSeq)})
 
+abstractSymbols :: [String]
+abstractSymbols = fmap pure . ('-' :) $ ['0'..'9'] <> ['A'..'Z'] <> ['a'..'z']
 
 -- | Check properties of the traversal
 traversalProperties :: TestTree
