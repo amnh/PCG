@@ -1,8 +1,24 @@
 {-# LINE 1 "SeqAlignFFI.hsc" #-}
-{-# LANGUAGE ForeignFunctionInterface, BangPatterns #-}
+-----------------------------------------------------------------------------
 {-# LINE 2 "SeqAlignFFI.hsc" #-}
+-- |
+-- Module      :  Analysis.Parsimony.Binary.SequentialAlign.SeqAlignFFI
+-- Copyright   :  (c) 2015-2015 Ward Wheeler
+-- License     :  BSD-style
+--
+-- Maintainer  :  wheeler@amnh.org
+-- Stability   :  provisional
+-- Portability :  portable
+--
+-- An FFI export module of the sequential alignment heuristic developed by
+-- Yu Xiang from Harvard.
+--
+-----------------------------------------------------------------------------
+{-# LANGUAGE ForeignFunctionInterface, BangPatterns #-}
 
-module Analysis.Parsimony.Binary.SequentialAlign.SeqAlignFFI where
+module Analysis.Parsimony.Binary.SequentialAlign.SeqAlignFFI
+  ( sequentialAlign
+  ) where
 
 import Data.Char (toUpper)
 import System.IO.Unsafe
@@ -12,11 +28,11 @@ import Foreign.C.String
 import Foreign.C.Types
 
 
-{-# LINE 13 "SeqAlignFFI.hsc" #-}
+{-# LINE 29 "SeqAlignFFI.hsc" #-}
 
--- Includes a struct (actually, a pointer thereto), and that struct, in turn, has a string
--- in it, so Ptr CChar
--- Modified from code samples here: https://en.wikibooks.org/wiki/Haskell/FFI#Working_with_C_Structures
+-- | Includes a struct (actually, a pointer thereto), and that struct, in turn, has a string
+--   in it, so Ptr CChar.
+--   Modified from code samples here: https://en.wikibooks.org/wiki/Haskell/FFI#Working_with_C_Structures
 data AlignResult = AlignResult { val    :: CInt
                                , seq1   :: CString 
                                , seq2   :: CString
@@ -30,30 +46,29 @@ foreign import ccall unsafe "seqAlignForHaskell.h aligner"
 -- Because we're using a struct we need to make a Storable instance
 instance Storable AlignResult where
     sizeOf    _ = ((32))
-{-# LINE 30 "SeqAlignFFI.hsc" #-}
+{-# LINE 46 "SeqAlignFFI.hsc" #-}
     alignment _ = alignment (undefined :: CDouble)
     peek ptr = do
         value   <- ((\hsc_ptr -> peekByteOff hsc_ptr 0)) ptr
-{-# LINE 33 "SeqAlignFFI.hsc" #-}
+{-# LINE 49 "SeqAlignFFI.hsc" #-}
         seq1Fin <- ((\hsc_ptr -> peekByteOff hsc_ptr 8)) ptr
-{-# LINE 34 "SeqAlignFFI.hsc" #-}
+{-# LINE 50 "SeqAlignFFI.hsc" #-}
         seq2Fin <- ((\hsc_ptr -> peekByteOff hsc_ptr 16)) ptr
-{-# LINE 35 "SeqAlignFFI.hsc" #-}
+{-# LINE 51 "SeqAlignFFI.hsc" #-}
         algnLen <- ((\hsc_ptr -> peekByteOff hsc_ptr 24)) ptr
-{-# LINE 36 "SeqAlignFFI.hsc" #-}
+{-# LINE 52 "SeqAlignFFI.hsc" #-}
         return  AlignResult { val = value, seq1 = seq1Fin, seq2 = seq2Fin, seqLen = algnLen }
-------------- Don't need this part, but left in for completion ---------------
------ Will get compiler warning if left out, because of missing instances ----
     poke ptr (AlignResult value seq1Fin seq2Fin alignLen) = do
         ((\hsc_ptr -> pokeByteOff hsc_ptr 0)) ptr value
-{-# LINE 41 "SeqAlignFFI.hsc" #-}
+{-# LINE 55 "SeqAlignFFI.hsc" #-}
         ((\hsc_ptr -> pokeByteOff hsc_ptr 8)) ptr seq1Fin
-{-# LINE 42 "SeqAlignFFI.hsc" #-}
+{-# LINE 56 "SeqAlignFFI.hsc" #-}
         ((\hsc_ptr -> pokeByteOff hsc_ptr 16)) ptr seq2Fin
-{-# LINE 43 "SeqAlignFFI.hsc" #-}
+{-# LINE 57 "SeqAlignFFI.hsc" #-}
         ((\hsc_ptr -> pokeByteOff hsc_ptr 24)) ptr alignLen -- need to be able to pass in length of alignemnt string
-{-# LINE 44 "SeqAlignFFI.hsc" #-}
+{-# LINE 58 "SeqAlignFFI.hsc" #-}
 
+-- | A pure FFI call to YU Xiang's sequential alignment algorithm.
 sequentialAlign :: Int -> Int -> String -> String -> Either String (Int, String, String) 
 sequentialAlign indelCst subCst inpStr1 inpStr2 = unsafePerformIO $ 
     -- have to allocate memory. Note that we're allocating to a lambda fn. I 
