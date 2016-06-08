@@ -27,6 +27,7 @@ import qualified Data.IntMap                      as IM
 import           Data.IntSet                             (IntSet)
 import qualified Data.IntSet                      as IS
 import           Data.Key
+import           Data.List                               (intercalate)
 import           Data.Maybe
 import           Data.Monoid
 import           Data.MonoTraversable
@@ -64,7 +65,7 @@ createSimpleTree rootRef symbols xs = TT . setRefIds $ unfoldTree buildTree root
           where
             root' = Node decoration' children'
             decoration' = (rootLabel root) { refEquality = counter }
-            (counter', children') = foldr g (counter + 1, []) $subForest root
+            (counter', children') = foldr g (counter + 1, []) $ subForest root
             g e (n, xs) = second (:xs) $ f n e
     
 createCherry :: String -> String -> String -> SimpleTree
@@ -73,7 +74,7 @@ createCherry rootCharacter leftCharacter rightCharacter = createSimpleTree 0 alp
     alphabet = toList $ foldMap S.fromList [rootCharacter, leftCharacter, rightCharacter]
 
 data SimpleTree = TT (Tree TestingDecoration)
-  deriving (Eq, Show)
+  deriving (Eq)
 
 data TestingDecoration
    = Decorations
@@ -87,7 +88,7 @@ data TestingDecoration
    , dTotalCost   :: Double
    , dIaHomology  :: IN.HomologyTrace
    , refEquality  :: Int
-   } deriving (Eq, Show)
+   } deriving (Eq)
 
 def = Decorations
     { dEncoded     = mempty
@@ -107,6 +108,25 @@ sameRef (TT x) (TT y) = ref x == ref y
   where
     ref = refEquality . rootLabel
 
+instance Show SimpleTree where
+  show (TT x) = drawTree $ show <$> x
+
+instance Show TestingDecoration where
+  show decoration = intercalate "\n" $ catMaybes renderedDecorations
+    where
+      renderedDecorations =
+        [ g "Encoded"     <$> f dEncoded
+        , g "Final"       <$> f dFinal
+        , g "Gapped"      <$> f dGapped
+        , g "Preliminary" <$> f dPreliminary
+        , g "Aligned"     <$> f dAligned
+        , g "Temporary"   <$> f dTemporary
+        ]
+      f x = show <$> headMay (x decoration)
+      g prefix shown = mconcat [prefix, ": ", y, "\n", intercalate "\n" $ ("  " <>) <$> zs]
+        where
+          (x:y:zs) = lines shown :: [String]
+    
 instance Arbitrary SimpleTree where
   -- | Arbitrary Cherry
     arbitrary = do
@@ -116,9 +136,6 @@ instance Arbitrary SimpleTree where
       rightSeq <- sublistOf symbols
       pure $ createSimpleTree 0 symbols [(0,rootSeq,[1,2]),(1,leftSeq,[]),(2,rightSeq,[])]    
     
-
---type instance Element (Tree TestingDecoration) = TestingDecoration
-
 type instance Element SimpleTree = SimpleTree
 
 treeFold x@(TT root) = (x :) . concatMap (treeFold . TT) $ subForest root
