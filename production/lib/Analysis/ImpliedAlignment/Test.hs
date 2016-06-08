@@ -50,14 +50,66 @@ testSuite = testGroup "Implied Alignment"
           ]
 
 fullIA :: TestTree
-fullIA = testGroup "Full alignment properties" [ lenHolds
+fullIA = testGroup "Full alignment properties" [ lenHoldsTest
                                                , checkDOResult1
                                                , checkIAResult1
                                                , checkDOResult2
                                                , checkIAResult2
                                                ]
     where
-        lenHolds       = testProperty "The sequences on a tree are longer or the same at end" checkLen
+        lenHoldsTest       = testProperty "The sequences on a tree are longer or the same at end." checkLen
+
+        checkDOResult1 = testCase "On a simple cherry, DO behaves as expected" (expectedDO @=? doResult1)
+            where
+                doResult1 = allOptimization 1 (pure doMeta) cherry1
+                cherry1   = V.fromList [rootTest, leftTest, rightTest]
+
+        checkDOResult2 = testCase "On a slightly larger case, DO behaves as expected" (expectedDO2 @=? doResult2)
+            where
+                doResult2    = allOptimization 1 (pure doMeta) longerTest
+                longerTest   = V.fromList [rootTest, leftTest2, rightTest, node3, node4] 
+                leftTest2    = leftTest { T.isLeaf = False
+                                        , T.children = [3, 4]
+                                        , T.encoded = mempty
+                                        }
+                seq2c        = encodeThem . pure $ V.fromList [ ["A"]
+                                                              , ["T", "-"]
+                                                              , ["G"]
+                                                              ]
+                seq2a        = encodeThem . pure $ V.fromList [ ["A"]
+                                                              , ["T"]
+                                                              , ["A", "-"]
+                                                              , ["T", "G"]
+                                                              ]
+                seq2b        = encodeThem . pure $ V.fromList [ ["A"], ["T"], ["G"] ]
+
+        checkIAResult1 = testCase "On the same cherry, IA gives the expected result" (expectedIA1 @=? iaResult1)
+            where
+                iaResult1   = impliedAlign expectedDO (pure doMeta)
+                expectedIA1 = IM.fromList [ (1, encodeThem . pure $ V.fromList 
+                                             [ ["A"]
+                                             , ["T"]
+                                             , ["T"]
+                                             , ["-"]
+                                             ])
+                                          , (2, encodeThem . pure $ V.fromList 
+                                             [ ["A"]
+                                             , ["-"]
+                                             , ["-"]
+                                             , ["G"]
+                                             ])
+                                          ]
+
+        checkIAResult2 = testCase "On that larger case, IA gives the expected result" (expectedIA2 @=? iaResult2)
+            where
+                iaResult2   = impliedAlign expectedDO2 (pure doMeta)
+                expectedIA2 = IM.fromList [ (2, encodeThem . pure $ V.fromList 
+                                             [["A"], ["-"], ["-"], ["G"], ["-"]])
+                                          , (3, encodeThem . pure $ V.fromList 
+                                             [["A"], ["T"], ["-"], ["-"], ["T"]])
+                                          , (4, encodeThem . pure $ V.fromList 
+                                             [["A"], ["T"], ["A"], ["-"], ["G"]])
+                                          ]
 
         bioAlph        = constructAlphabet . V.fromList . fmap pure $ "ACGT-"
         encodeThem     = V.fromList . fmap (encodeDynamic bioAlph)
@@ -76,86 +128,43 @@ fullIA = testGroup "Full alignment properties" [ lenHolds
                                   , T.encoded = encodeThem . pure $ V.fromList 
                                       [ ["A"], ["G"] ]
                                   }
-        
-        
-        expectedSeq    = encodeThem . pure $ V.fromList [["A"], ["T", "-"], ["T", "G"]]
-        newRoot        = rootTest { T.preliminary = expectedSeq
-                                  , T.aligned = expectedSeq
-                                  , T.localCost = 2
-                                  , T.totalCost = 2
-                                  }
         expectedDO     = V.fromList [newRoot, leftTest, rightTest]
-        checkDOResult1 = testCase "On a simple cherry, DO behaves as expected" (expectedDO @=? doResult1)
             where
-                doResult1      = allOptimization 1 (pure doMeta) cherry1
-                cherry1        = V.fromList [rootTest, leftTest, rightTest]
-        iaResult1      = impliedAlign expectedDO (pure doMeta)
-        expectedIA1    = IM.fromList [ (1, encodeThem . pure $ V.fromList 
-                                        [ ["A"]
-                                        , ["T"]
-                                        , ["T"]
-                                        , ["-"]
-                                        ])
-                                     , (2, encodeThem . pure $ V.fromList 
-                                        [ ["A"]
-                                        , ["-"]
-                                        , ["-"]
-                                        , ["G"]
-                                        ])
-                                     ]
-        checkIAResult1 = testCase "On the same cherry, IA gives the expected result" (expectedIA1 @=? iaResult1)
+                newRoot     = rootTest { T.preliminary = expectedSeq
+                                       , T.aligned = expectedSeq
+                                       , T.localCost = 2
+                                       , T.totalCost = 2
+                                       }
+                expectedSeq = encodeThem . pure $ V.fromList [["A"], ["T", "-"], ["T", "G"]]
 
-        leftTest2      = leftTest { T.isLeaf = False
-                                  , T.children = [3, 4]
-                                  , T.encoded = mempty
-                                  }
-        node3          = leftTest { T.code = 3, T.parents = [1] }
-        node4          = node3 { T.code = 4
-                               , T.encoded = encodeThem . pure $ V.fromList 
-                                   [["A"], ["T"], ["A"], ["G"]]
-                               }
-        longerTest     = V.fromList [rootTest, leftTest2, rightTest, node3, node4]
-        seq2a          = encodeThem . pure $ V.fromList [ ["A"]
-                                                        , ["T"]
-                                                        , ["A", "-"]
-                                                        , ["T", "G"]
-                                                        ]
-        seq2b          = encodeThem . pure $ V.fromList [ ["A"], ["T"], ["G"] ]
-        seq2c          = encodeThem . pure $ V.fromList [ ["A"]
-                                                        , ["T", "-"]
-                                                        , ["G"]
-                                                        ]
-        expectedRoot   = rootTest { T.preliminary = seq2c
-                                  , T.aligned = encodeThem . pure $ V.fromList 
-                                      [["A"], ["T", "-"], ["-"], ["G"] ]
-                                  , T.localCost = 1
-                                  , T.totalCost = 3
-                                  }
-        expectedLeft   = leftTest2 { T.preliminary = seq2a
-                                   , T.aligned = seq2a
-                                   , T.final = seq2b
-                                   , T.localCost = 2
-                                   , T.totalCost = 2
-                                   , T.gapped = encodeThem . pure $ V.fromList 
-                                       [["A"], ["T"], ["-"], ["G"]]
-                                   }
-        expectedDO2    = V.fromList [ expectedRoot
-                                    , expectedLeft
-                                    , rightTest
-                                    , node3
-                                    , node4
-                                    ]
-        doResult2      = allOptimization 1 (pure doMeta) longerTest
-        checkDOResult2 = testCase "On a slightly larger case, DO behaves as expected" (expectedDO2 @=? doResult2)
-        iaResult2      = impliedAlign expectedDO2 (pure doMeta)
-        expectedIA2    = IM.fromList [ (2, encodeThem . pure $ V.fromList 
-                                        [["A"], ["-"], ["-"], ["G"], ["-"]])
-                                     , (3, encodeThem . pure $ V.fromList 
-                                        [["A"], ["T"], ["-"], ["-"], ["T"]])
-                                     , (4, encodeThem . pure $ V.fromList 
-                                        [["A"], ["T"], ["A"], ["-"], ["G"]])
-                                     ]
-        checkIAResult2 = testCase "On that larger case, IA gives the expected result" (expectedIA2 @=? iaResult2)
+        expectedDO2  = V.fromList [ expectedRoot
+                                  , expectedLeft
+                                  , rightTest
+                                  , node3
+                                  , node4
+                                  ]
+
+        expectedLeft = leftTest2 { T.preliminary = seq2a
+                                 , T.aligned = seq2a
+                                 , T.final = seq2b
+                                 , T.localCost = 2
+                                 , T.totalCost = 2
+                                 , T.gapped = encodeThem . pure $ V.fromList 
+                                     [["A"], ["T"], ["-"], ["G"]]
+                                 }
+        expectedRoot = rootTest { T.preliminary = seq2c
+                                , T.aligned = encodeThem . pure $ V.fromList 
+                                    [["A"], ["T", "-"], ["-"], ["G"] ]
+                                , T.localCost = 1
+                                , T.totalCost = 3
+                                }
+
+        node3        = leftTest { T.code = 3, T.parents = [1] }
+        node4        = node3 { T.code = 4
+                             , T.encoded = encodeThem . pure $ V.fromList 
+                                 [["A"], ["T"], ["A"], ["G"]]
+                             }
+
 
 checkLen :: StandardSolution -> Bool
 checkLen inSolution = checkLS
