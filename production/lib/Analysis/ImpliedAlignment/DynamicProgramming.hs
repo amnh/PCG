@@ -21,12 +21,12 @@ import           Analysis.General.NeedlemanWunsch hiding (SeqConstraint)
 import           Analysis.ImpliedAlignment.Internal
 import           Analysis.Parsimony.Binary.Internal (allOptimization)
 import           Bio.Metadata
-import           Bio.PhyloGraph.DAG
+import           Bio.PhyloGraph.DAG    hiding (code, root)
 import           Bio.PhyloGraph.Forest
 import           Bio.PhyloGraph.Network
-import           Bio.PhyloGraph.Node   hiding (name)
+import           Bio.PhyloGraph.Node   hiding (children, code, name)
 import           Bio.PhyloGraph.Solution
-import           Bio.PhyloGraph.Tree   hiding (code)
+import           Bio.PhyloGraph.Tree
 import           Bio.Character.Dynamic.Coded
 import           Control.Applicative          ((<|>))
 import           Data.Alphabet
@@ -88,13 +88,15 @@ impliedAlign :: (TreeConstraint t n e s, Metadata m s) => t -> Vector m -> Align
 --impliedAlign inTree inMeta | trace ("impliedAlign with tree " ++ show inTree) False = undefined
 impliedAlign inTree inMeta = extractAlign numerated inMeta
     where
-        numerated = numeratePreorder inTree (getRoot inTree) inMeta (V.replicate (length inMeta) (0, 0))
+        numerated = numeratePreorder inTree (root inTree) inMeta (V.replicate (length inMeta) (0, 0))
 
 extractAlign :: (TreeConstraint t n e s, Metadata m s) => (Counts, t) -> Vector m -> Alignment s
 --extractAlign (lens, numeratedTree) inMeta | trace ("extract alignments " ++ show numeratedTree) False = undefined
-extractAlign (lens, numeratedTree) inMeta = foldr (\n acc -> insert (getCode n) (makeAlignment n lens) acc) mempty allLeaves
-    where allLeaves = V.filter (`nodeIsLeaf` numeratedTree) (getNodes numeratedTree)
-
+extractAlign (lens, numeratedTree) _inMeta = foldr (\n acc -> insert (fromJust $ code n numeratedTree) (makeAlignment n lens) acc) mempty allLeaves
+    where
+      allLeaves = filter (`nodeIsLeaf` numeratedTree) allNodes
+      allNodes  = getNthNode numeratedTree <$> [0..numNodes numeratedTree -1]
+      
 -- | Simple function to generate an alignment from a numerated node
 -- Takes in a Node
 -- returns a vector of characters
@@ -141,7 +143,7 @@ numeratePreorder initTree initNode inMeta curCounts
             (leftRecurseCount, leftRecurseTree)                     = numeratePreorder backPropagatedTree leftChildHomolog inMeta counterLeft
             leftRectifiedTree                                       = leftRecurseTree `update` [leftChildHomolog] -- TODO: Check this order
             
-            curNode'                                                = leftRectifiedTree `getNthNode` getCode curNode
+            curNode'                                                = leftRectifiedTree `getNthNode` fromJust (code curNode leftRectifiedTree)
             {-(alignedRCur, alignedRight)                             = alignAndAssign curNode' (fromJust $ rightChild curNode' leftRectifiedTree)
             (rightChildHomolog, counterRight, insertionEventsRight) = numerateNode alignedRCur alignedRight leftRecurseCount inMeta-}
             (rightChildHomolog, counterRight, insertionEventsRight) = alignAndNumerate curNode' (fromJust $ rightChild curNode' leftRectifiedTree) counterLeft inMeta
@@ -156,7 +158,7 @@ numeratePreorder initTree initNode inMeta curCounts
             inTree = if   nodeIsRoot initNode initTree
                      then initTree `update` [setHomologies initNode defaultHomologs]
                      else initTree
-            curNode = getNthNode inTree (getCode initNode)
+            curNode = getNthNode inTree . fromJust $ code initNode inTree
             curSeqs = getForAlign curNode
             isLeafNode = leftOnly && rightOnly
             leftOnly   = isNothing $ rightChild curNode inTree
@@ -190,7 +192,7 @@ backPropagation tree node insertionEvents
   | otherwise =
     case parent node tree of
       Nothing       -> tree -- If at the root, do nothing
-      Just myParent -> let nodeIsLeftChild = (getCode <$> leftChild myParent tree) == Just (getCode node)
+      Just myParent -> let nodeIsLeftChild = ((\n -> fromJust $ code n tree) <$> leftChild myParent tree) == code node tree
                            (tree', _)      = accountForInsertionEventsForNode tree myParent insertionEvents
                            tree''          = if   nodeIsLeftChild -- if we are the left child, then we only have to update the current node
                                               then tree'
@@ -291,7 +293,7 @@ getForAlign n
 comparativeNumeration :: (NodeConstraint n s, Metadata m s) => n -> n -> Vector (IntMap Int) -> Vector m -> (n, Vector (IntMap Int), Vector IntSet)
 comparativeNumeration parentNode childNode totalGapCounts _inMeta = (setHomologies childNode homologs, totalGapCounts', insertionEvents)
   where
-    totalGapCounts' = V.zipWith (IM.insert (getCode childNode)) childGapCounts totalGapCounts
+    totalGapCounts' = V.zipWith (IM.insert (0 {- We need a unique index for each node here or for each sewuence -})) childGapCounts totalGapCounts
     numeration      = V.zipWith characterNumeration (getForAlign parentNode) (getForAlign childNode)
     (homologs, childGapCounts, insertionEvents) = V.unzip3 numeration
                                                                                                                                             
@@ -355,11 +357,11 @@ instance Monoid InsertionEvents where
 numeration :: (Eq n, TreeConstraint t n e s) => t -> t
 numeration tree = tree
   where
-    root            = getRoot tree
+    rootNode        = root tree
     enumeratedNodes = enumerateNodes tree
     nodeCount       = length enumeratedNodes
-    rootIndex       = 0 -- locateRoot enumeratedNodes root
-    childMapping    = gatherChildren enumeratedNodes rootIndex tree
+    rootIndex       = 0 -- locateRoot enumeratedNodes rootNode
+    childMapping    = gatherChildren enumeratedNodes tree
     parentMapping   = gatherParents  childMapping    rootIndex
     homologyMemoize :: Matrix MemoizedEvents
     homologyMemoize = matrix nodeCount nodeCount opt
@@ -400,7 +402,7 @@ numeration tree = tree
                 Memo (_,_,directChildInsertions) = homologyMemoize ! (j, x)
 
 enumerateNodes :: TreeConstraint t n e s  => t -> Vector n
-enumerateNodes = undefined
+enumerateNodes tree = V.generate (numNodes tree) (getNthNode tree)
 
 locateRoot :: (Eq n, TreeConstraint t n e s) => Vector n -> n -> Int
 locateRoot ns n = fromMaybe 0 $ V.ifoldl' f Nothing ns
@@ -409,8 +411,20 @@ locateRoot ns n = fromMaybe 0 $ V.ifoldl' f Nothing ns
       | e == n    = acc <|> Just i
       | otherwise = Nothing
 
-gatherChildren :: (Eq n, TreeConstraint t n e s) => Vector n -> Int -> t -> Vector IntSet
-gatherChildren = undefined
+gatherChildren :: (Eq n, TreeConstraint t n e s) => Vector n -> t -> Vector IntSet
+gatherChildren enumNodes tree = V.generate (length enumNodes) f
+  where
+    f i = IS.fromList $ location <$> children'
+      where
+        children'  = children node tree
+        node       = enumNodes V.! i
+        location n = fromMaybe (-1) $ V.ifoldl' g Nothing enumNodes
+          where
+            g acc i e =
+              if   n == e
+              then acc <|> Just i
+              else acc
+
 
 gatherParents :: Vector IntSet -> Int -> Vector Int
 gatherParents = undefined

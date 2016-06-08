@@ -20,12 +20,12 @@ module Analysis.ImpliedAlignment.Standard where
 import           Analysis.General.NeedlemanWunsch hiding (SeqConstraint)
 import           Analysis.ImpliedAlignment.Internal
 import           Bio.Metadata
-import           Bio.PhyloGraph.DAG
+import           Bio.PhyloGraph.DAG  hiding (code, root)
 import           Bio.PhyloGraph.Forest
 import           Bio.PhyloGraph.Network
-import           Bio.PhyloGraph.Node
+import           Bio.PhyloGraph.Node hiding (code)
 import           Bio.PhyloGraph.Solution
-import           Bio.PhyloGraph.Tree hiding (code)
+import           Bio.PhyloGraph.Tree --hiding (code)
 import           Bio.Character.Dynamic.Coded
 import           Data.Foldable
 import           Data.IntMap                (IntMap, insert)
@@ -66,12 +66,14 @@ impliedAlign :: (TreeConstraint t n e s, Metadata m s) => t -> Vector m -> Align
 --impliedAlign inTree inMeta | trace ("impliedAlign with tree " ++ show inTree) False = undefined
 impliedAlign inTree inMeta = extractAlign numerated inMeta
     where
-        numerated = numeratePreorder inTree (getRoot inTree) inMeta (V.replicate (length inMeta) (0, 0))
+        numerated = numeratePreorder inTree (root inTree) inMeta (V.replicate (length inMeta) (0, 0))
 
 extractAlign :: (TreeConstraint t n e s, Metadata m s) => (Counts, t) -> Vector m -> Alignment s
 --extractAlign (lens, numeratedTree) inMeta | trace ("extract alignments " ++ show numeratedTree) False = undefined
-extractAlign (lens, numeratedTree) inMeta = foldr (\n acc -> insert (getCode n) (makeAlignment n lens) acc) mempty allLeaves
-    where allLeaves = V.filter (`nodeIsLeaf` numeratedTree) (getNodes numeratedTree)
+extractAlign (lens, numeratedTree) _inMeta = foldr (\n acc -> insert (fromJust $ code n numeratedTree) (makeAlignment n lens) acc) mempty allLeaves
+    where
+      allLeaves = filter (`nodeIsLeaf` numeratedTree) allNodes
+      allNodes  = getNthNode numeratedTree <$> [0..numNodes numeratedTree -1]
 
 -- | Simple function to generate an alignment from a numerated node
 -- Takes in a Node
@@ -119,7 +121,7 @@ numeratePreorder initTree initNode inMeta curCounts
             (leftRecurseCount, leftRecurseTree)                     = numeratePreorder backPropagatedTree leftChildHomolog inMeta counterLeft
             leftRectifiedTree                                       = leftRecurseTree `update` [leftChildHomolog] -- TODO: Check this order
             
-            curNode'                                                = leftRectifiedTree `getNthNode` getCode curNode
+            curNode'                                                = leftRectifiedTree `getNthNode` fromJust (code curNode leftRectifiedTree)
             {-(alignedRCur, alignedRight)                             = alignAndAssign curNode' (fromJust $ rightChild curNode' leftRectifiedTree)
             (rightChildHomolog, counterRight, insertionEventsRight) = numerateNode alignedRCur alignedRight leftRecurseCount inMeta-}
             (rightChildHomolog, counterRight, insertionEventsRight) = alignAndNumerate curNode' (fromJust $ rightChild curNode' leftRectifiedTree) counterLeft inMeta
@@ -134,7 +136,7 @@ numeratePreorder initTree initNode inMeta curCounts
             inTree = if   nodeIsRoot initNode initTree
                      then initTree `update` [setHomologies initNode defaultHomologs]
                      else initTree
-            curNode = getNthNode inTree (getCode initNode)
+            curNode = getNthNode inTree . fromJust $ code initNode inTree
             curSeqs = getForAlign curNode
             isLeafNode = leftOnly && rightOnly
             leftOnly   = isNothing $ rightChild curNode inTree
@@ -168,7 +170,7 @@ backPropagation tree node insertionEvents
   | otherwise =
     case parent node tree of
       Nothing       -> tree -- If at the root, do nothing
-      Just myParent -> let nodeIsLeftChild = (getCode <$> leftChild myParent tree) == Just (getCode node)
+      Just myParent -> let nodeIsLeftChild = ((\n -> fromJust $ code n tree) <$> leftChild myParent tree) == code node tree
                            (tree', _)      = accountForInsertionEventsForNode tree myParent insertionEvents
                            tree''          = if   nodeIsLeftChild -- if we are the left child, then we only have to update the current node
                                               then tree'
