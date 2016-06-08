@@ -32,13 +32,17 @@ import           Data.IntMap                (IntMap, insert)
 import qualified Data.IntMap as IM
 import           Data.IntSet                (IntSet)
 import qualified Data.IntSet as IS
+import           Data.Key
+import           Data.Matrix.NotStupid hiding (toList)
 import           Data.Maybe
+import           Data.Monoid
 import           Data.MonoTraversable
 import           Data.Vector                (Vector, imap)
 import qualified Data.Vector as V
 import           Prelude             hiding (lookup)
 import           Debug.Trace
-
+import           Test.Custom.Tree
+  
 newtype MutationAccumulator = Accum (IntMap Int, Int, Int, Int, Int, IntSet)
 
 -- | Top level wrapper to do an IA over an entire solution
@@ -267,26 +271,26 @@ type AncestorDeletionEvents    = IntSet
 type AncestorInsertionEvents   = IntSet
 type DescendantInsertionEvents = IntSet
 
-newtype MemoizedEvents = Memoized (AncestorDeletionEvents, AncestorInsertionEvents, DeletionEvents)
+newtype MemoizedEvents = Memo (AncestorDeletionEvents, AncestorInsertionEvents, DeletionEvents)
 
 instance Monoid MemoizedEvents where
   mempty  = Memo (mempty, mempty, mempty)
-  (Memo (a,b,c)) mappend (Memo (x,y,z)) = Memo (a<>x, b<>y, c<>z)
+  (Memo (a,b,c)) `mappend` (Memo (x,y,z)) = Memo (a<>x, b<>y, c<>z)
 
 newtype DeletionEvents = DE (IntMap Int)
 instance Monoid DeletionEvents where
   mempty = DE mempty
   (DE ancestorSet) `mappend` (DE descendantSet) = DE $ incrementedAncestorSet <> descendantSet
     where
-      incrementedAncestorSet = ofoldlWithKey' f ancestorSet descendantSet 
-      f acc i desc = ofoldlWithKey' g mempty acc
+      incrementedAncestorSet = foldlWithKey' f ancestorSet descendantSet 
+      f acc i desc = foldlWithKey' g mempty acc
         where
           g x
             | x >= desc = x + 1
             | otherwise = x
 
 numeration :: TreeConstraint t n e s  => t -> t
-numeration tree =
+numeration tree = tree
   where
     root            = getRoot tree
     enumeratedNodes = enumerateNodes tree
@@ -322,7 +326,9 @@ numeration tree =
                                                , allDescendantInsertion <> inserts
                                                )
           where
-            (deletes, inserts) = comparativeNumerate
+            (deletes, inserts) = comparativeNumerate parentCharacter childCharacter 
+            parentCharacter = headMay . getForAlign $ enumeratedNodes ! i
+            childCharacter  = headMay . getForAlign $ enumeratedNodes ! j
             Memo (                  _,                    _, rootInsertions) = homologyMemoize ! (0,0)
             Memo (ancestoralDeletions, ancestoralInsertions,              _) = homologyMemoize ! (parentMapping ! i, i) 
             allDescendantInsertion = f `ofoldMap` (childMapping ! i)
