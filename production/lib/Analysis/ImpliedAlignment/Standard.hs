@@ -136,7 +136,7 @@ numeratePreorder initTree initNode inMeta curCounts
             inTree = if   nodeIsRoot initNode initTree
                      then initTree `update` [setHomologies initNode defaultHomologs]
                      else initTree
-            curNode = getNthNode inTree . fromJust $ code initNode inTree
+            curNode = getNthNode inTree {- . fromJust -} $ getCode initNode --inTree
             curSeqs = getForAlign curNode
             isLeafNode = leftOnly && rightOnly
             leftOnly   = isNothing $ rightChild curNode inTree
@@ -220,7 +220,7 @@ accountForInsertionEvents homologies insertionEvents = V.generate (length homolo
 -- returns a tuple with the node with homologies incorporated, and a returned vector of counters
 numerateNode :: (NodeConstraint n s, Metadata m s) => n -> n -> Counts -> Vector m -> (n, Counts, Vector IntSet) 
 --numerateNode ancestorNode childNode initCounters _ | trace ("numerateNode on " ++ show (getCode ancestorNode) ++" and " ++ show (getCode childNode) ++ ", " ++ show initCounters) False = undefined
-numerateNode ancestorNode childNode initCounters inMeta = {-trace ("numeration result " ++ show homologs) $-} (setHomologies childNode homologs, counts, insertionEvents)
+numerateNode ancestorNode childNode initCounters _inMeta = {-trace ("numeration result " ++ show homologs) $-} (setHomologies childNode homologs, counts, insertionEvents)
         where
             numeration = --trace ("numeration zip on " ++ show (ancestorNode) ++" and " ++ show (childNode)) 
                           V.zipWith3 numerateOne (getForAlign ancestorNode) (getForAlign childNode) initCounters 

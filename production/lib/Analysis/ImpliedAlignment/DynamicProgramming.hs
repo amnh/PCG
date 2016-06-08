@@ -21,7 +21,7 @@ import           Analysis.General.NeedlemanWunsch hiding (SeqConstraint)
 import           Analysis.ImpliedAlignment.Internal
 import           Analysis.Parsimony.Binary.Internal (allOptimization)
 import           Bio.Metadata
-import           Bio.PhyloGraph.DAG    hiding (code, root)
+--import           Bio.PhyloGraph.DAG    hiding (code, root)
 import           Bio.PhyloGraph.Forest
 import           Bio.PhyloGraph.Network
 import           Bio.PhyloGraph.Node   hiding (children, code, name)
