@@ -46,9 +46,9 @@ data Node = Node  { nodeIdx     :: Int
                   , union       :: Vector DynamicChar -- the union assignment
                   , single      :: Vector DynamicChar -- the single assignment
                   , gapped      :: Vector DynamicChar -- the final assignment with gaps for alignment
-                  , iaHomology  :: IN.HomologyTrace  -- the homology traces for an implied alignment (the matrix is numChars by charLength)
-                  , localCost   :: Double            -- cost of assignment at this node alone
-                  , totalCost   :: Double            -- sum cost of this node and its subtree
+                  , iaHomology  :: IN.HomologyTrace   -- the homology traces for an implied alignment (the matrix is numChars by charLength)
+                  , localCost   :: Double             -- cost of assignment at this node alone
+                  , totalCost   :: Double             -- sum cost of this node and its subtree
                   } deriving (Eq, Show)
 
 -- | Make it an instance of encoded, final, packed, and preliminary
