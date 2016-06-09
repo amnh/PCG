@@ -42,6 +42,7 @@ import           Data.Monoid
 import           Data.MonoTraversable
 import           Data.Vector                  (Vector, imap)
 import qualified Data.Vector             as V
+import           Data.Vector.Instances        ()
 import           Prelude               hiding (lookup)
 --import           Debug.Trace
 import           Test.Custom.Tree
@@ -311,7 +312,7 @@ type AncestorDeletionEvents    = IntSet
 type AncestorInsertionEvents   = IntSet
 type DescendantInsertionEvents = IntSet
 
-type MemoizedEvents = (DeletionEvents, AncestorInsertionEvents, InsertionEvents)
+type MemoizedEvents = (DeletionEvents, InsertionEvents)
 
 {-
 instance Monoid MemoizedEvents where
@@ -334,14 +335,21 @@ instance Monoid DeletionEvents where
 newtype InsertionEvents = IE (IntMap Int)
 instance Monoid InsertionEvents where
   mempty = IE mempty
-  (IE ancestorSet) `mappend` (IE descendantSet) = IE $ incrementedAncestorSet <> descendantSet
+  (IE lhs) `mappend` (IE rhs) = IE $ foldlWithKey' f lhs rhs
     where
-      incrementedAncestorSet = foldlWithKey' f ancestorSet descendantSet 
-      f acc i desc = foldlWithKey' g mempty acc
+      f mapping k v = IM.insertWith (+) k v mapping
+
+(>-<) :: InsertionEvents -> InsertionEvents -> InsertionEvents
+(>-<) (IE ancestorMap) (IE descendantMap) = IE $ decrementedDescendantMap <> ancestorMap
+    where
+      decrementedDescendantMap = foldlWithKey' f descendantMap ancestorMap
+      f acc i ansVal = foldlWithKey' g mempty acc
         where
          g im k v
-            | v >= desc = IM.insert (k + 1) v im
-            | otherwise = IM.insert  k      v im
+           | i+1 == k  = IM.insert  i      (ansVal + v) im
+           | i   <= k  = IM.insert (k - 1)  v           im
+           | otherwise = IM.insert  k       v           im
+
 
 numeration :: (Eq n, TreeConstraint t n e s) => t -> t
 numeration tree = tree
@@ -360,35 +368,39 @@ numeration tree = tree
       where
         opt (i,j)
           -- Base case with root node
-          | i == rootIndex && j == rootIndex  = (mempty, mempty, allDescendantInsertion)
+          | i == rootIndex && j == rootIndex  = (mempty, allDescendantInsertions)
           -- Is a child of the root node
-          | i == rootIndex                    = ( ancestoralDeletions    <> deletes
-                                                , IS.fromList . IM.keys $ (\(IE x) -> x) rootInsertions
-                                                , allDescendantInsertion <> inserts
+          | i == rootIndex                    = ( deletes
+                                                , allDescendantInsertions >-< inserts
                                                 )
-          -- In the lower triange, never referenced
-          | i >  j                            = (mempty, mempty, mempty)
+          -- In the lower triangle, never referenced
+          | i >  j                            = (mempty, mempty)
           -- Not a direct descendant
-          | j `onotElem` (childMapping V.! i) = (mempty, mempty, mempty)
+          | j `onotElem` (childMapping V.! i) = (mempty, mempty)
           -- Accumulate insertions & deletions.
-          | i == j                            = ( ancestoralDeletions
-                                                , ancestoralInsertions
-                                                , mempty
-                                                )
-          | otherwise                         = ( ancestoralDeletions    <> deletes
-                                                , ancestoralInsertions   <> (\(IE x) -> IS.fromList $ IM.keys x) inserts
-                                                , allDescendantInsertion <> inserts
+          | i == j                            = ( ancestoralDeletions, mempty)
+          | otherwise                         = ( ancestoralDeletions <>  deletes
+                                                , inserts             >-< allDescendantInsertions
                                                 )
           where
             (deletes, inserts) = comparativeIndelEvents parentCharacter childCharacter 
             parentCharacter = fromMaybe (error "No perent Sequence!") . headMay . getForAlign $ enumeratedNodes V.! i
             childCharacter  = fromMaybe (error "No child sequence!" ) . headMay . getForAlign $ enumeratedNodes V.! j
-            (                  _,                    _, rootInsertions) = homologyMemoize ! (0,0)
-            (ancestoralDeletions, ancestoralInsertions,              _) = homologyMemoize ! (parentMapping V.! i, i) 
-            allDescendantInsertion = f `ofoldMap` (childMapping V.! i)
-            f x = directChildInsertions
+            (                  _, _) = homologyMemoize ! (0,0)
+            (ancestoralDeletions, _) = homologyMemoize ! (parentMapping V.! i, i) 
+            allDescendantInsertions  = ofoldl' f mempty  (childMapping V.! i)
+            f acc x = acc <> directChildInsertions
               where
-                (_,_,directChildInsertions) = homologyMemoize ! (j, x)
+                (_,directChildInsertions) = homologyMemoize ! (j, x)
+
+    updatedLeafNodes = foldrWithKey f [] enumeratedNodes
+      where
+        f i n xs
+          | n `nodeIsLeaf` tree = deriveImpliedAlignment i n  : xs
+          | otherwise           = xs
+
+    deriveImpliedAlignment :: IANode n => Int -> n -> n
+    deriveImpliedAlignment index node = undefined
 
 enumerateNodes :: TreeConstraint t n e s  => t -> Vector n
 enumerateNodes tree = V.generate (numNodes tree) (getNthNode tree)
@@ -423,11 +435,11 @@ gatherSubtree :: Vector IntSet -> Int -> BitMatrix
 gatherSubtree = undefined
 -}
 
-comparativeIndelEvents :: SeqConstraint s => s -> s -> (DeletionEvents, InsertionEvents)                                                               
+comparativeIndelEvents :: SeqConstraint s => s -> s -> (DeletionEvents, InsertionEvents)
 comparativeIndelEvents _ancestorSeq _descendantSeq = (deletionEvents, insertionEvents)                                          
   where
     deletionEvents  = mempty
-    insertionEvents = mempty
+    insertionEvents = mempty -- E . IM.singleton 0 $ [ _descendantSeq `indexChar` 0 ]
 {-
     gap = gapChar descendantSeq
     descendantHomologies = V.fromList . reverse $ indices                                                                                   
