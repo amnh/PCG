@@ -21,6 +21,7 @@ import           Control.Applicative                     ((<|>))
 import           Control.Monad                           ((<=<))
 import           Data.Alphabet
 import           Data.Bifunctor                          (second)
+import           Data.BitVector                          (width)
 import           Data.Foldable
 import           Data.IntMap                             (IntMap, insertWith)
 import qualified Data.IntMap                      as IM
@@ -137,17 +138,32 @@ instance Show TestingDecoration where
   show decoration = intercalate "\n" $ catMaybes renderedDecorations
     where
       renderedDecorations =
-        [ g "Encoded"     <$> f dEncoded
-        , g "Final"       <$> f dFinal
-        , g "Gapped"      <$> f dGapped
+        [ g "Encoded    " <$> f dEncoded
+        , g "Ungapped   " <$> f dFinal
+        , g "Gapped     " <$> f dGapped
         , g "Preliminary" <$> f dPreliminary
-        , g "Aligned"     <$> f dAligned
-        , g "Temporary"   <$> f dTemporary
+        , g "Aligned    " <$> f dAligned
+        , g "Temporary  " <$> f dTemporary
         ]
-      f x = show <$> headMay (x decoration)
-      g prefix shown = intercalate "\n" $ (prefix <> ": " <> y) : (("  " <>) <$> zs)
-        where
-          (x:y:zs) = lines shown :: [String]
+      f x = renderDynamicCharacter <$> headMay (x decoration)
+      g prefix shown = prefix <> ": " <> shown --intercalate "\n" $ (prefix <> ": " <> y) : (("  " <>) <$> zs)
+--        where
+--          (x:y:zs) = lines shown :: [String]
+
+renderDynamicCharacter :: DynamicChar -> String
+renderDynamicCharacter char
+  | onull char = ""
+  | otherwise  = concatMap f $ decodeDynamic alphabet char
+  where
+    symbolCount = width $ char `indexChar` 0
+    symbols     = take symbolCount arbitrarySymbols
+    alphabet    = constructAlphabet symbols
+    f :: [String] -> String
+    f [x] = x
+    f ambiguityGroup = "[" <> concat ambiguityGroup <> "]"
+
+arbitrarySymbols :: [String]
+arbitrarySymbols = fmap pure . ('-' :) $ ['0'..'9'] <> ['A'..'Z'] <> ['a'..'z']
     
 instance Arbitrary SimpleTree where
   -- | Arbitrary Cherry
