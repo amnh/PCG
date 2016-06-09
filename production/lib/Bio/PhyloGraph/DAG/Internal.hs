@@ -25,9 +25,8 @@ import           Bio.PhyloGraph.Edge
 import           Bio.PhyloGraph.Forest
 import qualified Bio.PhyloGraph.Network             as N
 import qualified Bio.PhyloGraph.Network.Subsettable as SN
-import           Bio.PhyloGraph.Node                      (Node(Node),generateLeavesDO)
-import qualified Bio.PhyloGraph.Node                as Node
-import           Bio.PhyloGraph.Node.Referential
+import           Bio.PhyloGraph.Node
+--import           Bio.PhyloGraph.Node.Referential          ()
 import           Bio.PhyloGraph.Node.Topological          (TopoNode)
 import qualified Bio.PhyloGraph.Node.Topological    as TN
 import qualified Bio.PhyloGraph.Tree.EdgeAware      as ET
@@ -111,7 +110,10 @@ binaryTreeToDAG binaryRoot = DAG
        (totalNodeMap, totalEdgeMap, _) = f Nothing binaryRoot (mempty, mempty, 0)
        f :: Maybe Int -> TestingBinaryTree Node -> Accumulator -> Accumulator
        f parentMay (Leaf node) (nodeMap, edgeMap, counter) = 
-           ( IM.insert counter (node { Node.code = counter, Node.name = "Taxon: " <> show (getCode node), Node.parents = otoList (inNodeSet parentMay)} ) nodeMap
+           ( IM.insert counter (node { nodeIdx = counter
+                                     , name = "Taxon: " <> show (nodeIdx node)
+                                     , parents = otoList (inNodeSet parentMay)
+                                     } ) nodeMap
            , IM.insert counter (EdgeSet (inNodeSet parentMay) mempty) edgeMap
            , counter + 1
            )
@@ -128,25 +130,25 @@ binaryTreeToDAG binaryRoot = DAG
            resultingOutNodes = IM.insert  counter'   (EdgeInfo 0 internalNode (nodeMap' ! counter'   ) Nothing)
                               (IM.insert (counter+1) (EdgeInfo 0 internalNode (nodeMap' ! (counter+1)) Nothing) mempty)
            internalNode = Node 
-                        { Node.code        = counter
-                        , Node.name        = "HTU: " <> show counter
-                        , Node.isRoot      = null $ maybe [] pure parentMay
-                        , Node.isLeaf      = False
-                        , Node.children    = [counter+1, counter']
-                        , Node.parents     = maybe [] pure parentMay
-                        , Node.encoded     = mempty
-                        , Node.packed      = mempty
-                        , Node.preliminary = mempty
-                        , Node.final       = mempty
-                        , Node.temporary   = mempty
-                        , Node.aligned     = mempty
-                        , Node.random      = mempty
-                        , Node.union       = mempty
-                        , Node.single      = mempty
-                        , Node.gapped      = mempty
-                        , Node.iaHomology  = mempty
-                        , Node.localCost   = 0
-                        , Node.totalCost   = 0
+                        { nodeIdx     = counter
+                        , name        = "HTU: " <> show counter
+                        , isRoot      = null $ maybe [] pure parentMay
+                        , isLeaf      = False
+                        , children    = [counter+1, counter']
+                        , parents     = maybe [] pure parentMay
+                        , encoded     = mempty
+                        , packed      = mempty
+                        , preliminary = mempty
+                        , final       = mempty
+                        , temporary   = mempty
+                        , aligned     = mempty
+                        , random      = mempty
+                        , union       = mempty
+                        , single      = mempty
+                        , gapped      = mempty
+                        , iaHomology  = mempty
+                        , localCost   = 0
+                        , totalCost   = 0
                         }
        inNodeSet :: Maybe Int -> IntSet
        inNodeSet (Just parentReference) = IS.insert parentReference mempty
@@ -191,29 +193,29 @@ instance SN.SubsettableNetwork DAG NodeInfo where
 
 -- | This tree knows its edges
 instance ET.EdgedTree DAG NodeInfo EdgeSet where
-    edges    n t   = edges t V.! getCode n
-    setEdges n t e = t {edges = edges t // [(getCode n, e)]}
+    edges    n t   = edges t V.! nodeIdx n
+    setEdges n t e = t {edges = edges t // [(nodeIdx n, e)]}
 
 -- | This particular tree is referential
 instance RT.ReferentialTree DAG NodeInfo where
-    code       node tree = elemIndex (getCode node) . toList $ getCode <$> nodes tree
+    getNodeIdx node tree = elemIndex (getCode node) . toList $ getCode <$> nodes tree
     getNthNode tree pos  = nodes tree V.! pos
 
 instance BinaryTree DAG NodeInfo where
-    leftChild  n t = lookup 0 $ (\i -> nodes t V.! i) <$> Node.children n
-    rightChild n t = lookup 1 $ (\i -> nodes t V.! i) <$> Node.children n
-    verifyBinary   = all ((2 >=) . length . Node.children) . nodes
+    leftChild  n t = lookup 0 $ (\i -> nodes t V.! i) <$> children n
+    rightChild n t = lookup 1 $ (\i -> nodes t V.! i) <$> children n
+    verifyBinary   = all ((2 >=) . length . children) . nodes
 
 instance RoseTree DAG NodeInfo where
-    parent n t = headMay $ fmap (\i -> nodes t V.! i) (Node.parents n)
+    parent n t = headMay $ fmap (\i -> nodes t V.! i) (parents n)
 
 instance N.Network DAG NodeInfo where
-    parents node dag    = fmap (\i -> nodes dag V.! i) (Node.parents node)
+    parents node dag    = fmap (\i -> nodes dag V.! i) (parents node)
     root dag            = nodes dag V.! root dag
-    children node dag   = fmap (\i -> nodes dag V.! i) (Node.children node)
+    children node dag   = fmap (\i -> nodes dag V.! i) (children node)
     update dag newNodes = dag { nodes = nodes dag // updatedNodes }
         where
-            updatedNodes = fmap (\n -> (getCode n, n)) newNodes
+            updatedNodes = fmap (\n -> (nodeIdx n, n)) newNodes
     numNodes            = length . nodes 
     addNode dag node    = DAG nodes2 edges2 reroot
       where
@@ -222,7 +224,7 @@ instance N.Network DAG NodeInfo where
           newEdge = makeEdges newNode dag
           edges2  = edges dag V.++ pure newEdge
           nodes2  = addConnections newNode (nodes dag) V.++ pure newNode
-          reroot  = if   Node.isRoot node && null (nodes dag) 
+          reroot  = if   isRoot node && null (nodes dag) 
                     then addPos 
                     else root dag
 
@@ -269,34 +271,34 @@ attachAt d1@(DAG nodes_1 edges_1 root_1) d2@(DAG nodes_2 edges_2 root_2) node_11
     | root_1 > length nodes_1 - 1 || root_2 > length nodes_2 - 1 = error "Root out of bounds when trying to append trees"
     | otherwise = DAG allNodes connectEdges root_1
         where
-            shiftNum        = length nodes_1 + 1 -- how much to add to the code of each node in DAG_2. Adding one because a new node, node_1new is added to nodes_1
-            hCode           = Node.code node_11
+            shiftNum        = length nodes_1 + 1 -- how much to add to the nodeIdx of each node in DAG_2. Adding one because a new node, node_1new is added to nodes_1
+            hCode           = nodeIdx node_11
 
             -- hang and shift the nodes
             hungNodes       = nodes_2 // [( root_2
-                                          , (nodes_2 V.! root_2) { Node.isRoot = False
-                                                                 , Node.parents = [hCode]
+                                          , (nodes_2 V.! root_2) { isRoot = False
+                                                                 , parents = [hCode]
                                                                  }
                                           )]
     
             connectN        = nodes_1  // [( hCode
-                                           , node_11 { Node.children = (shiftNum + root_2) : Node.children node_11
-                                                     , Node.isLeaf = False
+                                           , node_11 { children = (shiftNum + root_2) : children node_11
+                                                     , isLeaf = False
                                                      }
                                            )]
     
             recodeNew       = fmap recodeFun hungNodes -- this changes the parents of the root, which has already been set in hungNodes
-            recodeFun m     = m { Node.code     = Node.code m + shiftNum
-                                , Node.children = fmap (shiftNum +) (Node.children m)
-                                , Node.parents  = fmap (shiftNum +) (Node.parents m) 
+            recodeFun m     = m { nodeIdx  = nodeIdx m + shiftNum
+                                , children = fmap (shiftNum +) (children m)
+                                , parents  = fmap (shiftNum +) (parents m) 
                                 }
             allNodes        = connectN V.++ recodeNew
 
             -- update edges and add connecting edge
             reMapOut        = IM.foldWithKey (\k val acc -> IM.insert (k + shiftNum) (reMapInfo val) acc) mempty
-            reMapInfo eInfo = eInfo { origin   = allNodes V.! (Node.code (origin   eInfo) + shiftNum)
-                                    , terminal = allNodes V.! (Node.code (terminal eInfo) + shiftNum)
-                                    }
+            reMapInfo eInfo = eInfo { origin   = allNodes V.! (nodeIdx (origin   eInfo) + shiftNum)
+                                    , terminal = allNodes V.! (nodeIdx (terminal eInfo) + shiftNum)
+                                   }
 
             shiftEdge edge  = edge { inNodes  = IS.map (shiftNum +) (inNodes edge)
                                    , outNodes = reMapOut (outNodes edge)
@@ -327,7 +329,7 @@ fromTopo topoDag = DAG
                }
   where
     rootNode = structure topoDag
-    !rootRef = maybe 0 Node.code . find Node.isRoot $ toList nodeVector
+    !rootRef = maybe 0 nodeIdx . find isRoot $ toList nodeVector
     
     -- Step 1: We assume that each node in the TopoDAG has a unique 'name' field.
     -- We collect the names and assign each unique name a unique index in the range [0,|T|-1].
@@ -353,44 +355,43 @@ fromTopo topoDag = DAG
     nodeVector :: Vector NodeInfo
     !nodeVector = V.generate (length reference) f
       where
-        f i = Node 
-            { Node.code        = i
-            , Node.name        = TN.name topoRef
-            , Node.isRoot      = null parents'
-            , Node.isLeaf      = null children'
-            , Node.children    = children'
-            , Node.parents     = parents'
-            , Node.encoded     = TN.encoded     topoRef
-            , Node.packed      = TN.packed      topoRef
-            , Node.preliminary = TN.preliminary topoRef
-            , Node.final       = TN.final       topoRef
-            , Node.temporary   = TN.temporary   topoRef
-            , Node.aligned     = TN.aligned     topoRef
-            , Node.random      = TN.random      topoRef
-            , Node.union       = TN.union       topoRef
-            , Node.single      = TN.single      topoRef
-            , Node.gapped      = TN.gapped      topoRef
-            , Node.iaHomology  = mempty
-            , Node.localCost   = TN.localCost   topoRef
-            , Node.totalCost   = TN.totalCost   topoRef
-            }
-          where
-            (parentRefs, topoRef, childRefs) = reference ! i
-            children' = otoList childRefs
-            parents'  = otoList parentRefs
+        f i = Node { nodeIdx     = i
+                   , name        = TN.name topoRef
+                   , isRoot      = null parents'
+                   , isLeaf      = null children'
+                   , children    = children'
+                   , parents     = parents'
+                   , encoded     = TN.encoded     topoRef
+                   , packed      = TN.packed      topoRef
+                   , preliminary = TN.preliminary topoRef
+                   , final       = TN.final       topoRef
+                   , temporary   = TN.temporary   topoRef
+                   , aligned     = TN.aligned     topoRef
+                   , random      = TN.random      topoRef
+                   , union       = TN.union       topoRef
+                   , single      = TN.single      topoRef
+                   , gapped      = TN.gapped      topoRef
+                   , iaHomology  = mempty
+                   , localCost   = TN.localCost   topoRef
+                   , totalCost   = TN.totalCost   topoRef
+                   }
+            where
+                (parentRefs, topoRef, childRefs) = reference ! i
+                children' = otoList childRefs
+                parents'  = otoList parentRefs
 
     -- Step 4: We generate the edge set vector
     edgeVector :: Vector EdgeSet
     !edgeVector = V.generate (length reference) f
       where
         f i = EdgeSet
-            { inNodes  = IS.fromList $ Node.parents nodeData
-            , outNodes = IM.fromList $ (id &&& g) <$> Node.children nodeData
+            { inNodes  = IS.fromList $ parents nodeData
+            , outNodes = IM.fromList $ (id &&& g) <$> children nodeData
             }
           where
             nodeData = nodeVector V.! i
             g j = EdgeInfo
-                { len         = Node.localCost nodeData
+                { len         = localCost nodeData
                 , origin      = nodeData
                 , terminal    = childData
                 , virtualNode = Nothing
@@ -409,31 +410,31 @@ nodeToTopo inDAG curNode
     | N.nodeIsLeaf curNode inDAG = leaf
     | otherwise = leaf {TN.children = childDAGs}
       where
-          childDAGs = fmap (\i -> nodeToTopo inDAG (nodes inDAG V.! i)) (Node.children curNode)
+          childDAGs = fmap (\i -> nodeToTopo inDAG (nodes inDAG V.! i)) (children curNode)
           leaf = TN.TopoNode
-                   (Node.isRoot      curNode)
+                   (isRoot      curNode)
                    (N.nodeIsLeaf curNode inDAG)
-                   (Node.name        curNode)
+                   (name        curNode)
                    mempty
-                   (Node.encoded     curNode)
-                   (Node.packed      curNode)
-                   (Node.preliminary curNode) 
-                   (Node.final       curNode)
-                   (Node.temporary   curNode)
-                   (Node.aligned     curNode)
-                   (Node.random      curNode)
-                   (Node.union       curNode)
-                   (Node.single      curNode)
-                   (Node.gapped      curNode)
-                   (Node.localCost   curNode)
-                   (Node.totalCost   curNode)
+                   (encoded     curNode)
+                   (packed      curNode)
+                   (preliminary curNode) 
+                   (final       curNode)
+                   (temporary   curNode)
+                   (aligned     curNode)
+                   (random      curNode)
+                   (union       curNode)
+                   (single      curNode)
+                   (gapped      curNode)
+                   (localCost   curNode)
+                   (totalCost   curNode)
 
 -- | makeEdges is a small function assisting attachAt
 -- it creates the edge set for a given node in the given tree
 makeEdges :: NodeInfo -> DAG -> EdgeSet
-makeEdges node inDAG = EdgeSet (IS.fromList $ Node.parents node) out
+makeEdges node inDAG = EdgeSet (IS.fromList $ parents node) out
   where
-    out  = foldr (\i acc -> IM.insert i (info $ nodes inDAG V.! i) acc) mempty (Node.children node)
+    out  = foldr (\i acc -> IM.insert i (info $ nodes inDAG V.! i) acc) mempty (children node)
     info input = EdgeInfo 0 node input Nothing
 
 -- | resetPos is a small function assisting the joining of two subtrees
@@ -441,22 +442,22 @@ makeEdges node inDAG = EdgeSet (IS.fromList $ Node.parents node) out
 resetPos :: NodeInfo -> DAG -> Int -> NodeInfo
 resetPos node prevDAG i =
   let
-    leaf  = null $ Node.children node
-    nroot = null (Node.parents node) && null (nodes prevDAG)
-  in node { Node.code   = i
-          , Node.isLeaf = leaf
-          , Node.isRoot = nroot
-          }
+    leaf  = null $ children node
+    nroot = null (parents node) && null (nodes prevDAG)
+  in node {nodeIdx = i, isLeaf = leaf, isRoot = nroot}
 
 -- | addConnections is a small function assiting subtree joins
 -- it adds edges between a new node and an existing tree
 addConnections :: NodeInfo -> Vector NodeInfo -> Vector NodeInfo
 addConnections newNode myNodes = 
   let 
-    setIn curPos curNodes = curNodes // [(curPos, (curNodes V.! curPos) {Node.children = Node.code newNode : Node.children (curNodes V.! curPos), Node.isLeaf = False})]
-    withIn = foldr setIn myNodes (Node.parents newNode)
-    setOut curPos curNodes = curNodes // [(curPos, (curNodes V.! curPos) {Node.parents = Node.code newNode : Node.parents (curNodes V.! curPos), Node.isRoot = False})]
-    withOut = foldr setOut withIn (Node.children newNode)
+    setIn curPos curNodes = curNodes // [(curPos, (curNodes V.! curPos) { children = nodeIdx newNode : 
+                                                                              children (curNodes V.! curPos)
+                                                                        , isLeaf = False}
+                                        )]
+    withIn = foldr setIn myNodes (parents newNode)
+    setOut curPos curNodes = curNodes // [(curPos, (curNodes V.! curPos) {parents = nodeIdx newNode : parents (curNodes V.! curPos), isRoot = False})]
+    withOut = foldr setOut withIn (children newNode)
   in withOut 
 
 -- | Convert from a Newick format to a current DAG

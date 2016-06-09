@@ -280,7 +280,7 @@ instance N.Network SimpleTree SimpleTree where
                children' = subForest . maybe node (\(TT x) -> x) $ find (sameRef (TT node)) nodes'
          
 instance RT.ReferentialTree SimpleTree SimpleTree where
-    code (TT node) (TT root) = snd $ foldl' f (0, Nothing) root
+    getNodeIdx (TT node) (TT root) = snd $ foldl' f (0, Nothing) root
       where
         target = refEquality $ rootLabel node
         f :: (Int, Maybe Int) -> TestingDecoration -> (Int, Maybe Int)

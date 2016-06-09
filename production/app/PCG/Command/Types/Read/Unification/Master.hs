@@ -124,7 +124,7 @@ encodeSolution inVal@(Solution taxaSeqs metadataInfo inForests) = inVal {forests
     applyToDAG inName coded inDAG =
       case matching of
         Nothing    -> inDAG
-        Just match -> inDAG {nodes = nodes inDAG // [(code match, match {encoded = coded})]}
+        Just match -> inDAG {nodes = nodes inDAG // [(nodeIdx match, match {encoded = coded})]}
       where
         matching = V.find (\n -> name n == inName) $ nodes inDAG
 

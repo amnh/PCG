@@ -18,7 +18,6 @@ module Analysis.Parsimony.Binary.Constraints where
 import Bio.Character.Dynamic.Coded
 import Bio.Metadata
 import Bio.PhyloGraph.Forest
-import Bio.PhyloGraph.Network
 import Bio.PhyloGraph.Node ()
 import Bio.PhyloGraph.Node.Encoded
 import Bio.PhyloGraph.Node.Final
@@ -26,13 +25,8 @@ import Bio.PhyloGraph.Node.Preliminary
 import Bio.PhyloGraph.Solution
 import Bio.PhyloGraph.Tree.Referential
 import Bio.PhyloGraph.Tree.Binary
-import Bio.PhyloGraph.Tree.Rose
---import Bio.PhyloGraph.Network.Subsettable
 import Data.Bits
 import Data.Function.Memoize
-import Data.Matrix.NotStupid (Matrix, nrows, ncols, setElem)
-import Data.Maybe
-import Data.Monoid
 
 --TODO: Seriously?
 type SolutionConstraint' r f t n s m = (GeneralSolution r f, ForestConstraint' f t n s, MetadataSolution r m, Metadata m s)
