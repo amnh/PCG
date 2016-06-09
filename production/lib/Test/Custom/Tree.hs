@@ -153,20 +153,17 @@ instance Show TestingDecoration where
 
 -- | Neat 2-dimensional drawing of a tree.
 drawTreeMultiLine :: Tree String -> String
-drawTreeMultiLine = draw
+drawTreeMultiLine = unlines . draw
 
-draw :: Tree String -> String
-draw (Node x xs) = lineId x <> drawSubTrees xs
+draw :: Tree String -> [String]
+draw (Node x xs) = lines x <> drawSubTrees xs
   where
     drawSubTrees [] = []
     drawSubTrees [t] =
-      "|\n" <> shift "`- " "   " (draw t)
+      "|" : shift "`- " "   " (draw t)
     drawSubTrees (t:ts) =
-      "|\n" <> shift "+- " "|  " (draw t) <> drawSubTrees ts
-
-    shift first other = unlines . Prelude.zipWith (<>) (first : repeat other) . lines
-
-    lineId = unlines . lines
+      "|" : shift "+- " "|  " (draw t) <> drawSubTrees ts
+    shift first other = Prelude.zipWith (<>) (first : repeat other)
 
 renderDynamicCharacter :: DynamicChar -> String
 renderDynamicCharacter char
