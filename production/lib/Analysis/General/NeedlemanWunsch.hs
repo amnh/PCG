@@ -23,6 +23,7 @@ import Data.Foldable         (minimumBy)
 import Data.Function.Memoize
 import Data.Key              ((!))
 import Data.Matrix.NotStupid (Matrix, getElem, nrows, ncols, matrix)
+import Data.MonoTraversable
 import Data.Ord
 import Data.Vector           (Vector)
 
@@ -131,7 +132,6 @@ traceback alignMat' char1' char2' = (fromChars $ reverse t1, fromChars $ reverse
 
 -- | Simple function to get the cost from an alignment matrix
 getMatrixCost :: AlignMatrix s -> Double
---getMatrixCost inAlign | trace ("Get cost " ++ show (nrows inAlign) ++ " " ++ show (ncols inAlign)) False = undefined
 getMatrixCost inAlign = c
     where (c, _, _) = getElem (nrows inAlign - 1) (ncols inAlign - 1) inAlign
 
@@ -140,42 +140,43 @@ getMatrixCost inAlign = c
 -- This also means that there are a bunch of places below that could be using EDC class methods that are no longer.
 -- The same will be true in IA.
 -- | Memoized wrapper of the overlap function
-getOverlap :: (Metadata m s) => BitVector -> BitVector -> m -> (BitVector, Double)
---getOverlap inChar1 inChar2 meta | trace ("getOverlap on " ++ show inChar1 ++", " ++ show inChar2) False = undefined
+getOverlap :: (EncodableDynamicCharacter s, Metadata m s) => Element s -> Element s -> m -> (Element s, Double)
 getOverlap inChar1 inChar2 meta = result
     where
         result = memoize2 (overlap meta) inChar1 inChar2
         -- | Gets the overlap state: intersect if possible and union if that's empty
         -- Takes two sequences and returns another
-        overlap :: (Metadata m s) => m -> BitVector -> BitVector -> (BitVector, Double)
-        overlap inMeta char1 char2
-            | 0 == char1 || 0 == char2 = --trace ("overlap case 1: equals 0 ") $
-                                            (zeroBitVec, 0)
-            | char1 .&. char2 == 0 = --trace ("overlap case 2: and empty " ++ show allPossible) $
-                                        foldr1 ambigChoice allPossible
-            | otherwise = --trace ("overlap case 3: and nonempty") $
-                            (char1 .&. char2, 0)
-            where
-                alphLen    = width char1
-                zeroBitVec = --trace ("alphlen " ++ show alphLen) $
-                                bitVec (width char1) (0 :: Integer)
-                gap = setBit zeroBitVec (alphLen - 1)
-                -- Given characters without ambiguity, determine the cost
-                -- getCost :: SeqConstraint' s => CostStructure -> (Int, s) -> (Int, s) -> (s, Double)
-                --getCost c (p1, _) (p2, _) | trace ("getCost on " ++ show c ++ " at pos " ++ show (p1, p2)) False = undefined
-                getCost (TCM mtx) (pos1, c1) (pos2, c2) = (c1 .|. c2, getElem pos1 pos2 mtx)
-                getCost (GeneralCost indel sub) (_, c1) (_, c2) = if c1 == gap || c2 == gap then (c1 .|. c2, indel) else (c1 .|. c2, sub)
-                getCost  AffineCost {} _ _ = error "Cannot apply DO algorithm on affine cost"
 
-                -- get single character subsets from both
-                getSubs fullChar = foldr (\i acc -> if testBit fullChar i then (i, setBit (zeros $ width fullChar) i) : acc else acc) mempty [0..(width fullChar)]
-                -- make possible combinations with a double fold
-                matchSubs subList oneSub = foldr (\c acc -> getCost (getCosts inMeta) c oneSub : acc) mempty subList
-                matchBoth list1 = foldr (\e acc -> matchSubs list1 e ++ acc) mempty
-                allPossible = matchBoth (getSubs char1) (getSubs char2)
-                -- now take an ambiguous minimum
-                --ambigChoice (val1, cost1) (val2, cost2) | trace ("ambigChoice on " ++ show val1 ++ show val2) False = undefined
-                ambigChoice (val1, cost1) (val2, cost2)
-                    | cost1 == cost2 = (val1 .|. val2, cost1)
-                    | cost1 < cost2 = (val1, cost1)
-                    | otherwise = (val2, cost2)
+overlap :: (EncodableDynamicCharacter s, Metadata m s) => m -> Element s -> Element s -> (Element s, Double)
+overlap inMeta char1 char2
+    | 0 == char1 || 0 == char2 = (zeroBitVec, 0)
+    | char1 .&. char2 == 0 = foldr1 ambigChoice allPossible
+    | otherwise = (char1 .&. char2, 0)
+    where
+        alphLen    = width char1
+        zeroBitVec = bitVec (width char1) (0 :: Integer)
+        
+
+        -- get single character subsets from both
+        getSubs fullChar = foldr (\i acc -> if testBit fullChar i then (i, setBit (zeros $ width fullChar) i) : acc else acc) mempty [0..(width fullChar)]
+        -- make possible combinations with a double fold
+        matchSubs subList oneSub = foldr (\c acc -> getCost (getCosts inMeta) c oneSub : acc) mempty subList
+        matchBoth list1 = foldr (\e acc -> matchSubs list1 e ++ acc) mempty
+        allPossible     = matchBoth (getSubs char1) (getSubs char2)
+        -- now take an ambiguous minimum
+        ambigChoice (val1, cost1) (val2, cost2)
+            | cost1 == cost2 = (val1 .|. val2, cost1)
+            | cost1 < cost2 = (val1, cost1)
+            | otherwise = (val2, cost2)
+
+-- Given characters without ambiguity, determine the cost
+getCost :: EncodableDynamicCharacter s => CostStructure -> (Int, s) -> (Int, s) -> (s, Double)
+getCost costs seqTup1 seqTup2 = 
+    case (costs, seqTup1, seqTup2) of
+        (AffineCost {}        , _         , _         ) -> error "Cannot apply DO algorithm on affine cost" 
+        (TCM mtx              , (pos1, c1), (pos2, c2)) -> (c1 .|. c2, getElem pos1 pos2 mtx)
+        (GeneralCost indel sub, (_   , c1), (_   , c2)) -> if c1 == gap || c2 == gap 
+                                                           then (c1 .|. c2, indel) 
+                                                           else (c1 .|. c2, sub)
+    where
+        gap = gapChar $ snd seqTup1
