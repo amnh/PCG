@@ -132,7 +132,7 @@ sameRef (TT x) (TT y) = ref x == ref y
     ref = refEquality . rootLabel
 
 instance Show SimpleTree where
-  show (TT x) = drawTree $ show <$> x
+  show (TT x) = drawTreeMultiLine $ show <$> x
 
 instance Show TestingDecoration where
   show decoration = intercalate "\n" $ catMaybes renderedDecorations
@@ -149,6 +149,24 @@ instance Show TestingDecoration where
       g prefix shown = prefix <> ": " <> shown --intercalate "\n" $ (prefix <> ": " <> y) : (("  " <>) <$> zs)
 --        where
 --          (x:y:zs) = lines shown :: [String]
+
+
+-- | Neat 2-dimensional drawing of a tree.
+drawTreeMultiLine :: Tree String -> String
+drawTreeMultiLine = draw
+
+draw :: Tree String -> String
+draw (Node x xs) = lineId x <> drawSubTrees xs
+  where
+    drawSubTrees [] = []
+    drawSubTrees [t] =
+      "|\n" <> shift "`- " "   " (draw t)
+    drawSubTrees (t:ts) =
+      "|\n" <> shift "+- " "|  " (draw t) <> drawSubTrees ts
+
+    shift first other = unlines . Prelude.zipWith (<>) (first : repeat other) . lines
+
+    lineId = unlines . lines
 
 renderDynamicCharacter :: DynamicChar -> String
 renderDynamicCharacter char
