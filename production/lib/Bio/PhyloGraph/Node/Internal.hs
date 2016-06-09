@@ -30,7 +30,7 @@ import           Data.Ord ()
 import           Test.Tasty.QuickCheck
 
 -- | A node data structure holding all the necessary info (add verbose statement about what each field is)
-data Node = Node  { code        :: Int
+data Node = Node  { nodeIdx     :: Int
                   , name        :: String
                   , isRoot      :: Bool
                   , isLeaf      :: Bool
@@ -86,7 +86,7 @@ instance IN.IANode Node where
   setHomologies n h = n {iaHomology = h}
 
 instance RefNode Node where
-  getCode = code
+  getCode = nodeIdx
 
 instance Arbitrary Node where
     arbitrary = do
@@ -113,7 +113,7 @@ generateLeavesDO alphabet taxaCount = do
         generateLeaf sequenceLength i = do
             sequenceOfEncodedDynamicChars <- V.fromList <$> vectorOf sequenceLength generateDynamicCharacter 
             pure Node 
-                 { code        = i
+                 { nodeIdx     = i
                  , name        = show i
                  , isRoot      = False
                  , isLeaf      = True

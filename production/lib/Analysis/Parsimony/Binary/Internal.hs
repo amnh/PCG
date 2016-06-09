@@ -18,8 +18,6 @@ module Analysis.Parsimony.Binary.Internal where
 import Analysis.Parsimony.Binary.Constraints
 import Analysis.Parsimony.Binary.DirectOptimization
 import Analysis.Parsimony.Binary.Fitch
---import Analysis.Parsimony.Binary.SequentialAlign
-import Bio.Character.Dynamic.Coded
 import Bio.Metadata
 import Bio.PhyloGraph.Forest
 import Bio.PhyloGraph.Network
@@ -28,12 +26,8 @@ import Bio.PhyloGraph.Node.Encoded
 import Bio.PhyloGraph.Node.Final
 import Bio.PhyloGraph.Node.Preliminary
 import Bio.PhyloGraph.Solution
-import Bio.PhyloGraph.Tree.Referential
 import Bio.PhyloGraph.Tree.Binary
 import Bio.PhyloGraph.Tree.Rose
---import Bio.PhyloGraph.Network.Subsettable
-import Data.Bits
-import Data.Function.Memoize
 import Data.Matrix.NotStupid (Matrix, nrows, ncols, setElem)
 import Data.Maybe
 import Data.Monoid

@@ -119,10 +119,10 @@ integrityCheckSolution sol = ("Solution:\n" <>) . unlines' $ f <#$> getForests s
                 prefix x = " * DAG " <> show j <> " integrity check: " <> x
                 (failures, raw) = foldrWithKey h accum $ nodes dag 
                 accum = (0, []) :: (Int, [String])
-                h k e (incorrect, xs) = ( if   k /= code e
+                h k e (incorrect, xs) = ( if   k /= nodeIdx e
                                           then incorrect + 1
                                           else incorrect
-                                        , show (code e) : xs
+                                        , show (nodeIdx e) : xs
                                         )
                 wrap x = "[" <> x <> "]"
 
