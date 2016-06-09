@@ -28,7 +28,7 @@ module Bio.Character.Dynamic.Coded.Internal
 
 import           Bio.Character.Dynamic.Coded.Class
 import           Bio.Character.Parsed
-import           Control.DeepSeq
+--import           Control.DeepSeq
 import           Data.Alphabet
 import           Data.BitMatrix
 import           Data.Key
@@ -125,6 +125,8 @@ instance EncodableStaticCharacter BitVector where
   -- We need the first element of the alphabet to correspond to the least significant bit.
   -- Hence foldl, don't try foldMap or toList & fmap without careful thought.
   encodeChar alphabet ambiguity = fromBits $ foldl' (\xs x -> (x `elem` ambiguity) : xs) [] alphabet
+
+  stateCount = width
 
 instance EncodableDynamicCharacter DynamicChar where
 

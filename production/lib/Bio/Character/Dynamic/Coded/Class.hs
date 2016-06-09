@@ -33,6 +33,7 @@ class Bits b => EncodableStaticCharacter b where
 --  gapChar    ::  Eq a              => Alphabet a -> b
   decodeChar ::  Eq a              => Alphabet a -> b   -> [a]
   encodeChar :: (Eq a, Foldable t) => Alphabet a -> t a -> b
+  stateCount :: b -> Int
 
 {- LAWS:
  - decodeMany alphabet . encodeMany alphabet == fmap toList . toList
