@@ -319,17 +319,17 @@ instance Monoid MemoizedEvents where
   (Memo (a,b,c)) `mappend` (Memo (x,y,z)) = Memo (a<>x, b<>y, c<>z)
 -}
 
-newtype DeletionEvents = DE (IntMap Int)
+newtype DeletionEvents = DE IntSet
 instance Monoid DeletionEvents where
   mempty = DE mempty
-  (DE ancestorSet) `mappend` (DE descendantSet) = DE $ incrementedAncestorSet <> descendantSet
+  (DE ancestorSet) `mappend` (DE descendantSet) = DE $ incrementedDescendantSet <> ancestorSet
     where
-      incrementedAncestorSet = foldlWithKey' f ancestorSet descendantSet 
-      f acc i desc = foldlWithKey' g mempty acc
+      incrementedDescendantSet = ofoldl' f descendantSet ancestorSet
+      f acc anscestorIndex  = ofoldl' g mempty acc
         where
-          g im k v
-            | v >= desc = IM.insert (k + 1) v im
-            | otherwise = IM.insert  k      v im
+          g is descendantIndex
+            | anscestorIndex <= descendantIndex = IS.insert (descendantIndex + 1) is
+            | otherwise                         = IS.insert  descendantIndex      is
 
 newtype InsertionEvents = IE (IntMap Int)
 instance Monoid InsertionEvents where
@@ -346,12 +346,15 @@ instance Monoid InsertionEvents where
 numeration :: (Eq n, TreeConstraint t n e s) => t -> t
 numeration tree = tree
   where
+    -- | Precomputations used for reference in the Memoization
     rootNode        = root tree
     enumeratedNodes = enumerateNodes tree
     nodeCount       = length enumeratedNodes
     rootIndex       = locateRoot enumeratedNodes rootNode
     childMapping    = gatherChildren enumeratedNodes tree
     parentMapping   = gatherParents  childMapping    rootIndex
+
+    -- | Memoized multi-directional tree traversal
     homologyMemoize :: Matrix MemoizedEvents
     homologyMemoize = matrix nodeCount nodeCount opt
       where
@@ -421,7 +424,7 @@ gatherSubtree = undefined
 -}
 
 comparativeIndelEvents :: SeqConstraint s => s -> s -> (DeletionEvents, InsertionEvents)                                                               
-comparativeIndelEvents ancestorSeq descendantSeq = (deletionEvents, insertionEvents)                                          
+comparativeIndelEvents _ancestorSeq _descendantSeq = (deletionEvents, insertionEvents)                                          
   where
     deletionEvents  = mempty
     insertionEvents = mempty
