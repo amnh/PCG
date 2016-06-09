@@ -19,8 +19,8 @@ module Analysis.Parsimony.Binary.Optimization ( solutionOptimization
                                               ) where 
 
 import Analysis.Parsimony.Binary.Internal
-import Analysis.Parsimony.Binary.Fitch
-import Analysis.Parsimony.Binary.DirectOptimization
-import Analysis.Parsimony.Binary.SequentialAlign
+--import Analysis.Parsimony.Binary.Fitch
+--import Analysis.Parsimony.Binary.DirectOptimization
+--import Analysis.Parsimony.Binary.SequentialAlign
 
 

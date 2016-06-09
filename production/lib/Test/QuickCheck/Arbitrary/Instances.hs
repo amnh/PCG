@@ -14,8 +14,6 @@
 
 module Test.QuickCheck.Arbitrary.Instances where
 
-import           Data.IntSet      (IntSet)
-import qualified Data.IntSet as IS
 import           Data.Vector      (Vector)
 import qualified Data.Vector as V (fromList)
 import           Test.QuickCheck

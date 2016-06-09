@@ -28,7 +28,7 @@ module Bio.Character.Dynamic.Coded.Internal
 
 import           Bio.Character.Dynamic.Coded.Class
 import           Bio.Character.Parsed
-import           Control.DeepSeq
+--import           Control.DeepSeq
 import           Data.Alphabet
 import           Data.BitMatrix
 import           Data.Key
