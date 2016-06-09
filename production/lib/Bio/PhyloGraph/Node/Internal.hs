@@ -90,15 +90,15 @@ instance RefNode Node where
 
 instance Arbitrary Node where
     arbitrary = do
-        c      <- arbitrary :: Gen Int
-        n      <- arbitrary :: Gen String
-        root   <- arbitrary :: Gen Bool
-        leaf   <- arbitrary :: Gen Bool
-        child  <- listOf (arbitrary :: Gen Int)
-        parent <- listOf $ suchThat arbitrary (not . flip elem child)
-        groupOfSequences   <- vectorOf 10 arbitrary
-        c2     <- arbitrary :: Gen Double
-        c3     <- arbitrary :: Gen Double
+        c                <- arbitrary :: Gen Int
+        n                <- arbitrary :: Gen String
+        root             <- arbitrary :: Gen Bool
+        leaf             <- arbitrary :: Gen Bool
+        child            <- listOf (arbitrary :: Gen Int)
+        parent           <- listOf $ suchThat arbitrary (not . flip elem child)
+        groupOfSequences <- vectorOf 10 arbitrary
+        c2               <- arbitrary :: Gen Double
+        c3               <- arbitrary :: Gen Double
         pure $ Node c n root leaf child parent (head groupOfSequences ) (groupOfSequences !! 1) (groupOfSequences !! 2) (groupOfSequences !! 3) (groupOfSequences !! 4) (groupOfSequences !! 5) (groupOfSequences !! 6) (groupOfSequences !! 7) (groupOfSequences !! 8) (groupOfSequences !! 9) mempty c2 c3
 
 generateLeavesDO :: Alphabet String -> Int -> Gen [Node]

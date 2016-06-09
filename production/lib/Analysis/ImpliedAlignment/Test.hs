@@ -241,8 +241,8 @@ newtype GoodParsedChar
 
 instance Arbitrary GoodParsedChar where
   arbitrary = do
-    symbols  <- getNonEmpty <$> arbitrary :: Gen [String]
-    let ambiguityGroupGenerator = sublistOf symbols `suchThat` (not . null)
-    someAmbiguityGroups <- V.fromList <$> listOf1 ambiguityGroupGenerator
+    symbols                     <- getNonEmpty <$> arbitrary :: Gen [String]
+    let ambiguityGroupGenerator =  sublistOf symbols `suchThat` (not . null)
+    someAmbiguityGroups         <- V.fromList <$> listOf1 ambiguityGroupGenerator
     pure $ GoodParsedChar someAmbiguityGroups
 

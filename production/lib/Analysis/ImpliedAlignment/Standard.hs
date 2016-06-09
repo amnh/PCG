@@ -132,16 +132,17 @@ numeratePreorder initTree initNode inMeta curCounts
         where
             -- Deal with the root case by making sure it gets default homologies
             inTree                        = if nodeIsRoot initNode initTree
-                                                then initTree `update` [setHomologies initNode defaultHomologs]
-                                                else initTree
+                                            then initTree `update` [setHomologies initNode defaultHomologs]
+                                            else initTree
             curNode                       = getNthNode inTree . fromJust $ getNodeIdx initNode inTree
             curSeqs                       = getForAlign curNode
             isLeafNode                    = leftOnly && rightOnly
             leftOnly                      = isNothing $ rightChild curNode inTree
             rightOnly                     = isNothing $ leftChild curNode inTree
             defaultHomologs               = if V.length curSeqs == 0 
-                                                then V.replicate (V.length inMeta) mempty 
-                                                else imap (\i _ -> V.enumFromN 0 (numChars (curSeqs V.! i))) inMeta
+                                            then V.replicate (V.length inMeta) mempty 
+                                            else imap (\i _ -> V.enumFromN 0 (numChars (curSeqs V.! i))) inMeta
+            --curNode = getNthNode inTree {- . fromJust -} $ getCode initNode --inTree
             propagateIt tree child events = tree' `update` [child]
                                                 where tree' = backPropagation tree child events
             alignAndNumerate n1 n2        = numerateNode n1Align n2Align
@@ -224,7 +225,6 @@ numerateNode ancestorNode childNode initCounters = (setHomologies childNode homo
 
 
 numerateOne :: SeqConstraint s => s -> s -> Counter -> (Homologies, Counter, IntSet)
---numerateOne ancestorSeq descendantSeq ancestorHomologies initialCounter | trace ("numerateOne on " ++ show ancestorSeq ++" and " ++ show descendantSeq) False = undefined
 numerateOne ancestorSeq descendantSeq (maxLen, initialCounter) = (descendantHomologies, (newLen, counter'), insertionEvents)
   where
     gapCharacter = gapChar descendantSeq

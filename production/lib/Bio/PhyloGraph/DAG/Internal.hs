@@ -26,6 +26,7 @@ import           Bio.PhyloGraph.Forest
 import qualified Bio.PhyloGraph.Network             as N
 import qualified Bio.PhyloGraph.Network.Subsettable as SN
 import           Bio.PhyloGraph.Node
+import           Bio.PhyloGraph.Node.Referential
 import           Bio.PhyloGraph.Node.Topological          (TopoNode)
 import qualified Bio.PhyloGraph.Node.Topological    as TN
 import qualified Bio.PhyloGraph.Tree.EdgeAware      as ET
@@ -44,13 +45,13 @@ import qualified Data.IntSet                        as IS
 import           Data.IntMap                               (IntMap)
 import qualified Data.IntMap                        as IM
 import           Data.Key
-import           Data.List                                 (sort)
+import           Data.List                                 (elemIndex,sort)
 import           Data.Map                                  (Map)
 import qualified Data.Map                           as M
 import           Data.Maybe
 import           Data.Monoid
 import           Data.MonoTraversable
-import           Data.Vector                               ((//), Vector, elemIndex)
+import           Data.Vector                               ((//), Vector)
 import qualified Data.Vector                        as V
 import qualified File.Format.Newick                 as New
 import           Prelude                            hiding (lookup, zip)
@@ -77,13 +78,6 @@ data TopoDAG
    = TopoDAG 
    { structure :: Topo
    }
-
-instance StandardDAG DAG NodeInfo EdgeSet where
-    getNodes       = nodes
-    setNodes inD n = inD {nodes = n}
-    getEdges       = edges
-    setEdges inD e = inD {edges = e}
-    getRoot  inD   = nodes inD V.! root inD
 
 instance Arbitrary DAG where
   arbitrary = binaryTreeToDAG <$> (arbitrary :: Gen (TestingBinaryTree Node))
@@ -194,18 +188,18 @@ instance Monoid TopoDAG where
     mappend (TopoDAG topo1) (TopoDAG topo2) = TopoDAG $ topo1 { TN.children = topo2 : TN.children topo1 }
 
 instance SN.SubsettableNetwork DAG NodeInfo where
-  appendSubtree = attachAt
-  accessSubtree = grabAt
+    appendSubtree = attachAt
+    accessSubtree = grabAt
 
 -- | This tree knows its edges
 instance ET.EdgedTree DAG NodeInfo EdgeSet where
-  edges    n t   = edges t V.! nodeIdx n
-  setEdges n t e = t {edges = edges t // [(nodeIdx n, e)]}
+    edges    n t   = edges t V.! nodeIdx n
+    setEdges n t e = t {edges = edges t // [(nodeIdx n, e)]}
 
 -- | This particular tree is referential
 instance RT.ReferentialTree DAG NodeInfo where
-  getNodeIdx node tree = elemIndex node (nodes tree)
-  getNthNode tree pos = nodes tree V.! pos
+    getNodeIdx node tree = elemIndex node . toList $ nodes tree
+    getNthNode tree pos  = nodes tree V.! pos
 
 instance BinaryTree DAG NodeInfo where
     leftChild  n t = lookup 0 $ (\i -> nodes t V.! i) <$> children n
@@ -230,9 +224,16 @@ instance N.Network DAG NodeInfo where
           newEdge = makeEdges newNode dag
           edges2  = edges dag V.++ pure newEdge
           nodes2  = addConnections newNode (nodes dag) V.++ pure newNode
-          reroot  = if isRoot node && null (nodes dag) 
+          reroot  = if   isRoot node && null (nodes dag) 
                     then addPos 
                     else root dag
+
+instance StandardDAG DAG NodeInfo EdgeSet where
+    getNodes       = nodes
+    setNodes inD n = inD {nodes = n}
+    getEdges       = edges
+    setEdges inD e = inD {edges = e}
+    getRoot  inD   = nodes inD V.! root inD
 
 type instance Element DAG = NodeInfo
 
@@ -276,8 +277,8 @@ attachAt d1@(DAG nodes_1 edges_1 root_1) d2@(DAG nodes_2 edges_2 root_2) node_11
             -- hang and shift the nodes
             hungNodes       = nodes_2 // [( root_2
                                           , (nodes_2 V.! root_2) { isRoot = False
-                                                               , parents = [hCode]
-                                                               }
+                                                                 , parents = [hCode]
+                                                                 }
                                           )]
     
             connectN        = nodes_1  // [( hCode
@@ -297,7 +298,7 @@ attachAt d1@(DAG nodes_1 edges_1 root_1) d2@(DAG nodes_2 edges_2 root_2) node_11
             reMapOut        = IM.foldWithKey (\k val acc -> IM.insert (k + shiftNum) (reMapInfo val) acc) mempty
             reMapInfo eInfo = eInfo { origin   = allNodes V.! (nodeIdx (origin   eInfo) + shiftNum)
                                     , terminal = allNodes V.! (nodeIdx (terminal eInfo) + shiftNum)
-                                    }
+                                   }
 
             shiftEdge edge  = edge { inNodes  = IS.map (shiftNum +) (inNodes edge)
                                    , outNodes = reMapOut (outNodes edge)
@@ -354,31 +355,30 @@ fromTopo topoDag = DAG
     nodeVector :: Vector NodeInfo
     !nodeVector = V.generate (length reference) f
       where
-        f i = Node 
-            { nodeIdx        = i
-            , name        = TN.name topoRef
-            , isRoot      = null parents'
-            , isLeaf      = null children'
-            , children    = children'
-            , parents     = parents'
-            , encoded     = TN.encoded     topoRef
-            , packed      = TN.packed      topoRef
-            , preliminary = TN.preliminary topoRef
-            , final       = TN.final       topoRef
-            , temporary   = TN.temporary   topoRef
-            , aligned     = TN.aligned     topoRef
-            , random      = TN.random      topoRef
-            , union       = TN.union       topoRef
-            , single      = TN.single      topoRef
-            , gapped      = TN.gapped      topoRef
-            , iaHomology  = mempty
-            , localCost   = TN.localCost   topoRef
-            , totalCost   = TN.totalCost   topoRef
-            }
-          where
-            (parentRefs, topoRef, childRefs) = reference ! i
-            children' = otoList childRefs
-            parents'  = otoList parentRefs
+        f i = Node { nodeIdx     = i
+                   , name        = TN.name topoRef
+                   , isRoot      = null parents'
+                   , isLeaf      = null children'
+                   , children    = children'
+                   , parents     = parents'
+                   , encoded     = TN.encoded     topoRef
+                   , packed      = TN.packed      topoRef
+                   , preliminary = TN.preliminary topoRef
+                   , final       = TN.final       topoRef
+                   , temporary   = TN.temporary   topoRef
+                   , aligned     = TN.aligned     topoRef
+                   , random      = TN.random      topoRef
+                   , union       = TN.union       topoRef
+                   , single      = TN.single      topoRef
+                   , gapped      = TN.gapped      topoRef
+                   , iaHomology  = mempty
+                   , localCost   = TN.localCost   topoRef
+                   , totalCost   = TN.totalCost   topoRef
+                   }
+            where
+                (parentRefs, topoRef, childRefs) = reference ! i
+                children' = otoList childRefs
+                parents'  = otoList parentRefs
 
     -- Step 4: We generate the edge set vector
     edgeVector :: Vector EdgeSet
@@ -411,8 +411,23 @@ nodeToTopo inDAG curNode
     | otherwise = leaf {TN.children = childDAGs}
       where
           childDAGs = fmap (\i -> nodeToTopo inDAG (nodes inDAG V.! i)) (children curNode)
-          leaf = TN.TopoNode (isRoot curNode) (N.nodeIsLeaf curNode inDAG) (name curNode) mempty (encoded curNode) (packed curNode) (preliminary curNode) 
-                  (final curNode) (temporary curNode) (aligned curNode) (random curNode) (union curNode) (single curNode) (gapped curNode) (localCost curNode) (totalCost curNode)
+          leaf = TN.TopoNode
+                   (isRoot      curNode)
+                   (N.nodeIsLeaf curNode inDAG)
+                   (name        curNode)
+                   mempty
+                   (encoded     curNode)
+                   (packed      curNode)
+                   (preliminary curNode) 
+                   (final       curNode)
+                   (temporary   curNode)
+                   (aligned     curNode)
+                   (random      curNode)
+                   (union       curNode)
+                   (single      curNode)
+                   (gapped      curNode)
+                   (localCost   curNode)
+                   (totalCost   curNode)
 
 -- | makeEdges is a small function assisting attachAt
 -- it creates the edge set for a given node in the given tree
@@ -436,7 +451,10 @@ resetPos node prevDAG i =
 addConnections :: NodeInfo -> Vector NodeInfo -> Vector NodeInfo
 addConnections newNode myNodes = 
   let 
-    setIn curPos curNodes = curNodes // [(curPos, (curNodes V.! curPos) {children = nodeIdx newNode : children (curNodes V.! curPos), isLeaf = False})]
+    setIn curPos curNodes = curNodes // [(curPos, (curNodes V.! curPos) { children = nodeIdx newNode : 
+                                                                              children (curNodes V.! curPos)
+                                                                        , isLeaf = False}
+                                        )]
     withIn = foldr setIn myNodes (parents newNode)
     setOut curPos curNodes = curNodes // [(curPos, (curNodes V.! curPos) {parents = nodeIdx newNode : parents (curNodes V.! curPos), isRoot = False})]
     withOut = foldr setOut withIn (children newNode)
