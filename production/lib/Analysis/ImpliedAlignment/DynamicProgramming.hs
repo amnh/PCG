@@ -11,7 +11,7 @@
 -- Standard algorithm for implied alignment
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE AllowAmbiguousTypes, TypeFamilies #-}
+{-# LANGUAGE TypeFamilies #-}
 
 -- TODO: Make an AppliedAlignment.hs file for exposure of appropriate functions
 
@@ -21,7 +21,6 @@ import           Analysis.General.NeedlemanWunsch hiding (SeqConstraint)
 import           Analysis.ImpliedAlignment.Internal
 import           Analysis.Parsimony.Binary.Internal (allOptimization)
 import           Bio.Metadata
---import           Bio.PhyloGraph.DAG    hiding (code, root)
 import           Bio.PhyloGraph.Forest
 import           Bio.PhyloGraph.Network
 import           Bio.PhyloGraph.Node   hiding (children, name)
@@ -67,14 +66,12 @@ newtype MutationAccumulator = Accum (IntMap Int, Int, Int, Int, Int, IntSet)
 -- takes a solution
 -- returns an AlignmentSolution
 iaSolution :: SolutionConstraint r m f t n e s => r -> AlignmentSolution s
---iaSolution inSolution | trace ("iaSolution " ++ show inSolution) False = undefined
 iaSolution inSolution = fmap (`iaForest` getMetadata inSolution) (getForests inSolution)
 
 -- | Simple wrapper to do an IA over a forest
 -- takes in a forest and some metadata
 -- returns an alignment forest
 iaForest :: (ForestConstraint f t n e s, Metadata m s) => f -> Vector m -> AlignmentForest s
---iaForest inForest inMeta | trace ("iaForest ")  False = undefined
 iaForest inForest inMeta = fmap (`impliedAlign` inMeta) (trees inForest)
 
 -- TODO: used concrete BitVector type instead of something more appropriate, like EncodableDynamicCharacter. 
@@ -85,13 +82,11 @@ iaForest inForest inMeta = fmap (`impliedAlign` inMeta) (trees inForest)
 -- returns an alignment object (an intmap from the leaf codes to the aligned sequence)
 -- TODO: Consider building the alignment at each step of a postorder rather than grabbing wholesale
 impliedAlign :: (TreeConstraint t n e s, Metadata m s) => t -> Vector m -> Alignment s
---impliedAlign inTree inMeta | trace ("impliedAlign with tree " ++ show inTree) False = undefined
 impliedAlign inTree inMeta = extractAlign numerated inMeta
     where
         numerated = numeratePreorder inTree (root inTree) inMeta (V.replicate (length inMeta) (0, 0))
 
 extractAlign :: (TreeConstraint t n e s, Metadata m s) => (Counts, t) -> Vector m -> Alignment s
---extractAlign (lens, numeratedTree) inMeta | trace ("extract alignments " ++ show numeratedTree) False = undefined
 extractAlign (lens, numeratedTree) _inMeta = foldr (\n acc -> insert (fromJust $ getNodeIdx n numeratedTree) (makeAlignment n lens) acc) mempty allLeaves
     where
       allLeaves = filter (`nodeIsLeaf` numeratedTree) allNodes
@@ -101,7 +96,6 @@ extractAlign (lens, numeratedTree) _inMeta = foldr (\n acc -> insert (fromJust $
 -- Takes in a Node
 -- returns a vector of characters
 makeAlignment :: (NodeConstraint n s) => n -> Counts -> Vector s
---makeAlignment n seqLens | trace ("make alignment on n " ++ show n ++ " with lens " ++ show seqLens) False = undefined
 makeAlignment n seqLens = makeAlign (getFinalGapped n) (getHomologies n)
     where
         --makeAlign :: Vector s -> HomologyTrace -> Vector s
@@ -121,7 +115,6 @@ makeAlignment n seqLens = makeAlign (getFinalGapped n) (getHomologies n)
 -- outputs a resulting vector of counters and a tree with the assignments
 -- TODO: something seems off about doing the DO twice here
 numeratePreorder :: (TreeConstraint t n e s, Metadata m s) => t -> n -> Vector m -> Counts -> (Counts, t)
---numeratePreorder initTree curNode _ _ | trace ("numeratePreorder at " ++ show initTree) False = undefined
 numeratePreorder initTree initNode inMeta curCounts
     | isLeafNode =  (curCounts, inTree)
     | leftOnly = --trace "left only case" $
@@ -136,7 +129,7 @@ numeratePreorder initTree initNode inMeta curCounts
             editedTreeRight                                    = propagateIt inTree rightChildHomolog insertionEvents
             (rightRecurseCount, rightRecurseTree)              = numeratePreorder editedTreeRight rightChildHomolog inMeta counterRight
         in (rightRecurseCount, rightRecurseTree)
-    | otherwise = --trace "two children case" $
+    | otherwise =
         let
             ( leftChildHomolog, counterLeft , insertionEventsLeft)  = alignAndNumerate curNode (fromJust $ leftChild curNode inTree) curCounts inMeta
             backPropagatedTree                                      = backPropagation inTree leftChildHomolog insertionEventsLeft
@@ -163,16 +156,15 @@ numeratePreorder initTree initNode inMeta curCounts
             isLeafNode = leftOnly && rightOnly
             leftOnly   = isNothing $ rightChild curNode inTree
             rightOnly  = isNothing $ leftChild  curNode inTree
-            defaultHomologs = if V.length curSeqs == 0 then V.replicate (V.length inMeta) mempty --trace ("defaultHomologs " ++ show (V.length inMeta) ++ show (V.length curSeqs))
+            defaultHomologs = if V.length curSeqs == 0 then V.replicate (V.length inMeta) mempty
                                 else imap (\i _ -> V.enumFromN 0 (numChars (curSeqs V.! i))) inMeta
             propagateIt tree child events = tree' `update` [child]
-                                            where tree' = backPropagation tree child events
-            alignAndNumerate n1 n2 = {-trace ("alignment result " ++ show n1Align) $-} numerateNode n1Align n2Align
-                                                where (n1Align, n2Align) = alignAndAssign n1 n2
+               where tree' = backPropagation tree child events
+            alignAndNumerate n1 n2 = numerateNode n1Align n2Align
+               where (n1Align, n2Align) = alignAndAssign n1 n2
 
             -- Simple wrapper to align and assign using DO
             --alignAndAssign :: NodeConstraint n s => n -> n -> (n, n)
-
             alignAndAssign node1 node2 = (setFinalGapped (fst allUnzip) node1, setFinalGapped (snd allUnzip) node2)
                 where
                     final1 = getForAlign node1
@@ -186,7 +178,6 @@ numeratePreorder initTree initNode inMeta curCounts
 -- takes in a tree, a current node, and a vector of insertion event sets
 -- return a tree with the insertion events incorporated
 backPropagation :: TreeConstraint t n e s  => t -> n -> Vector IntSet -> t
---backPropagation tree node insertionEvents | trace ("backPropagation at node " ++ show (getCode node)) False = undefined
 backPropagation tree node insertionEvents
   | all onull insertionEvents = tree
   | otherwise =
@@ -241,16 +232,12 @@ accountForInsertionEvents homologies insertionEvents = V.generate (length homolo
 -- given the ancestor node, ancestor node, current counter vector, and vector of metadata
 -- returns a tuple with the node with homologies incorporated, and a returned vector of counters
 numerateNode :: (NodeConstraint n s, Metadata m s) => n -> n -> Counts -> Vector m -> (n, Counts, Vector IntSet) 
---numerateNode ancestorNode childNode initCounters _ | trace ("numerateNode on " ++ show (getCode ancestorNode) ++" and " ++ show (getCode childNode) ++ ", " ++ show initCounters) False = undefined
-numerateNode ancestorNode childNode initCounters inMeta = {-trace ("numeration result " ++ show homologs) $-} (setHomologies childNode homologs, counts, insertionEvents)
+numerateNode ancestorNode childNode initCounters inMeta = (setHomologies childNode homologs, counts, insertionEvents)
         where
-            numeration = --trace ("numeration zip on " ++ show (ancestorNode) ++" and " ++ show (childNode)) 
-                          V.zipWith3 numerateOne (getForAlign ancestorNode) (getForAlign childNode) initCounters 
-            (homologs, counts, insertionEvents) = {-trace ("numerate results " ++ show numeration) $-} V.unzip3 numeration
-
+            numeration = V.zipWith3 numerateOne (getForAlign ancestorNode) (getForAlign childNode) initCounters 
+            (homologs, counts, insertionEvents) = V.unzip3 numeration
 
 numerateOne :: SeqConstraint s => s -> s -> Counter -> (Homologies, Counter, IntSet)
---numerateOne ancestorSeq descendantSeq ancestorHomologies initialCounter | trace ("numerateOne on " ++ show ancestorSeq ++" and " ++ show descendantSeq) False = undefined
 numerateOne ancestorSeq descendantSeq (maxLen, initialCounter) = (descendantHomologies, (newLen, counter'), insertionEvents)
   where
     gapCharacter = gapChar descendantSeq
@@ -324,11 +311,13 @@ type AncestorDeletionEvents    = IntSet
 type AncestorInsertionEvents   = IntSet
 type DescendantInsertionEvents = IntSet
 
-newtype MemoizedEvents = Memo (DeletionEvents, AncestorInsertionEvents, InsertionEvents)
+type MemoizedEvents = (DeletionEvents, AncestorInsertionEvents, InsertionEvents)
 
+{-
 instance Monoid MemoizedEvents where
   mempty  = Memo (mempty, mempty, mempty)
   (Memo (a,b,c)) `mappend` (Memo (x,y,z)) = Memo (a<>x, b<>y, c<>z)
+-}
 
 newtype DeletionEvents = DE (IntMap Int)
 instance Monoid DeletionEvents where
@@ -360,7 +349,7 @@ numeration tree = tree
     rootNode        = root tree
     enumeratedNodes = enumerateNodes tree
     nodeCount       = length enumeratedNodes
-    rootIndex       = 0 -- locateRoot enumeratedNodes rootNode
+    rootIndex       = locateRoot enumeratedNodes rootNode
     childMapping    = gatherChildren enumeratedNodes tree
     parentMapping   = gatherParents  childMapping    rootIndex
     homologyMemoize :: Matrix MemoizedEvents
@@ -368,25 +357,22 @@ numeration tree = tree
       where
         opt (i,j)
           -- Base case with root node
-          | i == rootIndex && j == rootIndex  = Memo (mempty, mempty, allDescendantInsertion)
+          | i == rootIndex && j == rootIndex  = (mempty, mempty, allDescendantInsertion)
           -- Is a child of the root node
-          | i == rootIndex                    = Memo
-                                                ( ancestoralDeletions    <> deletes
+          | i == rootIndex                    = ( ancestoralDeletions    <> deletes
                                                 , IS.fromList . IM.keys $ (\(IE x) -> x) rootInsertions
                                                 , allDescendantInsertion <> inserts
                                                 )
           -- In the lower triange, never referenced
-          | i >  j                            = Memo (mempty, mempty, mempty)
+          | i >  j                            = (mempty, mempty, mempty)
           -- Not a direct descendant
-          | j `onotElem` (childMapping V.! i) = Memo (mempty, mempty, mempty)
+          | j `onotElem` (childMapping V.! i) = (mempty, mempty, mempty)
           -- Accumulate insertions & deletions.
-          | i == j                            = Memo
-                                                ( ancestoralDeletions
+          | i == j                            = ( ancestoralDeletions
                                                 , ancestoralInsertions
                                                 , mempty
                                                 )
-          | otherwise                         = Memo
-                                                ( ancestoralDeletions    <> deletes
+          | otherwise                         = ( ancestoralDeletions    <> deletes
                                                 , ancestoralInsertions   <> (\(IE x) -> IS.fromList $ IM.keys x) inserts
                                                 , allDescendantInsertion <> inserts
                                                 )
@@ -394,17 +380,17 @@ numeration tree = tree
             (deletes, inserts) = comparativeIndelEvents parentCharacter childCharacter 
             parentCharacter = fromMaybe (error "No perent Sequence!") . headMay . getForAlign $ enumeratedNodes V.! i
             childCharacter  = fromMaybe (error "No child sequence!" ) . headMay . getForAlign $ enumeratedNodes V.! j
-            Memo (                  _,                    _, rootInsertions) = homologyMemoize ! (0,0)
-            Memo (ancestoralDeletions, ancestoralInsertions,              _) = homologyMemoize ! (parentMapping V.! i, i) 
+            (                  _,                    _, rootInsertions) = homologyMemoize ! (0,0)
+            (ancestoralDeletions, ancestoralInsertions,              _) = homologyMemoize ! (parentMapping V.! i, i) 
             allDescendantInsertion = f `ofoldMap` (childMapping V.! i)
             f x = directChildInsertions
               where
-                Memo (_,_,directChildInsertions) = homologyMemoize ! (j, x)
+                (_,_,directChildInsertions) = homologyMemoize ! (j, x)
 
 enumerateNodes :: TreeConstraint t n e s  => t -> Vector n
 enumerateNodes tree = V.generate (numNodes tree) (getNthNode tree)
 
-locateRoot :: (Eq n, TreeConstraint t n e s) => Vector n -> n -> Int
+locateRoot :: Eq n => Vector n -> n -> Int
 locateRoot ns n = fromMaybe 0 $ V.ifoldl' f Nothing ns
   where
     f acc i e 
@@ -429,8 +415,10 @@ gatherChildren enumNodes tree = V.generate (length enumNodes) f
 gatherParents :: Vector IntSet -> Int -> Vector Int
 gatherParents = undefined
 
-gatherSubtree :: ({- Eq n, -} TreeConstraint t n e s) => Vector IntSet -> Int -> BitMatrix
+{-
+gatherSubtree :: Vector IntSet -> Int -> BitMatrix
 gatherSubtree = undefined
+-}
 
 comparativeIndelEvents :: SeqConstraint s => s -> s -> (DeletionEvents, InsertionEvents)                                                               
 comparativeIndelEvents ancestorSeq descendantSeq = (deletionEvents, insertionEvents)                                          
