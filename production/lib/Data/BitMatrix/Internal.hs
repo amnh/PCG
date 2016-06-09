@@ -29,11 +29,11 @@ import Test.QuickCheck hiding ((.&.))
 --   Exposes row based monomorphic mapping & folding.
 --
 --   It is important to note the endianness of 'BitMatrix'.
---   The bit at position (0,0) is displayed in the upper left hand corner when
+--   The bit at position @(0,0)@ is displayed in the upper left hand corner when
 --   the 'BitMatrix' is shown.
---   The bit at position (i,x) will be of less significance than position (i+1,x),
+--   The bit at position @(i,x)@ will be of less significance than position @(i+1,x)@,
 --   for the resulting xth 'BitVector' row when calling 'rows' on a 'BitMatrix'.
---   The bit at position (x,i) will be of less significance than position (x,i+1),
+--   The bit at position @(x,i)@ will be of less significance than position @(x,i+1)@,
 --   for the resulting xth 'BitVector' column when calling 'cols' on a 'BitMatrix'.
 --
 data BitMatrix
@@ -46,6 +46,8 @@ type instance Element BitMatrix = BitVector
 -- | A generating function for a 'BitMatrix'. Efficiently constructs a
 --   'BitMatrix' of the specified dimensions with each bit defined by the result
 --   of the supplied function.
+--
+--   /O(m + n)/
 --
 -- ==== __Examples__
 --
@@ -98,7 +100,8 @@ bitMatrix m n f =
         errorZeroCols   = mconcat ["the number of columns was 0 but the number of rows, ", show m, ", was positive."]
         errorZeroSuffix = "To construct the empty matrix, both rows and columns must be zero"
 
--- | Construct a 'BitMatrix' from a list of rows. 
+-- | Construct a 'BitMatrix' from a list of rows.
+--   /O(m)/
 fromRows :: Foldable t => t BitVector -> BitMatrix
 fromRows xs
   | equalityOf width xs = result
@@ -118,16 +121,19 @@ fromRows xs
                                             else foldr1 (bvCat) $ y:ys)
 
 -- | The number of columns in the 'BitMatrix'
+--   /O(1)/
 numCols :: BitMatrix -> Int
 numCols (BitMatrix n _) = n
 
 -- | The number of rows in the 'BitMatrix'
+--   /O(1)/
 numRows :: BitMatrix -> Int
 numRows (BitMatrix n bv)
   | n == 0    = 0
   | otherwise = width bv `div` n
 
 -- | The rows of the 'BitMatrix'
+--   /O(m)/
 rows :: BitMatrix -> [BitVector]
 rows bm@(BitMatrix nCols bv)
     |  nRows == 0
@@ -140,6 +146,7 @@ rows bm@(BitMatrix nCols bv)
 
 -- | Retreives a single row of the 'BitMatrix'.
 --   Allows for unsafe indexing.
+--   /O(1)/
 row :: BitMatrix -> Int -> BitVector
 row bm@(BitMatrix nCols bv) i
   | 0 <= i && i < nRows = bv @@ (left, right)
@@ -152,6 +159,8 @@ row bm@(BitMatrix nCols bv) i
     errorMsg = unwords ["Index", show i, "is outside the range", rangeStr]
     rangeStr = mconcat ["[0..", show nRows, "]."]
 
+-- | Determines if there are no set bits in the 'BitMatrix'
+--   /O(1)/
 isZeroMatrix :: BitMatrix -> Bool
 isZeroMatrix (BitMatrix _ bv) = nat bv == 0
 
@@ -160,6 +169,8 @@ col :: BitMatrix -> Int -> BitVector
 col = undefined -- bit twiddle or math
 -}
 
+-- | Test if a bit is set at the given indices.
+--   /O(1)/
 isSet :: BitMatrix -> (Int, Int) -> Bool
 (BitMatrix n bv) `isSet` (i,j) = bv `testBit` (n*i + j)
 
@@ -219,9 +230,11 @@ instance MonoTraversable BitMatrix where
     omapM = otraverse
     {-# INLINE omapM #-}
 
+-- | (✔)
 instance Memoizable BitMatrix where
     memoize f (BitMatrix n bv) = memoize (f . BitMatrix n) bv
 
+-- | (✔)
 instance Memoizable BV where
     memoize f char = memoize (f . bitVec w) (nat char)
       where
@@ -244,6 +257,7 @@ instance Bits BitMatrix where
     isSigned     (BitMatrix _ b)                     = isSigned b
     popCount     (BitMatrix _ b)                     = popCount b
 
+-- | Resulting matricies will have at /least/ one row and one column.
 instance Arbitrary BitMatrix where
     arbitrary = do 
         colCount <- (arbitrary :: Gen Int) `suchThat` (\x -> 0 < x && x <= 20) 
@@ -252,6 +266,7 @@ instance Arbitrary BitMatrix where
         bitRows  <- vectorOf rowCount rVal
         pure . fromRows $ bitVec colCount <$> bitRows
 
+-- | (✔)
 instance Show BitMatrix where
     show bm = headerLine <> matrixLines
       where
