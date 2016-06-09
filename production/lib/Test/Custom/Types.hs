@@ -81,31 +81,31 @@ instance Show InlineSpace where
     show (InlineSpace c) = show c
 
 -- Node type for a simple tree for testing
-data TestNode = TestNode  { code :: Int
-                          , isRoot :: Bool
-                          , isLeaf :: Bool
-                          , parents :: [Int]
-                          , children :: [Int]
-                          , encoded  :: Vector DynamicChar
+data TestNode = TestNode  { code        :: Int
+                          , isRoot      :: Bool
+                          , isLeaf      :: Bool
+                          , parents     :: [Int]
+                          , children    :: [Int]
+                          , encoded     :: Vector DynamicChar
                           , preliminary :: Vector DynamicChar
-                          , aligned :: Vector DynamicChar
-                          , temporary :: Vector DynamicChar
-                          , final    :: Vector DynamicChar
-                          , gapped   :: Vector DynamicChar
-                          , iaHomology :: IN.HomologyTrace
-                          , localCost  :: Double
-                          , totalCost :: Double
+                          , aligned     :: Vector DynamicChar
+                          , temporary   :: Vector DynamicChar
+                          , final       :: Vector DynamicChar
+                          , gapped      :: Vector DynamicChar
+                          , iaHomology  :: IN.HomologyTrace
+                          , localCost   :: Double
+                          , totalCost   :: Double
                           } deriving (Eq, Show)
 
 instance EN.EncodedNode TestNode DynamicChar where
     getEncoded = encoded
-    setEncoded n s = n {encoded = s}
+    setEncoded n s = n { encoded = s }
 
 instance FN.FinalNode TestNode DynamicChar where
     getFinal           = final
-    setFinal f n       = n {final = f}
+    setFinal f n       = n { final  = f }
     getFinalGapped     = gapped
-    setFinalGapped f n = n {gapped = f}
+    setFinalGapped f n = n { gapped = f }
 
 instance RN.PreliminaryNode TestNode DynamicChar where
     getPreliminary      = preliminary
@@ -138,7 +138,7 @@ instance N.Network TestDAG TestNode where
   addNode t n = t V.++ pure (n {code = V.length t})
 
 instance RT.ReferentialTree TestDAG TestNode where
-  code       = V.elemIndex
+  code n t      = V.elemIndex (getCode n) $ getCode <$> t
   getNthNode = (V.!)
 
 instance BinaryTree TestDAG TestNode where

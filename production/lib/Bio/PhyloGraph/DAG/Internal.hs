@@ -196,7 +196,7 @@ instance ET.EdgedTree DAG NodeInfo EdgeSet where
 
 -- | This particular tree is referential
 instance RT.ReferentialTree DAG NodeInfo where
-    code       node tree = elemIndex node . toList $ nodes tree
+    code       node tree = elemIndex (getCode node) . toList $ getCode <$> nodes tree
     getNthNode tree pos  = nodes tree V.! pos
 
 instance BinaryTree DAG NodeInfo where
