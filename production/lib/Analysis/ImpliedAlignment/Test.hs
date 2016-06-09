@@ -68,20 +68,6 @@ fullIA = testGroup "Full alignment properties" [ lenHoldsTest
             where
                 doResult2    = allOptimization 1 (pure doMeta) longerTest
                 longerTest   = V.fromList [rootTest, leftTest2, rightTest, node3, node4] 
-                leftTest2    = leftTest { T.isLeaf = False
-                                        , T.children = [3, 4]
-                                        , T.encoded = mempty
-                                        }
-                seq2c        = encodeThem . pure $ V.fromList [ ["A"]
-                                                              , ["T", "-"]
-                                                              , ["G"]
-                                                              ]
-                seq2a        = encodeThem . pure $ V.fromList [ ["A"]
-                                                              , ["T"]
-                                                              , ["A", "-"]
-                                                              , ["T", "G"]
-                                                              ]
-                seq2b        = encodeThem . pure $ V.fromList [ ["A"], ["T"], ["G"] ]
 
         checkIAResult1 = testCase "On the same cherry, IA gives the expected result" (expectedIA1 @=? iaResult1)
             where
@@ -128,6 +114,23 @@ fullIA = testGroup "Full alignment properties" [ lenHoldsTest
                                   , T.encoded = encodeThem . pure $ V.fromList 
                                       [ ["A"], ["G"] ]
                                   }
+        leftTest2      = leftTest { T.isLeaf = False
+                                  , T.children = [3, 4]
+                                  , T.encoded = mempty
+                                  }
+        seq2a          = encodeThem . pure $ V.fromList [ ["A"]
+                                                        , ["T"]
+                                                        , ["A", "-"]
+                                                        , ["T", "G"]
+                                                        ]
+        seq2b          = encodeThem . pure $ V.fromList [ ["A"]
+                                                        , ["T"]
+                                                        , ["G"]
+                                                        ]
+        seq2c          = encodeThem . pure $ V.fromList [ ["A"]
+                                                        , ["T", "-"]
+                                                        , ["G"]
+                                                        ]
         expectedDO     = V.fromList [newRoot, leftTest, rightTest]
             where
                 newRoot     = rootTest { T.preliminary = expectedSeq
@@ -145,24 +148,24 @@ fullIA = testGroup "Full alignment properties" [ lenHoldsTest
                                   ]
 
         expectedLeft = leftTest2 { T.preliminary = seq2a
-                                 , T.aligned = seq2a
-                                 , T.final = seq2b
-                                 , T.localCost = 2
-                                 , T.totalCost = 2
-                                 , T.gapped = encodeThem . pure $ V.fromList 
-                                     [["A"], ["T"], ["-"], ["G"]]
+                                 , T.aligned     = seq2a
+                                 , T.final       = seq2b
+                                 , T.localCost   = 2
+                                 , T.totalCost   = 2
+                                 , T.gapped      = encodeThem . pure $ V.fromList 
+                                                     [ ["A"], ["T"], ["-"], ["G"] ]
                                  }
         expectedRoot = rootTest { T.preliminary = seq2c
-                                , T.aligned = encodeThem . pure $ V.fromList 
-                                    [["A"], ["T", "-"], ["-"], ["G"] ]
-                                , T.localCost = 1
-                                , T.totalCost = 3
+                                , T.aligned     = encodeThem . pure $ V.fromList 
+                                                    [ ["A"], ["T", "-"], ["-"], ["G"] ]
+                                , T.localCost   = 1
+                                , T.totalCost   = 3
                                 }
 
         node3        = leftTest { T.code = 3, T.parents = [1] }
-        node4        = node3 { T.code = 4
+        node4        = node3 { T.code    = 4
                              , T.encoded = encodeThem . pure $ V.fromList 
-                                 [["A"], ["T"], ["A"], ["G"]]
+                                             [ ["A"], ["T"], ["A"], ["G"] ]
                              }
 
 
