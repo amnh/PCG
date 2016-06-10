@@ -144,39 +144,52 @@ getOverlap :: (EncodableDynamicCharacter s, Metadata m s) => Element s -> Elemen
 getOverlap inChar1 inChar2 meta = result
     where
         result = memoize2 (overlap meta) inChar1 inChar2
-        -- | Gets the overlap state: intersect if possible and union if that's empty
-        -- Takes two sequences and returns another
-
+        
+-- | Gets the overlap state: intersect if possible and union if that's empty
+-- Takes two sequences and returns another
 overlap :: (EncodableDynamicCharacter s, Metadata m s) => m -> Element s -> Element s -> (Element s, Double)
-overlap inMeta char1 char2
-    | 0 == char1 || 0 == char2 = (zeroBitVec, 0)
-    | char1 .&. char2 == 0 = foldr1 ambigChoice allPossible
-    | otherwise = (char1 .&. char2, 0)
+overlap inMeta char1 char2 = 
+    case char1 .&. char2 of 
+        0 -> foldr1 ambigChoice $ allPossible char1 char2
+        x -> (x, 0)
+    -- | 0 == char1 || 0 == char2 = (zeroBitVec, 0) -- Commented out, because nonsense. Problem for testing?
+    -- | char1 .&. char2 == 0 = foldr1 ambigChoice allPossible
+    -- | otherwise            = (char1 .&. char2, 0)
     where
         alphLen    = width char1
         zeroBitVec = bitVec (width char1) (0 :: Integer)
-        
-
-        -- get single character subsets from both
-        getSubs fullChar = foldr (\i acc -> if testBit fullChar i then (i, setBit (zeros $ width fullChar) i) : acc else acc) mempty [0..(width fullChar)]
         -- make possible combinations with a double fold
-        matchSubs subList oneSub = foldr (\c acc -> getCost (getCosts inMeta) c oneSub : acc) mempty subList
-        matchBoth list1 = foldr (\e acc -> matchSubs list1 e ++ acc) mempty
-        allPossible     = matchBoth (getSubs char1) (getSubs char2)
+        
         -- now take an ambiguous minimum
         ambigChoice (val1, cost1) (val2, cost2)
             | cost1 == cost2 = (val1 .|. val2, cost1)
             | cost1 < cost2 = (val1, cost1)
             | otherwise = (val2, cost2)
 
+-- | What does this actually do?
+allPossible :: EncodableDynamicCharacter s => Element s -> Element s -> [(Element s, Double)]
+allPossible char1 char2 = matchBoth (getSubs char1) (getSubs char2)
+    where
+        matchBoth list1 list2    = foldr (\e acc -> matchSubs e ++ acc) mempty list2
+            where
+                matchSubs oneSub = foldr (\c acc -> getCost (getCosts inMeta) c oneSub : acc) mempty list1
+
 -- Given characters without ambiguity, determine the cost
-getCost :: EncodableDynamicCharacter s => CostStructure -> (Int, s) -> (Int, s) -> (s, Double)
+getCost :: EncodableDynamicCharacter s => CostStructure -> (Int, Element s) -> (Int, Element s) -> (Element s, Double)
 getCost costs seqTup1 seqTup2 = 
     case (costs, seqTup1, seqTup2) of
         (AffineCost {}        , _         , _         ) -> error "Cannot apply DO algorithm on affine cost" 
         (TCM mtx              , (pos1, c1), (pos2, c2)) -> (c1 .|. c2, getElem pos1 pos2 mtx)
-        (GeneralCost indel sub, (_   , c1), (_   , c2)) -> if c1 == gap || c2 == gap 
-                                                           then (c1 .|. c2, indel) 
+        -- TODO: Check this logic.
+        (GeneralCost indel sub, (_   , c1), (_   , c2)) -> if indel < sub && (c1 == gap || c2 == gap)
+                                                           then (gap, indel) 
                                                            else (c1 .|. c2, sub)
     where
         gap = gapChar $ snd seqTup1
+
+-- get single-character subsets from both somethings?
+getSubs :: (EncodableDynamicCharacter s) => Element s -> [(Int, Element s)]
+getSubs fullChar = foldr (\i acc -> if testBit fullChar i 
+                                    then (i, setBit (zeros $ width fullChar) i) : acc 
+                                    else acc 
+                         ) mempty [0..(width fullChar)]
