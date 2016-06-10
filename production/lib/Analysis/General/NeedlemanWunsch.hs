@@ -52,7 +52,7 @@ needlemanWunsch char1 char2 meta = (seq1Align, seq2Align)
         (shorterChar, longerChar, _longLen) = if char1Len > char2Len
                                      then (char2, char1, char1Len)
                                      else (char1, char2, char2Len)
-        traversalMat = getAlignMat longerChar shorterChar meta
+        traversalMat = getAlignMat longerChar shorterChar (costs meta)
         (_, alignL, alignR) = traceback traversalMat shorterChar longerChar
         (seq1Align, seq2Align) = if char1Len > char2Len
                                 then (alignR, alignL)
@@ -61,8 +61,8 @@ needlemanWunsch char1 char2 meta = (seq1Align, seq2Align)
 -- | Main function to generate an alignment matrix
 -- Takes in two sequences (the longer first) and the metadata
 -- Returns an alignment matrix
-getAlignMat :: (SeqConstraint s, Metadata m s) => s -> s -> m -> AlignMatrix s
-getAlignMat char1 char2 meta = result
+getAlignMat :: (SeqConstraint s) => s -> s -> CostStructure -> AlignMatrix s
+getAlignMat char1 char2 costStruct = result
   where
     result = matrix (numChars char2 + 1) (numChars char1 + 1) generateMat
     -- | Internal generator function for the matrix
@@ -83,9 +83,9 @@ getAlignMat char1 char2 meta = result
         (leftwardValue, _, _)       = result ! (row    , col - 1)
         (diagonalValue, _, _)       = result ! (row - 1, col - 1)
         (  upwardValue, _, _)       = result ! (row - 1, col    )
-        (riteChar, riteOverlapCost) = getOverlap subChar1 gap      meta
-        (diagChar, diagOverlapCost) = getOverlap subChar1 subChar2 meta
-        (downChar, downOverlapCost) = getOverlap gap      subChar2 meta
+        (riteChar, riteOverlapCost) = getOverlap subChar1 gap      costStruct
+        (diagChar, diagOverlapCost) = getOverlap subChar1 subChar2 costStruct
+        (downChar, downOverlapCost) = getOverlap gap      subChar2 costStruct
         riteCost                    = riteOverlapCost + leftwardValue
         diagCost                    = diagOverlapCost + diagonalValue
         downCost                    = downOverlapCost +   upwardValue
@@ -140,42 +140,40 @@ getMatrixCost inAlign = c
 -- This also means that there are a bunch of places below that could be using EDC class methods that are no longer.
 -- The same will be true in IA.
 -- | Memoized wrapper of the overlap function
-getOverlap :: (EncodableDynamicCharacter s, Metadata m s) => Element s -> Element s -> m -> (Element s, Double)
-getOverlap inChar1 inChar2 meta = result
+getOverlap :: (EncodableStaticCharacter s, Memoizable s) => s -> s -> CostStructure -> (s, Double)
+getOverlap inChar1 inChar2 costStruct = result
     where
-        result = memoize2 (overlap meta) inChar1 inChar2
+        result = memoize2 (overlap costStruct) inChar1 inChar2
         
 -- | Gets the overlap state: intersect if possible and union if that's empty
 -- Takes two sequences and returns another
-overlap :: (EncodableDynamicCharacter s, Metadata m s) => m -> Element s -> Element s -> (Element s, Double)
-overlap inMeta char1 char2 = 
-    case char1 .&. char2 of 
-        0 -> foldr1 ambigChoice $ allPossible char1 char2
-        x -> (x, 0)
+overlap :: EncodableStaticCharacter s => CostStructure -> s -> s -> (s, Double)
+overlap costStruct char1 char2
+    | intersectionStates == zeroBits = foldr1 ambigChoice $ allPossible costStruct char1 char2
+    | otherwise                      = (intersectionStates, 0)
     -- | 0 == char1 || 0 == char2 = (zeroBitVec, 0) -- Commented out, because nonsense. Problem for testing?
     -- | char1 .&. char2 == 0 = foldr1 ambigChoice allPossible
     -- | otherwise            = (char1 .&. char2, 0)
     where
-        alphLen    = width char1
-        zeroBitVec = bitVec (width char1) (0 :: Integer)
+      intersectionStates = char1 .&. char2
+--        alphLen    = width char1
+--        z = char1 `xor` char1
         -- make possible combinations with a double fold
         
         -- now take an ambiguous minimum
-        ambigChoice (val1, cost1) (val2, cost2)
-            | cost1 == cost2 = (val1 .|. val2, cost1)
-            | cost1 < cost2  = (val1         , cost1)
-            | otherwise      = (val2         , cost2)
+      ambigChoice (val1, cost1) (val2, cost2)
+        | cost1 == cost2 = (val1 .|. val2, cost1)
+        | cost1 < cost2  = (val1         , cost1)
+        | otherwise      = (val2         , cost2)
 
 -- | What does this actually do?
-allPossible :: EncodableDynamicCharacter s => Element s -> Element s -> [(Element s, Double)]
-allPossible char1 char2 = matchBoth (getSubs char1) (getSubs char2)
-    where
-        matchBoth list1 list2    = foldr (\e acc -> matchSubs e ++ acc) mempty list2
-            where
-                matchSubs oneSub = foldr (\c acc -> getCost (getCosts inMeta) c oneSub : acc) mempty list1
+allPossible :: EncodableStaticCharacter s => CostStructure -> s -> s -> [(s, Double)]
+allPossible costStruct char1 char2 = [ getCost costStruct x y | x <- getSubs char1
+                                                              , y <- getSubs char2
+                                     ]
 
 -- Given characters without ambiguity, determine the cost
-getCost :: EncodableDynamicCharacter s => CostStructure -> (Int, Element s) -> (Int, Element s) -> (Element s, Double)
+getCost :: EncodableStaticCharacter s => CostStructure -> (Int, s) -> (Int, s) -> (s, Double)
 getCost costs seqTup1 seqTup2 = 
     case (costs, seqTup1, seqTup2) of
         (AffineCost {}        , _         , _         ) -> error "Cannot apply DO algorithm on affine cost" 
@@ -184,11 +182,15 @@ getCost costs seqTup1 seqTup2 =
                                                            then (c1 .|. c2, indel) 
                                                            else (c1 .|. c2, sub)
     where
-        gap = gapChar $ snd seqTup1
+      s   = snd seqTup1
+      z   = s `xor` s
+      gap = z `setBit` (stateCount s - 1)
 
 -- get single-character subsets from both somethings?
-getSubs :: (EncodableDynamicCharacter s) => Element s -> [(Int, Element s)]
+getSubs :: (EncodableStaticCharacter s) => s -> [(Int, s)]
 getSubs fullChar = foldr (\i acc -> if testBit fullChar i 
-                                    then (i, setBit (zeros $ width fullChar) i) : acc 
+                                    then (i, z `setBit` i) : acc 
                                     else acc 
-                         ) mempty [0..(width fullChar)]
+                         ) mempty [0..(stateCount fullChar)]
+  where
+    z = fullChar `xor` fullChar

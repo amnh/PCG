@@ -38,8 +38,13 @@ instance Metadata (CharacterMetadata s) s where
     getAligned        = isAligned
     getFitchMasks     = fitchMasks
     getType           = charType
-    getGapCost      m = case costs m of
-                            TCM mat           -> if length (alphabet m) > 1 then getElem 0 1 mat else 1
-                            AffineCost  g _ _ -> g
-                            GeneralCost g _   -> g
-
+    getGapCost      m =
+      
+indelCost :: CostStructure -> Double
+indelCost x =
+  case x of
+    AffineCost  g _ _ -> g
+    GeneralCost g _   -> g
+    TCM mat           -> if   numRows mat > 1
+                         then mat ! (0, numCols mat - 1)
+                         else 1
