@@ -40,6 +40,7 @@ naiveDO char1 char2 meta
             traversalMat = getAlignMat longerChar shorterChar meta
             cost = getMatrixCost traversalMat
             (gapped, left, right) = traceback traversalMat shorterChar longerChar
+            -- TODO: change to occur in traceback, to remove constant factor.
             ungapped = filterGaps gapped
             (out1, out2) = if char1Len > char2Len
                                 then (right, left)

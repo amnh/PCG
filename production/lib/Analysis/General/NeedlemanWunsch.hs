@@ -163,8 +163,8 @@ overlap inMeta char1 char2 =
         -- now take an ambiguous minimum
         ambigChoice (val1, cost1) (val2, cost2)
             | cost1 == cost2 = (val1 .|. val2, cost1)
-            | cost1 < cost2 = (val1, cost1)
-            | otherwise = (val2, cost2)
+            | cost1 < cost2  = (val1         , cost1)
+            | otherwise      = (val2         , cost2)
 
 -- | What does this actually do?
 allPossible :: EncodableDynamicCharacter s => Element s -> Element s -> [(Element s, Double)]
@@ -180,9 +180,8 @@ getCost costs seqTup1 seqTup2 =
     case (costs, seqTup1, seqTup2) of
         (AffineCost {}        , _         , _         ) -> error "Cannot apply DO algorithm on affine cost" 
         (TCM mtx              , (pos1, c1), (pos2, c2)) -> (c1 .|. c2, getElem pos1 pos2 mtx)
-        -- TODO: Check this logic.
-        (GeneralCost indel sub, (_   , c1), (_   , c2)) -> if indel < sub && (c1 == gap || c2 == gap)
-                                                           then (gap, indel) 
+        (GeneralCost indel sub, (_   , c1), (_   , c2)) -> if c1 == gap || c2 == gap 
+                                                           then (c1 .|. c2, indel) 
                                                            else (c1 .|. c2, sub)
     where
         gap = gapChar $ snd seqTup1
