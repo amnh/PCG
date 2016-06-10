@@ -58,7 +58,7 @@ defMeta = pure CharMeta
         , stateNames = mempty
         , fitchMasks = undefined
         , rootCost   = 0.0
-        , costs      = GeneralCost { indelCost = 1, subCost = 1 }
+        , costs      = GeneralCost { indelCost = 2, subCost = 1 }
         }
   
 newtype MutationAccumulator = Accum (IntMap Int, Int, Int, Int, Int, IntSet)
