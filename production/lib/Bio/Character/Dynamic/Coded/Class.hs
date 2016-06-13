@@ -30,9 +30,11 @@ import Data.MonoTraversable
  - decodeChar alphabet (encodeChar alphabet xs .&. encodeChar alphabet ys) == toList alphabet `Data.List.intersect` (toList xs `Data.List.intersect` toList ys)
  -}
 class Bits b => EncodableStaticCharacter b where
---  gapChar    ::  Eq a              => Alphabet a -> b
   decodeChar ::  Eq a              => Alphabet a -> b   -> [a]
   encodeChar :: (Eq a, Foldable t) => Alphabet a -> t a -> b
+  stateCount ::  b -> Int
+  getGapChar ::  b -> b
+  getGapChar = bit . pred . stateCount
 
 {- LAWS:
  - decodeMany alphabet . encodeMany alphabet == fmap toList . toList

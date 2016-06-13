@@ -312,7 +312,7 @@ type AncestorDeletionEvents    = IntSet
 type AncestorInsertionEvents   = IntSet
 type DescendantInsertionEvents = IntSet
 
-type MemoizedEvents = (DeletionEvents, InsertionEvents)
+type MemoizedEvents = (DeletionEvents, InsertionEvents, PseudoCharacter)
 
 {-
 instance Monoid MemoizedEvents where
@@ -350,6 +350,13 @@ instance Monoid InsertionEvents where
            | i   <= k  = IM.insert (k - 1)  v           im
            | otherwise = IM.insert  k       v           im
 
+data PsuedoIndex
+   = Base
+   | HardGap
+   | SoftGap
+   deriving (Eq,Show)
+
+type PseudoCharacter = Vector PsuedoIndex
 
 numeration :: (Eq n, TreeConstraint t n e s) => t -> t
 numeration tree = tree
@@ -368,30 +375,42 @@ numeration tree = tree
       where
         opt (i,j)
           -- Base case with root node
-          | i == rootIndex && j == rootIndex  = (mempty, allDescendantInsertions)
+          | i == rootIndex && j == rootIndex  = (mempty, allDescendantInsertions, rootPsuedoCharacter)
           -- Is a child of the root node
           | i == rootIndex                    = ( deletes
                                                 , allDescendantInsertions >-< inserts
+                                                , undefined
                                                 )
           -- In the lower triangle, never referenced
-          | i >  j                            = (mempty, mempty)
+          | i >  j                            = mempty
           -- Not a direct descendant
-          | j `onotElem` (childMapping V.! i) = (mempty, mempty)
+          | j `onotElem` (childMapping V.! i) = mempty
           -- Accumulate insertions & deletions.
-          | i == j                            = ( ancestoralDeletions, mempty)
+          | i == j                            = ( ancestoralDeletions, mempty, undefined)
           | otherwise                         = ( ancestoralDeletions <>  deletes
                                                 , inserts             >-< allDescendantInsertions
+                                                , undefined
                                                 )
           where
             (deletes, inserts) = comparativeIndelEvents parentCharacter childCharacter 
-            parentCharacter = fromMaybe (error "No perent Sequence!") . headMay . getForAlign $ enumeratedNodes V.! i
+            parentCharacter = fromMaybe (error "No parent Sequence!") . headMay . getForAlign $ enumeratedNodes V.! i
             childCharacter  = fromMaybe (error "No child sequence!" ) . headMay . getForAlign $ enumeratedNodes V.! j
-            (                  _, _) = homologyMemoize ! (0,0)
-            (ancestoralDeletions, _) = homologyMemoize ! (parentMapping V.! i, i) 
+            (                  _, _, _) = homologyMemoize ! (0,0)
+            (ancestoralDeletions, _, _) = homologyMemoize ! (parentMapping V.! i, i) 
             allDescendantInsertions  = ofoldl' f mempty  (childMapping V.! i)
             f acc x = acc <> directChildInsertions
               where
-                (_,directChildInsertions) = homologyMemoize ! (j, x)
+                (_, directChildInsertions, _) = homologyMemoize ! (j, x)
+            rootPsuedoCharacter = V.fromList seqList
+              where
+                -- Maybe chack for indicies after the length of the sequence.
+                IE insertionMapping = allDescendantInsertions
+                characterLength = olength $ getForAlign rootNode
+                seqList = foldMap f [0..characterLength - 1]
+                f i =
+                  case i `lookup` insertionMapping of
+                    Nothing -> [Base]
+                    Just n  -> replicate n SoftGap <> [Base]
 
     updatedLeafNodes = foldrWithKey f [] enumeratedNodes
       where
@@ -436,25 +455,21 @@ gatherSubtree = undefined
 -}
 
 comparativeIndelEvents :: SeqConstraint s => s -> s -> (DeletionEvents, InsertionEvents)
-comparativeIndelEvents _ancestorSeq _descendantSeq = (deletionEvents, insertionEvents)                                          
+comparativeIndelEvents ancestorSeq descendantSeq = (DE deletionEvents, IE insertionEvents)
   where
-    deletionEvents  = mempty
-    insertionEvents = mempty -- E . IM.singleton 0 $ [ _descendantSeq `indexChar` 0 ]
-{-
-    gap = gapChar descendantSeq
-    descendantHomologies = V.fromList . reverse $ indices                                                                                   
-    YAA (_, totalGaps, indices, insertionEvents) = ofoldl' f (YAA (0, 0, [], mempty)) descendantSeq                                         
-      where                                                                                                                                 
-        f (YAA (i, counter, hList, insertionIndices)) _                                                                                     
-          -- Biological "Nothing" case                                                                                                      
-          | ancestorCharacter == gap && descendantCharacter == gap = YAA (i + 1, counter + 1,     hList,               insertionIndices)    
-          -- Biological insertion event case                                                                                                
-          | ancestorCharacter == gap && descendantCharacter /= gap = YAA (i + 1, counter    , i : hList, i `IS.insert` insertionIndices)    
-          -- Biological deletion event case                                                                                                 
-          | ancestorCharacter /= gap && descendantCharacter == gap = YAA (i + 1, counter + 1,     hList,               insertionIndices)    
-          -- Biological substitution / non-substitution case                                                                                
-          | otherwise {- Both not gap -}                           = YAA (i + 1, counter    , i : hList,               insertionIndices)    
-          where                                                                                                                             
-            descendantCharacter    = fromJust $ safeGrab descendantSeq i                                                                    
-            ancestorCharacter      = fromJust $ safeGrab ancestorSeq   i 
--}
+--    deletionEvents  = mempty
+--    insertionEvents = mempty -- E . IM.singleton 0 $ [ _descendantSeq `indexChar` 0 ]
+    (_,deletionEvents,insertionEvents) = ofoldl' f (0, mempty, mempty) descendantSeq
+    f (baseIndex, deletions, insertions) _ -- Ignore passed in element
+      -- Biological "Nothing" case
+      | ancestorCharacter == gap && descendantCharacter == gap = (baseIndex    ,                       deletions,                               insertions)
+      -- Biological insertion event case
+      | ancestorCharacter == gap && descendantCharacter /= gap = (baseIndex    ,                       deletions, IM.insertWith (+) baseIndex 1 insertions)
+      -- Biological deletion event case
+      | ancestorCharacter /= gap && descendantCharacter == gap = (baseIndex + 1, baseIndex `IS.insert` deletions,                               insertions)
+      -- Biological substitution / non-substitution case
+      | otherwise {- Both not gap -}                           = (baseIndex + 1,                       deletions,                               insertions)
+      where
+        gap                    = getGapChar ancestorCharacter
+        ancestorCharacter      = fromJust $ safeGrab ancestorSeq   baseIndex
+        descendantCharacter    = fromJust $ safeGrab descendantSeq baseIndex
