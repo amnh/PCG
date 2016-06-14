@@ -375,42 +375,75 @@ numeration tree = tree
       where
         opt (i,j)
           -- Base case with root node
-          | i == rootIndex && j == rootIndex  = (mempty, allDescendantInsertions, rootPsuedoCharacter)
+          | i == rootIndex && j == rootIndex  = rootNodeValue
+          -- Is a non-root node
+          | i == j                            = nonRootNodeValue
           -- Is a child of the root node
-          | i == rootIndex                    = ( deletes
-                                                , allDescendantInsertions >-< inserts
-                                                , undefined
-                                                )
+          | i == rootIndex                    = rootChildEdge
           -- In the lower triangle, never referenced
           | i >  j                            = mempty
           -- Not a direct descendant
           | j `onotElem` (childMapping V.! i) = mempty
-          -- Accumulate insertions & deletions.
-          | i == j                            = ( ancestoralDeletions, mempty, undefined)
-          | otherwise                         = ( ancestoralDeletions <>  deletes
-                                                , inserts             >-< allDescendantInsertions
-                                                , undefined
-                                                )
+          -- Direct descendant edge
+          | otherwise                         = parentChildEdge
           where
-            (deletes, inserts) = comparativeIndelEvents parentCharacter childCharacter 
+
+            -- In the root case there can be no deletion events at the root node.
+            -- The insertion events present at the root node are the culmination of all insertion events over the whole tree.
+            -- The PsuedoCharacter at the root node contains all insertion events of the whole tree, intercalated as SoftGaps.
+            rootNodeValue = (mempty, allDescendantInsertions, rootPsuedoCharacter)
+              where
+                rootPsuedoCharacter = V.fromList seqList
+                  where
+                    -- Maybe chack for indicies after the length of the sequence.
+                    IE insertionMapping = allDescendantInsertions
+                    characterLength     = olength $ getForAlign rootNode
+                    seqList             = foldMap f [0..characterLength - 1]
+                    f i =
+                      case i `lookup` insertionMapping of
+                        Nothing -> [Base]
+                        Just n  -> replicate n SoftGap <> [Base]
+
+
+            nonRootNodeValue = (ancestoralDeletions, mempty, undefined) 
+
+            -- Child of the root node
+            -- The deletion events are derived from a pairwise comparison of the root character and the child character.
+            -- The insertion events are the culmination of the insertion events from all the child's children.
+            -- The PseudoCharacter is not yet defined
+            rootChildEdge = (deletes, inserts >-< allDescendantInsertions, undefined)
+
+            -- The deletion events are derived from a pairwise comparison of the parent character and the child character,
+            -- joined with the deletion events from the ancestor edges of the rooted tree.
+            -- The insertion events are the culmination of the insertion events from all the child's children,
+            -- joined with the insertion events are derived from a pairwise comparison of the parent character and the child character.
+            -- The PseudoCharacter is not yet defined
+            parentChildEdge = (ancestoralDeletions <> deletes, inserts >-< allDescendantInsertions, initialPsuedoCharacter)
+              where
+                initialPsuedoCharacter
+                  | j < firstSiblingIndex = (\(_,_,x) -> x) $ homologyMemoize (i                , i                )
+                  | otherwise             = (\(_,_,x) -> x) $ homologyMemoize (previousLeafIndex, previousLeafIndex)
+                  where
+                    previousLeafIndex =
+                      case lastMay . takeWhile (<j) $ otoList siblingIndices of
+                        Nothing -> parentMapping ! j 
+                        Just x  -> rightMostLeafIndex x
+                    rightMostLeafIndex n = fromMaybe n . fmap rightMostLeafIndex . maximumMay $ childMapping ! n
+                    siblingIndices       = j `IS.delete` (childMapping ! i)
+                    firstSiblingIndex    = minimumEx siblingIndices
+                   
+
+            
+            
             parentCharacter = fromMaybe (error "No parent Sequence!") . headMay . getForAlign $ enumeratedNodes V.! i
             childCharacter  = fromMaybe (error "No child sequence!" ) . headMay . getForAlign $ enumeratedNodes V.! j
-            (                  _, _, _) = homologyMemoize ! (0,0)
-            (ancestoralDeletions, _, _) = homologyMemoize ! (parentMapping V.! i, i) 
-            allDescendantInsertions  = ofoldl' f mempty  (childMapping V.! i)
-            f acc x = acc <> directChildInsertions
+            (ancestoralDeletions, _, _) = homologyMemoize ! (parentMapping ! j, j)
+            (deletes, inserts)          = comparativeIndelEvents parentCharacter childCharacter 
+            allDescendantInsertions     = ofoldl' f mempty (childMapping V.! i)
               where
-                (_, directChildInsertions, _) = homologyMemoize ! (j, x)
-            rootPsuedoCharacter = V.fromList seqList
-              where
-                -- Maybe chack for indicies after the length of the sequence.
-                IE insertionMapping = allDescendantInsertions
-                characterLength = olength $ getForAlign rootNode
-                seqList = foldMap f [0..characterLength - 1]
-                f i =
-                  case i `lookup` insertionMapping of
-                    Nothing -> [Base]
-                    Just n  -> replicate n SoftGap <> [Base]
+                f acc x = acc <> directChildInsertions
+                  where
+                    (_, directChildInsertions, _) = homologyMemoize ! (j, x)
 
     updatedLeafNodes = foldrWithKey f [] enumeratedNodes
       where
