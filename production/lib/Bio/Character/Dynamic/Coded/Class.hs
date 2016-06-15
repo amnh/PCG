@@ -60,7 +60,8 @@ class ( EncodableStaticCharacter (Element s)
     where
       f (Nothing, n) e = if n == i then (Just e, n) else (Nothing, n + 1)
       f acc          _ = acc
-  
+
+  constructDynamic :: Foldable t => t (Element s) -> s
   
   unsafeAppend  :: s -> BitVector -> s
   unsafeCons :: BitVector -> s -> s

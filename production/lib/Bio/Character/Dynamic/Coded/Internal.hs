@@ -126,6 +126,8 @@ instance EncodableStaticCharacter BitVector where
   -- Hence foldl, don't try foldMap or toList & fmap without careful thought.
   encodeChar alphabet ambiguity = fromBits $ foldl' (\xs x -> (x `elem` ambiguity) : xs) [] alphabet
 
+  stateCount = width
+
 instance EncodableDynamicCharacter DynamicChar where
 
   decodeDynamic alphabet (DC bm) = ofoldMap (pure . decodeChar alphabet) $ rows bm
@@ -135,6 +137,8 @@ instance EncodableDynamicCharacter DynamicChar where
   lookupChar (DC bm) i
     | 0 <= i && i < numRows bm = Just $ bm `row` i
     | otherwise                = Nothing
+
+  constructDynamic = DC . fromRows . toList
 
   -- TODO: Think about the efficiency of this
   unsafeCons static (DC dynamic) = DC . fromRows $ [static] <> rows dynamic

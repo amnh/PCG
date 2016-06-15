@@ -351,21 +351,22 @@ instance Monoid InsertionEvents where
            | otherwise = IM.insert  k       v           im
 
 data PsuedoIndex
-   = Base
+   = OriginalBase
+   | InsertedBase
    | HardGap
    | SoftGap
    deriving (Eq,Show)
 
 type PseudoCharacter = Vector PsuedoIndex
 
-numeration :: (Eq n, TreeConstraint t n e s) => t -> t
-numeration tree = tree
+numeration :: (Eq n, TreeConstraint t n e s, IANode' n s) => t -> t
+numeration tree = tree `update` updatedLeafNodes
   where
-    -- | Precomputations used for reference in the Memoization
+    -- | Precomputations used for reference in the memoization
     rootNode        = root tree
     enumeratedNodes = enumerateNodes tree
-    nodeCount       = length enumeratedNodes
-    rootIndex       = locateRoot enumeratedNodes rootNode
+    nodeCount       = length         enumeratedNodes
+    rootIndex       = locateRoot     enumeratedNodes rootNode
     childMapping    = gatherChildren enumeratedNodes tree
     parentMapping   = gatherParents  childMapping    rootIndex
 
@@ -379,7 +380,7 @@ numeration tree = tree
           -- Is a non-root node
           | i == j                            = nonRootNodeValue
           -- Is a child of the root node
-          | i == rootIndex                    = rootChildEdge
+          | i == rootIndex                    = parentChildEdge -- rootChildEdge
           -- In the lower triangle, never referenced
           | i >  j                            = mempty
           -- Not a direct descendant
@@ -401,17 +402,35 @@ numeration tree = tree
                     seqList             = foldMap f [0..characterLength - 1]
                     f i =
                       case i `lookup` insertionMapping of
-                        Nothing -> [Base]
-                        Just n  -> replicate n SoftGap <> [Base]
+                        Nothing -> [OriginalBase]
+                        Just n  -> replicate n SoftGap <> [OriginalBase]
 
-
-            nonRootNodeValue = (ancestoralDeletions, mempty, undefined) 
+            nonRootNodeValue = (ancestoralDeletions, parentInsertions, psuedoCharacter)
+              where
+                -- We mutate the the psuedo-character by replacing "soft gaps" with "hard gaps"
+                -- at indices where insertione events happened.
+                psuedoCharacter = V.fromList . reverse $ result
+                  where
+                    (_,_,result) = foldl f (0, m, []) parentPsuedoCharacter
+                    IE m = inserts
+                    f (basesSeen, mapping, es) e =
+                      case e of
+                        OriginalBase -> (basesSeen + 1, mapping, e : es)
+                        InsertedBase -> (basesSeen + 1, mapping, e : es)
+                        HardGap      -> (basesSeen    , mapping, e : es)
+                        SoftGap      ->
+                          case basesSeen `lookup` mapping of
+                            Nothing -> (basesSeen, mapping, e : es)
+                            Just c  ->
+                              if c > 0
+                              then (basesSeen, IM.update (pure . pred) basesSeen mapping, InsertedBase : es)
+                              else (basesSeen,                                   mapping,            e : es)
 
             -- Child of the root node
             -- The deletion events are derived from a pairwise comparison of the root character and the child character.
             -- The insertion events are the culmination of the insertion events from all the child's children.
             -- The PseudoCharacter is not yet defined
-            rootChildEdge = (deletes, inserts >-< allDescendantInsertions, undefined)
+            -- rootChildEdge = (deletes, inserts >-< allDescendantInsertions, undefined)
 
             -- The deletion events are derived from a pairwise comparison of the parent character and the child character,
             -- joined with the deletion events from the ancestor edges of the rooted tree.
@@ -421,9 +440,10 @@ numeration tree = tree
             parentChildEdge = (ancestoralDeletions <> deletes, inserts >-< allDescendantInsertions, initialPsuedoCharacter)
               where
                 initialPsuedoCharacter
-                  | j < firstSiblingIndex = (\(_,_,x) -> x) $ homologyMemoize (i                , i                )
-                  | otherwise             = (\(_,_,x) -> x) $ homologyMemoize (previousLeafIndex, previousLeafIndex)
+                  | j < firstSiblingIndex = (\(_,_,x) -> x) $ homologyMemoize ! (i                , i                )
+                  | otherwise             = substituteHardGaps . (\(_,_,x) -> x) $ homologyMemoize ! (previousLeafIndex, previousLeafIndex)
                   where
+                    -- Search for the previous leaf node by traversing down the "right" most edges of the previous sibling node.
                     previousLeafIndex =
                       case lastMay . takeWhile (<j) $ otoList siblingIndices of
                         Nothing -> parentMapping ! j 
@@ -431,13 +451,25 @@ numeration tree = tree
                     rightMostLeafIndex n = fromMaybe n . fmap rightMostLeafIndex . maximumMay $ childMapping ! n
                     siblingIndices       = j `IS.delete` (childMapping ! i)
                     firstSiblingIndex    = minimumEx siblingIndices
-                   
-
-            
+                -- We mutate the the psuedo-character by replacing "soft gaps" with "hard gaps"
+                -- at indices where insertione events happened.
+                substituteHardGaps psuedoCharacter = V.fromList . reverse $ result
+                  where
+                    (_, result) = foldl f (0, []) psuedoCharacter
+                    IE mapping = inserts
+                    f (basesSeen, es) e =
+                      case e of
+                        OriginalBase -> (basesSeen + 1,  e : es)
+                        HardGap      -> (basesSeen    ,  e : es)
+                        SoftGap      -> (basesSeen    ,  e : es)
+                        InsertedBase ->
+                          case basesSeen `lookup` mapping of
+                            Nothing -> (basesSeen,        e : es)
+                            Just _  -> (basesSeen,  HardGap : es)
             
             parentCharacter = fromMaybe (error "No parent Sequence!") . headMay . getForAlign $ enumeratedNodes V.! i
             childCharacter  = fromMaybe (error "No child sequence!" ) . headMay . getForAlign $ enumeratedNodes V.! j
-            (ancestoralDeletions, _, _) = homologyMemoize ! (parentMapping ! j, j)
+            (ancestoralDeletions, parentInsertions, parentPsuedoCharacter) = homologyMemoize ! (parentMapping ! j, j)
             (deletes, inserts)          = comparativeIndelEvents parentCharacter childCharacter 
             allDescendantInsertions     = ofoldl' f mempty (childMapping V.! i)
               where
@@ -445,14 +477,28 @@ numeration tree = tree
                   where
                     (_, directChildInsertions, _) = homologyMemoize ! (j, x)
 
+    updatedLeafNodes :: (NodeConstraint n s, IANode' n s) => [n]
     updatedLeafNodes = foldrWithKey f [] enumeratedNodes
       where
         f i n xs
           | n `nodeIsLeaf` tree = deriveImpliedAlignment i n  : xs
           | otherwise           = xs
 
-    deriveImpliedAlignment :: IANode n => Int -> n -> n
-    deriveImpliedAlignment index node = undefined
+    deriveImpliedAlignment :: (EncodableDynamicCharacter s, NodeConstraint n s, IANode' n s, Show s) => Int -> n -> n
+    deriveImpliedAlignment index node = node `setHomologies'` (constructDynamic result)
+      where
+        (deletions, insertions, psuedoCharacter) = homologyMemoize ! (index, index)
+        leafCharacter = fromMaybe (error "No leaf node sequence!") . headMay $ getForAlign node
+        gap           = gapChar leafCharacter
+        result        = reverse . snd $ foldl' f (0, []) psuedoCharacter
+          where
+            f :: EncodableDynamicCharacter s => (Int, [Element s]) -> PsuedoIndex -> (Int, [Element s])
+            f (basesSeen, cs) e =
+              case e of
+                OriginalBase -> (basesSeen + 1, (leafCharacter `indexChar` basesSeen) : cs)
+                InsertedBase -> (basesSeen + 1, (leafCharacter `indexChar` basesSeen) : cs)
+                HardGap      -> (basesSeen    ,  gap : cs)
+                SoftGap      -> (basesSeen    ,  gap : cs)
 
 enumerateNodes :: TreeConstraint t n e s  => t -> Vector n
 enumerateNodes tree = V.generate (numNodes tree) (getNthNode tree)
