@@ -28,7 +28,7 @@ class Metadata m s | m -> s where
     getFitchMasks     :: m -> (s, s)
     getAligned        :: m -> Bool
     getType           :: m -> CharDataType
-    -- getCost        :: m -> Double
+    -- getCosts          :: m -> Double
 
 instance Metadata (CharacterMetadata s) s where
     getWeight         = weight
@@ -39,8 +39,7 @@ instance Metadata (CharacterMetadata s) s where
     getFitchMasks     = fitchMasks
     getType           = charType
     -- getGapCost        = indelCost
-
-{-     
+ {-
 indelCost :: CharacterMetadata -> Double
 indelCost meta =
   case getCosts meta of

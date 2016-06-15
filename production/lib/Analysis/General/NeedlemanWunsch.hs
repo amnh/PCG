@@ -54,7 +54,7 @@ needlemanWunsch char1 char2 meta = (seq1Align, seq2Align)
         (shorterChar, longerChar, _) = if   char1Len > char2Len
                                               then (char2, char1, char1Len)
                                               else (char1, char2, char2Len)
-        traversalMat           = createAlignMtx longerChar shorterChar (costs meta)
+        traversalMat           = createAlignMtx longerChar shorterChar (getCosts meta)
         (_, alignL, alignR)    = traceback traversalMat shorterChar longerChar
         (seq1Align, seq2Align) = if   char1Len > char2Len
                                  then (alignR, alignL)
