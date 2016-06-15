@@ -478,27 +478,27 @@ numeration tree = tree `update` updatedLeafNodes
                   where
                     (_, directChildInsertions, _) = homologyMemoize ! (j, x)
 
-    updatedLeafNodes :: (NodeConstraint n s, IANode' n s) => [n]
+--    updatedLeafNodes :: (NodeConstraint n s, IANode' n s) => [n]
     updatedLeafNodes = foldrWithKey f [] enumeratedNodes
       where
         f i n xs
           | n `nodeIsLeaf` tree = deriveImpliedAlignment i n  : xs
           | otherwise           = xs
 
-    deriveImpliedAlignment :: (EncodableDynamicCharacter s, NodeConstraint n s, IANode' n s, Show s) => Int -> n -> n
+--    deriveImpliedAlignment :: (EncodableDynamicCharacter s, NodeConstraint n s, IANode' n s, Show s) => Int -> n -> n
     deriveImpliedAlignment index node = node `setHomologies'` (constructDynamic result)
       where
         (deletions, insertions, psuedoCharacter) = homologyMemoize ! (index, index)
         leafCharacter = fromMaybe (error "No leaf node sequence!") . headMay $ getForAlign node
         gap           = gapChar leafCharacter
-        result        = (\(_,_,x) -> x) $ foldr f (0, otoList leafCharacter, []) psuedoCharacter
+        result        = snd $ foldr f (otoList leafCharacter, []) psuedoCharacter
           where
-            f e (basesSeen, xs, ys) =
+            f e (xs, ys) =
               case e of
-                OriginalBase -> (basesSeen + 1, xs',       ys')
-                InsertedBase -> (basesSeen + 1, xs',       ys')
-                HardGap      -> (basesSeen    , xs , gap : ys )
-                SoftGap      -> (basesSeen    , xs , gap : ys )
+                OriginalBase -> (xs',       ys')
+                InsertedBase -> (xs',       ys')
+                HardGap      -> (xs , gap : ys )
+                SoftGap      -> (xs , gap : ys )
               where
                 ys' = maybe ys (:ys) $ headMay xs
                 xs' = fromMaybe []   $ tailMay xs 
