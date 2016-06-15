@@ -141,9 +141,9 @@ instance EncodableDynamicCharacter DynamicChar where
   constructDynamic = DC . fromRows . toList
 
   -- TODO: Think about the efficiency of this
-  unsafeCons static (DC dynamic) = DC . fromRows $ [static] <> rows dynamic
+--  unsafeCons static (DC dynamic) = DC . fromRows $ [static] <> rows dynamic
 
-  unsafeAppend (DC dynamic1) bv = DC . fromRows $ rows dynamic1 <> [bv]
+--  unsafeAppend (DC dynamic1) bv = DC . fromRows $ rows dynamic1 <> [bv]
 
   unsafeConsElem e (DC dynamic) = DC . fromRows $ pure e <> rows dynamic
 

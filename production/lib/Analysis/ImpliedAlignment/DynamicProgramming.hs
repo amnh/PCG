@@ -13,7 +13,7 @@
 
 {-# LANGUAGE TypeFamilies #-}
 
--- TODO: Make an AppliedAlignment.hs file for exposure of appropriate functions
+-- TODO: Make an IppliedAlignment.hs file for exposure of appropriate functions
 
 module Analysis.ImpliedAlignment.DynamicProgramming where
 
@@ -47,6 +47,11 @@ import           Prelude               hiding (lookup)
 --import           Debug.Trace
 import           Safe                         (tailMay)
 import           Test.Custom.Tree
+
+
+import Data.Function.Memoize
+import Data.Bits
+
 
 defMeta :: Vector (CharacterMetadata s)
 defMeta = pure CharMeta
@@ -279,8 +284,8 @@ getForAlign n
 -- | Function to do a numeration on an entire node
 -- given the parent node, child node, current counter vector, and vector of metadata
 -- returns a tuple with the node with homologies incorporated, and a returned vector of counters
-comparativeNumeration :: (NodeConstraint n s, Metadata m s) => n -> n -> Vector (IntMap Int) -> Vector m -> (n, Vector (IntMap Int), Vector IntSet)
-comparativeNumeration parentNode childNode totalGapCounts _inMeta = (setHomologies childNode homologs, totalGapCounts', insertionEvents)
+comparativeNumeration :: (NodeConstraint n s) => n -> n -> Vector (IntMap Int) -> (n, Vector (IntMap Int), Vector IntSet)
+comparativeNumeration parentNode childNode totalGapCounts = (setHomologies childNode homologs, totalGapCounts', insertionEvents)
   where
     totalGapCounts' = V.zipWith (IM.insert (0 {- We need a unique index for each node here or for each sewuence -})) childGapCounts totalGapCounts
     numeration      = V.zipWith characterNumeration (getForAlign parentNode) (getForAlign childNode)
@@ -361,6 +366,14 @@ data PsuedoIndex
 type PseudoCharacter = Vector PsuedoIndex
 
 numeration :: (Eq n, TreeConstraint t n e s, IANode' n s) => t -> t
+{-
+numeration :: (Eq n, Show mono, Show t, Show n, Data.Bits.Bits mono,
+                    Memoizable mono,
+                           ReferentialTree t n, PreliminaryNode n mono, IANode n,
+                                 FinalNode n mono, EncodedNode n mono,
+                                       EncodableDynamicCharacter mono, EncodableDynamicCharacter s,
+                                             BinaryTree t n, IANode' n s) => t -> t
+-}
 numeration tree = tree `update` updatedLeafNodes
   where
     -- | Precomputations used for reference in the memoization
@@ -482,16 +495,18 @@ numeration tree = tree `update` updatedLeafNodes
     updatedLeafNodes = foldrWithKey f [] enumeratedNodes
       where
         f i n xs
-          | n `nodeIsLeaf` tree = deriveImpliedAlignment i n  : xs
+          | n `nodeIsLeaf` tree = deriveImpliedAlignment i n homologyMemoize : xs
           | otherwise           = xs
 
 --    deriveImpliedAlignment :: (EncodableDynamicCharacter s, NodeConstraint n s, IANode' n s, Show s) => Int -> n -> n
-    deriveImpliedAlignment index node = node `setHomologies'` (constructDynamic result)
+deriveImpliedAlignment index node homologyMemoize = node `setHomologies'` (constructDynamic result)
       where
         (deletions, insertions, psuedoCharacter) = homologyMemoize ! (index, index)
         leafCharacter = fromMaybe (error "No leaf node sequence!") . headMay $ getForAlign node
-        gap           = gapChar leafCharacter
-        result        = snd $ foldr f (otoList leafCharacter, []) psuedoCharacter
+--        gap           = gapChar leafCharacter
+        characterTokens = otoList leafCharacter
+        gap           = getGapChar $ head characterTokens
+        result        = snd $ foldr f (characterTokens, []) psuedoCharacter
           where
             f e (xs, ys) =
               case e of

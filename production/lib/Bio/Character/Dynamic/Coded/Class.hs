@@ -63,8 +63,8 @@ class ( EncodableStaticCharacter (Element s)
 
   constructDynamic :: Foldable t => t (Element s) -> s
   
-  unsafeAppend  :: s -> BitVector -> s
-  unsafeCons :: BitVector -> s -> s
+--  unsafeAppend  :: s -> BitVector -> s
+--  unsafeCons :: BitVector -> s -> s
   unsafeConsElem :: Element s -> s -> s
 
 -- | A coded sequence allows grabbing of a character, filtering, and some standard types
