@@ -45,6 +45,7 @@ import qualified Data.Vector             as V
 import           Data.Vector.Instances        ()
 import           Prelude               hiding (lookup)
 --import           Debug.Trace
+import           Safe                         (tailMay)
 import           Test.Custom.Tree
 
 defMeta :: Vector (CharacterMetadata s)
@@ -490,15 +491,17 @@ numeration tree = tree `update` updatedLeafNodes
         (deletions, insertions, psuedoCharacter) = homologyMemoize ! (index, index)
         leafCharacter = fromMaybe (error "No leaf node sequence!") . headMay $ getForAlign node
         gap           = gapChar leafCharacter
-        result        = reverse . snd $ foldl' f (0, []) psuedoCharacter
+        result        = (\(_,_,x) -> x) $ foldr f (0, otoList leafCharacter, []) psuedoCharacter
           where
-            f :: EncodableDynamicCharacter s => (Int, [Element s]) -> PsuedoIndex -> (Int, [Element s])
-            f (basesSeen, cs) e =
+            f e (basesSeen, xs, ys) =
               case e of
-                OriginalBase -> (basesSeen + 1, (leafCharacter `indexChar` basesSeen) : cs)
-                InsertedBase -> (basesSeen + 1, (leafCharacter `indexChar` basesSeen) : cs)
-                HardGap      -> (basesSeen    ,  gap : cs)
-                SoftGap      -> (basesSeen    ,  gap : cs)
+                OriginalBase -> (basesSeen + 1, xs',       ys')
+                InsertedBase -> (basesSeen + 1, xs',       ys')
+                HardGap      -> (basesSeen    , xs , gap : ys )
+                SoftGap      -> (basesSeen    , xs , gap : ys )
+              where
+                ys' = maybe ys (:ys) $ headMay xs
+                xs' = fromMaybe []   $ tailMay xs 
 
 enumerateNodes :: TreeConstraint t n e s  => t -> Vector n
 enumerateNodes tree = V.generate (numNodes tree) (getNthNode tree)
