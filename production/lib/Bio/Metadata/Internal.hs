@@ -60,7 +60,7 @@ data CharDataType = DirectOptimization | Fitch | InfoTheoretic | Unknown derivin
 -- AffineCost stores a gap opening, gap continuing, and substitution cost
 -- GeneralCost just stores an indelCost and a subCost
 data CostStructure = TCM CostMatrix
-                      | AffineCost  { gapOpenCost :: Double, gapContinueCost :: Double, subCost :: Double }
+                     -- | AffineCost  { gapOpenCost :: Double, gapContinueCost :: Double, subCost :: Double }
                       | GeneralCost { indelCost   :: Double, subCost :: Double } deriving (Eq, Show)
 
 -- | A cost matrix is just a matrix of floats
@@ -100,7 +100,7 @@ instance Arbitrary s => Arbitrary (CharacterMetadata s) where
     r <- arbitrary :: Gen Double
     randCosts <- vectorOf 3 arbitrary 
     c <- elements [ TCM $ tcmOfSize (length a)
-                  , AffineCost  (head randCosts) (randCosts !! 1) (randCosts !! 2)
+                  -- , AffineCost  (head randCosts) (randCosts !! 1) (randCosts !! 2)
                   , GeneralCost (head randCosts) (randCosts !! 1)
                   ]
     pure $ CharMeta t a n align ignore w sn masks r c
