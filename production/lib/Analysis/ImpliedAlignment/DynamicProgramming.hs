@@ -36,7 +36,7 @@ import qualified Data.IntMap            as IM
 import           Data.IntSet                  (IntSet)
 import qualified Data.IntSet            as IS
 import           Data.Key
-import           Data.Matrix.NotStupid hiding ((<|>),toList)
+import           Data.Matrix.NotStupid hiding ((<|>),toList,trace)
 import           Data.Maybe
 import           Data.Monoid
 import           Data.MonoTraversable
@@ -44,9 +44,9 @@ import           Data.Vector                  (Vector, imap)
 import qualified Data.Vector             as V
 import           Data.Vector.Instances        ()
 import           Prelude               hiding (lookup)
---import           Debug.Trace
+import           Debug.Trace                  (trace)
 import           Safe                         (tailMay)
-import           Test.Custom.Tree
+import           Test.Custom hiding (children)
 
 
 import Data.Function.Memoize
@@ -62,7 +62,7 @@ defMeta = pure CharMeta
         , isIgnored  = False
         , weight     = 1.0
         , stateNames = mempty
-        , fitchMasks = undefined
+        , fitchMasks = trace "I suck so bad" $ undefined
         , rootCost   = 0.0
         , costs      = GeneralCost { indelCost = 2, subCost = 1 }
         }
@@ -365,16 +365,8 @@ data PsuedoIndex
 
 type PseudoCharacter = Vector PsuedoIndex
 
-numeration :: (Eq n, TreeConstraint t n e s, IANode' n s) => t -> t
-{-
-numeration :: (Eq n, Show mono, Show t, Show n, Data.Bits.Bits mono,
-                    Memoizable mono,
-                           ReferentialTree t n, PreliminaryNode n mono, IANode n,
-                                 FinalNode n mono, EncodedNode n mono,
-                                       EncodableDynamicCharacter mono, EncodableDynamicCharacter s,
-                                             BinaryTree t n, IANode' n s) => t -> t
--}
-numeration tree = tree `update` updatedLeafNodes
+numeration :: (Eq n, Metadata m s, TreeConstraint t n e s, IANode' n s) => m -> t -> t
+numeration metadataStructure tree = tree `update` updatedLeafNodes
   where
     -- | Precomputations used for reference in the memoization
     rootNode        = root tree
@@ -388,6 +380,7 @@ numeration tree = tree `update` updatedLeafNodes
     homologyMemoize :: Matrix MemoizedEvents
     homologyMemoize = matrix nodeCount nodeCount opt
       where
+--        opt (i,j) | trace (mconcat ["opt (",show i,",",show j,")"]) False = undefined
         opt (i,j)
           -- Base case with root node
           | i == rootIndex && j == rootIndex  = rootNodeValue
@@ -419,13 +412,13 @@ numeration tree = tree `update` updatedLeafNodes
                         Nothing -> [OriginalBase]
                         Just n  -> replicate n SoftGap <> [OriginalBase]
 
-            nonRootNodeValue = (ancestoralDeletions, parentInsertions, psuedoCharacter)
+            nonRootNodeValue = trace (mconcat ["nonRootNodeValue"]) $ (ancestoralDeletions, parentInsertions, psuedoCharacter)
               where
                 -- We mutate the the psuedo-character by replacing "soft gaps" with "hard gaps"
                 -- at indices where insertione events happened.
                 psuedoCharacter = V.fromList . reverse $ result
                   where
-                    (_,_,result) = foldl f (0, m, []) parentPsuedoCharacter
+                    (_,_,result) = foldl' f (0, m, []) parentPsuedoCharacter
                     IE m = inserts
                     f (basesSeen, mapping, es) e =
                       case e of
@@ -460,10 +453,10 @@ numeration tree = tree `update` updatedLeafNodes
                     -- Search for the previous leaf node by traversing down the "right" most edges of the previous sibling node.
                     previousLeafIndex =
                       case lastMay . takeWhile (<j) $ otoList siblingIndices of
-                        Nothing -> parentMapping ! j 
+                        Nothing -> parentMapping V.! j 
                         Just x  -> rightMostLeafIndex x
-                    rightMostLeafIndex n = fromMaybe n . fmap rightMostLeafIndex . maximumMay $ childMapping ! n
-                    siblingIndices       = j `IS.delete` (childMapping ! i)
+                    rightMostLeafIndex n = fromMaybe n . fmap rightMostLeafIndex . maximumMay $ childMapping V.! n
+                    siblingIndices       = j `IS.delete` (childMapping V.! i)
                     firstSiblingIndex    = minimumEx siblingIndices
                 -- We mutate the the psuedo-character by replacing "soft gaps" with "hard gaps"
                 -- at indices where insertione events happened.
@@ -483,8 +476,10 @@ numeration tree = tree `update` updatedLeafNodes
             
             parentCharacter = fromMaybe (error "No parent Sequence!") . headMay . getForAlign $ enumeratedNodes V.! i
             childCharacter  = fromMaybe (error "No child sequence!" ) . headMay . getForAlign $ enumeratedNodes V.! j
-            (ancestoralDeletions, parentInsertions, parentPsuedoCharacter) = homologyMemoize ! (parentMapping ! j, j)
-            (deletes, inserts)          = comparativeIndelEvents parentCharacter childCharacter 
+            (ancestoralDeletions, parentInsertions, parentPsuedoCharacter) =
+              trace (mconcat ["Accessing (",show $ parentMapping V.! j,",",show j,")"])
+              $ homologyMemoize ! (parentMapping V.! j, j)
+            (deletes, inserts)          = comparativeIndelEvents parentCharacter childCharacter metadataStructure
             allDescendantInsertions     = ofoldl' f mempty (childMapping V.! i)
               where
                 f acc x = acc <> directChildInsertions
@@ -499,7 +494,8 @@ numeration tree = tree `update` updatedLeafNodes
           | otherwise           = xs
 
 --    deriveImpliedAlignment :: (EncodableDynamicCharacter s, NodeConstraint n s, IANode' n s, Show s) => Int -> n -> n
-deriveImpliedAlignment index node homologyMemoize = node `setHomologies'` (constructDynamic result)
+deriveImpliedAlignment _ _ _ | trace "deriveImpliedAlignment" False = undefined
+deriveImpliedAlignment index node homologyMemoize = node `setHomologies'` pure (constructDynamic result)
       where
         (deletions, insertions, psuedoCharacter) = homologyMemoize ! (index, index)
         leafCharacter = fromMaybe (error "No leaf node sequence!") . headMay $ getForAlign node
@@ -544,29 +540,41 @@ gatherChildren enumNodes tree = V.generate (length enumNodes) f
 
 
 gatherParents :: Vector IntSet -> Int -> Vector Int
-gatherParents = undefined
+gatherParents childrenMapping rootIndex = V.generate (length childrenMapping) f
+  where
+    f i = fromMaybe (-1) $ foldlWithKey' g Nothing childrenMapping
+      where
+        g acc k e
+          | i `oelem` e = Just k
+          | otherwise   = acc
 
 {-
 gatherSubtree :: Vector IntSet -> Int -> BitMatrix
 gatherSubtree = undefined
 -}
 
-comparativeIndelEvents :: SeqConstraint s => s -> s -> (DeletionEvents, InsertionEvents)
-comparativeIndelEvents ancestorSeq descendantSeq = (DE deletionEvents, IE insertionEvents)
+comparativeIndelEvents :: (Metadata m s, SeqConstraint s) => s -> s -> m -> (DeletionEvents, InsertionEvents)
+comparativeIndelEvents ancestorCharacterUnaligned descendantCharacterUnaligned metadataStructure
+  | olength ancestorCharacter /= olength descendantCharacter = error $ mconcat ["Lengths of sequences are not equal!\n", "Parent length: ", show $ olength ancestorCharacter, "\nChild length: ", show $ olength descendantCharacter]
+  | otherwise                                    = (DE deletionEvents, IE insertionEvents)
   where
+    (ancestorCharacter, descendantCharacter) =
+      if olength ancestorCharacterUnaligned == olength descendantCharacterUnaligned
+      then (ancestorCharacterUnaligned, descendantCharacterUnaligned)
+      else needlemanWunsch ancestorCharacterUnaligned descendantCharacterUnaligned metadataStructure
 --    deletionEvents  = mempty
---    insertionEvents = mempty -- E . IM.singleton 0 $ [ _descendantSeq `indexChar` 0 ]
-    (_,deletionEvents,insertionEvents) = ofoldl' f (0, mempty, mempty) descendantSeq
-    f (baseIndex, deletions, insertions) _ -- Ignore passed in element
+--    insertionEvents = mempty -- E . IM.singleton 0 $ [ _descendantCharacter `indexChar` 0 ]
+    (_,deletionEvents,insertionEvents) = ofoldl' f (0, mempty, mempty) [0 .. olength descendantCharacter - 1]
+    f (baseIndex, deletions, insertions) index
       -- Biological "Nothing" case
-      | ancestorCharacter == gap && descendantCharacter == gap = (baseIndex    ,                       deletions,                               insertions)
+      | ancestorStatic == gap && descendantStatic == gap = (baseIndex    ,                       deletions,                               insertions)
       -- Biological insertion event case
-      | ancestorCharacter == gap && descendantCharacter /= gap = (baseIndex    ,                       deletions, IM.insertWith (+) baseIndex 1 insertions)
+      | ancestorStatic == gap && descendantStatic /= gap = (baseIndex    ,                       deletions, IM.insertWith (+) baseIndex 1 insertions)
       -- Biological deletion event case
-      | ancestorCharacter /= gap && descendantCharacter == gap = (baseIndex + 1, baseIndex `IS.insert` deletions,                               insertions)
+      | ancestorStatic /= gap && descendantStatic == gap = (baseIndex + 1, baseIndex `IS.insert` deletions,                               insertions)
       -- Biological substitution / non-substitution case
-      | otherwise {- Both not gap -}                           = (baseIndex + 1,                       deletions,                               insertions)
+      | otherwise {- Both not gap -}                     = (baseIndex + 1,                       deletions,                               insertions)
       where
-        gap                    = getGapChar ancestorCharacter
-        ancestorCharacter      = fromJust $ safeGrab ancestorSeq   baseIndex
-        descendantCharacter    = fromJust $ safeGrab descendantSeq baseIndex
+        gap              = getGapChar ancestorStatic
+        ancestorStatic   = ancestorCharacter   `indexChar` index
+        descendantStatic = descendantCharacter `indexChar` index

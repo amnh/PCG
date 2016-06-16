@@ -100,30 +100,32 @@ data SimpleTree = TT (Tree TestingDecoration)
 
 data TestingDecoration
    = Decorations
-   { dEncoded     :: Vector DynamicChar
-   , dFinal       :: Vector DynamicChar
-   , dGapped      :: Vector DynamicChar
-   , dPreliminary :: Vector DynamicChar
-   , dAligned     :: Vector DynamicChar
-   , dTemporary   :: Vector DynamicChar
-   , dLocalCost   :: Double
-   , dTotalCost   :: Double
-   , dIaHomology  :: IN.HomologyTrace
-   , refEquality  :: Int
+   { dEncoded          :: Vector DynamicChar
+   , dFinal            :: Vector DynamicChar
+   , dGapped           :: Vector DynamicChar
+   , dPreliminary      :: Vector DynamicChar
+   , dAligned          :: Vector DynamicChar
+   , dTemporary        :: Vector DynamicChar
+   , dLocalCost        :: Double
+   , dTotalCost        :: Double
+   , dIaHomology       :: IN.HomologyTrace
+   , dImpliedAlignment :: Vector DynamicChar
+   , refEquality       :: Int
    } deriving (Eq)
 
 def :: TestingDecoration
 def = Decorations
-    { dEncoded     = mempty
-    , dFinal       = mempty
-    , dGapped      = mempty
-    , dPreliminary = mempty
-    , dAligned     = mempty
-    , dTemporary   = mempty
-    , dLocalCost   = 0.0
-    , dTotalCost   = 0.0
-    , dIaHomology  = mempty
-    , refEquality  = -1
+    { dEncoded          = mempty
+    , dFinal            = mempty
+    , dGapped           = mempty
+    , dPreliminary      = mempty
+    , dAligned          = mempty
+    , dTemporary        = mempty
+    , dLocalCost        = 0.0
+    , dTotalCost        = 0.0
+    , dIaHomology       = mempty
+    , dImpliedAlignment = mempty
+    , refEquality       = -1
     }
 
 sameRef :: SimpleTree -> SimpleTree -> Bool
@@ -135,20 +137,28 @@ instance Show SimpleTree where
   show (TT x) = drawTreeMultiLine $ show <$> x
 
 instance Show TestingDecoration where
-  show decoration = intercalate "\n" $ catMaybes renderedDecorations
+  show decoration = intercalate "\n" $ catMaybes renderedCosts <> catMaybes renderedDecorations
     where
+      renderedCosts =
+        [ ("LocalCost   "<>)  <$> h dLocalCost
+        , ("TotalCost   "<>)  <$> h dTotalCost
+        ]
       renderedDecorations =
-        [ g "Encoded    " <$> f dEncoded
-        , g "Ungapped   " <$> f dFinal
-        , g "Gapped     " <$> f dGapped
-        , g "Preliminary" <$> f dPreliminary
-        , g "Aligned    " <$> f dAligned
-        , g "Temporary  " <$> f dTemporary
+        [ g "Encoded    "  <$> f dEncoded
+        , g "Ungapped   "  <$> f dFinal
+        , g "Gapped     "  <$> f dGapped
+        , g "Preliminary"  <$> f dPreliminary
+        , g "Aligned    "  <$> f dAligned
+        , g "Temporary  "  <$> f dTemporary
+        , g "ImpliedAlign" <$> f dImpliedAlignment
         ]
       f x = renderDynamicCharacter <$> headMay (x decoration)
       g prefix shown = prefix <> ": " <> shown --intercalate "\n" $ (prefix <> ": " <> y) : (("  " <>) <$> zs)
 --        where
 --          (x:y:zs) = lines shown :: [String]
+      h x
+        | x decoration == 0.0 = Nothing
+        | otherwise           = Just . show $ x decoration
 
 
 -- | Neat 2-dimensional drawing of a tree.
@@ -255,6 +265,12 @@ instance RN.PreliminaryNode SimpleTree DynamicChar where
 instance IN.IANode SimpleTree where
     getHomologies     (TT n)   = dIaHomology $ rootLabel n
     setHomologies     (TT n) x = TT $ n { rootLabel = decoration { dIaHomology = x } }
+      where
+        decoration = rootLabel n
+
+instance IN.IANode' SimpleTree DynamicChar where
+    getHomologies'    (TT n)   = dImpliedAlignment $ rootLabel n
+    setHomologies'    (TT n) x = TT $ n { rootLabel = decoration { dImpliedAlignment = x } }
       where
         decoration = rootLabel n
 

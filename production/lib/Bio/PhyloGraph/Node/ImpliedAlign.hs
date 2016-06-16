@@ -26,5 +26,5 @@ class IANode n where
     setHomologies  :: n -> HomologyTrace -> n
 
 class IANode' n s | n -> s where
-    getHomologies' :: n -> s
-    setHomologies' :: n -> s -> n 
+    getHomologies' :: n -> Vector s
+    setHomologies' :: n -> Vector s -> n 

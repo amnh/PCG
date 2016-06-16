@@ -13,6 +13,7 @@
 -----------------------------------------------------------------------------
 
 module Analysis.Parsimony.Binary.Optimization ( solutionOptimization
+                                              , allOptimization
 --                                              , somethingFromFitch
 --                                              , somethingFromDO
 --                                              , somethingFromSeqAlgn
