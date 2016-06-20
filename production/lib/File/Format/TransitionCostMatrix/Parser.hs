@@ -47,7 +47,7 @@ data TCM
    = TCM
    { -- | The custom alphabet of 'Symbols' for which the TCM matrix is defined
      customAlphabet  :: NonEmpty String
-     -- | The cost to transition between any two symbols, square but not nessisarily symetric
+     -- | The cost to transition between any two symbols, square but not necessarily symetric
    , transitionCosts :: Matrix Double -- n+1 X n+1 matrix where n = length customAlphabet
    } deriving (Show)
 

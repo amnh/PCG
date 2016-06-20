@@ -163,12 +163,12 @@ testEncodableStaticCharacterInstanceBitVector = testGroup "BitVector instance of
       where
         encodeDecodeIdentity = testProperty "Set.fromList . decodeChar alphabet . encodeChar alphabet . Set.fromList . toList == Set.fromList . toList" f
           where
-            f :: AlphabetAndSingleAbiguityGroup -> Bool
-            f alphabetAndAbiguityGroup = lhs ambiguityGroup == rhs ambiguityGroup
+            f :: AlphabetAndSingleAmbiguityGroup -> Bool
+            f alphabetAndAmbiguityGroup = lhs ambiguityGroup == rhs ambiguityGroup
               where
                 lhs = Set.fromList . decodeChar alphabet . encodeChar' alphabet . Set.fromList . toList
                 rhs = Set.fromList . toList
-                (alphabet, ambiguityGroup) = getAlphabetAndSingleAbiguityGroup alphabetAndAbiguityGroup
+                (alphabet, ambiguityGroup) = getAlphabetAndSingleAmbiguityGroup alphabetAndAmbiguityGroup
 
         singleBitConstruction = testProperty "encodeChar alphabet [alphabet ! i] == bit i" f
           where
@@ -187,25 +187,25 @@ testEncodableStaticCharacterInstanceBitVector = testGroup "BitVector instance of
 
         logicalOrIsomorphismWithSetUnion = testProperty "Set.fromList (decodeChar alphabet (encodeChar alphabet xs .|. encodeChar alphabet ys)) == Set.fromList (toList alphabet) `Set.intersect` (toList xs `Set.union` toList ys)" f
           where
-            f :: AlphabetAndTwoAbiguityGroups -> Bool
-            f alphabetAndAbiguityGroups = lhs == rhs
+            f :: AlphabetAndTwoAmbiguityGroups -> Bool
+            f alphabetAndAmbiguityGroups = lhs == rhs
               where
                 lhs = Set.fromList $ decodeChar alphabet (encodeChar' alphabet sxs .|. encodeChar' alphabet sys)
                 rhs = sxs `Set.union` sys
                 sxs = Set.fromList xs
                 sys = Set.fromList ys
-                (alphabet, xs, ys) = getAlphabetAndTwoAbiguityGroups alphabetAndAbiguityGroups
+                (alphabet, xs, ys) = getAlphabetAndTwoAmbiguityGroups alphabetAndAmbiguityGroups
 
         logicalAndIsomorphismWithSetIntersection = testProperty "Set.fromList (decodeChar alphabet (encodeChar alphabet xs .&. encodeChar alphabet ys)) == Set.fromList (toList alphabet) `Set.intersect` (toList xs `Set.intersection` toList ys)" f
           where
-            f :: AlphabetAndTwoAbiguityGroups -> Bool
-            f alphabetAndAbiguityGroups = lhs == rhs
+            f :: AlphabetAndTwoAmbiguityGroups -> Bool
+            f alphabetAndAmbiguityGroups = lhs == rhs
               where
                 lhs = Set.fromList $ decodeChar alphabet (encodeChar' alphabet sxs .&. encodeChar' alphabet sys)
                 rhs = sxs `Set.intersection` sys
                 sxs = Set.fromList xs
                 sys = Set.fromList ys
-                (alphabet, xs, ys) = getAlphabetAndTwoAbiguityGroups alphabetAndAbiguityGroups
+                (alphabet, xs, ys) = getAlphabetAndTwoAmbiguityGroups alphabetAndAmbiguityGroups
 
 {- LAWS:
  - decodeMany alphabet . encodeMany alphabet == fmap toList . toList
@@ -239,25 +239,25 @@ instance Arbitrary ParsedCharacterWithAlphabet where
         vector   <- fmap (fmap (NonEmpty . (:[]) . NonEmpty) . fromList) . listOf1 . elements . toList $ alphabet
         pure $ ParsedCharacterWithAlphabet (vector, alphabet)
 
-newtype AlphabetAndSingleAbiguityGroup
-      = AlphabetAndSingleAbiguityGroup
-      { getAlphabetAndSingleAbiguityGroup :: (Alphabet String, [String])
+newtype AlphabetAndSingleAmbiguityGroup
+      = AlphabetAndSingleAmbiguityGroup
+      { getAlphabetAndSingleAmbiguityGroup :: (Alphabet String, [String])
       } deriving (Eq, Show)
 
-instance Arbitrary AlphabetAndSingleAbiguityGroup where
+instance Arbitrary AlphabetAndSingleAmbiguityGroup where
   arbitrary = do
     (alphabet, [x]) <- alphabetAndAmbiguityGroups 1
-    pure $ AlphabetAndSingleAbiguityGroup (alphabet, x)
+    pure $ AlphabetAndSingleAmbiguityGroup (alphabet, x)
 
-newtype AlphabetAndTwoAbiguityGroups
-      = AlphabetAndTwoAbiguityGroups
-      { getAlphabetAndTwoAbiguityGroups :: (Alphabet String, [String], [String])
+newtype AlphabetAndTwoAmbiguityGroups
+      = AlphabetAndTwoAmbiguityGroups
+      { getAlphabetAndTwoAmbiguityGroups :: (Alphabet String, [String], [String])
       } deriving (Eq, Show)
 
-instance Arbitrary AlphabetAndTwoAbiguityGroups where
+instance Arbitrary AlphabetAndTwoAmbiguityGroups where
   arbitrary = do
     (alphabet, [x,y]) <- alphabetAndAmbiguityGroups 2
-    pure $ AlphabetAndTwoAbiguityGroups (alphabet, x, y)
+    pure $ AlphabetAndTwoAmbiguityGroups (alphabet, x, y)
 
 newtype AlphabetAndCharacter
       = AlphabetAndCharacter
@@ -273,8 +273,8 @@ instance Arbitrary AlphabetAndCharacter where
 
 alphabetAndAmbiguityGroups :: Int -> Gen (Alphabet String, [[String]])
 alphabetAndAmbiguityGroups n = do
-   alphabet        <- arbitrary :: Gen (Alphabet String)
-   let ambiguityGroup = listOf . elements $ toList alphabet -- list can be empty, can have duplicates!
-   ambiguityGroups <- vectorOf n ambiguityGroup
+   alphabet           <- arbitrary :: Gen (Alphabet String)
+   let ambiguityGroup =  listOf . elements $ toList alphabet -- list can be empty, can have duplicates!
+   ambiguityGroups    <- vectorOf n ambiguityGroup
    pure (constructAlphabet alphabet, ambiguityGroups)
                                 

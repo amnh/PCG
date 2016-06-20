@@ -59,9 +59,12 @@ data CharDataType = DirectOptimization | Fitch | InfoTheoretic | Unknown derivin
 -- | A cost structure can either be a TCM, an affine cost group, or a general cost group
 -- AffineCost stores a gap opening, gap continuing, and substitution cost
 -- GeneralCost just stores an indelCost and a subCost
-data CostStructure = TCM CostMatrix
-                     -- | AffineCost  { gapOpenCost :: Double, gapContinueCost :: Double, subCost :: Double }
-                      | GeneralCost { indelCost   :: Double, subCost :: Double } deriving (Eq, Show)
+data CostStructure = -- AffineCost  { gapOpenCost :: Double, gapContinueCost :: Double, subCost :: Double }
+                     -- TODO: AffineCost is not separate from other CostStructures.
+                     -- When adding AffineCost back in, ask Ward whether it makes sense to have it alongside TCM,
+                     -- or only with GeneralCost.
+                     TCM CostMatrix
+                   | GeneralCost { indelCost :: Double, subCost :: Double } deriving (Eq, Show)
 
 -- | A cost matrix is just a matrix of floats
 type CostMatrix = Matrix Double
