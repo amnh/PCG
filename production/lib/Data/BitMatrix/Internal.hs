@@ -182,16 +182,16 @@ instance MonoFunctor BitMatrix where
 instance MonoFoldable BitMatrix where
   -- | Map each element of a monomorphic container to a 'Monoid'
   -- and combine the results.
-  ofoldMap f = ofoldr (mappend . f) mempty
   {-# INLINE ofoldMap #-}
+  ofoldMap f = ofoldr (mappend . f) mempty
 
   -- | Right-associative fold of a monomorphic container.
-  ofoldr f e = foldr f e . rows
   {-# INLINE ofoldr #-}
+  ofoldr f e = foldr f e . rows
 
   -- | Strict left-associative fold of a monomorphic container.
-  ofoldl' f e = foldl' f e . rows
   {-# INLINE ofoldl' #-}
+  ofoldl' f e = foldl' f e . rows
 
   -- | Right-associative fold of a monomorphic container with no base element.
   --
@@ -199,8 +199,8 @@ instance MonoFoldable BitMatrix where
   -- throw an exception.
   --
   -- /See 'Data.MinLen.ofoldr1Ex' from "Data.MinLen" for a total version of this function./
-  ofoldr1Ex f = foldr1 f . rows
   {-# INLINE ofoldr1Ex #-}
+  ofoldr1Ex f = foldr1 f . rows
 
   -- | Strict left-associative fold of a monomorphic container with no base
   -- element.
@@ -209,26 +209,29 @@ instance MonoFoldable BitMatrix where
   -- throw an exception.
   --
   -- /See 'Data.MinLen.ofoldl1Ex'' from "Data.MinLen" for a total version of this function./
-  ofoldl1Ex' f = foldl1 f . rows
   {-# INLINE ofoldl1Ex' #-}
+  ofoldl1Ex' f = foldl1 f . rows
 
+  {-# INLINE onull #-}
   onull (BitMatrix 0 _) = True
   onull  _              = False
-  {-# INLINE onull #-}
+
+  {-# INLINE olength #-}
+  olength = numRows
 
 -- | Performs a row-wise monomporphic traversal over ther 'BitMatrix'.
 instance MonoTraversable BitMatrix where
     -- | Map each element of a monomorphic container to an action,
     -- evaluate these actions from left to right, and
     -- collect the results.
-    otraverse f bm = fmap (BitMatrix (numCols bm) . mconcat) . traverse f $ rows bm
     {-# INLINE otraverse #-}
+    otraverse f bm = fmap (BitMatrix (numCols bm) . mconcat) . traverse f $ rows bm
 
     -- | Map each element of a monomorphic container to a monadic action,
     -- evaluate these actions from left to right, and
     -- collect the results.
-    omapM = otraverse
     {-# INLINE omapM #-}
+    omapM = otraverse
 
 -- | (✔)
 instance Memoizable BitMatrix where

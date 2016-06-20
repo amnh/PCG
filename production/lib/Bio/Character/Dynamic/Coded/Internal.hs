@@ -65,16 +65,16 @@ instance MonoFunctor DynamicChar where
 instance MonoFoldable DynamicChar where
   -- | Map each element of a monomorphic container to a 'Monoid'
   -- and combine the results.
-  ofoldMap f (DC bm) = ofoldMap f bm
   {-# INLINE ofoldMap #-}
+  ofoldMap f (DC bm) = ofoldMap f bm
 
   -- | Right-associative fold of a monomorphic container.
-  ofoldr f e (DC bm) = ofoldr f e bm
   {-# INLINE ofoldr #-}
+  ofoldr f e (DC bm) = ofoldr f e bm
 
   -- | Strict left-associative fold of a monomorphic container.
-  ofoldl' f e (DC bm) = ofoldl' f e bm
   {-# INLINE ofoldl' #-}
+  ofoldl' f e (DC bm) = ofoldl' f e bm
 
   -- | Right-associative fold of a monomorphic container with no base element.
   --
@@ -82,8 +82,8 @@ instance MonoFoldable DynamicChar where
   -- throw an exception.
   --
   -- /See 'Data.MinLen.ofoldr1Ex' from "Data.MinLen" for a total version of this function./
-  ofoldr1Ex f (DC bm) = ofoldr1Ex f bm
   {-# INLINE ofoldr1Ex #-}
+  ofoldr1Ex f (DC bm) = ofoldr1Ex f bm
 
   -- | Strict left-associative fold of a monomorphic container with no base
   -- element.
@@ -92,25 +92,28 @@ instance MonoFoldable DynamicChar where
   -- throw an exception.
   --
   -- /See 'Data.MinLen.ofoldl1Ex'' from "Data.MinLen" for a total version of this function./
-  ofoldl1Ex' f (DC bm) = ofoldl1Ex' f bm
   {-# INLINE ofoldl1Ex' #-}
+  ofoldl1Ex' f (DC bm) = ofoldl1Ex' f bm
 
-  onull (DC bm) = onull bm
   {-# INLINE onull #-}
+  onull (DC bm) = onull bm
+
+  {-# INLINE olength #-}
+  olength (DC bm) = olength bm
 
 -- | Monomorphic containers that can be traversed from left to right.
 instance MonoTraversable DynamicChar where
     -- | Map each element of a monomorphic container to an action,
     -- evaluate these actions from left to right, and
     -- collect the results.
-    otraverse f (DC bm) = DC <$> otraverse f bm
     {-# INLINE otraverse #-}
+    otraverse f (DC bm) = DC <$> otraverse f bm
 
     -- | Map each element of a monomorphic container to a monadic action,
     -- evaluate these actions from left to right, and
     -- collect the results.
-    omapM = otraverse
     {-# INLINE omapM #-}
+    omapM = otraverse
 
 instance EncodableStaticCharacter BitVector where
 
