@@ -99,7 +99,7 @@ instance MonoFoldable DynamicChar where
   onull (DC bm) = onull bm
 
   {-# INLINE olength #-}
-  olength (DC bm) = olength bm
+  olength (DC bm) = numRows bm
 
 -- | Monomorphic containers that can be traversed from left to right.
 instance MonoTraversable DynamicChar where
