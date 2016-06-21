@@ -36,7 +36,7 @@ library
   other-extensions:    FlexibleContexts, BangPatterns, DeriveGeneric
   
   -- Other library packages from which modules are imported.
-  build-depends:       base                 >=4.8 && < 4.9
+  build-depends:       base                 >=4.8
                      , bv                   -any
                      , containers           -any
                      , criterion            -any
@@ -199,7 +199,7 @@ library
 executable pcg
   main-is:             Main.hs
 
-  build-depends:       base                 >=4.8 && < 4.9
+  build-depends:       base                 >=4.8
                      , bv                   -any
                      , containers           -any
                      , criterion            -any
@@ -275,9 +275,9 @@ executable pcg
 
 executable qdh
            
-  main-is:             BadReadGraphQDH.hs
+  main-is:             QDH.hs
 
-  build-depends:       base                 >=4.8 && < 4.9
+  build-depends:       base                 >=4.8
                      , bv                   -any
                      , containers           -any
                      , criterion            -any
@@ -339,7 +339,7 @@ Test-Suite testsuite
 
   main-is:             TestAll.hs
 
-  build-depends:       base                 >=4.8 && < 4.9
+  build-depends:       base                 >=4.8
                      , bv                   -any
                      , containers           -any
                      , criterion            -any
