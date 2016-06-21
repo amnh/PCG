@@ -200,6 +200,8 @@ overlapTest = testGroup "Overlap test cases" [ singleIntersectionTest
                 result         = getOverlap char1 char2 (GeneralCost 2 1)
 
 -- createAlignMtx (DC $ Data.BitMatrix.fromRows [bitVec 5 2, bitVec 5 1, bitVec 5 2, bitVec 5 3]) (DC $ Data.BitMatrix.fromRows [bitVec 5 1, bitVec 5 2, bitVec 5 3]) (GeneralCost 2 1)
+-- createAlignMtx (DC $ Data.BitMatrix.fromRows [bitVec 5 2, bitVec 5 1, bitVec 5 12, bitVec 5 3]) (DC $ Data.BitMatrix.fromRows [bitVec 5 1, bitVec 5 2, bitVec 5 3]) (GeneralCost 2 1)
+-- createAlignMtx (DC $ Data.BitMatrix.fromRows [bitVec 5 1, bitVec 5 2, bitVec 5 12, bitVec 5 9]) (DC $ Data.BitMatrix.fromRows [bitVec 5 1, bitVec 5 2, bitVec 5 4]) (GeneralCost 2 1)
 
 instance Arbitrary BV where
     arbitrary = do
