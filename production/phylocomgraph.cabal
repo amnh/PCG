@@ -95,6 +95,7 @@ library
       
   -- Modules exported by the library.
   exposed-modules:     Analysis.General.NeedlemanWunsch
+                       Analysis.ImpliedAlignment.DynamicProgramming
                        Analysis.ImpliedAlignment.Internal
                        Analysis.ImpliedAlignment.Standard
                        Analysis.Parsimony.Binary.DirectOptimization
@@ -290,10 +291,13 @@ executable qdh
                      , keys                 -any
                      , matrix               -any
                      , megaparsec           >=5.0
+                     , memoize              -any
+                     , mono-traversable     -any
                      , parallel             -any
                      , phylocomgraph        -any
                      , QuickCheck           -any
                      , safe                 -any
+                     , scientific           -any
                      , semigroups           -any
                      , smallcheck           -any
                      , split                -any 
@@ -321,7 +325,7 @@ executable qdh
                        -fwarn-unused-imports
                        -fwarn-unused-matches
   
-  hs-source-dirs:      app
+  hs-source-dirs:      app, lib
 
   other-modules:       PCG.Command
                        PCG.Command.Types
@@ -333,6 +337,7 @@ executable qdh
                        PCG.Script.Parser
                        PCG.Script.Types
                        PCG.Command.Types.Report.Metadata
+                       Test.Custom
 
 Test-Suite testsuite
   type:                exitcode-stdio-1.0
