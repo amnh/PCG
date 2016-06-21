@@ -420,8 +420,8 @@ numeration metadataStructure tree = tree `update` updatedLeafNodes
             nonRootNodeValue = {- trace (mconcat ["nonRootNodeValue: (", show i, ",", show j, ")\n", show parentInsertions, " , ", show parentEdgePsuedoCharacter, " , ", show psuedoCharacter ]) $ -}
                                (ancestoralEdgeDeletions, parentEdgeInsertions, psuedoCharacter)
               where
-                -- We mutate the the psuedo-character by replacing "soft gaps" with "hard gaps"
-                -- at indices where insertione events happened.
+                -- We mutate the the psuedo-character by replacing "soft gaps" with "inserted bases"
+                -- at indices where insertione events happened between the parent node and the current node.
                 psuedoCharacter = V.fromList {- . reverse -} $ result
                   where
                     (_,_,result) = foldr f (0, m, []) parentEdgePsuedoCharacter
@@ -516,7 +516,7 @@ deriveImpliedAlignment nodeIndex homologyMemoize node = node `setHomologies'` pu
                 SoftGap      -> (basesSeen    , xs , gap : ys )
                 InsertedBase -> (basesSeen    , xs',       ys')
                 OriginalBase ->
-                           if   basesSeen `oelem` deletions
+                           if    basesSeen `oelem` deletions
                            then (basesSeen + 1, xs', gap : ys )
                            else (basesSeen + 1, xs',       ys') 
               where
