@@ -379,13 +379,13 @@ numeration metadataStructure tree = tree `update` updatedLeafNodes
     parentMapping   = gatherParents  childMapping    rootIndex
 
     showIt = let !x = updatedLeafNodes
-             in x `seq` trace (show $ (\(_,_,y) -> y) <$> homologyMemoize) x
+             in x `seq` trace (show $ (\(y,_,_) -> y) <$> homologyMemoize) x
 
     -- | Memoized multi-directional tree traversal
     homologyMemoize :: Matrix MemoizedEvents
     homologyMemoize = {- (\x -> trace (show x) x) $ -} matrix nodeCount nodeCount opt
       where
---        opt (i,j) | trace (mconcat ["opt (",show i,",",show j,")"]) False = undefined
+        opt (i,j) | trace (mconcat ["opt (",show i,",",show j,")"]) False = undefined
         opt (i,j)
           -- Base case with root node
           | i == rootIndex && j == rootIndex  = {- (\x -> trace (show x) x) -} rootNodeValue
