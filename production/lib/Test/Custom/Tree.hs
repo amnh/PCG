@@ -140,16 +140,16 @@ instance Show TestingDecoration where
   show decoration = intercalate "\n" $ catMaybes renderedCosts <> catMaybes renderedDecorations
     where
       renderedCosts =
-        [ ("LocalCost   "<>)  <$> h dLocalCost
-        , ("TotalCost   "<>)  <$> h dTotalCost
+        [  ("LocalCost   " <>)  <$> h dLocalCost
+        ,  ("TotalCost   " <>)  <$> h dTotalCost
         ]
       renderedDecorations =
-        [ g "Encoded    "  <$> f dEncoded
-        , g "Ungapped   "  <$> f dFinal
-        , g "Gapped     "  <$> f dGapped
-        , g "Preliminary"  <$> f dPreliminary
-        , g "Aligned    "  <$> f dAligned
-        , g "Temporary  "  <$> f dTemporary
+        [ g "Encoded     "  <$> f dEncoded
+        , g "Ungapped    "  <$> f dFinal
+        , g "Gapped      "  <$> f dGapped
+        , g "Preliminary "  <$> f dPreliminary
+        , g "Aligned     "  <$> f dAligned
+        , g "Temporary   "  <$> f dTemporary
         , g "ImpliedAlign" <$> f dImpliedAlignment
         ]
       f x = renderDynamicCharacter <$> headMay (x decoration)
