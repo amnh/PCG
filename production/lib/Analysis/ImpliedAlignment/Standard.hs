@@ -155,7 +155,7 @@ numeratePreorder initTree initNode inMeta curCounts
                     final1 = getForAlign node1
                     final2 = getForAlign node2
                     allUnzip = V.unzip allDO
-                    allDO = V.zipWith3 checkThenAlign final1 final2 inMeta
+                    allDO = V.zipWith3 checkThenAlign final1 final2 $ getCosts <$> inMeta
                     checkThenAlign s1 s2 m = if numChars s1 == numChars s2 then (s1, s2) else doAlignment s1 s2 m
 
 -- | Back propagation to be performed after insertion events occur in a numeration

@@ -19,7 +19,7 @@ module Analysis.ImpliedAlignment.DynamicProgramming where
 
 import           Analysis.ImpliedAlignment.Internal
 import           Analysis.Parsimony.Binary.DirectOptimization
---import           Analysis.Parsimony.Binary.Internal (allOptimization)
+import           Analysis.Parsimony.Binary.Internal (allOptimization)
 import           Bio.Metadata
 import           Bio.PhyloGraph.Forest
 import           Bio.PhyloGraph.Network
@@ -48,7 +48,7 @@ import           Data.Vector.Instances        ()
 import           Prelude               hiding (lookup,zipWith)
 import           Debug.Trace                  (trace)
 import           Safe                         (tailMay)
--- import           Test.Custom hiding (children)
+import           Test.Custom hiding (children)
 
 defMeta :: Vector (CharacterMetadata s)
 defMeta = pure CharMeta
@@ -365,7 +365,7 @@ data PsuedoIndex
 
 type PseudoCharacter = Vector PsuedoIndex
 
-numeration :: (Eq n, Metadata m s, TreeConstraint t n e s, IANode' n s) => m -> t -> t
+numeration :: (Eq n, TreeConstraint t n e s, IANode' n s) => CostStructure -> t -> t
 numeration metadataStructure tree = tree `update` updatedLeafNodes
   where
     -- | Precomputations used for reference in the memoization
@@ -576,15 +576,15 @@ gatherParents childrenMapping = x -- trace ("Gathered parents: " <> show x) x
           | i `oelem` e = Just k
           | otherwise   = acc
 
-comparativeIndelEvents :: (Metadata m s, SeqConstraint s) => s -> s -> m -> (DeletionEvents, InsertionEvents)
-comparativeIndelEvents ancestorCharacterUnaligned descendantCharacterUnaligned metadataStructure
+comparativeIndelEvents :: (SeqConstraint s) => s -> s -> CostStructure -> (DeletionEvents, InsertionEvents)
+comparativeIndelEvents ancestorCharacterUnaligned descendantCharacterUnaligned costStructure
   | olength ancestorCharacter /= olength descendantCharacter = error $ mconcat ["Lengths of sequences are not equal!\n", "Parent length: ", show $ olength ancestorCharacter, "\nChild length: ", show $ olength descendantCharacter]
   | otherwise                                    = (DE deletionEvents, IE insertionEvents)
   where
     (ancestorCharacter, descendantCharacter) =
       if olength ancestorCharacterUnaligned == olength descendantCharacterUnaligned
       then (ancestorCharacterUnaligned, descendantCharacterUnaligned)
-      else doAlignment ancestorCharacterUnaligned descendantCharacterUnaligned metadataStructure
+      else doAlignment ancestorCharacterUnaligned descendantCharacterUnaligned costStructure
 --    deletionEvents  = mempty
 --    insertionEvents = mempty -- E . IM.singleton 0 $ [ _descendantCharacter `indexChar` 0 ]
     (_,deletionEvents,insertionEvents) = ofoldl' f (0, mempty, mempty) [0 .. olength descendantCharacter - 1]
