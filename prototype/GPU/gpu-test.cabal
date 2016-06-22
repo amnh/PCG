@@ -42,7 +42,6 @@ executable gpu-test
                      , accelerate-cuda      >=2.0
                      , Safe
                      , vector               -any
-
   ghc-options:         -O2 -Wall
                        -threaded
                        -fwarn-duplicate-exports

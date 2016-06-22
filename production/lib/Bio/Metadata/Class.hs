@@ -28,7 +28,7 @@ class Metadata m s | m -> s where
     getFitchMasks     :: m -> (s, s)
     getAligned        :: m -> Bool
     getType           :: m -> CharDataType
-    getGapCost        :: m -> Double
+    -- getCosts          :: m -> Double
 
 instance Metadata (CharacterMetadata s) s where
     getWeight         = weight
@@ -38,8 +38,14 @@ instance Metadata (CharacterMetadata s) s where
     getAligned        = isAligned
     getFitchMasks     = fitchMasks
     getType           = charType
-    getGapCost      m = case costs m of
-                            TCM mat           -> if length (alphabet m) > 1 then getElem 0 1 mat else 1
-                            AffineCost  g _ _ -> g
-                            GeneralCost g _   -> g
-
+    -- getGapCost        = indelCost
+ {-
+indelCost :: CharacterMetadata -> Double
+indelCost meta =
+  case getCosts meta of
+    -- AffineCost  g _ _ -> g
+    GeneralCost indel _ -> indel
+    TCM mat             -> if   numRows mat > 1
+                           then mat ! (, numCols mat - 1)
+                           else 1
+-}
