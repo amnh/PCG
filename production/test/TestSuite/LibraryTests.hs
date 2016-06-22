@@ -3,12 +3,12 @@ module TestSuite.LibraryTests
   , testSuite
   ) where
 
-import qualified Analysis.ImpliedAlignment.Test        as IA
-import qualified Analysis.General.Test                 as GeneralAnalysis
-import qualified Analysis.Parsimony.Binary.Test        as Parsimony
-import qualified Bio.Character.Dynamic.Coded.Test      as Char
-import qualified Bio.PhyloGraph.DAG.Test               as DAG
-import qualified Test.Custom.Tree.Test                 as MockTree
+import qualified Analysis.ImpliedAlignment.Test                    as IA
+import qualified Analysis.Parsimony.Binary.DirectOptimization.Test as DO
+import qualified Analysis.Parsimony.Binary.Test                    as Parsimony
+import qualified Bio.Character.Dynamic.Coded.Test                  as Char
+import qualified Bio.PhyloGraph.DAG.Test                           as DAG
+import qualified Test.Custom.Tree.Test                             as MockTree
 {-
 import qualified Control.Evaluation.Test               as Evaluation
 import qualified Text.Megaparsec.Custom.Test           as Megaparsec
@@ -39,7 +39,7 @@ testSuite = testGroup "Library Test Suite"
     DAG.testSuite
   , MockTree.testSuite
   , Char.testSuite
-  , GeneralAnalysis.testSuite
+  , DO.testSuite
   , Parsimony.testSuite
   , IA.testSuite
   ]

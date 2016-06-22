@@ -17,7 +17,7 @@ module Analysis.ImpliedAlignment.Test where
 
 import           Analysis.Parsimony.Binary.Internal
 import           Analysis.Parsimony.Binary.Optimization
-import           Analysis.General.NeedlemanWunsch
+import           Analysis.Parsimony.Binary.DirectOptimization
 import           Analysis.ImpliedAlignment.Internal
 import           Analysis.ImpliedAlignment.Standard
 import           Bio.Character.Dynamic.Coded

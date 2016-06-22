@@ -94,8 +94,7 @@ library
     ffi/Analysis/Parsimony/Binary/SequentialAlign
       
   -- Modules exported by the library.
-  exposed-modules:     Analysis.General.NeedlemanWunsch
-                       Analysis.ImpliedAlignment.DynamicProgramming
+  exposed-modules:
                        Analysis.ImpliedAlignment.Internal
                        Analysis.ImpliedAlignment.Standard
                        Analysis.Parsimony.Binary.DirectOptimization
@@ -144,7 +143,8 @@ library
                        Data.Matrix.NotStupid
                        Text.Megaparsec.Custom
   -- Modules included in this library but not exported.
-  other-modules:       Analysis.Parsimony.Binary.SequentialAlign.SeqAlignFFI
+  other-modules:       Analysis.Parsimony.Binary.DirectOptimization.Internal
+                       Analysis.Parsimony.Binary.SequentialAlign.SeqAlignFFI
                        Analysis.Parsimony.Binary.Constraints
                        Bio.Character.Dynamic.Coded.Class
                        Bio.Character.Dynamic.Coded.Internal
@@ -381,11 +381,11 @@ Test-Suite testsuite
   hs-source-dirs:      test, lib, app, ffi
 
   other-modules:
-                       Analysis.General.NeedlemanWunsch
                        Analysis.ImpliedAlignment.Internal
                        Analysis.ImpliedAlignment.Standard
                        Analysis.ImpliedAlignment.Test
-                       Analysis.Parsimony.Binary.DirectOptimization
+                       Analysis.Parsimony.Binary.DirectOptimization.Internal
+                       Analysis.Parsimony.Binary.DirectOptimization.Test
                        Analysis.Parsimony.Binary.Internal
                        Analysis.Parsimony.Binary.Test
                        Analysis.Parsimony.Binary.Fitch
@@ -499,7 +499,6 @@ Test-Suite testsuite
                        Control.Monad.Logger
                        Analysis.Parsimony.Binary.Optimization
                        Bio.PhyloGraph.Forest.Parsed
-                       Analysis.General.Test
                        Bio.Metadata.MaskGenerator
                        Bio.PhyloGraph.DAG.Test
                        Analysis.Parsimony.Binary.Constraints

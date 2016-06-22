@@ -1,6 +1,6 @@
 -----------------------------------------------------------------------------
 -- |
--- Module      :  Analysis.General.NeedlemanWunsch
+-- Module      :  Analysis.Parsimony.Binary.DirectOptimization.Internal
 -- Copyright   :  (c) 2015-2015 Ward Wheeler
 -- License     :  BSD-style
 --

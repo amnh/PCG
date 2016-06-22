@@ -1,6 +1,6 @@
 -----------------------------------------------------------------------------
 -- |
--- Module      :  Analysis.General.NeedlemanWunsch
+-- Module      :  Analysis.Parsimony.Binary.DirectOptimization 
 -- Copyright   :  (c) 2015-2015 Ward Wheeler
 -- License     :  BSD-style
 --
@@ -11,8 +11,9 @@
 -- Direct optimization export
 --
 -----------------------------------------------------------------------------
-module Analysis.Parsimony.Binary.DirectOptimization where
+module Analysis.Parsimony.Binary.DirectOptimization 
     ( naiveDO
+    , doAlignment 
     ) where
 
-import BAnalysis.Parsimony.Binary.DirectOptimization.Internal
+import Analysis.Parsimony.Binary.DirectOptimization.Internal

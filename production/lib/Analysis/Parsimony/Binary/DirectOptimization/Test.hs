@@ -1,6 +1,6 @@
 -----------------------------------------------------------------------------
 -- |
--- Module      :  Analysis.General.Test
+-- Module      :  Analysis.Parsimony.Binary.DirectOptimization.Test
 -- Copyright   :  (c) 2015-2015 Ward Wheeler
 -- License     :  BSD-style
 --
@@ -12,7 +12,7 @@
 --
 -----------------------------------------------------------------------------
 
-module Analysis.General.Test where
+module Analysis.Parsimony.Binary.DirectOptimization.Test where
 
 import           Analysis.Parsimony.Binary.DirectOptimization.Internal
 import           Bio.Character.Dynamic.Coded
@@ -48,17 +48,17 @@ matrixForTesting =  trace (show finalMatrix) $ finalMatrix
         finalMatrix = initMatrix
 
 testSuite :: TestTree
-testSuite =  testGroup "General analysis functionality" [ alignDOProperties
+testSuite =  testGroup "DO functionality" [ alignDOProperties
                                                        , getSubCharsTest
                                                        , overlapTest
                                                        , getCostTest
                                                        ]
 
 alignDOProperties :: TestTree
-alignDOProperties = testGroup "Properties of Needleman Wunsch algorithm" [ firstRow
+alignDOProperties = testGroup "Properties of DO alignment algorithm" [ firstRow
                                                                            ]
     where
-        firstRow = testProperty "First row of alignment matrix has expected directions" checkRow
+        firstRow = testProperty "First row of DO alignment matrix has expected directions" checkRow
             where
                 checkRow :: DynamicChar -> Bool
                 checkRow inSeq = fDir == DiagArrow && allLeft (V.tail result) && V.length result == (rowLen + 1)
