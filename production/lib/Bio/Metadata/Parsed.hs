@@ -81,8 +81,10 @@ instance ParsedMetadata Nexus where
         where
             convertNexusMeta inMeta =
                 let defaultMeta = makeOneInfo . Alphabet . fromList $ Nex.alphabet inMeta
-                in  defaultMeta { name = Nex.name inMeta, isIgnored = Nex.ignored inMeta,
-                                  costs  = maybe (costs defaultMeta) (TCM . F.transitionCosts) (Nex.costM inMeta)}
+                in  defaultMeta { name      = Nex.name inMeta
+                                , isIgnored = Nex.ignored inMeta
+                                , costs     = maybe (costs defaultMeta) (TCM . F.transitionCosts) (Nex.costM inMeta)
+                                }
 
 disAlph, dnaAlph, rnaAlph, aaAlph :: Vector String
 -- | The acceptable DNA character values (with IUPAC codes).

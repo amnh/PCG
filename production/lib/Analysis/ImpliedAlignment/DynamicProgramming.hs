@@ -17,9 +17,9 @@
 
 module Analysis.ImpliedAlignment.DynamicProgramming where
 
-import           Analysis.General.NeedlemanWunsch hiding (SeqConstraint)
 import           Analysis.ImpliedAlignment.Internal
--- import           Analysis.Parsimony.Binary.Internal (allOptimization)
+import           Analysis.Parsimony.Binary.DirectOptimization
+--import           Analysis.Parsimony.Binary.Internal (allOptimization)
 import           Bio.Metadata
 import           Bio.PhyloGraph.Forest
 import           Bio.PhyloGraph.Network
@@ -177,7 +177,7 @@ numeratePreorder initTree initNode inMeta curCounts
                     final2 = getForAlign node2
                     allUnzip = V.unzip allDO
                     allDO = V.zipWith3 checkThenAlign final1 final2 inMeta
-                    checkThenAlign s1 s2 m = if numChars s1 == numChars s2 then (s1, s2) else needlemanWunsch s1 s2 m
+                    checkThenAlign s1 s2 m = if numChars s1 == numChars s2 then (s1, s2) else doAlignment s1 s2 m
 
 -- | Back propagation to be performed after insertion events occur in a numeration
 -- goes back up and to the left, then downward
@@ -584,7 +584,7 @@ comparativeIndelEvents ancestorCharacterUnaligned descendantCharacterUnaligned m
     (ancestorCharacter, descendantCharacter) =
       if olength ancestorCharacterUnaligned == olength descendantCharacterUnaligned
       then (ancestorCharacterUnaligned, descendantCharacterUnaligned)
-      else needlemanWunsch ancestorCharacterUnaligned descendantCharacterUnaligned metadataStructure
+      else doAlignment ancestorCharacterUnaligned descendantCharacterUnaligned metadataStructure
 --    deletionEvents  = mempty
 --    insertionEvents = mempty -- E . IM.singleton 0 $ [ _descendantCharacter `indexChar` 0 ]
     (_,deletionEvents,insertionEvents) = ofoldl' f (0, mempty, mempty) [0 .. olength descendantCharacter - 1]

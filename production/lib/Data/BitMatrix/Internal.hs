@@ -136,10 +136,9 @@ numRows (BitMatrix n bv)
 --   /O(m)/
 rows :: BitMatrix -> [BitVector]
 rows bm@(BitMatrix nCols bv)
-    |  nRows == 0
-    || nCols == 0 = []
-    |  nRows == 1 = [bv]
-    |  otherwise  = (bv @@) <$> slices
+    |  nRows == 0 || nCols == 0 = []
+    |  nRows == 1               = [bv]
+    |  otherwise                = (bv @@) <$> slices
     where
       nRows  = numRows bm
       slices = take nRows $ iterate ((nCols +) `bimap` (nCols +)) (nCols - 1, 0) --(start, end)
@@ -150,7 +149,7 @@ rows bm@(BitMatrix nCols bv)
 row :: BitMatrix -> Int -> BitVector
 row bm@(BitMatrix nCols bv) i
   | 0 <= i && i < nRows = bv @@ (left, right)
-  | otherwise       = error errorMsg
+  | otherwise           = error errorMsg
   where
     -- It couldn't be more clear
     left     = nCols * (i + 1) - 1 -- BitVector is big-endian, so left is most-significant. 
