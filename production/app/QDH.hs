@@ -8,7 +8,7 @@ import Safe                (headMay, readMay, tailMay)
 import System.Environment  (getArgs)
 import Test.Custom
 
-import Debug.Trace (trace)
+-- import Debug.Trace (trace)
 
 main :: IO ()
 main = getArgs
