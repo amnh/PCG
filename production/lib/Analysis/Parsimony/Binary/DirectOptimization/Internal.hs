@@ -176,7 +176,7 @@ traceback alignMat' char1' char2' = (fromChars $ reverse t1, fromChars $ reverse
 getTotalAlignmentCost :: DOAlignMatrix s -> Double
 getTotalAlignmentCost alignmentMatrix = c
   where
-    (c, _, _) = alignmentMatrix ! (nrows inAlign - 1, ncols inAlign - 1) 
+    (c, _, _) = alignmentMatrix ! (nrows alignmentMatrix - 1, ncols alignmentMatrix - 1) 
 
 -- | Memoized wrapper of the overlap function
 getOverlap :: (EncodableStaticCharacter s, Memoizable s) => s -> s -> CostStructure -> (s, Double)
