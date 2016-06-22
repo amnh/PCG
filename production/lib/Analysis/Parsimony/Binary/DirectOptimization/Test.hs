@@ -14,7 +14,7 @@
 
 module Analysis.General.Test where
 
-import           Analysis.General.NeedlemanWunsch
+import           Analysis.Parsimony.Binary.DirectOptimization.Internal
 import           Bio.Character.Dynamic.Coded
 import           Bio.Character.Parsed
 import           Bio.Metadata
@@ -24,7 +24,8 @@ import           Data.BitMatrix
 import           Data.Bits
 import           Data.BitVector        hiding (foldr)
 import           Data.Matrix.NotStupid        (getRow, fromLists, setElem)
-import qualified Data.Vector                                            as V
+import qualified Data.Vector                                               as V
+import           Test.Custom.Types
 import           Test.Tasty
 import           Test.Tasty.HUnit
 import           Test.Tasty.QuickCheck hiding ((.?.))
@@ -37,7 +38,7 @@ sampleMeta :: CharacterMetadata DynamicChar
 sampleMeta =  CharMeta DirectOptimization standardAlph "" False False 1 mempty (emptyChar, emptyChar) 0 (GeneralCost 1 1)
 
 -- This is needed to align AC(GT)(AT) with ACT. Taked from Wheeler '96, fig. 2, HTU just below root.
-matrixForTesting :: AlignMatrix s
+matrixForTesting :: DOAlignMatrix s
 matrixForTesting =  trace (show finalMatrix) $ finalMatrix
     where
         initMatrix = Data.Matrix.NotStupid.fromLists cellList
@@ -47,14 +48,14 @@ matrixForTesting =  trace (show finalMatrix) $ finalMatrix
         finalMatrix = initMatrix
 
 testSuite :: TestTree
-testSuite =  testGroup "General analysis functionality" [ needlemanProperties
+testSuite =  testGroup "General analysis functionality" [ alignDOProperties
                                                        , getSubCharsTest
                                                        , overlapTest
                                                        , getCostTest
                                                        ]
 
-needlemanProperties :: TestTree
-needlemanProperties = testGroup "Properties of Needleman Wunsch algorithm" [ firstRow
+alignDOProperties :: TestTree
+alignDOProperties = testGroup "Properties of Needleman Wunsch algorithm" [ firstRow
                                                                            ]
     where
         firstRow = testProperty "First row of alignment matrix has expected directions" checkRow
@@ -63,7 +64,7 @@ needlemanProperties = testGroup "Properties of Needleman Wunsch algorithm" [ fir
                 checkRow inSeq = fDir == DiagArrow && allLeft (V.tail result) && V.length result == (rowLen + 1)
                     where
                         rowLen = numChars inSeq
-                        fullMat = createAlignMtx inSeq inSeq (getCosts sampleMeta)
+                        fullMat = createDOAlignMatrix inSeq inSeq (getCosts sampleMeta)
                         result = getRow 0 fullMat
                         (_, fDir, _) = V.head result
                         allLeft = V.all (\(_, val, _) -> val == LeftArrow)
@@ -112,6 +113,7 @@ getCostTest = testGroup "Properties of getCosts" [ -- tcmTest
                                                   ]
     where
         {- assuming TCM is properly tested, and since getSubChars is right, we don't need to test with tcms
+           Think about this with an assymetric TCM use case.
         tcmTest :: Bool
         tcmTest = allPassed
             where
@@ -199,14 +201,9 @@ overlapTest = testGroup "Overlap test cases" [ singleIntersectionTest
                 expectedResult = (bitVec 5 6, 1)
                 result         = getOverlap char1 char2 (GeneralCost 2 1)
 
--- createAlignMtx (DC $ Data.BitMatrix.fromRows [bitVec 5 2, bitVec 5 1, bitVec 5 2, bitVec 5 3]) (DC $ Data.BitMatrix.fromRows [bitVec 5 1, bitVec 5 2, bitVec 5 3]) (GeneralCost 2 1)
--- createAlignMtx (DC $ Data.BitMatrix.fromRows [bitVec 5 2, bitVec 5 1, bitVec 5 12, bitVec 5 3]) (DC $ Data.BitMatrix.fromRows [bitVec 5 1, bitVec 5 2, bitVec 5 3]) (GeneralCost 2 1)
--- createAlignMtx (DC $ Data.BitMatrix.fromRows [bitVec 5 1, bitVec 5 2, bitVec 5 12, bitVec 5 9]) (DC $ Data.BitMatrix.fromRows [bitVec 5 1, bitVec 5 2, bitVec 5 4]) (GeneralCost 2 1)
+-- createDOAlignMatrix (DC $ Data.BitMatrix.fromRows [bitVec 5 2, bitVec 5 1, bitVec 5 2, bitVec 5 3]) (DC $ Data.BitMatrix.fromRows [bitVec 5 1, bitVec 5 2, bitVec 5 3]) (GeneralCost 2 1)
+-- createDOAlignMatrix (DC $ Data.BitMatrix.fromRows [bitVec 5 2, bitVec 5 1, bitVec 5 12, bitVec 5 3]) (DC $ Data.BitMatrix.fromRows [bitVec 5 1, bitVec 5 2, bitVec 5 3]) (GeneralCost 2 1)
+-- createDOAlignMatrix (DC $ Data.BitMatrix.fromRows [bitVec 5 1, bitVec 5 2, bitVec 5 12, bitVec 5 9]) (DC $ Data.BitMatrix.fromRows [bitVec 5 1, bitVec 5 2, bitVec 5 4]) (GeneralCost 2 1)
 
-instance Arbitrary BV where
-    arbitrary = do
-        len <- arbitrary :: Gen (Positive Int)
-        boolList <- vector (getPositive len)
-        pure $ fromBits boolList 
 
 

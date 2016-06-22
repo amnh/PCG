@@ -145,6 +145,7 @@ instance EncodableDynamicCharacter DynamicChar where
 
   unsafeConsElem e (DC dynamic) = DC . fromRows $ pure e <> rows dynamic
 
+
 instance OldEncodableDynamicCharacterToBeRemoved DynamicChar where
     
 --    emptyChar          :: s

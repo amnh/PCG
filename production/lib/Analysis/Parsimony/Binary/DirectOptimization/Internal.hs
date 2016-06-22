@@ -13,8 +13,9 @@
 -----------------------------------------------------------------------------
 {-# LANGUAGE ConstraintKinds #-}
 
-module Analysis.General.NeedlemanWunsch where
+module Analysis.Parsimony.Binary.DirectOptimization.Internal where
 
+import Analysis.Parsimony.Binary.Constraints
 import Bio.Metadata
 import Bio.Character.Dynamic.Coded
 import Data.Bits
@@ -30,45 +31,76 @@ import Data.Vector           (Vector)
 -- | The direction to align the character at a given matrix point.
 data Direction = LeftArrow | DiagArrow | UpArrow deriving (Eq, Show)
 
--- | A row of the 'AlignMatrix'
+-- | A row of the 'DOAlignMatrix'
 -- constructed as a tuple of vectors for easy joining to the full matrix
 type AlignRow s = Vector (Double, Direction, BitVector)
 
--- | A representation of an alignment matrix
+-- | A representation of an alignment matrix for DO.
 -- The matrix itself stores tuples of the cost and direction at that position.
 -- We also store a vector of characters that are generated.
-type AlignMatrix s = Matrix (Double, Direction, BitVector)
+type DOAlignMatrix s = Matrix (Double, Direction, BitVector)
 
 type NWSeqConstraint s = (EncodableDynamicCharacter s, Show s, Memoizable s)
 
+-- | Performs a naive direct optimization
+-- Takes in two characters to run DO on and a metadata object
+-- Returns an assignment character, the cost of that assignment, the assignment character with gaps included,
+-- the aligned version of the first input character, and the aligned version of the second input character
+-- The process for this algorithm is to generate a traversal matrix, then perform a traceback.
+naiveDO :: (Metadata m s, SeqConstraint' s) => s -> s -> m -> (s, Double, s, s, s)
+naiveDO char1 char2 meta
+    | isEmpty char1 = (char1, 0, char1, char1, char1)
+    | isEmpty char2 = (char2, 0, char2, char2, char2)
+    | otherwise =
+        let
+            char1Len = numChars char1
+            char2Len = numChars char2
+            (shorterChar, longerChar, _longLen) = if char1Len > char2Len
+                                         then (char2, char1, char1Len)
+                                         else (char1, char2, char2Len)
+            traversalMat = createDOAlignMatrix longerChar shorterChar (getCosts meta)
+            cost = getTotalAlignmentCost traversalMat
+            (gapped, left, right) = traceback traversalMat shorterChar longerChar
+            -- TODO: change to occur in traceback, to remove constant factor.
+            ungapped = filterGaps gapped
+            (out1, out2) = if char1Len > char2Len
+                                then (right, left)
+                                else (left, right)
+        in (ungapped, cost, gapped, out1, out2)
+            
+
+
 -- | Wrapper function to do an enhanced Needleman-Wunsch algorithm.
--- Calls 'createAlignMtx' to generate an 'AlignMatrix', then 'traceback' to get 
--- the aligned characters
+-- Calls 'createDOAlignMatrix' to generate an 'DOAlignMatrix', then 'traceback' to get 
+-- the aligned characters.
 -- Takes in two 'EncodableDynamicCharacter's and a 'CostStructure'.
 -- Returns two _aligned_ 'EncodableDynamicCharacter's.
-needlemanWunsch :: (NWSeqConstraint s, Metadata m s) => s -> s -> m -> (s, s)
-needlemanWunsch char1 char2 meta = (seq1Align, seq2Align)
+-- !!!TODO: make 5-tuple, replace code in naiveDO
+doAlignment :: (NWSeqConstraint s, Metadata m s) => s -> s -> m -> (s, s)
+doAlignment char1 char2 meta = (seq1Align, seq2Align)
     where
-        char1Len               = numChars char1
-        char2Len               = numChars char2
-        (shorterChar, longerChar, _) = if   char1Len > char2Len
-                                              then (char2, char1, char1Len)
-                                              else (char1, char2, char2Len)
-        traversalMat           = createAlignMtx longerChar shorterChar (getCosts meta)
+        char1Len                  = numChars char1
+        char2Len                  = numChars char2
+        (shorterChar, longerChar) = if   char1Len > char2Len
+                                    then (char2, char1)
+                                    else (char1, char2)
+        traversalMat           = createDOAlignMatrix longerChar shorterChar (getCosts meta)
         (_, alignL, alignR)    = traceback traversalMat shorterChar longerChar
         (seq1Align, seq2Align) = if   char1Len > char2Len
                                  then (alignR, alignL)
                                  else (alignL, alignR)
 
--- | Main function to generate an 'AlignMatrix'. Works as in Needleman-Wunsch,
+-- | Main function to generate an 'DOAlignMatrix'. Works as in Needleman-Wunsch,
 -- but allows for multiple indel/replacement costs, depending on the 'CostStructure'.
+-- Also, returns the aligned parent characters, with appropriate ambiguities, as the third of
+-- each tuple in the matrix.
 -- Takes in two 'EncodableDynamicCharacter's and a 'CostStructure'. The first character
 -- must be the longer of the two and is the top labeling of the matrix.
--- Returns an 'AlignMatrix'.
+-- Returns an 'DOAlignMatrix'.
 -- TODO: See if we can move topDynChar logic inside here. It's also necessary in DO. 
--- Or maybe DO can just call needlemanWunsch?
-createAlignMtx :: (EncodableDynamicCharacter s) => s -> s -> CostStructure -> AlignMatrix s
-createAlignMtx topDynChar leftDynChar costStruct = result
+-- Or maybe DO can just call doAlignment?
+createDOAlignMatrix :: (EncodableDynamicCharacter s) => s -> s -> CostStructure -> DOAlignMatrix s
+createDOAlignMatrix topDynChar leftDynChar costStruct = result
     where
         result = matrix (numChars leftDynChar + 1) (numChars topDynChar + 1) generateMat
 
@@ -107,18 +139,19 @@ createAlignMtx topDynChar leftDynChar costStruct = result
                                           , (diagCost , diagChar , DiagArrow)
                                           ]
 
--- | Performs the traceback of an 'AlignMatrix'.
--- Takes in an 'AlignMatrix', two 'EncodableDynamicCharacter's, and the 'Alphabet' length.
+-- | Performs the traceback of an 'DOAlignMatrix'.
+-- Takes in an 'DOAlignMatrix', two 'EncodableDynamicCharacter's, and the 'Alphabet' length.
 -- Returns an aligned 'EncodableDynamicCharacter', as well as the aligned versions of the two inputs.
 -- Essentially does the second step of Needleman-Wunsch, following the arrows from the bottom right corner, 
--- accumulating the sequences as it goes, but only returns a single alignment. This alignment *should* be biased
--- toward the shorter of the two sequences.
-traceback :: (NWSeqConstraint s) => AlignMatrix s -> s -> s -> (s, s, s)
+-- accumulating the sequences as it goes, but returns three alignments: the left character, the right character,
+-- and the parent. The child alignments *should* be biased toward the shorter of the two sequences.
+-- Try 
+traceback :: (NWSeqConstraint s) => DOAlignMatrix s -> s -> s -> (s, s, s)
 traceback alignMat' char1' char2' = (fromChars $ reverse t1, fromChars $ reverse t2, fromChars $ reverse t3)
     where
         (t1, t2, t3) = tracebackInternal alignMat' char1' char2' (nrows alignMat' - 1, ncols alignMat' - 1)
         -- read it from the matrix instead of grabbing
-        tracebackInternal :: (NWSeqConstraint s) => AlignMatrix s -> s -> s -> (Int, Int) -> ([BitVector], [BitVector], [BitVector])
+        tracebackInternal :: (NWSeqConstraint s) => DOAlignMatrix s -> s -> s -> (Int, Int) -> ([BitVector], [BitVector], [BitVector]) -- TODO: make s's into Element s
         tracebackInternal alignMat char1 char2 (row, col)
             | nrows alignMat < row - 1 || ncols alignMat < col - 1 = error "Traceback cannot function because matrix is incomplete"
             | row == 0 && col == 0 = (mempty, mempty, mempty)
@@ -127,16 +160,20 @@ traceback alignMat' char1' char2' = (fromChars $ reverse t1, fromChars $ reverse
                 in (curState : trace1, leftCharacter : trace2, rightCharacter : trace3)
             where
               (_, curDirect, curState) = getElem row col alignMat
-              leftCharacter  = if row == i then gapChar char2 else grabSubChar char1 i
-              rightCharacter = if col == j then gapChar char1 else grabSubChar char2 j
+              leftCharacter  = if row == i 
+                               then gapChar char2 
+                               else grabSubChar char1 i
+              rightCharacter = if col == j 
+                               then gapChar char1 
+                               else grabSubChar char2 j
               (i, j) =
                 case curDirect of
                   LeftArrow -> (row    , col - 1)
-                  UpArrow -> (row - 1, col    ) -- Isn't this "up"
+                  UpArrow   -> (row - 1, col    )
                   DiagArrow -> (row - 1, col - 1)
 
 -- | Simple function to get the cost from an alignment matrix
-getTotalAlignmentCost :: AlignMatrix s -> Double
+getTotalAlignmentCost :: DOAlignMatrix s -> Double
 getTotalAlignmentCost inAlign = c
     where (c, _, _) = getElem (nrows inAlign - 1) (ncols inAlign - 1) inAlign
 
@@ -192,7 +229,7 @@ getCost :: EncodableStaticCharacter s => CostStructure -> (Int, s) -> (Int, s) -
 getCost costStruct seqTup1 seqTup2 = 
     case (costStruct, seqTup1, seqTup2) of
        -- (AffineCost {}        , _         , _         ) -> error "Cannot apply DO algorithm on affine cost" -- When this is added, remember to write a test.
-        (TCM mtx              , (pos1, c1), (pos2, c2)) -> (c1 .|. c2, getElem pos1 pos2 mtx)
+        (TCM matrix           , (pos1, c1), (pos2, c2)) -> (c1 .|. c2, matrix ! (pos1, pos2))
         (GeneralCost indel sub, (_   , c1), (_   , c2)) -> if c1 == gap || c2 == gap 
                                                            then (c1 .|. c2, indel) 
                                                            else (c1 .|. c2, sub)
@@ -208,8 +245,8 @@ getCost costStruct seqTup1 seqTup2 =
 -- Tests exist in the test suite.
 getSubChars :: (EncodableStaticCharacter s) => s -> [(Int, s)]
 getSubChars fullChar = foldr (\i acc -> if testBit fullChar i 
-                                    then (i, z `setBit` i) : acc 
-                                    else acc 
-                         ) mempty [0..(stateCount fullChar)]
+                                        then (i, z `setBit` i) : acc 
+                                        else acc 
+                             ) mempty [0..(stateCount fullChar)]
   where
     z = fullChar `xor` fullChar
