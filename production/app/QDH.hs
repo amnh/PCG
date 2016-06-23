@@ -2,13 +2,14 @@ module Main (main) where
 
 import Analysis.ImpliedAlignment.DynamicProgramming
 import Analysis.Parsimony.Binary.Optimization
+import Bio.Metadata        (getCosts)
 import Control.Applicative ((<|>))
 import Data.Vector         ((!))
 import Safe                (headMay, readMay, tailMay)
 import System.Environment  (getArgs)
 import Test.Custom
 
-import Debug.Trace (trace)
+-- import Debug.Trace (trace)
 
 main :: IO ()
 main = getArgs
@@ -21,7 +22,7 @@ handleInput args =
     Nothing -> exampleTree
 
 compute :: SimpleTree -> IO ()
-compute = print . numeration (defMeta ! 0) . allOptimization 0 defMeta 
+compute = print . numeration (getCosts $ defMeta ! 0) . allOptimization 0 defMeta 
 
 trySimpleTree :: [String] -> Maybe SimpleTree
 trySimpleTree xs = do

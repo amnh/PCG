@@ -11,7 +11,7 @@
 -- Standard algorithm for implied alignment
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE BangPatterns, TypeFamilies #-}
+{-# LANGUAGE BangPatterns, FlexibleContexts, TypeFamilies #-}
 
 -- TODO: Make an ImpliedAlignment.hs file for exposure of appropriate functions
 
@@ -31,7 +31,7 @@ import           Control.Applicative          ((<|>))
 import           Control.Arrow                ((&&&))
 import           Data.Alphabet
 import           Data.Bifunctor               (first)
-import           Data.BitMatrix
+-- import           Data.BitMatrix
 import           Data.Foldable
 import           Data.IntMap                  (IntMap, insert)
 import qualified Data.IntMap            as IM
@@ -45,15 +45,10 @@ import           Data.MonoTraversable
 import           Data.Vector                  (Vector, imap)
 import qualified Data.Vector             as V
 import           Data.Vector.Instances        ()
-import           Prelude               hiding (lookup)
+import           Prelude               hiding (lookup,zipWith)
 import           Debug.Trace                  (trace)
 import           Safe                         (tailMay)
 import           Test.Custom hiding (children)
-
-
-import Data.Function.Memoize
-import Data.Bits
-
 
 defMeta :: Vector (CharacterMetadata s)
 defMeta = pure CharMeta
@@ -70,6 +65,8 @@ defMeta = pure CharMeta
         }
   
 newtype MutationAccumulator = Accum (IntMap Int, Int, Int, Int, Int, IntSet)
+
+{-
 
 -- | Top level wrapper to do an IA over an entire solution
 -- takes a solution
@@ -273,16 +270,6 @@ numerateOne ancestorSeq descendantSeq (maxLen, initialCounter) = (descendantHomo
             descendantCharacter    = fromJust $ safeGrab descendantSeq i
             ancestorCharacter = fromJust $ safeGrab ancestorSeq   i 
 
--- TODO: make sure a sequence always ends up in FinalGapped to avoid this decision tree
--- | Simple function to get a sequence for alignment purposes
-getForAlign :: NodeConstraint n s => n -> Vector s
-getForAlign n 
-    | not . null $ getFinalGapped n = getFinalGapped n
-    | not . null $ getPreliminary n = getPreliminary n 
-    | not . null $ getEncoded     n = getEncoded n 
-    | otherwise = mempty {-error "No sequence at node for IA to numerate"-}
-
-
 -- | Function to do a numeration on an entire node
 -- given the parent node, child node, current counter vector, and vector of metadata
 -- returns a tuple with the node with homologies incorporated, and a returned vector of counters
@@ -292,10 +279,10 @@ comparativeNumeration parentNode childNode totalGapCounts = (setHomologies child
     totalGapCounts' = V.zipWith (IM.insert (0 {- We need a unique index for each node here or for each sewuence -})) childGapCounts totalGapCounts
     numeration      = V.zipWith characterNumeration (getForAlign parentNode) (getForAlign childNode)
     (homologs, childGapCounts, insertionEvents) = V.unzip3 numeration
-                                                                                                                                            
-characterNumeration :: SeqConstraint s => s -> s -> (Homologies, Int, IntSet)
-characterNumeration = undefined
+-}
 {-
+
+characterNumeration :: SeqConstraint s => s -> s -> (Homologies, Int, IntSet)
 characterNumeration ancestorSeq descendantSeq = (descendantHomologies, totalGaps, insertionEvents)                                          
   where                                                                                                                                     
     gap = gapChar descendantSeq                                                                                                             
@@ -315,6 +302,17 @@ characterNumeration ancestorSeq descendantSeq = (descendantHomologies, totalGaps
             descendantCharacter    = fromJust $ safeGrab descendantSeq i                                                                    
             ancestorCharacter      = fromJust $ safeGrab ancestorSeq   i 
 -}
+
+-- TODO: make sure a sequence always ends up in FinalGapped to avoid this decision tree
+-- | Simple function to get a sequence for alignment purposes
+getForAlign :: NodeConstraint n s => n -> Vector s
+getForAlign n 
+    | not . null $ getFinalGapped n = getFinalGapped n
+    | not . null $ getPreliminary n = getPreliminary n 
+    | not . null $ getEncoded     n = getEncoded n 
+    | otherwise = mempty {-error "No sequence at node for IA to numerate"-}
+
+
 
 type AncestorDeletionEvents    = IntSet
 type AncestorInsertionEvents   = IntSet
@@ -367,7 +365,7 @@ data PsuedoIndex
 
 type PseudoCharacter = Vector PsuedoIndex
 
-numeration :: (Eq n, Metadata m s, TreeConstraint t n e s, IANode' n s) => m -> t -> t
+numeration :: (Eq n, TreeConstraint t n e s, IANode' n s) => CostStructure -> t -> t
 numeration metadataStructure tree = tree `update` updatedLeafNodes
   where
     -- | Precomputations used for reference in the memoization
@@ -387,13 +385,15 @@ numeration metadataStructure tree = tree `update` updatedLeafNodes
       where
 --        opt (i,j) | trace (mconcat ["opt (",show i,",",show j,")"]) False = undefined
         opt (i,j)
-          -- Base case with root node
-          | i == rootIndex && j == rootIndex = {- (\x -> trace (show x) x)-} rootNodeValue
-          -- Is a non-root node
-          | i == j                           = nonRootNodeValue
-          -- Is an edge in the tree
-          | j `oelem` (childMapping V.! i)   = parentChildEdge
-          -- Not a node nor an edge
+          -- The root node (base case)
+          | i == rootIndex && j == rootIndex = {- (\x -> trace (show x) x) -} rootNodeValue
+          -- A non-root node
+          | i == j                           = {- (\e@(_,x,y) -> trace (mconcat ["opt(", show i,",",show j,") ",show x," ",show y]) e) -}
+                                                nonRootNodeValue
+          -- An edge in the tree
+          | j `oelem` (childMapping V.! i)   = {- (\e@(_,x,_) -> trace (mconcat ["opt(", show i,",",show j,") ",show x]) e) -}
+                                                parentChildEdge
+          -- Neither a node nor an edge
           | otherwise                        = undefined
           where
 
@@ -418,7 +418,7 @@ numeration metadataStructure tree = tree `update` updatedLeafNodes
                         Just n  -> replicate n SoftGap
 
             nonRootNodeValue = {- trace (mconcat ["nonRootNodeValue: (", show i, ",", show j, ")\n", show parentInsertions, " , ", show parentEdgePsuedoCharacter, " , ", show psuedoCharacter ]) $ -}
-                               (ancestoralEdgeDeletions, parentEdgeInsertions, psuedoCharacter)
+                               (ancestoralEdgeDeletions, parentEdgeInsertions, parentEdgePsuedoCharacter)
               where
                 -- We mutate the the psuedo-character by replacing "soft gaps" with "inserted bases"
                 -- at indices where insertione events happened between the parent node and the current node.
@@ -445,7 +445,7 @@ numeration metadataStructure tree = tree `update` updatedLeafNodes
             -- The insertion events are the culmination of the insertion events from all the child's children,
             -- joined with the insertion events are derived from a pairwise comparison of the parent character and the child character.
             -- The PseudoCharacter is not yet defined
-            parentChildEdge = (ancestoralNodeDeletions <> deletes, inserts >-< allDescendantInsertions, contextualPsuedoCharacter)
+            parentChildEdge = (ancestoralNodeDeletions <> deletes, inserts >-< allDescendantInsertions, psuedoCharacter)
               where
                 parentCharacter = fromMaybe (error "No parent Sequence!") . headMay . getForAlign $ enumeratedNodes V.! i
                 childCharacter  = fromMaybe (error "No child sequence!" ) . headMay . getForAlign $ enumeratedNodes V.! j
@@ -454,7 +454,24 @@ numeration metadataStructure tree = tree `update` updatedLeafNodes
                    homologyMemoize ! (i, i)
                 (deletes, inserts)      = comparativeIndelEvents parentCharacter childCharacter metadataStructure
 
-                contextualPsuedoCharacter
+                psuedoCharacter = V.fromList result
+                  where
+                    (_,_,result) = foldr f (0, m, []) contextualPreviousPsuedoCharacter
+                    IE m = inserts
+                    f e (basesSeen, mapping, es) =
+                      case e of
+                        OriginalBase -> (basesSeen + 1, mapping, e : es)
+                        InsertedBase -> (basesSeen + 1, mapping, e : es)
+                        HardGap      -> (basesSeen    , mapping, e : es)
+                        SoftGap      ->
+                          case basesSeen `lookup` mapping of
+                            Nothing -> (basesSeen, mapping, e : es)
+                            Just c  ->
+                              if c > 0
+                              then (basesSeen, IM.update (pure . pred) basesSeen mapping, InsertedBase : es)
+                              else (basesSeen,                                   mapping,            e : es)
+
+                contextualPreviousPsuedoCharacter
                   | j < firstSiblingIndex = parentNodePsuedoCharacter
                   | otherwise             = modifiedPsuedoCharacter
                   where
@@ -462,30 +479,30 @@ numeration metadataStructure tree = tree `update` updatedLeafNodes
                     modifiedPsuedoCharacter =
                       case lastMay . takeWhile (<j) $ otoList siblingIndices of
                         Nothing -> (\(_,_,x) -> x) $ homologyMemoize ! (i, i)
-                        Just x  -> rightMostLeafIndex x
-                    rightMostLeafIndex n = substituteHardGaps . first getInsertions {- . (\e@(x,_) -> trace (show x) e) -}
+                        Just x  -> substituteHardGaps (getPsuedoCharacter i, rightMostLeafPseudoCharacter x)
+                    rightMostLeafPseudoCharacter n = 
+                      case maximumMay $ childMapping V.! n of
+                        Nothing -> getPsuedoCharacter n
+                        Just x  -> substituteHardGaps (getPsuedoCharacter n, rightMostLeafPseudoCharacter x)
+{-
+                      = substituteHardGaps . first getInsertions {- . (\e@(x,_) -> trace (show x) e) -}
                                          . fromMaybe (n, getPsuedoCharacter n)
-                                         . fmap (id &&& rightMostLeafIndex)
-                                         . maximumMay $ childMapping V.! n
+                                         . fmap (id &&& 
+                                         .
+-}
                     siblingIndices       = j `IS.delete` (childMapping V.! i)
                     firstSiblingIndex    = minimumEx siblingIndices
-                    getInsertions n      = (\(_,x,_) -> x) $ homologyMemoize ! (n, n)
+                    getInsertions n      = (\(_,x,_) -> x) $ homologyMemoize ! (parentMapping V.! n, n)
                     getPsuedoCharacter n = (\(_,_,x) -> x) $ homologyMemoize ! (n, n)
 
                 -- We mutate the the psuedo-character by replacing "soft gaps" with "hard gaps"
                 -- at indices where insertione events happened.
-                substituteHardGaps (IE nodeInsertions, nodePsuedoCharacter) = {- (\x -> trace ("Subbing: " <> show nodeInsertions) x) . -} V.fromList {- . reverse -}  $ result
+                substituteHardGaps (parentPsuedoCharacter, childPsuedoCharacter) = zipWith f parentPsuedoCharacter childPsuedoCharacter
                   where
-                    (_, result) = foldr f (0, []) nodePsuedoCharacter
-                    f e (basesSeen, es) =
-                      case e of
-                        OriginalBase -> (basesSeen + 1,  e : es)
-                        HardGap      -> (basesSeen    ,  e : es)
-                        SoftGap      -> (basesSeen    ,  e : es)
-                        InsertedBase ->
-                          case basesSeen `lookup` nodeInsertions of
-                            Nothing -> (basesSeen,        e : es)
-                            Just _  -> (basesSeen,  HardGap : es)
+                    f p c =
+                      case (p,c) of
+                        (SoftGap, InsertedBase) -> HardGap
+                        (      _,            e) -> e
 
             allDescendantInsertions = ofoldl' f mempty (childMapping V.! j)
               where
@@ -501,24 +518,21 @@ numeration metadataStructure tree = tree `update` updatedLeafNodes
           | otherwise           = xs
 
 deriveImpliedAlignment :: (EncodableDynamicCharacter s, NodeConstraint n s, IANode' n s, Show s) => Int -> Matrix MemoizedEvents -> n -> n
--- deriveImpliedAlignment nodeIndex _ _ | trace ("deriveImpliedAlignment " <> show nodeIndex) False = undefined
+-- deriveImpliedAlignment nodeIndex _ _ | trace ("deriveImpliedAlignment " <> show nodeIndex <> " " <> show psuedoCharacter) False = undefined
 deriveImpliedAlignment nodeIndex homologyMemoize node = node `setHomologies'` pure (constructDynamic $ reverse result)
       where
         (DE deletions, _, psuedoCharacter) = homologyMemoize ! (nodeIndex, nodeIndex)
         leafCharacter   = fromMaybe (error "No leaf node sequence!") . headMay $ getForAlign node
         characterTokens = otoList leafCharacter
         gap             = getGapChar $ head characterTokens
-        (_,_,result)    = foldr f (0, characterTokens, []) psuedoCharacter
+        (_,_,result)    = foldr f (0, characterTokens, [])
+--                        $ (trace (mconcat ["deriveImpliedAlignment ",show nodeIndex," ",show psuedoCharacter," ",show deletions]))
+                          psuedoCharacter
           where
-            f e (basesSeen, xs, ys) =
-              case e of
-                HardGap      -> (basesSeen    , xs , gap : ys )
-                SoftGap      -> (basesSeen    , xs , gap : ys )
-                InsertedBase -> (basesSeen    , xs',       ys')
-                OriginalBase ->
-                           if    basesSeen `oelem` deletions
-                           then (basesSeen + 1, xs', gap : ys )
-                           else (basesSeen + 1, xs',       ys') 
+            f e (basesSeen, xs, ys)
+              | e == HardGap || e == SoftGap = (basesSeen    , xs , gap : ys )
+              | basesSeen `oelem` deletions  = (basesSeen + 1, xs', gap : ys )
+              | otherwise                    = (basesSeen + 1, xs',       ys') 
               where
                 xs' = fromMaybe []   $ tailMay xs 
                 ys' = maybe ys (:ys) $ headMay xs
@@ -562,15 +576,15 @@ gatherParents childrenMapping = x -- trace ("Gathered parents: " <> show x) x
           | i `oelem` e = Just k
           | otherwise   = acc
 
-comparativeIndelEvents :: (Metadata m s, SeqConstraint s) => s -> s -> m -> (DeletionEvents, InsertionEvents)
-comparativeIndelEvents ancestorCharacterUnaligned descendantCharacterUnaligned metadataStructure
+comparativeIndelEvents :: (SeqConstraint s) => s -> s -> CostStructure -> (DeletionEvents, InsertionEvents)
+comparativeIndelEvents ancestorCharacterUnaligned descendantCharacterUnaligned costStructure
   | olength ancestorCharacter /= olength descendantCharacter = error $ mconcat ["Lengths of sequences are not equal!\n", "Parent length: ", show $ olength ancestorCharacter, "\nChild length: ", show $ olength descendantCharacter]
   | otherwise                                    = (DE deletionEvents, IE insertionEvents)
   where
     (ancestorCharacter, descendantCharacter) =
       if olength ancestorCharacterUnaligned == olength descendantCharacterUnaligned
       then (ancestorCharacterUnaligned, descendantCharacterUnaligned)
-      else doAlignment ancestorCharacterUnaligned descendantCharacterUnaligned metadataStructure
+      else doAlignment ancestorCharacterUnaligned descendantCharacterUnaligned costStructure
 --    deletionEvents  = mempty
 --    insertionEvents = mempty -- E . IM.singleton 0 $ [ _descendantCharacter `indexChar` 0 ]
     (_,deletionEvents,insertionEvents) = ofoldl' f (0, mempty, mempty) [0 .. olength descendantCharacter - 1]

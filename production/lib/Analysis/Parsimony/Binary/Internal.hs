@@ -72,8 +72,8 @@ treeOptimizePreorder weighting tree meta
             newNode = setLocalCost 0.0 $ setTotalCost 0.0 (root tree)
             newTree = tree `update` [newNode]
         in newTree
-    | leftOnly && rightOnly = tree 
-    | rightOnly = -- if there is only one child, continue recursion down and resolve
+    | noLeftChild && noRightChild = tree 
+    | noLeftChild = -- if there is only one child, continue recursion down and resolve
         let
             nodes1    = treeInternalPreorderTraversal weighting (fromJust $ rightChild (root tree) tree) tree meta -- with only one child, assignment and cost is simply carried up
             carryNode = head nodes1
@@ -85,7 +85,7 @@ treeOptimizePreorder weighting tree meta
                         $ root tree
                         ) : nodes1
         in tree `update` newNodes
-    | leftOnly =
+    | noRightChild =
         let
             nodes1    = treeInternalPreorderTraversal weighting (fromJust $ leftChild (root tree) tree) tree meta -- with only one child, assignment and cost is simply carried up
             carryNode = head nodes1
@@ -106,8 +106,8 @@ treeOptimizePreorder weighting tree meta
         in tree `update` newNodes
 
     where
-        leftOnly  = isNothing $ rightChild (root tree) tree
-        rightOnly = isNothing $ leftChild  (root tree) tree
+        noRightChild = isNothing $ rightChild (root tree) tree
+        noLeftChild  = isNothing $ leftChild  (root tree) tree
 
 -- | Internal preorder optimization pass
 -- takes in a weight, a current node, a tree, and a vector of metadata
@@ -178,36 +178,36 @@ treeInternalPostorderTraversal node tree meta  =
 -- Takes in an overall weight, a current node, the left child, the right child, and a vector of metadata
 -- Outputs a node with the correct sequences and costs assigned.
 nodeOptimizePreorder :: (NodeConstraint' n s, Metadata m s) => Double -> n -> n -> n -> Vector m -> n
-nodeOptimizePreorder weighting curNode lNode rNode meta = setTotalCost summedTotalCost res
+nodeOptimizePreorder weighting curNode lNode rNode meta = summedTotalCost `setTotalCost` res
     where
-        summedTotalCost = sum $ getTotalCost <$> [res,lNode,rNode] --getTotalCost res + getTotalCost lNode + getTotalCost rNode
+        summedTotalCost = sum [getLocalCost res, getTotalCost lNode, getTotalCost rNode]
         res             = ifoldr chooseOptimization curNode meta
 
         --chooseOptimization :: (NodeConstraint' n s, Metadata m s) => Int -> m -> n -> n
-        chooseOptimization curPos curCharacter setNode
+        chooseOptimization curPos metadataStructure setNode
             -- TODO: Compiler error maybe below with comment structures and 'lets'
-            | getIgnored curCharacter = setNode
-            | getType curCharacter == Fitch =
-                let (assign, temp, local) = preorderFitchBit curWeight (getForAlign lNode ! curPos) (getForAlign rNode ! curPos) curCharacter
+            | getIgnored metadataStructure = setNode
+            | getType metadataStructure == Fitch =
+                let (assign, temp, local) = preorderFitchBit curWeight (getForAlign lNode ! curPos) (getForAlign rNode ! curPos) metadataStructure
                 in addTemporary temp
                  . addLocalCost (local * curWeight * weighting)
-                 . addTotalCost (local * curWeight * weighting)
+--                 . addTotalCost (local * curWeight * weighting)
                  . addAlign assign
                  $ addPreliminary assign setNode
-            | getType curCharacter == DirectOptimization =
-                let (ungapped, cost, gapped, _, _) = naiveDO (getForAlign lNode ! curPos) (getForAlign rNode ! curPos) curCharacter
+            | getType metadataStructure == DirectOptimization =
+                let (ungapped, cost, gapped, _, _) = naiveDO (getForAlign lNode ! curPos) (getForAlign rNode ! curPos) $ getCosts metadataStructure
                 in addLocalCost (cost * curWeight * weighting)
-                 . addTotalCost (cost * curWeight * weighting)
+--                 . addTotalCost (cost * curWeight * weighting)
                  . addAlign gapped
                  $ addPreliminary ungapped setNode
             | otherwise = error "Unrecognized optimization type"
 
-                where curWeight = getWeight curCharacter
+                where curWeight = getWeight metadataStructure
 
         addPreliminary addVal node = addToField setPreliminary getPreliminary      addVal node
         addAlign       addVal node = addToField setAlign       getPreliminaryAlign addVal node
         addTemporary   addVal node = addToField setTemporary   getTemporary        addVal node
-        addTotalCost   addVal node = setTotalCost (addVal + getTotalCost node) node
+--        addTotalCost   addVal node = setTotalCost (addVal + getTotalCost node) node
         addLocalCost   addVal node = setLocalCost (addVal + getLocalCost node) node
 
 -- | Wrapper function to perform optimization on a node during the postorder pass.
@@ -220,12 +220,12 @@ nodeOptimizePostorder curNode lNode rNode pNode meta
     | otherwise       = ifoldr chooseOptimization curNode meta
     where
         --chooseOptimization :: (NodeConstraint' n s, Metadata m s) => Int -> m -> n -> n
-        chooseOptimization i curCharacter setNode
-            | getType curCharacter == Fitch =
-                let finalAssign = postorderFitchBit (getForAlign curNode ! i) (getForAlign lNode ! i) (getForAlign rNode ! i) (getForAlign (fromJust pNode) ! i) (getTemporary curNode ! i) curCharacter
+        chooseOptimization i metadataStructure setNode
+            | getType metadataStructure == Fitch =
+                let finalAssign = postorderFitchBit (getForAlign curNode ! i) (getForAlign lNode ! i) (getForAlign rNode ! i) (getForAlign (fromJust pNode) ! i) (getTemporary curNode ! i) metadataStructure
                 in addToField setFinal getFinal finalAssign setNode
-            | getType curCharacter == DirectOptimization =  --TODO: do we grab the gapped or not?
-                let (final, _, finalAligned, _, _) = naiveDO (getForAlign curNode ! i) (getForAlign (fromJust pNode) ! i) curCharacter
+            | getType metadataStructure == DirectOptimization =  --TODO: do we grab the gapped or not?
+                let (final, _, finalAligned, _, _) = naiveDO (getForAlign curNode ! i) (getForAlign (fromJust pNode) ! i) $ getCosts metadataStructure
                 in addToField setFinal getFinal final
                  $ addToField setFinalGapped getFinalGapped finalAligned setNode
             | otherwise = error "Unrecognized optimization type"

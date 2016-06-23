@@ -37,8 +37,10 @@ standardAlph :: Alphabet String
 standardAlph = constructAlphabet $ V.fromList ["A", "C", "G", "T", "-"]
 
 doMeta, fitchMeta :: CharacterMetadata DynamicChar
-doMeta    = CharMeta DirectOptimization standardAlph "" False False 1 mempty (emptyChar, emptyChar) 0 (GeneralCost 1 1)
-fitchMeta = CharMeta Fitch              standardAlph "" False False 1 mempty (emptyChar, emptyChar) 0 (GeneralCost 1 1)
+doMeta    = CharMeta DirectOptimization standardAlph "" False False 1 mempty (emptyChar, emptyChar) 0 costStructure
+fitchMeta = CharMeta Fitch              standardAlph "" False False 1 mempty (emptyChar, emptyChar) 0 costStructure
+
+costStructure = GeneralCost 1 1
 
 decodeIt :: DynamicChar -> [[String]]
 decodeIt = decodeDynamic standardAlph
@@ -57,11 +59,11 @@ doProperties = testGroup "Properties of the DO algorithm"
             where
                 checkID :: DynamicChar -> Bool
                 checkID inSeq = main == filterGaps inSeq && cost == 0 && gapped == inSeq && left == inSeq && right == inSeq
-                    where (main, cost, gapped, left, right) = naiveDO inSeq inSeq doMeta
+                    where (main, cost, gapped, left, right) = naiveDO inSeq inSeq costStructure
 
-        seq1 = encodeDynamic standardAlph (V.fromList [["A"], ["T"], ["T"]])
-        seq2 =  encodeDynamic standardAlph (V.fromList [["A"], ["G"]])
-        result1 = naiveDO seq1 seq2 doMeta
+        seq1    = encodeDynamic standardAlph (V.fromList [["A"], ["T"], ["T"]]) :: DynamicChar
+        seq2    = encodeDynamic standardAlph (V.fromList [["A"], ["G"]])        :: DynamicChar
+        result1 = naiveDO seq1 seq2 costStructure
         --expected1 :: (DynamicChar, Double, DynamicChar, DynamicChar, DynamicChar)
         expected1 = (encodeDynamic standardAlph (V.fromList [["A"], ["T", "-"], ["G", "T"]]), 2.0, encodeDynamic standardAlph (V.fromList [["A"], ["T", "-"], ["G", "T"]]), seq1, encodeDynamic standardAlph (V.fromList [["A"], ["-"], ["G"]]))
         simpleDO1 = testCase "On a simple test, DO gives expected result: ATT and AG -> A-[GT] or AG-" (expected1 @=? result1)

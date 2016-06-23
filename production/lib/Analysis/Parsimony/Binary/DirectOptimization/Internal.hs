@@ -47,7 +47,7 @@ type NWSeqConstraint s = (EncodableDynamicCharacter s, Show s, Memoizable s)
 -- Returns an assignment character, the cost of that assignment, the assignment character with gaps included,
 -- the aligned version of the first input character, and the aligned version of the second input character
 -- The process for this algorithm is to generate a traversal matrix, then perform a traceback.
-naiveDO :: (Metadata m s, SeqConstraint' s) => s -> s -> m -> (s, Double, s, s, s)
+naiveDO :: SeqConstraint' s  => s -> s -> CostStructure -> (s, Double, s, s, s)
 naiveDO char1 char2 meta
     | isEmpty char1 = (char1, 0, char1, char1, char1)
     | isEmpty char2 = (char2, 0, char2, char2, char2)
@@ -76,7 +76,7 @@ naiveDO char1 char2 meta
 -- Takes in two 'EncodableDynamicCharacter's and a 'CostStructure'.
 -- Returns two _aligned_ 'EncodableDynamicCharacter's.
 -- !!!TODO: make 5-tuple, replace code in naiveDO
-doAlignment :: (NWSeqConstraint s, Metadata m s) => s -> s -> m -> (s, s)
+doAlignment :: NWSeqConstraint s => s -> s -> CostStructure -> (s, s)
 doAlignment char1 char2 meta = (seq1Align, seq2Align)
     where
         char1Len                  = numChars char1
@@ -84,7 +84,7 @@ doAlignment char1 char2 meta = (seq1Align, seq2Align)
         (shorterChar, longerChar) = if   char1Len > char2Len
                                     then (char2, char1)
                                     else (char1, char2)
-        traversalMat           = createDOAlignMatrix longerChar shorterChar (getCosts meta)
+        traversalMat           = createDOAlignMatrix longerChar shorterChar meta
         (_, alignL, alignR)    = traceback traversalMat shorterChar longerChar
         (seq1Align, seq2Align) = if   char1Len > char2Len
                                  then (alignR, alignL)
@@ -174,8 +174,9 @@ traceback alignMat' char1' char2' = (fromChars $ reverse t1, fromChars $ reverse
 
 -- | Simple function to get the cost from an alignment matrix
 getTotalAlignmentCost :: DOAlignMatrix s -> Double
-getTotalAlignmentCost inAlign = c
-    where (c, _, _) = getElem (nrows inAlign - 1) (ncols inAlign - 1) inAlign
+getTotalAlignmentCost alignmentMatrix = c
+  where
+    (c, _, _) = alignmentMatrix ! (nrows alignmentMatrix - 1, ncols alignmentMatrix - 1) 
 
 -- | Memoized wrapper of the overlap function
 getOverlap :: (EncodableStaticCharacter s, Memoizable s) => s -> s -> CostStructure -> (s, Double)
