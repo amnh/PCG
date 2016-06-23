@@ -33,6 +33,8 @@ import Data.Maybe
 import Data.Monoid
 import Data.Vector           (Vector, ifoldr, (!))
 
+-- !!!TODO: Remove weighting.
+
 -- | Top level binary optimization wrapper to optimize over a solution
 -- Takes in an overall weight and a solution
 -- Returns a solution with any relevant values assigned (root cost, node assignments, etc. depending on optimization types).
@@ -50,135 +52,75 @@ solutionOptimization weighting inSolution = outForests
 graphOptimization :: (ForestConstraint' f t n s, Metadata m s) => Double -> Vector m -> f -> f
 graphOptimization weighting meta inGraph = setTrees inGraph $ fmap (allOptimization weighting meta) (trees inGraph)
 
--- | Unified function to perform both the preorder and postorder passes (as relevant)
+-- | Unified function to perform both the postorder and preorder passes (as relevant)
 -- Takes in an overall weight, a vector of metadata, and a tree.
 -- Returns a tree with values assigned.
--- This actually calls the preorder and postorder optimizations.
+-- This actually calls the postorder and preorder optimizations.
 allOptimization :: (TreeConstraint' t n s, Metadata m s) => Double -> Vector m -> t -> t
-allOptimization weighting meta inTree =
-    let
-        firstPass  = treeOptimizePreorder weighting inTree meta
-        secondPass = treeOptimizePostorder firstPass meta
-    in secondPass
+allOptimization weighting meta inTree = secondPass
+    where
+        firstPass  = treeOptimizePostorder weighting inTree meta
+        secondPass = treeOptimizePreorder firstPass meta
 
--- | Optimization preorder wrapper to perform relevant algorithm at all nodes
+-- | Optimization postorder wrapper to perform relevant algorithm at all nodes
 -- Takes in an overall weight, a tree, and a vector of metadata
 -- Returns a tree with values assigned
 -- Correctly handles roots, leaves, and nodes with only one child
-treeOptimizePreorder :: (TreeConstraint' t n s, Metadata m s) => Double -> t -> Vector m -> t
-treeOptimizePreorder weighting tree meta 
-    | nodeIsLeaf (root tree) tree = -- if the root is a terminal, give the whole tree a cost of zero, do not reassign nodes
-        let
-            newNode = setLocalCost 0.0 $ setTotalCost 0.0 (root tree)
-            newTree = tree `update` [newNode]
-        in newTree
-    | noLeftChild && noRightChild = tree 
-    | noLeftChild = -- if there is only one child, continue recursion down and resolve
-        let
-            nodes1    = treeInternalPreorderTraversal weighting (fromJust $ rightChild (root tree) tree) tree meta -- with only one child, assignment and cost is simply carried up
-            carryNode = head nodes1
-            newNodes  = ( setTemporary   (getTemporary        carryNode)
-                        . setAlign       (getPreliminaryAlign carryNode)
-                        . setPreliminary (getPreliminary      carryNode)
-                        . setTotalCost   (getTotalCost        carryNode)
-                        . setLocalCost   (getLocalCost        carryNode)
-                        $ root tree
-                        ) : nodes1
-        in tree `update` newNodes
-    | noRightChild =
-        let
-            nodes1    = treeInternalPreorderTraversal weighting (fromJust $ leftChild (root tree) tree) tree meta -- with only one child, assignment and cost is simply carried up
-            carryNode = head nodes1
-            myNode    = setTemporary   (getTemporary        carryNode)
-                      . setAlign       (getPreliminaryAlign carryNode)
-                      . setPreliminary (getPreliminary      carryNode)
-                      . setTotalCost   (getTotalCost        carryNode)
-                      . setLocalCost   (getLocalCost        carryNode)
-                      $ root tree
-            newNodes  = myNode : nodes1
-        in tree `update` newNodes
-    | otherwise =
-        let
-            nodes1   = treeInternalPreorderTraversal weighting (fromJust $ rightChild (root tree) tree) tree meta
-            nodes2   = treeInternalPreorderTraversal weighting (fromJust $ leftChild (root tree) tree) tree meta
-            myNode   = nodeOptimizePreorder weighting (root tree) (head nodes1) (head nodes2) meta
-            newNodes = myNode : (nodes1 ++ nodes2)
-        in tree `update` newNodes
+treeOptimizePostorder :: (TreeConstraint' t n s, Metadata m s) => Double -> t -> Vector m -> t
+treeOptimizePostorder weighting tree meta = tree `update` (rootNode : nonRootNodes)
+  where
+    (rootNode, nonRootNodes) = treeInternalPostorderTraversal weighting (root tree) tree meta
 
-    where
-        noRightChild = isNothing $ rightChild (root tree) tree
-        noLeftChild  = isNothing $ leftChild  (root tree) tree
-
--- | Internal preorder optimization pass
+-- | Internal postorder optimization pass
 -- takes in a weight, a current node, a tree, and a vector of metadata
 -- returns a list of nodes that have had changes applied to them
 -- By using this node accumulation scheme, we save some complexity over simply always dealing with a tree
-treeInternalPreorderTraversal :: (TreeConstraint' t n s, Metadata m s) => Double -> n -> t -> Vector m -> [n]
-treeInternalPreorderTraversal weighting node tree meta
-    | nodeIsLeaf node tree = -- if the root is a terminal, give the whole tree a cost of zero, do not reassign nodes
-        let newNode = setTotalCost 0.0 $ setLocalCost 0.0 node
-        in [newNode]
-    | rightOnly && leftOnly = [] --error "Problem with binary tree structure: non-terminal has no children"
-    | rightOnly = -- if there is only one child, continue recursion down and resolve
-        let
-            nodes1    = treeInternalPreorderTraversal weighting (fromJust $ rightChild node tree) tree meta -- with only one child, assignment and cost is simply carried up
-            carryNode = head nodes1
-            myNode    = setTemporary   (getTemporary        carryNode)
-                      . setAlign       (getPreliminaryAlign carryNode)
-                      . setPreliminary (getPreliminary      carryNode)
-                      . setTotalCost   (getTotalCost        carryNode)
-                      . setLocalCost   (getLocalCost        carryNode)
-                      $ node
-        in myNode : nodes1
-    | leftOnly =
-        let
-            nodes1    = treeInternalPreorderTraversal weighting (fromJust $ leftChild node tree) tree meta -- with only one child, assignment and cost is simply carried up
-            carryNode = head nodes1
-            myNode    = setTemporary   (getTemporary        carryNode)
-                      . setAlign       (getPreliminaryAlign carryNode)
-                      . setPreliminary (getPreliminary      carryNode)
-                      . setTotalCost   (getTotalCost        carryNode)
-                      . setLocalCost   (getLocalCost        carryNode)
-                      $ node
-        in myNode : nodes1
-    | otherwise =
-        let
+treeInternalPostorderTraversal :: (TreeConstraint' t n s, Metadata m s) => Double -> n -> t -> Vector m -> (n, [n])
+treeInternalPostorderTraversal weighting node tree meta = (decoratedSelf, decoratedSubtree)
+  where
+      decoratedSelf =
+        case children' of
+          left:right:_ -> nodeOptimizePostorder weighting node left right meta
+          child:_      -> decorateInternal child node
+          _            -> decorateLeaf node
 
-            nodes1 = treeInternalPreorderTraversal weighting (fromJust $ rightChild node tree) tree meta
-            nodes2 = treeInternalPreorderTraversal weighting (fromJust $ leftChild node tree) tree meta
-            myNode = nodeOptimizePreorder weighting node (head nodes1) (head nodes2) meta
-        in myNode : (nodes1 ++ nodes2)
+      -- 
+      recursiveResult            = (\x -> treeInternalPostorderTraversal weighting x tree meta) <$> children node tree
+      children'                  = fst <$> recursiveResult
+      decoratedSubtree           = children' <> concatMap snd recursiveResult
+      decorateLeaf     leafNode  = setTotalCost 0.0 $ setLocalCost 0.0 leafNode
+      decorateInternal otherNode = setTemporary   (getTemporary        otherNode)
+                                 . setAlign       (getPreliminaryAlign otherNode)
+                                 . setPreliminary (getPreliminary      otherNode)
+        --                       . setTotalCost   (getTotalCost        otherNode)
+                                 . setLocalCost   (getLocalCost        otherNode)
 
-        where
-            leftOnly  = isNothing $ rightChild node tree
-            rightOnly = isNothing $ leftChild node tree
-
--- | Wrapper for the postorder
+-- | Wrapper for the preorder
 -- Takes in a tree and a vector of metadata,
 -- returns a tree with relevant nodes assigned.
--- This wrapper allows us to deal correctly with root passing to postorder algorithms
-treeOptimizePostorder :: (TreeConstraint' t n s, Metadata m s) => t -> Vector m -> t
-treeOptimizePostorder tree meta = tree `update` treeInternalPostorderTraversal (root tree) tree meta
+-- This wrapper allows us to deal correctly with root passing to preorder algorithms
+treeOptimizePreorder :: (TreeConstraint' t n s, Metadata m s) => t -> Vector m -> t
+treeOptimizePreorder tree meta = tree `update` treeInternalPreorderTraversal (root tree) tree meta
 
--- | Internal postorder pass that does the main recursion
+-- | Internal preorder pass that does the main recursion
 -- Takes in a current node, the tree, and a vector of metadata;
 -- returns a list of nodes that have been updated.
--- As in the preorder, this method saves on some time complexity.
-treeInternalPostorderTraversal :: (TreeConstraint' t n s, Metadata m s) => n -> t -> Vector m -> [n]
-treeInternalPostorderTraversal node tree meta  = 
+-- As in the postorder, this method saves on some time complexity.
+treeInternalPreorderTraversal :: (TreeConstraint' t n s, Metadata m s) => n -> t -> Vector m -> [n]
+treeInternalPreorderTraversal node tree meta  = 
   case children' of
-      left:right:_ -> nodeOptimizePostorder node left right (parent node tree) meta : result
+      left:right:_ -> nodeOptimizePreorder node left right (parent node tree) meta : result
       _            -> result
   where
       children' = children node tree
-      result    = concatMap (\x -> treeInternalPostorderTraversal x tree meta) children'
+      result    = concatMap (\x -> treeInternalPreorderTraversal x tree meta) children'
 
--- | Wrapper function to preform optimization on a node during the preorder pass
--- Essentially a map over a decision function that selects and performs the right optimization for each character.
+-- | Wrapper function to perform optimization on a node during the postorder pass
+-- Essentially a map over a decision function that selects and performs the correct optimization for each character.
 -- Takes in an overall weight, a current node, the left child, the right child, and a vector of metadata
 -- Outputs a node with the correct sequences and costs assigned.
-nodeOptimizePreorder :: (NodeConstraint' n s, Metadata m s) => Double -> n -> n -> n -> Vector m -> n
-nodeOptimizePreorder weighting curNode lNode rNode meta = summedTotalCost `setTotalCost` res
+nodeOptimizePostorder :: (NodeConstraint' n s, Metadata m s) => Double -> n -> n -> n -> Vector m -> n
+nodeOptimizePostorder weighting curNode lNode rNode meta = summedTotalCost `setTotalCost` res
     where
         summedTotalCost = sum [getLocalCost res, getTotalCost lNode, getTotalCost rNode]
         res             = ifoldr chooseOptimization curNode meta
@@ -210,13 +152,13 @@ nodeOptimizePreorder weighting curNode lNode rNode meta = summedTotalCost `setTo
 --        addTotalCost   addVal node = setTotalCost (addVal + getTotalCost node) node
         addLocalCost   addVal node = setLocalCost (addVal + getLocalCost node) node
 
--- | Wrapper function to perform optimization on a node during the postorder pass.
--- As in the preorder, it selects an optimization for each character, then groups the optimized characters together and assigns them to the node.
+-- | Wrapper function to perform optimization on a node during the preorder pass.
+-- As in the postorder, it selects an optimization for each character, then groups the optimized characters together and assigns them to the node.
 -- Takes in a current node, left child, right child, parent node, and vector of metadata,
 -- returns a node with everything assigned.
-nodeOptimizePostorder :: (NodeConstraint' n s, Metadata m s) => n -> n -> n -> Maybe n -> Vector m -> n
-nodeOptimizePostorder curNode lNode rNode pNode meta
-    | isNothing pNode = curNode --error "No parent node on postorder traversal"
+nodeOptimizePreorder :: (NodeConstraint' n s, Metadata m s) => n -> n -> n -> Maybe n -> Vector m -> n
+nodeOptimizePreorder curNode lNode rNode pNode meta
+    | isNothing pNode = curNode --error "No parent node on preorder traversal"
     | otherwise       = ifoldr chooseOptimization curNode meta
     where
         --chooseOptimization :: (NodeConstraint' n s, Metadata m s) => Int -> m -> n -> n
@@ -226,8 +168,9 @@ nodeOptimizePostorder curNode lNode rNode pNode meta
                 in addToField setFinal getFinal finalAssign setNode
             | getType metadataStructure == DirectOptimization =  --TODO: do we grab the gapped or not?
                 let (final, _, finalAligned, _, _) = naiveDO (getForAlign curNode ! i) (getForAlign (fromJust pNode) ! i) $ getCosts metadataStructure
-                in addToField setFinal getFinal final
-                 $ addToField setFinalGapped getFinalGapped finalAligned setNode
+                in addToField setFinal       getFinal       final
+                 . addToField setFinalGapped getFinalGapped finalAligned
+                 $ setNode
             | otherwise = error "Unrecognized optimization type"
 
 setElemSafe :: (Num a) => a -> (Maybe Int, Maybe Int) -> Matrix a -> Matrix a

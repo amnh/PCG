@@ -48,7 +48,7 @@ type NWSeqConstraint s = (EncodableDynamicCharacter s, Show s, Memoizable s)
 -- the aligned version of the first input character, and the aligned version of the second input character
 -- The process for this algorithm is to generate a traversal matrix, then perform a traceback.
 naiveDO :: SeqConstraint' s  => s -> s -> CostStructure -> (s, Double, s, s, s)
-naiveDO char1 char2 meta
+naiveDO char1 char2 costStruct
     | isEmpty char1 = (char1, 0, char1, char1, char1)
     | isEmpty char2 = (char2, 0, char2, char2, char2)
     | otherwise =
@@ -58,7 +58,7 @@ naiveDO char1 char2 meta
             (shorterChar, longerChar, _longLen) = if char1Len > char2Len
                                                   then (char2, char1, char1Len)
                                                   else (char1, char2, char2Len)
-            traversalMat = createDOAlignMatrix longerChar shorterChar (getCosts meta)
+            traversalMat = createDOAlignMatrix longerChar shorterChar costStruct
             cost = getTotalAlignmentCost traversalMat
             (gapped, left, right) = traceback traversalMat shorterChar longerChar
             -- TODO: change to occur in traceback, to remove constant factor.

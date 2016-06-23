@@ -28,7 +28,7 @@ import qualified Data.Vector                                               as V
 import           Test.Custom.Types
 import           Test.Tasty
 import           Test.Tasty.HUnit
-import           Test.Tasty.QuickCheck hiding ((.?.))
+import           Test.Tasty.QuickCheck hiding ((.?.), (.&.))
 import           Debug.Trace
 
 standardAlph :: Alphabet String
@@ -49,14 +49,14 @@ matrixForTesting =  trace (show finalMatrix) $ finalMatrix
 
 testSuite :: TestTree
 testSuite =  testGroup "DO functionality" [ alignDOProperties
-                                                       , getSubCharsTest
-                                                       , overlapTest
-                                                       , getCostTest
-                                                       ]
+                                          , getSubCharsTest
+                                          , overlapTest
+                                          , getCostTest
+                                          ]
 
 alignDOProperties :: TestTree
 alignDOProperties = testGroup "Properties of DO alignment algorithm" [ firstRow
-                                                                           ]
+                                                                     ]
     where
         firstRow = testProperty "First row of DO alignment matrix has expected directions" checkRow
             where
@@ -162,7 +162,7 @@ overlapTest = testGroup "Overlap test cases" [ singleIntersectionTest
                 f =  expectedResult == result
                 char1          = (bitVec 5 5) -- This is two bits on
                 char2          = (bitVec 5 6) -- This is two different, but overlapping, bits set
-                expectedResult = (char1 Data.BitVector..&. char2, 0) -- Couldn't get it to compile with prefix notation.
+                expectedResult = (char1 .&. char2, 0) -- Couldn't get it to compile with prefix notation.
                 result         = getOverlap char1 char2 (GeneralCost 2 1)
         multipleIntersectionTest = testProperty "Given characters with single intersection, gives expected results" f
             where 
