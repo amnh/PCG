@@ -22,7 +22,7 @@ handleInput args =
     Nothing -> exampleTree
 
 compute :: SimpleTree -> IO ()
-compute = print . numeration (getCosts $ defMeta ! 0) . allOptimization 0 defMeta 
+compute = print . deriveImpliedAlignments defMeta . allOptimization 0 defMeta 
 
 trySimpleTree :: [String] -> Maybe SimpleTree
 trySimpleTree xs = do

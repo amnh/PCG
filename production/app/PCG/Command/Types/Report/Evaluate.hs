@@ -4,7 +4,8 @@ module PCG.Command.Types.Report.Evaluate
   ( evaluate
   ) where
 
-import           Analysis.ImpliedAlignment.Standard
+--import           Analysis.ImpliedAlignment.Standard
+import           Analysis.ImpliedAlignment.DynamicProgramming
 import           Analysis.Parsimony.Binary.Optimization
 import           Bio.Metadata
 import           Bio.PhyloGraph.Solution
@@ -54,14 +55,25 @@ generateOutput g ImpliedAlignmentCharacters {} =
       case dynamicCharacterCount g of
         0 -> ErrorCase "There are no dynamic characters in the graph. Cannot construct an implied alignment on a graph which contains no dynamic characters."
         _ ->
+          case iaOutput' . iaSolution' $ addOptimization g of
+            [] -> ErrorCase "There were no Dynamic homology characters on which to perform an implied alignment."
+            zs -> MultiStream $ fromList zs
+{-
+  case getForests g of
+    [] -> ErrorCase "The graph contains an empty forest."
+    _  ->
+      case dynamicCharacterCount g of
+        0 -> ErrorCase "There are no dynamic characters in the graph. Cannot construct an implied alignment on a graph which contains no dynamic characters."
+        _ ->
           let g' = addOptimization g
-          in case iaSolution g' of
+          in case iaSolution' g' of
                [] -> ErrorCase "The result of the Implied Aligmnment returned an empty graph. (No dynamic homology characters?)"
                ys ->
-                  case iaOutput ys g' of
+                  case iaOutput' ys g' of
                     [] -> ErrorCase "There were no Dynamic homology characters on which to perform an implied alignment."
                     zs -> MultiStream $ fromList zs
-                       
+-}
+  
 generateOutput _ _ = ErrorCase "Unrecognized 'report' command"
 
 type FileContent = String

@@ -48,7 +48,7 @@ import           Data.Vector.Instances        ()
 import           Prelude               hiding (lookup,zipWith)
 import           Debug.Trace                  (trace)
 import           Safe                         (tailMay)
-import           Test.Custom hiding (children)
+--import           Test.Custom hiding (children)
 
 defMeta :: Vector (CharacterMetadata s)
 defMeta = pure CharMeta

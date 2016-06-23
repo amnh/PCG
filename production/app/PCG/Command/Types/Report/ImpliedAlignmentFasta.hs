@@ -16,6 +16,7 @@
 module PCG.Command.Types.Report.ImpliedAlignmentFasta where
 
 import Analysis.ImpliedAlignment.Internal
+import Analysis.ImpliedAlignment.DynamicProgramming
 import Bio.Character.Dynamic.Coded
 import Bio.Metadata   hiding (name)
 import Bio.PhyloGraph.DAG
@@ -37,6 +38,71 @@ import Data.Vector.Instances ()
 import Prelude        hiding (lookup,zipWith)
 
 import Debug.Trace (trace)
+
+--iaOutput :: (MetadataSolution s m, GeneralSolution s f) => AlignmentSolution DynamicChar -> s -> [(FilePath, String)]
+iaOutput' :: StandardSolution -> [(FilePath, String)]
+--iaOutput align solution | trace (mconcat [show align, show solution]) False = undefined
+iaOutput' solution = {- (\x -> trace (intercalate "\n\n"
+                                         [ integrityCheckSolution solution
+                                         , renderAlignments align
+                                         , "DynamicChar indicies: "     <> show (keys dynamicCharacterIndicesAndAlphabets)
+                                         , "Metadata character types: " <> show (getType <$> getMetadata solution)
+                                         ]
+                                       ) x) $
+                      -}
+                         foldMapWithKey characterToFastaFile dynamicCharacterIndicesAndAlphabets 
+  where
+    -- Here we use the metadata to filter for dynamic character indicies and
+    -- their corresponding alphabets. 
+    dynamicCharacterIndicesAndAlphabets :: IntMap (Alphabet String)
+    dynamicCharacterIndicesAndAlphabets = foldlWithKey dynamicCharFilter mempty (getMetadata solution)
+      where
+        dynamicCharFilter im i e = if   getType e == DirectOptimization
+                                   then insert i (getAlphabet e) im
+                                   else im
+
+    -- Here we perform a recursive structure "zip" between graph of forests of
+    -- DAGs of nodes containing implied alignment sequences and the original
+    -- graph of forests of DAGs of nodes containing the unaligned sequences.
+    -- The result of the structure zip is a Map from the taxon name within the
+    -- original (right-hand) structure to the implied alignment sequences within
+    -- the new (left-hand) structure.
+    nodeCharacterMapping :: Map String (Vector DynamicChar)
+    nodeCharacterMapping = foldMap f $ getForests solution
+      where
+        f solutionForest = foldMap g solutionForest
+        g dag            = foldMap h $ getNodes dag
+        h n              = singleton (name n) (getHomologies' n)
+
+    -- The folding function for consuming the 'dynamicCharacterIndicesAndAlphabets'
+    -- structure above. For each character index and corresponding alphabet this
+    -- function will create the file name and the file contents in FASTA format.
+    -- Internally folds over the 'nodeCharacterMapping' structure to place all
+    -- taxa in the graph into the resulting file.
+    --
+    -- Because 'dynamicCharacterIndicesAndAlphabets' contains only dynamic
+    -- characters, the resulting list of file content will contain a exactly one
+    -- file content tuple for each dynamic character.
+    --
+    -- Type checker doesn't like the Int in this explicit type signature.
+    -- The type checker *can* infer the correct (complicated) type all by itself,
+    -- so we will let it do that rather than listen to it complain.
+    
+    -- characterToFastaFile :: Int -> Alphabet -> [(FilePath, String)]
+    characterToFastaFile i alpha = [(characterFileName, foldMapWithKey f nodeCharacterMapping)]
+      where
+        characterFileName = mconcat ["Character", show i, ".fasta"]
+        f nodeName characters =
+          case i `lookup` characters of
+            Nothing        -> titleLine <> "\n (No sequence)\n"
+            Just character -> dynamicCharacterToFastaBlock character
+          where
+            titleLine     = "> " <> nodeName
+            dynamicCharacterToFastaBlock character = unlines $ titleLine : sequenceLines <> [""]
+              where
+                sequenceLines = chunksOf 50 . concatMap renderAmbiguityGroup . toList $ decodeDynamic alpha character
+                renderAmbiguityGroup [x] = x
+                renderAmbiguityGroup xs  = "[" <> concat xs <> "]"
 
 --iaOutput :: (MetadataSolution s m, GeneralSolution s f) => AlignmentSolution DynamicChar -> s -> [(FilePath, String)]
 iaOutput :: AlignmentSolution DynamicChar -> StandardSolution -> [(FilePath, String)]
