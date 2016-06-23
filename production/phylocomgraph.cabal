@@ -97,6 +97,7 @@ library
   exposed-modules:
                        Analysis.ImpliedAlignment.Internal
                        Analysis.ImpliedAlignment.Standard
+                       Analysis.ImpliedAlignment.DynamicProgramming
                        Analysis.Parsimony.Binary.DirectOptimization
                        Analysis.Parsimony.Binary.Fitch
                        Analysis.Parsimony.Binary.Internal

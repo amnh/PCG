@@ -20,6 +20,7 @@ import Analysis.ImpliedAlignment.DynamicProgramming
 import Bio.Character.Dynamic.Coded
 import Bio.Metadata   hiding (name)
 import Bio.PhyloGraph.DAG
+import Bio.PhyloGraph.Network (nodeIsLeaf)
 import Bio.PhyloGraph.Node
 import Bio.PhyloGraph.Solution
 --import Control.DeepSeq       (force)
@@ -71,8 +72,11 @@ iaOutput' solution = {- (\x -> trace (intercalate "\n\n"
     nodeCharacterMapping = foldMap f $ getForests solution
       where
         f solutionForest = foldMap g solutionForest
-        g dag            = foldMap h $ getNodes dag
-        h n              = singleton (name n) (getHomologies' n)
+        g dag            = foldMap h $getNodes dag
+          where
+            h node       = if   node `nodeIsLeaf` dag
+                           then singleton (name node) (getHomologies' node)
+                           else mempty
 
     -- The folding function for consuming the 'dynamicCharacterIndicesAndAlphabets'
     -- structure above. For each character index and corresponding alphabet this
