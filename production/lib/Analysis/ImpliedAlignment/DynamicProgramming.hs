@@ -66,20 +66,19 @@ defMeta = pure CharMeta
   
 newtype MutationAccumulator = Accum (IntMap Int, Int, Int, Int, Int, IntSet)
 
-{-
-
 -- | Top level wrapper to do an IA over an entire solution
 -- takes a solution
 -- returns an AlignmentSolution
-iaSolution :: SolutionConstraint r m f t n e s => r -> AlignmentSolution s
-iaSolution inSolution = fmap (`iaForest` getMetadata inSolution) (getForests inSolution)
+iaSolution' :: (Eq n, SolutionConstraint r m f t n e s, IANode' n s) => r -> r
+iaSolution' inSolution = inSolution `setForests` fmap (`iaForest'` getMetadata inSolution) (getForests inSolution)
 
 -- | Simple wrapper to do an IA over a forest
 -- takes in a forest and some metadata
 -- returns an alignment forest
-iaForest :: (ForestConstraint f t n e s, Metadata m s) => f -> Vector m -> AlignmentForest s
-iaForest inForest inMeta = fmap (`impliedAlign` inMeta) (trees inForest)
+iaForest' :: (Eq n, FoldableWithKey k, ForestConstraint f t n e s, IANode' n s, Metadata m s, Key k ~ Int) => f -> k m -> f
+iaForest' inForest inMeta = inForest `setTrees` fmap (deriveImpliedAlignments inMeta) (trees inForest)
 
+{-
 -- TODO: used concrete BitVector type instead of something more appropriate, like EncodableDynamicCharacter. 
 -- This also means that there are a bunch of places below that could be using EDC class methods that are no longer.
 -- The same will be true in DO.
@@ -365,8 +364,16 @@ data PsuedoIndex
 
 type PseudoCharacter = Vector PsuedoIndex
 
-numeration :: (Eq n, TreeConstraint t n e s, IANode' n s) => CostStructure -> t -> t
-numeration metadataStructure tree = tree `update` updatedLeafNodes
+deriveImpliedAlignments :: (Eq n, FoldableWithKey f, TreeConstraint t n e s, IANode' n s, Metadata m s, Key f ~ Int) => f m -> t -> t 
+deriveImpliedAlignments sequenceMetadatas tree = foldlWithKey' f tree sequenceMetadatas
+  where
+    f t k m
+      | getType m /= DirectOptimization = t
+      | otherwise                       = numeration k (getCosts m) t
+
+
+numeration :: (Eq n, TreeConstraint t n e s, IANode' n s) => Int -> CostStructure -> t -> t
+numeration sequenceIndex costStructure tree = tree `update` updatedLeafNodes
   where
     -- | Precomputations used for reference in the memoization
     rootNode        = root tree
@@ -406,7 +413,7 @@ numeration metadataStructure tree = tree `update` updatedLeafNodes
                   where
                     -- Maybe check for indicies after the length of the sequence.
                     IE insertionMapping = allDescendantInsertions
-                    characterLength     = olength . fromMaybe (error "No root Sequence!") . headMay $ getForAlign rootNode
+                    characterLength     = olength $ getForAlign rootNode V.! sequenceIndex
                     seqList             = trailingInsertions <> foldMap f [0..characterLength - 1]
                     f k =
                       case k `lookup` insertionMapping of
@@ -447,12 +454,12 @@ numeration metadataStructure tree = tree `update` updatedLeafNodes
             -- The PseudoCharacter is not yet defined
             parentChildEdge = (ancestoralNodeDeletions <> deletes, inserts >-< allDescendantInsertions, psuedoCharacter)
               where
-                parentCharacter = fromMaybe (error "No parent Sequence!") . headMay . getForAlign $ enumeratedNodes V.! i
-                childCharacter  = fromMaybe (error "No child sequence!" ) . headMay . getForAlign $ enumeratedNodes V.! j
+                parentCharacter = getForAlign (enumeratedNodes V.! i) V.! sequenceIndex
+                childCharacter  = getForAlign (enumeratedNodes V.! j) V.! sequenceIndex
                 (ancestoralNodeDeletions, _parentNodeInsertions, parentNodePsuedoCharacter) =
 --              trace (mconcat ["Accessing (",show $ parentMapping V.! j,",",show j,")"]) $
                    homologyMemoize ! (i, i)
-                (deletes, inserts)      = comparativeIndelEvents parentCharacter childCharacter metadataStructure
+                (deletes, inserts)      = comparativeIndelEvents parentCharacter childCharacter costStructure
 
                 psuedoCharacter = V.fromList result
                   where
@@ -514,15 +521,23 @@ numeration metadataStructure tree = tree `update` updatedLeafNodes
     updatedLeafNodes = foldrWithKey f [] enumeratedNodes
       where
         f i n xs
-          | n `nodeIsLeaf` tree = deriveImpliedAlignment i homologyMemoize n : xs
+          | n `nodeIsLeaf` tree = deriveImpliedAlignment i sequenceIndex homologyMemoize n : xs
           | otherwise           = xs
 
-deriveImpliedAlignment :: (EncodableDynamicCharacter s, NodeConstraint n s, IANode' n s, Show s) => Int -> Matrix MemoizedEvents -> n -> n
+deriveImpliedAlignment :: (EncodableDynamicCharacter s, NodeConstraint n s, IANode' n s, Show s) => Int -> Int -> Matrix MemoizedEvents -> n -> n
 -- deriveImpliedAlignment nodeIndex _ _ | trace ("deriveImpliedAlignment " <> show nodeIndex <> " " <> show psuedoCharacter) False = undefined
-deriveImpliedAlignment nodeIndex homologyMemoize node = node `setHomologies'` pure (constructDynamic $ reverse result)
+deriveImpliedAlignment nodeIndex sequenceIndex homologyMemoize node = node `setHomologies'` leafHomologies
       where
         (DE deletions, _, psuedoCharacter) = homologyMemoize ! (nodeIndex, nodeIndex)
-        leafCharacter   = fromMaybe (error "No leaf node sequence!") . headMay $ getForAlign node
+        leafHomologies
+          | length oldHomologies < sequenceIndex = oldHomologies <> V.replicate (sequenceIndex - length oldHomologies) (constructDynamic []) <> pure leafAlignedChar
+          | otherwise                            = oldHomologies V.// [(sequenceIndex, leafAlignedChar)]
+          where
+            oldHomologies = getHomologies' node
+            
+        leafSequence    = getForAlign node
+        leafCharacter   = leafSequence V.! sequenceIndex
+        leafAlignedChar = constructDynamic $ reverse result
         characterTokens = otoList leafCharacter
         gap             = getGapChar $ head characterTokens
         (_,_,result)    = foldr f (0, characterTokens, [])
