@@ -379,7 +379,9 @@ numeration sequenceIndex costStructure tree = tree `update` updatedLeafNodes
     rootNode        = root tree
     enumeratedNodes = enumerateNodes tree
     nodeCount       = length         enumeratedNodes
+--    rootIndex       = locateRoot'    parentMapping
     rootIndex       = locateRoot     enumeratedNodes rootNode
+--    rootIndex       = locateRoot     enumeratedNodes rootNode tree
     childMapping    = gatherChildren enumeratedNodes tree
     parentMapping   = gatherParents  childMapping
 
@@ -530,8 +532,8 @@ deriveImpliedAlignment nodeIndex sequenceIndex homologyMemoize node = node `setH
       where
         (DE deletions, _, psuedoCharacter) = homologyMemoize ! (nodeIndex, nodeIndex)
         leafHomologies
-          | length oldHomologies < sequenceIndex = oldHomologies <> V.replicate (sequenceIndex - length oldHomologies) (constructDynamic []) <> pure leafAlignedChar
-          | otherwise                            = oldHomologies V.// [(sequenceIndex, leafAlignedChar)]
+          | length oldHomologies <= sequenceIndex = oldHomologies <> V.replicate (sequenceIndex - length oldHomologies) (constructDynamic []) <> pure leafAlignedChar
+          | otherwise                             = oldHomologies V.// [(sequenceIndex, leafAlignedChar)]
           where
             oldHomologies = getHomologies' node
             
@@ -561,9 +563,9 @@ enumerateNodes tree = {- trace ("Enumerated Nodes: " <> show x) -} x
 locateRoot :: Eq n => Vector n -> n -> Int
 locateRoot ns n = fromMaybe 0 $ V.ifoldl' f Nothing ns
   where
-    f acc i e 
-      | e == n    = acc <|> Just i
-      | otherwise = Nothing
+    f acc i e = acc <|> if   e == n
+                        then Just i
+                        else Nothing
 
 gatherChildren :: (Eq n, TreeConstraint t n e s) => Vector n -> t -> Vector IntSet
 gatherChildren enumNodes tree = x -- trace ("Gathered children: " <> show x) x
@@ -582,7 +584,7 @@ gatherChildren enumNodes tree = x -- trace ("Gathered children: " <> show x) x
 
 
 gatherParents :: Vector IntSet -> Vector Int
-gatherParents childrenMapping = x -- trace ("Gathered parents: " <> show x) x
+gatherParents childrenMapping = {- trace ("Gathered parents: " <> show x) -} integrityCheck x
   where
     !x = V.generate (length childrenMapping) f
     f i = fromMaybe (-1) $ foldlWithKey' g Nothing childrenMapping
@@ -590,6 +592,15 @@ gatherParents childrenMapping = x -- trace ("Gathered parents: " <> show x) x
         g acc k e
           | i `oelem` e = Just k
           | otherwise   = acc
+    integrityCheck vectorOfParents =
+      case foldl' h 0 vectorOfParents of
+        0 -> error "There was no parent found!"
+        1 -> vectorOfParents
+        n -> error $ "Could not find the parent for " <> show n <> " nodes: " <> show x
+      where
+        h acc e
+          | e == -1   = acc + 1
+          | otherwise = acc
 
 comparativeIndelEvents :: (SeqConstraint s) => s -> s -> CostStructure -> (DeletionEvents, InsertionEvents)
 comparativeIndelEvents ancestorCharacterUnaligned descendantCharacterUnaligned costStructure
