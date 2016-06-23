@@ -47,6 +47,7 @@ data Node = Node  { nodeIdx     :: Int
                   , single      :: Vector DynamicChar -- the single assignment
                   , gapped      :: Vector DynamicChar -- the final assignment with gaps for alignment
                   , iaHomology  :: IN.HomologyTrace   -- the homology traces for an implied alignment (the matrix is numChars by charLength)
+                  , impliedAlignment :: Vector DynamicChar -- the homology traces for an implied alignment (the matrix is numChars by charLength)
                   , localCost   :: Double             -- cost of assignment at this node alone
                   , totalCost   :: Double             -- sum cost of this node and its subtree
                   } deriving (Eq, Show)
@@ -85,6 +86,10 @@ instance IN.IANode Node where
   getHomologies = iaHomology
   setHomologies n h = n {iaHomology = h}
 
+instance IN.IANode' Node DynamicChar where
+  getHomologies'             = impliedAlignment
+  setHomologies' n alignment = n { impliedAlignment = alignment }
+
 instance RefNode Node where
   getCode = nodeIdx
 
@@ -99,7 +104,28 @@ instance Arbitrary Node where
         groupOfSequences <- vectorOf 10 arbitrary
         c2               <- arbitrary :: Gen Double
         c3               <- arbitrary :: Gen Double
-        pure $ Node c n root leaf child parent (head groupOfSequences ) (groupOfSequences !! 1) (groupOfSequences !! 2) (groupOfSequences !! 3) (groupOfSequences !! 4) (groupOfSequences !! 5) (groupOfSequences !! 6) (groupOfSequences !! 7) (groupOfSequences !! 8) (groupOfSequences !! 9) mempty c2 c3
+        pure Node 
+                 { nodeIdx     = c
+                 , name        = n
+                 , isRoot      = root
+                 , isLeaf      = leaf
+                 , children    = child
+                 , parents     = parent
+                 , encoded     = head groupOfSequences
+                 , packed      = groupOfSequences !! 1
+                 , preliminary = groupOfSequences !! 2
+                 , final       = groupOfSequences !! 3
+                 , temporary   = groupOfSequences !! 4
+                 , aligned     = groupOfSequences !! 5
+                 , random      = groupOfSequences !! 6
+                 , union       = groupOfSequences !! 7
+                 , single      = groupOfSequences !! 8
+                 , gapped      = groupOfSequences !! 9
+                 , iaHomology  = mempty
+                 , impliedAlignment = mempty
+                 , localCost   = c2
+                 , totalCost   = c3
+                 }
 
 generateLeavesDO :: Alphabet String -> Int -> Gen [Node]
 generateLeavesDO alphabet taxaCount = do
@@ -130,6 +156,7 @@ generateLeavesDO alphabet taxaCount = do
                  , single      = mempty
                  , gapped      = mempty
                  , iaHomology  = mempty
+                 , impliedAlignment = mempty
                  , localCost   = 0
                  , totalCost   = 0
                  }

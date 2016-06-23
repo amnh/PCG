@@ -147,6 +147,7 @@ binaryTreeToDAG binaryRoot = DAG
                         , single      = mempty
                         , gapped      = mempty
                         , iaHomology  = mempty
+                        , impliedAlignment = mempty
                         , localCost   = 0
                         , totalCost   = 0
                         }
@@ -372,6 +373,7 @@ fromTopo topoDag = DAG
                    , single      = TN.single      topoRef
                    , gapped      = TN.gapped      topoRef
                    , iaHomology  = mempty
+                   , impliedAlignment = mempty
                    , localCost   = TN.localCost   topoRef
                    , totalCost   = TN.totalCost   topoRef
                    }
