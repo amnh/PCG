@@ -56,16 +56,16 @@ naiveDO char1 char2 meta
             char1Len = numChars char1
             char2Len = numChars char2
             (shorterChar, longerChar, _longLen) = if char1Len > char2Len
-                                         then (char2, char1, char1Len)
-                                         else (char1, char2, char2Len)
+                                                  then (char2, char1, char1Len)
+                                                  else (char1, char2, char2Len)
             traversalMat = createDOAlignMatrix longerChar shorterChar (getCosts meta)
             cost = getTotalAlignmentCost traversalMat
             (gapped, left, right) = traceback traversalMat shorterChar longerChar
             -- TODO: change to occur in traceback, to remove constant factor.
             ungapped = filterGaps gapped
             (out1, out2) = if char1Len > char2Len
-                                then (right, left)
-                                else (left, right)
+                           then (right, left)
+                           else (left, right)
         in (ungapped, cost, gapped, out1, out2)
             
 
@@ -145,7 +145,7 @@ createDOAlignMatrix topDynChar leftDynChar costStruct = result
 -- Essentially does the second step of Needleman-Wunsch, following the arrows from the bottom right corner, 
 -- accumulating the sequences as it goes, but returns three alignments: the left character, the right character,
 -- and the parent. The child alignments *should* be biased toward the shorter of the two sequences.
--- Try 
+-- TODO: Change order of input characters to match createDOAlignMatrix inputs.
 traceback :: (NWSeqConstraint s) => DOAlignMatrix s -> s -> s -> (s, s, s)
 traceback alignMat' char1' char2' = (fromChars $ reverse t1, fromChars $ reverse t2, fromChars $ reverse t3)
     where

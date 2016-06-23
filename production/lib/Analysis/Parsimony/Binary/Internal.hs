@@ -57,9 +57,9 @@ graphOptimization weighting meta inGraph = setTrees inGraph $ fmap (allOptimizat
 allOptimization :: (TreeConstraint' t n s, Metadata m s) => Double -> Vector m -> t -> t
 allOptimization weighting meta inTree =
     let
-        downPass = treeOptimizePreorder weighting inTree meta
-        upPass   = treeOptimizePostorder downPass meta
-    in upPass
+        firstPass  = treeOptimizePreorder weighting inTree meta
+        secondPass = treeOptimizePostorder firstPass meta
+    in secondPass
 
 -- | Optimization preorder wrapper to perform relevant algorithm at all nodes
 -- Takes in an overall weight, a tree, and a vector of metadata
