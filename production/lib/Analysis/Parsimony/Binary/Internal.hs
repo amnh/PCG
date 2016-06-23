@@ -69,6 +69,7 @@ allOptimization weighting meta inTree = secondPass
 treeOptimizePostorder :: (TreeConstraint' t n s, Metadata m s) => Double -> t -> Vector m -> t
 treeOptimizePostorder weighting tree meta = tree `update` (rootNode : nonRootNodes)
   where
+    -- We recursively decorate all nodes in the tree, then return the updated tree
     (rootNode, nonRootNodes) = treeInternalPostorderTraversal weighting (root tree) tree meta
 
 -- | Internal postorder optimization pass
@@ -78,22 +79,78 @@ treeOptimizePostorder weighting tree meta = tree `update` (rootNode : nonRootNod
 treeInternalPostorderTraversal :: (TreeConstraint' t n s, Metadata m s) => Double -> n -> t -> Vector m -> (n, [n])
 treeInternalPostorderTraversal weighting node tree meta = (decoratedSelf, decoratedSubtree)
   where
+      -- After applying the traversal logic to the subtree of this node
+      -- we count the mutated children of this node to determine how to decorate this node.
+      --
+      -- If the node has two (or more) children, we apply direct optimization and decorate this node with
+      -- the "gapped" and "ungapped" results of the direct optimization coparison of the two children.
+      --
+      -- If the node has a single child, we decorate this node with the exact values of the child node.
+      --
+      -- If the node has no children, we decorate the leaf node with cost values of zer.
       decoratedSelf =
         case children' of
           left:right:_ -> nodeOptimizePostorder weighting node left right meta
           child:_      -> decorateInternal child node
           _            -> decorateLeaf node
 
-      -- 
+      -- We apply the traversal logic to the nodes children, returning back [(n,[n])]
+      -- where the first componet ofeach tuple is a mutated child of this node
+      -- and where the second component of the tuple is the list of mutated nodes in the mutated child's subtree.
       recursiveResult            = (\x -> treeInternalPostorderTraversal weighting x tree meta) <$> children node tree
+
+      -- We extract the /only/ mutated children nodes from the resursive result.
       children'                  = fst <$> recursiveResult
+
+      -- We combine the mutated subtrees with the mutated children to create a new mutated subtree for this node.
       decoratedSubtree           = children' <> concatMap snd recursiveResult
+
+      -- Logic for decorating a leaf node
       decorateLeaf     leafNode  = setTotalCost 0.0 $ setLocalCost 0.0 leafNode
+
+      -- Logic for decorating a node with exactly one child.
+      -- These nodes are malformed in most (all?) tree topologies.
       decorateInternal otherNode = setTemporary   (getTemporary        otherNode)
                                  . setAlign       (getPreliminaryAlign otherNode)
                                  . setPreliminary (getPreliminary      otherNode)
-        --                       . setTotalCost   (getTotalCost        otherNode)
+                                 . setTotalCost   (getTotalCost        otherNode)
                                  . setLocalCost   (getLocalCost        otherNode)
+
+-- | Wrapper function to perform optimization on a node during the postorder pass
+-- Essentially map decision function that selects and performs the correct optimization over the sequence of characters.
+-- Takes in an overall weight, a current node, the left child, the right child, and a vector of metadata
+-- Outputs a node with the correct sequences and costs assigned.
+nodeOptimizePostorder :: (NodeConstraint' n s, Metadata m s) => Double -> n -> n -> n -> Vector m -> n
+nodeOptimizePostorder weighting curNode lNode rNode meta = summedTotalCost `setTotalCost` res
+    where
+        summedTotalCost = sum [getLocalCost res, getTotalCost lNode, getTotalCost rNode]
+        res             = ifoldr chooseOptimization curNode meta
+
+        --chooseOptimization :: (NodeConstraint' n s, Metadata m s) => Int -> m -> n -> n
+        chooseOptimization curPos metadataStructure setNode
+            -- TODO: Compiler error maybe below with comment structures and 'lets'
+            | getIgnored metadataStructure = setNode
+            | getType metadataStructure == Fitch =
+                let (assign, temp, local) = preorderFitchBit curWeight (getForAlign lNode ! curPos) (getForAlign rNode ! curPos) metadataStructure
+                in addTemporary temp
+                 . addLocalCost (local * curWeight * weighting)
+                 . addAlign assign
+                 . addPreliminary assign
+                 $ setNode
+            | getType metadataStructure == DirectOptimization =
+                let (ungapped, cost, gapped, _, _) = naiveDO (getForAlign lNode ! curPos) (getForAlign rNode ! curPos) $ getCosts metadataStructure
+                in addLocalCost (cost * curWeight * weighting)
+                 . addAlign gapped
+                 . addPreliminary ungapped
+                 $ setNode
+            | otherwise = error "Unrecognized optimization type"
+            where curWeight = getWeight metadataStructure
+
+        addPreliminary addVal node = addToField setPreliminary getPreliminary      addVal node
+        addAlign       addVal node = addToField setAlign       getPreliminaryAlign addVal node
+        addTemporary   addVal node = addToField setTemporary   getTemporary        addVal node
+--        addTotalCost   addVal node = setTotalCost (addVal + getTotalCost node) node
+        addLocalCost   addVal node = setLocalCost (addVal + getLocalCost node) node
 
 -- | Wrapper for the preorder
 -- Takes in a tree and a vector of metadata,
@@ -114,43 +171,6 @@ treeInternalPreorderTraversal node tree meta  =
   where
       children' = children node tree
       result    = concatMap (\x -> treeInternalPreorderTraversal x tree meta) children'
-
--- | Wrapper function to perform optimization on a node during the postorder pass
--- Essentially a map over a decision function that selects and performs the correct optimization for each character.
--- Takes in an overall weight, a current node, the left child, the right child, and a vector of metadata
--- Outputs a node with the correct sequences and costs assigned.
-nodeOptimizePostorder :: (NodeConstraint' n s, Metadata m s) => Double -> n -> n -> n -> Vector m -> n
-nodeOptimizePostorder weighting curNode lNode rNode meta = summedTotalCost `setTotalCost` res
-    where
-        summedTotalCost = sum [getLocalCost res, getTotalCost lNode, getTotalCost rNode]
-        res             = ifoldr chooseOptimization curNode meta
-
-        --chooseOptimization :: (NodeConstraint' n s, Metadata m s) => Int -> m -> n -> n
-        chooseOptimization curPos metadataStructure setNode
-            -- TODO: Compiler error maybe below with comment structures and 'lets'
-            | getIgnored metadataStructure = setNode
-            | getType metadataStructure == Fitch =
-                let (assign, temp, local) = preorderFitchBit curWeight (getForAlign lNode ! curPos) (getForAlign rNode ! curPos) metadataStructure
-                in addTemporary temp
-                 . addLocalCost (local * curWeight * weighting)
---                 . addTotalCost (local * curWeight * weighting)
-                 . addAlign assign
-                 $ addPreliminary assign setNode
-            | getType metadataStructure == DirectOptimization =
-                let (ungapped, cost, gapped, _, _) = naiveDO (getForAlign lNode ! curPos) (getForAlign rNode ! curPos) $ getCosts metadataStructure
-                in addLocalCost (cost * curWeight * weighting)
---                 . addTotalCost (cost * curWeight * weighting)
-                 . addAlign gapped
-                 $ addPreliminary ungapped setNode
-            | otherwise = error "Unrecognized optimization type"
-
-                where curWeight = getWeight metadataStructure
-
-        addPreliminary addVal node = addToField setPreliminary getPreliminary      addVal node
-        addAlign       addVal node = addToField setAlign       getPreliminaryAlign addVal node
-        addTemporary   addVal node = addToField setTemporary   getTemporary        addVal node
---        addTotalCost   addVal node = setTotalCost (addVal + getTotalCost node) node
-        addLocalCost   addVal node = setLocalCost (addVal + getLocalCost node) node
 
 -- | Wrapper function to perform optimization on a node during the preorder pass.
 -- As in the postorder, it selects an optimization for each character, then groups the optimized characters together and assigns them to the node.
