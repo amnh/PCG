@@ -11,7 +11,7 @@
 -- Direct optimization functionality for binary trees
 --
 -----------------------------------------------------------------------------
-{-# LANGUAGE ConstraintKinds #-}
+{-# LANGUAGE ConstraintKinds, TypeFamilies #-}
 
 module Analysis.Parsimony.Binary.DirectOptimization.Internal where
 
@@ -19,35 +19,40 @@ import Analysis.Parsimony.Binary.Constraints
 import Bio.Metadata
 import Bio.Character.Dynamic.Coded
 import Data.Bits
-import Data.BitVector hiding (foldr, reverse)
+--import Data.BitVector hiding (foldr, reverse)
 import Data.Foldable         (minimumBy)
 import Data.Function.Memoize
 import Data.Key              ((!))
 import Data.Matrix.NotStupid (Matrix, getElem, nrows, ncols, matrix)
--- import Data.MonoTraversable
+import Data.MonoTraversable
 import Data.Ord
 import Data.Vector           (Vector)
 
 -- | The direction to align the character at a given matrix point.
 data Direction = LeftArrow | DiagArrow | UpArrow deriving (Eq, Show)
 
--- | A row of the 'DOAlignMatrix'
--- constructed as a tuple of vectors for easy joining to the full matrix
-type AlignRow s = Vector (Double, Direction, BitVector)
-
 -- | A representation of an alignment matrix for DO.
 -- The matrix itself stores tuples of the cost and direction at that position.
 -- We also store a vector of characters that are generated.
-type DOAlignMatrix s = Matrix (Double, Direction, BitVector)
+type DOAlignMatrix s = Matrix (Double, Direction, s)
 
-type NWSeqConstraint s = (EncodableDynamicCharacter s, Show s, Memoizable s)
+type DOCharConstraint s = (EncodableDynamicCharacter s, Show s, Memoizable s)
 
 -- | Performs a naive direct optimization
 -- Takes in two characters to run DO on and a metadata object
 -- Returns an assignment character, the cost of that assignment, the assignment character with gaps included,
 -- the aligned version of the first input character, and the aligned version of the second input character
 -- The process for this algorithm is to generate a traversal matrix, then perform a traceback.
-naiveDO :: SeqConstraint' s  => s -> s -> CostStructure -> (s, Double, s, s, s)
+naiveDO :: DOCharConstraint s  
+        => s                -- ^ First  dynamic character
+        -> s                -- ^ Second dynamic character
+        -> CostStructure    -- ^ Structure defining the transition costs between character states
+        -> ( s              -- ^ The /ungapped/ character derived from the the input characters' N-W-esque matrix traceback
+           , Double         -- ^ The cost of the alignment
+           , s              -- ^ The /gapped/ character derived from the the input characters' N-W-esque matrix traceback
+           , s              -- ^ The gapped alignment of the /first/ input character when aligned with the second character
+           , s              -- ^ The gapped alignment of the /second/ input character when aligned with the first character
+           )
 naiveDO char1 char2 costStruct
     | isEmpty char1 = (char1, 0, char1, char1, char1)
     | isEmpty char2 = (char2, 0, char2, char2, char2)
@@ -55,7 +60,7 @@ naiveDO char1 char2 costStruct
         let
             char1Len = numChars char1
             char2Len = numChars char2
-            (shorterChar, longerChar, _longLen) = if char1Len > char2Len
+            (shorterChar, longerChar, _longLen) = if   char1Len > char2Len
                                                   then (char2, char1, char1Len)
                                                   else (char1, char2, char2Len)
             traversalMat = createDOAlignMatrix longerChar shorterChar costStruct
@@ -71,24 +76,12 @@ naiveDO char1 char2 costStruct
 
 
 -- | Wrapper function to do an enhanced Needleman-Wunsch algorithm.
--- Calls 'createDOAlignMatrix' to generate an 'DOAlignMatrix', then 'traceback' to get 
--- the aligned characters.
--- Takes in two 'EncodableDynamicCharacter's and a 'CostStructure'.
--- Returns two _aligned_ 'EncodableDynamicCharacter's.
--- !!!TODO: make 5-tuple, replace code in naiveDO
-doAlignment :: NWSeqConstraint s => s -> s -> CostStructure -> (s, s)
-doAlignment char1 char2 meta = (seq1Align, seq2Align)
+-- Calls naiveDO, but only returns the last two fields (gapped alignments of inputs)
+doAlignment :: DOCharConstraint s => s -> s -> CostStructure -> (s, s)
+doAlignment char1 char2 costStruct = (char1Align, char2Align)
     where
-        char1Len                  = numChars char1
-        char2Len                  = numChars char2
-        (shorterChar, longerChar) = if   char1Len > char2Len
-                                    then (char2, char1)
-                                    else (char1, char2)
-        traversalMat           = createDOAlignMatrix longerChar shorterChar meta
-        (_, alignL, alignR)    = traceback traversalMat shorterChar longerChar
-        (seq1Align, seq2Align) = if   char1Len > char2Len
-                                 then (alignR, alignL)
-                                 else (alignL, alignR)
+        (_, _, _, char1Align, char2Align) = naiveDO char1 char2 costStruct
+        
 
 -- | Main function to generate an 'DOAlignMatrix'. Works as in Needleman-Wunsch,
 -- but allows for multiple indel/replacement costs, depending on the 'CostStructure'.
@@ -99,7 +92,7 @@ doAlignment char1 char2 meta = (seq1Align, seq2Align)
 -- Returns an 'DOAlignMatrix'.
 -- TODO: See if we can move topDynChar logic inside here. It's also necessary in DO. 
 -- Or maybe DO can just call doAlignment?
-createDOAlignMatrix :: (EncodableDynamicCharacter s) => s -> s -> CostStructure -> DOAlignMatrix s
+createDOAlignMatrix :: (EncodableDynamicCharacter s) => s -> s -> CostStructure -> DOAlignMatrix (Element s)
 createDOAlignMatrix topDynChar leftDynChar costStruct = result
     where
         result = matrix (numChars leftDynChar + 1) (numChars topDynChar + 1) generateMat
@@ -107,7 +100,7 @@ createDOAlignMatrix topDynChar leftDynChar costStruct = result
         -- TODO: attempt to make tail recursive? Maybe not possible, given multiple tuple values.
         -- | Internal generator function for the matrix
         -- Deals with both first row and other cases, a merge of two previous algorithms
-        generateMat :: (Int, Int) -> (Double, Direction, BitVector)
+        -- generateMat :: (EncodableStaticCharacter b) => (Int, Int) -> (Double, Direction, b)
         generateMat (row, col)
           | row == 0 && col == 0         = (0                               , DiagArrow, gap      )
           | row == 0 && rightChar /= gap = (leftwardValue + rightOverlapCost, LeftArrow, staticCharFromLeft)
@@ -116,9 +109,9 @@ createDOAlignMatrix topDynChar leftDynChar costStruct = result
           | col == 0                     = (upwardValue                     , UpArrow  , staticCharFromTop )
           | otherwise                    = (minCost                         , minDir   , minState )
           where
-            gap                           = gapChar topDynChar
-            staticCharFromLeft            = grabSubChar topDynChar (col - 1)
-            staticCharFromTop             = grabSubChar leftDynChar (row - 1)
+            gap                           = getGapChar staticCharFromLeft
+            staticCharFromLeft            = topDynChar  `indexChar` (col - 1)
+            staticCharFromTop             = leftDynChar `indexChar` (row - 1)
             (leftwardValue, _, _)         = result ! (row    , col - 1)
             (diagonalValue, _, _)         = result ! (row - 1, col - 1)
             (upwardValue  , _, _)         = result ! (row - 1, col)
@@ -146,12 +139,15 @@ createDOAlignMatrix topDynChar leftDynChar costStruct = result
 -- accumulating the sequences as it goes, but returns three alignments: the left character, the right character,
 -- and the parent. The child alignments *should* be biased toward the shorter of the two sequences.
 -- TODO: Change order of input characters to match createDOAlignMatrix inputs.
-traceback :: (NWSeqConstraint s) => DOAlignMatrix s -> s -> s -> (s, s, s)
-traceback alignMat' char1' char2' = (fromChars $ reverse t1, fromChars $ reverse t2, fromChars $ reverse t3)
+traceback :: (DOCharConstraint s) => DOAlignMatrix (Element s) -> s -> s -> (s, s, s)
+traceback alignMat' char1' char2' = ( constructDynamic $ reverse t1
+                                    , constructDynamic $ reverse t2
+                                    , constructDynamic $ reverse t3
+                                    )
     where
         (t1, t2, t3) = tracebackInternal alignMat' char1' char2' (nrows alignMat' - 1, ncols alignMat' - 1)
         -- read it from the matrix instead of grabbing
-        tracebackInternal :: (NWSeqConstraint s) => DOAlignMatrix s -> s -> s -> (Int, Int) -> ([BitVector], [BitVector], [BitVector]) -- TODO: make s's into Element s
+        tracebackInternal :: (DOCharConstraint s) => DOAlignMatrix (Element s) -> s -> s -> (Int, Int) -> ([Element s], [Element s], [Element s]) -- TODO: make s's into Element s
         tracebackInternal alignMat char1 char2 (row, col)
             | nrows alignMat < row - 1 || ncols alignMat < col - 1 = error "Traceback cannot function because matrix is incomplete"
             | row == 0 && col == 0 = (mempty, mempty, mempty)
@@ -159,13 +155,17 @@ traceback alignMat' char1' char2' = (fromChars $ reverse t1, fromChars $ reverse
                 let (trace1, trace2, trace3) = tracebackInternal alignMat char1 char2 (i, j)
                 in (curState : trace1, leftCharacter : trace2, rightCharacter : trace3)
             where
-              (_, curDirect, curState) = getElem row col alignMat
-              leftCharacter  = if row == i 
-                               then gapChar char2 
-                               else grabSubChar char1 i
-              rightCharacter = if col == j 
-                               then gapChar char1 
-                               else grabSubChar char2 j
+              (_, curDirect, curState) = alignMat ! (row, col)
+              leftCharacter            = let x = char1 `indexChar` i
+                                         in
+                                             if row == i 
+                                             then getGapChar x 
+                                             else x
+              rightCharacter           = let x = char2 `indexChar` i
+                                         in
+                                             if col == j 
+                                             then getGapChar x 
+                                             else x
               (i, j) =
                 case curDirect of
                   LeftArrow -> (row    , col - 1)
@@ -173,7 +173,6 @@ traceback alignMat' char1' char2' = (fromChars $ reverse t1, fromChars $ reverse
                   DiagArrow -> (row - 1, col - 1)
 
 -- | Simple function to get the cost from an alignment matrix
-getTotalAlignmentCost :: DOAlignMatrix s -> Double
 getTotalAlignmentCost alignmentMatrix = c
   where
     (c, _, _) = alignmentMatrix ! (nrows alignmentMatrix - 1, ncols alignmentMatrix - 1) 
