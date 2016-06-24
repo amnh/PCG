@@ -144,13 +144,12 @@ instance Show TestingDecoration where
         ,  ("TotalCost   " <>)  <$> h dTotalCost
         ]
       renderedDecorations =
-        [ g "Encoded     "  <$> f dEncoded
-        , g "Ungapped    "  <$> f dFinal
-        , g "Gapped      "  <$> f dGapped
-        , g "Preliminary "  <$> f dPreliminary
-        , g "Aligned     "  <$> f dAligned
-        , g "Temporary   "  <$> f dTemporary
-        , g "ImpliedAlign" <$> f dImpliedAlignment
+        [ g "Encoded              " <$> f dEncoded
+        , g "Final Ungapped       " <$> f dFinal
+        , g "Final Gapped         " <$> f dGapped
+        , g "Preliminary Ungapped " <$> f dPreliminary
+        , g "Preliminary Gapped   " <$> f dAligned
+        , g "Implied Alignment    " <$> f dImpliedAlignment
         ]
       f x = renderDynamicCharacter <$> headMay (x decoration)
       g prefix shown = prefix <> ": " <> shown --intercalate "\n" $ (prefix <> ": " <> y) : (("  " <>) <$> zs)

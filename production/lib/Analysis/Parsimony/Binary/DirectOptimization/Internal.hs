@@ -28,6 +28,8 @@ import Data.MonoTraversable
 import Data.Ord
 import Data.Vector           (Vector)
 
+import Debug.Trace (trace)
+
 -- | The direction to align the character at a given matrix point.
 data Direction = LeftArrow | DiagArrow | UpArrow deriving (Eq, Show)
 
@@ -63,7 +65,7 @@ naiveDO char1 char2 costStruct
             (shorterChar, longerChar, _longLen) = if   char1Len > char2Len
                                                   then (char2, char1, char1Len)
                                                   else (char1, char2, char2Len)
-            traversalMat = createDOAlignMatrix longerChar shorterChar costStruct
+            traversalMat = (\x -> trace (show $ (\(a,b,_) -> (a,b)) <$> x) x) $ createDOAlignMatrix longerChar shorterChar costStruct
             cost = getTotalAlignmentCost traversalMat
             (gapped, left, right) = traceback traversalMat shorterChar longerChar
             -- TODO: change to occur in traceback, to remove constant factor.
