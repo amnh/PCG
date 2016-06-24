@@ -306,9 +306,9 @@ characterNumeration ancestorSeq descendantSeq = (descendantHomologies, totalGaps
 -- | Simple function to get a sequence for alignment purposes
 getForAlign :: NodeConstraint n s => n -> Vector s
 getForAlign n 
-    | not . null $ getFinalGapped n = getFinalGapped n
-    | not . null $ getPreliminary n = getPreliminary n 
-    | not . null $ getEncoded     n = getEncoded n 
+    | not . null $ getFinalGapped n         = getFinalGapped n
+    | not . null $ getPreliminaryUngapped n = getPreliminaryUngapped n 
+    | not . null $ getEncoded     n         = getEncoded n 
     | otherwise = mempty {-error "No sequence at node for IA to numerate"-}
 
 

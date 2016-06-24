@@ -80,7 +80,7 @@ instance Arbitrary InlineSpace where
 
 instance Show InlineSpace where
     show (InlineSpace c) = show c
-
+{-
 -- Node type for a simple tree for testing
 data TestNode = TestNode  { code        :: Int
                           , isRoot      :: Bool
@@ -160,9 +160,4 @@ instance StandardDAG TestDAG TestNode Int where
 
 instance RefNode TestNode where
   getCode = code
-
-instance Arbitrary BV where
-    arbitrary = do
-        len <- arbitrary :: Gen (Positive Int)
-        boolList <- vector (getPositive len)
-        pure $ fromBits boolList 
+-}

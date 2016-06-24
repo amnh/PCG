@@ -237,21 +237,21 @@ instance FN.FinalNode SimpleTree DynamicChar where
         decoration = rootLabel n
 
 instance RN.PreliminaryNode SimpleTree DynamicChar where
-    getPreliminary   (TT n) = dPreliminary $ rootLabel n
-    setPreliminary x (TT n) = TT $ n { rootLabel = decoration { dPreliminary = x } }
+    getPreliminaryUngapped   (TT n) = dPreliminary $ rootLabel n
+    setPreliminaryUngapped x (TT n) = TT $ n { rootLabel = decoration { dPreliminary = x } }
       where
         decoration = rootLabel n
 
-    getPreliminaryAlign (TT n) = dAligned $ rootLabel n
-    setAlign          x (TT n) = TT $ n { rootLabel = decoration { dAligned = x } }
+    getPreliminaryGapped   (TT n) = dAligned $ rootLabel n
+    setPreliminaryGapped x (TT n) = TT $ n { rootLabel = decoration { dAligned = x } }
       where
         decoration = rootLabel n
 
-    getTemporary        (TT n) = dTemporary $ rootLabel n
+ {-   getTemporary        (TT n) = dTemporary $ rootLabel n
     setTemporary      x (TT n) = TT $ n { rootLabel = decoration { dTemporary = x } }
       where
         decoration = rootLabel n
-
+-}
     getLocalCost        (TT n) = dLocalCost $ rootLabel n
     setLocalCost      x (TT n) = TT $ n { rootLabel = decoration { dLocalCost = x } }
       where

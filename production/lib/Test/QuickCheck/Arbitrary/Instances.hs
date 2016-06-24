@@ -14,9 +14,16 @@
 
 module Test.QuickCheck.Arbitrary.Instances where
 
+import           Data.BitVector
 import           Data.Vector      (Vector)
 import qualified Data.Vector as V (fromList)
 import           Test.QuickCheck
 
 instance Arbitrary a => Arbitrary (Vector a) where
     arbitrary = V.fromList <$> listOf arbitrary
+
+instance Arbitrary BV where
+    arbitrary = do
+        len <- arbitrary :: Gen (Positive Int)
+        boolList <- vector (getPositive len)
+        pure $ fromBits boolList 

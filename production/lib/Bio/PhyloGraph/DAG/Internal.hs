@@ -130,26 +130,26 @@ binaryTreeToDAG binaryRoot = DAG
            resultingOutNodes = IM.insert  counter'   (EdgeInfo 0 internalNode (nodeMap' ! counter'   ) Nothing)
                               (IM.insert (counter+1) (EdgeInfo 0 internalNode (nodeMap' ! (counter+1)) Nothing) mempty)
            internalNode = Node 
-                        { nodeIdx     = counter
-                        , name        = "HTU: " <> show counter
-                        , isRoot      = null $ maybe [] pure parentMay
-                        , isLeaf      = False
-                        , children    = [counter+1, counter']
-                        , parents     = maybe [] pure parentMay
-                        , encoded     = mempty
-                        , packed      = mempty
-                        , preliminary = mempty
-                        , final       = mempty
-                        , temporary   = mempty
-                        , aligned     = mempty
-                        , random      = mempty
-                        , union       = mempty
-                        , single      = mempty
-                        , gapped      = mempty
-                        , iaHomology  = mempty
-                        , impliedAlignment = mempty
-                        , localCost   = 0
-                        , totalCost   = 0
+                        { nodeIdx             = counter
+                        , name                = "HTU: " <> show counter
+                        , isRoot              = null $ maybe [] pure parentMay
+                        , isLeaf              = False
+                        , children            = [counter+1, counter']
+                        , parents             = maybe [] pure parentMay
+                        , encoded             = mempty
+                        , packed              = mempty
+                        , preliminaryUngapped = mempty
+                        , finalUngapped       = mempty
+                        --, temporary   = mempty
+                        , preliminaryGapped   = mempty
+                        , random              = mempty
+                        , union               = mempty
+                        , single              = mempty
+                        , finalGapped         = mempty
+                        , iaHomology          = mempty
+                        , impliedAlignment    = mempty
+                        , localCost           = 0
+                        , totalCost           = 0
                         }
        inNodeSet :: Maybe Int -> IntSet
        inNodeSet (Just parentReference) = IS.insert parentReference mempty
@@ -356,26 +356,26 @@ fromTopo topoDag = DAG
     nodeVector :: Vector NodeInfo
     !nodeVector = V.generate (length reference) f
       where
-        f i = Node { nodeIdx     = i
-                   , name        = TN.name topoRef
-                   , isRoot      = null parents'
-                   , isLeaf      = null children'
-                   , children    = children'
-                   , parents     = parents'
-                   , encoded     = TN.encoded     topoRef
-                   , packed      = TN.packed      topoRef
-                   , preliminary = TN.preliminary topoRef
-                   , final       = TN.final       topoRef
-                   , temporary   = TN.temporary   topoRef
-                   , aligned     = TN.aligned     topoRef
-                   , random      = TN.random      topoRef
-                   , union       = TN.union       topoRef
-                   , single      = TN.single      topoRef
-                   , gapped      = TN.gapped      topoRef
-                   , iaHomology  = mempty
-                   , impliedAlignment = mempty
-                   , localCost   = TN.localCost   topoRef
-                   , totalCost   = TN.totalCost   topoRef
+        f i = Node { nodeIdx             = i
+                   , name                = TN.name topoRef
+                   , isRoot              = null parents'
+                   , isLeaf              = null children'
+                   , children            = children'
+                   , parents             = parents'
+                   , encoded             = TN.encoded     topoRef
+                   , packed              = TN.packed      topoRef
+                   , preliminaryUngapped = TN.preliminary topoRef
+                   , finalUngapped       = TN.final       topoRef
+                   --, temporary           = TN.temporary   topoRef
+                   , preliminaryGapped   = TN.aligned     topoRef
+                   , random              = TN.random      topoRef
+                   , union               = TN.union       topoRef
+                   , single              = TN.single      topoRef
+                   , finalGapped         = TN.gapped      topoRef
+                   , iaHomology          = mempty
+                   , impliedAlignment    = mempty
+                   , localCost           = TN.localCost   topoRef
+                   , totalCost           = TN.totalCost   topoRef
                    }
             where
                 (parentRefs, topoRef, childRefs) = reference ! i
@@ -414,22 +414,23 @@ nodeToTopo inDAG curNode
       where
           childDAGs = fmap (\i -> nodeToTopo inDAG (nodes inDAG V.! i)) (children curNode)
           leaf = TN.TopoNode
-                   (isRoot      curNode)
-                   (N.nodeIsLeaf curNode inDAG)
-                   (name        curNode)
+                   (isRoot                 curNode)
+                   (N.nodeIsLeaf           curNode inDAG)
+                   (name                   curNode)
                    mempty
-                   (encoded     curNode)
-                   (packed      curNode)
-                   (preliminary curNode) 
-                   (final       curNode)
-                   (temporary   curNode)
-                   (aligned     curNode)
-                   (random      curNode)
-                   (union       curNode)
-                   (single      curNode)
-                   (gapped      curNode)
-                   (localCost   curNode)
-                   (totalCost   curNode)
+                   (encoded                curNode)
+                   (packed                 curNode)
+                   (getPreliminaryUngapped curNode) 
+                   (getFinal               curNode)
+                   --(temporary   curNode)
+                   mempty
+                   (getPreliminaryGapped   curNode)
+                   (random                 curNode)
+                   (union                  curNode)
+                   (single                 curNode)
+                   (getFinalGapped         curNode)
+                   (localCost              curNode)
+                   (totalCost              curNode)
 
 -- | makeEdges is a small function assisting attachAt
 -- it creates the edge set for a given node in the given tree

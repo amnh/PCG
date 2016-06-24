@@ -18,6 +18,7 @@ module Analysis.Parsimony.Binary.Internal where
 import Analysis.Parsimony.Binary.Constraints
 import Analysis.Parsimony.Binary.DirectOptimization
 import Analysis.Parsimony.Binary.Fitch
+import Bio.Character.Dynamic.Coded
 import Bio.Metadata
 import Bio.PhyloGraph.Forest
 import Bio.PhyloGraph.Network
@@ -110,11 +111,11 @@ treeInternalPostorderTraversal weighting node tree meta = (decoratedSelf, decora
 
       -- Logic for decorating a node with exactly one child.
       -- These nodes are malformed in most (all?) tree topologies.
-      decorateInternal otherNode = setTemporary   (getTemporary        otherNode)
-                                 . setAlign       (getPreliminaryAlign otherNode)
-                                 . setPreliminary (getPreliminary      otherNode)
-                                 . setTotalCost   (getTotalCost        otherNode)
-                                 . setLocalCost   (getLocalCost        otherNode)
+      decorateInternal otherNode = -- setTemporary   (getTemporary        otherNode)
+                                   setPreliminaryGapped   (getPreliminaryGapped   otherNode)
+                                 . setPreliminaryUngapped (getPreliminaryUngapped otherNode)
+                                 . setTotalCost           (getTotalCost           otherNode)
+                                 . setLocalCost           (getLocalCost           otherNode)
 
 -- | Wrapper function to perform optimization on a node during the postorder pass
 -- Essentially map decision function that selects and performs the correct optimization over the sequence of characters.
@@ -132,8 +133,8 @@ nodeOptimizePostorder weighting curNode lNode rNode meta = summedTotalCost `setT
             | getIgnored metadataStructure = setNode
             | getType metadataStructure == Fitch =
                 let (assign, temp, local) = preorderFitchBit curWeight (getForAlign lNode ! curPos) (getForAlign rNode ! curPos) metadataStructure
-                in addTemporary temp
-                 . addLocalCost (local * curWeight * weighting)
+                in -- addTemporary temp
+                   addLocalCost (local * curWeight * weighting)
                  . addAlign assign
                  . addPreliminary assign
                  $ setNode
@@ -146,9 +147,9 @@ nodeOptimizePostorder weighting curNode lNode rNode meta = summedTotalCost `setT
             | otherwise = error "Unrecognized optimization type"
             where curWeight = getWeight metadataStructure
 
-        addPreliminary addVal node = addToField setPreliminary getPreliminary      addVal node
-        addAlign       addVal node = addToField setAlign       getPreliminaryAlign addVal node
-        addTemporary   addVal node = addToField setTemporary   getTemporary        addVal node
+        addPreliminary addVal node = addToField setPreliminaryUngapped getPreliminaryUngapped addVal node
+        addAlign       addVal node = addToField setPreliminaryGapped   getPreliminaryGapped   addVal node
+--        addTemporary   addVal node = addToField setTemporary   getTemporary        addVal node
 --        addTotalCost   addVal node = setTotalCost (addVal + getTotalCost node) node
         addLocalCost   addVal node = setLocalCost (addVal + getLocalCost node) node
 
@@ -184,7 +185,7 @@ nodeOptimizePreorder curNode lNode rNode pNode meta
         --chooseOptimization :: (NodeConstraint' n s, Metadata m s) => Int -> m -> n -> n
         chooseOptimization i metadataStructure setNode
             | getType metadataStructure == Fitch =
-                let finalAssign = postorderFitchBit (getForAlign curNode ! i) (getForAlign lNode ! i) (getForAlign rNode ! i) (getForAlign (fromJust pNode) ! i) (getTemporary curNode ! i) metadataStructure
+                let finalAssign = postorderFitchBit (getForAlign curNode ! i) (getForAlign lNode ! i) (getForAlign rNode ! i) (getForAlign (fromJust pNode) ! i) {- (getTemporary curNode ! i) -} (constructDynamic []) metadataStructure
                 in addToField setFinal getFinal finalAssign setNode
             | getType metadataStructure == DirectOptimization =  --TODO: do we grab the gapped or not?
                 let (final, _, finalAligned, _, _) = naiveDO (getForAlign curNode ! i) (getForAlign (fromJust pNode) ! i) $ getCosts metadataStructure
@@ -203,9 +204,9 @@ setElemSafe value (row, col) matrix
 -- preliminary alignment 
 getForAlign :: (PreliminaryNode n s, EncodedNode n s, SeqConstraint' s) => n -> Vector s
 getForAlign node
-    | null (getPreliminaryAlign node) && null (getPreliminary node) = getEncoded node
-    | null $ getPreliminaryAlign node                               = getPreliminary node
-    | otherwise                                                     = getPreliminaryAlign node
+    | null (getPreliminaryGapped node) && null (getPreliminaryUngapped node) = getEncoded node
+    | null $ getPreliminaryGapped node                                       = getPreliminaryUngapped node
+    | otherwise                                                              = getPreliminaryGapped node
 
 -- | addToField takes in a setter fn, a getter fn, a value and a node.
 -- It then gets the related value from the node, adds to it the passed value,
