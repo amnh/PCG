@@ -109,7 +109,7 @@ createDOAlignMatrix topDynChar leftDynChar costStruct = result
           | col == 0                     = (upwardValue                     , UpArrow  , staticCharFromTop )
           | otherwise                    = (minCost                         , minDir   , minState )
           where
-            gap                           = getGapChar staticCharFromLeft
+            gap                           = getGapChar . head $ otoList leftDynChar -- Why would you give me an empty Dynamic Character?
             staticCharFromLeft            = topDynChar  `indexChar` (col - 1)
             staticCharFromTop             = leftDynChar `indexChar` (row - 1)
             (leftwardValue, _, _)         = result ! (row    , col - 1)
@@ -156,16 +156,12 @@ traceback alignMat' char1' char2' = ( constructDynamic $ reverse t1
                 in (curState : trace1, leftCharacter : trace2, rightCharacter : trace3)
             where
               (_, curDirect, curState) = alignMat ! (row, col)
-              leftCharacter            = let x = char1 `indexChar` i
-                                         in
-                                             if row == i 
-                                             then getGapChar x 
-                                             else x
-              rightCharacter           = let x = char2 `indexChar` i
-                                         in
-                                             if col == j 
-                                             then getGapChar x 
-                                             else x
+              leftCharacter            = if row == i 
+                                         then getGapChar curState  
+                                         else char1 `indexChar` i
+              rightCharacter           = if col == j 
+                                         then getGapChar curState
+                                         else char2 `indexChar` j
               (i, j) =
                 case curDirect of
                   LeftArrow -> (row    , col - 1)

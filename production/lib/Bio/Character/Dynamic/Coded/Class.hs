@@ -22,6 +22,8 @@ import Data.BitVector
 import Data.Maybe           (fromMaybe)
 import Data.MonoTraversable
 
+import GHC.Stack     (errorWithStackTrace )
+
 {- LAWS:
  - decodeChar alphabet . encodeChar alphabet . toList == id
  - encodeChar alphabet [alphabet ! i] == bit i
@@ -53,7 +55,7 @@ class ( EncodableStaticCharacter (Element s)
   indexChar  :: s -> Int -> Element s
   indexChar xs i = fromMaybe raiseError $ xs `lookupChar` i
     where
-      raiseError = error $ mconcat ["Index ", show i, " is out of range [0,", show $ olength xs,"]."] 
+      raiseError = errorWithStackTrace $ mconcat ["Index ", show i, " is out of range [0,", show $ olength xs - 1,"]."] 
 
   lookupChar :: s -> Int -> Maybe (Element s)
   lookupChar xs i = fst $ ofoldl' f (Nothing, 0) xs
