@@ -56,12 +56,13 @@ naiveDO :: DOCharConstraint s
            , s              -- ^ The gapped alignment of the /second/ input character when aligned with the first character
            )
 naiveDO char1 char2 costStruct
-    | isEmpty char1 = (char1, 0, char1, char1, char1)
-    | isEmpty char2 = (char2, 0, char2, char2, char2)
+    | onull char1 = (char1, 0, char1, char1, char1)
+    | onull char2 = (char2, 0, char2, char2, char2)
     | otherwise =
         let
-            char1Len = numChars char1
-            char2Len = numChars char2
+            gap      = getGapChar $ char1 `indexChar` 0
+            char1Len = olength char1
+            char2Len = olength char2
             (shorterChar, longerChar, _longLen) = if   char1Len > char2Len
                                                   then (char2, char1, char1Len)
                                                   else (char1, char2, char2Len)
@@ -69,7 +70,7 @@ naiveDO char1 char2 costStruct
             cost = getTotalAlignmentCost traversalMat
             (gapped, left, right) = traceback traversalMat shorterChar longerChar
             -- TODO: change to occur in traceback, to remove constant factor.
-            ungapped = filterGaps gapped
+            ungapped = constructDynamic . filter (\x -> x /= gap) $ otoList gapped
             (out1, out2) = if char1Len > char2Len
                            then (right, left)
                            else (left, right)
@@ -97,7 +98,7 @@ doAlignment char1 char2 costStruct = (char1Align, char2Align)
 createDOAlignMatrix :: (EncodableDynamicCharacter s) => s -> s -> CostStructure -> DOAlignMatrix (Element s)
 createDOAlignMatrix topDynChar leftDynChar costStruct = result
     where
-        result = matrix (numChars leftDynChar + 1) (numChars topDynChar + 1) generateMat
+        result = matrix (olength leftDynChar + 1) (olength topDynChar + 1) generateMat
 
         -- TODO: attempt to make tail recursive? Maybe not possible, given multiple tuple values.
         -- | Internal generator function for the matrix

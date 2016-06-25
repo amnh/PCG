@@ -27,6 +27,7 @@ import           Data.Alphabet
 import           Data.BitMatrix
 import           Data.BitVector
 import           Data.Matrix.NotStupid (getRow)
+import           Data.MonoTraversable
 import           Data.Monoid
 import qualified Data.Vector as V
 import           Test.Tasty
@@ -37,8 +38,8 @@ standardAlph :: Alphabet String
 standardAlph = constructAlphabet $ V.fromList ["A", "C", "G", "T", "-"]
 
 doMeta, fitchMeta :: CharacterMetadata DynamicChar
-doMeta    = CharMeta DirectOptimization standardAlph "" False False 1 mempty (emptyChar, emptyChar) 0 costStructure
-fitchMeta = CharMeta Fitch              standardAlph "" False False 1 mempty (emptyChar, emptyChar) 0 costStructure
+doMeta    = CharMeta DirectOptimization standardAlph "" False False 1 mempty (constructDynamic [], constructDynamic []) 0 costStructure
+fitchMeta = CharMeta Fitch              standardAlph "" False False 1 mempty (constructDynamic [], constructDynamic []) 0 costStructure
 
 costStructure = GeneralCost 1 1
 
@@ -58,8 +59,14 @@ doProperties = testGroup "Properties of the DO algorithm"
         idHolds = testProperty "When DO runs a sequence against itself, get input as result" checkID
             where
                 checkID :: DynamicChar -> Bool
-                checkID inSeq = main == filterGaps inSeq && cost == 0 && gapped == inSeq && left == inSeq && right == inSeq
-                    where (main, cost, gapped, left, right) = naiveDO inSeq inSeq costStructure
+                checkID inSeq = main   == constructDynamic (filter (\x -> x /= gap) $ otoList inSeq)
+                             && cost   == 0
+                             && gapped == inSeq
+                             && left   == inSeq
+                             && right  == inSeq
+                    where
+                      (main, cost, gapped, left, right) = naiveDO inSeq inSeq costStructure
+                      gap = getGapChar $ inSeq `indexChar` 0
 
         seq1    = encodeDynamic standardAlph (V.fromList [["A"], ["T"], ["T"]]) :: DynamicChar
         seq2    = encodeDynamic standardAlph (V.fromList [["A"], ["G"]])        :: DynamicChar
@@ -77,17 +84,17 @@ fitchProperties = testGroup "Properties of the Fitch algorithm" [preIdHolds, pos
                 checkID :: DynamicChar -> Bool
                 checkID inSeq = result == inSeq && cost == 0
                     where 
-                        newAlph = constructAlphabet $ take (getAlphLen inSeq) abstractSymbols
-                        (result, _, cost) = preorderFitchBit 1 inSeq inSeq (fitchMeta {alphabet = newAlph, fitchMasks = generateMasks newAlph (numChars inSeq)})
+                        newAlph = constructAlphabet $ take (stateCount $ inSeq `indexChar` 0) abstractSymbols
+                        (result, _, cost) = preorderFitchBit 1 inSeq inSeq (fitchMeta {alphabet = newAlph, fitchMasks = generateMasks newAlph (olength inSeq)})
 
         postIdHolds = testProperty "When Postorder Fitch runs a sequence against itself, get input as result" checkID
             where
                 checkID :: DynamicChar -> Bool
                 checkID inSeq = result == inSeq
                     where 
-                        newAlph = constructAlphabet $ take (getAlphLen inSeq) abstractSymbols
-                        (_, f, _) = preorderFitchBit 1 inSeq inSeq (fitchMeta {alphabet = newAlph, fitchMasks = generateMasks newAlph (numChars inSeq)})
-                        result = postorderFitchBit inSeq inSeq inSeq f inSeq (fitchMeta {alphabet = newAlph, fitchMasks = generateMasks newAlph (numChars inSeq)})
+                        newAlph = constructAlphabet $ take (stateCount $ inSeq `indexChar` 0) abstractSymbols
+                        (_, f, _) = preorderFitchBit 1 inSeq inSeq (fitchMeta {alphabet = newAlph, fitchMasks = generateMasks newAlph (olength inSeq)})
+                        result = postorderFitchBit inSeq inSeq inSeq f inSeq (fitchMeta {alphabet = newAlph, fitchMasks = generateMasks newAlph (olength inSeq)})
 
 abstractSymbols :: [String]
 abstractSymbols = fmap pure . ('-' :) $ ['0'..'9'] <> ['A'..'Z'] <> ['a'..'z']

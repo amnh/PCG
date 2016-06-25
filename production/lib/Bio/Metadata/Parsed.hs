@@ -106,7 +106,7 @@ addOtherCases (x:xs)
 
 -- | Make a single info given an alphabet
 makeOneInfo :: EncodableDynamicCharacter s => Alphabet String -> CharacterMetadata s
-makeOneInfo alph = CharMeta DirectOptimization alph mempty False False 1 mempty (emptyChar, emptyChar) 1 (GeneralCost 1 1)
+makeOneInfo alph = CharMeta DirectOptimization alph mempty False False 1 mempty (constructDynamic [], constructDynamic []) 1 (GeneralCost 1 1)
 
 -- | Functionality to make char info from tree seqs
 makeEncodeInfo :: EncodableDynamicCharacter s => TreeChars -> Vector (CharacterMetadata s)

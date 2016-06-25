@@ -24,6 +24,7 @@ import           Data.BitMatrix
 import           Data.Bits
 import           Data.BitVector        hiding (foldr)
 import           Data.Matrix.NotStupid        (getRow, fromLists, setElem)
+import           Data.MonoTraversable
 import qualified Data.Vector                                               as V
 import           Test.Custom.Types
 import           Test.Tasty
@@ -35,10 +36,10 @@ standardAlph :: Alphabet String
 standardAlph =  constructAlphabet $ V.fromList ["A", "C", "G", "T", "-"]
 
 sampleMeta :: CharacterMetadata DynamicChar             
-sampleMeta =  CharMeta DirectOptimization standardAlph "" False False 1 mempty (emptyChar, emptyChar) 0 (GeneralCost 1 1)
+sampleMeta =  CharMeta DirectOptimization standardAlph "" False False 1 mempty (constructDynamic [], constructDynamic []) 0 (GeneralCost 1 1)
 
 -- This is needed to align AC(GT)(AT) with ACT. Taked from Wheeler '96, fig. 2, HTU just below root.
-matrixForTesting :: DOAlignMatrix s
+matrixForTesting :: DOAlignMatrix BV
 matrixForTesting =  trace (show finalMatrix) $ finalMatrix
     where
         initMatrix = Data.Matrix.NotStupid.fromLists cellList
@@ -63,9 +64,9 @@ alignDOProperties = testGroup "Properties of DO alignment algorithm" [ firstRow
                 checkRow :: DynamicChar -> Bool
                 checkRow inSeq = fDir == DiagArrow && allLeft (V.tail result) && V.length result == (rowLen + 1)
                     where
-                        rowLen = numChars inSeq
+                        rowLen  = olength inSeq
                         fullMat = createDOAlignMatrix inSeq inSeq (getCosts sampleMeta)
-                        result = getRow 0 fullMat
+                        result  = getRow 0 fullMat
                         (_, fDir, _) = V.head result
                         allLeft = V.all (\(_, val, _) -> val == LeftArrow)
 
