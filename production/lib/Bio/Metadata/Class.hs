@@ -17,7 +17,6 @@ module Bio.Metadata.Class where
 
 import Bio.Metadata.Internal
 import Data.Alphabet
-import Data.Matrix.NotStupid (getElem)
 
 -- | Represents a type from which character information can be queried.
 class Metadata m s | m -> s where
@@ -28,7 +27,6 @@ class Metadata m s | m -> s where
     getFitchMasks     :: m -> (s, s)
     getAligned        :: m -> Bool
     getType           :: m -> CharDataType
-    -- getCosts          :: m -> Double
 
 instance Metadata (CharacterMetadata s) s where
     getWeight         = weight
@@ -38,14 +36,3 @@ instance Metadata (CharacterMetadata s) s where
     getAligned        = isAligned
     getFitchMasks     = fitchMasks
     getType           = charType
-    -- getGapCost        = indelCost
- {-
-indelCost :: CharacterMetadata -> Double
-indelCost meta =
-  case getCosts meta of
-    -- AffineCost  g _ _ -> g
-    GeneralCost indel _ -> indel
-    TCM mat             -> if   numRows mat > 1
-                           then mat ! (, numCols mat - 1)
-                           else 1
--}
