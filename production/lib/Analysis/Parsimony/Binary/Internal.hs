@@ -27,8 +27,8 @@ import Bio.PhyloGraph.Node.Encoded
 import Bio.PhyloGraph.Node.Final
 import Bio.PhyloGraph.Node.Preliminary
 import Bio.PhyloGraph.Solution
-import Bio.PhyloGraph.Tree.Binary
-import Bio.PhyloGraph.Tree.Rose
+--import Bio.PhyloGraph.Tree.Binary
+--import Bio.PhyloGraph.Tree.Rose
 import Data.Matrix.NotStupid (Matrix, nrows, ncols, setElem)
 import Data.Maybe
 import Data.Monoid
@@ -132,7 +132,7 @@ nodeOptimizePostorder weighting curNode lNode rNode meta = summedTotalCost `setT
             -- TODO: Compiler error maybe below with comment structures and 'lets'
             | getIgnored metadataStructure = setNode
             | getType metadataStructure == Fitch =
-                let (assign, temp, local) = preorderFitchBit curWeight (getForAlign lNode ! curPos) (getForAlign rNode ! curPos) metadataStructure
+                let (assign, _, local) = preorderFitchBit curWeight (getForAlign lNode ! curPos) (getForAlign rNode ! curPos) metadataStructure
                 in -- addTemporary temp
                    addLocalCost (local * curWeight * weighting)
                  . addAlign assign
@@ -186,7 +186,7 @@ nodeOptimizePreorder curNode lNode rNode pNode meta = ifoldr chooseOptimization 
               case pNode of
                 Nothing -> addToField setFinal getFinal (constructDynamic []) setNode -- TODO: This is broken, please don't ever use the code until after we have proper Static/Dynamic sequence partioning
                 Just parentNode -> 
-                  let finalAssign = postorderFitchBit (getForAlign curNode ! i) (getForAlign lNode ! i) (getForAlign rNode ! i) (getForAlign (fromJust pNode) ! i) {- (getTemporary curNode ! i) -} (constructDynamic []) metadataStructure
+                  let finalAssign = postorderFitchBit (getForAlign curNode ! i) (getForAlign lNode ! i) (getForAlign rNode ! i) (getForAlign parentNode ! i) {- (getTemporary curNode ! i) -} (constructDynamic []) metadataStructure
                   in addToField setFinal getFinal finalAssign setNode
             | getType metadataStructure == DirectOptimization =  --TODO: do we grab the gapped or not?
               case pNode of
@@ -214,6 +214,7 @@ getForAlign node
     | null $ getPreliminaryGapped node                                       = getPreliminaryUngapped node
     | otherwise                                                              = getPreliminaryGapped node
 
+getChildCharacterForDoPreorder ::  (PreliminaryNode n s, EncodedNode n s) => n -> Vector s
 getChildCharacterForDoPreorder node
   | null $ getPreliminaryUngapped node = getEncoded node
   | otherwise                          = getPreliminaryGapped node

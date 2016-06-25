@@ -23,8 +23,7 @@ import           Data.Alphabet
 import           Data.Bifunctor                          (second)
 import           Data.BitVector                          (width)
 import           Data.Foldable
-import           Data.IntMap                             (IntMap, insertWith)
-import qualified Data.IntMap                      as IM
+import           Data.IntMap                             (insertWith)
 import qualified Data.IntSet                      as IS
 import           Data.Key
 import           Data.List                               (intercalate)
@@ -200,6 +199,7 @@ instance Arbitrary SimpleTree where
     
 type instance Element SimpleTree = SimpleTree
 
+treeFold :: SimpleTree -> [SimpleTree]
 treeFold x@(TT root) = (x :) . concatMap (treeFold . TT) $ subForest root
 
 instance MonoFoldable SimpleTree where
@@ -246,11 +246,6 @@ instance RN.PreliminaryNode SimpleTree DynamicChar where
       where
         decoration = rootLabel n
 
- {-   getTemporary        (TT n) = dTemporary $ rootLabel n
-    setTemporary      x (TT n) = TT $ n { rootLabel = decoration { dTemporary = x } }
-      where
-        decoration = rootLabel n
--}
     getLocalCost        (TT n) = dLocalCost $ rootLabel n
     setLocalCost      x (TT n) = TT $ n { rootLabel = decoration { dLocalCost = x } }
       where

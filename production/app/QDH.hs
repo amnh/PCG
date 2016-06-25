@@ -2,9 +2,7 @@ module Main (main) where
 
 import Analysis.ImpliedAlignment.DynamicProgramming
 import Analysis.Parsimony.Binary.Optimization
-import Bio.Metadata        (getCosts)
 import Control.Applicative ((<|>))
-import Data.Vector         ((!))
 import Safe                (headMay, readMay, tailMay)
 import System.Environment  (getArgs)
 import Test.Custom
