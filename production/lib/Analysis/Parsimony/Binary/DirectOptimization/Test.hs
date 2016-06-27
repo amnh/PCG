@@ -40,7 +40,7 @@ sampleMeta =  CharMeta DirectOptimization standardAlph "" False False 1 mempty (
 
 -- This is needed to align AC(GT)(AT) with ACT. Taked from Wheeler '96, fig. 2, HTU just below root.
 matrixForTesting :: DOAlignMatrix BV
-matrixForTesting =  trace (show finalMatrix) $ finalMatrix
+matrixForTesting =  trace (show finalMatrix) finalMatrix
     where
         initMatrix = Data.Matrix.NotStupid.fromLists cellList
         cellList = [ [(0, LeftArrow, bitVec 5 1), (1, LeftArrow, bitVec 5 2), (2, LeftArrow, bitVec 5 24), (3, LeftArrow, bitVec 5 17)]
@@ -106,7 +106,7 @@ getSubCharsTest  = testGroup "getSubChars tests" [ orTest
                 f :: BitVector -> Bool
                 f inChar = rightPos
                     where
-                        rightPos = foldr (\(pos, char) acc -> (testBit char pos) && acc) True (getSubChars inChar)
+                        rightPos = foldr (\(pos, char) acc -> testBit char pos && acc) True (getSubChars inChar)
 
 getCostTest :: TestTree
 getCostTest = testGroup "Properties of getCosts" [ -- tcmTest 
@@ -138,7 +138,7 @@ getCostTest = testGroup "Properties of getCosts" [ -- tcmTest
                         f = getCost costStruct char1 char2 == expectedResult && getCost costStruct char2 char1 == expectedResult
                         char1          = (3, setBit (bitVec 5 0) 3)
                         char2          = (0, setBit (bitVec 5 0) 0)
-                        expectedResult = ((snd char1) .|. (snd char2), 1)
+                        expectedResult = (snd char1 .|. snd char2, 1)
                 costStruct = GeneralCost 2 1
 
 
@@ -149,7 +149,7 @@ allPossibleCombosCostsTest = testProperty "allPossibleCombosCosts returns correc
         f :: Bool
         f = 
 -}
-
+-- TDOD: these tests should all be HUnit, not QuickCheck based.
 overlapTest :: TestTree
 overlapTest = testGroup "Overlap test cases" [ singleIntersectionTest
                                              , multipleIntersectionTest

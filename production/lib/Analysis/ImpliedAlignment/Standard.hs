@@ -1,4 +1,4 @@
------------------------------------------------------------------------------
+ -----------------------------------------------------------------------------
 -- |
 -- Module      :  Analysis.ImpliedAlignment.Standard
 -- Copyright   :  (c) 2015-2015 Ward Wheeler
@@ -88,9 +88,9 @@ makeAlignment n seqLens = makeAlign (getFinalGapped n) (getHomologies n)
         --makeAlign :: Vector s -> HomologyTrace -> Vector s
         makeAlign dynChar homologies = V.zipWith3 makeOne' dynChar homologies seqLens
         -- | /O((n+m)*log(n)), could be linear, but at least it terminates!
-        makeOne' char homolog len = constructDynamic . toList $ result
+        makeOne' char homolog lens = constructDynamic . toList $ result
           where
-            result = V.generate (fst len + snd len) f
+            result = V.generate (uncurry (+) lens) f
               where
                 f i = case i `IM.lookup` mapping of
                         Nothing -> getGapChar $ char `indexChar` 0

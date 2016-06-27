@@ -4,21 +4,22 @@ module Bio.Character.Dynamic.Coded.Test
   ( testSuite
   ) where
 
-import Bio.Character.Dynamic.Coded
-import Bio.Character.Parsed
-import Data.Alphabet
-import Data.Bits
-import Data.BitVector (BitVector, bitVec, toBits, width)
-import Data.Foldable
-import Data.Key       ((!))
+import           Bio.Character.Dynamic.Coded
+import           Bio.Character.Parsed
+import           Data.Alphabet
+import           Data.Bits
+import           Data.BitVector (BitVector, bitVec, toBits, width)
+import           Data.Foldable
+import           Data.Key       ((!))
+import           Data.Set       (Set)
 import qualified Data.Set as Set (fromList,intersection,union)
-import Data.Monoid    ((<>))
-import Data.Vector    (Vector, fromList)
-import Test.Tasty
-import Test.Tasty.HUnit
-import Test.Tasty.QuickCheck hiding ((.&.))
+import           Data.Monoid    ((<>))
+import           Data.Vector    (Vector, fromList)
+import           Test.Tasty
+import           Test.Tasty.HUnit
+import           Test.Tasty.QuickCheck hiding ((.&.))
 
-import Debug.Trace
+import Debug.Trace (trace)
 
 testSuite :: TestTree
 testSuite = testGroup "Custom Bits instances"
@@ -105,8 +106,9 @@ encodeOverAlphabetTest = testGroup "encodeOverAlphabet"
     [ 
     -- testValue
     ]
+{-
     where
-        {-testValue = testProperty "Make sure encoded value matches position in alphabet." f
+        testValue = testProperty "Make sure encoded value matches position in alphabet." f
             where
                 -- for each ambiguity group in inChar, map over the alphabet determining whether each alphabet state exists in the ambiguity group
                 f :: (ParsedChar', Alphabet) -> Bool
@@ -186,9 +188,7 @@ testEncodableStaticCharacterInstanceBitVector = testGroup "BitVector instance of
               where
                 lhs = Set.fromList $ decodeChar alphabet (encodeChar' alphabet sxs .|. encodeChar' alphabet sys)
                 rhs = sxs `Set.union` sys
-                sxs = Set.fromList xs
-                sys = Set.fromList ys
-                (alphabet, xs, ys) = getAlphabetAndTwoAmbiguityGroups alphabetAndAmbiguityGroups
+                (alphabet, sxs,sys) = gatherAlphabetAndAmbiguitySets alphabetAndAmbiguityGroups
 
         logicalAndIsomorphismWithSetIntersection = testProperty "Set.fromList (decodeChar alphabet (encodeChar alphabet xs .&. encodeChar alphabet ys)) == Set.fromList (toList alphabet) `Set.intersect` (toList xs `Set.intersection` toList ys)" f
           where
@@ -197,9 +197,12 @@ testEncodableStaticCharacterInstanceBitVector = testGroup "BitVector instance of
               where
                 lhs = Set.fromList $ decodeChar alphabet (encodeChar' alphabet sxs .&. encodeChar' alphabet sys)
                 rhs = sxs `Set.intersection` sys
-                sxs = Set.fromList xs
-                sys = Set.fromList ys
-                (alphabet, xs, ys) = getAlphabetAndTwoAmbiguityGroups alphabetAndAmbiguityGroups
+                (alphabet, sxs,sys) = gatherAlphabetAndAmbiguitySets alphabetAndAmbiguityGroups
+
+gatherAlphabetAndAmbiguitySets :: AlphabetAndTwoAmbiguityGroups -> (Alphabet String, Set String, Set String)
+gatherAlphabetAndAmbiguitySets alphabetAndAmbiguityGroups = (alphabet, Set.fromList xs, Set.fromList ys)
+  where
+    (alphabet, xs, ys) = getAlphabetAndTwoAmbiguityGroups alphabetAndAmbiguityGroups
 
 {- LAWS:
  - decodeMany alphabet . encodeMany alphabet == fmap toList . toList

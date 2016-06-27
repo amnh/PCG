@@ -147,7 +147,7 @@ nodeOptimizePostorder weighting curNode lNode rNode meta = summedTotalCost `setT
             | otherwise = error "Unrecognized optimization type"
             where curWeight = getWeight metadataStructure
 
-        addPreliminary addVal node = addToField setPreliminaryUngapped getPreliminaryUngapped addVal node
+        addPreliminary  = addToField setPreliminaryUngapped getPreliminaryUngapped
         addAlign       addVal node = addToField setPreliminaryGapped   getPreliminaryGapped   addVal node
 --        addTemporary   addVal node = addToField setTemporary   getTemporary        addVal node
 --        addTotalCost   addVal node = setTotalCost (addVal + getTotalCost node) node
@@ -178,7 +178,7 @@ treeInternalPreorderTraversal parentNode node tree meta  =
 -- Takes in a current node, left child, right child, parent node, and vector of metadata,
 -- returns a node with everything assigned.
 nodeOptimizePreorder :: (NodeConstraint' n s, Metadata m s) => n -> n -> n -> Maybe n -> Vector m -> n
-nodeOptimizePreorder curNode lNode rNode pNode meta = ifoldr chooseOptimization curNode meta 
+nodeOptimizePreorder curNode lNode rNode pNode = ifoldr chooseOptimization curNode
     where
         --chooseOptimization :: (NodeConstraint' n s, Metadata m s) => Int -> m -> n -> n
         chooseOptimization i metadataStructure setNode

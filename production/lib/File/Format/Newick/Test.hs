@@ -92,7 +92,7 @@ newickLeaf' = testGroup "newickLeafDefinition'" [invariant]
       where
         validLabel = parserSatisfies (newickLabelDefinition <* eof) str (const True)
         labelValue = rightToMaybe $ parse (newickLabelDefinition <* eof :: Parsec Dec String String) "" str 
-        validLeaf  = parserSatisfies newickLeafDefinition target (==(NewickNode [] labelValue (Just num)))
+        validLeaf  = parserSatisfies newickLeafDefinition target (== NewickNode [] labelValue (Just num))
         target     = str ++ ":" ++ show num
     
 descendantList' :: TestTree

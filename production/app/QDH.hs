@@ -3,6 +3,7 @@ module Main (main) where
 import Analysis.ImpliedAlignment.DynamicProgramming
 import Analysis.Parsimony.Binary.Optimization
 import Control.Applicative ((<|>))
+import Data.Maybe          (fromMaybe)
 import Safe                (headMay, readMay, tailMay)
 import System.Environment  (getArgs)
 import Test.Custom
@@ -14,10 +15,7 @@ main = getArgs
    >>= compute . handleInput
 
 handleInput :: [String] -> SimpleTree
-handleInput args =
-  case trySimpleTree args <|> trySimpleBinaryTree args of
-    Just x  -> x
-    Nothing -> exampleTree
+handleInput args = fromMaybe exampleTree $ trySimpleTree args <|> trySimpleBinaryTree args
 
 compute :: SimpleTree -> IO ()
 compute = print . deriveImpliedAlignments defMeta . allOptimization 0 defMeta 

@@ -59,7 +59,7 @@ doProperties = testGroup "Properties of the DO algorithm"
         idHolds = testProperty "When DO runs a sequence against itself, get input as result" checkID
             where
                 checkID :: DynamicChar -> Bool
-                checkID inSeq = main   == constructDynamic (filter (\x -> x /= gap) $ otoList inSeq)
+                checkID inSeq = main   == (constructDynamic . filter (/= gap) . otoList) inSeq
                              && cost   == 0
                              && gapped == inSeq
                              && left   == inSeq

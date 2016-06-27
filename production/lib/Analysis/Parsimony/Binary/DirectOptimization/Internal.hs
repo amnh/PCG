@@ -72,7 +72,7 @@ naiveDO char1 char2 costStruct
             cost = getTotalAlignmentCost traversalMat
             (gapped, left, right) = traceback traversalMat shorterChar longerChar
             -- TODO: change to occur in traceback, to remove constant factor.
-            ungapped = constructDynamic . filter (\x -> x /= gap) $ otoList gapped
+            ungapped = constructDynamic . filter (/= gap) $ otoList gapped
             (out1, out2) = if char1Len > char2Len
                            then (right, left)
                            else (left, right)

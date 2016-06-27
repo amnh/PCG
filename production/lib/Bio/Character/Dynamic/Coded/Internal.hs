@@ -16,7 +16,7 @@
 -- TODO: Remove all commented-out code.
 
 -- TODO: are all of these necessary?
-{-# LANGUAGE DeriveGeneric, FlexibleInstances, MultiParamTypeClasses, TypeFamilies, TypeSynonymInstances, UndecidableInstances #-}
+{-# LANGUAGE FlexibleInstances, MultiParamTypeClasses, TypeFamilies, TypeSynonymInstances, UndecidableInstances #-}
 -- TODO: fix and remove this ghc option (is it needed for Arbitrary?):
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 

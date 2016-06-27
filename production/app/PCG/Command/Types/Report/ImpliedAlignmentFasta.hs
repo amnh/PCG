@@ -70,8 +70,8 @@ iaOutput' solution = {- (\x -> trace (intercalate "\n\n"
     nodeCharacterMapping :: Map String (Vector DynamicChar)
     nodeCharacterMapping = foldMap f $ getForests solution
       where
-        f solutionForest = foldMap g solutionForest
-        g dag            = foldMap h $getNodes dag
+        f = foldMap g 
+        g dag            = foldMap h $ getNodes dag
           where
             h node       = if   node `nodeIsLeaf` dag
                            then singleton (name node) (getHomologies' node)
@@ -110,14 +110,14 @@ iaOutput' solution = {- (\x -> trace (intercalate "\n\n"
 --iaOutput :: (MetadataSolution s m, GeneralSolution s f) => AlignmentSolution DynamicChar -> s -> [(FilePath, String)]
 iaOutput :: AlignmentSolution DynamicChar -> StandardSolution -> [(FilePath, String)]
 --iaOutput align solution | trace (mconcat [show align, show solution]) False = undefined
-iaOutput align solution = (\x -> trace (intercalate "\n\n"
-                                         [ integrityCheckSolution solution
-                                         , renderAlignments align
-                                         , "DynamicChar indicies: "     <> show (keys dynamicCharacterIndicesAndAlphabets)
-                                         , "Metadata character types: " <> show (getType <$> getMetadata solution)
-                                         ]
-                                       ) x) $
-                         foldMapWithKey characterToFastaFile dynamicCharacterIndicesAndAlphabets 
+iaOutput align solution = trace (intercalate "\n\n"
+                                  [ integrityCheckSolution solution
+                                  , renderAlignments align
+                                  , "DynamicChar indicies: "     <> show (keys dynamicCharacterIndicesAndAlphabets)
+                                  , "Metadata character types: " <> show (getType <$> getMetadata solution)
+                                  ]
+                                ) $
+                          foldMapWithKey characterToFastaFile dynamicCharacterIndicesAndAlphabets 
   where
     -- Here we use the metadata to filter for dynamic character indicies and
     -- their corresponding alphabets. 
@@ -142,7 +142,7 @@ iaOutput align solution = (\x -> trace (intercalate "\n\n"
           where
             nodeRefs = getNodes dag
             h :: Int -> Vector DynamicChar -> Map String (Vector DynamicChar)
-            h i characters = singleton (name $ nodeRefs V.! i) characters
+            h i = singleton (name $ nodeRefs V.! i)
 
     -- The folding function for consuming the 'dynamicCharacterIndicesAndAlphabets'
     -- structure above. For each character index and corresponding alphabet this
