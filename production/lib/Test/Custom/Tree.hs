@@ -156,10 +156,11 @@ instance Show TestingDecoration where
       g prefix shown = prefix <> ": " <> shown --intercalate "\n" $ (prefix <> ": " <> y) : (("  " <>) <$> zs)
 --        where
 --          (x:y:zs) = lines shown :: [String]
+{-
       h x
         | x decoration == 0.0 = Nothing
         | otherwise           = Just . show $ x decoration
-
+-}
 
 -- | Neat 2-dimensional drawing of a tree.
 drawTreeMultiLine :: Tree String -> String
