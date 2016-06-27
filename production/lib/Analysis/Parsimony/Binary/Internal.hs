@@ -29,8 +29,8 @@ import Bio.PhyloGraph.Node.Preliminary
 import Bio.PhyloGraph.Solution
 --import Bio.PhyloGraph.Tree.Binary
 --import Bio.PhyloGraph.Tree.Rose
-import Data.Matrix.NotStupid (Matrix, nrows, ncols, setElem)
-import Data.Maybe
+--import Data.Matrix.NotStupid (Matrix, nrows, ncols, setElem)
+--import Data.Maybe
 import Data.Monoid
 import Data.Vector           (Vector, ifoldr, (!))
 
@@ -200,12 +200,6 @@ nodeOptimizePreorder curNode lNode rNode pNode meta = ifoldr chooseOptimization 
                    $ setNode
             | otherwise = error "Unrecognized optimization type"
 
-setElemSafe :: (Num a) => a -> (Maybe Int, Maybe Int) -> Matrix a -> Matrix a
-setElemSafe value (row, col) matrix
-    | isNothing row || isNothing col = error "Attempt to set matrix out of bounds using a Nothing dimension"
-    | fromJust row >= nrows matrix || fromJust col >= ncols matrix || fromJust row < 0 || fromJust col < 0 = error "Attempt to set matrix value out of bounds"
-    | otherwise = setElem value (fromJust row, fromJust col) matrix
-
 -- | getForAlign returns the sequences from a node, where the node type is either 'EncodedNode' or 'PreliminaryNode'.
 -- preliminary alignment 
 getForAlign :: (PreliminaryNode n s, EncodedNode n s, SeqConstraint' s) => n -> Vector s
@@ -214,10 +208,17 @@ getForAlign node
     | null $ getPreliminaryGapped node                                       = getPreliminaryUngapped node
     | otherwise                                                              = getPreliminaryGapped node
 
+-- | Retreives the correct sequence of dynamic characters for the direct
+--   optimization preorder traversal from the child node. We conditionally
+--   select one of two fields. The gapped preliminary node assignment is
+--   preferenced and returned if not null. It is assumed that all internal nodes
+--   will have a non null vecotr of preliminary node assignemnt characters. If
+--   the gapped preliminary vector is null, itis assumed that the node is a leaf
+--   node and the original dynamic character encodings are returned.
 getChildCharacterForDoPreorder ::  (PreliminaryNode n s, EncodedNode n s) => n -> Vector s
 getChildCharacterForDoPreorder node
-  | null $ getPreliminaryUngapped node = getEncoded node
-  | otherwise                          = getPreliminaryGapped node
+  | not . null $ getPreliminaryUngapped node = getPreliminaryGapped node
+  | otherwise                                = getEncoded node
 
 -- | addToField takes in a setter fn, a getter fn, a value and a node.
 -- It then gets the related value from the node, adds to it the passed value,

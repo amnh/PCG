@@ -79,9 +79,11 @@ data TopoDAG
    { structure :: Topo
    }
 
+-- | (✔)
 instance Arbitrary DAG where
   arbitrary = binaryTreeToDAG <$> (arbitrary :: Gen (TestingBinaryTree Node))
 
+-- | (✔)
 instance Arbitrary (Positive Int, Positive Int, Alphabet String, [BitVector]) where
   arbitrary = do
     alphabet   <- arbitrary :: Gen (Alphabet String)
@@ -91,15 +93,21 @@ instance Arbitrary (Positive Int, Positive Int, Alphabet String, [BitVector]) wh
     bitVectors <- vectorOf taxaCount bvGen
     pure (Positive taxaCount, Positive charCount, alphabet, bitVectors)
     
-
+-- | A well typed tree used for generating a binary tree. An intermidiate type
+--   representation used in 'DAG' generation.
 data TestingBinaryTree a 
    = Leaf a
    | Internal (TestingBinaryTree a) (TestingBinaryTree a)
    deriving (Eq,Show)
 
+-- | Type synonym for a counter used when enumerating nodes in a tree.
 type Counter = Int
+
+-- | An accumulator type used when traversing the intermidate type tree. 
 type Accumulator = (IntMap NodeInfo, IntMap EdgeSet, Counter)
 
+-- | Convert between intermidate type 'TestingBinaryTree' to the resulting type
+--   DAG.
 binaryTreeToDAG :: TestingBinaryTree Node -> DAG
 binaryTreeToDAG binaryRoot = DAG 
                            { nodes = V.generate (length totalNodeMap) (totalNodeMap !)
@@ -155,6 +163,7 @@ binaryTreeToDAG binaryRoot = DAG
        inNodeSet (Just parentReference) = IS.insert parentReference mempty
        inNodeSet  Nothing               = mempty
 
+-- | (✔)
 instance Arbitrary (TestingBinaryTree Node) where
     arbitrary = do
         leafCount <- (getPositive <$> (arbitrary :: Gen (Positive Int))) `suchThat` (\x -> 2 <= x && x <= 10)
@@ -172,7 +181,9 @@ instance Arbitrary (TestingBinaryTree Node) where
                 f (Internal left right : remaining)
 
 maxTaxa, maxChildren :: Int
+-- | Default value for specified child count when generating trees.
 maxChildren = 2 -- it's a binary tree.
+-- | Default value for leaf node (taxa) count when generating trees.
 maxTaxa     = 10
 
 -- | Generate an arbitrary TopoDAG given an alphabet
@@ -184,32 +195,38 @@ maxTaxa     = 10
 arbitraryDAGGS :: HashMap String ParsedChars -> Vector (CharacterMetadata DynamicChar) -> Gen DAG
 arbitraryDAGGS allSeqs metadata = fromTopo . TopoDAG <$> TN.arbitraryTopoGivenCSNA maxChildren (H.toList allSeqs) metadata (0, maxTaxa)
 
+-- TODO: is this really a Monoid?
+-- | (✔)
 instance Monoid TopoDAG where
     mempty = TopoDAG mempty
     mappend (TopoDAG topo1) (TopoDAG topo2) = TopoDAG $ topo1 { TN.children = topo2 : TN.children topo1 }
 
+-- | (✔)
 instance SN.SubsettableNetwork DAG NodeInfo where
     appendSubtree = attachAt
     accessSubtree = grabAt
 
--- | This tree knows its edges
+-- | (✔)
 instance ET.EdgedTree DAG NodeInfo EdgeSet where
     edges    n t   = edges t V.! nodeIdx n
     setEdges n t e = t {edges = edges t // [(nodeIdx n, e)]}
 
--- | This particular tree is referential
+-- | (✔)
 instance RT.ReferentialTree DAG NodeInfo where
     getNodeIdx node tree = elemIndex (getCode node) . toList $ getCode <$> nodes tree
     getNthNode tree pos  = nodes tree V.! pos
 
+-- | (✔)
 instance BinaryTree DAG NodeInfo where
     leftChild  n t = lookup 0 $ (\i -> nodes t V.! i) <$> children n
     rightChild n t = lookup 1 $ (\i -> nodes t V.! i) <$> children n
     verifyBinary   = all ((2 >=) . length . children) . nodes
 
+-- | (✔)
 instance RoseTree DAG NodeInfo where
     parent n t = headMay $ fmap (\i -> nodes t V.! i) (parents n)
 
+-- | (✔)
 instance N.Network DAG NodeInfo where
     parents node dag    = fmap (\i -> nodes dag V.! i) (parents node)
     root dag            = nodes dag V.! root dag
@@ -229,6 +246,7 @@ instance N.Network DAG NodeInfo where
                     then addPos 
                     else root dag
 
+-- | (✔)
 instance StandardDAG DAG NodeInfo EdgeSet where
     getNodes       = nodes
     setNodes inD n = inD {nodes = n}
@@ -238,6 +256,7 @@ instance StandardDAG DAG NodeInfo EdgeSet where
 
 type instance Element DAG = NodeInfo
 
+-- | (✔)
 instance MonoFoldable DAG where
     ofoldMap f = foldr (mappend . f) mempty . nodes
     {-# INLINE ofoldMap #-}

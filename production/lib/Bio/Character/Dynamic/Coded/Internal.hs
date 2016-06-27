@@ -48,12 +48,18 @@ import           Test.QuickCheck.Arbitrary.Instances ()
         -- Make a missing a null vector
         -- Think about a nonempty type class or a refinement type for this
 
+-- | Represents an encoded dynamic character, consisting of one or more static
+--   characters. Dynamic characters treat entire static characters as the
+--   character states of the dynamic character. The dynamic character relies on
+--   the encoding of the individual static characters to defined the encoding of
+--   the entire dynamic character.
 newtype DynamicChar
       = DC BitMatrix
       deriving (Eq, Show)
 
 type instance Element DynamicChar = BitVector
 
+-- | A sequence of many dynamic characters. Probably should be asserted as non-empty.y
 type DynamicChars = Vector DynamicChar
 
 --instance NFData DynamicChar

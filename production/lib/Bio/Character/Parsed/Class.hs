@@ -113,9 +113,11 @@ tntToTheSuperSequence = V.fromList . fmap (Just . pure . f . show)
 mergeMaps :: (Foldable t, Ord k) => t (Map k v) -> Map k v
 mergeMaps = foldl (mergeWithKey (\_ _ b -> Just b) id id) mempty
 
+-- | (✔)
 instance ParsedCharacters TCM where
     unifyCharacters _ = mempty
 
+-- | (✔)
 instance ParsedCharacters VertexEdgeRoot where
     unifyCharacters (VER _ e r) = mergeMaps $ f . buildTree <$> toList r
         where

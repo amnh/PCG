@@ -132,6 +132,9 @@ instance Arbitrary Node where
                  }
 -}
 
+-- | Generates a fixed number of leaf nodes with dynamic characters encoded over
+--   the supplied alphabet. Used in other modules for constructing trees,
+--   directed acyclic graphs, and forests.
 generateLeavesDO :: Alphabet String -> Int -> Gen [Node]
 generateLeavesDO alphabet taxaCount = do
       sequenceLength  <- choose (1,2)

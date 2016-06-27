@@ -37,6 +37,8 @@ import           Data.Vector                (Vector, imap)
 import qualified Data.Vector as V
 import           Prelude             hiding (lookup)
 
+-- | An accumulator used in generating a comparative "homology" between two
+--   dynamic characters.
 newtype MutationAccumulator = Accum (IntMap Int, Int, Int, Int, Int, IntSet)
 
 -- | Top level wrapper to do an IA over an entire solution
@@ -66,6 +68,9 @@ impliedAlign inTree inMeta = extractAlign numerated inMeta
     where
         numerated = numeratePreorder inTree (root inTree) inMeta (V.replicate (length inMeta) (0, 0))
 
+-- | Constructs the implied alignment from the "homology" annotations on the leaf
+--   nodes of the tree. The external alignmentment structure mirrors the
+--   structure of the input tree.
 extractAlign :: (TreeConstraint t n e s, Metadata m s) => (Counts, t) -> Vector m -> Alignment s
 --extractAlign (lens, numeratedTree) inMeta | trace ("extract alignments " ++ show numeratedTree) False = undefined
 extractAlign (lens, numeratedTree) _inMeta = foldr (\n acc -> insert (fromJust $ getNodeIdx n numeratedTree) (makeAlignment n lens) acc) mempty allLeaves
@@ -214,16 +219,18 @@ accountForInsertionEvents homologies insertionEvents = V.generate (length homolo
         oldIndexReference          = homologies V.! i
         insertionEventsBeforeIndex = olength $ IS.filter (<= oldIndexReference) insertionEvents
 
--- | Function to do a numeration on an entire node
--- given the ancestor node, ancestor node, current counter vector, and vector of metadata
--- returns a tuple with the node with homologies incorporated, and a returned vector of counters
+-- | Function to do a numeration on an entire node given the ancestor node,
+--   ancestor node, current counter vector, and vector of metadata returns a
+--   tuple with the node with homologies incorporated, and a returned vector of
+--   counters.
 numerateNode :: (NodeConstraint n s) => n -> n -> Counts -> (n, Counts, Vector IntSet) 
 numerateNode ancestorNode childNode initCounters = (setHomologies childNode homologs, counts, insertionEvents)
     where
         numeration = V.zipWith3 numerateOne (getForAlign ancestorNode) (getForAlign childNode) initCounters 
         (homologs, counts, insertionEvents) = V.unzip3 numeration
 
-
+-- | Applies comparative logic to determine a comparative homology between two
+--   node sequences.
 numerateOne :: SeqConstraint s => s -> s -> Counter -> (Homologies, Counter, IntSet)
 numerateOne ancestorSeq descendantSeq (maxLen, initialCounter) = (descendantHomologies, (newLen, counter'), insertionEvents)
   where

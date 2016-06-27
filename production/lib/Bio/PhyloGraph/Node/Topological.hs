@@ -63,23 +63,32 @@ instance Arbitrary (TopoNode b) where
         nc <- arbitrary :: Gen Int
         arbitraryTopoGivenCAL nc arbAlph (0, 1)
 
+-- TODO: Does this generation correcly generate a tree with appropriate dependancies between fields?
+-- Not sure what the suffix CAL stands for...
+-- | Generates an 'Arbitrary' Topological tree from the supplied inputs.
 arbitraryTopoGivenCAL :: Int -> Alphabet String -> (Int, Int) -> Gen (TopoNode b)
 arbitraryTopoGivenCAL maxChildren inAlph (curLevel, maxLevel) = do
-     let root = curLevel == 0
-     name'     <- arbitrary :: Gen String
-     numChilds <- elements [0,2] -- for now the trees are binary
-     let ncFinal = if curLevel >= maxLevel 
-                   then 0 
-                   else numChilds
-     chillens <- vectorOf ncFinal (arbitraryTopoGivenCAL maxChildren inAlph (curLevel + 1, maxLevel))
-     let leaf = ncFinal == 0
+     let root    =  curLevel == 0
+     name'       <- arbitrary :: Gen String
+     numChilds   <- elements [0,2] -- for now the trees are binary
+     let ncFinal =  if curLevel >= maxLevel 
+                    then 0 
+                    else numChilds
+     chillens    <- vectorOf ncFinal (arbitraryTopoGivenCAL maxChildren inAlph (curLevel + 1, maxLevel))
+     let leaf    =  ncFinal == 0
      -- from here, meaningless, as costs are random, and number of seqs is not correlated to the number of taxa
      -- also, if this is to be used for testing, internal seq assignments and cost assignments are pointless
-     seqs     <- vectorOf 10 (arbitraryDynamicsGA inAlph)
-     costLoc       <- arbitrary :: Gen Double
-     costTot       <- arbitrary :: Gen Double
+     seqs        <- vectorOf 10 (arbitraryDynamicsGA inAlph)
+     costLoc     <- arbitrary :: Gen Double
+     costTot     <- arbitrary :: Gen Double
      pure $ TopoNode root leaf name' chillens (head seqs) (seqs !! 1) (seqs !! 2) (seqs !! 3) (seqs !! 4) (seqs !! 5) (seqs !! 6) (seqs !! 7) (seqs !! 8) (seqs !! 9) costLoc costTot
 
+
+-- TODO: Does this generation correcly generate a tree with appropriate
+-- dependancies between fields? Thoroughly review the code below.
+-- Not sure what the suffix CSNA stands for...
+-- Not sure what the inputs are used for...
+-- | Generates an 'Arbitrary' Topological tree from the supplied inputs.
 arbitraryTopoGivenCSNA :: Int -> [(String, ParsedChars)] -> Vector (CharacterMetadata DynamicChar) -> (Int, Int) -> Gen (TopoNode b)
 arbitraryTopoGivenCSNA maxChildren namesAndSeqs inMeta (curLevel, maxLevel) 
   | length namesAndSeqs <= 1 = do
@@ -87,19 +96,20 @@ arbitraryTopoGivenCSNA maxChildren namesAndSeqs inMeta (curLevel, maxLevel)
       c3       <- arbitrary :: Gen Double
       pure $ TopoNode root False myName mempty coded coded mempty mempty mempty mempty mempty mempty mempty mempty c2 c3
   | otherwise = do
-      nc <- (arbitrary :: Gen Int) `suchThat` (<= maxChildren)
-      let ncFinal = if curLevel == maxLevel then 0 else nc
-      let forChildren = chunksOf ncFinal (tail namesAndSeqs)
-      chillens <- mapM (\ns -> arbitraryTopoGivenCSNA maxChildren ns inMeta (curLevel + 1, maxLevel)) forChildren
+      nc              <- (arbitrary :: Gen Int) `suchThat` (<= maxChildren)
+      let ncFinal     =  if curLevel == maxLevel then 0 else nc
+      let forChildren =  chunksOf ncFinal (tail namesAndSeqs)
+      chillens        <- mapM (\ns -> arbitraryTopoGivenCSNA maxChildren ns inMeta (curLevel + 1, maxLevel)) forChildren
       --chillens <- vectorOf ncFinal (arbitraryTopoGivenCSNA maxChildren (tail namesAndSeqs) inMeta (curLevel + 1, maxLevel))
-      let leaf = ncFinal == 0
-      c2       <- arbitrary :: Gen Double
-      c3       <- arbitrary :: Gen Double
+      let leaf        = ncFinal == 0
+      c2              <- arbitrary :: Gen Double
+      c3              <- arbitrary :: Gen Double
       pure $ TopoNode root leaf myName chillens coded coded mempty mempty mempty mempty mempty mempty mempty mempty c2 c3
     where
       (myName, mySeqs) = head namesAndSeqs
-      root = curLevel == 0
+      root  = curLevel == 0
       coded = V.zipWith encodeIt inMeta mySeqs
-      encodeIt m s = case s of 
-                      Nothing -> constructDynamic []
-                      Just c  -> encodeDynamic (alphabet m) c 
+      encodeIt m s =
+        case s of 
+          Nothing -> constructDynamic []
+          Just c  -> encodeDynamic (alphabet m) c 

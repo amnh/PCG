@@ -36,7 +36,8 @@ data Direction = LeftArrow | DiagArrow | UpArrow deriving (Eq, Show)
 -- We also store a vector of characters that are generated.
 type DOAlignMatrix s = Matrix (Double, Direction, s)
 
-type DOCharConstraint s = (EncodableDynamicCharacter s, Show s, Memoizable s)
+-- | Constraints on the input dynamic characters that direct optiomization operates on.
+type DOCharConstraint c = (EncodableDynamicCharacter c, Show c, Memoizable c)
 
 -- | Performs a naive direct optimization
 -- Takes in two characters to run DO on and a metadata object
