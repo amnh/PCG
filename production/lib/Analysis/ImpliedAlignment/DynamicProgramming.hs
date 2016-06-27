@@ -49,7 +49,7 @@ import           Prelude               hiding (lookup,zipWith)
 import           Safe                         (tailMay)
 --import           Test.Custom
 
---import           Debug.Trace                  (trace)
+import           Debug.Trace                  (trace)
 
 defMeta :: Vector (CharacterMetadata s)
 defMeta = pure CharMeta
@@ -70,13 +70,13 @@ newtype MutationAccumulator = Accum (IntMap Int, Int, Int, Int, Int, IntSet)
 -- | Top level wrapper to do an IA over an entire solution
 -- takes a solution
 -- returns an AlignmentSolution
-iaSolution' :: (Eq n, SolutionConstraint r m f t n e s, IANode' n s) => r -> r
+iaSolution' :: (Eq n, SolutionConstraint r m f t n e s, IANode' n s, Show (Element s)) => r -> r
 iaSolution' inSolution = inSolution `setForests` fmap (`iaForest'` getMetadata inSolution) (getForests inSolution)
 
 -- | Simple wrapper to do an IA over a forest
 -- takes in a forest and some metadata
 -- returns an alignment forest
-iaForest' :: (Eq n, FoldableWithKey k, ForestConstraint f t n e s, IANode' n s, Metadata m s, Key k ~ Int) => f -> k m -> f
+iaForest' :: (Eq n, FoldableWithKey k, ForestConstraint f t n e s, IANode' n s, Metadata m s, Key k ~ Int, Show (Element s)) => f -> k m -> f
 iaForest' inForest inMeta = inForest `setTrees` fmap (deriveImpliedAlignments inMeta) (trees inForest)
 
 {-
@@ -307,7 +307,6 @@ characterNumeration ancestorSeq descendantSeq = (descendantHomologies, totalGaps
 -- | Simple function to get a sequence for alignment purposes
 getForAlign :: NodeConstraint n s => n -> Vector s
 getForAlign n 
-    | not . null $ getFinalGapped n         = getFinalGapped n
     | not . null $ getPreliminaryUngapped n = getPreliminaryUngapped n 
     | not . null $ getEncoded     n         = getEncoded n 
     | otherwise = mempty {-error "No sequence at node for IA to numerate"-}
@@ -365,7 +364,7 @@ data PsuedoIndex
 
 type PseudoCharacter = Vector PsuedoIndex
 
-deriveImpliedAlignments :: (Eq n, FoldableWithKey f, TreeConstraint t n e s, IANode' n s, Metadata m s, Key f ~ Int) => f m -> t -> t 
+deriveImpliedAlignments :: (Eq n, FoldableWithKey f, TreeConstraint t n e s, IANode' n s, Metadata m s, Key f ~ Int, Show (Element s)) => f m -> t -> t 
 deriveImpliedAlignments sequenceMetadatas tree = foldlWithKey' f tree sequenceMetadatas
   where
     f t k m
@@ -373,7 +372,7 @@ deriveImpliedAlignments sequenceMetadatas tree = foldlWithKey' f tree sequenceMe
       | otherwise                       = numeration k (getCosts m) t
 
 
-numeration :: (Eq n, TreeConstraint t n e s, IANode' n s) => Int -> CostStructure -> t -> t
+numeration :: (Eq n, TreeConstraint t n e s, IANode' n s, Show (Element s)) => Int -> CostStructure -> t -> t
 numeration sequenceIndex costStructure tree = tree `update` updatedLeafNodes
   where
     -- | Precomputations used for reference in the memoization
@@ -460,7 +459,7 @@ numeration sequenceIndex costStructure tree = tree `update` updatedLeafNodes
             -- The PseudoCharacter is not yet defined
             parentChildEdge = (ancestoralNodeDeletions <> deletes, inserts >-< allDescendantInsertions, psuedoCharacter)
               where
-                parentCharacter = getForAlign (enumeratedNodes V.! i) V.! sequenceIndex
+                parentCharacter = getFinal    (enumeratedNodes V.! i) V.! sequenceIndex
                 childCharacter  = getForAlign (enumeratedNodes V.! j) V.! sequenceIndex
                 (ancestoralNodeDeletions, _parentNodeInsertions, parentNodePsuedoCharacter) =
 --              trace (mconcat ["Accessing (",show $ parentMapping V.! j,",",show j,")"]) $
@@ -530,9 +529,9 @@ numeration sequenceIndex costStructure tree = tree `update` updatedLeafNodes
           | n `nodeIsLeaf` tree = deriveImpliedAlignment i sequenceIndex homologyMemoize n : xs
           | otherwise           = xs
 
-deriveImpliedAlignment :: (EncodableDynamicCharacter s, NodeConstraint n s, IANode' n s, Show s) => Int -> Int -> Matrix MemoizedEvents -> n -> n
+deriveImpliedAlignment :: (EncodableDynamicCharacter s, NodeConstraint n s, IANode' n s, Show s, Show (Element s)) => Int -> Int -> Matrix MemoizedEvents -> n -> n
 -- deriveImpliedAlignment nodeIndex _ _ | trace ("deriveImpliedAlignment " <> show nodeIndex <> " " <> show psuedoCharacter) False = undefined
-deriveImpliedAlignment nodeIndex sequenceIndex homologyMemoize node = node `setHomologies'` leafHomologies
+deriveImpliedAlignment nodeIndex sequenceIndex homologyMemoize node = trace (show nodeIndex <> "\n" <> show remaining) $ node `setHomologies'` leafHomologies
       where
         (DE deletions, _, psuedoCharacter) = homologyMemoize ! (nodeIndex, nodeIndex)
         leafHomologies
@@ -546,13 +545,14 @@ deriveImpliedAlignment nodeIndex sequenceIndex homologyMemoize node = node `setH
         leafAlignedChar = constructDynamic $ reverse result
         characterTokens = otoList leafCharacter
         gap             = getGapChar $ head characterTokens
-        (_,_,result)    = foldr f (0, characterTokens, [])
+        (_,remaining,result)    = foldr f (0, characterTokens, [])
 --                        $ (trace (mconcat ["deriveImpliedAlignment ",show nodeIndex," ",show psuedoCharacter," ",show deletions]))
                           psuedoCharacter
           where
             f e (basesSeen, xs, ys)
               | e == HardGap || e == SoftGap = (basesSeen    , xs , gap : ys )
-              | basesSeen `oelem` deletions  = (basesSeen + 1, xs', gap : ys )
+              | basesSeen `oelem` deletions &&
+                e == OriginalBase            = (basesSeen + 1, xs , gap : ys )
               | otherwise                    = (basesSeen + 1, xs',       ys') 
               where
                 xs' = fromMaybe []   $ tailMay xs 
@@ -622,9 +622,9 @@ comparativeIndelEvents ancestorCharacterUnaligned descendantCharacterUnaligned c
       -- Biological "Nothing" case
       | ancestorStatic == gap && descendantStatic == gap = (baseIndex    ,                       deletions,                               insertions)
       -- Biological insertion event case
-      | ancestorStatic == gap && descendantStatic /= gap = (baseIndex    ,                       deletions, IM.insertWith (+) baseIndex 1 insertions)
+      | ancestorStatic == gap && descendantStatic /= gap = (baseIndex +1 ,                       deletions, IM.insertWith (+) baseIndex 1 insertions)
       -- Biological deletion event case
-      | ancestorStatic /= gap && descendantStatic == gap = (baseIndex + 1, baseIndex `IS.insert` deletions,                               insertions)
+      | ancestorStatic /= gap && descendantStatic == gap = (baseIndex    , baseIndex `IS.insert` deletions,                               insertions)
       -- Biological substitution / non-substitution case
       | otherwise {- Both not gap -}                     = (baseIndex + 1,                       deletions,                               insertions)
       where
