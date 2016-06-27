@@ -27,7 +27,7 @@ parseArgs :: [String] -> Either String (FilePath, FilePath)
 parseArgs args =
   case args of
     []          -> Left "No arguments supplied!"
-    [x]         -> Left "Only one argument supplied, expecting two files."
+    [_]         -> Left "Only one argument supplied, expecting two files."
     arg1:arg2:_ -> Right (arg1, arg2)
 
 readFiles :: (FilePath, FilePath) -> IO (FilePath, String, FilePath, String)
