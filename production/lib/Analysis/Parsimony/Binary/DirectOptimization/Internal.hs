@@ -44,15 +44,18 @@ type DOCharConstraint s = (EncodableDynamicCharacter s, Show s, Memoizable s)
 -- the aligned version of the first input character, and the aligned version of the second input character
 -- The process for this algorithm is to generate a traversal matrix, then perform a traceback.
 naiveDO :: DOCharConstraint s  
-        => s                -- ^ First  dynamic character
-        -> s                -- ^ Second dynamic character
-        -> CostStructure    -- ^ Structure defining the transition costs between character states
-        -> ( s              -- ^ The /ungapped/ character derived from the the input characters' N-W-esque matrix traceback
-           , Double         -- ^ The cost of the alignment
-           , s              -- ^ The /gapped/ character derived from the the input characters' N-W-esque matrix traceback
-           , s              -- ^ The gapped alignment of the /first/ input character when aligned with the second character
-           , s              -- ^ The gapped alignment of the /second/ input character when aligned with the first character
-           )
+        => s                    -- ^ First  dynamic character
+        -> s                    -- ^ Second dynamic character
+        -> CostStructure        -- ^ Structure defining the transition costs between character states
+        -> (s, Double, s, s, s) -- ^ The /ungapped/ character derived from the the input characters' N-W-esque matrix traceback
+                                -- 
+                                --   The cost of the alignment
+                                -- 
+                                --   The /gapped/ character derived from the the input characters' N-W-esque matrix traceback
+                                -- 
+                                --   The gapped alignment of the /first/ input character when aligned with the second character
+                                -- 
+                                --   The gapped alignment of the /second/ input character when aligned with the first character
 naiveDO char1 char2 costStruct
     | onull char1 = (char1, 0, char1, char1, char1)
     | onull char2 = (char2, 0, char2, char2, char2)
@@ -194,9 +197,11 @@ overlap :: EncodableStaticCharacter s => CostStructure -> s -> s -> (s, Double)
 overlap costStruct char1 char2
     | intersectionStates == zeroBits = foldr1 ambigChoice $ allPossibleBaseCombosCosts costStruct char1 char2
     | otherwise                      = (intersectionStates, 0)
-    -- | 0 == char1 || 0 == char2 = (zeroBitVec, 0) -- Commented out, because nonsense. Problem for testing?
-    -- | char1 .&. char2 == 0 = foldr1 ambigChoice allPossibleBaseCombosCosts
-    -- | otherwise            = (char1 .&. char2, 0)
+    {-
+       | 0 == char1 || 0 == char2 = (zeroBitVec, 0) -- Commented out, because nonsense. Problem for testing?
+       | char1 .&. char2 == 0 = foldr1 ambigChoice allPossibleBaseCombosCosts
+       | otherwise            = (char1 .&. char2, 0)
+    -}
     where
       intersectionStates = char1 .&. char2
 --        alphLen    = width char1
