@@ -140,8 +140,10 @@ instance Show TestingDecoration where
   show decoration = intercalate "\n" $ catMaybes renderedCosts <> catMaybes renderedDecorations
     where
       renderedCosts =
-        [  ("LocalCost   " <>)  <$> h dLocalCost
-        ,  ("TotalCost   " <>)  <$> h dTotalCost
+        [  pure $ "LocalCost   " <> show (dLocalCost decoration)
+        ,  pure $ "TotalCost   " <> show (dTotalCost decoration)
+--        [  ("LocalCost   " <>)  <$> h dLocalCost
+--        ,  ("TotalCost   " <>)  <$> h dTotalCost
         ]
       renderedDecorations =
         [ g "Encoded     "  <$> f dEncoded
