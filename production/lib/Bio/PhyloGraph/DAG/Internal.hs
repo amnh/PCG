@@ -240,8 +240,8 @@ instance N.Network DAG NodeInfo where
           addPos  = length $ nodes dag
           newNode = resetPos node dag addPos
           newEdge = makeEdges newNode dag
-          edges2  = edges dag V.++ pure newEdge
-          nodes2  = addConnections newNode (nodes dag) V.++ pure newNode
+          edges2  = edges dag <> pure newEdge
+          nodes2  = addConnections newNode (nodes dag) <> pure newNode
           reroot  = if   isRoot node && null (nodes dag) 
                     then addPos 
                     else root dag
@@ -325,7 +325,7 @@ attachAt d1@(DAG nodes_1 edges_1 root_1) d2@(DAG nodes_2 edges_2 root_2) node_11
                                    }
 
             newEdges        = fmap shiftEdge edges_2
-            allEdges        = edges_1 V.++ newEdges
+            allEdges        = edges_1 <> newEdges
             hangUpdate      = (allEdges V.! hCode) { outNodes = fmap (\info -> info { origin = allNodes V.! hCode }) (outNodes (allEdges V.! hCode)) }
             hangAdd         = hangUpdate <> EdgeSet (inNodes $ edges_1 V.! hCode) (IM.insert (root_2 + shiftNum) (EdgeInfo 0 (allNodes V.! hCode) (allNodes V.! (root_2 + shiftNum)) Nothing) (outNodes $ edges_1 V.! hCode))
             hangedUpdate    = (allEdges V.! (root_2 + shiftNum)) <> EdgeSet (IS.singleton hCode) mempty
