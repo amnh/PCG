@@ -25,7 +25,4 @@ instance Arbitrary a => Arbitrary (Vector a) where
 
 -- | A 'BitVector' of arbitrary, positive length containing arbitrary set or unset values at each 'BitVector' index.
 instance Arbitrary BV where
-    arbitrary = do
-        len      <- arbitrary :: Gen (Positive Int)
-        boolList <- vector (getPositive len)
-        pure $ fromBits boolList 
+    arbitrary = fromInteger . getPositive <$> (arbitrary :: Gen (Positive Integer))
