@@ -490,7 +490,7 @@ numeration sequenceIndex costStructure tree = tree `update` updatedLeafNodes
                     -- Search for the previous leaf node by traversing down the "right" most edges of the previous sibling node.
                     modifiedPsuedoCharacter =
                       case lastMay . takeWhile (<j) $ otoList siblingIndices of
-                        Nothing -> (\(_,_,x) -> x) $ homologyMemoize ! (i, i)
+                        Nothing -> getPsuedoCharacter $ homologyMemoize ! (i, i)
                         Just x  -> substituteHardGaps (getPsuedoCharacter i, rightMostLeafPseudoCharacter x)
                     rightMostLeafPseudoCharacter n = 
                       case maximumMay $ childMapping V.! n of
