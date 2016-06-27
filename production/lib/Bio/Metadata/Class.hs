@@ -28,6 +28,7 @@ class Metadata m s | m -> s where
     getAligned        :: m -> Bool
     getType           :: m -> CharDataType
 
+-- | (✔)
 instance Metadata (CharacterMetadata s) s where
     getWeight         = weight
     getIgnored        = isIgnored
