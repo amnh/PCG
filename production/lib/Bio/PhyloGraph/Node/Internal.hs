@@ -52,24 +52,24 @@ data Node = Node  { nodeIdx             :: Int
                   , totalCost           :: Double             -- sum cost of this node and its subtree
                   } deriving (Eq, Show)
 
--- | Make it an instance of encoded, final, packed, and preliminary
+-- | (✔)
 instance EN.EncodedNode Node DynamicChar where
     getEncoded     = encoded
     setEncoded n s = n {encoded = s}
 
--- | Nodes can hold final assignment
+-- | (✔)
 instance FN.FinalNode Node DynamicChar where
     getFinal           = finalUngapped
     setFinal f n       = n {finalUngapped = f}
     getFinalGapped     = finalGapped
     setFinalGapped f n = n {finalGapped = f}
 
--- | Nodes can hold packed data
+-- | (✔)
 instance PN.PackedNode Node DynamicChar where
     getPacked     = packed
     setPacked n s = n {packed = s}
 
--- | Nodes hold all preliminary info
+-- | (✔)
 instance RN.PreliminaryNode Node DynamicChar where
     getPreliminaryUngapped     = preliminaryUngapped
     setPreliminaryUngapped s n = n {preliminaryUngapped = s}
@@ -82,14 +82,17 @@ instance RN.PreliminaryNode Node DynamicChar where
     getTotalCost               = totalCost
     setTotalCost c n           = n {totalCost = c}
 
+-- | (✔)
 instance IN.IANode Node where
   getHomologies = iaHomology
   setHomologies n h = n {iaHomology = h}
 
+-- | (✔)
 instance IN.IANode' Node DynamicChar where
   getHomologies'             = impliedAlignment
   setHomologies' n alignment = n { impliedAlignment = alignment }
 
+-- | (✔)
 instance RefNode Node where
   getCode = nodeIdx
 

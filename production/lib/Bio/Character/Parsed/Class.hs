@@ -55,20 +55,24 @@ import           File.Format.VertexEdgeRoot
 class ParsedCharacters a where
     unifyCharacters :: a -> TreeChars
 
+-- | (✔)
 instance ParsedCharacters FastaParseResult where
     unifyCharacters = foldr f mempty
         where
             convertSeq = V.fromList . fmap (Just . pure . pure . pure)
             f (FastaSequence n s) = insert n (convertSeq s)
 
+-- | (✔)
 instance ParsedCharacters TaxonSequenceMap where
     unifyCharacters = fmap (pure . pure)
 
+-- | (✔)
 instance ParsedCharacters FastcParseResult where
     unifyCharacters = foldl f mempty
         where
             f m (FastcSequence label symbols) = insert label (pure $ pure symbols) m
 
+-- | (✔)
 instance ParsedCharacters NewickForest where
     unifyCharacters = mergeMaps . fmap f
         where
@@ -79,9 +83,11 @@ instance ParsedCharacters NewickForest where
               where
                   name = fromMaybe "" $ newickLabel node
 
+-- | (✔)
 instance ParsedCharacters Nexus where
     unifyCharacters (Nexus (seqMap, _)) = seqMap
 
+-- | (✔)
 instance ParsedCharacters TntResult where
     unifyCharacters (Left forest) = mergeMaps $ foldl f mempty forest
       where
