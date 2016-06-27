@@ -55,7 +55,7 @@ performFileDiff (lhs, rhs) = maybe (Right fileDiffResult) Left errorMessage
     toMap = foldMap (singleton <$> taxonName <*> taxonSequence)
 
     renderTaxa :: String -> String -> String
-    renderTaxa taxaName taxaSequences = mconcat [ "> ", taxaName, "\n", taxaSequences] 
+    renderTaxa taxaName taxaSequences = mconcat [ "> ", taxaName, "\n", taxaSequences, "\n"] 
     
     errorMessage
       | null lhsUnique &&
