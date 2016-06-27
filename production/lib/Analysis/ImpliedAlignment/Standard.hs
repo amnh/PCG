@@ -83,13 +83,13 @@ makeAlignment n seqLens = makeAlign (getFinalGapped n) (getHomologies n)
         --makeAlign :: Vector s -> HomologyTrace -> Vector s
         makeAlign dynChar homologies = V.zipWith3 makeOne' dynChar homologies seqLens
         -- | /O((n+m)*log(n)), could be linear, but at least it terminates!
-        makeOne' char homolog len = fromChars . toList $ result
+        makeOne' char homolog len = constructDynamic . toList $ result
           where
             result = V.generate (fst len + snd len) f
               where
                 f i = case i `IM.lookup` mapping of
-                        Nothing -> gapChar char
-                        Just j  -> char `grabSubChar` j
+                        Nothing -> getGapChar $ char `indexChar` 0
+                        Just j  -> char `indexChar` j
                 mapping = V.ifoldl' (\im k v -> IM.insert v k im) mempty homolog
 
 -- | Main recursive function that assigns homology traces to every node
@@ -141,7 +141,7 @@ numeratePreorder initTree initNode inMeta curCounts
             rightOnly                     = isNothing $ leftChild curNode inTree
             defaultHomologs               = if V.length curSeqs == 0 
                                             then V.replicate (V.length inMeta) mempty 
-                                            else imap (\i _ -> V.enumFromN 0 (numChars (curSeqs V.! i))) inMeta
+                                            else imap (\i _ -> V.enumFromN 0 (olength (curSeqs V.! i))) inMeta
             --curNode = getNthNode inTree {- . fromJust -} $ getCode initNode --inTree
             propagateIt tree child events = tree' `update` [child]
                                                 where tree' = backPropagation tree child events
@@ -156,7 +156,7 @@ numeratePreorder initTree initNode inMeta curCounts
                     final2 = getForAlign node2
                     allUnzip = V.unzip allDO
                     allDO = V.zipWith3 checkThenAlign final1 final2 $ getCosts <$> inMeta
-                    checkThenAlign s1 s2 m = if numChars s1 == numChars s2 then (s1, s2) else doAlignment s1 s2 m
+                    checkThenAlign s1 s2 m = if olength s1 == olength s2 then (s1, s2) else doAlignment s1 s2 m
 
 -- | Back propagation to be performed after insertion events occur in a numeration
 -- goes back up and to the left, then downward
@@ -227,8 +227,8 @@ numerateNode ancestorNode childNode initCounters = (setHomologies childNode homo
 numerateOne :: SeqConstraint s => s -> s -> Counter -> (Homologies, Counter, IntSet)
 numerateOne ancestorSeq descendantSeq (maxLen, initialCounter) = (descendantHomologies, (newLen, counter'), insertionEvents)
   where
-    gapCharacter = gapChar descendantSeq
-    newLen = max (numChars descendantSeq) maxLen
+    gapCharacter = getGapChar $ descendantSeq `indexChar` 0
+    newLen = max (olength descendantSeq) maxLen
 
     descendantHomologies = V.generate (olength descendantSeq) g
      where
@@ -248,14 +248,14 @@ numerateOne ancestorSeq descendantSeq (maxLen, initialCounter) = (descendantHomo
           | otherwise {- Both not gap -}                                             = Accum (insert i (i + childOffset)     indexMapping, counter    , i + 1, ancestorOffset    , childOffset    , insertionEventIndicies)
           where
 --          j = i + childOffset
-            descendantCharacter    = fromJust $ safeGrab descendantSeq i
-            ancestorCharacter = fromJust $ safeGrab ancestorSeq   i 
+            ancestorCharacter   = ancestorSeq   `indexChar` i
+            descendantCharacter = descendantSeq `indexChar` i
 
 -- TODO: make sure a sequence always ends up in FinalGapped to avoid this decision tree
 -- | Simple function to get a sequence for alignment purposes
 getForAlign :: NodeConstraint n s => n -> Vector s
 getForAlign n 
-    | not . null $ getFinalGapped n = getFinalGapped n
-    | not . null $ getPreliminary n = getPreliminary n 
-    | not . null $ getEncoded     n = getEncoded n 
+    | not . null $ getFinalGapped n         = getFinalGapped n
+    | not . null $ getPreliminaryUngapped n = getPreliminaryUngapped n 
+    | not . null $ getEncoded     n         = getEncoded n 
     | otherwise = mempty {-error "No sequence at node for IA to numerate"-}

@@ -19,7 +19,7 @@ module Analysis.ImpliedAlignment.DynamicProgramming where
 
 import           Analysis.ImpliedAlignment.Internal
 import           Analysis.Parsimony.Binary.DirectOptimization
-import           Analysis.Parsimony.Binary.Internal (allOptimization)
+--import           Analysis.Parsimony.Binary.Internal (allOptimization)
 import           Bio.Metadata
 import           Bio.PhyloGraph.Forest
 import           Bio.PhyloGraph.Network
@@ -28,12 +28,12 @@ import           Bio.PhyloGraph.Solution
 import           Bio.PhyloGraph.Tree
 import           Bio.Character.Dynamic.Coded
 import           Control.Applicative          ((<|>))
-import           Control.Arrow                ((&&&))
+--import           Control.Arrow                ((&&&))
 import           Data.Alphabet
-import           Data.Bifunctor               (first)
--- import           Data.BitMatrix
+--import           Data.Bifunctor               (first)
+--import           Data.BitMatrix
 import           Data.Foldable
-import           Data.IntMap                  (IntMap, insert)
+import           Data.IntMap                  (IntMap)
 import qualified Data.IntMap            as IM
 import           Data.IntSet                  (IntSet)
 import qualified Data.IntSet            as IS
@@ -42,13 +42,14 @@ import           Data.Matrix.NotStupid hiding ((<|>),toList,trace)
 import           Data.Maybe
 import           Data.Monoid
 import           Data.MonoTraversable
-import           Data.Vector                  (Vector, imap)
+import           Data.Vector                  (Vector)
 import qualified Data.Vector             as V
 import           Data.Vector.Instances        ()
 import           Prelude               hiding (lookup,zipWith)
-import           Debug.Trace                  (trace)
 import           Safe                         (tailMay)
---import           Test.Custom hiding (children)
+--import           Test.Custom
+
+--import           Debug.Trace                  (trace)
 
 defMeta :: Vector (CharacterMetadata s)
 defMeta = pure CharMeta
@@ -306,9 +307,9 @@ characterNumeration ancestorSeq descendantSeq = (descendantHomologies, totalGaps
 -- | Simple function to get a sequence for alignment purposes
 getForAlign :: NodeConstraint n s => n -> Vector s
 getForAlign n 
-    | not . null $ getFinalGapped n = getFinalGapped n
-    | not . null $ getPreliminary n = getPreliminary n 
-    | not . null $ getEncoded     n = getEncoded n 
+    | not . null $ getFinalGapped n         = getFinalGapped n
+    | not . null $ getPreliminaryUngapped n = getPreliminaryUngapped n 
+    | not . null $ getEncoded     n         = getEncoded n 
     | otherwise = mempty {-error "No sequence at node for IA to numerate"-}
 
 
@@ -431,6 +432,8 @@ numeration sequenceIndex costStructure tree = tree `update` updatedLeafNodes
               where
                 -- We mutate the the psuedo-character by replacing "soft gaps" with "inserted bases"
                 -- at indices where insertione events happened between the parent node and the current node.
+
+{-
                 psuedoCharacter = V.fromList {- . reverse -} $ result
                   where
                     (_,_,result) = foldr f (0, m, []) parentEdgePsuedoCharacter
@@ -447,6 +450,7 @@ numeration sequenceIndex costStructure tree = tree `update` updatedLeafNodes
                               if c > 0
                               then (basesSeen, IM.update (pure . pred) basesSeen mapping, InsertedBase : es)
                               else (basesSeen,                                   mapping,            e : es)
+-}
                 (ancestoralEdgeDeletions, parentEdgeInsertions, parentEdgePsuedoCharacter) = homologyMemoize ! (parentMapping V.! j, j)
 
             -- The deletion events are derived from a pairwise comparison of the parent character and the child character,
@@ -501,7 +505,7 @@ numeration sequenceIndex costStructure tree = tree `update` updatedLeafNodes
 -}
                     siblingIndices       = j `IS.delete` (childMapping V.! i)
                     firstSiblingIndex    = minimumEx siblingIndices
-                    getInsertions n      = (\(_,x,_) -> x) $ homologyMemoize ! (parentMapping V.! n, n)
+--                    getInsertions n      = (\(_,x,_) -> x) $ homologyMemoize ! (parentMapping V.! n, n)
                     getPsuedoCharacter n = (\(_,_,x) -> x) $ homologyMemoize ! (n, n)
 
                 -- We mutate the the psuedo-character by replacing "soft gaps" with "hard gaps"
@@ -593,7 +597,7 @@ gatherParents childrenMapping = {- trace ("Gathered parents: " <> show x) -} int
           | i `oelem` e = Just k
           | otherwise   = acc
     integrityCheck vectorOfParents =
-      case foldl' h 0 vectorOfParents of
+      case foldl' h (0 :: Int) vectorOfParents of
         0 -> error "There was no parent found!"
         1 -> vectorOfParents
         n -> error $ "Could not find the parent for " <> show n <> " nodes: " <> show x

@@ -102,16 +102,10 @@ testCodedSequenceInstance = testGroup "Properties of instance CodedSequence Enco
 
 encodeOverAlphabetTest :: TestTree
 encodeOverAlphabetTest = testGroup "encodeOverAlphabet"
-    [ testAlphabetLen
-    --, testValue
+    [ 
+    -- testValue
     ]
     where
-        testAlphabetLen = testProperty "Make sure alphabet length of encoded dynamic char == len(alphabet)." f
-            where
-                f :: ParsedCharacterWithAlphabet -> Bool
-                f parsedCharAndAlphabet = getAlphLen (encodeDynamic alph (getParsedChar inChar) :: DynamicChar) == length alph
-                  where
-                    (inChar, alph) = getParsedCharAndAlphabet parsedCharAndAlphabet
         {-testValue = testProperty "Make sure encoded value matches position in alphabet." f
             where
                 -- for each ambiguity group in inChar, map over the alphabet determining whether each alphabet state exists in the ambiguity group

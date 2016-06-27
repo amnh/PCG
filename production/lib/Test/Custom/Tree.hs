@@ -23,8 +23,7 @@ import           Data.Alphabet
 import           Data.Bifunctor                          (second)
 import           Data.BitVector                          (width)
 import           Data.Foldable
-import           Data.IntMap                             (IntMap, insertWith)
-import qualified Data.IntMap                      as IM
+import           Data.IntMap                             (insertWith)
 import qualified Data.IntSet                      as IS
 import           Data.Key
 import           Data.List                               (intercalate)
@@ -146,13 +145,12 @@ instance Show TestingDecoration where
 --        ,  ("TotalCost   " <>)  <$> h dTotalCost
         ]
       renderedDecorations =
-        [ g "Encoded     "  <$> f dEncoded
-        , g "Ungapped    "  <$> f dFinal
-        , g "Gapped      "  <$> f dGapped
-        , g "Preliminary "  <$> f dPreliminary
-        , g "Aligned     "  <$> f dAligned
-        , g "Temporary   "  <$> f dTemporary
-        , g "ImpliedAlign" <$> f dImpliedAlignment
+        [ g "Encoded              " <$> f dEncoded
+        , g "Final Ungapped       " <$> f dFinal
+        , g "Final Gapped         " <$> f dGapped
+        , g "Preliminary Ungapped " <$> f dPreliminary
+        , g "Preliminary Gapped   " <$> f dAligned
+        , g "Implied Alignment    " <$> f dImpliedAlignment
         ]
       f x = renderDynamicCharacter <$> headMay (x decoration)
       g prefix shown = prefix <> ": " <> shown --intercalate "\n" $ (prefix <> ": " <> y) : (("  " <>) <$> zs)
@@ -203,6 +201,7 @@ instance Arbitrary SimpleTree where
     
 type instance Element SimpleTree = SimpleTree
 
+treeFold :: SimpleTree -> [SimpleTree]
 treeFold x@(TT root) = (x :) . concatMap (treeFold . TT) $ subForest root
 
 instance MonoFoldable SimpleTree where
@@ -239,18 +238,13 @@ instance FN.FinalNode SimpleTree DynamicChar where
         decoration = rootLabel n
 
 instance RN.PreliminaryNode SimpleTree DynamicChar where
-    getPreliminary   (TT n) = dPreliminary $ rootLabel n
-    setPreliminary x (TT n) = TT $ n { rootLabel = decoration { dPreliminary = x } }
+    getPreliminaryUngapped   (TT n) = dPreliminary $ rootLabel n
+    setPreliminaryUngapped x (TT n) = TT $ n { rootLabel = decoration { dPreliminary = x } }
       where
         decoration = rootLabel n
 
-    getPreliminaryAlign (TT n) = dAligned $ rootLabel n
-    setAlign          x (TT n) = TT $ n { rootLabel = decoration { dAligned = x } }
-      where
-        decoration = rootLabel n
-
-    getTemporary        (TT n) = dTemporary $ rootLabel n
-    setTemporary      x (TT n) = TT $ n { rootLabel = decoration { dTemporary = x } }
+    getPreliminaryGapped   (TT n) = dAligned $ rootLabel n
+    setPreliminaryGapped x (TT n) = TT $ n { rootLabel = decoration { dAligned = x } }
       where
         decoration = rootLabel n
 

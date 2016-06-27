@@ -22,6 +22,8 @@ import Data.BitVector
 import Data.Maybe           (fromMaybe)
 import Data.MonoTraversable
 
+import GHC.Stack            (errorWithStackTrace)
+
 {- LAWS:
  - decodeChar alphabet . encodeChar alphabet . toList == id
  - encodeChar alphabet [alphabet ! i] == bit i
@@ -42,9 +44,10 @@ class Bits b => EncodableStaticCharacter b where
  -}
 class ( EncodableStaticCharacter (Element s)
       , MonoTraversable s
-      , OldEncodableDynamicCharacterToBeRemoved s
       ) => EncodableDynamicCharacter s where
   -- All default instances can be "overidden" for efficientcy.
+  constructDynamic :: Foldable t => t (Element s) -> s
+  
   decodeDynamic ::  Eq a => Alphabet a -> s -> [[a]]
   decodeDynamic alphabet = ofoldr (\e acc -> decodeChar alphabet e : acc) []
 
@@ -53,7 +56,8 @@ class ( EncodableStaticCharacter (Element s)
   indexChar  :: s -> Int -> Element s
   indexChar xs i = fromMaybe raiseError $ xs `lookupChar` i
     where
-      raiseError = error $ mconcat ["Index ", show i, " is out of range [0,", show $ olength xs,"]."] 
+      raiseError = errorWithStackTrace
+                 $ mconcat ["Index ", show i, " is out of range [0,", show $ olength xs - 1,"]."] 
 
   lookupChar :: s -> Int -> Maybe (Element s)
   lookupChar xs i = fst $ ofoldl' f (Nothing, 0) xs
@@ -61,21 +65,3 @@ class ( EncodableStaticCharacter (Element s)
       f (Nothing, n) e = if n == i then (Just e, n) else (Nothing, n + 1)
       f acc          _ = acc
 
-  constructDynamic :: Foldable t => t (Element s) -> s
-  
---  unsafeAppend  :: s -> BitVector -> s
---  unsafeCons :: BitVector -> s -> s
-  unsafeConsElem :: Element s -> s -> s
-
--- | A coded sequence allows grabbing of a character, filtering, and some standard types
-class OldEncodableDynamicCharacterToBeRemoved s where
-  emptyChar          :: s
-  emptyLike          :: s -> s
-  filterGaps         :: s -> s
-  gapChar            :: s -> BitVector
-  getAlphLen         :: s -> Int
-  grabSubChar        :: s -> Int -> BitVector
-  isEmpty            :: s -> Bool
-  numChars           :: s -> Int
-  safeGrab           :: s -> Int -> Maybe BitVector
-  fromChars          :: [BitVector] -> s

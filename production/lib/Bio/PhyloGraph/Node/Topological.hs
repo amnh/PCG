@@ -101,5 +101,5 @@ arbitraryTopoGivenCSNA maxChildren namesAndSeqs inMeta (curLevel, maxLevel)
       root = curLevel == 0
       coded = V.zipWith encodeIt inMeta mySeqs
       encodeIt m s = case s of 
-                      Nothing -> emptyChar
+                      Nothing -> constructDynamic []
                       Just c  -> encodeDynamic (alphabet m) c 

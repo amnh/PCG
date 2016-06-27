@@ -37,7 +37,6 @@ import           Data.BitVector               hiding (foldr, join, not, replicat
 import           Data.Foldable
 import           Data.Function.Memoize
 import           Data.Maybe                          (fromMaybe)
-import           Data.Monoid                         ((<>))
 import           Data.MonoTraversable
 import           Data.Vector                         (Vector)
 import qualified Data.Vector                    as V (fromList)
@@ -133,7 +132,9 @@ instance EncodableStaticCharacter BitVector where
 
 instance EncodableDynamicCharacter DynamicChar where
 
-  decodeDynamic alphabet (DC bm) = ofoldMap (pure . decodeChar alphabet) $ rows bm
+  constructDynamic       = DC . fromRows . toList
+
+  decodeDynamic alphabet = ofoldMap (pure . decodeChar alphabet) . otoList
 
   encodeDynamic alphabet = DC . fromRows . fmap (encodeChar alphabet) . toList
 
@@ -141,48 +142,6 @@ instance EncodableDynamicCharacter DynamicChar where
     | 0 <= i && i < numRows bm = Just $ bm `row` i
     | otherwise                = Nothing
 
-  constructDynamic = DC . fromRows . toList
-
-  -- TODO: Think about the efficiency of this
---  unsafeCons static (DC dynamic) = DC . fromRows $ [static] <> rows dynamic
-
---  unsafeAppend (DC dynamic1) bv = DC . fromRows $ rows dynamic1 <> [bv]
-
-  unsafeConsElem e (DC dynamic) = DC . fromRows $ pure e <> rows dynamic
-
-
-instance OldEncodableDynamicCharacterToBeRemoved DynamicChar where
-    
---    emptyChar          :: s
-    emptyChar = DC $ bitMatrix 0 0 (const False)
-
-    emptyLike (DC bm) = DC $ bitMatrix 1 (numCols bm) (const False)
-    
---    filterGaps         :: s -> s
-    filterGaps c@(DC bm) = DC . fromRows . filter (/= gapBV) $ rows bm
-      where
-        gapBV = gapChar c
-    
---    gapChar            :: s -> s
-    gapChar (DC bm) = zeroBits `setBit` (numCols bm - 1)
-    
---    getAlphLen         :: s -> Int
-    getAlphLen (DC bm) = numCols bm
-
---   grabSubChar        :: s -> Int -> s
-    grabSubChar char i = char `indexChar` i
-    
---    isEmpty            :: s -> Bool
-    isEmpty (DC bm) = isZeroMatrix bm
-
---    numChars           :: s -> Int
-    numChars (DC bm) = numRows bm
-
-    safeGrab char@(DC bm) i 
-      |  0 <= i && i < numRows bm = Just $ char `indexChar` i
-      | otherwise                 = Nothing
-
-    fromChars bvs = DC $ fromRows bvs
 
 -- TODO: Probably remove?
 instance Bits DynamicChar where

@@ -18,6 +18,7 @@ module Analysis.Parsimony.Binary.Internal where
 import Analysis.Parsimony.Binary.Constraints
 import Analysis.Parsimony.Binary.DirectOptimization
 import Analysis.Parsimony.Binary.Fitch
+import Bio.Character.Dynamic.Coded
 import Bio.Metadata
 import Bio.PhyloGraph.Forest
 import Bio.PhyloGraph.Network
@@ -26,8 +27,8 @@ import Bio.PhyloGraph.Node.Encoded
 import Bio.PhyloGraph.Node.Final
 import Bio.PhyloGraph.Node.Preliminary
 import Bio.PhyloGraph.Solution
-import Bio.PhyloGraph.Tree.Binary
-import Bio.PhyloGraph.Tree.Rose
+--import Bio.PhyloGraph.Tree.Binary
+--import Bio.PhyloGraph.Tree.Rose
 import Data.Matrix.NotStupid (Matrix, nrows, ncols, setElem)
 import Data.Maybe
 import Data.Monoid
@@ -110,11 +111,11 @@ treeInternalPostorderTraversal weighting node tree meta = (decoratedSelf, decora
 
       -- Logic for decorating a node with exactly one child.
       -- These nodes are malformed in most (all?) tree topologies.
-      decorateInternal otherNode = setTemporary   (getTemporary        otherNode)
-                                 . setAlign       (getPreliminaryAlign otherNode)
-                                 . setPreliminary (getPreliminary      otherNode)
-                                 . setTotalCost   (getTotalCost        otherNode)
-                                 . setLocalCost   (getLocalCost        otherNode)
+      decorateInternal otherNode = -- setTemporary   (getTemporary        otherNode)
+                                   setPreliminaryGapped   (getPreliminaryGapped   otherNode)
+                                 . setPreliminaryUngapped (getPreliminaryUngapped otherNode)
+                                 . setTotalCost           (getTotalCost           otherNode)
+                                 . setLocalCost           (getLocalCost           otherNode)
 
 -- | Wrapper function to perform optimization on a node during the postorder pass
 -- Essentially map decision function that selects and performs the correct optimization over the sequence of characters.
@@ -131,9 +132,9 @@ nodeOptimizePostorder weighting curNode lNode rNode meta = summedTotalCost `setT
             -- TODO: Compiler error maybe below with comment structures and 'lets'
             | getIgnored metadataStructure = setNode
             | getType metadataStructure == Fitch =
-                let (assign, temp, local) = preorderFitchBit curWeight (getForAlign lNode ! curPos) (getForAlign rNode ! curPos) metadataStructure
-                in addTemporary temp
-                 . addLocalCost (local * curWeight * weighting)
+                let (assign, _, local) = preorderFitchBit curWeight (getForAlign lNode ! curPos) (getForAlign rNode ! curPos) metadataStructure
+                in -- addTemporary temp
+                   addLocalCost (local * curWeight * weighting)
                  . addAlign assign
                  . addPreliminary assign
                  $ setNode
@@ -146,9 +147,9 @@ nodeOptimizePostorder weighting curNode lNode rNode meta = summedTotalCost `setT
             | otherwise = error "Unrecognized optimization type"
             where curWeight = getWeight metadataStructure
 
-        addPreliminary addVal node = addToField setPreliminary getPreliminary      addVal node
-        addAlign       addVal node = addToField setAlign       getPreliminaryAlign addVal node
-        addTemporary   addVal node = addToField setTemporary   getTemporary        addVal node
+        addPreliminary addVal node = addToField setPreliminaryUngapped getPreliminaryUngapped addVal node
+        addAlign       addVal node = addToField setPreliminaryGapped   getPreliminaryGapped   addVal node
+--        addTemporary   addVal node = addToField setTemporary   getTemporary        addVal node
 --        addTotalCost   addVal node = setTotalCost (addVal + getTotalCost node) node
         addLocalCost   addVal node = setLocalCost (addVal + getLocalCost node) node
 
@@ -157,40 +158,46 @@ nodeOptimizePostorder weighting curNode lNode rNode meta = summedTotalCost `setT
 -- returns a tree with relevant nodes assigned.
 -- This wrapper allows us to deal correctly with root passing to preorder algorithms
 treeOptimizePreorder :: (TreeConstraint' t n s, Metadata m s) => t -> Vector m -> t
-treeOptimizePreorder tree meta = tree `update` treeInternalPreorderTraversal (root tree) tree meta
+treeOptimizePreorder tree meta = tree `update` treeInternalPreorderTraversal Nothing (root tree) tree meta
 
 -- | Internal preorder pass that does the main recursion
 -- Takes in a current node, the tree, and a vector of metadata;
 -- returns a list of nodes that have been updated.
 -- As in the postorder, this method saves on some time complexity.
-treeInternalPreorderTraversal :: (TreeConstraint' t n s, Metadata m s) => n -> t -> Vector m -> [n]
-treeInternalPreorderTraversal node tree meta  = 
+treeInternalPreorderTraversal :: (TreeConstraint' t n s, Metadata m s) => Maybe n -> n -> t -> Vector m -> [n]
+treeInternalPreorderTraversal parentNode node tree meta  = 
   case children' of
-      left:right:_ -> nodeOptimizePreorder node left right (parent node tree) meta : result
-      _            -> result
+      left:right:_ -> let mutatedSelf = nodeOptimizePreorder node left right parentNode meta 
+                      in mutatedSelf : concatMap (\x -> treeInternalPreorderTraversal (Just mutatedSelf) x tree meta) children'
+      _            -> concatMap (\x -> treeInternalPreorderTraversal (Just node) x tree meta) children'
   where
       children' = children node tree
-      result    = concatMap (\x -> treeInternalPreorderTraversal x tree meta) children'
 
 -- | Wrapper function to perform optimization on a node during the preorder pass.
 -- As in the postorder, it selects an optimization for each character, then groups the optimized characters together and assigns them to the node.
 -- Takes in a current node, left child, right child, parent node, and vector of metadata,
 -- returns a node with everything assigned.
 nodeOptimizePreorder :: (NodeConstraint' n s, Metadata m s) => n -> n -> n -> Maybe n -> Vector m -> n
-nodeOptimizePreorder curNode lNode rNode pNode meta
-    | isNothing pNode = curNode --error "No parent node on preorder traversal"
-    | otherwise       = ifoldr chooseOptimization curNode meta
+nodeOptimizePreorder curNode lNode rNode pNode meta = ifoldr chooseOptimization curNode meta 
     where
         --chooseOptimization :: (NodeConstraint' n s, Metadata m s) => Int -> m -> n -> n
         chooseOptimization i metadataStructure setNode
             | getType metadataStructure == Fitch =
-                let finalAssign = postorderFitchBit (getForAlign curNode ! i) (getForAlign lNode ! i) (getForAlign rNode ! i) (getForAlign (fromJust pNode) ! i) (getTemporary curNode ! i) metadataStructure
-                in addToField setFinal getFinal finalAssign setNode
+              case pNode of
+                Nothing -> addToField setFinal getFinal (constructDynamic []) setNode -- TODO: This is broken, please don't ever use the code until after we have proper Static/Dynamic sequence partioning
+                Just parentNode -> 
+                  let finalAssign = postorderFitchBit (getForAlign curNode ! i) (getForAlign lNode ! i) (getForAlign rNode ! i) (getForAlign parentNode ! i) {- (getTemporary curNode ! i) -} (constructDynamic []) metadataStructure
+                  in addToField setFinal getFinal finalAssign setNode
             | getType metadataStructure == DirectOptimization =  --TODO: do we grab the gapped or not?
-                let (final, _, finalAligned, _, _) = naiveDO (getForAlign curNode ! i) (getForAlign (fromJust pNode) ! i) $ getCosts metadataStructure
-                in addToField setFinal       getFinal       final
-                 . addToField setFinalGapped getFinalGapped finalAligned
-                 $ setNode
+              case pNode of
+                Nothing -> addToField setFinal       getFinal       (getPreliminaryUngapped setNode ! i)
+                         . addToField setFinalGapped getFinalGapped (getPreliminaryGapped   setNode ! i)
+                         $ setNode
+                Just parentNode -> 
+                  let (final, _, finalAligned, _, _) = naiveDO (getFinal parentNode ! i) (getChildCharacterForDoPreorder curNode ! i) $ getCosts metadataStructure
+                  in addToField setFinal       getFinal       final
+                   . addToField setFinalGapped getFinalGapped finalAligned
+                   $ setNode
             | otherwise = error "Unrecognized optimization type"
 
 setElemSafe :: (Num a) => a -> (Maybe Int, Maybe Int) -> Matrix a -> Matrix a
@@ -203,9 +210,14 @@ setElemSafe value (row, col) matrix
 -- preliminary alignment 
 getForAlign :: (PreliminaryNode n s, EncodedNode n s, SeqConstraint' s) => n -> Vector s
 getForAlign node
-    | null (getPreliminaryAlign node) && null (getPreliminary node) = getEncoded node
-    | null $ getPreliminaryAlign node                               = getPreliminary node
-    | otherwise                                                     = getPreliminaryAlign node
+    | null (getPreliminaryGapped node) && null (getPreliminaryUngapped node) = getEncoded node
+    | null $ getPreliminaryGapped node                                       = getPreliminaryUngapped node
+    | otherwise                                                              = getPreliminaryGapped node
+
+getChildCharacterForDoPreorder ::  (PreliminaryNode n s, EncodedNode n s) => n -> Vector s
+getChildCharacterForDoPreorder node
+  | null $ getPreliminaryUngapped node = getEncoded node
+  | otherwise                          = getPreliminaryGapped node
 
 -- | addToField takes in a setter fn, a getter fn, a value and a node.
 -- It then gets the related value from the node, adds to it the passed value,

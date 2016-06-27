@@ -2,24 +2,24 @@
 
 module Test.Custom.Types where
 
-import           Bio.Character.Dynamic.Coded
-import           Bio.PhyloGraph.DAG.Class
-import qualified Bio.PhyloGraph.Network                           as N
-import qualified Bio.PhyloGraph.Node.Encoded                      as EN
-import qualified Bio.PhyloGraph.Node.Final                        as FN
-import qualified Bio.PhyloGraph.Node.ImpliedAlign                 as IN
-import qualified Bio.PhyloGraph.Node.Preliminary                  as RN
-import           Bio.PhyloGraph.Node.Referential
-import           Bio.PhyloGraph.Tree.Binary
-import qualified Bio.PhyloGraph.Tree.Referential                  as RT
-import           Bio.PhyloGraph.Tree.Rose
+--import           Bio.Character.Dynamic.Coded
+--import           Bio.PhyloGraph.DAG.Class
+--import qualified Bio.PhyloGraph.Network                           as N
+--import qualified Bio.PhyloGraph.Node.Encoded                      as EN
+--import qualified Bio.PhyloGraph.Node.Final                        as FN
+--import qualified Bio.PhyloGraph.Node.ImpliedAlign                 as IN
+--import qualified Bio.PhyloGraph.Node.Preliminary                  as RN
+--import           Bio.PhyloGraph.Node.Referential
+--import           Bio.PhyloGraph.Tree.Binary
+--import qualified Bio.PhyloGraph.Tree.Referential                  as RT
+--import           Bio.PhyloGraph.Tree.Rose
 import           Data.Char
-import           Data.BitVector                   hiding (not)
-import           Data.Key                                (lookup)
-import           Safe
-import           Data.Vector                             (Vector)
-import qualified Data.Vector                                      as V
-import           Test.Custom.Tree 
+--import           Data.BitVector                   hiding (not)
+--import           Data.Key                                (lookup)
+--import           Safe
+--import           Data.Vector                             (Vector)
+--import qualified Data.Vector                                      as V
+--import           Test.Custom.Tree 
 import           Test.QuickCheck
 
 import           Prelude                          hiding (lookup)
@@ -80,7 +80,7 @@ instance Arbitrary InlineSpace where
 
 instance Show InlineSpace where
     show (InlineSpace c) = show c
-
+{-
 -- Node type for a simple tree for testing
 data TestNode = TestNode  { code        :: Int
                           , isRoot      :: Bool
@@ -160,9 +160,4 @@ instance StandardDAG TestDAG TestNode Int where
 
 instance RefNode TestNode where
   getCode = code
-
-instance Arbitrary BV where
-    arbitrary = do
-        len <- arbitrary :: Gen (Positive Int)
-        boolList <- vector (getPositive len)
-        pure $ fromBits boolList 
+-}
