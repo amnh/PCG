@@ -24,13 +24,22 @@ import Data.MonoTraversable
 
 import GHC.Stack            (errorWithStackTrace)
 
-{- LAWS:
- - decodeChar alphabet . encodeChar alphabet . toList == id
- - encodeChar alphabet [alphabet ! i] == bit i
- - encodeChar alphabet alphabet == complement (bit (length alphabet - 1) `clearBit` (bit (length alphabet - 1))
- - decodeChar alphabet (encodeChar alphabet xs .|. encodeChar alphabet ys) == toList alphabet `Data.List.intersect` (toList xs `Data.List.union` toList ys)
- - decodeChar alphabet (encodeChar alphabet xs .&. encodeChar alphabet ys) == toList alphabet `Data.List.intersect` (toList xs `Data.List.intersect` toList ys)
+{- | Represents a character of fixed width encoding one or more character states.
+ -
+ - Laws:
+ -
+ - @decodeChar alphabet . encodeChar alphabet . toList == id@
+ -
+ - @encodeChar alphabet [alphabet ! i] == bit i@
+ -
+ - @encodeChar alphabet alphabet == complement (bit (length alphabet - 1) `clearBit` (bit (length alphabet - 1))@
+ -
+ - @decodeChar alphabet (encodeChar alphabet xs .|. encodeChar alphabet ys) == toList alphabet `Data.List.intersect` (toList xs `Data.List.union` toList ys)@
+ - 
+ - @decodeChar alphabet (encodeChar alphabet xs .&. encodeChar alphabet ys) == toList alphabet `Data.List.intersect` (toList xs `Data.List.intersect` toList ys)@
+ -
  -}
+-- TODO: Add more laws here.
 class Bits b => EncodableStaticCharacter b where
   decodeChar ::  Eq a              => Alphabet a -> b   -> [a]
   encodeChar :: (Eq a, Foldable t) => Alphabet a -> t a -> b
@@ -38,10 +47,12 @@ class Bits b => EncodableStaticCharacter b where
   getGapChar ::  b -> b
   getGapChar = bit . pred . stateCount
 
-{- LAWS:
+{- | Represents a character of variable length representing multiple encoded static characters.
+ -
  - decodeMany alphabet . encodeMany alphabet == fmap toList . toList
- - TODO: Add more laws here
+ - 
  -}
+-- TODO: Add more laws here
 class ( EncodableStaticCharacter (Element s)
       , MonoTraversable s
       ) => EncodableDynamicCharacter s where
