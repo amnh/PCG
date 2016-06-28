@@ -20,11 +20,13 @@ import           Analysis.Parsimony.Binary.Optimization
 import           Analysis.Parsimony.Binary.DirectOptimization
 import           Analysis.ImpliedAlignment.Internal
 import           Analysis.ImpliedAlignment.Standard
+import           Analysis.ImpliedAlignment.DynamicProgramming
 import           Bio.Character.Dynamic.Coded
 import           Bio.Character.Parsed
 import           Bio.Metadata
 import           Bio.PhyloGraph
-
+import           Bio.PhyloGraph.Network           (nodeIsLeaf)
+import           Bio.PhyloGraph.Node.ImpliedAlign (getHomologies')
 import           Data.Alphabet
 import           Data.BitVector          (BitVector, setBit, bitVec)
 import           Data.Foldable
@@ -45,7 +47,8 @@ import Debug.Trace
 
 testSuite :: TestTree
 testSuite = testGroup "Implied Alignment"
-          [ numerate
+          [ testNumerate
+          , testImpliedAlignmentCases
           , fullIA
           ]
 
@@ -183,8 +186,8 @@ checkLen inSolution = checkLS
                           where
                             checkL n (_, s) = and $ V.zipWith ((<=) `on` olength) (getFinalGapped n) s
 
-numerate :: TestTree
-numerate = testGroup "Numeration properties" [ idHolds
+testNumerate :: TestTree
+testNumerate = testGroup "Numeration properties" [ idHolds
                                              , lengthHolds
                                              , counterIncrease
                                              , monotonic
@@ -228,6 +231,33 @@ partNumerate :: DAG -> Node -> Vector m -> Counts -> Node -> (Counts, t)
 partNumerate inTree curNode inMeta curCounts stopNode
     | (code curNode) == (code stopNode) = (curCounts, inTree)
     | otherwise = partNumerate -}
+
+testImpliedAlignmentCases :: TestTree
+testImpliedAlignmentCases = testGroup "Explicit test cases for implied alignment" [testDeletedInsertion]
+  where
+    testDeletedInsertion = testCase "Deletion event of an insertion event" . assertBool (show tree') $ oall leafProperty tree'
+      where
+        leafProperty n = not (n `nodeIsLeaf` tree') || characterMatch n "AG--TT" || characterMatch n "AGCCTT"
+        characterMatch n xs = (fmap (decodeDynamic alphabet) . headMay . getHomologies') n == Just (pure . pure <$> xs)
+        alphabet = constructAlphabet $ pure <$> "ACGT" :: Alphabet String
+        tree' = deriveImpliedAlignments defMeta $ allOptimization 1 defMeta tree
+        tree = createSimpleTree 0 "ACGT"
+             [ ( 0,       "", [ 1, 2])
+             , ( 1,   "AGTT",     [])
+             , ( 2,       "", [ 3, 4])
+             , ( 3,   "AGTT",     [])
+             , ( 4,       "", [ 5, 6])
+             , ( 5,   "AGTT",     [])
+             , ( 6,       "", [ 7, 8])
+             , ( 7, "AGCCTT",     [])
+             , ( 8,       "", [ 9,10])
+             , ( 9, "AGCCTT",     [])
+             , (10,       "", [11,12])
+             , (11, "AGCCTT",     [])
+             , (12,       "", [13,14])
+             , (13,   "AGTT",     [])
+             , (14,   "AGTT",     [])
+             ]
 
 -- | Useful function to convert encoding information to two encoded seqs
 encodeArbSameLen :: (GoodParsedChar, GoodParsedChar) -> (DynamicChar, DynamicChar)

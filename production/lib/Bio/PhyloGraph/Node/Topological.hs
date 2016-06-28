@@ -35,16 +35,18 @@ data TopoNode b
    , isLeaf       :: Bool
    , name         :: String
    , children     :: [TopoNode b]
-   , encoded      :: Vector DynamicChar -- | Encoded version of original assignment.
-   , packed       :: Vector DynamicChar -- | Packed version of the sequence.
-   , preliminary  :: Vector DynamicChar -- | Preliminary assignment at a node.
-   , final        :: Vector DynamicChar -- | Final assignment at a node.
-   , temporary    :: Vector DynamicChar -- | Multipurpose temporary assignment.
-   , aligned      :: Vector DynamicChar -- | The alignment between the children.
-   , random       :: Vector DynamicChar -- | The assignment with a single state randomly selected to remove ambiguity.
-   , union        :: Vector DynamicChar -- | The union assignment.
-   , single       :: Vector DynamicChar -- | The single assignment.
-   , gapped       :: Vector DynamicChar -- | The final assignment with gaps for alignment.
+   , encoded      :: Vector DynamicChar -- ^ Encoded version of original assignment.
+   , packed       :: Vector DynamicChar -- ^ Packed version of the sequence.
+   , preliminary  :: Vector DynamicChar -- ^ Preliminary assignment at a node.
+   , final        :: Vector DynamicChar -- ^ Final assignment at a node.
+   , leftAlign    :: Vector DynamicChar
+   , rightAlign   :: Vector DynamicChar
+   , temporary    :: Vector DynamicChar -- ^ Multipurpose temporary assignment.
+   , aligned      :: Vector DynamicChar -- ^ The alignment between the children.
+   , random       :: Vector DynamicChar -- ^ The assignment with a single state randomly selected to remove ambiguity.
+   , union        :: Vector DynamicChar -- ^ The union assignment.
+   , single       :: Vector DynamicChar -- ^ The single assignment.
+   , gapped       :: Vector DynamicChar -- ^ The final assignment with gaps for alignment.
    , localCost    :: Double
    , totalCost    :: Double
    } deriving (Eq, Show)
@@ -54,7 +56,7 @@ data TopoNode b
 -- where the second subtree passed becomes a child of the first
 -- edit: and the root of the second tree is deleted?
 instance Monoid (TopoNode b) where
-     mempty = TopoNode False False mempty mempty mempty mempty mempty mempty mempty mempty mempty mempty mempty mempty 0 0
+     mempty = TopoNode False False mempty mempty mempty mempty mempty mempty mempty mempty mempty mempty mempty mempty mempty mempty 0 0
      mappend n1 n2 = n1 {children = n2 : children n1}
 
 instance Arbitrary (TopoNode b) where
@@ -78,10 +80,10 @@ arbitraryTopoGivenCAL maxChildren inAlph (curLevel, maxLevel) = do
      let leaf    =  ncFinal == 0
      -- from here, meaningless, as costs are random, and number of seqs is not correlated to the number of taxa
      -- also, if this is to be used for testing, internal seq assignments and cost assignments are pointless
-     seqs        <- vectorOf 10 (arbitraryDynamicsGA inAlph)
+     seqs        <- vectorOf 12 (arbitraryDynamicsGA inAlph)
      costLoc     <- arbitrary :: Gen Double
      costTot     <- arbitrary :: Gen Double
-     pure $ TopoNode root leaf name' chillens (head seqs) (seqs !! 1) (seqs !! 2) (seqs !! 3) (seqs !! 4) (seqs !! 5) (seqs !! 6) (seqs !! 7) (seqs !! 8) (seqs !! 9) costLoc costTot
+     pure $ TopoNode root leaf name' chillens (head seqs) (seqs !! 1) (seqs !! 2) (seqs !! 3) (seqs !! 4) (seqs !! 5) (seqs !! 6) (seqs !! 7) (seqs !! 8) (seqs !! 9) (seqs !! 10) (seqs !! 11) costLoc costTot
 
 
 -- TODO: Does this generation correcly generate a tree with appropriate
@@ -94,7 +96,7 @@ arbitraryTopoGivenCSNA maxChildren namesAndSeqs inMeta (curLevel, maxLevel)
   | length namesAndSeqs <= 1 = do
       c2       <- arbitrary :: Gen Double
       c3       <- arbitrary :: Gen Double
-      pure $ TopoNode root False myName mempty coded coded mempty mempty mempty mempty mempty mempty mempty mempty c2 c3
+      pure $ TopoNode root False myName mempty coded coded mempty mempty mempty mempty mempty mempty mempty mempty mempty mempty c2 c3
   | otherwise = do
       nc              <- (arbitrary :: Gen Int) `suchThat` (<= maxChildren)
       let ncFinal     =  if curLevel == maxLevel then 0 else nc
@@ -104,7 +106,7 @@ arbitraryTopoGivenCSNA maxChildren namesAndSeqs inMeta (curLevel, maxLevel)
       let leaf        = ncFinal == 0
       c2              <- arbitrary :: Gen Double
       c3              <- arbitrary :: Gen Double
-      pure $ TopoNode root leaf myName chillens coded coded mempty mempty mempty mempty mempty mempty mempty mempty c2 c3
+      pure $ TopoNode root leaf myName chillens coded coded mempty mempty mempty mempty mempty mempty mempty mempty mempty mempty c2 c3
     where
       (myName, mySeqs) = head namesAndSeqs
       root  = curLevel == 0

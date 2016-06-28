@@ -103,6 +103,8 @@ data TestingDecoration
    , dFinal            :: Vector DynamicChar
    , dGapped           :: Vector DynamicChar
    , dPreliminary      :: Vector DynamicChar
+   , dLeftAlignment    :: Vector DynamicChar
+   , dRightAlignment   :: Vector DynamicChar
    , dAligned          :: Vector DynamicChar
    , dTemporary        :: Vector DynamicChar
    , dLocalCost        :: Double
@@ -118,6 +120,8 @@ def = Decorations
     , dFinal            = mempty
     , dGapped           = mempty
     , dPreliminary      = mempty
+    , dLeftAlignment    = mempty
+    , dRightAlignment   = mempty
     , dAligned          = mempty
     , dTemporary        = mempty
     , dLocalCost        = 0.0
@@ -145,12 +149,14 @@ instance Show TestingDecoration where
 --        ,  ("TotalCost   " <>)  <$> h dTotalCost
         ]
       renderedDecorations =
-        [ g "Encoded              " <$> f dEncoded
-        , g "Final Ungapped       " <$> f dFinal
-        , g "Final Gapped         " <$> f dGapped
-        , g "Preliminary Ungapped " <$> f dPreliminary
-        , g "Preliminary Gapped   " <$> f dAligned
-        , g "Implied Alignment    " <$> f dImpliedAlignment
+        [ g "Encoded                   " <$> f dEncoded
+        , g "Final Ungapped            " <$> f dFinal
+        , g "Final Gapped              " <$> f dGapped
+        , g "Preliminary Ungapped      " <$> f dPreliminary
+        , g "Preliminary Gapped        " <$> f dAligned
+        , g "Left  Child-wise Alignment" <$> f dLeftAlignment
+        , g "Right Child-wise Alignment" <$> f dRightAlignment
+        , g "Implied Alignment         " <$> f dImpliedAlignment
         ]
       f x = renderDynamicCharacter <$> headMay (x decoration)
       g prefix shown = prefix <> ": " <> shown --intercalate "\n" $ (prefix <> ": " <> y) : (("  " <>) <$> zs)
@@ -246,6 +252,16 @@ instance RN.PreliminaryNode SimpleTree DynamicChar where
 
     getPreliminaryGapped   (TT n) = dAligned $ rootLabel n
     setPreliminaryGapped x (TT n) = TT $ n { rootLabel = decoration { dAligned = x } }
+      where
+        decoration = rootLabel n
+
+    getLeftAlignment    (TT n) = dPreliminary $ rootLabel n
+    setLeftAlignment  x (TT n) = TT $ n { rootLabel = decoration { dLeftAlignment = x } }
+      where
+        decoration = rootLabel n
+
+    getRightAlignment   (TT n) = dAligned $ rootLabel n
+    setRightAlignment x (TT n) = TT $ n { rootLabel = decoration { dRightAlignment = x } }
       where
         decoration = rootLabel n
 

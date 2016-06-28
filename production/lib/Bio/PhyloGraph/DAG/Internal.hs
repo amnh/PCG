@@ -27,6 +27,7 @@ import qualified Bio.PhyloGraph.Network             as N
 import qualified Bio.PhyloGraph.Network.Subsettable as SN
 import           Bio.PhyloGraph.Node
 --import           Bio.PhyloGraph.Node.Referential          ()
+import           Bio.PhyloGraph.Node.Preliminary          (getLeftAlignment, getRightAlignment)
 import           Bio.PhyloGraph.Node.Topological          (TopoNode)
 import qualified Bio.PhyloGraph.Node.Topological    as TN
 import qualified Bio.PhyloGraph.Tree.EdgeAware      as ET
@@ -138,26 +139,28 @@ binaryTreeToDAG binaryRoot = DAG
            resultingOutNodes = IM.insert  counter'   (EdgeInfo 0 internalNode (nodeMap' ! counter'   ) Nothing)
                               (IM.insert (counter+1) (EdgeInfo 0 internalNode (nodeMap' ! (counter+1)) Nothing) mempty)
            internalNode = Node 
-                        { nodeIdx             = counter
-                        , name                = "HTU: " <> show counter
-                        , isRoot              = null $ maybe [] pure parentMay
-                        , isLeaf              = False
-                        , children            = [counter+1, counter']
-                        , parents             = maybe [] pure parentMay
-                        , encoded             = mempty
-                        , packed              = mempty
-                        , preliminaryUngapped = mempty
-                        , finalUngapped       = mempty
+                        { nodeIdx                 = counter
+                        , name                    = "HTU: " <> show counter
+                        , isRoot                  = null $ maybe [] pure parentMay
+                        , isLeaf                  = False
+                        , children                = [counter+1, counter']
+                        , parents                 = maybe [] pure parentMay
+                        , encoded                 = mempty
+                        , packed                  = mempty
                         --, temporary   = mempty
-                        , preliminaryGapped   = mempty
-                        , random              = mempty
-                        , union               = mempty
-                        , single              = mempty
-                        , finalGapped         = mempty
-                        , iaHomology          = mempty
-                        , impliedAlignment    = mempty
-                        , localCost           = 0
-                        , totalCost           = 0
+                        , random                  = mempty
+                        , union                   = mempty
+                        , single                  = mempty
+                        , preliminaryUngapped     = mempty
+                        , preliminaryGapped       = mempty
+                        , finalUngapped           = mempty
+                        , finalGapped             = mempty
+                        , leftChildwiseAlignment  = mempty
+                        , rightChildwiseAlignment = mempty 
+                        , iaHomology              = mempty
+                        , impliedAlignment        = mempty
+                        , localCost               = 0
+                        , totalCost               = 0
                         }
        inNodeSet :: Maybe Int -> IntSet
        inNodeSet (Just parentReference) = IS.insert parentReference mempty
@@ -375,26 +378,28 @@ fromTopo topoDag = DAG
     nodeVector :: Vector NodeInfo
     !nodeVector = V.generate (length reference) f
       where
-        f i = Node { nodeIdx             = i
-                   , name                = TN.name topoRef
-                   , isRoot              = null parents'
-                   , isLeaf              = null children'
-                   , children            = children'
-                   , parents             = parents'
-                   , encoded             = TN.encoded     topoRef
-                   , packed              = TN.packed      topoRef
-                   , preliminaryUngapped = TN.preliminary topoRef
-                   , finalUngapped       = TN.final       topoRef
+        f i = Node { nodeIdx                 = i
+                   , name                    = TN.name topoRef
+                   , isRoot                  = null parents'
+                   , isLeaf                  = null children'
+                   , children                = children'
+                   , parents                 = parents'
+                   , encoded                 = TN.encoded    topoRef
+                   , packed                  = TN.packed     topoRef
                    --, temporary           = TN.temporary   topoRef
-                   , preliminaryGapped   = TN.aligned     topoRef
-                   , random              = TN.random      topoRef
-                   , union               = TN.union       topoRef
-                   , single              = TN.single      topoRef
-                   , finalGapped         = TN.gapped      topoRef
-                   , iaHomology          = mempty
-                   , impliedAlignment    = mempty
-                   , localCost           = TN.localCost   topoRef
-                   , totalCost           = TN.totalCost   topoRef
+                   , random                  = TN.random      topoRef
+                   , union                   = TN.union       topoRef
+                   , single                  = TN.single      topoRef
+                   , preliminaryUngapped     = TN.preliminary topoRef
+                   , preliminaryGapped       = TN.aligned     topoRef
+                   , finalUngapped           = TN.final       topoRef
+                   , finalGapped             = TN.gapped      topoRef
+                   , leftChildwiseAlignment  = TN.leftAlign   topoRef
+                   , rightChildwiseAlignment = TN.rightAlign  topoRef
+                   , iaHomology              = mempty
+                   , impliedAlignment        = mempty
+                   , localCost               = TN.localCost   topoRef
+                   , totalCost               = TN.totalCost   topoRef
                    }
             where
                 (parentRefs, topoRef, childRefs) = reference ! i
@@ -444,6 +449,8 @@ nodeToTopo inDAG curNode
                    --(temporary   curNode)
                    mempty
                    (getPreliminaryGapped   curNode)
+                   mempty
+                   mempty
                    (random                 curNode)
                    (union                  curNode)
                    (single                 curNode)
@@ -503,4 +510,4 @@ fromNewick forest = fst $ foldr convertNewickForest ([], 1) forest
             myCost      = fromMaybe 0 (New.branchLength inTree)
             --recurse = V.toList $ V.imap (\i n -> internalNewick n (nameCount + i + 1)) (V.fromList $ New.descendants inTree) 
             (recurse, nextNameCount) = foldr (\n (acc,i) -> first (: acc) $ internalNewick i n) baseCase (New.descendants inTree) 
-            outNode     = TN.TopoNode False (null $ New.descendants inTree) myName recurse mempty mempty mempty mempty mempty mempty mempty mempty mempty mempty myCost 0
+            outNode     = TN.TopoNode False (null $ New.descendants inTree) myName recurse mempty mempty mempty mempty mempty mempty mempty mempty mempty mempty mempty mempty myCost 0

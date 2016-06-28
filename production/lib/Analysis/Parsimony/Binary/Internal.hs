@@ -139,19 +139,23 @@ nodeOptimizePostorder weighting curNode lNode rNode meta = summedTotalCost `setT
                  . addPreliminary assign
                  $ setNode
             | getType metadataStructure == DirectOptimization =
-                let (ungapped, cost, gapped, _, _) = naiveDO (getForAlign lNode ! curPos) (getForAlign rNode ! curPos) $ getCosts metadataStructure
+                let (ungapped, cost, gapped, leftAlignment, rightAlignment) = naiveDO (getForAlign lNode ! curPos) (getForAlign rNode ! curPos) $ getCosts metadataStructure
                 in addLocalCost (cost * curWeight * weighting)
-                 . addAlign gapped
-                 . addPreliminary ungapped
+                 . addAlign          gapped
+                 . addPreliminary    ungapped
+                 . addLeftAlignment  leftAlignment
+                 . addRightAlignment rightAlignment
                  $ setNode
             | otherwise = error "Unrecognized optimization type"
             where curWeight = getWeight metadataStructure
 
-        addPreliminary  = addToField setPreliminaryUngapped getPreliminaryUngapped
-        addAlign       addVal node = addToField setPreliminaryGapped   getPreliminaryGapped   addVal node
+        addPreliminary    = addToField setPreliminaryUngapped getPreliminaryUngapped
+        addLeftAlignment  = addToField setLeftAlignment  getLeftAlignment
+        addRightAlignment = addToField setRightAlignment getRightAlignment
+        addAlign          addVal node = addToField setPreliminaryGapped   getPreliminaryGapped   addVal node
 --        addTemporary   addVal node = addToField setTemporary   getTemporary        addVal node
 --        addTotalCost   addVal node = setTotalCost (addVal + getTotalCost node) node
-        addLocalCost   addVal node = setLocalCost (addVal + getLocalCost node) node
+        addLocalCost      addVal node = setLocalCost (addVal + getLocalCost node) node
 
 -- | Wrapper for the preorder
 -- Takes in a tree and a vector of metadata,
@@ -168,7 +172,7 @@ treeInternalPreorderTraversal :: (TreeConstraint' t n s, Metadata m s) => Maybe 
 treeInternalPreorderTraversal parentNode node tree meta  = 
   case children' of
       left:right:_ -> let mutatedSelf = nodeOptimizePreorder node left right parentNode meta 
-                      in mutatedSelf : concatMap (\x -> treeInternalPreorderTraversal (Just mutatedSelf) x tree meta) children'
+                      in  mutatedSelf : concatMap (\x -> treeInternalPreorderTraversal (Just mutatedSelf) x tree meta) children'
       _            -> concatMap (\x -> treeInternalPreorderTraversal (Just node) x tree meta) children'
   where
       children' = children node tree
@@ -225,3 +229,4 @@ getChildCharacterForDoPreorder node
 -- and sets that value on the node. It returns a new node with the newly computed value set.
 addToField :: NodeConstraint' n s => (Vector s -> n -> n) -> (n -> Vector s) -> s -> n -> n
 addToField setter getter val node = setter (pure val <> getter node) node
+
