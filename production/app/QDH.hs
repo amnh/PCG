@@ -18,7 +18,7 @@ handleInput :: [String] -> SimpleTree
 handleInput args = fromMaybe exampleTree $ trySimpleTree args <|> trySimpleBinaryTree args
 
 compute :: SimpleTree -> IO ()
-compute = print . deriveImpliedAlignments defMeta . allOptimization 0 defMeta 
+compute = print . deriveImpliedAlignments defMeta . allOptimization 1 defMeta 
 
 trySimpleTree :: [String] -> Maybe SimpleTree
 trySimpleTree xs = do
