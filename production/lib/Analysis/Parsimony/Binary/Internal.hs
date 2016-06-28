@@ -31,8 +31,18 @@ import Bio.PhyloGraph.Solution
 --import Bio.PhyloGraph.Tree.Rose
 --import Data.Matrix.NotStupid (Matrix, nrows, ncols, setElem)
 --import Data.Maybe
+import Data.Foldable
+import Data.Function.Memoize (Memoizable)
+import Data.IntMap           (IntMap)
+import qualified Data.IntMap as IM
+import Data.Key       hiding ((!))
 import Data.Monoid
-import Data.Vector           (Vector, ifoldr, (!))
+import Data.MonoTraversable
+import Data.Ord              (comparing)
+import Data.Vector           (Vector, (!), ifoldr)
+import Prelude        hiding (lookup)
+
+import Debug.Trace (trace)
 
 -- !!!TODO: Remove weighting.
 
@@ -114,6 +124,8 @@ treeInternalPostorderTraversal weighting node tree meta = (decoratedSelf, decora
       decorateInternal otherNode = -- setTemporary   (getTemporary        otherNode)
                                    setPreliminaryGapped   (getPreliminaryGapped   otherNode)
                                  . setPreliminaryUngapped (getPreliminaryUngapped otherNode)
+                                 . setLeftAlignment       (getLeftAlignment       otherNode)
+                                 . setRightAlignment      (getRightAlignment      otherNode)
                                  . setTotalCost           (getTotalCost           otherNode)
                                  . setLocalCost           (getLocalCost           otherNode)
 
@@ -198,10 +210,17 @@ nodeOptimizePreorder curNode lNode rNode pNode = ifoldr chooseOptimization curNo
                          . addToField setFinalGapped getFinalGapped (getPreliminaryGapped   setNode ! i)
                          $ setNode
                 Just parentNode -> 
-                  let (final, _, finalAligned, _, _) = naiveDO (getFinal parentNode ! i) (getChildCharacterForDoPreorder curNode ! i) $ getCosts metadataStructure
-                  in addToField setFinal       getFinal       final
-                   . addToField setFinalGapped getFinalGapped finalAligned
-                   $ setNode
+                  let costStructure    = getCosts metadataStructure
+                      childCharacter   = (\x -> trace (show x) x) $ getChildCharacterForDoPreorder curNode ! i
+                      parentCharacter  = (\x -> trace (show x) x) $ getFinal parentNode ! i
+                      (_, _, parentChildAlignment, _, _) = naiveDO parentCharacter childCharacter costStructure
+                      newGapIndicies   = (\x -> trace (show x) x) $ newGapLocations childCharacter parentChildAlignment
+                      leftCharacter    = (\x -> trace (show x) x) $ insertNewGaps newGapIndicies $ getLeftAlignment  curNode ! i
+                      rightCharacter   = (\x -> trace (show x) x) $ insertNewGaps newGapIndicies $ getRightAlignment curNode ! i
+                      (_, finalUngapped, finalGapped) = threeWayMean costStructure parentChildAlignment leftCharacter rightCharacter
+                  in  addToField setFinal       getFinal       finalUngapped
+                    . addToField setFinalGapped getFinalGapped finalGapped
+                    $ setNode
             | otherwise = error "Unrecognized optimization type"
 
 -- | getForAlign returns the sequences from a node, where the node type is either 'EncodedNode' or 'PreliminaryNode'.
@@ -216,7 +235,7 @@ getForAlign node
 --   optimization preorder traversal from the child node. We conditionally
 --   select one of two fields. The gapped preliminary node assignment is
 --   preferenced and returned if not null. It is assumed that all internal nodes
---   will have a non null vecotr of preliminary node assignemnt characters. If
+--   will have a non null vector of preliminary node assignemnt characters. If
 --   the gapped preliminary vector is null, itis assumed that the node is a leaf
 --   node and the original dynamic character encodings are returned.
 getChildCharacterForDoPreorder ::  (PreliminaryNode n s, EncodedNode n s) => n -> Vector s
@@ -230,3 +249,39 @@ getChildCharacterForDoPreorder node
 addToField :: NodeConstraint' n s => (Vector s -> n -> n) -> (n -> Vector s) -> s -> n -> n
 addToField setter getter val node = setter (pure val <> getter node) node
 
+newGapLocations :: (EncodableDynamicCharacter c) => c -> c -> IntMap Int
+newGapLocations originalChar newChar
+  | olength originalChar == olength newChar = mempty
+  | otherwise                               = newGaps
+  where
+    (_,_,newGaps) = ofoldl' f (xs, 0, mempty) newChar
+    gap = getGapChar $ newChar `indexChar` 0
+    xs  = otoList originalChar
+    f (  [], i, is) e
+      | e == gap  = ([], i, IM.insertWith (+) i 1 is)
+      | otherwise = ([], i, is)
+    f (x:xs, i, is) e
+      | e == gap && x /= gap = (x:xs, i  , IM.insertWith (+) i 1 is)
+      | otherwise            = (  xs, i+1, is)
+
+insertNewGaps :: EncodableDynamicCharacter c => IntMap Int -> c -> c
+insertNewGaps insertionIndicies = constructDynamic . foldMapWithKey f . otoList
+  where
+    f i e =
+      case i `lookup` insertionIndicies of
+        Nothing -> [e]
+        Just n  -> replicate n (getGapChar e) <> [e]
+      
+threeWayMean :: (Show c, EncodableDynamicCharacter c, Memoizable (Element c)) => CostStructure -> c -> c -> c -> (Double, c, c)
+threeWayMean costStructure char1 char2 char3
+  | not uniformLength = error $ "Three sequences supplied to 'threeWayMean' function did not have uniform length." <> show char1 <> show char2 <> show char3
+  | otherwise         = (sum costs, constructDynamic $ filter (/= gap) meanStates, constructDynamic meanStates)
+  where
+    gap                 = getGapChar $ char1 `indexChar` 0
+    uniformLength       = olength char1 == olength char2 && olength char2 == olength char3
+    (meanStates, costs) = unzip $ zipWith3 f (otoList char1) (otoList char2) (otoList char3)
+    f a b c = minimumBy (comparing snd)
+            [ getOverlap a b costStructure
+            , getOverlap a c costStructure
+            , getOverlap b c costStructure
+            ]

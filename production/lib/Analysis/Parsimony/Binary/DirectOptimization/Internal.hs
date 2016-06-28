@@ -234,7 +234,7 @@ getCost :: EncodableStaticCharacter s => CostStructure -> (Int, s) -> (Int, s) -
 getCost costStruct seqTup1 seqTup2 = 
     case (costStruct, seqTup1, seqTup2) of
        -- (AffineCost {}        , _         , _         ) -> error "Cannot apply DO algorithm on affine cost" -- When this is added, remember to write a test.
-        (TCM costMatrix           , (pos1, c1), (pos2, c2)) -> (c1 .|. c2, costMatrix ! (pos1, pos2))
+        (TCM costMatrix       , (pos1, c1), (pos2, c2)) -> (c1 .|. c2, costMatrix ! (pos1, pos2))
         (GeneralCost indel sub, (_   , c1), (_   , c2)) -> if c1 == gap || c2 == gap 
                                                            then (c1 .|. c2, indel) 
                                                            else (c1 .|. c2, sub)
