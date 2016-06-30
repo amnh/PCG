@@ -255,12 +255,12 @@ instance RN.PreliminaryNode SimpleTree DynamicChar where
       where
         decoration = rootLabel n
 
-    getLeftAlignment    (TT n) = dPreliminary $ rootLabel n
+    getLeftAlignment    (TT n) = dLeftAlignment $ rootLabel n
     setLeftAlignment  x (TT n) = TT $ n { rootLabel = decoration { dLeftAlignment = x } }
       where
         decoration = rootLabel n
 
-    getRightAlignment   (TT n) = dAligned $ rootLabel n
+    getRightAlignment   (TT n) = dRightAlignment $ rootLabel n
     setRightAlignment x (TT n) = TT $ n { rootLabel = decoration { dRightAlignment = x } }
       where
         decoration = rootLabel n
