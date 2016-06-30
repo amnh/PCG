@@ -23,7 +23,6 @@
 module Bio.Character.Dynamic.Coded.Internal
   ( DynamicChar (DC)
   , DynamicChars
-  , arbitraryDynamicsGA
   ) where
 
 import           Bio.Character.Dynamic.Coded.Class
@@ -177,16 +176,6 @@ instance Arbitrary DynamicChar where
         let randVal  =  choose (1, 2 ^ symbolCount - 1) :: Gen Integer
         bitRows      <- vectorOf characterLen randVal
         pure . DC . fromRows $ bitVec symbolCount <$> bitRows
-
--- | Function to generate an arbitrary DynamicChar given an alphabet
-arbitraryDynamicGivenAlph :: Alphabet String -> Gen DynamicChar
-arbitraryDynamicGivenAlph inAlph = do
-  arbParsed <- arbitrary :: Gen ParsedChar
-  pure $ encodeDynamic inAlph arbParsed
-
--- | Generate many dynamic characters using the above
-arbitraryDynamicsGA :: Alphabet String -> Gen DynamicChars
-arbitraryDynamicsGA inAlph = V.fromList <$> listOf (arbitraryDynamicGivenAlph inAlph)
 
 -- | Functionality to unencode many encoded sequences
 -- decodeMany :: DynamicChars -> Alphabet -> ParsedChars

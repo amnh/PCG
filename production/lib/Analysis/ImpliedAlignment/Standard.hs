@@ -11,7 +11,7 @@
 -- Standard algorithm for implied alignment
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE FlexibleContexts, TypeFamilies #-}
 
 -- TODO: Make an AppliedAlignment.hs file for exposure of appropriate functions
 

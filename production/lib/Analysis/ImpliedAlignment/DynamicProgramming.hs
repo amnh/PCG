@@ -395,7 +395,7 @@ numeration sequenceIndex costStructure tree = tree `update` updatedLeafNodes
 --        opt (i,j) | trace (mconcat ["opt (",show i,",",show j,")"]) False = undefined
         opt (i,j)
           -- The root node (base case)
-          | i == rootIndex && j == rootIndex = {- (\x -> trace (show x) x) -} rootNodeValue
+          | i == rootIndex && j == rootIndex = {--} (\x -> trace (show x) x) {--} rootNodeValue
           -- A non-root node
           | i == j                           = {- (\e@(_,x,y) -> trace (mconcat ["opt(", show i,",",show j,") ",show x," ",show y]) e) -}
                                                 nonRootNodeValue

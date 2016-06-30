@@ -15,7 +15,7 @@
 
 {-# LANGUAGE TypeSynonymInstances, FlexibleInstances, MultiParamTypeClasses #-}
 
-module Bio.PhyloGraph.Node.Topological (TopoNode(..), arbitraryTopoGivenCAL, arbitraryTopoGivenCSNA) where
+module Bio.PhyloGraph.Node.Topological (TopoNode(..){-, arbitraryTopoGivenCAL, arbitraryTopoGivenCSNA -}) where
 
 import           Bio.Character.Dynamic.Coded
 import           Bio.Character.Dynamic.Coded.Internal
@@ -58,7 +58,7 @@ data TopoNode b
 instance Monoid (TopoNode b) where
      mempty = TopoNode False False mempty mempty mempty mempty mempty mempty mempty mempty mempty mempty mempty mempty mempty mempty 0 0
      mappend n1 n2 = n1 {children = n2 : children n1}
-
+{-
 instance Arbitrary (TopoNode b) where
     arbitrary = do
         arbAlph <- arbitrary :: Gen (Alphabet String)
@@ -115,3 +115,4 @@ arbitraryTopoGivenCSNA maxChildren namesAndSeqs inMeta (curLevel, maxLevel)
         case s of 
           Nothing -> constructDynamic []
           Just c  -> encodeDynamic (alphabet m) c 
+-}

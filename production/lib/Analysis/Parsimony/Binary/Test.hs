@@ -52,22 +52,9 @@ testSuite = testGroup "Binary optimization" [doProperties, fitchProperties, trav
 -- | Check properties of the DO algorithm
 doProperties :: TestTree
 doProperties = testGroup "Properties of the DO algorithm"
-      [ idHolds
-      , simpleDO1
+      [ simpleDO1
       ]
     where
-        idHolds = testProperty "When DO runs a sequence against itself, get input as result" checkID
-            where
-                checkID :: DynamicChar -> Bool
-                checkID inSeq = main   == (constructDynamic . filter (/= gap) . otoList) inSeq
-                             && cost   == 0
-                             && gapped == inSeq
-                             && left   == inSeq
-                             && right  == inSeq
-                    where
-                      (main, cost, gapped, left, right) = naiveDO inSeq inSeq costStructure
-                      gap = getGapChar $ inSeq `indexChar` 0
-
         seq1    = encodeDynamic standardAlph (V.fromList [["A"], ["T"], ["T"]]) :: DynamicChar
         seq2    = encodeDynamic standardAlph (V.fromList [["A"], ["G"]])        :: DynamicChar
         result1 = naiveDO seq1 seq2 costStructure
