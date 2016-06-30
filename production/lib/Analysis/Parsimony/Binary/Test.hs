@@ -47,9 +47,11 @@ decodeIt :: DynamicChar -> [[String]]
 decodeIt = decodeDynamic standardAlph
 
 testSuite :: TestTree
-testSuite = testGroup "Binary optimization" [doProperties, fitchProperties, traversalProperties]
+testSuite = testGroup "Binary optimization" [fitchProperties, traversalProperties]
 
+-- I think this test for an exact values relies on implictic bias, making it not a great test?
 -- | Check properties of the DO algorithm
+{-
 doProperties :: TestTree
 doProperties = testGroup "Properties of the DO algorithm"
       [ simpleDO1
@@ -61,6 +63,8 @@ doProperties = testGroup "Properties of the DO algorithm"
         --expected1 :: (DynamicChar, Double, DynamicChar, DynamicChar, DynamicChar)
         expected1 = (encodeDynamic standardAlph (V.fromList [["A"], ["T", "-"], ["G", "T"]]), 2.0, encodeDynamic standardAlph (V.fromList [["A"], ["T", "-"], ["G", "T"]]), seq1, encodeDynamic standardAlph (V.fromList [["A"], ["-"], ["G"]]))
         simpleDO1 = testCase "On a simple test, DO gives expected result: ATT and AG -> A-[GT] or AG-" (expected1 @=? result1)
+-}
+
 
 -- | Check properties of the Fitch algorithm
 fitchProperties :: TestTree

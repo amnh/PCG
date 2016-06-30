@@ -81,7 +81,7 @@ directOptimizationProperties = testGroup "General properties of direct optimizat
           where
             (derivedUngapped, cost, derivedGapped, leftAlignment, rightAlignment) = naiveDO char char uniformCostStructure
 
-    equalLengthPariwiseAlignments = testProperty "Resulting alignments are same length" f
+    equalLengthPariwiseAlignments = testProperty "Resulting alignments are all of same length" f
       where
         f :: Gen Bool
         f = do

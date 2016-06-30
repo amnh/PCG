@@ -176,15 +176,15 @@ fullIA = testGroup "Full alignment properties" [ lenHoldsTest
 -}
 checkLen :: StandardSolution -> Bool
 checkLen inSolution = checkLS
-            where 
-                alignments = iaSolution $ solutionOptimization 1 inSolution
-                checkLS    = and $ zipWith checkLF (forests inSolution) alignments
-                  where
-                    checkLF f fa = and $ zipWith checkLD f fa
-                      where
-                        checkLD d a = and $ zipWith checkL (V.toList $ nodes d) (IM.toList a)
-                          where
-                            checkL n (_, s) = and $ V.zipWith ((<=) `on` olength) (getFinalGapped n) s
+  where 
+    alignments = iaSolution $ solutionOptimization 1 inSolution
+    checkLS    = and $ zipWith checkLF (forests inSolution) alignments
+      where
+        checkLF f fa = and $ zipWith checkLD f fa
+          where
+            checkLD d a = and $ zipWith checkL (V.toList $ nodes d) (IM.toList a)
+              where
+                checkL n (_, s) = and $ V.zipWith ((<=) `on` olength) (getFinalGapped n) s
 
 testNumerate :: TestTree
 testNumerate = testGroup "Numeration properties" [ idHolds

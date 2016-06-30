@@ -146,10 +146,12 @@ generateLeavesDO alphabet taxaCount = do
       sequenceLength  <- choose (1,2)
       sequence $ generateLeaf sequenceLength <$> [0..taxaCount-1]
     where
+        nullCheck [] = [gapCharacter alphabet]
+        nullCheck xs = xs
         generateDynamicCharacter :: Gen DynamicChar
         generateDynamicCharacter = do
             dynamicCharacterLength <- choose (1,2) :: Gen Int
-            fmap (encodeDynamic alphabet) . vectorOf dynamicCharacterLength . sublistOf $ toList alphabet
+            fmap (encodeDynamic alphabet) . vectorOf dynamicCharacterLength . fmap nullCheck . sublistOf $ toList alphabet
         generateLeaf sequenceLength i = do
             sequenceOfEncodedDynamicChars <- V.fromList <$> vectorOf sequenceLength generateDynamicCharacter 
             pure Node 
