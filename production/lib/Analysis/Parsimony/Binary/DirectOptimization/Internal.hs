@@ -11,7 +11,7 @@
 -- Direct optimization functionality for binary trees
 --
 -----------------------------------------------------------------------------
-{-# LANGUAGE ConstraintKinds, TypeFamilies #-}
+{-# LANGUAGE ConstraintKinds, FlexibleContexts, TypeFamilies #-}
 
 module Analysis.Parsimony.Binary.DirectOptimization.Internal where
 
@@ -26,7 +26,7 @@ import Data.Matrix.NotStupid (Matrix, matrix, nrows, ncols)
 import Data.MonoTraversable
 import Data.Ord
 
---import Debug.Trace (trace)
+import Debug.Trace (trace)
 
 -- | The direction to align the character at a given matrix point.
 data Direction = LeftArrow | DiagArrow | UpArrow deriving (Eq, Show)
@@ -37,7 +37,7 @@ data Direction = LeftArrow | DiagArrow | UpArrow deriving (Eq, Show)
 type DOAlignMatrix s = Matrix (Double, Direction, s)
 
 -- | Constraints on the input dynamic characters that direct optiomization operates on.
-type DOCharConstraint c = (EncodableDynamicCharacter c, Show c, Memoizable c)
+type DOCharConstraint c = (EncodableDynamicCharacter c, Show c, Memoizable c, Show (Element c))
 
 -- | Performs a naive direct optimization
 -- Takes in two characters to run DO on and a metadata object
@@ -62,7 +62,6 @@ naiveDO char1 char2 costStruct
     | onull char2 = (char2, 0, char2, char2, char2)
     | otherwise =
         let
-            gap      = getGapChar $ char1 `indexChar` 0
             char1Len = olength char1
             char2Len = olength char2
             (shorterChar, longerChar, _longLen) = if   char1Len > char2Len
@@ -73,14 +72,13 @@ naiveDO char1 char2 costStruct
             cost = getTotalAlignmentCost traversalMat
             (gapped, left, right) = traceback traversalMat shorterChar longerChar
             -- TODO: change to occur in traceback, to remove constant factor.
-            ungapped = constructDynamic . filter (/= gap) $ otoList gapped
+            ungapped = filterGaps gapped
             (out1, out2) = if char1Len > char2Len
                            then (right, left)
                            else (left, right)
         in (ungapped, cost, gapped, out1, out2)
-            
 
-
+           
 -- | Wrapper function to do an enhanced Needleman-Wunsch algorithm.
 -- Calls naiveDO, but only returns the last two fields (gapped alignments of inputs)
 doAlignment :: DOCharConstraint s => s -> s -> CostStructure -> (s, s)
@@ -88,6 +86,12 @@ doAlignment char1 char2 costStruct = (char1Align, char2Align)
     where
         (_, _, _, char1Align, char2Align) = naiveDO char1 char2 costStruct
         
+
+filterGaps :: EncodableDynamicCharacter c => c -> c
+filterGaps char = constructDynamic . filter (/= gap) $ otoList char
+  where
+    gap = getGapChar $ char `indexChar` 0
+
 
 -- | Main function to generate an 'DOAlignMatrix'. Works as in Needleman-Wunsch,
 -- but allows for multiple indel/replacement costs, depending on the 'CostStructure'.
@@ -98,7 +102,7 @@ doAlignment char1 char2 costStruct = (char1Align, char2Align)
 -- Returns an 'DOAlignMatrix'.
 -- TODO: See if we can move topDynChar logic inside here. It's also necessary in DO. 
 -- Or maybe DO can just call doAlignment?
-createDOAlignMatrix :: (EncodableDynamicCharacter s) => s -> s -> CostStructure -> DOAlignMatrix (Element s)
+createDOAlignMatrix :: (EncodableDynamicCharacter s, Show (Element s)) => s -> s -> CostStructure -> DOAlignMatrix (Element s)
 createDOAlignMatrix topDynChar leftDynChar costStruct = result
     where
         result = matrix (olength leftDynChar + 1) (olength topDynChar + 1) generateMat
@@ -107,12 +111,16 @@ createDOAlignMatrix topDynChar leftDynChar costStruct = result
         -- | Internal generator function for the matrix
         -- Deals with both first row and other cases, a merge of two previous algorithms
         -- generateMat :: (EncodableStaticCharacter b) => (Int, Int) -> (Double, Direction, b)
+--        generateMat (row, col) | trace (mconcat ["(",show row,",",show col,")"]) False = undefined
         generateMat (row, col)
           | row == 0 && col == 0         = (0                               , DiagArrow, gap      )
           | row == 0 && rightChar /= gap = (leftwardValue + rightOverlapCost, LeftArrow, staticCharFromLeft)
           | row == 0                     = (leftwardValue                   , LeftArrow, staticCharFromLeft)
-          | col == 0 && downChar /= gap  = (upwardValue + downOverlapCost   , UpArrow  , staticCharFromTop )
+          | col == 0 && downChar  /= gap = (upwardValue + downOverlapCost   , UpArrow  , staticCharFromTop )
           | col == 0                     = (upwardValue                     , UpArrow  , staticCharFromTop )
+          | staticCharFromLeft    == gap &&
+            staticCharFromTop     == gap = (diagCost                        , DiagArrow, gap)
+          | staticCharFromLeft ==  staticCharFromTop = (diagCost                        , DiagArrow, staticCharFromTop)
           | otherwise                    = (minCost                         , minDir   , minState )
           where
             gap                           = getGapChar . head $ otoList leftDynChar -- Why would you give me an empty Dynamic Character?
@@ -157,7 +165,7 @@ traceback alignMat' char1' char2' = ( constructDynamic $ reverse t1
         tracebackInternal alignMat char1 char2 (row, col)
             | nrows alignMat < row - 1 || ncols alignMat < col - 1 = error "Traceback cannot function because matrix is incomplete"
             | row == 0 && col == 0 = (mempty, mempty, mempty)
-            | otherwise = 
+            | otherwise = -- trace (mconcat ["(",show row,",",show col,") ",show curState]) $ 
                 let (trace1, trace2, trace3) = tracebackInternal alignMat char1 char2 (i, j)
                 in (curState : trace1, leftCharacter : trace2, rightCharacter : trace3)
             where
@@ -181,7 +189,7 @@ getTotalAlignmentCost alignmentMatrix = c
     (c, _, _) = alignmentMatrix ! (nrows alignmentMatrix - 1, ncols alignmentMatrix - 1) 
 
 -- | Memoized wrapper of the overlap function
-getOverlap :: (EncodableStaticCharacter s, Memoizable s) => s -> s -> CostStructure -> (s, Double)
+getOverlap :: (EncodableStaticCharacter c, Memoizable c, Show c) => c -> c -> CostStructure -> (c, Double)
 getOverlap inChar1 inChar2 costStruct = result
     where
         result = memoize2 (overlap costStruct) inChar1 inChar2
@@ -195,7 +203,7 @@ getOverlap inChar1 inChar2 costStruct = result
 -- if @ char1 == A,T @ and @ char2 == G,C @, and the two (non-overlapping) least cost pairs are A,C and T,G, then
 -- the return value is A,C,G,T. 
 -- Tests exist in the test suite.
-overlap :: EncodableStaticCharacter s => CostStructure -> s -> s -> (s, Double)
+overlap :: (EncodableStaticCharacter c, Show c) => CostStructure -> c -> c -> (c, Double)
 overlap costStruct char1 char2
     | intersectionStates == zeroBits = foldr1 ambigChoice $ allPossibleBaseCombosCosts costStruct char1 char2
     | otherwise                      = (intersectionStates, 0)

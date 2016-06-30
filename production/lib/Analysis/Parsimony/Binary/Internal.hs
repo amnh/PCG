@@ -211,12 +211,12 @@ nodeOptimizePreorder curNode lNode rNode pNode = ifoldr chooseOptimization curNo
                          $ setNode
                 Just parentNode -> 
                   let costStructure    = getCosts metadataStructure
-                      childCharacter   = {- (\x -> trace (show x) x) $ -} getChildCharacterForDoPreorder curNode ! i
-                      parentCharacter  = {- (\x -> trace (show x) x) $ -} getFinal parentNode ! i
+                      childCharacter   =  (\x -> trace ("childCharacter: "  <> show x) x) $ getChildCharacterForDoPreorder curNode ! i
+                      parentCharacter  =  (\x -> trace ("parentCharacter: " <> show x) x) $ getFinal parentNode ! i
                       (_, _, derivedAlignment, _, childAlignment) = naiveDO parentCharacter childCharacter costStructure
-                      newGapIndicies   = {- (\x -> trace (show x) x) $ -} newGapLocations childCharacter childAlignment
-                      leftCharacter    = {- (\x -> trace (show x) x) $ -} insertNewGaps newGapIndicies $ getLeftAlignment  curNode ! i
-                      rightCharacter   = {- (\x -> trace (show x) x) $ -} insertNewGaps newGapIndicies $ getRightAlignment curNode ! i
+                      newGapIndicies   =  (\x -> trace ("newGapIndices: "   <> show x) x) $  newGapLocations childCharacter $ (\x -> trace ("childAlignment: "   <> show x) x) $ childAlignment
+                      leftCharacter    =  (\x -> trace ("leftCharacter: "   <> show x) x) $  insertNewGaps newGapIndicies $ getLeftAlignment  curNode ! i
+                      rightCharacter   =  (\x -> trace ("rightCharacter: "  <> show x) x) $  insertNewGaps newGapIndicies $ getRightAlignment curNode ! i
                       (_, finalUngapped, finalGapped) = threeWayMean costStructure derivedAlignment leftCharacter rightCharacter
                   in  addToField setFinal       getFinal       finalUngapped
                     . addToField setFinalGapped getFinalGapped finalGapped
@@ -256,9 +256,8 @@ newGapLocations originalChar newChar
   | olength originalChar == olength newChar = mempty
   | otherwise                               = newGaps
   where
-    (_,_,newGaps) = ofoldl' f (xs, 0, mempty) newChar
+    (_,_,newGaps) = ofoldl' f (otoList originalChar, 0, mempty) newChar
     gap = getGapChar $ newChar `indexChar` 0
-    xs  = otoList originalChar
 --    f a e | trace (show a <> " " <> show e) False = undefined
     f (  [], i, is) e
       | e == gap  = ([], i, IM.insertWith (+) i 1 is)
@@ -275,15 +274,17 @@ insertNewGaps insertionIndicies = constructDynamic . foldMapWithKey f . otoList
         Nothing -> [e]
         Just n  -> replicate n (getGapChar e) <> [e]
       
-threeWayMean :: (Show c, EncodableDynamicCharacter c, Memoizable (Element c)) => CostStructure -> c -> c -> c -> (Double, c, c)
+threeWayMean :: (Show (Element c),Show c, EncodableDynamicCharacter c, Memoizable (Element c)) => CostStructure -> c -> c -> c -> (Double, c, c)
+threeWayMean _ char1 char2 char3 | trace (mconcat [show char1, show char2, show char3]) False = undefined
 threeWayMean costStructure char1 char2 char3
   | not uniformLength = error $ "Three sequences supplied to 'threeWayMean' function did not have uniform length." <> show char1 <> show char2 <> show char3
-  | otherwise         = (sum costs, constructDynamic $ filter (/= gap) meanStates, constructDynamic meanStates)
+  | otherwise         = (sum costValues, constructDynamic $ filter (/= gap) meanStates, constructDynamic meanStates)
   where
     gap                 = getGapChar $ char1 `indexChar` 0
     uniformLength       = olength char1 == olength char2 && olength char2 == olength char3
-    (meanStates, costs) = unzip $ zipWith3 f (otoList char1) (otoList char2) (otoList char3)
+    (meanStates, costValues) = unzip $ zipWith3 f (otoList char1) (otoList char2) (otoList char3)
     f a b c = minimumBy (comparing snd)
+            $ (\x -> trace (show x) x)
             [ getOverlap a b costStructure
             , getOverlap a c costStructure
             , getOverlap b c costStructure
