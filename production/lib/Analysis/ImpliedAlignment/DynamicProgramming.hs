@@ -400,7 +400,7 @@ numeration sequenceIndex costStructure tree = tree `update` updatedLeafNodes
           | i == j                           = {- (\e@(_,x,y) -> trace (mconcat ["opt(", show i,",",show j,") ",show x," ",show y]) e) -}
                                                 nonRootNodeValue
           -- An edge in the tree
-          | j `oelem` (childMapping V.! i)   = {- (\e@(_,x,_) -> trace (mconcat ["opt(", show i,",",show j,") ",show x]) e) -}
+          | j `oelem` (childMapping V.! i)   =  (\e@(_,x,_) -> trace (mconcat ["opt(", show i,",",show j,") ",show x]) e)
                                                 parentChildEdge
           -- Neither a node nor an edge
           | otherwise                        = undefined

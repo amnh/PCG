@@ -67,7 +67,7 @@ naiveDO char1 char2 costStruct
             (shorterChar, longerChar, _longLen) = if   char1Len > char2Len
                                                   then (char2, char1, char1Len)
                                                   else (char1, char2, char2Len)
-            traversalMat = -- (\x -> trace (show $ (\(a,b,_) -> (a,b)) <$> x) x) $
+            traversalMat =  (\x -> trace (show $ (\(a,b,_) -> (a,b)) <$> x) x) $
                            createDOAlignMatrix longerChar shorterChar costStruct
             cost = getTotalAlignmentCost traversalMat
             (gapped, left, right) = traceback traversalMat shorterChar longerChar
@@ -165,7 +165,7 @@ traceback alignMat' char1' char2' = ( constructDynamic $ reverse t1
         tracebackInternal alignMat char1 char2 (row, col)
             | nrows alignMat < row - 1 || ncols alignMat < col - 1 = error "Traceback cannot function because matrix is incomplete"
             | row == 0 && col == 0 = (mempty, mempty, mempty)
-            | otherwise = -- trace (mconcat ["(",show row,",",show col,") ",show curState]) $ 
+            | otherwise = trace (mconcat ["(",show row,",",show col,") ",show curState]) $ 
                 let (trace1, trace2, trace3) = tracebackInternal alignMat char1 char2 (i, j)
                 in (curState : trace1, leftCharacter : trace2, rightCharacter : trace3)
             where
@@ -204,8 +204,9 @@ getOverlap inChar1 inChar2 costStruct = result
 -- the return value is A,C,G,T. 
 -- Tests exist in the test suite.
 overlap :: (EncodableStaticCharacter c, Show c) => CostStructure -> c -> c -> (c, Double)
+--overlap _ inChar1 inChar2 | trace (unwords [show inChar1, show inChar2]) False = undefined
 overlap costStruct char1 char2
-    | intersectionStates == zeroBits = foldr1 ambigChoice $ allPossibleBaseCombosCosts costStruct char1 char2
+    | intersectionStates == zeroBits = (\x -> trace (unwords [show char1, show char2, show x]) x) $ foldr1 ambigChoice $ allPossibleBaseCombosCosts costStruct char1 char2
     | otherwise                      = (intersectionStates, 0)
     {-
        | 0 == char1 || 0 == char2 = (zeroBitVec, 0) -- Commented out, because nonsense. Problem for testing?
@@ -243,13 +244,26 @@ getCost costStruct seqTup1 seqTup2 =
     case (costStruct, seqTup1, seqTup2) of
        -- (AffineCost {}        , _         , _         ) -> error "Cannot apply DO algorithm on affine cost" -- When this is added, remember to write a test.
         (TCM costMatrix       , (pos1, c1), (pos2, c2)) -> (c1 .|. c2, costMatrix ! (pos1, pos2))
-        (GeneralCost indel sub, (_   , c1), (_   , c2)) -> if c1 == gap || c2 == gap 
-                                                           then (c1 .|. c2, indel) 
+        (GeneralCost indel sub, (_   , c1), (_   , c2)) -> -- f indel sub c1 c2
+                                                           if c1 == gap || c2 == gap
+                                                           then (c1 .|. c2, indel)
                                                            else (c1 .|. c2, sub)
     where
       s   = snd seqTup1
       z   = s `xor` s
       gap = z `setBit` (stateCount s - 1)
+{-      
+      f indel sub c1 c2
+        | indel == sub                             = (c1 .|. c2,   sub)
+        | indel >  sub &&  c1 == gap && c2 == gap  = (      gap, indel)
+        | indel >  sub &&  c1 == gap && c2 /= gap  = (       c2,   sub)
+        | indel >  sub &&  c1 /= gap && c2 == gap  = (       c1,   sub)
+        | indel >  sub                             = (c1 .|. c2,   sub)
+        | indel <  sub &&  c1 == gap && c2 == gap  = (      gap, indel)
+        | indel <  sub &&  c1 == gap && c2 /= gap  = (      gap, indel)
+        | indel <  sub &&  c1 /= gap && c2 == gap  = (      gap, indel)
+        | otherwise                                = (c1 .|. c2,   sub)
+-}
 
 -- | Takes in a 'EncodableStaticCharacter', possibly with more than one bit set, and returns a list of tuples of 
 -- 'Int's and 'EncodableStaticCharacter's, such that, for each set bit in the input, there is one element in the output list, 
@@ -260,6 +274,6 @@ getSubChars :: (EncodableStaticCharacter s) => s -> [(Int, s)]
 getSubChars fullChar = foldr (\i acc -> if testBit fullChar i 
                                         then (i, z `setBit` i) : acc 
                                         else acc 
-                             ) mempty [0..(stateCount fullChar)]
+                             ) mempty [0 .. stateCount fullChar - 1]
   where
     z = fullChar `xor` fullChar
