@@ -217,7 +217,7 @@ nodeOptimizePreorder curNode lNode rNode pNode = ifoldr chooseOptimization curNo
                       newGapIndicies   = {- (\x -> trace ("newGapIndices: "   <> show x) x) $ -} newGapLocations childCharacter $ {- (\x -> trace ("childAlignment: "   <> show x) x) $ -} childAlignment
                       leftCharacter    = {- (\x -> trace ("leftCharacter: "   <> show x) x) $ -} insertNewGaps newGapIndicies $ getLeftAlignment  curNode ! i
                       rightCharacter   = {- (\x -> trace ("rightCharacter: "  <> show x) x) $ -} insertNewGaps newGapIndicies $ getRightAlignment curNode ! i
-                      (_, finalUngapped, finalGapped) = threeWayMean costStructure derivedAlignment leftCharacter rightCharacter
+                      (_, finalUngapped, finalGapped) = threeWayMean costStructure wow derivedAlignment leftCharacter rightCharacter
                   in  addToField setFinal       getFinal       finalUngapped
                     . addToField setFinalGapped getFinalGapped finalGapped
                     $ setNode
@@ -283,7 +283,7 @@ threeWayMean costStructure char1 char2 char3
     gap                 = getGapChar $ char1 `indexChar` 0
     uniformLength       = olength char1 == olength char2 && olength char2 == olength char3
     (meanStates, costValues) = unzip $ zipWith3 f (otoList char1) (otoList char2) (otoList char3)
-    f a b c = minimumBy (comparing snd)
+    f a b c = minimalChoice -- minimumBy (comparing snd)
 --            $ (\x -> trace (show x) x)
             [ getOverlap a b costStructure
             , getOverlap a c costStructure

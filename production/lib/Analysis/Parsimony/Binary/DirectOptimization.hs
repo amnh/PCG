@@ -14,6 +14,7 @@
 module Analysis.Parsimony.Binary.DirectOptimization 
     ( doAlignment
     , getOverlap
+    , minimalChoice
     , naiveDO
     ) where
 

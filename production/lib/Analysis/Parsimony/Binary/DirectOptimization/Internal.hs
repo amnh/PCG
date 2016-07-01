@@ -206,7 +206,7 @@ getOverlap inChar1 inChar2 costStruct = result
 overlap :: (EncodableStaticCharacter c, Show c) => CostStructure -> c -> c -> (c, Double)
 --overlap _ inChar1 inChar2 | trace (unwords [show inChar1, show inChar2]) False = undefined
 overlap costStruct char1 char2
-    | intersectionStates == zeroBits = (\x -> trace (unwords [show char1, show char2, show x]) x) $ foldr1 ambigChoice $ allPossibleBaseCombosCosts costStruct char1 char2
+    | intersectionStates == zeroBits = (\x -> trace (unwords [show char1, show char2, show x]) x) $ minimalChoice $ allPossibleBaseCombosCosts costStruct char1 char2
     | otherwise                      = (intersectionStates, 0)
     {-
        | 0 == char1 || 0 == char2 = (zeroBitVec, 0) -- Commented out, because nonsense. Problem for testing?
@@ -220,10 +220,14 @@ overlap costStruct char1 char2
         -- make possible combinations with a double fold
         
         -- now take an ambiguous minimum
-      ambigChoice (val1, cost1) (val2, cost2)
-        | cost1 == cost2 = (val1 .|. val2, cost1)
-        | cost1 < cost2  = (val1         , cost1)
-        | otherwise      = (val2         , cost2)
+
+minimalChoice :: (Bits c, Foldable t, Ord n) => t (c, n) -> (c, n)
+minimalChoice = foldr1 f
+  where
+    f (val1, cost1) (val2, cost2)
+      | cost1 == cost2 = (val1 .|. val2, cost1)
+      | cost1 < cost2  = (val1         , cost1)
+      | otherwise      = (val2         , cost2)
 
 -- TODO: Can we eliminate all characters from below, and just pass around Ints?
 -- | Finds the cost of a pairing of two static characters.
