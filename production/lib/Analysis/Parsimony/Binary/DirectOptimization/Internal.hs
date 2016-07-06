@@ -67,7 +67,7 @@ naiveDO char1 char2 costStruct
             (shorterChar, longerChar, _longLen) = if   char1Len > char2Len
                                                   then (char2, char1, char1Len)
                                                   else (char1, char2, char2Len)
-            traversalMat =  (\x -> trace (show $ (\(a,b,_) -> (a,b)) <$> x) x) $
+            traversalMat =  -- (\x -> trace (show $ (\(a,b,_) -> (a,b)) <$> x) x) $
                            createDOAlignMatrix longerChar shorterChar costStruct
             cost = getTotalAlignmentCost traversalMat
             (gapped, left, right) = traceback traversalMat shorterChar longerChar
@@ -165,7 +165,7 @@ traceback alignMat' char1' char2' = ( constructDynamic $ reverse t1
         tracebackInternal alignMat char1 char2 (row, col)
             | nrows alignMat < row - 1 || ncols alignMat < col - 1 = error "Traceback cannot function because matrix is incomplete"
             | row == 0 && col == 0 = (mempty, mempty, mempty)
-            | otherwise = trace (mconcat ["(",show row,",",show col,") ",show curState]) $ 
+            | otherwise = -- trace (mconcat ["(",show row,",",show col,") ",show curState]) $ 
                 let (trace1, trace2, trace3) = tracebackInternal alignMat char1 char2 (i, j)
                 in (curState : trace1, leftCharacter : trace2, rightCharacter : trace3)
             where
@@ -206,7 +206,8 @@ getOverlap inChar1 inChar2 costStruct = result
 overlap :: (EncodableStaticCharacter c, Show c) => CostStructure -> c -> c -> (c, Double)
 --overlap _ inChar1 inChar2 | trace (unwords [show inChar1, show inChar2]) False = undefined
 overlap costStruct char1 char2
-    | intersectionStates == zeroBits = (\x -> trace (unwords [show char1, show char2, show x]) x) $ minimalChoice $ allPossibleBaseCombosCosts costStruct char1 char2
+    | intersectionStates == zeroBits = -- (\x -> trace (unwords [show char1, show char2, show x]) x) $
+                                       minimalChoice $ allPossibleBaseCombosCosts costStruct char1 char2
     | otherwise                      = (intersectionStates, 0)
     {-
        | 0 == char1 || 0 == char2 = (zeroBitVec, 0) -- Commented out, because nonsense. Problem for testing?
