@@ -38,11 +38,11 @@ import qualified Data.IntMap as IM
 import Data.Key       hiding ((!))
 import Data.Monoid
 import Data.MonoTraversable
-import Data.Ord              (comparing)
+--import Data.Ord              (comparing)
 import Data.Vector           (Vector, (!), ifoldr)
 import Prelude        hiding (lookup)
 
-import Debug.Trace (trace)
+--import Debug.Trace (trace)
 
 -- !!!TODO: Remove weighting.
 
@@ -217,7 +217,7 @@ nodeOptimizePreorder curNode lNode rNode pNode = ifoldr chooseOptimization curNo
                       newGapIndicies   = {- (\x -> trace ("newGapIndices: "   <> show x) x) $ -} newGapLocations childCharacter $ {- (\x -> trace ("childAlignment: "   <> show x) x) $ -} childAlignment
                       leftCharacter    = {- (\x -> trace ("leftCharacter: "   <> show x) x) $ -} insertNewGaps newGapIndicies $ getLeftAlignment  curNode ! i
                       rightCharacter   = {- (\x -> trace ("rightCharacter: "  <> show x) x) $ -} insertNewGaps newGapIndicies $ getRightAlignment curNode ! i
-                      (_, finalUngapped, finalGapped) = threeWayMean costStructure wow derivedAlignment leftCharacter rightCharacter
+                      (_, finalUngapped, finalGapped) = threeWayMean costStructure derivedAlignment leftCharacter rightCharacter
                   in  addToField setFinal       getFinal       finalUngapped
                     . addToField setFinalGapped getFinalGapped finalGapped
                     $ setNode
@@ -267,12 +267,15 @@ newGapLocations originalChar newChar
       | otherwise            = (  xs, i+1, is)
 
 insertNewGaps :: EncodableDynamicCharacter c => IntMap Int -> c -> c
-insertNewGaps insertionIndicies = constructDynamic . foldMapWithKey f . otoList
+insertNewGaps insertionIndicies character = constructDynamic . (<> trailingGaps) . foldMapWithKey f $ otoList character
   where
+    len = olength character
+    gap = getGapChar $ character `indexChar` 0
+    trailingGaps = maybe [] (`replicate` gap) $ len `lookup` insertionIndicies
     f i e =
       case i `lookup` insertionIndicies of
         Nothing -> [e]
-        Just n  -> replicate n (getGapChar e) <> [e]
+        Just n  -> replicate n gap <> [e]
       
 threeWayMean :: (Show (Element c),Show c, EncodableDynamicCharacter c, Memoizable (Element c)) => CostStructure -> c -> c -> c -> (Double, c, c)
 --threeWayMean _ char1 char2 char3 | trace (mconcat [show char1, show char2, show char3]) False = undefined
