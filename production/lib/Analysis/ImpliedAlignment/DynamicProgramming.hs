@@ -461,7 +461,7 @@ numeration sequenceIndex costStructure tree = tree `update` updatedLeafNodes
             -- The insertion events are the culmination of the insertion events from all the child's children,
             -- joined with the insertion events are derived from a pairwise comparison of the parent character and the child character.
             -- The PseudoCharacter is not yet defined
-            parentChildEdge = (ancestoralNodeDeletions <> incrementedDeletionEvents, inserts >-< allDescendantInsertions, psuedoCharacter)
+            parentChildEdge = (ancestoralNodeDeletions <> DE deletes, inserts >-< allDescendantInsertions, psuedoCharacter)
               where
                 parentCharacter = getFinal    (enumeratedNodes V.! i) V.! sequenceIndex
                 childCharacter  = getForAlign (enumeratedNodes V.! j) V.! sequenceIndex
@@ -562,7 +562,7 @@ deriveImpliedAlignment nodeIndex sequenceIndex homologyMemoize node = trace (sho
           where
             oldHomologies = getHomologies' node
             
-        leafSequence    = trace (mconcat ["opt (",show nodeIndex,",",show nodeIndex,") ", show $ length psuedoCharacter {- show deletions," ", show psuedoCharacter -}]) $ getForAlign node
+        leafSequence    = trace (mconcat ["opt (",show nodeIndex,",",show nodeIndex,") ", show $ length psuedoCharacter, show deletions {-," ", show psuedoCharacter -}]) $ getForAlign node
         leafCharacter   = leafSequence V.! sequenceIndex
         leafAlignedChar = constructDynamic $ reverse result
         characterTokens = otoList leafCharacter
