@@ -29,7 +29,9 @@ data AlignResult = AlignResult { val      :: CInt
 
 -- Because we're using a struct we need to make a Storable instance
 instance Storable AlignResult where
-    sizeOf    _ = (#size struct align) -- #size is a built-in that works with arrays, as are #peek and #poke, below
+    sizeOf    _ = (#size struct align) 
+        -- sizeOf returns size of structure, in bytes (size of any pointers, not entire referenced data structures)
+        -- #size is a built-in of hsc2hs that works with arrays (or in this case structs?), as are #peek and #poke, below
     alignment _ = alignment (undefined :: CChar)
     peek ptr    = do -- to get values from the C app
         value    <- (#peek struct align, finalWt) ptr
@@ -50,8 +52,8 @@ foreign import ccall unsafe "myComplexTestC.h testFn"
 -- testFn can be called from within Haskell code.
 testFn :: Either String (Int, String) 
 testFn = unsafePerformIO $ 
-    -- have to allocate memory. Note that we're allocating via a lambda fn. I 
-    -- don't yet understand what exactly is going on here.
+    -- have to allocate memory. Note that we're allocating via a lambda fn. In use, the lambda will take whatever is the 
+    -- argument of testFn, but here there is no argument, so all allocation is hard-coded.
     alloca $ \alignPtr -> do 
         -- This first part is similar to simple example.
         arg1   <- newCAString "hello"
