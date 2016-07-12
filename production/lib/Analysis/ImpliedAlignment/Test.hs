@@ -233,7 +233,13 @@ partNumerate inTree curNode inMeta curCounts stopNode
     | otherwise = partNumerate -}
 
 testImpliedAlignmentCases :: TestTree
-testImpliedAlignmentCases = testGroup "Explicit test cases for implied alignment" [testDeletedInsertion]
+testImpliedAlignmentCases = testGroup "Explicit test cases for implied alignment"
+  [ testDeletedInsertion
+  , testAppendedDeletions
+  , testPrependedDeletions
+  , testAppendedInsertions
+  , testPrependedInsertions
+  ]
   where
     testDeletedInsertion = testCase "Deletion event of an insertion event" . assertBool (show tree') $ oall leafProperty tree'
       where
@@ -258,6 +264,55 @@ testImpliedAlignmentCases = testGroup "Explicit test cases for implied alignment
              , (13,   "AGTT",     [])
              , (14,   "AGTT",     [])
              ]
+
+    performImpliedAlignment = (deriveImpliedAlignments defMeta . allOptimization 1 defMeta)
+
+    decorationTest :: Foldable t => t (Int, String, String, [Int]) -> Assertion
+    decorationTest          = simpleTreeCharacterDecorationEqualityAssertion 0 "ACGT-" performImpliedAlignment getHomologies'
+
+    testAppendedDeletions = testCase "Chain of deletions appended to sequence" $ decorationTest tree
+      where
+        tree = [ (0,     "",     "", [1,2])
+               , (1, "ACGT", "ACGT",    [])
+               , (2,     "",     "", [3,4])
+               , (3,  "ACG", "ACG-",    [])
+               , (4,     "",     "", [5,6])
+               , (5,   "AC", "AC--",    [])
+               , (6,    "A", "A---",    [])
+               ]
+
+    testPrependedDeletions = testCase "Chain of deletions prepended to sequence" $ decorationTest tree
+      where
+        tree = [ (0,     "",     "", [1,2])
+               , (1, "TGCA", "TGCA",    [])
+               , (2,     "",     "", [3,4])
+               , (3,  "GCA", "-CGA",    [])
+               , (4,     "",     "", [5,6])
+               , (5,   "CA", "--CA",    [])
+               , (6,    "A", "---A",    [])
+               ]
+
+    testAppendedInsertions = testCase "Chain of insertions appended to sequence" $ decorationTest tree
+      where
+        tree = [ (0, ""    ,     "", [1,2])
+               , (1, "A"   , "A---",    [])
+               , (2, ""    ,     "", [3,4])
+               , (3, "AC"  , "AC--",    [])
+               , (4, ""    ,     "", [5,6])
+               , (5, "ACG" , "ACG-",    [])
+               , (6, "ACGT", "ACGT",    [])
+               ]
+
+    testPrependedInsertions = testCase "Chain of insertions prepended to sequence" $ decorationTest tree
+      where
+        tree = [ (0, ""    ,     "", [1,2])
+               , (1, "A"   , "---A",    [])
+               , (2, ""    ,     "", [3,4])
+               , (3, "AC"  , "--CA",    [])
+               , (4, ""    ,     "", [5,6])
+               , (5, "ACG" , "-GCA",    [])
+               , (6, "ACGT", "TGCA",    [])
+               ]
 
 -- | Useful function to convert encoding information to two encoded seqs
 encodeArbSameLen :: (GoodParsedChar, GoodParsedChar) -> (DynamicChar, DynamicChar)

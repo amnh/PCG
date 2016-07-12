@@ -5,6 +5,7 @@ module Test.Custom.Tree
   , createBinary
   , createCherry
   , createSimpleTree
+  , simpleTreeCharacterDecorationEqualityAssertion
   ) where
 
 import           Bio.Character.Dynamic.Coded
@@ -25,7 +26,7 @@ import           Data.BitVector                          (width)
 import           Data.Foldable
 import           Data.IntMap                             (insertWith)
 import qualified Data.IntSet                      as IS
-import           Data.Key
+import           Data.Key                         hiding (zipWith)
 import           Data.List                               (intercalate)
 import           Data.List.Utility                       (chunksOf)
 import           Data.Maybe
@@ -37,6 +38,7 @@ import           Data.Vector                             (Vector)
 import           Prelude                          hiding (lookup)
 import           Safe                                    (tailMay)
 import           Test.QuickCheck
+import           Test.Tasty.HUnit
 
 createSimpleTree :: Foldable t
                => Int      -- ^ Root node reference
@@ -53,8 +55,11 @@ createSimpleTree rootRef symbols xs = TT . setRefIds $ unfoldTree buildTree root
           where
             g (newSeq, lhs) (_, rhs) = (newSeq, lhs <> rhs)
     buildTree :: Int -> (TestingDecoration, [Int])
-    buildTree i = (def { dEncoded = pure . encodeDynamic alphabet $ (\c -> [[c]]) <$> strChar }, otoList children)
+    buildTree i = (def { dEncoded = encodedSequence }, otoList children)
       where
+        encodedSequence = if   null strChar
+                   then mempty
+                   else pure . encodeDynamic alphabet $ (\c -> [[c]]) <$> strChar
         (strChar, children) = mapping ! i
 
 setRefIds :: Tree TestingDecoration -> Tree TestingDecoration
@@ -379,4 +384,51 @@ findNode f tree@(TT x)
   | f tree    = Just tree
   | otherwise = foldl' (<|>) Nothing $ (findNode f. TT) <$> subForest x
 
+
+
+
+simpleTreeCharacterDecorationEqualityAssertion :: Foldable t
+               => Int                            -- ^ Root node reference
+               -> String                         -- ^ Alphabet symbols
+               -> (SimpleTree -> SimpleTree)     -- ^ Topology invariant tree transformation.
+               -> (SimpleTree -> Vector DynamicChar)    -- ^ Node accessing function
+               -> t (Int, String, String, [Int]) -- ^ (Node Reference, sequence of dynamic characters, expected value, child nodes)
+               -> Assertion                      
+simpleTreeCharacterDecorationEqualityAssertion rootRef symbols transformation accessor spec = snd $ check (False, True @=? True) valueTree outputTree
+  where
+    check :: (Bool, Assertion) -> SimpleTree -> SimpleTree -> (Bool, Assertion)
+    check e@(failureFound, _) expectedValueNode actualValueNode
+      | failureFound                                                = e
+      | not $ expectedValueNode `sameRef` actualValueNode           = (True, assertFailure "The tree topology changed!")
+      | length xs /= length ys                                      = (True, assertFailure "The tree topology changed!")
+      | EN.getEncoded expectedValueNode /= accessor actualValueNode = (True, EN.getEncoded expectedValueNode @=? accessor actualValueNode)
+      | otherwise                                                =
+        case dropWhile fst $ zipWith (check e) xs ys of
+          []        -> e
+          failVal:_ -> failVal
+      where
+        xs = N.children expectedValueNode expectedValueNode
+        ys = N.children actualValueNode   actualValueNode
+    
+    inputTree  = createSimpleTree rootRef symbols . fmap (\(x,y,_,z) -> (x,y,z)) $ toList spec
+
+    outputTree = transformation inputTree
+    
+    valueTree  = TT . setRefIds $ unfoldTree buildExpectedTree rootRef 
+      where
+        buildExpectedTree :: Int -> (TestingDecoration, [Int])
+        buildExpectedTree i = (def { dEncoded = encodedSequence }, otoList children)
+          where
+            encodedSequence = if   null expectedChar
+                       then mempty
+                       else pure . encodeDynamic alphabet $ (\c -> [[c]]) <$> expectedChar
+            (expectedChar, children) = mapping ! i
+
+    alphabet = constructAlphabet $ pure <$> symbols
+--    mapping :: (Foldable a, Foldable c, Foldable v) => IntMap (v (c (a String)), IntSet)
+    mapping = foldl' f mempty spec
+      where
+        f m (i, _, valChar, adjacency) = insertWith g i (valChar, IS.fromList adjacency) m
+          where
+            g (newSeq, lhs) (_, rhs) = (newSeq, lhs <> rhs)
 

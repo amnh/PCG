@@ -332,12 +332,12 @@ instance Monoid DeletionEvents where
   mempty = DE mempty
   (DE ancestorSet) `mappend` (DE descendantSet) = DE $ incrementedDescendantSet <> ancestorSet
     where
-      incrementedDescendantSet = ofoldl' f descendantSet ancestorSet
-      f acc anscestorIndex  = ofoldl' g mempty acc
+      incrementedDescendantSet = ofoldl' f mempty descendantSet
+      f acc descendantIndex = (ofoldl' g 0 ancestorSet + descendantIndex) `IS.insert` acc
         where
-          g is descendantIndex
-            | anscestorIndex <= descendantIndex = IS.insert (descendantIndex + 1) is
-            | otherwise                         = IS.insert  descendantIndex      is
+          g inc anscestorIndex
+            | anscestorIndex <= descendantIndex = inc + 1 
+            | otherwise                         = inc
 
 newtype InsertionEvents = IE (IntMap Int) deriving (Show)
 instance Monoid InsertionEvents where
@@ -553,7 +553,30 @@ numeration sequenceIndex costStructure tree = tree `update` updatedLeafNodes
 
 deriveImpliedAlignment :: (EncodableDynamicCharacter s, NodeConstraint n s, IANode' n s, Show s, Show (Element s)) => Int -> Int -> Matrix MemoizedEvents -> n -> n
 -- deriveImpliedAlignment nodeIndex _ _ | trace ("deriveImpliedAlignment " <> show nodeIndex <> " " <> show psuedoCharacter) False = undefined
-deriveImpliedAlignment nodeIndex sequenceIndex homologyMemoize node = trace (show nodeIndex <> "\n" <> show remaining) $ node `setHomologies'` leafHomologies
+deriveImpliedAlignment nodeIndex sequenceIndex homologyMemoize node = trace (unwords
+                                                                            [ "Node:"
+                                                                            , show nodeIndex
+                                                                            ,"\n"
+                                                                            , "Deletion Events: "
+                                                                            , show deletions
+                                                                            , "\n"
+                                                                            , "Input psuedo-character:"
+                                                                            , show psuedoCharacter
+                                                                            , "\n"
+                                                                            , "Input leaf-character:"
+                                                                            , show leafCharacter
+                                                                            , "\n"
+                                                                            , "Ouput character:"
+                                                                            , show result
+                                                                            , "\n"
+                                                                            , "Actual length:"
+                                                                            , show $ length result
+                                                                            , "Expected length:"
+                                                                            , show $ length psuedoCharacter
+                                                                            , "Remaining tokens:"
+                                                                            , show remaining
+                                                                            ]) $
+                                                                      node `setHomologies'` leafHomologies
       where
         (DE deletions, _, psuedoCharacter) = homologyMemoize ! (nodeIndex, nodeIndex)
         leafHomologies
@@ -573,7 +596,7 @@ deriveImpliedAlignment nodeIndex sequenceIndex homologyMemoize node = trace (sho
           where
             f e (basesSeen, xs, ys)
               | e == HardGap || e == SoftGap = (basesSeen    , xs , gap : ys )
-              | basesSeen `oelem` deletions  = (basesSeen + 1, xs , gap : ys )
+              | basesSeen `oelem` deletions = (basesSeen + 1, xs , gap : ys )
               | otherwise                    = (basesSeen + 1, xs',       ys') 
               where
                 xs' = fromMaybe []   $ tailMay xs 
