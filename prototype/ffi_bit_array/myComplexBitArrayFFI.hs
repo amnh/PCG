@@ -14,18 +14,20 @@
 
 {-# LANGUAGE ForeignFunctionInterface, BangPatterns, TypeSynonymInstances, FlexibleInstances #-}
 
+import Data.Bits
+import Data.Foldable
 import Data.Monoid
 import Foreign
 import Foreign.Ptr
 import Foreign.C.String
 import Foreign.C.Types
 import System.IO.Unsafe
-import Test.QuickCheck
+import Test.QuickCheck hiding ((.&.))
 
 
-{-# LINE 24 "myComplexBitArrayFFI.hsc" #-}
+{-# LINE 26 "myComplexBitArrayFFI.hsc" #-}
 
-{-# LINE 25 "myComplexBitArrayFFI.hsc" #-}
+{-# LINE 27 "myComplexBitArrayFFI.hsc" #-}
 
 -- Includes a struct (actually, a pointer thereto), and that struct, in turn, has a string
 -- in it, so Ptr CChar.
@@ -41,25 +43,37 @@ data CDynamicChar = CDynamicChar { alphabetSize :: CInt
                                  }
 
 instance Show CDynamicChar where
-    show (CDynamicChar alphSize dcLen dChar) = "alphabetSize: " <> (show intAlphSize) <> "\ndynCharLen: " <> (show intLen) <> "\ndynChar: " <> (show $ unsafePerformIO printedArr)
+    show (CDynamicChar alphSize dcLen dChar) = mconcat ["alphabetSize:  "
+                                                       , show intAlphSize
+                                                       , "\ndynCharLen: "
+                                                       , show intLen
+                                                       , "\nbuffer length: "
+                                                       , show bufferLength
+                                                       , "\ndynChar:    "
+                                                       , show $ unsafePerformIO printedArr
+                                                       ]
         where
-            intAlphSize = fromIntegral alphSize
-            intLen = fromIntegral dcLen
-            printedArr = do 
-                interimArr <- peekArray intLen dChar
-                pure $ show interimArr
-         
+            (quot, rem)  = (intAlphSize * intLen) `divMod` 64
+            bufferLength = quot + if rem == 0 then 0 else 1
+            intAlphSize  = fromIntegral alphSize
+            intLen       = fromIntegral dcLen
+            printedArr   = show <$> peekArray bufferLength dChar
 
 instance Arbitrary CDynamicChar where
     arbitrary = do
-        alphSize <- (getPositive <$> (arbitrary :: Gen (Positive Int))) `suchThat` (<= 64)
-        charSize <- (getPositive <$> (arbitrary :: Gen (Positive Int))) `suchThat` (<= 16)
+        alphSize <- (arbitrary :: Gen Int) `suchThat` (\x -> 0 < x && x <= 64)
+        charSize <- (arbitrary :: Gen Int) `suchThat` (\x -> 0 < x && x <= 16)
         let (full,rem) = (alphSize * charSize) `divMod` 64
-        bitVals <- vectorOf full (arbitrary :: Gen CArrayUnit)
+        fullBitVals <- vectorOf full (arbitrary :: Gen CArrayUnit)
+        -- Note there is a faster way to do this loop in 2 steps by utilizing 2s compliment subtraction and setbit.
+        let mask    = foldl' (\val i -> val `setBit` i) (zeroBits :: CArrayUnit) [0..rem]
+        remBitVals  <- if   rem == 0
+                       then pure []
+                       else (pure . (mask .&.)) <$> (arbitrary :: Gen CArrayUnit)
         pure CDynamicChar
            { alphabetSize = fromIntegral alphSize
            , dynCharLen   = fromIntegral charSize
-           , dynChar      = unsafePerformIO (newArray bitVals)
+           , dynChar      = unsafePerformIO . newArray $ fullBitVals <> remBitVals
            }
 
 type CArrayUnit  = CULong -- This will be compatible with uint64_t
@@ -71,50 +85,50 @@ instance Arbitrary CArrayUnit where
 
 instance Storable CDynamicChar where
     sizeOf    _ = ((16)) -- #size is a built-in that works with arrays, as are #peek and #poke, below
-{-# LINE 70 "myComplexBitArrayFFI.hsc" #-}
+{-# LINE 84 "myComplexBitArrayFFI.hsc" #-}
     alignment _ = alignment (undefined :: CArrayUnit)
     peek ptr    = do -- to get values from the C app
         alphLen  <- ((\hsc_ptr -> peekByteOff hsc_ptr 0)) ptr
-{-# LINE 73 "myComplexBitArrayFFI.hsc" #-}
+{-# LINE 87 "myComplexBitArrayFFI.hsc" #-}
         seqLen   <- ((\hsc_ptr -> peekByteOff hsc_ptr 4)) ptr
-{-# LINE 74 "myComplexBitArrayFFI.hsc" #-}
+{-# LINE 88 "myComplexBitArrayFFI.hsc" #-}
         sequence <- ((\hsc_ptr -> peekByteOff hsc_ptr 8)) ptr
-{-# LINE 75 "myComplexBitArrayFFI.hsc" #-}
+{-# LINE 89 "myComplexBitArrayFFI.hsc" #-}
         return  CDynamicChar { alphabetSize = alphLen
                              , dynCharLen   = seqLen
                              , dynChar      = sequence  
                              }
     poke ptr (CDynamicChar alphabetSize dynCharLen dynChar) = do -- to modify values in the C app
         ((\hsc_ptr -> pokeByteOff hsc_ptr 0)) ptr alphabetSize
-{-# LINE 81 "myComplexBitArrayFFI.hsc" #-}
+{-# LINE 95 "myComplexBitArrayFFI.hsc" #-}
         ((\hsc_ptr -> pokeByteOff hsc_ptr 4)) ptr dynCharLen
-{-# LINE 82 "myComplexBitArrayFFI.hsc" #-}
+{-# LINE 96 "myComplexBitArrayFFI.hsc" #-}
         ((\hsc_ptr -> pokeByteOff hsc_ptr 8)) ptr dynChar
-{-# LINE 83 "myComplexBitArrayFFI.hsc" #-}
+{-# LINE 97 "myComplexBitArrayFFI.hsc" #-}
 
 -- Because we're using a struct we need to make a Storable instance
 instance Storable AlignResult where
     sizeOf    _ = ((16)) -- #size is a built-in that works with arrays, as are #peek and #poke, below
-{-# LINE 87 "myComplexBitArrayFFI.hsc" #-}
+{-# LINE 101 "myComplexBitArrayFFI.hsc" #-}
     alignment _ = alignment (undefined :: CArrayUnit)
     peek ptr    = do -- to get values from the C app
         value    <- ((\hsc_ptr -> peekByteOff hsc_ptr 0)) ptr
-{-# LINE 90 "myComplexBitArrayFFI.hsc" #-}
+{-# LINE 104 "myComplexBitArrayFFI.hsc" #-}
         len      <- ((\hsc_ptr -> peekByteOff hsc_ptr 4)) ptr
-{-# LINE 91 "myComplexBitArrayFFI.hsc" #-}
+{-# LINE 105 "myComplexBitArrayFFI.hsc" #-}
         sequence <- ((\hsc_ptr -> peekByteOff hsc_ptr 8)) ptr
-{-# LINE 92 "myComplexBitArrayFFI.hsc" #-}
+{-# LINE 106 "myComplexBitArrayFFI.hsc" #-}
         return  AlignResult { alignmentCost = value, lengthFinal = len, seqFinal = sequence }
 
 ------------- Don't need this part, but left in for completion ---------------
 ----- Will get compiler warning if left out, because of missing instances ----
     poke ptr (AlignResult cost len seqFinal) = do -- to modify values in the C app
         ((\hsc_ptr -> pokeByteOff hsc_ptr 0)) ptr cost
-{-# LINE 98 "myComplexBitArrayFFI.hsc" #-}
+{-# LINE 112 "myComplexBitArrayFFI.hsc" #-}
         ((\hsc_ptr -> pokeByteOff hsc_ptr 4)) ptr len
-{-# LINE 99 "myComplexBitArrayFFI.hsc" #-}
+{-# LINE 113 "myComplexBitArrayFFI.hsc" #-}
         ((\hsc_ptr -> pokeByteOff hsc_ptr 8)) ptr seqFinal
-{-# LINE 100 "myComplexBitArrayFFI.hsc" #-}
+{-# LINE 114 "myComplexBitArrayFFI.hsc" #-}
 
 -- This is the declaration of the Haskell wrapper for the C function we're calling.
 -- Note that this fn is called from testFn.
@@ -153,3 +167,19 @@ main = do
     print char1
     --print char2
     print $ testFn char1 char1
+
+
+data ExportableDynamicCharacter
+   = ExportableDynamicCharacter
+   { characterLength :: Int
+   , alphabetLength  :: Int
+   , bufferChunks    :: [CArrayUnit]
+   } deriving (Eq, Show)
+
+toExportable :: EncodableDynamicCharacter c => c -> ExportableDynamicCharacter
+toExportable (DC (BitMatrix alphabetSize bv)) =
+     ExportableDynamicCharacter
+     { characterLength = 0
+     , alphabetLength  = 0
+     , bufferChunks    = []
+     }

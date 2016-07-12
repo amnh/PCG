@@ -41,5 +41,5 @@ clean :
 my_ffi : myComplexBitArrayTestC.c myComplexBitArrayTestC.h myComplexBitArrayFFI.hs
 	rm -f myComplexBitArrayFFI.hs
 	hsc2hs myComplexBitArrayFFI.hsc
-	clang -c myComplexBitArrayTestC.c
+	gcc -c myComplexBitArrayTestC.c
 	ghc -O --make myComplexBitArrayFFI.hs myComplexBitArrayTestC.o

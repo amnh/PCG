@@ -12,13 +12,17 @@
 
 {-# LANGUAGE ForeignFunctionInterface, BangPatterns, TypeSynonymInstances, FlexibleInstances #-}
 
+import Bio.Character.Dynamic.Coded.Internal
+import Data.BitMatrix.Internal
+import Data.Bits
+import Data.Foldable
 import Data.Monoid
 import Foreign
 import Foreign.Ptr
 import Foreign.C.String
 import Foreign.C.Types
 import System.IO.Unsafe
-import Test.QuickCheck
+import Test.QuickCheck hiding ((.&.))
 
 #include "myComplexBitArrayTestC.h"
 #include <stdint.h>
@@ -37,25 +41,37 @@ data CDynamicChar = CDynamicChar { alphabetSize :: CInt
                                  }
 
 instance Show CDynamicChar where
-    show (CDynamicChar alphSize dcLen dChar) = "alphabetSize: " <> (show intAlphSize) <> "\ndynCharLen: " <> (show intLen) <> "\ndynChar: " <> (show $ unsafePerformIO printedArr)
+    show (CDynamicChar alphSize dcLen dChar) = mconcat ["alphabetSize:  "
+                                                       , show intAlphSize
+                                                       , "\ndynCharLen: "
+                                                       , show intLen
+                                                       , "\nbuffer length: "
+                                                       , show bufferLength
+                                                       , "\ndynChar:    "
+                                                       , show $ unsafePerformIO printedArr
+                                                       ]
         where
-            intAlphSize = fromIntegral alphSize
-            intLen = fromIntegral dcLen
-            printedArr = do 
-                interimArr <- peekArray intLen dChar
-                pure $ show interimArr
-         
+            (quot, rem)  = (intAlphSize * intLen) `divMod` 64
+            bufferLength = quot + if rem == 0 then 0 else 1
+            intAlphSize  = fromIntegral alphSize
+            intLen       = fromIntegral dcLen
+            printedArr   = show <$> peekArray bufferLength dChar
 
 instance Arbitrary CDynamicChar where
     arbitrary = do
-        alphSize <- (getPositive <$> (arbitrary :: Gen (Positive Int))) `suchThat` (<= 64)
-        charSize <- (getPositive <$> (arbitrary :: Gen (Positive Int))) `suchThat` (<= 16)
+        alphSize <- (arbitrary :: Gen Int) `suchThat` (\x -> 0 < x && x <= 64)
+        charSize <- (arbitrary :: Gen Int) `suchThat` (\x -> 0 < x && x <= 16)
         let (full,rem) = (alphSize * charSize) `divMod` 64
-        bitVals <- vectorOf full (arbitrary :: Gen CArrayUnit)
+        fullBitVals <- vectorOf full (arbitrary :: Gen CArrayUnit)
+        -- Note there is a faster way to do this loop in 2 steps by utilizing 2s compliment subtraction and setbit.
+        let mask    = foldl' (\val i -> val `setBit` i) (zeroBits :: CArrayUnit) [0..rem]
+        remBitVals  <- if   rem == 0
+                       then pure []
+                       else (pure . (mask .&.)) <$> (arbitrary :: Gen CArrayUnit)
         pure CDynamicChar
            { alphabetSize = fromIntegral alphSize
            , dynCharLen   = fromIntegral charSize
-           , dynChar      = unsafePerformIO (newArray bitVals)
+           , dynChar      = unsafePerformIO . newArray $ fullBitVals <> remBitVals
            }
 
 type CArrayUnit  = CULong -- This will be compatible with uint64_t
@@ -135,3 +151,19 @@ main = do
     print char1
     --print char2
     print $ testFn char1 char1
+
+
+data ExportableDynamicCharacter
+   = ExportableDynamicCharacter
+   { characterLength :: Int
+   , alphabetLength  :: Int
+   , bufferChunks    :: [CArrayUnit]
+   } deriving (Eq, Show)
+
+toExportable :: EncodableDynamicCharacter c => c -> ExportableDynamicCharacter
+toExportable (DC (BitMatrix alphabetSize bv)) =
+     ExportableDynamicCharacter
+     { characterLength = 0
+     , alphabetLength  = 0
+     , bufferChunks    = []
+     }

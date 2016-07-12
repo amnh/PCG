@@ -9,34 +9,50 @@
 // returns 0 on correct exit, 1 on allocation failure
 int testFn(struct dynChar_t* seqA, struct dynChar_t* seqB, struct alignResult_t* result) {
     // get total length of output string
-    int lenA = seqA -> dynCharLen;
-    int lenB = seqB -> dynCharLen;
-    printf("%d\n", seqA->alphSize);
-    printf("%d\n", seqA->dynCharLen);
-    printf("%p\n", seqA->dynChar);
+    int charLenA = seqA -> dynCharLen;
+    int charLenB = seqB -> dynCharLen;
+    int buffLenA = bufferSize(seqA);
+    int buffLenB = bufferSize(seqB);
+    
+    printf("C: alphabet  length  %d\n", seqA->alphSize);
+    printf("C: character length  %d\n", seqA->dynCharLen);
+    printf("C: character pointer %p\n", seqA->dynChar);
     
 
     // have to malloc because declaring a length in the formal params 
     // was causing buffer overflows according to valgrind
     // Unless malloc() fails, eventual freeing of memory must be done in Haskell FFI code.
-    uint64_t* buffer = calloc( lenA + lenB + 1, sizeof(uint64_t) * seqA->alphSize); // in bytes, extra 1 for NUL
+    uint64_t* buffer = calloc( buffLenA + buffLenB, sizeof(uint64_t)); // in bytes
 
     // Now check that malloc() didn't fail.
     if( buffer == NULL ) {
         return 1;
     }
     
-    for(int i = 0; i < lenA; i++) {
+    for(int i = 0; i < buffLenA; i++) {
         buffer[i] = seqA -> dynChar[i];
-        printf("%llu\n", seqA -> dynChar[i]);
+        printf("C: character A loop, %llu\n", seqA -> dynChar[i]);
     }
-    for(int i = lenA; i < lenA + lenB; i++) {
-        buffer[i] = seqB -> dynChar[(i - lenA)];
+    
+    for(int i = 0; i < buffLenB; i++) {
+        buffer[i + buffLenA] = seqB -> dynChar[i];
+        printf("C: character B loop, %llu\n", seqB -> dynChar[i]);
     }
-    result->finalWt = lenA + lenB;
-    result->finalLength = lenA + lenB + 1;
-    result->finalStr = buffer;
+
+    result->finalWt     = buffLenA + buffLenB; // Real cost goes here later
+    result->finalLength = buffLenA + buffLenB;
+    result->finalStr    = buffer;
     return 0;
+}
+
+#define BITS_IN_BYTE 8;
+
+int bufferSize(struct dynChar_t* character) {
+  int charLen    = character -> dynCharLen;
+  int alphLen    = character -> alphSize;
+  int totalBits  = charLen * alphLen;
+  int bitsInWord = sizeof(uint64_t) * BITS_IN_BYTE;
+  return (totalBits / bitsInWord) + ((totalBits % bitsInWord) ? 1 : 0);
 }
 
 /**
