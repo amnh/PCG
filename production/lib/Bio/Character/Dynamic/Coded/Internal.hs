@@ -16,14 +16,13 @@
 -- TODO: Remove all commented-out code.
 
 -- TODO: are all of these necessary?
-{-# LANGUAGE DeriveGeneric, FlexibleInstances, MultiParamTypeClasses, TypeFamilies, TypeSynonymInstances, UndecidableInstances #-}
+{-# LANGUAGE FlexibleInstances, MultiParamTypeClasses, TypeFamilies, TypeSynonymInstances, UndecidableInstances #-}
 -- TODO: fix and remove this ghc option (is it needed for Arbitrary?):
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
 module Bio.Character.Dynamic.Coded.Internal
   ( DynamicChar (DC)
   , DynamicChars
-  , arbitraryDynamicsGA
   ) where
 
 import           Bio.Character.Dynamic.Coded.Class
@@ -37,7 +36,6 @@ import           Data.BitVector               hiding (foldr, join, not, replicat
 import           Data.Foldable
 import           Data.Function.Memoize
 import           Data.Maybe                          (fromMaybe)
-import           Data.Monoid                         ((<>))
 import           Data.MonoTraversable
 import           Data.Vector                         (Vector)
 import qualified Data.Vector                    as V (fromList)
@@ -49,12 +47,18 @@ import           Test.QuickCheck.Arbitrary.Instances ()
         -- Make a missing a null vector
         -- Think about a nonempty type class or a refinement type for this
 
+-- | Represents an encoded dynamic character, consisting of one or more static
+--   characters. Dynamic characters treat entire static characters as the
+--   character states of the dynamic character. The dynamic character relies on
+--   the encoding of the individual static characters to defined the encoding of
+--   the entire dynamic character.
 newtype DynamicChar
       = DC BitMatrix
       deriving (Eq, Show)
 
 type instance Element DynamicChar = BitVector
 
+-- | A sequence of many dynamic characters. Probably should be asserted as non-empty.y
 type DynamicChars = Vector DynamicChar
 
 --instance NFData DynamicChar
@@ -133,7 +137,9 @@ instance EncodableStaticCharacter BitVector where
 
 instance EncodableDynamicCharacter DynamicChar where
 
-  decodeDynamic alphabet (DC bm) = ofoldMap (pure . decodeChar alphabet) $ rows bm
+  constructDynamic       = DC . fromRows . toList
+
+  decodeDynamic alphabet = ofoldMap (pure . decodeChar alphabet) . otoList
 
   encodeDynamic alphabet = DC . fromRows . fmap (encodeChar alphabet) . toList
 
@@ -141,48 +147,6 @@ instance EncodableDynamicCharacter DynamicChar where
     | 0 <= i && i < numRows bm = Just $ bm `row` i
     | otherwise                = Nothing
 
-  constructDynamic = DC . fromRows . toList
-
-  -- TODO: Think about the efficiency of this
---  unsafeCons static (DC dynamic) = DC . fromRows $ [static] <> rows dynamic
-
---  unsafeAppend (DC dynamic1) bv = DC . fromRows $ rows dynamic1 <> [bv]
-
-  unsafeConsElem e (DC dynamic) = DC . fromRows $ pure e <> rows dynamic
-
-
-instance OldEncodableDynamicCharacterToBeRemoved DynamicChar where
-    
---    emptyChar          :: s
-    emptyChar = DC $ bitMatrix 0 0 (const False)
-
-    emptyLike (DC bm) = DC $ bitMatrix 1 (numCols bm) (const False)
-    
---    filterGaps         :: s -> s
-    filterGaps c@(DC bm) = DC . fromRows . filter (/= gapBV) $ rows bm
-      where
-        gapBV = gapChar c
-    
---    gapChar            :: s -> s
-    gapChar (DC bm) = zeroBits `setBit` (numCols bm - 1)
-    
---    getAlphLen         :: s -> Int
-    getAlphLen (DC bm) = numCols bm
-
---   grabSubChar        :: s -> Int -> s
-    grabSubChar char i = char `indexChar` i
-    
---    isEmpty            :: s -> Bool
-    isEmpty (DC bm) = isZeroMatrix bm
-
---    numChars           :: s -> Int
-    numChars (DC bm) = numRows bm
-
-    safeGrab char@(DC bm) i 
-      |  0 <= i && i < numRows bm = Just $ char `indexChar` i
-      | otherwise                 = Nothing
-
-    fromChars bvs = DC $ fromRows bvs
 
 -- TODO: Probably remove?
 instance Bits DynamicChar where
@@ -212,16 +176,6 @@ instance Arbitrary DynamicChar where
         let randVal  =  choose (1, 2 ^ symbolCount - 1) :: Gen Integer
         bitRows      <- vectorOf characterLen randVal
         pure . DC . fromRows $ bitVec symbolCount <$> bitRows
-
--- | Function to generate an arbitrary DynamicChar given an alphabet
-arbitraryDynamicGivenAlph :: Alphabet String -> Gen DynamicChar
-arbitraryDynamicGivenAlph inAlph = do
-  arbParsed <- arbitrary :: Gen ParsedChar
-  pure $ encodeDynamic inAlph arbParsed
-
--- | Generate many dynamic characters using the above
-arbitraryDynamicsGA :: Alphabet String -> Gen DynamicChars
-arbitraryDynamicsGA inAlph = V.fromList <$> listOf (arbitraryDynamicGivenAlph inAlph)
 
 -- | Functionality to unencode many encoded sequences
 -- decodeMany :: DynamicChars -> Alphabet -> ParsedChars

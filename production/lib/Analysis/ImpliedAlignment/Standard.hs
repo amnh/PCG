@@ -1,4 +1,4 @@
------------------------------------------------------------------------------
+ -----------------------------------------------------------------------------
 -- |
 -- Module      :  Analysis.ImpliedAlignment.Standard
 -- Copyright   :  (c) 2015-2015 Ward Wheeler
@@ -11,7 +11,7 @@
 -- Standard algorithm for implied alignment
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE FlexibleContexts, TypeFamilies #-}
 
 -- TODO: Make an AppliedAlignment.hs file for exposure of appropriate functions
 
@@ -37,6 +37,8 @@ import           Data.Vector                (Vector, imap)
 import qualified Data.Vector as V
 import           Prelude             hiding (lookup)
 
+-- | An accumulator used in generating a comparative "homology" between two
+--   dynamic characters.
 newtype MutationAccumulator = Accum (IntMap Int, Int, Int, Int, Int, IntSet)
 
 -- | Top level wrapper to do an IA over an entire solution
@@ -66,6 +68,9 @@ impliedAlign inTree inMeta = extractAlign numerated inMeta
     where
         numerated = numeratePreorder inTree (root inTree) inMeta (V.replicate (length inMeta) (0, 0))
 
+-- | Constructs the implied alignment from the "homology" annotations on the leaf
+--   nodes of the tree. The external alignmentment structure mirrors the
+--   structure of the input tree.
 extractAlign :: (TreeConstraint t n e s, Metadata m s) => (Counts, t) -> Vector m -> Alignment s
 --extractAlign (lens, numeratedTree) inMeta | trace ("extract alignments " ++ show numeratedTree) False = undefined
 extractAlign (lens, numeratedTree) _inMeta = foldr (\n acc -> insert (fromJust $ getNodeIdx n numeratedTree) (makeAlignment n lens) acc) mempty allLeaves
@@ -83,13 +88,13 @@ makeAlignment n seqLens = makeAlign (getFinalGapped n) (getHomologies n)
         --makeAlign :: Vector s -> HomologyTrace -> Vector s
         makeAlign dynChar homologies = V.zipWith3 makeOne' dynChar homologies seqLens
         -- | /O((n+m)*log(n)), could be linear, but at least it terminates!
-        makeOne' char homolog len = fromChars . toList $ result
+        makeOne' char homolog lens = constructDynamic . toList $ result
           where
-            result = V.generate (fst len + snd len) f
+            result = V.generate (uncurry (+) lens) f
               where
                 f i = case i `IM.lookup` mapping of
-                        Nothing -> gapChar char
-                        Just j  -> char `grabSubChar` j
+                        Nothing -> getGapChar $ char `indexChar` 0
+                        Just j  -> char `indexChar` j
                 mapping = V.ifoldl' (\im k v -> IM.insert v k im) mempty homolog
 
 -- | Main recursive function that assigns homology traces to every node
@@ -141,7 +146,7 @@ numeratePreorder initTree initNode inMeta curCounts
             rightOnly                     = isNothing $ leftChild curNode inTree
             defaultHomologs               = if V.length curSeqs == 0 
                                             then V.replicate (V.length inMeta) mempty 
-                                            else imap (\i _ -> V.enumFromN 0 (numChars (curSeqs V.! i))) inMeta
+                                            else imap (\i _ -> V.enumFromN 0 (olength (curSeqs V.! i))) inMeta
             --curNode = getNthNode inTree {- . fromJust -} $ getCode initNode --inTree
             propagateIt tree child events = tree' `update` [child]
                                                 where tree' = backPropagation tree child events
@@ -156,7 +161,7 @@ numeratePreorder initTree initNode inMeta curCounts
                     final2 = getForAlign node2
                     allUnzip = V.unzip allDO
                     allDO = V.zipWith3 checkThenAlign final1 final2 $ getCosts <$> inMeta
-                    checkThenAlign s1 s2 m = if numChars s1 == numChars s2 then (s1, s2) else doAlignment s1 s2 m
+                    checkThenAlign s1 s2 m = if olength s1 == olength s2 then (s1, s2) else doAlignment s1 s2 m
 
 -- | Back propagation to be performed after insertion events occur in a numeration
 -- goes back up and to the left, then downward
@@ -214,21 +219,23 @@ accountForInsertionEvents homologies insertionEvents = V.generate (length homolo
         oldIndexReference          = homologies V.! i
         insertionEventsBeforeIndex = olength $ IS.filter (<= oldIndexReference) insertionEvents
 
--- | Function to do a numeration on an entire node
--- given the ancestor node, ancestor node, current counter vector, and vector of metadata
--- returns a tuple with the node with homologies incorporated, and a returned vector of counters
+-- | Function to do a numeration on an entire node given the ancestor node,
+--   ancestor node, current counter vector, and vector of metadata returns a
+--   tuple with the node with homologies incorporated, and a returned vector of
+--   counters.
 numerateNode :: (NodeConstraint n s) => n -> n -> Counts -> (n, Counts, Vector IntSet) 
 numerateNode ancestorNode childNode initCounters = (setHomologies childNode homologs, counts, insertionEvents)
     where
         numeration = V.zipWith3 numerateOne (getForAlign ancestorNode) (getForAlign childNode) initCounters 
         (homologs, counts, insertionEvents) = V.unzip3 numeration
 
-
+-- | Applies comparative logic to determine a comparative homology between two
+--   node sequences.
 numerateOne :: SeqConstraint s => s -> s -> Counter -> (Homologies, Counter, IntSet)
 numerateOne ancestorSeq descendantSeq (maxLen, initialCounter) = (descendantHomologies, (newLen, counter'), insertionEvents)
   where
-    gapCharacter = gapChar descendantSeq
-    newLen = max (numChars descendantSeq) maxLen
+    gapCharacter = getGapChar $ descendantSeq `indexChar` 0
+    newLen = max (olength descendantSeq) maxLen
 
     descendantHomologies = V.generate (olength descendantSeq) g
      where
@@ -248,8 +255,8 @@ numerateOne ancestorSeq descendantSeq (maxLen, initialCounter) = (descendantHomo
           | otherwise {- Both not gap -}                                             = Accum (insert i (i + childOffset)     indexMapping, counter    , i + 1, ancestorOffset    , childOffset    , insertionEventIndicies)
           where
 --          j = i + childOffset
-            descendantCharacter    = fromJust $ safeGrab descendantSeq i
-            ancestorCharacter = fromJust $ safeGrab ancestorSeq   i 
+            ancestorCharacter   = ancestorSeq   `indexChar` i
+            descendantCharacter = descendantSeq `indexChar` i
 
 -- TODO: make sure a sequence always ends up in FinalGapped to avoid this decision tree
 -- | Simple function to get a sequence for alignment purposes

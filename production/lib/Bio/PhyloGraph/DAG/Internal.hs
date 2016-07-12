@@ -27,6 +27,7 @@ import qualified Bio.PhyloGraph.Network             as N
 import qualified Bio.PhyloGraph.Network.Subsettable as SN
 import           Bio.PhyloGraph.Node
 --import           Bio.PhyloGraph.Node.Referential          ()
+import           Bio.PhyloGraph.Node.Preliminary          (getLeftAlignment, getRightAlignment)
 import           Bio.PhyloGraph.Node.Topological          (TopoNode)
 import qualified Bio.PhyloGraph.Node.Topological    as TN
 import qualified Bio.PhyloGraph.Tree.EdgeAware      as ET
@@ -79,9 +80,11 @@ data TopoDAG
    { structure :: Topo
    }
 
+-- | (✔)
 instance Arbitrary DAG where
   arbitrary = binaryTreeToDAG <$> (arbitrary :: Gen (TestingBinaryTree Node))
 
+-- | (✔)
 instance Arbitrary (Positive Int, Positive Int, Alphabet String, [BitVector]) where
   arbitrary = do
     alphabet   <- arbitrary :: Gen (Alphabet String)
@@ -91,15 +94,21 @@ instance Arbitrary (Positive Int, Positive Int, Alphabet String, [BitVector]) wh
     bitVectors <- vectorOf taxaCount bvGen
     pure (Positive taxaCount, Positive charCount, alphabet, bitVectors)
     
-
+-- | A well typed tree used for generating a binary tree. An intermidiate type
+--   representation used in 'DAG' generation.
 data TestingBinaryTree a 
    = Leaf a
    | Internal (TestingBinaryTree a) (TestingBinaryTree a)
    deriving (Eq,Show)
 
+-- | Type synonym for a counter used when enumerating nodes in a tree.
 type Counter = Int
+
+-- | An accumulator type used when traversing the intermidate type tree. 
 type Accumulator = (IntMap NodeInfo, IntMap EdgeSet, Counter)
 
+-- | Convert between intermidate type 'TestingBinaryTree' to the resulting type
+--   DAG.
 binaryTreeToDAG :: TestingBinaryTree Node -> DAG
 binaryTreeToDAG binaryRoot = DAG 
                            { nodes = V.generate (length totalNodeMap) (totalNodeMap !)
@@ -111,7 +120,7 @@ binaryTreeToDAG binaryRoot = DAG
        f :: Maybe Int -> TestingBinaryTree Node -> Accumulator -> Accumulator
        f parentMay (Leaf node) (nodeMap, edgeMap, counter) = 
            ( IM.insert counter (node { nodeIdx = counter
-                                     , name = "Taxon: " <> show (nodeIdx node)
+                                     , name    = "Taxon: " <> show (nodeIdx node)
                                      , parents = otoList (inNodeSet parentMay)
                                      } ) nodeMap
            , IM.insert counter (EdgeSet (inNodeSet parentMay) mempty) edgeMap
@@ -130,31 +139,34 @@ binaryTreeToDAG binaryRoot = DAG
            resultingOutNodes = IM.insert  counter'   (EdgeInfo 0 internalNode (nodeMap' ! counter'   ) Nothing)
                               (IM.insert (counter+1) (EdgeInfo 0 internalNode (nodeMap' ! (counter+1)) Nothing) mempty)
            internalNode = Node 
-                        { nodeIdx             = counter
-                        , name                = "HTU: " <> show counter
-                        , isRoot              = null $ maybe [] pure parentMay
-                        , isLeaf              = False
-                        , children            = [counter+1, counter']
-                        , parents             = maybe [] pure parentMay
-                        , encoded             = mempty
-                        , packed              = mempty
-                        , preliminaryUngapped = mempty
-                        , finalUngapped       = mempty
+                        { nodeIdx                 = counter
+                        , name                    = "HTU: " <> show counter
+                        , isRoot                  = null $ maybe [] pure parentMay
+                        , isLeaf                  = False
+                        , children                = [counter+1, counter']
+                        , parents                 = maybe [] pure parentMay
+                        , encoded                 = mempty
+                        , packed                  = mempty
                         --, temporary   = mempty
-                        , preliminaryGapped   = mempty
-                        , random              = mempty
-                        , union               = mempty
-                        , single              = mempty
-                        , finalGapped         = mempty
-                        , iaHomology          = mempty
-                        , impliedAlignment    = mempty
-                        , localCost           = 0
-                        , totalCost           = 0
+                        , random                  = mempty
+                        , union                   = mempty
+                        , single                  = mempty
+                        , preliminaryUngapped     = mempty
+                        , preliminaryGapped       = mempty
+                        , finalUngapped           = mempty
+                        , finalGapped             = mempty
+                        , leftChildwiseAlignment  = mempty
+                        , rightChildwiseAlignment = mempty 
+                        , iaHomology              = mempty
+                        , impliedAlignment        = mempty
+                        , localCost               = 0
+                        , totalCost               = 0
                         }
        inNodeSet :: Maybe Int -> IntSet
        inNodeSet (Just parentReference) = IS.insert parentReference mempty
        inNodeSet  Nothing               = mempty
 
+-- | (✔)
 instance Arbitrary (TestingBinaryTree Node) where
     arbitrary = do
         leafCount <- (getPositive <$> (arbitrary :: Gen (Positive Int))) `suchThat` (\x -> 2 <= x && x <= 10)
@@ -172,7 +184,9 @@ instance Arbitrary (TestingBinaryTree Node) where
                 f (Internal left right : remaining)
 
 maxTaxa, maxChildren :: Int
+-- | Default value for specified child count when generating trees.
 maxChildren = 2 -- it's a binary tree.
+-- | Default value for leaf node (taxa) count when generating trees.
 maxTaxa     = 10
 
 -- | Generate an arbitrary TopoDAG given an alphabet
@@ -181,35 +195,41 @@ maxTaxa     = 10
 
 -- | Generate an arbitrary DAG given sequences
 -- TODO: When you delete this, delete maxChildren, above.
-arbitraryDAGGS :: HashMap String ParsedChars -> Vector (CharacterMetadata DynamicChar) -> Gen DAG
-arbitraryDAGGS allSeqs metadata = fromTopo . TopoDAG <$> TN.arbitraryTopoGivenCSNA maxChildren (H.toList allSeqs) metadata (0, maxTaxa)
+--arbitraryDAGGS :: HashMap String ParsedChars -> Vector (CharacterMetadata DynamicChar) -> Gen DAG
+--arbitraryDAGGS allSeqs metadata = fromTopo . TopoDAG <$> TN.arbitraryTopoGivenCSNA maxChildren (H.toList allSeqs) metadata (0, maxTaxa)
 
+-- TODO: is this really a Monoid?
+-- | (✔)
 instance Monoid TopoDAG where
     mempty = TopoDAG mempty
     mappend (TopoDAG topo1) (TopoDAG topo2) = TopoDAG $ topo1 { TN.children = topo2 : TN.children topo1 }
 
+-- | (✔)
 instance SN.SubsettableNetwork DAG NodeInfo where
     appendSubtree = attachAt
     accessSubtree = grabAt
 
--- | This tree knows its edges
+-- | (✔)
 instance ET.EdgedTree DAG NodeInfo EdgeSet where
     edges    n t   = edges t V.! nodeIdx n
     setEdges n t e = t {edges = edges t // [(nodeIdx n, e)]}
 
--- | This particular tree is referential
+-- | (✔)
 instance RT.ReferentialTree DAG NodeInfo where
     getNodeIdx node tree = elemIndex (getCode node) . toList $ getCode <$> nodes tree
     getNthNode tree pos  = nodes tree V.! pos
 
+-- | (✔)
 instance BinaryTree DAG NodeInfo where
     leftChild  n t = lookup 0 $ (\i -> nodes t V.! i) <$> children n
     rightChild n t = lookup 1 $ (\i -> nodes t V.! i) <$> children n
     verifyBinary   = all ((2 >=) . length . children) . nodes
 
+-- | (✔)
 instance RoseTree DAG NodeInfo where
     parent n t = headMay $ fmap (\i -> nodes t V.! i) (parents n)
 
+-- | (✔)
 instance N.Network DAG NodeInfo where
     parents node dag    = fmap (\i -> nodes dag V.! i) (parents node)
     root dag            = nodes dag V.! root dag
@@ -223,12 +243,13 @@ instance N.Network DAG NodeInfo where
           addPos  = length $ nodes dag
           newNode = resetPos node dag addPos
           newEdge = makeEdges newNode dag
-          edges2  = edges dag V.++ pure newEdge
-          nodes2  = addConnections newNode (nodes dag) V.++ pure newNode
+          edges2  = edges dag <> pure newEdge
+          nodes2  = addConnections newNode (nodes dag) <> pure newNode
           reroot  = if   isRoot node && null (nodes dag) 
                     then addPos 
                     else root dag
 
+-- | (✔)
 instance StandardDAG DAG NodeInfo EdgeSet where
     getNodes       = nodes
     setNodes inD n = inD {nodes = n}
@@ -238,6 +259,7 @@ instance StandardDAG DAG NodeInfo EdgeSet where
 
 type instance Element DAG = NodeInfo
 
+-- | (✔)
 instance MonoFoldable DAG where
     ofoldMap f = foldr (mappend . f) mempty . nodes
     {-# INLINE ofoldMap #-}
@@ -306,7 +328,7 @@ attachAt d1@(DAG nodes_1 edges_1 root_1) d2@(DAG nodes_2 edges_2 root_2) node_11
                                    }
 
             newEdges        = fmap shiftEdge edges_2
-            allEdges        = edges_1 V.++ newEdges
+            allEdges        = edges_1 <> newEdges
             hangUpdate      = (allEdges V.! hCode) { outNodes = fmap (\info -> info { origin = allNodes V.! hCode }) (outNodes (allEdges V.! hCode)) }
             hangAdd         = hangUpdate <> EdgeSet (inNodes $ edges_1 V.! hCode) (IM.insert (root_2 + shiftNum) (EdgeInfo 0 (allNodes V.! hCode) (allNodes V.! (root_2 + shiftNum)) Nothing) (outNodes $ edges_1 V.! hCode))
             hangedUpdate    = (allEdges V.! (root_2 + shiftNum)) <> EdgeSet (IS.singleton hCode) mempty
@@ -356,26 +378,28 @@ fromTopo topoDag = DAG
     nodeVector :: Vector NodeInfo
     !nodeVector = V.generate (length reference) f
       where
-        f i = Node { nodeIdx             = i
-                   , name                = TN.name topoRef
-                   , isRoot              = null parents'
-                   , isLeaf              = null children'
-                   , children            = children'
-                   , parents             = parents'
-                   , encoded             = TN.encoded     topoRef
-                   , packed              = TN.packed      topoRef
-                   , preliminaryUngapped = TN.preliminary topoRef
-                   , finalUngapped       = TN.final       topoRef
+        f i = Node { nodeIdx                 = i
+                   , name                    = TN.name topoRef
+                   , isRoot                  = null parents'
+                   , isLeaf                  = null children'
+                   , children                = children'
+                   , parents                 = parents'
+                   , encoded                 = TN.encoded    topoRef
+                   , packed                  = TN.packed     topoRef
                    --, temporary           = TN.temporary   topoRef
-                   , preliminaryGapped   = TN.aligned     topoRef
-                   , random              = TN.random      topoRef
-                   , union               = TN.union       topoRef
-                   , single              = TN.single      topoRef
-                   , finalGapped         = TN.gapped      topoRef
-                   , iaHomology          = mempty
-                   , impliedAlignment    = mempty
-                   , localCost           = TN.localCost   topoRef
-                   , totalCost           = TN.totalCost   topoRef
+                   , random                  = TN.random      topoRef
+                   , union                   = TN.union       topoRef
+                   , single                  = TN.single      topoRef
+                   , preliminaryUngapped     = TN.preliminary topoRef
+                   , preliminaryGapped       = TN.aligned     topoRef
+                   , finalUngapped           = TN.final       topoRef
+                   , finalGapped             = TN.gapped      topoRef
+                   , leftChildwiseAlignment  = TN.leftAlign   topoRef
+                   , rightChildwiseAlignment = TN.rightAlign  topoRef
+                   , iaHomology              = mempty
+                   , impliedAlignment        = mempty
+                   , localCost               = TN.localCost   topoRef
+                   , totalCost               = TN.totalCost   topoRef
                    }
             where
                 (parentRefs, topoRef, childRefs) = reference ! i
@@ -425,6 +449,8 @@ nodeToTopo inDAG curNode
                    --(temporary   curNode)
                    mempty
                    (getPreliminaryGapped   curNode)
+                   mempty
+                   mempty
                    (random                 curNode)
                    (union                  curNode)
                    (single                 curNode)
@@ -484,4 +510,4 @@ fromNewick forest = fst $ foldr convertNewickForest ([], 1) forest
             myCost      = fromMaybe 0 (New.branchLength inTree)
             --recurse = V.toList $ V.imap (\i n -> internalNewick n (nameCount + i + 1)) (V.fromList $ New.descendants inTree) 
             (recurse, nextNameCount) = foldr (\n (acc,i) -> first (: acc) $ internalNewick i n) baseCase (New.descendants inTree) 
-            outNode     = TN.TopoNode False (null $ New.descendants inTree) myName recurse mempty mempty mempty mempty mempty mempty mempty mempty mempty mempty myCost 0
+            outNode     = TN.TopoNode False (null $ New.descendants inTree) myName recurse mempty mempty mempty mempty mempty mempty mempty mempty mempty mempty mempty mempty myCost 0

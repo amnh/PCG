@@ -118,7 +118,7 @@ fromRows xs
                []   -> BitMatrix 0 $ bitVec 0 (0 :: Integer)
                y:ys -> BitMatrix (width y) (if width y == 0 
                                             then bitVec (length xs) (0 :: Integer)
-                                            else foldr1 (bvCat) $ y:ys)
+                                            else foldr1 bvCat $ y:ys)
 
 -- | The number of columns in the 'BitMatrix'
 --   /O(1)/

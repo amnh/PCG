@@ -2,9 +2,8 @@ module Main (main) where
 
 import Analysis.ImpliedAlignment.DynamicProgramming
 import Analysis.Parsimony.Binary.Optimization
-import Bio.Metadata        (getCosts)
 import Control.Applicative ((<|>))
-import Data.Vector         ((!))
+import Data.Maybe          (fromMaybe)
 import Safe                (headMay, readMay, tailMay)
 import System.Environment  (getArgs)
 import Test.Custom
@@ -16,13 +15,10 @@ main = getArgs
    >>= compute . handleInput
 
 handleInput :: [String] -> SimpleTree
-handleInput args =
-  case trySimpleTree args <|> trySimpleBinaryTree args of
-    Just x  -> x
-    Nothing -> exampleTree
+handleInput args = fromMaybe exampleTree $ trySimpleTree args <|> trySimpleBinaryTree args
 
 compute :: SimpleTree -> IO ()
-compute = print . deriveImpliedAlignments defMeta . allOptimization 0 defMeta 
+compute = print . deriveImpliedAlignments defMeta . allOptimization 1 defMeta 
 
 trySimpleTree :: [String] -> Maybe SimpleTree
 trySimpleTree xs = do

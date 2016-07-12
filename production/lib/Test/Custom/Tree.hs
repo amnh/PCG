@@ -23,8 +23,7 @@ import           Data.Alphabet
 import           Data.Bifunctor                          (second)
 import           Data.BitVector                          (width)
 import           Data.Foldable
-import           Data.IntMap                             (IntMap, insertWith)
-import qualified Data.IntMap                      as IM
+import           Data.IntMap                             (insertWith)
 import qualified Data.IntSet                      as IS
 import           Data.Key
 import           Data.List                               (intercalate)
@@ -104,6 +103,8 @@ data TestingDecoration
    , dFinal            :: Vector DynamicChar
    , dGapped           :: Vector DynamicChar
    , dPreliminary      :: Vector DynamicChar
+   , dLeftAlignment    :: Vector DynamicChar
+   , dRightAlignment   :: Vector DynamicChar
    , dAligned          :: Vector DynamicChar
    , dTemporary        :: Vector DynamicChar
    , dLocalCost        :: Double
@@ -119,6 +120,8 @@ def = Decorations
     , dFinal            = mempty
     , dGapped           = mempty
     , dPreliminary      = mempty
+    , dLeftAlignment    = mempty
+    , dRightAlignment   = mempty
     , dAligned          = mempty
     , dTemporary        = mempty
     , dLocalCost        = 0.0
@@ -140,25 +143,30 @@ instance Show TestingDecoration where
   show decoration = intercalate "\n" $ catMaybes renderedCosts <> catMaybes renderedDecorations
     where
       renderedCosts =
-        [  ("LocalCost   " <>)  <$> h dLocalCost
-        ,  ("TotalCost   " <>)  <$> h dTotalCost
+        [  pure $ "LocalCost   " <> show (dLocalCost decoration)
+        ,  pure $ "TotalCost   " <> show (dTotalCost decoration)
+--        [  ("LocalCost   " <>)  <$> h dLocalCost
+--        ,  ("TotalCost   " <>)  <$> h dTotalCost
         ]
       renderedDecorations =
-        [ g "Encoded              " <$> f dEncoded
-        , g "Final Ungapped       " <$> f dFinal
-        , g "Final Gapped         " <$> f dGapped
-        , g "Preliminary Ungapped " <$> f dPreliminary
-        , g "Preliminary Gapped   " <$> f dAligned
-        , g "Implied Alignment    " <$> f dImpliedAlignment
+        [ g "Encoded                   " <$> f dEncoded
+        , g "Final Ungapped            " <$> f dFinal
+        , g "Final Gapped              " <$> f dGapped
+        , g "Preliminary Ungapped      " <$> f dPreliminary
+        , g "Preliminary Gapped        " <$> f dAligned
+        , g "Left  Child-wise Alignment" <$> f dLeftAlignment
+        , g "Right Child-wise Alignment" <$> f dRightAlignment
+        , g "Implied Alignment         " <$> f dImpliedAlignment
         ]
       f x = renderDynamicCharacter <$> headMay (x decoration)
       g prefix shown = prefix <> ": " <> shown --intercalate "\n" $ (prefix <> ": " <> y) : (("  " <>) <$> zs)
 --        where
 --          (x:y:zs) = lines shown :: [String]
+{-
       h x
         | x decoration == 0.0 = Nothing
         | otherwise           = Just . show $ x decoration
-
+-}
 
 -- | Neat 2-dimensional drawing of a tree.
 drawTreeMultiLine :: Tree String -> String
@@ -200,6 +208,7 @@ instance Arbitrary SimpleTree where
     
 type instance Element SimpleTree = SimpleTree
 
+treeFold :: SimpleTree -> [SimpleTree]
 treeFold x@(TT root) = (x :) . concatMap (treeFold . TT) $ subForest root
 
 instance MonoFoldable SimpleTree where
@@ -246,11 +255,16 @@ instance RN.PreliminaryNode SimpleTree DynamicChar where
       where
         decoration = rootLabel n
 
- {-   getTemporary        (TT n) = dTemporary $ rootLabel n
-    setTemporary      x (TT n) = TT $ n { rootLabel = decoration { dTemporary = x } }
+    getLeftAlignment    (TT n) = dLeftAlignment $ rootLabel n
+    setLeftAlignment  x (TT n) = TT $ n { rootLabel = decoration { dLeftAlignment = x } }
       where
         decoration = rootLabel n
--}
+
+    getRightAlignment   (TT n) = dRightAlignment $ rootLabel n
+    setRightAlignment x (TT n) = TT $ n { rootLabel = decoration { dRightAlignment = x } }
+      where
+        decoration = rootLabel n
+
     getLocalCost        (TT n) = dLocalCost $ rootLabel n
     setLocalCost      x (TT n) = TT $ n { rootLabel = decoration { dLocalCost = x } }
       where

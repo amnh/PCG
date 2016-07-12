@@ -20,11 +20,13 @@ import           Analysis.Parsimony.Binary.Optimization
 import           Analysis.Parsimony.Binary.DirectOptimization
 import           Analysis.ImpliedAlignment.Internal
 import           Analysis.ImpliedAlignment.Standard
+import           Analysis.ImpliedAlignment.DynamicProgramming
 import           Bio.Character.Dynamic.Coded
 import           Bio.Character.Parsed
 import           Bio.Metadata
 import           Bio.PhyloGraph
-
+import           Bio.PhyloGraph.Network           (nodeIsLeaf)
+import           Bio.PhyloGraph.Node.ImpliedAlign (getHomologies')
 import           Data.Alphabet
 import           Data.BitVector          (BitVector, setBit, bitVec)
 import           Data.Foldable
@@ -36,7 +38,7 @@ import           Data.MonoTraversable
 import qualified Data.Set          as S
 import qualified Data.Vector       as V
 import           Test.Custom.Tree
-import qualified Test.Custom.Types as T
+--import qualified Test.Custom.Types as T
 import           Test.Tasty
 import           Test.Tasty.HUnit
 import           Test.Tasty.QuickCheck
@@ -45,20 +47,22 @@ import Debug.Trace
 
 testSuite :: TestTree
 testSuite = testGroup "Implied Alignment"
-          [ numerate
+          [ testNumerate
+          , testImpliedAlignmentCases
           , fullIA
           ]
 
 fullIA :: TestTree
 fullIA = testGroup "Full alignment properties" [ lenHoldsTest
-                                               , checkDOResult1
-                                               , checkIAResult1
-                                               , checkDOResult2
-                                               , checkIAResult2
+--                                               , checkDOResult1
+--                                               , checkIAResult1
+--                                               , checkDOResult2
+--                                               , checkIAResult2
                                                ]
     where
         lenHoldsTest       = testProperty "The sequences on a tree are longer or the same at end." checkLen
 
+{-
         checkDOResult1 = testCase "On a simple cherry, DO behaves as expected" (expectedDO @=? doResult1)
             where
                 doResult1 = allOptimization 1 (pure doMeta) cherry1
@@ -169,20 +173,21 @@ fullIA = testGroup "Full alignment properties" [ lenHoldsTest
                              }
 
 
+-}
 checkLen :: StandardSolution -> Bool
 checkLen inSolution = checkLS
-            where 
-                alignments = iaSolution $ solutionOptimization 1 inSolution
-                checkLS    = and $ zipWith checkLF (forests inSolution) alignments
-                  where
-                    checkLF f fa = and $ zipWith checkLD f fa
-                      where
-                        checkLD d a = and $ zipWith checkL (V.toList $ nodes d) (IM.toList a)
-                          where
-                            checkL n (_, s) = and $ V.zipWith ((<=) `on` numChars) (getFinalGapped n) s
+  where 
+    alignments = iaSolution $ solutionOptimization 1 inSolution
+    checkLS    = and $ zipWith checkLF (forests inSolution) alignments
+      where
+        checkLF f fa = and $ zipWith checkLD f fa
+          where
+            checkLD d a = and $ zipWith checkL (V.toList $ nodes d) (IM.toList a)
+              where
+                checkL n (_, s) = and $ V.zipWith ((<=) `on` olength) (getFinalGapped n) s
 
-numerate :: TestTree
-numerate = testGroup "Numeration properties" [ idHolds
+testNumerate :: TestTree
+testNumerate = testGroup "Numeration properties" [ idHolds
                                              , lengthHolds
                                              , counterIncrease
                                              , monotonic
@@ -190,32 +195,32 @@ numerate = testGroup "Numeration properties" [ idHolds
     where
         idHolds                          = testProperty "When a sequence is numerated with itself, get indices and the same counter" checkID
         checkID :: DynamicChar -> Bool
-        checkID inChar                   = onull inChar || (traces == defaultH && counter <= numChars inChar)
+        checkID inChar                   = onull inChar || (traces == defaultH && counter <= olength inChar)
             where
-                defaultH = V.fromList [0..numChars inChar - 1] 
+                defaultH = V.fromList [0..olength inChar - 1] 
                 (traces, (_, counter), _) =  numerateOne inChar inChar (0, 0)
 
-        -- TODO: Talk to Eric about numChars ()
+        -- TODO: Talk to Eric about olength ()
         lengthHolds                      = testProperty "Numerate returns a sequence of the correct length" checkLen
         checkLen :: (GoodParsedChar, GoodParsedChar) -> Int -> Bool
         checkLen inParse count           = V.length traces >= maxLen
             where 
                 (seq1, seq2)              = encodeArbSameLen inParse
-                (traces, (_, counter), _) = numerateOne seq1 seq2 (numChars seq1, count)
-                maxLen                    = maximum [numChars seq1, numChars seq2]
+                (traces, (_, counter), _) = numerateOne seq1 seq2 (olength seq1, count)
+                maxLen                    = maximum [olength seq1, olength seq2]
 
         counterIncrease                   = testProperty "After numerate runs, counter is same or larger" checkCounter
         checkCounter :: (GoodParsedChar, GoodParsedChar) -> Int -> Bool
         checkCounter inParse count        = counter >= count
             where 
                 (seq1, seq2)              = encodeArbSameLen inParse
-                (traces, (_, counter), _) = numerateOne seq1 seq2 (numChars seq1, count)
+                (traces, (_, counter), _) = numerateOne seq1 seq2 (olength seq1, count)
         monotonic = testProperty "Numerate produces a monotonically increasing homology" checkIncrease
         checkIncrease :: (GoodParsedChar, GoodParsedChar) -> Int -> Bool
         checkIncrease inParse count       = increases $ toList traces
             where 
                 (seq1, seq2)         = encodeArbSameLen inParse
-                (traces, counter, _) = numerateOne seq1 seq2 (numChars seq1, count)
+                (traces, counter, _) = numerateOne seq1 seq2 (olength seq1, count)
                 increases :: Ord a => [a] -> Bool
                 increases []         = True
                 increases [x]        = True
@@ -226,6 +231,33 @@ partNumerate :: DAG -> Node -> Vector m -> Counts -> Node -> (Counts, t)
 partNumerate inTree curNode inMeta curCounts stopNode
     | (code curNode) == (code stopNode) = (curCounts, inTree)
     | otherwise = partNumerate -}
+
+testImpliedAlignmentCases :: TestTree
+testImpliedAlignmentCases = testGroup "Explicit test cases for implied alignment" [testDeletedInsertion]
+  where
+    testDeletedInsertion = testCase "Deletion event of an insertion event" . assertBool (show tree') $ oall leafProperty tree'
+      where
+        leafProperty n = not (n `nodeIsLeaf` tree') || characterMatch n "AG--TT" || characterMatch n "AGCCTT"
+        characterMatch n xs = (fmap (decodeDynamic alphabet) . headMay . getHomologies') n == Just (pure . pure <$> xs)
+        alphabet = constructAlphabet $ pure <$> "ACGT" :: Alphabet String
+        tree' = deriveImpliedAlignments defMeta $ allOptimization 1 defMeta tree
+        tree = createSimpleTree 0 "ACGT"
+             [ ( 0,       "", [ 1, 2])
+             , ( 1,   "AGTT",     [])
+             , ( 2,       "", [ 3, 4])
+             , ( 3,   "AGTT",     [])
+             , ( 4,       "", [ 5, 6])
+             , ( 5,   "AGTT",     [])
+             , ( 6,       "", [ 7, 8])
+             , ( 7, "AGCCTT",     [])
+             , ( 8,       "", [ 9,10])
+             , ( 9, "AGCCTT",     [])
+             , (10,       "", [11,12])
+             , (11, "AGCCTT",     [])
+             , (12,       "", [13,14])
+             , (13,   "AGTT",     [])
+             , (14,   "AGTT",     [])
+             ]
 
 -- | Useful function to convert encoding information to two encoded seqs
 encodeArbSameLen :: (GoodParsedChar, GoodParsedChar) -> (DynamicChar, DynamicChar)

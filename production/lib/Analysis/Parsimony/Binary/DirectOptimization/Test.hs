@@ -22,10 +22,11 @@ import           Bio.Metadata.Internal
 import           Data.Alphabet
 import           Data.BitMatrix
 import           Data.Bits
-import           Data.BitVector        hiding (foldr)
+import           Data.BitVector        hiding (and, foldr)
 import           Data.Matrix.NotStupid        (getRow, fromLists, setElem)
+import           Data.MonoTraversable
 import qualified Data.Vector                                               as V
-import           Test.Custom.Types
+import           Test.Custom
 import           Test.Tasty
 import           Test.Tasty.HUnit
 import           Test.Tasty.QuickCheck hiding ((.?.), (.&.))
@@ -35,11 +36,17 @@ standardAlph :: Alphabet String
 standardAlph =  constructAlphabet $ V.fromList ["A", "C", "G", "T", "-"]
 
 sampleMeta :: CharacterMetadata DynamicChar             
-sampleMeta =  CharMeta DirectOptimization standardAlph "" False False 1 mempty (emptyChar, emptyChar) 0 (GeneralCost 1 1)
+sampleMeta =  CharMeta DirectOptimization standardAlph "" False False 1 mempty (constructDynamic [], constructDynamic []) 0 uniformCostStructure
+
+defaultCostStructure :: CostStructure
+defaultCostStructure = GeneralCost 2 1
+
+uniformCostStructure :: CostStructure
+uniformCostStructure = GeneralCost 1 1
 
 -- This is needed to align AC(GT)(AT) with ACT. Taked from Wheeler '96, fig. 2, HTU just below root.
-matrixForTesting :: DOAlignMatrix s
-matrixForTesting =  trace (show finalMatrix) $ finalMatrix
+matrixForTesting :: DOAlignMatrix BV
+matrixForTesting =  trace (show finalMatrix) finalMatrix
     where
         initMatrix = Data.Matrix.NotStupid.fromLists cellList
         cellList = [ [(0, LeftArrow, bitVec 5 1), (1, LeftArrow, bitVec 5 2), (2, LeftArrow, bitVec 5 24), (3, LeftArrow, bitVec 5 17)]
@@ -48,11 +55,53 @@ matrixForTesting =  trace (show finalMatrix) $ finalMatrix
         finalMatrix = initMatrix
 
 testSuite :: TestTree
-testSuite =  testGroup "DO functionality" [ alignDOProperties
-                                          , getSubCharsTest
-                                          , overlapTest
-                                          , getCostTest
-                                          ]
+testSuite =  testGroup "DO functionality"
+  [ directOptimizationProperties
+  , alignDOProperties
+  , getSubCharsTest
+  , overlapTest
+  , getCostTest
+  ]
+
+directOptimizationProperties = testGroup "General properties of direct optimization"
+  [ identicalInputAndOutput
+  , equalLengthPariwiseAlignments
+  , nonDecreasingLengths
+  ]
+  where
+    identicalInputAndOutput = testProperty "Identical input characters and uniform transition costs result in identity alignments" f
+      where
+        f :: DynamicChar -> Bool
+        f char = and [ cost == 0
+                     , derivedUngapped == filterGaps char
+                     , derivedGapped   == char
+                     , leftAlignment   == char
+                     , rightAlignment  == char
+                     ]
+          where
+            (derivedUngapped, cost, derivedGapped, leftAlignment, rightAlignment) = naiveDO char char uniformCostStructure
+
+    equalLengthPariwiseAlignments = testProperty "Resulting alignments are all of same length" f
+      where
+        f :: Gen Bool
+        f = do
+            [char1,char2] <- take 2 <$> arbitraryDynamicCharStream
+            let (_, _, derivedAlignment, leftAlignment, rightAlignment) = naiveDO char1 char2 defaultCostStructure
+            pure $ olength leftAlignment == olength rightAlignment && olength rightAlignment == olength derivedAlignment
+
+    nonDecreasingLengths = testProperty "Resulting alignments are of greater than or equal length to input characters" f
+      where
+        f :: Gen Bool
+        f = do
+            [char1,char2] <- take 2 <$> arbitraryDynamicCharStream
+            let (_, _, derivedAlignment, leftAlignment, rightAlignment) = naiveDO char1 char2 defaultCostStructure
+            pure $ all (uncurry (>=))
+                 [ (outputLength, inputLength)
+                 |  outputLength <- [olength leftAlignment, olength rightAlignment, olength derivedAlignment]
+                 ,  inputLength  <- [olength char1, olength char2]
+                 ]
+
+
 
 alignDOProperties :: TestTree
 alignDOProperties = testGroup "Properties of DO alignment algorithm" [ firstRow
@@ -63,9 +112,9 @@ alignDOProperties = testGroup "Properties of DO alignment algorithm" [ firstRow
                 checkRow :: DynamicChar -> Bool
                 checkRow inSeq = fDir == DiagArrow && allLeft (V.tail result) && V.length result == (rowLen + 1)
                     where
-                        rowLen = numChars inSeq
+                        rowLen  = olength inSeq
                         fullMat = createDOAlignMatrix inSeq inSeq (getCosts sampleMeta)
-                        result = getRow 0 fullMat
+                        result  = getRow 0 fullMat
                         (_, fDir, _) = V.head result
                         allLeft = V.all (\(_, val, _) -> val == LeftArrow)
 
@@ -105,7 +154,7 @@ getSubCharsTest  = testGroup "getSubChars tests" [ orTest
                 f :: BitVector -> Bool
                 f inChar = rightPos
                     where
-                        rightPos = foldr (\(pos, char) acc -> (testBit char pos) && acc) True (getSubChars inChar)
+                        rightPos = foldr (\(pos, char) acc -> testBit char pos && acc) True (getSubChars inChar)
 
 getCostTest :: TestTree
 getCostTest = testGroup "Properties of getCosts" [ -- tcmTest 
@@ -137,7 +186,7 @@ getCostTest = testGroup "Properties of getCosts" [ -- tcmTest
                         f = getCost costStruct char1 char2 == expectedResult && getCost costStruct char2 char1 == expectedResult
                         char1          = (3, setBit (bitVec 5 0) 3)
                         char2          = (0, setBit (bitVec 5 0) 0)
-                        expectedResult = ((snd char1) .|. (snd char2), 1)
+                        expectedResult = (snd char1 .|. snd char2, 1)
                 costStruct = GeneralCost 2 1
 
 
@@ -148,7 +197,7 @@ allPossibleCombosCostsTest = testProperty "allPossibleCombosCosts returns correc
         f :: Bool
         f = 
 -}
-
+-- TDOD: these tests should all be HUnit, not QuickCheck based.
 overlapTest :: TestTree
 overlapTest = testGroup "Overlap test cases" [ singleIntersectionTest
                                              , multipleIntersectionTest

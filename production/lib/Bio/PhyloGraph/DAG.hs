@@ -21,7 +21,7 @@ module Bio.PhyloGraph.DAG
   , fromNewick
   , fromTopo
   , toTopo
-  , arbitraryDAGGS
+--  , arbitraryDAGGS
   ) where
 
 import Bio.PhyloGraph.DAG.Class

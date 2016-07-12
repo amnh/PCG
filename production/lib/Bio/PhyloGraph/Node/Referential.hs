@@ -14,5 +14,7 @@
 
 module Bio.PhyloGraph.Node.Referential where
 
+-- TODO: Consider removing this type-class.
+-- | A node which provides a value, unique amongst akll the nodes in the tree.
 class RefNode n where
     getCode :: n -> Int

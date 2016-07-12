@@ -12,8 +12,10 @@
 --
 -----------------------------------------------------------------------------
 module Analysis.Parsimony.Binary.DirectOptimization 
-    ( naiveDO
-    , doAlignment 
+    ( doAlignment
+    , getOverlap
+    , minimalChoice
+    , naiveDO
     ) where
 
 import Analysis.Parsimony.Binary.DirectOptimization.Internal

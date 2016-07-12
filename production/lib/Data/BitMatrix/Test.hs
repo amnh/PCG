@@ -49,20 +49,26 @@ testBitMatrixFn = testGroup "bitMatrix generating fn" [ testValue
         -- Note that it only tests on a single input function
             where
                 f :: Positive Int -> Positive Int -> Bool
-                f rowCt colCt = alphLen == numCols testBM
+                f rowCt colCt = expectedCols,== numCols testBM
                     where
-                        testBM   = bitMatrix numChars alphLen $ const True
-                        numChars = getPositive rowCt
-                        alphLen  = getPositive colCt
+                        (_, expectedCols, testBm) = constructMatrixFromPositives rowCt colCt
+
         testHeight = testProperty "Number of rows is correct." f
         -- Note that it only tests on a single input function
             where
                 f :: Positive Int -> Positive Int -> Bool
-                f rowCt colCt = numChars == numRows testBM
+                f rowCt colCt = expectedRows == numRows testBM
                     where
-                        testBM   = bitMatrix numChars alphLen $ const True
-                        numChars = getPositive rowCt
-                        alphLen  = getPositive colCt
+                        (expectedRows, _, testBm) = constructMatrixFromPositives rowCt colCt
+
+constructMatrixFromPositives
+  :: Positive Int          -- ^ Number of rows
+  -> Positive Int          -- ^ Number of columns
+  -> (Int, Int, BitMatrix) -- ^ Extracted Int values and resulting zero matrix
+constructMatrixFromPositives rowCt colCt = (numRows', numCols', bitMatrix numRows' numCols' $ const False)
+  where
+    numRows' = getPositive rowCt
+    numCols' = getPositive colCt
 
 testFromRowsFn :: TestTree
 testFromRowsFn = testGroup "fromRows generating fn"

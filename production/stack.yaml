@@ -5,13 +5,12 @@ resolver: lts-6.1
 # Local packages, usually specified by relative directory name
 packages:
 - '.'
-- location: https://bitbucket.org/iago/bv-haskell/get/4309ec7a39a2.zip
-  extra-dep: true
 
 # Packages to be pulled from upstream that are not in the resolver (e.g., acme-missiles-0.3)
 extra-deps:
- - megaparsec-5.0.0
- - fail-4.9.0.0
+- bv-0.4.1
+- fail-4.9.0.0
+- megaparsec-5.0.0
 
 # Override default flag values for local packages and extra-deps
 flags: {}
@@ -19,6 +18,7 @@ flags: {}
 # Extra package databases containing global packages
 extra-package-dbs: []
 
+# Location to place compiled binaries
 local-bin-path: bin
 
 # Control whether we use the GHC we find on the path

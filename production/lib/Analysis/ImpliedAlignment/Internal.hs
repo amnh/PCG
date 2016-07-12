@@ -10,7 +10,7 @@
 --
 -- Internal types for implied alignment
 -----------------------------------------------------------------------------
-{-# LANGUAGE ConstraintKinds #-}
+{-# LANGUAGE ConstraintKinds, FlexibleContexts #-}
 
 module Analysis.ImpliedAlignment.Internal where
 
@@ -22,17 +22,17 @@ import Bio.PhyloGraph.Node
 import Bio.PhyloGraph.Solution
 import Bio.PhyloGraph.Tree
 import Bio.Character.Dynamic.Coded
-
 import Data.Bits
 import Data.Function.Memoize
 import Data.IntMap
+import Data.MonoTraversable (Element)
 import Data.Vector
 
 type SolutionConstraint r m f t n e s = (GeneralSolution r f, MetadataSolution r m, Metadata m s, ForestConstraint f t n e s, Show r)
 type ForestConstraint       f t n e s = (GeneralForest f t, Show f, TreeConstraint t n e s)
 type TreeConstraint           t n e s = (BinaryTree t n, Network t n, ReferentialTree t n, NodeConstraint n s, Show t)
 type NodeConstraint             n   s = (FinalNode n s, IANode n, SeqConstraint s, Show n, EncodedNode n s, PreliminaryNode n s)
-type SeqConstraint                  s = (EncodableDynamicCharacter s, Bits s, Show s, Memoizable s)
+type SeqConstraint                  s = (EncodableDynamicCharacter s, Bits s, Show s, Memoizable s, Show (Element s))
 
 
 -- | The counter tracks the max sequence length and the number of gaps added

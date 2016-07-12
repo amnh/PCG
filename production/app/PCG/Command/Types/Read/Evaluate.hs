@@ -161,10 +161,10 @@ progressiveParse inputPath = do
     (filePath, fileContent) <- head . dataFiles <$> getSpecifiedContent (UnspecifiedFile [inputPath])
     case parse' nukeParser filePath fileContent of
       Right x    -> pure $ toFractured Nothing filePath x
-      Left  err1 -> do
+      Left  err1 ->
         case parse' acidParser filePath fileContent of
           Right x    -> pure $ toFractured Nothing filePath x
-          Left  err2 -> do
+          Left  err2 ->
             case parse' newickStreamParser filePath fileContent of
               Right x    -> pure $ toFractured Nothing filePath x
               Left  err3 ->

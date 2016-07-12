@@ -71,16 +71,18 @@ data Solution d
    , forests     :: [Forest d]
    } deriving (Eq, Show)
 
--- | Make it an instance of data storage type classes
 
+-- | (✔)
 instance GeneralSolution (Solution d) (Forest d) where
     getForests     = forests
     setForests s f = s {forests = f}
 
+-- | (✔)
 instance MS.MetadataSolution (Solution d) StandardMetadata where
     getMetadata               = metadata
     setMetadata solution meta = solution {metadata = meta}
 
+-- | (✔)
 instance Arbitrary (Solution DAG) where
     arbitrary = do
       forest    <- pure <$> (arbitrary :: Gen DAG)
@@ -91,6 +93,8 @@ instance Arbitrary (Solution DAG) where
            , forests     = pure forest
            }
 
+-- TODO: Can this be generaized, is this correct?
+-- | Derive an arbitrary metadata for dynamic characters from a 'Forest'.
 deriveDynamicMetadatas :: Forest DAG -> Gen (Vector StandardMetadata)
 deriveDynamicMetadatas []    = pure mempty
 deriveDynamicMetadatas (x:_) = sequenceA $ V.generate (length sequenceWLOG) f
@@ -129,6 +133,8 @@ deriveDynamicMetadatas (x:_) = sequenceA $ V.generate (length sequenceWLOG) f
         []  -> node
         c:_ -> getChildNodeWLOG c
 
+-- TODO: Is this correct? Do we need to derived generic Parsed values?
+-- | Derive 'Arbitrary' parsed character from the supplied metadata structures.
 arbitraryCharsGivenMeta :: Vector StandardMetadata -> Gen Parsed
 arbitraryCharsGivenMeta allMeta = do
   names         <- listOf (arbitrary :: Gen String)

@@ -22,15 +22,24 @@ import Data.BitVector
 import Data.Maybe           (fromMaybe)
 import Data.MonoTraversable
 
-import GHC.Stack     (errorWithStackTrace )
+import GHC.Stack            (errorWithStackTrace)
 
-{- LAWS:
- - decodeChar alphabet . encodeChar alphabet . toList == id
- - encodeChar alphabet [alphabet ! i] == bit i
- - encodeChar alphabet alphabet == complement (bit (length alphabet - 1) `clearBit` (bit (length alphabet - 1))
- - decodeChar alphabet (encodeChar alphabet xs .|. encodeChar alphabet ys) == toList alphabet `Data.List.intersect` (toList xs `Data.List.union` toList ys)
- - decodeChar alphabet (encodeChar alphabet xs .&. encodeChar alphabet ys) == toList alphabet `Data.List.intersect` (toList xs `Data.List.intersect` toList ys)
+{- | Represents a character of fixed width encoding one or more character states.
+ -
+ - Laws:
+ -
+ - @decodeChar alphabet . encodeChar alphabet . toList == id@
+ -
+ - @encodeChar alphabet [alphabet ! i] == bit i@
+ -
+ - @encodeChar alphabet alphabet == complement (bit (length alphabet - 1) `clearBit` (bit (length alphabet - 1))@
+ -
+ - @decodeChar alphabet (encodeChar alphabet xs .|. encodeChar alphabet ys) == toList alphabet `Data.List.intersect` (toList xs `Data.List.union` toList ys)@
+ - 
+ - @decodeChar alphabet (encodeChar alphabet xs .&. encodeChar alphabet ys) == toList alphabet `Data.List.intersect` (toList xs `Data.List.intersect` toList ys)@
+ -
  -}
+-- TODO: Add more laws here.
 class Bits b => EncodableStaticCharacter b where
   decodeChar ::  Eq a              => Alphabet a -> b   -> [a]
   encodeChar :: (Eq a, Foldable t) => Alphabet a -> t a -> b
@@ -38,15 +47,18 @@ class Bits b => EncodableStaticCharacter b where
   getGapChar ::  b -> b
   getGapChar = bit . pred . stateCount
 
-{- LAWS:
+{- | Represents a character of variable length representing multiple encoded static characters.
+ -
  - decodeMany alphabet . encodeMany alphabet == fmap toList . toList
- - TODO: Add more laws here
+ - 
  -}
+-- TODO: Add more laws here
 class ( EncodableStaticCharacter (Element s)
       , MonoTraversable s
-      , OldEncodableDynamicCharacterToBeRemoved s
       ) => EncodableDynamicCharacter s where
   -- All default instances can be "overidden" for efficientcy.
+  constructDynamic :: Foldable t => t (Element s) -> s
+  
   decodeDynamic ::  Eq a => Alphabet a -> s -> [[a]]
   decodeDynamic alphabet = ofoldr (\e acc -> decodeChar alphabet e : acc) []
 
@@ -55,7 +67,8 @@ class ( EncodableStaticCharacter (Element s)
   indexChar  :: s -> Int -> Element s
   indexChar xs i = fromMaybe raiseError $ xs `lookupChar` i
     where
-      raiseError = errorWithStackTrace $ mconcat ["Index ", show i, " is out of range [0,", show $ olength xs - 1,"]."] 
+      raiseError = errorWithStackTrace
+                 $ mconcat ["Index ", show i, " is out of range [0,", show $ olength xs - 1,"]."] 
 
   lookupChar :: s -> Int -> Maybe (Element s)
   lookupChar xs i = fst $ ofoldl' f (Nothing, 0) xs
@@ -63,21 +76,3 @@ class ( EncodableStaticCharacter (Element s)
       f (Nothing, n) e = if n == i then (Just e, n) else (Nothing, n + 1)
       f acc          _ = acc
 
-  constructDynamic :: Foldable t => t (Element s) -> s
-  
---  unsafeAppend  :: s -> BitVector -> s
---  unsafeCons :: BitVector -> s -> s
-  unsafeConsElem :: Element s -> s -> s
-
--- | A coded sequence allows grabbing of a character, filtering, and some standard types
-class OldEncodableDynamicCharacterToBeRemoved s where
-  emptyChar          :: s
-  emptyLike          :: s -> s
-  filterGaps         :: s -> s
-  gapChar            :: s -> BitVector
-  getAlphLen         :: s -> Int
-  grabSubChar        :: s -> Int -> BitVector
-  isEmpty            :: s -> Bool
-  numChars           :: s -> Int
-  safeGrab           :: s -> Int -> Maybe BitVector
-  fromChars          :: [BitVector] -> s

@@ -89,24 +89,28 @@ updateTcm      t x = x { costs      = TCM t }
 updateAligned :: Bool -> CharacterMetadata s -> CharacterMetadata s
 updateAligned a x = x { isAligned = a, charType = Fitch }
 
+-- TODO: Possibly inconsistent generation, need to review dependant structures
+-- | Contains a TCM of equaly costly character transitions if not an aligned character. 
 instance Arbitrary s => Arbitrary (CharacterMetadata s) where
   arbitrary = do
-    t <- elements [DirectOptimization, Fitch, InfoTheoretic, Unknown]
-    a <- arbitrary
-    n <- arbitrary :: Gen String
-    align <- arbitrary :: Gen Bool
-    ignore <- arbitrary :: Gen Bool
-    w <- arbitrary :: Gen Double
-    sn <- arbitrary
-    fm <- vectorOf 2 arbitrary
+    t         <- elements [DirectOptimization, Fitch, InfoTheoretic, Unknown]
+    a         <- arbitrary
+    n         <- arbitrary :: Gen String
+    align     <- arbitrary :: Gen Bool
+    ignore    <- arbitrary :: Gen Bool
+    w         <- arbitrary :: Gen Double
+    sn        <- arbitrary
+    fm        <- vectorOf 2 arbitrary
     let masks = (head fm, fm !! 1)
-    r <- arbitrary :: Gen Double
+    r         <- arbitrary :: Gen Double
     randCosts <- vectorOf 3 arbitrary 
-    c <- elements [ TCM $ tcmOfSize (length a)
-                  -- , AffineCost  (head randCosts) (randCosts !! 1) (randCosts !! 2)
-                  , GeneralCost (head randCosts) (randCosts !! 1)
-                  ]
+    c         <- elements
+                 [ TCM $ tcmOfSize (length a)
+              -- , AffineCost  (head randCosts) (randCosts !! 1) (randCosts !! 2)
+                 , GeneralCost (head randCosts) (randCosts !! 1)
+                 ]
     pure $ CharMeta t a n align ignore w sn masks r c
 
+-- | A default TCM matrix of equal cost character transitions.
 tcmOfSize :: Int -> CostMatrix
-tcmOfSize  n = matrix n n (const 1)
+tcmOfSize n = matrix n n (const 1)

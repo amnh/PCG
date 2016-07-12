@@ -25,6 +25,12 @@ class PreliminaryNode n s | n -> s where
     setPreliminaryUngapped :: Vector s -> n -> n
     getPreliminaryGapped   :: n -> Vector s
     setPreliminaryGapped   :: Vector s -> n -> n
+
+    getLeftAlignment       :: n -> Vector s
+    setLeftAlignment       :: Vector s -> n -> n
+    getRightAlignment      :: n -> Vector s
+    setRightAlignment      :: Vector s -> n -> n
+
     -- getTemporary        :: n -> Vector s
     -- setTemporary     :: Vector s -> n -> n
     getLocalCost           :: n -> Double

@@ -38,12 +38,15 @@ data EdgeInfo
    , virtualNode :: Maybe Node
    } deriving (Eq, Show)
 
+-- | (✔)
 instance C.StandardEdge EdgeInfo Node where
   getEdgeLen     = len
   setEdgeLen e f = e {len = f}
   getOrigin      = origin
   getTerminal    = terminal
 
+-- TODO: Is an EdgeSet a real Monoid. Maybe, but need to review structure.
+-- | (✔)
 instance Monoid EdgeSet where
   mempty = EdgeSet mempty mempty
   mappend (EdgeSet in1 out1) (EdgeSet in2 out2) = EdgeSet (in1 <> in2) (out1 <> out2)

@@ -55,20 +55,24 @@ import           File.Format.VertexEdgeRoot
 class ParsedCharacters a where
     unifyCharacters :: a -> TreeChars
 
+-- | (✔)
 instance ParsedCharacters FastaParseResult where
     unifyCharacters = foldr f mempty
         where
             convertSeq = V.fromList . fmap (Just . pure . pure . pure)
             f (FastaSequence n s) = insert n (convertSeq s)
 
+-- | (✔)
 instance ParsedCharacters TaxonSequenceMap where
     unifyCharacters = fmap (pure . pure)
 
+-- | (✔)
 instance ParsedCharacters FastcParseResult where
     unifyCharacters = foldl f mempty
         where
             f m (FastcSequence label symbols) = insert label (pure $ pure symbols) m
 
+-- | (✔)
 instance ParsedCharacters NewickForest where
     unifyCharacters = mergeMaps . fmap f
         where
@@ -79,9 +83,11 @@ instance ParsedCharacters NewickForest where
               where
                   name = fromMaybe "" $ newickLabel node
 
+-- | (✔)
 instance ParsedCharacters Nexus where
     unifyCharacters (Nexus (seqMap, _)) = seqMap
 
+-- | (✔)
 instance ParsedCharacters TntResult where
     unifyCharacters (Left forest) = mergeMaps $ foldl f mempty forest
       where
@@ -107,9 +113,11 @@ tntToTheSuperSequence = V.fromList . fmap (Just . pure . f . show)
 mergeMaps :: (Foldable t, Ord k) => t (Map k v) -> Map k v
 mergeMaps = foldl (mergeWithKey (\_ _ b -> Just b) id id) mempty
 
+-- | (✔)
 instance ParsedCharacters TCM where
     unifyCharacters _ = mempty
 
+-- | (✔)
 instance ParsedCharacters VertexEdgeRoot where
     unifyCharacters (VER _ e r) = mergeMaps $ f . buildTree <$> toList r
         where
