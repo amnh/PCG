@@ -6,7 +6,7 @@ all : my_ffi
 
 clean :
 	rm -f *.o *.hi
-	rm -f yuAlignForHaskell.c
+	rm -f seqAlignForHaskell.c
 
 ############ more simple case, structs, pointers, etc.
 # my_ffi : mySimpleTestC.c mySimpleTestC.h mySimpleFfi.hs
@@ -26,20 +26,8 @@ clean :
 #################### Yu's case, structs, pointers, etc.
 # Extremely similar to complex case, above.
 # may need to make use of  --cross-compile in final builds
-# my_ffi : yuAlign.c yuAlign.h haskellYuAlign.hsc processYuAlignForHaskell.py
-# 	python3 processYuAlignForHaskell.py
-# 	hsc2hs haskellYuAlign.hsc
-# 	clang -c yuAlignForHaskell.c
-# 	ghc -O --make haskellYuAlign.hs yuAlignForHaskell.o
-
-############ simple bit array case
-# my_ffi : mySimpleBitArrayTestC.c mySimpleBitArrayTestC.h mySimpleBitArrayFFI.hs
-# 	clang -c mySimpleBitArrayTestC.c
-# 	ghc -O --make mySimpleBitArrayFFI.hs mySimpleBitArrayTestC.o
-
-############ complex bit array case
-my_ffi : exportCharacter.c exportCharacter.h FFI.hsc
-	rm -f  FFI.hs
-	hsc2hs FFI.hsc
-	gcc -c exportCharacter.c
-	ghc -O --make FFI.hs exportCharacter.o
+my_ffi : seqAlign_ffi_c.c seqAlignForHaskell.h SeqAlignFFI.hsc processSeqAlignCCode.py
+	python3 processSeqAlignCCode.py
+#	hsc2hs SeqAlignFFI.hsc
+#	clang -c seqAlignForHaskell.c
+#	ghc -O --make SeqAlignFFI.hs seqAlignForHaskell.o

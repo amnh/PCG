@@ -1,0 +1,600 @@
+<META HTTP-EQUIV="expires" CONTENT="0">
+<html>
+
+<head>
+<style type="text/css">
+table { font-size: 100%; }
+body {
+    color = "#000000";
+    font-size: 12pt;
+}
+a { color="#00ff00"; }
+</style>
+</head>
+
+<body>
+
+<H1>
+<hr>
+Array of <em>bits</em><br />
+<hr>
+</H1>
+<h2>
+Copied from Cheung&rsquo;s website, <a href="http://www.mathcs.emory.edu/~cheung/Courses/255/Syllabus/1-C-intro/bit-array.html">here</a>.
+</h2>
+
+<P>
+<strong>
+     Bit arrays
+     </strong>
+<P>
+ <UL>
+ <strong>Fact:</strong>
+<UL>
+ The <strong>C programming language</strong> does
+     <strong><em>not</em></strong> provide support
+     for <strong>array of <em>bits</em></strong>
+ </UL>
+
+
+<P>
+<strong>However:</strong>
+<P>
+<UL>
+<TABLE bgcolor="lightcyan" BORDER="5">
+<TR> <TD>
+
+ <UL>
+ The <strong>C programming language</strong> provides
+      <strong><em>all</em> the necessary operations</strong>
+      to allow the <strong>programmer (= <em>you</em>)</strong>
+      to <strong>implement</strong> 
+      an 
+    <strong>"array of bits" data structure</strong>.
+ </UL>
+
+</TD> </TR>
+</TABLE>
+</UL>
+<P>
+
+ </UL>
+
+<P>
+<hr>
+<P>
+<strong>
+     Implementing an array of <em>bits</em>
+     </strong>
+<P>
+<UL>
+<strong>What</strong> is an <strong>array of bits</strong>:
+<P>
+<UL>
+<TABLE bgcolor="#CCFFCC" BORDER="5">
+<TR> <TD>
+
+ <UL>
+ An <strong>array of <em>bits</em></strong> <strong>A</strong>
+      is an <strong>array</strong> where:
+<P>
+<UL>
+<TABLE bgcolor="lightyellow" BORDER="5">
+<TR> <TD>
+
+ <UL>
+ <strong><TT>A[i]</TT></strong> = 
+      <strong>0</strong> or
+      <strong>1</strong>
+ </UL>
+
+</TD> </TR>
+</TABLE>
+</UL>
+<P>
+
+
+ </UL>
+
+</TD> </TR>
+</TABLE>
+</UL>
+<P>
+<hr>
+<P>
+<strong><em>Trivial</em> implementation:</strong>
+<P>
+<UL>
+<TABLE bgcolor="lightcyan" BORDER="5">
+<TR> <TD>
+
+ <UL>
+ Use an <strong>array of <TT>char</TT></strong>
+ <P>
+ <strong>Disadvantage:</strong>
+<P>
+<UL>
+<TABLE bgcolor="lightyellow" BORDER="5">
+<TR> <TD>
+
+ <UL>
+ You waste <strong>7/8 (87.5%)</strong> of the
+    <strong>memory space</strong> !!!
+ </UL>
+
+</TD> </TR>
+</TABLE>
+</UL>
+<P>
+
+ </UL>
+
+</TD> </TR>
+</TABLE>
+</UL>
+<P>
+<hr>
+<P>
+<strong><em>Efficient</em> implementation:</strong>
+<P>
+<UL>
+<TABLE bgcolor="#FFEEEE" BORDER="5">
+<TR> <TD>
+
+ <UL>
+ Use an <strong>array of <TT>int</TT></strong>
+      (<strong>because</strong> the <strong><em>most cost efficient</em></strong> access to
+      <strong>memory</strong> is accessing
+      <strong><TT>int</TT> sized data</strong>):
+<P>
+<UL>
+<TABLE BORDER="5">
+
+<TR> <TD>
+<IMG SRC="FIGS/bit-array1.gif"></IMG>
+</TD> </TR>
+
+</TABLE>
+</UL>
+<P>
+
+ <P>
+<hr>
+<P>
+ <strong>Map</strong> the
+      <strong>bit array</strong> onto
+      the <strong>array of integer</strong> as follows:
+<P>
+<UL>
+<TABLE BORDER="5">
+
+<TR> <TD>
+<IMG SRC="FIGS/bit-array1a.gif"></IMG>
+</TD> </TR>
+
+</TABLE>
+</UL>
+<P>
+<hr>
+<P>
+<strong>Mapping function</strong>:
+<P>
+<UL>
+<TABLE bgcolor="lightyellow" BORDER="5">
+<TR> <TD>
+
+ <UL>
+ <strong>Element</strong> with index <strong><TT>k</TT></strong> in
+       the <strong>bit array</strong> is:
+<P>
+<UL>
+<TABLE bgcolor="lightcyan" BORDER="5">
+<TR> <TD>
+
+ <UL>
+ <strong>bit <em>position</em></strong>
+      <strong>k % 32 </strong>
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; in the
+ <strong>array element</strong> with index
+    <strong>k/32</strong>
+ </UL>
+
+</TD> </TR>
+</TABLE>
+</UL>
+<P>
+
+ </UL>
+
+</TD> </TR>
+</TABLE>
+</UL>
+<P>
+
+ </UL>
+
+</TD> </TR>
+</TABLE>
+</UL>
+<P>
+
+</UL>
+
+<hr>
+<P>
+<strong>
+     Bit manipulation functions
+     </strong>
+<P>
+<UL>
+<strong>SetBit(A, k)</strong>:
+     <strong>set</strong> the
+     <strong><em>k<sup>th</sup></em></strong> bit
+     in the <strong>bit array <TT>A</TT></strong>:
+<P>
+<UL>
+<PRE>
+   void  SetBit( int A[ ],  int k )
+   {
+      int i = k/32;
+      int pos = k%32;
+
+      unsigned int flag = 1;   // flag = 0000.....00001
+
+      flag = flag << pos;      // flag = 0000...010...000   (shifted k positions)
+
+      A[i] = A[i] | flag;      // Set the bit at the k-th position in A[i]
+   }
+</PRE>
+</strong>
+
+
+</TD> </TR>
+</TABLE>
+</UL>
+<P>
+<strong>Shortened version:</strong>
+<P>
+<UL>
+<TABLE bgcolor="#FFEEEE" BORDER="5">
+<TR> <TD>
+
+
+<strong>
+<PRE>
+   void  SetBit( int A[ ],  int k )
+   {
+      A[k/32] |= 1 << (k%32);  // Set the bit at the k-th position in A[i]
+   }
+</PRE>
+</strong>
+
+
+</TD> </TR>
+</TABLE>
+</UL>
+
+<hr>
+<P>
+<strong>ClearBit(A, k)</strong>:
+     <strong>clear</strong> the
+     <strong><em>k<sup>th</sup></em></strong> bit
+     in the <strong>bit array <TT>A</TT></strong>:
+<P>
+<UL>
+<TABLE bgcolor="lightcyan" BORDER="5">
+<TR> <TD>
+
+
+<strong>
+<PRE>
+   void  ClearBit( int A[ ],  int k )
+   {
+      int i = k/32;
+      int pos = k%32;
+
+      unsigned int flag = 1;  // flag = 0000.....00001
+
+      flag = flag << pos;     // flag = 0000...010...000   (shifted k positions)
+      <FONT color="magenta"><strong>flag = ~flag;</FONT>           // flag = 1111...101..111
+
+      A[i] = A[i] & flag;     // RESET the bit at the k-th position in A[i]
+   }
+</PRE>
+</strong>
+
+
+</TD> </TR>
+</TABLE>
+</UL>
+<P>
+<strong>Shortened version:</strong>
+<P>
+<UL>
+<TABLE bgcolor="#FFEEEE" BORDER="5">
+<TR> <TD>
+
+
+<strong>
+<PRE>
+   void  ClearBit( int A[ ],  int k )                
+   {
+      A[k/32] &= ~(1 << (k%32));
+   }
+</PRE>
+</strong>
+
+
+</TD> </TR>
+</TABLE>
+</UL>
+
+<hr>
+<P>
+<strong>TestBit(A, k)</strong>:
+     <strong>test</strong> the
+     <strong><em>k<sup>th</sup></em></strong> bit
+     in the <strong>bit array <TT>A</TT></strong>:
+<P>
+<UL>
+<TABLE bgcolor="#CCFFCC" BORDER="5">
+<TR> <TD>
+
+
+<strong>
+<PRE>
+   int TestBit( int A[ ],  int k )
+   {
+      int i = k/32;
+      int pos = k%32;
+
+      unsigned int flag = 1;  // flag = 0000.....00001
+
+      flag = flag << pos;     // flag = 0000...010...000   (shifted k positions)
+
+      if ( A[i] & flag )      // Test the bit at the k-th position in A[i]
+         return 1;
+      else
+         return 0;
+   }
+</PRE>
+</strong>
+
+
+</TD> </TR>
+</TABLE>
+</UL>
+<P>
+<strong>Shortened version:</strong>
+<P>
+<UL>
+<TABLE bgcolor="#FFEEEE" BORDER="5">
+<TR> <TD>
+
+
+<strong>
+<PRE>
+   int TestBit( int A[ ],  int k )
+   {
+      return ( (A[k/32] & (1 << (k%32) )) != 0 ) ;     
+   }
+</PRE>
+</strong>
+
+
+</TD> </TR>
+</TABLE>
+</UL>
+ <hr />
+     <IMG SRC="Example.jpg"></IMG><br />
+ <strong> Example Program: </strong>
+      (Demo above code)
+  
+  <P>
+  <UL>
+  The <strong>C program</strong> file:
+       <A HREF="code/bit-manipulation.c"> click here </A>
+  The <strong><em>header</em></strong> file:
+       <A HREF="code/bit-manipulation.h"> click here </A>
+  </UL>
+
+<hr>
+<P>
+<strong>Example C program</strong> that uses the
+     <strong>bit array</strong>:
+<P>
+<UL>
+<TABLE bgcolor="lightyellow" BORDER="5">
+<TR> <TD>
+
+
+<strong>
+<PRE>
+   #include &lt;stdio.h>
+   #include "bit-manipulation.h"
+    
+   int main( int argc, char* argv[] )
+   {
+      int A[10];     // This is our bit array (32&times;10 = 320 bits !)
+      int i;
+    
+      for ( i = 0; i < 10; i++ )
+   	 A[i] = 0;                    // Clear the bit array            
+    
+      printf("Set bit poistions 100, 200 and 300\n");
+      SetBit( A, 100 );               // Set 3 bits
+      SetBit( A, 200 );
+      SetBit( A, 300 );
+    
+    <FONT color="magenta">
+      // Check if SetBit() works:</FONT>
+    
+      for ( i = 0; i < 320; i++ )
+   	 if ( TestBit(A, i) )
+   	    printf("Bit %d was set !\n", i);
+    
+      printf("\nClear bit poistions 200 \n");
+      ClearBit( A, 200 );
+    
+      // Check if ClearBit() works:
+    
+      for ( i = 0; i < 320; i++ )
+   	 if ( TestBit(A, i) )
+   	    printf("Bit %d was set !\n", i);
+   }
+</PRE>
+</strong>
+
+
+</TD> </TR>
+</TABLE>
+</UL>
+ <hr>
+ <IMG SRC="Example.jpg"></IMG><br />
+ <strong> Example Program: </strong>
+  <P>
+  <UL>
+  The <strong>Bit manipulation functions</strong> program file:
+       <A HREF="code/bit-manipulation.c"> click here </A>
+  The <strong>shortened version</strong> of
+       the <strong>Bit manipulation functions</strong> program file:
+       <A HREF="code/bit-manipulation1.c"> click here </A>
+  The <strong><em>header</em></strong> file:
+       <A HREF="code/bit-manipulation.h"> click here </A>
+  <P>
+  The <strong>test program</strong>:
+       <A HREF="code/bit-array1.c"> click here </A>
+  </UL>
+
+<P>
+ <strong>How to run the program:</strong>
+<P>
+<UL>
+<TABLE bgcolor="#CCFFCC" BORDER="5">
+<TR> <TD>
+
+ <UL>
+ <strong>Right click</strong> on link(s) and
+      <strong>save</strong> in a scratch directory
+ <P>
+ To compile the <strong>normal version</strong>: 
+<P>
+<UL>
+<TABLE bgcolor="lightyellow" BORDER="5">
+<TR> <TD>
+
+
+<strong>
+<PRE>
+     gcc -c bit-manipulation.c
+     gcc -c bit-array1.c
+     gcc bit-array1.o bit-manipulation.o      
+</PRE>
+</strong>
+
+
+</TD> </TR>
+</TABLE>
+</UL>
+<P>
+ To compile the <strong>shortened version</strong>: 
+<P>
+<UL>
+<TABLE bgcolor="lightyellow" BORDER="5">
+<TR> <TD>
+
+
+<strong>
+<PRE>
+     gcc -c bit-manipulation1.c
+     gcc -c bit-array1.c
+     gcc bit-array1.o bit-manipulation1.o      
+</PRE>
+</strong>
+
+
+</TD> </TR>
+</TABLE>
+</UL>
+<P>
+ To run: 
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+  <strong><TT>./a.out</TT></strong>
+ </UL>
+
+</TD> </TR>
+</TABLE>
+</UL>
+<P>
+
+
+
+</UL>
+
+<hr>
+<P>
+<strong>
+     Bit manipulations as <em>macros</em>
+     </strong>
+<P>
+<UL>
+Bit manipulations are <strong><em>usually</em></strong> written as
+    <strong>macros</strong>:
+<P>
+<UL>
+<TABLE bgcolor="lightyellow" BORDER="5">
+<TR> <TD>
+
+
+<strong>
+<PRE>
+   #define SetBit(A,k)     ( A[(k/32)] |= (1 << (k%32)) )
+   #define ClearBit(A,k)   ( A[(k/32)] &= ~(1 << (k%32)) )            
+   #define TestBit(A,k)    ( A[(k/32)] & (1 << (k%32)) )
+</PRE>
+</strong>
+
+
+</TD> </TR>
+</TABLE>
+</UL>
+
+ <hr />
+ <IMG SRC="Example.jpg"></IMG><br />
+ <strong> Example Program: </strong>
+      (Demo above code)
+      &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp
+      &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp
+ <P>
+  <UL>
+  The <strong>bit manipulation macros header</strong>
+        file:
+       <A HREF="http://www.mathcs.emory.edu/~cheung/Courses/255/Syllabus/1-C-intro/Progs/bit-ops.h"> click here </A>
+  <strong>Test</strong> Prog file:
+       <A HREF="http://www.mathcs.emory.edu/~cheung/Courses/255/Syllabus/1-C-intro/Progs/bit-array2.c"> click here </A>
+  </UL>
+<P>
+ <strong>How to run the program:</strong>
+<P>
+<UL>
+<TABLE bgcolor="#CCFFCC" BORDER="5">
+<TR> <TD>
+
+ <UL>
+ <strong>Right click</strong> on link and
+      <strong>save</strong> in a scratch directory
+ <P>
+ To compile: 
+  &nbsp; <strong><TT>gcc bit-array2.c</TT></strong>
+ To run: 
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+  <strong><TT>a.out</TT></strong>
+ </UL>
+
+</TD> </TR>
+</TABLE>
+</UL>
+
+</UL>
+<hr>
+

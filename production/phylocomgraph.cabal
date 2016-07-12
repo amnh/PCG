@@ -83,7 +83,9 @@ library
   -- We must provide the full relative path to every C file that the project depends on.
   c-sources:
     ffi/Analysis/Parsimony/Binary/SequentialAlign/seqAlignForHaskell.c
-
+    ffi/Analysis/Parsimony/Binary/SequentialAlign/exportCharacter.c
+--    ffi/Analysis/Parsimony/Binary/SequentialAlign/myComplexBitArrayFFI.c
+            
   -- Here we list all directories that contain C header files that the FFI tools will need
   -- to locate when preprocessing the C files. Without listing the directories containing
   -- the C header files here, the FFI preprocession (hsc2hs, c2hs,etc.) will fail to locate
@@ -104,6 +106,7 @@ library
                        Analysis.Parsimony.Binary.Optimization
                        Analysis.Parsimony.Binary.SequentialAlign
                        Bio.Character.Dynamic.Coded
+                       Bio.Character.Exportable.Class
                        Bio.Character.Parsed
                        Bio.Metadata
                        Bio.PhyloGraph
@@ -145,7 +148,7 @@ library
                        Text.Megaparsec.Custom
   -- Modules included in this library but not exported.
   other-modules:       Analysis.Parsimony.Binary.DirectOptimization.Internal
-                       Analysis.Parsimony.Binary.SequentialAlign.SeqAlignFFI
+                       Analysis.Parsimony.Binary.SequentialAlign.FFI
                        Analysis.Parsimony.Binary.Constraints
                        Bio.Character.Dynamic.Coded.Class
                        Bio.Character.Dynamic.Coded.Internal

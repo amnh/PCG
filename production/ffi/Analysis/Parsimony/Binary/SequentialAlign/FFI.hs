@@ -1,111 +1,195 @@
 {-# LINE 1 "FFI.hsc" #-}
-{-# LANGUAGE ForeignFunctionInterface, BangPatterns #-}
+-----------------------------------------------------------------------------
 {-# LINE 2 "FFI.hsc" #-}
+-- |
+-- a more complex example of an FFI interface, for learning
+--
+-- This example uses pointers, both to structs and to fields within the 
+-- structs. This is much easier to accomplish via .hsc rather than doing 
+-- straight FFI. A .hsc file are read by hsc2hs, which then creates a .c
+-- file, which is compiled and run to create an .hs file, which is then 
+-- compiled for use in outside modules.
+--
+-----------------------------------------------------------------------------
+
+{-# LANGUAGE ForeignFunctionInterface, BangPatterns, TypeSynonymInstances, FlexibleInstances #-}
 
 module Analysis.Parsimony.Binary.SequentialAlign.FFI where
 
-import System.IO.Unsafe
+import Bio.Character.Dynamic.Coded.Internal
+import Bio.Character.Exportable.Class
+import Data.BitMatrix.Internal
+import Data.Bits
+import Data.Foldable
+import Data.Monoid
 import Foreign
 import Foreign.Ptr
 import Foreign.C.String
 import Foreign.C.Types
+import System.IO.Unsafe
+import Test.QuickCheck hiding ((.&.))
 
 
-{-# LINE 12 "FFI.hsc" #-}
+{-# LINE 30 "FFI.hsc" #-}
+
+{-# LINE 31 "FFI.hsc" #-}
+
+-- TODO: replace when Yu Xiang updated his code for bit arrays.
+-- | STUB, DO NOT USE
+sequentialAlign :: (EncodableDynamicCharacter s, Exportable s) => Int -> Int -> s -> s -> Either String (Int, s, s)
+sequentialAlign x y a b = Right (x + y, a, b)
 
 -- Includes a struct (actually, a pointer thereto), and that struct, in turn, has a string
--- in it, so Ptr CChar
+-- in it, so Ptr CChar.
 -- Modified from code samples here: https://en.wikibooks.org/wiki/Haskell/FFI#Working_with_C_Structures
-data AlignResult = AlignResult { val    :: CInt
-                               , seq1   :: CString 
-                               , seq2   :: CString
-                               , seqLen :: CLong
+data AlignResult = AlignResult { alignmentCost :: CInt
+                               , lengthFinal   :: CInt
+                               , seqFinal      :: Ptr CArrayUnit
                                }
 
--- This is the declaration of the Haskell wrapper for the C function we're calling.
-foreign import ccall unsafe "seqAlign_ffi.h aligner"
-    callExtAlignFn_c :: CString -> CString -> CInt -> CInt -> Ptr AlignResult -> CInt
+data CDynamicChar = CDynamicChar { alphabetSize :: CInt
+                                 , dynCharLen   :: CInt
+                                 , dynChar      :: Ptr CArrayUnit
+                                 }
+
+instance Show CDynamicChar where
+    show (CDynamicChar alphSize dcLen dChar) = mconcat ["alphabetSize:  "
+                                                       , show intAlphSize
+                                                       , "\ndynCharLen: "
+                                                       , show intLen
+                                                       , "\nbuffer length: "
+                                                       , show bufferLength
+                                                       , "\ndynChar:    "
+                                                       , show $ unsafePerformIO printedArr
+                                                       ]
+        where
+            (quot, rem)  = (intAlphSize * intLen) `divMod` 64
+            bufferLength = quot + if rem == 0 then 0 else 1
+            intAlphSize  = fromIntegral alphSize
+            intLen       = fromIntegral dcLen
+            printedArr   = show <$> peekArray bufferLength dChar
+
+instance Arbitrary CDynamicChar where
+    arbitrary = do
+        alphSize <- (arbitrary :: Gen Int) `suchThat` (\x -> 0 < x && x <= 64)
+        charSize <- (arbitrary :: Gen Int) `suchThat` (\x -> 0 < x && x <= 16)
+        let (full,rem) = (alphSize * charSize) `divMod` 64
+        fullBitVals <- vectorOf full (arbitrary :: Gen CArrayUnit)
+        -- Note there is a faster way to do this loop in 2 steps by utilizing 2s compliment subtraction and setbit.
+        let mask    = foldl' (\val i -> val `setBit` i) (zeroBits :: CArrayUnit) [0..rem]
+        remBitVals  <- if   rem == 0
+                       then pure []
+                       else (pure . (mask .&.)) <$> (arbitrary :: Gen CArrayUnit)
+        pure CDynamicChar
+           { alphabetSize = fromIntegral alphSize
+           , dynCharLen   = fromIntegral charSize
+           , dynChar      = unsafePerformIO . newArray $ fullBitVals <> remBitVals
+           }
+
+type CArrayUnit  = CULong -- This will be compatible with uint64_t
+
+instance Arbitrary CArrayUnit where
+    arbitrary = do
+        num <- arbitrary :: Gen Integer
+        pure $ fromIntegral num
+
+instance Storable CDynamicChar where
+    sizeOf    _ = ((16)) -- #size is a built-in that works with arrays, as are #peek and #poke, below
+{-# LINE 93 "FFI.hsc" #-}
+    alignment _ = alignment (undefined :: CArrayUnit)
+    peek ptr    = do -- to get values from the C app
+        alphLen  <- ((\hsc_ptr -> peekByteOff hsc_ptr 0)) ptr
+{-# LINE 96 "FFI.hsc" #-}
+        seqLen   <- ((\hsc_ptr -> peekByteOff hsc_ptr 4)) ptr
+{-# LINE 97 "FFI.hsc" #-}
+        sequence <- ((\hsc_ptr -> peekByteOff hsc_ptr 8)) ptr
+{-# LINE 98 "FFI.hsc" #-}
+        return  CDynamicChar { alphabetSize = alphLen
+                             , dynCharLen   = seqLen
+                             , dynChar      = sequence  
+                             }
+    poke ptr (CDynamicChar alphabetSize dynCharLen dynChar) = do -- to modify values in the C app
+        ((\hsc_ptr -> pokeByteOff hsc_ptr 0)) ptr alphabetSize
+{-# LINE 104 "FFI.hsc" #-}
+        ((\hsc_ptr -> pokeByteOff hsc_ptr 4)) ptr dynCharLen
+{-# LINE 105 "FFI.hsc" #-}
+        ((\hsc_ptr -> pokeByteOff hsc_ptr 8)) ptr dynChar
+{-# LINE 106 "FFI.hsc" #-}
 
 -- Because we're using a struct we need to make a Storable instance
 instance Storable AlignResult where
-    sizeOf    _ = ((32))
-{-# LINE 29 "FFI.hsc" #-}
-    alignment _ = alignment (undefined :: CDouble)
-    peek ptr = do
-        value   <- ((\hsc_ptr -> peekByteOff hsc_ptr 0)) ptr
-{-# LINE 32 "FFI.hsc" #-}
-        seq1Fin <- ((\hsc_ptr -> peekByteOff hsc_ptr 8)) ptr
-{-# LINE 33 "FFI.hsc" #-}
-        seq2Fin <- ((\hsc_ptr -> peekByteOff hsc_ptr 16)) ptr
-{-# LINE 34 "FFI.hsc" #-}
-        algnLen <- ((\hsc_ptr -> peekByteOff hsc_ptr 24)) ptr
-{-# LINE 35 "FFI.hsc" #-}
-        return  AlignResult { val = value, seq1 = seq1Fin, seq2 = seq2Fin, seqLen = algnLen }
+    sizeOf    _ = ((16)) -- #size is a built-in that works with arrays, as are #peek and #poke, below
+{-# LINE 110 "FFI.hsc" #-}
+    alignment _ = alignment (undefined :: CArrayUnit)
+    peek ptr    = do -- to get values from the C app
+        value    <- ((\hsc_ptr -> peekByteOff hsc_ptr 0)) ptr
+{-# LINE 113 "FFI.hsc" #-}
+        len      <- ((\hsc_ptr -> peekByteOff hsc_ptr 4)) ptr
+{-# LINE 114 "FFI.hsc" #-}
+        sequence <- ((\hsc_ptr -> peekByteOff hsc_ptr 8)) ptr
+{-# LINE 115 "FFI.hsc" #-}
+        return  AlignResult { alignmentCost = value, lengthFinal = len, seqFinal = sequence }
+
 ------------- Don't need this part, but left in for completion ---------------
 ----- Will get compiler warning if left out, because of missing instances ----
-    poke ptr (AlignResult val seq1Fin seq2Fin alignLen) = do
-        ((\hsc_ptr -> pokeByteOff hsc_ptr 0)) ptr val
-{-# LINE 40 "FFI.hsc" #-}
-        ((\hsc_ptr -> pokeByteOff hsc_ptr 8)) ptr seq1Fin
-{-# LINE 41 "FFI.hsc" #-}
-        ((\hsc_ptr -> pokeByteOff hsc_ptr 16)) ptr seq2Fin
-{-# LINE 42 "FFI.hsc" #-}
-        ((\hsc_ptr -> pokeByteOff hsc_ptr 24)) ptr alignLen -- need to be able to pass in length of alignemnt string
-{-# LINE 43 "FFI.hsc" #-}
+    poke ptr (AlignResult cost len seqFinal) = do -- to modify values in the C app
+        ((\hsc_ptr -> pokeByteOff hsc_ptr 0)) ptr cost
+{-# LINE 121 "FFI.hsc" #-}
+        ((\hsc_ptr -> pokeByteOff hsc_ptr 4)) ptr len
+{-# LINE 122 "FFI.hsc" #-}
+        ((\hsc_ptr -> pokeByteOff hsc_ptr 8)) ptr seqFinal
+{-# LINE 123 "FFI.hsc" #-}
 
-sequentialAlign :: Int -> Int -> String -> String -> Either String (Int, String, String) 
-sequentialAlign indelCst subCst inpStr1 inpStr2 = unsafePerformIO $ 
-    -- have to allocate memory. Note that we're allocating to a lambda fn. I 
-    -- don't yet understand what exactly is going on here.
+-- This is the declaration of the Haskell wrapper for the C function we're calling.
+-- Note that this fn is called from testFn.
+foreign import ccall unsafe "exportCharacter testFn"
+    callExtFn_c :: Ptr CDynamicChar -> Ptr CDynamicChar -> Ptr AlignResult -> CInt
+
+-- testFn can be called from within Haskell code.
+testFn :: CDynamicChar -> CDynamicChar -> Either String (Int, String) 
+testFn char1 char2 = unsafePerformIO $ 
+    -- have to allocate memory. Note that we're allocating via a lambda fn. In use, the lambda will take whatever is the 
+    -- argument of testFn, but here there is no argument, so all allocation is hard-coded.
     alloca $ \alignPtr -> do 
-        -- This first part is similar to simple example, but now I need to pre-allocate the length of the String *inside* the retAlign struct
-        let len  = length inpStr1 + length inpStr2 + 5 -- This is the total length of the alignment. 
-                                                       -- I padded each half by 2, and there's one more for NULL term. 
-                                                       -- This math will have to be rectified in C.
-        arg1     <- newCAString $ map removeAmbDNA inpStr1
-        arg2     <- newCAString $ map removeAmbDNA inpStr2
-        algnSeq1 <- newCAString $ replicate len ' ' -- to force allocation of space inside struct; will add NULL terminator in C.
-        algnSeq2 <- newCAString $ replicate len ' '
+        marshalledChar1 <- new char1
+        marshalledChar2 <- new char2
+        print marshalledChar1
+        -- Using strict here because the values need to be read before freeing, 
+        -- so lazy is dangerous.
+        let !status = callExtFn_c marshalledChar1 marshalledChar2 alignPtr
 
-        -- putting allocated aligned sequences and length of that string into return struct
-        poke alignPtr $ AlignResult 0 algnSeq1 algnSeq2 (CLong (fromIntegral (succ len) :: Int64)) 
-        
-        -- Using strict here because of problems we had with simple example.
-        let !status = callExtAlignFn_c arg1 arg2 (CInt (fromIntegral indelCst :: Int32)) (CInt (fromIntegral subCst :: Int32)) alignPtr 
-        free arg1
-        free arg2
+        -- Now checking return status. If 0, then all is well, otherwise throw an error.
         if (fromIntegral status) == 0 
             then do
-                AlignResult val outSeq1 outSeq2 _ <- peek alignPtr
-                seq1Fin <- peekCAString algnSeq1
-                seq2Fin <- peekCAString outSeq2
-                free algnSeq1
-                free algnSeq2
-                pure $ Right (fromIntegral val, seq1Fin, seq2Fin)
+                AlignResult cost len seq <- peek alignPtr
+                --seqFinalPtr              <- peek seq
+                seqFinal                 <- peekArray (fromIntegral len) seq
+                free seq
+                pure $ Right (fromIntegral cost, show seqFinal)
             else do
-                free algnSeq1
-                free algnSeq2
                 pure $ Left "Out of memory"
-
--- TODO: note I'm assuming all caps here.
-removeAmbDNA :: Char -> Char
-removeAmbDNA x = case x of
-    'B' -> 'C'
-    'D' -> 'A'
-    'H' -> 'A'
-    'K' -> 'G'
-    'M' -> 'A'
-    'N' -> 'A'
-    'R' -> 'A'
-    'S' -> 'C'
-    'V' -> 'A'
-    'W' -> 'A'
-    'X' -> 'A'
-    'Y' -> 'C'
-    _   ->  x
-
+        
 -- Just for testing from CLI outside of ghci.
---main :: IO ()
---main = 
---    putStrLn $ show $ sequentialAlign 1 1 "CE" "GCT"
+main :: IO ()
+main = do 
+    char1 <- generate (arbitrary :: Gen CDynamicChar)
+    --char2 <- generate (arbitrary :: Gen CDynamicChar)
+    print char1
+    --print char2
+    print $ testFn char1 char1
 
+
+data ExportableDynamicCharacter
+   = ExportableDynamicCharacter
+   { characterLength :: Int
+   , alphabetLength  :: Int
+   , bufferChunks    :: [CArrayUnit]
+   } deriving (Eq, Show)
+
+toExportable :: EncodableDynamicCharacter c => c -> ExportableDynamicCharacter
+toExportable (DC (BitMatrix alphabetSize bv)) =
+     ExportableDynamicCharacter
+     { characterLength = 0
+     , alphabetLength  = 0
+     , bufferChunks    = []
+     }
