@@ -1,16 +1,9 @@
 module Main (main) where
 
-<<<<<<< HEAD
-import Data.Vector
-import Data.Word
-import SimpleGPUTest
-import Safe
-=======
 import Data.Vector        (fromList)
 import Data.Word
 import Safe
 import SimpleGPUTest
->>>>>>> fix_Needleman-Wunsch
 import System.Environment (getArgs)
 
 main :: IO ()
