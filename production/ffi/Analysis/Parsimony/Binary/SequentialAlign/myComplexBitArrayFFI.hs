@@ -1,6 +1,6 @@
-{-# LINE 1 "FFI.hsc" #-}
+{-# LINE 1 "myComplexBitArrayFFI.hsc" #-}
 -----------------------------------------------------------------------------
-{-# LINE 2 "FFI.hsc" #-}
+{-# LINE 2 "myComplexBitArrayFFI.hsc" #-}
 -- |
 -- a more complex example of an FFI interface, for learning
 --
@@ -14,10 +14,7 @@
 
 {-# LANGUAGE ForeignFunctionInterface, BangPatterns, TypeSynonymInstances, FlexibleInstances #-}
 
-module Analysis.Parsimony.Binary.SequentialAlign.FFI where
-
 import Bio.Character.Dynamic.Coded.Internal
-import Bio.Character.Exportable.Class
 import Data.BitMatrix.Internal
 import Data.Bits
 import Data.Foldable
@@ -30,14 +27,9 @@ import System.IO.Unsafe
 import Test.QuickCheck hiding ((.&.))
 
 
-{-# LINE 30 "FFI.hsc" #-}
+{-# LINE 28 "myComplexBitArrayFFI.hsc" #-}
 
-{-# LINE 31 "FFI.hsc" #-}
-
--- TODO: replace when Yu Xiang updated his code for bit arrays.
--- | STUB, DO NOT USE
-sequentialAlign :: (EncodableDynamicCharacter s, Exportable s) => Int -> Int -> s -> s -> Either String (Int, s, s)
-sequentialAlign x y a b = Right (x + y, a, b)
+{-# LINE 29 "myComplexBitArrayFFI.hsc" #-}
 
 -- Includes a struct (actually, a pointer thereto), and that struct, in turn, has a string
 -- in it, so Ptr CChar.
@@ -95,54 +87,54 @@ instance Arbitrary CArrayUnit where
 
 instance Storable CDynamicChar where
     sizeOf    _ = ((16)) -- #size is a built-in that works with arrays, as are #peek and #poke, below
-{-# LINE 93 "FFI.hsc" #-}
+{-# LINE 86 "myComplexBitArrayFFI.hsc" #-}
     alignment _ = alignment (undefined :: CArrayUnit)
     peek ptr    = do -- to get values from the C app
         alphLen  <- ((\hsc_ptr -> peekByteOff hsc_ptr 0)) ptr
-{-# LINE 96 "FFI.hsc" #-}
+{-# LINE 89 "myComplexBitArrayFFI.hsc" #-}
         seqLen   <- ((\hsc_ptr -> peekByteOff hsc_ptr 4)) ptr
-{-# LINE 97 "FFI.hsc" #-}
+{-# LINE 90 "myComplexBitArrayFFI.hsc" #-}
         sequence <- ((\hsc_ptr -> peekByteOff hsc_ptr 8)) ptr
-{-# LINE 98 "FFI.hsc" #-}
+{-# LINE 91 "myComplexBitArrayFFI.hsc" #-}
         return  CDynamicChar { alphabetSize = alphLen
                              , dynCharLen   = seqLen
                              , dynChar      = sequence  
                              }
     poke ptr (CDynamicChar alphabetSize dynCharLen dynChar) = do -- to modify values in the C app
         ((\hsc_ptr -> pokeByteOff hsc_ptr 0)) ptr alphabetSize
-{-# LINE 104 "FFI.hsc" #-}
+{-# LINE 97 "myComplexBitArrayFFI.hsc" #-}
         ((\hsc_ptr -> pokeByteOff hsc_ptr 4)) ptr dynCharLen
-{-# LINE 105 "FFI.hsc" #-}
+{-# LINE 98 "myComplexBitArrayFFI.hsc" #-}
         ((\hsc_ptr -> pokeByteOff hsc_ptr 8)) ptr dynChar
-{-# LINE 106 "FFI.hsc" #-}
+{-# LINE 99 "myComplexBitArrayFFI.hsc" #-}
 
 -- Because we're using a struct we need to make a Storable instance
 instance Storable AlignResult where
     sizeOf    _ = ((16)) -- #size is a built-in that works with arrays, as are #peek and #poke, below
-{-# LINE 110 "FFI.hsc" #-}
+{-# LINE 103 "myComplexBitArrayFFI.hsc" #-}
     alignment _ = alignment (undefined :: CArrayUnit)
     peek ptr    = do -- to get values from the C app
         value    <- ((\hsc_ptr -> peekByteOff hsc_ptr 0)) ptr
-{-# LINE 113 "FFI.hsc" #-}
+{-# LINE 106 "myComplexBitArrayFFI.hsc" #-}
         len      <- ((\hsc_ptr -> peekByteOff hsc_ptr 4)) ptr
-{-# LINE 114 "FFI.hsc" #-}
+{-# LINE 107 "myComplexBitArrayFFI.hsc" #-}
         sequence <- ((\hsc_ptr -> peekByteOff hsc_ptr 8)) ptr
-{-# LINE 115 "FFI.hsc" #-}
+{-# LINE 108 "myComplexBitArrayFFI.hsc" #-}
         return  AlignResult { alignmentCost = value, lengthFinal = len, seqFinal = sequence }
 
 ------------- Don't need this part, but left in for completion ---------------
 ----- Will get compiler warning if left out, because of missing instances ----
     poke ptr (AlignResult cost len seqFinal) = do -- to modify values in the C app
         ((\hsc_ptr -> pokeByteOff hsc_ptr 0)) ptr cost
-{-# LINE 121 "FFI.hsc" #-}
+{-# LINE 114 "myComplexBitArrayFFI.hsc" #-}
         ((\hsc_ptr -> pokeByteOff hsc_ptr 4)) ptr len
-{-# LINE 122 "FFI.hsc" #-}
+{-# LINE 115 "myComplexBitArrayFFI.hsc" #-}
         ((\hsc_ptr -> pokeByteOff hsc_ptr 8)) ptr seqFinal
-{-# LINE 123 "FFI.hsc" #-}
+{-# LINE 116 "myComplexBitArrayFFI.hsc" #-}
 
 -- This is the declaration of the Haskell wrapper for the C function we're calling.
 -- Note that this fn is called from testFn.
-foreign import ccall unsafe "exportCharacter testFn"
+foreign import ccall unsafe "myComplexBitArrayTestC.h testFn"
     callExtFn_c :: Ptr CDynamicChar -> Ptr CDynamicChar -> Ptr AlignResult -> CInt
 
 -- testFn can be called from within Haskell code.
