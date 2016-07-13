@@ -22,9 +22,9 @@
  */
 #include <stdint.h>
 
-#define BITS_IN_BYTE 8  // so bytes are set to 8, for all architectures
-#define INT_WIDTH sizeof(uint64_t)
-#define WORD_WIDTH BITS_IN_BYTE * INT_WIDTH
+const int BITS_IN_BYTE       = 8;  // so bytes are set to 8, for all architectures
+const int INT_WIDTH          = sizeof(uint64_t);
+const int WORD_WIDTH         = BITS_IN_BYTE * INT_WIDTH;
 const uint64_t CANONICAL_ONE = 1;
 
 /** 
@@ -32,9 +32,9 @@ const uint64_t CANONICAL_ONE = 1;
  *  Provides operations to use an array of ints as an array of bits. In essence, creates a mask of length k and uses that
  *  mask to set, clear and test bits. 
  */ 
-#define SetBit(arr,k)     ( arr[ k / WORD_WIDTH ] |=  (1 << (k % WORD_WIDTH)) )
-#define ClearBit(arr,k)   ( arr[ k / WORD_WIDTH ] &= ~(1 << (k % WORD_WIDTH)) )
-#define TestBit(arr,k)    ( arr[ k / WORD_WIDTH ] &   (1 << (k % WORD_WIDTH)) )
+void SetBit  (uint64_t* arr, int k) { arr[ k / WORD_WIDTH ]        |=  (CANONICAL_ONE << (k % WORD_WIDTH)); };
+void ClearBit(uint64_t* arr, int k) { arr[ k / WORD_WIDTH ]        &= ~(CANONICAL_ONE << (k % WORD_WIDTH)); };
+uint64_t TestBit (uint64_t* arr, int k) { return arr[ k / WORD_WIDTH ] &   (CANONICAL_ONE << (k % WORD_WIDTH)); };
 
 /* alignResult_t is where results get put for return to Haskell */
 typedef struct AlignResult {
@@ -61,14 +61,7 @@ int testFN(DynChar*, DynChar*, AlignResult*);
 int bufferSize(DynChar* character) {
     int charLen    = character -> dynCharLen;
     int alphLen    = character -> alphSize;
-    uint64_t totalBits  = (uint64_t) (charLen * alphLen);
-    printf("charLen:        %d\n", charLen);
-    printf("alphLen:        %d\n", alphLen);
-    printf("totalBits:      %llu\n", totalBits);
-    printf("bitsInWord:     %llu\n", WORD_WIDTH);
-    printf("Primary:        %lu\n", (uint64_t) totalBits / (uint64_t) WORD_WIDTH);
-    printf("extra:          %d\n", (totalBits % WORD_WIDTH) ? 1 : 0);
-    printf("total uint64_t: %llu\n", (totalBits / WORD_WIDTH) + ((totalBits % WORD_WIDTH) ? 1 : 0) );
+    int totalBits  = charLen * alphLen;
     return (totalBits / WORD_WIDTH) + ((totalBits % WORD_WIDTH) ? 1 : 0);
 }
 

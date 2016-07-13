@@ -3,18 +3,21 @@
 #include <string.h> 
 #include "myComplexBitArrayTestC.h"
 
-void printBits( uint64_t* input, int alphLen, int numChars ) {
-    printf("[");
-    for( int charNum = 0; charNum < numChars; charNum++ ) {
+void printBits( uint64_t* input, int alphLen, int numStaticChars ) {
+    printf("[\n");
+    for( int charNum = 0; charNum < numStaticChars; charNum++ ) {
         for( int bitIdx = 0; bitIdx < alphLen; bitIdx++ ) {
+            // printf("char num: %d\t", (alphLen * charNum + bitIdx) / WORD_WIDTH);
+            // printf("loc in char: %d\t", (alphLen * charNum + bitIdx) % WORD_WIDTH);
+            // printf("value: %d\n", TestBit(input, alphLen * charNum + bitIdx) );
             if( TestBit(input, alphLen * charNum + bitIdx) ) {
-                printf("%llu", TestBit(input, alphLen * charNum + bitIdx) );
+                //printf("Bit index:        %d\n", alphLen * charNum + bitIdx );
                 printf("1,");
             } else {
                 printf("0,");
             }
         }
-        printf("; ");
+        printf("\n");
     }
     printf("]\n");
 }
@@ -77,31 +80,32 @@ void makeDynamicChar( DynChar* output, int alphLen, int numStaticChars, int* val
     // Now figure out how many uint64_t's we'll need in our array.
     // Then declare and initialize a dynChar.
     int neededLen = bufferSize(output);
-    uint64_t interimArr [neededLen];
-    for( int i = 0; i < neededLen; i++ ) {
-        interimArr[i] = 0;
-    }
-    printf("Interim: ");
-    printBits(interimArr, alphLen, numStaticChars);
-    printf("Needed: %d\n", neededLen);
+    output -> dynChar = calloc( neededLen, INT_WIDTH ); // in bytes. int array, so don't need \0=
+    printf("\nInitial:\n");
+    printBits(output -> dynChar, alphLen, numStaticChars);
+    // printf("Needed: %d\n", neededLen);
     for( int charNum = 0; charNum < numStaticChars; charNum++ ) {
-        //printf("\nCurrent loc: %d\n", charNum);
+        printf("\nCurrent char: %d\n", charNum);
         for( int bitIdx = 0; bitIdx < alphLen; bitIdx++ ) {
             // printf("Bit value:   %d\n", 1 << bitIdx);
             // printf("Bit loc:     %d\n", charNum * alphLen + bitIdx);
+            // printf("value: %d, bit loc: %d\n", values[charNum], bitIdx);
             if( values[charNum] & (1 << bitIdx) ) {
-                //printf("True\n");
-                SetBit(interimArr, charNum * alphLen + bitIdx);
+                printf("True\n");
+                printf("Mask:       %d\n", (1 << bitIdx));
+                printf("Bit to set: %d\n", charNum * alphLen + bitIdx);
+                SetBit(output -> dynChar, charNum * alphLen + bitIdx);
+                printBits(output -> dynChar, alphLen, numStaticChars);
+                printf("After set:  %llu\n", output -> dynChar[0] );
             }
         }
     }
-    output -> dynChar = interimArr;
 }
 
 
 
 int main() {
-    int numStaticChars = 3;
+    int numStaticChars = 9;
     int alphabetLen    = 5;
     int values [numStaticChars];
     for( int i = 0; i < numStaticChars; i++ ) {
@@ -110,8 +114,7 @@ int main() {
 
     DynChar char1;
     makeDynamicChar(&char1, alphabetLen, numStaticChars, values);
+    printf("\nFinal:\n");
     printBits(char1.dynChar, alphabetLen, numStaticChars);
-    printf("\n%lu\n", WORD_WIDTH);
-    printf("%llu", CANONICAL_ONE << WORD_WIDTH);
 
 }
