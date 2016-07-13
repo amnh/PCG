@@ -55,7 +55,7 @@ createSimpleTree rootRef symbols xs = TT . setRefIds $ unfoldTree buildTree root
           where
             g (newSeq, lhs) (_, rhs) = (newSeq, lhs <> rhs)
     buildTree :: Int -> (TestingDecoration, [Int])
-    buildTree i = (def { dEncoded = encodedSequence }, otoList children)
+    buildTree i = (def { dEncoded = encodedSequence, suppliedAlphabet = Just alphabet }, otoList children)
       where
         encodedSequence = if   null strChar
                    then mempty
@@ -117,6 +117,7 @@ data TestingDecoration
    , dIaHomology       :: IN.HomologyTrace
    , dImpliedAlignment :: Vector DynamicChar
    , refEquality       :: Int
+   , suppliedAlphabet  :: Maybe (Alphabet String)
    } deriving (Eq)
 
 def :: TestingDecoration
@@ -134,19 +135,24 @@ def = Decorations
     , dIaHomology       = mempty
     , dImpliedAlignment = mempty
     , refEquality       = -1
+    , suppliedAlphabet  = Nothing
     }
 
 sameRef :: SimpleTree -> SimpleTree -> Bool
-sameRef (TT x) (TT y) = ref x == ref y
-  where
-    ref = refEquality . rootLabel
+sameRef x y = nodeRef x == nodeRef y
+
+nodeRef :: SimpleTree -> Int
+nodeRef (TT x) = refEquality $ rootLabel x
 
 instance Show SimpleTree where
   show (TT x) = drawTreeMultiLine $ show <$> x
 
 instance Show TestingDecoration where
-  show decoration = intercalate "\n" $ catMaybes renderedCosts <> catMaybes renderedDecorations
+  show decoration = intercalate "\n" $ catMaybes renderings
     where
+      renderings = mconcat [renderedId, renderedCosts, renderedDecorations]
+      
+      renderedId = pure . pure $ "Unique identifier: " <> show (refEquality decoration) 
       renderedCosts =
         [  pure $ "LocalCost   " <> show (dLocalCost decoration)
         ,  pure $ "TotalCost   " <> show (dTotalCost decoration)
@@ -163,7 +169,8 @@ instance Show TestingDecoration where
         , g "Right Child-wise Alignment" <$> f dRightAlignment
         , g "Implied Alignment         " <$> f dImpliedAlignment
         ]
-      f x = renderDynamicCharacter <$> headMay (x decoration)
+      alphabetToken = suppliedAlphabet decoration
+      f x = renderDynamicCharacter alphabetToken <$> headMay (x decoration)
       g prefix shown = prefix <> ": " <> shown --intercalate "\n" $ (prefix <> ": " <> y) : (("  " <>) <$> zs)
 --        where
 --          (x:y:zs) = lines shown :: [String]
@@ -187,14 +194,15 @@ draw (Node x xs) = lines x <> drawSubTrees xs
       "|" : shift "+- " "|  " (draw t) <> drawSubTrees ts
     shift first other = Prelude.zipWith (<>) (first : repeat other)
 
-renderDynamicCharacter :: DynamicChar -> String
-renderDynamicCharacter char
+renderDynamicCharacter :: Maybe (Alphabet String) -> DynamicChar -> String
+renderDynamicCharacter alphabetMay char
   | onull char = ""
   | otherwise  = concatMap f $ decodeDynamic alphabet char
   where
-    symbolCount = width $ char `indexChar` 0
-    symbols     = take symbolCount arbitrarySymbols
-    alphabet    = constructAlphabet symbols
+    symbolCount     = width $ char `indexChar` 0
+    symbols         = take symbolCount arbitrarySymbols
+    defaultAlphabet = constructAlphabet symbols
+    alphabet        = fromMaybe defaultAlphabet alphabetMay
     f :: [String] -> String
     f [x] = x
     f ambiguityGroup = "[" <> concat ambiguityGroup <> "]"
@@ -394,25 +402,39 @@ simpleTreeCharacterDecorationEqualityAssertion :: Foldable t
                -> (SimpleTree -> Vector DynamicChar)    -- ^ Node accessing function
                -> t (Int, String, String, [Int]) -- ^ (Node Reference, sequence of dynamic characters, expected value, child nodes)
                -> Assertion                      
-simpleTreeCharacterDecorationEqualityAssertion rootRef symbols transformation accessor spec = snd $ check (False, True @=? True) valueTree outputTree
+simpleTreeCharacterDecorationEqualityAssertion rootRef symbols transformation accessor spec = assertFailures $ check valueTree outputTree
   where
-    check :: (Bool, Assertion) -> SimpleTree -> SimpleTree -> (Bool, Assertion)
-    check e@(failureFound, _) expectedValueNode actualValueNode
-      | failureFound           = e
-      | notEqualReference      = (True, assertFailure "The tree topology changed!")
-      | length xs /= length ys = (True, assertFailure "The tree topology changed!")
-      | expected  /= actual    = (True, expected @=? actual)
-      | otherwise              =
-        case dropWhile (not . fst) $ zipWith (check e) xs ys of
-          []        -> e
-          failVal:_ -> failVal
+    assertFailures :: [Maybe String] -> Assertion
+    assertFailures xs =
+      case catMaybes xs of
+        [] -> True @=? True
+        ys -> assertFailure . (<> suffix) $ unlines ys
       where
+        suffix = "In the transformed tree: \n" <> show outputTree
+    
+    check :: SimpleTree -> SimpleTree -> [Maybe String]
+    check expectedValueNode actualValueNode
+      | notEqualReference ||
+        length xs /= length ys = [Just "The tree topology changed!"] 
+      | expected  /= actual    = Just failureMessage : recursiveFailures
+      | otherwise              = Nothing : recursiveFailures
+
+      where
+        recursiveFailures = concat $ zipWith check xs ys
         xs                = N.children expectedValueNode expectedValueNode
         ys                = N.children actualValueNode   actualValueNode
         expected          = EN.getEncoded expectedValueNode
         actual            = accessor actualValueNode
         notEqualReference = not $ expectedValueNode `sameRef` actualValueNode
-    
+        nodeAlphabet      = suppliedAlphabet . rootLabel $ (\(TT x) -> x) actualValueNode
+        failureMessage    = unlines
+                          [ "For node: " <> show (nodeRef actualValueNode)
+                          , "Expected value: " <> seqShow expected
+                          , "Actual value  : " <> seqShow actual
+                          ]
+        seqShow    = indentLine . maybe "Empty sequence" (renderDynamicCharacter nodeAlphabet) . headMay 
+        indentLine = (" "<>)
+        
     inputTree  = createSimpleTree rootRef symbols . fmap (\(x,y,_,z) -> (x,y,z)) $ toList spec
 
     outputTree = transformation inputTree
