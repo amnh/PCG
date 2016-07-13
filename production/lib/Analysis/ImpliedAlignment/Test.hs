@@ -286,7 +286,7 @@ testImpliedAlignmentCases = testGroup "Explicit test cases for implied alignment
         tree = [ (0,     "",     "", [1,2])
                , (1, "TGCA", "TGCA",    [])
                , (2,     "",     "", [3,4])
-               , (3,  "GCA", "-CGA",    [])
+               , (3,  "GCA", "-GCA",    [])
                , (4,     "",     "", [5,6])
                , (5,   "CA", "--CA",    [])
                , (6,    "A", "---A",    [])
@@ -308,11 +308,12 @@ testImpliedAlignmentCases = testGroup "Explicit test cases for implied alignment
         tree = [ (0, ""    ,     "", [1,2])
                , (1, "A"   , "---A",    [])
                , (2, ""    ,     "", [3,4])
-               , (3, "AC"  , "--CA",    [])
+               , (3, "CA"  , "--CA",    [])
                , (4, ""    ,     "", [5,6])
-               , (5, "ACG" , "-GCA",    [])
-               , (6, "ACGT", "TGCA",    [])
+               , (5, "GCA" , "-GCA",    [])
+               , (6, "TGCA", "TGCA",    [])
                ]
+
 
 -- | Useful function to convert encoding information to two encoded seqs
 encodeArbSameLen :: (GoodParsedChar, GoodParsedChar) -> (DynamicChar, DynamicChar)

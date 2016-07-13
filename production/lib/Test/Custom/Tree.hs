@@ -398,17 +398,20 @@ simpleTreeCharacterDecorationEqualityAssertion rootRef symbols transformation ac
   where
     check :: (Bool, Assertion) -> SimpleTree -> SimpleTree -> (Bool, Assertion)
     check e@(failureFound, _) expectedValueNode actualValueNode
-      | failureFound                                                = e
-      | not $ expectedValueNode `sameRef` actualValueNode           = (True, assertFailure "The tree topology changed!")
-      | length xs /= length ys                                      = (True, assertFailure "The tree topology changed!")
-      | EN.getEncoded expectedValueNode /= accessor actualValueNode = (True, EN.getEncoded expectedValueNode @=? accessor actualValueNode)
-      | otherwise                                                =
-        case dropWhile fst $ zipWith (check e) xs ys of
+      | failureFound           = e
+      | notEqualReference      = (True, assertFailure "The tree topology changed!")
+      | length xs /= length ys = (True, assertFailure "The tree topology changed!")
+      | expected  /= actual    = (True, expected @=? actual)
+      | otherwise              =
+        case dropWhile (not . fst) $ zipWith (check e) xs ys of
           []        -> e
           failVal:_ -> failVal
       where
-        xs = N.children expectedValueNode expectedValueNode
-        ys = N.children actualValueNode   actualValueNode
+        xs                = N.children expectedValueNode expectedValueNode
+        ys                = N.children actualValueNode   actualValueNode
+        expected          = EN.getEncoded expectedValueNode
+        actual            = accessor actualValueNode
+        notEqualReference = not $ expectedValueNode `sameRef` actualValueNode
     
     inputTree  = createSimpleTree rootRef symbols . fmap (\(x,y,_,z) -> (x,y,z)) $ toList spec
 

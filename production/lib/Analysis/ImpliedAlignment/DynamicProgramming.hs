@@ -327,18 +327,41 @@ instance Monoid MemoizedEvents where
   (Memo (a,b,c)) `mappend` (Memo (x,y,z)) = Memo (a<>x, b<>y, c<>z)
 -}
 
+-- TODO: Use BitVectors here for efficency!
 newtype DeletionEvents = DE IntSet deriving (Show)
 instance Monoid DeletionEvents where
   mempty = DE mempty
   (DE ancestorSet) `mappend` (DE descendantSet) = DE $ incrementedDescendantSet <> ancestorSet
     where
-      incrementedDescendantSet = ofoldl' f mempty descendantSet
-      f acc descendantIndex = (ofoldl' g 0 ancestorSet + descendantIndex) `IS.insert` acc
+      incrementedDescendantSet = snd $ ofoldl' f (0, ancestorSet) descendantSet
+      f (counter, as') descendantIndex
+        | descendantIndex' `onotElem` as' = (counter                 ,                   descendantIndex'  `IS.insert` as')
+        | otherwise                       = (counter + incrementation, (incrementation + descendantIndex') `IS.insert` as') 
         where
+          descendantIndex' = descendantIndex + counter
+          incrementation   = consecutiveLength . drop (descendantIndex' - 1) $ otoList as'
           g inc anscestorIndex
             | anscestorIndex <= descendantIndex = inc + 1 
             | otherwise                         = inc
-
+          consecutiveLength :: (Eq a, Num a) => [a] -> Int
+          consecutiveLength = h' 0
+            where
+              h' n       [] = n
+              h' n      [_] = n + 1
+              h' n (x:y:ys)
+                | x+1 == y  = h' (n+1) (y:ys)
+                | otherwise = n + 1
+ 
+{-
+  (DE ancestorSet) `mappend` (DE descendantSet) = DE $ incrementedAncestorSet <> descendantSet
+    where
+      incrementedAncestorSet = ofoldl' f mempty ancestorSet
+      f acc ancestorIndex = (ofoldl' g 0 descendantSet + ancestorIndex) `IS.insert` acc
+        where
+          g inc descendantIndex
+            | descendantIndex <= ancestorIndex = inc + 1 
+            | otherwise                        = inc
+-}
 newtype InsertionEvents = IE (IntMap Int) deriving (Show)
 instance Monoid InsertionEvents where
   mempty = IE mempty
@@ -399,13 +422,14 @@ numeration sequenceIndex costStructure tree = tree `update` updatedLeafNodes
 --        opt (i,j) | trace (mconcat ["opt (",show i,",",show j,")"]) False = undefined
         opt (i,j)
           -- The root node (base case)
-          | i == rootIndex && j == rootIndex = {--} (\x -> trace (show x) x) {--} rootNodeValue
+          | i == rootIndex && j == rootIndex = -- (\x -> trace (show x) x)
+                                               rootNodeValue
           -- A non-root node
-          | i == j                           = {- (\e@(_,x,y) -> trace (mconcat ["opt(", show i,",",show j,") ",show x," ",show y]) e) -}
-                                                nonRootNodeValue
+          | i == j                           = -- (\e@(_,x,y) -> trace (mconcat ["opt(", show i,",",show j,") ",show x," ",show y]) e)
+                                               nonRootNodeValue
           -- An edge in the tree
-          | j `oelem` (childMapping V.! i)   =  (\e@(_,x,_) -> trace (mconcat ["opt(", show i,",",show j,") ", show x]) e)
-                                                parentChildEdge
+          | j `oelem` (childMapping V.! i)   = -- (\e@(_,x,_) -> trace (mconcat ["opt(", show i,",",show j,") ", show x]) e)
+                                               parentChildEdge
           -- Neither a node nor an edge
           | otherwise                        = undefined
           where
@@ -430,7 +454,14 @@ numeration sequenceIndex costStructure tree = tree `update` updatedLeafNodes
                         Nothing -> []
                         Just n  -> replicate n SoftGap
 
-            nonRootNodeValue = {- trace (mconcat ["nonRootNodeValue: (", show i, ",", show j, ")\n", show parentInsertions, " , ", show parentEdgePsuedoCharacter, " , ", show psuedoCharacter ]) $ -}
+            nonRootNodeValue = {- trace (mconcat
+                                        [ "nonRootNodeValue: ("
+                                        , show i, ",", show j, ")\n"
+                                        , show parentEdgeInsertions, " , "
+                                        , show parentEdgePsuedoCharacter, " , "
+                                        , show parentEdgePsuedoCharacter
+                                        ]) $
+                               -}
                                (ancestoralEdgeDeletions, parentEdgeInsertions, parentEdgePsuedoCharacter)
               where
                 -- We mutate the the psuedo-character by replacing "soft gaps" with "inserted bases"
@@ -466,7 +497,7 @@ numeration sequenceIndex costStructure tree = tree `update` updatedLeafNodes
                 parentCharacter = getFinal    (enumeratedNodes V.! i) V.! sequenceIndex
                 childCharacter  = getForAlign (enumeratedNodes V.! j) V.! sequenceIndex
                 (ancestoralNodeDeletions, _parentNodeInsertions, parentNodePsuedoCharacter) =
---              trace (mconcat ["Accessing (",show $ parentMapping V.! j,",",show j,")"]) $
+--                   trace (mconcat ["Accessing (",show $ parentMapping V.! j,",",show j,")"]) $
                    homologyMemoize ! (i, i)
                 (DE deletes, !inserts)      = comparativeIndelEvents parentCharacter childCharacter costStructure
 
@@ -553,7 +584,7 @@ numeration sequenceIndex costStructure tree = tree `update` updatedLeafNodes
 
 deriveImpliedAlignment :: (EncodableDynamicCharacter s, NodeConstraint n s, IANode' n s, Show s, Show (Element s)) => Int -> Int -> Matrix MemoizedEvents -> n -> n
 -- deriveImpliedAlignment nodeIndex _ _ | trace ("deriveImpliedAlignment " <> show nodeIndex <> " " <> show psuedoCharacter) False = undefined
-deriveImpliedAlignment nodeIndex sequenceIndex homologyMemoize node = trace (unwords
+deriveImpliedAlignment nodeIndex sequenceIndex homologyMemoize node = {- trace (unwords
                                                                             [ "Node:"
                                                                             , show nodeIndex
                                                                             ,"\n"
@@ -576,6 +607,7 @@ deriveImpliedAlignment nodeIndex sequenceIndex homologyMemoize node = trace (unw
                                                                             , "Remaining tokens:"
                                                                             , show remaining
                                                                             ]) $
+-}
                                                                       node `setHomologies'` leafHomologies
       where
         (DE deletions, _, psuedoCharacter) = homologyMemoize ! (nodeIndex, nodeIndex)
@@ -585,7 +617,18 @@ deriveImpliedAlignment nodeIndex sequenceIndex homologyMemoize node = trace (unw
           where
             oldHomologies = getHomologies' node
             
-        leafSequence    = trace (mconcat ["opt (",show nodeIndex,",",show nodeIndex,") ", show $ length psuedoCharacter, show deletions {-," ", show psuedoCharacter -}]) $ getForAlign node
+        leafSequence    = {- trace (mconcat
+                                 [ "opt ("
+                                 , show nodeIndex
+                                 , ","
+                                 , show nodeIndex
+                                 , ") "
+                                 , show $ length psuedoCharacter
+                                 , show deletions
+                                 --," ", show psuedoCharacter
+                                 ]) $
+                          -}
+                          getForAlign node
         leafCharacter   = leafSequence V.! sequenceIndex
         leafAlignedChar = constructDynamic $ reverse result
         characterTokens = otoList leafCharacter
@@ -616,7 +659,7 @@ locateRoot ns n = fromMaybe 0 $ V.ifoldl' f Nothing ns
                         else Nothing
 
 gatherChildren :: (Eq n, TreeConstraint t n e s) => Vector n -> t -> Vector IntSet
-gatherChildren enumNodes tree = trace ("Gathered children: " <> show x) x
+gatherChildren enumNodes tree = x -- trace ("Gathered children: " <> show x) x
   where
     !x = V.generate (length enumNodes) f
     f i = IS.fromList $ location <$> children'
@@ -653,7 +696,8 @@ gatherParents childrenMapping = {- trace ("Gathered parents: " <> show x) -} int
 comparativeIndelEvents :: (SeqConstraint s) => s -> s -> CostStructure -> (DeletionEvents, InsertionEvents)
 comparativeIndelEvents ancestorCharacterUnaligned descendantCharacterUnaligned costStructure
   | olength ancestorCharacter /= olength descendantCharacter = error $ mconcat ["Lengths of sequences are not equal!\n", "Parent length: ", show $ olength ancestorCharacter, "\nChild length: ", show $ olength descendantCharacter]
-  | otherwise                                    = (\x -> trace (show x) x) $ (DE deletionEvents, IE insertionEvents)
+  | otherwise                                    = -- (\x -> trace (show x) x) $
+                                                   (DE deletionEvents, IE insertionEvents)
   where
     (ancestorCharacter, descendantCharacter) =
       if olength ancestorCharacterUnaligned == olength descendantCharacterUnaligned
