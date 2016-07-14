@@ -22,24 +22,31 @@
  */
 #include <stdint.h>
 
-const int BITS_IN_BYTE       = 8;  // so bytes are set to 8, for all architectures
-const int INT_WIDTH          = sizeof(uint64_t);
-const int WORD_WIDTH         = BITS_IN_BYTE * INT_WIDTH;
-const uint64_t CANONICAL_ONE = 1;
+const unsigned int BITS_IN_BYTE = 8;  // so bytes are set to 8, for all architectures
+const unsigned int INT_WIDTH    = sizeof(uint64_t);
+const unsigned int WORD_WIDTH   = BITS_IN_BYTE * INT_WIDTH;
+const uint64_t CANONICAL_ONE    = 1;
 
 /** 
  *  The following three #defines taken from http://www.mathcs.emory.edu/~cheung/Courses/255/Syllabus/1-C-intro/bit-array.html
  *  Provides operations to use an array of ints as an array of bits. In essence, creates a mask of length k and uses that
  *  mask to set, clear and test bits. 
  */ 
-void SetBit  (uint64_t* arr, int k) { arr[ k / WORD_WIDTH ]        |=  (CANONICAL_ONE << (k % WORD_WIDTH)); };
-void ClearBit(uint64_t* arr, int k) { arr[ k / WORD_WIDTH ]        &= ~(CANONICAL_ONE << (k % WORD_WIDTH)); };
-uint64_t TestBit (uint64_t* arr, int k) { return arr[ k / WORD_WIDTH ] &   (CANONICAL_ONE << (k % WORD_WIDTH)); };
+void SetBit (uint64_t* arr, unsigned int k) {
+    arr[ k / WORD_WIDTH ] |= (CANONICAL_ONE << (k % WORD_WIDTH)); 
+}
+void ClearBit (uint64_t* arr, unsigned int k) { 
+    arr[ k / WORD_WIDTH ] &= ~(CANONICAL_ONE << (k % WORD_WIDTH)); 
+}
+
+uint64_t TestBit (uint64_t* arr, unsigned int k) { 
+    return arr[ k / WORD_WIDTH ] & (CANONICAL_ONE << (k % WORD_WIDTH)); 
+}
 
 /* alignResult_t is where results get put for return to Haskell */
 typedef struct AlignResult {
-    int finalWt;
-    int finalLength;
+    unsigned int finalWt;
+    unsigned int finalLength;
     uint64_t* finalStr;
 } AlignResult;
 
@@ -49,8 +56,8 @@ typedef struct AlignResult {
  *  See note in .c file for how this is used. 
  */
 typedef struct DynChar {
-    int alphSize;
-    int dynCharLen;
+    unsigned int alphSize;
+    unsigned int dynCharLen;
     uint64_t* dynChar;
 } DynChar;
 
@@ -58,10 +65,10 @@ typedef struct DynChar {
 int testFN(DynChar*, DynChar*, AlignResult*);
 
 /* figures out how long the int array needs to be to hold a given dynamic character */
-int bufferSize(DynChar* character) {
-    int charLen    = character -> dynCharLen;
-    int alphLen    = character -> alphSize;
-    int totalBits  = charLen * alphLen;
+uint64_t bufferSize(DynChar* character) {
+    unsigned int charLen   = character -> dynCharLen;
+    unsigned int alphLen   = character -> alphSize;
+    unsigned int totalBits = charLen * alphLen;
     return (totalBits / WORD_WIDTH) + ((totalBits % WORD_WIDTH) ? 1 : 0);
 }
 
@@ -70,15 +77,15 @@ int bufferSize(DynChar* character) {
  *  Fails if the position of the static char to be replaced is beyond the end of the dynamic character to be altered.
  *  Fails if the alphabet sizes of the two input characters are different.
  */    
-int setStaticChar(DynChar* charToBeAltered, int whichIdx, DynChar* changeToThis) {
+int setStaticChar(DynChar* charToBeAltered, unsigned int whichIdx, DynChar* changeToThis) {
     if ( whichIdx >= charToBeAltered -> dynCharLen
        || charToBeAltered -> alphSize != changeToThis -> alphSize 
        ) {
         return 1;
     }
-    int start = whichIdx * charToBeAltered -> alphSize;
-    int end   = start + charToBeAltered -> alphSize;
-    for( int dynCharIdx = start, staticCharIdx = 0; dynCharIdx < end; dynCharIdx++, staticCharIdx++ ) {
+    unsigned int start = whichIdx * charToBeAltered -> alphSize;
+    unsigned int end   = start + charToBeAltered -> alphSize;
+    for( unsigned int dynCharIdx = start, staticCharIdx = 0; dynCharIdx < end; dynCharIdx++, staticCharIdx++ ) {
         if( TestBit(changeToThis -> dynChar, staticCharIdx) ) {
             SetBit(charToBeAltered -> dynChar, dynCharIdx);
         } else {
@@ -89,28 +96,29 @@ int setStaticChar(DynChar* charToBeAltered, int whichIdx, DynChar* changeToThis)
 }
 
 /** 
- *  Find a static character in a packed dynamic character.
+ *  Find and return a static character in a packed dynamic character.
  *  Copy that character into a static character (which was passed in by ref).
  *  Return failure if:
  *  • character requested is beyond end of dynamic character's length
- *  • the output character is the wrong length
  *  • the alphabet sizes of the input and output characters don't match
+ *
+ *  Nota bene: The outStaticChar *must* have a dynChar of adequate length, or 
+ *             things will go horribly wrong.
  */
-int getStaticChar(DynChar* inDynChar, int which, DynChar* outStaticChar) {
+int getStaticChar(DynChar* inDynChar, unsigned int whichChar, DynChar* outStaticChar) {
     // get necessary length and tack on isExtra
-    int minArrLen = bufferSize(inDynChar);
+    // unsigned int minArrLen = bufferSize(inDynChar);
     // fail if prereqs aren't met
-    if (  which >= inDynChar -> dynCharLen
-       || outStaticChar -> dynCharLen < minArrLen
+    if (  whichChar >= inDynChar -> dynCharLen
        || inDynChar -> alphSize != outStaticChar -> alphSize 
        ) {
         return 1;
     }
     // copy values
-    int start = which * inDynChar -> alphSize;
-    int end   = start + inDynChar -> alphSize;
-    for( int getIdx = start, setIdx = 0; getIdx < end; getIdx++, setIdx++ ) {
-        if( TestBit(outStaticChar -> dynChar, getIdx) ) {
+    unsigned int start = whichChar * inDynChar -> alphSize;
+    unsigned int end   = start + inDynChar -> alphSize;
+    for( unsigned int getIdx = start, setIdx = 0; getIdx < end; getIdx++, setIdx++ ) {
+        if( TestBit(inDynChar -> dynChar, getIdx) ) {
             SetBit(outStaticChar -> dynChar, setIdx);
         } else {
             ClearBit(outStaticChar -> dynChar, setIdx);
@@ -125,18 +133,19 @@ int getStaticChar(DynChar* inDynChar, int which, DynChar* outStaticChar) {
  *  using inputted alphabet length to determine necessary length of internal int array.
  *  Fill internal int array with zeroes.
  */
-void makeEmptyStaticChar( DynChar* output, int alphLen ) {
+void makeStaticChar( DynChar* output, unsigned int alphLen, uint64_t value ) {
     // First create dynamic character with empty character field.
     output -> alphSize = alphLen;
     output -> dynCharLen  = 1;
     
     // Now figure out how many uint64_t's we'll need in our array.
     // Then declare and initialize a dynChar set to all zeroes.
-    int neededLen = bufferSize(output);
-    uint64_t interimArr [neededLen];
-    for( int i = 0; i < neededLen; i++ ) {
-        interimArr[i] = 0;
+    unsigned int neededLen = bufferSize(output);
+    output -> dynChar = calloc( neededLen, INT_WIDTH );  // all set to 0s
+    for( unsigned int bitIdx = 0; bitIdx < alphLen; bitIdx++ ) {
+        if( value & (CANONICAL_ONE << bitIdx) ) {
+            SetBit(output -> dynChar, bitIdx);
+        }
     }
-    output -> dynChar = interimArr;
 }
 
