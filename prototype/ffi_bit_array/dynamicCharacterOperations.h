@@ -31,7 +31,7 @@
 
 static const unsigned int BITS_IN_BYTE = 8;  // so bytes are set to 8, for all architectures
 static const unsigned int INT_WIDTH    = sizeof(uint64_t);
-static const unsigned int WORD_WIDTH   = BITS_IN_BYTE * INT_WIDTH;
+static const unsigned int WORD_WIDTH   = 8 * sizeof(uint64_t); // BITS_IN_BYTE * INT_WIDTH; <-- because HSC is dumb!
 static const uint64_t CANONICAL_ONE    = 1;
 
 /* alignResult_t is where results get put for return to Haskell */
