@@ -15,7 +15,7 @@ void printBits( dynChar_t* input );
  *  dynamic character. The third character is allocated on Haskell side and passed in by reference.
  *  Returns 0 on correct exit, 1 on allocation failure. This was used to test the Haskell FFI.
  */
-int testFn( dynChar_t* seqA, dynChar_t* seqB, AlignResult* result );
+int testFn( dynChar_t* seqA, dynChar_t* seqB, alignResult_t* result );
 
 /** 
  *  The following fn should only needed this for testing, so it's not in the .h file. 
