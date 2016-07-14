@@ -27,7 +27,7 @@ import Foreign.C.Types
 import System.IO.Unsafe
 import Test.QuickCheck hiding ((.&.))
 
-#include "exportCharacter.h"
+#include "dynamicCharacterOperations.h"
 #include "seqAlignForHaskell.c"
 #include <stdint.h>
 
