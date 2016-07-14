@@ -340,16 +340,14 @@ instance Monoid DeletionEvents where
         where
           descendantIndex' = descendantIndex + counter
           incrementation   = consecutiveLength . drop (descendantIndex' - 1) $ otoList as'
-          g inc anscestorIndex
-            | anscestorIndex <= descendantIndex = inc + 1 
-            | otherwise                         = inc
+
           consecutiveLength :: (Eq a, Num a) => [a] -> Int
-          consecutiveLength = h' 0
+          consecutiveLength = g 0
             where
-              h' n       [] = n
-              h' n      [_] = n + 1
-              h' n (x:y:ys)
-                | x+1 == y  = h' (n+1) (y:ys)
+              g n       [] = n
+              g n      [_] = n + 1
+              g n (x:y:ys)
+                | x+1 == y  = g (n+1) (y:ys)
                 | otherwise = n + 1
  
 {-
@@ -502,7 +500,7 @@ numeration sequenceIndex costStructure tree = tree `update` updatedLeafNodes
                 (DE deletes, !inserts)      = comparativeIndelEvents parentCharacter childCharacter costStructure
 
                 (IE incrementedInsertionEvents) = inserts >-< allDescendantInsertions
-
+{-
                 incrementedDeletionEvents = DE . IS.fromList $ ofoldMap f deletes
                   where
                     allInsertionEvents   = (\(_,IE x,_) -> x) $ homologyMemoize ! (rootIndex, rootIndex)
@@ -514,7 +512,7 @@ numeration sequenceIndex costStructure tree = tree `update` updatedLeafNodes
                     f e = [e + otherInsertionsBefore e]
 
                     otherInsertionsBefore n = sum $ IM.filterWithKey (\k _ -> k <= n) otherInsertionEvents
-                      
+-}                    
                 psuedoCharacter = V.fromList result
                   where
                     (_,_,result) = foldr f (0, m, []) contextualPreviousPsuedoCharacter
