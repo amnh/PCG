@@ -3,14 +3,19 @@
 #include <string.h> 
 #include "myComplexBitArrayTestC.h"
 
-void printBits( uint64_t* input, int alphLen, int numStaticChars ) {
+/** 
+ *  The following fn should only needed this for testing, so it's not in the .h file. 
+ *
+ *  Prints a representation of a dynamic character as a matrix of bits.
+ */
+void printBits( DynChar* input ) {
     printf("[\n");
-    for( int charNum = 0; charNum < numStaticChars; charNum++ ) {
-        for( int bitIdx = 0; bitIdx < alphLen; bitIdx++ ) {
-            // printf("char num: %d\t", (alphLen * charNum + bitIdx) / WORD_WIDTH);
-            // printf("loc in char: %d\t", (alphLen * charNum + bitIdx) % WORD_WIDTH);
-            // printf("value: %d\n", TestBit(input, alphLen * charNum + bitIdx) );
-            if( TestBit(input, alphLen * charNum + bitIdx) ) {
+    unsigned int alphLen = input -> alphSize;
+    unsigned int numStaticChars = input -> dynCharLen;
+
+    for( unsigned int charNum = 0; charNum < numStaticChars; charNum++ ) {
+        for( unsigned int bitIdx = 0; bitIdx < alphLen; bitIdx++ ) {
+            if( TestBit(input -> dynChar, alphLen * charNum + bitIdx) ) {
                 //printf("Bit index:        %d\n", alphLen * charNum + bitIdx );
                 printf("1,");
             } else {
@@ -29,19 +34,13 @@ void printBits( uint64_t* input, int alphLen, int numStaticChars ) {
  */
 int testFn(DynChar* seqA, DynChar* seqB, AlignResult* result) {
     // get total length of output string
-    int charLenA = seqA -> dynCharLen; // This is the total number of static characters in our first input 
-    int charLenB = seqB -> dynCharLen; // This is the total number of static characters in our second input 
+    unsigned int charLenA = seqA -> dynCharLen; // This is the total number of static characters in our first input 
+    unsigned int charLenB = seqB -> dynCharLen; // This is the total number of static characters in our second input 
 
     // Because the characters are packed (meaning multiple characters will be in a single int,
     // we need the total number of ints in our array, which is 
-    int buffLenA = bufferSize(seqA);   
-    int buffLenB = bufferSize(seqB);
-    
-    /*
-    printf("C: alphabet  length  %d\n", seqA->alphSize);
-    printf("C: character length  %d\n", seqA->dynCharLen);
-    printf("C: character pointer %p\n", seqA->dynChar);
-    */
+    unsigned int buffLenA = bufferSize(seqA);   
+    unsigned int buffLenB = bufferSize(seqB);
 
     // using calloc out of an abundance of caution. Shouldn't need it.
     // See note in .h file re: uint64_t
@@ -55,12 +54,10 @@ int testFn(DynChar* seqA, DynChar* seqB, AlignResult* result) {
     // a simple concatenation, to test the input and output
     for(int i = 0; i < buffLenA; i++) {
         buffer[i] = seqA -> dynChar[i];
-        // printf("C: character A loop, %llu\n", seqA -> dynChar[i]);
     }
     
     for(int i = 0; i < buffLenB; i++) {
         buffer[i + buffLenA] = seqB -> dynChar[i];
-        // printf("C: character B loop, %llu\n", seqB -> dynChar[i]);
     }
 
     // now assign to struct for retrieval by Haskell FFI
@@ -70,51 +67,101 @@ int testFn(DynChar* seqA, DynChar* seqB, AlignResult* result) {
     return 0;
 }
 
-
-/* The following should only needed this for testing, so they're not in the .h file. */
-void makeDynamicChar( DynChar* output, int alphLen, int numStaticChars, int* values ) {
+/** 
+ *  The following fn should only needed this for testing, so it's not in the .h file. 
+ *
+ *  Takes in a dynamic character (by reference), an alphabet length, the number of static
+ *  characters the array should hold, and an array of int values that should be packed into the
+ *  the character. Then mutates the passed character to match the inputs.
+ */
+void makeDynamicChar( DynChar* output, unsigned int alphLen, unsigned int numStaticChars, uint64_t* values ) {
     // First create dynamic character with empty character field.
     output -> alphSize   = alphLen;
     output -> dynCharLen = numStaticChars;
     
     // Now figure out how many uint64_t's we'll need in our array.
     // Then declare and initialize a dynChar.
-    int neededLen = bufferSize(output);
-    output -> dynChar = calloc( neededLen, INT_WIDTH ); // in bytes. int array, so don't need \0=
-    printf("\nInitial:\n");
-    printBits(output -> dynChar, alphLen, numStaticChars);
-    // printf("Needed: %d\n", neededLen);
+    unsigned int neededLen = bufferSize(output);
+
+    // need to alloc so that array isn't on the stack, and persist beyond this function call
+    output -> dynChar = calloc( neededLen, INT_WIDTH ); 
+    // fill array with integer values, 
     for( int charNum = 0; charNum < numStaticChars; charNum++ ) {
-        printf("\nCurrent char: %d\n", charNum);
         for( int bitIdx = 0; bitIdx < alphLen; bitIdx++ ) {
-            // printf("Bit value:   %d\n", 1 << bitIdx);
-            // printf("Bit loc:     %d\n", charNum * alphLen + bitIdx);
-            // printf("value: %d, bit loc: %d\n", values[charNum], bitIdx);
             if( values[charNum] & (1 << bitIdx) ) {
-                printf("True\n");
-                printf("Mask:       %d\n", (1 << bitIdx));
-                printf("Bit to set: %d\n", charNum * alphLen + bitIdx);
                 SetBit(output -> dynChar, charNum * alphLen + bitIdx);
-                printBits(output -> dynChar, alphLen, numStaticChars);
-                printf("After set:  %llu\n", output -> dynChar[0] );
             }
         }
     }
 }
 
-
-
 int main() {
-    int numStaticChars = 9;
-    int alphabetLen    = 5;
-    int values [numStaticChars];
+    unsigned int numStaticChars = 14;
+    unsigned int alphabetLen    = 5;
+    uint64_t values [numStaticChars];
     for( int i = 0; i < numStaticChars; i++ ) {
-        values[i] = i;
+        values[i] = (uint64_t) i;
     }
 
-    DynChar char1;
+    DynChar char1; // alphabet: 5, chars: 14, values: 0 .. 13
     makeDynamicChar(&char1, alphabetLen, numStaticChars, values);
-    printf("\nFinal:\n");
-    printBits(char1.dynChar, alphabetLen, numStaticChars);
+    printf("\nTest bit wrap to next int. Should be 14, then 5, then numbers from 0 to 14 in bits:\n");
+    printf("%u\n", char1.dynCharLen);
+    printf("%u\n", char1.alphSize);
+    printBits(&char1);
+
+    printf("\nTest make static character. Should print 1, then 250, then a matrix 250 wide, all set to 0 except first three:\n");
+    alphabetLen = 63; // TODO: fix this so it rolls over. Right now 64 is max.
+    DynChar char2; // alphabet: 63, chars: 1, value: 7
+    makeStaticChar(&char2, alphabetLen, (uint64_t) 7); // cast because input needs to be unsigned long
+    printf("%u\n", char2.dynCharLen);
+    printf("%u\n", char2.alphSize);
+    printBits( &char2 );
+
+    printf("\nTest accessors:\n");
+
+    alphabetLen = 5;
+    printf("\nTest get static character. Should print 1, then 5, then 13 in binary, then error out twice:\n");
+    DynChar char3; // alphabet: 5, chars: 1, value: 13
+    makeStaticChar(&char3, alphabetLen, (uint64_t) 0);
+    if ( ! getStaticChar(&char1, (unsigned int) 13, &char3) ) {
+        printf("%u\n", char3.dynCharLen);
+        printf("%u\n", char3.alphSize);
+        printBits( &char3 );
+    } else {
+        printf("Error! \n");
+    }
+    if ( ! getStaticChar(&char1, (unsigned int) 17, &char3) ) {
+        printBits( &char3 );
+    } else {
+        printf("\nError!\n");
+    }
+    char3.alphSize = 7;
+    if ( ! getStaticChar(&char1, (unsigned int) 13, &char3) ) {
+        printBits( &char3 );
+    } else {
+        printf("\nError!\n");
+    }
+
+    printf("\nTest set static character. Should print binary ints from 0 to 13, with evens all replace by 13, then error out twice:\n");
+    char3.alphSize = 5;
+    for( unsigned int i = 0; i < char1.dynCharLen; i+=2 ) {
+        if ( setStaticChar(&char1, i, &char3) ) {
+            printf("Error! \n");
+        }
+    }
+    printBits( &char1 );
+    
+    if ( ! setStaticChar(&char1, (unsigned int) 17, &char3) ) {
+        printBits( &char3 );
+    } else {
+        printf("\nError!\n");
+    }
+    char3.alphSize = 7;
+    if ( ! setStaticChar(&char1, (unsigned int) 13, &char3) ) {
+        printBits( &char3 );
+    } else {
+        printf("\nError!\n");
+    }
 
 }
