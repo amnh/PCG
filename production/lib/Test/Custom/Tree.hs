@@ -32,6 +32,7 @@ import           Data.List.Utility                       (chunksOf)
 import           Data.Maybe
 import           Data.Monoid
 import           Data.MonoTraversable
+import           Data.Ord                                (comparing)
 import qualified Data.Set                         as S
 import           Data.Tree
 import           Data.Vector                             (Vector)
@@ -152,7 +153,7 @@ instance Show TestingDecoration where
     where
       renderings = mconcat [renderedId, renderedCosts, renderedDecorations]
       
-      renderedId = pure . pure $ "Unique identifier: " <> show (refEquality decoration) 
+      renderedId = pure . pure $ "Node ( " <> show (refEquality decoration) <> " )"
       renderedCosts =
         [  pure $ "LocalCost   " <> show (dLocalCost decoration)
         ,  pure $ "TotalCost   " <> show (dTotalCost decoration)
@@ -393,62 +394,87 @@ findNode f tree@(TT x)
   | otherwise = foldl' (<|>) Nothing $ (findNode f. TT) <$> subForest x
 
 
+data CharacterValueComparison
+   = AllCharactersMatched
+   | MismatchedCharacterValues [String]
+   deriving (Eq, Show)
 
+mismatches :: CharacterValueComparison -> [String]
+mismatches AllCharactersMatched           = []
+mismatches (MismatchedCharacterValues xs) = xs
 
 simpleTreeCharacterDecorationEqualityAssertion :: Foldable t
-               => Int                            -- ^ Root node reference
-               -> String                         -- ^ Alphabet symbols
-               -> (SimpleTree -> SimpleTree)     -- ^ Topology invariant tree transformation.
-               -> (SimpleTree -> Vector DynamicChar)    -- ^ Node accessing function
-               -> t (Int, String, String, [Int]) -- ^ (Node Reference, sequence of dynamic characters, expected value, child nodes)
+               => Int                                -- ^ Root node reference
+               -> String                             -- ^ Alphabet symbols
+               -> (SimpleTree -> SimpleTree)         -- ^ Topology invariant tree transformation.
+               -> (SimpleTree -> Vector DynamicChar) -- ^ Node accessing function
+               -> t (Int, String, [String], [Int])   -- ^ (Node Reference, sequence of dynamic characters, expected values, child nodes)
                -> Assertion                      
-simpleTreeCharacterDecorationEqualityAssertion rootRef symbols transformation accessor spec = assertFailures $ check valueTree outputTree
+simpleTreeCharacterDecorationEqualityAssertion rootRef symbols transformation accessor spec =
+    assertMinimalFailure $ compareTree outputTree <$> valueTrees
   where
-    assertFailures :: [Maybe String] -> Assertion
-    assertFailures xs =
-      case catMaybes xs of
-        [] -> True @=? True
+    assertMinimalFailure :: [CharacterValueComparison] -> Assertion
+    assertMinimalFailure comparisons =
+      case minimumBy (comparing length) $ mismatches <$> comparisons of
+        [] ->  True @=? True
         ys -> assertFailure . (<> suffix) $ unlines ys
       where
-        suffix = "In the transformed tree: \n" <> show outputTree
-    
-    check :: SimpleTree -> SimpleTree -> [Maybe String]
-    check expectedValueNode actualValueNode
-      | notEqualReference ||
-        length xs /= length ys = [Just "The tree topology changed!"] 
-      | expected  /= actual    = Just failureMessage : recursiveFailures
-      | otherwise              = Nothing : recursiveFailures
+        suffix = "In the transformed tree: \n" <> indentBlock (show outputTree)
 
+    compareTree :: SimpleTree -> SimpleTree -> CharacterValueComparison
+    compareTree actualValueTree expectedValueTree =
+      case catMaybes $ checkTree' actualValueTree expectedValueTree of
+        [] -> AllCharactersMatched
+        es -> MismatchedCharacterValues es
       where
-        recursiveFailures = concat $ zipWith check xs ys
-        xs                = N.children expectedValueNode expectedValueNode
-        ys                = N.children actualValueNode   actualValueNode
-        expected          = EN.getEncoded expectedValueNode
-        actual            = accessor actualValueNode
-        notEqualReference = not $ expectedValueNode `sameRef` actualValueNode
-        nodeAlphabet      = suppliedAlphabet . rootLabel $ (\(TT x) -> x) actualValueNode
-        failureMessage    = unlines
-                          [ "For node: " <> show (nodeRef actualValueNode)
-                          , "Expected value: " <> seqShow expected
-                          , "Actual value  : " <> seqShow actual
-                          ]
-        seqShow    = indentLine . maybe "Empty sequence" (renderDynamicCharacter nodeAlphabet) . headMay 
-        indentLine = (" "<>)
-        
-    inputTree  = createSimpleTree rootRef symbols . fmap (\(x,y,_,z) -> (x,y,z)) $ toList spec
+        checkTree' :: SimpleTree -> SimpleTree -> [Maybe String]
+        checkTree' actualValueNode expectedValueNode
+          | notEqualReference ||
+            length xs /= length ys = [Just "The tree topology changed!"] 
+          | actual    /= expected  = Just failureMessage : recursiveFailures
+          | otherwise              = Nothing : recursiveFailures
+          where
+            recursiveFailures = concat $ zipWith checkTree' xs ys
+            xs                = N.children actualValueNode   actualValueNode
+            ys                = N.children expectedValueNode expectedValueNode
+            expected          = EN.getEncoded expectedValueNode
+            actual            =  accessor actualValueNode
+            notEqualReference = not $ expectedValueNode `sameRef` actualValueNode
+            nodeAlphabet      = suppliedAlphabet . rootLabel $ (\(TT x) -> x) actualValueNode
+            failureMessage    = "For Node ( " <> show (nodeRef actualValueNode) <> " )\n" <>
+                                (indentBlock . unlines)
+                              [ "Expected value: " <> seqShow expected
+                              , "Actual value  : " <> seqShow actual
+                              ]
+              where
+                seqShow = indentLine . maybe "Empty sequence" (renderDynamicCharacter nodeAlphabet) . headMay 
 
-    outputTree = transformation inputTree
-    
-    valueTree  = TT . setRefIds $ unfoldTree buildExpectedTree rootRef 
+    indentLine  = ("  " <>)
+    indentBlock = unlines . fmap indentLine . lines
+
+    -- Construct the tree to be transformed.
+    inputTree   = createSimpleTree rootRef symbols . fmap (\(x,y,_,z) -> (x,y,z)) $ toList spec
+
+    -- The result of the tree transformation.
+    outputTree  = transformation inputTree
+
+    -- A list of "comparison" trees, each tree in the list is a possible correct decoration after the tree transformation.
+    valueTrees  = toValueTree <$> [0 .. valueTreeCount -1]
+
+    valueTreeCount = length . fst . head $ otoList mapping
+
+    -- Takes an index from the list of possible tree decorations and constructs a "comparison" tree.
+    toValueTree j = TT . setRefIds $ unfoldTree buildExpectedTree rootRef 
       where
         buildExpectedTree :: Int -> (TestingDecoration, [Int])
         buildExpectedTree i = (def { dEncoded = encodedSequence }, otoList children)
           where
-            encodedSequence = if   null expectedChar
-                       then mempty
-                       else pure . encodeDynamic alphabet $ (\c -> [[c]]) <$> expectedChar
+            encodedSequence = if   null (expectedChar !! j)
+                              then mempty
+                              else pure . encodeDynamic alphabet $ (\c -> [[c]]) <$> (expectedChar !! j)
             (expectedChar, children) = mapping ! i
 
+    -- 
     alphabet = constructAlphabet $ pure <$> symbols
 --    mapping :: (Foldable a, Foldable c, Foldable v) => IntMap (v (c (a String)), IntSet)
     mapping = foldl' f mempty spec
