@@ -8,7 +8,7 @@
  *
  *  Prints a representation of a dynamic character as a matrix of bits.
  */
-void printBits( DynChar* input ) {
+void printBits( dynChar_t* input ) {
     printf("[\n");
     unsigned int alphLen = input -> alphSize;
     unsigned int numStaticChars = input -> dynCharLen;
@@ -32,7 +32,7 @@ void printBits( DynChar* input ) {
  *  dynamic character. The third character is allocated on Haskell side and passed in by reference.
  *  Returns 0 on correct exit, 1 on allocation failure. This was used to test the Haskell FFI.
  */
-int testFn(DynChar* seqA, DynChar* seqB, AlignResult* result) {
+int testFn(dynChar_t* seqA, dynChar_t* seqB, AlignResult* result) {
     // get total length of output string
     unsigned int charLenA = seqA -> dynCharLen; // This is the total number of static characters in our first input 
     unsigned int charLenB = seqB -> dynCharLen; // This is the total number of static characters in our second input 
@@ -74,7 +74,7 @@ int testFn(DynChar* seqA, DynChar* seqB, AlignResult* result) {
  *  characters the array should hold, and an array of int values that should be packed into the
  *  the character. Then mutates the passed character to match the inputs.
  */
-void makeDynamicChar( DynChar* output, unsigned int alphLen, unsigned int numStaticChars, uint64_t* values ) {
+void makeDynamicChar( dynChar_t* output, unsigned int alphLen, unsigned int numStaticChars, uint64_t* values ) {
     // First create dynamic character with empty character field.
     output -> alphSize   = alphLen;
     output -> dynCharLen = numStaticChars;
@@ -103,7 +103,7 @@ int main() {
         values[i] = (uint64_t) i;
     }
 
-    DynChar char1; // alphabet: 5, chars: 14, values: 0 .. 13
+    dynChar_t char1; // alphabet: 5, chars: 14, values: 0 .. 13
     makeDynamicChar(&char1, alphabetLen, numStaticChars, values);
     printf("\nTest bit wrap to next int. Should be 14, then 5, then numbers from 0 to 14 in bits:\n");
     printf("%u\n", char1.dynCharLen);
@@ -112,7 +112,7 @@ int main() {
 
     printf("\nTest make static character. Should print 1, then 250, then a matrix 250 wide, all set to 0 except first three:\n");
     alphabetLen = 63; // TODO: fix this so it rolls over. Right now 64 is max.
-    DynChar char2; // alphabet: 63, chars: 1, value: 7
+    dynChar_t char2; // alphabet: 63, chars: 1, value: 7
     makeStaticChar(&char2, alphabetLen, (uint64_t) 7); // cast because input needs to be unsigned long
     printf("%u\n", char2.dynCharLen);
     printf("%u\n", char2.alphSize);
@@ -122,7 +122,7 @@ int main() {
 
     alphabetLen = 5;
     printf("\nTest get static character. Should print 1, then 5, then 13 in binary, then error out twice:\n");
-    DynChar char3; // alphabet: 5, chars: 1, value: 13
+    dynChar_t char3; // alphabet: 5, chars: 1, value: 13
     makeStaticChar(&char3, alphabetLen, (uint64_t) 0);
     if ( ! getStaticChar(&char1, (unsigned int) 13, &char3) ) {
         printf("%u\n", char3.dynCharLen);

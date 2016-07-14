@@ -18,14 +18,14 @@ uint64_t TestBit( uint64_t* const arr, const unsigned int k ) {
     return arr[ k / WORD_WIDTH ] & (CANONICAL_ONE << (k % WORD_WIDTH)); 
 }
 
-unsigned int bufferSize(const DynChar* const character) {
+unsigned int bufferSize(const dynChar_t* const character) {
     unsigned int charLen   = character -> dynCharLen;
     unsigned int alphLen   = character -> alphSize;
     unsigned int totalBits = charLen * alphLen;
     return (totalBits / WORD_WIDTH) + ((totalBits % WORD_WIDTH) ? 1 : 0);
 }
 
-int setStaticChar( const unsigned int whichIdx, const DynChar* const changeToThis, DynChar* const charToBeAltered ) {
+int setStaticChar( const unsigned int whichIdx, const dynChar_t* const changeToThis, dynChar_t* const charToBeAltered ) {
     if ( whichIdx >= charToBeAltered -> dynCharLen
        || charToBeAltered -> alphSize != changeToThis -> alphSize 
        ) {
@@ -43,18 +43,18 @@ int setStaticChar( const unsigned int whichIdx, const DynChar* const changeToThi
     return 0;
 }
 
-int getStaticChar( const unsigned int whichChar, const DynChar* const inDynChar, DynChar* const outStaticChar ) {
+int getStaticChar( const unsigned int whichChar, const dynChar_t* const indynChar_t, dynChar_t* const outStaticChar ) {
     // fail if prereqs aren't met
-    if (  whichChar >= inDynChar -> dynCharLen
-       || inDynChar -> alphSize != outStaticChar -> alphSize 
+    if (  whichChar >= indynChar_t -> dynCharLen
+       || indynChar_t -> alphSize != outStaticChar -> alphSize 
        ) {
         return 1;
     }
     // copy values
-    unsigned int start = whichChar * inDynChar -> alphSize;
-    unsigned int end   = start + inDynChar -> alphSize;
+    unsigned int start = whichChar * indynChar_t -> alphSize;
+    unsigned int end   = start + indynChar_t -> alphSize;
     for( unsigned int getIdx = start, setIdx = 0; getIdx < end; getIdx++, setIdx++ ) {
-        if( TestBit(inDynChar -> dynChar, getIdx) ) {
+        if( TestBit(indynChar_t -> dynChar, getIdx) ) {
             SetBit(outStaticChar -> dynChar, setIdx);
         } else {
             ClearBit(outStaticChar -> dynChar, setIdx);
@@ -64,7 +64,7 @@ int getStaticChar( const unsigned int whichChar, const DynChar* const inDynChar,
     return 0;
 }
 
-void makeStaticChar( const unsigned int alphLen, const uint64_t value, DynChar* const output ) {
+void makeStaticChar( const unsigned int alphLen, const uint64_t value, dynChar_t* const output ) {
     // First create dynamic character with empty character field.
     output -> alphSize = alphLen;
     output -> dynCharLen  = 1;
