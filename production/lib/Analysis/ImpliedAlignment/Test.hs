@@ -239,50 +239,45 @@ testImpliedAlignmentCases = testGroup "Explicit test cases for implied alignment
     , testSimpleInsertionDeletionBiasing
     ]
   where
-    testDeletedInsertion = testCase "Deletion event of an insertion event" . assertBool (show tree') $ oall leafProperty tree'
-      where
-        leafProperty n = not (n `nodeIsLeaf` tree') || characterMatch n "AG--TT" || characterMatch n "AGCCTT"
-        characterMatch n xs = (fmap (decodeDynamic alphabet) . headMay . getHomologies') n == Just (pure . pure <$> xs)
-        alphabet = constructAlphabet $ pure <$> "ACGT" :: Alphabet String
-        tree' = deriveImpliedAlignments defMeta $ allOptimization 1 defMeta tree
-        tree = createSimpleTree 0 "ACGT"
-             [ ( 0,       "", [ 1, 2])
-             , ( 1,   "AGTT",     [])
-             , ( 2,       "", [ 3, 4])
-             , ( 3,   "AGTT",     [])
-             , ( 4,       "", [ 5, 6])
-             , ( 5,   "AGTT",     [])
-             , ( 6,       "", [ 7, 8])
-             , ( 7, "AGCCTT",     [])
-             , ( 8,       "", [ 9,10])
-             , ( 9, "AGCCTT",     [])
-             , (10,       "", [11,12])
-             , (11, "AGCCTT",     [])
-             , (12,       "", [13,14])
-             , (13,   "AGTT",     [])
-             , (14,   "AGTT",     [])
-             ]
-
     performImpliedAlignment = (deriveImpliedAlignments defMeta . allOptimization 1 defMeta)
 
     decorationTest :: Foldable t => t (Int, String, [String], [Int]) -> Assertion
     decorationTest          = simpleTreeCharacterDecorationEqualityAssertion 0 "ACGT-" performImpliedAlignment getHomologies'
 
+    testDeletedInsertion = testCase "Deletion event of an insertion event" $ decorationTest tree
+      where
+        tree = [ ( 0,       "", [""      ], [ 1, 2])
+               , ( 1,   "AGTT", ["AG--TT"], []     )
+               , ( 2,       "", [""      ], [ 3, 4])
+               , ( 3,   "AGTT", ["AG--TT"], []     )
+               , ( 4,       "", [""      ], [ 5, 6])
+               , ( 5,   "AGTT", ["AG--TT"], []     )
+               , ( 6,       "", [""      ], [ 7, 8])
+               , ( 7, "AGCCTT", ["AGCCTT"], []     )
+               , ( 8,       "", [""      ], [ 9,10])
+               , ( 9, "AGCCTT", ["AGCCTT"], []     )
+               , (10,       "", [""      ], [11,12])
+               , (11, "AGCCTT", ["AGCCTT"], []     )
+               , (12,       "", [""      ], [13,14])
+               , (13,   "AGTT", ["AG--TT"], []     )
+               , (14,   "AGTT", ["AG--TT"], []     )
+               ]
+
     testPrependedInsertions = testCase "Prepended insertion of a deletion event" $ decorationTest tree
       where
-        tree = [ ( 0, ""      , [""      ], [1, 2])
-               , ( 1, "CAATTT", ["CAATTT"], []    )
-               , ( 2, ""      , [""      ], [3, 4])
-               , ( 3, "AATTT" , ["-AATTT"], []    )
-               , ( 4, ""      , [""      ], [5, 6])
-               , ( 5, "AATTT" , ["-AATTT"], []    )
-               , ( 6, ""      , [""      ], [7, 8])
-               , ( 7, "AATT"  , ["-AA-TT"], []    )
-               , ( 8, ""      , [""      ], [9,10])
-               , ( 9, "AATTT" , ["-AATTT"], []    )
-               , (10, "AATTT" , ["-AATTT"], []    )
-               , (11, "AATTT" , ["-AATTT"], []    )
-               , (12, ""      , [""      ], [0,11])
+        tree = [ ( 0, ""      , [""      , ""      , ""      ], [1, 2])
+               , ( 1, "CAATTT", ["CAATTT", "CAATTT", "CAATTT"], []    )
+               , ( 2, ""      , [""      , ""      , ""      ], [3, 4])
+               , ( 3, "AATTT" , ["-AATTT", "-AATTT", "-AATTT"], []    )
+               , ( 4, ""      , [""      , ""      , ""      ], [5, 6])
+               , ( 5, "AATTT" , ["-AATTT", "-AATTT", "-AATTT"], []    )
+               , ( 6, ""      , [""      , ""      , ""      ], [7, 8])
+               , ( 7, "AATT"  , ["-AA-TT", "-AAT-T", "-AATT-"], []    ) -- Multiple valid gap locations here.
+               , ( 8, ""      , [""      , ""      , ""      ], [9,10])
+               , ( 9, "AATTT" , ["-AATTT", "-AATTT", "-AATTT"], []    )
+               , (10, "AATTT" , ["-AATTT", "-AATTT", "-AATTT"], []    )
+               , (11, "AATTT" , ["-AATTT", "-AATTT", "-AATTT"], []    )
+               , (12, ""      , [""      , ""      , ""      ], [0,11])
                ]
 
     testSimpleInsertionDeletionBiasing = testGroup "Insertion & deletion event appending & prepending to character"
