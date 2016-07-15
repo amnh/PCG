@@ -341,7 +341,8 @@ instance Monoid DeletionEvents where
        which will require incrementation of the descendant deletion event
        collection.
 
-       |> CASE 1
+
+       |> CASE 1 (simple)
        -=-=-=-=-=-=-=-=-
 
        Consider the comparison between the follwoing sequences:
@@ -354,9 +355,9 @@ instance Monoid DeletionEvents where
        Consider the comparison betwen the folowing sequences:
 
        Anscestor:  GAACA
-       Descendant: GAAA
-       Alignment:  GAA-A
-       Deletion Events: [3]
+       Descendant: GAAC
+       Alignment:  GAAC-
+       Deletion Events: [4]
 
        We must consider the total alignment history when merging the two deletion
        event collections so that the deletion events of the child have a reference
@@ -365,16 +366,20 @@ instance Monoid DeletionEvents where
        Alignment History:
          Grandparent:  GATTACA
          Parent:       GA--ACA
-         Child:        GA--A-A
+         Child:        GA--AC-
 
        Deletion event collections:
-          [2,3] <> [3] = [2,3,5]
+          [2,3] <> [4] = [2,3,6]
 
        Grandparent:  GATTACA
-       Child:        GA--A-A
+       Child:        GA--AC-
+
+       Note that the index of 4 on the righthand side is incremented by 2 to 6.
+       This is because there are 2 indicies in the ancestor deletion event
+       collection that are less than 4.
 
 
-       |> CASE 2:
+       |> CASE 2: (complex)
        -=-=-=-=-=-=-=-=-
 
        Consider the comparison between the follwoing sequences:
