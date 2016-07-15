@@ -32,6 +32,7 @@ import           Control.Applicative          ((<|>))
 import           Data.Alphabet
 --import           Data.Bifunctor               (first)
 --import           Data.BitMatrix
+import Data.Bits
 import           Data.Foldable
 import           Data.IntMap                  (IntMap)
 import qualified Data.IntMap            as IM
@@ -308,7 +309,7 @@ characterNumeration ancestorSeq descendantSeq = (descendantHomologies, totalGaps
 -- | Simple function to get a sequence for alignment purposes
 getForAlign :: NodeConstraint n s => n -> Vector s
 getForAlign n 
---    | not . null $ getFinal               n = getFinal n 
+--    | not . null $ getFinalGapped         n = getFinalGapped n
     | not . null $ getPreliminaryUngapped n = getPreliminaryUngapped n 
     | not . null $ getEncoded     n         = getEncoded n 
     | otherwise = mempty {-error "No sequence at node for IA to numerate"-}
@@ -469,7 +470,8 @@ instance Monoid InsertionEvents where
       f mapping k v = IM.insertWith (+) k v mapping
 
 (>-<) :: InsertionEvents -> InsertionEvents -> InsertionEvents
---(>-<) = (<>)
+(>-<) = (<>)
+{-
 (>-<) (IE ancestorMap) (IE descendantMap) = IE $ IM.unionWith (+) decrementedDescendantMap ancestorMap
     where
       decrementedDescendantMap = foldMapWithKey f descendantMap
@@ -477,6 +479,7 @@ instance Monoid InsertionEvents where
         where
          toks      = takeWhile ((<= k) . fst) $ IM.assocs ancestorMap
          decrement = sum $ snd <$> toks
+-}
 {-
 (>-<) (IE ancestorMap) (IE descendantMap) = IE $ decrementedDescendantMap <> ancestorMap
     where
@@ -528,7 +531,7 @@ numeration sequenceIndex costStructure tree = tree `update` updatedLeafNodes
 --        opt (i,j) | trace (mconcat ["opt (",show i,",",show j,")"]) False = undefined
         opt (i,j)
           -- The root node (base case)
-          | i == rootIndex && j == rootIndex = -- (\x -> trace (show x) x)
+          | i == rootIndex && j == rootIndex = -- (\x -> trace ("ROOT: " <> show x) x)
                                                rootNodeValue
           -- A non-root node
           | i == j                           = -- (\e@(_,x,y) -> trace (mconcat ["opt(", show i,",",show j,") ",show x," ",show y]) e)
@@ -600,8 +603,8 @@ numeration sequenceIndex costStructure tree = tree `update` updatedLeafNodes
             -- The PseudoCharacter is not yet defined
             parentChildEdge = (ancestoralNodeDeletions <> DE deletes, inserts >-< allDescendantInsertions, psuedoCharacter)
               where
-                parentCharacter = getFinal    (enumeratedNodes V.! i) V.! sequenceIndex
-                childCharacter  = getForAlign (enumeratedNodes V.! j) V.! sequenceIndex
+                parentCharacter = getFinal       (enumeratedNodes V.! i) V.! sequenceIndex
+                childCharacter  = getForAlign    (enumeratedNodes V.! j) V.! sequenceIndex
                 (ancestoralNodeDeletions, _parentNodeInsertions, parentNodePsuedoCharacter) =
 --                   trace (mconcat ["Accessing (",show $ parentMapping V.! j,",",show j,")"]) $
                    homologyMemoize ! (i, i)
@@ -814,7 +817,15 @@ comparativeIndelEvents ancestorCharacterUnaligned descendantCharacterUnaligned c
     (_,deletionEvents,insertionEvents) = ofoldl' f (0, mempty, mempty) [0 .. olength descendantCharacter - 1]
     f (parentBaseIndex, deletions, insertions) characterIndex
       -- Biological "Nothing" case
-      | ancestorStatic == gap && descendantStatic == gap = (parentBaseIndex    ,                             deletions,                                     insertions)
+--      | ancestorStatic == gap && descendantStatic == gap = (parentBaseIndex    ,                             deletions,                                     insertions)
+      -- Biological "Nothing" case
+      | (ancestorStatic == gap && descendantStatic == gap) ||
+        (ancestorStatic /= descendantStatic &&
+           containsGap ancestorStatic &&
+           containsGap descendantStatic
+        )
+
+                                                         = (parentBaseIndex    ,                             deletions,                                     insertions)
       -- Biological insertion event case
       | ancestorStatic == gap && descendantStatic /= gap = (parentBaseIndex    ,                             deletions, IM.insertWith (+) parentBaseIndex 1 insertions)
       -- Biological deletion event case
@@ -825,3 +836,4 @@ comparativeIndelEvents ancestorCharacterUnaligned descendantCharacterUnaligned c
         gap              = getGapChar ancestorStatic
         ancestorStatic   = ancestorCharacter   `indexChar` characterIndex
         descendantStatic = descendantCharacter `indexChar` characterIndex
+        containsGap char = gap .&. char /= zeroBits
