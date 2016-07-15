@@ -331,15 +331,116 @@ instance Monoid MemoizedEvents where
 newtype DeletionEvents = DE IntSet deriving (Show)
 instance Monoid DeletionEvents where
   mempty = DE mempty
+
+  {- | /O(m)/ where m is sequence length
+
+       When we have two Deletion Event collections and we want to merge them
+       into a new, larger deletion event collection, we must take into account
+       that one collection is of anscestoral events and the other of descendant
+       events. There will likely be a shift in the indices' "frames of reference"
+       which will require incrementation of the descendant deletion event
+       collection.
+
+
+       |> CASE 1 (simple)
+       -=-=-=-=-=-=-=-=-
+
+       Consider the comparison between the follwoing sequences:
+
+       Anscestor:  GATTACA
+       Descendant: GAACA
+       Alignment:  GA--ACA
+       Deletion Events: [2,3]
+
+       Consider the comparison betwen the folowing sequences:
+
+       Anscestor:  GAACA
+       Descendant: GAAC
+       Alignment:  GAAC-
+       Deletion Events: [4]
+
+       We must consider the total alignment history when merging the two deletion
+       event collections so that the deletion events of the child have a reference
+       frame to the root sequence
+
+       Alignment History:
+         Grandparent:  GATTACA
+         Parent:       GA--ACA
+         Child:        GA--AC-
+
+       Deletion event collections:
+          [2,3] <> [4] = [2,3,6]
+
+       Grandparent:  GATTACA
+       Child:        GA--AC-
+
+       Note that the index of 4 on the righthand side is incremented by 2 to 6.
+       This is because there are 2 indicies in the ancestor deletion event
+       collection that are less than 4.
+
+
+       |> CASE 2: (complex)
+       -=-=-=-=-=-=-=-=-
+
+       Consider the comparison between the follwoing sequences:
+
+       Anscestor:  GATTACATA
+       Descendant: GACATA
+       Alignment:  GA---CATA
+       Deletion Events: [2,3,4]
+
+       Consider the comparison betwen the folowing sequences:
+
+       Anscestor:  GACATA
+       Descendant: GAAA
+       Alignment:  GA-A-A
+       Deletion Events: [2,4]
+
+       When the descendant deletion event collection has a deletion event with
+       an index that is a member of the acestor deletion event collection, the
+       descendant index must be updated by the number of sequential elements in
+       the ancestor deletion collection starting from the matching index.
+
+       Alignment History:
+         Grandparent:  GATTACATA
+         Parent:       GA--ACATA
+         Child:        GA----A-A
+
+       Deletion event collections:
+          [2,3,4] <> [2,4] = [2,3,4,5,7]
+
+       Grandparent:  GATTACA
+       Child:        GA--A-A
+
+       Note that the index of 2 on the righthand side is incremented by 3 to 5.
+       This is because there are 3 *consecutive* indicies in the ancestor
+       deletion event collection starting at index 2.
+
+       Note that the index of 4 on the righthand side is incremented by 3 to 7.
+       This is because there are 2 indicies in the ancestor deletion event
+       collection that are less than 4 *and* there is 1 *consecutive* index in
+       the ancestor deletion event collection starting at index 4.
+
+  -}
+  
   (DE ancestorSet) `mappend` (DE descendantSet) = DE $ incrementedDescendantSet <> ancestorSet
     where
-      incrementedDescendantSet = snd $ ofoldl' f (0, ancestorSet) descendantSet
-      f (counter, as') descendantIndex
-        | descendantIndex' `onotElem` as' = (counter                 ,                   descendantIndex'  `IS.insert` as')
-        | otherwise                       = (counter + incrementation, (incrementation + descendantIndex') `IS.insert` as') 
+      (_,_,incrementedDescendantSet) = ofoldl' f (0, otoList ancestorSet, mempty) descendantSet
+      f (counter, [], is) descendantIndex = (counter, [], (counter + descendantIndex) `IS.insert` is)
+      f (counter, as, is) descendantIndex =
+        case remaining of
+           []   -> (counter', [], (counter' + descendantIndex) `IS.insert` is)
+           x:xs ->
+             if   x > descendantIndex
+             then (counter'    , x:xs, (      counter' + descendantIndex) `IS.insert` is)
+             else (counter' + 1,   xs, (inc + counter' + descendantIndex) `IS.insert` is)
         where
+          (prev, remaining) = span (< descendantIndex) as
+          counter' = length prev + counter
+          inc = consecutiveLength remaining
+
           descendantIndex' = descendantIndex + counter
-          incrementation   = consecutiveLength . drop (descendantIndex' - 1) $ otoList as'
+          incrementation   = consecutiveLength . drop (descendantIndex' - 1) $ otoList ancestorSet
 
           consecutiveLength :: (Eq a, Num a) => [a] -> Int
           consecutiveLength = g 0
@@ -368,7 +469,14 @@ instance Monoid InsertionEvents where
       f mapping k v = IM.insertWith (+) k v mapping
 
 (>-<) :: InsertionEvents -> InsertionEvents -> InsertionEvents
-(>-<) = (<>)
+--(>-<) = (<>)
+(>-<) (IE ancestorMap) (IE descendantMap) = IE $ IM.unionWith (+) decrementedDescendantMap ancestorMap
+    where
+      decrementedDescendantMap = foldMapWithKey f descendantMap
+      f k v = IM.singleton (k - decrement) v
+        where
+         toks      = takeWhile ((<= k) . fst) $ IM.assocs ancestorMap
+         decrement = sum $ snd <$> toks
 {-
 (>-<) (IE ancestorMap) (IE descendantMap) = IE $ decrementedDescendantMap <> ancestorMap
     where
@@ -637,7 +745,7 @@ deriveImpliedAlignment nodeIndex sequenceIndex homologyMemoize node = {- trace (
           where
             f e (basesSeen, xs, ys)
               | e == HardGap || e == SoftGap = (basesSeen    , xs , gap : ys )
-              | basesSeen `oelem` deletions = (basesSeen + 1, xs , gap : ys )
+              | basesSeen `oelem` deletions  = (basesSeen + 1, xs , gap : ys )
               | otherwise                    = (basesSeen + 1, xs',       ys') 
               where
                 xs' = fromMaybe []   $ tailMay xs 
