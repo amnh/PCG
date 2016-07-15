@@ -83,7 +83,7 @@ library
   -- We must provide the full relative path to every C file that the project depends on.
   c-sources:
     ffi/Analysis/Parsimony/Binary/SequentialAlign/seqAlignForHaskell.c
-    ffi/Analysis/Parsimony/Binary/SequentialAlign/exportCharacter.c
+    ffi/Analysis/Parsimony/Binary/SequentialAlign/dynamicCharacterOperations.c
 --    ffi/Analysis/Parsimony/Binary/SequentialAlign/myComplexBitArrayFFI.c
             
   -- Here we list all directories that contain C header files that the FFI tools will need

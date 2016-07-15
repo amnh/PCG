@@ -32,26 +32,26 @@
 // these must be static to prevent compilation issues.
 static const unsigned int BITS_IN_BYTE = 8;  // so bytes are set to 8, for all architectures
 static const unsigned int INT_WIDTH    = sizeof(uint64_t);
-static const unsigned int WORD_WIDTH   = BITS_IN_BYTE * INT_WIDTH;
+static const unsigned int WORD_WIDTH   = 8 * sizeof(uint64_t); // BITS_IN_BYTE * INT_WIDTH; <-- because HSC is dumb!
 static const uint64_t CANONICAL_ONE    = 1;
 
 /* alignResult_t is where results get put for return to Haskell */
-typedef struct AlignResult {
+typedef struct alignResult_t {
     unsigned int finalWt;
     unsigned int finalLength;
     uint64_t* finalStr;
-} AlignResult;
+} alignResult_t;
 
 /** 
  *  This holds the array of _possibly ambiguous_ static chars (i.e. a single dynamic character),
  *  along with it's alphabet size and the number of "characters" in the dynChar.
  *  See note in .c file for how this is used. 
  */
-typedef struct DynChar {
+typedef struct dynChar_t {
     unsigned int alphSize;
     unsigned int dynCharLen;
     uint64_t* dynChar;
-} DynChar;
+} dynChar_t;
 
 /** 
  *  The following three functions taken from http://www.mathcs.emory.edu/~cheung/Courses/255/Syllabus/1-C-intro/bit-array.html
@@ -65,7 +65,7 @@ void ClearBit( uint64_t* const arr, const unsigned int k );
 uint64_t TestBit( uint64_t* const arr, const unsigned int k );
 
 /* figures out how long the int array needs to be to hold a given dynamic character */
-unsigned int bufferSize(const DynChar* const character);
+unsigned int bufferSize(const dynChar_t* const character);
 
 /** 
  *  Takes in a dynamic character to be altered, as well as the index of the static character that will
@@ -73,7 +73,7 @@ unsigned int bufferSize(const DynChar* const character);
  *  Fails if the position of the static char to be replaced is beyond the end of the dynamic character to be altered.
  *  Fails if the alphabet sizes of the two input characters are different.
  */    
-int setStaticChar( const unsigned int whichIdx, const DynChar* const changeToThis, DynChar* const charToBeAltered );
+int setStaticChar( const unsigned int whichIdx, const dynChar_t* const changeToThis, dynChar_t* const charToBeAltered );
 
 /** 
  *  Find and return a static character in a packed dynamic character.
@@ -85,13 +85,13 @@ int setStaticChar( const unsigned int whichIdx, const DynChar* const changeToThi
  *  Nota bene: The outStaticChar (created elsewhere) *must* have a dynChar of 
  *             adequate length, or things will go horribly wrong.
  */
-int getStaticChar( const unsigned int whichChar, const DynChar* const inDynChar, DynChar* const outStaticChar );
+int getStaticChar( const unsigned int whichChar, const dynChar_t* const indynChar_t, dynChar_t* const outStaticChar );
 
 /** 
  *  Create an empty static character (i.e., a dynamic character with only one sub-character)
  *  using inputted alphabet length to determine necessary length of internal int array.
  *  Fill internal int array with zeroes.
  */
-void makeStaticChar( const unsigned int alphLen, const uint64_t value, DynChar* const output );
+void makeStaticChar( const unsigned int alphLen, const uint64_t value, dynChar_t* const output );
 
 #endif /* DYNAMIC_CHARACTER_OPERATIONS */
