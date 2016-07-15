@@ -29,6 +29,7 @@
 
 #include <stdint.h>
 
+// these must be static to prevent compilation issues.
 static const unsigned int BITS_IN_BYTE = 8;  // so bytes are set to 8, for all architectures
 static const unsigned int INT_WIDTH    = sizeof(uint64_t);
 static const unsigned int WORD_WIDTH   = BITS_IN_BYTE * INT_WIDTH;
