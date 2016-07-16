@@ -353,3 +353,18 @@ instance Arbitrary GoodParsedChar where
     someAmbiguityGroups         <- V.fromList <$> listOf1 ambiguityGroupGenerator
     pure $ GoodParsedChar someAmbiguityGroups
 
+
+
+insertionDeletionTest :: Foldable t
+                      => Int          -- ^ Root node reference
+                      -> String       -- ^ Alphabet symbols
+                      -> t (Int, String, [Int])
+                      -> Int          -- ^ Parent node index
+                      -> Int          -- ^ Child  node index
+                      -> [Int]        -- ^ deletion events
+                      -> [(Int, Int)] -- ^ Insertion events
+                      -> Assertion
+insertionDeletionTest rootRef symbols spec parentRef childRef expectedDeletions expectedInsertions = undefined
+  where
+    inputtree  = createSimpleTree rootRef symbols spec
+    outputTree = allOptimization 1 defMeta inputTree
