@@ -37,13 +37,15 @@ import           Data.List
 import           Data.MonoTraversable
 import qualified Data.Set          as S
 import qualified Data.Vector       as V
-import           Test.Custom.Tree
+import           Test.Custom
 --import qualified Test.Custom.Types as T
 import           Test.Tasty
 import           Test.Tasty.HUnit
 import           Test.Tasty.QuickCheck
 import           Test.QuickCheck.Arbitrary.Instances
 import Debug.Trace
+
+performImpliedAlignment = deriveImpliedAlignments defMeta . allOptimization 1 defMeta
 
 testSuite :: TestTree
 testSuite = testGroup "Implied Alignment"
@@ -174,24 +176,29 @@ fullIA = testGroup "Full alignment properties" [ lenHoldsTest
 
 
 -}
-checkLen :: StandardSolution -> Bool
-checkLen inSolution = checkLS
-  where 
-    alignments = iaSolution $ solutionOptimization 1 inSolution
-    checkLS    = and $ zipWith checkLF (forests inSolution) alignments
+checkLen :: SimpleTree -> Bool
+checkLen inputTree = nodeInvariantHolds impliedAlignmentLengthIsLonger outputTree
+  where
+    outputTree = performImpliedAlignment inputTree
+    impliedAlignmentLengthIsLonger node = and $ V.zipWith ((<=) `on` olength) nodeImpliedAlignements nodeFinalCharacters
       where
-        checkLF f fa = and $ zipWith checkLD f fa
-          where
-            checkLD d a = and $ zipWith checkL (V.toList $ nodes d) (IM.toList a)
-              where
-                checkL n (_, s) = and $ V.zipWith ((<=) `on` olength) (getFinalGapped n) s
+        nodeImpliedAlignements   = getHomologies' node
+        nodeFinalCharacters      = getFinalGapped node
+{-
+    checkLF f fa = and $ zipWith checkLD f fa
+       where
+         checkLD d a = and $ zipWith checkL (V.toList $ nodes d) (IM.toList a)
+           where
+             checkL n (_, s) = and $ V.zipWith ((<=) `on` olength) (getFinalGapped n) s
+-}
 
 testNumerate :: TestTree
-testNumerate = testGroup "Numeration properties" [ idHolds
-                                             , lengthHolds
-                                             , counterIncrease
-                                             , monotonic
-                                             ]
+testNumerate = testGroup "Numeration properties"
+      [ idHolds
+      , lengthHolds
+      , counterIncrease
+      , monotonic
+      ]
     where
         idHolds                          = testProperty "When a sequence is numerated with itself, get indices and the same counter" checkID
         checkID :: DynamicChar -> Bool
@@ -239,8 +246,6 @@ testImpliedAlignmentCases = testGroup "Explicit test cases for implied alignment
     , testSimpleInsertionDeletionBiasing
     ]
   where
-    performImpliedAlignment = (deriveImpliedAlignments defMeta . allOptimization 1 defMeta)
-
     decorationTest :: Foldable t => t (Int, String, [String], [Int]) -> Assertion
     decorationTest          = simpleTreeCharacterDecorationEqualityAssertion 0 "ACGT-" performImpliedAlignment getHomologies'
 
