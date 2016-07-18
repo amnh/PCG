@@ -366,5 +366,5 @@ insertionDeletionTest :: Foldable t
                       -> Assertion
 insertionDeletionTest rootRef symbols spec parentRef childRef expectedDeletions expectedInsertions = undefined
   where
-    inputtree  = createSimpleTree rootRef symbols spec
+    inputTree  = createSimpleTree rootRef symbols spec
     outputTree = allOptimization 1 defMeta inputTree

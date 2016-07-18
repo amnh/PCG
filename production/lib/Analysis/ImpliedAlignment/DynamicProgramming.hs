@@ -470,8 +470,8 @@ instance Monoid InsertionEvents where
       f mapping k v = IM.insertWith (+) k v mapping
 
 (>-<) :: InsertionEvents -> InsertionEvents -> InsertionEvents
-(>-<) = (<>)
-{-
+--(>-<) = (<>)
+{--}
 (>-<) (IE ancestorMap) (IE descendantMap) = IE $ IM.unionWith (+) decrementedDescendantMap ancestorMap
     where
       decrementedDescendantMap = foldMapWithKey f descendantMap
@@ -479,7 +479,7 @@ instance Monoid InsertionEvents where
         where
          toks      = takeWhile ((<= k) . fst) $ IM.assocs ancestorMap
          decrement = sum $ snd <$> toks
--}
+{--}
 {-
 (>-<) (IE ancestorMap) (IE descendantMap) = IE $ decrementedDescendantMap <> ancestorMap
     where
@@ -631,7 +631,7 @@ numeration sequenceIndex costStructure tree = tree `update` updatedLeafNodes
                     f e (basesSeen, mapping, es) =
                       case e of
                         OriginalBase -> (basesSeen + 1, mapping, e : es)
-                        InsertedBase -> (basesSeen    , mapping, e : es)
+                        InsertedBase -> (basesSeen + 1, mapping, e : es) -- Pretty sure we count these as bases seen...?
                         HardGap      -> (basesSeen    , mapping, e : es)
                         SoftGap      ->
                           case basesSeen `lookup` mapping of
@@ -694,7 +694,7 @@ numeration sequenceIndex costStructure tree = tree `update` updatedLeafNodes
 deriveImpliedAlignment :: (EncodableDynamicCharacter s, NodeConstraint n s, IANode' n s, Show s, Show (Element s)) => Int -> Int -> Matrix MemoizedEvents -> n -> n
 -- deriveImpliedAlignment nodeIndex _ _ | trace ("deriveImpliedAlignment " <> show nodeIndex <> " " <> show psuedoCharacter) False = undefined
 deriveImpliedAlignment nodeIndex sequenceIndex homologyMemoize node = {- trace (unwords
-                                                                            [ "Node:"
+                                                                            [ "Memo Index:"
                                                                             , show nodeIndex
                                                                             ,"\n"
                                                                             , "Deletion Events: "
@@ -817,19 +817,25 @@ comparativeIndelEvents ancestorCharacterUnaligned descendantCharacterUnaligned c
     (_,deletionEvents,insertionEvents) = ofoldl' f (0, mempty, mempty) [0 .. olength descendantCharacter - 1]
     f (parentBaseIndex, deletions, insertions) characterIndex
       -- Biological "Nothing" case
---      | ancestorStatic == gap && descendantStatic == gap = (parentBaseIndex    ,                             deletions,                                     insertions)
+      | ancestorStatic == gap && descendantStatic == gap = (parentBaseIndex    ,                             deletions,                                     insertions)
       -- Biological "Nothing" case
+     {-
       | (ancestorStatic == gap && descendantStatic == gap) ||
         (ancestorStatic /= descendantStatic &&
            containsGap ancestorStatic &&
            containsGap descendantStatic
         )
-
                                                          = (parentBaseIndex    ,                             deletions,                                     insertions)
+-}
+
       -- Biological insertion event case
-      | ancestorStatic == gap && descendantStatic /= gap = (parentBaseIndex    ,                             deletions, IM.insertWith (+) parentBaseIndex 1 insertions)
+--      | ancestorStatic == gap && descendantStatic /= gap = (parentBaseIndex    ,                             deletions, IM.insertWith (+) parentBaseIndex 1 insertions)
+
+      | insertionEventLogic = (parentBaseIndex    ,                             deletions, IM.insertWith (+) parentBaseIndex 1 insertions)
+
       -- Biological deletion event case
       | ancestorStatic /= gap && descendantStatic == gap = (parentBaseIndex + 1, parentBaseIndex `IS.insert` deletions,                                     insertions)
+
       -- Biological substitution / non-substitution case
       | otherwise {- Both not gap -}                     = (parentBaseIndex + 1,                             deletions,                                     insertions)
       where
@@ -837,3 +843,4 @@ comparativeIndelEvents ancestorCharacterUnaligned descendantCharacterUnaligned c
         ancestorStatic   = ancestorCharacter   `indexChar` characterIndex
         descendantStatic = descendantCharacter `indexChar` characterIndex
         containsGap char = gap .&. char /= zeroBits
+        insertionEventLogic = ancestorStatic ==  gap && not (containsGap descendantStatic)
