@@ -227,9 +227,8 @@ nodeOptimizePreorder curNode lNode rNode pNode = ifoldr chooseOptimization curNo
 -- preliminary alignment 
 getForAlign :: (PreliminaryNode n s, EncodedNode n s, SeqConstraint' s) => n -> Vector s
 getForAlign node
-    | null (getPreliminaryGapped node) && null (getPreliminaryUngapped node) = getEncoded node
-    | null $ getPreliminaryGapped node                                       = getPreliminaryUngapped node
-    | otherwise                                                              = getPreliminaryGapped node
+    | null $ getPreliminaryUngapped node = getEncoded node -- Assume leaf node 
+    | otherwise                          = getPreliminaryUngapped node
 
 -- | Retreives the correct sequence of dynamic characters for the direct
 --   optimization preorder traversal from the child node. We conditionally
@@ -240,8 +239,8 @@ getForAlign node
 --   node and the original dynamic character encodings are returned.
 getChildCharacterForDoPreorder ::  (PreliminaryNode n s, EncodedNode n s) => n -> Vector s
 getChildCharacterForDoPreorder node
-  | not . null $ getPreliminaryUngapped node = getPreliminaryGapped node
-  | otherwise                                = getEncoded node
+  | not . null $ getPreliminaryGapped node = getPreliminaryGapped node
+  | otherwise                              = getEncoded node
 
 -- | addToField takes in a setter fn, a getter fn, a value and a node.
 -- It then gets the related value from the node, adds to it the passed value,

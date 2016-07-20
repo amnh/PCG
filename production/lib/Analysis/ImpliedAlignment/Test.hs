@@ -120,7 +120,9 @@ partNumerate inTree curNode inMeta curCounts stopNode
 testImpliedAlignmentCases :: TestTree
 testImpliedAlignmentCases = testGroup "Explicit test cases for implied alignment"
     [ testDeletedInsertion
-    , testPrependedInsertions
+    , testInsertedDeletion
+    , testInsertedDeletion2
+    , testInsertedDeletion3
     , testSimpleInsertionDeletionBiasing
     ]
   where
@@ -146,22 +148,57 @@ testImpliedAlignmentCases = testGroup "Explicit test cases for implied alignment
                , (14,   "AGTT", ["AG--TT"], []     )
                ]
 
-    testPrependedInsertions = testCase "Prepended insertion of a deletion event" $ decorationTest tree
+    testInsertedDeletion = testCase "Insertion event of an deletion event" $ decorationTest tree
       where
-        tree = [ ( 0, ""      , [""      , ""      , ""      ], [1, 2])
-               , ( 1, "CAATTT", ["CAATTT", "CAATTT", "CAATTT"], []    )
-               , ( 2, ""      , [""      , ""      , ""      ], [3, 4])
-               , ( 3, "AATTT" , ["-AATTT", "-AATTT", "-AATTT"], []    )
-               , ( 4, ""      , [""      , ""      , ""      ], [5, 6])
-               , ( 5, "AATTT" , ["-AATTT", "-AATTT", "-AATTT"], []    )
-               , ( 6, ""      , [""      , ""      , ""      ], [7, 8])
-               , ( 7, "AATT"  , ["-AA-TT", "-AAT-T", "-AATT-"], []    ) -- Multiple valid gap locations here.
-               , ( 8, ""      , [""      , ""      , ""      ], [9,10])
-               , ( 9, "AATTT" , ["-AATTT", "-AATTT", "-AATTT"], []    )
-               , (10, "AATTT" , ["-AATTT", "-AATTT", "-AATTT"], []    )
-               , (11, "AATTT" , ["-AATTT", "-AATTT", "-AATTT"], []    )
-               , (12, ""      , [""      , ""      , ""      ], [0,11])
+        tree = [ ( 0, ""      , [""     , ""     , ""     ], [11,12])
+               , ( 1, "AATTT" , ["AATTT", "AATTT", "AATTT"], []    )
+               , ( 2, ""      , [""     , ""     , ""     ], [3, 4])
+               , ( 3, "AATTT" , ["AATTT", "AATTT", "AATTT"], []    )
+               , ( 4, ""      , [""     , ""     , ""     ], [5, 6])
+               , ( 5, "AATTT" , ["AATTT", "AATTT", "AATTT"], []    )
+               , ( 6, ""      , [""     , ""     , ""     ], [7, 8])
+               , ( 7, "AATT"  , ["AA-TT", "AAT-T", "AATT-"], []    ) -- Multiple valid gap locations here.
+               , ( 8, ""      , [""     , ""     , ""     ], [9,10])
+               , ( 9, "AATTT" , ["AATTT", "AATTT", "AATTT"], []    )
+               , (10, "AATTT" , ["AATTT", "AATTT", "AATTT"], []    )
+               , (11, "AATTT" , ["AATTT", "AATTT", "AATTT"], []    )
+               , (12, ""      , [""     , ""     , ""     ], [1, 2])
                ]
+
+    testInsertedDeletion2 = testCase "Insertion event of an deletion event 2" $ decorationTest tree
+      where
+        tree = [ ( 0, ""      , [""     , ""     , ""     ], [1, 2])
+               , ( 1, ""      , [""     , ""     , ""     ], [3, 4])
+               , ( 2, ""      , [""     , ""     , ""     ], [5, 6])
+               , ( 3, ""      , [""     , ""     , ""     ], [7, 8])
+               , ( 4, "AATT"  , ["AA-TT", "AAT-T", "AATT-"], []    ) -- Multiple valid gap locations here.
+               , ( 5, "AATT"  , ["AA-TT", "AAT-T", "AATT-"], []    ) -- Multiple valid gap locations here.
+               , ( 6, ""      , [""     , ""     , ""     ], [9,10])
+               , ( 7, "AATTT" , ["AATTT", "AATTT", "AATTT"], []    )
+               , ( 8, "AATTT" , ["AATTT", "AATTT", "AATTT"], [])
+               , ( 9, "AATTT" , ["AATTT", "AATTT", "AATTT"], []    )
+               , (10, "AATTT" , ["AATTT", "AATTT", "AATTT"], []    )
+               ]
+
+    testInsertedDeletion3 = testCase "Insertion event of an deletion event 3" $ decorationTest tree
+      where
+        tree = [ ( 0, ""     , [""     , ""     , ""     ], [ 1, 4])
+               , ( 1, ""     , [""     , ""     , ""     ], [ 2, 3])
+               , ( 2, "AATTT", ["AATTT", "AATTT", "AATTT"], []     )
+               , ( 3, "AATTT", ["AATTT", "AATTT", "AATTT"], []     )
+               , ( 4, ""     , [""     , ""     , ""     ], [ 5, 6])
+               , ( 5, "AATTT", ["AATTT", "AATTT", "AATTT"], []     )
+               , ( 6, ""     , [""     , ""     , ""     ], [ 7, 8])
+               , ( 7, "AATT" , ["AA-TT", "AAT-T", "AATT-"], []     )
+               , ( 8, ""     , [""     , ""     , ""     ], [ 9,10])
+               , ( 9, "AATT" , ["AA-TT", "AAT-T", "AATT-"], []     )
+               , (10, ""     , [""     , ""     , ""     ], [11,12])
+               , (11, "AATT" , ["AA-TT", "AAT-T", "AATT-"], []     )
+               , (12, ""     , [""     , ""     , ""     ], [13,14])
+               , (13, "AATTT", ["AATTT", "AATTT", "AATTT"], []     )
+               , (14, "AATTT", ["AATTT", "AATTT", "AATTT"], []     )
+               ]
+
 
     testSimpleInsertionDeletionBiasing = testGroup "Insertion & deletion event appending & prepending to character"
         [ testAppendedDeletions
