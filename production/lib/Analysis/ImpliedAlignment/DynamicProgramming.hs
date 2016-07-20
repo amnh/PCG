@@ -560,8 +560,8 @@ deriveImpliedAlignments sequenceMetadatas tree = foldlWithKey' f tree sequenceMe
 
 
 numeration :: (Eq n, TreeConstraint t n e s, IANode' n s, Show (Element s)) => Int -> CostStructure -> t -> t
-numeration sequenceIndex costStructure tree = trace (unlines $ (renderInspectedGaps . (`inspectGapIndex` renderingTree)) <$> [10,11])
-                                            $ tree `update` (snd <$> updatedLeafNodes)
+numeration sequenceIndex costStructure tree = -- trace (unlines $ (renderInspectedGaps . (`inspectGapIndex` renderingTree)) <$> [10,11]) $
+                                              tree `update` (snd <$> updatedLeafNodes)
   where
     -- | Precomputations used for reference in the memoization
     rootNode        = root tree
@@ -857,10 +857,7 @@ comparativeIndelEvents ancestorCharacterUnaligned descendantCharacterUnaligned c
   | otherwise                                    = -- (\x -> trace (show x) x) $
                                                    (DE deletionEvents, IE insertionEvents)
   where
-    (ancestorCharacter, descendantCharacter) =
-      if olength ancestorCharacterUnaligned == olength descendantCharacterUnaligned
-      then (ancestorCharacterUnaligned, descendantCharacterUnaligned)
-      else doAlignment ancestorCharacterUnaligned descendantCharacterUnaligned costStructure
+    (ancestorCharacter, descendantCharacter) = doAlignment ancestorCharacterUnaligned descendantCharacterUnaligned costStructure
 --    deletionEvents  = mempty
 --    insertionEvents = mempty -- E . IM.singleton 0 $ [ _descendantCharacter `indexChar` 0 ]
     (_,deletionEvents,insertionEvents) = ofoldl' f (0, mempty, mempty) [0 .. olength descendantCharacter - 1]
