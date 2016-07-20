@@ -118,6 +118,35 @@ partNumerate inTree curNode inMeta curCounts stopNode
     | otherwise = partNumerate -}
 
 
+testDeletedInsertionAntisymetry = testCase "Deleted insertion events anti-symetrically reflected across the root." $ decorationTest tree
+      where
+        tree = [ ( 0, ""     , [""     ], [ 1, 2])
+               , ( 1, ""     , [""     ], [ 3,16])
+               , ( 2, ""     , [""     ], [ 4,17])
+               , ( 3, ""     , [""     ], [ 5,15])
+               , ( 4, ""     , [""     ], [ 6,18])
+               , ( 5, ""     , [""     ], [ 7,14])
+               , ( 6, ""     , [""     ], [ 8,19])
+               , ( 7, ""     , [""     ], [ 9,13])
+               , ( 8, ""     , [""     ], [10,20])
+               , ( 9, ""     , [""     ], [11,12])
+               , (10, ""     , [""     ], [21,22])
+               , (11, "ACAA" , ["ACA-A"], []     )
+               , (12, "ACAA" , ["ACA-A"], []     )
+               , (13, "ACATA", ["ACATA"], []     )
+               , (14, "ACATA", ["ACATA"], []     )
+               , (15, "AAA"  , ["A-A-A"], []     )
+               , (16, "AAA"  , ["A-A-A"], []     )
+               , (17, "AAA"  , ["A-A-A"], []     )
+               , (18, "AAA"  , ["A-A-A"], []     )
+               , (19, "ACATA", ["ACATA"], []     )
+               , (20, "ACATA", ["ACATA"], []     )
+               , (21, "AATA" , ["A-ATA"], []     )
+               , (22, "AATA" , ["A-ATA"], []     )
+               ]
+
+
+
 testInsertedDeletions = testGroup "Insertion of deletion events"
     [ testInsertedDeletion
     , testInsertedDeletion2
@@ -178,45 +207,85 @@ testInsertedDeletion3 = testCase "Insertion event of an deletion event 3" $ deco
 
 testDeletedInsertions = testGroup "Deletion of insertion events"
     [ testDeletedInsertionSingle
-    , testDeletedInsertionNestedMiddle
+    , testDeletedInsertionGroupMiddle
+    , testDeletedInsertionGroupPrepend
+    , testDeletedInsertionGroupAppend
+    , testDeletedInsertionAntisymetry
     ]
 
-testDeletedInsertionSingle = testCase "Deletion event of an insertion event" $ decorationTest tree
+testDeletedInsertionSingle = testCase "Deletion event of an single insertion event" $ decorationTest tree
       where
-        tree = [ ( 0,      "", [""     ], [ 1, 2])
-               , ( 1,  "AATT", ["AA-TT"], []     )
-               , ( 2,      "", [""     ], [ 3, 4])
-               , ( 3,  "AATT", ["AA-TT"], []     )
-               , ( 4,      "", [""     ], [ 5, 6])
-               , ( 5,  "AATT", ["AA-TT"], []     )
-               , ( 6,      "", [""     ], [ 7, 8])
+        tree = [ ( 0, ""     , [""     ], [ 1, 2])
+               , ( 1, "AATT" , ["AA-TT"], []     )
+               , ( 2, ""     , [""     ], [ 3, 4])
+               , ( 3, "AATT" , ["AA-TT"], []     )
+               , ( 4, ""     , [""     ], [ 5, 6])
+               , ( 5, "AATT" , ["AA-TT"], []     )
+               , ( 6, ""     , [""     ], [ 7, 8])
                , ( 7, "AACTT", ["AACTT"], []     )
-               , ( 8,      "", [""     ], [ 9,10])
+               , ( 8, ""     , [""     ], [ 9,10])
                , ( 9, "AACTT", ["AACTT"], []     )
-               , (10,      "", [""     ], [11,12])
+               , (10, ""     , [""     ], [11,12])
                , (11, "AACTT", ["AACTT"], []     )
-               , (12,      "", [""     ], [13,14])
-               , (13,  "AATT", ["AA-TT"], []     )
-               , (14,  "AATT", ["AA-TT"], []     )
+               , (12, ""     , [""     ], [13,14])
+               , (13, "AATT" , ["AA-TT"], []     )
+               , (14, "AATT" , ["AA-TT"], []     )
                ]
 
-testDeletedInsertionNestedMiddle = testCase "Deletion event of an insertion event nested between other insertion events" $ decorationTest tree
+testDeletedInsertionGroupMiddle = testCase "Deletion event of an insertion event nested between other insertion events" $ decorationTest tree
       where
-        tree = [ ( 0,        "", [""       ], [ 1, 2])
-               , ( 1,    "AATT", ["AA---TT"], []     )
-               , ( 2,        "", [""       ], [ 3, 4])
-               , ( 3,    "AATT", ["AA---TT"], []     )
-               , ( 4,        "", [""       ], [ 5, 6])
-               , ( 5,    "AATT", ["AA---TT"], []     )
-               , ( 6,        "", [""       ], [ 7, 8])
+        tree = [ ( 0, ""       , [""       ], [ 1, 2])
+               , ( 1, "AATT"   , ["AA---TT"], []     )
+               , ( 2, ""       , [""       ], [ 3, 4])
+               , ( 3, "AATT"   , ["AA---TT"], []     )
+               , ( 4, ""       , [""       ], [ 5, 6])
+               , ( 5, "AATT"   , ["AA---TT"], []     )
+               , ( 6, ""       , [""       ], [ 7, 8])
                , ( 7, "AACGCTT", ["AACGCTT"], []     )
-               , ( 8,        "", [""       ], [ 9,10])
+               , ( 8, ""       , [""       ], [ 9,10])
                , ( 9, "AACGCTT", ["AACGCTT"], []     )
-               , (10,        "", [""       ], [11,12])
+               , (10, ""       , [""       ], [11,12])
                , (11, "AACGCTT", ["AACGCTT"], []     )
-               , (12,        "", [""       ], [13,14])
-               , (13,  "AACCTT", ["AAC-CTT"], []     )
-               , (14,  "AACCTT", ["AAC-CTT"], []     )
+               , (12, ""       , [""       ], [13,14])
+               , (13, "AACCTT" , ["AAC-CTT"], []     )
+               , (14, "AACCTT" , ["AAC-CTT"], []     )
+               ]
+testDeletedInsertionGroupPrepend = testCase "Deletion event of an insertion event prepended to a group of other insertion events" $ decorationTest tree
+      where
+        tree = [ ( 0, ""       , [""       ], [ 1, 2])
+               , ( 1, "AATT"   , ["AA---TT"], []     )
+               , ( 2, ""       , [""       ], [ 3, 4])
+               , ( 3, "AATT"   , ["AA---TT"], []     )
+               , ( 4, ""       , [""       ], [ 5, 6])
+               , ( 5, "AATT"   , ["AA---TT"], []     )
+               , ( 6, ""       , [""       ], [ 7, 8])
+               , ( 7, "AAGCCTT", ["AAGCCTT"], []     )
+               , ( 8, ""       , [""       ], [ 9,10])
+               , ( 9, "AAGCCTT", ["AAGCCTT"], []     )
+               , (10, ""       , [""       ], [11,12])
+               , (11, "AAGCCTT", ["AAGCCTT"], []     )
+               , (12, ""       , [""       ], [13,14])
+               , (13, "AACCTT" , ["AA-CCTT"], []     )
+               , (14, "AACCTT" , ["AA-CCTT"], []     )
+               ]
+
+testDeletedInsertionGroupAppend = testCase "Deletion event of an insertion event appended to a group of other insertion events" $ decorationTest tree
+      where
+        tree = [ ( 0, ""       , [""       ], [ 1, 2])
+               , ( 1, "AATT"   , ["AA---TT"], []     )
+               , ( 2, ""       , [""       ], [ 3, 4])
+               , ( 3, "AATT"   , ["AA---TT"], []     )
+               , ( 4, ""       , [""       ], [ 5, 6])
+               , ( 5, "AATT"   , ["AA---TT"], []     )
+               , ( 6, ""       , [""       ], [ 7, 8])
+               , ( 7, "AACCGTT", ["AACCGTT"], []     )
+               , ( 8, ""       , [""       ], [ 9,10])
+               , ( 9, "AACCGTT", ["AACCGTT"], []     )
+               , (10, ""       , [""       ], [11,12])
+               , (11, "AACCGTT", ["AACCGTT"], []     )
+               , (12, ""       , [""       ], [13,14])
+               , (13, "AACCTT" , ["AACC-TT"], []     )
+               , (14, "AACCTT" , ["AACC-TT"], []     )
                ]
 
 decorationTest :: Foldable t => t (Int, String, [String], [Int]) -> Assertion
