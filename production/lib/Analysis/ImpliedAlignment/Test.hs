@@ -117,6 +117,25 @@ partNumerate inTree curNode inMeta curCounts stopNode
     | (code curNode) == (code stopNode) = (curCounts, inTree)
     | otherwise = partNumerate -}
 
+testInsertedDeletion3 = testCase "Insertion event of an deletion event 3" $ decorationTest tree
+      where
+        tree = [ ( 0, ""     , [""     , ""     , ""     ], [ 1, 4])
+               , ( 1, ""     , [""     , ""     , ""     ], [ 2, 3])
+               , ( 2, "AATTT", ["AATTT", "AATTT", "AATTT"], []     )
+               , ( 3, "AATTT", ["AATTT", "AATTT", "AATTT"], []     )
+               , ( 4, ""     , [""     , ""     , ""     ], [ 5, 6])
+               , ( 5, "AATTT", ["AATTT", "AATTT", "AATTT"], []     )
+               , ( 6, ""     , [""     , ""     , ""     ], [ 7, 8])
+               , ( 7, "AATT" , ["AA-TT", "AAT-T", "AATT-"], []     )
+               , ( 8, ""     , [""     , ""     , ""     ], [ 9,10])
+               , ( 9, "AATT" , ["AA-TT", "AAT-T", "AATT-"], []     )
+               , (10, ""     , [""     , ""     , ""     ], [11,12])
+               , (11, "AATT" , ["AA-TT", "AAT-T", "AATT-"], []     )
+               , (12, ""     , [""     , ""     , ""     ], [13,14])
+               , (13, "AATTT", ["AATTT", "AATTT", "AATTT"], []     )
+               , (14, "AATTT", ["AATTT", "AATTT", "AATTT"], []     )
+               ]
+
 testImpliedAlignmentCases :: TestTree
 testImpliedAlignmentCases = testGroup "Explicit test cases for implied alignment"
     [ testDeletedInsertion
@@ -180,24 +199,6 @@ testImpliedAlignmentCases = testGroup "Explicit test cases for implied alignment
                , (10, "AATTT" , ["AATTT", "AATTT", "AATTT"], []    )
                ]
 
-    testInsertedDeletion3 = testCase "Insertion event of an deletion event 3" $ decorationTest tree
-      where
-        tree = [ ( 0, ""     , [""     , ""     , ""     ], [ 1, 4])
-               , ( 1, ""     , [""     , ""     , ""     ], [ 2, 3])
-               , ( 2, "AATTT", ["AATTT", "AATTT", "AATTT"], []     )
-               , ( 3, "AATTT", ["AATTT", "AATTT", "AATTT"], []     )
-               , ( 4, ""     , [""     , ""     , ""     ], [ 5, 6])
-               , ( 5, "AATTT", ["AATTT", "AATTT", "AATTT"], []     )
-               , ( 6, ""     , [""     , ""     , ""     ], [ 7, 8])
-               , ( 7, "AATT" , ["AA-TT", "AAT-T", "AATT-"], []     )
-               , ( 8, ""     , [""     , ""     , ""     ], [ 9,10])
-               , ( 9, "AATT" , ["AA-TT", "AAT-T", "AATT-"], []     )
-               , (10, ""     , [""     , ""     , ""     ], [11,12])
-               , (11, "AATT" , ["AA-TT", "AAT-T", "AATT-"], []     )
-               , (12, ""     , [""     , ""     , ""     ], [13,14])
-               , (13, "AATTT", ["AATTT", "AATTT", "AATTT"], []     )
-               , (14, "AATTT", ["AATTT", "AATTT", "AATTT"], []     )
-               ]
 
 
     testSimpleInsertionDeletionBiasing = testGroup "Insertion & deletion event appending & prepending to character"
