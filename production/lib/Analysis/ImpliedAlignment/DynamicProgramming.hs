@@ -565,6 +565,7 @@ deriveImpliedAlignments sequenceMetadatas tree = foldlWithKey' f tree sequenceMe
 
 numeration :: (Eq n, TreeConstraint t n e s, IANode' n s, Show (Element s)) => Int -> CostStructure -> t -> t
 numeration sequenceIndex costStructure tree = -- trace (unlines $ (renderInspectedGaps . (`inspectGapIndex` renderingTree)) <$> [10,11]) $
+                                              -- trace eventRendering $
                                               tree `update` (snd <$> updatedLeafNodes)
   where
     -- | Precomputations used for reference in the memoization
@@ -645,8 +646,8 @@ numeration sequenceIndex costStructure tree = -- trace (unlines $ (renderInspect
             -- The PseudoCharacter is not yet defined
             parentChildEdge =
                 Memo
-                { cumulativeDeletionEvents       = ancestoralNodeDeletions <> DE deletes
-                , cumulativeInsertionEvents      = inserts >-< allDescendantInsertions
+                { cumulativeDeletionEvents       = purgedAncestoralDeletions <> DE deletes
+                , cumulativeInsertionEvents      = inserts >-< purgedDescendantInsertions -- allDescendantInsertions
                 , currentPsuedoCharacter         = psuedoCharacter
                 , localRelativeDeletionEvents    = DE deletes
                 , localNormalizedDeletionEvents  = DE $ ancestoralNodeDeletions `incrementDescendant` (DE deletes)
@@ -658,14 +659,31 @@ numeration sequenceIndex costStructure tree = -- trace (unlines $ (renderInspect
               where
                 parentCharacter = getFinal       (enumeratedNodes V.! i) V.! sequenceIndex
                 childCharacter  = getForAlign    (enumeratedNodes V.! j) V.! sequenceIndex
-                memoPoint = homologyMemoize ! (i, i)
+                memoPoint       = homologyMemoize ! (i, i)
                 ancestoralNodeDeletions   = cumulativeDeletionEvents memoPoint
                 parentNodePsuedoCharacter = currentPsuedoCharacter   memoPoint
 --                   trace (mconcat ["Accessing (",show $ parentMapping V.! j,",",show j,")"]) $
                    
                 (DE deletes, !inserts, doA, doD)      = comparativeIndelEvents parentCharacter childCharacter costStructure
 
-                (IE incrementedInsertionEvents) = inserts >-< allDescendantInsertions
+                (IE incrementedInsertionEvents) = inserts >-< purgedDescendantInsertions
+
+                purgedDescendantInsertions = IE . foldMapWithKey f $ (\(IE x) -> x) allDescendantInsertions
+                  where
+                    f k v
+                      | k `onotElem` deletes = IM.singleton k v
+                      | v /= 1               = IM.singleton k (v-1)
+                      | otherwise            = mempty
+
+                purgedAncestoralDeletions = DE . ofoldMap f $ (\(DE x) -> x) ancestoralNodeDeletions
+                  where
+                    f e =
+                      case takeWhile ((<=e) . fst) ins of
+                        []      -> IS.singleton e
+                        (k,v):_ -> if k + v >= e + 1
+                                   then mempty
+                                   else IS.singleton e
+                    ins = IM.assocs $ (\(IE x) -> x) inserts
 {-
                 incrementedDeletionEvents = DE . IS.fromList $ ofoldMap f deletes
                   where
