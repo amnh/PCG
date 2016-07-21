@@ -564,7 +564,7 @@ deriveImpliedAlignments sequenceMetadatas tree = foldlWithKey' f tree sequenceMe
 
 
 numeration :: (Eq n, TreeConstraint t n e s, IANode' n s, Show (Element s)) => Int -> CostStructure -> t -> t
-numeration sequenceIndex costStructure tree = -- trace (unlines $ (renderInspectedGaps . (`inspectGapIndex` renderingTree)) <$> [10,11]) $
+numeration sequenceIndex costStructure tree =  trace (unlines $ (renderInspectedGaps . (`inspectGapIndex` renderingTree)) <$> [10,11]) $
                                               -- trace eventRendering $
                                               tree `update` (snd <$> updatedLeafNodes)
   where
@@ -1098,3 +1098,14 @@ inspectGapIndex gapIndex rootNode = catMaybes $ nodeEventSites rootNode
               | gapIndex `oelem` xs || isJust (gapIndex  `lookup` ys) = Just (parentDecoration, datum, childDecoration)
               | otherwise                                             = Nothing 
           
+--inspectGaps :: [Int] -> 
+{-
+inspectGaps gapIndices renderingTree = renderedTreeTopology <> renderedInpsections
+  where
+    redneredTreeTopology = "No Tree Rendering\n\n"
+    inspectionResults    = id *** (`inspectGapIndex` renderingTree) <$> gapIndices
+    renderedInpsections  = foldMap f inspectionResults
+    f (i, []) = "No indel events for index: " <> show i <> "\n\n"
+    f (i, xs) = "Indel events for index: " show i <> "\n\n" <> (unlines $ renderInspectedGapsinspectionResults <$> xs) <> "\n"
+  
+-}

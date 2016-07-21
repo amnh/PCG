@@ -118,7 +118,7 @@ partNumerate inTree curNode inMeta curCounts stopNode
     | otherwise = partNumerate -}
 
 
-testDeletedInsertionAntisymetry = testCase "Deleted insertion events anti-symetrically reflected across the root." $ decorationTest tree
+testDeletedInsertionAntisymetry = testCase "Deleted insertion events anti-symetrically reflected across the root" $ decorationTest tree
       where
         tree = [ ( 0, ""     , [""     ], [ 1, 2])
                , ( 1, ""     , [""     ], [ 3,16])
@@ -131,20 +131,42 @@ testDeletedInsertionAntisymetry = testCase "Deleted insertion events anti-symetr
                , ( 8, ""     , [""     ], [10,20])
                , ( 9, ""     , [""     ], [11,12])
                , (10, ""     , [""     ], [21,22])
-               , (11, "ACAA" , ["ACA-A"], []     )
-               , (12, "ACAA" , ["ACA-A"], []     )
-               , (13, "ACATA", ["ACATA"], []     )
-               , (14, "ACATA", ["ACATA"], []     )
-               , (15, "AAA"  , ["A-A-A"], []     )
-               , (16, "AAA"  , ["A-A-A"], []     )
-               , (17, "AAA"  , ["A-A-A"], []     )
-               , (18, "AAA"  , ["A-A-A"], []     )
-               , (19, "ACATA", ["ACATA"], []     )
-               , (20, "ACATA", ["ACATA"], []     )
-               , (21, "AATA" , ["A-ATA"], []     )
-               , (22, "AATA" , ["A-ATA"], []     )
+               , (11, "ACAA" , ["AC-A--A", "A-CA--A", "AC-A--A", "A-CA--A"], []     )
+               , (12, "ACAA" , ["AC-A--A", "A-CA--A", "AC-A--A", "A-CA--A"], []     )
+               , (13, "ACATA", ["AC-AT-A", "A-CAT-A", "AC-A-TA", "A-CA-TA"], []     )
+               , (14, "ACATA", ["AC-AT-A", "A-CAT-A", "AC-A-TA", "A-CA-TA"], []     )
+               , (15, "AAA"  , ["A--A--A", "A--A--A", "A--A--A", "A--A--A"], []     )
+               , (16, "AAA"  , ["A--A--A", "A--A--A", "A--A--A", "A--A--A"], []     )
+               , (17, "AAA"  , ["A--A--A", "A--A--A", "A--A--A", "A--A--A"], []     )
+               , (18, "AAA"  , ["A--A--A", "A--A--A", "A--A--A", "A--A--A"], []     )
+               , (19, "ACATA", ["A-CA-TA", "AC-A-TA", "A-CAT-A", "AC-AT-A"], []     )
+               , (20, "ACATA", ["A-CA-TA", "AC-A-TA", "A-CAT-A", "AC-AT-A"], []     )
+               , (21, "AATA" , ["A--A-TA", "A--A-TA", "A--AT-A", "A--AT-A"], []     )
+               , (22, "AATA" , ["A--A-TA", "A--A-TA", "A--AT-A", "A--AT-A"], []     )
                ]
 
+testDoubleDeletedInsertion = testCase "Double deletion event of an single insertion event" $ decorationTest tree
+      where
+        tree = [ ( 0, ""   , [""    , ""    ], [ 1, 2])
+               , ( 1, "AA" , ["A--A", "A--A"], []     )
+               , ( 2, ""   , [""    , ""    ], [ 3, 4])
+               , ( 3, "AA" , ["A--A", "A--A"], []     )
+               , ( 4, ""   , [""    , ""    ], [ 5, 6])
+               , ( 5, "ATA", ["AT-A", "A-TA"], []     )
+               , ( 6, ""   , [""    , ""    ], [ 7, 8])
+               , ( 7, "ATA", ["AT-A", "A-TA"], []     )
+               , ( 8, ""   , [""    , ""    ], [ 9,10])
+               , ( 9, "ATA", ["AT-A", "A-TA"], []     )
+               , (10, ""   , [""    , ""    ], [11,12])
+               , (11, "AA" , ["A--A", "A--A"], []     )
+               , (12, ""   , [""    , ""    ], [13,14])
+               , (13, "AA" , ["A--A", "A--A"], []     )
+               , (14, ""   , [""    , ""    ], [15,16])
+               , (15, "AA" , ["A--A", "A--A"], []     )
+               , (16, ""   , [""    , ""    ], [17,18])
+               , (17, "ATA", ["A-TA", "AT-A"], []     )
+               , (18, "ATA", ["A-TA", "AT-A"], []     )
+               ]
 
 
 testInsertedDeletions = testGroup "Insertion of deletion events"
@@ -211,6 +233,7 @@ testDeletedInsertions = testGroup "Deletion of insertion events"
     , testDeletedInsertionGroupPrepend
     , testDeletedInsertionGroupAppend
     , testDeletedInsertionAntisymetry
+    , testDoubleDeletedInsertion
     ]
 
 testDeletedInsertionSingle = testCase "Deletion event of an single insertion event" $ decorationTest tree
