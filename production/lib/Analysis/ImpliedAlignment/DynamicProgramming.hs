@@ -564,8 +564,8 @@ deriveImpliedAlignments sequenceMetadatas tree = foldlWithKey' f tree sequenceMe
 
 
 numeration :: (Eq n, TreeConstraint t n e s, IANode' n s, Show (Element s)) => Int -> CostStructure -> t -> t
-numeration sequenceIndex costStructure tree =  trace (unlines $ (renderInspectedGaps . (`inspectGapIndex` renderingTree)) <$> [10,11]) $
-                                              -- trace eventRendering $
+numeration sequenceIndex costStructure tree = -- trace (unlines $ (renderInspectedGaps . (`inspectGapIndex` renderingTree)) <$> [10,11]) $
+--                                               trace eventRendering $
                                               tree `update` (snd <$> updatedLeafNodes)
   where
     -- | Precomputations used for reference in the memoization
@@ -627,7 +627,7 @@ numeration sequenceIndex costStructure tree =  trace (unlines $ (renderInspected
                     -- Maybe check for indicies after the length of the sequence.
                     IE insertionMapping = allDescendantInsertions
                     characterLength     = olength $ getForAlign rootNode V.! sequenceIndex
-                    seqList             = trailingInsertions <> foldMap f [0..characterLength - 1]
+                    seqList             = (<> trailingInsertions) $ foldMap f [0..characterLength - 1]
                     f k =
                       case k `lookup` insertionMapping of
                         Nothing -> [OriginalBase]
@@ -697,11 +697,12 @@ numeration sequenceIndex costStructure tree =  trace (unlines $ (renderInspected
 
                     otherInsertionsBefore n = sum $ IM.filterWithKey (\k _ -> k <= n) otherInsertionEvents
 -}                    
-                psuedoCharacter = V.fromList result
+                psuedoCharacter = V.fromList $ reverse result
                   where
-                    (_,_,result) = foldr f (0, m, []) contextualPreviousPsuedoCharacter
+                    (_,_,result) = --trace (mconcat ["(",show i,",",show j, ") = ", show m, " c: ", show contextualPreviousPsuedoCharacter]) $
+                      foldl f (0, m, []) contextualPreviousPsuedoCharacter
                     IE m = inserts
-                    f e (basesSeen, mapping, es) =
+                    f q@(basesSeen, mapping, es) e = -- (\x -> trace (show e <> show q <> show x) x) $
                       case e of
                         OriginalBase -> (basesSeen + 1, mapping, e : es)
                         InsertedBase -> (basesSeen + 1, mapping, e : es) -- Pretty sure we count these as bases seen...?
@@ -766,7 +767,38 @@ numeration sequenceIndex costStructure tree =  trace (unlines $ (renderInspected
 
 deriveImpliedAlignment :: (EncodableDynamicCharacter s, NodeConstraint n s, IANode' n s, Show s, Show (Element s)) => Int -> Int -> Matrix (MemoizedEvents s) -> n -> n
 -- deriveImpliedAlignment nodeIndex _ _ | trace ("deriveImpliedAlignment " <> show nodeIndex <> " " <> show psuedoCharacter) False = undefined
-deriveImpliedAlignment nodeIndex sequenceIndex homologyMemoize node = {- trace (unwords
+deriveImpliedAlignment nodeIndex sequenceIndex homologyMemoize node =
+{-
+                                                                      trace (unwords
+                                                                            [ "Memo Index:"
+                                                                            , show nodeIndex
+                                                                            ,"\n"
+                                                                            , "Deletion Events: "
+                                                                            , show deletions
+                                                                            , "\n"
+                                                                            , "Input psuedo-character:"
+                                                                            , show psuedoCharacter
+                                                                            , "\n"
+                                                                            , "Input leaf-character:"
+                                                                            , show leafCharacter
+                                                                            , "\n"
+                                                                            , "Ouput character:"
+                                                                            , show result
+                                                                            , "\n"
+                                                                            , "Actual length:"
+                                                                            , show $ length result
+                                                                            , "Expected length:"
+                                                                            , show $ length psuedoCharacter
+                                                                            , "Remaining tokens:"
+                                                                            , show remaining
+                                                                            ]) $
+-}
+{-
+                                                                      trace (
+                                                                        if length result == length psuedoCharacter 
+                                                                        then ""
+                                                                        else 
+                                                                            unwords
                                                                             [ "Memo Index:"
                                                                             , show nodeIndex
                                                                             ,"\n"
@@ -817,11 +849,13 @@ deriveImpliedAlignment nodeIndex sequenceIndex homologyMemoize node = {- trace (
         leafAlignedChar = constructDynamic $ reverse result
         characterTokens = otoList leafCharacter
         gap             = getGapChar $ head characterTokens
-        (_,remaining,result)    = foldr f (0, characterTokens, [])
+        (_,remaining,result)    =
+--                                  foldl f (0, characterTokens, [])
+                                  foldlWithKey f (0, characterTokens, [])
 --                        $ (trace (mconcat ["deriveImpliedAlignment ",show nodeIndex," ",show psuedoCharacter," ",show deletions]))
                           psuedoCharacter
           where
-            f e (basesSeen, xs, ys)
+            f (basesSeen, xs, ys) _k e
               | e == HardGap || e == SoftGap = (basesSeen    , xs , gap : ys )
               | basesSeen `oelem` deletions  = (basesSeen + 1, xs , gap : ys )
               | otherwise                    = (basesSeen + 1, xs',       ys') 
@@ -886,10 +920,10 @@ comparativeIndelEvents ancestorCharacterUnaligned descendantCharacterUnaligned c
     (ancestorCharacter, descendantCharacter) = doAlignment ancestorCharacterUnaligned descendantCharacterUnaligned costStructure
 --    deletionEvents  = mempty
 --    insertionEvents = mempty -- E . IM.singleton 0 $ [ _descendantCharacter `indexChar` 0 ]
-    (_,deletionEvents,insertionEvents) = ofoldl' f (0, mempty, mempty) [0 .. olength descendantCharacter - 1]
-    f (parentBaseIndex, deletions, insertions) characterIndex
+    (_,_,deletionEvents,insertionEvents) = ofoldl' f (0, 0, mempty, mempty) [0 .. olength descendantCharacter - 1]
+    f (parentBaseIndex, offset, deletions, insertions) characterIndex
       -- Biological "Nothing" case
-      | ancestorStatic == gap && descendantStatic == gap = (parentBaseIndex    ,                             deletions,                                     insertions)
+      | ancestorStatic == gap && descendantStatic == gap = (parentBaseIndex    , offset,                             deletions,                                     insertions)
       -- Biological "Nothing" case
      {-
       | (ancestorStatic == gap && descendantStatic == gap) ||
@@ -903,14 +937,16 @@ comparativeIndelEvents ancestorCharacterUnaligned descendantCharacterUnaligned c
       -- Biological insertion event case
 --      | ancestorStatic == gap && descendantStatic /= gap = (parentBaseIndex    ,                             deletions, IM.insertWith (+) parentBaseIndex 1 insertions)
 
-      | insertionEventLogic = (parentBaseIndex    ,                             deletions, IM.insertWith (+) parentBaseIndex 1 insertions)
+      | insertionEventLogic = (parentBaseIndex    , offset,                            deletions, IM.insertWith (+) parentBaseIndex 1 insertions)
 
       -- Biological deletion event case
-      | ancestorStatic /= gap && descendantStatic == gap = (parentBaseIndex + 1, parentBaseIndex `IS.insert` deletions,                                     insertions)
+--      | ancestorStatic /= gap && descendantStatic == gap = (parentBaseIndex + 1, offset', (parentBaseIndex + offset') `IS.insert` deletions,                                     insertions)
+--      | ancestorStatic /= gap && descendantStatic == gap = (parentBaseIndex + 1, offset', characterIndex `IS.insert` deletions,                                     insertions)
+      | ancestorStatic /= gap && descendantStatic == gap = (parentBaseIndex + 1, offset', (parentBaseIndex + length insertions) `IS.insert` deletions,                                     insertions)
 --      | deletionEventLogic  = (parentBaseIndex + 1, parentBaseIndex `IS.insert` deletions,                                     insertions)
 
       -- Biological substitution / non-substitution case
-      | otherwise {- Both not gap -}                     = (parentBaseIndex + 1,                             deletions,                                     insertions)
+      | otherwise {- Both not gap -}                     = (parentBaseIndex + 1, offset,                            deletions,                                     insertions)
       where
         gap              = getGapChar ancestorStatic
         ancestorStatic   = ancestorCharacter   `indexChar` characterIndex
@@ -918,6 +954,14 @@ comparativeIndelEvents ancestorCharacterUnaligned descendantCharacterUnaligned c
         containsGap char = gap .&. char /= zeroBits
         insertionEventLogic = ancestorStatic   == gap && not (containsGap descendantStatic)
         deletionEventLogic  = descendantStatic == gap && not (containsGap ancestorStatic)
+        offset'
+          | isJust $ parentBaseIndex `lookup` insertions = offset + 1
+          | otherwise = offset
+        insertions'         = foldMapWithKey g insertions
+          where
+            g k v
+              | k >= parentBaseIndex = IM.singleton (k+1) v
+              | otherwise            = IM.singleton k v
 
 data RenderingNode a e = Node a [RenderingEdge e a]
 

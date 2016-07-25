@@ -24,7 +24,7 @@ import           Analysis.ImpliedAlignment.DynamicProgramming
 import           Bio.Character.Dynamic.Coded
 import           Bio.Character.Parsed
 import           Bio.Metadata
-import           Bio.PhyloGraph
+import           Bio.PhyloGraph            hiding (name)
 import           Bio.PhyloGraph.Network           (nodeIsLeaf)
 import           Bio.PhyloGraph.Node.ImpliedAlign (getHomologies')
 import           Data.Alphabet
@@ -36,6 +36,7 @@ import           Data.IntSet             (IntSet)
 import           Data.List
 import           Data.MonoTraversable
 import qualified Data.Set          as S
+import           Data.Vector             (Vector)
 import qualified Data.Vector       as V
 import           Test.Custom
 --import qualified Test.Custom.Types as T
@@ -43,7 +44,22 @@ import           Test.Tasty
 import           Test.Tasty.HUnit
 import           Test.Tasty.QuickCheck
 import           Test.QuickCheck.Arbitrary.Instances
+
 import Debug.Trace
+
+sillyMeta :: Vector (CharacterMetadata s)
+sillyMeta = pure CharMeta
+          { charType   = DirectOptimization
+          , alphabet   = constructAlphabet []
+          , name       = "DefaultCharacter"
+          , isAligned  = False
+          , isIgnored  = False
+          , weight     = 1.0
+          , stateNames = mempty
+          , fitchMasks = undefined
+          , rootCost   = 0.0
+          , costs      = GeneralCost { indelCost = 1, subCost = 4 }
+          }
 
 performImpliedAlignment = deriveImpliedAlignments defMeta . allOptimization 1 defMeta
 
@@ -117,6 +133,34 @@ partNumerate inTree curNode inMeta curCounts stopNode
     | (code curNode) == (code stopNode) = (curCounts, inTree)
     | otherwise = partNumerate -}
 
+testAdjacentDeletionInsertionEvents2 :: TestTree
+testAdjacentDeletionInsertionEvents2 = testCase "Pair of adjacent insertion & deletion events (insertion should be first)" $ testHarness tree
+      where
+        testHarness    = simpleTreeCharacterDecorationEqualityAssertion 0 "ACGT-" transformation getHomologies'
+        transformation = deriveImpliedAlignments sillyMeta . allOptimization 1 sillyMeta
+        tree = [ ( 0, ""    , [""     , ""     ], [ 1, 2])
+               , ( 1, "ACTAA", ["A-CTAA", "AC-TAA"], []     )
+               , ( 2, ""    , [""     , ""     ], [ 3, 4])
+               , ( 3, "ACTAA", ["A-CTAA", "AC-TAA"], []     )
+               , ( 4, ""    , [""     , ""     ], [ 5, 6])
+               , ( 5, "ATTA" , ["AT-T-A" , "A-TT-A"], []     )
+               , ( 6, "ATTA" , ["AT-T-A" , "A-TT-A"], []     )
+               ]
+
+testAdjacentDeletionInsertionEvents :: TestTree
+testAdjacentDeletionInsertionEvents = testCase "Pair of adjacent insertion & deletion events" $ testHarness tree
+      where
+        testHarness    = simpleTreeCharacterDecorationEqualityAssertion 0 "ACGT-" transformation getHomologies'
+        transformation = deriveImpliedAlignments sillyMeta . allOptimization 1 sillyMeta
+        tree = [ ( 0, ""   , [""    , ""    ], [ 1, 2])
+               , ( 1, "ACA", ["A-CA", "AC-A"], []     )
+               , ( 2, ""   , [""    , ""    ], [ 3, 4])
+               , ( 3, "ACA", ["A-CA", "AC-A"], []     )
+               , ( 4, ""   , [""    , ""    ], [ 5, 6])
+               , ( 5, "ATA", ["AT-A", "A-TA"], []     )
+               , ( 6, "ATA", ["AT-A", "A-TA"], []     )
+               ]
+
 
 testDeletedInsertionAntisymetry = testCase "Deleted insertion events anti-symetrically reflected across the root" $ decorationTest tree
       where
@@ -167,6 +211,8 @@ testDoubleDeletedInsertion = testCase "Double deletion event of an single insert
                , (17, "ATA", ["A-TA", "AT-A"], []     )
                , (18, "ATA", ["A-TA", "AT-A"], []     )
                ]
+
+
 
 
 testInsertedDeletions = testGroup "Insertion of deletion events"
@@ -319,6 +365,8 @@ testImpliedAlignmentCases = testGroup "Explicit test cases for implied alignment
     [ testDeletedInsertions
     , testInsertedDeletions
     , testSimpleInsertionDeletionBiasing
+    , testAdjacentDeletionInsertionEvents
+    , testAdjacentDeletionInsertionEvents2
     ]
   where
 
@@ -351,7 +399,7 @@ testImpliedAlignmentCases = testGroup "Explicit test cases for implied alignment
                    , (6,    "A", ["---A"], []   )
                    ]
 
-        testAppendedInsertions = testCase "Chain of insertions appended to sequence" $ decorationTest tree
+testAppendedInsertions = testCase "Chain of insertions appended to sequence" $ decorationTest tree
           where
             tree = [ (0, ""    , [    ""], [1,2])
                    , (1, "A"   , ["A---"], []   )
@@ -362,7 +410,7 @@ testImpliedAlignmentCases = testGroup "Explicit test cases for implied alignment
                    , (6, "ACGT", ["ACGT"], []   )
                    ]
 
-        testPrependedInsertions = testCase "Chain of insertions prepended to sequence" $ decorationTest tree
+testPrependedInsertions = testCase "Chain of insertions prepended to sequence" $ decorationTest tree
           where
             tree = [ (0, ""    , [    ""], [1,2])
                    , (1, "A"   , ["---A"], []   )
