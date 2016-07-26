@@ -543,6 +543,7 @@ normalizeInsertions char (IE inserts) = IE $ IM.fromList normalizedInserts
 data PsuedoIndex
    = OriginalBase
    | InsertedBase
+   | DeletedBase
    | HardGap
    | SoftGap
    deriving (Eq)
@@ -550,6 +551,7 @@ data PsuedoIndex
 instance Show PsuedoIndex where
     show OriginalBase = "O"
     show InsertedBase = "I"
+    show DeletedBase  = "D"
     show HardGap      = "-"
     show SoftGap      = "~"
 
@@ -664,9 +666,9 @@ numeration sequenceIndex costStructure tree = -- trace (unlines $ (renderInspect
                 parentNodePsuedoCharacter = currentPsuedoCharacter   memoPoint
 --                   trace (mconcat ["Accessing (",show $ parentMapping V.! j,",",show j,")"]) $
                    
-                (DE deletes, !inserts, doA, doD)      = comparativeIndelEvents parentCharacter childCharacter costStructure
+                (DE deletes, !inserts, doA, doD) = comparativeIndelEvents parentCharacter childCharacter costStructure
 
-                (IE incrementedInsertionEvents) = inserts >-< purgedDescendantInsertions
+                (IE incrementedInsertionEvents)  = inserts >-< purgedDescendantInsertions
 
                 purgedDescendantInsertions = IE . foldMapWithKey f $ (\(IE x) -> x) allDescendantInsertions
                   where
@@ -704,10 +706,16 @@ numeration sequenceIndex costStructure tree = -- trace (unlines $ (renderInspect
                     IE m = inserts
                     f q@(basesSeen, mapping, es) e = -- (\x -> trace (show e <> show q <> show x) x) $
                       case e of
-                        OriginalBase -> (basesSeen + 1, mapping, e : es)
-                        InsertedBase -> (basesSeen + 1, mapping, e : es) -- Pretty sure we count these as bases seen...?
+                        OriginalBase -> conditionallyDelete
+                        InsertedBase -> conditionallyDelete
                         HardGap      -> (basesSeen    , mapping, e : es)
-                        SoftGap      ->
+                        SoftGap      -> conditionallyInsert
+                        DeletedBase  -> conditionallyInsert
+                      where 
+                        conditionallyDelete 
+                          | basesSeen `oelem` deletes = (basesSeen + 1, mapping, DeletedBase : es)
+                          | otherwise                 = (basesSeen + 1, mapping,           e : es)
+                        conditionallyInsert =
                           case basesSeen `lookup` mapping of
                             Nothing -> (basesSeen, mapping, e : es)
                             Just c  ->
@@ -745,7 +753,9 @@ numeration sequenceIndex costStructure tree = -- trace (unlines $ (renderInspect
                   where
                     f p c =
                       case (p,c) of
-                        (SoftGap, InsertedBase) -> HardGap
+                        (SoftGap     , InsertedBase) -> HardGap
+                        (OriginalBase, DeletedBase ) -> OriginalBase
+                        (InsertedBase, DeletedBase ) -> InsertedBase
                         (      _,            e) -> e
 
             allDescendantInsertions = ofoldl' f mempty (childMapping V.! j)
@@ -856,8 +866,8 @@ deriveImpliedAlignment nodeIndex sequenceIndex homologyMemoize node =
                           psuedoCharacter
           where
             f (basesSeen, xs, ys) _k e
-              | e == HardGap || e == SoftGap = (basesSeen    , xs , gap : ys )
-              | basesSeen `oelem` deletions  = (basesSeen + 1, xs , gap : ys )
+              | e == HardGap || e == SoftGap || e == DeletedBase = (basesSeen    , xs , gap : ys )
+--              | basesSeen `oelem` deletions  = (basesSeen + 1, xs , gap : ys )
               | otherwise                    = (basesSeen + 1, xs',       ys') 
               where
                 xs' = fromMaybe []   $ tailMay xs 
@@ -940,9 +950,10 @@ comparativeIndelEvents ancestorCharacterUnaligned descendantCharacterUnaligned c
       | insertionEventLogic = (parentBaseIndex    , offset,                            deletions, IM.insertWith (+) parentBaseIndex 1 insertions)
 
       -- Biological deletion event case
+      | ancestorStatic /= gap && descendantStatic == gap = (parentBaseIndex + 1, offset', parentBaseIndex `IS.insert` deletions,                                     insertions)
 --      | ancestorStatic /= gap && descendantStatic == gap = (parentBaseIndex + 1, offset', (parentBaseIndex + offset') `IS.insert` deletions,                                     insertions)
 --      | ancestorStatic /= gap && descendantStatic == gap = (parentBaseIndex + 1, offset', characterIndex `IS.insert` deletions,                                     insertions)
-      | ancestorStatic /= gap && descendantStatic == gap = (parentBaseIndex + 1, offset', (parentBaseIndex + length insertions) `IS.insert` deletions,                                     insertions)
+--      | ancestorStatic /= gap && descendantStatic == gap = (parentBaseIndex + 1, offset', (parentBaseIndex + length insertions) `IS.insert` deletions,                                     insertions)
 --      | deletionEventLogic  = (parentBaseIndex + 1, parentBaseIndex `IS.insert` deletions,                                     insertions)
 
       -- Biological substitution / non-substitution case
