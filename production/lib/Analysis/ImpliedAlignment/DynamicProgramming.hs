@@ -44,6 +44,7 @@ import           Data.Matrix.NotStupid hiding ((<|>),toList,trace)
 import           Data.Maybe
 import           Data.Monoid
 import           Data.MonoTraversable
+import qualified Data.Tree               as Tree
 import           Data.Vector                  (Vector)
 import qualified Data.Vector             as V
 import           Data.Vector.Instances        ()
@@ -329,6 +330,7 @@ data MemoizedEvents s
    { cumulativeDeletionEvents       :: DeletionEvents
    , cumulativeInsertionEvents      :: InsertionEvents
    , currentPsuedoCharacter         :: PseudoCharacter
+   , parentPsuedoCharacter          :: PseudoCharacter
    , localRelativeDeletionEvents    :: DeletionEvents
    , localNormalizedDeletionEvents  :: DeletionEvents
    , localRelativeInsertionEvents   :: InsertionEvents
@@ -350,7 +352,8 @@ instance EncodableDynamicCharacter s => Show (MemoizedEvents s) where
       , maybe "" (("Aligned Ancestor:\n  "  <>) . renderDynamicCharacter) $ doAncestorCharacter   memo
       , maybe "" (("Aligned Descendant:\n  "<>) . renderDynamicCharacter) $ doDescendantCharacter memo
       , "Psuedo-character:"
-      , ("  "<>) . concat . toList $ show <$> currentPsuedoCharacter memo
+      , ("  "<>) . concatMap show . toList $ parentPsuedoCharacter  memo
+      , ("  "<>) . concatMap show . toList $ currentPsuedoCharacter memo
       ]
     where
       unDE (DE x) = x
@@ -538,8 +541,8 @@ normalizeInsertions char (IE inserts) = IE $ IM.fromList normalizedInserts
       | otherwise        = (baseCounter', (k,v):xs,       result)
       where
         baseCounter'
-          | e == HardGap || e == SoftGap = baseCounter
-          | otherwise                    = baseCounter + 1
+          | e == HardGap || e == SoftGap || e == DeletedBase = baseCounter
+          | otherwise                                        = baseCounter + 1
 
 data PsuedoIndex
    = OriginalBase
@@ -556,7 +559,7 @@ instance Show PsuedoIndex where
     show HardGap      = "-"
     show SoftGap      = "~"
 
-    showList = showListWith (\x -> (\y -> show x <> y))
+    showList = showListWith (\x -> (show x <>))
 
 type PseudoCharacter = Vector PsuedoIndex
 
@@ -570,7 +573,8 @@ deriveImpliedAlignments sequenceMetadatas tree = foldlWithKey' f tree sequenceMe
 
 numeration :: (Eq n, TreeConstraint t n e s, IANode' n s, Show (Element s)) => Int -> CostStructure -> t -> t
 numeration sequenceIndex costStructure tree = -- trace (unlines $ (renderInspectedGaps . (`inspectGapIndex` renderingTree)) <$> [10,11]) $
---                                               trace eventRendering $
+                                                 trace (inspectGaps [4, 10] renderingTree) $
+                                              -- trace eventRendering $
                                               tree `update` (snd <$> updatedLeafNodes)
   where
     -- | Precomputations used for reference in the memoization
@@ -619,6 +623,7 @@ numeration sequenceIndex costStructure tree = -- trace (unlines $ (renderInspect
                 { cumulativeDeletionEvents       = mempty
                 , cumulativeInsertionEvents      = allDescendantInsertions
                 , currentPsuedoCharacter         = rootPsuedoCharacter
+                , parentPsuedoCharacter          = mempty
                 , localRelativeDeletionEvents    = mempty
                 , localNormalizedDeletionEvents  = mempty
                 , localRelativeInsertionEvents   = mempty
@@ -654,6 +659,7 @@ numeration sequenceIndex costStructure tree = -- trace (unlines $ (renderInspect
                 { cumulativeDeletionEvents       = purgedAncestoralDeletions <> DE deletes
                 , cumulativeInsertionEvents      = inserts >-< purgedDescendantInsertions -- allDescendantInsertions
                 , currentPsuedoCharacter         = psuedoCharacter
+                , parentPsuedoCharacter          = parentNodePsuedoCharacter
                 , localRelativeDeletionEvents    = DE deletes
                 , localNormalizedDeletionEvents  = DE $ ancestoralNodeDeletions `incrementDescendant` (DE deletes)
                 , localRelativeInsertionEvents   = inserts
@@ -999,6 +1005,7 @@ data RenderingDecoration
    , dImpliedAlignment    :: Maybe String
    , dLocalCost           :: Double
    , dTotalCost           :: Double
+   , dSecretIndex         :: Int
    } deriving (Eq)
 
 instance EncodableDynamicCharacter s => Show (PeekTree s) where
@@ -1008,7 +1015,7 @@ instance EncodableDynamicCharacter s => Show (PeekTree s) where
       showEdge (Edge datum      node ) = Edge (renderMemoizedEvents datum) (showNode node)
 
 instance Show RenderingDecoration where
-  show decoration = intercalate "\n" $ catMaybes renderings
+  show decoration = intercalate "\n" . (unwords ["Node (", show $ dSecretIndex decoration,")"] :) $ catMaybes renderings
     where
       renderings = mconcat [renderedCosts, renderedDecorations]
       renderedCosts =
@@ -1047,7 +1054,7 @@ renderDynamicCharacter char
     arbitrarySymbols = fmap pure . ('-' :) $ ['0'..'9'] <> ['A'..'Z'] <> ['a'..'z']  
 
 renderMemoizedEvents :: MemoizedEvents s -> String
-renderMemoizedEvents (Memo (DE totalDels) (IE totalIns) char (DE localRelDels) (DE localNormDels) (IE localRelIns) (IE localNormIns) _ _) =
+renderMemoizedEvents (Memo (DE totalDels) (IE totalIns) _pChar char (DE localRelDels) (DE localNormDels) (IE localRelIns) (IE localNormIns) _ _) =
     mconcat [renderedDeletionEvents, renderedInsertionEvents, renderedPsuedoCharacter]
   where
     renderedDeletionEvents  = renderEvents "Deletion  Events" (show <$> otoList localRelDels) (show <$> otoList localNormDels) (show <$> otoList totalDels) 
@@ -1130,6 +1137,7 @@ constructRenderingTree charIndex rootIndex adjacentcyList memoMatrix = construct
           , dImpliedAlignment    = getFieldMay getHomologies'
           , dLocalCost           = getLocalCost node
           , dTotalCost           = getTotalCost node
+          , dSecretIndex         = nodeIndex
           }
 
         getFieldMay accessor = fmap renderDynamicCharacter $ charIndex `lookup` accessor node
@@ -1162,14 +1170,18 @@ inspectGapIndex gapIndex rootNode = catMaybes $ nodeEventSites rootNode
               | gapIndex `oelem` xs || isJust (gapIndex  `lookup` ys) = Just (parentDecoration, datum, childDecoration)
               | otherwise                                             = Nothing 
           
---inspectGaps :: [Int] -> 
-{-
-inspectGaps gapIndices renderingTree = renderedTreeTopology <> renderedInpsections
+--inspectGaps :: [Int] -> PeekTree s -> String
+{--}
+inspectGaps gapIndices renderingTree = unlines ["Tree toplogy:", "", renderedTreeTopology, "", renderedInspections]
   where
-    redneredTreeTopology = "No Tree Rendering\n\n"
-    inspectionResults    = id *** (`inspectGapIndex` renderingTree) <$> gapIndices
-    renderedInpsections  = foldMap f inspectionResults
+    renderedTreeTopology = renderRenderingTreeTopology renderingTree
+    inspectionResults    = (\x -> (x, x `inspectGapIndex` renderingTree)) <$> gapIndices
+    renderedInspections  = foldMap f inspectionResults
     f (i, []) = "No indel events for index: " <> show i <> "\n\n"
-    f (i, xs) = "Indel events for index: " show i <> "\n\n" <> (unlines $ renderInspectedGapsinspectionResults <$> xs) <> "\n"
+    f (i, xs) = "Indel events for index: "    <> show i <> "\n\n" <> (renderInspectedGaps xs) <> "\n"
   
--}
+{--}
+
+renderRenderingTreeTopology = Tree.drawTree . toStringTree
+  where
+    toStringTree (Node x edges) = Tree.Node (show $ dSecretIndex x) $ (\(Edge _ n) -> toStringTree n) <$> edges
