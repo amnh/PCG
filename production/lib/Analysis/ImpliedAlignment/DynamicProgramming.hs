@@ -49,6 +49,7 @@ import qualified Data.Vector             as V
 import           Data.Vector.Instances        ()
 import           Prelude               hiding (lookup,zipWith)
 import           Safe                         (tailMay)
+import Text.Show (showListWith)
 --import           Test.Custom
 
 import Data.List (intercalate)
@@ -512,7 +513,7 @@ instance Monoid InsertionEvents where
       decrementedDescendantMap = foldMapWithKey f descendantMap
       f k v = IM.singleton (k - decrement) v
         where
-         toks      = takeWhile ((<= k) . fst) $ IM.assocs ancestorMap
+         toks      = takeWhile ((< k) . fst) $ IM.assocs ancestorMap
          decrement = sum $ snd <$> toks
 {--}
 {-
@@ -554,6 +555,8 @@ instance Show PsuedoIndex where
     show DeletedBase  = "D"
     show HardGap      = "-"
     show SoftGap      = "~"
+
+    showList = showListWith (\x -> (\y -> show x <> y))
 
 type PseudoCharacter = Vector PsuedoIndex
 
@@ -670,13 +673,15 @@ numeration sequenceIndex costStructure tree = -- trace (unlines $ (renderInspect
 
                 (IE incrementedInsertionEvents)  = inserts >-< purgedDescendantInsertions
 
+                purgedDescendantInsertions = allDescendantInsertions
+{-
                 purgedDescendantInsertions = IE . foldMapWithKey f $ (\(IE x) -> x) allDescendantInsertions
                   where
                     f k v
                       | k `onotElem` deletes = IM.singleton k v
                       | v /= 1               = IM.singleton k (v-1)
                       | otherwise            = mempty
-
+-}
                 purgedAncestoralDeletions = DE . ofoldMap f $ (\(DE x) -> x) ancestoralNodeDeletions
                   where
                     f e =
@@ -706,8 +711,12 @@ numeration sequenceIndex costStructure tree = -- trace (unlines $ (renderInspect
                     IE m = inserts
                     f q@(basesSeen, mapping, es) e = -- (\x -> trace (show e <> show q <> show x) x) $
                       case e of
-                        OriginalBase -> conditionallyDelete
-                        InsertedBase -> conditionallyDelete
+                        OriginalBase -> if    basesSeen `oelem` deletes
+                                        then (basesSeen + 1, mapping, DeletedBase : es)
+                                        else (basesSeen + 1, mapping,           e : es)
+                        InsertedBase -> if    basesSeen `oelem` deletes
+                                        then (basesSeen + 1, mapping,     HardGap : es)
+                                        else (basesSeen + 1, mapping,           e : es)
                         HardGap      -> (basesSeen    , mapping, e : es)
                         SoftGap      -> conditionallyInsert
                         DeletedBase  -> conditionallyInsert
@@ -755,8 +764,8 @@ numeration sequenceIndex costStructure tree = -- trace (unlines $ (renderInspect
                       case (p,c) of
                         (SoftGap     , InsertedBase) -> HardGap
                         (OriginalBase, DeletedBase ) -> OriginalBase
-                        (InsertedBase, DeletedBase ) -> InsertedBase
-                        (      _,            e) -> e
+                        (InsertedBase, HardGap     ) -> InsertedBase
+                        (           _, e           ) -> e
 
             allDescendantInsertions = ofoldl' f mempty (childMapping V.! j)
               where

@@ -256,21 +256,21 @@ testInsertedDeletions = testGroup "Insertion of deletion events"
 
 testInsertedDeletion3 = testCase "Insertion event of an deletion event 3" $ decorationTest tree
       where
-        tree = [ ( 0, ""     , [""     , ""     , ""     ], [ 1, 4])
-               , ( 1, ""     , [""     , ""     , ""     ], [ 2, 3])
-               , ( 2, "AATTT", ["AATTT", "AATTT", "AATTT"], []     )
-               , ( 3, "AATTT", ["AATTT", "AATTT", "AATTT"], []     )
-               , ( 4, ""     , [""     , ""     , ""     ], [ 5, 6])
-               , ( 5, "AATTT", ["AATTT", "AATTT", "AATTT"], []     )
-               , ( 6, ""     , [""     , ""     , ""     ], [ 7, 8])
-               , ( 7, "AATT" , ["AA-TT", "AAT-T", "AATT-"], []     )
-               , ( 8, ""     , [""     , ""     , ""     ], [ 9,10])
-               , ( 9, "AATT" , ["AA-TT", "AAT-T", "AATT-"], []     )
-               , (10, ""     , [""     , ""     , ""     ], [11,12])
-               , (11, "AATT" , ["AA-TT", "AAT-T", "AATT-"], []     )
-               , (12, ""     , [""     , ""     , ""     ], [13,14])
-               , (13, "AATTT", ["AATTT", "AATTT", "AATTT"], []     )
-               , (14, "AATTT", ["AATTT", "AATTT", "AATTT"], []     )
+        tree = [ ( 0, ""     , [""      , ""      , ""      , ""      , ""      , ""      ], [ 1, 4])
+               , ( 1, ""     , [""      , ""      , ""      , ""      , ""      , ""      ], [ 2, 3])
+               , ( 2, "AATTG", ["AA-TTG", "AA-TTG", "AAT-TG", "AAT-TG", "AATT-G", "AATT-G"], []     )
+               , ( 3, "AATTG", ["AA-TTG", "AA-TTG", "AAT-TG", "AAT-TG", "AATT-G", "AATT-G"], []     )
+               , ( 4, ""     , [""      , ""      , ""      , ""      , ""      , ""      ], [ 5, 6])
+               , ( 5, "AATTG", ["AA-TTG", "AA-TTG", "AAT-TG", "AAT-TG", "AATT-G", "AATT-G"], []     )
+               , ( 6, ""     , [""      , ""      , ""      , ""      , ""      , ""      ], [ 7, 8])
+               , ( 7, "AATG" , ["AA--TG", "AA-T-G", "AA-TTG", "AAT--G", "AA-T-G", "AAT--G"], []     )
+               , ( 8, ""     , [""      , ""      , ""      , ""      , ""      , ""      ], [ 9,10])
+               , ( 9, "AATG" , ["AA--TG", "AA-T-G", "AA--TG", "AAT--G", "AA-T-G", "AAT--G"], []     )
+               , (10, ""     , [""      , ""      , ""      , ""      , ""      , ""      ], [11,12])
+               , (11, "AATG" , ["AA--TG", "AA-T-G", "AA--TG", "AAT--G", "AA-T-G", "AAT--G"], []     )
+               , (12, ""     , [""      , ""      , ""      , ""      , ""      , ""      ], [13,14])
+               , (13, "AATTG", ["AAT-TG", "AATT-G", "AA-TTG", "AATT-G", "AA-TTG", "AAT-TG"], []     )
+               , (14, "AATTG", ["AAT-TG", "AATT-G", "AA-TTG", "AATT-G", "AA-TTG", "AAT-TG"], []     )
                ]
 
 testDeletedInsertions = testGroup "Deletion of insertion events"
