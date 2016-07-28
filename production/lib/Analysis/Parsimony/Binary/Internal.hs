@@ -31,6 +31,7 @@ import Bio.PhyloGraph.Solution
 --import Bio.PhyloGraph.Tree.Rose
 --import Data.Matrix.NotStupid (Matrix, nrows, ncols, setElem)
 --import Data.Maybe
+import Data.Bits ((.&.))
 import Data.Foldable
 import Data.Function.Memoize (Memoizable)
 import Data.IntMap           (IntMap)
@@ -206,22 +207,39 @@ nodeOptimizePreorder curNode lNode rNode pNode = ifoldr chooseOptimization curNo
                   in addToField setFinal getFinal finalAssign setNode
             | getType metadataStructure == DirectOptimization =  --TODO: do we grab the gapped or not?
               case pNode of
-                Nothing -> addToField setFinal       getFinal       (getPreliminaryUngapped setNode ! i)
-                         . addToField setFinalGapped getFinalGapped (getPreliminaryGapped   setNode ! i)
-                         $ setNode
+                Nothing ->
+                  let finalValue = getPreliminaryUngapped setNode ! i
+                  in  addToField setFinal       getFinal        finalValue
+                    . addToField setFinalGapped getFinalGapped (getPreliminaryGapped   setNode ! i)
+                    . addToField setSingle      getSingle      (disambiguate finalValue)
+                    $ setNode
                 Just parentNode -> 
-                  let costStructure    = getCosts metadataStructure
-                      childCharacter   = {- (\x -> trace ("childCharacter: "  <> show x) x) $ -} getChildCharacterForDoPreorder curNode ! i
-                      parentCharacter  = {- (\x -> trace ("parentCharacter: " <> show x) x) $ -} getFinal parentNode ! i
-                      (_, _, derivedAlignment, _, childAlignment) = naiveDO parentCharacter childCharacter costStructure
-                      newGapIndicies   = {- (\x -> trace ("newGapIndices: "   <> show x) x) $ -} newGapLocations childCharacter $ {- (\x -> trace ("childAlignment: "   <> show x) x) $ -} childAlignment
-                      leftCharacter    = {- (\x -> trace ("leftCharacter: "   <> show x) x) $ -} insertNewGaps newGapIndicies $ getLeftAlignment  curNode ! i
-                      rightCharacter   = {- (\x -> trace ("rightCharacter: "  <> show x) x) $ -} insertNewGaps newGapIndicies $ getRightAlignment curNode ! i
-                      (_, finalUngapped, finalGapped) = threeWayMean costStructure derivedAlignment leftCharacter rightCharacter
+                  let costStructure         = getCosts metadataStructure
+                      parentFinalCharacter  = getFinal  parentNode ! i
+                      parentSingleCharacter = getSingle parentNode ! i
+                      (finalUngapped, finalGapped) = tripleComparison i costStructure curNode parentFinalCharacter
+                      (            _, singleValue) = tripleComparison i costStructure curNode parentSingleCharacter
                   in  addToField setFinal       getFinal       finalUngapped
                     . addToField setFinalGapped getFinalGapped finalGapped
+                    . addToField setSingle      getSingle      (disambiguate singleValue)
                     $ setNode
             | otherwise = error "Unrecognized optimization type"
+
+disambiguate :: EncodableDynamicCharacter c => c -> c
+disambiguate = omap orderedSelection
+  where
+    orderedSelection x = x .&. (negate x) -- Selects the least significant set bit, clears all others.
+
+tripleComparison i costStructure curNode parentCharacter = (finalUngapped, finalGapped)
+  where
+    childCharacter   = {- (\x -> trace ("childCharacter: "  <> show x) x) $ -} getChildCharacterForDoPreorder curNode ! i
+--    parentCharacter  = {- (\x -> trace ("parentCharacter: " <> show x) x) $ -} parentAccessor parentNode ! i
+    (_, _, derivedAlignment, _, childAlignment) = naiveDO parentCharacter childCharacter costStructure
+    newGapIndicies   = {- (\x -> trace ("newGapIndices: "   <> show x) x) $ -} newGapLocations childCharacter $ {- (\x -> trace ("childAlignment: "   <> show x) x) $ -} childAlignment
+    leftCharacter    = {- (\x -> trace ("leftCharacter: "   <> show x) x) $ -} insertNewGaps newGapIndicies $ getLeftAlignment  curNode ! i
+    rightCharacter   = {- (\x -> trace ("rightCharacter: "  <> show x) x) $ -} insertNewGaps newGapIndicies $ getRightAlignment curNode ! i
+    (_, finalUngapped, finalGapped) = threeWayMean costStructure derivedAlignment leftCharacter rightCharacter
+
 
 -- | getForAlign returns the sequences from a node, where the node type is either 'EncodedNode' or 'PreliminaryNode'.
 -- preliminary alignment 

@@ -40,7 +40,7 @@ import GHC.Stack            (errorWithStackTrace)
  -
  -}
 -- TODO: Add more laws here.
-class Bits b => EncodableStaticCharacter b where
+class (Bits b, Num b) => EncodableStaticCharacter b where
   decodeChar ::  Eq a              => Alphabet a -> b   -> [a]
   encodeChar :: (Eq a, Foldable t) => Alphabet a -> t a -> b
   stateCount ::  b -> Int

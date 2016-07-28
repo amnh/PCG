@@ -125,6 +125,7 @@ data TestingDecoration
 def :: TestingDecoration
 def = Decorations
     { dEncoded          = mempty
+    , dSingle           = mempty
     , dFinal            = mempty
     , dGapped           = mempty
     , dPreliminary      = mempty
