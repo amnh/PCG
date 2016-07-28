@@ -164,6 +164,7 @@ instance Show TestingDecoration where
         ]
       renderedDecorations =
         [ g "Encoded                   " <$> f dEncoded
+        , g "Single                    " <$> f dSingle
         , g "Final Ungapped            " <$> f dFinal
         , g "Final Gapped              " <$> f dGapped
         , g "Preliminary Ungapped      " <$> f dPreliminary

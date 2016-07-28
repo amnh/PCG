@@ -674,7 +674,8 @@ numeration sequenceIndex costStructure tree = -- trace (unlines $ (renderInspect
                 , doDescendantCharacter          = Just doD
                 }
               where
-                parentCharacter = getFinal       (enumeratedNodes V.! i) V.! sequenceIndex
+--                parentCharacter = getFinal       (enumeratedNodes V.! i) V.! sequenceIndex
+                parentCharacter = getSingle      (enumeratedNodes V.! i) V.! sequenceIndex
                 childCharacter  = getForAlign    (enumeratedNodes V.! j) V.! sequenceIndex
                 memoPoint       = homologyMemoize ! (i, i)
                 ancestoralNodeDeletions   = cumulativeDeletionEvents memoPoint

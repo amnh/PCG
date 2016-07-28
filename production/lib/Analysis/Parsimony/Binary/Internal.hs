@@ -218,7 +218,7 @@ nodeOptimizePreorder curNode lNode rNode pNode = ifoldr chooseOptimization curNo
                       parentFinalCharacter  = getFinal  parentNode ! i
                       parentSingleCharacter = getSingle parentNode ! i
                       (finalUngapped, finalGapped) = tripleComparison i costStructure curNode parentFinalCharacter
-                      (            _, singleValue) = tripleComparison i costStructure curNode parentSingleCharacter
+                      (  singleValue, _          ) = tripleComparison i costStructure curNode parentSingleCharacter
                   in  addToField setFinal       getFinal       finalUngapped
                     . addToField setFinalGapped getFinalGapped finalGapped
                     . addToField setSingle      getSingle      (disambiguate singleValue)
