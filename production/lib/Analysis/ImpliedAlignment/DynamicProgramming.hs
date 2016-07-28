@@ -39,8 +39,9 @@ import qualified Data.IntMap            as IM
 import           Data.IntSet                  (IntSet)
 import qualified Data.IntSet            as IS
 import           Data.Key
+import           Data.List                    (transpose)
 import           Data.List.Utility            (equalityOf)
-import           Data.Matrix.NotStupid hiding ((<|>),toList,trace)
+import           Data.Matrix.NotStupid hiding ((<|>),toList,trace,transpose)
 import           Data.Maybe
 import           Data.Monoid
 import           Data.MonoTraversable
@@ -573,8 +574,9 @@ deriveImpliedAlignments sequenceMetadatas tree = foldlWithKey' f tree sequenceMe
 
 numeration :: (Eq n, TreeConstraint t n e s, IANode' n s, Show (Element s)) => Int -> CostStructure -> t -> t
 numeration sequenceIndex costStructure tree = -- trace (unlines $ (renderInspectedGaps . (`inspectGapIndex` renderingTree)) <$> [10,11]) $
---                                                 trace (inspectGaps [4, 10] renderingTree) $
-                                              -- trace eventRendering $
+--                                               trace (inspectGaps [4, 10] renderingTree) $
+--                                               trace eventRendering $
+--                                               trace gapColumnRendering $
                                               tree `update` (snd <$> updatedLeafNodes)
   where
     -- | Precomputations used for reference in the memoization
@@ -588,6 +590,10 @@ numeration sequenceIndex costStructure tree = -- trace (unlines $ (renderInspect
     parentMapping   = gatherParents  childMapping
 
     eventRendering  = show $ renderingTree
+
+    gapColumnRendering = mconcat ["All gap columns: ", show $ olength allGapColumns, "/", show . length . currentPsuedoCharacter $ homologyMemoize ! (rootIndex, rootIndex), "\n  ", show $ otoList allGapColumns]
+
+    allGapColumns   = getAllGapColumns $ (V.! sequenceIndex) . getHomologies' . snd <$> updatedLeafNodes
 
     renderingTree   = constructRenderingTree sequenceIndex rootIndex adjacencyList homologyMemoize
       where
@@ -713,7 +719,7 @@ numeration sequenceIndex costStructure tree = -- trace (unlines $ (renderInspect
                 psuedoCharacter = V.fromList $ reverse result
                   where
                     (_,_,result) = --trace (mconcat ["(",show i,",",show j, ") = ", show m, " c: ", show contextualPreviousPsuedoCharacter]) $
-                      foldl f (0, m, []) contextualPreviousPsuedoCharacter
+                      foldl f (0, m, []) contextualPreviousPsuedoCharacter2
                     IE m = inserts
                     f q@(basesSeen, mapping, es) e = -- (\x -> trace (show e <> show q <> show x) x) $
                       case e of
@@ -737,6 +743,43 @@ numeration sequenceIndex costStructure tree = -- trace (unlines $ (renderInspect
                               if c > 0
                               then (basesSeen, IM.update (pure . pred) basesSeen mapping, InsertedBase : es)
                               else (basesSeen,                                   mapping,            e : es)
+
+
+                contextualPreviousPsuedoCharacter2
+                  | j < firstSiblingIndex = parentNodePsuedoCharacter
+                  | otherwise             = modifiedPsuedoCharacter
+                  where
+                    -- Search for the previous leaf node by traversing down the "right" most edges of the previous sibling node.
+                    modifiedPsuedoCharacter = V.fromList $ reverse hardGappedCharacter
+                      where
+                        previousSiblings = takeWhile (<j) $ otoList siblingIndices
+                        IE previousInsertionEvents = foldMap f previousSiblings
+                          where
+                            f siblingIndex = cumulativeInsertionEvents $ homologyMemoize ! (i, siblingIndex)
+                            
+                        (_,_,hardGappedCharacter) = foldl g (0, previousInsertionEvents, []) parentNodePsuedoCharacter
+                        g q@(basesSeen, mapping, es) e = -- (\x -> trace (show e <> show q <> show x) x) $
+                          case e of
+                            OriginalBase -> (basesSeen + 1, mapping, e : es)
+                            InsertedBase -> (basesSeen + 1, mapping, e : es)
+                            HardGap      -> (basesSeen    , mapping, e : es)
+                            DeletedBase  -> (basesSeen    , mapping, e : es) -- conditionallyInsert
+                            SoftGap      -> conditionallyInsert
+                          where 
+                            conditionallyInsert =
+                              case basesSeen `lookup` mapping of
+                                Nothing -> (basesSeen, mapping, e : es)
+                                Just c  ->
+                                  if c > 0
+                                  then (basesSeen, IM.update (pure . pred) basesSeen mapping, HardGap : es)
+                                  else (basesSeen,                                   mapping,       e : es)
+
+                            
+
+                    siblingIndices       = j `IS.delete` (childMapping V.! i)
+                    firstSiblingIndex    = minimumEx siblingIndices
+
+
 
                 contextualPreviousPsuedoCharacter
                   | j < firstSiblingIndex = parentNodePsuedoCharacter
@@ -769,8 +812,8 @@ numeration sequenceIndex costStructure tree = -- trace (unlines $ (renderInspect
                     f p c =
                       case (p,c) of
                         (SoftGap     , InsertedBase) -> HardGap
-                        (OriginalBase, DeletedBase ) -> OriginalBase
-                        (InsertedBase, HardGap     ) -> InsertedBase
+--                        (OriginalBase, DeletedBase ) -> OriginalBase
+--                        (InsertedBase, HardGap     ) -> InsertedBase
                         (           e, _           ) -> e
 
             allDescendantInsertions = ofoldl' f mempty (childMapping V.! j)
@@ -1185,3 +1228,13 @@ inspectGaps gapIndices renderingTree = unlines ["Tree toplogy:", "", renderedTre
 renderRenderingTreeTopology = Tree.drawTree . toStringTree
   where
     toStringTree (Node x edges) = Tree.Node (show $ dSecretIndex x) $ (\(Edge _ n) -> toStringTree n) <$> edges
+
+getAllGapColumns :: (EncodableDynamicCharacter c, Foldable t) => t c -> IntSet
+getAllGapColumns = foldMapWithKey f . transpose . fmap otoList . toList
+  where
+    f :: EncodableStaticCharacter c => Int -> [c] -> IntSet
+    f k elements 
+      | all (== gap) elements = IS.singleton k
+      | otherwise             = mempty
+      where
+        gap = getGapChar $ head elements
