@@ -573,7 +573,7 @@ deriveImpliedAlignments sequenceMetadatas tree = foldlWithKey' f tree sequenceMe
 
 numeration :: (Eq n, TreeConstraint t n e s, IANode' n s, Show (Element s)) => Int -> CostStructure -> t -> t
 numeration sequenceIndex costStructure tree = -- trace (unlines $ (renderInspectedGaps . (`inspectGapIndex` renderingTree)) <$> [10,11]) $
-                                                 trace (inspectGaps [4, 10] renderingTree) $
+--                                                 trace (inspectGaps [4, 10] renderingTree) $
                                               -- trace eventRendering $
                                               tree `update` (snd <$> updatedLeafNodes)
   where
@@ -725,7 +725,7 @@ numeration sequenceIndex costStructure tree = -- trace (unlines $ (renderInspect
                                         else (basesSeen + 1, mapping,           e : es)
                         HardGap      -> (basesSeen    , mapping, e : es)
                         SoftGap      -> conditionallyInsert
-                        DeletedBase  -> conditionallyInsert
+                        DeletedBase  -> (basesSeen    , mapping, e : es) -- conditionallyInsert
                       where 
                         conditionallyDelete 
                           | basesSeen `oelem` deletes = (basesSeen + 1, mapping, DeletedBase : es)
@@ -771,7 +771,7 @@ numeration sequenceIndex costStructure tree = -- trace (unlines $ (renderInspect
                         (SoftGap     , InsertedBase) -> HardGap
                         (OriginalBase, DeletedBase ) -> OriginalBase
                         (InsertedBase, HardGap     ) -> InsertedBase
-                        (           _, e           ) -> e
+                        (           e, _           ) -> e
 
             allDescendantInsertions = ofoldl' f mempty (childMapping V.! j)
               where
