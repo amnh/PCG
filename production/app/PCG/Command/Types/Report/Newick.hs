@@ -44,7 +44,7 @@ newickRenderDag dag = concat [ newickRenderNode rootNode, "[", show treeCost, "]
     newickRenderNode :: Show b => TopoNode b -> String
     newickRenderNode node
       | null (children node) = name node
-      | otherwise = (\x -> "(" <> x <> ")") . intercalate "," $ newickRenderNode <$> children node
+      | otherwise = (\x -> "(" <> x <> ")'" <> filter (/=' ') (name node) <> "'") . intercalate "," $ newickRenderNode <$> children node
 
 -- | Wrapper function to output a graph to a newick
 outPutNewick :: String -> StandardSolution -> IO ()

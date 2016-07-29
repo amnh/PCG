@@ -352,8 +352,8 @@ numeration :: (Eq n, TreeConstraint t n e s, IANode' n s, Show (Element s)) => I
 numeration sequenceIndex costStructure tree =  trace gapColumnRendering $
 --                                               trace (inspectGaps [4, 10] renderingTree) $
                                                trace eventRendering $
---                                              tree `update` (snd <$> updatedLeafNodes)
-                                              tree `update` (snd <$> updatedNodes)
+                                              tree `update` (snd <$> updatedLeafNodes)
+--                                              tree `update` (snd <$> updatedNodes)
   where
     -- | Precomputations used for reference in the memoization
     rootNode        = root tree
@@ -373,7 +373,7 @@ numeration sequenceIndex costStructure tree =  trace gapColumnRendering $
 
     renderingTree   = constructRenderingTree sequenceIndex rootIndex adjacencyList homologyMemoize
       where
-        adjacencyList = V.zip (enumeratedNodes V.// updatedNodes) childMapping
+        adjacencyList = V.zip (enumeratedNodes V.// updatedLeafNodes) childMapping
 
 --    showIt = let !x = updatedLeafNodes
 --             in x `seq` trace (show $ (\(y,_,_) -> y) <$> homologyMemoize) x
@@ -785,10 +785,10 @@ comparativeIndelEvents ancestorCharacterUnaligned descendantCharacterUnaligned c
 --      | insertionEventLogic = (parentBaseIndex    , offset,                            deletions, IM.insertWith (+) parentBaseIndex 1 insertions)
 
       -- Biological deletion event case
---    | ancestorStatic /= gap && descendantStatic == gap = (parentBaseIndex + 1, offset', parentBaseIndex `IS.insert` deletions,                                     insertions)
+      | ancestorStatic /= gap && descendantStatic == gap = (parentBaseIndex + 1, offset', parentBaseIndex `IS.insert` deletions,                                     insertions)
 --      | ancestorStatic /= gap && descendantStatic == gap = (parentBaseIndex + 1, offset', (parentBaseIndex + offset') `IS.insert` deletions,                                     insertions)
 --      | ancestorStatic /= gap && descendantStatic == gap = (parentBaseIndex + 1, offset', characterIndex `IS.insert` deletions,                                     insertions)
-      | ancestorStatic /= gap && descendantStatic == gap = (parentBaseIndex + 1, offset', (parentBaseIndex + length insertions) `IS.insert` deletions,                                     insertions)
+--      | ancestorStatic /= gap && descendantStatic == gap = (parentBaseIndex + 1, offset', (characterIndex) `IS.insert` deletions,                                     insertions)
 --      | deletionEventLogic  = (parentBaseIndex + 1, parentBaseIndex `IS.insert` deletions,                                     insertions)
 
       -- Biological substitution / non-substitution case
