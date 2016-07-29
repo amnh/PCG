@@ -207,7 +207,7 @@ nodeOptimizePreorder curNode lNode rNode pNode = ifoldr chooseOptimization curNo
                   in addToField setFinal getFinal finalAssign setNode
             | getType metadataStructure == DirectOptimization =  --TODO: do we grab the gapped or not?
               case pNode of
-                Nothing ->
+                Nothing -> -- Root node case
                   let finalValue = getPreliminaryUngapped setNode ! i
                   in  addToField setFinal       getFinal        finalValue
                     . addToField setFinalGapped getFinalGapped (getPreliminaryGapped   setNode ! i)

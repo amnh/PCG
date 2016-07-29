@@ -21,6 +21,7 @@ import Data.Alphabet
 import Data.BitVector
 import Data.Maybe           (fromMaybe)
 import Data.MonoTraversable
+import Data.String          (IsString)
 
 import GHC.Stack            (errorWithStackTrace)
 
@@ -59,10 +60,10 @@ class ( EncodableStaticCharacter (Element s)
   -- All default instances can be "overidden" for efficientcy.
   constructDynamic :: Foldable t => t (Element s) -> s
   
-  decodeDynamic ::  Eq a => Alphabet a -> s -> [[a]]
+  decodeDynamic :: (Ord a, IsString a) => Alphabet a -> s -> [[a]]
   decodeDynamic alphabet = ofoldr (\e acc -> decodeChar alphabet e : acc) []
 
-  encodeDynamic :: (Eq a, Foldable t, Foldable c) => Alphabet a -> c (t a) -> s
+  encodeDynamic :: (Ord a, Foldable t, Foldable c, IsString a) => Alphabet a -> c (t a) -> s
 
   indexChar  :: s -> Int -> Element s
   indexChar xs i = fromMaybe raiseError $ xs `lookupChar` i
