@@ -49,7 +49,7 @@ import qualified Data.Tree               as Tree
 import           Data.Vector                  (Vector)
 import qualified Data.Vector             as V
 import           Data.Vector.Instances        ()
-import           Prelude               hiding (lookup,zipWith)
+import           Prelude               hiding (lookup,zip,zipWith)
 import           Safe                         (tailMay)
 import Text.Show (showListWith)
 --import           Test.Custom
@@ -754,56 +754,37 @@ gatherParents childrenMapping = {- trace ("Gathered parents: " <> show x) -} int
 
 comparativeIndelEvents :: (SeqConstraint s) => s -> s -> CostStructure -> (DeletionEvents, InsertionEvents, s ,s)
 comparativeIndelEvents ancestorCharacterUnaligned descendantCharacterUnaligned costStructure
-  | olength ancestorCharacter /= olength descendantCharacter = error $ mconcat ["Lengths of sequences are not equal!\n", "Parent length: ", show $ olength ancestorCharacter, "\nChild length: ", show $ olength descendantCharacter]
+  | olength ancestorCharacter /= olength descendantCharacter = error errorMessage
   | otherwise                                    = -- (\x -> trace (show x) x) $
                                                    (DE deletionEvents, IE insertionEvents, ancestorCharacter, descendantCharacter)
   where
+    errorMessage = mconcat [ "Lengths of sequences are not equal!\n"
+                           , "Parent length: "
+                           , show $ olength ancestorCharacter
+                           , "\nChild length: "
+                           , show $ olength descendantCharacter
+                           ]
     (ancestorCharacter, descendantCharacter) = doAlignment ancestorCharacterUnaligned descendantCharacterUnaligned costStructure
---    deletionEvents  = mempty
---    insertionEvents = mempty -- E . IM.singleton 0 $ [ _descendantCharacter `indexChar` 0 ]
-    (_,_,deletionEvents,insertionEvents) = ofoldl' f (0, 0, mempty, mempty) [0 .. olength descendantCharacter - 1]
-    f (parentBaseIndex, offset, deletions, insertions) characterIndex
+    (_,deletionEvents,insertionEvents)     = foldlWithKey' f (0, mempty, mempty) $ zip (otoList ancestorCharacter) (otoList descendantCharacter)
+    f (parentBaseIndex, deletions, insertions) characterIndex (ancestorElement, descendantElement)
       -- Biological "Nothing" case
-      | ancestorStatic == gap && descendantStatic == gap = (parentBaseIndex    , offset,                             deletions,                                     insertions)
-      -- Biological "Nothing" case
-     {-
-      | (ancestorStatic == gap && descendantStatic == gap) ||
-        (ancestorStatic /= descendantStatic &&
-           containsGap ancestorStatic &&
-           containsGap descendantStatic
-        )
-                                                         = (parentBaseIndex    ,                             deletions,                                     insertions)
--}
-
+      | ancestorElement == gap && descendantElement == gap = (parentBaseIndex    , deletions , insertions )
       -- Biological insertion event case
---      | ancestorStatic == gap && descendantStatic /= gap = (parentBaseIndex    ,                             deletions, IM.insertWith (+) parentBaseIndex 1 insertions)
-
-      | insertionEventLogic = (parentBaseIndex    , offset,                            deletions, IM.insertWith (+) parentBaseIndex 1 insertions)
+      | insertionEventLogic                                = (parentBaseIndex    , deletions , insertions')
 
       -- Biological deletion event case
-      | ancestorStatic /= gap && descendantStatic == gap = (parentBaseIndex + 1, offset', parentBaseIndex `IS.insert` deletions,                                     insertions)
---      | ancestorStatic /= gap && descendantStatic == gap = (parentBaseIndex + 1, offset', (parentBaseIndex + offset') `IS.insert` deletions,                                     insertions)
---      | ancestorStatic /= gap && descendantStatic == gap = (parentBaseIndex + 1, offset', characterIndex `IS.insert` deletions,                                     insertions)
---      | ancestorStatic /= gap && descendantStatic == gap = (parentBaseIndex + 1, offset', (parentBaseIndex + length insertions) `IS.insert` deletions,                                     insertions)
---      | deletionEventLogic  = (parentBaseIndex + 1, parentBaseIndex `IS.insert` deletions,                                     insertions)
-
+      | deletionEventLogic                                 = (parentBaseIndex + 1, deletions', insertions )
+--      | ancestorElement /= gap && descendantElement == gap = (parentBaseIndex + 1, deletions', insertions )
       -- Biological substitution / non-substitution case
-      | otherwise {- Both not gap -}                     = (parentBaseIndex + 1, offset,                            deletions,                                     insertions)
+      | otherwise {- Both not gap -}                       = (parentBaseIndex + 1, deletions , insertions )
       where
-        gap              = getGapChar ancestorStatic
-        ancestorStatic   = ancestorCharacter   `indexChar` characterIndex
-        descendantStatic = descendantCharacter `indexChar` characterIndex
-        containsGap char = gap .&. char /= zeroBits
-        insertionEventLogic = ancestorStatic   == gap && not (containsGap descendantStatic)
-        deletionEventLogic  = descendantStatic == gap && not (containsGap ancestorStatic)
-        offset'
-          | isJust $ parentBaseIndex `lookup` insertions = offset + 1
-          | otherwise = offset
-        insertions'         = foldMapWithKey g insertions
-          where
-            g k v
-              | k >= parentBaseIndex = IM.singleton (k+1) v
-              | otherwise            = IM.singleton k v
+        deletions'          = parentBaseIndex `IS.insert` deletions
+        insertions'         = IM.insertWith (+) parentBaseIndex 1 insertions
+        gap                 = getGapChar ancestorElement
+        containsGap char    = gap .&. char /= zeroBits
+        insertionEventLogic = ancestorElement   == gap && not (containsGap descendantElement)
+        deletionEventLogic  = descendantElement == gap && not (containsGap ancestorElement)
+
 
 data RenderingNode a e = Node a [RenderingEdge e a]
 
