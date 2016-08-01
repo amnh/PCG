@@ -367,6 +367,7 @@ testImpliedAlignmentCases = testGroup "Explicit test cases for implied alignment
     , testSimpleInsertionDeletionBiasing
     , testAdjacentDeletionInsertionEvents
     , testAdjacentDeletionInsertionEvents2
+    , testTheDamnTrucnation
     ]
   where
 
@@ -423,17 +424,17 @@ testPrependedInsertions = testCase "Chain of insertions prepended to sequence" $
 
 testTheDamnTrucnation  = testCase "That god damn truncation issue" $ decorationTest tree
           where
-            tree = [ ( 0, ""      , [""     ], [ 1, 2])
-                   , ( 1, "AT"    , ["A---T"], []     )
-                   , ( 2, ""      , [""     ], [ 3, 4])
-                   , ( 3, "AT"    , ["A---T"], []   )
-                   , ( 4, ""      , [""     ], [ 5, 6])
-                   , ( 5, "ACT"   , ["AC--T"], []     )
-                   , ( 6, ""      , [""     ], [ 7, 8])
-                   , ( 7, "ACT"   , ["AC--T"], []     )
-                   , ( 8, ""      , [""     ], [ 9,10])
-                   , ( 9, "ACCT"  , ["ACC-T"], []     )
-                   , (10, "ACCCT" , ["ACCCT"], []     )
+            tree = [ ( 0, ""      , [""     , ""     ], [ 1, 2])
+                   , ( 1, "AT"    , ["A---T", "A---T"], []     )
+                   , ( 2, ""      , [""     , ""     ], [ 3, 4])
+                   , ( 3, "AT"    , ["A---T", "A---T"], []   )
+                   , ( 4, ""      , [""     , ""     ], [ 5, 6])
+                   , ( 5, "ACT"   , ["AC--T", "A--CT"], []     )
+                   , ( 6, ""      , [""     , ""     ], [ 7, 8])
+                   , ( 7, "ACT"   , ["AC--T", "A--CT"], []     )
+                   , ( 8, ""      , [""     , ""     ], [ 9,10])
+                   , ( 9, "ACCT"  , ["ACC-T", "A-CCT"], []     )
+                   , (10, "ACCCT" , ["ACCCT", "ACCCT"], []     )
                    ]
   
 
