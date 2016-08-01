@@ -349,18 +349,17 @@ deriveImpliedAlignments sequenceMetadatas tree = foldlWithKey' f tree sequenceMe
 
 
 numeration :: (Eq n, TreeConstraint t n e s, IANode' n s, Show (Element s)) => Int -> CostStructure -> t -> t
-numeration sequenceIndex costStructure tree =  trace gapColumnRendering $
---                                               trace (inspectGaps [4, 10] renderingTree) $
-                                               trace eventRendering $
-                                              tree `update` (snd <$> updatedLeafNodes)
+numeration sequenceIndex costStructure tree =
+--    trace gapColumnRendering $
+--    trace (inspectGaps [4, 10] renderingTree) $
+--    trace eventRendering $
+    tree `update` (snd <$> updatedLeafNodes)
   where
     -- | Precomputations used for reference in the memoization
     rootNode        = root tree
     enumeratedNodes = enumerateNodes tree
     nodeCount       = length         enumeratedNodes
---    rootIndex       = locateRoot'    parentMapping
     rootIndex       = locateRoot     enumeratedNodes rootNode
---    rootIndex       = locateRoot     enumeratedNodes rootNode tree
     childMapping    = gatherChildren enumeratedNodes tree
     parentMapping   = gatherParents  childMapping
 
@@ -374,12 +373,10 @@ numeration sequenceIndex costStructure tree =  trace gapColumnRendering $
       where
         adjacencyList = V.zip (enumeratedNodes V.// updatedLeafNodes) childMapping
 
---    showIt = let !x = updatedLeafNodes
---             in x `seq` trace (show $ (\(y,_,_) -> y) <$> homologyMemoize) x
 
     -- | Memoized multi-directional tree traversal
 --    homologyMemoize :: SeqConstraint s => Matrix (MemoizedEvents s)
-    homologyMemoize = {- (\x -> trace (show x) x) $ -} matrix nodeCount nodeCount opt
+    homologyMemoize = matrix nodeCount nodeCount opt
       where
 --        opt (i,j) | trace (mconcat ["opt (",show i,",",show j,")"]) False = undefined
         opt (i,j)
