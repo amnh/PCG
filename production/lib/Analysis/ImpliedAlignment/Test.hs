@@ -421,6 +421,22 @@ testPrependedInsertions = testCase "Chain of insertions prepended to sequence" $
                    , (6, "TGCA", ["TGCA"], []   )
                    ]
 
+testTheDamnTrucnation  = testCase "That god damn truncation issue" $ decorationTest tree
+          where
+            tree = [ ( 0, ""      , [""     ], [ 1, 2])
+                   , ( 1, "AT"    , ["A---T"], []     )
+                   , ( 2, ""      , [""     ], [ 3, 4])
+                   , ( 3, "AT"    , ["A---T"], []   )
+                   , ( 4, ""      , [""     ], [ 5, 6])
+                   , ( 5, "ACT"   , ["AC--T"], []     )
+                   , ( 6, ""      , [""     ], [ 7, 8])
+                   , ( 7, "ACT"   , ["AC--T"], []     )
+                   , ( 8, ""      , [""     ], [ 9,10])
+                   , ( 9, "ACCT"  , ["ACC-T"], []     )
+                   , (10, "ACCCT" , ["ACCCT"], []     )
+                   ]
+  
+
 -- | Useful function to convert encoding information to two encoded seqs
 encodeArbSameLen :: (GoodParsedChar, GoodParsedChar) -> (DynamicChar, DynamicChar)
 encodeArbSameLen (parse1, parse2) = (encodeDynamic alph (V.take minLen p1), encodeDynamic alph (V.take minLen p2))

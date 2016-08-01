@@ -350,9 +350,9 @@ deriveImpliedAlignments sequenceMetadatas tree = foldlWithKey' f tree sequenceMe
 
 numeration :: (Eq n, TreeConstraint t n e s, IANode' n s, Show (Element s)) => Int -> CostStructure -> t -> t
 numeration sequenceIndex costStructure tree =
---    trace gapColumnRendering $
+    trace gapColumnRendering $
 --    trace (inspectGaps [33] renderingTree) $
---    trace eventRendering $
+    trace eventRendering $
     tree `update` (snd <$> updatedLeafNodes)
   where
     -- | Precomputations used for reference in the memoization
@@ -497,7 +497,7 @@ numeration sequenceIndex costStructure tree =
                 psuedoCharacter = let x = V.fromList $ reverse result
                                   in if null leftoverInsertions
                                      then x 
-                                     else trace ("Leftover insertions: " <> show leftoverInsertions) x
+                                     else trace (mconcat ["(", show i,",", show j, ") Leftover insertions: ", show leftoverInsertions]) x
                   where
                     (_,leftoverInsertions,result) = --trace (mconcat ["(",show i,",",show j, ") = ", show m, " c: ", show contextualPreviousPsuedoCharacter]) $
                       foldl' f (0, m, []) contextualPreviousPsuedoCharacter2
@@ -833,7 +833,7 @@ data RenderingDecoration
    , dSecretIndex         :: Int
    } deriving (Eq)
 
-instance EncodableDynamicCharacter s => Show (PeekTree s) where
+instance (Show s, EncodableDynamicCharacter s) => Show (PeekTree s) where
   show = drawTreeMultiLine . showNode
     where
       showNode (Node decoration edges) = Node (show decoration) (showEdge <$> edges)
@@ -879,7 +879,9 @@ renderDynamicCharacter char
     arbitrarySymbols :: [String]
     arbitrarySymbols = fmap pure . ('-' :) $ ['0'..'9'] <> ['A'..'Z'] <> ['a'..'z']  
 
-renderMemoizedEvents :: MemoizedEvents s -> String
+renderMemoizedEvents :: (Show s, EncodableDynamicCharacter s) => MemoizedEvents s -> String
+renderMemoizedEvents = show 
+{-
 renderMemoizedEvents (Memo (DE totalDels) (IE totalIns) _pChar char (DE localRelDels) (DE localNormDels) (IE localRelIns) (IE localNormIns) _ _) =
     mconcat [renderedDeletionEvents, renderedInsertionEvents, renderedPsuedoCharacter]
   where
@@ -916,7 +918,8 @@ renderMemoizedEvents (Memo (DE totalDels) (IE totalIns) _pChar char (DE localRel
                                           where
             (y,ys) = chunk (n-len) xs
             len    = length x
-            
+ -}
+  
 -- | Neat 2-dimensional drawing of a tree.
 drawTreeMultiLine :: RenderingNode String String-> String
 drawTreeMultiLine = unlines . draw
