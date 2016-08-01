@@ -352,7 +352,7 @@ numeration :: (Eq n, TreeConstraint t n e s, IANode' n s, Show (Element s)) => I
 numeration sequenceIndex costStructure tree =
 --    trace gapColumnRendering $
 --    trace (inspectGaps [4, 10] renderingTree) $
---    trace eventRendering $
+    trace eventRendering $
     tree `update` (snd <$> updatedLeafNodes)
   where
     -- | Precomputations used for reference in the memoization
@@ -371,7 +371,7 @@ numeration sequenceIndex costStructure tree =
 
     renderingTree   = constructRenderingTree sequenceIndex rootIndex adjacencyList homologyMemoize
       where
-        adjacencyList = V.zip (enumeratedNodes V.// updatedLeafNodes) childMapping
+        adjacencyList = V.zip (enumeratedNodes V.// updatedNodes) childMapping
 
 
     -- | Memoized multi-directional tree traversal
@@ -596,15 +596,15 @@ numeration sequenceIndex costStructure tree =
                     directChildInsertions = cumulativeInsertionEvents $ homologyMemoize ! (j, x)
             
 --    updatedLeafNodes :: (NodeConstraint n s, IANode' n s) => [n]
-    updatedLeafNodes
-      | equalityOf id lengths = foldrWithKey f [] enumeratedNodes
+    updatedLeafNodes = filter ((`nodeIsLeaf` tree) . snd) updatedNodes
+
+    updatedNodes
+      | equalityOf id lengths = foldMapWithKey f enumeratedNodes
       | otherwise = error $ show lengths
       where
         lengths = foldMapWithKey g enumeratedNodes
         g i _ = (:[]) . length . currentPsuedoCharacter $ homologyMemoize ! (i,i)
-        f i n xs
-          | n `nodeIsLeaf` tree = (i, deriveImpliedAlignment i sequenceIndex homologyMemoize n) : xs
-          | otherwise           = xs
+        f i n = [(i, deriveImpliedAlignment i sequenceIndex homologyMemoize n)]
 
 deriveImpliedAlignment :: (EncodableDynamicCharacter s, NodeConstraint n s, IANode' n s, Show s, Show (Element s)) => Int -> Int -> Matrix (MemoizedEvents s) -> n -> n
 -- deriveImpliedAlignment nodeIndex _ _ | trace ("deriveImpliedAlignment " <> show nodeIndex <> " " <> show psuedoCharacter) False = undefined

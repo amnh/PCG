@@ -138,13 +138,13 @@ testAdjacentDeletionInsertionEvents2 = testCase "Pair of adjacent insertion & de
       where
         testHarness    = simpleTreeCharacterDecorationEqualityAssertion 0 "ACGT-" transformation getHomologies'
         transformation = deriveImpliedAlignments sillyMeta . allOptimization 1 sillyMeta
-        tree = [ ( 0, ""    , [""     , ""     ], [ 1, 2])
+        tree = [ ( 0, ""     , [""      , ""      ], [ 1, 2])
                , ( 1, "ACTAA", ["A-CTAA", "AC-TAA"], []     )
-               , ( 2, ""    , [""     , ""     ], [ 3, 4])
+               , ( 2, ""     , [""      , ""      ], [ 3, 4])
                , ( 3, "ACTAA", ["A-CTAA", "AC-TAA"], []     )
-               , ( 4, ""    , [""     , ""     ], [ 5, 6])
-               , ( 5, "ATTA" , ["AT-T-A" , "A-TT-A"], []     )
-               , ( 6, "ATTA" , ["AT-T-A" , "A-TT-A"], []     )
+               , ( 4, ""     , [""      , ""      ], [ 5, 6])
+               , ( 5, "ATTA" , ["AT-T-A", "A-TT-A"], []     )
+               , ( 6, "ATTA" , ["AT-T-A", "A-TT-A"], []     )
                ]
 
 testAdjacentDeletionInsertionEvents :: TestTree
