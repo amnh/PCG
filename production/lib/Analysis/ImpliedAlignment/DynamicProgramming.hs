@@ -350,6 +350,7 @@ deriveImpliedAlignments sequenceMetadatas tree = foldlWithKey' f tree sequenceMe
 
 numeration :: (Eq n, TreeConstraint t n e s, IANode' n s, Show (Element s)) => Int -> CostStructure -> t -> t
 numeration sequenceIndex costStructure tree =
+--    trace renderedTopology $
 --    trace gapColumnRendering $
 --    trace (inspectGaps [33] renderingTree) $
 --    trace eventRendering $
@@ -365,6 +366,7 @@ numeration sequenceIndex costStructure tree =
 
     eventRendering  = show $ renderingTree
 
+    renderedTopology   = renderRenderingTreeTopology renderingTree
     gapColumnRendering = mconcat ["All gap columns: ", show $ olength allGapColumns, "/", show . length . currentPsuedoCharacter $ homologyMemoize ! (rootIndex, rootIndex), "\n  ", show $ otoList allGapColumns]
 
     allGapColumns   = getAllGapColumns $ (V.! sequenceIndex) . getHomologies' . snd <$> updatedLeafNodes
@@ -381,7 +383,7 @@ numeration sequenceIndex costStructure tree =
 --        opt (i,j) | trace (mconcat ["opt (",show i,",",show j,")"]) False = undefined
         opt (i,j)
           -- The root node (base case)
-          | i == rootIndex && j == rootIndex = (\x -> trace ("ROOT: " <> show x) x)
+          | i == rootIndex && j == rootIndex = -- (\x -> trace ("ROOT: " <> show x) x)
                                                rootNodeValue
           -- A non-root node
           | i == j                           = -- (\e@(_,x,y) -> trace (mconcat ["opt(", show i,",",show j,") ",show x," ",show y]) e)
@@ -512,7 +514,7 @@ numeration sequenceIndex costStructure tree =
                                         else (basesSeen + 1, remainingInsertions,           e : es)
                         HardGap      -> (basesSeen    , remainingInsertions, e : es)
                         SoftGap      -> conditionallyInsert
-                        DeletedBase  -> (basesSeen    , remainingInsertions, e : es) -- conditionallyInsert
+                        DeletedBase  -> (basesSeen + 1, remainingInsertions, e : es) -- conditionallyInsert
                       where 
 --                        conditionallyDelete 
 --                          | basesSeen `oelem` deletes = (basesSeen + 1, remainingInsertions, DeletedBase : es)
@@ -782,8 +784,8 @@ gatherParents childrenMapping = {- trace ("Gathered parents: " <> show x) -} int
 comparativeIndelEvents :: (SeqConstraint s) => s -> s -> CostStructure -> (DeletionEvents, InsertionEvents, s ,s)
 comparativeIndelEvents ancestorCharacterUnaligned descendantCharacterUnaligned costStructure
   | olength ancestorCharacter /= olength descendantCharacter = error errorMessage
-  | otherwise                                    = -- (\x -> trace (show x) x) $
-                                                   (DE deletionEvents, IE insertionEvents, ancestorCharacter, descendantCharacter)
+  | otherwise                                                = -- (\x -> trace (show x) x) $
+                                                               (DE deletionEvents, IE insertionEvents, ancestorCharacter, descendantCharacter)
   where
     errorMessage = mconcat [ "Lengths of sequences are not equal!\n"
                            , "Parent length: "
@@ -796,13 +798,12 @@ comparativeIndelEvents ancestorCharacterUnaligned descendantCharacterUnaligned c
     f (parentBaseIndex, deletions, insertions) characterIndex (ancestorElement, descendantElement)
       -- Biological "Nothing" case
       | ancestorElement == gap && descendantElement == gap = (parentBaseIndex    , deletions , insertions )
-      -- Biological insertion event case
-      | insertionEventLogic                                = (parentBaseIndex    , deletions , insertions')
-
       -- Biological deletion event case
       | deletionEventLogic                                 = (parentBaseIndex + 1, deletions', insertions )
---      | ancestorElement /= gap && descendantElement == gap = (parentBaseIndex + 1, deletions', insertions )
-      -- Biological substitution / non-substitution case
+      -- Biological insertion event case
+      | insertionEventLogic                                = (parentBaseIndex    , deletions , insertions')
+      -- Biological substitution / non-substitution cases
+      | ancestorElement == gap                             = (parentBaseIndex    , deletions , insertions )
       | otherwise {- Both not gap -}                       = (parentBaseIndex + 1, deletions , insertions )
       where
         deletions'          = parentBaseIndex `IS.insert` deletions
