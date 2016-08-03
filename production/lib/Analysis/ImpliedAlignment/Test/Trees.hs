@@ -147,7 +147,11 @@ testDeletedInsertions = testGroup "Deletion of insertion events (no non-homology
     , testDeletedInsertionGroupMiddle
     , testDeletedInsertionGroupPrepend
     , testDeletedInsertionGroupAppend
-    , testDoubleDeletedInsertion
+    , testTwoAdjacentInsertionsSimultaneousDeletions
+    , testTwoNonAdjacentInsertionsSimultaneousDeletions
+    , testTwoAdjacentInsertionsSeperateDeletions
+    , testTwoNonAdjacentSymetricInsertionsSeperateDeletions
+    , testTwoNonAdjacentAntiSymetricInsertionsSeperateDeletions
     ]
 
 
@@ -171,6 +175,7 @@ testNonHomology = testGroup "Non-homology events from insertion and/or deletion 
     [ testNonHomologyDualInsertions
     , testNonHomologyDualInsertionsWithExtraBase
     , testNonHomologyDeletedInsertion
+    , testNonHomologyDoubleDeletedInsertion
     ]
 
 
@@ -637,6 +642,77 @@ testNonHomologyDualInsertions = testCase "Non-homology dual insertions of base" 
            ]
 
 {- |
+  This tree should contain an insertion event on the edge between node 3 and
+  node 5. This insertion event should be deleted on the edge between node 9
+  and node 11. This tree should also contain a second insertion event on the
+  edge between node 14 and 16.
+
+  We should note that both insertion events of T are /non-homologous/!
+
+  0
+  |
+  +-1: AA
+  |
+  `-2
+    |
+    +-3: AA
+    |
+    `-4
+      |
+      +-5: ATA
+      |
+      `-6
+        |
+        +-7: ATA
+        |
+        `-8
+          |
+          +-9: ATA
+          |
+          `-10
+            |
+            +-11: AA
+            |
+            `-12
+              |
+              +-13: AA
+              |
+              `-14
+                |
+                +-15: AA
+                |
+                `-16
+                  |
+                  +-17: ATA
+                  |
+                  `-18: ATA
+-}
+testNonHomologyDoubleDeletedInsertion :: TestTree
+testNonHomologyDoubleDeletedInsertion = testCase "Double deletion event of an single insertion event" $ decorationTest tree
+  where
+    tree = [ ( 0, ""   , [""    , ""    ], [ 1, 2])
+           , ( 1, "AA" , ["A--A", "A--A"], []     )
+           , ( 2, ""   , [""    , ""    ], [ 3, 4])
+           , ( 3, "AA" , ["A--A", "A--A"], []     )
+           , ( 4, ""   , [""    , ""    ], [ 5, 6])
+           , ( 5, "ATA", ["AT-A", "A-TA"], []     )
+           , ( 6, ""   , [""    , ""    ], [ 7, 8])
+           , ( 7, "ATA", ["AT-A", "A-TA"], []     )
+           , ( 8, ""   , [""    , ""    ], [ 9,10])
+           , ( 9, "ATA", ["AT-A", "A-TA"], []     )
+           , (10, ""   , [""    , ""    ], [11,12])
+           , (11, "AA" , ["A--A", "A--A"], []     )
+           , (12, ""   , [""    , ""    ], [13,14])
+           , (13, "AA" , ["A--A", "A--A"], []     )
+           , (14, ""   , [""    , ""    ], [15,16])
+           , (15, "AA" , ["A--A", "A--A"], []     )
+           , (16, ""   , [""    , ""    ], [17,18])
+           , (17, "ATA", ["A-TA", "AT-A"], []     )
+           , (18, "ATA", ["A-TA", "AT-A"], []     )
+           ]
+
+
+{- |
   This tree should contain one insertion event on each branch between the
   ATA and ATTA characters followed.
 
@@ -751,6 +827,7 @@ testDeletedInsertionSingle = testCase "Deletion event of an single insertion eve
            , (13, "AATT" , ["AA-TT"], []     )
            , (14, "AATT" , ["AA-TT"], []     )
            ]
+
 
 {- |
   This tree should contain three /consecutive/ insertion events and one deletion
@@ -921,73 +998,438 @@ testDeletedInsertionGroupAppend = testCase "Deletion event of an insertion event
 
 
 {- |
-  This tree should contain an insertion event on the edge between node 3 and
-  node 5. This insertion event should be deleted on the edge between node 9
-  and node 11. This tree should also contain a second insertion event on the
-  edge between node 14 and 16.
+  This tree should contain two /adjacent/ insertion events on different edges
+  and two deletion events on a single edge.
 
-  We should note that both insertion events of T are /non-homologous/!
+  The deletion events should be applied to the same indices as the inserted
+  bases.
 
   0
   |
-  +-1: AA
+  +-1: AATT
   |
   `-2
     |
-    +-3: AA
+    +-3: AATT
     |
     `-4
       |
-      +-5: ATA
+      +-5: AATT
       |
       `-6
         |
-        +-7: ATA
+        +-7: AACTT
         |
         `-8
           |
-          +-9: ATA
+          +-9: AACTT
           |
           `-10
             |
-            +-11: AA
+            +-11: AACTT
             |
             `-12
               |
-              +-13: AA
+              +-13: AACCTT
               |
               `-14
-                |
-                +-15: AA
-                |
-                `-16
-                  |
-                  +-17: ATA
-                  |
-                  `-18: ATA
+                 |
+                 +-15: AACCTT
+                 |
+                 `-16
+                   |
+                   +-17: AACCTT
+                     |
+                     `-18
+                       |
+                       +-19: AATT
+                       |
+                       `-20: AATT
 -}
-testDoubleDeletedInsertion :: TestTree
-testDoubleDeletedInsertion = testCase "Double deletion event of an single insertion event" $ decorationTest tree
+testTwoAdjacentInsertionsSimultaneousDeletions :: TestTree
+testTwoAdjacentInsertionsSimultaneousDeletions = testCase "Delete two     adjacent insertion events on a single edge" $ decorationTest tree
   where
-    tree = [ ( 0, ""   , [""    , ""    ], [ 1, 2])
-           , ( 1, "AA" , ["A--A", "A--A"], []     )
-           , ( 2, ""   , [""    , ""    ], [ 3, 4])
-           , ( 3, "AA" , ["A--A", "A--A"], []     )
-           , ( 4, ""   , [""    , ""    ], [ 5, 6])
-           , ( 5, "ATA", ["AT-A", "A-TA"], []     )
-           , ( 6, ""   , [""    , ""    ], [ 7, 8])
-           , ( 7, "ATA", ["AT-A", "A-TA"], []     )
-           , ( 8, ""   , [""    , ""    ], [ 9,10])
-           , ( 9, "ATA", ["AT-A", "A-TA"], []     )
-           , (10, ""   , [""    , ""    ], [11,12])
-           , (11, "AA" , ["A--A", "A--A"], []     )
-           , (12, ""   , [""    , ""    ], [13,14])
-           , (13, "AA" , ["A--A", "A--A"], []     )
-           , (14, ""   , [""    , ""    ], [15,16])
-           , (15, "AA" , ["A--A", "A--A"], []     )
-           , (16, ""   , [""    , ""    ], [17,18])
-           , (17, "ATA", ["A-TA", "AT-A"], []     )
-           , (18, "ATA", ["A-TA", "AT-A"], []     )
+    tree = [ ( 0, ""      , [""      , ""      ], [ 1, 2])
+           , ( 1, "AATT"  , ["AA--TT", "AA--TT"], []     )
+           , ( 2, ""      , [""      , ""      ], [ 3, 4])
+           , ( 3, "AATT"  , ["AA--TT", "AA--TT"], []     )
+           , ( 4, ""      , [""      , ""      ], [ 5, 6])
+           , ( 5, "AATT"  , ["AA--TT", "AA--TT"], []     )
+           , ( 6, ""      , [""      , ""      ], [ 7, 8])
+           , ( 7, "AACTT" , ["AA-CTT", "AAC-TT"], []     )
+           , ( 8, ""      , [""      , ""      ], [ 9,10])
+           , ( 9, "AACTT" , ["AA-CTT", "AAC-TT"], []     )
+           , (10, ""      , [""      , ""      ], [11,12])
+           , (11, "AACTT" , ["AA-CTT", "AAC-TT"], []     )
+           , (12, ""      , [""      , ""      ], [13,14])
+           , (13, "AACCTT", ["AACCTT", "AACCTT"], []     )
+           , (14, ""      , [""      , ""      ], [15,16])
+           , (15, "AACCTT", ["AACCTT", "AACCTT"], []     )
+           , (16, ""      , [""      , ""      ], [17,18])
+           , (17, "AACCTT", ["AACCTT", "AACCTT"], []     )
+           , (18, ""      , [""      , ""      ], [19,20])
+           , (19, "AATT"  , ["AA--TT", "AA--TT"], []     )
+           , (20, "AATT"  , ["AA--TT", "AA--TT"], []     )
+           ]
+
+
+{- |
+  This tree should contain two /non-adjacdent/ insertion events on different
+  edges and two deletion events on a single edge.
+
+  The deletion events should be applied to the same indices as the inserted
+  bases.
+
+  0
+  |
+  +-1: AATT
+  |
+  `-2
+    |
+    +-3: AATT
+    |
+    `-4
+      |
+      +-5: AATT
+      |
+      `-6
+        |
+        +-7: AACTT
+        |
+        `-8
+          |
+          +-9: AACTT
+          |
+          `-10
+            |
+            +-11: AACTT
+            |
+            `-12
+              |
+              +-13: AACCTT
+              |
+              `-14
+                 |
+                 +-15: AACCTT
+                 |
+                 `-16
+                   |
+                   +-17: AACCTT
+                     |
+                     `-18
+                       |
+                       +-19: AATT
+                       |
+                       `-20: AATT
+-}
+testTwoNonAdjacentInsertionsSimultaneousDeletions :: TestTree
+testTwoNonAdjacentInsertionsSimultaneousDeletions = testCase "Delete two non-adjacent insertion events on a single edge" $ decorationTest tree
+  where
+    tree = [ ( 0, ""       , [""       ], [ 1, 2])
+           , ( 1, "AAGTT"  , ["AA-G-TT"], []     )
+           , ( 2, ""       , [""       ], [ 3, 4])
+           , ( 3, "AAGTT"  , ["AA-G-TT"], []     )
+           , ( 4, ""       , [""       ], [ 5, 6])
+           , ( 5, "AAGTT"  , ["AA-G-TT"], []     )
+           , ( 6, ""       , [""       ], [ 7, 8])
+           , ( 7, "AACGTT" , ["AACG-TT"], []     )
+           , ( 8, ""       , [""       ], [ 9,10])
+           , ( 9, "AACGTT" , ["AACG-TT"], []     )
+           , (10, ""       , [""       ], [11,12])
+           , (11, "AACGTT" , ["AACG-TT"], []     )
+           , (12, ""       , [""       ], [13,14])
+           , (13, "AACGCTT", ["AACGCTT"], []     )
+           , (14, ""       , [""       ], [15,16])
+           , (15, "AACGCTT", ["AACGCTT"], []     )
+           , (16, ""       , [""       ], [17,18])
+           , (17, "AACGCTT", ["AACGCTT"], []     )
+           , (18, ""       , [""       ], [19,20])
+           , (19, "AAGTT"  , ["AA-G-TT"], []     )
+           , (20, "AAGTT"  , ["AA-G-TT"], []     )
+           ]
+
+
+{- |
+  This tree should contain two /adjacent/ insertion events on different edges
+  and two deletion events on different edges.
+
+  The deletion events should be applied to the same indices as the inserted
+  bases.
+
+  0
+  |
+  +-1: AATT
+  |
+  `-2
+    |
+    +-3: AATT
+    |
+    `-4
+      |
+      +-5: AATT
+      |
+      `-6
+        |
+        +-7: AACTT
+        |
+        `-8
+          |
+          +-9: AACTT
+          |
+          `-10
+            |
+            +-11: AACTT
+            |
+            `-12
+              |
+              +-13: AACCTT
+              |
+              `-14
+                 |
+                 +-15: AACCTT
+                 |
+                 `-16
+                   |
+                   +-17: AACCTT
+                   |
+                   `-18
+                     |
+                     +-19: AACTT
+                     |
+                     `-20
+                       |
+                       +-21: AACTT
+                       |
+                       `-22
+                          |
+                          +-23: AACTT
+                          |
+                          `-24
+                            |
+                            +-25: AATT
+                            |
+                            `-26: AATT
+-}
+testTwoAdjacentInsertionsSeperateDeletions :: TestTree
+testTwoAdjacentInsertionsSeperateDeletions = testCase "Delete two     adjacent insertion events on different edges" $ decorationTest tree
+  where
+    tree = [ ( 0, ""      , [""      , ""      , ""      , ""      ], [ 1, 2])
+           , ( 1, "AATT"  , ["AA--TT", "AA--TT", "AA--TT", "AA--TT"], []     )
+           , ( 2, ""      , [""      , ""      , ""      , ""      ], [ 3, 4])
+           , ( 3, "AATT"  , ["AA--TT", "AA--TT", "AA--TT", "AA--TT"], []     )
+           , ( 4, ""      , [""      , ""      , ""      , ""      ], [ 5, 6])
+           , ( 5, "AATT"  , ["AA--TT", "AA--TT", "AA--TT", "AA--TT"], []     )
+           , ( 6, ""      , [""      , ""      , ""      , ""      ], [ 7, 8])
+           , ( 7, "AACTT" , ["AA-CTT", "AA-CTT", "AAC-TT", "AAC-TT"], []     )
+           , ( 8, ""      , [""      , ""      , ""      , ""      ], [ 9,10])
+           , ( 9, "AACTT" , ["AA-CTT", "AA-CTT", "AAC-TT", "AAC-TT"], []     )
+           , (10, ""      , [""      , ""      , ""      , ""      ], [11,12])
+           , (11, "AACTT" , ["AA-CTT", "AA-CTT", "AAC-TT", "AAC-TT"], []     )
+           , (12, ""      , [""      , ""      , ""      , ""      ], [13,14])
+           , (13, "AACCTT", ["AACCTT", "AACCTT", "AACCTT", "AACCTT"], []     )
+           , (14, ""      , [""      , ""      , ""      , ""      ], [15,16])
+           , (15, "AACCTT", ["AACCTT", "AACCTT", "AACCTT", "AACCTT"], []     )
+           , (16, ""      , [""      , ""      , ""      , ""      ], [17,18])
+           , (17, "AACCTT", ["AACCTT", "AACCTT", "AACCTT", "AACCTT"], []     )
+           , (18, ""      , [""      , ""      , ""      , ""      ], [19,20])
+           , (19, "AACTT" , ["AA-CTT", "AAC-TT", "AA-CTT", "AAC-TT"], []     )
+           , (20, ""      , [""      , ""      , ""      , ""      ], [21,22])
+           , (21, "AACTT" , ["AA-CTT", "AAC-TT", "AA-CTT", "AAC-TT"], []     )
+           , (22, ""      , [""      , ""      , ""      , ""      ], [23,24])
+           , (23, "AACTT" , ["AA-CTT", "AAC-TT", "AA-CTT", "AAC-TT"], []     )
+           , (24, ""      , [""      , ""      , ""      , ""      ], [25,26])
+           , (25, "AATT"  , ["AA--TT", "AA--TT", "AA--TT", "AA--TT"], []     )
+           , (26, "AATT"  , ["AA--TT", "AA--TT", "AA--TT", "AA--TT"], []     )
+           ]
+
+
+{- |
+  This tree should contain two /non-adjacent/ insertion events on different edges
+  and two deletion events on different edges. The insertion events follow a
+  symetric pattern.
+
+  The deletion events should be applied to the same indices as the inserted
+  bases.
+
+  0
+  |
+  +-1: AATT
+  |
+  `-2
+    |
+    +-3: AATT
+    |
+    `-4
+      |
+      +-5: AATT
+      |
+      `-6
+        |
+        +-7: AACTT
+        |
+        `-8
+          |
+          +-9: AACTT
+          |
+          `-10
+            |
+            +-11: AACTT
+            |
+            `-12
+              |
+              +-13: AACCTT
+              |
+              `-14
+                 |
+                 +-15: AACCTT
+                 |
+                 `-16
+                   |
+                   +-17: AACCTT
+                   |
+                   `-18
+                     |
+                     +-19: AACTT
+                     |
+                     `-20
+                       |
+                       +-21: AACTT
+                       |
+                       `-22
+                          |
+                          +-23: AACTT
+                          |
+                          `-24
+                            |
+                            +-25: AATT
+                            |
+                            `-26: AATT
+-}
+testTwoNonAdjacentSymetricInsertionsSeperateDeletions :: TestTree
+testTwoNonAdjacentSymetricInsertionsSeperateDeletions = testCase "Delete two non-adjacent insertion events on different edges (symetric)" $ decorationTest tree
+  where
+    tree = [ ( 0, ""       , [""       ], [ 1, 2])
+           , ( 1, "AAGTT"  , ["AA-G-TT"], []     )
+           , ( 2, ""       , [""       ], [ 3, 4])
+           , ( 3, "AAGTT"  , ["AA-G-TT"], []     )
+           , ( 4, ""       , [""       ], [ 5, 6])
+           , ( 5, "AAGTT"  , ["AA-G-TT"], []     )
+           , ( 6, ""       , [""       ], [ 7, 8])
+           , ( 7, "AACGTT" , ["AACG-TT"], []     )
+           , ( 8, ""       , [""       ], [ 9,10])
+           , ( 9, "AACGTT" , ["AACG-TT"], []     )
+           , (10, ""       , [""       ], [11,12])
+           , (11, "AACGTT" , ["AACG-TT"], []     )
+           , (12, ""       , [""       ], [13,14])
+           , (13, "AACGCTT", ["AACGCTT"], []     )
+           , (14, ""       , [""       ], [15,16])
+           , (15, "AACGCTT", ["AACGCTT"], []     )
+           , (16, ""       , [""       ], [17,18])
+           , (17, "AACGCTT", ["AACGCTT"], []     )
+           , (18, ""       , [""       ], [19,20])
+           , (19, "AACGTT" , ["AACG-TT"], []     )
+           , (20, ""       , [""       ], [21,22])
+           , (21, "AACGTT" , ["AACG-TT"], []     )
+           , (22, ""       , [""       ], [23,24])
+           , (23, "AACGTT" , ["AACG-TT"], []     )
+           , (24, ""       , [""       ], [25,26])
+           , (25, "AAGTT"  , ["AA-G-TT"], []     )
+           , (26, "AAGTT"  , ["AA-G-TT"], []     )
+           ]
+
+
+{- |
+  This tree should contain two /non-adjacent/ insertion events on different edges
+  and two deletion events on different edges. The insertion events follow a
+  symetric pattern.
+
+  The deletion events should be applied to the same indices as the inserted
+  bases.
+
+  0
+  |
+  +-1: AATT
+  |
+  `-2
+    |
+    +-3: AATT
+    |
+    `-4
+      |
+      +-5: AATT
+      |
+      `-6
+        |
+        +-7: AACTT
+        |
+        `-8
+          |
+          +-9: AACTT
+          |
+          `-10
+            |
+            +-11: AACTT
+            |
+            `-12
+              |
+              +-13: AACCTT
+              |
+              `-14
+                 |
+                 +-15: AACCTT
+                 |
+                 `-16
+                   |
+                   +-17: AACCTT
+                   |
+                   `-18
+                     |
+                     +-19: AACTT
+                     |
+                     `-20
+                       |
+                       +-21: AACTT
+                       |
+                       `-22
+                          |
+                          +-23: AACTT
+                          |
+                          `-24
+                            |
+                            +-25: AATT
+                            |
+                            `-26: AATT
+-}
+testTwoNonAdjacentAntiSymetricInsertionsSeperateDeletions :: TestTree
+testTwoNonAdjacentAntiSymetricInsertionsSeperateDeletions = testCase "Delete two non-adjacent insertion events on different edges (antisymetric)" $ decorationTest tree
+  where
+    tree = [ ( 0, ""       , [""       ], [ 1, 2])
+           , ( 1, "AAGTT"  , ["AA-G-TT"], []     )
+           , ( 2, ""       , [""       ], [ 3, 4])
+           , ( 3, "AAGTT"  , ["AA-G-TT"], []     )
+           , ( 4, ""       , [""       ], [ 5, 6])
+           , ( 5, "AAGTT"  , ["AA-G-TT"], []     )
+           , ( 6, ""       , [""       ], [ 7, 8])
+           , ( 7, "AACGTT" , ["AACG-TT"], []     )
+           , ( 8, ""       , [""       ], [ 9,10])
+           , ( 9, "AACGTT" , ["AACG-TT"], []     )
+           , (10, ""       , [""       ], [11,12])
+           , (11, "AACGTT" , ["AACG-TT"], []     )
+           , (12, ""       , [""       ], [13,14])
+           , (13, "AACGCTT", ["AACGCTT"], []     )
+           , (14, ""       , [""       ], [15,16])
+           , (15, "AACGCTT", ["AACGCTT"], []     )
+           , (16, ""       , [""       ], [17,18])
+           , (17, "AACGCTT", ["AACGCTT"], []     )
+           , (18, ""       , [""       ], [19,20])
+           , (19, "AAGCTT" , ["AA-GCTT"], []     )
+           , (20, ""       , [""       ], [21,22])
+           , (21, "AAGCTT" , ["AA-GCTT"], []     )
+           , (22, ""       , [""       ], [23,24])
+           , (23, "AAGCTT" , ["AA-GCTT"], []     )
+           , (24, ""       , [""       ], [25,26])
+           , (25, "AAGTT"  , ["AA-G-TT"], []     )
+           , (26, "AAGTT"  , ["AA-G-TT"], []     )
            ]
 
 
