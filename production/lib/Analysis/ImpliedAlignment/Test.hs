@@ -16,44 +16,44 @@
 module Analysis.ImpliedAlignment.Test where
 
 import           Analysis.Parsimony.Binary.Internal
-import           Analysis.Parsimony.Binary.Optimization
-import           Analysis.Parsimony.Binary.DirectOptimization
+--import           Analysis.Parsimony.Binary.Optimization
+--import           Analysis.Parsimony.Binary.DirectOptimization
 import           Analysis.ImpliedAlignment.DynamicProgramming
-import           Analysis.ImpliedAlignment.Internal
+--import           Analysis.ImpliedAlignment.Internal
 import           Analysis.ImpliedAlignment.Standard
 import           Analysis.ImpliedAlignment.Test.Trees
 import           Bio.Character.Dynamic.Coded
 import           Bio.Character.Parsed
-import           Bio.Metadata
+--import           Bio.Metadata
 import           Bio.PhyloGraph            hiding (name)
-import           Bio.PhyloGraph.Network           (nodeIsLeaf)
-import           Bio.PhyloGraph.Node.ImpliedAlign (getHomologies')
+--import           Bio.PhyloGraph.Network           (nodeIsLeaf)
+--import           Bio.PhyloGraph.Node.ImpliedAlign (getHomologies')
 import           Data.Alphabet
-import           Data.BitVector          (BitVector, setBit, bitVec)
+--import           Data.BitVector          (BitVector, setBit, bitVec)
 import           Data.Foldable
 import           Data.Function           (on)
-import qualified Data.IntMap       as IM
-import           Data.IntSet             (IntSet)
-import           Data.List
+--import qualified Data.IntMap       as IM
+--import           Data.IntSet             (IntSet)
+--import           Data.List
 import           Data.MonoTraversable
 import qualified Data.Set          as S
-import           Data.Vector             (Vector)
+--import           Data.Vector             (Vector)
 import qualified Data.Vector       as V
 import           Test.Custom
 --import qualified Test.Custom.Types as T
 import           Test.Tasty
 import           Test.Tasty.HUnit
 import           Test.Tasty.QuickCheck
-import           Test.QuickCheck.Arbitrary.Instances
+--import           Test.QuickCheck.Arbitrary.Instances
 
-import Debug.Trace
+--import Debug.Trace
 
 testSuite :: TestTree
 testSuite = testGroup "Implied Alignment"
-          [ testNumerate
-          , testImpliedAlignmentCases
-          , fullIA
-          ]
+    [ testNumerate
+    , testImpliedAlignmentCases
+--    , fullIA
+    ]
 
 fullIA :: TestTree
 fullIA = testGroup "Full alignment properties"
@@ -92,7 +92,7 @@ testNumerate = testGroup "Numeration properties"
         checkLen inParse count           = V.length traces >= maxLen
             where 
                 (seq1, seq2)              = encodeArbSameLen inParse
-                (traces, (_, counter), _) = numerateOne seq1 seq2 (olength seq1, count)
+                (traces, (_, _), _) = numerateOne seq1 seq2 (olength seq1, count)
                 maxLen                    = maximum [olength seq1, olength seq2]
 
         counterIncrease                   = testProperty "After numerate runs, counter is same or larger" checkCounter
@@ -100,16 +100,16 @@ testNumerate = testGroup "Numeration properties"
         checkCounter inParse count        = counter >= count
             where 
                 (seq1, seq2)              = encodeArbSameLen inParse
-                (traces, (_, counter), _) = numerateOne seq1 seq2 (olength seq1, count)
+                (_, (_, counter), _) = numerateOne seq1 seq2 (olength seq1, count)
         monotonic = testProperty "Numerate produces a monotonically increasing homology" checkIncrease
         checkIncrease :: (GoodParsedChar, GoodParsedChar) -> Int -> Bool
         checkIncrease inParse count       = increases $ toList traces
             where 
                 (seq1, seq2)         = encodeArbSameLen inParse
-                (traces, counter, _) = numerateOne seq1 seq2 (olength seq1, count)
+                (traces, _, _) = numerateOne seq1 seq2 (olength seq1, count)
                 increases :: Ord a => [a] -> Bool
                 increases []         = True
-                increases [x]        = True
+                increases [_]        = True
                 increases (x:y:xs)   = x < y && increases (y:xs)
 
 -- | Useful function to convert encoding information to two encoded seqs
@@ -145,7 +145,7 @@ insertionDeletionTest :: Foldable t
                       -> [Int]        -- ^ deletion events
                       -> [(Int, Int)] -- ^ Insertion events
                       -> Assertion
-insertionDeletionTest rootRef symbols spec parentRef childRef expectedDeletions expectedInsertions = undefined
+insertionDeletionTest rootRef symbols spec _parentRef _childRef _expectedDeletions _expectedInsertions = undefined
   where
-    inputTree  = createSimpleTree rootRef symbols spec
-    outputTree = allOptimization 1 defMeta inputTree
+    _inputTree  = createSimpleTree rootRef symbols spec
+    _outputTree = allOptimization 1 defMeta _inputTree
