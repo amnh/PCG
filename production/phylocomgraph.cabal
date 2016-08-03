@@ -439,20 +439,34 @@ Test-Suite testsuite
 
   hs-source-dirs:      test, lib, app, ffi
 
+  ghc-options:         -O2 -Wall 
+                       -fwarn-duplicate-exports
+                       -fwarn-incomplete-patterns
+                       -fwarn-missing-signatures
+                       -fwarn-overlapping-patterns
+                       -fwarn-tabs
+                       -fwarn-unused-binds
+                       -fwarn-unused-do-bind
+                       -fwarn-unused-imports
+                       -fwarn-unused-matches
   other-modules:
+                       Analysis.ImpliedAlignment.DynamicProgramming
                        Analysis.ImpliedAlignment.Internal
                        Analysis.ImpliedAlignment.Standard
                        Analysis.ImpliedAlignment.Test
+                       Analysis.ImpliedAlignment.Test.Trees
                        Analysis.Parsimony.Binary.DirectOptimization.Internal
                        Analysis.Parsimony.Binary.DirectOptimization.Test
                        Analysis.Parsimony.Binary.Internal
                        Analysis.Parsimony.Binary.Test
+                       Analysis.Parsimony.Binary.DirectOptimization
                        Analysis.Parsimony.Binary.Fitch
                        Bio.Metadata.Class
                        Bio.Metadata.Internal
                        Bio.Character.Dynamic.Coded
                        Bio.Character.Dynamic.Coded.Class
                        Bio.Character.Dynamic.Coded.Test
+                       Bio.Character.Exportable.Class
                        Bio.Character.Parsed
                        Bio.Character.Parsed.Class
                        Bio.Character.Parsed.Internal
@@ -533,6 +547,7 @@ Test-Suite testsuite
                        File.Format.VertexEdgeRoot.Parser
                        File.Format.VertexEdgeRoot.Test
                        Test.Custom
+                       Test.Custom.Constructions
                        Test.Custom.Types
                        Test.Custom.Tree
                        Test.Custom.Tree.Test

@@ -16,36 +16,24 @@
 module Analysis.ImpliedAlignment.Test.Trees where
 
 import           Analysis.Parsimony.Binary.Internal
-import           Analysis.Parsimony.Binary.Optimization
-import           Analysis.Parsimony.Binary.DirectOptimization
-import           Analysis.ImpliedAlignment.Internal
-import           Analysis.ImpliedAlignment.Standard
 import           Analysis.ImpliedAlignment.DynamicProgramming
-import           Bio.Character.Dynamic.Coded
-import           Bio.Character.Parsed
 import           Bio.Metadata
 import           Bio.PhyloGraph            hiding (name)
-import           Bio.PhyloGraph.Network           (nodeIsLeaf)
-import           Bio.PhyloGraph.Node.ImpliedAlign (getHomologies')
 import           Data.Alphabet
-import           Data.BitVector          (BitVector, setBit, bitVec)
-import           Data.Foldable
-import           Data.Function           (on)
-import qualified Data.IntMap       as IM
-import           Data.IntSet             (IntSet)
-import           Data.List
-import           Data.MonoTraversable
-import qualified Data.Set          as S
 import           Data.Vector             (Vector)
-import qualified Data.Vector       as V
 import           Test.Custom
 import           Test.Tasty
 import           Test.Tasty.HUnit
-import           Test.Tasty.QuickCheck
-import           Test.QuickCheck.Arbitrary.Instances
 
-import Debug.Trace
+--import Debug.Trace
 
+{-
+ -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+   SUPPORTING DATA-STRUCTURES AND FUNCTIONS
+ -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+-}
+
+-- | A meta data structure with the cheap indel cost (1) and large substituion cost (4).
 sillyMeta :: Vector (CharacterMetadata s)
 sillyMeta =
   pure CharMeta
@@ -61,6 +49,7 @@ sillyMeta =
     , costs      = GeneralCost { indelCost = 1, subCost = 4 }
     }
 
+-- | A meta data structure with the typical indel cost (2) and substituion cost (1).
 defaultMeta :: Vector (CharacterMetadata s)
 defaultMeta =
   pure CharMeta
@@ -73,27 +62,63 @@ defaultMeta =
     , stateNames = mempty
     , fitchMasks = undefined
     , rootCost   = 0.0
-    , costs      = GeneralCost { indelCost = 1, subCost = 4 }
+    , costs      = GeneralCost { indelCost = 2, subCost = 1 }
     }
 
---performImpliedAlignment :: 
+-- | A meta data structure with the equal indel cost (1) and substituion cost (1).
+equalMeta :: Vector (CharacterMetadata s)
+equalMeta =
+  pure CharMeta
+    { charType   = DirectOptimization
+    , alphabet   = constructAlphabet []
+    , name       = "DefaultCharacter"
+    , isAligned  = False
+    , isIgnored  = False
+    , weight     = 1.0
+    , stateNames = mempty
+    , fitchMasks = undefined
+    , rootCost   = 0.0
+    , costs      = GeneralCost { indelCost = 2, subCost = 1 }
+    }
+
+
+{- |
+  A tree transformation that applies the direct optimization decoration followed
+  by the implied alignment decoration to a tree.
+-}
+performImpliedAlignment :: SimpleTree -> SimpleTree
 performImpliedAlignment = deriveImpliedAlignments meta . allOptimization 1 meta
   where
     meta = defaultMeta 
 
+{- |
+  Takes an adjacency list representation of a tree with annotations of inital
+  characters and the resulting valid implied alignment character decorations.
+-}
 decorationTest :: Foldable t => t (Int, String, [String], [Int]) -> Assertion
 decorationTest = simpleTreeCharacterDecorationEqualityAssertion 0 "ACGT-" performImpliedAlignment getHomologies'
 
+{-
+ -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+   TEST TREE BRANCHES
+ -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+-}
+
+-- | The entire set of test case trees
 testImpliedAlignmentCases :: TestTree
 testImpliedAlignmentCases = testGroup "Explicit test cases for implied alignment"
-    [ testDeletedInsertions
+    [ testSimpleInsertionDeletionBiasing
+    , testDeletedInsertions
     , testInsertedDeletions
-    , testSimpleInsertionDeletionBiasing
     , testAdjacentDeletionInsertionEvents
     , testAdjacentDeletionInsertionEvents2
     , testTheDamnTrucnation
     ]
 
+{- |
+  A set of simple tests to ensure that a series of insertions or deletions
+  behave as expected when applied in both directions.
+-}
 testSimpleInsertionDeletionBiasing :: TestTree
 testSimpleInsertionDeletionBiasing = testGroup "Insertion & deletion event appending & prepending to character"
     [ testAppendedDeletions
@@ -102,6 +127,17 @@ testSimpleInsertionDeletionBiasing = testGroup "Insertion & deletion event appen
     , testPrependedInsertions
     ]
 
+testDeletedInsertions :: TestTree
+testDeletedInsertions = testGroup "Deletion of insertion events"
+    [ testDeletedInsertionSingle
+    , testDeletedInsertionGroupMiddle
+    , testDeletedInsertionGroupPrepend
+    , testDeletedInsertionGroupAppend
+    , testDeletedInsertionAntisymetry
+    , testDoubleDeletedInsertion
+    ]
+
+
 testInsertedDeletions :: TestTree
 testInsertedDeletions = testGroup "Insertion of deletion events"
     [ testInsertedDeletion
@@ -109,9 +145,130 @@ testInsertedDeletions = testGroup "Insertion of deletion events"
     , testInsertedDeletion3
     ]
 
+{-
+ -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+   TEST TREE CASES
+ -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+-}
 
+{- |
+  This tree should contain 3 deletion events which are applied repeatedly to the
+  /end/ of the character as you traverse down the tree.
 
+  0
+  |
+  +-1: ACGT
+  |
+  `-2
+    |
+    +-3: ACG
+    |
+    `-4
+      |
+      +-5: AC
+      |
+      `-6: A
+-}
+testAppendedDeletions :: TestTree
+testAppendedDeletions = testCase "Chain of deletions appended to sequence" $ decorationTest tree
+  where
+    tree = [ ( 0, ""    , [""    ], [ 1, 2])
+           , ( 1, "ACGT", ["ACGT"], []     )
+           , ( 2, ""    , [""    ], [ 3, 4])
+           , ( 3, "ACG" , ["ACG-"], []     )
+           , ( 4, ""    , [""    ], [ 5, 6])
+           , ( 5, "AC"  , ["AC--"], []     )
+           , ( 6, "A"   , ["A---"], []     )
+           ]
 
+{- |
+  This tree should contain 3 deletion events which are applied repeatedly to the
+  /beginning/ of the character as you traverse down the tree.
+
+  0
+  |
+  +-1: TGCA
+  |
+  `-2
+    |
+    +-3: GCA
+    |
+    `-4
+      |
+      +-5: CA
+      |
+      `-6: A
+-}
+testPrependedDeletions :: TestTree
+testPrependedDeletions = testCase "Chain of deletions prepended to sequence" $ decorationTest tree
+  where
+    tree = [ ( 0, ""    , [""    ], [ 1, 2])
+           , ( 1, "TGCA", ["TGCA"], []     )
+           , ( 2, ""    , [""    ], [ 3, 4])
+           , ( 3, "GCA" , ["-GCA"], []     )
+           , ( 4, ""    , [""    ], [ 5, 6])
+           , ( 5, "CA"  , ["--CA"], []     )
+           , ( 6, "A"   , ["---A"], []     )
+           ]
+{- |
+  This tree should contain 3 insertion events which are applied repeatedly to the
+  /end/ of the character as you traverse down the tree.
+
+  0
+  |
+  +-1: A
+  |
+  `-2
+    |
+    +-3: AC
+    |
+    `-4
+      |
+      +-5: ACG
+      |
+      `-6: ACGT
+-}
+testAppendedInsertions :: TestTree
+testAppendedInsertions = testCase "Chain of insertions appended to sequence" $ decorationTest tree
+  where
+    tree = [ ( 0, ""    , [    ""], [ 1, 2])
+           , ( 1, "A"   , ["A---"], []     )
+           , ( 2, ""    , [    ""], [ 3, 4])
+           , ( 3, "AC"  , ["AC--"], []     )
+           , ( 4, ""    , [    ""], [ 5, 6])
+           , ( 5, "ACG" , ["ACG-"], []     )
+           , ( 6, "ACGT", ["ACGT"], []     )
+           ]
+
+{- |
+  This tree should contain 3 insertion events which are applied repeatedly to the
+  /beginning/ of the character as you traverse down the tree.
+
+  0
+  |
+  +-1: A
+  |
+  `-2
+    |
+    +-3: CA
+    |
+    `-4
+      |
+      +-5: GCA
+      |
+      `-6: TGCA
+-}
+testPrependedInsertions :: TestTree
+testPrependedInsertions = testCase "Chain of insertions prepended to sequence" $ decorationTest tree
+  where
+    tree = [ ( 0, ""    , [""    ], [ 1, 2])
+           , ( 1, "A"   , ["---A"], []     )
+           , ( 2, ""    , [""    ], [ 3, 4])
+           , ( 3, "CA"  , ["--CA"], []     )
+           , ( 4, ""    , [""    ], [ 5, 6])
+           , ( 5, "GCA" , ["-GCA"], []     )
+           , ( 6, "TGCA", ["TGCA"], []     )
+           ]
 
 testAdjacentDeletionInsertionEvents2 :: TestTree
 testAdjacentDeletionInsertionEvents2 = testCase "Pair of adjacent insertion & deletion events (insertion should be first)" $ testHarness tree
@@ -142,6 +299,7 @@ testAdjacentDeletionInsertionEvents = testCase "Pair of adjacent insertion & del
            ]
 
 
+testDeletedInsertionAntisymetry :: TestTree
 testDeletedInsertionAntisymetry = testCase "Deleted insertion events anti-symetrically reflected across the root" $ decorationTest tree
   where
     tree = [ ( 0, ""     , [""     ], [ 1, 2])
@@ -169,6 +327,7 @@ testDeletedInsertionAntisymetry = testCase "Deleted insertion events anti-symetr
            , (22, "AATA" , ["A--A-TA", "A--A-TA", "A--AT-A", "A--AT-A"], []     )
            ]
 
+testDoubleDeletedInsertion :: TestTree
 testDoubleDeletedInsertion = testCase "Double deletion event of an single insertion event" $ decorationTest tree
   where
     tree = [ ( 0, ""   , [""    , ""    ], [ 1, 2])
@@ -192,6 +351,7 @@ testDoubleDeletedInsertion = testCase "Double deletion event of an single insert
            , (18, "ATA", ["A-TA", "AT-A"], []     )
            ]
 
+testInsertedDeletion :: TestTree
 testInsertedDeletion = testCase "Insertion event of an deletion event" $ decorationTest tree
   where
     tree = [ ( 0, ""      , [""     , ""     , ""     ], [11,12])
@@ -209,6 +369,7 @@ testInsertedDeletion = testCase "Insertion event of an deletion event" $ decorat
            , (12, ""      , [""     , ""     , ""     ], [1, 2])
            ]
 
+testInsertedDeletion2 :: TestTree
 testInsertedDeletion2 = testCase "Insertion event of an deletion event 2" $ decorationTest tree
   where
     tree = [ ( 0, ""      , [""     , ""     , ""     ], [1, 2])
@@ -225,6 +386,7 @@ testInsertedDeletion2 = testCase "Insertion event of an deletion event 2" $ deco
            ]
 
 
+testInsertedDeletion3 :: TestTree
 testInsertedDeletion3 = testCase "Insertion event of an deletion event 3" $ decorationTest tree
   where
     tree = [ ( 0, ""     , [""      , ""      , ""      , ""      , ""      , ""      ], [ 1, 4])
@@ -244,15 +406,7 @@ testInsertedDeletion3 = testCase "Insertion event of an deletion event 3" $ deco
            , (14, "AATTG", ["AAT-TG", "AATT-G", "AA-TTG", "AATT-G", "AA-TTG", "AAT-TG"], []     )
            ]
 
-testDeletedInsertions = testGroup "Deletion of insertion events"
-    [ testDeletedInsertionSingle
-    , testDeletedInsertionGroupMiddle
-    , testDeletedInsertionGroupPrepend
-    , testDeletedInsertionGroupAppend
-    , testDeletedInsertionAntisymetry
-    , testDoubleDeletedInsertion
-    ]
-
+testDeletedInsertionSingle :: TestTree
 testDeletedInsertionSingle = testCase "Deletion event of an single insertion event" $ decorationTest tree
   where
     tree = [ ( 0, ""     , [""     ], [ 1, 2])
@@ -272,6 +426,7 @@ testDeletedInsertionSingle = testCase "Deletion event of an single insertion eve
            , (14, "AATT" , ["AA-TT"], []     )
            ]
 
+testDeletedInsertionGroupMiddle :: TestTree
 testDeletedInsertionGroupMiddle = testCase "Deletion event of an insertion event nested between other insertion events" $ decorationTest tree
   where
     tree = [ ( 0, ""       , [""       ], [ 1, 2])
@@ -291,6 +446,7 @@ testDeletedInsertionGroupMiddle = testCase "Deletion event of an insertion event
            , (14, "AACCTT" , ["AAC-CTT"], []     )
            ]
 
+testDeletedInsertionGroupPrepend :: TestTree
 testDeletedInsertionGroupPrepend = testCase "Deletion event of an insertion event prepended to a group of other insertion events" $ decorationTest tree
   where
     tree = [ ( 0, ""       , [""       ], [ 1, 2])
@@ -310,6 +466,7 @@ testDeletedInsertionGroupPrepend = testCase "Deletion event of an insertion even
              , (14, "AACCTT" , ["AA-CCTT"], []     )
              ]
 
+testDeletedInsertionGroupAppend :: TestTree
 testDeletedInsertionGroupAppend = testCase "Deletion event of an insertion event appended to a group of other insertion events" $ decorationTest tree
   where
     tree = [ ( 0, ""       , [""       ], [ 1, 2])
@@ -329,53 +486,8 @@ testDeletedInsertionGroupAppend = testCase "Deletion event of an insertion event
            , (14, "AACCTT" , ["AACC-TT"], []     )
            ]
 
-testAppendedDeletions :: TestTree
-testAppendedDeletions = testCase "Chain of deletions appended to sequence" $ decorationTest tree
-  where
-    tree = [ ( 0, ""    , [""    ], [ 1, 2])
-           , ( 1, "ACGT", ["ACGT"], []     )
-           , ( 2, ""    , [""    ], [ 3, 4])
-           , ( 3, "ACG" , ["ACG-"], []     )
-           , ( 4, ""    , [""    ], [ 5, 6])
-           , ( 5, "AC"  , ["AC--"], []     )
-           , ( 6, "A"   , ["A---"], []     )
-           ]
-
-testPrependedDeletions :: TestTree
-testPrependedDeletions = testCase "Chain of deletions prepended to sequence" $ decorationTest tree
-  where
-    tree = [ ( 0, ""    , [""    ], [ 1, 2])
-           , ( 1, "TGCA", ["TGCA"], []     )
-           , ( 2, ""    , [""    ], [ 3, 4])
-           , ( 3, "GCA" , ["-GCA"], []     )
-           , ( 4, ""    , [""    ], [ 5, 6])
-           , ( 5, "CA"  , ["--CA"], []     )
-           , ( 6, "A"   , ["---A"], []     )
-           ]
-
-testAppendedInsertions = testCase "Chain of insertions appended to sequence" $ decorationTest tree
-  where
-    tree = [ ( 0, ""    , [    ""], [ 1, 2])
-           , ( 1, "A"   , ["A---"], []     )
-           , ( 2, ""    , [    ""], [ 3, 4])
-           , ( 3, "AC"  , ["AC--"], []     )
-           , ( 4, ""    , [    ""], [ 5, 6])
-           , ( 5, "ACG" , ["ACG-"], []     )
-           , ( 6, "ACGT", ["ACGT"], []     )
-           ]
-
-testPrependedInsertions = testCase "Chain of insertions prepended to sequence" $ decorationTest tree
-  where
-    tree = [ ( 0, ""    , [""    ], [ 1, 2])
-           , ( 1, "A"   , ["---A"], []     )
-           , ( 2, ""    , [""    ], [ 3, 4])
-           , ( 3, "CA"  , ["--CA"], []     )
-           , ( 4, ""    , [""    ], [ 5, 6])
-           , ( 5, "GCA" , ["-GCA"], []     )
-           , ( 6, "TGCA", ["TGCA"], []     )
-           ]
-
-testTheDamnTrucnation  = testCase "That god damn truncation issue" $ decorationTest tree
+testTheDamnTrucnation :: TestTree
+testTheDamnTrucnation = testCase "That god damn truncation issue" $ decorationTest tree
   where
     tree = [ ( 0, ""      , [""     , ""     ], [ 1, 2])
            , ( 1, "AT"    , ["A---T", "A---T"], []     )
@@ -389,44 +501,3 @@ testTheDamnTrucnation  = testCase "That god damn truncation issue" $ decorationT
            , ( 9, "ACCT"  , ["ACC-T", "A-CCT"], []     )
            , (10, "ACCCT" , ["ACCCT", "ACCCT"], []     )
            ]
-  
-{-
-
--- | Useful function to convert encoding information to two encoded seqs
-encodeArbSameLen :: (GoodParsedChar, GoodParsedChar) -> (DynamicChar, DynamicChar)
-encodeArbSameLen (parse1, parse2) = (encodeDynamic alph (V.take minLen p1), encodeDynamic alph (V.take minLen p2))
-    where
-        (p1,p2) = (getGoodness parse1, getGoodness parse2)
-        minLen  = minimum [length p1, length p2]
-        oneAlph = foldMap S.fromList
-        alph    = constructAlphabet $ oneAlph p1 `S.union` oneAlph p2
-
--- | Newtyping ensures that the sequence and ambiguity groups are both non empty.
-newtype GoodParsedChar
-      = GoodParsedChar
-      { getGoodness :: ParsedChar
-      } deriving (Eq,Show)
-
-instance Arbitrary GoodParsedChar where
-  arbitrary = do
-    symbols                     <- getNonEmpty <$> arbitrary :: Gen [String]
-    let ambiguityGroupGenerator =  sublistOf symbols `suchThat` (not . null)
-    someAmbiguityGroups         <- V.fromList <$> listOf1 ambiguityGroupGenerator
-    pure $ GoodParsedChar someAmbiguityGroups
-
-
-
-insertionDeletionTest :: Foldable t
-                      => Int          -- ^ Root node reference
-                      -> String       -- ^ Alphabet symbols
-                      -> t (Int, String, [Int])
-                      -> Int          -- ^ Parent node index
-                      -> Int          -- ^ Child  node index
-                      -> [Int]        -- ^ deletion events
-                      -> [(Int, Int)] -- ^ Insertion events
-                      -> Assertion
-insertionDeletionTest rootRef symbols spec parentRef childRef expectedDeletions expectedInsertions = undefined
-  where
-    inputTree  = createSimpleTree rootRef symbols spec
-    outputTree = allOptimization 1 defMeta inputTree
--}

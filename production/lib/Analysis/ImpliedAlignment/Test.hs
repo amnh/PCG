@@ -52,7 +52,7 @@ testSuite :: TestTree
 testSuite = testGroup "Implied Alignment"
           [ testNumerate
           , testImpliedAlignmentCases
---          , fullIA
+          , fullIA
           ]
 
 fullIA :: TestTree
