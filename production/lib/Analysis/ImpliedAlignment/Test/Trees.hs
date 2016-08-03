@@ -121,6 +121,7 @@ testImpliedAlignmentCases = testGroup "Explicit test cases for implied alignment
     , testAdjacentDeletionInsertionEvents
     , testAdjacentDeletionInsertionEvents2
     , testTheDamnTrucnation
+    , testDeletionInsertionInterrelations
     ]
 
 
@@ -176,6 +177,20 @@ testNonHomology = testGroup "Non-homology events from insertion and/or deletion 
     , testNonHomologyDualInsertionsWithExtraBase
     , testNonHomologyDeletedInsertion
     , testNonHomologyDoubleDeletedInsertion
+    , testAmbiguousNonHomologyInsertions
+    ]
+
+
+{- |
+  A set of test trees which tests the indexing between insertion and deletion
+  events occuring at various places in the tree and character.
+-}
+testDeletionInsertionInterrelations :: TestTree
+testDeletionInsertionInterrelations = testGroup "Correct relative indexing between insertion and deletion events"
+    [ testDeletionBeforeAboveInsertion
+    , testDeletionBeforeBelowInsertion
+    , testDeletionAfterAboveInsertion
+    , testDeletionAfterBelowInsertion
     ]
 
 
@@ -469,10 +484,65 @@ testNonHomologyDeletedInsertion = testCase "Deleted insertion events anti-symetr
 
 
 {- |
+  This tree should contain an three insertion events. These insertion events
+  should have /consecutive/ indices. All the insertion events are /non-homologous/.
+
+  0
+  |
+  +-1
+  | |
+  | +-7: AA
+  | |
+  | `-8
+  |   |
+  |   +-9
+  |   | |
+  |   | +-11: AA
+  |   | |
+  |   | `-12: AGA
+  |   |
+  |   `-10:
+  |     |
+  |     +-13: AA
+  |     |
+  |     `-14: ATA
+  |
+  `-2
+    |
+    +-3: AA
+    |
+    `-4
+      |
+      +-5: AA
+      |
+      `-6: ACA
+-}
+testAmbiguousNonHomologyInsertions :: TestTree
+testAmbiguousNonHomologyInsertions = testCase "multiple ambigously placed non-homology insertion events" $ decorationTest tree
+  where
+    tree = [ ( 0, ""   , [""     , ""     , ""     , ""     , ""     , ""     ], [ 1, 2])
+           , ( 1, ""   , [""     , ""     , ""     , ""     , ""     , ""     ], [ 7, 8])
+           , ( 2, ""   , [""     , ""     , ""     , ""     , ""     , ""     ], [ 3, 4])
+           , ( 3, "AA" , ["A---A", "A---A", "A---A", "A---A", "A---A", "A---A"], []     )
+           , ( 4, ""   , [""     , ""     , ""     , ""     , ""     , ""     ], [ 5, 6])
+           , ( 5, "AA" , ["A---A", "A---A", "A---A", "A---A", "A---A", "A---A"], []     )
+           , ( 6, "ACA", ["AC--A", "AC--A", "A-C-A", "A--CA", "A-C-A", "A--CA"], []     )
+           , ( 7, "AA" , ["A---A", "A---A", "A---A", "A---A", "A---A", "A---A"], []     )
+           , ( 8, ""   , [""     , ""     , ""     , ""     , ""     , ""     ], [ 9,10])
+           , ( 9, ""   , [""     , ""     , ""     , ""     , ""     , ""     ], [11,12])
+           , (10, ""   , [""     , ""     , ""     , ""     , ""     , ""     ], [13,14])
+           , (11, "AA" , ["A---A", "A---A", "A---A", "A---A", "A---A", "A---A"], []     )
+           , (12, "AGA", ["A-G-A", "A--GA", "AG--A", "AG--A", "A--GA", "A-G-A"], []     )
+           , (13, "AA" , ["A---A", "A---A", "A---A", "A---A", "A---A", "A---A"], []     )
+           , (14, "ATA", ["A--TA", "A-T-A", "A--TA", "A-T-A", "AT--A", "AT--A"], []     )
+           ]
+
+
+{- |
   This tree should contain one deletion event followwed by an insertion event.
 
   We should note that the deletion event and subsequent insertion event of the
-  T baseare /non-homologous/!
+  T base are /non-homologous/!
 
   The presense of an additional T base in all the leaf characters tests that
   the implied alignment correctly handles the base ambiguity appropriately. 
@@ -1477,3 +1547,186 @@ testTheDamnTrucnation = testCase "That god damn truncation issue" $ decorationTe
            , ( 9, "ACCT"  , ["ACC-T", "A-CCT"], []     )
            , (10, "ACCCT" , ["ACCCT", "ACCCT"], []     )
            ]
+
+
+{- |
+  This tree should contain one insertion event and one deletion event.
+
+  This tree tests to ensure that an insertion event with a deletion event
+  before in the character and above the insertion event in the tree is
+  handled correctly.
+
+  0
+  |
+  +-1: GAA
+  |
+  `-2
+    |
+    +-3: GAA
+    |
+    `-4
+      |
+      +-5: AA
+      |
+      `-6
+        |
+        +-7: AA
+        |
+        `-8
+          |
+          +-9: AA
+          |
+          `-10: ACA
+-}
+testDeletionBeforeAboveInsertion :: TestTree
+testDeletionBeforeAboveInsertion = testCase "Insertion event with deletion event before in character & above in tree" $ decorationTest tree
+  where
+    tree = [ ( 0, ""   , [""    ], [ 1, 2])
+           , ( 1, "GAA", ["GA-A"], []     )
+           , ( 2, ""   , [""    ], [ 3, 4])
+           , ( 3, "GAA", ["GA-A"], []     )
+           , ( 4, ""   , [""    ], [ 5, 6])
+           , ( 5, "AA" , ["-A-A"], []     )
+           , ( 6, ""   , [""    ], [ 7, 8])
+           , ( 7, "AA" , ["-A-A"], []     )
+           , ( 8, ""   , [""    ], [ 9,10])
+           , ( 9, "AA" , ["-A-A"], []     )
+           , (10, "ACA", ["-ACA"], []     )
+           ]
+
+
+{- |
+  This tree should contain one insertion event and one deletion event.
+
+  This tree tests to ensure that an insertion event with a deletion event
+  before in the character and below in the tree is handled correctly.
+
+  0
+  |
+  +-1: GAA
+  |
+  `-2
+    |
+    +-3: GAA
+    |
+    `-4
+      |
+      +-5: GACA
+      |
+      `-6 
+        |
+        +-7: GACA
+        |
+        `-8
+          |
+          +-9: GACA
+          |
+          `-10: ACA
+-}
+testDeletionBeforeBelowInsertion :: TestTree
+testDeletionBeforeBelowInsertion = testCase "Insertion event with deletion event before in character & below in tree" $ decorationTest tree
+  where
+    tree = [ ( 0, ""    , [""    ], [ 1, 2])
+           , ( 1, "GAA" , ["GA-A"], []     )
+           , ( 2, ""    , [""    ], [ 3, 4])
+           , ( 3, "GAA" , ["GA-A"], []     )
+           , ( 4, ""    , [""    ], [ 5, 6])
+           , ( 5, "GACA", ["GACA"], []     )
+           , ( 6, ""    , [""    ], [ 7, 8])
+           , ( 7, "GACA", ["GACA"], []     )
+           , ( 8, ""    , [""    ], [ 9,10])
+           , ( 9, "GACA", ["GACA"], []     )
+           , (10, "ACA" , ["-ACA"], []     )
+           ]
+
+
+{- |
+  This tree should contain one insertion event and one deletion event.
+
+  This tree tests to ensure that an insertion event with a deletion event
+  after in the character and above in the tree is handled correctly.
+
+  0
+  |
+  +-1: AAG
+  |
+  `-2
+    |
+    +-3: AAG
+    |
+    `-4
+      |
+      +-5: AA
+      |
+      `-6
+        |
+        +-7: AA
+        |
+        `-8
+          |
+          +-9: AA
+          |
+          `-10: ACA
+-}
+testDeletionAfterAboveInsertion :: TestTree
+testDeletionAfterAboveInsertion = testCase "Insertion event with deletion event  after in character & above in tree" $ decorationTest tree
+  where
+    tree = [ ( 0, ""   , [""    ], [ 1, 2])
+           , ( 1, "AAG", ["A-AG"], []     )
+           , ( 2, ""   , [""    ], [ 3, 4])
+           , ( 3, "AAG", ["A-AG"], []     )
+           , ( 4, ""   , [""    ], [ 5, 6])
+           , ( 5, "AA" , ["A-A-"], []     )
+           , ( 6, ""   , [""    ], [ 7, 8])
+           , ( 7, "AA" , ["A-A-"], []     )
+           , ( 8, ""   , [""    ], [ 9,10])
+           , ( 9, "AA" , ["A-A-"], []     )
+           , (10, "ACA", ["ACA-"], []     )
+           ]
+
+
+{- |
+  This tree should contain one insertion event and one deletion event.
+
+  This tree tests to ensure that an insertion event with a deletion event
+  after in the character and below in the tree is handled correctly.
+
+  0
+  |
+  +-1: AAG
+  |
+  `-2
+    |
+    +-3: AAG
+    |
+    `-4
+      |
+      +-5: ACAG
+      |
+      `-6 
+        |
+        +-7: ACAG
+        |
+        `-8
+          |
+          +-9: ACAG
+          |
+          `-10: ACA
+-}
+testDeletionAfterBelowInsertion :: TestTree
+testDeletionAfterBelowInsertion = testCase "Insertion event with deletion event  after in character & below in tree" $ decorationTest tree
+  where
+    tree = [ ( 0, ""    , [""    ], [ 1, 2])
+           , ( 1, "AAG" , ["A-AG"], []     )
+           , ( 2, ""    , [""    ], [ 3, 4])
+           , ( 3, "AAG" , ["A-AG"], []     )
+           , ( 4, ""    , [""    ], [ 5, 6])
+           , ( 5, "ACAG", ["ACAG"], []     )
+           , ( 6, ""    , [""    ], [ 7, 8])
+           , ( 7, "ACAG", ["ACAG"], []     )
+           , ( 8, ""    , [""    ], [ 9,10])
+           , ( 9, "ACAG", ["ACAG"], []     )
+           , (10, "ACA" , ["ACA-"], []     )
+           ]
+
+

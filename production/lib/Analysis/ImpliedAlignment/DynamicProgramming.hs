@@ -350,10 +350,10 @@ deriveImpliedAlignments sequenceMetadatas tree = foldlWithKey' f tree sequenceMe
 
 numeration :: (Eq n, TreeConstraint t n e s, IANode' n s, Show (Element s)) => Int -> CostStructure -> t -> t
 numeration sequenceIndex costStructure tree =
-    trace renderedTopology $
-    trace gapColumnRendering $
-    trace (inspectGaps [33] renderingTree) $
-    trace eventRendering $
+--    trace renderedTopology $
+--    trace gapColumnRendering $
+--    trace (inspectGaps [33] renderingTree) $
+--    trace eventRendering $
     tree `update` (snd <$> updatedLeafNodes)
   where
     -- | Precomputations used for reference in the memoization
@@ -439,7 +439,7 @@ numeration sequenceIndex costStructure tree =
                   resultPoint =
                     Memo
                       { cumulativeDeletionEvents       = purgedAncestoralDeletions <> DE deletes
-                      , cumulativeInsertionEvents      = inserts >-< purgedDescendantInsertions -- allDescendantInsertions
+                      , cumulativeInsertionEvents      = inserts >-< rereferencedDescendantInsertions -- purgedDescendantInsertions -- allDescendantInsertions
                       , currentPsuedoCharacter         = psuedoCharacter
                       , parentPsuedoCharacter          = parentNodePsuedoCharacter
                       , localRelativeDeletionEvents    = DE deletes
@@ -463,9 +463,13 @@ numeration sequenceIndex costStructure tree =
                    
                 (DE deletes, !inserts, doA, doD) = comparativeIndelEvents parentCharacter childCharacter costStructure
 
-                (IE incrementedInsertionEvents)  = inserts >-< purgedDescendantInsertions
+                (IE incrementedInsertionEvents)  = inserts >-< rereferencedDescendantInsertions
 
-                purgedDescendantInsertions = allDescendantInsertions
+                rereferencedDescendantInsertions = IE . foldMapWithKey f $ (\(IE x) -> x) allDescendantInsertions
+                  where
+                    f k v = IM.singleton (k + incVal) v
+                      where
+                        incVal = length . takeWhile (<=k) $ otoList deletes
 {-
                 purgedDescendantInsertions = IE . foldMapWithKey f $ (\(IE x) -> x) allDescendantInsertions
                   where
@@ -499,33 +503,34 @@ numeration sequenceIndex costStructure tree =
                 psuedoCharacter = let x = V.fromList $ reverse result
                                   in if null leftoverInsertions
                                      then x 
-                                     else trace (mconcat ["(", show i,",", show j, ") Leftover insertions: ", show leftoverInsertions]) x
+                                     else trace (mconcat ["(", show i,",", show j, ") Leftover insertions: ", show leftoverInsertions]) $
+                                          x
                   where
                     (_,_,leftoverInsertions,result) = --trace (mconcat ["(",show i,",",show j, ") = ", show m, " c: ", show contextualPreviousPsuedoCharacter]) $
                       foldl' f (0, 0, m, []) contextualPreviousPsuedoCharacter2
                     IE m = inserts
-                    f _q@(pBasesSeen, tBasesSeen, remainingInsertions, es) e = -- (\x -> trace (show e <> show _q <> show x) x) $
+                    f _q@(pBasesSeen, _tBasesSeen, remainingInsertions, es) e = -- (\x -> trace (show e <> show _q <> show x) x) $
                       case e of
                         OriginalBase ->
                                    if    pBasesSeen `oelem` deletes
-                                   then (pBasesSeen + 1, tBasesSeen + 1, remainingInsertions, DeletedBase : es)
-                                   else (pBasesSeen + 1, tBasesSeen + 1, remainingInsertions,           e : es)
+                                   then (pBasesSeen + 1, _tBasesSeen + 1, remainingInsertions, DeletedBase : es)
+                                   else (pBasesSeen + 1, _tBasesSeen + 1, remainingInsertions,           e : es)
                         InsertedBase ->
                                    if    pBasesSeen `oelem` deletes
-                                   then (pBasesSeen + 1, tBasesSeen + 1, remainingInsertions,     HardGap : es)
-                                   else (pBasesSeen + 1, tBasesSeen + 1, remainingInsertions,           e : es)
-                        DeletedBase  -> (pBasesSeen    , tBasesSeen + 1, remainingInsertions,           e : es) -- conditionallyInsert
-                        HardGap      -> (pBasesSeen    , tBasesSeen    , remainingInsertions,           e : es)
+                                   then (pBasesSeen + 1, _tBasesSeen + 1, remainingInsertions,     HardGap : es)
+                                   else (pBasesSeen + 1, _tBasesSeen + 1, remainingInsertions,           e : es)
+                        DeletedBase  -> (pBasesSeen    , _tBasesSeen    , remainingInsertions,           e : es) -- conditionallyInsert
+                        HardGap      -> (pBasesSeen    , _tBasesSeen    , remainingInsertions,           e : es)
                         SoftGap      -> conditionallyInsert
                       where 
 --                        conditionallyDelete 
 --                          | basesSeen `oelem` deletes = (basesSeen + 1, remainingInsertions, DeletedBase : es)
 --                          | otherwise                 = (basesSeen + 1, remainingInsertions,           e : es)
                         conditionallyInsert =
-                          case tBasesSeen `lookup` remainingInsertions of
-                            Nothing -> (pBasesSeen, tBasesSeen, remainingInsertions ,            e : es)
-                            Just _  -> (pBasesSeen, tBasesSeen, remainingInsertions', InsertedBase : es)
-                        remainingInsertions' = IM.update decrementRemaining tBasesSeen remainingInsertions
+                          case _tBasesSeen `lookup` remainingInsertions of
+                            Nothing -> (pBasesSeen, _tBasesSeen, remainingInsertions ,            e : es)
+                            Just _  -> (pBasesSeen, _tBasesSeen, remainingInsertions', InsertedBase : es)
+                        remainingInsertions' = IM.update decrementRemaining _tBasesSeen remainingInsertions
                           where
                             decrementRemaining x
                               | x > 1     = Just (x - 1)
