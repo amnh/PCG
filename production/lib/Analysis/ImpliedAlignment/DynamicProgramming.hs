@@ -295,7 +295,11 @@ instance Monoid InsertionEvents where
       f k v = IM.singleton (k - decrement) v
         where
          toks      = takeWhile ((< k) . fst) $ IM.assocs ancestorMap
-         decrement = sum $ snd <$> toks
+         decrement = sum $ g <$> toks
+         g (k', v')
+           | k' + v' >= k = k - k'
+           | otherwise    = v'
+         
 {--}
 {-
 (>-<) (IE ancestorMap) (IE descendantMap) = IE $ decrementedDescendantMap <> ancestorMap
@@ -351,10 +355,10 @@ deriveImpliedAlignments sequenceMetadatas tree = foldlWithKey' f tree sequenceMe
 
 numeration :: (Eq n, TreeConstraint t n e s, IANode' n s, Show (Element s)) => Int -> CostStructure -> t -> t
 numeration sequenceIndex costStructure tree =
---    trace renderedTopology $
---    trace gapColumnRendering $
+    trace renderedTopology $
+    trace gapColumnRendering $
 --    trace (inspectGaps [33] renderingTree) $
---    trace eventRendering $
+    trace eventRendering $
     tree `update` (snd <$> updatedLeafNodes)
   where
     -- | Precomputations used for reference in the memoization
@@ -510,28 +514,33 @@ numeration sequenceIndex costStructure tree =
                     (_,_,leftoverInsertions,result) = --trace (mconcat ["(",show i,",",show j, ") = ", show m, " c: ", show contextualPreviousPsuedoCharacter]) $
                       foldl' f (0, 0, m, []) contextualPreviousPsuedoCharacter2
                     IE m = inserts
-                    f _q@(pBasesSeen, _tBasesSeen, remainingInsertions, es) e = -- (\x -> trace (show e <> show _q <> show x) x) $
+                    f _q@(pBasesSeen, consecutiveInsertions, remainingInsertions, es) e = -- (\x -> trace (show e <> show _q <> show x) x) $
                       case e of
                         OriginalBase ->
                                    if    pBasesSeen `oelem` deletes
-                                   then (pBasesSeen + 1, _tBasesSeen + 1, remainingInsertions, DeletedBase : es)
-                                   else (pBasesSeen + 1, _tBasesSeen + 1, remainingInsertions,           e : es)
+                                   then (pBasesSeen + 1, 0                        , remainingInsertions, DeletedBase : es)
+                                   else (pBasesSeen + 1, 0                        , remainingInsertions,           e : es)
                         InsertedBase ->
                                    if    pBasesSeen `oelem` deletes
-                                   then (pBasesSeen + 1, _tBasesSeen + 1, remainingInsertions,     HardGap : es)
-                                   else (pBasesSeen + 1, _tBasesSeen + 1, remainingInsertions,           e : es)
-                        DeletedBase  -> (pBasesSeen    , _tBasesSeen    , remainingInsertions,           e : es) -- conditionallyInsert
-                        HardGap      -> (pBasesSeen    , _tBasesSeen    , remainingInsertions,           e : es)
+                                   then (pBasesSeen + 1, consecutiveInsertions + 1, remainingInsertions,     HardGap : es)
+                                   else (pBasesSeen + 1, consecutiveInsertions + 1, remainingInsertions,           e : es)
+                        DeletedBase  -> (pBasesSeen    , 0                        , remainingInsertions,           e : es) -- conditionallyInsert
+                        HardGap      -> (pBasesSeen    , 0                        , remainingInsertions,           e : es) -- maybe increment consecutive here too?
                         SoftGap      -> conditionallyInsert
                       where 
 --                        conditionallyDelete 
 --                          | basesSeen `oelem` deletes = (basesSeen + 1, remainingInsertions, DeletedBase : es)
 --                          | otherwise                 = (basesSeen + 1, remainingInsertions,           e : es)
                         conditionallyInsert =
-                          case _tBasesSeen `lookup` remainingInsertions of
-                            Nothing -> (pBasesSeen, _tBasesSeen, remainingInsertions ,            e : es)
-                            Just _  -> (pBasesSeen, _tBasesSeen, remainingInsertions', InsertedBase : es)
-                        remainingInsertions' = IM.update decrementRemaining _tBasesSeen remainingInsertions
+                          case insertIndices of
+                            []      -> (pBasesSeen, 0                    , remainingInsertions   ,            e : es)
+                            (k,_):_ -> (pBasesSeen, consecutiveInsertions, remainingInsertions' k, InsertedBase : es)
+                          where
+                            insertIndices = catMaybes $ (\x -> (\y -> (x,y)) <$> (x `lookup` remainingInsertions)) <$> validIndices
+                            validIndices  = [lower..upper]
+                            lower = pBasesSeen - consecutiveInsertions
+                            upper = pBasesSeen
+                        remainingInsertions' target = IM.update decrementRemaining target remainingInsertions
                           where
                             decrementRemaining x
                               | x > 1     = Just (x - 1)
