@@ -351,10 +351,10 @@ deriveImpliedAlignments sequenceMetadatas tree = foldlWithKey' f tree sequenceMe
 
 numeration :: (Eq n, TreeConstraint t n e s, IANode' n s, Show (Element s)) => Int -> CostStructure -> t -> t
 numeration sequenceIndex costStructure tree =
-    trace renderedTopology $
-    trace gapColumnRendering $
+--    trace renderedTopology $
+--    trace gapColumnRendering $
 --    trace (inspectGaps [33] renderingTree) $
-    trace eventRendering $
+--    trace eventRendering $
     tree `update` (snd <$> updatedLeafNodes)
   where
     -- | Precomputations used for reference in the memoization
@@ -454,8 +454,8 @@ numeration sequenceIndex costStructure tree =
                   resultPoint
 
               where
-                parentCharacter = getFinal       (enumeratedNodes V.! i) V.! sequenceIndex
---                parentCharacter = getSingle      (enumeratedNodes V.! i) V.! sequenceIndex
+--                parentCharacter = getFinal       (enumeratedNodes V.! i) V.! sequenceIndex
+                parentCharacter = getSingle      (enumeratedNodes V.! i) V.! sequenceIndex
                 childCharacter  = getForAlign    (enumeratedNodes V.! j) V.! sequenceIndex
                 memoPoint       = homologyMemoize ! (i, i)
                 ancestoralNodeDeletions   = cumulativeDeletionEvents memoPoint
@@ -805,8 +805,8 @@ comparativeIndelEvents ancestorCharacterUnaligned descendantCharacterUnaligned c
     (_,deletionEvents,insertionEvents)     = foldlWithKey' f (0, mempty, mempty) $ zip (otoList ancestorCharacter) (otoList descendantCharacter)
     f (parentBaseIndex, deletions, insertions) characterIndex (ancestorElement, descendantElement)
       -- Biological "Nothing" case
-      | nothingLogic                                       = (parentBaseIndex    , deletions , insertions )
---      | ancestorElement == gap && descendantElement == gap = (parentBaseIndex    , deletions , insertions )
+--      | nothingLogic                                       = (parentBaseIndex    , deletions , insertions )
+      | ancestorElement == gap && descendantElement == gap = (parentBaseIndex    , deletions , insertions )
       -- Biological deletion event case
       | deletionEventLogic                                 = (parentBaseIndex + 1, deletions', insertions )
       -- Biological insertion event case
