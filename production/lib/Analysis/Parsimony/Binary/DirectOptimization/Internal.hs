@@ -71,11 +71,11 @@ naiveDO char1 char2 costStruct
                       createDOAlignMatrix longerChar shorterChar costStruct
       cost = getTotalAlignmentCost traversalMat
       (gapped , left , right ) = traceback traversalMat shorterChar longerChar
-      (gapped', left', right') = traceback traversalMat shorterChar longerChar
-{-
+--      (gapped', left', right') = traceback traversalMat shorterChar longerChar
+{--}
       (gapped', left', right') = (\(x,y,z) -> (constructDynamic x, constructDynamic y, constructDynamic z)) 
                                $ correctBiasing (getGapChar $ gapped `indexChar` 0) (otoList gapped, otoList left, otoList right)
--}
+{--}
       -- TODO: change to occur in traceback, to remove constant factor.
       ungapped = filterGaps gapped'
       (out1, out2) = if char1Len > char2Len
