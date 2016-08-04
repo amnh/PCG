@@ -31,7 +31,7 @@ import Bio.PhyloGraph.Solution
 --import Bio.PhyloGraph.Tree.Rose
 --import Data.Matrix.NotStupid (Matrix, nrows, ncols, setElem)
 --import Data.Maybe
-import Data.Bits ((.&.))
+import Data.Bits             ((.&.),zeroBits)
 import Data.Foldable
 import Data.Function.Memoize (Memoizable)
 import Data.IntMap           (IntMap)
@@ -41,7 +41,7 @@ import Data.Monoid
 import Data.MonoTraversable
 --import Data.Ord              (comparing)
 import Data.Vector           (Vector, (!), ifoldr)
-import Prelude        hiding (lookup)
+import Prelude        hiding (lookup,zip)
 
 --import Debug.Trace (trace)
 
@@ -218,7 +218,7 @@ nodeOptimizePreorder curNode lNode rNode pNode = ifoldr chooseOptimization curNo
                       parentFinalCharacter  = getFinal  parentNode ! i
                       parentSingleCharacter = getSingle parentNode ! i
                       (finalUngapped, finalGapped) = tripleComparison i costStructure curNode parentFinalCharacter
-                      (  singleValue, _          ) = tripleComparison i costStructure curNode parentSingleCharacter
+                      singleValue = deriveSingleAssignment costStructure parentSingleCharacter parentFinalCharacter finalUngapped
                   in  addToField setFinal       getFinal       finalUngapped
                     . addToField setFinalGapped getFinalGapped finalGapped
                     . addToField setSingle      getSingle      (disambiguate singleValue)
@@ -227,9 +227,29 @@ nodeOptimizePreorder curNode lNode rNode pNode = ifoldr chooseOptimization curNo
 
 disambiguate :: EncodableDynamicCharacter c => c -> c
 disambiguate = omap orderedSelection
-  where
-    orderedSelection x = x .&. (negate x) -- Selects the least significant set bit, clears all others.
 
+orderedSelection x = x .&. (negate x) -- Selects the least significant set bit, clears all others.
+
+deriveSingleAssignment :: SeqConstraint' c => CostStructure -> c -> c -> c -> c
+deriveSingleAssignment costStructure parentSingle parentFinal childFinal = result
+  where
+    (_, _, _, parentAlignment, childAlignment) = naiveDO parentFinal childFinal costStructure
+    result = constructDynamic . reverse . snd . foldl f (0,[]) $ zip (otoList parentAlignment) (otoList childAlignment)
+    gap    = getGapChar $ parentSingle `indexChar` 0
+    f (pointer, xs) (pElement, cElement)
+      | pElement == gap && cElement == gap = (pointer    ,                             xs)
+      | pElement == gap && cElement /= gap = (pointer    , orderedSelection cElement : xs)
+      | pElement /= gap && cElement == gap = (pointer + 1,                             xs)
+      | pElement /= gap && cElement /= gap = (pointer + 1,       g sElement cElement : xs)
+      where
+        sElement = parentSingle `indexChar` 0
+    g single ambiguous
+      | new /= zeroBits = new
+      | otherwise       = orderedSelection ambiguous
+      where
+        new = single .&. ambiguous
+
+        
 tripleComparison i costStructure curNode parentCharacter = (finalUngapped, finalGapped)
   where
     childCharacter   = {- (\x -> trace ("childCharacter: "  <> show x) x) $ -} getChildCharacterForDoPreorder curNode ! i
