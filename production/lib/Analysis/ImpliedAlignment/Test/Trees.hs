@@ -122,6 +122,7 @@ testImpliedAlignmentCases = testGroup "Explicit test cases for implied alignment
     , testAdjacentDeletionInsertionEvents2
     , testTheDamnTrucnation
     , testDeletionInsertionInterrelations
+    , testMaliciousInsertions
     ]
 
 
@@ -1727,6 +1728,48 @@ testDeletionAfterBelowInsertion = testCase "Insertion event with deletion event 
            , ( 8, ""    , [""    ], [ 9,10])
            , ( 9, "ACAG", ["ACAG"], []     )
            , (10, "ACA" , ["ACA-"], []     )
+           ]
+
+
+{- |
+  This tree should mess everything up.
+
+  0
+  |
+  +-1: AA
+  |
+  `-2
+    |
+    +-3: AA
+    |
+    `-4
+      |
+      +-5: ACCCCA
+      |
+      `-6 
+        |
+        +-7: ACCCCA
+        |
+        `-8
+          |
+          +-9: ACCCCA
+          |
+          `-10: ACCGCCA
+-}
+testMaliciousInsertions :: TestTree
+testMaliciousInsertions = testCase "Insertion event nested inside a larger ancetoral insertion event" $ decorationTest tree
+  where
+    tree = [ ( 0, ""       , [""       ], [ 1, 2])
+           , ( 1, "AA"     , ["A-----A"], []     )
+           , ( 2, ""       , [""       ], [ 3, 4])
+           , ( 3, "AA"     , ["A-----A"], []     )
+           , ( 4, ""       , [""       ], [ 5, 6])
+           , ( 5, "ACCCCA" , ["ACC-CCA"], []     )
+           , ( 6, ""       , [""       ], [ 7, 8])
+           , ( 7, "ACCCCA" , ["ACC-CCA"], []     )
+           , ( 8, ""       , [""       ], [ 9,10])
+           , ( 9, "ACCCCA" , ["ACC-CCA"], []     )
+           , (10, "ACCGCCA", ["ACCGCCA"], []     )
            ]
 
 
