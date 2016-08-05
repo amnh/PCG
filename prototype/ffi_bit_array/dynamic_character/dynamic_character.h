@@ -18,32 +18,27 @@
  *    of a dynamic character, but will do for our purposes.)
  */
 
+
+#ifndef DYNAMIC_CHARACTER
+#define DYNAMIC_CHARACTER
+
 /** 
  *  stdint is a library that provides int values for all architectures. This will allow the code to
  *  compile even on architectures on which int != 32 bits (and, more to the point, unsigned long int != 64 bits).
  */
-#ifndef DYNAMIC_CHARACTER_OPERATIONS
-#define DYNAMIC_CHARACTER_OPERATIONS
-
 #include <cstdint>
+#include <vector>
 
  // TODO: If I make this a class, I can add a [] operator, as well as ^ and &. 
  // Maybe use vector under the hood, so resizing takes place automatically.
  // Also need concatenation, I think.
 
 // these must be static to prevent compilation issues.
-static const size_t BITS_IN_BYTE     = 8;  // so bytes are set to 8, for all architectures
-static const size_t INT_WIDTH        = sizeof(uint64_t);
-static const size_t WORD_WIDTH       = BITS_IN_BYTE * sizeof(uint64_t); // BITS_IN_BYTE * INT_WIDTH; <-- because HSC is dumb!
+static const size_t   BITS_IN_BYTE   = 8;  // so bytes are set to 8, for all architectures
+static const size_t   INT_WIDTH      = sizeof(uint64_t);
+static const size_t   WORD_WIDTH     = BITS_IN_BYTE * INT_WIDTH; // BITS_IN_BYTE * INT_WIDTH; <-- because HSC is dumb!
 static const uint64_t CANONICAL_ONE  = 1;
 static const uint64_t CANONICAL_ZERO = 0;
-
-/* alignResult_t is where results get put for return to Haskell */
-struct alignResult_t {
-    unsigned int finalWt;
-    size_t finalLength;
-    uint64_t* finalStr;
-};
 
 /** 
  *  This holds the array of _possibly ambiguous_ static chars (i.e. a single dynamic character),
@@ -52,20 +47,29 @@ struct alignResult_t {
  */
 class dynChar_t {
     public: 
-        size_t alphSize;   // how many chars in alphabet
-        size_t numElems;   // how many elements are in the dynChar
-        size_t arrLen;     // how many uint_64s are in dynChar
-        uint64_t* dynChar; // packed dynamic character
+        dynChar_t( size_t alphSize = 5, size_t numElems = 1, uint64_t vals = {0} );
+        /** takes the pre-computed size of a int vector */
+        dynChar_t( size_t characterVectorLen );
 
-        dynChar_t operator&( const dynChar_t& right );
+        dynChar_t operator& ( dynChar_t const &right );
 
+        dynChar_t operator[]( size_t pos );
+
+        dynChar_t operator==( dynChar_t const &right );
+
+        dynChar_t operator| ( dynChar_t const &right );
+
+        dynChar_t operator^ ( dynChar_t const &right );
+
+    private:
+        vector<uint64_t> character; // packed dynamic character
         /** 
          *  Takes in a dynamic character to be altered, as well as the index of the static character that will
          *  be replaced. A second input is provided, which is the replacement static character.
          *  Fails if the position of the static char to be replaced is beyond the end of the dynamic character to be altered.
          *  Fails if the alphabet sizes of the two input characters are different.
          */    
-        int setDCElement( const unsigned int whichIdx, const dynChar_t* const changeToThis, const dynChar_t* const charToBeAltered );
+        // int setDCElement( const unsigned int whichIdx, const dynChar_t* const changeToThis, const dynChar_t* const charToBeAltered );
 
         /** 
          *  Find and return a static character in a packed dynamic character.
@@ -77,14 +81,14 @@ class dynChar_t {
          *  Nota bene: The outDCElement (created elsewhere) *must* have a dynChar of 
          *             adequate length, or things will go horribly wrong.
          */
-        int getDCElement( const unsigned int whichChar, const dynChar_t* const inDynChar_t, dynChar_t* const outDCElement );
+        // int getDCElement( const unsigned int whichChar, const dynChar_t* const inDynChar_t, dynChar_t* const outDCElement );
 
         /** 
          *  Create an empty dynamic character element of appropriate length
          *  using inputted alphabet length to determine necessary length of internal int array.
          *  Fill internal int array with zeroes.
          */
-        void makeDCElement( const unsigned int alphLen, const uint64_t value, dynChar_t* const output );
+        // void makeDCElement( const unsigned int alphLen, const uint64_t value, dynChar_t* const output );
 };
 
 typedef dynChar_t dcElement_t;

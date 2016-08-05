@@ -1,7 +1,7 @@
 #include <stdio.h> 
 #include <stdlib.h>
 #include <string.h> 
-#include "myComplexBitArrayTestC.h"
+#include "bitArrayTestC.h"
 
 /** 
  *  The following fn should only needed this for testing, so it's not in the .h file. 
@@ -11,7 +11,7 @@
 void printBits( dynChar_t* input ) {
   printf("[\n");
   unsigned int alphLen = input -> alphSize;
-  unsigned int numDCElements = input -> dynCharLen;
+  unsigned int numDCElements = input -> numElems;
 
   for( unsigned int charNum = 0; charNum < numDCElements; charNum++ ) {
     for( unsigned int bitIdx = 0; bitIdx < alphLen; bitIdx++ ) {
@@ -35,13 +35,13 @@ void printBits( dynChar_t* input ) {
 int exampleInterfaceFn(dynChar_t* seqA, dynChar_t* seqB, alignResult_t* result) {
     // Because the characters are packed (meaning multiple characters will be in a single int,
     // we need the total number of ints in our array, which is 
-    unsigned int buffLenA = bufferSize(seqA);   
-    unsigned int buffLenB = bufferSize(seqB);
+    size_t buffLenA = bufferSize(seqA);   
+    size_t buffLenB = bufferSize(seqB);
 
     // Using calloc out of an abundance of caution. Shouldn't need it, as we overwrite the entire buffer.
     // This will have to be freed in the Haskell end of things.
     // See note in .h file re: uint64_t
-    uint64_t* buffer = calloc( buffLenA + buffLenB, INT_WIDTH); // in bytes. int array, so don't need \0
+    uint64_t* buffer = (uint64_t*) calloc( buffLenA + buffLenB, INT_WIDTH); // in bytes. int array, so don't need \0
 
     // Now check that calloc() didn't fail.
     if( buffer == NULL ) {
@@ -68,21 +68,21 @@ int exampleInterfaceFn(dynChar_t* seqA, dynChar_t* seqB, alignResult_t* result) 
 /** 
  *  The following fn should only needed this for testing, so it's not in the .h file. 
  *
- *  Takes in a dynamic character (by reference), an alphabet length, the number of dynamic elements
- *  the array should hold, and an array of int values that should be packed into the
+ *  Takes in a dynamic character (by reference), an alphabet length, the number of static
+ *  characters the array should hold, and an array of int values that should be packed into the
  *  the character. Then mutates the passed character to match the inputs.
  */
 void makeDynamicChar( dynChar_t* output, unsigned int alphLen, unsigned int numDCElements, uint64_t* values ) {
   // First create dynamic character with empty character field.
   output -> alphSize   = alphLen;
-  output -> dynCharLen = numDCElements;
+  output -> numElems = numDCElements;
 
   // Now figure out how many uint64_t's we'll need in our array.
   // Then declare and initialize a dynChar.
-  unsigned int neededLen = bufferSize(output);
+  size_t neededLen = bufferSize(output);
 
   // need to alloc so that array isn't on the stack, and persist beyond this function call
-  output -> dynChar = calloc( neededLen, INT_WIDTH );
+  output -> dynChar = (uint64_t*)  calloc( neededLen, INT_WIDTH );
   // fill array with integer values,
   for( int charNum = 0; charNum < numDCElements; charNum++ ) {
     for( int bitIdx = 0; bitIdx < alphLen; bitIdx++ ) {
@@ -97,10 +97,10 @@ void makeDynamicChar( dynChar_t* output, unsigned int alphLen, unsigned int numD
  *  This function purely for testing, and as example usage.
  */
 int main() {
-    unsigned int numDCElements = 14;
-    unsigned int alphabetLen    = 5;
+    size_t numDCElements = 14;
+    size_t alphabetLen    = 5;
     uint64_t values [numDCElements];
-    for( unsigned int i = 0; i < numDCElements; i++ ) {
+    for( size_t i = 0; i < numDCElements; i++ ) {
         values[i] = (uint64_t) i;
     }
 
@@ -109,32 +109,32 @@ int main() {
     // creating with more than one int necessary in the array
     dynChar_t char1; // alphabet: 5, chars: 14, values: 0 .. 13
     makeDynamicChar(&char1, alphabetLen, numDCElements, values);
-    printf("\nTest bit wrap to next int. Should be 14, then 5, then numbers from 0 to 14 in bits:\n");
-    printf("%u\n", char1.dynCharLen);
-    printf("%u\n", char1.alphSize);
+    printf("\nTest bit wrap to next int. Should be 14 elements and alphabet length 5, then numbers from 0 to 14 in bits:\n");
+    printf("No. of elements: %zu\n", char1.numElems);
+    printf("Alphabet length: %zu\n", char1.alphSize);
     printBits(&char1);
 
     // testing this with a large alphabet size. Still needs to be amended.
-    printf("\nTest make dynamic element. Should print 1, then 250, then a matrix 250 wide, all set to 0 except first three:\n");
+    printf("\nTest make static character. Should be 1 elements and alphabet length 63, then a matrix 63 wide, all set to 0 except first three:\n");
     alphabetLen = 63; // TODO: fix this so it rolls over. Right now 64 is max.
-    dynChar_t char2; // alphabet: 63, chars: 1, value: 7
+    dcElement_t char2; // alphabet: 63, chars: 1, value: 7
     makeDCElement( alphabetLen, (uint64_t) 7, &char2 ); // cast because input needs to be unsigned long
-    printf("%u\n", char2.dynCharLen);
-    printf("%u\n", char2.alphSize);
+    printf("No. of elements: %zu\n", char2.numElems);
+    printf("Alphabet length: %zu\n", char2.alphSize);
     printBits( &char2 );
 
     printf("\nTest accessors:\n");
 
-    // first, try getting a dynamic element from char1 and assiging it int char3
+    // first, try getting a static character from char1 and assiging it int char3
     alphabetLen = 5;
-    printf("\nTest get dynamic element. Should print 1, then 5, then 13 in binary, then error out twice:\n");
-    dynChar_t char3; // alphabet: 5, chars: 1, value: 13
+    printf("\nTest get static character. Should be 1 elements and alphabet length 5, then an element with value 13 (in binary), then error out twice:\n");
+    dcElement_t char3; // alphabet: 5, chars: 1, value: 13
     makeDCElement( alphabetLen, (uint64_t) 0, &char3 );
     if ( getDCElement( (unsigned int) 13, &char1, &char3) ) { //note that failing returns a 1, so "true, it failed"
         printf("Error! \n");
     } else {
-        printf("%u\n", char3.dynCharLen);
-        printf("%u\n", char3.alphSize);
+        printf("No. of elements: %zu\n", char3.numElems);
+        printf("Alphabet length: %zu\n", char3.alphSize);
         printBits( &char3 );
     }
 
@@ -154,11 +154,11 @@ int main() {
     }
 
 
-    printf("\nTest set dynamic element. Should print binary ints from 0 to 13, with evens all replace by 13, then error out twice:\n");
+    printf("\nTest set static character. Should print matrix with binary ints from 0 to 13, with evens all replace by 13, then error out twice:\n");
 
     // now set the value of char3 into char1 at all even positions.
     char3.alphSize = 5;
-    for( unsigned int i = 0; i < char1.dynCharLen; i+=2 ) {
+    for( unsigned int i = 0; i < char1.numElems; i+=2 ) {
         if ( setDCElement( i, &char3, &char1 ) ) {
             printf("Error! \n");
             break;
@@ -176,7 +176,7 @@ int main() {
     // fail because alphabets are different lengths
     char3.alphSize = 7;
     if ( setDCElement( (unsigned int) 13, &char1, &char3) ) {
-        printf("\nError!\n");
+        printf("\nError!\n\n\n");
     } else {
         printBits( &char3 );
     }

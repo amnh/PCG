@@ -1,0 +1,28 @@
+Name:                tst
+Version:             0.1
+Description:         C++ FFI Example
+build-type:          Simple
+Cabal-Version:       >= 1.8
+
+Library
+   hs-source-dirs:  src
+   exposed-modules: Tst
+   include-dirs:     cbits
+                     /usr/local/c++-ffi-example/include
+   includes:         cbits/a.h
+   install-includes: cbits/a.h
+   c-sources:        cbits/a.cpp
+   extra-libraries: tst-c++
+                    stdc++
+   extra-lib-dirs: /usr/local/c++-ffi-example/lib
+   ghc-options: -auto-all -Wall -O2 -fPIC
+   extensions: ForeignFunctionInterface
+   cc-options: -fPIC
+   build-tools: c2hs
+   build-depends: base                     >= 4.6        && < 5
+
+Executable tst-prog
+   build-depends: base                     >= 4.6        && < 5
+                , tst
+   hs-source-dirs: apps
+   main-is: tst-prog.hs

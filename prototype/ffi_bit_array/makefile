@@ -5,7 +5,7 @@ all : bit-ops
 clean :
 	rm -f *.o
 
-bit-ops : myComplexBitArrayTestC.c myComplexBitArrayTestC.h dynamicCharacterOperations.c dynamicCharacterOperations.h
+bit-ops : bitArrayTestC.c bitArrayTestC.h dynamicCharacterOperations.cpp dynamicCharacterOperations.h
 	rm -f *.o
-	gcc -c myComplexBitArrayTestC.c dynamicCharacterOperations.c
-	gcc myComplexBitArrayTestC.o dynamicCharacterOperations.o
+	g++ -c bitArrayTestC.c dynamicCharacterOperations.cpp
+	g++ bitArrayTestC.o dynamicCharacterOperations.o
