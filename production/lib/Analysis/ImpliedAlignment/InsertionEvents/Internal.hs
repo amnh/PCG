@@ -62,8 +62,9 @@ instance Eq a => Monoid (InsertionEvents a) where
 
 -- | This operator is used for combining an direct ancestoral edge with the
 --   combined insertion events of child edges.
-{--
 (<^>) :: Eq a => InsertionEvents a -> InsertionEvents a -> InsertionEvents a
+(<^>) = undefined
+{--
 (<^>) (IE ancestorMap) (IE descendantMap) = IE $ IM.unionWith (+) decrementedDescendantMap ancestorMap
   where
     decrementedDescendantMap =

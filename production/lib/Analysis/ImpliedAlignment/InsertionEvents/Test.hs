@@ -28,6 +28,7 @@ import Test.Tasty.HUnit
 testSuite :: TestTree
 testSuite = testGroup "Insertion Event operations"
     [ testMonoidOperator
+    , testCoalesceOperator
     ]
 
 testMonoidOperator :: TestTree
@@ -36,10 +37,18 @@ testMonoidOperator = testGroup "The monoid operator behaves as expected"
     ]
 
 monoidOperatorTestCases :: TestTree
-monoidOperatorTestCases = testGroup "Monoif operator test cases"
-    [ testLeftBias
+monoidOperatorTestCases = testGroup "Monoid operator test cases"
+    [ testCase "Test left bias"   $ fromList [(1,"AB")]                        @=? fromList [(1,"A")]  <> fromList [(1,"B")]
+    , testCase "Test left bias 2" $ fromList [(0,"ACDC")]                      @=? fromList [(0,"AC")] <> fromList [(0,"DC")]
+    , testCase "Test interlacing" $ fromList [(1,"A"),(2,"B"),(3,"C"),(4,"D")] @=? fromList [(1,"A"),(3,"C")] <> fromList [(2,"B"),(4,"D")]
     ]
 
-testLeftBias :: TestTree
-testLeftBias = testCase "TestLeftBias" $
-    fromList [(1,"AB")] @=? fromList [(1,"A")] <> fromList [(1,"B")]
+testCoalesceOperator :: TestTree
+testCoalesceOperator = testGroup "The coalesce operator behaves as expected"
+    [ coalesceOperatorTestCases
+    ]
+
+coalesceOperatorTestCases :: TestTree
+coalesceOperatorTestCases = testGroup "Coalesce operator test cases"
+    [ testCase "Test appending case"   $ fromList [(1,"ABCD")] @=? fromList [(1,"A")] <^> fromList [(2,"BCD")]
+    ]
