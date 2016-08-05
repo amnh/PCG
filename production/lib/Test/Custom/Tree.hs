@@ -214,12 +214,13 @@ arbitrarySymbols = fmap pure . ('-' :) $ ['0'..'9'] <> ['A'..'Z'] <> ['a'..'z']
 instance Arbitrary SimpleTree where
   -- | Arbitrary Cherry
     arbitrary = do
-      symbols  <- sublistOf $ ['0'..'9'] <> ['A'..'Z'] <> ['a'..'z']
-      rootSeq  <- sublistOf symbols 
-      leftSeq  <- sublistOf symbols 
-      rightSeq <- sublistOf symbols
-      pure $ createSimpleTree 0 symbols [(0,rootSeq,[1,2]),(1,leftSeq,[]),(2,rightSeq,[])]    
-    
+      let allSymbols      = ['0'..'9'] <> ['A'..'Z'] <> ['a'..'z']
+      alphabetLength      <- choose (1, length allSymbols) -- Inclusive bounds
+      let alphabetSymbols = take alphabetLength allSymbols
+      leafNodeCount       <- choose (2, 16) -- Inclusive bounds
+      let leafNodeCharGen = listOf1 (elements alphabetSymbols)
+      createBinary <$> vectorOf leafNodeCount leafNodeCharGen
+
 type instance Element SimpleTree = SimpleTree
 
 treeFold :: SimpleTree -> [SimpleTree]
@@ -318,7 +319,7 @@ instance N.Network SimpleTree SimpleTree where
 
    numNodes (TT x) = length x
 
-   addNode _ _ = error "addNode called on a TestingTree. Not implements, don't call it!" -- Just don't call this!
+   addNode _ _ = error "addNode called on a TestingTree. Not implemented, don't call it!" -- Just don't call this!
 
    update (TT root) nodes = TT $ modifyTopology root'
      where
@@ -384,6 +385,7 @@ instance RoseTree SimpleTree SimpleTree where
     parent node = findNode isParent
       where
         isParent (TT internal) = any (sameRef node . TT) $ subForest internal
+
 
 idMatches :: Int -> SimpleTree -> Bool
 idMatches target (TT internal) = refEquality (rootLabel internal) == target
