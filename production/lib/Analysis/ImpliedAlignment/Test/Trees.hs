@@ -123,6 +123,7 @@ testImpliedAlignmentCases = testGroup "Explicit test cases for implied alignment
     , testTheDamnTrucnation
     , testDeletionInsertionInterrelations
     , testMaliciousInsertions
+    , testMaliceOfForethoughtInsertions
     ]
 
 
@@ -1744,32 +1745,81 @@ testDeletionAfterBelowInsertion = testCase "Insertion event with deletion event 
     |
     `-4
       |
-      +-5: ACCCCA
+      +-5: ACCA
       |
       `-6 
         |
-        +-7: ACCCCA
+        +-7: ACCA
         |
         `-8
           |
-          +-9: ACCCCA
+          +-9: ACCA
           |
-          `-10: ACCGCCA
+          `-10: ACGCA
 -}
 testMaliciousInsertions :: TestTree
 testMaliciousInsertions = testCase "Insertion event nested inside a larger ancetoral insertion event" $ decorationTest tree
   where
+    tree = [ ( 0, ""       , [""     ], [ 1, 2])
+           , ( 1, "AA"     , ["A---A"], []     )
+           , ( 2, ""       , [""     ], [ 3, 4])
+           , ( 3, "AA"     , ["A---A"], []     )
+           , ( 4, ""       , [""     ], [ 5, 6])
+           , ( 5, "ACCCCA" , ["AC-CA"], []     )
+           , ( 6, ""       , [""     ], [ 7, 8])
+           , ( 7, "ACCCCA" , ["AC-CA"], []     )
+           , ( 8, ""       , [""     ], [ 9,10])
+           , ( 9, "ACCCCA" , ["AC-CA"], []     )
+           , (10, "ACCGCCA", ["ACGCA"], []     )
+           ]
+
+
+
+{- |
+  This tree should /really/ mess everything up.
+
+  0
+  |
+  +-1: AAA
+  |
+  `-2
+    |
+    +-3: AAA
+    |
+    `-4
+      |
+      +-5: ACACA
+      |
+      `-6 
+        |
+        +-7: ACACA
+        |
+        `-8
+          |
+          +-9: ACACA
+          |
+          `-10
+            |
+            +-11: ACGACA
+            |
+            `-12: ACAGCA
+-}
+testMaliceOfForethoughtInsertions :: TestTree
+testMaliceOfForethoughtInsertions = testCase "Insertion event nested inside a larger ancetoral insertion event" $ decorationTest tree
+  where
     tree = [ ( 0, ""       , [""       ], [ 1, 2])
-           , ( 1, "AA"     , ["A-----A"], []     )
+           , ( 1, "AAA"    , ["A--A--A"], []     )
            , ( 2, ""       , [""       ], [ 3, 4])
-           , ( 3, "AA"     , ["A-----A"], []     )
+           , ( 3, "AAA"    , ["A--A--A"], []     )
            , ( 4, ""       , [""       ], [ 5, 6])
-           , ( 5, "ACCCCA" , ["ACC-CCA"], []     )
+           , ( 5, "ACACA"  , ["AC-A-CA"], []     )
            , ( 6, ""       , [""       ], [ 7, 8])
-           , ( 7, "ACCCCA" , ["ACC-CCA"], []     )
+           , ( 7, "ACACA"  , ["AC-A-CA"], []     )
            , ( 8, ""       , [""       ], [ 9,10])
-           , ( 9, "ACCCCA" , ["ACC-CCA"], []     )
-           , (10, "ACCGCCA", ["ACCGCCA"], []     )
+           , ( 9, "ACACA"  , ["AC-A-CA"], []     )
+           , (10, ""       , [""       ], [11,12])
+           , (11, "ACGACA" , ["ACGA-CA"], []     )
+           , (12, "ACAGCA" , ["AC-AGCA"], []     )
            ]
 
 

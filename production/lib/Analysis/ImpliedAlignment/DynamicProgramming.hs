@@ -355,10 +355,10 @@ deriveImpliedAlignments sequenceMetadatas tree = foldlWithKey' f tree sequenceMe
 
 numeration :: (Eq n, TreeConstraint t n e s, IANode' n s, Show (Element s)) => Int -> CostStructure -> t -> t
 numeration sequenceIndex costStructure tree =
-    trace renderedTopology $
-    trace gapColumnRendering $
+--    trace renderedTopology $
+--    trace gapColumnRendering $
 --    trace (inspectGaps [33] renderingTree) $
-    trace eventRendering $
+--    trace eventRendering $
     tree `update` (snd <$> updatedLeafNodes)
   where
     -- | Precomputations used for reference in the memoization
