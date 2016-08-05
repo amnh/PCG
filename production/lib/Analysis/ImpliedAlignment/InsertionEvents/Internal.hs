@@ -62,16 +62,28 @@ instance Eq a => Monoid (InsertionEvents a) where
 
 -- | This operator is used for combining an direct ancestoral edge with the
 --   combined insertion events of child edges.
+--
+--   Pronounced <http://www.dictionary.com/browse/coalesce "coalesce"> operator.
 (<^>) :: Eq a => InsertionEvents a -> InsertionEvents a -> InsertionEvents a
-(<^>) = undefined
+(<^>) = const id
 {--
 (<^>) (IE ancestorMap) (IE descendantMap) = IE $ IM.unionWith (+) decrementedDescendantMap ancestorMap
   where
     decrementedDescendantMap =
 
-    foldlWithKey f (IM.assocs ancestorMap, mempty) descendantMap
-    
-    f (remainingAncestoralInsertions, currentCumulativeInsertions) k v = IM.singleton (k - decrement) v
+    foldlWithKey f initialAccumulator descendantMap
+
+    initialAccumulator = (0,dummy, dummy, IM.assocs ancestorMap, mempty)
+      where
+        dummy = (-1, [])
+
+    -- dec is the total number of inserted bases from the ancestoral insertion set that have been consumed.
+    -- ok/v are orignal key/value pair for this tuple
+    -- mk/v are mutated key/value pair for this tuple
+    -- ek/v are the fold element's  key/value pair
+    -- aies are ancestor insertion events
+    -- ries are ancestor insertion events
+    f (dec, (ok,ov), (mk,mv), aies, ries) ek ev = (,,,)
       where
        toks      = takeWhile ((< k) . fst) $ IM.assocs ancestorMap
        decrement = sum $ g <$> toks
@@ -87,23 +99,27 @@ fromList = IE . IM.fromList . fmap (fromEnum `bimap` toSeq) . toList
 
 -- | A nicer version of Show hiding the internal structure.
 instance Show a => Show (InsertionEvents a) where
-  show (IE xs) = mconcat [ "{"
-                         , intercalate "," $ render <$> kvs
-                         , "}"
-                         ]
+  show (IE xs) = mconcat
+      [ "{"
+      , intercalate "," $ render <$> kvs
+      , "}"
+      ]
     where
       kvs = IM.assocs xs
-      render (k, v) = mconcat [ "("
-                              , show k
-                              , ","
-                              , renderedValue
-                              ]
+      render (k, v) = mconcat
+          [ "("
+          , show k
+          , ","
+          , renderedValue
+          , ")"
+          ]
         where
+          unenquote = filter (\x -> x /= '\'' && x /= '"') 
           renderedValue
-            | all singleChar shown = mconcat shown
+            | all singleChar shown = concatMap unenquote shown
             | otherwise            = show shown
             where
-              singleChar = (1==) . length
+              singleChar = (1==) . length . unenquote
               shown = toList $ show <$> v
 {--}
 {-
