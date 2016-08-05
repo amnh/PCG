@@ -1,6 +1,6 @@
 -----------------------------------------------------------------------------
 -- |
--- Module      :  Analysis.ImpliedAlignment.InsertionEvents
+-- Module      :  Analysis.ImpliedAlignment.InsertionEvents.Internal
 -- Copyright   :  (c) 2015-2015 Ward Wheeler
 -- License     :  BSD-style
 --
@@ -14,7 +14,7 @@
 -- TODO: Maybe we don't need these language extensions?
 {-# LANGUAGE FlexibleContexts, FlexibleInstances #-}
 
-module Analysis.ImpliedAlignment.InsertionEvents where
+module Analysis.ImpliedAlignment.InsertionEvents.Internal where
 
 import           Data.Bifunctor       (bimap,second)
 import           Data.Foldable
@@ -46,7 +46,7 @@ import           Prelude       hiding (lookup,zip,zipWith)
   May be also be combined directionally to accululate out edges and an in edge of
   a node to represent all insertion events below the in edge.
 -}
-newtype InsertionEvents a = IE (IntMap (Seq a))
+newtype InsertionEvents a = IE (IntMap (Seq a)) deriving (Eq)
 
 instance Eq a => Monoid (InsertionEvents a) where
   -- | This represent no insertionevents occurring on an edge
@@ -58,23 +58,26 @@ instance Eq a => Monoid (InsertionEvents a) where
   --   `cEdges`, use the following: 'p <^> mconcat cEdges'.
   (IE lhs) `mappend` (IE rhs) = IE $ foldlWithKey' f lhs rhs
     where
-      f mapping k v = IM.insertWith (<>) k v mapping
+      f mapping k v = IM.insertWith (flip (<>)) k v mapping
 
 -- | This operator is used for combining an direct ancestoral edge with the
 --   combined insertion events of child edges.
-{-
+{--
 (<^>) :: Eq a => InsertionEvents a -> InsertionEvents a -> InsertionEvents a
 (<^>) (IE ancestorMap) (IE descendantMap) = IE $ IM.unionWith (+) decrementedDescendantMap ancestorMap
-    where
-      decrementedDescendantMap = foldMapWithKey f descendantMap
-      f k v = IM.singleton (k - decrement) v
-        where
-         toks      = takeWhile ((< k) . fst) $ IM.assocs ancestorMap
-         decrement = sum $ g <$> toks
-         g (k', v')
-           | k' + v' >= k = k - k'
-           | otherwise    = v'
--}
+  where
+    decrementedDescendantMap =
+
+    foldlWithKey f (IM.assocs ancestorMap, mempty) descendantMap
+    
+    f (remainingAncestoralInsertions, currentCumulativeInsertions) k v = IM.singleton (k - decrement) v
+      where
+       toks      = takeWhile ((< k) . fst) $ IM.assocs ancestorMap
+       decrement = sum $ g <$> toks
+       g (k', v')
+         | k' + v' >= k = k - k'
+         | otherwise    = v'
+--}
 
 fromList :: (Enum i, Foldable t, Foldable t') => t (i, t' a) -> InsertionEvents a
 fromList = IE . IM.fromList . fmap (fromEnum `bimap` toSeq) . toList
