@@ -11,7 +11,7 @@
 -- Unit tests for the InvertionEvents type
 -----------------------------------------------------------------------------
 
-module Analysis.ImpliedAlignment.InsertionEvents.Test where
+module Analysis.ImpliedAlignment.InsertionEvents.Test (testSuite) where
 
 import Analysis.ImpliedAlignment.InsertionEvents.Internal
 import Data.Monoid

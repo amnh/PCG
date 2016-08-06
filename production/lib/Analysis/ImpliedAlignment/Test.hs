@@ -22,6 +22,7 @@ import           Analysis.ImpliedAlignment.DynamicProgramming
 --import           Analysis.ImpliedAlignment.Internal
 import           Analysis.ImpliedAlignment.Standard
 import           Analysis.ImpliedAlignment.Test.Trees
+import qualified Analysis.ImpliedAlignment.InsertionEvents.Test as IE (testSuite)
 import           Bio.Character.Dynamic.Coded
 import           Bio.Character.Parsed
 --import           Bio.Metadata
@@ -51,8 +52,14 @@ import           Test.Tasty.QuickCheck
 testSuite :: TestTree
 testSuite = testGroup "Implied Alignment"
     [ testNumerate
+    , testSupportingDataStructures
     , testImpliedAlignmentCases
 --    , fullIA
+    ]
+
+testSupportingDataStructures :: TestTree
+testSupportingDataStructures = testGroup "Supporting data-structures for implied alignment"
+    [ IE.testSuite
     ]
 
 fullIA :: TestTree
