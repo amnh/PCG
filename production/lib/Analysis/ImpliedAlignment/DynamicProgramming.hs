@@ -97,7 +97,14 @@ getForAlign n
     | not . null $ getEncoded     n         = getEncoded n 
     | otherwise = mempty {-error "No sequence at node for IA to numerate"-}
 
-
+shiftDescendantInsertions :: DeletionEvents -> InsertionEvents -> InsertionEvents
+shiftDescendantInsertions localDeletions (IE descendantInsertions) = IE result
+  where
+    (_,_,result) = foldlWithKey' f (0, otoList localDeletions, mempty) descendantInsertions
+    f (inc,   [], acc) k v = (inc , [], acc <> IM.singleton (k + inc ) v)
+    f (inc, x:xs, acc) k v
+      | x <= k    = (inc + 1,   xs, acc <> IM.singleton (k + inc + 1) v)
+      | otherwise = (inc    , x:xs, acc <> IM.singleton (k + inc    ) v)
 
 type AncestorDeletionEvents    = IntSet
 type AncestorInsertionEvents   = IntSet
@@ -471,12 +478,14 @@ numeration sequenceIndex costStructure tree =
                 (DE deletes, !inserts, doA, doD) = comparativeIndelEvents parentCharacter childCharacter costStructure
 
                 (IE incrementedInsertionEvents)  = inserts >-< rereferencedDescendantInsertions
-
+                rereferencedDescendantInsertions = shiftDescendantInsertions (DE deletes) allDescendantInsertions
+{-
                 rereferencedDescendantInsertions = IE . foldMapWithKey f $ (\(IE x) -> x) allDescendantInsertions
                   where
                     f k v = IM.singleton (k + incVal) v
                       where
                         incVal = length . takeWhile (<=k) $ otoList deletes
+-}
 {-
                 purgedDescendantInsertions = IE . foldMapWithKey f $ (\(IE x) -> x) allDescendantInsertions
                   where
