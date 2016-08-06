@@ -620,12 +620,10 @@ numeration sequenceIndex costStructure tree =
 --                        (InsertedBase, HardGap     ) -> InsertedBase
                         (           e, _           ) -> e
 
-            allDescendantInsertions = ofoldl' f mempty (childMapping V.! j)
+            allDescendantInsertions = ofoldMap f (childMapping V.! j)
               where
-                f acc x = acc <> directChildInsertions
-                  where
-                    directChildInsertions = cumulativeInsertionEvents $ homologyMemoize ! (j, x)
-            
+                f x = cumulativeInsertionEvents $ homologyMemoize ! (j, x)
+
 --    updatedLeafNodes :: (NodeConstraint n s, IANode' n s) => [n]
     updatedLeafNodes = filter ((`nodeIsLeaf` tree) . snd) updatedNodes
 
