@@ -18,6 +18,7 @@
 module Analysis.ImpliedAlignment.DynamicProgramming where
 
 import           Analysis.ImpliedAlignment.Internal
+import           Analysis.ImpliedAlignment.DeletionEvents
 import           Analysis.Parsimony.Binary.DirectOptimization
 --import           Analysis.Parsimony.Binary.Internal (allOptimization)
 import           Bio.Metadata
@@ -143,6 +144,7 @@ instance Monoid MemoizedEvents where
   (Memo (a,b,c)) `mappend` (Memo (x,y,z)) = Memo (a<>x, b<>y, c<>z)
 -}
 
+{-
 -- TODO: Use BitVectors here for efficency!
 newtype DeletionEvents = DE IntSet deriving (Show)
 instance Monoid DeletionEvents where
@@ -268,7 +270,7 @@ incrementDescendant (DE ancestorSet) (DE descendantSet) = incrementedDescendantS
               g n (x:y:ys)
                 | x+1 == y  = g (n+1) (y:ys)
                 | otherwise = n + 1
- 
+-} 
 {-
   (DE ancestorSet) `mappend` (DE descendantSet) = DE $ incrementedAncestorSet <> descendantSet
     where
@@ -456,7 +458,7 @@ numeration sequenceIndex costStructure tree =
                       }
                 in
                   resultPoint
-
+ 
               where
 --                parentCharacter = getFinal       (enumeratedNodes V.! i) V.! sequenceIndex
                 parentCharacter = getSingle      (enumeratedNodes V.! i) V.! sequenceIndex
