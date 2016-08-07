@@ -73,33 +73,26 @@ instance Eq a => Monoid (InsertionEvents a) where
     -- ek/v are the fold element's  key/value pair
     -- aies are ancestor insertion events
     -- ries are ancestor insertion events
-    f (dec,  Done                 , ries) ek ev = (dec, Done, (ek - dec, ev):ries)
-
-    f (dec, (Last (ok,ov) lies     ), ries) ek ev
-      | ek - (dec + len) > ok = (dec + len, Done              , old:(ek - dec, ev):ries)
-      | otherwise             = (dec      , Last (ok,ov) lies',                    ries)
-      where
-        old   = (ok, applyLocalInsertionEvents lies ov)
-        len   = length ov
-        {- How many element of the ancestor insertion sequence must be consumed for
-           the ancestoral key `ok` and the decendant key `ek` to be equal?
-        
-           The following equation represents the "shift backwards" to align the
-           insertion events, answering the question above.
+    f (dec, iter, ries) ek ev =
+      case getCurr iter of
+        Nothing             -> (dec, Done, (ek - dec, ev):ries)
+        Just (ok, ov) ->
+          let len    = length ov
+              newAns = (ok, getState iter)
+              {- How many element of the ancestor insertion sequence must be consumed for
+                 the ancestoral key `ok` and the decendant key `ek` to be equal?
          
-           We want to solve the equation ``` ek - dec - x = ok ``` to determine the
-           index `x` for the IntMap. Basic algebra shows us the solution is:
-           ``` x = ek - dec - ok ```
-        -}
-        lies' = IM.insertWith (<>) (ek - dec - ok) ev  lies
-
-    f (dec, iter@(Curr (ok,ov) lies aies), ries) ek ev
-      | ek - (dec + len) > ok = f (dec + len, next iter              , old:ries) ek ev
-      | otherwise             =   (dec      , Curr (ok,ov) lies' aies,     ries)
-      where
-        old   = (ok, applyLocalInsertionEvents lies ov)
-        len   = length ov
-        lies' = IM.insertWith (<>) (ek - dec - ok) ev  lies
+                 The following equation represents the "shift backwards" to align the
+                 insertion events, answering the question above.
+         
+                 We want to solve the equation ``` ek - dec - x = ok ``` to determine the
+                 index `x` for the IntMap. Basic algebra shows us the solution is:
+                 ``` x = ek - dec - ok ```
+              -}
+              ansMod = (ek - dec - ok, ev)
+          in if ek - (dec + len) > ok
+             then f (dec + len, next iter         , newAns:ries) ek ev
+             else   (dec      , mutate ansMod iter,        ries)
 
 -- | A nicer version of Show hiding the internal structure.
 instance Show a => Show (InsertionEvents a) where
@@ -142,7 +135,7 @@ unwrap :: Eq a => InsertionEvents a -> IntMap (Seq a)
 unwrap (IE x) = x
 
 
-
+-- INTERNAL STRUCTURES:
 
 
 -- Convinience type alias for Key-Value Pairs.
@@ -155,7 +148,7 @@ type KVP a = (Int, Seq a)
 -- Enforces invariants when consuming the ancestoral insertion events.
 data MutationIterator a
    = Done
-   | Last (KVP a) (IntMap (Seq a))
+--   | Last (KVP a) (IntMap (Seq a))
    | Curr (KVP a) (IntMap (Seq a)) [(KVP a)]
 
 -- Takes a list of key-value pairs and produces a MutationIterator for consuming
@@ -166,26 +159,40 @@ initializeMutationIterator :: [KVP a] -> MutationIterator a
 initializeMutationIterator xs =
   case xs of
     []   -> Done
-    [e]  -> Last e mempty
+--    [e]  -> Last e mempty
     e:es -> Curr e mempty es
 
 -- Moves the MutationIterator forward one element in the ordered insertion event
 -- stream.
-next :: MutationIterator a -> MutationIterator a 
+next :: MutationIterator a -> MutationIterator a
 next  Done         = Done
-next (Last _ _)    = Done
+--next (Last _ _)    = Done
 next (Curr _ _ xs) = initializeMutationIterator xs
 
 -- Takes a MutationIterator an returns the unconsumed key-value pairs
 remaining :: MutationIterator a -> [KVP a]
 remaining  Done              = []
-remaining (Last (k,v) im)    = [(k, applyLocalInsertionEvents im v)]
-remaining (Curr (k,v) im xs) =  (k, applyLocalInsertionEvents im v):xs
+remaining (Curr (k,v) im xs) =  (k, im `applyMutations` v):xs
+
+getCurr :: MutationIterator a -> Maybe (Int, Seq a)
+getCurr  Done             = Nothing
+getCurr (Curr (k,v) im _) = Just (k,v)
+
+mutate :: (Int, Seq a) -> MutationIterator a -> MutationIterator a
+mutate     _  Done             = Done
+mutate (i,e) (Curr (k,v) im xs) = Curr (k,v) im' xs
+  where
+    im' = IM.insertWith (<>) i e im
+
+getState :: MutationIterator a -> Seq a
+getState  Done             = mempty
+getState (Curr (k,v) im _) = im `applyMutations` v
+
 
 -- Takes an IntMap of insertion events localized to a seqence and applies them to
 -- that sequence producing a longer sequence with the insertions inserted.
-applyLocalInsertionEvents :: IntMap (Seq a) -> Seq a -> Seq a
-applyLocalInsertionEvents im xs = (<> trailing) . foldMapWithKey f $ toList xs
+applyMutations :: IntMap (Seq a) -> Seq a -> Seq a
+applyMutations im xs = (<> trailing) . foldMapWithKey f $ toList xs
   where
     f k v =
       case k `lookup` im of
