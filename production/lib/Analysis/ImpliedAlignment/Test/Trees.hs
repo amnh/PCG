@@ -1154,39 +1154,39 @@ testTwoAdjacentInsertionsSimultaneousDeletions = testCase "Delete two     adjace
 
   0
   |
-  +-1: AATT
+  +-1: AAGTT
   |
   `-2
     |
-    +-3: AATT
+    +-3: AAGTT
     |
     `-4
       |
-      +-5: AATT
+      +-5: AAGTT
       |
       `-6
         |
-        +-7: AACTT
+        +-7: AACGTT
         |
         `-8
           |
-          +-9: AACTT
+          +-9: AACGTT
           |
           `-10
             |
-            +-11: AACTT
+            +-11: AACGTT
             |
             `-12
               |
-              +-13: AACCTT
+              +-13: AACGCTT
               |
               `-14
                  |
-                 +-15: AACCTT
+                 +-15: AACGCTT
                  |
                  `-16
                    |
-                   +-17: AACCTT
+                   +-17: AACGCTT
                      |
                      `-18
                        |

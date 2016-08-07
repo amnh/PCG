@@ -148,6 +148,8 @@ library
                        Text.Megaparsec.Custom
   -- Modules included in this library but not exported.
   other-modules:       Analysis.ImpliedAlignment.DeletionEvents
+                       Analysis.ImpliedAlignment.InsertionEvents
+                       Analysis.ImpliedAlignment.InsertionEvents.Internal
                        Analysis.Parsimony.Binary.DirectOptimization.Internal
                        Analysis.Parsimony.Binary.SequentialAlign.FFI
                        Analysis.Parsimony.Binary.Constraints
