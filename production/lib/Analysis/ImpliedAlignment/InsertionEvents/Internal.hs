@@ -148,7 +148,6 @@ type KVP a = (Int, Seq a)
 -- Enforces invariants when consuming the ancestoral insertion events.
 data MutationIterator a
    = Done
---   | Last (KVP a) (IntMap (Seq a))
    | Curr (KVP a) (IntMap (Seq a)) [(KVP a)]
 
 -- Takes a list of key-value pairs and produces a MutationIterator for consuming
@@ -159,14 +158,12 @@ initializeMutationIterator :: [KVP a] -> MutationIterator a
 initializeMutationIterator xs =
   case xs of
     []   -> Done
---    [e]  -> Last e mempty
     e:es -> Curr e mempty es
 
 -- Moves the MutationIterator forward one element in the ordered insertion event
 -- stream.
 next :: MutationIterator a -> MutationIterator a
 next  Done         = Done
---next (Last _ _)    = Done
 next (Curr _ _ xs) = initializeMutationIterator xs
 
 -- Takes a MutationIterator an returns the unconsumed key-value pairs
