@@ -20,6 +20,7 @@
 
 module Analysis.ImpliedAlignment.DynamicProgramming where
 
+import           Analysis.ImpliedAlignment.AlignmentContext
 import           Analysis.ImpliedAlignment.DeletionEvents
 import           Analysis.ImpliedAlignment.InsertionEvents
 import qualified Analysis.ImpliedAlignment.InsertionEvents as IE (unwrap,wrap) 
@@ -176,6 +177,7 @@ normalizeInsertions char inserts = IE.wrap $ IM.fromList normalizedInserts
           | e == HardGap || e == SoftGap || e == DeletedBase = baseCounter
           | otherwise                                        = baseCounter + 1
 
+{-
 data PsuedoIndex
    = OriginalBase
    | InsertedBase
@@ -190,10 +192,16 @@ instance Show PsuedoIndex where
     show DeletedBase  = "D"
     show HardGap      = "-"
     show SoftGap      = "~"
-
     showList = showListWith (\x -> (show x <>))
 
 type PseudoCharacter = Vector PsuedoIndex
+
+data AlignmentContext e
+   = Context
+   { psuedoCharacter :: PseudoCharacter
+   , insertionEvents :: InsertionEvents e
+   }
+-}
 
 deriveImpliedAlignments :: (Eq n, FoldableWithKey f, TreeConstraint t n e s, IANode' n s, Metadata m s, Key f ~ Int, Show (Element s)) => f m -> t -> t 
 deriveImpliedAlignments sequenceMetadatas tree = foldlWithKey' f tree sequenceMetadatas
@@ -267,7 +275,7 @@ numeration sequenceIndex costStructure tree =
                 , doDescendantCharacter          = Nothing
                 }
               where
-                rootPsuedoCharacter = V.fromList seqList
+                rootPsuedoCharacter = seqList
                   where
                     -- Maybe check for indicies after the length of the sequence.
                     insertionMapping = IE.unwrap allDescendantInsertions
@@ -350,7 +358,7 @@ numeration sequenceIndex costStructure tree =
 
                     otherInsertionsBefore n = sum $ IM.filterWithKey (\k _ -> k <= n) otherInsertionEvents
 -}                    
-                psuedoCharacter = let x = V.fromList $ reverse result
+                psuedoCharacter = let x = reverse result
                                   in if null leftoverInsertions
                                      then x 
                                      else trace (mconcat ["(", show i,",", show j, ") Leftover insertions: ", show leftoverInsertions]) $
@@ -397,7 +405,7 @@ numeration sequenceIndex costStructure tree =
                   | otherwise             = modifiedPsuedoCharacter
                   where
                     -- Search for the previous leaf node by traversing down the "right" most edges of the previous sibling node.
-                    modifiedPsuedoCharacter = V.fromList $ reverse hardGappedCharacter
+                    modifiedPsuedoCharacter = reverse hardGappedCharacter
                       where
                         previousSiblings        = takeWhile (<j) $ otoList siblingIndices
                         previousInsertionEvents = IE.unwrap $ foldMap f previousSiblings

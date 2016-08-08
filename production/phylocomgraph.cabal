@@ -46,7 +46,7 @@ library
                      , keys                 -any
                      , matrix               -any
                      , megaparsec           >=5.0
-                     , mono-traversable     -any
+                     , mono-traversable     >=1.0
                      , memoize              -any
                      , parallel             -any
                      , QuickCheck           -any
@@ -147,7 +147,8 @@ library
                        Data.Matrix.NotStupid
                        Text.Megaparsec.Custom
   -- Modules included in this library but not exported.
-  other-modules:       Analysis.ImpliedAlignment.DeletionEvents
+  other-modules:       Analysis.ImpliedAlignment.AlignmentContext
+                       Analysis.ImpliedAlignment.DeletionEvents
                        Analysis.ImpliedAlignment.InsertionEvents
                        Analysis.ImpliedAlignment.InsertionEvents.Internal
                        Analysis.Parsimony.Binary.DirectOptimization.Internal
