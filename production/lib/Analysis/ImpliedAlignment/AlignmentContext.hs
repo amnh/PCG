@@ -37,13 +37,14 @@ import           Data.Vector.Instances           ()
 import           Prelude                 hiding  (lookup,zip,zipWith)
 import           Text.Show                       (showListWith)
 
---import           Debug.Trace                  (trace)
+import           Debug.Trace                  (trace)
 
 
 data PsuedoIndex
    = OriginalBase
    | InsertedBase
    | DeletedBase
+   | DelInsBase
    | HardGap
    | SoftGap
    deriving (Eq)
@@ -60,50 +61,84 @@ instance Show PsuedoIndex where
     show OriginalBase = "O"
     show InsertedBase = "I"
     show DeletedBase  = "D"
+    show DelInsBase   = "X"
     show HardGap      = "-"
     show SoftGap      = "~"
     showList = showListWith (\x -> (show x <>))
 
+instance Show e => Show (AlignmentContext e) where
+  show ac = unlines
+          [ "Alignment Context:"
+          , ("  "<>) .           show $ insertionEvents ac
+          , ("  "<>) . concatMap show $ psuedoCharacter ac
+          ]
+
 
 --TODO: remove the actual character.
 
-applyLocalEventsToAlignment :: EncodableDynamicCharacter c => c -> DeletionEvents -> InsertionEvents (Element c) -> AlignmentContext (Element c) -> AlignmentContext (Element c)
-applyLocalEventsToAlignment parentCharacter localDeletionEvents localInsertionEvents alignmentContext =
+applyLocalEventsToAlignment :: (Eq c, Show c) => DeletionEvents -> InsertionEvents c -> AlignmentContext c -> AlignmentContext c
+--applyLocalEventsToAlignment _ _ x | trace ("\n\nInput:\n"<>show x) False = undefined
+applyLocalEventsToAlignment localDeletionEvents localInsertionEvents alignmentContext = --  (\x -> trace ("\nOutput\n"<>show x) x)
     Context
        { insertionEvents = IE.wrap resultInserts
-       , psuedoCharacter = resultChar
+       , psuedoCharacter = reverse resultChar
        }
   where
-    (_,_,_,_,_,_leftoverInsertions, resultInserts, resultChar) = foldl' f initalAccumulator $ psuedoCharacter alignmentContext
+    (_,_,_,_,_leftoverInsertions, resultInserts, resultChar) = foldl' f initalAccumulator $ psuedoCharacter alignmentContext
 
-    initalAccumulator = (0, 0, 0, otoList parentCharacter, IE.unwrap localInsertionEvents, IE.unwrap $ insertionEvents alignmentContext, mempty, mempty)
+    initalAccumulator = (0, 0, 0, IE.unwrap localInsertionEvents, IE.unwrap $ insertionEvents alignmentContext, mempty, mempty)
 
-    f _q@(pBasesSeen, cBasesSeen, consecutiveInsertionsSkipped, charElements, remainingLocalInsertions, unappliedGlobalInsertions, is, es) e =
+--    f q e | trace (show e <> show q) False = undefined
+    f _q@(pBasesSeen, cBasesSeen, consecutiveInsertionsSkipped,  remainingLocalInsertions, unappliedGlobalInsertions, is, es) e =
       case e of
+        -- In the case of an original base, we migth delete the base. if so we must decrement the resulting InsertionEvents. We place in a deleted base. This can probably be replaced with a HardGap.
         OriginalBase ->
                    if    pBasesSeen `oelem` localDeletionEvents
-                   then (pBasesSeen + 1, cBasesSeen    , 0                               , tail' charElements, remainingLocalInsertions, unappliedGlobalInsertions, is, DeletedBase : es)
-                   else (pBasesSeen + 1, cBasesSeen + 1, 0                               , tail' charElements, remainingLocalInsertions, unappliedGlobalInsertions, is,          e : es)
+                   then (pBasesSeen + 1, cBasesSeen    , 0                               ,  remainingLocalInsertions, unappliedGlobalInsertions, is, DeletedBase : es)
+                   else (pBasesSeen + 1, cBasesSeen + 1, 0                               ,  remainingLocalInsertions, unappliedGlobalInsertions, is,           e : es)
+        -- In the case of an original base, we migth delete the base. if so we must decrement the resulting InsertionEvents. We place in a HardGap.
         InsertedBase ->
                    if    pBasesSeen `oelem` localDeletionEvents
-                   then (pBasesSeen + 1, cBasesSeen    , consecutiveInsertionsSkipped + 1, tail' charElements, remainingLocalInsertions, unappliedGlobalInsertions, is,  HardGap : es)
-                   else (pBasesSeen + 1, cBasesSeen + 1, consecutiveInsertionsSkipped + 1, tail' charElements, remainingLocalInsertions, unappliedGlobalInsertions, is,        e : es)
-        DeletedBase  -> (pBasesSeen    , cBasesSeen    , 0                               ,       charElements, remainingLocalInsertions, unappliedGlobalInsertions, is,        e : es)
-        HardGap      -> (pBasesSeen    , cBasesSeen    , 0                               ,       charElements, remainingLocalInsertions, unappliedGlobalInsertions, is,        e : es) -- maybe increment consecutive here too?
+                   then (pBasesSeen + 1, cBasesSeen    , consecutiveInsertionsSkipped + 1,  remainingLocalInsertions, unappliedGlobalInsertions, is, DelInsBase : es)
+                   else (pBasesSeen + 1, cBasesSeen + 1, consecutiveInsertionsSkipped + 1,  remainingLocalInsertions, unappliedGlobalInsertions, is,          e : es)
+
+        -- Same logic in nesxt two cases, essentially the identifunction of the accumulator.
+        DeletedBase  -> (pBasesSeen    , cBasesSeen    , 0                               ,        remainingLocalInsertions, unappliedGlobalInsertions, is,        e : es)
+        DelInsBase   -> (pBasesSeen    , cBasesSeen    , 0                               ,        remainingLocalInsertions, unappliedGlobalInsertions, is,        e : es)
+--        HardGap      -> (pBasesSeen    , cBasesSeen    , 0                               ,        remainingLocalInsertions, unappliedGlobalInsertions, is,        e : es) -- maybe increment consecutive here too?
+        HardGap      -> (pBasesSeen    , cBasesSeen    , 0                               ,        remainingLocalInsertions, imRemove pBasesSeen 0 unappliedGlobalInsertions, imAdd cBasesSeen ((Seq.take 1 (unappliedGlobalInsertions ! pBasesSeen)) ) is,        e : es) -- maybe increment consecutive here too?
+        -- The super complicated case... let nme try and explain.
+        --
+        -- First Check to see if the bases 
         SoftGap      -> conditionallyInsert
       where
         conditionallyInsert =
-          case pBasesSeen `lookup` remainingLocalInsertions of
-            Nothing -> (pBasesSeen, cBasesSeen, 0                    , charElements, remainingLocalInsertions, unappliedGlobalInsertions, is,          e : es)
-            Just bs ->
-              let b = bs ! 0
-              in
-                case (cBasesSeen `lookup` unappliedGlobalInsertions) >>= (consecutiveInsertionsSkipped `lookup`) of
-                  Nothing -> error "Inconsistent indexing"
-                  Just c  ->
+          case (pBasesSeen `lookup` unappliedGlobalInsertions) >>= (0 `lookup`) of
+            Nothing -> error ("Inconsistent indexing @ " <> show pBasesSeen <> ": " <> show remainingLocalInsertions <> show unappliedGlobalInsertions <> show (insertionEvents alignmentContext))
+--                        (pBasesSeen, cBasesSeen    , consecutiveInsertionsSkipped + 1,                        remainingLocalInsertions, imRemove pBasesSeen 0 unappliedGlobalInsertions, is,                     e : es)
+            Just c  -> 
+              case pBasesSeen `lookup` remainingLocalInsertions of
+                Nothing -> (pBasesSeen, cBasesSeen    , consecutiveInsertionsSkipped + 1,                        remainingLocalInsertions, imRemove pBasesSeen 0 unappliedGlobalInsertions, imAdd cBasesSeen (Seq.singleton c) is,                     e : es)
+                Just bs ->
+                  let b = bs ! 0
+                  in
                     if b /= c
-                    then (pBasesSeen, cBasesSeen    , consecutiveInsertionsSkipped + 1, charElements,                       remainingLocalInsertions,                                                  unappliedGlobalInsertions, is,                     e : es)
-                    else (pBasesSeen, cBasesSeen + 1, 0                               , charElements, imRemove pBasesSeen 0 remainingLocalInsertions, imRemove pBasesSeen consecutiveInsertionsSkipped unappliedGlobalInsertions, is,          InsertedBase : es)
+                    then   (pBasesSeen, cBasesSeen    , consecutiveInsertionsSkipped + 1,                        remainingLocalInsertions, imRemove pBasesSeen 0 unappliedGlobalInsertions, imAdd cBasesSeen (Seq.singleton c) is,                     e : es)
+                    else   (pBasesSeen, cBasesSeen + 1, 0                               ,  imRemove pBasesSeen 0 remainingLocalInsertions, imRemove pBasesSeen 0 unappliedGlobalInsertions,                                    is,          InsertedBase : es)
+
+imDec i = IM.mapKeysMonotonic f
+  where
+    f k
+      | k >= i    = k -1
+      | otherwise = k
+
+imAdd = IM.insertWith (flip (Seq.><) )
+
+imInc i = IM.mapKeysMonotonic f
+  where
+    f k
+      | k >= i    = k + 1
+      | otherwise = k
 
 tail' :: [a] -> [a]
 tail'    []  = []

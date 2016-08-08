@@ -1760,17 +1760,17 @@ testDeletionAfterBelowInsertion = testCase "Insertion event with deletion event 
 testMaliciousInsertions :: TestTree
 testMaliciousInsertions = testCase "Insertion event nested inside a larger ancetoral insertion event" $ decorationTest tree
   where
-    tree = [ ( 0, ""       , [""     ], [ 1, 2])
-           , ( 1, "AA"     , ["A---A"], []     )
-           , ( 2, ""       , [""     ], [ 3, 4])
-           , ( 3, "AA"     , ["A---A"], []     )
-           , ( 4, ""       , [""     ], [ 5, 6])
-           , ( 5, "ACCCCA" , ["AC-CA"], []     )
-           , ( 6, ""       , [""     ], [ 7, 8])
-           , ( 7, "ACCCCA" , ["AC-CA"], []     )
-           , ( 8, ""       , [""     ], [ 9,10])
-           , ( 9, "ACCCCA" , ["AC-CA"], []     )
-           , (10, "ACCGCCA", ["ACGCA"], []     )
+    tree = [ ( 0, ""     , [""     ], [ 1, 2])
+           , ( 1, "AA"   , ["A---A"], []     )
+           , ( 2, ""     , [""     ], [ 3, 4])
+           , ( 3, "AA"   , ["A---A"], []     )
+           , ( 4, ""     , [""     ], [ 5, 6])
+           , ( 5, "ACCA" , ["AC-CA"], []     )
+           , ( 6, ""     , [""     ], [ 7, 8])
+           , ( 7, "ACCA" , ["AC-CA"], []     )
+           , ( 8, ""     , [""     ], [ 9,10])
+           , ( 9, "ACCA" , ["AC-CA"], []     )
+           , (10, "ACGCA", ["ACGCA"], []     )
            ]
 
 
@@ -1792,7 +1792,15 @@ testMaliciousInsertions = testCase "Insertion event nested inside a larger ancet
       |
       `-6 
         |
-        +-7: ACACA
+        +-7: 
+        | |
+        | +-13: ACACA
+        | |
+        | `-14
+        |   |
+        |   +-15: ACACA
+        |   |
+        |   `-16: ACAGCA
         |
         `-8
           |
@@ -1800,9 +1808,9 @@ testMaliciousInsertions = testCase "Insertion event nested inside a larger ancet
           |
           `-10
             |
-            +-11: ACGACA
+            +-11 ACACA
             |
-            `-12: ACAGCA
+            `-12: ACGACA
 -}
 testMaliceOfForethoughtInsertions :: TestTree
 testMaliceOfForethoughtInsertions = testCase "Insertion event nested inside a larger ancetoral insertion event" $ decorationTest tree
@@ -1814,12 +1822,17 @@ testMaliceOfForethoughtInsertions = testCase "Insertion event nested inside a la
            , ( 4, ""       , [""       ], [ 5, 6])
            , ( 5, "ACACA"  , ["AC-A-CA"], []     )
            , ( 6, ""       , [""       ], [ 7, 8])
-           , ( 7, "ACACA"  , ["AC-A-CA"], []     )
+           , ( 7, ""       , [""       ], [13,14])
            , ( 8, ""       , [""       ], [ 9,10])
            , ( 9, "ACACA"  , ["AC-A-CA"], []     )
            , (10, ""       , [""       ], [11,12])
-           , (11, "ACGACA" , ["ACGA-CA"], []     )
-           , (12, "ACAGCA" , ["AC-AGCA"], []     )
+           , (11, "ACACA"  , ["AC-A-CA"], []     )
+           , (12, "ACGACA" , ["ACGA-CA"], []     )
+           , (13, "ACACA"  , ["AC-A-CA"], []     )
+           , (14, ""       , [""       ], [15,16])
+           , (15, "ACACA"  , ["AC-A-CA"], []     )
+           , (16, "ACAGCA" , ["AC-AGCA"], []     )
+
            ]
 
 

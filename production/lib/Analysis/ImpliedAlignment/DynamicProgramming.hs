@@ -123,6 +123,7 @@ data MemoizedEvents s
    , localNormalizedInsertionEvents :: InsertionEvents (Element s)
    , doAncestorCharacter            :: Maybe s
    , doDescendantCharacter          :: Maybe s
+   , contextValue                   :: AlignmentContext (Element s)
    }
 
 instance (EncodableDynamicCharacter s, Show (Element s)) => Show (MemoizedEvents s) where
@@ -140,6 +141,8 @@ instance (EncodableDynamicCharacter s, Show (Element s)) => Show (MemoizedEvents
       , "Psuedo-character:"
       , ("  "<>) . concatMap show . toList $ parentPsuedoCharacter  memo
       , ("  "<>) . concatMap show . toList $ currentPsuedoCharacter memo
+      , ("  "<>) . concatMap show . toList . psuedoCharacter $ contextValue  memo
+      , ("  "<>) . show . insertionEvents $ contextValue  memo
       ]
 
 
@@ -273,6 +276,7 @@ numeration sequenceIndex costStructure tree =
                 , localNormalizedInsertionEvents = mempty
                 , doAncestorCharacter            = Nothing
                 , doDescendantCharacter          = Nothing
+                , contextValue                   = rootContext
                 }
               where
                 rootPsuedoCharacter = seqList
@@ -290,6 +294,12 @@ numeration sequenceIndex costStructure tree =
                         Nothing -> []
                         Just n  -> replicate (length n) SoftGap
 
+                rootContext =
+                  Context
+                  { insertionEvents = allDescendantInsertions
+                  , psuedoCharacter = rootPsuedoCharacter
+                  } 
+
             nonRootNodeValue = homologyMemoize ! (parentMapping V.! j, j)
 
             -- The deletion events are derived from a pairwise comparison of the parent character and the child character,
@@ -303,31 +313,40 @@ numeration sequenceIndex costStructure tree =
                     Memo
                       { cumulativeDeletionEvents       = purgedAncestoralDeletions <> DE deletes
                       , cumulativeInsertionEvents      = inserts <^> rereferencedDescendantInsertions -- purgedDescendantInsertions -- allDescendantInsertions
-                      , currentPsuedoCharacter         = psuedoCharacter
+                      , currentPsuedoCharacter         = psuedoCharacter'
                       , parentPsuedoCharacter          = parentNodePsuedoCharacter
                       , localRelativeDeletionEvents    = DE deletes
                       , localNormalizedDeletionEvents  = DE $ ancestoralNodeDeletions `incrementDescendant` (DE deletes)
                       , localRelativeInsertionEvents   = inserts
-                      , localNormalizedInsertionEvents = normalizeInsertions psuedoCharacter inserts
+                      , localNormalizedInsertionEvents = normalizeInsertions psuedoCharacter' inserts
                       , doAncestorCharacter            = Just doA
                       , doDescendantCharacter          = Just doD
+                      , contextValue                   = resultingContext 
                       }
                 in
                   resultPoint
  
               where
+                resultingContext = applyLocalEventsToAlignment (DE deletes) (inserts) parentContext'
+
+
+                parentContext' = parentContext { psuedoCharacter = contextualPreviousPsuedoCharacter3 }
+
+
+
 --                parentCharacter = getFinal       (enumeratedNodes V.! i) V.! sequenceIndex
                 parentCharacter = getSingle      (enumeratedNodes V.! i) V.! sequenceIndex
                 childCharacter  = getForAlign    (enumeratedNodes V.! j) V.! sequenceIndex
+                parentContext   = contextValue  memoPoint
                 memoPoint       = homologyMemoize ! (i, i)
                 ancestoralNodeDeletions   = cumulativeDeletionEvents memoPoint
-                parentNodePsuedoCharacter = currentPsuedoCharacter   memoPoint
+                parentNodePsuedoCharacter = psuedoCharacter parentContext -- currentPsuedoCharacter   memoPoint
 --                   trace (mconcat ["Accessing (",show $ parentMapping V.! j,",",show j,")"]) $
                    
                 (DE deletes, !inserts, doA, doD) = comparativeIndelEvents parentCharacter childCharacter costStructure
 
 --                (IE incrementedInsertionEvents)  = inserts >-< rereferencedDescendantInsertions
-                rereferencedDescendantInsertions = (\x -> trace (show x) x) $  shiftDescendantInsertions (DE deletes) allDescendantInsertions
+                rereferencedDescendantInsertions = {- (\x -> trace (show x) x) $ -} shiftDescendantInsertions (DE deletes) allDescendantInsertions
 {-
                 purgedDescendantInsertions = IE . foldMapWithKey f $ (\(IE x) -> x) allDescendantInsertions
                   where
@@ -358,7 +377,7 @@ numeration sequenceIndex costStructure tree =
 
                     otherInsertionsBefore n = sum $ IM.filterWithKey (\k _ -> k <= n) otherInsertionEvents
 -}                    
-                psuedoCharacter = let x = reverse result
+                psuedoCharacter' = let x = reverse result
                                   in if null leftoverInsertions
                                      then x 
                                      else trace (mconcat ["(", show i,",", show j, ") Leftover insertions: ", show leftoverInsertions]) $
@@ -378,6 +397,7 @@ numeration sequenceIndex costStructure tree =
                                    then (pBasesSeen + 1, consecutiveInsertions + 1, remainingInsertions,     HardGap : es)
                                    else (pBasesSeen + 1, consecutiveInsertions + 1, remainingInsertions,           e : es)
                         DeletedBase  -> (pBasesSeen    , 0                        , remainingInsertions,           e : es) -- conditionallyInsert
+                        DelInsBase   -> (pBasesSeen    , 0                        , remainingInsertions,           e : es) -- conditionallyInsert
                         HardGap      -> (pBasesSeen    , 0                        , remainingInsertions,           e : es) -- maybe increment consecutive here too?
                         SoftGap      -> conditionallyInsert
                       where 
@@ -399,6 +419,41 @@ numeration sequenceIndex costStructure tree =
                               | length x > 1 = Just $ Seq.drop 1 x
                               | otherwise    = Nothing
 
+                contextualPreviousPsuedoCharacter3
+                  | j < firstSiblingIndex = parentNodePsuedoCharacter
+                  | otherwise             = modifiedPsuedoCharacter
+                  where
+                    -- Search for the previous leaf node by traversing down the "right" most edges of the previous sibling node.
+                    modifiedPsuedoCharacter = reverse hardGappedCharacter
+                      where
+                        previousSiblings        = takeWhile (<j) $ otoList siblingIndices
+                        previousInsertionEvents = IE.unwrap $ foldMap f previousSiblings
+                          where
+                            f siblingIndex = cumulativeInsertionEvents $ homologyMemoize ! (i, siblingIndex)
+                            
+                        (_,_,hardGappedCharacter) = foldl g (0, previousInsertionEvents, []) parentNodePsuedoCharacter
+                        g (basesSeen, mapping, es) e =
+                          case e of
+                            OriginalBase -> (basesSeen + 1, mapping, e : es)
+                            InsertedBase -> (basesSeen + 1, mapping, e : es)
+                            HardGap      -> (basesSeen    , mapping, e : es)
+                            DeletedBase  -> (basesSeen    , mapping, e : es) -- conditionallyInsert
+                            DelInsBase   -> (basesSeen    , mapping, e : es) -- conditionallyInsert
+                            SoftGap      -> conditionallyInsert
+                          where 
+                            conditionallyInsert =
+                              case basesSeen `lookup` mapping of
+                                Nothing -> (basesSeen, mapping, e : es)
+                                Just c  ->
+                                  if length c > 0
+                                  then (basesSeen, IM.update (pure . Seq.drop 1) basesSeen mapping, HardGap : es)
+                                  else (basesSeen,                                         mapping,       e : es)
+
+                            
+
+                    siblingIndices       = j `IS.delete` (childMapping V.! i)
+                    firstSiblingIndex    = minimumEx siblingIndices
+                
 
                 contextualPreviousPsuedoCharacter2
                   | j < firstSiblingIndex = parentNodePsuedoCharacter
@@ -419,6 +474,7 @@ numeration sequenceIndex costStructure tree =
                             InsertedBase -> (basesSeen + 1, mapping, e : es)
                             HardGap      -> (basesSeen    , mapping, e : es)
                             DeletedBase  -> (basesSeen    , mapping, e : es) -- conditionallyInsert
+                            DelInsBase   -> (basesSeen    , mapping, e : es) -- conditionallyInsert
                             SoftGap      -> conditionallyInsert
                           where 
                             conditionallyInsert =
@@ -567,7 +623,8 @@ deriveImpliedAlignment nodeIndex sequenceIndex homologyMemoize node =
       where
         memoPoint       = homologyMemoize ! (nodeIndex, nodeIndex)
 --        DE deletions    = cumulativeDeletionEvents memoPoint
-        psuedoCharacter = currentPsuedoCharacter   memoPoint
+--        psuedoCharacter = currentPsuedoCharacter   memoPoint
+        psuedoCharacterVal = psuedoCharacter $ contextValue  memoPoint
         leafHomologies
           | length oldHomologies <= sequenceIndex = oldHomologies <> V.replicate (sequenceIndex - length oldHomologies) (constructDynamic []) <> pure leafAlignedChar
           | otherwise                             = oldHomologies V.// [(sequenceIndex, leafAlignedChar)]
@@ -593,10 +650,10 @@ deriveImpliedAlignment nodeIndex sequenceIndex homologyMemoize node =
         (_,_remaining,result)    =
                                   foldl' f (0 :: Int, characterTokens, [])
 --                        $ (trace (mconcat ["deriveImpliedAlignment ",show nodeIndex," ",show psuedoCharacter," ",show deletions]))
-                          psuedoCharacter
+                          psuedoCharacterVal
           where
             f (basesSeen, xs, ys) e
-              | e == HardGap || e == SoftGap || e == DeletedBase = (basesSeen    , xs , gap : ys )
+              | e == HardGap || e == SoftGap || e == DeletedBase || e == DelInsBase = (basesSeen    , xs , gap : ys )
 --              | basesSeen `oelem` deletions  = (basesSeen + 1, xs , gap : ys )
               | otherwise                    = (basesSeen + 1, xs',       ys') 
               where

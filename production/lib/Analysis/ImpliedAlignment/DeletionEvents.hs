@@ -182,7 +182,7 @@ instance MonoFoldable DeletionEvents where
   {-# INLINE ofoldr1Ex #-}
   ofoldr1Ex f (DE de) = ofoldr1Ex f de
 
-                      -- | Strict left-associative fold of a monomorphic container with no base
+  -- | Strict left-associative fold of a monomorphic container with no base
   -- element.
   --
   -- Note: this is a partial function. On an empty 'MonoFoldable', it will
