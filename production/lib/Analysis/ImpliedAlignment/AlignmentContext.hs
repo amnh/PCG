@@ -73,22 +73,36 @@ instance Show e => Show (AlignmentContext e) where
           , ("  "<>) . concatMap show $ psuedoCharacter ac
           ]
 
+readPseudoCharacter ('O':xs) = OriginalBase : readPseudoCharacter xs
+readPseudoCharacter ('I':xs) = InsertedBase : readPseudoCharacter xs
+readPseudoCharacter ('D':xs) = DeletedBase  : readPseudoCharacter xs
+readPseudoCharacter ('X':xs) = DelInsBase   : readPseudoCharacter xs
+readPseudoCharacter ('-':xs) = HardGap      : readPseudoCharacter xs
+readPseudoCharacter ('~':xs) = SoftGap      : readPseudoCharacter xs
+readPseudoCharacter       _  = []
 
 --TODO: remove the actual character.
 
-applyLocalEventsToAlignment :: (Eq c, Show c) => DeletionEvents -> InsertionEvents c -> AlignmentContext c -> AlignmentContext c
+applyLocalEventsToAlignment :: (Eq c, Show c) => Int -> Int -> DeletionEvents -> InsertionEvents c -> AlignmentContext c -> AlignmentContext c
 --applyLocalEventsToAlignment _ _ x | trace ("\n\nInput:\n"<>show x) False = undefined
-applyLocalEventsToAlignment localDeletionEvents localInsertionEvents alignmentContext = --  (\x -> trace ("\nOutput\n"<>show x) x)
-    Context
-       { insertionEvents = IE.wrap resultInserts
-       , psuedoCharacter = reverse resultChar
-       }
+applyLocalEventsToAlignment i j localDeletionEvents localInsertionEvents alignmentContext --  (\x -> trace ("\nOutput\n"<>show x) x)
+  | not $ consistency result           = trace (edge <> " Inconsistent result: " <> show result) result 
+  | not $ null leftoverLocalInsertions = trace (edge <> " Leftover insertions: " <> show (IE.wrap leftoverLocalInsertions)) result 
+  | otherwise                          = result 
   where
-    (_,_,_,_,_leftoverInsertions, resultInserts, resultChar) = foldl' f initalAccumulator $ psuedoCharacter alignmentContext
+    edge   = "(" <> show i <> "," <> show j <> ")" 
+    result =
+      Context
+         { insertionEvents = IE.wrap resultInserts
+         , psuedoCharacter = reverse resultChar
+         }
+      
+    (_,_,_,leftoverLocalInsertions, leftoverGlobalInsertions, resultInserts, resultChar) = foldl' f initalAccumulator $ psuedoCharacter alignmentContext
 
     initalAccumulator = (0, 0, 0, IE.unwrap localInsertionEvents, IE.unwrap $ insertionEvents alignmentContext, mempty, mempty)
 
 --    f q e | trace (show e <> show q) False = undefined
+--    f _q@(pBasesSeen, cBasesSeen, consecutiveInsertionsSkipped,  remainingLocalInsertions, unappliedGlobalInsertions, is, es) e | trace (show remainingLocalInsertions) False = undefined
     f _q@(pBasesSeen, cBasesSeen, consecutiveInsertionsSkipped,  remainingLocalInsertions, unappliedGlobalInsertions, is, es) e =
       case e of
         -- In the case of an original base, we migth delete the base. if so we must decrement the resulting InsertionEvents. We place in a deleted base. This can probably be replaced with a HardGap.
@@ -155,3 +169,19 @@ imRemove k i im = IM.update f k im
         (as, bs) = Seq.splitAt i v
 
 
+consistency :: Eq c => AlignmentContext c -> Bool
+consistency ac = truth
+  where
+    m = IE.unwrap $ insertionEvents ac
+    (_,_,truth) = foldl f (0,0,True) $ psuedoCharacter ac 
+
+    f a@(_,_,False) _ = a
+    f (basesSeen, consecutiveBases, result) e = 
+      case e of
+        OriginalBase -> (basesSeen + 1, 0                   , result)
+        InsertedBase -> (basesSeen + 1, 0                   , result)
+        DeletedBase  -> (basesSeen    , 0                   , result)
+        DelInsBase   -> (basesSeen    , 0                   , result)
+        HardGap      -> (basesSeen    , consecutiveBases + 1, isJust ((basesSeen `lookup` m) >>= (consecutiveBases `lookup`)))
+        SoftGap      -> (basesSeen    , consecutiveBases + 1, isJust ((basesSeen `lookup` m) >>= (consecutiveBases `lookup`)))
+    

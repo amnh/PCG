@@ -117,6 +117,7 @@ data MemoizedEvents s
    , cumulativeInsertionEvents      :: InsertionEvents (Element s)
    , currentPsuedoCharacter         :: PseudoCharacter
    , parentPsuedoCharacter          :: PseudoCharacter
+   , parentInsertionEvents          :: InsertionEvents (Element s)
    , localRelativeDeletionEvents    :: DeletionEvents
    , localNormalizedDeletionEvents  :: DeletionEvents
    , localRelativeInsertionEvents   :: InsertionEvents (Element s)
@@ -141,6 +142,10 @@ instance (EncodableDynamicCharacter s, Show (Element s)) => Show (MemoizedEvents
       , "Psuedo-character:"
       , ("  "<>) . concatMap show . toList $ parentPsuedoCharacter  memo
       , ("  "<>) . concatMap show . toList $ currentPsuedoCharacter memo
+      , "Parent Context:"
+      , ("  "<>) . concatMap show . toList $ parentPsuedoCharacter  memo
+      , ("  "<>) . show $ parentInsertionEvents  memo
+      , "Current Context:"
       , ("  "<>) . concatMap show . toList . psuedoCharacter $ contextValue  memo
       , ("  "<>) . show . insertionEvents $ contextValue  memo
       ]
@@ -216,10 +221,12 @@ deriveImpliedAlignments sequenceMetadatas tree = foldlWithKey' f tree sequenceMe
 
 numeration :: (Eq n, TreeConstraint t n e s, IANode' n s, Show (Element s)) => Int -> CostStructure -> t -> t
 numeration sequenceIndex costStructure tree =
---    trace renderedTopology $
---    trace gapColumnRendering $
 --    trace (inspectGaps [33] renderingTree) $
---    trace eventRendering $
+{--}
+    trace renderedTopology $
+    trace gapColumnRendering $
+    trace eventRendering $
+{--}
     tree `update` (snd <$> updatedLeafNodes)
   where
     -- | Precomputations used for reference in the memoization
@@ -270,6 +277,7 @@ numeration sequenceIndex costStructure tree =
                 , cumulativeInsertionEvents      = allDescendantInsertions
                 , currentPsuedoCharacter         = rootPsuedoCharacter
                 , parentPsuedoCharacter          = mempty
+                , parentInsertionEvents          = mempty
                 , localRelativeDeletionEvents    = mempty
                 , localNormalizedDeletionEvents  = mempty
                 , localRelativeInsertionEvents   = mempty
@@ -313,8 +321,9 @@ numeration sequenceIndex costStructure tree =
                     Memo
                       { cumulativeDeletionEvents       = purgedAncestoralDeletions <> DE deletes
                       , cumulativeInsertionEvents      = inserts <^> rereferencedDescendantInsertions -- purgedDescendantInsertions -- allDescendantInsertions
-                      , currentPsuedoCharacter         = psuedoCharacter'
+                      , currentPsuedoCharacter         = psuedoCharacter resultingContext
                       , parentPsuedoCharacter          = parentNodePsuedoCharacter
+                      , parentInsertionEvents          = parentNodeInsertionEvents
                       , localRelativeDeletionEvents    = DE deletes
                       , localNormalizedDeletionEvents  = DE $ ancestoralNodeDeletions `incrementDescendant` (DE deletes)
                       , localRelativeInsertionEvents   = inserts
@@ -327,7 +336,7 @@ numeration sequenceIndex costStructure tree =
                   resultPoint
  
               where
-                resultingContext = applyLocalEventsToAlignment (DE deletes) (inserts) parentContext'
+                resultingContext = applyLocalEventsToAlignment i j (DE deletes) (inserts) parentContext'
 
 
                 parentContext' = parentContext { psuedoCharacter = contextualPreviousPsuedoCharacter3 }
@@ -341,6 +350,7 @@ numeration sequenceIndex costStructure tree =
                 memoPoint       = homologyMemoize ! (i, i)
                 ancestoralNodeDeletions   = cumulativeDeletionEvents memoPoint
                 parentNodePsuedoCharacter = psuedoCharacter parentContext -- currentPsuedoCharacter   memoPoint
+                parentNodeInsertionEvents = insertionEvents parentContext -- currentPsuedoCharacter   memoPoint
 --                   trace (mconcat ["Accessing (",show $ parentMapping V.! j,",",show j,")"]) $
                    
                 (DE deletes, !inserts, doA, doD) = comparativeIndelEvents parentCharacter childCharacter costStructure
@@ -378,9 +388,11 @@ numeration sequenceIndex costStructure tree =
                     otherInsertionsBefore n = sum $ IM.filterWithKey (\k _ -> k <= n) otherInsertionEvents
 -}                    
                 psuedoCharacter' = let x = reverse result
-                                  in if null leftoverInsertions
+                                  in{-
+                                     if null leftoverInsertions
                                      then x 
                                      else trace (mconcat ["(", show i,",", show j, ") Leftover insertions: ", show leftoverInsertions]) $
+                                    -}
                                           x
                   where
                     (_,_,leftoverInsertions,result) = --trace (mconcat ["(",show i,",",show j, ") = ", show m, " c: ", show contextualPreviousPsuedoCharacter]) $
@@ -546,14 +558,16 @@ numeration sequenceIndex costStructure tree =
         f i n =
           case otoList $ deletesToCompare `IS.intersection` insertsToCompare of
                     [] -> result
-                    xs -> trace (mconcat [ "Error on edge ("
+                    xs -> {-- trace (mconcat [ "Error on edge ("
                                          , show $ parentMapping V.! i
                                          , ","
                                          , show i
                                          , "), overlapping insertion and deletion events: \n"
                                          , show xs
                                          ]
-                                ) result
+                                )
+                          --}
+                          result
           where
             result = [(i, deriveImpliedAlignment i sequenceIndex homologyMemoize n)]
             resultPoint         = homologyMemoize ! (i,i)
