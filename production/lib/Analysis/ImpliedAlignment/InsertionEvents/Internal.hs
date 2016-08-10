@@ -11,6 +11,8 @@
 -- Core types for representing and accumulating insertion events.
 -----------------------------------------------------------------------------
 
+{-# LANGUAGE FlexibleContexts #-}
+
 module Analysis.ImpliedAlignment.InsertionEvents.Internal where
 
 import           Analysis.ImpliedAlignment.DeletionEvents
@@ -26,6 +28,8 @@ import           Data.MonoTraversable
 import           Data.Sequence        (Seq,splitAt)
 import qualified Data.Sequence as Seq
 import           Prelude       hiding (lookup,splitAt,zip,zipWith)
+
+import Debug.Trace (trace)
 
 {- |
   Represents a collection of insertion events. This collection may be indicative
@@ -107,7 +111,7 @@ coalesce :: (Eq a, Foldable t) => DeletionEvents -> InsertionEvents a -> t (Inse
 coalesce ancestorDeletions (IE ancestorMap) descendantEvents = IE . IM.fromList $ result <> remaining acc
   where
     IE descendantMap = mconcat $ toList descendantEvents
-    (_, _, acc, result) = foldlWithKey f initialAccumulator descendantMap
+    (_, _, acc, result) = foldlWithKey f2 initialAccumulator descendantMap
     initialAccumulator = (0, otoList ancestorDeletions, initializeMutationIterator (IM.assocs ancestorMap), [])
     -- off is the offset for the descendant keys equal to
     --    the toral number of deletion events strictly less than the key
@@ -116,7 +120,7 @@ coalesce ancestorDeletions (IE ancestorMap) descendantEvents = IE . IM.fromList 
     -- lies are locat insertion eventes to be placed in ov
     -- ek/v are the fold element's  key/value pair
     -- aies are ancestor insertion events
-    -- ries are ancestor insertion events
+    -- ries are ancestor insertion event
     f (off, dels, iter, ries) ek ev =
       case dels of
         de:ds ->
@@ -145,6 +149,38 @@ coalesce ancestorDeletions (IE ancestorMap) descendantEvents = IE . IM.fromList 
               in if ek + off - len > ok
                  then f (off - len, dels, next iter         , newAns:ries) ek ev
                  else   (off      , dels, mutate ansMod iter,        ries)
+
+    f2 (off, dels, iter, ries) ek ev =
+      case (getCurr iter, dels) of
+        (Nothing     ,    []) -> (off, dels, next iter, (ek + off, ev):ries)
+        (Nothing     , de:ds) -> if de < (ek + off)
+                                 then f2 (off + 1,   ds,      iter,                ries) ek ev
+                                 else   (off    , dels, next iter, (ek + off, ev):ries)
+        (Just (ok,ov),    []) -> let
+                                   len    = length ov
+                                   newAns = (ok, getState iter)
+                                   ansMod = (ek + off - ok, ev)
+                                 in
+                                   if ek + off - len > ok
+                                   then f2 (off - len, dels, next iter         , newAns:ries) ek ev
+                                   else   (off      , dels, mutate ansMod iter,        ries)
+          
+        (Just (ok,ov), de:ds) -> let
+                                   len = length ov
+                                 in
+                                   if ok > de && de < ek + off
+                                   then f2 (off + 1,   ds,      iter,                ries) ek ev
+                                   else
+                                     let
+                                       newAns = (ok, getState iter)
+                                       ansMod = (ek + off - ok, ev)
+                                     in
+                                       if ek + off - len > ok
+                                       then f2 (off - len, dels, next iter         , newAns:ries) ek ev
+                                       else    (off      , dels, mutate ansMod iter,        ries)
+        
+
+
 
 
 -- | A nicer version of Show hiding the internal structure.
@@ -202,6 +238,7 @@ type KVP a = (Int, Seq a)
 data MutationIterator a
    = Done
    | Curr (KVP a) (IntMap (Seq a)) [(KVP a)]
+   deriving (Show)
 
 -- Takes a list of key-value pairs and produces a MutationIterator for consuming
 -- the insertion events.
