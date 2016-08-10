@@ -13,6 +13,7 @@
 
 module Analysis.ImpliedAlignment.InsertionEvents.Internal where
 
+import           Analysis.ImpliedAlignment.DeletionEvents
 import           Data.Bifunctor       (bimap,second)
 import           Data.Foldable
 import           Data.IntMap          (IntMap)
@@ -20,7 +21,8 @@ import qualified Data.IntMap   as IM
 import           Data.Key
 import           Data.List            (intercalate, transpose)
 import           Data.Maybe           (fromMaybe)
-import           Data.Monoid          ((<>))
+import           Data.Monoid
+import           Data.MonoTraversable
 import           Data.Sequence        (Seq,splitAt)
 import qualified Data.Sequence as Seq
 import           Prelude       hiding (lookup,splitAt,zip,zipWith)
@@ -93,6 +95,57 @@ instance Eq a => Monoid (InsertionEvents a) where
           in if ek - (dec + len) > ok
              then f (dec + len, next iter         , newAns:ries) ek ev
              else   (dec      , mutate ansMod iter,        ries)
+
+
+
+
+-- | This operator is used for combining an direct ancestoral edge with the
+--   combined insertion events of child edges.
+--
+--   Pronounced <http://www.dictionary.com/browse/coalesce "coalesce"> operator.
+coalesce :: (Eq a, Foldable t) => DeletionEvents -> InsertionEvents a -> t (InsertionEvents a) -> InsertionEvents a
+coalesce ancestorDeletions (IE ancestorMap) descendantEvents = IE . IM.fromList $ result <> remaining acc
+  where
+    IE descendantMap = mconcat $ toList descendantEvents
+    (_, _, acc, result) = foldlWithKey f initialAccumulator descendantMap
+    initialAccumulator = (0, otoList ancestorDeletions, initializeMutationIterator (IM.assocs ancestorMap), [])
+    -- off is the offset for the descendant keys equal to
+    --    the toral number of deletion events strictly less than the key
+    ---   minus total number of inserted bases from the ancestoral insertion set that have been consumed.
+    -- ok/v are orignal key/value pair for this tuple
+    -- lies are locat insertion eventes to be placed in ov
+    -- ek/v are the fold element's  key/value pair
+    -- aies are ancestor insertion events
+    -- ries are ancestor insertion events
+    f (off, dels, iter, ries) ek ev =
+      case dels of
+        de:ds ->
+            if   de < (ek + off)
+            then f (off + 1, ds, iter, ries) ek ev
+            else alpha
+        []    -> alpha
+      where
+        alpha =
+          case getCurr iter of
+            Nothing -> (off, dels, next iter, (ek + off, ev):ries)
+            Just (ok, ov) ->
+              let len    = length ov
+                  newAns = (ok, getState iter)
+              {- How many element of the ancestor insertion sequence must be consumed for
+                 the ancestoral key `ok` and the decendant key `ek` to be equal?
+         
+                 The following equation represents the "shift backwards" to align the
+                 insertion events, answering the question above.
+         
+                 We want to solve the equation ``` ek - off - x = ok ``` to determine the
+                 index `x` for the IntMap. Basic algebra shows us the solution is:
+                 ``` x = ek - off - ok ```
+              -}
+                  ansMod = (ek + off - ok, ev)
+              in if ek + off - len > ok
+                 then f (off - len, dels, next iter         , newAns:ries) ek ev
+                 else   (off      , dels, mutate ansMod iter,        ries)
+
 
 -- | A nicer version of Show hiding the internal structure.
 instance Show a => Show (InsertionEvents a) where

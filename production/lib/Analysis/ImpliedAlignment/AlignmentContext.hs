@@ -27,15 +27,17 @@ import           Bio.Character.Dynamic.Coded
 import           Data.Foldable
 import           Data.IntMap                    (IntMap)
 import qualified Data.IntMap             as IM
+import qualified Data.IntSet             as IS
 import           Data.Key
+import           Data.List                      (intercalate)
 import           Data.Maybe
 import           Data.Monoid
 import           Data.MonoTraversable
-import           Data.Sequence                   (Seq)
+import           Data.Sequence                  (Seq)
 import qualified Data.Sequence           as Seq
-import           Data.Vector.Instances           ()
-import           Prelude                 hiding  (lookup,zip,zipWith)
-import           Text.Show                       (showListWith)
+import           Data.Vector.Instances          ()
+import           Prelude                 hiding (lookup,zip,zipWith)
+import           Text.Show                      (showListWith)
 
 import           Debug.Trace                  (trace)
 
@@ -86,9 +88,8 @@ readPseudoCharacter       _  = []
 applyLocalEventsToAlignment :: (Eq c, Show c) => Int -> Int -> DeletionEvents -> InsertionEvents c -> AlignmentContext c -> AlignmentContext c
 --applyLocalEventsToAlignment _ _ x | trace ("\n\nInput:\n"<>show x) False = undefined
 applyLocalEventsToAlignment i j localDeletionEvents localInsertionEvents alignmentContext --  (\x -> trace ("\nOutput\n"<>show x) x)
-  | not $ consistency result           = trace (edge <> " Inconsistent result: " <> show result) result 
-  | not $ null leftoverLocalInsertions = trace (edge <> " Leftover insertions: " <> show (IE.wrap leftoverLocalInsertions)) result 
-  | otherwise                          = result 
+  | null errors = result
+  | otherwise   = trace (intercalate "\n" errors) result 
   where
     edge   = "(" <> show i <> "," <> show j <> ")" 
     result =
@@ -96,31 +97,45 @@ applyLocalEventsToAlignment i j localDeletionEvents localInsertionEvents alignme
          { insertionEvents = IE.wrap resultInserts
          , psuedoCharacter = reverse resultChar
          }
-      
-    (_,_,_,leftoverLocalInsertions, leftoverGlobalInsertions, resultInserts, resultChar) = foldl' f initalAccumulator $ psuedoCharacter alignmentContext
 
-    initalAccumulator = (0, 0, 0, IE.unwrap localInsertionEvents, IE.unwrap $ insertionEvents alignmentContext, mempty, mempty)
+    errors = catMaybes [badResMessage, badInsMessage, badDelMessage]
+
+    badResMessage
+      | consistency result = Nothing
+      | otherwise = Just $ edge <> " Inconsistent result: " <> show result
+
+    badInsMessage
+      | null leftoverLocalInsertions = Nothing
+      | otherwise = Just $ edge <> " Leftover insertions: " <> show (IE.wrap leftoverLocalInsertions)
+
+    badDelMessage
+      | onull leftoverDeletions = Nothing
+      | otherwise = Just $ edge <> " Leftover deletions: " <> show (DE leftoverDeletions)
+
+    (_,_,_,leftoverDeletions, leftoverLocalInsertions, leftoverGlobalInsertions, resultInserts, resultChar) = foldl' f initalAccumulator $ psuedoCharacter alignmentContext
+
+    initalAccumulator = (0, 0, 0, (\(DE x) -> x) localDeletionEvents, IE.unwrap localInsertionEvents, IE.unwrap $ insertionEvents alignmentContext, mempty, mempty)
 
 --    f q e | trace (show e <> show q) False = undefined
 --    f _q@(pBasesSeen, cBasesSeen, consecutiveInsertionsSkipped,  remainingLocalInsertions, unappliedGlobalInsertions, is, es) e | trace (show remainingLocalInsertions) False = undefined
-    f _q@(pBasesSeen, cBasesSeen, consecutiveInsertionsSkipped,  remainingLocalInsertions, unappliedGlobalInsertions, is, es) e =
+    f _q@(pBasesSeen, cBasesSeen, consecutiveInsertionsSkipped, remainingDeletions, remainingLocalInsertions, unappliedGlobalInsertions, is, es) e =
       case e of
         -- In the case of an original base, we migth delete the base. if so we must decrement the resulting InsertionEvents. We place in a deleted base. This can probably be replaced with a HardGap.
         OriginalBase ->
                    if    pBasesSeen `oelem` localDeletionEvents
-                   then (pBasesSeen + 1, cBasesSeen    , 0                               ,  remainingLocalInsertions, unappliedGlobalInsertions, is, DeletedBase : es)
-                   else (pBasesSeen + 1, cBasesSeen + 1, 0                               ,  remainingLocalInsertions, unappliedGlobalInsertions, is,           e : es)
+                   then (pBasesSeen + 1, cBasesSeen    , 0                               , pBasesSeen `IS.delete` remainingDeletions, remainingLocalInsertions, unappliedGlobalInsertions, is, DeletedBase : es)
+                   else (pBasesSeen + 1, cBasesSeen + 1, 0                               ,                        remainingDeletions, remainingLocalInsertions, unappliedGlobalInsertions, is,           e : es)
         -- In the case of an original base, we migth delete the base. if so we must decrement the resulting InsertionEvents. We place in a HardGap.
         InsertedBase ->
                    if    pBasesSeen `oelem` localDeletionEvents
-                   then (pBasesSeen + 1, cBasesSeen    , consecutiveInsertionsSkipped + 1,  remainingLocalInsertions, unappliedGlobalInsertions, is, DelInsBase : es)
-                   else (pBasesSeen + 1, cBasesSeen + 1, consecutiveInsertionsSkipped + 1,  remainingLocalInsertions, unappliedGlobalInsertions, is,          e : es)
+                   then (pBasesSeen + 1, cBasesSeen    , consecutiveInsertionsSkipped + 1, pBasesSeen `IS.delete` remainingDeletions, remainingLocalInsertions, unappliedGlobalInsertions, is, DelInsBase : es)
+                   else (pBasesSeen + 1, cBasesSeen + 1, consecutiveInsertionsSkipped + 1,                        remainingDeletions, remainingLocalInsertions, unappliedGlobalInsertions, is,          e : es)
 
         -- Same logic in nesxt two cases, essentially the identifunction of the accumulator.
-        DeletedBase  -> (pBasesSeen    , cBasesSeen    , 0                               ,        remainingLocalInsertions, unappliedGlobalInsertions, is,        e : es)
-        DelInsBase   -> (pBasesSeen    , cBasesSeen    , 0                               ,        remainingLocalInsertions, unappliedGlobalInsertions, is,        e : es)
---        HardGap      -> (pBasesSeen    , cBasesSeen    , 0                               ,        remainingLocalInsertions, unappliedGlobalInsertions, is,        e : es) -- maybe increment consecutive here too?
-        HardGap      -> (pBasesSeen    , cBasesSeen    , 0                               ,        remainingLocalInsertions, imRemove pBasesSeen 0 unappliedGlobalInsertions, imAdd cBasesSeen ((Seq.take 1 (unappliedGlobalInsertions ! pBasesSeen)) ) is,        e : es) -- maybe increment consecutive here too?
+        DeletedBase  -> (pBasesSeen    , cBasesSeen    , 0                               , remainingDeletions,       remainingLocalInsertions, unappliedGlobalInsertions, is,        e : es)
+        DelInsBase   -> (pBasesSeen    , cBasesSeen    , 0                               , remainingDeletions,       remainingLocalInsertions, unappliedGlobalInsertions, is,        e : es)
+--        HardGap      -> (pBasesSeen    , cBasesSeen    , 0                               remainingDeletions,        remainingLocalInsertions, unappliedGlobalInsertions, is,        e : es) -- maybe increment consecutive here too?
+        HardGap      -> (pBasesSeen    , cBasesSeen    , 0                               , remainingDeletions,       remainingLocalInsertions, imRemove pBasesSeen 0 unappliedGlobalInsertions, imAdd cBasesSeen ((Seq.take 1 (unappliedGlobalInsertions ! pBasesSeen)) ) is,        e : es) -- maybe increment consecutive here too?
         -- The super complicated case... let nme try and explain.
         --
         -- First Check to see if the bases 
@@ -132,13 +147,13 @@ applyLocalEventsToAlignment i j localDeletionEvents localInsertionEvents alignme
 --                        (pBasesSeen, cBasesSeen    , consecutiveInsertionsSkipped + 1,                        remainingLocalInsertions, imRemove pBasesSeen 0 unappliedGlobalInsertions, is,                     e : es)
             Just c  -> 
               case pBasesSeen `lookup` remainingLocalInsertions of
-                Nothing -> (pBasesSeen, cBasesSeen    , consecutiveInsertionsSkipped + 1,                        remainingLocalInsertions, imRemove pBasesSeen 0 unappliedGlobalInsertions, imAdd cBasesSeen (Seq.singleton c) is,                     e : es)
+                Nothing -> (pBasesSeen, cBasesSeen    , consecutiveInsertionsSkipped + 1, remainingDeletions,                        remainingLocalInsertions, imRemove pBasesSeen 0 unappliedGlobalInsertions, imAdd cBasesSeen (Seq.singleton c) is,                     e : es)
                 Just bs ->
                   let b = bs ! 0
                   in
                     if b /= c
-                    then   (pBasesSeen, cBasesSeen    , consecutiveInsertionsSkipped + 1,                        remainingLocalInsertions, imRemove pBasesSeen 0 unappliedGlobalInsertions, imAdd cBasesSeen (Seq.singleton c) is,                     e : es)
-                    else   (pBasesSeen, cBasesSeen + 1, 0                               ,  imRemove pBasesSeen 0 remainingLocalInsertions, imRemove pBasesSeen 0 unappliedGlobalInsertions,                                    is,          InsertedBase : es)
+                    then   (pBasesSeen, cBasesSeen    , consecutiveInsertionsSkipped + 1, remainingDeletions,                       remainingLocalInsertions, imRemove pBasesSeen 0 unappliedGlobalInsertions, imAdd cBasesSeen (Seq.singleton c) is,                     e : es)
+                    else   (pBasesSeen, cBasesSeen + 1, 0                               , remainingDeletions, imRemove pBasesSeen 0 remainingLocalInsertions, imRemove pBasesSeen 0 unappliedGlobalInsertions,                                    is,          InsertedBase : es)
 
 imDec i = IM.mapKeysMonotonic f
   where

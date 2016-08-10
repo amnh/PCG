@@ -221,7 +221,7 @@ deriveImpliedAlignments sequenceMetadatas tree = foldlWithKey' f tree sequenceMe
 
 numeration :: (Eq n, TreeConstraint t n e s, IANode' n s, Show (Element s)) => Int -> CostStructure -> t -> t
 numeration sequenceIndex costStructure tree =
---    trace (inspectGaps [33] renderingTree) $
+--     trace (inspectGaps [33] renderingTree) $
 {--}
     trace renderedTopology $
     trace gapColumnRendering $
@@ -320,7 +320,8 @@ numeration sequenceIndex costStructure tree =
                   resultPoint =
                     Memo
                       { cumulativeDeletionEvents       = purgedAncestoralDeletions <> DE deletes
-                      , cumulativeInsertionEvents      = inserts <^> rereferencedDescendantInsertions -- purgedDescendantInsertions -- allDescendantInsertions
+                      , cumulativeInsertionEvents      = coalesce (DE deletes) inserts [allDescendantInsertions]
+--                      , cumulativeInsertionEvents      = inserts <^> rereferencedDescendantInsertions -- purgedDescendantInsertions -- allDescendantInsertions
                       , currentPsuedoCharacter         = psuedoCharacter resultingContext
                       , parentPsuedoCharacter          = parentNodePsuedoCharacter
                       , parentInsertionEvents          = parentNodeInsertionEvents
