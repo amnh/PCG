@@ -15,7 +15,8 @@
 
 module Analysis.ImpliedAlignment.InsertionEvents.Internal where
 
-import           Analysis.ImpliedAlignment.DeletionEvents
+import           Analysis.ImpliedAlignment.DeletionEvents       (DeletionEvents)
+import qualified Analysis.ImpliedAlignment.DeletionEvents as DE
 import           Data.Bifunctor       (bimap,second)
 import           Data.Foldable
 import           Data.IntMap          (IntMap)
@@ -28,6 +29,7 @@ import           Data.MonoTraversable
 import           Data.Sequence        (Seq,splitAt)
 import qualified Data.Sequence as Seq
 import           Prelude       hiding (lookup,splitAt,zip,zipWith)
+import           Test.QuickCheck
 
 import Debug.Trace (trace)
 
@@ -63,6 +65,12 @@ instance Eq a => Monoid (InsertionEvents a) where
   (IE lhs) `mappend` (IE rhs) = IE $ foldlWithKey' f lhs rhs
     where
       f mapping k v = IM.insertWith (flip (<>)) k v mapping
+
+instance (Arbitrary a, Eq a) => Arbitrary (InsertionEvents a) where
+  arbitrary = do
+    keys <- fmap getNonNegative . getNonEmpty <$> (arbitrary :: Gen (NonEmptyList (NonNegative Int)))
+    vals <- vectorOf (length keys) (listOf1 arbitrary) 
+    pure . fromList $ zip keys vals
 
 -- | This operator is used for combining an direct ancestoral edge with the
 --   combined insertion events of child edges.
@@ -107,7 +115,7 @@ instance Eq a => Monoid (InsertionEvents a) where
 --   combined insertion events of child edges.
 --
 --   Pronounced <http://www.dictionary.com/browse/coalesce "coalesce"> operator.
-coalesce :: (Eq a, Foldable t) => DeletionEvents -> InsertionEvents a -> t (InsertionEvents a) -> InsertionEvents a
+coalesce :: (Show a, Eq a, Foldable t) => DeletionEvents -> InsertionEvents a -> t (InsertionEvents a) -> InsertionEvents a
 coalesce ancestorDeletions (IE ancestorMap) descendantEvents = IE . IM.fromList $ result <> remaining acc
   where
     IE descendantMap = mconcat $ toList descendantEvents
@@ -121,6 +129,7 @@ coalesce ancestorDeletions (IE ancestorMap) descendantEvents = IE . IM.fromList 
     -- ek/v are the fold element's  key/value pair
     -- aies are ancestor insertion events
     -- ries are ancestor insertion event
+{-
     f (off, dels, iter, ries) ek ev =
       case dels of
         de:ds ->
@@ -149,35 +158,65 @@ coalesce ancestorDeletions (IE ancestorMap) descendantEvents = IE . IM.fromList 
               in if ek + off - len > ok
                  then f (off - len, dels, next iter         , newAns:ries) ek ev
                  else   (off      , dels, mutate ansMod iter,        ries)
-
+-}
+    f2 acc k v | trace (show acc <> show k <> show v) False = undefined
     f2 (off, dels, iter, ries) ek ev =
       case (getCurr iter, dels) of
+                                 -- If there is no more mutation state from the ancestoral insertion events
+                                 -- nor any more ancestoral deletion events we will simply apply the offest
+                                 -- to the descendant key
         (Nothing     ,    []) -> (off, dels, next iter, (ek + off, ev):ries)
         (Nothing     , de:ds) -> if de < (ek + off)
+                                 -- If there is no more mutation state from the ancestoral insertion events
+                                 -- and the next deletion event is strictly less than
+                                 -- the current decendant element's key after the offest is applied
+                                 -- then we increment the offest by one and recurse on the current decentant KVP.
                                  then f2 (off + 1,   ds,      iter,                ries) ek ev
-                                 else   (off    , dels, next iter, (ek + off, ev):ries)
+                                 -- If there is no more mutation state from the ancestoral insertion events
+                                 -- and the next deletion event is *not* strictly less than
+                                 -- the current decendant element's key after the offest is applied
+                                 -- then we simply apply the offset.
+                                 else    (off    , dels, next iter, (ek + off, ev):ries)
         (Just (ok,ov),    []) -> let
                                    len    = length ov
                                    newAns = (ok, getState iter)
                                    ansMod = (ek + off - ok, ev)
                                  in
                                    if ek + off - len > ok
+                                 -- If there is no more ancestoral deletion events
+                                 -- and the next deletion event is *not* less than the current keys after the offest is applied
+                                 -- then we increment the offest by one.
                                    then f2 (off - len, dels, next iter         , newAns:ries) ek ev
-                                   else   (off      , dels, mutate ansMod iter,        ries)
+                                   else g off iter dels ries ok ov ek ev
+--                                   else    (off      , dels, mutate ansMod iter,        ries)
           
         (Just (ok,ov), de:ds) -> let
                                    len = length ov
                                  in
                                    if ok > de && de < ek + off
                                    then f2 (off + 1,   ds,      iter,                ries) ek ev
-                                   else
+                                   else g off iter dels ries ok ov ek ev
+{-
                                      let
                                        newAns = (ok, getState iter)
                                        ansMod = (ek + off - ok, ev)
                                      in
-                                       if ek + off - len > ok
-                                       then f2 (off - len, dels, next iter         , newAns:ries) ek ev
-                                       else    (off      , dels, mutate ansMod iter,        ries)
+                                       if    ek + off < ok
+                                       then      (off      , dels, iter              , (ek,ev):ries)
+                                       else
+                                         if  ek + off - len > ok
+                                         then f2 (off - len, dels, next iter         ,  newAns:ries) ek ev
+                                         else    (off      , dels, mutate ansMod iter,         ries)
+-}
+    g off iter dels ries ok ov ek ev
+        | ek + off       < ok =    (off      , dels, iter              , (ek+off,ev):ries)
+        | ek + off - len > ok = f2 (off - len, dels, next iter         ,      newAns:ries) ek ev
+        | otherwise           =    (off      , dels, mutate ansMod iter,             ries)
+        where
+          len    = length ov
+          newAns = (ok, getState iter)
+          ansMod = (ek + off - ok, ev)
+          
         
 
 

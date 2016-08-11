@@ -9,4 +9,5 @@ extra-deps:
 - bv-0.4.1
 - megaparsec-5.0.0
 - mono-traversable-1.0.0.1
+- quickcheck-properties-0.1
 resolver: lts-6.10

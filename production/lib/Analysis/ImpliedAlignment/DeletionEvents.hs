@@ -15,12 +15,9 @@
 
 module Analysis.ImpliedAlignment.DeletionEvents where
 
-import           Data.Foldable
 import           Data.IntSet          (IntSet)
 import qualified Data.IntSet    as IS
-import           Data.Key
 import           Data.List            (intercalate)
-import           Data.Maybe
 import           Data.Monoid
 import           Data.MonoTraversable
 
@@ -123,6 +120,7 @@ instance Monoid DeletionEvents where
   
   as@(DE ancestorSet) `mappend` ds@(DE descendantSet) = DE . (ancestorSet <>) $ as `incrementDescendant` ds
 
+incrementDescendant :: DeletionEvents -> DeletionEvents -> IntSet
 incrementDescendant (DE ancestorSet) (DE descendantSet) = incrementedDescendantSet
   where
       (_,_,incrementedDescendantSet) = ofoldl' f (0, otoList ancestorSet, mempty) descendantSet
@@ -139,8 +137,8 @@ incrementDescendant (DE ancestorSet) (DE descendantSet) = incrementedDescendantS
           counter' = length prev + counter
           inc = consecutiveLength remaining
 
-          descendantIndex' = descendantIndex + counter
-          incrementation   = consecutiveLength . drop (descendantIndex' - 1) $ otoList ancestorSet
+--          descendantIndex' = descendantIndex + counter
+--          incrementation   = consecutiveLength . drop (descendantIndex' - 1) $ otoList ancestorSet
 
           consecutiveLength :: (Eq a, Num a) => [a] -> Int
           consecutiveLength = g 0
