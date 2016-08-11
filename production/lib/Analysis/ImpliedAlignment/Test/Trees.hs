@@ -124,6 +124,7 @@ testImpliedAlignmentCases = testGroup "Explicit test cases for implied alignment
     , testDeletionInsertionInterrelations
     , testMaliciousInsertions
     , testMaliceOfForethoughtInsertions
+    , testWhyTheAlgorithmHatesMe
     ]
 
 
@@ -1833,6 +1834,54 @@ testMaliceOfForethoughtInsertions = testCase "Insertion event nested inside a la
            , (15, "ACACA"  , ["AC-A-CA"], []     )
            , (16, "ACAGCA" , ["AC-AGCA"], []     )
 
+           ]
+
+
+
+
+
+{- |
+  This tree should *crush* your very soul.
+
+  0
+  |
+  +-1: AA
+  |
+  `-2
+    |
+    +-3: AA
+    |
+    `-4
+      |
+      +-5: ACA
+      |
+      `-6 
+        |
+        +-7: ACA
+        |
+        `-8
+          |
+          +-9 ACA
+          |
+          `-10: AGCTCA
+-}
+testWhyTheAlgorithmHatesMe :: TestTree
+testWhyTheAlgorithmHatesMe = testCase label $ decorationTest tree
+  where
+    label = "B̵̛͍̲̟̲͔̍̋̅͞͠E̛̛̲̹͔͇̠̮̭͐͐̋͘̕C̰̹̰̗̓͑̓̽̓͢͢A̖͍͚̞̺̞̥̙͇͊̏̽͆̑͂̾͛͠U̯͓̩̗̪̔̓̄͒͞ͅS̢̳̦̮͉̗̩̎̏̀̊̅̒͝Ȅ̵̟̩͙̪͉̞͍͓̘̎́͊́̒̾̓͘͟ W̵̝̳͈̻̱̳̹͔̤̍͑͂̋͌̎̑̅͟͠H̷̩̝̫͎̦͉̭̼̽̀͒̌̌͂͜͝Y̵̧̠̘̏̓̈̏̊͊̊͘͜ͅ Ḇ̨̛̠̝̤͔̹͖̥̝̒̽̀̔͋̄͘͡E̢̢̛̤̱̩̼̝͎̻̭͒͆̐͊̾͂͊͞ Ë̵̡̛̳̗͍̭̫̖̤̟̃͗͂͝͡͝À̴̤̬̖̥̤̣́͂̋́͗̄̀͘ͅS͍̥̤͍̘̩̮̘̬̈́̀͋̂̈́͡͝Y̷̨̢̖̣̼̘͑͂͒̔́͢"
+    
+
+    tree = [ ( 0, ""       , [""      ], [ 1, 2])
+           , ( 1, "AA"     , ["A----A"], []     )
+           , ( 2, ""       , [""      ], [ 3, 4])
+           , ( 3, "AA"     , ["A----A"], []     )
+           , ( 4, ""       , [""      ], [ 5, 6])
+           , ( 5, "ACA"    , ["A---CA"], []     )
+           , ( 6, ""       , [""      ], [ 7, 8])
+           , ( 7, "ACA"    , [""      ], []     )
+           , ( 8, ""       , [""      ], [ 9,10])
+           , ( 9, "ACA"    , ["A---CA"], []     )
+           , (10, "AGCTCA" , ["AGCTCA"], []     )
            ]
 
 

@@ -159,7 +159,7 @@ coalesce ancestorDeletions (IE ancestorMap) descendantEvents = IE . IM.fromList 
                  then f (off - len, dels, next iter         , newAns:ries) ek ev
                  else   (off      , dels, mutate ansMod iter,        ries)
 -}
-    f2 acc k v | trace (show acc <> show k <> show v) False = undefined
+--    f2 acc k v | trace (show acc <> show k <> show v) False = undefined
     f2 (off, dels, iter, ries) ek ev =
       case (getCurr iter, dels) of
                                  -- If there is no more mutation state from the ancestoral insertion events
