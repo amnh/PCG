@@ -1878,7 +1878,7 @@ testWhyTheAlgorithmHatesMe = testCase label $ decorationTest tree
            , ( 4, ""       , [""      ], [ 5, 6])
            , ( 5, "ACA"    , ["A---CA"], []     )
            , ( 6, ""       , [""      ], [ 7, 8])
-           , ( 7, "ACA"    , [""      ], []     )
+           , ( 7, "ACA"    , ["A---CA"], []     )
            , ( 8, ""       , [""      ], [ 9,10])
            , ( 9, "ACA"    , ["A---CA"], []     )
            , (10, "AGCTCA" , ["AGCTCA"], []     )

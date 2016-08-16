@@ -92,12 +92,12 @@ iaForest' inForest inMeta = inForest `setTrees` fmap (deriveImpliedAlignments in
 getForAlign :: NodeConstraint n s => n -> Vector s
 getForAlign n 
 --    | not . null $ getFinalGapped         n = getFinalGapped n
-    | not . null $ getPreliminaryUngapped n = getPreliminaryUngapped n 
---    | not . null $ getSingle              n = getSingle n 
+--    | not . null $ getPreliminaryUngapped n = getPreliminaryUngapped n 
+    | not . null $ getSingle              n = getSingle n 
     | not . null $ getEncoded     n         = getEncoded n 
     | otherwise = mempty {-error "No sequence at node for IA to numerate"-}
 
-shiftDescendantInsertions :: Eq a => DeletionEvents -> InsertionEvents a -> InsertionEvents a
+shiftDescendantInsertions :: (Eq a, Eq e) => DeletionEvents -> InsertionEvents a e -> InsertionEvents a e
 shiftDescendantInsertions localDeletions descendantInsertions = IE.wrap result
   where
     (_,_,result) = foldlWithKey' f (0, otoList localDeletions, mempty) $ IE.unwrap descendantInsertions
@@ -111,23 +111,23 @@ shiftDescendantInsertions localDeletions descendantInsertions = IE.wrap result
 --type DescendantInsertionEvents = IntSet
 
 --type MemoizedEvents  = (DeletionEvents, InsertionEvents, PseudoCharacter, DeletionEvents, DeletionEvents, InsertionEvents)
-data MemoizedEvents s
+data MemoizedEvents s e
    = Memo
    { cumulativeDeletionEvents       :: DeletionEvents
-   , cumulativeInsertionEvents      :: InsertionEvents (Element s)
+   , cumulativeInsertionEvents      :: InsertionEvents (Element s) e
    , currentPsuedoCharacter         :: PseudoCharacter
    , parentPsuedoCharacter          :: PseudoCharacter
-   , parentInsertionEvents          :: InsertionEvents (Element s)
+   , parentInsertionEvents          :: InsertionEvents (Element s) e
    , localRelativeDeletionEvents    :: DeletionEvents
    , localNormalizedDeletionEvents  :: DeletionEvents
-   , localRelativeInsertionEvents   :: InsertionEvents (Element s)
-   , localNormalizedInsertionEvents :: InsertionEvents (Element s)
+   , localRelativeInsertionEvents   :: InsertionEvents (Element s) e
+   , localNormalizedInsertionEvents :: InsertionEvents (Element s) e
    , doAncestorCharacter            :: Maybe s
    , doDescendantCharacter          :: Maybe s
-   , contextValue                   :: AlignmentContext (Element s)
+   , contextValue                   :: AlignmentContext (Element s) e
    }
 
-instance (EncodableDynamicCharacter s, Show (Element s)) => Show (MemoizedEvents s) where
+instance (EncodableDynamicCharacter s, Eq e, Show e, Show (Element s)) => Show (MemoizedEvents s e) where
   show memo = unlines
       [ "Deletion Events"
       , ("  Relative  : "<>) . show . otoList $ localRelativeDeletionEvents   memo
@@ -172,7 +172,7 @@ instance Monoid InsertionEvents where
            | otherwise    = v'
 -}
 
-normalizeInsertions :: Eq a => PseudoCharacter -> InsertionEvents a -> InsertionEvents a
+normalizeInsertions :: (Eq a, Eq e) => PseudoCharacter -> InsertionEvents a e -> InsertionEvents a e
 normalizeInsertions char inserts = IE.wrap $ IM.fromList normalizedInserts
   where
     (_,_,normalizedInserts) = foldlWithKey' f (0, IM.assocs $ IE.unwrap inserts, []) char
@@ -220,6 +220,7 @@ deriveImpliedAlignments sequenceMetadatas tree = foldlWithKey' f tree sequenceMe
 
 
 numeration :: (Eq n, TreeConstraint t n e s, IANode' n s, Show (Element s)) => Int -> CostStructure -> t -> t
+numeration sequenceIndex costStructure tree | trace ("Cost Structure: " <> show costStructure) False = undefined
 numeration sequenceIndex costStructure tree =
 --     trace (inspectGaps [33] renderingTree) $
 {--
@@ -287,7 +288,9 @@ numeration sequenceIndex costStructure tree =
                 , contextValue                   = rootContext
                 }
               where
-                rootPsuedoCharacter = seqList
+                rootPsuedoCharacter
+                  | not $ null leftOverInsertions = error "Leftover insertione events at root node. Out of range!"
+                  | otherwise = seqList
                   where
                     -- Maybe check for indicies after the length of the sequence.
                     insertionMapping = IE.unwrap allDescendantInsertions
@@ -301,6 +304,7 @@ numeration sequenceIndex costStructure tree =
                       case characterLength `lookup` insertionMapping of
                         Nothing -> []
                         Just n  -> replicate (length n) SoftGap
+                    leftOverInsertions = filter ((> characterLength) . fst) $ IM.assocs insertionMapping
 
                 rootContext =
                   Context
@@ -337,7 +341,7 @@ numeration sequenceIndex costStructure tree =
                   resultPoint
  
               where
-                resultingContext = applyLocalEventsToAlignment i j (DE deletes) (inserts) parentContext'
+                resultingContext = applyLocalEventsToAlignment (i,j) (DE deletes) (inserts) parentContext'
 
 
                 parentContext' = parentContext { psuedoCharacter = contextualPreviousPsuedoCharacter3 }
@@ -354,7 +358,7 @@ numeration sequenceIndex costStructure tree =
                 parentNodeInsertionEvents = insertionEvents parentContext -- currentPsuedoCharacter   memoPoint
 --                   trace (mconcat ["Accessing (",show $ parentMapping V.! j,",",show j,")"]) $
                    
-                (DE deletes, !inserts, doA, doD) = comparativeIndelEvents parentCharacter childCharacter costStructure
+                (DE deletes, !inserts, doA, doD) = comparativeIndelEvents (i,j) parentCharacter childCharacter costStructure
 
 --                (IE incrementedInsertionEvents)  = inserts >-< rereferencedDescendantInsertions
                 rereferencedDescendantInsertions = {- (\x -> trace (show x) x) $ -} shiftDescendantInsertions (DE deletes) allDescendantInsertions
@@ -577,7 +581,7 @@ numeration sequenceIndex costStructure tree =
             insertsToCompare    = foldMapWithKey mutator insertsToMutate
             DE deletesToCompare = localNormalizedDeletionEvents resultPoint
 
-deriveImpliedAlignment :: (EncodableDynamicCharacter s, NodeConstraint n s, IANode' n s, Show s, Show (Element s)) => Int -> Int -> Matrix (MemoizedEvents s) -> n -> n
+deriveImpliedAlignment :: (EncodableDynamicCharacter s, NodeConstraint n s, IANode' n s, Show s, Show (Element s)) => Int -> Int -> Matrix (MemoizedEvents s e) -> n -> n
 -- deriveImpliedAlignment nodeIndex _ _ | trace ("deriveImpliedAlignment " <> show nodeIndex <> " " <> show psuedoCharacter) False = undefined
 deriveImpliedAlignment nodeIndex sequenceIndex homologyMemoize node =
 {-
@@ -723,8 +727,8 @@ gatherParents childrenMapping = {- trace ("Gathered parents: " <> show x) -} int
           | e == -1   = acc + 1
           | otherwise = acc
 
-comparativeIndelEvents :: (SeqConstraint s) => s -> s -> CostStructure -> (DeletionEvents, InsertionEvents (Element s), s ,s)
-comparativeIndelEvents ancestorCharacterUnaligned descendantCharacterUnaligned costStructure
+comparativeIndelEvents :: (Eq e, SeqConstraint s) => e -> s -> s -> CostStructure -> (DeletionEvents, InsertionEvents (Element s) e, s ,s)
+comparativeIndelEvents edgeIdentifier ancestorCharacterUnaligned descendantCharacterUnaligned costStructure
   | olength ancestorCharacter /= olength descendantCharacter = error errorMessage
   | otherwise                                                = -- (\x -> trace (show x) x) $
                                                                (DE deletionEvents, IE.wrap insertionEvents, ancestorCharacter, descendantCharacter)
@@ -750,11 +754,11 @@ comparativeIndelEvents ancestorCharacterUnaligned descendantCharacterUnaligned c
       | otherwise {- Both not gap -}                       = (parentBaseIndex + 1, deletions , insertions )
       where
         deletions'          = parentBaseIndex `IS.insert` deletions
-        insertions'         = IM.insertWith (<>) parentBaseIndex (Seq.singleton descendantElement) insertions
+        insertions'         = IM.insertWith (<>) parentBaseIndex (Seq.singleton (descendantElement,edgeIdentifier)) insertions
         gap                 = getGapChar ancestorElement
         containsGap char    = gap .&. char /= zeroBits
-        insertionEventLogic =     ancestorElement == gap && not (containsGap descendantElement)
-        deletionEventLogic  =   descendantElement == gap && not (containsGap   ancestorElement)
+        insertionEventLogic =     ancestorElement == gap && descendantElement /= gap -- not (containsGap descendantElement)
+        deletionEventLogic  =   descendantElement == gap && ancestorElement   /= gap --not (containsGap   ancestorElement)
 {-        
         nothingLogic        =  (  ancestorElement == gap && containsGap descendantElement)
                             || (descendantElement == gap && containsGap   ancestorElement)
@@ -781,7 +785,7 @@ data RenderingDecoration
    , dSecretIndex         :: Int
    } deriving (Eq)
 
-instance (EncodableDynamicCharacter s, Show s, Show (Element s)) => Show (PeekTree s) where
+instance (EncodableDynamicCharacter s, Eq e, Show s, Show e, Show (Element s)) => Show (PeekTree s e) where
   show = drawTreeMultiLine . showNode
     where
       showNode (Node decoration edges) = Node (show decoration) (showEdge <$> edges)
@@ -827,7 +831,7 @@ renderDynamicCharacter char
     arbitrarySymbols :: [String]
     arbitrarySymbols = fmap pure . ('-' :) $ ['0'..'9'] <> ['A'..'Z'] <> ['a'..'z']  
 
-renderMemoizedEvents :: (EncodableDynamicCharacter s, Show s, Show (Element s)) => MemoizedEvents s -> String
+renderMemoizedEvents :: (EncodableDynamicCharacter s, Eq e, Show s, Show e, Show (Element s)) => MemoizedEvents s e -> String
 renderMemoizedEvents = show 
 
 -- | Neat 2-dimensional drawing of a tree.
@@ -847,14 +851,14 @@ draw (Node x xs) = lines x <> drawSubTrees xs
         prefix  =  "| "
         payload = (prefix <>) <$> lines edgeString
 
-type PeekTree s = RenderingNode RenderingDecoration (MemoizedEvents s)
+type PeekTree s e = RenderingNode RenderingDecoration (MemoizedEvents s e)
 
 constructRenderingTree :: (Eq n, NodeConstraint n s, IANode' n s)
                        => Int
                        -> Int
                        -> Vector (n, IntSet)
-                       -> Matrix (MemoizedEvents s)
-                       -> PeekTree s
+                       -> Matrix (MemoizedEvents s e)
+                       -> PeekTree s e
 --                       -> RenderingNode String String
 constructRenderingTree charIndex rootIndex adjacentcyList memoMatrix = constructTree rootIndex
   where
@@ -882,7 +886,7 @@ constructRenderingTree charIndex rootIndex adjacentcyList memoMatrix = construct
 
         getFieldMay accessor = fmap renderDynamicCharacter $ charIndex `lookup` accessor node
 
-renderInspectedGaps :: (EncodableDynamicCharacter s, Show (Element s)) => [(RenderingDecoration, MemoizedEvents s, RenderingDecoration)] -> String
+renderInspectedGaps :: (EncodableDynamicCharacter s, Eq e, Show e, Show (Element s)) => [(RenderingDecoration, MemoizedEvents s e, RenderingDecoration)] -> String
 renderInspectedGaps = unlines . fmap renderEventSite
   where
     indentLine  = ("  " <>)
@@ -895,7 +899,7 @@ renderInspectedGaps = unlines . fmap renderEventSite
                                       , indentBlock $ show z
                                       ]
 
-inspectGapIndex :: (Eq (Element s)) => Int -> RenderingNode t (MemoizedEvents s) -> [(t, MemoizedEvents s, t)]
+inspectGapIndex :: (Eq (Element s), Eq e) => Int -> RenderingNode t (MemoizedEvents s e) -> [(t, MemoizedEvents s e, t)]
 inspectGapIndex gapIndex rootNode = catMaybes $ nodeEventSites rootNode
   where
     nodeEventSites (Node parentDecoration edges) = concatMap edgeEventSite edges
@@ -911,7 +915,7 @@ inspectGapIndex gapIndex rootNode = catMaybes $ nodeEventSites rootNode
               | otherwise                                             = Nothing 
           
 --inspectGaps :: [Int] -> PeekTree s -> String
-inspectGaps :: (Functor t, Foldable t, EncodableDynamicCharacter s, Show (Element s)) => t Int -> RenderingNode RenderingDecoration (MemoizedEvents s) -> String
+inspectGaps :: (Functor t, Foldable t, EncodableDynamicCharacter s, Eq e, Show e, Show (Element s)) => t Int -> RenderingNode RenderingDecoration (MemoizedEvents s e) -> String
 inspectGaps gapIndices renderingTree = unlines ["Tree toplogy:", "", renderedTreeTopology, "", renderedInspections]
   where
     renderedTreeTopology = renderRenderingTreeTopology renderingTree

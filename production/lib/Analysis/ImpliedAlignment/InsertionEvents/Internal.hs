@@ -17,6 +17,7 @@ module Analysis.ImpliedAlignment.InsertionEvents.Internal where
 
 import           Analysis.ImpliedAlignment.DeletionEvents       (DeletionEvents)
 import qualified Analysis.ImpliedAlignment.DeletionEvents as DE
+import           Control.Arrow        ((&&&))
 import           Data.Bifunctor       (bimap,second)
 import           Data.Foldable
 import           Data.IntMap          (IntMap)
@@ -52,9 +53,9 @@ import Debug.Trace (trace)
   May be also be combined directionally to accululate out edges and an in edge of
   a node to represent all insertion events below the in edge.
 -}
-newtype InsertionEvents a = IE (IntMap (Seq a)) deriving (Eq)
+newtype InsertionEvents a e = IE (IntMap (Seq (a,e))) deriving (Eq)
 
-instance Eq a => Monoid (InsertionEvents a) where
+instance (Eq a, Eq e) => Monoid (InsertionEvents a e) where
   -- | This represent no insertionevents occurring on an edge
   mempty = IE mempty
 
@@ -66,17 +67,18 @@ instance Eq a => Monoid (InsertionEvents a) where
     where
       f mapping k v = IM.insertWith (flip (<>)) k v mapping
 
-instance (Arbitrary a, Eq a) => Arbitrary (InsertionEvents a) where
+instance (Arbitrary a, Arbitrary e, Eq a, Eq e) => Arbitrary (InsertionEvents a e) where
   arbitrary = do
+    let gen = (,) <$> arbitrary <*> arbitrary
     keys <- fmap getNonNegative . getNonEmpty <$> (arbitrary :: Gen (NonEmptyList (NonNegative Int)))
-    vals <- vectorOf (length keys) (listOf1 arbitrary) 
-    pure . fromList $ zip keys vals
+    vals <- vectorOf (length keys) (listOf1 gen) 
+    pure . IE . IM.fromList $ zipWith (\x y -> (x, Seq.fromList y)) keys vals
 
 -- | This operator is used for combining an direct ancestoral edge with the
 --   combined insertion events of child edges.
 --
 --   Pronounced <http://www.dictionary.com/browse/coalesce "coalesce"> operator.
-(<^>) :: Eq a => InsertionEvents a -> InsertionEvents a -> InsertionEvents a
+(<^>) :: (Eq a, Eq e) => InsertionEvents a e -> InsertionEvents a e -> InsertionEvents a e
 (<^>) (IE ancestorMap) (IE descendantMap) = IE . IM.fromList $ result <> remaining acc
   where
     (_, acc, result) = foldlWithKey f initialAccumulator descendantMap
@@ -115,9 +117,13 @@ instance (Arbitrary a, Eq a) => Arbitrary (InsertionEvents a) where
 --   combined insertion events of child edges.
 --
 --   Pronounced <http://www.dictionary.com/browse/coalesce "coalesce"> operator.
-coalesce :: (Show a, Eq a, Foldable t) => DeletionEvents -> InsertionEvents a -> t (InsertionEvents a) -> InsertionEvents a
-coalesce ancestorDeletions (IE ancestorMap) descendantEvents = IE . IM.fromList $ result <> remaining acc
+coalesce :: (Eq a, Eq e, Foldable t) => DeletionEvents -> InsertionEvents a e -> t (InsertionEvents a e) -> InsertionEvents a e
+coalesce ancestorDeletions (IE ancestorMap) descendantEvents
+  | any (<0) $ IM.keys descendantMap = error "A negative key value was created"
+  | size output /= (sum $ size <$> toList descendantEvents) + size (IE ancestorMap) = error "Serious problem, size is not additive"
+  | otherwise                        = output
   where
+    output = IE . IM.fromList $ result <> remaining acc
     IE descendantMap = mconcat $ toList descendantEvents
     (_, _, acc, result) = foldlWithKey f2 initialAccumulator descendantMap
     initialAccumulator = (0, otoList ancestorDeletions, initializeMutationIterator (IM.assocs ancestorMap), [])
@@ -223,7 +229,7 @@ coalesce ancestorDeletions (IE ancestorMap) descendantEvents = IE . IM.fromList 
 
 
 -- | A nicer version of Show hiding the internal structure.
-instance Show a => Show (InsertionEvents a) where
+instance (Show a, Show e) => Show (InsertionEvents a e) where
   show (IE xs) = mconcat
       [ "{"
       , intercalate "," $ render <$> kvs
@@ -249,19 +255,21 @@ instance Show a => Show (InsertionEvents a) where
 
 -- | Constructs an InsertionEvents collection from a structure of integral keys
 -- and sequences of equatable elements.
-fromList :: (Enum i, Eq a, Foldable t, Foldable t') => t (i, t' a) -> InsertionEvents a
+fromList :: (Enum i, Eq a, Foldable t, Foldable t') => t (i, t' a) -> InsertionEvents a Int
 fromList = IE . IM.fromList . fmap (fromEnum `bimap` toSeq) . toList
   where
-    toSeq = Seq.fromList . toList
+    toSeq = Seq.fromList . fmap (id &&& const 0) . toList
 
 -- | Constructs an InsertionEvents collection from an IntMap of Sequences
-wrap :: Eq a => IntMap (Seq a) -> InsertionEvents a
+wrap :: (Eq a, Eq e) => IntMap (Seq (a,e)) -> InsertionEvents a e
 wrap = IE
 
 -- | Extracts an IntMap of Sequences from an InsertionEvents collection.
-unwrap :: Eq a => InsertionEvents a -> IntMap (Seq a)
+unwrap :: (Eq a, Eq e) => InsertionEvents a e -> IntMap (Seq (a,e))
 unwrap (IE x) = x
 
+size :: InsertionEvents a e -> Int
+size (IE im) = sum $ length <$> im
 
 -- INTERNAL STRUCTURES:
 
