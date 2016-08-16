@@ -106,6 +106,7 @@ data SimpleTree = TT (Tree TestingDecoration)
 data TestingDecoration
    = Decorations
    { dEncoded          :: Vector DynamicChar
+   , dSingle           :: Vector DynamicChar
    , dFinal            :: Vector DynamicChar
    , dGapped           :: Vector DynamicChar
    , dPreliminary      :: Vector DynamicChar
@@ -124,6 +125,7 @@ data TestingDecoration
 def :: TestingDecoration
 def = Decorations
     { dEncoded          = mempty
+    , dSingle           = mempty
     , dFinal            = mempty
     , dGapped           = mempty
     , dPreliminary      = mempty
@@ -162,6 +164,7 @@ instance Show TestingDecoration where
         ]
       renderedDecorations =
         [ g "Encoded                   " <$> f dEncoded
+        , g "Single                    " <$> f dSingle
         , g "Final Ungapped            " <$> f dFinal
         , g "Final Gapped              " <$> f dGapped
         , g "Preliminary Ungapped      " <$> f dPreliminary
@@ -256,6 +259,11 @@ instance FN.FinalNode SimpleTree DynamicChar where
         
     getFinalGapped   (TT n) = dGapped  $ rootLabel n
     setFinalGapped x (TT n) = TT $ n { rootLabel = decoration { dGapped = x } }
+      where
+        decoration = rootLabel n
+
+    getSingle       (TT n) = dSingle   $ rootLabel n
+    setSingle     x (TT n) = TT $ n { rootLabel = decoration { dSingle = x } }
       where
         decoration = rootLabel n
 

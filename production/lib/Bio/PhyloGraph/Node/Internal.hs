@@ -42,12 +42,12 @@ data Node = Node  { nodeIdx                 :: Int
                   , union                   :: Vector DynamicChar -- ^ the union assignment
                   , single                  :: Vector DynamicChar -- ^ the single assignment
                   --, temporary           :: Vector DynamicChar -- multipurpose temporary assignment
-                  , preliminaryUngapped     :: Vector DynamicChar -- ^ ungapped assignment, after preorder traversal
                   , finalUngapped           :: Vector DynamicChar -- ^ ungapped final assignment, after postorder traversal
+                  , finalGapped             :: Vector DynamicChar -- ^ gapped final assignment, for use in IA
                   , preliminaryGapped       :: Vector DynamicChar -- ^ gapped alignment from preorder travesal
+                  , preliminaryUngapped     :: Vector DynamicChar -- ^ ungapped assignment, after preorder traversal
                   , leftChildwiseAlignment  :: Vector DynamicChar -- ^ gapped alignment of the left child compared to it's right sibling
                   , rightChildwiseAlignment :: Vector DynamicChar -- ^ gapped alignment of the right child compared to it's left sibling
-                  , finalGapped             :: Vector DynamicChar -- ^ gapped final assignment, for use in IA
                   , iaHomology              :: IN.HomologyTrace   -- ^ the homology traces for an implied alignment (the matrix is numChars by charLength). might be deprecated
                   , impliedAlignment        :: Vector DynamicChar -- ^ the homology traces for an implied alignment (the matrix is numChars by charLength)
                   , localCost               :: Double             -- ^ cost of assignment at this node alone
@@ -65,6 +65,8 @@ instance FN.FinalNode Node DynamicChar where
     setFinal f n       = n {finalUngapped = f}
     getFinalGapped     = finalGapped
     setFinalGapped f n = n {finalGapped = f}
+    getSingle          = single
+    setSingle f n      = n {single = f}
 
 -- | (✔)
 instance PN.PackedNode Node DynamicChar where

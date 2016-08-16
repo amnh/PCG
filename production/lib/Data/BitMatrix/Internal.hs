@@ -175,7 +175,7 @@ isSet :: BitMatrix -> (Int, Int) -> Bool
 
 -- | Performs a row-wise monomporphic map over ther 'BitMatrix'.
 instance MonoFunctor BitMatrix where
-  omap f bm = BitMatrix (numCols bm) . mconcat $ f <$> rows bm
+  omap f bm = BitMatrix (numCols bm) . mconcat . Prelude.reverse $ f <$> rows bm
 
 -- | Performs a row-wise monomporphic fold over ther 'BitMatrix'.
 instance MonoFoldable BitMatrix where
