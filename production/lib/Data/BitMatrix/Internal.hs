@@ -17,7 +17,7 @@ module Data.BitMatrix.Internal where
 
 import Data.Bifunctor
 import Data.BitVector  hiding (foldl,foldr)
-import Data.Function.Memoize
+--import Data.Function.Memoize
 import Data.List.Utility      (equalityOf)
 import Data.Foldable
 import Data.Maybe             (fromMaybe)
@@ -231,6 +231,7 @@ instance MonoTraversable BitMatrix where
     -- collect the results.
     {-# INLINE omapM #-}
     omapM = otraverse
+{-
 
 -- | (✔)
 instance Memoizable BitMatrix where
@@ -241,6 +242,7 @@ instance Memoizable BV where
     memoize f char = memoize (f . bitVec w) (nat char)
       where
         w = width char
+-}
 
 -- | For binary operations we (perhaps erroneously) assume equal column and row
 --   dimensions

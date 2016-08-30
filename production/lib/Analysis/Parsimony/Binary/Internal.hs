@@ -33,7 +33,7 @@ import Bio.PhyloGraph.Solution
 --import Data.Maybe
 import Data.Bits             ((.&.),zeroBits)
 import Data.Foldable
-import Data.Function.Memoize (Memoizable)
+--import Data.Function.Memoize (Memoizable)
 import Data.IntMap           (IntMap)
 import qualified Data.IntMap as IM
 import Data.Key       hiding ((!))
@@ -315,7 +315,7 @@ insertNewGaps insertionIndicies character = constructDynamic . (<> trailingGaps)
         Nothing -> [e]
         Just n  -> replicate n gap <> [e]
       
-threeWayMean :: (Show (Element c),Show c, EncodableDynamicCharacter c, Memoizable (Element c)) => CostStructure -> c -> c -> c -> (Double, c, c)
+threeWayMean :: (Show (Element c), Show c, EncodableDynamicCharacter c {-, Memoizable (Element c) -} ) => CostStructure -> c -> c -> c -> (Double, c, c)
 --threeWayMean _ char1 char2 char3 | trace (mconcat [show char1, show char2, show char3]) False = undefined
 threeWayMean costStructure char1 char2 char3
   | not uniformLength = error $ "Three sequences supplied to 'threeWayMean' function did not have uniform length." <> show char1 <> show char2 <> show char3

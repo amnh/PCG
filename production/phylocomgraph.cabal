@@ -47,7 +47,7 @@ library
                      , matrix               -any
                      , megaparsec           >=5.0
                      , mono-traversable     >=1.0
-                     , memoize              -any
+--                     , memoize              -any
                      , parallel             -any
                      , QuickCheck           -any
                      , safe                 -any
@@ -221,7 +221,7 @@ executable pcg
                      , keys                 -any
                      , matrix               -any
                      , megaparsec           >=5.0
-                     , memoize              -any
+--                     , memoize              -any
                      , mono-traversable     -any
                      , mtl                  -any
                      , parallel             -any
@@ -299,7 +299,7 @@ executable qdh
                      , keys                 -any
                      , matrix               -any
                      , megaparsec           >=5.0
-                     , memoize              -any
+--                     , memoize              -any
                      , mono-traversable     -any
                      , parallel             -any
                      , phylocomgraph        -any
@@ -365,7 +365,7 @@ executable fasta-differ
                      , keys                  -any
                      , matrix                -any
                      , megaparsec            >=5.0
-                     , memoize               -any
+--                     , memoize               -any
                      , mono-traversable      -any
                      , parallel              -any
                      , phylocomgraph         -any
@@ -418,7 +418,7 @@ Test-Suite testsuite
                      , keys                 -any
                      , matrix               -any
                      , megaparsec           >=5.0
-                     , memoize              -any
+--                     , memoize              -any
                      , mono-traversable     -any
                      , parallel             -any
                      , phylocomgraph        -any

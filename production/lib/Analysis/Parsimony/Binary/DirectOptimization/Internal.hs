@@ -20,7 +20,7 @@ import Bio.Character.Dynamic.Coded
 import Data.Bits
 --import Data.BitVector hiding (foldr, reverse)
 import Data.Foldable         (minimumBy)
-import Data.Function.Memoize
+--import Data.Function.Memoize
 import Data.Key              ((!))
 import Data.Matrix.NotStupid (Matrix, matrix, nrows, ncols)
 import Data.MonoTraversable
@@ -37,7 +37,7 @@ data Direction = LeftArrow | DiagArrow | UpArrow deriving (Eq, Show)
 type DOAlignMatrix s = Matrix (Double, Direction, s)
 
 -- | Constraints on the input dynamic characters that direct optiomization operates on.
-type DOCharConstraint c = (EncodableDynamicCharacter c, Show c, Memoizable c, Show (Element c))
+type DOCharConstraint c = (EncodableDynamicCharacter c, Show c, {- Memoizable c, -} Show (Element c))
 
 -- | Performs a naive direct optimization
 -- Takes in two characters to run DO on and a metadata object
@@ -193,10 +193,10 @@ getTotalAlignmentCost alignmentMatrix = c
     (c, _, _) = alignmentMatrix ! (nrows alignmentMatrix - 1, ncols alignmentMatrix - 1) 
 
 -- | Memoized wrapper of the overlap function
-getOverlap :: (EncodableStaticCharacter c, Memoizable c, Show c) => c -> c -> CostStructure -> (c, Double)
+getOverlap :: (EncodableStaticCharacter c, {- Memoizable c, -} Show c) => c -> c -> CostStructure -> (c, Double)
 getOverlap inChar1 inChar2 costStruct = result
     where
-        result = memoize2 (overlap costStruct) inChar1 inChar2
+        result = {- memoize2 -} (overlap costStruct) inChar1 inChar2
         
 -- | Takes two 'EncodableStaticCharacter' and a 'CostStructure' and returns a tuple of a new character, 
 -- along with the cost of obtaining that character. The return character may be (or is even likely to be)

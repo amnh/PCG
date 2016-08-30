@@ -39,7 +39,7 @@ import           Data.Key
 import           Data.Bits
 import           Data.BitVector               hiding (foldr, join, not, replicate)
 import           Data.Foldable
-import           Data.Function.Memoize
+--import           Data.Function.Memoize
 import           Data.Map                            (Map)
 import qualified Data.Map                       as M
 import           Data.Maybe                          (fromMaybe)
@@ -205,8 +205,10 @@ instance Bits DynamicChar where
     isSigned     (DC b)             = isSigned b
     popCount     (DC b)             = popCount b
 
+{-
 instance Memoizable DynamicChar where
     memoize f (DC bm) = memoize (f . DC) bm
+-}
 
 -- We restrict the DynamicChar values generated to be non-empty.
 -- Most algorithms assume a nonempty dynamic character.

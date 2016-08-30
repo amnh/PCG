@@ -11,7 +11,7 @@
 -- Standard edge structure for phylogenetic trees
 --
 -----------------------------------------------------------------------------
-{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE AllowAmbiguousTypes, MultiParamTypeClasses #-}
 
 module Bio.PhyloGraph.Edge.Class where
 
