@@ -122,9 +122,9 @@ testImpliedAlignmentCases = testGroup "Explicit test cases for implied alignment
     , testAdjacentDeletionInsertionEvents2
     , testTheDamnTrucnation
     , testDeletionInsertionInterrelations
-    , testMaliciousInsertions
-    , testMaliceOfForethoughtInsertions
-    , testWhyTheAlgorithmHatesMe
+    , testNestedInsertions
+    , testBranchesWithAdjacentInsertions
+    , testAmbigousResolutionConsistency
     ]
 
 
@@ -1712,7 +1712,7 @@ testDeletionAfterAboveInsertion = testCase "Insertion event with deletion event 
         |
         `-8
           |
-          +-9: ACAG
+           +-9: ACAG
           |
           `-10: ACA
 -}
@@ -1734,7 +1734,11 @@ testDeletionAfterBelowInsertion = testCase "Insertion event with deletion event 
 
 
 {- |
-  This tree should mess everything up.
+  This tree contains an insertion event embedded in an earlier ancertoral insertion sequence.
+
+  This won't be handled appropriately with greedy preorder traversal insertions, unless extra
+  information is stored in the insertion event structure, or pains are taken to perform linear
+  probing during the folds.
 
   0
   |
@@ -1758,8 +1762,8 @@ testDeletionAfterBelowInsertion = testCase "Insertion event with deletion event 
           |
           `-10: ACGCA
 -}
-testMaliciousInsertions :: TestTree
-testMaliciousInsertions = testCase "Insertion event nested inside a larger ancetoral insertion event" $ decorationTest tree
+testNestedInsertions :: TestTree
+testNestedInsertions = testCase "Insertion event nested inside a larger ancetoral insertion event" $ decorationTest tree
   where
     tree = [ ( 0, ""     , [""     ], [ 1, 2])
            , ( 1, "AA"   , ["A---A"], []     )
@@ -1777,7 +1781,13 @@ testMaliciousInsertions = testCase "Insertion event nested inside a larger ancet
 
 
 {- |
-  This tree should /really/ mess everything up.
+  This tree contains disjoint ancestoral insertion events and branches with
+  anti-symetric adjacent insertion events.
+
+  This tree tests that the ordering of insertion event biasing from root to leafs
+  is handled appropriately.
+
+  This tree will fail for many naive attempts at greedy insertion event application.
 
   0
   |
@@ -1813,8 +1823,8 @@ testMaliciousInsertions = testCase "Insertion event nested inside a larger ancet
             |
             `-12: ACGACA
 -}
-testMaliceOfForethoughtInsertions :: TestTree
-testMaliceOfForethoughtInsertions = testCase "Insertion event nested inside a larger ancetoral insertion event" $ decorationTest tree
+testBranchesWithAdjacentInsertions :: TestTree
+testBranchesWithAdjacentInsertions = testCase "Insertion events adjacent to ancetoral insertion events" $ decorationTest tree
   where
     tree = [ ( 0, ""       , [""       ], [ 1, 2])
            , ( 1, "AAA"    , ["A--A--A"], []     )
@@ -1838,10 +1848,19 @@ testMaliceOfForethoughtInsertions = testCase "Insertion event nested inside a la
 
 
 
-
-
 {- |
   This tree should *crush* your very soul.
+
+  This tree contains insertion events which are ambigous with respect to thier
+  resolution. On resolution is of a large insertion event prepended to a smaller
+  ancestoral insertion event. Another resolution is of two insertion events
+  prepending and appending another ancestoral insetrtion event.
+
+  This will break if the implied alignment postorder traversal accumulation of
+  insertion events is not perfectly reapplied during the preorder traversal. It is
+  possible that one of the ambiguous resolutions will be chosen on the postorder
+  traversal and that the other ambiguous resolution will be chosen on the preorder
+  traversal.
 
   0
   |
@@ -1865,12 +1884,9 @@ testMaliceOfForethoughtInsertions = testCase "Insertion event nested inside a la
           |
           `-10: AGCTCA
 -}
-testWhyTheAlgorithmHatesMe :: TestTree
-testWhyTheAlgorithmHatesMe = testCase label $ decorationTest tree
+testAmbigousResolutionConsistency :: TestTree
+testAmbigousResolutionConsistency = testCase "Consistency of ambiguous insertion event resolutions" $ decorationTest tree
   where
-    label = "B̵̛͍̲̟̲͔̍̋̅͞͠E̛̛̲̹͔͇̠̮̭͐͐̋͘̕C̰̹̰̗̓͑̓̽̓͢͢A̖͍͚̞̺̞̥̙͇͊̏̽͆̑͂̾͛͠U̯͓̩̗̪̔̓̄͒͞ͅS̢̳̦̮͉̗̩̎̏̀̊̅̒͝Ȅ̵̟̩͙̪͉̞͍͓̘̎́͊́̒̾̓͘͟ W̵̝̳͈̻̱̳̹͔̤̍͑͂̋͌̎̑̅͟͠H̷̩̝̫͎̦͉̭̼̽̀͒̌̌͂͜͝Y̵̧̠̘̏̓̈̏̊͊̊͘͜ͅ Ḇ̨̛̠̝̤͔̹͖̥̝̒̽̀̔͋̄͘͡E̢̢̛̤̱̩̼̝͎̻̭͒͆̐͊̾͂͊͞ Ë̵̡̛̳̗͍̭̫̖̤̟̃͗͂͝͡͝À̴̤̬̖̥̤̣́͂̋́͗̄̀͘ͅS͍̥̤͍̘̩̮̘̬̈́̀͋̂̈́͡͝Y̷̨̢̖̣̼̘͑͂͒̔́͢"
-    
-
     tree = [ ( 0, ""       , [""      ], [ 1, 2])
            , ( 1, "AA"     , ["A----A"], []     )
            , ( 2, ""       , [""      ], [ 3, 4])
