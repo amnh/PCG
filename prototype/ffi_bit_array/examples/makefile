@@ -38,7 +38,7 @@ clean :
 # 	ghc -O --make mySimpleBitArrayFFI.hs mySimpleBitArrayTestC.o
 
 ############ complex bit array case
-my_ffi : myComplexBitArrayTestC.c myComplexBitArrayTestC.h myComplexBitArrayFFI.hs
+my_ffi : myComplexBitArrayTestC.c myComplexBitArrayTestC.h myComplexBitArrayFFI.hsc
 	rm -f myComplexBitArrayFFI.hs
 	hsc2hs myComplexBitArrayFFI.hsc
 	gcc -c myComplexBitArrayTestC.c

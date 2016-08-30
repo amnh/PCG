@@ -1,5 +1,5 @@
-/* POY 5.1.1. A phylogenetic analysis program using Dynamic Homologies.       */
-/* Copyright (C) 2014 AndrÃ©s VarÃ³n, Lin Hong, Nicholas Lucaroni, Ward Wheeler,*/
+/* POY 4.0 Beta. A phylogenetic analysis program using Dynamic Homologies.    */
+/* Copyright (C) 2007  Andrés Varón, Le Sy Vinh, Illya Bomash, Ward Wheeler,  */
 /* and the American Museum of Natural History.                                */
 /*                                                                            */
 /* This program is free software; you can redistribute it and/or modify       */
@@ -18,6 +18,7 @@
 /* USA                                                                        */
 
 #ifndef MATRICES_H
+
 #define MATRICES_H 1
 #define DIAGONAL (1 << 0)
 #define BEHIND (1 << 1)
@@ -43,32 +44,22 @@
 
 #define Matrices_struct(a) ((struct matrices *) Data_custom_val(a))
 
-#ifdef USE_LONG_SEQUENCES
-#define MAT_SIZE long int
-#else 
-#define MAT_SIZE int
-#endif
-
 struct matrices {
-    MAT_SIZE len;       /* Total length of available memory allocated */
-    int len_eff;        /* Length of the 3d efficient matrix */
-    int len_pre;        /* Length of the precalculated matrix */
-    int *matrix;        /* Matrix for regular alignment */
-    DIRECTION_MATRIX *matrix_d;     /* Matrix for directions in a 2d alignment */
-    //we need four gap number arrays, two for each sequence. each sequence need
-    //a previous array and a current one.
-    int len_gapnumarr;
-    DIRECTION_MATRIX *gap_num1; 
-    DIRECTION_MATRIX *gap_num2; 
-    DIRECTION_MATRIX *gap_num3; 
-    DIRECTION_MATRIX *gap_num4; 
-    int **pointers_3d;  /* Matrix of pointers to each rwo in a 3d align */
-    int *cube;          /* Matrix for 3d alignment */
-    DIRECTION_MATRIX *cube_d;       /* Matrix for directions in a 3d alignment */
-    int *precalc;       /* Matrix of precalculated arrays */
+                                  /****** In each of the following calculations, seq length includes opening gap *******/
+    int len;                      // Total length of available memory allocated == (len_s1 + len_s2 + 2)^2 
+    int len_eff;                  // Length of the 3d efficient matrix == 12 * max(len_s1, lens2) 
+    int len_pre;                  // Length of the precalculated matrix == max(len_s1, lens2) * (alphSize + 1) ---extra 1 is for gap 
+    int *matrix;                  // Matrix for regular alignment 
+    DIRECTION_MATRIX *dir_mtx_2d; // Matrix for directions in a 2d alignment 
+    int **pointers_3d;            // Matrix of pointers to each row in a 3d align 
+    int *cube;                    // Matrix for 3d alignment 
+    DIRECTION_MATRIX *cube_d;     // Matrix for directions in a 3d alignment 
+    int *precalc;                 // Matrix of precalculated arrays 
 };
 
 typedef struct matrices * matricest;
+
+void print_matrices(matricest m);
 
 /* 
  * Calculates the amount of memory required to perform a three dimensional
@@ -87,12 +78,11 @@ mat_size_of_2d_matrix (int w, int h);
 
 /*
  * Rearrange or reallocate memory if necessary to perform an alignment between
- * sequences of length w, d and h; over alphabet of size a_sz. Note that for 2d
- * alignments is necessary to * set h=0, and k=0. if we are using "level", 
- * set uselevel to 1
+ * sequences of length w, d and h. Note that for 2d alignments is necessary to
+ * set h=0, and uk=0. 
  */
 int
-mat_setup_size (matricest m, int w, int d, int h, int k, int a_sz,int uselevel);
+mat_setup_size (matricest m, int w, int d, int h, int k, int a_sz);
 
 /* 
  * Gets the pointer to the first memory position of the 2d alignment matrix. 
@@ -131,11 +121,6 @@ void
 mat_print_algn_2d (matricest m, int w, int h);
 
 void
-mat_print_dir_2d (matricest m, int w, int h);
-
-void
-mat_clean_direction_matrix (matricest m);
-
-void
 mat_print_algn_3d (matricest m, int w, int h, int d);
+
 #endif /* MATRICES_H */

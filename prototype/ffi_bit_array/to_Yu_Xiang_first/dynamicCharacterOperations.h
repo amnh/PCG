@@ -43,8 +43,8 @@ typedef struct alignResult_t {
 } alignResult_t;
 
 /** 
- *  This holds the array of _possibly ambiguous_ static chars (i.e. a single dynamic character),
- *  along with it's alphabet size and the number of "characters" in the dynChar.
+ *  This holds the array of _possibly ambiguous_ dynamic character elements
+ *  along with its alphabet size and the number of elements in the dynChar.
  *  See note in .c file for how this is used. 
  */
 typedef struct dynChar_t {
@@ -72,7 +72,7 @@ unsigned int bufferSize(const dynChar_t* const character);
  *  be replaced. A second input is provided, which is the replacement static character.
  *  Fails if the position of the static char to be replaced is beyond the end of the dynamic character to be altered.
  *  Fails if the alphabet sizes of the two input characters are different.
- */    
+ */
 int setStaticChar( const unsigned int whichIdx, const dynChar_t* const changeToThis, dynChar_t* const charToBeAltered );
 
 /** 

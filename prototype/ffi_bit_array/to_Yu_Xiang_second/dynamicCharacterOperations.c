@@ -1,6 +1,6 @@
 /**
  * For function documentation see the header file.
- * Don't modify the implementation without consulting library maintainer.
+ * Please don't modify the implementation without consulting library maintainer.
  */
 
 #include <stdint.h>

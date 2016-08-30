@@ -1,0 +1,5 @@
+read("./sample.fa")
+transform(tcm: "./sample.mat")
+build(1)
+select()
+exit()

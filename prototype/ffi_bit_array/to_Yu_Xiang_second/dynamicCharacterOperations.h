@@ -18,13 +18,13 @@
  *    of a dynamic character, but will do for our purposes.)
  */
 
+#ifndef DYNAMIC_CHARACTER_OPERATIONS
+#define DYNAMIC_CHARACTER_OPERATIONS
+
 /**
  *  stdint is a library that provides int values for all architectures. This will allow the code to
  *  compile even on architectures on which int != 32 bits (and, more to the point, unsigned long int != 64 bits).
  */
-#ifndef DYNAMIC_CHARACTER_OPERATIONS
-#define DYNAMIC_CHARACTER_OPERATIONS
-
 #include <stdint.h>
 
 // these must be static to prevent compilation issues.
@@ -86,44 +86,46 @@ void freeDCElem( dcElement_t* p );
 
 
 /**
- *  Takes in a dynamic character to be altered, as well as the index of the static character that will
- *  be replaced. A second input is provided, which is the replacement static character.
- *  Fails if the position of the static char to be replaced is beyond the end of the dynamic character to be altered.
+ *  Takes in a dynamic character to be altered, as well as the index of the element that will
+ *  be replaced. A second input is provided, which is the replacement element.
+ *  Fails if the position of the element to be replaced is beyond the end of the dynamic character to be altered.
  *  Fails if the alphabet sizes of the two input characters are different.
  */
 int setDCElement( const size_t whichIdx, const dcElement_t* const changeToThis, dynChar_t* const charToBeAltered );
 
 /**
- *  Find and return a static character in a packed dynamic character.
- *  Copy that character into a static character (which was passed in by ref).
- *  Return failure if:
+ *  Find and return an element from a packed dynamic character.
+ *  Return failure (indicted as an alphabet size of 0) if:
  *  • character requested is beyond end of dynamic character's length
  *  • the alphabet sizes of the input and output characters don't match
  *
- *  Nota bene: The outDCElem (created elsewhere) *must* have a dynChar of
- *             adequate length, or things will go horribly wrong.
  *  This allocates, so must be 
  *      a) NULL checked, 
- *      b) freed
+ *      b) freed later using deallocations, above.
  */
 dcElement_t* getDCElement( const size_t whichChar, const dynChar_t* const indynChar_t);
 
 /**
- *  Create an empty static character (i.e., a dynamic character with only one sub-character)
+ *  Create an empty dynamic character element (i.e., a dynamic character with only one sub-character)
  *  using inputted alphabet length to determine necessary length of internal int array.
  *  Fill internal int array with zeroes.
  *  This allocates, so must be 
  *      a) NULL checked, 
- *      b) freed
+ *      b) freed later using deallocations, above.
  */
 dcElement_t* makeDCElement( const size_t alphLen, const uint64_t value );
 
 /**
- *  Send in two static characters. If there's an overlap, put that overlap into each return dyn char, return 0.
- *  Otherwise, compute least cost and return that cost. Ignore .
+ *  Send in two elements. If there's an overlap, put that overlap into each return dyn char, return 0.
+ *  Otherwise, compute least cost and return that cost.
  */
 double getCost( const dynChar_t* const inDynChar1, size_t whichElem1, const dynChar_t* const inDynChar2, size_t whichElem2, costMtx_t* tcm, dcElement_t* newElem1, dcElement_t* newElem2 );
 
+/** Allocator for dynChar_t
+ *  This (obviously) allocates, so must be 
+ *      a) NULL checked, 
+ *      b) freed later using deallocations, above.
+ */
 dynChar_t* makeDynamicChar( size_t alphLen, size_t numElems, uint64_t* values );
 
 #endif /* DYNAMIC_CHARACTER_OPERATIONS */
