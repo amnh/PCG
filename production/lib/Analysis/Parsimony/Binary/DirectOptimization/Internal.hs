@@ -60,24 +60,27 @@ naiveDO :: DOCharConstraint s
 naiveDO char1 char2 costStruct
     | onull char1 = (char1, 0, char1, char1, char1)
     | onull char2 = (char2, 0, char2, char2, char2)
-    | otherwise =
-        let
-            char1Len = olength char1
-            char2Len = olength char2
-            (shorterChar, longerChar, _longLen) = if   char1Len > char2Len
-                                                  then (char2, char1, char1Len)
-                                                  else (char1, char2, char2Len)
-            traversalMat =  -- (\x -> trace (show $ (\(a,b,_) -> (a,b)) <$> x) x) $
-                           createDOAlignMatrix longerChar shorterChar costStruct
-            cost = getTotalAlignmentCost traversalMat
-            (gapped, left, right) = traceback traversalMat shorterChar longerChar
-            -- TODO: change to occur in traceback, to remove constant factor.
-            ungapped = filterGaps gapped
-            (out1, out2) = if char1Len > char2Len
-                           then (right, left)
-                           else (left, right)
-        in (ungapped, cost, gapped, out1, out2)
-
+    | otherwise   = (ungapped, cost, gapped', out1, out2)
+    where
+      char1Len = olength char1
+      char2Len = olength char2
+      (shorterChar, longerChar, _longLen) = if   char1Len > char2Len
+                                            then (char2, char1, char1Len)
+                                            else (char1, char2, char2Len)
+      traversalMat = -- (\x -> trace (show $ (\(a,b,_) -> (a,b)) <$> x) x) $
+                      createDOAlignMatrix longerChar shorterChar costStruct
+      cost = getTotalAlignmentCost traversalMat
+      (gapped , left , right ) = traceback traversalMat shorterChar longerChar
+--      (gapped', left', right') = traceback traversalMat shorterChar longerChar
+{--}
+      (gapped', left', right') = (\(x,y,z) -> (constructDynamic x, constructDynamic y, constructDynamic z)) 
+                               $ correctBiasing (getGapChar $ gapped `indexChar` 0) (otoList gapped, otoList left, otoList right)
+{--}
+      -- TODO: change to occur in traceback, to remove constant factor.
+      ungapped = filterGaps gapped'
+      (out1, out2) = if char1Len > char2Len
+                     then (right', left')
+                     else (left', right')
            
 -- | Wrapper function to do an enhanced Needleman-Wunsch algorithm.
 -- Calls naiveDO, but only returns the last two fields (gapped alignments of inputs)
@@ -111,17 +114,17 @@ createDOAlignMatrix topDynChar leftDynChar costStruct = result
         -- | Internal generator function for the matrix
         -- Deals with both first row and other cases, a merge of two previous algorithms
         -- generateMat :: (EncodableStaticCharacter b) => (Int, Int) -> (Double, Direction, b)
---        generateMat (row, col) | trace (mconcat ["(",show row,",",show col,")"]) False = undefined
+        -- generateMat (row, col) | trace (mconcat ["(",show row,",",show col,")"]) False = undefined
         generateMat (row, col)
-          | row == 0 && col == 0         = (0                               , DiagArrow, gap      )
-          | row == 0 && rightChar /= gap = (leftwardValue + rightOverlapCost, LeftArrow, staticCharFromLeft)
-          | row == 0                     = (leftwardValue                   , LeftArrow, staticCharFromLeft)
-          | col == 0 && downChar  /= gap = (upwardValue + downOverlapCost   , UpArrow  , staticCharFromTop )
-          | col == 0                     = (upwardValue                     , UpArrow  , staticCharFromTop )
-          | staticCharFromLeft    == gap &&
-            staticCharFromTop     == gap = (diagCost                        , DiagArrow, gap)
-          | staticCharFromLeft ==  staticCharFromTop = (diagCost                        , DiagArrow, staticCharFromTop)
-          | otherwise                    = (minCost                         , minDir   , minState )
+          | row == 0 && col == 0                    = (0                               , DiagArrow, gap      )
+          | row == 0 && rightChar /= gap            = (leftwardValue + rightOverlapCost, LeftArrow, staticCharFromLeft)
+          | row == 0                                = (leftwardValue                   , LeftArrow, staticCharFromLeft)
+          | col == 0 && downChar  /= gap            = (upwardValue + downOverlapCost   , UpArrow  , staticCharFromTop )
+          | col == 0                                = (upwardValue                     , UpArrow  , staticCharFromTop )
+          | staticCharFromLeft == gap &&
+            staticCharFromTop  == gap               = (diagCost                        , DiagArrow, gap)
+          | staticCharFromLeft == staticCharFromTop = (diagCost                        , DiagArrow, staticCharFromTop)
+          | otherwise                               = (minCost                         , minDir   , minState )
           where
             gap                           = getGapChar . head $ otoList leftDynChar -- Why would you give me an empty Dynamic Character?
             staticCharFromLeft            = topDynChar  `indexChar` (col - 1)
@@ -142,9 +145,10 @@ createDOAlignMatrix topDynChar leftDynChar costStruct = result
                                           -- TODO: POY prioritizes gaps to shorter char, make sure it prioritizes
                                           -- right on equal-length chars
                                           [ (rightCost, rightChar, LeftArrow)
-                                          , (downCost , downChar , UpArrow)
+                                          , (downCost , downChar , UpArrow  )
                                           , (diagCost , diagChar , DiagArrow)
                                           ]
+
 
 -- | Performs the traceback of an 'DOAlignMatrix'.
 -- Takes in an 'DOAlignMatrix', two 'EncodableDynamicCharacter's, and the 'Alphabet' length.
@@ -282,3 +286,15 @@ getSubChars fullChar = foldr (\i acc -> if testBit fullChar i
                              ) mempty [0 .. stateCount fullChar - 1]
   where
     z = fullChar `xor` fullChar
+
+
+correctBiasing :: (Eq a) => a -> ([a], [a], [a]) -> ([a], [a], [a])
+correctBiasing   _ ( [], [], []) = ( [],  [],  [])
+correctBiasing   _ ([x],[y],[z]) = ([x], [y], [z])
+correctBiasing gap (x1:x2:xs, y1:y2:ys, z1:z2:zs)
+  | y1 == gap && z1 /= gap && z1 == y2 && z1 == z2 = (x2:xs'', y2:ys'', z2:zs'')
+  | y1 /= gap && z1 == gap && y1 == y2 && y1 == z2 = (x2:xs'', y2:ys'', z2:zs'')
+  | otherwise                                      = (x1:xs' , y1:ys' , z1:zs' )
+  where
+    (xs' , ys' , zs' ) = correctBiasing gap ( x2:xs, y2:ys, z2:zs )
+    (xs'', ys'', zs'') = correctBiasing gap ( x1:xs, y1:ys, z1:zs )

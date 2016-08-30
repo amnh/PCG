@@ -28,24 +28,33 @@ module Bio.Character.Dynamic.Coded.Internal
 import           Bio.Character.Dynamic.Coded.Class
 import           Bio.Character.Exportable.Class
 import           Bio.Character.Parsed
+import           Control.Arrow                       ((***))
 --import           Control.DeepSeq
 import           Data.Alphabet
 import           Data.Bifunctor                      (bimap)
 import           Data.BitMatrix
 import           Data.BitMatrix.Internal(BitMatrix(..))
+import           Data.Char                           (toLower)
 import           Data.Key
 import           Data.Bits
 import           Data.BitVector               hiding (foldr, join, not, replicate)
 import           Data.Foldable
 import           Data.Function.Memoize
+import           Data.Map                            (Map)
+import qualified Data.Map                       as M
 import           Data.Maybe                          (fromMaybe)
 import           Data.Monoid
 import           Data.MonoTraversable
+import           Data.String                         (IsString, fromString)
+import           Data.Tuple                          (swap)
 import           Data.Vector                         (Vector)
 import qualified Data.Vector                    as V (fromList)
+import           Prelude                      hiding (lookup)
 --import           GHC.Generics
 import           Test.Tasty.QuickCheck        hiding ((.&.))
 import           Test.QuickCheck.Arbitrary.Instances ()
+
+import Debug.Trace
 
 -- TODO: Change DynamicChar/Sequences to DynamicCharacters
         -- Make a missing a null vector
@@ -143,7 +152,35 @@ instance EncodableDynamicCharacter DynamicChar where
 
   constructDynamic       = DC . fromRows . toList
 
-  decodeDynamic alphabet = ofoldMap (pure . decodeChar alphabet) . otoList
+  decodeDynamic alphabet char
+    | alphabet /= dnaAlphabet = rawResult 
+    | otherwise               = (dnaIUPAC !) <$> rawResult
+    where
+      rawResult   = ofoldMap (pure . decodeChar alphabet) . otoList $ char
+      dnaAlphabet = constructAlphabet $ fromString <$> ["A","C","G","T"]
+--      dnaIUPAC :: (IsString a, Ord a) => Map [a] [a]
+      dnaIUPAC    = M.fromList . fmap (swap . (pure . fromChar *** fmap fromChar)) $ mapping
+        where
+          fromChar = fromString . pure
+          mapping  = gapMap <> noGapMap <> [('-', "-")]
+          gapMap   = (toLower *** (<> "-")) <$> noGapMap
+          noGapMap =
+            [ ('A', "A"   )
+            , ('C', "C"   )
+            , ('G', "G"   )
+            , ('T', "T"   )
+            , ('M', "AC"  ) 
+            , ('R', "AG"  )
+            , ('W', "AT"  )
+            , ('S', "CG"  )
+            , ('Y', "CT"  )
+            , ('K', "GT"  )
+            , ('V', "ACG" )
+            , ('H', "ACT" )
+            , ('D', "AGT" )
+            , ('B', "CGT" )
+            , ('N', "ACGT")
+            ]
 
   encodeDynamic alphabet = DC . fromRows . fmap (encodeChar alphabet) . toList
 

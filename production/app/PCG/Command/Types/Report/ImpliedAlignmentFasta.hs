@@ -39,6 +39,9 @@ import Prelude        hiding (lookup,zipWith)
 
 import Debug.Trace (trace)
 
+outputHUTs :: Bool
+outputHUTs = not True
+
 --iaOutput :: (MetadataSolution s m, GeneralSolution s f) => AlignmentSolution DynamicChar -> s -> [(FilePath, String)]
 iaOutput' :: StandardSolution -> [(FilePath, String)]
 --iaOutput align solution | trace (mconcat [show align, show solution]) False = undefined
@@ -73,7 +76,7 @@ iaOutput' solution = {- (\x -> trace (intercalate "\n\n"
         f = foldMap g 
         g dag            = foldMap h $ getNodes dag
           where
-            h node       = if   node `nodeIsLeaf` dag
+            h node       = if   node `nodeIsLeaf` dag || outputHUTs
                            then singleton (name node) (getHomologies' node)
                            else mempty
 
@@ -100,7 +103,7 @@ iaOutput' solution = {- (\x -> trace (intercalate "\n\n"
             Nothing        -> titleLine <> "\n (No sequence)\n"
             Just character -> dynamicCharacterToFastaBlock character
           where
-            titleLine     = "> " <> nodeName
+            titleLine     = "> " <> filter (/=' ') nodeName
             dynamicCharacterToFastaBlock character = unlines $ titleLine : sequenceLines <> [""]
               where
                 sequenceLines = chunksOf 50 . concatMap renderAmbiguityGroup . toList $ decodeDynamic alpha character
