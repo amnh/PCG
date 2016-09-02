@@ -98,9 +98,8 @@ library
       
   -- Modules exported by the library.
   exposed-modules:
-                       Analysis.ImpliedAlignment.Internal
+                       Analysis.ImpliedAlignment
                        Analysis.ImpliedAlignment.Standard
-                       Analysis.ImpliedAlignment.DynamicProgramming
                        Analysis.Parsimony.Binary.DirectOptimization
                        Analysis.Parsimony.Binary.Fitch
                        Analysis.Parsimony.Binary.Internal
@@ -150,8 +149,10 @@ library
   -- Modules included in this library but not exported.
   other-modules:       Analysis.ImpliedAlignment.AlignmentContext
                        Analysis.ImpliedAlignment.DeletionEvents
+                       Analysis.ImpliedAlignment.DynamicProgramming
                        Analysis.ImpliedAlignment.InsertionEvents
                        Analysis.ImpliedAlignment.InsertionEvents.Internal
+                       Analysis.ImpliedAlignment.Internal
                        Analysis.Parsimony.Binary.DirectOptimization.Internal
                        Analysis.Parsimony.Binary.SequentialAlign.FFI
                        Analysis.Parsimony.Binary.Constraints
