@@ -84,14 +84,27 @@ getForAlign n
     | not . null $ getEncoded     n         = getEncoded n 
     | otherwise = mempty {-error "No sequence at node for IA to numerate"-}
 
-deriveImpliedAlignments :: (Eq n, FoldableWithKey f, TreeConstraint t n e s, IANode' n s, Metadata m s, Key f ~ Int, Show (Element s)) => f m -> t -> t 
+-- | Decorates a tree with implied alignments of the leaf nodes given a tree
+--   decorated with direct optimization annotations, along with suporting metadata.
+deriveImpliedAlignments :: (Eq n, FoldableWithKey f, TreeConstraint t n e s, IANode' n s, Metadata m s, Key f ~ Int, Show (Element s))
+                        => f m -> t -> t 
 deriveImpliedAlignments sequenceMetadatas tree = foldlWithKey' f tree sequenceMetadatas
   where
     f t k m
       | getType m /= DirectOptimization = t
       | otherwise                       = numeration k (getCosts m) t
 
-
+-- | The core derivation of an implied alignment for a given character on a tree.
+--
+--   Requires:
+--
+--   * The index of the character for which the implied alignment should be
+--   derived, from the sequence of characters.
+--
+--   * The 'CostStructure' for that character
+--
+--   * The tree on which implies the alignment
+-- 
 numeration :: (Eq n, TreeConstraint t n e s, IANode' n s, Show (Element s)) => Int -> CostStructure -> t -> t
 numeration sequenceIndex costStructure tree = tree `update` (snd <$> updatedLeafNodes)
   where
@@ -99,6 +112,8 @@ numeration sequenceIndex costStructure tree = tree `update` (snd <$> updatedLeaf
     (TreeRefs rootIndex enumeratedNodes parentMapping childMapping) = precomputeTreeReferences tree
     rootNode        = root tree
     nodeCount       = length parentMapping
+
+    -- | A memoized, constant access structure for the indel events of each edge in the tree.
     edgeIndels = HM.fromList $ (id &&& edgeValue) <$> edgeKeys
       where
         edgeKeys = [ (i,j) | i <- [0 .. nodeCount - 1], j <- [0 .. nodeCount - 1], j `oelem` (childMapping V.! i) ]
@@ -108,6 +123,9 @@ numeration sequenceIndex costStructure tree = tree `update` (snd <$> updatedLeaf
             childCharacter  = getForAlign    (enumeratedNodes V.! j) V.! sequenceIndex
             (deletes, !inserts, _, _) = comparativeIndelEvents e parentCharacter childCharacter costStructure
 
+    -- | The root 'AlignmentContext'.
+    --   Defines how 'InserionEvents' are accumulated in a post-order traversal
+    --   to encapsulate the require global state information of the implied alignment.
     rootContext =
         Context
         { insertionEvents = totalInsertionEvents
@@ -138,6 +156,10 @@ numeration sequenceIndex costStructure tree = tree `update` (snd <$> updatedLeaf
           where
             (IndelEvents ins del) = edgeIndels ! (i, j)
 
+    -- | The 'AlignmentContext' for each node in the tree.
+    --   Constructed using a recursive, memoized generating function
+    --   with the root node as the base case.
+    --   The generating function will implicitly perform a parralelizable pre-order traversal
     nodeContexts = V.generate (length enumeratedNodes) f
       where
         f nodeIndex
@@ -150,36 +172,19 @@ numeration sequenceIndex costStructure tree = tree `update` (snd <$> updatedLeaf
             IndelEvents inserts deletes = edgeIndels ! edgeKey
             nodeContext       = applyLocalEventsToAlignment edgeKey deletes inserts parentContext
 
-    updatedLeafNodes = filter ((`nodeIsLeaf` tree) . snd) updatedNodes
-
+    -- | We mutate the original nodes from the input tree to contain
+    --    the implied alignment for each node.
     updatedNodes = foldMapWithKey f enumeratedNodes
       where
         f i n = [(i, deriveImpliedAlignment sequenceIndex (psuedoCharacter $ nodeContexts V.! i) n)]
 
-deriveImpliedAlignment :: (EncodableDynamicCharacter s2, Foldable t, IANode' n s2, NodeConstraint n s1, Element s1 ~ Element s2)
-                       => Int -> t PsuedoIndex -> n -> n
-deriveImpliedAlignment sequenceIndex psuedoCharacterVal node = node `setHomologies'` leafHomologies
-      where
-        leafHomologies
-          | length oldHomologies <= sequenceIndex = oldHomologies <> V.replicate (sequenceIndex - length oldHomologies) (constructDynamic []) <> pure leafAlignedChar
-          | otherwise                             = oldHomologies V.// [(sequenceIndex, leafAlignedChar)]
-          where
-            oldHomologies = getHomologies' node
-            
-        leafSequence    = getForAlign node
-        leafCharacter   = leafSequence V.! sequenceIndex
-        leafAlignedChar = constructDynamic $ reverse result
-        characterTokens = otoList leafCharacter
-        gap             = getGapChar $ head characterTokens
-        (_,_remaining,result)    = foldl' f (0 :: Int, characterTokens, []) psuedoCharacterVal
-          where
-            f (basesSeen, xs, ys) e
-              | e == HardGap || e == SoftGap || e == DeletedBase || e == DelInsBase = (basesSeen    , xs , gap : ys )
-              | otherwise                    = (basesSeen + 1, xs',       ys') 
-              where
-                xs' = fromMaybe []   $ tailMay xs 
-                ys' = maybe ys (:ys) $ headMay xs
+    -- | We filter the 'updatedNodes' to only include the leaf nodes.
+    --   We do this beacuse implied alignments on internal nodes doesn't make sense... or does it?
+    updatedLeafNodes = filter ((`nodeIsLeaf` tree) . snd) updatedNodes
 
+
+-- | Performs a preorder traversal to generate referential indexing structures
+--   for refrencing actions to perform a tree.
 precomputeTreeReferences :: TreeConstraint t n e s  => t -> TreeReferences n
 precomputeTreeReferences tree =
      TreeRefs
@@ -204,7 +209,8 @@ precomputeTreeReferences tree =
             g (subCounter,xs) n = (subCounter', ys:xs)
               where
                 (subCounter',ys) = f n (Just counter) (subCounter+1)
-      
+
+-- | Calculates the 'IndelEvents' that occur given two sequences of an edge.
 comparativeIndelEvents :: (Eq e, SeqConstraint s) => e -> s -> s -> CostStructure -> (DeletionEvents, InsertionEvents (Element s) e, s ,s)
 comparativeIndelEvents edgeIdentifier ancestorCharacterUnaligned descendantCharacterUnaligned costStructure
   | olength ancestorCharacter /= olength descendantCharacter = error errorMessage
@@ -241,4 +247,29 @@ comparativeIndelEvents edgeIdentifier ancestorCharacterUnaligned descendantChara
         nothingLogic        =  (  ancestorElement == gap && containsGap descendantElement)
                             || (descendantElement == gap && containsGap   ancestorElement)
 -}                             
+
+-- | Transforms a node's decorations to include the implied alignment given a 'PsuedoCharacter' and sequence index.
+deriveImpliedAlignment :: (EncodableDynamicCharacter s2, Foldable t, IANode' n s2, NodeConstraint n s1, Element s1 ~ Element s2)
+                       => Int -> t PsuedoIndex -> n -> n
+deriveImpliedAlignment sequenceIndex psuedoCharacterVal node = node `setHomologies'` leafHomologies
+      where
+        leafHomologies
+          | length oldHomologies <= sequenceIndex = oldHomologies <> V.replicate (sequenceIndex - length oldHomologies) (constructDynamic []) <> pure leafAlignedChar
+          | otherwise                             = oldHomologies V.// [(sequenceIndex, leafAlignedChar)]
+          where
+            oldHomologies = getHomologies' node
+            
+        leafSequence    = getForAlign node
+        leafCharacter   = leafSequence V.! sequenceIndex
+        leafAlignedChar = constructDynamic $ reverse result
+        characterTokens = otoList leafCharacter
+        gap             = getGapChar $ head characterTokens
+        (_,_remaining,result)    = foldl' f (0 :: Int, characterTokens, []) psuedoCharacterVal
+          where
+            f (basesSeen, xs, ys) e
+              | e == HardGap || e == SoftGap || e == DeletedBase || e == DelInsBase = (basesSeen    , xs , gap : ys )
+              | otherwise                    = (basesSeen + 1, xs',       ys') 
+              where
+                xs' = fromMaybe []   $ tailMay xs 
+                ys' = maybe ys (:ys) $ headMay xs
 
