@@ -229,7 +229,7 @@ nodeOptimizePreorder curNode lNode rNode pNode = ifoldr chooseOptimization curNo
 disambiguate :: EncodableDynamicCharacter c => c -> c
 disambiguate = omap orderedSelection
 
-orderedSelection x = x .&. (negate x) -- Selects the least significant set bit, clears all others.
+orderedSelection x = x .&. negate x -- Selects the least significant set bit, clears all others.
 
 deriveSingleAssignment :: SeqConstraint' c => CostStructure -> c -> c -> c -> c
 deriveSingleAssignment costStructure parentSingle parentFinal childFinal = result
@@ -256,7 +256,7 @@ tripleComparison i costStructure curNode parentCharacter = (finalUngapped, final
     childCharacter   = {- (\x -> trace ("childCharacter: "  <> show x) x) $ -} getChildCharacterForDoPreorder curNode ! i
 --    parentCharacter  = {- (\x -> trace ("parentCharacter: " <> show x) x) $ -} parentAccessor parentNode ! i
     (_, _, derivedAlignment, _, childAlignment) = naiveDO parentCharacter childCharacter costStructure
-    newGapIndicies   = {- (\x -> trace ("newGapIndices: "   <> show x) x) $ -} newGapLocations childCharacter $ {- (\x -> trace ("childAlignment: "   <> show x) x) $ -} childAlignment
+    newGapIndicies   = {- (\x -> trace ("newGapIndices: "   <> show x) x) $ -} newGapLocations childCharacter {-  $ (\x -> trace ("childAlignment: "   <> show x) x) $ -} childAlignment
     leftCharacter    = {- (\x -> trace ("leftCharacter: "   <> show x) x) $ -} insertNewGaps newGapIndicies $ getLeftAlignment  curNode ! i
     rightCharacter   = {- (\x -> trace ("rightCharacter: "  <> show x) x) $ -} insertNewGaps newGapIndicies $ getRightAlignment curNode ! i
     (_, finalUngapped, finalGapped) = threeWayMean costStructure derivedAlignment leftCharacter rightCharacter

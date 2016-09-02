@@ -16,20 +16,20 @@ module Analysis.Parsimony.Binary.DirectOptimization.Test where
 
 import           Analysis.Parsimony.Binary.DirectOptimization.Internal
 import           Bio.Character.Dynamic.Coded
-import           Bio.Character.Parsed
+--import           Bio.Character.Parsed
 import           Bio.Metadata
-import           Bio.Metadata.Internal
+--import           Bio.Metadata.Internal
 import           Data.Alphabet
-import           Data.BitMatrix
+--import           Data.BitMatrix
 import           Data.Bits
 import           Data.BitVector        hiding (and, foldr)
-import           Data.Matrix.NotStupid        (getRow, fromLists, setElem)
+import           Data.Matrix.NotStupid        (getRow, fromLists)
 import           Data.MonoTraversable
-import qualified Data.Vector                                               as V
+import qualified Data.Vector           as V
 import           Test.Custom
 import           Test.Tasty
-import           Test.Tasty.HUnit
-import           Test.Tasty.QuickCheck hiding ((.?.), (.&.))
+--import           Test.Tasty.HUnit
+import           Test.Tasty.QuickCheck hiding ((.&.))
 import           Debug.Trace
 
 standardAlph :: Alphabet String
@@ -49,8 +49,8 @@ matrixForTesting :: DOAlignMatrix BV
 matrixForTesting =  trace (show finalMatrix) finalMatrix
     where
         initMatrix = Data.Matrix.NotStupid.fromLists cellList
-        cellList = [ [(0, LeftArrow, bitVec 5 1), (1, LeftArrow, bitVec 5 2), (2, LeftArrow, bitVec 5 24), (3, LeftArrow, bitVec 5 17)]
-                   , [(1, LeftArrow, bitVec 5 1), (0, LeftArrow, bitVec 5 0), (2, LeftArrow, bitVec 5 0),  (3, LeftArrow, bitVec 5 0)]
+        cellList = [ [(0, LeftArrow, bitVec 5 (1::Int)), (1, LeftArrow, bitVec 5 (2::Int)), (2, LeftArrow, bitVec 5 (24::Int)), (3, LeftArrow, bitVec 5 (17::Int))]
+                   , [(1, LeftArrow, bitVec 5 (1::Int)), (0, LeftArrow, bitVec 5 (0::Int)), (2, LeftArrow, bitVec 5 (0::Int)),  (3, LeftArrow, bitVec 5 (0::Int))]
                    ]
         finalMatrix = initMatrix
 
@@ -63,6 +63,7 @@ testSuite =  testGroup "DO functionality"
   , getCostTest
   ]
 
+directOptimizationProperties :: TestTree
 directOptimizationProperties = testGroup "General properties of direct optimization"
   [ identicalInputAndOutput
   , equalLengthPariwiseAlignments
@@ -130,7 +131,7 @@ getSubCharsTest  = testGroup "getSubChars tests" [ orTest
                 f :: BitVector -> Bool
                 f inChar = inChar == outChar
                     where
-                        outChar = foldr (\(_, char) acc -> char .|. acc) (bitVec 0 0) (getSubChars inChar)
+                        outChar = foldr (\(_, char) acc -> char .|. acc) (bitVec 0 (0::Int)) (getSubChars inChar)
                         -- nada    = inChar `xor` inChar
         lengthTest = testProperty "Number of returned static chars == number of set bits in input" f
             where
@@ -143,12 +144,14 @@ getSubCharsTest  = testGroup "getSubChars tests" [ orTest
                     where
                         correctLength = foldr (\(_, char) acc -> (bitSizeMaybe char == len) && acc) True (getSubChars inChar)
                         len           = bitSizeMaybe inChar
+{-
         allReturnedCharsOnlyOneBitSet = testProperty "All returned static chars have only a single bit set" f
             where
                 f :: BitVector -> Bool
                 f inChar = onlyOneBit
                     where
                         onlyOneBit = foldr (\(_, char) acc -> (popCount char == 1) && acc) True (getSubChars inChar)
+-}
         posIsCorrect = testProperty "Position matches index of set bit in each returnd char" f
             where
                 f :: BitVector -> Bool
@@ -177,15 +180,15 @@ getCostTest = testGroup "Properties of getCosts" [ -- tcmTest
                     where
                         f :: Bool
                         f = getCost costStruct char1 char2 == expectedResult && getCost costStruct char2 char1 == expectedResult
-                        char1          = (4, setBit (bitVec 5 0) 4) -- has a gap
-                        char2          = (0, setBit (bitVec 5 0) 2) -- no gap
-                        expectedResult = (bitVec 5 20, 2)
+                        char1          = (4, setBit (bitVec 5 (0::Int)) 4) -- has a gap
+                        char2          = (0, setBit (bitVec 5 (0::Int)) 2) -- no gap
+                        expectedResult = (bitVec 5 (20::Int), 2)
                 subsTest  = testProperty "Subs work correctly" f
                     where
                         f :: Bool
                         f = getCost costStruct char1 char2 == expectedResult && getCost costStruct char2 char1 == expectedResult
-                        char1          = (3, setBit (bitVec 5 0) 3)
-                        char2          = (0, setBit (bitVec 5 0) 0)
+                        char1          = (3, setBit (bitVec 5 (0::Int)) 3)
+                        char2          = (0, setBit (bitVec 5 (0::Int)) 0)
                         expectedResult = (snd char1 .|. snd char2, 1)
                 costStruct = GeneralCost 2 1
 
@@ -209,17 +212,17 @@ overlapTest = testGroup "Overlap test cases" [ singleIntersectionTest
             where
                 f :: Bool
                 f =  expectedResult == result
-                char1          = (bitVec 5 5) -- This is two bits on
-                char2          = (bitVec 5 6) -- This is two different, but overlapping, bits set
+                char1          =  bitVec 5 (5::Int) -- This is two bits on
+                char2          =  bitVec 5 (6::Int) -- This is two different, but overlapping, bits set
                 expectedResult = (char1 .&. char2, 0) -- Couldn't get it to compile with prefix notation.
                 result         = getOverlap char1 char2 (GeneralCost 2 1)
         multipleIntersectionTest = testProperty "Given characters with single intersection, gives expected results" f
             where 
                 f :: Bool
                 f =  expectedResult == result
-                char1          = (bitVec 5 5) -- This is two bits on
-                char2          = (bitVec 5 7) -- This is two different, but overlapping, bits set
-                expectedResult = (bitVec 5 5, 0)
+                char1          =  bitVec 5 (5::Int) -- This is two bits on
+                char2          =  bitVec 5 (7::Int) -- This is two different, but overlapping, bits set
+                expectedResult = (bitVec 5 (5::Int), 0)
                 result         = getOverlap char1 char2 (GeneralCost 2 1)
         unionTestWithGeneral = testGroup "Given characters with no intersection and general cost, gives expected results" [ withoutGap
                                                                                                                           , withGap 
@@ -229,26 +232,28 @@ overlapTest = testGroup "Overlap test cases" [ singleIntersectionTest
                     where
                         f :: Bool
                         f =  expectedResult == result
-                        char1          = (bitVec 5 2) -- This is one bit on.
-                        char2          = (bitVec 5 4) -- No gap.
-                        expectedResult = (bitVec 5 6, 1)
+                        char1          =  bitVec 5 (2::Int) -- This is one bit on.
+                        char2          =  bitVec 5 (4::Int) -- No gap.
+                        expectedResult = (bitVec 5 (6::Int), 1)
                         result         = getOverlap char1 char2 (GeneralCost 2 1)
                 withGap    = testProperty "With a gap" f
                     where
                         f :: Bool
                         f =  expectedResult == result
-                        char1          = (bitVec 5 4)  -- This is one bit on.
-                        char2          = (bitVec 5 18) -- Has a gap.
-                        expectedResult = ((bitVec 5 6), 1)
+                        char1          =  bitVec 5 ( 4::Int) -- This is one bit on.
+                        char2          =  bitVec 5 (18::Int) -- Has a gap.
+                        expectedResult = (bitVec 5 ( 6::Int), 1)
                         result         = getOverlap char1 char2 (GeneralCost 2 1)
+{-                        
         unionTestWithTCM = testProperty "Given characters with no intersection and TCM, gives expected results" f
             where
                 f :: Bool
                 f = expectedResult == result
-                char1          = (bitVec 5 2) -- This is one bit on.
-                char2          = (bitVec 5 4) -- No gap.
-                expectedResult = (bitVec 5 6, 1)
+                char1          =  bitVec 5 (2::Int) -- This is one bit on.
+                char2          =  bitVec 5 (4::Int) -- No gap.
+                expectedResult = (bitVec 5 (6::Int), 1)
                 result         = getOverlap char1 char2 (GeneralCost 2 1)
+-}
 
 -- createDOAlignMatrix (DC $ Data.BitMatrix.fromRows [bitVec 5 2, bitVec 5 1, bitVec 5 2, bitVec 5 3]) (DC $ Data.BitMatrix.fromRows [bitVec 5 1, bitVec 5 2, bitVec 5 3]) (GeneralCost 2 1)
 -- createDOAlignMatrix (DC $ Data.BitMatrix.fromRows [bitVec 5 2, bitVec 5 1, bitVec 5 12, bitVec 5 3]) (DC $ Data.BitMatrix.fromRows [bitVec 5 1, bitVec 5 2, bitVec 5 3]) (GeneralCost 2 1)

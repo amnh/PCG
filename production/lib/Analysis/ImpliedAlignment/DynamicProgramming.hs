@@ -194,7 +194,7 @@ precomputeTreeReferences tree =
      , childRefs  = c
      }
   where
-    (a,b,c) = V.unzip3 $ V.fromList $ rmRefVal <$> sortBy (comparing refVal) tokens
+    (a,b,c) = V.unzip3 . V.fromList $ rmRefVal <$> sortBy (comparing refVal) tokens
     
     (_,tokens) = f (root tree) Nothing 0
 

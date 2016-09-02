@@ -16,23 +16,21 @@
 module Analysis.ImpliedAlignment.InsertionEvents.Internal where
 
 import           Analysis.ImpliedAlignment.DeletionEvents       (DeletionEvents)
-import qualified Analysis.ImpliedAlignment.DeletionEvents as DE
-import           Control.Arrow        ((***),(&&&))
-import           Data.Bifunctor       (bimap,second)
+--import qualified Analysis.ImpliedAlignment.DeletionEvents as DE
+import           Control.Arrow          ((&&&))
+import           Data.Bifunctor         (bimap)
 import           Data.Foldable
-import           Data.IntMap          (IntMap)
-import qualified Data.IntMap   as IM
+import           Data.IntMap            (IntMap)
+import qualified Data.IntMap     as IM
 import           Data.Key
-import           Data.List            (intercalate, transpose)
-import           Data.Maybe           (fromMaybe)
+import           Data.List              (intercalate)
+import           Data.Maybe             (fromMaybe)
 import           Data.Monoid
 import           Data.MonoTraversable
-import           Data.Sequence        (Seq,splitAt)
-import qualified Data.Sequence as Seq
-import           Prelude       hiding (lookup,splitAt,zip,zipWith)
-import           Test.QuickCheck
-
-import Debug.Trace (trace)
+import           Data.Sequence          (Seq)
+import qualified Data.Sequence   as Seq
+import           Prelude         hiding (lookup,splitAt,zip,zipWith)
+import           Test.QuickCheck hiding (output)
 
 {- |
   Represents a collection of insertion events. This collection may be indicative
@@ -155,7 +153,7 @@ instance (Show e) => Show (InsertionEvents a e) where
 coalesce :: (Eq a, Eq e, Foldable t) => DeletionEvents -> InsertionEvents a e -> t (InsertionEvents a e) -> InsertionEvents a e
 coalesce ancestorDeletions (IE ancestorMap) descendantEvents
   | any (<0) $ IM.keys descendantMap = error "A negative key value was created"
-  | size output /= (sum $ size <$> toList descendantEvents) + size (IE ancestorMap) = error "Serious problem, size is not additive"
+  | size output /= sum (size <$> toList descendantEvents) + size (IE ancestorMap) = error "Serious problem, size is not additive"
   | otherwise                        = output
   where
     output = IE . IM.fromList $ result <> remaining acc
@@ -221,7 +219,6 @@ coalesce ancestorDeletions (IE ancestorMap) descendantEvents
         (Just (ok,ov),    []) -> let
                                    len    = length ov
                                    newAns = (ok, getState iter)
-                                   ansMod = (ek + off - ok, ev)
                                  in
                                    if ek + off - len > ok
                                  -- If there is no more ancestoral deletion events
@@ -231,12 +228,9 @@ coalesce ancestorDeletions (IE ancestorMap) descendantEvents
                                    else g off iter dels ries ok ov ek ev
 --                                   else    (off      , dels, mutate ansMod iter,        ries)
           
-        (Just (ok,ov), de:ds) -> let
-                                   len = length ov
-                                 in
-                                   if ok > de && de < ek + off
-                                   then f2 (off + 1,   ds,      iter,                ries) ek ev
-                                   else g off iter dels ries ok ov ek ev
+        (Just (ok,ov), de:ds) -> if ok > de && de < ek + off
+                                 then f2 (off + 1,   ds,      iter,                ries) ek ev
+                                 else g off iter dels ries ok ov ek ev
 {-
                                      let
                                        newAns = (ok, getState iter)
@@ -294,7 +288,7 @@ type KVP a = (Int, Seq a)
 -- Enforces invariants when consuming the ancestoral insertion events.
 data MutationIterator a
    = Done
-   | Curr (KVP a) (IntMap (Seq a)) [(KVP a)]
+   | Curr (KVP a) (IntMap (Seq a)) [KVP a]
    deriving (Show)
 
 -- Takes a list of key-value pairs and produces a MutationIterator for consuming
@@ -319,8 +313,8 @@ remaining  Done              = []
 remaining (Curr (k,v) im xs) =  (k, im `applyMutations` v):xs
 
 getCurr :: MutationIterator a -> Maybe (Int, Seq a)
-getCurr  Done             = Nothing
-getCurr (Curr (k,v) im _) = Just (k,v)
+getCurr  Done            = Nothing
+getCurr (Curr (k,v) _ _) = Just (k,v)
 
 mutate :: (Int, Seq a) -> MutationIterator a -> MutationIterator a
 mutate     _  Done             = Done
@@ -330,7 +324,7 @@ mutate (i,e) (Curr (k,v) im xs) = Curr (k,v) im' xs
 
 getState :: MutationIterator a -> Seq a
 getState  Done             = mempty
-getState (Curr (k,v) im _) = im `applyMutations` v
+getState (Curr (_,v) im _) = im `applyMutations` v
 
 
 -- Takes an IntMap of insertion events localized to a seqence and applies them to
@@ -342,4 +336,4 @@ applyMutations im xs = (<> trailing) . foldMapWithKey f $ toList xs
       case k `lookup` im of
         Nothing ->      Seq.singleton v
         Just x  -> x <> Seq.singleton v
-    trailing = fromMaybe mempty $ (length xs) `lookup` im
+    trailing = fromMaybe mempty $ length xs `lookup` im

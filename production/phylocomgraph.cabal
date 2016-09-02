@@ -457,7 +457,12 @@ Test-Suite testsuite
                        -fwarn-unused-imports
                        -fwarn-unused-matches
   other-modules:
+                       Analysis.ImpliedAlignment.AlignmentContext
+                       Analysis.ImpliedAlignment.DeletionEvents
                        Analysis.ImpliedAlignment.DynamicProgramming
+                       Analysis.ImpliedAlignment.InsertionEvents
+                       Analysis.ImpliedAlignment.InsertionEvents.Internal
+                       Analysis.ImpliedAlignment.InsertionEvents.Test
                        Analysis.ImpliedAlignment.Internal
                        Analysis.ImpliedAlignment.Standard
                        Analysis.ImpliedAlignment.Test

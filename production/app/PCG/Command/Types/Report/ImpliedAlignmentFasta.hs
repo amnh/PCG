@@ -34,7 +34,7 @@ import Data.Vector.Instances ()
 import Prelude        hiding (lookup,zipWith)
 
 outputHUTs :: Bool
-outputHUTs = not True
+outputHUTs = False
 
 --iaOutput :: (MetadataSolution s m, GeneralSolution s f) => AlignmentSolution DynamicChar -> s -> [(FilePath, String)]
 iaOutput :: StandardSolution -> [(FilePath, String)]

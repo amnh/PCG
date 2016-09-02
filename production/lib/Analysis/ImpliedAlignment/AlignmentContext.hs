@@ -11,19 +11,13 @@
 -- Standard algorithm for implied alignment
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE BangPatterns, FlexibleContexts, FlexibleInstances, TypeFamilies #-}
-
--- TODO: Remove, used for Show instance of MemoPoint
-{-# LANGUAGE UndecidableInstances #-}
-
--- TODO: Make an ImpliedAlignment.hs file for exposure of appropriate functions
+{-# LANGUAGE FlexibleContexts, FlexibleInstances, TypeFamilies #-}
 
 module Analysis.ImpliedAlignment.AlignmentContext where
 
 import           Analysis.ImpliedAlignment.DeletionEvents
 import           Analysis.ImpliedAlignment.InsertionEvents
 import qualified Analysis.ImpliedAlignment.InsertionEvents as IE (unwrap,wrap) 
-import           Bio.Character.Dynamic.Coded
 import           Data.Foldable
 import           Data.IntMap                    (IntMap)
 import qualified Data.IntMap             as IM
@@ -75,6 +69,7 @@ instance (Show a, Show e) => Show (AlignmentContext a e) where
           , ("  "<>) . concatMap show $ psuedoCharacter ac
           ]
 
+readPseudoCharacter :: [Char] -> [PsuedoIndex]
 readPseudoCharacter ('O':xs) = OriginalBase : readPseudoCharacter xs
 readPseudoCharacter ('I':xs) = InsertedBase : readPseudoCharacter xs
 readPseudoCharacter ('D':xs) = DeletedBase  : readPseudoCharacter xs
@@ -112,9 +107,9 @@ applyLocalEventsToAlignment edgeIdentifier localDeletionEvents localInsertionEve
       | onull leftoverDeletions = Nothing
       | otherwise = Just $ edgeStr <> " Leftover deletions: "  <> show (DE leftoverDeletions)
 
-    (_,_,_,leftoverDeletions, leftoverLocalInsertions, leftoverGlobalInsertions, resultInserts, resultChar) = foldl' f initalAccumulator $ psuedoCharacter alignmentContext
+    (_,_,_,leftoverDeletions, leftoverLocalInsertions, _leftoverGlobalInsertions, resultInserts, resultChar) = foldl' f initalAccumulator $ psuedoCharacter alignmentContext
 
-    initalAccumulator = (0, 0, 0, (\(DE x) -> x) localDeletionEvents, IE.unwrap localInsertionEvents, IE.unwrap $ insertionEvents alignmentContext, mempty, mempty)
+    initalAccumulator = (0, 0, 0 :: Int, (\(DE x) -> x) localDeletionEvents, IE.unwrap localInsertionEvents, IE.unwrap $ insertionEvents alignmentContext, mempty, mempty)
 
 --    f q e | trace (show e <> show q) False = undefined
 --    f _q@(pBasesSeen, cBasesSeen, consecutiveInsertionsSkipped,  remainingLocalInsertions, unappliedGlobalInsertions, is, es) e | trace (show remainingLocalInsertions) False = undefined
@@ -135,7 +130,7 @@ applyLocalEventsToAlignment edgeIdentifier localDeletionEvents localInsertionEve
         DeletedBase  -> (pBasesSeen    , cBasesSeen    , 0                               , remainingDeletions,       remainingLocalInsertions, unappliedGlobalInsertions, is,        pc : cs)
         DelInsBase   -> (pBasesSeen    , cBasesSeen    , 0                               , remainingDeletions,       remainingLocalInsertions, unappliedGlobalInsertions, is,        pc : cs)
 --        HardGap      -> (pBasesSeen    , cBasesSeen    , 0                               remainingDeletions,        remainingLocalInsertions, unappliedGlobalInsertions, is,        e : es) -- maybe increment consecutive here too?
-        HardGap      -> (pBasesSeen    , cBasesSeen    , 0                               , remainingDeletions,       remainingLocalInsertions, imRemove pBasesSeen 0 unappliedGlobalInsertions, imAdd cBasesSeen ((Seq.take 1 (unappliedGlobalInsertions ! pBasesSeen)) ) is,       pc : cs) -- maybe increment consecutive here too?
+        HardGap      -> (pBasesSeen    , cBasesSeen    , 0                               , remainingDeletions,       remainingLocalInsertions, imRemove pBasesSeen 0 unappliedGlobalInsertions, imAdd cBasesSeen (Seq.take 1 (unappliedGlobalInsertions ! pBasesSeen)) is,       pc : cs) -- maybe increment consecutive here too?
         -- The super complicated case... let nme try and explain.
         --
         -- First Check to see if the bases 
@@ -170,15 +165,20 @@ applyLocalEventsToAlignment edgeIdentifier localDeletionEvents localInsertionEve
                     then   (pBasesSeen, cBasesSeen    , consecutiveInsertionsSkipped + 1, remainingDeletions,                       remainingLocalInsertions, imRemove pBasesSeen 0 unappliedGlobalInsertions, imAdd cBasesSeen (Seq.singleton c) is,                     e : es)
                     else   (pBasesSeen, cBasesSeen + 1, 0                               , remainingDeletions, imRemove pBasesSeen 0 remainingLocalInsertions, imRemove pBasesSeen 0 unappliedGlobalInsertions,                                    is,          InsertedBase : es)
 -}
-              
+
+
+imDec :: IS.Key -> IntMap a -> IntMap a
 imDec i = IM.mapKeysMonotonic f
   where
     f k
       | k >= i    = k -1
       | otherwise = k
 
+
+imAdd :: IS.Key -> Seq a -> IntMap (Seq a) -> IntMap (Seq a)
 imAdd = IM.insertWith (flip (Seq.><) )
 
+imInc :: IS.Key -> IntMap a -> IntMap a
 imInc i = IM.mapKeysMonotonic f
   where
     f k
@@ -190,7 +190,7 @@ tail'    []  = []
 tail' (_:xs) = xs
 
 imRemove :: Int -> Int -> IntMap (Seq a) -> IntMap (Seq a)
-imRemove k i im = IM.update f k im
+imRemove k i = IM.update f k
   where
     f v
       | Seq.null v' = Nothing
