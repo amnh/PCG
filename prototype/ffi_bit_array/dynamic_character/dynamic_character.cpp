@@ -5,15 +5,18 @@ dynChar_t( size_t totalLen ) {
 }
 
 dynChar_t( size_t alphSize = 5, size_t numElems = 1, uint64_t vals = {0} ) {
-    character = vector( bufferSize(alphSize, numElems) );
+    character = calloc( bufferSize(alphSize, numElems), INT_WIDTH);
+    for( int charNum = 0; charNum < numDCElements; charNum++ ) {
+        for( int bitIdx = 0; bitIdx < alphLen; bitIdx++ ) {
+            if( values[charNum] & (1 << bitIdx) ) {
+                SetBit(output -> dynChar, charNum * alphLen + bitIdx);
+            }
+        }
+    }
 }
 
-dynChar_t( size_t characterLen ) {
 
-}
-
-
-dynChar_t operator&( dynChar_t const &right ) const {
+dynChar_t operator&( const dynChar_t& right ) const {
     dynChar_t holder = dynChar_t( right.end() - right.start() );
     for( size_t i = right.start(); i < right.end(); i++ ) {
         holder[i] = right.dynChar[i] & dynChar[i];
@@ -22,7 +25,7 @@ dynChar_t operator&( dynChar_t const &right ) const {
  }
 
 dynChar_t operator[]( size_t pos, size_t alphSize ) {
-    dynChar_t holder;
+    dynChar_t holder = (uint64_t*) malloc( right.arrLen * INT_WIDTH );
     for( size_t i ; i < right.arrLen; i++ ) {
         holder[i] = right.dynChar[i] & dynChar[i];
     }
@@ -30,33 +33,9 @@ dynChar_t operator[]( size_t pos, size_t alphSize ) {
 
 }
 
-dynChar_t operator==( dynChar_t const &right ) {
-    if( character.size() != right.character.size() ) {
-        return false;
-    }
-    for( vector< uint64_t >::iterator lIter = character.begin(), lEnd = character.end(), 
-                                      rIter = right.begin(), rEnd = right.character.end(); 
-                                      lIter < lEnd;
-                                      ++lIter, ++rIter ) {
-        if( *rIter != *lIter) {
-            return false;
-        }
-    }
-    return true;
-}
+dynChar_t operator==( dynChar_t const &right );
 
-dynChar_t operator| ( dynChar_t const &right ) {
-    for( vector< uint64_t >::iterator lIter = character.begin(), lEnd = character.end(), 
-                                      rIter = right.begin(), rEnd = right.character.end(); 
-                                      lIter < lEnd;
-                                      ++lIter, ++rIter ) {
-        if( *rIter != *lIter) {
-            return false;
-        }
-    }
-    return true;
-
-}
+dynChar_t operator| ( dynChar_t const &right );
 
 dynChar_t operator^ ( dynChar_t const &right );
 

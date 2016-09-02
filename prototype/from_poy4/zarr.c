@@ -1,5 +1,5 @@
-/* POY 5.1.1. A phylogenetic analysis program using Dynamic Homologies.       */
-/* Copyright (C) 2014 AndrÃ©s VarÃ³n, Lin Hong, Nicholas Lucaroni, Ward Wheeler,*/
+/* POY 4.0 Beta. A phylogenetic analysis program using Dynamic Homologies.    */
+/* Copyright (C) 2007  Andrés Varón, Le Sy Vinh, Illya Bomash, Ward Wheeler,  */
 /* and the American Museum of Natural History.                                */
 /*                                                                            */
 /* This program is free software; you can redistribute it and/or modify       */

@@ -12,8 +12,8 @@ simple_ffi : mySimpleTestC.c mySimpleTestC.h mySimpleFfi.hs
 	ghc -O --make mySimpleFfi.hs mySimpleTestC.o
 
 ########## more complex case, structs, pointers, etc.
-In this case, first call hsc2hs to build .hs file from .hsc file.
-.hsc file is weird mix of Haskell and C.
+# In this case, first call hsc2hs to build .hs file from .hsc file.
+# .hsc file is weird mix of Haskell and C.
 complex_ffi : myComplexTestC.c myComplexTestC.h myComplexFFI.hsc
 	rm -f myComplex.hs
 	hsc2hs myComplexFFI.hsc
