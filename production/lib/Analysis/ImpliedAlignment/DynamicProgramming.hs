@@ -54,6 +54,14 @@ data IndelEvents c e
    , edgeDeletionEvents  :: DeletionEvents
    } deriving (Show)
 
+data TreeReferences n
+   = TreeRefs
+   { rootRef    :: Int
+   , nodeRefs   :: Vector n
+   , parentRefs :: Vector Int
+   , childRefs  :: Vector IntSet
+   }
+
 -- | Top level wrapper to do an IA over an entire solution
 -- takes a solution
 -- returns an AlignmentSolution
@@ -171,14 +179,6 @@ deriveImpliedAlignment sequenceIndex psuedoCharacterVal node = node `setHomologi
               where
                 xs' = fromMaybe []   $ tailMay xs 
                 ys' = maybe ys (:ys) $ headMay xs
-
-data TreeReferences n
-   = TreeRefs
-   { rootRef    :: Int
-   , nodeRefs   :: Vector n
-   , parentRefs :: Vector Int
-   , childRefs  :: Vector IntSet
-   }
 
 precomputeTreeReferences :: TreeConstraint t n e s  => t -> TreeReferences n
 precomputeTreeReferences tree =
