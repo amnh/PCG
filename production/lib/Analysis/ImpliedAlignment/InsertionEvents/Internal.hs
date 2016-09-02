@@ -17,7 +17,7 @@ module Analysis.ImpliedAlignment.InsertionEvents.Internal where
 
 import           Analysis.ImpliedAlignment.DeletionEvents       (DeletionEvents)
 import qualified Analysis.ImpliedAlignment.DeletionEvents as DE
-import           Control.Arrow        ((&&&))
+import           Control.Arrow        ((***),(&&&))
 import           Data.Bifunctor       (bimap,second)
 import           Data.Foldable
 import           Data.IntMap          (IntMap)
@@ -55,6 +55,13 @@ import Debug.Trace (trace)
 -}
 newtype InsertionEvents a e = IE (IntMap (Seq (a,e))) deriving (Eq)
 
+instance (Arbitrary a, Arbitrary e, Eq a, Eq e) => Arbitrary (InsertionEvents a e) where
+  arbitrary = do
+    let gen = (,) <$> arbitrary <*> arbitrary
+    keys <- fmap getNonNegative . getNonEmpty <$> (arbitrary :: Gen (NonEmptyList (NonNegative Int)))
+    vals <- vectorOf (length keys) (listOf1 gen) 
+    pure . IE . IM.fromList $ zipWith (\x y -> (x, Seq.fromList y)) keys vals
+
 instance (Eq a, Eq e) => Monoid (InsertionEvents a e) where
   -- | This represent no insertionevents occurring on an edge
   mempty = IE mempty
@@ -67,12 +74,40 @@ instance (Eq a, Eq e) => Monoid (InsertionEvents a e) where
     where
       f mapping k v = IM.insertWith (flip (<>)) k v mapping
 
-instance (Arbitrary a, Arbitrary e, Eq a, Eq e) => Arbitrary (InsertionEvents a e) where
-  arbitrary = do
-    let gen = (,) <$> arbitrary <*> arbitrary
-    keys <- fmap getNonNegative . getNonEmpty <$> (arbitrary :: Gen (NonEmptyList (NonNegative Int)))
-    vals <- vectorOf (length keys) (listOf1 gen) 
-    pure . IE . IM.fromList $ zipWith (\x y -> (x, Seq.fromList y)) keys vals
+
+-- | A nicer version of Show hiding the internal structure.
+instance (Show a, Show e) => Show (InsertionEvents a e) where
+  show (IE xs) = mconcat
+      [ "{"
+      , intercalate "," $ render <$> kvs
+      , "}"
+      ]
+    where
+      kvs = IM.assocs xs
+      render (k, v) = mconcat
+          [ "("
+          , show k
+          , ","
+          , renderedValue
+          , ")"
+          ]
+        where
+          unenquote = filter (\x -> x /= '\'' && x /= '"') 
+          renderedValue
+            | all singleChar shown = concatMap unenquote shown
+            | otherwise            = show shown
+            where
+              singleChar = (1==) . length . unenquote
+              shown = toList $ show <$> v
+
+
+{-
+instance (Show e) => Show (InsertionEvents a e) where
+  show (IE im) = enclose .intercalate "," . fmap (f . (show *** show . fmap (show . snd) . toList)) $ IM.assocs im
+    where
+      enclose x = mconcat ["{",x,"}"]
+      f (a,b)   = mconcat ["(",a,",",b,")"]
+-}
 
 -- | This operator is used for combining an direct ancestoral edge with the
 --   combined insertion events of child edges.
@@ -227,31 +262,6 @@ coalesce ancestorDeletions (IE ancestorMap) descendantEvents
 
 
 
-
--- | A nicer version of Show hiding the internal structure.
-instance (Show a, Show e) => Show (InsertionEvents a e) where
-  show (IE xs) = mconcat
-      [ "{"
-      , intercalate "," $ render <$> kvs
-      , "}"
-      ]
-    where
-      kvs = IM.assocs xs
-      render (k, v) = mconcat
-          [ "("
-          , show k
-          , ","
-          , renderedValue
-          , ")"
-          ]
-        where
-          unenquote = filter (\x -> x /= '\'' && x /= '"') 
-          renderedValue
-            | all singleChar shown = concatMap unenquote shown
-            | otherwise            = show shown
-            where
-              singleChar = (1==) . length . unenquote
-              shown = toList $ show <$> v
 
 -- | Constructs an InsertionEvents collection from a structure of integral keys
 -- and sequences of equatable elements.

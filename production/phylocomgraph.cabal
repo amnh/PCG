@@ -50,6 +50,7 @@ library
                      , memoize              -any
                      , parallel             -any
                      , QuickCheck           -any
+                     , quickcheck-properties -any
                      , safe                 -any
                      , scientific           -any
                      , semigroups           -any
