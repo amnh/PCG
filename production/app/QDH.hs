@@ -2,8 +2,11 @@ module Main (main) where
 
 import Analysis.ImpliedAlignment.DynamicProgramming
 import Analysis.Parsimony.Binary.Optimization
+import Bio.Metadata
 import Control.Applicative ((<|>))
+import Data.Alphabet       (constructAlphabet)
 import Data.Maybe          (fromMaybe)
+import Data.Vector         (Vector)
 import Safe                (headMay, readMay, tailMay)
 import System.Environment  (getArgs)
 import Test.Custom
@@ -22,10 +25,10 @@ compute = print . deriveImpliedAlignments defMeta . allOptimization 1 defMeta
 
 trySimpleTree :: [String] -> Maybe SimpleTree
 trySimpleTree xs = do
-  rootIndex <- readMay =<< headMay xs :: Maybe Int
-  alphabet  <- readMay =<< headMay =<< tailMay xs :: Maybe String
-  mapping   <- readMay =<< headMay =<< tailMay =<< tailMay xs :: Maybe [(Int,String,[Int])]
-  pure $ createSimpleTree rootIndex alphabet mapping
+  rootIndex   <- readMay =<< headMay xs :: Maybe Int
+  alphabetStr <- readMay =<< headMay =<< tailMay xs :: Maybe String
+  mapping     <- readMay =<< headMay =<< tailMay =<< tailMay xs :: Maybe [(Int,String,[Int])]
+  pure $ createSimpleTree rootIndex alphabetStr mapping
 
 trySimpleBinaryTree :: [String] -> Maybe SimpleTree
 trySimpleBinaryTree xs = do
@@ -44,6 +47,21 @@ exampleTree = createSimpleTree 8 "ACTG"
   , (7, "ACA",   [])
   , (8,    "",[6,7])
   ]
+
+defMeta :: Vector (CharacterMetadata s)
+defMeta = pure CharMeta
+        { charType   = DirectOptimization
+        , alphabet   = constructAlphabet []
+        , name       = "DefaultCharacter"
+        , isAligned  = False
+        , isIgnored  = False
+        , weight     = 1.0
+        , stateNames = mempty
+        , fitchMasks = undefined
+        , rootCost   = 0.0
+        , costs      = GeneralCost { indelCost = 2, subCost = 1 }
+        }
+
 {--}
 {--
      $ createSimpleTree 0 "ACTG"
