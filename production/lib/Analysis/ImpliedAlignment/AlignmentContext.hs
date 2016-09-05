@@ -69,7 +69,7 @@ instance (Show a, Show e) => Show (AlignmentContext a e) where
           , ("  "<>) . concatMap show $ psuedoCharacter ac
           ]
 
-readPseudoCharacter :: [Char] -> [PsuedoIndex]
+readPseudoCharacter :: String -> [PsuedoIndex]
 readPseudoCharacter ('O':xs) = OriginalBase : readPseudoCharacter xs
 readPseudoCharacter ('I':xs) = InsertedBase : readPseudoCharacter xs
 readPseudoCharacter ('D':xs) = DeletedBase  : readPseudoCharacter xs

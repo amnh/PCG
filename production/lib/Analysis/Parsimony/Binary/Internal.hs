@@ -15,34 +15,33 @@
 
 module Analysis.Parsimony.Binary.Internal where
 
-import Analysis.Parsimony.Binary.Constraints
-import Analysis.Parsimony.Binary.DirectOptimization
-import Analysis.Parsimony.Binary.Fitch
-import Data.Bits           (Bits)
-import Bio.Character.Dynamic.Coded
-import Bio.Metadata
-import Bio.PhyloGraph.Forest
-import Bio.PhyloGraph.Network
-import Bio.PhyloGraph.Node ()
-import Bio.PhyloGraph.Node.Encoded
-import Bio.PhyloGraph.Node.Final
-import Bio.PhyloGraph.Node.Preliminary
-import Bio.PhyloGraph.Solution
+import           Analysis.Parsimony.Binary.Constraints
+import           Analysis.Parsimony.Binary.DirectOptimization
+import           Analysis.Parsimony.Binary.Fitch
+import           Bio.Character.Dynamic.Coded
+import           Bio.Metadata
+import           Bio.PhyloGraph.Forest
+import           Bio.PhyloGraph.Network
+import           Bio.PhyloGraph.Node ()
+import           Bio.PhyloGraph.Node.Encoded
+import           Bio.PhyloGraph.Node.Final
+import           Bio.PhyloGraph.Node.Preliminary
+import           Bio.PhyloGraph.Solution
 --import Bio.PhyloGraph.Tree.Binary
 --import Bio.PhyloGraph.Tree.Rose
 --import Data.Matrix.NotStupid (Matrix, nrows, ncols, setElem)
 --import Data.Maybe
-import Data.Bits             ((.&.),zeroBits)
-import Data.Foldable
-import Data.Function.Memoize (Memoizable)
-import Data.IntMap           (IntMap)
-import qualified Data.IntMap as IM
-import Data.Key       hiding ((!))
-import Data.Monoid
-import Data.MonoTraversable
+import           Data.Bits             (Bits,(.&.),zeroBits)
+import           Data.Foldable
+import           Data.Function.Memoize (Memoizable)
+import           Data.IntMap           (IntMap)
+import qualified Data.IntMap    as IM
+import           Data.Key       hiding ((!))
+import           Data.Monoid
+import           Data.MonoTraversable
 --import Data.Ord              (comparing)
-import Data.Vector           (Vector, (!), ifoldr)
-import Prelude        hiding (lookup,zip)
+import           Data.Vector           (Vector, (!), ifoldr)
+import           Prelude        hiding (lookup,zip)
 
 --import Debug.Trace (trace)
 

@@ -8,6 +8,7 @@ import qualified Analysis.Parsimony.Binary.DirectOptimization.Test as DO
 import qualified Analysis.Parsimony.Binary.Test                    as Parsimony
 import qualified Bio.Character.Dynamic.Coded.Test                  as Char
 import qualified Bio.PhyloGraph.DAG.Test                           as DAG
+import qualified Data.BitMatrix.Test                               as BitMatrix
 import qualified Test.Custom.Tree.Test                             as MockTree
 {-
 import qualified Control.Evaluation.Test               as Evaluation
@@ -36,7 +37,8 @@ testSuite = testGroup "Library Test Suite"
   , TCM.testSuite
   , VER.testSuite
 -}
-    DAG.testSuite
+    BitMatrix.testSuite
+  , DAG.testSuite
   , MockTree.testSuite
   , Char.testSuite
   , DO.testSuite
