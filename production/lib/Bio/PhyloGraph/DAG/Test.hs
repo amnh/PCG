@@ -24,7 +24,7 @@ import           Bio.PhyloGraph.Node          hiding (parents, children)
 import qualified Data.Vector                  as V
 import           Data.MonoTraversable
 import           Test.Tasty
-import           Test.Tasty.HUnit
+--import           Test.Tasty.HUnit
 import           Test.Tasty.QuickCheck
 
 testSuite :: TestTree
@@ -60,7 +60,11 @@ onlyNodeIsRoot dag = oall (\node -> (root dag /= node) /= nodeIsRoot node dag) d
                                                                        {- ^^this /= is not working the way I thought it would. -}
 
 -- Alex pulled this out. Now it's back in?
+{-
+rootConsistency :: (Eq (Element mono), Network mono (Element mono), MonoFoldable mono)
+                => mono -> Bool
 rootConsistency dag = oall (\node -> (root dag /= node) /= nodeIsRoot node dag) dag
+-}
 
 allRootNodesHaveNoParentsTest :: TestTree
 allRootNodesHaveNoParentsTest = testProperty "forall a. null (parents (nodeIsRoot a t) t)" f

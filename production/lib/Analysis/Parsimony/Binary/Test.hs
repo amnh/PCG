@@ -14,24 +14,24 @@
 
 module Analysis.Parsimony.Binary.Test where
 
-import           Analysis.Parsimony.Binary.DirectOptimization
+--import           Analysis.Parsimony.Binary.DirectOptimization
 import           Analysis.Parsimony.Binary.Fitch
 import           Analysis.Parsimony.Binary.Internal
-import           Analysis.Parsimony.Binary.Optimization
+--import           Analysis.Parsimony.Binary.Optimization
 import           Bio.Metadata
 import           Bio.Metadata.MaskGenerator
 import           Bio.Character.Dynamic.Coded
-import           Bio.Character.Parsed
+--import           Bio.Character.Parsed
 import           Bio.PhyloGraph.Solution
 import           Data.Alphabet
-import           Data.BitMatrix
-import           Data.BitVector
-import           Data.Matrix.NotStupid (getRow)
+--import           Data.BitMatrix
+--import           Data.BitVector
+--import           Data.Matrix.NotStupid (getRow)
 import           Data.MonoTraversable
 import           Data.Monoid
 import qualified Data.Vector as V
 import           Test.Tasty
-import           Test.Tasty.HUnit
+--import           Test.Tasty.HUnit
 import           Test.Tasty.QuickCheck
 
 standardAlph :: Alphabet String
@@ -41,6 +41,7 @@ doMeta, fitchMeta :: CharacterMetadata DynamicChar
 doMeta    = CharMeta DirectOptimization standardAlph "" False False 1 mempty (constructDynamic [], constructDynamic []) 0 costStructure
 fitchMeta = CharMeta Fitch              standardAlph "" False False 1 mempty (constructDynamic [], constructDynamic []) 0 costStructure
 
+costStructure :: CostStructure
 costStructure = GeneralCost 1 1
 
 decodeIt :: DynamicChar -> [[String]]
@@ -90,17 +91,18 @@ fitchProperties = testGroup "Properties of the Fitch algorithm" [preIdHolds, pos
 abstractSymbols :: [String]
 abstractSymbols = fmap pure . ('-' :) $ ['0'..'9'] <> ['A'..'Z'] <> ['a'..'z']
 
+-- TODO: Investigate the test failure!
 -- | Check properties of the traversal
 traversalProperties :: TestTree
-traversalProperties = testGroup "Properties of the common binary traversal" [] -- [opTwice]
+traversalProperties = testGroup "Properties of the common binary traversal" [opTwice]
     where
         opTwice = testProperty "Running an optimization twice returns same result as first time" checkTwice
             where
                 checkTwice :: StandardSolution -> Bool
-                checkTwice inSol = once == twice
+                checkTwice inSol = optOnce == optTwice
                     where
-                        once  = solutionOptimization 1 inSol
-                        twice = solutionOptimization 1 once
+                        optOnce  = solutionOptimization 1 inSol
+                        optTwice = solutionOptimization 1 optOnce
         {-
         atLeaf = testProperty "If we start at a leaf, only that node changes" checkSimple
             where

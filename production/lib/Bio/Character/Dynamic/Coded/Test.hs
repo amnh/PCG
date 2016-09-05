@@ -5,21 +5,20 @@ module Bio.Character.Dynamic.Coded.Test
   ) where
 
 import           Bio.Character.Dynamic.Coded
-import           Bio.Character.Parsed
 import           Data.Alphabet
 import           Data.Bits
-import           Data.BitVector (BitVector, bitVec, toBits, width)
+import           Data.BitVector (BitVector)
 import           Data.Foldable
 import           Data.Key       ((!))
 import           Data.Set       (Set)
 import qualified Data.Set as Set (fromList,intersection,union)
-import           Data.Monoid    ((<>))
+--import           Data.Monoid    ((<>))
 import           Data.Vector    (Vector, fromList)
 import           Test.Tasty
-import           Test.Tasty.HUnit
+--import           Test.Tasty.HUnit
 import           Test.Tasty.QuickCheck hiding ((.&.))
 
-import Debug.Trace (trace)
+--import Debug.Trace (trace)
 
 testSuite :: TestTree
 testSuite = testGroup "Custom Bits instances"
@@ -72,6 +71,7 @@ testZeroBitProperties z label = testGroup ("zeroBit properties (" <> label <> ")
         popCountZeroBitIs0 = testCase "popCount zeroBits == 0" . assert $ popCount z == 0
 -}
 
+{-
 testBitConstructionProperties :: Bits b => b -> String -> TestTree
 testBitConstructionProperties z label = testGroup ("Bit toggling properties (" <> label <> ")")
         [ setBitTestBit
@@ -90,6 +90,7 @@ testBitConstructionProperties z label = testGroup ("Bit toggling properties (" <
                 f :: NonNegative Int -> Bool
                 f n = let i = getNonNegative n
                       in  clearBit (bit i) i == z
+-}
 
 testCodedSequenceInstance :: TestTree
 testCodedSequenceInstance = testGroup "Properties of instance CodedSequence EncodedSeq"
@@ -122,12 +123,12 @@ overEmpties = testGroup "Verify function over empty structures" [filt]
     where
         filt = testCase "FilterGaps works over empty" ((filterGaps emptyChar) @?= emptyChar)
 -}
-type DynamicChar' = Vector
+--type DynamicChar' = Vector
 
-type ParsedChar' = Vector (NonEmptyList (NonEmptyList Char))
-
+{-
 getParsedChar :: ParsedChar' -> ParsedChar
 getParsedChar = fmap (fmap getNonEmpty . getNonEmpty)
+-}
 
 --decodeOverAlphabetTest :: TestTree
 --decodeOverAlphabetTest = testProperty "decodeOverAlphabet" f
@@ -184,25 +185,25 @@ testEncodableStaticCharacterInstanceBitVector = testGroup "BitVector instance of
         logicalOrIsomorphismWithSetUnion = testProperty "Set.fromList (decodeChar alphabet (encodeChar alphabet xs .|. encodeChar alphabet ys)) == Set.fromList (toList alphabet) `Set.intersect` (toList xs `Set.union` toList ys)" f
           where
             f :: AlphabetAndTwoAmbiguityGroups -> Bool
-            f alphabetAndAmbiguityGroups = lhs == rhs
+            f input = lhs == rhs
               where
                 lhs = Set.fromList $ decodeChar alphabet (encodeChar' alphabet sxs .|. encodeChar' alphabet sys)
                 rhs = sxs `Set.union` sys
-                (alphabet, sxs,sys) = gatherAlphabetAndAmbiguitySets alphabetAndAmbiguityGroups
+                (alphabet, sxs,sys) = gatherAlphabetAndAmbiguitySets input
 
         logicalAndIsomorphismWithSetIntersection = testProperty "Set.fromList (decodeChar alphabet (encodeChar alphabet xs .&. encodeChar alphabet ys)) == Set.fromList (toList alphabet) `Set.intersect` (toList xs `Set.intersection` toList ys)" f
           where
             f :: AlphabetAndTwoAmbiguityGroups -> Bool
-            f alphabetAndAmbiguityGroups = lhs == rhs
+            f input = lhs == rhs
               where
                 lhs = Set.fromList $ decodeChar alphabet (encodeChar' alphabet sxs .&. encodeChar' alphabet sys)
                 rhs = sxs `Set.intersection` sys
-                (alphabet, sxs,sys) = gatherAlphabetAndAmbiguitySets alphabetAndAmbiguityGroups
+                (alphabet, sxs,sys) = gatherAlphabetAndAmbiguitySets input
 
 gatherAlphabetAndAmbiguitySets :: AlphabetAndTwoAmbiguityGroups -> (Alphabet String, Set String, Set String)
-gatherAlphabetAndAmbiguitySets alphabetAndAmbiguityGroups = (alphabet, Set.fromList xs, Set.fromList ys)
+gatherAlphabetAndAmbiguitySets input = (alphabet, Set.fromList xs, Set.fromList ys)
   where
-    (alphabet, xs, ys) = getAlphabetAndTwoAmbiguityGroups alphabetAndAmbiguityGroups
+    (alphabet, xs, ys) = getAlphabetAndTwoAmbiguityGroups input
 
 {- LAWS:
  - decodeMany alphabet . encodeMany alphabet == fmap toList . toList
@@ -225,16 +226,20 @@ testEncodableDynamicCharacterInstanceDynamicChar = testGroup "DynamicChar instan
                 rhs = fmap Set.fromList . toList
                 (alphabet, dynamicChar) = getAlphabetAndCharacter alphabetAndDynamicChar
 
+
+-- Types for supporting 'Arbitrary' construction
+
+type ParsedChar' = Vector (NonEmptyList (NonEmptyList Char))
+
 newtype ParsedCharacterWithAlphabet
-      = ParsedCharacterWithAlphabet
-      { getParsedCharAndAlphabet :: (ParsedChar', Alphabet String) 
-      } deriving (Eq, Show)
+      = ParsedCharacterWithAlphabet (ParsedChar', Alphabet String)
+      deriving (Eq, Show)
 
 instance Arbitrary ParsedCharacterWithAlphabet where
     arbitrary = do
-        alphabet <- arbitrary :: Gen (Alphabet String)
-        vector   <- fmap (fmap (NonEmpty . (:[]) . NonEmpty) . fromList) . listOf1 . elements . toList $ alphabet
-        pure $ ParsedCharacterWithAlphabet (vector, alphabet)
+        alphabet  <- arbitrary :: Gen (Alphabet String)
+        vectorVal <- fmap (fmap (NonEmpty . (:[]) . NonEmpty) . fromList) . listOf1 . elements . toList $ alphabet
+        pure $ ParsedCharacterWithAlphabet (vectorVal, alphabet)
 
 newtype AlphabetAndSingleAmbiguityGroup
       = AlphabetAndSingleAmbiguityGroup

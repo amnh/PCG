@@ -4,14 +4,12 @@ module TestSuite.GeneratedTests.TNT
   ( testSuite
   ) where
 
-import Data.Either.Combinators
 import Data.Map                          (toList)
 import File.Format.TNT
 import Test.Custom.Parse
 import Test.Tasty                        (TestTree,testGroup)
 import Test.Tasty.HUnit
 import TestSuite.GeneratedTests.Internal
-import Text.Megaparsec                   (parse)
 
 testSuite :: IO TestTree
 testSuite = testGroup "tntStreamParser" <$> sequence [validTNTFiles, invalidTNTFiles]

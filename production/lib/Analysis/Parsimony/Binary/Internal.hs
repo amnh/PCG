@@ -18,6 +18,7 @@ module Analysis.Parsimony.Binary.Internal where
 import Analysis.Parsimony.Binary.Constraints
 import Analysis.Parsimony.Binary.DirectOptimization
 import Analysis.Parsimony.Binary.Fitch
+import Data.Bits           (Bits)
 import Bio.Character.Dynamic.Coded
 import Bio.Metadata
 import Bio.PhyloGraph.Forest
@@ -229,13 +230,14 @@ nodeOptimizePreorder curNode lNode rNode pNode = ifoldr chooseOptimization curNo
 disambiguate :: EncodableDynamicCharacter c => c -> c
 disambiguate = omap orderedSelection
 
+orderedSelection :: (Num a, Bits a) => a -> a
 orderedSelection x = x .&. negate x -- Selects the least significant set bit, clears all others.
 
 deriveSingleAssignment :: SeqConstraint' c => CostStructure -> c -> c -> c -> c
 deriveSingleAssignment costStructure parentSingle parentFinal childFinal = result
   where
     (_, _, _, parentAlignment, childAlignment) = naiveDO parentFinal childFinal costStructure
-    result = constructDynamic . reverse . snd . foldl f (0,[]) $ zip (otoList parentAlignment) (otoList childAlignment)
+    result = constructDynamic . reverse . snd . foldl f (0::Int, []) $ zip (otoList parentAlignment) (otoList childAlignment)
     gap    = getGapChar $ parentSingle `indexChar` 0
     f (pointer, xs) (pElement, cElement)
       | pElement == gap && cElement == gap = (pointer    ,                             xs)
@@ -244,13 +246,18 @@ deriveSingleAssignment costStructure parentSingle parentFinal childFinal = resul
       | pElement /= gap && cElement /= gap = (pointer + 1,       g sElement cElement : xs)
       where
         sElement = parentSingle `indexChar` 0
+    f (_,_) (_,_) = error "Satisfy the exahustiveness checker (dead logic branch)"
+    
     g single ambiguous
       | new /= zeroBits = new
       | otherwise       = orderedSelection ambiguous
       where
         new = single .&. ambiguous
 
-        
+
+tripleComparison :: ( Show t, Show (Element t), Memoizable t, Memoizable (Element t)
+                    , EncodableDynamicCharacter t, PreliminaryNode n t, EncodedNode n t)
+                 => Int -> CostStructure -> n -> t -> (t, t)
 tripleComparison i costStructure curNode parentCharacter = (finalUngapped, finalGapped)
   where
     childCharacter   = {- (\x -> trace ("childCharacter: "  <> show x) x) $ -} getChildCharacterForDoPreorder curNode ! i

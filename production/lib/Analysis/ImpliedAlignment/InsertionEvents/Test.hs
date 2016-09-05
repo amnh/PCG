@@ -11,7 +11,9 @@
 -- Unit tests for the InvertionEvents type
 -----------------------------------------------------------------------------
 
-module Analysis.ImpliedAlignment.InsertionEvents.Test (testSuite) where
+module Analysis.ImpliedAlignment.InsertionEvents.Test
+  ( testSuite
+  ) where
 
 import           Analysis.ImpliedAlignment.InsertionEvents.Internal
 import qualified Analysis.ImpliedAlignment.DeletionEvents as DE
@@ -21,6 +23,10 @@ import Test.QuickCheck.Property.Monoid
 import Test.Tasty
 import Test.Tasty.HUnit
 import Test.Tasty.QuickCheck
+
+-- Disambiguated the type inference for this module.
+fromList' :: [(Int,String)] -> InsertionEvents Char Int
+fromList' = fromList
 
 testSuite :: TestTree
 testSuite = testGroup "Insertion Event operations"
@@ -44,11 +50,12 @@ monoidProperties = testProperty "InsertionEvents is a proper Monoid instance" f
     prop :: (Eq a, Eq e) => T (InsertionEvents a e) -> InsertionEvents a e -> InsertionEvents a e -> InsertionEvents a e -> Equal (InsertionEvents a e)
     prop = prop_Monoid
 
+
 monoidOperatorTestCases :: TestTree
 monoidOperatorTestCases = testGroup "Monoid operator test cases"
-    [ testCase "Test left bias"   $ fromList [(1,"AB")]                        @=? fromList [(1,"A")]         <> fromList [(1,"B")]
-    , testCase "Test left bias 2" $ fromList [(1,"ACDC")]                      @=? fromList [(1,"AC")]        <> fromList [(1,"DC")]
-    , testCase "Test interlacing" $ fromList [(1,"A"),(2,"B"),(3,"C"),(4,"D")] @=? fromList [(1,"A"),(3,"C")] <> fromList [(2,"B"),(4,"D")]
+    [ testCase "Test left bias"   $ fromList' [(1,"AB")]                        @=? fromList' [(1,"A")]         <> fromList' [(1,"B")]
+    , testCase "Test left bias 2" $ fromList' [(1,"ACDC")]                      @=? fromList' [(1,"AC")]        <> fromList' [(1,"DC")]
+    , testCase "Test interlacing" $ fromList' [(1,"A"),(2,"B"),(3,"C"),(4,"D")] @=? fromList' [(1,"A"),(3,"C")] <> fromList' [(2,"B"),(4,"D")]
     ]
 
 testCoalesce :: TestTree
@@ -78,20 +85,22 @@ coalesceTestCases = testGroup "Coalesce function test cases"
 
 coalesceSecondaryTestCases :: TestTree
 coalesceSecondaryTestCases = testGroup "Secondary test cases"
-    [ testCase "Test leading decendant insertion" $ fromList [(0,"V" ),(1,"ABCDE"),(2,"MN"),(3,"XYZ")]      @=? coalesce  mempty           (fromList [(1,"BD"),(2,"MN"),(3,"Y")])               [fromList [(0,"V"),(1,"A"),(2,"C"),(3,"E"),(7,"X"),(8,"Z")]]
-    , testCase "Test lets try a deletion"         $ fromList [(2,"A" ),(3,"C"),(4,"E")]                     @=? coalesce (DE.fromList [0])  mempty                                               [fromList [(1,"A"),(2,"C"),(3,"E")]]
-    , testCase "Test lets try a deletion 2"       $ fromList [(1,"XA"),(2,"C"),(3,"E")]                     @=? coalesce (DE.fromList [0]) (fromList [(1,"X")])                                  [fromList [(1,"A"),(2,"C"),(3,"E")]]
-    , testCase "Test (22,9)"                      $ fromList [(2,"I" ),(3,"I"),(5,"I"),(6,"II"),(7,"IXYZ")] @=? coalesce (DE.fromList [0]) (fromList [(2,"I"),(3,"I"),(5,"I"),(6,"II"),(7,"I")]) [fromList [(12,"XYZ")]]
+    [ testCase "Test leading decendant insertion" $ fromList' [(0,"V" ),(1,"ABCDE"),(2,"MN"),(3,"XYZ")]      @=? coalesce mempty    (fromList' [(1,"BD"),(2,"MN"),(3,"Y")])                [fromList' [(0,"V"),(1,"A"),(2,"C"),(3,"E"),(7,"X"),(8,"Z")]]
+    , testCase "Test lets try a deletion"         $ fromList' [(2,"A" ),(3,"C"),(4,"E")]                     @=? coalesce delEvents  mempty                                                [fromList' [(1,"A"),(2,"C"),(3,"E")]]
+    , testCase "Test lets try a deletion 2"       $ fromList' [(1,"XA"),(2,"C"),(3,"E")]                     @=? coalesce delEvents (fromList' [(1,"X")])                                  [fromList' [(1,"A"),(2,"C"),(3,"E")]]
+    , testCase "Test (22,9)"                      $ fromList' [(2,"I" ),(3,"I"),(5,"I"),(6,"II"),(7,"IXYZ")] @=? coalesce delEvents (fromList' [(2,"I"),(3,"I"),(5,"I"),(6,"II"),(7,"I")]) [fromList' [(12,"XYZ")]]
     ]
+  where
+    delEvents = DE.fromList [0::Int]
 
 coalesceInitialTestCases :: TestTree
 coalesceInitialTestCases = testGroup "Initial test cases"
-    [ testCase "Test decrementing  case" $ fromList [(1,"A"),(2,"B")]                @=? coalesce mempty (fromList [(1,"A")   ])                [fromList [(3,"B")  ]]
-    , testCase "Test appending     case" $ fromList [(1,"ABCD" )]                    @=? coalesce mempty (fromList [(1,"A")   ])                [fromList [(2,"BCD")]]
-    , testCase "Test prepending    case" $ fromList [(1,"ABCD" )]                    @=? coalesce mempty (fromList [(1,"BCD") ])                [fromList [(1,"A")  ]]
-    , testCase "Test inserting     case" $ fromList [(1,"ABCDE")]                    @=? coalesce mempty (fromList [(1,"ABDE")])                [fromList [(3,"C")  ]]
-    , testCase "Test all three     case" $ fromList [(1,"ABCDE")]                    @=? coalesce mempty (fromList [(1,"BD")  ])                [fromList [(1,"A"),(2,"C"),(3,"E")]]
-    , testCase "Test padded middle case" $ fromList [(1,"AB"),(2,"X"),(3,"CD")]      @=? coalesce mempty (fromList [(1,"B"),(2,"X"),(3,"C")])   [fromList [(1,"A"),(6,"D")]]
-    , testCase "Test double        case" $ fromList [(1,"AB"),(2,"CD")]              @=? coalesce mempty (fromList [(1,"A"),(2,"D")])           [fromList [(2,"B"),(3,"C")]]
-    , testCase "Test all of above  case" $ fromList [(1,"ABCDE"),(2,"MN"),(3,"XYZ")] @=? coalesce mempty (fromList [(1,"BD"),(2,"MN"),(3,"Y")]) [fromList [(1,"A"),(2,"C"),(3,"E"),(7,"X"),(8,"Z")]]
+    [ testCase "Test decrementing  case" $ fromList' [(1,"A"),(2,"B")]                @=? coalesce mempty (fromList' [(1,"A")   ])                [fromList' [(3,"B")  ]]
+    , testCase "Test appending     case" $ fromList' [(1,"ABCD" )]                    @=? coalesce mempty (fromList' [(1,"A")   ])                [fromList' [(2,"BCD")]]
+    , testCase "Test prepending    case" $ fromList' [(1,"ABCD" )]                    @=? coalesce mempty (fromList' [(1,"BCD") ])                [fromList' [(1,"A")  ]]
+    , testCase "Test inserting     case" $ fromList' [(1,"ABCDE")]                    @=? coalesce mempty (fromList' [(1,"ABDE")])                [fromList' [(3,"C")  ]]
+    , testCase "Test all three     case" $ fromList' [(1,"ABCDE")]                    @=? coalesce mempty (fromList' [(1,"BD")  ])                [fromList' [(1,"A"),(2,"C"),(3,"E")]]
+    , testCase "Test padded middle case" $ fromList' [(1,"AB"),(2,"X"),(3,"CD")]      @=? coalesce mempty (fromList' [(1,"B"),(2,"X"),(3,"C")])   [fromList' [(1,"A"),(6,"D")]]
+    , testCase "Test double        case" $ fromList' [(1,"AB"),(2,"CD")]              @=? coalesce mempty (fromList' [(1,"A"),(2,"D")])           [fromList' [(2,"B"),(3,"C")]]
+    , testCase "Test all of above  case" $ fromList' [(1,"ABCDE"),(2,"MN"),(3,"XYZ")] @=? coalesce mempty (fromList' [(1,"BD"),(2,"MN"),(3,"Y")]) [fromList' [(1,"A"),(2,"C"),(3,"E"),(7,"X"),(8,"Z")]]
     ]

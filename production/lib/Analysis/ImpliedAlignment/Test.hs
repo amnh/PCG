@@ -16,7 +16,6 @@
 module Analysis.ImpliedAlignment.Test where
 
 import           Analysis.Parsimony.Binary.Internal
-import           Analysis.ImpliedAlignment.DynamicProgramming
 import           Analysis.ImpliedAlignment.Standard
 import           Analysis.ImpliedAlignment.Test.Trees
 import qualified Analysis.ImpliedAlignment.InsertionEvents.Test as IE (testSuite)

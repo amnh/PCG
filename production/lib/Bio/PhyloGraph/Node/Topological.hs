@@ -18,14 +18,7 @@
 module Bio.PhyloGraph.Node.Topological (TopoNode(..){-, arbitraryTopoGivenCAL, arbitraryTopoGivenCSNA -}) where
 
 import           Bio.Character.Dynamic.Coded
-import           Bio.Character.Dynamic.Coded.Internal
-import           Bio.Character.Parsed
-import           Bio.Metadata.Internal
-import           Data.Alphabet
-import           Data.List.Utility
-import           Data.Vector (Vector)
-import qualified Data.Vector as V (zipWith)
-import           Test.Tasty.QuickCheck
+import           Data.Vector      (Vector) 
 
 -- | A tree construction which stores it's children as pointers. Tree traversal
 --   must start from the root node.
