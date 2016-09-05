@@ -16,8 +16,6 @@
 module Analysis.ImpliedAlignment.InsertionEvents.Internal where
 
 import           Analysis.ImpliedAlignment.DeletionEvents       (DeletionEvents)
---import qualified Analysis.ImpliedAlignment.DeletionEvents as DE
-import           Control.Arrow          ((&&&))
 import           Data.Bifunctor         (bimap)
 import           Data.Foldable
 import           Data.IntMap            (IntMap)
@@ -51,16 +49,16 @@ import           Test.QuickCheck hiding (output)
   May be also be combined directionally to accululate out edges and an in edge of
   a node to represent all insertion events below the in edge.
 -}
-newtype InsertionEvents a e = IE (IntMap (Seq (a,e))) deriving (Eq)
+newtype InsertionEvents e = IE (IntMap (Seq e)) deriving (Eq)
 
-instance (Arbitrary a, Arbitrary e, Eq a, Eq e) => Arbitrary (InsertionEvents a e) where
+instance (Arbitrary e, Eq e) => Arbitrary (InsertionEvents e) where
   arbitrary = do
-    let gen = (,) <$> arbitrary <*> arbitrary
+    let gen = arbitrary
     keys <- fmap getNonNegative . getNonEmpty <$> (arbitrary :: Gen (NonEmptyList (NonNegative Int)))
     vals <- vectorOf (length keys) (listOf1 gen) 
     pure . IE . IM.fromList $ zipWith (\x y -> (x, Seq.fromList y)) keys vals
 
-instance (Eq a, Eq e) => Monoid (InsertionEvents a e) where
+instance Eq e => Monoid (InsertionEvents e) where
   -- | This represent no insertionevents occurring on an edge
   mempty = IE mempty
 
@@ -74,7 +72,7 @@ instance (Eq a, Eq e) => Monoid (InsertionEvents a e) where
 
 
 -- | A nicer version of Show hiding the internal structure.
-instance (Show a, Show e) => Show (InsertionEvents a e) where
+instance Show e => Show (InsertionEvents e) where
   show (IE xs) = mconcat
       [ "{"
       , intercalate "," $ render <$> kvs
@@ -111,7 +109,7 @@ instance (Show e) => Show (InsertionEvents a e) where
 --   combined insertion events of child edges.
 --
 --   Pronounced <http://www.dictionary.com/browse/coalesce "coalesce"> operator.
-(<^>) :: (Eq a, Eq e) => InsertionEvents a e -> InsertionEvents a e -> InsertionEvents a e
+(<^>) :: Eq e => InsertionEvents e -> InsertionEvents e -> InsertionEvents e
 (<^>) (IE ancestorMap) (IE descendantMap) = IE . IM.fromList $ result <> remaining acc
   where
     (_, acc, result) = foldlWithKey f initialAccumulator descendantMap
@@ -150,16 +148,17 @@ instance (Show e) => Show (InsertionEvents a e) where
 --   combined insertion events of child edges.
 --
 --   Pronounced <http://www.dictionary.com/browse/coalesce "coalesce"> operator.
-coalesce :: (Eq a, Eq e, Foldable t) => DeletionEvents -> InsertionEvents a e -> t (InsertionEvents a e) -> InsertionEvents a e
+coalesce :: (Eq e, Foldable t) => DeletionEvents -> InsertionEvents e -> t (InsertionEvents e) -> InsertionEvents e
 coalesce ancestorDeletions (IE ancestorMap) descendantEvents
   | any (<0) $ IM.keys descendantMap = error "A negative key value was created"
   | size output /= sum (size <$> toList descendantEvents) + size (IE ancestorMap) = error "Serious problem, size is not additive"
   | otherwise                        = output
   where
     output = IE . IM.fromList $ result <> remaining acc
-    IE descendantMap = mconcat $ toList descendantEvents
-    (_, _, acc, result) = foldlWithKey f2 initialAccumulator descendantMap
-    initialAccumulator = (0, otoList ancestorDeletions, initializeMutationIterator (IM.assocs ancestorMap), [])
+    IE descendantMap    = mconcat $ toList descendantEvents
+    (_, _, acc, result) = foldlWithKey f initialAccumulator descendantMap
+    initialAccumulator  = (0, otoList ancestorDeletions, initializeMutationIterator (IM.assocs ancestorMap), [])
+
     -- off is the offset for the descendant keys equal to
     --    the toral number of deletion events strictly less than the key
     ---   minus total number of inserted bases from the ancestoral insertion set that have been consumed.
@@ -168,38 +167,7 @@ coalesce ancestorDeletions (IE ancestorMap) descendantEvents
     -- ek/v are the fold element's  key/value pair
     -- aies are ancestor insertion events
     -- ries are ancestor insertion event
-{-
     f (off, dels, iter, ries) ek ev =
-      case dels of
-        de:ds ->
-            if   de < (ek + off)
-            then f (off + 1, ds, iter, ries) ek ev
-            else alpha
-        []    -> alpha
-      where
-        alpha =
-          case getCurr iter of
-            Nothing -> (off, dels, next iter, (ek + off, ev):ries)
-            Just (ok, ov) ->
-              let len    = length ov
-                  newAns = (ok, getState iter)
-              {- How many element of the ancestor insertion sequence must be consumed for
-                 the ancestoral key `ok` and the decendant key `ek` to be equal?
-         
-                 The following equation represents the "shift backwards" to align the
-                 insertion events, answering the question above.
-         
-                 We want to solve the equation ``` ek - off - x = ok ``` to determine the
-                 index `x` for the IntMap. Basic algebra shows us the solution is:
-                 ``` x = ek - off - ok ```
-              -}
-                  ansMod = (ek + off - ok, ev)
-              in if ek + off - len > ok
-                 then f (off - len, dels, next iter         , newAns:ries) ek ev
-                 else   (off      , dels, mutate ansMod iter,        ries)
--}
---    f2 acc k v | trace (show acc <> show k <> show v) False = undefined
-    f2 (off, dels, iter, ries) ek ev =
       case (getCurr iter, dels) of
                                  -- If there is no more mutation state from the ancestoral insertion events
                                  -- nor any more ancestoral deletion events we will simply apply the offest
@@ -210,12 +178,12 @@ coalesce ancestorDeletions (IE ancestorMap) descendantEvents
                                  -- and the next deletion event is strictly less than
                                  -- the current decendant element's key after the offest is applied
                                  -- then we increment the offest by one and recurse on the current decentant KVP.
-                                 then f2 (off + 1,   ds,      iter,                ries) ek ev
+                                 then f (off + 1,   ds,      iter,                ries) ek ev
                                  -- If there is no more mutation state from the ancestoral insertion events
                                  -- and the next deletion event is *not* strictly less than
                                  -- the current decendant element's key after the offest is applied
                                  -- then we simply apply the offset.
-                                 else    (off    , dels, next iter, (ek + off, ev):ries)
+                                 else   (off    , dels, next iter, (ek + off, ev):ries)
         (Just (ok,ov),    []) -> let
                                    len    = length ov
                                    newAns = (ok, getState iter)
@@ -224,29 +192,17 @@ coalesce ancestorDeletions (IE ancestorMap) descendantEvents
                                  -- If there is no more ancestoral deletion events
                                  -- and the next deletion event is *not* less than the current keys after the offest is applied
                                  -- then we increment the offest by one.
-                                   then f2 (off - len, dels, next iter         , newAns:ries) ek ev
+                                   then f (off - len, dels, next iter         , newAns:ries) ek ev
                                    else g off iter dels ries ok ov ek ev
---                                   else    (off      , dels, mutate ansMod iter,        ries)
           
         (Just (ok,ov), de:ds) -> if ok > de && de < ek + off
-                                 then f2 (off + 1,   ds,      iter,                ries) ek ev
+                                 then f (off + 1,   ds,      iter,                ries) ek ev
                                  else g off iter dels ries ok ov ek ev
-{-
-                                     let
-                                       newAns = (ok, getState iter)
-                                       ansMod = (ek + off - ok, ev)
-                                     in
-                                       if    ek + off < ok
-                                       then      (off      , dels, iter              , (ek,ev):ries)
-                                       else
-                                         if  ek + off - len > ok
-                                         then f2 (off - len, dels, next iter         ,  newAns:ries) ek ev
-                                         else    (off      , dels, mutate ansMod iter,         ries)
--}
+
     g off iter dels ries ok ov ek ev
-        | ek + off       < ok =    (off      , dels, iter              , (ek+off,ev):ries)
-        | ek + off - len > ok = f2 (off - len, dels, next iter         ,      newAns:ries) ek ev
-        | otherwise           =    (off      , dels, mutate ansMod iter,             ries)
+        | ek + off       < ok =   (off      , dels, iter              , (ek+off,ev):ries)
+        | ek + off - len > ok = f (off - len, dels, next iter         ,      newAns:ries) ek ev
+        | otherwise           =   (off      , dels, mutate ansMod iter,             ries)
         where
           len    = length ov
           newAns = (ok, getState iter)
@@ -259,26 +215,33 @@ coalesce ancestorDeletions (IE ancestorMap) descendantEvents
 
 -- | Constructs an InsertionEvents collection from a structure of integral keys
 -- and sequences of equatable elements.
-fromList :: (Enum i, Eq a, Foldable t, Foldable t') => t (i, t' a) -> InsertionEvents a Int
+fromList :: (Eq e, Enum i, Foldable t, Foldable t') => t (i, t' e) -> InsertionEvents e
 fromList = IE . IM.fromList . fmap (fromEnum `bimap` toSeq) . toList
   where
-    toSeq = Seq.fromList . fmap (id &&& const 0) . toList
+    toSeq = Seq.fromList . toList
+
+fromEdgeMapping :: Eq e => e -> IntMap Int -> InsertionEvents e
+fromEdgeMapping edgeToken mapping = IE $ f <$> mapping
+  where
+    f count = Seq.fromList $ replicate count edgeToken
 
 -- | Constructs an InsertionEvents collection from an IntMap of Sequences
-wrap :: (Eq a, Eq e) => IntMap (Seq (a,e)) -> InsertionEvents a e
+wrap :: Eq e => IntMap (Seq e) -> InsertionEvents e
 wrap = IE
 
 -- | Extracts an IntMap of Sequences from an InsertionEvents collection.
-unwrap :: (Eq a, Eq e) => InsertionEvents a e -> IntMap (Seq (a,e))
+unwrap :: Eq e => InsertionEvents e -> IntMap (Seq e)
 unwrap (IE x) = x
 
-size :: InsertionEvents a e -> Int
+size :: InsertionEvents e -> Int
 size (IE im) = sum $ length <$> im
+
+
 
 -- INTERNAL STRUCTURES:
 
 
--- Convinience type alias for Key-Value Pairs.
+-- Convenience type alias for Key-Value Pairs.
 -- Should not leave Internal module scope!
 --   DO NOT export.
 --   DO NOT use in exported function type signitures.

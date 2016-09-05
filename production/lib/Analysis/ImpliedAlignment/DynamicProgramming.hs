@@ -13,25 +13,23 @@
 
 {-# LANGUAGE BangPatterns, FlexibleContexts, FlexibleInstances, TypeFamilies #-}
 
--- TODO: Make an ImpliedAlignment.hs file for exposure of appropriate functions
-
 module Analysis.ImpliedAlignment.DynamicProgramming where
 
 import           Analysis.ImpliedAlignment.AlignmentContext
 import           Analysis.ImpliedAlignment.DeletionEvents
 import           Analysis.ImpliedAlignment.InsertionEvents
-import qualified Analysis.ImpliedAlignment.InsertionEvents as IE (unwrap,wrap) 
 import           Analysis.ImpliedAlignment.Internal
 import           Analysis.Parsimony.Binary.DirectOptimization
 import           Bio.Metadata
 import           Bio.PhyloGraph.Forest
 import           Bio.PhyloGraph.Network
-import           Bio.PhyloGraph.Node     hiding  (Node,children, name)
+import           Bio.PhyloGraph.Node     hiding  (Node,children,name)
 import           Bio.PhyloGraph.Solution
 import           Bio.Character.Dynamic.Coded
 import           Control.Arrow                   ((&&&))
 import           Data.Foldable
 import qualified Data.HashMap.Lazy       as HM
+import           Data.IntMap                     (IntMap)
 import qualified Data.IntMap             as IM
 import           Data.IntSet                     (IntSet)
 import qualified Data.IntSet             as IS
@@ -41,16 +39,15 @@ import           Data.Maybe
 import           Data.Monoid
 import           Data.MonoTraversable
 import           Data.Ord                        (comparing)
-import qualified Data.Sequence           as Seq
 import           Data.Vector                     (Vector)
 import qualified Data.Vector             as V
 import           Data.Vector.Instances           ()
 import           Prelude                 hiding  (lookup,zip,zipWith)
 import           Safe                            (tailMay)
 
-data IndelEvents c e
+data IndelEvents e
    = IndelEvents
-   { edgeInsertionEvents :: InsertionEvents c e
+   { edgeInsertionEvents :: InsertionEvents e
    , edgeDeletionEvents  :: DeletionEvents
    } deriving (Show)
 
@@ -126,33 +123,11 @@ numeration sequenceIndex costStructure tree = tree `update` (snd <$> updatedLeaf
     -- | The root 'AlignmentContext'.
     --   Defines how 'InserionEvents' are accumulated in a post-order traversal
     --   to encapsulate the require global state information of the implied alignment.
-    rootContext =
-        Context
-        { insertionEvents = totalInsertionEvents
-        , psuedoCharacter = rootPsuedoCharacter
-        }
+    rootContext = deriveContextFromCharacter rootCharacter totalInsertionEvents
       where
-        rootPsuedoCharacter
-          | not $ null leftOverInsertions = error "Leftover insertion events at root node. Out of range!"
-          | otherwise = seqList
-          where
-            -- Maybe check for indicies after the length of the sequence.
-            insertionMapping = IE.unwrap totalInsertionEvents
-            characterLength  = olength $ getForAlign rootNode V.! sequenceIndex
-            seqList          = (<> trailingInsertions) $ foldMap f [0..characterLength - 1]
-            f k =
-              case k `lookup` insertionMapping of
-                Nothing -> [OriginalBase]
-                Just n  -> replicate (length n) SoftGap <> [OriginalBase]
-            trailingInsertions =
-              case characterLength `lookup` insertionMapping of
-                Nothing -> []
-                Just n  -> replicate (length n) SoftGap
-            leftOverInsertions = filter ((> characterLength) . fst) $ IM.assocs insertionMapping
-
-        totalInsertionEvents = ofoldMap (allDescendantInsertions rootIndex) $ childMapping V.! rootIndex
-            
-        allDescendantInsertions i j = coalesce del ins . fmap (allDescendantInsertions j) . otoList $ childMapping V.! j
+        rootCharacter            = getForAlign rootNode V.! sequenceIndex
+        totalInsertionEvents     = ofoldMap (descendantInsertions rootIndex) $ childMapping V.! rootIndex
+        descendantInsertions i j = coalesce del ins . fmap (descendantInsertions j) . otoList $ childMapping V.! j
           where
             (IndelEvents ins del) = edgeIndels ! (i, j)
 
@@ -166,17 +141,17 @@ numeration sequenceIndex costStructure tree = tree `update` (snd <$> updatedLeaf
           | nodeIndex == rootIndex = rootContext
           | otherwise              = nodeContext
           where
-            parentIndex       = parentMapping V.! nodeIndex
-            parentContext     = nodeContexts  V.! parentIndex
-            edgeKey           = (parentIndex, nodeIndex)
-            IndelEvents inserts deletes = edgeIndels ! edgeKey
-            nodeContext       = applyLocalEventsToAlignment edgeKey deletes inserts parentContext
+            parentIndex   = parentMapping V.! nodeIndex
+            parentContext = nodeContexts  V.! parentIndex
+            edgeKey       = (parentIndex, nodeIndex)
+            deletes       = edgeDeletionEvents $ edgeIndels ! edgeKey
+            nodeContext   = applyLocalEventsToAlignment edgeKey deletes parentContext
 
     -- | We mutate the original nodes from the input tree to contain
     --    the implied alignment for each node.
     updatedNodes = foldMapWithKey f enumeratedNodes
       where
-        f i n = [(i, deriveImpliedAlignment sequenceIndex (psuedoCharacter $ nodeContexts V.! i) n)]
+        f i n = [(i, deriveImpliedAlignment sequenceIndex (pseudoCharacter $ nodeContexts V.! i) n)]
 
     -- | We filter the 'updatedNodes' to only include the leaf nodes.
     --   We do this beacuse implied alignments on internal nodes doesn't make sense... or does it?
@@ -211,11 +186,11 @@ precomputeTreeReferences tree =
                 (subCounter',ys) = f n (Just counter) (subCounter+1)
 
 -- | Calculates the 'IndelEvents' that occur given two sequences of an edge.
-comparativeIndelEvents :: (Eq e, SeqConstraint s) => e -> s -> s -> CostStructure -> (DeletionEvents, InsertionEvents (Element s) e, s ,s)
+comparativeIndelEvents :: (Eq e, SeqConstraint s) => e -> s -> s -> CostStructure -> (DeletionEvents, InsertionEvents e, s ,s)
 comparativeIndelEvents edgeIdentifier ancestorCharacterUnaligned descendantCharacterUnaligned costStructure
   | olength ancestorCharacter /= olength descendantCharacter = error errorMessage
   | otherwise                                                = -- (\x -> trace (show x) x) $
-                                                               (DE resultingDeletionEvents, IE.wrap resultingInsertionEvents, ancestorCharacter, descendantCharacter)
+                                                               (DE resultingDeletionEvents, fromEdgeMapping edgeIdentifier resultingInsertionEvents, ancestorCharacter, descendantCharacter)
   where
     errorMessage = mconcat [ "Lengths of sequences are not equal!\n"
                            , "Parent length: "
@@ -238,7 +213,7 @@ comparativeIndelEvents edgeIdentifier ancestorCharacterUnaligned descendantChara
       | otherwise {- Both not gap -}                       = (parentBaseIndex + 1, deletions , insertions )
       where
         deletions'          = parentBaseIndex `IS.insert` deletions
-        insertions'         = IM.insertWith (<>) parentBaseIndex (Seq.singleton (descendantElement,edgeIdentifier)) insertions
+        insertions'         = parentBaseIndex `incInsMap` insertions
         gap                 = getGapChar ancestorElement
 --      containsGap char    = gap .&. char /= zeroBits
         insertionEventLogic =     ancestorElement == gap && descendantElement /= gap -- not (containsGap descendantElement)
@@ -248,9 +223,14 @@ comparativeIndelEvents edgeIdentifier ancestorCharacterUnaligned descendantChara
                             || (descendantElement == gap && containsGap   ancestorElement)
 -}                             
 
+incInsMap :: Int -> IntMap Int -> IntMap Int
+incInsMap key = IM.insertWith f key 1
+  where
+    f _ = succ
+
 -- | Transforms a node's decorations to include the implied alignment given a 'PsuedoCharacter' and sequence index.
 deriveImpliedAlignment :: (EncodableDynamicCharacter s2, Foldable t, IANode' n s2, NodeConstraint n s1, Element s1 ~ Element s2)
-                       => Int -> t PsuedoIndex -> n -> n
+                       => Int -> t PseudoIndex -> n -> n
 deriveImpliedAlignment sequenceIndex psuedoCharacterVal node = node `setHomologies'` leafHomologies
       where
         leafHomologies
@@ -267,8 +247,8 @@ deriveImpliedAlignment sequenceIndex psuedoCharacterVal node = node `setHomologi
         (_,_remaining,result)    = foldl' f (0 :: Int, characterTokens, []) psuedoCharacterVal
           where
             f (basesSeen, xs, ys) e
-              | e == HardGap || e == SoftGap || e == DeletedBase || e == DelInsBase = (basesSeen    , xs , gap : ys )
-              | otherwise                    = (basesSeen + 1, xs',       ys') 
+              | isPseudoGap e = (basesSeen    , xs , gap : ys )
+              | otherwise     = (basesSeen + 1, xs',       ys') 
               where
                 xs' = fromMaybe []   $ tailMay xs 
                 ys' = maybe ys (:ys) $ headMay xs

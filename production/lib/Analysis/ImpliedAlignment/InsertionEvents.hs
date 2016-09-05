@@ -18,6 +18,7 @@ module Analysis.ImpliedAlignment.InsertionEvents
   ( InsertionEvents()
   , (<^>)
   , coalesce
+  , fromEdgeMapping
   , fromList
   , unwrap
   , wrap

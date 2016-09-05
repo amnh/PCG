@@ -17,16 +17,18 @@ module Analysis.ImpliedAlignment.InsertionEvents.Test
 
 import           Analysis.ImpliedAlignment.InsertionEvents.Internal
 import qualified Analysis.ImpliedAlignment.DeletionEvents as DE
-import Data.Monoid
-import Test.QuickCheck.Property.Common.Internal (Equal,runEqual)
-import Test.QuickCheck.Property.Monoid
-import Test.Tasty
-import Test.Tasty.HUnit
-import Test.Tasty.QuickCheck
+import           Control.Arrow                                  ((***))
+import qualified Data.IntMap                              as IM
+import           Data.Monoid
+import           Test.QuickCheck.Property.Common.Internal       (Equal,runEqual)
+import           Test.QuickCheck.Property.Monoid
+import           Test.Tasty
+import           Test.Tasty.HUnit
+import           Test.Tasty.QuickCheck
 
 -- Disambiguated the type inference for this module.
-fromList' :: [(Int,String)] -> InsertionEvents Char Int
-fromList' = fromList
+fromList' :: [(Int,String)] -> InsertionEvents Int
+fromList' = fromEdgeMapping 0 . IM.fromList . fmap (id *** length)
 
 testSuite :: TestTree
 testSuite = testGroup "Insertion Event operations"
@@ -43,11 +45,11 @@ testMonoidOperator = testGroup "The monoid operator behaves as expected"
 monoidProperties :: TestTree
 monoidProperties = testProperty "InsertionEvents is a proper Monoid instance" f
   where
-    f :: InsertionEvents Char Int -> InsertionEvents Char Int -> InsertionEvents Char Int -> Bool
+    f :: InsertionEvents Int -> InsertionEvents Int -> InsertionEvents Int -> Bool
     f x y z = runEqual (==) $ prop e x y z
 --    e :: T (InsertionEvents Char)
     e = T
-    prop :: (Eq a, Eq e) => T (InsertionEvents a e) -> InsertionEvents a e -> InsertionEvents a e -> InsertionEvents a e -> Equal (InsertionEvents a e)
+    prop :: Eq e => T (InsertionEvents e) -> InsertionEvents e -> InsertionEvents e -> InsertionEvents e -> Equal (InsertionEvents e)
     prop = prop_Monoid
 
 
