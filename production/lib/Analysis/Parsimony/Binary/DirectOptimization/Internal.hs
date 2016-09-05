@@ -26,7 +26,7 @@ import Data.Matrix.NotStupid (Matrix, matrix, nrows, ncols)
 import Data.MonoTraversable
 import Data.Ord
 
-import Debug.Trace (trace)
+--import Debug.Trace (trace)
 
 -- | The direction to align the character at a given matrix point.
 data Direction = LeftArrow | DiagArrow | UpArrow deriving (Eq, Show)
@@ -288,7 +288,11 @@ getSubChars fullChar = foldr (\i acc -> if testBit fullChar i
     z = fullChar `xor` fullChar
 
 
+-- Transformation should no longer be nescissary
+-- Replaced definition with the identiy function over two values.
 correctBiasing :: (Eq a) => a -> ([a], [a], [a]) -> ([a], [a], [a])
+correctBiasing = const id
+{-
 correctBiasing   _ ( [], [], []) = ( [],  [],  [])
 correctBiasing   _ ([x],[y],[z]) = ([x], [y], [z])
 correctBiasing gap (x1:x2:xs, y1:y2:ys, z1:z2:zs)
@@ -298,3 +302,4 @@ correctBiasing gap (x1:x2:xs, y1:y2:ys, z1:z2:zs)
   where
     (xs' , ys' , zs' ) = correctBiasing gap ( x2:xs, y2:ys, z2:zs )
     (xs'', ys'', zs'') = correctBiasing gap ( x1:xs, y1:ys, z1:zs )
+-}

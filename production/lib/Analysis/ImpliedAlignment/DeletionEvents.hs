@@ -118,7 +118,7 @@ instance Monoid DeletionEvents where
 
   -}
   
-  as@(DE ancestorSet) `mappend` ds@(DE descendantSet) = DE . (ancestorSet <>) $ as `incrementDescendant` ds
+  ancestorSet@(DE as) `mappend` descendantSet = DE . (as <>) $ ancestorSet `incrementDescendant` descendantSet
 
 incrementDescendant :: DeletionEvents -> DeletionEvents -> IntSet
 incrementDescendant (DE ancestorSet) (DE descendantSet) = incrementedDescendantSet

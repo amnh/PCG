@@ -20,10 +20,10 @@ module Analysis.Parsimony.Binary.SequentialAlign (sequentialAlign) where
 import qualified Analysis.Parsimony.Binary.SequentialAlign.FFI as FFI (sequentialAlign)
 import           Bio.Character.Dynamic.Coded
 import           Bio.Character.Exportable.Class
-import           Data.Alphabet
-import           Data.Vector     (fromList)
-import           Data.Foldable
-import           Data.List.Split (chunksOf)
+--import           Data.Alphabet
+--import           Data.Vector     (fromList)
+--import           Data.Foldable
+--import           Data.List.Split (chunksOf)
 import           Data.MonoTraversable
 
 -- | sequentialAlign is similar to DO, but uses Yu's and Vahid's information theoretical sequential alignment algorithm to produce the alignment

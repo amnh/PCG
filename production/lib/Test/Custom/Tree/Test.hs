@@ -22,13 +22,11 @@ import           Bio.PhyloGraph.Network
 import           Bio.PhyloGraph.Node.Encoded
 import           Bio.PhyloGraph.Tree.Referential
 import           Data.MonoTraversable
-import qualified Data.Vector           as V
 import           Test.Custom.Tree
 import           Test.Tasty
-import           Test.Tasty.HUnit
 import           Test.Tasty.QuickCheck
 
-import Debug.Trace
+--import Debug.Trace
 
 testSuite :: TestTree
 testSuite = testGroup "SimpleTree tests" [typeClassLawsForNetwork]

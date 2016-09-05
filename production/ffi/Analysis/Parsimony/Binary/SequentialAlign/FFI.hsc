@@ -12,17 +12,18 @@
 
 {-# LANGUAGE ForeignFunctionInterface, BangPatterns, TypeSynonymInstances, FlexibleInstances #-}
 
+{-# OPTIONS_GHC -fno-warn-orphans #-}
+
 module Analysis.Parsimony.Binary.SequentialAlign.FFI where
 
 import Bio.Character.Dynamic.Coded
 import Bio.Character.Exportable.Class
-import Data.BitMatrix.Internal
 import Data.Bits
 import Data.Foldable
 import Data.Monoid
-import Foreign
-import Foreign.Ptr
-import Foreign.C.String
+import Foreign         hiding (alignPtr)
+--import Foreign.Ptr
+--import Foreign.C.String
 import Foreign.C.Types
 import System.IO.Unsafe
 import Test.QuickCheck hiding ((.&.))
@@ -39,15 +40,19 @@ sequentialAlign x y a b = Right (x + y, a, b)
 -- Includes a struct (actually, a pointer thereto), and that struct, in turn, has a string
 -- in it, so Ptr CChar.
 -- Modified from code samples here: https://en.wikibooks.org/wiki/Haskell/FFI#Working_with_C_Structures
-data AlignResult = AlignResult { alignmentCost :: CInt
-                               , lengthFinal   :: CInt
-                               , seqFinal      :: Ptr CArrayUnit
-                               }
+data AlignResult
+   = AlignResult
+   { alignmentCost :: CInt
+   , lengthFinal   :: CInt
+   , seqFinal      :: Ptr CArrayUnit
+   }
 
-data CDynamicChar = CDynamicChar { alphabetSize :: CInt
-                                 , dynCharLen   :: CInt
-                                 , dynChar      :: Ptr CArrayUnit
-                                 }
+data CDynamicChar
+   = CDynamicChar
+   { alphabetSize :: CInt
+   , dynCharLen   :: CInt
+   , dynChar      :: Ptr CArrayUnit
+   }
 
 instance Show CDynamicChar where
     show (CDynamicChar alphSize dcLen dChar) =
@@ -62,8 +67,8 @@ instance Show CDynamicChar where
          , show $ unsafePerformIO printedArr
          ]
         where
-            (quot, rem)  = (intAlphSize * intLen) `divMod` 64
-            bufferLength = quot + if rem == 0 then 0 else 1
+            (q, r)       = (intAlphSize * intLen) `divMod` 64
+            bufferLength = q + if r == 0 then 0 else 1
             intAlphSize  = fromIntegral alphSize
             intLen       = fromIntegral dcLen
             printedArr   = show <$> peekArray bufferLength dChar
@@ -72,11 +77,11 @@ instance Arbitrary CDynamicChar where
     arbitrary = do
         alphSize <- (arbitrary :: Gen Int) `suchThat` (\x -> 0 < x && x <= 64)
         charSize <- (arbitrary :: Gen Int) `suchThat` (\x -> 0 < x && x <= 16)
-        let (full,rem) = (alphSize * charSize) `divMod` 64
-        fullBitVals <- vectorOf full (arbitrary :: Gen CArrayUnit)
+        let (q,r)   = (alphSize * charSize) `divMod` 64
+        fullBitVals <- vectorOf q (arbitrary :: Gen CArrayUnit)
         -- Note there is a faster way to do this loop in 2 steps by utilizing 2s compliment subtraction and setbit.
-        let mask    = foldl' (\val i -> val `setBit` i) (zeroBits :: CArrayUnit) [0..rem]
-        remBitVals  <- if   rem == 0
+        let mask    = foldl' (\val i -> val `setBit` i) (zeroBits :: CArrayUnit) [0..r]
+        remBitVals  <- if   r == 0
                        then pure []
                        else (pure . (mask .&.)) <$> (arbitrary :: Gen CArrayUnit)
         pure CDynamicChar
@@ -96,34 +101,39 @@ instance Storable CDynamicChar where
     sizeOf    _ = (#size struct dynChar_t) -- #size is a built-in that works with arrays, as are #peek and #poke, below
     alignment _ = alignment (undefined :: CArrayUnit)
     peek ptr    = do -- to get values from the C app
-        alphLen  <- (#peek struct dynChar_t, alphSize  ) ptr
-        seqLen   <- (#peek struct dynChar_t, dynCharLen) ptr
-        sequence <- (#peek struct dynChar_t, dynChar   ) ptr
-        return  CDynamicChar { alphabetSize = alphLen
-                             , dynCharLen   = seqLen
-                             , dynChar      = sequence  
-                             }
-    poke ptr (CDynamicChar alphabetSize dynCharLen dynChar) = do -- to modify values in the C app
-        (#poke struct dynChar_t, alphSize  ) ptr alphabetSize
-        (#poke struct dynChar_t, dynCharLen) ptr dynCharLen
-        (#poke struct dynChar_t, dynChar   ) ptr dynChar
+        alphLen <- (#peek struct dynChar_t, alphSize  ) ptr
+        seqLen  <- (#peek struct dynChar_t, dynCharLen) ptr
+        seqVal  <- (#peek struct dynChar_t, dynChar   ) ptr
+        pure CDynamicChar
+             { alphabetSize = alphLen
+             , dynCharLen   = seqLen
+             , dynChar      = seqVal
+             }
+    poke ptr (CDynamicChar alphLen seqLen seqVal) = do -- to modify values in the C app
+        (#poke struct dynChar_t, alphSize  ) ptr alphLen
+        (#poke struct dynChar_t, dynCharLen) ptr seqLen
+        (#poke struct dynChar_t, dynChar   ) ptr seqVal
 
 -- Because we're using a struct we need to make a Storable instance
 instance Storable AlignResult where
     sizeOf    _ = (#size struct alignResult_t) -- #size is a built-in that works with arrays, as are #peek and #poke, below
     alignment _ = alignment (undefined :: CArrayUnit)
     peek ptr    = do -- to get values from the C app
-        value    <- (#peek struct alignResult_t, finalWt ) ptr
-        len      <- (#peek struct alignResult_t, finalLength) ptr
-        sequence <- (#peek struct alignResult_t, finalStr) ptr
-        return  AlignResult { alignmentCost = value, lengthFinal = len, seqFinal = sequence }
+        value  <- (#peek struct alignResult_t, finalWt ) ptr
+        seqLen <- (#peek struct alignResult_t, finalLength) ptr
+        seqVal <- (#peek struct alignResult_t, finalStr) ptr
+        pure AlignResult
+             { alignmentCost = value
+             , lengthFinal   = seqLen
+             , seqFinal      = seqVal
+             }
 
 ------------- Don't need this part, but left in for completion ---------------
 ----- Will get compiler warning if left out, because of missing instances ----
-    poke ptr (AlignResult cost len seqFinal) = do -- to modify values in the C app
-        (#poke struct alignResult_t, finalWt) ptr cost
-        (#poke struct alignResult_t, finalLength) ptr len
-        (#poke struct alignResult_t, finalStr) ptr seqFinal
+    poke ptr (AlignResult cost seqLen seqVal) = do -- to modify values in the C app
+        (#poke struct alignResult_t, finalWt    ) ptr cost
+        (#poke struct alignResult_t, finalLength) ptr seqLen
+        (#poke struct alignResult_t, finalStr   ) ptr seqVal
 
 -- This is the declaration of the Haskell wrapper for the C function we're calling.
 -- Note that this fn is called from testFn.
@@ -147,13 +157,12 @@ testFn char1 char2 = unsafePerformIO $
         let !status = callExtFn_c marshalledChar1 marshalledChar2 alignPtr
 
         -- Now checking return status. If 0, then all is well, otherwise throw an error.
-        if (fromIntegral status) == 0 
+        if status == (0 :: CInt)
             then do
-                AlignResult cost len seq <- peek alignPtr
-                --seqFinalPtr              <- peek seq
-                seqFinal                 <- peekArray (fromIntegral len) seq
-                free seq
-                pure $ Right (fromIntegral cost, show seqFinal)
+                AlignResult cost seqLen seqVal <- peek alignPtr
+                seqFinalVal                    <- peekArray (fromIntegral seqLen) seqVal
+                free seqVal
+                pure $ Right (fromIntegral cost, show seqFinalVal)
             else do
                 pure $ Left "Out of memory"
         

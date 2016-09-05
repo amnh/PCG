@@ -5,17 +5,20 @@ module Data.BitMatrix.Test
   ) where
 
 import Data.BitMatrix
-import Data.Bits
 import Data.BitVector hiding (foldr)
 import Data.Foldable
 import Test.Tasty
-import Test.Tasty.HUnit
 import Test.Tasty.QuickCheck
 
-import Debug.Trace
+--import Debug.Trace
 
 testSuite :: TestTree
-testSuite = testGroup "BitMatrix tests" [testRowsFromRows, testBitMatrixFn, testFromRowsFn, testConsistentIndexing]
+testSuite = testGroup "BitMatrix tests"
+    [ testRowsFromRows
+    , testBitMatrixFn
+    , testFromRowsFn
+    , testConsistentIndexing
+    ]
 
 -- Just to make sure that rows . fromRows == id.
 testRowsFromRows :: TestTree
@@ -29,11 +32,12 @@ testRowsFromRows = testProperty "rows $ fromRows x == id" f
 
 -- both sets of tests on generating functions rely on BitMatrix functions rows, numRows, numCols
 testBitMatrixFn :: TestTree
-testBitMatrixFn = testGroup "bitMatrix generating fn" [ testValue
-                                                      , testWidth
-                                                      , testHeight
-                                                      , testRow
-                                                      ]
+testBitMatrixFn = testGroup "bitMatrix generating fn"
+    [ testValue
+    , testWidth
+    , testHeight
+    , testRow
+    ]
     where
         testValue = testProperty "Internal BitVector value is correct." f
         -- Note that it only tests on a single input function
@@ -42,16 +46,16 @@ testBitMatrixFn = testGroup "bitMatrix generating fn" [ testValue
                 f rowCt colCt = testBM == controlBM
                     where
                         testBM = Data.BitVector.concat $ rows (bitMatrix numChars alphLen $ const True)
-                        controlBM = bitVec (alphLen * numChars) (2 ^ (alphLen * numChars) - 1)
+                        controlBM = bitVec (alphLen * numChars) (2 ^ (alphLen * numChars) - 1 :: Integer)
                         numChars  = getPositive rowCt
                         alphLen   = getPositive colCt
         testWidth = testProperty "Number of columns is correct." f
         -- Note that it only tests on a single input function
             where
                 f :: Positive Int -> Positive Int -> Bool
-                f rowCt colCt = expectedCols,== numCols testBM
+                f rowCt colCt = expectedCols == numCols testBM
                     where
-                        (_, expectedCols, testBm) = constructMatrixFromPositives rowCt colCt
+                        (_, expectedCols, testBM) = constructMatrixFromPositives rowCt colCt
 
         testHeight = testProperty "Number of rows is correct." f
         -- Note that it only tests on a single input function
@@ -59,7 +63,7 @@ testBitMatrixFn = testGroup "bitMatrix generating fn" [ testValue
                 f :: Positive Int -> Positive Int -> Bool
                 f rowCt colCt = expectedRows == numRows testBM
                     where
-                        (expectedRows, _, testBm) = constructMatrixFromPositives rowCt colCt
+                        (expectedRows, _, testBM) = constructMatrixFromPositives rowCt colCt
 
 constructMatrixFromPositives
   :: Positive Int          -- ^ Number of rows

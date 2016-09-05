@@ -27,9 +27,7 @@ module Bio.Character.Dynamic.Coded.Internal
 
 import           Bio.Character.Dynamic.Coded.Class
 import           Bio.Character.Exportable.Class
-import           Bio.Character.Parsed
 import           Control.Arrow                       ((***))
---import           Control.DeepSeq
 import           Data.Alphabet
 import           Data.Bifunctor                      (bimap)
 import           Data.BitMatrix
@@ -39,22 +37,18 @@ import           Data.Key
 import           Data.Bits
 import           Data.BitVector               hiding (foldr, join, not, replicate)
 import           Data.Foldable
---import           Data.Function.Memoize
-import           Data.Map                            (Map)
 import qualified Data.Map                       as M
 import           Data.Maybe                          (fromMaybe)
 import           Data.Monoid
 import           Data.MonoTraversable
-import           Data.String                         (IsString, fromString)
+import           Data.String                         (fromString)
 import           Data.Tuple                          (swap)
 import           Data.Vector                         (Vector)
-import qualified Data.Vector                    as V (fromList)
 import           Prelude                      hiding (lookup)
---import           GHC.Generics
 import           Test.Tasty.QuickCheck        hiding ((.&.))
 import           Test.QuickCheck.Arbitrary.Instances ()
 
-import Debug.Trace
+--import Debug.Trace
 
 -- TODO: Change DynamicChar/Sequences to DynamicCharacters
         -- Make a missing a null vector
@@ -236,7 +230,7 @@ instance Exportable DynamicChar where
         y = numCols bm
         totalBits = x * y
         (fullWords, remainingBits) = totalBits `divMod` 64
-        slices   = take fullWords $ iterate ((64 +) `bimap` (64 +)) (63, 0)
+        slices   = take fullWords $ iterate ((64 +) `bimap` (64 +)) ((63, 0) :: (Int,Int))
         tailWord = if   remainingBits == 0
                    then []
                    else [ bv @@ (totalBits - 1, totalBits - remainingBits) ]

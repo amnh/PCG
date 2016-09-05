@@ -1,5 +1,5 @@
-/* POY 5.1.1. A phylogenetic analysis program using Dynamic Homologies.       */
-/* Copyright (C) 2014 AndrÃ©s VarÃ³n, Lin Hong, Nicholas Lucaroni, Ward Wheeler,*/
+/* POY 4.0 Beta. A phylogenetic analysis program using Dynamic Homologies.    */
+/* Copyright (C) 2007  Andrés Varón, Le Sy Vinh, Illya Bomash, Ward Wheeler,  */
 /* and the American Museum of Natural History.                                */
 /*                                                                            */
 /* This program is free software; you can redistribute it and/or modify       */
@@ -17,37 +17,35 @@
 /* Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301   */
 /* USA                                                                        */
 
-#ifndef ZARR_H 
-#define ZARR_H 1
+#include "seq.h"
+#include "cm.h"
 
-struct zarr {
-    int length;
-    int check;
-    int expansion;
-    int *arr;
+#ifdef USE_LONG_SEQUENCES
+#define UNION_OFFT signed int
+#else
+#define UNION_OFFT signed short
+#endif
+
+struct unionoff {
+    seqt s;         /* A pointer to the sequence that holds the union */
+    UNION_OFFT *offsets;   /* A pointer to the array of offsets */
+    UNION_OFFT *begin;     /* The current position where the sequence starts */
+    UNION_OFFT *end;       /* The end of the offset array. This is after the 
+                       first writtable memory position */
+    UNION_OFFT *ca_offsets;
+    UNION_OFFT *cb_offsets;
+    UNION_OFFT counter;    /* A convenient counter for the merging operations */
+    UNION_OFFT length;     /* The current number of items it holds */
+    UNION_OFFT position;   /* The location of the current position in some 
+                       internal operations */
 };
 
-typedef struct zarr * zarrt;
+typedef struct unionoff *unionofft;
 
-int 
-zarr_test_pos (const zarrt arr, int pos);
+/* Take the counter prepend consecutive, numbers from counter to 0, 
+ * to u->begin, then set counter to 0. */
+void
+union_prepend_counter (unionofft u);
 
-zarrt
-zarr_alloc (int length); 
-
-int
-zarr_get (zarrt arr, int pos, int *val);
-
-int
-zarr_set (zarrt arr, int pos, int val);
-
-int
-zarr_realloc (zarrt arr, int length);
-
-int
-zarr_length (zarrt arr);
-
-int
-zarr_clear (zarrt arr, int len);
-
-#endif /* ZARR_H */
+void
+union_merge (seqt a, seqt b, seqt median, unionofft au, unionofft bu, unionofft c, cmt m);

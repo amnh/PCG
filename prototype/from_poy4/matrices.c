@@ -1,5 +1,5 @@
-/* POY 5.1.1. A phylogenetic analysis program using Dynamic Homologies.       */
-/* Copyright (C) 2014 AndrÃ©s VarÃ³n, Lin Hong, Nicholas Lucaroni, Ward Wheeler,*/
+/* POY 4.0 Beta. A phylogenetic analysis program using Dynamic Homologies.    */
+/* Copyright (C) 2007  Andrés Varón, Le Sy Vinh, Illya Bomash, Ward Wheeler,  */
 /* and the American Museum of Natural History.                                */
 /*                                                                            */
 /* This program is free software; you can redistribute it and/or modify       */
@@ -18,25 +18,20 @@
 /* USA                                                                        */
 
 #include <stdio.h>
-#include <caml/memory.h>
-#include <caml/mlvalues.h>
-#include <caml/custom.h>
-#include <caml/fail.h>
+#include <stdlib.h>
+
 #include "matrices.h"
 
+#define DEBUG 1
 
 
 /* 
  * For memory management efficiency, I will keep all the matrices in one big
  * chunck of memory, that I can reallocate as a whole, and reduce fragmentation
  * a lot if possible, all the alignment calculations and all the matrices that
- * are precomputed to speedup the alignments are hold here.
+ * are precomputed to speedup the alignments are held here.
  */
-#ifdef _WIN32
-__inline int
-#else
 inline int
-#endif
 mat_size_of_3d_matrix (int w, int d, int h, int k) {
     /*
     int basic_cube;
@@ -51,56 +46,50 @@ mat_size_of_3d_matrix (int w, int d, int h, int k) {
     return (w * d * h);
 }
 
+void print_matrices(matricest m) {
+    printf("\nMatrices:\n");
+    printf("  Allocated len:         %d\n", m->len);
+    printf("  3D efficiency mtx len: %d\n", m->len_eff);
+    printf("  Precalc mtx len:       %d\n", m->len_pre);
+
+    printf("\n  Precalculated nw matrix:\n");
+    for( size_t i = 0; i < m->len_pre; i++) {
+        printf("    %d\t", m->precalc[i]);
+    }
+    printf("\n");
+}
+
+inline int
+mat_size_of_2d_matrix (int w, int h) {
+    if (w > h) return (w * 12);
+    else return (h * 12);
+}
 
 void
 mat_clean_direction_matrix (matricest m) {
     int len = m->len;
     int i;
     for (i = 0; i < len; i++) 
-        m->matrix_d[i] = (DIRECTION_MATRIX) 0;
+        m->dir_mtx_2d[i] = (DIRECTION_MATRIX) 0;
     return;
 }
 
-//, int needtraceback
-#ifdef _WIN32
-__inline int
-#else
 inline int
-#endif
-mat_setup_size (matricest m, int w, int d, int h, int k, int sz, int uselevel) {
-    long int len, len_2d, len_precalc;
-    long int len_dir;
+mat_setup_size (matricest m, int w, int d, int h, int is_ukk, int lcm) {
+    if(DEBUG) {
+        printf("\n---mat_setup_size\n");
+    }
+    int len, len_2d, len_precalc, len_dir;
     if (h == 0) {           /* If the size setup is only for 2d */
-        //len = mat_size_of_2d_matrix (w, d);//if (w > h) return (w * 12); else return (h * 12); what is 12 doing here?
-        len = (long int)(w + 1) * (long int)(d + 1);
-        if(uselevel==1)
-            len_precalc = (sz+1) * d; 
-        else
-            len_precalc = ((1<<sz)+1) * d;
-        len_dir = (long int)(w + 1) * (long int)(d + 1);
+        len = mat_size_of_2d_matrix (w, d);
+        len_precalc = (1 << lcm) * w;
+        len_dir = (w + 1) * (d + 1);
         len_2d = 0;
     } else {                /* If the size setup is for 3d */
-        len = mat_size_of_3d_matrix (w, d, h, k);
-        if(uselevel==1)
-            len_precalc = (sz+1) * (sz+1) * d;
-        else
-            len_precalc = ((1<<sz)+ 1) * ((1<<sz) + 1) * d;
+        len = mat_size_of_3d_matrix (w, d, h, is_ukk);
+        len_precalc = (1 << lcm) * (1 << lcm) * d;
         len_2d = w * d;
         len_dir = len_2d * h;
-    }
-    /*
-These `-m' switches are supported in addition to the above on AMD x86-64 processors in 64-bit environments.
-
--m32
--m64
-    Generate code for a 32-bit or 64-bit environment. The 32-bit environment sets int, long and pointer to 32 bits and generates code that runs on any i386 system. The 64-bit environment sets int to 32 bits and long and pointer to 64 bits and generates code for AMD's x86-64 architecture. For darwin only the -m64 option turns off the -fno-pic and -mdynamic-no-pic options. 
-*/      
-    if (m->len_gapnumarr < d) {
-        m->gap_num1 = (DIRECTION_MATRIX *) realloc (m->gap_num1, ((d) * sizeof(DIRECTION_MATRIX)));
-        m->gap_num2 = (DIRECTION_MATRIX *) realloc (m->gap_num2, ((d) * sizeof(DIRECTION_MATRIX)));
-        m->gap_num3 = (DIRECTION_MATRIX *) realloc (m->gap_num3, ((d) * sizeof(DIRECTION_MATRIX)));
-        m->gap_num4 = (DIRECTION_MATRIX *) realloc (m->gap_num4, ((d) * sizeof(DIRECTION_MATRIX)));
-        m->len_gapnumarr = d;
     }
     if (m->len_eff < len) { /* If the 3d or 2d matrix is not enough */
         m->cube = m->matrix = 
@@ -108,13 +97,17 @@ These `-m' switches are supported in addition to the above on AMD x86-64 process
         m->len_eff = len;
     }
     if (m->len < len_dir) { /* If the other matrices are not enough */
-        m->cube_d = m->matrix_d = (DIRECTION_MATRIX *) 
-            realloc (m->matrix_d, (len_dir * sizeof(DIRECTION_MATRIX)));
+        m->cube_d = m->dir_mtx_2d = 
+            (DIRECTION_MATRIX *) 
+            realloc (m->dir_mtx_2d, (len_dir * sizeof(DIRECTION_MATRIX)));
         if (0 != len_2d) {
             m->pointers_3d = 
                 (int **) realloc (m->pointers_3d, len_2d * sizeof(int));
-            if (m->pointers_3d == NULL)
-                failwith ("Memory allocation problem in pointers 3d.");
+            if (m->pointers_3d == NULL) {
+                printf("Memory allocation problem in pointers 3d.\n");
+                exit(1);
+                // failwith ("Memory allocation problem in pointers 3d.");
+            }
         }
         m->len = len_dir;
     }
@@ -123,12 +116,21 @@ These `-m' switches are supported in addition to the above on AMD x86-64 process
         m->len_pre = len_precalc;
     }
     /* Check if there is an allocation error then abort program */
-    if ((len != 0) && (m->cube == NULL))
-        failwith ("Memory allocation problem in cube.");
-    if ((len_dir != 0) && (m->matrix_d == NULL))
-        failwith ("Memory allocation problem in matrix_d");
-    if ((len_precalc != 0) && (m->precalc == NULL))
-        failwith ("Memory allocation problem in precalc");
+    if ((len > 0) && (m->cube == NULL)) {
+        printf("Memory allocation problem in cube.\n");
+        exit(1);
+        // failwith ("Memory allocation problem in cube.");
+    }
+    if ((len_dir > 0) && (m->dir_mtx_2d == NULL)) {
+        printf("Memory allocation problem in dir_mtx_2d\n");
+        exit(1);
+        // failwith ("Memory allocation problem in dir_mtx_2d");
+    }
+    if ((len_precalc > 0) && (m->precalc == NULL)) {
+        printf("Memory allocation problem in precalc\n");
+        exit(1);
+        // failwith ("Memory allocation problem in precalc");
+    }
     return 0;
 }
 
@@ -149,29 +151,8 @@ mat_get_2d_matrix (matricest m) {
 
 DIRECTION_MATRIX *
 mat_get_2d_direct (const matricest m) {
-    return (m->matrix_d);
+    return (m->dir_mtx_2d);
 }
-
-DIRECTION_MATRIX *
-mat_get_2d_gapnum1 (const matricest m) {
-    return (m->gap_num1);
-}
-
-DIRECTION_MATRIX *
-mat_get_2d_gapnum2 (const matricest m) {
-    return (m->gap_num2);
-}
-
-DIRECTION_MATRIX *
-mat_get_2d_gapnum3 (const matricest m) {
-    return (m->gap_num3);
-}
-
-DIRECTION_MATRIX *
-mat_get_2d_gapnum4 (const matricest m) {
-    return (m->gap_num4);
-}
-
 
 int **
 mat_get_3d_pointers (matricest m) {
@@ -188,6 +169,7 @@ mat_get_3d_direct (matricest m) {
     return (m->cube_d);
 }
 
+/*
 void
 mat_CAML_free (value m) {
     matricest tmp;
@@ -211,16 +193,13 @@ unsigned long
 mat_CAML_deserialize (void *v) {
     matricest m;
     m = (matricest) v;
-    m->len_pre = m->len_eff = m->len = m->len_gapnumarr = 0;
+    m->len_pre = m->len_eff = m->len = 0;
     m->matrix = m->cube = m->precalc = NULL;
-    m->matrix_d = m->cube_d = NULL;
+    m->dir_mtx_2d = m->cube_d = NULL;
     m->pointers_3d = NULL;
-    m->gap_num1 = NULL;
-    m->gap_num2 = NULL;
-    m->gap_num3 = NULL;
-    m->gap_num4 = NULL;
     return (sizeof (struct matrices));
 }
+
 
 static struct custom_operations alignment_matrix = {
     "http://www.amnh.org/poy/alignment_matrix/alignment_matrix0.1",
@@ -230,39 +209,24 @@ static struct custom_operations alignment_matrix = {
     custom_serialize_default,
     custom_deserialize_default
 };
+*/
 
+/*
 value 
 mat_CAML_create_general (value a) {
     CAMLparam1(a);
     CAMLlocal1(res);
     matricest m;
     res = 
-        alloc_custom (&alignment_matrix, sizeof(struct matrices), 1, 1000000);
+        alloc_custom (&alignment_matrix, sizeof(struct matrices), 1, 1000);
     m = Matrices_struct(res);
-    m->len_gapnumarr = m->len_pre = m->len_eff = m->len = 0;
+    m->len_pre = m->len_eff = m->len = 0;
     m->matrix = m->cube = m->precalc = NULL;
-    m->matrix_d = m->cube_d = NULL;
+    m->dir_mtx_2d = m->cube_d = NULL;
     m->pointers_3d = NULL;
-    m->gap_num1 = NULL;
-    m->gap_num2 = NULL;
-    m->gap_num3 = NULL;
-    m->gap_num4 = NULL;
     CAMLreturn(res);
 }
-
-void
-mat_print_dir_2d (matricest m, int w, int h) {
-    DIRECTION_MATRIX *mm;
-    int i, j;
-    mm = mat_get_2d_direct (m);
-    for (i = 0; i < h; i++) {
-        for (j = 0; j < w; j++)
-            fprintf (stdout, "%d\t", mm[ (w * i)+j ] );
-        fprintf (stdout, "\n");
-    }
-    fprintf (stdout, "\n");
-    return;
-}
+*/
 
 void
 mat_print_algn_2d (matricest m, int w, int h) {
@@ -278,6 +242,7 @@ mat_print_algn_2d (matricest m, int w, int h) {
     return;
 }
 
+/*
 value
 mat_CAML_print_algn_2d (value res, value mw, value mh) {
     CAMLparam3(res, mw, mh);
@@ -294,16 +259,17 @@ value
 mat_CAML_get_value (value res, value mw, value mh, value vrow, value vcolumn) {
     CAMLparam5(res, mw, mh, vrow, vcolumn);
     matricest m;
-    int w, row, column /*,h */; 
+    int w, h, row, column; 
     DIRECTION_MATRIX *mm;
     m = Matrices_struct(res);
     w = Int_val(mw);
-    /* h = Int_val(mh); */
+    h = Int_val(mh);
     row = Int_val(vrow);
     column = Int_val(vcolumn);
     mm = mat_get_2d_direct(m);
     CAMLreturn (Val_int(*(mm + (row * w) + column)));
 }
+*/
 
 void
 mat_print_algn_3d (matricest m, int w, int h, int d) {
@@ -324,6 +290,7 @@ mat_print_algn_3d (matricest m, int w, int h, int d) {
     return;
 }
 
+/*
 value
 mat_CAML_print_algn_3d (value res, value mw, value mh, value md) {
     CAMLparam4(res, mw, mh, md);
@@ -350,15 +317,11 @@ mat_CAML_flush_memory (value vm) {
     matricest m;
     m = Matrices_struct(vm);
     free (m->matrix);
-    free (m->matrix_d);
+    free (m->dir_mtx_2d);
     free (m->precalc);
-    free (m->gap_num1);
-    free (m->gap_num2);
-    free (m->gap_num3);
-    free (m->gap_num4);
-    m->len_gapnumarr = m->len_pre = m->len_eff = m->len = 0;
+    m->len_pre = m->len_eff = m->len = 0;
     m->matrix = m->cube = m->precalc = NULL;
-    m->matrix_d = m->cube_d = NULL;
+    m->dir_mtx_2d = m->cube_d = NULL;
     m->pointers_3d = NULL;
     CAMLreturn(Val_unit);
 }
@@ -371,3 +334,4 @@ mat_CAML_clear_direction (value vm) {
     mat_clean_direction_matrix (m);
     CAMLreturn(Val_unit);
 }
+*/

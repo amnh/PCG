@@ -18,8 +18,8 @@
 module Bio.PhyloGraph.DAG.Internal where
 
 import           Bio.Character.Dynamic.Coded
-import           Bio.Character.Parsed
-import           Bio.Metadata.Internal                     (CharacterMetadata)
+--import           Bio.Character.Parsed
+--import           Bio.Metadata.Internal                     (CharacterMetadata)
 import           Bio.PhyloGraph.DAG.Class
 import           Bio.PhyloGraph.Edge
 import           Bio.PhyloGraph.Forest
@@ -27,7 +27,7 @@ import qualified Bio.PhyloGraph.Network             as N
 import qualified Bio.PhyloGraph.Network.Subsettable as SN
 import           Bio.PhyloGraph.Node
 --import           Bio.PhyloGraph.Node.Referential          ()
-import           Bio.PhyloGraph.Node.Preliminary          (getLeftAlignment, getRightAlignment)
+--import           Bio.PhyloGraph.Node.Preliminary          (getLeftAlignment, getRightAlignment)
 import           Bio.PhyloGraph.Node.Topological          (TopoNode)
 import qualified Bio.PhyloGraph.Node.Topological    as TN
 import qualified Bio.PhyloGraph.Tree.EdgeAware      as ET
@@ -39,8 +39,8 @@ import           Data.Alphabet
 import           Data.Bifunctor
 import           Data.BitVector                     hiding (foldr,index)
 import           Data.Foldable
-import           Data.HashMap.Lazy                         (HashMap)
-import qualified Data.HashMap.Lazy                  as H   (toList)
+--import           Data.HashMap.Lazy                         (HashMap)
+--import qualified Data.HashMap.Lazy                  as H   (toList)
 import           Data.IntSet                               (IntSet)
 import qualified Data.IntSet                        as IS
 import           Data.IntMap                               (IntMap)

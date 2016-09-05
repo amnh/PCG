@@ -1,5 +1,5 @@
-/* POY 5.1.1. A phylogenetic analysis program using Dynamic Homologies.       */
-/* Copyright (C) 2014 AndrÃ©s VarÃ³n, Lin Hong, Nicholas Lucaroni, Ward Wheeler,*/
+/* POY 4.0 Beta. A phylogenetic analysis program using Dynamic Homologies.    */
+/* Copyright (C) 2007  Andrés Varón, Le Sy Vinh, Illya Bomash, Ward Wheeler,  */
 /* and the American Museum of Natural History.                                */
 /*                                                                            */
 /* This program is free software; you can redistribute it and/or modify       */
@@ -18,12 +18,9 @@
 /* USA                                                                        */
 
 #ifndef SEQ_H
-#define SEQ_H 1
 
-#include <caml/custom.h>
-#include <caml/mlvalues.h>
-#include <caml/memory.h>
-#include "array_pool.h"
+#define SEQ_H 1
+// #include "array_pool.h" ARRAY_POOL_DELETE
 
 #define POY_SEQ_MAGIC_NUMBER 9873123
 /* Macro to retrieve and cast a pointer to a seq structure from the Ocaml custom
@@ -35,17 +32,14 @@
     to_asgn->begin = to_asgn->end - to_asgn->len + 1; \
     assert (to_asgn->magic_number == POY_SEQ_MAGIC_NUMBER)
 
-
 #ifdef USE_LARGE_ALPHABETS 
- #define SEQT unsigned int
- #define DESERIALIZE_SEQT(a,b) caml_deserialize_block_4((a),(b))
- #define SERIALIZE_SEQT(a,b) caml_serialize_block_4((a),(b))
- #define INDEXSIZE long int
+#define SEQT unsigned int
+#define DESERIALIZE_SEQT(a,b) caml_deserialize_block_4((a),(b))
+#define SERIALIZE_SEQT(a,b) caml_serialize_block_4((a),(b))
 #else 
- #define SEQT unsigned char
- #define DESERIALIZE_SEQT(a,b) caml_deserialize_block_1((a),(b))
- #define SERIALIZE_SEQT(a,b) caml_serialize_block_1((a),(b))
- #define INDEXSIZE int
+#define SEQT unsigned char
+#define DESERIALIZE_SEQT(a,b) caml_deserialize_block_1((a),(b))
+#define SERIALIZE_SEQT(a,b) caml_serialize_block_1((a),(b))
 #endif
 
 /* Sequence structure to be used inside ocaml custom types. */
@@ -53,60 +47,49 @@ struct seq {
     int magic_number;
     int cap;        /* Capacity of the sequence memory structure. */
     int len;        /* Total length of the sequence stored. */
-    SEQT *head;
-    SEQT *begin;    /* Offset of the position where the first element of 
+    SEQT *head;     /* beginning of the allocated array */
+    SEQT *begin;    /* Position where the first element of 
                        the sequence is actually stored. */
     SEQT *end;
-    struct pool *my_pool;
+    //struct pool *my_pool; ARRAY_POOL_DELETE
 };
 
 typedef struct seq * seqt;
 
-/* Gets the capacity of the sequence a. */
-int seq_get_cap (const seqt a);
+void print_seq(seqt inSeq, int num);
 
-void seq_prepend (seqt a, SEQT v);
+/* Gets the capacity of the sequence a. */
+int
+seq_get_cap (const seqt a);
+
+void
+seq_prepend (seqt a, SEQT v);
 
 /* Gets the total length of the sequence a */
-int seq_get_len (const seqt a);
+int
+seq_get_len (const seqt a);
 
 /* Gets a pointer to the beginning of the sequence a */
-SEQT * seq_get_begin (const seqt a);
-
-void seq_clear (seqt s);
+ SEQT *
+seq_get_begin (const seqt a);
 
 /* Gets a pointer to the beginning of the array where the sequence is stored.
  * Note that begin != head. */
-#ifdef _WIN32
-__inline SEQT *
-#else
-inline SEQT *
-#endif
+ SEQT *
 seq_get_head (const seqt a);
 
 /* Gets a pointer to the memory location where the last element of the sequence
  * a is stored. */
-#ifdef _WIN32
-__inline SEQT *
-#else
-inline SEQT *
-#endif
+ SEQT *
 seq_get_end (const seqt a);
 
-/* Gets the value of the sequence a in the position p, a starting in position 0 */
-SEQT seq_get (const seqt a, int p);
-
-void seq_print(const seqt a);
+/* Gets the value of the sequence a in the position p, a starting in position 0
+ */
+SEQT 
+seq_get (const seqt a, int p);
 
 /* Stores the value v in the position p of sequence a. */
-#ifdef _WIN32
-__inline void
-#else
-inline void
-#endif
+void
 seq_set (seqt a, int p, SEQT v);
-
-//inline void
-//seq_get_median_2d (seqt s1, seqt s2, cmt m, seqt sm);
 
 #endif /* SEQ_H */
