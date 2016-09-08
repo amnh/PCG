@@ -40,7 +40,7 @@ cm_combinations_of_alphabet (const int alphSize) {
     return ((1 << alphSize) - 1); // ignore empty set
 }
 
-void cm_print (cmt c) {
+void cm_print (cost_matrices_p c) {
     printf("\nCost matrix fields:\n");
     printf("  alphabet size: %d\n", c->alphSize);
     printf("  lcm:           %d\n", c->lcm);
@@ -52,13 +52,15 @@ void cm_print (cmt c) {
     printf("  all elements:  %d\n", c->all_elements);
 
     printf("\n  Cost matrix:\n    ");
-    cm_print_matrix(c->cost, c->alphSize + 1, c->alphSize);
+    cm_print_matrix(c->cost, c->alphSize + 1, c->alphSize + 1);
     printf("  Prepend cost\n    ");
-    cm_print_matrix(c->prepend_cost, 1, c->alphSize);
+    cm_print_matrix(c->prepend_cost, 1, c->alphSize + 1);
     printf("  Worst\n    ");
-    cm_print_matrix(c->worst, c->alphSize + 1, c->alphSize);
+    cm_print_matrix(c->worst, c->alphSize + 1, c->alphSize + 1);
     printf("  Tail cost:\n    ");
     cm_print_matrix(c->tail_cost, 1, c->alphSize);
+    printf("  Median costs:\n    ");
+    cm_print_median(c->median, c->alphSize + 1, c->alphSize + 1);
 }
 
 void
@@ -74,7 +76,19 @@ cm_print_matrix (int* m, int w, int h) {
 }
 
 void
-cm_free (cmt c) {
+cm_print_median (SEQT* m, int w, int h) {
+    size_t i, j;
+    for (i = 0; i < h; i++) {
+        //fprintf(stdout,"%zu: ", i);
+        for (j = 0; j < w; j++)
+            printf ("%4d", *(m + (w * i) + j));
+        printf ("\n    ");
+    }
+    return;
+}
+
+void
+cm_free (cost_matrices_p c) {
     free (c->cost);
     free (c->median);
     free (c->worst);
@@ -85,7 +99,7 @@ cm_free (cmt c) {
 }
 
 void
-cm_3d_free (cmt c) {
+cm_3d_free (cost_matrices_p c) {
     free (c->cost);
     free (c->median);
     free (c);
@@ -93,7 +107,7 @@ cm_3d_free (cmt c) {
 }
 
 static inline void
-cm_set_alphSize (cmt c, int v) {
+cm_set_alphSize (cost_matrices_p c, int v) {
     assert(c != NULL);
     c->alphSize = v;
     return;
@@ -107,7 +121,7 @@ cm_set_alphSize_3d (cm_3dt c, int v) {
 }
 
 static inline void
-cm_set_gap (cmt c, int v) {
+cm_set_gap (cost_matrices_p c, int v) {
     assert(c != NULL);
     c->gap = v;
     return;
@@ -121,7 +135,7 @@ cm_set_gap_3d (cm_3dt c, int v) {
 }
 
 static inline void
-cm_set_affine (cmt c, int do_aff, int go) {
+cm_set_affine (cost_matrices_p c, int do_aff, int go) {
     assert(c != NULL);
     c->cost_model_type = do_aff;
     c->gap_open = go;
@@ -137,7 +151,7 @@ cm_set_affine_3d (cm_3dt c, int do_aff, int go) {
 }
 
 inline int
-cm_get_lcm (cmt c) {
+cm_get_lcm (cost_matrices_p c) {
     assert(c != NULL);
     return (c->lcm);
 }
@@ -149,7 +163,7 @@ cm_get_lcm_3d (cm_3dt c) {
 }
 
 static inline void
-cm_set_lcm (cmt c, int v) {
+cm_set_lcm (cost_matrices_p c, int v) {
     assert(c != NULL);
     c->lcm = v;
     return;
@@ -163,7 +177,7 @@ cm_set_lcm_3d (cm_3dt c, int v) {
 }
 
 static inline void
-cm_set_combinations (cmt c) {
+cm_set_combinations (cost_matrices_p c) {
     assert(c != NULL);
     c->combinations = 1;
     return;
@@ -177,7 +191,7 @@ cm_set_combinations_3d (cm_3dt c) {
 }
 
 static inline void
-cm_unset_combinations (cmt c) {
+cm_unset_combinations (cost_matrices_p c) {
     assert(c != NULL);
     c->combinations = 0;
     return;
@@ -191,7 +205,7 @@ cm_unset_combinations_3d (cm_3dt c) {
 }
 
 inline int
-cm_get_combinations (cmt c) {
+cm_get_combinations (cost_matrices_p c) {
     assert(c != NULL);
     return (c->combinations);
 }
@@ -203,7 +217,7 @@ cm_get_combinations_3d (cm_3dt c) {
 }
 
 void
-cm_set_all_elements (cmt c, int v) {
+cm_set_all_elements (cost_matrices_p c, int v) {
     assert (c != NULL);
     c->all_elements = v;
     return;
@@ -217,7 +231,7 @@ cm_set_all_elements_3d (cm_3dt c, int v) {
 }
 
 int
-cm_get_all_elements (cmt c) {
+cm_get_all_elements (cost_matrices_p c) {
     return (c->all_elements);
 }
 
@@ -229,7 +243,7 @@ cm_get_all_elements_3d (cm_3dt c) {
 value
 cm_CAML_set_all_elements (value cm, value v) {
     CAMLparam2(cm, v);
-    cmt c;
+    cost_matrices_p c;
     int i;
     c = Cost_matrix_struct(cm);
     i = Int_val(v);
@@ -259,7 +273,7 @@ cm_CAML_get_all_elements_3d (value cm) {
 value
 cm_CAML_get_all_elements (value cm) {
     CAMLparam1(cm);
-    cmt c;
+    cost_matrices_p c;
     c = Cost_matrix_struct(cm);
     CAMLreturn(Val_int(cm_get_all_elements(c)));
 }
@@ -273,9 +287,9 @@ cm_CAML_get_all_elements (value cm) {
  * stored in do_aff, gap_open, in the cost matrix res. 
  * In case of error the function fails with the message "Memory error.".
  */
-cmt 
+cost_matrices_p 
 cm_set_val (int alphSize, int combinations, int do_aff, int gap_open, \
-        int is_metric, int all_elements, cmt res) {
+        int is_metric, int all_elements, cost_matrices_p res) {
     if(DEBUG) {
         printf("\n---cm_set_val\n");
     }
@@ -385,7 +399,7 @@ cm_set_val_3d (int alphSize, int combinations, int do_aff, int gap_open, \
 }
 
 inline int
-cm_get_alphabet_size (cmt c) {
+cm_get_alphabet_size (cost_matrices_p c) {
     assert(c != NULL);
     return c->alphSize;
 }
@@ -397,7 +411,7 @@ cm_get_alphabet_size_3d (cm_3dt c) {
 }
 
 SEQT
-cm_get_gap (const cmt c) {
+cm_get_gap (const cost_matrices_p c) {
     assert(c != NULL);
     return c->gap;
 }
@@ -409,7 +423,7 @@ cm_get_gap_3d (const cm_3dt c) {
 }
 
 int
-cm_get_affine_flag (cmt c) {
+cm_get_affine_flag (cost_matrices_p c) {
     assert(c != NULL);
     return c->cost_model_type;
 }
@@ -421,7 +435,7 @@ cm_get_affine_flag_3d (cm_3dt c) {
 }
 
 int
-cm_get_gap_opening_parameter (cmt c) {
+cm_get_gap_opening_parameter (cost_matrices_p c) {
     assert(c != NULL);
     return c->gap_open;
 }
@@ -439,13 +453,13 @@ cm_calc_cost_position (int a, int b, int alphSize) {
 }
 
 static inline int
-cm_calc_cost_position_seqt (SEQT a, SEQT b, int alphSize) {
+cm_calc_cost_position_seq_p (SEQT a, SEQT b, int alphSize) {
     assert(alphSize >= 0);
     return ((((int) a) << alphSize) + ((int) b));
 }
 
 inline int
-cm_calc_cost_position_3d_seqt (SEQT a, SEQT b, SEQT c, int alphSize) {
+cm_calc_cost_position_3d_seq_p (SEQT a, SEQT b, SEQT c, int alphSize) {
     assert(alphSize >= 0);
     return ((((((int) a) << alphSize) + ((int) b)) << alphSize) + ((int) c));
 }
@@ -462,7 +476,7 @@ cm_calc_median (SEQT *tcm, SEQT a, SEQT b, int alphSize) {
     assert (alphSize >= 0);
     assert ((1 << alphSize) > a);
     assert ((1 << alphSize) > b);
-    res = tcm + cm_calc_cost_position_seqt (a, b, alphSize);
+    res = tcm + cm_calc_cost_position_seq_p (a, b, alphSize);
     return (*res);
 }
 
@@ -472,7 +486,7 @@ cm_calc_cost (int *tcm, SEQT a, SEQT b, int alphSize) {
     assert (alphSize >= 0);
     assert ((1 << alphSize) > a);
     assert ((1 << alphSize) > b);
-    res = tcm + cm_calc_cost_position_seqt (a, b, alphSize);
+    res = tcm + cm_calc_cost_position_seq_p (a, b, alphSize);
     return (*res);
 }
 
@@ -517,7 +531,7 @@ cm_calc_cost_3d (int *tcm, SEQT a, SEQT b, SEQT c, int alphSize) {
 }
 
 inline SEQT
-cm_calc_cost_3d_seqt (SEQT *tcm, SEQT a, SEQT b, SEQT c, int alphSize) {
+cm_calc_cost_3d_seq_p (SEQT *tcm, SEQT a, SEQT b, SEQT c, int alphSize) {
     if (alphSize <= 0) {
         printf("Alphabet size = 2\n");
         exit(1);
@@ -551,17 +565,17 @@ cm_calc_median_position (SEQT a, SEQT b, int alphSize) {
  * a bigarray from ocaml.
  */
 inline int *
-cm_get_transformation_cost_matrix (const cmt a) {
+cm_get_transformation_cost_matrix (const cost_matrices_p a) {
     return (a->cost);
 }
 
 int *
-cm_get_tail_cost (const cmt a) {
+cm_get_tail_cost (const cost_matrices_p a) {
     return (a->tail_cost);
 }
 
 static inline int *
-cm_get_prepend_cost (const cmt a) {
+cm_get_prepend_cost (const cost_matrices_p a) {
     return (a->prepend_cost);
 }
 
@@ -605,9 +619,9 @@ cm_get_row_3d (int *tcm, SEQT a, SEQT b, int alphSize) {
     return (tcm + (((a << alphSize) + b) << alphSize));
 }
 
-inline void
-cm_set_value_seqt (SEQT a, SEQT b, SEQT v, SEQT *p, int alphSize) {
-    *(p + (cm_calc_cost_position_seqt (a, b, alphSize))) = v;
+void
+cm_set_value_seq_p (SEQT a, SEQT b, SEQT v, SEQT *p, int alphSize) {
+    *(p + (cm_calc_cost_position_seq_p (a, b, alphSize))) = v;
     return;
 }
 
@@ -623,7 +637,7 @@ cm_get_value (int a, int b, int *p, int alphSize) {
 }
 
 void
-cm_precalc_4algn (const cmt costMtx_t, matricest toOutput, const seqt s) {
+cm_precalc_4algn (const cost_matrices_p costMtx_t, nw_matrices_p toOutput, const seq_p s) {
     if(DEBUG) {
         printf("\n---cm_precalc_4algn\n");
     }
@@ -696,7 +710,7 @@ cm_get_row_precalc_3d (const int *to, int s3l, int alphSize, int s1c, int s2c) {
 }
 
 void
-cm_precalc_4algn_3d (const cm_3dt c, int *to, const seqt s) {
+cm_precalc_4algn_3d (const cm_3dt c, int *to, const seq_p s) {
     int i, j, k, l, *tmp_cost, *tcm;
     int sequen, *precalc_pos;
     l = seq_get_len (s);
@@ -714,8 +728,8 @@ cm_precalc_4algn_3d (const cm_3dt c, int *to, const seqt s) {
 }
 
 inline void
-cm_set_value_3d_seqt (SEQT a, SEQT b, SEQT c, SEQT v, SEQT *p, int alphSize) {
-    *(p + (cm_calc_cost_position_3d_seqt (a, b, c, alphSize))) = v;
+cm_set_value_3d_seq_p (SEQT a, SEQT b, SEQT c, SEQT v, SEQT *p, int alphSize) {
+    *(p + (cm_calc_cost_position_3d_seq_p (a, b, c, alphSize))) = v;
     return;
 }
 
@@ -726,19 +740,19 @@ cm_set_value_3d (int a, int b, int c, int v, int *p, int alphSize) {
 }
 
  void
-cm_set_cost (int a, int b, int v, cmt c) {
+cm_set_cost (int a, int b, int v, cost_matrices_p c) {
     cm_set_value (a, b, v, c->cost, c->lcm);
     return;
 }
 
 int
-cm_get_cost (int a, int b, cmt c) {
+cm_get_cost (int a, int b, cost_matrices_p c) {
     return cm_get_value (a, b, c->cost, c->lcm);
 }
 
 
 void
-cm_set_worst (int a, int b, int v, cmt c) {
+cm_set_worst (int a, int b, int v, cost_matrices_p c) {
     cm_set_value (a, b, v, c->worst, c->lcm);
     return;
 }
@@ -752,32 +766,32 @@ cm_set_cost_3d (int a, int b, int cp, int v, cm_3dt c) {
     return;
 }
 
-inline void
-cm_set_prepend (int a, int b, cmt c) {
+void
+cm_set_prepend (int a, int b, cost_matrices_p c) {
     c->prepend_cost[a] = b;
     return;
 }
 
-inline void
-cm_set_tail (int a, int b, cmt c) {
+void
+cm_set_tail (int a, int b, cost_matrices_p c) {
     c->tail_cost[a] = b;
     return;
 }
 
-inline void
-cm_set_median (SEQT a, SEQT b, SEQT v, cmt c) {
-    cm_set_value_seqt (a, b, v, c->median, c->lcm);
+void
+cm_set_median (SEQT a, SEQT b, SEQT v, cost_matrices_p c) {
+    cm_set_value_seq_p (a, b, v, c->median, c->lcm);
     return;
 }
 
 inline void
 cm_set_median_3d (SEQT a, SEQT b, SEQT cp, SEQT v, cm_3dt c) {
-    cm_set_value_3d_seqt (a, b, cp, v, c->median, c->lcm);
+    cm_set_value_3d_seq_p (a, b, cp, v, c->median, c->lcm);
     return;
 }
 
 int
-cm_compare (cmt a, cmt b) {
+cm_compare (cost_matrices_p a, cost_matrices_p b) {
     int cmp, len_g;
     size_t len, len1;
     if (a->alphSize != b->alphSize) {
@@ -818,7 +832,7 @@ cm_copy_contents (int *src, int *tgt, int len) {
 
 
 void
-cm_copy_contents_seqt (SEQT *src, SEQT *tgt, int len) {
+cm_copy_contents_seq_p (SEQT *src, SEQT *tgt, int len) {
     int i;
     for (i = 0; i < len; i++)
         *(tgt + i) = *(src + i);
@@ -826,7 +840,7 @@ cm_copy_contents_seqt (SEQT *src, SEQT *tgt, int len) {
 }
 
 SEQT
-cm_get_median (const cmt tmp, SEQT a, SEQT b) {
+cm_get_median (const cost_matrices_p tmp, SEQT a, SEQT b) {
     return (cm_calc_median((tmp->median), a, b, tmp->lcm));
 }
 
@@ -839,9 +853,9 @@ cm_get_median_3d (const cm_3dt t, SEQT a, SEQT b, SEQT c) {
 /*
 unsigned long
 cm_CAML_deserialize (void *v) {
-    cmt n;
+    cost_matrices_p n;
     int len;
-    n = (cmt) v;
+    n = (cost_matrices_p) v;
     n->alphSize = deserialize_sint_4();
     n->lcm = deserialize_sint_4();
     n->gap = deserialize_sint_4();
@@ -889,7 +903,7 @@ cm_CAML_deserialize_3d (void *v) {
 void
 cm_CAML_serialize (value vcm, unsigned long *wsize_32, \
         unsigned long *wsize_64) {
-    cmt c;
+    cost_matrices_p c;
     int len;
     if (DEBUG) {
         printf ("I will serialize cm!\n");
@@ -936,7 +950,7 @@ cm_CAML_serialize_3d (value vcm, unsigned long *wsize_32, \
 
 void
 cm_CAML_free (value v) {
-    cmt c;
+    cost_matrices_p c;
     c = Cost_matrix_struct(v);
     free (c->cost);
     free (c->median);
@@ -999,8 +1013,8 @@ value
 cm_CAML_clone (value v) {
     CAMLparam1(v);
     value clone;
-    cmt clone2;
-    cmt c;
+    cost_matrices_p clone2;
+    cost_matrices_p c;
     int len;
     clone = alloc_custom (&cost_matrix, sizeof(struct cm), 1, 1000000);
     clone2 = Cost_matrix_struct(clone);
@@ -1013,7 +1027,7 @@ cm_CAML_clone (value v) {
                 c->gap_open, c->is_metric, c->all_elements, clone2);
     len = 2 *(1 << (c->lcm)) * (1 << (c->lcm));
     cm_copy_contents (c->cost, clone2->cost, len);
-    cm_copy_contents_seqt (c->median, clone2->median, len);
+    cm_copy_contents_seq_p (c->median, clone2->median, len);
     cm_copy_contents (c->worst, clone2->worst, len);
     cm_copy_contents (c->prepend_cost, clone2->prepend_cost, len);
     cm_copy_contents (c->tail_cost, clone2->tail_cost, len);
@@ -1034,7 +1048,7 @@ cm_CAML_clone_3d (value v) {
             c->gap_open, c->all_elements, clone2);
     len = (c->alphSize + 1) * (c->alphSize + 1) * (c->alphSize + 1);
     cm_copy_contents (c->cost, clone2->cost, len);
-    cm_copy_contents_seqt (c->median, clone2->median, len);
+    cm_copy_contents_seq_p (c->median, clone2->median, len);
     CAMLreturn(clone);
 }
 
@@ -1165,7 +1179,7 @@ value
 cm_CAML_get_cost (value a, value b, value c) {
     CAMLparam3(a, b, c);
     int *tcm;
-    cmt tmp;
+    cost_matrices_p tmp;
     tmp = Cost_matrix_struct(c);
     tcm = tmp->cost;
     CAMLreturn(Val_int(cm_calc_cost(tcm, Int_val(a), Int_val(b), tmp->lcm)));
@@ -1175,7 +1189,7 @@ value
 cm_CAML_get_worst (value a, value b, value c) {
     CAMLparam3(a, b, c);
     int *tcm;
-    cmt tmp;
+    cost_matrices_p tmp;
     tmp = Cost_matrix_struct(c);
     tcm = tmp->worst;
     CAMLreturn(Val_int(cm_calc_cost(tcm, Int_val(a), Int_val(b), tmp->lcm)));
@@ -1189,7 +1203,7 @@ cm_CAML_get_median_3d (value a, value b, value c, value cm) {
     cm_3dt tmp;
     tmp = Cost_matrix_struct_3d(cm);
     tcm = tmp->median;
-    CAMLreturn(Val_int(cm_calc_cost_3d_seqt(tcm, Int_val(a), Int_val(b), \
+    CAMLreturn(Val_int(cm_calc_cost_3d_seq_p(tcm, Int_val(a), Int_val(b), \
                     Int_val(c), tmp->lcm)));
 }
 */
@@ -1199,7 +1213,7 @@ value
 cm_CAML_get_median (value a, value b, value c) {
     CAMLparam3(a, b, c);
     SEQT *tcm;
-    cmt tmp;
+    cost_matrices_p tmp;
     tmp = Cost_matrix_struct(c);
     tcm = tmp->median;
     CAMLreturn(Val_int(cm_calc_median(tcm, Int_val(a), Int_val(b), tmp->lcm)));
@@ -1217,7 +1231,7 @@ cm_CAML_set_cost_3d (value a, value b, value c, value cc, value v) {
 value
 cm_CAML_set_cost (value a, value b, value c, value v) {
     CAMLparam4(a, b, c, v);
-    cmt tmp;
+    cost_matrices_p tmp;
     tmp = Cost_matrix_struct(c);
     cm_set_cost (Int_val(a), Int_val(b), Int_val(v), tmp);
     CAMLreturn(Val_unit);
@@ -1226,7 +1240,7 @@ cm_CAML_set_cost (value a, value b, value c, value v) {
 value 
 cm_CAML_set_worst (value a, value b, value c, value v) {
     CAMLparam4(a, b, c, v);
-    cmt tmp;
+    cost_matrices_p tmp;
     tmp = Cost_matrix_struct(c);
     cm_set_worst (Int_val(a), Int_val(b), Int_val(v), tmp);
     CAMLreturn(Val_unit);
@@ -1244,7 +1258,7 @@ cm_CAML_set_median_3d (value a, value b, value c, value cp, value v) {
 value
 cm_CAML_set_median (value a, value b, value c, value v) {
     CAMLparam4(a, b, c, v);
-    cmt tmp;
+    cost_matrices_p tmp;
     tmp = Cost_matrix_struct(c);
     cm_set_median (Int_val(a), Int_val(b), Int_val(v), tmp);
     CAMLreturn(Val_unit);
@@ -1253,7 +1267,7 @@ cm_CAML_set_median (value a, value b, value c, value v) {
 value
 cm_CAML_set_prepend (value a, value b, value v) {
     CAMLparam3(a, b, v);
-    cmt tmp;
+    cost_matrices_p tmp;
     tmp = Cost_matrix_struct(v);
     cm_set_prepend (Int_val(a), Int_val(b), tmp);
     CAMLreturn(Val_unit);
@@ -1262,7 +1276,7 @@ cm_CAML_set_prepend (value a, value b, value v) {
 value
 cm_CAML_set_tail (value a, value b, value v) {
     CAMLparam3(a, b, v);
-    cmt tmp;
+    cost_matrices_p tmp;
     tmp = Cost_matrix_struct(v);
     cm_set_tail (Int_val(a), Int_val(b), tmp);
     CAMLreturn(Val_unit);
@@ -1272,7 +1286,7 @@ value
 cm_CAML_get_prepend (value a, value v) {
     CAMLparam2(a, v);
     int r;
-    cmt tmp;
+    cost_matrices_p tmp;
     tmp = Cost_matrix_struct(v);
     assert ((1 + tmp->alphSize) > Int_val(a));
     r = tmp->prepend_cost[Int_val(a)];
@@ -1283,7 +1297,7 @@ value
 cm_CAML_get_tail (value a, value v) {
     CAMLparam2(a, v);
     int r;
-    cmt tmp;
+    cost_matrices_p tmp;
     tmp = Cost_matrix_struct(v);
     assert ((1 + tmp->alphSize) > Int_val(a));
     r = tmp->tail_cost[Int_val(a)];
@@ -1312,7 +1326,7 @@ value
 cm_CAML_create (value alphSize, value combine, value aff, value go, value all) {
     CAMLparam5(alphSize, combine, aff, go, all);
     value tmp;
-    cmt tmp2;
+    cost_matrices_p tmp2;
     tmp = alloc_custom (&cost_matrix, sizeof(struct cm), 1, 1000000);
     tmp2 = Cost_matrix_struct(tmp);
     cm_set_val (Int_val(alphSize), Bool_val(combine), Int_val(aff), Int_val(go), \
@@ -1323,7 +1337,7 @@ cm_CAML_create (value alphSize, value combine, value aff, value go, value all) {
 value 
 cm_CAML_set_lcm (value c, value v) {
     CAMLparam2(c, v);
-    cmt tmp;
+    cost_matrices_p tmp;
     tmp = Cost_matrix_struct(c);
     cm_set_lcm (tmp, Int_val(v));
     CAMLreturn(Val_unit);
@@ -1341,7 +1355,7 @@ cm_CAML_set_lcm_3d (value c, value v) {
 value 
 cm_CAML_get_lcm (value c) {
     CAMLparam1(c);
-    cmt tmp;
+    cost_matrices_p tmp;
     tmp = Cost_matrix_struct(c);
     CAMLreturn(Val_int(cm_get_lcm(tmp)));
 }
@@ -1358,7 +1372,7 @@ value
 cm_CAML_clone_to_3d (value c) {
     CAMLparam1(c);
     CAMLlocal1(res);
-    cmt init;
+    cost_matrices_p init;
     cm_3dt final;
     init = Cost_matrix_struct(c);
     res = alloc_custom (&cost_matrix_3d, sizeof(struct cm_3d), 1, 1000000);
@@ -1379,7 +1393,7 @@ cm_CAML_initialize (value unit) {
 value
 cm_CAML_set_is_metric (value c) {
     CAMLparam1(c);
-    cmt init;
+    cost_matrices_p init;
     init = Cost_matrix_struct(c);
     init->is_metric = 1;
     CAMLreturn(Val_unit);
@@ -1388,7 +1402,7 @@ cm_CAML_set_is_metric (value c) {
 value
 cm_CAML_get_is_metric (value c) {
     CAMLparam1(c);
-    cmt init;
+    cost_matrices_p init;
     init = Cost_matrix_struct(c);
     CAMLreturn(Val_int(init->is_metric));
 }

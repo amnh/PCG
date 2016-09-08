@@ -22,24 +22,25 @@
 #define SEQ_H 1
 // #include "array_pool.h" ARRAY_POOL_DELETE
 
+// TODO: Here's another wtf:
 #define POY_SEQ_MAGIC_NUMBER 9873123
 /* Macro to retrieve and cast a pointer to a seq structure from the Ocaml custom
  * type. */
 #define Seq_pointer(a) ((struct seq *) Data_custom_val(a))
 #define Seq_custom_val(to_asgn,a)  to_asgn = Seq_pointer(a); \
-    to_asgn->head = (SEQT *) ((seqt) (to_asgn + 1)); \
+    to_asgn->head = (SEQT *) ((seq_p) (to_asgn + 1)); \
     to_asgn->end = to_asgn->head + to_asgn->cap - 1; \
     to_asgn->begin = to_asgn->end - to_asgn->len + 1; \
     assert (to_asgn->magic_number == POY_SEQ_MAGIC_NUMBER)
 
 #ifdef USE_LARGE_ALPHABETS 
 #define SEQT unsigned int
-#define DESERIALIZE_SEQT(a,b) caml_deserialize_block_4((a),(b))
-#define SERIALIZE_SEQT(a,b) caml_serialize_block_4((a),(b))
+// #define DESERIALIZE_SEQT(a,b) caml_deserialize_block_4((a),(b))
+// #define SERIALIZE_SEQT(a,b) caml_serialize_block_4((a),(b))
 #else 
 #define SEQT unsigned char
-#define DESERIALIZE_SEQT(a,b) caml_deserialize_block_1((a),(b))
-#define SERIALIZE_SEQT(a,b) caml_serialize_block_1((a),(b))
+// #define DESERIALIZE_SEQT(a,b) caml_deserialize_block_1((a),(b))
+// #define SERIALIZE_SEQT(a,b) caml_serialize_block_1((a),(b))
 #endif
 
 /* Sequence structure to be used inside ocaml custom types. */
@@ -54,42 +55,42 @@ struct seq {
     //struct pool *my_pool; ARRAY_POOL_DELETE
 };
 
-typedef struct seq * seqt;
+typedef struct seq * seq_p;
 
-void print_seq(seqt inSeq, int num);
+void seq_print(seq_p inSeq, int num);
 
 /* Gets the capacity of the sequence a. */
 int
-seq_get_cap (const seqt a);
+seq_get_cap (const seq_p a);
 
 void
-seq_prepend (seqt a, SEQT v);
+seq_prepend (seq_p a, SEQT v);
 
 /* Gets the total length of the sequence a */
 int
-seq_get_len (const seqt a);
+seq_get_len (const seq_p a);
 
 /* Gets a pointer to the beginning of the sequence a */
  SEQT *
-seq_get_begin (const seqt a);
+seq_get_begin (const seq_p a);
 
 /* Gets a pointer to the beginning of the array where the sequence is stored.
  * Note that begin != head. */
  SEQT *
-seq_get_head (const seqt a);
+seq_get_head (const seq_p a);
 
 /* Gets a pointer to the memory location where the last element of the sequence
  * a is stored. */
  SEQT *
-seq_get_end (const seqt a);
+seq_get_end (const seq_p a);
 
 /* Gets the value of the sequence a in the position p, a starting in position 0
  */
 SEQT 
-seq_get (const seqt a, int p);
+seq_get (const seq_p a, int p);
 
 /* Stores the value v in the position p of sequence a. */
 void
-seq_set (seqt a, int p, SEQT v);
+seq_set (seq_p a, int p, SEQT v);
 
 #endif /* SEQ_H */

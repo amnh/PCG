@@ -46,9 +46,11 @@
 
 struct matrices {
                                   /****** In each of the following calculations, seq length includes opening gap *******/
-    int len;                      // Total length of available memory allocated == (len_s1 + len_s2 + 2)^2 
-    int len_eff;                  // Length of the 3d efficient matrix == 12 * max(len_s1, lens2) 
-    int len_pre;                  // Length of the precalculated matrix == max(len_s1, lens2) * (alphSize + 1) ---extra 1 is for gap 
+    int len;                      /* Total length of available memory allocated to matrix or cube == for 2D: 12 * max(len_s1, len_s2)
+                                   *                                                                 for 3D: len_s1 * len_s2 * len_s3 
+                                   */
+    int len_eff;                  // Length of the efficiency matrix; at least as large as len
+    int len_pre;                  // Length of the precalculated matrix == max(len_s1, len_s2) * (alphSize + 1) ---extra 1 is for gap 
     int *matrix;                  // Matrix for regular alignment 
     DIRECTION_MATRIX *dir_mtx_2d; // Matrix for directions in a 2d alignment 
     int **pointers_3d;            // Matrix of pointers to each row in a 3d align 
@@ -57,9 +59,9 @@ struct matrices {
     int *precalc;                 // Matrix of precalculated arrays 
 };
 
-typedef struct matrices * matricest;
+typedef struct matrices * nw_matrices_p;
 
-void print_matrices(matricest m);
+void print_matrices(nw_matrices_p m, int alphSize);
 
 /* 
  * Calculates the amount of memory required to perform a three dimensional
@@ -82,45 +84,45 @@ mat_size_of_2d_matrix (int w, int h);
  * set h=0, and uk=0. 
  */
 int
-mat_setup_size (matricest m, int w, int d, int h, int k, int a_sz);
+mat_setup_size (nw_matrices_p m, int len_seq1, int len_seq2, int len_seq3, int is_ukk, int lcm);
 
 /* 
  * Gets the pointer to the first memory position of the 2d alignment matrix. 
  */
 int *
-mat_get_2d_matrix (matricest m);
+mat_get_2d_matrix (nw_matrices_p m);
 
 int *
-mat_get_2d_prec (const matricest m);
+mat_get_2d_prec (const nw_matrices_p m);
 
 int *
-mat_get_3d_prec (const matricest m);
+mat_get_3d_prec (const nw_matrices_p m);
 
 DIRECTION_MATRIX *
-mat_get_2d_direct (const matricest m);
+mat_get_2d_direct (const nw_matrices_p m);
 
 /* 
  * Gets a pointer to the first memory positon of the matrix of row pointers for
  * 3d aligments.
  */
 int **
-mat_get_3d_pointers (matricest m);
+mat_get_3d_pointers (nw_matrices_p m);
 
 /*
  * Gets a pointer to the first memory position of the memory batch (this is not
  * a matrix!) for the 3d alignments. 
  */
 int *
-mat_get_3d_matrix (matricest m);
+mat_get_3d_matrix (nw_matrices_p m);
 
 DIRECTION_MATRIX *
-mat_get_3d_direct (matricest m);
+mat_get_3d_direct (nw_matrices_p m);
 
 /* Printout the contents of the matrix */
 void
-mat_print_algn_2d (matricest m, int w, int h);
+mat_print_algn_2d (nw_matrices_p m, int w, int h);
 
 void
-mat_print_algn_3d (matricest m, int w, int h, int d);
+mat_print_algn_3d (nw_matrices_p m, int w, int h, int d);
 
 #endif /* MATRICES_H */

@@ -70,13 +70,13 @@
  * name>
  */
 
-inline void
-algn_fill_row (int *nwMtx, const int *pm, const int *gap_row, \
-        const int *alg_row, unsigned char *dm, int c, int l);
+static inline void
+algn_fill_row (int *curRow, const int *prevRow, const int *gap_row, 
+               const int *alg_row, DIRECTION_MATRIX *dirMtx, int c, int i, int end);
 
-inline int
-algn_fill_plane (const seqt s1, int *prec, int s1_len, \
-        int s2_len, int *nwMtx, unsigned char *dm, int uk, const cmt c);
+static inline int
+algn_fill_plane (const seq_p s1, int *precalcMtx, int s1_len, 
+                 int s2_len, int *curRow, DIRECTION_MATRIX *dirMtx, const cost_matrices_p c);
 
 inline void
 algn_fill_row_uk (int *nwMtx, const int *pm, const int *gap_row, \
@@ -85,22 +85,24 @@ algn_fill_row_uk (int *nwMtx, const int *pm, const int *gap_row, \
 
 inline int
 algn_fill_plane_uk (const struct seq *s1, int *prec, int s1_len, \
-        int s2_len, int *nwMtx, unsigned char *dm, int uk, const struct cm *c);
+        int s2_len, int *nwMtx, unsigned char *dm, int uk, const struct cost_matrices *c);
 
 static inline void
-fill_moved (int s3_len, int *prev_m, int *upper_m, int *diag_m, int *s1gs3, \
-        int *gs2s3, int *s1s2s3, int *nwMtx);
+fill_moved (int s3_len, const int *prev_m, const int *upper_m, 
+            const int *diag_m, const int *s1gs3, const int *gs2s3, 
+            const int *s1s2s3, int *curRow, DIRECTION_MATRIX *dirMtx);
 
 static inline void
-fill_parallel (int s3_len, int *prev_m, int *upper_m, int *diag_m, \
-        int *s1gs3, int *gs2s3, int *s1s2s3, int *nwMtx);
+fill_parallel (int s3_len, const int *prev_m, const int *upper_m, 
+               const int *diag_m, int s1gg, int gs2g, int s1s2g, int *curRow, 
+               DIRECTION_MATRIX *dirMtx);
 
 /**
  *  s1 is a pointer to the sequence s1 (vertical)
  *  s2 is horizontal 1 
     **** Note that s1 <= s2 ****
  *
- *  prec is a pointer to the precalculated cm, a three-dimensional matrix that holds
+ *  prec is a pointer to the precalculatedcost_matrices a three-dimensional matrix that holds
  *    the transitionn costs for the entire alphabet (of all three sequences)
  *    with the sequence s3. The columns are the bases of seq3, and the rows are 
  *    each of the alphabet characters (possibly including ambiguities). See 
@@ -125,39 +127,44 @@ fill_parallel (int s3_len, int *prev_m, int *upper_m, int *diag_m, \
  *  All following fns have the same argument values, when present
  */
 inline int
-algn_fill_cube (const seqt s1, const seqt s2, int *prec, \
-        int s1_len, int s2_len, int s3_len, int *nwMtx, unsigned char *dm, int uk, \
-        int gap, int alphSize);
+algn_fill_cube (const seq_p s1, const seq_p s2, const int *precalcMtx, 
+                int s1_len, int s2_len, int s3_len, int *curRow, DIRECTION_MATRIX *dirMtx, 
+                int uk, int gap, int alphSize);
 
 int
-algn_nw (const seqt s1, const seqt s2, const cmt c, matricest m, int uk);
+algn_nw (const seq_p s1, const seq_p s2, const cost_matrices_p c, nw_matrices_p m, int uk);
 
 inline int
-algn_nw_3d (const seqt s1, const seqt s2, const seqt s3,
-        const cm_3dt c, matricest m, int uk);
+algn_nw_3d (const seq_p s1, const seq_p s2, const seq_p s3,
+        const cm_3dt c, nw_matrices_p m, int uk);
 
 void
-print_bcktrck (const seqt s1, const seqt s2, const matricest m);
+print_bcktrck (const seq_p s1, const seq_p s2, const nw_matrices_p m);
 
 void
-print_dynmtrx (const seqt s1, const seqt s2, matricest m);
+print_dynmtrx (const seq_p s1, const seq_p s2, nw_matrices_p m);
+
+void
+backtrack_2d ( const seq_p s1, const seq_p s2, 
+               seq_p r1, seq_p r2, 
+               const nw_matrices_p m, const cost_matrices_p c, 
+               int st_s1, int st_s2, 
+               int algn_s1, int algn_s2, 
+               int swapped 
+              );
+
+void
+backtrack_3d (const seq_p s1, const seq_p s2, seq_p s3, \
+        seq_p r1, seq_p r2, seq_p r3, nw_matrices_p m, const cm_3dt c);
 
 inline void
-backtrack_2d (const seqt s1, const seqt s2, seqt r1, \
-        seqt r2, const matricest m, const cmt c);
-
-inline void
-backtrack_3d (const seqt s1, const seqt s2, seqt s3, \
-        seqt r1, seqt r2, seqt r3, matricest m, const cm_3dt c);
-
-inline void
-algn_get_median_2d (seqt s1, seqt s2, cmt m, seqt sm);
+algn_get_median_2d (seq_p s1, seq_p s2, cost_matrices_p m, seq_p sm);
 
 /* 
  * Given three aligned sequences s1, s2, and s3, the median between them is
  * returned in the sequence sm, using the cost matrix stored in m.
  */
 inline void
-algn_get_median_3d (seqt s1, seqt s2, seqt s3, cm_3dt m, seqt sm);
+algn_get_median_3d (seq_p s1, seq_p s2, seq_p s3, cm_3dt m, seq_p sm);
 
 #endif /* ALGN_H */

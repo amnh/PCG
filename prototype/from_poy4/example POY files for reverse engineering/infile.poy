@@ -1,5 +1,7 @@
 read("./sample.fa")
-transform(tcm: "./sample.mat")
+transform(tcm: "./sample2.mat")
 build(1)
+swap()
 select()
+report("ex.txt")
 exit()
