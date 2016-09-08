@@ -1,4 +1,4 @@
-------------------------------------------------------------------------------
+ ------------------------------------------------------------------------------
 -- |
 -- Module      :  Bio.Metadata.Internal
 -- Copyright   :  (c) 2015-2015 Ward Wheeler
@@ -30,44 +30,57 @@ import Test.Tasty.QuickCheck
 data CharacterMetadata s
    = CharMeta
    { -- | Stores the type of character
-     charType   :: CharDataType
+     charType   :: CharDataType                      -- TODO: Kill this, but each type will be rebinned into the types below 
+                                                     --    (four for static, three for dynamic)
+                                                     -- static:  additive (ordered), non-additive (Fitch, unordered), Sankoff, continuous
+                                                     -- dynamic: sequence (IDS), rearrangement (IDR, no S), sequence with move (IDSR)
+                                                     --    where I is insertion, D is deletion, S is substitution R is rearrangement
      -- | Alphabet as a list of strings
-   , alphabet   :: Alphabet String
+   , alphabet   :: Alphabet String                   -- This will become Maybe BiMap with alphabet symbols & state names
+                                                     --    state names correspond to the alphabet elements; if not given, alphabet values are default
+                                                     -- Possibly combined with TCM.
      -- | Name (give name : file name)
-   , name       :: String
+   , name       :: String                            -- TODO: change to
+                                                     -- tuple with (Name,Int)              (where Int is global index)
+                                                     -- Name
+                                                     --    | UserDefined :: String          (String value is username)
+                                                     --    | Default     :: (FilePath,Int)  (String value is filename, Int value is index within file)
      -- | Whether this character is aligned
-   , isAligned  :: Bool
+   , isAligned  :: Bool                              -- TODO: Kill this
      -- | Whether this character is ignored
-   , isIgnored  :: Bool
-     -- | The weight of this character, should default to 1
+   , isIgnored  :: Bool                              -- this is mutable; things will be rebinned
+     -- | The weight of this character, 
+     -- should default to 1
    , weight     :: Double
-     -- | The names of the states of this character (corresponds to the alphabet elements)
-   , stateNames :: Vector String
-     -- | Masks for fitch, should be mempty for anything but NonAdditive
-   , fitchMasks :: (s, s)
+     -- | The names of the states of this character 
+   , stateNames :: Vector String                     -- TODO: kill this; it's being added to alphabet
+     -- | Masks for fitch, should be mempty for 
+     -- anything but NonAdditive
+   , fitchMasks :: (s, s)                            -- TODO: only static non-additive
      -- | Cost of the root for this character
-   , rootCost   :: Double
-   -- | The cost structure storing different options for costs
-   , costs      :: CostStructure
+   , rootCost   :: Double                            -- additive factor for both static and dynamic chars (maybe rename)
+   -- | The cost structure storing different 
+   -- options for costs
+   , costs      :: CostStructure                     
+
+   -- TODO: -- AffineCost :: Maybe Int  
+
    } deriving (Eq, Show)
 
+-- TODO: Kill this, too
 -- | Different types of characters are stored here
 -- TODO: Add AffineDO, 3dDO, OptimizedDO
-data CharDataType = DirectOptimization | Fitch | InfoTheoretic | Unknown deriving (Eq, Show)
+data CharDataType = DirectOptimization | Fitch | InfoTheoretic | Unknown deriving (Eq, Show) -- replace this with above
 --data CharDataType = Nucleotide | AminoAcid | Continuous | Custom | Additive | NonAdditive | Unknown deriving (Eq, Show)
 
 -- | A cost structure can either be a TCM, an affine cost group, or a general cost group
 -- AffineCost stores a gap opening, gap continuing, and substitution cost
 -- GeneralCost just stores an indelCost and a subCost
-data CostStructure = -- AffineCost  { gapOpenCost :: Double, gapContinueCost :: Double, subCost :: Double }
-                     -- TODO: AffineCost is not separate from other CostStructures.
-                     -- When adding AffineCost back in, ask Ward whether it makes sense to have it alongside TCM,
-                     -- or only with GeneralCost.
-                     TCM CostMatrix
-                   | GeneralCost { indelCost :: Double, subCost :: Double } deriving (Eq, Show)
+data CostStructure = TCM CostMatrix
+                   | GeneralCost { indelCost :: Double, subCost :: Double } deriving (Eq, Show) -- TODO: should be Ints, not Doubles
 
 -- | A cost matrix is just a matrix of floats
-type CostMatrix = Matrix Double
+type CostMatrix = Matrix Double    -- TODO: Should be Int, not Double.
 
 -- TODO: replace these calls with lenses
 -- | Prepends a 'String' to the existing character name.

@@ -1,0 +1,861 @@
+(F,E);
+      
+
+Tree
+    Tree cost: 90.
+               Tree rearrangement cost: 0.
+                                        
+                                        
+                                        
+                                        root
+                                        Cost 0.
+                                        Rearrangement cost 0.
+                                        Children: E F
+                                                                                                                                                              
+                                        Characters        Class        Cost        Rearrangement Cost        Chrom Ref        Median Map        States
+                                        ./sample.fa       Preliminary  90.,90.     0.                        -                -                 1MCGT
+                                        ./sample.fa       Final        90.,90.     0.                        -                -                 1MCGT
+                                        ./sample.fa       Single       0.,0.       0.                        -                -                 ACGT
+                                        
+                                        
+                                        
+                                        E
+                                        Cost 0.
+                                        Rearrangement cost 0.
+                                        Children:  
+                                                                                                                                                              
+                                        Characters        Class        Cost        Rearrangement Cost        Chrom Ref        Median Map        States
+                                        ./sample.fa       Preliminary  72,130      0.                        -                -                 ACGT
+                                        ./sample.fa       Final        72,130      0.                        -                -                 ACGT
+                                        ./sample.fa       Single       72,72       0.                        -                -                 ACGT
+                                        
+                                        
+                                        
+                                        F
+                                        Cost 0.
+                                        Rearrangement cost 0.
+                                        Children:  
+                                                                                                                                                              
+                                        Characters        Class        Cost        Rearrangement Cost        Chrom Ref        Median Map        States
+                                        ./sample.fa       Preliminary  72,124      0.                        -                -                 ACCGT
+                                        ./sample.fa       Final        72,124      0.                        -                -                 ACCGT
+                                        ./sample.fa       Single       90,90       0.                        -                -                 ACCGT
+                                        
+                                        (F,E);
+      
+
+Tree
+    Tree cost: 90.
+               Tree rearrangement cost: 0.
+                                        
+                                        
+                                        
+                                        root
+                                        Cost 0.
+                                        Rearrangement cost 0.
+                                        Children: F E
+                                                                                                                                                              
+                                        Characters        Class        Cost        Rearrangement Cost        Chrom Ref        Median Map        States
+                                        ./sample.fa       Preliminary  90.,90.     0.                        -                -                 1MCGT
+                                        ./sample.fa       Final        90.,90.     0.                        -                -                 1MCGT
+                                        ./sample.fa       Single       0.,0.       0.                        -                -                 ACCGT
+                                        
+                                        
+                                        
+                                        F
+                                        Cost 0.
+                                        Rearrangement cost 0.
+                                        Children:  
+                                                                                                                                                              
+                                        Characters        Class        Cost        Rearrangement Cost        Chrom Ref        Median Map        States
+                                        ./sample.fa       Preliminary  72,124      0.                        -                -                 ACCGT
+                                        ./sample.fa       Final        72,124      0.                        -                -                 ACCGT
+                                        ./sample.fa       Single       84,84       0.                        -                -                 ACCGT
+                                        
+                                        
+                                        
+                                        E
+                                        Cost 0.
+                                        Rearrangement cost 0.
+                                        Children:  
+                                                                                                                                                              
+                                        Characters        Class        Cost        Rearrangement Cost        Chrom Ref        Median Map        States
+                                        ./sample.fa       Preliminary  72,130      0.                        -                -                 ACGT
+                                        ./sample.fa       Final        72,130      0.                        -                -                 ACGT
+                                        ./sample.fa       Single       90,114      0.                        -                -                 ACGT
+                                        
+                                        (F,E);
+      
+
+Tree
+    Tree cost: 2.
+               Tree rearrangement cost: 0.
+                                        
+                                        
+                                        
+                                        root
+                                        Cost 0.
+                                        Rearrangement cost 0.
+                                        Children: F E
+                                                                                                                                                              
+                                        Characters        Class        Cost        Rearrangement Cost        Chrom Ref        Median Map        States
+                                        ./sample.fa       Preliminary  2.,2.       0.                        -                -                 A2CGT
+                                        ./sample.fa       Final        2.,2.       0.                        -                -                 A2CGT
+                                        ./sample.fa       Single       0.,0.       0.                        -                -                 ACCGT
+                                        
+                                        
+                                        
+                                        F
+                                        Cost 0.
+                                        Rearrangement cost 0.
+                                        Children:  
+                                                                                                                                                              
+                                        Characters        Class        Cost        Rearrangement Cost        Chrom Ref        Median Map        States
+                                        ./sample.fa       Preliminary  0,2         0.                        -                -                 ACCGT
+                                        ./sample.fa       Final        0,2         0.                        -                -                 ACCGT
+                                        ./sample.fa       Single       0,0         0.                        -                -                 ACCGT
+                                        
+                                        
+                                        
+                                        E
+                                        Cost 0.
+                                        Rearrangement cost 0.
+                                        Children:  
+                                                                                                                                                              
+                                        Characters        Class        Cost        Rearrangement Cost        Chrom Ref        Median Map        States
+                                        ./sample.fa       Preliminary  0,2         0.                        -                -                 ACGT
+                                        ./sample.fa       Final        0,2         0.                        -                -                 ACGT
+                                        ./sample.fa       Single       2,2         0.                        -                -                 ACGT
+                                        
+                                        (F,E);
+      
+
+Tree
+    Tree cost: 90.
+               Tree rearrangement cost: 0.
+                                        
+                                        
+                                        
+                                        root
+                                        Cost 0.
+                                        Rearrangement cost 0.
+                                        Children: F E
+                                                                                                                                                              
+                                        Characters        Class        Cost        Rearrangement Cost        Chrom Ref        Median Map        States
+                                        ./sample.fa       Preliminary  90.,90.     0.                        -                -                 1MCGT
+                                        ./sample.fa       Final        90.,90.     0.                        -                -                 1MCGT
+                                        ./sample.fa       Single       0.,0.       0.                        -                -                 ACCGT
+                                        
+                                        
+                                        
+                                        F
+                                        Cost 0.
+                                        Rearrangement cost 0.
+                                        Children:  
+                                                                                                                                                              
+                                        Characters        Class        Cost        Rearrangement Cost        Chrom Ref        Median Map        States
+                                        ./sample.fa       Preliminary  72,124      0.                        -                -                 ACCGT
+                                        ./sample.fa       Final        72,124      0.                        -                -                 ACCGT
+                                        ./sample.fa       Single       84,84       0.                        -                -                 ACCGT
+                                        
+                                        
+                                        
+                                        E
+                                        Cost 0.
+                                        Rearrangement cost 0.
+                                        Children:  
+                                                                                                                                                              
+                                        Characters        Class        Cost        Rearrangement Cost        Chrom Ref        Median Map        States
+                                        ./sample.fa       Preliminary  72,122      0.                        -                -                 ACGT
+                                        ./sample.fa       Final        72,122      0.                        -                -                 ACGT
+                                        ./sample.fa       Single       90,114      0.                        -                -                 ACGT
+                                        
+                                        (F,E);
+      
+
+Tree
+    Tree cost: 90.
+               Tree rearrangement cost: 0.
+                                        
+                                        
+                                        
+                                        root
+                                        Cost 0.
+                                        Rearrangement cost 0.
+                                        Children: E F
+                                                                                                                                                              
+                                        Characters        Class        Cost        Rearrangement Cost        Chrom Ref        Median Map        States
+                                        ./sample.fa       Preliminary  90.,90.     0.                        -                -                 1MCGT
+                                        ./sample.fa       Final        90.,90.     0.                        -                -                 1MCGT
+                                        ./sample.fa       Single       0.,0.       0.                        -                -                 ACGT
+                                        
+                                        
+                                        
+                                        E
+                                        Cost 0.
+                                        Rearrangement cost 0.
+                                        Children:  
+                                                                                                                                                              
+                                        Characters        Class        Cost        Rearrangement Cost        Chrom Ref        Median Map        States
+                                        ./sample.fa       Preliminary  72,122      0.                        -                -                 ACGT
+                                        ./sample.fa       Final        72,122      0.                        -                -                 ACGT
+                                        ./sample.fa       Single       72,72       0.                        -                -                 ACGT
+                                        
+                                        
+                                        
+                                        F
+                                        Cost 0.
+                                        Rearrangement cost 0.
+                                        Children:  
+                                                                                                                                                              
+                                        Characters        Class        Cost        Rearrangement Cost        Chrom Ref        Median Map        States
+                                        ./sample.fa       Preliminary  72,124      0.                        -                -                 ACCGT
+                                        ./sample.fa       Final        72,124      0.                        -                -                 ACCGT
+                                        ./sample.fa       Single       90,90       0.                        -                -                 ACCGT
+                                        
+                                        (F,E);
+      
+
+Tree
+    Tree cost: 90.
+               Tree rearrangement cost: 0.
+                                        
+                                        
+                                        
+                                        root
+                                        Cost 0.
+                                        Rearrangement cost 0.
+                                        Children: F E
+                                                                                                                                                              
+                                        Characters        Class        Cost        Rearrangement Cost        Chrom Ref        Median Map        States
+                                        ./sample.fa       Preliminary  90.,90.     0.                        -                -                 1MCGT
+                                        ./sample.fa       Final        90.,90.     0.                        -                -                 1MCGT
+                                        ./sample.fa       Single       0.,0.       0.                        -                -                 ACCGT
+                                        
+                                        
+                                        
+                                        F
+                                        Cost 0.
+                                        Rearrangement cost 0.
+                                        Children:  
+                                                                                                                                                              
+                                        Characters        Class        Cost        Rearrangement Cost        Chrom Ref        Median Map        States
+                                        ./sample.fa       Preliminary  72,124      0.                        -                -                 ACCGT
+                                        ./sample.fa       Final        72,124      0.                        -                -                 ACCGT
+                                        ./sample.fa       Single       84,84       0.                        -                -                 ACCGT
+                                        
+                                        
+                                        
+                                        E
+                                        Cost 0.
+                                        Rearrangement cost 0.
+                                        Children:  
+                                                                                                                                                              
+                                        Characters        Class        Cost        Rearrangement Cost        Chrom Ref        Median Map        States
+                                        ./sample.fa       Preliminary  72,122      0.                        -                -                 ACGT
+                                        ./sample.fa       Final        72,122      0.                        -                -                 ACGT
+                                        ./sample.fa       Single       90,114      0.                        -                -                 ACGT
+                                        
+                                        (F,E);
+      
+
+Tree
+    Tree cost: 2.
+               Tree rearrangement cost: 0.
+                                        
+                                        
+                                        
+                                        root
+                                        Cost 0.
+                                        Rearrangement cost 0.
+                                        Children: F E
+                                                                                                                                                              
+                                        Characters        Class        Cost        Rearrangement Cost        Chrom Ref        Median Map        States
+                                        ./sample.fa       Preliminary  2.,2.       0.                        -                -                 A2CGT
+                                        ./sample.fa       Final        2.,2.       0.                        -                -                 A2CGT
+                                        ./sample.fa       Single       0.,0.       0.                        -                -                 ACCGT
+                                        
+                                        
+                                        
+                                        F
+                                        Cost 0.
+                                        Rearrangement cost 0.
+                                        Children:  
+                                                                                                                                                              
+                                        Characters        Class        Cost        Rearrangement Cost        Chrom Ref        Median Map        States
+                                        ./sample.fa       Preliminary  0,2         0.                        -                -                 ACCGT
+                                        ./sample.fa       Final        0,2         0.                        -                -                 ACCGT
+                                        ./sample.fa       Single       0,0         0.                        -                -                 ACCGT
+                                        
+                                        
+                                        
+                                        E
+                                        Cost 0.
+                                        Rearrangement cost 0.
+                                        Children:  
+                                                                                                                                                              
+                                        Characters        Class        Cost        Rearrangement Cost        Chrom Ref        Median Map        States
+                                        ./sample.fa       Preliminary  0,2         0.                        -                -                 ACGT
+                                        ./sample.fa       Final        0,2         0.                        -                -                 ACGT
+                                        ./sample.fa       Single       2,2         0.                        -                -                 ACGT
+                                        
+                                        (F,E);
+      
+
+Tree
+    Tree cost: 3.
+               Tree rearrangement cost: 0.
+                                        
+                                        
+                                        
+                                        root
+                                        Cost 0.
+                                        Rearrangement cost 0.
+                                        Children: F E
+                                                                                                                                                              
+                                        Characters        Class        Cost        Rearrangement Cost        Chrom Ref        Median Map        States
+                                        ./sample.fa       Preliminary  3.,3.       0.                        -                -                 1MCGT
+                                        ./sample.fa       Final        3.,3.       0.                        -                -                 1MCGT
+                                        ./sample.fa       Single       0.,0.       0.                        -                -                 ACCGT
+                                        
+                                        
+                                        
+                                        F
+                                        Cost 0.
+                                        Rearrangement cost 0.
+                                        Children:  
+                                                                                                                                                              
+                                        Characters        Class        Cost        Rearrangement Cost        Chrom Ref        Median Map        States
+                                        ./sample.fa       Preliminary  0,3         0.                        -                -                 ACCGT
+                                        ./sample.fa       Final        0,3         0.                        -                -                 ACCGT
+                                        ./sample.fa       Single       0,0         0.                        -                -                 ACCGT
+                                        
+                                        
+                                        
+                                        E
+                                        Cost 0.
+                                        Rearrangement cost 0.
+                                        Children:  
+                                                                                                                                                              
+                                        Characters        Class        Cost        Rearrangement Cost        Chrom Ref        Median Map        States
+                                        ./sample.fa       Preliminary  0,3         0.                        -                -                 ACGT
+                                        ./sample.fa       Final        0,3         0.                        -                -                 ACGT
+                                        ./sample.fa       Single       3,3         0.                        -                -                 ACGT
+                                        
+                                        (F,E);
+      
+
+Tree
+    Tree cost: 3.
+               Tree rearrangement cost: 0.
+                                        
+                                        
+                                        
+                                        root
+                                        Cost 0.
+                                        Rearrangement cost 0.
+                                        Children: F E
+                                                                                                                                                              
+                                        Characters        Class        Cost        Rearrangement Cost        Chrom Ref        Median Map        States
+                                        ./sample.fa       Preliminary  3.,3.       0.                        -                -                 1MCGT
+                                        ./sample.fa       Final        3.,3.       0.                        -                -                 1MCGT
+                                        ./sample.fa       Single       0.,0.       0.                        -                -                 ACCGT
+                                        
+                                        
+                                        
+                                        F
+                                        Cost 0.
+                                        Rearrangement cost 0.
+                                        Children:  
+                                                                                                                                                              
+                                        Characters        Class        Cost        Rearrangement Cost        Chrom Ref        Median Map        States
+                                        ./sample.fa       Preliminary  0,4         0.                        -                -                 ACCGT
+                                        ./sample.fa       Final        0,4         0.                        -                -                 ACCGT
+                                        ./sample.fa       Single       0,0         0.                        -                -                 ACCGT
+                                        
+                                        
+                                        
+                                        E
+                                        Cost 0.
+                                        Rearrangement cost 0.
+                                        Children:  
+                                                                                                                                                              
+                                        Characters        Class        Cost        Rearrangement Cost        Chrom Ref        Median Map        States
+                                        ./sample.fa       Preliminary  0,4         0.                        -                -                 ACGT
+                                        ./sample.fa       Final        0,4         0.                        -                -                 ACGT
+                                        ./sample.fa       Single       3,4         0.                        -                -                 ACGT
+                                        
+                                        (F,E);
+      
+
+Tree
+    Tree cost: 4.
+               Tree rearrangement cost: 0.
+                                        
+                                        
+                                        
+                                        root
+                                        Cost 0.
+                                        Rearrangement cost 0.
+                                        Children: E F
+                                                                                                                                                              
+                                        Characters        Class        Cost        Rearrangement Cost        Chrom Ref        Median Map        States
+                                        ./sample.fa       Preliminary  4.,4.       0.                        -                -                 A2CGT
+                                        ./sample.fa       Final        4.,4.       0.                        -                -                 A2CGT
+                                        ./sample.fa       Single       0.,0.       0.                        -                -                 ACGT
+                                        
+                                        
+                                        
+                                        E
+                                        Cost 0.
+                                        Rearrangement cost 0.
+                                        Children:  
+                                                                                                                                                              
+                                        Characters        Class        Cost        Rearrangement Cost        Chrom Ref        Median Map        States
+                                        ./sample.fa       Preliminary  0,5         0.                        -                -                 ACGT
+                                        ./sample.fa       Final        0,5         0.                        -                -                 ACGT
+                                        ./sample.fa       Single       0,0         0.                        -                -                 ACGT
+                                        
+                                        
+                                        
+                                        F
+                                        Cost 0.
+                                        Rearrangement cost 0.
+                                        Children:  
+                                                                                                                                                              
+                                        Characters        Class        Cost        Rearrangement Cost        Chrom Ref        Median Map        States
+                                        ./sample.fa       Preliminary  0,5         0.                        -                -                 ACCGT
+                                        ./sample.fa       Final        0,5         0.                        -                -                 ACCGT
+                                        ./sample.fa       Single       4,4         0.                        -                -                 ACCGT
+                                        
+                                        (F,E);
+      
+
+Tree
+    Tree cost: 0.
+               Tree rearrangement cost: 0.
+                                        
+                                        
+                                        
+                                        root
+                                        Cost 0.
+                                        Rearrangement cost 0.
+                                        Children: E F
+                                                                                                                                                              
+                                        Characters        Class        Cost        Rearrangement Cost        Chrom Ref        Median Map        States
+                                        ./sample.fa       Preliminary  0.,0.       0.                        -                -                 A2CGT
+                                        ./sample.fa       Final        0.,0.       0.                        -                -                 A2CGT
+                                        ./sample.fa       Single       0.,0.       0.                        -                -                 ACGT
+                                        
+                                        
+                                        
+                                        E
+                                        Cost 0.
+                                        Rearrangement cost 0.
+                                        Children:  
+                                                                                                                                                              
+                                        Characters        Class        Cost        Rearrangement Cost        Chrom Ref        Median Map        States
+                                        ./sample.fa       Preliminary  0,1         0.                        -                -                 ACGT
+                                        ./sample.fa       Final        0,1         0.                        -                -                 11CGT
+                                        ./sample.fa       Single       0,0         0.                        -                -                 ACGT
+                                        
+                                        
+                                        
+                                        F
+                                        Cost 0.
+                                        Rearrangement cost 0.
+                                        Children:  
+                                                                                                                                                              
+                                        Characters        Class        Cost        Rearrangement Cost        Chrom Ref        Median Map        States
+                                        ./sample.fa       Preliminary  0,0         0.                        -                -                 ACCGT
+                                        ./sample.fa       Final        0,0         0.                        -                -                 ACCGT
+                                        ./sample.fa       Single       0,0         0.                        -                -                 ACCGT
+                                        
+                                        (F,E);
+      
+
+Tree
+    Tree cost: 0.
+               Tree rearrangement cost: 0.
+                                        
+                                        
+                                        
+                                        root
+                                        Cost 0.
+                                        Rearrangement cost 0.
+                                        Children: F E
+                                                                                                                                                              
+                                        Characters        Class        Cost        Rearrangement Cost        Chrom Ref        Median Map        States
+                                        ./sample.fa       Preliminary  0.,0.       0.                        -                -                 A2CGT
+                                        ./sample.fa       Final        0.,0.       0.                        -                -                 A2CGT
+                                        ./sample.fa       Single       0.,0.       0.                        -                -                 ACCGT
+                                        
+                                        
+                                        
+                                        F
+                                        Cost 0.
+                                        Rearrangement cost 0.
+                                        Children:  
+                                                                                                                                                              
+                                        Characters        Class        Cost        Rearrangement Cost        Chrom Ref        Median Map        States
+                                        ./sample.fa       Preliminary  0,0         0.                        -                -                 ACCGT
+                                        ./sample.fa       Final        0,0         0.                        -                -                 ACCGT
+                                        ./sample.fa       Single       0,0         0.                        -                -                 ACCGT
+                                        
+                                        
+                                        
+                                        E
+                                        Cost 0.
+                                        Rearrangement cost 0.
+                                        Children:  
+                                                                                                                                                              
+                                        Characters        Class        Cost        Rearrangement Cost        Chrom Ref        Median Map        States
+                                        ./sample.fa       Preliminary  0,0         0.                        -                -                 ACGT
+                                        ./sample.fa       Final        0,0         0.                        -                -                 ACGT
+                                        ./sample.fa       Single       0,0         0.                        -                -                 ACGT
+                                        
+                                        (F,E);
+      
+
+Tree
+    Tree cost: 0.
+               Tree rearrangement cost: 0.
+                                        
+                                        
+                                        
+                                        root
+                                        Cost 0.
+                                        Rearrangement cost 0.
+                                        Children: F E
+                                                                                                                                                              
+                                        Characters        Class        Cost        Rearrangement Cost        Chrom Ref        Median Map        States
+                                        ./sample.fa       Preliminary  0.,0.       0.                        -                -                 A2CGT
+                                        ./sample.fa       Final        0.,0.       0.                        -                -                 A2CGT
+                                        ./sample.fa       Single       0.,0.       0.                        -                -                 ACCGT
+                                        
+                                        
+                                        
+                                        F
+                                        Cost 0.
+                                        Rearrangement cost 0.
+                                        Children:  
+                                                                                                                                                              
+                                        Characters        Class        Cost        Rearrangement Cost        Chrom Ref        Median Map        States
+                                        ./sample.fa       Preliminary  0,0         0.                        -                -                 ACCGT
+                                        ./sample.fa       Final        0,0         0.                        -                -                 ACCGT
+                                        ./sample.fa       Single       0,0         0.                        -                -                 ACCGT
+                                        
+                                        
+                                        
+                                        E
+                                        Cost 0.
+                                        Rearrangement cost 0.
+                                        Children:  
+                                                                                                                                                              
+                                        Characters        Class        Cost        Rearrangement Cost        Chrom Ref        Median Map        States
+                                        ./sample.fa       Preliminary  0,0         0.                        -                -                 ACGT
+                                        ./sample.fa       Final        0,0         0.                        -                -                 ACGT
+                                        ./sample.fa       Single       0,0         0.                        -                -                 ACGT
+                                        
+                                        (F,E);
+      
+
+Tree
+    Tree cost: 0.
+               Tree rearrangement cost: 0.
+                                        
+                                        
+                                        
+                                        root
+                                        Cost 0.
+                                        Rearrangement cost 0.
+                                        Children: F E
+                                                                                                                                                              
+                                        Characters        Class        Cost        Rearrangement Cost        Chrom Ref        Median Map        States
+                                        ./sample.fa       Preliminary  0.,0.       0.                        -                -                 A2CGT
+                                        ./sample.fa       Final        0.,0.       0.                        -                -                 A2CGT
+                                        ./sample.fa       Single       0.,0.       0.                        -                -                 ACCGT
+                                        
+                                        
+                                        
+                                        F
+                                        Cost 0.
+                                        Rearrangement cost 0.
+                                        Children:  
+                                                                                                                                                              
+                                        Characters        Class        Cost        Rearrangement Cost        Chrom Ref        Median Map        States
+                                        ./sample.fa       Preliminary  0,0         0.                        -                -                 ACCGT
+                                        ./sample.fa       Final        0,0         0.                        -                -                 ACCGT
+                                        ./sample.fa       Single       0,0         0.                        -                -                 ACCGT
+                                        
+                                        
+                                        
+                                        E
+                                        Cost 0.
+                                        Rearrangement cost 0.
+                                        Children:  
+                                                                                                                                                              
+                                        Characters        Class        Cost        Rearrangement Cost        Chrom Ref        Median Map        States
+                                        ./sample.fa       Preliminary  0,0         0.                        -                -                 ACGT
+                                        ./sample.fa       Final        0,0         0.                        -                -                 ACGT
+                                        ./sample.fa       Single       0,0         0.                        -                -                 ACGT
+                                        
+                                        (F,E);
+      
+
+Tree
+    Tree cost: 1.
+               Tree rearrangement cost: 0.
+                                        
+                                        
+                                        
+                                        root
+                                        Cost 0.
+                                        Rearrangement cost 0.
+                                        Children: F E
+                                                                                                                                                              
+                                        Characters        Class        Cost        Rearrangement Cost        Chrom Ref        Median Map        States
+                                        ./sample.fa       Preliminary  1.,1.       0.                        -                -                 ACS4T
+                                        ./sample.fa       Final        1.,1.       0.                        -                -                 ACS4T
+                                        ./sample.fa       Single       0.,0.       0.                        -                -                 ACCGT
+                                        
+                                        
+                                        
+                                        F
+                                        Cost 0.
+                                        Rearrangement cost 0.
+                                        Children:  
+                                                                                                                                                              
+                                        Characters        Class        Cost        Rearrangement Cost        Chrom Ref        Median Map        States
+                                        ./sample.fa       Preliminary  0,1         0.                        -                -                 ACCGT
+                                        ./sample.fa       Final        0,1         0.                        -                -                 ACCGT
+                                        ./sample.fa       Single       0,0         0.                        -                -                 ACCGT
+                                        
+                                        
+                                        
+                                        E
+                                        Cost 0.
+                                        Rearrangement cost 0.
+                                        Children:  
+                                                                                                                                                              
+                                        Characters        Class        Cost        Rearrangement Cost        Chrom Ref        Median Map        States
+                                        ./sample.fa       Preliminary  0,2         0.                        -                -                 ACGT
+                                        ./sample.fa       Final        0,2         0.                        -                -                 AC6GT
+                                        ./sample.fa       Single       1,1         0.                        -                -                 ACGT
+                                        
+                                        (F,E);
+      
+
+Tree
+    Tree cost: 1.
+               Tree rearrangement cost: 0.
+                                        
+                                        
+                                        
+                                        root
+                                        Cost 0.
+                                        Rearrangement cost 0.
+                                        Children: E F
+                                                                                                                                                              
+                                        Characters        Class        Cost        Rearrangement Cost        Chrom Ref        Median Map        States
+                                        ./sample.fa       Preliminary  1.,1.       0.                        -                -                 ACS4T
+                                        ./sample.fa       Final        1.,1.       0.                        -                -                 ACS4T
+                                        ./sample.fa       Single       0.,0.       0.                        -                -                 ACGT
+                                        
+                                        
+                                        
+                                        E
+                                        Cost 0.
+                                        Rearrangement cost 0.
+                                        Children:  
+                                                                                                                                                              
+                                        Characters        Class        Cost        Rearrangement Cost        Chrom Ref        Median Map        States
+                                        ./sample.fa       Preliminary  0,2         0.                        -                -                 ACGT
+                                        ./sample.fa       Final        0,2         0.                        -                -                 AC6GT
+                                        ./sample.fa       Single       0,0         0.                        -                -                 ACGT
+                                        
+                                        
+                                        
+                                        F
+                                        Cost 0.
+                                        Rearrangement cost 0.
+                                        Children:  
+                                                                                                                                                              
+                                        Characters        Class        Cost        Rearrangement Cost        Chrom Ref        Median Map        States
+                                        ./sample.fa       Preliminary  0,1         0.                        -                -                 ACCGT
+                                        ./sample.fa       Final        0,1         0.                        -                -                 ACCGT
+                                        ./sample.fa       Single       1,1         0.                        -                -                 ACCGT
+                                        
+                                        (F,E);
+      
+
+Tree
+    Tree cost: 1.
+               Tree rearrangement cost: 0.
+                                        
+                                        
+                                        
+                                        root
+                                        Cost 0.
+                                        Rearrangement cost 0.
+                                        Children: F E
+                                                                                                                                                              
+                                        Characters        Class        Cost        Rearrangement Cost        Chrom Ref        Median Map        States
+                                        ./sample.fa       Preliminary  1.,1.       0.                        -                -                 ACS4T
+                                        ./sample.fa       Final        1.,1.       0.                        -                -                 ACS4T
+                                        ./sample.fa       Single       0.,0.       0.                        -                -                 ACCGT
+                                        
+                                        
+                                        
+                                        F
+                                        Cost 0.
+                                        Rearrangement cost 0.
+                                        Children:  
+                                                                                                                                                              
+                                        Characters        Class        Cost        Rearrangement Cost        Chrom Ref        Median Map        States
+                                        ./sample.fa       Preliminary  0,1         0.                        -                -                 ACCGT
+                                        ./sample.fa       Final        0,1         0.                        -                -                 ACCGT
+                                        ./sample.fa       Single       0,0         0.                        -                -                 ACCGT
+                                        
+                                        
+                                        
+                                        E
+                                        Cost 0.
+                                        Rearrangement cost 0.
+                                        Children:  
+                                                                                                                                                              
+                                        Characters        Class        Cost        Rearrangement Cost        Chrom Ref        Median Map        States
+                                        ./sample.fa       Preliminary  0,2         0.                        -                -                 ACGT
+                                        ./sample.fa       Final        0,2         0.                        -                -                 AC6GT
+                                        ./sample.fa       Single       1,1         0.                        -                -                 ACGT
+                                        
+                                        (F,E);
+      
+
+Tree
+    Tree cost: 1.
+               Tree rearrangement cost: 0.
+                                        
+                                        
+                                        
+                                        root
+                                        Cost 0.
+                                        Rearrangement cost 0.
+                                        Children: F E
+                                                                                                                                                              
+                                        Characters        Class        Cost        Rearrangement Cost        Chrom Ref        Median Map        States
+                                        ./sample.fa       Preliminary  1.,1.       0.                        -                -                 ACS4T
+                                        ./sample.fa       Final        1.,1.       0.                        -                -                 ACS4T
+                                        ./sample.fa       Single       0.,0.       0.                        -                -                 ACCGT
+                                        
+                                        
+                                        
+                                        F
+                                        Cost 0.
+                                        Rearrangement cost 0.
+                                        Children:  
+                                                                                                                                                              
+                                        Characters        Class        Cost        Rearrangement Cost        Chrom Ref        Median Map        States
+                                        ./sample.fa       Preliminary  0,1         0.                        -                -                 ACCGT
+                                        ./sample.fa       Final        0,1         0.                        -                -                 ACCGT
+                                        ./sample.fa       Single       0,0         0.                        -                -                 ACCGT
+                                        
+                                        
+                                        
+                                        E
+                                        Cost 0.
+                                        Rearrangement cost 0.
+                                        Children:  
+                                                                                                                                                              
+                                        Characters        Class        Cost        Rearrangement Cost        Chrom Ref        Median Map        States
+                                        ./sample.fa       Preliminary  0,2         0.                        -                -                 ACGT
+                                        ./sample.fa       Final        0,2         0.                        -                -                 AC6GT
+                                        ./sample.fa       Single       1,1         0.                        -                -                 ACGT
+                                        
+                                        (F,E);
+      
+
+Tree
+    Tree cost: 1.
+               Tree rearrangement cost: 0.
+                                        
+                                        
+                                        
+                                        root
+                                        Cost 0.
+                                        Rearrangement cost 0.
+                                        Children: E F
+                                                                                                                                                              
+                                        Characters        Class        Cost        Rearrangement Cost        Chrom Ref        Median Map        States
+                                        ./sample.fa       Preliminary  1.,1.       0.                        -                -                 ACS4T
+                                        ./sample.fa       Final        1.,1.       0.                        -                -                 ACS4T
+                                        ./sample.fa       Single       0.,0.       0.                        -                -                 ACGT
+                                        
+                                        
+                                        
+                                        E
+                                        Cost 0.
+                                        Rearrangement cost 0.
+                                        Children:  
+                                                                                                                                                              
+                                        Characters        Class        Cost        Rearrangement Cost        Chrom Ref        Median Map        States
+                                        ./sample.fa       Preliminary  0,2         0.                        -                -                 ACGT
+                                        ./sample.fa       Final        0,2         0.                        -                -                 AC6GT
+                                        ./sample.fa       Single       0,0         0.                        -                -                 ACGT
+                                        
+                                        
+                                        
+                                        F
+                                        Cost 0.
+                                        Rearrangement cost 0.
+                                        Children:  
+                                                                                                                                                              
+                                        Characters        Class        Cost        Rearrangement Cost        Chrom Ref        Median Map        States
+                                        ./sample.fa       Preliminary  0,1         0.                        -                -                 ACCGT
+                                        ./sample.fa       Final        0,1         0.                        -                -                 ACCGT
+                                        ./sample.fa       Single       1,1         0.                        -                -                 ACCGT
+                                        
+                                        (F,E);
+      
+
+Tree
+    Tree cost: 1.
+               Tree rearrangement cost: 0.
+                                        
+                                        
+                                        
+                                        root
+                                        Cost 0.
+                                        Rearrangement cost 0.
+                                        Children: E F
+                                                                                                                                                              
+                                        Characters        Class        Cost        Rearrangement Cost        Chrom Ref        Median Map        States
+                                        ./sample.fa       Preliminary  1.,1.       0.                        -                -                 ACS4T
+                                        ./sample.fa       Final        1.,1.       0.                        -                -                 ACS4T
+                                        ./sample.fa       Single       0.,0.       0.                        -                -                 ACGT
+                                        
+                                        
+                                        
+                                        E
+                                        Cost 0.
+                                        Rearrangement cost 0.
+                                        Children:  
+                                                                                                                                                              
+                                        Characters        Class        Cost        Rearrangement Cost        Chrom Ref        Median Map        States
+                                        ./sample.fa       Preliminary  0,4         0.                        -                -                 ACGT
+                                        ./sample.fa       Final        0,4         0.                        -                -                 AC4GT
+                                        ./sample.fa       Single       0,0         0.                        -                -                 ACGT
+                                        
+                                        
+                                        
+                                        F
+                                        Cost 0.
+                                        Rearrangement cost 0.
+                                        Children:  
+                                                                                                                                                              
+                                        Characters        Class        Cost        Rearrangement Cost        Chrom Ref        Median Map        States
+                                        ./sample.fa       Preliminary  0,3         0.                        -                -                 ACCGT
+                                        ./sample.fa       Final        0,3         0.                        -                -                 ACCGT
+                                        ./sample.fa       Single       1,1         0.                        -                -                 ACCGT
+                                        
+                                        

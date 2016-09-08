@@ -23,7 +23,7 @@
 
 #define DEBUG 1
 #define CM_H 1
-#define Cost_matrix_struct(a) ((struct cm *) Data_custom_val(a))
+#define Cost_matrix_struct(a) ((struct cost_matrices *) Data_custom_val(a))
 #define Cost_matrix_struct_3d(a) ((struct cm_3d *) Data_custom_val(a))
 #include "matrices.h"
 #include "seq.h"
@@ -32,7 +32,7 @@
  * Check cm_3d for further information. This is the corresponding data
  * structure for two dimensional sequence alignment. 
  */
-struct cm {
+struct cost_matrices {
     int alphSize;        // alphabet size, including ambiguities if cominations == True
     int lcm;             // ceiling of log_2 (alphSize)
     int gap;             // gap value (1 << alphSize + 1)
@@ -63,17 +63,24 @@ struct cm {
                           */
     int *worst;          /** The transformation cost matrix, including ambiguities, 
                           *  storing the **worst** cost for each ambiguity pair
+                          *  Missing in 3d
                           */
-    int *prepend_cost;   /* Missing in 3d */
-    int *tail_cost;      /* Missing in 3d */
+    int *prepend_cost;   /** The cost of going from gap -> each base. For ambiguities, use best cost.
+                          *  Set up as all_elements x all_elements
+                          *  matrix, but seemingly only first row is used. Missing in 3d 
+                          */
+    int *tail_cost;      /** As prepend_cost, but with reverse directionality, so base -> gap. 
+                          *  As with prepend_cost, seems to be allocated as too large. 
+                          *  Missing in 3d 
+                          */
 };
 
 /*
- * A pointer to the cm structure.
+ * A pointer to the cost_matrices structure.
  */
-typedef struct cm * cmt;
+typedef struct cost_matrices * cost_matrices_p;
 
-void cm_print (cmt c);
+void cm_print (cost_matrices_p c);
 
 void cm_print_matrix (int* m, int w, int h);
 
@@ -85,23 +92,23 @@ void cm_print_matrix (int* m, int w, int h);
  * stored in do_aff, gap_open, in the cost matrix res. 
  * In case of error the function fails with the message "Memory error.".
  */
-cmt cm_set_val (int alphSize, int combinations, int do_aff, int gap_open, \
-        int is_metric, int all_elements, cmt res);
+cost_matrices_p cm_set_val (int alphSize, int combinations, int do_aff, int gap_open, \
+        int is_metric, int all_elements, cost_matrices_p res);
 
  void
-cm_set_cost (int a, int b, int v, cmt c);
+cm_set_cost (int a, int b, int v, cost_matrices_p c);
 
 /* 
  * Retrieves the alphabet size flag from the transformation cost matrix.
  */
 inline int 
-cm_get_alphabet_size (cmt c);
+cm_get_alphabet_size (cost_matrices_p c);
 
 /*
  * Retrieves the gap code as defined in the transformation cost matrix. 
  */
 SEQT
-cm_get_gap (const cmt c);
+cm_get_gap (const cost_matrices_p c);
 
 /*
  * Retrieves a pointer to the memory position stored in the precalculated array
@@ -129,7 +136,7 @@ cm_get_row_precalc_3d (const int *to, int s3l, int alphSize, int s1c, int s2c);
  * flag is 1 if true, otherwise 0. 
  */
 int
-cm_get_affine_flag (cmt c);
+cm_get_affine_flag (cost_matrices_p c);
 
 /*
  * Gets the total number of possible combinations of an alphabeet of size
@@ -154,7 +161,7 @@ cm_calc_median_position (SEQT a, SEQT b, int alphSize);
  * according to the transformation cost matrix hold in t.
  */
 SEQT
-cm_get_median (const cmt t, SEQT a, SEQT b);
+cm_get_median (const cost_matrices_p t, SEQT a, SEQT b);
 
 /*
  * Retrieves the transformation cost of the elements a and b as stored in the
@@ -170,13 +177,13 @@ cm_calc_cost (int *tcm, SEQT a, SEQT b, int alphSize);
  * function retrieves the actual starting position.
  */
 static inline int *
-cm_get_transformation_cost_matrix (const cmt a);
+cm_get_transformation_cost_matrix (const cost_matrices_p a);
 
 int *
-cm_get_tail_cost (const cmt a);
+cm_get_tail_cost (const cost_matrices_p a);
 
 static inline int *
-cm_get_prepend_cost (const cmt a);
+cm_get_prepend_cost (const cost_matrices_p a);
 
 /*
  * Gets the row in the transformation cost matrix tcm where the transformations
@@ -188,7 +195,7 @@ cm_get_row (int *tcm, SEQT a, int alphSize);
 
 /* set the value of c->worst at location (a,b) to v */
 void
-cm_set_worst (int a, int b, int v, cmt c);
+cm_set_worst (int a, int b, int v, cost_matrices_p c);
 
 /* 
  * Fills a precalculated matrix with the cost of comparing each elment in the
@@ -201,7 +208,7 @@ cm_set_worst (int a, int b, int v, cmt c);
  * This function is only valid for two dimensional alignments.
  */
 void
-cm_precalc_4algn (const cmt costMtx, matricest toOutput, const seqt s);
+cm_precalc_4algn (const cost_matrices_p costMtx, nw_matrices_p toOutput, const seq_p s);
 
 /* 
  * Gets the precalculated row for a particular character in the alphabet.
@@ -306,23 +313,36 @@ cm_get_row_3d (int *tcm, SEQT a, SEQT b, int alphSize);
  * corresponding function for three dimensional alignments.
  */
 void
-cm_precalc_4algn_3d (const cm_3dt c, int *to_output, const seqt s);
+cm_precalc_4algn_3d (const cm_3dt c, int *to_output, const seq_p s);
 
 /*
  * Deallocates the memory structure iff there are no more pointers to it,
  * otherwise it will just decrease the garbage collection counter. 
  */
 inline void
-cm_free (cmt c);
+cm_free (cost_matrices_p c);
 
 int
-cm_get_gap_opening_parameter (cmt c);
+cm_get_gap_opening_parameter (cost_matrices_p c);
 
 int
-cm_get_cost (int a, int b, cmt c);
+cm_get_cost (int a, int b, cost_matrices_p c);
 
 int
 cm_get_value (int a, int b, int *p, int alphSize);
+
+void
+cm_set_prepend (int a, int b, cost_matrices_p c);
+
+void
+cm_set_tail (int a, int b, cost_matrices_p c);
+
+void
+cm_set_median (SEQT a, SEQT b, SEQT v, cost_matrices_p c);
+
+void
+cm_print_median (SEQT* m, int w, int h);
+
 
 #endif /* CM_H */
 

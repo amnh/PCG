@@ -22,7 +22,7 @@
 // #include "array_pool.h" ARRAY_POOL_DELETE
 #include "seq.h"
 
-void print_seq(seqt inSeq, int num) {
+void seq_print(seq_p inSeq, int num) {
     SEQT * start = seq_get_begin(inSeq);
     SEQT * end   = seq_get_end(inSeq);
     printf("Seq num: %d\n", num);
@@ -33,27 +33,27 @@ void print_seq(seqt inSeq, int num) {
 }
 
 int
-seq_get_cap (const seqt a) {
+seq_get_cap (const seq_p a) {
     return a->cap;
 }
 
  int
-seq_get_len (const seqt a) {
+seq_get_len (const seq_p a) {
     return a->len;
 }
 
  SEQT *
-seq_get_begin (const seqt a) {
+seq_get_begin (const seq_p a) {
     return (a->begin);
 }
 
  SEQT *
-seq_get_head (const seqt a) {
+seq_get_head (const seq_p a) {
     return (a->head);
 }
 
  SEQT *
-seq_get_end (const seqt a) {
+seq_get_end (const seq_p a) {
     return (a->end);
 }
 
@@ -63,21 +63,21 @@ seq_begin (int cap, int len) {
 }
 
 static inline SEQT *
-seq_get_ptr (const seqt a, int p) {
+seq_get_ptr (const seq_p a, int p) {
     // assert (p < a->len);  // removed these because it's always checked in
     // assert (p >= 0);      // calling fns.
     return (a->begin + p);
 }
     
 SEQT 
-seq_get (const seqt a, int p) {
+seq_get (const seq_p a, int p) {
     assert (p < a->len);
     assert (p >= 0);
     return (*(seq_get_ptr (a, p)));
 }
 
 void
-seq_set (seqt a, int p, SEQT v) {
+seq_set (seq_p a, int p, SEQT v) {
     SEQT *tmp;
     if (a->len == 0) {
         assert (p == 0);
@@ -93,7 +93,7 @@ seq_set (seqt a, int p, SEQT v) {
 }
 
 inline void
-seq_reverse_ip (seqt cs) { 
+seq_reverse_ip (seq_p cs) { 
     SEQT *a, *b, tmp;
     a = seq_get_begin (cs);
     b = seq_get_end (cs);
@@ -108,7 +108,7 @@ seq_reverse_ip (seqt cs) {
 }
 
 void
-seq_prepend (seqt a, SEQT v) {
+seq_prepend (seq_p a, SEQT v) {
     assert(a->cap > a->len);
     a->begin = a->begin - 1;
     *(a->begin) = v;
@@ -117,7 +117,7 @@ seq_prepend (seqt a, SEQT v) {
 }
 
 inline void
-seq_reverse (seqt src, seqt tgt) {
+seq_reverse (seq_p src, seq_p tgt) {
     SEQT *a, *b, *c;
     int i;
     tgt->len = src->len;
@@ -131,7 +131,7 @@ seq_reverse (seqt src, seqt tgt) {
 }
 
 void
-seq_clear (seqt s) {
+seq_clear (seq_p s) {
     s->len = 0;
     s->begin = s->end + 1;
     return;
@@ -141,7 +141,7 @@ seq_clear (seqt s) {
 value
 seq_CAML_clear (value s) {
     CAMLparam1(s);
-    seqt cs;
+    seq_p cs;
     Seq_custom_val(cs,s);
     seq_clear (cs);
     CAMLreturn(Val_unit);
@@ -149,7 +149,7 @@ seq_CAML_clear (value s) {
     
 void
 seq_CAML_free_seq (value v) {
-    seqt s;
+    seq_p s;
     Seq_custom_val(s,v);
     if (NULL == s->my_pool) 
         free (s->head);
@@ -161,7 +161,7 @@ seq_CAML_free_seq (value v) {
 */
 
 inline int
-seq_compare (seqt a, seqt b) {
+seq_compare (seq_p a, seq_p b) {
     int i;
     int la, lb;
     SEQT ca, cb;
@@ -236,7 +236,7 @@ seq_fix_randomly (struct seq *t) {
 value
 seq_CAML_get_cap (value s) {
     CAMLparam1(s);
-    seqt tmp;
+    seq_p tmp;
     Seq_custom_val(tmp,s);
     CAMLreturn(Val_int(tmp->cap));
 }
@@ -244,7 +244,7 @@ seq_CAML_get_cap (value s) {
 value 
 seq_CAML_length (value v) {
     CAMLparam1(v);
-    seqt tmp;
+    seq_p tmp;
     Seq_custom_val(tmp,v);
     CAMLreturn(Val_int(seq_get_len(tmp)));
 }
@@ -252,7 +252,7 @@ seq_CAML_length (value v) {
 int
 seq_CAML_compare (value a, value b) {
     int cmp;
-    seqt ap, bp;
+    seq_p ap, bp;
     Seq_custom_val(ap,a);
     Seq_custom_val(bp,b);
     cmp = seq_compare (ap, bp);
@@ -261,10 +261,10 @@ seq_CAML_compare (value a, value b) {
 
 unsigned long
 seq_CAML_deserialize (void *v) {
-    seqt n;
+    seq_p n;
     SEQT *head;
-    n = (seqt) v;
-    head = (SEQT *) ((seqt) n + 1);
+    n = (seq_p) v;
+    head = (SEQT *) ((seq_p) n + 1);
     n->cap = deserialize_sint_4();
     n->len = deserialize_sint_4();
     n->magic_number = deserialize_sint_4();
@@ -281,7 +281,7 @@ seq_CAML_deserialize (void *v) {
 void
 seq_CAML_serialize (value vo, unsigned long *wsize_32, unsigned long *wsize_64) 
 {
-    seqt v;
+    seq_p v;
     SEQT *tmp;
     Seq_custom_val(v,vo);
     serialize_int_4(v->len);
@@ -296,7 +296,7 @@ seq_CAML_serialize (value vo, unsigned long *wsize_32, unsigned long *wsize_64)
 long
 seq_CAML_hash (value v) {
     long x = 0;
-    seqt s;
+    seq_p s;
     int i;
     Seq_custom_val(s,v);
     for (i = (seq_get_len(s)) - 1; i >= 0; i--) {
@@ -322,7 +322,7 @@ value
 seq_CAML_create (value cap) {
     CAMLparam1(cap);
     CAMLlocal1(res);
-    seqt tmp2;
+    seq_p tmp2;
     int len;
     size_t s;
     len = Int_val(cap);
@@ -343,7 +343,7 @@ seq_CAML_create (value cap) {
     tmp2->magic_number = POY_SEQ_MAGIC_NUMBER;
     tmp2->cap = len;
     tmp2->len = 0;
-    tmp2->head = (SEQT *) ((seqt) (tmp2 + 1));
+    tmp2->head = (SEQT *) ((seq_p) (tmp2 + 1));
     tmp2->my_pool = NULL;
     if (tmp2->head == NULL) failwith ("Memory error.");
     tmp2->end = tmp2->begin = tmp2->head + len - 1;
@@ -357,8 +357,8 @@ seq_CAML_create (value cap) {
 //     CAMLparam2(other_seq, cap);
     /*
     CAMLlocal1(res);
-    seqt tmp2;
-    seqt *tmp3, tmp_p;
+    seq_p tmp2;
+    seq_p *tmp3, tmp_p;
     struct pool *p;
     int len;
     size_t s;
@@ -397,8 +397,8 @@ seq_CAML_create (value cap) {
 //     CAMLparam2(pl, cap);
     /*
     CAMLlocal1(res);
-    seqt tmp2;
-    seqt *tmp3;
+    seq_p tmp2;
+    seq_p *tmp3;
     struct pool *p;
     int len;
     size_t s;
@@ -431,7 +431,7 @@ seq_CAML_create (value cap) {
 value
 seq_CAML_get (value s, value p) {
     CAMLparam2(s, p);
-    seqt cs;
+    seq_p cs;
     int cp;
     Seq_custom_val(cs,s);
     cp = Int_val(p);
@@ -441,7 +441,7 @@ seq_CAML_get (value s, value p) {
 value
 seq_CAML_set (value s, value p, value v) {
     CAMLparam3(s, p, v);
-    seqt cs;
+    seq_p cs;
     int cp, cv;
     Seq_custom_val(cs,s);
     cp = Int_val(p);
@@ -453,7 +453,7 @@ seq_CAML_set (value s, value p, value v) {
 value 
 seq_CAML_copy (value from, value to) {
     CAMLparam2(from, to);
-    seqt cto, cfrom;
+    seq_p cto, cfrom;
     int i;
     Seq_custom_val(cto,to);
     Seq_custom_val(cfrom,from);
@@ -468,7 +468,7 @@ seq_CAML_copy (value from, value to) {
 value
 seq_CAML_reverse_ip (value s) {
     CAMLparam1(s);
-    seqt cs;
+    seq_p cs;
     Seq_custom_val(cs,s);
     seq_reverse_ip (cs);
     CAMLreturn(Val_unit);
@@ -477,7 +477,7 @@ seq_CAML_reverse_ip (value s) {
 value 
 seq_CAML_reverse (value src, value tgt) {
     CAMLparam2(src, tgt);
-    seqt csrc, ctgt;
+    seq_p csrc, ctgt;
     Seq_custom_val(csrc,src);
     Seq_custom_val(ctgt,tgt);
     seq_reverse (csrc, ctgt);
@@ -487,7 +487,7 @@ seq_CAML_reverse (value src, value tgt) {
 value
 seq_CAML_prepend (value s, value v) {
     CAMLparam2(s, v);
-    seqt tmp;
+    seq_p tmp;
     Seq_custom_val(tmp,s);
     seq_prepend (tmp, Int_val(v));
     CAMLreturn(Val_unit);
@@ -510,7 +510,7 @@ seq_CAML_fix_randomly (value tgt) {
 
 // void    ARRAY_POOL_DELETE
 // seq_pool_free (void *item) {
-//     seqt s;
+//     seq_p s;
 //     s = (struct seq *) item;
 //     s->my_pool = NULL;
 // }
@@ -519,7 +519,7 @@ seq_CAML_fix_randomly (value tgt) {
 value 
 seq_CAML_assign_pool (value s, value p) {
     CAMLparam2(s, p);
-    seqt sc;
+    seq_p sc;
     Seq_custom_val(sc,s);
     //sc->my_pool = Pool_custom_val(p);
     sc->my_pool = NULL;
@@ -530,7 +530,7 @@ seq_CAML_assign_pool (value s, value p) {
 value
 seq_CAML_count (value gap, value seq) {
     CAMLparam2(gap, seq);
-    seqt sc;
+    seq_p sc;
     int i, cnt = 0;
     SEQT cgap;
     Seq_custom_val (sc,seq);
@@ -544,7 +544,7 @@ value
 seq_CAML_encoding (value enc, value seq) {
     CAMLparam2(enc, seq);
     CAMLlocal1(resc);
-    seqt sc;
+    seq_p sc;
     double *ec, res = 0.0, cost;
     int i;
     SEQT base;

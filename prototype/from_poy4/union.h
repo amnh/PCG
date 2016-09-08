@@ -27,7 +27,7 @@
 #endif
 
 struct unionoff {
-    seqt s;         /* A pointer to the sequence that holds the union */
+    seq_p s;         /* A pointer to the sequence that holds the union */
     UNION_OFFT *offsets;   /* A pointer to the array of offsets */
     UNION_OFFT *begin;     /* The current position where the sequence starts */
     UNION_OFFT *end;       /* The end of the offset array. This is after the 
@@ -48,4 +48,4 @@ void
 union_prepend_counter (unionofft u);
 
 void
-union_merge (seqt a, seqt b, seqt median, unionofft au, unionofft bu, unionofft c, cmt m);
+union_merge (seq_p a, seq_p b, seq_p median, unionofft au, unionofft bu, unionofft c, cost_matrices_p m);

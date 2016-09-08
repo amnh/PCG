@@ -97,8 +97,8 @@ union_move_left (unionofft a) {
 }
 
 void
-union_merge (seqt a, seqt b, seqt median, unionofft au, \
-        unionofft bu, unionofft c, cmt m) {
+union_merge (seq_p a, seq_p b, seq_p median, unionofft au, \
+        unionofft bu, unionofft c, cost_matrices_p m) {
     UNION_OFFT items_prepended = 0, i, gap, lena, interm, apos, bpos;
     SEQT *begina, *beginb, *beginm;
     lena = seq_get_len (a);
@@ -163,7 +163,7 @@ union_merge (seqt a, seqt b, seqt median, unionofft au, \
 
 /*
 void
-union_CAML_produce (unionofft u, seqt s, UNION_OFFT *off, UNION_OFFT *begin, \
+union_CAML_produce (unionofft u, seq_p s, UNION_OFFT *off, UNION_OFFT *begin, \
         UNION_OFFT *ca_offsets, UNION_OFFT *cb_offsets, UNION_OFFT length) {
     u->s = s;
     u->offsets = off;
@@ -186,7 +186,7 @@ union_CAML_produce (unionofft u, seqt s, UNION_OFFT *off, UNION_OFFT *begin, \
 void
 union_CAML_unwrap (value a, unionofft u) {
     UNION_OFFT *offset, length, capacity, *ca_offsets, *cb_offsets;
-    seqt s;
+    seq_p s;
     Seq_custom_val(s, (Field (a, 0))); // The sequence 
     offset = (UNION_OFFT *) Data_bigarray_val(Field(a, 1));
     length = seq_get_len (s);
@@ -210,8 +210,8 @@ union_CAML_make (value s1, value s2, value smedian, value a, value b, \
     CAMLparam5 (s1, s2, a, b, c);
     CAMLxparam2 (smedian, cm);
     struct unionoff ua, ub, uc;
-    seqt ss1, ss2, ssmedian;
-    cmt cmc;
+    seq_p ss1, ss2, ssmedian;
+    cost_matrices_p cmc;
     cmc = Cost_matrix_struct(cm);
     union_CAML_unwrap (a, &ua);
     union_CAML_unwrap (b, &ub);
