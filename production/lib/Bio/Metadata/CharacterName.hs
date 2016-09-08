@@ -28,6 +28,7 @@ data CharacterName
    | Default     FilePath Int
    deriving (Eq)
 
+-- A custom 'Show' instance for more legible rendering of lists
 instance Show CharacterName where
   show (UserDefined _ name) = name
   show (Default path index) = path <> ":" <> show index
@@ -35,7 +36,8 @@ instance Show CharacterName where
   showList = showListWith f
     where
       f x = showString $ "\"" <> show x <> "\""
- 
+
+-- Ordering biases user defined names with a file path prefix before defaulted names with the same prefix.
 instance Ord CharacterName where
   lhs@Default{} `compare` rhs@UserDefined{} =
     case rhs `compare` lhs of
@@ -110,14 +112,15 @@ sourceFile (Default     x _) = x
 -- >>> makeDefaultCharacterNameRange ("virus.exe", Just "a:")
 -- ["a:"]
 --
--- >>> makeDefaultCharacterNameRange ("virus.exe", Just "!:%a")
--- ["!:%a"]
+-- >>> makeDefaultCharacterNameRange ("virus.exe", Just "%#:!")
+-- ["%#:!"]
 --
 -- >>> makeCharacterNames [("foo.txt", Nothing), ("foo.tx", Just ""), ("foo.tx", Nothing)]
 -- ["foo.txt:0","foo.txt:1","foo.txt:2"]
 -- 
 makeCharacterNames :: (Foldable f, Functor f,) => f (FilePath, Maybe String) => f CharacterName
 makeCharacterNames xs = undefined
+
 {-
 -- | Constructor for a 'CharacterName' that has been specified explicitly by user input.
 makeUserDefinedCharacterName :: FilePath -> String -> CharacterName
