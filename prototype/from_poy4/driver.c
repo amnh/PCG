@@ -45,8 +45,10 @@ int main() {
 */
     SEQT s1[20] = {16,3,8,5,6,8};
     SEQT s2[20] = {16,8,8,5,7};
+    SEQT s3[20] = {16,2,4,4};
     SEQT *ret_s1 = calloc(20, sizeof(SEQT));
     SEQT *ret_s2 = calloc(20, sizeof(SEQT));
+    SEQT *ret_s3 = calloc(20, sizeof(SEQT));
 
 
     seq1->magic_number = 0; // This was only used in OCaml code
@@ -55,13 +57,6 @@ int main() {
     seq1->head         = s1;
     seq1->begin        = seq1->head; // because the beginning is at the head at first
     seq1->end          = seq1->begin + seq1->len;
- 
-    seq2->magic_number = 1; // came from OCaml
-    seq2->cap          = 20;
-    seq2->len          = 5;
-    seq2->head         = s2;
-    seq2->begin        = seq2->head; // because the beginning is at the head at first
-    seq2->end          = seq2->begin + seq2->len;
 
     retSeq1->magic_number = 0; // This was only used in OCaml code
     retSeq1->cap          = 20; // capacity
@@ -69,6 +64,27 @@ int main() {
     retSeq1->head         = ret_s1;
     retSeq1->begin        = retSeq1->head; // because the beginning is at the head at first
     retSeq1->end          = retSeq1->begin + retSeq1->len;
+
+    seq2->magic_number = 1; // came from OCaml
+    seq2->cap          = 20;
+    seq2->len          = 5;
+    seq2->head         = s2;
+    seq2->begin        = seq2->head; // because the beginning is at the head at first
+    seq2->end          = seq2->begin + seq2->len;
+    
+    retSeq2->magic_number = 1; // came from OCaml
+    retSeq2->cap          = 20;
+    retSeq2->len          = 0;
+    retSeq2->head         = ret_s2;
+    retSeq2->begin        = retSeq2->head; // because the beginning is at the head at first
+    retSeq2->end          = retSeq2->begin + retSeq2->len;
+
+    seq2->magic_number = 1; // came from OCaml
+    seq2->cap          = 20;
+    seq2->len          = 5;
+    seq2->head         = s2;
+    seq2->begin        = seq2->head; // because the beginning is at the head at first
+    seq2->end          = seq2->begin + seq2->len;
     
     retSeq2->magic_number = 1; // came from OCaml
     retSeq2->cap          = 20;

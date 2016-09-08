@@ -77,10 +77,10 @@ data CharDataType = DirectOptimization | Fitch | InfoTheoretic | Unknown derivin
 -- AffineCost stores a gap opening, gap continuing, and substitution cost
 -- GeneralCost just stores an indelCost and a subCost
 data CostStructure = TCM CostMatrix
-                   | GeneralCost { indelCost :: Int, subCost :: Int } deriving (Eq, Show)
+                   | GeneralCost { indelCost :: Double, subCost :: Double } deriving (Eq, Show) -- TODO: should be Ints, not Doubles
 
 -- | A cost matrix is just a matrix of floats
-type CostMatrix = Matrix Int
+type CostMatrix = Matrix Double    -- TODO: Should be Int, not Double.
 
 -- TODO: replace these calls with lenses
 -- | Prepends a 'String' to the existing character name.
