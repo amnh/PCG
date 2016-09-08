@@ -50,6 +50,7 @@ library
                      , memoize              -any
                      , parallel             -any
                      , QuickCheck           -any
+                     , quickcheck-properties -any
                      , safe                 -any
                      , scientific           -any
                      , semigroups           -any
@@ -97,9 +98,8 @@ library
       
   -- Modules exported by the library.
   exposed-modules:
-                       Analysis.ImpliedAlignment.Internal
+                       Analysis.ImpliedAlignment
                        Analysis.ImpliedAlignment.Standard
-                       Analysis.ImpliedAlignment.DynamicProgramming
                        Analysis.Parsimony.Binary.DirectOptimization
                        Analysis.Parsimony.Binary.Fitch
                        Analysis.Parsimony.Binary.Internal
@@ -149,8 +149,10 @@ library
   -- Modules included in this library but not exported.
   other-modules:       Analysis.ImpliedAlignment.AlignmentContext
                        Analysis.ImpliedAlignment.DeletionEvents
+                       Analysis.ImpliedAlignment.DynamicProgramming
                        Analysis.ImpliedAlignment.InsertionEvents
                        Analysis.ImpliedAlignment.InsertionEvents.Internal
+                       Analysis.ImpliedAlignment.Internal
                        Analysis.Parsimony.Binary.DirectOptimization.Internal
                        Analysis.Parsimony.Binary.SequentialAlign.FFI
                        Analysis.Parsimony.Binary.Constraints
@@ -455,7 +457,12 @@ Test-Suite testsuite
                        -fwarn-unused-imports
                        -fwarn-unused-matches
   other-modules:
+                       Analysis.ImpliedAlignment.AlignmentContext
+                       Analysis.ImpliedAlignment.DeletionEvents
                        Analysis.ImpliedAlignment.DynamicProgramming
+                       Analysis.ImpliedAlignment.InsertionEvents
+                       Analysis.ImpliedAlignment.InsertionEvents.Internal
+                       Analysis.ImpliedAlignment.InsertionEvents.Test
                        Analysis.ImpliedAlignment.Internal
                        Analysis.ImpliedAlignment.Standard
                        Analysis.ImpliedAlignment.Test

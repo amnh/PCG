@@ -16,38 +16,38 @@
 module Analysis.ImpliedAlignment.Test where
 
 import           Analysis.Parsimony.Binary.Internal
---import           Analysis.Parsimony.Binary.Optimization
---import           Analysis.Parsimony.Binary.DirectOptimization
-import           Analysis.ImpliedAlignment.DynamicProgramming
---import           Analysis.ImpliedAlignment.Internal
 import           Analysis.ImpliedAlignment.Standard
 import           Analysis.ImpliedAlignment.Test.Trees
 import qualified Analysis.ImpliedAlignment.InsertionEvents.Test as IE (testSuite)
 import           Bio.Character.Dynamic.Coded
 import           Bio.Character.Parsed
---import           Bio.Metadata
+import           Bio.Metadata
 import           Bio.PhyloGraph            hiding (name)
---import           Bio.PhyloGraph.Network           (nodeIsLeaf)
---import           Bio.PhyloGraph.Node.ImpliedAlign (getHomologies')
 import           Data.Alphabet
---import           Data.BitVector          (BitVector, setBit, bitVec)
 import           Data.Foldable
 import           Data.Function           (on)
---import qualified Data.IntMap       as IM
---import           Data.IntSet             (IntSet)
---import           Data.List
 import           Data.MonoTraversable
 import qualified Data.Set          as S
---import           Data.Vector             (Vector)
+import           Data.Vector             (Vector)
 import qualified Data.Vector       as V
 import           Test.Custom
---import qualified Test.Custom.Types as T
 import           Test.Tasty
 import           Test.Tasty.HUnit
 import           Test.Tasty.QuickCheck
---import           Test.QuickCheck.Arbitrary.Instances
 
---import Debug.Trace
+defMeta :: Vector (CharacterMetadata s)
+defMeta = pure CharMeta
+        { charType   = DirectOptimization
+        , alphabet   = constructAlphabet []
+        , name       = "DefaultCharacter"
+        , isAligned  = False
+        , isIgnored  = False
+        , weight     = 1.0
+        , stateNames = mempty
+        , fitchMasks = undefined
+        , rootCost   = 0.0
+        , costs      = GeneralCost { indelCost = 2, subCost = 1 }
+        }
 
 testSuite :: TestTree
 testSuite = testGroup "Implied Alignment"

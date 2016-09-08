@@ -5,7 +5,7 @@ module PCG.Command.Types.Report.Evaluate
   ) where
 
 --import           Analysis.ImpliedAlignment.Standard
-import           Analysis.ImpliedAlignment.DynamicProgramming
+import           Analysis.ImpliedAlignment
 import           Analysis.Parsimony.Binary.Optimization
 import           Bio.Metadata
 import           Bio.PhyloGraph.Solution
@@ -55,7 +55,7 @@ generateOutput g ImpliedAlignmentCharacters {} =
       case dynamicCharacterCount g of
         0 -> ErrorCase "There are no dynamic characters in the graph. Cannot construct an implied alignment on a graph which contains no dynamic characters."
         _ ->
-          case iaOutput' . iaSolution' $ addOptimization g of
+          case iaOutput . iaSolution $ addOptimization g of
             [] -> ErrorCase "There were no Dynamic homology characters on which to perform an implied alignment."
             zs -> MultiStream $ fromList zs
 {-
