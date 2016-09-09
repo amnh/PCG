@@ -163,6 +163,7 @@ library
                        Bio.PhyloGraph.Forest.Class
                        Bio.PhyloGraph.Forest.Internal
                        Bio.PhyloGraph.Forest.Parsed
+                       Bio.Metadata.CharacterName
                        Bio.Metadata.Class
                        Bio.Metadata.Internal
                        Bio.Metadata.Parsed
