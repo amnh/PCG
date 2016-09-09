@@ -12,6 +12,8 @@
 --
 -----------------------------------------------------------------------------
 
+{-# LANGUAGE FlexibleContexts #-}
+
 module Bio.Metadata.CharacterName
   ( CharacterName()
   , isUserDefined
@@ -19,9 +21,15 @@ module Bio.Metadata.CharacterName
   , sourceFile
   ) where
 
-import Data.List   (isPrefixOf)
+import Control.Monad.State.Lazy
+import Data.Traversable
+import Data.List       (isPrefixOf)
+import Data.Map hiding (null)
 import Data.Monoid
-import Text.Show   (showListWith, showString)
+import Prelude  hiding (lookup)
+import Text.Show       (showListWith, showString)
+
+import Debug.Trace
 
 data CharacterName
    = UserDefined FilePath String
@@ -97,7 +105,7 @@ sourceFile (Default     x _) = x
 -- >>> makeCharacterNames [("file.dat", Nothing), ("file.dat", Just "Eyes"), ("file.dat", Nothing)]
 -- ["file.dat:0","Eyes","file.dat:1"]
 --
--- >>> makeCharacterNames [("foo.txt", Nothing), ("foo.tx", Nothing), ("bar.txt", Nothing"), ("baz.txt",Nothing), ("baz.txt",Nothing)]
+-- >>> makeCharacterNames [("foo.txt", Nothing), ("foo.txt", Nothing), ("bar.txt", Nothing), ("baz.txt", Nothing), ("baz.txt", Nothing)]
 -- ["foo.txt:0","foo.txt:1","bar.txt:0","baz.txt:0","baz.txt"]
 --
 -- >>> makeDefaultCharacterNameRange ("virus.exe", Just "")
@@ -118,8 +126,31 @@ sourceFile (Default     x _) = x
 -- >>> makeCharacterNames [("foo.txt", Nothing), ("foo.tx", Just ""), ("foo.tx", Nothing)]
 -- ["foo.txt:0","foo.txt:1","foo.txt:2"]
 -- 
-makeCharacterNames :: (Foldable f, Functor f,) => f (FilePath, Maybe String) => f CharacterName
-makeCharacterNames xs = undefined
+makeCharacterNames :: (Traversable t) => t (FilePath, Maybe String) -> t CharacterName
+makeCharacterNames = (`evalState` mempty) . mapM f
+  where
+    f (path, may) =
+      case may of
+        Just name | validName name -> pure $ UserDefined path name
+        _ -> do
+               im <- get
+               _  <- put $ incMap path im
+               pure $
+                 case path `lookup` im of
+                   Nothing -> Default path 0
+                   Just i  -> Default path i
+
+    incMap :: (Show a, Ord a) => a -> Map a Int -> Map a Int
+    incMap k m = insertWith f k 1 m
+      where
+        f = const succ
+                     
+    validName :: String -> Bool
+    validName name
+      | null name        = False
+      | head name == ':' = False
+      | otherwise        = True
+      
 
 {-
 -- | Constructor for a 'CharacterName' that has been specified explicitly by user input.
