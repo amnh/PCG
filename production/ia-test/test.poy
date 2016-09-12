@@ -1,3 +1,0 @@
-read ("chel.fasta")
-read ("chel_nj_tbr_rr.tre")
-report (implied_alignment)
