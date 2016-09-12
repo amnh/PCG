@@ -22,7 +22,6 @@ import           Bio.PhyloGraph.Solution
 import           Data.Alphabet
 import           Data.Char
 import           Data.Foldable
-import           Data.List              hiding (insert)
 import           Data.Monoid
 import           Data.Set                      (Set, insert)
 import           Data.Vector                   (fromList, Vector)
@@ -63,7 +62,7 @@ instance ParsedMetadata TNT.TntResult where
     unifyMetadata (Right withSeq) = fromList $ zipWith f (toList $ TNT.charMetaData withSeq) (snd . head . toList $ TNT.sequences withSeq)
         where
            f :: EncodableDynamicCharacter s => TNT.CharacterMetaData -> TNT.TntCharacter -> CharacterMetadata s
-           f inMeta inChar =  let defaultMeta = makeOneInfo . Alphabet $ tntAlphabet inChar
+           f inMeta inChar =  let defaultMeta = makeOneInfo . fromSymbols $ tntAlphabet inChar
                     in  defaultMeta { name       = TNT.characterName   inMeta
                                     , stateNames = TNT.characterStates inMeta
                                     , costs      = maybe (costs defaultMeta) TCM (TNT.costTCM inMeta)
@@ -76,7 +75,7 @@ instance ParsedMetadata TNT.TntResult where
 -- | (✔)
 instance ParsedMetadata F.TCM where
     unifyMetadata (F.TCM alph mat) =
-        let defaultMeta = makeOneInfo . Alphabet . fromList $ toList alph
+        let defaultMeta = makeOneInfo . fromSymbols $ toList alph
         in  pure (defaultMeta {costs = TCM mat})
 
 -- | (✔)
@@ -88,7 +87,7 @@ instance ParsedMetadata Nexus where
     unifyMetadata (Nexus (_, metas)) = V.map convertNexusMeta metas
         where
             convertNexusMeta inMeta =
-                let defaultMeta = makeOneInfo . Alphabet . fromList $ Nex.alphabet inMeta
+                let defaultMeta = makeOneInfo . fromSymbols $ Nex.alphabet inMeta
                 in  defaultMeta { name      = Nex.name inMeta
                                 , isIgnored = Nex.ignored inMeta
                                 , costs     = maybe (costs defaultMeta) (TCM . F.transitionCosts) (Nex.costM inMeta)
@@ -134,7 +133,7 @@ makeEncodeInfo seqs = V.map makeOneInfo alphabets
 
 --old version
 developAlphabets :: TreeChars -> Vector (Alphabet String)
-developAlphabets inTaxSeqMap = (setGapChar . Alphabet . V.fromList . sort . toList) <$> foldr (V.zipWith getNodeAlphAt) partialAlphabets inTaxSeqMap
+developAlphabets inTaxSeqMap = fromSymbols <$> foldr (V.zipWith getNodeAlphAt) partialAlphabets inTaxSeqMap
     where
         seqLength        = length . head $ toList inTaxSeqMap
         partialAlphabets = V.replicate seqLength mempty
@@ -145,8 +144,3 @@ developAlphabets inTaxSeqMap = (setGapChar . Alphabet . V.fromList . sort . toLi
             Nothing     -> partialAlphabet
             Just inChar -> foldr (flip $ foldr insert  -- this is set insertion
                                  ) partialAlphabet inChar
-
-
--- | Ensure that the gap char is present and correctly positioned in an alphabet
-setGapChar :: Alphabet String -> Alphabet String
-setGapChar (Alphabet inAlph) = Alphabet $ V.filter (/= "-") inAlph <> pure "-"

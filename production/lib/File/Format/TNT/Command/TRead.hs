@@ -33,7 +33,7 @@ treadCommand = treadValidation =<< treadDefinition
                    *> symbol treadForest
                    <* symbol (char ';')
 
-    treadValidation :: (MonadParsec e s m, Token s ~ Char) => TRead -> m TRead
+    treadValidation :: (MonadParsec e s m {- , Token s ~ Char -}) => TRead -> m TRead
     treadValidation = pure -- No validation yet (what to validate?)
 
 -- | The superflous information of an XREAD command.

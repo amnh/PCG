@@ -40,5 +40,5 @@ import Text.Megaparsec
 import Text.Megaparsec.Prim      (MonadParsec)
 
 -- | Parses the entirety of a stream consisting of a single Nexus file resulting a 'Nexus'.
-nexusStreamParser :: (Show s, MonadParsec e s m, Token s ~ Char) => m Nexus
+nexusStreamParser :: (MonadParsec e s m, Token s ~ Char {- , Show s -}) => m Nexus
 nexusStreamParser = validateNexusParseResult =<< parseNexus <* eof

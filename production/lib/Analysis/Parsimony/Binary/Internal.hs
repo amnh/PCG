@@ -51,7 +51,7 @@ import           Prelude        hiding (lookup,zip)
 -- Takes in an overall weight and a solution
 -- Returns a solution with any relevant values assigned (root cost, node assignments, etc. depending on optimization types).
 -- Calls 'graphOptimization'.
-solutionOptimization :: (SolutionConstraint' r f t n s m, Show (Element s)) => Double -> r -> r
+solutionOptimization :: (SolutionConstraint' r f t n s m) => Double -> r -> r
 solutionOptimization weighting inSolution = outForests 
     where
         meta = getMetadata inSolution
@@ -61,14 +61,14 @@ solutionOptimization weighting inSolution = outForests
 -- Takes in an overall weight, a vector of metadata, and a forest
 -- Returns a forest with relevant values assigned.
 -- Calls 'allOptimization'.
-graphOptimization :: (ForestConstraint' f t n s, Metadata m s, Show (Element s)) => Double -> Vector m -> f -> f
+graphOptimization :: (ForestConstraint' f t n s, Metadata m s) => Double -> Vector m -> f -> f
 graphOptimization weighting meta inGraph = setTrees inGraph $ fmap (allOptimization weighting meta) (trees inGraph)
 
 -- | Unified function to perform both the postorder and preorder passes (as relevant)
 -- Takes in an overall weight, a vector of metadata, and a tree.
 -- Returns a tree with values assigned.
 -- This actually calls the postorder and preorder optimizations.
-allOptimization :: (TreeConstraint' t n s, Metadata m s, Show (Element s)) => Double -> Vector m -> t -> t
+allOptimization :: (TreeConstraint' t n s, Metadata m s) => Double -> Vector m -> t -> t
 allOptimization weighting meta inTree = secondPass
     where
         firstPass  = treeOptimizePostorder weighting inTree meta
@@ -78,7 +78,7 @@ allOptimization weighting meta inTree = secondPass
 -- Takes in an overall weight, a tree, and a vector of metadata
 -- Returns a tree with values assigned
 -- Correctly handles roots, leaves, and nodes with only one child
-treeOptimizePostorder :: (TreeConstraint' t n s, Metadata m s, Show (Element s)) => Double -> t -> Vector m -> t
+treeOptimizePostorder :: (TreeConstraint' t n s, Metadata m s) => Double -> t -> Vector m -> t
 treeOptimizePostorder weighting tree meta = tree `update` (rootNode : nonRootNodes)
   where
     -- We recursively decorate all nodes in the tree, then return the updated tree
@@ -88,7 +88,7 @@ treeOptimizePostorder weighting tree meta = tree `update` (rootNode : nonRootNod
 -- takes in a weight, a current node, a tree, and a vector of metadata
 -- returns a list of nodes that have had changes applied to them
 -- By using this node accumulation scheme, we save some complexity over simply always dealing with a tree
-treeInternalPostorderTraversal :: (TreeConstraint' t n s, Metadata m s, Show (Element s)) => Double -> n -> t -> Vector m -> (n, [n])
+treeInternalPostorderTraversal :: (TreeConstraint' t n s, Metadata m s) => Double -> n -> t -> Vector m -> (n, [n])
 treeInternalPostorderTraversal weighting node tree meta = (decoratedSelf, decoratedSubtree)
   where
       -- After applying the traversal logic to the subtree of this node
@@ -134,7 +134,7 @@ treeInternalPostorderTraversal weighting node tree meta = (decoratedSelf, decora
 -- Essentially map decision function that selects and performs the correct optimization over the sequence of characters.
 -- Takes in an overall weight, a current node, the left child, the right child, and a vector of metadata
 -- Outputs a node with the correct sequences and costs assigned.
-nodeOptimizePostorder :: (NodeConstraint' n s, Metadata m s, Show (Element s)) => Double -> n -> n -> n -> Vector m -> n
+nodeOptimizePostorder :: (NodeConstraint' n s, Metadata m s) => Double -> n -> n -> n -> Vector m -> n
 nodeOptimizePostorder weighting curNode lNode rNode meta = summedTotalCost `setTotalCost` res
     where
         summedTotalCost = sum [getLocalCost res, getTotalCost lNode, getTotalCost rNode]
@@ -174,14 +174,14 @@ nodeOptimizePostorder weighting curNode lNode rNode meta = summedTotalCost `setT
 -- Takes in a tree and a vector of metadata,
 -- returns a tree with relevant nodes assigned.
 -- This wrapper allows us to deal correctly with root passing to preorder algorithms
-treeOptimizePreorder :: (TreeConstraint' t n s, Metadata m s, Show (Element s)) => t -> Vector m -> t
+treeOptimizePreorder :: (TreeConstraint' t n s, Metadata m s) => t -> Vector m -> t
 treeOptimizePreorder tree meta = tree `update` treeInternalPreorderTraversal Nothing (root tree) tree meta
 
 -- | Internal preorder pass that does the main recursion
 -- Takes in a current node, the tree, and a vector of metadata;
 -- returns a list of nodes that have been updated.
 -- As in the postorder, this method saves on some time complexity.
-treeInternalPreorderTraversal :: (TreeConstraint' t n s, Metadata m s, Show (Element s)) => Maybe n -> n -> t -> Vector m -> [n]
+treeInternalPreorderTraversal :: (TreeConstraint' t n s, Metadata m s) => Maybe n -> n -> t -> Vector m -> [n]
 treeInternalPreorderTraversal parentNode node tree meta  = 
   case children' of
       left:right:_ -> let mutatedSelf = nodeOptimizePreorder node left right parentNode meta 
@@ -194,7 +194,7 @@ treeInternalPreorderTraversal parentNode node tree meta  =
 -- As in the postorder, it selects an optimization for each character, then groups the optimized characters together and assigns them to the node.
 -- Takes in a current node, left child, right child, parent node, and vector of metadata,
 -- returns a node with everything assigned.
-nodeOptimizePreorder :: (NodeConstraint' n s, Metadata m s, Show (Element s)) => n -> n -> n -> Maybe n -> Vector m -> n
+nodeOptimizePreorder :: (NodeConstraint' n s, Metadata m s) => n -> n -> n -> Maybe n -> Vector m -> n
 nodeOptimizePreorder curNode lNode rNode pNode = ifoldr chooseOptimization curNode
     where
         --chooseOptimization :: (NodeConstraint' n s, Metadata m s) => Int -> m -> n -> n
@@ -269,7 +269,7 @@ tripleComparison i costStructure curNode parentCharacter = (finalUngapped, final
 
 -- | getForAlign returns the sequences from a node, where the node type is either 'EncodedNode' or 'PreliminaryNode'.
 -- preliminary alignment 
-getForAlign :: (PreliminaryNode n s, EncodedNode n s, SeqConstraint' s) => n -> Vector s
+getForAlign :: (PreliminaryNode n s, EncodedNode n s) => n -> Vector s
 getForAlign node
     | null $ getPreliminaryUngapped node = getEncoded node -- Assume leaf node 
     | otherwise                          = getPreliminaryUngapped node
@@ -289,11 +289,11 @@ getChildCharacterForDoPreorder node
 -- | addToField takes in a setter fn, a getter fn, a value and a node.
 -- It then gets the related value from the node, adds to it the passed value,
 -- and sets that value on the node. It returns a new node with the newly computed value set.
-addToField :: NodeConstraint' n s => (Vector s -> n -> n) -> (n -> Vector s) -> s -> n -> n
+addToField :: (Vector s -> n -> n) -> (n -> Vector s) -> s -> n -> n
 addToField setter getter val node = setter (pure val <> getter node) node
 
 -- 
-newGapLocations :: (EncodableDynamicCharacter c, Show c, Show (Element c)) => c -> c -> IntMap Int
+newGapLocations :: EncodableDynamicCharacter c => c -> c -> IntMap Int
 --newGapLocations originalChar newChar | trace ("o: " <> show originalChar <> "n: " <> show newChar) False = undefined
 newGapLocations originalChar newChar
   | olength originalChar == olength newChar = mempty

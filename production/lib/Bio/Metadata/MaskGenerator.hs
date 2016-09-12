@@ -20,6 +20,7 @@ import Bio.Character.Dynamic.Coded
 import Data.Alphabet
 import Data.Foldable
 import Data.HashMap.Strict        (elems)
+import Data.Key
 import Data.Maybe
 import qualified Data.Vector as V
 
@@ -50,10 +51,10 @@ addMasks inSolution = inSolution { metadata = V.imap changeMetadata (metadata in
         -}
 -- | Generate mask pair given proper info
 generateMasks :: Alphabet String -> Int -> (DynamicChar, DynamicChar)
-generateMasks inAlphabet@(Alphabet a) sLen = --trace ("encode masks " ++ show periodic) $
-                                                (encodeDynamic inAlphabet occupancy, encodeDynamic inAlphabet periodic)
+generateMasks inAlphabet sLen = --trace ("encode masks " ++ show periodic) $
+                                (encodeDynamic inAlphabet occupancy, encodeDynamic inAlphabet periodic)
     where
-        unit      = [a V.! (length a - 1)]
+        unit      = [inAlphabet ! (length inAlphabet - 1)]
         periodic  = V.replicate sLen unit
         occupancy = V.replicate sLen (toList inAlphabet)
 

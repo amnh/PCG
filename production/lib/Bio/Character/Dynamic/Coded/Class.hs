@@ -23,8 +23,6 @@ import Data.Maybe           (fromMaybe)
 import Data.MonoTraversable
 import Data.String          (IsString)
 
-import GHC.Stack            (errorWithStackTrace)
-
 {- | Represents a character of fixed width encoding one or more character states.
  -
  - Laws:
@@ -68,7 +66,7 @@ class ( EncodableStaticCharacter (Element s)
   indexChar  :: s -> Int -> Element s
   indexChar xs i = fromMaybe raiseError $ xs `lookupChar` i
     where
-      raiseError = errorWithStackTrace
+      raiseError = error
                  $ mconcat ["Index ", show i, " is out of range [0,", show $ olength xs - 1,"]."] 
 
   lookupChar :: s -> Int -> Maybe (Element s)

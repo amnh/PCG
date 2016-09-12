@@ -119,7 +119,7 @@ matrixBlock spacing = validateMatrix =<< many (symbol matrixRow)
 
 -- | Validates that the dimensions of the Matrix are @(n+1) x (n+1)@
 -- where @n@ is the length of the Alphabet.
-validateTCMParseResult :: (MonadParsec e s m, Token s ~ Char) => TCMParseResult -> m TCM
+validateTCMParseResult :: (MonadParsec e s m {- , Token s ~ Char -}) => TCMParseResult -> m TCM
 validateTCMParseResult (TCMParseResult alphabet matrix)
   | dimMismatch  = fail errorMessage
   | otherwise    = pure $ TCM alphabet matrix
@@ -169,7 +169,7 @@ validateAlphabet alphabet
 --
 --   * The number of rows match the number of columns
 --
-validateMatrix :: (MonadParsec e s m, Token s ~ Char) => [[Double]] -> m (Matrix Double)
+validateMatrix :: (MonadParsec e s m {- , Token s ~ Char -}) => [[Double]] -> m (Matrix Double)
 validateMatrix matrix
   | null matrix        = fail "No matrix specified"
   | null matrixErrors  = pure . M.fromList rows cols $ concat matrix

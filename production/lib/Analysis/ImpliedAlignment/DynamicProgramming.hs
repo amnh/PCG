@@ -62,13 +62,13 @@ data TreeReferences n
 -- | Top level wrapper to do an IA over an entire solution
 -- takes a solution
 -- returns an AlignmentSolution
-iaSolution :: (Eq n, SolutionConstraint r m f t n e s, IANode' n s, Show (Element s)) => r -> r
+iaSolution :: (SolutionConstraint r m f t n e s, IANode' n s) => r -> r
 iaSolution inSolution = inSolution `setForests` fmap (`iaForest` getMetadata inSolution) (getForests inSolution)
 
 -- | Simple wrapper to do an IA over a forest
 -- takes in a forest and some metadata
 -- returns an alignment forest
-iaForest :: (Eq n, FoldableWithKey k, ForestConstraint f t n e s, IANode' n s, Metadata m s, Key k ~ Int, Show (Element s)) => f -> k m -> f
+iaForest :: (FoldableWithKey k, ForestConstraint f t n e s, IANode' n s, Metadata m s, Key k ~ Int) => f -> k m -> f
 iaForest inForest inMeta = inForest `setTrees` fmap (deriveImpliedAlignments inMeta) (trees inForest)
 
 -- TODO: make sure a sequence always ends up in FinalGapped to avoid this decision tree
@@ -83,7 +83,7 @@ getForAlign n
 
 -- | Decorates a tree with implied alignments of the leaf nodes given a tree
 --   decorated with direct optimization annotations, along with suporting metadata.
-deriveImpliedAlignments :: (Eq n, FoldableWithKey f, TreeConstraint t n e s, IANode' n s, Metadata m s, Key f ~ Int, Show (Element s))
+deriveImpliedAlignments :: (FoldableWithKey f, TreeConstraint t n e s, IANode' n s, Metadata m s, Key f ~ Int)
                         => f m -> t -> t 
 deriveImpliedAlignments sequenceMetadatas tree = foldlWithKey' f tree sequenceMetadatas
   where
@@ -102,7 +102,7 @@ deriveImpliedAlignments sequenceMetadatas tree = foldlWithKey' f tree sequenceMe
 --
 --   * The tree on which implies the alignment
 -- 
-numeration :: (Eq n, TreeConstraint t n e s, IANode' n s, Show (Element s)) => Int -> CostStructure -> t -> t
+numeration :: (TreeConstraint t n e s, IANode' n s) => Int -> CostStructure -> t -> t
 numeration sequenceIndex costStructure tree = tree `update` (snd <$> updatedLeafNodes)
   where
     -- | Precomputations used for reference in the memoization

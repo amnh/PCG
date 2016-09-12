@@ -118,7 +118,7 @@ deriveDynamicMetadatas (x:_) = sequenceA $ V.generate (length sequenceWLOG) f
       where
         character = sequenceWLOG ! i
         -- We take one less than the width here to account for the cumpulsory gap character.
-        alphabet' = constructAlphabet . ("-":) $ take (alphabetSize - 1) symbols
+        alphabet' = fromSymbols . ("-":) $ take (alphabetSize - 1) symbols
           where
             -- We don't care about the exact symbol rendering, only that they are unique and there are a correct quantity of them.
             -- We also know that the alphabet size of the generated Dynamic characters has been restricted to less than 62 in the

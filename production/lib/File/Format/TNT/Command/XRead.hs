@@ -49,7 +49,7 @@ xreadCommand = xreadValidation =<< xreadDefinition
     xreadDefinition :: (MonadParsec e s m, Token s ~ Char) => m (Int, Int, NonEmpty TaxonInfo)
     xreadDefinition = uncurry (,,) <$> xreadPreamble <*> xreadSequences <* symbol (char ';')
 
-    xreadValidation :: (MonadParsec e s m, Token s ~ Char) => (Int, Int, NonEmpty TaxonInfo) -> m XRead
+    xreadValidation :: (MonadParsec e s m {- , Token s ~ Char -}) => (Int, Int, NonEmpty TaxonInfo) -> m XRead
     xreadValidation (charCount, taxaCount, taxaSeqs)
       | null errors = pure $ XRead charCount taxaCount taxaSeqs
       | otherwise   = fails errors
@@ -212,7 +212,7 @@ proteinSequence = mapM discreteToProtein =<< discreteSequence
 -- | A conversion function from a discrete character ambiguity group to a dna
 --   character ambiguity group. The mapping is not injective and unmatched
 --   discrete character values will result in a parse error being raised.
-discreteToDna :: (MonadParsec e s m, Token s ~ Char) => TntDiscreteCharacter -> m TntDnaCharacter
+discreteToDna :: (MonadParsec e s m {- , Token s ~ Char -}) => TntDiscreteCharacter -> m TntDnaCharacter
 discreteToDna character = foldl (.|.) zeroBits <$> mapM f flags
   where
     flags = bitsToFlags character
@@ -225,7 +225,7 @@ discreteToDna character = foldl (.|.) zeroBits <$> mapM f flags
 --   protein character ambiguity group. The mapping is not injective and
 --   unmatched discrete character values will result in a parse error being
 --   raised.
-discreteToProtein :: (MonadParsec e s m, Token s ~ Char) => TntDiscreteCharacter -> m TntProteinCharacter
+discreteToProtein :: (MonadParsec e s m {- , Token s ~ Char -}) => TntDiscreteCharacter -> m TntProteinCharacter
 discreteToProtein character = foldl (.|.) zeroBits <$> mapM f flags
   where
     flags     = bitsToFlags character
@@ -433,7 +433,7 @@ xreadTags = validateXReadTags =<< xreadTagsDef
                  , try (keyword "trimhead"   5) $> TagTrimHead
                  ,      keyword "trimtail"   5  $> TagTrimTail
                  ]
-    validateXReadTags :: (MonadParsec e s m, Token s ~ Char) => NonEmpty XReadTag -> m XReadInterpretation
+    validateXReadTags :: (MonadParsec e s m {- , Token s ~ Char -}) => NonEmpty XReadTag -> m XReadInterpretation
     validateXReadTags xs
       | not (null dupes)                      = fail $ "You got duplicate tags man! Like only one's allowed. For realz! " ++ show dupes
       | manyTags allTypeTags                  = fail $ "You can't have multiple character type tags: " ++ show allTypeTags

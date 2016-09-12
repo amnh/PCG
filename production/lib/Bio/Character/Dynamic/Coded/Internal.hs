@@ -151,7 +151,7 @@ instance EncodableDynamicCharacter DynamicChar where
     | otherwise               = (dnaIUPAC !) <$> rawResult
     where
       rawResult   = ofoldMap (pure . decodeChar alphabet) . otoList $ char
-      dnaAlphabet = constructAlphabet $ fromString <$> ["A","C","G","T"]
+      dnaAlphabet = fromSymbols $ fromString <$> ["A","C","G","T"]
 --      dnaIUPAC :: (IsString a, Ord a) => Map [a] [a]
       dnaIUPAC    = M.fromList . fmap (swap . (pure . fromChar *** fmap fromChar)) $ mapping
         where

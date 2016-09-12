@@ -73,7 +73,7 @@ tntStreamParser = (colateResult <=< collapseStructures) =<< (whitespace *> gathe
 
 -- | Performs an inital structural collapse to the various type lists to make
 --   subsequent folding easier.
-collapseStructures :: (MonadParsec e s m, Token s ~ Char) => Commands -> m ([CCode],[CharacterName],[Cost],[NStates],[TReadTree],[XRead])
+collapseStructures :: (MonadParsec e s m {- , Token s ~ Char -}) => Commands -> m ([CCode],[CharacterName],[Cost],[NStates],[TReadTree],[XRead])
 collapseStructures (ccodes,cnames,costs,nstates,treads,xreads)
   | not (null errors) = fails errors
   | otherwise         = pure (ccodes,collapsedCNames,costs,nstates,collapsedTReads,xreads)

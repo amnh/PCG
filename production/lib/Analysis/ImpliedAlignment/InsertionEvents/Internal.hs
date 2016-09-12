@@ -51,14 +51,14 @@ import           Test.QuickCheck hiding (output)
 -}
 newtype InsertionEvents e = IE (IntMap (Seq e)) deriving (Eq)
 
-instance (Arbitrary e, Eq e) => Arbitrary (InsertionEvents e) where
+instance (Arbitrary e) => Arbitrary (InsertionEvents e) where
   arbitrary = do
     let gen = arbitrary
     keys <- fmap getNonNegative . getNonEmpty <$> (arbitrary :: Gen (NonEmptyList (NonNegative Int)))
     vals <- vectorOf (length keys) (listOf1 gen) 
     pure . IE . IM.fromList $ zipWith (\x y -> (x, Seq.fromList y)) keys vals
 
-instance Eq e => Monoid (InsertionEvents e) where
+instance Monoid (InsertionEvents e) where
   -- | This represent no insertionevents occurring on an edge
   mempty = IE mempty
 
@@ -109,7 +109,7 @@ instance (Show e) => Show (InsertionEvents a e) where
 --   combined insertion events of child edges.
 --
 --   Pronounced <http://www.dictionary.com/browse/coalesce "coalesce"> operator.
-(<^>) :: Eq e => InsertionEvents e -> InsertionEvents e -> InsertionEvents e
+(<^>) :: InsertionEvents e -> InsertionEvents e -> InsertionEvents e
 (<^>) (IE ancestorMap) (IE descendantMap) = IE . IM.fromList $ result <> remaining acc
   where
     (_, acc, result) = foldlWithKey f initialAccumulator descendantMap
@@ -215,22 +215,22 @@ coalesce ancestorDeletions (IE ancestorMap) descendantEvents
 
 -- | Constructs an InsertionEvents collection from a structure of integral keys
 -- and sequences of equatable elements.
-fromList :: (Eq e, Enum i, Foldable t, Foldable t') => t (i, t' e) -> InsertionEvents e
+fromList :: (Enum i, Foldable t, Foldable t') => t (i, t' e) -> InsertionEvents e
 fromList = IE . IM.fromList . fmap (fromEnum `bimap` toSeq) . toList
   where
     toSeq = Seq.fromList . toList
 
-fromEdgeMapping :: Eq e => e -> IntMap Int -> InsertionEvents e
+fromEdgeMapping :: e -> IntMap Int -> InsertionEvents e
 fromEdgeMapping edgeToken mapping = IE $ f <$> mapping
   where
     f count = Seq.fromList $ replicate count edgeToken
 
 -- | Constructs an InsertionEvents collection from an IntMap of Sequences
-wrap :: Eq e => IntMap (Seq e) -> InsertionEvents e
+wrap :: IntMap (Seq e) -> InsertionEvents e
 wrap = IE
 
 -- | Extracts an IntMap of Sequences from an InsertionEvents collection.
-unwrap :: Eq e => InsertionEvents e -> IntMap (Seq e)
+unwrap :: InsertionEvents e -> IntMap (Seq e)
 unwrap (IE x) = x
 
 size :: InsertionEvents e -> Int

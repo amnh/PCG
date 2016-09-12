@@ -119,12 +119,12 @@ validateIdentifierConsistency xs =
     errorMessage x = "Multiple taxon labels found identified by: '"++x++"'" 
 
 -- | Ensures that the charcters are all from a consistent alphabet
-validateSequenceConsistency :: (MonadParsec e s m, Token s ~ Char) => FastaParseResult -> m FastaParseResult
+validateSequenceConsistency :: (MonadParsec e s m {- , Token s ~ Char -}) => FastaParseResult -> m FastaParseResult
 validateSequenceConsistency = validateConsistentPartition <=< validateConsistentAlphabet
 
 -- | Validates that all elements of all sequences are consistent with each other sequence.
 -- Sequences of differing types cannot be mixed.
-validateConsistentAlphabet :: (MonadParsec e s m, Token s ~ Char) => FastaParseResult -> m FastaParseResult
+validateConsistentAlphabet :: (MonadParsec e s m {- , Token s ~ Char -}) => FastaParseResult -> m FastaParseResult
 validateConsistentAlphabet xs =
   case partition snd results of
     (_,[]) -> pure xs
@@ -144,7 +144,7 @@ validateConsistentAlphabet xs =
                        ]
 
 -- | Validates that sequences partitioned with the '\'#\'' character are all of the same length.
-validateConsistentPartition :: (MonadParsec e s m, Token s ~ Char) => FastaParseResult -> m FastaParseResult
+validateConsistentPartition :: (MonadParsec e s m {- , Token s ~ Char -}) => FastaParseResult -> m FastaParseResult
 validateConsistentPartition xs
   |  null xs
   || null errors  = pure xs

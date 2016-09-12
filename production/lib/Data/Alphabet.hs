@@ -49,13 +49,12 @@ module Data.Alphabet
 import           Control.Monad.State.Strict
 import           Data.Foldable
 import           Data.Key
-import           Data.List                    (elemIndex, intercalate, sort)
-import           Data.Matrix.NotStupid        (Matrix, matrix)
+import           Data.List                    (intercalate, sort)
 import           Data.Maybe
 import           Data.Monoid
 import           Data.Set                     (insert)
 import           Data.String
-import           Data.Vector                  (Vector, generate)
+import           Data.Vector                  (Vector)
 import qualified Data.Vector           as V
 import           Prelude               hiding (lookup, zip)
 import           Test.Tasty.QuickCheck hiding (generate)
@@ -200,9 +199,13 @@ alphabetPreprocessing = V.fromList . appendGapSymbol . removeSpecialSymbolsAndDu
 newtype UnnamedSymbol a = Unnamed  a
 newtype NamedSymbol   a = Named (a,a)
 
+fromUnnamed :: UnnamedSymbol t -> t
 fromUnnamed (Unnamed x) = x
+
+fromNamed   :: NamedSymbol t -> (t, t)
 fromNamed   (Named   x) = x
 
+symbolVector :: Alphabet b -> Vector b
 symbolVector (SimpleAlphabet     v) =       fromUnnamed <$> v
 symbolVector (StateNamedAlphabet v) = fst . fromNamed   <$> v
 
@@ -210,7 +213,10 @@ symbolVector (StateNamedAlphabet v) = fst . fromNamed   <$> v
 newtype AlphabetInputSingle a = ASI  { toSingle ::  a    } deriving (Eq,Ord)
 newtype AlphabetInputTuple  a = ASNI { toTuple  :: (a,a) } deriving (Eq,Ord)
 
+fromSingle :: a -> AlphabetInputSingle a
 fromSingle = ASI
+
+fromTuple :: (a, a) -> AlphabetInputTuple a
 fromTuple  = ASNI
 
 class InternalClass a where

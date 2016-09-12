@@ -24,7 +24,7 @@ import           Data.Maybe                 (fromMaybe)
 import           Data.Monoid                ((<>))
 import           Data.Ord                   (comparing)
 import           Data.Vector                (Vector)
-import qualified Data.Vector           as V (fromList,zipWith)
+import qualified Data.Vector           as V (zipWith)
 --import           Debug.Trace
 import           File.Format.Fasta   hiding   (FastaSequenceType(..))
 import qualified File.Format.Fasta   as Fasta (FastaSequenceType(..))
@@ -124,7 +124,7 @@ applyReferencedTCM :: FracturedParseResult -> FracturedParseResult
 applyReferencedTCM fpr =
   case relatedTcm fpr of
      Nothing -> fpr
-     Just x  -> let newAlphabet = Alphabet . V.fromList . toList $ customAlphabet x
+     Just x  -> let newAlphabet = fromSymbols $ customAlphabet x
                     newTcm      = transitionCosts x
                 in  fpr { parsedMetas = updateAlphabet newAlphabet . updateTcm newTcm <$> parsedMetas fpr }
 

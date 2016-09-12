@@ -37,7 +37,7 @@ f x@READ   {} = Read.evaluate   x
 f x@REPORT {} = Report.evaluate x
 f _ = error "NOT YET IMPLEMENTED"
 
-renderSearchState :: (Show a) => Evaluation a -> IO ()
+renderSearchState :: Evaluation a -> IO ()
 renderSearchState e = do
    _ <- case notifications e of
           [] -> pure ()

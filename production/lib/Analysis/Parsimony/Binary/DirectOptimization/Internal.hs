@@ -105,7 +105,7 @@ filterGaps char = constructDynamic . filter (/= gap) $ otoList char
 -- Returns an 'DOAlignMatrix'.
 -- TODO: See if we can move topDynChar logic inside here. It's also necessary in DO. 
 -- Or maybe DO can just call doAlignment?
-createDOAlignMatrix :: (EncodableDynamicCharacter s, Show (Element s)) => s -> s -> CostStructure -> DOAlignMatrix (Element s)
+createDOAlignMatrix :: EncodableDynamicCharacter s => s -> s -> CostStructure -> DOAlignMatrix (Element s)
 createDOAlignMatrix topDynChar leftDynChar costStruct = result
     where
         result = matrix (olength leftDynChar + 1) (olength topDynChar + 1) generateMat
@@ -193,7 +193,7 @@ getTotalAlignmentCost alignmentMatrix = c
     (c, _, _) = alignmentMatrix ! (nrows alignmentMatrix - 1, ncols alignmentMatrix - 1) 
 
 -- | Memoized wrapper of the overlap function
-getOverlap :: (EncodableStaticCharacter c, {- Memoizable c, -} Show c) => c -> c -> CostStructure -> (c, Double)
+getOverlap :: (EncodableStaticCharacter c {- , Memoizable c, -}) => c -> c -> CostStructure -> (c, Double)
 getOverlap inChar1 inChar2 costStruct = result
     where
         result = {- memoize2 -} (overlap costStruct) inChar1 inChar2
@@ -207,7 +207,7 @@ getOverlap inChar1 inChar2 costStruct = result
 -- if @ char1 == A,T @ and @ char2 == G,C @, and the two (non-overlapping) least cost pairs are A,C and T,G, then
 -- the return value is A,C,G,T. 
 -- Tests exist in the test suite.
-overlap :: (EncodableStaticCharacter c, Show c) => CostStructure -> c -> c -> (c, Double)
+overlap :: (EncodableStaticCharacter c {- , Show c -}) => CostStructure -> c -> c -> (c, Double)
 --overlap _ inChar1 inChar2 | trace (unwords [show inChar1, show inChar2]) False = undefined
 overlap costStruct char1 char2
     | intersectionStates == zeroBits = -- (\x -> trace (unwords [show char1, show char2, show x]) x) $
@@ -290,7 +290,7 @@ getSubChars fullChar = foldr (\i acc -> if testBit fullChar i
 
 -- Transformation should no longer be nescissary
 -- Replaced definition with the identiy function over two values.
-correctBiasing :: (Eq a) => a -> ([a], [a], [a]) -> ([a], [a], [a])
+correctBiasing :: a -> ([a], [a], [a]) -> ([a], [a], [a])
 correctBiasing = const id
 {-
 correctBiasing   _ ( [], [], []) = ( [],  [],  [])

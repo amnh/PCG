@@ -47,6 +47,7 @@ library
                      , matrix               -any
                      , megaparsec           >=5.0
                      , mono-traversable     >=1.0
+                     , mtl                  -any
 --                     , memoize              -any
                      , parallel             -any
                      , QuickCheck           -any
@@ -302,6 +303,7 @@ executable qdh
                      , keys                 -any
                      , matrix               -any
                      , megaparsec           >=5.0
+                     , mtl                  -any
 --                     , memoize              -any
                      , mono-traversable     -any
                      , parallel             -any
@@ -368,6 +370,7 @@ executable fasta-differ
                      , keys                  -any
                      , matrix                -any
                      , megaparsec            >=5.0
+                     , mtl                  -any
 --                     , memoize               -any
                      , mono-traversable      -any
                      , parallel              -any
@@ -421,6 +424,7 @@ Test-Suite testsuite
                      , keys                 -any
                      , matrix               -any
                      , megaparsec           >=5.0
+                     , mtl                  -any
 --                     , memoize              -any
                      , mono-traversable     -any
                      , parallel             -any

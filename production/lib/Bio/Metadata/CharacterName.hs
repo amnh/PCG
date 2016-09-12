@@ -29,7 +29,7 @@ import Data.Monoid
 import Prelude  hiding (lookup)
 import Text.Show       (showListWith, showString)
 
-import Debug.Trace
+-- import Debug.Trace
 
 data CharacterName
    = UserDefined FilePath String
@@ -52,10 +52,10 @@ instance Ord CharacterName where
       LT -> GT
       GT -> LT
       EQ -> EQ
-  lhs@(UserDefined _ name) `compare` rhs@(Default path index)
+  lhs@(UserDefined _ name) `compare` rhs@(Default path _index)
     | (path <> ":") `isPrefixOf` name = LT
     | otherwise = strCmp lhs rhs
-  compare lhs rhs = strCmp lhs rhs
+  lhs `compare` rhs = strCmp lhs rhs
 
 -- Used internally for orderign logic after special cases are checked.
 strCmp :: Show a => a -> a -> Ordering
@@ -126,7 +126,7 @@ sourceFile (Default     x _) = x
 -- >>> makeCharacterNames [("foo.txt", Nothing), ("foo.tx", Just ""), ("foo.tx", Nothing)]
 -- ["foo.txt:0","foo.txt:1","foo.txt:2"]
 -- 
-makeCharacterNames :: (Traversable t) => t (FilePath, Maybe String) -> t CharacterName
+makeCharacterNames :: Traversable t => t (FilePath, Maybe String) -> t CharacterName
 makeCharacterNames = (`evalState` mempty) . mapM f
   where
     f (path, may) =
@@ -140,10 +140,10 @@ makeCharacterNames = (`evalState` mempty) . mapM f
                    Nothing -> Default path 0
                    Just i  -> Default path i
 
-    incMap :: (Show a, Ord a) => a -> Map a Int -> Map a Int
-    incMap k m = insertWith f k 1 m
+    incMap :: Ord a => a -> Map a Int -> Map a Int
+    incMap k = insertWith g k 1
       where
-        f = const succ
+        g = const succ
                      
     validName :: String -> Bool
     validName name

@@ -97,8 +97,6 @@ import qualified Data.Matrix as Stupid
 import           Data.Maybe    (catMaybes)
 import           Data.Vector   (Vector)
 
-import           GHC.Stack     (errorWithStackTrace )
-
 type instance Key Matrix = (Int, Int)
 
 instance Indexable Matrix where
@@ -139,7 +137,7 @@ getElem :: Int      -- ^ Row
 {-# INLINE getElem #-}
 getElem i j mtx =
   case errorMessage of
-    Just err -> errorWithStackTrace err
+    Just err -> error err
     Nothing  -> Stupid.getElem (i+1) (j+1) mtx
   where
     m = Stupid.nrows mtx

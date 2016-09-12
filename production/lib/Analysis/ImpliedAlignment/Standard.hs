@@ -71,7 +71,7 @@ impliedAlign inTree inMeta = extractAlign numerated inMeta
 -- | Constructs the implied alignment from the "homology" annotations on the leaf
 --   nodes of the tree. The external alignmentment structure mirrors the
 --   structure of the input tree.
-extractAlign :: (TreeConstraint t n e s, Metadata m s) => (Counts, t) -> Vector m -> Alignment s
+extractAlign :: TreeConstraint t n e s => (Counts, t) -> Vector m -> Alignment s
 --extractAlign (lens, numeratedTree) inMeta | trace ("extract alignments " ++ show numeratedTree) False = undefined
 extractAlign (lens, numeratedTree) _inMeta = foldr (\n acc -> insert (fromJust $ getNodeIdx n numeratedTree) (makeAlignment n lens) acc) mempty allLeaves
     where

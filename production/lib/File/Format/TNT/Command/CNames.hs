@@ -36,7 +36,7 @@ cnamesCommand = cnamesValidation =<< cnamesDefinition
                     <* symbol (char ';')
 
     -- | Make sure indicies are unique
-    cnamesValidation :: (MonadParsec e s m, Token s ~ Char) => CNames -> m CNames
+    cnamesValidation :: (MonadParsec e s m {- , Token s ~ Char -}) => CNames -> m CNames
     cnamesValidation cnames
       | not (null duplicateIndexErrors) = fails duplicateIndexErrors
       | otherwise                       = pure cnames

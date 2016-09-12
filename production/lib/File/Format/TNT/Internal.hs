@@ -317,11 +317,12 @@ flexibleNonNegativeInt :: (MonadParsec e s m, Token s ~ Char) => String -> m Int
 flexibleNonNegativeInt labeling = either coerceFloating coerceIntegral . floatingOrInteger 
                               =<< signed whitespace number <?> ("positive integer for " ++ labeling)
   where
-    coerceIntegral :: (MonadParsec e s m, Token s ~ Char) => Integer -> m Int
+    coerceIntegral :: (MonadParsec e s m {- , Token s ~ Char -}) => Integer -> m Int
     coerceIntegral x
       | x <  0      = fail $ concat ["The ",labeling," value (",show x,") is a negative number"]
       | otherwise   = pure $ fromEnum x
-    coerceFloating :: (MonadParsec e s m, Token s ~ Char) => Double -> m Int
+
+--    coerceFloating :: (MonadParsec e s m {- , Token s ~ Char -}) => Double -> m Int
     coerceFloating = assertNonNegative <=< assertIntegral labeling
       where
         assertNonNegative x
@@ -359,11 +360,12 @@ flexiblePositiveInt :: (MonadParsec e s m, Token s ~ Char) => String -> m Int
 flexiblePositiveInt labeling = either coerceFloating coerceIntegral . floatingOrInteger
                              =<< signed whitespace number <?> ("positive integer for " ++ labeling)
   where
-    coerceIntegral :: (MonadParsec e s m, Token s ~ Char) => Integer -> m Int
+    coerceIntegral :: (MonadParsec e s m {- , Token s ~ Char -}) => Integer -> m Int
     coerceIntegral x
       | x <= 0      = fail $ concat ["The ",labeling," value (",show x,") is not a positive number"]
       | otherwise   = pure $ fromEnum x
-    coerceFloating :: (MonadParsec e s m, Token s ~ Char) => Double -> m Int
+
+    coerceFloating :: (MonadParsec e s m {- , Token s ~ Char -}) => Double -> m Int
     coerceFloating = assertPositive <=< assertIntegral labeling
       where
         assertPositive x
@@ -414,7 +416,7 @@ nonNegInt = fromIntegral <$> integer
 -- | Parses an Integral value from a 'Double' value. If the 'Double' is not an
 --   integral value, then a parse error is raised. The first 'String' parameter
 --   is used as a label in the error reporting.
-assertIntegral :: (MonadParsec e s m, Token s ~ Char) => String -> Double -> m Int
+assertIntegral :: (MonadParsec e s m {- , Token s ~ Char -}) => String -> Double -> m Int
 assertIntegral labeling x
   | isInt x   = pure $ fromEnum rounded
   | otherwise = fail $ concat ["The ",labeling," value (",show x,") is a real value, not an integral value"]
@@ -530,7 +532,7 @@ findFirstSet :: FiniteBits b => b -> Int
 findFirstSet = countTrailingZeros
 
 -- | Inverts a map.
-swapMap :: (Ord k, Ord a) => Map k a -> Map a k
+swapMap :: Ord a => Map k a -> Map a k
 swapMap x = let !tups = assocs x
             in M.fromList $ swap <$> tups
 

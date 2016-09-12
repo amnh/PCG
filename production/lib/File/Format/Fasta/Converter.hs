@@ -23,18 +23,18 @@ import qualified Data.Vector                as V   (fromList)
 import           File.Format.Fasta.Internal
 import           File.Format.Fasta.Parser
 import           Text.Megaparsec.Custom            (fails)
-import           Text.Megaparsec.Prim              (MonadParsec, Token)
+import           Text.Megaparsec.Prim              (MonadParsec)
 
 
 -- | Different forms a 'FastaSequence' can be interpreted as.
 data FastaSequenceType = DNA | RNA | AminoAcid deriving (Bounded,Eq,Enum,Read,Show)
 
 -- | Define and convert a 'FastaParseResult' to the expected sequence type 
-fastaStreamConverter :: (MonadParsec e s m, Token s ~ Char) => FastaSequenceType -> FastaParseResult -> m TaxonSequenceMap
+fastaStreamConverter :: (MonadParsec e s m {- , Token s ~ Char -}) => FastaSequenceType -> FastaParseResult -> m TaxonSequenceMap
 fastaStreamConverter seqType = fmap (colate seqType) . validateStreamConversion seqType 
 
 -- | Validates that the stream contains a 'FastaParseResult' of the given 'FastaSequenceType'.
-validateStreamConversion :: (MonadParsec e s m, Token s ~ Char) => FastaSequenceType -> FastaParseResult -> m FastaParseResult
+validateStreamConversion :: (MonadParsec e s m {- , Token s ~ Char -}) => FastaSequenceType -> FastaParseResult -> m FastaParseResult
 validateStreamConversion seqType xs =
   case partition hasErrors result of
     ([] , _) -> pure xs

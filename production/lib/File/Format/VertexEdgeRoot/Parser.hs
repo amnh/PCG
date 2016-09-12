@@ -174,7 +174,7 @@ unlabeledVertexSetDefinition = validateVertexSet =<< unlabeledVertexSetDefinitio
         labels' <- vertexLabelDefinition `sepBy1` symbol (char ',')
         _       <- symbol (char '}')
         pure (Nothing, labels')
-    validateVertexSet :: (MonadParsec e s m, Token s ~ Char) => (Maybe VertexSetType, [VertexLabel]) -> m (Maybe VertexSetType, Set VertexLabel)
+--    validateVertexSet :: (MonadParsec e s m, Token s ~ Char) => (Maybe VertexSetType, [VertexLabel]) -> m (Maybe VertexSetType, Set VertexLabel)
     validateVertexSet (t,vs)
       | null dupes = pure (t, fromList vs)
       | otherwise  = fail errorMessage
@@ -206,7 +206,7 @@ edgeSetDefinition = validateEdgeSet =<< edgeSetDefinition'
         _      <- symbol (char '}')
         pure pairs
 
-    validateEdgeSet :: (MonadParsec e s m, Token s ~ Char) => [EdgeInfo] -> m (Set EdgeInfo)
+--    validateEdgeSet :: (MonadParsec e s m, Token s ~ Char) => [EdgeInfo] -> m (Set EdgeInfo)
     validateEdgeSet es
       | null errors = pure $ fromList es
       | otherwise   = fails errors
@@ -247,7 +247,7 @@ symbol x = x <* space
 --   * Any two root nodes are connected
 --
 --   * Any tree contains a cycle
-validateForest :: (MonadParsec e s m, Token s ~ Char) => VertexEdgeRoot -> m VertexEdgeRoot
+validateForest :: (MonadParsec e s m {- , Token s ~ Char -}) => VertexEdgeRoot -> m VertexEdgeRoot
 validateForest ver@(VER vs es rs )
   | (not.null) treeEdgeCycles = fails $ edgeCycleErrorMessage <$> treeEdgeCycles
   | (not.null) connectedRoots = fails $ manyRootsErrorMessage <$> connectedRoots

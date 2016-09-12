@@ -48,7 +48,7 @@ createSimpleTree :: Foldable t
                -> SimpleTree
 createSimpleTree rootRef symbols xs = TT . setRefIds $ unfoldTree buildTree rootRef
   where
-    alphabet = constructAlphabet $ pure <$> symbols
+    alphabet = fromSymbols $ pure <$> symbols
 --    mapping :: (Foldable a, Foldable c, Foldable v) => IntMap (v (c (a String)), IntSet)
     mapping = foldl' f mempty xs
       where
@@ -79,11 +79,11 @@ createCherry rootCharacter leftCharacter rightCharacter = createSimpleTree 0 alp
   where
     alphabet = toList $ foldMap S.fromList [rootCharacter, leftCharacter, rightCharacter]
 
-createBinary :: (Show (t String), Foldable t) => t String -> SimpleTree
+createBinary :: Foldable t => t String -> SimpleTree
 createBinary leafCharacters = TT . setRefIds . createBinary' $ createCherry' <$> chunksOf 2 leafCharacters
   where
     symbols  = toList $ foldMap S.fromList leafCharacters
-    alphabet = constructAlphabet $ pure <$> symbols
+    alphabet = fromSymbols $ pure <$> symbols
 
     strToLeaf :: String -> Tree TestingDecoration
     strToLeaf str = Node (def { dEncoded = pure . encodeDynamic alphabet $ (\c -> [[c]]) <$> str }) []
@@ -205,7 +205,7 @@ renderDynamicCharacter alphabetMay char
   where
     symbolCount     = width $ char `indexChar` 0
     symbols         = take symbolCount arbitrarySymbols
-    defaultAlphabet = constructAlphabet symbols
+    defaultAlphabet = fromSymbols symbols
     alphabet        = fromMaybe defaultAlphabet alphabetMay
     f :: [String] -> String
     f [x] = x
@@ -217,11 +217,11 @@ arbitrarySymbols = fmap pure . ('-' :) $ ['0'..'9'] <> ['A'..'Z'] <> ['a'..'z']
 instance Arbitrary SimpleTree where
   -- | Arbitrary Cherry
     arbitrary = do
-      let allSymbols      = ['0'..'9'] <> ['A'..'Z'] <> ['a'..'z']
-      alphabetLength      <- choose (1, length allSymbols) -- Inclusive bounds
-      let alphabetSymbols = take alphabetLength allSymbols
-      leafNodeCount       <- choose (2, 16) -- Inclusive bounds
-      let leafNodeCharGen = listOf1 (elements alphabetSymbols)
+      let defaultSymbols         = ['0'..'9'] <> ['A'..'Z'] <> ['a'..'z']
+      alphabetLength             <- choose (1, length defaultSymbols) -- Inclusive bounds
+      let defaultAlphabetSymbols = take alphabetLength defaultSymbols
+      leafNodeCount              <- choose (2, 16) -- Inclusive bounds
+      let leafNodeCharGen        = listOf1 (elements defaultAlphabetSymbols)
       createBinary <$> vectorOf leafNodeCount leafNodeCharGen
 
 type instance Element SimpleTree = SimpleTree
@@ -485,7 +485,7 @@ simpleTreeCharacterDecorationEqualityAssertion rootRef symbols transformation ac
             (expectedChar, children) = mapping ! i
 
     -- 
-    alphabet = constructAlphabet $ pure <$> symbols
+    alphabet = fromSymbols $ pure <$> symbols
 --    mapping :: (Foldable a, Foldable c, Foldable v) => IntMap (v (c (a String)), IntSet)
     mapping = foldl' f mempty spec
       where
