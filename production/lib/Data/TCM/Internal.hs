@@ -10,91 +10,219 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE BangPatterns, TypeFamilies #-}
-{-# OPTIONS_GHC -fno-warn-orphans #-}
+{-# LANGUAGE Strict, TypeFamilies #-}
 
 module Data.TCM.Internal where
 
 import           Data.Foldable
-import           Data.Key
-import           Data.List.Utility (equalityOf, occurances)
-import           Data.Map          (delete, findMax, keys)
-import qualified Data.Map            as Map   (fromList)
-import           Data.Maybe                   (fromMaybe)
+import           Data.List.Utility             (equalityOf, occurances)
+import           Data.Map                      (delete, findMax, keys)
+import qualified Data.Map             as Map   (fromList)
 import           Data.Monoid
-import qualified Data.Vector         as Boxed
-import           Data.Vector.Unboxed          (Unbox, Vector)
-import qualified Data.Vector.Unboxed as V
-import           Prelude             hiding   (lookup)
+import           Data.MonoTraversable
+import qualified Data.Vector          as Boxed
+import           Data.Vector.Unboxed           (Vector)
+import qualified Data.Vector.Unboxed  as V
+import           Data.Word
+import           Prelude              hiding   (lookup)
 import           Test.QuickCheck
 
 
--- | A data structure for storing a two dimensional array of bits.
---   Exposes row based monomorphic mapping & folding.
+-- | A data structure for storing a two dimensional array of positive cost values.
+--   Values are stored in an unboxed structure for cache efficiency.
 --
---   It is important to note the endianness of 'BitMatrix'.
---   The bit at position @(0,0)@ is displayed in the upper left hand corner when
---   the 'BitMatrix' is shown.
---   The bit at position @(i,x)@ will be of less significance than position @(i+1,x)@,
---   for the resulting xth 'BitVector' row when calling 'rows' on a 'BitMatrix'.
---   The bit at position @(x,i)@ will be of less significance than position @(x,i+1)@,
---   for the resulting xth 'BitVector' column when calling 'cols' on a 'BitMatrix'.
---
-data TCM a
-   = TCM !Int (Vector a)
+data TCM
+   = TCM Int (Vector Word32)
    deriving (Eq)
 
--- | The number of rows and columns in the 'BitMatrix'
---   /O(1)/
-size :: TCM a -> Int
+type instance Element TCM = Word32
+
+-- | Performs a element-wise monomporphic map over ther 'TCM'.
+instance MonoFunctor TCM where
+    omap f (TCM n v) = TCM n $ V.map f v
+
+-- | Performs a row-major monomporphic fold over ther 'TCM'.
+instance MonoFoldable TCM where
+  -- | Map each element of a structure to a 'Monoid' and combine the results.
+  {-# INLINE ofoldMap #-}
+  ofoldMap f = V.foldr (mappend . f) mempty . vec
+
+  -- | Right-associative fold of a structure.
+  {-# INLINE ofoldr #-}
+  ofoldr f e = V.foldr f e . vec
+
+  -- | Strict left-associative fold of a structure.
+  {-# INLINE ofoldl' #-}
+  ofoldl' f e = V.foldl' f e . vec
+
+  -- | Right-associative fold of a monomorphic container with no base element.
+  --
+  -- Note: this is a partial function. On an empty 'MonoFoldable', it will
+  -- throw an exception.
+  --
+  -- /See 'Data.MinLen.ofoldr1Ex' from "Data.MinLen" for a total version of this function./
+  {-# INLINE ofoldr1Ex #-}
+  ofoldr1Ex f = V.foldr1 f . vec
+
+  -- | Strict left-associative fold of a monomorphic container with no base
+  -- element.
+  --
+  -- Note: this is a partial function. On an empty 'MonoFoldable', it will
+  -- throw an exception.
+  --
+  -- /See 'Data.MinLen.ofoldl1Ex'' from "Data.MinLen" for a total version of this function./
+  {-# INLINE ofoldl1Ex' #-}
+  ofoldl1Ex' f = V.foldl1 f . vec
+
+  {-# INLINE otoList #-}
+  otoList = V.toList . vec
+
+  {-# INLINE onull #-}
+  onull = const False
+
+  {-# INLINE olength #-}
+  olength = V.length .vec
+
+
+-- | Performs a row-wise monomporphic traversal over ther 'TCM'.
+instance MonoTraversable TCM where
+  -- | Map each element of a monomorphic container to an action,
+  -- evaluate these actions in row-major order and collect the results.
+  {-# INLINE otraverse #-}
+  otraverse f (TCM n v) = fmap (TCM n . V.fromList) . traverse f $ V.toList v
+
+  -- | Map each element of a monomorphic container to a monadic action,
+  -- evaluate these actions from left to right, and
+  -- collect the results.
+  {-# INLINE omapM #-}
+  omapM = otraverse
+
+
+-- | Resulting TCMs will have at a dimension between 2 and 25.
+instance Arbitrary TCM where
+    arbitrary = do 
+        dimension  <- (arbitrary :: Gen Int) `suchThat` (\x -> 2 <= x && x <= 25) 
+        dataVector <- V.fromList <$> vectorOf (dimension * dimension) arbitrary
+        pure $ TCM dimension dataVector
+
+
+instance Show TCM where
+    show tcm = headerLine <> matrixLines
+      where
+        renderRow i = ("  "<>) . unwords $ renderValue <$> [ tcm ! (i,j) | j <- rangeValues ]
+        matrixLines = unlines $ renderRow   <$> rangeValues
+        rangeValues = [0 .. (size tcm) - 1] 
+        headerLine  = '\n' : unwords [ "TCM:", show $ size tcm, "x", show $ size tcm, "\n"]
+        maxValue    = maximumEx tcm
+        padSpacing  = length $ show maxValue
+        renderValue x = pad <> shown
+          where
+            shown = show x
+            pad   = (padSpacing - length shown) `replicate` ' '
+        
+        
+
+
+
+-- | /O(1)/ Indexing without bounds checking.
+{-# INLINE (!) #-}
+(!) :: TCM -> (Int, Int) -> Word32
+(!) (TCM n v) (i,j) = v `V.unsafeIndex` (i * n + j)
+
+
+-- | /O(1)/ Safe indexing.
+{-# INLINE (!?) #-}
+(!?) :: TCM -> (Int, Int) -> Maybe Word32
+(!?) (TCM n v) (i,j) = v V.!? (i * n + j)
+
+
+-- | /O(1)/
+--
+--   The number of rows and columns in the 'TCM'.
+{-# INLINE size #-}
+size :: TCM -> Int
 size (TCM x _) = x
 
--- | A generating function for a 'BitMatrix'. Efficiently constructs a
---   'BitMatrix' of the specified dimensions with each bit defined by the result
---   of the supplied function.
+
+-- | /O(n*n)/
 --
---   /O(n*n)/
+--   Construct a 'TCM' from a list of columns.
 --
 -- ==== __Examples__
 --
-generate :: Integral a
-         => Int              -- ^ Number of rows & columns in the TCM.
-         -> ((Int,Int) -> a) -- ^ Function to determine the value of a given index.
-         -> TCM a
-generate n f
-  | n < 1     = error message
-  | otherwise = TCM n resultVector
+-- >>> fromCols [[1,2,3],[4,5,6],[7,8,9]]
+-- TCM: 3 x 3
+--   1 4 7
+--   2 5 8
+--   3 6 9
+--
+fromCols :: (Foldable t, Foldable t', Integral a) => t (t' a) -> TCM
+fromCols xs
+  | null xs          = error "fromCols: An empty structure was supplied. Cannot construct an empty TCM!"
+  | hasJaggedCols    = error jaggedColsErrorMsg
+  | width /= height  = error notSquareErrorMsg
+  | otherwise        = result
   where
-    resultVector = V.generate (n*n) g
+    intermediaryForm = Boxed.fromList $ V.fromList . fmap coerce . toList <$> toList xs
+    width            = Boxed.length intermediaryForm
+    height           = V.length $ intermediaryForm Boxed.! 0
+    hasJaggedCols    = not . equalityOf V.length $ toList intermediaryForm
+
+    jaggedColsErrorMsg = mconcat 
+                       [ "fromCols: All the columns did not have the same height! "
+                       , "Expected modal height of ("
+                       , show mode
+                       , ") but found other heights of "
+                       , show otherLengths
+                       ]
       where
-        g i = coerce $ f (i `divMod` n)
+        occuranceMap = Map.fromList . occurances $ V.length <$> intermediaryForm
+        (mode,_)     = findMax occuranceMap
+        otherLengths = keys  $ mode `delete` occuranceMap
+        
+    notSquareErrorMsg = mconcat [ "fromRows: The number of rows ("
+                                , show height
+                                ,") did not match the number of columns ("
+                                , show width
+                                , ")!"
+                                ]
+    
+    result = TCM height resultVector
 
-    message = mconcat
-            [ "The call to generate ", show n, " f is malformed, "
-            , "the dimension (", show n, ") is a non-positive number!"
-            ]
+    resultVector = V.generate (height * height) f
+      where
+        f i = (intermediaryForm Boxed.! r) V.! q
+         where
+           (q,r) = i `divMod` height
 
-{-# INLINE coerce #-}
-coerce :: Integral a => a -> Int
-coerce = fromEnum . toInteger
 
--- | Construct a 'TCM' from a list of rows.
---   /O(n*n)/
-fromRows :: (Foldable t, Foldable t', Unbox a) => t (t' a) -> TCM a
+-- | /O(n*n)/
+--
+--   Construct a 'TCM' from a list of rows.
+--
+-- ==== __Examples__
+--
+-- >>> fromRows [[1,2,3],[4,5,6],[7,8,9]]
+-- TCM: 3 x 3
+--   1 2 3
+--   4 5 6
+--   7 8 9
+--
+fromRows :: (Foldable t, Foldable t', Integral a) => t (t' a) -> TCM
 fromRows xs
   | null xs          = error "fromRows: An empty structure was supplied. Cannot construct an empty TCM!"
   | hasJaggedRows    = error jaggedRowsErrorMsg
   | width /= height  = error notSquareErrorMsg
   | otherwise        = result
   where
-    intermediaryForm = Boxed.fromList $ V.fromList . toList <$> toList xs
+    intermediaryForm = Boxed.fromList $ V.fromList . fmap coerce . toList <$> toList xs
     height           = Boxed.length intermediaryForm
     width            = V.length $ intermediaryForm Boxed.! 0
     hasJaggedRows    = not $ equalityOf V.length intermediaryForm
 
     jaggedRowsErrorMsg = mconcat 
                        [ "fromRows: All the rows did not have the same width! "
-                       , "Expected width modal width of ("
+                       , "Expected modal width of ("
                        , show mode
                        , ") but found other widths of "
                        , show otherLengths
@@ -120,158 +248,64 @@ fromRows xs
            (q,r) = i `divMod` height
 
 
--- | Construct a 'TCM' from a list of columns.
---   /O(n*n)/
-fromCols :: (Foldable t, Foldable t', Unbox a) => t (t' a) -> TCM a
-fromCols xs
-  | null xs          = error "fromCols: An empty structure was supplied. Cannot construct an empty TCM!"
-  | hasJaggedCols    = error jaggedColsErrorMsg
-  | width /= height  = error notSquareErrorMsg
-  | otherwise        = result
+-- | /O(n*n)/
+--
+--   A generating function for a 'TCM'. Efficiently constructs a
+--   'TCM' of the specified dimensions with each value defined by the result
+--   of the supplied function.
+--
+-- ==== __Examples__
+--
+-- >>> generate 5 $ const 5
+-- TCM: 5 x 5
+--   5 5 5 5 5
+--   5 5 5 5 5
+--   5 5 5 5 5
+--   5 5 5 5 5
+--   5 5 5 5 5
+--
+-- >>> generate 4 $ \(i,j) -> abs (i - j)
+-- TCM: 4 x 4
+--   0 1 2 3 4
+--   1 0 1 2 3
+--   2 1 0 1 2
+--   3 2 1 0 1
+--   4 3 2 1 0
+--
+-- >>> generate 8 $ \(i,j) -> if i == j || i + j == 6 then 0 else 1
+-- TCM: 8 x 8
+--   0 1 1 1 0 1 1 1
+--   1 0 1 0 1 1 1 1
+--   1 1 0 1 1 1 1 1
+--   1 0 1 0 1 1 1 1
+--   0 1 1 1 0 1 1 1
+--   1 1 1 1 1 0 1 1
+--   1 1 1 1 1 1 0 1
+--   1 1 1 1 1 1 1 0
+--
+generate :: Integral a
+         => Int              -- ^ Number of rows & columns in the TCM.
+         -> ((Int,Int) -> a) -- ^ Function to determine the value of a given index.
+         -> TCM
+generate n f
+  | n < 1     = error message
+  | otherwise = TCM n resultVector
   where
-    intermediaryForm = Boxed.fromList $ V.fromList . toList <$> toList xs
-    width            = Boxed.length intermediaryForm
-    height           = V.length $ intermediaryForm Boxed.! 0
-    hasJaggedCols    = not . equalityOf V.length $ toList intermediaryForm
-
-    jaggedColsErrorMsg = mconcat 
-                       [ "fromCols: All the rows did not have the same width! "
-                       , "Expected width modal width of ("
-                       , show mode
-                       , ") but found other widths of "
-                       , show otherLengths
-                       ]
+    resultVector = V.generate (n*n) g
       where
-        occuranceMap = Map.fromList . occurances $ V.length <$> intermediaryForm
-        (mode,_)     = findMax occuranceMap
-        otherLengths = keys  $ mode `delete` occuranceMap
-        
-    notSquareErrorMsg = mconcat [ "fromRows: The number of rows ("
-                                , show height
-                                ,") did not match the number of columns ("
-                                , show width
-                                , ")!"
-                                ]
-    
-    result = TCM height resultVector
+        g i = coerce $ f (i `divMod` n)
+    message = mconcat
+            [ "The call to generate ", show n, " f is malformed, "
+            , "the dimension (", show n, ") is a non-positive number!"
+            ]
 
-    resultVector = V.generate (height * height) f
-      where
-        f i = (intermediaryForm Boxed.! r) V.! q
-         where
-           (q,r) = i `divMod` height
 
 {-# INLINE vec #-}
-vec :: TCM a -> Vector a
+vec :: TCM -> Vector Word32
 vec (TCM _ v) = v
 
-type instance Key TCM = (Int, Int)
 
-instance Indexable TCM where
-  {-# INLINE index #-}
-  index a i = fromMaybe raiseError $ i `lookup` a
-    where
-      raiseError = error $ mconcat
-                 ["Error indexing Alphabet at location "
-                 , show i
-                 , ", valid inclusive index range is [0, "
-                 , show $ length a - 1
-                 , "]."
-                 ]
+{-# INLINE coerce #-}
+coerce :: Integral a => a -> Word32
+coerce = toEnum . fromEnum . toInteger
 
-
-instance Lookup TCM where
-  {-# INLINE lookup #-}
-  (i,j) `lookup` (TCM n v) = v V.!? (i * n + j)
-
-  
--- | Performs a row-wise monomporphic fold over ther 'BitMatrix'.
-instance Foldable TCM where
-  -- | Map each element of a structure to a 'Monoid' and combine the results.
-  {-# INLINE foldMap #-}
-  foldMap f = V.foldr (mappend . f) mempty
-
-  -- | Right-associative fold of a structure.
-  {-# INLINE foldr #-}
-  foldr f e = V.foldr f e . vec
-
-  -- | Strict right-associative fold of a structure.
-  {-# INLINE foldr' #-}
-  foldr' f e = V.foldr' f e . vec
-
-  -- | Left-associative fold of a structure.
-  {-# INLINE foldl #-}
-  foldl f e = V.foldl f e . vec
-
-  -- | Strict left-associative fold of a structure.
-  {-# INLINE foldl' #-}
-  foldl' f e = V.foldl' f e . vec
-
-  -- | Right-associative fold of a non-empty structure.
-  {-# INLINE foldr1 #-}
-  foldr1 f = V.foldr1 f . vec
-
-  -- | Left-associative fold of a non-empty structure.
-  {-# INLINE foldl1 #-}
-  foldl1 f = V.foldl1 f . vec
-
-  {-# INLINE toList #-}
-  toList = V.toList . vec
-
-  {-# INLINE null #-}
-  null = const False
-
-  {-# INLINE length #-}
-  length = V.length .vec
-
-  {-# INLINE elem #-}
-  elem x = V.elem x . vec
-
-  {-# INLINE maximum #-}
-  maximum = V.maximum . vec
-
-  {-# INLINE minimum #-}
-  minimum = V.minimum . vec
-
-  {-# INLINE sum #-}
-  sum = V.sum . vec
-
-  {-# INLINE product #-}
-  product = V.product . vec
-
-
-instance FoldableWithKey TCM where
-  {-# INLINE foldrWithKey #-}
-  foldrWithKey f e (TCM n v) = V.ifoldr' g e v
-    where
-      g i = f (i `divMod` n)
-
-  {-# INLINE foldlWithKey #-}
-  foldlWithKey f e (TCM n v) = V.ifoldl' g e v
-    where
-      g i = f (i `divMod` n)
-
-{-
--- | Resulting matricies will have at /least/ one row and one column.
-instance Arbitrary BitMatrix where
-    arbitrary = do 
-        colCount <- (arbitrary :: Gen Int) `suchThat` (\x -> 0 < x && x <= 20) 
-        rowCount <- (arbitrary :: Gen Int) `suchThat` (\x -> 0 < x && x <= 20)
-        let rVal = choose (0, 2 ^ colCount -1) :: Gen Integer
-        bitRows  <- vectorOf rowCount rVal
-        pure . fromRows $ bitVec colCount <$> bitRows
-
--- | (✔)
-instance Show BitMatrix where
-    show bm = headerLine <> matrixLines
-      where
-        renderRow   = foldl (\acc e -> (if e then '1' else '0') : acc) "" . toBits
-        matrixLines = unlines $ renderRow <$> rows bm          
-        headerLine  = '\n' : unwords
-                    [ "BitMatrix:"
-                    , show $ numRows bm
-                    , "x"
-                    , show $ numCols bm
-                    , "\n"
-                    ]
--}

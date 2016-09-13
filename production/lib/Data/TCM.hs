@@ -8,22 +8,17 @@
 -- Stability   :  provisional
 -- Portability :  portable
 --
--- A matrix of bits with some useful operations.
--- Exposes row-based monomorphic maps, folds, and traversals.
--- Intended to be used by multiple datatypes for space efficient character
--- state encoding and packing.
+-- A matrix of transition costs between alphabet symbols.
+-- Exposes row-major monomorphic maps, folds, and traversals.
 -----------------------------------------------------------------------------
 
 module Data.TCM
   ( TCM()
-  , bitMatrix
+  , (!)
+  , (!?)
+  , fromCols
   , fromRows
-  , isSet
-  , isZeroMatrix
-  , numCols
-  , numRows
-  , rows
-  , row
+  , generate
   ) where
 
 import Data.TCM.Internal

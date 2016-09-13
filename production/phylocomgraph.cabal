@@ -133,6 +133,7 @@ library
                        Data.Either.Custom
                        Data.Alphabet
                        Data.BitMatrix
+                       Data.TCM
                        File.Format.Fasta
                        File.Format.Fastc
                        File.Format.Newick
@@ -185,6 +186,7 @@ library
                        Control.Evaluation.Internal
                        Control.Evaluation.Trans
                        Data.BitMatrix.Internal
+                       Data.TCM.Internal
                        File.Format.TNT.Command.CCode
                        File.Format.TNT.Command.CNames
                        File.Format.TNT.Command.Cost
