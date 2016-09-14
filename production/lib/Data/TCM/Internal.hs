@@ -10,7 +10,8 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE Strict, TypeFamilies #-}
+{- # LANGUAGE Strict #-}
+{-# LANGUAGE TypeFamilies #-}
 
 module Data.TCM.Internal where
 
@@ -20,6 +21,7 @@ import           Data.Map                      (delete, findMax, keys)
 import qualified Data.Map             as Map   (fromList)
 import           Data.Monoid
 import           Data.MonoTraversable
+import           Data.Ratio
 import qualified Data.Vector          as Boxed
 import           Data.Vector.Unboxed           (Vector)
 import qualified Data.Vector.Unboxed  as V
@@ -309,3 +311,51 @@ vec (TCM _ v) = v
 coerce :: Integral a => a -> Word32
 coerce = toEnum . fromEnum . toInteger
 
+type Weight = Double
+
+isAdditive :: (Foldable t, Foldable t', Real a) => t (t' a) -> Maybe Weight
+isAdditive = undefined
+
+isNonAdditive :: TCM -> Maybe Weight
+isNonAdditive = undefined
+
+-- Modified greeatest common divisor algorithm applied to rational numbers.
+gcd' :: Rational -> Rational -> Maybe Rational
+gcd' x y 
+  | result < 1 = Nothing
+  | otherwise  = Just result
+  where
+    result = gcd'' (abs x) (abs y) 
+    gcd'' a 0  = a
+    gcd'' a b
+      | a < b     = gcd'' b  a
+      | otherwise = gcd'' b (a `op` b)
+    m `op` n = r * n
+      where
+       q = m / n
+       p = numerator q `rem` denominator q
+       r = p % denominator q
+
+-- This allows for jagged "matries"
+matrixGCD :: (Foldable t, Foldable t', Real a) => t (t' a) -> Maybe Rational
+matrixGCD structure =
+  case rowGCD <$> toList structure of
+    [] -> Nothing
+    xs -> foldl1 coalesce xs
+  where
+    rowGCD = streamProcessRow . fmap toRational . toList
+      where
+        streamProcessRow []       = Nothing
+        streamProcessRow [x]      = Just x
+        streamProcessRow [x,y]    = gcd' x y
+        streamProcessRow (x:y:xs) = streamProcessRow' (gcd' x y) (y:xs)
+        
+        streamProcessRow' z [x,y]    = coalesce z $ gcd' x y
+        streamProcessRow' z (x:y:xs) = streamProcessRow' acc (y:xs)
+          where
+            acc = coalesce z $ gcd' x y
+
+    coalesce        _  Nothing = Nothing
+    coalesce  Nothing        _ = Nothing
+    coalesce (Just m) (Just n) = gcd' m n
+       
