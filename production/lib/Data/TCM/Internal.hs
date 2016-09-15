@@ -10,7 +10,7 @@
 --
 -----------------------------------------------------------------------------
 
-{- # LANGUAGE Strict #-}
+{-# LANGUAGE Strict #-}
 {-# LANGUAGE TypeFamilies #-}
 
 module Data.TCM.Internal where
@@ -21,7 +21,6 @@ import           Data.Map                      (delete, findMax, keys)
 import qualified Data.Map             as Map   (fromList)
 import           Data.Monoid
 import           Data.MonoTraversable
-import           Data.Ratio
 import qualified Data.Vector          as Boxed
 import           Data.Vector.Unboxed           (Vector)
 import qualified Data.Vector.Unboxed  as V
@@ -30,9 +29,22 @@ import           Prelude              hiding   (lookup)
 import           Test.QuickCheck
 
 
--- | A data structure for storing a two dimensional array of positive cost values.
+-- | A data structure for storing a two dimensional, square array of dimensionality
+--   greater that or equal to two with positive cost values at the array indices.
 --   Values are stored in an unboxed structure for cache efficiency.
 --
+--  A 'TCM' can be constructed by calling one of the following functions:
+--
+--    * 'fromList'
+--
+--    * 'fromCols'
+--
+--    * 'fromRows'
+--
+--    * 'generate'
+--
+--  Attempts to construct an empty or singleton 'TCM' through the above constructors
+--  will result in a runtime exception.
 data TCM
    = TCM Int (Vector Word32)
    deriving (Eq)
@@ -86,7 +98,7 @@ instance MonoFoldable TCM where
   olength = V.length .vec
 
 
--- | Performs a row-wise monomporphic traversal over ther 'TCM'.
+-- | Performs a row-major monomporphic traversal over ther 'TCM'.
 instance MonoTraversable TCM where
   -- | Map each element of a monomorphic container to an action,
   -- evaluate these actions in row-major order and collect the results.
@@ -123,9 +135,6 @@ instance Show TCM where
             pad   = (padSpacing - length shown) `replicate` ' '
         
         
-
-
-
 -- | /O(1)/ Indexing without bounds checking.
 {-# INLINE (!) #-}
 (!) :: TCM -> (Int, Int) -> Word32
@@ -148,6 +157,47 @@ size (TCM x _) = x
 
 -- | /O(n*n)/
 --
+--   Construct a 'TCM' from a list of elements in row major order.
+--
+-- ==== __Examples__
+--
+-- >>> fromCols [1,2,3,4,5,6,7,8,9]
+-- TCM: 3 x 3
+--   1 2 3
+--   4 5 6
+--   7 8 9
+--
+-- >>> fromList [0,1,2,1,0,1,2,1,0,3,2,1]
+-- *** Exception: fromList: The number of element (12) is not a square number. Cannot construct an non-square TCM! The number of elements (12) lies between the valid square numbers (9) and (16).
+--
+fromList :: (Foldable t, Integral a) => t a -> TCM
+fromList xs
+  | null xs       = error "fromList: An empty structure was supplied. Cannot construct an empty TCM!"
+  | notSquareList = error notSquareErrorMsg
+  | dimension < 2 = error "fromCols: A singleton structure was supplied. Cannot construct a TCM with dimension of 1, must have dimension of 2 or greater."
+  | otherwise     = TCM dimension resultVector
+  where
+    resultVector  = V.fromList $ coerce <$> toList xs
+    len           = V.length resultVector
+    dimension     = floor $ sqrt (fromIntegral len :: Double)
+    notSquareList = square dimension /= len
+    square x      = x*x
+    notSquareErrorMsg = mconcat [ "fromList: The number of element ("
+                                , show len
+                                ,") is not a square number. "
+                                , "Cannot construct an non-square TCM! "
+                                , "The number of elements ("
+                                , show len
+                                , ") lies between the valid square numbers ("
+                                , show $ square dimension
+                                , ") and ("
+                                , show $ square (dimension + 1)
+                                , ")."
+                                ]
+
+
+-- | /O(n*n)/
+--
 --   Construct a 'TCM' from a list of columns.
 --
 -- ==== __Examples__
@@ -163,6 +213,7 @@ fromCols xs
   | null xs          = error "fromCols: An empty structure was supplied. Cannot construct an empty TCM!"
   | hasJaggedCols    = error jaggedColsErrorMsg
   | width /= height  = error notSquareErrorMsg
+  | height < 2       = error "fromCols: A singleton structure was supplied. Cannot construct a TCM with dimension of 1, must have dimension of 2 or greater."
   | otherwise        = result
   where
     intermediaryForm = Boxed.fromList $ V.fromList . fmap coerce . toList <$> toList xs
@@ -215,6 +266,7 @@ fromRows xs
   | null xs          = error "fromRows: An empty structure was supplied. Cannot construct an empty TCM!"
   | hasJaggedRows    = error jaggedRowsErrorMsg
   | width /= height  = error notSquareErrorMsg
+  | height < 2       = error "fromRows: A singleton structure was supplied. Cannot construct a TCM with dimension of 1, must have dimension of 2 or greater."
   | otherwise        = result
   where
     intermediaryForm = Boxed.fromList $ V.fromList . fmap coerce . toList <$> toList xs
@@ -290,17 +342,65 @@ generate :: Integral a
          -> ((Int,Int) -> a) -- ^ Function to determine the value of a given index.
          -> TCM
 generate n f
-  | n < 1     = error message
+  | n <  0    = error negativeErrorMessage
+  | n == 0    = error nullErrorMessage
+  | n == 1    = error singletonErrorMessage
   | otherwise = TCM n resultVector
   where
     resultVector = V.generate (n*n) g
       where
         g i = coerce $ f (i `divMod` n)
-    message = mconcat
-            [ "The call to generate ", show n, " f is malformed, "
-            , "the dimension (", show n, ") is a non-positive number!"
-            ]
+    negativeErrorMessage = mconcat
+      [ "The call to generate ", show n, " f is malformed, "
+      , "the dimension (", show n, ") is a negative number."
+      , "Cannot construct a TCM with a negative dimension!"
+      ]
+    nullErrorMessage = mconcat
+      [ "The call to generate 0 f is malformed, "
+      , "the dimension is zero."
+      , "Cannot construct an empty TCM with a nullary dimension!"
+      ]
+    singletonErrorMessage = mconcat
+      [ "The call to generate ", show n, " f is malformed, "
+      , "the dimension is one."
+      , "Cannot construct a singlton TCM with a dimension of one!"
+      ]
 
+
+-- |
+-- Determines if the TCM has an additive structure.
+--
+-- /Assumes/ the 'TCM' has already been factored with 'factorTCM'.
+isAdditive :: TCM -> Bool
+isAdditive tcm = all isAdditiveIndex [(i,j) | i <- range, j <- range ]
+  where
+    isAdditiveIndex (i,j) = tcm ! (i,j) == toEnum (max i j - min i j)
+    range = [0 .. size tcm - 1]
+
+-- |
+-- Determines if the TCM has an non-additive structure.
+-- This is also colloquially reffered to as Fitch cost structure.
+--
+-- /Assumes/ the 'TCM' has already been factored with 'factorTCM'.
+isNonAdditive :: TCM -> Bool
+isNonAdditive tcm = all isNonAdditiveIndex [(i,j) | i <- range, j <- range ]
+  where
+    isNonAdditiveIndex (i,j) =  (i == j && tcm ! (i,j) == 0)
+                             || (i /= j && tcm ! (i,j) == 1)
+    range = [0 .. size tcm - 1]
+
+-- |
+-- Determines if a constant positve multiplicative factor can be extracted from
+-- every non-zero value of the TCM. Returns the multiplicive factor and the 'TCM'
+-- with reduced values. The least factor that can be found is the multipliative
+-- identiy /one/ when all values in the 'TCM' are reletively prime.
+factorTCM :: TCM -> (Int, TCM)
+factorTCM tcm
+  | factor <= 1 = (x,                       tcm)
+  | otherwise   = (x, (`div` factor) `omap` tcm)
+  where
+    factor = ofoldr1Ex gcd tcm
+    x = fromEnum factor
 
 {-# INLINE vec #-}
 vec :: TCM -> Vector Word32
@@ -311,14 +411,8 @@ vec (TCM _ v) = v
 coerce :: Integral a => a -> Word32
 coerce = toEnum . fromEnum . toInteger
 
-type Weight = Double
 
-isAdditive :: (Foldable t, Foldable t', Real a) => t (t' a) -> Maybe Weight
-isAdditive = undefined
-
-isNonAdditive :: TCM -> Maybe Weight
-isNonAdditive = undefined
-
+{-
 -- Modified greeatest common divisor algorithm applied to rational numbers.
 gcd' :: Rational -> Rational -> Maybe Rational
 gcd' x y 
@@ -358,4 +452,4 @@ matrixGCD structure =
     coalesce        _  Nothing = Nothing
     coalesce  Nothing        _ = Nothing
     coalesce (Just m) (Just n) = gcd' m n
-       
+       -}

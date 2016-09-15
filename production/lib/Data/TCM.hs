@@ -14,11 +14,18 @@
 
 module Data.TCM
   ( TCM()
-  , (!)
-  , (!?)
+    -- * Construction
   , fromCols
+  , fromList
   , fromRows
   , generate
+    -- * Indexing
+  , (!)
+  , (!?)
+    -- * Specialization Utility
+  , factorTCM
+  , isAdditive
+  , isNonAdditive
   ) where
 
 import Data.TCM.Internal
