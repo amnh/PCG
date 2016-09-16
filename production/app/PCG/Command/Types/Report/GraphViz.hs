@@ -19,29 +19,51 @@ import Bio.PhyloGraph.Edge
 import Bio.PhyloGraph.Solution
 import Bio.PhyloGraph.Node
 import Data.Char
---import Data.Vector
+import Data.Foldable
+import Data.Key hiding (zipWith)
+import Data.Monoid
+import qualified Data.Vector as V
 
-import qualified Data.IntMap as IM (elems)
+import qualified Data.IntMap as IM (keys)
 
 --import Debug.Trace
 
 dotOutput :: StandardSolution -> String
+--dotOutput solution | trace (show solution) False = undefined
 dotOutput solution = header ++ foldr (\f acc -> acc ++ foldr treeToDot mempty f) mempty (forests solution) ++ footer
     where
         header = "digraph G { \n" ++ "\trankdir = LR;\n" ++ "\tnode [shape = rect];\n"
         footer = "}"
 
         treeToDot :: DAG -> String -> String
-        treeToDot inTree curString = foldr printEdge curString (edges inTree)
-            where 
-                printEdge :: EdgeSet -> String -> String
-                --printEdge curEdge accum | trace ("printEdge " ++ show curEdge) False = undefined
-                printEdge curEdge accum = foldr (++) accum (zipWith printOne origins terminals)
+        treeToDot inTree curString = edgesStr
+            where
+              nodeValues = nodes inTree
+              
+              name' = replaceSpaces . name
+                where
+                  replaceSpaces = fmap (\c -> if isSpace c then '_' else c)
+
+              edgesStr = foldrWithKey printEdge curString . toList $ edges inTree
+                where
+                  printEdge :: Int -> EdgeSet -> String -> String
+                  --printEdge curEdge accum | trace ("printEdge " ++ show curEdge) False = undefined
+                  printEdge i curEdge accum = foldr (<>) accum (zipWith printOne origins terminals)
                     where 
-                        origins = replaceSpaces . name . origin <$> IM.elems (outNodes curEdge)
-                        terminals = replaceSpaces . name . terminal <$> IM.elems (outNodes curEdge)
-                        printOne o t = "\t\"" ++ o ++ "\" -> \"" ++ t ++ "\";\n"
-                        replaceSpaces = fmap (\c -> if isSpace c then '_' else c)
+                      origins   = repeat . printNode $ nodeValues V.! i
+                      terminals = printNode . (nodeValues V.!) <$> IM.keys (outNodes curEdge)
+                      printOne o t = "\t\"" ++ o ++ "\" -> \"" ++ t ++ "\";\n"
+                      printNode x
+                        | c == 0    = n
+                        | otherwise = unwords [n, ": cost =", show' c]
+                        where
+                          n = name' x
+                          c = totalCost x
+                          show' x
+                            | fromIntegral x' == x = show x'
+                            | otherwise = show x
+                            where
+                              x' = floor x :: Int
 
 outPutDot :: String -> StandardSolution -> IO ()
 outPutDot fileName = writeFile fileName . dotOutput
