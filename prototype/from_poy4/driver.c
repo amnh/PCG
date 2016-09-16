@@ -17,7 +17,8 @@ int main() {
     nw_matrices_p algn_mtxs2dAffine = malloc( sizeof(struct matrices) );
     nw_matrices_p algn_mtxs3d       = malloc( sizeof(struct matrices) );
 
-
+    // in three following allocationsk all matrices are set to their shortest length because they get realloced in mat_setup_size
+    // len_eff is likewise set to 0, as that triggers the realloc.
     algn_mtxs2d->len_eff     = 0;
     algn_mtxs2d->nw_costMtx  = malloc ( sizeof( int ) );
     algn_mtxs2d->dir_mtx_2d  = malloc ( sizeof( DIRECTION_MATRIX ) );
@@ -26,6 +27,13 @@ int main() {
     algn_mtxs2d->cube_d      = NULL;
     algn_mtxs2d->precalc     = malloc ( sizeof( int ) );  
 
+    algn_mtxs2d->len_eff     = 0;
+    algn_mtxs2d->nw_costMtx  = malloc ( sizeof( int ) );
+    algn_mtxs2d->dir_mtx_2d  = malloc ( sizeof( DIRECTION_MATRIX ) );
+    algn_mtxs2d->pointers_3d = malloc ( sizeof( int* ) );
+    algn_mtxs2d->cube        = malloc ( sizeof( int ) );
+    algn_mtxs2d->cube_d      = malloc ( sizeof( int ) );
+    algn_mtxs2d->precalc     = malloc ( sizeof( int ) );  
 
     algn_mtxs3d->len_eff     = 0;
     algn_mtxs3d->nw_costMtx  = malloc ( sizeof( int ) ); // TODO: do I need this here?
@@ -138,8 +146,6 @@ int main() {
     int all_elements = 31; // How is this used?
 
     cost_matrices_2d_p costMtx2d = malloc( sizeof(struct cost_matrices_2d) );
-    cost_matrices_3d_p costMtx3d = malloc( sizeof(struct cost_matrices_3d) );
-
     costMtx2d = cm_alloc_set_costs_2d( alphSize, 
                                        combinations, 
                                        do_aff, 
@@ -149,7 +155,7 @@ int main() {
                                        costMtx2d
                                      );
 
-
+    cost_matrices_3d_p costMtx3d = malloc( sizeof(struct cost_matrices_3d) );
     costMtx3d = cm_alloc_set_costs_3d( alphSize, 
                                        combinations, 
                                        do_aff, 
@@ -271,7 +277,7 @@ int main() {
 
     int deltawh = 2; // Increase in height or width of 
 
-    algn_nw_2d( seq1, seq2, costMtx2d, algn_mtxs2d, deltawh );
+    algn_nw_2d( seq1, seq2, costMtx2d, algn_mtxs2d, deltawh ); // TODO: is 
     // printf("Final alignment matrix: \n");
     // print_dynmtrx( seq1, seq2, algn_mtxs2d );
 
@@ -293,6 +299,18 @@ int main() {
 
 /************************************************ Do 2d affine alignment *****************************************************/
 
+    do_aff   = 1;
+    gap_open = 2;
+
+    cost_matrices_2d_p costMtx2d_affine = malloc( sizeof(struct cost_matrices_2d) );
+    costMtx2d_affine = cm_alloc_set_costs_2d( alphSize, 
+                                              combinations, 
+                                              do_aff, 
+                                              gap_open, 
+                                              is_metric, 
+                                              all_elements, 
+                                              costMtx2d_affine
+                                            );
 
     retSeq1->begin = retSeq1->head + SEQ_CAPACITY;
     retSeq1->end   = retSeq1->begin;
@@ -330,14 +348,14 @@ int main() {
         lenLongerSeq = lenSeq2;
     }
 
-    mat_setup_size (algn_mtxs2dAffine, lenLongerSeq, lenLongerSeq, 0, 0, cm_get_lcm (costMtx2d));
-    matrix_2d = mat_get_2d_matrix (algn_mtxs2dAffine);
+    mat_setup_size (algn_mtxs2dAffine, lenLongerSeq, lenLongerSeq, 0, 0, cm_get_lcm (costMtx2d_affine));
+    matrix_2d = mat_get_2d_nwMtx (algn_mtxs2dAffine);
     precalcMtx = mat_get_2d_prec (algn_mtxs2dAffine);
 
     // TODO: figure out what the following seven values do/are
     //       also note the int factors, which maybe have something to do with the unexplained 12
     //       that appears in matrices.c?
-    close_block_diagonal       = (int *) matrix_2d;
+    close_block_diagonal       = (int *)  matrix_2d;
     extend_block_diagonal      = (int *) (matrix_2d + (2 * lenLongerSeq));
     extend_vertical            = (int *) (matrix_2d + (4 * lenLongerSeq));
     extend_horizontal          = (int *) (matrix_2d + (6 * lenLongerSeq));
@@ -345,59 +363,59 @@ int main() {
     gap_open_prec              = (int *) (matrix_2d + (10 * lenLongerSeq));
     s_horizontal_gap_extension = (int *) (matrix_2d + (11 * lenLongerSeq));
 
-    // TODO: this might not be necessary, as it's unused in ml code:
-    cost_matrices_2d_p empty_median = malloc( sizeof(struct cost_matrices_2d) );
+    // TODO: empty_medianSeq might not be necessary, as it's unused in ml code:
+    size_t medianSeqLen    = lenSeq1 + lenSeq2 + 2;  // 2 because that's how it is in ML code
+    seq_p empty_medianSeq  = malloc( sizeof(struct seq) );
+    empty_medianSeq->cap   = medianSeqLen;
+    empty_medianSeq->head  = calloc( medianSeqLen, sizeof(SEQT));
+    empty_medianSeq->len   = 0;
+    empty_medianSeq->begin = empty_medianSeq->end = empty_medianSeq->head + medianSeqLen;
 
-    empty_median = cm_alloc_set_costs_2d( alphSize, 
-                                          combinations, 
-                                          do_aff, 
-                                          gap_open, 
-                                          is_metric, 
-                                          all_elements, 
-                                          empty_median
-                                        );
+    seq_p medianSeq  = malloc( sizeof(struct seq) );
+    medianSeq->cap   = medianSeqLen;
+    medianSeq->head  = calloc( medianSeqLen, sizeof(SEQT));
+    medianSeq->len   = 0;
+    medianSeq->begin = medianSeq->end = medianSeq->head + medianSeqLen;
 
     direction_matrix =  mat_get_2d_direct (algn_mtxs2dAffine);
-    if (lenSeq1 <= lenSeq2) {
-        cm_precalc_4algn(costMtx2d, algn_mtxs2dAffine, seq1);
-
-        // TODO: consider moving all of this into algn.
-        //       the following three fns were initially not declared in algn.h
-        initialize_matrices_affine (costMtx2d->gap_open, seq2, seq1, costMtx2d, close_block_diagonal, 
-                                    extend_block_diagonal, extend_vertical, extend_horizontal, 
-                                    final_cost_matrix, direction_matrix, precalcMtx);
-        result = algn_fill_plane_3_affine (seq2, seq1, lenSeq1 - 1, lenSeq2 - 1, final_cost_matrix, 
-                                           direction_matrix, costMtx2d, extend_horizontal, extend_vertical, 
-                                           close_block_diagonal, extend_block_diagonal, precalcMtx, gap_open_prec, 
-                                           s_horizontal_gap_extension);
-        backtrace_affine (direction_matrix, seq2, seq1, costMtx2d->median, empty_median,
-                          retSeq1, retSeq2, costMtx2d);
-    } else {
-        cm_precalc_4algn(costMtx2d, algn_mtxs2dAffine, seq2);
-        initialize_matrices_affine(costMtx2d->gap_open, seq1, seq2, costMtx2d, close_block_diagonal, 
-                                   extend_block_diagonal, extend_vertical, extend_horizontal, 
-                                   final_cost_matrix, direction_matrix, precalcMtx);
-        result = algn_fill_plane_3_affine (seq1, seq2, lenSeq2 - 1, lenSeq1 - 1, final_cost_matrix, 
-                                           direction_matrix, costMtx2d, extend_horizontal, extend_vertical, 
-                                           close_block_diagonal, extend_block_diagonal, precalcMtx, gap_open_prec, 
-                                           s_horizontal_gap_extension);
-        backtrace_affine (direction_matrix, seq1, seq2, costMtx2d->median, empty_median,
-                         retSeq2, retSeq1, costMtx2d);
-    }
 
     printf("\n\n\n***************** Align 2 sequences affine ********************\n");
-
-    cm_set_affine(costMtx2d, 1, 2); // set affine as True, gap cost is 2
-
-    algn_nw_2d( seq1, seq2, costMtx2d, algn_mtxs2d, deltawh );
-    // printf("Final alignment matrix: \n");
-    // print_dynmtrx( seq1, seq2, algn_mtxs2d );
 
     printf("Original 2d sequences:\n");
     seq_print(seq1, 1);
     seq_print(seq2, 2);
 
-    backtrack_2d_affine (seq1, seq2, retSeq1, retSeq2, algn_mtxs2d, costMtx2d, 0, 0, 1);
+
+    if (lenSeq1 <= lenSeq2) {
+        printf("seq 1 is shorter, s1: %zu, s2: %zu\n", lenSeq1, lenSeq2);
+        cm_precalc_4algn(costMtx2d_affine, algn_mtxs2dAffine, seq1);
+
+        // TODO: consider moving all of this into algn.
+        //       the following three fns were initially not declared in algn.h
+        initialize_matrices_affine (costMtx2d_affine->gap_open, seq2, seq1, costMtx2d_affine, close_block_diagonal, 
+                                    extend_block_diagonal, extend_vertical, extend_horizontal, 
+                                    final_cost_matrix, direction_matrix, precalcMtx);
+        result = algn_fill_plane_3_affine (seq2, seq1, lenSeq1 - 1, lenSeq2 - 1, final_cost_matrix, 
+                                           direction_matrix, costMtx2d_affine, extend_horizontal, extend_vertical, 
+                                           close_block_diagonal, extend_block_diagonal, precalcMtx, gap_open_prec, 
+                                           s_horizontal_gap_extension);
+        backtrace_affine (direction_matrix, seq2, seq1, medianSeq, empty_medianSeq,
+                          retSeq1, retSeq2, costMtx2d_affine);
+    } else {
+        printf("seq 2 is shorter, s1: %zu, s2: %zu\n", lenSeq1, lenSeq2);
+        cm_precalc_4algn(costMtx2d_affine, algn_mtxs2dAffine, seq2);
+        initialize_matrices_affine(costMtx2d_affine->gap_open, seq1, seq2, costMtx2d_affine, close_block_diagonal, 
+                                   extend_block_diagonal, extend_vertical, extend_horizontal, 
+                                   final_cost_matrix, direction_matrix, precalcMtx);
+        result = algn_fill_plane_3_affine (seq1, seq2, lenSeq2 - 1, lenSeq1 - 1, final_cost_matrix, 
+                                           direction_matrix, costMtx2d_affine, extend_horizontal, extend_vertical, 
+                                           close_block_diagonal, extend_block_diagonal, precalcMtx, gap_open_prec, 
+                                           s_horizontal_gap_extension);
+        backtrace_affine (direction_matrix, seq1, seq2, medianSeq, empty_medianSeq,
+                         retSeq2, retSeq1, costMtx2d_affine);
+    }
+ 
+
     printf("\nAligned 2d sequences\n");
     seq_print(retSeq1, 1);
     seq_print(retSeq2, 2);

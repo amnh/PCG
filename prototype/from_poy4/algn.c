@@ -1684,6 +1684,7 @@ HAS_GAP_OPENING (SEQT prev, SEQT curr, int gap, int gap_open) {
     else return gap_open;
 }
 
+// TODO: is this used?
 static inline void
 FILL_EXTEND_HORIZONTAL_NOBT (int sj_horizontal_extension, int sj_gap_extension, int sj_gap_opening, int j, 
                              int *extend_horizontal, const cost_matrices_2d_p c, 
@@ -1705,7 +1706,7 @@ FILL_EXTEND_HORIZONTAL_NOBT (int sj_horizontal_extension, int sj_gap_extension, 
     return;
 }
 
-inline DIRECTION_MATRIX
+DIRECTION_MATRIX
 FILL_EXTEND_HORIZONTAL (int sj_horizontal_extension, int sj_gap_extension, int sj_gap_opening, int j, 
                         int *extend_horizontal, const cost_matrices_2d_p c, 
                         const int *close_block_diagonal, DIRECTION_MATRIX direction_matrix) {
@@ -1730,7 +1731,7 @@ FILL_EXTEND_HORIZONTAL (int sj_horizontal_extension, int sj_gap_extension, int s
     return (direction_matrix);
 }
 
-inline void
+void
 FILL_EXTEND_VERTICAL_NOBT (int si_vertical_extension, int si_gap_extension, int si_gap_opening, int j, 
                            int *extend_vertical, const int *prev_extend_vertical, const cost_matrices_2d_p c, 
                            const int *prev_close_block_diagonal) {
@@ -1745,7 +1746,7 @@ FILL_EXTEND_VERTICAL_NOBT (int si_vertical_extension, int si_gap_extension, int 
     return;
 }
 
-inline DIRECTION_MATRIX
+DIRECTION_MATRIX
 FILL_EXTEND_VERTICAL (int si_vertical_extension, int si_gap_extension, int si_gap_opening, int j, 
                       int *extend_vertical, const int *prev_extend_vertical, const cost_matrices_2d_p c, 
                       const int *prev_close_block_diagonal, 
@@ -1765,7 +1766,7 @@ FILL_EXTEND_VERTICAL (int si_vertical_extension, int si_gap_extension, int si_ga
     return (direction_matrix);
 }
 
-inline void
+void
 FILL_EXTEND_BLOCK_DIAGONAL_NOBT (SEQT si_base, SEQT sj_base, SEQT si_prev_base, 
                                  SEQT sj_prev_base, int gap_open, int j, 
                                  int *extend_block_diagonal, const int *prev_extend_block_diagonal, 
@@ -1785,7 +1786,7 @@ FILL_EXTEND_BLOCK_DIAGONAL_NOBT (SEQT si_base, SEQT sj_base, SEQT si_prev_base,
     return;
 }
 
-inline DIRECTION_MATRIX
+DIRECTION_MATRIX
 FILL_EXTEND_BLOCK_DIAGONAL (SEQT si_base, SEQT sj_base, SEQT si_prev_base, SEQT sj_prev_base, 
                             int gap_open, int j, 
                             int *extend_block_diagonal, const int *prev_extend_block_diagonal, 
@@ -1809,7 +1810,7 @@ FILL_EXTEND_BLOCK_DIAGONAL (SEQT si_base, SEQT sj_base, SEQT si_prev_base, SEQT 
     return (direction_matrix);
 }
 
-inline void
+void
 FILL_CLOSE_BLOCK_DIAGONAL_NOBT(SEQT si_base, SEQT sj_base, SEQT si_no_gap, 
                                SEQT sj_no_gap, int si_gap_opening, int sj_gap_opening, int j, 
                                const int *c, int *close_block_diagonal, 
@@ -1847,7 +1848,7 @@ FILL_CLOSE_BLOCK_DIAGONAL_NOBT(SEQT si_base, SEQT sj_base, SEQT si_no_gap,
     return;
 }
 
-inline DIRECTION_MATRIX
+DIRECTION_MATRIX
 FILL_CLOSE_BLOCK_DIAGONAL(SEQT si_base, SEQT sj_base, SEQT si_no_gap, 
                           SEQT sj_no_gap, int si_gap_opening, int sj_gap_opening, int j, 
                           const int *c, int *close_block_diagonal, 
@@ -2195,7 +2196,7 @@ initialize_matrices_affine (int go, const seq_p si, const seq_p sj,
     return;
 }
 
-inline DIRECTION_MATRIX
+DIRECTION_MATRIX
 ASSIGN_MINIMUM (int *final_cost_matrix, int extend_horizontal, 
                 int extend_vertical, int extend_block_diagonal, 
                 int close_block_diagonal, DIRECTION_MATRIX direction_matrix) {
@@ -2347,7 +2348,7 @@ algn_fill_plane_3_affine_nobt (const seq_p si, const seq_p sj, int leni, int len
 }
 
 
-inline int
+int
 algn_fill_plane_3_affine (const seq_p si, const seq_p sj, int leni, int lenj, 
                        int *final_cost_matrix, DIRECTION_MATRIX *direction_matrix, 
                        const cost_matrices_2d_p c, int *extend_horizontal, int *extend_vertical, 
@@ -2523,7 +2524,7 @@ algn_CAML_align_affine_3 (value si, value sj, value cm, value am, value resi,
         largest = leni;
     else largest = lenj;
     mat_setup_size (cam, largest, largest, 0, 0, cm_get_lcm(ccm));
-    matrix = mat_get_2d_matrix(cam);
+    matrix = mat_get_2d_nwMtx(cam);
     precalcMtx = mat_get_2d_prec(cam);
     close_block_diagonal = (int *) matrix;
     extend_block_diagonal = (int *) (matrix + (2 * largest));
@@ -2591,7 +2592,7 @@ algn_CAML_cost_affine_3 (value si, value sj, value cm, value am) {
         largest = leni;
     else largest = lenj;
     mat_setup_size (cam, largest, largest, 0, 0, cm_get_lcm(ccm));
-    matrix = mat_get_2d_matrix(cam);
+    matrix = mat_get_2d_nwMtx(cam);
     close_block_diagonal = (int *) matrix;
     extend_block_diagonal = (int *) (matrix + (2 * largest));
     extend_vertical = (int *) (matrix + (4 * largest));
@@ -3181,7 +3182,9 @@ algn_fill_cube_ukk (const seq_p seq1, const seq_p seq2, const int *precalcMtx,
  *  and st_seq2, respectively, with length len_seq1 and len_seq2 using the
  *  transformation cost matrix cstMtx and the alignment matrices nw_mtxs.
  */
-/** TODO: st_seq1 and st_seq2 are unused???  */
+/** TODO: st_seq1 and st_seq2 are unused??? Also, limit defined here seems to be defined in sequence.ml but 
+ *        never used. It's only call traces back to algn_CAML_limit_2, which, in turn, seems never to be called? 
+ */
 static inline int
 algn_nw_limit_2d (const seq_p seq1, const seq_p seq2, const cost_matrices_2d_p costMtx, 
                nw_matrices_p nw_mtxs, int deltawh, int st_seq1, int len_seq1, 
@@ -3191,7 +3194,7 @@ algn_nw_limit_2d (const seq_p seq1, const seq_p seq2, const cost_matrices_2d_p c
     DIRECTION_MATRIX *dirMtx;
     sseq1 = seq_get_begin (seq1);
     sseq2 = seq_get_begin (seq2);
-    curRow = mat_get_2d_matrix (nw_mtxs);
+    curRow = mat_get_2d_nwMtx (nw_mtxs);
     dirMtx = mat_get_2d_direct (nw_mtxs);
     seq1_len = seq_get_len (seq1);
     seq2_len = seq_get_len (seq2);
@@ -3495,7 +3498,7 @@ print_dynmtrx (const seq_p seq1, const seq_p seq2,
                nw_matrices_p m) {
     int i, j;
     int *d;
-    d = mat_get_2d_matrix (m);
+    d = mat_get_2d_nwMtx (m);
     for (i = 0; i < seq_get_len (seq1); i++) {
         for (j = 0; j < seq_get_len (seq2); j++)
             printf ("%d", (int) *(d + j));

@@ -201,7 +201,7 @@ void
 backtrace_affine (DIRECTION_MATRIX *direction_matrix, const seq_p si, const seq_p sj, 
                   seq_p median, seq_p medianwg, seq_p resi, seq_p resj, const cost_matrices_2d_p c);
 
-inline int
+int
 algn_fill_plane_3_affine (const seq_p si, const seq_p sj, int leni, int lenj, 
                        int *final_cost_matrix, DIRECTION_MATRIX *direction_matrix, 
                        const cost_matrices_2d_p c, int *extend_horizontal, int *extend_vertical, 

@@ -91,7 +91,7 @@ mat_setup_size (nw_matrices_p m, int len_seq1, int len_seq2, int len_seq3, int i
         len_2d = 0;
     } else {                /* If the size setup is for 3d */
         len = mat_size_of_3d_matrix (len_seq1, len_seq2, len_seq3, is_ukk);
-        len_precalc = (1 << lcm) * (1 << lcm) * len_seq2;
+        len_precalc = (1 << lcm) * (1 << lcm) * len_seq2;  // TODO: why sequence 2?
         len_2d = len_seq1 * len_seq2;
         len_dir = len_2d * len_seq3;
     }
@@ -234,7 +234,7 @@ void
 mat_print_algn_2d (nw_matrices_p m, int w, int h) {
     int *mm;
     int i, j;
-    mm = mat_get_2d_matrix (m);
+    mm = mat_get_2d_nwMtx (m);
     for (i = 0; i < h; i++) {
         for (j = 0; j < w; j++)
             fprintf (stdout, "%d\t", *(mm + (w * i) + j));

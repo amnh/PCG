@@ -95,7 +95,7 @@ mat_setup_size (nw_matrices_p m, int len_seq1, int len_seq2, int len_seq3, int i
  * Gets the pointer to the first memory position of the 2d alignment matrix. 
  */
 int *
-mat_get_2d_matrix (nw_matrices_p m);
+mat_get_2d_nwMtx (nw_matrices_p m);
 
 int *
 mat_get_2d_prec (const nw_matrices_p m);
