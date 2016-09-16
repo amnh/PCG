@@ -26,8 +26,8 @@
 void
 union_prepend_pair (unionofft a, unionofft b, unionofft c, SEQT or){
     seq_prepend (c->s, \
-            or | seq_get (a->s, a->position) \
-            | seq_get (b->s, b->position));
+            or | seq_get_element (a->s, a->position) \
+            | seq_get_element (b->s, b->position));
     a->position--;
     b->position--;
     a->end--;
@@ -37,7 +37,7 @@ union_prepend_pair (unionofft a, unionofft b, unionofft c, SEQT or){
 
 void
 union_prepend_item (unionofft source, unionofft target, SEQT or) {
-    seq_prepend (target->s, or | seq_get (source->s, source->position));
+    seq_prepend (target->s, or | seq_get_element (source->s, source->position));
     source->position--;
     source->end--;
     return;
@@ -90,7 +90,7 @@ union_prepend_and_fill_items (SEQT interm, unionofft c, UNION_OFFT prep, unionof
 SEQT
 union_move_left (unionofft a) {
     SEQT res;
-    res = seq_get (a->s, a->position);
+    res = seq_get_element (a->s, a->position);
     a->position--;
     a->end--;
     return (res);
@@ -98,7 +98,7 @@ union_move_left (unionofft a) {
 
 void
 union_merge (seq_p a, seq_p b, seq_p median, unionofft au, \
-        unionofft bu, unionofft c, cost_matrices_p m) {
+        unionofft bu, unionofft c, cost_matrices_2d_p m) {
     UNION_OFFT items_prepended = 0, i, gap, lena, interm, apos, bpos;
     SEQT *begina, *beginb, *beginm;
     lena = seq_get_len (a);
@@ -152,7 +152,7 @@ union_merge (seq_p a, seq_p b, seq_p median, unionofft au, \
             i--;
         }
     }
-    if (gap != seq_get (c->s, 0)) {
+    if (gap != seq_get_element (c->s, 0)) {
         seq_prepend (c->s, gap);
         *(c->ca_offsets) = 0;
         *(c->cb_offsets) = 0;
@@ -211,7 +211,7 @@ union_CAML_make (value s1, value s2, value smedian, value a, value b, \
     CAMLxparam2 (smedian, cm);
     struct unionoff ua, ub, uc;
     seq_p ss1, ss2, ssmedian;
-    cost_matrices_p cmc;
+    cost_matrices_2d_p cmc;
     cmc = Cost_matrix_struct(cm);
     union_CAML_unwrap (a, &ua);
     union_CAML_unwrap (b, &ub);

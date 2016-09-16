@@ -26,8 +26,8 @@ void seq_print(seq_p inSeq, int num) {
     SEQT * start = seq_get_begin(inSeq);
     SEQT * end   = seq_get_end(inSeq);
     printf("Seq num: %d\n", num);
-    for( SEQT *i = start; i < end; i++) {
-        printf("%d, ", *i);
+    for( ; start < end; start++) {
+        printf("%2d, ", *start);
     }
     printf("\n");
 }
@@ -70,7 +70,7 @@ seq_get_ptr (const seq_p a, int p) {
 }
     
 SEQT 
-seq_get (const seq_p a, int p) {
+seq_get_element (const seq_p a, int p) {
     assert (p < a->len);
     assert (p >= 0);
     return (*(seq_get_ptr (a, p)));
@@ -172,8 +172,8 @@ seq_compare (seq_p a, seq_p b) {
         else return -1;
     }
     for (i = 0; i < la; i++) {
-        ca = seq_get (a, i);
-        cb = seq_get (b, i);
+        ca = seq_get_element (a, i);
+        cb = seq_get_element (b, i);
         if (ca != cb) {
             if (ca > cb) return 1;
             else return -1;

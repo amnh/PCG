@@ -46,17 +46,22 @@
 
 struct matrices {
                                   /****** In each of the following calculations, seq length includes opening gap *******/
-    int len;                      /* Total length of available memory allocated to matrix or cube == for 2D: 12 * max(len_s1, len_s2)
-                                   *                                                                 for 3D: len_s1 * len_s2 * len_s3 
+    int len;                      /* Total length of available memory allocated to matrix or cube == | for 2d: 12 * max(len_s1, len_s2)
+                                   *                                                                 | for 3d: len_s1 * len_s2 * len_s3 
                                    */
-    int len_eff;                  // Length of the efficiency matrix; at least as large as len
+    int len_eff;                  // Length of the efficiency matrix; at least as large as len TODO: figure out what this actually is
     int len_pre;                  // Length of the precalculated matrix == max(len_s1, len_s2) * (alphSize + 1) ---extra 1 is for gap 
-    int *matrix;                  // Matrix for regular alignment 
-    DIRECTION_MATRIX *dir_mtx_2d; // Matrix for directions in a 2d alignment 
+    int *nw_costMtx;              // NW cost matrix for 2d alignment 
+    DIRECTION_MATRIX *dir_mtx_2d; // Matrix for backtrace directions in a 2d alignment 
     int **pointers_3d;            // Matrix of pointers to each row in a 3d align 
     int *cube;                    // Matrix for 3d alignment 
-    DIRECTION_MATRIX *cube_d;     // Matrix for directions in a 3d alignment 
-    int *precalc;                 // Matrix of precalculated arrays 
+    DIRECTION_MATRIX *cube_d;     // Matrix for backtrack directions in a 3d alignment 
+    int *precalc;                 /* a three-dimensional matrix that holds
+                                   * the transition costs for the entire alphabet (of all three sequences)
+                                   * with the sequence seq3. The columns are the bases of seq3, and the rows are 
+                                   * each of the alphabet characters (possibly inc including ambiguities). See 
+                                   * cm_precalc_4algn_3d for more information). 
+                                   */
 };
 
 typedef struct matrices * nw_matrices_p;

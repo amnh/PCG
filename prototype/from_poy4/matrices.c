@@ -23,8 +23,6 @@
 #include "matrices.h"
 #include "cm.h"
 
-#define DEBUG 1
-
 
 /* 
  * For memory management efficiency, I will keep all the matrices in one big
@@ -64,6 +62,7 @@ void print_matrices(nw_matrices_p m, int alphSize) {
     
 }
 
+// TODO: wtf is with the 12 here?
 inline int
 mat_size_of_2d_matrix (int w, int h) {
     if (w > h) return (w * 12);
@@ -97,7 +96,7 @@ mat_setup_size (nw_matrices_p m, int len_seq1, int len_seq2, int len_seq3, int i
         len_dir = len_2d * len_seq3;
     }
     if (m->len_eff < len) { /* If the 3d or 2d matrix is not enough */
-        m->cube = m->matrix = realloc (m->matrix, (len * sizeof(int)));
+        m->cube = m->nw_costMtx = realloc (m->nw_costMtx, (len * sizeof(int)));
         m->len_eff = len;
     }
     if (m->len < len_dir) { /* If the other matrices are not enough */
@@ -147,8 +146,8 @@ mat_get_3d_prec (const nw_matrices_p m) {
 }
 
 int *
-mat_get_2d_matrix (nw_matrices_p m) {
-    return (m->matrix);
+mat_get_2d_nwMtx (nw_matrices_p m) {
+    return (m->nw_costMtx);
 }
 
 DIRECTION_MATRIX *
@@ -156,6 +155,7 @@ mat_get_2d_direct (const nw_matrices_p m) {
     return (m->dir_mtx_2d);
 }
 
+// TODO: I think this can be removed, which means pointers_3d can be, also.
 int **
 mat_get_3d_pointers (nw_matrices_p m) {
     return (m->pointers_3d);
@@ -176,7 +176,7 @@ void
 mat_CAML_free (value m) {
     nw_matrices_p tmp;
     tmp = Matrices_struct(m);
-    free (tmp->matrix);
+    free (tmp->nw_costMtx);
     free (tmp->cube);
     free (tmp->pointers_3d);
     free (tmp->precalc);
@@ -196,7 +196,7 @@ mat_CAML_deserialize (void *v) {
     nw_matrices_p m;
     m = (nw_matrices_p) v;
     m->len_pre = m->len_eff = m->len = 0;
-    m->matrix = m->cube = m->precalc = NULL;
+    m->nw_costMtx = m->cube = m->precalc = NULL;
     m->dir_mtx_2d = m->cube_d = NULL;
     m->pointers_3d = NULL;
     return (sizeof (struct matrices));
@@ -223,7 +223,7 @@ mat_CAML_create_general (value a) {
         alloc_custom (&alignment_matrix, sizeof(struct matrices), 1, 1000);
     m = Matrices_struct(res);
     m->len_pre = m->len_eff = m->len = 0;
-    m->matrix = m->cube = m->precalc = NULL;
+    m->nw_costMtx = m->cube = m->precalc = NULL;
     m->dir_mtx_2d = m->cube_d = NULL;
     m->pointers_3d = NULL;
     CAMLreturn(res);
@@ -318,11 +318,11 @@ mat_CAML_flush_memory (value vm) {
     CAMLparam1(vm);
     nw_matrices_p m;
     m = Matrices_struct(vm);
-    free (m->matrix);
+    free (m->nw_costMtx);
     free (m->dir_mtx_2d);
     free (m->precalc);
     m->len_pre = m->len_eff = m->len = 0;
-    m->matrix = m->cube = m->precalc = NULL;
+    m->nw_costMtx = m->cube = m->precalc = NULL;
     m->dir_mtx_2d = m->cube_d = NULL;
     m->pointers_3d = NULL;
     CAMLreturn(Val_unit);
