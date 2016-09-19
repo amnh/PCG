@@ -3489,31 +3489,47 @@ algn_CAML_print_bcktrck (value seq1, value seq2, value matrix) {
 void
 algn_print_dynmtrx_2d (const seq_p seq1, const seq_p seq2, nw_matrices_p matrices) {
     int i, j;
+
     const int seqLen1 = seq_get_len (seq1);
     const int seqLen2 = seq_get_len (seq2);
-    const int n       = seqLen1 + 1;
-    const int m       = seqLen2 + 1;
+
+    const seq_p longerSeq  = seqLen1 > seqLen2 ? seq1 : seq2;
+    const seq_p lesserSeq  = seqLen1 > seqLen2 ? seq2 : seq1;
+
+    const int longerSeqLen = seqLen1 > seqLen2 ? seqLen1 : seqLen2;
+    const int lesserSeqLen = seqLen1 > seqLen2 ? seqLen2 : seqLen1;
+    
+    const int n       = longerSeqLen + 1;
+    const int m       = lesserSeqLen + 1;
     int *d;
     d = mat_get_2d_nwMtx (matrices);
 
-    printf ("Sequence 1 length: %d\n", n);
-    printf ("Sequence 2 length: %d\n", m);
+    printf ("Sequence 1 length: %d\n", seqLen1);
+    printf ("Sequence 2 length: %d\n", seqLen2);
     printf ("Length    Product: %d\n", seqLen1*seqLen2);
     printf ("Length +1 Product: %d\n", m*n);
     printf ("Allocated space  : %d\n\n", matrices->len);
     
     // print column heads
-    printf(" x       \n");
-    for (i = 0; i < n; i++) {
-        printf("%7c", *(seq1->begin + i));
+    printf("  x |       * ");
+    for (i = 0; i < longerSeqLen; i++) {
+        printf("%7d ", longerSeq->begin[i]);
     }
     printf("\n");
-
+    printf(" ---+-");
     for (i = 0; i < n; i++) {
-      printf (" %c ", *(seq2->begin + i));
-        for (j = 0; j < m; j++)
-            printf ("%7d ", (int) d[n * i + j]);
-        printf ("|\n");
+      printf("--------");  
+    }
+    printf("\n");
+    
+    for (i = 0; i < m; i++) {
+      if (i == 0) printf ("  * | ");
+      else        printf (" %2d | ", (lesserSeq->begin)[i-1]);
+
+      for (j = 0; j < n; j++) {
+        printf ("%7d ", (int) d[n * i + j]);
+      }
+      printf ("\n");
     }
     return;
 }
