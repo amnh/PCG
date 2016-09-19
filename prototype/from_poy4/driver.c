@@ -202,7 +202,7 @@ int main() {
             if ( i == j * costMtx2d->lcm ) {
                 tcm[i + j] = 0;    // identity
             } else if (i == (tcm_total_len - costMtx2d->lcm) || j == (costMtx2d->lcm - 1)) {
-                tcm[i + j] = 32;   // indel cost
+                tcm[i + j] = 2;   // indel cost
             } else {
                 tcm[i + j] = 1;    // sub cost
             }
@@ -295,7 +295,14 @@ int main() {
     // printf("Original alignment matrix before algn_nw_2d: \n");
     // algn_print_dynmtrx_2d_2d( seq1, seq2, algn_mtxs2d );
 
-    int deltawh = 2; // Increase in height or width of 
+    int deltawh = 2; // Increase in height or width of matrices.
+                     // TODO: shuld be:
+                     // diff = lenseq1 - lenseq2
+                     // lower_limit = .1 * lenseq1
+                     // if deltawh has a value then:
+                     //     deltawh = diff < lower_limit ? lower_limit : deltawh
+                     // else:
+                     //     deltawh = diff < lower_limit ? lower_limit / 2 : 2
 
     int algnCost = algn_nw_2d( seq1, seq2, costMtx2d, algn_mtxs2d, deltawh ); // TODO: is
 

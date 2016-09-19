@@ -100,7 +100,9 @@ mat_setup_size (nw_matrices_p m, int len_seq1, int len_seq2, int len_seq3, int i
         printf("len_eff: %d, len: %d\n", m->len_eff, len);
     }
     if (m->len_eff < len) {         /* If the current 2d or 3d matrix is not large enough */
-        printf("allocation: %zu\n", len * sizeof(int));
+        if (DEBUG_MAT) {
+            printf("allocation: %zu\n", len * sizeof(int));
+        }
         m->cube = m->nw_costMtx = realloc (m->nw_costMtx, (len * sizeof(int)));
         m->len_eff = len;
     }
@@ -108,7 +110,9 @@ mat_setup_size (nw_matrices_p m, int len_seq1, int len_seq2, int len_seq3, int i
         m->cube_d = m->dir_mtx_2d = 
             realloc (m->dir_mtx_2d, (len_dir * sizeof(DIRECTION_MATRIX)));
         if (0 != len_2d) {
-            printf("\n\nlen_2d: %d\n", len_2d);
+            if (DEBUG_MAT) {
+                printf("\n\nlen_2d: %d\n", len_2d);
+            }
             m->pointers_3d = realloc (m->pointers_3d, len_2d * sizeof(int));
             if (m->pointers_3d == NULL) {
                 printf("Memory allocation problem in pointers 3d.\n");
