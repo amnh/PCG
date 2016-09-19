@@ -241,7 +241,7 @@ instance (Eq a, IsString a) => InternalClass (AlphabetInputTuple a) where
 --   columns as the 'Alphabet' is reordered. Deletes TCM rows and columns where
 --   'Alphabet' symbols are eliminated.
 --
---   TODO: Explain why the TCm needs to be permuted.
+--   If the alphabet has been permuted the coresponding TCM needs to be permuted in the same mannor.
 --
 --   /O(n*log(n) + n^2)/
 constructAlphabetWithTCM :: (Ord a, IsString a, Foldable t) => t a -> Matrix b -> (Alphabet a, Matrix b)
