@@ -216,9 +216,9 @@ int main() {
 
     /**
     // Print TCM in pretty format 
-    int n = costMtx2d->lcm;
-    for (size_t i = 0; i < costMtx2d->lcm; ++i) {
-        for (size_t j = 0; j < costMtx2d->lcm; ++j) {
+    const int n = costMtx2d->lcm;
+    for (size_t i = 0; i < n; ++i) {
+        for (size_t j = 0; j < n; ++j) {
             printf("%2d ",tcm[ n*i + j ]);
         }
         printf("\n");
