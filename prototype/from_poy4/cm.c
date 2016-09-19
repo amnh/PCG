@@ -637,9 +637,10 @@ cm_get_value (int a, int b, int *p, int alphSize) {
     return *(p + (cm_calc_cost_position (a, b, alphSize)));
 }
 
+/** Sets first row of nw cost matrix, where s is column headers */
 void
 cm_precalc_4algn (const cost_matrices_2d_p costMtx_t, nw_matrices_p toOutput, const seq_p s) {
-    if(DEBUG_CM) {
+    if(DEBUG_MAT) {
         printf("\n---cm_precalc_4algn\n");
     }
     size_t i, j, seqLen;
@@ -653,17 +654,19 @@ cm_precalc_4algn (const cost_matrices_2d_p costMtx_t, nw_matrices_p toOutput, co
     tailCosts_t  = cm_get_tail_cost (costMtx_t);
     tmpPrecMtx_t = precalcMtx_t + seqLen;
     begin_t      = seq_get_begin (s);         // Inlined seq_get for speed purposes
-    if (DEBUG_CM) {
+    if (DEBUG_MAT) {
         printf ("Precalculated transformation cost matrix.\n");
     }
     // We will put the cost of the prepend in the 0th row of the precalc matrix.
     for (j = 0; j < seqLen; j++) {
         precalcMtx_t[j] = prepend_t[begin_t[j]];
         if (DEBUG_CM) {
-            printf ("%d\t", precalcMtx_t[j]);
+            printf ("%7d", precalcMtx_t[j]);
         }
     }
-    printf("\n");
+    if (DEBUG_MAT) {
+        printf("\n");
+    }
     for (j = 1; j <= costMtx_t->alphSize; j++, tmpPrecMtx_t += seqLen) {
         // if (DEBUG_CM) {
         //     printf("%zu\t", j);
@@ -672,21 +675,21 @@ cm_precalc_4algn (const cost_matrices_2d_p costMtx_t, nw_matrices_p toOutput, co
         /* We fill almost the complete row. Only the first (aligning with the
          * gap), is filled using the tail cost */
         tmpPrecMtx_t[0] = tailCosts_t[j];
-        if (DEBUG_CM) {
-            printf ("%d\t", tmpPrecMtx_t[0]);
+        if (DEBUG_MAT) {
+            printf ("%7d", tmpPrecMtx_t[0]);
         }
         for (i = 1; i < seqLen; i++) {
             tmpPrecMtx_t[i] = tmpCost_t[begin_t[i]];
-            if (DEBUG_CM) {
-                printf ("%d\t", tmpPrecMtx_t[i]);
+            if (DEBUG_MAT) {
+                printf ("%7d", tmpPrecMtx_t[i]);
             }
         }
-        if (DEBUG_CM) {
+        if (DEBUG_MAT) {
             printf ("\n");
         }
     }
-    if (DEBUG_CM) {
-        printf ("Finished printing transforamtion cost matrix\n");
+    if (DEBUG_MAT) {
+        printf ("Finished printing transformation cost matrix\n");
     }
     return;
 }

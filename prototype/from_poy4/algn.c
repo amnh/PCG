@@ -869,7 +869,8 @@ algn_fill_plane_2 (const seq_p seq1, int *precalcMtx, int seq1_len, int seq2_len
         return (algn_fill_plane (seq1, precalcMtx, seq1_len, seq2_len, curRow, dirMtx, c));
     /* Case 2:
      * There are no full rows to be filled, therefore we have to break the
-     * procedure into three different subsets */
+     * procedure into two different subsets */
+    // subset 1:
     else if (2 * height < seq1_len) {
         algn_fill_first_row (a, dirMtx, width, gap_row);
         start_row = 1;
@@ -909,8 +910,10 @@ algn_fill_plane_2 (const seq_p seq1, int *precalcMtx, int seq1_len, int seq2_len
         /* We will simplify this case even further: If the size of the leftover
          * is too small, don't use the barriers at all, just fill it all up
          */
+        // subset 2:
         if (8 >= (seq1_len - height)) {
             return (algn_fill_plane (seq1, precalcMtx, seq1_len, seq2_len, curRow, dirMtx, c));
+        // subset 3:
         } else {
             algn_fill_first_row (curRow, dirMtx, width, gap_row);
             start_row = 1;
@@ -3221,7 +3224,7 @@ algn_nw_limit_2d (const seq_p seq1, const seq_p seq2, const cost_matrices_2d_p c
 /** seq1 must be longer!!! */
 int
 algn_nw_2d (const seq_p seq1, const seq_p seq2, const cost_matrices_2d_p costMtx, 
-         nw_matrices_p m, int deltawh) {
+         nw_matrices_p nw_mtxs, int deltawh) {
     // deltawh is the size of the direction matrix, and was determined by the following algorithm:
     // let dif = seq1len - seq2len
     // let lower_limit = seq1len * .1
@@ -3242,7 +3245,7 @@ algn_nw_2d (const seq_p seq1, const seq_p seq2, const cost_matrices_2d_p costMtx
         printf("---algn_nw_2d\n");
         seq_print(seq1, 1);
         seq_print(seq2, 2);
-        print_matrices(m, costMtx->lcm);
+        print_matrices(nw_mtxs, costMtx->lcm);
     }
 
 
@@ -3250,7 +3253,7 @@ algn_nw_2d (const seq_p seq1, const seq_p seq2, const cost_matrices_2d_p costMtx
     seq1_len = seq_get_len (seq1);
     seq2_len = seq_get_len (seq2);
     assert (seq1_len >= seq2_len);
-    return algn_nw_limit_2d (seq1, seq2, costMtx, m, deltawh, 0, seq1_len, 0, seq2_len);
+    return algn_nw_limit_2d (seq1, seq2, costMtx, nw_mtxs, deltawh, 0, seq1_len, 0, seq2_len);
 }
 
 int
@@ -3499,39 +3502,43 @@ algn_print_dynmtrx_2d (const seq_p seq1, const seq_p seq2, nw_matrices_p matrice
     const int longerSeqLen = seqLen1 > seqLen2 ? seqLen1 : seqLen2;
     const int lesserSeqLen = seqLen1 > seqLen2 ? seqLen2 : seqLen1;
     
-    const int n       = longerSeqLen + 1;
-    const int m       = lesserSeqLen + 1;
-    int *d;
-    d = mat_get_2d_nwMtx (matrices);
+    const int n       = longerSeqLen;
+    const int m       = lesserSeqLen;
+    int *nw_costMtx;
+    nw_costMtx = mat_get_2d_nwMtx (matrices);
 
     printf ("Sequence 1 length: %d\n", seqLen1);
     printf ("Sequence 2 length: %d\n", seqLen2);
-    printf ("Length    Product: %d\n", seqLen1*seqLen2);
-    printf ("Length +1 Product: %d\n", m*n);
+    printf ("Length    Product: %d\n", seqLen1 * seqLen2);
+    printf ("Length +1 Product: %d\n", lesserSeqLen * longerSeqLen);
     printf ("Allocated space  : %d\n\n", matrices->len);
     
     // print column heads
     printf("  x |       * ");
-    for (i = 0; i < lesserSeqLen; i++) {
+    for (i = 1; i < lesserSeqLen; i++) {
         printf("%7d ", lesserSeq->begin[i]);
     }
     printf("\n");
     printf(" ---+-");
-    for (i = 0; i < m; i++) {
+    for (i = 1; i < lesserSeqLen; i++) {
       printf("--------");  
     }
     printf("\n");
     
-    for (i = 0; i < n; i++) {
-      if (i == 0) printf ("  * | ");
-      else        printf (" %2d | ", longerSeq->begin[i-1]);
-
-      for (j = 0; j < m; j++) {
-        printf ("%7d ", (int) d[m * i + j]);
+    for (i = 0; i < longerSeqLen; i++) {
+        if (i == 0) printf ("  * | ");
+        else        printf (" %2d | ", longerSeq->begin[i]);
+  
+        for (j = 0; j < lesserSeqLen; j++) {
+            if (j == 0 && i == 0) {
+                printf("%7d ", 0);
+            } else {
+                printf ("%7d ", (int) nw_costMtx[lesserSeqLen * i + j]);
+            }
+        }
+        printf ("\n");
       }
-      printf ("\n");
-    }
-    return;
+      return;
 }
 
 void
