@@ -57,13 +57,18 @@
 
 #define ALGN_H 1
 
+#define HIGH_NUM   1000000
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
 
-#include "matrices.h"
+#include "algn.h"
 #include "cm.h"
+#include "debug.h"
+#include "matrices.h"
 #include "seq.h"
+#include "zarr.h"
 
 /*
  * As standard, all the caml binding functions are called algn_CAML_<function

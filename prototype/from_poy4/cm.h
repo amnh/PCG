@@ -21,10 +21,11 @@
 
 #ifndef CM_H
 
-#define DEBUG 0
+//#define DEBUG 0
 #define CM_H 1
 #define Cost_matrix_struct(a) ((struct cost_matrices_2d *) Data_custom_val(a))
 #define Cost_matrix_struct_3d(a) ((struct cost_matrices_3d *) Data_custom_val(a))
+#include "debug.h"
 #include "matrices.h"
 #include "seq.h"
 

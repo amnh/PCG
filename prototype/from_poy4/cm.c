@@ -290,7 +290,7 @@ cm_CAML_get_all_elements (value cm) {
 cost_matrices_2d_p 
 cm_alloc_set_costs_2d(int alphSize, int combinations, int do_aff, int gap_open, \
         int is_metric, int all_elements, cost_matrices_2d_p res) {
-    if(DEBUG) {
+    if(DEBUG_CM) {
         printf("\n---cm_alloc_set_costs_2d\n");
     }
     size_t size;
@@ -366,7 +366,7 @@ cost_matrices_3d_p
 cm_alloc_set_costs_3d (int alphSize, int combinations, int do_aff, int gap_open, 
                        int all_elements, cost_matrices_3d_p res) {
     int size;
-    if (DEBUG) {
+    if (DEBUG_CM) {
         printf ("Allocating a three dimensional matrix:\n");
         printf ("alphabet size: %d \n", alphSize);
         printf ("combinations: %d \n", combinations);
@@ -639,7 +639,7 @@ cm_get_value (int a, int b, int *p, int alphSize) {
 
 void
 cm_precalc_4algn (const cost_matrices_2d_p costMtx_t, nw_matrices_p toOutput, const seq_p s) {
-    if(DEBUG) {
+    if(DEBUG_CM) {
         printf("\n---cm_precalc_4algn\n");
     }
     size_t i, j, seqLen;
@@ -653,39 +653,39 @@ cm_precalc_4algn (const cost_matrices_2d_p costMtx_t, nw_matrices_p toOutput, co
     tailCosts_t  = cm_get_tail_cost (costMtx_t);
     tmpPrecMtx_t = precalcMtx_t + seqLen;
     begin_t      = seq_get_begin (s);         // Inlined seq_get for speed purposes
-    if (DEBUG) {
+    if (DEBUG_CM) {
         printf ("Precalculated transformation cost matrix.\n");
     }
     // We will put the cost of the prepend in the 0th row of the precalc matrix.
     for (j = 0; j < seqLen; j++) {
         precalcMtx_t[j] = prepend_t[begin_t[j]];
-        if (DEBUG) {
+        if (DEBUG_CM) {
             printf ("%d\t", precalcMtx_t[j]);
         }
     }
     printf("\n");
     for (j = 1; j <= costMtx_t->alphSize; j++, tmpPrecMtx_t += seqLen) {
-        // if (DEBUG) {
+        // if (DEBUG_CM) {
         //     printf("%zu\t", j);
         // }
         tmpCost_t = cm_get_row (seqTcm_t, j, costMtx_t->lcm);
         /* We fill almost the complete row. Only the first (aligning with the
          * gap), is filled using the tail cost */
         tmpPrecMtx_t[0] = tailCosts_t[j];
-        if (DEBUG) {
+        if (DEBUG_CM) {
             printf ("%d\t", tmpPrecMtx_t[0]);
         }
         for (i = 1; i < seqLen; i++) {
             tmpPrecMtx_t[i] = tmpCost_t[begin_t[i]];
-            if (DEBUG) {
+            if (DEBUG_CM) {
                 printf ("%d\t", tmpPrecMtx_t[i]);
             }
         }
-        if (DEBUG) {
+        if (DEBUG_CM) {
             printf ("\n");
         }
     }
-    if (DEBUG) {
+    if (DEBUG_CM) {
         printf ("Finished printing transforamtion cost matrix\n");
     }
     return;
@@ -906,7 +906,7 @@ cm_CAML_serialize (value vcm, unsigned long *wsize_32, \
         unsigned long *wsize_64) {
     cost_matrices_2d_p c;
     int len;
-    if (DEBUG) {
+    if (DEBUG_CM) {
         printf ("I will serialize cm!\n");
         fflush (stdout);
     }

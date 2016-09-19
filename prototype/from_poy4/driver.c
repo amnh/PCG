@@ -17,7 +17,7 @@ int main() {
     nw_matrices_p algn_mtxs2dAffine = malloc( sizeof(struct matrices) );
     nw_matrices_p algn_mtxs3d       = malloc( sizeof(struct matrices) );
 
-    // in three following allocationsk all matrices are set to their shortest length because they get realloced in mat_setup_size
+    // in three following allocations all matrices are set to their shortest length because they get realloced in mat_setup_size
     // len_eff is likewise set to 0, as that triggers the realloc.
     algn_mtxs2d->len_eff     = 0;
     algn_mtxs2d->nw_costMtx  = malloc ( sizeof( int ) );

@@ -20,8 +20,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "debug.h"
 #include "matrices.h"
-#include "cm.h"
+// #include "cm.h"
 
 
 /* 
@@ -80,7 +81,7 @@ mat_clean_direction_matrix (nw_matrices_p m) {
 
 inline int
 mat_setup_size (nw_matrices_p m, int len_seq1, int len_seq2, int len_seq3, int is_ukk, int lcm) {
-    if(DEBUG) {
+    if(DEBUG_MAT) {
         printf("\n---mat_setup_size\n");
     }
     int len, len_2d, len_precalc, len_dir;
@@ -95,7 +96,9 @@ mat_setup_size (nw_matrices_p m, int len_seq1, int len_seq2, int len_seq3, int i
         len_2d = len_seq1 * len_seq2;
         len_dir = len_2d * len_seq3;
     }
-    printf("len_eff: %d, len: %d\n", m->len_eff, len);
+    if (DEBUG_MAT) {
+        printf("len_eff: %d, len: %d\n", m->len_eff, len);
+    }
     if (m->len_eff < len) {         /* If the current 2d or 3d matrix is not large enough */
         printf("allocation: %zu\n", len * sizeof(int));
         m->cube = m->nw_costMtx = realloc (m->nw_costMtx, (len * sizeof(int)));

@@ -61,21 +61,11 @@
 
 // #include "array_pool.h" ARRAY_POOL_DELETE
 #include "algn.h"
-#include "cm.h"
-#include "matrices.h"
-#include "seq.h"
-#include "zarr.h"
-
-#define HIGH_NUM   1000000
-#define DEBUG_ALGN       0
-#define DEBUG_BT         0
-#define DEBUG_CALL_ORDER 0
-#define DEBUG_CM         0
-#define PRINT_COST_M     0
-#define PRINT_DIR_M      0
-#define DEBUG_NW         0
-#define DEBUG_AFFINE     1
-
+#include "debug.h"
+// #include "cm.h"
+// #include "matrices.h"
+// #include "seq.h"
+// #include "zarr.h"
 
 /*
 #include "matrices.c"
@@ -432,7 +422,7 @@ algn_fill_row (int *curRow, const int *prevRow, const int *gap_row,
                 dirMtx[i] = (DELETE | INSERT | ALIGN);
             }
         }
-        if (DEBUG && PRINT_DIR_M) {
+        if (DEBUG_DIR_M) {
             /* Print the alignment matrix */
             if (INSERT & dirMtx[i])
                 printf ("I");
@@ -442,13 +432,13 @@ algn_fill_row (int *curRow, const int *prevRow, const int *gap_row,
                 printf ("A");
             printf ("\t");
         }
-        if (DEBUG && PRINT_COST_M) {
+        if (DEBUG_COST_M) {
             /* Print the cost matrix */
             printf ("%d\t", curRow[i]);
             fflush (stdout);
         }
     }
-    if (DEBUG && (PRINT_COST_M || PRINT_DIR_M))  {
+    if (DEBUG_COST_M || DEBUG_DIR_M)  {
         printf ("\n");
         fflush (stdout);
     }
@@ -476,7 +466,7 @@ algn_fill_ukk_right_cell (int *curRow, const int *prevRow, const int *gap_row,
         curRow[pos] = tmp3;
         dirMtx[pos] = INSERT | ALIGN;
     }
-    if (DEBUG && PRINT_DIR_M) {
+    if (DEBUG_DIR_M) {
         /* Print the alignment matrix */
         if (INSERT & dirMtx[pos])
             printf ("I");
@@ -486,12 +476,12 @@ algn_fill_ukk_right_cell (int *curRow, const int *prevRow, const int *gap_row,
             printf ("A");
         printf ("\t");
     }
-    if (DEBUG &&PRINT_COST_M) {
+    if (DEBUG_COST_M) {
         /* Print the cost matrix */
         printf ("%d\t", curRow[pos]);
         fflush (stdout);
     }
-    if (DEBUG && (PRINT_COST_M || PRINT_DIR_M)) {
+    if (DEBUG_COST_M || DEBUG_DIR_M) {
         printf ("\n");
         fflush (stdout);
     }
@@ -517,7 +507,7 @@ algn_fill_ukk_left_cell (int *curRow, const int *prevRow, const int *gap_row,
             curRow[pos] = tmp1;
             dirMtx[pos] = ALIGN | DELETE;
         }
-    if (DEBUG && PRINT_DIR_M) {
+    if (DEBUG_DIR_M) {
         /* Print the alignment matrix */
         if (INSERT & dirMtx[pos])
             printf ("I");
@@ -527,7 +517,7 @@ algn_fill_ukk_left_cell (int *curRow, const int *prevRow, const int *gap_row,
             printf ("A");
         printf ("\t");
     }
-    if (DEBUG &&PRINT_COST_M) {
+    if (DEBUG_COST_M) {
         /* Print the cost matrix */
         printf ("%d\t", curRow[pos]);
         fflush (stdout);
@@ -556,11 +546,11 @@ algn_fill_full_row (int *curRow, const int *prevRow, const int *gap_row,
     /* first entry is delete */
     curRow[0] = c + prevRow[0];
     dirMtx[0] = DELETE;
-    if ((DEBUG) && (PRINT_COST_M)) {
+    if (DEBUG_COST_M) {
         printf ("%d\t", curRow[0]);
         fflush (stdout);
     }
-    if ((DEBUG) && (PRINT_DIR_M)) {
+    if (DEBUG_DIR_M) {
         printf ("D\t");
     }
     algn_fill_row (curRow, prevRow, gap_row, alg_row, dirMtx, c, 1, l - 1);
@@ -575,18 +565,18 @@ algn_fill_first_row (int *curRow, DIRECTION_MATRIX *dirMtx, int len, int const *
     curRow[0] = 0;
     dirMtx[0] = ALIGN;
     /* Now the rest of the row */
-    if (DEBUG && PRINT_DIR_M)
+    if (DEBUG_DIR_M)
         printf ("A\t");
-    if (DEBUG && PRINT_DIR_M) {
+    if (DEBUG_DIR_M) {
         printf ("%d\t", curRow[0]);
         fflush (stdout);
     }
     for (i = 1; i < len; i++) {
         curRow[i] = curRow[i - 1] + gap_row[i];
         dirMtx[i] = INSERT;
-        if (DEBUG && PRINT_DIR_M)
+        if (DEBUG_DIR_M)
             printf ("I\t");
-        if (DEBUG && PRINT_DIR_M) {
+        if (DEBUG_DIR_M) {
             printf ("%d\t", curRow[i]);
             fflush (stdout);
         }
@@ -598,9 +588,9 @@ void
 algn_fill_first_cell (int *curRow, int prevRow, DIRECTION_MATRIX *dirMtx, int gap) {
     *curRow = prevRow + gap;
     *dirMtx = DELETE;
-    if (DEBUG && PRINT_DIR_M)
+    if (DEBUG_DIR_M)
         printf ("D\t");
-    if (DEBUG && PRINT_DIR_M) {
+    if (DEBUG_DIR_M) {
         printf ("%d\t", *curRow);
         fflush (stdout);
     }
@@ -740,7 +730,7 @@ algn_fill_extending_left (const seq_p seq1, int *precalcMtx, int seq1_len,
         start_column++;
         len--;
     }
-    if (DEBUG && PRINT_COST_M) {
+    if (DEBUG_COST_M) {
         printf ("S2 gap cost\n");
         fflush (stdout);
         for (i = 0; i < seq2_len; i++) {
@@ -808,24 +798,24 @@ algn_fill_plane (const seq_p seq1, int *precalcMtx, int seq1_len,
     newNWMtx = curRow;
     curRow[0] = 0;
     dirMtx[0] = ALIGN;
-    if ((DEBUG) && (PRINT_COST_M)) {
+    if (DEBUG_COST_M) {
         printf ("%d\t", curRow[0]);
     }
-    if ((DEBUG) && (PRINT_DIR_M)) {
+    if (DEBUG_DIR_M) {
         printf ("A\t");
     }
     /* We fill the first row to start with */
     for (i = 1; i < seq2_len; i++) {
         curRow[i] = curRow[i - 1] + first_gap_row[i];
         dirMtx[i] = INSERT;
-        if ((DEBUG) && (PRINT_COST_M)) {
+        if (DEBUG_COST_M) {
             printf ("%d\t", curRow[i]);
         }
-        if ((DEBUG) && (PRINT_DIR_M)) {
+        if (DEBUG_DIR_M) {
             printf ("I\t");
         }
     }
-    if (DEBUG && (PRINT_DIR_M || PRINT_COST_M)) {
+    if (DEBUG_DIR_M || DEBUG_COST_M) {
         printf ("\n");
     }
     curRow += seq2_len;
@@ -1057,32 +1047,32 @@ algn_fill_row_affine (int *curRow, const int *prevRow, const int *gap_row,
         else if (tmp3 < tmp1) {
             if (tmp3 < tmp2) {
                 curRow[i] = tmp3;
-                algn_assign_dirMtx(dirMtx, i, (ALIGN));
+                algn_assign_dirMtx(dirMtx, i, ALIGN);
             }
             else if (tmp2 < tmp3) {
                 curRow[i] = tmp2;
-                algn_assign_dirMtx(dirMtx, i, (INSERT));
+                algn_assign_dirMtx(dirMtx, i, INSERT);
             }
             else {
                 curRow[i] = tmp2;
-                algn_assign_dirMtx(dirMtx, i, ((ALIGN | INSERT)));
+                algn_assign_dirMtx(dirMtx, i, ALIGN | INSERT);
             }
         }
         else { /* tmp3 == tmp1 */
             if (tmp3 < tmp2) {
                 curRow[i] = tmp3;
-                algn_assign_dirMtx(dirMtx, i, ((ALIGN | DELETE)));
+                algn_assign_dirMtx(dirMtx, i, ALIGN | DELETE);
             }
             else if (tmp2 < tmp3) {
                 curRow[i] = tmp2;
-                algn_assign_dirMtx(dirMtx, i, (INSERT));
+                algn_assign_dirMtx(dirMtx, i, INSERT);
             }
             else {
                 curRow[i] = tmp2;
-                algn_assign_dirMtx(dirMtx, i, ((DELETE | INSERT | ALIGN)));
+                algn_assign_dirMtx(dirMtx, i, DELETE | INSERT | ALIGN);
             }
         }
-        if (DEBUG && PRINT_DIR_M) {
+        if (DEBUG_DIR_M) {
             /* Print the alignment matrix */
             if (INSERT & dirMtx[i])
                 printf ("I");
@@ -1092,13 +1082,13 @@ algn_fill_row_affine (int *curRow, const int *prevRow, const int *gap_row,
                 printf ("A");
             printf ("\t");
         }
-        if (DEBUG &&PRINT_COST_M) {
+        if (DEBUG_COST_M) {
             /* Print the cost matrix */
             printf ("(%d, %d, %d)\t", curRow[i], htcurRow[i], dncurRow[i]);
             fflush (stdout);
         }
     }
-    if (DEBUG && PRINT_DIR_M) {
+    if (DEBUG_DIR_M) {
         printf ("\n");
         fflush (stdout);
     }
@@ -1158,7 +1148,7 @@ algn_fill_ukk_right_cell_affine (int *curRow, const int *prevRow, const int *gap
         curRow[pos] = tmp3;
         algn_assign_dirMtx(dirMtx, pos, (INSERT | ALIGN));
     }
-    if (DEBUG && PRINT_DIR_M) {
+    if (DEBUG_DIR_M) {
         /* Print the alignment matrix */
         if (INSERT & dirMtx[pos])
             printf ("I");
@@ -1168,11 +1158,11 @@ algn_fill_ukk_right_cell_affine (int *curRow, const int *prevRow, const int *gap
             printf ("A");
         printf ("\t");
     }
-    if (DEBUG &&PRINT_COST_M) {
+    if (DEBUG_COST_M) {
         /* Print the cost matrix */
         printf ("(%d, %d)\t", curRow[pos], htcurRow[pos]);
     }
-    if (DEBUG && (PRINT_DIR_M || PRINT_COST_M))
+    if (DEBUG_DIR_M || DEBUG_COST_M)
         printf ("\n");
     return;
 }
@@ -1230,7 +1220,7 @@ algn_fill_ukk_left_cell_affine (int *curRow, const int *prevRow, const int *gap_
             curRow[pos] = tmp1;
             algn_assign_dirMtx(dirMtx, pos, (ALIGN | DELETE));
         }
-    if (DEBUG && PRINT_DIR_M) {
+    if (DEBUG_DIR_M) {
         /* Print the alignment matrix */
         if (INSERT & dirMtx[pos])
             printf ("I");
@@ -1240,7 +1230,7 @@ algn_fill_ukk_left_cell_affine (int *curRow, const int *prevRow, const int *gap_
             printf ("A");
         printf ("\t");
     }
-    if (DEBUG &&PRINT_COST_M) {
+    if (DEBUG_COST_M) {
         /* Print the cost matrix */
         printf ("(%d, ,%d)\t", curRow[pos], dncurRow[pos]);
     }
@@ -1292,9 +1282,9 @@ algn_fill_full_row_affine (int *curRow, const int *prevRow, const int *gap_row,
     curRow[0] += c;
     dirMtx[0] = DELETE | DELETE_V;
     dncurRow[0] = c + pdncurRow[0];
-    if ((DEBUG) && (PRINT_COST_M))
+    if (DEBUG_COST_M)
         printf ("%d\t", curRow[0]);
-    if ((DEBUG) && (PRINT_DIR_M))
+    if (DEBUG_DIR_M)
         printf ("D\t");
     algn_fill_row_affine (curRow, prevRow, gap_row, alg_row, dirMtx, c, cprev, 1, l - 1, 
                        dncurRow, pdncurRow, htcurRow, open_gap);
@@ -1311,17 +1301,17 @@ algn_fill_first_row_affine (int *curRow, DIRECTION_MATRIX *dirMtx, int len, int 
     dncurRow[0] = htcurRow[0] = HIGH_NUM;
     dirMtx[0] = ALIGN | ALIGN_V | ALIGN_H;
     /* Now the rest of the row */
-    if ((DEBUG) && (PRINT_DIR_M))
+    if (DEBUG_DIR_M)
         printf ("A\t");
-    if ((DEBUG) && (PRINT_COST_M))
+    if (DEBUG_COST_M)
         printf ("%d\t", curRow[0]);
     for (i = 1; i < len; i++) {
         dncurRow[i] = HIGH_NUM;
         curRow[i] = curRow[i - 1] + gap_row[i];
         dirMtx[i] = INSERT | (INSERT_H);
-        if ((DEBUG) && (PRINT_DIR_M))
+        if (DEBUG_DIR_M)
             printf ("I\t");
-        if ((DEBUG) && (PRINT_COST_M))
+        if (DEBUG_COST_M)
             printf ("%d\t", curRow[i]);
     }
     return;
@@ -1334,9 +1324,9 @@ algn_fill_first_cell_affine (int *curRow, int prevRow, DIRECTION_MATRIX *dirMtx,
     curRow[0] += gap;
     *dirMtx = DELETE | DELETE_V;
     dncurRow[0] = gap + pdncurRow[0];
-    if ((DEBUG) && (PRINT_DIR_M))
+    if (DEBUG_DIR_M)
         printf ("D\t");
-    if ((DEBUG) && (PRINT_COST_M))
+    if (DEBUG_COST_M)
         printf ("%d\t", *curRow);
     return;
 }
@@ -1508,7 +1498,7 @@ algn_fill_extending_left_affine (const seq_p seq1, int *precalcMtx, int seq1_len
         start_column++;
         len--;
     }
-    if (DEBUG && PRINT_COST_M) {
+    if (DEBUG_COST_M) {
         printf ("S2 gap cost\n");
         fflush (stdout);
         for (i = 0; i < seq2_len; i++) {
@@ -1588,26 +1578,26 @@ algn_fill_plane_affine (const seq_p seq1, int *precalcMtx, int seq1_len,
     dirMtx[0] = ALIGN | ALIGN_H | ALIGN_V;
     htcurRow[0] = HIGH_NUM;
     dncurRow[0] = HIGH_NUM;
-    if ((DEBUG) && (PRINT_COST_M))
+    if (DEBUG_COST_M)
         printf ("%d\t", curRow[0]);
-    if ((DEBUG) && (PRINT_DIR_M))
+    if (DEBUG_DIR_M)
         printf ("A\t");
     /* We fill the first row to start with */
     for (i = 1; i < seq2_len; i++) {
         dncurRow[i] = HIGH_NUM;
         curRow[i] = curRow[i - 1] + first_gap_row[i];
         dirMtx[i] = INSERT | INSERT_H;
-        if ((DEBUG) && (PRINT_COST_M)) {
+        if (DEBUG_COST_M) {
             printf ("%d\t", curRow[i]);
             fflush (stdout);
         }
-        if ((DEBUG) && (PRINT_DIR_M))
+        if (DEBUG_DIR_M)
             printf ("I\t");
     }
     curRow += seq2_len;
     curRow[0] = newNWMtx[0];
     newNWMtx[0] = 0;
-    if (DEBUG && (PRINT_DIR_M || PRINT_COST_M)) {
+    if (DEBUG_DIR_M || DEBUG_COST_M) {
         printf ("\n");
         fflush (stdout);
     }
@@ -1622,7 +1612,7 @@ algn_fill_plane_affine (const seq_p seq1, int *precalcMtx, int seq1_len,
         algn_fill_full_row_affine (curRow, newNWMtx, gap_row, alg_row, dirMtx, const_val, 
                                 prev_const_val, const_val_tail, prev_const_val_tail, seq2_len, 
                                 dncurRow, pdncurRow, htcurRow, open_gap);
-        if (DEBUG && PRINT_COST_M) {
+        if (DEBUG_COST_M) {
             printf ("\n");
             fflush (stdout);
         }
@@ -1775,8 +1765,8 @@ FILL_EXTEND_BLOCK_DIAGONAL_NOBT (SEQT si_base, SEQT sj_base, SEQT si_prev_base,
     int diag, open_diag, flag, flag2;
     flag = ((TMPGAP & si_base) && (TMPGAP & sj_base));
     flag2= (!(TMPGAP & si_prev_base) && (!(TMPGAP & sj_base)));
-    diag = flag?0:HIGH_NUM;
-    open_diag = flag?(flag2?0:(2 * gap_open)):HIGH_NUM;
+    diag = flag ? 0 : HIGH_NUM;
+    open_diag = flag ? (flag2 ? 0 : (2 * gap_open)) : HIGH_NUM;
     ext_cost = prev_extend_block_diagonal[j - 1] + diag;
     open_cost = prev_close_block_diagonal[j - 1] + open_diag;
     if (ext_cost < open_cost)
@@ -2845,7 +2835,7 @@ algn_fill_cube (const seq_p seq1, const seq_p seq2, const int *precalcMtx,
     tmp_curRow = curRow;
     upper_m = curRow + seq3_len;
     diag_m = curRow;
-    if (DEBUG) {
+    if (DEBUG_MAT) {
         printf ("Three dimensional sequence alignment matrix.\n");
     }
     /* Fill the first plane only at the beginning, this is special */
@@ -2897,7 +2887,7 @@ algn_fill_cube (const seq_p seq1, const seq_p seq2, const int *precalcMtx,
                 }
             }
         }
-        if (DEBUG && PRINT_COST_M) {  /* Printing the cost matrix */
+        if (DEBUG_COST_M) {  /* Printing the cost matrix */
             int *tmp_curRow_debug;
             tmp_curRow_debug = tmp_curRow;
             printf ("\n");
@@ -2927,7 +2917,7 @@ algn_fill_cube (const seq_p seq1, const seq_p seq2, const int *precalcMtx,
              * 2-dimensional alignment (the three for loops) */
             curRow[0] = diag_m[0] + seq1_gap_seq3[0]; /* diag is upper in this step */
             dirMtx[0] = P3;
-            if (DEBUG && PRINT_COST_M) {
+            if (DEBUG_COST_M) {
                 printf ("%d\t", curRow[0]);
             }
             for (j = 1, k = 0; j < seq3_len; j++, k++) {
@@ -2943,11 +2933,11 @@ algn_fill_cube (const seq_p seq1, const seq_p seq2, const int *precalcMtx,
                     curRow[j] = tmp;
                     dirMtx[j] = SS;
                 }
-                if (DEBUG && PRINT_COST_M) {
+                if (DEBUG_COST_M) {
                     printf ("%d\t", curRow[j]);
                 }
             }
-            if (DEBUG) {
+            if (DEBUG_COST_M) {
                 printf ("\n");
             }
             /* Now we should move to the next row to continue filling the matrix */
@@ -2973,7 +2963,7 @@ algn_fill_cube (const seq_p seq1, const seq_p seq2, const int *precalcMtx,
                         seq2_seq3_gap, seq1_seq2_seq3, curRow, dirMtx);
             /* In the final step we run over the array filling the self check.
              * */
-            if (DEBUG) {
+            if (DEBUG_COST_M) {
                 printf ("%d\t", curRow[0]);
             }
             for (k = 1; k < seq3_len; k++) {
@@ -2982,15 +2972,15 @@ algn_fill_cube (const seq_p seq1, const seq_p seq2, const int *precalcMtx,
                     curRow[k] = tmp;
                     dirMtx[k] = SS;
                 }
-                if (DEBUG) {
+                if (DEBUG_COST_M) {
                     printf ("%d\t", curRow[k]);
                 }
             }
-            if (DEBUG) {
+            if (DEBUG_COST_M) {
                 printf ("\n");
             }
         }
-        if (DEBUG) {
+        if (DEBUG_COST_M) {
             printf ("\n");
         }
     }
@@ -3034,7 +3024,7 @@ algn_fill_cube_ukk (const seq_p seq1, const seq_p seq2, const int *precalcMtx,
     tmp_curRow = curRow;
     upper_m = curRow + seq3_len;
     diag_m = curRow;
-    if (DEBUG)
+    if (DEBUG_MAT)
         printf ("Three dimensional sequence alignment matrix.\n");
     /* Fill the first plane only at the beginning, this is special */
     {
@@ -3084,7 +3074,7 @@ algn_fill_cube_ukk (const seq_p seq1, const seq_p seq2, const int *precalcMtx,
                 }
             }
         }
-        if (DEBUG) {  /* Printing the cost matrix */
+        if (DEBUG_COST_M) {  /* Printing the cost matrix */
             int *tmp_curRow_debug;
             tmp_curRow_debug = tmp_curRow;
             for (i = 0; i < seq2_len; i++) {
@@ -3113,7 +3103,7 @@ algn_fill_cube_ukk (const seq_p seq1, const seq_p seq2, const int *precalcMtx,
              2-dimensional alignment (the three for loops) */
             curRow[0] = diag_m[0] + seq1_gap_seq3[0]; /* diag is upper in this step */
             dirMtx[0] = P3;
-            if (DEBUG)
+            if (DEBUG_DIR_M)
                 printf ("%d\t", curRow[0]);
             for (j = 1, k = 0; j < seq3_len; j++, k++) {
                 curRow[j] = diag_m[j] + seq1_gap_seq3[0];
@@ -3128,10 +3118,10 @@ algn_fill_cube_ukk (const seq_p seq1, const seq_p seq2, const int *precalcMtx,
                     curRow[j] = tmp;
                     dirMtx[j] = SS;
                 }
-                if (DEBUG)
+                if (DEBUG_DIR_M)
                     printf ("%d\t", curRow[j]);
             }
-            if (DEBUG)
+            if (DEBUG_DIR_M)
                 printf ("\n");
             /* Now we should move to the next row to continue filling the matrix
              * */
@@ -3157,7 +3147,7 @@ algn_fill_cube_ukk (const seq_p seq1, const seq_p seq2, const int *precalcMtx,
                         seq2_seq3_gap, seq1_seq2_seq3, curRow, dirMtx);
             /* In the final step we run over the array filling the self check.
              * */
-            if (DEBUG)
+            if (DEBUG_DIR_M)
                 printf ("%d\t", curRow[0]);
             for (k = 1; k < seq3_len; k++) {
                 tmp = curRow[k - 1] + gap_gap_seq3[k];
@@ -3165,13 +3155,13 @@ algn_fill_cube_ukk (const seq_p seq1, const seq_p seq2, const int *precalcMtx,
                     curRow[k] = tmp;
                     dirMtx[k] = SS;
                 }
-                if (DEBUG)
+                if (DEBUG_DIR_M)
                     printf ("%d\t", curRow[k]);
             }
-            if (DEBUG)
+            if (DEBUG_DIR_M)
                 printf ("\n");
         }
-        if (DEBUG)
+        if (DEBUG_DIR_M)
             printf ("\n");
     }
     return (curRow[-1]); /** We return the last item in the previous row */
@@ -3260,7 +3250,7 @@ algn_nw_2d (const seq_p seq1, const seq_p seq2, const cost_matrices_2d_p costMtx
     seq1_len = seq_get_len (seq1);
     seq2_len = seq_get_len (seq2);
     assert (seq1_len >= seq2_len);
-    return (algn_nw_limit_2d (seq1, seq2, costMtx, m, deltawh, 0, seq1_len, 0, seq2_len));
+    return algn_nw_limit_2d (seq1, seq2, costMtx, m, deltawh, 0, seq1_len, 0, seq2_len);
 }
 
 int
@@ -3560,7 +3550,7 @@ backtrack_2d ( const seq_p seq1, const seq_p seq2,
         printf("idx_seq1: %d\n", idx_seq1);
         printf("idx_seq2: %d\n", idx_seq2);
 
-        if (PRINT_DIR_M) {
+        if (DEBUG_DIR_M) {
             printf("\n");
             DIRECTION_MATRIX *beg_debug;
             int i, j;
@@ -3850,7 +3840,7 @@ backtrack_3d ( const seq_p seq1, const seq_p seq2, const seq_p seq3,
     a_line     = idx_seq3;
     a_cell     = 1;
     beg        = mat_get_3d_direct (m);
-    if (DEBUG) {
+    if (DEBUG_DIR_M) {
         char *toprint;
         DIRECTION_MATRIX *beg_debug;
         int i, j, k;
