@@ -202,7 +202,7 @@ int main() {
             if ( i == j * costMtx2d->lcm ) {
                 tcm[i + j] = 0;    // identity
             } else if (i == (tcm_total_len - costMtx2d->lcm) || j == (costMtx2d->lcm - 1)) {
-                tcm[i + j] = 32;   // indel cost
+                tcm[i + j] = 2;    // indel cost
             } else {
                 tcm[i + j] = 1;    // sub cost
             }
@@ -216,9 +216,9 @@ int main() {
 
     /**
     // Print TCM in pretty format 
-    int n = costMtx2d->lcm;
-    for (size_t i = 0; i < costMtx2d->lcm; ++i) {
-        for (size_t j = 0; j < costMtx2d->lcm; ++j) {
+    const int n = costMtx2d->lcm;
+    for (size_t i = 0; i < n; ++i) {
+        for (size_t j = 0; j < n; ++j) {
             printf("%2d ",tcm[ n*i + j ]);
         }
         printf("\n");

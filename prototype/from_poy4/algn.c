@@ -3512,22 +3512,22 @@ algn_print_dynmtrx_2d (const seq_p seq1, const seq_p seq2, nw_matrices_p matrice
     
     // print column heads
     printf("  x |       * ");
-    for (i = 0; i < longerSeqLen; i++) {
-        printf("%7d ", longerSeq->begin[i]);
+    for (i = 0; i < lesserSeqLen; i++) {
+        printf("%7d ", lesserSeq->begin[i]);
     }
     printf("\n");
     printf(" ---+-");
-    for (i = 0; i < n; i++) {
+    for (i = 0; i < m; i++) {
       printf("--------");  
     }
     printf("\n");
     
-    for (i = 0; i < m; i++) {
+    for (i = 0; i < n; i++) {
       if (i == 0) printf ("  * | ");
-      else        printf (" %2d | ", (lesserSeq->begin)[i-1]);
+      else        printf (" %2d | ", longerSeq->begin[i-1]);
 
-      for (j = 0; j < n; j++) {
-        printf ("%7d ", (int) d[n * i + j]);
+      for (j = 0; j < m; j++) {
+        printf ("%7d ", (int) d[m * i + j]);
       }
       printf ("\n");
     }
