@@ -3452,7 +3452,7 @@ algn_CAML_simple_3_bc (value *argv, int argn) {
 */
 
 void
-print_bcktrck (const seq_p seq1, const seq_p seq2, 
+algn_print_bcktrck_2d (const seq_p seq1, const seq_p seq2, 
               const nw_matrices_p m) {
     int i, j;
     DIRECTION_MATRIX *d;
@@ -3487,7 +3487,7 @@ algn_CAML_print_bcktrck (value seq1, value seq2, value matrix) {
 */
 
 void
-print_dynmtrx (const seq_p seq1, const seq_p seq2, nw_matrices_p matrices) {
+algn_print_dynmtrx_2d (const seq_p seq1, const seq_p seq2, nw_matrices_p matrices) {
     int i, j;
     const int seqLen1 = seq_get_len (seq1);
     const int seqLen2 = seq_get_len (seq2);
@@ -3500,12 +3500,19 @@ print_dynmtrx (const seq_p seq1, const seq_p seq2, nw_matrices_p matrices) {
     printf ("Sequence 2 length: %d\n", m);
     printf ("Length    Product: %d\n", seqLen1*seqLen2);
     printf ("Length +1 Product: %d\n", m*n);
-    printf ("Allocated space  : %d\n", matrices->len);
+    printf ("Allocated space  : %d\n\n", matrices->len);
     
+    // print column heads
+    printf(" x       \n");
     for (i = 0; i < n; i++) {
-      printf (" | ");
+        printf("%7c", *(seq1->begin + i));
+    }
+    printf("\n");
+
+    for (i = 0; i < n; i++) {
+      printf (" %c ", *(seq2->begin + i));
         for (j = 0; j < m; j++)
-            printf ("%7d ", (int) d[n*i + j]);
+            printf ("%7d ", (int) d[n * i + j]);
         printf ("|\n");
     }
     return;
@@ -3642,7 +3649,8 @@ backtrack_2d ( const seq_p seq1, const seq_p seq2,
                     }
                 }
                 else { // something terrible has happened!!!!
-                    print_dynmtrx (seq1, seq2, m);
+                    printf("Error. Alignment cost matrix:\n");
+                    algn_print_dynmtrx_2d (seq1, seq2, m);
                     printf("*beg: %d\n", *beg);
                     printf("*end: %d\n", *end);
                     printf("beg: 0x%d\n", (unsigned int) beg);

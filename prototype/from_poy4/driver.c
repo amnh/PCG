@@ -3,6 +3,7 @@
 #include <stdlib.h>
 
 #include "algn.h"
+#include "debug.h"
 // #include "array_pool.h"
 // #include "cm.h"
 #include "matrices.h"
@@ -292,13 +293,17 @@ int main() {
     printf("\n\n\n******************** Align 2 sequences **********************\n");
     
     // printf("Original alignment matrix before algn_nw_2d: \n");
-    // print_dynmtrx( seq1, seq2, algn_mtxs2d );
+    // algn_print_dynmtrx_2d_2d( seq1, seq2, algn_mtxs2d );
 
     int deltawh = 2; // Increase in height or width of 
 
     int algnCost = algn_nw_2d( seq1, seq2, costMtx2d, algn_mtxs2d, deltawh ); // TODO: is
-    printf("Final alignment matrix: \n");
-    print_dynmtrx( seq1, seq2, algn_mtxs2d );
+
+    if (DEBUG_MAT) {
+        printf("\n\nFinal alignment matrix: \n\n");
+        algn_print_dynmtrx_2d( seq1, seq2, algn_mtxs2d );
+    }
+
 
     printf("Original 2d sequences:\n");
     seq_print(seq1, 1);
@@ -486,7 +491,7 @@ int main() {
 
     algn_nw_3d( seq1, seq2, seq3, costMtx3d, algn_mtxs3d, deltawh );
     //printf("Final alignment matrix: \n");
-    //print_dynmtrx( seq1, seq2, algn_mtxs3d );
+    //algn_print_dynmtrx_2d_2d( seq1, seq2, algn_mtxs3d );
 
     printf("Original 3d sequences:\n");
     seq_print(seq1, 1);

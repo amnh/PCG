@@ -146,10 +146,10 @@ algn_nw_3d (const seq_p seq1, const seq_p seq2, const seq_p seq3,
             const cost_matrices_3d_p c, nw_matrices_p m, int uk);
 
 void
-print_bcktrck (const seq_p seq1, const seq_p seq2, const nw_matrices_p m);
+algn_print_bcktrck_2d (const seq_p seq1, const seq_p seq2, const nw_matrices_p m);
 
 void
-print_dynmtrx (const seq_p seq1, const seq_p seq2, nw_matrices_p m);
+algn_print_dynmtrx_2d (const seq_p seq1, const seq_p seq2, nw_matrices_p m);
 
 /** takes two previously aligned sequences, @param seq1 & @param seq2, for which some align function has been called,
  *  and extracts their
