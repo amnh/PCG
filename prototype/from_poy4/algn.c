@@ -74,6 +74,8 @@
 #define PRINT_COST_M     0
 #define PRINT_DIR_M      0
 #define DEBUG_NW         0
+#define DEBUG_AFFINE     1
+
 
 /*
 #include "matrices.c"
@@ -1650,8 +1652,6 @@ algn_choose_affine_other (int *next_row, int *curRow, int **next_dncurRow,
     return;
 }
 
-#define DEBUG_AFFINE 0
-
 #define ALIGN_TO_ALIGN 1
 #define ALIGN_TO_VERTICAL 2
 #define ALIGN_TO_HORIZONTAL 4
@@ -1693,7 +1693,7 @@ FILL_EXTEND_HORIZONTAL_NOBT (int sj_horizontal_extension, int sj_gap_extension, 
     ext_cost = extend_horizontal[j - 1] + sj_horizontal_extension;
     open_cost = close_block_diagonal[j - 1] +
                 sj_gap_opening + sj_gap_extension;
-    if (0 && DEBUG_AFFINE)
+    if (DEBUG_AFFINE)
         printf ("The ext cost is %d and the open_cost is %d with gap_extension %d \
             and gap opening %d, and sj_horizontal_extension %d\n", ext_cost, open_cost, sj_gap_extension, 
                 sj_gap_opening, sj_horizontal_extension);
@@ -1701,7 +1701,7 @@ FILL_EXTEND_HORIZONTAL_NOBT (int sj_horizontal_extension, int sj_gap_extension, 
         extend_horizontal[j] = ext_cost;
     else
         extend_horizontal[j] = open_cost;
-    if (0 && DEBUG_AFFINE)
+    if (DEBUG_AFFINE)
         printf ("The final cost is %d\n", extend_horizontal[j]);
     return;
 }
@@ -1714,7 +1714,7 @@ FILL_EXTEND_HORIZONTAL (int sj_horizontal_extension, int sj_gap_extension, int s
     ext_cost = extend_horizontal[j - 1] + sj_horizontal_extension;
     open_cost = close_block_diagonal[j - 1] +
                 sj_gap_opening + sj_gap_extension;
-    if (0 && DEBUG_AFFINE)
+    if (DEBUG_AFFINE)
         printf ("The ext cost is %d and the open_cost is %d with gap_extension %d \
             and gap opening %d, and sj_horizontal_extension %d\n", ext_cost, open_cost, sj_gap_extension, 
                 sj_gap_opening, sj_horizontal_extension);
@@ -1726,7 +1726,7 @@ FILL_EXTEND_HORIZONTAL (int sj_horizontal_extension, int sj_gap_extension, int s
         LOR_WITH_DIRECTION_MATRIX(END_HORIZONTAL, direction_matrix);
         extend_horizontal[j] = open_cost;
     }
-    if (0 && DEBUG_AFFINE)
+    if (DEBUG_AFFINE)
         printf ("The final cost is %d\n", extend_horizontal[j]);
     return (direction_matrix);
 }
@@ -1824,7 +1824,7 @@ FILL_CLOSE_BLOCK_DIAGONAL_NOBT(SEQT si_base, SEQT sj_base, SEQT si_no_gap,
     */
     extra_gap_opening =
         (sj_gap_opening < si_gap_opening)?si_gap_opening:sj_gap_opening;
-    if (0 && DEBUG_AFFINE) {
+    if (DEBUG_AFFINE) {
         printf ("Between %d and %d: Diag : %d, Extra gap opening: %d\n", si_no_gap, sj_no_gap, diag, extra_gap_opening);
         fflush (stdout);
     }
@@ -1864,7 +1864,7 @@ FILL_CLOSE_BLOCK_DIAGONAL(SEQT si_base, SEQT sj_base, SEQT si_no_gap,
         */
     extra_gap_opening =
         (sj_gap_opening < si_gap_opening)?si_gap_opening:sj_gap_opening;
-    if (0 && DEBUG_AFFINE) {
+    if (DEBUG_AFFINE) {
         printf ("Between %d and %d: Diag : %d, Extra gap opening: %d\n", si_no_gap, sj_no_gap, diag, extra_gap_opening);
         fflush (stdout);
     }
@@ -1926,7 +1926,7 @@ backtrace_affine (DIRECTION_MATRIX *direction_matrix, const seq_p si, const seq_
     initial_direction_matrix = direction_matrix;
     direction_matrix = direction_matrix + (((leni + 1) * (lenj + 1)) - 1);
     while ((i != 0) && (j != 0)) {
-        if (0 && DEBUG_AFFINE) {
+        if (DEBUG_AFFINE) {
             printf ("In position %d %d of affine backtrace\n", i, j);
             fflush (stdout);
         }
@@ -2138,8 +2138,8 @@ initialize_matrices_affine (int go, const seq_p si, const seq_p sj,
     int *prev_extend_vertical;
     const int *gap_row;
     SEQT jc, jp, ic, ip;
-    leni = seq_get_len(si) - 1;
-    lenj = seq_get_len(sj) - 1;
+    leni = seq_get_len(si) - 1; //TODO: is this for deleting opening gap?
+    lenj = seq_get_len(sj) - 1; //TODO: is this for deleting opening gap?
     final_cost_matrix[0] = 0;
     close_block_diagonal[0] = 0;
     extend_block_diagonal[0] = 0;
@@ -3228,6 +3228,7 @@ algn_nw_limit_2d (const seq_p seq1, const seq_p seq2, const cost_matrices_2d_p c
 /** TODO: can probably eliminate either this or algn_nw_limit_2d, since
  *  both seem to be doing the same thing
  */
+/** seq1 must be longer!!! */
 int
 algn_nw_2d (const seq_p seq1, const seq_p seq2, const cost_matrices_2d_p costMtx, 
          nw_matrices_p m, int deltawh) {
@@ -3268,18 +3269,20 @@ algn_nw_3d (const seq_p seq1, const seq_p seq2, const seq_p seq3,
     const SEQT *sseq1, *sseq2, *sseq3;
     int *curRow, *precalcMtx, seq1_len, seq2_len, seq3_len, gap, res;
     DIRECTION_MATRIX *dirMtx;
+   /* 
     sseq1 = seq_get_begin (seq1);
     sseq2 = seq_get_begin (seq2);
     sseq3 = seq_get_begin (seq3);
+    */
     mat_setup_size (m, seq_get_len (seq2), seq_get_len (seq3), seq_get_len (seq1), 
                     w, c->lcm);
     curRow     = mat_get_3d_matrix (m);
-    dirMtx = mat_get_3d_direct (m);
-    precalcMtx   = mat_get_3d_prec (m);
+    dirMtx     = mat_get_3d_direct (m);
+    precalcMtx = mat_get_3d_prec (m);
     seq1_len = seq_get_len (seq1);
     seq2_len = seq_get_len (seq2);
     seq3_len = seq_get_len (seq3);
-    gap    = cm_get_gap_3d (c);
+    gap      = cm_get_gap_3d (c);
     cm_precalc_4algn_3d (c, precalcMtx, seq3);
     /* TODO Check how is this ukkonen barrier affecting this fill cube, the w
      * was called uk */

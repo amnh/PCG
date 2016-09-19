@@ -11,7 +11,7 @@ int main() {
 
 /******************************** set up and allocate all variables and structs ************************************/
 
-    const size_t SEQ_CAPACITY = 20;
+    const size_t SEQ_CAPACITY = 64;
 
     nw_matrices_p algn_mtxs2d       = malloc( sizeof(struct matrices) );
     nw_matrices_p algn_mtxs2dAffine = malloc( sizeof(struct matrices) );
@@ -27,13 +27,13 @@ int main() {
     algn_mtxs2d->cube_d      = NULL;
     algn_mtxs2d->precalc     = malloc ( sizeof( int ) );  
 
-    algn_mtxs2d->len_eff     = 0;
-    algn_mtxs2d->nw_costMtx  = malloc ( sizeof( int ) );
-    algn_mtxs2d->dir_mtx_2d  = malloc ( sizeof( DIRECTION_MATRIX ) );
-    algn_mtxs2d->pointers_3d = malloc ( sizeof( int* ) );
-    algn_mtxs2d->cube        = malloc ( sizeof( int ) );
-    algn_mtxs2d->cube_d      = malloc ( sizeof( int ) );
-    algn_mtxs2d->precalc     = malloc ( sizeof( int ) );  
+    algn_mtxs2dAffine->len_eff     = 0;
+    algn_mtxs2dAffine->nw_costMtx  = malloc ( sizeof( int ) );
+    algn_mtxs2dAffine->dir_mtx_2d  = malloc ( sizeof( DIRECTION_MATRIX ) );
+    algn_mtxs2dAffine->pointers_3d = malloc ( sizeof( int* ) );
+    algn_mtxs2dAffine->cube        = malloc ( sizeof( int ) );
+    algn_mtxs2dAffine->cube_d      = malloc ( sizeof( int ) );
+    algn_mtxs2dAffine->precalc     = malloc ( sizeof( int ) );  
 
     algn_mtxs3d->len_eff     = 0;
     algn_mtxs3d->nw_costMtx  = malloc ( sizeof( int ) ); // TODO: do I need this here?
@@ -74,12 +74,14 @@ int main() {
     SEQT *s1 = calloc(SEQ_CAPACITY, sizeof(SEQT));
     SEQT *s2 = calloc(SEQ_CAPACITY, sizeof(SEQT));
     SEQT *s3 = calloc(SEQ_CAPACITY, sizeof(SEQT));
-    int s1_vals[SEQ_CAPACITY]  = {16,3,1,5,6,4}; // don't forget to change lengths!!!
-    seq1->len                  = 6;
-    int s2_vals[SEQ_CAPACITY]  = {16,3,6,2,9,8}; // don't forget to change lengths!!!
-    seq2->len                  = 5;
-    int s3_vals[SEQ_CAPACITY]  = {16,3,1,5,8,2}; // don't forget to change lengths!!!
-    seq3->len                  = 6;
+
+    //***** for following seqs, affine requires gap at start of sequence!!! *****/
+    int s1_vals[SEQ_CAPACITY]  = {16, 2,1,8,8,8,8,8,4,4,4,4,4,4,4,4}; // don't forget to change lengths!!!
+    seq1->len                  = 16;
+    int s2_vals[SEQ_CAPACITY]  = {16, 2,1          ,4,4,4,4,4,4,4,4}; // don't forget to change lengths!!!
+    seq2->len                  = 11;
+    int s3_vals[SEQ_CAPACITY]  = {16, 3,1,9,9,8,4,4}; // don't forget to change lengths!!!
+    seq3->len                  = 8;
 
     for(size_t i = SEQ_CAPACITY - seq1->len; i < SEQ_CAPACITY; i++) {
         s1[i] = (int) s1_vals[i - SEQ_CAPACITY + seq1->len];
@@ -142,7 +144,7 @@ int main() {
     int combinations = 1; // false if matrix is sparse. In this case, it's DNA, so not sparse.
     int do_aff       = 0;
     int gap_open     = 0;
-    int is_metric    = 0;
+    int is_metric    = 1;
     int all_elements = 31; // How is this used?
 
     cost_matrices_2d_p costMtx2d = malloc( sizeof(struct cost_matrices_2d) );
@@ -186,24 +188,39 @@ int main() {
     size_t tcm_total_len = costMtx2d->lcm * costMtx2d->lcm; // the size of the input tcm
 
     // printf("%zu\n", tcm_total_len);
+
+    // if modifying this code, also make sure to change is_metric
     int* tcm = calloc(tcm_total_len, sizeof(int)); // this is the input tcm, not the generated one
     for (size_t i = 0; i < tcm_total_len; i += costMtx2d->lcm) {
         //printf("i: %zu\n", i);
         for (size_t j = 0; j < costMtx2d->lcm; j++) {
             //printf("i: %zu, j: %zu, cost: %lu\n", i, j, 2 * i + 2 * j);
             //tcm[i + j] = 2 * i + 2 * j;
-            if ( i == j ) {
-                tcm[i + j] = 0;
+            if ( i == j * costMtx2d->lcm ) {
+                tcm[i + j] = 0;    // identity
+            } else if (i == (tcm_total_len - costMtx2d->lcm) || j == (costMtx2d->lcm - 1)) {
+                tcm[i + j] = 32;   // indel cost
             } else {
-                tcm[i + j] = 1;
+                tcm[i + j] = 1;    // sub cost
             }
-            //printf("cost: %d\n", tcm[i+j]);
+            // printf("i: %zu, j: %zu, cost: %d\n", i, j, tcm[i+j]);
 
             //cm_set_cost (i, j, or, costMtx2d);
             // printf("should be: %zu, is: %d\n", or, cm_get_cost (i,j,costMtx2d));
             // or += 2;
         }
     }
+
+    /**
+    // Print TCM in pretty format 
+    int n = costMtx2d->lcm;
+    for (size_t i = 0; i < costMtx2d->lcm; ++i) {
+        for (size_t j = 0; j < costMtx2d->lcm; ++j) {
+            printf("%2d ",tcm[ n*i + j ]);
+        }
+        printf("\n");
+    }
+    **/
 
     // set up cost, median and worst matrices.
     // Since arrays in 3d are just pointers to 2d, should work for both.
@@ -218,7 +235,7 @@ int main() {
             min = INT_MAX; // this should be largest integer value.
 
             // now cycle through single-bit values, 1, 2, 4, etc.
-            // if that bit is set in base1, look at all bits in base2
+            // if that bit is set in base1, look at all bits in base2,
             // accumulate lowest cost and highest cost of all existing combinations
             // into cost and worst matrices.
             for (i = 1; i <= costMtx2d->alphSize; i++) {
@@ -277,7 +294,7 @@ int main() {
 
     int deltawh = 2; // Increase in height or width of 
 
-    algn_nw_2d( seq1, seq2, costMtx2d, algn_mtxs2d, deltawh ); // TODO: is 
+    int algnCost = algn_nw_2d( seq1, seq2, costMtx2d, algn_mtxs2d, deltawh ); // TODO: is 
     // printf("Final alignment matrix: \n");
     // print_dynmtrx( seq1, seq2, algn_mtxs2d );
 
@@ -290,6 +307,8 @@ int main() {
     seq_print(retSeq1, 1);
     seq_print(retSeq2, 2);
 
+    printf("Alignment cost: %d\n", algnCost);
+
     // for (SEQT *base = retSeq1->begin; base != retSeq1->end; base++) {
     //     printf("a: %c\n", *base);
     // }
@@ -298,6 +317,8 @@ int main() {
     // }
 
 /************************************************ Do 2d affine alignment *****************************************************/
+
+    /*** must have gap at start of sequence!!! ***/
 
     do_aff   = 1;
     gap_open = 2;
@@ -315,10 +336,11 @@ int main() {
     retSeq1->begin = retSeq1->head + SEQ_CAPACITY;
     retSeq1->end   = retSeq1->begin;
     retSeq1->len   = 0;
-    retSeq2->begin = retSeq1->head + SEQ_CAPACITY;
+    retSeq2->begin = retSeq2->head + SEQ_CAPACITY;
     retSeq2->end   = retSeq2->begin;
     retSeq2->len   = 0;
 
+    // TODO: document these variables
     int *matrix;                        // 
     int *close_block_diagonal;          //
     int *extend_block_diagonal;         //
@@ -329,7 +351,7 @@ int main() {
     int *matrix_2d;                     //
     int *gap_open_prec;                 //
     int *s_horizontal_gap_extension;    //
-    int result, lenLongerSeq;           //
+    int lenLongerSeq;                   //
     DIRECTION_MATRIX *direction_matrix;
     size_t lenSeq1 = seq_get_len(seq1);
     size_t lenSeq2 = seq_get_len(seq2);
@@ -338,15 +360,12 @@ int main() {
     retSeq1->begin = retSeq1->head + SEQ_CAPACITY;
     retSeq1->end   = retSeq1->begin;
     retSeq1->len   = 0;
-    retSeq2->begin = retSeq1->head + SEQ_CAPACITY;
+    retSeq2->begin = retSeq2->head + SEQ_CAPACITY;
     retSeq2->end   = retSeq2->begin;
     retSeq2->len   = 0;
 
-    if (lenSeq1 > lenSeq2) {
-        lenLongerSeq = lenSeq1;
-    } else {
-        lenLongerSeq = lenSeq2;
-    }
+    lenLongerSeq = (lenSeq1 > lenSeq2) ? lenSeq1 : lenSeq2;
+
 
     mat_setup_size (algn_mtxs2dAffine, lenLongerSeq, lenLongerSeq, 0, 0, cm_get_lcm (costMtx2d_affine));
     matrix_2d = mat_get_2d_nwMtx (algn_mtxs2dAffine);
@@ -361,7 +380,9 @@ int main() {
     extend_horizontal          = (int *) (matrix_2d + (6 * lenLongerSeq));
     final_cost_matrix          = (int *) (matrix_2d + (8 * lenLongerSeq));
     gap_open_prec              = (int *) (matrix_2d + (10 * lenLongerSeq));
-    s_horizontal_gap_extension = (int *) (matrix_2d + (11 * lenLongerSeq));
+    s_horizontal_gap_extension = (int *) (matrix_2d + (12 * lenLongerSeq));
+
+
 
     // TODO: empty_medianSeq might not be necessary, as it's unused in ml code:
     size_t medianSeqLen    = lenSeq1 + lenSeq2 + 2;  // 2 because that's how it is in ML code
@@ -392,26 +413,48 @@ int main() {
 
         // TODO: consider moving all of this into algn.
         //       the following three fns were initially not declared in algn.h
-        initialize_matrices_affine (costMtx2d_affine->gap_open, seq2, seq1, costMtx2d_affine, close_block_diagonal, 
+        initialize_matrices_affine (costMtx2d_affine->gap_open, seq1, seq2, costMtx2d_affine, close_block_diagonal, 
                                     extend_block_diagonal, extend_vertical, extend_horizontal, 
                                     final_cost_matrix, direction_matrix, precalcMtx);
-        result = algn_fill_plane_3_affine (seq2, seq1, lenSeq1 - 1, lenSeq2 - 1, final_cost_matrix, 
+        // shorter first TODO: is this consistent?
+        cost = algn_fill_plane_3_affine (seq1, seq2, lenSeq1 - 1, lenSeq1 - 1, final_cost_matrix, 
                                            direction_matrix, costMtx2d_affine, extend_horizontal, extend_vertical, 
                                            close_block_diagonal, extend_block_diagonal, precalcMtx, gap_open_prec, 
                                            s_horizontal_gap_extension);
-        backtrace_affine (direction_matrix, seq2, seq1, medianSeq, empty_medianSeq,
+        // shorter first TODO: fix this to make it consistent
+        backtrace_affine (direction_matrix, seq1, seq2, medianSeq, empty_medianSeq,
                           retSeq1, retSeq2, costMtx2d_affine);
     } else {
         printf("seq 2 is shorter, s1: %zu, s2: %zu\n", lenSeq1, lenSeq2);
+    
         cm_precalc_4algn(costMtx2d_affine, algn_mtxs2dAffine, seq2);
-        initialize_matrices_affine(costMtx2d_affine->gap_open, seq1, seq2, costMtx2d_affine, close_block_diagonal, 
+
+        initialize_matrices_affine(costMtx2d_affine->gap_open, seq2, seq1, costMtx2d_affine, close_block_diagonal, 
                                    extend_block_diagonal, extend_vertical, extend_horizontal, 
                                    final_cost_matrix, direction_matrix, precalcMtx);
-        result = algn_fill_plane_3_affine (seq1, seq2, lenSeq2 - 1, lenSeq1 - 1, final_cost_matrix, 
+
+        printf("close_block_diagonal      : %d\n", *close_block_diagonal      );
+        printf("extend_block_diagonal     : %d\n", *extend_block_diagonal     );
+        printf("extend_vertical           : %d\n", *extend_vertical           );
+        printf("extend_horizontal         : %d\n", *extend_horizontal         );
+        printf("final_cost_matrix         : %d\n", *final_cost_matrix         );
+        printf("gap_open_prec             : %d\n", *gap_open_prec             );
+        printf("s_horizontal_gap_extension: %d\n", *s_horizontal_gap_extension);
+
+        for (int *i = matrix_2d, j = 0; i < matrix_2d + algn_mtxs2dAffine->len; i++, j++) {
+            printf("%d, ", *i);
+            if (j % (lenLongerSeq ) == 0) {
+                printf("\n");
+            }
+            
+        }
+        
+        algnCost = algn_fill_plane_3_affine (seq2, seq1, lenSeq2 - 1, lenSeq1 - 1, final_cost_matrix, 
                                            direction_matrix, costMtx2d_affine, extend_horizontal, extend_vertical, 
                                            close_block_diagonal, extend_block_diagonal, precalcMtx, gap_open_prec, 
                                            s_horizontal_gap_extension);
-        backtrace_affine (direction_matrix, seq1, seq2, medianSeq, empty_medianSeq,
+        // shorter first
+        backtrace_affine (direction_matrix, seq2, seq1, medianSeq, empty_medianSeq,
                          retSeq2, retSeq1, costMtx2d_affine);
     }
  
@@ -419,6 +462,8 @@ int main() {
     printf("\nAligned 2d sequences\n");
     seq_print(retSeq1, 1);
     seq_print(retSeq2, 2);
+
+    printf("Alignment cost: %d\n", algnCost);
 
 
 
@@ -432,7 +477,8 @@ int main() {
     retSeq1->begin = retSeq1->head + SEQ_CAPACITY;
     retSeq1->end   = retSeq1->begin;
     retSeq1->len   = 0;
-    retSeq2->begin = retSeq1->head + SEQ_CAPACITY;
+
+    retSeq2->begin = retSeq2->head + SEQ_CAPACITY;
     retSeq2->end   = retSeq2->begin;
     retSeq2->len   = 0;
 
@@ -442,15 +488,15 @@ int main() {
 
     printf("Original 3d sequences:\n");
     seq_print(seq1, 1);
-    seq_print(seq3, 2);
-    seq_print(seq2, 3);
+    seq_print(seq2, 2);
+    seq_print(seq3, 3);
 
-    backtrack_3d (seq1, seq3, seq2, retSeq1, retSeq3, retSeq2, algn_mtxs3d, costMtx3d);
+    backtrack_3d (seq1, seq2, seq3, retSeq1, retSeq2, retSeq3, algn_mtxs3d, costMtx3d);
 
     printf("\nAligned 3d sequences:\n");
     seq_print(retSeq1, 1);
-    seq_print(retSeq3, 2);
-    seq_print(retSeq2, 3);
+    seq_print(retSeq2, 2);
+    seq_print(retSeq3, 3);
 
     printf("\n\n\n");
 

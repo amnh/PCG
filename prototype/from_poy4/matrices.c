@@ -26,7 +26,7 @@
 
 /* 
  * For memory management efficiency, I will keep all the matrices in one big
- * chunck of memory, that I can reallocate as a whole, and reduce fragmentation
+ * chunk of memory, that I can reallocate as a whole, and reduce fragmentation
  * a lot if possible, all the alignment calculations and all the matrices that
  * are precomputed to speedup the alignments are held here.
  */
@@ -89,20 +89,23 @@ mat_setup_size (nw_matrices_p m, int len_seq1, int len_seq2, int len_seq3, int i
         len_precalc = (1 << lcm) * len_seq1;
         len_dir = (len_seq1 + 1) * (len_seq2 + 1);
         len_2d = 0;
-    } else {                /* If the size setup is for 3d */
+    } else {                       /* If the size setup is for 3d */
         len = mat_size_of_3d_matrix (len_seq1, len_seq2, len_seq3, is_ukk);
         len_precalc = (1 << lcm) * (1 << lcm) * len_seq2;  // TODO: why sequence 2?
         len_2d = len_seq1 * len_seq2;
         len_dir = len_2d * len_seq3;
     }
-    if (m->len_eff < len) { /* If the 3d or 2d matrix is not enough */
+    printf("len_eff: %d, len: %d\n", m->len_eff, len);
+    if (m->len_eff < len) {         /* If the current 2d or 3d matrix is not large enough */
+        printf("allocation: %zu\n", len * sizeof(int));
         m->cube = m->nw_costMtx = realloc (m->nw_costMtx, (len * sizeof(int)));
         m->len_eff = len;
     }
-    if (m->len < len_dir) { /* If the other matrices are not enough */
+    if (m->len < len_dir) {         /* If the other matrices are not large enough */
         m->cube_d = m->dir_mtx_2d = 
             realloc (m->dir_mtx_2d, (len_dir * sizeof(DIRECTION_MATRIX)));
         if (0 != len_2d) {
+            printf("\n\nlen_2d: %d\n", len_2d);
             m->pointers_3d = realloc (m->pointers_3d, len_2d * sizeof(int));
             if (m->pointers_3d == NULL) {
                 printf("Memory allocation problem in pointers 3d.\n");

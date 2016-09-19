@@ -109,10 +109,13 @@ seq_reverse_ip (seq_p cs) {
 
 void
 seq_prepend (seq_p a, SEQT v) {
-    assert(a->cap > a->len);
-    a->begin = a->begin - 1;
-    *(a->begin) = v;
-    a->len = a->len + 1;
+    if ( a->cap <= a->len ) {
+      printf("Failing values: %d %d\n", a->cap, a->len);
+      assert(a->cap > a->len);
+    }
+    a->begin    -= 1;
+    *(a->begin)  = v;
+    a->len      += 1;
     return;
 }
 
