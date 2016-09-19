@@ -3497,16 +3497,26 @@ algn_CAML_print_bcktrck (value seq1, value seq2, value matrix) {
 */
 
 void
-print_dynmtrx (const seq_p seq1, const seq_p seq2, 
-               nw_matrices_p m) {
+print_dynmtrx (const seq_p seq1, const seq_p seq2, nw_matrices_p matrices) {
     int i, j;
+    const int seqLen1 = seq_get_len (seq1);
+    const int seqLen2 = seq_get_len (seq2);
+    const int n       = seqLen1 + 1;
+    const int m       = seqLen2 + 1;
     int *d;
-    d = mat_get_2d_nwMtx (m);
-    for (i = 0; i < seq_get_len (seq1); i++) {
-        for (j = 0; j < seq_get_len (seq2); j++)
-            printf ("%d", (int) *(d + j));
-        d += j;
-        printf ("\n");
+    d = mat_get_2d_nwMtx (matrices);
+
+    printf ("Sequence 1 length: %d\n", n);
+    printf ("Sequence 2 length: %d\n", m);
+    printf ("Length    Product: %d\n", seqLen1*seqLen2);
+    printf ("Length +1 Product: %d\n", m*n);
+    printf ("Allocated space  : %d\n", matrices->len);
+    
+    for (i = 0; i < n; i++) {
+      printf (" | ");
+        for (j = 0; j < m; j++)
+            printf ("%7d ", (int) d[n*i + j]);
+        printf ("|\n");
     }
     return;
 }

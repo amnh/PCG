@@ -7,11 +7,13 @@
 // #include "cm.h"
 #include "matrices.h"
 
+#define SEQ_CAPACITY 64
+
 int main() {
 
 /******************************** set up and allocate all variables and structs ************************************/
 
-    const size_t SEQ_CAPACITY = 64;
+//    const size_t SEQ_CAPACITY = 64;
 
     nw_matrices_p algn_mtxs2d       = malloc( sizeof(struct matrices) );
     nw_matrices_p algn_mtxs2dAffine = malloc( sizeof(struct matrices) );
@@ -294,9 +296,9 @@ int main() {
 
     int deltawh = 2; // Increase in height or width of 
 
-    int algnCost = algn_nw_2d( seq1, seq2, costMtx2d, algn_mtxs2d, deltawh ); // TODO: is 
-    // printf("Final alignment matrix: \n");
-    // print_dynmtrx( seq1, seq2, algn_mtxs2d );
+    int algnCost = algn_nw_2d( seq1, seq2, costMtx2d, algn_mtxs2d, deltawh ); // TODO: is
+    printf("Final alignment matrix: \n");
+    print_dynmtrx( seq1, seq2, algn_mtxs2d );
 
     printf("Original 2d sequences:\n");
     seq_print(seq1, 1);
@@ -483,8 +485,8 @@ int main() {
     retSeq2->len   = 0;
 
     algn_nw_3d( seq1, seq2, seq3, costMtx3d, algn_mtxs3d, deltawh );
-    // printf("Final alignment matrix: \n");
-    // print_dynmtrx( seq1, seq2, algn_mtxs3d );
+    //printf("Final alignment matrix: \n");
+    //print_dynmtrx( seq1, seq2, algn_mtxs3d );
 
     printf("Original 3d sequences:\n");
     seq_print(seq1, 1);
