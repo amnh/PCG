@@ -14,7 +14,9 @@
 
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
-module Analysis.Parsimony.Binary.SequentialAlign.FFI where
+module Analysis.Parsimony.Binary.SequentialAlign.FFI
+  ( sequentialAlign
+  ) where
 
 import Bio.Character.Dynamic.Coded
 import Bio.Character.Exportable.Class
@@ -40,6 +42,8 @@ sequentialAlign x y a b = Right (x + y, a, b)
 -- Includes a struct (actually, a pointer thereto), and that struct, in turn, has a string
 -- in it, so Ptr CChar.
 -- Modified from code samples here: https://en.wikibooks.org/wiki/Haskell/FFI#Working_with_C_Structures
+-- |
+-- The result of the alignment from the C side of the FFI
 data AlignResult
    = AlignResult
    { alignmentCost :: CInt
@@ -47,6 +51,8 @@ data AlignResult
    , seqFinal      :: Ptr CArrayUnit
    }
 
+-- |
+-- Type of a dynamic character to pass back and forth across the FFI interface.
 data CDynamicChar
    = CDynamicChar
    { alphabetSize :: CInt
@@ -54,6 +60,7 @@ data CDynamicChar
    , dynChar      :: Ptr CArrayUnit
    }
 
+-- | (✔) 
 instance Show CDynamicChar where
     show (CDynamicChar alphSize dcLen dChar) =
        mconcat
@@ -73,6 +80,7 @@ instance Show CDynamicChar where
             intLen       = fromIntegral dcLen
             printedArr   = show <$> peekArray bufferLength dChar
 
+-- | (✔) 
 instance Arbitrary CDynamicChar where
     arbitrary = do
         alphSize <- (arbitrary :: Gen Int) `suchThat` (\x -> 0 < x && x <= 64)
@@ -90,13 +98,18 @@ instance Arbitrary CDynamicChar where
            , dynChar      = unsafePerformIO . newArray $ fullBitVals <> remBitVals
            }
 
+-- |
+-- A convient type alias for improved clairity of use.
 type CArrayUnit  = CULong -- This will be compatible with uint64_t
 
+
+-- | (✔)
 instance Arbitrary CArrayUnit where
     arbitrary = do
         num <- arbitrary :: Gen Integer
         pure $ fromIntegral num
 
+-- | (✔) 
 instance Storable CDynamicChar where
     sizeOf    _ = (#size struct dynChar_t) -- #size is a built-in that works with arrays, as are #peek and #poke, below
     alignment _ = alignment (undefined :: CArrayUnit)
@@ -115,6 +128,7 @@ instance Storable CDynamicChar where
         (#poke struct dynChar_t, dynChar   ) ptr seqVal
 
 -- Because we're using a struct we need to make a Storable instance
+-- | (✔)
 instance Storable AlignResult where
     sizeOf    _ = (#size struct alignResult_t) -- #size is a built-in that works with arrays, as are #peek and #poke, below
     alignment _ = alignment (undefined :: CArrayUnit)
@@ -136,13 +150,19 @@ instance Storable AlignResult where
         (#poke struct alignResult_t, finalStr   ) ptr seqVal
 
 -- This is the declaration of the Haskell wrapper for the C function we're calling.
--- Note that this fn is called from testFn.
-foreign import ccall unsafe "exportCharacter testFn"
-    callExtFn_c :: Ptr CDynamicChar -> Ptr CDynamicChar -> Ptr AlignResult -> CInt
+-- Note that this fn is called from testFn.f
 
+-- |
+-- FFI call to the C pairwise alignment algorithm with /defaulted/ sub & indel cost parameters
+foreign import ccall unsafe "exportCharacter testFn"
+    callExtFn_c  :: Ptr CDynamicChar -> Ptr CDynamicChar -> Ptr AlignResult -> CInt
+
+-- |
+-- FFI call to the C pairwise alignment algorithm with /explicit/ sub & indel cost parameters.
 foreign import ccall unsafe "seqAlignForHaskell aligner"
     call_aligner :: Ptr CDynamicChar -> Ptr CDynamicChar -> CInt -> CInt -> Ptr AlignResult -> CInt
 
+-- |
 -- testFn can be called from within Haskell code.
 testFn :: CDynamicChar -> CDynamicChar -> Either String (Int, String) 
 testFn char1 char2 = unsafePerformIO $ 
