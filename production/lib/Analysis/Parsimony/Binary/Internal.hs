@@ -47,7 +47,8 @@ import           Prelude        hiding (lookup,zip)
 
 -- !!!TODO: Remove weighting.
 
--- | Top level binary optimization wrapper to optimize over a solution
+-- |
+-- Top level binary optimization wrapper to optimize over a solution
 -- Takes in an overall weight and a solution
 -- Returns a solution with any relevant values assigned (root cost, node assignments, etc. depending on optimization types).
 -- Calls 'graphOptimization'.
@@ -57,14 +58,16 @@ solutionOptimization weighting inSolution = outForests
         meta = getMetadata inSolution
         outForests = setForests inSolution $ fmap (graphOptimization weighting meta) (getForests inSolution)
 
--- | Mapping function to optimize over a forest
+-- |
+-- Mapping function to optimize over a forest
 -- Takes in an overall weight, a vector of metadata, and a forest
 -- Returns a forest with relevant values assigned.
 -- Calls 'allOptimization'.
 graphOptimization :: (ForestConstraint' f t n s, Metadata m s) => Double -> Vector m -> f -> f
 graphOptimization weighting meta inGraph = setTrees inGraph $ fmap (allOptimization weighting meta) (trees inGraph)
 
--- | Unified function to perform both the postorder and preorder passes (as relevant)
+-- |
+-- Unified function to perform both the postorder and preorder passes (as relevant)
 -- Takes in an overall weight, a vector of metadata, and a tree.
 -- Returns a tree with values assigned.
 -- This actually calls the postorder and preorder optimizations.
@@ -74,7 +77,8 @@ allOptimization weighting meta inTree = secondPass
         firstPass  = treeOptimizePostorder weighting inTree meta
         secondPass = treeOptimizePreorder firstPass meta
 
--- | Optimization postorder wrapper to perform relevant algorithm at all nodes
+-- |
+-- Optimization postorder wrapper to perform relevant algorithm at all nodes
 -- Takes in an overall weight, a tree, and a vector of metadata
 -- Returns a tree with values assigned
 -- Correctly handles roots, leaves, and nodes with only one child
@@ -84,7 +88,8 @@ treeOptimizePostorder weighting tree meta = tree `update` (rootNode : nonRootNod
     -- We recursively decorate all nodes in the tree, then return the updated tree
     (rootNode, nonRootNodes) = treeInternalPostorderTraversal weighting (root tree) tree meta
 
--- | Internal postorder optimization pass
+-- |
+-- Internal postorder optimization pass
 -- takes in a weight, a current node, a tree, and a vector of metadata
 -- returns a list of nodes that have had changes applied to them
 -- By using this node accumulation scheme, we save some complexity over simply always dealing with a tree
@@ -130,7 +135,8 @@ treeInternalPostorderTraversal weighting node tree meta = (decoratedSelf, decora
                                  . setTotalCost           (getTotalCost           otherNode)
                                  . setLocalCost           (getLocalCost           otherNode)
 
--- | Wrapper function to perform optimization on a node during the postorder pass
+-- |
+-- Wrapper function to perform optimization on a node during the postorder pass
 -- Essentially map decision function that selects and performs the correct optimization over the sequence of characters.
 -- Takes in an overall weight, a current node, the left child, the right child, and a vector of metadata
 -- Outputs a node with the correct sequences and costs assigned.
@@ -170,14 +176,16 @@ nodeOptimizePostorder weighting curNode lNode rNode meta = summedTotalCost `setT
 --        addTotalCost   addVal node = setTotalCost (addVal + getTotalCost node) node
         addLocalCost      addVal node = setLocalCost (addVal + getLocalCost node) node
 
--- | Wrapper for the preorder
+-- |
+-- Wrapper for the preorder
 -- Takes in a tree and a vector of metadata,
 -- returns a tree with relevant nodes assigned.
 -- This wrapper allows us to deal correctly with root passing to preorder algorithms
 treeOptimizePreorder :: (TreeConstraint' t n s, Metadata m s) => t -> Vector m -> t
 treeOptimizePreorder tree meta = tree `update` treeInternalPreorderTraversal Nothing (root tree) tree meta
 
--- | Internal preorder pass that does the main recursion
+-- |
+-- Internal preorder pass that does the main recursion
 -- Takes in a current node, the tree, and a vector of metadata;
 -- returns a list of nodes that have been updated.
 -- As in the postorder, this method saves on some time complexity.
@@ -190,7 +198,8 @@ treeInternalPreorderTraversal parentNode node tree meta  =
   where
       children' = children node tree
 
--- | Wrapper function to perform optimization on a node during the preorder pass.
+-- |
+-- Wrapper function to perform optimization on a node during the preorder pass.
 -- As in the postorder, it selects an optimization for each character, then groups the optimized characters together and assigns them to the node.
 -- Takes in a current node, left child, right child, parent node, and vector of metadata,
 -- returns a node with everything assigned.
@@ -226,12 +235,20 @@ nodeOptimizePreorder curNode lNode rNode pNode = ifoldr chooseOptimization curNo
                     $ setNode
             | otherwise = error "Unrecognized optimization type"
 
+-- |
+-- Takes a potentially ambiguous character element and deterministically returns 
+-- an unambiguous character element from the ambiguous representaion.
 disambiguate :: EncodableDynamicCharacter c => c -> c
 disambiguate = omap orderedSelection
 
+-- |
+-- Defines a deterministic ordering for ambiguity resolution.
 orderedSelection :: (Num a, Bits a) => a -> a
 orderedSelection x = x .&. negate x -- Selects the least significant set bit, clears all others.
 
+-- |
+-- Given three input characters, returns a disambiguated character that is
+-- consistent with supplied characters.
 deriveSingleAssignment :: SeqConstraint' c => CostStructure -> c -> c -> c -> c
 deriveSingleAssignment costStructure parentSingle parentFinal childFinal = result
   where
@@ -253,7 +270,8 @@ deriveSingleAssignment costStructure parentSingle parentFinal childFinal = resul
       where
         new = single .&. ambiguous
 
-
+-- |
+-- A three way comparison of characters used in the DO preorder traversal.
 tripleComparison :: ( Show t, Show (Element t), EncodableDynamicCharacter t, PreliminaryNode n t, EncodedNode n t)
                  => Int -> CostStructure -> n -> t -> (t, t)
 tripleComparison i costStructure curNode parentCharacter = (finalUngapped, finalGapped)
@@ -267,32 +285,37 @@ tripleComparison i costStructure curNode parentCharacter = (finalUngapped, final
     (_, finalUngapped, finalGapped) = threeWayMean costStructure derivedAlignment leftCharacter rightCharacter
 
 
--- | getForAlign returns the sequences from a node, where the node type is either 'EncodedNode' or 'PreliminaryNode'.
+-- |
+-- getForAlign returns the sequences from a node, where the node type is either 'EncodedNode' or 'PreliminaryNode'.
 -- preliminary alignment 
 getForAlign :: (PreliminaryNode n s, EncodedNode n s) => n -> Vector s
 getForAlign node
     | null $ getPreliminaryUngapped node = getEncoded node -- Assume leaf node 
     | otherwise                          = getPreliminaryUngapped node
 
--- | Retreives the correct sequence of dynamic characters for the direct
---   optimization preorder traversal from the child node. We conditionally
---   select one of two fields. The gapped preliminary node assignment is
---   preferenced and returned if not null. It is assumed that all internal nodes
---   will have a non null vector of preliminary node assignemnt characters. If
---   the gapped preliminary vector is null, itis assumed that the node is a leaf
---   node and the original dynamic character encodings are returned.
+-- |
+-- Retreives the correct sequence of dynamic characters for the direct
+-- optimization preorder traversal from the child node. We conditionally
+-- select one of two fields. The gapped preliminary node assignment is
+-- preferenced and returned if not null. It is assumed that all internal nodes
+-- will have a non null vector of preliminary node assignemnt characters. If
+-- the gapped preliminary vector is null, itis assumed that the node is a leaf
+-- node and the original dynamic character encodings are returned.
 getChildCharacterForDoPreorder ::  (PreliminaryNode n s, EncodedNode n s) => n -> Vector s
 getChildCharacterForDoPreorder node
   | not . null $ getPreliminaryGapped node = getPreliminaryGapped node
   | otherwise                              = getEncoded node
 
--- | addToField takes in a setter fn, a getter fn, a value and a node.
+-- |
+-- addToField takes in a setter fn, a getter fn, a value and a node.
 -- It then gets the related value from the node, adds to it the passed value,
 -- and sets that value on the node. It returns a new node with the newly computed value set.
 addToField :: (Vector s -> n -> n) -> (n -> Vector s) -> s -> n -> n
 addToField setter getter val node = setter (pure val <> getter node) node
 
--- 
+-- |
+-- Returns the indicies of the gaps that were added in the second character when
+-- compared to the first character.
 newGapLocations :: EncodableDynamicCharacter c => c -> c -> IntMap Int
 --newGapLocations originalChar newChar | trace ("o: " <> show originalChar <> "n: " <> show newChar) False = undefined
 newGapLocations originalChar newChar
@@ -309,6 +332,9 @@ newGapLocations originalChar newChar
       | e == gap && x /= gap = (x:xs, i  , IM.insertWith (+) i 1 is)
       | otherwise            = (  xs, i+1, is)
 
+-- |
+-- Given a list of gap location and a character returns a longer character with
+-- the supplied gaps inserted at the corersponding locations.
 insertNewGaps :: EncodableDynamicCharacter c => IntMap Int -> c -> c
 insertNewGaps insertionIndicies character = constructDynamic . (<> trailingGaps) . foldMapWithKey f $ otoList character
   where
@@ -319,7 +345,9 @@ insertNewGaps insertionIndicies character = constructDynamic . (<> trailingGaps)
       case i `lookup` insertionIndicies of
         Nothing -> [e]
         Just n  -> replicate n gap <> [e]
-      
+
+-- |
+-- Calculates the mean character and cost between three supplied characters.
 threeWayMean :: (Show (Element c), Show c, EncodableDynamicCharacter c {-, Memoizable (Element c) -} ) => CostStructure -> c -> c -> c -> (Double, c, c)
 --threeWayMean _ char1 char2 char3 | trace (mconcat [show char1, show char2, show char3]) False = undefined
 threeWayMean costStructure char1 char2 char3

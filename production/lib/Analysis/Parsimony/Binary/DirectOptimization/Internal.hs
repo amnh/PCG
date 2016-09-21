@@ -90,6 +90,8 @@ doAlignment char1 char2 costStruct = (char1Align, char2Align)
         (_, _, _, char1Align, char2Align) = naiveDO char1 char2 costStruct
         
 
+-- |
+-- Strips the gaps from the supplied character.
 filterGaps :: EncodableDynamicCharacter c => c -> c
 filterGaps char = constructDynamic . filter (/= gap) $ otoList char
   where
@@ -226,6 +228,10 @@ overlap costStruct char1 char2
         
         -- now take an ambiguous minimum
 
+-- |
+-- Given a structure of character elements and costs, calculates the least
+-- costly intersection of character elements and the cost of that intersection
+-- of chaarcter elements.
 minimalChoice :: (Bits c, Foldable t, Ord n) => t (c, n) -> (c, n)
 minimalChoice = foldr1 f
   where
@@ -235,7 +241,8 @@ minimalChoice = foldr1 f
       | otherwise      = (val2         , cost2)
 
 -- TODO: Can we eliminate all characters from below, and just pass around Ints?
--- | Finds the cost of a pairing of two static characters.
+-- |
+-- Finds the cost of a pairing of two static characters.
 -- Takes in a 'CostStructure' and two ambiguous 'EncodableStaticCharacter's. Returns a list of tuples of all possible unambiguous
 -- pairings, along with their costs. 
 allPossibleBaseCombosCosts :: EncodableStaticCharacter s => CostStructure -> s -> s -> [(s, Double)]
@@ -243,11 +250,12 @@ allPossibleBaseCombosCosts costStruct char1 char2 = [ getCost costStruct x y | x
                                                                              , y <- getSubChars char2
                                                     ]
 
--- | Given a 'CostStructure' and two tuples of an 'Int' and an unambiguous 'EncodableStaticCharacter', determines the cost 
+-- TODO: This won't work with an asymmetric TCM.
+-- |
+-- Given a 'CostStructure' and two tuples of an 'Int' and an unambiguous 'EncodableStaticCharacter', determines the cost 
 -- of a pairing (intersection) of those characters into an ambiguous character. The 'Int's are the set bits in each character
 -- and are used as lookup into the 'CostStructure'. 
 -- Tests exist in the test suite.
--- TODO: This won't work with an asymmetric TCM.
 getCost :: EncodableStaticCharacter s => CostStructure -> (Int, s) -> (Int, s) -> (s, Double)
 getCost costStruct seqTup1 seqTup2 = 
     case (costStruct, seqTup1, seqTup2) of
@@ -274,7 +282,8 @@ getCost costStruct seqTup1 seqTup2 =
         | otherwise                                = (c1 .|. c2,   sub)
 -}
 
--- | Takes in a 'EncodableStaticCharacter', possibly with more than one bit set, and returns a list of tuples of 
+-- |
+-- Takes in a 'EncodableStaticCharacter', possibly with more than one bit set, and returns a list of tuples of 
 -- 'Int's and 'EncodableStaticCharacter's, such that, for each set bit in the input, there is one element in the output list, 
 -- a tuple with an 'Int', @ x @, giving the location of the set bit, as well as an 'EncodableStaticCharacter' of the same
 -- length as the input, but with only the bit at location @ x @ set.
@@ -288,6 +297,7 @@ getSubChars fullChar = foldr (\i acc -> if testBit fullChar i
     z = fullChar `xor` fullChar
 
 
+-- |
 -- Transformation should no longer be nescissary
 -- Replaced definition with the identiy function over two values.
 correctBiasing :: a -> ([a], [a], [a]) -> ([a], [a], [a])

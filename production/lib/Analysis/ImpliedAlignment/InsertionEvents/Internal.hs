@@ -51,6 +51,8 @@ import           Test.QuickCheck hiding (output)
 -}
 newtype InsertionEvents e = IE (IntMap (Seq e)) deriving (Eq)
 
+-- |
+-- An instance with all values on the same edge.
 instance (Arbitrary e) => Arbitrary (InsertionEvents e) where
   arbitrary = do
     let gen = arbitrary
@@ -58,8 +60,10 @@ instance (Arbitrary e) => Arbitrary (InsertionEvents e) where
     vals <- vectorOf (length keys) (listOf1 gen) 
     pure . IE . IM.fromList $ zipWith (\x y -> (x, Seq.fromList y)) keys vals
 
+-- |
+-- A custom monoid instance to account for ordered accumulation at a given index.
 instance Monoid (InsertionEvents e) where
-  -- | This represent no insertionevents occurring on an edge
+  -- | This represent no insertion vents occurring on an edge
   mempty = IE mempty
 
   -- | This operator is valid /only/ when combineing sibling edges.
@@ -213,13 +217,18 @@ coalesce ancestorDeletions (IE ancestorMap) descendantEvents
 
 
 
--- | Constructs an InsertionEvents collection from a structure of integral keys
+-- |
+-- Constructs an 'InsertionEvents' collection from a structure of integral keys
 -- and sequences of equatable elements.
 fromList :: (Enum i, Foldable t, Foldable t') => t (i, t' e) -> InsertionEvents e
 fromList = IE . IM.fromList . fmap (fromEnum `bimap` toSeq) . toList
   where
     toSeq = Seq.fromList . toList
 
+-- |
+-- Constructs an 'InsertionEvents' collection from an 'IntMap Int' and a given
+-- edge so that the resulting 'InsertionEvents' has all insertion events in the
+-- 'IntMap' applied to the supplied edge identifier.
 fromEdgeMapping :: e -> IntMap Int -> InsertionEvents e
 fromEdgeMapping edgeToken mapping = IE $ f <$> mapping
   where
@@ -233,6 +242,7 @@ wrap = IE
 unwrap :: InsertionEvents e -> IntMap (Seq e)
 unwrap (IE x) = x
 
+-- | The number of distinct insertion events stored in the 'InsertionEvents' 
 size :: InsertionEvents e -> Int
 size (IE im) = sum $ length <$> im
 
@@ -241,12 +251,14 @@ size (IE im) = sum $ length <$> im
 -- INTERNAL STRUCTURES:
 
 
--- Convenience type alias for Key-Value Pairs.
 -- Should not leave Internal module scope!
 --   DO NOT export.
 --   DO NOT use in exported function type signitures.
+-- |
+-- Convenience type alias for Key-Value Pairs.
 type KVP a = (Int, Seq a)
 
+-- |
 -- Used in the coalesce fold's accumulator.
 -- Enforces invariants when consuming the ancestoral insertion events.
 data MutationIterator a
@@ -254,6 +266,7 @@ data MutationIterator a
    | Curr (KVP a) (IntMap (Seq a)) [KVP a]
    deriving (Show)
 
+-- |
 -- Takes a list of key-value pairs and produces a MutationIterator for consuming
 -- the insertion events.
 --
@@ -264,33 +277,42 @@ initializeMutationIterator xs =
     []   -> Done
     e:es -> Curr e mempty es
 
+-- |
 -- Moves the MutationIterator forward one element in the ordered insertion event
 -- stream.
 next :: MutationIterator a -> MutationIterator a
 next  Done         = Done
 next (Curr _ _ xs) = initializeMutationIterator xs
 
--- Takes a MutationIterator an returns the unconsumed key-value pairs
+-- |
+-- Takes a MutationIterator an returns the unconsumed key-value pairs.
 remaining :: MutationIterator a -> [KVP a]
 remaining  Done              = []
 remaining (Curr (k,v) im xs) =  (k, im `applyMutations` v):xs
 
+-- |
+-- Attempts to retreive the current value in the stream of the iterator.
 getCurr :: MutationIterator a -> Maybe (Int, Seq a)
 getCurr  Done            = Nothing
 getCurr (Curr (k,v) _ _) = Just (k,v)
 
+-- |
+-- Adds a mutation to the 'MutationIterator''s internal state.
 mutate :: (Int, Seq a) -> MutationIterator a -> MutationIterator a
 mutate     _  Done             = Done
 mutate (i,e) (Curr (k,v) im xs) = Curr (k,v) im' xs
   where
     im' = IM.insertWith (<>) i e im
 
+-- |
+-- Retreives the current state of the 'MutationIterator'.
 getState :: MutationIterator a -> Seq a
 getState  Done             = mempty
 getState (Curr (_,v) im _) = im `applyMutations` v
 
 
--- Takes an IntMap of insertion events localized to a seqence and applies them to
+-- |
+-- Takes an 'IntMap' of insertion events localized to a seqence and applies them to
 -- that sequence producing a longer sequence with the insertions inserted.
 applyMutations :: IntMap (Seq a) -> Seq a -> Seq a
 applyMutations im xs = (<> trailing) . foldMapWithKey f $ toList xs

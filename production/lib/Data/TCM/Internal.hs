@@ -120,6 +120,8 @@ instance Arbitrary TCM where
         pure $ TCM dimension dataVector
 
 
+-- |
+-- A pretty printed custom show instance for 'TCM'.
 instance Show TCM where
     show tcm = headerLine <> matrixLines
       where
@@ -402,11 +404,15 @@ factorTCM tcm
     factor = ofoldr1Ex gcd tcm
     x = fromEnum factor
 
+-- |
+-- Deconstructs the 'TCM' to expose the underlying unboxed 'Vector'.
 {-# INLINE vec #-}
 vec :: TCM -> Vector Word32
 vec (TCM _ v) = v
 
 
+-- |
+-- Takes an 'Integral' value and converts it to an unsigned unboxable value.
 {-# INLINE coerce #-}
 coerce :: Integral a => a -> Word32
 coerce = toEnum . fromEnum . toInteger

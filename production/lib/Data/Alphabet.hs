@@ -65,6 +65,8 @@ import           Test.QuickCheck.Arbitrary.Instances ()
    from either parsers or in unification step.
  -}
 
+-- |
+-- A collection of symbols and optional corresponding state names.
 data Alphabet a 
    = SimpleAlphabet     (Vector (UnnamedSymbol a))
    | StateNamedAlphabet (Vector (  NamedSymbol a))

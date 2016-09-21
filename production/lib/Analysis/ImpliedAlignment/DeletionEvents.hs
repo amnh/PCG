@@ -13,7 +13,10 @@
 
 {-# LANGUAGE FlexibleContexts, TypeFamilies #-}
 
-module Analysis.ImpliedAlignment.DeletionEvents where
+module Analysis.ImpliedAlignment.DeletionEvents
+  ( DeletionEvents(..)
+  , fromList
+  ) where
 
 import           Data.IntSet          (IntSet)
 import qualified Data.IntSet    as IS
@@ -22,6 +25,9 @@ import           Data.Monoid
 import           Data.MonoTraversable
 
 -- TODO: Use BitVectors here for efficency!
+-- |
+-- A wrapped type to represent deletion events on an edge with a custom 'Monoid'
+-- instance.
 newtype DeletionEvents = DE IntSet deriving (Eq)
 
 instance Monoid DeletionEvents where
@@ -122,32 +128,32 @@ instance Monoid DeletionEvents where
 
 incrementDescendant :: DeletionEvents -> DeletionEvents -> IntSet
 incrementDescendant (DE ancestorSet) (DE descendantSet) = incrementedDescendantSet
-  where
-      (_,_,incrementedDescendantSet) = ofoldl' f (0, otoList ancestorSet, mempty) descendantSet
-      f (counter, [], is) descendantIndex = (counter, [], (counter + descendantIndex) `IS.insert` is)
-      f (counter, as, is) descendantIndex =
-        case remaining of
-           []   -> (counter', [], (counter' + descendantIndex) `IS.insert` is)
-           x:xs ->
-             if   x > descendantIndex
-             then (counter'    , x:xs, (      counter' + descendantIndex) `IS.insert` is)
-             else (counter' + 1,   xs, (inc + counter' + descendantIndex) `IS.insert` is)
         where
-          (prev, remaining) = span (< descendantIndex) as
-          counter' = length prev + counter
-          inc = consecutiveLength remaining
-
---          descendantIndex' = descendantIndex + counter
---          incrementation   = consecutiveLength . drop (descendantIndex' - 1) $ otoList ancestorSet
-
-          consecutiveLength :: (Eq a, Num a) => [a] -> Int
-          consecutiveLength = g 0
+          (_,_,incrementedDescendantSet) = ofoldl' f (0, otoList ancestorSet, mempty) descendantSet
+          f (counter, [], is) descendantIndex = (counter, [], (counter + descendantIndex) `IS.insert` is)
+          f (counter, as, is) descendantIndex =
+            case remaining of
+               []   -> (counter', [], (counter' + descendantIndex) `IS.insert` is)
+               x:xs ->
+                 if   x > descendantIndex
+                 then (counter'    , x:xs, (      counter' + descendantIndex) `IS.insert` is)
+                 else (counter' + 1,   xs, (inc + counter' + descendantIndex) `IS.insert` is)
             where
-              g n       [] = n
-              g n      [_] = n + 1
-              g n (x:y:ys)
-                | x+1 == y  = g (n+1) (y:ys)
-                | otherwise = n + 1
+              (prev, remaining) = span (< descendantIndex) as
+              counter' = length prev + counter
+              inc = consecutiveLength remaining
+
+--              descendantIndex' = descendantIndex + counter
+--              incrementation   = consecutiveLength . drop (descendantIndex' - 1) $ otoList ancestorSet
+
+              consecutiveLength :: (Eq a, Num a) => [a] -> Int
+              consecutiveLength = g 0
+                where
+                  g n       [] = n
+                  g n      [_] = n + 1
+                  g n (x:y:ys)
+                    | x+1 == y  = g (n+1) (y:ys)
+                    | otherwise = n + 1
  
 instance Show DeletionEvents where
   show = (\x -> "{" <> x <> "}") . intercalate "," . fmap show . otoList
@@ -196,5 +202,7 @@ instance MonoFoldable DeletionEvents where
   {-# INLINE olength #-}
   olength (DE de) = olength de
 
+-- |
+-- Construct a 'DeletionEvent' from a structure of values coercable to an 'Int'.
 fromList :: (Enum (Element t), MonoFoldable t) => t -> DeletionEvents
 fromList = DE . ofoldMap (IS.singleton . fromEnum)

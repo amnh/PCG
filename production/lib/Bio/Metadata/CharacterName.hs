@@ -8,8 +8,30 @@
 -- Stability   :  provisional
 -- Portability :  portable
 --
--- Data types for metadata
+-- A 'CharacterName' represents an /unique/ name identifier for a character that
+-- can be used as a textual reference.
 --
+-- A 'CharacterName' contains within it a reference to the file from which it
+-- was originally parsed, allowing identically named characters from different
+-- input files to be uniquely referenced. The file from which a 'CharacterName'
+-- was originally parsed can be queried by the function 'sourceFile'.
+--
+-- A 'CharcterName' can be a either a user specified textual identifier or a
+-- default generated value. Where a given 'CharacterName' is user specified or
+-- defaulted may be queried by the function 'isUserDefined'.
+--
+-- A 'CharacterName' is only constructable by calling 'makeCharacterNames'.
+-- Calls to 'makeCharacterNames' should supply all possible character information
+-- available at parse time to ensure that the resulting 'CharacterNames' are
+-- uniquely idenitfible.
+--
+-- A 'CharacterName' has an ordering defined as follows:
+--
+--  1. The lexical ordering of the 'CharacterName' source file name
+--  2. User defined values take precedence over a defaulted values within the same source file
+--  3. The lexical ordering of the user defined textual identifier within the same source file
+--  4. The numeric ordering of the defaulted values within the same source file.
+-- 
 -----------------------------------------------------------------------------
 
 {-# LANGUAGE FlexibleContexts #-}
@@ -31,6 +53,8 @@ import Text.Show       (showListWith, showString)
 
 -- import Debug.Trace
 
+-- |
+-- Represents the name of a character in a type-safe manner which resolves namespace ambiguities.
 data CharacterName
    = UserDefined FilePath String
    | Default     FilePath Int

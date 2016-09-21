@@ -45,12 +45,16 @@ import           Data.Vector.Instances           ()
 import           Prelude                 hiding  (lookup,zip,zipWith)
 import           Safe                            (tailMay)
 
+-- |
+-- Memoized data points on the edges of the post order traversal.
 data IndelEvents e
    = IndelEvents
    { edgeInsertionEvents :: InsertionEvents e
    , edgeDeletionEvents  :: DeletionEvents
    } deriving (Show)
 
+-- |
+-- The referencial precomputation tree structure used for the tree traversals.
 data TreeReferences n
    = TreeRefs
    { rootRef    :: Int
@@ -223,10 +227,10 @@ comparativeIndelEvents edgeIdentifier ancestorCharacterUnaligned descendantChara
                             || (descendantElement == gap && containsGap   ancestorElement)
 -}                             
 
-incInsMap :: Int -> IntMap Int -> IntMap Int
-incInsMap key = IM.insertWith f key 1
-  where
-    f _ = succ
+        incInsMap :: Int -> IntMap Int -> IntMap Int
+        incInsMap key = IM.insertWith g key 1
+          where
+            g = const succ
 
 -- | Transforms a node's decorations to include the implied alignment given a 'PsuedoCharacter' and sequence index.
 deriveImpliedAlignment :: (EncodableDynamicCharacter s2, Foldable t, IANode' n s2, NodeConstraint n s1, Element s1 ~ Element s2)
