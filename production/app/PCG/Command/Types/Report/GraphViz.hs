@@ -54,16 +54,16 @@ dotOutput solution = header ++ foldr (\f acc -> acc ++ foldr treeToDot mempty f)
                       terminals = printNode . (nodeValues V.!) <$> IM.keys (outNodes curEdge)
                       printOne o t = "\t\"" ++ o ++ "\" -> \"" ++ t ++ "\";\n"
                       printNode x
-                        | c == 0    = n
-                        | otherwise = unwords [n, ": cost =", show' c]
+                        | costVal == 0 = nameStr
+                        | otherwise    = unwords [nameStr, ": cost =", show' costVal]
                         where
-                          n = name' x
-                          c = totalCost x
-                          show' x
-                            | fromIntegral x' == x = show x'
-                            | otherwise = show x
+                          nameStr = name' x
+                          costVal = totalCost x
+                          show' n
+                            | fromIntegral n' == n = show n'
+                            | otherwise            = show n
                             where
-                              x' = floor x :: Int
+                              n' = floor n :: Int
 
 outPutDot :: String -> StandardSolution -> IO ()
 outPutDot fileName = writeFile fileName . dotOutput
