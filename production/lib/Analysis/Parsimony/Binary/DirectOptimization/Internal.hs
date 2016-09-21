@@ -198,7 +198,7 @@ getTotalAlignmentCost alignmentMatrix = c
 getOverlap :: (EncodableStaticCharacter c {- , Memoizable c, -}) => c -> c -> CostStructure -> (c, Double)
 getOverlap inChar1 inChar2 costStruct = result
     where
-        result = {- memoize2 -} (overlap costStruct) inChar1 inChar2
+        result = {- memoize2 -} overlap costStruct inChar1 inChar2
         
 -- | Takes two 'EncodableStaticCharacter' and a 'CostStructure' and returns a tuple of a new character, 
 -- along with the cost of obtaining that character. The return character may be (or is even likely to be)

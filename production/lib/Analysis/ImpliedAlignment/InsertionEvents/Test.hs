@@ -17,10 +17,10 @@ module Analysis.ImpliedAlignment.InsertionEvents.Test
 
 import           Analysis.ImpliedAlignment.InsertionEvents.Internal
 import qualified Analysis.ImpliedAlignment.DeletionEvents as DE
-import           Control.Arrow                                  ((***))
+import           Control.Arrow                                  (second)
 import qualified Data.IntMap                              as IM
 import           Data.Monoid
-import           Test.QuickCheck.Property.Common.Internal       (Equal,runEqual)
+import           Test.QuickCheck.Property.Common.Internal       (Equal, runEqual)
 import           Test.QuickCheck.Property.Monoid
 import           Test.Tasty
 import           Test.Tasty.HUnit
@@ -28,7 +28,7 @@ import           Test.Tasty.QuickCheck
 
 -- Disambiguated the type inference for this module.
 fromList' :: [(Int,String)] -> InsertionEvents Int
-fromList' = fromEdgeMapping 0 . IM.fromList . fmap (id *** length)
+fromList' = fromEdgeMapping 0 . IM.fromList . fmap (second length)
 
 testSuite :: TestTree
 testSuite = testGroup "Insertion Event operations"

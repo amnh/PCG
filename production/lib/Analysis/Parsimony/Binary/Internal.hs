@@ -11,6 +11,7 @@
 -- Functions used accross optimization modules
 --
 -----------------------------------------------------------------------------
+
 {-# LANGUAGE AllowAmbiguousTypes, ConstraintKinds, FlexibleContexts #-}
 
 module Analysis.Parsimony.Binary.Internal where
@@ -42,6 +43,8 @@ import           Data.MonoTraversable
 --import Data.Ord              (comparing)
 import           Data.Vector           (Vector, (!), ifoldr)
 import           Prelude        hiding (lookup,zip)
+
+{-# ANN module "HLint: error Eta reduce" #-}
 
 --import Debug.Trace (trace)
 
@@ -171,10 +174,12 @@ nodeOptimizePostorder weighting curNode lNode rNode meta = summedTotalCost `setT
         addPreliminary    = addToField setPreliminaryUngapped getPreliminaryUngapped
         addLeftAlignment  = addToField setLeftAlignment  getLeftAlignment
         addRightAlignment = addToField setRightAlignment getRightAlignment
+
         addAlign          addVal node = addToField setPreliminaryGapped   getPreliminaryGapped   addVal node
 --        addTemporary   addVal node = addToField setTemporary   getTemporary        addVal node
 --        addTotalCost   addVal node = setTotalCost (addVal + getTotalCost node) node
         addLocalCost      addVal node = setLocalCost (addVal + getLocalCost node) node
+
 
 -- |
 -- Wrapper for the preorder

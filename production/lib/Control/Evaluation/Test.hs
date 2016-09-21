@@ -1,4 +1,7 @@
+{-# ANN module "HLint: error Functor law" #-}
+
 {-# LANGUAGE AllowAmbiguousTypes, ViewPatterns #-}
+
 module Control.Evaluation.Test where
 
 import Control.Evaluation.Unit
