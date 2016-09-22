@@ -16,6 +16,8 @@
 
 module Analysis.Parsimony.Binary.SequentialAlign.FFI
   ( sequentialAlign
+  , testFn
+  , main
   ) where
 
 import Bio.Character.Dynamic.Coded
