@@ -197,3 +197,4 @@ main = do
     --print char2
     print $ testFn char1 char1
 
+

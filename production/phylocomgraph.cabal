@@ -110,6 +110,7 @@ library
                        Bio.Character.Exportable.Class
                        Bio.Character.Parsed
                        Bio.Metadata
+                       Bio.Metadata.CharacterName
                        Bio.PhyloGraph
                        Bio.PhyloGraph.DAG
                        Bio.PhyloGraph.Edge
@@ -165,7 +166,6 @@ library
                        Bio.PhyloGraph.Forest.Class
                        Bio.PhyloGraph.Forest.Internal
                        Bio.PhyloGraph.Forest.Parsed
-                       Bio.Metadata.CharacterName
                        Bio.Metadata.Class
                        Bio.Metadata.Internal
                        Bio.Metadata.Parsed
