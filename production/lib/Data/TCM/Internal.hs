@@ -163,13 +163,13 @@ size (TCM x _) = x
 --
 -- ==== __Examples__
 --
--- >>> fromCols [1,2,3,4,5,6,7,8,9]
+-- >>> fromLists [1..9]
 -- TCM: 3 x 3
 --   1 2 3
 --   4 5 6
 --   7 8 9
 --
--- >>> fromList [0,1,2,1,0,1,2,1,0,3,2,1]
+-- >>> fromList [1..12]
 -- *** Exception: fromList: The number of element (12) is not a square number. Cannot construct an non-square TCM! The number of elements (12) lies between the valid square numbers (9) and (16).
 --
 fromList :: (Foldable t, Integral a) => t a -> TCM
