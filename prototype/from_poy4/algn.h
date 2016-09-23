@@ -57,8 +57,6 @@
 
 #define ALGN_H 1
 
-#define HIGH_NUM   1000000
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>

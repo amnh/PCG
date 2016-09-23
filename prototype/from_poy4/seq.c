@@ -110,7 +110,7 @@ seq_reverse_ip (seq_p cs) {
 void
 seq_prepend (seq_p a, SEQT v) {
     if ( a->cap <= a->len ) {
-      printf("Failing values: %d %d\n", a->cap, a->len);
+      printf("Failing values: capacity: %d, length: %d\n", a->cap, a->len);
       assert(a->cap > a->len);
     }
     a->begin    -= 1;

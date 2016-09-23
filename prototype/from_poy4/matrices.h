@@ -20,6 +20,16 @@
 #ifndef MATRICES_H
 
 #define MATRICES_H 1
+
+/** The following consts are to define possible moves in an NW matrix. 
+ *  As we're only saving one possible matrix, we don't need ambiguities,
+ *  Thus for 2d we only have 3 possible states, rather than 7.
+ * 
+ *  Remember that we bias toward the shorter sequence, so INSERT puts a gap
+ *  in the longer sequence and DELETE puts a gap in the shorter sequence. TODO: make sure shorter seq is on left
+ *
+ *  Likewise, for 3d we should need only 7 states and not 2^7 - 1.
+ */
 #define DIAGONAL (1 << 0)
 #define BEHIND (1 << 1)
 #define UPPER (1 << 2)
@@ -40,6 +50,7 @@
 #define S3 (1 << 5)     /** Align the sequence from s1 and s3 */
 #define SS (1 << 6)
 
+// TODO: Can this be a char, instead?
 #define DIRECTION_MATRIX unsigned short
 
 #define Matrices_struct(a) ((struct matrices *) Data_custom_val(a))

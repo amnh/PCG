@@ -54,10 +54,13 @@
  *  the direction codes are different for three dimensional alignments.
  */
 
+#include <assert.h>
+#include <limits.h>
+#include <locale.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <limits.h>
-#include <assert.h>
+#include <wchar.h>
+
 
 // #include "array_pool.h" ARRAY_POOL_DELETE
 #include "algn.h"
@@ -1137,7 +1140,7 @@ algn_fill_ukk_right_cell_affine (int *curRow, const int *prevRow, const int *gap
         algn_assign_dirMtx(dirMtx, pos, INSERT_H);
     }
     htcurRow[pos] = tmp2;
-    dncurRow[pos] = HIGH_NUM;
+    dncurRow[pos] = INT_MAX;
     /* check whether insertion is better */
     if (tmp2 < tmp3) {
         curRow[pos] = tmp2;
@@ -1210,7 +1213,7 @@ algn_fill_ukk_left_cell_affine (int *curRow, const int *prevRow, const int *gap_
         tmp1 = tmp5;
     }
     dncurRow[pos] = tmp1;
-    htcurRow[pos] = HIGH_NUM;
+    htcurRow[pos] = INT_MAX;
         if (tmp1 < tmp3) {
             curRow[pos] = tmp1;
             algn_assign_dirMtx(dirMtx, pos, (DELETE));
@@ -1281,7 +1284,7 @@ algn_fill_full_row_affine (int *curRow, const int *prevRow, const int *gap_row,
                         int tlcprev, int l, int *dncurRow, const int *pdncurRow, int *htcurRow, 
                         int open_gap) {
     /* first entry is delete */
-    htcurRow[0] = HIGH_NUM;
+    htcurRow[0] = INT_MAX;
     curRow[0] += c;
     dirMtx[0] = DELETE | DELETE_V;
     dncurRow[0] = c + pdncurRow[0];
@@ -1301,7 +1304,7 @@ algn_fill_first_row_affine (int *curRow, DIRECTION_MATRIX *dirMtx, int len, int 
     int i;
     /* We fill the first cell to start with */
     curRow[0] = open_gap;
-    dncurRow[0] = htcurRow[0] = HIGH_NUM;
+    dncurRow[0] = htcurRow[0] = INT_MAX;
     dirMtx[0] = ALIGN | ALIGN_V | ALIGN_H;
     /* Now the rest of the row */
     if (DEBUG_DIR_M)
@@ -1309,7 +1312,7 @@ algn_fill_first_row_affine (int *curRow, DIRECTION_MATRIX *dirMtx, int len, int 
     if (DEBUG_COST_M)
         printf ("%d\t", curRow[0]);
     for (i = 1; i < len; i++) {
-        dncurRow[i] = HIGH_NUM;
+        dncurRow[i] = INT_MAX;
         curRow[i] = curRow[i - 1] + gap_row[i];
         dirMtx[i] = INSERT | (INSERT_H);
         if (DEBUG_DIR_M)
@@ -1323,7 +1326,7 @@ algn_fill_first_row_affine (int *curRow, DIRECTION_MATRIX *dirMtx, int len, int 
 void
 algn_fill_first_cell_affine (int *curRow, int prevRow, DIRECTION_MATRIX *dirMtx, int gap, int *dncurRow, 
                           int *pdncurRow, int *htcurRow) {
-    htcurRow[0] = HIGH_NUM;
+    htcurRow[0] = INT_MAX;
     curRow[0] += gap;
     *dirMtx = DELETE | DELETE_V;
     dncurRow[0] = gap + pdncurRow[0];
@@ -1579,15 +1582,15 @@ algn_fill_plane_affine (const seq_p seq1, int *precalcMtx, int seq1_len,
     pdncurRow = dncurRow;
     curRow[0] = open_gap;
     dirMtx[0] = ALIGN | ALIGN_H | ALIGN_V;
-    htcurRow[0] = HIGH_NUM;
-    dncurRow[0] = HIGH_NUM;
+    htcurRow[0] = INT_MAX;
+    dncurRow[0] = INT_MAX;
     if (DEBUG_COST_M)
         printf ("%d\t", curRow[0]);
     if (DEBUG_DIR_M)
         printf ("A\t");
     /* We fill the first row to start with */
     for (i = 1; i < seq2_len; i++) {
-        dncurRow[i] = HIGH_NUM;
+        dncurRow[i] = INT_MAX;
         curRow[i] = curRow[i - 1] + first_gap_row[i];
         dirMtx[i] = INSERT | INSERT_H;
         if (DEBUG_COST_M) {
@@ -1768,8 +1771,8 @@ FILL_EXTEND_BLOCK_DIAGONAL_NOBT (SEQT si_base, SEQT sj_base, SEQT si_prev_base,
     int diag, open_diag, flag, flag2;
     flag = ((TMPGAP & si_base) && (TMPGAP & sj_base));
     flag2= (!(TMPGAP & si_prev_base) && (!(TMPGAP & sj_base)));
-    diag = flag ? 0 : HIGH_NUM;
-    open_diag = flag ? (flag2 ? 0 : (2 * gap_open)) : HIGH_NUM;
+    diag = flag ? 0 : INT_MAX;
+    open_diag = flag ? (flag2 ? 0 : (2 * gap_open)) : INT_MAX;
     ext_cost = prev_extend_block_diagonal[j - 1] + diag;
     open_cost = prev_close_block_diagonal[j - 1] + open_diag;
     if (ext_cost < open_cost)
@@ -1787,9 +1790,9 @@ FILL_EXTEND_BLOCK_DIAGONAL (SEQT si_base, SEQT sj_base, SEQT si_prev_base, SEQT 
                             DIRECTION_MATRIX direction_matrix) {
     int ext_cost, open_cost;
     int diag, open_diag;
-    diag = ((TMPGAP & si_base) && (TMPGAP & sj_base))?0:HIGH_NUM;
+    diag = ((TMPGAP & si_base) && (TMPGAP & sj_base))?0:INT_MAX;
     open_diag = (!(TMPGAP & si_prev_base) && (!(TMPGAP & sj_base)) && (TMPGAP & si_base) && (TMPGAP & sj_base))?
-        0:(((TMPGAP & si_base) && (TMPGAP & sj_base))?(2 * gap_open):HIGH_NUM);
+        0:(((TMPGAP & si_base) && (TMPGAP & sj_base))?(2 * gap_open):INT_MAX);
     ext_cost = prev_extend_block_diagonal[j - 1] + diag;
     open_cost = prev_close_block_diagonal[j - 1] + diag;
     if (ext_cost < open_cost) {
@@ -2092,8 +2095,8 @@ initialize_matrices_affine_nobt (int go, const seq_p si, const seq_p sj,
         r = extend_horizontal[j - 1] + gap_row[j];
         extend_horizontal[j] = r;
         close_block_diagonal[j] = r;
-        extend_block_diagonal[j] = HIGH_NUM;
-        extend_vertical[j] = HIGH_NUM;
+        extend_block_diagonal[j] = INT_MAX;
+        extend_vertical[j] = INT_MAX;
     }
     if (DEBUG_AFFINE) {
         printf ("Just initialized\n");
@@ -2112,9 +2115,9 @@ initialize_matrices_affine_nobt (int go, const seq_p si, const seq_p sj,
         ic = seq_get_element(si, i);
         ip = seq_get_element(si, i - 1);
         r = prev_extend_vertical[0] + (HAS_GAP_EXTENSION(ic, c));
-        extend_horizontal[0] = HIGH_NUM;
+        extend_horizontal[0] = INT_MAX;
         close_block_diagonal[0] = r;
-        extend_block_diagonal[0] = HIGH_NUM;
+        extend_block_diagonal[0] = INT_MAX;
         extend_vertical[0] = r;
     /* } */
     return;
@@ -2155,8 +2158,8 @@ initialize_matrices_affine (int go, const seq_p si, const seq_p sj,
         extend_horizontal[j] = r;
         close_block_diagonal[j] = r;
         final_cost_matrix[j] = r;
-        extend_block_diagonal[j] = HIGH_NUM;
-        extend_vertical[j] = HIGH_NUM;
+        extend_block_diagonal[j] = INT_MAX;
+        extend_vertical[j] = INT_MAX;
         direction_matrix[j] = DO_HORIZONTAL | END_HORIZONTAL;
     }
     if (DEBUG_AFFINE) {
@@ -2179,10 +2182,10 @@ initialize_matrices_affine (int go, const seq_p si, const seq_p sj,
         ic = seq_get_element(si, i);
         ip = seq_get_element(si, i - 1);
         r = prev_extend_vertical[0] + (HAS_GAP_EXTENSION(ic, c));
-        extend_horizontal[0] = HIGH_NUM;
+        extend_horizontal[0] = INT_MAX;
         close_block_diagonal[0] = r;
         final_cost_matrix[0] = r;
-        extend_block_diagonal[0] = HIGH_NUM;
+        extend_block_diagonal[0] = INT_MAX;
         extend_vertical[0] = r;
         direction_matrix[0] = DO_VERTICAL | END_VERTICAL;
     /* } */
@@ -2281,7 +2284,7 @@ algn_fill_plane_3_affine_nobt (const seq_p si, const seq_p sj, int leni, int len
             init_extend_block_diagonal + ((lenj + 1) * (i % 2));
         close_block_diagonal = init_close_block_diagonal + ((lenj + 1) * (i % 2));
         if (i > start_v) start_pos++;
-        extend_horizontal[start_pos - 1] = HIGH_NUM;
+        extend_horizontal[start_pos - 1] = INT_MAX;
         ip = ic;
         ic = begini[i];
         si_gap_extension = HAS_GAP_EXTENSION(ic, c);
@@ -2291,12 +2294,12 @@ algn_fill_plane_3_affine_nobt (const seq_p si, const seq_p sj, int leni, int len
             si_vertical_extension = si_gap_opening + si_gap_extension;
         else si_vertical_extension = si_gap_extension;
         r = prev_extend_vertical[start_pos - 1] + si_vertical_extension;
-        extend_horizontal[start_pos - 1] = HIGH_NUM;
+        extend_horizontal[start_pos - 1] = INT_MAX;
         close_block_diagonal[start_pos - 1] = r;
-        extend_block_diagonal[start_pos - 1] = HIGH_NUM;
+        extend_block_diagonal[start_pos - 1] = INT_MAX;
         extend_vertical[start_pos - 1] = r;
         jc = beginj[start_pos - 1];
-        close_block_diagonal[start_pos - 1] = HIGH_NUM;
+        close_block_diagonal[start_pos - 1] = INT_MAX;
         si_no_gap_vector = c->cost + (si_no_gap << c->lcm);
         for (j=start_pos; j <= end_pos; j++) {
             jp = jc;
@@ -2321,10 +2324,10 @@ algn_fill_plane_3_affine_nobt (const seq_p si, const seq_p sj, int leni, int len
         }
         if (end_pos < lenj) {
             end_pos++;
-            extend_vertical[end_pos] = HIGH_NUM;
-            close_block_diagonal[end_pos] = HIGH_NUM;
-            extend_horizontal[end_pos] = HIGH_NUM;
-            extend_block_diagonal[end_pos] = HIGH_NUM;
+            extend_vertical[end_pos] = INT_MAX;
+            close_block_diagonal[end_pos] = INT_MAX;
+            extend_horizontal[end_pos] = INT_MAX;
+            extend_block_diagonal[end_pos] = INT_MAX;
         }
         if (DEBUG_AFFINE) {
             print_array ("EH:", extend_horizontal, lenj);
@@ -2408,7 +2411,7 @@ algn_fill_plane_3_affine (const seq_p si, const seq_p sj, int leni, int lenj,
         direction_matrix = direction_matrix + (lenj + 1);
         if (i > start_v) start_pos++;
         direction_matrix[start_pos - 1] = DO_VERTICAL | END_VERTICAL;
-        extend_horizontal[start_pos - 1] = HIGH_NUM;
+        extend_horizontal[start_pos - 1] = INT_MAX;
         ip = ic;
         ic = begini[i];
         si_gap_extension = HAS_GAP_EXTENSION(ic, c);
@@ -2418,14 +2421,14 @@ algn_fill_plane_3_affine (const seq_p si, const seq_p sj, int leni, int lenj,
             si_vertical_extension = si_gap_opening + si_gap_extension;
         else si_vertical_extension = si_gap_extension;
         r = prev_extend_vertical[start_pos - 1] + si_vertical_extension;
-        extend_horizontal[start_pos - 1] = HIGH_NUM;
+        extend_horizontal[start_pos - 1] = INT_MAX;
         close_block_diagonal[start_pos - 1] = r;
         final_cost_matrix[start_pos - 1] = r;
-        extend_block_diagonal[start_pos - 1] = HIGH_NUM;
+        extend_block_diagonal[start_pos - 1] = INT_MAX;
         extend_vertical[start_pos - 1] = r;
         direction_matrix[start_pos - 1] = DO_VERTICAL | END_VERTICAL;
         jc = beginj[start_pos - 1];
-        close_block_diagonal[start_pos - 1] = HIGH_NUM;
+        close_block_diagonal[start_pos - 1] = INT_MAX;
         si_no_gap_vector = c->cost + (si_no_gap << c->lcm);
         for (j=start_pos; j <= end_pos; j++) {
             jp = jc;
@@ -2462,11 +2465,11 @@ algn_fill_plane_3_affine (const seq_p si, const seq_p sj, int leni, int lenj,
         if (end_pos < lenj) {
             end_pos++;
             direction_matrix[end_pos] = DO_HORIZONTAL | END_HORIZONTAL;
-            extend_vertical[end_pos] = HIGH_NUM;
-            close_block_diagonal[end_pos] = HIGH_NUM;
-            extend_horizontal[end_pos] = HIGH_NUM;
-            extend_horizontal[end_pos] = HIGH_NUM;
-            extend_block_diagonal[end_pos] = HIGH_NUM;
+            extend_vertical[end_pos] = INT_MAX;
+            close_block_diagonal[end_pos] = INT_MAX;
+            extend_horizontal[end_pos] = INT_MAX;
+            extend_horizontal[end_pos] = INT_MAX;
+            extend_block_diagonal[end_pos] = INT_MAX;
         }
         if (DEBUG_AFFINE) {
             print_array ("EH:", extend_horizontal, lenj);
@@ -3502,17 +3505,19 @@ algn_print_dynmtrx_2d (const seq_p seq1, const seq_p seq2, nw_matrices_p matrice
     const int longerSeqLen = seqLen1 > seqLen2 ? seqLen1 : seqLen2;
     const int lesserSeqLen = seqLen1 > seqLen2 ? seqLen2 : seqLen1;
     
-    const int n       = longerSeqLen;
-    const int m       = lesserSeqLen;
+    const int n       = longerSeqLen + 1;
+    const int m       = lesserSeqLen + 1;
     int *nw_costMtx;
     nw_costMtx = mat_get_2d_nwMtx (matrices);
+    DIRECTION_MATRIX *nw_dirMtx  = mat_get_2d_direct (matrices);
 
     printf ("Sequence 1 length: %d\n", seqLen1);
     printf ("Sequence 2 length: %d\n", seqLen2);
     printf ("Length    Product: %d\n", seqLen1 * seqLen2);
-    printf ("Length +1 Product: %d\n", lesserSeqLen * longerSeqLen);
+    printf ("Length +1 Product: %d\n", n * m);
     printf ("Allocated space  : %d\n\n", matrices->len);
     
+    printf("Cost matrix:\n");
     // print column heads
     printf("  x |       * ");
     for (i = 1; i < lesserSeqLen; i++) {
@@ -3530,14 +3535,78 @@ algn_print_dynmtrx_2d (const seq_p seq1, const seq_p seq2, nw_matrices_p matrice
         else        printf (" %2d | ", longerSeq->begin[i]);
   
         for (j = 0; j < lesserSeqLen; j++) {
-            if (j == 0 && i == 0) {
-                printf("%7d ", 0);
-            } else {
+            // if (j == 0 && i == 0) {
+            //     printf("%7d ", 0);
+            // } else {
                 printf ("%7d ", (int) nw_costMtx[lesserSeqLen * i + j]);
-            }
+            // }
         }
         printf ("\n");
-      }
+    }
+
+    // Print direction matrix
+    setlocale(LC_CTYPE, "en_US.UTF-8");
+
+    wchar_t *name;
+    printf("\n\nDirection matrix:\n");
+    // print column heads
+    printf("  x |       * ");
+    for (i = 1; i < lesserSeqLen; i++) {
+        printf("%7d ", lesserSeq->begin[i]);
+    }
+    printf("\n");
+    printf(" ---+-");
+    for (i = 1; i < lesserSeqLen + 1; i++) {
+      printf("--------");  
+    }
+    printf("\n");
+
+
+    for (i = 0; i < longerSeqLen; i++) {
+        if (i == 0) printf ("  * | ");
+        else        printf (" %2d | ", longerSeq->begin[i]);
+  
+        for (j = 0; j < lesserSeqLen; j++) {
+            unsigned short dirToken = nw_dirMtx[lesserSeqLen * i + j];
+            /*
+            if (dirToken & ALIGN)    printf ("A");
+            if (dirToken & DELETE)   printf ("D");
+            if (dirToken & INSERT)   printf ("I");
+            if (dirToken & ALIGN_V)  printf ("VA");
+            if (dirToken & DELETE_V) printf ("VD");
+            if (dirToken & ALIGN_H)  printf ("HA");
+            if (dirToken & INSERT_H) printf ("HI");
+            printf("\t");
+            */
+            printf("    "); // leading pad
+            wprintf(L"%s", dirToken & DELETE ? (wchar_t *) "\u2191" : (wchar_t *) " ");
+            wprintf(L"%s", dirToken & ALIGN  ? (wchar_t *) "\u2196" : (wchar_t *) " ");
+            wprintf(L"%s", dirToken & INSERT ? (wchar_t *) "\u2190" : (wchar_t*) " ");
+            printf(" ");
+            /*
+            if (dirToken == INSERT)
+                wprintf(L"%7s ", (wchar_t *) "\u2190");
+            } else if (dirToken == DELETE) {
+                wprintf(L"%7s ", (wchar_t *) "\u2191");
+            } else if (dirToken == ALIGN) {
+                wprintf(L"%7s ", (wchar_t *) "\u2191");
+            } else {
+                printf("      ? ");
+            }
+            */
+            /*
+            //wprintf(L"name is %ls\n", name);
+            // if (j == 0 && i == 0) {
+            //     printf("%7d ", 0);
+            // } else {
+                // printf ("%7d ", (int) nw_dirMtx[lesserSeqLen * i + j]);
+            // }
+            */
+        }
+        printf ("\n");
+    }
+
+
       return;
 }
 
