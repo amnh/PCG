@@ -237,7 +237,6 @@ int main() {
     } else {
         deltawh = diff < lower_limit ? lower_limit / 2 : 2;
     }
-    
 
     int algnCost = algn_nw_2d( seq1, seq2, costMtx2d, algn_mtxs2d, deltawh ); // TODO: is
 
@@ -258,12 +257,7 @@ int main() {
 
     printf("Alignment cost: %d\n", algnCost);
 
-    // for (SEQT *base = retSeq1->begin; base != retSeq1->end; base++) {
-    //     printf("a: %c\n", *base);
-    // }
-    // for (SEQT *base = retSeq2->begin; base != retSeq2->end; base++) {
-    //     printf("b: %s\n", base);
-    // }
+
 
 /************************************************ Do 2d affine alignment *****************************************************/
 
@@ -343,7 +337,7 @@ int main() {
     if (lenSeq1 <= lenSeq2) {
         if (DEBUG_AFFINE) printf("seq 1 is shorter, s1: %zu, s2: %zu\n", lenSeq1, lenSeq2);
 
-        cm_precalc_4algn(costMtx2d_affine, algn_mtxs2dAffine, seq1);
+        cm_precalc_4algn (costMtx2d_affine, algn_mtxs2dAffine, seq1);
 
         // TODO: consider moving all of this into algn.
         //       the following three fns were initially not declared in algn.h
