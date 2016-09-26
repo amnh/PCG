@@ -189,6 +189,7 @@ testFn char1 char2 = unsafePerformIO $
                 pure $ Left "Out of memory"
         
 -- Just for testing from CLI outside of ghci.
+-- | A test driver for the FFI functionality
 main :: IO ()
 main = do 
     char1 <- generate (arbitrary :: Gen CDynamicChar)
