@@ -204,10 +204,12 @@ int main() {
         printf("\n");
     }
     **/
+    // tcm == tcm; alphSize includes gap; third param is gap opening cost
     cost_matrices_2d_p costMtx2d        = setupCostMtx (tcm, alphSize, 0);
     cost_matrices_2d_p costMtx2d_affine = setupCostMtx (tcm, alphSize, 2);
     cost_matrices_3d_p costMtx3d        = setupCostMtx (tcm, alphSize, 0);
 
+    // penultimate parameter is ukk flag
     mat_setup_size (algn_mtxs2d,       seq1->len, seq2->len, 0,         0, costMtx2d->lcm);
     mat_setup_size (algn_mtxs2dAffine, seq1->len, seq2->len, 0,         0, costMtx2d_affine->lcm);
     mat_setup_size (algn_mtxs3d,       seq1->len, seq2->len, seq3->len, 0, costMtx3d->lcm);
@@ -294,21 +296,24 @@ int main() {
 
     lenLongerSeq = (lenSeq1 > lenSeq2) ? lenSeq1 : lenSeq2;
 
-
+    // two 0s are length of seq3 and is_ukk, respectively
     mat_setup_size (algn_mtxs2dAffine, lenLongerSeq, lenLongerSeq, 0, 0, cm_get_lcm (costMtx2d_affine));
-    matrix_2d = mat_get_2d_nwMtx (algn_mtxs2dAffine);
-    precalcMtx = mat_get_2d_prec (algn_mtxs2dAffine);
+    matrix_2d  = mat_get_2d_nwMtx (algn_mtxs2dAffine);
+    precalcMtx = mat_get_2d_prec  (algn_mtxs2dAffine);
 
     // TODO: figure out what the following seven values do/are
     //       also note the int factors, which maybe have something to do with the unexplained 12
     //       that appears in matrices.c?
+    // here and in algn.c, "block" refers to a block of gaps, so close_block_diagonal is the cost to
+    // end a subsequence of gaps, presumably with a substitution, but maybe by simply switching directions:
+    // there was a vertical gap, now there's a horizontal one.
     close_block_diagonal       = (int *)  matrix_2d;
-    extend_block_diagonal      = (int *) (matrix_2d + (2 * lenLongerSeq));
-    extend_vertical            = (int *) (matrix_2d + (4 * lenLongerSeq));
-    extend_horizontal          = (int *) (matrix_2d + (6 * lenLongerSeq));
-    final_cost_matrix          = (int *) (matrix_2d + (8 * lenLongerSeq));
+    extend_block_diagonal      = (int *) (matrix_2d + (2  * lenLongerSeq));
+    extend_vertical            = (int *) (matrix_2d + (4  * lenLongerSeq));
+    extend_horizontal          = (int *) (matrix_2d + (6  * lenLongerSeq));
+    final_cost_matrix          = (int *) (matrix_2d + (8  * lenLongerSeq));
     gap_open_prec              = (int *) (matrix_2d + (10 * lenLongerSeq));
-    s_horizontal_gap_extension = (int *) (matrix_2d + (12 * lenLongerSeq));
+    s_horizontal_gap_extension = (int *) (matrix_2d + (11 * lenLongerSeq));
 
 
 
@@ -342,47 +347,56 @@ int main() {
 
         // TODO: consider moving all of this into algn.
         //       the following three fns were initially not declared in algn.h
-        initialize_matrices_affine (costMtx2d_affine->gap_open, seq1, seq2, costMtx2d_affine, close_block_diagonal, 
-                                    extend_block_diagonal, extend_vertical, extend_horizontal, 
+        initialize_matrices_affine (costMtx2d_affine->gap_open, seq1, seq2, costMtx2d_affine, 
+                                    close_block_diagonal, extend_block_diagonal, 
+                                    extend_vertical, extend_horizontal, 
                                     final_cost_matrix, direction_matrix, precalcMtx);
         // shorter first TODO: is this consistent?
-        algnCost = algn_fill_plane_3_affine (seq1, seq2, lenSeq1 - 1, lenSeq1 - 1, final_cost_matrix, 
-                                           direction_matrix, costMtx2d_affine, extend_horizontal, extend_vertical, 
-                                           close_block_diagonal, extend_block_diagonal, precalcMtx, gap_open_prec, 
-                                           s_horizontal_gap_extension);
+        algnCost = algn_fill_plane_3_affine (seq1, seq2, lenSeq1 - 1, lenSeq1 - 1, 
+                                             final_cost_matrix, direction_matrix, costMtx2d_affine, 
+                                             extend_horizontal, extend_vertical, 
+                                             close_block_diagonal, extend_block_diagonal, 
+                                             precalcMtx, gap_open_prec, 
+                                             s_horizontal_gap_extension);
         // shorter first TODO: fix this to make it consistent
         backtrace_affine (direction_matrix, seq1, seq2, medianSeq, empty_medianSeq,
                           retSeq1, retSeq2, costMtx2d_affine);
     } else {
         if (DEBUG_AFFINE) printf("seq 2 is shorter, s1: %zu, s2: %zu\n", lenSeq1, lenSeq2);
     
-        cm_precalc_4algn(costMtx2d_affine, algn_mtxs2dAffine, seq2);
+        cm_precalc_4algn (costMtx2d_affine, algn_mtxs2dAffine, seq2);
 
-        initialize_matrices_affine(costMtx2d_affine->gap_open, seq2, seq1, costMtx2d_affine, close_block_diagonal, 
-                                   extend_block_diagonal, extend_vertical, extend_horizontal, 
+        initialize_matrices_affine (costMtx2d_affine->gap_open, seq2, seq1, costMtx2d_affine, 
+                                   close_block_diagonal, extend_block_diagonal, 
+                                   extend_vertical, extend_horizontal, 
                                    final_cost_matrix, direction_matrix, precalcMtx);
 
-        printf("close_block_diagonal      : %d\n", *close_block_diagonal      );
-        printf("extend_block_diagonal     : %d\n", *extend_block_diagonal     );
-        printf("extend_vertical           : %d\n", *extend_vertical           );
-        printf("extend_horizontal         : %d\n", *extend_horizontal         );
-        printf("final_cost_matrix         : %d\n", *final_cost_matrix         );
-        printf("gap_open_prec             : %d\n", *gap_open_prec             );
-        printf("s_horizontal_gap_extension: %d\n\n", *s_horizontal_gap_extension);
+        if (DEBUG_AFFINE) {
+            printf("close_block_diagonal      : %d\n", *close_block_diagonal      );
+            printf("extend_block_diagonal     : %d\n", *extend_block_diagonal     );
+            printf("extend_vertical           : %d\n", *extend_vertical           );
+            printf("extend_horizontal         : %d\n", *extend_horizontal         );
+            printf("final_cost_matrix         : %d\n", *final_cost_matrix         );
+            printf("gap_open_prec             : %d\n", *gap_open_prec             );
+            printf("s_horizontal_gap_extension: %d\n\n", *s_horizontal_gap_extension);
 
-        // for (int *i = matrix_2d, j = 0; i < matrix_2d + algn_mtxs2dAffine->len; i++, j++) {
-        //     printf("%d, ", *i);
-        //     if (j % (lenLongerSeq ) == 0) {
-        //         printf("\n");
-        //     }
-            
-        // }
+            // for (int *i = matrix_2d, j = 0; i < matrix_2d + algn_mtxs2dAffine->len; i++, j++) {
+            //     printf("%d, ", *i);
+            //     if (j % (lenLongerSeq ) == 0) {
+            //         printf("\n");
+            //     }
+                
+            // }
+        }
+
         
-        algnCost = algn_fill_plane_3_affine (seq2, seq1, lenSeq2 - 1, lenSeq1 - 1, final_cost_matrix, 
-                                             direction_matrix, costMtx2d_affine, extend_horizontal, extend_vertical, 
-                                             close_block_diagonal, extend_block_diagonal, precalcMtx, gap_open_prec, 
+        algnCost = algn_fill_plane_3_affine (seq2, seq1, lenSeq2 - 1, lenSeq1 - 1, 
+                                             final_cost_matrix, direction_matrix, costMtx2d_affine, 
+                                             extend_horizontal, extend_vertical, 
+                                             close_block_diagonal, extend_block_diagonal, 
+                                             precalcMtx, gap_open_prec, 
                                              s_horizontal_gap_extension);
-        if (DEBUG_MAT) {
+        if (DEBUG_AFFINE) {
             printf("\n\nFinal alignment matrix, affine: \n\n");
             algn_print_dynmtrx_2d( seq1, seq2, algn_mtxs2dAffine );
         }

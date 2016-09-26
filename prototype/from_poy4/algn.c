@@ -2083,11 +2083,11 @@ initialize_matrices_affine_nobt (int go, const seq_p si, const seq_p sj,
     extend_vertical[0] = go;
     gap_row = cm_get_precal_row(precalcMtx, 0, lenj);
     if (DEBUG_AFFINE) {
-        printf ("The gap opening parameter is %d\n", go);
-        print_array ("EH:", extend_horizontal, lenj);
-        print_array ("EV:", extend_vertical, lenj);
+        printf ("\n\nThe gap opening parameter is %d\n", go);
+        print_array ("CB:", close_block_diagonal,  lenj);
         print_array ("EB:", extend_block_diagonal, lenj);
-        print_array ("CB:", close_block_diagonal, lenj);
+        print_array ("EV:", extend_vertical,       lenj);
+        print_array ("EH:", extend_horizontal,     lenj);
     }
     for (; j <= lenj; j++) {
         jc = seq_get_element(sj, j);
@@ -2099,26 +2099,26 @@ initialize_matrices_affine_nobt (int go, const seq_p si, const seq_p sj,
         extend_vertical[j] = INT_MAX;
     }
     if (DEBUG_AFFINE) {
-        printf ("Just initialized\n");
-        print_array ("EH:", extend_horizontal, lenj);
-        print_array ("EV:", extend_vertical, lenj);
+        printf ("\n\nJust initialized\n");
+        print_array ("CB:", close_block_diagonal,  lenj);
         print_array ("EB:", extend_block_diagonal, lenj);
-        print_array ("CB:", close_block_diagonal, lenj);
-        printf ("Finished initialized\n");
+        print_array ("EV:", extend_vertical,       lenj);
+        print_array ("EH:", extend_horizontal,     lenj);
+        printf ("Finished initialization\n\n");
     }
     /* for (; i <= leni; i++) { */
         prev_extend_vertical = extend_vertical;
-        extend_vertical += (1 + lenj);
-        close_block_diagonal += (1 + lenj);
+        extend_vertical       += (1 + lenj);
+        close_block_diagonal  += (1 + lenj);
         extend_block_diagonal += (1 + lenj);
-        extend_horizontal += (1 + lenj);
+        extend_horizontal     += (1 + lenj);
         ic = seq_get_element(si, i);
         ip = seq_get_element(si, i - 1);
-        r = prev_extend_vertical[0] + (HAS_GAP_EXTENSION(ic, c));
-        extend_horizontal[0] = INT_MAX;
-        close_block_diagonal[0] = r;
+        r  = prev_extend_vertical[0] + (HAS_GAP_EXTENSION(ic, c));
+        extend_horizontal[0]     = INT_MAX;
+        close_block_diagonal[0]  = r;
         extend_block_diagonal[0] = INT_MAX;
-        extend_vertical[0] = r;
+        extend_vertical[0]       = r;
     /* } */
     return;
 }
@@ -2144,50 +2144,53 @@ initialize_matrices_affine (int go, const seq_p si, const seq_p sj,
     direction_matrix[0] = 0xFFFF;
     gap_row = cm_get_precal_row(precalcMtx, 0, lenj);
     if (DEBUG_AFFINE) {
-        printf ("The gap opening parameter is %d\n", go);
-        print_array ("EH:", extend_horizontal, lenj);
-        print_array ("EV:", extend_vertical, lenj);
+        printf ("\n\nThe gap opening parameter is %d\n", go);
+        print_array ("CB:", close_block_diagonal,  lenj);
         print_array ("EB:", extend_block_diagonal, lenj);
-        print_array ("CB:", close_block_diagonal, lenj);
-        print_array ("FC:", final_cost_matrix, lenj);
+        print_array ("EV:", extend_vertical,       lenj);
+        print_array ("EH:", extend_horizontal,     lenj);
+        print_array ("FC:", final_cost_matrix,     lenj);
     }
     for (; j <= lenj; j++) {
         jc = seq_get_element(sj, j);
         jp = seq_get_element(sj, j - 1);
-        r = extend_horizontal[j - 1] + gap_row[j];
-        extend_horizontal[j] = r;
-        close_block_diagonal[j] = r;
-        final_cost_matrix[j] = r;
+        r  = extend_horizontal[j - 1] + gap_row[j];
+
+        extend_horizontal[j]     = r;
+        close_block_diagonal[j]  = r;
+        final_cost_matrix[j]     = r;
         extend_block_diagonal[j] = INT_MAX;
-        extend_vertical[j] = INT_MAX;
-        direction_matrix[j] = DO_HORIZONTAL | END_HORIZONTAL;
+        extend_vertical[j]       = INT_MAX;
+        direction_matrix[j]      = DO_HORIZONTAL | END_HORIZONTAL;
     }
     if (DEBUG_AFFINE) {
         printf ("Just initialized\n");
-        print_array ("EH:", extend_horizontal, lenj);
-        print_array ("EV:", extend_vertical, lenj);
+        print_array ("EH:", extend_horizontal,     lenj);
+        print_array ("EV:", extend_vertical,       lenj);
         print_array ("EB:", extend_block_diagonal, lenj);
-        print_array ("CB:", close_block_diagonal, lenj);
-        print_array ("FC:", final_cost_matrix, lenj);
+        print_array ("CB:", close_block_diagonal,  lenj);
+        print_array ("FC:", final_cost_matrix,     lenj);
         printf ("Finished initialized\n");
     }
     /* for (; i <= leni; i++) { */
-        prev_extend_vertical = extend_vertical;
-        extend_vertical += (1 + lenj);
-        close_block_diagonal += (1 + lenj);
-        final_cost_matrix += (1 + lenj);
+        prev_extend_vertical   = extend_vertical;
+        extend_vertical       += (1 + lenj);
+        close_block_diagonal  += (1 + lenj);
+        final_cost_matrix     += (1 + lenj);
         extend_block_diagonal += (1 + lenj);
-        extend_horizontal += (1 + lenj);
-        direction_matrix += (1 + lenj);
+        extend_horizontal     += (1 + lenj);
+        direction_matrix      += (1 + lenj);
+
         ic = seq_get_element(si, i);
         ip = seq_get_element(si, i - 1);
-        r = prev_extend_vertical[0] + (HAS_GAP_EXTENSION(ic, c));
-        extend_horizontal[0] = INT_MAX;
-        close_block_diagonal[0] = r;
-        final_cost_matrix[0] = r;
+        r  = prev_extend_vertical[0] + (HAS_GAP_EXTENSION(ic, c));
+
+        extend_horizontal[0]     = INT_MAX;
+        close_block_diagonal[0]  = r;
+        final_cost_matrix[0]     = r;
         extend_block_diagonal[0] = INT_MAX;
-        extend_vertical[0] = r;
-        direction_matrix[0] = DO_VERTICAL | END_VERTICAL;
+        extend_vertical[0]       = r;
+        direction_matrix[0]      = DO_VERTICAL | END_VERTICAL;
     /* } */
     return;
 }
@@ -2350,7 +2353,7 @@ algn_fill_plane_3_affine (const seq_p si, const seq_p sj, int leni, int lenj,
                        const cost_matrices_2d_p c, int *extend_horizontal, int *extend_vertical, 
                        int *close_block_diagonal, int *extend_block_diagonal, const int *precalcMtx, 
                        int *gap_open_prec, int *sj_horizontal_extension) {
-    int start_pos = 1, end_pos, start_v = 40, i=1, j, res;
+    int start_pos = 1, end_pos, start_v = 40, i = 1, j, res;
     int *prev_extend_horizontal, *prev_extend_vertical, *prev_close_block_diagonal, 
         *prev_extend_block_diagonal;
     int *init_extend_horizontal, *init_extend_vertical, *init_close_block_diagonal, 
@@ -3183,8 +3186,8 @@ algn_fill_cube_ukk (const seq_p seq1, const seq_p seq2, const int *precalcMtx,
  */
 static inline int
 algn_nw_limit_2d (const seq_p seq1, const seq_p seq2, const cost_matrices_2d_p costMtx, 
-               nw_matrices_p nw_mtxs, int deltawh, int st_seq1, int len_seq1, 
-               int st_seq2, int len_seq2) {
+                  nw_matrices_p nw_mtxs, int deltawh, int st_seq1, int len_seq1, 
+                  int st_seq2, int len_seq2) {
     const SEQT *sseq1, *sseq2;
     int *curRow, *precalcMtx, seq1_len, seq2_len;
     DIRECTION_MATRIX *dirMtx;

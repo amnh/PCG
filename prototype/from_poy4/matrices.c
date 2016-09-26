@@ -86,15 +86,15 @@ mat_setup_size (nw_matrices_p m, int len_seq1, int len_seq2, int len_seq3, int i
     }
     int len, len_2d, len_precalc, len_dir;
     if (len_seq3 == 0) {           /* If the size setup is only for 2d */
-        len = mat_size_of_2d_matrix (len_seq1, len_seq2);
+        len         = mat_size_of_2d_matrix (len_seq1, len_seq2);
         len_precalc = (1 << lcm) * len_seq1;
-        len_dir = (len_seq1 + 1) * (len_seq2 + 1);
-        len_2d = 0;
+        len_dir     = (len_seq1 + 1) * (len_seq2 + 1);
+        len_2d      = 0;
     } else {                       /* If the size setup is for 3d */
-        len = mat_size_of_3d_matrix (len_seq1, len_seq2, len_seq3, is_ukk);
+        len         = mat_size_of_3d_matrix (len_seq1, len_seq2, len_seq3, is_ukk);
         len_precalc = (1 << lcm) * (1 << lcm) * len_seq2;  // TODO: why sequence 2?
-        len_2d = len_seq1 * len_seq2;
-        len_dir = len_2d * len_seq3;
+        len_2d      = len_seq1 * len_seq2;
+        len_dir     = len_2d * len_seq3;
     }
     if (DEBUG_MAT) {
         printf("len_eff: %d, len: %d\n", m->len_eff, len);
@@ -103,7 +103,7 @@ mat_setup_size (nw_matrices_p m, int len_seq1, int len_seq2, int len_seq3, int i
         if (DEBUG_MAT) {
             printf("allocation: %zu\n", len * sizeof(int));
         }
-        m->cube = m->nw_costMtx = realloc (m->nw_costMtx, (len * sizeof(int)));
+        m->cube    = m->nw_costMtx = realloc (m->nw_costMtx, (len * sizeof(int)));
         m->len_eff = len;
     }
     if (m->len < len_dir) {         /* If the other matrices are not large enough */
