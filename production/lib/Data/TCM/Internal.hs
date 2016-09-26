@@ -380,8 +380,9 @@ isAdditive tcm = all isAdditiveIndex [(i,j) | i <- range, j <- range ]
     range = [0 .. size tcm - 1]
 
 -- |
--- Determines if the TCM has an non-additive structure.
--- This is also colloquially reffered to as Fitch cost structure.
+-- Determines if the 'TCM' has an non-additive structure.
+-- This is also colloquially reffered to as as unordered characters as originally
+-- named by Fitch.
 --
 -- /Assumes/ the 'TCM' has already been factored with 'factorTCM'.
 isNonAdditive :: TCM -> Bool
@@ -390,6 +391,59 @@ isNonAdditive tcm = all isNonAdditiveIndex [(i,j) | i <- range, j <- range ]
     isNonAdditiveIndex (i,j) =  (i == j && tcm ! (i,j) == 0)
                              || (i /= j && tcm ! (i,j) == 1)
     range = [0 .. size tcm - 1]
+
+-- |
+-- Determines if the 'TCM' has a metric structure.
+--
+-- The properties of a metric space much hold for the 'TCM':
+--
+-- * /σ(i,j) = 0 iff i = j/
+--
+-- * /σ(i,j) = σ(j,i)/
+--
+-- * /σ(i,k) ≤ σ(i,j) + σ(j,k)/
+isMetric :: TCM -> Bool
+isMetric tcm = and
+    [ zeroDiagonalOnly   tcm
+    , isSymetric         tcm
+    , triangleInequality tcm
+    ]
+  where
+   range = [0 .. size tcm - 1]
+   triangleInequality x = all triangleInequalityIndex [(i,k,j) | i <- range, j <- range, k <- range, i < j, j < k ]
+      where
+        triangleInequalityIndex (i,j,k) = x ! (i,k) <= x ! (i,j) + x ! (j,k)
+
+-- |
+-- Determines if the 'TCM' has a symetric structure.
+isSymetric :: TCM -> Bool
+isSymetric tcm = all isSymetricIndex [(i,j) | i <- range, j <- range, i <= j ]
+  where
+    isSymetricIndex (i,j) = tcm ! (i,j) == tcm ! (j,i)
+    range = [0 .. size tcm - 1]
+
+-- |
+-- Determines if the 'TCM' has an ultrametric structure.
+--
+-- The properties of an ultrametric space much hold for the 'TCM':
+--
+-- * /σ(i,j) = 0 iff i = j/
+--
+-- * /σ(i,j) = σ(j,i)/
+--
+-- * /σ(i,k) ≤ max { σ(i,j),  σ(j,k) }/
+isUltraMetric :: TCM -> Bool
+isUltraMetric tcm = and
+    [ zeroDiagonalOnly      tcm
+    , isSymetric            tcm
+    , ultraMetricInequality tcm
+    ]
+  where
+    range = [0 .. size tcm - 1]
+    ultraMetricInequality x = all ultraMetricInequalityIndex [(i,k,j) | i <- range, j <- range, k <- range, i < j, j < k ]
+      where
+        ultraMetricInequalityIndex (i,j,k) = x ! (i,k) <= max (x ! (i,j)) (x ! (j,k))
+
 
 -- |
 -- Determines if a constant positve multiplicative factor can be extracted from
@@ -403,6 +457,21 @@ factorTCM tcm
   where
     factor = ofoldr1Ex gcd tcm
     x = fromEnum factor
+
+
+
+-- |
+-- An internal helper function used in both 'isMetric' & 'isUltraMetric' exported functions.
+zeroDiagonalOnly :: TCM -> Bool
+zeroDiagonalOnly tcm = all zeroDiagonalIndex [ (i,j) | i <- range, j <- range ]
+  where
+    range = [0 .. size tcm - 1]
+    zeroDiagonalIndex (i,j)
+      | i == j    = value == 0
+      | otherwise = value /= 0
+      where
+         value = tcm ! (i,j)
+
 
 -- |
 -- Deconstructs the 'TCM' to expose the underlying unboxed 'Vector'.

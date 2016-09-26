@@ -25,7 +25,10 @@ module Data.TCM
     -- * Specialization Utility
   , factorTCM
   , isAdditive
+  , isMetric
   , isNonAdditive
+  , isSymetric
+  , isUltraMetric
   ) where
 
 import Data.TCM.Internal
