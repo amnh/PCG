@@ -3495,7 +3495,7 @@ algn_CAML_print_bcktrck (value seq1, value seq2, value matrix) {
 void
 algn_print_dynmtrx_2d (const seq_p seq1, const seq_p seq2, nw_matrices_p matrices) {
     int i, j;
-
+    /*
     const int seqLen1 = seq_get_len (seq1);
     const int seqLen2 = seq_get_len (seq2);
 
@@ -3568,45 +3568,26 @@ algn_print_dynmtrx_2d (const seq_p seq1, const seq_p seq2, nw_matrices_p matrice
   
         for (j = 0; j < lesserSeqLen; j++) {
             unsigned short dirToken = nw_dirMtx[lesserSeqLen * i + j];
-            /*
-            if (dirToken & ALIGN)    printf ("A");
-            if (dirToken & DELETE)   printf ("D");
-            if (dirToken & INSERT)   printf ("I");
-            if (dirToken & ALIGN_V)  printf ("VA");
-            if (dirToken & DELETE_V) printf ("VD");
-            if (dirToken & ALIGN_H)  printf ("HA");
-            if (dirToken & INSERT_H) printf ("HI");
-            printf("\t");
-            */
+
+            //if (dirToken & ALIGN)    printf ("A");
+            //if (dirToken & DELETE)   printf ("D");
+            //if (dirToken & INSERT)   printf ("I");
+            //if (dirToken & ALIGN_V)  printf ("VA");
+            //if (dirToken & DELETE_V) printf ("VD");
+            //if (dirToken & ALIGN_H)  printf ("HA");
+            //if (dirToken & INSERT_H) printf ("HI");
+            //printf("\t");
+
             printf("    "); // leading pad
             wprintf(L"%s", dirToken & DELETE ? (wchar_t *) "\u2191" : (wchar_t *) " ");
             wprintf(L"%s", dirToken & ALIGN  ? (wchar_t *) "\u2196" : (wchar_t *) " ");
             wprintf(L"%s", dirToken & INSERT ? (wchar_t *) "\u2190" : (wchar_t*) " ");
             printf(" ");
-            /*
-            if (dirToken == INSERT)
-                wprintf(L"%7s ", (wchar_t *) "\u2190");
-            } else if (dirToken == DELETE) {
-                wprintf(L"%7s ", (wchar_t *) "\u2191");
-            } else if (dirToken == ALIGN) {
-                wprintf(L"%7s ", (wchar_t *) "\u2191");
-            } else {
-                printf("      ? ");
-            }
-            */
-            /*
-            //wprintf(L"name is %ls\n", name);
-            // if (j == 0 && i == 0) {
-            //     printf("%7d ", 0);
-            // } else {
-                // printf ("%7d ", (int) nw_dirMtx[lesserSeqLen * i + j]);
-            // }
-            */
         }
         printf ("\n");
     }
 
-
+    */
       return;
 }
 
