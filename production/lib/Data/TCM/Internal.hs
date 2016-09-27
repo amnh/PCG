@@ -49,13 +49,95 @@ data TCM
    = TCM Int (Vector Word32)
    deriving (Eq)
 
+
+-- |
+-- The monomorphic element of a TCM representing the transition cost between to state symbols.
 type instance Element TCM = Word32
 
--- | Performs a element-wise monomporphic map over ther 'TCM'.
+
+-- |
+-- There is a heirachichal nature to a TCM's possible structure:
+--
+-- @
+--       NonSymetric
+--
+--           |
+--
+--        Symetric
+--
+--           |
+-- 
+--         Metric
+--
+--         /    \\
+--
+-- UltraMetric  Additive
+--
+--      |
+--
+-- NonAdditive
+--
+-- @
+--
+-- Each TCM structure has certain properties that must hold and allows for space
+-- & time optimizations.
+--
+--   * Non-Symetric: No structure expoitable for optimizations.
+--
+--   * Symetric: Allows for half the space allocation.
+--
+--       * /σ(i,j) = σ(j,i)/
+--
+--   * Metric: Allows for half the space allocation & runtime optimizations
+--
+--       * /σ(i,j) = 0 iff i = j/
+--
+--       * /σ(i,j) = σ(j,i)/
+--
+--       * /σ(i,k) ≤ σ(i,j) + σ(j,k)/
+--
+--  * Ultra-Metric: Allows for half the space allocation & runtime optimizations
+--
+--       * /σ(i,j) = 0 iff i = j/
+--
+--       * /σ(i,j) = σ(j,i)/
+--
+--       * /σ(i,k) ≤ max { σ(i,j),  σ(j,k) }/
+--
+--   * Non-Additive: Allows for /no/ space allocation & runtime optimizations
+--
+--       * /σ(i,j) = 0 iff i = j/
+--
+--       * /σ(i,j) = 1 iff i ≠ j/
+--
+--   * Additive: Allows for /no/ space allocation & runtime optimizations
+--
+--       * /σ(i,j) = max(i,j) - min(i,j)/
+--
+data TCMStructure
+   = NonSymetric
+   | Symetric
+   | Metric
+   | UltraMetric
+   | Additive
+   | NonAdditive
+   deriving (Eq, Show)
+
+
+data TCMDiagnosis
+   = TCMDiagnosis
+   { factoredWeight :: Int
+   , factoredTcm    :: TCM
+   , tcmStructure   :: TCMStructure
+   } deriving (Show)
+
+
+-- | Performs a element-wise monomporphic map over the 'TCM'.
 instance MonoFunctor TCM where
     omap f (TCM n v) = TCM n $ V.map f v
 
--- | Performs a row-major monomporphic fold over ther 'TCM'.
+
+-- | Performs a row-major monomporphic fold over the 'TCM'.
 instance MonoFoldable TCM where
   -- | Map each element of a structure to a 'Monoid' and combine the results.
   {-# INLINE ofoldMap #-}
@@ -114,27 +196,27 @@ instance MonoTraversable TCM where
 
 -- | Resulting TCMs will have at a dimension between 2 and 25.
 instance Arbitrary TCM where
-    arbitrary = do 
-        dimension  <- (arbitrary :: Gen Int) `suchThat` (\x -> 2 <= x && x <= 25) 
-        dataVector <- V.fromList <$> vectorOf (dimension * dimension) arbitrary
-        pure $ TCM dimension dataVector
+  arbitrary = do 
+    dimension  <- (arbitrary :: Gen Int) `suchThat` (\x -> 2 <= x && x <= 25) 
+    dataVector <- V.fromList <$> vectorOf (dimension * dimension) arbitrary
+    pure $ TCM dimension dataVector
 
 
 -- |
 -- A pretty printed custom show instance for 'TCM'.
 instance Show TCM where
-    show tcm = headerLine <> matrixLines
-      where
-        renderRow i = ("  "<>) . unwords $ renderValue <$> [ tcm ! (i,j) | j <- rangeValues ]
-        matrixLines = unlines $ renderRow   <$> rangeValues
-        rangeValues = [0 .. (size tcm) - 1] 
-        headerLine  = '\n' : unwords [ "TCM:", show $ size tcm, "x", show $ size tcm, "\n"]
-        maxValue    = maximumEx tcm
-        padSpacing  = length $ show maxValue
-        renderValue x = pad <> shown
-          where
-            shown = show x
-            pad   = (padSpacing - length shown) `replicate` ' '
+  show tcm = headerLine <> matrixLines
+    where
+      renderRow i = ("  "<>) . unwords $ renderValue <$> [ tcm ! (i,j) | j <- rangeValues ]
+      matrixLines = unlines $ renderRow   <$> rangeValues
+      rangeValues = [0 .. (size tcm) - 1] 
+      headerLine  = '\n' : unwords [ "TCM:", show $ size tcm, "x", show $ size tcm, "\n"]
+      maxValue    = maximumEx tcm
+      padSpacing  = length $ show maxValue
+      renderValue x = pad <> shown
+        where
+          shown = show x
+          pad   = (padSpacing - length shown) `replicate` ' '
         
         
 -- | /O(1)/ Indexing without bounds checking.
@@ -370,6 +452,26 @@ generate n f
 
 
 -- |
+-- Performs a diagnosis of a TCM factoring out any multiplicative factor as a
+-- constant weighting and reporting the most restricitive structure present in
+-- the TCM.
+diagnoseTcm :: TCM -> TCMDiagnosis
+diagnoseTcm tcm
+  | isNonAdditive tcm' = diagnosis NonAdditive
+  | isAdditive    tcm' = diagnosis    Additive
+  | isUltraMetric tcm' = diagnosis UltraMetric
+  | isMetric      tcm' = diagnosis      Metric
+  | isSymetric    tcm' = diagnosis    Symetric
+  | otherwise          = diagnosis NonSymetric
+  where
+    (weight, tcm') = factorTCM tcm
+    diagnosis = (TCMDiagnosis weight tcm')
+
+
+
+
+
+-- |
 -- Determines if the TCM has an additive structure.
 --
 -- /Assumes/ the 'TCM' has already been factored with 'factorTCM'.
@@ -457,7 +559,6 @@ factorTCM tcm
   where
     factor = ofoldr1Ex gcd tcm
     x = fromEnum factor
-
 
 
 -- |

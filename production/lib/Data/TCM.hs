@@ -14,6 +14,8 @@
 
 module Data.TCM
   ( TCM()
+  , TCMDiagnosis(..)
+  , TCMStructure(..)
     -- * Construction
   , fromCols
   , fromList
@@ -23,12 +25,7 @@ module Data.TCM
   , (!)
   , (!?)
     -- * Specialization Utility
-  , factorTCM
-  , isAdditive
-  , isMetric
-  , isNonAdditive
-  , isSymetric
-  , isUltraMetric
+  , diagnoseTcm
   ) where
 
 import Data.TCM.Internal
