@@ -35,6 +35,16 @@ import qualified File.Format.TNT        as TNT
 import qualified File.Format.TransitionCostMatrix as F
 import           File.Format.VertexEdgeRoot
 
+-- | An intermediate composite type for parse result coercion.
+data ParsedCharacterMetadata
+   = ParsedCharacterMetadata
+   { alphabet      :: Alphabet String
+   , characterName :: String
+   , weight        :: Double
+--   , parsedTCM     :: Maybe TCM
+   , isDynamic     :: Bool
+   } deriving (Show)
+
 -- | Represents a parser result type which can have a character metadata
 --   structure extracted from it.
 class ParsedMetadata a where
