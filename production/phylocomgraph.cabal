@@ -111,6 +111,7 @@ library
                        Bio.Character.Parsed
                        Bio.Metadata
                        Bio.Metadata.CharacterName
+                       Bio.Metadata.Sequence.SharedContinugousMetatdata
                        Bio.PhyloGraph
                        Bio.PhyloGraph.DAG
                        Bio.PhyloGraph.Edge
@@ -134,6 +135,7 @@ library
                        Data.Either.Custom
                        Data.Alphabet
                        Data.BitMatrix
+                       Data.ReplicatedSequence
                        Data.TCM
                        File.Format.Fasta
                        File.Format.Fastc
