@@ -14,21 +14,21 @@
 
 module Data.ReplicatedSequence
   ( ReplicatedSequence()
+  , replicate
   , singleton
   ) where
 
 
-import Data.Foldable
-import Data.Key
-import Data.Maybe             (fromMaybe)
-import Data.Monoid
-import Prelude         hiding (lookup)
-import Test.QuickCheck
+import           Data.Foldable
+import           Data.Key
+import           Data.Maybe             (fromMaybe)
+import           Data.Monoid
+import           Prelude         hiding (lookup,replicate)
+import qualified Prelude         as P   (replicate)
+import           Test.QuickCheck
 
 -- |
 -- A sequence of values that are repeated multiple times in contiguous blocks.
---
--- Newtyped for space efficiency and instance definition consitency.
 newtype ReplicatedSequence a = RSeq [(Int,a)]
    deriving (Eq,Functor,Ord)
 
@@ -121,7 +121,20 @@ instance Show a => Show (ReplicatedSequence a) where
 
 
 -- |
--- @singleton n x@ is a 'ReplicatedSequence' of the supplied element value repeated n times.
+-- /O(1)/
+--
+-- @replicate n x@ is a 'ReplicatedSequence' of the supplied element value repeated n times.
+{-# INLINE replicate #-}
+replicate :: Int -> a -> ReplicatedSequence a
+replicate i e
+  | i < 1     = error $ "Call to replicate with a non-positve value: " <> show i
+  | otherwise = RSeq [(i,e)]
+
+
+-- |
+-- /O(1)/
+--
+-- A synomym for 'replicate'.
 {-# INLINE singleton #-}
 singleton :: Int -> a -> ReplicatedSequence a
 singleton i e
@@ -131,7 +144,7 @@ singleton i e
 
 {-# INLINE expand #-}
 expand :: ReplicatedSequence a -> [a]
-expand =  foldMap (uncurry replicate) . unwrap
+expand =  foldMap (uncurry P.replicate) . unwrap
 
 
 {-# INLINE uniqueElems #-}

@@ -124,11 +124,13 @@ data TCMStructure
    deriving (Eq, Show)
 
 
+-- |
+-- The result of a call to 'diagnoseTcm'.
 data TCMDiagnosis
    = TCMDiagnosis
-   { factoredWeight :: Int
-   , factoredTcm    :: TCM
-   , tcmStructure   :: TCMStructure
+   { factoredWeight :: Int -- ^ The multiplicative constant factor of a 'TCM'. Minimum value of the multiplicative identiy /one/.
+   , factoredTcm    :: TCM -- ^ The new 'TCM' with each value divided by the 'factoredWeight' .
+   , tcmStructure   :: TCMStructure -- ^ The most restrictive present in the 'factoredTcm'.
    } deriving (Show)
 
 
@@ -318,6 +320,7 @@ fromCols xs
         otherLengths = keys  $ mode `delete` occuranceMap
         
     notSquareErrorMsg = mconcat [ "fromRows: The number of rows ("
+
                                 , show height
                                 ,") did not match the number of columns ("
                                 , show width
