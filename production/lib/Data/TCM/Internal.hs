@@ -472,6 +472,20 @@ diagnoseTcm tcm
 
 
 -- |
+-- Determines if a constant positve multiplicative factor can be extracted from
+-- every non-zero value of the TCM. Returns the multiplicive factor and the 'TCM'
+-- with reduced values. The least factor that can be found is the multipliative
+-- identiy /one/ when all values in the 'TCM' are reletively prime.
+factorTCM :: TCM -> (Int, TCM)
+factorTCM tcm
+  | factor <= 1 = (x,                       tcm)
+  | otherwise   = (x, (`div` factor) `omap` tcm)
+  where
+    factor = ofoldr1Ex gcd tcm
+    x = fromEnum factor
+
+
+-- |
 -- Determines if the TCM has an additive structure.
 --
 -- /Assumes/ the 'TCM' has already been factored with 'factorTCM'.
@@ -480,6 +494,7 @@ isAdditive tcm = all isAdditiveIndex [(i,j) | i <- range, j <- range ]
   where
     isAdditiveIndex (i,j) = tcm ! (i,j) == toEnum (max i j - min i j)
     range = [0 .. size tcm - 1]
+
 
 -- |
 -- Determines if the 'TCM' has an non-additive structure.
@@ -493,6 +508,7 @@ isNonAdditive tcm = all isNonAdditiveIndex [(i,j) | i <- range, j <- range ]
     isNonAdditiveIndex (i,j) =  (i == j && tcm ! (i,j) == 0)
                              || (i /= j && tcm ! (i,j) == 1)
     range = [0 .. size tcm - 1]
+
 
 -- |
 -- Determines if the 'TCM' has a metric structure.
@@ -516,6 +532,7 @@ isMetric tcm = and
       where
         triangleInequalityIndex (i,j,k) = x ! (i,k) <= x ! (i,j) + x ! (j,k)
 
+
 -- |
 -- Determines if the 'TCM' has a symetric structure.
 isSymetric :: TCM -> Bool
@@ -523,6 +540,7 @@ isSymetric tcm = all isSymetricIndex [(i,j) | i <- range, j <- range, i <= j ]
   where
     isSymetricIndex (i,j) = tcm ! (i,j) == tcm ! (j,i)
     range = [0 .. size tcm - 1]
+
 
 -- |
 -- Determines if the 'TCM' has an ultrametric structure.
@@ -545,20 +563,6 @@ isUltraMetric tcm = and
     ultraMetricInequality x = all ultraMetricInequalityIndex [(i,k,j) | i <- range, j <- range, k <- range, i < j, j < k ]
       where
         ultraMetricInequalityIndex (i,j,k) = x ! (i,k) <= max (x ! (i,j)) (x ! (j,k))
-
-
--- |
--- Determines if a constant positve multiplicative factor can be extracted from
--- every non-zero value of the TCM. Returns the multiplicive factor and the 'TCM'
--- with reduced values. The least factor that can be found is the multipliative
--- identiy /one/ when all values in the 'TCM' are reletively prime.
-factorTCM :: TCM -> (Int, TCM)
-factorTCM tcm
-  | factor <= 1 = (x,                       tcm)
-  | otherwise   = (x, (`div` factor) `omap` tcm)
-  where
-    factor = ofoldr1Ex gcd tcm
-    x = fromEnum factor
 
 
 -- |
