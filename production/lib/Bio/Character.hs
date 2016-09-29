@@ -8,22 +8,22 @@
 -- Stability   :  provisional
 -- Portability :  portable
 --
--- Export of coded characters
---
 -----------------------------------------------------------------------------
 
 module Bio.Character
-  ( DynamicChar()
+  (  -- * Character Types
+    DynamicChar()
   , DynamicChars
+  , ExportableCharacterSequence(..)
+  , StaticCharacter()
+  , StaticCharacterBlock()
+    -- * Character Classes
   , EncodableDynamicCharacter(..)
   , EncodableStaticCharacter(..)
   , EncodableStaticCharacterStream(..)
   , EncodableStream(..)
   , EncodableStreamElement(..)
   , Exportable(..)
-  , ExportableCharacterSequence(characterCount, characterWidth, bufferChunks)
-  , StaticCharacter()
-  , StaticCharacterBlock()
   ) where
 
 import Bio.Character.Dynamic
