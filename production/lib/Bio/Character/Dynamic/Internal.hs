@@ -1,6 +1,6 @@
 -----------------------------------------------------------------------------
 -- |
--- Module      :  Bio.Character.Dynamic.Coded.Internal
+-- Module      :  Bio.Character.Dynamic.Internal
 -- Copyright   :  (c) 2015-2015 Ward Wheeler
 -- License     :  BSD-style
 --
@@ -20,12 +20,13 @@
 -- TODO: fix and remove this ghc option (is it needed for Arbitrary?):
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
-module Bio.Character.Dynamic.Coded.Internal
+module Bio.Character.Dynamic.Internal
   ( DynamicChar (DC)
   , DynamicChars
   ) where
 
-import           Bio.Character.Dynamic.Coded.Class
+import           Bio.Character.Dynamic.Class
+import           Bio.Character.Stream
 import           Bio.Character.Exportable.Class
 import           Control.Arrow                       ((***))
 import           Data.Alphabet
@@ -37,7 +38,8 @@ import           Data.Key
 import           Data.Bits
 import           Data.BitVector               hiding (foldr, join, not, replicate)
 import           Data.Foldable
-import qualified Data.Map                       as M
+import qualified Data.List.NonEmpty           as NE
+import qualified Data.Map                     as M
 import           Data.Maybe                          (fromMaybe)
 import           Data.Monoid
 import           Data.MonoTraversable
@@ -63,15 +65,20 @@ newtype DynamicChar
       = DC BitMatrix
       deriving (Eq, Show)
 
+
 type instance Element DynamicChar = BitVector
+
 
 -- | A sequence of many dynamic characters. Probably should be asserted as non-empty.y
 type DynamicChars = Vector DynamicChar
 
+
 --instance NFData DynamicChar
+
 
 instance MonoFunctor DynamicChar where
   omap f (DC bm) = DC $ omap f bm
+
 
 instance MonoFoldable DynamicChar where
   -- | Map each element of a monomorphic container to a 'Monoid'
@@ -112,6 +119,7 @@ instance MonoFoldable DynamicChar where
   {-# INLINE olength #-}
   olength (DC bm) = numRows bm
 
+
 -- | Monomorphic containers that can be traversed from left to right.
 instance MonoTraversable DynamicChar where
     -- | Map each element of a monomorphic container to an action,
@@ -126,9 +134,10 @@ instance MonoTraversable DynamicChar where
     {-# INLINE omapM #-}
     omapM = otraverse
 
-instance EncodableStaticCharacter BitVector where
 
-  decodeChar alphabet character = foldMapWithKey f alphabet
+instance EncodableStreamElement BitVector where
+
+  decodeElement alphabet character = NE.fromList $ foldMapWithKey f alphabet
     where
       f i symbol
         | character `testBit` i = [symbol]
@@ -138,22 +147,21 @@ instance EncodableStaticCharacter BitVector where
   -- The head element of the list is the most significant bit when calling fromBits.
   -- We need the first element of the alphabet to correspond to the least significant bit.
   -- Hence foldl, don't try foldMap or toList & fmap without careful thought.
-  encodeChar alphabet ambiguity = fromBits $ foldl' (\xs x -> (x `elem` ambiguity) : xs) [] alphabet
+  encodeElement alphabet ambiguity = fromBits $ foldl' (\xs x -> (x `elem` ambiguity) : xs) [] alphabet
 
   stateCount = width
 
-instance EncodableDynamicCharacter DynamicChar where
 
-  constructDynamic       = DC . fromRows . toList
+instance EncodableStream DynamicChar where
 
-  decodeDynamic alphabet char
+  decodeStream alphabet char
     | alphabet /= dnaAlphabet = rawResult 
     | otherwise               = (dnaIUPAC !) <$> rawResult
     where
-      rawResult   = ofoldMap (pure . decodeChar alphabet) . otoList $ char
+      rawResult   = NE.fromList . ofoldMap (pure . decodeElement alphabet) . otoList $ char
       dnaAlphabet = fromSymbols $ fromString <$> ["A","C","G","T"]
 --      dnaIUPAC :: (IsString a, Ord a) => Map [a] [a]
-      dnaIUPAC    = M.fromList . fmap (swap . (pure . fromChar *** fmap fromChar)) $ mapping
+      dnaIUPAC    = M.fromList . fmap (swap . (NE.fromList . pure . fromChar *** NE.fromList . fmap fromChar)) $ mapping
         where
           fromChar = fromString . pure
           mapping  = gapMap <> noGapMap <> [('-', "-")]
@@ -176,11 +184,18 @@ instance EncodableDynamicCharacter DynamicChar where
             , ('N', "ACGT")
             ]
 
-  encodeDynamic alphabet = DC . fromRows . fmap (encodeChar alphabet) . toList
+  encodeStream alphabet = DC . fromRows . fmap (encodeElement alphabet) . toList
 
-  lookupChar (DC bm) i
+  lookupStream (DC bm) i
     | 0 <= i && i < numRows bm = Just $ bm `row` i
     | otherwise                = Nothing
+
+
+instance EncodableDynamicCharacter DynamicChar where
+
+  constructDynamic = DC . fromRows . toList
+
+  encodeDynamic alphabet = encodeStream alphabet . NE.fromList . fmap (NE.fromList . toList) . toList
 
 
 -- TODO: Probably remove?
@@ -199,10 +214,12 @@ instance Bits DynamicChar where
     isSigned     (DC b)             = isSigned b
     popCount     (DC b)             = popCount b
 
+
 {-
 instance Memoizable DynamicChar where
     memoize f (DC bm) = memoize (f . DC) bm
 -}
+
 
 -- We restrict the DynamicChar values generated to be non-empty.
 -- Most algorithms assume a nonempty dynamic character.
@@ -214,9 +231,11 @@ instance Arbitrary DynamicChar where
         bitRows      <- vectorOf characterLen randVal
         pure . DC . fromRows $ bitVec symbolCount <$> bitRows
 
+
 -- | Functionality to unencode many encoded sequences
 -- decodeMany :: DynamicChars -> Alphabet -> ParsedChars
 -- decodeMany seqs alph = fmap (Just . decodeOverAlphabet alph) seqs
+
 
 instance Exportable DynamicChar where
     toExportable (DC bm@(BitMatrix _ bv)) =

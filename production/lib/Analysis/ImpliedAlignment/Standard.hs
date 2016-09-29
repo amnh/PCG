@@ -17,13 +17,13 @@ module Analysis.ImpliedAlignment.Standard where
 
 import           Analysis.ImpliedAlignment.Internal
 import           Analysis.Parsimony.Binary.DirectOptimization
+import           Bio.Character.Dynamic
 import           Bio.Metadata
 import           Bio.PhyloGraph.Forest
 import           Bio.PhyloGraph.Network
 import           Bio.PhyloGraph.Node
 import           Bio.PhyloGraph.Solution
 import           Bio.PhyloGraph.Tree 
-import           Bio.Character.Dynamic.Coded
 import           Data.Foldable
 import           Data.IntMap                (IntMap, insert)
 import qualified Data.IntMap as IM

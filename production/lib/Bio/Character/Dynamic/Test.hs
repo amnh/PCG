@@ -1,19 +1,21 @@
 {-# LANGUAGE FlexibleInstances #-}
 
-module Bio.Character.Dynamic.Coded.Test
+module Bio.Character.Dynamic.Test
   ( testSuite
   ) where
 
-import           Bio.Character.Dynamic.Coded
+import           Bio.Character.Dynamic
 import           Data.Alphabet
 import           Data.Bits
-import           Data.BitVector (BitVector)
+import           Data.BitVector            (BitVector)
 import           Data.Foldable
-import           Data.Key       ((!))
-import           Data.Set       (Set)
-import qualified Data.Set as Set (fromList,intersection,union)
+import           Data.Key                  ((!))
+import           Data.List.NonEmpty        (NonEmpty((:|)))
+import qualified Data.List.NonEmpty as NE
+import           Data.Set                  (Set)
+import qualified Data.Set           as Set (fromList,intersection,union)
 --import           Data.Monoid    ((<>))
-import           Data.Vector    (Vector, fromList)
+import           Data.Vector               (Vector, fromList)
 import           Test.Tasty
 --import           Test.Tasty.HUnit
 import           Test.Tasty.QuickCheck hiding ((.&.))
@@ -139,17 +141,17 @@ getParsedChar = fmap (fmap getNonEmpty . getNonEmpty)
 
 
 {- LAWS:
- - decodeChar alphabet . encodeChar alphabet . toList == id
+ - decodeElement alphabet . encodeChar alphabet . toList == id
  - encodeChar alphabet [alphabet !! i] == bit i
  - encodeChar alphabet alphabet == complement zeroBits
- - decodeChar alphabet (encodeChar alphabet xs .|. encodeChar alphabet ys) == toList alphabet `Data.List.intersect` (toList xs `Data.List.union` toList ys)
- - decodeChar alphabet (encodeChar alphabet xs .&. encodeChar alphabet ys) == toList alphabet `Data.List.intersect` (toList xs `Data.List.intersect` toList ys)
+ - decodeElement alphabet (encodeChar alphabet xs .|. encodeChar alphabet ys) == toList alphabet `Data.List.intersect` (toList xs `Data.List.union` toList ys)
+ - decodeElement alphabet (encodeChar alphabet xs .&. encodeChar alphabet ys) == toList alphabet `Data.List.intersect` (toList xs `Data.List.intersect` toList ys)
  -}
 testEncodableStaticCharacterInstanceBitVector :: TestTree
 testEncodableStaticCharacterInstanceBitVector = testGroup "BitVector instance of EncodableDynamicCharacter" [testLaws]
   where
-    encodeChar' :: Foldable t => Alphabet String -> t String -> BitVector
-    encodeChar' = encodeChar
+    encodeChar' :: Alphabet String -> NonEmpty String -> BitVector
+    encodeChar' = encodeElement
     testLaws = testGroup "EncodableDynamicChar Laws"
              [ encodeDecodeIdentity
              , singleBitConstruction
@@ -158,50 +160,51 @@ testEncodableStaticCharacterInstanceBitVector = testGroup "BitVector instance of
              , logicalAndIsomorphismWithSetIntersection
              ]
       where
-        encodeDecodeIdentity = testProperty "Set.fromList . decodeChar alphabet . encodeChar alphabet . Set.fromList . toList == Set.fromList . toList" f
+        encodeDecodeIdentity = testProperty "Set.fromList . decodeElement alphabet . encodeChar alphabet . Set.fromList . toList == Set.fromList . toList" f
           where
             f :: AlphabetAndSingleAmbiguityGroup -> Bool
             f alphabetAndAmbiguityGroup = lhs ambiguityGroup == rhs ambiguityGroup
               where
-                lhs = Set.fromList . decodeChar alphabet . encodeChar' alphabet . Set.fromList . toList
+                lhs = Set.fromList . toList . decodeElement alphabet . encodeChar' alphabet . NE.fromList . toList . Set.fromList . toList
                 rhs = Set.fromList . toList
                 (alphabet, ambiguityGroup) = getAlphabetAndSingleAmbiguityGroup alphabetAndAmbiguityGroup
 
         singleBitConstruction = testProperty "encodeChar alphabet [alphabet ! i] == bit i" f
           where
             f :: Alphabet String -> NonNegative Int -> Bool
-            f alphabet (NonNegative n) = encodeChar' alphabet [alphabet ! i] == bit i
+            f alphabet (NonNegative n) = encodeChar' alphabet (pure $ alphabet ! i) == bit i
               where
                 i = n `mod` length alphabet
 
         totalBitConstruction = testProperty "encodeChar alphabet alphabet == complement (bit (length alphabet - 1) `clearBit` (bit (length alphabet - 1))" f
           where
             f :: Alphabet String -> Bool
-            f alphabet = encodeChar' alphabet alphabet == e
+            f alphabet = encodeChar' alphabet allSymbols == e
               where
+                allSymbols = (NE.fromList $ toList alphabet)
                 e = complement $ bit i `clearBit` i
                 i = length alphabet - 1
 
-        logicalOrIsomorphismWithSetUnion = testProperty "Set.fromList (decodeChar alphabet (encodeChar alphabet xs .|. encodeChar alphabet ys)) == Set.fromList (toList alphabet) `Set.intersect` (toList xs `Set.union` toList ys)" f
+        logicalOrIsomorphismWithSetUnion = testProperty "Set.fromList (decodeElement alphabet (encodeChar alphabet xs .|. encodeChar alphabet ys)) == Set.fromList (toList alphabet) `Set.intersect` (toList xs `Set.union` toList ys)" f
           where
             f :: AlphabetAndTwoAmbiguityGroups -> Bool
             f input = lhs == rhs
               where
-                lhs = Set.fromList $ decodeChar alphabet (encodeChar' alphabet sxs .|. encodeChar' alphabet sys)
+                lhs = Set.fromList . toList $ decodeElement alphabet (encodeChar' alphabet (fromFoldable sxs) .|. encodeChar' alphabet (fromFoldable sys))
                 rhs = sxs `Set.union` sys
                 (alphabet, sxs,sys) = gatherAlphabetAndAmbiguitySets input
 
-        logicalAndIsomorphismWithSetIntersection = testProperty "Set.fromList (decodeChar alphabet (encodeChar alphabet xs .&. encodeChar alphabet ys)) == Set.fromList (toList alphabet) `Set.intersect` (toList xs `Set.intersection` toList ys)" f
+        logicalAndIsomorphismWithSetIntersection = testProperty "Set.fromList (decodeElement alphabet (encodeChar alphabet xs .&. encodeChar alphabet ys)) == Set.fromList (toList alphabet) `Set.intersect` (toList xs `Set.intersection` toList ys)" f
           where
             f :: AlphabetAndTwoAmbiguityGroups -> Bool
             f input = lhs == rhs
               where
-                lhs = Set.fromList $ decodeChar alphabet (encodeChar' alphabet sxs .&. encodeChar' alphabet sys)
+                lhs = Set.fromList . toList $ decodeElement alphabet (encodeChar' alphabet (fromFoldable sxs) .&. encodeChar' alphabet (fromFoldable sys))
                 rhs = sxs `Set.intersection` sys
-                (alphabet, sxs,sys) = gatherAlphabetAndAmbiguitySets input
+                (alphabet, sxs, sys) = gatherAlphabetAndAmbiguitySets input
 
 gatherAlphabetAndAmbiguitySets :: AlphabetAndTwoAmbiguityGroups -> (Alphabet String, Set String, Set String)
-gatherAlphabetAndAmbiguitySets input = (alphabet, Set.fromList xs, Set.fromList ys)
+gatherAlphabetAndAmbiguitySets input = (alphabet, Set.fromList $ toList xs, Set.fromList $ toList ys)
   where
     (alphabet, xs, ys) = getAlphabetAndTwoAmbiguityGroups input
 
@@ -222,8 +225,8 @@ testEncodableDynamicCharacterInstanceDynamicChar = testGroup "DynamicChar instan
               where
                 enc :: (Foldable t) => t (t String) -> DynamicChar
                 enc = encodeDynamic alphabet
-                lhs = fmap Set.fromList . decodeDynamic alphabet . enc
-                rhs = fmap Set.fromList . toList
+                lhs = fmap  Set.fromList . toList . decodeDynamic alphabet . enc
+                rhs = fmap (Set.fromList . toList) . toList
                 (alphabet, dynamicChar) = getAlphabetAndCharacter alphabetAndDynamicChar
 
 
@@ -243,40 +246,43 @@ instance Arbitrary ParsedCharacterWithAlphabet where
 
 newtype AlphabetAndSingleAmbiguityGroup
       = AlphabetAndSingleAmbiguityGroup
-      { getAlphabetAndSingleAmbiguityGroup :: (Alphabet String, [String])
+      { getAlphabetAndSingleAmbiguityGroup :: (Alphabet String, NonEmpty String)
       } deriving (Eq, Show)
 
 instance Arbitrary AlphabetAndSingleAmbiguityGroup where
   arbitrary = do
-    (alphabet, [x]) <- alphabetAndAmbiguityGroups 1
+    (alphabet, x :| _) <- alphabetAndAmbiguityGroups 1
     pure $ AlphabetAndSingleAmbiguityGroup (alphabet, x)
 
 newtype AlphabetAndTwoAmbiguityGroups
       = AlphabetAndTwoAmbiguityGroups
-      { getAlphabetAndTwoAmbiguityGroups :: (Alphabet String, [String], [String])
+      { getAlphabetAndTwoAmbiguityGroups :: (Alphabet String, NonEmpty String, NonEmpty String)
       } deriving (Eq, Show)
 
 instance Arbitrary AlphabetAndTwoAmbiguityGroups where
   arbitrary = do
-    (alphabet, [x,y]) <- alphabetAndAmbiguityGroups 2
+    (alphabet, xs) <- alphabetAndAmbiguityGroups 2
+    let [x,y] = NE.take 2 xs
     pure $ AlphabetAndTwoAmbiguityGroups (alphabet, x, y)
 
 newtype AlphabetAndCharacter
       = AlphabetAndCharacter
-      { getAlphabetAndCharacter :: (Alphabet String, [[String]])
+      { getAlphabetAndCharacter :: (Alphabet String, NonEmpty (NonEmpty String))
       } deriving (Eq, Show)
 
 instance Arbitrary AlphabetAndCharacter where
   arbitrary = do
     alphabet           <- arbitrary :: Gen (Alphabet String)
-    let ambiguityGroup =  listOf . elements $ toList alphabet
-    dynamicChar        <- listOf1 ambiguityGroup
+    let ambiguityGroup =  fmap NE.fromList . listOf1 . elements $ toList alphabet
+    dynamicChar        <- fmap NE.fromList $ listOf1 ambiguityGroup
     pure $ AlphabetAndCharacter (alphabet, dynamicChar)
 
-alphabetAndAmbiguityGroups :: Int -> Gen (Alphabet String, [[String]])
+alphabetAndAmbiguityGroups :: Int -> Gen (Alphabet String, NonEmpty (NonEmpty String))
 alphabetAndAmbiguityGroups n = do
    alphabet           <- arbitrary :: Gen (Alphabet String)
-   let ambiguityGroup =  listOf . elements $ toList alphabet -- list can be empty, can have duplicates!
-   ambiguityGroups    <- vectorOf n ambiguityGroup
-   pure (constructAlphabet alphabet, ambiguityGroups)
-                                
+   let ambiguityGroup =  fmap NE.fromList . listOf1 . elements $ toList alphabet -- list can be empty, can have duplicates!
+   ambiguityGroups    <- fmap NE.fromList $ vectorOf n ambiguityGroup
+   pure (fromSymbols alphabet, ambiguityGroups)
+
+fromFoldable :: Set a -> NonEmpty a
+fromFoldable = NE.fromList . toList

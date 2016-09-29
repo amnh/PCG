@@ -15,9 +15,9 @@
 
 module Bio.Metadata.Parsed where
 
-import           Bio.Metadata.Internal
-import           Bio.Character.Dynamic.Coded
+import           Bio.Character.Dynamic
 import           Bio.Character.Parsed
+import           Bio.Metadata.Internal
 import           Bio.PhyloGraph.Solution
 import           Data.Alphabet
 import           Data.Char

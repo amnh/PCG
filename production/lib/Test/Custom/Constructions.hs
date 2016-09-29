@@ -3,7 +3,7 @@
 module Test.Custom.Constructions where
 
 import           Bio.Character.Parsed -- why?
-import           Bio.Character.Dynamic.Coded
+import           Bio.Character.Dynamic
 import           Data.Alphabet
 import           Data.BitMatrix
 import           Data.BitVector    (bitVec)

@@ -1,6 +1,6 @@
 -----------------------------------------------------------------------------
 -- |
--- Module      :  Bio.Character.Dynamic.Coded
+-- Module      :  Bio.Character.Static
 -- Copyright   :  (c) 2015-2015 Ward Wheeler
 -- License     :  BSD-style
 --
@@ -12,13 +12,16 @@
 --
 -----------------------------------------------------------------------------
 
-module Bio.Character.Dynamic.Coded
-  ( EncodableDynamicCharacter(..)
+module Bio.Character.Static
+  ( StaticCharacter()
+  , StaticCharacterBlock()
   , EncodableStaticCharacter(..)
-  , DynamicChar(DC)
-  , DynamicChars
+  , EncodableStaticCharacterStream(..)
+  , EncodableStreamElement(..)
+  , EncodableStream(..)
   ) where
 
-import Bio.Character.Dynamic.Coded.Internal
-import Bio.Character.Dynamic.Coded.Class
+import Bio.Character.Static.Internal
+import Bio.Character.Static.Class
+import Bio.Character.Stream
 

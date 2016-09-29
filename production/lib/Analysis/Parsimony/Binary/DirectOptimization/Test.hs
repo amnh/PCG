@@ -15,7 +15,7 @@
 module Analysis.Parsimony.Binary.DirectOptimization.Test where
 
 import           Analysis.Parsimony.Binary.DirectOptimization.Internal
-import           Bio.Character.Dynamic.Coded
+import           Bio.Character.Dynamic
 --import           Bio.Character.Parsed
 import           Bio.Metadata
 --import           Bio.Metadata.Internal
@@ -33,7 +33,7 @@ import           Test.Tasty.QuickCheck hiding ((.&.))
 import           Debug.Trace
 
 standardAlph :: Alphabet String
-standardAlph =  constructAlphabet $ V.fromList ["A", "C", "G", "T", "-"]
+standardAlph =  fromSymbols $ V.fromList ["A", "C", "G", "T", "-"]
 
 sampleMeta :: CharacterMetadata DynamicChar             
 sampleMeta =  CharMeta DirectOptimization standardAlph "" False False 1 mempty (constructDynamic [], constructDynamic []) 0 uniformCostStructure

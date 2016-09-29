@@ -16,7 +16,7 @@
 module Analysis.Parsimony.Binary.DirectOptimization.Internal where
 
 import Bio.Metadata
-import Bio.Character.Dynamic.Coded
+import Bio.Character.Dynamic
 import Data.Bits
 --import Data.BitVector hiding (foldr, reverse)
 import Data.Foldable         (minimumBy)
@@ -195,7 +195,7 @@ getTotalAlignmentCost alignmentMatrix = c
     (c, _, _) = alignmentMatrix ! (nrows alignmentMatrix - 1, ncols alignmentMatrix - 1) 
 
 -- | Memoized wrapper of the overlap function
-getOverlap :: (EncodableStaticCharacter c {- , Memoizable c, -}) => c -> c -> CostStructure -> (c, Double)
+getOverlap :: (EncodableStreamElement c {- , Memoizable c, -}) => c -> c -> CostStructure -> (c, Double)
 getOverlap inChar1 inChar2 costStruct = result
     where
         result = {- memoize2 -} overlap costStruct inChar1 inChar2
@@ -209,7 +209,7 @@ getOverlap inChar1 inChar2 costStruct = result
 -- if @ char1 == A,T @ and @ char2 == G,C @, and the two (non-overlapping) least cost pairs are A,C and T,G, then
 -- the return value is A,C,G,T. 
 -- Tests exist in the test suite.
-overlap :: (EncodableStaticCharacter c {- , Show c -}) => CostStructure -> c -> c -> (c, Double)
+overlap :: (EncodableStreamElement c {- , Show c -}) => CostStructure -> c -> c -> (c, Double)
 --overlap _ inChar1 inChar2 | trace (unwords [show inChar1, show inChar2]) False = undefined
 overlap costStruct char1 char2
     | intersectionStates == zeroBits = -- (\x -> trace (unwords [show char1, show char2, show x]) x) $
@@ -245,7 +245,7 @@ minimalChoice = foldr1 f
 -- Finds the cost of a pairing of two static characters.
 -- Takes in a 'CostStructure' and two ambiguous 'EncodableStaticCharacter's. Returns a list of tuples of all possible unambiguous
 -- pairings, along with their costs. 
-allPossibleBaseCombosCosts :: EncodableStaticCharacter s => CostStructure -> s -> s -> [(s, Double)]
+allPossibleBaseCombosCosts :: EncodableStreamElement s => CostStructure -> s -> s -> [(s, Double)]
 allPossibleBaseCombosCosts costStruct char1 char2 = [ getCost costStruct x y | x <- getSubChars char1
                                                                              , y <- getSubChars char2
                                                     ]
@@ -256,7 +256,7 @@ allPossibleBaseCombosCosts costStruct char1 char2 = [ getCost costStruct x y | x
 -- of a pairing (intersection) of those characters into an ambiguous character. The 'Int's are the set bits in each character
 -- and are used as lookup into the 'CostStructure'. 
 -- Tests exist in the test suite.
-getCost :: EncodableStaticCharacter s => CostStructure -> (Int, s) -> (Int, s) -> (s, Double)
+getCost :: EncodableStreamElement s => CostStructure -> (Int, s) -> (Int, s) -> (s, Double)
 getCost costStruct seqTup1 seqTup2 = 
     case (costStruct, seqTup1, seqTup2) of
        -- (AffineCost {}        , _         , _         ) -> error "Cannot apply DO algorithm on affine cost" -- When this is added, remember to write a test.
@@ -288,7 +288,7 @@ getCost costStruct seqTup1 seqTup2 =
 -- a tuple with an 'Int', @ x @, giving the location of the set bit, as well as an 'EncodableStaticCharacter' of the same
 -- length as the input, but with only the bit at location @ x @ set.
 -- Tests exist in the test suite.
-getSubChars :: (EncodableStaticCharacter s) => s -> [(Int, s)]
+getSubChars :: EncodableStreamElement s => s -> [(Int, s)]
 getSubChars fullChar = foldr (\i acc -> if testBit fullChar i 
                                         then (i, z `setBit` i) : acc 
                                         else acc 

@@ -15,7 +15,7 @@
 
 module PCG.Command.Types.Report.ImpliedAlignmentFasta where
 
-import Bio.Character.Dynamic.Coded
+import Bio.Character.Dynamic
 import Bio.Metadata   hiding (name)
 import Bio.PhyloGraph.DAG
 import Bio.PhyloGraph.Network (nodeIsLeaf)

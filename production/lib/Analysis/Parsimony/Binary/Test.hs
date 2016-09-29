@@ -18,9 +18,9 @@ module Analysis.Parsimony.Binary.Test where
 import           Analysis.Parsimony.Binary.Fitch
 import           Analysis.Parsimony.Binary.Internal
 --import           Analysis.Parsimony.Binary.Optimization
+import           Bio.Character.Dynamic
 import           Bio.Metadata
 import           Bio.Metadata.MaskGenerator
-import           Bio.Character.Dynamic.Coded
 --import           Bio.Character.Parsed
 import           Bio.PhyloGraph.Solution
 import           Data.Alphabet
@@ -35,7 +35,7 @@ import           Test.Tasty
 import           Test.Tasty.QuickCheck
 
 standardAlph :: Alphabet String
-standardAlph = constructAlphabet $ V.fromList ["A", "C", "G", "T", "-"]
+standardAlph = fromSymbols $ V.fromList ["A", "C", "G", "T", "-"]
 
 doMeta, fitchMeta :: CharacterMetadata DynamicChar
 doMeta    = CharMeta DirectOptimization standardAlph "" False False 1 mempty (constructDynamic [], constructDynamic []) 0 costStructure
@@ -76,7 +76,7 @@ fitchProperties = testGroup "Properties of the Fitch algorithm" [preIdHolds, pos
                 checkID :: DynamicChar -> Bool
                 checkID inSeq = result == inSeq && cost == 0
                     where 
-                        newAlph = constructAlphabet $ take (stateCount $ inSeq `indexChar` 0) abstractSymbols
+                        newAlph = fromSymbols $ take (stateCount $ inSeq `indexChar` 0) abstractSymbols
                         (result, _, cost) = preorderFitchBit 1 inSeq inSeq (fitchMeta {alphabet = newAlph, fitchMasks = generateMasks newAlph (olength inSeq)})
 
         postIdHolds = testProperty "When Postorder Fitch runs a sequence against itself, get input as result" checkID
@@ -84,7 +84,7 @@ fitchProperties = testGroup "Properties of the Fitch algorithm" [preIdHolds, pos
                 checkID :: DynamicChar -> Bool
                 checkID inSeq = result == inSeq
                     where 
-                        newAlph = constructAlphabet $ take (stateCount $ inSeq `indexChar` 0) abstractSymbols
+                        newAlph = fromSymbols $ take (stateCount $ inSeq `indexChar` 0) abstractSymbols
                         (_, f, _) = preorderFitchBit 1 inSeq inSeq (fitchMeta {alphabet = newAlph, fitchMasks = generateMasks newAlph (olength inSeq)})
                         result = postorderFitchBit inSeq inSeq inSeq f inSeq (fitchMeta {alphabet = newAlph, fitchMasks = generateMasks newAlph (olength inSeq)})
 

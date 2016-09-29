@@ -106,9 +106,12 @@ library
                        Analysis.Parsimony.Binary.Internal
                        Analysis.Parsimony.Binary.Optimization
                        Analysis.Parsimony.Binary.SequentialAlign
-                       Bio.Character.Dynamic.Coded
+                       Bio.Character
+                       Bio.Character.Dynamic
                        Bio.Character.Exportable.Class
                        Bio.Character.Parsed
+                       Bio.Character.Stream
+                       Bio.Character.Static
                        Bio.Metadata
                        Bio.Metadata.CharacterName
                        Bio.Metadata.Sequence.SharedContinugousMetatdata
@@ -161,10 +164,12 @@ library
                        Analysis.Parsimony.Binary.DirectOptimization.Internal
                        Analysis.Parsimony.Binary.SequentialAlign.FFI
                        Analysis.Parsimony.Binary.Constraints
-                       Bio.Character.Dynamic.Coded.Class
-                       Bio.Character.Dynamic.Coded.Internal
+                       Bio.Character.Dynamic.Class
+                       Bio.Character.Dynamic.Internal
                        Bio.Character.Parsed.Class
                        Bio.Character.Parsed.Internal
+                       Bio.Character.Static.Class
+                       Bio.Character.Static.Internal
                        Bio.PhyloGraph.Forest.Class
                        Bio.PhyloGraph.Forest.Internal
                        Bio.PhyloGraph.Forest.Parsed
@@ -366,13 +371,14 @@ executable qdh
                        Analysis.Parsimony.Binary.Fitch
                        Analysis.Parsimony.Binary.Internal
                        Analysis.Parsimony.Binary.Optimization
-                       Bio.Character.Dynamic.Coded
-                       Bio.Character.Dynamic.Coded.Class
-                       Bio.Character.Dynamic.Coded.Internal
+                       Bio.Character.Dynamic
+                       Bio.Character.Dynamic.Class
+                       Bio.Character.Dynamic.Internal
                        Bio.Character.Exportable.Class
                        Bio.Character.Parsed
                        Bio.Character.Parsed.Class
                        Bio.Character.Parsed.Internal
+                       Bio.Character.Stream
                        Bio.Metadata
                        Bio.Metadata.Class
                        Bio.Metadata.Internal
@@ -585,13 +591,15 @@ Test-Suite testsuite
                        Analysis.Parsimony.Binary.Fitch
                        Bio.Metadata.Class
                        Bio.Metadata.Internal
-                       Bio.Character.Dynamic.Coded
-                       Bio.Character.Dynamic.Coded.Class
-                       Bio.Character.Dynamic.Coded.Test
+                       Bio.Character.Dynamic
+                       Bio.Character.Dynamic.Class
+                       Bio.Character.Dynamic.Internal
+                       Bio.Character.Dynamic.Test
                        Bio.Character.Exportable.Class
                        Bio.Character.Parsed
                        Bio.Character.Parsed.Class
                        Bio.Character.Parsed.Internal
+                       Bio.Character.Stream
                        Bio.Metadata
                        Bio.Metadata.Parsed
                        Bio.PhyloGraph
@@ -687,7 +695,6 @@ Test-Suite testsuite
 
                        Data.Matrix.NotStupid
                        TestSuite.GeneratedTests.TNT
-                       Bio.Character.Dynamic.Coded.Internal
                        Data.Alphabet
                        Data.BitMatrix
                        Control.Evaluation
@@ -699,4 +706,6 @@ Test-Suite testsuite
                        Bio.PhyloGraph.DAG.Test
                        Analysis.Parsimony.Binary.Constraints
                        Analysis.Parsimony.Binary.SequentialAlign
+
 --                       Analysis.Parsimony.Binary.SequentialAlign.SeqAlignFFI
+

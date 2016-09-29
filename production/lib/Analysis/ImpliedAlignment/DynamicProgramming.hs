@@ -20,12 +20,12 @@ import           Analysis.ImpliedAlignment.DeletionEvents
 import           Analysis.ImpliedAlignment.InsertionEvents
 import           Analysis.ImpliedAlignment.Internal
 import           Analysis.Parsimony.Binary.DirectOptimization
+import           Bio.Character.Dynamic
 import           Bio.Metadata
 import           Bio.PhyloGraph.Forest
 import           Bio.PhyloGraph.Network
 import           Bio.PhyloGraph.Node     hiding  (Node,children,name)
 import           Bio.PhyloGraph.Solution
-import           Bio.Character.Dynamic.Coded
 import           Control.Arrow                   ((&&&))
 import           Data.Foldable
 import qualified Data.HashMap.Lazy       as HM

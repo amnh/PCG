@@ -25,6 +25,7 @@ import Data.Monoid
 import Data.MonoTraversable
 import Test.QuickCheck hiding ((.&.))
 
+
 -- | A data structure for storing a two dimensional array of bits.
 --   Exposes row based monomorphic mapping & folding.
 --
@@ -39,6 +40,7 @@ import Test.QuickCheck hiding ((.&.))
 data BitMatrix
    = BitMatrix !Int BitVector
    deriving (Eq)
+
 
 -- | The row based element for monomorphic maps & folds.
 type instance Element BitMatrix = BitVector
@@ -100,6 +102,7 @@ bitMatrix m n f =
         errorZeroCols   = mconcat ["the number of columns was 0 but the number of rows, ", show m, ", was positive."]
         errorZeroSuffix = "To construct the empty matrix, both rows and columns must be zero"
 
+
 -- | Construct a 'BitMatrix' from a list of rows.
 --   /O(m)/
 fromRows :: Foldable t => t BitVector -> BitMatrix
@@ -120,10 +123,12 @@ fromRows xs
                                             then bitVec (length xs) (0 :: Integer)
                                             else foldr1 bvCat $ y:ys)
 
+
 -- | The number of columns in the 'BitMatrix'
 --   /O(1)/
 numCols :: BitMatrix -> Int
 numCols (BitMatrix n _) = n
+
 
 -- | The number of rows in the 'BitMatrix'
 --   /O(1)/
@@ -131,6 +136,7 @@ numRows :: BitMatrix -> Int
 numRows (BitMatrix n bv)
   | n == 0    = 0
   | otherwise = width bv `div` n
+
 
 -- | The rows of the 'BitMatrix'
 --   /O(m)/
@@ -142,6 +148,7 @@ rows bm@(BitMatrix nCols bv)
     where
       nRows  = numRows bm
       slices = take nRows $ iterate ((nCols +) `bimap` (nCols +)) (nCols - 1, 0) --(start, end)
+
 
 -- | Retreives a single row of the 'BitMatrix'.
 --   Allows for unsafe indexing.
@@ -158,10 +165,33 @@ row bm@(BitMatrix nCols bv) i
     errorMsg = unwords ["Index", show i, "is outside the range", rangeStr]
     rangeStr = mconcat ["[0..", show nRows, "]."]
 
+
 -- | Determines if there are no set bits in the 'BitMatrix'
 --   /O(1)/
 isZeroMatrix :: BitMatrix -> Bool
 isZeroMatrix (BitMatrix _ bv) = nat bv == 0
+
+
+{-# INLINE collapseRows #-}
+collapseRows :: BitMatrix -> BitVector
+collapseRows (BitMatrix _ bv) = bv
+
+
+{-# INLINE expandVector #-}
+expandVector :: Int -> BitVector -> BitMatrix
+expandVector n bv
+  | len `mod` n == 0 = BitMatrix n bv
+  | otherwise        = error erroMsg
+  where
+    len = width bv
+    erroMsg = mconcat
+      [ "The supplied BitVector length ("
+      , show len
+      , ") cannot be evenly divided by the supplied column count ("
+      , show n
+      , ")."
+      ]
+
 
 {-
 col :: BitMatrix -> Int -> BitVector
@@ -172,6 +202,7 @@ col = undefined -- bit twiddle or math
 --   /O(1)/
 isSet :: BitMatrix -> (Int, Int) -> Bool
 (BitMatrix n bv) `isSet` (i,j) = bv `testBit` (n*i + j)
+
 
 -- | Performs a row-wise monomporphic map over ther 'BitMatrix'.
 instance MonoFunctor BitMatrix where
@@ -217,6 +248,7 @@ instance MonoFoldable BitMatrix where
 
   {-# INLINE olength #-}
   olength = numRows
+
 
 -- | Performs a row-wise monomporphic traversal over ther 'BitMatrix'.
 instance MonoTraversable BitMatrix where

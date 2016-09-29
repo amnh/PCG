@@ -19,7 +19,7 @@ import           Analysis.Parsimony.Binary.Internal
 import           Analysis.ImpliedAlignment.Standard
 import           Analysis.ImpliedAlignment.Test.Trees
 import qualified Analysis.ImpliedAlignment.InsertionEvents.Test as IE (testSuite)
-import           Bio.Character.Dynamic.Coded
+import           Bio.Character.Dynamic
 import           Bio.Character.Parsed
 import           Bio.Metadata
 import           Bio.PhyloGraph            hiding (name)
@@ -38,7 +38,7 @@ import           Test.Tasty.QuickCheck
 defMeta :: Vector (CharacterMetadata s)
 defMeta = pure CharMeta
         { charType   = DirectOptimization
-        , alphabet   = constructAlphabet []
+        , alphabet   = undefined
         , name       = "DefaultCharacter"
         , isAligned  = False
         , isIgnored  = False
@@ -126,7 +126,7 @@ encodeArbSameLen (parse1, parse2) = (encodeDynamic alph (V.take minLen p1), enco
         (p1,p2) = (getGoodness parse1, getGoodness parse2)
         minLen  = minimum [length p1, length p2]
         oneAlph = foldMap S.fromList
-        alph    = constructAlphabet $ oneAlph p1 `S.union` oneAlph p2
+        alph    = fromSymbols $ oneAlph p1 `S.union` oneAlph p2
 
 -- | Newtyping ensures that the sequence and ambiguity groups are both non empty.
 newtype GoodParsedChar

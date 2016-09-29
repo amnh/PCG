@@ -2,7 +2,7 @@
 
 module Test.Custom.Types where
 
---import           Bio.Character.Dynamic.Coded
+--import           Bio.Character.Dynamic
 --import           Bio.PhyloGraph.DAG.Class
 --import qualified Bio.PhyloGraph.Network                           as N
 --import qualified Bio.PhyloGraph.Node.Encoded                      as EN

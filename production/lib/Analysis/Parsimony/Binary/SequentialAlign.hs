@@ -18,7 +18,7 @@ module Analysis.Parsimony.Binary.SequentialAlign (sequentialAlign) where
 
 --import           Analysis.Parsimony.Binary.Internal
 import qualified Analysis.Parsimony.Binary.SequentialAlign.FFI as FFI (sequentialAlign)
-import           Bio.Character.Dynamic.Coded
+import           Bio.Character.Dynamic
 import           Bio.Character.Exportable.Class
 --import           Data.Alphabet
 --import           Data.Vector     (fromList)
@@ -55,4 +55,4 @@ sequentialAlign inpSeq1 inpSeq2 = ( constructDynamic inferredParent
 --        | y < x                = (y : xs, y : ys)
         | otherwise            = (x : xs, x : ys) -- they must be equal, so choose x
 --      inferredParent' = constructDynamic inferredParent
-      gap = getGapChar $ inpSeq1 `indexChar` 0
+      gap = getGapElement $ inpSeq1 `indexStream` 0

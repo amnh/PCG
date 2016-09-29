@@ -22,7 +22,7 @@ import           Bio.PhyloGraph.Network.Class
 import           Bio.PhyloGraph.Solution.Class
 import qualified Bio.PhyloGraph.Solution.Metadata as MS
 import           Bio.Character.Parsed.Internal
-import           Bio.Character.Dynamic.Coded
+import           Bio.Character.Dynamic
 import           Bio.Metadata.Internal
 import           Bio.PhyloGraph.Node hiding (children, name)
 

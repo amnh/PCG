@@ -17,6 +17,8 @@
 module Data.BitMatrix
   ( BitMatrix()
   , bitMatrix
+  , collapseRows
+  , expandVector
   , fromRows
   , isSet
   , isZeroMatrix

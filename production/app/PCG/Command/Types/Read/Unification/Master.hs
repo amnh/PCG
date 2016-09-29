@@ -22,11 +22,9 @@ import           Bio.PhyloGraph.Solution  hiding (parsedChars)
 import           Bio.PhyloGraph.DAG
 import           Bio.PhyloGraph.Forest
 import           Bio.PhyloGraph.Node      hiding (isLeaf)
-import           Bio.Character.Dynamic.Coded
+import           Bio.Character.Dynamic
 import           Bio.Character.Parsed
-
 import           Control.Arrow                  ((***),(&&&))
-
 import           Data.Bifunctor                 (first)
 import           Data.Foldable
 import qualified Data.HashMap.Lazy        as HM
@@ -39,7 +37,6 @@ import           Data.Set                       ((\\))
 import qualified Data.Set                 as S  (fromList)
 import           Data.Vector                    (Vector, (//), generate)
 import qualified Data.Vector              as V  (find, zipWith)
-
 import           File.Format.Newick
 import           File.Format.TransitionCostMatrix
 import           PCG.Command.Types.Read.Unification.UnificationError

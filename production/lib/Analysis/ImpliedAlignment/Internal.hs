@@ -14,6 +14,7 @@
 
 module Analysis.ImpliedAlignment.Internal where
 
+import Bio.Character.Dynamic
 import Bio.Metadata
 --import Bio.PhyloGraph.DAG
 import Bio.PhyloGraph.Forest
@@ -21,7 +22,6 @@ import Bio.PhyloGraph.Network
 import Bio.PhyloGraph.Node
 import Bio.PhyloGraph.Solution
 import Bio.PhyloGraph.Tree
-import Bio.Character.Dynamic.Coded
 import Data.Bits
 --import Data.Function.Memoize
 import Data.IntMap

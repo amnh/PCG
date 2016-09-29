@@ -1,6 +1,6 @@
 -----------------------------------------------------------------------------
 -- |
--- Module      :  Bio.Character.Static.NotPacked.Internal
+-- Module      :  Bio.Character.Dynamic
 -- Copyright   :  (c) 2015-2015 Ward Wheeler
 -- License     :  BSD-style
 --
@@ -8,9 +8,19 @@
 -- Stability   :  provisional
 -- Portability :  portable
 --
--- Module holding the data type for a static character that can't be packed
+-- Export of coded characters
 --
 -----------------------------------------------------------------------------
 
-module Bio.Character.Static.NotPacked.Internal where
+module Bio.Character.Dynamic
+  ( DynamicChar(DC)
+  , DynamicChars
+  , EncodableDynamicCharacter(..)
+  , EncodableStreamElement(..)
+  , EncodableStream(..)
+  ) where
+
+import Bio.Character.Dynamic.Internal
+import Bio.Character.Dynamic.Class
+import Bio.Character.Stream
 

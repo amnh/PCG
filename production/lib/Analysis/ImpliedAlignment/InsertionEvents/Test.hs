@@ -49,7 +49,7 @@ monoidProperties = testProperty "InsertionEvents is a proper Monoid instance" f
     f x y z = runEqual (==) $ prop e x y z
 --    e :: T (InsertionEvents Char)
     e = T
-    prop :: Eq e => T (InsertionEvents e) -> InsertionEvents e -> InsertionEvents e -> InsertionEvents e -> Equal (InsertionEvents e)
+    prop :: T (InsertionEvents e) -> InsertionEvents e -> InsertionEvents e -> InsertionEvents e -> Equal (InsertionEvents e)
     prop = prop_Monoid
 
 

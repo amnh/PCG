@@ -25,7 +25,7 @@ module Bio.Character.Dynamic.Coded.Internal
   , DynamicChars
   ) where
 
-import           Bio.Character.Dynamic.Coded.Class
+import           Bio.Character.Dynamic
 import           Bio.Character.Exportable.Class
 import           Control.Arrow                       ((***))
 import           Data.Alphabet
