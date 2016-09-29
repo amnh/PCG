@@ -102,7 +102,7 @@ union_merge (seq_p a, seq_p b, seq_p median, unionofft au, \
     UNION_OFFT items_prepended = 0, i, gap, lena, interm, apos, bpos;
     SEQT *begina, *beginb, *beginm;
     lena = seq_get_len (a);
-    gap = cm_get_gap (m);
+    gap = cm_get_gap_2d (m);
     begina = seq_get_begin (a);
     beginb = seq_get_begin (b);
     beginm = seq_get_begin (median);

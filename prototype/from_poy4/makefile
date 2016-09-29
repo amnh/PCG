@@ -23,5 +23,5 @@ complex_ffi : myComplexTestC.c myComplexTestC.h myComplexFFI.hsc
 
 just_c_code : driver.c algn.c algn.h avl.c avl.h cm.c cm.h matrices.c matrices.h seq.c seq.h zarr.c zarr.h
 	rm -f *.o
-	gcc -c algn.c avl.c cm.c matrices.c seq.c zarr.c
-	gcc driver.c algn.o avl.c cm.o matrices.o seq.o zarr.o
+	gcc -g -c algn.c avl.c cm.c matrices.c seq.c zarr.c
+	gcc -g driver.c algn.o avl.c cm.o matrices.o seq.o zarr.o

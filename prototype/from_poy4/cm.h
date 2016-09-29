@@ -34,7 +34,7 @@
  * structure for two dimensional sequence alignment. 
  */
 struct cost_matrices_2d {
-    int alphSize;        // alphabet size, including ambiguities if cominations == True
+    int alphSize;        // alphabet size, including ambiguities if combinations == True
     int lcm;             // ceiling of log_2 (alphSize)
     int gap;             // gap value (1 << alphSize + 1)
     int cost_model_type; /* The type of cost model to be used in the alignment, 
@@ -83,6 +83,41 @@ struct cost_matrices_2d {
  */
 typedef struct cost_matrices_2d * cost_matrices_2d_p;
 
+/** A three dimesional cost matrix 
+ *
+ * For three way sequence alignment, this structure holds the cost of
+ * transforming the elements of an alphabet.  A cost matrix can only be applied
+ * on a particular alphabet.
+ */
+struct cost_matrices_3d {
+    int alphSize;           /** The number of elements in the alphabet */
+    int lcm;                /** The logarithm base 2 of alphSize */
+    int gap;                /** The integer representing a gap in the alphabet */
+    int cost_model_type;    /** The type of cost model to be used in the alignment */
+    int combinations;       /** This is a flag set to true if we are going to accept
+                                all possible combinations of the elements in the alphabet
+                                in the alignments. This is not true for protein sequences 
+                                for example, where the number of elements of the alphabet 
+                                is already too big to build all the possible combinations.
+                             */
+    int gap_open;           /** The cost of opening a gap. This is only useful in 
+                                certain cost_model_type's. */
+    int all_elements;       /** The integer that represents all the combinations, used 
+                                for ambiguities */
+    int *cost;              /** The transformation cost matrix. The ordering is row-major,
+                             *  and the lookup is a->b, where a is a row label and b is 
+                             *  a column label
+                             */
+    SEQT *median;           /** The matrix of possible medians between elements in the 
+                                alphabet. The best possible medians according to the cost 
+                                matrix. */
+};
+
+/* 
+ * A pointer to a three dimensional cost matrix 
+ */ 
+typedef struct cost_matrices_3d * cost_matrices_3d_p;
+
 void cm_print (cost_matrices_2d_p c);
 
 void cm_print_matrix (int* m, int w, int h);
@@ -95,12 +130,15 @@ void cm_print_matrix (int* m, int w, int h);
  * stored in do_aff, gap_open, in the cost matrix res. 
  * In case of error the function fails with the message "Memory error.".
  */
-cost_matrices_2d_p cm_alloc_set_costs_2d(int alphSize, int combinations, int do_aff, int gap_open, \
+void cm_alloc_set_costs_2d (int alphSize, int combinations, int do_aff, int gap_open, \
         int is_metric, int all_elements, cost_matrices_2d_p res);
 
 
 void
-cm_set_cost (int a, int b, int v, cost_matrices_2d_p c);
+cm_set_cost_2d (int a, int b, int v, cost_matrices_2d_p c);
+
+void
+cm_set_cost_3d (int a, int b, int cp, int v, cost_matrices_3d_p c);
 
 /* 
  * Retrieves the alphabet size flag from the transformation cost matrix.
@@ -112,7 +150,10 @@ cm_get_alphabet_size (cost_matrices_2d_p c);
  * Retrieves the gap code as defined in the transformation cost matrix. 
  */
 SEQT
-cm_get_gap (const cost_matrices_2d_p c);
+cm_get_gap_2d (const cost_matrices_2d_p c);
+
+SEQT
+cm_get_gap_3d (const cost_matrices_3d_p c);
 
 /*
  * Retrieves a pointer to the memory position stored in the precalculated array
@@ -231,43 +272,10 @@ cm_precalc_4algn (const cost_matrices_2d_p costMtx, nw_matrices_p toOutput, cons
 const int *
 cm_get_precal_row (const int *p, SEQT item, int len);
 
-/** A three dimesional cost matrix 
- *
- * For three way sequence alignment, this structure holds the cost of
- * transforming the elements of an alphabet.  A cost matrix can only be applied
- * on a particular alphabet.
- */
-struct cost_matrices_3d {
-    int alphSize;           /** The number of elements in the alphabet */
-    int lcm;                /** The logarithm base 2 of alphSize */
-    int gap;                /** The integer representing a gap in the alphabet */
-    int cost_model_type;    /** The type of cost model to be used in the alignment */
-    int combinations;       /** This is a flag set to true if we are going to accept
-                                all possible combinations of the elements in the alphabet
-                                in the alignments. This is not true for protein sequences 
-                                for example, where the number of elements of the alphabet 
-                                is already too big to build all the possible combinations.
-                             */
-    int gap_open;           /** The cost of opening a gap. This is only useful in 
-                                certain cost_model_type's. */
-    int all_elements;       /** The integer that represents all the combinations, used 
-                                for ambiguities */
-    int *cost;              /** The transformation cost matrix. The ordering is row-major,
-                             *  and the lookup is a->b, where a is a row label and b is 
-                             *  a column label
-                             */
-    SEQT *median;           /** The matrix of possible medians between elements in the 
-                                alphabet. The best possible medians according to the cost 
-                                matrix. */
-};
 
-/* 
- * A pointer to a three dimensional cost matrix 
- */ 
-typedef struct cost_matrices_3d * cost_matrices_3d_p;
 
 /** As with 2d, but doesn't compute worst, prepend or tail */
-cost_matrices_3d_p 
+void
 cm_alloc_set_costs_3d (int alphSize, int combinations, int do_aff, int gap_open, 
                        int all_elements, cost_matrices_3d_p res);
 
@@ -348,13 +356,16 @@ int
 cm_get_value (int a, int b, int *p, int alphSize);
 
 void
-cm_set_prepend (int a, int b, cost_matrices_2d_p c);
+cm_set_prepend_2d (int a, int b, cost_matrices_2d_p c);
 
 void
-cm_set_tail (int a, int b, cost_matrices_2d_p c);
+cm_set_tail_2d (int a, int b, cost_matrices_2d_p c);
 
 void
-cm_set_median (SEQT a, SEQT b, SEQT v, cost_matrices_2d_p c);
+cm_set_median_2d (SEQT a, SEQT b, SEQT v, cost_matrices_2d_p c);
+
+void
+cm_set_median_3d (SEQT a, SEQT b, SEQT cp, SEQT v, cost_matrices_3d_p c);
 
 void
 cm_print_median (SEQT* m, int w, int h);

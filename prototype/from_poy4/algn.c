@@ -795,7 +795,7 @@ algn_fill_plane (const seq_p seq1, int *precalcMtx, int seq1_len,
     const int *gap_row, *first_gap_row;
     int gapcode;
     /* A precalculated cost of a gap aligned with each base in the array */
-    gapcode = cm_get_gap (c);
+    gapcode = cm_get_gap_2d (c);
     gap_row = cm_get_precal_row (precalcMtx, gapcode, seq2_len);
     first_gap_row = cm_get_precal_row (precalcMtx, 0, seq2_len);
     newNWMtx = curRow;
@@ -1575,7 +1575,7 @@ algn_fill_plane_affine (const seq_p seq1, int *precalcMtx, int seq1_len,
     const int *gap_row, *first_gap_row;
     int gapcode;
     /* A precalculated cost of a gap aligned with each base in the array */
-    gapcode = cm_get_gap (c);
+    gapcode = cm_get_gap_2d (c);
     gap_row = cm_get_precal_row (precalcMtx, gapcode, seq2_len);
     first_gap_row = cm_get_precal_row (precalcMtx, 0, seq2_len);
     newNWMtx = curRow;
@@ -1690,9 +1690,8 @@ FILL_EXTEND_HORIZONTAL_NOBT (int sj_horizontal_extension, int sj_gap_extension, 
     open_cost = close_block_diagonal[j - 1] +
                 sj_gap_opening + sj_gap_extension;
     if (DEBUG_AFFINE)
-        printf ("The ext cost is %d and the open_cost is %d with gap_extension %d \
-            and gap opening %d, and sj_horizontal_extension %d\n", ext_cost, open_cost, sj_gap_extension, 
-                sj_gap_opening, sj_horizontal_extension);
+        printf ("Ext cost: %d, Open cost: %d, Gap extension: %d, gap opening: %d, sj_horizontal_extension: %d\n", 
+                ext_cost, open_cost, sj_gap_extension, sj_gap_opening, sj_horizontal_extension);
     if (ext_cost < open_cost)
         extend_horizontal[j] = ext_cost;
     else
@@ -1711,9 +1710,8 @@ FILL_EXTEND_HORIZONTAL (int sj_horizontal_extension, int sj_gap_extension, int s
     open_cost = close_block_diagonal[j - 1] +
                 sj_gap_opening + sj_gap_extension;
     if (DEBUG_AFFINE)
-        printf ("The ext cost is %d and the open_cost is %d with gap_extension %d \
-            and gap opening %d, and sj_horizontal_extension %d\n", ext_cost, open_cost, sj_gap_extension, 
-                sj_gap_opening, sj_horizontal_extension);
+        printf ("Ext cost: %d, Open cost: %d, Gap extension: %d, gap opening: %d, sj_horizontal_extension: %d\n", 
+                ext_cost, open_cost, sj_gap_extension, sj_gap_opening, sj_horizontal_extension);
     if (ext_cost < open_cost) {
         LOR_WITH_DIRECTION_MATRIX(BEGIN_HORIZONTAL, direction_matrix);
         extend_horizontal[j] = ext_cost;
@@ -1818,11 +1816,10 @@ FILL_CLOSE_BLOCK_DIAGONAL_NOBT(SEQT si_base, SEQT sj_base, SEQT si_no_gap,
     /*
     diag = cm_calc_cost(c->cost, si_no_gap, sj_no_gap, c->lcm);
     */
-    extra_gap_opening =
-        (sj_gap_opening < si_gap_opening)?si_gap_opening:sj_gap_opening;
+    extra_gap_opening = (sj_gap_opening < si_gap_opening)?si_gap_opening:sj_gap_opening;
     if (DEBUG_AFFINE) {
-        printf ("Between %d and %d: Diag : %d, Extra gap opening: %d\n", si_no_gap, sj_no_gap, diag, extra_gap_opening);
-        fflush (stdout);
+        //printf ("Between %d and %d: Diag : %d, Extra gap opening: %d\n", si_no_gap, sj_no_gap, diag, extra_gap_opening);
+        //fflush (stdout);
     }
     algn = prev_close_block_diagonal[j - 1] + diag;
     if (si_base == si_no_gap)
@@ -1861,8 +1858,8 @@ FILL_CLOSE_BLOCK_DIAGONAL(SEQT si_base, SEQT sj_base, SEQT si_no_gap,
     extra_gap_opening =
         (sj_gap_opening < si_gap_opening)?si_gap_opening:sj_gap_opening;
     if (DEBUG_AFFINE) {
-        printf ("Between %d and %d: Diag : %d, Extra gap opening: %d\n", si_no_gap, sj_no_gap, diag, extra_gap_opening);
-        fflush (stdout);
+        // printf ("Between %d and %d: Diag : %d, Extra gap opening: %d\n", si_no_gap, sj_no_gap, diag, extra_gap_opening);
+        // fflush (stdout);
     }
     algn = prev_close_block_diagonal[j - 1] + diag;
     if (si_base == si_no_gap)
@@ -2083,11 +2080,13 @@ initialize_matrices_affine_nobt (int go, const seq_p si, const seq_p sj,
     extend_vertical[0] = go;
     gap_row = cm_get_precal_row(precalcMtx, 0, lenj);
     if (DEBUG_AFFINE) {
+        printf("initialize_matrices_affine_nobt\n");
         printf ("\n\nThe gap opening parameter is %d\n", go);
-        print_array ("CB:", close_block_diagonal,  lenj);
-        print_array ("EB:", extend_block_diagonal, lenj);
-        print_array ("EV:", extend_vertical,       lenj);
-        print_array ("EH:", extend_horizontal,     lenj);
+        printf ("\nPre-initialized values:\n");
+        print_array  ("CB :", close_block_diagonal, lenj);
+        print_array  ("EB :", extend_block_diagonal, lenj);
+        print_array  ("EV :", extend_vertical, lenj);
+        print_array  ("EH :", extend_horizontal, lenj);
     }
     for (; j <= lenj; j++) {
         jc = seq_get_element(sj, j);
@@ -2099,15 +2098,16 @@ initialize_matrices_affine_nobt (int go, const seq_p si, const seq_p sj,
         extend_vertical[j] = INT_MAX;
     }
     if (DEBUG_AFFINE) {
-        printf ("\n\nJust initialized\n");
-        print_array ("CB:", close_block_diagonal,  lenj);
-        print_array ("EB:", extend_block_diagonal, lenj);
-        print_array ("EV:", extend_vertical,       lenj);
-        print_array ("EH:", extend_horizontal,     lenj);
+        printf("initialize_matrices_affine_nobt\n");
+        printf ("\nInitialized values:\n");
+        print_array  ("CB :", close_block_diagonal, lenj);
+        print_array  ("EB :", extend_block_diagonal, lenj);
+        print_array  ("EV :", extend_vertical, lenj);
+        print_array  ("EH :", extend_horizontal, lenj);
         printf ("Finished initialization\n\n");
     }
     /* for (; i <= leni; i++) { */
-        prev_extend_vertical = extend_vertical;
+        prev_extend_vertical   = extend_vertical;
         extend_vertical       += (1 + lenj);
         close_block_diagonal  += (1 + lenj);
         extend_block_diagonal += (1 + lenj);
@@ -2136,20 +2136,22 @@ initialize_matrices_affine (int go, const seq_p si, const seq_p sj,
     SEQT jc, jp, ic, ip;
     leni = seq_get_len(si) - 1; //TODO: is this for deleting opening gap?
     lenj = seq_get_len(sj) - 1; //TODO: is this for deleting opening gap?
-    final_cost_matrix[0] = 0;
-    close_block_diagonal[0] = 0;
+    final_cost_matrix[0]     = 0;
+    close_block_diagonal[0]  = 0;
     extend_block_diagonal[0] = 0;
-    extend_horizontal[0] = go;
-    extend_vertical[0] = go;
-    direction_matrix[0] = 0xFFFF;
+    extend_horizontal[0]     = go;
+    extend_vertical[0]       = go;
+    direction_matrix[0]      = 0xFFFF;
     gap_row = cm_get_precal_row(precalcMtx, 0, lenj);
     if (DEBUG_AFFINE) {
+        printf("initialize_matrices_affine\n");
         printf ("\n\nThe gap opening parameter is %d\n", go);
-        print_array ("CB:", close_block_diagonal,  lenj);
-        print_array ("EB:", extend_block_diagonal, lenj);
-        print_array ("EV:", extend_vertical,       lenj);
-        print_array ("EH:", extend_horizontal,     lenj);
-        print_array ("FC:", final_cost_matrix,     lenj);
+        printf ("\nPre-initialized values:\n");
+        print_array ("CB :", close_block_diagonal,  lenj);
+        print_array ("EB :", extend_block_diagonal, lenj);
+        print_array ("EV :", extend_vertical,       lenj);
+        print_array ("EH :", extend_horizontal,     lenj);
+        print_array ("FC :", final_cost_matrix,     lenj);
     }
     for (; j <= lenj; j++) {
         jc = seq_get_element(sj, j);
@@ -2164,13 +2166,14 @@ initialize_matrices_affine (int go, const seq_p si, const seq_p sj,
         direction_matrix[j]      = DO_HORIZONTAL | END_HORIZONTAL;
     }
     if (DEBUG_AFFINE) {
-        printf ("Just initialized\n");
-        print_array ("EH:", extend_horizontal,     lenj);
-        print_array ("EV:", extend_vertical,       lenj);
-        print_array ("EB:", extend_block_diagonal, lenj);
-        print_array ("CB:", close_block_diagonal,  lenj);
-        print_array ("FC:", final_cost_matrix,     lenj);
-        printf ("Finished initialized\n");
+        printf("initialize_matrices_affine_nobt\n");
+        printf ("\nInitialized values:\n");
+        print_array  ("CB :", close_block_diagonal, lenj);
+        print_array  ("EB :", extend_block_diagonal, lenj);
+        print_array  ("EV :", extend_vertical, lenj);
+        print_array  ("EH :", extend_horizontal, lenj);
+        print_array  ("FC :", final_cost_matrix, lenj);
+        printf ("Finished initializing.\n");
     }
     /* for (; i <= leni; i++) { */
         prev_extend_vertical   = extend_vertical;
@@ -2252,10 +2255,12 @@ algn_fill_plane_3_affine_nobt (const seq_p si, const seq_p sj, int leni, int len
     gap_row = cm_get_precal_row(precalcMtx, 0, lenj);
     end_pos = (lenj - leni) + 8;
     if (DEBUG_AFFINE) {
-        print_array ("EH:", extend_horizontal, lenj);
-        print_array ("EV:", extend_vertical, lenj);
-        print_array ("EB:", extend_block_diagonal, lenj);
-        print_array ("CB:", close_block_diagonal, lenj);
+        printf("\n--algn fill plane 3 affine nobt\n");
+        printf("Before initializing:\n");
+        print_array  ("CB :", close_block_diagonal, lenj);
+        print_array  ("EB :", extend_block_diagonal, lenj);
+        print_array  ("EV :", extend_vertical, lenj);
+        print_array  ("EH :", extend_horizontal, lenj);
     }
     if (end_pos < 40) end_pos = 40;
     if (end_pos > lenj) end_pos = lenj;
@@ -2333,10 +2338,12 @@ algn_fill_plane_3_affine_nobt (const seq_p si, const seq_p sj, int leni, int len
             extend_block_diagonal[end_pos] = INT_MAX;
         }
         if (DEBUG_AFFINE) {
-            print_array ("EH:", extend_horizontal, lenj);
-            print_array ("EV:", extend_vertical, lenj);
-            print_array ("EB:", extend_block_diagonal, lenj);
-            print_array ("CB:", close_block_diagonal, lenj);
+            printf("algn fill plane 3 affine nobt\n");
+            printf("After initializing:\n");
+            print_array  ("CB :", close_block_diagonal, lenj);
+            print_array  ("EB :", extend_block_diagonal, lenj);
+            print_array  ("EV :", extend_vertical, lenj);
+            print_array  ("EH :", extend_horizontal, lenj);
         }
     }
     res = extend_horizontal[lenj];
@@ -2374,12 +2381,14 @@ algn_fill_plane_3_affine (const seq_p si, const seq_p sj, int leni, int lenj,
     gap_row = cm_get_precal_row(precalcMtx, 0, lenj);
     end_pos = (lenj - leni) + 8;
     if (DEBUG_AFFINE) {
-        print_array ("EH:", extend_horizontal, lenj);
-        print_array ("EV:", extend_vertical, lenj);
-        print_array ("EB:", extend_block_diagonal, lenj);
-        print_array ("CB:", close_block_diagonal, lenj);
-        print_array ("FC:", final_cost_matrix, lenj);
-        print_dirMtx ("DM:", direction_matrix, lenj);
+        printf("\n--algn fill plane 3 affine\n");
+        printf("Before initializing:\n");
+        print_array  ("CB :", close_block_diagonal, lenj);
+        print_array  ("EB :", extend_block_diagonal, lenj);
+        print_array  ("EV :", extend_vertical, lenj);
+        print_array  ("EH :", extend_horizontal, lenj);
+        print_array  ("FC :", final_cost_matrix, lenj);
+        print_dirMtx ("DM :", direction_matrix, lenj);
     }
     if (end_pos < 40) end_pos = 40;
     if (end_pos > lenj) end_pos = lenj;
@@ -2475,12 +2484,14 @@ algn_fill_plane_3_affine (const seq_p si, const seq_p sj, int leni, int lenj,
             extend_block_diagonal[end_pos] = INT_MAX;
         }
         if (DEBUG_AFFINE) {
-            print_array ("EH:", extend_horizontal, lenj);
-            print_array ("EV:", extend_vertical, lenj);
-            print_array ("EB:", extend_block_diagonal, lenj);
-            print_array ("CB:", close_block_diagonal, lenj);
-            print_array ("FC:", final_cost_matrix, lenj);
-            print_dirMtx ("DM:", direction_matrix, lenj);
+            printf("\n--algn fill plane 3 affine\n");
+            printf("Inside loop:\n");
+            print_array  ("CB :", close_block_diagonal, lenj);
+            print_array  ("EB :", extend_block_diagonal, lenj);
+            print_array  ("EV :", extend_vertical, lenj);
+            print_array  ("EH :", extend_horizontal, lenj);
+            print_array  ("FC :", final_cost_matrix, lenj);
+            print_dirMtx ("DM :", direction_matrix, lenj);
         }
     }
     res = final_cost_matrix[lenj];
@@ -3294,7 +3305,7 @@ int
 algn_calculate_from_2_aligned (seq_p seq1, seq_p seq2, cost_matrices_2d_p c, int *matrix) {
     int i, res = 0, gap_opening, gap_row = 0;
     SEQT gap, seq1b, seq2b;
-    gap = cm_get_gap (c);
+    gap = cm_get_gap_2d (c);
     /* We initialize i to the proper location */
     seq1b = seq_get_element (seq1, 0);
     seq2b = seq_get_element (seq2, 0);
@@ -3498,7 +3509,7 @@ algn_CAML_print_bcktrck (value seq1, value seq2, value matrix) {
 void
 algn_print_dynmtrx_2d (const seq_p seq1, const seq_p seq2, nw_matrices_p matrices) {
     int i, j;
-
+    /*
     const int seqLen1 = seq_get_len (seq1);
     const int seqLen2 = seq_get_len (seq2);
 
@@ -3571,45 +3582,26 @@ algn_print_dynmtrx_2d (const seq_p seq1, const seq_p seq2, nw_matrices_p matrice
   
         for (j = 0; j < lesserSeqLen; j++) {
             unsigned short dirToken = nw_dirMtx[lesserSeqLen * i + j];
-            /*
-            if (dirToken & ALIGN)    printf ("A");
-            if (dirToken & DELETE)   printf ("D");
-            if (dirToken & INSERT)   printf ("I");
-            if (dirToken & ALIGN_V)  printf ("VA");
-            if (dirToken & DELETE_V) printf ("VD");
-            if (dirToken & ALIGN_H)  printf ("HA");
-            if (dirToken & INSERT_H) printf ("HI");
-            printf("\t");
-            */
+
+            //if (dirToken & ALIGN)    printf ("A");
+            //if (dirToken & DELETE)   printf ("D");
+            //if (dirToken & INSERT)   printf ("I");
+            //if (dirToken & ALIGN_V)  printf ("VA");
+            //if (dirToken & DELETE_V) printf ("VD");
+            //if (dirToken & ALIGN_H)  printf ("HA");
+            //if (dirToken & INSERT_H) printf ("HI");
+            //printf("\t");
+
             printf("    "); // leading pad
             wprintf(L"%s", dirToken & DELETE ? (wchar_t *) "\u2191" : (wchar_t *) " ");
             wprintf(L"%s", dirToken & ALIGN  ? (wchar_t *) "\u2196" : (wchar_t *) " ");
             wprintf(L"%s", dirToken & INSERT ? (wchar_t *) "\u2190" : (wchar_t*) " ");
             printf(" ");
-            /*
-            if (dirToken == INSERT)
-                wprintf(L"%7s ", (wchar_t *) "\u2190");
-            } else if (dirToken == DELETE) {
-                wprintf(L"%7s ", (wchar_t *) "\u2191");
-            } else if (dirToken == ALIGN) {
-                wprintf(L"%7s ", (wchar_t *) "\u2191");
-            } else {
-                printf("      ? ");
-            }
-            */
-            /*
-            //wprintf(L"name is %ls\n", name);
-            // if (j == 0 && i == 0) {
-            //     printf("%7d ", 0);
-            // } else {
-                // printf ("%7d ", (int) nw_dirMtx[lesserSeqLen * i + j]);
-            // }
-            */
         }
         printf ("\n");
     }
 
-
+    */
       return;
 }
 
@@ -3718,7 +3710,7 @@ backtrack_2d ( const seq_p seq1, const seq_p seq2,
                     }
                 }
                 else if (*end & INSERT) {
-                    new_item_for_ret_seq1 = cm_get_gap (c);
+                    new_item_for_ret_seq1 = cm_get_gap_2d (c);
                     my_prepend(ret_seq1, new_item_for_ret_seq1);
                     idx_seq2--;
                     new_item_for_ret_seq2 = my_get(seq2, idx_seq2);
@@ -3734,7 +3726,7 @@ backtrack_2d ( const seq_p seq1, const seq_p seq2,
                     idx_seq1--;
                     new_item_for_ret_seq1 = my_get (seq1, idx_seq1);
                     my_prepend(ret_seq1, new_item_for_ret_seq1);
-                    new_item_for_ret_seq2 = cm_get_gap (c);
+                    new_item_for_ret_seq2 = cm_get_gap_2d (c);
                     my_prepend(ret_seq2, new_item_for_ret_seq2);
                     end -= l;
                     if (DEBUG_ALGN) {
@@ -3774,13 +3766,13 @@ backtrack_2d ( const seq_p seq1, const seq_p seq2,
                     idx_seq1--;
                     new_item_for_ret_seq1 = my_get(seq1, idx_seq1);
                     my_prepend(ret_seq1, new_item_for_ret_seq1);
-                    new_item_for_ret_seq2 = cm_get_gap (c);
+                    new_item_for_ret_seq2 = cm_get_gap_2d (c);
                     my_prepend(ret_seq2, new_item_for_ret_seq2);
                     end -= l;
                 }
                 else {
                     assert (*end & INSERT);
-                    new_item_for_ret_seq1 = cm_get_gap (c);
+                    new_item_for_ret_seq1 = cm_get_gap_2d (c);
                     my_prepend(ret_seq1, new_item_for_ret_seq1);
                     idx_seq2--;
                     new_item_for_ret_seq2 = my_get(seq2, idx_seq2);
@@ -3807,14 +3799,14 @@ backtrack_2d ( const seq_p seq1, const seq_p seq2,
                         idx_seq1--;
                         new_item_for_ret_seq1 = my_get (seq1, idx_seq1);
                         my_prepend(ret_seq1, new_item_for_ret_seq1);
-                        new_item_for_ret_seq2 = cm_get_gap (c);
+                        new_item_for_ret_seq2 = cm_get_gap_2d (c);
                         my_prepend(ret_seq2, new_item_for_ret_seq2);
                         end -= l;
                         shifter = 0;
                     } else {
                         if (DEBUG_BT) printf ("3\t");
                         assert (SHIFT_H == shifter);
-                        new_item_for_ret_seq1 = cm_get_gap (c);
+                        new_item_for_ret_seq1 = cm_get_gap_2d (c);
                         my_prepend(ret_seq1, new_item_for_ret_seq1);
                         idx_seq2--;
                         new_item_for_ret_seq2 = my_get(seq2, idx_seq2);
@@ -3829,7 +3821,7 @@ backtrack_2d ( const seq_p seq1, const seq_p seq2,
                         shifter = SHIFT_H;
                     } else if (SHIFT_H == shifter) {
                         if (DEBUG_BT) printf ("5\t");
-                        new_item_for_ret_seq1 = cm_get_gap (c);
+                        new_item_for_ret_seq1 = cm_get_gap_2d (c);
                         my_prepend(ret_seq1, new_item_for_ret_seq1);
                         idx_seq2--;
                         new_item_for_ret_seq2 = my_get(seq2, idx_seq2);
@@ -3849,7 +3841,7 @@ backtrack_2d ( const seq_p seq1, const seq_p seq2,
                         idx_seq1--;
                         new_item_for_ret_seq1 = my_get (seq1, idx_seq1);
                         my_prepend(ret_seq1, new_item_for_ret_seq1);
-                        new_item_for_ret_seq2 = cm_get_gap (c);
+                        new_item_for_ret_seq2 = cm_get_gap_2d (c);
                         my_prepend(ret_seq2, new_item_for_ret_seq2);
                         end -= l;
                     } else {
@@ -3873,13 +3865,13 @@ backtrack_2d ( const seq_p seq1, const seq_p seq2,
                         idx_seq1--;
                         new_item_for_ret_seq1 = my_get (seq1, idx_seq1);
                         my_prepend(ret_seq1, new_item_for_ret_seq1);
-                        new_item_for_ret_seq2 = cm_get_gap (c);
+                        new_item_for_ret_seq2 = cm_get_gap_2d (c);
                         my_prepend(ret_seq2, new_item_for_ret_seq2);
                         end -= l;
                         shifter = 0;
                     } else {
                         assert (SHIFT_H == shifter);
-                        new_item_for_ret_seq1 = cm_get_gap (c);
+                        new_item_for_ret_seq1 = cm_get_gap_2d (c);
                         my_prepend(ret_seq1, new_item_for_ret_seq1);
                         idx_seq2--;
                         new_item_for_ret_seq2 = my_get(seq2, idx_seq2);
@@ -3894,7 +3886,7 @@ backtrack_2d ( const seq_p seq1, const seq_p seq2,
                         idx_seq1--;
                         new_item_for_ret_seq1 = my_get (seq1, idx_seq1);
                         my_prepend(ret_seq1, new_item_for_ret_seq1);
-                        new_item_for_ret_seq2 = cm_get_gap (c);
+                        new_item_for_ret_seq2 = cm_get_gap_2d (c);
                         my_prepend(ret_seq2, new_item_for_ret_seq2);
                         end -= l;
                     } else {
@@ -3905,7 +3897,7 @@ backtrack_2d ( const seq_p seq1, const seq_p seq2,
                     if (0 == shifter)
                         shifter = SHIFT_H;
                     else if (SHIFT_H == shifter) {
-                        new_item_for_ret_seq1 = cm_get_gap (c);
+                        new_item_for_ret_seq1 = cm_get_gap_2d (c);
                         my_prepend(ret_seq1, new_item_for_ret_seq1);
                         idx_seq2--;
                         new_item_for_ret_seq2 = my_get(seq2, idx_seq2);
@@ -4155,10 +4147,10 @@ algn_get_median_2d_no_gaps (seq_p seq1, seq_p seq2, cost_matrices_2d_p m, seq_p 
     begin2 = seq_get_begin (seq2);
     for (i = seq_get_len (seq1) - 1; i >= 0; i--) {
         interm = cm_get_median (m, begin1[i], begin2[i]);
-        if (interm != cm_get_gap (m))
+        if (interm != cm_get_gap_2d (m))
             seq_prepend (sm, interm);
     }
-    seq_prepend (sm, cm_get_gap (m));
+    seq_prepend (sm, cm_get_gap_2d (m));
     return;
 }
 
@@ -4233,7 +4225,7 @@ algn_ancestor_2 (seq_p seq1, seq_p seq2, cost_matrices_2d_p m, seq_p sm ) {
     int i, gap, is_combinations, cost_model;
     begin1 = seq_get_begin (seq1);
     begin2 = seq_get_begin (seq2);
-    gap = cm_get_gap (m);
+    gap = cm_get_gap_2d (m);
     is_combinations = m->combinations;
     cost_model = m->cost_model_type;
     for (i = seq_get_len (seq1) - 1; i >= 0; i--) {

@@ -25,7 +25,7 @@
 void seq_print(seq_p inSeq, int num) {
     SEQT * start = seq_get_begin(inSeq);
     SEQT * end   = seq_get_end(inSeq);
-    printf("Seq num: %d\n", num);
+    printf("Seq num: %2d of length %3d\n", num, inSeq->len);
     for( ; start < end; start++) {
         printf("%2d, ", *start);
     }

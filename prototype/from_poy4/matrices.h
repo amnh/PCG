@@ -70,7 +70,7 @@ struct matrices {
     int *precalc;                 /* a three-dimensional matrix that holds
                                    * the transition costs for the entire alphabet (of all three sequences)
                                    * with the sequence seq3. The columns are the bases of seq3, and the rows are 
-                                   * each of the alphabet characters (possibly inc including ambiguities). See 
+                                   * each of the alphabet characters (possibly including ambiguities). See 
                                    * cm_precalc_4algn_3d for more information). 
                                    */
 };
@@ -99,7 +99,7 @@ mat_size_of_2d_matrix (int w, int h);
  * sequences of length w, d and h. Note that for 2d alignments is necessary to
  * set h=0, and uk=0. 
  */
-int
+void
 mat_setup_size (nw_matrices_p m, int len_seq1, int len_seq2, int len_seq3, int is_ukk, int lcm);
 
 /* 
