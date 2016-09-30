@@ -232,13 +232,6 @@ void * setupCostMtx(int* tcm, int alphSize, int gap_open, int is_2d) {
 
 int main() {
 
-    const int DO_2D  = 1;
-    const int DO_AFF = 0;
-    const int DO_3D  = 1;
-
-    const int IDENTITY_COST = 0;
-    const int INDEL_COST    = 100;
-    const int SUB_COST      = 1;
 
 /******************************** set up and allocate all variables and structs ************************************/
 
@@ -253,7 +246,7 @@ int main() {
     int seq1Len               = 16;
     int s2_vals[SEQ_CAPACITY] = {16, 2,1          ,4,4,4,4,4,4,4,4}; // don't forget to change lengths!!!
     int seq2Len               = 11;
-    int s3_vals[SEQ_CAPACITY] = {16, 3,1,9,9,8,4,4}; // don't forget to change lengths!!!
+    int s3_vals[SEQ_CAPACITY] = {16, 2,1,9,9,8,4,4}; // don't forget to change lengths!!!
     int seq3Len               = 8;
 
     seq_p seq1    = initializeSeq(SEQ_CAPACITY, s1_vals, seq1Len);
@@ -446,19 +439,21 @@ int main() {
         printf("\n\n\n***************** Align 2 sequences affine ********************\n\n");
 
         printf("Original affine 2d sequences:\n");
-        seq_print(seq1, 1);
-        seq_print(seq2, 2);
-
+        
         seq_p longerSequence = lenSeq1 > lenSeq2 ? seq1 : seq2;
-        seq_p lesserSequence = lenSeq1 > lenSeq2 ? seq2 : seq1;
+        seq_p shorterSequence = lenSeq1 > lenSeq2 ? seq2 : seq1;
+
+        seq_print(longerSequence, 1);
+        seq_print(shorterSequence, 2);
 
         cm_precalc_4algn(costMtx2d_affine, algn_mtxs2dAffine, longerSequence);
 
         // TODO: consider moving all of this into algn.
         //       the following three fns were initially not declared in algn.h
-        initialize_matrices_affine (costMtx2d_affine->gap_open, lesserSequence, longerSequence, 
-                                    costMtx2d_affine, close_block_diagonal,
-                                    extend_block_diagonal, extend_vertical, extend_horizontal,
+        initialize_matrices_affine (costMtx2d_affine->gap_open, shorterSequence, longerSequence, 
+                                    costMtx2d_affine, 
+                                    close_block_diagonal, extend_block_diagonal, 
+                                    extend_vertical, extend_horizontal,
                                     final_cost_matrix, direction_matrix, precalcMtx);
 
         printf("\n");
@@ -467,8 +462,8 @@ int main() {
         printf("extend_vertical           : %d\n", *extend_vertical           );
         printf("extend_horizontal         : %d\n", *extend_horizontal         );
         printf("final_cost_matrix         : %d\n", *final_cost_matrix         );
-    //    printf("gap_open_prec             : %d\n", *gap_open_prec             );
-    //    printf("s_horizontal_gap_extension: %d\n", *s_horizontal_gap_extension);
+        printf("gap_open_prec             : %d\n", *gap_open_prec             );
+        printf("s_horizontal_gap_extension: %d\n", *s_horizontal_gap_extension);
         printf("\n");
 
        // for (int *i = matrix_2d, j = 0; i < matrix_2d + algn_mtxs2dAffine->len; i++, j++) {
@@ -479,9 +474,10 @@ int main() {
        // }
 
 
-        // shorter first TODO: is this consistent?
-        algnCost = algn_fill_plane_3_affine (lesserSequence, longerSequence, 
-                                             lesserSequence->len - 1, longerSequence->len - 1,
+        // shorter first
+        // TODO: why isn't this consistent with next fn call?
+        algnCost = algn_fill_plane_3_affine (shorterSequence, longerSequence, 
+                                             shorterSequence->len - 1, longerSequence->len - 1,
                                              final_cost_matrix, direction_matrix, costMtx2d_affine, 
                                              extend_horizontal, extend_vertical,
                                              close_block_diagonal, extend_block_diagonal, 
@@ -496,8 +492,9 @@ int main() {
         }
 
 
-        // shorter first TODO: fix this to make it consistent
-        backtrace_affine (direction_matrix, lesserSequence, longerSequence, medianSeq, empty_medianSeq,
+        // shorter first
+        // TODO: fix this to make it consistent
+        backtrace_affine (direction_matrix, shorterSequence, longerSequence, medianSeq, empty_medianSeq,
                           retSeq1, retSeq2, costMtx2d_affine);
 
         printf("\nAligned affine 2d sequences\n");
