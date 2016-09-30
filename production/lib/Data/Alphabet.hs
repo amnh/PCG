@@ -128,8 +128,14 @@ instance Show a => Show (Alphabet a) where
                    , "}"
                    ]
 
-instance (Arbitrary a, Ord a, IsString a) => Arbitrary (Alphabet a) where
-  arbitrary = fromSymbols <$> listOf1 arbitrary
+
+instance (Ord a, IsString a) => Arbitrary (Alphabet a) where
+    arbitrary = do
+        n <- (arbitrary :: Gen Int) `suchThat` (\x -> 0 < x && x <= 62)
+        pure . fromSymbols $ take n symbolSpace
+      where
+        -- We do this to simplify Aplahbet generation, ensuring that there is at least one non gap symbol.
+        symbolSpace = fromString . pure <$> ['0'..'9'] <> ['A'..'Z'] <> ['a'..'z'] <> "?-"
 
 
 -- | Constructs an 'Alphabet' from a 'Foldable' structure of symbols which are

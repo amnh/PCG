@@ -240,9 +240,9 @@ instance Arbitrary DynamicChar where
 instance Exportable DynamicChar where
     toExportable (DC bm@(BitMatrix _ bv)) =
         ExportableCharacterSequence
-        { characterCount = x
-        , characterWidth = y
-        , bufferChunks   = fmap fromIntegral $ ((bv @@) <$> slices) <> tailWord
+        { elementCount = x
+        , elementWidth = y
+        , bufferChunks = fmap fromIntegral $ ((bv @@) <$> slices) <> tailWord
         }
       where
         x = numRows bm

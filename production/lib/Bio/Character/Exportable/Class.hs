@@ -27,7 +27,7 @@ class Exportable c where
 -- | A structure used for FFI calls (and maybe GPU stuff)
 data ExportableCharacterSequence
    = ExportableCharacterSequence
-   { characterCount :: Int
-   , characterWidth :: Int
-   , bufferChunks   :: [CULong]
+   { elementCount :: Int
+   , elementWidth :: Int
+   , bufferChunks :: [CULong]
    } deriving (Eq, Show)   

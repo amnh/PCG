@@ -197,10 +197,13 @@ testEncodableStaticCharacterInstanceBitVector = testGroup "BitVector instance of
         logicalAndIsomorphismWithSetIntersection = testProperty "Set.fromList (decodeElement alphabet (encodeChar alphabet xs .&. encodeChar alphabet ys)) == Set.fromList (toList alphabet) `Set.intersect` (toList xs `Set.intersection` toList ys)" f
           where
             f :: AlphabetAndTwoAmbiguityGroups -> Bool
-            f input = lhs == rhs
+            f input
+              | zeroBits == anded = null rhs
+              | otherwise         = lhs == rhs
               where
-                lhs = Set.fromList . toList $ decodeElement alphabet (encodeChar' alphabet (fromFoldable sxs) .&. encodeChar' alphabet (fromFoldable sys))
-                rhs = sxs `Set.intersection` sys
+                lhs   = Set.fromList . toList $ decodeElement alphabet anded
+                anded = encodeChar' alphabet (fromFoldable sxs) .&. encodeChar' alphabet (fromFoldable sys)
+                rhs   = sxs `Set.intersection` sys
                 (alphabet, sxs, sys) = gatherAlphabetAndAmbiguitySets input
 
 gatherAlphabetAndAmbiguitySets :: AlphabetAndTwoAmbiguityGroups -> (Alphabet String, Set String, Set String)

@@ -221,9 +221,9 @@ instance Arbitrary StaticCharacterBlock where
 instance Exportable StaticCharacterBlock where
     toExportable (SCB bm@(BitMatrix _ bv)) =
         ExportableCharacterSequence
-        { characterCount = x
-        , characterWidth = y
-        , bufferChunks   = fmap fromIntegral $ ((bv @@) <$> slices) <> tailWord
+        { elementCount = x
+        , elementWidth = y
+        , bufferChunks = fmap fromIntegral $ ((bv @@) <$> slices) <> tailWord
         }
       where
         x = numRows bm
