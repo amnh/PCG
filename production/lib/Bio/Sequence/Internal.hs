@@ -1,6 +1,6 @@
 -----------------------------------------------------------------------------
 -- |
--- Module      :  Bio.Character.Dynamic.Coded.Internal
+-- Module      :  Bio.Character.Sequence.Internal
 -- Copyright   :  (c) 2015-2015 Ward Wheeler
 -- License     :  BSD-style
 --
@@ -20,7 +20,7 @@
 -- TODO: fix and remove this ghc option (is it needed for Arbitrary?):
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
-module Bio.Character.Dynamic.Coded.Internal
+module Bio.Character.Sequence.Internal
   ( DynamicChar (DC)
   , DynamicChars
   ) where
