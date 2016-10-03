@@ -25,7 +25,7 @@ import Data.Semigroup
 
 class EncodableStreamElement c => EncodableStaticCharacter c where
 
-  encodeStatic :: Eq a => Alphabet a -> NonEmpty a -> c
+  encodeStatic :: Eq a => Alphabet a -> AmbiguityGroup a -> c
   encodeStatic = encodeElement
 
 

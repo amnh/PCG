@@ -39,6 +39,7 @@
 
 module Data.Alphabet
   ( Alphabet()
+  , AmbiguityGroup
   , alphabetStateNames
   , alphabetSymbols
   , fromSymbols
@@ -50,6 +51,7 @@ import           Control.Monad.State.Strict
 import           Data.Foldable
 import           Data.Key
 import           Data.List                    (intercalate, sort)
+import           Data.List.NonEmpty           (NonEmpty)
 import           Data.Maybe
 import           Data.Monoid
 import           Data.Set                     (insert)
@@ -64,6 +66,11 @@ import           Test.QuickCheck.Arbitrary.Instances ()
    code as "-" & "?", respectively, before this module is used, i.e., as output 
    from either parsers or in unification step.
  -}
+
+-- |
+-- A non empty collection of symbols from an 'Alphabet'.
+type AmbiguityGroup a = NonEmpty a
+
 
 -- |
 -- A collection of symbols and optional corresponding state names.

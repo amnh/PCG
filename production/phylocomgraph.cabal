@@ -114,7 +114,8 @@ library
                        Bio.Character.Static
                        Bio.Metadata
                        Bio.Metadata.CharacterName
-                       Bio.Metadata.Sequence.SharedContinugousMetatdata
+                       Bio.Sequence.Bin
+                       Bio.Sequence.SharedContinugousMetatdata
                        Bio.PhyloGraph
                        Bio.PhyloGraph.DAG
                        Bio.PhyloGraph.Edge
@@ -706,6 +707,6 @@ Test-Suite testsuite
                        Bio.PhyloGraph.DAG.Test
                        Analysis.Parsimony.Binary.Constraints
                        Analysis.Parsimony.Binary.SequentialAlign
-
+                       Bio.Character.Static.Test
 --                       Analysis.Parsimony.Binary.SequentialAlign.SeqAlignFFI
 

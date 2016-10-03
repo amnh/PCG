@@ -34,6 +34,8 @@ import           Test.Tasty
 --import           Test.Tasty.HUnit
 import           Test.Tasty.QuickCheck
 
+import Debug.Trace (trace)
+
 standardAlph :: Alphabet String
 standardAlph = fromSymbols $ V.fromList ["A", "C", "G", "T", "-"]
 
@@ -101,7 +103,7 @@ traversalProperties = testGroup "Properties of the common binary traversal" [opT
                 checkTwice :: StandardSolution -> Bool
                 checkTwice inSol = optOnce == optTwice
                     where
-                        optOnce  = solutionOptimization 1 inSol
+                        optOnce  = trace "Opt once success" $ solutionOptimization 1 inSol
                         optTwice = solutionOptimization 1 optOnce
         {-
         atLeaf = testProperty "If we start at a leaf, only that node changes" checkSimple

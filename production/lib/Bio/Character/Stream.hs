@@ -46,9 +46,9 @@ import Data.String          (IsString)
 -}
 class (Bits b, Num b) => EncodableStreamElement b where
 
-  decodeElement :: Eq a => Alphabet a -> b   -> NonEmpty a
+  decodeElement :: Eq a => Alphabet a -> b -> AmbiguityGroup a
 
-  encodeElement :: Eq a => Alphabet a -> NonEmpty a -> b
+  encodeElement :: Eq a => Alphabet a -> AmbiguityGroup a -> b
 
   stateCount    :: b -> Int
 
@@ -73,10 +73,10 @@ class ( EncodableStreamElement (Element s)
       , MonoTraversable s
       ) => EncodableStream s where
   
-  decodeStream :: (Ord a, IsString a) => Alphabet a -> s -> NonEmpty (NonEmpty a)
+  decodeStream :: (Ord a, IsString a) => Alphabet a -> s -> NonEmpty (AmbiguityGroup a)
   decodeStream alphabet = fromList . ofoldMap (\e -> [decodeElement alphabet e])
 
-  encodeStream :: (Ord a, IsString a) => Alphabet a -> NonEmpty (NonEmpty a) -> s
+  encodeStream :: (Ord a, IsString a) => Alphabet a -> NonEmpty (AmbiguityGroup a) -> s
 
   indexStream  :: s -> Int -> Element s
   indexStream xs i = fromMaybe raiseError $ xs `lookupStream` i
