@@ -31,24 +31,24 @@
  *  Likewise, for 3d we should need only 7 states and not 2^7 - 1.
  */
 #define DIAGONAL (1 << 0)
-#define BEHIND (1 << 1)
-#define UPPER (1 << 2)
-#define ALIGN DIAGONAL 
-#define INSERT BEHIND
-#define DELETE UPPER
-#define SHIFT_V 3
-#define SHIFT_H 6
-#define ALIGN_V (ALIGN << SHIFT_V)
+#define BEHIND   (1 << 1)
+#define UPPER    (1 << 2)
+#define ALIGN    DIAGONAL 
+#define INSERT   BEHIND
+#define DELETE   UPPER
+#define SHIFT_V  3
+#define SHIFT_H  6
+#define ALIGN_V  (ALIGN << SHIFT_V)
 #define DELETE_V (DELETE << SHIFT_V) 
-#define ALIGN_H (ALIGN << SHIFT_H)
+#define ALIGN_H  (ALIGN << SHIFT_H)
 #define INSERT_H (INSERT << SHIFT_H)
-#define P1 (1 << 0)
-#define P2 (1 << 1)
-#define P3 (1 << 2)
-#define S1 (1 << 3)     /** Align the sequence from s2 and s3 */
-#define S2 (1 << 4)     /** Align the three bases */
-#define S3 (1 << 5)     /** Align the sequence from s1 and s3 */
-#define SS (1 << 6)
+#define GAP13    (1 << 0)        /** Previously P1. Move in plane 1? Put gaps in for 1 & 3. */
+#define ALIGN12  (1 << 1)    /** Previously P2. Move in plane 2 */
+#define GAP23    (1 << 2)    /** Previously P3. Move in plane 3 */
+#define ALIGN23  (1 << 3)     /** Align the sequence from s2 and s3. Previously S1. */
+#define ALIGNALL (1 << 4)     /** Align the three bases. Previously S2. */
+#define ALIGN13  (1 << 5)     /** Align the sequence from s1 and s3. Previously S3. */
+#define GAP12    (1 << 6)     /** Previously SS. */
 
 // TODO: Can this be a char, instead?
 #define DIRECTION_MATRIX unsigned short

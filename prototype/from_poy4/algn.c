@@ -42,7 +42,7 @@
  *  @param gap_row is the cost of aligning each base in x with a gap.
  *  @param alg_row is the cost of aligning each base in x with the base
  *      represented by the base of the row of curRow in y.
- *  @param dirMtx is the directional matrix for the backtrack
+ *  @param dirMtx is the directional matrix for the backtrace
  *  @param c is the cost of an insertion. An insertion can only occur for one
  *      particular base in the alphabet, corresponding to the base in y represented
  *      by the row that is being filled.
@@ -379,7 +379,7 @@ algn_fill_row (int *curRow, const int *prevRow, const int *gap_row,
         tmp3 = prevRow[i - 1] + alg_row[i];
         /* check whether insertion is better */
         /* This option will allow all the possible optimal paths to be stored
-         * concurrently on the same backtrack matrix. This is important for the
+         * concurrently on the same backtrace matrix. This is important for the
          * sequences being able to choose the appropriate direction while
          * keeping the algorithm that assumes that seq2 is at most as long as seq1.
          * */
@@ -734,14 +734,14 @@ algn_fill_extending_left (const seq_p seq1, int *precalcMtx, int seq1_len,
         len--;
     }
     if (DEBUG_COST_M) {
-        printf ("S2 gap cost\n");
+        printf ("ALIGNALL gap cost\n");
         fflush (stdout);
         for (i = 0; i < seq2_len; i++) {
             printf ("%d\t", gap_row[i]);
             fflush (stdout);
         }
         printf ("\n");
-        printf ("The S1 - gap cost is %d\n", const_val);
+        printf ("The ALIGN23 - gap cost is %d\n", const_val);
         fflush (stdout);
     }
 
@@ -1032,7 +1032,7 @@ algn_fill_row_affine (int *curRow, const int *prevRow, const int *gap_row,
         htcurRow[i] = tmp2;
         /* check whether insertion is better */
         /* This option will allow all the possible optimal paths to be stored
-         * concurrently on the same backtrack matrix. This is important for the
+         * concurrently on the same backtrace matrix. This is important for the
          * sequences being able to choose the appropriate direction while
          * keeping the algorithm that assumes that seq2 is at most as long as seq1.
          * */
@@ -1505,7 +1505,7 @@ algn_fill_extending_left_affine (const seq_p seq1, int *precalcMtx, int seq1_len
         len--;
     }
     if (DEBUG_COST_M) {
-        printf ("S2 gap cost\n");
+        printf ("ALIGNALL gap cost\n");
         fflush (stdout);
         for (i = 0; i < seq2_len; i++) {
             printf ("%d\t", gap_row[i]);
@@ -2757,24 +2757,24 @@ algn_fill_plane_2_affine (const seq_p seq1, int *precalcMtx, int seq1_len, int s
 /** Fill parallel must have been called before */
 static inline void
 fill_moved (int seq3_len, const int *prev_m, const int *upper_m, 
-            const int *diag_m, const int *seq1_gap_seq3, const int *seq2_seq3_gap, 
+            const int *diag_m, const int *seq1_gap_seq3, const int *gap_seq2_seq3, 
             const int *seq1_seq2_seq3, int *curRow, DIRECTION_MATRIX *dirMtx) {
     int k, tmp0, tmp1, tmp;
     for (k = 1; k < seq3_len; k++) {
         tmp0 = upper_m[k] + seq1_gap_seq3[k];
         if (tmp0 < curRow[k]) {
             curRow[k] = tmp0;
-            dirMtx[k] = S3;
+            dirMtx[k] = ALIGN13;
         }
-        tmp = prev_m[k] + seq2_seq3_gap[k];
+        tmp = prev_m[k] + gap_seq2_seq3[k];
         if (tmp < curRow[k]) {
             curRow[k] = tmp;
-            dirMtx[k] = S1;
+            dirMtx[k] = ALIGN23;
         }
         tmp1 = diag_m[k] + seq1_seq2_seq3[k];
         if (tmp1 < curRow[k]) {
             curRow[k] = tmp1;
-            dirMtx[k] = S2;
+            dirMtx[k] = ALIGNALL;
         }
     }
 }
@@ -2786,23 +2786,23 @@ fill_parallel (int seq3_len, const int *prev_m, const int *upper_m,
     int k, tmp1, tmp;
     for (k = 0; k < seq3_len; k++) {
         curRow[k] = upper_m[k] + seq1_gap_gap;
-        dirMtx[k] = P3;
+        dirMtx[k] = GAP23;
         tmp = prev_m[k] + gap_seq2_gap;
         if (tmp < curRow[k]) {
             curRow[k] = tmp;
-            dirMtx[k] = P1;
+            dirMtx[k] = GAP13;
         }
         tmp1 = diag_m[k] + seq1_seq2_gap;
         if (tmp1 < curRow[k]) {
             curRow[k] = tmp1;
-            dirMtx[k] = P2;
+            dirMtx[k] = ALIGN12;
         }
     }
 }
 
 /*
- * @param seq1 is a pointer to the sequence seq1 (vertical), and 
- * @paramseq2 (horizontal 1) defined in the same way. 
+ * @param seq1 is a pointer to the sequence seq1 (vertical).
+ * @param seq2 (depth) is defined in the same way. 
  * @param precalcMtx is a pointer to the three dimensional matrix that holds
  *  the alignment values for all the combinations of the alphabet of sequences
  *  seq1, seq2 and seq3, with the sequence seq3 (see cm_precalc_4algn_3d for more
@@ -2811,7 +2811,7 @@ fill_parallel (int seq3_len, const int *prev_m, const int *upper_m,
  *  to be aligned
  * @param *curRow is the first element of the alignment cube that will
  *  hold the matrix of the dynamic programming algorithm 
- * @param dirMtx does the same job, holding the direction information for the backtrack. 
+ * @param dirMtx does the same job, holding the direction information for the backtrace. 
  * @param uk is the value of the Ukkonen barriers (not used in this version of the program).
  *
  * consider all combinations
@@ -2828,13 +2828,19 @@ int
 algn_fill_cube (const seq_p seq1, const seq_p seq2, const int *precalcMtx, 
                 int seq1_len, int seq2_len, int seq3_len, int *curRow, DIRECTION_MATRIX *dirMtx, 
                 int uk, int gap, int alphSize) {
+    if (DEBUG_CALL_ORDER) {
+        printf("  --algn_fill_cube\n");
+    }
     SEQT *seq1_p, *seq2_p;
+
     /* Each of the following arrays hold some precalculated value for the
-     * sequence seq3 which is not passed as argument. */
-    const int *seq2_seq3_gap;     /* Align a gap and the current base of seq2 with seq3 */
+     * sequence seq3 which is not passed as argument. 
+     */
+    const int *gap_seq2_seq3;     /* Align a gap and the current base of seq2 with seq3 */
     const int *seq1_gap_seq3;     /* Align the current base of seq1 and a gap with seq3 */
     const int *seq1_seq2_seq3;    /* Align the current bases of seq1 and seq2 with seq3 */
     const int *gap_gap_seq3;      /* Align two gaps with seq3 */
+    
     /* Each of the following arrays hold the arrays of the three dimensional
      * matrix that are located around the row that is filled on each iteration.
      * These rows are already filled in some previous iteration and used in
@@ -2858,70 +2864,77 @@ algn_fill_cube (const seq_p seq1, const seq_p seq2, const int *precalcMtx,
     if (DEBUG_MAT) {
         printf ("Three dimensional sequence alignment matrix.\n");
     }
-    /* Fill the first plane only at the beginning, this is special */
-    {
-        curRow[0] = 0;              /* Fill the first cell, of course to 0 */
-        dirMtx[0] = S2;
 
-        /* Fill first row based on precalculated row.
-         * The first row consists of aligning seq3 with gaps, we have that
-         * precalculated, so all we really need is to add up that vector.
-         */
-        gap_gap_seq3 = cm_get_row_precalc_3d (precalcMtx, seq3_len, alphSize, gap, gap);
-        for (i = 1; i < seq3_len; i++) {
-            curRow[i] = curRow[i - 1] + gap_gap_seq3[i];
-            dirMtx[i] = SS;
-        }
 
-        prev_m = curRow;
-        curRow += seq3_len;
-        dirMtx += seq3_len;
+    /****************************** Fill the first plane only at the beginning, this is special ******************************/
+    
+    curRow[0] = 0;              /* Fill the first cell, of course to 0 */
+    dirMtx[0] = ALIGNALL;
 
-        /* Finish filling the first plane.
-         * In this plane filling, all we really need to deal with is aligning seq2
-         * and seq3, as the first plane holds the inital gap of seq1. */
-        for (i = 1; i < seq2_len; i++, prev_m += seq3_len, curRow += seq3_len, dirMtx += seq3_len) {
-            seq2_seq3_gap = cm_get_row_precalc_3d (precalcMtx, seq3_len, alphSize, gap, seq2_p[i]);
+    /* Fill first row based on precalculated row.
+     * The first row consists of aligning seq3 with gaps, we have that
+     * precalculated, so all we really need is to add up that vector.
+     */
+    gap_gap_seq3 = cm_get_row_precalc_3d (precalcMtx, seq3_len, alphSize, gap, gap);
+    for (i = 1; i < seq3_len; i++) {
+        curRow[i] = curRow[i - 1] + gap_gap_seq3[i];
+        dirMtx[i] = GAP12;
+    }
 
-            /** Fill the first cell with the cost of extending the gap from the
-             * previous row */
-            curRow[0] = prev_m[0] + seq2_seq3_gap[0];
-            dirMtx[0] = P1;
-            /* Everyone else requires the three comparisons we used when filling
-             * rows as usual in a two dimensional alignment. Note that this code
-             * is almost the same as algn_fill_row, so if something is modified
-             * there, there will be need of modifying it in the same way here. */
-            /* TODO: Add the ukkonen barriers */
-            for (j = 1; j < seq3_len; j++) {
-                curRow[j] = prev_m[j] + seq2_seq3_gap[0];
-                dirMtx[j] = P1;
-                tmp = prev_m[j - 1] + seq2_seq3_gap[j];
-                if (tmp < curRow[j]) {
-                    curRow[j] = tmp;
-                    dirMtx[j] = S1;
-                }
-                tmp = curRow[j - 1] + gap_gap_seq3[j];
-                if (tmp < curRow[j]) {
-                    curRow[j] = tmp;
-                    dirMtx[j] = SS;
-                }
+    prev_m = curRow;
+    curRow += seq3_len;
+    dirMtx += seq3_len;
+
+    /* Finish filling the first plane.
+     * In this plane filling, all we really need to deal with is aligning seq2
+     * and seq3, as the first plane holds the inital gap of seq1. */
+    for (i = 1; i < seq2_len; i++, prev_m += seq3_len, curRow += seq3_len, dirMtx += seq3_len) {
+        gap_seq2_seq3 = cm_get_row_precalc_3d (precalcMtx, seq3_len, alphSize, gap, seq2_p[i]);
+
+        /** Fill the first cell with the cost of extending the gap from the
+         * previous row */
+        curRow[0] = prev_m[0] + gap_seq2_seq3[0];
+        dirMtx[0] = GAP13;
+        /* Everyone else requires the three comparisons we used when filling
+         * rows as usual in a two dimensional alignment. Note that this code
+         * is almost the same as algn_fill_row, so if something is modified
+         * there, there will be need of modifying it in the same way here. */
+        /* TODO: Add the ukkonen barriers */
+        for (j = 1; j < seq3_len; j++) {
+            curRow[j] = prev_m[j] + gap_seq2_seq3[0];
+            dirMtx[j] = GAP13;
+            tmp = prev_m[j - 1] + gap_seq2_seq3[j];
+            if (tmp < curRow[j]) {
+                curRow[j] = tmp;
+                dirMtx[j] = ALIGN23;
+            }
+            tmp = curRow[j - 1] + gap_gap_seq3[j];
+            if (tmp < curRow[j]) {
+                curRow[j] = tmp;
+                dirMtx[j] = GAP12;
             }
         }
-        if (DEBUG_COST_M) {  /* Printing the cost matrix */
-            int *tmp_curRow_debug;
-            tmp_curRow_debug = tmp_curRow;
-            printf ("\n");
-            for (i = 0; i < seq2_len; i++) {
-                for (j = 0; j < seq3_len; j++)
-                    printf ("%d\t", tmp_curRow_debug[j]);
-                tmp_curRow_debug += seq2_len;
-                printf ("\n");
+    }
+    if (DEBUG_COST_M) {  /* Printing the cost matrix */
+        int *tmp_curRow_debug;
+        tmp_curRow_debug = tmp_curRow;
+        printf ("\n");
+        for (i = 0; i < seq2_len; i++) {
+            for (int l = seq2_len - i; l > 1; l--) {
+                printf("  ");
             }
+            for (j = 0; j < seq3_len; j++)
+                printf ("%-6d", tmp_curRow_debug[j]);
+            tmp_curRow_debug += seq2_len;
             printf ("\n");
         }
-    } /* Finished the first plane filling */
+        printf ("\n");
+    }
+    /****************************** Finished the first plane filling ******************************/
 
-    /* Fill plane by plane */
+
+
+    /****************************** Fill plane by plane ******************************/
     curRow = tmp_curRow + (seq3_len * seq2_len);
     dirMtx = tmp_dirMtx + (seq3_len * seq2_len);
     diag_m = tmp_curRow;
@@ -2936,25 +2949,25 @@ algn_fill_cube (const seq_p seq1, const seq_p seq2, const int *precalcMtx,
             /* This requires only three operations, equivalent to the
              * 2-dimensional alignment (the three for loops) */
             curRow[0] = diag_m[0] + seq1_gap_seq3[0]; /* diag is upper in this step */
-            dirMtx[0] = P3;
+            dirMtx[0] = GAP23;
             if (DEBUG_COST_M) {
-                printf ("%d\t", curRow[0]);
+                printf ("%-6d", curRow[0]);
             }
             for (j = 1, k = 0; j < seq3_len; j++, k++) {
                 curRow[j] = diag_m[j] + seq1_gap_seq3[0];
-                dirMtx[j] = P3;
+                dirMtx[j] = GAP23;
                 tmp = diag_m[k] + seq1_gap_seq3[j];
                 if (tmp < curRow[j]) {
                     curRow[j] = tmp;
-                    dirMtx[j] = S3;
+                    dirMtx[j] = ALIGN13;
                 }
                 tmp = gap_gap_seq3[j] + curRow[k];
                 if (tmp < curRow[j]) {
                     curRow[j] = tmp;
-                    dirMtx[j] = SS;
+                    dirMtx[j] = GAP12;
                 }
                 if (DEBUG_COST_M) {
-                    printf ("%d\t", curRow[j]);
+                    printf ("%-6d", curRow[j]);
                 }
             }
             if (DEBUG_COST_M) {
@@ -2975,25 +2988,25 @@ algn_fill_cube (const seq_p seq1, const seq_p seq2, const int *precalcMtx,
             /* We first set the vectors that are needed */
             int seq2_it;
             seq2_it = seq2_p[j];
-            seq2_seq3_gap = cm_get_row_precalc_3d (precalcMtx, seq3_len, alphSize, gap, seq2_it);
+            gap_seq2_seq3 = cm_get_row_precalc_3d (precalcMtx, seq3_len, alphSize, gap, seq2_it);
             seq1_seq2_seq3 = cm_get_row_precalc_3d (precalcMtx, seq3_len, alphSize, seq1_it, seq2_it);
-            fill_parallel (seq3_len, prev_m, upper_m, diag_m, seq1_gap_seq3[0], seq2_seq3_gap[0], 
+            fill_parallel (seq3_len, prev_m, upper_m, diag_m, seq1_gap_seq3[0], gap_seq2_seq3[0], 
                     seq1_seq2_seq3[0], curRow, dirMtx);
             fill_moved (seq3_len, prev_m - 1, upper_m - 1, diag_m - 1, seq1_gap_seq3, 
-                        seq2_seq3_gap, seq1_seq2_seq3, curRow, dirMtx);
+                        gap_seq2_seq3, seq1_seq2_seq3, curRow, dirMtx);
             /* In the final step we run over the array filling the self check.
              * */
             if (DEBUG_COST_M) {
-                printf ("%d\t", curRow[0]);
+                printf ("%-6d", curRow[0]);
             }
             for (k = 1; k < seq3_len; k++) {
                 tmp = curRow[k - 1] + gap_gap_seq3[k];
                 if (tmp < curRow[k]) {
                     curRow[k] = tmp;
-                    dirMtx[k] = SS;
+                    dirMtx[k] = GAP12;
                 }
                 if (DEBUG_COST_M) {
-                    printf ("%d\t", curRow[k]);
+                    printf ("%-6d", curRow[k]);
                 }
             }
             if (DEBUG_COST_M) {
@@ -3022,7 +3035,7 @@ algn_fill_cube_ukk (const seq_p seq1, const seq_p seq2, const int *precalcMtx,
     SEQT *seq1_p, *seq2_p;
     /* Each of the following arrays hold some precalculated value for the
      * sequence seq3 which is not passed as argument. */
-    const int *seq2_seq3_gap;     /** Align a gap and the current base of seq2 with seq3 */
+    const int *gap_seq2_seq3;     /** Align a gap and the current base of seq2 with seq3 */
     const int *seq1_gap_seq3;     /** Align the current base of seq1 and a gap with seq3 */
     const int *seq1_seq2_seq3;    /** Align the current bases of seq1 and seq2 with seq3 */
     const int *gap_gap_seq3;      /** Align two gaps with seq3 */
@@ -3049,7 +3062,7 @@ algn_fill_cube_ukk (const seq_p seq1, const seq_p seq2, const int *precalcMtx,
     /* Fill the first plane only at the beginning, this is special */
     {
         curRow[0] = 0;              /* Fill the first cell, of course to 0 */
-        dirMtx[0] = S2;
+        dirMtx[0] = ALIGNALL;
 
         /* Fill first row based on precalculated row.
          * The first row consists of aligning seq3 with gaps, we have that
@@ -3057,7 +3070,7 @@ algn_fill_cube_ukk (const seq_p seq1, const seq_p seq2, const int *precalcMtx,
         gap_gap_seq3 = cm_get_row_precalc_3d (precalcMtx, seq3_len, alphSize, gap, gap);
         for (i = 1; i < seq3_len; i++) {
             curRow[i] = curRow[i - 1] + gap_gap_seq3[i];
-            dirMtx[i] = SS;
+            dirMtx[i] = GAP12;
         }
 
         prev_m = curRow;
@@ -3068,29 +3081,29 @@ algn_fill_cube_ukk (const seq_p seq1, const seq_p seq2, const int *precalcMtx,
          * In this plane filling, all we really need to deal with is aligning seq2
          * and seq3, as the first plane holds the inital gap of seq1. */
         for (i = 1; i < seq2_len; i++, prev_m += seq3_len, curRow += seq3_len, dirMtx += seq3_len) {
-            seq2_seq3_gap = cm_get_row_precalc_3d (precalcMtx, seq3_len, alphSize, gap, seq2_p[i]);
+            gap_seq2_seq3 = cm_get_row_precalc_3d (precalcMtx, seq3_len, alphSize, gap, seq2_p[i]);
 
             /** Fill the first cell with the cost of extending the gap from the
              * previous row */
-            curRow[0] = prev_m[0] + seq2_seq3_gap[0];
-            dirMtx[0] = P1;
+            curRow[0] = prev_m[0] + gap_seq2_seq3[0];
+            dirMtx[0] = GAP13;
             /* Everyone else requires the three comparisons we used when filling
              * rows as usual in a two dimensional alignment. Note that this code
              * is almost the same as algn_fill_row, so if something is modified
              * there, there will be need of modifying it in the same way here. */
             /* TODO: Add the ukkonen barriers */
             for (j = 1; j < seq3_len; j++) {
-                curRow[j] = prev_m[j] + seq2_seq3_gap[0];
-                dirMtx[j] = P1;
-                tmp = prev_m[j - 1] + seq2_seq3_gap[j];
+                curRow[j] = prev_m[j] + gap_seq2_seq3[0];
+                dirMtx[j] = GAP13;
+                tmp = prev_m[j - 1] + gap_seq2_seq3[j];
                 if (tmp < curRow[j]) {
                     curRow[j] = tmp;
-                    dirMtx[j] = S1;
+                    dirMtx[j] = ALIGN23;
                 }
                 tmp = curRow[j - 1] + gap_gap_seq3[j];
                 if (tmp < curRow[j]) {
                     curRow[j] = tmp;
-                    dirMtx[j] = SS;
+                    dirMtx[j] = GAP12;
                 }
             }
         }
@@ -3098,6 +3111,9 @@ algn_fill_cube_ukk (const seq_p seq1, const seq_p seq2, const int *precalcMtx,
             int *tmp_curRow_debug;
             tmp_curRow_debug = tmp_curRow;
             for (i = 0; i < seq2_len; i++) {
+                for (int l = seq2_len; l > 1; l++) {
+                    printf("  ");
+                }
                 for (j = 0; j < seq3_len; j++)
                     printf ("%d\t", tmp_curRow_debug[j]);
                 tmp_curRow_debug += seq2_len;
@@ -3122,21 +3138,21 @@ algn_fill_cube_ukk (const seq_p seq1, const seq_p seq2, const int *precalcMtx,
             /* This requires only three operations, equivalent to the
              2-dimensional alignment (the three for loops) */
             curRow[0] = diag_m[0] + seq1_gap_seq3[0]; /* diag is upper in this step */
-            dirMtx[0] = P3;
+            dirMtx[0] = GAP23;
             if (DEBUG_DIR_M)
                 printf ("%d\t", curRow[0]);
             for (j = 1, k = 0; j < seq3_len; j++, k++) {
                 curRow[j] = diag_m[j] + seq1_gap_seq3[0];
-                dirMtx[j] = P3;
+                dirMtx[j] = GAP23;
                 tmp = diag_m[k] + seq1_gap_seq3[j];
                 if (tmp < curRow[j]) {
                     curRow[j] = tmp;
-                    dirMtx[j] = S3;
+                    dirMtx[j] = ALIGN13;
                 }
                 tmp = gap_gap_seq3[j] + curRow[k];
                 if (tmp < curRow[j]) {
                     curRow[j] = tmp;
-                    dirMtx[j] = SS;
+                    dirMtx[j] = GAP12;
                 }
                 if (DEBUG_DIR_M)
                     printf ("%d\t", curRow[j]);
@@ -3159,12 +3175,12 @@ algn_fill_cube_ukk (const seq_p seq1, const seq_p seq2, const int *precalcMtx,
             /* We first set the vectors that are needed */
             int seq2_it;
             seq2_it = seq2_p[j];
-            seq2_seq3_gap = cm_get_row_precalc_3d (precalcMtx, seq3_len, alphSize, gap, seq2_it);
+            gap_seq2_seq3 = cm_get_row_precalc_3d (precalcMtx, seq3_len, alphSize, gap, seq2_it);
             seq1_seq2_seq3 = cm_get_row_precalc_3d (precalcMtx, seq3_len, alphSize, seq1_it, seq2_it);
-            fill_parallel (seq3_len, prev_m, upper_m, diag_m, seq1_gap_seq3[0], seq2_seq3_gap[0], 
+            fill_parallel (seq3_len, prev_m, upper_m, diag_m, seq1_gap_seq3[0], gap_seq2_seq3[0], 
                            seq1_seq2_seq3[0], curRow, dirMtx);
             fill_moved (seq3_len, prev_m - 1, upper_m - 1, diag_m - 1, seq1_gap_seq3, 
-                        seq2_seq3_gap, seq1_seq2_seq3, curRow, dirMtx);
+                        gap_seq2_seq3, seq1_seq2_seq3, curRow, dirMtx);
             /* In the final step we run over the array filling the self check.
              * */
             if (DEBUG_DIR_M)
@@ -3173,7 +3189,7 @@ algn_fill_cube_ukk (const seq_p seq1, const seq_p seq2, const int *precalcMtx,
                 tmp = curRow[k - 1] + gap_gap_seq3[k];
                 if (tmp < curRow[k]) {
                     curRow[k] = tmp;
-                    dirMtx[k] = SS;
+                    dirMtx[k] = GAP12;
                 }
                 if (DEBUG_DIR_M)
                     printf ("%d\t", curRow[k]);
@@ -3626,7 +3642,7 @@ algn_string_of_2d_direction (DIRECTION_MATRIX v) {
 
 
 void
-backtrack_2d ( const seq_p seq1, const seq_p seq2, 
+algn_backtrace_2d ( const seq_p seq1, const seq_p seq2, 
                seq_p ret_seq1, seq_p ret_seq2, 
                const nw_matrices_p m, const cost_matrices_2d_p c, 
                int st_seq1, int st_seq2, 
@@ -3916,13 +3932,13 @@ backtrack_2d ( const seq_p seq1, const seq_p seq2,
 
 char *
 algn_string_of_3d_direction (char v) {
-    if (v & S2) return "S2";
-    else if (v & S3) return "S3";
-    else if (v & S1) return "S1";
-    else if (v & P3) return "P3";
-    else if (v & SS) return "SS";
-    else if (v & P1) return "P1";
-    else if (v & P2) return "P2";
+    if      (v & ALIGNALL) return "ALGN-ALL";
+    else if (v & ALIGN13)  return "ALGN--13";
+    else if (v & ALIGN23)  return "ALGN--23";
+    else if (v & GAP23)    return "GAP---23";
+    else if (v & GAP12)    return "GAP---12";
+    else if (v & GAP13)    return "GAP---13";
+    else if (v & ALIGN12)  return "ALGN--12";
     else {
         assert (0);
     }
@@ -3930,9 +3946,9 @@ algn_string_of_3d_direction (char v) {
 }
 
 void
-backtrack_3d ( const seq_p seq1, const seq_p seq2, const seq_p seq3, 
+algn_backtrace_3d ( const seq_p seq1, const seq_p seq2, const seq_p seq3, 
                seq_p ret_seq1, seq_p ret_seq2, seq_p ret_seq3, 
-               nw_matrices_p m, const cost_matrices_3d_p c
+               const cost_matrices_3d_p c, nw_matrices_p m
              ) {
     int len_dirMtx, idx_seq1, idx_seq2, idx_seq3;
     int a_plane, a_line, a_cell;
@@ -3941,21 +3957,27 @@ backtrack_3d ( const seq_p seq1, const seq_p seq2, const seq_p seq3,
     idx_seq2   = seq_get_len (seq2);
     idx_seq3   = seq_get_len (seq3);
     len_dirMtx = idx_seq1 * idx_seq2 * idx_seq3;
-    a_plane    = idx_seq2 * idx_seq3;
-    a_line     = idx_seq3;
-    a_cell     = 1;
+    a_plane    = idx_seq2 * idx_seq3; // move one plane up (so move one down seq1) TODO: check these three assertions
+    a_line     = idx_seq3;            // move one line over (so move one down seq3)
+    a_cell     = 1;                   // move over 1 (so move one down seq2)
     beg        = mat_get_3d_direct (m);
     if (DEBUG_DIR_M) {
         char *toprint;
         DIRECTION_MATRIX *beg_debug;
         int i, j, k;
         beg_debug = beg;
-        printf ("Printing a three dimensional direction matrix.\n");
+        printf ("\n\n*** Printing a three dimensional direction matrix.\n");
+        printf("*** Width is shortest sequence.\n");
+        printf("*** Depth is middle sequence;\n");
+        printf("*** Height (# of blocks) longest sequence.\n\n");
         for (i = 0; i < idx_seq1; i++) {
             for (j  = 0; j < idx_seq2; j++) {
+                for (int l = idx_seq2 - j; l > 1; l--) {
+                    printf("  ");
+                }
                 for (k = 0 ; k < idx_seq3; k++, beg_debug++) {
                     toprint = algn_string_of_3d_direction (*beg_debug);
-                    printf ("%s\t", toprint);
+                    printf ("%-9s  ", toprint);
                 }
                 printf ("\n");
             }
@@ -3966,38 +3988,38 @@ backtrack_3d ( const seq_p seq1, const seq_p seq2, const seq_p seq3,
     idx_seq1--;
     idx_seq2--;
     idx_seq3--;
-    while (end > beg) {
-        if (*end & S2) {        /* A plane, line, and cell */
+    while (end >= beg) {
+        if (*end & ALIGNALL) {        /* A plane, line, and cell */
             seq_prepend (ret_seq1, seq_get_element (seq1, idx_seq1--));
             seq_prepend (ret_seq2, seq_get_element (seq2, idx_seq2--));
             seq_prepend (ret_seq3, seq_get_element (seq3, idx_seq3--));
             end -= a_plane + a_line + a_cell;
-        } else if (*end & S3) { /* A plane and cell */
+        } else if (*end & ALIGN13) { /* A plane and cell */
             seq_prepend (ret_seq1, seq_get_element (seq1, idx_seq1--));
             seq_prepend (ret_seq2, cm_get_gap_3d (c));
             seq_prepend (ret_seq3, seq_get_element (seq3, idx_seq3--));
             end -= a_plane + a_cell;
-        } else if (*end & S1) { /* A line and cell */
+        } else if (*end & ALIGN23) { /* A line and cell */
             seq_prepend (ret_seq1, cm_get_gap_3d (c));
             seq_prepend (ret_seq2, seq_get_element (seq2, idx_seq2--));
             seq_prepend (ret_seq3, seq_get_element (seq3, idx_seq3--));
             end -= a_line + a_cell;
-        } else if (*end & P3) { /* A plane */
+        } else if (*end & GAP23) { /* A plane */
             seq_prepend (ret_seq1, seq_get_element (seq1, idx_seq1--));
             seq_prepend (ret_seq2, cm_get_gap_3d (c));
             seq_prepend (ret_seq3, cm_get_gap_3d (c));
             end -= a_plane;
-        } else if (*end & SS) { /* A cell */
+        } else if (*end & GAP12) { /* A cell */
             seq_prepend (ret_seq1, cm_get_gap_3d (c));
             seq_prepend (ret_seq2, cm_get_gap_3d (c));
             seq_prepend (ret_seq3, seq_get_element (seq3, idx_seq3--));
             end -= a_cell;
-        } else if (*end & P1) { /* A line */
+        } else if (*end & GAP13) { /* A line */
             seq_prepend (ret_seq1, cm_get_gap_3d (c));
             seq_prepend (ret_seq2, seq_get_element (seq2, idx_seq2--));
             seq_prepend (ret_seq3, cm_get_gap_3d (c));
             end -= a_line;
-        } else if (*end & P2) { /* A plane and line */
+        } else if (*end & ALIGN12) { /* A plane and line */
             seq_prepend (ret_seq1, seq_get_element (seq1, idx_seq1--));
             seq_prepend (ret_seq2, seq_get_element (seq2, idx_seq2--));
             seq_prepend (ret_seq3, cm_get_gap_3d (c));
@@ -4025,7 +4047,7 @@ algn_CAML_backtrack_2d (value seq1, value seq2, value seq1_p, value seq2_p, valu
     Seq_custom_val(sseq1_p, seq1_p); // sseq1_p is pointer to seq1_p, which is empty seq struct
     Seq_custom_val(sseq2_p, seq2_p);
     cc = Cost_matrix_struct(c);
-    backtrack_2d (sseq1, sseq2, sseq1_p, sseq2_p, ta, cc, 0, 0, seq_get_len(sseq1), \
+    algn_backtrace_2d (sseq1, sseq2, sseq1_p, sseq2_p, ta, cc, 0, 0, seq_get_len(sseq1), \
             seq_get_len(sseq2), Bool_val(swap), seq1, seq2);
     CAMLreturn(Val_unit);
 }
@@ -4052,7 +4074,7 @@ algn_CAML_backtrack_2d_limit (value seq1, value seq2, value seq1_p, \
     Seq_custom_val(sseq1_p, seq1_p);
     Seq_custom_val(sseq2_p, seq2_p);
     cc = Cost_matrix_struct(c);
-    backtrack_2d (sseq1, sseq2, sseq1_p, sseq2_p, ta, cc, Int_val(st_seq1), \
+    algn_backtrace_2d (sseq1, sseq2, sseq1_p, sseq2_p, ta, cc, Int_val(st_seq1), \
             Int_val(st_seq2), Int_val(idx_seq1), Int_val(idx_seq2), 
             Bool_val(swapped), seq1, seq2);
     CAMLreturn (Val_unit);
@@ -4080,7 +4102,7 @@ algn_CAML_backtrack_3d (value seq1, value seq2, value seq3, value seq1_p, value 
     Seq_custom_val(sseq2_p, seq2_p);
     Seq_custom_val(sseq3_p, seq3_p);
     tc = Cost_matrix_struct_3d(c);
-    backtrack_3d (sseq1, sseq2, sseq3, sseq1_p, sseq2_p, sseq3_p, ta, tc);
+    algn_backtrace_3d (sseq1, sseq2, sseq3, sseq1_p, sseq2_p, sseq3_p, ta, tc);
     CAMLreturn(Val_unit);
 }
 
@@ -4400,7 +4422,7 @@ algn_CAML_ancestor_2 (value sa, value sb, value cm, value sab) {
 }
 
 void
-algn_copy_backtrack (int seq1, int seq2, const nw_matrices_p m, value res) {
+algn_copy_backtrace (int seq1, int seq2, const nw_matrices_p m, value res) {
     value row;
     int i, j;
     DIRECTION_MATRIX *d;
@@ -4424,7 +4446,7 @@ algn_CAML_create_backtrack (value lsa, value lsb, value scm, value sres) {
     la = Int_val(lsa);
     lb = Int_val(lsb);
     m = Matrices_struct(scm);
-    algn_copy_backtrack (la, lb, m, sres);
+    algn_copy_backtrace (la, lb, m, sres);
     CAMLreturn(Val_unit);
 }
 */

@@ -701,8 +701,8 @@ cm_get_precal_row (const int *p, SEQT item, int len) {
 }
 
 static inline int *
-cm_get_pos_in_precalc (const int *toOutput, int s3l, int alphSize, int s1c, int s2c, \
-        int s3p) {
+cm_get_pos_in_precalc (const int *toOutput, int s3l, int alphSize, 
+                       int s1c, int s2c, int s3p) {
     int *res;
     alphSize++;
     res = (int *) toOutput + ((s1c * (alphSize * s3l)) + (s3l * s2c) + s3p);
