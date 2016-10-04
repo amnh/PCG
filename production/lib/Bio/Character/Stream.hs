@@ -20,9 +20,9 @@ module Bio.Character.Stream where
 import Data.Alphabet
 import Data.BitVector
 import Data.List.NonEmpty
-import Data.Maybe           (fromMaybe)
+import Data.Maybe            (fromMaybe)
 import Data.MonoTraversable
-import Data.String          (IsString)
+import Data.String           (IsString)
 
 {-# DEPRECATED getGapChar "Don't use getGapChar, use getGapElement instead!" #-}
 
@@ -62,7 +62,7 @@ class (Bits b, Num b) => EncodableStreamElement b where
 
 -- TODO: Add more laws here
 {- |
- Represents a character of variable length representing multiple encoded static characters.
+ Represents a non empty stream of 'EncodableStreamElement' of variable length.
 
  Laws:
 

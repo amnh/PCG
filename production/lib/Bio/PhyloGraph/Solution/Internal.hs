@@ -111,7 +111,7 @@ deriveDynamicMetadatas (x:_) = sequenceA $ V.generate (length sequenceWLOG) f
              , isIgnored  = False
              , weight     = 1.0
              , stateNames = stateNames'
-             , fitchMasks = (encodeDynamic alphabet' ([] :: [[String]]), encodeDynamic alphabet' ([] :: [[String]]))
+             , fitchMasks = (undefined,undefined) -- TODO: try not to cry (encodeStream alphabet' ([] :: [[String]]), encodeStream alphabet' ([] :: [[String]]))
              , rootCost   = 0.0
              , costs      = TCM $ matrix (length alphabet') (length alphabet') (const 1.0)
              }
@@ -123,7 +123,7 @@ deriveDynamicMetadatas (x:_) = sequenceA $ V.generate (length sequenceWLOG) f
             -- We don't care about the exact symbol rendering, only that they are unique and there are a correct quantity of them.
             -- We also know that the alphabet size of the generated Dynamic characters has been restricted to less than 62 in the
             -- BitMatrix library.
-            alphabetSize = width $ character `indexChar` 0
+            alphabetSize = width $ character `indexStream` 0
             symbols      = fmap pure $ ['0'..'9'] <> ['A'..'Z'] <> ['a'..'z']
 
     sequenceWLOG = encoded leafWLOG

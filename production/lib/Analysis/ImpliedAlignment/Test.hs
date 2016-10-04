@@ -22,14 +22,15 @@ import qualified Analysis.ImpliedAlignment.InsertionEvents.Test as IE (testSuite
 import           Bio.Character.Dynamic
 import           Bio.Character.Parsed
 import           Bio.Metadata
-import           Bio.PhyloGraph            hiding (name)
+import           Bio.PhyloGraph     hiding (name)
 import           Data.Alphabet
 import           Data.Foldable
-import           Data.Function           (on)
+import           Data.Function             (on)
+import qualified Data.List.NonEmpty as NE
 import           Data.MonoTraversable
-import qualified Data.Set          as S
-import           Data.Vector             (Vector)
-import qualified Data.Vector       as V
+import qualified Data.Set           as S
+import           Data.Vector               (Vector)
+import qualified Data.Vector        as V
 import           Test.Custom
 import           Test.Tasty
 import           Test.Tasty.HUnit
@@ -121,7 +122,9 @@ testNumerate = testGroup "Numeration properties"
 
 -- | Useful function to convert encoding information to two encoded seqs
 encodeArbSameLen :: (GoodParsedChar, GoodParsedChar) -> (DynamicChar, DynamicChar)
-encodeArbSameLen (parse1, parse2) = (encodeDynamic alph (V.take minLen p1), encodeDynamic alph (V.take minLen p2))
+encodeArbSameLen (parse1, parse2) = ( encodeStream alph . NE.fromList . fmap NE.fromList . toList $ V.take minLen p1
+                                    , encodeStream alph . NE.fromList . fmap NE.fromList . toList $ V.take minLen p2
+                                    )
     where
         (p1,p2) = (getGoodness parse1, getGoodness parse2)
         minLen  = minimum [length p1, length p2]

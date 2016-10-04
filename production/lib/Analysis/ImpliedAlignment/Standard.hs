@@ -91,8 +91,8 @@ makeAlignment n seqLens = makeAlign (getFinalGapped n) (getHomologies n)
             result = V.generate (uncurry (+) lens) f
               where
                 f i = case i `IM.lookup` mapping of
-                        Nothing -> getGapChar $ char `indexChar` 0
-                        Just j  -> char `indexChar` j
+                        Nothing -> getGapElement $ char `indexStream` 0
+                        Just j  -> char `indexStream` j
                 mapping = V.ifoldl' (\im k v -> IM.insert v k im) mempty homolog
 
 -- | Main recursive function that assigns homology traces to every node
@@ -232,7 +232,7 @@ numerateNode ancestorNode childNode initCounters = (setHomologies childNode homo
 numerateOne :: SeqConstraint s => s -> s -> Counter -> (Homologies, Counter, IntSet)
 numerateOne ancestorSeq descendantSeq (maxLen, initialCounter) = (descendantHomologies, (newLen, counter'), insertionEvents)
   where
-    gapCharacter = getGapChar $ descendantSeq `indexChar` 0
+    gapCharacter = getGapElement $ descendantSeq `indexStream` 0
     newLen = max (olength descendantSeq) maxLen
 
     descendantHomologies = V.generate (olength descendantSeq) g
@@ -253,8 +253,8 @@ numerateOne ancestorSeq descendantSeq (maxLen, initialCounter) = (descendantHomo
           | otherwise {- Both not gap -}                                             = Accum (insert i (i + childOffset)     indexMapping, counter    , i + 1, ancestorOffset    , childOffset    , insertionEventIndicies)
           where
 --          j = i + childOffset
-            ancestorCharacter   = ancestorSeq   `indexChar` i
-            descendantCharacter = descendantSeq `indexChar` i
+            ancestorCharacter   = ancestorSeq   `indexStream` i
+            descendantCharacter = descendantSeq `indexStream` i
 
 -- TODO: make sure a sequence always ends up in FinalGapped to avoid this decision tree
 -- | Simple function to get a sequence for alignment purposes

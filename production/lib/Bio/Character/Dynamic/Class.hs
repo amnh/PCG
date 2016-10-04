@@ -19,14 +19,14 @@ module Bio.Character.Dynamic.Class where
 
 import Bio.Character.Stream
 import Data.Alphabet
-import Data.List.NonEmpty
+--import Data.List.NonEmpty
 import Data.MonoTraversable
 import Data.String          (IsString)
 
-{-# DEPRECATED decodeDynamic "Don't use decodeDynamic, use decodeStream instead!" #-}
+-- {-# DEPRECATED decodeDynamic "Don't use decodeDynamic, use decodeStream instead!" #-}
 {-# DEPRECATED encodeDynamic "Don't use encodeDynamic, use encodeStream instead!" #-}
-{-# DEPRECATED indexChar     "Don't use indexChar, use indexStream instead!"      #-}
-{-# DEPRECATED lookupChar    "Don't use lookupChar, use lookupStream instead!"    #-}
+-- {-# DEPRECATED indexChar     "Don't use indexChar, use indexStream instead!"      #-}
+-- {-# DEPRECATED lookupChar    "Don't use lookupChar, use lookupStream instead!"    #-}
 
 -- TODO: Add more laws here
 {- | Represents a character of variable length representing multiple encoded static characters.
@@ -42,14 +42,14 @@ class EncodableStream s => EncodableDynamicCharacter s where
 -- TODO: Make sure it's non-empty
 --    constructDynamic :: NonEmpty (Element s) -> s
   
-    decodeDynamic :: (Ord a, IsString a) => Alphabet a -> s -> [[a]]
-    decodeDynamic alphabet = toList . (fmap toList) . decodeStream alphabet
+--    decodeDynamic :: (Ord a, IsString a) => Alphabet a -> s -> [[a]]
+--    decodeDynamic alphabet = toList . (fmap toList) . decodeStream alphabet
 
     encodeDynamic :: (Ord a, Foldable t, Foldable c, IsString a) => Alphabet a -> c (t a) -> s
 
-    indexChar  :: s -> Int -> Element s
-    indexChar  = indexStream
+--    indexChar  :: s -> Int -> Element s
+--    indexChar  = indexStream
 
-    lookupChar :: s -> Int -> Maybe (Element s)
-    lookupChar = lookupChar
+--    lookupChar :: s -> Int -> Maybe (Element s)
+--    lookupChar = lookupChar
 

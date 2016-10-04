@@ -2,21 +2,26 @@
 
 module Test.Custom.Constructions where
 
+
 import           Bio.Character.Parsed -- why?
 import           Bio.Character.Dynamic
 import           Data.Alphabet
 import           Data.BitMatrix
 import           Data.BitVector    (bitVec)
-import qualified Data.Vector  as V
-import           Test.Custom.Types ()
+import           Data.Foldable
+import qualified Data.List.NonEmpty as NE
+import qualified Data.Vector        as V
+import           Test.Custom.Types        ()
 import           Test.QuickCheck
 import           Test.QuickCheck.Arbitrary.Instances ()
+
+
 
 -- | Function to generate an arbitrary DynamicChar given an alphabet
 arbitraryDynamicGivenAlph :: Alphabet String -> Gen DynamicChar
 arbitraryDynamicGivenAlph inAlph = do
-    arbParsed <- arbitrary :: Gen ParsedChar -- Surely this also needs to depend on the alphabet?
-    pure $ encodeDynamic inAlph arbParsed
+    arbParsed <- arbitrary :: Gen ParsedChar -- TODO: Surely this also needs to depend on the alphabet?
+    pure . encodeStream inAlph . fmap NE.fromList . NE.fromList $ toList arbParsed
 
 -- | Generate many dynamic characters using the above
 arbitraryDynamicsGA :: Alphabet String -> Gen DynamicChars
@@ -31,3 +36,4 @@ arbitraryDynamicCharStream = do
                       bitRows      <- vectorOf characterLen randVal
                       pure . DC . fromRows $ bitVec symbolCount <$> bitRows
     infiniteListOf randChar
+

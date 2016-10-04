@@ -100,7 +100,7 @@ iaOutput solution = {- (\x -> trace (intercalate "\n\n"
             titleLine     = "> " <> filter (/=' ') nodeName
             dynamicCharacterToFastaBlock character = unlines $ titleLine : sequenceLines <> [""]
               where
-                sequenceLines = chunksOf 50 . concatMap renderAmbiguityGroup . toList $ decodeDynamic alpha character
+                sequenceLines = chunksOf 50 . concatMap (renderAmbiguityGroup . toList) . toList $ decodeStream alpha character
                 renderAmbiguityGroup [x] = x
                 renderAmbiguityGroup xs  = "[" <> concat xs <> "]"
 

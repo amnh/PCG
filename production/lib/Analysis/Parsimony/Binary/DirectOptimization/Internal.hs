@@ -74,7 +74,7 @@ naiveDO char1 char2 costStruct
 --      (gapped', left', right') = traceback traversalMat shorterChar longerChar
 {--}
       (gapped', left', right') = (\(x,y,z) -> (constructDynamic x, constructDynamic y, constructDynamic z)) 
-                               $ correctBiasing (getGapChar $ gapped `indexChar` 0) (otoList gapped, otoList left, otoList right)
+                               $ correctBiasing (getGapElement $ gapped `indexStream` 0) (otoList gapped, otoList left, otoList right)
 {--}
       -- TODO: change to occur in traceback, to remove constant factor.
       ungapped = filterGaps gapped'
@@ -95,7 +95,7 @@ doAlignment char1 char2 costStruct = (char1Align, char2Align)
 filterGaps :: EncodableDynamicCharacter c => c -> c
 filterGaps char = constructDynamic . filter (/= gap) $ otoList char
   where
-    gap = getGapChar $ char `indexChar` 0
+    gap = getGapElement $ char `indexStream` 0
 
 
 -- | Main function to generate an 'DOAlignMatrix'. Works as in Needleman-Wunsch,
@@ -128,9 +128,9 @@ createDOAlignMatrix topDynChar leftDynChar costStruct = result
           | staticCharFromLeft == staticCharFromTop = (diagCost                        , DiagArrow, staticCharFromTop)
           | otherwise                               = (minCost                         , minDir   , minState )
           where
-            gap                           = getGapChar . head $ otoList leftDynChar -- Why would you give me an empty Dynamic Character?
-            staticCharFromLeft            = topDynChar  `indexChar` (col - 1)
-            staticCharFromTop             = leftDynChar `indexChar` (row - 1)
+            gap                           = getGapElement . head $ otoList leftDynChar -- Why would you give me an empty Dynamic Character?
+            staticCharFromLeft            = topDynChar  `indexStream` (col - 1)
+            staticCharFromTop             = leftDynChar `indexStream` (row - 1)
             (leftwardValue, _, _)         = result ! (row    , col - 1)
             (diagonalValue, _, _)         = result ! (row - 1, col - 1)
             (upwardValue  , _, _)         = result ! (row - 1, col)
@@ -177,11 +177,11 @@ traceback alignMat' char1' char2' = ( constructDynamic $ reverse t1
             where
               (_, curDirect, curState) = alignMat ! (row, col)
               leftCharacter            = if row == i 
-                                         then getGapChar curState  
-                                         else char1 `indexChar` i
+                                         then getGapElement curState
+                                         else char1 `indexStream` i
               rightCharacter           = if col == j 
-                                         then getGapChar curState
-                                         else char2 `indexChar` j
+                                         then getGapElement curState
+                                         else char2 `indexStream` j
               (i, j) =
                 case curDirect of
                   LeftArrow -> (row    , col - 1)

@@ -16,11 +16,13 @@
 
 module Bio.Character.Parsed.Internal where
 
-import Data.Alphabet
-import Data.Foldable
-import Data.Vector   (Vector, fromList)
-import Data.Map      (Map)
-import Test.QuickCheck
+import           Data.Alphabet  hiding (AmbiguityGroup) -- TODO: Maybe don't hide this and use it below? This change will cascade into other modules!
+import           Data.Foldable
+import qualified Data.List.NonEmpty as NE
+import           Data.Vector              (Vector)
+import qualified Data.Vector        as V
+import           Data.Map                 (Map)
+import           Test.QuickCheck
 
 -- TODO: do ambiguity group types: more aliasing
 
@@ -44,7 +46,7 @@ type TreeChars = Map String ParsedChars
 
 -- | Higher level arbitrary helper
 parsedCharsGivenAlph :: [Alphabet String] -> Gen ParsedChars
-parsedCharsGivenAlph inAlphs = fromList <$> mapM parsedMaybe inAlphs
+parsedCharsGivenAlph inAlphs = V.fromList <$> mapM parsedMaybe inAlphs
 
 -- | Generates a maybe character
 parsedMaybe :: Alphabet String -> Gen (Maybe ParsedChar)
@@ -54,4 +56,4 @@ parsedMaybe inAlph = do
 
 -- | Define an arbitrary helper function to create a parsed sequence over an Alphabet
 arbParsedGivenAlph :: Alphabet String -> Gen ParsedChar
-arbParsedGivenAlph inAlph = fromList <$> listOf (sublistOf (toList inAlph))
+arbParsedGivenAlph inAlph = V.fromList <$> listOf1 ({- NE.fromList <$>-} sublistOf (toList inAlph))

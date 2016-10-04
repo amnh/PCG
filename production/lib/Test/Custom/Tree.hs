@@ -22,12 +22,13 @@ import           Control.Applicative                     ((<|>))
 import           Control.Monad                           ((<=<))
 import           Data.Alphabet
 import           Data.Bifunctor                          (second)
-import           Data.BitVector                          (width)
 import           Data.Foldable
 import           Data.IntMap                             (insertWith)
 import qualified Data.IntSet                      as IS
 import           Data.Key                         hiding (zipWith)
 import           Data.List                               (intercalate)
+import           Data.List.NonEmpty                      (NonEmpty((:|)))
+import qualified Data.List.NonEmpty               as NE
 import           Data.List.Utility                       (chunksOf)
 import           Data.Maybe
 import           Data.Monoid
@@ -58,10 +59,12 @@ createSimpleTree rootRef symbols xs = TT . setRefIds $ unfoldTree buildTree root
     buildTree :: Int -> (TestingDecoration, [Int])
     buildTree i = (def { dEncoded = encodedSequence, suppliedAlphabet = Just alphabet }, otoList children)
       where
-        encodedSequence = if   null strChar
-                   then mempty
-                   else pure . encodeDynamic alphabet $ (\c -> [[c]]) <$> strChar
+        encodedSequence =
+          if   null strChar
+          then mempty
+          else pure . encodeStream alphabet . NE.fromList $ (\c -> [c]:|[]) <$> strChar
         (strChar, children) = mapping ! i
+
 
 setRefIds :: Tree TestingDecoration -> Tree TestingDecoration
 setRefIds = snd . f 0
@@ -73,7 +76,8 @@ setRefIds = snd . f 0
             decoration' = (rootLabel root) { refEquality = counter }
             (counter', children') = foldr g (counter + 1, []) $ subForest root
             g e (n, ys) = second (:ys) $ f n e
-    
+
+        
 createCherry :: String -> String -> String -> SimpleTree
 createCherry rootCharacter leftCharacter rightCharacter = createSimpleTree 0 alphabet [(0,rootCharacter,[1,2]), (1,leftCharacter,[]), (2,rightCharacter,[])]
   where
@@ -86,7 +90,7 @@ createBinary leafCharacters = TT . setRefIds . createBinary' $ createCherry' <$>
     alphabet = fromSymbols $ pure <$> symbols
 
     strToLeaf :: String -> Tree TestingDecoration
-    strToLeaf str = Node (def { dEncoded = pure . encodeDynamic alphabet $ (\c -> [[c]]) <$> str }) []
+    strToLeaf str = Node (def { dEncoded = pure . encodeStream alphabet . NE.fromList $ (\c -> [c]:|[]) <$> str }) []
 
     createCherry' :: [String] -> Tree TestingDecoration
     createCherry' [x] = strToLeaf x
@@ -201,9 +205,9 @@ draw (Node x xs) = lines x <> drawSubTrees xs
 renderDynamicCharacter :: Maybe (Alphabet String) -> DynamicChar -> String
 renderDynamicCharacter alphabetMay char
   | onull char = ""
-  | otherwise  = concatMap f $ decodeDynamic alphabet char
+  | otherwise  = concatMap (f . toList) $ decodeStream alphabet char
   where
-    symbolCount     = width $ char `indexChar` 0
+    symbolCount     = stateCount $ char `indexStream` 0
     symbols         = take symbolCount arbitrarySymbols
     defaultAlphabet = fromSymbols symbols
     alphabet        = fromMaybe defaultAlphabet alphabetMay
@@ -226,8 +230,10 @@ instance Arbitrary SimpleTree where
 
 type instance Element SimpleTree = SimpleTree
 
+
 treeFold :: SimpleTree -> [SimpleTree]
 treeFold x@(TT root) = (x :) . concatMap (treeFold . TT) $ subForest root
+
 
 instance MonoFoldable SimpleTree where
     {-# INLINE ofoldMap #-}
@@ -479,9 +485,9 @@ simpleTreeCharacterDecorationEqualityAssertion rootRef symbols transformation ac
         buildExpectedTree :: Int -> (TestingDecoration, [Int])
         buildExpectedTree i = (def { dEncoded = encodedSequence }, otoList children)
           where
-            encodedSequence = if   null (expectedChar !! j)
-                              then mempty
-                              else pure . encodeDynamic alphabet $ (\c -> [[c]]) <$> (expectedChar !! j)
+            encodedSequence
+              | null (expectedChar !! j) = mempty
+              | otherwise                =  pure . encodeStream alphabet . NE.fromList $ (\c -> [c]:|[]) <$> (expectedChar !! j)
             (expectedChar, children) = mapping ! i
 
     -- 

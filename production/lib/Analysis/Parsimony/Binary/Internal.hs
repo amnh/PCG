@@ -259,14 +259,14 @@ deriveSingleAssignment costStructure parentSingle parentFinal childFinal = resul
   where
     (_, _, _, parentAlignment, childAlignment) = naiveDO parentFinal childFinal costStructure
     result = constructDynamic . reverse . snd . foldl f (0::Int, []) $ zip (otoList parentAlignment) (otoList childAlignment)
-    gap    = getGapChar $ parentSingle `indexChar` 0
+    gap    = getGapElement $ parentSingle `indexStream` 0
     f (pointer, xs) (pElement, cElement)
       | pElement == gap && cElement == gap = (pointer    ,                             xs)
       | pElement == gap && cElement /= gap = (pointer    , orderedSelection cElement : xs)
       | pElement /= gap && cElement == gap = (pointer + 1,                             xs)
       | pElement /= gap && cElement /= gap = (pointer + 1,       g sElement cElement : xs)
       where
-        sElement = parentSingle `indexChar` 0
+        sElement = parentSingle `indexStream` 0
     f (_,_) (_,_) = error "Satisfy the exahustiveness checker (dead logic branch)"
     
     g single ambiguous
@@ -328,7 +328,7 @@ newGapLocations originalChar newChar
   | otherwise                               = newGaps
   where
     (_,_,newGaps) = ofoldl' f (otoList originalChar, 0, mempty) newChar
-    gap = getGapChar $ newChar `indexChar` 0
+    gap = getGapElement $ newChar `indexStream` 0
 --    f a e | trace (show a <> " " <> show e) False = undefined
     f (  [], i, is) e
       | e == gap  = ([], i, IM.insertWith (+) i 1 is)
@@ -344,7 +344,7 @@ insertNewGaps :: EncodableDynamicCharacter c => IntMap Int -> c -> c
 insertNewGaps insertionIndicies character = constructDynamic . (<> trailingGaps) . foldMapWithKey f $ otoList character
   where
     len = olength character
-    gap = getGapChar $ character `indexChar` 0
+    gap = getGapElement $ character `indexStream` 0
     trailingGaps = maybe [] (`replicate` gap) $ len `lookup` insertionIndicies
     f i e =
       case i `lookup` insertionIndicies of
@@ -359,7 +359,7 @@ threeWayMean costStructure char1 char2 char3
   | not uniformLength = error $ "Three sequences supplied to 'threeWayMean' function did not have uniform length." <> show char1 <> show char2 <> show char3
   | otherwise         = (sum costValues, constructDynamic $ filter (/= gap) meanStates, constructDynamic meanStates)
   where
-    gap                 = getGapChar $ char1 `indexChar` 0
+    gap                 = getGapElement $ char1 `indexStream` 0
     uniformLength       = olength char1 == olength char2 && olength char2 == olength char3
     (meanStates, costValues) = unzip $ zipWith3 f (otoList char1) (otoList char2) (otoList char3)
     f a b c = minimalChoice -- minimumBy (comparing snd)

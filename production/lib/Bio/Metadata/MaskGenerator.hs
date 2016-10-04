@@ -14,15 +14,16 @@
 
 module Bio.Metadata.MaskGenerator where
 
-import Bio.Metadata
-import Bio.PhyloGraph.Solution
-import Bio.Character.Dynamic
-import Data.Alphabet
-import Data.Foldable
-import Data.HashMap.Strict        (elems)
-import Data.Key
-import Data.Maybe
-import qualified Data.Vector as V
+import           Bio.Metadata
+import           Bio.PhyloGraph.Solution
+import           Bio.Character.Dynamic
+import           Data.Alphabet
+import           Data.Foldable
+import qualified Data.List.NonEmpty as NE
+import           Data.HashMap.Strict        (elems)
+import           Data.Key
+import           Data.Maybe
+import qualified Data.Vector        as V
 
 -- | Mutate a 'StandardSolution' to include masks in the metadata structure
 addMasks :: StandardSolution -> StandardSolution
@@ -52,11 +53,11 @@ addMasks inSolution = inSolution { metadata = V.imap changeMetadata (metadata in
 -- | Generate mask pair given proper info
 generateMasks :: Alphabet String -> Int -> (DynamicChar, DynamicChar)
 generateMasks inAlphabet sLen = --trace ("encode masks " ++ show periodic) $
-                                (encodeDynamic inAlphabet occupancy, encodeDynamic inAlphabet periodic)
+                                (encodeStream inAlphabet occupancy, encodeStream inAlphabet periodic)
     where
-        unit      = [inAlphabet ! (length inAlphabet - 1)]
-        periodic  = V.replicate sLen unit
-        occupancy = V.replicate sLen (toList inAlphabet)
+        unit      = NE.fromList [inAlphabet ! (length inAlphabet - 1)]
+        periodic  = NE.fromList . toList $ V.replicate sLen unit
+        occupancy = NE.fromList . toList . V.replicate sLen . NE.fromList $ toList inAlphabet
 
 
 

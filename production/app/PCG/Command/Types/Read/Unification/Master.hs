@@ -147,8 +147,15 @@ joinSequences =  foldl' g (mempty, mempty)
 encodeOverMetadata :: Maybe ParsedChar -> StandardMetadata -> DynamicChar
 encodeOverMetadata maybeInChar inMeta =
     case maybeInChar of
-        Just inChar -> encodeDynamic (alphabet inMeta) inChar
-        Nothing     -> encodeDynamic (alphabet inMeta) [[]]
+      Nothing     -> encodeDynamic (alphabet inMeta) [[]] -- This is bad!!!
+      Just inChar ->
+        case toList inChar of
+          [] -> error "You have an empty character, because that makes sense..."
+          xs -> 
+            if any null xs
+            then error "An empty ambiguity group exisits in an input character :("
+            else encodeStream  (alphabet inMeta) . NE.fromList $ NE.fromList <$> xs
+
 
 -- | Wrapper for encoding
 encodeIt :: ParsedChars -> Vector StandardMetadata -> Vector DynamicChar

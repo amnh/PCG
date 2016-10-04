@@ -218,7 +218,7 @@ comparativeIndelEvents edgeIdentifier ancestorCharacterUnaligned descendantChara
       where
         deletions'          = parentBaseIndex `IS.insert` deletions
         insertions'         = parentBaseIndex `incInsMap` insertions
-        gap                 = getGapChar ancestorElement
+        gap                 = getGapElement ancestorElement
 --      containsGap char    = gap .&. char /= zeroBits
         insertionEventLogic =     ancestorElement == gap && descendantElement /= gap -- not (containsGap descendantElement)
         deletionEventLogic  =   descendantElement == gap && ancestorElement   /= gap --not (containsGap   ancestorElement)
@@ -247,7 +247,7 @@ deriveImpliedAlignment sequenceIndex psuedoCharacterVal node = node `setHomologi
         leafCharacter   = leafSequence V.! sequenceIndex
         leafAlignedChar = constructDynamic $ reverse result
         characterTokens = otoList leafCharacter
-        gap             = getGapChar $ head characterTokens
+        gap             = getGapElement $ head characterTokens
         (_,_remaining,result)    = foldl' f (0 :: Int, characterTokens, []) psuedoCharacterVal
           where
             f (basesSeen, xs, ys) e

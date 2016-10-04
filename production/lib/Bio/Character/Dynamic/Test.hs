@@ -228,7 +228,7 @@ testEncodableDynamicCharacterInstanceDynamicChar = testGroup "DynamicChar instan
               where
                 enc :: (Foldable t) => t (t String) -> DynamicChar
                 enc = encodeDynamic alphabet
-                lhs = fmap  Set.fromList . toList . decodeDynamic alphabet . enc
+                lhs = fmap (Set.fromList . toList) . toList . decodeStream alphabet . enc
                 rhs = fmap (Set.fromList . toList) . toList
                 (alphabet, dynamicChar) = getAlphabetAndCharacter alphabetAndDynamicChar
 

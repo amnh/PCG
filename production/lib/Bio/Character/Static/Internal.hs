@@ -59,6 +59,7 @@ newtype StaticCharacter
       = SC BitVector
       deriving (Bits, Eq, Enum, Num, Ord, Show)
 
+
 -- | Represents an encoded dynamic character, consisting of one or more static
 --   characters. Dynamic characters treat entire static characters as the
 --   character states of the dynamic character. The dynamic character relies on

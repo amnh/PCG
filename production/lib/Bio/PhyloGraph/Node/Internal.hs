@@ -24,6 +24,7 @@ import qualified Bio.PhyloGraph.Node.Preliminary  as RN
 import           Bio.PhyloGraph.Node.Referential
 import           Data.Alphabet
 import           Data.Foldable
+import qualified Data.List.NonEmpty               as NE
 import           Data.Vector                            (Vector)
 import qualified Data.Vector                      as V  (fromList)
 import           Data.Ord ()
@@ -153,7 +154,7 @@ generateLeavesDO alphabet taxaCount = do
         generateDynamicCharacter :: Gen DynamicChar
         generateDynamicCharacter = do
             dynamicCharacterLength <- choose (1,2) :: Gen Int
-            fmap (encodeDynamic alphabet) . vectorOf dynamicCharacterLength . fmap nullCheck . sublistOf $ toList alphabet
+            fmap (encodeStream alphabet . NE.fromList . fmap NE.fromList) . vectorOf dynamicCharacterLength . fmap nullCheck . sublistOf $ toList alphabet
         generateLeaf sequenceLength i = do
             sequenceOfEncodedDynamicChars <- V.fromList <$> vectorOf sequenceLength generateDynamicCharacter 
             pure Node 

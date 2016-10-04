@@ -26,6 +26,7 @@ import           Bio.PhyloGraph.Solution
 import           Data.Alphabet
 --import           Data.BitMatrix
 --import           Data.BitVector
+import           Data.List.NonEmpty (NonEmpty)
 --import           Data.Matrix.NotStupid (getRow)
 import           Data.MonoTraversable
 import           Data.Monoid
@@ -40,14 +41,14 @@ standardAlph :: Alphabet String
 standardAlph = fromSymbols $ V.fromList ["A", "C", "G", "T", "-"]
 
 doMeta, fitchMeta :: CharacterMetadata DynamicChar
-doMeta    = CharMeta DirectOptimization standardAlph "" False False 1 mempty (constructDynamic [], constructDynamic []) 0 costStructure
-fitchMeta = CharMeta Fitch              standardAlph "" False False 1 mempty (constructDynamic [], constructDynamic []) 0 costStructure
+doMeta    = CharMeta DirectOptimization standardAlph "" False False 1 mempty (undefined, undefined) 0 costStructure
+fitchMeta = CharMeta Fitch              standardAlph "" False False 1 mempty (undefined, undefined) 0 costStructure
 
 costStructure :: CostStructure
 costStructure = GeneralCost 1 1
 
-decodeIt :: DynamicChar -> [[String]]
-decodeIt = decodeDynamic standardAlph
+decodeIt :: DynamicChar -> NonEmpty (AmbiguityGroup String)
+decodeIt = decodeStream standardAlph
 
 testSuite :: TestTree
 testSuite = testGroup "Binary optimization" [fitchProperties, traversalProperties]
@@ -78,7 +79,7 @@ fitchProperties = testGroup "Properties of the Fitch algorithm" [preIdHolds, pos
                 checkID :: DynamicChar -> Bool
                 checkID inSeq = result == inSeq && cost == 0
                     where 
-                        newAlph = fromSymbols $ take (stateCount $ inSeq `indexChar` 0) abstractSymbols
+                        newAlph = fromSymbols $ take (stateCount $ inSeq `indexStream` 0) abstractSymbols
                         (result, _, cost) = preorderFitchBit 1 inSeq inSeq (fitchMeta {alphabet = newAlph, fitchMasks = generateMasks newAlph (olength inSeq)})
 
         postIdHolds = testProperty "When Postorder Fitch runs a sequence against itself, get input as result" checkID
@@ -86,7 +87,7 @@ fitchProperties = testGroup "Properties of the Fitch algorithm" [preIdHolds, pos
                 checkID :: DynamicChar -> Bool
                 checkID inSeq = result == inSeq
                     where 
-                        newAlph = fromSymbols $ take (stateCount $ inSeq `indexChar` 0) abstractSymbols
+                        newAlph = fromSymbols $ take (stateCount $ inSeq `indexStream` 0) abstractSymbols
                         (_, f, _) = preorderFitchBit 1 inSeq inSeq (fitchMeta {alphabet = newAlph, fitchMasks = generateMasks newAlph (olength inSeq)})
                         result = postorderFitchBit inSeq inSeq inSeq f inSeq (fitchMeta {alphabet = newAlph, fitchMasks = generateMasks newAlph (olength inSeq)})
 

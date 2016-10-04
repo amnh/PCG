@@ -11,7 +11,7 @@ import           Bio.PhyloGraph.Solution    (SearchState,StandardMetadata)
 import           Control.Monad              (when)
 import           Control.Monad.IO.Class
 import           Control.Monad.Trans.Either
-import           Data.Alphabet
+import           Data.Alphabet       hiding (AmbiguityGroup)
 import           Data.Bifunctor             (bimap,first)
 import           Data.Char                  (isLower,toLower,isUpper,toUpper)
 import           Data.Either.Custom

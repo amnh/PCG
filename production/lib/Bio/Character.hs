@@ -29,4 +29,3 @@ module Bio.Character
 import Bio.Character.Dynamic
 import Bio.Character.Exportable.Class
 import Bio.Character.Static
-import Bio.Character.Stream
