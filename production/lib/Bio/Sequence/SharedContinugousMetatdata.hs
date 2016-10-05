@@ -35,10 +35,11 @@ data GeneralCharacterMetadata
    { characterAlphabet :: Alphabet String
    , characterName     :: CharacterName
    , characterWeight   :: Double
-   } deriving (Eq) 
+   } deriving (Eq, Show) 
 
 
 newtype SharedMetatdataIntervals = SMI (ReplicatedSequence GeneralCharacterMetadata)
+  deriving (Eq, Show)
 
 
 type instance Element SharedMetatdataIntervals = GeneralCharacterMetadata

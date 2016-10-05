@@ -1,6 +1,6 @@
 ------------------------------------------------------------------------------
 -- |
--- Module      :  Bio.Sequence.Bin.NonAdditive
+-- Module      :  Bio.Sequence.Bin.Metric
 -- Copyright   :  (c) 2015-2015 Ward Wheeler
 -- License     :  BSD-style
 --
@@ -12,8 +12,8 @@
 
 {-# LANGUAGE FlexibleContexts #-}
 
-module Bio.Sequence.Bin.NonAdditive
-  ( NonAdditiveBin(..)
+module Bio.Sequence.Bin.NonMetric
+  ( NonMetricBin(..)
   ) where
 
 
@@ -21,32 +21,35 @@ import Bio.Character.Static
 import Bio.Sequence.SharedContinugousMetatdata
 import Data.List.NonEmpty
 import Data.Monoid          (mappend)
-import Data.MonoTraversable (olength)
 import Data.Semigroup
+import Data.TCM (TCM)
 
 
-data NonAdditiveBin s
-   = NonAdditiveBin
+data NonMetricBin s
+   = NonMetricBin
    { characterStream :: s
+   , tcmDefinition   :: TCM
    , metatdataBounds :: SharedMetatdataIntervals
    } deriving (Eq,Show)
 
 
-instance Semigroup s => Semigroup (NonAdditiveBin s) where
+instance Semigroup s => Semigroup (NonMetricBin s) where
 
   lhs <> rhs =
-    NonAdditiveBin
+    NonMetricBin
       { characterStream = characterStream lhs <> characterStream rhs
+      , tcmDefinition   = tcmDefinition   lhs
       , metatdataBounds = metatdataBounds lhs `mappend` metatdataBounds rhs
       }
 
 
-nonAdditiveBin :: NonEmpty (NonEmpty String) -> GeneralCharacterMetadata -> NonAdditiveBin s
-nonAdditiveBin staticCharacters corespondingMetadata =
-  NonAdditiveBin
+nonMetricBin :: NonEmpty (NonEmpty String)) -> TCM -> GeneralCharacterMetadata -> NonMetricBin s
+nonMetricBin staticCharacters tcm corespondingMetadata =
+  NonMetricBin
     { characterStream = newChars
+    , tcmDefinition   = tcm
     , metatdataBounds = singleton (olength newChars) corespondingMetadata
     }
   where
-    newChars = encodeStream (characterAlphabet corespondingMetadata) staticCharacters
+    newChars = encodeStream (alphabet corespondingMetadata) staticCharacters
 

@@ -14,7 +14,20 @@
 
 module Bio.Sequence.Bin
   ( StaticCharacterBin(..)
+  , Additive()
+  , Continuous()
+  , Metric()
+  , NonAdditive()
+  , NonMetric()
   ) where
+
+
+import Bio.Sequence.Bin.Additive
+import Bio.Sequence.Bin.Continuous
+import Bio.Sequence.Bin.Metric
+import Bio.Sequence.Bin.NonAdditive
+import Bio.Sequence.Bin.NonMetric
+
 
 
 class StaticCharacterBin b where
