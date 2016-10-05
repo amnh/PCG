@@ -27,8 +27,8 @@ import Data.Semigroup
 
 data NonAdditiveBin s
    = NonAdditiveBin
-   { characterStream :: s
-   , metatdataBounds :: SharedMetatdataIntervals
+   { characterDecoration :: s
+   , metatdataBounds     :: SharedMetatdataIntervals
    } deriving (Eq,Show)
 
 
@@ -36,17 +36,6 @@ instance Semigroup s => Semigroup (NonAdditiveBin s) where
 
   lhs <> rhs =
     NonAdditiveBin
-      { characterStream = characterStream lhs <> characterStream rhs
-      , metatdataBounds = metatdataBounds lhs `mappend` metatdataBounds rhs
+      { characterDecoration = characterDecoration lhs    <>     characterDecoration rhs
+      , metatdataBounds     = metatdataBounds     lhs `mappend` metatdataBounds     rhs
       }
-
-
-nonAdditiveBin :: NonEmpty (NonEmpty String) -> GeneralCharacterMetadata -> NonAdditiveBin s
-nonAdditiveBin staticCharacters corespondingMetadata =
-  NonAdditiveBin
-    { characterStream = newChars
-    , metatdataBounds = singleton (olength newChars) corespondingMetadata
-    }
-  where
-    newChars = encodeStream (characterAlphabet corespondingMetadata) staticCharacters
-

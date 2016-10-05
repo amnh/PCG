@@ -13,7 +13,7 @@
 {-# LANGUAGE FlexibleContexts #-}
 
 module Bio.Sequence.Bin.Additive
-  ( NonAdditiveBin(..)
+  ( AdditiveBin(..)
   ) where
 
 
@@ -26,8 +26,8 @@ import Data.MonoTraversable      (olength)
 
 data AdditiveBin s
    = AdditiveBin
-   { characterStream :: s
-   , metatdataBounds :: SharedMetatdataIntervals
+   { characterDecoration :: s
+   , metatdataBounds     :: SharedMetatdataIntervals
    } deriving (Eq,Show)
 
 
@@ -35,17 +35,6 @@ instance Semigroup s => Semigroup (AdditiveBin s) where
 
   lhs <> rhs =
     AdditiveBin
-      { characterStream = characterStream lhs    <>     characterStream rhs
-      , metatdataBounds = metatdataBounds lhs `mappend` metatdataBounds rhs
+      { characterDecoration = characterDecoration lhs    <>     characterDecoration rhs
+      , metatdataBounds     = metatdataBounds     lhs `mappend` metatdataBounds     rhs
       }
-
-
-additiveBin :: NonEmpty (NonEmpty String) -> GeneralCharacterMetadata -> AdditiveBin s
-additiveBin staticCharacters corespondingMetadata =
-  AdditiveBin
-    { characterStream = newChars
-    , metatdataBounds = singleton (length staticCharacters) corespondingMetadata
-    }
-  where
-    newChars = encodeStream (characterAlphabet corespondingMetadata) staticCharacters
-
