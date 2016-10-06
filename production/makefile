@@ -14,7 +14,7 @@ profiling     = --executable-profiling --library-profiling
 
 
 # Default build target
-all: standard-build
+all: standard-build copy-docs
 
 # Rebuilds with profiling
 prof: stack-build-profiling
@@ -61,6 +61,12 @@ stack-build-profiling: phylocomgraph.cabal stack.yaml
 stack-build-test: phylocomgraph.cabal stack.yaml
 	stack build --test
 
+
+# Copies documentation director to local scope
+copy-docs:
+	rm -rf docs
+	cp -r .stack-work/dist/x86_64-linux/Cabal-1.24.0.0/doc/html/phylocomgraph docs
+	ln -s docs/index.html docs.html
 
 # Cleans up artefact files after a build
 clean: phylocomgraph.cabal stack.yaml
