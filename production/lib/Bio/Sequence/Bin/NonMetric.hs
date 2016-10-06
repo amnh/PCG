@@ -27,9 +27,9 @@ import Data.TCM (TCM)
 
 data NonMetricBin s
    = NonMetricBin
-   { characterStream :: s
-   , tcmDefinition   :: TCM
-   , metatdataBounds :: SharedMetatdataIntervals
+   { characterDecoration :: s
+   , tcmDefinition       :: TCM
+   , metatdataBounds     :: SharedMetatdataIntervals
    } deriving (Eq,Show)
 
 
@@ -37,19 +37,7 @@ instance Semigroup s => Semigroup (NonMetricBin s) where
 
   lhs <> rhs =
     NonMetricBin
-      { characterStream = characterStream lhs <> characterStream rhs
-      , tcmDefinition   = tcmDefinition   lhs
-      , metatdataBounds = metatdataBounds lhs `mappend` metatdataBounds rhs
+      { characterDecoration = characterDecoration lhs    <>     characterDecoration rhs
+      , tcmDefinition       = tcmDefinition       lhs
+      , metatdataBounds     = metatdataBounds     lhs `mappend` metatdataBounds     rhs
       }
-
-
-nonMetricBin :: NonEmpty (NonEmpty String)) -> TCM -> GeneralCharacterMetadata -> NonMetricBin s
-nonMetricBin staticCharacters tcm corespondingMetadata =
-  NonMetricBin
-    { characterStream = newChars
-    , tcmDefinition   = tcm
-    , metatdataBounds = singleton (olength newChars) corespondingMetadata
-    }
-  where
-    newChars = encodeStream (alphabet corespondingMetadata) staticCharacters
-

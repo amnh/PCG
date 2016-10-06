@@ -14,11 +14,11 @@
 
 module Bio.Sequence.Bin
   ( StaticCharacterBin(..)
-  , Additive()
-  , Continuous()
-  , Metric()
-  , NonAdditive()
-  , NonMetric()
+  , AdditiveBin()
+  , ContinuousBin()
+  , MetricBin()
+  , NonAdditiveBin()
+  , NonMetricBin()
   ) where
 
 

@@ -14,7 +14,6 @@
 
 module Bio.Sequence.Bin.Metric
   ( MetricBin(..)
-  , metricBin
   ) where
 
 
@@ -29,9 +28,9 @@ import Data.TCM             (TCM)
 
 data MetricBin s
    = MetricBin
-   { characterStream :: s
-   , tcmDefinition   :: TCM
-   , metatdataBounds :: SharedMetatdataIntervals
+   { characterDecoration :: s
+   , tcmDefinition       :: TCM
+   , metatdataBounds     :: SharedMetatdataIntervals
    } deriving (Eq,Show)
 
 
@@ -39,19 +38,7 @@ instance Semigroup s => Semigroup (MetricBin s) where
 
   lhs <> rhs =
     MetricBin
-      { characterStream = characterStream lhs <> characterStream rhs
-      , tcmDefinition   = tcmDefinition   lhs
-      , metatdataBounds = metatdataBounds lhs `mappend` metatdataBounds rhs
+      { characterDecoration = characterDecoration lhs    <>     characterDecoration rhs
+      , tcmDefinition       = tcmDefinition       lhs
+      , metatdataBounds     = metatdataBounds     lhs `mappend` metatdataBounds     rhs
       }
-
-
-metricBin :: NonEmpty (NonEmpty String) -> TCM -> GeneralCharacterMetadata -> MetricBin s
-metricBin staticCharacters tcm corespondingMetadata =
-  MetricBin
-    { characterStream = newChars
-    , tcmDefinition   = tcm
-    , metatdataBounds = singleton (olength newChars) corespondingMetadata
-    }
-  where
-    newChars = encodeStream (alphabet corespondingMetadata) staticCharacters
-
