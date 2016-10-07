@@ -24,6 +24,8 @@ module Data.TCM
     -- * Indexing
   , (!)
   , (!?)
+    -- * Queries
+  , size
     -- * Specialization Utility
   , diagnoseTcm
   ) where
