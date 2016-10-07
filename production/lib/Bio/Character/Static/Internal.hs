@@ -25,6 +25,7 @@ module Bio.Character.Static.Internal
   , StaticCharacterBlock()
   ) where
 
+import           Bio.Character.Internal
 import           Bio.Character.Static.Class
 import           Bio.Character.Stream
 import           Bio.Character.Exportable.Class
@@ -73,76 +74,10 @@ newtype StaticCharacterBlock
 type instance Element StaticCharacterBlock = StaticCharacter
 
 
-instance MonoFunctor StaticCharacterBlock where
+instance EncodedAmbiguityGroupContainer StaticCharacter where
 
-    omap f = SCB . omap (unwrap . f . SC) . unstream
-  
-
-instance Semigroup StaticCharacterBlock where
-
-    (SCB lhs) <> (SCB rhs)
-      | m == n    = SCB . expandVector m $ collapseRows lhs `mappend` collapseRows rhs
-      | otherwise = error $ unwords ["Attempt to concatentate two StaticCharacterBlock of differing stateCounts:", show m, show n]
-      where
-        m = numCols lhs
-        n = numCols rhs
-
-
-instance MonoFoldable StaticCharacterBlock where
-
-    -- | Map each element of a monomorphic container to a 'Monoid'
-    -- and combine the results.
-    {-# INLINE ofoldMap #-}
-    ofoldMap f = ofoldMap (f . SC) . unstream
-
-    -- | Right-associative fold of a monomorphic container.
-    {-# INLINE ofoldr #-}
-    ofoldr f e = ofoldr (f . SC) e . unstream
-
-    -- | Strict left-associative fold of a monomorphic container.
-    {-# INLINE ofoldl' #-}
-    ofoldl' f e = ofoldl' (\acc x -> f acc (SC x)) e . unstream
-
-    -- | Right-associative fold of a monomorphic container with no base element.
-    --
-    -- Note: this is a partial function. On an empty 'MonoFoldable', it will
-    -- throw an exception.
-    --
-    -- /See 'Data.MinLen.ofoldr1Ex' from "Data.MinLen" for a total version of this function./
-    {-# INLINE ofoldr1Ex #-}
-    ofoldr1Ex f = SC . ofoldr1Ex (\x y -> unwrap $ f (SC x) (SC y)) . unstream
-
-    -- | Strict left-associative fold of a monomorphic container with no base
-    -- element.
-    --
-    -- Note: this is a partial function. On an empty 'MonoFoldable', it will
-    -- throw an exception.
-    --
-    -- /See 'Data.MinLen.ofoldl1Ex'' from "Data.MinLen" for a total version of this function./
-    {-# INLINE ofoldl1Ex' #-}
-    ofoldl1Ex' f = SC . ofoldl1Ex' (\x y -> unwrap $ f (SC x) (SC y)) . unstream
-
-    {-# INLINE onull #-}
-    onull = const False
-
-    {-# INLINE olength #-}
-    olength = numRows . unstream
-
-
--- | Monomorphic containers that can be traversed from left to right.
-instance MonoTraversable StaticCharacterBlock where
-
-    -- | Map each element of a monomorphic container to an action,
-    -- evaluate these actions from left to right, and
-    -- collect the results.
-    {-# INLINE otraverse #-}
-    otraverse f = fmap SCB . otraverse (fmap unwrap . f . SC) . unstream
-
-    -- | Map each element of a monomorphic container to a monadic action,
-    -- evaluate these actions from left to right, and
-    -- collect the results.
-    {-# INLINE omapM #-}
-    omapM = otraverse
+    {-# INLINE symbolCount #-}
+    symbolCount = width . unwrap
 
 
 instance EncodableStreamElement StaticCharacter where
@@ -159,11 +94,64 @@ instance EncodableStreamElement StaticCharacter where
     -- Hence foldl, don't try foldMap or toList & fmap without careful thought.
     encodeElement alphabet ambiguity = SC . fromBits $ foldl' (\xs x -> (x `elem` ambiguity) : xs) [] alphabet
 
-    stateCount = width . unwrap
-
 
 instance EncodableStaticCharacter StaticCharacter
 
+
+instance MonoFunctor StaticCharacterBlock where
+
+    {-# INLINE omap #-}
+    omap f = SCB . omap (unwrap . f . SC) . unstream
+  
+
+instance Semigroup StaticCharacterBlock where
+
+    (SCB lhs) <> (SCB rhs)
+      | m == n    = SCB . expandVector m $ collapseRows lhs `mappend` collapseRows rhs
+      | otherwise = error $ unwords ["Attempt to concatentate two StaticCharacterBlock of differing stateCounts:", show m, show n]
+      where
+        m = numCols lhs
+        n = numCols rhs
+
+
+instance MonoFoldable StaticCharacterBlock where
+
+    {-# INLINE ofoldMap #-}
+    ofoldMap f = ofoldMap (f . SC) . unstream
+
+    {-# INLINE ofoldr #-}
+    ofoldr f e = ofoldr (f . SC) e . unstream
+
+    {-# INLINE ofoldl' #-}
+    ofoldl' f e = ofoldl' (\acc x -> f acc (SC x)) e . unstream
+
+    {-# INLINE ofoldr1Ex #-}
+    ofoldr1Ex f = SC . ofoldr1Ex (\x y -> unwrap $ f (SC x) (SC y)) . unstream
+
+    {-# INLINE ofoldl1Ex' #-}
+    ofoldl1Ex' f = SC . ofoldl1Ex' (\x y -> unwrap $ f (SC x) (SC y)) . unstream
+
+    {-# INLINE onull #-}
+    onull = const False
+
+    {-# INLINE olength #-}
+    olength = numRows . unstream
+
+
+-- | Monomorphic containers that can be traversed from left to right.
+instance MonoTraversable StaticCharacterBlock where
+
+    {-# INLINE otraverse #-}
+    otraverse f = fmap SCB . otraverse (fmap unwrap . f . SC) . unstream
+
+    {-# INLINE omapM #-}
+    omapM = otraverse
+
+
+instance EncodedAmbiguityGroupContainer StaticCharacterBlock where
+
+    {-# INLINE symbolCount #-}
+    symbolCount   = numCols . unstream
 
 
 instance EncodableStream StaticCharacterBlock where
@@ -204,6 +192,9 @@ instance EncodableStream StaticCharacterBlock where
       | 0 <= i && i < numRows bm = Just . SC $ bm `row` i
       | otherwise                = Nothing
 
+    {-# INLINE gapOfStream #-}
+    gapOfStream = bit . pred . symbolCount
+
 
 instance EncodableStaticCharacterStream StaticCharacterBlock where
 
@@ -212,11 +203,11 @@ instance EncodableStaticCharacterStream StaticCharacterBlock where
 
 instance Arbitrary StaticCharacterBlock where
     arbitrary = do 
-        symbolCount  <- arbitrary `suchThat` (\x -> 0 < x && x <= 62) :: Gen Int
+        alphabetLen  <- arbitrary `suchThat` (\x -> 0 < x && x <= 62) :: Gen Int
         characterLen <- arbitrary `suchThat` (> 0) :: Gen Int
-        let randVal  =  choose (1, 2 ^ symbolCount - 1) :: Gen Integer
+        let randVal  =  choose (1, 2 ^ alphabetLen - 1) :: Gen Integer
         bitRows      <- vectorOf characterLen randVal
-        pure . SCB . fromRows $ bitVec symbolCount <$> bitRows
+        pure . SCB . fromRows $ bitVec alphabetLen <$> bitRows
 
 
 instance Exportable StaticCharacterBlock where

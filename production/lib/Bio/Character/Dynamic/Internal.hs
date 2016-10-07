@@ -26,6 +26,7 @@ module Bio.Character.Dynamic.Internal
   ) where
 
 import           Bio.Character.Dynamic.Class
+import           Bio.Character.Internal
 import           Bio.Character.Stream
 import           Bio.Character.Exportable.Class
 import           Control.Arrow                       ((***))
@@ -73,129 +74,123 @@ type instance Element DynamicChar = BitVector
 type DynamicChars = Vector DynamicChar
 
 
---instance NFData DynamicChar
+instance EncodedAmbiguityGroupContainer BitVector where
 
-
-instance MonoFunctor DynamicChar where
-  omap f (DC bm) = DC $ omap f bm
-
-
-instance MonoFoldable DynamicChar where
-  -- | Map each element of a monomorphic container to a 'Monoid'
-  -- and combine the results.
-  {-# INLINE ofoldMap #-}
-  ofoldMap f (DC bm) = ofoldMap f bm
-
-  -- | Right-associative fold of a monomorphic container.
-  {-# INLINE ofoldr #-}
-  ofoldr f e (DC bm) = ofoldr f e bm
-
-  -- | Strict left-associative fold of a monomorphic container.
-  {-# INLINE ofoldl' #-}
-  ofoldl' f e (DC bm) = ofoldl' f e bm
-
-  -- | Right-associative fold of a monomorphic container with no base element.
-  --
-  -- Note: this is a partial function. On an empty 'MonoFoldable', it will
-  -- throw an exception.
-  --
-  -- /See 'Data.MinLen.ofoldr1Ex' from "Data.MinLen" for a total version of this function./
-  {-# INLINE ofoldr1Ex #-}
-  ofoldr1Ex f (DC bm) = ofoldr1Ex f bm
-
-  -- | Strict left-associative fold of a monomorphic container with no base
-  -- element.
-  --
-  -- Note: this is a partial function. On an empty 'MonoFoldable', it will
-  -- throw an exception.
-  --
-  -- /See 'Data.MinLen.ofoldl1Ex'' from "Data.MinLen" for a total version of this function./
-  {-# INLINE ofoldl1Ex' #-}
-  ofoldl1Ex' f (DC bm) = ofoldl1Ex' f bm
-
-  {-# INLINE onull #-}
-  onull (DC bm) = onull bm
-
-  {-# INLINE olength #-}
-  olength (DC bm) = numRows bm
-
-
--- | Monomorphic containers that can be traversed from left to right.
-instance MonoTraversable DynamicChar where
-    -- | Map each element of a monomorphic container to an action,
-    -- evaluate these actions from left to right, and
-    -- collect the results.
-    {-# INLINE otraverse #-}
-    otraverse f (DC bm) = DC <$> otraverse f bm
-
-    -- | Map each element of a monomorphic container to a monadic action,
-    -- evaluate these actions from left to right, and
-    -- collect the results.
-    {-# INLINE omapM #-}
-    omapM = otraverse
+    {-# INLINE symbolCount  #-}
+    symbolCount = width
 
 
 instance EncodableStreamElement BitVector where
 
-  decodeElement alphabet character = NE.fromList $ foldMapWithKey f alphabet
-    where
-      f i symbol
-        | character `testBit` i = [symbol]
-        | otherwise             = []
+    decodeElement alphabet character = NE.fromList $ foldMapWithKey f alphabet
+      where
+        f i symbol
+          | character `testBit` i = [symbol]
+          | otherwise             = []
 
-  -- Use foldl here to do an implicit reversal of the alphabet!
-  -- The head element of the list is the most significant bit when calling fromBits.
-  -- We need the first element of the alphabet to correspond to the least significant bit.
-  -- Hence foldl, don't try foldMap or toList & fmap without careful thought.
-  encodeElement alphabet ambiguity = fromBits $ foldl' (\xs x -> (x `elem` ambiguity) : xs) [] alphabet
+    -- Use foldl here to do an implicit reversal of the alphabet!
+    -- The head element of the list is the most significant bit when calling fromBits.
+    -- We need the first element of the alphabet to correspond to the least significant bit.
+    -- Hence foldl, don't try foldMap or toList & fmap without careful thought.
+    encodeElement alphabet ambiguity = fromBits $ foldl' (\xs x -> (x `elem` ambiguity) : xs) [] alphabet
 
-  stateCount = width
+
+--instance NFData DynamicChar
+
+
+instance MonoFunctor DynamicChar where
+
+    {-# INLINE omap #-}
+    omap f (DC bm) = DC $ omap f bm
+
+
+instance MonoFoldable DynamicChar where
+
+    {-# INLINE ofoldMap #-}
+    ofoldMap f (DC bm) = ofoldMap f bm
+
+    {-# INLINE ofoldr #-}
+    ofoldr f e (DC bm) = ofoldr f e bm
+
+    {-# INLINE ofoldl' #-}
+    ofoldl' f e (DC bm) = ofoldl' f e bm
+
+    {-# INLINE ofoldr1Ex #-}
+    ofoldr1Ex f (DC bm) = ofoldr1Ex f bm
+
+    {-# INLINE ofoldl1Ex' #-}
+    ofoldl1Ex' f (DC bm) = ofoldl1Ex' f bm
+
+    {-# INLINE onull #-}
+    onull (DC bm) = onull bm
+
+    {-# INLINE olength #-}
+    olength (DC bm) = numRows bm
+
+
+-- | Monomorphic containers that can be traversed from left to right.
+instance MonoTraversable DynamicChar where
+
+    {-# INLINE otraverse #-}
+    otraverse f (DC bm) = DC <$> otraverse f bm
+
+    {-# INLINE omapM #-}
+    omapM = otraverse
+
+
+instance EncodedAmbiguityGroupContainer DynamicChar where
+
+    {-# INLINE symbolCount #-} 
+    symbolCount (DC bm) = numCols bm
 
 
 instance EncodableStream DynamicChar where
 
-  decodeStream alphabet char
-    | alphabet /= dnaAlphabet = rawResult 
-    | otherwise               = (dnaIUPAC !) <$> rawResult
-    where
-      rawResult   = NE.fromList . ofoldMap (pure . decodeElement alphabet) . otoList $ char
-      dnaAlphabet = fromSymbols $ fromString <$> ["A","C","G","T"]
---      dnaIUPAC :: (IsString a, Ord a) => Map [a] [a]
-      dnaIUPAC    = M.fromList . fmap (swap . (NE.fromList . pure . fromChar *** NE.fromList . fmap fromChar)) $ mapping
-        where
-          fromChar = fromString . pure
-          mapping  = gapMap <> noGapMap <> [('-', "-")]
-          gapMap   = (toLower *** (<> "-")) <$> noGapMap
-          noGapMap =
-            [ ('A', "A"   )
-            , ('C', "C"   )
-            , ('G', "G"   )
-            , ('T', "T"   )
-            , ('M', "AC"  ) 
-            , ('R', "AG"  )
-            , ('W', "AT"  )
-            , ('S', "CG"  )
-            , ('Y', "CT"  )
-            , ('K', "GT"  )
-            , ('V', "ACG" )
-            , ('H', "ACT" )
-            , ('D', "AGT" )
-            , ('B', "CGT" )
-            , ('N', "ACGT")
-            ]
+    decodeStream alphabet char
+      | alphabet /= dnaAlphabet = rawResult 
+      | otherwise               = (dnaIUPAC !) <$> rawResult
+      where
+        rawResult   = NE.fromList . ofoldMap (pure . decodeElement alphabet) . otoList $ char
+        dnaAlphabet = fromSymbols $ fromString <$> ["A","C","G","T"]
+--        dnaIUPAC :: (IsString a, Ord a) => Map [a] [a]
+        dnaIUPAC    = M.fromList . fmap (swap . (NE.fromList . pure . fromChar *** NE.fromList . fmap fromChar)) $ mapping
+          where
+            fromChar = fromString . pure
+            mapping  = gapMap <> noGapMap <> [('-', "-")]
+            gapMap   = (toLower *** (<> "-")) <$> noGapMap
+            noGapMap =
+              [ ('A', "A"   )
+              , ('C', "C"   )
+              , ('G', "G"   )
+              , ('T', "T"   )
+              , ('M', "AC"  ) 
+              , ('R', "AG"  )
+              , ('W', "AT"  )
+              , ('S', "CG"  )
+              , ('Y', "CT"  )
+              , ('K', "GT"  )
+              , ('V', "ACG" )
+              , ('H', "ACT" )
+              , ('D', "AGT" )
+              , ('B', "CGT" )
+              , ('N', "ACGT")
+              ]
 
-  encodeStream alphabet = DC . fromRows . fmap (encodeElement alphabet) . toList
+    encodeStream alphabet = DC . fromRows . fmap (encodeElement alphabet) . toList
 
-  lookupStream (DC bm) i
-    | 0 <= i && i < numRows bm = Just $ bm `row` i
-    | otherwise                = Nothing
+    lookupStream (DC bm) i
+      | 0 <= i && i < numRows bm = Just $ bm `row` i
+      | otherwise                = Nothing
+
+    {-# INLINE gapOfStream #-}
+    gapOfStream = bit . pred . symbolCount 
 
 
 instance EncodableDynamicCharacter DynamicChar where
 
-  constructDynamic = DC . fromRows . toList
-
-  encodeDynamic alphabet = encodeStream alphabet . NE.fromList . fmap (NE.fromList . toList) . toList
+    constructDynamic = DC . fromRows . toList
+    
+    encodeDynamic alphabet = encodeStream alphabet . NE.fromList . fmap (NE.fromList . toList) . toList
 
 
 -- TODO: Probably remove?
@@ -225,11 +220,11 @@ instance Memoizable DynamicChar where
 -- Most algorithms assume a nonempty dynamic character.
 instance Arbitrary DynamicChar where
     arbitrary = do 
-        symbolCount  <- arbitrary `suchThat` (\x -> 0 < x && x <= 62) :: Gen Int
+        alphabetLen  <- arbitrary `suchThat` (\x -> 0 < x && x <= 62) :: Gen Int
         characterLen <- arbitrary `suchThat` (> 0) :: Gen Int
-        let randVal  =  choose (1, 2 ^ symbolCount - 1) :: Gen Integer
+        let randVal  =  choose (1, 2 ^ alphabetLen - 1) :: Gen Integer
         bitRows      <- vectorOf characterLen randVal
-        pure . DC . fromRows $ bitVec symbolCount <$> bitRows
+        pure . DC . fromRows $ bitVec alphabetLen <$> bitRows
 
 
 -- | Functionality to unencode many encoded sequences

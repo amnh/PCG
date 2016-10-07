@@ -167,6 +167,7 @@ library
                        Analysis.Parsimony.Binary.Constraints
                        Bio.Character.Dynamic.Class
                        Bio.Character.Dynamic.Internal
+                       Bio.Character.Internal
                        Bio.Character.Parsed.Class
                        Bio.Character.Parsed.Internal
                        Bio.Character.Static.Class
@@ -190,6 +191,12 @@ library
                        Bio.PhyloGraph.Tree.Binary.Class
                        Bio.PhyloGraph.Tree.EdgeAware.Class
                        Bio.PhyloGraph.Tree.Rose.Class
+                       Bio.Character.Internal
+                       Bio.Sequence.Bin.Additive
+                       Bio.Sequence.Bin.Continuous
+                       Bio.Sequence.Bin.Metric
+                       Bio.Sequence.Bin.NonAdditive
+                       Bio.Sequence.Bin.NonMetric
                        Control.Evaluation.Unit
                        Control.Evaluation.Internal
                        Control.Evaluation.Trans

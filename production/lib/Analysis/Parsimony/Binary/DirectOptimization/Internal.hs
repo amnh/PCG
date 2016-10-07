@@ -267,8 +267,8 @@ getCost costStruct seqTup1 seqTup2 =
                                                            else (c1 .|. c2, sub)
     where
       s   = snd seqTup1
-      z   = s `xor` s
-      gap = z `setBit` (stateCount s - 1)
+--      z   = s `xor` s
+      gap = getGapElement s -- z `setBit` (symbolCount s - 1)
 {-      
       f indel sub c1 c2
         | indel == sub                             = (c1 .|. c2,   sub)
@@ -292,7 +292,7 @@ getSubChars :: EncodableStreamElement s => s -> [(Int, s)]
 getSubChars fullChar = foldr (\i acc -> if testBit fullChar i 
                                         then (i, z `setBit` i) : acc 
                                         else acc 
-                             ) mempty [0 .. stateCount fullChar - 1]
+                             ) mempty [0 .. symbolCount fullChar - 1]
   where
     z = fullChar `xor` fullChar
 

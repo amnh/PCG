@@ -30,10 +30,10 @@ arbitraryDynamicsGA inAlph = V.fromList <$> listOf (arbitraryDynamicGivenAlph in
 -- | An infinite list of (non-empty) 'DynamicChar's of fixed width and varying length.
 arbitraryDynamicCharStream :: Gen [DynamicChar]
 arbitraryDynamicCharStream = do
-    symbolCount  <- arbitrary `suchThat` (\x -> 0 < x && x <= 62) :: Gen Int
+    alphabetLen  <- arbitrary `suchThat` (\x -> 0 < x && x <= 62) :: Gen Int
     let randChar = do characterLen <- arbitrary `suchThat` (> 0) :: Gen Int
-                      let randVal  =  choose (1, 2 ^ symbolCount - 1) :: Gen Integer
+                      let randVal  =  choose (1, 2 ^ alphabetLen - 1) :: Gen Integer
                       bitRows      <- vectorOf characterLen randVal
-                      pure . DC . fromRows $ bitVec symbolCount <$> bitRows
+                      pure . DC . fromRows $ bitVec alphabetLen <$> bitRows
     infiniteListOf randChar
 

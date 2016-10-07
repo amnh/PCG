@@ -15,12 +15,14 @@
 module Bio.Character.Static
   ( StaticCharacter()
   , StaticCharacterBlock()
+  , EncodedAmbiguityGroupContainer(..)
   , EncodableStaticCharacter(..)
   , EncodableStaticCharacterStream(..)
   , EncodableStreamElement(..)
   , EncodableStream(..)
   ) where
 
+import Bio.Character.Internal
 import Bio.Character.Static.Internal
 import Bio.Character.Static.Class
 import Bio.Character.Stream

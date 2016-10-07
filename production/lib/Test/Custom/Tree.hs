@@ -207,8 +207,8 @@ renderDynamicCharacter alphabetMay char
   | onull char = ""
   | otherwise  = concatMap (f . toList) $ decodeStream alphabet char
   where
-    symbolCount     = stateCount $ char `indexStream` 0
-    symbols         = take symbolCount arbitrarySymbols
+    numSymbols      = symbolCount char
+    symbols         = take numSymbols arbitrarySymbols
     defaultAlphabet = fromSymbols symbols
     alphabet        = fromMaybe defaultAlphabet alphabetMay
     f :: [String] -> String

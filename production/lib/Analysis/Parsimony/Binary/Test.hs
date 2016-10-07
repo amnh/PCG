@@ -79,7 +79,7 @@ fitchProperties = testGroup "Properties of the Fitch algorithm" [preIdHolds, pos
                 checkID :: DynamicChar -> Bool
                 checkID inSeq = result == inSeq && cost == 0
                     where 
-                        newAlph = fromSymbols $ take (stateCount $ inSeq `indexStream` 0) abstractSymbols
+                        newAlph = fromSymbols $ take (symbolCount $ inSeq `indexStream` 0) abstractSymbols
                         (result, _, cost) = preorderFitchBit 1 inSeq inSeq (fitchMeta {alphabet = newAlph, fitchMasks = generateMasks newAlph (olength inSeq)})
 
         postIdHolds = testProperty "When Postorder Fitch runs a sequence against itself, get input as result" checkID
@@ -87,7 +87,7 @@ fitchProperties = testGroup "Properties of the Fitch algorithm" [preIdHolds, pos
                 checkID :: DynamicChar -> Bool
                 checkID inSeq = result == inSeq
                     where 
-                        newAlph = fromSymbols $ take (stateCount $ inSeq `indexStream` 0) abstractSymbols
+                        newAlph = fromSymbols $ take (symbolCount $ inSeq `indexStream` 0) abstractSymbols
                         (_, f, _) = preorderFitchBit 1 inSeq inSeq (fitchMeta {alphabet = newAlph, fitchMasks = generateMasks newAlph (olength inSeq)})
                         result = postorderFitchBit inSeq inSeq inSeq f inSeq (fitchMeta {alphabet = newAlph, fitchMasks = generateMasks newAlph (olength inSeq)})
 
