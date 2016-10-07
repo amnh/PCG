@@ -13,15 +13,13 @@
 {-# LANGUAGE FlexibleContexts #-}
 
 module Bio.Sequence.Bin.NonAdditive
-  ( NonAdditiveBin(..)
+  ( NonAdditiveBin(characterDecoration, metatdataBounds)
   ) where
 
 
 import Bio.Character.Static
 import Bio.Sequence.SharedContinugousMetatdata
-import Data.List.NonEmpty
 import Data.Monoid          (mappend)
-import Data.MonoTraversable (olength)
 import Data.Semigroup
 
 
@@ -29,7 +27,14 @@ data NonAdditiveBin s
    = NonAdditiveBin
    { characterDecoration :: s
    , metatdataBounds     :: SharedMetatdataIntervals
+   , width               :: !Int -- We hid this field
    } deriving (Eq,Show)
+
+
+instance EncodedAmbiguityGroupContainer (NonAdditiveBin s) where
+
+    {-# INLINE symbolCount #-}
+    symbolCount = width
 
 
 instance Semigroup s => Semigroup (NonAdditiveBin s) where
@@ -38,4 +43,5 @@ instance Semigroup s => Semigroup (NonAdditiveBin s) where
     NonAdditiveBin
       { characterDecoration = characterDecoration lhs    <>     characterDecoration rhs
       , metatdataBounds     = metatdataBounds     lhs `mappend` metatdataBounds     rhs
+      , width               = width lhs
       }

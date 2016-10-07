@@ -1,6 +1,6 @@
 ------------------------------------------------------------------------------
 -- |
--- Module      :  Bio.Metadata.Sequence.Bin
+-- Module      :  Bio.Metadata.Sequence.Bin.Class
 -- Copyright   :  (c) 2015-2015 Ward Wheeler
 -- License     :  BSD-style
 --
@@ -10,22 +10,15 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE FlexibleContexts #-}
-
-module Bio.Sequence.Bin
+module Bio.Sequence.Bin.Class
   ( StaticCharacterBin(..)
-  , AdditiveBin()
-  , ContinuousBin()
-  , MetricBin()
-  , NonAdditiveBin()
-  , NonMetricBin()
+  , EncodedAmbiguityGroupContainer(..)
   ) where
 
 
 import Bio.Character.Internal
-import Bio.Sequence.Bin.Additive
-import Bio.Sequence.Bin.Class
-import Bio.Sequence.Bin.Continuous
-import Bio.Sequence.Bin.Metric
-import Bio.Sequence.Bin.NonAdditive
-import Bio.Sequence.Bin.NonMetric
+
+
+class EncodedAmbiguityGroupContainer b => StaticCharacterBin b where
+
+    binSize :: b -> Int

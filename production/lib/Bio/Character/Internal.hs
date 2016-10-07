@@ -19,4 +19,4 @@ module Bio.Character.Internal where
 -- ambiguity group.
 class EncodedAmbiguityGroupContainer w where
 
-  symbolCount   :: w -> Int
+  symbolCount :: w -> Int

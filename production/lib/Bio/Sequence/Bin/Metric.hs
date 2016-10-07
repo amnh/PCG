@@ -19,11 +19,9 @@ module Bio.Sequence.Bin.Metric
 
 import Bio.Character.Static
 import Bio.Sequence.SharedContinugousMetatdata
-import Data.List.NonEmpty
 import Data.Monoid          (mappend)
-import Data.MonoTraversable (olength)
 import Data.Semigroup
-import Data.TCM             (TCM)
+import Data.TCM
 
 
 data MetricBin s
@@ -32,6 +30,12 @@ data MetricBin s
    , tcmDefinition       :: TCM
    , metatdataBounds     :: SharedMetatdataIntervals
    } deriving (Eq,Show)
+
+
+instance EncodedAmbiguityGroupContainer (MetricBin s) where
+
+    {-# INLINE symbolCount #-}
+    symbolCount = size . tcmDefinition
 
 
 instance Semigroup s => Semigroup (MetricBin s) where

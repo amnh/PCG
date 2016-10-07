@@ -5,6 +5,7 @@ packages:
 - '.'
 system-ghc: false
 extra-deps:
+- ListZipper-1.2.0.2
 - QuickCheck-2.9.1
 - attoparsec-0.13.0.2
 - bv-0.4.1
