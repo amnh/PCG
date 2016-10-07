@@ -150,7 +150,7 @@ getParsedChar = fmap (fmap getNonEmpty . getNonEmpty)
 testEncodableStaticCharacterInstanceBitVector :: TestTree
 testEncodableStaticCharacterInstanceBitVector = testGroup "BitVector instance of EncodableDynamicCharacter" [testLaws]
   where
-    encodeChar' :: Alphabet String -> NonEmpty String -> BitVector
+    encodeChar' :: Alphabet String -> NonEmpty String -> DynamicCharacterElement
     encodeChar' = encodeElement
     testLaws = testGroup "EncodableDynamicChar Laws"
              [ encodeDecodeIdentity

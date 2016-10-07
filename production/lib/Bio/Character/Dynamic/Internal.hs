@@ -16,13 +16,14 @@
 -- TODO: Remove all commented-out code.
 
 -- TODO: are all of these necessary?
-{-# LANGUAGE FlexibleInstances, MultiParamTypeClasses, TypeFamilies, TypeSynonymInstances, UndecidableInstances #-}
+{-# LANGUAGE FlexibleInstances, GeneralizedNewtypeDeriving, MultiParamTypeClasses, TypeFamilies, TypeSynonymInstances, UndecidableInstances #-}
 -- TODO: fix and remove this ghc option (is it needed for Arbitrary?):
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
 module Bio.Character.Dynamic.Internal
   ( DynamicChar (DC)
   , DynamicChars
+  , DynamicCharacterElement()
   ) where
 
 import           Bio.Character.Dynamic.Class
@@ -57,30 +58,38 @@ import           Test.QuickCheck.Arbitrary.Instances ()
         -- Make a missing a null vector
         -- Think about a nonempty type class or a refinement type for this
 
--- | Represents an encoded dynamic character, consisting of one or more static
---   characters. Dynamic characters treat entire static characters as the
---   character states of the dynamic character. The dynamic character relies on
---   the encoding of the individual static characters to defined the encoding of
---   the entire dynamic character.
+-- |
+-- Represents an encoded dynamic character, consisting of one or more static
+-- characters. Dynamic characters treat entire static characters as the
+-- character states of the dynamic character. The dynamic character relies on
+-- the encoding of the individual static characters to defined the encoding of
+-- the entire dynamic character.
 newtype DynamicChar
       = DC BitMatrix
       deriving (Eq, Show)
 
 
-type instance Element DynamicChar = BitVector
+-- |
+-- Represents a sinlge element of a dynamic character. 
+newtype DynamicCharacterElement
+      = DCE BitVector
+      deriving (Bits, Eq, Enum, Num, Ord, Show)
 
 
--- | A sequence of many dynamic characters. Probably should be asserted as non-empty.y
+type instance Element DynamicChar = DynamicCharacterElement
+
+
+-- | A sequence of many dynamic characters. Probably should be asserted as non-empty.
 type DynamicChars = Vector DynamicChar
 
 
-instance EncodedAmbiguityGroupContainer BitVector where
+instance EncodedAmbiguityGroupContainer DynamicCharacterElement where
 
     {-# INLINE symbolCount  #-}
-    symbolCount = width
+    symbolCount = width . unwrap
 
 
-instance EncodableStreamElement BitVector where
+instance EncodableStreamElement DynamicCharacterElement where
 
     decodeElement alphabet character = NE.fromList $ foldMapWithKey f alphabet
       where
@@ -92,7 +101,7 @@ instance EncodableStreamElement BitVector where
     -- The head element of the list is the most significant bit when calling fromBits.
     -- We need the first element of the alphabet to correspond to the least significant bit.
     -- Hence foldl, don't try foldMap or toList & fmap without careful thought.
-    encodeElement alphabet ambiguity = fromBits $ foldl' (\xs x -> (x `elem` ambiguity) : xs) [] alphabet
+    encodeElement alphabet ambiguity = DCE . fromBits $ foldl' (\xs x -> (x `elem` ambiguity) : xs) [] alphabet
 
 
 --instance NFData DynamicChar
@@ -101,38 +110,38 @@ instance EncodableStreamElement BitVector where
 instance MonoFunctor DynamicChar where
 
     {-# INLINE omap #-}
-    omap f (DC bm) = DC $ omap f bm
+    omap f = DC . omap (unwrap . f . DCE) . unstream
 
 
 instance MonoFoldable DynamicChar where
 
     {-# INLINE ofoldMap #-}
-    ofoldMap f (DC bm) = ofoldMap f bm
+    ofoldMap f = ofoldMap (f . DCE) . unstream
 
     {-# INLINE ofoldr #-}
-    ofoldr f e (DC bm) = ofoldr f e bm
+    ofoldr f e = ofoldr (f . DCE)  e . unstream
 
     {-# INLINE ofoldl' #-}
-    ofoldl' f e (DC bm) = ofoldl' f e bm
+    ofoldl' f e = ofoldl' (\acc x -> f acc (DCE x)) e . unstream
 
     {-# INLINE ofoldr1Ex #-}
-    ofoldr1Ex f (DC bm) = ofoldr1Ex f bm
+    ofoldr1Ex f = DCE . ofoldr1Ex (\x y -> unwrap $ f (DCE x) (DCE y)) . unstream
 
     {-# INLINE ofoldl1Ex' #-}
-    ofoldl1Ex' f (DC bm) = ofoldl1Ex' f bm
+    ofoldl1Ex' f = DCE . ofoldl1Ex' (\x y -> unwrap $ f (DCE x) (DCE y)) .unstream
 
     {-# INLINE onull #-}
-    onull (DC bm) = onull bm
+    onull = const False
 
     {-# INLINE olength #-}
-    olength (DC bm) = numRows bm
+    olength = numRows . unstream
 
 
 -- | Monomorphic containers that can be traversed from left to right.
 instance MonoTraversable DynamicChar where
 
     {-# INLINE otraverse #-}
-    otraverse f (DC bm) = DC <$> otraverse f bm
+    otraverse f = fmap DC . otraverse (fmap unwrap . f . DCE) . unstream
 
     {-# INLINE omapM #-}
     omapM = otraverse
@@ -141,7 +150,7 @@ instance MonoTraversable DynamicChar where
 instance EncodedAmbiguityGroupContainer DynamicChar where
 
     {-# INLINE symbolCount #-} 
-    symbolCount (DC bm) = numCols bm
+    symbolCount = numCols . unstream
 
 
 instance EncodableStream DynamicChar where
@@ -176,10 +185,10 @@ instance EncodableStream DynamicChar where
               , ('N', "ACGT")
               ]
 
-    encodeStream alphabet = DC . fromRows . fmap (encodeElement alphabet) . toList
+    encodeStream alphabet = DC . fromRows . fmap (unwrap . encodeElement alphabet) . toList
 
     lookupStream (DC bm) i
-      | 0 <= i && i < numRows bm = Just $ bm `row` i
+      | 0 <= i && i < numRows bm = Just . DCE $ bm `row` i
       | otherwise                = Nothing
 
     {-# INLINE gapOfStream #-}
@@ -188,7 +197,7 @@ instance EncodableStream DynamicChar where
 
 instance EncodableDynamicCharacter DynamicChar where
 
-    constructDynamic = DC . fromRows . toList
+    constructDynamic = DC . fromRows . fmap unwrap . toList
     
     encodeDynamic alphabet = encodeStream alphabet . NE.fromList . fmap (NE.fromList . toList) . toList
 
@@ -215,12 +224,17 @@ instance Memoizable DynamicChar where
     memoize f (DC bm) = memoize (f . DC) bm
 -}
 
+instance Arbitrary DynamicCharacterElement where
+    arbitrary = do
+        alphabetLen <- arbitrary `suchThat` (\x -> 2 <= x && x <= 62) :: Gen Int
+        DCE . bitVec alphabetLen <$> (choose (1, 2 ^ alphabetLen - 1) :: Gen Integer)
+      
 
 -- We restrict the DynamicChar values generated to be non-empty.
 -- Most algorithms assume a nonempty dynamic character.
 instance Arbitrary DynamicChar where
     arbitrary = do 
-        alphabetLen  <- arbitrary `suchThat` (\x -> 0 < x && x <= 62) :: Gen Int
+        alphabetLen  <- arbitrary `suchThat` (\x -> 2 <= x && x <= 62) :: Gen Int
         characterLen <- arbitrary `suchThat` (> 0) :: Gen Int
         let randVal  =  choose (1, 2 ^ alphabetLen - 1) :: Gen Integer
         bitRows      <- vectorOf characterLen randVal
@@ -250,3 +264,13 @@ instance Exportable DynamicChar where
                    else [ bv @@ (totalBits - 1, totalBits - remainingBits) ]
         
     fromExportable = undefined
+
+
+{-# INLINE unstream #-}
+unstream :: DynamicChar -> BitMatrix
+unstream (DC x) = x
+
+
+{-# INLINE unwrap #-}
+unwrap :: DynamicCharacterElement -> BitVector
+unwrap (DCE x) = x

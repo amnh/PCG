@@ -15,6 +15,7 @@
 module Bio.Character.Dynamic
   ( DynamicChar(DC)
   , DynamicChars
+  , DynamicCharacterElement()
   , EncodedAmbiguityGroupContainer(..)
   , EncodableDynamicCharacter(..)
   , EncodableStreamElement(..)

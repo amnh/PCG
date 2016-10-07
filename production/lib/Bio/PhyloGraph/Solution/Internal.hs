@@ -16,7 +16,7 @@
 
 module Bio.PhyloGraph.Solution.Internal where
 
-import           Bio.PhyloGraph.DAG           hiding (root)
+import           Bio.PhyloGraph.DAG    hiding (root)
 import           Bio.PhyloGraph.Forest
 import           Bio.PhyloGraph.Network.Class
 import           Bio.PhyloGraph.Solution.Class
@@ -24,18 +24,16 @@ import qualified Bio.PhyloGraph.Solution.Metadata as MS
 import           Bio.Character.Parsed.Internal
 import           Bio.Character.Dynamic
 import           Bio.Metadata.Internal
-import           Bio.PhyloGraph.Node hiding (children, name)
-
+import           Bio.PhyloGraph.Node   hiding (children, name)
 import           Control.Evaluation
 import           Data.Alphabet
-import           Data.BitVector (width)
 import           Data.Foldable
-import           Data.HashMap.Strict (HashMap, fromList)
-import           Data.Matrix.NotStupid (matrix)
-import           Data.Monoid ((<>))
+import           Data.HashMap.Strict          (HashMap, fromList)
+import           Data.Matrix.NotStupid        (matrix)
+import           Data.Monoid                  ((<>))
 --import           Data.MonoTraversable
-import           Data.Vector      (Vector, (!))
-import qualified Data.Vector as V
+import           Data.Vector                 (Vector, (!))
+import qualified Data.Vector           as V
 import           Test.Tasty.QuickCheck 
 
 -- | The equatable identifier for a node in the graph.
@@ -123,7 +121,7 @@ deriveDynamicMetadatas (x:_) = sequenceA $ V.generate (length sequenceWLOG) f
             -- We don't care about the exact symbol rendering, only that they are unique and there are a correct quantity of them.
             -- We also know that the alphabet size of the generated Dynamic characters has been restricted to less than 62 in the
             -- BitMatrix library.
-            alphabetSize = width $ character `indexStream` 0
+            alphabetSize = symbolCount character
             symbols      = fmap pure $ ['0'..'9'] <> ['A'..'Z'] <> ['a'..'z']
 
     sequenceWLOG = encoded leafWLOG
