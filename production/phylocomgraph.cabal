@@ -115,6 +115,7 @@ library
                        Bio.Character.Static
                        Bio.Metadata
                        Bio.Metadata.CharacterName
+                       Bio.Sequence
                        Bio.Sequence.Bin
                        Bio.Sequence.SharedContinugousMetatdata
                        Bio.PhyloGraph
@@ -195,10 +196,12 @@ library
                        Bio.Character.Internal
                        Bio.Sequence.Bin.Additive
                        Bio.Sequence.Bin.Continuous
+                       Bio.Sequence.Bin.Class
                        Bio.Sequence.Bin.Metric
                        Bio.Sequence.Bin.NonAdditive
                        Bio.Sequence.Bin.NonMetric
                        Bio.Sequence.Block
+                       Bio.Sequence.Internal
                        Control.Evaluation.Unit
                        Control.Evaluation.Internal
                        Control.Evaluation.Trans
