@@ -44,6 +44,7 @@ library
                      , dlist                -any
                      , either               -any
                      , keys                 -any
+                     , lens
                      , ListZipper           -any
                      , matrix               -any
                      , megaparsec           >=5.0
@@ -109,6 +110,8 @@ library
                        Analysis.Parsimony.Binary.SequentialAlign
                        Bio.Character
                        Bio.Character.Dynamic
+                       Bio.Character.Dynamic.Decoration.Class
+                       Bio.Character.Dynamic.Decoration.Internal
                        Bio.Character.Exportable.Class
                        Bio.Character.Parsed
                        Bio.Character.Stream

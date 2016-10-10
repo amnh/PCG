@@ -1,6 +1,6 @@
 -----------------------------------------------------------------------------
 -- |
--- Module      :  Bio.Character.Dynamic.Decoration.Internal
+-- Module      :  Bio.Character.Dynamic.Decoration.Class
 -- Copyright   :  (c) 2015-2015 Ward Wheeler
 -- License     :  BSD-style
 --
@@ -12,19 +12,17 @@
 
 {-# LANGUAGE FlexibleInstances, FunctionalDependencies, MultiParamTypeClasses #-}
 
-module Bio.Character.Dynamic.Decoration.Internal where
+module Bio.Character.Dynamic.Decoration.Class where
 
-import           Bio.Character.Dynamic.Class
-import           Bio.Character.Dynamic.Decoration.Class
-import           Control.Lens
+import Bio.Character.Dynamic.Class
+import Control.Lens
 
 
-{-
 class ( HasEncoded s a
       , EncodableDynamicCharacter a
       ) => DynamicDecoration s a | s -> a where
 
-
+  
 class ( HasFinalGapped         s a
       , HasFinalUngapped       s a
       , HasPreliminaryGapped   s a
@@ -36,18 +34,40 @@ class ( HasFinalGapped         s a
 class ( HasImpliedAlignment           s a
       , DirectOptimizationDecoration  s a
       ) => ImpliedAlignmentDecoration s a | s -> a where
--}
 
 
-data InitialEncodedDecoration d
-   = InitialEncodedDecoration
-   { initialEncodedDecorationEncodedField :: d
-   }
-     
+class HasEncoded s a | s -> a where
 
-instance HasEncoded (InitialEncodedDecoration d) d where
-
-    encoded = lens initialEncodedDecorationEncodedField (\e x -> e { initialEncodedDecorationEncodedField = x })
+    encoded :: Lens' s a
+    {-# MINIMAL encoded #-}
 
 
-instance EncodableDynamicCharacter d => DynamicDecoration (InitialEncodedDecoration d) d where
+class HasFinalGapped s a | s -> a where
+
+    finalGapped :: Lens' s a
+    {-# MINIMAL finalGapped #-}
+
+
+class HasFinalUngapped s a | s -> a where
+
+    finalUngapped :: Lens' s a
+    {-# MINIMAL finalUngapped #-}
+
+
+class HasPreliminaryGapped s a | s -> a where
+
+    preliminaryGapped :: Lens' s a
+    {-# MINIMAL preliminaryGapped #-}
+
+
+class HasPreliminaryUngapped s a | s -> a where
+
+    preliminaryUngapped :: Lens' s a
+    {-# MINIMAL preliminaryUngapped #-}
+
+
+class HasImpliedAlignment s a | s -> a where
+
+    impliedAlignment :: Lens' s a
+    {-# MINIMAL impliedAlignment #-}
+
