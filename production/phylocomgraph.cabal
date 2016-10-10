@@ -110,8 +110,7 @@ library
                        Analysis.Parsimony.Binary.SequentialAlign
                        Bio.Character
                        Bio.Character.Dynamic
-                       Bio.Character.Dynamic.Decoration.Class
-                       Bio.Character.Dynamic.Decoration.Internal
+                       Bio.Character.Dynamic.Decoration
                        Bio.Character.Exportable.Class
                        Bio.Character.Parsed
                        Bio.Character.Stream
@@ -171,6 +170,8 @@ library
                        Analysis.Parsimony.Binary.SequentialAlign.FFI
                        Analysis.Parsimony.Binary.Constraints
                        Bio.Character.Dynamic.Class
+                       Bio.Character.Dynamic.Decoration.Class
+                       Bio.Character.Dynamic.Decoration.Internal
                        Bio.Character.Dynamic.Internal
                        Bio.Character.Internal
                        Bio.Character.Parsed.Class
