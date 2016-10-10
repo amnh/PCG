@@ -48,4 +48,4 @@ void
 union_prepend_counter (unionofft u);
 
 void
-union_merge (seq_p a, seq_p b, seq_p median, unionofft au, unionofft bu, unionofft c, cost_matrices_p m);
+union_merge (seq_p a, seq_p b, seq_p median, unionofft au, unionofft bu, unionofft c, cost_matrices_2d_p m);

@@ -50,7 +50,7 @@ struct seq {
     int len;        /* Total length of the sequence stored. */
     SEQT *head;     /* beginning of the allocated array */
     SEQT *begin;    /* Position where the first element of 
-                       the sequence is actually stored. */
+                       the sequence is actually stored. ***Sequence as it comes in must be in last x spaces in array!*** */
     SEQT *end;
     //struct pool *my_pool; ARRAY_POOL_DELETE
 };
@@ -84,10 +84,10 @@ seq_get_head (const seq_p a);
  SEQT *
 seq_get_end (const seq_p a);
 
-/* Gets the value of the sequence a in the position p, a starting in position 0
+/* Gets the value of the element of sequence a in the position p, where a starts at position 0
  */
 SEQT 
-seq_get (const seq_p a, int p);
+seq_get_element (const seq_p a, int p);
 
 /* Stores the value v in the position p of sequence a. */
 void

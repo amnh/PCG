@@ -61,9 +61,12 @@
 #include <stdlib.h>
 #include <assert.h>
 
-#include "matrices.h"
+#include "algn.h"
 #include "cm.h"
+#include "debug.h"
+#include "matrices.h"
 #include "seq.h"
+#include "zarr.h"
 
 /*
  * As standard, all the caml binding functions are called algn_CAML_<function
@@ -75,96 +78,139 @@ algn_fill_row (int *curRow, const int *prevRow, const int *gap_row,
                const int *alg_row, DIRECTION_MATRIX *dirMtx, int c, int i, int end);
 
 static inline int
-algn_fill_plane (const seq_p s1, int *precalcMtx, int s1_len, 
-                 int s2_len, int *curRow, DIRECTION_MATRIX *dirMtx, const cost_matrices_p c);
+algn_fill_plane (const seq_p seq1, int *precalcMtx, int seq1_len, 
+                 int seq2_len, int *curRow, DIRECTION_MATRIX *dirMtx, const cost_matrices_2d_p c);
 
 inline void
-algn_fill_row_uk (int *nwMtx, const int *pm, const int *gap_row, \
-                  const int *alg_row, unsigned char *dm, int c, int l, int lowerbound, \
+algn_fill_row_uk (int *nwMtx, const int *pm, const int *gap_row, 
+                  const int *alg_row, unsigned char *dm, int c, int l, int lowerbound, 
                   int upperbound);
 
 inline int
-algn_fill_plane_uk (const struct seq *s1, int *prec, int s1_len, \
-        int s2_len, int *nwMtx, unsigned char *dm, int uk, const struct cost_matrices *c);
+algn_fill_plane_uk (const struct seq *seq1, int *prec, int seq1_len, 
+                    int seq2_len, int *nwMtx, unsigned char *dm, int uk, const struct cost_matrices_2d *c);
 
 static inline void
-fill_moved (int s3_len, const int *prev_m, const int *upper_m, 
-            const int *diag_m, const int *s1gs3, const int *gs2s3, 
-            const int *s1s2s3, int *curRow, DIRECTION_MATRIX *dirMtx);
+fill_moved (int seq3_len, const int *prev_m, const int *upper_m, 
+            const int *diag_m, const int *seq1_gap_seq3, const int *gap_seq2_seq3, 
+            const int *seq1seq2seq3, int *curRow, DIRECTION_MATRIX *dirMtx);
 
 static inline void
-fill_parallel (int s3_len, const int *prev_m, const int *upper_m, 
-               const int *diag_m, int s1gg, int gs2g, int s1s2g, int *curRow, 
+fill_parallel (int seq3_len, const int *prev_m, const int *upper_m, 
+               const int *diag_m, int seq1_gap_gap, int gap_seq2_gap, int seq1_seq2_gap, int *curRow, 
                DIRECTION_MATRIX *dirMtx);
 
 /**
- *  s1 is a pointer to the sequence s1 (vertical)
- *  s2 is horizontal 1 
-    **** Note that s1 <= s2 ****
+ *  @param seq1 is a pointer to the sequence seq1 (vertical)
+ *  @param seq2 is horizontal 1 
+    **** Note that seq1 <= seq2 ****
  *
- *  prec is a pointer to the precalculatedcost_matrices a three-dimensional matrix that holds
+ *  @param precalcMtx is a pointer to the precalculated_cost_matrices, a 
+ *    three-dimensional matrix that holds
  *    the transitionn costs for the entire alphabet (of all three sequences)
- *    with the sequence s3. The columns are the bases of seq3, and the rows are 
+ *    with the sequence seq3. The columns are the bases of seq3, and the rows are 
  *    each of the alphabet characters (possibly including ambiguities). See 
  *    cm_precalc_4algn_3d for more information). 
- *  s1_len, s2_len and s3_len are the lengths of the three sequences
- *    to be aligned
- *  nwMtx is a pointer to the first element of the alignment cube that will
- *    hold the matrix of the dynamic progranwMtxing algorithm, 
- *  dm holds the direction information for the backtrack. 
- *  uk is the value of the Ukkonen barriers (not used in this version of the program)
+ *  @param seq1_len, @param seq2_len and @param seq3_len are the lengths of the three 
+ *    sequences to be aligned
+ *  @param nwMtx is a pointer to the first element of the alignment cube that will
+ *    hold the matrix of the dynamic programming algorithm, 
+ *  @param dm holds the direction information for the backtrack. 
+ *  @param uk is the value of the Ukkonen barriers (not used in this version of the program)
  * 
- * TODO: figure out what this means:
+ * TODO: figure out wtf this means:
  *  consider all combinations:
- *  s1, g, g -> const for plane
- *  g, s2, g -> const const per row
- *  s1, s2, g -> const const per row
- *  g, s2, s3 -> vector (changes on each row)
- *  s1, g, s3 -> vector (change per plane)
- *  s1, s2, s3 -> vector (changes on each row)
- *  g, g, s3 -> vector (the last one to be done, not parallelizable)
+ *  seq1, gap, gap   -> const for plane
+ *  gap, seq2, gap   -> const const per row
+ *  seq1, seq2, gap  -> const const per row
+ *  gap, seq2, seq3  -> vector (changes on each row)
+ *  seq1, gap, seq3  -> vector (change per plane)
+ *  seq1, seq2, seq3 -> vector (changes on each row)
+ *  gap, gap, seq3   -> vector (the last one to be done, not parallelizable)
  *
  *  All following fns have the same argument values, when present
  */
-inline int
-algn_fill_cube (const seq_p s1, const seq_p s2, const int *precalcMtx, 
-                int s1_len, int s2_len, int s3_len, int *curRow, DIRECTION_MATRIX *dirMtx, 
+
+int
+algn_fill_cube (const seq_p seq1, const seq_p seq2, const int *precalcMtx, 
+                int seq1_len, int seq2_len, int seq3_len, int *curRow, DIRECTION_MATRIX *dirMtx, 
                 int uk, int gap, int alphSize);
 
 int
-algn_nw (const seq_p s1, const seq_p s2, const cost_matrices_p c, nw_matrices_p m, int uk);
+algn_nw_2d (const seq_p seq1, const seq_p seq2, const cost_matrices_2d_p c, nw_matrices_p m, int uk);
 
-inline int
-algn_nw_3d (const seq_p s1, const seq_p s2, const seq_p s3,
-        const cm_3dt c, nw_matrices_p m, int uk);
-
-void
-print_bcktrck (const seq_p s1, const seq_p s2, const nw_matrices_p m);
+int
+algn_nw_3d (const seq_p seq1, const seq_p seq2, const seq_p seq3,
+            const cost_matrices_3d_p c, nw_matrices_p m, int uk);
 
 void
-print_dynmtrx (const seq_p s1, const seq_p s2, nw_matrices_p m);
+algn_print_bcktrck_2d (const seq_p seq1, const seq_p seq2, const nw_matrices_p m);
 
 void
-backtrack_2d ( const seq_p s1, const seq_p s2, 
-               seq_p r1, seq_p r2, 
-               const nw_matrices_p m, const cost_matrices_p c, 
-               int st_s1, int st_s2, 
-               int algn_s1, int algn_s2, 
+algn_print_dynmtrx_2d (const seq_p seq1, const seq_p seq2, nw_matrices_p m);
+
+/** takes two previously aligned sequences, @param seq1 & @param seq2, for which some align function has been called,
+ *  and extracts their
+ *  edited version into @param ret_seq1 and @param ret_seq2, using the alignment matrix @param m and the transformation
+ *  cost mstrix @param c. *Nota bene:* Make sure the m and c are the same as used in the alignment of
+ *  the sequence for the call of cost_2. No check of an appropriate call of cost_2
+ *  is made, therefore the behavior of the function in that case is undefined.
+ *  As passed in, unaligned seq1 is always longer than seq2.
+ *  If @param swapped == 1, then seq1 and seq2 are in their original order. Otherwise, len_seq2 > len_seq1
+ *  so they have been switched before the call (meaning that seq1 is still the longest).
+ *  Depending on the case, deletion or insertion may be biased toward either longer or shorter.
+ *  @param st_seq1 and @param st_seq2 are 0 if there are no limits, have values otherwise.
+ */
+void
+backtrack_2d ( const seq_p seq1, const seq_p seq2, 
+               seq_p ret_seq1, seq_p ret_seq2, 
+               const nw_matrices_p m, const cost_matrices_2d_p c, 
+               int st_seq1, int st_seq2, 
                int swapped 
               );
 
+/** As backtrack_2d, but for three sequences */
 void
-backtrack_3d (const seq_p s1, const seq_p s2, seq_p s3, \
-        seq_p r1, seq_p r2, seq_p r3, nw_matrices_p m, const cm_3dt c);
+backtrack_3d (const seq_p seq1, const seq_p seq2, seq_p seq3, 
+              seq_p r1, seq_p r2, seq_p r3, nw_matrices_p m, const cost_matrices_3d_p c);
+
 
 inline void
-algn_get_median_2d (seq_p s1, seq_p s2, cost_matrices_p m, seq_p sm);
+algn_get_median_2d (seq_p seq1, seq_p seq2, cost_matrices_2d_p m, seq_p sm);
 
 /* 
- * Given three aligned sequences s1, s2, and s3, the median between them is
+ * Given three aligned sequences seq1, seq2, and seq3, the median between them is
  * returned in the sequence sm, using the cost matrix stored in m.
  */
 inline void
-algn_get_median_3d (seq_p s1, seq_p s2, seq_p s3, cm_3dt m, seq_p sm);
+algn_get_median_3d (seq_p seq1, seq_p seq2, seq_p seq3, cost_matrices_3d_p m, seq_p sm);
+
+// TODO: document following four fns
+void
+initialize_matrices_affine (int go, const seq_p si, const seq_p sj, 
+                            const cost_matrices_2d_p c, 
+                            int *close_block_diagonal, int *extend_block_diagonal, 
+                            int *extend_vertical, int *extend_horizontal, int *final_cost_matrix, 
+                            DIRECTION_MATRIX *direction_matrix, const int *precalcMtx);
+
+// TODO: what is nobt? no backtrace? And why the 3? It's not 3d. Maybe third iteration of fn? In that case remove 3, as it's confusing.
+int
+algn_fill_plane_3_affine_nobt (const seq_p si, const seq_p sj, int leni, int lenj, 
+                            const cost_matrices_2d_p c, int *extend_horizontal, int *extend_vertical, 
+                            int *close_block_diagonal, int *extend_block_diagonal, const int *precalcMtx, 
+                            int *gap_open_prec, int *sj_horizontal_extension);
+
+void
+backtrace_affine (DIRECTION_MATRIX *direction_matrix, const seq_p si, const seq_p sj, 
+                  seq_p median, seq_p medianwg, seq_p resi, seq_p resj, const cost_matrices_2d_p c);
+
+int
+algn_fill_plane_3_affine (const seq_p si, const seq_p sj, int leni, int lenj, 
+                       int *final_cost_matrix, DIRECTION_MATRIX *direction_matrix, 
+                       const cost_matrices_2d_p c, int *extend_horizontal, int *extend_vertical, 
+                       int *close_block_diagonal, int *extend_block_diagonal, const int *precalcMtx, 
+                       int *gap_open_prec, int *sj_horizontal_extension);
+
+
 
 #endif /* ALGN_H */
