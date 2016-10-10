@@ -115,7 +115,7 @@ createDOAlignMatrix topDynChar leftDynChar costStruct = result
         -- TODO: attempt to make tail recursive? Maybe not possible, given multiple tuple values.
         -- | Internal generator function for the matrix
         -- Deals with both first row and other cases, a merge of two previous algorithms
-        -- generateMat :: (EncodableStaticCharacter b) => (Int, Int) -> (Double, Direction, b)
+        -- generateMat :: (EncodableStreamElement b) => (Int, Int) -> (Double, Direction, b)
         -- generateMat (row, col) | trace (mconcat ["(",show row,",",show col,")"]) False = undefined
         generateMat (row, col)
           | row == 0 && col == 0                    = (0                               , DiagArrow, gap      )
@@ -200,7 +200,7 @@ getOverlap inChar1 inChar2 costStruct = result
     where
         result = {- memoize2 -} overlap costStruct inChar1 inChar2
         
--- | Takes two 'EncodableStaticCharacter' and a 'CostStructure' and returns a tuple of a new character, 
+-- | Takes two 'EncodableStreamElement' and a 'CostStructure' and returns a tuple of a new character, 
 -- along with the cost of obtaining that character. The return character may be (or is even likely to be)
 -- ambiguous. Will attempt to intersect the two characters, but will union them if that is not possible,
 -- based on the 'CostStructure'. 
@@ -243,7 +243,7 @@ minimalChoice = foldr1 f
 -- TODO: Can we eliminate all characters from below, and just pass around Ints?
 -- |
 -- Finds the cost of a pairing of two static characters.
--- Takes in a 'CostStructure' and two ambiguous 'EncodableStaticCharacter's. Returns a list of tuples of all possible unambiguous
+-- Takes in a 'CostStructure' and two ambiguous 'EncodableStreamElement's. Returns a list of tuples of all possible unambiguous
 -- pairings, along with their costs. 
 allPossibleBaseCombosCosts :: EncodableStreamElement s => CostStructure -> s -> s -> [(s, Double)]
 allPossibleBaseCombosCosts costStruct char1 char2 = [ getCost costStruct x y | x <- getSubChars char1
@@ -252,7 +252,7 @@ allPossibleBaseCombosCosts costStruct char1 char2 = [ getCost costStruct x y | x
 
 -- TODO: This won't work with an asymmetric TCM.
 -- |
--- Given a 'CostStructure' and two tuples of an 'Int' and an unambiguous 'EncodableStaticCharacter', determines the cost 
+-- Given a 'CostStructure' and two tuples of an 'Int' and an unambiguous 'EncodableStreamElement', determines the cost 
 -- of a pairing (intersection) of those characters into an ambiguous character. The 'Int's are the set bits in each character
 -- and are used as lookup into the 'CostStructure'. 
 -- Tests exist in the test suite.
@@ -283,19 +283,18 @@ getCost costStruct seqTup1 seqTup2 =
 -}
 
 -- |
--- Takes in a 'EncodableStaticCharacter', possibly with more than one bit set, and returns a list of tuples of 
--- 'Int's and 'EncodableStaticCharacter's, such that, for each set bit in the input, there is one element in the output list, 
--- a tuple with an 'Int', @ x @, giving the location of the set bit, as well as an 'EncodableStaticCharacter' of the same
+-- Takes in a 'EncodableStreamElement', possibly with more than one bit set, and returns a list of tuples of 
+-- 'Int's and 'EncodableStreamElement's, such that, for each set bit in the input, there is one element in the output list, 
+-- a tuple with an 'Int', @ x @, giving the location of the set bit, as well as an 'EncodableStreamElement' of the same
 -- length as the input, but with only the bit at location @ x @ set.
 -- Tests exist in the test suite.
 getSubChars :: EncodableStreamElement s => s -> [(Int, s)]
-getSubChars fullChar = foldr (\i acc -> if testBit fullChar i 
-                                        then (i, z `setBit` i) : acc 
-                                        else acc 
-                             ) mempty [0 .. symbolCount fullChar - 1]
+getSubChars fullChar = foldMap f [0 .. symbolCount fullChar - 1]
   where
+    f i
+      | fullChar `testBit` i = pure (i,  z `setBit` i)
+      | otherwise            = mempty
     z = fullChar `xor` fullChar
-
 
 -- |
 -- Transformation should no longer be nescissary
