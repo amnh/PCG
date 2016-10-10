@@ -23,5 +23,4 @@ module Bio.Sequence
   , fromBlocks
   ) where
 
-import           Bio.Sequence.Block
-import           Bio.Sequence.Internal
+import Bio.Sequence.Internal

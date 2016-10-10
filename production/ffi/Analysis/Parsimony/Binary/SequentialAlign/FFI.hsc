@@ -41,6 +41,7 @@ import Test.QuickCheck hiding ((.&.))
 sequentialAlign :: (EncodableDynamicCharacter s, Exportable s) => Int -> Int -> s -> s -> Either String (Int, s, s)
 sequentialAlign x y a b = Right (x + y, a, b)
 
+
 -- Includes a struct (actually, a pointer thereto), and that struct, in turn, has a string
 -- in it, so Ptr CChar.
 -- Modified from code samples here: https://en.wikibooks.org/wiki/Haskell/FFI#Working_with_C_Structures
@@ -53,6 +54,7 @@ data AlignResult
    , seqFinal      :: Ptr CArrayUnit
    }
 
+
 -- |
 -- Type of a dynamic character to pass back and forth across the FFI interface.
 data CDynamicChar
@@ -61,6 +63,7 @@ data CDynamicChar
    , dynCharLen   :: CInt
    , dynChar      :: Ptr CArrayUnit
    }
+
 
 -- | (✔) 
 instance Show CDynamicChar where
@@ -82,6 +85,7 @@ instance Show CDynamicChar where
             intLen       = fromIntegral dcLen
             printedArr   = show <$> peekArray bufferLength dChar
 
+
 -- | (✔) 
 instance Arbitrary CDynamicChar where
     arbitrary = do
@@ -100,6 +104,7 @@ instance Arbitrary CDynamicChar where
            , dynChar      = unsafePerformIO . newArray $ fullBitVals <> remBitVals
            }
 
+
 -- |
 -- A convient type alias for improved clairity of use.
 type CArrayUnit  = CULong -- This will be compatible with uint64_t
@@ -110,6 +115,7 @@ instance Arbitrary CArrayUnit where
     arbitrary = do
         num <- arbitrary :: Gen Integer
         pure $ fromIntegral num
+
 
 -- | (✔) 
 instance Storable CDynamicChar where
@@ -129,6 +135,7 @@ instance Storable CDynamicChar where
         (#poke struct dynChar_t, dynCharLen) ptr seqLen
         (#poke struct dynChar_t, dynChar   ) ptr seqVal
 
+
 -- Because we're using a struct we need to make a Storable instance
 -- | (✔)
 instance Storable AlignResult where
@@ -144,6 +151,7 @@ instance Storable AlignResult where
              , seqFinal      = seqVal
              }
 
+
 ------------- Don't need this part, but left in for completion ---------------
 ----- Will get compiler warning if left out, because of missing instances ----
     poke ptr (AlignResult cost seqLen seqVal) = do -- to modify values in the C app
@@ -151,18 +159,22 @@ instance Storable AlignResult where
         (#poke struct alignResult_t, finalLength) ptr seqLen
         (#poke struct alignResult_t, finalStr   ) ptr seqVal
 
+
 -- This is the declaration of the Haskell wrapper for the C function we're calling.
 -- Note that this fn is called from testFn.f
+
 
 -- |
 -- FFI call to the C pairwise alignment algorithm with /defaulted/ sub & indel cost parameters
 foreign import ccall unsafe "exportCharacter testFn"
     callExtFn_c  :: Ptr CDynamicChar -> Ptr CDynamicChar -> Ptr AlignResult -> CInt
 
+
 -- |
 -- FFI call to the C pairwise alignment algorithm with /explicit/ sub & indel cost parameters.
 foreign import ccall unsafe "seqAlignForHaskell aligner"
     call_aligner :: Ptr CDynamicChar -> Ptr CDynamicChar -> CInt -> CInt -> Ptr AlignResult -> CInt
+
 
 -- |
 -- testFn can be called from within Haskell code.
@@ -187,6 +199,7 @@ testFn char1 char2 = unsafePerformIO $
                 pure $ Right (fromIntegral cost, show seqFinalVal)
             else do
                 pure $ Left "Out of memory"
+
         
 -- Just for testing from CLI outside of ghci.
 -- | A test driver for the FFI functionality

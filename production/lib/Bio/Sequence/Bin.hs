@@ -22,7 +22,6 @@ module Bio.Sequence.Bin
   ) where
 
 
-import Bio.Character.Internal
 import Bio.Sequence.Bin.Additive
 import Bio.Sequence.Bin.Class
 import Bio.Sequence.Bin.Continuous

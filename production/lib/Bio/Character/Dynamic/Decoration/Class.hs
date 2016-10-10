@@ -14,6 +14,7 @@
 
 module Bio.Character.Dynamic.Decoration.Class where
 
+
 import Bio.Character.Dynamic.Class
 import Control.Lens
 

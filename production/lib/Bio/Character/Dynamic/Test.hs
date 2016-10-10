@@ -13,62 +13,18 @@ import           Data.List.NonEmpty        (NonEmpty((:|)))
 import qualified Data.List.NonEmpty as NE
 import           Data.Set                  (Set)
 import qualified Data.Set           as Set (fromList,intersection,union)
-import           Data.Monoid    ((<>))
 import           Data.Vector               (Vector, fromList)
 import           Test.Tasty
-import           Test.Tasty.HUnit
 import           Test.Tasty.QuickCheck hiding ((.&.))
 
 --import Debug.Trace (trace)
 
 testSuite :: TestTree
 testSuite = testGroup "Custom Bits instances"
-        [ testCodedSequenceInstance
-        , testEncodableStaticCharacterInstanceBitVector
+        [ testEncodableStaticCharacterInstanceBitVector
         , testEncodableDynamicCharacterInstanceDynamicChar
 --        , testVectorBits
         ]
-
-testCodedSequenceInstance :: TestTree
-testCodedSequenceInstance = testGroup "Properties of instance CodedSequence EncodedSeq"
-        [ --decodeOverAlphabet
---        encodeOverAlphabetTest
-        --, filterGaps
-        --, grabSubChar
-        --, isEmpty
-        --, numChars
-        ]
-
--- Not sure what this is attempting to test, pretty sure it is no longer applicable with DynamicChar no longer an instance of bits.
-{--
-encodeOverAlphabetTest :: TestTree
-encodeOverAlphabetTest = testGroup "encodeOverAlphabet"
-    [ 
-     testValue
-    ]
-    where
-        testValue = testProperty "Make sure encoded value matches position in alphabet." f
-            where
-                -- for each ambiguity group in inChar, map over the alphabet determining whether each alphabet state exists in the ambiguity group
-                f :: (ParsedChar', Alphabet String) -> Bool
-                f (inChar, alph) = toBits controlChar == ((`elem` alph) <$> toList charToTest)
-                    where 
-                        charToTest  = getParsedChar inChar
-                        controlChar = encodeOverAlphabet alph charToTest :: DynamicChar
---}
---type DynamicChar' = Vector
-
-{-
-getParsedChar :: ParsedChar' -> ParsedChar
-getParsedChar = fmap (fmap getNonEmpty . getNonEmpty)
--}
-
---decodeOverAlphabetTest :: TestTree
---decodeOverAlphabetTest = testProperty "decodeOverAlphabet" f
---    where
---        f :: CodedSequence s -> Alphabet -> ParsedChar
---        f inChar alph =
-
 
 
 {- LAWS:

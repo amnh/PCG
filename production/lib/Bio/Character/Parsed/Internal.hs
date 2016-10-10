@@ -18,7 +18,7 @@ module Bio.Character.Parsed.Internal where
 
 import           Data.Alphabet  hiding (AmbiguityGroup) -- TODO: Maybe don't hide this and use it below? This change will cascade into other modules!
 import           Data.Foldable
-import qualified Data.List.NonEmpty as NE
+--import qualified Data.List.NonEmpty as NE
 import           Data.Vector              (Vector)
 import qualified Data.Vector        as V
 import           Data.Map                 (Map)
