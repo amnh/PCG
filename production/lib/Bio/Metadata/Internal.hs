@@ -78,7 +78,8 @@ instance Show (CharacterMetadata s) where
      , ", Weight:         " <> show (weight     s)
      , ", State Names:    " <> show (stateNames s)
      , ", Root Cost:      " <> show (rootCost   s)
-     , ", Cost Structure: " <> show (costs      s)
+     , ", Cost Structure: "
+     , unlines . fmap ("    " <>) . lines . show $ costs s
      , "}"
      ]
 
