@@ -42,13 +42,13 @@
 #define DELETE_V (DELETE << SHIFT_V) 
 #define ALIGN_H  (ALIGN << SHIFT_H)
 #define INSERT_H (INSERT << SHIFT_H)
-#define GAP13    (1 << 0)        /** Previously P1. Move in plane 1? Put gaps in for 1 & 3. */
-#define ALIGN12  (1 << 1)    /** Previously P2. Move in plane 2 */
-#define GAP23    (1 << 2)    /** Previously P3. Move in plane 3 */
-#define ALIGN23  (1 << 3)     /** Align the sequence from s2 and s3. Previously S1. */
-#define ALIGNALL (1 << 4)     /** Align the three bases. Previously S2. */
-#define ALIGN13  (1 << 5)     /** Align the sequence from s1 and s3. Previously S3. */
-#define GAP12    (1 << 6)     /** Previously SS. */
+#define G_A_G    (1 << 0)     /** Previously P1. Move in pages (i.e., put gaps in for 1 & 3). */
+#define A_A_G    (1 << 1)     /** Previously P2. Move in column and page. */
+#define A_G_G    (1 << 2)     /** Previously P3. Move in columns */
+#define G_A_A    (1 << 3)     /** Previously S1. Move in page and row. */
+#define A_A_A    (1 << 4)     /** Previously S2. Move in all three. */
+#define A_G_A    (1 << 5)     /** Previously S3. Move in column and row. */
+#define G_G_A    (1 << 6)     /** Previously SS. Move in rows. */
 
 // TODO: Can this be a char, instead?
 #define DIRECTION_MATRIX unsigned short

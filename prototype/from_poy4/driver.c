@@ -10,6 +10,15 @@
 
 #define SEQ_CAPACITY 64
 
+int power_2 (int input) {
+    if (input == 1)  return 1;
+    if (input == 2)  return 1;
+    if (input == 4)  return 1;
+    if (input == 8)  return 1;
+    if (input == 16) return 1;
+    return 0;
+}
+
 nw_matrices_p initializeNWMtx() {
     nw_matrices_p newMtx = malloc( sizeof(struct matrices) );
 
@@ -139,87 +148,87 @@ void * setupCostMtx(int* tcm, int alphSize, int gap_open, int is_2d) {
 
     size_t i;
 
-    for (SEQT base1 = 1; base1 <= 31; base1++) {
-        for (SEQT base2 = 1; base2 <= 31; base2++) {
-            median_12 = base1 | base2;
+    for (SEQT ambElem1 = 1; ambElem1 <= 31; ambElem1++) {
+        for (SEQT ambElem2 = 1; ambElem2 <= 31; ambElem2++) {
+            median_12 = ambElem1 | ambElem2;
             if (is_2d) {
                 *min_1    = INT_MAX; // this should be largest integer value.
                 *max_1    = 0;
                 *median_1 = 0;
-                setCosts(tcm, alphSize, retMtx->lcm, base1, base2, min_1, max_1, median_1);
+                setCosts(tcm, alphSize, retMtx->lcm, ambElem1, ambElem2, min_1, max_1, median_1);
                 // if (*min_1 != 0) {
-                //     printf("base1: %2hhu,    median_23: %2d,    min: %d,    max: %d,    median: %2d\n", 
-                //            base1, median_23, *min_1, *max_1, *median_1);
+                //     printf("ambElem1: %2hhu,    median_23: %2d,    min: %d,    max: %d,    median: %2d\n", 
+                //            ambElem1, median_23, *min_1, *max_1, *median_1);
                 // }
 
                 *min_2    = INT_MAX;
                 *max_2    = 0;
                 *median_2 = 0;
-                setCosts(tcm, alphSize, retMtx->lcm, base2, base1, min_2, max_2, median_2);
+                setCosts(tcm, alphSize, retMtx->lcm, ambElem2, ambElem1, min_2, max_2, median_2);
 
                 min_2d    = *min_1 + *min_2;
                 median_2d = *median_1 | *median_2;
                 // if (min_2d != 0) {
-                //     printf("base1: %2hhu,   base2: %2hhu,   base3: %2hhu,    median: %2d,    min: %d,    max: %d\n", 
-                //            base1, base2, base3, median_2d, min_2d, max_2d);
+                //     printf("ambElem1: %2hhu,   ambElem2: %2hhu,   ambElem3: %2hhu,    median: %2d,    min: %d,    max: %d\n", 
+                //            ambElem1, ambElem2, ambElem3, median_2d, min_2d, max_2d);
                 // }
                 max_2d    = *max_1 + *max_2; 
                 
-                // printf("base1: %2hhu,    base2: %2hhu,    base3: %2hhu\n", base1, base2, base3);
+                // printf("ambElem1: %2hhu,    ambElem2: %2hhu,    ambElem3: %2hhu\n", ambElem1, ambElem2, ambElem3);
                 // printf("median: %2d,    min: %2d\n", median_2d, min_2d);
-                cm_set_cost_2d   (base1, base2, min_2d,    (cost_matrices_2d_p) retMtx);
-                cm_set_median_2d (base1, base2, median_2d, (cost_matrices_2d_p) retMtx);
-                cm_set_worst     (base1, base2, max_2d,    (cost_matrices_2d_p) retMtx);
+                cm_set_cost_2d   (ambElem1, ambElem2, min_2d,    (cost_matrices_2d_p) retMtx);
+                cm_set_median_2d (ambElem1, ambElem2, median_2d, (cost_matrices_2d_p) retMtx);
+                cm_set_worst     (ambElem1, ambElem2, max_2d,    (cost_matrices_2d_p) retMtx);
             } else {
-                for (SEQT base3 = 1; base3 <= 31; base3++) {
-                    median_23 = base2 | base3;
-                    median_13 = base1 | base3;
+                for (SEQT ambElem3 = 1; ambElem3 <= 31; ambElem3++) {
+                    median_23 = ambElem2 | ambElem3;
+                    median_13 = ambElem1 | ambElem3;
 
                     *min_1    = INT_MAX; // this should be largest integer value.
                     *max_1    = 0;
                     *median_1 = 0;
-                    setCosts(tcm, alphSize, retMtx->lcm, base1, median_23, min_1, max_1, median_1);
+                    setCosts(tcm, alphSize, retMtx->lcm, ambElem1, median_23, min_1, max_1, median_1);
                     // if (*min_1 != 0) {
-                    //     printf("base1: %2hhu,    median_23: %2d,    min: %d,    max: %d,    median: %2d\n", 
-                    //            base1, median_23, *min_1, *max_1, *median_1);
+                    //     printf("ambElem1: %2hhu,    median_23: %2d,    min: %d,    max: %d,    median: %2d\n", 
+                    //            ambElem1, median_23, *min_1, *max_1, *median_1);
                     // }
 
                     *min_2    = INT_MAX;
                     *max_2    = 0;
                     *median_2 = 0;
-                    setCosts(tcm, alphSize, retMtx->lcm, base2, median_13, min_2, max_2, median_2);
+                    setCosts(tcm, alphSize, retMtx->lcm, ambElem2, median_13, min_2, max_2, median_2);
                     // if (*min_2 != 0) {
-                    //     printf("base2: %2hhu,    median_13: %2d,    min: %d,    max: %d,    median: %2d\n", 
-                    //            base2, median_13, *min_2, *max_2, *median_2);
+                    //     printf("ambElem2: %2hhu,    median_13: %2d,    min: %d,    max: %d,    median: %2d\n", 
+                    //            ambElem2, median_13, *min_2, *max_2, *median_2);
                     // }
 
                     *max_3    = 0;
                     *min_3    = INT_MAX; 
                     *median_3 = 0;
-                    setCosts(tcm, alphSize, retMtx->lcm, base3, median_12, min_3, max_3, median_3);
+                    setCosts(tcm, alphSize, retMtx->lcm, ambElem3, median_12, min_3, max_3, median_3);
                     // if (*min_3 != 0) {
-                    //     printf("base3: %2hhu,    median_12: %2d,    min: %d,    max: %d,    median: %2d\n", 
-                    //            base3, median_12, *min_3, *max_3, *median_3);
+                    //     printf("ambElem3: %2hhu,    median_12: %2d,    min: %d,    max: %d,    median: %2d\n", 
+                    //            ambElem3, median_12, *min_3, *max_3, *median_3);
                     // }
 
                     min_3d    = *min_1 + *min_2 + *min_3;
                     median_3d = *median_1 | *median_2 | *median_3;
 
-                    printf("base1: %2hhu,    base2: %2hhu,    base3: %2hhu    3d median: %2d,    3d cost: %2d\n", 
-                               base1, base2, base3, median_3d, min_3d);
+                    printf("ambElem1: %2hhu,    ambElem2: %2hhu,    ambElem3: %2hhu    3d median: %2d,    3d cost: %2d\n", 
+                               ambElem1, ambElem2, ambElem3, median_3d, min_3d);
                     
-                    cm_set_cost_3d   (base1, base2, base3, min_3d,    (cost_matrices_3d_p) retMtx);
-                    cm_set_median_3d (base1, base2, base3, median_3d, (cost_matrices_3d_p) retMtx);
+                    cm_set_cost_3d   (ambElem1, ambElem2, ambElem3, min_3d,    (cost_matrices_3d_p) retMtx);
+                    cm_set_median_3d (ambElem1, ambElem2, ambElem3, median_3d, (cost_matrices_3d_p) retMtx);
                     // no worst in 3d
 
-                    // printf("base1: %hhu, base2: %hhu, base3:\n", base1, base2);
+                    // printf("ambElem1: %hhu, ambElem2: %hhu, ambElem3:\n", ambElem1, ambElem2);
                     
                     
-                    // printf("cost_2d: %d, min: %d, max: %d, base1: %hhu, base2: %hhu, median: %d\n", cost, min, max, base1, base2, median );
-                } // base3
+                    // printf("cost_2d: %d, min: %d, max: %d, ambElem1: %hhu, ambElem2: %hhu, median: %d\n", cost, min, max, ambElem1, ambElem2, median );
+                } // ambElem3
             }
-        } // base2
-    } // base1
+        } // ambElem2
+    } // ambElem1
 
     // now that 2d cost matrix is set up, use it to calculate prepend and tail matrices
     // remember: no tail or prepend in 3d
@@ -233,33 +242,30 @@ void * setupCostMtx(int* tcm, int alphSize, int gap_open, int is_2d) {
 }
 */
 
-/** Find distance between an ambiguous and an unambiguous base. Return that value, and the median. 
- *  @param base is ambiguous input.
+/** Find distance between an ambiguous nucleotide and an unambiguous ambElem. Return that value and the median. 
+ *  @param ambElem is ambiguous input.
  *  @param nucleotide is unambiguous.
  *  @param median is used to return the calculated median value.
  *
  *  This fn is necessary because there isn't yet a cost matrix set up, so it's not possible to 
- *  look up unambiguous bases; therefore we must loop over possible values of the ambiguous base
+ *  look up ambElems; therefore we must loop over possible values of the ambElem
  *  and find the lowest cost median.
  *
  *  Requires symmetric, if not metric, matrix.
  */
-int distance (int *tcm, int alphSize, int lcm, int nucleotide, int base, int *median) {
+int distance (int const *tcm, int alphSize, int lcm, int nucleotide, int ambElem) {
     int min     = INT_MAX;
     // int max     = 0;
     int curCost = 0;
     for (size_t pos = 0; pos < alphSize; pos++) {
-        if (1 << pos & base) {
+        if (1 << pos & ambElem) { // if pos is set in ambElem, meaning pos is possible value of ambElem
             curCost = tcm[pos * alphSize + nucleotide - 1];
             if (curCost < min) {
-                min      = curCost;
-                *median  = (1 << pos) | nucleotide;
-            } else if (curCost == min) {
-                *median |= (1 << pos) | nucleotide;
-            }
+                min = curCost;
+            } 
         }
     }
-    // printf("base:   %2d,   nuc:   %2d,   min: %2d\n", base, nucleotide, min);
+    // printf("ambElem:   %2d,   nuc:   %2d,   min: %2d\n", ambElem, nucleotide, min);
     return min;
 }
 
@@ -280,7 +286,7 @@ void * setupCostMtx(int* tcm, int alphSize, int gap_open, int is_2d) {
     // int cost2d, cost3d;
     int curCost2d, curCost3d;
 
-    int median1, median2, median3; // median of a given nucleotide and current ambiguous base, for each base
+    int median1, median2, median3; // median of a given nucleotide and current ambElem, for each ambElem
 
     if (is_2d) {
         retMtx = malloc( sizeof(struct cost_matrices_2d) );
@@ -303,49 +309,70 @@ void * setupCostMtx(int* tcm, int alphSize, int gap_open, int is_2d) {
                               );
     }
 
-    for (SEQT base1 = 1; base1 <= 31; base1++) { // for every possible value of ambiguous base1, base2, base3
-        for (SEQT base2 = 1; base2 <= 31; base2++) {
-            for (SEQT base3 = 1; base3 <= 31; base3++) {
-                curCost2d = curCost3d;
+    for (SEQT ambElem1 = 1; ambElem1 <= 31; ambElem1++) { // for every possible value of ambElem1, ambElem2, ambElem3
+        for (SEQT ambElem2 = 1; ambElem2 <= 31; ambElem2++) {
+            for (SEQT ambElem3 = 1; ambElem3 <= 31; ambElem3++) {
+                curCost2d = curCost3d = 0; // don't actually need to do this
                 minCost2d = INT_MAX; 
                 minCost3d = INT_MAX;
                 // maxCost   = 0;
-                median2d  = 0;
-                median3   = 0;
-                median1   = median2 = median3 = 0;
-                for (size_t nucleotide = 1; nucleotide <= alphSize; nucleotide++) {
+                median2d  = median3d = 0;
+                median1   = median2  = median3 = 0;
+                for (int nucleotide = 1; nucleotide <= alphSize; nucleotide++) {
                     // TODO: if we do maxCost, then we should find individual max's for each distance below?
-                    curCost2d = distance (tcm, alphSize, retMtx->lcm, nucleotide, base1, &median1) +
-                                distance (tcm, alphSize, retMtx->lcm, nucleotide, base2, &median2);
+                    curCost2d = distance (tcm, alphSize, retMtx->lcm, nucleotide, ambElem1) +
+                                distance (tcm, alphSize, retMtx->lcm, nucleotide, ambElem2);
                     // now seemingly recreating logic in distance(), but that was to get the cost for each
-                    // base; now we're combining those costs get overall cost and median
+                    // ambElem; now we're combining those costs get overall cost and median
                     if (curCost2d < minCost2d) {
                         minCost2d = curCost2d;
-                        median2d  = median1 | median2;
+                        median2d  = 1 << (nucleotide - 1); // median1 | median2;
                     } else if (curCost2d == minCost2d) {
-                        median2d |= median1 | median2;
+                        median2d |= 1 << (nucleotide - 1); // median1 | median2;
                     }
-                    
                     if (!is_2d) {
-                        curCost3d = curCost2d + distance (tcm, alphSize, retMtx->lcm, nucleotide, base3, &median3);
+                        median1   = median2 = median3 = 0;
+                        curCost3d = distance (tcm, alphSize, retMtx->lcm, nucleotide, ambElem1) +
+                                    distance (tcm, alphSize, retMtx->lcm, nucleotide, ambElem2) + 
+                                    distance (tcm, alphSize, retMtx->lcm, nucleotide, ambElem3);
                         if (curCost3d < minCost3d) {
-                            minCost3d = curCost2d;
-                            median3d = median2d | median3;
-                        } else if (curCost2d == minCost3d) {
-                            median3d |= median2d | median3;
+                            minCost3d = curCost3d;
+                            median3d  = 1 << (nucleotide - 1); // median1 | median2 | median3;
+                            // if( power_2(ambElem1) && power_2(ambElem2) && power_2(ambElem3)) {
+                            //     printf("<     seq1: %2d,    seq2: %2d,    seq3: %2d,    cost: %2d,    median: %2d,    nucleotide: %2d\n", 
+                            //       ambElem1, ambElem2, ambElem3, minCost3d, median3d, 1 << (nucleotide - 1));
+                            // }
+                        } else if (curCost3d == minCost3d) {
+                            median3d |= 1 << (nucleotide - 1); // median1 | median2 | median3;
+                            // if( power_2(ambElem1) && power_2(ambElem2) && power_2(ambElem3)) {
+                            //     printf("==    seq1: %2d,    seq2: %2d,    seq3: %2d,    cost: %2d,    median: %2d,    nucleotide: %2d\n", 
+                            //       ambElem1, ambElem2, ambElem3, minCost3d, median3d, 1 << (nucleotide - 1));
+                            // }
                         }
                     }
                 } // nucleotide
-                // printf("base1:  %2hhu,   base2: %2hhu\n", base1, base2);
-                // printf("median: %2d,   min:   %2d\n", median2d, minCost2d);
-                cm_set_cost_2d   (base1, base2, minCost2d, (cost_matrices_2d_p) retMtx);
-                cm_set_median_2d (base1, base2, median2d,  (cost_matrices_2d_p) retMtx);
-                cm_set_cost_3d   (base1, base2, base3, minCost3d, (cost_matrices_3d_p) retMtx);
-                cm_set_median_3d (base1, base2, base3, median3d,  (cost_matrices_3d_p) retMtx);
-                // cm_set_worst     (base1, base2, max_2d,    (cost_matrices_2d_p) retMtx);
-            } // base3
-        } // base2
-    } // base1
+                
+                if (!is_2d) {
+                    // printf("seq1: %d,    seq2: %d,    cost: %d,    median: %d\n", 
+                    //        ambElem1, ambElem2, minCost2d, median2d);
+                    cm_set_cost_3d   (ambElem1, ambElem2, ambElem3, minCost3d, (cost_matrices_3d_p) retMtx);
+                    cm_set_median_3d (ambElem1, ambElem2, ambElem3, median3d,  (cost_matrices_3d_p) retMtx);
+                    // cm_set_worst     (ambElem1, ambElem2, max_2d,    (cost_matrices_2d_p) retMtx);    // no worst in 3d
+                    if( power_2(ambElem1) && power_2(ambElem2) && power_2(ambElem3)) {
+                        printf("3d    seq1: %2d,    seq2: %2d,    seq3: %2d,    cost: %2d,    median: %2d\n", 
+                          ambElem1, ambElem2, ambElem3, minCost3d, median3d);
+                    }
+                }
+            } // ambElem3
+            // printf("ambElem1:  %2hhu,   ambElem2: %2hhu\n", ambElem1, ambElem2);
+            // printf("median: %2d,   min:   %2d\n", median2d, minCost2d);
+            cm_set_cost_2d   (ambElem1, ambElem2, minCost2d, (cost_matrices_2d_p) retMtx);
+            cm_set_median_2d (ambElem1, ambElem2, median2d,  (cost_matrices_2d_p) retMtx);
+            // if (power_2(ambElem1) && power_2(ambElem2)) {
+            //     printf("2d    seq1: %d,    seq2: %d,    cost: %d,    median: %2d\n", ambElem1, ambElem2, minCost2d, median2d);
+            // }
+        } // ambElem2
+    } // ambElem1
     if (is_2d) {
         for ( size_t i = 0; i < retMtx->alphSize; i++) {
             cm_set_prepend_2d (i, cm_get_cost(cm_get_gap_2d (retMtx), i, retMtx), retMtx);
@@ -367,20 +394,20 @@ int main() {
 
     int alphSize = 5; // includes gap, but no ambiguities
 
-    int longest_vals[SEQ_CAPACITY] = {16, 2, 1, 8, 4}; // don't forget to change lengths!!!
-    int longSeqLen               = 5;
-    int shortest_vals[SEQ_CAPACITY] = {16, 2, 1}; // don't forget to change lengths!!!
-    int shortSeqLen               = 3;
-    int middle_vals[SEQ_CAPACITY] = {16, 2, 1, 9}; // don't forget to change lengths!!!
-    int mediumSeqLen               = 4;
+    int longest_vals[SEQ_CAPACITY]  = {16, 1,2,4,8}; // don't forget to change lengths!!!
+    int longSeqLen                  = 5;
+    int shortest_vals[SEQ_CAPACITY] = {16, 1,2,4,8}; // don't forget to change lengths!!!
+    int shortSeqLen                 = 5;
+    int middle_vals[SEQ_CAPACITY]   = {16, 1,1,1,1}; // don't forget to change lengths!!!
+    int middleSeqLen                = 5;
 
-    seq_p longSeq  = initializeSeq(SEQ_CAPACITY, longest_vals,  longSeqLen);
-    seq_p shortSeq = initializeSeq(SEQ_CAPACITY, shortest_vals, shortSeqLen);
-    seq_p mediumSeq   = initializeSeq(SEQ_CAPACITY, middle_vals,   mediumSeqLen);
+    seq_p longSeq   = initializeSeq(SEQ_CAPACITY, longest_vals,  longSeqLen);
+    seq_p shortSeq  = initializeSeq(SEQ_CAPACITY, shortest_vals, shortSeqLen);
+    seq_p mediumSeq = initializeSeq(SEQ_CAPACITY, middle_vals,   middleSeqLen);
 
-    size_t total_poss_align_len = longSeqLen + shortSeqLen + mediumSeqLen;
-    seq_p retLongSeq = initializeSeq(total_poss_align_len, 0, 0);
-    seq_p retShortSeq = initializeSeq(total_poss_align_len, 0, 0);
+    size_t total_poss_align_len = longSeqLen + shortSeqLen + middleSeqLen;
+    seq_p retLongSeq   = initializeSeq(total_poss_align_len, 0, 0);
+    seq_p retShortSeq  = initializeSeq(total_poss_align_len, 0, 0);
     seq_p retMediumSeq = initializeSeq(total_poss_align_len, 0, 0);
 
 
@@ -442,9 +469,9 @@ int main() {
         mat_setup_size (algn_mtxs2dAffine, longSeq->len, shortSeq->len, 0, 0, costMtx2d_affine->lcm);
     }
     if (DO_3D) {
-        costMtx3d = setupCostMtx (tcm, alphSize, 0, 0);
+        costMtx3d = setupCostMtx (tcm, alphSize, 0, 0);  // last argument means it's not 2d
         // penultimate parameter is ukk flag
-        mat_setup_size (algn_mtxs3d, longSeq->len, shortSeq->len, mediumSeq->len, 0, costMtx3d->lcm);
+        mat_setup_size (algn_mtxs3d, longSeq->len, mediumSeq->len, shortSeq->len, 0, costMtx3d->lcm);
     }
     int algnCost;
 
@@ -490,6 +517,30 @@ int main() {
         seq_print(retShortSeq, 2);
 
         printf("Alignment cost: %d\n", algnCost);
+
+        /****  Now get alignments  ****/
+
+        printf("\nAligned sequences:\n");
+        int *algnSeqVals = calloc(retLongSeq->len, sizeof(int));
+        seq_p algnSeq = initializeSeq(SEQ_CAPACITY, algnSeqVals, retLongSeq->len);
+        resetSeqValues(algnSeq);
+
+        // union:
+        algn_union (retLongSeq, retShortSeq, algnSeq);
+        printf("  Unioned sequence\n  ");
+        seq_print(algnSeq, 0);
+
+        // ungapped:
+        resetSeqValues(algnSeq);
+        algn_get_median_2d_no_gaps (retLongSeq, retShortSeq, costMtx2d, algnSeq);
+        printf("\n  Median without gaps\n  ");
+        seq_print(algnSeq, 0);
+
+        // gapped:
+        resetSeqValues(algnSeq);
+        algn_get_median_2d_with_gaps (retLongSeq, retShortSeq, costMtx2d, algnSeq);
+        printf("\n  Median with gaps\n  ");
+        seq_print(algnSeq, 0);
     }
 
 
@@ -645,6 +696,7 @@ int main() {
         resetSeqValues(retLongSeq);
         resetSeqValues(retShortSeq);
 
+        // following 
         algnCost = algn_nw_3d (longSeq, mediumSeq, shortSeq, costMtx3d, algn_mtxs3d, deltawh);
         //printf("Final alignment matrix: \n");
         //algn_print_dynmtrx_2d_2d( longSeq, shortSeq, algn_mtxs3d );
@@ -672,6 +724,9 @@ int main() {
         //     printf("b: %s\n", base);
         // }
     }
+
+    // Next this: algn_get_median_3d (seq_p seq1, seq_p seq2, seq_p seq3, 
+    //                cost_matrices_3d_p m, seq_p sm)
 
 
     return 1;

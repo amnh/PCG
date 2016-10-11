@@ -48,13 +48,13 @@ seq_get_begin (const seq_p a) {
 }
 
  SEQT *
-seq_get_head (const seq_p a) {
-    return (a->head);
+seq_get_head (const seq_p seq) {
+    return (seq->head);
 }
 
  SEQT *
-seq_get_end (const seq_p a) {
-    return (a->end);
+seq_get_end (const seq_p seq) {
+    return (seq->end);
 }
 
 inline int
@@ -63,31 +63,31 @@ seq_begin (int cap, int len) {
 }
 
 static inline SEQT *
-seq_get_ptr (const seq_p a, int p) {
+seq_get_ptr (const seq_p seq, int pos) {
     // assert (p < a->len);  // removed these because it's always checked in
     // assert (p >= 0);      // calling fns.
-    return (a->begin + p);
+    return (seq->begin + pos);
 }
     
 SEQT 
-seq_get_element (const seq_p a, int p) {
-    assert (p < a->len);
-    assert (p >= 0);
-    return (*(seq_get_ptr (a, p)));
+seq_get_element (const seq_p seq, int pos) {
+    assert (pos < seq->len);
+    assert (pos >= 0);
+    return (*(seq_get_ptr (seq, pos)));
 }
 
 void
-seq_set (seq_p a, int p, SEQT v) {
+seq_set (seq_p seq, int pos, SEQT v) {
     SEQT *tmp;
-    if (a->len == 0) {
-        assert (p == 0);
-        a->len++;
+    if (seq->len == 0) {
+        assert (pos == 0);
+        seq->len++;
     } 
     else {
-        assert (p < a->len);
-        assert (p >= 0);
+        assert (pos < seq->len);
+        assert (pos >= 0);
     }
-    tmp = seq_get_ptr (a, p);
+    tmp = seq_get_ptr (seq, pos);
     *tmp = v;
     return;
 }

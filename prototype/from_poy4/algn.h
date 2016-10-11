@@ -139,6 +139,9 @@ algn_fill_cube (const seq_p seq1, const seq_p seq2, const int *precalcMtx,
 int
 algn_nw_2d (const seq_p seq1, const seq_p seq2, const cost_matrices_2d_p c, nw_matrices_p m, int uk);
 
+/** Creates N-W matrices, then does alignment
+ *  
+ */
 int
 algn_nw_3d (const seq_p seq1, const seq_p seq2, const seq_p seq3,
             const cost_matrices_3d_p c, nw_matrices_p m, int uk);
@@ -211,6 +214,13 @@ algn_fill_plane_3_affine (const seq_p si, const seq_p sj, int leni, int lenj,
                        int *close_block_diagonal, int *extend_block_diagonal, const int *precalcMtx, 
                        int *gap_open_prec, int *sj_horizontal_extension);
 
+void
+algn_get_median_2d_no_gaps (seq_p seq1, seq_p seq2, cost_matrices_2d_p m, seq_p sm);
 
+void
+algn_get_median_2d_with_gaps (seq_p seq1, seq_p seq2, cost_matrices_2d_p m, seq_p sm);
+
+void
+algn_union (seq_p seq1, seq_p seq2, seq_p su);
 
 #endif /* ALGN_H */
