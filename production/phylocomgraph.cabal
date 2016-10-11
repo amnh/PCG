@@ -193,7 +193,6 @@ library
                        Bio.PhyloGraph.Solution.Class
                        Bio.PhyloGraph.Solution.Internal
                        Bio.PhyloGraph.Solution.Metadata
-                       Bio.PhyloGraph.Tree
                        Bio.PhyloGraph.Tree.Binary.Class
                        Bio.PhyloGraph.Tree.EdgeAware.Class
                        Bio.PhyloGraph.Tree.Rose.Class
@@ -426,7 +425,6 @@ executable qdh
                        Bio.PhyloGraph.Solution.Class
                        Bio.PhyloGraph.Solution.Internal
                        Bio.PhyloGraph.Solution.Metadata
-                       Bio.PhyloGraph.Tree
                        Bio.PhyloGraph.Tree.Binary
                        Bio.PhyloGraph.Tree.Binary.Class
                        Bio.PhyloGraph.Tree.EdgeAware
@@ -645,7 +643,6 @@ Test-Suite testsuite
                        Bio.PhyloGraph.Solution.Class
                        Bio.PhyloGraph.Solution.Internal
                        Bio.PhyloGraph.Solution.Metadata
-                       Bio.PhyloGraph.Tree
                        Bio.PhyloGraph.Tree.Binary
                        Bio.PhyloGraph.Tree.Binary.Class
                        Bio.PhyloGraph.Tree.EdgeAware
