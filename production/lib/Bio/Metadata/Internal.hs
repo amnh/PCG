@@ -65,7 +65,22 @@ data CharacterMetadata s
 
    -- TODO: -- AffineCost :: Maybe Int  
 
-   } deriving (Eq, Show)
+   } deriving (Eq)
+
+
+instance Show (CharacterMetadata s) where
+  show s = unlines
+     [ "Metadata: "
+     , "{ Alphabet:       " <> show (alphabet   s)
+     , ", Name:           " <> show (name       s)
+     , ", Is Aligned:     " <> show (isAligned  s)
+     , ", Is Ignored:     " <> show (isIgnored  s)
+     , ", Weight:         " <> show (weight     s)
+     , ", State Names:    " <> show (stateNames s)
+     , ", Root Cost:      " <> show (rootCost   s)
+     , ", Cost Structure: " <> show (costs      s)
+     , "}"
+     ]
 
 -- TODO: Kill this, too
 -- | Different types of characters are stored here
