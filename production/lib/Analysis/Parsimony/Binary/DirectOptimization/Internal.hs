@@ -128,7 +128,7 @@ createDOAlignMatrix topDynChar leftDynChar costStruct = result
           | staticCharFromLeft == staticCharFromTop = (diagCost                        , DiagArrow, staticCharFromTop)
           | otherwise                               = (minCost                         , minDir   , minState )
           where
-            gap                           = getGapElement . head $ otoList leftDynChar -- Why would you give me an empty Dynamic Character?
+            gap                           = gapOfStream leftDynChar -- Why would you give me an empty Dynamic Character?
             staticCharFromLeft            = topDynChar  `indexStream` (col - 1)
             staticCharFromTop             = leftDynChar `indexStream` (row - 1)
             (leftwardValue, _, _)         = result ! (row    , col - 1)

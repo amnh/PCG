@@ -28,6 +28,7 @@ import           Bio.PhyloGraph.Node   hiding (children, name)
 import           Control.Evaluation
 import           Data.Alphabet
 import           Data.Foldable
+import           Data.List.NonEmpty           (NonEmpty((:|)))
 import           Data.HashMap.Strict          (HashMap, fromList)
 import           Data.Matrix.NotStupid        (matrix)
 import           Data.Monoid                  ((<>))
@@ -100,7 +101,7 @@ deriveDynamicMetadatas (x:_) = sequenceA $ V.generate (length sequenceWLOG) f
     f :: Int -> Gen StandardMetadata
     f i = do
         name'       <- getNonEmpty <$> arbitrary
-        stateNames' <- V.fromList <$> vectorOf (length alphabet') (getNonEmpty <$> arbitrary)
+        stateNames' <- V.fromList  <$> vectorOf (length alphabet') (getNonEmpty <$> arbitrary)
         pure CharMeta
              { charType   = DirectOptimization
              , alphabet   = alphabet'
@@ -109,11 +110,15 @@ deriveDynamicMetadatas (x:_) = sequenceA $ V.generate (length sequenceWLOG) f
              , isIgnored  = False
              , weight     = 1.0
              , stateNames = stateNames'
-             , fitchMasks = (undefined,undefined) -- TODO: try not to cry (encodeStream alphabet' ([] :: [[String]]), encodeStream alphabet' ([] :: [[String]]))
+              -- TODO: try not to cry
+             , fitchMasks = (encodeDynamic alphabet' badMask, encodeDynamic alphabet' badMask)
+--             , fitchMasks = (encodeDynamic alphabet' ([] :: [[String]]), encodeDynamic alphabet' ([] :: [[String]]))
+           --  , fitchMasks = (undefined,undefined)
              , rootCost   = 0.0
              , costs      = TCM $ matrix (length alphabet') (length alphabet') (const 1.0)
              }
       where
+        badMask   = ("-":|[]):|[]
         character = sequenceWLOG ! i
         -- We take one less than the width here to account for the cumpulsory gap character.
         alphabet' = fromSymbols . ("-":) $ take (alphabetSize - 1) symbols
