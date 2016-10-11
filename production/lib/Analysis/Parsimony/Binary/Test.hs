@@ -95,6 +95,7 @@ abstractSymbols :: [String]
 abstractSymbols = fmap pure . ('-' :) $ ['0'..'9'] <> ['A'..'Z'] <> ['a'..'z']
 
 -- TODO: Investigate the test failure!
+-- Appears to be dropping the second value in the 'single' vector
 -- | Check properties of the traversal
 traversalProperties :: TestTree
 traversalProperties = testGroup "Properties of the common binary traversal" [opTwice]
@@ -104,8 +105,8 @@ traversalProperties = testGroup "Properties of the common binary traversal" [opT
                 checkTwice :: StandardSolution -> Bool
                 checkTwice inSol = optOnce == optTwice
                     where
-                        optOnce  = trace "Opt once success" $ solutionOptimization 1 inSol
-                        optTwice = solutionOptimization 1 optOnce
+                        optOnce  = (\x -> trace (show x) x) $ solutionOptimization 1 inSol
+                        optTwice = (\x -> trace (show x) x) $ solutionOptimization 1 optOnce
         {-
         atLeaf = testProperty "If we start at a leaf, only that node changes" checkSimple
             where

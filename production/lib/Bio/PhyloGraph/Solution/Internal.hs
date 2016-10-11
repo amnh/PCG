@@ -28,6 +28,7 @@ import           Bio.PhyloGraph.Node   hiding (children, name)
 import           Control.Evaluation
 import           Data.Alphabet
 import           Data.Foldable
+import           Data.List                    (intercalate)
 import           Data.List.NonEmpty           (NonEmpty((:|)))
 import           Data.HashMap.Strict          (HashMap, fromList)
 import           Data.Matrix.NotStupid        (matrix)
@@ -37,13 +38,16 @@ import           Data.Vector                 (Vector, (!))
 import qualified Data.Vector           as V
 import           Test.Tasty.QuickCheck 
 
+
 -- | The equatable identifier for a node in the graph.
 type Identifier = String
+
 
 -- TODO: ParsedDynChars should probably not be hard coded here.
 -- TODO: Actually, why do we need this at all?
 -- | The sequence of characters associated with a taxon.
 type Sequences = ParsedChars
+
 
 -- We'll have two types of node: topological and referential
 
@@ -51,15 +55,19 @@ type Sequences = ParsedChars
 -- | The character metadata reference structure.
 type StandardMetadata = CharacterMetadata DynamicChar
 
+
 -- | A simple storable computation state value.
 type StandardSolution = Solution DAG
+
 
 -- | A computational evaluation state which can be modified monoidally or
 --   monadically.
 type SearchState = EvaluationT IO StandardSolution
 
+
 -- | A structure for storing parsed characters
 type Parsed = HashMap Identifier Sequences
+
 
 -- | A solution is an array of forests character data and names are common
 --   across all forests and so stored at this level
@@ -68,7 +76,20 @@ data Solution d
    { parsedChars :: Parsed
    , metadata    :: Vector StandardMetadata
    , forests     :: [Forest d]
-   } deriving (Eq, Show)
+   } deriving (Eq)
+
+
+instance Show d => Show (Solution d) where
+    show s = unlines
+        [ niceList $ metadata s
+        , "\nForests: "
+        , niceList $ forests s
+        ]
+      where
+        niceList :: (Foldable t, Show a) => t a -> String
+        niceList = (\x -> "[" <> x <> "\n]") . intercalate "\n, " . fmap (indent . show) . toList
+
+        indent = unlines . fmap ("  "<>) . lines
 
 
 -- | (✔)
@@ -76,10 +97,12 @@ instance GeneralSolution (Solution d) (Forest d) where
     getForests     = forests
     setForests s f = s {forests = f}
 
+
 -- | (✔)
 instance MS.MetadataSolution (Solution d) StandardMetadata where
     getMetadata               = metadata
     setMetadata solution meta = solution {metadata = meta}
+
 
 -- | (✔)
 instance Arbitrary (Solution DAG) where
@@ -91,6 +114,7 @@ instance Arbitrary (Solution DAG) where
            , metadata    = meta
            , forests     = pure forest
            }
+
 
 -- TODO: Can this be generaized, is this correct?
 -- | Derive an arbitrary metadata for dynamic characters from a 'Forest'.
@@ -136,12 +160,13 @@ deriveDynamicMetadatas (x:_) = sequenceA $ V.generate (length sequenceWLOG) f
         []  -> node
         c:_ -> getChildNodeWLOG c
 
+
 -- TODO: Is this correct? Do we need to derived generic Parsed values?
 -- | Derive 'Arbitrary' parsed character from the supplied metadata structures.
 arbitraryCharsGivenMeta :: Vector StandardMetadata -> Gen Parsed
 arbitraryCharsGivenMeta allMeta = do
-  names         <- listOf (arbitrary :: Gen String)
-  let nodeCount = length names
-  let alphs     = toList $ V.map alphabet allMeta
-  parsed        <- vectorOf nodeCount (parsedCharsGivenAlph alphs)
-  pure . fromList $ zip names parsed
+    names         <- listOf (arbitrary :: Gen String)
+    let nodeCount = length names
+    let alphs     = toList $ V.map alphabet allMeta
+    parsed        <- vectorOf nodeCount (parsedCharsGivenAlph alphs)
+    pure . fromList $ zip names parsed
