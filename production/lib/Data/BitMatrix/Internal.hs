@@ -172,11 +172,15 @@ isZeroMatrix :: BitMatrix -> Bool
 isZeroMatrix (BitMatrix _ bv) = nat bv == 0
 
 
+-- |
+-- Extracts a bitvector with all cells concatenated ina row-major manner.
 {-# INLINE collapseRows #-}
 collapseRows :: BitMatrix -> BitVector
 collapseRows (BitMatrix _ bv) = bv
 
 
+-- |
+-- Constructs a 'BitMatrix' from a 'BitVector' with all cells wrapped in a row-major manner.
 {-# INLINE expandVector #-}
 expandVector :: Int -> BitVector -> BitMatrix
 expandVector n bv

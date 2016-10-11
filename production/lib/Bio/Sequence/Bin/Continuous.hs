@@ -26,7 +26,10 @@ import           Data.Monoid               (mappend)
 import           Data.Vector               (Vector)
 import qualified Data.Vector        as V
 
-
+-- |
+-- A bin of one or more real-valued characters and thier corresponding metadata.
+--
+-- Use 'continuousBin' and '(<>)' to construct larger bins with differing metadata.
 data ContinuousBin
    = ContinuousBin
    { characterStream :: Vector Double
@@ -43,6 +46,9 @@ instance Semigroup ContinuousBin where
       }
 
 
+-- |
+-- Constructs a non-empty bin of continuous character that all shared the same
+-- metadata values.
 continuousBin :: NonEmpty Double -> GeneralCharacterMetadata -> ContinuousBin
 continuousBin continuousCharacters corespondingMetadata =
   ContinuousBin

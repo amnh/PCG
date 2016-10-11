@@ -24,6 +24,12 @@ import Data.Semigroup
 import Data.TCM
 
 
+-- |
+-- A bin of one or more non-metric characters and thier corresponding metadata.
+--
+-- Use '(<>)' to construct larger bins with differing metadata.
+--
+-- There is currently no singleton-like constructor!
 data NonMetricBin s
    = NonMetricBin
    { characterDecoration :: s

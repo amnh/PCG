@@ -32,15 +32,27 @@ import           Data.List.NonEmpty   (NonEmpty)
 import           Data.MonoTraversable
 
 
+-- |
+-- A multi-level partitioned, non-empty sequence of characters.
+--
+-- A sequence is partitioned into blocks, each block is partitioned into static
+-- and dynamic charcters, with the static characters partitioned by optimization
+-- routines.
+--
+-- Blocks are optimized atomically with resepect to network resolutions.
 data CharacterSequence s d
    = CharSeq (NonEmpty (CharacterBlock s d))
 
 
+-- |
+-- Destructs a 'CharacterSequence' to it's composite blocks.
 {-# INLINE toBlocks #-}
 toBlocks :: CharacterSequence s d -> NonEmpty (CharacterBlock s d)
 toBlocks (CharSeq x) = x
 
 
+-- |
+-- Constructs a 'CharacterSequence' from a non-empty colection of blocks.
 {-# INLINE fromBlocks #-}
 fromBlocks :: NonEmpty (CharacterBlock s d) -> CharacterSequence s d
 fromBlocks = CharSeq

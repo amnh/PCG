@@ -19,6 +19,8 @@ module Bio.Sequence.Bin.Class
 import Bio.Character.Internal
 
 
+-- |
+-- Allows for the generalization of computating the size of a bin.
 class EncodedAmbiguityGroupContainer b => StaticCharacterBin b where
 
     binSize :: b -> Int

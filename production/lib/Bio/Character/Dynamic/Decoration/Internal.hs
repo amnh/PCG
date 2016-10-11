@@ -18,21 +18,28 @@ import Bio.Character.Dynamic.Class
 import Bio.Character.Dynamic.Decoration.Class
 import Control.Lens
 
-
+-- |
+-- An abstract initial dynamic character decoration with a polymorphic character
+-- type.
 data DynamicDecorationInitial d
    = DynamicDecorationInitial
    { dynamicDecorationInitialEncodedField :: d
    }
 
 
+-- | (✔)
 instance HasEncoded (DynamicDecorationInitial d) d where
 
     encoded = lens dynamicDecorationInitialEncodedField (\e x -> e { dynamicDecorationInitialEncodedField = x })
 
 
+-- | (✔)
 instance EncodableDynamicCharacter d => DynamicDecoration (DynamicDecorationInitial d) d where
 
 
+-- |
+-- An abstract direct optimization dynamic character decoration with a
+-- polymorphic character type.
 data DynamicDecorationDirectOptimization d
    = DynamicDecorationDirectOptimization
    { dynamicDecorationDirectOptimizationEncodedField             :: d
@@ -43,37 +50,47 @@ data DynamicDecorationDirectOptimization d
    }
 
 
+-- | (✔)
 instance HasEncoded (DynamicDecorationDirectOptimization d) d where
 
     encoded = lens dynamicDecorationDirectOptimizationEncodedField (\e x -> e { dynamicDecorationDirectOptimizationEncodedField = x })
 
 
+-- | (✔)
 instance HasFinalGapped (DynamicDecorationDirectOptimization d) d where
 
     finalGapped = lens dynamicDecorationDirectOptimizationFinalGappedField (\e x -> e { dynamicDecorationDirectOptimizationFinalGappedField = x })
 
 
+-- | (✔)
 instance HasFinalUngapped (DynamicDecorationDirectOptimization d) d where
 
     finalUngapped = lens dynamicDecorationDirectOptimizationFinalUngappedField (\e x -> e { dynamicDecorationDirectOptimizationFinalUngappedField = x })
 
 
+-- | (✔)
 instance HasPreliminaryGapped (DynamicDecorationDirectOptimization d) d where
 
     preliminaryGapped = lens dynamicDecorationDirectOptimizationPreliminaryGappedField (\e x -> e { dynamicDecorationDirectOptimizationPreliminaryGappedField = x })
 
 
+-- | (✔)
 instance HasPreliminaryUngapped (DynamicDecorationDirectOptimization d) d where
 
     preliminaryUngapped = lens dynamicDecorationDirectOptimizationPreliminaryUngappedField (\e x -> e { dynamicDecorationDirectOptimizationPreliminaryUngappedField = x })
 
 
+-- | (✔)
 instance EncodableDynamicCharacter d => DynamicDecoration (DynamicDecorationDirectOptimization d) d where
 
-  
+
+-- | (✔)
 instance EncodableDynamicCharacter d => DirectOptimizationDecoration (DynamicDecorationDirectOptimization d) d where
 
 
+-- |
+-- An abstract implied alignment dynamic character decoration with a polymorphic
+-- character type.
 data DynamicDecorationImpliedAlignment d
    = DynamicDecorationImpliedAlignment
    { dynamicDecorationImpliedAlignmentEncodedField             :: d
@@ -85,40 +102,49 @@ data DynamicDecorationImpliedAlignment d
    }
 
 
+-- | (✔)
 instance HasEncoded (DynamicDecorationImpliedAlignment d) d where
 
     encoded = lens dynamicDecorationImpliedAlignmentEncodedField (\e x -> e { dynamicDecorationImpliedAlignmentEncodedField = x })
 
 
+-- | (✔)
 instance HasFinalGapped (DynamicDecorationImpliedAlignment d) d where
 
     finalGapped = lens dynamicDecorationImpliedAlignmentFinalGappedField (\e x -> e { dynamicDecorationImpliedAlignmentFinalGappedField = x })
 
 
+-- | (✔)
 instance HasFinalUngapped (DynamicDecorationImpliedAlignment d) d where
 
     finalUngapped = lens dynamicDecorationImpliedAlignmentFinalUngappedField (\e x -> e { dynamicDecorationImpliedAlignmentFinalUngappedField = x })
 
 
+-- | (✔)
 instance HasPreliminaryGapped (DynamicDecorationImpliedAlignment d) d where
 
     preliminaryGapped = lens dynamicDecorationImpliedAlignmentPreliminaryGappedField (\e x -> e { dynamicDecorationImpliedAlignmentPreliminaryGappedField = x })
 
 
+-- | (✔)
 instance HasPreliminaryUngapped (DynamicDecorationImpliedAlignment d) d where
 
     preliminaryUngapped = lens dynamicDecorationImpliedAlignmentPreliminaryUngappedField (\e x -> e { dynamicDecorationImpliedAlignmentPreliminaryUngappedField = x })
 
 
+-- | (✔)
 instance HasImpliedAlignment (DynamicDecorationImpliedAlignment d) d where
 
     impliedAlignment = lens dynamicDecorationImpliedAlignmentImpliedAlignmentField (\e x -> e { dynamicDecorationImpliedAlignmentImpliedAlignmentField = x })
 
 
+-- | (✔)
 instance EncodableDynamicCharacter d => DynamicDecoration            (DynamicDecorationImpliedAlignment d) d where
 
-  
+
+-- | (✔)
 instance EncodableDynamicCharacter d => DirectOptimizationDecoration (DynamicDecorationImpliedAlignment d) d where
 
 
+-- | (✔)
 instance EncodableDynamicCharacter d => ImpliedAlignmentDecoration   (DynamicDecorationImpliedAlignment d) d where

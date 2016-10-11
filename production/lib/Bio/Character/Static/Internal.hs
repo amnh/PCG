@@ -56,16 +56,18 @@ import           Test.QuickCheck.Arbitrary.Instances ()
         -- Make a missing a null vector
         -- Think about a nonempty type class or a refinement type for this
 
+-- |
+-- Represents an encoded static character. Supports binary and numeric operations.
 newtype StaticCharacter
       = SC BitVector
       deriving (Bits, Eq, Enum, Num, Ord, Show)
 
 
--- | Represents an encoded dynamic character, consisting of one or more static
---   characters. Dynamic characters treat entire static characters as the
---   character states of the dynamic character. The dynamic character relies on
---   the encoding of the individual static characters to defined the encoding of
---   the entire dynamic character.
+-- |
+-- Represents an encoded stream of static characters, consisting of one or more
+-- static characters. The static character stream relies on the encoding of the
+-- individual static characters to defined the encoding of the entire static
+-- character stream.
 newtype StaticCharacterBlock
       = SCB BitMatrix
       deriving (Eq, Show)

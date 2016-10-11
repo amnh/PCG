@@ -23,7 +23,9 @@ import           Bio.PhyloGraph.Forest
 import           Bio.PhyloGraph.Network
 import           Bio.PhyloGraph.Node
 import           Bio.PhyloGraph.Solution
-import           Bio.PhyloGraph.Tree 
+import           Bio.PhyloGraph.Tree.Binary
+import           Bio.PhyloGraph.Tree.Referential
+import           Bio.PhyloGraph.Tree.Rose
 import           Data.Foldable
 import           Data.IntMap                (IntMap, insert)
 import qualified Data.IntMap as IM

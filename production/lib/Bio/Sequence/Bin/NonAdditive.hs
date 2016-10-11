@@ -23,6 +23,12 @@ import Data.Monoid          (mappend)
 import Data.Semigroup
 
 
+-- |
+-- A bin of one or more non-additive characters and thier corresponding metadata.
+--
+-- Use '(<>)' to construct larger bins with differing metadata.
+--
+-- There is currently no singleton-like constructor!
 data NonAdditiveBin s
    = NonAdditiveBin
    { characterDecoration :: s

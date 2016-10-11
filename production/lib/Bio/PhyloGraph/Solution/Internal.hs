@@ -79,6 +79,7 @@ data Solution d
    } deriving (Eq)
 
 
+-- | Custom Show instance for improved sanity in debug renderings.
 instance Show d => Show (Solution d) where
     show s = unlines
         [ niceList $ metadata s

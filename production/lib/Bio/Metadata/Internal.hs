@@ -68,6 +68,7 @@ data CharacterMetadata s
    } deriving (Eq)
 
 
+-- | (✔)
 instance Show (CharacterMetadata s) where
   show s = unlines
      [ "Metadata: "

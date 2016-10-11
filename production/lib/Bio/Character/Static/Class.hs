@@ -23,12 +23,23 @@ import Data.List.NonEmpty
 import Data.MonoTraversable
 import Data.Semigroup
 
+-- |
+-- Represents a single static character encoded in a binary and coercable to
+-- `Int` values.
+--
+-- Binary encoding must allow for the nth symbol in the 'Alphabet' to be tested
+-- for membership in the encoded ambiguity group by the following computation:
+--
+-- >>> staticCharacter `testBit` n
 class EncodableStreamElement c => EncodableStaticCharacter c where
 
   encodeStatic :: Eq a => Alphabet a -> AmbiguityGroup a -> c
   encodeStatic = encodeElement
 
 
+-- |
+-- Represents a fixed number of static charcters encoded over 'Alphabet's of the
+-- same size and with the same cost structure.
 class ( EncodableStaticCharacter (Element s)
       , EncodableStream s
       , Semigroup s

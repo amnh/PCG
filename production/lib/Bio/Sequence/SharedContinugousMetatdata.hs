@@ -30,6 +30,9 @@ import           Data.ReplicatedSequence        (ReplicatedSequence)
 import qualified Data.ReplicatedSequence as Rep
 
 
+-- |
+-- Represents a concrete type containing metadata fields shared across different
+-- bins.
 data GeneralCharacterMetadata
    = GeneralCharacterMetadata
    { characterAlphabet :: Alphabet String
@@ -38,6 +41,13 @@ data GeneralCharacterMetadata
    } deriving (Eq, Show) 
 
 
+-- |
+-- A space efficient storage of repeating metadata fields.
+--
+-- /O(m)/ indexing, where /m/ is then number of /unique/ metadata values in the
+-- structure.
+--
+-- Use 'singleton' and '(<>)' for construction.
 newtype SharedMetatdataIntervals = SMI (ReplicatedSequence GeneralCharacterMetadata)
   deriving (Eq, Show)
 
@@ -92,16 +102,25 @@ instance MonoFoldable SharedMetatdataIntervals where
   olength = length . unwrap
 
 
+-- |
+-- /O(1)/ construction.
+--
+-- @singleton n m@ creates a new 'SharedMetatdataIntervals' containing @n@
+-- idenitcal values of @m@.
 {-# INLINE singleton #-}
 singleton :: Int -> GeneralCharacterMetadata -> SharedMetatdataIntervals
 singleton i = SMI . Rep.singleton i
+
+
+-- |
+-- /O(m)/ indexing, where /m/ is then number of /unique/ metadata values in the
+-- structure. 
+{-# INLINE (!) #-}
+(!) :: SharedMetatdataIntervals -> Int -> GeneralCharacterMetadata
+(!) xs i = unwrap xs `index` i
 
 
 {-# INLINE unwrap #-}
 unwrap :: SharedMetatdataIntervals -> ReplicatedSequence GeneralCharacterMetadata
 unwrap (SMI xs) = xs
 
-
-{-# INLINE (!) #-}
-(!) :: SharedMetatdataIntervals -> Int -> GeneralCharacterMetadata
-(!) xs i = unwrap xs `index` i

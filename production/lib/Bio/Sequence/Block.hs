@@ -37,6 +37,12 @@ import           Data.Vector             (Vector)
 import qualified Data.Vector      as V
 
 
+-- |
+-- Represents a block of charcters which are optimized atomically together across
+-- networks. The 'CharcterBlock' is ploymorphic over static and dynamic charcter
+-- definitions.
+--
+-- Use '(<>)' to construct larger blocks.
 data CharacterBlock s d
    = CharacterBlock
    { continuousCharacterBins   :: ContinuousBin
