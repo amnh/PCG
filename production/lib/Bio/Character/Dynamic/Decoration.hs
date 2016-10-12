@@ -11,12 +11,21 @@
 -----------------------------------------------------------------------------
 
 module Bio.Character.Dynamic.Decoration
-  ( DynamicDecorationInitial()
+  ( -- * Polymorphic Types
+    DynamicDecorationInitial()
   , DynamicDecorationDirectOptimization()
   , DynamicDecorationImpliedAlignment()
+    -- * Constraint Classes
   , DynamicDecoration()
   , DirectOptimizationDecoration()
   , ImpliedAlignmentDecoration()
+    -- * Lenses
+  , HasEncoded(..)
+  , HasFinalGapped(..)
+  , HasFinalUngapped(..)
+  , HasPreliminaryGapped(..)
+  , HasPreliminaryUngapped(..)
+  , HasImpliedAlignment(..)
   ) where
 
 
