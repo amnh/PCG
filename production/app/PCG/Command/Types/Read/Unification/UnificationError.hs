@@ -59,7 +59,7 @@ instance Show UnificationErrorMessage where
         , "' contain an entry for the taxa: \n"
         , listShow names
         ]
-  where
-    listShow :: (Foldable t, Show a) => t a -> String
-    listShow = (\x -> "[ " <> x <> "]") . drop 2 . unlines . fmap ((", " <>) . show) . toList
+
+listShow :: (Foldable t, Show a) => t a -> String
+listShow = (\x -> "[ " <> x <> "]") . drop 2 . unlines . fmap ((", " <>) . show) . toList
 

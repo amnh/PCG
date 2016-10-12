@@ -24,19 +24,19 @@ import           Bio.PhyloGraph.Forest
 import           Bio.PhyloGraph.Node      hiding (isLeaf)
 import           Bio.Character.Dynamic
 import           Bio.Character.Parsed
-import           Control.Arrow                  ((***),(&&&))
-import           Data.Bifunctor                 (first)
+import           Control.Arrow                   ((***),(&&&))
+import           Data.Bifunctor                  (first)
 import           Data.Foldable
 import qualified Data.HashMap.Lazy        as HM
-import qualified Data.List.NonEmpty       as NE (fromList)
-import           Data.List.Utility              (duplicates)
-import           Data.Map                       (assocs, difference, intersectionWith, keys)
-import           Data.Maybe                     (catMaybes, fromJust)
-import           Data.Semigroup                 ((<>))
-import           Data.Set                       ((\\))
-import qualified Data.Set                 as S  (fromList)
-import           Data.Vector                    (Vector, (//), generate)
-import qualified Data.Vector              as V  (find, zipWith)
+import qualified Data.List.NonEmpty       as NE  (fromList)
+import           Data.List.Utility               (duplicates)
+import           Data.Map                        (assocs, difference, intersectionWith, keys)
+import           Data.Maybe                      (catMaybes, fromJust)
+import           Data.Semigroup                  ((<>))
+import           Data.Set                        ((\\))
+import qualified Data.Set                 as S   (fromList)
+import           Data.Vector                     (Vector, (//), generate)
+import qualified Data.Vector              as V   (find, zipWith)
 import           File.Format.Newick
 import           File.Format.TransitionCostMatrix
 import           PCG.Command.Types.Read.Unification.UnificationError
@@ -52,8 +52,10 @@ data FracturedParseResult
    , sourceFile   :: FilePath
    } deriving (Show)
 
+
 masterUnify' :: [FracturedParseResult] -> Either UnificationError (Solution DAG)
 masterUnify' = rectifyResults
+
 
 rectifyResults :: [FracturedParseResult] -> Either UnificationError (Solution DAG)
 rectifyResults fprs
@@ -97,15 +99,18 @@ rectifyResults fprs
       then Nothing
       else Just . UnificationError . NE.fromList $ uncurry ForestMissingTaxa   . (NE.fromList . toList *** sourceFile) <$> missingNames
 
+
 fromTreeOnlyFile :: FracturedParseResult -> Bool
 fromTreeOnlyFile fpr = null chars || all null chars
   where
     chars = parsedChars fpr
 
+
 terminalNames :: NewickNode -> [Identifier]
 terminalNames n
   | isLeaf n  = [fromJust $ newickLabel n]
   | otherwise = mconcat $ terminalNames <$> descendants n
+
 
 -- | Functionality to encode into a solution
 encodeSolution :: StandardSolution -> StandardSolution
@@ -141,6 +146,7 @@ joinSequences =  foldl' g (mempty, mempty)
         inBoth       = intersectionWith mappend oldTreeChars nextTreeChars
         inOnlyOld    = fmap (`mappend` nextPad) $  oldTreeChars `difference` nextTreeChars
         inOnlyNext   = fmap (oldPad  `mappend`) $ nextTreeChars `difference` oldTreeChars
+
 
 -- | Function to encode given metadata information
 -- TODO: Remove tight coupling of DynamicChar here
