@@ -370,13 +370,13 @@ cm_alloc_set_costs_3d (int alphSize, int combinations, int do_aff, int gap_open,
     if (DEBUG_CM) {
         printf ("Allocating a three dimensional matrix:\n");
         printf ("alphabet size: %d \n", alphSize);
-        printf ("combinations: %d \n", combinations);
-        printf ("cost model: %d \n", do_aff);
+        printf ("combinations:  %d \n", combinations);
+        printf ("cost model:    %d \n", do_aff);
         printf ("gap open cost: %d \n", gap_open);
     }
     if (combinations != 0) {
         cm_set_gap_3d (res, 1 << (alphSize - 1));
-        cm_set_alphSize_3d (res, cm_combinations_of_alphabet (alphSize));
+        cm_set_alphSize_3d (res, cm_combinations_of_alphabet (alphSize)); // 2 ^ alphSize - 1 is |power set of alphSize|
         cm_set_lcm_3d (res, alphSize);
         cm_set_combinations_3d (res);
     } else {
@@ -609,12 +609,12 @@ cm_get_row_3d (int *tcm, SEQT a, SEQT b, int alphSize) {
         // failwith ("Alphabet size = 4");
     }
     if ((1 << alphSize) <= a) {
-        printf("4a is bigger than alphabet size\n");
+        printf("%hhu is bigger than alphabet size\n", a);
         exit(1);
         // failwith ("4a is bigger than alphabet size");
     }
     if ((1 << alphSize) <= b) {
-        printf("b is bigger than alphabet size\n");
+        printf("%hhu is bigger than alphabet size\n", b);
         exit(1);
         // failwith ("b is bigger than alphabet size");
     }
@@ -638,9 +638,9 @@ cm_get_value (int a, int b, int *p, int alphSize) {
     return *(p + (cm_calc_cost_position (a, b, alphSize)));
 }
 
-/** Sets first row of nw cost matrix, where s is column headers */
+/** Sets first row of nw cost matrix, where @param seq is column headers */
 void
-cm_precalc_4algn (const cost_matrices_2d_p costMtx_t, nw_matrices_p toOutput, const seq_p s) {
+cm_precalc_4algn (const cost_matrices_2d_p costMtx_t, nw_matrices_p nwMtxs, const seq_p seq) {
     if(DEBUG_MAT) {
         printf("\n---cm_precalc_4algn\n");
     }
@@ -648,13 +648,13 @@ cm_precalc_4algn (const cost_matrices_2d_p costMtx_t, nw_matrices_p toOutput, co
     int *tmpCost_t, *seqTcm_t, *tmpPrecMtx_t, *prepend_t, *tailCosts_t, *precalcMtx_t;
     SEQT *begin_t;
 
-    seqLen       = seq_get_len (s);
-    precalcMtx_t = mat_get_2d_prec (toOutput);
+    seqLen       = seq_get_len (seq);
+    precalcMtx_t = mat_get_2d_prec (nwMtxs);
     seqTcm_t     = cm_get_transformation_cost_matrix (costMtx_t);
     prepend_t    = cm_get_prepend_cost (costMtx_t);
     tailCosts_t  = cm_get_tail_cost (costMtx_t);
     tmpPrecMtx_t = precalcMtx_t + seqLen;
-    begin_t      = seq_get_begin (s);         // Inlined seq_get for speed purposes
+    begin_t      = seq_get_begin (seq);         // Inlined seq_get for speed purposes
     if (DEBUG_MAT) {
         printf ("Precalculated transformation cost matrix.\n");
     }
@@ -701,32 +701,35 @@ cm_get_precal_row (const int *p, SEQT item, int len) {
 }
 
 static inline int *
-cm_get_pos_in_precalc (const int *toOutput, int s3l, int alphSize, int s1c, int s2c, \
-        int s3p) {
-    int *res;
+cm_get_pos_in_precalc (const int *outPrecalcMtx, int seq3Len, int alphSize, 
+                       int seq1idx, int seq2idx, int seq3idx) {
+    int *result;
     alphSize++;
-    res = (int *) toOutput + ((s1c * (alphSize * s3l)) + (s3l * s2c) + s3p);
-    return (res);
+    result = (int *) outPrecalcMtx + ((seq1idx * (alphSize * seq3Len)) + (seq3Len * seq2idx) + seq3idx);
+    return (result);
 }
 
 int *
-cm_get_row_precalc_3d (const int *toOutput, int s3l, int alphSize, int s1c, int s2c) {
-    return (cm_get_pos_in_precalc (toOutput, s3l, alphSize, s1c, s2c, 0));
+cm_get_row_precalc_3d (const int *outPrecalcMtx, int seq3Len, int alphSize, int seq1idx, int seq2idx) {
+    return (cm_get_pos_in_precalc (outPrecalcMtx, seq3Len, alphSize, seq1idx, seq2idx, 0));
 }
 
 void
-cm_precalc_4algn_3d (const cost_matrices_3d_p c, int *toOutput, const seq_p s) {
-    int i, j, k, l, *tmp_cost, *tcm;
-    int sequen, *precalc_pos;
-    l = seq_get_len (s);
-    tcm = cm_get_transformation_cost_matrix_3d (c);
-    for (j = 1; j < c->alphSize + 1; j++) 
-        for (k = 1; k < c->alphSize + 1; k++) {
-            tmp_cost = cm_get_row_3d (tcm, j, k, c->lcm);
-            for (i = 0; i < l; i++) {
-                sequen = seq_get_element (s, i);
-                precalc_pos = (int *) cm_get_pos_in_precalc (toOutput, l, c->alphSize, j, k, i);
-                *precalc_pos = *(tmp_cost + sequen); 
+cm_precalc_4algn_3d (const cost_matrices_3d_p costMtx, int *outPrecalcMtx, const seq_p seq3) {
+    int seq3idx, seq1idx, seq2idx, seq3Len, *tmp_cost, *tcm;
+    int sequence, *precalc_pos;
+    seq3Len = seq_get_len (seq3);
+    tcm    = cm_get_transformation_cost_matrix_3d (costMtx);
+    for (seq1idx = 1; seq1idx < costMtx->alphSize + 1; seq1idx++) 
+        for (seq2idx = 1; seq2idx < costMtx->alphSize + 1; seq2idx++) {
+            tmp_cost = cm_get_row_3d (tcm, seq1idx, seq2idx, costMtx->lcm);
+            //printf("seq1: %d,    seq2: %d,    cost: %d\n", seq1idx, seq2idx, *(tmp_cost+1));
+            for (seq3idx = 0; seq3idx < seq3Len; seq3idx++) {
+                sequence     = seq_get_element (seq3, seq3idx);
+                precalc_pos  = (int *) cm_get_pos_in_precalc (outPrecalcMtx, seq3Len, costMtx->alphSize, 
+                                                              seq1idx, seq2idx, seq3idx);
+                *precalc_pos = *(tmp_cost + sequence); 
+                printf("seq1: %2d,    seq2: %2d,    sequence: %2d,    cost: %2d\n", seq1idx, seq2idx, sequence, *(precalc_pos));
             }
         }
     return;

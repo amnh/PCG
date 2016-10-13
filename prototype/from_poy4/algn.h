@@ -42,7 +42,7 @@
  *  @param gap_row is the cost of aligning each base in x with a gap.
  *  @param alg_row is the cost of aligning each base in x wit hthe base
  *  represented by the base of the row of nwMtx in y.
- *  @param dirMtx is the directional matrix for the backtrack
+ *  @param dirMtx is the directional matrix for the backtrace
  *  @param c is the cost of an insertion. As an insertion can only occur for one
  *  particular base in the alphabet, corresponding to the base in y represented
  *  by the row that is being filled.
@@ -115,7 +115,7 @@ fill_parallel (int seq3_len, const int *prev_m, const int *upper_m,
  *    sequences to be aligned
  *  @param nwMtx is a pointer to the first element of the alignment cube that will
  *    hold the matrix of the dynamic programming algorithm, 
- *  @param dm holds the direction information for the backtrack. 
+ *  @param dm holds the direction information for the backtrace. 
  *  @param uk is the value of the Ukkonen barriers (not used in this version of the program)
  * 
  * TODO: figure out wtf this means:
@@ -139,6 +139,9 @@ algn_fill_cube (const seq_p seq1, const seq_p seq2, const int *precalcMtx,
 int
 algn_nw_2d (const seq_p seq1, const seq_p seq2, const cost_matrices_2d_p c, nw_matrices_p m, int uk);
 
+/** Creates N-W matrices, then does alignment
+ *  
+ */
 int
 algn_nw_3d (const seq_p seq1, const seq_p seq2, const seq_p seq3,
             const cost_matrices_3d_p c, nw_matrices_p m, int uk);
@@ -162,17 +165,17 @@ algn_print_dynmtrx_2d (const seq_p seq1, const seq_p seq2, nw_matrices_p m);
  *  @param st_seq1 and @param st_seq2 are 0 if there are no limits, have values otherwise.
  */
 void
-backtrack_2d ( const seq_p seq1, const seq_p seq2, 
+algn_backtrace_2d ( const seq_p seq1, const seq_p seq2, 
                seq_p ret_seq1, seq_p ret_seq2, 
                const nw_matrices_p m, const cost_matrices_2d_p c, 
                int st_seq1, int st_seq2, 
                int swapped 
               );
 
-/** As backtrack_2d, but for three sequences */
+/** As backtrace_2d, but for three sequences */
 void
-backtrack_3d (const seq_p seq1, const seq_p seq2, seq_p seq3, 
-              seq_p r1, seq_p r2, seq_p r3, nw_matrices_p m, const cost_matrices_3d_p c);
+algn_backtrace_3d (const seq_p seq1, const seq_p seq2, seq_p seq3, 
+              seq_p r1, seq_p r2, seq_p r3, const cost_matrices_3d_p c, nw_matrices_p m);
 
 
 inline void
@@ -211,6 +214,13 @@ algn_fill_plane_3_affine (const seq_p si, const seq_p sj, int leni, int lenj,
                        int *close_block_diagonal, int *extend_block_diagonal, const int *precalcMtx, 
                        int *gap_open_prec, int *sj_horizontal_extension);
 
+void
+algn_get_median_2d_no_gaps (seq_p seq1, seq_p seq2, cost_matrices_2d_p m, seq_p sm);
 
+void
+algn_get_median_2d_with_gaps (seq_p seq1, seq_p seq2, cost_matrices_2d_p m, seq_p sm);
+
+void
+algn_union (seq_p seq1, seq_p seq2, seq_p su);
 
 #endif /* ALGN_H */
