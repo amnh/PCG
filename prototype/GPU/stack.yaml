@@ -13,8 +13,8 @@ flags: {}
 
 packages:
 - '.'
-- location: https://github.com/AccelerateHS/accelerate-cuda/archive/master.zip
-- location: https://github.com/AccelerateHS/accelerate/archive/master.zip
+- location: https://github.com/AccelerateHS/accelerate-cuda/archive/f70211c167db0dfb70375e82f69273a6354e6ede.zip
+- location: https://github.com/AccelerateHS/accelerate/archive/6e54b685207b0d35be6c7452c2da1abe9d65c.zip 
 
 resolver: lts-6.1
 
