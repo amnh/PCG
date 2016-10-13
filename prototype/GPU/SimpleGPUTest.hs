@@ -8,7 +8,7 @@ import qualified Data.Array.Accelerate.CUDA as AI
 import           Data.Array.Accelerate.Data.Bits
 import qualified Data.Vector                as V
 import           Data.Word
-u
+
 type SamplePacked = V.Vector Word16
 
 simpleTest :: SamplePacked -> SamplePacked -> SamplePacked
