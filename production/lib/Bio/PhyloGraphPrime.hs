@@ -34,6 +34,8 @@ newtype PhylogeneticSolution a
       deriving (Semigroup)
 
 
+-- |
+-- Retrieve the non-empty collection of phylogenetic forests  from the solution.
 {-# INLINE phylogeneticForests #-}
 phylogeneticForests :: PhylogeneticSolution a -> NonEmpty (PhylogeneticForest a)
 phylogeneticForests (PhylogeneticSolution x) = x

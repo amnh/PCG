@@ -199,6 +199,8 @@ library
                        Bio.PhyloGraph.Tree.Binary.Class
                        Bio.PhyloGraph.Tree.EdgeAware.Class
                        Bio.PhyloGraph.Tree.Rose.Class
+                       Bio.PhyloGraphPrime.Forest
+                       Bio.PhyloGraphPrime.ZipperDAG.Internal
                        Bio.Character.Internal
                        Bio.Sequence.Bin.Additive
                        Bio.Sequence.Bin.Continuous
