@@ -22,11 +22,18 @@ import Data.Bifunctor
 
 -- |
 -- A node in the zipper structure.
+--
+-- * The node's decoration value can be accessed through the 'Cursor' instance functions.
+-- * The node's edges can bew extracted with 'zipperEdges'.
 data ZipperNode e n = ZNode n [InternalEdge n e]
 
 
 -- |
 -- An edge of the zipper structure.
+--
+-- * The edge's decoration value can be accessed through the 'Cursor' instance functions.
+-- * The edge's parent node can be accessed with 'zipperEdgeParent'.
+-- * The edge's child  node can be accessed with 'zipperEdgeChild'.
 data ZipperEdge n e = ZEdge EdgeDirection e (ZipperNode e n) (ZipperNode e n)
 
 
@@ -103,6 +110,8 @@ instance Functor (ZipperEdge n) where
 -- Zipper types with an accessible cursor. The instance methods should be
 -- implemented in constant time for this type-class to be useful.
 class Cursor f where
+
+    {-# MINIMAL getCursor, (setCursor | adjustCursor) #-}
 
     -- |
     -- Monomorphically modify the value at the zipper's current cursor position

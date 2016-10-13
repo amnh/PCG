@@ -11,9 +11,12 @@
 -----------------------------------------------------------------------------
 
 module Bio.PhyloGraphPrime.ZipperDAG
-  ( Cursor(..)
+  ( -- * Mutually recursive zipper types
+    ZipperNode()
   , ZipperEdge()
-  , ZipperNode()
+    -- * Zipper cursor accessors
+  , Cursor(..)
+    -- * Zipper neighbor accessors
   , zipperEdgeChild
   , zipperEdgeParent
   , zipperEdges
