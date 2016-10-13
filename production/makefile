@@ -65,7 +65,7 @@ stack-build-test: phylocomgraph.cabal stack.yaml
 # Copies documentation director to local scope
 copy-docs:
 	rm -rf docs
-	rm -r  docs.html
+	rm -f  docs.html
 	cp -r .stack-work/dist/x86_64-linux/Cabal-1.24.0.0/doc/html/phylocomgraph docs
 	ln -s docs/index.html docs.html
 
