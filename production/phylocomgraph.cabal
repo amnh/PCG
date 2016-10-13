@@ -85,6 +85,8 @@ library
   
   hs-source-dirs:      lib, ffi
 
+  cc-options: --std=c99
+
   -- We must provide the full relative path to every C file that the project depends on.
   c-sources:
     ffi/Analysis/Parsimony/Binary/SequentialAlign/seqAlignForHaskell.c
