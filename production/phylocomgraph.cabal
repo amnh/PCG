@@ -142,6 +142,7 @@ library
                        Bio.PhyloGraph.Tree.Referential
                        Bio.PhyloGraph.Tree.Rose
                        Bio.PhyloGraphPrime
+                       Bio.PhyloGraphPrime.ReferenceDAG
                        Bio.PhyloGraphPrime.ZipperDAG
                        Control.Evaluation
                        Control.Monad.Logger
@@ -202,6 +203,7 @@ library
                        Bio.PhyloGraph.Tree.EdgeAware.Class
                        Bio.PhyloGraph.Tree.Rose.Class
                        Bio.PhyloGraphPrime.Forest
+                       Bio.PhyloGraphPrime.ReferenceDAG.Internal
                        Bio.PhyloGraphPrime.ZipperDAG.Internal
                        Bio.Character.Internal
                        Bio.Sequence.Bin.Additive
