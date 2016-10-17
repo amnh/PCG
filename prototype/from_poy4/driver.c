@@ -7,6 +7,7 @@
 // #include "array_pool.h"
 // #include "cm.h"
 #include "matrices.h"
+#include "ukk.checkp.c"
 
 #define SEQ_CAPACITY 64
 
@@ -358,10 +359,10 @@ void * setupCostMtx(int* tcm, int alphSize, int gap_open, int is_2d) {
                     cm_set_cost_3d   (ambElem1, ambElem2, ambElem3, minCost3d, (cost_matrices_3d_p) retMtx);
                     cm_set_median_3d (ambElem1, ambElem2, ambElem3, median3d,  (cost_matrices_3d_p) retMtx);
                     // cm_set_worst     (ambElem1, ambElem2, max_2d,    (cost_matrices_2d_p) retMtx);    // no worst in 3d
-                    if( power_2(ambElem1) && power_2(ambElem2) && power_2(ambElem3)) {
-                        printf("3d    seq1: %2d,    seq2: %2d,    seq3: %2d,    cost: %2d,    median: %2d\n", 
-                          ambElem1, ambElem2, ambElem3, minCost3d, median3d);
-                    }
+                    // if( power_2(ambElem1) && power_2(ambElem2) && power_2(ambElem3)) {
+                    //     printf("3d    seq1: %2d,    seq2: %2d,    seq3: %2d,    cost: %2d,    median: %2d\n", 
+                    //       ambElem1, ambElem2, ambElem3, minCost3d, median3d);
+                    // }
                 }
             } // ambElem3
             // printf("ambElem1:  %2hhu,   ambElem2: %2hhu\n", ambElem1, ambElem2);
@@ -476,6 +477,7 @@ int main() {
     int algnCost;
 
     // the following to compute deltawh, which increases the matrix height or width in algn_nw_2d
+    // TODO: This has something to do with Ukkonnen. Figure it out and document it.
     // This from ML:
     // TODO: figure out: does this loop, or something?
     int deltawh = 0;
@@ -489,11 +491,11 @@ int main() {
     }
 
 
-    //cm_print (costMtx3d);
+    // cm_print_3d (costMtx3d);
 
 /**************************************************** Do 2d alignment ********************************************************/
 
-    if (DO_2D ) {
+    if (DO_2D) {
         printf("\n\n\n******************** Align 2 sequences **********************\n");
 
         // printf("Original alignment matrix before algn_nw_2d: \n");
