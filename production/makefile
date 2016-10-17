@@ -63,11 +63,18 @@ stack-build-test: phylocomgraph.cabal stack.yaml
 
 
 # Copies documentation director to local scope
-copy-docs:
+copy-docs: set-dir-variables
 	rm -rf docs
 	rm -f  docs.html
-	cp -r .stack-work/dist/x86_64-linux/Cabal-1.24.0.0/doc/html/phylocomgraph docs
+	cp -r .stack-work/dist/$(DIR_ONE)/$(DIR_TWO)/doc/html/phylocomgraph docs
 	ln -s docs/index.html docs.html
+
+# Sets up variables of path names that are subject to change.
+# Finds the most recently modified file in the directory
+set-dir-variables:
+	$(eval DIR_ONE = $(shell ls -t .stack-work/dist/            | head -n 1))
+	$(eval DIR_TWO = $(shell ls -t .stack-work/dist/$(DIR_ONE)/ | head -n 1))
+	@true
 
 # Cleans up artefact files after a build
 clean: phylocomgraph.cabal stack.yaml
