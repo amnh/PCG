@@ -33,7 +33,7 @@
  */
 inline int
 mat_size_of_3d_matrix (int w, int d, int h, int k) {
-    /* Not sure what this was for, but kept for posterity's sake
+    /* Not sure what this was for, as it was commented out, but kept for posterity's sake
        int basic_cube;
        int prism_1, prism_2, pyramid;
        basic_cube = k * k * k;

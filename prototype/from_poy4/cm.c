@@ -40,7 +40,7 @@ cm_combinations_of_alphabet (const int alphSize) {
     return ((1 << alphSize) - 1); // ignore empty set
 }
 
-void cm_print (cost_matrices_2d_p c) {
+void cm_print_2d (cost_matrices_2d_p c) {
     printf("\nCost matrix fields:\n");
     printf("  alphabet size: %d\n", c->alphSize);
     printf("  lcm:           %d\n", c->lcm);
@@ -59,6 +59,22 @@ void cm_print (cost_matrices_2d_p c) {
     cm_print_matrix(c->worst, c->alphSize + 1, c->alphSize + 1);
     printf("  Tail cost:\n    ");
     cm_print_matrix(c->tail_cost, 1, c->alphSize);
+    printf("  Median costs:\n    ");
+    cm_print_median(c->median, c->alphSize + 1, c->alphSize + 1);
+}
+
+void cm_print_3d (cost_matrices_3d_p c) {
+    printf("\nCost matrix fields:\n");
+    printf("  alphabet size: %d\n", c->alphSize);
+    printf("  lcm:           %d\n", c->lcm);
+    printf("  gap:           %d\n", c->gap);
+    printf("  cost model:    %d\n", c->cost_model_type);
+    printf("  combinations:  %d\n", c->combinations);
+    printf("  gap open:      %d\n", c->gap_open);
+    printf("  all elements:  %d\n", c->all_elements);
+
+    printf("\n  Cost matrix:\n    ");
+    cm_print_matrix(c->cost, c->alphSize + 1, c->alphSize + 1);
     printf("  Median costs:\n    ");
     cm_print_median(c->median, c->alphSize + 1, c->alphSize + 1);
 }
@@ -729,7 +745,7 @@ cm_precalc_4algn_3d (const cost_matrices_3d_p costMtx, int *outPrecalcMtx, const
                 precalc_pos  = (int *) cm_get_pos_in_precalc (outPrecalcMtx, seq3Len, costMtx->alphSize, 
                                                               seq1idx, seq2idx, seq3idx);
                 *precalc_pos = *(tmp_cost + sequence); 
-                printf("seq1: %2d,    seq2: %2d,    sequence: %2d,    cost: %2d\n", seq1idx, seq2idx, sequence, *(precalc_pos));
+                // printf("seq1: %2d,    seq2: %2d,    sequence: %2d,    cost: %2d\n", seq1idx, seq2idx, sequence, *(precalc_pos));
             }
         }
     return;
