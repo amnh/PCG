@@ -48,7 +48,7 @@ type SeqConstraint                  s = (EncodableDynamicCharacter s, Bits s, Sh
 
 -- | The counter tracks the max sequence length and the number of gaps added
 type Counter = (Int, Int)
--- The counts are a vector of ints
+-- | The counts are a vector of ints
 type Counts = Vector Counter
 -- | An alignment object is an intmap from the node code to a vector of aligned coded sequences
 type Alignment s = IntMap (Vector s)

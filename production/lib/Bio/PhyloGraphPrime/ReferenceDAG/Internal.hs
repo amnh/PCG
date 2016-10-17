@@ -29,12 +29,14 @@ data ReferenceDAG e n
    }
 
 
+-- | Annotations which are global to the graph
 data GraphData
    = GraphData
    { cost :: Double
    }
 
 
+-- | (✔)
 instance Bifunctor ReferenceDAG where
 
     bimap f g dag =
@@ -47,6 +49,7 @@ instance Bifunctor ReferenceDAG where
         h (node, parentRefs, childRefs) = (g node, parentRefs, f <$> childRefs)
 
 
+-- | (✔)
 instance Functor (ReferenceDAG e) where
 
     fmap f dag =
@@ -57,3 +60,9 @@ instance Functor (ReferenceDAG e) where
         }
       where
         g (node, parentRefs, childRefs) = (f node, parentRefs, childRefs)
+
+
+-- | Build the graph functionally from a generating function.
+unfoldDAG :: (b -> (n, [(e,b)])) -> b -> ReferenceDAG e n
+unfoldDAG f root = undefined
+    
