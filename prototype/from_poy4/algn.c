@@ -848,6 +848,8 @@ static inline int
 algn_fill_plane_2 (const seq_p seq1, int *precalcMtx, int seq1_len, int seq2_len, int *curRow, 
                    DIRECTION_MATRIX *dirMtx, const cost_matrices_2d_p c, 
                    int width, int height, int dwidth_height) {
+    printf("algn_fill_plane_2 %d", iteration);
+    fflush(stdout);
     int *next_row;
     int *next_prevRow;
     int *a, *b;
@@ -2637,6 +2639,8 @@ algn_fill_plane_2_affine (const seq_p seq1, int *precalcMtx, int seq1_len, int s
                        DIRECTION_MATRIX *dirMtx, const cost_matrices_2d_p c, 
                        int width, int height, int dwidth_height, 
                        int *dncurRow, int *htcurRow) {
+    printf("algn_fill_plane_2_affine %d", iteration);
+    fflush(stdout);
     int *next_row, *next_prevRow, *next_dncurRow, *next_pdncurRow;
     int *a, *b, *d, *e, open_gap;
     int const *gap_row;
@@ -3258,6 +3262,8 @@ static inline int
 algn_nw_limit_2d (const seq_p seq1, const seq_p seq2, const cost_matrices_2d_p costMtx, 
                   nw_matrices_p nw_mtxs, int deltawh, int st_seq1, int len_seq1, 
                   int st_seq2, int len_seq2) {
+    printf("algn_nw_limit_2d %d", iteration);
+    fflush(stdout);
     const SEQT *sseq1, *sseq2;
     int *curRow, *precalcMtx, seq1_len, seq2_len;
     DIRECTION_MATRIX *dirMtx;
@@ -3336,7 +3342,6 @@ algn_nw_2d (const seq_p seq1, const seq_p seq2, const cost_matrices_2d_p costMtx
 int
 algn_nw_3d (const seq_p seq1, const seq_p seq2, const seq_p seq3, 
             const cost_matrices_3d_p costMtx, nw_matrices_p nwMtxs, int deltawh) {
-
     const SEQT *sseq1, *sseq2, *sseq3;
     int *costMtxVals, *precalcMtx, seq1_len, seq2_len, seq3_len, gap, res;
     DIRECTION_MATRIX *dirMtx;

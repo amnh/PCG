@@ -118,7 +118,9 @@ struct cost_matrices_3d {
  */ 
 typedef struct cost_matrices_3d * cost_matrices_3d_p;
 
-void cm_print (cost_matrices_2d_p c);
+void cm_print_2d (cost_matrices_2d_p c);
+
+void cm_print_3d (cost_matrices_3d_p c);
 
 void cm_print_matrix (int* m, int w, int h);
 
