@@ -17,6 +17,7 @@ module Bio.PhyloGraphPrime.ReferenceDAG.Internal where
 import           Bio.PhyloGraphPrime.Component
 import           Data.Bifunctor
 import           Data.Foldable
+import           Data.List                 (intercalate)
 import           Data.List.NonEmpty        (NonEmpty)
 import qualified Data.List.NonEmpty as NE
 import           Data.IntMap               (IntMap)
@@ -87,59 +88,6 @@ instance Functor (ReferenceDAG e) where
         g (IndexData node parentRefs' childRefs') = IndexData (f node) parentRefs' childRefs'
 
 
--- | Build the graph functionally from a generating function.
-unfoldDAG :: Eq b => (b -> ([(e,b)], n, [(e,b)])) -> b -> ReferenceDAG e n
-unfoldDAG f origin =
-    RefDAG
-    { references = referenceVector
-    , rootRefs   = NE.fromList $ otoList rootIndices
-    , graphData  = GraphData 0
-    }
-  where
-    referenceVector = V.fromList . fmap h $ toList resultMap
-      where
-        h (iSet, nDatum, iMap) =
-            IndexData
-            { nodeDecoration = nDatum
-            , parentRefs     = iSet
-            , childRefs      = iMap
-            }
-    
-    initialAccumulator :: (Int, b, IntSet, IntMap (IntSet, n, IntMap e))
-    initialAccumulator = (0, origin, mempty, mempty)
-    (_, _, rootIndices, resultMap) = g initialAccumulator origin
-    g acc@(counter, previousValue, currentRoots, currentMap) currentValue = result
-      where
-        result = (cCounter + 1, currentValue, cRoots <> localRoots, currentMap <> mapWithLocalChildren <> mapWithLocalParents)
-        
-        (parentPairs, newDatum, childPairs) = resultFilter $ f currentValue
-        resultFilter (x,y,z) = (filter' x, y, filter' z)
-          where
-            filter' = filter ((/= previousValue) . snd)
-
-        parentResursiveResult       = scanr (\e a -> second (g (snd a)) e) (undefined, acc) $ parentPairs
-        (pCounter, _, pRoots, pMap) = snd $ head parentResursiveResult
-        childResursiveResult        = scanr (\e a -> second (g (snd a)) e) (undefined, (pCounter, currentValue, pRoots, pMap)) $ childPairs
-        (cCounter, _, cRoots, cMap) = snd $ head childResursiveResult
-
-        mapWithLocalChildren = foldMap h childResursiveResult
-          where
-            h (e,(c,_,_,_)) = IM.insertWith insWith cCounter (mempty, newDatum, IM.singleton c e) cMap
-              where
-                insWith (niSet, _, niMap) (oiSet, dec, oiMap) = (niSet <> oiSet, dec, oiMap <> niMap)
-
-        mapWithLocalParents = foldMap h parentResursiveResult
-          where
-            h (_,(c,_,_,_)) = IM.insertWith insWith cCounter (IS.singleton c, newDatum, mempty) cMap
-              where
-                insWith (niSet, _, niMap) (oiSet, dec, oiMap) = (niSet <> oiSet, dec, oiMap <> niMap)
-
-        localRoots
-          | null parentPairs = IS.singleton cCounter
-          | otherwise        = mempty
-
-
-
 instance PhylogeneticComponent (ReferenceDAG e n) NodeRef e n where
 
     parents   i dag = fmap toEnum . otoList . parentRefs $ references dag V.! fromEnum i
@@ -195,3 +143,93 @@ instance PhylogeneticNetwork (ReferenceDAG e n) NodeRef e n where
 instance PhylogeneticTree (ReferenceDAG e n) NodeRef e n where
 
     parent i dag = fmap toEnum . headMay . otoList . parentRefs $ references dag V.! fromEnum i
+
+
+instance {- (Show e, Show n) => -} Show (ReferenceDAG e n) where
+
+    show = referenceRendering 
+
+    
+-- | Build the graph functionally from a generating function.
+unfoldDAG :: Eq b => (b -> ([(e,b)], n, [(e,b)])) -> b -> ReferenceDAG e n
+unfoldDAG f origin =
+    RefDAG
+    { references = referenceVector
+    , rootRefs   = NE.fromList $ otoList rootIndices
+    , graphData  = GraphData 0
+    }
+  where
+    referenceVector = V.fromList . fmap h $ toList resultMap
+      where
+        h (iSet, nDatum, iMap) =
+            IndexData
+            { nodeDecoration = nDatum
+            , parentRefs     = iSet
+            , childRefs      = iMap
+            }
+    
+    initialAccumulator = (0, origin, mempty, mempty)
+    (_, _, rootIndices, resultMap) = g initialAccumulator origin
+    g acc@(_counter, previousValue, _currentRoots, currentMap) currentValue = result
+      where
+        result = (cCounter + 1, currentValue, cRoots <> localRoots, currentMap <> mapWithLocalChildren <> mapWithLocalParents)
+        
+        (parentPairs, newDatum, childPairs) = resultFilter $ f currentValue
+        resultFilter (x,y,z) = (filter' x, y, filter' z)
+          where
+            filter' = filter ((/= previousValue) . snd)
+
+        parentResursiveResult       = scanr (\e a -> second (g (snd a)) e) (undefined, acc) $ parentPairs
+        (pCounter, _, pRoots, pMap) = snd $ head parentResursiveResult
+        childResursiveResult        = scanr (\e a -> second (g (snd a)) e) (undefined, (pCounter, currentValue, pRoots, pMap)) $ childPairs
+        (cCounter, _, cRoots, cMap) = snd $ head childResursiveResult
+
+        mapWithLocalChildren = foldMap h $ init childResursiveResult
+          where
+            h (e,(c,_,_,_)) = IM.insertWith insWith cCounter (mempty, newDatum, IM.singleton c e) cMap
+              where
+                insWith (niSet, _, niMap) (oiSet, dec, oiMap) = (niSet <> oiSet, dec, oiMap <> niMap)
+
+        mapWithLocalParents = foldMap h $ init parentResursiveResult
+          where
+            h (_,(c,_,_,_)) = IM.insertWith insWith cCounter (IS.singleton c, newDatum, mempty) cMap
+              where
+                insWith (niSet, _, niMap) (oiSet, dec, oiMap) = (niSet <> oiSet, dec, oiMap <> niMap)
+
+        localRoots
+          | null parentPairs = IS.singleton cCounter
+          | otherwise        = mempty
+
+
+referenceRendering :: ReferenceDAG e n -> String
+referenceRendering dag = unlines $ [shownRootRefs] <> toList shownDataLines
+  where
+    shownRootRefs   = listShow . toList $ rootRefs dag
+    
+    shownRefs       = f <$> references dag
+      where
+        f (IndexData _ pRefs cRefs) = (listShow $ otoList pRefs, listShow $ IM.keys cRefs)
+
+    shownTrimmedParentRefs = fst <$> shownRefs
+    
+    shownTrimmedChildRefs  = snd <$> shownRefs
+
+    shownPaddedParentRefs  = pad maxParentWidth <$> shownTrimmedParentRefs
+    
+    shownPaddedChildRefs   = pad maxChildWidth  <$> shownTrimmedChildRefs
+
+    maxParentWidth  = maximum $ length <$> shownTrimmedParentRefs
+
+    maxChildWidth   = maximum $ length <$> shownTrimmedChildRefs
+
+    maxIndexWidth   = length . show . pred . length $ references dag
+
+    shownDataLines = zipWithKey f shownPaddedParentRefs shownPaddedChildRefs
+      where
+        f i p c = unwords [ show (pad maxIndexWidth $ show i), p, c]
+
+    listShow = (\x -> "{" <> x <> "}") . intercalate "," . fmap show
+
+    pad n    []  = replicate n ' '
+    pad 0    xs  = xs
+    pad n (x:xs) = x : pad (n-1) xs
