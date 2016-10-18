@@ -13,6 +13,8 @@
 module Bio.PhyloGraphPrime.ReferenceDAG
   ( -- * Efficient access
     ReferenceDAG()
+  , NodeRef()
+  , unfoldDAG
   ) where
 
 import Bio.PhyloGraphPrime.ReferenceDAG.Internal

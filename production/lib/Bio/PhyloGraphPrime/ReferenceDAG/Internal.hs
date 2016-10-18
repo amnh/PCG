@@ -10,19 +10,27 @@
 --
 -----------------------------------------------------------------------------
 
+{-# LANGUAGE FlexibleInstances, FunctionalDependencies, GeneralizedNewtypeDeriving, MultiParamTypeClasses #-}
+
 module Bio.PhyloGraphPrime.ReferenceDAG.Internal where
 
+import           Bio.PhyloGraphPrime.Component
 import           Data.Bifunctor
 import           Data.Foldable
-import           Data.List.NonEmpty   (NonEmpty)
-import           Data.IntMap          (IntMap)
-import qualified Data.IntMap   as IM
-import           Data.IntSet          (IntSet)
+import           Data.List.NonEmpty        (NonEmpty)
+import qualified Data.List.NonEmpty as NE
+import           Data.IntMap               (IntMap)
+import qualified Data.IntMap        as IM
+import           Data.IntSet               (IntSet)
+import qualified Data.IntSet        as IS
 import           Data.Key
+import           Data.Monoid               ((<>))
 import           Data.MonoTraversable
-import           Data.Vector          (Vector)
-import qualified Data.Vector   as V
-import           Prelude       hiding (lookup)
+import           Data.Vector               (Vector)
+import qualified Data.Vector        as V
+import           Data.Vector.Instances     ()
+import           Prelude            hiding (lookup)
+
 
 -- |
 -- A constant time access representation of a directed acyclic graph.
@@ -42,12 +50,16 @@ data IndexData e n
    , childRefs      :: IntMap e
    }
 
+
 -- | Annotations which are global to the graph
 data GraphData
    = GraphData
    { cost :: Double
    }
 
+
+newtype NodeRef = NR Int deriving (Eq, Enum)
+                   
 
 -- | (✔)
 instance Bifunctor ReferenceDAG where
@@ -76,22 +88,59 @@ instance Functor (ReferenceDAG e) where
 
 
 -- | Build the graph functionally from a generating function.
-unfoldDAG :: (b -> (n, [(e,b)])) -> b -> ReferenceDAG e n
-unfoldDAG f root = undefined
+unfoldDAG :: Eq b => (b -> ([(e,b)], n, [(e,b)])) -> b -> ReferenceDAG e n
+unfoldDAG f origin =
+    RefDAG
+    { references = referenceVector
+    , rootRefs   = NE.fromList $ otoList rootIndices
+    , graphData  = GraphData 0
+    }
+  where
+    referenceVector = V.fromList . fmap h $ toList resultMap
+      where
+        h (iSet, nDatum, iMap) =
+            IndexData
+            { nodeDecoration = nDatum
+            , parentRefs     = iSet
+            , childRefs      = iMap
+            }
+    
+    initialAccumulator :: (Int, b, IntSet, IntMap (IntSet, n, IntMap e))
+    initialAccumulator = (0, origin, mempty, mempty)
+    (_, _, rootIndices, resultMap) = g initialAccumulator origin
+    g acc@(counter, previousValue, currentRoots, currentMap) currentValue = result
+      where
+        result = (cCounter + 1, currentValue, cRoots <> localRoots, currentMap <> mapWithLocalChildren <> mapWithLocalParents)
+        
+        (parentPairs, newDatum, childPairs) = resultFilter $ f currentValue
+        resultFilter (x,y,z) = (filter' x, y, filter' z)
+          where
+            filter' = filter ((/= previousValue) . snd)
+
+        parentResursiveResult       = scanr (\e a -> second (g (snd a)) e) (undefined, acc) $ parentPairs
+        (pCounter, _, pRoots, pMap) = snd $ head parentResursiveResult
+        childResursiveResult        = scanr (\e a -> second (g (snd a)) e) (undefined, (pCounter, currentValue, pRoots, pMap)) $ childPairs
+        (cCounter, _, cRoots, cMap) = snd $ head childResursiveResult
+
+        mapWithLocalChildren = foldMap h childResursiveResult
+          where
+            h (e,(c,_,_,_)) = IM.insertWith insWith cCounter (mempty, newDatum, IM.singleton c e) cMap
+              where
+                insWith (niSet, _, niMap) (oiSet, dec, oiMap) = (niSet <> oiSet, dec, oiMap <> niMap)
+
+        mapWithLocalParents = foldMap h parentResursiveResult
+          where
+            h (_,(c,_,_,_)) = IM.insertWith insWith cCounter (IS.singleton c, newDatum, mempty) cMap
+              where
+                insWith (niSet, _, niMap) (oiSet, dec, oiMap) = (niSet <> oiSet, dec, oiMap <> niMap)
+
+        localRoots
+          | null parentPairs = IS.singleton cCounter
+          | otherwise        = mempty
 
 
-newtype NodeRef = NR Int deriving (Eq, Enum)
-                   
--- |
--- Represents the most relaxed phylogentic graph structure.
---
--- The graph must satisfy the following:
---  * The graph is directed
---  * The graph is acyclic
---  * the graph contains one or more root nodes
---  * All nodes have at most in-degree 2
---  * All nodes have out-degree 0 or out-degree 2
-class PhylogeneticComponent (ReferenceDAG e n) NodeRef e n where
+
+instance PhylogeneticComponent (ReferenceDAG e n) NodeRef e n where
 
     parents   i dag = fmap toEnum . otoList . parentRefs $ references dag V.! fromEnum i
  
@@ -103,7 +152,7 @@ class PhylogeneticComponent (ReferenceDAG e n) NodeRef e n where
       where
         f i x
           | null $ childRefs x = mempty
-          | otherwise          = toEnum i
+          | otherwise          = [toEnum i]
 
     nodeCount       = length . references
 
@@ -111,77 +160,38 @@ class PhylogeneticComponent (ReferenceDAG e n) NodeRef e n where
 
     edgeDatum (i,j) dag =  fromEnum j `lookup` childRefs (references dag V.! fromEnum i)
 
-    -- |
-    -- A node satisfying:
-    --  * In-degree  of 2 or more
-    --  * Out-degree of 2 or more
-    --  * A least 2 parent nodes have ancestoral paths to different root nodes
-    isComponentNode :: i -> t -> Bool
+    -- TODO: Broken
+    isComponentNode i dag = olength ps > 2
+      where
+        ps = parentRefs $ references dag V.! fromEnum i
 
-    -- |
-    -- A node satisfying:
-    --  * In-degree  of 2 or more
-    --  * Out-degree of 2 or more
-    --  * All parent nodes have ancestoral paths to a single root node
-    isNetworkNode :: i -> t -> Bool
+    -- TODO: Broken
+    isNetworkNode i dag = olength ps > 2
+      where
+        ps = parentRefs $ references dag V.! fromEnum i
 
-    -- |
-    -- A node satisfying:
-    --  * In-degree  of 1
-    --  * Out-degree of 2
-    isTreeNode
+    isTreeNode i dag = olength ps == 1 && length cs == 2
+      where
+        iPoint = references dag V.! fromEnum i 
+        ps = parentRefs iPoint
+        cs = childRefs  iPoint
 
-    -- |
-    -- A node satisfying:
-    --  * Out-degree 0
-    isLeafNode :: i -> t -> Bool
+    isLeafNode i dag =  null . childRefs  $ references dag V.! fromEnum i
 
-    -- |
-    -- A node satisfying:
-    --  * In-degree 0
-    isRootNode :: i -> t -> Bool
+    isRootNode i dag = onull . parentRefs $ references dag V.! fromEnum i
 
-    -- |
-    -- Performs a softwire resolution of all /component/ nodes into a collection
-    -- of all resulting networks. The resulting size of the collection is equal
-    -- to /2^n/ where /n/ is the number of component nodes in the
-    -- 'PhylogeneticComponent'.
-    networkResolutions :: t -> NonEmpty t
+    -- TODO: Broken
+    networkResolutions dag = pure dag
 
 
--- |
--- Represents a more constrained phylogentic graph structure.
---
--- The graph must satisfy the following:
---  * The graph is directed
---  * The graph is acyclic
---  * The graph contains /exactly one/ root nodes
---  * All nodes have at most in-degree 2
---  * All nodes have out-degree 0 or out-degree 2
-class PhylogeneticNetwork t i e n | t -> i, t -> n, t -> e where
+instance PhylogeneticNetwork (ReferenceDAG e n) NodeRef e n where
 
-    root  :: t -> i
-
-    -- |
-    -- Performs a softwire resolution of all /network/ nodes into a collection
-    -- of all resulting trees. The resulting size of the collection is equal
-    -- to /2^n/ where /n/ is the number of network nodes in the
-    -- 'PhylogenetiNetwork'.
-    treeResolutions :: t -> NonEmpty t
+    root = toEnum . NE.head . rootRefs
+  
+    -- TODO: Broken
+    treeResolutions dag = pure dag
 
 
--- |
--- Represents the most constrained phylogentic graph structure.
--- The constraints correlate to a binary tree.
---
--- The graph must satisfy the following:
---  * The graph is directed
---  * The graph is acyclic
---  * The graph contains /exactly one/ root nodes
---  * All nodes have /exactly/ in-degree 1
---  * All nodes contain out-degree 0 or out-degree 2
-class PhylogeneticTree t i e n | t -> i, t -> n, t -> e where
+instance PhylogeneticTree (ReferenceDAG e n) NodeRef e n where
 
-    parent :: i -> t -> Maybe i
-
-    bifurcation :: i -> t -> Maybe (i,i)
+    parent i dag = fmap toEnum . headMay . otoList . parentRefs $ references dag V.! fromEnum i

@@ -142,6 +142,7 @@ library
                        Bio.PhyloGraph.Tree.Referential
                        Bio.PhyloGraph.Tree.Rose
                        Bio.PhyloGraphPrime
+                       Bio.PhyloGraphPrime.Component
                        Bio.PhyloGraphPrime.ReferenceDAG
                        Bio.PhyloGraphPrime.ZipperDAG
                        Control.Evaluation
@@ -400,6 +401,7 @@ executable qdh
                        Bio.Character.Dynamic.Class
                        Bio.Character.Dynamic.Internal
                        Bio.Character.Exportable.Class
+                       Bio.Character.Internal
                        Bio.Character.Parsed
                        Bio.Character.Parsed.Class
                        Bio.Character.Parsed.Internal

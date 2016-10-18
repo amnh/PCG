@@ -10,6 +10,8 @@
 --
 -----------------------------------------------------------------------------
 
+{-# LANGUAGE FunctionalDependencies, MultiParamTypeClasses #-}
+
 module Bio.PhyloGraphPrime.Component where
 
 import Data.List.NonEmpty
@@ -42,9 +44,7 @@ class PhylogeneticComponent t i e n | t -> i, t -> n, t -> e where
 
     children  :: i -> t -> [i]
 
-    neighbors :: i -> t -> [i]
-
-    roots     :: t -> [i]
+    roots     :: t -> NonEmpty i
 
     leaves    :: t -> [i]
 
@@ -72,7 +72,7 @@ class PhylogeneticComponent t i e n | t -> i, t -> n, t -> e where
     -- A node satisfying:
     --  * In-degree  of 1
     --  * Out-degree of 2
-    isTreeNode
+    isTreeNode :: i -> t -> Bool
 
     -- |
     -- A node satisfying:
@@ -127,4 +127,3 @@ class PhylogeneticTree t i e n | t -> i, t -> n, t -> e where
 
     parent :: i -> t -> Maybe i
 
-    bifurcation :: i -> t -> Maybe (i,i)
