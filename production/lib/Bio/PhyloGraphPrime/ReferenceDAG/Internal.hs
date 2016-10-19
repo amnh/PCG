@@ -240,15 +240,15 @@ referenceRendering dag = unlines $ [shownRootRefs] <> toList shownDataLines
     
     shownPaddedChildRefs   = pad maxChildWidth  <$> shownTrimmedChildRefs
 
-    maxParentWidth  = maximum $ length <$> shownTrimmedParentRefs
+    maxParentWidth = maximum $ length <$> shownTrimmedParentRefs
 
-    maxChildWidth   = maximum $ length <$> shownTrimmedChildRefs
+    maxChildWidth  = maximum $ length <$> shownTrimmedChildRefs
 
-    maxIndexWidth   = length . show . pred . length $ references dag
+    maxIndexWidth  = length . show . pred . length $ references dag
 
     shownDataLines = zipWithKey f shownPaddedParentRefs shownPaddedChildRefs
       where
-        f i p c = unwords [ show (pad maxIndexWidth $ show i), p, c]
+        f i p c = "  " <> unwords [ pad maxIndexWidth $ show i, p, c]
 
     listShow = (\x -> "{" <> x <> "}") . intercalate "," . fmap show
 
