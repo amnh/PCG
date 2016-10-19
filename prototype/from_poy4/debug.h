@@ -9,6 +9,7 @@
 #define INDEL_COST       10
 #define SUB_COST         2
 
+#define DEBUG_3D         1
 #define DEBUG_AFFINE     0
 #define DEBUG_ALGN       0
 #define DEBUG_BT         0

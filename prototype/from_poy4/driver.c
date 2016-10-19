@@ -7,7 +7,7 @@
 // #include "array_pool.h"
 // #include "cm.h"
 #include "matrices.h"
-#include "ukk.checkp.c"
+#include "ukkCommon.h"
 
 #define SEQ_CAPACITY 64
 
@@ -698,22 +698,26 @@ int main() {
         resetSeqValues(retLongSeq);
         resetSeqValues(retShortSeq);
 
-        // following 
-        algnCost = algn_nw_3d (longSeq, mediumSeq, shortSeq, costMtx3d, algn_mtxs3d, deltawh);
+        // algnCost = algn_nw_3d (longSeq, mediumSeq, shortSeq, costMtx3d, algn_mtxs3d, deltawh);
         //printf("Final alignment matrix: \n");
         //algn_print_dynmtrx_2d_2d( longSeq, shortSeq, algn_mtxs3d );
 
         printf("Original 3d sequences:\n");
-        seq_print(longSeq, 1);
+        seq_print(longSeq,   1);
         seq_print(mediumSeq, 2);
-        seq_print(shortSeq, 3);
+        seq_print(shortSeq,  3);
+        printf("\n");
 
-        algn_backtrace_3d (longSeq, mediumSeq, shortSeq, retLongSeq, retMediumSeq, retShortSeq, costMtx3d, algn_mtxs3d);
+        powell_3D_align (longSeq,    mediumSeq,    shortSeq, 
+                         retLongSeq, retMediumSeq, retShortSeq, 
+                         1, 2, 1);
 
-        printf("\nAligned 3d sequences:\n");
-        seq_print(retLongSeq, 1);
+        //algn_backtrace_3d (longSeq, mediumSeq, shortSeq, retLongSeq, retMediumSeq, retShortSeq, costMtx3d, algn_mtxs3d);
+
+        printf("\n\nAligned 3d sequences:\n");
+        seq_print(retLongSeq,   1);
         seq_print(retMediumSeq, 2);
-        seq_print(retShortSeq, 3);
+        seq_print(retShortSeq,  3);
 
         printf("\nAlignment cost: %d\n", algnCost);
 

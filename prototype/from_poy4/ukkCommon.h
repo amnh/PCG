@@ -28,102 +28,132 @@
 // Use the NO_ALLOC_ROUTINES flag to compile without alloc routines.
 // Use the FIXED_NUM_PLANES flag to make routines allocate on d^2 memory.
 
-#ifndef __UKKCOMMON_H__
-#define __UKKCOMMON_H__
+#ifndef UKKCOMMON_H
+#define UKKCOMMON_H
 
+#include <limits.h>
 #include <string.h>
 
 #define MAX_STR 100000
 
 #define MAX_STATES 27                 // Maximum number of possible states, 3^3
 
-#define MAX_COST (2*MAX_STR)
-#define INFINITY MAXINT/2
+#define MAX_COST (2 * MAX_STR)
+#define INFINITY INT_MAX / 2
 
 typedef enum {match, del, ins} Trans;  // The 3 possible state-machine states
 
-#ifndef __UKKCOMMON_C__
-extern int misCost;
-extern int startInsert;
-extern int continueInsert;
-extern int startDelete;
-extern int continueDelete;
 
-extern int neighbours[MAX_STATES];
-extern int contCost[MAX_STATES];
-extern int secondCost[MAX_STATES];
-extern int transCost[MAX_STATES][MAX_STATES];
-extern int stateNum[MAX_STATES];
+#ifndef UKKCOMMON_C
 
-extern int numStates;
-extern int maxSingleStep;
+    extern int misCost;
+    extern int startInsert;
+    extern int continueInsert;
+    extern int startDelete;
+    extern int continueDelete;
 
-extern char Astr[MAX_STR];
-extern char Bstr[MAX_STR];
-extern char Cstr[MAX_STR];
-extern int Alen,Blen,Clen;
+    extern int neighbours[MAX_STATES];
+    extern int contCost  [MAX_STATES];
+    extern int secondCost[MAX_STATES];
+    extern int transCost [MAX_STATES][MAX_STATES];
+    extern int stateNum  [MAX_STATES];
+
+    extern int numStates;
+    extern int maxSingleStep;
+
+    extern char Astr[MAX_STR];
+    extern char Bstr[MAX_STR];
+    extern char Cstr[MAX_STR];
+    extern int  aLen, bLen, cLen;
+
 #endif
 
-#define maxSingleCost  (maxSingleStep*2)
+#define maxSingleCost  (maxSingleStep * 2)
 
 int whichCharCost(char a, char b, char c);
 int okIndex(int a, int da, int end);
 
 // Setup routines
-int stateTransitionCost(int from, int to);
+int  stateTransitionCost(int from, int to);
 void step(int n, int *a, int *b, int *c);
-int neighbourNum(int i, int j, int k);
+int  neighbourNum(int i, int j, int k);
 void transitions(int s, Trans st[3]);
 char *state2str(int s) ;
-int countTrans(Trans st[3], Trans t);
+int  countTrans(Trans st[3], Trans t);
 void setup();
 
 // Alignment checking routines
 void checkAlign(char *al, int alLen, char *str, int strLen);
 void revIntArray(int *arr, int start, int end);
 void revCharArray(char *arr, int start, int end);
-int alignmentCost(int states[], char *al1, char *al2, char *al3, int len);
+int  alignmentCost(int states[], char *al1, char *al2, char *al3, int len);
+
+int doUkk(seq_p ra, seq_p rb, seq_p rc);
+int powell_3D_align (seq_p seqA,    seq_p seqB,    seq_p seqC, 
+                     seq_p retSeqA, seq_p retSeqB, seq_p retSeqC, 
+                     int mismatchCost, int gapOpenCost, int gapExtendCost);
 
 
-
-#ifndef NO_ALLOC_ROUTINES
+//#ifndef NO_ALLOC_ROUTINES
 // Allocation stuff routines.  All inline -----------------------------------------
 
 /*
-  Memory organisation:
+    Memory organisation:
 
-  basePtr -> pointer to array of pointers.  Array is indexed by edit cost, 
-             and contains a pointer to the plane for that cost.
+    basePtr -> pointer to array of pointers.  Array is indexed by edit cost, 
+               and contains a pointer to the plane for that cost.
 
-  A Block is square containing CellsPerBlock x CellsPerBlock cells 
+    A Block is square containing CellsPerBlock x CellsPerBlock cells 
     (note: each cell contains numStates states)
 
-  A plane is 2d array of pointers to Blocks.  Enough pointers to cover
-  from ab=-|B|..|A| and ac=-|C|..|A|.  Each block is only allocated as needed.
-
+    A plane is 2d array of pointers to Blocks.  Enough pointers to cover
+    from ab =- |B|..|A| and ac =- |C|..|A|.  Each block is only allocated as needed.
 */
 
-//#define FIXED_NUM_PLANES
+#define FIXED_NUM_PLANES 1 // TODO: had to do this to use correct AllocInit---check it.
 
 #define FULL_ALLOC_INFO 0
 
-#define CellsPerBlock    10
+#define CellsPerBlock   10
 
 typedef struct {
-  int elemSize;
-  int abSize,acSize;
-  int abOffset,acOffset;
-  long abBlocks, acBlocks;
+    int elemSize;
+    int abSize, acSize;
+    int abOffset, acOffset;
+    long abBlocks, acBlocks;
 
-#ifdef FIXED_NUM_PLANES
-  int costSize;
-#endif
+    #ifdef FIXED_NUM_PLANES
+        int costSize;
+    #endif
 
-  long baseAlloc;
-  void **basePtr;
+    long baseAlloc;
+    void **basePtr;
 
-  long memAllocated;
+    long memAllocated;
 } AllocInfo;
+
+typedef struct {
+    long cells, 
+    innerLoop;
+} Counts;
+
+typedef struct {
+    int dist; 
+    int cost;
+} CPType;
+
+typedef struct {
+    int ab;
+    int ac;
+    int cost;
+    int state;
+} fromType;
+
+typedef struct {
+    int dist; 
+    long computed; 
+    fromType from;
+} U_cell_type;
 
 //U_cell_type **Umatrix;		/* 2 dimensional */
 
@@ -134,184 +164,198 @@ typedef struct {
 //}
 
 #ifdef FIXED_NUM_PLANES
-inline AllocInfo allocInit(int elemSize, int costSize)
+    static inline AllocInfo allocInit(int elemSize, int costSize)
 #else
-inline AllocInfo allocInit(int elemSize)
+    static inline AllocInfo allocInit(int elemSize)
 #endif
+
 {
-  AllocInfo a;
+    AllocInfo a;
   
-  a.memAllocated = 0;
-  a.elemSize     = elemSize;
+    a.memAllocated = 0;
+    a.elemSize     = elemSize;
 
-  a.abSize = Alen + Blen+1;
-  a.acSize = Alen + Clen+1;
-  a.abOffset = Blen;
-  a.acOffset = Clen;
+    a.abSize = aLen + bLen+1;
+    a.acSize = aLen + cLen+1;
+    a.abOffset = bLen;
+    a.acOffset = cLen;
 
-  a.abBlocks = a.abSize/CellsPerBlock+1;
-  a.acBlocks = a.acSize/CellsPerBlock+1;
+    a.abBlocks = a.abSize/CellsPerBlock+1;
+    a.acBlocks = a.acSize/CellsPerBlock+1;
 
-#ifdef FIXED_NUM_PLANES
-  a.costSize  = costSize;
-  a.baseAlloc = costSize;
-#else
-  a.baseAlloc = 20;		/* Whatever not really important, will increase as needed */
-#endif
+    #ifdef FIXED_NUM_PLANES
+        a.costSize  = costSize;
+        a.baseAlloc = costSize;
+    #else
+        a.baseAlloc = 20;		/* Whatever not really important, will increase as needed */
+    #endif
 
-  a.memAllocated += a.baseAlloc * sizeof(void *);
-  a.basePtr = calloc(a.baseAlloc, sizeof(void *));
+    a.memAllocated += a.baseAlloc * sizeof(void *);
+    a.basePtr = calloc(a.baseAlloc, sizeof(void *));
 
-  if (a.basePtr==NULL) {
+    if (a.basePtr==NULL) {
     fprintf(stderr,"Unable to alloc memory\n");
     exit(-1);
-  }
+    }
 
-  return a;
+    return a;
 }
 
-inline void *allocEntry(AllocInfo *a)
-{
-  void *p;
+static inline void *allocEntry(AllocInfo *a) {
+    void *p;
   
-  long entries = CellsPerBlock * CellsPerBlock * numStates;
-  a->memAllocated += entries * a->elemSize;
+    long entries = CellsPerBlock * CellsPerBlock * numStates;
+    a->memAllocated += entries * a->elemSize;
 
-  p=calloc(entries, a->elemSize);
+    p = calloc(entries, a->elemSize);
 
-  if (p==NULL) { fprintf(stderr,"Unable to alloc memory\n"); exit(-1); }
+    if (p == NULL) { 
+        fprintf(stderr,"Unable to alloc memory\n"); 
+        exit(-1); 
+    }
 
-  return p;
+    return p;
 }
 
-inline long allocGetSubIndex(AllocInfo *a, int ab,int ac,int s)
-{
-  long index=0;
+static inline long allocGetSubIndex(AllocInfo *a, int ab,int ac,int s) {
+    long index=0;
 
-  int i=(ab + a->abOffset)/CellsPerBlock;
-  int j=(ac + a->acOffset)/CellsPerBlock;
-  int abAdjusted = ab + a->abOffset - i*CellsPerBlock;
-  int acAdjusted = ac + a->acOffset - j*CellsPerBlock;
+    int i = (ab + a->abOffset) / CellsPerBlock;
+    int j = (ac + a->acOffset) / CellsPerBlock;
+    int abAdjusted = ab + a->abOffset - i * CellsPerBlock;
+    int acAdjusted = ac + a->acOffset - j * CellsPerBlock;
 
-  //  fprintf(stderr,"ab=%d ac=%d abA=%d acA=%d abO=%d acO=%d i=%d j=%d\n",
-  //	  ab,ac,abAdjusted,acAdjusted,a->abOffset,a->acOffset,i,j);
+    //  fprintf(stderr,"ab=%d ac=%d abA=%d acA=%d abO=%d acO=%d i=%d j=%d\n",
+    //	  ab,ac,abAdjusted,acAdjusted,a->abOffset,a->acOffset,i,j);
   
-  assert(abAdjusted>=0 && abAdjusted<CellsPerBlock);
-  assert(acAdjusted>=0 && acAdjusted<CellsPerBlock);
-  assert(s>=0  && s<numStates);
+    assert(abAdjusted >= 0 && abAdjusted < CellsPerBlock);
+    assert(acAdjusted >= 0 && acAdjusted < CellsPerBlock);
+    assert(s>=0  && s<numStates);
 
-  index = (index+abAdjusted)*CellsPerBlock;
-  index = (index+acAdjusted)*numStates;
-  index = (index + s);
+    index = (index + abAdjusted) * CellsPerBlock;
+    index = (index + acAdjusted) * numStates;
+    index = (index + s);
 
-  return index;
+    return index;
 }
 
-inline void *allocPlane(AllocInfo *a)
-{
-  void *p;
+static inline void *allocPlane(AllocInfo *a) {
+    void *p;
 
-  a->memAllocated += a->abBlocks * a->acBlocks * sizeof(void*);
-  p = calloc(a->abBlocks * a->acBlocks, sizeof(void*));
-  if (p==NULL) { fprintf(stderr,"Unable to alloc memory\n"); exit(-1); }
+    a->memAllocated += a->abBlocks * a->acBlocks * sizeof(void*);
+    p = calloc(a->abBlocks * a->acBlocks, sizeof(void*));
+    if (p==NULL) { 
+        fprintf(stderr,"Unable to alloc memory\n"); 
+        exit(-1); 
+    }
   
-  return p;
+    return p;
 }
 
 // recalloc - does a realloc() but sets any new memory to 0.
-inline void *recalloc(void *p, size_t oldSize, size_t newSize)
-{
-  p = realloc(p, newSize);
-  if (!p || oldSize>newSize) return p;
+static inline void *recalloc(void *p, size_t oldSize, size_t newSize) {
+    p = realloc(p, newSize);
+    if (!p || oldSize>newSize) {
+        return p;
+    }
 
-  memset(p+oldSize, 0, newSize-oldSize);
-  return p;
+    memset(p+oldSize, 0, newSize-oldSize);
+    return p;
 }
 
-inline void *getPtr(AllocInfo *a, int ab, int ac, int d, int s)
-{
-  int i,j;
-  void **bPtr;
-  void *base;
-  int index;
+static inline void *getPtr(AllocInfo *a, int ab, int ac, int d, int s) {
+    int i, j;
+    void **bPtr;
+    void *base;
+    int index;
 
-#ifdef FIXED_NUM_PLANES
-  // If doing a noalign or checkp,  remap 'd' into 0..costSize-1
-  d = d % a->costSize;
-#endif
+    #ifdef FIXED_NUM_PLANES
+        // If doing a noalign or checkp,  remap 'd' into 0..costSize-1
+        d = d % a->costSize;
+    #endif
 
-  // Increase the base array as needed
-  while (d >= a->baseAlloc) {
-    int oldSize = a->baseAlloc;
-    a->baseAlloc *= 2;
-    a->basePtr = recalloc(a->basePtr, oldSize*sizeof(void *), a->baseAlloc*sizeof(void*));
-    if (a->basePtr==NULL) { fprintf(stderr,"Unable to alloc memory\n"); exit(-1); }
-    a->memAllocated += oldSize * sizeof(void*);
-  }
-  assert(d>=0 && d<a->baseAlloc);
+    // Increase the base array as needed
+    while (d >= a->baseAlloc) {
+        int oldSize = a->baseAlloc;
+        a->baseAlloc *= 2;
+        a->basePtr = recalloc(a->basePtr, oldSize * sizeof(void *), a->baseAlloc * sizeof(void*));
+        if (a->basePtr==NULL) { 
+            fprintf(stderr,"Unable to alloc memory\n"); 
+            exit(-1); 
+        }
+        a->memAllocated += oldSize * sizeof(void*);
+    }
+    assert(d >= 0 && d < a->baseAlloc);
 
-  if (a->basePtr[d] == NULL)
-    a->basePtr[d] = allocPlane(a);
+    if (a->basePtr[d] == NULL) {
+        a->basePtr[d] = allocPlane(a);
+    }
 
-  bPtr = a->basePtr[d];
+    bPtr = a->basePtr[d];
 
-  i=(ab+a->abOffset)/CellsPerBlock;
-  j=(ac+a->acOffset)/CellsPerBlock;
-  assert(i>=0 && i<a->abBlocks);
-  assert(j>=0 && j<a->acBlocks);
+    i = (ab + a->abOffset) / CellsPerBlock;
+    j = (ac + a->acOffset) / CellsPerBlock;
+    assert(i >= 0 && i < a->abBlocks);
+    assert(j >= 0 && j < a->acBlocks);
 
-  if (bPtr[(i*a->acBlocks)+j]==NULL)
-    bPtr[(i*a->acBlocks)+j] = allocEntry(a);
+    if (bPtr[(i * a->acBlocks) + j] == NULL) {
+        bPtr[(i * a->acBlocks) + j] = allocEntry(a);
+    }
   
-  base = bPtr[(i*a->acBlocks)+j];
-  assert(base != NULL);
+    base = bPtr[(i * a->acBlocks) + j];
+    assert(base != NULL);
 
-  index = allocGetSubIndex(a, ab,ac,s);
-  assert(index>=0);
+    index = allocGetSubIndex(a, ab, ac, s);
+    assert(index >= 0);
 
-  //  fprintf(stderr,"getPtr(ab=%d,ac=%d,d=%d,s=%d): base=%p index=%d\n", 
-  //	  ab,ac,d,s,
-  //	  base,index);
+    //  fprintf(stderr,"getPtr(ab=%d,ac=%d,d=%d,s=%d): base=%p index=%d\n", 
+    //	  ab,ac,d,s,
+    //	  base,index);
 
-  return base + (index * a->elemSize);
+    return base + (index * a->elemSize);
 }
 
-inline void allocFinal(AllocInfo *a, void *flag, void *top)
-{
-  int usedFlag = flag-top;
-  {
+static inline void allocFinal(AllocInfo *a, void *flag, void *top) {
+    int usedFlag = flag-top;
+    
     int i,j,cIndex;
-    long planesUsed=0;
-    long blocksTotal=0, blocksUsed=0;
-    long cellsTotal=0, cellsUsed=0;
-    for (i=0; i<a->baseAlloc; i++) {
-      long tblocksUsed=0;
-      void **p = a->basePtr[i];
-      if (!p) continue;
-      planesUsed++;
-      for (j=0; j<a->abBlocks * a->acBlocks; j++) {
-	long tcellsUsed=0;
-	void *block = p[j];
-	blocksTotal++;
-	if (!block) continue;
-	blocksUsed++;
-	tblocksUsed++;
-	for (cIndex=0; cIndex<CellsPerBlock*CellsPerBlock*numStates; cIndex++) {
-	  cellsTotal++;
-	  if (  *(int*)(block+(cIndex*a->elemSize)+usedFlag)) {
-	    cellsUsed++;
-	    tcellsUsed++;
-	  }
-	}
-    free (block);
+    long planesUsed = 0;
+    long blocksTotal = 0, blocksUsed = 0;
+    long cellsTotal = 0, cellsUsed = 0;
+    for (i = 0; i < a->baseAlloc; i++) {
+        long tblocksUsed=0;
+        void **p = a->basePtr[i];
+        if (!p) {
+            continue;
+        }
+        planesUsed++;
+        for (j = 0; j < a->abBlocks * a->acBlocks; j++) {
+            long tcellsUsed=0;
+            void *block = p[j];
+            blocksTotal++;
+            if (!block) {
+                continue;
+            }
+            blocksUsed++;
+            tblocksUsed++;
+            for (cIndex = 0; cIndex < CellsPerBlock * CellsPerBlock * numStates; cIndex++) {
+                cellsTotal++;
+                if ( *(int*)(block + (cIndex * a->elemSize) + usedFlag)) {
+                    cellsUsed++;
+                    tcellsUsed++;
+                }
+            }
+            free (block);
       }
       free (p);
     }
     free (a->basePtr);
     a->basePtr=NULL;
-  }
+    
 }
-#endif
 
 
-#endif
+//#endif // NO_ALLOC_ROUTINES
+
+
+#endif // UKKCOMMON_H
