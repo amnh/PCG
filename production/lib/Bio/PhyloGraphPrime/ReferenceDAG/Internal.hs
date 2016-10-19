@@ -32,6 +32,7 @@ import qualified Data.Vector        as V
 import           Data.Vector.Instances     ()
 import           Prelude            hiding (lookup)
 
+import Debug.Trace (trace)
 
 -- |
 -- A constant time access representation of a directed acyclic graph.
@@ -44,12 +45,15 @@ data ReferenceDAG e n
    }
 
 
+-- |
+-- A labeled record for each "node" in the graph containing the node decoration,
+-- a set of parent references, and a set of child references with edge decorations.
 data IndexData e n
    = IndexData
    { nodeDecoration :: n
    , parentRefs     :: IntSet
    , childRefs      :: IntMap e
-   }
+   } deriving (Show)
 
 
 -- | Annotations which are global to the graph
@@ -59,6 +63,8 @@ data GraphData
    }
 
 
+-- |
+-- A reference to a node within the 'ReferenceDAG'.
 newtype NodeRef = NR Int deriving (Eq, Enum)
                    
 
@@ -88,6 +94,7 @@ instance Functor (ReferenceDAG e) where
         g (IndexData node parentRefs' childRefs') = IndexData (f node) parentRefs' childRefs'
 
 
+-- | (✔)
 instance PhylogeneticComponent (ReferenceDAG e n) NodeRef e n where
 
     parents   i dag = fmap toEnum . otoList . parentRefs $ references dag V.! fromEnum i
@@ -132,6 +139,7 @@ instance PhylogeneticComponent (ReferenceDAG e n) NodeRef e n where
     networkResolutions dag = pure dag
 
 
+-- | (✔)
 instance PhylogeneticNetwork (ReferenceDAG e n) NodeRef e n where
 
     root = toEnum . NE.head . rootRefs
@@ -140,21 +148,25 @@ instance PhylogeneticNetwork (ReferenceDAG e n) NodeRef e n where
     treeResolutions dag = pure dag
 
 
+-- | (✔)
 instance PhylogeneticTree (ReferenceDAG e n) NodeRef e n where
 
     parent i dag = fmap toEnum . headMay . otoList . parentRefs $ references dag V.! fromEnum i
 
 
+-- | (✔)
 instance {- (Show e, Show n) => -} Show (ReferenceDAG e n) where
 
     show = referenceRendering 
 
-    
+
+-- TODO: Broken!
+-- TODO: Preorder counter incrementation from origin (pushed down)
 -- | Build the graph functionally from a generating function.
-unfoldDAG :: Eq b => (b -> ([(e,b)], n, [(e,b)])) -> b -> ReferenceDAG e n
+unfoldDAG :: (Eq b, Show b, Show e, Show n, Enum e) => (b -> ([(e,b)], n, [(e,b)])) -> b -> ReferenceDAG e n
 unfoldDAG f origin =
     RefDAG
-    { references = referenceVector
+    { references = (\x -> trace (show x) x) referenceVector
     , rootRefs   = NE.fromList $ otoList rootIndices
     , graphData  = GraphData 0
     }
@@ -172,35 +184,45 @@ unfoldDAG f origin =
     (_, _, rootIndices, resultMap) = g initialAccumulator origin
     g acc@(_counter, previousValue, _currentRoots, currentMap) currentValue = result
       where
-        result = (cCounter + 1, currentValue, cRoots <> localRoots, currentMap <> mapWithLocalChildren <> mapWithLocalParents)
+        result = (\x -> trace ("Result " <> show _counter <>": " <> show x) x) $
+                 (cCounter + 1, currentValue, cRoots <> localRoots, currentMap <> mapWithLocalChildren <> mapWithLocalParents <> mapWithLocalValues)
         
-        (parentPairs, newDatum, childPairs) = resultFilter $ f currentValue
+        (parentPairs, newDatum, childPairs) =  (\x -> trace ("Application: " <> show x) x) $ resultFilter $ f currentValue
         resultFilter (x,y,z) = (filter' x, y, filter' z)
           where
             filter' = filter ((/= previousValue) . snd)
 
-        parentResursiveResult       = scanr (\e a -> second (g (snd a)) e) (undefined, acc) $ parentPairs
+        parentResursiveResult       = (\x -> trace (show x) x) $ scanr (\e a -> second (g (snd a)) e) (toEnum (-1), acc) $ parentPairs
         (pCounter, _, pRoots, pMap) = snd $ head parentResursiveResult
-        childResursiveResult        = scanr (\e a -> second (g (snd a)) e) (undefined, (pCounter, currentValue, pRoots, pMap)) $ childPairs
+        childResursiveResult        = (\x -> trace (show x) x) $ scanr (\e a -> second (g (snd a)) e) (toEnum (-1), (pCounter, currentValue, pRoots, pMap)) $ childPairs
         (cCounter, _, cRoots, cMap) = snd $ head childResursiveResult
 
-        mapWithLocalChildren = foldMap h $ init childResursiveResult
+        mapWithLocalChildren = (\x -> trace ("totalChildMap " <> show _counter <>": " <> show x) x) $ foldMap h $ init childResursiveResult
           where
             h (e,(c,_,_,_)) = IM.insertWith insWith cCounter (mempty, newDatum, IM.singleton c e) cMap
               where
                 insWith (niSet, _, niMap) (oiSet, dec, oiMap) = (niSet <> oiSet, dec, oiMap <> niMap)
 
-        mapWithLocalParents = foldMap h $ init parentResursiveResult
+        mapWithLocalParents = (\x -> trace ("totalParentMap: " <> show _counter <> ": " <> show x) x) $ foldMap h $ init parentResursiveResult
           where
             h (_,(c,_,_,_)) = IM.insertWith insWith cCounter (IS.singleton c, newDatum, mempty) cMap
               where
                 insWith (niSet, _, niMap) (oiSet, dec, oiMap) = (niSet <> oiSet, dec, oiMap <> niMap)
+
+        mapWithLocalValues  = IM.singleton cCounter
+                            ( foldMap (\(_,(c,_,_,_)) -> IS.singleton c  ) parentResursiveResult
+                            , newDatum
+                            , foldMap (\(e,(c,_,_,_)) -> IM.singleton c e) childResursiveResult
+                            )
 
         localRoots
           | null parentPairs = IS.singleton cCounter
           | otherwise        = mempty
 
 
+-- |
+-- Renders the 'ReferenceDAG' without showing the node or edge decorations.
+-- Displays a multi-line, tabular reference map of the 'ReferenceDAG'. 
 referenceRendering :: ReferenceDAG e n -> String
 referenceRendering dag = unlines $ [shownRootRefs] <> toList shownDataLines
   where
