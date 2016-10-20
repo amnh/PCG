@@ -179,45 +179,80 @@ unfoldDAG f origin =
             , parentRefs     = iSet
             , childRefs      = iMap
             }
-    
-    initialAccumulator = (0, origin, mempty, mempty)
+
+    initialAccumulator = (-1, Nothing, mempty, mempty)
     (_, _, rootIndices, resultMap) = g initialAccumulator origin
-    g acc@(_counter, previousValue, _currentRoots, currentMap) currentValue = result
+    g acc@(counter, previousContext, currentRoots, currentMap) currentValue = result
       where
-        result = (\x -> trace ("Result " <> show _counter <>": " <> show x) x) $
-                 (cCounter + 1, currentValue, cRoots <> localRoots, currentMap <> mapWithLocalChildren <> mapWithLocalParents <> mapWithLocalValues)
+        result = (\x -> trace ("Result " <> show currentIndex <>": " <> show x) x) $
+                 ( cCounter
+                 , previousContext, currentRoots <> pRoots <> cRoots <> localRoots
+                 , cMap <> mapWithLocalChildren <> mapWithLocalParents <> mapWithLocalValues
+                 )
         
-        (parentPairs, newDatum, childPairs) =  (\x -> trace ("Application: " <> show x) x) $ resultFilter $ f currentValue
-        resultFilter (x,y,z) = (filter' x, y, filter' z)
-          where
-            filter' = filter ((/= previousValue) . snd)
+        (fullParentPairs, newDatum, fullChildPairs) =  (\x -> trace ("Application " <> show currentIndex <> ": " <> show x) x) $ f currentValue
+        (omittedParentPairs, parentPairs) = omitOriginPath fullParentPairs
+        (omittedChildPairs , childPairs ) = omitOriginPath fullChildPairs
 
-        parentResursiveResult       = (\x -> trace (show x) x) $ scanr (\e a -> second (g (snd a)) e) (toEnum (-1), acc) $ parentPairs
+        currentIndex   = counter + 1
+        currentContext = Just (currentIndex, currentValue)
+
+        omitOriginPath =
+            case previousContext of
+              Just (_,previousValue) -> span ((== previousValue) . snd)
+              Nothing -> \x -> ([],x)
+
+        parentResursiveResult       = (\x -> trace ("parentRecursiveResult " <> show currentIndex <> ": " <> show x) x) $
+                                      scanr (\e a -> second (g (snd a)) e) (toEnum (-1), (currentIndex, currentContext, currentRoots, currentMap)) $ parentPairs
         (pCounter, _, pRoots, pMap) = snd $ head parentResursiveResult
-        childResursiveResult        = (\x -> trace (show x) x) $ scanr (\e a -> second (g (snd a)) e) (toEnum (-1), (pCounter, currentValue, pRoots, pMap)) $ childPairs
-        (cCounter, _, cRoots, cMap) = snd $ head childResursiveResult
+        childResursiveResult        = (\x -> trace ("childRecursiveResult: " <> show currentIndex <>": " <> show x) x) $
+                                      scanr (\e a -> second (g (snd a)) e) (toEnum (-1), (pCounter, currentContext, pRoots, pMap)) $ childPairs
+        (cCounter, _, cRoots, cMap) = (\x -> trace ("childResultHead: " <> show currentIndex <>": " <> show x) x) $
+                                      snd $ head childResursiveResult
 
-        mapWithLocalChildren = (\x -> trace ("totalChildMap " <> show _counter <>": " <> show x) x) $ foldMap h $ init childResursiveResult
-          where
-            h (e,(c,_,_,_)) = IM.insertWith insWith cCounter (mempty, newDatum, IM.singleton c e) cMap
-              where
-                insWith (niSet, _, niMap) (oiSet, dec, oiMap) = (niSet <> oiSet, dec, oiMap <> niMap)
+        myCounter = cCounter + 1
 
-        mapWithLocalParents = (\x -> trace ("totalParentMap: " <> show _counter <> ": " <> show x) x) $ foldMap h $ init parentResursiveResult
+        mapWithLocalParents = (\x -> trace ("totalParentMap: " <> show counter <> ": " <> show x) x) $ foldMap h $ init parentResursiveResult
           where
             h (_,(c,_,_,_)) = IM.insertWith insWith cCounter (IS.singleton c, newDatum, mempty) cMap
               where
                 insWith (niSet, _, niMap) (oiSet, dec, oiMap) = (niSet <> oiSet, dec, oiMap <> niMap)
 
-        mapWithLocalValues  = IM.singleton cCounter
-                            ( foldMap (\(_,(c,_,_,_)) -> IS.singleton c  ) parentResursiveResult
+        mapWithLocalChildren = (\x -> trace ("totalChildMap: " <> show counter <>": " <> show x) x) $ foldMap h $ init childResursiveResult
+          where
+            h (e,(c,_,_,_)) = IM.insertWith insWith cCounter (mempty, newDatum, IM.singleton c e) cMap
+              where
+                insWith (niSet, _, niMap) (oiSet, dec, oiMap) = (niSet <> oiSet, dec, oiMap <> niMap)
+
+        -- Do stuff with current context here!
+        mapWithLocalValues  = (\x -> trace ("localValuesMap: " <> show counter <>": " <> show x) x) $
+                              IM.singleton currentIndex
+                            ( otherParents  <> foldMap (\(_,(c,_,_,_)) -> IS.singleton c  ) (init parentResursiveResult)
                             , newDatum
-                            , foldMap (\(e,(c,_,_,_)) -> IM.singleton c e) childResursiveResult
+                            , otherChildren <> foldMap (\(e,(c,_,_,_)) -> IM.singleton c e) (init childResursiveResult)
                             )
+          where
+            otherParents =
+              case previousContext of
+                Nothing -> mempty
+                Just (previousIndex,_) ->
+                  if null omittedParentPairs
+                  then mempty
+                  else IS.singleton previousIndex
+                  
+            otherChildren = (\x -> trace ("otherChildren: " <> show counter <>": " <> show x) x) $
+              case previousContext of
+                Nothing -> mempty
+                Just (previousIndex, previousValue) ->
+                  if null omittedChildPairs
+                  then mempty
+                  else
+                    let e = fst . head . filter ((==currentValue) . snd) . (\(_,_,x) -> x) $ f previousValue
+                    in  IM.singleton previousIndex e
 
         localRoots
-          | null parentPairs = IS.singleton cCounter
-          | otherwise        = mempty
+          | null fullParentPairs = IS.singleton cCounter
+          | otherwise            = mempty
 
 
 -- |
