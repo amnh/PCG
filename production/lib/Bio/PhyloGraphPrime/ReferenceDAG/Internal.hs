@@ -31,6 +31,7 @@ import           Data.Vector               (Vector)
 import qualified Data.Vector        as V
 import           Data.Vector.Instances     ()
 import           Prelude            hiding (lookup)
+import qualified Prelude            as Pre (lookup)
 
 import Debug.Trace (trace)
 
@@ -191,8 +192,8 @@ unfoldDAG f origin =
                  )
         
         (fullParentPairs, newDatum, fullChildPairs) =  (\x -> trace ("Application " <> show currentIndex <> ": " <> show x) x) $ f currentValue
-        (omittedParentPairs, parentPairs) = omitOriginPath fullParentPairs
-        (omittedChildPairs , childPairs ) = omitOriginPath fullChildPairs
+        (omittedParentPairs, parentPairs) = (\x -> trace ("parentApplicationBreak " <> show currentIndex <> ": " <> show x) x) $ omitOriginPath fullParentPairs
+        (omittedChildPairs , childPairs ) = (\x -> trace ("childApplicationBreak " <> show currentIndex <> ": " <> show x) x) $ omitOriginPath fullChildPairs
 
         currentIndex   = counter + 1
         currentContext = Just (currentIndex, currentValue)
@@ -244,11 +245,9 @@ unfoldDAG f origin =
               case previousContext of
                 Nothing -> mempty
                 Just (previousIndex, previousValue) ->
-                  if null omittedChildPairs
-                  then mempty
-                  else
-                    let e = fst . head . filter ((==currentValue) . snd) . (\(_,_,x) -> x) $ f previousValue
-                    in  IM.singleton previousIndex e
+                  case omittedChildPairs of
+                    [] -> mempty
+                    xs -> foldMap (IM.singleton previousIndex . fst) xs
 
         localRoots
           | null fullParentPairs = IS.singleton cCounter
@@ -290,3 +289,15 @@ referenceRendering dag = unlines $ [shownRootRefs] <> toList shownDataLines
     pad n    []  = replicate n ' '
     pad 0    xs  = xs
     pad n (x:xs) = x : pad (n-1) xs
+
+
+dataDef1 = [(0,[1,2]),(1,[]),(2,[])]
+
+gen1 :: Int -> ([(Int,Int)], String, [(Int,Int)])
+gen1 x = (pops, show x, kids)
+  where
+    pops = foldMap (\(i,xs) -> if x `elem` xs then [(-1,i)] else []) dataDef1
+    kids =
+      case Pre.lookup x dataDef1 of
+        Nothing -> []
+        Just xs -> (\y -> (-1,y)) <$> xs
