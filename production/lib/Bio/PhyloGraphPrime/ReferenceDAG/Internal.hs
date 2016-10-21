@@ -17,7 +17,7 @@ module Bio.PhyloGraphPrime.ReferenceDAG.Internal where
 import           Bio.PhyloGraphPrime.Component
 import           Data.Bifunctor
 import           Data.Foldable
-import           Data.List                 (intercalate)
+import           Data.List                 (intercalate,partition)
 import           Data.List.NonEmpty        (NonEmpty)
 import qualified Data.List.NonEmpty as NE
 import           Data.IntMap               (IntMap)
@@ -191,16 +191,16 @@ unfoldDAG f origin =
                  , cMap <> mapWithLocalChildren <> mapWithLocalParents <> mapWithLocalValues
                  )
         
-        (fullParentPairs, newDatum, fullChildPairs) =  (\x -> trace ("Application " <> show currentIndex <> ": " <> show x) x) $ f currentValue
+        (fullParentPairs, newDatum, fullChildPairs) =  (\x -> trace ("Application " <> show currentIndex <> ": " <> show x <> "\nprevious context: " <> show previousContext) x) $ f currentValue
         (omittedParentPairs, parentPairs) = (\x -> trace ("parentApplicationBreak " <> show currentIndex <> ": " <> show x) x) $ omitOriginPath fullParentPairs
-        (omittedChildPairs , childPairs ) = (\x -> trace ("childApplicationBreak " <> show currentIndex <> ": " <> show x) x) $ omitOriginPath fullChildPairs
+        (omittedChildPairs , childPairs ) = (\x -> trace ("childApplicationBreak  " <> show currentIndex <> ": " <> show x) x) $ omitOriginPath fullChildPairs
 
         currentIndex   = counter + 1
         currentContext = Just (currentIndex, currentValue)
 
         omitOriginPath =
             case previousContext of
-              Just (_,previousValue) -> span ((== previousValue) . snd)
+              Just (_,previousValue) -> partition (\(_,x) -> x == previousValue)
               Nothing -> \x -> ([],x)
 
         parentResursiveResult       = (\x -> trace ("parentRecursiveResult " <> show currentIndex <> ": " <> show x) x) $
