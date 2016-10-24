@@ -15,7 +15,7 @@
 module File.Format.Nexus.Data where
 
 import qualified Data.Map.Lazy as M
-import qualified Data.Vector as V
+import qualified Data.Vector   as V
 import           File.Format.Newick
 import           File.Format.TransitionCostMatrix
 
@@ -25,16 +25,34 @@ import           File.Format.TransitionCostMatrix
 ----------------- Types for sending data out -----------------
 --------------------------------------------------------------
 
+
+-- |
+-- Mapping of taxa names to character data and a vector corresponding to each
+-- character's metadata.
 type Sequences = ( TaxonSequenceMap
                  , V.Vector CharacterMetadata
                  )
 
+
+-- |
+-- Represents a symbol in the character alphabet.
 type AlphabetSymbol = String
 
+
+-- TODO: Use Data.List.NonEmpty here?
+-- |
+-- Represents an ambiguity group of symbols in the character alphabet.
+-- Should always be a non empty list.
 type AmbiguityGroup = [AlphabetSymbol]
 
+
+-- |
+-- Represents the unique identifier of a taxon.
 type TaxonIdentifier = String
 
+
+-- |
+-- Metadata recrod type for a given character.
 data CharacterMetadata 
    = CharacterMetadata
    { name       :: String
@@ -47,15 +65,23 @@ data CharacterMetadata
    , weight     :: Int
    } deriving (Show)
 
+
+-- |
 -- Character is Maybe, because some chars might not be present for some taxa
 -- if unaligned, multiple characters are treated as a single "character", so V.length >= 1
 -- if aligned, each character is a "character", so V.length == 1
 type Character = Maybe (V.Vector AmbiguityGroup)
 
+
+-- |
 -- This is a Vector, because Character may have length /= 1 
 -- (see explanation at Character)
 type Sequence = V.Vector Character
 
+
+-- |
+-- Mapping of taxon identifiers (typically names) to thier corresponding
+-- sequence data.
 type TaxonSequenceMap = M.Map TaxonIdentifier Sequence
 
 

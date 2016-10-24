@@ -14,13 +14,16 @@
 -- and its fields used as arguments to a constructor.
 -- I'm wondering if there's isn't a more efficient way to do this.
 -- Also, can these be reduced to a single function, since they're all doing the same thing?
+-----------------------------------------------------------------------------
 
 module File.Format.Nexus.Partition where
 
 import File.Format.Newick
 import File.Format.Nexus.Data
 
-
+-- |
+-- Takes an 'AssumptionField' list and returns a tuple of of the step matricies
+-- contained in the input list along with additive boolean flags.
 partitionAssumptionBlock :: [AssumptionField] -> ([StepMatrix],[Bool])
 partitionAssumptionBlock = foldr f ([],[])
     where
@@ -28,7 +31,18 @@ partitionAssumptionBlock = foldr f ([],[])
         f (Add    n) (a,b) = (  a, n:b)
         f (IgnAF  _)    vs = vs
 
-partitionSequenceBlock :: [SeqSubBlock] -> ([[String]],[CharacterFormat],[DimensionsFormat],[String],[[String]],[[String]])
+
+-- |
+-- Takes a 'SeqSubBlock' list and partitions the colletive parse results into a
+-- 6-tuple of possible result types.
+partitionSequenceBlock :: [SeqSubBlock]
+                       -> ( [[String]]         -- A "Stringly-typed" matrix
+                          , [CharacterFormat]  -- Character format specifications
+                          , [DimensionsFormat] -- Matrix dimension specifications
+                          , [String]           -- Symbols to eliminate
+                          , [[String]]         -- Supplied taxa names
+                          , [[String]]         -- Labels of characters.
+                          )
 partitionSequenceBlock = foldr f ([],[],[],[],[],[])
     where
         f (Matrix      e)  (v,w,x,y,z,a) = (e:v,   w,   x,   y,   z,   a)
@@ -39,15 +53,21 @@ partitionSequenceBlock = foldr f ([],[],[],[],[],[])
         f (CharLabels  e)  (v,w,x,y,z,a) = (  v,   w,   x,   y,   z, e:a)
         f _                           ws = ws
 
+
+-- |
+-- A partitioning function which takes a 'SeqSubBlock' list and returns the last
+-- 'Dims' & 'Taxa' values present in the supplied list.
 partitionTaxaBlock :: [SeqSubBlock] -> (Int, [String])
 partitionTaxaBlock = foldr f (0,[])
     where
-        f (Dims n) (_,z) = (num, z)
-            where
-                num = numTaxa n
-        f (Taxa n) (y,_) = (  y, n)
+        f (Dims n) (_,z) = (numTaxa n, z)
+        f (Taxa n) (y,_) = (        y, n)
         f _           ws = ws
 
+
+-- |
+-- High level partiotioning function which takes a 'NexusBlock' list and returns
+-- a 5-tuple containing the well-typed values present in the parsed results.
 partitionNexusBlocks :: [NexusBlock] -> ([PhyloSequence], [TaxaSpecification], [TreeBlock], [AssumptionBlock], [IgnBlock])
 partitionNexusBlocks = foldr f ([],[],[],[],[])
   where
@@ -58,7 +78,25 @@ partitionNexusBlocks = foldr f ([],[],[],[],[])
     f (SkippedBlock     n) (xs,ys,zs,as,bs) = (  xs,   ys,   zs,   as, n:bs)
     --f _                                  ws = ws
 
-partitionCharFormat :: [CharFormatField] -> (String, Either String [String], Either String [String], String, String, String, String, Bool, Bool, Bool, Bool, Bool)
+
+-- |
+-- A partitioning function which takes a 'CharFormatField' list and returns a
+-- 12-tuple containing the possible character formatting options present in the
+-- parsed results.
+partitionCharFormat :: [CharFormatField]
+                    -> ( String
+                       , Either String [String]
+                       , Either String [String]
+                       , String
+                       , String
+                       , String
+                       , String
+                       , Bool
+                       , Bool
+                       , Bool
+                       , Bool
+                       , Bool
+                       )
 partitionCharFormat = foldr f ("", Right [""], Right [""], "", "", "", "", False, False, False, False, False)
     where
         f (CharDT      n) (_,q,r,s,t,u,v,w,x,y,z,o) = (n,q,r,s,t,u,v,w,x,y,z,o)
@@ -75,6 +113,9 @@ partitionCharFormat = foldr f ("", Right [""], Right [""], "", "", "", "", False
         f (Unlabeled   n) (p,q,r,s,t,u,v,w,x,y,z,_) = (p,q,r,s,t,u,v,w,x,y,z,n)
         f (IgnFF       _)                        ws = ws
 
+
+-- |
+-- Partitions tree block results into translation and forest results.
 partitionTreeBlock :: [TreeField] -> ([[String]], [(String,NewickForest)])
 partitionTreeBlock = foldr f ([],[])
     where
