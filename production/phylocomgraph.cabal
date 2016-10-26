@@ -43,6 +43,7 @@ library
                      , deepseq
                      , dlist
                      , either
+                     , hashable
                      , keys
                      , lens
                      , ListZipper

@@ -165,17 +165,11 @@ instance {- (Show e, Show n) => -} Show (ReferenceDAG e n) where
     show = referenceRendering 
 
 
--- SO BAD, VERY BROKEN
--- What we want to do is 2 passes, removing the full laziness of this aproach.
--- a map of values to indicies
-
--- TODO: Broken!
--- TODO: Preorder counter incrementation from origin (pushed down)
 -- | Build the graph functionally from a generating function.
-unfoldDAG :: (Eq b, Hashable b, Show b, Show e, Show n, Enum e) => (b -> ([(e,b)], n, [(e,b)])) -> b -> ReferenceDAG e n
+unfoldDAG :: (Eq b, Hashable b) => (b -> ([(e,b)], n, [(e,b)])) -> b -> ReferenceDAG e n
 unfoldDAG f origin =
     RefDAG
-    { references = (\x -> trace (show x) x) referenceVector
+    { references = referenceVector
     , rootRefs   = NE.fromList $ otoList rootIndices
     , graphData  = GraphData 0
     }
@@ -191,19 +185,23 @@ unfoldDAG f origin =
 
     initialAccumulator = (-1, -1, (Nothing,mempty), mempty, mempty)
     (_, _, _, rootIndices, resultMap) = g initialAccumulator origin
-    g acc@(counter, otherIndex, previousContext@(previousIndex, previousSeenSet), currentRoots, currentMap) currentValue = result
+    g acc@(counter, otherIndex, previousContext@(previousIndex, previousSeenSet), currentRoots, currentMap) currentValue =
+      case currentValue `lookup` previousSeenSet of
+         -- If this value is in the previously seen set we don't recurse.
+         -- We just return the supplied accumulator with a mutated otherIndex value.
+        Just i  -> (counter, i, previousContext, currentRoots, currentMap)
+        Nothing -> result
       where
-        result = (\x -> trace ("Result " <> show currentIndex <>": " <> show x) x) $
-                 ( cCounter
+        result = ( cCounter
                  , currentIndex
                  , resultContext
                  , currentRoots <> pRoots <> cRoots <> localRoots
                  , cMap <> mapWithLocalChildren <> mapWithLocalParents <> mapWithLocalValues
                  )
         
-        (fullParentPairs, newDatum, fullChildPairs) =  (\x -> trace ("Application " <> show currentIndex <> ": " <> show x <> "\nprevious context: " <> show previousContext) x) $ f currentValue
-        (omittedParentPairs, parentPairs) = (\x -> trace ("parentApplicationBreak " <> show currentIndex <> ": " <> show x) x) $ omitOriginPath fullParentPairs
-        (omittedChildPairs , childPairs ) = (\x -> trace ("childApplicationBreak  " <> show currentIndex <> ": " <> show x) x) $ omitOriginPath fullChildPairs
+        (fullParentPairs, newDatum, fullChildPairs) = f currentValue
+        (omittedParentPairs, parentPairs) = omitOriginPath fullParentPairs
+        (omittedChildPairs , childPairs ) = omitOriginPath fullChildPairs
 
         currentIndex   = counter + 1
         currentContext = (Just currentIndex, HM.insert currentValue currentIndex previousSeenSet)
@@ -217,44 +215,35 @@ unfoldDAG f origin =
                 Nothing -> (        xs, y:ys)
                 Just i  -> ((e,v,i):xs,   ys)
 
-        parentResursiveResult          = (\x -> trace ("parentRecursiveResult " <> show currentIndex <> ": " <> show x) x) $
-                                         scanr (\e a -> second (g (snd a)) e) (toEnum (-1), (currentIndex, -2, currentContext, currentRoots, currentMap)) $ parentPairs
+        parentResursiveResult          = scanr (\e a -> second (g (snd a)) e) (undefined, (currentIndex, undefined, currentContext, currentRoots, currentMap)) $ parentPairs
         (pCounter, _, pContext, pRoots, pMap) = snd $ head parentResursiveResult
-        childResursiveResult           = (\x -> trace ("childRecursiveResult: " <> show currentIndex <>": " <> show x) x) $
-                                         scanr (\e a -> second (g (snd a)) e) (toEnum (-1), (pCounter, -2, pContext, pRoots, pMap)) $ childPairs
-        (cCounter, _, cContext, cRoots, cMap) = (\x -> trace ("childResultHead: " <> show currentIndex <>": " <> show x) x) $
-                                         snd $ head childResursiveResult
+        childResursiveResult           = scanr (\e a -> second (g (snd a)) e) (undefined, (pCounter, undefined, pContext, pRoots, pMap)) $ childPairs
+        (cCounter, _, cContext, cRoots, cMap) = snd $ head childResursiveResult
 
         myCounter = cCounter + 1
 
-        mapWithLocalParents = (\x -> trace ("totalParentMap: " <> show counter <> ": " <> show x) x) $ foldMap h $ init parentResursiveResult
+        mapWithLocalParents = foldMap h $ init parentResursiveResult
           where
             h (_,(_,c,_,_,_)) = IM.insertWith insWith cCounter (IS.singleton c, newDatum, mempty) cMap
               where
                 insWith (niSet, _, niMap) (oiSet, dec, oiMap) = (niSet <> oiSet, dec, oiMap <> niMap)
 
-        mapWithLocalChildren = (\x -> trace ("totalChildMap: " <> show counter <>": " <> show x) x) $ foldMap h $ init childResursiveResult
+        mapWithLocalChildren = foldMap h $ init childResursiveResult
           where
             h (e,(_,c,_,_,_)) = IM.insertWith insWith cCounter (mempty, newDatum, IM.singleton c e) cMap
               where
                 insWith (niSet, _, niMap) (oiSet, dec, oiMap) = (niSet <> oiSet, dec, oiMap <> niMap)
 
-        -- Do stuff with current context here!
-        mapWithLocalValues  = (\x -> trace ("localValuesMap: " <> show counter <>": " <> show x) x) $
-                              IM.singleton currentIndex
-                            ( otherParents  <> foldMap (\(_,(_,c,_,_,_)) -> IS.singleton c  ) (init parentResursiveResult)
+        mapWithLocalValues  = IM.singleton currentIndex
+                            ( otherParents  <> resultParents
                             , newDatum
-                            , otherChildren <> foldMap (\(e,(_,c,_,_,_)) -> IM.singleton c e) (init childResursiveResult)
+                            , otherChildren <> resultChildren
                             )
           where
-            otherParents = foldMap h omittedParentPairs
-              where
-                h (_,_,i) = IS.singleton i
-                  
-            otherChildren = (\x -> trace ("otherChildren: " <> show counter <>": " <> show x) x) $
-                            foldMap h omittedChildPairs
-              where
-                h (e,v,i) = IM.singleton i e
+            otherParents   = foldMap (\(_,_,i)         -> IS.singleton i  )   omittedParentPairs
+            resultParents  = foldMap (\(_,(_,c,_,_,_)) -> IS.singleton c  ) $ init parentResursiveResult
+            otherChildren  = foldMap (\(e,_,i)         -> IM.singleton i e)   omittedChildPairs
+            resultChildren = foldMap (\(e,(_,c,_,_,_)) -> IM.singleton c e) $ init childResursiveResult
 
         localRoots
           | null fullParentPairs = IS.singleton cCounter
@@ -298,8 +287,11 @@ referenceRendering dag = unlines $ [shownRootRefs] <> toList shownDataLines
     pad n (x:xs) = x : pad (n-1) xs
 
 
+-- A test for unfoldDAG containing all node types!
+{--
+
 dataDef1 :: [(Char,String)]
-dataDef1 = [('R',"AB"),('A',"CD"),('B',"CE"),('C',[]),('D',[]),('E',[])]
+dataDef1 = [('R',"AB"),('A',"CD"),('B',"CE"),('C',[]),('D',[]),('E',[]),('Z',"BF"),('F',"GH"),('G',[]),('H',[])]
 
 gen1 :: Char -> ([(Int,Char)], String, [(Int,Char)])
 gen1 x = (pops, show x, kids)
@@ -309,3 +301,4 @@ gen1 x = (pops, show x, kids)
       case Pre.lookup x dataDef1 of
         Nothing -> []
         Just xs -> (\y -> (-1,y)) <$> xs
+--}
