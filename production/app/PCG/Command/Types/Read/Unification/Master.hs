@@ -28,6 +28,7 @@ import           Control.Arrow                   ((***),(&&&))
 import           Data.Bifunctor                  (first)
 import           Data.Foldable
 import qualified Data.HashMap.Lazy        as HM
+import           Data.List.NonEmpty              (NonEmpty)
 import qualified Data.List.NonEmpty       as NE  (fromList)
 import           Data.List.Utility               (duplicates)
 import           Data.Map                        (assocs, difference, intersectionWith, keys)
@@ -45,11 +46,11 @@ import           PCG.Command.Types.Read.Unification.UnificationError
 
 data FracturedParseResult
    = FPR
-   { parsedChars  :: TreeChars
-   , parsedMetas  :: Vector StandardMetadata
-   , parsedTrees  :: Forest NewickNode
-   , relatedTcm   :: Maybe TCM
-   , sourceFile   :: FilePath
+   { parsedChars :: TreeChars
+   , parsedMetas :: Vector StandardMetadata
+   , parsedTrees :: Forest NewickNode
+   , relatedTcm  :: Maybe TCM
+   , sourceFile  :: FilePath
    } deriving (Show)
 
 
@@ -58,9 +59,10 @@ masterUnify' = rectifyResults
 
 
 rectifyResults :: [FracturedParseResult] -> Either UnificationError (Solution DAG)
-rectifyResults fprs
-  | not (null errors) = Left  $ foldl1 (<>) errors
-  | otherwise         = Right {- $ (\x -> trace ("Called one (maybe?) " <> show x) x) -} maskedSolution
+rectifyResults fprs =
+  case errors of
+    [] -> Right {- $ (\x -> trace ("Called one (maybe?) " <> show x) x) -} maskedSolution
+    xs -> Left $ foldl1 (<>) xs
   where
     -- Step 1: Gather data file contents
     dataSeqs        = (parsedChars &&& parsedMetas) <$> filter (not . fromTreeOnlyFile) fprs
@@ -86,18 +88,17 @@ rectifyResults fprs
     maskedSolution  = addMasks encodedSolution
 
     errors          = catMaybes [duplicateError, extraError, missingError]
-    duplicateError  =
-      if null duplicateNames
-      then Nothing
-      else Just . UnificationError . NE.fromList $ uncurry ForestDuplicateTaxa . (NE.fromList . toList *** sourceFile) <$> duplicateNames
-    extraError =
-      if null extraNames
-      then Nothing
-      else Just . UnificationError . NE.fromList $ uncurry ForestExtraTaxa     . (NE.fromList . toList *** sourceFile) <$> extraNames
-    missingError =
-      if null missingNames
-      then Nothing
-      else Just . UnificationError . NE.fromList $ uncurry ForestMissingTaxa   . (NE.fromList . toList *** sourceFile) <$> missingNames
+    duplicateError  = colateErrors ForestDuplicateTaxa duplicateNames
+    extraError      = colateErrors ForestExtraTaxa     duplicateNames
+    missingError    = colateErrors ForestMissingTaxa   duplicateNames
+
+    colateErrors :: ((NonEmpty a) -> FilePath -> UnificationErrorMessage) -> [([a], FracturedParseResult)] -> Maybe UnificationError
+    colateErrors f xs =
+      case xs of
+        [] -> Nothing
+        ys -> Just . UnificationError . NE.fromList $ transformFPR <$> ys
+      where
+        transformFPR (x,y) = f (NE.fromList $ toList x) $ sourceFile y
 
 
 fromTreeOnlyFile :: FracturedParseResult -> Bool
