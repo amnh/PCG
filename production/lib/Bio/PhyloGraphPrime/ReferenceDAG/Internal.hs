@@ -18,14 +18,13 @@ import           Bio.PhyloGraphPrime.Component
 import           Data.Bifunctor
 import           Data.Foldable
 import           Data.Hashable             (Hashable)
-import           Data.HashMap.Strict       (HashMap)
 import qualified Data.HashMap.Strict as HM
 import           Data.IntMap               (IntMap)
 import qualified Data.IntMap        as IM
 import           Data.IntSet               (IntSet)
 import qualified Data.IntSet        as IS
 import           Data.Key
-import           Data.List                 (intercalate,partition)
+import           Data.List                 (intercalate)
 import           Data.List.NonEmpty        (NonEmpty)
 import qualified Data.List.NonEmpty as NE
 import           Data.Monoid               ((<>))
@@ -34,9 +33,6 @@ import           Data.Vector               (Vector)
 import qualified Data.Vector        as V
 import           Data.Vector.Instances     ()
 import           Prelude            hiding (lookup)
-import qualified Prelude            as Pre (lookup)
-
-import Debug.Trace (trace)
 
 
 -- |
@@ -185,7 +181,7 @@ unfoldDAG f origin =
 
     initialAccumulator = (-1, -1, (Nothing,mempty), mempty, mempty)
     (_, _, _, rootIndices, resultMap) = g initialAccumulator origin
-    g acc@(counter, otherIndex, previousContext@(previousIndex, previousSeenSet), currentRoots, currentMap) currentValue =
+    g (counter, _otherIndex, previousContext@(previousIndex, previousSeenSet), currentRoots, currentMap) currentValue =
       case currentValue `lookup` previousSeenSet of
          -- If this value is in the previously seen set we don't recurse.
          -- We just return the supplied accumulator with a mutated otherIndex value.
@@ -219,8 +215,6 @@ unfoldDAG f origin =
         (pCounter, _, pContext, pRoots, pMap) = snd $ head parentResursiveResult
         childResursiveResult           = scanr (\e a -> second (g (snd a)) e) (undefined, (pCounter, undefined, pContext, pRoots, pMap)) $ childPairs
         (cCounter, _, cContext, cRoots, cMap) = snd $ head childResursiveResult
-
-        myCounter = cCounter + 1
 
         mapWithLocalParents = foldMap h $ init parentResursiveResult
           where
