@@ -10,7 +10,7 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE DeriveFunctor, FlexibleContexts #-}
 
 module Bio.Sequence.Bin.NonMetric
   ( NonMetricBin(..)
@@ -35,7 +35,7 @@ data NonMetricBin s
    { characterDecoration :: s
    , tcmDefinition       :: TCM
    , metatdataBounds     :: SharedMetatdataIntervals
-   } deriving (Eq,Show)
+   } deriving (Eq, Functor, Show)
 
 
 instance EncodedAmbiguityGroupContainer (NonMetricBin s) where

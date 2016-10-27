@@ -10,7 +10,7 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE DeriveFunctor, FlexibleContexts #-}
 
 module Bio.Sequence.Bin.Metric
   ( MetricBin(..)
@@ -35,7 +35,7 @@ data MetricBin s
    { characterDecoration :: s
    , tcmDefinition       :: TCM
    , metatdataBounds     :: SharedMetatdataIntervals
-   } deriving (Eq,Show)
+   } deriving (Eq,Functor,Show)
 
 
 instance EncodedAmbiguityGroupContainer (MetricBin s) where

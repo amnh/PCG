@@ -32,7 +32,7 @@ import qualified Data.Vector        as V
 -- Use 'continuousBin' and '(<>)' to construct larger bins with differing metadata.
 data ContinuousBin
    = ContinuousBin
-   { characterStream :: Vector Double
+   { characterStream :: Vector (Maybe Double)
    , metatdataBounds :: SharedMetatdataIntervals
    } deriving (Eq,Show)
 
@@ -49,7 +49,7 @@ instance Semigroup ContinuousBin where
 -- |
 -- Constructs a non-empty bin of continuous character that all shared the same
 -- metadata values.
-continuousBin :: NonEmpty Double -> GeneralCharacterMetadata -> ContinuousBin
+continuousBin :: NonEmpty (Maybe Double) -> GeneralCharacterMetadata -> ContinuousBin
 continuousBin continuousCharacters corespondingMetadata =
   ContinuousBin
     { characterStream = V.fromList $ toList continuousCharacters

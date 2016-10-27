@@ -16,33 +16,47 @@
 
 module PCG.Command.Types.Read.Unification.Master where
 
-import           Bio.Metadata             hiding (name)
+import           Bio.Character
+import           Bio.Sequence
+import           Bio.Sequence.Block
+import           Bio.Metadata
+import           Bio.Metadata.CharacterName hiding (sourceFile)
 import           Bio.Metadata.MaskGenerator
-import           Bio.PhyloGraph.Solution  hiding (parsedChars)
+import           Bio.PhyloGraph.Solution    hiding (parsedChars)
 import           Bio.PhyloGraph.DAG
 import           Bio.PhyloGraph.Forest
-import           Bio.PhyloGraph.Node      hiding (isLeaf)
+import           Bio.PhyloGraph.Node               (encoded, nodeIdx)
+import qualified Bio.PhyloGraph.Node        as Node
+import           Bio.PhyloGraphPrime
+import           Bio.PhyloGraphPrime.ReferenceDAG
 import           Bio.Character.Dynamic
 import           Bio.Character.Parsed
-import           Control.Arrow                   ((***),(&&&))
-import           Data.Bifunctor                  (first)
+import           Control.Arrow                     ((***), (&&&))
+import           Data.Bifunctor                    (first)
 import           Data.Foldable
-import qualified Data.HashMap.Lazy        as HM
-import           Data.List.NonEmpty              (NonEmpty)
-import qualified Data.List.NonEmpty       as NE  (fromList)
-import           Data.List.Utility               (duplicates)
-import           Data.Map                        (assocs, difference, intersectionWith, keys)
-import           Data.Maybe                      (catMaybes, fromJust)
-import           Data.Semigroup                  ((<>))
-import           Data.Set                        ((\\))
-import qualified Data.Set                 as S   (fromList)
-import           Data.Vector                     (Vector, (//), generate)
-import qualified Data.Vector              as V   (find, zipWith)
+import qualified Data.HashMap.Lazy          as HM
+import           Data.List                         (zip4)
+import           Data.List.NonEmpty                (NonEmpty)
+import qualified Data.List.NonEmpty         as NE  (fromList)
+import           Data.List.Utility                 (duplicates)
+import           Data.Map                          (Map, assocs, difference, intersectionWith, keys)
+import qualified Data.Map                   as Map
+import           Data.Maybe                        (catMaybes, fromJust)
+import           Data.Semigroup                    ((<>), sconcat)
+import           Data.Set                          ((\\))
+import qualified Data.Set                   as Set
+import           Data.Vector                       (Vector, (//), generate)
+import qualified Data.Vector                as V   (find, zipWith)
 import           File.Format.Newick
 import           File.Format.TransitionCostMatrix
 import           PCG.Command.Types.Read.Unification.UnificationError
 
---import Debug.Trace
+-- import Debug.Trace
+
+-- type TreeChars      = Map String ParsedChars
+-- type ParsedChars    = Vector (Maybe ParsedChar)
+-- type ParsedChar     = Vector AmbiguityGroup
+-- type AmbiguityGroup = [String]
 
 data FracturedParseResult
    = FPR
@@ -58,16 +72,16 @@ masterUnify' :: [FracturedParseResult] -> Either UnificationError (Solution DAG)
 masterUnify' = rectifyResults
 
 
-rectifyResults :: [FracturedParseResult] -> Either UnificationError (Solution DAG)
-rectifyResults fprs =
+rectifyResults2 :: [FracturedParseResult] -> Either UnificationError (PhylogeneticSolution (ReferenceDAG () ()))
+rectifyResults2 fprs =
   case errors of
-    [] -> Right {- $ (\x -> trace ("Called one (maybe?) " <> show x) x) -} maskedSolution
-    xs -> Left $ foldl1 (<>) xs
+    [] -> undefined -- Right maskedSolution
+    xs -> Left . sconcat $ NE.fromList xs
   where
     -- Step 1: Gather data file contents
-    dataSeqs        = (parsedChars &&& parsedMetas) <$> filter (not . fromTreeOnlyFile) fprs
+    dataSeqs        = filter (not . fromTreeOnlyFile) fprs
     -- Step 2: Union the taxa names together into total terminal set
-    taxaSet         = mconcat $ (S.fromList . keys . fst) <$> dataSeqs
+    taxaSet         = mconcat $ (Set.fromList . keys . parsedChars) <$> dataSeqs
     -- Step 3: Gather forest file data
     allForests      = filter (not . null . parsedTrees) fprs
     -- Step 4: Gather the taxa names for each forest from terminal nodes
@@ -75,8 +89,123 @@ rectifyResults fprs =
     -- Step 5: Assert that each terminal node name is unique in the forest
     duplicateNames  = filter (not . null . fst) $ first duplicates <$> forestTaxa
     -- Step 6: Assert that each forest's terminal node set is exactly the same as the taxa set from "data files"
-    extraNames      = filter (not . null . fst) $ first ((\\ taxaSet) . S.fromList) <$> forestTaxa
-    missingNames    = filter (not . null . fst) $ first ((taxaSet \\) . S.fromList) <$> forestTaxa
+    extraNames      = filter (not . null . fst) $ first ((\\ taxaSet) . Set.fromList) <$> forestTaxa
+    missingNames    = filter (not . null . fst) $ first ((taxaSet \\) . Set.fromList) <$> forestTaxa
+    -- Step 7: Combine disparte sequences from many sources  into single metadata & character sequence.
+    -- TODO: Properly construct bins here, encode characters!
+    charSeqs = joinSequences2 dataSeqs
+    -- Step 8: Convert topological forests to DAGs (using reference indexing from #7 results)
+    -- TODO: unfoldDAGs referencing #7
+--    dagForests      = fromNewick . parsedTrees <$> allForests
+--    combinedData    = Solution (HM.fromList $ assocs charSeqs) combinedMetadata dagForests
+    -- Step 9:  TODO: Node encoding
+--    encodedSolution = encodeSolution combinedData
+    -- Step 10: TODO: masking for the nodes
+--    maskedSolution  = addMasks encodedSolution
+
+    -- Error collection
+    errors          = catMaybes [duplicateError, extraError, missingError]
+    duplicateError  = colateErrors ForestDuplicateTaxa duplicateNames
+    extraError      = colateErrors ForestExtraTaxa     duplicateNames
+    missingError    = colateErrors ForestMissingTaxa   duplicateNames
+
+    colateErrors :: ((NonEmpty a) -> FilePath -> UnificationErrorMessage) -> [([a], FracturedParseResult)] -> Maybe UnificationError
+    colateErrors f xs =
+      case xs of
+        [] -> Nothing
+        ys -> Just . UnificationError . NE.fromList $ transformFPR <$> ys
+      where
+        transformFPR (x,y) = f (NE.fromList $ toList x) $ sourceFile y
+
+
+-- | Joins the sequences of a fractured parse result
+-- 
+joinSequences2 :: Foldable t => t FracturedParseResult -> Map String (CharacterSequence StaticCharacterBlock DynamicChar)
+joinSequences2 =  fmap (fromBlocks . NE.fromList) . fst . foldl' f (mempty, mempty) . createIntermediateForm
+  where
+--    f :: (TreeChars, Vector StandardMetadata) -> FracturedParseResult -> (TreeChars, Vector StandardMetadata)
+--    f acc fpr = g acc $ (parsedMetas fpr, parsedChars fpr)
+    
+    -- We do this to correctly constrcut the CharacterNames.
+    createIntermediateForm :: Foldable t
+                           => t FracturedParseResult
+                           -> [Map String [(Maybe ParsedChar, StandardMetadata, Maybe TCM, CharacterName)]]
+    createIntermediateForm xs = reverse . snd $ foldl' g (charNames, []) xs
+      where
+        g (propperNames, xs) fpr = (drop (length localMetadata) propperNames, newMap:xs)
+          where
+            localMetadata = parsedMetas fpr
+            newMap = (\x -> zip4 (toList x) (toList localMetadata) (repeat (relatedTcm fpr)) propperNames) <$> parsedChars fpr
+
+        charNames :: [CharacterName]
+        charNames = makeCharacterNames . concatMap transform $ toList xs
+          where
+            transform x = fmap (const (sourceFile x) &&& correctName . name) . toList $ parsedMetas x
+              where
+                correctName [] = Nothing
+                correctName xs = Just xs
+    
+    f :: (Map String [CharacterBlock StaticCharacterBlock DynamicChar], [CharacterBlock StaticCharacterBlock DynamicChar])
+      ->  Map String [(Maybe ParsedChar, StandardMetadata, Maybe TCM, CharacterName)] 
+      -> (Map String [CharacterBlock StaticCharacterBlock DynamicChar], [CharacterBlock StaticCharacterBlock DynamicChar])
+    f (prevMapping, prevPad) currTreeChars = (nextMapping, nextPad)
+      where
+        nextMapping    = inOnlyPrev <> inBoth <> inOnlyCurr
+        nextPad        = prevPad <> currPad -- generate (length nextMetaData) (const Nothing)
+
+        currPad        = fmap toMissingCharacters . head $ toList currMapping
+        currMapping    = pure . encodeToBlock <$> currTreeChars
+
+        -- TODO: complete this!
+        inBoth          = undefined -- intersectionWith f oldTreeChars nextTreeChars
+--          where
+--            g old new = old <> Node.encode
+
+        inOnlyCurr   = (prevPad <>) <$> getUnique currMapping prevMapping
+        inOnlyPrev   = (<> currPad) <$> getUnique prevMapping currMapping
+        
+        getUnique x y = x `Map.restrictKeys` (lhs `Set.difference` rhs)
+          where
+            lhs = Set.fromList $ keys x
+            rhs = Set.fromList $ keys y
+
+        encodeToBlock = undefined
+{-
+        encodeCharacters :: (Foldable t, Foldable t') => t StandardMetadata -> t' (Maybe ParsedChar) -> CharacterBlock StaticCharacter DynamicChar
+        encodeCharacters metadatas chars
+          | length metadatas /= length chars = error
+          | otherwise = zipWith f (toList metadatas) (toList chars)
+          where
+            f m c = 
+-}
+
+
+
+
+
+
+
+
+
+rectifyResults :: [FracturedParseResult] -> Either UnificationError (Solution DAG)
+rectifyResults fprs =
+  case errors of
+    [] -> Right maskedSolution
+    xs -> Left . sconcat $ NE.fromList xs
+  where
+    -- Step 1: Gather data file contents
+    dataSeqs        = (parsedChars &&& parsedMetas) <$> filter (not . fromTreeOnlyFile) fprs
+    -- Step 2: Union the taxa names together into total terminal set
+    taxaSet         = mconcat $ (Set.fromList . keys . fst) <$> dataSeqs
+    -- Step 3: Gather forest file data
+    allForests      = filter (not . null . parsedTrees) fprs
+    -- Step 4: Gather the taxa names for each forest from terminal nodes
+    forestTaxa      = (mconcat . fmap terminalNames . parsedTrees &&& id) <$> allForests
+    -- Step 5: Assert that each terminal node name is unique in the forest
+    duplicateNames  = filter (not . null . fst) $ first duplicates <$> forestTaxa
+    -- Step 6: Assert that each forest's terminal node set is exactly the same as the taxa set from "data files"
+    extraNames      = filter (not . null . fst) $ first ((\\ taxaSet) . Set.fromList) <$> forestTaxa
+    missingNames    = filter (not . null . fst) $ first ((taxaSet \\) . Set.fromList) <$> forestTaxa
     -- Step 7: Combine disparte sequences from many sources  into single metadata & character sequence.
     (charSeqs,combinedMetadata) = joinSequences dataSeqs
     -- Step 8: Convert topological forests to DAGs (using reference indexing from #7 results)
@@ -87,6 +216,7 @@ rectifyResults fprs =
     -- Step 10: TODO: masking for the nodes
     maskedSolution  = addMasks encodedSolution
 
+    -- Error collection
     errors          = catMaybes [duplicateError, extraError, missingError]
     duplicateError  = colateErrors ForestDuplicateTaxa duplicateNames
     extraError      = colateErrors ForestExtraTaxa     duplicateNames
@@ -129,7 +259,7 @@ encodeSolution inVal@(Solution taxaSeqs metadataInfo inForests) = inVal {forests
         Nothing    -> inDAG
         Just match -> inDAG {nodes = nodes inDAG // [(nodeIdx match, match {encoded = coded})]}
       where
-        matching = V.find (\n -> name n == inName) $ nodes inDAG
+        matching = V.find (\n -> Node.name n == inName) $ nodes inDAG
 
 
 -- | Joins the sequences of a fractured parse result

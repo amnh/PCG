@@ -10,7 +10,7 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE DeriveFunctor, FlexibleContexts #-}
 
 module Bio.Sequence.Bin.Additive
   ( AdditiveBin(characterDecoration, metatdataBounds)
@@ -33,7 +33,7 @@ data AdditiveBin s
    { characterDecoration :: s
    , metatdataBounds     :: SharedMetatdataIntervals
    , width               :: !Int
-   } deriving (Eq,Show)
+   } deriving (Eq, Functor, Show)
 
 
 instance EncodedAmbiguityGroupContainer (AdditiveBin s) where

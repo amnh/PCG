@@ -10,7 +10,7 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE DeriveFunctor, FlexibleContexts #-}
 
 module Bio.Sequence.Block
   ( CharacterBlock(..)
@@ -19,27 +19,33 @@ module Bio.Sequence.Block
   , MetricBin()
   , NonAdditiveBin()
   , NonMetricBin()
+  , toMissingCharacters
   ) where
 
 
+import           Bio.Character
 import           Bio.Character.Internal
 import           Bio.Sequence.Bin.Additive
 import           Bio.Sequence.Bin.Continuous
+import qualified Bio.Sequence.Bin.Continuous as Continuous
 import           Bio.Sequence.Bin.Metric
 import           Bio.Sequence.Bin.NonAdditive
 import           Bio.Sequence.Bin.NonMetric
+import           Bio.Sequence.SharedContinugousMetatdata
 import           Data.Foldable
-import           Data.List.Zipper hiding (toList)
-import qualified Data.List.Zipper as Zip
-import           Data.Monoid             (mappend)
+import           Data.List.Zipper            hiding (toList)
+import qualified Data.List.Zipper            as Zip
+import           Data.Monoid                        (mappend)
+import           Data.MonoTraversable
 import           Data.Semigroup
-import           Data.Vector             (Vector)
-import qualified Data.Vector      as V
+import           Data.TCM
+import           Data.Vector                        (Vector)
+import qualified Data.Vector                 as V
 
 
 -- |
 -- Represents a block of charcters which are optimized atomically together across
--- networks. The 'CharcterBlock' is ploymorphic over static and dynamic charcter
+-- networks. The 'CharcterBlock' is polymorphic over static and dynamic charcter
 -- definitions.
 --
 -- Use '(<>)' to construct larger blocks.
@@ -50,9 +56,13 @@ data CharacterBlock s d
    , additiveCharacterBins     :: Vector (   AdditiveBin s)
    , metricCharacterBins       :: Vector (     MetricBin s)
    , nonNonMetricCharacterBins :: Vector (  NonMetricBin s)
-   , dynamicCharacters         :: Vector d
+   , dynamicCharacters         :: Vector (DynamicCharacterConstruct d)
    } deriving (Eq, Show)
-   
+
+
+newtype DynamicCharacterConstruct d = DCC (GeneralCharacterMetadata, TCM, Maybe d)
+  deriving (Eq, Show)
+
 
 instance Semigroup s => Semigroup (CharacterBlock s d) where
     lhs <> rhs =
@@ -85,3 +95,20 @@ mergeByComparing comparator lhs rhs
                 else g (right z)
 
     
+toMissingCharacters :: EncodableStaticCharacterStream s => CharacterBlock s d  -> CharacterBlock s d
+toMissingCharacters cb =
+    CharacterBlock
+    { continuousCharacterBins   =           missingContinuous   $  continuousCharacterBins   cb
+    , nonAdditiveCharacterBins  = fmap (omap getMissingStatic) <$> nonAdditiveCharacterBins  cb
+    , additiveCharacterBins     = fmap (omap getMissingStatic) <$> additiveCharacterBins     cb
+    , metricCharacterBins       = fmap (omap getMissingStatic) <$> metricCharacterBins       cb
+    , nonNonMetricCharacterBins = fmap (omap getMissingStatic) <$> nonNonMetricCharacterBins cb
+    , dynamicCharacters         =               missingDynamic <$> dynamicCharacters         cb
+    }
+  where
+    missingContinuous x =
+        ContinuousBin
+        { Continuous.characterStream = fmap (const Nothing) . Continuous.characterStream $ x
+        , Continuous.metatdataBounds =                        Continuous.metatdataBounds $ x
+        }
+    missingDynamic (DCC (gcm, tcm, _)) = DCC (gcm, tcm, Nothing)

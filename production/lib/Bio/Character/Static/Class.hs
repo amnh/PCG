@@ -19,9 +19,11 @@ module Bio.Character.Static.Class where
 
 import Bio.Character.Stream
 import Data.Alphabet
-import Data.List.NonEmpty
+import Data.Bits
+import Data.List.NonEmpty   hiding (xor) -- Why is this defined? Is foldl1' (/=) too verbose?
 import Data.MonoTraversable
 import Data.Semigroup
+
 
 -- |
 -- Represents a single static character encoded in a binary and coercable to
@@ -33,8 +35,12 @@ import Data.Semigroup
 -- >>> staticCharacter `testBit` n
 class EncodableStreamElement c => EncodableStaticCharacter c where
 
-  encodeStatic :: Eq a => Alphabet a -> AmbiguityGroup a -> c
-  encodeStatic = encodeElement
+    encodeStatic :: Eq a => Alphabet a -> AmbiguityGroup a -> c
+    encodeStatic = encodeElement
+
+    {-# INLINE getMissingStatic #-}
+    getMissingStatic :: c -> c
+    getMissingStatic c = complement $ c `xor` c
 
 
 -- |

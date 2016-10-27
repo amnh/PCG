@@ -10,7 +10,7 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE DeriveFunctor, FlexibleContexts #-}
 
 module Bio.Sequence.Bin.NonAdditive
   ( NonAdditiveBin(characterDecoration, metatdataBounds)
@@ -34,7 +34,7 @@ data NonAdditiveBin s
    { characterDecoration :: s
    , metatdataBounds     :: SharedMetatdataIntervals
    , width               :: !Int -- We hid this field
-   } deriving (Eq,Show)
+   } deriving (Eq,Functor,Show)
 
 
 instance EncodedAmbiguityGroupContainer (NonAdditiveBin s) where
