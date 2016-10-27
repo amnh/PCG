@@ -38,7 +38,8 @@ library
   -- Other library packages from which modules are imported.
   build-depends:       base             >=4.8
                      , bv
-                     , containers
+                       -- Required for Data.Map.restrictKeys
+                     , containers       >=0.5.8
                      , criterion
                      , deepseq
                      , dlist
@@ -123,6 +124,7 @@ library
                        Bio.Metadata.CharacterName
                        Bio.Sequence
                        Bio.Sequence.Bin
+                       Bio.Sequence.Block
                        Bio.Sequence.SharedContinugousMetatdata
                        Bio.PhyloGraph
                        Bio.PhyloGraph.DAG
@@ -214,7 +216,6 @@ library
                        Bio.Sequence.Bin.Metric
                        Bio.Sequence.Bin.NonAdditive
                        Bio.Sequence.Bin.NonMetric
-                       Bio.Sequence.Block
                        Bio.Sequence.Internal
                        Control.Evaluation.Unit
                        Control.Evaluation.Internal
