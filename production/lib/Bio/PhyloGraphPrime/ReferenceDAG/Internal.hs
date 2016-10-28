@@ -211,18 +211,18 @@ unfoldDAG f origin =
                 Nothing -> (        xs, y:ys)
                 Just i  -> ((e,v,i):xs,   ys)
 
-        parentResursiveResult          = scanr (\e a -> second (g (snd a)) e) (undefined, (currentIndex, undefined, currentContext, currentRoots, currentMap)) $ parentPairs
-        (pCounter, _, pContext, pRoots, pMap) = snd $ head parentResursiveResult
-        childResursiveResult           = scanr (\e a -> second (g (snd a)) e) (undefined, (pCounter, undefined, pContext, pRoots, pMap)) $ childPairs
-        (cCounter, _, cContext, cRoots, cMap) = snd $ head childResursiveResult
+        parentResursiveResult          = NE.scanr (\e a -> second (g (snd a)) e) (undefined, (currentIndex, undefined, currentContext, currentRoots, currentMap)) $ parentPairs
+        (pCounter, _, pContext, pRoots, pMap) = snd $ NE.head parentResursiveResult
+        childResursiveResult           = NE.scanr (\e a -> second (g (snd a)) e) (undefined, (pCounter, undefined, pContext, pRoots, pMap)) $ childPairs
+        (cCounter, _, cContext, cRoots, cMap) = snd $ NE.head childResursiveResult
 
-        mapWithLocalParents = foldMap h $ init parentResursiveResult
+        mapWithLocalParents = foldMap h $ NE.init parentResursiveResult
           where
             h (_,(_,c,_,_,_)) = IM.insertWith insWith cCounter (IS.singleton c, newDatum, mempty) cMap
               where
                 insWith (niSet, _, niMap) (oiSet, dec, oiMap) = (niSet <> oiSet, dec, oiMap <> niMap)
 
-        mapWithLocalChildren = foldMap h $ init childResursiveResult
+        mapWithLocalChildren = foldMap h $ NE.init childResursiveResult
           where
             h (e,(_,c,_,_,_)) = IM.insertWith insWith cCounter (mempty, newDatum, IM.singleton c e) cMap
               where
@@ -234,10 +234,10 @@ unfoldDAG f origin =
                             , otherChildren <> resultChildren
                             )
           where
-            otherParents   = foldMap (\(_,_,i)         -> IS.singleton i  )   omittedParentPairs
-            resultParents  = foldMap (\(_,(_,c,_,_,_)) -> IS.singleton c  ) $ init parentResursiveResult
-            otherChildren  = foldMap (\(e,_,i)         -> IM.singleton i e)   omittedChildPairs
-            resultChildren = foldMap (\(e,(_,c,_,_,_)) -> IM.singleton c e) $ init childResursiveResult
+            otherParents   = foldMap (\(_,_,i)         -> IS.singleton i  ) omittedParentPairs
+            otherChildren  = foldMap (\(e,_,i)         -> IM.singleton i e) omittedChildPairs
+            resultParents  = foldMap (\(_,(_,c,_,_,_)) -> IS.singleton c  ) $ NE.init parentResursiveResult
+            resultChildren = foldMap (\(e,(_,c,_,_,_)) -> IM.singleton c e) $ NE.init childResursiveResult
 
         localRoots
           | null fullParentPairs = IS.singleton cCounter
