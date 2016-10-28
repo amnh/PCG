@@ -68,6 +68,8 @@
 #include "seq.h"
 #include "zarr.h"
 
+#define VERY_LARGE_NUMBER 100000 // large number, but as this gets added to itself repeatedly, small enough that it won't overflow. 
+
 /*
  * As standard, all the caml binding functions are called algn_CAML_<function
  * name>

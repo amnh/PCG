@@ -299,7 +299,7 @@ cm_CAML_get_all_elements (value cm) {
  * Creates a cost matrix with memory allocated for an alphabet of size alphSize
  * (not including the gap representation which is internally chosen), and whose
  * size must consider all possible combinations of characters in the alphabeet
- * iff combinations != 0. Set the affine gap model paramters to the values
+ * iff combinations != 0. Set the affine gap model parameters to the values
  * stored in do_aff, gap_open, in the cost matrix res. 
  * In case of error the function fails with the message "Memory error.".
  */
@@ -314,7 +314,7 @@ cm_alloc_set_costs_2d (int alphSize, int combinations, int do_aff, int gap_open,
     if (alphSize > 255) {
         // TODO: update this error message from POY
         printf("Apparently you are analyzing large alphabets. This version \
-                of PNG was compiled without the --enable-large-alphabets option. \
+                of PCG was compiled without the --enable-large-alphabets option. \
                 To run this analysis you need to enable that option at compile time. \
                 Either compile yourself the program, or request a version suited \
                 for your needs in the POY mailing list (poy4@googlegroups.com).");

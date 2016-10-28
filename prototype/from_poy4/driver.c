@@ -7,6 +7,7 @@
 // #include "array_pool.h"
 // #include "cm.h"
 #include "matrices.h"
+#include "ukkCheckp.h"
 #include "ukkCommon.h"
 
 #define SEQ_CAPACITY 64
@@ -249,7 +250,7 @@ void * setupCostMtx(int* tcm, int alphSize, int gap_open, int is_2d) {
  *  @param median is used to return the calculated median value.
  *
  *  This fn is necessary because there isn't yet a cost matrix set up, so it's not possible to 
- *  look up ambElems; therefore we must loop over possible values of the ambElem
+ *  look up ambElems, therefore we must loop over possible values of the ambElem
  *  and find the lowest cost median.
  *
  *  Requires symmetric, if not metric, matrix.
@@ -272,10 +273,11 @@ int distance (int const *tcm, int alphSize, int lcm, int nucleotide, int ambElem
 
 // may return cost_matrices_2d or cost_matrices_3d, so void *
 // no longer setting max, as algorithm to do so is unclear: see note below
-void * setupCostMtx(int* tcm, int alphSize, int gap_open, int is_2d) {
+void * setupCostMtx(int* tcm, int alphSize, int gap_open, int is_2d, seq_p longSeq) {
     // first allocate retMatrix
     int combinations = 1; // false if matrix is sparse. In this case, it's DNA, so not sparse.
-    int do_aff       = gap_open == 0 ? 0 : 2;
+    int do_aff       = gap_open == 0 ? 0 : 2; // The 2 is because affine's cost_model_type is 2, according to my reading of ML code. 
+                                              // This value set in cm_set_affine().
     int is_metric    = 1;
     int all_elements = 31; // How is this used?
     cost_matrices_2d_p retMtx;
@@ -350,7 +352,7 @@ void * setupCostMtx(int* tcm, int alphSize, int gap_open, int is_2d) {
                             //       ambElem1, ambElem2, ambElem3, minCost3d, median3d, 1 << (nucleotide - 1));
                             // }
                         }
-                    }
+                    } // end 3d cost assignment
                 } // nucleotide
                 
                 if (!is_2d) {
@@ -375,10 +377,18 @@ void * setupCostMtx(int* tcm, int alphSize, int gap_open, int is_2d) {
         } // ambElem2
     } // ambElem1
     if (is_2d) {
-        for ( size_t i = 0; i < retMtx->alphSize; i++) {
-            cm_set_prepend_2d (i, cm_get_cost(cm_get_gap_2d (retMtx), i, retMtx), retMtx);
-            cm_set_tail_2d    (i, cm_get_cost(i, cm_get_gap_2d (retMtx), retMtx), retMtx);
+        SEQT* seqStart = longSeq->begin;
+        int gap        = 1 << (alphSize - 1);
+        int seqElem;
+        for ( size_t i = 0; i < longSeq->len; i++) {
+            // Gap number is alphSize - 1, which makes bit representation 
+            // i << (alphSize - 1), because first char value is i << 0.
+            seqElem = (int) *(seqStart + i);
+            cm_set_prepend_2d (i, cm_get_cost(gap, seqElem, retMtx), retMtx);
+            //printf("%2d", cm_get_cost(alphSize - 1, i, retMtx));
+            cm_set_tail_2d    (cm_get_cost(seqElem, gap, retMtx), i, retMtx);
         }
+        printf("\n");
     }
     return retMtx;
 }
@@ -394,13 +404,13 @@ int main() {
         //***** for following seqs, affine requires gap at start of sequence!!! *****/
 
     int alphSize = 5; // includes gap, but no ambiguities
-
-    int longest_vals[SEQ_CAPACITY]  = {16, 1,2,4,8}; // don't forget to change lengths!!!
-    int longSeqLen                  = 5;
-    int shortest_vals[SEQ_CAPACITY] = {16, 1,2,4,8}; // don't forget to change lengths!!!
-    int shortSeqLen                 = 5;
-    int middle_vals[SEQ_CAPACITY]   = {16, 1,1,1,1}; // don't forget to change lengths!!!
-    int middleSeqLen                = 5;
+    int longest_vals[SEQ_CAPACITY]  = {16, 2, 1, 8, 4, 2, 1, 8, 4, 1, 1, 1, 1, 1, 2, 1, 8, 4, 2, 1, 8, 4}; // don't forget to change lengths!!!
+    int longSeqLen                  = 22;
+    int middle_vals[SEQ_CAPACITY]   = {16, 8, 8, 2, 1, 8, 4, 2, 1, 8, 4, 1, 1, 2, 1, 8, 4, 1}; // don't forget to change lengths!!!
+    int middleSeqLen                = 18;
+    int shortest_vals[SEQ_CAPACITY] = {16, 2, 1, 8, 4, 2, 1, 8, 4, 2, 1, 8, 4, 2, 1, 8, 4}; // don't forget to change lengths!!!
+    int shortSeqLen                 = 17; 
+    
 
     seq_p longSeq   = initializeSeq(SEQ_CAPACITY, longest_vals,  longSeqLen);
     seq_p shortSeq  = initializeSeq(SEQ_CAPACITY, shortest_vals, shortSeqLen);
@@ -446,35 +456,39 @@ int main() {
          }
     }
 
-    /**
-    // Print TCM in pretty format
-    const int n = costMtx2d->lcm;
-    for (size_t i = 0; i < n; ++i) {
-        for (size_t j = 0; j < n; ++j) {
-            printf("%2d ",tcm[ n*i + j ]);
-        }
-        printf("\n");
-    }
-    **/
+    
+    
+    
     cost_matrices_2d_p costMtx2d;
     cost_matrices_2d_p costMtx2d_affine;
     cost_matrices_3d_p costMtx3d;
 
     // tcm is tcm; alphSize includes gap; third param is gap opening cost; fourth is is_2d
     if (DO_2D) {
-        costMtx2d = setupCostMtx (tcm, alphSize, 0, 1);
-        mat_setup_size (algn_mtxs2d, longSeq->len, shortSeq->len, 0, 0, costMtx2d->lcm);
+        costMtx2d = setupCostMtx (tcm, alphSize, 0, 1, longSeq);
+        mat_setup_size (algn_mtxs2d, longSeq->len, longSeq->len, 0, 0, costMtx2d->lcm);
     }
     if (DO_AFF) {
-        costMtx2d_affine = setupCostMtx (tcm, alphSize, 2, 1);
-        mat_setup_size (algn_mtxs2dAffine, longSeq->len, shortSeq->len, 0, 0, costMtx2d_affine->lcm);
+        costMtx2d_affine = setupCostMtx (tcm, alphSize, GAP_OPEN_COST, 1, longSeq);
+        mat_setup_size (algn_mtxs2dAffine, longSeq->len, longSeq->len, 0, 0, costMtx2d_affine->lcm);
     }
     if (DO_3D) {
-        costMtx3d = setupCostMtx (tcm, alphSize, 0, 0);  // last argument means it's not 2d
+        costMtx3d = setupCostMtx (tcm, alphSize, 0, 0, longSeq);  // last argument means it's not 2d
         // penultimate parameter is ukk flag
         mat_setup_size (algn_mtxs3d, longSeq->len, mediumSeq->len, shortSeq->len, 0, costMtx3d->lcm);
     }
     int algnCost;
+
+    /**
+    // Print TCM in pretty format
+    const int n = costMtx2d->lcm;
+    for (size_t i = 0; i < n; ++i) {
+        for (size_t j = 0; j < n; ++j) {
+            printf("%2d ", tcm[ n*i + j ]);
+        }
+        printf("\n");
+    }
+    **/
 
     // the following to compute deltawh, which increases the matrix height or width in algn_nw_2d
     // TODO: This has something to do with Ukkonnen. Figure it out and document it.
@@ -580,7 +594,7 @@ int main() {
 
         //    mat_setup_size (algn_mtxs2dAffine, lenLongerSeq, lenLongerSeq, 0, 0, cm_get_lcm (costMtx2d_affine));
         matrix_2d  = mat_get_2d_nwMtx (algn_mtxs2dAffine);
-        precalcMtx = mat_get_2d_prec (algn_mtxs2dAffine);
+        precalcMtx = mat_get_2d_prec  (algn_mtxs2dAffine);
 
         // TODO: figure out what the following seven values do/are
         //       also note the int factors, which maybe have something to do with the unexplained 12
@@ -634,15 +648,17 @@ int main() {
                                     extend_vertical, extend_horizontal,
                                     final_cost_matrix, direction_matrix, precalcMtx);
 
-        printf("\n");
-        printf("close_block_diagonal      : %d\n", *close_block_diagonal      );
-        printf("extend_block_diagonal     : %d\n", *extend_block_diagonal     );
-        printf("extend_vertical           : %d\n", *extend_vertical           );
-        printf("extend_horizontal         : %d\n", *extend_horizontal         );
-        printf("final_cost_matrix         : %d\n", *final_cost_matrix         );
-        printf("gap_open_prec             : %d\n", *gap_open_prec             );
-        printf("s_horizontal_gap_extension: %d\n", *s_horizontal_gap_extension);
-        printf("\n");
+        if (DEBUG_AFFINE) {
+            printf("\n");
+            printf("close_block_diagonal      : %d\n", *close_block_diagonal      );
+            printf("extend_block_diagonal     : %d\n", *extend_block_diagonal     );
+            printf("extend_vertical           : %d\n", *extend_vertical           );
+            printf("extend_horizontal         : %d\n", *extend_horizontal         );
+            printf("final_cost_matrix         : %d\n", *final_cost_matrix         );
+            printf("gap_open_prec             : %d\n", *gap_open_prec             );
+            printf("s_horizontal_gap_extension: %d\n", *s_horizontal_gap_extension);
+            printf("\n");
+        }
 
        // for (int *i = matrix_2d, j = 0; i < matrix_2d + algn_mtxs2dAffine->len; i++, j++) {
        //     printf("%d, ", *i);
@@ -672,7 +688,7 @@ int main() {
 
         // shorter first
         // TODO: fix this to make it consistent
-        backtrace_affine (direction_matrix, shortSeq, longSeq, medianSeq, empty_medianSeq,
+        backtrace_affine (direction_matrix, longSeq, shortSeq, medianSeq, empty_medianSeq,
                           retLongSeq, retShortSeq, costMtx2d_affine);
 
         printf("\nAligned affine 2d sequences\n");
@@ -708,9 +724,12 @@ int main() {
         seq_print(shortSeq,  3);
         printf("\n");
 
-        powell_3D_align (longSeq,    mediumSeq,    shortSeq, 
-                         retLongSeq, retMediumSeq, retShortSeq, 
-                         1, 2, 1);
+        // short input, medium input, long input
+        // short return, medium return, long return
+        // sub, gap open, gap extend
+        algnCost = powell_3D_align (shortSeq,    mediumSeq,    longSeq, 
+                                    retLongSeq, retMediumSeq, retShortSeq, 
+                                    1, 0, 2);
 
         //algn_backtrace_3d (longSeq, mediumSeq, shortSeq, retLongSeq, retMediumSeq, retShortSeq, costMtx3d, algn_mtxs3d);
 
