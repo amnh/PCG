@@ -36,13 +36,14 @@ import           Data.Bifunctor                    (first)
 import           Data.Foldable
 import qualified Data.HashMap.Lazy          as HM
 import           Data.List                         (zip4)
-import           Data.List.NonEmpty                (NonEmpty)
+import           Data.List.NonEmpty                (NonEmpty( (:|) ))
 import qualified Data.List.NonEmpty         as NE  (fromList)
 import           Data.List.Utility                 (duplicates)
 import           Data.Map                          (Map, assocs, difference, intersectionWith, keys)
 import qualified Data.Map                   as Map
 import           Data.Maybe                        (catMaybes, fromJust)
 import           Data.Semigroup                    ((<>), sconcat)
+import           Data.Semigroup.Foldable
 import           Data.Set                          ((\\))
 import qualified Data.Set                   as Set
 import           Data.Vector                       (Vector, (//), generate)
@@ -121,7 +122,7 @@ rectifyResults2 fprs =
 -- | Joins the sequences of a fractured parse result
 -- 
 joinSequences2 :: Foldable t => t FracturedParseResult -> Map String (CharacterSequence StaticCharacterBlock DynamicChar)
-joinSequences2 =  fmap (fromBlocks . NE.fromList) . fst . foldl' f (mempty, mempty) . createIntermediateForm
+joinSequences2 = fmap fromBlocks . fst . foldl' f (mempty, mempty) . createIntermediateForm
   where
 --    f :: (TreeChars, Vector StandardMetadata) -> FracturedParseResult -> (TreeChars, Vector StandardMetadata)
 --    f acc fpr = g acc $ (parsedMetas fpr, parsedChars fpr)
@@ -129,13 +130,14 @@ joinSequences2 =  fmap (fromBlocks . NE.fromList) . fst . foldl' f (mempty, memp
     -- We do this to correctly constrcut the CharacterNames.
     createIntermediateForm :: Foldable t
                            => t FracturedParseResult
-                           -> [Map String [(Maybe ParsedChar, StandardMetadata, Maybe TCM, CharacterName)]]
+                           -> [ Map String (NonEmpty (Maybe ParsedChar, StandardMetadata, Maybe TCM, CharacterName)) ]
     createIntermediateForm xs = reverse . snd $ foldl' g (charNames, []) xs
       where
         g (propperNames, xs) fpr = (drop (length localMetadata) propperNames, newMap:xs)
           where
             localMetadata = parsedMetas fpr
-            newMap = (\x -> zip4 (toList x) (toList localMetadata) (repeat (relatedTcm fpr)) propperNames) <$> parsedChars fpr
+            -- This call to Ne.fromList is safe, we checked that there were no empty characters in Step 1. (not realy though)
+            newMap = (\x -> NE.fromList $ zip4 (toList x) (toList localMetadata) (repeat (relatedTcm fpr)) propperNames) <$> parsedChars fpr
 
         charNames :: [CharacterName]
         charNames = makeCharacterNames . concatMap transform $ toList xs
@@ -145,13 +147,13 @@ joinSequences2 =  fmap (fromBlocks . NE.fromList) . fst . foldl' f (mempty, memp
                 correctName [] = Nothing
                 correctName xs = Just xs
     
-    f :: (Map String [CharacterBlock StaticCharacterBlock DynamicChar], [CharacterBlock StaticCharacterBlock DynamicChar])
-      ->  Map String [(Maybe ParsedChar, StandardMetadata, Maybe TCM, CharacterName)] 
-      -> (Map String [CharacterBlock StaticCharacterBlock DynamicChar], [CharacterBlock StaticCharacterBlock DynamicChar])
+    f :: (Map String (NonEmpty (CharacterBlock StaticCharacterBlock DynamicChar)), [CharacterBlock StaticCharacterBlock DynamicChar])
+      ->  Map String (NonEmpty (Maybe ParsedChar, StandardMetadata, Maybe TCM, CharacterName))
+      -> (Map String (NonEmpty (CharacterBlock StaticCharacterBlock DynamicChar)), [CharacterBlock StaticCharacterBlock DynamicChar])
     f (prevMapping, prevPad) currTreeChars = (nextMapping, nextPad)
       where
         nextMapping    = inOnlyPrev <> inBoth <> inOnlyCurr
-        nextPad        = prevPad <> currPad -- generate (length nextMetaData) (const Nothing)
+        nextPad        = prevPad <> toList currPad -- generate (length nextMetaData) (const Nothing)
 
         currPad        = fmap toMissingCharacters . head $ toList currMapping
         currMapping    = pure . encodeToBlock <$> currTreeChars
@@ -161,15 +163,28 @@ joinSequences2 =  fmap (fromBlocks . NE.fromList) . fst . foldl' f (mempty, memp
 --          where
 --            g old new = old <> Node.encode
 
-        inOnlyCurr   = (prevPad <>) <$> getUnique currMapping prevMapping
-        inOnlyPrev   = (<> currPad) <$> getUnique prevMapping currMapping
+        inOnlyCurr   = (prepend prevPad) <$> getUnique currMapping prevMapping
+        inOnlyPrev   = (<>      currPad) <$> getUnique prevMapping currMapping
         
         getUnique x y = x `Map.restrictKeys` (lhs `Set.difference` rhs)
           where
             lhs = Set.fromList $ keys x
             rhs = Set.fromList $ keys y
 
-        encodeToBlock = undefined
+        encodeToBlock :: Foldable1 t
+                      => t (Maybe ParsedChar, StandardMetadata, Maybe TCM, CharacterName)
+                      -> CharacterBlock StaticCharacterBlock DynamicChar
+        encodeToBlock = foldMap1 encodeBinToSingletonBlock
+          where
+            encodeBinToSingletonBlock (charMay, charMeta, tcmMay, charName) = undefined
+
+        -- Necisarry for mixing [] with NonEmpty
+        prepend :: [a] -> NonEmpty a -> NonEmpty a
+        prepend list ne =
+          case list of
+            []   -> ne
+            x:xs -> x :| (xs <> toList ne) 
+        
 {-
         encodeCharacters :: (Foldable t, Foldable t') => t StandardMetadata -> t' (Maybe ParsedChar) -> CharacterBlock StaticCharacter DynamicChar
         encodeCharacters metadatas chars
