@@ -34,9 +34,10 @@
  * structure for two dimensional sequence alignment. 
  */
 struct cost_matrices_2d {
-    int alphSize;        // alphabet size, including ambiguities if combinations == True
+    int alphSize;        // alphabet size including gap, and including ambiguities if 
+                         // combinations == True
     int lcm;             // ceiling of log_2 (alphSize)
-    int gap;             // gap value (1 << alphSize + 1)
+    int gap;             // gap value (1 << (alphSize - 1))
     int cost_model_type; /* The type of cost model to be used in the alignment, 
                           * i.e. affine or not. 
                           * Based on cost_matrix.ml, values are:
@@ -51,7 +52,7 @@ struct cost_matrices_2d {
                           * is already too big to build all the possible combinations.
                           */
     int gap_open;        /* The cost of opening a gap. This is only useful in 
-                          * certain cost_model_types. 
+                          * certain cost_model_types (type 2: affine, based on my reading of ML code). 
                           */
     int is_metric;       /* if tcm is symmetric
                           * Not present in 3d. */
@@ -70,11 +71,14 @@ struct cost_matrices_2d {
     int *prepend_cost;   /* The cost of going from gap -> each base. For ambiguities, use best cost.
                           * Set up as all_elements x all_elements
                           * matrix, but seemingly only first row is used. 
-                          * Missing in 3d 
+                          * Missing in 3d because current version of 3d sets gap cost 
+                          * as constant.
                           */
-    int *tail_cost;      /* As prepend_cost, but with reverse directionality, so base -> gap. 
+    int *tail_cost;      /* As prepend_cost, but with reverse directionality, 
+                          * so base -> gap. 
                           * As with prepend_cost, seems to be allocated as too large. 
-                          * Missing in 3d 
+                          * Missing in 3d because current version of 3d sets gap cost 
+                          * as constant.
                           */
 };
 
