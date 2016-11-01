@@ -33,8 +33,8 @@ import Data.TCM
 data NonMetricBin s
    = NonMetricBin
    { characterDecoration :: s
-   , tcmDefinition       :: TCM
    , metatdataBounds     :: SharedMetatdataIntervals
+   , tcmDefinition       :: TCM
    } deriving (Eq, Functor, Show)
 
 
@@ -49,6 +49,6 @@ instance Semigroup s => Semigroup (NonMetricBin s) where
   lhs <> rhs =
     NonMetricBin
       { characterDecoration = characterDecoration lhs    <>     characterDecoration rhs
-      , tcmDefinition       = tcmDefinition       lhs
       , metatdataBounds     = metatdataBounds     lhs `mappend` metatdataBounds     rhs
+      , tcmDefinition       = tcmDefinition       lhs
       }

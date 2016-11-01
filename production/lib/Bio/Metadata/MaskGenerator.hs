@@ -22,8 +22,8 @@ import           Data.Foldable
 import qualified Data.List.NonEmpty as NE
 import           Data.HashMap.Strict        (elems)
 import           Data.Key
-import           Data.Maybe
 import qualified Data.Vector        as V
+
 
 -- | Mutate a 'StandardSolution' to include masks in the metadata structure
 addMasks :: StandardSolution -> StandardSolution
@@ -36,7 +36,7 @@ addMasks inSolution = inSolution { metadata = V.imap changeMetadata (metadata in
 
         -- | Get length of a sample sequence, operating under assumption they're all the same
         getSeqLen :: Int -> Int
-        getSeqLen pos = length $ fromMaybe mempty curSeq
+        getSeqLen pos = maybe 0 length curSeq
             where
                 someSeqs = head . elems $ parsedChars inSolution
                 curSeq   = someSeqs V.! pos
@@ -50,6 +50,8 @@ addMasks inSolution = inSolution { metadata = V.imap changeMetadata (metadata in
                 occupancy = fromBits $ replicate (alphLen * sLen) True
                 gapChar   = (bitVec alphLen (0 :: Integer)) (alphLen - 1)
         -}
+
+
 -- | Generate mask pair given proper info
 generateMasks :: Alphabet String -> Int -> (DynamicChar, DynamicChar)
 generateMasks inAlphabet sLen = --trace ("encode masks " ++ show periodic) $

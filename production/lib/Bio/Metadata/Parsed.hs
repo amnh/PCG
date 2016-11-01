@@ -41,30 +41,37 @@ data ParsedCharacterMetadata
    { alphabet      :: Alphabet String
    , characterName :: String
    , weight        :: Double
---   , parsedTCM     :: Maybe TCM
+   , parsedTCM     :: Maybe TCM
    , isDynamic     :: Bool
+   , isIgnored     :: Bool
    } deriving (Show)
+
 
 -- | Represents a parser result type which can have a character metadata
 --   structure extracted from it.
 class ParsedMetadata a where
     unifyMetadata :: a -> Vector StandardMetadata
 
+
 -- | (✔)
 instance ParsedMetadata FastaParseResult where
     unifyMetadata = makeEncodeInfo . unifyCharacters
+
 
 -- | (✔)
 instance ParsedMetadata TaxonSequenceMap where
     unifyMetadata = makeEncodeInfo . unifyCharacters
 
+
 -- | (✔)
 instance ParsedMetadata FastcParseResult where
     unifyMetadata = makeEncodeInfo . unifyCharacters
 
+
 -- | (✔)
 instance ParsedMetadata NewickForest where
     unifyMetadata _ = mempty
+
 
 -- | (✔)
 instance ParsedMetadata TNT.TntResult where
@@ -82,15 +89,18 @@ instance ParsedMetadata TNT.TntResult where
            tntAlphabet TNT.Dna        {} = dnaAlph
            tntAlphabet TNT.Protein    {} = aaAlph
 
+
 -- | (✔)
 instance ParsedMetadata F.TCM where
     unifyMetadata (F.TCM alph mat) =
         let defaultMeta = makeOneInfo . fromSymbols $ toList alph
         in  pure (defaultMeta {costs = TCM mat})
 
+
 -- | (✔)
 instance ParsedMetadata VertexEdgeRoot where
     unifyMetadata _ = mempty
+
 
 -- | (✔)
 instance ParsedMetadata Nexus where
@@ -102,6 +112,7 @@ instance ParsedMetadata Nexus where
                                 , isIgnored = Nex.ignored inMeta
                                 , costs     = maybe (costs defaultMeta) (TCM . F.transitionCosts) (Nex.costM inMeta)
                                 }
+
 
 disAlph, dnaAlph, rnaAlph, aaAlph :: Vector String
 -- | The acceptable DNA character values (with IUPAC codes).

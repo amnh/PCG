@@ -17,6 +17,8 @@
 module File.Format.Fasta.Converter where
 
 import           Data.List                         (intercalate,partition)
+import           Data.List.NonEmpty                (NonEmpty) 
+import qualified Data.List.NonEmpty         as NE 
 import           Data.Map                   hiding (filter,foldr,fromList,partition,null)
 import qualified Data.Map                   as M   (fromList)
 import qualified Data.Vector                as V   (fromList)
@@ -70,35 +72,35 @@ seqCharMapping seqType = V.fromList . fmap (f seqType)
     f RNA       = (!) iupacRNASubstitutions 
 
 -- | Substitutions for converting to a DNA sequence based on IUPAC codes.
-iupacNucleotideSubstitutions :: Map Char [String]
+iupacNucleotideSubstitutions :: Map Char (NonEmpty String)
 iupacNucleotideSubstitutions = 
-  fmap pure <$> M.fromList 
-  [ ('A', "A")
-  , ('C', "C")
-  , ('G', "G")
-  , ('T', "T")
-  , ('R', "AG")
-  , ('Y', "CT")
-  , ('S', "CG")
-  , ('W', "AT")
-  , ('K', "GT")
-  , ('M', "AC")
-  , ('B', "CGT")
-  , ('D', "AGT")
-  , ('H', "ACT")
-  , ('V', "ACG")
-  , ('N', "ACGT")
-  , ('-', "-")
-  , ('.', "-")
-  , ('?', "?")
-  , ('#', "#")
-  ]
+    (fmap pure . NE.fromList) <$> M.fromList 
+    [ ('A', "A")
+    , ('C', "C")
+    , ('G', "G")
+    , ('T', "T")
+    , ('R', "AG")
+    , ('Y', "CT")
+    , ('S', "CG")
+    , ('W', "AT")
+    , ('K', "GT")
+    , ('M', "AC")
+    , ('B', "CGT")
+    , ('D', "AGT")
+    , ('H', "ACT")
+    , ('V', "ACG")
+    , ('N', "ACGT")
+    , ('-', "-")
+    , ('.', "-")
+    , ('?', "?")
+    , ('#', "#")
+    ]
 
 -- | Substitutions for converting to an RNA sequence based on IUPAC codes.
-iupacRNASubstitutions :: Map Char [String]
-iupacRNASubstitutions = insert 'U' ["U"] . delete 'T' $ f <$> iupacNucleotideSubstitutions
+iupacRNASubstitutions :: Map Char (NonEmpty String)
+iupacRNASubstitutions = insert 'U' (pure "U") . delete 'T' $ f <$> iupacNucleotideSubstitutions
   where
-    f :: [String] -> [String]
-    f = foldr g []
+    f :: NonEmpty String -> NonEmpty String
+    f = NE.fromList . foldr g []
     g "T" xs = "U":xs
     g   x xs =   x:xs

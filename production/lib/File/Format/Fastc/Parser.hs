@@ -26,9 +26,9 @@ module File.Format.Fastc.Parser
   ) where
 
 import           Data.Char                 (isSpace)
-import           Data.List.NonEmpty hiding (fromList)
-import qualified Data.List.NonEmpty as NE  (fromList)
-import qualified Data.Vector        as V   (fromList)
+import           Data.List.NonEmpty        (NonEmpty)
+import qualified Data.List.NonEmpty as NE
+import qualified Data.Vector        as V
 import           File.Format.Fasta.Internal
 import           Text.Megaparsec
 import           Text.Megaparsec.Custom
@@ -65,13 +65,13 @@ fastcSymbolSequence = V.fromList <$> (space *> fullSequence)
     sequenceLine = (symbolGroup <* inlineSpace) `manyTill` endOfLine
 
 -- | parses either an ambiguity group of 'Symbol's or a single, unambiguous 'Symbol'.
-symbolGroup :: (MonadParsec e s m, Token s ~ Char) => m [String]
+symbolGroup :: (MonadParsec e s m, Token s ~ Char) => m (NonEmpty String)
 symbolGroup = ambiguityGroup
           <|> (pure <$> validSymbol)
 
 -- | Parses an ambiguity group of symbols. Ambiguity groups are delimited by the '\'|\'' character.
-ambiguityGroup :: (MonadParsec e s m, Token s ~ Char) => m [String]
-ambiguityGroup = validSymbol `sepBy1` (char '|' <* inlineSpace)
+ambiguityGroup :: (MonadParsec e s m, Token s ~ Char) => m (NonEmpty String)
+ambiguityGroup = NE.fromList <$> (validSymbol `sepBy1` (char '|' <* inlineSpace))
 
 -- | Parses a 'Symbol' token ending with whitespace and excluding the forbidden characters: '[\'>\',\'|\']'.
 validSymbol :: (MonadParsec e s m, Token s ~ Char) => m String

@@ -16,18 +16,20 @@
 module Bio.Character.Parsed.Class where
 
 import           Bio.Character.Parsed.Internal
-import           Data.Bifunctor             (second)
+import           Data.Bifunctor            (second)
 import           Data.Foldable
-import           Data.Map                   (Map,insert,mergeWithKey)
-import qualified Data.Map          as M     (fromList)
+import           Data.List.NonEmpty        (NonEmpty)
+import qualified Data.List.NonEmpty as NE
+import           Data.Map                  (Map,insert,mergeWithKey)
+import qualified Data.Map           as M   (fromList)
 import           Data.Maybe
 import           Data.Monoid
 import           Data.Tree
-import qualified Data.Vector       as V
+import qualified Data.Vector        as V
 import           File.Format.Fasta
 import           File.Format.Fastc
 import           File.Format.Newick
-import           File.Format.Nexus hiding (TaxonSequenceMap)
+import           File.Format.Nexus  hiding (TaxonSequenceMap)
 import           File.Format.TNT
 import           File.Format.TransitionCostMatrix
 import           File.Format.VertexEdgeRoot
@@ -51,9 +53,9 @@ import           File.Format.VertexEdgeRoot
 --
 -- I need to think about how this might interact with some things in Nexus, but it seems
 -- to make sense. It might make verification in the parsers more difficult... thinking...
-
 class ParsedCharacters a where
     unifyCharacters :: a -> TreeChars
+
 
 -- | (✔)
 instance ParsedCharacters FastaParseResult where
@@ -62,15 +64,18 @@ instance ParsedCharacters FastaParseResult where
             convertSeq = V.fromList . fmap (Just . pure . pure . pure)
             f (FastaSequence n s) = insert n (convertSeq s)
 
+
 -- | (✔)
 instance ParsedCharacters TaxonSequenceMap where
-    unifyCharacters = fmap (pure . pure)
+    unifyCharacters = fmap (pure . pure . NE.fromList . toList)
+
 
 -- | (✔)
 instance ParsedCharacters FastcParseResult where
     unifyCharacters = foldl f mempty
         where
-            f m (FastcSequence label symbols) = insert label (pure $ pure symbols) m
+            f m (FastcSequence label symbols) = insert label (pure . pure . NE.fromList . toList $ symbols) m
+
 
 -- | (✔)
 instance ParsedCharacters NewickForest where
@@ -83,9 +88,15 @@ instance ParsedCharacters NewickForest where
               where
                   name = fromMaybe "" $ newickLabel node
 
+
 -- | (✔)
 instance ParsedCharacters Nexus where
-    unifyCharacters (Nexus (seqMap, _)) = seqMap
+    unifyCharacters (Nexus (seqMap, _)) = f <$> seqMap
+      where
+        f = fmap (fmap (fmap NE.fromList . NE.fromList . toList))  
+        -- V.Vector Character
+        -- Maybe (V.Vector AmbiguityGroup)
+
 
 -- | (✔)
 instance ParsedCharacters TntResult where
@@ -99,12 +110,15 @@ instance ParsedCharacters TntResult where
     -- maybe just use the seq vaiable like above and remove this case?
     unifyCharacters (Right (WithTaxa _    _ forest)) = mergeMaps $ (M.fromList . toList . fmap (second tntToTheSuperSequence)) <$> forest
 
+
 -- | Coalesce the 'TaxonSequence' to the larger type 'ParsedSequences'
 tntToTheSuperSequence :: TaxonSequence -> ParsedChars
 tntToTheSuperSequence = V.fromList . fmap (Just . pure . f . show)
     where
-        f ('[':xs) = pure <$> init xs
+        f :: String -> NonEmpty String
+        f ('[':xs) = NE.fromList $ pure <$> init xs
         f e        = pure e
+
 
 -- | Takes a 'Foldable' structure of 'Map's and returns the union 'Map'
 --   containing all the key value pairs. This fold is right biased with respect
@@ -113,9 +127,11 @@ tntToTheSuperSequence = V.fromList . fmap (Just . pure . f . show)
 mergeMaps :: (Foldable t, Ord k) => t (Map k v) -> Map k v
 mergeMaps = foldl (mergeWithKey (\_ _ b -> Just b) id id) mempty
 
+
 -- | (✔)
 instance ParsedCharacters TCM where
     unifyCharacters _ = mempty
+
 
 -- | (✔)
 instance ParsedCharacters VertexEdgeRoot where

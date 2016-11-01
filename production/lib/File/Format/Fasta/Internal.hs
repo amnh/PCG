@@ -17,6 +17,7 @@
 module File.Format.Fasta.Internal where
 
 import Data.Char              (isSpace)
+import Data.List.NonEmpty
 import Data.Map               (Map)
 import Data.Vector            (Vector)
 import Text.Megaparsec
@@ -33,7 +34,7 @@ type Identifier        = String
 type Symbol            = String
 
 -- | Indexed sequences of 'Symbol's with possible abiguity at an index
-type CharacterSequence = Vector [Symbol]
+type CharacterSequence = Vector (NonEmpty Symbol)
 
 -- | Parses a line containing the sequence identifier along with an
 -- optional conmment which is discarded.

@@ -22,7 +22,8 @@ module Data.ReplicatedSequence
 import           Data.Foldable
 import           Data.Key
 import           Data.Maybe             (fromMaybe)
-import           Data.Monoid
+import           Data.Monoid     hiding ((<>))     
+import           Data.Semigroup
 import           Prelude         hiding (lookup,replicate)
 import qualified Prelude         as P   (replicate)
 import           Test.QuickCheck
@@ -104,6 +105,12 @@ instance Lookup ReplicatedSequence where
       f n ((j,a):xs)
         | n < j     = Just a
         | otherwise = f (n - j) xs
+
+
+instance Semigroup (ReplicatedSequence a) where
+
+  {-# INLINE (<>) #-}
+  lhs <> rhs = RSeq $ unwrap lhs <> unwrap rhs
 
 
 instance Monoid (ReplicatedSequence a) where

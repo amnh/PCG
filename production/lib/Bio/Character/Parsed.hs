@@ -14,8 +14,7 @@
 
 
 module Bio.Character.Parsed
-  ( AmbiguityGroup
-  , ParsedChar
+  ( ParsedChar
   , ParsedChars
   , ParsedCharacters(..)
   , TreeChars

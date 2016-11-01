@@ -20,11 +20,15 @@ module Bio.Sequence.Block
   , NonAdditiveBin()
   , NonMetricBin()
   , toMissingCharacters
+  , continuousSingleton
+  , discreteSingleton
+  , dynamicSingleton
   ) where
 
 
 import           Bio.Character
 import           Bio.Character.Internal
+import           Bio.Metadata.CharacterName
 import           Bio.Sequence.Bin.Additive
 import           Bio.Sequence.Bin.Continuous
 import qualified Bio.Sequence.Bin.Continuous as Continuous
@@ -32,7 +36,9 @@ import           Bio.Sequence.Bin.Metric
 import           Bio.Sequence.Bin.NonAdditive
 import           Bio.Sequence.Bin.NonMetric
 import           Bio.Sequence.SharedContinugousMetatdata
+import           Data.Alphabet
 import           Data.Foldable
+import           Data.List.NonEmpty                 (NonEmpty( (:|) ))
 import           Data.List.Zipper            hiding (toList)
 import qualified Data.List.Zipper            as Zip
 import           Data.Monoid                        (mappend)
@@ -51,7 +57,7 @@ import qualified Data.Vector                 as V
 -- Use '(<>)' to construct larger blocks.
 data CharacterBlock s d
    = CharacterBlock
-   { continuousCharacterBins   :: ContinuousBin
+   { continuousCharacterBins   :: Maybe ContinuousBin
    , nonAdditiveCharacterBins  :: Vector (NonAdditiveBin s)
    , additiveCharacterBins     :: Vector (   AdditiveBin s)
    , metricCharacterBins       :: Vector (     MetricBin s)
@@ -60,20 +66,28 @@ data CharacterBlock s d
    } deriving (Eq, Show)
 
 
-newtype DynamicCharacterConstruct d = DCC (GeneralCharacterMetadata, TCM, Maybe d)
+newtype DynamicCharacterConstruct d = DCC (DiscreteCharacterMetadata, TCM, Maybe d)
   deriving (Eq, Show)
 
 
-instance Semigroup s => Semigroup (CharacterBlock s d) where
+instance (EncodedAmbiguityGroupContainer s, Semigroup s) => Semigroup (CharacterBlock s d) where
     lhs <> rhs =
         CharacterBlock
-          { continuousCharacterBins   = continuousCharacterBins lhs <> continuousCharacterBins rhs
+          { continuousCharacterBins   = continuousCharacterBins lhs `maybeMerge` continuousCharacterBins rhs
           , nonAdditiveCharacterBins  = mergeByComparing symbolCount ( nonAdditiveCharacterBins lhs) ( nonAdditiveCharacterBins rhs)
           , additiveCharacterBins     = mergeByComparing symbolCount (    additiveCharacterBins lhs) (    additiveCharacterBins rhs)
           , metricCharacterBins       = mergeByComparing symbolCount (      metricCharacterBins lhs) (      metricCharacterBins rhs)
           , nonNonMetricCharacterBins = mergeByComparing symbolCount (nonNonMetricCharacterBins lhs) (nonNonMetricCharacterBins rhs)
           , dynamicCharacters         = dynamicCharacters lhs `mappend` dynamicCharacters rhs
           }
+      where
+        maybeMerge x y =
+          case x of
+            Nothing -> y
+            Just v  ->
+              case y of
+                Nothing -> x
+                Just w  -> Just $ v <> w
 
 
 mergeByComparing :: (Eq a, Semigroup s) => (s -> a) -> Vector s -> Vector s -> Vector s
@@ -98,7 +112,7 @@ mergeByComparing comparator lhs rhs
 toMissingCharacters :: EncodableStaticCharacterStream s => CharacterBlock s d  -> CharacterBlock s d
 toMissingCharacters cb =
     CharacterBlock
-    { continuousCharacterBins   =           missingContinuous   $  continuousCharacterBins   cb
+    { continuousCharacterBins   =            missingContinuous <$> continuousCharacterBins   cb
     , nonAdditiveCharacterBins  = fmap (omap getMissingStatic) <$> nonAdditiveCharacterBins  cb
     , additiveCharacterBins     = fmap (omap getMissingStatic) <$> additiveCharacterBins     cb
     , metricCharacterBins       = fmap (omap getMissingStatic) <$> metricCharacterBins       cb
@@ -112,3 +126,38 @@ toMissingCharacters cb =
         , Continuous.metatdataBounds =                        Continuous.metatdataBounds $ x
         }
     missingDynamic (DCC (gcm, tcm, _)) = DCC (gcm, tcm, Nothing)
+
+
+continuousSingleton :: CharacterName -> (Maybe Double) -> CharacterBlock s d
+continuousSingleton nameValue continuousValue =
+    CharacterBlock (Just bin)  mempty  mempty  mempty mempty mempty
+  where
+    bin      = continuousBin (continuousValue :| []) metadata
+    metadata = continuousMetadata nameValue 1
+
+
+discreteSingleton :: Alphabet String -> CharacterName -> TCM -> (a -> s) -> a -> CharacterBlock s d
+discreteSingleton alphabetValues nameValue tcmValues transformation input =
+  case tcmStructure diagnosis of
+    NonSymetric -> (\x -> CharacterBlock Nothing  mempty  mempty  mempty (pure x) mempty) $   NonMetricBin character metadata $ factoredTcm diagnosis
+    Symetric    -> (\x -> CharacterBlock Nothing  mempty  mempty  mempty (pure x) mempty) $   NonMetricBin character metadata $ factoredTcm diagnosis
+    Metric      -> (\x -> CharacterBlock Nothing  mempty  mempty (pure x) mempty  mempty) $      MetricBin character metadata $ factoredTcm diagnosis
+    UltraMetric -> (\x -> CharacterBlock Nothing  mempty  mempty (pure x) mempty  mempty) $      MetricBin character metadata $ factoredTcm diagnosis
+    Additive    -> (\x -> CharacterBlock Nothing  mempty (pure x) mempty  mempty  mempty) $    AdditiveBin character metadata -- $ symbolCount character
+    NonAdditive -> (\x -> CharacterBlock Nothing (pure x) mempty  mempty  mempty  mempty) $ NonAdditiveBin character metadata -- $ symbolCount character
+  where
+    character = transformation input
+    diagnosis = diagnoseTcm tcmValues
+    metadata  = singleton 1 . discreteMetadata alphabetValues nameValue . fromIntegral $ factoredWeight diagnosis
+
+-- DCC (DiscreteCharacterMetadata, TCM, Maybe d)
+
+dynamicSingleton :: Alphabet String -> CharacterName -> TCM -> (a -> d) -> Maybe a -> CharacterBlock s d
+dynamicSingleton alphabetValues nameValue tcmValues transformation input =
+    CharacterBlock Nothing mempty mempty mempty mempty . pure $ DCC (metadata, tcmValues, character)
+  where
+    character = transformation <$> input
+    diagnosis = diagnoseTcm tcmValues
+    metadata  = discreteMetadata alphabetValues nameValue . fromIntegral $ factoredWeight diagnosis
+
+    

@@ -13,7 +13,7 @@
 {-# LANGUAGE DeriveFunctor, FlexibleContexts #-}
 
 module Bio.Sequence.Bin.Additive
-  ( AdditiveBin(characterDecoration, metatdataBounds)
+  ( AdditiveBin(..)
   ) where
 
 import Bio.Character.Static
@@ -32,14 +32,13 @@ data AdditiveBin s
    = AdditiveBin
    { characterDecoration :: s
    , metatdataBounds     :: SharedMetatdataIntervals
-   , width               :: !Int
    } deriving (Eq, Functor, Show)
 
 
-instance EncodedAmbiguityGroupContainer (AdditiveBin s) where
+instance EncodedAmbiguityGroupContainer s => EncodedAmbiguityGroupContainer (AdditiveBin s) where
 
     {-# INLINE symbolCount #-}
-    symbolCount = width
+    symbolCount = symbolCount . characterDecoration
     
 
 instance Semigroup s => Semigroup (AdditiveBin s) where
@@ -48,5 +47,4 @@ instance Semigroup s => Semigroup (AdditiveBin s) where
       AdditiveBin
         { characterDecoration = characterDecoration lhs    <>     characterDecoration rhs
         , metatdataBounds     = metatdataBounds     lhs `mappend` metatdataBounds     rhs
-        , width               = width               lhs
         }

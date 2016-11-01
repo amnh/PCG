@@ -16,9 +16,10 @@
 
 module Bio.Character.Parsed.Internal where
 
-import           Data.Alphabet  hiding (AmbiguityGroup) -- TODO: Maybe don't hide this and use it below? This change will cascade into other modules!
+import           Data.Alphabet -- hiding (AmbiguityGroup) -- TODO: Maybe don't hide this and use it below? This change will cascade into other modules!
 import           Data.Foldable
---import qualified Data.List.NonEmpty as NE
+import           Data.List.NonEmpty       (NonEmpty)
+import qualified Data.List.NonEmpty as NE
 import           Data.Vector              (Vector)
 import qualified Data.Vector        as V
 import           Data.Map                 (Map)
@@ -29,12 +30,13 @@ import           Test.QuickCheck
 -- TODO: make AmbiguityGroup a nonempty list
 -- | A (nonempty) collection of possible character values. Singleton lists
 --   represent a unambiguous character value.
-type AmbiguityGroup = [String]
+-- type AmbiguityGroup = [String]
 
 -- | An ordered dynamic character of ambiguity groups. This represents a dynamic
 --   homology character when it comes from the parser (so is not yet encoded
 ---  or packed, if those are options.)
-type ParsedChar = Vector AmbiguityGroup
+-- type ParsedChar = Vector  AmbiguityGroup
+type ParsedChar = NonEmpty (AmbiguityGroup String)
 
 -- TODO: Remove Maybe?
 -- | Represents a character sequence containing possibly missing character data.
@@ -56,4 +58,4 @@ parsedMaybe inAlph = do
 
 -- | Define an arbitrary helper function to create a parsed sequence over an Alphabet
 arbParsedGivenAlph :: Alphabet String -> Gen ParsedChar
-arbParsedGivenAlph inAlph = V.fromList <$> listOf1 ({- NE.fromList <$>-} sublistOf (toList inAlph))
+arbParsedGivenAlph inAlph = NE.fromList <$> listOf1 ( NE.fromList <$> sublistOf (toList inAlph))

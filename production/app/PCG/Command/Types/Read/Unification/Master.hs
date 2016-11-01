@@ -70,9 +70,11 @@ data FracturedParseResult
 
 
 masterUnify' :: [FracturedParseResult] -> Either UnificationError (Solution DAG)
-masterUnify' = rectifyResults
+masterUnify' = undefined --rectifyResults
 
 
+-- |
+-- Unify disparate parsed results into a single phylogenetic solution.
 rectifyResults2 :: [FracturedParseResult] -> Either UnificationError (PhylogeneticSolution (ReferenceDAG () ()))
 rectifyResults2 fprs =
   case errors of
@@ -119,8 +121,8 @@ rectifyResults2 fprs =
         transformFPR (x,y) = f (NE.fromList $ toList x) $ sourceFile y
 
 
--- | Joins the sequences of a fractured parse result
--- 
+-- | 
+-- Joins the sequences of a fractured parse result
 joinSequences2 :: Foldable t => t FracturedParseResult -> Map String (CharacterSequence StaticCharacterBlock DynamicChar)
 joinSequences2 = fmap fromBlocks . fst . foldl' f (mempty, mempty) . createIntermediateForm
   where
@@ -176,7 +178,23 @@ joinSequences2 = fmap fromBlocks . fst . foldl' f (mempty, mempty) . createInter
                       -> CharacterBlock StaticCharacterBlock DynamicChar
         encodeToBlock = foldMap1 encodeBinToSingletonBlock
           where
-            encodeBinToSingletonBlock (charMay, charMeta, tcmMay, charName) = undefined
+            encodeBinToSingletonBlock :: (Maybe ParsedChar, StandardMetadata, Maybe TCM, CharacterName)
+                                      -> CharacterBlock StaticCharacterBlock DynamicChar
+            encodeBinToSingletonBlock (charMay, charMeta, tcmMay, charName)
+              | isAligned charMeta = discreteSingleton specifiedAlphabet charName specifiedTcm staticTransform charMay
+              | otherwise          = dynamicSingleton  specifiedAlphabet charName specifiedTcm (encodeStream specifiedAlphabet) charMay
+              where
+                specifiedTcm =
+                  case tcmMay of
+                    Nothing -> costs charMeta
+                    Just x  -> x
+
+                specifiedAlphabet = alphabet charMeta
+                missingSize       = length specifiedAlphabet
+                staticTransform valueMay  = encodeStream specifiedAlphabet $
+                  case valueMay of
+                    Nothing -> pure . NE.fromList $ toList specifiedAlphabet
+                    Just xs -> encodeStream specifiedAlphabet xs
 
         -- Necisarry for mixing [] with NonEmpty
         prepend :: [a] -> NonEmpty a -> NonEmpty a
@@ -200,7 +218,7 @@ joinSequences2 = fmap fromBlocks . fst . foldl' f (mempty, mempty) . createInter
 
 
 
-
+{-
 
 rectifyResults :: [FracturedParseResult] -> Either UnificationError (Solution DAG)
 rectifyResults fprs =
@@ -245,6 +263,7 @@ rectifyResults fprs =
       where
         transformFPR (x,y) = f (NE.fromList $ toList x) $ sourceFile y
 
+-}
 
 fromTreeOnlyFile :: FracturedParseResult -> Bool
 fromTreeOnlyFile fpr = null chars || all null chars
@@ -258,6 +277,7 @@ terminalNames n
   | otherwise = mconcat $ terminalNames <$> descendants n
 
 
+{-
 -- | Functionality to encode into a solution
 encodeSolution :: StandardSolution -> StandardSolution
 encodeSolution inVal@(Solution taxaSeqs metadataInfo inForests) = inVal {forests = HM.foldrWithKey encodeAndSet inForests taxaSeqs}
@@ -275,6 +295,7 @@ encodeSolution inVal@(Solution taxaSeqs metadataInfo inForests) = inVal {forests
         Just match -> inDAG {nodes = nodes inDAG // [(nodeIdx match, match {encoded = coded})]}
       where
         matching = V.find (\n -> Node.name n == inName) $ nodes inDAG
+-}
 
 
 -- | Joins the sequences of a fractured parse result
@@ -287,13 +308,14 @@ joinSequences =  foldl' g (mempty, mempty)
     g :: (TreeChars, Vector StandardMetadata) -> (TreeChars, Vector StandardMetadata) -> (TreeChars, Vector StandardMetadata)
     g (oldTreeChars, oldMetaData) (nextTreeChars, nextMetaData) = (inOnlyOld `mappend` inBoth `mappend` inOnlyNext, oldMetaData `mappend` nextMetaData)
       where
-        oldPad       = generate (length  oldMetaData) (const Nothing)
-        nextPad      = generate (length nextMetaData) (const Nothing)
-        inBoth       = intersectionWith mappend oldTreeChars nextTreeChars
-        inOnlyOld    = fmap (`mappend` nextPad) $  oldTreeChars `difference` nextTreeChars
-        inOnlyNext   = fmap (oldPad  `mappend`) $ nextTreeChars `difference` oldTreeChars
+        oldPad     = generate (length  oldMetaData) (const Nothing)
+        nextPad    = generate (length nextMetaData) (const Nothing)
+        inBoth     = intersectionWith mappend oldTreeChars nextTreeChars
+        inOnlyOld  = fmap (`mappend` nextPad) $  oldTreeChars `difference` nextTreeChars
+        inOnlyNext = fmap (oldPad  `mappend`) $ nextTreeChars `difference` oldTreeChars
 
 
+{-
 -- | Function to encode given metadata information
 -- TODO: Remove tight coupling of DynamicChar here
 encodeOverMetadata :: Maybe ParsedChar -> StandardMetadata -> DynamicChar
@@ -307,9 +329,11 @@ encodeOverMetadata maybeInChar inMeta =
             if any null xs
             then error "An empty ambiguity group exisits in an input character :("
             else encodeStream  (alphabet inMeta) . NE.fromList $ NE.fromList <$> xs
+-}
 
 
+{-
 -- | Wrapper for encoding
 encodeIt :: ParsedChars -> Vector StandardMetadata -> Vector DynamicChar
 encodeIt = V.zipWith encodeOverMetadata
-
+-}

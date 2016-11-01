@@ -13,7 +13,7 @@
 {-# LANGUAGE DeriveFunctor, FlexibleContexts #-}
 
 module Bio.Sequence.Bin.NonAdditive
-  ( NonAdditiveBin(characterDecoration, metatdataBounds)
+  ( NonAdditiveBin(..)
   ) where
 
 
@@ -33,14 +33,13 @@ data NonAdditiveBin s
    = NonAdditiveBin
    { characterDecoration :: s
    , metatdataBounds     :: SharedMetatdataIntervals
-   , width               :: !Int -- We hid this field
    } deriving (Eq,Functor,Show)
 
 
-instance EncodedAmbiguityGroupContainer (NonAdditiveBin s) where
+instance EncodedAmbiguityGroupContainer s => EncodedAmbiguityGroupContainer (NonAdditiveBin s) where
 
     {-# INLINE symbolCount #-}
-    symbolCount = width
+    symbolCount = symbolCount . characterDecoration
 
 
 instance Semigroup s => Semigroup (NonAdditiveBin s) where
@@ -49,5 +48,4 @@ instance Semigroup s => Semigroup (NonAdditiveBin s) where
     NonAdditiveBin
       { characterDecoration = characterDecoration lhs    <>     characterDecoration rhs
       , metatdataBounds     = metatdataBounds     lhs `mappend` metatdataBounds     rhs
-      , width               = width lhs
       }

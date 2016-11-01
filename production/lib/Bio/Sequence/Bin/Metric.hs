@@ -33,8 +33,8 @@ import Data.TCM
 data MetricBin s
    = MetricBin
    { characterDecoration :: s
-   , tcmDefinition       :: TCM
    , metatdataBounds     :: SharedMetatdataIntervals
+   , tcmDefinition       :: TCM
    } deriving (Eq,Functor,Show)
 
 
@@ -49,6 +49,6 @@ instance Semigroup s => Semigroup (MetricBin s) where
   lhs <> rhs =
     MetricBin
       { characterDecoration = characterDecoration lhs    <>     characterDecoration rhs
-      , tcmDefinition       = tcmDefinition       lhs
       , metatdataBounds     = metatdataBounds     lhs `mappend` metatdataBounds     rhs
+      , tcmDefinition       = tcmDefinition       lhs
       }
