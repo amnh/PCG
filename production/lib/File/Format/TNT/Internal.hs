@@ -37,14 +37,17 @@ import           Text.Megaparsec.Custom
 import           Text.Megaparsec.Lexer    (integer,number,signed)
 import           Text.Megaparsec.Prim     (MonadParsec)
 
+
 -- | The result of parsing a TNT file.
 --   A file can contain either only tree data with labeled leaf nodes or
 --   a collection of taxa sequences with coresponsing metadata and possibly
 --   corresponding tree data.
 type TntResult = Either TreeOnly WithTaxa
 
+
 -- | The possible parse result when the file contains only tree data.
 type TreeOnly  = TRead
+
 
 -- | The possible parse result when the file contains taxa sequences.
 --   'trees' represents a (possibly empty) forest where each tree in
@@ -56,12 +59,15 @@ data WithTaxa
    , trees        :: [LeafyTree TaxonInfo]
    } deriving (Show)
 
+
 -- CCode types
 --------------------------------------------------------------------------------
+
 
 -- | Parse result from a CCODE command that reprsents a list of augmentations to
 --   the default metatdata state for some characters.
 type CCode = NonEmpty CCodeAugment
+
 
 -- | The specifcation of which chracters need which metadata mutations.
 data CCodeAugment
@@ -69,6 +75,7 @@ data CCodeAugment
    { charState :: NonEmpty CharacterState
    , charSet   :: NonEmpty CharacterSet
    } deriving (Show)
+
 
 -- | The possible chracter metatadata values that can be mutated.
 data CharacterState
@@ -82,6 +89,7 @@ data CharacterState
    | Steps  Int
    deriving (Eq,Show)
 
+
 -- | A nonempty contiguous character range.
 data CharacterSet
    = Single    Int
@@ -91,11 +99,14 @@ data CharacterSet
    | Whole
    deriving (Eq,Show)
 
+
 -- CNames types
 --------------------------------------------------------------------------------
 
+
 -- | A list of names for the states of characters in the taxa sequences.
 type CNames = NonEmpty CharacterName
+
 
 -- | A specifcation for the state names of a given character in the taxon's sequence.
 data CharacterName
@@ -105,8 +116,10 @@ data CharacterName
    , characterStateNames :: [String]
    } deriving (Show)
 
+
 -- Cost types
 --------------------------------------------------------------------------------
+
 
 -- | A custom TCM derivation for a list of characters in the taxa sequences.
 data Cost
@@ -116,8 +129,11 @@ data Cost
    } deriving (Eq,Show)
 
 
+
 -- NStates types
 --------------------------------------------------------------------------------
+
+
 
 -- | Specifies how to interpret the various character types in the taxa sequences.
 data NStates
@@ -126,27 +142,33 @@ data NStates
    | ProteinStates
    | ContinuousStates
    deriving (Show)
-                                  
+
+
 -- TRead types
 --------------------------------------------------------------------------------
+
 
 -- | Parse result of an internal TREAD command.
 --   Specifies a nonempty forest of trees, where the leaf node set must be validated
 --   againtst the taxa set from a XREAD command.
 type TRead     = NonEmpty  TReadTree
 
+
 -- | A tree with data only at the leaf nodes. Leaf nodes contain different criteria
 --   for matching the node against a given taxa from the taxa set.
 type TReadTree = LeafyTree NodeType
 
+
 -- | A tree which has had each leaf node matched against the taxon from the taxa set.
 type TNTTree   = LeafyTree TaxonInfo
+
 
 -- | A rose tree which only contains data at the leaf nodes.
 data LeafyTree a
    = Leaf a
    | Branch [LeafyTree a]
    deriving (Eq,Foldable,Functor,Show,Traversable)
+
 
 -- | Multiple possible criteria for matching leaf nodes to taxa from the taxa set.
 data NodeType
@@ -155,8 +177,10 @@ data NodeType
    | Prefix String
    deriving (Eq,Show)
 
---XRead types
+
+-- XRead types
 --------------------------------------------------------------------------------
+
 
 -- | Parse result of an XREAD command.
 data XRead
@@ -166,15 +190,19 @@ data XRead
    , sequencesx :: NonEmpty TaxonInfo
    } deriving (Show)
 
+
 -- | The sequence information for a taxon within the TNT file's XREAD command.
 -- Contains the 'TaxonName' and the naive 'TaxonSequence' 
 type TaxonInfo     = (TaxonName, TaxonSequence)
 
+
 -- | The name of a taxon in a TNT file's XREAD command.
 type TaxonName     = String
 
+
 -- | The naive sequence of a taxon in a TNT files' XREAD command.
 type TaxonSequence = [TntCharacter]
+
 
 -- | Different character types are deserialized from sequences segments.
 --   After all segments are collected they are de-interleaved into a single
@@ -186,10 +214,12 @@ data TntCharacter
    | Protein    TntProteinCharacter
    deriving (Show)
 
+
 -- | A 'TntContinuousCharacter' is an real valued character. Continuous
 --   characters can have negative values. Continuous values are serialized
 --   textually as decimal values or integral values, scientific notation supported.
 type TntContinuousCharacter = Maybe Double
+
 
 -- | A 'TntDiscreteCharacter' is an integral value in the range '[0..62]'. Discrete
 --   values are serialized textualy as one of the 64  values:
@@ -198,6 +228,7 @@ type TntContinuousCharacter = Maybe Double
 --   Each value coresponds to it's respective bit in the 'Int64'. Ambiguity groups
 --   are represented by 'Int64' values with multiple set bits.
 newtype TntDiscreteCharacter   = TntDis Word64 deriving (Bits,Eq,Ord,FiniteBits)
+
 
 -- | A 'TntDnaCharacter' represents a nucleotide ('"ACGT"') as an integral value
 --   in the range '[0..3]' respectively. If gap characters (\'-\') are treated as a fifth
@@ -208,11 +239,13 @@ newtype TntDiscreteCharacter   = TntDis Word64 deriving (Bits,Eq,Ord,FiniteBits)
 --   treated as a fifth state. Missing represents the empty ambiguity group.
 newtype TntDnaCharacter        = TntDna Word8 deriving (Bits,Eq,FiniteBits,Ord)
 
+
 -- | A 'TntProteinCharacter' is an integral value in the range '[0..20]'. 
 --   Discrete values are serialized textualy as the protein IUPAC codes case-insensitively,
 --   along with \'-\' & \'?\' characters representing gap or missing data respecitively.
 --   Missing represents the empty ambiguity group.
 newtype TntProteinCharacter    = TntPro Word32 deriving (Bits,Eq,FiniteBits,Ord)
+
 
 -- | Serialize character
 instance Show TntDiscreteCharacter where
@@ -223,9 +256,11 @@ instance Show TntDiscreteCharacter where
     where
       str = (serializeStateDiscrete !) <$> bitsToFlags x
 
+
 -- | Serialize character
 instance Show TntDnaCharacter where
   show x = [serializeStateDna ! x]
+
 
 -- | Serialize character
 instance Show TntProteinCharacter where
@@ -236,8 +271,10 @@ instance Show TntProteinCharacter where
     where
       str = (serializeStateProtein !) <$> bitsToFlags x
 
+
 -- CharacterMetaData types
 --------------------------------------------------------------------------------
+
 
 -- | The metadata of a character specifying the attributes of the character
 --   specified in the file.
@@ -260,13 +297,14 @@ data CharacterMetaData
    = CharMeta
    { characterName   :: String
    , characterStates :: Vector String
-   , additive        :: Bool --- Mutually exclusive sankoff
+   , additive        :: Bool --- Mutually exclusive sankoff!
    , active          :: Bool
    , sankoff         :: Bool
    , weight          :: Int
    , steps           :: Int
    , costTCM         :: Maybe (Matrix Double)
    } deriving (Show)
+
 
 -- | The default values for 'CharacterMetadata' as specified by the TNT "documentation."
 initialMetaData :: CharacterMetaData
@@ -281,10 +319,12 @@ initialMetaData = CharMeta
                 , costTCM         = Nothing
                 }
 
+
 -- | Convienece method for generating a 'CharacterMetadata' by specifying a single
 --   attribute value and defaulting all the other values.
 metaDataTemplate :: CharacterState -> CharacterMetaData
 metaDataTemplate state = modifyMetaDataState state initialMetaData
+
 
 -- | Overwrite the value of the 'Charactemetadat' with the 'CharacterState' value.
 modifyMetaDataState :: CharacterState -> CharacterMetaData -> CharacterMetaData
@@ -297,15 +337,18 @@ modifyMetaDataState  NonSankoff   old = old { sankoff  = False }
 modifyMetaDataState (Weight n)    old = old { weight   = n     }
 modifyMetaDataState (Steps  n)    old = old { steps    = n     }
 
+
 -- | Overwrite the naming variables of the 'CharacterMetadata'.
 modifyMetaDataNames :: CharacterName -> CharacterMetaData -> CharacterMetaData
 modifyMetaDataNames charName old = old { characterName   = characterId charName
                                        , characterStates = V.fromList $ characterStateNames charName
                                        }
 
+
 -- | Overwrite the TCM attribute of the 'CharacterMetadata'.
 modifyMetaDataTCM :: Matrix Double -> CharacterMetaData -> CharacterMetaData
 modifyMetaDataTCM mat old = old { costTCM = Just mat }
+
 
 -- | Parses an non-negative integer from a variety of representations.
 -- Parses both signed integral values and signed floating values
@@ -325,6 +368,7 @@ flexibleNonNegativeInt labeling = either coerceFloating coerceIntegral . floatin
         assertNonNegative x
           | x >= 0    = pure x
           | otherwise = fail $ concat ["The ",labeling," value (",show x,") is a negative value"]
+
 
 -- | Parses an positive integer from a variety of representations.
 -- Parses both signed integral values and signed floating values
@@ -369,6 +413,7 @@ flexiblePositiveInt labeling = either coerceFloating coerceIntegral . floatingOr
           | x > 0     = pure x
           | otherwise = fail $ concat ["The ",labeling," value (",show x,") is not a positive integer"]
 
+
 -- | Consumes a TNT keyword flexibly.
 --   @keyword fullName minChars@ will parse the __longest prefix of__ @fullName@
 --   requiring that __at least__ the first @minChars@ of @fullName@ are in the prefix.
@@ -404,11 +449,13 @@ keyword x y = abreviatable x y $> ()
         makePartial opt = try $ string' opt <* terminator
         terminator      = lookAhead $ satisfy (not . isAlpha) 
 
+
 -- | Parses an Int which is non-negative. This Int is not parsed flexibly.
 --   Will fail integral valued Double literals. Use this in preference to 'flexibleNonNegativeInt'
 --   when expecting one of these chars ".eE" adjacent to the Int value.
 nonNegInt :: (MonadParsec e s m, Token s ~ Char) => m Int
 nonNegInt = fromIntegral <$> integer
+
 
 -- | Parses an Integral value from a 'Double' value. If the 'Double' is not an
 --   integral value, then a parse error is raised. The first 'String' parameter
@@ -420,6 +467,7 @@ assertIntegral labeling x
   where
     isInt n = n == fromInteger rounded
     rounded = round x
+
 
 -- | Parses a single character index or a contiguous character range.
 characterIndicies :: (MonadParsec e s m, Token s ~ Char) => m CharacterSet
@@ -433,25 +481,31 @@ characterIndicies = choice $ try <$> [range, fromStart, single, toEnd, whole]
     num       = symbol (nonNegInt <?> "sequence index value")
     dot       = symbol (char '.')
 
+
 -- | Parses one of the valid character states for a TNT file.
 characterStateChar :: (MonadParsec e s m, Token s ~ Char) => m Char
 characterStateChar = oneOf (toList discreteStateValues)
+
 
 -- | The only 64 (case-insensitive) valid state values for a TNT file.
 discreteStateValues :: Vector Char
 discreteStateValues = V.fromList $ keys deserializeStateDiscrete
 
+
 -- | The only valid state values for a DNA character.
 dnaStateValues :: Vector Char
 dnaStateValues = V.fromList $ keys deserializeStateDna
+
 
 -- | The only valid state values for a protein character.
 proteinStateValues :: Vector Char
 proteinStateValues = V.fromList $ keys deserializeStateProtein
 
+
 -- | A map for serializing discrete state chatracters.
 serializeStateDiscrete :: Map TntDiscreteCharacter Char
 serializeStateDiscrete = swapMap deserializeStateDiscrete
+
 
 -- | A map for deserializing discrete state chatracters.
 deserializeStateDiscrete :: Map Char TntDiscreteCharacter
@@ -460,9 +514,11 @@ deserializeStateDiscrete = insert '?' allBits core
     allBits = foldl (.|.) zeroBits core
     core    = M.fromList $ zip (['0'..'9'] ++ ['A'..'Z'] ++ ['a'..'z'] ++ "-") (bit <$> [0..])
 
+
 -- | A map for serializing dna state chatracters.
 serializeStateDna :: Map TntDnaCharacter Char
 serializeStateDna = swapMap deserializeStateDna
+
 
 -- | A map for deserializing dna state chatracters.
 deserializeStateDna :: Map Char TntDnaCharacter
@@ -491,9 +547,11 @@ deserializeStateDna = casei core
          , ('?', ref 'A' .|. ref 'G' .|. ref 'C' .|. ref 'T' .|. ref '-')
          ]
 
+
 -- | A map for deserializing protein state chatracters.
 serializeStateProtein :: Map TntProteinCharacter Char
 serializeStateProtein = swapMap deserializeStateProtein
+
 
 -- | A map for deserializing protein state chatracters.
 deserializeStateProtein :: Map Char TntProteinCharacter
@@ -505,6 +563,7 @@ deserializeStateProtein = insert '?' allBits . casei $ core `union` multi
     allBits = foldl (.|.) zeroBits core
     gapBit  = findFirstSet $ core ! '-'
 
+
 -- | Add case insensitive keys to map with the corresponding keys.
 casei :: Map Char v -> Map Char v 
 casei x = foldl f x $ assocs x
@@ -515,6 +574,7 @@ casei x = foldl f x $ assocs x
       | otherwise = m
     g _ o = o -- Don't overwrite old, opisite case values in the map.
 
+
 -- | Gets the set bit flags of all bits in the finite bit structure.
 --   A useful decunstruction to supply to folds.
 bitsToFlags :: FiniteBits b => b -> [b]
@@ -524,9 +584,11 @@ bitsToFlags b
   where
     i = findFirstSet b
 
+
 -- | Gets the index of the least significant set bit.
 findFirstSet :: FiniteBits b => b -> Int
 findFirstSet = countTrailingZeros
+
 
 -- | Inverts a map.
 swapMap :: Ord a => Map k a -> Map a k
@@ -537,13 +599,16 @@ swapMap x = let !tups = assocs x
 symbol :: (MonadParsec e s m, Token s ~ Char) => m a -> m a
 symbol c = c <* whitespace
 
+
 -- | Consumes trailing whitespace after the parameter combinator.
 trim :: (MonadParsec e s m, Token s ~ Char) => m a -> m a
 trim c = whitespace *> c <* whitespace
 
+
 -- | Consumes zero or more whitespace characters __including__ line breaks.
 whitespace :: (MonadParsec e s m, Token s ~ Char) => m ()
 whitespace = space
+
 
 -- | Consumes zero or more whitespace characters that are not line breaks.
 whitespaceInline :: (MonadParsec e s m, Token s ~ Char) => m ()

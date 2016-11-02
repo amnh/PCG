@@ -20,14 +20,17 @@ import           Bio.Character.Parsed
 --import           Bio.Metadata.Internal
 --import           Bio.PhyloGraph.Solution
 import           Data.Alphabet
+import           Data.Bifunctor                (second)
 import           Data.Char
 import           Data.Foldable
 import           Data.List                     (transpose)
 --import           Data.Matrix.NotStupid  hiding (toList,fromList)
+import           Data.Maybe                    (fromMaybe)
 import           Data.Monoid
 import           Data.Set                      (Set, insert)
 import qualified Data.Set               as Set
 import           Data.TCM                      (TCM)
+import qualified Data.TCM               as TCM
 import           Data.Vector                   (Vector)
 import qualified Data.Vector            as V
 import           File.Format.Fasta             (FastaParseResult,TaxonSequenceMap)
@@ -88,7 +91,47 @@ instance ParsedMetadata TNT.TntResult where
 
 
         f :: TNT.CharacterMetaData -> TNT.TntCharacter -> ParsedCharacterMetadata
-        f inMeta inChar = undefined -- TODO: fix
+        f inMeta inChar =
+            ParsedCharacterMetadata
+            { alphabet      = characterAlphabet
+            , characterName = TNT.characterName         inMeta
+            , weight        = fromRational rationalWeight * suppliedWeight
+            , parsedTCM     = unfactoredTcmMay
+            , isDynamic     = False
+            , isIgnored     = not $ TNT.active          inMeta
+            }
+          where
+
+            -- |
+            -- When constructing the Alphabet for a given character, we need to
+            -- take into account several things.
+            --
+            -- * We must consider the well typed nature of the character. If
+            --   the character type is Continuous, no alphabet exists. We
+            --   supply 'undefined' in place of the alphabet as a hack to make
+            --   later processing easier. This is inherently unsafe, but with
+            --   proper character type checking later, we will never attempt
+            --   to reference the undefined value.
+            --
+            -- * If the charcter type is Discrete (not DNA or Amino Acid), then
+            --   we must check for supplied state names
+            characterAlphabet =
+                case inChar of
+                  TNT.Continuous {} -> undefined -- I'm sure this will never blow up in our face /s
+                  TNT.Dna        {} -> fromSymbols dnaAlph
+                  TNT.Protein    {} -> fromSymbols aaAlph
+                  TNT.Discrete   {} ->
+                      let stateNameValues = TNT.characterStates inMeta
+                      in
+                          if   null stateNameValues
+                          then fromSymbols disAlph
+                          else fromSymbolsWithStateNames $ zip (toList disAlph) (toList stateNameValues)
+                          
+            (rationalWeight, unfactoredTcmMay) = maybe (1, Nothing) (second Just)
+                                               $ TCM.fromList . toList <$> TNT.costTCM inMeta
+
+            suppliedWeight = fromIntegral $ TNT.weight inMeta
+          -- TODO: fix
           {-
                let defaultMeta = makeOneInfo . fromSymbols $ tntAlphabet inChar
                in  defaultMeta { name       = TNT.characterName   inMeta
@@ -97,14 +140,14 @@ instance ParsedMetadata TNT.TntResult where
                                }
           -}
 
-        alphabetSets = g <$> unifyCharacters input
-          where
-            g = foldMap (foldMap (foldMap (foldMap (Set.fromList . toList))))
+--        alphabetSets = fmap g . transpose . fmap toList . toList $ unifyCharacters input
+--          where
+--            g = foldMap (foldMap (foldMap (Set.fromList . toList)))
                    
-        tntAlphabet TNT.Continuous {} = undefined -- I'm sure this will never blow up /s
-        tntAlphabet TNT.Discrete   {} = disAlph   -- TODO: get subset of maximum alphabet by doing a columwise set collection
-        tntAlphabet TNT.Dna        {} = dnaAlph
-        tntAlphabet TNT.Protein    {} = aaAlph
+--        tntAlphabet TNT.Continuous {} = undefined -- I'm sure this will never blow up /s
+--        tntAlphabet TNT.Discrete   {} = disAlph   -- TODO: get subset of maximum alphabet by doing a columwise set collection
+--        tntAlphabet TNT.Dna        {} = dnaAlph
+--        tntAlphabet TNT.Protein    {} = aaAlph
 
 
 -- | (✔)
