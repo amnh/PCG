@@ -10,18 +10,19 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE Strict #-}
+-- {-# LANGUAGE Strict #-}
 {-# LANGUAGE TypeFamilies #-}
 
 module Data.TCM.Internal where
 
 import           Data.Foldable
+import           Data.List                     (transpose)
 import           Data.List.Utility             (equalityOf, occurances)
 import           Data.Map                      (delete, findMax, keys)
 import qualified Data.Map             as Map   (fromList)
 import           Data.Monoid
 import           Data.MonoTraversable
-import qualified Data.Vector          as Boxed
+import           Data.Ratio
 import           Data.Vector.Unboxed           (Vector)
 import qualified Data.Vector.Unboxed  as V
 import           Data.Word
@@ -247,24 +248,30 @@ size (TCM x _) = x
 --
 -- ==== __Examples__
 --
--- >>> fromLists [1..9]
+-- >>> fromList [1..9]
 -- TCM: 3 x 3
 --   1 2 3
 --   4 5 6
 --   7 8 9
 --
+-- >>> fromList []
+-- *** Exception: fromList: An empty structure was supplied. Cannot construct an empty TCM!
+--
+-- >>> fromList [42]
+-- *** Exception: fromList: A singleton structure was supplied. Cannot construct a TCM with dimension of 1, must have dimension of 2 or greater.
+--
 -- >>> fromList [1..12]
 -- *** Exception: fromList: The number of element (12) is not a square number. Cannot construct an non-square TCM! The number of elements (12) lies between the valid square numbers (9) and (16).
 --
-fromList :: (Foldable t, Integral a) => t a -> TCM
+fromList :: (Foldable t, Real a) => t a -> (Rational, TCM)
 fromList xs
   | null xs       = error "fromList: An empty structure was supplied. Cannot construct an empty TCM!"
   | notSquareList = error notSquareErrorMsg
-  | dimension < 2 = error "fromCols: A singleton structure was supplied. Cannot construct a TCM with dimension of 1, must have dimension of 2 or greater."
-  | otherwise     = TCM dimension resultVector
+  | dimension < 2 = error "fromList: A singleton structure was supplied. Cannot construct a TCM with dimension of 1, must have dimension of 2 or greater."
+  | otherwise     = fromListUnsafe xs
   where
-    resultVector  = V.fromList $ coerce <$> toList xs
-    len           = V.length resultVector
+--    resultVector  = V.fromList $ coerce <$> toList xs
+    len           = length xs
     dimension     = floor $ sqrt (fromIntegral len :: Double)
     notSquareList = square dimension /= len
     square x      = x*x
@@ -294,18 +301,17 @@ fromList xs
 --   2 5 8
 --   3 6 9
 --
-fromCols :: (Foldable t, Foldable t', Integral a) => t (t' a) -> TCM
+fromCols :: (Foldable t, Foldable t', Real a) => t (t' a) -> (Rational, TCM)
 fromCols xs
   | null xs          = error "fromCols: An empty structure was supplied. Cannot construct an empty TCM!"
   | hasJaggedCols    = error jaggedColsErrorMsg
   | width /= height  = error notSquareErrorMsg
   | height < 2       = error "fromCols: A singleton structure was supplied. Cannot construct a TCM with dimension of 1, must have dimension of 2 or greater."
-  | otherwise        = result
+  | otherwise        = fromListUnsafe . mconcat . transpose $ toList <$> toList xs 
   where
-    intermediaryForm = Boxed.fromList $ V.fromList . fmap coerce . toList <$> toList xs
-    width            = Boxed.length intermediaryForm
-    height           = V.length $ intermediaryForm Boxed.! 0
-    hasJaggedCols    = not . equalityOf V.length $ toList intermediaryForm
+    width            = length xs
+    height           = length . head $ toList xs
+    hasJaggedCols    = not . equalityOf length $ toList xs 
 
     jaggedColsErrorMsg = mconcat 
                        [ "fromCols: All the columns did not have the same height! "
@@ -315,7 +321,7 @@ fromCols xs
                        , show otherLengths
                        ]
       where
-        occuranceMap = Map.fromList . occurances $ V.length <$> intermediaryForm
+        occuranceMap = Map.fromList . occurances $ length <$> toList xs
         (mode,_)     = findMax occuranceMap
         otherLengths = keys  $ mode `delete` occuranceMap
         
@@ -326,14 +332,6 @@ fromCols xs
                                 , show width
                                 , ")!"
                                 ]
-    
-    result = TCM height resultVector
-
-    resultVector = V.generate (height * height) f
-      where
-        f i = (intermediaryForm Boxed.! r) V.! q
-         where
-           (q,r) = i `divMod` height
 
 
 -- | /O(n*n)/
@@ -348,18 +346,17 @@ fromCols xs
 --   4 5 6
 --   7 8 9
 --
-fromRows :: (Foldable t, Foldable t', Integral a) => t (t' a) -> TCM
+fromRows :: (Foldable t, Foldable t', Real a) => t (t' a) -> (Rational, TCM)
 fromRows xs
   | null xs          = error "fromRows: An empty structure was supplied. Cannot construct an empty TCM!"
   | hasJaggedRows    = error jaggedRowsErrorMsg
   | width /= height  = error notSquareErrorMsg
   | height < 2       = error "fromRows: A singleton structure was supplied. Cannot construct a TCM with dimension of 1, must have dimension of 2 or greater."
-  | otherwise        = result
+  | otherwise        = fromListUnsafe . foldMap toList $ toList xs 
   where
-    intermediaryForm = Boxed.fromList $ V.fromList . fmap coerce . toList <$> toList xs
-    height           = Boxed.length intermediaryForm
-    width            = V.length $ intermediaryForm Boxed.! 0
-    hasJaggedRows    = not $ equalityOf V.length intermediaryForm
+    height           = length xs
+    width            = length . head $  toList xs
+    hasJaggedRows    = not $ equalityOf length xs
 
     jaggedRowsErrorMsg = mconcat 
                        [ "fromRows: All the rows did not have the same width! "
@@ -369,7 +366,7 @@ fromRows xs
                        , show otherLengths
                        ]
       where
-        occuranceMap = Map.fromList . occurances $ V.length <$> intermediaryForm
+        occuranceMap = Map.fromList . occurances $ length <$> toList xs
         (mode,_)     = findMax occuranceMap
         otherLengths = keys  $ mode `delete` occuranceMap
         
@@ -379,14 +376,6 @@ fromRows xs
                                 , show width
                                 , ")!"
                                 ]
-    
-    result = TCM height resultVector
-
-    resultVector = V.generate (height * height) f
-      where
-        f i = (intermediaryForm Boxed.! q) V.! r
-         where
-           (q,r) = i `divMod` height
 
 
 -- | /O(n*n)/
@@ -471,7 +460,29 @@ diagnoseTcm tcm
     diagnosis = (TCMDiagnosis weight tcm')
 
 
+-- Un-exported Functionality
+--------------------------------------------------------------------------------
 
+
+-- |
+-- Precondition of the list having a square number of elements was already
+-- checked in the function wrapping calls to this method.
+--
+-- This method take a list of values coercable to 'Rational' values via the
+-- 'Real' type-class and produces an integral valued TCM with a rational weight.
+fromListUnsafe :: (Foldable t, Real a) => t a -> (Rational, TCM)
+fromListUnsafe xs
+  | not $ null negativeValues = error $ "The following negative values were found in the TCM: " <> show negativeValues
+  | not $ null overflowValues = error $ "The following values are either too small or two large for the TCM's 32-bit precision: " <> show overflowValues
+  | otherwise                 = ( 1 % coefficient, TCM dimension coercedVector)
+  where
+    dimension         = floor $ sqrt (fromIntegral (length xs) :: Double)
+    coercedVector     = V.fromList $ toEnum . fromEnum <$> prospectiveValues
+    negativeValues    = filter (< 0) $ rationalValues
+    overflowValues    = fmap fst . filter (\(_,y) -> y > toRational (maxBound :: Word32)) $ zip rationalValues prospectiveValues
+    prospectiveValues = ((coefficient % 1) *) <$> rationalValues
+    coefficient       = foldl1 lcm $ abs . denominator <$> rationalValues
+    rationalValues    = toRational <$> toList  xs
 
 
 -- |
@@ -588,11 +599,13 @@ vec :: TCM -> Vector Word32
 vec (TCM _ v) = v
 
 
+
 -- |
 -- Takes an 'Integral' value and converts it to an unsigned unboxable value.
 {-# INLINE coerce #-}
 coerce :: Integral a => a -> Word32
 coerce = toEnum . fromEnum . toInteger
+
 
 
 {-
