@@ -17,14 +17,18 @@ module Bio.Metadata.Parsed where
 
 import           Bio.Character.Dynamic
 import           Bio.Character.Parsed
-import           Bio.Metadata.Internal
-import           Bio.PhyloGraph.Solution
+--import           Bio.Metadata.Internal
+--import           Bio.PhyloGraph.Solution
 import           Data.Alphabet
 import           Data.Char
 import           Data.Foldable
+import           Data.List                     (transpose)
+--import           Data.Matrix.NotStupid  hiding (toList,fromList)
 import           Data.Monoid
 import           Data.Set                      (Set, insert)
-import           Data.Vector                   (fromList, Vector)
+import qualified Data.Set               as Set
+import           Data.TCM                      (TCM)
+import           Data.Vector                   (Vector)
 import qualified Data.Vector            as V
 import           File.Format.Fasta             (FastaParseResult,TaxonSequenceMap)
 import           File.Format.Fastc
@@ -50,7 +54,7 @@ data ParsedCharacterMetadata
 -- | Represents a parser result type which can have a character metadata
 --   structure extracted from it.
 class ParsedMetadata a where
-    unifyMetadata :: a -> Vector StandardMetadata
+    unifyMetadata :: a -> Vector ParsedCharacterMetadata
 
 
 -- | (✔)
@@ -75,26 +79,41 @@ instance ParsedMetadata NewickForest where
 
 -- | (✔)
 instance ParsedMetadata TNT.TntResult where
-    unifyMetadata (Left _) = mempty
-    unifyMetadata (Right withSeq) = fromList $ zipWith f (toList $ TNT.charMetaData withSeq) (snd . head . toList $ TNT.sequences withSeq)
-        where
-           f :: EncodableDynamicCharacter s => TNT.CharacterMetaData -> TNT.TntCharacter -> CharacterMetadata s
-           f inMeta inChar =  let defaultMeta = makeOneInfo . fromSymbols $ tntAlphabet inChar
-                    in  defaultMeta { name       = TNT.characterName   inMeta
-                                    , stateNames = TNT.characterStates inMeta
-                                    , costs      = maybe (costs defaultMeta) TCM (TNT.costTCM inMeta)
-                                    }
-           tntAlphabet TNT.Continuous {} = mempty
-           tntAlphabet TNT.Discrete   {} = disAlph -- TODO: get subset of maximum alphabet by doing a columwise set collection
-           tntAlphabet TNT.Dna        {} = dnaAlph
-           tntAlphabet TNT.Protein    {} = aaAlph
+    unifyMetadata       (Left        _) = mempty
+    unifyMetadata input@(Right withSeq) = V.fromList $ zipWith f parsedMetadatas parsedCharacters
+      where
+        parsedMetadatas  = toList $ TNT.charMetaData withSeq
+        parsedCharacters = snd . head . toList $ TNT.sequences withSeq
+
+
+
+        f :: TNT.CharacterMetaData -> TNT.TntCharacter -> ParsedCharacterMetadata
+        f inMeta inChar = undefined -- TODO: fix
+          {-
+               let defaultMeta = makeOneInfo . fromSymbols $ tntAlphabet inChar
+               in  defaultMeta { name       = TNT.characterName   inMeta
+                               , stateNames = TNT.characterStates inMeta
+                               , costs      = maybe (costs defaultMeta) TCM (TNT.costTCM inMeta)
+                               }
+          -}
+
+        alphabetSets = g <$> unifyCharacters input
+          where
+            g = foldMap (foldMap (foldMap (foldMap (Set.fromList . toList))))
+                   
+        tntAlphabet TNT.Continuous {} = undefined -- I'm sure this will never blow up /s
+        tntAlphabet TNT.Discrete   {} = disAlph   -- TODO: get subset of maximum alphabet by doing a columwise set collection
+        tntAlphabet TNT.Dna        {} = dnaAlph
+        tntAlphabet TNT.Protein    {} = aaAlph
 
 
 -- | (✔)
 instance ParsedMetadata F.TCM where
-    unifyMetadata (F.TCM alph mat) =
+    unifyMetadata (F.TCM alph mat) = undefined -- TODO: fix
+{-
         let defaultMeta = makeOneInfo . fromSymbols $ toList alph
         in  pure (defaultMeta {costs = TCM mat})
+-}
 
 
 -- | (✔)
@@ -106,23 +125,25 @@ instance ParsedMetadata VertexEdgeRoot where
 instance ParsedMetadata Nexus where
     unifyMetadata (Nexus (_, metas)) = V.map convertNexusMeta metas
         where
-            convertNexusMeta inMeta =
+            convertNexusMeta inMeta = undefined -- TODO: fix
+            {-
                 let defaultMeta = makeOneInfo . fromSymbols $ Nex.alphabet inMeta
                 in  defaultMeta { name      = Nex.name inMeta
                                 , isIgnored = Nex.ignored inMeta
                                 , costs     = maybe (costs defaultMeta) (TCM . F.transitionCosts) (Nex.costM inMeta)
                                 }
-
+-}
 
 disAlph, dnaAlph, rnaAlph, aaAlph :: Vector String
 -- | The acceptable DNA character values (with IUPAC codes).
-dnaAlph = fromList $ pure <$> addOtherCases "AGCTRMWSKTVDHBNX?-"
+dnaAlph = V.fromList $ pure <$> addOtherCases "AGCTRMWSKTVDHBNX?-"
 -- | The acceptable RNA character values (with IUPAC codes).
-rnaAlph = fromList $ pure <$> addOtherCases "AGCURMWSKTVDHBNX?-"
+rnaAlph = V.fromList $ pure <$> addOtherCases "AGCURMWSKTVDHBNX?-"
 -- | The acceptable amino acid/protein character values (with IUPAC codes).
-aaAlph  = fromList $ pure <$> addOtherCases "ABCDEFGHIKLMNPQRSTVWXYZ-"
+aaAlph  = V.fromList $ pure <$> addOtherCases "ABCDEFGHIKLMNPQRSTVWXYZ-"
 -- | The acceptable discrete character values.
-disAlph = fromList $ pure <$> (['0'..'9'] <> ['A'..'Z'] <> ['a'..'z'] <> "-" <> "?")
+disAlph = V.fromList $ pure <$> (['0'..'9'] <> ['A'..'Z'] <> ['a'..'z'] <> "-" <> "?")
+
 
 -- | Adds case insensitive values to a 'String'.
 addOtherCases :: String -> String
@@ -132,14 +153,26 @@ addOtherCases (x:xs)
   | isUpper x && toLower x `notElem` xs = x : toLower x : addOtherCases xs
   | otherwise = x : addOtherCases xs
 
--- | Make a single info given an alphabet
-makeOneInfo :: EncodableDynamicCharacter s => Alphabet String -> CharacterMetadata s
-makeOneInfo alph = CharMeta DirectOptimization alph mempty False False 1 mempty (constructDynamic [], constructDynamic []) 1 (GeneralCost 1 1)
+
+-- | Make a single info given an alphabet without state names
+makeOneInfo :: Alphabet String -> ParsedCharacterMetadata
+makeOneInfo alph =
+    ParsedCharacterMetadata
+    { alphabet      = alph
+    , characterName = ""
+    , weight        = 1
+    , parsedTCM     = Nothing 
+    , isDynamic     = True
+    , isIgnored     = False
+    }
+
 
 -- | Functionality to make char info from tree seqs
-makeEncodeInfo :: EncodableDynamicCharacter s => TreeChars -> Vector (CharacterMetadata s)
+makeEncodeInfo :: TreeChars -> Vector ParsedCharacterMetadata
 makeEncodeInfo seqs = V.map makeOneInfo alphabets
-    where alphabets = developAlphabets seqs
+  where
+    alphabets = developAlphabets seqs
+
 
 -- | Internal function(s) to create alphabets
 -- First is the new version. Following is the old version, which looks like it tosses the accumulator every once in a while.

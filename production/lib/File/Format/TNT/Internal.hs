@@ -46,9 +46,6 @@ type TntResult = Either TreeOnly WithTaxa
 -- | The possible parse result when the file contains only tree data.
 type TreeOnly  = TRead
 
--- | The stringly typed option, no good :(
-type Yucky     = String
-
 -- | The possible parse result when the file contains taxa sequences.
 --   'trees' represents a (possibly empty) forest where each tree in
 --   the forest must have the complete taxa set as it's leaf node set.
