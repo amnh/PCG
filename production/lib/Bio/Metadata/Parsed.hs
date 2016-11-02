@@ -15,32 +15,26 @@
 
 module Bio.Metadata.Parsed where
 
-import           Bio.Character.Dynamic
 import           Bio.Character.Parsed
---import           Bio.Metadata.Internal
---import           Bio.PhyloGraph.Solution
 import           Data.Alphabet
-import           Data.Bifunctor                (second)
+import           Data.Bifunctor                          (second)
 import           Data.Char
 import           Data.Foldable
-import           Data.List                     (transpose)
---import           Data.Matrix.NotStupid  hiding (toList,fromList)
-import           Data.Maybe                    (fromMaybe)
+import           Data.List                               (transpose)
 import           Data.Monoid
-import           Data.Set                      (Set, insert)
-import qualified Data.Set               as Set
-import           Data.TCM                      (TCM)
-import qualified Data.TCM               as TCM
-import           Data.Vector                   (Vector)
-import qualified Data.Vector            as V
-import           File.Format.Fasta             (FastaParseResult,TaxonSequenceMap)
+import           Data.TCM                                (TCM)
+import qualified Data.TCM                         as TCM
+import           Data.Vector                             (Vector)
+import qualified Data.Vector                      as V
+import           File.Format.Fasta                       (FastaParseResult,TaxonSequenceMap)
 import           File.Format.Fastc
 import           File.Format.Newick
-import           File.Format.Nexus      hiding (CharacterMetadata, DNA, RNA, Nucleotide, TaxonSequenceMap)
-import qualified File.Format.Nexus.Data as Nex
-import qualified File.Format.TNT        as TNT
+import           File.Format.Nexus                hiding (CharacterMetadata, DNA, RNA, Nucleotide, TaxonSequenceMap)
+import qualified File.Format.Nexus.Data           as Nex
+import qualified File.Format.TNT                  as TNT
 import qualified File.Format.TransitionCostMatrix as F
 import           File.Format.VertexEdgeRoot
+
 
 -- | An intermediate composite type for parse result coercion.
 data ParsedCharacterMetadata
@@ -82,13 +76,11 @@ instance ParsedMetadata NewickForest where
 
 -- | (✔)
 instance ParsedMetadata TNT.TntResult where
-    unifyMetadata       (Left        _) = mempty
-    unifyMetadata input@(Right withSeq) = V.fromList $ zipWith f parsedMetadatas parsedCharacters
+    unifyMetadata (Left        _) = mempty
+    unifyMetadata (Right withSeq) = V.fromList $ zipWith f parsedMetadatas parsedCharacters
       where
         parsedMetadatas  = toList $ TNT.charMetaData withSeq
         parsedCharacters = snd . head . toList $ TNT.sequences withSeq
-
-
 
         f :: TNT.CharacterMetaData -> TNT.TntCharacter -> ParsedCharacterMetadata
         f inMeta inChar =
@@ -131,32 +123,21 @@ instance ParsedMetadata TNT.TntResult where
                                                $ TCM.fromList . toList <$> TNT.costTCM inMeta
 
             suppliedWeight = fromIntegral $ TNT.weight inMeta
-          -- TODO: fix
-          {-
-               let defaultMeta = makeOneInfo . fromSymbols $ tntAlphabet inChar
-               in  defaultMeta { name       = TNT.characterName   inMeta
-                               , stateNames = TNT.characterStates inMeta
-                               , costs      = maybe (costs defaultMeta) TCM (TNT.costTCM inMeta)
-                               }
-          -}
-
---        alphabetSets = fmap g . transpose . fmap toList . toList $ unifyCharacters input
---          where
---            g = foldMap (foldMap (foldMap (Set.fromList . toList)))
-                   
---        tntAlphabet TNT.Continuous {} = undefined -- I'm sure this will never blow up /s
---        tntAlphabet TNT.Discrete   {} = disAlph   -- TODO: get subset of maximum alphabet by doing a columwise set collection
---        tntAlphabet TNT.Dna        {} = dnaAlph
---        tntAlphabet TNT.Protein    {} = aaAlph
 
 
 -- | (✔)
 instance ParsedMetadata F.TCM where
-    unifyMetadata (F.TCM alph mat) = undefined -- TODO: fix
-{-
-        let defaultMeta = makeOneInfo . fromSymbols $ toList alph
-        in  pure (defaultMeta {costs = TCM mat})
--}
+    unifyMetadata (F.TCM alph mat) =
+        pure ParsedCharacterMetadata
+        { alphabet      = fromSymbols alph
+        , characterName = ""
+        , weight        = fromRational $ rationalWeight
+        , parsedTCM     = Just unfactoredTCM 
+        , isDynamic     = False
+        , isIgnored     = False -- Maybe this should be True?
+        }
+      where
+        (rationalWeight, unfactoredTCM) = TCM.fromList $ toList mat
 
 
 -- | (✔)
@@ -167,15 +148,21 @@ instance ParsedMetadata VertexEdgeRoot where
 -- | (✔)
 instance ParsedMetadata Nexus where
     unifyMetadata (Nexus (_, metas)) = V.map convertNexusMeta metas
-        where
-            convertNexusMeta inMeta = undefined -- TODO: fix
-            {-
-                let defaultMeta = makeOneInfo . fromSymbols $ Nex.alphabet inMeta
-                in  defaultMeta { name      = Nex.name inMeta
-                                , isIgnored = Nex.ignored inMeta
-                                , costs     = maybe (costs defaultMeta) (TCM . F.transitionCosts) (Nex.costM inMeta)
-                                }
--}
+      where
+        convertNexusMeta inMeta =
+            ParsedCharacterMetadata
+            { alphabet      = fromSymbols $ Nex.alphabet inMeta
+            , characterName = Nex.name inMeta
+            , weight        = fromRational rationalWeight * suppliedWeight
+            , parsedTCM     = unfactoredTcmMay
+            , isDynamic     = not $ Nex.isAligned inMeta 
+            , isIgnored     = Nex.ignored inMeta
+            }
+          where
+            suppliedWeight = fromIntegral $ Nex.weight inMeta
+            (rationalWeight, unfactoredTcmMay) = maybe (1, Nothing) (second Just)
+                                               $ TCM.fromList . toList . F.transitionCosts <$> Nex.costM inMeta
+            
 
 disAlph, dnaAlph, rnaAlph, aaAlph :: Vector String
 -- | The acceptable DNA character values (with IUPAC codes).
@@ -197,6 +184,11 @@ addOtherCases (x:xs)
   | otherwise = x : addOtherCases xs
 
 
+-- | Functionality to make char info from tree seqs
+makeEncodeInfo :: TreeChars -> Vector ParsedCharacterMetadata
+makeEncodeInfo = fmap makeOneInfo . developAlphabets
+
+
 -- | Make a single info given an alphabet without state names
 makeOneInfo :: Alphabet String -> ParsedCharacterMetadata
 makeOneInfo alph =
@@ -210,13 +202,6 @@ makeOneInfo alph =
     }
 
 
--- | Functionality to make char info from tree seqs
-makeEncodeInfo :: TreeChars -> Vector ParsedCharacterMetadata
-makeEncodeInfo seqs = V.map makeOneInfo alphabets
-  where
-    alphabets = developAlphabets seqs
-
-
 -- | Internal function(s) to create alphabets
 -- First is the new version. Following is the old version, which looks like it tosses the accumulator every once in a while.
 -- Notes on data types follow
@@ -226,18 +211,5 @@ makeEncodeInfo seqs = V.map makeOneInfo alphabets
 -- characters may be missing, hence Maybe Vector [String]
 -- each taxon may have a sequence (multiple characters), hence Vector Maybe Vector [String]
 -- sequences are values mapped to using taxon names as keys, hence Map String Vector Maybe Vector [String]
---developAlphabets :: TreeChars -> Vector Alphabet
-
---old version
 developAlphabets :: TreeChars -> Vector (Alphabet String)
-developAlphabets inTaxSeqMap = fromSymbols <$> foldr (V.zipWith getNodeAlphAt) partialAlphabets inTaxSeqMap
-    where
-        seqLength        = length . head $ toList inTaxSeqMap
-        partialAlphabets = V.replicate seqLength mempty
-
-        getNodeAlphAt :: Maybe ParsedChar -> Set String -> Set String
-        getNodeAlphAt inCharMay partialAlphabet =
-          case inCharMay of
-            Nothing     -> partialAlphabet
-            Just inChar -> foldr (flip $ foldr insert  -- this is set insertion
-                                 ) partialAlphabet inChar
+developAlphabets = V.fromList . fmap (fromSymbols . foldMap (foldMap (foldMap toList))) . transpose . fmap toList . toList 
