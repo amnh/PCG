@@ -52,7 +52,7 @@ type TaxonIdentifier = String
 
 
 -- |
--- Metadata recrod type for a given character.
+-- Metadata record type for a given character.
 data CharacterMetadata 
    = CharacterMetadata
    { name       :: String

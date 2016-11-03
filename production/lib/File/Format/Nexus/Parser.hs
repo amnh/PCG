@@ -191,6 +191,7 @@ treeBlockDefinition = {-do
         pure $ TreeBlock x y
 
 
+-- TODO: Capture values of the StateLabels field, and CharStateLabels field.
 seqSubBlock :: (MonadParsec e s m, Token s ~ Char {- , Show s -}) => m SeqSubBlock
 seqSubBlock = {-do
     x <- getInput
