@@ -122,6 +122,7 @@ library
                        Bio.Character.Static
                        Bio.Metadata
                        Bio.Metadata.CharacterName
+                       Bio.Metadata.Parsed
                        Bio.Sequence
                        Bio.Sequence.Bin
                        Bio.Sequence.Block
@@ -193,7 +194,6 @@ library
                        Bio.PhyloGraph.Forest.Parsed
                        Bio.Metadata.Class
                        Bio.Metadata.Internal
-                       Bio.Metadata.Parsed
                        Bio.PhyloGraph.DAG.Internal
                        Bio.PhyloGraph.DAG.Class
                        Bio.PhyloGraph.Edge.Internal
