@@ -44,6 +44,8 @@ module Data.Alphabet
   , alphabetSymbols
   , fromSymbols
   , fromSymbolsWithStateNames
+  , isAlphabetDNA
+  , isAlphabetAminoAcid
   , gapCharacter
   ) where
 
@@ -54,7 +56,7 @@ import           Data.List                    (intercalate, sort)
 import           Data.List.NonEmpty           (NonEmpty)
 import           Data.Maybe
 import           Data.Monoid
-import           Data.Set                     (insert)
+import qualified Data.Set              as Set
 import           Data.String
 import           Data.Vector                  (Vector)
 import qualified Data.Vector           as V
@@ -208,7 +210,7 @@ alphabetPreprocessing = V.fromList . appendGapSymbol . removeSpecialSymbolsAndDu
           | isMissingSymboled x = pure False
           | otherwise           = do
               seenSet <- get
-              _       <- put $ x `insert` seenSet
+              _       <- put $ x `Set.insert` seenSet
               pure $ x `notElem` seenSet
 
 newtype UnnamedSymbol a = Unnamed  a
@@ -269,3 +271,29 @@ constructAlphabetWithTCM symbols originalTcm = (alphabet, permutedTcm)
     f (i,j) =  originalTcm ! (oldOrdering V.! i, oldOrdering V.! j)
 
 -}
+
+
+-- |
+-- /O(n)/
+--
+-- Determines if the supplied alphabet represents DNA symbols.
+--
+-- Useful for determining if an 'AmbiguityGroup' should be rendered as an IUPAC
+-- code.
+isAlphabetDNA :: (IsString s, Ord s) => Alphabet s -> Bool
+isAlphabetDNA = (`Set.isSubsetOf` dnaSymbolSet) . Set.fromList . toList
+  where
+    dnaSymbolSet = Set.fromList $ fromString . pure <$> "ACGTU-"
+
+
+-- |
+-- /O(n)/
+--
+-- Determines if the supplied alphabet represents amino acid symbols.
+--
+-- Useful for determining if an 'AmbiguityGroup' should be rendered as an IUPAC
+-- code.
+isAlphabetAminoAcid :: (IsString s, Ord s) => Alphabet s -> Bool
+isAlphabetAminoAcid = (`Set.isSubsetOf` aminoAcidSymbolSet) . Set.fromList . toList
+  where
+    aminoAcidSymbolSet = Set.fromList $ fromString . pure <$> "ACDEFGHIKLMNPQRSTVWY"
