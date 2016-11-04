@@ -202,6 +202,7 @@ joinSequences2 = collapseAndMerge . reduceAlphabets . deriveCorrectTCMs . derive
                                 -> (Maybe ParsedChar, ParsedCharacterMetadata, TCM, CharacterName)
                                 -> (Maybe ParsedChar, ParsedCharacterMetadata, TCM, CharacterName)
         removeExtraneousSymbols observedSymbols input@(charMay, charMetadata, tcm, charName)
+          | isDynamic charMetadata      = input
           | onull missingSymbolIndicies = input
           | otherwise                   = (charMay, charMetadata { alphabet = reducedAlphabet }, reducedTCM, charName)
           where
