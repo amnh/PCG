@@ -16,7 +16,11 @@
 
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 
-module Bio.PhyloGraphPrime where
+module Bio.PhyloGraphPrime
+  ( PhylogeneticSolution(..)
+  , PhylogeneticForest(..)
+  , phylogeneticForests
+  ) where
 
 --import Bio.PhyloGraphPrime.Component
 import Bio.PhyloGraphPrime.Forest

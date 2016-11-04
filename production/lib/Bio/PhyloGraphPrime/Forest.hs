@@ -26,8 +26,6 @@ import Data.Semigroup.Traversable
 import Prelude                hiding (lookup)
 
 
--- |
--- A solution that contains one or more equally costly forests.
 newtype PhylogeneticForest a
       = PhylogeneticForest (NonEmpty a)
       deriving (Foldable, Foldable1, Functor, Semigroup, Traversable)
@@ -117,3 +115,5 @@ instance TraversableWithKey1 PhylogeneticForest where
 {-# INLINE unwrap #-}
 unwrap :: PhylogeneticForest a -> NonEmpty a
 unwrap (PhylogeneticForest x) = x
+
+

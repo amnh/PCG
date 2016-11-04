@@ -102,10 +102,23 @@ rectifyResults2 fprs =
     extraNames      = filter (not . null . fst) $ first ((\\ taxaSet) . Set.fromList) <$> forestTaxa
     missingNames    = filter (not . null . fst) $ first ((taxaSet \\) . Set.fromList) <$> forestTaxa
     -- Step 7: Combine disparte sequences from many sources  into single metadata & character sequence.
-    charSeqs = joinSequences2 dataSeqs
+    charSeqs        = joinSequences2 dataSeqs
     -- Step 8: Convert topological forests to DAGs (using reference indexing from #7 results)
     -- TODO: unfoldDAGs referencing #7
---    dagForests      = fromNewick . parsedTrees <$> allForests
+    dagForest
+      | null suppliedTrees && null charSeqs = undefined -- Throw a unification error here
+      | null suppliedTrees = PhylogeneticSolution . pure . foldMap1 singletonComponent . NE.fromList $ toList charSeqs
+      | null charSeqs      = undefined
+      | otherwise          = undefined
+      where
+        suppliedTrees = parsedTrees <$> allForests
+        singletonComponent datum = PhylogeneticForest . pure $ unfoldDAG rootLeafGen True
+          where
+            rootLeafGen x
+              | x         = (                [], Nothing   , [(Nothing, not x)])
+              | otherwise = ([(Nothing, not x)], Just datum, []                )
+              
+            
 --    combinedData    = Solution (HM.fromList $ assocs charSeqs) combinedMetadata dagForests
     -- Step 9:  TODO: Node encoding
 --    encodedSolution = encodeSolution combinedData
