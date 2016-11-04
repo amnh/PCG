@@ -36,7 +36,9 @@ import           Data.Alphabet
 import           Data.Bifunctor                    (first)
 import           Data.Foldable
 import qualified Data.HashMap.Lazy          as HM
-import           Data.List                         (zip4)
+import qualified Data.IntSet                as IS
+import           Data.Key
+import           Data.List                         (transpose, zip4)
 import           Data.List.NonEmpty                (NonEmpty( (:|) ))
 import qualified Data.List.NonEmpty         as NE  (fromList)
 import           Data.List.Utility                 (duplicates)
@@ -49,11 +51,13 @@ import           Data.Set                          ((\\))
 import qualified Data.Set                   as Set
 import           Data.TCM
 import qualified Data.TCM                   as TCM
+import           Data.MonoTraversable
 import           Data.Vector                       (Vector, (//))
 import qualified Data.Vector                as V
 import           File.Format.Newick
 -- import           File.Format.TransitionCostMatrix
 import           PCG.Command.Types.Read.Unification.UnificationError
+import           Prelude                   hiding  (lookup, zip, zipWith)
 
 -- import Debug.Trace
 
@@ -137,9 +141,9 @@ data IntermediateCharacter
 
 -- | 
 -- Joins the sequences of a fractured parse result
---joinSequences2 :: Foldable t => t FracturedParseResult -> Map String (CharacterSequence StaticCharacterBlock DynamicChar)
-joinSequences2 :: Foldable t => t FracturedParseResult -> Map String [IntermediateCharacter]
-joinSequences2 = fmap toIntermediateForm . collapseAndMerge . deriveCharacterNames
+joinSequences2 :: Foldable t => t FracturedParseResult -> Map String (CharacterSequence StaticCharacterBlock DynamicChar)
+--joinSequences2 :: Foldable t => t FracturedParseResult -> Map String [IntermediateCharacter]
+joinSequences2 = collapseAndMerge . reduceAlphabets . deriveCorrectTCMs . deriveCharacterNames
   where
 --    f :: (TreeChars, Vector StandardMetadata) -> FracturedParseResult -> (TreeChars, Vector StandardMetadata)
 --    f acc fpr = g acc $ (parsedMetas fpr, parsedChars fpr)
@@ -164,7 +168,49 @@ joinSequences2 = fmap toIntermediateForm . collapseAndMerge . deriveCharacterNam
                 correctName [] = Nothing
                 correctName ys = Just ys
 
-    collapseAndMerge = fst . foldl' f (mempty, [])
+    deriveCorrectTCMs :: Functor f
+                      => f (Map String (NonEmpty (Maybe ParsedChar, ParsedCharacterMetadata, Maybe TCM, CharacterName)))
+                      -> f (Map String (NonEmpty (Maybe ParsedChar, ParsedCharacterMetadata,       TCM, CharacterName)))
+    deriveCorrectTCMs = fmap (fmap (fmap selectTCM))
+      where
+        selectTCM (charMay, charMetadata, tcmMay, charName) = (charMay, charMetadata, selectedTCM, charName)
+          where
+            selectedTCM       = fromMaybe defaultTCM $ tcmMay <|> parsedTCM charMetadata
+            specifiedAlphabet = alphabet charMetadata
+            defaultTCM        = TCM.generate (length specifiedAlphabet) $ \(i,j) -> (if i == j then 0 else 1 :: Int)
+
+    reduceAlphabets :: Functor f
+                    => f (Map String (NonEmpty (Maybe ParsedChar, ParsedCharacterMetadata, TCM, CharacterName)))
+                    -> f (Map String (NonEmpty (Maybe ParsedChar, ParsedCharacterMetadata, TCM, CharacterName)))
+    reduceAlphabets fileChuncks = fmap (fmap (zipWith removeExtraneousSymbols observedSymbolSets)) fileChuncks 
+      where
+        observedSymbolSets = fmap (fmap (foldMap (foldMap (foldMap (Set.fromList . toList)))) . transpose . fmap toList . toList) fileChuncks
+        removeExtraneousSymbols observedSymbols input@(charMay, charMetadata, tcm, charName)
+          | onull missingSymbolIndicies = input
+          | otherwise                   = (charMay, charMetadata { alphabet = reducedAlphabet }, reducedTCM, charName)
+          where
+            missingSymbolIndicies = foldMapWithKey (\x -> if x `notElem` observedSymbols then IS.singleton x else mempty) suppliedAlphabet
+            suppliedAlphabet      = alphabet charMetadata
+            reducedAlphabet       =
+                case alphabetStateNames suppliedAlphabet of
+                  [] -> fromSymbols               . reduceTokens $     (alphabetSymbols suppliedAlphabet)
+                  xs -> fromSymbolsWithStateNames . reduceTokens $ zip (alphabetSymbols suppliedAlphabet) xs
+              where
+                reduceTokens = foldMapWithKey (\k v -> if k `oelem` missingSymbolIndicies then [] else [v])
+            reducedTCM = TCM.generate (TCM.size tcm - length missingSymbolIndicies) f
+              where
+                f (i,j) = tcm TCM.! (i', j')
+                  where
+                    i' = i + iOffset
+                    j' = j + iOffset
+                    xs = otoList missingSymbolIndicies
+                    iOffset = length $ filter (<=i) xs
+                    jOffest = length $ filter (<=j) xs
+
+            
+
+    collapseAndMerge = undefined -- fst . foldl' f (mempty, [])
+    {-
       where
         f :: (Map String (NonEmpty (Maybe ParsedChar, ParsedCharacterMetadata, Maybe TCM, CharacterName))
              ,                    [(Maybe ParsedChar, ParsedCharacterMetadata, Maybe TCM, CharacterName)]
@@ -201,9 +247,9 @@ joinSequences2 = fmap toIntermediateForm . collapseAndMerge . deriveCharacterNam
             []   -> ne
             x:xs -> x :| (xs <> toList ne)
 
-        createMissingCharacter (charMay, meta, tcmMay, charName) = 
+        createMissingCharacter (charMay, meta, tcmMay, charName) = undefined
+-}
 
-    toIntermediateForm = undefined
 
 
 {-    
