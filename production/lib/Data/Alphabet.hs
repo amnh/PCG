@@ -64,7 +64,7 @@ import           Prelude               hiding (lookup, zip)
 import           Test.Tasty.QuickCheck hiding (generate)
 import           Test.QuickCheck.Arbitrary.Instances ()
 
-{- PRECONDITION: We must insure that missing and gap are appropriately 
+{- PRECONDITION: We must ensure that missing and gap are appropriately 
    code as "-" & "?", respectively, before this module is used, i.e., as output 
    from either parsers or in unification step.
  -}
