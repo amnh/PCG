@@ -47,7 +47,7 @@ import qualified Data.Map                   as Map
 import           Data.Maybe                        (catMaybes, fromJust, fromMaybe)
 import           Data.Semigroup                    ((<>), sconcat)
 import           Data.Semigroup.Foldable
-import           Data.Set                          ((\\))
+import           Data.Set                          (Set, (\\))
 import qualified Data.Set                   as Set
 import           Data.TCM
 import qualified Data.TCM                   as TCM
@@ -102,7 +102,6 @@ rectifyResults2 fprs =
     extraNames      = filter (not . null . fst) $ first ((\\ taxaSet) . Set.fromList) <$> forestTaxa
     missingNames    = filter (not . null . fst) $ first ((taxaSet \\) . Set.fromList) <$> forestTaxa
     -- Step 7: Combine disparte sequences from many sources  into single metadata & character sequence.
-    -- TODO: Properly construct bins here, encode characters!
     charSeqs = joinSequences2 dataSeqs
     -- Step 8: Convert topological forests to DAGs (using reference indexing from #7 results)
     -- TODO: unfoldDAGs referencing #7
@@ -128,27 +127,35 @@ rectifyResults2 fprs =
         transformFPR (x,y) = f (NE.fromList $ toList x) $ sourceFile y
 
 
-data IntermediateCharacterSequence
-   = IntermediateCharacterSequence
-   {
-   }
-
-data IntermediateCharacter
-   = IntermediateCharacter
-   | IContinuous CharacterName (Maybe Double)
-   | IStatic     CharacterName (Alphabet String) TCM (AmbiguityGroup String) 
-   | IDynamic    CharacterName (Alphabet String) TCM [AmbiguityGroup String]
-
 -- | 
--- Joins the sequences of a fractured parse result
+-- Joins the sequences of a fractured parse result. This requires several
+-- sequential steps. Each fractured parse result will be placed into a seperate
+-- character block by default. We collapse and merge these seperate parse results
+-- in the last step to ensure that the input data is placed into it's propper
+-- character block.
+--
+-- * First we collect all character and file names, and atomically generate
+--   well-typed CharcterName list. We must not collapse the structure.
+--
+-- * Next We disambiguate or default which TCM should be used for each input
+--   character. We assume that the fractured parse result alphabet that is
+--   supplied is of equal length to the selected TCM dimension. This assumption
+--   should be safe, though it is the burden of the caller to ensure this input
+--   invariant. 
+--
+-- * Afterwards we attempt to reduce the alphabet and TCMs by looking for
+--   symbols present in the alphabet that do not appear in any input character.
+--   Extyraneous symbols are removed from the character alphabet and the
+--   corresponding TCM is reduced in size.
+--
+-- * Lastly we collapse the many parse results into a single map of charcter
+--   blocks wrapped together as a charcter sequence. This will properly add
+--   missing character values to taxa provided in other files.
 joinSequences2 :: Foldable t => t FracturedParseResult -> Map String (CharacterSequence StaticCharacterBlock DynamicChar)
---joinSequences2 :: Foldable t => t FracturedParseResult -> Map String [IntermediateCharacter]
 joinSequences2 = collapseAndMerge . reduceAlphabets . deriveCorrectTCMs . deriveCharacterNames
   where
---    f :: (TreeChars, Vector StandardMetadata) -> FracturedParseResult -> (TreeChars, Vector StandardMetadata)
---    f acc fpr = g acc $ (parsedMetas fpr, parsedChars fpr)
     
-    -- We do this to correctly constrcut the CharacterNames.
+    -- We do this to correctly construct the CharacterNames.
     deriveCharacterNames :: Foldable t
                          => t FracturedParseResult
                          -> [ Map String (NonEmpty (Maybe ParsedChar, ParsedCharacterMetadata, Maybe TCM, CharacterName)) ]
@@ -182,14 +189,23 @@ joinSequences2 = collapseAndMerge . reduceAlphabets . deriveCorrectTCMs . derive
     reduceAlphabets :: Functor f
                     => f (Map String (NonEmpty (Maybe ParsedChar, ParsedCharacterMetadata, TCM, CharacterName)))
                     -> f (Map String (NonEmpty (Maybe ParsedChar, ParsedCharacterMetadata, TCM, CharacterName)))
-    reduceAlphabets fileChuncks = fmap (fmap (zipWith removeExtraneousSymbols observedSymbolSets)) fileChuncks 
+    reduceAlphabets = fmap reduceFileBlock
       where
-        observedSymbolSets = fmap (fmap (foldMap (foldMap (foldMap (Set.fromList . toList)))) . transpose . fmap toList . toList) fileChuncks
+        reduceFileBlock mapping = fmap (zipWith removeExtraneousSymbols observedSymbolSets) mapping
+          where
+            observedSymbolSets :: NonEmpty (Set String)
+            observedSymbolSets = fmap (foldMap f) . NE.fromList . transpose . fmap toList $ toList mapping
+             where
+               f (x,_,_,_) = foldMap (foldMap (Set.fromList . toList)) x
+
+        removeExtraneousSymbols :: Set String
+                                -> (Maybe ParsedChar, ParsedCharacterMetadata, TCM, CharacterName)
+                                -> (Maybe ParsedChar, ParsedCharacterMetadata, TCM, CharacterName)
         removeExtraneousSymbols observedSymbols input@(charMay, charMetadata, tcm, charName)
           | onull missingSymbolIndicies = input
           | otherwise                   = (charMay, charMetadata { alphabet = reducedAlphabet }, reducedTCM, charName)
           where
-            missingSymbolIndicies = foldMapWithKey (\x -> if x `notElem` observedSymbols then IS.singleton x else mempty) suppliedAlphabet
+            missingSymbolIndicies = foldMapWithKey (\k v -> if v `notElem` observedSymbols then IS.singleton k else mempty) suppliedAlphabet
             suppliedAlphabet      = alphabet charMetadata
             reducedAlphabet       =
                 case alphabetStateNames suppliedAlphabet of
@@ -197,112 +213,59 @@ joinSequences2 = collapseAndMerge . reduceAlphabets . deriveCorrectTCMs . derive
                   xs -> fromSymbolsWithStateNames . reduceTokens $ zip (alphabetSymbols suppliedAlphabet) xs
               where
                 reduceTokens = foldMapWithKey (\k v -> if k `oelem` missingSymbolIndicies then [] else [v])
-            reducedTCM = TCM.generate (TCM.size tcm - length missingSymbolIndicies) f
+            reducedTCM = TCM.generate (TCM.size tcm - olength missingSymbolIndicies) f
               where
                 f (i,j) = tcm TCM.! (i', j')
                   where
                     i' = i + iOffset
-                    j' = j + iOffset
+                    j' = j + jOffset
                     xs = otoList missingSymbolIndicies
                     iOffset = length $ filter (<=i) xs
-                    jOffest = length $ filter (<=j) xs
+                    jOffset = length $ filter (<=j) xs
 
-            
-
-    collapseAndMerge = undefined -- fst . foldl' f (mempty, [])
-    {-
+    collapseAndMerge = fmap fromBlocks . fst . foldl' f (mempty, [])
       where
-        f :: (Map String (NonEmpty (Maybe ParsedChar, ParsedCharacterMetadata, Maybe TCM, CharacterName))
-             ,                    [(Maybe ParsedChar, ParsedCharacterMetadata, Maybe TCM, CharacterName)]
-             )
-          ->  Map String (NonEmpty (Maybe ParsedChar, ParsedCharacterMetadata, Maybe TCM, CharacterName))
-          -> (Map String (NonEmpty (Maybe ParsedChar, ParsedCharacterMetadata, Maybe TCM, CharacterName))
-             ,                    [(Maybe ParsedChar, ParsedCharacterMetadata, Maybe TCM, CharacterName)]
-             )
+        f :: (Map String (NonEmpty (CharacterBlock StaticCharacterBlock DynamicChar)), [CharacterBlock StaticCharacterBlock DynamicChar])
+          ->  Map String (NonEmpty (Maybe ParsedChar, ParsedCharacterMetadata, TCM, CharacterName))
+          -> (Map String (NonEmpty (CharacterBlock StaticCharacterBlock DynamicChar)), [CharacterBlock StaticCharacterBlock DynamicChar])
         f (prevMapping, prevPad) currTreeChars = (nextMapping, nextPad)
           where
             nextMapping    = inOnlyPrev <> inBoth <> inOnlyCurr
             nextPad        = prevPad <> toList currPad -- generate (length nextMetaData) (const Nothing)
 
             currPad        = fmap toMissingCharacters . head $ toList currMapping
-            currMapping    = currTreeChars
+            currMapping    = pure . encodeToBlock <$> currTreeChars
 
-        -- TODO: complete this!
-            inBoth          = undefined -- intersectionWith f oldTreeChars nextTreeChars
---          where
---            g old new = old <> Node.encode
-
-            inOnlyCurr   = (prepend prevPad) <$> getUnique currMapping prevMapping
-            inOnlyPrev   = (<>      currPad) <$> getUnique prevMapping currMapping
+            inBoth         = intersectionWith (<>) prevMapping currMapping-- oldTreeChars nextTreeChars
+            inOnlyCurr     = (prepend prevPad) <$> getUnique currMapping prevMapping
+            inOnlyPrev     = (<>      currPad) <$> getUnique prevMapping currMapping
         
             getUnique x y = x `Map.restrictKeys` (lhs `Set.difference` rhs)
               where
                 lhs = Set.fromList $ keys x
                 rhs = Set.fromList $ keys y
 
-        -- Necisarry for mixing [] with NonEmpty
-        prepend :: [a] -> NonEmpty a -> NonEmpty a
-        prepend list ne =
-          case list of
-            []   -> ne
-            x:xs -> x :| (xs <> toList ne)
-
-        createMissingCharacter (charMay, meta, tcmMay, charName) = undefined
--}
-
-
-
-{-    
-    f :: (Map String (NonEmpty (CharacterBlock StaticCharacterBlock DynamicChar)), [CharacterBlock StaticCharacterBlock DynamicChar])
-      ->  Map String (NonEmpty (Maybe ParsedChar, ParsedCharacterMetadata, Maybe TCM, CharacterName))
-      -> (Map String (NonEmpty (CharacterBlock StaticCharacterBlock DynamicChar)), [CharacterBlock StaticCharacterBlock DynamicChar])
-    f (prevMapping, prevPad) currTreeChars = (nextMapping, nextPad)
-      where
-        nextMapping    = inOnlyPrev <> inBoth <> inOnlyCurr
-        nextPad        = prevPad <> toList currPad -- generate (length nextMetaData) (const Nothing)
-
-        currPad        = fmap toMissingCharacters . head $ toList currMapping
-        currMapping    = pure . encodeToBlock <$> currTreeChars
-
-        -- TODO: complete this!
-        inBoth          = undefined -- intersectionWith f oldTreeChars nextTreeChars
---          where
---            g old new = old <> Node.encode
-
-        inOnlyCurr   = (prepend prevPad) <$> getUnique currMapping prevMapping
-        inOnlyPrev   = (<>      currPad) <$> getUnique prevMapping currMapping
-        
-        getUnique x y = x `Map.restrictKeys` (lhs `Set.difference` rhs)
-          where
-            lhs = Set.fromList $ keys x
-            rhs = Set.fromList $ keys y
-
-        encodeToBlock :: Foldable1 t
-                      => t (Maybe ParsedChar, ParsedCharacterMetadata, Maybe TCM, CharacterName)
-                      -> CharacterBlock StaticCharacterBlock DynamicChar
-        encodeToBlock = foldMap1 encodeBinToSingletonBlock
-          where
-            encodeBinToSingletonBlock :: (Maybe ParsedChar, ParsedCharacterMetadata, Maybe TCM, CharacterName)
-                                      -> CharacterBlock StaticCharacterBlock DynamicChar
-            encodeBinToSingletonBlock (charMay, charMeta, tcmMay, charName)
-              | isDynamic charMeta = dynamicSingleton  specifiedAlphabet charName specifiedTcm (encodeStream specifiedAlphabet) charMay
-              | otherwise          = discreteSingleton specifiedAlphabet charName specifiedTcm staticTransform charMay
+            encodeToBlock :: Foldable1 t
+                          => t (Maybe ParsedChar, ParsedCharacterMetadata, TCM, CharacterName)
+                          -> CharacterBlock StaticCharacterBlock DynamicChar
+            encodeToBlock = foldMap1 encodeBinToSingletonBlock
               where
-                specifiedTcm      = fromMaybe defaultTCM $ tcmMay <|> parsedTCM charMeta
-                specifiedAlphabet = alphabet charMeta
-                defaultTCM        = TCM.generate (length specifiedAlphabet) $ \(i,j) -> (if i == j then 0 else 1 :: Int)
-                missingSize       = length specifiedAlphabet
-                missingCharValue  = pure . NE.fromList $ toList specifiedAlphabet
-                staticTransform   = encodeStream specifiedAlphabet . fromMaybe missingCharValue
+                encodeBinToSingletonBlock :: (Maybe ParsedChar, ParsedCharacterMetadata, TCM, CharacterName)
+                                          -> CharacterBlock StaticCharacterBlock DynamicChar
+                encodeBinToSingletonBlock (charMay, charMeta, tcm, charName)
+                  | isDynamic charMeta = dynamicSingleton  specifiedAlphabet charName tcm (encodeStream specifiedAlphabet) charMay
+                  | otherwise          = discreteSingleton specifiedAlphabet charName tcm staticTransform charMay
+                  where
+                    specifiedAlphabet = alphabet charMeta
+                    missingCharValue  = pure . NE.fromList $ toList specifiedAlphabet
+                    staticTransform   = encodeStream specifiedAlphabet . fromMaybe missingCharValue
 
-        -- Necisarry for mixing [] with NonEmpty
-        prepend :: [a] -> NonEmpty a -> NonEmpty a
-        prepend list ne =
-          case list of
-            []   -> ne
-            x:xs -> x :| (xs <> toList ne) 
-
--}
+            -- Necisarry for mixing [] with NonEmpty
+            prepend :: [a] -> NonEmpty a -> NonEmpty a
+            prepend list ne =
+              case list of
+                []   -> ne
+                x:xs -> x :| (xs <> toList ne) 
 
 {-
         encodeCharacters :: (Foldable t, Foldable t') => t StandardMetadata -> t' (Maybe ParsedChar) -> CharacterBlock StaticCharacter DynamicChar
