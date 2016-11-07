@@ -15,4 +15,4 @@ extra-deps:
 - lens-4.15.1
 - math-functions-0.2.0.1
 - megaparsec-5.0.0
-resolver: lts-7.3
+resolver: lts-7.7
