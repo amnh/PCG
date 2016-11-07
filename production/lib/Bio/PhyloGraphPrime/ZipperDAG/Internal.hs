@@ -19,6 +19,7 @@
 module Bio.PhyloGraphPrime.ZipperDAG.Internal where
 
 import Data.Bifunctor
+import Data.Monoid 
 
 -- |
 -- A node in the zipper structure.
@@ -163,9 +164,10 @@ zipperEdgeChild (ZEdge dir _ lhs rhs) =
       Rightward -> rhs
 
 
--- TODO: Make a nice monadic rendering here with depth and stacks.
-{-
-instance (Show e, Show n) =>  Show (ZipperNode e a) where
-
-    show ZNode n [ZipperEdge n e]
--}
+-- | Build the graph functionally from a generating function.
+unfoldDAG :: (b -> ([(e,b)], n, [(e,b)])) -> b -> ZipperNode e n
+unfoldDAG f origin = ZNode nDatum $ (pApply <$> parents) <> (cApply <$> children)
+  where
+    (parents, nDatum, children) = f origin
+    pApply (eDatum, seed) = IEdge Leftward  eDatum (unfoldDAG f seed)
+    cApply (eDatum, seed) = IEdge Rightward eDatum (unfoldDAG f seed)

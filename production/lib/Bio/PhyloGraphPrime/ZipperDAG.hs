@@ -20,6 +20,8 @@ module Bio.PhyloGraphPrime.ZipperDAG
   , zipperEdgeChild
   , zipperEdgeParent
   , zipperEdges
+    -- * Construction
+  , unfoldDAG
   ) where
 
 import Bio.PhyloGraphPrime.ZipperDAG.Internal
