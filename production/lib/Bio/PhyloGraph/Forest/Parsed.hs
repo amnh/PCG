@@ -56,6 +56,26 @@ class ParsedForest a where
 
 
 -- | (✔)
+instance ParsedForest FastaParseResult where
+    unifyGraph = const Nothing
+
+
+-- | (✔)
+instance ParsedForest FastcParseResult where
+    unifyGraph = const Nothing
+
+
+-- | (✔)
+instance ParsedForest TaxonSequenceMap where
+    unifyGraph = const Nothing
+
+
+-- | (✔)
+instance ParsedForest TCM where
+    unifyGraph = const Nothing
+
+
+-- | (✔)
 instance ParsedForest NewickForest where
     unifyGraph = fmap (PhylogeneticForest . fmap (coerceTree . relationMap . enumerate)) . nonEmpty
       where
@@ -110,28 +130,14 @@ instance ParsedForest NewickForest where
               
 
 -- | (✔)
-instance ParsedForest FastaParseResult where
-    unifyGraph = const Nothing
-
-
--- | (✔)
-instance ParsedForest TaxonSequenceMap where
-    unifyGraph = const Nothing
-
-
--- | (✔)
-instance ParsedForest FastcParseResult where
-    unifyGraph = const Nothing
-
-{--}
--- | (✔)
 instance ParsedForest TntResult where
     unifyGraph input =
         case input of
           Left                forest  -> PhylogeneticForest . fmap (coerceTree . enumerate getTNTName) <$> Just     forest
           Right (WithTaxa _ _ forest) -> PhylogeneticForest . fmap (coerceTree . enumerate fst       ) <$> nonEmpty forest
       where
-        -- fmap (PhylogeneticForest . fmap (coerceTree . relationMap . enumerate)) . nonEmpty
+
+        -- | Apply the generating function referencing the relational mapping.
         coerceTree mapping = unfoldDAG f 0
           where
             f i = (g $ maybeToList parentMay, datum, g childRefs)
@@ -139,7 +145,7 @@ instance ParsedForest TntResult where
                 (parentMay, datum, childRefs) = mapping ! i
                 g = fmap (\j -> (Nothing, j))
 
-        -- We assign a unique index to each node by converting the node to a NewickEnum type.
+        -- | We assign a unique index to each node and creating an adjcentcy matrix.
         enumerate :: (n -> String) -> LeafyTree n -> IntMap (Maybe Int, Maybe String, [Int])
         enumerate toLabel = (\(_,_,x) -> x) . f Nothing 0
           where
@@ -161,11 +167,6 @@ instance ParsedForest TntResult where
               Index  i -> show i
               Name   n -> n
               Prefix s -> s
-
-
--- | (✔)
-instance ParsedForest TCM where
-    unifyGraph = const Nothing
 
 
 {-
