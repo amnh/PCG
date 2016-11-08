@@ -148,7 +148,7 @@ joinNonUniqueLabeledNodes root = joinNonUniqueLabeledNodes' [] root
     -- combined descendant lists for substituting labeled node descendants
     -- in a second pass over the Newick Tree.
     joinedNodes :: Map String [NewickNode]
-    joinedNodes = foldl joinNodes empty labeledNodes
+    joinedNodes = foldl joinNodes mempty labeledNodes
       where
         labeledNodes           = filter (isJust . newickLabel) $ toList' root 
         joinNodes :: Map String [NewickNode] -> NewickNode -> Map String [NewickNode]
