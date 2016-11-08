@@ -17,11 +17,7 @@ module Bio.PhyloGraph.Forest.Parsed where
 
 import           Bio.PhyloGraphPrime.Forest
 import           Bio.PhyloGraphPrime.ZipperDAG
-
--- import           Bio.PhyloGraph.Forest.Internal
-
 import           Data.Foldable
-import           Data.Tree
 import           Data.IntMap                              (IntMap)
 import qualified Data.IntMap                       as IM
 import           Data.Key
@@ -37,9 +33,9 @@ import           File.Format.Newick
 import           File.Format.Nexus                 hiding (TaxonSequenceMap)
 import           File.Format.TNT
 import           File.Format.TransitionCostMatrix
-import           File.Format.VertexEdgeRoot.Parser        (VertexEdgeRoot(..),VertexLabel)
+import           File.Format.VertexEdgeRoot.Parser        (VertexEdgeRoot(..), VertexLabel)
 import qualified File.Format.VertexEdgeRoot.Parser as VER
-import Prelude hiding (lookup, scanr)
+import           Prelude                           hiding (lookup)
 
 
 type ParserTree   = ZipperNode (Maybe Double) (Maybe String)
@@ -79,6 +75,8 @@ instance ParsedForest TCM where
 instance ParsedForest NewickForest where
     unifyGraph = fmap (PhylogeneticForest . fmap (coerceTree . relationMap . enumerate)) . nonEmpty
       where
+
+        -- Apply generating function by indexing adjacentcy matrix.
         coerceTree mapping = unfoldDAG (mapping !) 0
 
         -- We assign a unique index to each node by converting the node to a NewickEnum type.
@@ -105,7 +103,7 @@ instance ParsedForest NewickForest where
                                   case newickLabel node of
                                     Nothing -> seen'
                                     Just x  -> seen' <> Map.singleton x enumed
-                            in  (seen'', n + 1, enumed)
+                            in  (seen'', n', enumed)
 
         -- We use the unique indicies from the 'enumerate' step to build a local connectivity map.
         relationMap :: NewickEnum -> IntMap ([(Maybe Double, Int)], Maybe String, [(Maybe Double, Int)])
@@ -133,9 +131,12 @@ instance ParsedForest NewickForest where
 instance ParsedForest TntResult where
     unifyGraph input =
         case input of
-          Left                forest  -> PhylogeneticForest . fmap (coerceTree . enumerate getTNTName) <$> Just     forest
-          Right (WithTaxa _ _ forest) -> PhylogeneticForest . fmap (coerceTree . enumerate fst       ) <$> nonEmpty forest
+          Left                forest  -> toPhylogeneticForest getTNTName <$> Just     forest
+          Right (WithTaxa _ _ forest) -> toPhylogeneticForest fst        <$> nonEmpty forest
       where
+
+        -- | Propper fmapping over Maybes and NonEmptys
+        toPhylogeneticForest f = PhylogeneticForest . fmap (coerceTree . enumerate f)
 
         -- | Apply the generating function referencing the relational mapping.
         coerceTree mapping = unfoldDAG f 0
