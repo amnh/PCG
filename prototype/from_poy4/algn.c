@@ -1848,9 +1848,9 @@ FILL_CLOSE_BLOCK_DIAGONAL_NOBT(SEQT si_base, SEQT sj_base, SEQT si_no_gap,
 }
 
 DIRECTION_MATRIX
-FILL_CLOSE_BLOCK_DIAGONAL(SEQT si_base, SEQT sj_base, SEQT si_no_gap, 
-                          SEQT sj_no_gap, int si_gap_opening, int sj_gap_opening, int j, 
-                          const int *c, int *close_block_diagonal, 
+FILL_CLOSE_BLOCK_DIAGONAL(SEQT si_base, SEQT sj_base, SEQT si_no_gap, SEQT sj_no_gap, 
+                          int si_gap_opening, int sj_gap_opening, int j, const int *c, 
+                          int *close_block_diagonal, 
                           const int *prev_close_block_diagonal, const int *prev_extend_vertical, 
                           const int *prev_extend_horizontal, const int *prev_extend_block_diagonal, 
         DIRECTION_MATRIX direction_matrix) {
@@ -1908,8 +1908,10 @@ enum MODE { m_todo, m_vertical, m_horizontal, m_diagonal, m_align } backtrace_mo
 
 
 void
-backtrace_affine (DIRECTION_MATRIX *direction_matrix, const seq_p longSeq, const seq_p shortSeq, 
-                  seq_p median, seq_p medianwg, seq_p retLongSeq, seq_p retShortSeq, const cost_matrices_2d_p costMtx) {
+backtrace_affine (DIRECTION_MATRIX *direction_matrix, 
+                  const seq_p longSeq, const seq_p shortSeq, seq_p median, 
+                  seq_p medianwg, seq_p retLongSeq, seq_p retShortSeq, 
+                  const cost_matrices_2d_p costMtx) {
 #define HAS_FLAG(flag) (*direction_matrix & flag)
     enum MODE mode = m_todo;
     int shortIdx, longIdx, lenShortSeq, lenLongSeq;
@@ -2067,7 +2069,7 @@ print_dirMtx (char *title, DIRECTION_MATRIX *arr, int max) {
     return;
 }
 
-// TODO: what is this?
+// nobt: no backtrack
 void
 initialize_matrices_affine_nobt (int go, const seq_p si, const seq_p sj, 
                                  const cost_matrices_2d_p c, 
@@ -2144,8 +2146,8 @@ initialize_matrices_affine (int go, const seq_p shortSeq, const seq_p longSeq,
     int *prev_extend_vertical;
     const int *gap_row;
     SEQT longSeqElem, longSeqPrevElem, shortSeqElem, shortSeqPrevElem;
-    lenShortSeq = seq_get_len(shortSeq) - 1; //TODO: is this for deleting opening gap?
-    lenLongSeq = seq_get_len(longSeq) - 1; //TODO: is this for deleting opening gap?
+    lenShortSeq = seq_get_len(shortSeq) - 1; //TODO: is this for deleting opening gap? This is currently unused
+    lenLongSeq  = seq_get_len(longSeq)  - 1; //TODO: is this for deleting opening gap?
     final_cost_matrix[0]     = 0;
     close_block_diagonal[0]  = 0;
     extend_block_diagonal[0] = 0;
@@ -2164,9 +2166,9 @@ initialize_matrices_affine (int go, const seq_p shortSeq, const seq_p longSeq,
         print_dirMtx ("DM: ", direction_matrix,     lenLongSeq);
     }
     for (; j <= lenLongSeq; j++) {
-        longSeqElem = seq_get_element(longSeq, j);
+        longSeqElem     = seq_get_element(longSeq, j);
         longSeqPrevElem = seq_get_element(longSeq, j - 1);
-        r  = extend_horizontal[j - 1] + gap_row[j];
+        r = extend_horizontal[j - 1] + gap_row[j];
 
         extend_horizontal[j]     = r;
         close_block_diagonal[j]  = r;

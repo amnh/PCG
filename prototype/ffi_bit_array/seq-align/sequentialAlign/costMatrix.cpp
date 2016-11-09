@@ -2,26 +2,26 @@
 
 CostMatrix::CostMatrix() {
     alphabetSize = 2;
+
 }
 
 CostMatrix::CostMatrix(int alphSz) {
     alphabetSize = alphSz;
+    myMatrix 
 }
 
 CostMatrix::~CostMatrix() {}
 
-int getCost(uint64_t left, uint64_t right, uint64_t& retMedian) {
+int getCost(dcElement_t& left, dcElement_t& right, dcElement_t& retMedian) {
     keys toLookup (left, right);  
-    costMedian computedCostMed;   // value returned from computeCostMedian()
-    std::unordered_map<keys, costMedian>::const_iterator found;
+    std::unordered_map<keys, costMedian, KeyHash, KeyEqual>::const_iterator found;
     int foundCost;
 
     found = myMap.find (toLookup);
 
     if ( found == myMatrix.end() ) {
-        computedCostMed = computeCostMedian(toLookup);
-        foundCost       = computedCostMed->first;
-        retMedian       = computedCostMed->second;
+        retMedian->element = computeCostMedian (toLookup);
+        foundCost          = computedCostMed->first;
 
         setValue (toLookup, computedCostMed);
     } else {
@@ -32,8 +32,34 @@ int getCost(uint64_t left, uint64_t right, uint64_t& retMedian) {
     return foundCost;
 }
 
-costMedian computeCostMedian(keys key) {
-    
+costMedian computeCostMedian(keys& key) {
+    for (SEQT ambElem1 = 1; ambElem1 <= 31; ambElem1++) { // for every possible value of ambElem1, ambElem2
+        for (SEQT ambElem2 = 1; ambElem2 <= 31; ambElem2++) {
+                curCost = 0; // don't actually need to initialize this
+                minCost = INT_MAX; 
+                median  = 0;
+                for (int nucleotide = 1; nucleotide <= alphSize; nucleotide++) {
+                    curCost = distance (key) +
+                                distance (tcm, alphSize, retMtx->lcm, nucleotide, ambElem2);
+                    // now seemingly recreating logic in distance(), but that was to get the cost for each
+                    // ambElem; now we're combining those costs get overall cost and median
+                    if (curCost < minCost) {
+                        minCost = curCost;
+                        median  = 1 << (nucleotide - 1); 
+                    } else if (curCost2d == minCost2d) {
+                        median |= 1 << (nucleotide - 1); 
+                    }
+                } // nucleotide
+                            
+            } // ambElem2
+            // printf("ambElem1:  %2hhu,   ambElem2: %2hhu\n", ambElem1, ambElem2);
+            // printf("median: %2d,   min:   %2d\n", median2d, minCost2d);
+            cm_set_cost_2d   (ambElem1, ambElem2, minCost2d, (cost_matrices_2d_p) retMtx);
+            cm_set_median_2d (ambElem1, ambElem2, median2d,  (cost_matrices_2d_p) retMtx);
+            // if (power_2(ambElem1) && power_2(ambElem2)) {
+            //     printf("2d    seq1: %d,    seq2: %d,    cost: %d,    median: %2d\n", ambElem1, ambElem2, minCost2d, median2d);
+            // }
+    } // ambElem1
 }
 
 /** Find distance between an ambiguous nucleotide and an unambiguous ambElem. Return that value and the median. 
@@ -47,7 +73,7 @@ costMedian computeCostMedian(keys key) {
  *
  *  Requires symmetric, if not metric, matrix.
  */
-int distance (keys key) {
+int distance (keys& key) {
 
     int min     = INT_MAX;
     int curCost = 0;
@@ -97,20 +123,3 @@ void computeInitialMatrix (size_t alphSize) {
         } // ambElem2
     }
 }
-
-template <typename T>
-void hash_combine(size_t& seed, const T* v, size_t curLoc, size_t length) {
-    std::hash<T> hasher;
-    while (length > curLoc) {
-        seed ^= hasher(v[curLoc]) + 0x9e3779b9 + (seed<<6) + (seed>>2);
-        curLoc++;
-    }
-}
-
-template <typename T>
-void hash_combine(size_t& seed, T lhs, T rhs) {
-    std::hash<T> hasher;
-    seed ^= hasher(lhs) + 0x9e3779b9 + (seed<<6) + (seed>>2);
-    seed ^= hasher(rhs) + 0x9e3779b9 + (seed<<6) + (seed>>2);
-}
-
