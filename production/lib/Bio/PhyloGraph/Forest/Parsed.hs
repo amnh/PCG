@@ -170,15 +170,42 @@ instance ParsedForest TntResult where
               Prefix s -> s
 
 
-{-
+{- -}
 -- | (✔)
 instance ParsedForest VER.VertexEdgeRoot where
-    unifyGraph ver = fmap (convertToDAG) $ roots ver
+    unifyGraph (VER vs es rs) = fmap convertToDAG . NE.fromList $ toList disconnectedRoots
       where
-        convertToDAG rootLabel = 
+
+        childMapping = foldMap f vs
           where
-            children 
--}
+            f v = Map.singleton v $ foldMap g es
+              where
+                g e
+                  | edgeOrigin e == v = [edgeTarget e]
+                  | otherwise         = []
+
+        parentMapping = foldMap f vs
+          where
+            f v = Map.singleton v $ foldMap g es
+              where
+                g e
+                  | edgeTarget e == v = [edgeOrigin e]
+                  | otherwise         = []
+
+        disconnectedRoots = foldl' f rs rs
+          where
+            f remainingRoots r
+              | r `notElem` remainingRoots = remainingRoots
+              | otherwise                  = (`Set.delete` remainingRoots) connectedRoots
+              where
+                connectedRoots = isConnected r <$> remainingRoots
+
+            isConnected r1 r2 = 
+
+              
+        convertToDAG rootLabel = undefined
+        
+{- -}
 
 
 -- | (✔)
