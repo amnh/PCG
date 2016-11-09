@@ -16,6 +16,7 @@
 module Bio.Character.Parsed.Class where
 
 import           Bio.Character.Parsed.Internal
+import           Control.Arrow             ((&&&))
 import           Data.Bifunctor            (second)
 import           Data.Foldable
 import           Data.List.NonEmpty        (NonEmpty)
@@ -33,6 +34,7 @@ import           File.Format.Nexus  hiding (TaxonSequenceMap)
 import           File.Format.TNT
 import           File.Format.TransitionCostMatrix
 import           File.Format.VertexEdgeRoot
+
 
 -- TODO: Make sure that pipelines don't undo and redo the conversion to treeSeqs
 -- currently we pack and unpack codes, make parsers dumber in the future. Read below!
@@ -143,6 +145,6 @@ instance ParsedCharacters VertexEdgeRoot where
               | otherwise = foldl1 (<>) $ f <$> subForest node
             buildTree name = Node name kids
                 where
-                    kids = fmap (buildTree . snd) . filter ((==name) . fst) $ edgeConnection <$> es
+                    kids = fmap (buildTree . snd) . filter ((==name) . fst) $ (edgeOrigin &&& edgeTarget) <$> es
 
 

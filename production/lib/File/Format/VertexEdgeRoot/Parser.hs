@@ -18,63 +18,71 @@
 module File.Format.VertexEdgeRoot.Parser where
 
 import Data.Char              (isSpace)
-import Data.Functor           (($>))
 import Data.Either            (partitionEithers)
-import Data.List              (delete,partition,maximumBy,sortBy)
+import Data.Foldable
+import Data.Functor           (($>))
+import Data.List              (delete, intercalate, partition, maximumBy, sortBy)
 import Data.List.Utility      (duplicates)
-import Data.Map               (Map,empty,insert,lookup)
-import Data.Maybe             (catMaybes,fromMaybe)
+import Data.Map               (Map, insert, lookup)
+import Data.Maybe             (catMaybes, fromMaybe, maybeToList)
+import Data.Monoid
 import Data.Ord               (comparing)
-import Data.Set               (Set,elems,fromList,size)
+import Data.Set               (Set, fromList, size)
 import Prelude         hiding (lookup)
 import Text.Megaparsec
 import Text.Megaparsec.Custom
 import Text.Megaparsec.Prim   (MonadParsec)
 
+
 -- | A textual identifier for a node in the graph
-type VertexLabel   = String
+type  VertexLabel   = String
+
 
 -- | The possibly calculated distance between two nodes in the graph
-type EdgeLength    = Maybe Double
+type  EdgeLength    = Maybe Double
+
 
 -- | The two types of sets of nodes present in a VER file
-data VertexSetType = Vertices | Roots deriving (Eq,Show)
+data  VertexSetType = Vertices | Roots deriving (Eq,Show)
+
 
 -- | Connection between two nodes in the graph along with the distance of the connection
 --   Edges are interpred as bidirectional when read in and given direction when interpreted
 --   relative to the root of the tree.
-data EdgeInfo      = EdgeInfo (VertexLabel,VertexLabel) EdgeLength deriving (Show,Eq,Ord)
+data  EdgeInfo
+    = EdgeInfo
+    { edgeOrigin :: VertexLabel
+    , edgeTarget :: VertexLabel
+    , edgeLength :: EdgeLength
+    } deriving (Eq, Ord)
+
 
 -- | Collection of Vericies, roots, and edges representing a "Phylogenetic Forest"
-data VertexEdgeRoot
-   = VER
-   { vertices :: Set VertexLabel
-   , edges    :: Set EdgeInfo
-   , roots    :: Set VertexLabel
-   } deriving (Show, Eq)
+data  VertexEdgeRoot
+    = VER
+    { vertices :: Set VertexLabel
+    , edges    :: Set EdgeInfo
+    , roots    :: Set VertexLabel
+    } deriving (Show, Eq)
 
--- | Returns the `EdgeInfo as a tuple of 'VertexLabel's satisfying the constraint:
---
--- > let (a,b) = edgeConnection e in a <= b
-edgeConnection :: EdgeInfo -> (VertexLabel,VertexLabel)
-edgeConnection (EdgeInfo (a,b) _)
-  | a <= b    = (a,b)
-  | otherwise = (b,a)
+
+instance Show EdgeInfo where
+  show (EdgeInfo x y c) = mconcat $ ["(", show x, ", ", show y, ")"] <> renderCost c
+    where
+      renderCost = fmap ((":" <>) . show) . maybeToList
+
 
 -- | For a given vertex, attempts to get the connected vertex from the 'EdgeInfo'.
 --   If the input vertex was present in the 'EdgeInfo', returns 'Just v' where
 --   'v' is the corresponsing 'VertexLabel'. If the input vertex was not present
 --   in the 'EdgeInfo'.
 connectedVertex :: VertexLabel -> EdgeInfo -> Maybe VertexLabel
-connectedVertex v (EdgeInfo (a,b) _)
+connectedVertex v (EdgeInfo a b _)
   | v == a    = Just b
   | v == b    = Just a
   | otherwise = Nothing
 
--- | Extract the edge length value from the 'EdgeInfo'.
-edgeLength :: EdgeInfo -> Maybe Double
-edgeLength (EdgeInfo (_,_) n) = n
-                               
+
 -- | Reads two vertex sets and an edge set, conditionally infers the root set
 -- when vertex sets are unlabeled. Ensures that the elements of the root set
 -- are not connected in the forest. Ensures that the rooted trees in the
@@ -82,6 +90,7 @@ edgeLength (EdgeInfo (_,_) n) = n
 verStreamParser :: (MonadParsec e s m, Token s ~ Char) => m VertexEdgeRoot
 verStreamParser = validateForest =<< verDefinition
     
+
 -- We have a complicated definition here because we do not want to restrict
 -- the order of the set definitions, and yet we must enforce that there is 
 -- only one edge set and two vertex sets. One vertex set is the set of all 
@@ -129,6 +138,7 @@ verDefinition = do
     messages name (_:_:_)   = [message "Multiple" (name++"s")]
     message x y             = concat [x," ",y," defined in input"]
 
+
 -- | We read a set from the input. The set can be an edge set or a vertex set.
 -- If it is a vertex set, it may be labeled as a specific set of verticies or
 -- a set of roots. We use the Either type as a return type to denote the 
@@ -140,11 +150,13 @@ setDefinition = do
       Just x  -> pure $ Left x
       Nothing -> Right <$> vertexSetDefinition
 
+
 -- | A vertex set can be labeled or unlabeled. We first attempt to read in a 
 -- labeled vertex set, and if that fails an unlabeled vertex set. The label
 -- is returned contidionally in a Maybe type.
 vertexSetDefinition :: (MonadParsec e s m, Token s ~ Char) => m (Maybe VertexSetType, Set VertexLabel)
 vertexSetDefinition = try labeledVertexSetDefinition <|> unlabeledVertexSetDefinition
+
 
 -- | A labeled vertex set contains a label followed by an unlabeled vertex set
 labeledVertexSetDefinition :: (MonadParsec e s m, Token s ~ Char) => m (Maybe VertexSetType, Set VertexLabel )
@@ -154,6 +166,7 @@ labeledVertexSetDefinition = do
     (_,set) <- unlabeledVertexSetDefinition
     pure (Just setType, set)
 
+
 -- | A vertex set label is one of the following case insensative strings:
 -- "vertexset", rootset"
 vertexSetType :: (MonadParsec e s m, Token s ~ Char) => m VertexSetType
@@ -162,6 +175,7 @@ vertexSetType = do
     case value of
       Just _  -> pure Vertices
       Nothing -> symbol (string' "RootSet") $> Roots
+
 
 -- | A vertex set with an optional set label enclosed in braces.
 -- A vertex set cannot have duplicate verticies
@@ -182,12 +196,14 @@ unlabeledVertexSetDefinition = validateVertexSet =<< unlabeledVertexSetDefinitio
         dupes = duplicates vs
         errorMessage = "The following verticies were defined multiple times: " ++ show dupes
 
+
 -- | A vertex label is any non-scpace character that is also not a brace, paren, or comma.
 vertexLabelDefinition :: (MonadParsec e s m, Token s ~ Char) => m String
 vertexLabelDefinition = some validChar
   where
     validChar = satisfy $ \x -> x `notElem` "{}(),"
                              && (not . isSpace) x
+
 
 -- | Parses an edge set with an optional edge set label.
 -- Edges cannot be from one node to the same node.
@@ -211,16 +227,37 @@ edgeSetDefinition = validateEdgeSet =<< edgeSetDefinition'
       | null errors = pure $ fromList es
       | otherwise   = fails errors
       where
-        edges' = edgeConnection <$> es
+        edges' = toTuple <$> es
         dupes  = duplicates edges'
         selfs  = filter (uncurry (==)) edges'
-        errors = case (dupes,selfs) of
-                   ([] ,[] ) -> []
-                   (_:_,[] ) -> [dupesErrorMessage]
-                   ([] ,_:_) -> [selfsErrorMessage] 
-                   (_:_,_:_) -> [dupesErrorMessage,selfsErrorMessage]
-        dupesErrorMessage = "Duplicate edges detected. The following edges were defined multiple times: "    ++ show dupes
-        selfsErrorMessage = "Self-referencing edge(s) detected.The following edge(s) are self=referencing: " ++ show selfs
+        biDirs :: [(EdgeInfo, EdgeInfo)]
+        biDirs = filter (uncurry isReflexive) $ [(x,y) | x <- es, y <- es, x /= y ]
+        errors = fmap snd $ filter (not . fst)
+            [ (null  dupes,         dupesErrorMessage)
+            , (null  selfs,         selfsErrorMessage)
+            , (null biDirs, biDirectionalErrorMessage)
+            ]
+          where
+            dupesErrorMessage = "Duplicate edges detected. The following edges were defined multiple times: "    <> show dupes
+            selfsErrorMessage = "Self-referencing edge(s) detected.The following edge(s) are self-referencing: " <> show selfs
+            biDirectionalErrorMessage = "One or more bidirectional edges detected: " <> biDirectionShow biDirs
+            biDirectionShow :: [(EdgeInfo, EdgeInfo)] -> String
+            biDirectionShow = (\x -> "[" <> x <> "]") . intercalate ", " . fmap g
+              where
+                g (lhs, rhs) = show lhs <> " <--> " <> show rhs
+              
+
+
+-- | Converts EdgeInfo to an tuple of VertexLabels, representing edge direction.
+toTuple :: EdgeInfo -> (VertexLabel, VertexLabel)
+toTuple (EdgeInfo x y _) = (x, y)
+
+
+-- | Determine if two edges satisfy the reflexive relation.
+isReflexive :: EdgeInfo -> EdgeInfo -> Bool
+isReflexive (EdgeInfo a b _) (EdgeInfo x y _) = a == y && b == x
+
+
 
 -- | Defines the serialized format of an edge connecting nodes 'a' and 'b' as '"(a,b)"'.
 -- Allows for optional "branch length" annotation as '"(a,b):12.34"'.
@@ -233,13 +270,15 @@ edgeDefinition = symbol $ do
     y <- symbol vertexLabelDefinition
     _ <- symbol (char ')')
     z <- optional $ try branchLengthDefinition
-    pure $ EdgeInfo (x,y) z
+    pure $ EdgeInfo x y z
   where
     branchLengthDefinition = symbol (char ':') *> symbol double
+
 
 -- | Convinence combinator to consume trailing whitespace.
 symbol :: (MonadParsec e s m, Token s ~ Char) => m a -> m a
 symbol x = x <* space
+
 
 -- | Validates a parse result to ensure that the resulting forest is internally consistent.
 -- A VER forest is not consistent if:
@@ -253,7 +292,7 @@ validateForest ver@(VER vs es rs )
   | (not.null) connectedRoots = fails $ manyRootsErrorMessage <$> connectedRoots
   | otherwise                 = pure ver
   where
-    rootList       = elems rs
+    rootList       = toList rs
     treeEdgeCycles = catMaybes       $ findCycle <$> rootList
     connectedRoots = filter manyList $ findRoots <$> rootList
     connections    = buildEdgeMap vs es
@@ -306,11 +345,12 @@ validateForest ver@(VER vs es rs )
       , show xs
       ]
 
+
 -- | Convience method for building a connection 'Map' based on the existing edges in the graph.
 buildEdgeMap :: Set VertexLabel -> Set EdgeInfo -> Map VertexLabel [VertexLabel]
-buildEdgeMap vs es = foldr buildMap empty vs
+buildEdgeMap vs es = foldr buildMap mempty vs
   where
-    edgeList       = edgeConnection <$> elems es
+    edgeList       = toTuple <$> toList es
     buildMap  node = insert node (connected node)
     connected node = catMaybes $ f <$> edgeList
       where

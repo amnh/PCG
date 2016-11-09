@@ -16,16 +16,17 @@ import           Test.QuickCheck
 import           Test.QuickCheck.Arbitrary.Instances ()
 
 
-
 -- | Function to generate an arbitrary DynamicChar given an alphabet
 arbitraryDynamicGivenAlph :: Alphabet String -> Gen DynamicChar
 arbitraryDynamicGivenAlph inAlph = do
     arbParsed <- arbitrary :: Gen ParsedChar -- TODO: Surely this also needs to depend on the alphabet?
-    pure . encodeStream inAlph . fmap NE.fromList . NE.fromList $ toList arbParsed
+    pure . encodeStream inAlph $ arbParsed
+
 
 -- | Generate many dynamic characters using the above
 arbitraryDynamicsGA :: Alphabet String -> Gen DynamicChars
 arbitraryDynamicsGA inAlph = V.fromList <$> listOf (arbitraryDynamicGivenAlph inAlph) 
+
 
 -- | An infinite list of (non-empty) 'DynamicChar's of fixed width and varying length.
 arbitraryDynamicCharStream :: Gen [DynamicChar]

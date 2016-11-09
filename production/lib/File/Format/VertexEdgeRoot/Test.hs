@@ -121,11 +121,11 @@ edgeDefinition' = testGroup "edgeDefinition" [validLines,invalidLines]
 
 validEdges :: [(EdgeInfo,String)]
 validEdges =
-  [ (EdgeInfo ("a","b")   Nothing   , "(a,b)"            )
-  , (EdgeInfo ("a","b")   Nothing   , " ( a , b ) "      )
-  , (EdgeInfo ("a","b") $ Just 42.0 , "(a,b):42"         )
-  , (EdgeInfo ("a","b") $ Just 1.337, "(a,b):1.337"      )
-  , (EdgeInfo ("a","b") $ Just 0.07 , " ( a , b ) : 0.07")
+  [ (EdgeInfo "a" "b"   Nothing   , "(a,b)"            )
+  , (EdgeInfo "a" "b"   Nothing   , " ( a , b ) "      )
+  , (EdgeInfo "a" "b" $ Just 42.0 , "(a,b):42"         )
+  , (EdgeInfo "a" "b" $ Just 1.337, "(a,b):1.337"      )
+  , (EdgeInfo "a" "b" $ Just 0.07 , " ( a , b ) : 0.07")
   ]
 
 invalidEdges :: [String]
@@ -154,10 +154,10 @@ validEdgeSets =
 
 invalidEdgeSets :: [String]
 invalidEdgeSets =
-  [ "{(a,b),(a,b)}"
-  , "{(a,b),(b,a)}"
-  , "{(a,b):1,(a,b):2}" -- still invalid
-  , "{(a,a)}" -- cannot be connected to yourself
+  [ "{(a,b),(a,b)}"     -- No dupes allowed
+  , "{(a,b):1,(a,b):2}" -- Still an invalid dupe
+  , "{(a,b),(b,a)}"     -- No bidirectional edges allowed
+  , "{(a,a)}"           -- Cannot be connected to yourself
   ]
 
 verStreamParser' :: TestTree
