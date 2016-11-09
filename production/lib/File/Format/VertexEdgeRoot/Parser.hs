@@ -17,21 +17,26 @@
 
 module File.Format.VertexEdgeRoot.Parser where
 
-import Data.Char              (isSpace)
-import Data.Either            (partitionEithers)
-import Data.Foldable
-import Data.Functor           (($>))
-import Data.List              (delete, intercalate, partition, maximumBy, sortBy)
-import Data.List.Utility      (duplicates)
-import Data.Map               (Map, insert, lookup)
-import Data.Maybe             (catMaybes, fromMaybe, maybeToList)
-import Data.Monoid
-import Data.Ord               (comparing)
-import Data.Set               (Set, fromList, size)
-import Prelude         hiding (lookup)
-import Text.Megaparsec
-import Text.Megaparsec.Custom
-import Text.Megaparsec.Prim   (MonadParsec)
+import           Data.Char                 (isSpace)
+import           Data.Either               (partitionEithers)
+import           Data.Foldable
+import           Data.Functor              (($>))
+import           Data.Key
+import           Data.List                 (delete, intercalate, partition, maximumBy, sortBy)
+import           Data.List.NonEmpty        (NonEmpty( (:|) ))
+import qualified Data.List.NonEmpty as NE
+import           Data.List.Utility         (duplicates)
+import           Data.Map                  (Map)
+import qualified Data.Map           as Map
+import           Data.Maybe                (catMaybes, fromMaybe, maybeToList)
+import           Data.Monoid
+import           Data.Ord                  (comparing)
+import           Data.Set                  (Set)
+import qualified Data.Set           as Set
+import           Prelude            hiding (lookup)
+import           Text.Megaparsec
+import           Text.Megaparsec.Custom
+import           Text.Megaparsec.Prim      (MonadParsec)
 
 
 -- | A textual identifier for a node in the graph
@@ -115,7 +120,7 @@ verDefinition = do
   where
     formVertexEdgeRoot x@(typeA, setA) y@(typeB, setB) edges' =
       case (typeA, typeB) of
-        (Nothing       , Nothing      ) -> let [m,n] = sortBy (comparing size) [setA,setB]
+        (Nothing       , Nothing      ) -> let [m,n] = sortBy (comparing length) [setA,setB]
                                            in pure $ VER n    edges' m
         (Nothing       , Just Vertices) ->    pure $ VER setB edges' setA
         (Nothing       , Just Roots   ) ->    pure $ VER setA edges' setB
@@ -190,7 +195,7 @@ unlabeledVertexSetDefinition = validateVertexSet =<< unlabeledVertexSetDefinitio
         pure (Nothing, labels')
 --    validateVertexSet :: (MonadParsec e s m, Token s ~ Char) => (Maybe VertexSetType, [VertexLabel]) -> m (Maybe VertexSetType, Set VertexLabel)
     validateVertexSet (t,vs)
-      | null dupes = pure (t, fromList vs)
+      | null dupes = pure (t, Set.fromList vs)
       | otherwise  = fail errorMessage
       where
         dupes = duplicates vs
@@ -224,7 +229,7 @@ edgeSetDefinition = validateEdgeSet =<< edgeSetDefinition'
 
 --    validateEdgeSet :: (MonadParsec e s m, Token s ~ Char) => [EdgeInfo] -> m (Set EdgeInfo)
     validateEdgeSet es
-      | null errors = pure $ fromList es
+      | null errors = pure $ Set.fromList es
       | otherwise   = fails errors
       where
         edges' = toTuple <$> es
@@ -283,79 +288,115 @@ symbol x = x <* space
 -- | Validates a parse result to ensure that the resulting forest is internally consistent.
 -- A VER forest is not consistent if:
 --
---   * Any two root nodes are connected
+--   * Any spcified root node has in-degree greater than 0
 --
---   * Any tree contains a cycle
+--   * A directed cycle exists
 validateForest :: (MonadParsec e s m {- , Token s ~ Char -}) => VertexEdgeRoot -> m VertexEdgeRoot
-validateForest ver@(VER vs es rs )
-  | (not.null) treeEdgeCycles = fails $ edgeCycleErrorMessage <$> treeEdgeCycles
-  | (not.null) connectedRoots = fails $ manyRootsErrorMessage <$> connectedRoots
-  | otherwise                 = pure ver
+validateForest ver@(VER vs es rs ) =
+    case errors of
+      [] -> pure ver
+      xs -> fails errors
   where
     rootList       = toList rs
-    treeEdgeCycles = catMaybes       $ findCycle <$> rootList
-    connectedRoots = filter manyList $ findRoots <$> rootList
     connections    = buildEdgeMap vs es
-    manyList []  = False
-    manyList [_] = False
-    manyList _   = True
-    -- Detect if the tree contains a cycle by consulting a stack
-    -- while performing a depth-first-search
-    findCycle :: VertexLabel -> Maybe (VertexLabel,[VertexLabel])
-    findCycle root
-      | null result = Nothing
-      | otherwise   = Just (root,result)
-      where
-        result = findCycle' [] Nothing root
-        findCycle' stack parent node
-          | cycleDetected = cycle'
-          | null children = []
-          | otherwise     = maximumBy (comparing length) childCycles
-          where
-            (inner,base)  = span (/=node) stack
-            cycleDetected = not $ null base
-            cycle'        = [node] ++ inner ++ [node]
-            childCycles   = findCycle' (node:stack) (Just node) <$> children
-            adjacentNodes = fromMaybe [] $ node `lookup` connections
-            children      = case parent of
-                              Just x  -> x `delete` adjacentNodes
-                              Nothing -> adjacentNodes
+    errors         = badRootErrorMessages <> cycleErrorMessages
 
+    -- |
+    badRoots :: Map VertexLabel (NonEmpty VertexLabel)
+    badRoots       = foldMap f rs
+      where
+        f rootLabel =
+            case foldMapWithKey g connections of
+              [] -> mempty
+              xs -> Map.singleton rootLabel $ NE.fromList xs
+          where
+            g k v
+              | rootLabel `elem` v = [k]
+              | otherwise          = []
+
+    -- |
+    -- Detect if the tree contains a cycle by consulting a stack
+    -- while performing a depth-first-search 
+    treeEdgeCycles = foldMap mergeCycles $ [ (x,y) | x <- resultList, y <- resultList, x <= y ]
+      where
+        resultList = catMaybes $ findCycle <$> rootList
+
+        -- We merge cycles to provide nice error messages when a netowrk has multiple roots.
+        mergeCycles ((r1,cycle1), (r2,cycle2))
+          | cycle1 == cycle2 && r1 /= r2 = [(r1:|[r2], cycle1)]
+          | otherwise                    = [(r1:|[]  , cycle1), (r2:|[], cycle2)]
+
+        findCycle :: VertexLabel -> Maybe (VertexLabel, NonEmpty VertexLabel)
+        findCycle root =
+            case result of
+              [] -> Nothing
+              xs -> Just (root, NE.fromList xs)
+          where
+            result = findCycle' [] root
+            findCycle' stack node
+              | cycleDetected = cycle'
+              | null children = []
+              | otherwise     = maximumBy (comparing length) childCycles
+              where
+                (inner, base) = span (/= node) stack
+                cycleDetected = not $ null base
+                cycle'        = [node] <> reverse inner <> [node]
+                childCycles   = findCycle' (node:stack) <$> toList children
+                children      = fromMaybe mempty $ node `lookup` connections
+
+{-
     -- Determine if multiple roots are connected by traversing the tree
     -- and checking each node for inclusion in the root set.
     findRoots :: VertexLabel -> [VertexLabel]
     findRoots root = findRoots' root root
       where
-        findRoots' parent node = selfRoot ++ descendantRoots
+        findRoots' parent node = selfRoot <> descendantRoots
           where
             selfRoot        = filter (`elem` rs) [node]
             descendantRoots = concat $ findRoots' node <$> children
             children        = parent `delete` adjacentNodes
             adjacentNodes   = fromMaybe [] $ node `lookup` connections
 
-    edgeCycleErrorMessage (r,xs) = concat
-      [ "In the tree rooted at '"
-      , show r
-      , "', the following cycle was detected: "
-      , show xs
-      ] 
     manyRootsErrorMessage xs = concat
       [ "Multiple root nodes detected in a single tree. "
       , "The following root nodes should form different trees, but thay are part of the same tree: "
       , show xs
       ]
+-}
+      
+    badRootErrorMessages :: [String]
+    badRootErrorMessages = foldMapWithKey f badRoots
+      where
+        f k v = pure $ mconcat
+            [ "Root node cannot have parents! For specified root node '"
+            , show k
+            , "' the following parent nodes were found: "
+            , show $ toList v
+            ]
+
+    cycleErrorMessages :: [String]
+    cycleErrorMessages = edgeCycleErrorMessage <$> treeEdgeCycles
+      where
+        edgeCycleErrorMessage (r,xs) = concat
+            [ "In the tree rooted at "
+            , shownRoots
+            , ", the following cycle was detected: "
+            , show xs
+            ]
+          where
+            shownRoots
+              | length r == 1 = "'" <> show r <> "'"
+              | otherwise     = show $ toList r
+      
 
 
 -- | Convience method for building a connection 'Map' based on the existing edges in the graph.
-buildEdgeMap :: Set VertexLabel -> Set EdgeInfo -> Map VertexLabel [VertexLabel]
-buildEdgeMap vs es = foldr buildMap mempty vs
+buildEdgeMap :: Set VertexLabel -> Set EdgeInfo -> Map VertexLabel (Set VertexLabel)
+buildEdgeMap vs es = foldMap buildMap vs
   where
-    edgeList       = toTuple <$> toList es
-    buildMap  node = insert node (connected node)
-    connected node = catMaybes $ f <$> edgeList
+    buildMap nodeLabel = foldl' f mempty es
       where
-        f (a,b)
-          | a == node  = Just b
-          | b == node  = Just a
-          | otherwise  = Nothing
+        f m e
+          | edgeOrigin e == nodeLabel = Map.insertWith (<>) nodeLabel (Set.singleton $ edgeTarget e) m
+          | otherwise                 = m
 

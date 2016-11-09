@@ -168,9 +168,20 @@ verStreamParser' = testGroup "verStreamParser" [valid,invalid]
     success str  = testCase (show str) $ parseSuccess (verStreamParser <* eof) str
     failure str  = testCase (show str) $ parseFailure (verStreamParser <* eof) str
     validVerDefs =
-      ["{a,b,c}{(a,b),(a,c)}{a}"
+      [ -- Single simple tree
+        "{a,b,c}{(a,b),(a,c)}{a}"
+        -- Disjoint simple trees
+      , "{a,b,c,x,y,z}{(a,b),(a,c),(x,y),(x,z)}{a,x}"
+        -- Single network with a "network" edge
+      , "{a,b,c,d,e,f}{(a,b),(a,c),(b,d),(b,e),(c,e),(c,f)}{a}"
+        -- Single network with a "component" edge
+      , "{a,b,c,d,e,f,g}{(a,b),(a,c),(b,d),(b,e),(c,e),(c,f),(g,c)}{a,g}"
+        -- dijoint network with a "component" edge & simple tree
+      , "{a,b,c,d,e,f,g,h,i}{(a,b),(a,c),(b,d),(b,e),(c,e),(c,f),(g,c),(h,i)}{a,g,h}"
       ]
     invalidVerDefs =
-      [ "{a,b,c}{(a,b),(a,c),(b,c)}{a}" -- contains a cycle
-      , "{a,b,c}{(a,b),(a,c)}{a,c}"     -- root nodes are connected
+      [  -- Contains a cycle
+        "{a,b,c,d}{(a,b),(b,c),(c,d),(d,b)}{a}"
+         -- Root nodes has a parent
+      , "{a,b,c}{(a,b),(c,a)}{a}"
       ]
