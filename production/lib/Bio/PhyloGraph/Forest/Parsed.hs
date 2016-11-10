@@ -184,7 +184,7 @@ instance ParsedForest VER.VertexEdgeRoot where
             f v = Map.singleton v $ foldMap g es
               where
                 g e
-                  | edgeOrigin e == v = Set.singleton $ (edgeTarget e, edgeLength e)
+                  | edgeOrigin e == v = Set.singleton $ (edgeLength e, edgeTarget e)
                   | otherwise         = mempty
 
         parentMapping = foldMap f vs
@@ -192,9 +192,12 @@ instance ParsedForest VER.VertexEdgeRoot where
             f v = Map.singleton v $ foldMap g es
               where
                 g e
-                  | edgeTarget e == v = Set.singleton $ (edgeOrigin e, edgeLength e)
+                  | edgeTarget e == v = Set.singleton $ (edgeLength e, edgeOrigin e)
                   | otherwise         = mempty
 
+        -- |
+        -- We collect only disconnected roots so that we don't generate duplicate
+        -- trees from connected roots.
         disconnectedRoots = foldl' f rs rs
           where
             f remainingRoots r
@@ -208,10 +211,20 @@ instance ParsedForest VER.VertexEdgeRoot where
                   | otherwise                  = foldMap (g seen') children
                   where
                     seen' = seen 
-                    children = (Set.mapMonotonic fst (childMapping ! node)) `Set.difference` seen
+                    children = (Set.mapMonotonic snd (childMapping ! node)) `Set.difference` seen
 
-              
-        convertToDAG rootLabel = undefined
+        convertToDAG = unfoldDAG f 
+          where
+            f label = (pValues, Just label, cValues)
+              where
+                pValues =
+                    case label `lookup` parentMapping of
+                       Nothing -> []
+                       Just xs -> toList xs
+                cValues =
+                    case label `lookup` childMapping of
+                       Nothing -> []
+                       Just xs -> toList xs
         
 {- -}
 
