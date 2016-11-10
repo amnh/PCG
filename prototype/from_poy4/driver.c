@@ -271,7 +271,7 @@ void * setupCostMtx(int* tcm, int alphSize, int gap_open, int is_2d) {
  *
  *  Requires symmetric, if not metric, matrix.
  */
-int distance (int const *tcm, int alphSize, int lcm, int nucleotide, int ambElem) {
+int distance (int const *tcm, int alphSize, int nucleotide, int ambElem) {
     int min     = INT_MAX;
     // int max     = 0;
     int curCost = 0;
@@ -339,8 +339,8 @@ void * setupCostMtx(int* tcm, int alphSize, int gap_open, int is_2d, seq_p longS
                 median1   = median2  = median3 = 0;
                 for (int nucleotide = 1; nucleotide <= alphSize; nucleotide++) {
                     // TODO: if we do maxCost, then we should find individual max's for each distance below?
-                    curCost2d = distance (tcm, alphSize, retMtx->lcm, nucleotide, ambElem1) +
-                                distance (tcm, alphSize, retMtx->lcm, nucleotide, ambElem2);
+                    curCost2d = distance (tcm, alphSize, nucleotide, ambElem1) +
+                                distance (tcm, alphSize, nucleotide, ambElem2);
                     // now seemingly recreating logic in distance(), but that was to get the cost for each
                     // ambElem; now we're combining those costs get overall cost and median
                     if (curCost2d < minCost2d) {
@@ -351,9 +351,9 @@ void * setupCostMtx(int* tcm, int alphSize, int gap_open, int is_2d, seq_p longS
                     }
                     if (!is_2d) {
                         median1   = median2 = median3 = 0;
-                        curCost3d = distance (tcm, alphSize, retMtx->lcm, nucleotide, ambElem1) +
-                                    distance (tcm, alphSize, retMtx->lcm, nucleotide, ambElem2) + 
-                                    distance (tcm, alphSize, retMtx->lcm, nucleotide, ambElem3);
+                        curCost3d = distance (tcm, alphSize, nucleotide, ambElem1) +
+                                    distance (tcm, alphSize, nucleotide, ambElem2) + 
+                                    distance (tcm, alphSize, nucleotide, ambElem3);
                         if (curCost3d < minCost3d) {
                             minCost3d = curCost3d;
                             median3d  = 1 << (nucleotide - 1); // median1 | median2 | median3;

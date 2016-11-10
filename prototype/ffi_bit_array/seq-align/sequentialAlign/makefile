@@ -15,6 +15,8 @@ bit-ops : bitArrayExampleC.c bitArrayExampleC.h dynamicCharacterOperations.c dyn
 #  -g    adds debugging information to the executable file
 #  -Wall turns on most, but not all, compiler warnings
 costMtxTest: costMtxTest.cpp costMatrix.h costMatrix.cpp dynamicCharacterOperations.h dynamicCharacterOperations.c
+	gcc -c dynamicCharacterOperations.c
+	g++ -c costMatrix.cpp
 	g++ -g -Wall -o costMtxTest costMtxTest.cpp
 
 yu_code: main.c seqAlignForHaskell.c seqAlignForHaskell.h dynamicCharacterOperations.c dynamicCharacterOperations.h

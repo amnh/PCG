@@ -18,7 +18,7 @@
  *    of a dynamic character, but will do for our purposes.)
  *
  *  TODO: for this to be useable on |alphabet including gap| > 64, various uint64_t types below will have to be 
- *        exchanged out for uint64_t* (i.e. arrays of 64-bit ints).
+ *        exchanged out for packedChar_p (i.e. arrays of 64-bit ints).
  */
 
 #ifndef DYNAMIC_CHARACTER_OPERATIONS
@@ -37,12 +37,14 @@ static const size_t   WORD_WIDTH     = BITS_IN_BYTE * INT_WIDTH; // BITS_IN_BYTE
 static const uint64_t CANONICAL_ONE  = 1;
 static const uint64_t CANONICAL_ZERO = 0;
 
+typedef uint64_t* packedChar_p;
+
 /* alignResult_t is where results get put for return to Haskell */
 typedef struct alignResult_t {
-    size_t    finalWt;
-    size_t    finalLength;
-    uint64_t* finalChar1;
-    uint64_t* finalChar2;
+    size_t       finalWt;
+    size_t       finalLength;
+    packedChar_p finalChar1;
+    packedChar_p finalChar2;
 } alignResult_t;
 
 /**
@@ -51,15 +53,15 @@ typedef struct alignResult_t {
  *  See note in .c file for how this is used.
  */
 typedef struct dynChar_t {
-    size_t    alphSize;
-    size_t    numElems;     // how many dc elements are stored
-    size_t    dynCharLen;   // how many uint64_ts are necessary to store the elements
-    uint64_t* dynChar;
+    size_t       alphSize;
+    size_t       numElems;     // how many dc elements are stored
+    size_t       dynCharLen;   // how many uint64_ts are necessary to store the elements
+    packedChar_p dynChar;
 } dynChar_t;
 
 typedef struct dcElement_t {
-    size_t    alphSize;
-    uint64_t* element;
+    size_t       alphSize;
+    packedChar_p element;
 } dcElement_t;
 
 typedef struct costMtx_t {
@@ -72,11 +74,16 @@ typedef struct costMtx_t {
  *  Provides operations to use an array of ints as an array of bits. In essence, creates a mask of length k and uses that
  *  mask to set, clear and test bits.
  */
-void SetBit( uint64_t* const arr, const size_t k );
+void SetBit( packedChar_p const arr, const size_t k );
 
-void ClearBit( uint64_t* const arr, const size_t k );
+void ClearBit( packedChar_p const arr, const size_t k );
 
-uint64_t TestBit( uint64_t* const arr, const size_t k );
+uint64_t TestBit( packedChar_p const arr, const size_t k );
+
+/** Clear entire packed character: all bits set to 0; 
+ *  packedCharLen is pre-computed dynCharSize() 
+ */
+void ClearAll( packedChar_p const arr, const size_t packedCharLen);
 
 /* figures out how long the int array needs to be to hold a given dynamic character */
 size_t dynCharSize(size_t alphSize, size_t numElems);
@@ -100,7 +107,8 @@ uint64_t getGap(const dynChar_t* const character);
  *  Fails if the alphabet sizes of the two input characters are different.
  *  Makes a copy of value in changeToThis, so can deallocate or mutate changeToThis later with no worries.
  */
-int setDCElement( const size_t whichIdx, const dcElement_t* const changeToThis, dynChar_t* const charToBeAltered );
+int setDCElement( const size_t whichIdx, 
+                 const dcElement_t* const changeToThis, dynChar_t* const charToBeAltered );
 
 /**
  *  Find and return an element from a packed dynamic character.
@@ -131,7 +139,8 @@ dcElement_t* makeDCElement( const size_t alphSize, const uint64_t value );
  *  If the two characters are not compatible (have different length alphabets—it doesn't check 
  *  to see that the alphabets are the same), returns a negative cost.
  */
-double getCost( const dynChar_t* const inDynChar1, size_t whichElem1, const dynChar_t* const inDynChar2, size_t whichElem2, 
+double getCost( const dynChar_t* const inDynChar1, size_t whichElem1, 
+                const dynChar_t* const inDynChar2, size_t whichElem2, 
                 costMtx_t* tcm, dcElement_t* newElem1 );
 
 /** Allocator for dynChar_t
@@ -139,12 +148,12 @@ double getCost( const dynChar_t* const inDynChar1, size_t whichElem1, const dynC
  *      a) NULL checked, 
  *      b) freed later using deallocations, above.
  */
-dynChar_t* makeDynamicChar( size_t alphSize, size_t numElems, uint64_t* values );
+dynChar_t* makeDynamicChar( size_t alphSize, size_t numElems, packedChar_p values );
 
 /** takes as input a dynamic character and converts it to a uint64_t array. Allocates, so after returned array
  *  is no longer in use it must be deallocated.
  */
-int* dynCharToIntArr(dynChar_t* input);
+int* dynCharToIntArr( dynChar_t* input );
 
 /** takes as input an int array and copies its values into a packed dynamic character.
  *  This effectively recapitulates makeDynamicChar(), with one difference, this is intended to 
@@ -154,7 +163,10 @@ int* dynCharToIntArr(dynChar_t* input);
 void intArrToDynChar( size_t alphSize, size_t arrayLen, int* input, dynChar_t* output );
 
 /** As above, but only allocates and fills the bit array, not whole dyn char */
-uint64_t* intArrToBitArr( size_t alphSize, size_t arrayLen, int* input );
+packedChar_p intArrToBitArr( size_t alphSize, size_t arrayLen, int* input );
 
+dcElement_t* dcElementOr (dcElement_t* lhs, dcElement_t* rhs);
+
+packedChar_p packedCharOr (packedChar_p lhs, packedChar_p rhs, size_t alphSize);
 
 #endif /* DYNAMIC_CHARACTER_OPERATIONS */

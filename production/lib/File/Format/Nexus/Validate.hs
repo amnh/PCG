@@ -18,7 +18,7 @@ module File.Format.Nexus.Validate where
 
 import           Data.Char              (isSpace,toLower)
 import           Data.Either            (lefts) 
---import           Data.Foldable          (toList)
+import           Data.Foldable          
 import           Data.List              (sort,sortBy)
 import           Data.List.Split        (splitOn)
 --import           Data.List.Utility      (chunksOf)
@@ -97,7 +97,7 @@ import           Text.Megaparsec.Custom
 -- • check alignment and length of aligned blocks
 -- • check tcm for size; see how *'s work in tcm
 -- • check for chars that aren't in alphabet
--- • fail on incorrrect datatype
+-- • fail on incorrect datatype
 -- • dependentErrors & independentErrors become :: String error, String warning => [Maybe (Either error warning)]
      -- then partitionEithers . catMaybes, etc., etc. (talk to Alex)
 -- • warn that eliminate (among several other things: match, additive, weight(, etc.?)) doesn't work on unaligned data
@@ -157,11 +157,11 @@ validateNexusParseResult (NexusParseResult inputSeqBlocks taxas treeSet assumpti
  --       incorrectCharCount  = checkSeqLength (filter (\x -> alignedSeq x) inputSeqBlocks) outputSeqTups -- TODO: This doesn't work, because it takes an entire list of PhyloSequence blocks and the complete, concatted sequences. It needs to take place at a different point in the process.
 
       -- dependencies for dependent errors
-        equates = foldr (\x acc -> getEquates x : acc) [] inputSeqBlocks
+        equates  = foldr (\x acc -> getEquates x : acc) [] inputSeqBlocks
         symbols' = foldr (\x acc -> getSymbols x : acc) [] inputSeqBlocks
         taxaLst  = if not $ null taxas
                       then V.fromList . taxaLabels $ head taxas
-                      else V.empty
+                      else mempty
 
       -- these are still dependencies for dependent errors, but they're also the beginning of the output gathering.                  
         maybeThing = foldSeqs <$> seqMetadataTuples
@@ -170,11 +170,12 @@ validateNexusParseResult (NexusParseResult inputSeqBlocks taxas treeSet assumpti
         --                          )) inputSeqBlocks -- TODO: replace getSeqFromMatrix blah blah with parsedSeqs
         costMatrix = headMay . tcm =<< headMay assumptions -- TODO: why does this work?
         
-        seqMetadataTuples = createSeqMetaTuples <$> parsedSeqs
+        seqMetadataTuples   = createSeqMetaTuples <$> parsedSeqs
         createSeqMetaTuples = fmap (\(taxonSeqMap,rawSequence) -> (taxonSeqMap, getCharMetadata costMatrix rawSequence)) . (`zip` inputSeqBlocks)
-        parsedSeqs = decisionTree inputSeqBlocks taxaLst
+        parsedSeqs          = decisionTree inputSeqBlocks taxaLst
         -- taxaSeqVector = V.fromList [(taxon, alignedTaxaSeqMap M.! taxon) | taxon <- taxaLst]
         --unalignedTaxaSeqMap = getSeqFromMatrix (getBlock "unaligned" inputSeqBlocks) taxaLst
+        translatedTrees     = translateTrees taxaLst treeSet
 
 ---------------------------  Following set of fns is actually set of nested ifs to match decision tree in docs  ---------------------------
 -------------------------  Mostly, these fns just check for errors much of the logic is dup'd in getSeqFromMatrix  ------------------------
@@ -255,6 +256,19 @@ foldSeqs ((taxSeqMap,charMDataVec):xs)   = ((newSeqMap, newMetadata), totLength)
                                                                 else curMetadata
         totLength                        = curLength +  V.length charMDataVec
     
+
+-- different cardinalities of taxaLst and taxa in translate block
+-- 
+translateTrees :: Vector String -> [TreeBlock] -> Either String NewickForest
+translateTrees taxaLst treeSet = undefine --outputResult
+{-    where
+        handleTreeBlock <$> treeSet
+        handleTreeBlock (TreeBlock translateFields labeledTrees) = 
+            case translateFields of 
+                x:y:_ -> Left "Multiple translate fields in a trees block"
+                []    -> Right $ foldMap snd labeledTrees
+                x:[]  ->  
+-}
 
 -- | updateSeqInMap takes in a TaxonSequenceMap, a length (the length of the longest sequence in the map), a taxon name and a sequence.
 -- It updates the first map by adding the new seq using the taxon name as a key. If the seq us shorter than the max, it is first

@@ -8,15 +8,21 @@
 #include <stdlib.h>
 #include "dynamicCharacterOperations.h"
 
-void SetBit( uint64_t* const arr, const size_t k ) {
+void SetBit( packedChar_p const arr, const size_t k ) {
     arr[ k / WORD_WIDTH ] |= (CANONICAL_ONE << (k % WORD_WIDTH));
 }
-void ClearBit( uint64_t* const arr, const size_t k ) {
+void ClearBit( packedChar_p const arr, const size_t k ) {
     arr[ k / WORD_WIDTH ] &= ~(CANONICAL_ONE << (k % WORD_WIDTH));
 }
 
-uint64_t TestBit( uint64_t* const arr, const size_t k ) {
+uint64_t TestBit( packedChar_p const arr, const size_t k ) {
     return arr[ k / WORD_WIDTH ] & (CANONICAL_ONE << (k % WORD_WIDTH));
+}
+
+void ClearAll( packedChar_p const arr, const size_t packedCharLen) {
+    for (size_t i = 0; i < packedCharLen; i++) {
+        arr[i] = CANONICAL_ZERO;
+    }
 }
 
 size_t dynCharSize(size_t alphSize, size_t numElems) {
@@ -32,7 +38,8 @@ uint64_t getGap(const dynChar_t* const character) {
     return 1 << (character->alphSize - 1);
 }
 
-int setDCElement( const size_t whichIdx, const dcElement_t* const changeToThis, dynChar_t* const charToBeAltered ) {
+int setDCElement( const size_t whichIdx, const dcElement_t* const changeToThis, 
+                  dynChar_t* const charToBeAltered ) {
     if ( whichIdx >= charToBeAltered->numElems ) {
         return 1;
     }
@@ -101,7 +108,8 @@ dcElement_t* makeDCElement( const size_t alphSize, const uint64_t value ) {
     return output;
 }
 
-double getCost( const dynChar_t* const inDynChar1, size_t whichElem1, const dynChar_t* const inDynChar2, size_t whichElem2, 
+double getCost( const dynChar_t* const inDynChar1, size_t whichElem1, 
+                const dynChar_t* const inDynChar2, size_t whichElem2, 
                costMtx_t* tcm, dcElement_t* newElem1 ) {
     if (  newElem1->alphSize != inDynChar1->alphSize 
        // || newElem2->alphSize != inDynChar1->alphSize
@@ -157,7 +165,7 @@ double getCost( const dynChar_t* const inDynChar1, size_t whichElem1, const dynC
  *
  *  If this is used, need to free afterwards.
  */
-dynChar_t* makeDynamicChar( size_t alphSize, size_t numElems, uint64_t* values ) {
+dynChar_t* makeDynamicChar( size_t alphSize, size_t numElems, packedChar_p values ) {
     // allocate dynamic character
     dynChar_t* output  = malloc( sizeof(dynChar_t) );
     if (output == NULL) {
@@ -217,8 +225,8 @@ void intArrToDynChar( size_t alphSize, size_t arrayLen, int* input, dynChar_t* o
     freeDCElem(changeToThis);
 }
 
-uint64_t* intArrToBitArr( size_t alphSize, size_t arrayLen, int* input ) {
-    uint64_t* output = calloc( dynCharSize(alphSize, arrayLen), INT_WIDTH );
+packedChar_p intArrToBitArr( size_t alphSize, size_t arrayLen, int* input ) {
+    packedChar_p output = calloc( dynCharSize(alphSize, arrayLen), INT_WIDTH );
     if (output == NULL) {
         printf("Out of memory.\n");
         fflush(stdout);
@@ -237,6 +245,28 @@ uint64_t* intArrToBitArr( size_t alphSize, size_t arrayLen, int* input ) {
         }
     }
     return output;
+}
+
+// TODO: test the next two fns. And make sure docs in .h file are good.
+dcElement_t* dcElementOr(dcElement_t* lhs, dcElement_t* rhs) {
+    dcElement_t* toReturn = malloc(sizeof(dcElement_t));
+    size_t elementSz      = dcElemSize(lhs->alphSize);
+    toReturn->alphSize    = lhs->alphSize;
+    toReturn->element     = calloc(elementSz, INT_WIDTH);
+    for (size_t i = 0; i < elementSz; i++) {
+        toReturn->element[i] = rhs->element[i];
+    }
+    return toReturn;
+}
+
+// TODO: test this fn.
+packedChar_p packedCharOr (packedChar_p lhs, packedChar_p rhs, size_t alphSize) {
+    size_t length = dcElemSize(alphSize);
+    packedChar_p toReturn = calloc(length, INT_WIDTH);
+    for (size_t i = 0; i < length; i++) {
+        toReturn[i] = lhs[i] | rhs[i];
+    }
+    return toReturn;
 }
 
 void freeDynChar( dynChar_t* p ) {
