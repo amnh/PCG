@@ -27,6 +27,8 @@ import           Data.Map                                 (Map)
 import qualified Data.Map                          as Map
 import           Data.Maybe
 import           Data.Monoid
+import           Data.Set                                 (Set)
+import qualified Data.Set                          as Set
 import           File.Format.Fasta
 import           File.Format.Fastc                 hiding (Identifier)
 import           File.Format.Newick
@@ -34,6 +36,7 @@ import           File.Format.Nexus                 hiding (TaxonSequenceMap)
 import           File.Format.TNT
 import           File.Format.TransitionCostMatrix
 import           File.Format.VertexEdgeRoot.Parser        (VertexEdgeRoot(..), VertexLabel)
+import           File.Format.VertexEdgeRoot.Parser
 import qualified File.Format.VertexEdgeRoot.Parser as VER
 import           Prelude                           hiding (lookup)
 
@@ -173,7 +176,7 @@ instance ParsedForest TntResult where
 {- -}
 -- | (✔)
 instance ParsedForest VER.VertexEdgeRoot where
-    unifyGraph (VER vs es rs) = fmap convertToDAG . NE.fromList $ toList disconnectedRoots
+    unifyGraph (VER vs es rs) = Just . PhylogeneticForest . fmap convertToDAG . NE.fromList $ toList disconnectedRoots
       where
 
         childMapping = foldMap f vs
@@ -181,26 +184,31 @@ instance ParsedForest VER.VertexEdgeRoot where
             f v = Map.singleton v $ foldMap g es
               where
                 g e
-                  | edgeOrigin e == v = [edgeTarget e]
-                  | otherwise         = []
+                  | edgeOrigin e == v = Set.singleton $ (edgeTarget e, edgeLength e)
+                  | otherwise         = mempty
 
         parentMapping = foldMap f vs
           where
             f v = Map.singleton v $ foldMap g es
               where
                 g e
-                  | edgeTarget e == v = [edgeOrigin e]
-                  | otherwise         = []
+                  | edgeTarget e == v = Set.singleton $ (edgeOrigin e, edgeLength e)
+                  | otherwise         = mempty
 
         disconnectedRoots = foldl' f rs rs
           where
             f remainingRoots r
               | r `notElem` remainingRoots = remainingRoots
-              | otherwise                  = (`Set.delete` remainingRoots) connectedRoots
+              | otherwise                  = remainingRoots `Set.difference` connectedRoots
               where
-                connectedRoots = isConnected r <$> remainingRoots
-
-            isConnected r1 r2 = 
+                connectedRoots = g mempty r
+                g seen node
+                  | node `elem` remainingRoots = Set.singleton node
+                  | node `elem` seen           = mempty
+                  | otherwise                  = foldMap (g seen') children
+                  where
+                    seen' = seen 
+                    children = (Set.mapMonotonic fst (childMapping ! node)) `Set.difference` seen
 
               
         convertToDAG rootLabel = undefined
