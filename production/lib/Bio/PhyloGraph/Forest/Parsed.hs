@@ -27,7 +27,6 @@ import           Data.Map                                 (Map)
 import qualified Data.Map                          as Map
 import           Data.Maybe
 import           Data.Monoid
-import           Data.Set                                 (Set)
 import qualified Data.Set                          as Set
 import           File.Format.Fasta
 import           File.Format.Fastc                 hiding (Identifier)
@@ -35,7 +34,6 @@ import           File.Format.Newick
 import           File.Format.Nexus                 hiding (TaxonSequenceMap)
 import           File.Format.TNT
 import           File.Format.TransitionCostMatrix
-import           File.Format.VertexEdgeRoot.Parser        (VertexEdgeRoot(..), VertexLabel)
 import           File.Format.VertexEdgeRoot.Parser
 import qualified File.Format.VertexEdgeRoot.Parser as VER
 import           Prelude                           hiding (lookup)
