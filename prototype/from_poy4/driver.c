@@ -29,14 +29,25 @@ nw_matrices_p initializeNWMtx() {
     newMtx->len_eff     = -1; // len_eff is -1 so that len_eff < len, triggering the realloc
     newMtx->len_pre     = 0;  // again, trigger realloc
 
-    newMtx->nw_costMtx  = malloc ( sizeof( int ) * 1); // TODO: add reasoning
+    newMtx->nw_costMtx  = malloc ( sizeof( int ) ); 
     newMtx->dir_mtx_2d  = malloc ( sizeof( DIRECTION_MATRIX ) );
-    newMtx->pointers_3d = malloc ( sizeof( int* ) );
-    newMtx->cube        = malloc ( sizeof( int* ) );
-    newMtx->cube_d      = malloc ( sizeof( int* ) );
+    newMtx->pointers_3d = malloc ( sizeof( int* ) );  // TODO: Why don't I have to dealloc all pointers in array?
+    // newMtx->cube        = malloc ( sizeof( int* ) );  // don't have to allocate these two, 
+    // newMtx->cube_d      = malloc ( sizeof( int* ) );  // because they're just pointing to nw_costMtx and dir_mtx_2d
     newMtx->precalc     = malloc ( sizeof( int ) );
 
     return newMtx;
+}
+
+void freeNWMtx(nw_matrices_p input) {
+    free (input->nw_costMtx);
+    free (input->dir_mtx_2d);
+    free (input->pointers_3d);
+    // free (input->cube);    // don't have to deallocate these two, 
+    // free (input->cube_d);  // because they're just pointing to nw_costMtx and dir_mtx_2d
+    free (input->precalc);
+
+    free(input);
 }
 
 seq_p initializeSeq(size_t allocSize, const int *vals, size_t length) {
@@ -58,6 +69,11 @@ seq_p initializeSeq(size_t allocSize, const int *vals, size_t length) {
     retSeq->end          = retSeq->begin + retSeq->len;
 
     return retSeq;
+}
+
+void freeSeq(seq_p toFree) {
+    free(toFree->head);
+    free(toFree);
 }
 
 void resetSeqValues(seq_p retSeq) {
@@ -255,7 +271,7 @@ void * setupCostMtx(int* tcm, int alphSize, int gap_open, int is_2d) {
  *
  *  Requires symmetric, if not metric, matrix.
  */
-int distance (int const *tcm, int alphSize, int lcm, int nucleotide, int ambElem) {
+int distance (int const *tcm, int alphSize, int nucleotide, int ambElem) {
     int min     = INT_MAX;
     // int max     = 0;
     int curCost = 0;
@@ -323,8 +339,8 @@ void * setupCostMtx(int* tcm, int alphSize, int gap_open, int is_2d, seq_p longS
                 median1   = median2  = median3 = 0;
                 for (int nucleotide = 1; nucleotide <= alphSize; nucleotide++) {
                     // TODO: if we do maxCost, then we should find individual max's for each distance below?
-                    curCost2d = distance (tcm, alphSize, retMtx->lcm, nucleotide, ambElem1) +
-                                distance (tcm, alphSize, retMtx->lcm, nucleotide, ambElem2);
+                    curCost2d = distance (tcm, alphSize, nucleotide, ambElem1) +
+                                distance (tcm, alphSize, nucleotide, ambElem2);
                     // now seemingly recreating logic in distance(), but that was to get the cost for each
                     // ambElem; now we're combining those costs get overall cost and median
                     if (curCost2d < minCost2d) {
@@ -335,9 +351,9 @@ void * setupCostMtx(int* tcm, int alphSize, int gap_open, int is_2d, seq_p longS
                     }
                     if (!is_2d) {
                         median1   = median2 = median3 = 0;
-                        curCost3d = distance (tcm, alphSize, retMtx->lcm, nucleotide, ambElem1) +
-                                    distance (tcm, alphSize, retMtx->lcm, nucleotide, ambElem2) + 
-                                    distance (tcm, alphSize, retMtx->lcm, nucleotide, ambElem3);
+                        curCost3d = distance (tcm, alphSize, nucleotide, ambElem1) +
+                                    distance (tcm, alphSize, nucleotide, ambElem2) + 
+                                    distance (tcm, alphSize, nucleotide, ambElem3);
                         if (curCost3d < minCost3d) {
                             minCost3d = curCost3d;
                             median3d  = 1 << (nucleotide - 1); // median1 | median2 | median3;
@@ -391,6 +407,22 @@ void * setupCostMtx(int* tcm, int alphSize, int gap_open, int is_2d, seq_p longS
         printf("\n");
     }
     return retMtx;
+}
+
+void freeCostMtx(void * input, int is_2d) {
+    
+    if (is_2d) {
+        free( ( (cost_matrices_2d_p) input )->cost);
+        free( ( (cost_matrices_2d_p) input )->median);
+        free( ( (cost_matrices_2d_p) input )->worst);
+        free( ( (cost_matrices_2d_p) input )->prepend_cost);
+        free( ( (cost_matrices_2d_p) input )->tail_cost);
+    } else { 
+        free( ( (cost_matrices_3d_p) input )->cost);
+        free( ( (cost_matrices_3d_p) input )->median);
+    }
+
+    free (input);
 }
 
 int main() {
@@ -491,11 +523,9 @@ int main() {
     **/
 
     // the following to compute deltawh, which increases the matrix height or width in algn_nw_2d
-    // TODO: This has something to do with Ukkonnen. Figure it out and document it.
-    // This from ML:
-    // TODO: figure out: does this loop, or something?
+    // pulled from ML code
+    // deltawh is for use in Ukonnen, it gives the current necessary width of the Ukk matrix
     int deltawh = 0;
-    // TODO: make sure lenLongSeq > lenShortSeq
     int diff = longSeq->len - shortSeq->len;
     int lower_limit = .1 * longSeq->len;
     if (deltawh) {
@@ -515,7 +545,7 @@ int main() {
         // printf("Original alignment matrix before algn_nw_2d: \n");
         // algn_print_dynmtrx_2d( longSeq, shortSeq, algn_mtxs2d );
 
-        algnCost = algn_nw_2d( longSeq, shortSeq, costMtx2d, algn_mtxs2d, deltawh ); // TODO: is
+        algnCost = algn_nw_2d( longSeq, shortSeq, costMtx2d, algn_mtxs2d, deltawh );
 
         if (DEBUG_MAT) {
             printf("\n\nFinal alignment matrix: \n\n");
@@ -539,6 +569,7 @@ int main() {
         printf("\nAligned sequences:\n");
         int *algnSeqVals = calloc(retLongSeq->len, sizeof(int));
         seq_p algnSeq = initializeSeq(SEQ_CAPACITY, algnSeqVals, retLongSeq->len);
+        free (algnSeqVals);
         resetSeqValues(algnSeq);
 
         // union:
@@ -557,6 +588,8 @@ int main() {
         algn_get_median_2d_with_gaps (retLongSeq, retShortSeq, costMtx2d, algnSeq);
         printf("\n  Median with gaps\n  ");
         seq_print(algnSeq, 0);
+
+        free (algnSeq);
     }
 
 
@@ -571,19 +604,20 @@ int main() {
         resetSeqValues(retShortSeq);
 
         // TODO: document these variables
-        int *matrix;                        //
-        int *close_block_diagonal;          //
-        int *extend_block_diagonal;         //
-        int *extend_vertical;               //
-        int *extend_horizontal;             //
-        int *final_cost_matrix;             //
-        int *precalcMtx;                    //
-        int *matrix_2d;                     //
-        int *gap_open_prec;                 //
-        int *s_horizontal_gap_extension;    //
-        int lenLongerSeq;                   //
+        int *matrix;                        // 
+        int *close_block_diagonal;          // 
+        int *extend_block_diagonal;         // 
+        int *extend_vertical;               // 
+        int *extend_horizontal;             // 
+        int *final_cost_matrix;             // 
+        int *precalcMtx;                    // 
+        int *matrix_2d;                     // 
+        int *gap_open_prec;                 // precalculated gap opening value (top row of nw matrix)
+        int *s_horizontal_gap_extension;    // 
+        int lenLongerSeq;                   // 
+        
         DIRECTION_MATRIX *direction_matrix;
-        size_t lenLongSeq = seq_get_len(longSeq);
+        size_t lenLongSeq  = seq_get_len(longSeq);
         size_t lenShortSeq = seq_get_len(shortSeq);
 
         // reset return results
@@ -669,7 +703,7 @@ int main() {
 
 
         // shorter first
-        // TODO: why isn't this consistent with next fn call?
+        // TODO: why isn't this argument order consistent with next fn call?
         algnCost = algn_fill_plane_3_affine (shortSeq, longSeq, 
                                              shortSeq->len - 1, longSeq->len - 1,
                                              final_cost_matrix, direction_matrix, costMtx2d_affine, 
@@ -699,6 +733,9 @@ int main() {
           seq_print(retLongSeq, 1);
           seq_print(retShortSeq, 2);
         }
+
+        freeSeq(empty_medianSeq);
+        freeSeq(medianSeq);
 
         printf("\nAlignment cost: %d\n", algnCost);
     }
@@ -753,6 +790,22 @@ int main() {
     // Next this: algn_get_median_3d (seq_p seq1, seq_p seq2, seq_p seq3, 
     //                cost_matrices_3d_p m, seq_p sm)
 
+    freeCostMtx(costMtx2d,        1);  // 1 is 2d
+    freeCostMtx(costMtx2d_affine, 1);
+    freeCostMtx(costMtx3d,        0);  // 0 is !2d
 
-    return 1;
+    freeNWMtx(algn_mtxs2d);
+    freeNWMtx(algn_mtxs2dAffine);
+    freeNWMtx(algn_mtxs3d);
+
+    freeSeq(longSeq);
+    freeSeq(shortSeq);
+    freeSeq(mediumSeq);
+    freeSeq(retLongSeq);
+    freeSeq(retShortSeq);
+    freeSeq(retMediumSeq);
+
+    free(tcm);
+
+    return 0;
 }

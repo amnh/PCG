@@ -147,7 +147,7 @@ instance ParsedMetadata VertexEdgeRoot where
 
 -- | (✔)
 instance ParsedMetadata Nexus where
-    unifyMetadata (Nexus (_, metas)) = V.map convertNexusMeta metas
+    unifyMetadata (Nexus (_, metas) _) = convertNexusMeta <$> metas
       where
         convertNexusMeta inMeta =
             ParsedCharacterMetadata
@@ -162,7 +162,7 @@ instance ParsedMetadata Nexus where
             suppliedWeight = fromIntegral $ Nex.weight inMeta
             (rationalWeight, unfactoredTcmMay) = maybe (1, Nothing) (second Just)
                                                $ TCM.fromList . toList . F.transitionCosts <$> Nex.costM inMeta
-            
+
 
 disAlph, dnaAlph, rnaAlph, aaAlph :: Vector String
 -- | The acceptable DNA character values (with IUPAC codes).

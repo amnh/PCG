@@ -93,11 +93,9 @@ instance ParsedCharacters NewickForest where
 
 -- | (✔)
 instance ParsedCharacters Nexus where
-    unifyCharacters (Nexus (seqMap, _)) = f <$> seqMap
+    unifyCharacters (Nexus (seqMap, _) _) = f <$> seqMap
       where
         f = fmap (fmap (fmap NE.fromList . NE.fromList . toList))  
-        -- V.Vector Character
-        -- Maybe (V.Vector AmbiguityGroup)
 
 
 -- | (✔)

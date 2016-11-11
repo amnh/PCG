@@ -229,5 +229,33 @@ instance ParsedForest VER.VertexEdgeRoot where
 
 -- | (✔)
 instance ParsedForest Nexus where
-    unifyGraph = const Nothing -- Nexus parser isn't exporting trees yet.
+    unifyGraph (Nexus _ forest) = unifyGraph forest
+{-
+-- | Convert the referential forests defined by sets of verticies, edges, and
+--   roots into a forest of topological tree structure.
+convertVerToNewick :: VertexEdgeRoot -> Forest NewickNode
+convertVerToNewick (VER _ e r) = buildNewickTree Nothing <$> toList r
+  where
+    buildNewickTree :: Maybe Double -> VertexLabel -> NewickNode
+    buildNewickTree c n = fromJust $ newickNode kids (Just n) c
+      where
+        kids = fmap (uncurry buildNewickTree) . catMaybes $ kidMay n <$> toList e
+        kidMay vertex edge = do
+          other <- VER.connectedVertex vertex edge
+          pure (VER.edgeLength edge, other)
+
+-- | Convert the topological 'LeafyTree' structure into a forest of topological
+--   tree structures with nodes that hold additional information.
+convertTntToNewick :: (n -> String) -> LeafyTree n -> NewickNode
+convertTntToNewick f (Leaf   x ) = fromJust $ newickNode [] (Just $ f x) Nothing -- Scary use of fromJust?
+convertTntToNewick f (Branch xs) = fromJust $ newickNode (convertTntToNewick f <$> xs) Nothing Nothing
+
+-- | Conversion function for NodeType to string
+getTNTName :: NodeType -> String
+getTNTName node = case node of 
+    (Index i) -> show i
+    (Name n) -> n
+    (Prefix s) -> s
+-}
+
 
