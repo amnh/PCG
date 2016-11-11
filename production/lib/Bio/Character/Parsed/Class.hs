@@ -85,7 +85,7 @@ instance ParsedCharacters NewickForest where
 
 -- | (✔)
 instance ParsedCharacters Nexus where
-    unifyCharacters (Nexus (seqMap, _)) = seqMap
+    unifyCharacters (Nexus (seqMap, _) _) = seqMap
 
 -- | (✔)
 instance ParsedCharacters TntResult where
