@@ -75,7 +75,7 @@ partitionCharFormat = foldr f ("", Right [""], Right [""], "", "", "", "", False
         f (Unlabeled   n) (p,q,r,s,t,u,v,w,x,y,z,_) = (p,q,r,s,t,u,v,w,x,y,z,n)
         f (IgnFF       _)                        ws = ws
 
-partitionTreeBlock :: [TreeField] -> ([[String]], [(String,NewickForest)])
+partitionTreeBlock :: [TreeField] -> ([[String]], [(String,NewickNode)])
 partitionTreeBlock = foldr f ([],[])
     where
         f (Translation n) (ys,zs) = (n:ys,   zs)
