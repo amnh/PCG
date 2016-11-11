@@ -119,7 +119,7 @@ validateNexusParseResult (NexusParseResult inputSeqBlocks taxas treeSet assumpti
   | not (null dependentErrors)                        = fails dependentErrors
   | otherwise                                         = case maybeThing of
                                                               Left   err               -> fail err
-                                                              Right (outputSeqTups, _) -> pure $ Nexus {-taxaLst-} outputSeqTups 
+                                                              Right (outputSeqTups, _) -> pure $ Nexus {-taxaLst-} outputSeqTups translatedTrees
   where
       -- Ordered by call, so first independentErrors, then dependentErrors, then outputSeqTups. Dependencies are subgrouped according to calling fn.
       
@@ -183,11 +183,16 @@ validateNexusParseResult (NexusParseResult inputSeqBlocks taxas treeSet assumpti
         -- taxaSeqVector = V.fromList [(taxon, alignedTaxaSeqMap M.! taxon) | taxon <- taxaLst]
         --unalignedTaxaSeqMap = getSeqFromMatrix (getBlock "unaligned" inputSeqBlocks) taxaLst
 
-        translatedTreesMay  = translateTrees taxaLst treeSet
-        treeTranslateErrors =
-          case translatedTreesMay of
+        translateTreesResult = translateTrees taxaLst treeSet
+        treeTranslateErrors  =
+          case translateTreesResult of
             Left (x:|xs) -> Just <$> (x:xs)
             Right _      -> []
+
+        translatedTrees =
+          case translateTreesResult of
+            Left  _ -> mempty
+            Right x -> x
 
 ---------------------------  Following set of fns is actually set of nested ifs to match decision tree in docs  ---------------------------
 -------------------------  Mostly, these fns just check for errors much of the logic is dup'd in getSeqFromMatrix  ------------------------

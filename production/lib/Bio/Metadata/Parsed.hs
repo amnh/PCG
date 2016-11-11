@@ -85,7 +85,7 @@ instance ParsedMetadata VertexEdgeRoot where
 
 -- | (✔)
 instance ParsedMetadata Nexus where
-    unifyMetadata (Nexus (_, metas)) = V.map convertNexusMeta metas
+    unifyMetadata (Nexus (_, metas) _) = V.map convertNexusMeta metas
         where
             convertNexusMeta inMeta =
                 let defaultMeta = makeOneInfo . Alphabet . fromList $ Nex.alphabet inMeta

@@ -63,7 +63,7 @@ instance ParsedForest VER.VertexEdgeRoot where
 
 -- | (✔)
 instance ParsedForest Nexus where
-    unifyGraph = mempty -- Will also be newick forest at somepoint
+    unifyGraph (Nexus _ forest) = unifyGraph forest
 
 -- | Convert the referential forests defined by sets of verticies, edges, and
 --   roots into a forest of topological tree structure.
