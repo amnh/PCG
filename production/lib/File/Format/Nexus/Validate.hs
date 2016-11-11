@@ -16,20 +16,27 @@
 
 module File.Format.Nexus.Validate where
 
-import           Data.Char              (isSpace,toLower)
-import           Data.Either            (lefts) 
+import           Data.Char                 (isSpace,toLower)
+import           Data.Either
 import           Data.Foldable          
-import           Data.List              (sort,sortBy)
-import           Data.List.Split        (splitOn)
+import           Data.List                 (sort,sortBy)
+import           Data.List.NonEmpty        (NonEmpty( (:|) ))
+--import qualified Data.List.NonEmpty as NE
+import           Data.List.Split           (splitOn)
 --import           Data.List.Utility      (chunksOf)
-import qualified Data.Map.Lazy     as M
-import           Data.Maybe             (catMaybes,fromJust)
-import           Data.Ord               (comparing)
---import qualified Data.Set          as S (fromList, union)
-import qualified Data.Vector       as V
+import           Data.Map.Lazy             (Map)
+import qualified Data.Map.Lazy      as M
+import           Data.Maybe
+import           Data.Monoid
+import           Data.Ord                  (comparing)
+--import           Data.Set                  (Set)
+import qualified Data.Set           as Set
+import           Data.Vector               (Vector)
+import qualified Data.Vector        as V
+import           File.Format.Newick
 import           File.Format.Nexus.Data
 import           Safe
-import           Text.Megaparsec.Prim   (MonadParsec,Token)
+import           Text.Megaparsec.Prim      (MonadParsec,Token)
 --import qualified Text.Megaparsec.Prim as P (Token)
 import           Text.Megaparsec.Custom
 
@@ -259,16 +266,74 @@ foldSeqs ((taxSeqMap,charMDataVec):xs)   = ((newSeqMap, newMetadata), totLength)
 
 -- different cardinalities of taxaLst and taxa in translate block
 -- 
-translateTrees :: Vector String -> [TreeBlock] -> Either String NewickForest
-translateTrees taxaLst treeSet = undefine --outputResult
-{-    where
-        handleTreeBlock <$> treeSet
-        handleTreeBlock (TreeBlock translateFields labeledTrees) = 
-            case translateFields of 
-                x:y:_ -> Left "Multiple translate fields in a trees block"
-                []    -> Right $ foldMap snd labeledTrees
-                x:[]  ->  
--}
+translateTrees :: Vector String -> [TreeBlock] -> Either (NonEmpty String) NewickForest
+translateTrees taxaList treeSet =
+    case partitionEithers $ handleTreeBlock <$> treeSet of
+      (  [], xs) -> Right $ mconcat xs
+      (x:xs,  _) -> Left  $ x :| xs
+    where
+        taxaSet = Set.fromList $ toList taxaList
+      
+        handleTreeBlock :: TreeBlock -> Either String NewickForest
+        handleTreeBlock (TreeBlock translateFields labeledTrees) =
+            (\x -> foldMap (translateForest x. snd) labeledTrees) <$> labelMappingEither
+          where
+            labelMappingEither :: Either String (Map String String)
+            labelMappingEither =
+                case translateFields of 
+                  [x]   -> presentTranslationMap x
+                  []    -> missingTranslationMap
+                  _:_:_ -> Left "Multiple translate fields in a trees block"
+
+            translateForest :: Map String String -> NewickForest -> NewickForest
+            translateForest mapping = fmap f
+              where
+                f node
+                  | isLeaf node = node { newickLabel = newickLabel node >>= (`M.lookup` mapping)  }
+                  | otherwise   = node { descendants = translateForest mapping $ descendants node }
+                    
+
+            missingTranslationMap
+              | leafSet == possibleIntegralValue = Right $ M.fromList $ zip ( show <$> [(1::Int)..]) (toList taxaList)
+              | leafSet `Set.isSubsetOf` taxaSet = Right $ M.fromList $ zip (toList taxaList) (toList taxaList)
+              | otherwise                        = Left  $ "The supplied leaf labels were not a proper subset of the taxa set or the positive integers."
+              where
+                possibleIntegralValue = Set.fromList $ show <$> [1.. (length leafSet)]
+            
+            presentTranslationMap :: [String] -> Either String (Map String String)
+            presentTranslationMap transSpec =
+                case partitionEithers $ tupleEither <$> transSpec of
+                  -- | Alledgedly permuted taxaList
+                  (xs, []) ->
+                      if Set.fromList xs `Set.isSubsetOf` taxaSet
+                      then Right . M.fromList $ zip (show <$> [(1::Int)..]) xs 
+                      else Left  $ "Translation specifcation: " <> show xs <> " is not a subset of: " <> show (toList taxaList)
+                  ([], xs) ->
+                      if      not   $ Set.fromList (snd <$> xs) `Set.isSubsetOf` taxaSet
+                      then    Left  $ "There was an element in the co-domain of the Translation specifaction that is not an element of the taxa set."
+                      else if not   $ Set.fromList (fst <$> xs) == leafSet
+                      then    Left  $ "There was an element in the domain of the Translation specifaction that is not an element of the leaf node label set."
+                      else    Right $ M.fromList xs
+                  ( _,  _) -> Left  $ "All elements of the Translation specifaction were not either all singleton tokens or pairwise tokens."
+              where
+                tupleEither :: String -> Either String (String, String)
+                tupleEither inputStr =
+                    case sndToken of
+                      [] -> Left   fstToken
+                      xs -> Right (fstToken, xs)
+                  where
+                    frontTrimmed         = dropWhile isSpace inputStr
+                    (fstToken, trailing) = span (not . isSpace) frontTrimmed
+                    secondTrimmed        = dropWhile isSpace trailing
+                    (sndToken, _)        = span (not . isSpace) secondTrimmed
+
+            leafSet = foldMap (foldMap f . snd) labeledTrees
+              where
+                f node
+                  | isLeaf node  = Set.fromList . maybeToList $ newickLabel node
+                  | otherwise    = foldMap f $ descendants node
+                  
+
 
 -- | updateSeqInMap takes in a TaxonSequenceMap, a length (the length of the longest sequence in the map), a taxon name and a sequence.
 -- It updates the first map by adding the new seq using the taxon name as a key. If the seq us shorter than the max, it is first
