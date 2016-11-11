@@ -116,7 +116,7 @@ partitionCharFormat = foldr f ("", Right [""], Right [""], "", "", "", "", False
 
 -- |
 -- Partitions tree block results into translation and forest results.
-partitionTreeBlock :: [TreeField] -> ([[String]], [(String,NewickForest)])
+partitionTreeBlock :: [TreeField] -> ([[String]], [(String,NewickNode)])
 partitionTreeBlock = foldr f ([],[])
     where
         f (Translation n) (ys,zs) = (n:ys,   zs)
