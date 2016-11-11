@@ -29,7 +29,7 @@ import qualified Data.Map.Lazy      as M
 import           Data.Maybe
 import           Data.Monoid
 import           Data.Ord                  (comparing)
---import           Data.Set                  (Set)
+import           Data.Set                  (Set)
 import qualified Data.Set           as Set
 import           Data.Vector               (Vector)
 import qualified Data.Vector        as V
@@ -124,7 +124,7 @@ validateNexusParseResult (NexusParseResult inputSeqBlocks taxas treeSet assumpti
       -- Ordered by call, so first independentErrors, then dependentErrors, then outputSeqTups. Dependencies are subgrouped according to calling fn.
       
       -- Independent errors
-        independentErrors  = catMaybes $ noTaxaError : multipleTaxaBlocks : seqMatrixDimsErrors ++ wrongDataTypeErrors-- sequenceBlockErrors
+        independentErrors  = catMaybes $ noTaxaError : multipleTaxaBlocks : seqMatrixDimsErrors ++ wrongDataTypeErrors ++ treeTranslateErrors -- sequenceBlockErrors
       -- types of independent errors
 --        DEFINED BUT NOT USED: (taxaDimsMissingError)
 --        taxaDimsMissingError = taxaDimsMissing taxas inputSeqBlocks
@@ -182,7 +182,12 @@ validateNexusParseResult (NexusParseResult inputSeqBlocks taxas treeSet assumpti
         parsedSeqs          = decisionTree inputSeqBlocks taxaLst
         -- taxaSeqVector = V.fromList [(taxon, alignedTaxaSeqMap M.! taxon) | taxon <- taxaLst]
         --unalignedTaxaSeqMap = getSeqFromMatrix (getBlock "unaligned" inputSeqBlocks) taxaLst
-        translatedTrees     = translateTrees taxaLst treeSet
+
+        translatedTreesMay  = translateTrees taxaLst treeSet
+        treeTranslateErrors =
+          case translatedTreesMay of
+            Left (x:|xs) -> Just <$> (x:xs)
+            Right _      -> []
 
 ---------------------------  Following set of fns is actually set of nested ifs to match decision tree in docs  ---------------------------
 -------------------------  Mostly, these fns just check for errors much of the logic is dup'd in getSeqFromMatrix  ------------------------
@@ -264,20 +269,36 @@ foldSeqs ((taxSeqMap,charMDataVec):xs)   = ((newSeqMap, newMetadata), totLength)
         totLength                        = curLength +  V.length charMDataVec
     
 
--- different cardinalities of taxaLst and taxa in translate block
--- 
+-- |
+-- Given the supplied /ordered/ collection of taxa and the collection of
+-- 'TreeBlock's we apply any nescisarry translations and return Either a list of
+-- errors encountered when translation the 'TreeBlock's or a coalesced & translated
+-- forest in which all leaf nodes have a coresponding taxa label.
 translateTrees :: Vector String -> [TreeBlock] -> Either (NonEmpty String) NewickForest
 translateTrees taxaList treeSet =
     case partitionEithers $ handleTreeBlock <$> treeSet of
       (  [], xs) -> Right $ mconcat xs
       (x:xs,  _) -> Left  $ x :| xs
     where
+
+        -- |
+        -- A set of all taxa labels supplied.
+        taxaSet :: Set String
         taxaSet = Set.fromList $ toList taxaList
-      
+
+        -- |
+        -- Attempt to translate a 'TreeBlock' into a 'NewickForest' with leaf
+        -- nodes properly labeled with taxa names.
         handleTreeBlock :: TreeBlock -> Either String NewickForest
         handleTreeBlock (TreeBlock translateFields labeledTrees) =
             (\x -> foldMap (translateForest x. snd) labeledTrees) <$> labelMappingEither
           where
+
+            -- |
+            -- Contextually construct the symbolic mapping function.
+            --
+            -- There exist many possible error conditions which are supplied as
+            -- Left values.
             labelMappingEither :: Either String (Map String String)
             labelMappingEither =
                 case translateFields of 
@@ -285,6 +306,9 @@ translateTrees taxaList treeSet =
                   []    -> missingTranslationMap
                   _:_:_ -> Left "Multiple translate fields in a trees block"
 
+            -- |
+            -- Applies a translation of leaf label symbols to taxa labels over
+            -- a forest.
             translateForest :: Map String String -> NewickForest -> NewickForest
             translateForest mapping = fmap f
               where
@@ -292,7 +316,16 @@ translateTrees taxaList treeSet =
                   | isLeaf node = node { newickLabel = newickLabel node >>= (`M.lookup` mapping)  }
                   | otherwise   = node { descendants = translateForest mapping $ descendants node }
                     
-
+            -- |
+            -- Construct the leaf node symbol to taxon label mapping when there
+            -- is no translation specifaction present in the TREES block.
+            --
+            -- Depending on the leaf label annotation either a mapping from Z+
+            -- to the taxa set or an identity mapping will be constructed.
+            --
+            -- In the case that the leaf label set is not a subset of either Z+
+            -- or the taxa set, an error condition is returned.
+            missingTranslationMap :: Either String (Map String String)
             missingTranslationMap
               | leafSet == possibleIntegralValue = Right $ M.fromList $ zip ( show <$> [(1::Int)..]) (toList taxaList)
               | leafSet `Set.isSubsetOf` taxaSet = Right $ M.fromList $ zip (toList taxaList) (toList taxaList)
@@ -300,20 +333,33 @@ translateTrees taxaList treeSet =
               where
                 possibleIntegralValue = Set.fromList $ show <$> [1.. (length leafSet)]
             
+            -- |
+            -- Construct the leaf node symbol to taxon label mapping when there
+            -- is a single translation specifaction present in the TREES block.
+            --
+            -- Depending on the supplied transation specification either a mapping
+            -- from Z+ to the permuted taxa set or a mapping from a symbol set to
+            -- the taxa set will be constructed.
+            --
+            -- In the case that the translations specifiaction did not contain
+            -- all tuples or a perutation of the taxa set, an error condition is
+            -- returned.
             presentTranslationMap :: [String] -> Either String (Map String String)
             presentTranslationMap transSpec =
                 case partitionEithers $ tupleEither <$> transSpec of
-                  -- | Alledgedly permuted taxaList
+                  -- Alledgedly permuted taxaList
                   (xs, []) ->
                       if Set.fromList xs `Set.isSubsetOf` taxaSet
                       then Right . M.fromList $ zip (show <$> [(1::Int)..]) xs 
                       else Left  $ "Translation specifcation: " <> show xs <> " is not a subset of: " <> show (toList taxaList)
+                  -- Alledged /total/ symbol to taxa mapping
                   ([], xs) ->
                       if      not   $ Set.fromList (snd <$> xs) `Set.isSubsetOf` taxaSet
                       then    Left  $ "There was an element in the co-domain of the Translation specifaction that is not an element of the taxa set."
                       else if not   $ Set.fromList (fst <$> xs) == leafSet
                       then    Left  $ "There was an element in the domain of the Translation specifaction that is not an element of the leaf node label set."
                       else    Right $ M.fromList xs
+                  -- Inconsistent Translate formatting
                   ( _,  _) -> Left  $ "All elements of the Translation specifaction were not either all singleton tokens or pairwise tokens."
               where
                 tupleEither :: String -> Either String (String, String)
@@ -327,6 +373,9 @@ translateTrees taxaList treeSet =
                     secondTrimmed        = dropWhile isSpace trailing
                     (sndToken, _)        = span (not . isSpace) secondTrimmed
 
+            -- |
+            -- Construct the leaf set of a forest.
+            leafSet :: Set String
             leafSet = foldMap (foldMap f . snd) labeledTrees
               where
                 f node
