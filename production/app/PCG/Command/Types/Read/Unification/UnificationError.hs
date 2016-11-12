@@ -1,6 +1,7 @@
 module PCG.Command.Types.Read.Unification.UnificationError where
 
 import Data.Foldable
+import Data.List          (intercalate)
 import Data.List.NonEmpty (NonEmpty)
 import Data.Semigroup
 
@@ -18,6 +19,7 @@ data UnificationErrorMessage
    | ForestDuplicateTaxa (NonEmpty TaxaName) FilePath
    | ForestExtraTaxa     (NonEmpty TaxaName) FilePath
    | ForestMissingTaxa   (NonEmpty TaxaName) FilePath
+   | VacuousInput        (NonEmpty FilePath)
 
 
 instance Semigroup UnificationError where
@@ -59,6 +61,10 @@ instance Show UnificationErrorMessage where
         , "' contain an entry for the taxa: \n"
         , listShow names
         ]
+    show (VacuousInput files) = mconcat
+       [ "There was niether any character sequences nor any trees found in any of the supplied files input files:\n"
+       , (\x -> "  ["<>x<>"]") . intercalate ", " $ show <$> toList files 
+       ]
 
 listShow :: (Foldable t, Show a) => t a -> String
 listShow = (\x -> "[ " <> x <> "]") . drop 2 . unlines . fmap ((", " <>) . show) . toList

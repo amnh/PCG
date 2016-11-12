@@ -7,31 +7,32 @@ module PCG.Command.Types.Read.Evaluate
 import           Bio.Metadata
 import           Bio.Character.Parsed
 import           Bio.PhyloGraph.Forest
-import           Bio.PhyloGraph.Solution    (SearchState,StandardMetadata)
-import           Control.Monad              (when)
+import           Bio.PhyloGraph.Solution      (SearchState,StandardMetadata)
+import           Control.Monad                (when)
 import           Control.Monad.IO.Class
 import           Control.Monad.Trans.Either
-import           Data.Alphabet       hiding (AmbiguityGroup)
-import           Data.Bifunctor             (bimap,first)
-import           Data.Char                  (isLower,toLower,isUpper,toUpper)
+import           Data.Alphabet   --    hiding (AmbiguityGroup)
+import           Data.Bifunctor               (bimap,first)
+import           Data.Char                    (isLower,toLower,isUpper,toUpper)
 import           Data.Either.Custom
 import           Data.Foldable
-import           Data.Key                   ((!),lookup)
-import           Data.List.Utility          (subsetOf)
-import           Data.Map                   (Map,assocs,insert,union, keys)
-import qualified Data.Map              as M (fromList)
-import           Data.Maybe                 (fromMaybe)
-import           Data.Monoid                ((<>))
-import           Data.Ord                   (comparing)
-import           Data.Vector                (Vector)
-import qualified Data.Vector           as V (zipWith)
+import           Data.Key                     ((!),lookup)
+import           Data.List.Utility            (subsetOf)
+import           Data.Map                     (Map,assocs,insert,union, keys)
+import qualified Data.Map              as M   (fromList)
+import           Data.Maybe                   (fromMaybe)
+import           Data.Monoid                  ((<>))
+import           Data.Ord                     (comparing)
+import qualified Data.TCM              as TCM
+import           Data.Vector                  (Vector)
+import qualified Data.Vector           as V   (zipWith)
 --import           Debug.Trace
 import           File.Format.Fasta   hiding   (FastaSequenceType(..))
 import qualified File.Format.Fasta   as Fasta (FastaSequenceType(..))
-import           File.Format.Fastc   hiding (Identifier)
+import           File.Format.Fastc   hiding   (Identifier)
 import           File.Format.Newick
-import           File.Format.Nexus          (nexusStreamParser)
-import           File.Format.TNT
+import           File.Format.Nexus            (nexusStreamParser)
+import           File.Format.TNT     hiding   (weight)
 import           File.Format.TransitionCostMatrix
 import           File.Format.VertexEdgeRoot
 import           PCG.Command.Types (Command(..))
@@ -67,22 +68,30 @@ parseSpecifiedFile      GenomeFile        {}     = fail "Genome file specificati
 parseSpecifiedFile spec@AminoAcidFile     {}     = fastaAminoAcid spec
 parseSpecifiedFile spec@NucleotideFile    {}     = fastaDNA       spec
 parseSpecifiedFile spec@CustomAlphabetFile{}     = parseCustomAlphabet spec
+parseSpecifiedFile spec@(UnspecifiedFile      _) =
+  getSpecifiedContent spec >>= eitherTValidation . fmap (progressiveParse . fst) . dataFiles
 parseSpecifiedFile     (PrealignedFile x tcmRef) = do
     tcmContent <- getSpecifiedTcm tcmRef
     subContent <- parseSpecifiedFile x
     fmap (fmap setCharactersToAligned) $
       case tcmContent of
-        Nothing             -> pure subContent
-        Just (path,content) -> do
+        Nothing              -> pure subContent
+        Just (path, content) -> do
           tcmMat <- hoistEither . first unparsable $ parse' tcmStreamParser path content
           traverse (setTcm tcmMat) subContent
   where
     setTcm :: TCM -> FracturedParseResult -> EitherT ReadError IO FracturedParseResult
-    setTcm t fpr = case relatedTcm fpr of
-                     Nothing -> pure $ fpr { relatedTcm = Just t }
-                     Just _  -> fail "Multiple TCM files defined in prealigned file specification"
-parseSpecifiedFile spec@(UnspecifiedFile    _    ) =
-  getSpecifiedContent spec >>= eitherTValidation . fmap (progressiveParse . fst) . dataFiles
+    setTcm t fpr =
+        case relatedTcm fpr of
+          Just _  -> fail "Multiple TCM files defined in prealigned file specification"
+          Nothing ->
+            let (factoredWeight, factoredTCM) = TCM.fromList . toList $ transitionCosts t
+                relatedAlphabet               = fromSymbols $ customAlphabet t
+            in  pure $ fpr
+                { parsedMetas = (\x -> x { weight = (weight x) * fromRational factoredWeight }) <$> parsedMetas fpr
+                , relatedTcm  = Just factoredTCM
+                }
+
 
 fastaDNA :: FileSpecification -> EitherT ReadError IO [FracturedParseResult]
 --fastaDNA spec | trace ("fasta DNA parser with spec " ++ show spec) False = undefined
@@ -204,7 +213,7 @@ toFractured tcmMat path = FPR <$> unifyCharacters
                               <*> const path
 {--}
 
-nucleotideIUPAC :: Map AmbiguityGroup AmbiguityGroup
+nucleotideIUPAC :: Map (AmbiguityGroup String) (AmbiguityGroup String)
 nucleotideIUPAC = casei core
   where
     ref  = (core !)
@@ -230,7 +239,7 @@ nucleotideIUPAC = casei core
          , (["?"], ref ["A"] <> ref ["G"] <> ref ["C"] <> ref ["T"] <> ref ["-"])
          ]
 
-aminoAcidIUPAC :: Map AmbiguityGroup AmbiguityGroup
+aminoAcidIUPAC :: Map (AmbiguityGroup String) (AmbiguityGroup String)
 aminoAcidIUPAC = casei $ core `union` multi
   where
     core         = M.fromList $ zip symbolGroups symbolGroups
@@ -245,7 +254,7 @@ aminoAcidIUPAC = casei $ core `union` multi
                  , (["?"], allSymbols)
                  ]
 
-casei :: Map AmbiguityGroup v -> Map AmbiguityGroup v
+casei :: Map (AmbiguityGroup String ) v -> Map (AmbiguityGroup String) v
 casei x = foldl f x $ assocs x
   where
     f m ([[k]], v)

@@ -49,7 +49,7 @@ import           Data.Semigroup                    ((<>), sconcat)
 import           Data.Semigroup.Foldable
 import           Data.Set                          (Set, (\\))
 import qualified Data.Set                   as Set
-import           Data.TCM
+import           Data.TCM                          (TCM)
 import qualified Data.TCM                   as TCM
 import           Data.MonoTraversable
 import           Data.Vector                       (Vector, (//))
@@ -105,11 +105,17 @@ rectifyResults2 fprs =
     charSeqs        = joinSequences2 dataSeqs
     -- Step 8: Convert topological forests to DAGs (using reference indexing from #7 results)
     -- TODO: unfoldDAGs referencing #7
-    dagForest
-      | null suppliedTrees && null charSeqs = undefined -- Throw a unification error here
-      | null suppliedTrees = PhylogeneticSolution . pure . foldMap1 singletonComponent . NE.fromList $ toList charSeqs
-      | null charSeqs      = undefined
-      | otherwise          = undefined
+    dagForest       =
+        case (null suppliedTrees, null charSeqs) of
+          -- Throw a unification error here
+          (True , True ) -> Left . VacuousInput $ sourceFile <$> NE.fromList fprs
+          -- Build a default forest of singleton components
+          (True , False) -> Right . PhylogeneticSolution . pure
+                          . foldMap1 singletonComponent . NE.fromList $ toList charSeqs
+          -- Build a forest of with Units () as character type parameter
+          (False, True ) -> undefined
+          -- BUild a forest with the corresponding character data on the nodes
+          (False, False) -> undefined
       where
         suppliedTrees = parsedTrees <$> allForests
         singletonComponent datum = PhylogeneticForest . pure $ unfoldDAG rootLeafGen True
