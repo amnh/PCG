@@ -24,9 +24,10 @@ import           Data.Char                (isSpace,toLower)
 import qualified Data.List.NonEmpty as NE (head)
 import           Data.List.Split          (splitOneOf)
 import           Data.Maybe               (isJust)
+-- import           Data.Monoid
 import qualified Data.Set           as S
---import Debug.Trace
 import           File.Format.Newick
+import           File.Format.Newick.Parser (newickExtendedDefinition)
 import           File.Format.Nexus.Data
 import           File.Format.Nexus.Partition
 import           File.Format.Nexus.Validate
@@ -35,6 +36,8 @@ import           Text.Megaparsec  hiding (label, Tokens)
 import           Text.Megaparsec.Lexer   (integer)
 import           Text.Megaparsec.Prim    (MonadParsec)
 import           Text.Megaparsec.Custom
+
+--import Debug.Trace (trace)
 
 
 -- |
@@ -100,13 +103,15 @@ nexusBlock = do
         _      <- symbol blockend
         pure block'
     where
-        block =  (CharacterBlock   <$> try (characterBlockDefinition "characters" True))
-             <|> (CharacterBlock   <$> try (characterBlockDefinition "unaligned" False))
-             <|> (CharacterBlock   <$> try (characterBlockDefinition "data"       True)) -- data blocks should be aligned
-             <|> (TaxaBlock        <$> try taxaBlockDefinition)
-             <|> (TreesBlock       <$> try treeBlockDefinition)
-             <|> (AssumptionsBlock <$> try assumptionsBlockDefinition)
-             <|> (SkippedBlock     <$> try ignoredBlockDefinition)
+        block = choice
+            [ CharacterBlock   <$> try (characterBlockDefinition "characters" True)
+            , CharacterBlock   <$> try (characterBlockDefinition "unaligned" False)
+            , CharacterBlock   <$> try (characterBlockDefinition "data" True) -- data blocks should be aligned
+            , TaxaBlock        <$> try taxaBlockDefinition
+            , TreesBlock       <$> try treeBlockDefinition
+            , AssumptionsBlock <$> try assumptionsBlockDefinition
+            , SkippedBlock     <$> try ignoredBlockDefinition
+            ]
 
 
 characterBlockDefinition :: (MonadParsec e s m, Token s ~ Char {- , Show s -}) => String -> Bool -> m PhyloSequence
@@ -119,9 +124,7 @@ characterBlockDefinition which isAlignedSequence = {-do
 
 
 taxaBlockDefinition :: (MonadParsec e s m, Token s ~ Char {- , Show s -}) => m TaxaSpecification
-taxaBlockDefinition = {-do
-    x <- getInput
-    trace ("taxaBlockDefinition"  ++ show x) $ -}do
+taxaBlockDefinition = do
     _     <- symbol (string' "taxa;")
     (y,z) <- partitionTaxaBlock <$> many taxaSubBlock
     pure $ TaxaSpecification y z
@@ -183,12 +186,11 @@ tcmMatrixDefinition = {-do
 
 
 treeBlockDefinition :: (MonadParsec e s m, Token s ~ Char {- , Show s -}) => m TreeBlock
-treeBlockDefinition = {-do
-    x <- getInput
-    trace ("\n\ntreeBlockDefinition "  ++ show x) $ -}do
+treeBlockDefinition = do
         _     <- symbol (string' "trees;")
-        (x,y) <- partitionTreeBlock <$> many treeFieldDef
-        pure $ TreeBlock x y
+        xs    <- many treeFieldDef
+        (x,y) <- partitionTreeBlock <$> (pure xs)
+        pure $ TreeBlock x y 
 
 
 -- TODO: Capture values of the StateLabels field, and CharStateLabels field.
@@ -197,13 +199,15 @@ seqSubBlock = {-do
     x <- getInput
     trace ("seqSubBlock" ++ (show x)) $ -}symbol block
     where
-        block =  (Dims        <$> try dimensionsDefinition)
-             <|> (Format      <$> try formatDefinition)
-             <|> (Eliminate   <$> try (stringDefinition "eliminate"))
-             <|> (Matrix      <$> try seqMatrixDefinition)
-             <|> (Taxa        <$> try (stringListDefinition "taxlabels"))
-             <|>  CharLabels  <$> try (stringListDefinition "charlabels")
-             <|>  IgnSSB      <$> try (ignoredSubBlockDef ';')
+        block = choice
+            [ Dims        <$> try dimensionsDefinition
+            , Format      <$> try formatDefinition
+            , Eliminate   <$> try (stringDefinition "eliminate")
+            , Matrix      <$> try seqMatrixDefinition
+            , Taxa        <$> try (stringListDefinition "taxlabels")
+            , CharLabels  <$> try (stringListDefinition "charlabels")
+            , IgnSSB      <$> try (ignoredSubBlockDef ';')
+            ]
 
 
 -- |
@@ -256,31 +260,35 @@ charFormatFieldDef = {-do
         block' <- many $ symbol block
         pure block'
     where
-        block =  (CharDT      <$> try (stringDefinition       "datatype"   ))
-             <|> (SymStr      <$> try (quotedStringDefinition "symbols"    ))
-             <|> (Transpose   <$> try (booleanDefinition      "transpose"  ))
-             <|> (Interleave  <$> try (booleanDefinition      "interleave" ))
-             <|> (Tokens      <$> try (booleanDefinition      "tokens"     ))
-             <|> (EqStr       <$> try (quotedStringDefinition "equate"     ))
-             <|> (MissStr     <$> try (stringDefinition       "missing"    ))
-             <|> (GapChar     <$> try (stringDefinition       "gap"        ))
-             <|> (MatchChar   <$> try (stringDefinition       "matchchar"  ))
-             <|> (Items       <$> try (stringDefinition       "items"      ))
-             <|> (RespectCase <$> try (booleanDefinition      "respectcase"))
-             <|> (Unlabeled   <$> try (booleanDefinition      "nolabels"   ))
-             <|> (IgnFF       <$> try (ignoredSubBlockDef     ' '          ))
+        block = choice
+            [ CharDT      <$> try (stringDefinition       "datatype"   )
+            , SymStr      <$> try (quotedStringDefinition "symbols"    )
+            , Transpose   <$> try (booleanDefinition      "transpose"  )
+            , Interleave  <$> try (booleanDefinition      "interleave" )
+            , Tokens      <$> try (booleanDefinition      "tokens"     )
+            , EqStr       <$> try (quotedStringDefinition "equate"     )
+            , MissStr     <$> try (stringDefinition       "missing"    )
+            , GapChar     <$> try (stringDefinition       "gap"        )
+            , MatchChar   <$> try (stringDefinition       "matchchar"  )
+            , Items       <$> try (stringDefinition       "items"      )
+            , RespectCase <$> try (booleanDefinition      "respectcase")
+            , Unlabeled   <$> try (booleanDefinition      "nolabels"   )
+            , IgnFF       <$> try (ignoredSubBlockDef     ' '          )
+            ]
 
 
 -- |
 -- Parses one of the two caputured field values present in a tree block.
 treeFieldDef :: (MonadParsec e s m, Token s ~ Char {- , Show s -}) => m TreeField
-treeFieldDef  =  (Translation <$> try (delimitedStringListDefinition "translate" ','))
-             <|> (Tree        <$> try treeDefinition)
-             <|> (IgnTF       <$> try (ignoredSubBlockDef ';'))
+treeFieldDef = choice
+    [ Translation <$> try (delimitedStringListDefinition "translate" ',')
+    , Tree        <$> try treeDefinition
+    , IgnTF       <$> try (ignoredSubBlockDef ';')
+    ]
 
 
 -- | booleanDefinition takes a string of format KEYWORD;
--- and returns True if it succeeds in matching. The semicolon is not captured by this fn.
+-- and returnsTreeField True if it succeeds in matching. The semicolon is not captured by this fn.
 -- A test exists in the test suite.
 booleanDefinition :: (MonadParsec e s m, Token s ~ Char {- , Show s -}) => String -> m Bool
 booleanDefinition blockTitle = {-do
@@ -342,7 +350,7 @@ delimitedStringListDefinition label delimiter = {-do
     x <- getInput
     trace (("delimitedStringListDefinition " ++ label)  ++ show x) $ -}do
     _        <- symbol (string' label)
-    theItems <- many (noneOf $ delimiter : ";") `sepBy` char delimiter
+    theItems <- many (noneOf $ delimiter : ";") `sepBy` trimmed (char delimiter)
     _        <- symbol $ char ';'
     pure theItems
 
@@ -351,14 +359,12 @@ delimitedStringListDefinition label delimiter = {-do
 -- and returns the tuple of (<label>, '[NewickForest']). Label consists on one or more
 -- non-space, non-equal-sign characters. For the proper definition of a 'NewickForest'
 -- see the module for the Newick parser.
-treeDefinition :: (MonadParsec e s m, Token s ~ Char {- , Show s -}) => m (String, NewickForest)
-treeDefinition = {-do
-    x <- getInput
-    trace ("treeDefinition"  ++ show x) $ -}do
+treeDefinition :: (MonadParsec e s m, Token s ~ Char {- , Show s -}) => m (String, NewickNode)
+treeDefinition = do
     _      <- symbol $ string' "tree"
     label  <- symbol $ somethingTill (char '=' <|> spaceChar)
     _      <- symbol $ char '='
-    newick <- symbol newickStreamParser
+    newick <- symbol newickExtendedDefinition -- newickStreamParser
     pure (label, newick)
 
 

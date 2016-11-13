@@ -22,7 +22,7 @@ import           Data.Either               (partitionEithers)
 import           Data.Foldable
 import           Data.Functor              (($>))
 import           Data.Key
-import           Data.List                 (delete, intercalate, partition, maximumBy, sortBy)
+import           Data.List                 (intercalate, partition, maximumBy, sortBy)
 import           Data.List.NonEmpty        (NonEmpty( (:|) ))
 import qualified Data.List.NonEmpty as NE
 import           Data.List.Utility         (duplicates)
@@ -295,7 +295,7 @@ validateForest :: (MonadParsec e s m {- , Token s ~ Char -}) => VertexEdgeRoot -
 validateForest ver@(VER vs es rs ) =
     case errors of
       [] -> pure ver
-      xs -> fails errors
+      xs -> fails xs
   where
     rootList       = toList rs
     connections    = buildEdgeMap vs es

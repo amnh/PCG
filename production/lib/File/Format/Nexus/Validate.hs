@@ -16,20 +16,27 @@
 
 module File.Format.Nexus.Validate where
 
-import           Data.Char              (isSpace,toLower)
-import           Data.Either            (lefts) 
---import           Data.Foldable          (toList)
-import           Data.List              (sort,sortBy)
-import           Data.List.Split        (splitOn)
+import           Data.Char                 (isSpace,toLower)
+import           Data.Either
+import           Data.Foldable          
+import           Data.List                 (sort,sortBy)
+import           Data.List.NonEmpty        (NonEmpty( (:|) ))
+--import qualified Data.List.NonEmpty as NE
+import           Data.List.Split           (splitOn)
 --import           Data.List.Utility      (chunksOf)
-import qualified Data.Map.Lazy     as M
-import           Data.Maybe             (catMaybes,fromJust)
-import           Data.Ord               (comparing)
---import qualified Data.Set          as S (fromList, union)
-import qualified Data.Vector       as V
+import           Data.Map.Lazy             (Map)
+import qualified Data.Map.Lazy      as M
+import           Data.Maybe
+import           Data.Monoid
+import           Data.Ord                  (comparing)
+import           Data.Set                  (Set)
+import qualified Data.Set           as Set
+import           Data.Vector               (Vector)
+import qualified Data.Vector        as V
+import           File.Format.Newick
 import           File.Format.Nexus.Data
 import           Safe
-import           Text.Megaparsec.Prim   (MonadParsec)
+import           Text.Megaparsec.Prim      (MonadParsec)
 --import qualified Text.Megaparsec.Prim as P (Token)
 import           Text.Megaparsec.Custom
 
@@ -97,7 +104,7 @@ import           Text.Megaparsec.Custom
 -- • check alignment and length of aligned blocks
 -- • check tcm for size; see how *'s work in tcm
 -- • check for chars that aren't in alphabet
--- • fail on incorrrect datatype
+-- • fail on incorrect datatype
 -- • dependentErrors & independentErrors become :: String error, String warning => [Maybe (Either error warning)]
      -- then partitionEithers . catMaybes, etc., etc. (talk to Alex)
 -- • warn that eliminate (among several other things: match, additive, weight(, etc.?)) doesn't work on unaligned data
@@ -112,12 +119,12 @@ validateNexusParseResult (NexusParseResult inputSeqBlocks taxas treeSet assumpti
   | not (null dependentErrors)                        = fails dependentErrors
   | otherwise                                         = case maybeThing of
                                                               Left   err               -> fail err
-                                                              Right (outputSeqTups, _) -> pure $ Nexus {-taxaLst-} outputSeqTups 
+                                                              Right (outputSeqTups, _) -> pure $ Nexus {-taxaLst-} outputSeqTups translatedTrees
   where
       -- Ordered by call, so first independentErrors, then dependentErrors, then outputSeqTups. Dependencies are subgrouped according to calling fn.
       
       -- Independent errors
-        independentErrors  = catMaybes $ noTaxaError : multipleTaxaBlocks : seqMatrixDimsErrors ++ wrongDataTypeErrors-- sequenceBlockErrors
+        independentErrors  = catMaybes $ noTaxaError : multipleTaxaBlocks : seqMatrixDimsErrors ++ wrongDataTypeErrors ++ treeTranslateErrors -- sequenceBlockErrors
       -- types of independent errors
 --        DEFINED BUT NOT USED: (taxaDimsMissingError)
 --        taxaDimsMissingError = taxaDimsMissing taxas inputSeqBlocks
@@ -157,11 +164,11 @@ validateNexusParseResult (NexusParseResult inputSeqBlocks taxas treeSet assumpti
  --       incorrectCharCount  = checkSeqLength (filter (\x -> alignedSeq x) inputSeqBlocks) outputSeqTups -- TODO: This doesn't work, because it takes an entire list of PhyloSequence blocks and the complete, concatted sequences. It needs to take place at a different point in the process.
 
       -- dependencies for dependent errors
-        equates = foldr (\x acc -> getEquates x : acc) [] inputSeqBlocks
+        equates  = foldr (\x acc -> getEquates x : acc) [] inputSeqBlocks
         symbols' = foldr (\x acc -> getSymbols x : acc) [] inputSeqBlocks
         taxaLst  = if not $ null taxas
                       then V.fromList . taxaLabels $ head taxas
-                      else V.empty
+                      else mempty
 
       -- these are still dependencies for dependent errors, but they're also the beginning of the output gathering.                  
         maybeThing = foldSeqs <$> seqMetadataTuples
@@ -170,11 +177,22 @@ validateNexusParseResult (NexusParseResult inputSeqBlocks taxas treeSet assumpti
         --                          )) inputSeqBlocks -- TODO: replace getSeqFromMatrix blah blah with parsedSeqs
         costMatrix = headMay . tcm =<< headMay assumptions -- TODO: why does this work?
         
-        seqMetadataTuples = createSeqMetaTuples <$> parsedSeqs
+        seqMetadataTuples   = createSeqMetaTuples <$> parsedSeqs
         createSeqMetaTuples = fmap (\(taxonSeqMap,rawSequence) -> (taxonSeqMap, getCharMetadata costMatrix rawSequence)) . (`zip` inputSeqBlocks)
-        parsedSeqs = decisionTree inputSeqBlocks taxaLst
+        parsedSeqs          = decisionTree inputSeqBlocks taxaLst
         -- taxaSeqVector = V.fromList [(taxon, alignedTaxaSeqMap M.! taxon) | taxon <- taxaLst]
         --unalignedTaxaSeqMap = getSeqFromMatrix (getBlock "unaligned" inputSeqBlocks) taxaLst
+
+        translateTreesResult = translateTrees taxaLst treeSet
+        treeTranslateErrors  =
+          case translateTreesResult of
+            Left (x:|xs) -> Just <$> (x:xs)
+            Right _      -> []
+
+        translatedTrees =
+          case translateTreesResult of
+            Left  _ -> mempty
+            Right x -> x
 
 ---------------------------  Following set of fns is actually set of nested ifs to match decision tree in docs  ---------------------------
 -------------------------  Mostly, these fns just check for errors much of the logic is dup'd in getSeqFromMatrix  ------------------------
@@ -255,6 +273,122 @@ foldSeqs ((taxSeqMap,charMDataVec):xs)   = ((newSeqMap, newMetadata), totLength)
                                                                 else curMetadata
         totLength                        = curLength +  V.length charMDataVec
     
+
+-- |
+-- Given the supplied /ordered/ collection of taxa and the collection of
+-- 'TreeBlock's we apply any nescisarry translations and return Either a list of
+-- errors encountered when translation the 'TreeBlock's or a coalesced & translated
+-- forest in which all leaf nodes have a coresponding taxa label.
+translateTrees :: Vector String -> [TreeBlock] -> Either (NonEmpty String) NewickForest
+translateTrees taxaList treeSet =
+    case partitionEithers $ handleTreeBlock <$> treeSet of
+      (  [], xs) -> Right $ xs
+      (x:xs,  _) -> Left  $ x :| xs
+    where
+
+        -- |
+        -- A set of all taxa labels supplied.
+        taxaSet :: Set String
+        taxaSet = Set.fromList $ toList taxaList
+
+        -- |
+        -- Attempt to translate a 'TreeBlock' into a 'NewickForest' with leaf
+        -- nodes properly labeled with taxa names.
+        handleTreeBlock :: TreeBlock -> Either String NewickNode
+        handleTreeBlock (TreeBlock translateFields labeledTrees) =
+            (\x -> foldMap (translateTree x. snd) labeledTrees) <$> labelMappingEither
+          where
+
+            -- |
+            -- Contextually construct the symbolic mapping function.
+            --
+            -- There exist many possible error conditions which are supplied as
+            -- Left values.
+            labelMappingEither :: Either String (Map String String)
+            labelMappingEither =
+                case translateFields of 
+                  [x]   -> presentTranslationMap x
+                  []    -> missingTranslationMap
+                  _:_:_ -> Left "Multiple translate fields in a trees block"
+
+            -- |
+            -- Applies a translation of leaf label symbols to taxa labels over
+            -- a forest.
+            translateTree :: Map String String -> NewickNode -> NewickNode
+            translateTree mapping = f
+              where
+                f node
+                  | isLeaf node = node { newickLabel = newickLabel node >>= (`M.lookup` mapping)  }
+                  | otherwise   = node { descendants = translateTree mapping <$> descendants node }
+                    
+            -- |
+            -- Construct the leaf node symbol to taxon label mapping when there
+            -- is no translation specifaction present in the TREES block.
+            --
+            -- Depending on the leaf label annotation either a mapping from Z+
+            -- to the taxa set or an identity mapping will be constructed.
+            --
+            -- In the case that the leaf label set is not a subset of either Z+
+            -- or the taxa set, an error condition is returned.
+            missingTranslationMap :: Either String (Map String String)
+            missingTranslationMap
+              | leafSet == possibleIntegralValue = Right $ M.fromList $ zip ( show <$> [(1::Int)..]) (toList taxaList)
+              | leafSet `Set.isSubsetOf` taxaSet = Right $ M.fromList $ zip (toList taxaList) (toList taxaList)
+              | otherwise                        = Left  $ "The supplied leaf labels were not a proper subset of the taxa set or the positive integers."
+              where
+                possibleIntegralValue = Set.fromList $ show <$> [1.. (length leafSet)]
+            
+            -- |
+            -- Construct the leaf node symbol to taxon label mapping when there
+            -- is a single translation specifaction present in the TREES block.
+            --
+            -- Depending on the supplied transation specification either a mapping
+            -- from Z+ to the permuted taxa set or a mapping from a symbol set to
+            -- the taxa set will be constructed.
+            --
+            -- In the case that the translations specifiaction did not contain
+            -- all tuples or a perutation of the taxa set, an error condition is
+            -- returned.
+            presentTranslationMap :: [String] -> Either String (Map String String)
+            presentTranslationMap transSpec =
+                case partitionEithers $ tupleEither <$> transSpec of
+                  -- Alledgedly permuted taxaList
+                  (xs, []) ->
+                      if Set.fromList xs `Set.isSubsetOf` taxaSet
+                      then Right . M.fromList $ zip (show <$> [(1::Int)..]) xs 
+                      else Left  $ "Translation specifcation: " <> show xs <> " is not a subset of: " <> show (toList taxaList)
+                  -- Alledged /total/ symbol to taxa mapping
+                  ([], xs) ->
+                      if      not   $ Set.fromList (snd <$> xs) `Set.isSubsetOf` taxaSet
+                      then    Left  $ "There was an element in the co-domain of the Translation specifaction that is not an element of the taxa set."
+                      else if not   $ leafSet `Set.isSubsetOf` Set.fromList (fst <$> xs)
+                      then    Left  $ "There was an element in the domain of the Translation specifaction that is not an element of the leaf node label set.\n  LeafSet - Symbols: " <> show (toList $ leafSet `Set.difference` Set.fromList (fst <$> xs))
+                      else    Right $ M.fromList xs
+                  -- Inconsistent Translate formatting
+                  ( _,  _) -> Left  $ "All elements of the Translation specifaction were not either all singleton tokens or pairwise tokens."
+              where
+                tupleEither :: String -> Either String (String, String)
+                tupleEither inputStr =
+                    case sndToken of
+                      [] -> Left   fstToken
+                      xs -> Right (fstToken, xs)
+                  where
+                    frontTrimmed         = dropWhile isSpace inputStr
+                    (fstToken, trailing) = span (not . isSpace) frontTrimmed
+                    secondTrimmed        = dropWhile isSpace trailing
+                    (sndToken, _)        = span (not . isSpace) secondTrimmed
+
+            -- |
+            -- Construct the leaf set of a forest.
+            leafSet :: Set String
+            leafSet = foldMap (f . snd) labeledTrees
+              where
+                f :: NewickNode -> Set String
+                f node =
+                  case descendants node of
+                    [] -> Set.fromList . maybeToList $ newickLabel node
+                    xs -> foldMap f xs
+
 
 -- | updateSeqInMap takes in a TaxonSequenceMap, a length (the length of the longest sequence in the map), a taxon name and a sequence.
 -- It updates the first map by adding the new seq using the taxon name as a key. If the seq us shorter than the max, it is first
