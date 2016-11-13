@@ -1,18 +1,18 @@
 flags: {}
+
 extra-package-dbs: []
+
 local-bin-path: bin
+
 packages:
 - '.'
+
 system-ghc: false
+
 extra-deps:
 - ListZipper-1.2.0.2
-- QuickCheck-2.9.1
-- aeson-1.0.2.1
-- attoparsec-0.13.0.2
 - bv-0.4.1
 - containers-0.5.8.1
-- dlist-0.8.0.1
 - lens-4.15.1
-- math-functions-0.2.0.1
-- megaparsec-5.0.0
-resolver: lts-7.7
+
+resolver: lts-7.8
