@@ -11,12 +11,14 @@
 -- Typeclass for a parsed forest so that it can convert into an internal forest.
 --
 -----------------------------------------------------------------------------
-{-# LANGUAGE TypeSynonymInstances, FlexibleContexts, FlexibleInstances #-}
+{-# LANGUAGE FlexibleContexts, FlexibleInstances #-}
+{- # LANGUAGE TypeSynonymInstances # -}
 
 module Bio.PhyloGraph.Forest.Parsed where
 
 import           Bio.PhyloGraphPrime.Forest
-import           Bio.PhyloGraphPrime.ZipperDAG
+import           Bio.PhyloGraphPrime.ReferenceDAG
+-- import           Bio.PhyloGraphPrime.ZipperDAG
 import           Data.Foldable
 import           Data.IntMap                              (IntMap)
 import qualified Data.IntMap                       as IM
@@ -39,11 +41,12 @@ import qualified File.Format.VertexEdgeRoot.Parser as VER
 import           Prelude                           hiding (lookup)
 
 
-type ParserTree   = ZipperNode (Maybe Double) (Maybe String)
+-- type ParserTree   = ZipperNode (Maybe Double) (Maybe String)
+type ParserTree   = ReferenceDAG (Maybe Double) (Maybe String)
 
 type ParserForest = Maybe (PhylogeneticForest ParserTree)
 
-data NewickEnum = NE !Int (Maybe String) (Maybe Double) [NewickEnum] 
+data NewickEnum   = NE !Int (Maybe String) (Maybe Double) [NewickEnum] 
    
 
 -- | Represents a parser result type which can have a possibly empty forest

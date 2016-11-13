@@ -143,10 +143,12 @@ library
                        Bio.PhyloGraph.Node.Packed
                        Bio.PhyloGraph.Node.Preliminary
                        Bio.PhyloGraph.Node.Referential
+                       Bio.PhyloGraph.Forest.Parsed
                        Bio.PhyloGraph.Tree.Referential
                        Bio.PhyloGraph.Tree.Rose
                        Bio.PhyloGraphPrime
                        Bio.PhyloGraphPrime.Component
+                       Bio.PhyloGraphPrime.Node
                        Bio.PhyloGraphPrime.ReferenceDAG
                        Bio.PhyloGraphPrime.ZipperDAG
                        Control.Evaluation
@@ -191,7 +193,6 @@ library
                        Bio.Character.Static.Internal
                        Bio.PhyloGraph.Forest.Class
                        Bio.PhyloGraph.Forest.Internal
-                       Bio.PhyloGraph.Forest.Parsed
                        Bio.Metadata.Class
                        Bio.Metadata.Internal
                        Bio.PhyloGraph.DAG.Internal

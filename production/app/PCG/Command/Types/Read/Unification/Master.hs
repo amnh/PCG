@@ -26,9 +26,12 @@ import           Bio.Metadata.MaskGenerator
 import           Bio.PhyloGraph.Solution    hiding (parsedChars)
 import           Bio.PhyloGraph.DAG
 import           Bio.PhyloGraph.Forest
+import           Bio.PhyloGraph.Forest.Parsed
 import           Bio.PhyloGraph.Node               (encoded, nodeIdx)
 import qualified Bio.PhyloGraph.Node        as Node
 import           Bio.PhyloGraphPrime
+import           Bio.PhyloGraphPrime.Component
+import           Bio.PhyloGraphPrime.Node
 import           Bio.PhyloGraphPrime.ReferenceDAG
 import           Control.Arrow                     ((***), (&&&))
 import           Control.Applicative               ((<|>))
@@ -70,10 +73,35 @@ data FracturedParseResult
    = FPR
    { parsedChars :: TreeChars
    , parsedMetas :: Vector ParsedCharacterMetadata -- Vector StandardMetadata
-   , parsedTrees :: Forest NewickNode
+   , parsedTrees :: ParserForest
    , relatedTcm  :: Maybe TCM
    , sourceFile  :: FilePath
-   } deriving (Show)
+   }
+
+
+instance Show FracturedParseResult where
+    show fpr = unlines 
+        [ "FPR"
+        , "  { parsedChars = " <> show (parsedChars fpr)
+        , "  , parsedMetas = " <> show (parsedMetas fpr)
+        , "  , parsedTrees = " <> if null (parsedTrees fpr) then "Nothing" else "Just <trees>"
+        , "  , relatedTcm  = " <> show (relatedTcm  fpr)
+        , "  , sourceFile  = " <> show (sourceFile  fpr)
+        , "  }"
+        ]
+
+
+type TopologicalResult = PhylogeneticSolution (ReferenceDAG (Maybe Double) (Maybe String))
+
+
+type CharacterResult   = PhylogeneticSolution
+                           (ReferenceDAG
+                             (Maybe Double)
+                             (PhylogeneticNode
+                               (Maybe
+                                 (CharacterSequence StaticCharacterBlock DynamicChar))
+                             )
+                           )
 
 
 masterUnify' :: [FracturedParseResult] -> Either UnificationError (Solution DAG)
@@ -82,11 +110,12 @@ masterUnify' = undefined --rectifyResults
 
 -- |
 -- Unify disparate parsed results into a single phylogenetic solution.
-rectifyResults2 :: [FracturedParseResult] -> Either UnificationError (PhylogeneticSolution (ReferenceDAG () ()))
+rectifyResults2 :: [FracturedParseResult]
+                -> Either UnificationError (Either TopologicalResult CharacterResult)
 rectifyResults2 fprs =
-  case errors of
-    [] -> undefined -- Right maskedSolution
-    xs -> Left . sconcat $ NE.fromList xs
+    case errors of
+      []   -> dagForest --      = undefined -- Right maskedSolution
+      x:xs -> Left . sconcat $ x:|xs
   where
     -- Step 1: Gather data file contents
     dataSeqs        = filter (not . fromTreeOnlyFile) fprs
@@ -95,7 +124,7 @@ rectifyResults2 fprs =
     -- Step 3: Gather forest file data
     allForests      = filter (not . null . parsedTrees) fprs
     -- Step 4: Gather the taxa names for each forest from terminal nodes
-    forestTaxa      = (mconcat . fmap terminalNames . parsedTrees &&& id) <$> allForests
+    forestTaxa      = (foldMap (foldMap terminalNames2) . parsedTrees &&& id) <$> allForests
     -- Step 5: Assert that each terminal node name is unique in the forest
     duplicateNames  = filter (not . null . fst) $ first duplicates <$> forestTaxa
     -- Step 6: Assert that each forest's terminal node set is exactly the same as the taxa set from "data files"
@@ -103,28 +132,42 @@ rectifyResults2 fprs =
     missingNames    = filter (not . null . fst) $ first ((taxaSet \\) . Set.fromList) <$> forestTaxa
     -- Step 7: Combine disparte sequences from many sources  into single metadata & character sequence.
     charSeqs        = joinSequences2 dataSeqs
-    -- Step 8: Convert topological forests to DAGs (using reference indexing from #7 results)
-    -- TODO: unfoldDAGs referencing #7
+    -- Step 8: Collect the parsed forests to be merged
+    suppliedForests = catMaybes $ parsedTrees <$> allForests
+      
+    -- Step 9: Convert topological forests to DAGs (using reference indexing from #7 results)
     dagForest       =
-        case (null suppliedTrees, null charSeqs) of
+        case (null suppliedForests, null charSeqs) of
           -- Throw a unification error here
-          (True , True ) -> Left . VacuousInput $ sourceFile <$> NE.fromList fprs
+          (True , True ) -> Left . UnificationError . pure . VacuousInput $ sourceFile <$> NE.fromList fprs
           -- Build a default forest of singleton components
-          (True , False) -> Right . PhylogeneticSolution . pure
-                          . foldMap1 singletonComponent . NE.fromList $ toList charSeqs
+          (True , False) -> Right . Right . PhylogeneticSolution . pure
+                          . foldMap1 singletonComponent . NE.fromList $ toKeyedList charSeqs
           -- Build a forest of with Units () as character type parameter
-          (False, True ) -> undefined
+          (False, True ) -> Right . Left . PhylogeneticSolution . pure
+                          . sconcat $ NE.fromList suppliedForests
           -- BUild a forest with the corresponding character data on the nodes
-          (False, False) -> undefined
+          (False, False) -> Right . Right $ PhylogeneticSolution . pure
+                          . foldMap1 (matchToChars charSeqs) $ NE.fromList suppliedForests
       where
-        suppliedTrees = parsedTrees <$> allForests
-        singletonComponent datum = PhylogeneticForest . pure $ unfoldDAG rootLeafGen True
+        
+        singletonComponent (label, datum) = PhylogeneticForest . pure $ unfoldDAG rootLeafGen True
           where
             rootLeafGen x
-              | x         = (                [], Nothing   , [(Nothing, not x)])
-              | otherwise = ([(Nothing, not x)], Just datum, []                )
-              
-            
+              | x         = (                [], PNode "Trivial Root" Nothing    , [(Nothing, not x)])
+              | otherwise = ([(Nothing, not x)], PNode label         (Just datum), []                )
+
+        matchToChars :: Map String (CharacterSequence StaticCharacterBlock DynamicChar)
+                     -> PhylogeneticForest ParserTree
+                     -> PhylogeneticForest (ReferenceDAG (Maybe Double) (PhylogeneticNode (Maybe (CharacterSequence StaticCharacterBlock DynamicChar))))
+        matchToChars charMapping = fmap (fmap f)
+          where
+            f e =
+                case e of
+                  Nothing    -> PNode "HTU" Nothing
+                  Just label -> PNode label $ label `lookup` charMapping
+
+-- Omitted from old unifcation process            
 --    combinedData    = Solution (HM.fromList $ assocs charSeqs) combinedMetadata dagForests
     -- Step 9:  TODO: Node encoding
 --    encodedSolution = encodeSolution combinedData
@@ -134,12 +177,15 @@ rectifyResults2 fprs =
     -- Error collection
     errors          = catMaybes [duplicateError, extraError, missingError]
     duplicateError  = colateErrors ForestDuplicateTaxa duplicateNames
-    extraError      = colateErrors ForestExtraTaxa     duplicateNames
-    missingError    = colateErrors ForestMissingTaxa   duplicateNames
+    extraError      = colateErrors ForestExtraTaxa     extraNames
+    missingError    = colateErrors ForestMissingTaxa   missingNames
 
-    colateErrors :: ((NonEmpty a) -> FilePath -> UnificationErrorMessage) -> [([a], FracturedParseResult)] -> Maybe UnificationError
+    colateErrors :: (Foldable t, Foldable t')
+                 => ((NonEmpty a) -> FilePath -> UnificationErrorMessage)
+                 -> t (t' a, FracturedParseResult)
+                 -> Maybe UnificationError
     colateErrors f xs =
-      case xs of
+      case toList xs of
         [] -> Nothing
         ys -> Just . UnificationError . NE.fromList $ transformFPR <$> ys
       where
@@ -360,6 +406,9 @@ terminalNames n
   | isLeaf n  = [fromJust $ newickLabel n]
   | otherwise = mconcat $ terminalNames <$> descendants n
 
+
+terminalNames2 :: ReferenceDAG (Maybe Double) (Maybe String) -> [Identifier]
+terminalNames2 dag = catMaybes $ (`nodeDatum` dag) <$> leaves dag
 
 {-
 -- | Functionality to encode into a solution
