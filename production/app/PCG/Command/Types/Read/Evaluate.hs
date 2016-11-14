@@ -4,10 +4,10 @@ module PCG.Command.Types.Read.Evaluate
   ( evaluate
   ) where
 
-import           Bio.Metadata
 import           Bio.Character.Parsed
+import           Bio.Metadata.Parsed
 import           Bio.PhyloGraph.Forest
-import           Bio.PhyloGraph.Solution      (SearchState,StandardMetadata)
+import           Bio.PhyloGraph.Solution      (SearchState)
 import           Control.Monad                (when)
 import           Control.Monad.IO.Class
 import           Control.Monad.Trans.Either
@@ -41,8 +41,10 @@ import           PCG.Command.Types.Read.Unification.Master
 import           Prelude             hiding (lookup)
 import           Text.Megaparsec
 
+
 parse' :: Parsec Dec s a -> String -> s -> Either (ParseError (Token s) Dec) a
 parse' = parse
+
 
 evaluate :: Command -> SearchState -> SearchState
 {--}
@@ -61,6 +63,8 @@ evaluate (READ fileSpecs) _old = do
 
 evaluate _ _ = fail "Invalid READ command binding"
 {--}
+
+
 parseSpecifiedFile  :: FileSpecification -> EitherT ReadError IO [FracturedParseResult]
 parseSpecifiedFile      AnnotatedFile     {}     = fail "Annotated file specification is not implemented"
 parseSpecifiedFile      ChromosomeFile    {}     = fail "Chromosome file specification is not implemented"
@@ -103,6 +107,7 @@ fastaDNA spec = getSpecifiedContent spec >>= (hoistEither . parseSpecifiedConten
         parseResult = {- (\x -> trace (show x) x) . -} first unparsable $ parse' combinator path content
         combinator  = (\x -> try (fastaStreamConverter Fasta.DNA x) <|> fastaStreamConverter Fasta.RNA x) =<< fastaStreamParser
 
+
 -- TODO: abstract these two (three) v^
 fastaAminoAcid :: FileSpecification -> EitherT ReadError IO [FracturedParseResult]
 fastaAminoAcid spec = getSpecifiedContent spec >>= (hoistEither . parseSpecifiedContent parse'')
@@ -113,8 +118,10 @@ fastaAminoAcid spec = getSpecifiedContent spec >>= (hoistEither . parseSpecified
         parseResult = first unparsable $ parse' combinator path content
         combinator  = fastaStreamConverter Fasta.AminoAcid =<< fastaStreamParser
 
+
 parseSpecifiedContent :: (FileResult -> Either ReadError FracturedParseResult) -> FileSpecificationContent -> Either ReadError [FracturedParseResult]
 parseSpecifiedContent parse'' = eitherValidation . fmap parse'' . dataFiles
+
 
 parseCustomAlphabet :: FileSpecification -> EitherT ReadError IO [FracturedParseResult]
 parseCustomAlphabet spec = getSpecifiedContent spec >>= (hoistEither . parseSpecifiedContentWithTcm)
@@ -129,31 +136,36 @@ parseCustomAlphabet spec = getSpecifiedContent spec >>= (hoistEither . parseSpec
       where
         parseResult = first unparsable $ parse' fastcStreamParser path content
 
+
 applyReferencedTCM :: FracturedParseResult -> FracturedParseResult
 applyReferencedTCM fpr =
   case relatedTcm fpr of
      Nothing -> fpr
-     Just x  -> let newAlphabet = fromSymbols $ customAlphabet x
-                    newTcm      = transitionCosts x
-                in  fpr { parsedMetas = updateAlphabet newAlphabet . updateTcm newTcm <$> parsedMetas fpr }
+     Just x  ->
+       let newAlphabet = fromSymbols $ customAlphabet x
+           newTcm      = transitionCosts x
+       in  fpr { parsedMetas = updateAlphabet newAlphabet . updateTcm newTcm <$> parsedMetas fpr }
+
 
 prependFilenamesToCharacterNames :: FracturedParseResult -> FracturedParseResult
 prependFilenamesToCharacterNames fpr = fpr { parsedMetas = prependName (sourceFile fpr) <$> parsedMetas fpr }
 
+
 setCharactersToAligned :: FracturedParseResult -> FracturedParseResult
 setCharactersToAligned fpr = fpr { parsedMetas = updateAligned True <$> parsedMetas fpr }
+
 
 expandIUPAC :: FracturedParseResult -> FracturedParseResult
 expandIUPAC fpr = fpr { parsedChars = newTreeChars }
   where
     newTreeChars = f (parsedChars fpr) (parsedMetas fpr)
-    f :: TreeChars -> Vector StandardMetadata -> TreeChars
+    f :: TreeChars -> Vector ParsedCharacterMetadata -> TreeChars
     f mapping meta = g <$> mapping
       where
         g :: ParsedChars -> ParsedChars
         g = V.zipWith h meta
           where
-            h :: StandardMetadata -> Maybe ParsedChar -> Maybe ParsedChar
+            h :: ParsedCharacterMetadata -> Maybe ParsedChar -> Maybe ParsedChar
             h cInfo seqMay = expandCodes <$> seqMay
               where
                 cAlph = toList $ alphabet cInfo
@@ -164,6 +176,7 @@ expandIUPAC fpr = fpr { parsedChars = newTreeChars }
                   | cAlph `subsetOf` concat (keys aminoAcidIUPAC ) = expandOrId aminoAcidIUPAC  <$> x
                   | otherwise = x
     expandOrId m x = fromMaybe x $ x `lookup` m
+
 
 progressiveParse :: FilePath -> EitherT ReadError IO FracturedParseResult
 progressiveParse inputPath = do
@@ -205,6 +218,7 @@ progressiveParse inputPath = do
     nukeParser = (\x -> try (fastaStreamConverter Fasta.DNA x) <|> fastaStreamConverter Fasta.RNA x) =<< fastaStreamParser
     acidParser = fastaStreamConverter Fasta.DNA =<< fastaStreamParser
     
+
 toFractured :: (ParsedMetadata a, ParsedCharacters a, ParsedForest a) => Maybe TCM -> FilePath -> a -> FracturedParseResult
 toFractured tcmMat path = FPR <$> unifyCharacters
                               <*> unifyMetadata
@@ -212,6 +226,7 @@ toFractured tcmMat path = FPR <$> unifyCharacters
                               <*> const tcmMat
                               <*> const path
 {--}
+
 
 nucleotideIUPAC :: Map (AmbiguityGroup String) (AmbiguityGroup String)
 nucleotideIUPAC = casei core
@@ -239,6 +254,7 @@ nucleotideIUPAC = casei core
          , (["?"], ref ["A"] <> ref ["G"] <> ref ["C"] <> ref ["T"] <> ref ["-"])
          ]
 
+
 aminoAcidIUPAC :: Map (AmbiguityGroup String) (AmbiguityGroup String)
 aminoAcidIUPAC = casei $ core `union` multi
   where
@@ -253,6 +269,7 @@ aminoAcidIUPAC = casei $ core `union` multi
                  , (["X"], allAcids  )
                  , (["?"], allSymbols)
                  ]
+
 
 casei :: Map (AmbiguityGroup String ) v -> Map (AmbiguityGroup String) v
 casei x = foldl f x $ assocs x
