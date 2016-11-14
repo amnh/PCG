@@ -12,7 +12,6 @@
 --
 -----------------------------------------------------------------------------
 {-# LANGUAGE FlexibleContexts, FlexibleInstances #-}
-{- # LANGUAGE TypeSynonymInstances # -}
 
 module Bio.PhyloGraph.Forest.Parsed where
 
@@ -73,6 +72,11 @@ instance ParsedForest TaxonSequenceMap where
 -- | (✔)
 instance ParsedForest TCM where
     unifyGraph = const Nothing
+
+
+-- | (✔)
+instance ParsedForest Nexus where
+    unifyGraph (Nexus _ forest) = unifyGraph forest
 
 
 -- | (✔)
@@ -229,10 +233,6 @@ instance ParsedForest VER.VertexEdgeRoot where
         
 {- -}
 
-
--- | (✔)
-instance ParsedForest Nexus where
-    unifyGraph (Nexus _ forest) = unifyGraph forest
 {-
 -- | Convert the referential forests defined by sets of verticies, edges, and
 --   roots into a forest of topological tree structure.

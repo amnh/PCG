@@ -125,13 +125,13 @@ testNumerate = testGroup "Numeration properties"
 -- | Useful function to convert encoding information to two encoded seqs
 encodeArbSameLen :: (GoodParsedChar, GoodParsedChar) -> (DynamicChar, DynamicChar)
 encodeArbSameLen (parse1, parse2) =
-    ( encodeStream alph . NE.fromList . fmap NE.fromList . toList $ V.take minLen p1
-    , encodeStream alph . NE.fromList . fmap NE.fromList . toList $ V.take minLen p2
+    ( encodeStream alph . NE.fromList $ NE.take minLen p1
+    , encodeStream alph . NE.fromList $ NE.take minLen p2
     )
   where
     (p1,p2) = (getGoodness parse1, getGoodness parse2)
     minLen  = minimum [length p1, length p2]
-    oneAlph = foldMap S.fromList
+    oneAlph = foldMap (S.fromList . toList)
     alph    = fromSymbols $ oneAlph p1 `S.union` oneAlph p2
 
 
@@ -145,8 +145,8 @@ newtype GoodParsedChar
 instance Arbitrary GoodParsedChar where
     arbitrary = do
         symbols                     <- getNonEmpty <$> arbitrary :: Gen [String]
-        let ambiguityGroupGenerator =  sublistOf symbols `suchThat` (not . null)
-        someAmbiguityGroups         <- V.fromList <$> listOf1 ambiguityGroupGenerator
+        let ambiguityGroupGenerator =  NE.fromList <$> (sublistOf symbols `suchThat` (not . null))
+        someAmbiguityGroups         <- NE.fromList <$> listOf1 ambiguityGroupGenerator
         pure $ GoodParsedChar someAmbiguityGroups
 
 

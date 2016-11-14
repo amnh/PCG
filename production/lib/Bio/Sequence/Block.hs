@@ -143,8 +143,8 @@ discreteSingleton alphabetValues nameValue tcmValues transformation input =
     Symetric    -> (\x -> CharacterBlock Nothing  mempty  mempty  mempty (pure x) mempty) $   NonMetricBin character metadata $ factoredTcm diagnosis
     Metric      -> (\x -> CharacterBlock Nothing  mempty  mempty (pure x) mempty  mempty) $      MetricBin character metadata $ factoredTcm diagnosis
     UltraMetric -> (\x -> CharacterBlock Nothing  mempty  mempty (pure x) mempty  mempty) $      MetricBin character metadata $ factoredTcm diagnosis
-    Additive    -> (\x -> CharacterBlock Nothing  mempty (pure x) mempty  mempty  mempty) $    AdditiveBin character metadata -- $ symbolCount character
-    NonAdditive -> (\x -> CharacterBlock Nothing (pure x) mempty  mempty  mempty  mempty) $ NonAdditiveBin character metadata -- $ symbolCount character
+    Additive    -> (\x -> CharacterBlock Nothing  mempty (pure x) mempty  mempty  mempty) $    AdditiveBin character metadata --- $ symbolCount character
+    NonAdditive -> (\x -> CharacterBlock Nothing (pure x) mempty  mempty  mempty  mempty) $ NonAdditiveBin character metadata --- $ symbolCount character
   where
     character = transformation input
     diagnosis = diagnoseTcm tcmValues

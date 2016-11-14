@@ -17,16 +17,17 @@ import           Data.Char                    (isLower,toLower,isUpper,toUpper)
 import           Data.Either.Custom
 import           Data.Foldable
 import           Data.Key                     ((!),lookup)
+import           Data.List.NonEmpty           (NonEmpty( (:|) ))
+import qualified Data.List.NonEmpty    as NE
 import           Data.List.Utility            (subsetOf)
 import           Data.Map                     (Map,assocs,insert,union, keys)
-import qualified Data.Map              as M   (fromList)
+import qualified Data.Map              as M
 import           Data.Maybe                   (fromMaybe)
 import           Data.Monoid                  ((<>))
 import           Data.Ord                     (comparing)
 import qualified Data.TCM              as TCM
 import           Data.Vector                  (Vector)
 import qualified Data.Vector           as V   (zipWith)
---import           Debug.Trace
 import           File.Format.Fasta   hiding   (FastaSequenceType(..))
 import qualified File.Format.Fasta   as Fasta (FastaSequenceType(..))
 import           File.Format.Fastc   hiding   (Identifier)
@@ -40,6 +41,8 @@ import           PCG.Command.Types.Read.Internal
 import           PCG.Command.Types.Read.Unification.Master
 import           Prelude             hiding (lookup)
 import           Text.Megaparsec
+
+--import Debug.Trace (trace)
 
 
 parse' :: Parsec Dec s a -> String -> s -> Either (ParseError (Token s) Dec) a
@@ -59,7 +62,7 @@ evaluate (READ fileSpecs) _old = do
           Left uErr -> fail $ show uErr -- Report rectification errors here.
           Right g   -> pure g           -- TODO: rectify against 'old' SearchState, don't just blindly merge or ignore old state
   where
-    transformation = expandIUPAC . prependFilenamesToCharacterNames . applyReferencedTCM
+    transformation = expandIUPAC
 
 evaluate _ _ = fail "Invalid READ command binding"
 {--}
@@ -82,19 +85,25 @@ parseSpecifiedFile     (PrealignedFile x tcmRef) = do
         Nothing              -> pure subContent
         Just (path, content) -> do
           tcmMat <- hoistEither . first unparsable $ parse' tcmStreamParser path content
-          traverse (setTcm tcmMat) subContent
+          traverse (hoistEither . setTcm tcmMat path) subContent
   where
-    setTcm :: TCM -> FracturedParseResult -> EitherT ReadError IO FracturedParseResult
-    setTcm t fpr =
-        case relatedTcm fpr of
-          Just _  -> fail "Multiple TCM files defined in prealigned file specification"
-          Nothing ->
-            let (factoredWeight, factoredTCM) = TCM.fromList . toList $ transitionCosts t
-                relatedAlphabet               = fromSymbols $ customAlphabet t
-            in  pure $ fpr
-                { parsedMetas = (\x -> x { weight = (weight x) * fromRational factoredWeight }) <$> parsedMetas fpr
-                , relatedTcm  = Just factoredTCM
-                }
+
+
+setTcm :: TCM -> FilePath -> FracturedParseResult -> Either ReadError FracturedParseResult
+setTcm t tcmPath fpr =
+   case relatedTcm fpr of
+     Just _  -> Left $ multipleTCMs (sourceFile fpr) tcmPath
+     Nothing ->
+       let (factoredWeight, factoredTCM) = TCM.fromList . toList $ transitionCosts t
+           relatedAlphabet               = fromSymbols $ customAlphabet t
+           metadataUpdate x = x
+               { weight = (weight x) * fromRational factoredWeight
+               , alphabet = relatedAlphabet
+               }
+       in  pure $ fpr
+           { parsedMetas = metadataUpdate <$> parsedMetas fpr
+           , relatedTcm  = Just factoredTCM
+           }
 
 
 fastaDNA :: FileSpecification -> EitherT ReadError IO [FracturedParseResult]
@@ -126,33 +135,45 @@ parseSpecifiedContent parse'' = eitherValidation . fmap parse'' . dataFiles
 parseCustomAlphabet :: FileSpecification -> EitherT ReadError IO [FracturedParseResult]
 parseCustomAlphabet spec = getSpecifiedContent spec >>= (hoistEither . parseSpecifiedContentWithTcm)
   where
+    parse'' m (path, content) =
+        case m of
+          Nothing     -> fracturedResult 
+          Just oldTCM -> setTcm oldTCM path =<< fracturedResult 
+      where
+        fracturedResult = toFractured Nothing path <$> parseResult
+        parseResult     = first unparsable $ parse' fastcStreamParser path content
+
     parseSpecifiedContentWithTcm :: FileSpecificationContent -> Either ReadError [FracturedParseResult]
     parseSpecifiedContentWithTcm specContent = do
-        tcmMay <- case tcmFile specContent of
-                    Nothing             -> pure Nothing
-                    Just (path,content) -> bimap unparsable Just $ parse' tcmStreamParser path content
+        tcmMay <-
+          case tcmFile specContent of
+            Nothing              -> pure Nothing
+            Just (path, content) -> bimap unparsable Just $ parse' tcmStreamParser path content
         eitherValidation . fmap (parse'' tcmMay) $ dataFiles specContent
-    parse'' m (path, content) = toFractured m path <$> parseResult
-      where
-        parseResult = first unparsable $ parse' fastcStreamParser path content
 
-
+{-
 applyReferencedTCM :: FracturedParseResult -> FracturedParseResult
 applyReferencedTCM fpr =
-  case relatedTcm fpr of
-     Nothing -> fpr
-     Just x  ->
-       let newAlphabet = fromSymbols $ customAlphabet x
-           newTcm      = transitionCosts x
-       in  fpr { parsedMetas = updateAlphabet newAlphabet . updateTcm newTcm <$> parsedMetas fpr }
+    case relatedTcm fpr of
+       Nothing -> fpr
+       Just x  ->
+         let newAlphabet = fromSymbols $ customAlphabet x
+             newTcm      = transitionCosts x
+         in  fpr
+             { parsedMetas = updateAlphabet newAlphabet <$> parsedMetas fpr
+            }
+  where
+    updateAlphabet parsedMeta newValue = parsedMeta { alphabet = newValue }
+-}
 
-
-prependFilenamesToCharacterNames :: FracturedParseResult -> FracturedParseResult
-prependFilenamesToCharacterNames fpr = fpr { parsedMetas = prependName (sourceFile fpr) <$> parsedMetas fpr }
+--prependFilenamesToCharacterNames :: FracturedParseResult -> FracturedParseResult
+--prependFilenamesToCharacterNames fpr = fpr { parsedMetas = prependName (sourceFile fpr) <$> parsedMetas fpr }
 
 
 setCharactersToAligned :: FracturedParseResult -> FracturedParseResult
-setCharactersToAligned fpr = fpr { parsedMetas = updateAligned True <$> parsedMetas fpr }
+setCharactersToAligned fpr = fpr { parsedMetas = setAligned <$> parsedMetas fpr }
+  where
+    setAligned x = x { isDynamic = False }
 
 
 expandIUPAC :: FracturedParseResult -> FracturedParseResult
@@ -172,8 +193,8 @@ expandIUPAC fpr = fpr { parsedChars = newTreeChars }
 
                 expandCodes :: ParsedChar -> ParsedChar
                 expandCodes x
-                  | cAlph `subsetOf` concat (keys nucleotideIUPAC) = expandOrId nucleotideIUPAC <$> x
-                  | cAlph `subsetOf` concat (keys aminoAcidIUPAC ) = expandOrId aminoAcidIUPAC  <$> x
+                  | cAlph `subsetOf` (concatMap toList . keys) nucleotideIUPAC = expandOrId nucleotideIUPAC <$> x
+                  | cAlph `subsetOf` (concatMap toList . keys) aminoAcidIUPAC  = expandOrId aminoAcidIUPAC  <$> x
                   | otherwise = x
     expandOrId m x = fromMaybe x $ x `lookup` m
 
@@ -219,7 +240,7 @@ progressiveParse inputPath = do
     acidParser = fastaStreamConverter Fasta.DNA =<< fastaStreamParser
     
 
-toFractured :: (ParsedMetadata a, ParsedCharacters a, ParsedForest a) => Maybe TCM -> FilePath -> a -> FracturedParseResult
+toFractured :: (ParsedMetadata a, ParsedCharacters a, ParsedForest a) => Maybe TCM.TCM -> FilePath -> a -> FracturedParseResult
 toFractured tcmMat path = FPR <$> unifyCharacters
                               <*> unifyMetadata
                               <*> unifyGraph
@@ -229,7 +250,7 @@ toFractured tcmMat path = FPR <$> unifyCharacters
 
 
 nucleotideIUPAC :: Map (AmbiguityGroup String) (AmbiguityGroup String)
-nucleotideIUPAC = casei core
+nucleotideIUPAC = casei $ nonEmptyMap core
   where
     ref  = (core !)
     core = M.fromList
@@ -256,7 +277,7 @@ nucleotideIUPAC = casei core
 
 
 aminoAcidIUPAC :: Map (AmbiguityGroup String) (AmbiguityGroup String)
-aminoAcidIUPAC = casei $ core `union` multi
+aminoAcidIUPAC = casei . nonEmptyMap $ core `union` multi
   where
     core         = M.fromList $ zip symbolGroups symbolGroups
     symbolGroups = pure . pure <$> "ACDEFGHIKLMNPQRSTVWY-"
@@ -270,13 +291,15 @@ aminoAcidIUPAC = casei $ core `union` multi
                  , (["?"], allSymbols)
                  ]
 
+nonEmptyMap :: Map [a] [a] -> Map (NonEmpty a) (NonEmpty a)
+nonEmptyMap = fmap NE.fromList . M.mapKeysMonotonic NE.fromList
 
 casei :: Map (AmbiguityGroup String ) v -> Map (AmbiguityGroup String) v
 casei x = foldl f x $ assocs x
   where
-    f m ([[k]], v)
-      | isLower k  = insert [[toUpper k]] v m
-      | isUpper k  = insert [[toLower k]] v m
+    f m ([k]:|[], v)
+      | isLower k  = insert (pure . pure $ toUpper k) v m
+      | isUpper k  = insert (pure . pure $ toLower k) v m
       | otherwise  = m
     f m (_    , _) = m
 

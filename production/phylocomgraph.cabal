@@ -355,6 +355,7 @@ executable qdh
                      , QuickCheck           -any
                      , safe                 -any
                      , scientific           -any
+                     , semigroupoids        -any
                      , semigroups           -any
                      , smallcheck           -any
                      , split                -any 
@@ -452,6 +453,10 @@ executable qdh
                        Bio.PhyloGraph.Tree.Referential
                        Bio.PhyloGraph.Tree.Rose
                        Bio.PhyloGraph.Tree.Rose.Class
+                       Bio.PhyloGraphPrime.Component
+                       Bio.PhyloGraphPrime.Forest
+                       Bio.PhyloGraphPrime.ReferenceDAG
+                       Bio.PhyloGraphPrime.ReferenceDAG.Internal
                        Control.Evaluation
                        Control.Evaluation.Internal
                        Control.Evaluation.Trans
@@ -462,6 +467,8 @@ executable qdh
                        Data.BitMatrix.Internal
                        Data.List.Utility
                        Data.Matrix.NotStupid
+                       Data.TCM
+                       Data.TCM.Internal
                        File.Format.Fasta
                        File.Format.Fasta.Converter
                        File.Format.Fasta.Internal
@@ -560,7 +567,7 @@ Test-Suite testsuite
 
   build-depends:       base                 >=4.8
                      , bv                   -any
-                     , containers           -any
+                     , containers           >=0.5.8
                      , criterion            -any
                      , deepseq              -any
                      , directory            -any
@@ -572,13 +579,14 @@ Test-Suite testsuite
                      , megaparsec           >=5.0
                      , mtl                  -any
 --                     , memoize              -any
-                     , mono-traversable     -any
+                     , mono-traversable     >=1.0
                      , parallel             -any
                      , phylocomgraph        -any
                      , QuickCheck           -any
                      , quickcheck-properties -any
                      , safe                 -any
                      , scientific           -any
+                     , semigroupoids        -any
                      , semigroups           -any
                      , smallcheck           -any 
                      , split                -any 
@@ -670,12 +678,19 @@ Test-Suite testsuite
                        Bio.PhyloGraph.Tree.Referential
                        Bio.PhyloGraph.Tree.Rose
                        Bio.PhyloGraph.Tree.Rose.Class
+                       Bio.Character.Internal
+                       Bio.PhyloGraphPrime.Component
+                       Bio.PhyloGraphPrime.Forest
+                       Bio.PhyloGraphPrime.ReferenceDAG
+                       Bio.PhyloGraphPrime.ReferenceDAG.Internal
                        Control.Evaluation.Internal
                        Control.Evaluation.Test
                        Control.Evaluation.Unit
                        Data.BitMatrix.Internal
                        Data.BitMatrix.Test
                        Data.List.Utility
+                       Data.TCM
+                       Data.TCM.Internal
                        File.Format.Fasta
                        File.Format.Fasta.Converter
                        File.Format.Fasta.Internal
