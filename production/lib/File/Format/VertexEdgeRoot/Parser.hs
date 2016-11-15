@@ -236,8 +236,8 @@ edgeSetDefinition = validateEdgeSet =<< edgeSetDefinition'
         dupes  = duplicates edges'
         selfs  = filter (uncurry (==)) edges'
         biDirs :: [(EdgeInfo, EdgeInfo)]
-        biDirs = filter (uncurry isReflexive) $ [(x,y) | x <- es, y <- es, x /= y ]
-        errors = fmap snd $ filter (not . fst)
+        biDirs = filter (uncurry isReflexive) [(x,y) | x <- es, y <- es, x /= y ]
+        errors = snd <$> filter (not . fst)
             [ (null  dupes,         dupesErrorMessage)
             , (null  selfs,         selfsErrorMessage)
             , (null biDirs, biDirectionalErrorMessage)

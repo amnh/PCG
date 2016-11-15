@@ -40,7 +40,7 @@ instance Arbitrary a => Arbitrary (ReplicatedSequence a) where
   arbitrary = RSeq <$> f 5
     where
       f n = do
-        b <- (arbitrary :: Gen Int) `suchThat` (\x -> 0 < x && x <= (max n 1))
+        b <- (arbitrary :: Gen Int) `suchThat` (\x -> 0 < x && x <= max n 1)
         if b == 0
         then pure []
         else do

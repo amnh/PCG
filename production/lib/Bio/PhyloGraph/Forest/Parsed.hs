@@ -93,7 +93,7 @@ instance ParsedForest NewickForest where
           where
             f :: Map String NewickEnum -> Int -> NewickNode -> (Map String NewickEnum, Int, NewickEnum)
             f seen n node =
-                case (newickLabel node) >>= (`lookup` seen) of
+                case newickLabel node >>= (`lookup` seen) of
                   Just x  -> (seen, n, x)
                   Nothing ->
                     case descendants node of
@@ -189,7 +189,7 @@ instance ParsedForest VER.VertexEdgeRoot where
             f v = Map.singleton v $ foldMap g es
               where
                 g e
-                  | edgeOrigin e == v = Set.singleton $ (edgeLength e, edgeTarget e)
+                  | edgeOrigin e == v = Set.singleton (edgeLength e, edgeTarget e)
                   | otherwise         = mempty
 
         parentMapping = foldMap f vs
@@ -197,7 +197,7 @@ instance ParsedForest VER.VertexEdgeRoot where
             f v = Map.singleton v $ foldMap g es
               where
                 g e
-                  | edgeTarget e == v = Set.singleton $ (edgeLength e, edgeOrigin e)
+                  | edgeTarget e == v = Set.singleton (edgeLength e, edgeOrigin e)
                   | otherwise         = mempty
 
         -- |
@@ -216,7 +216,7 @@ instance ParsedForest VER.VertexEdgeRoot where
                   | otherwise                  = foldMap (g seen') children
                   where
                     seen' = seen 
-                    children = (Set.mapMonotonic snd (childMapping ! node)) `Set.difference` seen
+                    children = Set.mapMonotonic snd (childMapping ! node) `Set.difference` seen
 
         convertToDAG = unfoldDAG f 
           where

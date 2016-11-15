@@ -10,7 +10,7 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE DeriveFunctor, FlexibleContexts #-}
+{-# LANGUAGE FlexibleContexts #-}
 
 module Bio.Sequence.Block
   ( CharacterBlock(..)
@@ -122,13 +122,13 @@ toMissingCharacters cb =
   where
     missingContinuous x =
         ContinuousBin
-        { Continuous.characterStream = fmap (const Nothing) . Continuous.characterStream $ x
-        , Continuous.metatdataBounds =                        Continuous.metatdataBounds $ x
+        { Continuous.characterStream = Nothing <$ Continuous.characterStream x
+        , Continuous.metatdataBounds =            Continuous.metatdataBounds x
         }
     missingDynamic (DCC (gcm, tcm, _)) = DCC (gcm, tcm, Nothing)
 
 
-continuousSingleton :: CharacterName -> (Maybe Double) -> CharacterBlock s d
+continuousSingleton :: CharacterName -> Maybe Double -> CharacterBlock s d
 continuousSingleton nameValue continuousValue =
     CharacterBlock (Just bin)  mempty  mempty  mempty mempty mempty
   where
@@ -139,10 +139,10 @@ continuousSingleton nameValue continuousValue =
 discreteSingleton :: Alphabet String -> CharacterName -> TCM -> (a -> s) -> a -> CharacterBlock s d
 discreteSingleton alphabetValues nameValue tcmValues transformation input =
   case tcmStructure diagnosis of
-    NonSymetric -> (\x -> CharacterBlock Nothing  mempty  mempty  mempty (pure x) mempty) $   NonMetricBin character metadata $ factoredTcm diagnosis
-    Symetric    -> (\x -> CharacterBlock Nothing  mempty  mempty  mempty (pure x) mempty) $   NonMetricBin character metadata $ factoredTcm diagnosis
-    Metric      -> (\x -> CharacterBlock Nothing  mempty  mempty (pure x) mempty  mempty) $      MetricBin character metadata $ factoredTcm diagnosis
-    UltraMetric -> (\x -> CharacterBlock Nothing  mempty  mempty (pure x) mempty  mempty) $      MetricBin character metadata $ factoredTcm diagnosis
+    NonSymetric -> (\x -> CharacterBlock Nothing  mempty  mempty  mempty (pure x) mempty) .   NonMetricBin character metadata $ factoredTcm diagnosis
+    Symetric    -> (\x -> CharacterBlock Nothing  mempty  mempty  mempty (pure x) mempty) .   NonMetricBin character metadata $ factoredTcm diagnosis
+    Metric      -> (\x -> CharacterBlock Nothing  mempty  mempty (pure x) mempty  mempty) .      MetricBin character metadata $ factoredTcm diagnosis
+    UltraMetric -> (\x -> CharacterBlock Nothing  mempty  mempty (pure x) mempty  mempty) .      MetricBin character metadata $ factoredTcm diagnosis
     Additive    -> (\x -> CharacterBlock Nothing  mempty (pure x) mempty  mempty  mempty) $    AdditiveBin character metadata --- $ symbolCount character
     NonAdditive -> (\x -> CharacterBlock Nothing (pure x) mempty  mempty  mempty  mempty) $ NonAdditiveBin character metadata --- $ symbolCount character
   where

@@ -10,7 +10,7 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE FlexibleContexts, FlexibleInstances, FunctionalDependencies, MultiParamTypeClasses #-}
+{-# LANGUAGE FlexibleContexts, FlexibleInstances, MultiParamTypeClasses #-}
 
 module Bio.Character.Dynamic.Decoration.Internal where
 

@@ -68,7 +68,7 @@ testEncodableStaticCharacterInstanceBitVector = testGroup "BitVector instance of
             f :: Alphabet String -> Bool
             f alphabet = encodeChar' alphabet allSymbols == e
               where
-                allSymbols = (NE.fromList $ toList alphabet)
+                allSymbols = NE.fromList $ toList alphabet
                 e = complement $ bit i `clearBit` i
                 i = length alphabet - 1
 
@@ -164,14 +164,14 @@ instance Arbitrary AlphabetAndCharacter where
   arbitrary = do
     alphabet           <- arbitrary :: Gen (Alphabet String)
     let ambiguityGroup =  fmap NE.fromList . listOf1 . elements $ toList alphabet
-    dynamicChar        <- fmap NE.fromList $ listOf1 ambiguityGroup
+    dynamicChar        <- NE.fromList <$> listOf1 ambiguityGroup
     pure $ AlphabetAndCharacter (alphabet, dynamicChar)
 
 alphabetAndAmbiguityGroups :: Int -> Gen (Alphabet String, NonEmpty (NonEmpty String))
 alphabetAndAmbiguityGroups n = do
    alphabet           <- arbitrary :: Gen (Alphabet String)
    let ambiguityGroup =  fmap NE.fromList . listOf1 . elements $ toList alphabet -- list can be empty, can have duplicates!
-   ambiguityGroups    <- fmap NE.fromList $ vectorOf n ambiguityGroup
+   ambiguityGroups    <- NE.fromList <$> vectorOf n ambiguityGroup
    pure (fromSymbols alphabet, ambiguityGroups)
 
 fromFoldable :: Set a -> NonEmpty a

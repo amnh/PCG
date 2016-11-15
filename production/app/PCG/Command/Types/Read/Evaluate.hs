@@ -97,7 +97,7 @@ setTcm t tcmPath fpr =
        let (factoredWeight, factoredTCM) = TCM.fromList . toList $ transitionCosts t
            relatedAlphabet               = fromSymbols $ customAlphabet t
            metadataUpdate x = x
-               { weight = (weight x) * fromRational factoredWeight
+               { weight = weight x * fromRational factoredWeight
                , alphabet = relatedAlphabet
                }
        in  pure $ fpr

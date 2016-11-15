@@ -131,7 +131,7 @@ instance ParsedMetadata F.TCM where
         pure ParsedCharacterMetadata
         { alphabet      = fromSymbols alph
         , characterName = ""
-        , weight        = fromRational $ rationalWeight
+        , weight        = fromRational rationalWeight
         , parsedTCM     = Just unfactoredTCM 
         , isDynamic     = False
         , isIgnored     = False -- Maybe this should be True?

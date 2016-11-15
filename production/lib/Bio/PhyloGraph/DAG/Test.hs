@@ -95,9 +95,7 @@ afterUpdatingSingleNodeNumNodesDoesntChangeTest = testProperty "numNodes (update
         f :: DAG -> Gen Bool
         f dag = do
               i <- (getNonNegative <$> arbitrary) `suchThat` (< numNodes dag)
-              let newDag = update dag [node']
-                  node   = nodes dag V.! i
-                  node'  = node { name = "Changed" }
+              let newDag = changeNodeInDAG i dag
               pure $ nodeIsRoot' newDag
 
 
@@ -121,9 +119,7 @@ rootIsStillRootTest = testProperty "After update making a random node root, node
         f :: DAG -> Gen Bool
         f dag = do
               i <- (getNonNegative <$> arbitrary) `suchThat` (< numNodes dag)
-              let newDag = update dag [node']
-                  node   = nodes dag V.! i
-                  node'  = node { isRoot = True }
+              let newDag = changeNodeInDAG i dag
               pure $ nodeIsRoot (root newDag) newDag
 
 stillNoOtherNodesAreRootTest :: TestTree
@@ -148,6 +144,12 @@ updateDoesSomething = testProperty "After update, DAG has changed" f
                   node   = nodes dag V.! i
                   node'  = node { name = "Changed" }
               pure $ newDag /= dag
+
+changeNodeInDAG i oldDag = newDag
+  where
+    newDag = update oldDag [node']
+    node   = nodes oldDag V.! i
+    node'  = node { name = "Changed" }
 
 {-
 nonSingletonNetworkRootIsNotLeafTest :: TestTree

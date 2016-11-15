@@ -14,7 +14,7 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE DeriveTraversable, GeneralizedNewtypeDeriving, TypeFamilies #-}
+{-# LANGUAGE TypeFamilies #-}
 
 module Bio.PhyloGraphPrime.ZipperDAG.Internal where
 

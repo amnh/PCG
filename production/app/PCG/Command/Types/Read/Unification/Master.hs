@@ -147,7 +147,7 @@ rectifyResults2 fprs =
           (False, True ) -> Right . Left . PhylogeneticSolution . pure
                           . sconcat $ NE.fromList suppliedForests
           -- BUild a forest with the corresponding character data on the nodes
-          (False, False) -> Right . Right $ PhylogeneticSolution . pure
+          (False, False) -> Right . Right . PhylogeneticSolution . pure
                           . foldMap1 (matchToChars charSeqs) $ NE.fromList suppliedForests
       where
         
@@ -181,7 +181,7 @@ rectifyResults2 fprs =
     missingError    = colateErrors ForestMissingTaxa   missingNames
 
     colateErrors :: (Foldable t, Foldable t')
-                 => ((NonEmpty a) -> FilePath -> UnificationErrorMessage)
+                 => (NonEmpty a -> FilePath -> UnificationErrorMessage)
                  -> t (t' a, FracturedParseResult)
                  -> Maybe UnificationError
     colateErrors f xs =
@@ -275,7 +275,7 @@ joinSequences2 = collapseAndMerge . reduceAlphabets . deriveCorrectTCMs . derive
             suppliedAlphabet      = alphabet charMetadata
             reducedAlphabet       =
                 case alphabetStateNames suppliedAlphabet of
-                  [] -> fromSymbols               . reduceTokens $     (alphabetSymbols suppliedAlphabet)
+                  [] -> fromSymbols               . reduceTokens $      alphabetSymbols suppliedAlphabet
                   xs -> fromSymbolsWithStateNames . reduceTokens $ zip (alphabetSymbols suppliedAlphabet) xs
               where
                 reduceTokens = foldMapWithKey (\k v -> if k `oelem` missingSymbolIndicies then [] else [v])
@@ -303,7 +303,7 @@ joinSequences2 = collapseAndMerge . reduceAlphabets . deriveCorrectTCMs . derive
             currMapping    = pure . encodeToBlock <$> currTreeChars
 
             inBoth         = intersectionWith (<>) prevMapping currMapping-- oldTreeChars nextTreeChars
-            inOnlyCurr     = (prepend prevPad) <$> getUnique currMapping prevMapping
+            inOnlyCurr     =  prepend prevPad  <$> getUnique currMapping prevMapping
             inOnlyPrev     = (<>      currPad) <$> getUnique prevMapping currMapping
         
             getUnique x y = x `Map.restrictKeys` (lhs `Set.difference` rhs)
