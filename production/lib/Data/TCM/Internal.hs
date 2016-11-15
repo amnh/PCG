@@ -212,7 +212,7 @@ instance Show TCM where
     where
       renderRow i = ("  "<>) . unwords $ renderValue <$> [ tcm ! (i,j) | j <- rangeValues ]
       matrixLines = unlines $ renderRow   <$> rangeValues
-      rangeValues = [0 .. (size tcm) - 1] 
+      rangeValues = [0 .. size tcm - 1] 
       headerLine  = '\n' : unwords [ "TCM:", show $ size tcm, "x", show $ size tcm, "\n"]
       maxValue    = maximumEx tcm
       padSpacing  = length $ show maxValue
@@ -321,9 +321,7 @@ fromCols xs
                        , show otherLengths
                        ]
       where
-        occuranceMap = Map.fromList . occurances $ length <$> toList xs
-        (mode,_)     = findMax occuranceMap
-        otherLengths = keys  $ mode `delete` occuranceMap
+        (mode, otherLengths) = modeAndOutlierLengths xs
         
     notSquareErrorMsg = mconcat [ "fromRows: The number of rows ("
 
@@ -366,9 +364,7 @@ fromRows xs
                        , show otherLengths
                        ]
       where
-        occuranceMap = Map.fromList . occurances $ length <$> toList xs
-        (mode,_)     = findMax occuranceMap
-        otherLengths = keys  $ mode `delete` occuranceMap
+        (mode, otherLengths) = modeAndOutlierLengths xs
         
     notSquareErrorMsg = mconcat [ "fromRows: The number of rows ("
                                 , show height
@@ -376,6 +372,16 @@ fromRows xs
                                 , show width
                                 , ")!"
                                 ]
+
+
+-- |
+-- Determines the mode length and the other lengths of a nested foldable structure.
+modeAndOutlierLengths :: (Foldable t, Foldable t') => t (t' a) -> (Int, [Int])
+modeAndOutlierLengths xs = (mode, otherLengths)
+  where
+    occuranceMap = Map.fromList . occurances $ length <$> toList xs
+    (mode,_)     = findMax occuranceMap
+    otherLengths = keys  $ mode `delete` occuranceMap
 
 
 -- | /O(n*n)/
@@ -457,7 +463,7 @@ diagnoseTcm tcm
   | otherwise          = diagnosis NonSymetric
   where
     (weight, tcm') = factorTCM tcm
-    diagnosis = (TCMDiagnosis weight tcm')
+    diagnosis = TCMDiagnosis weight tcm'
 
 
 -- Un-exported Functionality
@@ -478,7 +484,7 @@ fromListUnsafe xs
   where
     dimension         = floor $ sqrt (fromIntegral (length xs) :: Double)
     coercedVector     = V.fromList $ toEnum . fromEnum <$> prospectiveValues
-    negativeValues    = filter (< 0) $ rationalValues
+    negativeValues    = filter (< 0) rationalValues
     overflowValues    = fmap fst . filter (\(_,y) -> y > toRational (maxBound :: Word32)) $ zip rationalValues prospectiveValues
     prospectiveValues = ((coefficient % 1) *) <$> rationalValues
     coefficient       = foldl1 lcm $ abs . denominator <$> rationalValues
@@ -535,16 +541,17 @@ isNonAdditive tcm = all isNonAdditiveIndex [(i,j) | i <- range, j <- range ]
 --
 -- * /σ(i,k) ≤ σ(i,j) + σ(j,k)/
 isMetric :: TCM -> Bool
-isMetric tcm = and
-    [ zeroDiagonalOnly   tcm
-    , isSymetric         tcm
-    , triangleInequality tcm
-    ]
+isMetric tcm = conditions `allSatisfiedBy` tcm
   where
-   range = [0 .. size tcm - 1]
-   triangleInequality x = all triangleInequalityIndex [(i,k,j) | i <- range, j <- range, k <- range, i < j, j < k ]
+    conditions =
+        [ zeroDiagonalOnly
+        , isSymetric
+        , triangleInequality
+        ]
+    triangleInequality x = all triangleInequalityIndex [(i,k,j) | i <- range, j <- range, k <- range, i < j, j < k ]
       where
         triangleInequalityIndex (i,j,k) = x ! (i,k) <= x ! (i,j) + x ! (j,k)
+        range = [0 .. size tcm - 1]
 
 
 -- |
@@ -567,16 +574,17 @@ isSymetric tcm = all isSymetricIndex [(i,j) | i <- range, j <- range, i <= j ]
 --
 -- * /σ(i,k) ≤ max { σ(i,j),  σ(j,k) }/
 isUltraMetric :: TCM -> Bool
-isUltraMetric tcm = and
-    [ zeroDiagonalOnly      tcm
-    , isSymetric            tcm
-    , ultraMetricInequality tcm
-    ]
+isUltraMetric tcm = conditions `allSatisfiedBy` tcm
   where
-    range = [0 .. size tcm - 1]
+    conditions = 
+        [ zeroDiagonalOnly      
+        , isSymetric           
+        , ultraMetricInequality
+        ]
     ultraMetricInequality x = all ultraMetricInequalityIndex [(i,k,j) | i <- range, j <- range, k <- range, i < j, j < k ]
       where
         ultraMetricInequalityIndex (i,j,k) = x ! (i,k) <= max (x ! (i,j)) (x ! (j,k))
+        range = [0 .. size tcm - 1]
 
 
 -- |
@@ -590,6 +598,13 @@ zeroDiagonalOnly tcm = all zeroDiagonalIndex [ (i,j) | i <- range, j <- range ]
       | otherwise = value /= 0
       where
          value = tcm ! (i,j)
+
+
+-- |
+-- Takes a "list" of conditions to be satisfied and a element upon which to query
+-- And returns whether *all* the conditions were satified.
+allSatisfiedBy :: Foldable t => t (a -> Bool) -> a -> Bool
+allSatisfiedBy conditions element = foldl' (&&) True $ toList conditions <*> pure element
 
 
 -- |

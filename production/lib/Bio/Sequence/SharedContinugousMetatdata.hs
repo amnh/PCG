@@ -193,9 +193,14 @@ singleton i = SMI . Rep.singleton i
 (!) xs i = unwrap xs `index` i
 
 
+-- |
+-- A smart constructor for 'GeneralCharacterMetadata'.
 continuousMetadata :: CharacterName -> Double -> GeneralCharacterMetadata
 continuousMetadata = GeneralCharacterMetadata
 
+
+-- |
+-- A smart constructor for 'DiscreteCharacterMetadata'.
 discreteMetadata :: Alphabet String -> CharacterName -> Double -> DiscreteCharacterMetadata
 discreteMetadata alphabetVal nameVal weightVal =
     DiscreteCharacterMetadata

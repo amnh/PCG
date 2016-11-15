@@ -18,7 +18,7 @@
 
 module Bio.Character.Parsed.Internal where
 
-import           Data.Alphabet -- hiding (AmbiguityGroup) -- TODO: Maybe don't hide this and use it below? This change will cascade into other modules!
+import           Data.Alphabet
 import           Data.Foldable
 import           Data.List.NonEmpty       (NonEmpty)
 import qualified Data.List.NonEmpty as NE
@@ -60,9 +60,10 @@ arbParsedGivenAlph :: Alphabet String -> Gen ParsedChar
 arbParsedGivenAlph inAlph = NE.fromList <$> listOf1 ( NE.fromList <$> sublistOf (toList inAlph))
 
 -- Shouldn't need this definition
-{-
+{- -}
+-- | (✔)
 instance Arbitrary ParsedChar where
    arbitrary = do
        let amb = NE.fromList <$> listOf1 arbitrary
        NE.fromList <$> listOf1 amb
--}
+{- -}

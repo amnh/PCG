@@ -109,7 +109,7 @@ monadRightIdentity :: (Monad m, Eq (m a)) => m a -> Bool
 monadRightIdentity x = (x >>= pure) == x
 
 monadLeftIdentity :: (Monad m, Eq (m b)) => a -> Fun a (m b) -> Bool
-monadLeftIdentity x (apply -> f) = pure x >>= f) == f x
+monadLeftIdentity x (apply -> f) = (pure x >>= f) == f x
 
 monadAssociativity :: (Monad m, Eq (m c)) => m a -> Fun a (m b) -> Fun b (m c) -> Bool
 monadAssociativity x (apply -> f) (apply -> g) = ((x >>= f) >>= g) == (x >>= (\x' -> f x' >>= g))

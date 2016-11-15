@@ -15,39 +15,39 @@
 module PCG.Command.Types.Read.Unification.Master where
 
 import           Bio.Character
-import           Bio.Character.Dynamic
+--import           Bio.Character.Dynamic
 import           Bio.Character.Parsed
 import           Bio.Sequence
 import           Bio.Sequence.Block
 --import           Bio.Metadata
 import           Bio.Metadata.CharacterName hiding (sourceFile)
 import           Bio.Metadata.Parsed
-import           Bio.Metadata.MaskGenerator
+--import           Bio.Metadata.MaskGenerator
 import           Bio.PhyloGraph.Solution    hiding (parsedChars)
 import           Bio.PhyloGraph.DAG
-import           Bio.PhyloGraph.Forest
+--import           Bio.PhyloGraph.Forest
 import           Bio.PhyloGraph.Forest.Parsed
-import           Bio.PhyloGraph.Node               (encoded, nodeIdx)
-import qualified Bio.PhyloGraph.Node        as Node
+--import           Bio.PhyloGraph.Node               (encoded, nodeIdx)
+--import qualified Bio.PhyloGraph.Node        as Node
 import           Bio.PhyloGraphPrime
 import           Bio.PhyloGraphPrime.Component
 import           Bio.PhyloGraphPrime.Node
 import           Bio.PhyloGraphPrime.ReferenceDAG
-import           Control.Arrow                     ((***), (&&&))
+import           Control.Arrow                     ((&&&))
 import           Control.Applicative               ((<|>))
 import           Data.Alphabet
 import           Data.Bifunctor                    (first)
 import           Data.Foldable
-import qualified Data.HashMap.Lazy          as HM
+--import qualified Data.HashMap.Lazy          as HM
 import qualified Data.IntSet                as IS
 import           Data.Key
 import           Data.List                         (transpose, zip4)
 import           Data.List.NonEmpty                (NonEmpty( (:|) ))
 import qualified Data.List.NonEmpty         as NE  (fromList)
 import           Data.List.Utility                 (duplicates)
-import           Data.Map                          (Map, assocs, difference, intersectionWith, keys)
+import           Data.Map                          (Map, intersectionWith, keys)
 import qualified Data.Map                   as Map
-import           Data.Maybe                        (catMaybes, fromJust, fromMaybe)
+import           Data.Maybe                        (catMaybes, fromMaybe)
 import           Data.Semigroup                    ((<>), sconcat)
 import           Data.Semigroup.Foldable
 import           Data.Set                          (Set, (\\))
@@ -55,9 +55,9 @@ import qualified Data.Set                   as Set
 import           Data.TCM                          (TCM)
 import qualified Data.TCM                   as TCM
 import           Data.MonoTraversable
-import           Data.Vector                       (Vector, (//))
-import qualified Data.Vector                as V
-import           File.Format.Newick
+import           Data.Vector                       (Vector)
+--import qualified Data.Vector                as V
+--import           File.Format.Newick
 -- import           File.Format.TransitionCostMatrix
 import           PCG.Command.Types.Read.Unification.UnificationError
 import           Prelude                   hiding  (lookup, zip, zipWith)
@@ -147,7 +147,7 @@ rectifyResults2 fprs =
           (False, True ) -> Right . Left . PhylogeneticSolution . pure
                           . sconcat $ NE.fromList suppliedForests
           -- BUild a forest with the corresponding character data on the nodes
-          (False, False) -> Right . Right $ PhylogeneticSolution . pure
+          (False, False) -> Right . Right . PhylogeneticSolution . pure
                           . foldMap1 (matchToChars charSeqs) $ NE.fromList suppliedForests
       where
         
@@ -181,7 +181,7 @@ rectifyResults2 fprs =
     missingError    = colateErrors ForestMissingTaxa   missingNames
 
     colateErrors :: (Foldable t, Foldable t')
-                 => ((NonEmpty a) -> FilePath -> UnificationErrorMessage)
+                 => (NonEmpty a -> FilePath -> UnificationErrorMessage)
                  -> t (t' a, FracturedParseResult)
                  -> Maybe UnificationError
     colateErrors f xs =
@@ -275,7 +275,7 @@ joinSequences2 = collapseAndMerge . reduceAlphabets . deriveCorrectTCMs . derive
             suppliedAlphabet      = alphabet charMetadata
             reducedAlphabet       =
                 case alphabetStateNames suppliedAlphabet of
-                  [] -> fromSymbols               . reduceTokens $     (alphabetSymbols suppliedAlphabet)
+                  [] -> fromSymbols               . reduceTokens $      alphabetSymbols suppliedAlphabet
                   xs -> fromSymbolsWithStateNames . reduceTokens $ zip (alphabetSymbols suppliedAlphabet) xs
               where
                 reduceTokens = foldMapWithKey (\k v -> if k `oelem` missingSymbolIndicies then [] else [v])
@@ -303,7 +303,7 @@ joinSequences2 = collapseAndMerge . reduceAlphabets . deriveCorrectTCMs . derive
             currMapping    = pure . encodeToBlock <$> currTreeChars
 
             inBoth         = intersectionWith (<>) prevMapping currMapping-- oldTreeChars nextTreeChars
-            inOnlyCurr     = (prepend prevPad) <$> getUnique currMapping prevMapping
+            inOnlyCurr     =  prepend prevPad  <$> getUnique currMapping prevMapping
             inOnlyPrev     = (<>      currPad) <$> getUnique prevMapping currMapping
         
             getUnique x y = x `Map.restrictKeys` (lhs `Set.difference` rhs)
@@ -400,17 +400,18 @@ fromTreeOnlyFile fpr = null chars || all null chars
   where
     chars = parsedChars fpr
 
+terminalNames2 :: ReferenceDAG (Maybe Double) (Maybe String) -> [Identifier]
+terminalNames2 dag = catMaybes $ (`nodeDatum` dag) <$> leaves dag
 
+{-
 terminalNames :: NewickNode -> [Identifier]
 terminalNames n
   | isLeaf n  = [fromJust $ newickLabel n]
   | otherwise = mconcat $ terminalNames <$> descendants n
 
 
-terminalNames2 :: ReferenceDAG (Maybe Double) (Maybe String) -> [Identifier]
-terminalNames2 dag = catMaybes $ (`nodeDatum` dag) <$> leaves dag
 
-{-
+
 -- | Functionality to encode into a solution
 encodeSolution :: StandardSolution -> StandardSolution
 encodeSolution inVal@(Solution taxaSeqs metadataInfo inForests) = inVal {forests = HM.foldrWithKey encodeAndSet inForests taxaSeqs}
@@ -428,7 +429,7 @@ encodeSolution inVal@(Solution taxaSeqs metadataInfo inForests) = inVal {forests
         Just match -> inDAG {nodes = nodes inDAG // [(nodeIdx match, match {encoded = coded})]}
       where
         matching = V.find (\n -> Node.name n == inName) $ nodes inDAG
--}
+
 
 
 -- | Joins the sequences of a fractured parse result
@@ -446,7 +447,7 @@ joinSequences =  foldl' g (mempty, mempty)
         inBoth     = intersectionWith mappend oldTreeChars nextTreeChars
         inOnlyOld  = fmap (`mappend` nextPad) $  oldTreeChars `difference` nextTreeChars
         inOnlyNext = fmap (oldPad  `mappend`) $ nextTreeChars `difference` oldTreeChars
-
+-}
 
 {-
 -- | Function to encode given metadata information

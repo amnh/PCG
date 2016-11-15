@@ -13,10 +13,20 @@
 -----------------------------------------------------------------------------
 
 module Bio.PhyloGraph
-  ( module X
+  ( module Bio.PhyloGraph.DAG      
+  , module Bio.PhyloGraph.Edge     
+  , module Bio.PhyloGraph.Node     
+  , module Bio.PhyloGraph.Solution 
   ) where
 
+import Bio.PhyloGraph.DAG      
+import Bio.PhyloGraph.Edge     
+import Bio.PhyloGraph.Node     
+import Bio.PhyloGraph.Solution 
+
+{-
 import Bio.PhyloGraph.DAG      as X
 import Bio.PhyloGraph.Edge     as X
 import Bio.PhyloGraph.Node     as X
 import Bio.PhyloGraph.Solution as X
+-}

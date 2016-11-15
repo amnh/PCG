@@ -56,9 +56,9 @@ data  VertexSetType = Vertices | Roots deriving (Eq,Show)
 --   relative to the root of the tree.
 data  EdgeInfo
     = EdgeInfo
-    { edgeOrigin :: VertexLabel
-    , edgeTarget :: VertexLabel
-    , edgeLength :: EdgeLength
+    { edgeOrigin :: VertexLabel -- ^ Extract the origin of the directed edge
+    , edgeTarget :: VertexLabel -- ^ Extract the destination of the directed edge
+    , edgeLength :: EdgeLength  -- ^ Extract the /possibly/ present edge length
     } deriving (Eq, Ord)
 
 
@@ -71,6 +71,7 @@ data  VertexEdgeRoot
     } deriving (Show, Eq)
 
 
+-- | (✔)
 instance Show EdgeInfo where
   show (EdgeInfo x y c) = mconcat $ ["(", show x, ", ", show y, ")"] <> renderCost c
     where
@@ -236,8 +237,8 @@ edgeSetDefinition = validateEdgeSet =<< edgeSetDefinition'
         dupes  = duplicates edges'
         selfs  = filter (uncurry (==)) edges'
         biDirs :: [(EdgeInfo, EdgeInfo)]
-        biDirs = filter (uncurry isReflexive) $ [(x,y) | x <- es, y <- es, x /= y ]
-        errors = fmap snd $ filter (not . fst)
+        biDirs = filter (uncurry isReflexive) [(x,y) | x <- es, y <- es, x /= y ]
+        errors = snd <$> filter (not . fst)
             [ (null  dupes,         dupesErrorMessage)
             , (null  selfs,         selfsErrorMessage)
             , (null biDirs, biDirectionalErrorMessage)
@@ -317,7 +318,7 @@ validateForest ver@(VER vs es rs ) =
     -- |
     -- Detect if the tree contains a cycle by consulting a stack
     -- while performing a depth-first-search 
-    treeEdgeCycles = foldMap mergeCycles $ [ (x,y) | x <- resultList, y <- resultList, x <= y ]
+    treeEdgeCycles = foldMap mergeCycles [ (x,y) | x <- resultList, y <- resultList, x <= y ]
       where
         resultList = catMaybes $ findCycle <$> rootList
 

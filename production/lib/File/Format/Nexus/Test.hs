@@ -69,23 +69,24 @@ booleanDefinition' = testGroup "booleanDefinition" [generalProperty]
 charFormatFieldDef' :: TestTree
 charFormatFieldDef' = testGroup "charFormatFieldDef" ([emptyString] ++ testSingletons ++ testCommutivity)
     where
-        emptyString = testCase "Empty String" $ parseEquals charFormatFieldDef "" []
-        testSingletons = map (\(x,y) -> testCase x (parseEquals charFormatFieldDef x [y])) stringTypeList
-        testCommutivity = map (\(x,y) -> testCase x (parseEquals charFormatFieldDef x y)) stringTypeListPerms
-        stringTypeList = [ ("datatype=xyz", CharDT "xyz")
-                         , ("symbols=\"abc\"", SymStr (Right ["abc"]))
-                         , ("transpose", Transpose True)
-                         , ("interleave", Interleave True)
-                         , ("tokens", Tokens True)
-                         , ("equate=\"a={bc} d={ef}\"", EqStr (Right ["a={bc}", "d={ef}"]))
-                         , ("missing=def", MissStr "def")
-                         , ("gap=-", GapChar "-")
-                         , ("matchchar=.", MatchChar ".")
-                         , ("items=ghi", Items "ghi")
-                         , ("respectcase", RespectCase True)
-                         , ("nolabels", Unlabeled True)
-                         , ("something ", IgnFF "something")
-                         ]
+        emptyString     = testCase "Empty String" $ parseEquals charFormatFieldDef "" []
+        testSingletons  = (\(x,y) -> testCase x (parseEquals charFormatFieldDef x [y])) <$> stringTypeList
+        testCommutivity = (\(x,y) -> testCase x (parseEquals charFormatFieldDef x y))   <$> stringTypeListPerms
+        stringTypeList  =
+            [ ("datatype=xyz", CharDT "xyz")
+            , ("symbols=\"abc\"", SymStr (Right ["abc"]))
+            , ("transpose", Transpose True)
+            , ("interleave", Interleave True)
+            , ("tokens", Tokens True)
+            , ("equate=\"a={bc} d={ef}\"", EqStr (Right ["a={bc}", "d={ef}"]))
+            , ("missing=def", MissStr "def")
+            , ("gap=-", GapChar "-")
+            , ("matchchar=.", MatchChar ".")
+            , ("items=ghi", Items "ghi")
+            , ("respectcase", RespectCase True)
+            , ("nolabels", Unlabeled True)
+            , ("something ", IgnFF "something")
+            ]
         stringTypeListPerms = [(string ++ " " ++ string', [result, result']) | (string, result) <- stringTypeList, (string', result') <- stringTypeList]
 
 deInterleave' :: TestTree
@@ -100,12 +101,12 @@ deInterleave' = testCase "deInterleave" $ assertEqual "" outMap (deInterleave in
 formatDefinition' :: TestTree
 formatDefinition' = testGroup "formatDefinition" [test1, test2, test3, test4, test5, test6]
     where
-        test1 = testCase "transpose" $ parseEquals formatDefinition "format transpose;" $ CharacterFormat "" (Right [""]) (Right [""]) "" "" "" "" False False True False False
-        test2 = testCase "datatype" $ parseEquals formatDefinition "format DATATYPE=Standard;" $ CharacterFormat "Standard" (Right [""]) (Right [""]) "" "" "" "" False False False False False
-        test3 = testCase "symbols" $ parseEquals formatDefinition "format symbols=\"abcd\";" $ CharacterFormat "" (Right ["abcd"]) (Right [""]) "" "" "" "" False False False False False
-        test4 = testCase "missing" $ parseEquals formatDefinition "format MISSING=?;" $ CharacterFormat "" (Right [""]) (Right [""]) "?" "" "" "" False False False False False
-        test5 = testCase "gap" $ parseEquals formatDefinition "format GAP= -;" $ CharacterFormat "" (Right [""]) (Right [""]) "" "-" "" "" False False False False False
-        test6 = testCase "all previous 5" $ parseEquals formatDefinition "FORMAT DATATYPE=Standard symbols=\"abcd\" MISSING=? GAP= - transpose;" $ CharacterFormat "Standard" (Right ["abcd"]) (Right [""]) "?" "-" "" "" False False True False False
+        test1 = testCase "transpose" . parseEquals formatDefinition "format transpose;" $ CharacterFormat "" (Right [""]) (Right [""]) "" "" "" "" False False True False False
+        test2 = testCase "datatype" . parseEquals formatDefinition "format DATATYPE=Standard;" $ CharacterFormat "Standard" (Right [""]) (Right [""]) "" "" "" "" False False False False False
+        test3 = testCase "symbols" . parseEquals formatDefinition "format symbols=\"abcd\";" $ CharacterFormat "" (Right ["abcd"]) (Right [""]) "" "" "" "" False False False False False
+        test4 = testCase "missing" . parseEquals formatDefinition "format MISSING=?;" $ CharacterFormat "" (Right [""]) (Right [""]) "?" "" "" "" False False False False False
+        test5 = testCase "gap" . parseEquals formatDefinition "format GAP= -;" $ CharacterFormat "" (Right [""]) (Right [""]) "" "-" "" "" False False False False False
+        test6 = testCase "all previous 5" . parseEquals formatDefinition "FORMAT DATATYPE=Standard symbols=\"abcd\" MISSING=? GAP= - transpose;" $ CharacterFormat "Standard" (Right ["abcd"]) (Right [""]) "?" "-" "" "" False False True False False
 
 getTaxonAndSeqFromMatrixRow' :: TestTree
 getTaxonAndSeqFromMatrixRow' = testGroup "getTaxonAndSeqFromMatrixRow" [space,spaces,tab,tabs,both]
@@ -115,47 +116,45 @@ getTaxonAndSeqFromMatrixRow' = testGroup "getTaxonAndSeqFromMatrixRow" [space,sp
                 f :: NonEmptyList AsciiAlphaNum -> AsciiAlphaNum -> NonEmptyList Char -> Bool
                 f x prefix y = getTaxonAndSeqFromMatrixRow combo == (tax,seq)
                     where
-                        prefix' = getAsciiAlphaNum prefix
-                        tax = getAsciiAlphaNum <$> getNonEmpty x
-                        seq = prefix' : getNonEmpty y
-                        combo = tax ++ " " ++ seq
+                        (tax, seq) = extractTaxonAndSeq x y prefix 
+                        combo   = tax ++ " " ++ seq
         spaces = testProperty "Multiple spaces" f
             where
                 f :: NonEmptyList AsciiAlphaNum -> AsciiAlphaNum -> NonEmptyList Char -> Bool
                 f x prefix y = getTaxonAndSeqFromMatrixRow combo == (tax,seq)
                     where
-                        prefix' = getAsciiAlphaNum prefix
-                        tax = getAsciiAlphaNum <$> getNonEmpty x
-                        seq = prefix' : getNonEmpty y
-                        combo = tax ++ "     " ++ seq
+                        (tax, seq) = extractTaxonAndSeq x y prefix 
+                        combo   = tax ++ "     " ++ seq
         tab = testProperty "Single tab" f
             where
                 f :: NonEmptyList AsciiAlphaNum -> AsciiAlphaNum -> NonEmptyList Char -> Bool
                 f x prefix y = getTaxonAndSeqFromMatrixRow combo == (tax,seq)
                     where
-                        prefix' = getAsciiAlphaNum prefix
-                        tax = getAsciiAlphaNum <$> getNonEmpty x
-                        seq = prefix' : getNonEmpty y
-                        combo = tax ++ "\t" ++ seq
+                        (tax, seq) = extractTaxonAndSeq x y prefix 
+                        combo   = tax ++ "\t" ++ seq
         tabs = testProperty "Multiple tabs" f
             where
                 f :: NonEmptyList AsciiAlphaNum -> AsciiAlphaNum -> NonEmptyList Char -> Bool
                 f x prefix y = getTaxonAndSeqFromMatrixRow combo == (tax,seq)
                     where
-                        prefix' = getAsciiAlphaNum prefix
-                        tax = getAsciiAlphaNum <$> getNonEmpty x
-                        seq = prefix' : getNonEmpty y
-                        combo = tax ++ "\t\t\t\t" ++ seq
+                        (tax, seq) = extractTaxonAndSeq x y prefix 
+                        combo   = tax ++ "\t\t\t\t" ++ seq
         both = testProperty "Combination of tabs & spaces" f
             where
                 f :: NonEmptyList AsciiAlphaNum -> NonEmptyList InlineSpace -> AsciiAlphaNum -> NonEmptyList Char -> Bool
                 f x y prefix z = getTaxonAndSeqFromMatrixRow combo == (tax,seq)
                     where
-                        prefix' = getAsciiAlphaNum prefix
-                        tax = getAsciiAlphaNum <$> getNonEmpty x
-                        sep = getInlineSpaceChar <$> getNonEmpty y
-                        seq = prefix' : getNonEmpty z
-                        combo = tax ++ sep ++ seq
+                        (prefix', tax, seq) = extractTaxonAndSeq x y prefix 
+                        sep     = getInlineSpaceChar <$> getNonEmpty y
+                        combo   = tax ++ sep ++ seq
+
+
+extractTaxonAndSeq x y prefix = (tax, seq)
+  where
+    prefix' = getAsciiAlphaNum prefix
+    tax     = getAsciiAlphaNum <$> getNonEmpty x
+    seq     = prefix' : getNonEmpty y  
+
 
 ignoredSubBlockDef' :: TestTree
 ignoredSubBlockDef' = testGroup "ignoredSubBlockDef" [endTest, endblockTest, sendTest, semicolonTest, argumentTest, emptyStringTest]
@@ -235,9 +234,7 @@ quotedStringDefinition' = testGroup "quotedStringDefinition" [generalProperty, m
         f :: (NonEmptyList AsciiAlphaNum, NonEmptyList Char) -> Bool
         f (x,y) = null res || parse (quotedStringDefinition key <* eof) "" str == Right (Right res)
           where
-            key = getAsciiAlphaNum <$> getNonEmpty x
-            val = filter (`notElem` badChars) $ getNonEmpty y
-            res = words val
+            (key, val, res) = extractKeyValueAndResidueFromInput x y
             str = key ++ "=\"" ++ val ++ "\""
 
     missingCloseQuote = testProperty "Missing close quote" f
@@ -261,11 +258,15 @@ quotedStringDefinition' = testGroup "quotedStringDefinition" [generalProperty, m
         f :: (NonEmptyList AsciiAlphaNum, NonEmptyList Char, NonEmptyList Whitespace) -> Bool
         f (x,y,z) = null res || parse (quotedStringDefinition key <* eof) "" str == Right (Right res)
           where
-            key = getAsciiAlphaNum  <$> getNonEmpty x
-            val = filter (`notElem` badChars) $ getNonEmpty y
-            res = words val
+            (key, val, res) = extractKeyValueAndResidueFromInput x y
             spc = getWhitespaceChar <$> getNonEmpty z
             str = key ++ "=" ++ spc ++ "\"" ++ val ++ "\""
+
+extractKeyValueAndResidueFromInput x y = (key, val, res)
+  where
+    key = getAsciiAlphaNum  <$> getNonEmpty x
+    val = filter (`notElem` badChars) $ getNonEmpty y
+    res = words val
 
 replaceMatches' :: TestTree
 replaceMatches' = testCase "replaceMatches" $ assertEqual "" outString (replaceMatches matchChar canonical strToRepair)

@@ -12,7 +12,6 @@
 --
 -----------------------------------------------------------------------------
 {-# LANGUAGE FlexibleContexts, FlexibleInstances #-}
-{- # LANGUAGE TypeSynonymInstances # -}
 
 module Bio.PhyloGraph.Forest.Parsed where
 
@@ -42,10 +41,19 @@ import           Prelude                           hiding (lookup)
 
 
 -- type ParserTree   = ZipperNode (Maybe Double) (Maybe String)
+
+-- |
+-- The type of possibly present decorations on a tree from a parsed file.
 type ParserTree   = ReferenceDAG (Maybe Double) (Maybe String)
 
+
+-- |
+-- The parser coalesced type, representing a possibly present forest.
 type ParserForest = Maybe (PhylogeneticForest ParserTree)
 
+
+-- |
+-- An internal type for representing a node with a unique numeric identifier.
 data NewickEnum   = NE !Int (Maybe String) (Maybe Double) [NewickEnum] 
    
 
@@ -76,6 +84,11 @@ instance ParsedForest TCM where
 
 
 -- | (✔)
+instance ParsedForest Nexus where
+    unifyGraph (Nexus _ forest) = unifyGraph forest
+
+
+-- | (✔)
 instance ParsedForest NewickForest where
     unifyGraph = fmap (PhylogeneticForest . fmap (coerceTree . relationMap . enumerate)) . nonEmpty
       where
@@ -89,7 +102,7 @@ instance ParsedForest NewickForest where
           where
             f :: Map String NewickEnum -> Int -> NewickNode -> (Map String NewickEnum, Int, NewickEnum)
             f seen n node =
-                case (newickLabel node) >>= (`lookup` seen) of
+                case newickLabel node >>= (`lookup` seen) of
                   Just x  -> (seen, n, x)
                   Nothing ->
                     case descendants node of
@@ -185,7 +198,7 @@ instance ParsedForest VER.VertexEdgeRoot where
             f v = Map.singleton v $ foldMap g es
               where
                 g e
-                  | edgeOrigin e == v = Set.singleton $ (edgeLength e, edgeTarget e)
+                  | edgeOrigin e == v = Set.singleton (edgeLength e, edgeTarget e)
                   | otherwise         = mempty
 
         parentMapping = foldMap f vs
@@ -193,7 +206,7 @@ instance ParsedForest VER.VertexEdgeRoot where
             f v = Map.singleton v $ foldMap g es
               where
                 g e
-                  | edgeTarget e == v = Set.singleton $ (edgeLength e, edgeOrigin e)
+                  | edgeTarget e == v = Set.singleton (edgeLength e, edgeOrigin e)
                   | otherwise         = mempty
 
         -- |
@@ -212,7 +225,7 @@ instance ParsedForest VER.VertexEdgeRoot where
                   | otherwise                  = foldMap (g seen') children
                   where
                     seen' = seen 
-                    children = (Set.mapMonotonic snd (childMapping ! node)) `Set.difference` seen
+                    children = Set.mapMonotonic snd (childMapping ! node) `Set.difference` seen
 
         convertToDAG = unfoldDAG f 
           where
@@ -229,10 +242,6 @@ instance ParsedForest VER.VertexEdgeRoot where
         
 {- -}
 
-
--- | (✔)
-instance ParsedForest Nexus where
-    unifyGraph (Nexus _ forest) = unifyGraph forest
 {-
 -- | Convert the referential forests defined by sets of verticies, edges, and
 --   roots into a forest of topological tree structure.

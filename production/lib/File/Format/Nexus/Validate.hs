@@ -16,6 +16,7 @@
 
 module File.Format.Nexus.Validate where
 
+import           Data.Bifunctor            (second)
 import           Data.Char                 (isSpace,toLower)
 import           Data.Either
 import           Data.Foldable          
@@ -178,7 +179,7 @@ validateNexusParseResult (NexusParseResult inputSeqBlocks taxas treeSet assumpti
         costMatrix = headMay . tcm =<< headMay assumptions -- TODO: why does this work?
         
         seqMetadataTuples   = createSeqMetaTuples <$> parsedSeqs
-        createSeqMetaTuples = fmap (\(taxonSeqMap,rawSequence) -> (taxonSeqMap, getCharMetadata costMatrix rawSequence)) . (`zip` inputSeqBlocks)
+        createSeqMetaTuples = fmap (second (getCharMetadata costMatrix)) . (`zip` inputSeqBlocks)
         parsedSeqs          = decisionTree inputSeqBlocks taxaLst
         -- taxaSeqVector = V.fromList [(taxon, alignedTaxaSeqMap M.! taxon) | taxon <- taxaLst]
         --unalignedTaxaSeqMap = getSeqFromMatrix (getBlock "unaligned" inputSeqBlocks) taxaLst
@@ -282,8 +283,8 @@ foldSeqs ((taxSeqMap,charMDataVec):xs)   = ((newSeqMap, newMetadata), totLength)
 translateTrees :: Vector String -> [TreeBlock] -> Either (NonEmpty String) NewickForest
 translateTrees taxaList treeSet =
     case partitionEithers $ handleTreeBlock <$> treeSet of
-      (  [], xs) -> Right $ xs
-      (x:xs,  _) -> Left  $ x :| xs
+      (  [], xs) -> Right xs
+      (x:xs,  _) -> Left $ x :| xs
     where
 
         -- |
@@ -332,9 +333,9 @@ translateTrees taxaList treeSet =
             -- or the taxa set, an error condition is returned.
             missingTranslationMap :: Either String (Map String String)
             missingTranslationMap
-              | leafSet == possibleIntegralValue = Right $ M.fromList $ zip ( show <$> [(1::Int)..]) (toList taxaList)
-              | leafSet `Set.isSubsetOf` taxaSet = Right $ M.fromList $ zip (toList taxaList) (toList taxaList)
-              | otherwise                        = Left  $ "The supplied leaf labels were not a proper subset of the taxa set or the positive integers."
+              | leafSet == possibleIntegralValue = Right . M.fromList $ zip (show <$> [(1::Int)..]) (toList taxaList)
+              | leafSet `Set.isSubsetOf` taxaSet = Right . M.fromList $ zip       (toList taxaList) (toList taxaList)
+              | otherwise                        = Left "The supplied leaf labels were not a proper subset of the taxa set or the positive integers."
               where
                 possibleIntegralValue = Set.fromList $ show <$> [1.. (length leafSet)]
             
@@ -353,19 +354,16 @@ translateTrees taxaList treeSet =
             presentTranslationMap transSpec =
                 case partitionEithers $ tupleEither <$> transSpec of
                   -- Alledgedly permuted taxaList
-                  (xs, []) ->
-                      if Set.fromList xs `Set.isSubsetOf` taxaSet
-                      then Right . M.fromList $ zip (show <$> [(1::Int)..]) xs 
-                      else Left  $ "Translation specifcation: " <> show xs <> " is not a subset of: " <> show (toList taxaList)
+                  (xs, [])
+                    | Set.fromList xs `Set.isSubsetOf` taxaSet -> Right . M.fromList $ zip (show <$> [(1::Int)..]) xs 
+                    | otherwise -> Left $ "Translation specifcation: " <> show xs <> " is not a subset of: " <> show (toList taxaList)
                   -- Alledged /total/ symbol to taxa mapping
-                  ([], xs) ->
-                      if      not   $ Set.fromList (snd <$> xs) `Set.isSubsetOf` taxaSet
-                      then    Left  $ "There was an element in the co-domain of the Translation specifaction that is not an element of the taxa set."
-                      else if not   $ leafSet `Set.isSubsetOf` Set.fromList (fst <$> xs)
-                      then    Left  $ "There was an element in the domain of the Translation specifaction that is not an element of the leaf node label set.\n  LeafSet - Symbols: " <> show (toList $ leafSet `Set.difference` Set.fromList (fst <$> xs))
-                      else    Right $ M.fromList xs
+                  ([], xs)
+                    | not $ Set.fromList (snd <$> xs) `Set.isSubsetOf` taxaSet -> Left "There was an element in the co-domain of the Translation specifaction that is not an element of the taxa set."
+                    | not $ leafSet `Set.isSubsetOf` Set.fromList (fst <$> xs) -> Left $ "There was an element in the domain of the Translation specifaction that is not an element of the leaf node label set.\n  LeafSet - Symbols: " <> show (toList $ leafSet `Set.difference` Set.fromList (fst <$> xs))
+                    | otherwise -> Right $ M.fromList xs
                   -- Inconsistent Translate formatting
-                  ( _,  _) -> Left  $ "All elements of the Translation specifaction were not either all singleton tokens or pairwise tokens."
+                  ( _,  _) -> Left "All elements of the Translation specifaction were not either all singleton tokens or pairwise tokens."
               where
                 tupleEither :: String -> Either String (String, String)
                 tupleEither inputStr =
@@ -374,9 +372,9 @@ translateTrees taxaList treeSet =
                       xs -> Right (fstToken, xs)
                   where
                     frontTrimmed         = dropWhile isSpace inputStr
-                    (fstToken, trailing) = span (not . isSpace) frontTrimmed
+                    (fstToken, trailing) = break isSpace frontTrimmed
                     secondTrimmed        = dropWhile isSpace trailing
-                    (sndToken, _)        = span (not . isSpace) secondTrimmed
+                    (sndToken, _)        = break isSpace secondTrimmed
 
             -- |
             -- Construct the leaf set of a forest.

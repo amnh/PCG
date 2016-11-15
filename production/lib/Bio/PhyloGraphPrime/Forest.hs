@@ -20,12 +20,15 @@ module Bio.PhyloGraphPrime.Forest (PhylogeneticForest(..)) where
 
 import Data.Key
 import Data.List.NonEmpty            (NonEmpty)
+import Data.Maybe
 import Data.Semigroup
 import Data.Semigroup.Foldable
 import Data.Semigroup.Traversable
 import Prelude                hiding (lookup)
 
 
+-- |
+-- A newtype wrapper for a 'NonEmpty' collection of forests.
 newtype PhylogeneticForest a
       = PhylogeneticForest (NonEmpty a)
       deriving (Foldable, Foldable1, Functor, Semigroup, Traversable)
@@ -67,16 +70,15 @@ instance FoldableWithKey1 PhylogeneticForest where
 instance Indexable PhylogeneticForest where
 
     {-# INLINE index #-}
-    index forest i =
-        case i `lookup` unwrap forest of
-          Just v  -> v
-          Nothing -> error $ mconcat
-              [ "Could not index PhylogeneticForest at location '"
-              , show i
-              , "' with a valid range of [0,"
-              , show $ length forest
-              , "]."
-              ]
+    index forest i = fromMaybe errorMessage $ i `lookup` unwrap forest
+      where
+        errorMessage =  error $ mconcat
+            [ "Could not index PhylogeneticForest at location '"
+            , show i
+            , "' with a valid range of [0,"
+            , show $ length forest
+            , "]."
+            ]
 
 
 instance Keyed PhylogeneticForest where

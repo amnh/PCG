@@ -10,7 +10,7 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE FlexibleInstances, FunctionalDependencies, GeneralizedNewtypeDeriving, MultiParamTypeClasses #-}
+{-# LANGUAGE FlexibleInstances, GeneralizedNewtypeDeriving, MultiParamTypeClasses #-}
 
 module Bio.PhyloGraphPrime.ReferenceDAG.Internal where
 
@@ -137,7 +137,7 @@ instance PhylogeneticComponent (ReferenceDAG e n) NodeRef e n where
     isRootNode i dag = onull . parentRefs $ references dag V.! fromEnum i
 
     -- TODO: Broken
-    networkResolutions dag = pure dag
+    networkResolutions = pure
 
 
 -- | (✔)
@@ -146,7 +146,7 @@ instance PhylogeneticNetwork (ReferenceDAG e n) NodeRef e n where
     root = toEnum . NE.head . rootRefs
   
     -- TODO: Broken
-    treeResolutions dag = pure dag
+    treeResolutions = pure
 
 
 -- | (✔)
@@ -211,9 +211,9 @@ unfoldDAG f origin =
                 Nothing -> (        xs, y:ys)
                 Just i  -> ((e,v,i):xs,   ys)
 
-        parentResursiveResult          = NE.scanr (\e a -> second (g (snd a)) e) (undefined, (currentIndex, undefined, currentContext, currentRoots, currentMap)) $ parentPairs
+        parentResursiveResult          = NE.scanr (\e a -> second (g (snd a)) e) (undefined, (currentIndex, undefined, currentContext, currentRoots, currentMap)) parentPairs
         (pCounter, _, pContext, pRoots, pMap) = snd $ NE.head parentResursiveResult
-        childResursiveResult           = NE.scanr (\e a -> second (g (snd a)) e) (undefined, (pCounter, undefined, pContext, pRoots, pMap)) $ childPairs
+        childResursiveResult           = NE.scanr (\e a -> second (g (snd a)) e) (undefined, (pCounter, undefined, pContext, pRoots, pMap)) childPairs
         (cCounter, _, cContext, cRoots, cMap) = snd $ NE.head childResursiveResult
 
         mapWithLocalParents = foldMap h $ NE.init parentResursiveResult
