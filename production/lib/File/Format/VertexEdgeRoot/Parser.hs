@@ -56,9 +56,9 @@ data  VertexSetType = Vertices | Roots deriving (Eq,Show)
 --   relative to the root of the tree.
 data  EdgeInfo
     = EdgeInfo
-    { edgeOrigin :: VertexLabel
-    , edgeTarget :: VertexLabel
-    , edgeLength :: EdgeLength
+    { edgeOrigin :: VertexLabel -- ^ Extract the origin of the directed edge
+    , edgeTarget :: VertexLabel -- ^ Extract the destination of the directed edge
+    , edgeLength :: EdgeLength  -- ^ Extract the /possibly/ present edge length
     } deriving (Eq, Ord)
 
 
@@ -71,6 +71,7 @@ data  VertexEdgeRoot
     } deriving (Show, Eq)
 
 
+-- | (✔)
 instance Show EdgeInfo where
   show (EdgeInfo x y c) = mconcat $ ["(", show x, ", ", show y, ")"] <> renderCost c
     where

@@ -27,6 +27,8 @@ import Data.Semigroup.Traversable
 import Prelude                hiding (lookup)
 
 
+-- |
+-- A newtype wrapper for a 'NonEmpty' collection of forests.
 newtype PhylogeneticForest a
       = PhylogeneticForest (NonEmpty a)
       deriving (Foldable, Foldable1, Functor, Semigroup, Traversable)

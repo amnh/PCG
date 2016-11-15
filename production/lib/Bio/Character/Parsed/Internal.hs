@@ -61,6 +61,7 @@ arbParsedGivenAlph inAlph = NE.fromList <$> listOf1 ( NE.fromList <$> sublistOf 
 
 -- Shouldn't need this definition
 {- -}
+-- | (✔)
 instance Arbitrary ParsedChar where
    arbitrary = do
        let amb = NE.fromList <$> listOf1 arbitrary

@@ -373,12 +373,16 @@ fromRows xs
                                 , ")!"
                                 ]
 
+
+-- |
+-- Determines the mode length and the other lengths of a nested foldable structure.
 modeAndOutlierLengths :: (Foldable t, Foldable t') => t (t' a) -> (Int, [Int])
 modeAndOutlierLengths xs = (mode, otherLengths)
   where
     occuranceMap = Map.fromList . occurances $ length <$> toList xs
     (mode,_)     = findMax occuranceMap
     otherLengths = keys  $ mode `delete` occuranceMap
+
 
 -- | /O(n*n)/
 --

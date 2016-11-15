@@ -41,10 +41,19 @@ import           Prelude                           hiding (lookup)
 
 
 -- type ParserTree   = ZipperNode (Maybe Double) (Maybe String)
+
+-- |
+-- The type of possibly present decorations on a tree from a parsed file.
 type ParserTree   = ReferenceDAG (Maybe Double) (Maybe String)
 
+
+-- |
+-- The parser coalesced type, representing a possibly present forest.
 type ParserForest = Maybe (PhylogeneticForest ParserTree)
 
+
+-- |
+-- An internal type for representing a node with a unique numeric identifier.
 data NewickEnum   = NE !Int (Maybe String) (Maybe Double) [NewickEnum] 
    
 
