@@ -145,6 +145,7 @@ updateDoesSomething = testProperty "After update, DAG has changed" f
                   node'  = node { name = "Changed" }
               pure $ newDag /= dag
 
+changeNodeInDAG :: Int -> DAG -> DAG
 changeNodeInDAG i oldDag = newDag
   where
     newDag = update oldDag [node']
