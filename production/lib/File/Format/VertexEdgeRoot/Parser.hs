@@ -317,7 +317,7 @@ validateForest ver@(VER vs es rs ) =
     -- |
     -- Detect if the tree contains a cycle by consulting a stack
     -- while performing a depth-first-search 
-    treeEdgeCycles = foldMap mergeCycles $ [ (x,y) | x <- resultList, y <- resultList, x <= y ]
+    treeEdgeCycles = foldMap mergeCycles [ (x,y) | x <- resultList, y <- resultList, x <= y ]
       where
         resultList = catMaybes $ findCycle <$> rootList
 

@@ -21,6 +21,7 @@
 module File.Format.Nexus.Parser where
 
 import           Data.Char                (isSpace,toLower)
+import           Data.Functor
 import qualified Data.List.NonEmpty as NE (head)
 import           Data.List.Split          (splitOneOf)
 import           Data.Maybe               (isJust)
@@ -176,7 +177,7 @@ tcmMatrixDefinition = {-do
     trace ("\n\ntcmMatrixDefinition "  ++ show x) $ -}do
         _            <- symbol $ string' "usertype"
         matrixName   <- symbol $ somethingTill spaceChar
-        _            <- symbol $ optional $ try (string' "(stepmatrix)") <|> try (string' "(realmatrix)")
+        _            <- symbol . optional $ try (string' "(stepmatrix)") <|> try (string' "(realmatrix)")
         _            <- symbol $ char '='
         cardinality  <- symbol   integer 
         mtxAlphabet  <- symbol $ alphabetLine whitespaceNoNewlines
@@ -189,7 +190,7 @@ treeBlockDefinition :: (MonadParsec e s m, Token s ~ Char {- , Show s -}) => m T
 treeBlockDefinition = do
         _     <- symbol (string' "trees;")
         xs    <- many treeFieldDef
-        (x,y) <- partitionTreeBlock <$> (pure xs)
+        (x,y) <- partitionTreeBlock <$> pure xs
         pure $ TreeBlock x y 
 
 
@@ -293,7 +294,8 @@ treeFieldDef = choice
 booleanDefinition :: (MonadParsec e s m, Token s ~ Char {- , Show s -}) => String -> m Bool
 booleanDefinition blockTitle = {-do
         x <- getInput
-        trace (("booleanDefinition " ++ blockTitle)  ++ show x) $-} symbol (string' blockTitle) *> pure True
+        trace (("booleanDefinition " ++ blockTitle)  ++ show x) $-}
+    symbol (string' blockTitle) $> True
 
 -- | stringDefinition takes a string of format TITLE=value;
 -- and returns the value. The semicolon is not captured by this fn.
@@ -336,7 +338,7 @@ stringListDefinition label = {-do
     x <- getInputs
     trace (("many stringListDefinition " ++ label)  ++ show x) $ -}do
     _        <- symbol (string' label)
-    theItems <- many $ symbol $ notKeywordWord ""
+    theItems <- many . symbol $ notKeywordWord ""
     _        <- symbol $ char ';'
     pure theItems
 
@@ -419,7 +421,7 @@ symbol x = x <* whitespace
 -- are delimited by square brackets.
 -- TODO: Since this accepts the empty string, it's difficult to test....
 whitespace :: (MonadParsec e s m, Token s ~ Char {- , Show s -}) => m ()
-whitespace = (space *> optional (try $ some $ commentDefinition *> space) *> pure ())
+whitespace = (space *> optional (try . some $ commentDefinition *> space) $> ())
           <?> "comments or whitespace"
 
 
@@ -430,7 +432,7 @@ whitespace = (space *> optional (try $ some $ commentDefinition *> space) *> pur
 -- Consumes whitespace (including multi-line comments) but not newlines outside
 -- of a comment definition. 
 whitespaceNoNewlines :: (MonadParsec e s m, Token s ~ Char {- , Show s -}) => m ()
-whitespaceNoNewlines = (inlineSpace *> optional (try $ some $ commentDefinition *> inlineSpace) *> pure ())
+whitespaceNoNewlines = (inlineSpace *> optional (try . some $ commentDefinition *> inlineSpace) $> ())
           <?> "comments or non-newline whitespace"
 
 
@@ -459,7 +461,7 @@ notKeywordWord avoidChars = do
     then fail $ "Unexpected keyword '" ++ word ++ "', perhaps you are missing a semicolon?"
     else nextWord
   where
-    nextWord = some $ try $ satisfy (\x -> x `notElem` (';' : avoidChars) && not (isSpace x))
+    nextWord = some . try $ satisfy (\x -> x `notElem` (';' : avoidChars) && not (isSpace x))
 
 -- |
 -- A collection of nexus keywords that must be queried against during parsing to
@@ -467,68 +469,68 @@ notKeywordWord avoidChars = do
 -- operating on a malformed stream.
 nexusKeywords :: S.Set String
 nexusKeywords = S.fromList
-  [ "ancstates"
-  , "assumptions"
-  , "begin"
-  , "changeset"
-  , "characters"
-  , "charlabels"
-  , "charpartition"
-  , "charset"
-  , "charstatelabels"
-  , "codeorder"
-  , "codeset"
-  , "codons"
-  , "data"
-  , "datatype"
-  , "deftype"
-  , "diagonal"
-  , "dimensions"
-  , "distances"
-  , "eliminate"
-  , "end"
-  , "endblock"
-  , "equate"
-  , "exset"
-  , "extensions"
-  , "format"
-  , "gap"
-  , "interleave"
-  , "items"
-  , "labels"
-  , "matchchar"
-  , "matrix"
-  , "missing"
-  , "nchar"
-  , "newtaxa"
-  , "nodiagonal"
-  , "nolabels"
-  , "notes"
-  , "notokens"
-  , "ntax"
-  , "options"
-  , "picture"
-  , "respectcase"
-  , "sets"
-  , "statelabels"
-  , "statesformat"
-  , "symbols"
-  , "taxa"
-  , "taxlabels"
-  , "taxpartition"
-  , "taxset"
-  , "text"
-  , "tokens"
-  , "translate"
-  , "transpose"
-  , "tree"
-  , "treepartition"
-  , "trees"
-  , "treeset"
-  , "triangle"
-  , "typeset"
-  , "unaligned"
-  , "usertype"
-  , "wtset"
-  ]
+    [ "ancstates"
+    , "assumptions"
+    , "begin"
+    , "changeset"
+    , "characters"
+    , "charlabels"
+    , "charpartition"
+    , "charset"
+    , "charstatelabels"
+    , "codeorder"
+    , "codeset"
+    , "codons"
+    , "data"
+    , "datatype"
+    , "deftype"
+    , "diagonal"
+    , "dimensions"
+    , "distances"
+    , "eliminate"
+    , "end"
+    , "endblock"
+    , "equate"
+    , "exset"
+    , "extensions"
+    , "format"
+    , "gap"
+    , "interleave"
+    , "items"
+    , "labels"
+    , "matchchar"
+    , "matrix"
+    , "missing"
+    , "nchar"
+    , "newtaxa"
+    , "nodiagonal"
+    , "nolabels"
+    , "notes"
+    , "notokens"
+    , "ntax"
+    , "options"
+    , "picture"
+    , "respectcase"
+    , "sets"
+    , "statelabels"
+    , "statesformat"
+    , "symbols"
+    , "taxa"
+    , "taxlabels"
+    , "taxpartition"
+    , "taxset"
+    , "text"
+    , "tokens"
+    , "translate"
+    , "transpose"
+    , "tree"
+    , "treepartition"
+    , "trees"
+    , "treeset"
+    , "triangle"
+    , "typeset"
+    , "unaligned"
+    , "usertype"
+    , "wtset"
+    ]
 
