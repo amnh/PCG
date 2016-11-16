@@ -196,7 +196,7 @@ int main() {
     //     printCharBits( &char3 );
     // }
 
-    // now test getCost
+    // now test getCostDyn
     // currently second element in char1 is with 10000, or gap
     // and the first element in char3 is with 10110
     alphabetSize = 5;
@@ -209,13 +209,13 @@ int main() {
     // dcElement_t* alignElem2 = makeDCElement( alphabetSize, CANONICAL_ZERO );
 
     //getDCElement( alphabetSize, &char3, &char4 );
-    int cost = getCost( char1, 1, char3, 0, tcm, alignElem1 );
+    int cost = getCostDyn( char1, 1, char3, 0, tcm, alignElem1 );
     if( cost < 0 ) {
         printf("Error: alphabet sizes don't match.\n");
     }
 
     // test overlap cost
-    printf("Testing getCost():");
+    printf("Testing getCostDyn():");
     printf("\nShould print 0 and 10000.\n");
     printf("%d\n", cost);
     printElemBits( alignElem1 );
@@ -223,7 +223,7 @@ int main() {
     // test sub cost
     dcElem2->element[0] = (uint64_t) 18;
     setDCElement(1, dcElem2, char1);
-    cost = getCost( char1, 1, char3, 0, tcm, alignElem1 );
+    cost = getCostDyn( char1, 1, char3, 0, tcm, alignElem1 );
     printf("\nShould print 1 and 11111.\n");
     printf("%d\n", cost);
     printElemBits( alignElem1 );
@@ -231,7 +231,7 @@ int main() {
     // test indel cost
     dcElem2->element[0] = (uint64_t) 16;
     setDCElement(1, dcElem2, char1);
-    cost = getCost( char1, 1, char3, 0, tcm, alignElem1 );
+    cost = getCostDyn( char1, 1, char3, 0, tcm, alignElem1 );
     printf("\nShould print 2 and 10111.\n");
     printf("%d\n", cost);
     printElemBits( alignElem1 );

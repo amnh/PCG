@@ -11,6 +11,8 @@
 
 #include <stddef.h>
 
+#include "dynamicCharacterOperations.h"
+
 struct align {
     int partialWt;
     int partialTrueWt;
@@ -44,10 +46,12 @@ int trueWt(struct align *path, const int alphSize, int wtInsertDel, int wtSub, i
 
 // EDIT: rectified with .c file.
 //int aligner(char*, char*, int, int, struct retType*);
-int aligner(int *seq1, size_t seq1Len, int *seq2, size_t seq2Len, size_t alphSize, 
+int aligner(int *seq1, size_t seq1Len, int *seq2, size_t seq2Len, size_t alphSize,
             int wtInsertDel, int wtSub, retType_t* retAlign);
 
 void freeRetType(retType_t* toFree);
+
+int getCost(uint64_t lhs, uint64_t rhs, costMtx_t* tcm, size_t alphSize);
 
 
 #endif /* YUALIGN_H */

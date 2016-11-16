@@ -19,7 +19,9 @@
 #include <unordered_map>
 
 #include "costMatrix.h"
-#include "dynamicCharacterOperations.h"
+extern "C" {
+    #include "dynamicCharacterOperations.h"
+}
 // #include "CostMedPair.h"
 
 typedef std::pair<dcElement_t, dcElement_t> keys_t;
