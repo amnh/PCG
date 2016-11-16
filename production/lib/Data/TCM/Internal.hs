@@ -60,11 +60,11 @@ type instance Element TCM = Word32
 -- There is a heirachichal nature to a TCM's possible structure:
 --
 -- @
---       NonSymetric
+--       NonSymmetric
 --
 --           |
 --
---        Symetric
+--        Symmetric
 --
 --           |
 -- 
@@ -83,9 +83,9 @@ type instance Element TCM = Word32
 -- Each TCM structure has certain properties that must hold and allows for space
 -- & time optimizations.
 --
---   * Non-Symetric: No structure expoitable for optimizations.
+--   * Non-Symmetric: No structure expoitable for optimizations.
 --
---   * Symetric: Allows for half the space allocation.
+--   * Symmetric: Allows for half the space allocation.
 --
 --       * /σ(i,j) = σ(j,i)/
 --
@@ -116,8 +116,8 @@ type instance Element TCM = Word32
 --       * /σ(i,j) = max(i,j) - min(i,j)/
 --
 data TCMStructure
-   = NonSymetric
-   | Symetric
+   = NonSymmetric
+   | Symmetric
    | Metric
    | UltraMetric
    | Additive
@@ -455,12 +455,12 @@ generate n f
 -- the TCM.
 diagnoseTcm :: TCM -> TCMDiagnosis
 diagnoseTcm tcm
-  | isNonAdditive tcm' = diagnosis NonAdditive
-  | isAdditive    tcm' = diagnosis    Additive
-  | isUltraMetric tcm' = diagnosis UltraMetric
-  | isMetric      tcm' = diagnosis      Metric
-  | isSymetric    tcm' = diagnosis    Symetric
-  | otherwise          = diagnosis NonSymetric
+  | isNonAdditive  tcm' = diagnosis  NonAdditive
+  | isAdditive     tcm' = diagnosis     Additive
+  | isUltraMetric  tcm' = diagnosis  UltraMetric
+  | isMetric       tcm' = diagnosis       Metric
+  | isSymmetric    tcm' = diagnosis    Symmetric
+  | otherwise           = diagnosis NonSymmetric
   where
     (weight, tcm') = factorTCM tcm
     diagnosis = TCMDiagnosis weight tcm'
@@ -545,7 +545,7 @@ isMetric tcm = conditions `allSatisfiedBy` tcm
   where
     conditions =
         [ zeroDiagonalOnly
-        , isSymetric
+        , isSymmetric
         , triangleInequality
         ]
     triangleInequality x = all triangleInequalityIndex [(i,k,j) | i <- range, j <- range, k <- range, i < j, j < k ]
@@ -555,11 +555,11 @@ isMetric tcm = conditions `allSatisfiedBy` tcm
 
 
 -- |
--- Determines if the 'TCM' has a symetric structure.
-isSymetric :: TCM -> Bool
-isSymetric tcm = all isSymetricIndex [(i,j) | i <- range, j <- range, i <= j ]
+-- Determines if the 'TCM' has a symmetric structure.
+isSymmetric :: TCM -> Bool
+isSymmetric tcm = all isSymmetricIndex [(i,j) | i <- range, j <- range, i <= j ]
   where
-    isSymetricIndex (i,j) = tcm ! (i,j) == tcm ! (j,i)
+    isSymmetricIndex (i,j) = tcm ! (i,j) == tcm ! (j,i)
     range = [0 .. size tcm - 1]
 
 
@@ -578,7 +578,7 @@ isUltraMetric tcm = conditions `allSatisfiedBy` tcm
   where
     conditions = 
         [ zeroDiagonalOnly      
-        , isSymetric           
+        , isSymmetric           
         , ultraMetricInequality
         ]
     ultraMetricInequality x = all ultraMetricInequalityIndex [(i,k,j) | i <- range, j <- range, k <- range, i < j, j < k ]

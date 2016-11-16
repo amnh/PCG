@@ -139,12 +139,12 @@ continuousSingleton nameValue continuousValue =
 discreteSingleton :: Alphabet String -> CharacterName -> TCM -> (a -> s) -> a -> CharacterBlock s d
 discreteSingleton alphabetValues nameValue tcmValues transformation input =
   case tcmStructure diagnosis of
-    NonSymetric -> (\x -> CharacterBlock Nothing  mempty  mempty  mempty (pure x) mempty) .   NonMetricBin character metadata $ factoredTcm diagnosis
-    Symetric    -> (\x -> CharacterBlock Nothing  mempty  mempty  mempty (pure x) mempty) .   NonMetricBin character metadata $ factoredTcm diagnosis
-    Metric      -> (\x -> CharacterBlock Nothing  mempty  mempty (pure x) mempty  mempty) .      MetricBin character metadata $ factoredTcm diagnosis
-    UltraMetric -> (\x -> CharacterBlock Nothing  mempty  mempty (pure x) mempty  mempty) .      MetricBin character metadata $ factoredTcm diagnosis
-    Additive    -> (\x -> CharacterBlock Nothing  mempty (pure x) mempty  mempty  mempty) $    AdditiveBin character metadata --- $ symbolCount character
-    NonAdditive -> (\x -> CharacterBlock Nothing (pure x) mempty  mempty  mempty  mempty) $ NonAdditiveBin character metadata --- $ symbolCount character
+    NonSymmetric -> (\x -> CharacterBlock Nothing  mempty  mempty  mempty (pure x) mempty) .   NonMetricBin character metadata $ factoredTcm diagnosis
+    Symmetric    -> (\x -> CharacterBlock Nothing  mempty  mempty  mempty (pure x) mempty) .   NonMetricBin character metadata $ factoredTcm diagnosis
+    Metric       -> (\x -> CharacterBlock Nothing  mempty  mempty (pure x) mempty  mempty) .      MetricBin character metadata $ factoredTcm diagnosis
+    UltraMetric  -> (\x -> CharacterBlock Nothing  mempty  mempty (pure x) mempty  mempty) .      MetricBin character metadata $ factoredTcm diagnosis
+    Additive     -> (\x -> CharacterBlock Nothing  mempty (pure x) mempty  mempty  mempty) $    AdditiveBin character metadata --- $ symbolCount character
+    NonAdditive  -> (\x -> CharacterBlock Nothing (pure x) mempty  mempty  mempty  mempty) $ NonAdditiveBin character metadata --- $ symbolCount character
   where
     character = transformation input
     diagnosis = diagnoseTcm tcmValues

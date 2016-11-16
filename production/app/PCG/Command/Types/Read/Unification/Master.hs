@@ -319,4 +319,5 @@ fromTreeOnlyFile fpr = null chars || all null chars
 
 
 terminalNames2 :: ReferenceDAG (Maybe Double) (Maybe String) -> [Identifier]
-terminalNames2 dag = catMaybes $ (`nodeDatum` dag) <$> leaves dag
+terminalNames2 dag = (trace (show $ toList dag)) $
+  catMaybes $ (\x -> (\y -> trace (show y) y) $ x `nodeDatum` dag) <$> leaves dag
