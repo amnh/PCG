@@ -66,7 +66,7 @@ struct KeyEqual {
     // Return true if every `uint64_t` in lhs->element and rhs->element is equal, else false.
     bool operator()(const keys_t& lhs, const keys_t& rhs) const
     {
-        int elemArrWidth = lhs.first.alphSize / INT_WIDTH + lhs.first.alphSize % INT_WIDTH; // assume that alphabet sizes for all four dcElements are the same
+        size_t elemArrWidth = lhs.first.alphSize / INT_WIDTH + lhs.first.alphSize % INT_WIDTH; // assume that alphabet sizes for all four dcElements are the same
         for (size_t i = 0; i < elemArrWidth; i++) {
             if (lhs.first.element[i] != rhs.first.element[i]) {
                 return false;
