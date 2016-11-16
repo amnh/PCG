@@ -8,18 +8,17 @@
 -- Stability   :  provisional
 -- Portability :  portable
 --
--- The Phylogentic Graph types.
---
--- 
---
 -----------------------------------------------------------------------------
 
 {-# LANGUAGE DeriveFunctor #-}
 
-module Bio.PhyloGraphPrime.Node (PhylogeneticNode(..)) where
+module Bio.PhyloGraphPrime.Node (PhylogeneticNode (..)) where
 
 
-data PhylogeneticNode a
+-- |
+-- This serves as a computation invariant node decoration designed to hold node
+-- information such as name and later a subtree structure.
+data  PhylogeneticNode a
     = PNode
     { nodeName       :: String
     , nodeDecoration :: a
