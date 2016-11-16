@@ -34,7 +34,7 @@ import           Data.HashMap.Strict          (HashMap, fromList)
 import           Data.Matrix.NotStupid        (matrix)
 import           Data.Monoid                  ((<>))
 --import           Data.MonoTraversable
-import           Data.Vector                 (Vector, (!))
+import           Data.Vector                  (Vector, (!))
 import qualified Data.Vector           as V
 import           Test.Tasty.QuickCheck 
 

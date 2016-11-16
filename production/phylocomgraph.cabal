@@ -329,6 +329,7 @@ executable pcg
                        PCG.Script
                        PCG.Script.Parser
                        PCG.Script.Types
+                       PCG.SearchState
 
 executable qdh
            

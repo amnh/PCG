@@ -26,6 +26,8 @@ module Bio.PhyloGraphPrime
 import Bio.PhyloGraphPrime.Forest
 --import Bio.PhyloGraphPrime.Network
 --import Bio.PhyloGraphPrime.Tree
+import Data.Key
+import Data.List
 import Data.List.NonEmpty            (NonEmpty)
 import Data.Semigroup
 import Prelude                hiding (lookup)
@@ -43,3 +45,29 @@ newtype PhylogeneticSolution a
 {-# INLINE phylogeneticForests #-}
 phylogeneticForests :: PhylogeneticSolution a -> NonEmpty (PhylogeneticForest a)
 phylogeneticForests (PhylogeneticSolution x) = x
+
+
+instance Show a => Show (PhylogeneticSolution a) where
+
+    show = ("Solution:\n\n" <>) . indent . renderForests . fmap renderForest . phylogeneticForests
+      where
+        indent = intercalate "\n" . fmap ("  "<>) . lines
+        renderForest = indent . foldMapWithKey f
+          where
+            f k e = mconcat
+                [ "Component #"
+                , show k
+                , ":\n\n"
+                , indent $ show e
+                , "\n"
+                ]
+        renderForests = indent . foldMapWithKey f
+          where
+            f k e = mconcat
+                [ "Forest #"
+                , show k
+                , ":\n\n"
+                , indent e
+                , "\n"
+                ]                
+        

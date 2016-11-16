@@ -91,7 +91,7 @@ instance Lookup PhylogeneticForest where
 
     {-# INLINE lookup #-}
     lookup i = lookup i . unwrap
-           
+
 
 instance Traversable1 PhylogeneticForest where
 

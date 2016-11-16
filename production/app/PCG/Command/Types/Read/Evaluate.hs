@@ -8,6 +8,7 @@ import           Bio.Character.Parsed
 import           Bio.Metadata.Parsed
 import           Bio.PhyloGraph.Forest
 import           Bio.PhyloGraph.Solution      (SearchState)
+import           Control.Evaluation
 import           Control.Monad                (when)
 import           Control.Monad.IO.Class
 import           Control.Monad.Trans.Either
@@ -16,6 +17,7 @@ import           Data.Bifunctor               (bimap,first)
 import           Data.Char                    (isLower,toLower,isUpper,toUpper)
 import           Data.Either.Custom
 import           Data.Foldable
+import           Data.Functor
 import           Data.Key                     ((!),lookup)
 import           Data.List.NonEmpty           (NonEmpty( (:|) ))
 import qualified Data.List.NonEmpty    as NE
@@ -39,17 +41,20 @@ import           File.Format.VertexEdgeRoot
 import           PCG.Command.Types (Command(..))
 import           PCG.Command.Types.Read.Internal
 import           PCG.Command.Types.Read.Unification.Master
+import           PCG.SearchState
 import           Prelude             hiding (lookup)
 import           Text.Megaparsec
 
 --import Debug.Trace (trace)
+
+type SearchState = EvaluationT IO (Either TopologicalResult CharacterResult)
 
 
 parse' :: Parsec Dec s a -> String -> s -> Either (ParseError (Token s) Dec) a
 parse' = parse
 
 
-evaluate :: Command -> SearchState -> SearchState
+evaluate :: Command -> EvaluationT IO a -> EvaluationT IO (Either TopologicalResult CharacterResult)
 {--}
 --evaluate (READ fileSpecs) _old | trace ("Evaluated called: " <> show fileSpecs) False = undefined
 evaluate (READ fileSpecs) _old = do
@@ -58,9 +63,11 @@ evaluate (READ fileSpecs) _old = do
     case result of
       Left pErr -> fail $ show pErr   -- Report structural errors here.
       Right xs ->
-        case masterUnify' $ transformation <$> concat xs of
-          Left uErr -> fail $ show uErr -- Report rectification errors here.
-          Right g   -> pure g           -- TODO: rectify against 'old' SearchState, don't just blindly merge or ignore old state
+        case masterUnify $ transformation <$> concat xs of
+          Left uErr -> fail $ show uErr -- Report unification errors here.
+           -- TODO: rectify against 'old' SearchState, don't just blindly merge or ignore old state
+          Right g   -> (liftIO . putStrLn $ show g) $> g
+
   where
     transformation = expandIUPAC
 
