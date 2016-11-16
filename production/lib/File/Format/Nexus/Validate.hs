@@ -282,7 +282,7 @@ foldSeqs ((taxSeqMap,charMDataVec):xs)   = ((newSeqMap, newMetadata), totLength)
 translateTrees :: Vector String -> [TreeBlock] -> Either (NonEmpty String) NewickForest
 translateTrees taxaList treeSet =
     case partitionEithers $ handleTreeBlock <$> treeSet of
-      (  [], xs) -> Right $ mconcat xs
+      (  [], xs) -> Right $ xs
       (x:xs,  _) -> Left  $ x :| xs
     where
 
@@ -294,9 +294,9 @@ translateTrees taxaList treeSet =
         -- |
         -- Attempt to translate a 'TreeBlock' into a 'NewickForest' with leaf
         -- nodes properly labeled with taxa names.
-        handleTreeBlock :: TreeBlock -> Either String NewickForest
+        handleTreeBlock :: TreeBlock -> Either String NewickNode
         handleTreeBlock (TreeBlock translateFields labeledTrees) =
-            (\x -> foldMap (translateForest x. snd) labeledTrees) <$> labelMappingEither
+            (\x -> foldMap (translateTree x. snd) labeledTrees) <$> labelMappingEither
           where
 
             -- |
@@ -314,12 +314,12 @@ translateTrees taxaList treeSet =
             -- |
             -- Applies a translation of leaf label symbols to taxa labels over
             -- a forest.
-            translateForest :: Map String String -> NewickForest -> NewickForest
-            translateForest mapping = fmap f
+            translateTree :: Map String String -> NewickNode -> NewickNode
+            translateTree mapping = f
               where
                 f node
                   | isLeaf node = node { newickLabel = newickLabel node >>= (`M.lookup` mapping)  }
-                  | otherwise   = node { descendants = translateForest mapping $ descendants node }
+                  | otherwise   = node { descendants = translateTree mapping <$> descendants node }
                     
             -- |
             -- Construct the leaf node symbol to taxon label mapping when there
@@ -361,8 +361,8 @@ translateTrees taxaList treeSet =
                   ([], xs) ->
                       if      not   $ Set.fromList (snd <$> xs) `Set.isSubsetOf` taxaSet
                       then    Left  $ "There was an element in the co-domain of the Translation specifaction that is not an element of the taxa set."
-                      else if not   $ Set.fromList (fst <$> xs) == leafSet
-                      then    Left  $ "There was an element in the domain of the Translation specifaction that is not an element of the leaf node label set."
+                      else if not   $ leafSet `Set.isSubsetOf` Set.fromList (fst <$> xs)
+                      then    Left  $ "There was an element in the domain of the Translation specifaction that is not an element of the leaf node label set.\n  LeafSet - Symbols: " <> show (toList $ leafSet `Set.difference` Set.fromList (fst <$> xs))
                       else    Right $ M.fromList xs
                   -- Inconsistent Translate formatting
                   ( _,  _) -> Left  $ "All elements of the Translation specifaction were not either all singleton tokens or pairwise tokens."
@@ -381,12 +381,13 @@ translateTrees taxaList treeSet =
             -- |
             -- Construct the leaf set of a forest.
             leafSet :: Set String
-            leafSet = foldMap (foldMap f . snd) labeledTrees
+            leafSet = foldMap (f . snd) labeledTrees
               where
-                f node
-                  | isLeaf node  = Set.fromList . maybeToList $ newickLabel node
-                  | otherwise    = foldMap f $ descendants node
-                  
+                f :: NewickNode -> Set String
+                f node =
+                  case descendants node of
+                    [] -> Set.fromList . maybeToList $ newickLabel node
+                    xs -> foldMap f xs
 
 
 -- | updateSeqInMap takes in a TaxonSequenceMap, a length (the length of the longest sequence in the map), a taxon name and a sequence.
