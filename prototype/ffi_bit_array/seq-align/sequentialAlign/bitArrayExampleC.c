@@ -1,10 +1,10 @@
-#include <stdio.h> 
+#include <stdio.h>
 #include <stdlib.h>
-#include <string.h> 
+#include <string.h>
 #include "bitArrayExampleC.h"
 
-/** 
- *  The following fn should only needed this for testing, so it's not in the .h file. 
+/**
+ *  The following fn should only needed this for testing, so it's not in the .h file.
  *
  *  Prints a representation of a dynamic character as a matrix of bits.
  */
@@ -49,7 +49,7 @@ void printDynChar( const dynChar_t* const input ) {
     printCharBits(input);
 }
 
-/** 
+/**
  *  A sample program that takes in two dynamic characters, and writes the result of any computations to a third
  *  dynamic character. The third character is allocated on Haskell side and passed in by reference.
  *  Returns 0 on correct exit, 1 on allocation failure. This was used to test the Haskell FFI.
@@ -59,7 +59,7 @@ void printDynChar( const dynChar_t* const input ) {
 /* int exampleInterfaceFnOld(dynChar_t* seqA, dynChar_t* seqB, alignResult_t* result) {
     // Because the characters are packed (meaning multiple characters will be in a single uint64_t),
     // we need the total number of uint64_ts in our array, which is computed in dynCharSize().
-    // 
+    //
     size_t buffLenA = dynCharSize(seqA);
     size_t buffLenB = dynCharSize(seqB);
 
@@ -73,13 +73,13 @@ void printDynChar( const dynChar_t* const input ) {
     if( buffer == NULL ) {
         return 1;
     }
-    
-    // a simple concatenation, to test the input and output. Note that this won't be packed; we're just 
+
+    // a simple concatenation, to test the input and output. Note that this won't be packed; we're just
     // sticking the two arrays together.
     for(int i = 0; i < buffLenA; i++) {
         buffer[i] = seqA->dynChar[i];
     }
-    
+
     for(int i = 0; i < buffLenB; i++) {
         buffer[i + buffLenA] = seqB->dynChar[i];
     }
@@ -98,9 +98,9 @@ void printDynChar( const dynChar_t* const input ) {
  *  This function purely for testing, and as example usage.
  */
 int main() {
-    size_t numElems    = 14;
-    size_t alphabetLen = 5;
-    uint64_t* values = calloc(numElems, sizeof(uint64_t));
+    size_t numElems     = 14;
+    size_t alphabetSize = 5;
+    uint64_t* values    = calloc(numElems, sizeof(uint64_t));
     for( size_t i = 0; i < numElems; i++ ) {
         values[i] = (uint64_t) i;
     }
@@ -108,7 +108,7 @@ int main() {
     // testing makeDynamicChar
 
     // creating with more than one int necessary in the array
-    dynChar_t* char1 = makeDynamicChar( alphabetLen, numElems, values );
+    dynChar_t* char1 = makeDynamicChar( alphabetSize, numElems, values );
     printf("\nTest bit wrap to next int. Should be 14, then 5, then numbers from 0 to 14 in bits:\n");
     printf("number of elems: %zu\n", char1->numElems);
     printf("alphabet size:   %zu\n", char1->alphSize);
@@ -118,11 +118,11 @@ int main() {
 
     // testing this with a large alphabet size. Still needs to be amended.
     printf("\nTest make static character. Should print 1, then 67, then a matrix 67 wide, all set to 0 except first three:\n");
-    alphabetLen = 67; // TODO: fix this so it rolls over. Right now 64 is max.
+    alphabetSize = 67; // TODO: fix this so it rolls over. Right now 64 is max.
     //; // alphabet: 63, chars: 1, value: 7
     dcElement_t* dcElem1;
     printf("just about to start assign values to dcElem1\n");
-    dcElem1 = makeDCElement( alphabetLen, (uint64_t) 7 ); // cast because input needs to be unsigned long
+    dcElem1 = makeDCElement( alphabetSize, (uint64_t) 7 ); // cast because input needs to be unsigned long
     printf("%zu\n", dcElem1->alphSize);
     printElemBits( dcElem1 );
 
@@ -132,7 +132,7 @@ int main() {
     printf("\nTest accessors:\n");
 
     // first, try getting a static character from char1 and assigning it into char3
-    alphabetLen = 5;
+    alphabetSize = 5;
     printf("\nTest get static character. Should print 5, then 13 in binary, then error out:\n");
     dynChar_t* char3 = makeDynamicChar( 5, 1, &values[13] ); // alphabet: 5, chars: 1, value: 13
 
@@ -147,7 +147,7 @@ int main() {
     }
 
     /** already freed, so should be able to reallocate **/
-    dcElem1 = getDCElement( (size_t) 17, char1 ); 
+    dcElem1 = getDCElement( (size_t) 17, char1 );
 
     // now fail because there aren't 17 elements in char1
     if ( dcElem1->alphSize == 0 ) {
@@ -178,7 +178,7 @@ int main() {
         }
     }
     printCharBits( char1 );
-    
+
     // Fail because index is beyond length of char3
     if ( setDCElement( (size_t) 17, dcElem2, char3) ) {
         printf("\nError! Not enough elements in char1.\n\n");
@@ -199,16 +199,16 @@ int main() {
     // now test getCost
     // currently second element in char1 is with 10000, or gap
     // and the first element in char3 is with 10110
-    alphabetLen = 5;
+    alphabetSize = 5;
     costMtx_t* tcm = malloc( sizeof(costMtx_t) );
     tcm->subCost = 1;
     tcm->gapCost = 2;
 
     // next to get values back
-    dcElement_t* alignElem1 = makeDCElement( alphabetLen, CANONICAL_ZERO );
-    // dcElement_t* alignElem2 = makeDCElement( alphabetLen, CANONICAL_ZERO );
+    dcElement_t* alignElem1 = allocateDCElement( alphabetSize );
+    // dcElement_t* alignElem2 = makeDCElement( alphabetSize, CANONICAL_ZERO );
 
-    //getDCElement( alphabetLen, &char3, &char4 );
+    //getDCElement( alphabetSize, &char3, &char4 );
     int cost = getCost( char1, 1, char3, 0, tcm, alignElem1 );
     if( cost < 0 ) {
         printf("Error: alphabet sizes don't match.\n");
@@ -245,6 +245,12 @@ int main() {
         printf("%d, ", toPrint[i]);
     }
     printf("\n");
+
+    dcElement_t* dcOr = dcElementOr( getDCElement(3, char1), getDCElement(2, char3) );
+
+    printElemBits(dcOr);
+
+    // packedChar_t pcOr = packedCharOr(getDCElement(char1, 3), getDCElement(char3, 2), alphabetSize);
 
     dynChar_t* char4 = makeDynamicChar( char1->alphSize, char1->numElems, values );
 

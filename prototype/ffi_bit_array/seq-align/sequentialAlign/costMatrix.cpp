@@ -1,16 +1,23 @@
 #include "costMatrix.h"
 
-CostMatrix::CostMatrix() {
-    alphabetSize = 2;
-
+costMedian_t* allocCostMedian_t (size_t alphabetSize) {
+    costMedian_t* toReturn;
+    toReturn->second = (uint64_t*) calloc(dcElemSize(alphabetSize), INT_WIDTH);
+    return toReturn;
 }
 
-CostMatrix::CostMatrix(int alphSize, int* tcm) {
+// CostMatrix::CostMatrix() {
+//     alphabetSize = 2;
+
+// }
+
+CostMatrix::CostMatrix(size_t alphSize, int* tcm) {
     alphabetSize = alphSize;
     setUpInitialMatrix(tcm);
 }
 
 CostMatrix::~CostMatrix() {
+    //TODO: actually write this
 
 }
 
@@ -19,66 +26,81 @@ int CostMatrix::getCost(dcElement_t& left, dcElement_t& right, dcElement_t& retM
     std::unordered_map<keys_t, costMedian_t, KeyHash, KeyEqual>::const_iterator found;
     int foundCost;
 
-    found = myMatrix.find (toLookup);
+    found = myMatrix.find(toLookup);
 
     if ( found == myMatrix.end() ) {
-        costMedian_t computedCostMed = computeCostMedian (toLookup);
-        retMedian.element = computedCostMed.second.element;
-        foundCost         = computedCostMed.first;
+        costMedian_t *computedCostMed = computeCostMedian(toLookup);
+        foundCost                     = computedCostMed->first;
+        retMedian.element             = computedCostMed->second;
+
 
         setValue (toLookup, computedCostMed);
     } else {
             // because in the next two lines, I get back a pair<keys, costMedian_t>
-        foundCost = found->second.first;
-        retMedian = found->second.second;
+        foundCost         = found->second.first;
+        retMedian.element = found->second.second;
     }
 
     return foundCost;
 }
 
-costMedian_t CostMatrix::computeCostMedian(keys_t& key) {
-    int curCost, minCost, median;
-    for (uint64_t ambElem1 = 1; ambElem1 <= 31; ambElem1++) { // for every possible value of ambElem1, ambElem2
-        for (uint64_t ambElem2 = 1; ambElem2 <= 31; ambElem2++) {
-            curCost = 0; // don't actually need to initialize this
-            minCost = INT_MAX;
-            median  = 0;
-            for (int nucleotide = 1; nucleotide <= alphabetSize; nucleotide++) {
-                curCost = CM_distance (key) + // this isn't going to work: CM_distance() does the wrong thing
-                          CM_distance (key);
-                // now seemingly recreating logic in CM_distance(), but that was to get the cost for each
-                // ambElem; now we're combining those costs get overall cost and median
-                if (curCost < minCost) {
-                    minCost = curCost;
-                    median  = 1 << (nucleotide - 1); 
-                } else if (curCost == minCost) {
-                    median |= 1 << (nucleotide - 1); 
-                }
-            } // nucleotide
+costMedian_t* CostMatrix::computeCostMedian(keys_t& key) {
+    int curCost                   = 0; // don't actually need to initialize this
+    dcElement_t *firstUnambigKey  = allocateDCElement(alphabetSize); // these will get set and used for lookup
+    dcElement_t *secondUnambigKey = allocateDCElement(alphabetSize);
+    packedChar_p curMedian;
+    packedChar_p interimMedian;
 
-        } // ambElem2
-    } // ambElem1
+    costMedian_t *toReturn; // not allocating second, because will be alloc'ed in curMedian
+    toReturn->first               = INT_MAX;
+
+
+    firstUnambigKey->alphSize  = alphabetSize;
+    secondUnambigKey->alphSize = alphabetSize;
+    keys_t searchKey;
+    searchKey.first  = *firstUnambigKey;
+    searchKey.second = *secondUnambigKey;
+
+    std::unordered_map<keys_t, costMedian_t, KeyHash, KeyEqual>::const_iterator found;
+
+    for (uint64_t posFirstKey = 1; posFirstKey <= alphabetSize; posFirstKey++) {
+        if( TestBit(key.first.element, posFirstKey) ) {
+            for (uint64_t posSecondKey = 1; posSecondKey <= alphabetSize; posSecondKey++) {
+                if( TestBit(key.second.element, posSecondKey) ) {
+                    SetBit(searchKey.first.element, posFirstKey);
+                    SetBit(searchKey.second.element, posFirstKey);
+                    // free(found.second);
+                    found   = myMatrix.find(key);
+                    curCost = found->second.first;
+                    // now seemingly recreating logic in CM_distance(), but that was to get the cost for each
+                    // ambElem; now we're combining those costs get overall cost and median
+                    if (curCost < toReturn->first) {
+                        toReturn->first = curCost;
+                        free(curMedian);
+                        curMedian = found->second.second; // TODO: this is not making a copy, so need to fix it.
+                    } else if (curCost == toReturn->first) {
+                        interimMedian = packedCharOr(curMedian, found->second.second, alphabetSize);
+                        free(curMedian);
+                        curMedian = interimMedian;
+                        free(interimMedian);
+                    }
+                } // if pos2 is set in second key
+            } // if pos1 is set in first key
+        } // posSecondKey
+    } // posFirstKey
+    freeDCElem(firstUnambigKey);
+    freeDCElem(secondUnambigKey);
+    return toReturn;
 }
 
-/** Find distance between an ambiguous nucleotide and an unambiguous ambElem. Return that value and the median. 
- *  @param ambElem is ambiguous input.
- *  @param nucleotide is unambiguous.
- *  @param median is used to return the calculated median value.
- *
- *  This fn is necessary because there isn't yet a cost matrix set up, so it's not possible to 
- *  look up ambElems, therefore we must loop over possible values of the ambElem
- *  and find the lowest cost median.
- *
- *  Requires symmetric, if not metric, matrix.
- */
-costMedian_t* CostMatrix::CM_distance (keys_t& key, int* tcm) {
+costMedian_t* CostMatrix::findDistance (keys_t& key, int* tcm) {
 
     packedChar_p key1      = key.first.element;
     packedChar_p key2      = key.second.element;
     size_t dynCharLen      = dcElemSize(alphabetSize);
-    packedChar_p curMedian = (packedChar_p) calloc( dynCharLen, INT_WIDTH );
+    packedChar_p curMedian = (packedChar_p)  calloc( dynCharLen, INT_WIDTH );
     costMedian_t* toReturn = (costMedian_t*) malloc( sizeof(costMedian_t) );
-    &toReturn->second       = &curMedian;
+    toReturn->second    = curMedian;
     int curMin             = INT_MAX;
     int curCost            = 0;
 
@@ -107,18 +129,33 @@ costMedian_t* CostMatrix::CM_distance (keys_t& key, int* tcm) {
     return toReturn;
 }
 
+// TODO: deallocate here
 void CostMatrix::setUpInitialMatrix (int* tcm) {
     std::pair<keys_t, costMedian_t> toInsert;
-    toInsert.first.first.alphSize = toInsert.first.second.alphSize = 
-                                    toInsert.second.second.alphSize = alphabetSize;
+    toInsert.second.second = (uint64_t*) calloc(dcElemSize(alphabetSize), INT_WIDTH);
+    toInsert.first.first.alphSize   = alphabetSize;
+    toInsert.first.second.alphSize  = alphabetSize;
     for (size_t key1 = 1; key1 <= alphabetSize; key1 <<= 1) { // for every possible value of key1, key2
         for (size_t key2 = 1; key2 <= alphabetSize; key2 <<= 1) {
-            SetBit(toInsert.first.first.element,  key1); 
+            SetBit(toInsert.first.first.element,  key1);
             SetBit(toInsert.first.second.element, key2);
-            toInsert.second.first          = tcm[(key1 - 1) * alphabetSize + key2 - 1];
-            SetBit(toInsert.second.second.element, key1);
-            SetBit(toInsert.second.second.element, key2); 
-            if (!myMatrix.insert(toInsert) ) exit ("failed to insert.");
+            toInsert.second.first = tcm[(key1 - 1) * alphabetSize + key2 - 1];
+            SetBit(toInsert.second.second, key1);
+            SetBit(toInsert.second.second, key2);
+            if ( !myMatrix.insert(toInsert).second ) {
+                printf("failed to insert.\n");
+                exit (1);
+            }
         } // key2
+    }
+    freeDCElem(&toInsert.first.first);
+    freeDCElem(&toInsert.first.second);
+    free(toInsert.second.second);
+}
+
+void CostMatrix::setValue(keys_t key, costMedian_t *median) {
+    if( !myMatrix.insert(std::make_pair(key, *median)).second ) {
+        printf("failed to insert\n");
+        exit(1);
     }
 }

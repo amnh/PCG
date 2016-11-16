@@ -1,4 +1,37 @@
 /**
+ *  Module      :  Functions for processing bit-packed character data
+ *  Description :  Contains various helper fns for using bit arrays to implement packed dynamic characters.
+ *  Copyright   :  (c) 2016 Eric Ford, Division of Invertebrate Zoology, AMNH. All rights reserved.
+ *  License     :
+ *
+ *  Redistribution and use in source and binary forms, with or without
+ *  modification, are permitted provided that the following conditions are met:
+ *
+ *  1. Redistributions of source code must retain the above copyright notice, this
+ *     list of conditions and the following disclaimer.
+ *  2. Redistributions in binary form must reproduce the above copyright notice,
+ *     this list of conditions and the following disclaimer in the documentation
+ *     and/or other materials provided with the distribution.
+ *
+ *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+ *  ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+ *  WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ *  DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR
+ *  ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+ *  (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ *  LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ *  ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ *  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ *  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *
+ *  The views and conclusions contained in the software and documentation are those
+ *  of the authors and should not be interpreted as representing official policies,
+ *  either expressed or implied, of the FreeBSD Project.
+ *
+ *  Maintainer  :  Eric Ford <eford@amnh.org>
+ *  Stability   :  Interface is stable.
+ *  Portability :  Should be portable.
+ *
  *  Contains various helper fns for using bit arrays to implement packed dynamic characters.
  *  Individual dynamic character elements are represented using bit arrays, where each bit marks whether
  *  a given character state is present in that element, so [1,0,0,1] would imply that the element is
@@ -17,7 +50,7 @@
  *  • A dynamic character is a packed series of elements. (This isn't the _actual_ definition
  *    of a dynamic character, but will do for our purposes.)
  *
- *  TODO: for this to be useable on |alphabet including gap| > 64, various uint64_t types below will have to be 
+ *  TODO: for this to be useable on |alphabet including gap| > 64, various uint64_t types below will have to be
  *        exchanged out for packedChar_p (i.e. arrays of 64-bit ints).
  */
 
@@ -31,8 +64,8 @@
 #include <stdint.h>
 
 // these must be static to prevent compilation issues.
-static const size_t   BITS_IN_BYTE   = 8;  // so bytes are set to 8, for all architectures
-static const size_t   INT_WIDTH      = sizeof(uint64_t);
+static const size_t   BITS_IN_BYTE   = 8;                        // so bytes are set to 8, for all architectures
+static const size_t   INT_WIDTH      = sizeof(uint64_t);         // don't forget: in bytes
 static const size_t   WORD_WIDTH     = BITS_IN_BYTE * INT_WIDTH; // BITS_IN_BYTE * INT_WIDTH; <-- because HSC is dumb!
 static const uint64_t CANONICAL_ONE  = 1;
 static const uint64_t CANONICAL_ZERO = 0;
@@ -80,25 +113,30 @@ void ClearBit( packedChar_p const arr, const size_t k );
 
 uint64_t TestBit( packedChar_p const arr, const size_t k );
 
-/** Clear entire packed character: all bits set to 0; 
- *  packedCharLen is pre-computed dynCharSize() 
+/** Clear entire packed character: all bits set to 0;
+ *  packedCharLen is pre-computed dynCharSize()
  */
 void ClearAll( packedChar_p const arr, const size_t packedCharLen);
 
-/* figures out how long the int array needs to be to hold a given dynamic character */
+/** Returns size_t holding length a uint64_t array needs to be to hold numElems packed dynamic characters.
+ *  Note that this is different from numElems * dcElemSize.
+ */
 size_t dynCharSize(size_t alphSize, size_t numElems);
 
+/** Returns a size_t holding length a uint64_t array needs to be to hold a single packed dynamic character. */
 size_t dcElemSize(size_t alphSize);
 
-/** functions to free memory **/
+/** functions to free memory. Self-explanatory. **/
 void freeDynChar( dynChar_t* p );
 
 void freeDCElem( dcElement_t* p );
 
 /** functions to interact directly with DCElements */
 
-/** returns the correct gap value for this character */
-uint64_t getGap(const dynChar_t* const character);
+/** Returns the correct gap value for this character.
+ *  Allocates, so much be deallocated after each use.
+ */
+dcElement_t* getGap(const dynChar_t* const character);
 
 /**
  *  Takes in a dynamic character to be altered, as well as the index of the element that will
@@ -107,7 +145,7 @@ uint64_t getGap(const dynChar_t* const character);
  *  Fails if the alphabet sizes of the two input characters are different.
  *  Makes a copy of value in changeToThis, so can deallocate or mutate changeToThis later with no worries.
  */
-int setDCElement( const size_t whichIdx, 
+int setDCElement( const size_t whichIdx,
                  const dcElement_t* const changeToThis, dynChar_t* const charToBeAltered );
 
 /**
@@ -116,18 +154,24 @@ int setDCElement( const size_t whichIdx,
  *  • character requested is beyond end of dynamic character's length
  *  • the alphabet sizes of the input and output characters don't match
  *
- *  This allocates, so must be 
- *      a) NULL checked, 
+ *  This allocates, so must be
+ *      a) NULL checked,
  *      b) freed later using deallocations, above.
  */
 dcElement_t* getDCElement( const size_t whichChar, const dynChar_t* const indynChar_t);
+
+
+/** Allocates a dcElement_t. Sets the element to 0 of the appropriate length,
+ *  and the alphSize to alphSize.
+ */
+dcElement_t* allocateDCElement( const size_t alphSize );
 
 /**
  *  Create an empty dynamic character element (i.e., a dynamic character with only one sub-character)
  *  using inputted alphabet length to determine necessary length of internal int array.
  *  Fill internal int array with zeroes.
- *  This allocates, so must be 
- *      a) NULL checked, 
+ *  This allocates, so must be
+ *      a) NULL checked,
  *      b) freed later using deallocations, above.
  */
 dcElement_t* makeDCElement( const size_t alphSize, const uint64_t value );
@@ -136,27 +180,31 @@ dcElement_t* makeDCElement( const size_t alphSize, const uint64_t value );
  *  Send in two elements. If there's an overlap, put that overlap into return dyn char, return 0.
  *  Otherwise, compute least cost and return that cost and put the median into return dynChar.
  *
- *  If the two characters are not compatible (have different length alphabets—it doesn't check 
+ *  If the two characters are not compatible (have different length alphabets—it doesn't check
  *  to see that the alphabets are the same), returns a negative cost.
+ *
+ *  newElem1
  */
-double getCost( const dynChar_t* const inDynChar1, size_t whichElem1, 
-                const dynChar_t* const inDynChar2, size_t whichElem2, 
+double getCost( const dynChar_t* const inDynChar1, size_t whichElem1,
+                const dynChar_t* const inDynChar2, size_t whichElem2,
                 costMtx_t* tcm, dcElement_t* newElem1 );
 
 /** Allocator for dynChar_t
- *  This (obviously) allocates, so must be 
- *      a) NULL checked, 
+ *  This (obviously) allocates, so must be
+ *      a) NULL checked,
  *      b) freed later using deallocations, above.
  */
 dynChar_t* makeDynamicChar( size_t alphSize, size_t numElems, packedChar_p values );
 
-/** takes as input a dynamic character and converts it to a uint64_t array. Allocates, so after returned array
+/** takes as input a dynamic character and converts it to a int array. Allocates, so after returned array
  *  is no longer in use it must be deallocated.
+ *
+ *  Nota bene: limits alphabet size to whatever the width of an int is, likely 2 bytes.
  */
 int* dynCharToIntArr( dynChar_t* input );
 
 /** takes as input an int array and copies its values into a packed dynamic character.
- *  This effectively recapitulates makeDynamicChar(), with one difference, this is intended to 
+ *  This effectively recapitulates makeDynamicChar(), with one difference, this is intended to
  *  *copy* the contents, so it requires a preallocated dynChar_t. This is so that it can be placed
  *  into a container allocated on the other side of the FFI, and deallocated there, as well.
  */
@@ -165,8 +213,24 @@ void intArrToDynChar( size_t alphSize, size_t arrayLen, int* input, dynChar_t* o
 /** As above, but only allocates and fills the bit array, not whole dyn char */
 packedChar_p intArrToBitArr( size_t alphSize, size_t arrayLen, int* input );
 
+/** Takes two packed characters (uint64_t*) and finds the value as if they were bitwise AND'ed.
+ *  Allocates, so must call freeDynChar() afterwards.
+ */
+packedChar_p packedCharAnd(packedChar_p lhs, packedChar_p rhs, size_t alphSize);
+
+/** Takes two dcElements and finds the value if they were bitwise OR'ed.
+ *  Allocates, so must call freeDynChar() afterwards. Uses packedCharOr()
+ *  to find | of elements.
+ */
 dcElement_t* dcElementOr (dcElement_t* lhs, dcElement_t* rhs);
 
+/** Takes two packed characters (uint64_t*) and finds the value as if they were bitwise OR'ed.
+ *  Allocates, so must call freeDynChar() afterwards.
+ */
 packedChar_p packedCharOr (packedChar_p lhs, packedChar_p rhs, size_t alphSize);
+
+
+
+int dcElementEq (dcElement_t* lhs, dcElement_t* rhs);
 
 #endif /* DYNAMIC_CHARACTER_OPERATIONS */
