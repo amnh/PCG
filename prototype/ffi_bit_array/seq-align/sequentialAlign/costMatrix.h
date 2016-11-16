@@ -43,8 +43,8 @@ struct KeyHash {
      *  http://stackoverflow.com/questions/2590677/how-do-i-combine-hash-values-in-c0x
      */
     std::size_t hash_combine (const dcElement_t lhs, const dcElement_t rhs) const {
-        std::size_t left_seed  = 3141592653;
-        std::size_t right_seed = 2718281828;
+        std::size_t left_seed  = 3141592653; // PI used as arbitrarily random seed
+        std::size_t right_seed = 2718281828; // E  used as arbitrarily random seed
 
         std::hash<uint64_t> hasher;
         size_t elemArrWidth = lhs.alphSize / INT_WIDTH + lhs.alphSize % INT_WIDTH;

@@ -17,7 +17,7 @@ bit-ops : bitArrayExampleC.c bitArrayExampleC.h dynamicCharacterOperations.c dyn
 costMtxTest: costMtxTest.cpp costMatrix.h costMatrix.cpp dynamicCharacterOperations.h dynamicCharacterOperations.c
 	gcc -std=c11   -c dynamicCharacterOperations.c
 	g++ -std=c++14 -c costMatrix.cpp
-	g++ -std=c++14 -g -Wall -o costMtxTest costMtxTest.cpp
+	g++ -std=c++14 -g -Wall dynamicCharacterOperations.o costMatrix.o costMtxTest.cpp -o costMtxTest
 
 yu_code: main.c seqAlignForHaskell.c seqAlignForHaskell.h dynamicCharacterOperations.c dynamicCharacterOperations.h
 	gcc -std=c11 -c seqAlignForHaskell.c dynamicCharacterOperations.c
