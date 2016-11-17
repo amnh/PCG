@@ -28,7 +28,7 @@ import qualified Data.List.NonEmpty as NE
 import           Data.List.Utility         (duplicates)
 import           Data.Map                  (Map)
 import qualified Data.Map           as Map
-import           Data.Maybe                (catMaybes, fromMaybe, maybeToList)
+import           Data.Maybe                (catMaybes, fromMaybe)
 import           Data.Monoid
 import           Data.Ord                  (comparing)
 import           Data.Set                  (Set)
@@ -75,7 +75,7 @@ data  VertexEdgeRoot
 instance Show EdgeInfo where
   show (EdgeInfo x y c) = mconcat $ ["(", show x, ", ", show y, ")"] <> renderCost c
     where
-      renderCost = fmap ((":" <>) . show) . maybeToList
+      renderCost = fmap ((":" <>) . show) . toList
 
 
 -- | For a given vertex, attempts to get the connected vertex from the 'EdgeInfo'.

@@ -158,7 +158,7 @@ instance ParsedForest TntResult where
         -- | Apply the generating function referencing the relational mapping.
         coerceTree mapping = unfoldDAG f 0
           where
-            f i = (g $ maybeToList parentMay, datum, g childRefs)
+            f i = (g $ toList parentMay, datum, g childRefs)
               where
                 (parentMay, datum, childRefs) = mapping ! i
                 g = fmap (\j -> (Nothing, j))

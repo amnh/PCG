@@ -384,7 +384,7 @@ translateTrees taxaList treeSet =
                 f :: NewickNode -> Set String
                 f node =
                   case descendants node of
-                    [] -> Set.fromList . maybeToList $ newickLabel node
+                    [] -> Set.fromList . toList $ newickLabel node
                     xs -> foldMap f xs
 
 

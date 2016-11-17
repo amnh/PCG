@@ -3,6 +3,7 @@ import "hint" HLint.Dollar
 import "hint" HLint.Builtin.All
 -- import "hint" HLint.Generalise
 
+import        Data.Maybe
 import        Data.Monoid
 import        Control.Monad
 
@@ -18,3 +19,4 @@ warn = liftM ==> fmap
 
 warn = map ==> fmap
 
+warn = maybeToList ==> toList
