@@ -82,6 +82,12 @@ instance Bifunctor ReferenceDAG where
         h (IndexData node parentRefs' childRefs') = IndexData (g node) parentRefs' $ f <$> childRefs'
 
 
+-- | (✔) 
+instance Foldable (ReferenceDAG e) where
+
+    foldMap f = foldMap (f . nodeDecoration) . references
+  
+
 -- | (✔)
 instance Functor (ReferenceDAG e) where
 
@@ -107,8 +113,8 @@ instance PhylogeneticComponent (ReferenceDAG e n) NodeRef e n where
     leaves          = foldMapWithKey f . references
       where
         f i x
-          | null $ childRefs x = mempty
-          | otherwise          = [toEnum i]
+          | null $ childRefs x = [toEnum i]
+          | otherwise          = mempty
 
     nodeCount       = length . references
 
