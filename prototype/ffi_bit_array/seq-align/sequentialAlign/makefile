@@ -8,17 +8,18 @@ clean :
 
 bit-ops : bitArrayExampleC.c bitArrayExampleC.h dynamicCharacterOperations.c dynamicCharacterOperations.h
 	rm -f *.o
-	gcc -c bitArrayExampleC.c dynamicCharacterOperations.c
-	gcc bitArrayExampleC.o dynamicCharacterOperations.o
+	gcc -std=c11 -c bitArrayExampleC.c dynamicCharacterOperations.c
+	gcc -std=c11 bitArrayExampleC.o dynamicCharacterOperations.o
 
 # compiler flags:
 #  -g    adds debugging information to the executable file
 #  -Wall turns on most, but not all, compiler warnings
 costMtxTest: costMtxTest.cpp costMatrix.h costMatrix.cpp dynamicCharacterOperations.h dynamicCharacterOperations.c
-	gcc -c dynamicCharacterOperations.c
-	g++ -c costMatrix.cpp
-	g++ -g -Wall -o costMtxTest costMtxTest.cpp
+	gcc -std=c11 -c dynamicCharacterOperations.c
+	g++ -std=c++14 -c costMatrix.cpp
+	g++ -std=c++14 -c costMtxTest.cpp
+	g++ -std=c++14 -g -Wall -o costMtxTest dynamicCharacterOperations.o costMatrix.o costMtxTest.o
 
 yu_code: main.c seqAlignForHaskell.c seqAlignForHaskell.h dynamicCharacterOperations.c dynamicCharacterOperations.h
-	gcc -c seqAlignForHaskell.c dynamicCharacterOperations.c
-	gcc main.c seqAlignForHaskell.o dynamicCharacterOperations.o
+	gcc -std=c11 -c seqAlignForHaskell.c dynamicCharacterOperations.c
+	gcc -std=c11 main.c seqAlignForHaskell.o dynamicCharacterOperations.o
