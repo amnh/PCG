@@ -15,11 +15,21 @@
 module Bio.PhyloGraphPrime.Node (PhylogeneticNode (..)) where
 
 
+import Data.Bifunctor
+
 -- |
 -- This serves as a computation invariant node decoration designed to hold node
 -- information such as name and later a subtree structure.
-data  PhylogeneticNode a
+data  PhylogeneticNode n s
     = PNode
-    { nodeName       :: String
-    , nodeDecoration :: a
+    { nodeName           :: String
+    , nodeDecoration     :: n
+    , sequenceDecoration :: s
     } deriving (Eq, Functor)
+
+instance Bifunctor PhylogeneticNode where
+
+    bimap g f = 
+      PNode <$> nodeName
+            <*> g . nodeDecoration
+            <*> f . sequenceDecoration
