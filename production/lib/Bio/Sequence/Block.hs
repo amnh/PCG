@@ -55,13 +55,13 @@ import qualified Data.Vector                 as V
 -- definitions.
 --
 -- Use '(<>)' to construct larger blocks.
-data CharacterBlock s d
+data CharacterBlock m i c f a d
    = CharacterBlock
-   { continuousCharacterBins   :: Maybe ContinuousBin
-   , nonAdditiveCharacterBins  :: Vector (NonAdditiveBin s)
-   , additiveCharacterBins     :: Vector (   AdditiveBin s)
-   , metricCharacterBins       :: Vector (     MetricBin s)
-   , nonNonMetricCharacterBins :: Vector (  NonMetricBin s)
+   { continuousCharacterBins   :: Maybe  (ContinuousBin  c)
+   , nonAdditiveCharacterBins  :: Vector (NonAdditiveBin f)
+   , additiveCharacterBins     :: Vector (   AdditiveBin a)
+   , metricCharacterBins       :: Vector (     MetricBin m)
+   , nonNonMetricCharacterBins :: Vector (  NonMetricBin i)
    , dynamicCharacters         :: Vector (DynamicCharacterConstruct d)
    } deriving (Eq, Show)
 
@@ -70,7 +70,12 @@ newtype DynamicCharacterConstruct d = DCC (DiscreteCharacterMetadata, TCM, Maybe
   deriving (Eq, Show)
 
 
-instance (EncodedAmbiguityGroupContainer s, Semigroup s) => Semigroup (CharacterBlock s d) where
+instance ( EncodedAmbiguityGroupContainer m, Semigroup m
+         , EncodedAmbiguityGroupContainer i, Semigroup i
+         , Semigroup c
+         , EncodedAmbiguityGroupContainer f, Semigroup f
+         , EncodedAmbiguityGroupContainer a, Semigroup a
+         ) => Semigroup (CharacterBlock m i c f a d) where
     lhs <> rhs =
         CharacterBlock
           { continuousCharacterBins   = continuousCharacterBins lhs `maybeMerge` continuousCharacterBins rhs
@@ -109,7 +114,13 @@ mergeByComparing comparator lhs rhs
                 else g (right z)
 
     
-toMissingCharacters :: EncodableStaticCharacterStream s => CharacterBlock s d  -> CharacterBlock s d
+toMissingCharacters :: ( EncodableStaticCharacterStream m
+                       , EncodableStaticCharacterStream i
+                       , EncodableStaticCharacterStream f
+                       , EncodableStaticCharacterStream a
+                       ) 
+                    => CharacterBlock m i c f a d
+                    -> CharacterBlock m i c f a d
 toMissingCharacters cb =
     CharacterBlock
     { continuousCharacterBins   =            missingContinuous <$> continuousCharacterBins   cb
@@ -120,6 +131,7 @@ toMissingCharacters cb =
     , dynamicCharacters         =               missingDynamic <$> dynamicCharacters         cb
     }
   where
+--    encodableStreamToMissing = fmap (omap getMissingStatic)
     missingContinuous x =
         ContinuousBin
         { Continuous.characterStream = Nothing <$ Continuous.characterStream x
@@ -128,7 +140,7 @@ toMissingCharacters cb =
     missingDynamic (DCC (gcm, tcm, _)) = DCC (gcm, tcm, Nothing)
 
 
-continuousSingleton :: CharacterName -> Maybe Double -> CharacterBlock s d
+continuousSingleton :: CharacterName -> c -> CharacterBlock m i c f a d
 continuousSingleton nameValue continuousValue =
     CharacterBlock (Just bin)  mempty  mempty  mempty mempty mempty
   where
@@ -136,7 +148,7 @@ continuousSingleton nameValue continuousValue =
     metadata = continuousMetadata nameValue 1
 
 
-discreteSingleton :: Alphabet String -> CharacterName -> TCM -> (a -> s) -> a -> CharacterBlock s d
+discreteSingleton :: Alphabet String -> CharacterName -> TCM -> (a -> s) -> a -> CharacterBlock s s c s s d
 discreteSingleton alphabetValues nameValue tcmValues transformation input =
   case tcmStructure diagnosis of
     NonSymmetric -> (\x -> CharacterBlock Nothing  mempty  mempty  mempty (pure x) mempty) .   NonMetricBin character metadata $ factoredTcm diagnosis
@@ -152,7 +164,7 @@ discreteSingleton alphabetValues nameValue tcmValues transformation input =
 
 -- DCC (DiscreteCharacterMetadata, TCM, Maybe d)
 
-dynamicSingleton :: Alphabet String -> CharacterName -> TCM -> (a -> d) -> Maybe a -> CharacterBlock s d
+dynamicSingleton :: Alphabet String -> CharacterName -> TCM -> (a -> d) -> Maybe a -> CharacterBlock m i c f a d
 dynamicSingleton alphabetValues nameValue tcmValues transformation input =
     CharacterBlock Nothing mempty mempty mempty mempty . pure $ DCC (metadata, tcmValues, character)
   where

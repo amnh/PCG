@@ -40,34 +40,34 @@ import           Data.MonoTraversable
 -- routines.
 --
 -- Blocks are optimized atomically with resepect to network resolutions.
-data CharacterSequence s d
-   = CharSeq (NonEmpty (CharacterBlock s d))
+data CharacterSequence m i c f a d
+   = CharSeq (NonEmpty (CharacterBlock m i c f a d))
 
 
 -- |
 -- Destructs a 'CharacterSequence' to it's composite blocks.
 {-# INLINE toBlocks #-}
-toBlocks :: CharacterSequence s d -> NonEmpty (CharacterBlock s d)
+toBlocks :: CharacterSequence m i c f a d -> NonEmpty (CharacterBlock m i c f a d)
 toBlocks (CharSeq x) = x
 
 
 -- |
 -- Constructs a 'CharacterSequence' from a non-empty colection of blocks.
 {-# INLINE fromBlocks #-}
-fromBlocks :: NonEmpty (CharacterBlock s d) -> CharacterSequence s d
+fromBlocks :: NonEmpty (CharacterBlock m i c f a d) -> CharacterSequence m i c f a d
 fromBlocks = CharSeq
 
 
-type instance Element (CharacterSequence s d) = CharacterBlock s d
+type instance Element (CharacterSequence m i c f a d) = CharacterBlock m i c f a d
 
 
-instance MonoFunctor (CharacterSequence s d) where
+instance MonoFunctor (CharacterSequence m i c f a d) where
 
     {-# INLINE omap #-}
     omap f = fromBlocks . fmap f . toBlocks
 
 
-instance MonoFoldable (CharacterSequence s d) where
+instance MonoFoldable (CharacterSequence m i c f a d) where
 
     {-# INLINE ofoldMap #-}
     ofoldMap f = foldMap f . toBlocks
@@ -92,7 +92,7 @@ instance MonoFoldable (CharacterSequence s d) where
 
 
 -- | Monomorphic containers that can be traversed from left to right.
-instance MonoTraversable (CharacterSequence s d) where
+instance MonoTraversable (CharacterSequence m i c f a d) where
 
     {-# INLINE otraverse #-}
     otraverse f = fmap fromBlocks . traverse f . toBlocks

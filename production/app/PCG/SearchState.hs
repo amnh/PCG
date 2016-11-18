@@ -29,11 +29,21 @@ type TopologicalResult = PhylogeneticSolution (ReferenceDAG (Maybe Double) (Mayb
 
 
 type CharacterResult   = PhylogeneticSolution
-                           (ReferenceDAG
+                           (PhylogeneticDAG
                              (Maybe Double)
-                             (PhylogeneticNode
-                               (Maybe
-                                 (CharacterSequence StaticCharacterBlock DynamicChar))
-                             )
+                             (Maybe String)
+                             StaticCharacterBlock
+                             StaticCharacterBlock
+                             Double
+                             StaticCharacterBlock
+                             StaticCharacterBlock
+                             DynamicChar
                            )
 
+
+
+-- PhylogeneticDAG (Maybe Double) (Maybe String) (Maybe StaticCharacterBlock) (Maybe DynamicChar)
+
+
+data  PhylogeneticDAG e n m i c f a d
+    = PDAG (ReferenceDAG e (PhylogeneticNode n (CharacterSequence m i c f a d)))

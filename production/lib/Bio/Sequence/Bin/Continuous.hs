@@ -34,9 +34,9 @@ import qualified Data.Vector                             as V
 -- A bin of one or more real-valued characters and thier corresponding metadata.
 --
 -- Use 'continuousBin' and '(<>)' to construct larger bins with differing metadata.
-data ContinuousBin
+data ContinuousBin c
    = ContinuousBin
-   { characterStream :: Vector (Maybe Double)
+   { characterStream :: Vector (Maybe c)
    , metatdataBounds :: ContinuousMetatdataIntervals
    } deriving (Eq,Show)
 
@@ -52,7 +52,7 @@ newtype ContinuousMetatdataIntervals = CMI (ReplicatedSequence GeneralCharacterM
   deriving (Eq, Show)
 
 
-instance Semigroup ContinuousBin where
+instance Semigroup (ContinuousBin c) where
 
   lhs <> rhs =
     ContinuousBin
@@ -114,10 +114,10 @@ instance MonoFoldable ContinuousMetatdataIntervals where
 -- |
 -- Constructs a non-empty bin of continuous character that all shared the same
 -- metadata values.
-continuousBin :: NonEmpty (Maybe Double) -> GeneralCharacterMetadata -> ContinuousBin
+continuousBin :: NonEmpty c -> GeneralCharacterMetadata -> ContinuousBin c
 continuousBin continuousCharacters corespondingMetadata =
   ContinuousBin
-    { characterStream = V.fromList $ toList continuousCharacters
+    { characterStream = V.fromList . fmap Just $ toList continuousCharacters
     , metatdataBounds = singleton (length continuousCharacters) corespondingMetadata
     }
 
