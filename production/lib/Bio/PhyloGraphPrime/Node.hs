@@ -22,14 +22,12 @@ import Data.Bifunctor
 -- information such as name and later a subtree structure.
 data  PhylogeneticNode n s
     = PNode
-    { nodeName           :: String
-    , nodeDecoration     :: n
+    { nodeDecoration     :: n
     , sequenceDecoration :: s
     } deriving (Eq, Functor)
 
 instance Bifunctor PhylogeneticNode where
 
     bimap g f = 
-      PNode <$> nodeName
-            <*> g . nodeDecoration
+      PNode <$> g . nodeDecoration
             <*> f . sequenceDecoration

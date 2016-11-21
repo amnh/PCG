@@ -164,7 +164,7 @@ discreteSingleton alphabetValues nameValue tcmValues transformation input =
 
 -- DCC (DiscreteCharacterMetadata, TCM, Maybe d)
 
-dynamicSingleton :: Alphabet String -> CharacterName -> TCM -> (a -> d) -> Maybe a -> CharacterBlock m i c f a d
+dynamicSingleton :: Alphabet String -> CharacterName -> TCM -> (x -> d) -> Maybe x -> CharacterBlock m i c f a d
 dynamicSingleton alphabetValues nameValue tcmValues transformation input =
     CharacterBlock Nothing mempty mempty mempty mempty . pure $ DCC (metadata, tcmValues, character)
   where

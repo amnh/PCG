@@ -16,6 +16,7 @@ module PCG.SearchState where
 
 import           Bio.Character
 import           Bio.Sequence
+import           Bio.Sequence.Block
 import           Bio.PhyloGraphPrime
 import           Bio.PhyloGraphPrime.Node
 import           Bio.PhyloGraphPrime.ReferenceDAG
@@ -27,9 +28,9 @@ type SearchState = EvaluationT IO (Either TopologicalResult CharacterResult)
 
 type TopologicalResult = PhylogeneticSolution (ReferenceDAG (Maybe Double) (Maybe String))
 
+type CharacterResult   = PhylogeneticSolution CharacterDAG
 
-type CharacterResult   = PhylogeneticSolution
-                           (PhylogeneticDAG
+type CharacterDAG      = PhylogeneticDAG
                              (Maybe Double)
                              (Maybe String)
                              StaticCharacterBlock
@@ -38,8 +39,24 @@ type CharacterResult   = PhylogeneticSolution
                              StaticCharacterBlock
                              StaticCharacterBlock
                              DynamicChar
-                           )
 
+type  UnifiedCharacterSequence
+    = CharacterSequence
+        StaticCharacterBlock
+        StaticCharacterBlock
+        Double
+        StaticCharacterBlock
+        StaticCharacterBlock
+        DynamicChar
+
+type  UnifiedCharacterBlock
+    = CharacterBlock
+        StaticCharacterBlock
+        StaticCharacterBlock
+        Double
+        StaticCharacterBlock
+        StaticCharacterBlock
+        DynamicChar
 
 
 -- PhylogeneticDAG (Maybe Double) (Maybe String) (Maybe StaticCharacterBlock) (Maybe DynamicChar)

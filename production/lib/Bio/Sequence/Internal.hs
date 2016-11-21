@@ -40,8 +40,8 @@ import           Data.MonoTraversable
 -- routines.
 --
 -- Blocks are optimized atomically with resepect to network resolutions.
-data CharacterSequence m i c f a d
-   = CharSeq (NonEmpty (CharacterBlock m i c f a d))
+newtype CharacterSequence m i c f a d
+    = CharSeq (NonEmpty (CharacterBlock m i c f a d))
 
 
 -- |

@@ -129,22 +129,23 @@ rectifyResults2 fprs =
                           . foldMap1 (matchToChars charSeqs) $ NE.fromList suppliedForests
       where
         
-        singletonComponent (label, datum) = PhylogeneticForest . pure $ unfoldDAG rootLeafGen True
+        singletonComponent (label, datum) = PhylogeneticForest . pure . PDAG $ unfoldDAG rootLeafGen True
           where
             rootLeafGen x
               | x         = (                [], PNode "Trivial Root" Nothing    , [(Nothing, not x)])
               | otherwise = ([(Nothing, not x)], PNode label         (Just datum), []                )
 
-        matchToChars :: Map String (CharacterSequence StaticCharacterBlock DynamicChar)
+        matchToChars :: Map String UnifiedCharacterSequence
                      -> PhylogeneticForest ParserTree
-                     -> PhylogeneticForest (ReferenceDAG (Maybe Double) (PhylogeneticNode (Maybe (CharacterSequence StaticCharacterBlock DynamicChar))))
-        matchToChars charMapping = fmap (fmap f)
+                     -> PhylogeneticForest CharacterDAG
+        matchToChars charMapping = fmap (PDAG . fmap f)
           where
-            f e =
-                case e of
+            f label = PNode label $ label >>= (`lookup` charMapping)
+{-
+              case e of
                   Nothing    -> PNode "HTU" Nothing
                   Just label -> PNode label $ label `lookup` charMapping
-
+-}
 -- Omitted from old unifcation process            
 --    combinedData    = Solution (HM.fromList $ assocs charSeqs) combinedMetadata dagForests
     -- Step 9:  TODO: Node encoding
@@ -194,7 +195,7 @@ rectifyResults2 fprs =
 -- * Lastly we collapse the many parse results into a single map of charcter
 --   blocks wrapped together as a charcter sequence. This will properly add
 --   missing character values to taxa provided in other files.
-joinSequences2 :: Foldable t => t FracturedParseResult -> Map String (CharacterSequence StaticCharacterBlock DynamicChar)
+joinSequences2 :: Foldable t => t FracturedParseResult -> Map String UnifiedCharacterSequence
 joinSequences2 = collapseAndMerge . reduceAlphabets . deriveCorrectTCMs . deriveCharacterNames
   where
     
@@ -269,9 +270,9 @@ joinSequences2 = collapseAndMerge . reduceAlphabets . deriveCorrectTCMs . derive
 
     collapseAndMerge = fmap fromBlocks . fst . foldl' f (mempty, [])
       where
-        f :: (Map String (NonEmpty (CharacterBlock StaticCharacterBlock DynamicChar)), [CharacterBlock StaticCharacterBlock DynamicChar])
+        f :: (Map String (NonEmpty (UnifiedCharacterBlock)), [UnifiedCharacterBlock])
           ->  Map String (NonEmpty (Maybe ParsedChar, ParsedCharacterMetadata, TCM, CharacterName))
-          -> (Map String (NonEmpty (CharacterBlock StaticCharacterBlock DynamicChar)), [CharacterBlock StaticCharacterBlock DynamicChar])
+          -> (Map String (NonEmpty (UnifiedCharacterBlock)), [UnifiedCharacterBlock])
         f (prevMapping, prevPad) currTreeChars = (nextMapping, nextPad)
           where
             nextMapping    = inOnlyPrev <> inBoth <> inOnlyCurr
@@ -291,11 +292,11 @@ joinSequences2 = collapseAndMerge . reduceAlphabets . deriveCorrectTCMs . derive
 
             encodeToBlock :: Foldable1 t
                           => t (Maybe ParsedChar, ParsedCharacterMetadata, TCM, CharacterName)
-                          -> CharacterBlock StaticCharacterBlock DynamicChar
+                          -> UnifiedCharacterBlock
             encodeToBlock = foldMap1 encodeBinToSingletonBlock
               where
                 encodeBinToSingletonBlock :: (Maybe ParsedChar, ParsedCharacterMetadata, TCM, CharacterName)
-                                          -> CharacterBlock StaticCharacterBlock DynamicChar
+                                          -> UnifiedCharacterBlock
                 encodeBinToSingletonBlock (charMay, charMeta, tcm, charName)
                   | isDynamic charMeta = dynamicSingleton  specifiedAlphabet charName tcm (encodeStream specifiedAlphabet) charMay
                   | otherwise          = discreteSingleton specifiedAlphabet charName tcm staticTransform charMay
