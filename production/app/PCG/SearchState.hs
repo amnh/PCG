@@ -64,3 +64,29 @@ type  UnifiedCharacterBlock
 
 data  PhylogeneticDAG e n m i c f a d
     = PDAG (ReferenceDAG e (PhylogeneticNode n (CharacterSequence m i c f a d)))
+
+
+nodePreorderMap :: (n -> [n'] -> n')
+nodePreorderMap = undefined
+
+edgePreorderMap :: (e -> [e'] -> e')
+edgePreorderMap = undefined
+
+nodePostorderMap :: (n -> [n'] -> n')
+nodePostorderMap = undefined
+
+edgePostorderMap :: (e -> [e'] -> e')
+edgePostorderMap = undefined
+
+nodePreorderFold :: (n -> [a] -> a)
+nodePreorderFold = undefined
+
+edgePreorderFold :: (e -> [a] -> a)
+edgePreorderFold = undefined
+
+nodePostorderFold :: (n -> [a] -> a)
+nodePostorderFold = undefined
+
+edgePostorderFold :: (e -> [a] -> a)
+edgePostorderFold = undefined
+
