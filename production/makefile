@@ -44,7 +44,7 @@ full-build: install-stack clean stack-setup stack-build-prof
 
 # Upgrade stack if installed or install stack if not installed
 install-stack:
-	stack upgrade || (cabal update && cabal install stack)
+	which stack || (cabal update && cabal install stack)
 
 stack-setup: phylocomgraph.cabal stack.yaml
 	stack setup
