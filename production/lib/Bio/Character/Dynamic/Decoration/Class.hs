@@ -24,6 +24,7 @@ import Control.Lens
 -- appropriate 'Lens' & character class constraints.
 class ( HasEncoded s a
       , EncodableDynamicCharacter a
+      , DiscreteCharacterMetadata s a
       ) => DynamicDecoration s a | s -> a where
 
   
