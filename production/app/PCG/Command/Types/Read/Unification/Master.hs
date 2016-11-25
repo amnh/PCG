@@ -53,7 +53,7 @@ import           PCG.Command.Types.Read.Unification.UnificationError
 import           PCG.SearchState 
 import           Prelude                    hiding (lookup, zip, zipWith)
 
-import Debug.Trace (trace)
+-- import Debug.Trace (trace)
 
 
 data FracturedParseResult
@@ -100,7 +100,7 @@ rectifyResults2 fprs =
     -- Step 2: Union the taxa names together into total terminal set
     taxaSet         = (\x ->  trace ("Taxa Set: " <> show x) x) . mconcat $ (Set.fromList . keys . parsedChars) <$> dataSeqs
     -- Step 3: Gather forest file data
-    allForests      = (\x ->  trace ("Forest Lengths: " <> (show $ length . parsedTrees <$> x)) x) $ filter (not . null . parsedTrees) fprs
+    allForests      = (\x ->  trace ("Forest Lengths: " <> show (length . parsedTrees <$> x)) x) $ filter (not . null . parsedTrees) fprs
     -- Step 4: Gather the taxa names for each forest from terminal nodes
     forestTaxa      = (\x ->  trace ("Forest Set: " <> show x) x) . (foldMap (foldMap terminalNames2) . parsedTrees &&& id) <$> allForests
     -- Step 5: Assert that each terminal node name is unique in the forest
@@ -270,9 +270,9 @@ joinSequences2 = collapseAndMerge . reduceAlphabets . deriveCorrectTCMs . derive
 
     collapseAndMerge = fmap fromBlocks . fst . foldl' f (mempty, [])
       where
-        f :: (Map String (NonEmpty (UnifiedCharacterBlock)), [UnifiedCharacterBlock])
+        f :: (Map String (NonEmpty UnifiedCharacterBlock), [UnifiedCharacterBlock])
           ->  Map String (NonEmpty (Maybe ParsedChar, ParsedCharacterMetadata, TCM, CharacterName))
-          -> (Map String (NonEmpty (UnifiedCharacterBlock)), [UnifiedCharacterBlock])
+          -> (Map String (NonEmpty UnifiedCharacterBlock), [UnifiedCharacterBlock])
         f (prevMapping, prevPad) currTreeChars = (nextMapping, nextPad)
           where
             nextMapping    = inOnlyPrev <> inBoth <> inOnlyCurr
@@ -320,5 +320,4 @@ fromTreeOnlyFile fpr = null chars || all null chars
 
 
 terminalNames2 :: ReferenceDAG (Maybe Double) (Maybe String) -> [Identifier]
-terminalNames2 dag = (trace (show $ toList dag)) $
-  catMaybes $ (\x -> (\y -> trace (show y) y) $ x `nodeDatum` dag) <$> leaves dag
+terminalNames2 dag = catMaybes $ (`nodeDatum` dag) <$> leaves dag
