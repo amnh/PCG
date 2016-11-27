@@ -60,10 +60,10 @@ arbParsedGivenAlph :: Alphabet String -> Gen ParsedChar
 arbParsedGivenAlph inAlph = NE.fromList <$> listOf1 ( NE.fromList <$> sublistOf (toList inAlph))
 
 -- Shouldn't need this definition
-{- -}
+{- 
 -- | (✔)
 instance Arbitrary ParsedChar where
    arbitrary = do
        let amb = NE.fromList <$> listOf1 arbitrary
        NE.fromList <$> listOf1 amb
-{- -}
+ -}
