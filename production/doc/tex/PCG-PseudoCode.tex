@@ -1,0 +1,362 @@
+\documentclass[11pt]{article}
+\usepackage{setspace}
+\usepackage{graphicx}
+\usepackage{subfigure}
+\usepackage{lscape}
+\usepackage{flafter}  % Don't place floats before their definition
+\usepackage{bm}  % Define \bm{} to use bold math fonts
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{amssymb}
+\usepackage{MnSymbol}
+\usepackage{url}
+\usepackage{natbib}
+%\usepackage{fullpage}
+\bibliographystyle{cbe}
+\citestyle{aa}
+%\usepackage{algorithmic}
+%\usepackage[vlined,algochapter,ruled]{algorithm2e}
+\usepackage[vlined,ruled]{algorithm2e}
+\SetKwComment{Comment}{$\triangleright\ $}{}
+
+%ROOT PRIORS?
+%Add Giribet and Wheeler arth, ratchet cite, Arango sea spiders
+
+\title{Algorithmic Descriptions and Pseudo-Code for Phylogenetic Component Graphs}
+\author{Ward C. Wheeler\\
+		%Richard Gilder Graduate School,\\
+		Division of Invertebrate Zoology,\\
+		American Museum of Natural History,\\
+		Central Park West @ 79th Street,\\
+		New York, NY 10024-5192,\\
+		USA,\\
+		wheeler@amnh.org}
+	%\date{}
+\begin{document}
+
+\maketitle
+\begin{abstract}
+	Algorithmic Descriptions and Pseudo-Code for Phylogenetic Component Graphs (PCG) code base.
+\end{abstract}
+%\newpage
+%\tableofcontents
+%\newpage
+
+%\doublespacing
+\section{Introduction}
+This document contains the descriptions and pseudo-code for core  Phylogenetic Component Graphs (PCG)
+algorithms.  This is designed to serve both as documentation for the code and a development tool.  We have tried to keep
+the style as consistent as possible,  Functional-type statements (\textit{e.g.} map and fold) and structures (\textit{e.g.} lists, tuples)
+are employed.
+
+\section{Labelling of a single graph}
+One of the fundamental procedures is in the labelling of individual graphs,  This is the determination of various 
+aspects (including preliminary, final, and single assignments) of vertices and edges.   
+
+The basic PCG graph is a forest of directed acyclic graphs (DAG).  These DAGs may be trees in the sense of having
+ vertices with (indegree, outdegree): (0, 1) the unique root, (1,0) leaves, and (1,2) ``internal'' vertices.; or
+ networks adding (2,1) vertices as ``network'' vertices.  Individual components may have more than one 
+ root vertex.   All trees or networks are \textit{components} of a forest.  A forest
+ is a list of components,
+ $F = [N]$, where $N = (V, E)$ (conventionally $V$ is a set of vertices and $E$ a set of edges).  One or more vertex in each component is a root.
+ Vertices with indegree and outdegree 1 may be maintained for computational convenience, but would normally be contracted.
+ 
+ Following \cite{moretetal2004}, the above would be described as a ``model'' phylogenetic network. This has two additional constraints.
+ First, that all edges must begin or end in a tree vertex (no network vertex to network vertex edges).  
+ Second,  the parents of a network vertex must, at least potentially, be 
+ contemporaneous. [Insert path conditions here]  
+ 
+ A less restrictive form of network (``reconstructable'') is defined by \cite{moretetal2004} with vertices (indegree, outdegree): 
+ (0, $\ge 1$) the unique root, (1, 0) leaves, and (1, $\ge$1) ``internal'' vertices, and 
+ networks adding ($\ge 2$, 1) vertices as ``network'' vertices.  For purposes of searching,
+ outdegree of internal nodes is restricted to at most 2. Since edges may have zero length, networks may be output 
+ with vertices of outdegree $> 2$.
+ 
+ \section{Optimization of a single graph}
+ Optimization is a function that takes a graph ($G$), here a forest $F$, and data ($D$) as inputs and returns a numerical value.  
+ This value can be referred to as its score ($S$)
+ 	\begin{eqnarray*}
+ 		f & : &  \{\mathcal{F}, D\} \rightarrow \mathbb{R}\\
+		g & : & \{  \mathbb{R},  \mathbb{R} \} \rightarrow \mathbb{R}
+	 \end{eqnarray*}
+ 
+ \section{Forest Optimization/Labelling}
+ The optimization is simply the optimization of each constituent component and their optimization values 
+ combined through $f$ (summed for parisomy, if likelihood or such then add logs).  Both local (vertex  specific) and subtree costs (local cost of a vertex plus
+ the subtree costs of its descendants) are stored.  The overall component cost is stored at the traversal root.
+     \begin{eqnarray*}
+     	\mathcal{F} & = & [C]\\
+	\mathcal{F}_{labelled} & = & \text{ map } labelNetwork \text{ } [C]\\
+	\left[ S_{\mathcal{F}} \right] &=& \text{ map } f \text{ } \mathcal{F}_{labelled}\\
+	\mathcal{F}_{optValue} &=& \text{ fold } g \text{ } \left[ S_{\mathcal{F}} \right] 
+    \end{eqnarray*}
+ 
+ Define a 4-tuple $L = (a, b, c, d)$ with $a$ a bitvector of the length of leaves, $b$ a tree representation, $c$ a 
+ character assignment (of appropriate character type), and $d$ a real (likely double). Each vertex will have a list of these
+ tuples, $\left[L\right]$, one element for each network node resolution, created during a postorder traversal of a component.
+ 
+ Define a function $h$ that takes as input two labellings (state sets of a character) and character metadata, returning 
+ a labelling and a real denoting the cost of creating the returned labelling.
+ 
+     \begin{eqnarray*}
+     	h : \left(l , l \right) \rightarrow \left( l ,  \mathbb{R} \right)
+    \end{eqnarray*}
+
+Define a tree representation (e.g. Newick) and a function to ``join'' the tree representations of two descendant vertices
+into the representation of the subtree for that vertex.  For a newick representation this would be the string operation
+joining representations $A$ and $B$ into $\left( A, B \right)$.
+
+ A full optimization of a forest results in a fully ``decorated'' graph (all vertex and edge information present).  This normally
+ proceeds via a map of the optimization operations over the components of a forest.  The forest components are optimized in turn
+ by a series of traversals over the vertex and edge sets.
+ 
+% However, multiple components may share vertices.  A vertex with indegree $\ge 2$ where there are $\ge 2$ edges
+% that are members of different components are referred to as multi-network edges and the vertices multi-network
+% vertices.  The component membership of an edge 
+% is determined by tracing the edge back (reverse direction) to its root.  If the roots of two edges are different--they are 
+% multi-network edges.  
+% Edges can be
+% both multi-network and network.  So, if we 
+% require ``soft-wired'' forests, the multi-network vertices need to be resolved and the forest into a
+% into a list of ``simple'' forests with independent components ($\vline V_{ms} \vline = 0; V_i \cap V_j = \emptyset, \forall V_i, V_j \in F$).
+% 	\begin{eqnarray*}
+%		\lbrack F \rbrack &=& resolveForest \text{ } \mathcal{F}\\
+%		\lbrack F_{score} \rbrack &=& \text{map } simpleForestFullOptimization \text{ } \lbrack F \rbrack \\
+%		\mathcal{F}_{score} &=& \min \text{ } \lbrack F_{score}  \rbrack
+%	 \end{eqnarray*}
+%Resolution into simple forests proceeds by choosing a single indegree edge for each of the multi-network vertices and 
+%recursively generating all possible combinations.  The result is a list of simple forests.  
+%
+%	\begin{algorithm}
+%		\caption{resolveForest}
+%		\label{alg:resolveForest}
+%		\SetAlgoLined
+%		\KwData{Input  forest $\mathcal{F}$ (list of DAGs) and data $D$}
+%		\KwResult{List of simple forests $[F]$ (no multi-network vertices)}
+%		\Comment{recursively choose one indegree edge for each multi-network vertex} 
+%		$\lbrack F^{simple} \rbrack \leftarrow $all combinations of multi-network edge choices\\
+%		\Return {$\lbrack F^{simple} \rbrack$}
+%	\end{algorithm}
+
+	\begin{algorithm}
+		\caption{forestFullOptimization}
+		\label{alg:orestFullOpt}
+		\SetAlgoLined
+		\KwData{Input forest $F$ (list of DAGs including components, networks, and trees) and data $D$}
+		\KwResult{Optimality value of Forest and and list of optimality value and fully labelled (vertex, edge features etc) forest components}
+		\Comment{map optimization over list of components} 
+		$optimizedComponentList =$ map (componentFullOptimization $D$) $F$
+		
+		\Comment{extract and combine optimality values of components} 
+		$optimalityValue =$ fold $g$ (map first $optimizedComponentList$)
+		
+		\Return {(optimalityValue, optimizedComponentList)}
+	\end{algorithm}
+	
+	
+	\begin{algorithm}
+		\caption{componentFullOptimization}
+		\label{alg:compFullOpt}
+		\SetAlgoLined
+		\KwData{Input component $C$ (DAGs multi-rooted component,  network, or tree) and data $D$}
+		\KwResult{Decorated, fully labelled (vertex, edge features etc) component with optimality value}
+		\Comment{Post-order traversal, beginning with root as fold right} 
+		$preliminaryComponent =$ fold (makePreliminaryVertex $D$) $C$
+		
+		\Comment{Pre-order traversal beginning at root} 
+		$finalComponent =$ fold (makeFinalVertex $D$) $preliminaryComponent$
+		
+		\Return {(optimalityValue, optimizedComponent)}
+	\end{algorithm}
+
+\begin{algorithm}
+		\caption{makePreliminaryVertex}
+		\label{alg:prelimComp}
+		\SetAlgoLined
+		\KwData{Input vertex $V$, descendent lists of left $L$ and right $R$ descendants of $V$ (if not a leaf), and data $D$}
+		\KwResult{List of label 4-tuple $\left[ \left(a, b, c, d \right) \right]$ as defined above for $V$}
+		\Comment{If leaf take observed states and subtree is just name, bitvector has `1' for that leaf and `0' for all others} 
+		\If {$V$ is leaf } {$labelList = \left[ \left( V_{bv},  V_{subtreeRep},\text{observed state}, 0 \right) \right] $} 			
+		\Comment{Otherwise do all combinations of two lists\\Check if previous in list $L$ and $R$ are same as current--if so then just return previous label}
+		\Else {$labelList =$ map2 joinTwoLabelings $L$ $R$}
+		\Return {labelList}
+	\end{algorithm}
+
+\begin{algorithm}
+	\caption{joinTwoLabelings}
+	\label{alg:joinTwo}
+	\SetAlgoLined
+		\KwData{Input two $L$ and $R$ 4-tuple labelings}
+		\KwResult{4-tuple labelling, could be null `()'}
+		\Comment{If bitvectors have non-empty intersection then incompatible resolution and return null} 
+		\If {$L_{bv} \text{ AND } R_{bv} <> 0$} {\Return ()} 			
+		\Comment{Otherwise combine elements} 
+		\Else {$\Return \left( L_{bv} \text{ OR } R_{bv}, \text {join } L_{subtreeRep} R_{subtreeRep}, h \text{ } \left( L_{assignment} R_{assignment} \right) \right)$}
+	\end{algorithm}
+%psuedocode
+ %resolve soft-wired forest into simple forests.
+ %keep track of simple and reticulate forests for optimization purposes.
+ 
+ \section{Forest Rearrangement}
+ There are two operations in forest rearrangements.  The first is the operation which splits network components into
+ multiple components and the second joins separate components into network components.
+ 
+ \subsection{Break}
+ Each tree edge is deleted in turn.  There are two possible outcomes.  The resulting two components
+ may or may not be connected (have vertices in common).  The neighborhood can be generated and evaluated
+ for overall minimum or breaks evaluated seriatim.   In either case, the new forest elements 
+ are diagnosed and compared to the current best.  If better cost, then kept, else discarded.  
+ 
+	\begin{algorithm}
+		\caption{forestBreak}
+		\label{alg:forestBreak}
+		\SetAlgoLined
+		\KwData{Input forest $F$ (list of DAGs including networks and trees) and data $D$}
+		\KwResult{Forest break neighborhood as list}
+		\Comment{Break each forest component at each tree edge.  Head of deleted edge becomes new 
+		root, tail becomes (1,1) vertex} 
+		$\lbrack F' \rbrack \leftarrow $all combinations of tree edge deletions\\
+		\Return {$\lbrack F' \rbrack$}
+	\end{algorithm}
+
+ \subsection{Join}
+ Pairs of components are joined by creating a new edge between each pair of edges in the input networks,
+ subject to the time consistency constraint of network edges.  This basically proceeds as SPR/TBR joins
+ with added complexity of network edge issues (ie. time consistency. 
+
+	\begin{algorithm}
+		\caption{forestJoin}
+		\label{alg:forestJoin}
+		\SetAlgoLined
+		\KwData{Input forest $F$ (list of DAGs including networks and trees) and data $D$}
+		\KwResult{Forest join neighborhood as list}
+		\Comment{For each pair of forest components, add edge between each pair of edges (TBR), or edges and rot vertex (SPR)} 
+		$\lbrack F' \rbrack \leftarrow $all combinations of tree edge joins\\
+		\Return {$\lbrack F' \rbrack$}
+	\end{algorithm}
+
+ \section{Network Rearrangement}
+ As with forest rearrangement, network edges can be added or subtracted, and underlying (displayed) trees 
+ rearranged vis NNI, SPR, TBR etc.
+ 
+ \subsection{Network edge removal}
+ The optimization of networks identifies 
+ unused edges, so these can be removed during optimization.  Standardly, networks with unused edges are attached an
+ infinite cost.  Another option would be to output a new network with the offending edge deleted.  Remaining 
+ network edges can be removed in turn.
+ 
+ \subsection{Network edge addition}
+ Subject to edge time constraints and that each edge must have at least one tree vertex, new edges are added
+ between each pair of edges (except for those where both are network edges).
+ 
+ 	\begin{algorithm}
+		\caption{networkEdgeAdd}
+		\label{alg:networkEdgeAdd}
+		\SetAlgoLined
+		\KwData{Input network $N$ }
+		\KwResult{Network neighborhood as list}
+		\Comment{For each pair of edges in input network, add edge between each pair of edges, subject
+		to time and edge tree vertex constraints} 
+		$\lbrack N' \rbrack \leftarrow $all combinations of available edge joins\\
+		\Return {$\lbrack N' \rbrack$}
+	\end{algorithm}
+	
+\subsection{Display tree rearangement}
+NNI, SPR, TBR etc.
+ 
+ \section{\textit{Ab initio} build}
+ 	\begin{enumerate}
+		\item{Build trees and create EUN}
+		\item{fold over list of leaves = wagner build}
+		\item{Build with forest and network rearrangements based on sequential addition of leaves}
+	\end{enumerate}
+	
+\section{Forest Refinement}
+Various combinations of forest, network, tree rearrangements.
+
+ \section{Naive Tree Optimization}
+ 
+ \section{Tree ReRoot Optimization}
+ 
+ \section{Naive Soft-Wired Network Optimization}
+ 
+ \section{Less-Naive Network Optimization}
+ 
+
+	\begin{algorithm}
+		\caption{Post-Order Soft-Wired Network Traversal and Optimization for arbitrary in-degree 
+		and out-degree vertices}
+		\label{alg:PON}
+		\SetAlgoLined
+		\KwData{Input network $N$ and data $D$}
+		\KwResult{The minimum cost and tree displayed by network for each input character in $D$}
+		For all characters $\in D cost_{character} \gets 0$\;
+		\While {$nodesToDo = True$} {
+			\If {$node_{out degree} = 0$} {$node_{prelim} = $observed} 
+			\ElseIf {$node_{out degree} = 1$} {$node_{prelim} = node^{desc}_{prelim}$} 
+			\ElseIf {$node_{out degree} = 2$} {$node_{prelim} = $ standard if not done and not desc of network edge} 
+			\Else  {$node_{prelim} = $ ladderize} 
+			\If {$node_{in-degree} = 0$} {$nodesToDo = False$}
+			\ElseIf {$node_{in-degree} = 1$} {recurse to parent}
+			\Else {split tree then recurse each parent}
+		} 
+		\Return{$[(tree, [cost])]$ can choose best displayed tree for each character, later
+		do reroot thing (3d-Varon and Wheeler (or Malign too) for dynamic characters} 					
+	\end{algorithm}
+	
+% Full (postorder + preorder) Component Optimization	
+	\begin{algorithm}
+		\caption{FullComponentOptimization}
+		\label{alg:FullComponentOpt}
+		\SetAlgoLined
+		\KwData{Input component $C$ and data $D$}
+		\KwResult{Pair of component optimality value and decorated (edge labels, etc) component}
+		\Comment{Get optimality value of component and postorder labelling of component}
+		$(optimalityValue, postOrderAssignment) =$ PostOrderComponent $C$ $D$
+		
+		\Comment{Get preorder `final' labelling of component (vertex and edges costs assignments etc)}
+		$finalLabelling =$ PreOrderOptimization $postOrderAssignment$ $D$
+		\Return{(optimalityValue, finalLabelling)} 					
+	\end{algorithm}
+	
+% Postorder (="down pass") Component Optimization	
+	\begin{algorithm}
+		\caption{PostOrderOptimization}
+		\label{alg:PostOrderOptimization}
+		\SetAlgoLined
+		\KwData{Input data $D$}
+		\KwResult{Blah}
+		Comment 
+		\Return{(Optimization value, labelled component)} 					
+	\end{algorithm}
+
+% Preorder (="down pass") Component Optimization	
+	\begin{algorithm}
+		\caption{PreOrderOptimization}
+		\label{alg:PreOrderOptimization}
+		\SetAlgoLined
+		\KwData{Input data $D$}
+		\KwResult{Blah}
+		Comment 
+		\Return{labelled component} 					
+	\end{algorithm}
+
+%Algorithm basic template
+%	\begin{algorithm}
+%		\caption{Blah}
+%		\label{alg:Blah}
+%		\SetAlgoLined
+%		\KwData{Input data $D$}
+%		\KwResult{Blah}
+%		\Comment{Blah Comment}
+%		\Return{Bleh} 					
+%	\end{algorithm}
+
+\newpage
+\singlespacing
+\bibliography{/users/ward/home/biblio/ward_new}
+%\bibliography{ward_new}
+
+%cost of root for pars = insert all characters, good first aapprox
+
+\end{document}
