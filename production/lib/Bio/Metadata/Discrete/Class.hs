@@ -13,7 +13,8 @@
 {-# LANGUAGE FlexibleContexts, FlexibleInstances, FunctionalDependencies, MultiParamTypeClasses #-}
 
 module Bio.Metadata.Discrete.Class
-  ( DiscreteCharacterMetadata(..)
+  ( DiscreteCharacterMetadata()
+  , GeneralCharacterMetadata()
   , HasCharacterAlphabet(..)
   , HasCharacterName(..)
   , HasCharacterSymbolTransitionCostMatrixGenerator(..)
@@ -22,7 +23,6 @@ module Bio.Metadata.Discrete.Class
   ) where
 
 import Bio.Character.Stream
-import Bio.Metadata.CharacterName
 import Bio.Metadata.General 
 import Control.Lens
 import Data.Alphabet

@@ -12,6 +12,8 @@
 
 module Bio.Metadata.Discrete
   ( DiscreteCharacterMetadataDec()
+  , DiscreteCharacterMetadata()
+  , GeneralCharacterMetadata()
   , HasCharacterAlphabet(..)
   , HasCharacterName(..)
   , HasCharacterSymbolTransitionCostMatrixGenerator(..)

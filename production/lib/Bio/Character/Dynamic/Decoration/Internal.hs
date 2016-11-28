@@ -10,13 +10,19 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE FlexibleContexts, FlexibleInstances, MultiParamTypeClasses #-}
+{-# LANGUAGE FlexibleContexts, FlexibleInstances, MultiParamTypeClasses, TypeFamilies #-}
 
 module Bio.Character.Dynamic.Decoration.Internal where
 
 import Bio.Character.Dynamic.Class
 import Bio.Character.Dynamic.Decoration.Class
+import Bio.Character.Stream
+import Bio.Metadata.CharacterName
+import Bio.Metadata.Discrete
 import Control.Lens
+import Data.Alphabet
+import Data.MonoTraversable
+
 
 -- |
 -- An abstract initial dynamic character decoration with a polymorphic character
@@ -24,6 +30,7 @@ import Control.Lens
 data DynamicDecorationInitial d
    = DynamicDecorationInitial
    { dynamicDecorationInitialEncodedField :: d
+   , metadata                             :: DiscreteCharacterMetadataDec (Element d)
    }
 
 
@@ -33,10 +40,73 @@ instance HasEncoded (DynamicDecorationInitial d) d where
     encoded = lens dynamicDecorationInitialEncodedField (\e x -> e { dynamicDecorationInitialEncodedField = x })
 
 
+-- |
+-- A decoration of an initial encoding of a dynamic character which has the
+-- appropriate 'Lens' & character class constraints.
+-- instance EncodableStream d => DiscreteCharacterMetadata (DynamicDecorationInitial d) (Element d) where
+
+
+-- | (✔)
+instance GeneralCharacterMetadata (DynamicDecorationInitial c) where
+
+
+-- | (✔)
+instance HasCharacterAlphabet (DynamicDecorationInitial c) (Alphabet String) where
+
+    characterAlphabet = lens getter setter
+      where
+         getter e   = metadata e ^. characterAlphabet
+         setter e x = e { metadata = metadata e &  characterAlphabet .~ x }
+
+
+-- | (✔)
+instance HasCharacterName (DynamicDecorationInitial c) CharacterName where
+
+    characterName = lens getter setter
+      where
+         getter e   = metadata e ^. characterName
+         setter e x = e { metadata = metadata e &  characterName .~ x }
+
+
+-- |
+-- A 'Lens' for the 'symbolicTCMGenerator' field
+instance HasCharacterSymbolTransitionCostMatrixGenerator (DynamicDecorationInitial c) (Int -> Int -> Int) where
+
+    characterSymbolTransitionCostMatrixGenerator = lens getter setter
+      where
+         getter e   = metadata e ^. characterSymbolTransitionCostMatrixGenerator
+         setter e f = e { metadata = metadata e &  characterSymbolTransitionCostMatrixGenerator .~ f }
+
+
+-- |
+-- A 'Lens' for the 'transitionCostMatrix' field
+instance Element d ~ c => HasCharacterTransitionCostMatrix (DynamicDecorationInitial d) (c -> c -> (c, Int)) where
+
+    characterTCM = lens getter setter
+      where
+         getter e   = metadata e ^. characterTCM
+         setter e f = e { metadata = metadata e &  characterTCM .~ f }
+        
+
+-- | (✔)
+instance HasCharacterWeight (DynamicDecorationInitial c) Double where
+
+    characterWeight = lens getter setter
+      where
+         getter e   = metadata e ^. characterWeight
+         setter e x = e { metadata = metadata e &  characterWeight .~ x }
+
+
 -- | (✔)
 instance EncodableDynamicCharacter d => DynamicDecoration (DynamicDecorationInitial d) d where
 
 
+
+  
+
+
+
+  
 -- |
 -- An abstract direct optimization dynamic character decoration with a
 -- polymorphic character type.
