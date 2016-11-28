@@ -2,7 +2,7 @@
 //  main.c
 //  version_Haskell_bit
 //
-//  Created by Yu Xiang on 11/1/16.
+//  Created by Yu Xiang on 11/1/22.
 //  Copyright © 2016 Yu Xiang. All rights reserved.
 //
 
@@ -23,7 +23,9 @@
 
 #include "dynamicCharacterOperations.h"
 #include "seqAlignForHaskell.h"
+#include <inttypes.h>
 
+#define __STDC_FORMAT_MACROS
 
 
 int main() {
@@ -33,9 +35,11 @@ int main() {
     
     // Since we're only dealing with dna + gap now:
     size_t alphSize = 5;
-    int seqA_main[] = {1, 2, 3};
+  //  int seqA_main[] = {1, 2, 3};
+    uint64_t seqA_main[] = {1, 2, 3};
     size_t seqALen = 3;
-    int seqB_main[] = {4, 5, 6};   //  Yu_Edit: here 100 is the maximum length of the sequences
+  //  int seqB_main[] = {4, 5, 6};   //  Yu_Edit: here 100 is the maximum length of the sequences
+    uint64_t seqB_main[] = {4, 5, 6};
     size_t seqBLen = 3;
 
     

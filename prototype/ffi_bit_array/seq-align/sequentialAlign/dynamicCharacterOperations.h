@@ -229,8 +229,25 @@ dcElement_t* dcElementOr (dcElement_t* lhs, dcElement_t* rhs);
  */
 packedChar_p packedCharOr (packedChar_p lhs, packedChar_p rhs, size_t alphSize);
 
-
-
 int dcElementEq (dcElement_t* lhs, dcElement_t* rhs);
+
+/** Print only the bit representation of an element of a dynamic character as a matrix.
+ *  Calls printPackedChar().
+ */
+void printCharBits( const dynChar_t* const input );
+
+/** Print only the bit representation of an element of a dynamic character element.
+ * Calls printPackedChar().
+ */
+void printElemBits( const dcElement_t* const input );
+
+/** Print the bit representation of an element of a dynamic character as a matrix
+ *  but also print the alphabet size.
+ *  Calls printCharBits().
+ */
+void printDynChar( const dynChar_t* const input );
+
+/** Print only a packed character. */
+void printPackedChar( const packedChar_p input, size_t numElems, size_t alphSize );
 
 #endif /* DYNAMIC_CHARACTER_OPERATIONS */

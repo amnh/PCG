@@ -46,7 +46,7 @@ int trueWt(struct align *path, const int alphSize, int wtInsertDel, int wtSub, i
 
 // EDIT: rectified with .c file.
 //int aligner(char*, char*, int, int, struct retType*);
-int aligner(int *seq1, size_t seq1Len, int *seq2, size_t seq2Len, size_t alphSize,
+int aligner(uint64_t *seq1, size_t seq1Len, uint64_t *seq2, size_t seq2Len, size_t alphSize,
             int wtInsertDel, int wtSub, retType_t* retAlign);
 
 void freeRetType(retType_t* toFree);

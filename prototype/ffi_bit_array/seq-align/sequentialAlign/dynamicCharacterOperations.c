@@ -385,3 +385,36 @@ void freeDCElem( dcElement_t* p ) {
     free( p->element );
     free( p );
 }
+
+void printCharBits( const dynChar_t* const input ) {
+    printPackedChar(input->dynChar, input->numElems, input->alphSize);
+}
+
+void printPackedChar( const packedChar_p input, size_t numElems, size_t alphSize ) {
+    printf("[\n");
+
+    for( size_t elemNum = 0; elemNum < numElems; elemNum++ ) {
+        for( size_t bitIdx = 0; bitIdx < alphSize; bitIdx++ ) {
+            if( TestBit(input, alphSize * elemNum + bitIdx) ) {
+                // printf("Bit index:        %lu\n", alphSize * elemNum + bitIdx );
+                printf("1,");
+            } else {
+                printf("0,");
+            }
+        }
+        printf("\n");
+    }
+    printf("]\n");
+}
+
+void printElemBits( const dcElement_t* const input ) {
+    printPackedChar( input->element, 1, input->alphSize );
+}
+
+void printDynChar( const dynChar_t* const input ) {
+    printf("\nAlphabet Size:       %lu\n", input->alphSize);
+    printf("Number of Elements:  %lu\n", input->numElems);
+    printf("Internal arr Length: %lu ", input->dynCharLen);
+    printf("(should need %lu.)\n", dynCharSize(input->alphSize, input->numElems) );
+    printCharBits(input);
+}
