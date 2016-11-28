@@ -14,7 +14,7 @@
 
 module Bio.Metadata.General
   ( GeneralCharacterMetadataDec()
-  , GeneralCharacterMetadata(..)
+  , GeneralCharacterMetadata()
   , HasCharacterName(..)
   , HasCharacterWeight(..) 
   , generalMetadata

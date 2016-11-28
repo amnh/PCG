@@ -20,14 +20,7 @@ module Bio.Metadata.General.Internal
 
 import           Bio.Metadata.CharacterName
 import           Bio.Metadata.General.Class
-import           Control.Lens            hiding (index)
-import           Data.Alphabet
-import           Data.Foldable
-import           Data.Key                       (index)
-import           Data.Monoid
-import           Data.MonoTraversable
-import           Data.ReplicatedSequence        (ReplicatedSequence)
-import qualified Data.ReplicatedSequence as Rep
+import           Control.Lens
 
 
 -- |

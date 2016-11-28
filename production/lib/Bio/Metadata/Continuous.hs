@@ -20,7 +20,6 @@ module Bio.Metadata.Continuous
   ) where
 
 
---import Bio.Metadata.General
 import Bio.Metadata.CharacterName
 import Bio.Metadata.General
 import Control.Lens
@@ -50,7 +49,3 @@ instance HasCharacterWeight ContinuousCharacterMetadataDec Double where
 continuousMetadata :: CharacterName -> Double -> ContinuousCharacterMetadataDec
 continuousMetadata name weight = CCM $ generalMetadata name weight
 
-
-{-# INLINE unwrap #-}
-unwrap :: ContinuousCharacterMetadataDec -> GeneralCharacterMetadataDec
-unwrap (CCM x) = x
