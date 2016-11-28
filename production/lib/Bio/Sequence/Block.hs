@@ -29,6 +29,8 @@ module Bio.Sequence.Block
 import           Bio.Character
 import           Bio.Character.Internal
 import           Bio.Metadata.CharacterName
+import           Bio.Metadata.Discrete
+{-
 import           Bio.Sequence.Bin.Additive
 import           Bio.Sequence.Bin.Continuous
 import qualified Bio.Sequence.Bin.Continuous as Continuous
@@ -36,6 +38,7 @@ import           Bio.Sequence.Bin.Metric
 import           Bio.Sequence.Bin.NonAdditive
 import           Bio.Sequence.Bin.NonMetric
 import           Bio.Sequence.SharedContinugousMetatdata
+-}
 import           Data.Alphabet
 import           Data.Foldable
 import           Data.List.NonEmpty                 (NonEmpty( (:|) ))
@@ -57,19 +60,19 @@ import qualified Data.Vector                 as V
 -- Use '(<>)' to construct larger blocks.
 data CharacterBlock m i c f a d
    = CharacterBlock
-   { continuousCharacterBins   :: Maybe  (ContinuousBin  c)
-   , nonAdditiveCharacterBins  :: Vector (NonAdditiveBin f)
-   , additiveCharacterBins     :: Vector (   AdditiveBin a)
-   , metricCharacterBins       :: Vector (     MetricBin m)
-   , nonNonMetricCharacterBins :: Vector (  NonMetricBin i)
-   , dynamicCharacters         :: Vector (DynamicCharacterConstruct d)
+   { continuousCharacterBins   :: Vector c
+   , nonAdditiveCharacterBins  :: Vector f
+   , additiveCharacterBins     :: Vector a
+   , metricCharacterBins       :: Vector m
+   , nonNonMetricCharacterBins :: Vector i
+   , dynamicCharacters         :: Vector d
    } deriving (Eq, Show)
 
 
-newtype DynamicCharacterConstruct d = DCC (DiscreteCharacterMetadata, TCM, Maybe d)
+newtype DynamicCharacterConstruct d = DCC (DiscreteCharacterMetadataDec d, TCM, Maybe d)
   deriving (Eq, Show)
 
-
+{-
 instance ( EncodedAmbiguityGroupContainer m, Semigroup m
          , EncodedAmbiguityGroupContainer i, Semigroup i
          , Semigroup c
@@ -93,7 +96,7 @@ instance ( EncodedAmbiguityGroupContainer m, Semigroup m
               case y of
                 Nothing -> x
                 Just w  -> Just $ v <> w
-
+-}
 
 mergeByComparing :: (Eq a, Semigroup s) => (s -> a) -> Vector s -> Vector s -> Vector s
 mergeByComparing comparator lhs rhs
@@ -123,20 +126,16 @@ toMissingCharacters :: ( EncodableStaticCharacterStream m
                     -> CharacterBlock m i c f a d
 toMissingCharacters cb =
     CharacterBlock
-    { continuousCharacterBins   =            missingContinuous <$> continuousCharacterBins   cb
-    , nonAdditiveCharacterBins  = fmap (omap getMissingStatic) <$> nonAdditiveCharacterBins  cb
-    , additiveCharacterBins     = fmap (omap getMissingStatic) <$> additiveCharacterBins     cb
-    , metricCharacterBins       = fmap (omap getMissingStatic) <$> metricCharacterBins       cb
-    , nonNonMetricCharacterBins = fmap (omap getMissingStatic) <$> nonNonMetricCharacterBins cb
-    , dynamicCharacters         =               missingDynamic <$> dynamicCharacters         cb
+    { continuousCharacterBins   =          Nothing <$  continuousCharacterBins   cb
+    , nonAdditiveCharacterBins  = getMissingStatic <$> nonAdditiveCharacterBins  cb
+    , additiveCharacterBins     = getMissingStatic <$> additiveCharacterBins     cb
+    , metricCharacterBins       = getMissingStatic <$> metricCharacterBins       cb
+    , nonNonMetricCharacterBins = getMissingStatic <$> nonNonMetricCharacterBins cb
+    , dynamicCharacters         =   missingDynamic <$> dynamicCharacters         cb
     }
   where
 --    encodableStreamToMissing = fmap (omap getMissingStatic)
-    missingContinuous x =
-        ContinuousBin
-        { Continuous.characterStream = Nothing <$ Continuous.characterStream x
-        , Continuous.metatdataBounds =            Continuous.metatdataBounds x
-        }
+    missingContinuous x = (Nothing <$)
     missingDynamic (DCC (gcm, tcm, _)) = DCC (gcm, tcm, Nothing)
 
 

@@ -122,11 +122,11 @@ library
                        Bio.Character.Static
                        Bio.Metadata
                        Bio.Metadata.CharacterName
+                       Bio.Metadata.Continuous
+                       Bio.Metadata.Discrete
                        Bio.Metadata.Parsed
                        Bio.Sequence
-                       Bio.Sequence.Bin
                        Bio.Sequence.Block
-                       Bio.Sequence.SharedContinugousMetatdata
                        Bio.PhyloGraph
                        Bio.PhyloGraph.DAG
                        Bio.PhyloGraph.Edge
@@ -194,6 +194,11 @@ library
                        Bio.PhyloGraph.Forest.Class
                        Bio.PhyloGraph.Forest.Internal
                        Bio.Metadata.Class
+                       Bio.Metadata.General
+                       Bio.Metadata.General.Class
+                       Bio.Metadata.General.Internal
+                       Bio.Metadata.Discrete.Class
+                       Bio.Metadata.Discrete.Internal
                        Bio.Metadata.Internal
                        Bio.PhyloGraph.DAG.Internal
                        Bio.PhyloGraph.DAG.Class
@@ -211,12 +216,6 @@ library
                        Bio.PhyloGraphPrime.ReferenceDAG.Internal
                        Bio.PhyloGraphPrime.ZipperDAG.Internal
                        Bio.Character.Internal
-                       Bio.Sequence.Bin.Additive
-                       Bio.Sequence.Bin.Continuous
-                       Bio.Sequence.Bin.Class
-                       Bio.Sequence.Bin.Metric
-                       Bio.Sequence.Bin.NonAdditive
-                       Bio.Sequence.Bin.NonMetric
                        Bio.Sequence.Internal
                        Control.Evaluation.Unit
                        Control.Evaluation.Internal

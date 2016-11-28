@@ -10,21 +10,22 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE FlexibleInstances, FunctionalDependencies, MultiParamTypeClasses #-}
+{-# LANGUAGE FlexibleContexts, FlexibleInstances, FunctionalDependencies, MultiParamTypeClasses #-}
 
 module Bio.Character.Dynamic.Decoration.Class where
 
 
 import Bio.Character.Dynamic.Class
+import Bio.Metadata.Discrete
 import Control.Lens
-
+import Data.MonoTraversable
 
 -- |
 -- A decoration of an initial encoding of a dynamic character which has the
 -- appropriate 'Lens' & character class constraints.
 class ( HasEncoded s a
       , EncodableDynamicCharacter a
-      , DiscreteCharacterMetadata s a
+      , DiscreteCharacterMetadata s (Element a)
       ) => DynamicDecoration s a | s -> a where
 
   
