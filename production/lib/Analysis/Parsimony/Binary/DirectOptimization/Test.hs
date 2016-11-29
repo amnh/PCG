@@ -15,7 +15,7 @@
 module Analysis.Parsimony.Binary.DirectOptimization.Test where
 
 import           Analysis.Parsimony.Binary.DirectOptimization.Internal
-import           Bio.Character.Dynamic
+import           Bio.Character.Encodable
 --import           Bio.Character.Parsed
 import           Bio.Metadata          hiding (alphabet)
 --import           Bio.Metadata.Internal
