@@ -24,8 +24,7 @@ module Bio.Sequence.Internal
   , fromBlocks
   ) where
 
---import           Bio.Character.Dynamic
---import           Bio.Character.Static
+--import           Bio.Character.Encodable
 import           Bio.Sequence.Block   (CharacterBlock)
 import           Data.Foldable
 import           Data.List.NonEmpty   (NonEmpty)

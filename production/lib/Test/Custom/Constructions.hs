@@ -4,7 +4,7 @@ module Test.Custom.Constructions where
 
 
 import           Bio.Character.Parsed -- why?
-import           Bio.Character.Dynamic
+import           Bio.Character.Encodable
 import           Data.Alphabet
 import           Data.BitMatrix
 import           Data.BitVector    (bitVec)

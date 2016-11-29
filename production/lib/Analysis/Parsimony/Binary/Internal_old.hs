@@ -26,7 +26,7 @@ import Bio.PhyloGraph.Tree.Referential
 import Bio.PhyloGraph.Tree.Binary
 import Bio.PhyloGraph.Tree.Rose
 --import Bio.PhyloGraph.Network.Subsettable
-import Bio.Character.Dynamic.Coded
+import Bio.Character.Encodable
 import Data.Bits
 import Data.Function.Memoize
 import Data.Matrix.NotStupid (Matrix, nrows, ncols, setElem)

@@ -19,7 +19,7 @@ import           Analysis.Parsimony.Binary.Internal
 import           Analysis.ImpliedAlignment.Standard
 import           Analysis.ImpliedAlignment.Test.Trees
 import qualified Analysis.ImpliedAlignment.InsertionEvents.Test as IE (testSuite)
-import           Bio.Character.Dynamic
+import           Bio.Character.Encodable
 import           Bio.Character.Parsed
 import           Bio.Metadata
 import           Bio.PhyloGraph     hiding (name)
