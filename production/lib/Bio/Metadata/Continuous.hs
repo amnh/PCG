@@ -13,7 +13,8 @@
 {-# LANGUAGE FlexibleInstances, FunctionalDependencies, MultiParamTypeClasses, TypeFamilies #-}
 
 module Bio.Metadata.Continuous
-  ( GeneralCharacterMetadata()
+  ( ContinuousCharacterMetadataDec()
+  , GeneralCharacterMetadata()
   , HasCharacterName(..)
   , HasCharacterWeight(..) 
   , continuousMetadata

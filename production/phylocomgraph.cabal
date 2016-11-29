@@ -114,6 +114,7 @@ library
                        Analysis.Parsimony.Binary.Optimization
                        Analysis.Parsimony.Binary.SequentialAlign
                        Bio.Character
+                       Bio.Character.Decoration.Continuous
                        Bio.Character.Decoration.Dynamic
                        Bio.Character.Encodable
                        Bio.Character.Exportable.Class
@@ -181,6 +182,8 @@ library
                        Analysis.Parsimony.Binary.DirectOptimization.Internal
                        Analysis.Parsimony.Binary.SequentialAlign.FFI
                        Analysis.Parsimony.Binary.Constraints
+                       Bio.Character.Decoration.Continuous.Class
+                       Bio.Character.Decoration.Continuous.Internal
                        Bio.Character.Decoration.Dynamic.Class
                        Bio.Character.Decoration.Dynamic.Internal
                        Bio.Character.Encodable.Dynamic
