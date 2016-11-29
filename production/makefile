@@ -14,7 +14,7 @@ profiling     = --executable-profiling --library-profiling
 
 
 # Default build target
-all: standard-build copy-docs
+all: standard-build copy-haddock
 
 # Rebuilds with profiling
 prof: stack-build-profiling
@@ -63,11 +63,11 @@ stack-build-test: phylocomgraph.cabal stack.yaml
 
 
 # Copies documentation director to local scope
-copy-docs: set-dir-variables
-	rm -rf docs
-	rm -f  docs.html
-	cp -r .stack-work/dist/$(DIR_ONE)/$(DIR_TWO)/doc/html/phylocomgraph docs
-	ln -s docs/index.html docs.html
+copy-haddock: set-dir-variables
+	rm -rf doc/haddock
+	rm -f  doc/haddock.html
+	cp -r .stack-work/dist/$(DIR_ONE)/$(DIR_TWO)/doc/html/phylocomgraph doc/haddock
+	ln -s haddock/index.html doc/haddock.html
 
 # Sets up variables of path names that are subject to change.
 # Finds the most recently modified file in the directory
