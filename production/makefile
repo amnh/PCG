@@ -5,7 +5,7 @@ sanity        = -fwarn-duplicate-exports -fwarn-incomplete-patterns -fwarn-missi
 stacktracing  = -prof -auto-all -caf-all
 
 #Flags for `stack`
-haddock       = --haddock --haddock-deps
+haddock       = --haddock --haddock-deps --mathjax=https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-MML-AM_CHTML
 profiling     = --executable-profiling --library-profiling
 
 
