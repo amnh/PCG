@@ -1,10 +1,10 @@
 {-# LANGUAGE FlexibleInstances #-}
 
-module Bio.Character.Dynamic.Test
+module Bio.Character.Encodable.Dynamic.Test
   ( testSuite
   ) where
 
-import           Bio.Character.Dynamic
+import           Bio.Character.Encodable.Dynamic
 import           Data.Alphabet
 import           Data.Bits
 import           Data.Foldable

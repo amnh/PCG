@@ -1,6 +1,6 @@
 -----------------------------------------------------------------------------
 -- |
--- Module      :  Bio.Character.Dynamic
+-- Module      :  Bio.Character.Encodable
 -- Copyright   :  (c) 2015-2015 Ward Wheeler
 -- License     :  BSD-style
 --
@@ -12,18 +12,19 @@
 --
 -----------------------------------------------------------------------------
 
-module Bio.Character.Dynamic
+module Bio.Character.Encodable
   ( DynamicChar(DC)
   , DynamicChars
   , DynamicCharacterElement()
+  , StaticCharacter()
+  , StaticCharacterBlock()
   , EncodedAmbiguityGroupContainer(..)
   , EncodableDynamicCharacter(..)
+  , EncodableStaticCharacter(..)
+  , EncodableStaticCharacterStream(..)
   , EncodableStreamElement(..)
   , EncodableStream(..)
   ) where
 
-import Bio.Character.Dynamic.Internal
-import Bio.Character.Dynamic.Class
-import Bio.Character.Internal
-import Bio.Character.Stream
-
+import Bio.Character.Encodable.Dynamic
+import Bio.Character.Encodable.Static

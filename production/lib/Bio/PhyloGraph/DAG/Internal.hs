@@ -17,7 +17,7 @@
 
 module Bio.PhyloGraph.DAG.Internal where
 
-import           Bio.Character.Dynamic
+import           Bio.Character.Encodable
 --import           Bio.Character.Parsed
 --import           Bio.Metadata.Internal                     (CharacterMetadata)
 import           Bio.PhyloGraph.DAG.Class
@@ -84,8 +84,10 @@ data TopoDAG
 instance Arbitrary DAG where
   arbitrary = binaryTreeToDAG <$> (arbitrary :: Gen (TestingBinaryTree Node))
 
+newtype TreeContext = TreeContext { fromTreeContext :: (Positive Int, Positive Int, Alphabet String, [BitVector]) }
+
 -- | (✔)
-instance Arbitrary (Positive Int, Positive Int, Alphabet String, [BitVector]) where
+instance Arbitrary TreeContext where
   arbitrary = do
     alphabet    <- arbitrary :: Gen (Alphabet String)
     taxaCount   <- getPositive <$> (arbitrary :: Gen (Positive Int)) -- this should be limited to <= 10
@@ -94,7 +96,8 @@ instance Arbitrary (Positive Int, Positive Int, Alphabet String, [BitVector]) wh
     let elemGen =  bitVec aLen <$> (choose (1, 2 ^ aLen - 1) :: Gen Integer)  -- Each element but have at least one bit set!
     let bvGen   =  mconcat     <$> vectorOf charCount elemGen
     bitVectors  <- vectorOf taxaCount bvGen
-    pure (Positive taxaCount, Positive charCount, alphabet, bitVectors)
+    pure $ TreeContext (Positive taxaCount, Positive charCount, alphabet, bitVectors)
+
     
 -- | A well typed tree used for generating a binary tree. An intermidiate type
 --   representation used in 'DAG' generation.

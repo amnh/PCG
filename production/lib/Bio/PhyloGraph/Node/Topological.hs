@@ -17,7 +17,7 @@
 
 module Bio.PhyloGraph.Node.Topological (TopoNode(..){-, arbitraryTopoGivenCAL, arbitraryTopoGivenCSNA -}) where
 
-import Bio.Character.Dynamic
+import Bio.Character.Encodable.Dynamic
 import Data.Vector           (Vector) 
 
 -- | A tree construction which stores it's children as pointers. Tree traversal

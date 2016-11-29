@@ -1,6 +1,6 @@
 -----------------------------------------------------------------------------
 -- |
--- Module      :  Bio.Character.Internal
+-- Module      :  Bio.Character.Encodable.Internal
 -- Copyright   :  (c) 2015-2015 Ward Wheeler
 -- License     :  BSD-style
 --
@@ -10,7 +10,7 @@
 --
 -----------------------------------------------------------------------------
 
-module Bio.Character.Internal where
+module Bio.Character.Encodable.Internal where
 
 
 -- |

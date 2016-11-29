@@ -1,6 +1,6 @@
 -----------------------------------------------------------------------------
 -- |
--- Module      :  Bio.Character.Static.Internal
+-- Module      :  Bio.Character.Encodable.Static.Internal
 -- Copyright   :  (c) 2015-2015 Ward Wheeler
 -- License     :  BSD-style
 --
@@ -20,14 +20,14 @@
 -- TODO: fix and remove this ghc option (is it needed for Arbitrary?):
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
-module Bio.Character.Static.Internal
+module Bio.Character.Encodable.Static.Internal
   ( StaticCharacter()
   , StaticCharacterBlock()
   ) where
 
-import           Bio.Character.Internal
-import           Bio.Character.Static.Class
-import           Bio.Character.Stream
+import           Bio.Character.Encodable.Internal
+import           Bio.Character.Encodable.Static.Class
+import           Bio.Character.Encodable.Stream
 import           Bio.Character.Exportable.Class
 import           Control.Arrow                       ((***))
 import           Data.Alphabet

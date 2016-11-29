@@ -93,7 +93,6 @@ parseSpecifiedFile     (PrealignedFile x tcmRef) = do
         Just (path, content) -> do
           tcmMat <- hoistEither . first unparsable $ parse' tcmStreamParser path content
           traverse (hoistEither . setTcm tcmMat path) subContent
-  where
 
 
 setTcm :: TCM -> FilePath -> FracturedParseResult -> Either ReadError FracturedParseResult
