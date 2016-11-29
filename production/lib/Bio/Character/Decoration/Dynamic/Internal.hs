@@ -28,7 +28,7 @@ import Data.MonoTraversable
 -- |
 -- An abstract initial dynamic character decoration with a polymorphic character
 -- type.
-data DynamicDecorationInitial d -- c is a Phantom type representing (Element d)
+data DynamicDecorationInitial d
    = DynamicDecorationInitial
    { dynamicDecorationInitialEncodedField :: d
    , metadata                             :: DiscreteCharacterMetadataDec (Element d)

@@ -116,6 +116,7 @@ library
                        Bio.Character
                        Bio.Character.Decoration.Continuous
                        Bio.Character.Decoration.Dynamic
+                       Bio.Character.Decoration.Fitch
                        Bio.Character.Encodable
                        Bio.Character.Exportable.Class
                        Bio.Character.Parsed
@@ -184,8 +185,11 @@ library
                        Analysis.Parsimony.Binary.Constraints
                        Bio.Character.Decoration.Continuous.Class
                        Bio.Character.Decoration.Continuous.Internal
+                       Bio.Character.Decoration.Discrete
                        Bio.Character.Decoration.Dynamic.Class
                        Bio.Character.Decoration.Dynamic.Internal
+                       Bio.Character.Decoration.Fitch.Class
+                       Bio.Character.Decoration.Fitch.Internal
                        Bio.Character.Encodable.Dynamic
                        Bio.Character.Encodable.Dynamic.Class
                        Bio.Character.Encodable.Dynamic.Internal
