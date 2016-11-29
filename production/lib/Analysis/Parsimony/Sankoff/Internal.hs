@@ -1,9 +1,25 @@
+-----------------------------------------------------------------------------
+-- |
+-- Module      :  Analysis.Parsimony.Sankoff
+-- Copyright   :  (c) 2015-2015 Ward Wheeler
+-- License     :  BSD-style
+--
+-- Maintainer  :  wheeler@amnh.org
+-- Stability   :  provisional
+-- Portability :  portable
+--
+-- Sankoff character analysis (cost and median)
+--
+-----------------------------------------------------------------------------
+
 data SankoffCharacterDecoration c = SankoffCharacterDecoration
     { minCostVector :: [Word32]
     , dirVectors    :: [c]
     , minCost       :: Word32
     }
 
+-- | Used on the post-order (i.e. first) traversal.
+--
 sankoffPostOrder :: ( HasTCM d ((c, c) -> (c, Double))
                     , HasStaticCharacter d c
                     , EncodableStaticCharacter c
