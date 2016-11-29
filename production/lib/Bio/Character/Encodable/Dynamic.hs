@@ -1,6 +1,6 @@
 -----------------------------------------------------------------------------
 -- |
--- Module      :  Bio.Character
+-- Module      :  Bio.Character.Encodable.Dynamic
 -- Copyright   :  (c) 2015-2015 Ward Wheeler
 -- License     :  BSD-style
 --
@@ -8,23 +8,22 @@
 -- Stability   :  provisional
 -- Portability :  portable
 --
+-- Export of coded characters
+--
 -----------------------------------------------------------------------------
 
-module Bio.Character
-  (  -- * Character Types
-    DynamicChar()
+module Bio.Character.Encodable.Dynamic
+  ( DynamicChar(DC)
   , DynamicChars
-  , ExportableCharacterSequence(..)
-  , StaticCharacter()
-  , StaticCharacterBlock()
-    -- * Character Classes
+  , DynamicCharacterElement()
+  , EncodedAmbiguityGroupContainer(..)
   , EncodableDynamicCharacter(..)
-  , EncodableStaticCharacter(..)
-  , EncodableStaticCharacterStream(..)
-  , EncodableStream(..)
   , EncodableStreamElement(..)
-  , Exportable(..)
+  , EncodableStream(..)
   ) where
 
-import Bio.Character.Encodable
-import Bio.Character.Exportable.Class
+import Bio.Character.Encodable.Dynamic.Internal
+import Bio.Character.Encodable.Dynamic.Class
+import Bio.Character.Encodable.Internal
+import Bio.Character.Encodable.Stream
+

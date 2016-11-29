@@ -1,6 +1,6 @@
 -----------------------------------------------------------------------------
 -- |
--- Module      :  Bio.Character.Dynamic.Decoration.Class
+-- Module      :  Bio.Character.Decoration.Dynamic.Class
 -- Copyright   :  (c) 2015-2015 Ward Wheeler
 -- License     :  BSD-style
 --
@@ -12,10 +12,10 @@
 
 {-# LANGUAGE FlexibleContexts, FlexibleInstances, FunctionalDependencies, MultiParamTypeClasses #-}
 
-module Bio.Character.Dynamic.Decoration.Class where
+module Bio.Character.Decoration.Dynamic.Class where
 
 
-import Bio.Character.Dynamic.Class
+import Bio.Character.Encodable
 import Bio.Metadata.Discrete
 import Control.Lens
 import Data.MonoTraversable

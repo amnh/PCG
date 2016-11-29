@@ -1,6 +1,6 @@
 -----------------------------------------------------------------------------
 -- |
--- Module      :  Bio.Character.Dynamic.Class
+-- Module      :  Bio.Character.Encodable.Dynamic.Class
 -- Copyright   :  (c) 2015-2015 Ward Wheeler
 -- License     :  BSD-style
 --
@@ -15,9 +15,9 @@
 
 {-# LANGUAGE FlexibleContexts, MultiParamTypeClasses #-}
 
-module Bio.Character.Dynamic.Class where
+module Bio.Character.Encodable.Dynamic.Class where
 
-import Bio.Character.Stream
+import Bio.Character.Encodable.Stream
 import Data.Alphabet
 --import Data.List.NonEmpty
 import Data.MonoTraversable

@@ -16,14 +16,14 @@
 
 module Bio.PhyloGraph.Solution.Internal where
 
+import           Bio.Character.Encodable
+import           Bio.Character.Parsed.Internal
+import           Bio.Metadata.Internal
 import           Bio.PhyloGraph.DAG    hiding (root)
 import           Bio.PhyloGraph.Forest
 import           Bio.PhyloGraph.Network.Class
 import           Bio.PhyloGraph.Solution.Class
 import qualified Bio.PhyloGraph.Solution.Metadata as MS
-import           Bio.Character.Parsed.Internal
-import           Bio.Character.Dynamic
-import           Bio.Metadata.Internal
 import           Bio.PhyloGraph.Node   hiding (children, name)
 import           Control.Evaluation
 import           Data.Alphabet

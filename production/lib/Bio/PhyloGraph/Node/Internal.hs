@@ -15,7 +15,7 @@
 
 module Bio.PhyloGraph.Node.Internal where
 
-import           Bio.Character.Dynamic
+import           Bio.Character.Encodable.Dynamic
 import qualified Bio.PhyloGraph.Node.Encoded      as EN
 import qualified Bio.PhyloGraph.Node.Final        as FN
 import qualified Bio.PhyloGraph.Node.ImpliedAlign as IN

@@ -1,6 +1,6 @@
 -----------------------------------------------------------------------------
 -- |
--- Module      :  Bio.Character.Dynamic.Internal
+-- Module      :  Bio.Character.Encodable.Dynamic.Internal
 -- Copyright   :  (c) 2015-2015 Ward Wheeler
 -- License     :  BSD-style
 --
@@ -20,15 +20,15 @@
 -- TODO: fix and remove this ghc option (is it needed for Arbitrary?):
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
-module Bio.Character.Dynamic.Internal
+module Bio.Character.Encodable.Dynamic.Internal
   ( DynamicChar (DC)
   , DynamicChars
   , DynamicCharacterElement()
   ) where
 
-import           Bio.Character.Dynamic.Class
-import           Bio.Character.Internal
-import           Bio.Character.Stream
+import           Bio.Character.Encodable.Dynamic.Class
+import           Bio.Character.Encodable.Internal
+import           Bio.Character.Encodable.Stream
 import           Bio.Character.Exportable.Class
 import           Control.Arrow                       ((***))
 import           Data.Alphabet

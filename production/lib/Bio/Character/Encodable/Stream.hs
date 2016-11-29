@@ -1,6 +1,6 @@
 -----------------------------------------------------------------------------
 -- |
--- Module      :  Bio.Character.Stream
+-- Module      :  Bio.Character.Encodable.Stream
 -- Copyright   :  (c) 2015-2015 Ward Wheeler
 -- License     :  BSD-style
 --
@@ -15,9 +15,9 @@
 
 {-# LANGUAGE FlexibleContexts, MultiParamTypeClasses #-}
 
-module Bio.Character.Stream where
+module Bio.Character.Encodable.Stream where
 
-import Bio.Character.Internal
+import Bio.Character.Encodable.Internal
 import Data.Alphabet
 import Data.BitVector
 import Data.List.NonEmpty

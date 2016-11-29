@@ -114,12 +114,10 @@ library
                        Analysis.Parsimony.Binary.Optimization
                        Analysis.Parsimony.Binary.SequentialAlign
                        Bio.Character
-                       Bio.Character.Dynamic
-                       Bio.Character.Dynamic.Decoration
+                       Bio.Character.Decoration.Dynamic
+                       Bio.Character.Encodable
                        Bio.Character.Exportable.Class
                        Bio.Character.Parsed
-                       Bio.Character.Stream
-                       Bio.Character.Static
                        Bio.Metadata
                        Bio.Metadata.CharacterName
                        Bio.Metadata.Continuous
@@ -172,6 +170,7 @@ library
                        Data.List.Utility
                        Data.Matrix.NotStupid
                        Text.Megaparsec.Custom
+
   -- Modules included in this library but not exported.
   other-modules:       Analysis.ImpliedAlignment.AlignmentContext
                        Analysis.ImpliedAlignment.DeletionEvents
@@ -182,15 +181,17 @@ library
                        Analysis.Parsimony.Binary.DirectOptimization.Internal
                        Analysis.Parsimony.Binary.SequentialAlign.FFI
                        Analysis.Parsimony.Binary.Constraints
-                       Bio.Character.Dynamic.Class
-                       Bio.Character.Dynamic.Decoration.Class
-                       Bio.Character.Dynamic.Decoration.Internal
-                       Bio.Character.Dynamic.Internal
-                       Bio.Character.Internal
+                       Bio.Character.Decoration.Dynamic.Class
+                       Bio.Character.Decoration.Dynamic.Internal
+                       Bio.Character.Encodable.Dynamic
+                       Bio.Character.Encodable.Dynamic.Class
+                       Bio.Character.Encodable.Dynamic.Internal
+                       Bio.Character.Encodable.Internal
+                       Bio.Character.Encodable.Static
+                       Bio.Character.Encodable.Static.Class
+                       Bio.Character.Encodable.Static.Internal
                        Bio.Character.Parsed.Class
                        Bio.Character.Parsed.Internal
-                       Bio.Character.Static.Class
-                       Bio.Character.Static.Internal
                        Bio.PhyloGraph.Forest.Class
                        Bio.PhyloGraph.Forest.Internal
                        Bio.Metadata.Class
@@ -215,7 +216,6 @@ library
                        Bio.PhyloGraphPrime.Forest
                        Bio.PhyloGraphPrime.ReferenceDAG.Internal
                        Bio.PhyloGraphPrime.ZipperDAG.Internal
-                       Bio.Character.Internal
                        Bio.Sequence.Internal
                        Control.Evaluation.Unit
                        Control.Evaluation.Internal

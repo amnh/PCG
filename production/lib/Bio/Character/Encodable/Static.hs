@@ -1,6 +1,6 @@
 -----------------------------------------------------------------------------
 -- |
--- Module      :  Bio.Character.Static
+-- Module      :  Bio.Character.Encodable.Static
 -- Copyright   :  (c) 2015-2015 Ward Wheeler
 -- License     :  BSD-style
 --
@@ -12,7 +12,7 @@
 --
 -----------------------------------------------------------------------------
 
-module Bio.Character.Static
+module Bio.Character.Encodable.Static
   ( StaticCharacter()
   , StaticCharacterBlock()
   , EncodedAmbiguityGroupContainer(..)
@@ -22,8 +22,8 @@ module Bio.Character.Static
   , EncodableStream(..)
   ) where
 
-import Bio.Character.Internal
-import Bio.Character.Static.Internal
-import Bio.Character.Static.Class
-import Bio.Character.Stream
+import Bio.Character.Encodable.Internal
+import Bio.Character.Encodable.Static.Internal
+import Bio.Character.Encodable.Static.Class
+import Bio.Character.Encodable.Stream
 

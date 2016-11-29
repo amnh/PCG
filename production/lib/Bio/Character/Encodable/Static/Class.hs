@@ -1,6 +1,6 @@
 -----------------------------------------------------------------------------
 -- |
--- Module      :  Bio.Character.Static.Class
+-- Module      :  Bio.Character.Encodable.Static.Class
 -- Copyright   :  (c) 2015-2015 Ward Wheeler
 -- License     :  BSD-style
 --
@@ -15,9 +15,9 @@
 
 {-# LANGUAGE FlexibleContexts, MultiParamTypeClasses #-}
 
-module Bio.Character.Static.Class where
+module Bio.Character.Encodable.Static.Class where
 
-import Bio.Character.Stream
+import Bio.Character.Encodable.Stream
 import Data.Alphabet
 import Data.Bits
 import Data.List.NonEmpty   hiding (xor) -- Why is this defined? Is foldl1' (/=) too verbose?

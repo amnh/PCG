@@ -23,7 +23,7 @@ module Bio.Metadata.Discrete.Internal
   ) where
 
 
-import Bio.Character.Stream
+import Bio.Character.Encodable
 import Bio.Metadata.CharacterName
 import Bio.Metadata.Discrete.Class
 import Bio.Metadata.General

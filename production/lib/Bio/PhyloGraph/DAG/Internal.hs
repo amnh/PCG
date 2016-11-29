@@ -17,7 +17,7 @@
 
 module Bio.PhyloGraph.DAG.Internal where
 
-import           Bio.Character.Dynamic
+import           Bio.Character.Encodable
 --import           Bio.Character.Parsed
 --import           Bio.Metadata.Internal                     (CharacterMetadata)
 import           Bio.PhyloGraph.DAG.Class

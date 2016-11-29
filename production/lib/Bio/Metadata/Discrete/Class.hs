@@ -22,7 +22,7 @@ module Bio.Metadata.Discrete.Class
   , HasCharacterWeight(..)
   ) where
 
-import Bio.Character.Stream
+import Bio.Character.Encodable
 import Bio.Metadata.General 
 import Control.Lens
 import Data.Alphabet

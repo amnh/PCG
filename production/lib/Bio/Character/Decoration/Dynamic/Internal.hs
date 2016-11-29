@@ -1,6 +1,6 @@
 -----------------------------------------------------------------------------
 -- |
--- Module      :  Bio.Character.Dynamic.Decoration.Internal
+-- Module      :  Bio.Character.Decoration.Dynamic.Internal
 -- Copyright   :  (c) 2015-2015 Ward Wheeler
 -- License     :  BSD-style
 --
@@ -14,11 +14,10 @@
 
 {-# LANGUAGE UndecidableInstances #-}
 
-module Bio.Character.Dynamic.Decoration.Internal where
+module Bio.Character.Decoration.Dynamic.Internal where
 
-import Bio.Character.Dynamic.Class
-import Bio.Character.Dynamic.Decoration.Class
-import Bio.Character.Stream
+import Bio.Character.Decoration.Dynamic.Class
+import Bio.Character.Encodable
 import Bio.Metadata.CharacterName
 import Bio.Metadata.Discrete
 import Control.Lens
