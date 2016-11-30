@@ -47,7 +47,6 @@ library
                      , hashable
                      , keys
                      , lens
-                     , ListZipper
                      , matrix
                      , megaparsec       >=5.0
                      , mono-traversable >=1.0
@@ -279,7 +278,6 @@ executable pcg
                      , hashable
                      , keys
                      , lens
-                     , ListZipper
                      , matrix
                      , megaparsec       >=5.0
                      , mono-traversable >=1.0

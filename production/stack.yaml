@@ -10,7 +10,6 @@ packages:
 system-ghc: false
 
 extra-deps:
-- ListZipper-1.2.0.2
 - bv-0.4.1
 - containers-0.5.8.1
 - lens-4.15.1
