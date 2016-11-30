@@ -23,8 +23,7 @@ CostMatrix::~CostMatrix() {
 
 int CostMatrix::getCost(dcElement_t& left, dcElement_t& right, dcElement_t& retMedian) {
     keys_t toLookup (left, right);
-    std::unordered_map<keys_t, costMedian_t, KeyHash, KeyEqual>::const_iterator found;
-    int foundCost;
+    std::unordered_map<keys_t, costMedian_t, KeyHash, KeyEqual>::const_iterator found; int foundCost;
 
     found = myMatrix.find(toLookup);
 
@@ -129,28 +128,64 @@ costMedian_t* CostMatrix::findDistance (keys_t& key, int* tcm) {
     return toReturn;
 }
 
-// TODO: deallocate here
+// TODO: deallocate here?
 void CostMatrix::setUpInitialMatrix (int* tcm) {
     std::pair<keys_t, costMedian_t> toInsert;
     toInsert.second.second = (uint64_t*) calloc(dcElemSize(alphabetSize), INT_WIDTH);
-    toInsert.first.first.alphSize   = alphabetSize;
-    toInsert.first.second.alphSize  = alphabetSize;
-    for (size_t key1 = 1; key1 <= alphabetSize; key1 <<= 1) { // for every possible value of key1, key2
-        for (size_t key2 = 1; key2 <= alphabetSize; key2 <<= 1) {
-            SetBit(toInsert.first.first.element,  key1);
-            SetBit(toInsert.first.second.element, key2);
-            toInsert.second.first = tcm[(key1 - 1) * alphabetSize + key2 - 1];
-            SetBit(toInsert.second.second, key1);
-            SetBit(toInsert.second.second, key2);
+    toInsert.first.first.element = (uint64_t*) calloc(dcElemSize(alphabetSize), INT_WIDTH);
+    toInsert.first.second.element = (uint64_t*) calloc(dcElemSize(alphabetSize), INT_WIDTH);
+    dcElement_t *firstKey  = &toInsert.first.first;
+    dcElement_t *secondKey = &toInsert.first.second;
+    packedChar_p median    = toInsert.second.second;
+    int *cost              = &toInsert.second.first;
+
+    std::unordered_map<keys_t, costMedian_t, KeyHash, KeyEqual>::const_iterator found;
+
+    //firstKey->element   = (uint64_t*) calloc(dcElemSize(alphabetSize), INT_WIDTH);
+    //secondKey->element  = (uint64_t*) calloc(dcElemSize(alphabetSize), INT_WIDTH);
+    firstKey->alphSize  = alphabetSize;
+    secondKey->alphSize = alphabetSize;
+    //median              = (uint64_t*) calloc(dcElemSize(alphabetSize), INT_WIDTH);
+    // median->alphSize    = alphabetSize;
+    //cost                = (int*) malloc(sizeof(int));
+    for (size_t key1 = 1; key1 <= alphabetSize; key1 += 1) { // for every possible value of key1, key2
+        SetBit(firstKey->element, key1 - 1);
+        SetBit(median, key1 - 1);
+        printf("key 1 set: %zu\n", key1);
+        printPackedChar(median, 1, alphabetSize);
+
+        for (size_t key2 = key1 + 1; key2 <= alphabetSize; key2 += 1) {
+            SetBit(secondKey->element, key2 - 1);
+            *cost = tcm[(key1 - 1) * alphabetSize + key2 - 1];
+            SetBit(median, key2 - 1);
+            printf("key 2 set: %zu\n", key2);
+            printPackedChar(median, 1, alphabetSize);
             if ( !myMatrix.insert(toInsert).second ) {
-                printf("failed to insert.\n");
+                printf("failed to insert!!\n");
+                printf("first key:\n");
+                printPackedChar(firstKey->element, 1, alphabetSize);
+                printf("second key:\n");
+                printPackedChar(secondKey->element, 1, alphabetSize);
+                printf("median:\n");
+                printPackedChar(median, 1, alphabetSize);
                 exit (1);
             }
+            found = myMatrix.find(toInsert.first);
+            printf("cost: %d\n", found->second.first);
+            printPackedChar(found->second.second, 1, alphabetSize);
+            ClearBit(secondKey->element, key2 - 1);
+            ClearBit(median, key2 - 1);
+            printf("key 2 cleared: %zu\n", key2);
+            printPackedChar(median, 1, alphabetSize);
+
         } // key2
+        ClearBit(firstKey->element, key1 - 1);
+        ClearBit(median, key1 - 1);
     }
-    freeDCElem(&toInsert.first.first);
-    freeDCElem(&toInsert.first.second);
-    free(toInsert.second.second);
+    freeDCElem(firstKey);
+    freeDCElem(secondKey);
+    free(median);
+    free(cost);
 }
 
 void CostMatrix::setValue(keys_t key, costMedian_t *median) {
