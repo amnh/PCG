@@ -20,6 +20,7 @@ module Bio.Character.Decoration.Continuous
   , HasCharacterName(..)
   , HasCharacterWeight(..)
   , HasContinuousCharacter(..)
+  , continuousDecorationInitial
   ) where
 
 

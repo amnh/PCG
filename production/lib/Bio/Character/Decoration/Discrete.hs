@@ -10,7 +10,9 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE FunctionalDependencies, MultiParamTypeClasses #-}
+{-# LANGUAGE FlexibleInstances, FunctionalDependencies, MultiParamTypeClasses #-}
+
+{-# LANGUAGE UndecidableInstances #-}
 
 module Bio.Character.Decoration.Discrete where
 
@@ -37,6 +39,15 @@ class ( HasDiscreteCharacter s a
       , DiscreteCharacterMetadata s a
       ) => DiscreteCharacterDecoration s a | s -> a where 
 
-    toDiscreteCharacterDecoration :: CharacterName -> Double -> Alphabet String -> TCM-> (Alphabet String -> AmbiguityGroup String -> a) ->  AmbiguityGroup String -> s
+    toDiscreteCharacterDecoration :: CharacterName -> Double -> Alphabet String -> TCM -> (Alphabet String -> AmbiguityGroup String -> a) ->  AmbiguityGroup String -> s
     {-# MINIMAL toDiscreteCharacterDecoration #-}
-    
+
+
+instance ( DiscreteCharacterDecoration s a 
+         , PossiblyMissingCharacter a
+         ) => PossiblyMissingCharacter s where
+
+    isMissing = isMissing . (^. discreteCharacter)
+
+    toMissing x = x & discreteCharacter %~ toMissing
+

@@ -30,15 +30,12 @@ import           Bio.Character
 import           Bio.Character.Encodable
 import           Bio.Metadata.CharacterName
 import           Bio.Metadata.Discrete
-{-
-import           Bio.Sequence.Bin.Additive
-import           Bio.Sequence.Bin.Continuous
-import qualified Bio.Sequence.Bin.Continuous as Continuous
-import           Bio.Sequence.Bin.Metric
-import           Bio.Sequence.Bin.NonAdditive
-import           Bio.Sequence.Bin.NonMetric
-import           Bio.Sequence.SharedContinugousMetatdata
--}
+import           Bio.Character.Decoration.Additive
+import           Bio.Character.Decoration.Continuous
+import qualified Bio.Character.Decoration.Continuous as Continuous
+import           Bio.Character.Decoration.Metric
+import           Bio.Character.Decoration.Fitch
+import           Bio.Character.Decoration.NonMetric
 import           Data.Alphabet
 import           Data.Foldable
 import           Data.List.NonEmpty                 (NonEmpty( (:|) ))
@@ -117,20 +114,21 @@ mergeByComparing comparator lhs rhs
                 else g (right z)
 
     
-toMissingCharacters :: ( EncodableStaticCharacterStream m
-                       , EncodableStaticCharacterStream i
-                       , EncodableStaticCharacterStream f
-                       , EncodableStaticCharacterStream a
+toMissingCharacters :: ( PossiblyMissingCharacter m
+                       , PossiblyMissingCharacter i
+                       , PossiblyMissingCharacter c
+                       , PossiblyMissingCharacter f
+                       , PossiblyMissingCharacter a
                        ) 
                     => CharacterBlock m i c f a d
                     -> CharacterBlock m i c f a d
 toMissingCharacters cb =
     CharacterBlock
-    { continuousCharacterBins   =          Nothing <$  continuousCharacterBins   cb
-    , nonAdditiveCharacterBins  = getMissingStatic <$> nonAdditiveCharacterBins  cb
-    , additiveCharacterBins     = getMissingStatic <$> additiveCharacterBins     cb
-    , metricCharacterBins       = getMissingStatic <$> metricCharacterBins       cb
-    , nonNonMetricCharacterBins = getMissingStatic <$> nonNonMetricCharacterBins cb
+    { continuousCharacterBins   =        toMissing <$> continuousCharacterBins   cb
+    , nonAdditiveCharacterBins  =        toMissing <$> nonAdditiveCharacterBins  cb
+    , additiveCharacterBins     =        toMissing <$> additiveCharacterBins     cb
+    , metricCharacterBins       =        toMissing <$> metricCharacterBins       cb
+    , nonNonMetricCharacterBins =        toMissing <$> nonNonMetricCharacterBins cb
     , dynamicCharacters         =   missingDynamic <$> dynamicCharacters         cb
     }
   where
@@ -139,12 +137,11 @@ toMissingCharacters cb =
     missingDynamic (DCC (gcm, tcm, _)) = DCC (gcm, tcm, Nothing)
 
 
-continuousSingleton :: CharacterName -> c -> CharacterBlock m i c f a d
-continuousSingleton nameValue continuousValue =
-    CharacterBlock (Just bin)  mempty  mempty  mempty mempty mempty
+continuousSingleton :: Real r => CharacterName -> Maybe r -> (Maybe r -> c) -> CharacterBlock m i (ContinuousDecorationInitial c) f a d
+continuousSingleton nameValue continuousValue f =
+    CharacterBlock (pure bin)  mempty  mempty  mempty mempty mempty
   where
-    bin      = continuousBin (continuousValue :| []) metadata
-    metadata = continuousMetadata nameValue 1
+    bin      = continuousDecorationInitial nameValue continuousValue f
 
 
 discreteSingleton :: Alphabet String -> CharacterName -> TCM -> (a -> s) -> a -> CharacterBlock s s c s s d
