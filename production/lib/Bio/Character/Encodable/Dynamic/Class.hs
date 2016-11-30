@@ -17,6 +17,7 @@
 
 module Bio.Character.Encodable.Dynamic.Class where
 
+import Bio.Character.Encodable.Internal
 import Bio.Character.Encodable.Stream
 import Data.Alphabet
 --import Data.List.NonEmpty
@@ -34,7 +35,9 @@ import Data.String          (IsString)
  decodeMany alphabet . encodeMany alphabet == fmap toList . toList
   
 -}
-class EncodableStream s => EncodableDynamicCharacter s where
+class ( EncodableStream s
+      , PossiblyMissingCharacter s
+      ) => EncodableDynamicCharacter s where
 
     -- |
     -- Directly construct a dynamic character from the encoded elements.

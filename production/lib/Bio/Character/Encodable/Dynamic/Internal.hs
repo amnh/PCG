@@ -64,9 +64,10 @@ import           Test.QuickCheck.Arbitrary.Instances ()
 -- character states of the dynamic character. The dynamic character relies on
 -- the encoding of the individual static characters to defined the encoding of
 -- the entire dynamic character.
-newtype DynamicChar
-      = DC BitMatrix
-      deriving (Eq, Show)
+data  DynamicChar
+    = Missing Int
+    | DC BitMatrix
+    deriving (Eq, Show)
 
 
 -- |
@@ -87,6 +88,16 @@ instance EncodedAmbiguityGroupContainer DynamicCharacterElement where
 
     {-# INLINE symbolCount  #-}
     symbolCount = width . unwrap
+
+
+instance PossiblyMissingCharacter DynamicChar where
+
+    {-# INLINE toMissing  #-}
+    toMissing c = Missing $ symbolCount c
+
+    {-# INLINE isMissing  #-}
+    isMissing Missing{} = True
+    isMissing _         = False
 
 
 instance EncodableStreamElement DynamicCharacterElement where
@@ -110,38 +121,48 @@ instance EncodableStreamElement DynamicCharacterElement where
 instance MonoFunctor DynamicChar where
 
     {-# INLINE omap #-}
-    omap f = DC . omap (unwrap . f . DCE) . unstream
+    omap f e@Missing{} = e
+    omap f (DC x)      = DC . omap (unwrap . f . DCE) $ x
 
 
 instance MonoFoldable DynamicChar where
 
     {-# INLINE ofoldMap #-}
-    ofoldMap f = ofoldMap (f . DCE) . unstream
+    ofoldMap f Missing{} = mempty
+    ofoldMap f (DC x)    = ofoldMap (f . DCE) $ x
 
     {-# INLINE ofoldr #-}
-    ofoldr f e = ofoldr (f . DCE)  e . unstream
+    ofoldr f e Missing{} = e
+    ofoldr f e (DC x)    = ofoldr (f . DCE)  e $ x
 
     {-# INLINE ofoldl' #-}
-    ofoldl' f e = ofoldl' (\acc x -> f acc (DCE x)) e . unstream
+    ofoldl' f e Missing{} = e
+    ofoldl' f e (DC x)   = ofoldl' (\acc x -> f acc (DCE x)) e $ x
 
-    {-# INLINE ofoldr1Ex #-}
-    ofoldr1Ex f = DCE . ofoldr1Ex (\x y -> unwrap $ f (DCE x) (DCE y)) . unstream
+    {-# INLINE ofoldr1Ex #-} 
+    ofoldr1Ex f Missing{} = error "Trying to mono-morphically fold over an empty structure without supplying an inital accumulator!"
+    ofoldr1Ex f (DC x)    = DCE . ofoldr1Ex (\x y -> unwrap $ f (DCE x) (DCE y)) $ x
 
     {-# INLINE ofoldl1Ex' #-}
-    ofoldl1Ex' f = DCE . ofoldl1Ex' (\x y -> unwrap $ f (DCE x) (DCE y)) .unstream
+    ofoldl1Ex' f Missing{} = error "Trying to mono-morphically fold over an empty structure without supplying an inital accumulator!"
+    ofoldl1Ex' f (DC x)    = DCE . ofoldl1Ex' (\x y -> unwrap $ f (DCE x) (DCE y)) $ x
 
     {-# INLINE onull #-}
-    onull = const False
+--    onull = const False
+    onull Missing{} = True
+    onull _         = False
 
     {-# INLINE olength #-}
-    olength = numRows . unstream
+    olength Missing{} = 0
+    olength (DC x)    = numRows x
 
 
 -- | Monomorphic containers that can be traversed from left to right.
 instance MonoTraversable DynamicChar where
 
     {-# INLINE otraverse #-}
-    otraverse f = fmap DC . otraverse (fmap unwrap . f . DCE) . unstream
+    otraverse f e@Missing{} = pure e
+    otraverse f (DC x)      = fmap DC . otraverse (fmap unwrap . f . DCE) $ x
 
     {-# INLINE omapM #-}
     omapM = otraverse
@@ -149,8 +170,9 @@ instance MonoTraversable DynamicChar where
 
 instance EncodedAmbiguityGroupContainer DynamicChar where
 
-    {-# INLINE symbolCount #-} 
-    symbolCount = numCols . unstream
+    {-# INLINE symbolCount #-}
+    symbolCount (Missing n) = n
+    symbolCount (DC x)     = numCols x
 
 
 instance EncodableStream DynamicChar where
@@ -266,10 +288,11 @@ instance Exportable DynamicChar where
     fromExportable = undefined
 
 
+{-
 {-# INLINE unstream #-}
 unstream :: DynamicChar -> BitMatrix
 unstream (DC x) = x
-
+-}
 
 {-# INLINE unwrap #-}
 unwrap :: DynamicCharacterElement -> BitVector

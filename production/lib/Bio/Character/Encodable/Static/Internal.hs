@@ -82,6 +82,15 @@ instance EncodedAmbiguityGroupContainer StaticCharacter where
     symbolCount = width . unwrap
 
 
+instance PossiblyMissingCharacter StaticCharacter where
+
+    {-# INLINE toMissing  #-}
+    toMissing c = complement $ c `xor` c
+
+    {-# INLINE isMissing  #-}
+    isMissing c = c == toMissing c
+                                       
+
 instance EncodableStreamElement StaticCharacter where
 
     decodeElement alphabet character = NE.fromList $ foldMapWithKey f alphabet

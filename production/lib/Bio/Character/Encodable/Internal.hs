@@ -19,4 +19,11 @@ module Bio.Character.Encodable.Internal where
 -- ambiguity group.
 class EncodedAmbiguityGroupContainer w where
 
-  symbolCount :: w -> Int
+    symbolCount :: w -> Int
+
+
+class PossiblyMissingCharacter c where
+
+    toMissing :: c -> c
+
+    isMissing :: c -> Bool

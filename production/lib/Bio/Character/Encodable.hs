@@ -24,7 +24,9 @@ module Bio.Character.Encodable
   , EncodableStaticCharacterStream(..)
   , EncodableStreamElement(..)
   , EncodableStream(..)
+  , PossiblyMissingCharacter(..)
   ) where
 
 import Bio.Character.Encodable.Dynamic
+import Bio.Character.Encodable.Internal
 import Bio.Character.Encodable.Static

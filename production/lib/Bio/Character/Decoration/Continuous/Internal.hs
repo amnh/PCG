@@ -16,6 +16,7 @@ module Bio.Character.Decoration.Continuous.Internal where
 
 
 import Bio.Character.Decoration.Continuous.Class
+import Bio.Character.Encodable
 import Bio.Metadata.Continuous
 import Bio.Metadata.CharacterName
 import Control.Lens
@@ -36,10 +37,21 @@ newtype ContinuousChar = CC (Maybe Double)
 
 
 -- | (✔)
+instance PossiblyMissingCharacter ContinuousChar where
+
+    {-# INLINE toMissing #-}
+    toMissing = const $ CC Nothing
+
+    {-# INLINE isMissing #-}
+    isMissing (CC Nothing) = True
+    isMissing _            = False
+
+
+-- | (✔)
 instance ContinuousCharacter ContinuousChar where
 
     toContinuousCharacter = CC . fmap (fromRational . toRational)
-    
+
 
 -- | (✔)
 instance HasCharacterName (ContinuousDecorationInitial c) CharacterName where
