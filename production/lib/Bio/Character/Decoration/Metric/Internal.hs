@@ -1,6 +1,6 @@
 -----------------------------------------------------------------------------
 -- |
--- Module      :  Bio.Character.Decoration.Fitch.Internal
+-- Module      :  Bio.Character.Decoration.Metric.Internal
 -- Copyright   :  (c) 2015-2015 Ward Wheeler
 -- License     :  BSD-style
 --
@@ -12,11 +12,11 @@
 
 {-# LANGUAGE FlexibleContexts, FlexibleInstances, MultiParamTypeClasses, TypeFamilies #-}
 
-module Bio.Character.Decoration.Fitch.Internal where
+module Bio.Character.Decoration.Metric.Internal where
 
 
+import Bio.Character.Decoration.Metric.Class
 import Bio.Character.Decoration.Discrete
-import Bio.Character.Decoration.Fitch.Class
 import Bio.Character.Encodable
 import Bio.Metadata.CharacterName
 import Bio.Metadata.Discrete
@@ -27,21 +27,21 @@ import Data.Alphabet
 -- |
 -- An abstract initial dynamic character decoration with a polymorphic character
 -- type.
-data FitchDecorationInitial f
-   = FitchDecorationInitial
-   { fitchDecorationInitialCharacter :: f
-   , metadata                        :: DiscreteCharacterMetadataDec f
+data MetricDecorationInitial c
+   = MetricDecorationInitial
+   { metricDecorationInitialCharacter :: c
+   , metadata                        :: DiscreteCharacterMetadataDec c
    }
 
 
 -- | (✔)
-instance HasDiscreteCharacter (FitchDecorationInitial f) f where
+instance HasDiscreteCharacter (MetricDecorationInitial c) c where
 
-    discreteCharacter = lens fitchDecorationInitialCharacter (\e x -> e { fitchDecorationInitialCharacter = x })
+    discreteCharacter = lens metricDecorationInitialCharacter (\e x -> e { metricDecorationInitialCharacter = x })
 
 
 -- | (✔)
-instance HasCharacterAlphabet (FitchDecorationInitial f) (Alphabet String) where
+instance HasCharacterAlphabet (MetricDecorationInitial c) (Alphabet String) where
 
     characterAlphabet = lens getter setter
       where
@@ -50,7 +50,7 @@ instance HasCharacterAlphabet (FitchDecorationInitial f) (Alphabet String) where
 
 
 -- | (✔)
-instance HasCharacterName (FitchDecorationInitial f) CharacterName where
+instance HasCharacterName (MetricDecorationInitial c) CharacterName where
 
     characterName = lens getter setter
       where
@@ -60,7 +60,7 @@ instance HasCharacterName (FitchDecorationInitial f) CharacterName where
 
 -- |
 -- A 'Lens' for the 'symbolicTCMGenerator' field
-instance HasCharacterSymbolTransitionCostMatrixGenerator (FitchDecorationInitial f) (Int -> Int -> Int) where
+instance HasCharacterSymbolTransitionCostMatrixGenerator (MetricDecorationInitial c) (Int -> Int -> Int) where
 
     characterSymbolTransitionCostMatrixGenerator = lens getter setter
       where
@@ -70,7 +70,7 @@ instance HasCharacterSymbolTransitionCostMatrixGenerator (FitchDecorationInitial
 
 -- |
 -- A 'Lens' for the 'transitionCostMatrix' field
-instance (EncodableStreamElement f) => HasCharacterTransitionCostMatrix (FitchDecorationInitial f) (f -> f -> (f, Int)) where
+instance EncodableStreamElement c => HasCharacterTransitionCostMatrix (MetricDecorationInitial c) (c -> c -> (c, Int)) where
 
     characterTCM = lens getter setter
       where
@@ -79,7 +79,7 @@ instance (EncodableStreamElement f) => HasCharacterTransitionCostMatrix (FitchDe
         
 
 -- | (✔)
-instance HasCharacterWeight (FitchDecorationInitial f) Double where
+instance HasCharacterWeight (MetricDecorationInitial c) Double where
 
     characterWeight = lens getter setter
       where
@@ -88,21 +88,20 @@ instance HasCharacterWeight (FitchDecorationInitial f) Double where
 
 
 -- | (✔)
-instance GeneralCharacterMetadata (FitchDecorationInitial f) where
+instance GeneralCharacterMetadata (MetricDecorationInitial c) where
 
 -- | (✔)
-instance (EncodableStreamElement f) => DiscreteCharacterMetadata (FitchDecorationInitial f) f where
+instance EncodableStreamElement c => DiscreteCharacterMetadata (MetricDecorationInitial c) c where
 
 
 -- | (✔)
-instance EncodableStaticCharacter f => DiscreteCharacterDecoration (FitchDecorationInitial f) f where 
-
+instance EncodableStaticCharacter c => DiscreteCharacterDecoration (MetricDecorationInitial c) c where 
     toDiscreteCharacterDecoration name weight alphabet tcm g symbolSet =
-        FitchDecorationInitial
-        { fitchDecorationInitialCharacter = g alphabet symbolSet
-        , metadata                        = discreteMetadata name weight alphabet tcm
+        MetricDecorationInitial
+        { metricDecorationInitialCharacter = g alphabet symbolSet
+        , metadata                           = discreteMetadata name weight alphabet tcm
         }    
 
 
 -- | (✔)
-instance EncodableStaticCharacter f => FitchCharacterDecoration (FitchDecorationInitial f) f where 
+instance EncodableStaticCharacter c => MetricCharacterDecoration (MetricDecorationInitial c) c where

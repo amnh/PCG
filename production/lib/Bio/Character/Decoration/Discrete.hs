@@ -19,16 +19,24 @@ import Bio.Character.Encodable
 import Bio.Metadata.Discrete
 import Control.Lens
 
+import Bio.Metadata.CharacterName
+import Data.Alphabet
+import Data.TCM
+
 
 -- |
--- A 'Lens' for the 'discreteChararcter' field
+-- A 'Lens' for the 'discreteCharacter' field
 class HasDiscreteCharacter s a | s -> a where
 
-    discreteChararcter :: Lens' s a
-    {-# MINIMAL discreteChararcter #-}
+    discreteCharacter :: Lens' s a
+    {-# MINIMAL discreteCharacter #-}
 
 
 class ( HasDiscreteCharacter s a
       , EncodableStaticCharacter a
       , DiscreteCharacterMetadata s a
       ) => DiscreteCharacterDecoration s a | s -> a where 
+
+    toDiscreteCharacterDecoration :: CharacterName -> Double -> Alphabet String -> TCM-> (Alphabet String -> AmbiguityGroup String -> a) ->  AmbiguityGroup String -> s
+    {-# MINIMAL toDiscreteCharacterDecoration #-}
+    

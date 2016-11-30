@@ -114,9 +114,12 @@ library
                        Analysis.Parsimony.Binary.Optimization
                        Analysis.Parsimony.Binary.SequentialAlign
                        Bio.Character
+                       Bio.Character.Decoration.Additive
                        Bio.Character.Decoration.Continuous
                        Bio.Character.Decoration.Dynamic
                        Bio.Character.Decoration.Fitch
+                       Bio.Character.Decoration.Metric
+                       Bio.Character.Decoration.NonMetric
                        Bio.Character.Encodable
                        Bio.Character.Exportable.Class
                        Bio.Character.Parsed
@@ -183,6 +186,8 @@ library
                        Analysis.Parsimony.Binary.DirectOptimization.Internal
                        Analysis.Parsimony.Binary.SequentialAlign.FFI
                        Analysis.Parsimony.Binary.Constraints
+                       Bio.Character.Decoration.Additive.Class
+                       Bio.Character.Decoration.Additive.Internal
                        Bio.Character.Decoration.Continuous.Class
                        Bio.Character.Decoration.Continuous.Internal
                        Bio.Character.Decoration.Discrete
@@ -190,6 +195,10 @@ library
                        Bio.Character.Decoration.Dynamic.Internal
                        Bio.Character.Decoration.Fitch.Class
                        Bio.Character.Decoration.Fitch.Internal
+                       Bio.Character.Decoration.Metric.Class
+                       Bio.Character.Decoration.Metric.Internal
+                       Bio.Character.Decoration.NonMetric.Class
+                       Bio.Character.Decoration.NonMetric.Internal
                        Bio.Character.Encodable.Dynamic
                        Bio.Character.Encodable.Dynamic.Class
                        Bio.Character.Encodable.Dynamic.Internal

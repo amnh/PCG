@@ -19,7 +19,6 @@ import Bio.Character.Decoration.Continuous.Class
 import Bio.Metadata.Continuous
 import Bio.Metadata.CharacterName
 import Control.Lens
-import Data.Alphabet
 
 
 -- |

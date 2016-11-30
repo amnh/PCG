@@ -1,6 +1,6 @@
 -----------------------------------------------------------------------------
 -- |
--- Module      :  Bio.Character.Decoration.Fitch
+-- Module      :  Bio.Character.Decoration.NonMetric
 -- Copyright   :  (c) 2015-2015 Ward Wheeler
 -- License     :  BSD-style
 --
@@ -10,9 +10,9 @@
 --
 -----------------------------------------------------------------------------
 
-module Bio.Character.Decoration.Fitch
-  ( FitchDecorationInitial()
-  , FitchCharacterDecoration()
+module Bio.Character.Decoration.NonMetric
+  ( NonMetricDecorationInitial()
+  , NonMetricCharacterDecoration()
   , GeneralCharacterMetadata()
   , DiscreteCharacterMetadata()
   , DiscreteCharacterDecoration()
@@ -25,7 +25,7 @@ module Bio.Character.Decoration.Fitch
   ) where
 
 import Bio.Character.Decoration.Discrete
-import Bio.Character.Decoration.Fitch.Class
-import Bio.Character.Decoration.Fitch.Internal
+import Bio.Character.Decoration.NonMetric.Class
+import Bio.Character.Decoration.NonMetric.Internal
 import Bio.Metadata.Discrete
 
