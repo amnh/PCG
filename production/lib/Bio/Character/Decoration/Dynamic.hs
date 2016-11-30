@@ -11,9 +11,13 @@
 -----------------------------------------------------------------------------
 
 module Bio.Character.Decoration.Dynamic
-  ( DynamicDecorationInitial(..)
-  , DynamicDecorationDirectOptimization(..)
-  , DynamicDecorationImpliedAlignment(..)
+  ( DynamicDecorationInitial()
+  , DynamicDecorationDirectOptimization()
+  , DynamicDecorationImpliedAlignment()
+  , SimpleDynamicDecoration()
+  , DirectOptimizationDecoration()
+  , ImpliedAlignmentDecoration()
+  , DynamicCharacterDecoration(..)
   , GeneralCharacterMetadata()
   , HasCharacterAlphabet(..)
   , HasCharacterName(..)

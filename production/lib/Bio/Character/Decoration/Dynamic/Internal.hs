@@ -97,10 +97,19 @@ instance (EncodableStream d, Element d ~ c) => DiscreteCharacterMetadata (Dynami
 
 
 -- | (✔)
-instance (EncodableDynamicCharacter d) => DynamicDecoration (DynamicDecorationInitial d) d where
+instance (EncodableDynamicCharacter d) => SimpleDynamicDecoration (DynamicDecorationInitial d) d where
 
+  
+-- | (✔)
+instance (EncodableDynamicCharacter d) => DynamicCharacterDecoration (DynamicDecorationInitial d) d where
 
-
+--    toDynamicCharacterDecoration :: CharacterName -> Double -> Alphabet String -> TCM -> (x -> a) -> x -> s
+    toDynamicCharacterDecoration name weight alphabet tcm g symbolSet = 
+        DynamicDecorationInitial
+        { dynamicDecorationInitialEncodedField = g symbolSet
+        , metadata                             = discreteMetadata name weight alphabet tcm
+        }
+    
   
 
 
@@ -198,7 +207,7 @@ instance HasCharacterWeight (DynamicDecorationDirectOptimization d) Double where
 
 
 -- | (✔)
-instance EncodableDynamicCharacter d => DynamicDecoration (DynamicDecorationDirectOptimization d) d where
+instance EncodableDynamicCharacter d => SimpleDynamicDecoration (DynamicDecorationDirectOptimization d) d where
 
 
 -- | (✔)
@@ -323,8 +332,8 @@ instance GeneralCharacterMetadata (DynamicDecorationImpliedAlignment d) where
 -- | (✔)
 instance (EncodableStream d, Element d ~ c) => DiscreteCharacterMetadata (DynamicDecorationImpliedAlignment d) c where
 
-  -- | (✔)
-instance EncodableDynamicCharacter d => DynamicDecoration            (DynamicDecorationImpliedAlignment d) d where
+-- | (✔)
+instance EncodableDynamicCharacter d => SimpleDynamicDecoration (DynamicDecorationImpliedAlignment d) d where
 
 
 -- | (✔)

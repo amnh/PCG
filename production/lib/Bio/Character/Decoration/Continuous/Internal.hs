@@ -84,8 +84,9 @@ instance GeneralCharacterMetadata (ContinuousDecorationInitial d) where
 -- | (✔)
 instance ContinuousCharacter c => ContinuousDecoration (ContinuousDecorationInitial c) c where
 
-continuousDecorationInitial :: Real r => CharacterName -> Maybe r -> (Maybe r -> c) -> ContinuousDecorationInitial c
-continuousDecorationInitial name v f =
+
+continuousDecorationInitial :: CharacterName -> (x -> c) -> x -> ContinuousDecorationInitial c
+continuousDecorationInitial name f v =
     ContinuousDecorationInitial
     { continuousDecorationInitialCharacter = f v
     , metadata                             = continuousMetadata name 1

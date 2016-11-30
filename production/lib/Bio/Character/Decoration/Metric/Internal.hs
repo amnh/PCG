@@ -98,7 +98,7 @@ instance EncodableStreamElement c => DiscreteCharacterMetadata (MetricDecoration
 instance EncodableStaticCharacter c => DiscreteCharacterDecoration (MetricDecorationInitial c) c where 
     toDiscreteCharacterDecoration name weight alphabet tcm g symbolSet =
         MetricDecorationInitial
-        { metricDecorationInitialCharacter = g alphabet symbolSet
+        { metricDecorationInitialCharacter = g symbolSet
         , metadata                           = discreteMetadata name weight alphabet tcm
         }    
 
