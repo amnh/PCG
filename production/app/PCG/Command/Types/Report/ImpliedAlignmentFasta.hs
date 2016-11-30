@@ -15,23 +15,23 @@
 
 module PCG.Command.Types.Report.ImpliedAlignmentFasta where
 
-import Bio.Character.Dynamic
-import Bio.Metadata   hiding (name)
+import Bio.Character.Encodable
+import Bio.Metadata    hiding (name)
 import Bio.PhyloGraph.DAG
 import Bio.PhyloGraph.Network (nodeIsLeaf)
 import Bio.PhyloGraph.Node
 import Bio.PhyloGraph.Solution
 import Data.Alphabet
 import Data.Foldable
-import Data.IntMap           (IntMap,insert)
+import Data.IntMap            (IntMap,insert)
 import Data.Key
-import Data.List             (intercalate)
-import Data.List.Utility     (chunksOf)
-import Data.Map              (Map, singleton)
-import Data.Monoid           ((<>))
-import           Data.Vector      (Vector)
-import Data.Vector.Instances ()
-import Prelude        hiding (lookup,zipWith)
+import Data.List              (intercalate)
+import Data.List.Utility      (chunksOf)
+import Data.Map               (Map, singleton)
+import Data.Monoid            ((<>))
+import Data.Vector            (Vector)
+import Data.Vector.Instances  ()
+import Prelude         hiding (lookup,zipWith)
 
 outputHUTs :: Bool
 outputHUTs = False
