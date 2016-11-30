@@ -5,7 +5,8 @@ sanity        = -fwarn-duplicate-exports -fwarn-incomplete-patterns -fwarn-missi
 stacktracing  = -prof -auto-all -caf-all
 
 #Flags for `stack`
-haddock       = --haddock --haddock-deps
+haddock       = --haddock --haddock-deps \
+				# --haddock-arguments --mathjax=https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-MML-AM_CHTML
 profiling     = --executable-profiling --library-profiling
 
 
@@ -44,7 +45,7 @@ full-build: install-stack clean stack-setup stack-build-prof
 
 # Upgrade stack if installed or install stack if not installed
 install-stack:
-	stack upgrade || (cabal update && cabal install stack)
+	which stack || (cabal update && cabal install stack)
 
 stack-setup: phylocomgraph.cabal stack.yaml
 	stack setup
