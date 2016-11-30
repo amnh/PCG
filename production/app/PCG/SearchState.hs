@@ -15,6 +15,9 @@
 module PCG.SearchState where
 
 import           Bio.Character
+import           Bio.Character.Decoration.Continuous
+import           Bio.Character.Decoration.Discrete
+import           Bio.Character.Decoration.Dynamic
 import           Bio.Sequence
 import           Bio.Sequence.Block
 import           Bio.PhyloGraphPrime
@@ -26,37 +29,51 @@ import           Control.Evaluation
 
 type SearchState = EvaluationT IO (Either TopologicalResult CharacterResult)
 
+
 type TopologicalResult = PhylogeneticSolution (ReferenceDAG (Maybe Double) (Maybe String))
 
+
 type CharacterResult   = PhylogeneticSolution CharacterDAG
+
 
 type CharacterDAG      = PhylogeneticDAG
                              (Maybe Double)
                              (Maybe String)
-                             StaticCharacterBlock
-                             StaticCharacterBlock
-                             Double
-                             StaticCharacterBlock
-                             StaticCharacterBlock
-                             DynamicChar
+                             UnifiedDiscreteCharacter
+                             UnifiedDiscreteCharacter
+                             UnifiedContinuousCharacter
+                             UnifiedDiscreteCharacter
+                             UnifiedDiscreteCharacter
+                             UnifiedDynamicCharacter
+
 
 type  UnifiedCharacterSequence
     = CharacterSequence
-        StaticCharacterBlock
-        StaticCharacterBlock
-        Double
-        StaticCharacterBlock
-        StaticCharacterBlock
-        DynamicChar
+        UnifiedDiscreteCharacter
+        UnifiedDiscreteCharacter
+        UnifiedContinuousCharacter
+        UnifiedDiscreteCharacter
+        UnifiedDiscreteCharacter
+        UnifiedDynamicCharacter
+
 
 type  UnifiedCharacterBlock
     = CharacterBlock
-        StaticCharacterBlock
-        StaticCharacterBlock
-        Double
-        StaticCharacterBlock
-        StaticCharacterBlock
-        DynamicChar
+        UnifiedDiscreteCharacter
+        UnifiedDiscreteCharacter
+        UnifiedContinuousCharacter
+        UnifiedDiscreteCharacter
+        UnifiedDiscreteCharacter
+        UnifiedDynamicCharacter
+
+
+type UnifiedContinuousCharacter = Maybe (ContinuousDecorationInitial ContinuousChar)
+
+
+type UnifiedDiscreteCharacter   = Maybe (DiscreteDecoration StaticCharacter)
+
+
+type UnifiedDynamicCharacter    = Maybe (DynamicDecorationInitial DynamicChar)
 
 
 -- PhylogeneticDAG (Maybe Double) (Maybe String) (Maybe StaticCharacterBlock) (Maybe DynamicChar)
