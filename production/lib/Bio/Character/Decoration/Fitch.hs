@@ -27,5 +27,4 @@ module Bio.Character.Decoration.Fitch
 import Bio.Character.Decoration.Discrete
 import Bio.Character.Decoration.Fitch.Class
 import Bio.Character.Decoration.Fitch.Internal
-import Bio.Metadata.Discrete
 

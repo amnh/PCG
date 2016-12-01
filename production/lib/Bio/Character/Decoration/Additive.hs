@@ -27,5 +27,4 @@ module Bio.Character.Decoration.Additive
 import Bio.Character.Decoration.Discrete
 import Bio.Character.Decoration.Additive.Class
 import Bio.Character.Decoration.Additive.Internal
-import Bio.Metadata.Discrete
 

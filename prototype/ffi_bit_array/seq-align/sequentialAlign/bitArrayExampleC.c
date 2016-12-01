@@ -3,51 +3,6 @@
 #include <string.h>
 #include "bitArrayExampleC.h"
 
-/**
- *  The following fn should only needed this for testing, so it's not in the .h file.
- *
- *  Prints a representation of a dynamic character as a matrix of bits.
- */
-void printCharBits( const dynChar_t* const input ) {
-    printf("[\n");
-    size_t alphLen = input->alphSize;
-
-    for( size_t elemNum = 0; elemNum < input->numElems; elemNum++ ) {
-        for( size_t bitIdx = 0; bitIdx < alphLen; bitIdx++ ) {
-            if( TestBit(input->dynChar, alphLen * elemNum + bitIdx) ) {
-                // printf("Bit index:        %lu\n", alphLen * elemNum + bitIdx );
-                printf("1,");
-            } else {
-                printf("0,");
-            }
-        }
-        printf("\n");
-    }
-    printf("]\n");
-}
-
-void printElemBits( const dcElement_t* const input ) {
-    size_t alphLen = input->alphSize;
-
-    printf("[ ");
-    for( size_t bitIdx = 0; bitIdx < input->alphSize; bitIdx++ ) {
-        if( TestBit(input->element, bitIdx) ) {
-            //printf("Bit index:        %d\n", alphLen * elemNum + bitIdx );
-            printf("1,");
-        } else {
-            printf("0,");
-        }
-    }
-    printf(" ]\n");
-}
-
-void printDynChar( const dynChar_t* const input ) {
-    printf("\nAlphabet Size:       %lu\n", input->alphSize);
-    printf("Number of Elements:  %lu\n", input->numElems);
-    printf("Internal arr Length: %lu ", input->dynCharLen);
-    printf("(should need %lu.)\n", dynCharSize(input->alphSize, input->numElems) );
-    printCharBits(input);
-}
 
 /**
  *  A sample program that takes in two dynamic characters, and writes the result of any computations to a third

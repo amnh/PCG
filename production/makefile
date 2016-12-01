@@ -6,9 +6,8 @@ stacktracing  = -prof -auto-all -caf-all
 
 #Flags for `stack`
 haddock       = --haddock --haddock-deps
-# For later
-#--mathjax=https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-MML-AM_CHTML
-
+              # For later:
+              # --haddock-arguments --mathjax=https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-MML-AM_CHTML
 profiling     = --executable-profiling --library-profiling
 
 

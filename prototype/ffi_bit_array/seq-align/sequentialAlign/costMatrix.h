@@ -49,17 +49,21 @@ struct KeyHash {
         std::size_t right_seed = 2718281828; // E  used as arbitrarily random seed
 
         std::hash<uint64_t> hasher;
-        size_t elemArrWidth = lhs.alphSize / INT_WIDTH + lhs.alphSize % INT_WIDTH;
+        size_t elemArrWidth = lhs.alphSize / INT_WIDTH + (lhs.alphSize % INT_WIDTH ? 1 : 0);
         for (size_t i = 0; i < elemArrWidth; i++) {
             left_seed  ^= hasher(lhs.element[i]) + 0x9e3779b9 + (left_seed  << 6) + (left_seed  >> 2);
             right_seed ^= hasher(rhs.element[i]) + 0x9e3779b9 + (right_seed << 6) + (right_seed >> 2);
         }
         left_seed ^= hasher(right_seed) + 0x9e3779b9 + (left_seed << 6) + (left_seed >> 2);
+        printf("%lu\n", left_seed);
         return left_seed;
     }
 
     std::size_t operator()(const keys_t& k) const
     {
+        printf("operator hash ()\n");
+        printPackedChar(k.first.element, 1, k.first.alphSize);
+        printPackedChar(k.second.element, 1, k.second.alphSize);
         return hash_combine (k.first, k.second);
     }
 };
@@ -68,7 +72,12 @@ struct KeyEqual {
     // Return true if every `uint64_t` in lhs->element and rhs->element is equal, else false.
     bool operator()(const keys_t& lhs, const keys_t& rhs) const
     {
-        size_t elemArrWidth = lhs.first.alphSize / INT_WIDTH + lhs.first.alphSize % INT_WIDTH; // assume that alphabet sizes for all four dcElements are the same
+        size_t elemArrWidth = lhs.first.alphSize / INT_WIDTH + ((lhs.first.alphSize % INT_WIDTH) ? 1 : 0); // assume that alphabet sizes for all four dcElements are the same
+        printf("operator equal ()\n");
+        printPackedChar(lhs.first.element, 1, lhs.first.alphSize);
+        printPackedChar(rhs.first.element, 1, rhs.first.alphSize);
+        printPackedChar(lhs.second.element, 1, lhs.second.alphSize);
+        printPackedChar(rhs.second.element, 1, rhs.second.alphSize);
         for (size_t i = 0; i < elemArrWidth; i++) {
             if (lhs.first.element[i] != rhs.first.element[i]) {
                 return false;
@@ -77,6 +86,7 @@ struct KeyEqual {
                 return false;
             }
         }
+        printf("equal: true\n");
         return true;
     }
 };
@@ -134,7 +144,13 @@ class CostMatrix
          */
         costMedian_t* findDistance (keys_t& key, int* tcm);
 
-        // can only be called once this.alphabetSize has been set.
+        /** given a tcm, build ambiguous submatrix of cost matrix.
+         *
+         *  Nota bene:
+         *  Can only be called once this.alphabetSize has been set.
+         *
+         *
+         */
         void setUpInitialMatrix (int* tcm);
 
 };

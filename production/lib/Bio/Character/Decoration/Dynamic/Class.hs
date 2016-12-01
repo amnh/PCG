@@ -12,13 +12,21 @@
 
 {-# LANGUAGE FlexibleContexts, FlexibleInstances, FunctionalDependencies, MultiParamTypeClasses #-}
 
+-- For derived instance of PossiblyMissingCharacter
+{-# LANGUAGE UndecidableInstances #-}
+{-# OPTIONS_GHC -fno-warn-orphans #-}
+
 module Bio.Character.Decoration.Dynamic.Class where
 
 
 import Bio.Character.Encodable
+import Bio.Metadata.CharacterName
 import Bio.Metadata.Discrete
 import Control.Lens
+import Data.Alphabet
 import Data.MonoTraversable
+import Data.TCM
+
 
 -- |
 -- A decoration of an initial encoding of a dynamic character which has the
@@ -26,18 +34,18 @@ import Data.MonoTraversable
 class ( HasEncoded s a
       , EncodableDynamicCharacter a
       , DiscreteCharacterMetadata s (Element a)
-      ) => DynamicDecoration s a | s -> a where
+      ) => SimpleDynamicDecoration s a | s -> a where
 
-  
--- |
+
+  -- |
 -- A decoration of a dynamic character with all direct optimization annotations.
 --
--- Is a sub-class of 'DynamicDecoration'.
-class ( HasFinalGapped         s a
-      , HasFinalUngapped       s a
-      , HasPreliminaryGapped   s a
-      , HasPreliminaryUngapped s a
-      , DynamicDecoration      s a
+-- Is a sub-class of 'DynamicCharacterDecoration'.
+class ( HasFinalGapped          s a
+      , HasFinalUngapped        s a
+      , HasPreliminaryGapped    s a
+      , HasPreliminaryUngapped  s a
+      , SimpleDynamicDecoration s a
       ) => DirectOptimizationDecoration s a | s -> a where
 
 
@@ -48,6 +56,25 @@ class ( HasFinalGapped         s a
 class ( HasImpliedAlignment           s a
       , DirectOptimizationDecoration  s a
       ) => ImpliedAlignmentDecoration s a | s -> a where
+
+
+-- |
+-- A decoration of an initial encoding of a dynamic character which has the
+-- appropriate 'Lens' & character class constraints.
+class ( SimpleDynamicDecoration s a
+      ) => DynamicCharacterDecoration s a | s -> a where
+
+    toDynamicCharacterDecoration :: CharacterName -> Double -> Alphabet String -> TCM -> (x -> a) -> x -> s
+    {-# MINIMAL toDynamicCharacterDecoration #-}
+
+
+instance ( DynamicCharacterDecoration s a
+         , PossiblyMissingCharacter a
+         ) => PossiblyMissingCharacter s where
+
+    isMissing = isMissing . (^. encoded)
+
+    toMissing x = x & encoded %~ toMissing 
 
 
 -- |

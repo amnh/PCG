@@ -47,7 +47,6 @@ library
                      , hashable
                      , keys
                      , lens
-                     , ListZipper
                      , matrix
                      , megaparsec       >=5.0
                      , mono-traversable >=1.0
@@ -116,6 +115,7 @@ library
                        Bio.Character
                        Bio.Character.Decoration.Additive
                        Bio.Character.Decoration.Continuous
+                       Bio.Character.Decoration.Discrete
                        Bio.Character.Decoration.Dynamic
                        Bio.Character.Decoration.Fitch
                        Bio.Character.Decoration.Metric
@@ -190,7 +190,6 @@ library
                        Bio.Character.Decoration.Additive.Internal
                        Bio.Character.Decoration.Continuous.Class
                        Bio.Character.Decoration.Continuous.Internal
-                       Bio.Character.Decoration.Discrete
                        Bio.Character.Decoration.Dynamic.Class
                        Bio.Character.Decoration.Dynamic.Internal
                        Bio.Character.Decoration.Fitch.Class
@@ -279,7 +278,6 @@ executable pcg
                      , hashable
                      , keys
                      , lens
-                     , ListZipper
                      , matrix
                      , megaparsec       >=5.0
                      , mono-traversable >=1.0

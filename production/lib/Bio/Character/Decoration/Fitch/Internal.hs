@@ -99,7 +99,7 @@ instance EncodableStaticCharacter f => DiscreteCharacterDecoration (FitchDecorat
 
     toDiscreteCharacterDecoration name weight alphabet tcm g symbolSet =
         FitchDecorationInitial
-        { fitchDecorationInitialCharacter = g alphabet symbolSet
+        { fitchDecorationInitialCharacter = g symbolSet
         , metadata                        = discreteMetadata name weight alphabet tcm
         }    
 

@@ -27,5 +27,4 @@ module Bio.Character.Decoration.NonMetric
 import Bio.Character.Decoration.Discrete
 import Bio.Character.Decoration.NonMetric.Class
 import Bio.Character.Decoration.NonMetric.Internal
-import Bio.Metadata.Discrete
 
