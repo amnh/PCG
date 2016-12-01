@@ -40,7 +40,7 @@ import qualified Data.IntSet                as IS
 import           Data.Key
 import           Data.List                         (transpose, zip4)
 import           Data.List.NonEmpty                (NonEmpty( (:|) ))
-import qualified Data.List.NonEmpty         as NE  (fromList)
+import qualified Data.List.NonEmpty         as NE
 import           Data.List.Utility                 (duplicates)
 import           Data.Map                          (Map, intersectionWith, keys)
 import qualified Data.Map                   as Map
@@ -132,19 +132,22 @@ rectifyResults2 fprs =
           (False, False) -> Right . Right . PhylogeneticSolution . pure
                           . foldMap1 (matchToChars charSeqs) $ NE.fromList suppliedForests
       where
+        defaultCharacterSequenceDatum = undefined -- toDiscreteCharacterDecoration Nothing
         
         singletonComponent (label, datum) = PhylogeneticForest . pure . PDAG $ unfoldDAG rootLeafGen True
           where
             rootLeafGen x
-              | x         = (                [], PNode "Trivial Root" Nothing    , [(Nothing, not x)])
-              | otherwise = ([(Nothing, not x)], PNode label         (Just datum), []                )
+              | x         = (                [], PNode (Just "Trivial Root") defaultCharacterSequenceDatum, [(Nothing, not x)])
+              | otherwise = ([(Nothing, not x)], PNode (Just label         )                         datum, []                )
 
         matchToChars :: Map String UnifiedCharacterSequence
                      -> PhylogeneticForest ParserTree
                      -> PhylogeneticForest CharacterDAG
         matchToChars charMapping = fmap (PDAG . fmap f)
           where
-            f label = PNode label $ label >>= (`lookup` charMapping)
+            f label = PNode label $ fromMaybe defaultCharacterSequenceDatum charLabelMay
+              where
+                charLabelMay     = label >>= (`lookup` charMapping)
 {-
               case e of
                   Nothing    -> PNode "HTU" Nothing
@@ -308,8 +311,8 @@ joinSequences2 = collapseAndMerge . reduceAlphabets . deriveCorrectTCMs . derive
                     alphabetLength    = length specifiedAlphabet
                     specifiedAlphabet = alphabet charMeta
                     charWeight        = weight   charMeta
-                    missingCharValue  = pure . NE.fromList $ toList specifiedAlphabet
-                    staticTransform   = encodeStream specifiedAlphabet . fromMaybe missingCharValue
+                    missingCharValue  = NE.fromList $ toList specifiedAlphabet
+                    staticTransform   = encodeElement specifiedAlphabet . maybe missingCharValue NE.head
                     staticCharacter   = Just $ toDiscreteCharacterDecoration charName charWeight specifiedAlphabet tcm staticTransform charMay
                     dynamicTransform  = maybe (Missing alphabetLength) (encodeStream specifiedAlphabet)
                     dynamicCharacter  = Just $ toDynamicCharacterDecoration  charName charWeight specifiedAlphabet tcm dynamicTransform charMay

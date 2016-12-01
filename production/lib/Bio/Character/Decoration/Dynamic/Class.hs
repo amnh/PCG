@@ -68,6 +68,7 @@ class ( SimpleDynamicDecoration s a
     {-# MINIMAL toDynamicCharacterDecoration #-}
 
 
+{-
 instance ( DynamicCharacterDecoration s a
          , PossiblyMissingCharacter a
          ) => PossiblyMissingCharacter s where
@@ -75,6 +76,7 @@ instance ( DynamicCharacterDecoration s a
     isMissing = isMissing . (^. encoded)
 
     toMissing x = x & encoded %~ toMissing 
+-}
 
 
 -- |

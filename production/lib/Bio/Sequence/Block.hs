@@ -21,13 +21,9 @@ module Bio.Sequence.Block
   ) where
 
 
---import Bio.Character
 import Bio.Character.Encodable
 import Bio.Character.Decoration.Continuous
---import Bio.Character.Decoration.Discrete
---import Bio.Character.Decoration.Dynamic
 import Bio.Metadata.CharacterName
---import Data.Alphabet
 import Data.Monoid                         (mappend)
 import Data.Semigroup
 import Data.TCM
@@ -51,12 +47,7 @@ data CharacterBlock m i c f a d
    } deriving (Eq, Show)
 
 
-instance ( EncodedAmbiguityGroupContainer m, Semigroup m
-         , EncodedAmbiguityGroupContainer i, Semigroup i
-         , Semigroup c
-         , EncodedAmbiguityGroupContainer f, Semigroup f
-         , EncodedAmbiguityGroupContainer a, Semigroup a
-         ) => Semigroup (CharacterBlock m i c f a d) where
+instance Semigroup (CharacterBlock m i c f a d) where
     lhs <> rhs =
         CharacterBlock
           { continuousCharacterBins   = continuousCharacterBins   lhs `mappend` continuousCharacterBins   rhs

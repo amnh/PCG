@@ -26,7 +26,8 @@ module Bio.Character.Decoration.Discrete
   , HasCharacterSymbolTransitionCostMatrixGenerator(..)
   , HasCharacterTransitionCostMatrix(..)
   , HasCharacterWeight(..)
-  , HasDiscreteCharacter(..) 
+  , HasDiscreteCharacter(..)
+  , PossiblyMissingCharacter(..)
   ) where
 
 
@@ -36,6 +37,7 @@ import Control.Lens
 
 import Bio.Metadata.CharacterName
 import Data.Alphabet
+import Data.List.Utility
 import Data.TCM
 
 
@@ -44,6 +46,29 @@ data DiscreteDecoration c
    { additiveDecorationInitialCharacter :: c
    , metadata                           :: DiscreteCharacterMetadataDec c
    }
+
+{-
+  TODO: Complete this instance
+
+instance ( HasCharacterAlphabet s (Alphabet String)
+         , HasDiscreteCharacter s a
+         ) => Show s where
+
+    show dec
+      | isAlphabetDNA       alphabet = 
+      | isAlphabetAminoAcid alphabet = 
+      | otherwise           alphabet = 
+      where
+        symbols   = decodeElement alphabet character
+        character = discreteCharacter dec
+        alphabet  = characterAlphabet dec
+-}
+
+instance PossiblyMissingCharacter c => PossiblyMissingCharacter (DiscreteDecoration c) where
+
+    isMissing = isMissing . (^. discreteCharacter)
+
+    toMissing x = x & discreteCharacter %~ toMissing
 
 
 -- |
@@ -63,6 +88,7 @@ class ( HasDiscreteCharacter s a
     {-# MINIMAL toDiscreteCharacterDecoration #-}
 
 
+{-
 instance ( DiscreteCharacterDecoration s a 
          , PossiblyMissingCharacter a
          ) => PossiblyMissingCharacter s where
@@ -70,7 +96,7 @@ instance ( DiscreteCharacterDecoration s a
     isMissing = isMissing . (^. discreteCharacter)
 
     toMissing x = x & discreteCharacter %~ toMissing
-
+-}
 
 
 -- | (✔)

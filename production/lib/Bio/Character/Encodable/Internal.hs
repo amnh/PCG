@@ -27,3 +27,10 @@ class PossiblyMissingCharacter c where
     toMissing :: c -> c
 
     isMissing :: c -> Bool
+
+
+instance PossiblyMissingCharacter c => PossiblyMissingCharacter (Maybe c) where
+
+    toMissing = fmap toMissing
+
+    isMissing = maybe False isMissing

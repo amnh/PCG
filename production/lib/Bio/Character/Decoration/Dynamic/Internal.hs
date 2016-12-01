@@ -35,6 +35,15 @@ data DynamicDecorationInitial d
    }
 
 
+
+instance PossiblyMissingCharacter d => PossiblyMissingCharacter (DynamicDecorationInitial d) where
+
+    isMissing = isMissing . (^. encoded)
+
+    toMissing x = x & encoded %~ toMissing
+                                            
+
+
 -- | (✔)
 instance HasEncoded (DynamicDecorationInitial d) d where
 
