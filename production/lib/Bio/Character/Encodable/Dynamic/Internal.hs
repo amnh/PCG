@@ -21,7 +21,7 @@
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
 module Bio.Character.Encodable.Dynamic.Internal
-  ( DynamicChar (DC)
+  ( DynamicChar (DC,Missing)
   , DynamicChars
   , DynamicCharacterElement()
   ) where

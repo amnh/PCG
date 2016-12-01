@@ -13,7 +13,7 @@
 -----------------------------------------------------------------------------
 
 module Bio.Character.Encodable
-  ( DynamicChar(DC)
+  ( DynamicChar(DC,Missing)
   , DynamicChars
   , DynamicCharacterElement()
   , StaticCharacter()
