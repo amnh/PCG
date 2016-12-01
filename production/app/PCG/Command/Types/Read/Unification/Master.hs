@@ -15,6 +15,10 @@
 module PCG.Command.Types.Read.Unification.Master where
 
 import           Bio.Character
+import           Bio.Character.Encodable
+import           Bio.Character.Decoration.Continuous hiding (characterName)
+import           Bio.Character.Decoration.Discrete   hiding (characterName)
+import           Bio.Character.Decoration.Dynamic    hiding (characterName)
 import           Bio.Character.Parsed
 import           Bio.Sequence
 import           Bio.Sequence.Block
@@ -53,7 +57,7 @@ import           PCG.Command.Types.Read.Unification.UnificationError
 import           PCG.SearchState 
 import           Prelude                    hiding (lookup, zip, zipWith)
 
--- import Debug.Trace (trace)
+import Debug.Trace (trace)
 
 
 data FracturedParseResult
@@ -298,12 +302,18 @@ joinSequences2 = collapseAndMerge . reduceAlphabets . deriveCorrectTCMs . derive
                 encodeBinToSingletonBlock :: (Maybe ParsedChar, ParsedCharacterMetadata, TCM, CharacterName)
                                           -> UnifiedCharacterBlock
                 encodeBinToSingletonBlock (charMay, charMeta, tcm, charName)
-                  | isDynamic charMeta = dynamicSingleton  specifiedAlphabet charName tcm (encodeStream specifiedAlphabet) charMay
-                  | otherwise          = discreteSingleton specifiedAlphabet charName tcm staticTransform charMay
+                  | isDynamic charMeta = dynamicSingleton     dynamicCharacter
+                  | otherwise          = discreteSingleton tcm staticCharacter
                   where
+                    alphabetLength    = length specifiedAlphabet
                     specifiedAlphabet = alphabet charMeta
+                    charWeight        = weight   charMeta
                     missingCharValue  = pure . NE.fromList $ toList specifiedAlphabet
                     staticTransform   = encodeStream specifiedAlphabet . fromMaybe missingCharValue
+                    staticCharacter   = Just $ toDiscreteCharacterDecoration charName charWeight specifiedAlphabet tcm staticTransform charMay
+                    dynamicTransform  = maybe (Missing alphabetLength) (encodeStream specifiedAlphabet)
+                    dynamicCharacter  = Just $ toDynamicCharacterDecoration  charName charWeight specifiedAlphabet tcm dynamicTransform charMay
+                        
 
             -- Necessary for mixing [] with NonEmpty
             prepend :: [a] -> NonEmpty a -> NonEmpty a
