@@ -41,7 +41,8 @@ sankoffPreOrder = undefined
 -- possible characters, including ambiguous characters. For extant character states \(i_c_x\) on
 -- the leaf, and for each possible character state, \(i\)
 -- \[ cost(i_c) =
---       \] \(i \elem s_x\)
+--       \] \(i \elem s_x\), etc...
+-- TODO: finish above comment once MathJax is working
 initializeCostVector :: EncodableStaticCharacter c => c -> SankoffCharacterDecoration c
 initializeCostVector inputChar = returnChar
     where
@@ -56,14 +57,23 @@ initializeCostVector inputChar = returnChar
 updateCostVector :: EncodableStaticCharacter c => c -> SankoffCharacterDecoration c -> SankoffCharacterDecoration c
 updateCostVector curDecoration childDecoration = returnChar
     where
-        -- fold over alphabet states, i
-            -- fold over alphabet states, j maxBound
-                -- if minCost child[i] + tcmCost (i, j) < curMin
-                    -- then curMin = minCost child[i] + tcmCost(i, j)
-                    -- else curMin = curMin
-            -- costList[i] = curMin
+        minCost, costVector, dirVector = foldl f [] [] $ getAlphabet curDecoration -- fold over alphabet states, i
+            where
+                f alphIdxI costList dirList = foldl g getAlphabet  [maxBound :: Word32] curDecoration -- fold over alphabet states, j
+                    where
+                        g curMin alphIdxJ = finalMin costList dirList
+                            where
+                                curMin =
+                                    -- if minCost child[i] + tcmCost (i, j) < curMin
+                                    if newMin < curMin
+                                        then newMin
+                                        else curMin
+                                newMin = minCost childDecoration + tcm[alphIdxI, alphIdxJ]
+                    costList : curMin
+        dirList = costList[i] = curMin
+            foldl
             -- fold over alphabet states, j
                 -- if curMin == minCost child[i] + tcmCost(i, j)
                     -- then dirVector `setBit` j
                     -- else dirVector `clearBit` j
-        -- returnChar = SankoffCharacterDecoration costList dirVector curMin
+        returnChar = SankoffCharacterDecoration costVector dirVector minCost
