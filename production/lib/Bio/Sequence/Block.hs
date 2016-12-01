@@ -21,13 +21,13 @@ module Bio.Sequence.Block
   ) where
 
 
-import Bio.Character
+--import Bio.Character
 import Bio.Character.Encodable
 import Bio.Character.Decoration.Continuous
-import Bio.Character.Decoration.Discrete
-import Bio.Character.Decoration.Dynamic
+--import Bio.Character.Decoration.Discrete
+--import Bio.Character.Decoration.Dynamic
 import Bio.Metadata.CharacterName
-import Data.Alphabet
+--import Data.Alphabet
 import Data.Monoid                         (mappend)
 import Data.Semigroup
 import Data.TCM
@@ -95,10 +95,8 @@ continuousSingleton nameValue transformation continuousValue =
     bin = continuousDecorationInitial nameValue transformation continuousValue
 
 
-discreteSingleton :: EncodableStaticCharacter s
-                  => Alphabet String -> CharacterName -> TCM -> (a -> s) -> a
-                  -> CharacterBlock (DiscreteDecoration s) (DiscreteDecoration s) c (DiscreteDecoration s) (DiscreteDecoration s) d
-discreteSingleton alphabetValues nameValue tcmValues transformation input =
+discreteSingleton :: TCM -> s -> CharacterBlock s s c s s d
+discreteSingleton tcmValues dec =
     case tcmStructure diagnosis of
       NonSymmetric -> CharacterBlock mempty mempty mempty mempty bin    mempty
       Symmetric    -> CharacterBlock mempty mempty mempty mempty bin    mempty
@@ -108,17 +106,8 @@ discreteSingleton alphabetValues nameValue tcmValues transformation input =
       NonAdditive  -> CharacterBlock mempty bin    mempty mempty mempty mempty
   where
     diagnosis   = diagnoseTcm tcmValues
-    weightValue = fromIntegral $ factoredWeight diagnosis
-    bin         = pure $ toDiscreteCharacterDecoration nameValue weightValue alphabetValues (factoredTcm diagnosis) transformation input
+    bin         = pure dec
 
 
-dynamicSingleton :: EncodableDynamicCharacter d
-                 => Alphabet String -> CharacterName -> TCM -> (x -> d) -> x -> CharacterBlock m i c f a (DynamicDecorationInitial d)
-dynamicSingleton alphabetValues nameValue tcmValues transformation input =
-    CharacterBlock mempty mempty mempty mempty mempty bin
-  where
-    diagnosis   = diagnoseTcm tcmValues
-    weightValue = fromIntegral $ factoredWeight diagnosis
-    bin         = pure $ toDynamicCharacterDecoration nameValue weightValue alphabetValues (factoredTcm diagnosis) transformation input
-
-    
+dynamicSingleton :: d -> CharacterBlock m i c f a d
+dynamicSingleton = CharacterBlock mempty mempty mempty mempty mempty . pure
