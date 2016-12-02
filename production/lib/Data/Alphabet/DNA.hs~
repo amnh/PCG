@@ -1,0 +1,27 @@
+
+module
+
+
+-- | Substitutions for converting to a DNA sequence based on IUPAC codes.
+iupacNucleotideSubstitutions :: Map Char (NonEmpty String)
+iupacNucleotideSubstitutions =
+      (fmap pure . NE.fromList) <$> M.fromList
+          [ ('A', "A")
+          , ('C', "C")
+          , ('G', "G")
+          , ('T', "T")
+          , ('R', "AG")
+          , ('Y', "CT")
+          , ('S', "CG")
+          , ('W', "AT")
+          , ('K', "GT")
+          , ('M', "AC")
+          , ('B', "CGT")
+          , ('D', "AGT")
+          , ('H', "ACT")
+          , ('V', "ACG")
+          , ('N', "ACGT")
+          , ('-', "-")
+          , ('.', "-")
+          , ('?', "?")
+          ] 
