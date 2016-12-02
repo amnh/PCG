@@ -1,6 +1,6 @@
 {-# LANGUAGE FlexibleInstances #-}
 
-module Bio.Character.Static.Test
+module Bio.Character.Encodable.Static.Test
   ( testSuite
   ) where
 

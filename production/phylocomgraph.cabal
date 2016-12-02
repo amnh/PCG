@@ -410,6 +410,7 @@ Test-Suite testsuite
   main-is:             TestAll.hs
 
   build-depends:       base                 >=4.8
+                     , bimap                -any
                      , bv                   -any
                      , containers           >=0.5.8
                      , criterion            -any
@@ -476,19 +477,66 @@ Test-Suite testsuite
                        Analysis.Parsimony.Binary.Test
                        Analysis.Parsimony.Binary.DirectOptimization
                        Analysis.Parsimony.Binary.Fitch
-                       Bio.Metadata.Class
-                       Bio.Metadata.Internal
-                       Bio.Character.Dynamic
-                       Bio.Character.Dynamic.Class
-                       Bio.Character.Dynamic.Internal
-                       Bio.Character.Dynamic.Test
+                       Bio.Character
+                       Bio.Character.Decoration.Additive
+                       Bio.Character.Decoration.Continuous
+                       Bio.Character.Decoration.Discrete
+                       Bio.Character.Decoration.Dynamic
+                       Bio.Character.Decoration.Fitch
+                       Bio.Character.Decoration.Metric
+                       Bio.Character.Decoration.NonMetric
+                       Bio.Character.Encodable
                        Bio.Character.Exportable.Class
                        Bio.Character.Parsed
+                       Bio.Character.Decoration.Additive.Class
+                       Bio.Character.Decoration.Additive.Internal
+                       Bio.Character.Decoration.Continuous.Class
+                       Bio.Character.Decoration.Continuous.Internal
+                       Bio.Character.Decoration.Dynamic.Class
+                       Bio.Character.Decoration.Dynamic.Internal
+                       Bio.Character.Decoration.Fitch.Class
+                       Bio.Character.Decoration.Fitch.Internal
+                       Bio.Character.Decoration.Metric.Class
+                       Bio.Character.Decoration.Metric.Internal
+                       Bio.Character.Decoration.NonMetric.Class
+                       Bio.Character.Decoration.NonMetric.Internal
+                       Bio.Character.Encodable.Dynamic
+                       Bio.Character.Encodable.Dynamic.Class
+                       Bio.Character.Encodable.Dynamic.Internal
+                       Bio.Character.Encodable.Internal
+                       Bio.Character.Encodable.Static
+                       Bio.Character.Encodable.Static.Class
+                       Bio.Character.Encodable.Static.Internal
+                       Bio.Character.Encodable.Stream
                        Bio.Character.Parsed.Class
                        Bio.Character.Parsed.Internal
-                       Bio.Character.Stream
                        Bio.Metadata
+                       Bio.Metadata.CharacterName
+                       Bio.Metadata.Continuous
+                       Bio.Metadata.Discrete
                        Bio.Metadata.Parsed
+                       Bio.Metadata.Class
+                       Bio.Metadata.General
+                       Bio.Metadata.General.Class
+                       Bio.Metadata.General.Internal
+                       Bio.Metadata.Discrete.Class
+                       Bio.Metadata.Discrete.Internal
+                       Bio.Metadata.Internal
+                       Bio.Sequence
+                       Bio.Sequence.Block
+                       Bio.PhyloGraphPrime
+                       Bio.PhyloGraphPrime.Component
+                       Bio.PhyloGraphPrime.Node
+                       Bio.PhyloGraphPrime.ReferenceDAG
+                       Bio.PhyloGraphPrime.ZipperDAG
+                       Bio.PhyloGraphPrime.Forest
+                       Bio.PhyloGraphPrime.ReferenceDAG.Internal
+                       Bio.PhyloGraphPrime.ZipperDAG.Internal
+                       Bio.Sequence.Internal
+
+
+
+
                        Bio.PhyloGraph
                        Bio.PhyloGraph.DAG
                        Bio.PhyloGraph.DAG.Class
@@ -522,14 +570,10 @@ Test-Suite testsuite
                        Bio.PhyloGraph.Tree.Referential
                        Bio.PhyloGraph.Tree.Rose
                        Bio.PhyloGraph.Tree.Rose.Class
-                       Bio.Character.Internal
-                       Bio.PhyloGraphPrime.Component
-                       Bio.PhyloGraphPrime.Forest
-                       Bio.PhyloGraphPrime.ReferenceDAG
-                       Bio.PhyloGraphPrime.ReferenceDAG.Internal
                        Control.Evaluation.Internal
                        Control.Evaluation.Test
                        Control.Evaluation.Unit
+                       Data.Alphabet.IUPAC
                        Data.BitMatrix.Internal
                        Data.BitMatrix.Test
                        Data.List.Utility
@@ -599,6 +643,6 @@ Test-Suite testsuite
                        Bio.PhyloGraph.DAG.Test
                        Analysis.Parsimony.Binary.Constraints
                        Analysis.Parsimony.Binary.SequentialAlign
-                       Bio.Character.Static.Test
+                       Bio.Character.Encodable.Static.Test
 --                       Analysis.Parsimony.Binary.SequentialAlign.SeqAlignFFI
 
