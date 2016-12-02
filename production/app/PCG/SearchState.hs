@@ -82,6 +82,19 @@ type UnifiedDynamicCharacter    = Maybe (DynamicDecorationInitial DynamicChar)
 data  PhylogeneticDAG e n m i c f a d
     = PDAG (ReferenceDAG e (PhylogeneticNode n (CharacterSequence m i c f a d)))
 
+instance ( Show e
+         , Show n
+         , Show m
+         , Show i
+         , Show c
+         , Show f
+         , Show a
+         , Show d
+         ) => Show (PhylogeneticDAG e n m i c f a d) where
+
+    show (PDAG dag) =
+        show dag
+
 
 nodePreorderMap :: (n -> [n'] -> n')
 nodePreorderMap = undefined
