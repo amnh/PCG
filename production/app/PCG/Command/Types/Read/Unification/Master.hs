@@ -132,7 +132,7 @@ rectifyResults2 fprs =
           (False, False) -> Right . Right . PhylogeneticSolution . pure
                           . foldMap1 (matchToChars charSeqs) $ NE.fromList suppliedForests
       where
-        defaultCharacterSequenceDatum = undefined -- toDiscreteCharacterDecoration Nothing
+        defaultCharacterSequenceDatum = fromBlocks . fmap toMissingCharacters . toBlocks . head $ toList charSeqs
         
         singletonComponent (label, datum) = PhylogeneticForest . pure . PDAG $ unfoldDAG rootLeafGen True
           where

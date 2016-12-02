@@ -24,6 +24,7 @@ module Bio.Sequence.Block
 import Bio.Character.Encodable
 import Bio.Character.Decoration.Continuous
 import Bio.Metadata.CharacterName
+import Data.Foldable
 import Data.Monoid                         (mappend)
 import Data.Semigroup
 import Data.TCM
@@ -44,10 +45,11 @@ data CharacterBlock m i c f a d
    , metricCharacterBins       :: Vector m
    , nonNonMetricCharacterBins :: Vector i
    , dynamicCharacters         :: Vector d
-   } deriving (Eq, Show)
+   } deriving (Eq)
 
 
 instance Semigroup (CharacterBlock m i c f a d) where
+
     lhs <> rhs =
         CharacterBlock
           { continuousCharacterBins   = continuousCharacterBins   lhs `mappend` continuousCharacterBins   rhs
@@ -58,7 +60,32 @@ instance Semigroup (CharacterBlock m i c f a d) where
           , dynamicCharacters         = dynamicCharacters         lhs `mappend` dynamicCharacters         rhs
           }
 
-    
+
+instance ( Show m
+         , Show i
+         , Show i
+         , Show c
+         , Show f
+         , Show a
+         , Show d
+         ) => Show (CharacterBlock m i c f a d) where
+
+    show block = unlines
+       [ "Continuous Characters:"
+       , unlines . fmap (("  " <>) . show) . toList $ continuousCharacterBins block
+       , "Fitch Characters:"
+       , unlines . fmap (("  " <>) . show) . toList $ continuousCharacterBins block
+       , "Additive Characters:"
+       , unlines . fmap (("  " <>) . show) . toList $ continuousCharacterBins block
+       , "Metric Characters:"
+       , unlines . fmap (("  " <>) . show) . toList $ continuousCharacterBins block
+       , "NonMetric Characters:"
+       , unlines . fmap (("  " <>) . show) . toList $ continuousCharacterBins block
+       , "Dynamic Characters:"
+       , unlines . fmap (("  " <>) . show) . toList $ continuousCharacterBins block
+       ]
+
+
 toMissingCharacters :: ( PossiblyMissingCharacter m
                        , PossiblyMissingCharacter i
                        , PossiblyMissingCharacter c

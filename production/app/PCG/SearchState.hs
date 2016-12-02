@@ -24,6 +24,7 @@ import           Bio.PhyloGraphPrime
 import           Bio.PhyloGraphPrime.Node
 import           Bio.PhyloGraphPrime.ReferenceDAG
 import           Control.Evaluation
+import           Data.Monoid
 
 -- import Debug.Trace
 
@@ -93,7 +94,9 @@ instance ( Show e
          ) => Show (PhylogeneticDAG e n m i c f a d) where
 
     show (PDAG dag) =
-        show dag
+        show dag <> "\n" <> foldMap f dag
+      where
+        f (PNode n sek) = unlines [show n, show sek]
 
 
 nodePreorderMap :: (n -> [n'] -> n')
