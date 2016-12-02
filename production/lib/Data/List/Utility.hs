@@ -20,12 +20,14 @@ import Data.List     (sort, sortBy)
 import Data.Map      (assocs, empty, insertWith)
 import Data.Ord      (comparing)
 
+
 -- | Determines whether a foldable structure contains a single element.
 isSingleton :: Foldable t => t a -> Bool
 isSingleton = f . toList
   where
     f [_] = True
     f  _  = False
+
 
 -- | Returns the list of elements which are not unique in the input list.
 duplicates :: (Foldable t, Ord a) => t a -> [a]
@@ -37,6 +39,7 @@ duplicates = duplicates' . sort . toList
                            then (x:) . duplicates $ dropWhile (==y) ys 
                            else duplicates (y:ys)
 
+
 -- | Returns the element that occurs the most often in the list.
 mostCommon :: (Foldable t, Ord a) => t a -> Maybe a
 mostCommon xs
@@ -44,6 +47,7 @@ mostCommon xs
   | otherwise = case occurances xs of
                   []      -> Nothing
                   (x,_):_ -> Just x
+
 
 -- | Returns a mapping of each unique element in the list
 --   paired with how often the element occurs in the list.
@@ -60,6 +64,7 @@ occurances = collateOccuranceMap . buildOccuranceMap
         descending GT  = LT
         descending x   = x
 
+
 -- | chunksOf is based on Text.chunksOf, but is more general.
 chunksOf :: Foldable t => Int -> t a -> [[a]]
 chunksOf n = chunksOf' . toList
@@ -69,6 +74,7 @@ chunksOf n = chunksOf' . toList
         (y,[]) -> [y]
         (y,ys) -> y : chunksOf' ys
 
+
 -- | Useful function to check subsets of lists.
 subsetOf :: (Foldable t, Foldable c, Ord a) => t a -> c a -> Bool
 subsetOf xs ys = xs' `intersection` ys' == xs'
@@ -76,11 +82,31 @@ subsetOf xs ys = xs' `intersection` ys' == xs'
     xs' = foldr insert mempty xs 
     ys' = foldr insert mempty ys 
 
--- | Applies a transformation to each element fo the structure and asserts that
---   transformed values are equal for all elements of the structure.
+
+-- |
+-- Applies a transformation to each element fo the structure and asserts that
+-- transformed values are equal for all elements of the structure.
 equalityOf :: (Eq b, Foldable t) => (a -> b) -> t a -> Bool
 equalityOf f xs =
   case toList xs of
     []   -> True
     [_]  -> True
     y:ys -> all (\e -> f y == f e) ys
+
+
+-- |
+-- Applies a transformation to each element fo the structure.
+-- If /every/ application of the transformation yeilds the same result value
+-- for each element of the structure then this function will return @Just v@
+-- where @v@ is the invariant value accross the transformation.
+-- If the transformation does not produce an invariant value accross the
+-- structure, or the structure is empty, this function returns @Nothing@.
+invariantTransformation :: (Eq b, Foldable t) => (a -> b) -> t a -> Maybe b
+invariantTransformation f xs =
+  case toList xs of
+    []   -> Nothing
+    y:ys ->
+      let v = f y
+      in  if all (\e -> f e == v) ys
+          then Just v
+          else Nothing

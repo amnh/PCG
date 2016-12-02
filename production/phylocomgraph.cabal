@@ -37,6 +37,7 @@ library
   
   -- Other library packages from which modules are imported.
   build-depends:       base             >=4.8
+                     , bimap
                      , bv
                        -- Required for Data.Map.restrictKeys
                      , containers       >=0.5.8
@@ -235,6 +236,8 @@ library
                        Control.Evaluation.Unit
                        Control.Evaluation.Internal
                        Control.Evaluation.Trans
+                       Data.Alphabet.IUPAC
+                       Data.Alphabet.Internal
                        Data.BitMatrix.Internal
                        Data.TCM.Internal
                        File.Format.TNT.Command.CCode
