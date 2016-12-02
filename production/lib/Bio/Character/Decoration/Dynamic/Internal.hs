@@ -35,6 +35,18 @@ data DynamicDecorationInitial d
    }
 
 
+instance ( EncodableStreamElement (Element d)
+         , MonoFoldable d
+         , PossiblyMissingCharacter d
+         ) => Show (DynamicDecorationInitial d) where
+
+    show dec
+      | isMissing character = "<Missing>"
+      | otherwise           = ofoldMap (showStreamElement alphabet) character 
+      where
+        character = dec ^. encoded
+        alphabet  = dec ^. characterAlphabet 
+
 
 instance PossiblyMissingCharacter d => PossiblyMissingCharacter (DynamicDecorationInitial d) where
 
