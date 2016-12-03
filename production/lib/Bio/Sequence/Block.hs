@@ -71,18 +71,18 @@ instance ( Show m
          ) => Show (CharacterBlock m i c f a d) where
 
     show block = unlines
-       [ "Continuous Characters:"
+       [ "Continuous Characters: "
        , unlines . fmap (("  " <>) . show) . toList $ continuousCharacterBins block
        , "Fitch Characters:"
-       , unlines . fmap (("  " <>) . show) . toList $ continuousCharacterBins block
+       , unlines . fmap (("  " <>) . show) . toList $ nonAdditiveCharacterBins block
        , "Additive Characters:"
-       , unlines . fmap (("  " <>) . show) . toList $ continuousCharacterBins block
+       , unlines . fmap (("  " <>) . show) . toList $ additiveCharacterBins block
        , "Metric Characters:"
-       , unlines . fmap (("  " <>) . show) . toList $ continuousCharacterBins block
+       , unlines . fmap (("  " <>) . show) . toList $ metricCharacterBins block
        , "NonMetric Characters:"
-       , unlines . fmap (("  " <>) . show) . toList $ continuousCharacterBins block
+       , unlines . fmap (("  " <>) . show) . toList $ nonNonMetricCharacterBins block
        , "Dynamic Characters:"
-       , unlines . fmap (("  " <>) . show) . toList $ continuousCharacterBins block
+       , unlines . fmap (("  " <>) . show) . toList $ dynamicCharacters block
        ]
 
 
