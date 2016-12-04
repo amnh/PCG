@@ -10,7 +10,7 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE FlexibleContexts, FlexibleInstances, MultiParamTypeClasses #-}
 
 module Bio.Sequence.Block
   ( CharacterBlock(..)
@@ -18,6 +18,7 @@ module Bio.Sequence.Block
   , continuousSingleton
   , discreteSingleton
   , dynamicSingleton
+  , hexmap
   ) where
 
 
@@ -39,13 +40,31 @@ import Data.Vector                         (Vector)
 -- Use '(<>)' to construct larger blocks.
 data CharacterBlock m i c f a d
    = CharacterBlock
-   { continuousCharacterBins   :: Vector c
-   , nonAdditiveCharacterBins  :: Vector f
-   , additiveCharacterBins     :: Vector a
-   , metricCharacterBins       :: Vector m
-   , nonNonMetricCharacterBins :: Vector i
-   , dynamicCharacters         :: Vector d
+   { continuousCharacterBins  :: Vector c
+   , nonAdditiveCharacterBins :: Vector f
+   , additiveCharacterBins    :: Vector a
+   , metricCharacterBins      :: Vector m
+   , nonMetricCharacterBins   :: Vector i
+   , dynamicCharacters        :: Vector d
    } deriving (Eq)
+
+
+hexmap :: (m -> m')
+       -> (i -> i')
+       -> (c -> c')
+       -> (f -> f')
+       -> (a -> a')
+       -> (d -> d')
+       -> CharacterBlock m  i  c  f  a  d 
+       -> CharacterBlock m' i' c' f' a' d' 
+hexmap f1 f2 f3 f4 f5 f6 =
+    CharacterBlock
+    <$> (fmap f3 . continuousCharacterBins )
+    <*> (fmap f4 . nonAdditiveCharacterBins)
+    <*> (fmap f5 . additiveCharacterBins   )
+    <*> (fmap f1 . metricCharacterBins     )
+    <*> (fmap f2 . nonMetricCharacterBins  )
+    <*> (fmap f6 . dynamicCharacters       )
 
 
 instance Semigroup (CharacterBlock m i c f a d) where
@@ -56,7 +75,7 @@ instance Semigroup (CharacterBlock m i c f a d) where
           , nonAdditiveCharacterBins  = nonAdditiveCharacterBins  lhs `mappend` nonAdditiveCharacterBins  rhs
           , additiveCharacterBins     = additiveCharacterBins     lhs `mappend` additiveCharacterBins     rhs
           , metricCharacterBins       = metricCharacterBins       lhs `mappend` metricCharacterBins       rhs
-          , nonNonMetricCharacterBins = nonNonMetricCharacterBins lhs `mappend` nonNonMetricCharacterBins rhs
+          , nonMetricCharacterBins = nonMetricCharacterBins lhs `mappend` nonMetricCharacterBins rhs
           , dynamicCharacters         = dynamicCharacters         lhs `mappend` dynamicCharacters         rhs
           }
 
@@ -80,7 +99,7 @@ instance ( Show m
        , "Metric Characters:"
        , unlines . fmap (("  " <>) . show) . toList $ metricCharacterBins block
        , "NonMetric Characters:"
-       , unlines . fmap (("  " <>) . show) . toList $ nonNonMetricCharacterBins block
+       , unlines . fmap (("  " <>) . show) . toList $ nonMetricCharacterBins block
        , "Dynamic Characters:"
        , unlines . fmap (("  " <>) . show) . toList $ dynamicCharacters block
        ]
@@ -97,12 +116,12 @@ toMissingCharacters :: ( PossiblyMissingCharacter m
                     -> CharacterBlock m i c f a d
 toMissingCharacters cb =
     CharacterBlock
-    { continuousCharacterBins   = toMissing <$> continuousCharacterBins   cb
-    , nonAdditiveCharacterBins  = toMissing <$> nonAdditiveCharacterBins  cb
-    , additiveCharacterBins     = toMissing <$> additiveCharacterBins     cb
-    , metricCharacterBins       = toMissing <$> metricCharacterBins       cb
-    , nonNonMetricCharacterBins = toMissing <$> nonNonMetricCharacterBins cb
-    , dynamicCharacters         = toMissing <$> dynamicCharacters         cb
+    { continuousCharacterBins  = toMissing <$> continuousCharacterBins  cb
+    , nonAdditiveCharacterBins = toMissing <$> nonAdditiveCharacterBins cb
+    , additiveCharacterBins    = toMissing <$> additiveCharacterBins    cb
+    , metricCharacterBins      = toMissing <$> metricCharacterBins      cb
+    , nonMetricCharacterBins   = toMissing <$> nonMetricCharacterBins   cb
+    , dynamicCharacters        = toMissing <$> dynamicCharacters        cb
     }
 
 
