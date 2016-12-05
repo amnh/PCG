@@ -45,7 +45,7 @@ import           PCG.SearchState
 import           Prelude             hiding (lookup)
 import           Text.Megaparsec
 
---import Debug.Trace (trace)
+import Debug.Trace (trace)
 
 type SearchState = EvaluationT IO (Either TopologicalResult CharacterResult)
 
@@ -57,6 +57,7 @@ parse' = parse
 evaluate :: Command -> EvaluationT IO a -> EvaluationT IO (Either TopologicalResult CharacterResult)
 {--}
 --evaluate (READ fileSpecs) _old | trace ("Evaluated called: " <> show fileSpecs) False = undefined
+evaluate (READ fileSpecs) _old | trace "STARTING READ COMMAND" False = undefined
 evaluate (READ fileSpecs) _old = do
     when (null fileSpecs) $ fail "No files specified in 'read()' command"
     result <- liftIO . runEitherT . eitherTValidation $ parseSpecifiedFile <$> fileSpecs
@@ -205,10 +206,11 @@ expandIUPAC fpr = fpr { parsedChars = newTreeChars }
     expandOrId m x = fromMaybe x $ x `lookup` m
 
 
+-- TODO: check file extension, to guess which parser to use first
 progressiveParse :: FilePath -> EitherT ReadError IO FracturedParseResult
 progressiveParse inputPath = do
     (filePath, fileContent) <- head . dataFiles <$> getSpecifiedContent (UnspecifiedFile [inputPath])
-    case parse' nukeParser filePath fileContent of
+    case trace "STARTING PROGRESSIVE PARSE" $ parse' nukeParser filePath fileContent of
       Right x    -> pure $ toFractured Nothing filePath x
       Left  err1 ->
         case parse' acidParser filePath fileContent of

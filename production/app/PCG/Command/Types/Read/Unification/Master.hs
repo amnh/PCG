@@ -94,6 +94,7 @@ masterUnify = rectifyResults2
 -- Unify disparate parsed results into a single phylogenetic solution.
 rectifyResults2 :: [FracturedParseResult]
                 -> Either UnificationError (Either TopologicalResult CharacterResult)
+rectifyResults2 fprs | trace (show fprs) False = undefined
 rectifyResults2 fprs =
     case errors of
       []   -> dagForest --      = undefined -- Right maskedSolution
