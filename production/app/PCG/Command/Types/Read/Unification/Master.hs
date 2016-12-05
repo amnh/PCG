@@ -80,7 +80,7 @@ instance Show FracturedParseResult where
         , "  , sourceFile  = " <> show (sourceFile  fpr)
         , "  }"
         ]
-
+    
 
 masterUnify' :: [FracturedParseResult] -> Either UnificationError (Solution DAG)
 masterUnify' = undefined --rectifyResults
@@ -239,7 +239,7 @@ joinSequences2 = collapseAndMerge . reduceAlphabets . deriveCorrectTCMs . derive
           where
             selectedTCM       = fromMaybe defaultTCM $ tcmMay <|> parsedTCM charMetadata
             specifiedAlphabet = alphabet charMetadata
-            defaultTCM        = TCM.generate (length specifiedAlphabet) $ \(i,j) -> (if i == j then 0 else 1 :: Int)
+            defaultTCM        = TCM.generate ((\x -> trace (show specifiedAlphabet) x) $ length specifiedAlphabet) $ \(i,j) -> (if i == j then 0 else 1 :: Int)
 
     reduceAlphabets :: Functor f
                     => f (Map String (NonEmpty (Maybe ParsedChar, ParsedCharacterMetadata, TCM, CharacterName)))

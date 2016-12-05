@@ -101,7 +101,7 @@ setTcm t tcmPath fpr =
    case relatedTcm fpr of
      Just _  -> Left $ multipleTCMs (sourceFile fpr) tcmPath
      Nothing ->
-       let (factoredWeight, factoredTCM) = TCM.fromList . toList $ transitionCosts t
+       let (factoredWeight, factoredTCM) = TCM.fromList . (\x -> (trace . show $ length x) x) . toList $ transitionCosts t
            relatedAlphabet               = fromSymbols $ customAlphabet t
            metadataUpdate x = x
                { weight = weight x * fromRational factoredWeight
@@ -208,24 +208,25 @@ expandIUPAC fpr = fpr { parsedChars = newTreeChars }
 
 -- TODO: check file extension, to guess which parser to use first
 progressiveParse :: FilePath -> EitherT ReadError IO FracturedParseResult
+progressiveParse _ | trace "STARTING PROGRESSIVE PARSE" False = undefined
 progressiveParse inputPath = do
     (filePath, fileContent) <- head . dataFiles <$> getSpecifiedContent (UnspecifiedFile [inputPath])
-    case trace "STARTING PROGRESSIVE PARSE" $ parse' nukeParser filePath fileContent of
+    case trace "FASTA (Nucleiotide)" $ parse' nukeParser filePath fileContent of
       Right x    -> pure $ toFractured Nothing filePath x
       Left  err1 ->
-        case parse' acidParser filePath fileContent of
+        case trace "FASTA (Amino Acid)" $ parse' acidParser filePath fileContent of
           Right x    -> pure $ toFractured Nothing filePath x
           Left  err2 ->
-            case parse' newickStreamParser filePath fileContent of
+            case trace "Newick" $ parse' newickStreamParser filePath fileContent of
               Right x    -> pure $ toFractured Nothing filePath x
               Left  err3 ->
-                case parse' verStreamParser filePath fileContent of
+                case trace "VER" $ parse' verStreamParser filePath fileContent of
                   Right x    -> pure $ toFractured Nothing filePath x
                   Left  err4 ->
-                    case parse' tntStreamParser filePath fileContent of
+                    case trace "TNT" $ parse' tntStreamParser filePath fileContent of
                       Right x    -> pure $ toFractured Nothing filePath x
                       Left  err5 ->
-                        case parse' nexusStreamParser filePath fileContent of
+                        case trace "Nexus" $ parse' nexusStreamParser filePath fileContent of
                           Right x    -> pure $ toFractured Nothing filePath x
                           Left  err6 ->
                             let previousErrors      = [(err1,"Fasta"),(err2,"Fasta"),(err3,"Newick tree"),(err4,"VER"),(err5,"Henning/TNT"),(err6,"Nexus")]
