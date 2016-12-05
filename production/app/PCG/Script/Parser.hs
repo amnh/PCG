@@ -12,11 +12,14 @@ import Text.Megaparsec.Lexer  (float,integer,signed)
 
 import PCG.Script.Types
 
+
 scriptStreamParser :: (MonadParsec e s m, Token s ~ Char) => m Script
 scriptStreamParser = scriptDefinition
 
+
 scriptDefinition :: (MonadParsec e s m, Token s ~ Char) => m Script
 scriptDefinition = Script <$> (trimmed (some commandDefinition) <* eof)
+
 
 commandDefinition :: (MonadParsec e s m, Token s ~ Char) => m DubiousCommand
 commandDefinition = do
@@ -25,6 +28,7 @@ commandDefinition = do
   arguments <- argumentListDefinition
   pure $ DubiousCommand lident arguments
 
+
 lidentDefinition :: (MonadParsec e s m, Token s ~ Char) => m Lident
 lidentDefinition = try $ Lident <$> symbol lident
   where
@@ -32,13 +36,15 @@ lidentDefinition = try $ Lident <$> symbol lident
     leadingChar    = char '_' <|> lowerChar
     followingChars = char '_' <|> alphaNumChar
 
+
 argumentDefinition :: (MonadParsec e s m, Token s ~ Char) => m Argument
-argumentDefinition =
-      try (PrimativeArg <$> primativeDefinition)
-  <|> try (CommandArg   <$> commandDefinition)
-  <|> try lidentNamedArg'
-  <|> try (LidentArg    <$> lidentDefinition)
-  <|> try (ArgumentList <$> argumentListDefinition)
+argumentDefinition = choice
+    [ try (PrimativeArg <$> primativeDefinition)
+    , try (CommandArg   <$> commandDefinition)
+    , try lidentNamedArg'
+    , try (LidentArg    <$> lidentDefinition)
+    , try (ArgumentList <$> argumentListDefinition)
+    ]
   where
     lidentNamedArg' = do 
       lident   <- lidentDefinition
@@ -46,19 +52,22 @@ argumentDefinition =
       argument <- argumentDefinition
       pure $ LidentNamedArg lident argument
 
+
 argumentListDefinition :: (MonadParsec e s m, Token s ~ Char) => m [Argument]
 argumentListDefinition = 
      symbol (char '(') 
   *> argumentDefinition `sepBy` trimmed (char ',')
   <* symbol (char ')')
 
+
 primativeDefinition :: (MonadParsec e s m, Token s ~ Char) => m Primative
-primativeDefinition = symbol $
-      try  timeValue'
-  <|> try (RealNum   <$> signed space float)
-  <|> try (WholeNum . fromIntegral <$> signed space integer)
-  <|> try (BitValue  <$> bitValue)
-  <|> try (TextValue <$> textValue)
+primativeDefinition = symbol $ choice
+    [ try  timeValue'
+    , try (RealNum   <$> signed space float)
+    , try (WholeNum . fromIntegral <$> signed space integer)
+    , try (BitValue  <$> bitValue)
+    , try (TextValue <$> textValue)
+    ]
   where 
     bitValue    = ((=="true") . fmap toLower) <$> (try (string' "true") <|> try (string' "false"))
     timeValue'  = do
@@ -91,12 +100,15 @@ primativeDefinition = symbol $
                   ,( 'f', '\f')
                   ]
 
+
 -- Other combinators
 trimmed :: (MonadParsec e s m, Token s ~ Char) => m a -> m a
 trimmed x = whitespace *> x <* whitespace
 
+
 symbol  :: (MonadParsec e s m, Token s ~ Char) => m a -> m a
 symbol  x = x <* whitespace
+
 
 whitespace :: (MonadParsec e s m, Token s ~ Char) => m ()
 whitespace = try commentBlock <|> space
