@@ -78,6 +78,7 @@ instance ParsedMetadata NewickForest where
 
 -- | (✔)
 instance ParsedMetadata TNT.TntResult where
+    unifyMetadata (Right withSeq) | trace (show . snd . head . toList $ TNT.sequences withSeq) False = undefined
     unifyMetadata (Left        _) = mempty
     unifyMetadata (Right withSeq) = V.fromList $ zipWith f parsedMetadatas parsedCharacters
       where
