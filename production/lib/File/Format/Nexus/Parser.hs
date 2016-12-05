@@ -64,8 +64,7 @@ nexusFileDefinition :: (MonadParsec e s m, Token s ~ Char {- , Show s -}) => m N
 nexusFileDefinition = {-do
     x <- getInput
     trace ("nexusFileDefinition"  ++ show x) $ -}do
-    _           <- string' "#NEXUS"
-    _           <- space
+    _           <- optional (string' "#NEXUS" <* space)
     _           <- optional . many $ commentDefinition <* space
     (v,w,x,y,z) <- partitionNexusBlocks <$> many nexusBlock
     pure $ NexusParseResult v w x y z
