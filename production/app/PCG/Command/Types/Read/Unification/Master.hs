@@ -15,6 +15,10 @@
 module PCG.Command.Types.Read.Unification.Master where
 
 import           Bio.Character
+import           Bio.Character.Encodable
+import           Bio.Character.Decoration.Continuous hiding (characterName)
+import           Bio.Character.Decoration.Discrete   hiding (characterName)
+import           Bio.Character.Decoration.Dynamic    hiding (characterName)
 import           Bio.Character.Parsed
 import           Bio.Sequence
 import           Bio.Sequence.Block
@@ -36,7 +40,7 @@ import qualified Data.IntSet                as IS
 import           Data.Key
 import           Data.List                         (transpose, zip4)
 import           Data.List.NonEmpty                (NonEmpty( (:|) ))
-import qualified Data.List.NonEmpty         as NE  (fromList)
+import qualified Data.List.NonEmpty         as NE
 import           Data.List.Utility                 (duplicates)
 import           Data.Map                          (Map, intersectionWith, keys)
 import qualified Data.Map                   as Map
@@ -53,7 +57,7 @@ import           PCG.Command.Types.Read.Unification.UnificationError
 import           PCG.SearchState 
 import           Prelude                    hiding (lookup, zip, zipWith)
 
--- import Debug.Trace (trace)
+import Debug.Trace (trace)
 
 
 data FracturedParseResult
@@ -90,6 +94,7 @@ masterUnify = rectifyResults2
 -- Unify disparate parsed results into a single phylogenetic solution.
 rectifyResults2 :: [FracturedParseResult]
                 -> Either UnificationError (Either TopologicalResult CharacterResult)
+rectifyResults2 fprs | trace (show fprs) False = undefined
 rectifyResults2 fprs =
     case errors of
       []   -> dagForest --      = undefined -- Right maskedSolution
@@ -128,19 +133,25 @@ rectifyResults2 fprs =
           (False, False) -> Right . Right . PhylogeneticSolution . pure
                           . foldMap1 (matchToChars charSeqs) $ NE.fromList suppliedForests
       where
+        defaultCharacterSequenceDatum = fromBlocks . fmap blockTransform . toBlocks . head $ toList charSeqs
+          where
+            blockTransform = hexmap f f f f f f
+            f = const Nothing
         
         singletonComponent (label, datum) = PhylogeneticForest . pure . PDAG $ unfoldDAG rootLeafGen True
           where
             rootLeafGen x
-              | x         = (                [], PNode "Trivial Root" Nothing    , [(Nothing, not x)])
-              | otherwise = ([(Nothing, not x)], PNode label         (Just datum), []                )
+              | x         = (                [], PNode (Just "Trivial Root") defaultCharacterSequenceDatum, [(Nothing, not x)])
+              | otherwise = ([(Nothing, not x)], PNode (Just label         )                         datum, []                )
 
         matchToChars :: Map String UnifiedCharacterSequence
                      -> PhylogeneticForest ParserTree
                      -> PhylogeneticForest CharacterDAG
         matchToChars charMapping = fmap (PDAG . fmap f)
           where
-            f label = PNode label $ label >>= (`lookup` charMapping)
+            f label = PNode label $ fromMaybe defaultCharacterSequenceDatum charLabelMay
+              where
+                charLabelMay     = label >>= (`lookup` charMapping)
 {-
               case e of
                   Nothing    -> PNode "HTU" Nothing
@@ -298,12 +309,18 @@ joinSequences2 = collapseAndMerge . reduceAlphabets . deriveCorrectTCMs . derive
                 encodeBinToSingletonBlock :: (Maybe ParsedChar, ParsedCharacterMetadata, TCM, CharacterName)
                                           -> UnifiedCharacterBlock
                 encodeBinToSingletonBlock (charMay, charMeta, tcm, charName)
-                  | isDynamic charMeta = dynamicSingleton  specifiedAlphabet charName tcm (encodeStream specifiedAlphabet) charMay
-                  | otherwise          = discreteSingleton specifiedAlphabet charName tcm staticTransform charMay
+                  | isDynamic charMeta = dynamicSingleton     dynamicCharacter
+                  | otherwise          = discreteSingleton tcm staticCharacter
                   where
+                    alphabetLength    = length specifiedAlphabet
                     specifiedAlphabet = alphabet charMeta
-                    missingCharValue  = pure . NE.fromList $ toList specifiedAlphabet
-                    staticTransform   = encodeStream specifiedAlphabet . fromMaybe missingCharValue
+                    charWeight        = weight   charMeta
+                    missingCharValue  = NE.fromList $ toList specifiedAlphabet
+                    staticTransform   = encodeElement specifiedAlphabet . maybe missingCharValue NE.head
+                    staticCharacter   = Just $ toDiscreteCharacterDecoration charName charWeight specifiedAlphabet tcm staticTransform charMay
+                    dynamicTransform  = maybe (Missing alphabetLength) (encodeStream specifiedAlphabet)
+                    dynamicCharacter  = Just $ toDynamicCharacterDecoration  charName charWeight specifiedAlphabet tcm dynamicTransform charMay
+                        
 
             -- Necessary for mixing [] with NonEmpty
             prepend :: [a] -> NonEmpty a -> NonEmpty a

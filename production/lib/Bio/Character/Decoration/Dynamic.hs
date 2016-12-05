@@ -30,9 +30,11 @@ module Bio.Character.Decoration.Dynamic
   , HasPreliminaryGapped(..)
   , HasPreliminaryUngapped(..)
   , HasImpliedAlignment(..)
+  , PossiblyMissingCharacter(..)
   ) where
 
 import Bio.Character.Decoration.Dynamic.Class
 import Bio.Character.Decoration.Dynamic.Internal
+import Bio.Character.Encodable
 import Bio.Metadata.Discrete
 

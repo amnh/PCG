@@ -17,13 +17,21 @@
 
 module Bio.Character.Encodable.Stream where
 
-import Bio.Character.Encodable.Internal
-import Data.Alphabet
-import Data.BitVector
-import Data.List.NonEmpty
-import Data.Maybe            (fromMaybe)
-import Data.MonoTraversable
-import Data.String           (IsString)
+import           Bio.Character.Encodable.Internal
+import           Data.Alphabet
+import           Data.Alphabet.IUPAC
+import qualified Data.Bimap         as BM
+import           Data.BitVector     hiding (concat)
+import           Data.Foldable
+import           Data.List                 (intercalate)
+import           Data.List.NonEmpty        (NonEmpty)
+import qualified Data.List.NonEmpty as NE
+import           Data.List.Utility 
+import           Data.Maybe                (fromMaybe)
+import           Data.Monoid
+import           Data.MonoTraversable
+import           Data.String               (IsString)
+
 
 {-# DEPRECATED getGapChar "Don't use getGapChar, use getGapElement instead!" #-}
 
@@ -77,7 +85,7 @@ class ( EncodableStreamElement (Element s)
       ) => EncodableStream s where
   
     decodeStream :: (Ord a, IsString a) => Alphabet a -> s -> NonEmpty (AmbiguityGroup a)
-    decodeStream alphabet = fromList . ofoldMap (\e -> [decodeElement alphabet e])
+    decodeStream alphabet = NE.fromList . ofoldMap (\e -> [decodeElement alphabet e])
 
     encodeStream :: (Ord a, IsString a) => Alphabet a -> NonEmpty (AmbiguityGroup a) -> s
 
@@ -96,3 +104,23 @@ class ( EncodableStreamElement (Element s)
     -- Should probably be overwritten for safety & efficiency.
     gapOfStream :: s -> Element s
     gapOfStream = getGapElement . headEx
+
+
+showStreamElement :: EncodableStreamElement e => Alphabet String -> e -> String
+showStreamElement alphabet element = renderAmbiguity $ toIUPAC symbols
+  where
+    symbols   = decodeElement alphabet element
+    renderAmbiguity amb =
+        case toList amb of
+          []  -> undefined -- Never occurs!
+          [x] -> x
+          xs  ->
+              case invariantTransformation length xs of
+                Just 1 -> "[" <> concat xs <> "]"
+                _      -> "{" <> intercalate ", " xs <> "}"
+
+    toIUPAC x
+      | isAlphabetDna       alphabet = fromMaybe x $ x `BM.lookup` BM.twist iupacToDna
+      | isAlphabetRna       alphabet = fromMaybe x $ x `BM.lookup` BM.twist iupacToRna
+      | isAlphabetAminoAcid alphabet = fromMaybe x $ x `BM.lookup` BM.twist iupacToAminoAcid
+      | otherwise                    = x

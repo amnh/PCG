@@ -10,7 +10,7 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE FlexibleInstances, FunctionalDependencies, MultiParamTypeClasses #-}
+{-# LANGUAGE FlexibleContexts, FlexibleInstances, FunctionalDependencies, MultiParamTypeClasses #-}
 
 -- For derived instance of PossiblyMissingCharacter
 {-# LANGUAGE UndecidableInstances #-}
@@ -26,24 +26,52 @@ module Bio.Character.Decoration.Discrete
   , HasCharacterSymbolTransitionCostMatrixGenerator(..)
   , HasCharacterTransitionCostMatrix(..)
   , HasCharacterWeight(..)
-  , HasDiscreteCharacter(..) 
+  , HasDiscreteCharacter(..)
+  , PossiblyMissingCharacter(..)
+  , showDiscreteCharacterElement
   ) where
 
 
-import Bio.Character.Encodable
-import Bio.Metadata.Discrete
-import Control.Lens
-
-import Bio.Metadata.CharacterName
-import Data.Alphabet
-import Data.TCM
+import           Bio.Character.Encodable
+import           Bio.Metadata.Discrete
+import           Bio.Metadata.CharacterName
+import           Control.Lens
+import           Data.Alphabet
+import           Data.Alphabet.IUPAC
+import           Data.Bimap        (twist)
+import qualified Data.Bimap as BM
+import           Data.Foldable
+import           Data.List         (intercalate)
+import           Data.List.Utility
+import           Data.Maybe
+import           Data.Monoid
+import           Data.TCM
 
 
 data DiscreteDecoration c
    = DiscreteDec
-   { additiveDecorationInitialCharacter :: c
+   { discreteDecorationCharacter :: c
    , metadata                           :: DiscreteCharacterMetadataDec c
    }
+
+
+instance EncodableStreamElement c => Show (DiscreteDecoration c) where
+
+    show = showDiscreteCharacterElement
+
+
+showDiscreteCharacterElement :: ( EncodableStreamElement a
+                                , HasCharacterAlphabet s (Alphabet String)
+                                , HasDiscreteCharacter s a
+                                ) => s -> String
+showDiscreteCharacterElement = showStreamElement <$> (^. characterAlphabet) <*> (^. discreteCharacter)
+
+
+instance PossiblyMissingCharacter c => PossiblyMissingCharacter (DiscreteDecoration c) where
+
+    isMissing = isMissing . (^. discreteCharacter)
+
+    toMissing x = x & discreteCharacter %~ toMissing
 
 
 -- |
@@ -63,20 +91,10 @@ class ( HasDiscreteCharacter s a
     {-# MINIMAL toDiscreteCharacterDecoration #-}
 
 
-instance ( DiscreteCharacterDecoration s a 
-         , PossiblyMissingCharacter a
-         ) => PossiblyMissingCharacter s where
-
-    isMissing = isMissing . (^. discreteCharacter)
-
-    toMissing x = x & discreteCharacter %~ toMissing
-
-
-
 -- | (✔)
 instance HasDiscreteCharacter (DiscreteDecoration c) c where
 
-    discreteCharacter = lens additiveDecorationInitialCharacter (\e x -> e { additiveDecorationInitialCharacter = x })
+    discreteCharacter = lens discreteDecorationCharacter (\e x -> e { discreteDecorationCharacter = x })
 
 
 -- | (✔)
@@ -137,6 +155,6 @@ instance EncodableStreamElement c => DiscreteCharacterMetadata (DiscreteDecorati
 instance EncodableStaticCharacter c => DiscreteCharacterDecoration (DiscreteDecoration c) c where 
     toDiscreteCharacterDecoration name weight alphabet tcm g symbolSet =
         DiscreteDec
-        { additiveDecorationInitialCharacter = g symbolSet
+        { discreteDecorationCharacter = g symbolSet
         , metadata                           = discreteMetadata name weight alphabet tcm
         }    

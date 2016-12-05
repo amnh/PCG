@@ -13,7 +13,7 @@
 -----------------------------------------------------------------------------
 
 module Bio.Character.Encodable.Dynamic
-  ( DynamicChar(DC)
+  ( DynamicChar(DC,Missing)
   , DynamicChars
   , DynamicCharacterElement()
   , EncodedAmbiguityGroupContainer(..)

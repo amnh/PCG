@@ -123,8 +123,11 @@ discreteMetadata :: CharacterName -> Double -> Alphabet String -> TCM -> Discret
 discreteMetadata name weight alpha tcm =
     DiscreteCharacterMetadataDec
     { alphabet       = alpha
-    , unambiguousTCM = tcm
+    , unambiguousTCM = factoredTcm diagnosis
     , fullTCM        = undefined
-    , generalData    = generalMetadata name weight
+    , generalData    = generalMetadata name (weight * coefficient)
     }
+  where
+    diagnosis   = diagnoseTcm tcm
+    coefficient = fromIntegral $ factoredWeight diagnosis
            

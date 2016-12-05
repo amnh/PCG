@@ -10,7 +10,7 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE FlexibleContexts, FlexibleInstances, MultiParamTypeClasses #-}
 
 module Bio.Sequence.Block
   ( CharacterBlock(..)
@@ -18,16 +18,14 @@ module Bio.Sequence.Block
   , continuousSingleton
   , discreteSingleton
   , dynamicSingleton
+  , hexmap
   ) where
 
 
-import Bio.Character
 import Bio.Character.Encodable
 import Bio.Character.Decoration.Continuous
-import Bio.Character.Decoration.Discrete
-import Bio.Character.Decoration.Dynamic
 import Bio.Metadata.CharacterName
-import Data.Alphabet
+import Data.Foldable
 import Data.Monoid                         (mappend)
 import Data.Semigroup
 import Data.TCM
@@ -42,32 +40,71 @@ import Data.Vector                         (Vector)
 -- Use '(<>)' to construct larger blocks.
 data CharacterBlock m i c f a d
    = CharacterBlock
-   { continuousCharacterBins   :: Vector c
-   , nonAdditiveCharacterBins  :: Vector f
-   , additiveCharacterBins     :: Vector a
-   , metricCharacterBins       :: Vector m
-   , nonNonMetricCharacterBins :: Vector i
-   , dynamicCharacters         :: Vector d
-   } deriving (Eq, Show)
+   { continuousCharacterBins  :: Vector c
+   , nonAdditiveCharacterBins :: Vector f
+   , additiveCharacterBins    :: Vector a
+   , metricCharacterBins      :: Vector m
+   , nonMetricCharacterBins   :: Vector i
+   , dynamicCharacters        :: Vector d
+   } deriving (Eq)
 
 
-instance ( EncodedAmbiguityGroupContainer m, Semigroup m
-         , EncodedAmbiguityGroupContainer i, Semigroup i
-         , Semigroup c
-         , EncodedAmbiguityGroupContainer f, Semigroup f
-         , EncodedAmbiguityGroupContainer a, Semigroup a
-         ) => Semigroup (CharacterBlock m i c f a d) where
+hexmap :: (m -> m')
+       -> (i -> i')
+       -> (c -> c')
+       -> (f -> f')
+       -> (a -> a')
+       -> (d -> d')
+       -> CharacterBlock m  i  c  f  a  d 
+       -> CharacterBlock m' i' c' f' a' d' 
+hexmap f1 f2 f3 f4 f5 f6 =
+    CharacterBlock
+    <$> (fmap f3 . continuousCharacterBins )
+    <*> (fmap f4 . nonAdditiveCharacterBins)
+    <*> (fmap f5 . additiveCharacterBins   )
+    <*> (fmap f1 . metricCharacterBins     )
+    <*> (fmap f2 . nonMetricCharacterBins  )
+    <*> (fmap f6 . dynamicCharacters       )
+
+
+instance Semigroup (CharacterBlock m i c f a d) where
+
     lhs <> rhs =
         CharacterBlock
           { continuousCharacterBins   = continuousCharacterBins   lhs `mappend` continuousCharacterBins   rhs
           , nonAdditiveCharacterBins  = nonAdditiveCharacterBins  lhs `mappend` nonAdditiveCharacterBins  rhs
           , additiveCharacterBins     = additiveCharacterBins     lhs `mappend` additiveCharacterBins     rhs
           , metricCharacterBins       = metricCharacterBins       lhs `mappend` metricCharacterBins       rhs
-          , nonNonMetricCharacterBins = nonNonMetricCharacterBins lhs `mappend` nonNonMetricCharacterBins rhs
+          , nonMetricCharacterBins = nonMetricCharacterBins lhs `mappend` nonMetricCharacterBins rhs
           , dynamicCharacters         = dynamicCharacters         lhs `mappend` dynamicCharacters         rhs
           }
 
-    
+
+instance ( Show m
+         , Show i
+         , Show i
+         , Show c
+         , Show f
+         , Show a
+         , Show d
+         ) => Show (CharacterBlock m i c f a d) where
+
+    show block = unlines
+       [ "Continuous Characters: "
+       , unlines . fmap (("  " <>) . show) . toList $ continuousCharacterBins block
+       , "Fitch Characters:"
+       , unlines . fmap (("  " <>) . show) . toList $ nonAdditiveCharacterBins block
+       , "Additive Characters:"
+       , unlines . fmap (("  " <>) . show) . toList $ additiveCharacterBins block
+       , "Metric Characters:"
+       , unlines . fmap (("  " <>) . show) . toList $ metricCharacterBins block
+       , "NonMetric Characters:"
+       , unlines . fmap (("  " <>) . show) . toList $ nonMetricCharacterBins block
+       , "Dynamic Characters:"
+       , unlines . fmap (("  " <>) . show) . toList $ dynamicCharacters block
+       ]
+
+
 toMissingCharacters :: ( PossiblyMissingCharacter m
                        , PossiblyMissingCharacter i
                        , PossiblyMissingCharacter c
@@ -79,12 +116,12 @@ toMissingCharacters :: ( PossiblyMissingCharacter m
                     -> CharacterBlock m i c f a d
 toMissingCharacters cb =
     CharacterBlock
-    { continuousCharacterBins   = toMissing <$> continuousCharacterBins   cb
-    , nonAdditiveCharacterBins  = toMissing <$> nonAdditiveCharacterBins  cb
-    , additiveCharacterBins     = toMissing <$> additiveCharacterBins     cb
-    , metricCharacterBins       = toMissing <$> metricCharacterBins       cb
-    , nonNonMetricCharacterBins = toMissing <$> nonNonMetricCharacterBins cb
-    , dynamicCharacters         = toMissing <$> dynamicCharacters         cb
+    { continuousCharacterBins  = toMissing <$> continuousCharacterBins  cb
+    , nonAdditiveCharacterBins = toMissing <$> nonAdditiveCharacterBins cb
+    , additiveCharacterBins    = toMissing <$> additiveCharacterBins    cb
+    , metricCharacterBins      = toMissing <$> metricCharacterBins      cb
+    , nonMetricCharacterBins   = toMissing <$> nonMetricCharacterBins   cb
+    , dynamicCharacters        = toMissing <$> dynamicCharacters        cb
     }
 
 
@@ -95,10 +132,8 @@ continuousSingleton nameValue transformation continuousValue =
     bin = continuousDecorationInitial nameValue transformation continuousValue
 
 
-discreteSingleton :: EncodableStaticCharacter s
-                  => Alphabet String -> CharacterName -> TCM -> (a -> s) -> a
-                  -> CharacterBlock (DiscreteDecoration s) (DiscreteDecoration s) c (DiscreteDecoration s) (DiscreteDecoration s) d
-discreteSingleton alphabetValues nameValue tcmValues transformation input =
+discreteSingleton :: TCM -> s -> CharacterBlock s s c s s d
+discreteSingleton tcmValues dec =
     case tcmStructure diagnosis of
       NonSymmetric -> CharacterBlock mempty mempty mempty mempty bin    mempty
       Symmetric    -> CharacterBlock mempty mempty mempty mempty bin    mempty
@@ -108,17 +143,8 @@ discreteSingleton alphabetValues nameValue tcmValues transformation input =
       NonAdditive  -> CharacterBlock mempty bin    mempty mempty mempty mempty
   where
     diagnosis   = diagnoseTcm tcmValues
-    weightValue = fromIntegral $ factoredWeight diagnosis
-    bin         = pure $ toDiscreteCharacterDecoration nameValue weightValue alphabetValues (factoredTcm diagnosis) transformation input
+    bin         = pure dec
 
 
-dynamicSingleton :: EncodableDynamicCharacter d
-                 => Alphabet String -> CharacterName -> TCM -> (x -> d) -> x -> CharacterBlock m i c f a (DynamicDecorationInitial d)
-dynamicSingleton alphabetValues nameValue tcmValues transformation input =
-    CharacterBlock mempty mempty mempty mempty mempty bin
-  where
-    diagnosis   = diagnoseTcm tcmValues
-    weightValue = fromIntegral $ factoredWeight diagnosis
-    bin         = pure $ toDynamicCharacterDecoration nameValue weightValue alphabetValues (factoredTcm diagnosis) transformation input
-
-    
+dynamicSingleton :: d -> CharacterBlock m i c f a d
+dynamicSingleton = CharacterBlock mempty mempty mempty mempty mempty . pure

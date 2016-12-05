@@ -149,7 +149,7 @@ generateLeavesDO alphabet taxaCount = do
       sequenceLength  <- choose (1,2)
       sequence $ generateLeaf sequenceLength <$> [0..taxaCount-1]
     where
-        nullCheck [] = [gapCharacter alphabet]
+        nullCheck [] = [gapSymbol alphabet]
         nullCheck xs = xs
         generateDynamicCharacter :: Gen DynamicChar
         generateDynamicCharacter = do

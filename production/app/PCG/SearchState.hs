@@ -24,6 +24,7 @@ import           Bio.PhyloGraphPrime
 import           Bio.PhyloGraphPrime.Node
 import           Bio.PhyloGraphPrime.ReferenceDAG
 import           Control.Evaluation
+import           Data.Monoid
 
 -- import Debug.Trace
 
@@ -81,6 +82,21 @@ type UnifiedDynamicCharacter    = Maybe (DynamicDecorationInitial DynamicChar)
 
 data  PhylogeneticDAG e n m i c f a d
     = PDAG (ReferenceDAG e (PhylogeneticNode n (CharacterSequence m i c f a d)))
+
+instance ( Show e
+         , Show n
+         , Show m
+         , Show i
+         , Show c
+         , Show f
+         , Show a
+         , Show d
+         ) => Show (PhylogeneticDAG e n m i c f a d) where
+
+    show (PDAG dag) =
+        show dag <> "\n" <> foldMap f dag
+      where
+        f (PNode n sek) = unlines [show n, show sek]
 
 
 nodePreorderMap :: (n -> [n'] -> n')

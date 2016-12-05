@@ -36,6 +36,24 @@ newtype ContinuousChar = CC (Maybe Double)
   deriving (Eq,Ord)
 
 
+instance Show ContinuousChar where
+
+    show (CC  Nothing) = "?"
+    show (CC (Just x)) = show x
+
+
+instance Show c => Show (ContinuousDecorationInitial c) where
+
+    show = show . (^. continuousCharacter)
+
+
+instance PossiblyMissingCharacter c => PossiblyMissingCharacter (ContinuousDecorationInitial c) where
+
+    isMissing = isMissing . (^. continuousCharacter)
+
+    toMissing x = x & continuousCharacter %~ toMissing
+
+
 -- | (✔)
 instance PossiblyMissingCharacter ContinuousChar where
 

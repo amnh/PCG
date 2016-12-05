@@ -13,7 +13,7 @@
 -----------------------------------------------------------------------------
 
 module Bio.Character.Encodable
-  ( DynamicChar(DC)
+  ( DynamicChar(DC,Missing)
   , DynamicChars
   , DynamicCharacterElement()
   , StaticCharacter()
@@ -25,8 +25,10 @@ module Bio.Character.Encodable
   , EncodableStreamElement(..)
   , EncodableStream(..)
   , PossiblyMissingCharacter(..)
+  , showStreamElement
   ) where
 
 import Bio.Character.Encodable.Dynamic
 import Bio.Character.Encodable.Internal
 import Bio.Character.Encodable.Static
+import Bio.Character.Encodable.Stream
