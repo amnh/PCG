@@ -101,11 +101,19 @@ updateCostVector curNodeDecoration (x:y:_) = returnNodeDecoration
 -- We can throw away the medians here because we're building medians: the possible character is looped over
 -- all available characters, and there's an outer loop which sends in each possible character.
 calcCostPerState :: Int -> [DiscreteCharacterDecoration] -> Word32
-calcCostPerState children charState = cost
-    -- foldlWithKey (\key (cost, ) value ->  ) child ^. minCostVector
+calcCostPerState inputCharState children =
+    -- foldlWithKey (\key (cost, ) value -> cost = value + tcm(key, inputCharState) ) child ^. minCostVector
+    foldlWithKey (\acc childCharState _ -> summedChildCosts + acc
+           where
+               summedChildCosts =
+                   foldl (\child cost -> transitionCost + child ^. minCost
+                          where
+                              tansitionCost = (child ^. characterSymbolTransitionCostMatrixGenerator) childCharState inputCharState
+                         ) 0 children
+          ) [1..(head children)]
     foldl (\child cost -> transitionCost + child ^. minCost
             where
-                (tansitionCost, _) = (child ^. characterTCM) (child ^. discreteCharacter) charState
+                tansitionCost = (child ^. characterSymbolTransitionCostMatrixGenerator) (child ^. discreteCharacter) charState
            ) 0 children
 
         leftCost = (median, cost) = (leftChild ^. characterTCM) (leftChild ^. discreteCharacter) + leftChild ^. minCost
