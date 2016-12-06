@@ -95,13 +95,14 @@ updateCostVector curNodeDecoration (x:y:_) = returnNodeDecoration
                     -- else dirVector `clearBit` j
         returnChar = SankoffCharacterDecoration minCost costVector dirVector
 
--- | Take in a single character state and two decorations (the decorations of the two child states).
+-- | Take in a single character state, represented by an int (which bit is on) and two decorations (the decorations of the two child states).
 -- Return the total cost of transitioning from those two child decorations to the given character.
 --
--- TODO: double check that I can throw away the medians here. My current thinking is that I can, because
--- I cycle through all of the character states before this is called, so any
-calcCostPerState :: [DiscreteCharacterDecoration] -> Word32
-calcCostPerState children charState =
+-- We can throw away the medians here because we're building medians: the possible character is looped over
+-- all available characters, and there's an outer loop which sends in each possible character.
+calcCostPerState :: Int -> [DiscreteCharacterDecoration] -> Word32
+calcCostPerState children charState = cost
+    -- foldlWithKey (\key (cost, ) value ->  ) child ^. minCostVector
     foldl (\child cost -> transitionCost + child ^. minCost
             where
                 (tansitionCost, _) = (child ^. characterTCM) (child ^. discreteCharacter) charState
