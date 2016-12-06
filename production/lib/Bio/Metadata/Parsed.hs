@@ -35,6 +35,8 @@ import qualified File.Format.TNT                  as TNT
 import qualified File.Format.TransitionCostMatrix as F
 import           File.Format.VertexEdgeRoot
 
+import Debug.Trace
+  
 
 -- | An intermediate composite type for parse result coercion.
 data ParsedCharacterMetadata
@@ -76,6 +78,7 @@ instance ParsedMetadata NewickForest where
 
 -- | (✔)
 instance ParsedMetadata TNT.TntResult where
+    unifyMetadata (Right withSeq) | trace (show . snd . head . toList $ TNT.sequences withSeq) False = undefined
     unifyMetadata (Left        _) = mempty
     unifyMetadata (Right withSeq) = V.fromList $ zipWith f parsedMetadatas parsedCharacters
       where
@@ -147,11 +150,12 @@ instance ParsedMetadata VertexEdgeRoot where
 
 -- | (✔)
 instance ParsedMetadata Nexus where
+    unifyMetadata (Nexus (_, metas) _) | trace (show $ (show . fromSymbols . Nex.alphabet) <$> metas) False = undefined
     unifyMetadata (Nexus (_, metas) _) = convertNexusMeta <$> metas
       where
         convertNexusMeta inMeta =
             ParsedCharacterMetadata
-            { alphabet      = fromSymbols $ Nex.alphabet inMeta
+            { alphabet      = {- (\x -> trace (show x) x) . -} fromSymbols $ Nex.alphabet inMeta
             , characterName = Nex.name inMeta
             , weight        = fromRational rationalWeight * suppliedWeight
             , parsedTCM     = unfactoredTcmMay
