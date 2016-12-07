@@ -38,11 +38,11 @@ import           File.Format.Nexus            (nexusStreamParser)
 import           File.Format.TNT     hiding   (weight)
 import           File.Format.TransitionCostMatrix
 import           File.Format.VertexEdgeRoot
-import           PCG.Command.Types (Command(..))
+import           PCG.Command.Types            (Command(..))
 import           PCG.Command.Types.Read.Internal
 import           PCG.Command.Types.Read.Unification.Master
 import           PCG.SearchState
-import           Prelude             hiding (lookup)
+import           Prelude             hiding   (lookup)
 import           Text.Megaparsec
 
 import Debug.Trace (trace)

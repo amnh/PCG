@@ -11,9 +11,11 @@
 -- Typeclass for a parsed forest so that it can convert into an internal forest.
 --
 -----------------------------------------------------------------------------
+
 {-# LANGUAGE FlexibleContexts, FlexibleInstances #-}
 
 module Bio.PhyloGraph.Forest.Parsed where
+
 
 import           Bio.PhyloGraphPrime.Forest
 import           Bio.PhyloGraphPrime.ReferenceDAG
@@ -50,6 +52,11 @@ type ParserTree   = ReferenceDAG (Maybe Double) (Maybe String)
 -- |
 -- The parser coalesced type, representing a possibly present forest.
 type ParserForest = Maybe (PhylogeneticForest ParserTree)
+
+
+-- |
+-- The parser coalesced type, representing a possibly present forest.
+type ParserForestSet = Maybe (PhylogeneticForest ParserTree)
 
 
 -- |

@@ -103,8 +103,14 @@ instance EncodableStreamElement StaticCharacter where
     -- The head element of the list is the most significant bit when calling fromBits.
     -- We need the first element of the alphabet to correspond to the least significant bit.
     -- Hence foldl, don't try foldMap or toList & fmap without careful thought.
-    encodeElement alphabet ambiguity = SC . fromBits $ foldl' (\xs x -> (x `elem` ambiguity) : xs) [] alphabet
-
+    encodeElement alphabet ambiguity = SC encoding
+      where
+        encoding
+          | containsMissing ambiguity = fromBits $ replicate (length alphabet) True
+          | otherwise                 = fromBits $ foldl' (\xs x -> (x `elem` ambiguity) : xs) [] alphabet
+          where
+            containsMissing = any (== fromString "?")
+            
 
 instance EncodableStaticCharacter StaticCharacter
 

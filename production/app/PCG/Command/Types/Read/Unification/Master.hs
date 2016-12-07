@@ -94,7 +94,7 @@ masterUnify = rectifyResults2
 -- Unify disparate parsed results into a single phylogenetic solution.
 rectifyResults2 :: [FracturedParseResult]
                 -> Either UnificationError (Either TopologicalResult CharacterResult)
-rectifyResults2 fprs | trace (show fprs) False = undefined
+--rectifyResults2 fprs | trace (show fprs) False = undefined
 rectifyResults2 fprs =
     case errors of
       []   -> dagForest --      = undefined -- Right maskedSolution
@@ -103,11 +103,11 @@ rectifyResults2 fprs =
     -- Step 1: Gather data file contents
     dataSeqs        = filter (not . fromTreeOnlyFile) fprs
     -- Step 2: Union the taxa names together into total terminal set
-    taxaSet         = (\x ->  trace ("Taxa Set: " <> show x) x) . mconcat $ (Set.fromList . keys . parsedChars) <$> dataSeqs
+    taxaSet         = {- (\x ->  trace ("Taxa Set: " <> show x) x) . -} mconcat $ (Set.fromList . keys . parsedChars) <$> dataSeqs
     -- Step 3: Gather forest file data
-    allForests      = (\x ->  trace ("Forest Lengths: " <> show (length . parsedTrees <$> x)) x) $ filter (not . null . parsedTrees) fprs
+    allForests      = {- (\x ->  trace ("Forest Lengths: " <> show (length . parsedTrees <$> x)) x) $ -} filter (not . null . parsedTrees) fprs
     -- Step 4: Gather the taxa names for each forest from terminal nodes
-    forestTaxa      = (\x ->  trace ("Forest Set: " <> show x) x) . (foldMap (foldMap terminalNames2) . parsedTrees &&& id) <$> allForests
+    forestTaxa      = {- (\x ->  trace ("Forest Set: " <> show x) x) . -} (foldMap (foldMap terminalNames2) . parsedTrees &&& id) <$> allForests
     -- Step 5: Assert that each terminal node name is unique in the forest
     duplicateNames  = filter (not . null . fst) $ first duplicates <$> forestTaxa
     -- Step 6: Assert that each forest's terminal node set is exactly the same as the taxa set from "data files"
@@ -239,7 +239,7 @@ joinSequences2 = collapseAndMerge . reduceAlphabets . deriveCorrectTCMs . derive
           where
             selectedTCM       = fromMaybe defaultTCM $ tcmMay <|> parsedTCM charMetadata
             specifiedAlphabet = alphabet charMetadata
-            defaultTCM        = TCM.generate ((\x -> trace (show specifiedAlphabet) x) $ length specifiedAlphabet) $ \(i,j) -> (if i == j then 0 else 1 :: Int)
+            defaultTCM        = TCM.generate (length specifiedAlphabet) $ \(i,j) -> (if i == j then 0 else 1 :: Int)
 
     reduceAlphabets :: Functor f
                     => f (Map String (NonEmpty (Maybe ParsedChar, ParsedCharacterMetadata, TCM, CharacterName)))
@@ -261,7 +261,14 @@ joinSequences2 = collapseAndMerge . reduceAlphabets . deriveCorrectTCMs . derive
           | onull missingSymbolIndicies = input
           | otherwise                   = (charMay, charMetadata { alphabet = reducedAlphabet }, reducedTCM, charName)
           where
-            missingSymbolIndicies = foldMapWithKey (\k v -> if v `notElem` observedSymbols then IS.singleton k else mempty) suppliedAlphabet
+--            observedSymbols       = observedSymbols' `Set.remove` "?"
+            missingSymbolIndicies = foldMapWithKey f suppliedAlphabet
+              where
+                f k v
+                  |    v `notElem` observedSymbols
+                    && v /= gapSymbol suppliedAlphabet = IS.singleton k
+                  | otherwise = mempty
+                  
             suppliedAlphabet      = alphabet charMetadata
             reducedAlphabet       =
                 case alphabetStateNames suppliedAlphabet of
@@ -269,8 +276,9 @@ joinSequences2 = collapseAndMerge . reduceAlphabets . deriveCorrectTCMs . derive
                   xs -> fromSymbolsWithStateNames . reduceTokens $ zip (alphabetSymbols suppliedAlphabet) xs
               where
                 reduceTokens = foldMapWithKey (\k v -> if k `oelem` missingSymbolIndicies then [] else [v])
-            reducedTCM = TCM.generate (TCM.size tcm - olength missingSymbolIndicies) f
+            reducedTCM = TCM.generate reducedDimension f
               where
+                reducedDimension = TCM.size tcm - olength missingSymbolIndicies
                 f (i,j) = tcm TCM.! (i', j')
                   where
                     i' = i + iOffset

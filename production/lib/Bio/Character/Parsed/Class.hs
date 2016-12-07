@@ -35,6 +35,8 @@ import           File.Format.TNT
 import           File.Format.TransitionCostMatrix
 import           File.Format.VertexEdgeRoot
 
+import Debug.Trace
+
 
 -- TODO: Make sure that pipelines don't undo and redo the conversion to treeSeqs
 -- currently we pack and unpack codes, make parsers dumber in the future. Read below!

@@ -212,7 +212,7 @@ data TntCharacter
    | Discrete   TntDiscreteCharacter
    | Dna        TntDnaCharacter
    | Protein    TntProteinCharacter
-   deriving (Show)
+   deriving (Eq)
 
 
 -- | A 'TntContinuousCharacter' is an real valued character. Continuous
@@ -245,6 +245,14 @@ newtype TntDnaCharacter        = TntDna Word8 deriving (Bits,Eq,FiniteBits,Ord)
 --   along with \'-\' & \'?\' characters representing gap or missing data respecitively.
 --   Missing represents the empty ambiguity group.
 newtype TntProteinCharacter    = TntPro Word32 deriving (Bits,Eq,FiniteBits,Ord)
+
+
+instance Show TntCharacter where
+
+    show (Continuous x) = show x
+    show (Discrete   x) = show x
+    show (Dna        x) = show x
+    show (Protein    x) = show x
 
 
 -- | Serialize character
