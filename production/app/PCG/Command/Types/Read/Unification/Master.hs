@@ -239,7 +239,7 @@ joinSequences2 = collapseAndMerge . reduceAlphabets . deriveCorrectTCMs . derive
           where
             selectedTCM       = fromMaybe defaultTCM $ tcmMay <|> parsedTCM charMetadata
             specifiedAlphabet = alphabet charMetadata
-            defaultTCM        = TCM.generate ((\x -> trace (show specifiedAlphabet) x) $ length specifiedAlphabet) $ \(i,j) -> (if i == j then 0 else 1 :: Int)
+            defaultTCM        = TCM.generate ((\x -> trace (show x) x) $ length specifiedAlphabet) $ \(i,j) -> (if i == j then 0 else 1 :: Int)
 
     reduceAlphabets :: Functor f
                     => f (Map String (NonEmpty (Maybe ParsedChar, ParsedCharacterMetadata, TCM, CharacterName)))
@@ -269,7 +269,15 @@ joinSequences2 = collapseAndMerge . reduceAlphabets . deriveCorrectTCMs . derive
                   xs -> fromSymbolsWithStateNames . reduceTokens $ zip (alphabetSymbols suppliedAlphabet) xs
               where
                 reduceTokens = foldMapWithKey (\k v -> if k `oelem` missingSymbolIndicies then [] else [v])
-            reducedTCM = TCM.generate (TCM.size tcm - olength missingSymbolIndicies) f
+            reducedTCM = TCM.generate ((\x -> trace
+                                            (  "TCM size: " <> show x <> "\n"
+                                            <> "Missing count: " <> show (olength missingSymbolIndicies)
+                                            <> "\n"
+                                            <> "Missing value: " <> show missingSymbolIndicies <> "\n"
+                                            <> "Observed: " <> show observedSymbols
+                                            )
+                                         x)
+                       $ TCM.size tcm - (olength missingSymbolIndicies)) f
               where
                 f (i,j) = tcm TCM.! (i', j')
                   where

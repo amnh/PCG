@@ -115,7 +115,7 @@ instance ParsedMetadata TNT.TntResult where
                   TNT.Continuous {} -> undefined -- I'm sure this will never blow up in our face /s
                   TNT.Dna        {} -> fromSymbols dnaAlph
                   TNT.Protein    {} -> fromSymbols aaAlph
-                  TNT.Discrete   {} ->
+                  TNT.Discrete   {} -> (\x -> trace (show x) x) $
                       let stateNameValues = TNT.characterStates inMeta
                       in
                           if   null stateNameValues
