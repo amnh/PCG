@@ -78,7 +78,7 @@ instance ParsedMetadata NewickForest where
 
 -- | (✔)
 instance ParsedMetadata TNT.TntResult where
-    unifyMetadata (Right withSeq) | trace (show . snd . head . toList $ TNT.sequences withSeq) False = undefined
+--    unifyMetadata (Right withSeq) | trace (show . snd . head . toList $ TNT.sequences withSeq) False = undefined
     unifyMetadata (Left        _) = mempty
     unifyMetadata (Right withSeq) = V.fromList $ zipWith f parsedMetadatas parsedCharacters
       where
@@ -150,12 +150,13 @@ instance ParsedMetadata VertexEdgeRoot where
 
 -- | (✔)
 instance ParsedMetadata Nexus where
-    unifyMetadata (Nexus (_, metas) _) | trace (show $ (show . fromSymbols . Nex.alphabet) <$> metas) False = undefined
-    unifyMetadata (Nexus (_, metas) _) = convertNexusMeta <$> metas
+    unifyMetadata (Nexus (_, metas) _) | trace ("BEGIN FROM NEXUS:\n" <> (show $ (show . fromSymbols . Nex.alphabet) <$> metas) <> "\nENnD FROM NEXUS\n") False = undefined
+    unifyMetadata input @(Nexus (_, metas) _) = V.zipWith convertNexusMeta alphabetVector metas
       where
-        convertNexusMeta inMeta =
+        alphabetVector = developAlphabets $ unifyCharacters input
+        convertNexusMeta developedAlphabet inMeta =
             ParsedCharacterMetadata
-            { alphabet      = {- (\x -> trace (show x) x) . -} fromSymbols $ Nex.alphabet inMeta
+            { alphabet      = (\x -> trace (show x) x) developedAlphabet -- {- (\x -> trace (show x) x) . -} fromSymbols $ Nex.alphabet inMeta
             , characterName = Nex.name inMeta
             , weight        = fromRational rationalWeight * suppliedWeight
             , parsedTCM     = unfactoredTcmMay

@@ -115,7 +115,7 @@ instance ParsedCharacters TntResult where
 
 -- | Coalesce the 'TaxonSequence' to the larger type 'ParsedSequences'
 tntToTheSuperSequence :: TaxonSequence -> ParsedChars
-tntToTheSuperSequence = V.fromList . fmap (Just . pure . f . (\x -> trace (show x) x) . show)
+tntToTheSuperSequence = V.fromList . fmap (Just . pure . f . show)
     where
         f :: String -> NonEmpty String
         f ('[':xs) = NE.fromList $ pure <$> init xs

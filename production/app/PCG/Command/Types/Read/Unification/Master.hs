@@ -239,7 +239,12 @@ joinSequences2 = collapseAndMerge . reduceAlphabets . deriveCorrectTCMs . derive
           where
             selectedTCM       = fromMaybe defaultTCM $ tcmMay <|> parsedTCM charMetadata
             specifiedAlphabet = alphabet charMetadata
-            defaultTCM        = TCM.generate ((\x -> trace (show x) x) $ length specifiedAlphabet) $ \(i,j) -> (if i == j then 0 else 1 :: Int)
+            defaultTCM        = TCM.generate ((\x -> trace
+                                                (  "TCM size:  " <> show (length specifiedAlphabet) <> "\n"
+                                                <> "Char name: " <> show charName                   <> "\n"
+                                                <> "Alphabet:  " <> show specifiedAlphabet          <> "\n"
+                                                )
+                                              x) $ length specifiedAlphabet) $ \(i,j) -> (if i == j then 0 else 1 :: Int)
 
     reduceAlphabets :: Functor f
                     => f (Map String (NonEmpty (Maybe ParsedChar, ParsedCharacterMetadata, TCM, CharacterName)))
@@ -261,7 +266,14 @@ joinSequences2 = collapseAndMerge . reduceAlphabets . deriveCorrectTCMs . derive
           | onull missingSymbolIndicies = input
           | otherwise                   = (charMay, charMetadata { alphabet = reducedAlphabet }, reducedTCM, charName)
           where
-            missingSymbolIndicies = foldMapWithKey (\k v -> if v `notElem` observedSymbols then IS.singleton k else mempty) suppliedAlphabet
+--            observedSymbols       = observedSymbols' `Set.remove` "?"
+            missingSymbolIndicies = foldMapWithKey f suppliedAlphabet
+              where
+                f k v
+                  |    v `notElem` observedSymbols
+                    && v /= gapSymbol suppliedAlphabet = IS.singleton k
+                  | otherwise = mempty
+                  
             suppliedAlphabet      = alphabet charMetadata
             reducedAlphabet       =
                 case alphabetStateNames suppliedAlphabet of
@@ -274,7 +286,8 @@ joinSequences2 = collapseAndMerge . reduceAlphabets . deriveCorrectTCMs . derive
                                             <> "Missing count: " <> show (olength missingSymbolIndicies)
                                             <> "\n"
                                             <> "Missing value: " <> show missingSymbolIndicies <> "\n"
-                                            <> "Observed: " <> show observedSymbols
+                                            <> "Observed: " <> show observedSymbols <> "\n"
+                                            <> "Reduced : " <> show reducedAlphabet
                                             )
                                          x)
                        $ TCM.size tcm - (olength missingSymbolIndicies)) f
