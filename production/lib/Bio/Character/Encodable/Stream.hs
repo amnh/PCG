@@ -61,7 +61,7 @@ class ( Bits b
 
     decodeElement :: Eq a => Alphabet a -> b -> AmbiguityGroup a
 
-    encodeElement :: Eq a => Alphabet a -> AmbiguityGroup a -> b
+    encodeElement :: (Eq a, IsString a) => Alphabet a -> AmbiguityGroup a -> b
 
     {-# INLINE getGapElement #-}
     getGapElement :: b -> b

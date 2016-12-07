@@ -35,6 +35,8 @@ import           File.Format.TNT
 import           File.Format.TransitionCostMatrix
 import           File.Format.VertexEdgeRoot
 
+import Debug.Trace
+
 
 -- TODO: Make sure that pipelines don't undo and redo the conversion to treeSeqs
 -- currently we pack and unpack codes, make parsers dumber in the future. Read below!
@@ -113,7 +115,7 @@ instance ParsedCharacters TntResult where
 
 -- | Coalesce the 'TaxonSequence' to the larger type 'ParsedSequences'
 tntToTheSuperSequence :: TaxonSequence -> ParsedChars
-tntToTheSuperSequence = V.fromList . fmap (Just . pure . f . show)
+tntToTheSuperSequence = V.fromList . fmap (Just . pure . f . (\x -> trace (show x) x) . show)
     where
         f :: String -> NonEmpty String
         f ('[':xs) = NE.fromList $ pure <$> init xs
