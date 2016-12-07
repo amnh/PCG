@@ -27,6 +27,7 @@ import Data.List
 import Data.Monoid
 import Control.Applicative (liftA2)
 
+
 {----
   - The Newick file format was developed by an informal committee meeting at
   - Newick's seafood restaurant. The grammar definition of the Newick format
@@ -48,8 +49,10 @@ import Control.Applicative (liftA2)
   - Extended Newick filed format.
   -}
 
+
 -- | One or more trees in a "Phylogenetic Forest".
 type NewickForest = [NewickNode]
+
 
 -- | A node in a "Phylogenetic Forest"
 data NewickNode
@@ -59,11 +62,13 @@ data NewickNode
    , branchLength :: Maybe Double
    } deriving (Eq,Ord)
 
+
 instance Show NewickNode where
   show (NewickNode d n b) = name ++ len ++ " " ++ show d 
     where
       name = maybe "Node" show n
       len  = maybe "" (\x -> ':' : show x) b
+
 
 instance Monoid NewickNode where
   mempty = NewickNode [] Nothing Nothing
@@ -83,26 +88,35 @@ newickNode nodes label length'
 isLeaf :: NewickNode -> Bool
 isLeaf node = (null . descendants) node && (isJust . newickLabel) node
 
+
 instance N.Network NewickNode NewickNode where
-  root     t   = t
-  children n _ = descendants n
-  nodeIsLeaf   n _ = isLeaf n
-  nodeIsRoot   n t = null $ N.parents n t
-  parents node tree 
-    | node `elem` descendants tree = nub $ tree : foldr (\n acc -> N.parents node n ++ acc) [] (descendants tree)
-    | otherwise = nub $ foldr (\n acc -> N.parents node n ++ acc) [] (descendants tree)
-  update tree new = 
-    let 
-        updateHere = foldr (\n acc -> if match n acc then upOne n acc else acc) tree new
-        updateRest = updateHere { descendants = (`N.update` new) <$> descendants updateHere }
-    in updateRest
-    where
-      match newNode t = newickLabel t == newickLabel newNode
-      upOne newNode t = t {descendants = descendants newNode, branchLength = branchLength newNode}
-  numNodes = tallyNodes
-    where
-      tallyNodes :: NewickNode -> Int
-      tallyNodes = succ . sum . fmap tallyNodes . descendants
-  addNode t n = t { descendants = n : descendants t }
+
+    root     t   = t
+
+    children n _ = descendants n
+
+    nodeIsLeaf   n _ = isLeaf n
+
+    nodeIsRoot   n t = null $ N.parents n t
+
+    parents node tree 
+      | node `elem` descendants tree = nub $ tree : foldr (\n acc -> N.parents node n ++ acc) [] (descendants tree)
+      | otherwise = nub $ foldr (\n acc -> N.parents node n ++ acc) [] (descendants tree)
+
+    update tree new = 
+      let 
+          updateHere = foldr (\n acc -> if match n acc then upOne n acc else acc) tree new
+          updateRest = updateHere { descendants = (`N.update` new) <$> descendants updateHere }
+      in updateRest
+      where
+        match newNode t = newickLabel t == newickLabel newNode
+        upOne newNode t = t {descendants = descendants newNode, branchLength = branchLength newNode}
+
+    numNodes = tallyNodes
+      where
+        tallyNodes :: NewickNode -> Int
+        tallyNodes = succ . sum . fmap tallyNodes . descendants
+
+    addNode t n = t { descendants = n : descendants t }
 
 
