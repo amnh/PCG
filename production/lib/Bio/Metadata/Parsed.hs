@@ -115,7 +115,7 @@ instance ParsedMetadata TNT.TntResult where
                   TNT.Continuous {} -> undefined -- I'm sure this will never blow up in our face /s
                   TNT.Dna        {} -> fromSymbols dnaAlph
                   TNT.Protein    {} -> fromSymbols aaAlph
-                  TNT.Discrete   {} -> (\x -> trace (show x) x) $
+                  TNT.Discrete   {} -> 
                       let stateNameValues = TNT.characterStates inMeta
                       in
                           if   null stateNameValues
@@ -150,13 +150,13 @@ instance ParsedMetadata VertexEdgeRoot where
 
 -- | (✔)
 instance ParsedMetadata Nexus where
-    unifyMetadata (Nexus (_, metas) _) | trace ("BEGIN FROM NEXUS:\n" <> (show $ (show . fromSymbols . Nex.alphabet) <$> metas) <> "\nENnD FROM NEXUS\n") False = undefined
+
     unifyMetadata input @(Nexus (_, metas) _) = V.zipWith convertNexusMeta alphabetVector metas
       where
         alphabetVector = developAlphabets $ unifyCharacters input
         convertNexusMeta developedAlphabet inMeta =
             ParsedCharacterMetadata
-            { alphabet      = (\x -> trace (show x) x) developedAlphabet -- {- (\x -> trace (show x) x) . -} fromSymbols $ Nex.alphabet inMeta
+            { alphabet      = developedAlphabet
             , characterName = Nex.name inMeta
             , weight        = fromRational rationalWeight * suppliedWeight
             , parsedTCM     = unfactoredTcmMay
