@@ -21,11 +21,13 @@ module File.Format.Newick.Internal
   , newickNode
   ) where
 
-import Data.Maybe (isJust,isNothing)
+
+import           Control.Applicative (liftA2)
+import           Data.Maybe (isJust,isNothing)
 import qualified Bio.PhyloGraph.Network as N
-import Data.List
-import Data.Monoid
-import Control.Applicative (liftA2)
+import           Data.List
+import           Data.List.NonEmpty  (NonEmpty)
+import           Data.Monoid
 
 
 {----
@@ -51,7 +53,7 @@ import Control.Applicative (liftA2)
 
 
 -- | One or more trees in a "Phylogenetic Forest".
-type NewickForest = [NewickNode]
+type NewickForest = NonEmpty NewickNode
 
 
 -- | A node in a "Phylogenetic Forest"
@@ -64,7 +66,7 @@ data NewickNode
 
 
 instance Show NewickNode where
-  show (NewickNode d n b) = name ++ len ++ " " ++ show d 
+  show (NewickNode d n b) = name <> len <> " " <> show d 
     where
       name = maybe "Node" show n
       len  = maybe "" (\x -> ':' : show x) b
