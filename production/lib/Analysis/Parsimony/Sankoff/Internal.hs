@@ -13,6 +13,8 @@
 -- This only works on static characters, and due to the traversal, only one
 -- character will be received at a time.
 --
+-- Assumes binary trees.
+--
 -----------------------------------------------------------------------------
 
 import Control.Lens
@@ -20,25 +22,27 @@ import Bio.Character.Decoration.Discrete
 import Bio.Character.Encodable
 
 data SankoffCharacterDecoration c = SankoffCharacterDecoration
-    { minCostVector :: [Word32]
-    , dirVector     :: [(Bool, Bool)] -- for a character state, (from left, from right)
-    , minCost       :: Word32
+    { minCostVector        :: [Word32]           -- overall min for each character state
+    , directionalMinVector :: [(Word32, Word32)] -- for a character state, its min from the left child and its min from the right
+    , minCost              :: Word32
     }
 
 -- | Used on the post-order (i.e. first) traversal.
---
 sankoffPostOrder :: ( EncodableStaticCharacter c, DiscreteCharacterDecoration d c ) => (d -> [d'] -> d')
 sankoffPostOrder charDecoration childDecorations =
     if isLeaf charDecoration
         then initializeCostVector charDecoration
-        else updateCostVector charDecoration childDecorations -- childDecorations needs to be a tuple
+        else updateCostVector charDecoration childDecorations
 
 -- | Used on the pre-order (i.e. second) traversal.
 sankoffPreOrder  :: ( HasTCM d ((c, c) -> (c, Double))
                     , HasStaticCharacter d c
                     , EncodableStaticCharacter c
-                    ) => (d -> [d'] -> d')
-sankoffPreOrder = undefined
+                    ) => (SankoffCharacterDecoration c -> [d'] -> d')
+sankoffPreOrder charDecoration childDecorations =
+    if isRoot charDecoration
+        then initializeDirVector charDecoration
+        else updateDirVector charDecoration childDecorations
 
 -- | Before post-order can actually occur, must initialize leaf vectors with values as such:
 -- Given \(n\) character states, for a given character \(i_c\) on leaf \(i\), there are \(2^n - 1)
@@ -62,64 +66,81 @@ initializeCostVector inputDecoration = returnChar
 -- | Given current node and its children, does actual calculation of new node value:
 -- [overall minimum cost, [minimum cost for character state], [direction arrows]],
 -- for each character state, for each character on current node. Does not assume binary tree.
-updateCostVector :: EncodableStaticCharacter c => c -> (SankoffCharacterDecoration c, SankoffCharacterDecoration c) -> SankoffCharacterDecoration c
-updateCostVector curNodeDecoration []      = undefined
-updateCostVector curNodeDecoration (x:[])  = undefined
-updateCostVector curNodeDecoration (x:y:_) = returnNodeDecoration
+
+-- TODO: Think we can eliminate the first argument here:
+updateCostVector :: EncodableStaticCharacter c => c -> [SankoffCharacterDecoration c] -> SankoffCharacterDecoration c
+updateCostVector _                 []                       = undefined
+updateCostVector _                 (x:[])                   = undefined
+updateCostVector curNodeDecoration (leftChild:rightChild:_) = returnNodeDecoration -- _Should_ be able to amend this to use non-binary children.
     where
-{-        -- fold over characters
-        costTuple = foldl (\x acc -> (fst acc : overallMin, snd acc : perCharStateMin)
-                            where
-                                (overallMin, perCharStateMin) = generateSingleCharDec (getAlphabet curNodeDecoration) childCharTup
-                                dirVector = generateDirVector overallMin perCharStateMin childCharTup
-                          ) ([],[]) $ zipWith (\a b -> (getChars a, getChars b)) leftChildDec rightChildDec
--}
-        -- There's an overall min for that character, charMin, as well as a list of mins corresponding to the minimum cost for each character state, [stateMin]
-        (minCost, costVector) = foldl (\charState (curDecoration ^. discreteCharacter, minC, costs) -> (charMin, costs : stateMin)
-                                          where
-                                              (charMin, stateMin) = calcCostPerState (curDecoration ^. discreteCharacter) minC charState
-                                      ) (maxBound :: Word32, []) $ curDecoration ^. characterAlphabet -- fold over alphabet states
-                            where
-                                finalMin =
-                                    -- if minCost child[i] + tcmCost (i, j) < curMin
-                                    if newMin < curMin
-                                        then newMin
-                                        else curMin
-                                newMin = minCost childDecoration + tcm[alphIdxI, alphIdxJ]
-                    costList : curMin
-        dirList = costList[i] = curMin
-            foldl
-            -- fold over alphabet states, j
-                -- if curMin == minCost child[i] + tcmCost(i, j)
-                    -- then dirVector `setBit` j
-                    -- else dirVector `clearBit` j
-        returnChar = SankoffCharacterDecoration minCost costVector dirVector
+        (charCost, costVector, dirCostVector) =
+            foldlWithKey' (\(charMin, costs, diretionalMins) charState _ -> (charMin, costs : stateMin, diretionalMins : childMins)
+                       where
+                           charMin = if stateMin < charMin
+                               then charMin
+                               else stateMin
+                           stateMin  = leftChildMin + rightChildMin
+                           childMins =
+                               calcCostPerState charState (leftChild ^. discreteCharacter) (rightChild ^. discreteCharacter)
+                   ) (maxBound :: Word32, [], []) (curNodeDecoration ^. characterAlphabet)
+        returnChar = SankoffCharacterDecoration costVector [] charCost
 
--- | Take in a single character state, represented by an int (which bit is on) and two decorations (the decorations of the two child states).
--- Return the total cost of transitioning from those two child decorations to the given character.
+initializeDirVector :: SankoffCharacterDecoration c -> SankoffCharacterDecoration c
+initializeDirVector curDecoration = returnChar
+    where
+        median = foldlWithKey' buildMedian startMedian $ curDecoration ^. minCostVector
+        buildMedian acc key charMin
+            | charMin == curDecoration ^. minCost = acc `setBit` key
+            | otherwise                           = acc
+        startMedian = (curDecoration ^. discreteCharacter) `xor` (curDecoration ^. discreteCharacter)
+        returnChar = SankoffCharacterDecoration (curDecoration ^. minCostVector) median (curDecoration ^. minCost) -- TODO: this is not where median goes. Fix it.
+
+updateDirVector :: SankoffCharacterDecoration c -> SankoffCharacterDecoration c -> SankoffCharacterDecoration c
+updateDirVector parentDecoration childDecoration = returnChar
+    where
+        median = foldlWithKey' buildMedian startMedian $ zip (childDecoration ^. minCostVector) (parentDecoration ^. directionalMinVector)
+        buildMedian acc key charMin
+            | charMin == curDecoration ^. minCost = acc `setBit` key
+            | otherwise                           = acc
+        startMedian = (childDecoration ^. discreteCharacter) `xor` (childDecoration ^. discreteCharacter)
+        returnChar  = SankoffCharacterDecoration (curDecoration ^. minCostVector) median (curDecoration ^. minCost) -- TODO: this is not where median goes. Fix it.
+
+-- | Take in a single character state as an Int, which represents an possible unambiguous character state on the parent,
+-- and two decorations: the decorations of the two child states.
+-- Return the minimum costs of transitioning from each of those two child decorations to the given character.
+-- These mins will be saved for use at the next post-order call, to the current parent node's parent.
 --
--- We can throw away the medians here because we're building medians: the possible character is looped over
+-- Note: We can throw away the medians that come back from the tcm here because we're building medians: the possible character is looped over
 -- all available characters, and there's an outer loop which sends in each possible character.
-calcCostPerState :: Int -> [DiscreteCharacterDecoration] -> Word32
-calcCostPerState inputCharState children =
-    -- foldlWithKey (\key (cost, ) value -> cost = value + tcm(key, inputCharState) ) child ^. minCostVector
-    foldlWithKey (\acc childCharState _ -> summedChildCosts + acc
-           where
-               summedChildCosts =
-                   foldl (\child cost -> transitionCost + child ^. minCost
-                          where
-                              tansitionCost = (child ^. characterSymbolTransitionCostMatrixGenerator) childCharState inputCharState
-                         ) 0 children
-          ) [1..(head children)]
-    foldl (\child cost -> transitionCost + child ^. minCost
-            where
-                tansitionCost = (child ^. characterSymbolTransitionCostMatrixGenerator) (child ^. discreteCharacter) charState
-           ) 0 children
+calcCostPerState :: Int -> DiscreteCharacterDecoration DiscreteCharacterDecoration -> (Int, Int)
+calcCostPerState inputCharState leftChildDec rightChildDec =
+    -- Using keys, fold over alphabet states as Ints. The zipped lists will give minimum accumulated costs for each character state in each child.
+    foldlWithKey' (\(leftMin, rightMin) childCharState (accumulatedLeftCharCost, accumulatedRightCharCost) ->
+                     leftMin  = if curLeftMin < leftMin
+                                then curLeftMin
+                                else leftMin
+                     rightMin = if curRightMin < rightMin
+                                then curRightMin
+                                else rightMin
+                     where
+                         curLeftMin          = leftTransitionCost  + accumulatedLeftCharCost
+                         curRightMin         = rightTransitionCost + accumulatedRightCharCost
+                         leftTransitionCost  = (leftChildDec  ^. characterSymbolTransitionCostMatrixGenerator) inputCharState childCharState
+                         rightTransitionCost = (rightChildDec ^. characterSymbolTransitionCostMatrixGenerator) inputCharState childCharState
+                 ) (maxBound :: Word32, maxBound :: Word32) zip (leftChildDec ^. minCostVector) (rightChildDec ^. minCostVector)
 
-        leftCost = (median, cost) = (leftChild ^. characterTCM) (leftChild ^. discreteCharacter) + leftChild ^. minCost
+calcDirPerState :: Int -> Int -> Int -> DiscreteCharacterDecoration DiscreteCharacterDecoration -> (Bool, Bool)
+calcDirPerState inputCharState leftChildCharMin rightChildMin leftChildDec rightChildDec =
+    foldlWithKey' (\(leftCharDirList, rightCharDirList) key (leftChildAccumCost, rightChildAccumCost) ->
+                       (leftCharDirList : leftCharDir, rightCharDirList : rightCharDir)
+                       where
+                           leftCharDir         = leftTransitionCost  + leftChildAccumCost  == leftChildCharMin
+                           rightCharDir        = rightTransitionCost + rightChildAccumCost == rightChildMin
+                           leftTransitionCost  = (leftChildDec  ^. characterSymbolTransitionCostMatrixGenerator) inputCharState childCharState
+                           rightTransitionCost = (rightChildDec ^. characterSymbolTransitionCostMatrixGenerator) inputCharState childCharState
 
--- | Takes in two characters, then folds over possible character states, calculating the minimum cost of having that character state
--- as a member of the possibly ambiguous character in the median
-generateSingleCharDec :: Alphabet -> (AlphabetChar, AlphabetChar) -> (Word32, [Word32])
-generateSingleCharDec (curDecoration, leftChildDec, rightChildDec) =
-    calcCostPerState charState [maxBound :: Word32]
+                  ) ([],[]) $ zip (leftChildDec ^. minCostVector) (rightChildDec ^. minCostVector)
+
+
+
+
