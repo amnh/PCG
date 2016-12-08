@@ -1,6 +1,6 @@
 -----------------------------------------------------------------------------
 -- |
--- Module      :  Analysis.Parsimony.Sankoff
+-- Module      :  Analysis.Parsimony.Fitch
 -- Copyright   :  (c) 2015-2015 Ward Wheeler
 -- License     :  BSD-style
 --
@@ -8,7 +8,7 @@
 -- Stability   :  provisional
 -- Portability :  portable
 --
--- Sankoff character analysis (cost and median)
+-- Fitch (non-additive) character analysis (cost and medians)
 --
 -- This only works on static characters, and due to the traversal, only one
 -- character will be received at a time.
@@ -21,26 +21,25 @@ import Control.Lens
 import Bio.Character.Decoration.Discrete
 import Bio.Character.Encodable
 
-data SankoffCharacterDecoration c = SankoffCharacterDecoration
-    { minCostVector        :: [Word32]             -- overall min for each character state
-    , directionalMinVector :: ([Word32], [Word32]) -- for a character state, its min from the left child and its min from the right
-    , minCost              :: Word32
+data FitchCharacterDecoration c = FitchCharacterDecoration
+    { cost   :: Word32
+    , median :: ([Word32], [Word32]) -- for a character state, its min from the left child and its min from the right
     }
 
 -- | Used on the post-order (i.e. first) traversal.
-sankoffPostOrder :: ( EncodableStaticCharacter c, DiscreteCharacterDecoration d c ) => (d -> [d'] -> d')
-sankoffPostOrder charDecoration []               = initializeCostVector charDecoration                             -- is a leaf
-sankoffPostOrder charDecoration childDecorations = updateCostVector charDecoration childDecorations
+fitchPostOrder :: ( EncodableStaticCharacter c, DiscreteCharacterDecoration d c ) => (d -> [d'] -> d')
+fitchPostOrder charDecoration []               = charDecoration
+fitchPostOrder charDecoration childDecorations = updateCostVector charDecoration childDecorations
 
 -- | Used on the pre-order (i.e. second) traversal. Either calls 'initializeDirVector' on root or
 -- Needs to determine which child it's updating, then sends the appropriate minlist
-sankoffPreOrder  :: ( HasTCM d ((c, c) -> (c, Double))
+fitchPreOrder  :: ( HasTCM d ((c, c) -> (c, Double))
                     , HasStaticCharacter d c
                     , EncodableStaticCharacter c
-                    ) => (SankoffCharacterDecoration c -> [(Word, d')] -> d')
-sankoffPreOrder curDecoration (x:y:_)                             = curDecoration                     -- shouldn't be possible, but here for completion
-sankoffPreOrder curDecoration []                                  = initializeDirVector curDecoration -- is a root
-sankoffPreOrder curDecoration ((whichChild, parentDecoration):[]) = returnChar
+                    ) => (FitchCharacterDecoration c -> [(Word, d')] -> d')
+fitchPreOrder curDecoration (x:y:_)                             = curDecoration                     -- shouldn't be possible, but here for completion
+fitchPreOrder curDecoration []                                  = initializeDirVector curDecoration -- is a root
+fitchPreOrder curDecoration ((whichChild, parentDecoration):[]) = returnChar
     where
         returnChar
             | whichChild == 0 = updateDirVector parentDecoration (fst (parentDecoration ^. directionalMinVector)) curDecoration -- left child
@@ -54,7 +53,7 @@ sankoffPreOrder curDecoration ((whichChild, parentDecoration):[]) = returnChar
 -- \[ cost(i_c) =
 --       \] \(i \elem s_x\), etc...
 -- TODO: finish above comment once MathJax is working
-initializeCostVector :: DiscreteCharacterDecoration d c => c -> SankoffCharacterDecoration c
+initializeCostVector :: DiscreteCharacterDecoration d c => c -> FitchCharacterDecoration c
 initializeCostVector inputDecoration = returnChar
     where
         -- assuming metricity and 0 diagonal
@@ -64,32 +63,29 @@ initializeCostVector inputDecoration = returnChar
                     | key `testBit` inputChar = [minBound :: Word32]
                     | otherwise               = [maxBound :: Word32] -- Change this if it's actually Doubles.
                     where inputChar = (inputDecoration ^. discreteCharacter)
-        returnChar = SankoffCharacterDecoration costList [] (minBound :: Word32)
+        returnChar = FitchCharacterDecoration costList [] (minBound :: Word32)
 
 -- |
 -- Given current node and its children, does actual calculation of new node value
 -- for each character state, for each character on current node. Assumes binary tree.
-updateCostVector :: EncodableStaticCharacter c => c -> [SankoffCharacterDecoration c] -> SankoffCharacterDecoration c
+updateCostVector :: EncodableStaticCharacter c => c -> [FitchCharacterDecoration c] -> FitchCharacterDecoration c
 updateCostVector curNodeDecoration []                       = curNodeDecoration    -- Leaf node, so shouldn't get here.
 updateCostVector curNodeDecoration (x:[])                   = curNodeDecoration    -- Shouldn't be possible, but here for completion.
 updateCostVector curNodeDecoration (leftChild:rightChild:_) = returnNodeDecoration -- _Should_ be able to amend this to use non-binary children.
     where
         (charCost, costVector) =
-            foldlWithKey' findMins (maxBound :: Word32, ([],[])) (curNodeDecoration ^. characterAlphabet)
+            foldlWithKey' (\(charMin, (leftMin, rightMin)) charState _ -> (charMin, (leftMin : leftChildMin, rightMin : rightChildMin)
+                       where
+                           charMin = if stateMin < charMin
+                               then charMin
+                               else stateMin
+                           stateMin                      = leftChildMin + rightChildMin
+                           (leftChildMin, rightChildMin) =
+                               calcCostPerState charState (leftChild ^. discreteCharacter) (rightChild ^. discreteCharacter)
+                   ) (maxBound :: Word32, ([],[])) (curNodeDecoration ^. characterAlphabet)
+        returnChar = FitchCharacterDecoration costVector [] charCost
 
-        findMins (charMin, (leftMin : leftChildMin, rightMin : rightChildMin)) = returnVal
-             where
-                 charMin = if stateMin < charMin
-                           then charMin
-                           else stateMin
-                 stateMin                      = leftChildMin + rightChildMin
-                 (leftChildMin, rightChildMin) =
-                     calcCostPerState charState (leftChild ^. discreteCharacter) (rightChild ^. discreteCharacter)
-                 returnVal = (charMin, (leftMin : leftChildMin, rightMin : rightChildMin)
-
-        returnNodeDecoration = SankoffCharacterDecoration costVector [] charCost
-
-initializeDirVector :: SankoffCharacterDecoration c -> SankoffCharacterDecoration c
+initializeDirVector :: FitchCharacterDecoration c -> FitchCharacterDecoration c
 initializeDirVector curDecoration = returnChar
     where
         median = foldlWithKey' buildMedian startMedian $ curDecoration ^. minCostVector
@@ -97,7 +93,7 @@ initializeDirVector curDecoration = returnChar
             | charMin == curDecoration ^. minCost = acc `setBit` key
             | otherwise                           = acc
         startMedian = (curDecoration ^. discreteCharacter) `xor` (curDecoration ^. discreteCharacter)
-        returnChar = SankoffCharacterDecoration (curDecoration ^. minCostVector) median (curDecoration ^. minCost) -- TODO: this is not where median goes. Fix it.
+        returnChar = FitchCharacterDecoration (curDecoration ^. minCostVector) median (curDecoration ^. minCost) -- TODO: this is not where median goes. Fix it.
 
 -- |
 -- Takes two decorations in, a child and a parent, and calculates the median character value of the child. For each possible character state,
@@ -105,7 +101,7 @@ initializeDirVector curDecoration = returnChar
 -- It relies on dynamic programming to do so, using the minimum tuple in the parent to determine whether that character state can participate
 -- in the final median. Using the left child as a template, the character state is part of the median if, for some state in the parent,
 -- parCharState_minCost_left == childCharState_minCost + TCM(childCharState, parCharState).
-updateDirVector :: DiscreteCharacterDecoration c => SankoffCharacterDecoration c -> SankoffCharacterDecoration c -> SankoffCharacterDecoration c
+updateDirVector :: DiscreteCharacterDecoration c => FitchCharacterDecoration c -> FitchCharacterDecoration c -> FitchCharacterDecoration c
 updateDirVector parentDecoration parentMins childDecoration = returnChar
     where
         median = foldlWithKey' (\acc parentCharState parentCharMin ->
