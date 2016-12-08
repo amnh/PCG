@@ -21,6 +21,7 @@ import           Data.Bifunctor                          (second)
 import           Data.Char
 import           Data.Foldable
 import           Data.List                               (transpose)
+import           Data.List.NonEmpty                      (NonEmpty)
 import           Data.Monoid
 import           Data.TCM                                (TCM)
 import qualified Data.TCM                         as TCM
@@ -72,7 +73,7 @@ instance ParsedMetadata FastcParseResult where
 
 
 -- | (✔)
-instance ParsedMetadata NewickForest where
+instance ParsedMetadata (NonEmpty NewickForest) where
     unifyMetadata _ = mempty
 
 

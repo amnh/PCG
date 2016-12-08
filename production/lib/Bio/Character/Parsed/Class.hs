@@ -25,6 +25,7 @@ import           Data.Map                  (Map,insert,mergeWithKey)
 import qualified Data.Map           as M   (fromList)
 import           Data.Maybe
 import           Data.Monoid
+import           Data.Semigroup.Foldable
 import           Data.Tree
 import qualified Data.Vector        as V
 import           File.Format.Fasta
@@ -82,8 +83,8 @@ instance ParsedCharacters FastcParseResult where
 
 
 -- | (✔)
-instance ParsedCharacters NewickForest where
-    unifyCharacters = mergeMaps . fmap f
+instance ParsedCharacters (NonEmpty NewickForest) where
+    unifyCharacters = mergeMaps . foldMap1 (fmap f)
         where
             f :: NewickNode -> TreeChars
             f node 
