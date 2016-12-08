@@ -15,18 +15,18 @@
 {-# LANGUAGE FlexibleContexts, TypeFamilies #-}
 
 module Text.Megaparsec.Custom
- ( (<:>)
- , (<++>)
- , anythingTill
- , comment
- , double
- , endOfLine
- , fails
- , inlineSpaceChar 
- , inlineSpace
- , nonEmpty
- , somethingTill
- ) where
+  ( (<:>)
+  , (<++>)
+  , anythingTill
+  , comment
+  , double
+  , endOfLine
+  , fails
+  , inlineSpaceChar 
+  , inlineSpace
+  , nonEmpty
+  , somethingTill
+  ) where
 
 import           Data.Char                (isSpace)
 import           Data.Functor             (($>))
@@ -37,17 +37,21 @@ import           Text.Megaparsec
 import           Text.Megaparsec.Prim     (MonadParsec)
 import           Text.Megaparsec.Lexer    (float,integer,signed)
 
+
 -- | Prepend a single combinator result element to the combinator result of a list of elements
 (<:>)  :: Applicative f => f a -> f [a] -> f [a]
 (<:>)  a b = (:)  <$> a <*> b
+
 
 -- | Concatenate the result of two list producing combinators
 (<++>) :: Applicative f => f [a] -> f [a] -> f [a]
 (<++>) a b = (++) <$> a <*> b
 
+
 -- | Collects one or more of the arguments into a `NonEmpty` list.
 nonEmpty :: MonadParsec e s m => m a -> m (NonEmpty a)
 nonEmpty c = NE.fromList <$> some c
+
 
 -- | @anythingTill end@ consumes zero or more characters until @end@ is matched, leaving @end@ in the stream
 anythingTill :: (MonadParsec e s m, Token s ~ Char) => m a -> m String
@@ -57,6 +61,7 @@ anythingTill c = do
       Just _  -> pure []
       Nothing -> somethingTill c
 
+
 -- | @somethingTill end@ consumes one or more characters until @end@ is matched, leaving @end@ in the stream
 somethingTill :: (MonadParsec e s m, Token s ~ Char) => m a -> m String
 somethingTill c = 
@@ -64,18 +69,22 @@ somethingTill c =
     _ <- notFollowedBy c
     anyChar <:> anythingTill c
 
+
 -- | Flexibly parses a 'Double' value represented in a variety of forms.
 double :: (MonadParsec e s m, Token s ~ Char) => m Double
 double = try (signed space float)
      <|> fromIntegral <$> signed space integer
 
+
 -- | Custom 'eol' combinator to account for /very/ old Mac file formats ending lines in a single @\'\\r\'@
 endOfLine :: (MonadParsec e s m, Token s ~ Char) => m Char
 endOfLine = (try eol <|> string "\r") $> '\n'
 
+
 -- | Accepts zero or more Failure messages
 fails :: MonadParsec e s m => [String] -> m a
 fails = failure mempty mempty . S.fromList . fmap representFail
+
 
 -- | Consumes a whitespace character that is not a newline character
 inlineSpaceChar :: (MonadParsec e s m, Token s ~ Char) => m Char
@@ -83,9 +92,11 @@ inlineSpaceChar = satisfy $ \x -> isSpace x
                                && '\n' /= x
                                && '\r' /= x
 
+
 -- | Consumes zero or more whitespace characters that are not newline characters
 inlineSpace :: (MonadParsec e s m, Token s ~ Char) => m ()
 inlineSpace = skipMany inlineSpaceChar
+
 
 -- | @comment start end@ will parse a /nested/ comment structure which begins with
 -- the delimiter @start@ and ends with the delimiter @end@.
@@ -118,6 +129,7 @@ comment start end = commentDefinition' False
           if enquote
           then [prefix,before,comments,suffix,after]
           else [before,comments,after]
+
 
 -- | Takes a 'Stream' of 'Char's and returns a String
 -- with EOL sequences standardized to the Unix EOL sequence.
