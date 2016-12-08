@@ -44,7 +44,7 @@ import qualified Data.List.NonEmpty         as NE
 import           Data.List.Utility                 (duplicates)
 import           Data.Map                          (Map, intersectionWith, keys)
 import qualified Data.Map                   as Map
-import           Data.Maybe                        (catMaybes, fromMaybe)
+import           Data.Maybe                        (catMaybes, fromMaybe, listToMaybe)
 import           Data.Semigroup                    ((<>), sconcat)
 import           Data.Semigroup.Foldable
 import           Data.Set                          (Set, (\\))
@@ -62,22 +62,22 @@ import Debug.Trace (trace)
 
 data FracturedParseResult
    = FPR
-   { parsedChars :: TreeChars
-   , parsedMetas :: Vector ParsedCharacterMetadata -- Vector StandardMetadata
-   , parsedTrees :: ParserForest
-   , relatedTcm  :: Maybe TCM
-   , sourceFile  :: FilePath
+   { parsedChars   :: TreeChars
+   , parsedMetas   :: Vector ParsedCharacterMetadata -- Vector StandardMetadata
+   , parsedForests :: ParserForestSet
+   , relatedTcm    :: Maybe TCM
+   , sourceFile    :: FilePath
    }
 
 
 instance Show FracturedParseResult where
     show fpr = unlines 
         [ "FPR"
-        , "  { parsedChars = " <> show (parsedChars fpr)
-        , "  , parsedMetas = " <> show (parsedMetas fpr)
-        , "  , parsedTrees = " <> if null (parsedTrees fpr) then "Nothing" else "Just <trees>"
-        , "  , relatedTcm  = " <> show (relatedTcm  fpr)
-        , "  , sourceFile  = " <> show (sourceFile  fpr)
+        , "  { parsedChars   = " <> show (parsedChars fpr)
+        , "  , parsedMetas   = " <> show (parsedMetas fpr)
+        , "  , parsedForests = " <> if null (parsedForests fpr) then "Nothing" else "Just <trees>"
+        , "  , relatedTcm    = " <> show (relatedTcm  fpr)
+        , "  , sourceFile    = " <> show (sourceFile  fpr)
         , "  }"
         ]
     
@@ -105,18 +105,23 @@ rectifyResults2 fprs =
     -- Step 2: Union the taxa names together into total terminal set
     taxaSet         = {- (\x ->  trace ("Taxa Set: " <> show x) x) . -} mconcat $ (Set.fromList . keys . parsedChars) <$> dataSeqs
     -- Step 3: Gather forest file data
-    allForests      = {- (\x ->  trace ("Forest Lengths: " <> show (length . parsedTrees <$> x)) x) $ -} filter (not . null . parsedTrees) fprs
+    allForests      = {- (\x ->  trace ("Forest Lengths: " <> show (length . parsedTrees <$> x)) x) $ -} filter (not . null . parsedForests) fprs
     -- Step 4: Gather the taxa names for each forest from terminal nodes
-    forestTaxa      = {- (\x ->  trace ("Forest Set: " <> show x) x) . -} (foldMap (foldMap terminalNames2) . parsedTrees &&& id) <$> allForests
-    -- Step 5: Assert that each terminal node name is unique in the forest
-    duplicateNames  = filter (not . null . fst) $ first duplicates <$> forestTaxa
+    forestTaxa :: [([NonEmpty Identifier], FracturedParseResult)]
+    forestTaxa      = {- (\x ->  trace ("Forest Set: " <> show x) x) . -} gatherForestsTerminalNames <$> allForests
+    -- Step 5: Assert that each terminal node name is unique in each forest
+    duplicateNames :: [([[Identifier]], FracturedParseResult)]
+    duplicateNames  = filter (not . (all null) . fst) $ first (fmap duplicates) <$> forestTaxa
     -- Step 6: Assert that each forest's terminal node set is exactly the same as the taxa set from "data files"
-    extraNames      = filter (not . null . fst) $ first ((\\ taxaSet) . Set.fromList) <$> forestTaxa
-    missingNames    = filter (not . null . fst) $ first ((taxaSet \\) . Set.fromList) <$> forestTaxa
+    extraNames   :: [([Set Identifier], FracturedParseResult)]
+    extraNames      = filter (not . (all null) . fst) $ first (fmap ((\\ taxaSet) . Set.fromList . toList)) <$> forestTaxa
+    missingNames :: [([Set Identifier], FracturedParseResult)]
+    missingNames    = filter (not . (all null) . fst) $ first (fmap ((taxaSet \\) . Set.fromList . toList)) <$> forestTaxa
     -- Step 7: Combine disparte sequences from many sources  into single metadata & character sequence.
     charSeqs        = joinSequences2 dataSeqs
     -- Step 8: Collect the parsed forests to be merged
-    suppliedForests = catMaybes $ parsedTrees <$> allForests
+    suppliedForests :: [PhylogeneticForest ParserTree]
+    suppliedForests = foldMap toList . catMaybes $ parsedForests <$> allForests
       
     -- Step 9: Convert topological forests to DAGs (using reference indexing from #7 results)
     dagForest       =
@@ -127,11 +132,9 @@ rectifyResults2 fprs =
           (True , False) -> Right . Right . PhylogeneticSolution . pure
                           . foldMap1 singletonComponent . NE.fromList $ toKeyedList charSeqs
           -- Build a forest of with Units () as character type parameter
-          (False, True ) -> Right . Left . PhylogeneticSolution . pure
-                          . sconcat $ NE.fromList suppliedForests
+          (False, True ) -> Right . Left  . PhylogeneticSolution $ NE.fromList suppliedForests
           -- BUild a forest with the corresponding character data on the nodes
-          (False, False) -> Right . Right . PhylogeneticSolution . pure
-                          . foldMap1 (matchToChars charSeqs) $ NE.fromList suppliedForests
+          (False, False) -> Right . Right . PhylogeneticSolution $ (matchToChars charSeqs) <$> NE.fromList suppliedForests
       where
         defaultCharacterSequenceDatum = fromBlocks . fmap blockTransform . toBlocks . head $ toList charSeqs
           where
@@ -166,9 +169,9 @@ rectifyResults2 fprs =
 
     -- Error collection
     errors          = catMaybes [duplicateError, extraError, missingError]
-    duplicateError  = colateErrors ForestDuplicateTaxa duplicateNames
-    extraError      = colateErrors ForestExtraTaxa     extraNames
-    missingError    = colateErrors ForestMissingTaxa   missingNames
+    duplicateError  = listToMaybe . catMaybes $ colateErrors ForestDuplicateTaxa <$> expandForestErrors duplicateNames
+    extraError      = listToMaybe . catMaybes $ colateErrors ForestExtraTaxa     <$> expandForestErrors extraNames
+    missingError    = listToMaybe . catMaybes $ colateErrors ForestMissingTaxa   <$> expandForestErrors missingNames
 
     colateErrors :: (Foldable t, Foldable t')
                  => (NonEmpty a -> FilePath -> UnificationErrorMessage)
@@ -180,6 +183,12 @@ rectifyResults2 fprs =
         ys -> Just . UnificationError . NE.fromList $ transformFPR <$> ys
       where
         transformFPR (x,y) = f (NE.fromList $ toList x) $ sourceFile y
+
+    -- [([Set Identifier], FracturedParseResult)]
+    expandForestErrors :: Foldable t => [([t TaxaName], FracturedParseResult)] -> [[(t TaxaName, FracturedParseResult)]]
+    expandForestErrors = fmap f
+      where
+        f (ys, fpr) = (\x -> (x, fpr)) <$> ys
 
 
 -- | 
@@ -346,3 +355,17 @@ fromTreeOnlyFile fpr = null chars || all null chars
 
 terminalNames2 :: ReferenceDAG (Maybe Double) (Maybe String) -> [Identifier]
 terminalNames2 dag = catMaybes $ (`nodeDatum` dag) <$> leaves dag
+
+
+gatherForestsTerminalNames :: FracturedParseResult -> ([NonEmpty Identifier], FracturedParseResult)
+gatherForestsTerminalNames fpr = (identifiers, fpr)
+  where
+    identifiers =
+        case parsedForests fpr of
+          Nothing      -> []
+          Just (e:|es) -> catMaybes $ f <$> (e:es)
+      where
+        f x =
+          case foldMap terminalNames2 x of
+             []   -> Nothing
+             x:xs -> Just $ x :| xs

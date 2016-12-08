@@ -226,7 +226,7 @@ progressiveParse inputPath = do
                     case trace "TNT" $ parse' tntStreamParser filePath fileContent of
                       Right x    -> pure $ toFractured Nothing filePath x
                       Left  err5 ->
-                        case trace "Nexus" $ parse' nexusStreamParser filePath fileContent of
+                        case parse' nexusStreamParser filePath $ trace "Nexus" fileContent of
                           Right x    -> pure $ toFractured Nothing filePath x
                           Left  err6 ->
                             let previousErrors      = [(err1,"Fasta"),(err2,"Fasta"),(err3,"Newick tree"),(err4,"VER"),(err5,"Henning/TNT"),(err6,"Nexus")]
@@ -250,11 +250,12 @@ progressiveParse inputPath = do
     
 
 toFractured :: (ParsedMetadata a, ParsedCharacters a, ParsedForest a) => Maybe TCM.TCM -> FilePath -> a -> FracturedParseResult
-toFractured tcmMat path = FPR <$> unifyCharacters
-                              <*> unifyMetadata
-                              <*> unifyGraph
-                              <*> const tcmMat
-                              <*> const path
+toFractured tcmMat path =
+    FPR <$> unifyCharacters
+        <*> unifyMetadata
+        <*> unifyGraph
+        <*> const tcmMat
+        <*> const path
 {--}
 
 

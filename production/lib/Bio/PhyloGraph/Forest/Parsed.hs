@@ -20,7 +20,6 @@ module Bio.PhyloGraph.Forest.Parsed where
 import           Bio.PhyloGraphPrime.Forest
 import           Bio.PhyloGraphPrime.ReferenceDAG
 -- import           Bio.PhyloGraphPrime.ZipperDAG
-import           Control.Monad                            (join)
 import           Data.Foldable
 import           Data.IntMap                              (IntMap)
 import qualified Data.IntMap                       as IM
@@ -93,8 +92,7 @@ instance ParsedForest TCM where
 
 -- | (✔)
 instance ParsedForest Nexus where
-    unifyGraph (Nexus _ forest) = forest
-                              >>= unifyGraph . (pure:: a -> NonEmpty a)
+    unifyGraph (Nexus _ forest) = unifyGraph =<< nonEmpty forest
 
 
 -- | (✔)
