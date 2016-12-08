@@ -1,6 +1,6 @@
 -----------------------------------------------------------------------------
 -- |
--- Module      :  Analysis.Parsimony.Sankoff
+-- Module      :  Analysis.Parsimony.Sankoff.Internal
 -- Copyright   :  (c) 2015-2015 Ward Wheeler
 -- License     :  BSD-style
 --
@@ -17,9 +17,13 @@
 --
 -----------------------------------------------------------------------------
 
+module Analysis.Parsimony.Sankoff.Internal where
+
+
 import Control.Lens
 import Bio.Character.Decoration.Discrete
 import Bio.Character.Encodable
+
 
 data SankoffCharacterDecoration c = SankoffCharacterDecoration
     { minCostVector        :: [Word32]             -- overall min for each character state
@@ -27,12 +31,14 @@ data SankoffCharacterDecoration c = SankoffCharacterDecoration
     , minCost              :: Word32
     }
 
+
 -- | Used on the post-order (i.e. first) traversal.
 sankoffPostOrder :: ( EncodableStaticCharacter c, DiscreteCharacterDecoration d c ) => (d -> [d'] -> d')
 sankoffPostOrder charDecoration childDecorations =
     if isLeaf charDecoration
         then initializeCostVector charDecoration
         else updateCostVector charDecoration childDecorations
+
 
 -- | Used on the pre-order (i.e. second) traversal. Either calls 'initializeDirVector' on root or
 -- Needs to determine which child it's updating, then sends the appropriate minlist
@@ -68,6 +74,7 @@ initializeCostVector inputDecoration = returnChar
                     where inputChar = (inputDecoration ^. discreteCharacter)
         returnChar = SankoffCharacterDecoration costList [] (minBound :: Word32)
 
+
 -- |
 -- Given current node and its children, does actual calculation of new node value
 -- for each character state, for each character on current node. Assumes binary tree.
@@ -76,17 +83,18 @@ updateCostVector curNodeDecoration []                       = curNodeDecoration 
 updateCostVector curNodeDecoration (x:[])                   = curNodeDecoration    -- Shouldn't be possible, but here for completion.
 updateCostVector curNodeDecoration (leftChild:rightChild:_) = returnNodeDecoration -- _Should_ be able to amend this to use non-binary children.
     where
-        (charCost, costVector) =
-            foldlWithKey' (\(charMin, (leftMin, rightMin)) charState _ -> (charMin, (leftMin : leftChildMin, rightMin : rightChildMin)
-                       where
-                           charMin = if stateMin < charMin
-                               then charMin
-                               else stateMin
-                           stateMin                      = leftChildMin + rightChildMin
-                           (leftChildMin, rightChildMin) =
-                               calcCostPerState charState (leftChild ^. discreteCharacter) (rightChild ^. discreteCharacter)
-                   ) (maxBound :: Word32, ([],[])) (curNodeDecoration ^. characterAlphabet)
-        returnChar = SankoffCharacterDecoration costVector [] charCost
+      (charCost, costVector) = foldlWithKey' f iniitalAccumulator (curNodeDecoration ^. characterAlphabet)
+      iniitalAccumulator = (maxBound :: Word32, ([],[]))
+      f (charMin, (leftMin, rightMin)) charState _ = (charMin, (leftMin : leftChildMin, rightMin : rightChildMin))
+          where
+             -- Almost certain that this shadowed, recursive bining is incorrect. Shadowing is bad!
+            charMin = if   stateMin < charMin
+                      then charMin
+                      else stateMin
+            stateMin                     = leftChildMin + rightChildMin
+            (leftChildMin, rightChildMin) =  calcCostPerState charState (leftChild ^. discreteCharacter) (rightChild ^. discreteCharacter)
+      returnChar = SankoffCharacterDecoration costVector [] charCost
+
 
 initializeDirVector :: SankoffCharacterDecoration c -> SankoffCharacterDecoration c
 initializeDirVector curDecoration = returnChar
@@ -98,6 +106,7 @@ initializeDirVector curDecoration = returnChar
         startMedian = (curDecoration ^. discreteCharacter) `xor` (curDecoration ^. discreteCharacter)
         returnChar = SankoffCharacterDecoration (curDecoration ^. minCostVector) median (curDecoration ^. minCost) -- TODO: this is not where median goes. Fix it.
 
+        
 -- |
 -- Takes two decorations in, a child and a parent, and calculates the median character value of the child. For each possible character state,
 -- this value is based on whether that character state in the child is on one of the min-cost paths from the root to the leaves.
@@ -121,7 +130,9 @@ updateDirVector parentDecoration parentMins childDecoration = returnChar
         parentMin   = if whichChild == 0
                         then parentDecoration ^. leftChildMin
                         else parentDecoration ^. rightChildMin
-        returnChar  = curDecoration ^. discreteCharacter = median
+--  [!]   What's happening here? Mutation over a Lens? Use (%~) operator.
+--      returnChar  = curDecoration ^. discreteCharacter = median
+        returnChar = undefined
 
 
 -- | Take in a single character state as an Int, which represents an possible unambiguous character state on the parent,
@@ -147,9 +158,4 @@ calcCostPerState inputCharState leftChildDec rightChildDec =
                          leftTransitionCost  = (leftChildDec  ^. characterSymbolTransitionCostMatrixGenerator) inputCharState childCharState
                          rightTransitionCost = (rightChildDec ^. characterSymbolTransitionCostMatrixGenerator) inputCharState childCharState
                  ) (maxBound :: Word32, maxBound :: Word32) zip (leftChildDec ^. minCostVector) (rightChildDec ^. minCostVector)
-
-
-
-
-
 
