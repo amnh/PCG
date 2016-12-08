@@ -16,7 +16,7 @@
 
 module Analysis.Parsimony.Binary.SequentialAlign.FFI where
 
-import Bio.Character.Dynamic.Coded.Internal
+import Bio.Character.Encodable
 import Bio.Character.Exportable.Class
 import Data.BitMatrix.Internal
 import Data.Bits

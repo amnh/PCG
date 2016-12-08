@@ -16,7 +16,7 @@ module Bio.Metadata.MaskGenerator where
 
 import           Bio.Metadata
 import           Bio.PhyloGraph.Solution
-import           Bio.Character.Dynamic
+import           Bio.Character.Encodable
 import           Data.Alphabet
 import           Data.Foldable
 import qualified Data.List.NonEmpty as NE

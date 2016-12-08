@@ -15,7 +15,7 @@
 
 module Bio.PhyloGraph.Node.Internal where
 
-import           Bio.Character.Dynamic
+import           Bio.Character.Encodable.Dynamic
 import qualified Bio.PhyloGraph.Node.Encoded      as EN
 import qualified Bio.PhyloGraph.Node.Final        as FN
 import qualified Bio.PhyloGraph.Node.ImpliedAlign as IN
@@ -149,7 +149,7 @@ generateLeavesDO alphabet taxaCount = do
       sequenceLength  <- choose (1,2)
       sequence $ generateLeaf sequenceLength <$> [0..taxaCount-1]
     where
-        nullCheck [] = [gapCharacter alphabet]
+        nullCheck [] = [gapSymbol alphabet]
         nullCheck xs = xs
         generateDynamicCharacter :: Gen DynamicChar
         generateDynamicCharacter = do

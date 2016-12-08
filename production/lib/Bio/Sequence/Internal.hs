@@ -24,11 +24,12 @@ module Bio.Sequence.Internal
   , fromBlocks
   ) where
 
---import           Bio.Character.Dynamic
---import           Bio.Character.Static
+--import           Bio.Character.Encodable
 import           Bio.Sequence.Block   (CharacterBlock)
 import           Data.Foldable
+import           Data.Key
 import           Data.List.NonEmpty   (NonEmpty)
+import           Data.Monoid
 import           Data.MonoTraversable
 
 
@@ -42,7 +43,28 @@ import           Data.MonoTraversable
 -- Blocks are optimized atomically with resepect to network resolutions.
 newtype CharacterSequence m i c f a d
     = CharSeq (NonEmpty (CharacterBlock m i c f a d))
+    deriving (Eq)
 
+
+instance ( Show m
+         , Show i
+         , Show c
+         , Show f
+         , Show a
+         , Show d
+         ) => Show (CharacterSequence m i c f a d) where
+
+    show = foldMapWithKey f . toBlocks
+      where
+        f blockNumber shownBlock = mconcat
+            [ "Character Block #"
+            , show blockNumber
+            , "\n\n"
+            , indent (show shownBlock)
+            , "\n"
+            ]
+        indent = unlines . fmap ("  "<>) . lines
+    
 
 -- |
 -- Destructs a 'CharacterSequence' to it's composite blocks.

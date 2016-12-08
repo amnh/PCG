@@ -18,7 +18,7 @@ module Analysis.Parsimony.Binary.Test where
 import           Analysis.Parsimony.Binary.Fitch
 import           Analysis.Parsimony.Binary.Internal
 --import           Analysis.Parsimony.Binary.Optimization
-import           Bio.Character.Dynamic
+import           Bio.Character.Encodable
 import           Bio.Metadata
 import           Bio.Metadata.MaskGenerator
 --import           Bio.Character.Parsed

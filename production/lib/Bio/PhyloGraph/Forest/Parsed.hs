@@ -11,9 +11,11 @@
 -- Typeclass for a parsed forest so that it can convert into an internal forest.
 --
 -----------------------------------------------------------------------------
+
 {-# LANGUAGE FlexibleContexts, FlexibleInstances #-}
 
 module Bio.PhyloGraph.Forest.Parsed where
+
 
 import           Bio.PhyloGraphPrime.Forest
 import           Bio.PhyloGraphPrime.ReferenceDAG
@@ -22,7 +24,7 @@ import           Data.Foldable
 import           Data.IntMap                              (IntMap)
 import qualified Data.IntMap                       as IM
 import           Data.Key
-import           Data.List.NonEmpty                       (nonEmpty)
+import           Data.List.NonEmpty                       (NonEmpty, nonEmpty)
 import qualified Data.List.NonEmpty                as NE
 import           Data.Map                                 (Map)
 import qualified Data.Map                          as Map
@@ -53,6 +55,11 @@ type ParserForest = Maybe (PhylogeneticForest ParserTree)
 
 
 -- |
+-- The parser coalesced type, representing a possibly present forest.
+type ParserForestSet = Maybe (NonEmpty (PhylogeneticForest ParserTree))
+
+
+-- |
 -- An internal type for representing a node with a unique numeric identifier.
 data NewickEnum   = NE !Int (Maybe String) (Maybe Double) [NewickEnum] 
    
@@ -60,7 +67,7 @@ data NewickEnum   = NE !Int (Maybe String) (Maybe Double) [NewickEnum]
 -- | Represents a parser result type which can have a possibly empty forest
 --   extracted from it.
 class ParsedForest a where
-    unifyGraph :: a -> ParserForest
+    unifyGraph :: a -> ParserForestSet
 
 
 -- | (✔)
@@ -85,12 +92,12 @@ instance ParsedForest TCM where
 
 -- | (✔)
 instance ParsedForest Nexus where
-    unifyGraph (Nexus _ forest) = unifyGraph forest
+    unifyGraph (Nexus _ forest) = unifyGraph =<< nonEmpty forest
 
 
 -- | (✔)
-instance ParsedForest NewickForest where
-    unifyGraph = fmap (PhylogeneticForest . fmap (coerceTree . relationMap . enumerate)) . nonEmpty
+instance ParsedForest (NonEmpty NewickForest) where
+    unifyGraph = Just . fmap (PhylogeneticForest . fmap (coerceTree . relationMap . enumerate))
       where
 
         -- Apply generating function by indexing adjacentcy matrix.
@@ -146,7 +153,7 @@ instance ParsedForest NewickForest where
 
 -- | (✔)
 instance ParsedForest TntResult where
-    unifyGraph input =
+    unifyGraph input = fmap pure $
         case input of
           Left                forest  -> toPhylogeneticForest getTNTName <$> Just     forest
           Right (WithTaxa _ _ forest) -> toPhylogeneticForest fst        <$> nonEmpty forest
@@ -190,7 +197,7 @@ instance ParsedForest TntResult where
 {- -}
 -- | (✔)
 instance ParsedForest VER.VertexEdgeRoot where
-    unifyGraph (VER vs es rs) = Just . PhylogeneticForest . fmap convertToDAG . NE.fromList $ toList disconnectedRoots
+    unifyGraph (VER vs es rs) = Just . pure . PhylogeneticForest . fmap convertToDAG . NE.fromList $ toList disconnectedRoots
       where
 
         childMapping = foldMap f vs

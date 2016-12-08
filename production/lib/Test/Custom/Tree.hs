@@ -8,7 +8,7 @@ module Test.Custom.Tree
   , simpleTreeCharacterDecorationEqualityAssertion
   ) where
 
-import           Bio.Character.Dynamic
+import           Bio.Character.Encodable
 import qualified Bio.PhyloGraph.Network           as N
 import qualified Bio.PhyloGraph.Node.Encoded      as EN
 import qualified Bio.PhyloGraph.Node.Final        as FN

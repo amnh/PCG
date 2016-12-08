@@ -25,6 +25,7 @@ import           Data.Map                  (Map,insert,mergeWithKey)
 import qualified Data.Map           as M   (fromList)
 import           Data.Maybe
 import           Data.Monoid
+import           Data.Semigroup.Foldable
 import           Data.Tree
 import qualified Data.Vector        as V
 import           File.Format.Fasta
@@ -34,6 +35,8 @@ import           File.Format.Nexus  hiding (TaxonSequenceMap)
 import           File.Format.TNT
 import           File.Format.TransitionCostMatrix
 import           File.Format.VertexEdgeRoot
+
+import Debug.Trace
 
 
 -- TODO: Make sure that pipelines don't undo and redo the conversion to treeSeqs
@@ -80,8 +83,8 @@ instance ParsedCharacters FastcParseResult where
 
 
 -- | (✔)
-instance ParsedCharacters NewickForest where
-    unifyCharacters = mergeMaps . fmap f
+instance ParsedCharacters (NonEmpty NewickForest) where
+    unifyCharacters = mergeMaps . foldMap1 (fmap f)
         where
             f :: NewickNode -> TreeChars
             f node 

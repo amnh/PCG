@@ -15,48 +15,66 @@
 module PCG.SearchState where
 
 import           Bio.Character
+import           Bio.Character.Decoration.Continuous
+import           Bio.Character.Decoration.Discrete
+import           Bio.Character.Decoration.Dynamic
 import           Bio.Sequence
 import           Bio.Sequence.Block
 import           Bio.PhyloGraphPrime
 import           Bio.PhyloGraphPrime.Node
 import           Bio.PhyloGraphPrime.ReferenceDAG
 import           Control.Evaluation
+import           Data.Monoid
 
 -- import Debug.Trace
 
 type SearchState = EvaluationT IO (Either TopologicalResult CharacterResult)
 
+
 type TopologicalResult = PhylogeneticSolution (ReferenceDAG (Maybe Double) (Maybe String))
 
+
 type CharacterResult   = PhylogeneticSolution CharacterDAG
+
 
 type CharacterDAG      = PhylogeneticDAG
                              (Maybe Double)
                              (Maybe String)
-                             StaticCharacterBlock
-                             StaticCharacterBlock
-                             Double
-                             StaticCharacterBlock
-                             StaticCharacterBlock
-                             DynamicChar
+                             UnifiedDiscreteCharacter
+                             UnifiedDiscreteCharacter
+                             UnifiedContinuousCharacter
+                             UnifiedDiscreteCharacter
+                             UnifiedDiscreteCharacter
+                             UnifiedDynamicCharacter
+
 
 type  UnifiedCharacterSequence
     = CharacterSequence
-        StaticCharacterBlock
-        StaticCharacterBlock
-        Double
-        StaticCharacterBlock
-        StaticCharacterBlock
-        DynamicChar
+        UnifiedDiscreteCharacter
+        UnifiedDiscreteCharacter
+        UnifiedContinuousCharacter
+        UnifiedDiscreteCharacter
+        UnifiedDiscreteCharacter
+        UnifiedDynamicCharacter
+
 
 type  UnifiedCharacterBlock
     = CharacterBlock
-        StaticCharacterBlock
-        StaticCharacterBlock
-        Double
-        StaticCharacterBlock
-        StaticCharacterBlock
-        DynamicChar
+        UnifiedDiscreteCharacter
+        UnifiedDiscreteCharacter
+        UnifiedContinuousCharacter
+        UnifiedDiscreteCharacter
+        UnifiedDiscreteCharacter
+        UnifiedDynamicCharacter
+
+
+type UnifiedContinuousCharacter = Maybe (ContinuousDecorationInitial ContinuousChar)
+
+
+type UnifiedDiscreteCharacter   = Maybe (DiscreteDecoration StaticCharacter)
+
+
+type UnifiedDynamicCharacter    = Maybe (DynamicDecorationInitial DynamicChar)
 
 
 -- PhylogeneticDAG (Maybe Double) (Maybe String) (Maybe StaticCharacterBlock) (Maybe DynamicChar)
@@ -64,6 +82,21 @@ type  UnifiedCharacterBlock
 
 data  PhylogeneticDAG e n m i c f a d
     = PDAG (ReferenceDAG e (PhylogeneticNode n (CharacterSequence m i c f a d)))
+
+instance ( Show e
+         , Show n
+         , Show m
+         , Show i
+         , Show c
+         , Show f
+         , Show a
+         , Show d
+         ) => Show (PhylogeneticDAG e n m i c f a d) where
+
+    show (PDAG dag) =
+        show dag <> "\n" <> foldMap f dag
+      where
+        f (PNode n sek) = unlines [show n, show sek]
 
 
 nodePreorderMap :: (n -> [n'] -> n')

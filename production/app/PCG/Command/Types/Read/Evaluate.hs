@@ -38,14 +38,14 @@ import           File.Format.Nexus            (nexusStreamParser)
 import           File.Format.TNT     hiding   (weight)
 import           File.Format.TransitionCostMatrix
 import           File.Format.VertexEdgeRoot
-import           PCG.Command.Types (Command(..))
+import           PCG.Command.Types            (Command(..))
 import           PCG.Command.Types.Read.Internal
 import           PCG.Command.Types.Read.Unification.Master
 import           PCG.SearchState
-import           Prelude             hiding (lookup)
+import           Prelude             hiding   (lookup)
 import           Text.Megaparsec
 
---import Debug.Trace (trace)
+import Debug.Trace (trace)
 
 type SearchState = EvaluationT IO (Either TopologicalResult CharacterResult)
 
@@ -57,6 +57,7 @@ parse' = parse
 evaluate :: Command -> EvaluationT IO a -> EvaluationT IO (Either TopologicalResult CharacterResult)
 {--}
 --evaluate (READ fileSpecs) _old | trace ("Evaluated called: " <> show fileSpecs) False = undefined
+evaluate (READ fileSpecs) _old | trace "STARTING READ COMMAND" False = undefined
 evaluate (READ fileSpecs) _old = do
     when (null fileSpecs) $ fail "No files specified in 'read()' command"
     result <- liftIO . runEitherT . eitherTValidation $ parseSpecifiedFile <$> fileSpecs
@@ -93,7 +94,6 @@ parseSpecifiedFile     (PrealignedFile x tcmRef) = do
         Just (path, content) -> do
           tcmMat <- hoistEither . first unparsable $ parse' tcmStreamParser path content
           traverse (hoistEither . setTcm tcmMat path) subContent
-  where
 
 
 setTcm :: TCM -> FilePath -> FracturedParseResult -> Either ReadError FracturedParseResult
@@ -101,7 +101,7 @@ setTcm t tcmPath fpr =
    case relatedTcm fpr of
      Just _  -> Left $ multipleTCMs (sourceFile fpr) tcmPath
      Nothing ->
-       let (factoredWeight, factoredTCM) = TCM.fromList . toList $ transitionCosts t
+       let (factoredWeight, factoredTCM) = TCM.fromList . (\x -> (trace . show $ length x) x) . toList $ transitionCosts t
            relatedAlphabet               = fromSymbols $ customAlphabet t
            metadataUpdate x = x
                { weight = weight x * fromRational factoredWeight
@@ -206,25 +206,27 @@ expandIUPAC fpr = fpr { parsedChars = newTreeChars }
     expandOrId m x = fromMaybe x $ x `lookup` m
 
 
+-- TODO: check file extension, to guess which parser to use first
 progressiveParse :: FilePath -> EitherT ReadError IO FracturedParseResult
+progressiveParse _ | trace "STARTING PROGRESSIVE PARSE" False = undefined
 progressiveParse inputPath = do
     (filePath, fileContent) <- head . dataFiles <$> getSpecifiedContent (UnspecifiedFile [inputPath])
-    case parse' nukeParser filePath fileContent of
+    case trace "FASTA (Nucleiotide)" $ parse' nukeParser filePath fileContent of
       Right x    -> pure $ toFractured Nothing filePath x
       Left  err1 ->
-        case parse' acidParser filePath fileContent of
+        case trace "FASTA (Amino Acid)" $ parse' acidParser filePath fileContent of
           Right x    -> pure $ toFractured Nothing filePath x
           Left  err2 ->
-            case parse' newickStreamParser filePath fileContent of
+            case trace "Newick" $ parse' newickStreamParser filePath fileContent of
               Right x    -> pure $ toFractured Nothing filePath x
               Left  err3 ->
-                case parse' verStreamParser filePath fileContent of
+                case trace "VER" $ parse' verStreamParser filePath fileContent of
                   Right x    -> pure $ toFractured Nothing filePath x
                   Left  err4 ->
-                    case parse' tntStreamParser filePath fileContent of
+                    case trace "TNT" $ parse' tntStreamParser filePath fileContent of
                       Right x    -> pure $ toFractured Nothing filePath x
                       Left  err5 ->
-                        case parse' nexusStreamParser filePath fileContent of
+                        case parse' nexusStreamParser filePath $ trace "Nexus" fileContent of
                           Right x    -> pure $ toFractured Nothing filePath x
                           Left  err6 ->
                             let previousErrors      = [(err1,"Fasta"),(err2,"Fasta"),(err3,"Newick tree"),(err4,"VER"),(err5,"Henning/TNT"),(err6,"Nexus")]
@@ -248,11 +250,12 @@ progressiveParse inputPath = do
     
 
 toFractured :: (ParsedMetadata a, ParsedCharacters a, ParsedForest a) => Maybe TCM.TCM -> FilePath -> a -> FracturedParseResult
-toFractured tcmMat path = FPR <$> unifyCharacters
-                              <*> unifyMetadata
-                              <*> unifyGraph
-                              <*> const tcmMat
-                              <*> const path
+toFractured tcmMat path =
+    FPR <$> unifyCharacters
+        <*> unifyMetadata
+        <*> unifyGraph
+        <*> const tcmMat
+        <*> const path
 {--}
 
 

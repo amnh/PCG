@@ -25,7 +25,6 @@ setup-info:
         content-length: 113379688
 extra-deps:
 - Glob-0.7.12
-- ListZipper-1.2.0.2
 - MonadRandom-0.4.2.3
 - QuickCheck-2.9.2
 - StateVar-1.1.0.4
@@ -40,6 +39,7 @@ extra-deps:
 - base-compat-0.9.1
 - base-orphans-0.5.4
 - bifunctors-5.4.1
+- bimap-0.3.2
 - binary-0.8.4.1
 - blaze-builder-0.4.0.2
 - bv-0.4.1

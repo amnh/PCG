@@ -16,7 +16,7 @@
 module Analysis.Parsimony.Binary.DirectOptimization.Internal where
 
 import Bio.Metadata
-import Bio.Character.Dynamic
+import Bio.Character.Encodable
 import Data.Bits
 --import Data.BitVector hiding (foldr, reverse)
 import Data.Foldable         (minimumBy)

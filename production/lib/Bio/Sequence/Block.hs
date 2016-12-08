@@ -10,43 +10,26 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE FlexibleContexts, FlexibleInstances, MultiParamTypeClasses #-}
 
 module Bio.Sequence.Block
   ( CharacterBlock(..)
-  , AdditiveBin()
-  , ContinuousBin()
-  , MetricBin()
-  , NonAdditiveBin()
-  , NonMetricBin()
   , toMissingCharacters
   , continuousSingleton
   , discreteSingleton
   , dynamicSingleton
+  , hexmap
   ) where
 
 
-import           Bio.Character
-import           Bio.Character.Internal
-import           Bio.Metadata.CharacterName
-import           Bio.Sequence.Bin.Additive
-import           Bio.Sequence.Bin.Continuous
-import qualified Bio.Sequence.Bin.Continuous as Continuous
-import           Bio.Sequence.Bin.Metric
-import           Bio.Sequence.Bin.NonAdditive
-import           Bio.Sequence.Bin.NonMetric
-import           Bio.Sequence.SharedContinugousMetatdata
-import           Data.Alphabet
-import           Data.Foldable
-import           Data.List.NonEmpty                 (NonEmpty( (:|) ))
-import           Data.List.Zipper            hiding (toList)
-import qualified Data.List.Zipper            as Zip
-import           Data.Monoid                        (mappend)
-import           Data.MonoTraversable
-import           Data.Semigroup
-import           Data.TCM
-import           Data.Vector                        (Vector)
-import qualified Data.Vector                 as V
+import Bio.Character.Encodable
+import Bio.Character.Decoration.Continuous
+import Bio.Metadata.CharacterName
+import Data.Foldable
+import Data.Monoid                         (mappend)
+import Data.Semigroup
+import Data.TCM
+import Data.Vector                         (Vector)
 
 
 -- |
@@ -57,119 +40,111 @@ import qualified Data.Vector                 as V
 -- Use '(<>)' to construct larger blocks.
 data CharacterBlock m i c f a d
    = CharacterBlock
-   { continuousCharacterBins   :: Maybe  (ContinuousBin  c)
-   , nonAdditiveCharacterBins  :: Vector (NonAdditiveBin f)
-   , additiveCharacterBins     :: Vector (   AdditiveBin a)
-   , metricCharacterBins       :: Vector (     MetricBin m)
-   , nonNonMetricCharacterBins :: Vector (  NonMetricBin i)
-   , dynamicCharacters         :: Vector (DynamicCharacterConstruct d)
-   } deriving (Eq, Show)
+   { continuousCharacterBins  :: Vector c
+   , nonAdditiveCharacterBins :: Vector f
+   , additiveCharacterBins    :: Vector a
+   , metricCharacterBins      :: Vector m
+   , nonMetricCharacterBins   :: Vector i
+   , dynamicCharacters        :: Vector d
+   } deriving (Eq)
 
 
-newtype DynamicCharacterConstruct d = DCC (DiscreteCharacterMetadata, TCM, Maybe d)
-  deriving (Eq, Show)
+hexmap :: (m -> m')
+       -> (i -> i')
+       -> (c -> c')
+       -> (f -> f')
+       -> (a -> a')
+       -> (d -> d')
+       -> CharacterBlock m  i  c  f  a  d 
+       -> CharacterBlock m' i' c' f' a' d' 
+hexmap f1 f2 f3 f4 f5 f6 =
+    CharacterBlock
+    <$> (fmap f3 . continuousCharacterBins )
+    <*> (fmap f4 . nonAdditiveCharacterBins)
+    <*> (fmap f5 . additiveCharacterBins   )
+    <*> (fmap f1 . metricCharacterBins     )
+    <*> (fmap f2 . nonMetricCharacterBins  )
+    <*> (fmap f6 . dynamicCharacters       )
 
 
-instance ( EncodedAmbiguityGroupContainer m, Semigroup m
-         , EncodedAmbiguityGroupContainer i, Semigroup i
-         , Semigroup c
-         , EncodedAmbiguityGroupContainer f, Semigroup f
-         , EncodedAmbiguityGroupContainer a, Semigroup a
-         ) => Semigroup (CharacterBlock m i c f a d) where
+instance Semigroup (CharacterBlock m i c f a d) where
+
     lhs <> rhs =
         CharacterBlock
-          { continuousCharacterBins   = continuousCharacterBins lhs `maybeMerge` continuousCharacterBins rhs
-          , nonAdditiveCharacterBins  = mergeByComparing symbolCount ( nonAdditiveCharacterBins lhs) ( nonAdditiveCharacterBins rhs)
-          , additiveCharacterBins     = mergeByComparing symbolCount (    additiveCharacterBins lhs) (    additiveCharacterBins rhs)
-          , metricCharacterBins       = mergeByComparing symbolCount (      metricCharacterBins lhs) (      metricCharacterBins rhs)
-          , nonNonMetricCharacterBins = mergeByComparing symbolCount (nonNonMetricCharacterBins lhs) (nonNonMetricCharacterBins rhs)
-          , dynamicCharacters         = dynamicCharacters lhs `mappend` dynamicCharacters rhs
+          { continuousCharacterBins   = continuousCharacterBins   lhs `mappend` continuousCharacterBins   rhs
+          , nonAdditiveCharacterBins  = nonAdditiveCharacterBins  lhs `mappend` nonAdditiveCharacterBins  rhs
+          , additiveCharacterBins     = additiveCharacterBins     lhs `mappend` additiveCharacterBins     rhs
+          , metricCharacterBins       = metricCharacterBins       lhs `mappend` metricCharacterBins       rhs
+          , nonMetricCharacterBins = nonMetricCharacterBins lhs `mappend` nonMetricCharacterBins rhs
+          , dynamicCharacters         = dynamicCharacters         lhs `mappend` dynamicCharacters         rhs
           }
-      where
-        maybeMerge x y =
-          case x of
-            Nothing -> y
-            Just v  ->
-              case y of
-                Nothing -> x
-                Just w  -> Just $ v <> w
 
 
-mergeByComparing :: (Eq a, Semigroup s) => (s -> a) -> Vector s -> Vector s -> Vector s
-mergeByComparing comparator lhs rhs
-    | null lhs  = rhs
-    | null rhs  = lhs
-    | otherwise = lhs' `mappend` (V.fromList . Zip.toList) rhs'
-    where
-      (rhs', lhs') = foldl' f initialAccumulator lhs
-      initialAccumulator = (Zip.fromList $ toList rhs, mempty)
-      f (x,y) e = g x
-        where
-          g z =
-            case safeCursor z of
-              Nothing -> (start z, y `mappend` pure e)
-              Just a  ->
-                if comparator a == comparator e
-                then (start $ delete z, y `mappend` pure (e <> a))
-                else g (right z)
+instance ( Show m
+         , Show i
+         , Show i
+         , Show c
+         , Show f
+         , Show a
+         , Show d
+         ) => Show (CharacterBlock m i c f a d) where
 
-    
-toMissingCharacters :: ( EncodableStaticCharacterStream m
-                       , EncodableStaticCharacterStream i
-                       , EncodableStaticCharacterStream f
-                       , EncodableStaticCharacterStream a
+    show block = unlines
+       [ "Continuous Characters: "
+       , unlines . fmap (("  " <>) . show) . toList $ continuousCharacterBins block
+       , "Fitch Characters:"
+       , unlines . fmap (("  " <>) . show) . toList $ nonAdditiveCharacterBins block
+       , "Additive Characters:"
+       , unlines . fmap (("  " <>) . show) . toList $ additiveCharacterBins block
+       , "Metric Characters:"
+       , unlines . fmap (("  " <>) . show) . toList $ metricCharacterBins block
+       , "NonMetric Characters:"
+       , unlines . fmap (("  " <>) . show) . toList $ nonMetricCharacterBins block
+       , "Dynamic Characters:"
+       , unlines . fmap (("  " <>) . show) . toList $ dynamicCharacters block
+       ]
+
+
+toMissingCharacters :: ( PossiblyMissingCharacter m
+                       , PossiblyMissingCharacter i
+                       , PossiblyMissingCharacter c
+                       , PossiblyMissingCharacter f
+                       , PossiblyMissingCharacter a
+                       , PossiblyMissingCharacter d
                        ) 
                     => CharacterBlock m i c f a d
                     -> CharacterBlock m i c f a d
 toMissingCharacters cb =
     CharacterBlock
-    { continuousCharacterBins   =            missingContinuous <$> continuousCharacterBins   cb
-    , nonAdditiveCharacterBins  = fmap (omap getMissingStatic) <$> nonAdditiveCharacterBins  cb
-    , additiveCharacterBins     = fmap (omap getMissingStatic) <$> additiveCharacterBins     cb
-    , metricCharacterBins       = fmap (omap getMissingStatic) <$> metricCharacterBins       cb
-    , nonNonMetricCharacterBins = fmap (omap getMissingStatic) <$> nonNonMetricCharacterBins cb
-    , dynamicCharacters         =               missingDynamic <$> dynamicCharacters         cb
+    { continuousCharacterBins  = toMissing <$> continuousCharacterBins  cb
+    , nonAdditiveCharacterBins = toMissing <$> nonAdditiveCharacterBins cb
+    , additiveCharacterBins    = toMissing <$> additiveCharacterBins    cb
+    , metricCharacterBins      = toMissing <$> metricCharacterBins      cb
+    , nonMetricCharacterBins   = toMissing <$> nonMetricCharacterBins   cb
+    , dynamicCharacters        = toMissing <$> dynamicCharacters        cb
     }
+
+
+continuousSingleton :: CharacterName -> (a -> c) -> a -> CharacterBlock m i (ContinuousDecorationInitial c) f a d
+continuousSingleton nameValue transformation continuousValue =
+    CharacterBlock (pure bin)  mempty  mempty  mempty mempty mempty
   where
---    encodableStreamToMissing = fmap (omap getMissingStatic)
-    missingContinuous x =
-        ContinuousBin
-        { Continuous.characterStream = Nothing <$ Continuous.characterStream x
-        , Continuous.metatdataBounds =            Continuous.metatdataBounds x
-        }
-    missingDynamic (DCC (gcm, tcm, _)) = DCC (gcm, tcm, Nothing)
+    bin = continuousDecorationInitial nameValue transformation continuousValue
 
 
-continuousSingleton :: CharacterName -> c -> CharacterBlock m i c f a d
-continuousSingleton nameValue continuousValue =
-    CharacterBlock (Just bin)  mempty  mempty  mempty mempty mempty
+discreteSingleton :: TCM -> s -> CharacterBlock s s c s s d
+discreteSingleton tcmValues dec =
+    case tcmStructure diagnosis of
+      NonSymmetric -> CharacterBlock mempty mempty mempty mempty bin    mempty
+      Symmetric    -> CharacterBlock mempty mempty mempty mempty bin    mempty
+      Metric       -> CharacterBlock mempty mempty mempty bin    mempty mempty
+      UltraMetric  -> CharacterBlock mempty mempty mempty bin    mempty mempty
+      Additive     -> CharacterBlock mempty mempty bin    mempty mempty mempty
+      NonAdditive  -> CharacterBlock mempty bin    mempty mempty mempty mempty
   where
-    bin      = continuousBin (continuousValue :| []) metadata
-    metadata = continuousMetadata nameValue 1
+    diagnosis   = diagnoseTcm tcmValues
+    bin         = pure dec
 
 
-discreteSingleton :: Alphabet String -> CharacterName -> TCM -> (a -> s) -> a -> CharacterBlock s s c s s d
-discreteSingleton alphabetValues nameValue tcmValues transformation input =
-  case tcmStructure diagnosis of
-    NonSymmetric -> (\x -> CharacterBlock Nothing  mempty  mempty  mempty (pure x) mempty) .   NonMetricBin character metadata $ factoredTcm diagnosis
-    Symmetric    -> (\x -> CharacterBlock Nothing  mempty  mempty  mempty (pure x) mempty) .   NonMetricBin character metadata $ factoredTcm diagnosis
-    Metric       -> (\x -> CharacterBlock Nothing  mempty  mempty (pure x) mempty  mempty) .      MetricBin character metadata $ factoredTcm diagnosis
-    UltraMetric  -> (\x -> CharacterBlock Nothing  mempty  mempty (pure x) mempty  mempty) .      MetricBin character metadata $ factoredTcm diagnosis
-    Additive     -> (\x -> CharacterBlock Nothing  mempty (pure x) mempty  mempty  mempty) $    AdditiveBin character metadata --- $ symbolCount character
-    NonAdditive  -> (\x -> CharacterBlock Nothing (pure x) mempty  mempty  mempty  mempty) $ NonAdditiveBin character metadata --- $ symbolCount character
-  where
-    character = transformation input
-    diagnosis = diagnoseTcm tcmValues
-    metadata  = singleton 1 . discreteMetadata alphabetValues nameValue . fromIntegral $ factoredWeight diagnosis
-
--- DCC (DiscreteCharacterMetadata, TCM, Maybe d)
-
-dynamicSingleton :: Alphabet String -> CharacterName -> TCM -> (x -> d) -> Maybe x -> CharacterBlock m i c f a d
-dynamicSingleton alphabetValues nameValue tcmValues transformation input =
-    CharacterBlock Nothing mempty mempty mempty mempty . pure $ DCC (metadata, tcmValues, character)
-  where
-    character = transformation <$> input
-    diagnosis = diagnoseTcm tcmValues
-    metadata  = discreteMetadata alphabetValues nameValue . fromIntegral $ factoredWeight diagnosis
-
-    
+dynamicSingleton :: d -> CharacterBlock m i c f a d
+dynamicSingleton = CharacterBlock mempty mempty mempty mempty mempty . pure

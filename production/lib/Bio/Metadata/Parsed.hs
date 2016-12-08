@@ -21,6 +21,7 @@ import           Data.Bifunctor                          (second)
 import           Data.Char
 import           Data.Foldable
 import           Data.List                               (transpose)
+import           Data.List.NonEmpty                      (NonEmpty)
 import           Data.Monoid
 import           Data.TCM                                (TCM)
 import qualified Data.TCM                         as TCM
@@ -35,6 +36,8 @@ import qualified File.Format.TNT                  as TNT
 import qualified File.Format.TransitionCostMatrix as F
 import           File.Format.VertexEdgeRoot
 
+import Debug.Trace
+  
 
 -- | An intermediate composite type for parse result coercion.
 data ParsedCharacterMetadata
@@ -70,12 +73,13 @@ instance ParsedMetadata FastcParseResult where
 
 
 -- | (✔)
-instance ParsedMetadata NewickForest where
+instance ParsedMetadata (NonEmpty NewickForest) where
     unifyMetadata _ = mempty
 
 
 -- | (✔)
 instance ParsedMetadata TNT.TntResult where
+--    unifyMetadata (Right withSeq) | trace (show . snd . head . toList $ TNT.sequences withSeq) False = undefined
     unifyMetadata (Left        _) = mempty
     unifyMetadata (Right withSeq) = V.fromList $ zipWith f parsedMetadatas parsedCharacters
       where
@@ -112,7 +116,7 @@ instance ParsedMetadata TNT.TntResult where
                   TNT.Continuous {} -> undefined -- I'm sure this will never blow up in our face /s
                   TNT.Dna        {} -> fromSymbols dnaAlph
                   TNT.Protein    {} -> fromSymbols aaAlph
-                  TNT.Discrete   {} ->
+                  TNT.Discrete   {} -> 
                       let stateNameValues = TNT.characterStates inMeta
                       in
                           if   null stateNameValues
@@ -147,11 +151,13 @@ instance ParsedMetadata VertexEdgeRoot where
 
 -- | (✔)
 instance ParsedMetadata Nexus where
-    unifyMetadata (Nexus (_, metas) _) = convertNexusMeta <$> metas
+
+    unifyMetadata input @(Nexus (_, metas) _) = V.zipWith convertNexusMeta alphabetVector metas
       where
-        convertNexusMeta inMeta =
+        alphabetVector = developAlphabets $ unifyCharacters input
+        convertNexusMeta developedAlphabet inMeta =
             ParsedCharacterMetadata
-            { alphabet      = fromSymbols $ Nex.alphabet inMeta
+            { alphabet      = developedAlphabet
             , characterName = Nex.name inMeta
             , weight        = fromRational rationalWeight * suppliedWeight
             , parsedTCM     = unfactoredTcmMay

@@ -18,7 +18,7 @@ module Analysis.Parsimony.Binary.SequentialAlign (sequentialAlign) where
 
 --import           Analysis.Parsimony.Binary.Internal
 import qualified Analysis.Parsimony.Binary.SequentialAlign.FFI as FFI (sequentialAlign)
-import           Bio.Character.Dynamic
+import           Bio.Character.Encodable
 import           Bio.Character.Exportable.Class
 --import           Data.Alphabet
 --import           Data.Vector     (fromList)

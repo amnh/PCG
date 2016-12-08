@@ -26,6 +26,5 @@ module Bio.Character
   , Exportable(..)
   ) where
 
-import Bio.Character.Dynamic
+import Bio.Character.Encodable
 import Bio.Character.Exportable.Class
-import Bio.Character.Static

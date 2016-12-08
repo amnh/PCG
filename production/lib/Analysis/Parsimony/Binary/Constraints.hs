@@ -15,7 +15,7 @@
 
 module Analysis.Parsimony.Binary.Constraints where
 
-import Bio.Character.Dynamic
+import Bio.Character.Encodable
 import Bio.Metadata
 import Bio.PhyloGraph.Forest
 import Bio.PhyloGraph.Node ()
