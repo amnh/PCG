@@ -192,8 +192,8 @@ validateNexusParseResult (NexusParseResult inputSeqBlocks taxas treeSet assumpti
 
         translatedTrees =
           case translateTreesResult of
-            Left  _ -> mempty
-            Right x -> x
+            Left  _ -> Nothing
+            Right x -> Just x
 
 ---------------------------  Following set of fns is actually set of nested ifs to match decision tree in docs  ---------------------------
 -------------------------  Mostly, these fns just check for errors much of the logic is dup'd in getSeqFromMatrix  ------------------------
@@ -283,8 +283,9 @@ foldSeqs ((taxSeqMap,charMDataVec):xs)   = ((newSeqMap, newMetadata), totLength)
 translateTrees :: Vector String -> [TreeBlock] -> Either (NonEmpty String) NewickForest
 translateTrees taxaList treeSet =
     case partitionEithers $ handleTreeBlock <$> treeSet of
-      (  [], xs) -> Right xs
-      (x:xs,  _) -> Left $ x :| xs
+      (x:xs,    _) -> Left  $ x :| xs
+      (   _,   []) -> Left  $ "No trees found" :| []
+      (  [], x:xs) -> Right $ x :| xs
     where
 
         -- |

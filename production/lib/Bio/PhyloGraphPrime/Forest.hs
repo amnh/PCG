@@ -16,7 +16,9 @@
 
 {-# LANGUAGE DeriveTraversable, GeneralizedNewtypeDeriving, TypeFamilies #-}
 
-module Bio.PhyloGraphPrime.Forest (PhylogeneticForest(..)) where
+module Bio.PhyloGraphPrime.Forest
+  ( PhylogeneticForest(..)
+  ) where
 
 import Data.Key
 import Data.List.NonEmpty            (NonEmpty)
@@ -32,6 +34,10 @@ import Prelude                hiding (lookup)
 newtype PhylogeneticForest a
       = PhylogeneticForest (NonEmpty a)
       deriving (Foldable, Foldable1, Functor, Semigroup, Traversable)
+
+
+fromComponents :: (NonEmpty a) -> PhylogeneticForest a
+fromComponents = PhylogeneticForest
 
 
 type instance Key PhylogeneticForest = Int
