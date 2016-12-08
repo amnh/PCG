@@ -42,7 +42,7 @@ import           Text.Megaparsec.Custom
 
 
 -- |
--- Nexus stream parser. 
+-- Nexus stream parser.
 parseNexusStream :: FilePath  -- ^ Used in error message reporting
                  -> String    -- ^ Input stream to be parsed
                  -> Either (ParseError (Token String) Dec) Nexus
@@ -70,7 +70,7 @@ nexusFileDefinition = {-do
     pure $ NexusParseResult v w x y z
 
 
--- TODO: test this 
+-- TODO: test this
 -- why is PROTPARS-example.nex failing? It works with end;, but not with endblock;
 -- |
 -- Parser for blocks whose content will be ignored.
@@ -143,7 +143,7 @@ taxaSubBlock = {-do
              <|> (IgnSSB <$> try (ignoredSubBlockDef ';'))
 
 
--- | assumptionsBlockDefinition 
+-- | assumptionsBlockDefinition
 assumptionsBlockDefinition :: (MonadParsec e s m, Token s ~ Char {- , Show s -}) => m AssumptionBlock
 assumptionsBlockDefinition = {-do
     x <- getInput
@@ -163,7 +163,7 @@ assumptionFieldDef = {-do
                <|> (IgnAF  <$> try (ignoredSubBlockDef ';'))
 
 
--- | tcmMatrixDefinition expects a string of format 
+-- | tcmMatrixDefinition expects a string of format
 -- USERTYPE myMatrix (STEPMATRIX) =n
 -- s s s s
 -- k k k k
@@ -178,7 +178,7 @@ tcmMatrixDefinition = {-do
         matrixName   <- symbol $ somethingTill spaceChar
         _            <- symbol . optional $ try (string' "(stepmatrix)") <|> try (string' "(realmatrix)")
         _            <- symbol $ char '='
-        cardinality  <- symbol   integer 
+        cardinality  <- symbol   integer
         mtxAlphabet  <- symbol $ alphabetLine whitespaceNoNewlines
         assumpMatrix <- symbol $ matrixBlock whitespaceNoNewlines
         _            <- symbol $ char ';'
@@ -190,7 +190,7 @@ treeBlockDefinition = do
         _     <- symbol (string' "trees;")
         xs    <- many treeFieldDef
         (x,y) <- partitionTreeBlock <$> pure xs
-        pure $ TreeBlock x y 
+        pure $ TreeBlock x y
 
 
 -- TODO: Capture values of the StateLabels field, and CharStateLabels field.
@@ -215,8 +215,8 @@ seqSubBlock = {-do
 --
 -- Correctly matches and discards information which is not captured.
 dimensionsDefinition :: (MonadParsec e s m, Token s ~ Char {- , Show s -}) => m DimensionsFormat
-dimensionsDefinition = {-do 
-        x         <- getInput 
+dimensionsDefinition = {-do
+        x         <- getInput
         trace ("**dimensionsDefinition:  " ++ show x) $ -}do
         _         <- symbol   $ string' "dimensions"
         newTaxa'  <- optional $ try (symbol (string' "newTaxa"))
@@ -235,7 +235,7 @@ dimensionsDefinition = {-do
 -- | formatDefinition tests an input String. If that String passes the (implicit) definition
 -- of a format statement in the characters block or unaligned block of a Nexus file, it returns
 -- a parse of the String. A well-formed input string will start with the word "format" followed by
--- a space-delimited list of words, each of which can be successfully parsed by 
+-- a space-delimited list of words, each of which can be successfully parsed by
 -- charFormatFieldDef, and end with a semi-colon.
 -- TODO: An incomplete test exists in the test suite.
 formatDefinition :: (MonadParsec e s m, Token s ~ Char {- , Show s -}) => m CharacterFormat
@@ -303,7 +303,7 @@ stringDefinition :: (MonadParsec e s m, Token s ~ Char {- , Show s -}) => String
 stringDefinition blockTitle = do
     _     <- symbol $ string' blockTitle
     _     <- symbol $ char '='
-    value <- symbol $ notKeywordWord ""
+    value <- symbol $ (notKeywordWord "\"" <?> "Word that is not a Nexus keyword")
     pure value
 
 
@@ -324,14 +324,14 @@ quotedStringDefinition blockTitle = {-do
     close <- optional $ char '"'
     pure $ if isJust close
            then Right value
-           else Left (blockTitle ++ " missing closing quote.") 
+           else Left (blockTitle ++ " missing closing quote.")
     -- _ <- symbol $ char '"'
     --pure $ Right value
 
 
 -- | stringListDefinition is similar to quotedStringDefinition, but in this case the format is
--- TITLE val1 val2 val3 ...; In other words, there is no '=' and the list of values is whitepace-separated. 
--- Those values are captured and returned. 
+-- TITLE val1 val2 val3 ...; In other words, there is no '=' and the list of values is whitepace-separated.
+-- Those values are captured and returned.
 stringListDefinition :: (MonadParsec e s m, Token s ~ Char {- , Show s -}) => String -> m [String]
 stringListDefinition label = {-do
     x <- getInputs
@@ -345,7 +345,7 @@ stringListDefinition label = {-do
 -- | delimitedStringListDefinition is similar to stringListDefinition, but in this case the format is
 -- TITLE val1, val2, val3, ...; Again, there is no '='' after the title of the block. However, in this
 -- case values are separated by a Char which is passed in as an argument. (In the given example the separator
--- is ','. The values are captured and returned. 
+-- is ','. The values are captured and returned.
 delimitedStringListDefinition :: (MonadParsec e s m, Token s ~ Char {- , Show s -}) => String -> Char -> m [String]
 delimitedStringListDefinition label delimiter = {-do
     x <- getInput
@@ -377,7 +377,7 @@ seqMatrixDefinition = {-do
     goodStuff <- some   $ somethingTill c <* c
     _         <- symbol $ char ';'
     pure $ filter (/= "") goodStuff
-    where 
+    where
         c = whitespaceNoNewlines *> (char ';' <|> endOfLine) <* whitespace
 
 
@@ -429,14 +429,14 @@ whitespace = (space *> optional (try . some $ commentDefinition *> space) $> ())
 -- there were newlines present in a comment contained in the whitespace.
 --
 -- Consumes whitespace (including multi-line comments) but not newlines outside
--- of a comment definition. 
+-- of a comment definition.
 whitespaceNoNewlines :: (MonadParsec e s m, Token s ~ Char {- , Show s -}) => m ()
 whitespaceNoNewlines = (inlineSpace *> optional (try . some $ commentDefinition *> inlineSpace) $> ())
           <?> "comments or non-newline whitespace"
 
 
 -- |
--- Capture the contents of a comment 
+-- Capture the contents of a comment
 commentDefinition :: (MonadParsec e s m, Token s ~ Char {- , Show s -}) => m String
 commentDefinition = comment (string "[") (string "]")
 
