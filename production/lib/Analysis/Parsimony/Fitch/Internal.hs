@@ -22,14 +22,15 @@ import Bio.Character.Decoration.Discrete
 import Bio.Character.Encodable
 
 data FitchCharacterDecoration c = FitchCharacterDecoration
-    { cost   :: Word32
-    , median :: ([Word32], [Word32]) -- for a character state, its min from the left child and its min from the right
+    { cost         :: Word32                                                     -- cost of the subtree
+    , median       :: (DiscreteCharacterDecoration )                             -- for a character state, its min from the left child and its min from the right
+    , childMedians :: (DiscreteCharacterDecoration, DiscreteCharacterDecoration) -- so that we can do post order pass with all of Fitch's rules
     }
 
 -- | Used on the post-order (i.e. first) traversal.
 fitchPostOrder :: ( EncodableStaticCharacter c, DiscreteCharacterDecoration d c ) => (d -> [d'] -> d')
-fitchPostOrder charDecoration []               = charDecoration
-fitchPostOrder charDecoration childDecorations = updateCostVector charDecoration childDecorations
+fitchPostOrder charDecoration []               = initialize charDecoration    -- a leaf
+fitchPostOrder charDecoration childDecorations = updateNodeDec charDecoration childDecorations
 
 -- | Used on the pre-order (i.e. second) traversal. Either calls 'initializeDirVector' on root or
 -- Needs to determine which child it's updating, then sends the appropriate minlist
@@ -46,15 +47,8 @@ fitchPreOrder curDecoration ((whichChild, parentDecoration):[]) = returnChar
             | otherwise       = updateDirVector parentDecoration (snd (parentDecoration ^. directionalMinVector)) curDecoration -- right child
 
 
--- | Before post-order can actually occur, must initialize leaf vectors with values as such:
--- Given \(n\) character states, for a given character \(i_c\) on leaf \(i\), there are \(2^n - 1)
--- possible characters, including ambiguous characters. For extant character states \(i_c_x\) on
--- the leaf, and for each possible character state, \(i\)
--- \[ cost(i_c) =
---       \] \(i \elem s_x\), etc...
--- TODO: finish above comment once MathJax is working
-initializeCostVector :: DiscreteCharacterDecoration d c => c -> FitchCharacterDecoration c
-initializeCostVector inputDecoration = returnChar
+updateNodeDec :: DiscreteCharacterDecoration d c => c -> FitchCharacterDecoration c
+updateNodeDec curDecoration childDecorations = returnChar
     where
         -- assuming metricity and 0 diagonal
         costList = foldMapWithKey f $ inputDecoration ^. characterAlphabet
@@ -128,7 +122,7 @@ updateDirVector parentDecoration parentMins childDecoration = returnChar
 --
 -- Note: We can throw away the medians that come back from the tcm here because we're building medians: the possible character is looped over
 -- all available characters, and there's an outer loop which sends in each possible character.
-calcCostPerState :: Int -> DiscreteCharacterDecoration DiscreteCharacterDecoration -> (Int, Int)
+calcCostPerState :: Int -> DiscreteCharacterDecoration c -> DiscreteCharacterDecoration -> (Int, Int)
 calcCostPerState inputCharState leftChildDec rightChildDec =
     -- Using keys, fold over alphabet states as Ints. The zipped lists will give minimum accumulated costs for each character state in each child.
     foldlWithKey' (\(leftMin, rightMin) childCharState (accumulatedLeftCharCost, accumulatedRightCharCost) ->
@@ -145,8 +139,12 @@ calcCostPerState inputCharState leftChildDec rightChildDec =
                          rightTransitionCost = (rightChildDec ^. characterSymbolTransitionCostMatrixGenerator) inputCharState childCharState
                  ) (maxBound :: Word32, maxBound :: Word32) zip (leftChildDec ^. minCostVector) (rightChildDec ^. minCostVector)
 
-
-
-
-
+calcCostAndMedian :: DiscreteCharacterDecoration c -> DiscreteCharacterDecoration c -> (DiscreteCharacterDecoration c, Int)
+calcCostAndMedian leftChildDec rightChildDec = returnVal
+    where
+        returnVal = foldlWithKey' f initializedAcc $ leftChildDec ^. characterAlphabet
+        initializedAcc = ((leftChildDec ^. discreteCharacter) `xor` (leftChildDec ^. discreteCharacter), True)
+        f (outputChar, isCost) key
+            | (leftChildDec ^. discreteCharacter) `testBit` key & (rightChildDec ^. discreteCharacter) `testBit` key =
+                (outputChar `setBit` key, False)
 

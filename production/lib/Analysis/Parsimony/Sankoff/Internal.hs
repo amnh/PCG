@@ -17,12 +17,15 @@
 --
 -----------------------------------------------------------------------------
 
+{-# LANGUAGE FlexibleContexts #-}
+
 module Analysis.Parsimony.Sankoff.Internal where
 
 
-import Control.Lens
 import Bio.Character.Decoration.Discrete
 import Bio.Character.Encodable
+import Control.Lens
+import Data.Word
 
 
 data SankoffCharacterDecoration c = SankoffCharacterDecoration
@@ -34,16 +37,16 @@ data SankoffCharacterDecoration c = SankoffCharacterDecoration
 
 -- | Used on the post-order (i.e. first) traversal.
 sankoffPostOrder :: ( EncodableStaticCharacter c, DiscreteCharacterDecoration d c ) => (d -> [d'] -> d')
-sankoffPostOrder charDecoration []               = initializeCostVector charDecoration                             -- is a leaf
+sankoffPostOrder charDecoration []               = initializeCostVector charDecoration              -- is a leaf
 sankoffPostOrder charDecoration childDecorations = updateCostVector charDecoration childDecorations
 
 
 -- | Used on the pre-order (i.e. second) traversal. Either calls 'initializeDirVector' on root or
 -- Needs to determine which child it's updating, then sends the appropriate minlist
-sankoffPreOrder  :: ( HasTCM d ((c, c) -> (c, Double))
-                    , HasStaticCharacter d c
+sankoffPreOrder  :: ( DiscreteCharacterDecoration d c
+                    , HasCharacterTransitionCostMatrix d (c -> c -> (c, Int))
                     , EncodableStaticCharacter c
-                    ) => (SankoffCharacterDecoration c -> [(Word, d')] -> d')
+                    ) => (SankoffCharacterDecoration c -> [(Word, c)] -> d')
 sankoffPreOrder curDecoration (x:y:_)                             = curDecoration                     -- shouldn't be possible, but here for completion
 sankoffPreOrder curDecoration []                                  = initializeDirVector curDecoration -- is a root
 sankoffPreOrder curDecoration ((whichChild, parentDecoration):[]) = returnChar
@@ -60,7 +63,7 @@ sankoffPreOrder curDecoration ((whichChild, parentDecoration):[]) = returnChar
 -- \[ cost(i_c) =
 --       \] \(i \elem s_x\), etc...
 -- TODO: finish above comment once MathJax is working
-initializeCostVector :: DiscreteCharacterDecoration d c => c -> SankoffCharacterDecoration c
+initializeCostVector :: SankoffCharacterDecoration c -> SankoffCharacterDecoration c
 initializeCostVector inputDecoration = returnChar
     where
         -- assuming metricity and 0 diagonal
@@ -84,14 +87,14 @@ updateCostVector curNodeDecoration (leftChild:rightChild:_) = returnNodeDecorati
         (charCost, costVector) =
             foldlWithKey' findMins initialAccumulator (curNodeDecoration ^. characterAlphabet)
         initialAccumulator = (maxBound :: Word32, ([],[]))
-        findMins (charMin, (leftMin : leftChildMin, rightMin : rightChildMin)) = returnVal
+        findMins (charMin, (leftMin, rightMin)) = returnVal
              where
                  charMin = if stateMin < charMin
                            then charMin
                            else stateMin
                  stateMin                      = leftChildMin + rightChildMin
                  (leftChildMin, rightChildMin) = calcCostPerState charState (leftChild ^. discreteCharacter) (rightChild ^. discreteCharacter)
-                 returnVal = (charMin, (leftMin : leftChildMin, rightMin : rightChildMin)
+                 returnVal = (charMin, (leftMin : leftChildMin, rightMin : rightChildMin))
 
         returnNodeDecoration = SankoffCharacterDecoration costVector [] charCost
 
@@ -112,7 +115,7 @@ initializeDirVector curDecoration = returnChar
 -- It relies on dynamic programming to do so, using the minimum tuple in the parent to determine whether that character state can participate
 -- in the final median. Using the left child as a template, the character state is part of the median if, for some state in the parent,
 -- parCharState_minCost_left == childCharState_minCost + TCM(childCharState, parCharState).
-updateDirVector :: DiscreteCharacterDecoration c => SankoffCharacterDecoration c -> SankoffCharacterDecoration c -> SankoffCharacterDecoration c
+updateDirVector :: SankoffCharacterDecoration c -> SankoffCharacterDecoration c -> SankoffCharacterDecoration c
 updateDirVector parentDecoration parentMins childDecoration = returnChar
     where
         median = foldlWithKey' (\acc parentCharState parentCharMin ->
@@ -129,9 +132,7 @@ updateDirVector parentDecoration parentMins childDecoration = returnChar
         parentMin   = if whichChild == 0
                         then parentDecoration ^. leftChildMin
                         else parentDecoration ^. rightChildMin
---  [!]   What's happening here? Mutation over a Lens? Use (%~) operator.
---      returnChar  = curDecoration ^. discreteCharacter = median
-        returnChar = undefined
+        returnChar  = curDecoration & discreteCharacter %~ median
 
 
 -- | Take in a single character state as an Int, which represents an possible unambiguous character state on the parent,
@@ -141,20 +142,24 @@ updateDirVector parentDecoration parentMins childDecoration = returnChar
 --
 -- Note: We can throw away the medians that come back from the tcm here because we're building medians: the possible character is looped over
 -- all available characters, and there's an outer loop which sends in each possible character.
-calcCostPerState :: Int -> DiscreteCharacterDecoration DiscreteCharacterDecoration -> (Int, Int)
-calcCostPerState inputCharState leftChildDec rightChildDec =
-    -- Using keys, fold over alphabet states as Ints. The zipped lists will give minimum accumulated costs for each character state in each child.
-    foldlWithKey' (\(leftMin, rightMin) childCharState (accumulatedLeftCharCost, accumulatedRightCharCost) ->
-                     leftMin  = if curLeftMin < leftMin
-                                then curLeftMin
-                                else leftMin
-                     rightMin = if curRightMin < rightMin
-                                then curRightMin
-                                else rightMin
-                     where
-                         curLeftMin          = leftTransitionCost  + accumulatedLeftCharCost
-                         curRightMin         = rightTransitionCost + accumulatedRightCharCost
-                         leftTransitionCost  = (leftChildDec  ^. characterSymbolTransitionCostMatrixGenerator) inputCharState childCharState
-                         rightTransitionCost = (rightChildDec ^. characterSymbolTransitionCostMatrixGenerator) inputCharState childCharState
-                 ) (maxBound :: Word32, maxBound :: Word32) zip (leftChildDec ^. minCostVector) (rightChildDec ^. minCostVector)
+calcCostPerState :: Int -> SankoffCharacterDecoration c -> SankoffCharacterDecoration c -> (Int, Int)
+calcCostPerState inputCharState leftChildDec rightChildDec = retVal
+    where
+        -- Using keys, fold over alphabet states as Ints. The zipped lists will give minimum accumulated costs for each character state in each child.
+        retVal = foldlWithKey' findMins initialAccumulator zippedCostList
 
+        findMins (leftMin, rightMin) childCharState (accumulatedLeftCharCost, accumulatedRightCharCost) = (leftMin, rightMin)
+            where
+                leftMin             = if curLeftMin < leftMin
+                                      then curLeftMin
+                                      else leftMin
+                rightMin            = if curRightMin < rightMin
+                                      then curRightMin
+                                      else rightMin
+                curLeftMin          = leftTransitionCost  + accumulatedLeftCharCost
+                curRightMin         = rightTransitionCost + accumulatedRightCharCost
+                leftTransitionCost  = (leftChildDec  ^. characterSymbolTransitionCostMatrixGenerator) inputCharState childCharState
+                rightTransitionCost = (rightChildDec ^. characterSymbolTransitionCostMatrixGenerator) inputCharState childCharState
+
+        initialAccumulator = (maxBound :: Word32, maxBound :: Word32)
+        zippedCostList = zip (leftChildDec ^. minCostVector) (rightChildDec ^. minCostVector)
