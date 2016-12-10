@@ -28,6 +28,7 @@ module Bio.Character.Decoration.Discrete
   , HasCharacterWeight(..)
   , HasDiscreteCharacter(..)
   , PossiblyMissingCharacter(..)
+  , SimpleDiscreteCharacterDecoration(..)
   , showDiscreteCharacterElement
   ) where
 
@@ -87,8 +88,12 @@ class ( HasDiscreteCharacter s a
       , DiscreteCharacterMetadata s a
       ) => DiscreteCharacterDecoration s a | s -> a where 
 
+
+class DiscreteCharacterDecoration s a => SimpleDiscreteCharacterDecoration s a | s -> a where
+
     toDiscreteCharacterDecoration :: CharacterName -> Double -> Alphabet String -> TCM -> (x -> a) -> x -> s
     {-# MINIMAL toDiscreteCharacterDecoration #-}
+
 
 
 -- | (✔)
@@ -147,14 +152,19 @@ instance HasCharacterWeight (DiscreteDecoration c) Double where
 -- | (✔)
 instance GeneralCharacterMetadata (DiscreteDecoration c) where
 
+  
 -- | (✔)
 instance EncodableStreamElement c => DiscreteCharacterMetadata (DiscreteDecoration c) c where
 
 
 -- | (✔)
-instance EncodableStaticCharacter c => DiscreteCharacterDecoration (DiscreteDecoration c) c where 
+instance EncodableStaticCharacter c => DiscreteCharacterDecoration (DiscreteDecoration c) c where
+
+
+-- | (✔)
+instance EncodableStaticCharacter c => SimpleDiscreteCharacterDecoration (DiscreteDecoration c) c where 
     toDiscreteCharacterDecoration name weight alphabet tcm g symbolSet =
         DiscreteDec
         { discreteDecorationCharacter = g symbolSet
-        , metadata                           = discreteMetadata name weight alphabet tcm
+        , metadata                    = discreteMetadata name weight alphabet tcm
         }    

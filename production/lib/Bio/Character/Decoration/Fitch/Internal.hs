@@ -97,6 +97,9 @@ instance (EncodableStreamElement f) => DiscreteCharacterMetadata (FitchDecoratio
 -- | (✔)
 instance EncodableStaticCharacter f => DiscreteCharacterDecoration (FitchDecorationInitial f) f where 
 
+-- | (✔)
+instance EncodableStaticCharacter f => SimpleDiscreteCharacterDecoration (FitchDecorationInitial f) f where 
+
     toDiscreteCharacterDecoration name weight alphabet tcm g symbolSet =
         FitchDecorationInitial
         { fitchDecorationInitialCharacter = g symbolSet
