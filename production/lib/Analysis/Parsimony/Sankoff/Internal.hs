@@ -23,33 +23,43 @@ module Analysis.Parsimony.Sankoff.Internal where
 
 
 import Bio.Character.Decoration.Discrete
+import Bio.Character.Decoration.Metric
 import Bio.Character.Encodable
 import Control.Lens
+import Data.Bits
 import Data.Word
 
-
-data SankoffCharacterDecoration c = SankoffCharacterDecoration
-    { minCostVector        :: [Word32]             -- overall min for each character state
-    , directionalMinVector :: ([Word32], [Word32]) -- for a character state, its min from the left child and its min from the right
-    , minCost              :: Word32
+{-
+data SankoffPostOrderResult c = SankoffPostOrderResult
+    { minCostVector        :: [Word]             -- overall min for each character state
+    , directionalMinVector :: ([Word], [Word]) -- for a character state, its min from the left child and its min from the right
+    , minCost              :: Word
     }
+-}
+
+data SankoffCharacterDecoration c = SankoffCharacterDecoration c
 
 
 -- | Used on the post-order (i.e. first) traversal.
-sankoffPostOrder :: ( EncodableStaticCharacter c, DiscreteCharacterDecoration d c ) => (d -> [d'] -> d')
+sankoffPostOrder :: ( EncodableStaticCharacter c
+                    , DiscreteCharacterDecoration d c
+                    ) => d
+                      -> [SankoffPostOrderResult c]
+                      ->  SankoffPostOrderResult c
 sankoffPostOrder charDecoration []               = initializeCostVector charDecoration              -- is a leaf
 sankoffPostOrder charDecoration childDecorations = updateCostVector charDecoration childDecorations
 
 
 -- | Used on the pre-order (i.e. second) traversal. Either calls 'initializeDirVector' on root or
 -- Needs to determine which child it's updating, then sends the appropriate minlist
-sankoffPreOrder  :: ( DiscreteCharacterDecoration d c
-                    , HasCharacterTransitionCostMatrix d (c -> c -> (c, Int))
-                    , EncodableStaticCharacter c
-                    ) => (SankoffCharacterDecoration c -> [(Word, c)] -> d')
-sankoffPreOrder curDecoration (x:y:_)                             = curDecoration                     -- shouldn't be possible, but here for completion
-sankoffPreOrder curDecoration []                                  = initializeDirVector curDecoration -- is a root
-sankoffPreOrder curDecoration ((whichChild, parentDecoration):[]) = returnChar
+sankoffPreOrder  :: (-- DiscreteCharacterDecoration d c
+--                    , HasCharacterTransitionCostMatrix d (c -> c -> (c, Int))
+                      EncodableStaticCharacter c
+                    ) => SankoffPostOrderResult c
+                      -> [(Word, SankoffCharacterDecoration c)]
+                      -> SankoffCharacterDecoration c
+sankoffPreOrder curDecoration []                                 = initializeDirVector curDecoration -- is a root
+sankoffPreOrder curDecoration ((whichChild, parentDecoration):_) = returnChar
     where
         returnChar
             | whichChild == 0 = updateDirVector parentDecoration (fst (parentDecoration ^. directionalMinVector)) curDecoration -- left child
@@ -63,30 +73,37 @@ sankoffPreOrder curDecoration ((whichChild, parentDecoration):[]) = returnChar
 -- \[ cost(i_c) =
 --       \] \(i \elem s_x\), etc...
 -- TODO: finish above comment once MathJax is working
-initializeCostVector :: SankoffCharacterDecoration c -> SankoffCharacterDecoration c
+initializeCostVector :: ( Bits c,
+                          DiscreteCharacterDecoration d c
+                        ) => d
+                          -> SankoffPostOrderResult c
 initializeCostVector inputDecoration = returnChar
     where
         -- assuming metricity and 0 diagonal
         costList = foldMapWithKey f $ inputDecoration ^. characterAlphabet
             where
                 f key alphState
-                    | key `testBit` inputChar = [minBound :: Word32]
-                    | otherwise               = [maxBound :: Word32] -- Change this if it's actually Doubles.
-                    where inputChar = (inputDecoration ^. discreteCharacter)
-        returnChar = SankoffCharacterDecoration costList [] (minBound :: Word32)
+                    | key `testBit` inputChar = [minBound :: Word]
+                    | otherwise               = [maxBound :: Word] -- Change this if it's actually Doubles.
+                    where inputChar = inputDecoration ^. discreteCharacter
+        returnChar = SankoffCharacterDecoration costList [] (minBound :: Word)
 
 
 -- |
 -- Given current node and its children, does actual calculation of new node value
 -- for each character state, for each character on current node. Assumes binary tree.
-updateCostVector :: EncodableStaticCharacter c => c -> [SankoffCharacterDecoration c] -> SankoffCharacterDecoration c
+updateCostVector :: ( EncodableStaticCharacter c
+                    , DiscreteCharacterDecoration d c
+                    ) => d
+                      -> [SankoffPostOrderResult c]
+                      -> SankoffPostOrderResult c
 updateCostVector curNodeDecoration []                       = curNodeDecoration    -- Leaf node, so shouldn't get here.
-updateCostVector curNodeDecoration (x:[])                   = curNodeDecoration    -- Shouldn't be possible, but here for completion.
+updateCostVector curNodeDecoration [x]                      = curNodeDecoration    -- Shouldn't be possible, but here for completion.
 updateCostVector curNodeDecoration (leftChild:rightChild:_) = returnNodeDecoration -- _Should_ be able to amend this to use non-binary children.
     where
         (charCost, costVector) =
             foldlWithKey' findMins initialAccumulator (curNodeDecoration ^. characterAlphabet)
-        initialAccumulator = (maxBound :: Word32, ([],[]))
+        initialAccumulator = (maxBound :: Word, ([],[]))
         findMins (charMin, (leftMin, rightMin)) = returnVal
              where
                  charMin = if stateMin < charMin
@@ -96,9 +113,10 @@ updateCostVector curNodeDecoration (leftChild:rightChild:_) = returnNodeDecorati
                  (leftChildMin, rightChildMin) = calcCostPerState charState (leftChild ^. discreteCharacter) (rightChild ^. discreteCharacter)
                  returnVal = (charMin, (leftMin : leftChildMin, rightMin : rightChildMin))
 
-        returnNodeDecoration = SankoffCharacterDecoration costVector [] charCost
+        returnNodeDecoration = SankoffPostOrderResult costVector [] charCost
 
-initializeDirVector :: SankoffCharacterDecoration c -> SankoffCharacterDecoration c
+
+initializeDirVector :: SankoffPostOrderResult c -> SankoffCharacterDecoration c
 initializeDirVector curDecoration = returnChar
     where
         median = foldlWithKey' buildMedian startMedian $ curDecoration ^. minCostVector
@@ -115,7 +133,9 @@ initializeDirVector curDecoration = returnChar
 -- It relies on dynamic programming to do so, using the minimum tuple in the parent to determine whether that character state can participate
 -- in the final median. Using the left child as a template, the character state is part of the median if, for some state in the parent,
 -- parCharState_minCost_left == childCharState_minCost + TCM(childCharState, parCharState).
-updateDirVector :: SankoffCharacterDecoration c -> SankoffCharacterDecoration c -> SankoffCharacterDecoration c
+updateDirVector :: SankoffCharacterDecoration c
+                -> [Word]
+                -> SankoffCharacterDecoration c
 updateDirVector parentDecoration parentMins childDecoration = returnChar
     where
         median = foldlWithKey' (\acc parentCharState parentCharMin ->
@@ -161,5 +181,5 @@ calcCostPerState inputCharState leftChildDec rightChildDec = retVal
                 leftTransitionCost  = (leftChildDec  ^. characterSymbolTransitionCostMatrixGenerator) inputCharState childCharState
                 rightTransitionCost = (rightChildDec ^. characterSymbolTransitionCostMatrixGenerator) inputCharState childCharState
 
-        initialAccumulator = (maxBound :: Word32, maxBound :: Word32)
+        initialAccumulator = (maxBound :: Word, maxBound :: Word)
         zippedCostList = zip (leftChildDec ^. minCostVector) (rightChildDec ^. minCostVector)
