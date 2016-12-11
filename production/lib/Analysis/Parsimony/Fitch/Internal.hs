@@ -8,7 +8,7 @@
 -- Stability   :  provisional
 -- Portability :  portable
 --
--- Fitch (non-additive) character analysis (cost and medians)
+-- Standard Fitch (non-additive) character analysis (cost and medians).
 --
 -- This only works on static characters, and due to the traversal, only one
 -- character will be received at a time.
@@ -22,14 +22,14 @@ import Bio.Character.Decoration.Discrete
 import Bio.Character.Encodable
 
 data FitchCharacterDecoration c = FitchCharacterDecoration
-    { cost         :: Word32                                                     -- cost of the subtree
-    , median       :: (DiscreteCharacterDecoration )                             -- for a character state, its min from the left child and its min from the right
-    , childMedians :: (DiscreteCharacterDecoration, DiscreteCharacterDecoration) -- so that we can do post order pass with all of Fitch's rules
+    { subtreeCost  :: Word32                                                     -- cost of the subtree
+    , median       :: (DiscreteCharacterDecoration)                              -- for a character state, its min from the left child and its min from the right
+    , childMedians :: (DiscreteCharacterDecoration, DiscreteCharacterDecoration) -- (left, right) so that we can do post order pass with all of Fitch's rules
     }
 
 -- | Used on the post-order (i.e. first) traversal.
 fitchPostOrder :: ( EncodableStaticCharacter c, DiscreteCharacterDecoration d c ) => (d -> [d'] -> d')
-fitchPostOrder charDecoration []               = initialize charDecoration    -- a leaf
+fitchPostOrder charDecoration []               = initializeLeaf charDecoration    -- a leaf
 fitchPostOrder charDecoration childDecorations = updateNodeDec charDecoration childDecorations
 
 -- | Used on the pre-order (i.e. second) traversal. Either calls 'initializeDirVector' on root or
@@ -79,15 +79,12 @@ updateCostVector curNodeDecoration (leftChild:rightChild:_) = returnNodeDecorati
                    ) (maxBound :: Word32, ([],[])) (curNodeDecoration ^. characterAlphabet)
         returnChar = FitchCharacterDecoration costVector [] charCost
 
-initializeDirVector :: FitchCharacterDecoration c -> FitchCharacterDecoration c
-initializeDirVector curDecoration = returnChar
-    where
-        median = foldlWithKey' buildMedian startMedian $ curDecoration ^. minCostVector
-        buildMedian acc key charMin
-            | charMin == curDecoration ^. minCost = acc `setBit` key
-            | otherwise                           = acc
-        startMedian = (curDecoration ^. discreteCharacter) `xor` (curDecoration ^. discreteCharacter)
-        returnChar = FitchCharacterDecoration (curDecoration ^. minCostVector) median (curDecoration ^. minCost) -- TODO: this is not where median goes. Fix it.
+initializeLeaf :: FitchCharacterDecoration c -> FitchCharacterDecoration c
+initializeLeaf curDecoration =
+    FitchCharacterDecoration 0 label (emptyChar, emptyChar)
+        where
+            label     = curDecoration ^. discreteCharacter
+            emptyChar = label `xor` label
 
 -- |
 -- Takes two decorations in, a child and a parent, and calculates the median character value of the child. For each possible character state,
