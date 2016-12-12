@@ -251,6 +251,23 @@ unfoldDAG f origin =
 
 
 -- |
+nodePostOrder :: (n -> [n'] -> n') -> ReferenceDAG e n -> ReferenceDAG e n'
+nodePostOrder f dag = RefDAG <$> const newReferences <*> rootRefs <*> graphData $ dag
+  where
+    dagSize       = length $ references dag
+    newReferences = V.generate dagSize h
+      where
+        h i = IndexData <$> const (memo ! i) <*> parentRefs <*> childRefs $ references dag V.! i
+    memo = V.generate dagSize h
+      where
+        h i = f datum $ (memo V.!) <$> childIndices
+          where
+            datum        = nodeDecoration node 
+            node         = references dag V.! i
+            childIndices = IM.keys $ childRefs node
+
+
+-- |
 -- Renders the 'ReferenceDAG' without showing the node or edge decorations.
 -- Displays a multi-line, tabular reference map of the 'ReferenceDAG'. 
 referenceRendering :: ReferenceDAG e n -> String
