@@ -27,7 +27,9 @@ import Bio.Character.Decoration.Metric
 import Bio.Character.Encodable
 import Control.Lens
 import Data.Bits
+import Data.Key
 import Data.Word
+import Prelude hiding (zip)
 
 {-
 data SankoffPostOrderResult c = SankoffPostOrderResult
@@ -37,15 +39,15 @@ data SankoffPostOrderResult c = SankoffPostOrderResult
     }
 -}
 
-data SankoffCharacterDecoration c = SankoffCharacterDecoration c
+-- data SankoffOptimizationDecoration c = SankoffOptimizationDecoration c
 
 
 -- | Used on the post-order (i.e. first) traversal.
 sankoffPostOrder :: ( EncodableStaticCharacter c
                     , DiscreteCharacterDecoration d c
                     ) => d
-                      -> [SankoffPostOrderResult c]
-                      ->  SankoffPostOrderResult c
+                      -> [SankoffOptimizationDecoration c]
+                      ->  SankoffOptimizationDecoration c
 sankoffPostOrder charDecoration []               = initializeCostVector charDecoration              -- is a leaf
 sankoffPostOrder charDecoration childDecorations = updateCostVector charDecoration childDecorations
 
@@ -55,9 +57,9 @@ sankoffPostOrder charDecoration childDecorations = updateCostVector charDecorati
 sankoffPreOrder  :: (-- DiscreteCharacterDecoration d c
 --                    , HasCharacterTransitionCostMatrix d (c -> c -> (c, Int))
                       EncodableStaticCharacter c
-                    ) => SankoffPostOrderResult c
-                      -> [(Word, SankoffCharacterDecoration c)]
-                      -> SankoffCharacterDecoration c
+                    ) => SankoffOptimizationDecoration c
+                      -> [(Word, SankoffOptimizationDecoration c)]
+                      -> SankoffOptimizationDecoration c
 sankoffPreOrder curDecoration []                                 = initializeDirVector curDecoration -- is a root
 sankoffPreOrder curDecoration ((whichChild, parentDecoration):_) = returnChar
     where
@@ -76,17 +78,17 @@ sankoffPreOrder curDecoration ((whichChild, parentDecoration):_) = returnChar
 initializeCostVector :: ( Bits c,
                           DiscreteCharacterDecoration d c
                         ) => d
-                          -> SankoffPostOrderResult c
+                          -> SankoffOptimizationDecoration c
 initializeCostVector inputDecoration = returnChar
     where
         -- assuming metricity and 0 diagonal
         costList = foldMapWithKey f $ inputDecoration ^. characterAlphabet
             where
                 f key alphState
-                    | key `testBit` inputChar = [minBound :: Word]
+                    | inputChar `testBit` key = [minBound :: Word]
                     | otherwise               = [maxBound :: Word] -- Change this if it's actually Doubles.
                     where inputChar = inputDecoration ^. discreteCharacter
-        returnChar = SankoffCharacterDecoration costList [] (minBound :: Word)
+        returnChar = extendToSankoff inputDecoration costList ([],[]) (minBound :: Word)
 
 
 -- |
@@ -95,8 +97,8 @@ initializeCostVector inputDecoration = returnChar
 updateCostVector :: ( EncodableStaticCharacter c
                     , DiscreteCharacterDecoration d c
                     ) => d
-                      -> [SankoffPostOrderResult c]
-                      -> SankoffPostOrderResult c
+                      -> [SankoffOptimizationDecoration c]
+                      -> SankoffOptimizationDecoration c
 updateCostVector curNodeDecoration []                       = curNodeDecoration    -- Leaf node, so shouldn't get here.
 updateCostVector curNodeDecoration [x]                      = curNodeDecoration    -- Shouldn't be possible, but here for completion.
 updateCostVector curNodeDecoration (leftChild:rightChild:_) = returnNodeDecoration -- _Should_ be able to amend this to use non-binary children.
@@ -113,10 +115,10 @@ updateCostVector curNodeDecoration (leftChild:rightChild:_) = returnNodeDecorati
                  (leftChildMin, rightChildMin) = calcCostPerState charState (leftChild ^. discreteCharacter) (rightChild ^. discreteCharacter)
                  returnVal = (charMin, (leftMin : leftChildMin, rightMin : rightChildMin))
 
-        returnNodeDecoration = SankoffPostOrderResult costVector [] charCost
+                 returnNodeDecoration = extendToSankoff curNodeDecoration costVector ([],[]) charCost
 
 
-initializeDirVector :: SankoffPostOrderResult c -> SankoffCharacterDecoration c
+initializeDirVector :: SankoffOptimizationDecoration c -> SankoffOptimizationDecoration c
 initializeDirVector curDecoration = returnChar
     where
         median = foldlWithKey' buildMedian startMedian $ curDecoration ^. minCostVector
@@ -124,7 +126,7 @@ initializeDirVector curDecoration = returnChar
             | charMin == curDecoration ^. minCost = acc `setBit` key
             | otherwise                           = acc
         startMedian = (curDecoration ^. discreteCharacter) `xor` (curDecoration ^. discreteCharacter)
-        returnChar = SankoffCharacterDecoration (curDecoration ^. minCostVector) median (curDecoration ^. minCost) -- TODO: this is not where median goes. Fix it.
+        returnChar = SankoffOptimizationDecoration (curDecoration ^. minCostVector) median (curDecoration ^. minCost) -- TODO: this is not where median goes. Fix it.
 
 
 -- |
@@ -133,9 +135,10 @@ initializeDirVector curDecoration = returnChar
 -- It relies on dynamic programming to do so, using the minimum tuple in the parent to determine whether that character state can participate
 -- in the final median. Using the left child as a template, the character state is part of the median if, for some state in the parent,
 -- parCharState_minCost_left == childCharState_minCost + TCM(childCharState, parCharState).
-updateDirVector :: SankoffCharacterDecoration c
+updateDirVector :: SankoffOptimizationDecoration c
                 -> [Word]
-                -> SankoffCharacterDecoration c
+                -> SankoffOptimizationDecoration c
+                -> SankoffOptimizationDecoration c
 updateDirVector parentDecoration parentMins childDecoration = returnChar
     where
         median = foldlWithKey' (\acc parentCharState parentCharMin ->
@@ -162,7 +165,7 @@ updateDirVector parentDecoration parentMins childDecoration = returnChar
 --
 -- Note: We can throw away the medians that come back from the tcm here because we're building medians: the possible character is looped over
 -- all available characters, and there's an outer loop which sends in each possible character.
-calcCostPerState :: Int -> SankoffCharacterDecoration c -> SankoffCharacterDecoration c -> (Int, Int)
+calcCostPerState :: Int -> SankoffOptimizationDecoration c -> SankoffOptimizationDecoration c -> (Int, Int)
 calcCostPerState inputCharState leftChildDec rightChildDec = retVal
     where
         -- Using keys, fold over alphabet states as Ints. The zipped lists will give minimum accumulated costs for each character state in each child.
