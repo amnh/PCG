@@ -77,7 +77,7 @@ instance EncodableStreamElement c => HasCharacterTransitionCostMatrix (MetricDec
       where
          getter e   = metadata e ^. characterTCM
          setter e f = e { metadata = metadata e &  characterTCM .~ f }
-        
+
 
 -- | (✔)
 instance HasCharacterWeight (MetricDecorationInitial c) Double where
@@ -96,17 +96,17 @@ instance EncodableStreamElement c => DiscreteCharacterMetadata (MetricDecoration
 
 
 -- | (✔)
-instance EncodableStaticCharacter c => DiscreteCharacterDecoration (MetricDecorationInitial c) c where 
+instance EncodableStaticCharacter c => DiscreteCharacterDecoration (MetricDecorationInitial c) c where
 
- 
+
 -- | (✔)
-instance EncodableStaticCharacter c => SimpleDiscreteCharacterDecoration (MetricDecorationInitial c) c where 
+instance EncodableStaticCharacter c => SimpleDiscreteCharacterDecoration (MetricDecorationInitial c) c where
 
     toDiscreteCharacterDecoration name weight alphabet tcm g symbolSet =
         MetricDecorationInitial
         { metricDecorationInitialCharacter = g symbolSet
-        , metadata                           = discreteMetadata name weight alphabet tcm
-        }    
+        , metadata                         = discreteMetadata name weight alphabet tcm
+        }
 
 
 -- | (✔)
@@ -117,7 +117,7 @@ instance EncodableStaticCharacter c => MetricCharacterDecoration (MetricDecorati
 data SankoffOptimizationDecoration c
    = SankoffOptimizationDecoration
    { sankoffDirectionalMinVector :: ([Word], [Word])
-   , sankoffMinCostVector        ::  [Word]          
+   , sankoffMinCostVector        ::  [Word]
    , sankoffMinCost              ::   Word
    , sankoffMetadataField        :: DiscreteCharacterMetadataDec c
    , sankoffCharacterField       :: c
@@ -166,7 +166,7 @@ instance EncodableStreamElement c => HasCharacterTransitionCostMatrix (SankoffOp
       where
          getter e   = sankoffMetadataField e ^. characterTCM
          setter e f = e { sankoffMetadataField = sankoffMetadataField e &  characterTCM .~ f }
-        
+
 
 -- | (✔)
 instance HasCharacterWeight (SankoffOptimizationDecoration c) Double where
@@ -195,15 +195,15 @@ instance HasMinCost (SankoffOptimizationDecoration c) Word where
 -- | (✔)
 instance GeneralCharacterMetadata (SankoffOptimizationDecoration c) where
 
-  
+
 -- | (✔)
 instance EncodableStreamElement c => DiscreteCharacterMetadata (SankoffOptimizationDecoration c) c where
 
 
 -- | (✔)
-instance EncodableStaticCharacter c => DiscreteCharacterDecoration (SankoffOptimizationDecoration c) c where 
+instance EncodableStaticCharacter c => DiscreteCharacterDecoration (SankoffOptimizationDecoration c) c where
 
-  
+
 -- | (✔)
 instance EncodableStaticCharacter c => MetricCharacterDecoration (SankoffOptimizationDecoration c) c where
 
