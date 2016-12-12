@@ -126,7 +126,9 @@ initializeDirVector curDecoration = returnChar
             | charMin == curDecoration ^. minCost = acc `setBit` key
             | otherwise                           = acc
         startMedian = (curDecoration ^. discreteCharacter) `xor` (curDecoration ^. discreteCharacter)
-        returnChar = SankoffOptimizationDecoration (curDecoration ^. minCostVector) median (curDecoration ^. minCost) -- TODO: this is not where median goes. Fix it.
+        returnChar = curDecoration & directionalMinVector %~ median
+
+--          SankoffOptimizationDecoration (curDecoration ^. minCostVector) median (curDecoration ^. minCost) -- TODO: this is not where median goes. Fix it.
 
 
 -- |
