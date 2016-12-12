@@ -15,6 +15,7 @@
 module Bio.PhyloGraphPrime.ReferenceDAG.Internal where
 
 import           Bio.PhyloGraphPrime.Component
+import           Control.Arrow             ((&&&))
 import           Data.Bifunctor
 import           Data.Foldable
 import           Data.Hashable             (Hashable)
@@ -248,6 +249,40 @@ unfoldDAG f origin =
         localRoots
           | null fullParentPairs = IS.singleton cCounter
           | otherwise            = mempty
+
+
+nodePostOrder :: (n -> [n'] -> n') -> ReferenceDAG e n -> ReferenceDAG e n'
+nodePostOrder f dag = RefDAG <$> const newReferences <*> rootRefs <*> graphData $ dag
+  where
+    dagSize       = length $ references dag
+    newReferences = V.generate dagSize h
+      where
+        h i = IndexData <$> const (memo ! i) <*> parentRefs <*> childRefs $ references dag V.! i
+    memo = V.generate dagSize h
+      where
+        h i = f datum $ (memo V.!) <$> childIndices
+          where
+            datum        = nodeDecoration node 
+            node         = references dag V.! i
+            childIndices = IM.keys $ childRefs node
+
+
+nodePreOrder :: (n -> [(Word, n')] -> n') -> ReferenceDAG e n -> ReferenceDAG e n'
+nodePreOrder f dag = RefDAG <$> const newReferences <*> rootRefs <*> graphData $ dag
+  where
+    dagSize       = length $ references dag
+    newReferences = V.generate dagSize h
+      where
+        h i = IndexData <$> const (memo ! i) <*> parentRefs <*> childRefs $ references dag V.! i
+    memo = V.generate dagSize h
+      where
+        h i = f datum $ (childPosition &&& (memo V.!)) <$> parentIndices
+          where
+            datum           = nodeDecoration node 
+            node            = references dag V.! i
+            -- In sparsely connected graphs (like ours) this will be effectively constant.
+            childPosition j = fromIntegral . length . takeWhile (<i) . IM.keys . childRefs $ references dag V.! j
+            parentIndices   = otoList $ parentRefs node
 
 
 -- |
