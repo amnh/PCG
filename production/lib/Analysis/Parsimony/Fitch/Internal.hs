@@ -22,7 +22,7 @@ import Bio.Character.Decoration.Discrete
 import Bio.Character.Encodable
 
 data FitchCharacterDecoration c = FitchCharacterDecoration
-    { subtreeCost       :: Word32                                               -- cost of the subtree
+    { minCost           :: Word32                                               -- cost of the subtree
     , preliminaryMedian :: (EncodableStaticCharacter)                           -- held here until final state is determined and we can assign that into discreteCharacter
     , childMedians      :: (EncodableStaticCharacter, EncodableStaticCharacter) -- (left, right) so that we can do post order pass with all of Fitch's rules
     }
@@ -41,7 +41,7 @@ fitchPreOrder curDecoration (x:y:_)                    = curDecoration   -- two 
 fitchPreOrder curDecoration []                         = curDecoration   -- is a root TODO: need to change preliminary to final
 fitchPreOrder curDecoration ((_, parentDecoration):[]) =
     if curDecoration ^. isLeaf    -- TODO: this call probably isn't right
-        then curDecoration & discreteCharacter %~ curDecoration ^. preliminaryMedian
+        then curDecoration & discreteCharacter %~ (curDecoration ^. preliminaryMedian)
         else determineFinalState curDecoration parentDecoration
 
 
@@ -58,7 +58,7 @@ updatePostOrder curNodeDecoration (leftChild:rightChild:_) = returnNodeDecoratio
         isSet decoration key   = (decoration   ^. discreteCharacter) `testBit` key
         indel l r k            = (isSet l k) `xor` (isSet r k)
         noSub l r k            = (isSet l k) &&    (isSet r k)
-        totalCost              = thisNodeCost + (leftChild ^. subtreeCost) + (rightChild ^. subtreeCost)
+        totalCost              = thisNodeCost + (leftChild ^. minCost) + (rightChild ^. minCost)
         f (inChar, cost) key
             | noSub leftChildDec rightChildDec key =
                 if cost > 0
@@ -74,9 +74,9 @@ updatePostOrder curNodeDecoration (leftChild:rightChild:_) = returnNodeDecoratio
 initializeLeaf :: FitchCharacterDecoration c -> FitchCharacterDecoration c
 initializeLeaf curDecoration =
     FitchCharacterDecoration 0 label (emptyChar, emptyChar)
-        where
-            label     = curDecoration ^. discreteCharacter
-            emptyChar = label `xor` label
+    where
+        label     = curDecoration ^. discreteCharacter
+        emptyChar = label `xor` label
 
 determineFinalState :: DiscreteCharacterDecoration c => FitchCharacterDecoration c -> FitchCharacterDecoration c -> FitchCharacterDecoration c
 determineFinalState curDecoration parentDecoration = finalDecoration
@@ -85,10 +85,9 @@ determineFinalState curDecoration parentDecoration = finalDecoration
                                                        then acc && False
                                                        else acc && True
                                                       ) True $ curDecoration ^. characterAlphabet
-        curIsUnion = foldlWithKey (\acc k _ -> acc && !(left || right `xor` preliminary) `testBit` k)) -- preliminary is 0 if both are 0, 1 otherwise
-                                                                                                       -- TODO: see if this short-circuits; otherwise rewrite
-                                                                                                       -- doing testbit three times and then logical operations
-
+        curIsUnion = foldlWithKey (\acc k _ -> acc && (popCount (left || right `xor` preliminary) > 0) -- preliminary is 0 if both are 0, 1 otherwise
+                                                                                                        -- TODO: see if this short-circuits; otherwise rewrite
+                                                                                                        -- doing testbit three times and then logical operations
                                                       ) True $ curDecoration ^. characterAlphabet
         finalDecoration = curDecoration    &  discreteCharacter %. median
         preliminary     = curDecoration    ^. preliminaryMedian
@@ -101,4 +100,3 @@ determineFinalState curDecoration parentDecoration = finalDecoration
             | curIsUnion    = ancestor `union` preliminary                                                      -- Fitch rule 2
             | otherwise     = ancestor `union` (left `intersect` ancestor) `union` (right `intersect` ancestor) -- Fitch rule 3
 
-        isOverlap answer bit =

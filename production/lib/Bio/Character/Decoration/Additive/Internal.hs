@@ -30,7 +30,7 @@ import Data.Alphabet
 data AdditiveDecorationInitial c
    = AdditiveDecorationInitial
    { additiveDecorationInitialCharacter :: c
-   , metadata                        :: DiscreteCharacterMetadataDec c
+   , metadata                           :: DiscreteCharacterMetadataDec c
    }
 
 
@@ -76,7 +76,7 @@ instance EncodableStreamElement c => HasCharacterTransitionCostMatrix (AdditiveD
       where
          getter e   = metadata e ^. characterTCM
          setter e f = e { metadata = metadata e &  characterTCM .~ f }
-        
+
 
 -- | (✔)
 instance HasCharacterWeight (AdditiveDecorationInitial c) Double where
@@ -97,14 +97,14 @@ instance EncodableStreamElement c => DiscreteCharacterMetadata (AdditiveDecorati
 -- | (✔)
 instance EncodableStaticCharacter c => DiscreteCharacterDecoration (AdditiveDecorationInitial c) c where
 
-  
+
 -- | (✔)
-instance EncodableStaticCharacter c => SimpleDiscreteCharacterDecoration (AdditiveDecorationInitial c) c where 
+instance EncodableStaticCharacter c => SimpleDiscreteCharacterDecoration (AdditiveDecorationInitial c) c where
     toDiscreteCharacterDecoration name weight alphabet tcm g symbolSet =
         AdditiveDecorationInitial
         { additiveDecorationInitialCharacter = g symbolSet
         , metadata                           = discreteMetadata name weight alphabet tcm
-        }    
+        }
 
 
 -- | (✔)
