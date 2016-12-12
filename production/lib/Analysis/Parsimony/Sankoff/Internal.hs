@@ -183,7 +183,7 @@ calcCostPerState inputCharState leftChildDec rightChildDec = retVal
                                       else rightMin
                 curLeftMin          = leftTransitionCost  + accumulatedLeftCharCost
                 curRightMin         = rightTransitionCost + accumulatedRightCharCost
-                leftTransitionCost  = (leftChildDec  ^. characterSymbolTransitionCostMatrixGenerator) inputCharState childCharState
+                leftTransitionCost  = ( leftChildDec ^. characterSymbolTransitionCostMatrixGenerator) inputCharState childCharState
                 rightTransitionCost = (rightChildDec ^. characterSymbolTransitionCostMatrixGenerator) inputCharState childCharState
 
         initialAccumulator = (maxBound :: Word, maxBound :: Word)
