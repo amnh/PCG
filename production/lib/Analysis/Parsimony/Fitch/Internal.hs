@@ -22,56 +22,53 @@ import Bio.Character.Decoration.Discrete
 import Bio.Character.Encodable
 
 data FitchCharacterDecoration c = FitchCharacterDecoration
-    { subtreeCost       :: Word32                                                     -- cost of the subtree
-    , preliminaryMedian :: (DiscreteCharacterDecoration)                              -- held here until final state is determined and we can assign that into discreteCharacter
-    , childMedians      :: (DiscreteCharacterDecoration, DiscreteCharacterDecoration) -- (left, right) so that we can do post order pass with all of Fitch's rules
+    { subtreeCost       :: Word32                                               -- cost of the subtree
+    , preliminaryMedian :: (EncodableStaticCharacter)                           -- held here until final state is determined and we can assign that into discreteCharacter
+    , childMedians      :: (EncodableStaticCharacter, EncodableStaticCharacter) -- (left, right) so that we can do post order pass with all of Fitch's rules
     }
 
 -- | Used on the post-order (i.e. first) traversal.
 fitchPostOrder :: ( EncodableStaticCharacter c, DiscreteCharacterDecoration d c ) => (d -> [d'] -> d')
-fitchPostOrder charDecoration []               = initializeLeaf charDecoration    -- a leaf
-fitchPostOrder charDecoration childDecorations = updateNodeDecoration charDecoration childDecorations
+fitchPostOrder charDecoration []               = initializeLeaf charDecoration                         -- a leaf
+fitchPostOrder charDecoration childDecorations = updatePostOrder charDecoration childDecorations
 
--- | Used on the pre-order (i.e. second) traversal. Either calls 'initializeDirVector' on root or
--- Needs to determine which child it's updating, then sends the appropriate minlist
+-- | Used on the pre-order (i.e. second) traversal.
 fitchPreOrder  :: ( HasTCM d ((c, c) -> (c, Double))
                     , HasStaticCharacter d c
                     , EncodableStaticCharacter c
                     ) => (FitchCharacterDecoration c -> [(Word, d')] -> d')
-fitchPreOrder curDecoration (x:y:_)                             = curDecoration                     -- shouldn't be possible, but here for completion
-fitchPreOrder curDecoration []                                  =
-    initializeDirVector curDecoration -- is a root
-fitchPreOrder curDecoration ((whichChild, parentDecoration):[]) = returnChar
+fitchPreOrder curDecoration (x:y:_)                    = curDecoration   -- two parents; shouldn't be possible, but here for completion
+fitchPreOrder curDecoration []                         = curDecoration   -- is a root TODO: need to change preliminary to final
+fitchPreOrder curDecoration ((_, parentDecoration):[]) =
+    if curDecoration ^. isLeaf    -- TODO: this call probably isn't right
+        then curDecoration & discreteCharacter %~ curDecoration ^. preliminaryMedian
+        else determineFinalState curDecoration parentDecoration
+
+
+updatePostOrder :: EncodableStaticCharacter c => c -> [FitchCharacterDecoration c] -> FitchCharacterDecoration c
+updatePostOrder curNodeDecoration []                       = curNodeDecoration    -- Leaf. Here for completion because levaes are filtered out before this call.
+updatePostOrder curNodeDecoration (x:[])                   = curNodeDecoration    -- Shouldn't be possible, but here for completion.
+updatePostOrder curNodeDecoration (leftChild:rightChild:_) = returnNodeDecoration
     where
-        returnChar
-            | whichChild == 0 = updateDirVector parentDecoration (fst (parentDecoration ^. directionalMinVector)) curDecoration -- left child
-            | otherwise       = updateDirVector parentDecoration (snd (parentDecoration ^. directionalMinVector)) curDecoration -- right child
+        returnNodeDecoration   = FitchCharacterDecoration totalCost median (leftChild ^. preliminaryMedian, rightChild ^. preliminaryMedian)
+        (median, thisNodeCost) = foldlWithKey' f initializedAcc leftChildDec rightChild
 
-
-calcCostAndMedian :: EncodableStaticCharacter c => c -> [FitchCharacterDecoration c] -> FitchCharacterDecoration c
-calcCostAndMedian curNodeDecoration []                       = curNodeDecoration    -- Leaf. Here for completion because levaes are filtered out before this call.
-calcCostAndMedian curNodeDecoration (x:[])                   = curNodeDecoration    -- Shouldn't be possible, but here for completion.
-calcCostAndMedian curNodeDecoration (leftChild:rightChild:_) = returnNodeDecoration
-    where
-        returnNodeDecoration   = FitchCharacterDecoration cost median (leftChild ^. preliminaryMedian, rightChild ^. preliminaryMedian)
-        (cost, median) = calcCostAndMedian leftChild rightChild
-        returnVal            = foldlWithKey' f initializedAcc $ leftChildDec ^. characterAlphabet
-
-        initializedAcc       = (emptyChar, True)
-        emptyChar            = (leftChildDec ^. discreteCharacter) `xor`     (leftChildDec ^. discreteCharacter)
-        isSet decoration key = (decoration   ^. discreteCharacter) `testBit` key
-        indel l r k          = (isSet l k) `xor` (isSet r k)
-        noSub l r k          = (isSet l k) &&    (isSet r k)
-        f (inChar, isCost) key
-            | noSub =
-                if isCost
-                    then (emptyChar `setBit` key, False)
-                    else (inChar    `setBit` key, isCost)
+        initializedAcc         = (emptyChar, 1)
+        emptyChar              = (leftChildDec ^. discreteCharacter) `xor`     (leftChildDec ^. discreteCharacter)
+        isSet decoration key   = (decoration   ^. discreteCharacter) `testBit` key
+        indel l r k            = (isSet l k) `xor` (isSet r k)
+        noSub l r k            = (isSet l k) &&    (isSet r k)
+        totalCost              = thisNodeCost + (leftChild ^. subtreeCost) + (rightChild ^. subtreeCost)
+        f (inChar, cost) key
+            | noSub leftChildDec rightChildDec key =
+                if cost > 0
+                    then (emptyChar `setBit` key, 0)
+                    else (inChar    `setBit` key, 0)
             | indel leftChildDec rightChildDec key =
-                if isCost
-                    then (inChar `setBit` key, isCost)
-                    else (inChar,              isCost)
-            | otherwise  = (inChar, isCost)
+                if cost > 0
+                    then (inChar `setBit` key, cost)
+                    else (inChar,              cost)
+            | otherwise = (inChar, cost)
 
 
 initializeLeaf :: FitchCharacterDecoration c -> FitchCharacterDecoration c
@@ -81,27 +78,27 @@ initializeLeaf curDecoration =
             label     = curDecoration ^. discreteCharacter
             emptyChar = label `xor` label
 
--- |
--- Takes two decorations in, a child and a parent, and calculates the median character value of the child. For each possible character state,
--- this value is based on whether that character state in the child is on one of the min-cost paths from the root to the leaves.
--- It relies on dynamic programming to do so, using the minimum tuple in the parent to determine whether that character state can participate
--- in the final median. Using the left child as a template, the character state is part of the median if, for some state in the parent,
--- parCharState_minCost_left == childCharState_minCost + TCM(childCharState, parCharState).
-updateDirVector :: DiscreteCharacterDecoration c => FitchCharacterDecoration c -> FitchCharacterDecoration c -> FitchCharacterDecoration c
-updateDirVector parentDecoration parentMins childDecoration = returnChar
+determineFinalState :: DiscreteCharacterDecoration c => FitchCharacterDecoration c -> FitchCharacterDecoration c -> FitchCharacterDecoration c
+determineFinalState curDecoration parentDecoration = finalDecoration
     where
-        median = foldlWithKey' (\acc parentCharState parentCharMin ->
-                                    if parentCharMin == parentDecoration ^. minCost
-                                    then foldlWithKey' buildMedian acc parentCharMin $ curDecoration ^. minCostVector
-                                    else acc
-                               ) startMedian parentMins
+        curIsSuperset = foldlWithKey (\acc k _ -> if (ancestor `testBit` k) && (preliminary `testBit` k)
+                                                       then acc && False
+                                                       else acc && True
+                                                      ) True $ curDecoration ^. characterAlphabet
+        curIsUnion = foldlWithKey (\acc k _ -> acc && !(left || right `xor` preliminary) `testBit` k)) -- preliminary is 0 if both are 0, 1 otherwise
+                                                                                                       -- TODO: see if this short-circuits; otherwise rewrite
+                                                                                                       -- doing testbit three times and then logical operations
 
-        buildMedian acc childCharState parentCharState charMin
-            | charMin == curDecoration ^. minCost + (curDecoration ^. characterSymbolTransitionCostMatrixGenerator) childCharState parentCharState =
-                acc `setBit` childCharState
-            | otherwise                           = acc
-        startMedian = (curDecoration ^. discreteCharacter) `xor` (curDecoration ^. discreteCharacter)
-        parentMin   = if whichChild == 0
-                        then parentDecoration ^. leftChildMin
-                        else parentDecoration ^. rightChildMin
-        returnChar  = curDecoration ^. discreteCharacter = median
+                                                      ) True $ curDecoration ^. characterAlphabet
+        finalDecoration = curDecoration    &  discreteCharacter %. median
+        preliminary     = curDecoration    ^. preliminaryMedian
+        ancestor        = parentDecoration ^. discreteCharacter
+        (left, right)   = curDecoration    ^. childMedians
+        union     l r   = l .|. r
+        intersect l r   = l .&. r
+        median
+            | curIsSuperset = ancestor                                                                          -- Fitch rule 1
+            | curIsUnion    = ancestor `union` preliminary                                                      -- Fitch rule 2
+            | otherwise     = ancestor `union` (left `intersect` ancestor) `union` (right `intersect` ancestor) -- Fitch rule 3
+
+        isOverlap answer bit =
