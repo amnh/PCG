@@ -15,7 +15,7 @@ module Bio.Character.Decoration.Metric
   , MetricCharacterDecoration()
   , SankoffOptimizationDecoration()
   , SankoffDecoration()
-  , FromExtentionSankoffDecoration(..)
+  , DiscreteExtensionSankoffDecoration(..)
   , GeneralCharacterMetadata()
   , DiscreteCharacterMetadata()
   , DiscreteCharacterDecoration()

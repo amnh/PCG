@@ -29,9 +29,9 @@ class ( DiscreteCharacterDecoration s c
       ) => SankoffDecoration s c | s -> c where
 
 class ( SankoffDecoration s c
-      ) => FromExtentionSankoffDecoration s c | s -> c where
+      ) => DiscreteExtensionSankoffDecoration s c | s -> c where
 
-    extendToSankoff :: DiscreteCharacterDecoration x c => x -> [Word] -> ([Word], [Word]) -> Word -> s
+    extendDiscreteToSankoff :: DiscreteCharacterDecoration x c => x -> [Word] -> ([Word], [Word]) -> Word -> s
 
 
 class HasMinCostVector s a | s -> a where
@@ -50,4 +50,4 @@ class HasMinCost s a | s -> a where
 
     minCost :: Lens' s a
     {-# MINIMAL minCost #-}
-    
+
