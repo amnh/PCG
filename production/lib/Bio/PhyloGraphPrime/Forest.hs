@@ -36,10 +36,6 @@ newtype PhylogeneticForest a
       deriving (Foldable, Foldable1, Functor, Semigroup, Traversable)
 
 
-fromComponents :: (NonEmpty a) -> PhylogeneticForest a
-fromComponents = PhylogeneticForest
-
-
 type instance Key PhylogeneticForest = Int
 
 

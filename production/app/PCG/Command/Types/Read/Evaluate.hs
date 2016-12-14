@@ -7,7 +7,7 @@ module PCG.Command.Types.Read.Evaluate
 import           Bio.Character.Parsed
 import           Bio.Metadata.Parsed
 import           Bio.PhyloGraph.Forest
-import           Bio.PhyloGraph.Solution      (SearchState)
+--import           Bio.PhyloGraph.Solution      (SearchState)
 import           Control.Evaluation
 import           Control.Monad                (when)
 import           Control.Monad.IO.Class
@@ -47,7 +47,7 @@ import           Text.Megaparsec
 
 import Debug.Trace (trace)
 
-type SearchState = EvaluationT IO (Either TopologicalResult CharacterResult)
+-- type SearchState = EvaluationT IO (Either TopologicalResult CharacterResult)
 
 
 parse' :: Parsec Dec s a -> String -> s -> Either (ParseError (Token s) Dec) a
@@ -55,9 +55,8 @@ parse' = parse
 
 
 evaluate :: Command -> EvaluationT IO a -> EvaluationT IO (Either TopologicalResult CharacterResult)
-{--}
---evaluate (READ fileSpecs) _old | trace ("Evaluated called: " <> show fileSpecs) False = undefined
-evaluate (READ fileSpecs) _old | trace "STARTING READ COMMAND" False = undefined
+-- evaluate (READ fileSpecs) _old | trace ("Evaluated called: " <> show fileSpecs) False = undefined
+-- evaluate (READ fileSpecs) _old | trace "STARTING READ COMMAND" False = undefined
 evaluate (READ fileSpecs) _old = do
     when (null fileSpecs) $ fail "No files specified in 'read()' command"
     result <- liftIO . runEitherT . eitherTValidation $ parseSpecifiedFile <$> fileSpecs
@@ -73,7 +72,6 @@ evaluate (READ fileSpecs) _old = do
     transformation = expandIUPAC
 
 evaluate _ _ = fail "Invalid READ command binding"
-{--}
 
 
 parseSpecifiedFile  :: FileSpecification -> EitherT ReadError IO [FracturedParseResult]

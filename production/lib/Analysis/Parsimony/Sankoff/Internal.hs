@@ -32,6 +32,7 @@ import Data.List.NonEmpty (NonEmpty( (:|) ))
 import Data.Word
 import Prelude hiding (zip)
 
+
 {-
 data SankoffPostOrderResult c = SankoffPostOrderResult
     { minCostVector        :: [Word]             -- overall min for each character state
@@ -85,14 +86,17 @@ initializeCostVector :: ( Bits c,
                           -> SankoffOptimizationDecoration c
 initializeCostVector inputDecoration = returnChar
     where
-        -- assuming metricity and 0 diagonal
-        costList = foldMapWithKey f $ inputDecoration ^. characterAlphabet
+        -- assuming metricity
+        len      = symbolCount $ inputDecoration ^. discreteCharacter
+        range    = [0..len-1]
+        costList = foldMap f range
             where
-                f key alphState
-                    | inputChar `testBit` key = [minBound :: Word]
-                    | otherwise               = [maxBound :: Word] -- Change this if it's actually Doubles.
+                f i
+                    | inputChar `testBit` i = [minBound :: Word]
+                    | otherwise             = [maxBound :: Word] -- Change this if it's actually Doubles.
                     where inputChar = inputDecoration ^. discreteCharacter
         returnChar = extendDiscreteToSankoff inputDecoration costList ([],[]) (minBound :: Word)
+        
 
 
 -- |
@@ -105,8 +109,8 @@ updateCostVector :: ( EncodableStaticCharacter c
                     ) => d
                       -> NonEmpty (SankoffOptimizationDecoration c)
                       -> SankoffOptimizationDecoration c
-updateCostVector parentDecoration (x:|[])                   = x                    -- Shouldn't be possible, but here for completion.
-updateCostVector parentDecoration (leftChild:|rightChild:_) = returnNodeDecoration -- _Should_ be able to amend this to use non-binary children.
+updateCostVector _parentDecoration (x:|[])                   = x                    -- Shouldn't be possible, but here for completion.
+updateCostVector  parentDecoration (leftChild:|rightChild:_) = returnNodeDecoration -- _Should_ be able to amend this to use non-binary children.
     where
         (costVector, dirCostVector, charCost) = foldr findMins initialAccumulator [0..length(parentDecoration ^. characterAlphabet)]
         initialAccumulator     = ([], ([],[]), maxBound :: Word)  -- (current minCost, (leftMin, rightMin))
@@ -162,7 +166,7 @@ updateDirVector parentDecoration childDecoration parentMins  = returnChar
             | charMin == totalCost childCharState parentCharState = acc `setBit` childCharState
             | otherwise                                           = acc
         tcmCostAsWord childState parState = fromIntegral $ (parentDecoration ^. characterSymbolTransitionCostMatrixGenerator) childState parState
-        totalCost childState parState     = parentDecoration ^. minCost + fromIntegral (tcmCostAsWord childState parState)
+        totalCost childState parState     = parentDecoration ^. minCost + tcmCostAsWord childState parState
         startMedian                       = (parentDecoration ^. discreteCharacter) `xor` (parentDecoration ^. discreteCharacter)
         returnChar                        = childDecoration & discreteCharacter .~ median
 

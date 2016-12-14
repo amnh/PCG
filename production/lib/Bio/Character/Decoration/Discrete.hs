@@ -18,7 +18,7 @@
 
 module Bio.Character.Decoration.Discrete
   ( DiscreteDecoration()
-  , DiscreteCharacterDecoration(..)
+  , DiscreteCharacterDecoration()
   , DiscreteCharacterMetadata()
   , GeneralCharacterMetadata()
   , HasCharacterAlphabet(..)
@@ -33,20 +33,12 @@ module Bio.Character.Decoration.Discrete
   ) where
 
 
-import           Bio.Character.Encodable
-import           Bio.Metadata.Discrete
-import           Bio.Metadata.CharacterName
-import           Control.Lens
-import           Data.Alphabet
-import           Data.Alphabet.IUPAC
-import           Data.Bimap        (twist)
-import qualified Data.Bimap as BM
-import           Data.Foldable
-import           Data.List         (intercalate)
-import           Data.List.Utility
-import           Data.Maybe
-import           Data.Monoid
-import           Data.TCM
+import Bio.Character.Encodable
+import Bio.Metadata.Discrete
+import Bio.Metadata.CharacterName
+import Control.Lens
+import Data.Alphabet
+import Data.TCM
 
 
 data DiscreteDecoration c
