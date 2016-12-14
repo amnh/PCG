@@ -111,8 +111,8 @@ int main() {
  */
 int exampleInterfaceFn(dynChar_t* seqA, dynChar_t* seqB, alignResult_t* result) {
 
-    int* seqA_main = dynCharToIntArr(seqA);
-    int* seqB_main = dynCharToIntArr(seqB);
+    uint64_t* seqA_main = dynCharToIntArr(seqA);
+    uint64_t* seqB_main = dynCharToIntArr(seqB);
 
     retType_t* retAlign = malloc( sizeof(retType_t) );
 
