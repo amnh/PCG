@@ -22,6 +22,7 @@ import Bio.Metadata.CharacterName
 import Bio.Metadata.Discrete
 import Control.Lens
 import Data.Alphabet
+import Data.TCM
 
 
 -- |
@@ -30,7 +31,7 @@ import Data.Alphabet
 data MetricDecorationInitial c
    = MetricDecorationInitial
    { metricDecorationInitialCharacter :: c
-   , metadata                        :: DiscreteCharacterMetadataDec c
+   , metadata                         :: DiscreteCharacterMetadataDec c
    }
 
 
@@ -76,7 +77,7 @@ instance EncodableStreamElement c => HasCharacterTransitionCostMatrix (MetricDec
       where
          getter e   = metadata e ^. characterTCM
          setter e f = e { metadata = metadata e &  characterTCM .~ f }
-        
+
 
 -- | (✔)
 instance HasCharacterWeight (MetricDecorationInitial c) Double where
@@ -95,13 +96,142 @@ instance EncodableStreamElement c => DiscreteCharacterMetadata (MetricDecoration
 
 
 -- | (✔)
-instance EncodableStaticCharacter c => DiscreteCharacterDecoration (MetricDecorationInitial c) c where 
+instance EncodableStaticCharacter c => DiscreteCharacterDecoration (MetricDecorationInitial c) c where
+
+
+-- | (✔)
+instance EncodableStaticCharacter c => SimpleDiscreteCharacterDecoration (MetricDecorationInitial c) c where
+
     toDiscreteCharacterDecoration name weight alphabet tcm g symbolSet =
         MetricDecorationInitial
         { metricDecorationInitialCharacter = g symbolSet
-        , metadata                           = discreteMetadata name weight alphabet tcm
-        }    
+        , metadata                         = discreteMetadata name weight alphabet tcm
+        }
 
 
 -- | (✔)
 instance EncodableStaticCharacter c => MetricCharacterDecoration (MetricDecorationInitial c) c where
+
+
+
+data SankoffOptimizationDecoration c
+   = SankoffOptimizationDecoration
+   { sankoffDirectionalMinVector :: ([Word], [Word])
+   , sankoffMinCostVector        ::  [Word]
+   , sankoffMinCost              ::   Word
+   , sankoffMetadataField        :: DiscreteCharacterMetadataDec c
+   , sankoffCharacterField       :: c
+   }
+
+
+-- | (✔)
+instance HasDiscreteCharacter (SankoffOptimizationDecoration c) c where
+
+    discreteCharacter = lens sankoffCharacterField (\e x -> e { sankoffCharacterField = x })
+
+
+-- | (✔)
+instance HasCharacterAlphabet (SankoffOptimizationDecoration c) (Alphabet String) where
+
+    characterAlphabet = lens getter setter
+      where
+         getter e   = sankoffMetadataField e ^. characterAlphabet
+         setter e x = e { sankoffMetadataField = sankoffMetadataField e &  characterAlphabet .~ x }
+
+
+-- | (✔)
+instance HasCharacterName (SankoffOptimizationDecoration c) CharacterName where
+
+    characterName = lens getter setter
+      where
+         getter e   = sankoffMetadataField e ^. characterName
+         setter e x = e { sankoffMetadataField = sankoffMetadataField e &  characterName .~ x }
+
+
+-- |
+-- A 'Lens' for the 'symbolicTCMGenerator' field
+instance HasCharacterSymbolTransitionCostMatrixGenerator (SankoffOptimizationDecoration c) (Int -> Int -> Int) where
+
+    characterSymbolTransitionCostMatrixGenerator = lens getter setter
+      where
+         getter e   = sankoffMetadataField e ^. characterSymbolTransitionCostMatrixGenerator
+         setter e f = e { sankoffMetadataField = sankoffMetadataField e &  characterSymbolTransitionCostMatrixGenerator .~ f }
+
+
+-- |
+-- A 'Lens' for the 'transitionCostMatrix' field
+instance EncodableStreamElement c => HasCharacterTransitionCostMatrix (SankoffOptimizationDecoration c) (c -> c -> (c, Int)) where
+
+    characterTCM = lens getter setter
+      where
+         getter e   = sankoffMetadataField e ^. characterTCM
+         setter e f = e { sankoffMetadataField = sankoffMetadataField e &  characterTCM .~ f }
+
+
+-- | (✔)
+instance HasCharacterWeight (SankoffOptimizationDecoration c) Double where
+
+    characterWeight = lens getter setter
+      where
+         getter e   = sankoffMetadataField e ^. characterWeight
+         setter e x = e { sankoffMetadataField = sankoffMetadataField e &  characterWeight .~ x }
+
+
+instance HasMinCostVector (SankoffOptimizationDecoration c) [Word] where
+
+    minCostVector = lens sankoffMinCostVector (\e x -> e { sankoffMinCostVector = x })
+
+
+instance HasDirectionalMinVector (SankoffOptimizationDecoration c) ([Word], [Word]) where
+
+    directionalMinVector = lens sankoffDirectionalMinVector (\e x -> e { sankoffDirectionalMinVector = x })
+
+
+instance HasMinCost (SankoffOptimizationDecoration c) Word where
+
+    minCost = lens sankoffMinCost (\e x -> e { sankoffMinCost = x })
+
+
+-- | (✔)
+instance GeneralCharacterMetadata (SankoffOptimizationDecoration c) where
+
+
+-- | (✔)
+instance EncodableStreamElement c => DiscreteCharacterMetadata (SankoffOptimizationDecoration c) c where
+
+
+-- | (✔)
+instance EncodableStaticCharacter c => DiscreteCharacterDecoration (SankoffOptimizationDecoration c) c where
+
+
+-- | (✔)
+instance EncodableStaticCharacter c => MetricCharacterDecoration (SankoffOptimizationDecoration c) c where
+
+
+-- | (✔)
+instance EncodableStaticCharacter c => SankoffDecoration (SankoffOptimizationDecoration c) c where
+
+
+-- | (✔)
+instance EncodableStaticCharacter c => DiscreteExtensionSankoffDecoration (SankoffOptimizationDecoration c) c where
+
+--    extendToSankoff :: DiscreteCharacterDecoration x c => x -> [Word] -> ([Word], [Word]) -> Word -> s
+    extendDiscreteToSankoff subDecoration costVector directionVector cost = undefined
+
+        SankoffOptimizationDecoration
+        { sankoffDirectionalMinVector = directionVector
+        , sankoffMinCostVector        = costVector
+        , sankoffMinCost              = cost
+        , sankoffMetadataField        = metadataValue
+        , sankoffCharacterField       = subDecoration ^. discreteCharacter
+        }
+      where
+        alphabetValue = subDecoration ^. characterAlphabet
+        tcmValue      = generate (length alphabetValue) (uncurry $ subDecoration ^. characterSymbolTransitionCostMatrixGenerator)
+        metadataValue =
+          discreteMetadata
+            <$> (^. characterName)
+            <*> (^. characterWeight)
+            <*> const alphabetValue
+            <*> const tcmValue
+            $ subDecoration

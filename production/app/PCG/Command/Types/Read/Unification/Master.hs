@@ -16,7 +16,7 @@ module PCG.Command.Types.Read.Unification.Master where
 
 import           Bio.Character
 import           Bio.Character.Encodable
-import           Bio.Character.Decoration.Continuous hiding (characterName)
+--import           Bio.Character.Decoration.Continuous hiding (characterName)
 import           Bio.Character.Decoration.Discrete   hiding (characterName)
 import           Bio.Character.Decoration.Dynamic    hiding (characterName)
 import           Bio.Character.Parsed
@@ -56,8 +56,6 @@ import           Data.Vector                       (Vector)
 import           PCG.Command.Types.Read.Unification.UnificationError
 import           PCG.SearchState 
 import           Prelude                    hiding (lookup, zip, zipWith)
-
-import Debug.Trace (trace)
 
 
 data FracturedParseResult
@@ -365,7 +363,7 @@ gatherForestsTerminalNames fpr = (identifiers, fpr)
           Nothing      -> []
           Just (e:|es) -> catMaybes $ f <$> (e:es)
       where
-        f x =
-          case foldMap terminalNames2 x of
+        f forest =
+          case foldMap terminalNames2 forest of
              []   -> Nothing
              x:xs -> Just $ x :| xs

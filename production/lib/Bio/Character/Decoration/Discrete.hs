@@ -18,7 +18,7 @@
 
 module Bio.Character.Decoration.Discrete
   ( DiscreteDecoration()
-  , DiscreteCharacterDecoration(..)
+  , DiscreteCharacterDecoration()
   , DiscreteCharacterMetadata()
   , GeneralCharacterMetadata()
   , HasCharacterAlphabet(..)
@@ -28,24 +28,17 @@ module Bio.Character.Decoration.Discrete
   , HasCharacterWeight(..)
   , HasDiscreteCharacter(..)
   , PossiblyMissingCharacter(..)
+  , SimpleDiscreteCharacterDecoration(..)
   , showDiscreteCharacterElement
   ) where
 
 
-import           Bio.Character.Encodable
-import           Bio.Metadata.Discrete
-import           Bio.Metadata.CharacterName
-import           Control.Lens
-import           Data.Alphabet
-import           Data.Alphabet.IUPAC
-import           Data.Bimap        (twist)
-import qualified Data.Bimap as BM
-import           Data.Foldable
-import           Data.List         (intercalate)
-import           Data.List.Utility
-import           Data.Maybe
-import           Data.Monoid
-import           Data.TCM
+import Bio.Character.Encodable
+import Bio.Metadata.Discrete
+import Bio.Metadata.CharacterName
+import Control.Lens
+import Data.Alphabet
+import Data.TCM
 
 
 data DiscreteDecoration c
@@ -87,8 +80,12 @@ class ( HasDiscreteCharacter s a
       , DiscreteCharacterMetadata s a
       ) => DiscreteCharacterDecoration s a | s -> a where 
 
+
+class DiscreteCharacterDecoration s a => SimpleDiscreteCharacterDecoration s a | s -> a where
+
     toDiscreteCharacterDecoration :: CharacterName -> Double -> Alphabet String -> TCM -> (x -> a) -> x -> s
     {-# MINIMAL toDiscreteCharacterDecoration #-}
+
 
 
 -- | (✔)
@@ -147,14 +144,19 @@ instance HasCharacterWeight (DiscreteDecoration c) Double where
 -- | (✔)
 instance GeneralCharacterMetadata (DiscreteDecoration c) where
 
+  
 -- | (✔)
 instance EncodableStreamElement c => DiscreteCharacterMetadata (DiscreteDecoration c) c where
 
 
 -- | (✔)
-instance EncodableStaticCharacter c => DiscreteCharacterDecoration (DiscreteDecoration c) c where 
+instance EncodableStaticCharacter c => DiscreteCharacterDecoration (DiscreteDecoration c) c where
+
+
+-- | (✔)
+instance EncodableStaticCharacter c => SimpleDiscreteCharacterDecoration (DiscreteDecoration c) c where 
     toDiscreteCharacterDecoration name weight alphabet tcm g symbolSet =
         DiscreteDec
         { discreteDecorationCharacter = g symbolSet
-        , metadata                           = discreteMetadata name weight alphabet tcm
+        , metadata                    = discreteMetadata name weight alphabet tcm
         }    

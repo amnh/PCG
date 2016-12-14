@@ -36,8 +36,6 @@ import           File.Format.TNT
 import           File.Format.TransitionCostMatrix
 import           File.Format.VertexEdgeRoot
 
-import Debug.Trace
-
 
 -- TODO: Make sure that pipelines don't undo and redo the conversion to treeSeqs
 -- currently we pack and unpack codes, make parsers dumber in the future. Read below!
@@ -59,43 +57,49 @@ import Debug.Trace
 -- I need to think about how this might interact with some things in Nexus, but it seems
 -- to make sense. It might make verification in the parsers more difficult... thinking...
 class ParsedCharacters a where
+
     unifyCharacters :: a -> TreeChars
 
 
 -- | (✔)
 instance ParsedCharacters FastaParseResult where
+
     unifyCharacters = foldr f mempty
-        where
-            convertSeq = V.fromList . fmap (Just . pure . pure . pure)
-            f (FastaSequence n s) = insert n (convertSeq s)
+      where
+        convertSeq = V.fromList . fmap (Just . pure . pure . pure)
+        f (FastaSequence n s) = insert n (convertSeq s)
 
 
 -- | (✔)
 instance ParsedCharacters TaxonSequenceMap where
+
     unifyCharacters = fmap (pure . pure . NE.fromList . toList)
 
 
 -- | (✔)
 instance ParsedCharacters FastcParseResult where
+
     unifyCharacters = foldl f mempty
-        where
-            f m (FastcSequence label symbols) = insert label (pure . pure . NE.fromList . toList $ symbols) m
+      where
+        f m (FastcSequence label symbols) = insert label (pure . pure . NE.fromList . toList $ symbols) m
 
 
 -- | (✔)
 instance ParsedCharacters (NonEmpty NewickForest) where
+
     unifyCharacters = mergeMaps . foldMap1 (fmap f)
-        where
-            f :: NewickNode -> TreeChars
-            f node 
-              | null (descendants node) = insert name mempty mempty
-              | otherwise = foldl1 (<>) $ f <$> descendants node
-              where
-                  name = fromMaybe "" $ newickLabel node
+      where
+        f :: NewickNode -> TreeChars
+        f node 
+          | null (descendants node) = insert name mempty mempty
+          | otherwise = foldl1 (<>) $ f <$> descendants node
+          where
+            name = fromMaybe "" $ newickLabel node
 
 
 -- | (✔)
 instance ParsedCharacters Nexus where
+
     unifyCharacters (Nexus (seqMap, _) _) = f <$> seqMap
       where
         f = fmap (fmap (fmap NE.fromList . NE.fromList . toList))  
@@ -103,24 +107,46 @@ instance ParsedCharacters Nexus where
 
 -- | (✔)
 instance ParsedCharacters TntResult where
+
     unifyCharacters (Left forest) = mergeMaps $ foldl f mempty forest
       where
-          f xs tree = foldl g mempty tree : xs
-          g m (Index  i) = insert (show i) mempty m
-          g m (Name   n) = insert n mempty m
-          g m (Prefix p) = insert p mempty m
+        f xs tree = foldl g mempty tree : xs
+        g m (Index  i) = insert (show i) mempty m
+        g m (Name   n) = insert n mempty m
+        g m (Prefix p) = insert p mempty m
+
     unifyCharacters (Right (WithTaxa seqs _ []    )) = M.fromList . toList $ second tntToTheSuperSequence   <$> seqs
     -- maybe just use the seq vaiable like above and remove this case?
     unifyCharacters (Right (WithTaxa _    _ forest)) = mergeMaps $ (M.fromList . toList . fmap (second tntToTheSuperSequence)) <$> forest
 
 
+-- | (✔)
+instance ParsedCharacters TCM where
+
+    unifyCharacters _ = mempty
+
+
+-- | (✔)
+instance ParsedCharacters VertexEdgeRoot where
+
+    unifyCharacters (VER _ e r) = mergeMaps $ f . buildTree <$> toList r
+      where
+        es = toList e
+        f node 
+          | null (subForest node) = insert (rootLabel node) mempty mempty
+          | otherwise = foldl1 (<>) $ f <$> subForest node
+        buildTree name = Node name kids
+          where
+            kids = fmap (buildTree . snd) . filter ((==name) . fst) $ (edgeOrigin &&& edgeTarget) <$> es
+
+
 -- | Coalesce the 'TaxonSequence' to the larger type 'ParsedSequences'
 tntToTheSuperSequence :: TaxonSequence -> ParsedChars
 tntToTheSuperSequence = V.fromList . fmap (Just . pure . f . show)
-    where
-        f :: String -> NonEmpty String
-        f ('[':xs) = NE.fromList $ pure <$> init xs
-        f e        = pure e
+  where
+    f :: String -> NonEmpty String
+    f ('[':xs) = NE.fromList $ pure <$> init xs
+    f e        = pure e
 
 
 -- | Takes a 'Foldable' structure of 'Map's and returns the union 'Map'
@@ -129,23 +155,3 @@ tntToTheSuperSequence = V.fromList . fmap (Just . pure . f . show)
 --   occuring last in the 'Foldable' structure is returned.
 mergeMaps :: (Foldable t, Ord k) => t (Map k v) -> Map k v
 mergeMaps = foldl (mergeWithKey (\_ _ b -> Just b) id id) mempty
-
-
--- | (✔)
-instance ParsedCharacters TCM where
-    unifyCharacters _ = mempty
-
-
--- | (✔)
-instance ParsedCharacters VertexEdgeRoot where
-    unifyCharacters (VER _ e r) = mergeMaps $ f . buildTree <$> toList r
-        where
-            es = toList e
-            f node 
-              | null (subForest node) = insert (rootLabel node) mempty mempty
-              | otherwise = foldl1 (<>) $ f <$> subForest node
-            buildTree name = Node name kids
-                where
-                    kids = fmap (buildTree . snd) . filter ((==name) . fst) $ (edgeOrigin &&& edgeTarget) <$> es
-
-

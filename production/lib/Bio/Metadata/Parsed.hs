@@ -36,8 +36,6 @@ import qualified File.Format.TNT                  as TNT
 import qualified File.Format.TransitionCostMatrix as F
 import           File.Format.VertexEdgeRoot
 
-import Debug.Trace
-  
 
 -- | An intermediate composite type for parse result coercion.
 data ParsedCharacterMetadata
@@ -54,32 +52,37 @@ data ParsedCharacterMetadata
 -- | Represents a parser result type which can have a character metadata
 --   structure extracted from it.
 class ParsedMetadata a where
+
     unifyMetadata :: a -> Vector ParsedCharacterMetadata
 
 
 -- | (✔)
 instance ParsedMetadata FastaParseResult where
+
     unifyMetadata = makeEncodeInfo . unifyCharacters
 
 
 -- | (✔)
 instance ParsedMetadata TaxonSequenceMap where
+
     unifyMetadata = makeEncodeInfo . unifyCharacters
 
 
 -- | (✔)
 instance ParsedMetadata FastcParseResult where
+
     unifyMetadata = makeEncodeInfo . unifyCharacters
 
 
 -- | (✔)
 instance ParsedMetadata (NonEmpty NewickForest) where
+
     unifyMetadata _ = mempty
 
 
 -- | (✔)
 instance ParsedMetadata TNT.TntResult where
---    unifyMetadata (Right withSeq) | trace (show . snd . head . toList $ TNT.sequences withSeq) False = undefined
+
     unifyMetadata (Left        _) = mempty
     unifyMetadata (Right withSeq) = V.fromList $ zipWith f parsedMetadatas parsedCharacters
       where
