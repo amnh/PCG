@@ -17,32 +17,37 @@
 --
 -----------------------------------------------------------------------------
 
+module Analysis.Parsimony.Fitch.Internal where
+
 import Control.Lens
 import Bio.Character.Decoration.Discrete
 import Bio.Character.Encodable
 
 data FitchCharacterDecoration c = FitchCharacterDecoration
-    { minCost           :: Word32                                               -- cost of the subtree
-    , preliminaryMedian :: (EncodableStaticCharacter)                           -- held here until final state is determined and we can assign that into discreteCharacter
-    , childMedians      :: (EncodableStaticCharacter, EncodableStaticCharacter) -- (left, right) so that we can do post order pass with all of Fitch's rules
+    { minCost           :: Word                                                 -- cost of the subtree
+    , preliminaryMedian :: (EncodableStaticCharacter)                           -- held here until final state is determined
+                                                                                -- and we can assign that into discreteCharacter
+    , childMedians      :: (EncodableStaticCharacter, EncodableStaticCharacter) -- (left, right) so that we can do post
+                                                                                -- order pass with all of Fitch's rules
+    , isLeaf            :: Bool
     }
 
 -- | Used on the post-order (i.e. first) traversal.
-fitchPostOrder :: ( EncodableStaticCharacter c, DiscreteCharacterDecoration d c ) => (d -> [d'] -> d')
-fitchPostOrder charDecoration []               = initializeLeaf charDecoration                         -- a leaf
-fitchPostOrder charDecoration childDecorations = updatePostOrder charDecoration childDecorations
+fitchPostOrder :: ( EncodableStaticCharacter c, DiscreteCharacterDecoration d c ) => d -> [d'] -> d'
+fitchPostOrder parentDecoration []               = initializeLeaf  parentDecoration                  -- a leaf
+fitchPostOrder parentDecoration childDecorations = updatePostOrder parentDecoration childDecorations
 
 -- | Used on the pre-order (i.e. second) traversal.
-fitchPreOrder  :: ( HasTCM d ((c, c) -> (c, Double))
-                    , HasStaticCharacter d c
-                    , EncodableStaticCharacter c
-                    ) => (FitchCharacterDecoration c -> [(Word, d')] -> d')
-fitchPreOrder curDecoration (x:y:_)                    = curDecoration   -- two parents; shouldn't be possible, but here for completion
-fitchPreOrder curDecoration []                         = curDecoration   -- is a root TODO: need to change preliminary to final
-fitchPreOrder curDecoration ((_, parentDecoration):[]) =
-    if curDecoration ^. isLeaf    -- TODO: this call probably isn't right
-        then curDecoration & discreteCharacter %~ (curDecoration ^. preliminaryMedian)
-        else determineFinalState curDecoration parentDecoration
+fitchPreOrder :: EncodableStaticCharacter c
+              => FitchOptimizationDecoration c
+              -> [(Word, FitchOptimizationDecoration c)]
+              -> FitchOptimizationDecoration c
+fitchPreOrder childDecoration (x:y:_)                    = childDecoration   -- two parents; shouldn't be possible, but here for completion
+fitchPreOrder childDecoration []                         = childDecoration   -- is a root TODO: need to change preliminary to final
+fitchPreOrder childDecoration ((_, parentDecoration):[]) =
+    if childDecoration ^. isLeaf    -- TODO: this call probably isn't right
+        then childDecoration
+        else determineFinalState childDecoration parentDecoration
 
 
 updatePostOrder :: EncodableStaticCharacter c => c -> [FitchCharacterDecoration c] -> FitchCharacterDecoration c

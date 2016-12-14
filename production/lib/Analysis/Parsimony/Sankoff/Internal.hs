@@ -57,12 +57,10 @@ sankoffPostOrder charDecoration xs =
 
 -- | Used on the pre-order (i.e. second) traversal. Either calls 'initializeDirVector' on root or
 -- Needs to determine which child it's updating, then sends the appropriate minlist
-sankoffPreOrder  :: (-- DiscreteCharacterDecoration d c
---                    , HasCharacterTransitionCostMatrix d (c -> c -> (c, Int))
-                      EncodableStaticCharacter c
-                    ) => SankoffOptimizationDecoration c
-                      -> [(Word, SankoffOptimizationDecoration c)]
-                      -> SankoffOptimizationDecoration c
+sankoffPreOrder :: EncodableStaticCharacter c
+                => SankoffOptimizationDecoration c
+                -> [(Word, SankoffOptimizationDecoration c)]
+                -> SankoffOptimizationDecoration c
 sankoffPreOrder childDecoration []                                 = initializeDirVector childDecoration -- is a root
 sankoffPreOrder childDecoration ((whichChild, parentDecoration):_) = resultDecoration $
     case whichChild of
