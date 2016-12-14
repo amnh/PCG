@@ -21,5 +21,6 @@ import Bio.Character.Decoration.Discrete
 --import Control.Lens
 
 
-
+-- |
+-- An optimization class for Fith (non-additive) characters.
 class DiscreteCharacterDecoration s a => FitchCharacterDecoration s a | s -> a where

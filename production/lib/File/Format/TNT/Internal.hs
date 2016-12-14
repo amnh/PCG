@@ -246,7 +246,8 @@ newtype TntDnaCharacter        = TntDna Word8 deriving (Bits,Eq,FiniteBits,Ord)
 --   Missing represents the empty ambiguity group.
 newtype TntProteinCharacter    = TntPro Word32 deriving (Bits,Eq,FiniteBits,Ord)
 
-
+-- |
+-- Serialize the sum type of TNT characters.
 instance Show TntCharacter where
 
     show (Continuous x) = show x

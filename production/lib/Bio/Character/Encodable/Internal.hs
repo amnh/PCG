@@ -22,6 +22,9 @@ class EncodedAmbiguityGroupContainer w where
     symbolCount :: w -> Int
 
 
+-- |
+-- Represents a type which may be a missing character.
+-- Allows for /O(1)/ testing and construction of missing character.
 class PossiblyMissingCharacter c where
 
     toMissing :: c -> c
@@ -29,6 +32,7 @@ class PossiblyMissingCharacter c where
     isMissing :: c -> Bool
 
 
+-- | (✔) 
 instance PossiblyMissingCharacter c => PossiblyMissingCharacter (Maybe c) where
 
     toMissing = fmap toMissing

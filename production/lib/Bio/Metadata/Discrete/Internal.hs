@@ -73,7 +73,7 @@ instance Show (DiscreteCharacterMetadataDec c) where
 instance EncodableStreamElement c => DiscreteCharacterMetadata (DiscreteCharacterMetadataDec c) c where
 
 
-  -- | (✔) 
+-- | (✔) 
 instance GeneralCharacterMetadata (DiscreteCharacterMetadataDec c) where
   
   
@@ -118,7 +118,8 @@ instance HasCharacterWeight (DiscreteCharacterMetadataDec c) Double where
                     $ \e x -> e { generalData = generalData e & characterWeight .~ x }
 
 
-
+-- |
+-- Construct a concrete typed 'DiscreteCharacterMetadataDec' value from the supplied inputs.
 discreteMetadata :: CharacterName -> Double -> Alphabet String -> TCM -> DiscreteCharacterMetadataDec c
 discreteMetadata name weight alpha tcm =
     DiscreteCharacterMetadataDec

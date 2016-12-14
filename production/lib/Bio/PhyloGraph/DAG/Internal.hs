@@ -84,6 +84,7 @@ data TopoDAG
 instance Arbitrary DAG where
   arbitrary = binaryTreeToDAG <$> (arbitrary :: Gen (TestingBinaryTree Node))
 
+-- | A newtype wrapper for Arbitrary instances.
 newtype TreeContext = TreeContext { fromTreeContext :: (Positive Int, Positive Int, Alphabet String, [BitVector]) }
 
 -- | (✔)

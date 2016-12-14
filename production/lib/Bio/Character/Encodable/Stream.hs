@@ -106,6 +106,7 @@ class ( EncodableStreamElement (Element s)
     gapOfStream = getGapElement . headEx
 
 
+-- | Show an 'EncodableStreamElement' by decoding it with it's corresponding alphabet.
 showStreamElement :: EncodableStreamElement e => Alphabet String -> e -> String
 showStreamElement alphabet element = renderAmbiguity $ toIUPAC symbols
   where
