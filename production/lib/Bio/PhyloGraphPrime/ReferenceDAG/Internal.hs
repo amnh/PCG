@@ -251,6 +251,12 @@ unfoldDAG f origin =
           | otherwise            = mempty
 
 
+-- |
+-- Applies a traversal logic function over a 'ReferenceDAG' in a /post-order/ manner.
+--
+-- The logic function takes a current node decoration,
+-- a list of child node decorations with the logic function already applied,
+-- and returns the new decoration for the current node.
 nodePostOrder :: (n -> [n'] -> n') -> ReferenceDAG e n -> ReferenceDAG e n'
 nodePostOrder f dag = RefDAG <$> const newReferences <*> rootRefs <*> graphData $ dag
   where
@@ -267,6 +273,12 @@ nodePostOrder f dag = RefDAG <$> const newReferences <*> rootRefs <*> graphData 
             childIndices = IM.keys $ childRefs node
 
 
+-- |
+-- Applies a traversal logic function over a 'ReferenceDAG' in a /pre-order/ manner.
+--
+-- The logic function takes a current node decoration,
+-- a list of parent node decorations with the logic function already applied,
+-- and returns the new decoration for the current node.
 nodePreOrder :: (n -> [(Word, n')] -> n') -> ReferenceDAG e n -> ReferenceDAG e n'
 nodePreOrder f dag = RefDAG <$> const newReferences <*> rootRefs <*> graphData $ dag
   where

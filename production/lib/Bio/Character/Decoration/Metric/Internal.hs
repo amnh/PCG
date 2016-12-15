@@ -59,8 +59,7 @@ instance HasCharacterName (MetricDecorationInitial c) CharacterName where
          setter e x = e { metadata = metadata e &  characterName .~ x }
 
 
--- |
--- A 'Lens' for the 'symbolicTCMGenerator' field
+-- | (✔)
 instance HasCharacterSymbolTransitionCostMatrixGenerator (MetricDecorationInitial c) (Int -> Int -> Int) where
 
     characterSymbolTransitionCostMatrixGenerator = lens getter setter
@@ -69,8 +68,7 @@ instance HasCharacterSymbolTransitionCostMatrixGenerator (MetricDecorationInitia
          setter e f = e { metadata = metadata e &  characterSymbolTransitionCostMatrixGenerator .~ f }
 
 
--- |
--- A 'Lens' for the 'transitionCostMatrix' field
+-- | (✔)
 instance EncodableStreamElement c => HasCharacterTransitionCostMatrix (MetricDecorationInitial c) (c -> c -> (c, Int)) where
 
     characterTCM = lens getter setter
@@ -114,6 +112,8 @@ instance EncodableStaticCharacter c => MetricCharacterDecoration (MetricDecorati
 
 
 
+-- |
+-- A concrete type representing the results of performing Sankoff's algorithm.
 data SankoffOptimizationDecoration c
    = SankoffOptimizationDecoration
    { sankoffDirectionalMins :: ([Word], [Word])
@@ -148,8 +148,7 @@ instance HasCharacterName (SankoffOptimizationDecoration c) CharacterName where
          setter e x = e { sankoffMetadataField = sankoffMetadataField e &  characterName .~ x }
 
 
--- |
--- A 'Lens' for the 'symbolicTCMGenerator' field
+-- | (✔)
 instance HasCharacterSymbolTransitionCostMatrixGenerator (SankoffOptimizationDecoration c) (Int -> Int -> Int) where
 
     characterSymbolTransitionCostMatrixGenerator = lens getter setter
@@ -158,8 +157,7 @@ instance HasCharacterSymbolTransitionCostMatrixGenerator (SankoffOptimizationDec
          setter e f = e { sankoffMetadataField = sankoffMetadataField e &  characterSymbolTransitionCostMatrixGenerator .~ f }
 
 
--- |
--- A 'Lens' for the 'transitionCostMatrix' field
+-- | (✔)
 instance EncodableStreamElement c => HasCharacterTransitionCostMatrix (SankoffOptimizationDecoration c) (c -> c -> (c, Int)) where
 
     characterTCM = lens getter setter
@@ -177,16 +175,19 @@ instance HasCharacterWeight (SankoffOptimizationDecoration c) Double where
          setter e x = e { sankoffMetadataField = sankoffMetadataField e &  characterWeight .~ x }
 
 
+-- | (✔)
 instance HasMinCostVector (SankoffOptimizationDecoration c) [Word] where
 
     minCostVector = lens sankoffMinCostVector (\e x -> e { sankoffMinCostVector = x })
 
 
+-- | (✔)
 instance HasDirectionalMinVector (SankoffOptimizationDecoration c) ([Word], [Word]) where
 
     directionalMinVector = lens sankoffDirectionalMins (\e x -> e { sankoffDirectionalMins = x })
 
 
+-- | (✔)
 instance HasMinCost (SankoffOptimizationDecoration c) Word where
 
     minCost = lens sankoffMinCost (\e x -> e { sankoffMinCost = x })

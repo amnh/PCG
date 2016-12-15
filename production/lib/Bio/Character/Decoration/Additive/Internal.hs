@@ -58,8 +58,7 @@ instance HasCharacterName (AdditiveDecorationInitial c) CharacterName where
          setter e x = e { metadata = metadata e &  characterName .~ x }
 
 
--- |
--- A 'Lens' for the 'symbolicTCMGenerator' field
+-- | (✔)
 instance HasCharacterSymbolTransitionCostMatrixGenerator (AdditiveDecorationInitial c) (Int -> Int -> Int) where
 
     characterSymbolTransitionCostMatrixGenerator = lens getter setter
@@ -68,8 +67,7 @@ instance HasCharacterSymbolTransitionCostMatrixGenerator (AdditiveDecorationInit
          setter e f = e { metadata = metadata e &  characterSymbolTransitionCostMatrixGenerator .~ f }
 
 
--- |
--- A 'Lens' for the 'transitionCostMatrix' field
+-- | (✔)
 instance EncodableStreamElement c => HasCharacterTransitionCostMatrix (AdditiveDecorationInitial c) (c -> c -> (c, Int)) where
 
     characterTCM = lens getter setter

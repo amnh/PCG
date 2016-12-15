@@ -18,4 +18,6 @@ module Bio.Character.Decoration.NonMetric.Class where
 import Bio.Character.Decoration.Discrete
 
 
+-- |
+-- A character optimization class for any TCM; unconstrained by metricity, symetry, etc.
 class DiscreteCharacterDecoration s a => NonMetricCharacterDecoration s a | s -> a where

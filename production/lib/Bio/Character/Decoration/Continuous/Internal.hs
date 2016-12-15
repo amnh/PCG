@@ -32,21 +32,26 @@ data ContinuousDecorationInitial c
    }
 
 
+-- |
+-- A newtype wrapper for a possibly missing continuous.
 newtype ContinuousChar = CC (Maybe Double)
   deriving (Eq,Ord)
 
 
+-- | (✔)
 instance Show ContinuousChar where
 
     show (CC  Nothing) = "?"
     show (CC (Just x)) = show x
 
 
+-- | (✔)
 instance Show c => Show (ContinuousDecorationInitial c) where
 
     show = show . (^. continuousCharacter)
 
 
+-- | (✔)
 instance PossiblyMissingCharacter c => PossiblyMissingCharacter (ContinuousDecorationInitial c) where
 
     isMissing = isMissing . (^. continuousCharacter)
@@ -103,6 +108,7 @@ instance GeneralCharacterMetadata (ContinuousDecorationInitial d) where
 instance ContinuousCharacter c => ContinuousDecoration (ContinuousDecorationInitial c) c where
 
 
+-- | A smart constructor for a continuous character.
 continuousDecorationInitial :: CharacterName -> (x -> c) -> x -> ContinuousDecorationInitial c
 continuousDecorationInitial name f v =
     ContinuousDecorationInitial

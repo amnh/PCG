@@ -27,6 +27,8 @@ class ( HasContinuousCharacter s c
       ) => ContinuousDecoration s c | s -> c where
 
   
+-- |
+-- A character class for continuous characters.
 class Ord c => ContinuousCharacter c where
 
     toContinuousCharacter :: Real r => Maybe r -> c 

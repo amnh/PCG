@@ -18,4 +18,7 @@ module Bio.Character.Decoration.Additive.Class where
 import Bio.Character.Decoration.Discrete
 
 
+-- |
+-- An abstract initial additive character decoration with a polymorphic character
+-- type.
 class DiscreteCharacterDecoration s a => AdditiveCharacterDecoration s a | s -> a where

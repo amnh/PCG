@@ -18,7 +18,7 @@
 
 module Bio.Character.Decoration.Discrete
   ( DiscreteDecoration()
-  , DiscreteCharacterDecoration(..)
+  , DiscreteCharacterDecoration()
   , DiscreteCharacterMetadata()
   , GeneralCharacterMetadata()
   , HasCharacterAlphabet(..)
@@ -33,22 +33,16 @@ module Bio.Character.Decoration.Discrete
   ) where
 
 
-import           Bio.Character.Encodable
-import           Bio.Metadata.Discrete
-import           Bio.Metadata.CharacterName
-import           Control.Lens
-import           Data.Alphabet
-import           Data.Alphabet.IUPAC
-import           Data.Bimap        (twist)
-import qualified Data.Bimap as BM
-import           Data.Foldable
-import           Data.List         (intercalate)
-import           Data.List.Utility
-import           Data.Maybe
-import           Data.Monoid
-import           Data.TCM
+import Bio.Character.Encodable
+import Bio.Metadata.Discrete
+import Bio.Metadata.CharacterName
+import Control.Lens
+import Data.Alphabet
+import Data.TCM
 
 
+-- |
+-- General, concrete type for Discrete characters.
 data DiscreteDecoration c
    = DiscreteDec
    { discreteDecorationCharacter :: c
@@ -61,6 +55,10 @@ instance EncodableStreamElement c => Show (DiscreteDecoration c) where
     show = showDiscreteCharacterElement
 
 
+-- |
+-- Show an appropriate instance of 'HasDiscreteCharacter' that is also
+-- 'HasCharacterAlphabet' by decoding the 'EncodableStreamElement' over the 'Alphabet';
+-- both of which contained in the lensed type.
 showDiscreteCharacterElement :: ( EncodableStreamElement a
                                 , HasCharacterAlphabet s (Alphabet String)
                                 , HasDiscreteCharacter s a
@@ -68,6 +66,7 @@ showDiscreteCharacterElement :: ( EncodableStreamElement a
 showDiscreteCharacterElement = showStreamElement <$> (^. characterAlphabet) <*> (^. discreteCharacter)
 
 
+-- | (✔)
 instance PossiblyMissingCharacter c => PossiblyMissingCharacter (DiscreteDecoration c) where
 
     isMissing = isMissing . (^. discreteCharacter)
@@ -83,12 +82,14 @@ class HasDiscreteCharacter s a | s -> a where
     {-# MINIMAL discreteCharacter #-}
 
 
+-- | (✔)
 class ( HasDiscreteCharacter s a
       , EncodableStaticCharacter a
       , DiscreteCharacterMetadata s a
       ) => DiscreteCharacterDecoration s a | s -> a where 
 
 
+-- | (✔)
 class DiscreteCharacterDecoration s a => SimpleDiscreteCharacterDecoration s a | s -> a where
 
     toDiscreteCharacterDecoration :: CharacterName -> Double -> Alphabet String -> TCM -> (x -> a) -> x -> s
@@ -120,8 +121,7 @@ instance HasCharacterName (DiscreteDecoration c) CharacterName where
          setter e x = e { metadata = metadata e &  characterName .~ x }
 
 
--- |
--- A 'Lens' for the 'symbolicTCMGenerator' field
+-- | (✔)
 instance HasCharacterSymbolTransitionCostMatrixGenerator (DiscreteDecoration c) (Int -> Int -> Int) where
 
     characterSymbolTransitionCostMatrixGenerator = lens getter setter
@@ -130,8 +130,7 @@ instance HasCharacterSymbolTransitionCostMatrixGenerator (DiscreteDecoration c) 
          setter e f = e { metadata = metadata e &  characterSymbolTransitionCostMatrixGenerator .~ f }
 
 
--- |
--- A 'Lens' for the 'transitionCostMatrix' field
+-- | (✔)
 instance EncodableStreamElement c => HasCharacterTransitionCostMatrix (DiscreteDecoration c) (c -> c -> (c, Int)) where
 
     characterTCM = lens getter setter

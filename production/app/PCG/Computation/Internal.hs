@@ -11,7 +11,7 @@ import PCG.Script
 import PCG.SearchState
 
 import qualified PCG.Command.Types.Read   as Read
-import qualified PCG.Command.Types.Report as Report
+--import qualified PCG.Command.Types.Report as Report
 
 data Computation = Computation [Command]
   deriving (Show)
