@@ -216,8 +216,7 @@ instance EncodableStaticCharacter c => SankoffDecoration (SankoffOptimizationDec
 -- | (✔)
 instance EncodableStaticCharacter c => DiscreteExtensionSankoffDecoration (SankoffOptimizationDecoration c) c where
 
---    extendToSankoff :: DiscreteCharacterDecoration x c => x -> [Word] -> ([Word], [Word]) -> Word -> s
-    extendDiscreteToSankoff subDecoration costVector directionVector cost = undefined
+    extendDiscreteToSankoff subDecoration costVector directionVector cost =
 
         SankoffOptimizationDecoration
         { sankoffDirectionalMinVector = directionVector
