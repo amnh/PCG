@@ -116,11 +116,11 @@ instance EncodableStaticCharacter c => MetricCharacterDecoration (MetricDecorati
 
 data SankoffOptimizationDecoration c
    = SankoffOptimizationDecoration
-   { sankoffDirectionalMinVector :: ([Word], [Word])
-   , sankoffMinCostVector        ::  [Word]
-   , sankoffMinCost              ::   Word
-   , sankoffMetadataField        :: DiscreteCharacterMetadataDec c
-   , sankoffCharacterField       :: c
+   { sankoffDirectionalMins :: ([Word], [Word])
+   , sankoffMinCostVector   ::  [Word]
+   , sankoffMinCost         ::   Word
+   , sankoffMetadataField   :: DiscreteCharacterMetadataDec c
+   , sankoffCharacterField  :: c
    }
 
 
@@ -184,7 +184,7 @@ instance HasMinCostVector (SankoffOptimizationDecoration c) [Word] where
 
 instance HasDirectionalMinVector (SankoffOptimizationDecoration c) ([Word], [Word]) where
 
-    directionalMinVector = lens sankoffDirectionalMinVector (\e x -> e { sankoffDirectionalMinVector = x })
+    directionalMinVector = lens sankoffDirectionalMins (\e x -> e { sankoffDirectionalMins = x })
 
 
 instance HasMinCost (SankoffOptimizationDecoration c) Word where
@@ -219,11 +219,11 @@ instance EncodableStaticCharacter c => DiscreteExtensionSankoffDecoration (Sanko
     extendDiscreteToSankoff subDecoration costVector directionVector cost = undefined
 
         SankoffOptimizationDecoration
-        { sankoffDirectionalMinVector = directionVector
-        , sankoffMinCostVector        = costVector
-        , sankoffMinCost              = cost
-        , sankoffMetadataField        = metadataValue
-        , sankoffCharacterField       = subDecoration ^. discreteCharacter
+        { sankoffDirectionalMins = directionVector
+        , sankoffMinCostVector   = costVector
+        , sankoffMinCost         = cost
+        , sankoffMetadataField   = metadataValue
+        , sankoffCharacterField  = subDecoration ^. discreteCharacter
         }
       where
         alphabetValue = subDecoration ^. characterAlphabet

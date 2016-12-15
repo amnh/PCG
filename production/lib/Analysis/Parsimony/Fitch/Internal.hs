@@ -29,7 +29,7 @@ data FitchCharacterDecoration c = FitchCharacterDecoration
                                                                                 -- and we can assign that into discreteCharacter
     , childMedians      :: (EncodableStaticCharacter, EncodableStaticCharacter) -- (left, right) so that we can do post
                                                                                 -- order pass with all of Fitch's rules
-    , isLeaf            :: Bool
+    , isLeaf            :: Bool                                                 -- need this in preorder
     }
 
 -- | Used on the post-order (i.e. first) traversal.
