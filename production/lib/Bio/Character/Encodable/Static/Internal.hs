@@ -110,10 +110,13 @@ instance EncodableStreamElement StaticCharacter where
           | otherwise                 = fromBits $ foldl' (\xs x -> (x `elem` ambiguity) : xs) [] alphabet
           where
             containsMissing = any (== fromString "?")
+
+
+instance EncodableStaticCharacter StaticCharacter where
+
+    {-# INLINE emptyStatic #-}
+    emptyStatic (SC x) = SC $ bitVec (width x) (0 :: Integer)
             
-
-instance EncodableStaticCharacter StaticCharacter
-
 
 instance MonoFunctor StaticCharacterBlock where
 
