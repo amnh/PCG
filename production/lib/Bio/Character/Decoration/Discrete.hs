@@ -46,7 +46,7 @@ import Data.TCM
 data DiscreteDecoration c
    = DiscreteDec
    { discreteDecorationCharacter :: c
-   , metadata                           :: DiscreteCharacterMetadataDec c
+   , metadata                    :: DiscreteCharacterMetadataDec c
    }
 
 
@@ -86,7 +86,7 @@ class HasDiscreteCharacter s a | s -> a where
 class ( HasDiscreteCharacter s a
       , EncodableStaticCharacter a
       , DiscreteCharacterMetadata s a
-      ) => DiscreteCharacterDecoration s a | s -> a where 
+      ) => DiscreteCharacterDecoration s a | s -> a where
 
 
 -- | (✔)
@@ -131,13 +131,13 @@ instance HasCharacterSymbolTransitionCostMatrixGenerator (DiscreteDecoration c) 
 
 
 -- | (✔)
-instance EncodableStreamElement c => HasCharacterTransitionCostMatrix (DiscreteDecoration c) (c -> c -> (c, Int)) where
+instance HasCharacterTransitionCostMatrix (DiscreteDecoration c) (c -> c -> (c, Int)) where
 
     characterTCM = lens getter setter
       where
          getter e   = metadata e ^. characterTCM
          setter e f = e { metadata = metadata e &  characterTCM .~ f }
-        
+
 
 -- | (✔)
 instance HasCharacterWeight (DiscreteDecoration c) Double where
@@ -151,7 +151,7 @@ instance HasCharacterWeight (DiscreteDecoration c) Double where
 -- | (✔)
 instance GeneralCharacterMetadata (DiscreteDecoration c) where
 
-  
+
 -- | (✔)
 instance EncodableStreamElement c => DiscreteCharacterMetadata (DiscreteDecoration c) c where
 
@@ -161,9 +161,9 @@ instance EncodableStaticCharacter c => DiscreteCharacterDecoration (DiscreteDeco
 
 
 -- | (✔)
-instance EncodableStaticCharacter c => SimpleDiscreteCharacterDecoration (DiscreteDecoration c) c where 
+instance EncodableStaticCharacter c => SimpleDiscreteCharacterDecoration (DiscreteDecoration c) c where
     toDiscreteCharacterDecoration name weight alphabet tcm g symbolSet =
         DiscreteDec
         { discreteDecorationCharacter = g symbolSet
         , metadata                    = discreteMetadata name weight alphabet tcm
-        }    
+        }

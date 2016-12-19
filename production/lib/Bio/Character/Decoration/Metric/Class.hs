@@ -32,7 +32,7 @@ class ( DiscreteCharacterDecoration s c
       , HasMinCost s Word
       ) => SankoffDecoration s c | s -> c where
 
-  
+
 -- |
 -- A decoration that can be constructed from a 'DiscreteCharacterDecoration' by
 -- extending the decoration to contain the requisite fields for performing

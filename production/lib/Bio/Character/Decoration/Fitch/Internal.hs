@@ -22,90 +22,146 @@ import Bio.Metadata.CharacterName
 import Bio.Metadata.Discrete
 import Control.Lens
 import Data.Alphabet
+import Data.TCM
+--import Data.Word
 
 
 -- |
 -- An abstract initial dynamic character decoration with a polymorphic character
 -- type.
-data FitchDecorationInitial f
-   = FitchDecorationInitial
-   { fitchDecorationInitialCharacter :: f
-   , metadata                        :: DiscreteCharacterMetadataDec f
+data FitchOptimizationDecoration f
+   = FitchOptimizationDecoration
+   { fitchMinCost           :: Word                                      -- cost of the subtree
+   , fitchPreliminaryMedian :: StaticCharacter                             -- held here until final state is
+                                                                           --     determined and we can assign that
+                                                                           --     into discreteCharacter
+   , fitchFinalMedian       :: StaticCharacter                           -- eventually gets assigned to discreteCharacter
+   , fitchChildMedians      :: (StaticCharacter, StaticCharacter)          -- (left, right) so that we can do post order
+                                                                           --     pass with all of Fitch's rules
+   , fitchIsLeaf            :: Bool                                        -- need this in preorder
+   , fitchCharacterField    :: f
+   , fitchMetadataField     :: DiscreteCharacterMetadataDec f
    }
 
 
 -- | (✔)
-instance HasDiscreteCharacter (FitchDecorationInitial f) f where
+instance HasDiscreteCharacter (FitchOptimizationDecoration f) f where
 
-    discreteCharacter = lens fitchDecorationInitialCharacter (\e x -> e { fitchDecorationInitialCharacter = x })
+    discreteCharacter = lens fitchCharacterField (\e x -> e { fitchCharacterField = x })
 
 
 -- | (✔)
-instance HasCharacterAlphabet (FitchDecorationInitial f) (Alphabet String) where
+instance HasCharacterAlphabet (FitchOptimizationDecoration f) (Alphabet String) where
 
     characterAlphabet = lens getter setter
       where
-         getter e   = metadata e ^. characterAlphabet
-         setter e x = e { metadata = metadata e &  characterAlphabet .~ x }
+         getter e   = fitchMetadataField e ^. characterAlphabet
+         setter e x = e { fitchMetadataField = fitchMetadataField e &  characterAlphabet .~ x }
 
 
 -- | (✔)
-instance HasCharacterName (FitchDecorationInitial f) CharacterName where
+instance HasCharacterName (FitchOptimizationDecoration f) CharacterName where
 
     characterName = lens getter setter
       where
-         getter e   = metadata e ^. characterName
-         setter e x = e { metadata = metadata e &  characterName .~ x }
+         getter e   = fitchMetadataField e ^. characterName
+         setter e x = e { fitchMetadataField = fitchMetadataField e &  characterName .~ x }
 
 
 -- |
 -- A 'Lens' for the 'symbolicTCMGenerator' field
-instance HasCharacterSymbolTransitionCostMatrixGenerator (FitchDecorationInitial f) (Int -> Int -> Int) where
+instance HasCharacterSymbolTransitionCostMatrixGenerator (FitchOptimizationDecoration f) (Int -> Int -> Int) where
 
     characterSymbolTransitionCostMatrixGenerator = lens getter setter
       where
-         getter e   = metadata e ^. characterSymbolTransitionCostMatrixGenerator
-         setter e f = e { metadata = metadata e &  characterSymbolTransitionCostMatrixGenerator .~ f }
+         getter e   = fitchMetadataField e ^. characterSymbolTransitionCostMatrixGenerator
+         setter e f = e { fitchMetadataField = fitchMetadataField e &  characterSymbolTransitionCostMatrixGenerator .~ f }
 
 
 -- |
 -- A 'Lens' for the 'transitionCostMatrix' field
-instance (EncodableStreamElement f) => HasCharacterTransitionCostMatrix (FitchDecorationInitial f) (f -> f -> (f, Int)) where
+instance HasCharacterTransitionCostMatrix (FitchOptimizationDecoration f) (f -> f -> (f, Int)) where
 
     characterTCM = lens getter setter
       where
-         getter e   = metadata e ^. characterTCM
-         setter e f = e { metadata = metadata e &  characterTCM .~ f }
-        
+         getter e   = fitchMetadataField e ^. characterTCM
+         setter e f = e { fitchMetadataField = fitchMetadataField e &  characterTCM .~ f }
+
 
 -- | (✔)
-instance HasCharacterWeight (FitchDecorationInitial f) Double where
+instance HasCharacterWeight (FitchOptimizationDecoration f) Double where
 
     characterWeight = lens getter setter
       where
-         getter e   = metadata e ^. characterWeight
-         setter e x = e { metadata = metadata e &  characterWeight .~ x }
+         getter e   = fitchMetadataField e ^. characterWeight
+         setter e x = e { fitchMetadataField = fitchMetadataField e &  characterWeight .~ x }
+
+-- | (✔)
+instance HasIsLeaf (FitchOptimizationDecoration f) Bool where
+
+    isLeaf = lens fitchIsLeaf (\e x -> e { fitchIsLeaf = x })
+
+-- | (✔)
+instance HasMinCost (FitchOptimizationDecoration f) Word where
+
+    minCost = lens fitchMinCost (\e x -> e { fitchMinCost = x })
+
+-- | (✔)
+instance HasPreliminaryMedian (FitchOptimizationDecoration f) StaticCharacter where
+    preliminaryMedian = lens fitchPreliminaryMedian (\e x -> e { fitchPreliminaryMedian = x })
+
+-- | (✔)
+instance HasChildMedians (FitchOptimizationDecoration f) ( StaticCharacter, StaticCharacter ) where
+    childMedians = lens fitchChildMedians (\e x -> e { fitchChildMedians = x })
+
+-- | (✔)
+instance HasFinalMedian (FitchOptimizationDecoration f) StaticCharacter where
+    finalMedian = lens fitchFinalMedian (\e x -> e { fitchFinalMedian = x })
 
 
 -- | (✔)
-instance GeneralCharacterMetadata (FitchDecorationInitial f) where
-
--- | (✔)
-instance (EncodableStreamElement f) => DiscreteCharacterMetadata (FitchDecorationInitial f) f where
+instance GeneralCharacterMetadata (FitchOptimizationDecoration f) where
 
 
 -- | (✔)
-instance EncodableStaticCharacter f => DiscreteCharacterDecoration (FitchDecorationInitial f) f where 
-
--- | (✔)
-instance EncodableStaticCharacter f => SimpleDiscreteCharacterDecoration (FitchDecorationInitial f) f where 
-
-    toDiscreteCharacterDecoration name weight alphabet tcm g symbolSet =
-        FitchDecorationInitial
-        { fitchDecorationInitialCharacter = g symbolSet
-        , metadata                        = discreteMetadata name weight alphabet tcm
-        }    
+instance EncodableStreamElement f => DiscreteCharacterMetadata (FitchOptimizationDecoration f) f where
 
 
 -- | (✔)
-instance EncodableStaticCharacter f => FitchCharacterDecoration (FitchDecorationInitial f) f where 
+instance EncodableStaticCharacter f => DiscreteCharacterDecoration (FitchOptimizationDecoration f) f where
+
+
+-- | (✔)
+instance EncodableStaticCharacter f => FitchCharacterDecoration (FitchOptimizationDecoration f) f where
+
+
+-- | (✔)
+instance EncodableStaticCharacter f => FitchDecoration (FitchOptimizationDecoration f) f where
+
+
+-- | (✔)
+instance EncodableStaticCharacter f => DiscreteExtensionFitchDecoration (FitchOptimizationDecoration f) f where
+
+    extendDiscreteToFitch subDecoration cost prelimMedian finMedian childMedianTup isLeafVal =
+
+        FitchOptimizationDecoration
+        { fitchChildMedians      = childMedianTup
+        , fitchIsLeaf            = isLeafVal
+        , fitchMinCost           = cost
+        , fitchMetadataField     = metadataValue
+        , fitchPreliminaryMedian = prelimMedian
+        , fitchFinalMedian       = finMedian
+        , fitchCharacterField    = subDecoration ^. discreteCharacter
+        }
+      where
+        alphabetValue = subDecoration ^. characterAlphabet
+        tcmValue      = generate (length alphabetValue) (uncurry $ subDecoration ^. characterSymbolTransitionCostMatrixGenerator)
+        metadataValue =
+          discreteMetadata
+            <$> (^. characterName)
+            <*> (^. characterWeight)
+            <*> const alphabetValue
+            <*> const tcmValue
+            $ subDecoration
+
+

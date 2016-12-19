@@ -114,7 +114,7 @@ library
                        Analysis.Parsimony.Binary.Optimization
                        Analysis.Parsimony.Binary.SequentialAlign
                        Analysis.Parsimony.Sankoff.Internal
---                       Analysis.Parsimony.Fitch.Internal
+                       Analysis.Parsimony.Fitch.Internal
                        Bio.Character
                        Bio.Character.Decoration.Additive
                        Bio.Character.Decoration.Continuous

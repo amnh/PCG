@@ -68,7 +68,7 @@ instance HasCharacterSymbolTransitionCostMatrixGenerator (AdditiveDecorationInit
 
 
 -- | (✔)
-instance EncodableStreamElement c => HasCharacterTransitionCostMatrix (AdditiveDecorationInitial c) (c -> c -> (c, Int)) where
+instance HasCharacterTransitionCostMatrix (AdditiveDecorationInitial c) (c -> c -> (c, Int)) where
 
     characterTCM = lens getter setter
       where

@@ -35,9 +35,9 @@ import Prelude hiding (zip)
 
 -- | Used on the post-order (i.e. first) traversal.
 sankoffPostOrder :: DiscreteCharacterDecoration d c
-                      => d
-                      -> [SankoffOptimizationDecoration c]
-                      ->  SankoffOptimizationDecoration c
+                 => d
+                 -> [SankoffOptimizationDecoration c]
+                 ->  SankoffOptimizationDecoration c
 sankoffPostOrder charDecoration xs =
     case xs of
         []   -> initializeCostVector charDecoration              -- is a leaf
@@ -87,6 +87,10 @@ initializeCostVector inputDecoration = returnChar
 -- |
 -- Given current node and its children, does actual calculation of new node value
 -- for each character state.
+--
+-- That is, folds over character states, and for each state finds the minimum cost to transition to that
+-- state from the characters on each of the left and right children. Stores those mins as a tuple of lists.
+-- Likewise, for each state calculates its min (min_left + min_right), as well as the overall lowest min for all states.
 --
 -- Assumes binary tree.
 updateCostVector :: DiscreteCharacterDecoration d c

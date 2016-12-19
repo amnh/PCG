@@ -26,12 +26,12 @@ class ( HasContinuousCharacter s c
       , GeneralCharacterMetadata s
       ) => ContinuousDecoration s c | s -> c where
 
-  
+
 -- |
 -- A character class for continuous characters.
 class Ord c => ContinuousCharacter c where
 
-    toContinuousCharacter :: Real r => Maybe r -> c 
+    toContinuousCharacter :: Real r => Maybe r -> c
 
 
 -- |
@@ -39,4 +39,4 @@ class Ord c => ContinuousCharacter c where
 class HasContinuousCharacter s a | s -> a where
 
     continuousCharacter :: Lens' s a
-    {-# MINIMAL continuousCharacter #-} 
+    {-# MINIMAL continuousCharacter #-}
