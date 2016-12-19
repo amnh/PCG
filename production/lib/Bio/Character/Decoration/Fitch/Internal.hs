@@ -31,11 +31,11 @@ import Data.TCM
 -- type.
 data FitchOptimizationDecoration f
    = FitchOptimizationDecoration
-   { fitchMinCost           :: Word                                      -- cost of the subtree
-   , fitchPreliminaryMedian :: StaticCharacter                             -- held here until final state is
+   { fitchMinCost           :: Word                                        -- Cost of the subtree
+   , fitchPreliminaryMedian :: StaticCharacter                             -- Held here until final state is
                                                                            --     determined and we can assign that
                                                                            --     into discreteCharacter
-   , fitchFinalMedian       :: StaticCharacter                           -- eventually gets assigned to discreteCharacter
+   , fitchFinalMedian       :: StaticCharacter                             -- Eventually gets assigned to discreteCharacter
    , fitchChildMedians      :: (StaticCharacter, StaticCharacter)          -- (left, right) so that we can do post order
                                                                            --     pass with all of Fitch's rules
    , fitchIsLeaf            :: Bool                                        -- need this in preorder

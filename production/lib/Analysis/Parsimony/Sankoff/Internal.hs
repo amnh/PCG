@@ -142,7 +142,7 @@ updateDirectionalMins parentDecoration childDecoration parentMins  = returnChar
             | otherwise                                           = acc
         tcmCostAsWord childState parState = fromIntegral $ (parentDecoration ^. characterSymbolTransitionCostMatrixGenerator) childState parState
         totalCost childState parState     = parentDecoration ^. minCost + tcmCostAsWord childState parState
-        startMedian                       = (parentDecoration ^. discreteCharacter) `xor` (parentDecoration ^. discreteCharacter)
+        startMedian                       = emptyStatic
         returnChar                        = childDecoration & discreteCharacter .~ median
 
 

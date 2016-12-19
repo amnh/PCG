@@ -17,6 +17,8 @@
 --
 -----------------------------------------------------------------------------
 
+{-# LANGUAGE FlexibleContexts #-}
+
 module Analysis.Parsimony.Fitch.Internal where
 
 import Bio.Character.Decoration.Discrete
@@ -72,10 +74,9 @@ updatePostOrder parentDecoration (leftChildDec:|rightChildDec:_) = returnNodeDec
     where
         returnNodeDecoration =
             extendDiscreteToFitch parentDecoration totalCost median emptyChar (leftChildDec ^. preliminaryMedian, rightChildDec ^. preliminaryMedian) False
-        (median, parentCost) = foldlWithKey' f initializedAcc [0..length (parentDecoration ^. characterAlphabet)]
+        (median, parentCost) = foldlWithKey' f initializedAcc [0..symbolCount (parentDecoration ^. characterAlphabet) - 1]
 
-        initializedAcc       = (emptyChar, 1)                   -- Cost is set to 1 so that branches in guards below work correctly.
-        emptyChar            = (leftChildDec ^. discreteCharacter) `xor` (leftChildDec ^. discreteCharacter)
+        initializedAcc       = (emptyStatic, 1)                   -- Cost is set to 1 so that branches in guards below work correctly.
         isSet decoration key = (decoration   ^. preliminaryMedian) `testBit` key
         indel l r k          = (isSet l k) `xor` (isSet r k)
         noSub l r k          = (isSet l k)  &&   (isSet r k)    -- Same bit is on in both characters.
@@ -98,32 +99,36 @@ updatePostOrder parentDecoration (leftChildDec:|rightChildDec:_) = returnNodeDec
 -- Its "child preliminary medians" are empty lists.
 initializeLeaf :: DiscreteCharacterDecoration d c => d -> FitchOptimizationDecoration c
 initializeLeaf leafDecoration =
-    extendDiscreteToFitch leafDecoration 0 label label (emptyChar, emptyChar) True
+    extendDiscreteToFitch leafDecoration 0 emptyChar emptyChar (emptyChar, emptyChar) True
     where
-        -- label     = leafDecoration ^. discreteCharacter -- can skip this now, because it's set in post order
-        emptyChar = label `xor` label  -- TODO: did we decide to replace this?
+        --label     = leafDecoration ^. discreteCharacter -- can skip this now, because it's set in post order
+        emptyChar = emptyStatic
 
 
 -- |
 -- Using the preliminary state of the current node, as well as the preliminary states of its parent and sibling,
 -- compute the final state of the character using Fitch's ordered rules.
-determineFinalState ::  DiscreteCharacterDecoration d c => d -> FitchOptimizationDecoration c -> FitchOptimizationDecoration c
+determineFinalState :: (DiscreteCharacterDecoration d c)
+                    => d
+                    -> FitchOptimizationDecoration c
+                    -> FitchOptimizationDecoration c
 determineFinalState curDecoration parentDecoration = finalDecoration
     where
-        curIsSuperset = foldlWithKey (\acc k _ -> if (ancestor `testBit` k) && (preliminary `testBit` k)
+        curIsSuperset = foldl (\acc k -> if (ancestor `testBit` k) && (preliminary `testBit` k)
                                                        then acc && False
                                                        else acc && True
-                                                      ) True $ curDecoration ^. characterAlphabet
-        curIsUnion = foldlWithKey (\acc k _ -> acc && (popCount (left .|. right `xor` preliminary) > 0) -- preliminary is 0 if both are 0, 1 otherwise
-                                                                                                        -- TODO: see if this short-circuits; otherwise rewrite
-                                                                                                        -- doing testbit three times and then logical operations
-                                                      ) True $ curDecoration ^. characterAlphabet
+                              ) True [0..alphLen]
+        -- TODO: see if this short-circuits; otherwise rewrite doing testbit three times and then logical operations
+        curIsUnion    = foldl (\acc k -> acc && (popCount (left .|. right `xor` preliminary) > 0)
+                              ) True [0..alphLen]                         -- preliminary is 0 if both are 0, 1 otherwise
         finalDecoration = extendDiscreteToFitch curDecoration cost preliminary median (left, right) leafVal
         leafVal         = curDecoration    ^. isLeaf
         cost            = curDecoration    ^. minCost
         preliminary     = curDecoration    ^. preliminaryMedian
         ancestor        = parentDecoration ^. discreteCharacter
         (left, right)   = curDecoration    ^. childMedians
+        alphLen         = symbolCount $ inputDecoration ^. discreteCharacter - 1
+        union :: StaticCharacter -> StaticCharacter -> StaticCharacter
         union     l r   = l .|. r
         intersect l r   = l .&. r
         median
