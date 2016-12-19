@@ -124,7 +124,7 @@ updateCostVector  parentDecoration (leftChild:|rightChild:_) = returnNodeDecorat
 -- parCharState_minCost_left == childCharState_minCost + TCM(childCharState, parCharState).
 --
 -- Used on second, pre-order, pass.
-updateDirectionalMins :: Bits c
+updateDirectionalMins :: EncodableStaticCharacter c -- ERIC: I made this more restrictive to resolve the 'Cannot deduce EncodableStaticCharacter c from Bits c'
                 => SankoffOptimizationDecoration c
                 -> SankoffOptimizationDecoration c
                 -> [Word]
@@ -142,7 +142,7 @@ updateDirectionalMins parentDecoration childDecoration parentMins  = returnChar
             | otherwise                                           = acc
         tcmCostAsWord childState parState = fromIntegral $ (parentDecoration ^. characterSymbolTransitionCostMatrixGenerator) childState parState
         totalCost childState parState     = parentDecoration ^. minCost + tcmCostAsWord childState parState
-        startMedian                       = emptyStatic
+        startMedian                       = emptyStatic $ parentDecoration ^. discreteCharacter -- ERIC: This is a unary function, not a nullary function.
         returnChar                        = childDecoration & discreteCharacter .~ median
 
 
