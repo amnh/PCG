@@ -12,7 +12,7 @@
 
 module Bio.Character.Decoration.Fitch
   ( FitchCharacterDecoration()
-  , FitchOptimizationDecoration()
+  , FitchOptimizationDecoration(FitchOptimizationDecoration)
   , DiscreteExtensionFitchDecoration(..)
   , GeneralCharacterMetadata()
   , DiscreteCharacterMetadata()

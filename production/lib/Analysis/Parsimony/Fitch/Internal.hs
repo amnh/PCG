@@ -28,7 +28,6 @@ import Control.Lens
 import Data.Bits
 import Data.Key
 import Data.List.NonEmpty (NonEmpty( (:|) ))
-import Data.Word
 
 -- data FitchCharacterDecoration c = FitchCharacterDecoration
 --     { minCost           :: Word32                                               -- cost of the subtree
@@ -54,12 +53,12 @@ fitchPreOrder :: EncodableStaticCharacter c
               => FitchOptimizationDecoration c
               -> [(Word, FitchOptimizationDecoration c)]
               -> FitchOptimizationDecoration c
-fitchPreOrder childDecoration (x:y:_)                    = childDecoration   -- two parents; shouldn't be possible, but here for completion
+fitchPreOrder childDecoration (_x:_y:_)                    = childDecoration   -- two parents; shouldn't be possible, but here for completion
 fitchPreOrder childDecoration []                         = childDecoration   -- is a root TODO: need to change preliminary to final
 fitchPreOrder childDecoration ((_, parentDecoration):[]) =
-    if childDecoration ^. isLeaf    -- TODO: this call probably isn't right
+    if childDecoration ^. isLeaf
         then childDecoration
-        else determineFinalState childDecoration parentDecoration
+        else determineFinalState parentDecoration childDecoration
 
 -- |
 -- Used in second, preorder, pass. Take in parent and two child nodes. Using the child preliminary decorations,
@@ -74,13 +73,14 @@ updatePostOrder parentDecoration (leftChildDec:|rightChildDec:_) = returnNodeDec
     where
         returnNodeDecoration =
             extendDiscreteToFitch parentDecoration totalCost median emptyChar (leftChildDec ^. preliminaryMedian, rightChildDec ^. preliminaryMedian) False
-        (median, parentCost) = foldlWithKey' f initializedAcc [0..symbolCount (parentDecoration ^. characterAlphabet) - 1]
+        (median, parentCost) = foldlWithKey' f initializedAcc [0..length (parentDecoration ^. characterAlphabet) - 1]
 
-        initializedAcc       = (emptyStatic, 1)                   -- Cost is set to 1 so that branches in guards below work correctly.
+        initializedAcc       = (emptyStatic $ parentDecoration ^. discreteCharacter , 1) -- Cost is set to 1 so that branches in guards below work correctly.
         isSet decoration key = (decoration   ^. preliminaryMedian) `testBit` key
         indel l r k          = (isSet l k) `xor` (isSet r k)
         noSub l r k          = (isSet l k)  &&   (isSet r k)    -- Same bit is on in both characters.
         totalCost            = parentCost + (leftChildDec ^. minCost) + (rightChildDec ^. minCost)
+        emptyChar = emptyStatic $ parentDecoration ^. discreteCharacter
         f (inChar, cost) key _                                  -- In following, note that a 1 has been set to the character by
                                                                 -- default, above. So we never have
                                                                 -- to add value to the cost (it can never be > 1 under Fitch).
@@ -102,33 +102,32 @@ initializeLeaf leafDecoration =
     extendDiscreteToFitch leafDecoration 0 emptyChar emptyChar (emptyChar, emptyChar) True
     where
         --label     = leafDecoration ^. discreteCharacter -- can skip this now, because it's set in post order
-        emptyChar = emptyStatic
+        emptyChar = emptyStatic $ leafDecoration ^. discreteCharacter
 
 
 -- |
 -- Using the preliminary state of the current node, as well as the preliminary states of its parent and sibling,
 -- compute the final state of the character using Fitch's ordered rules.
-determineFinalState :: (DiscreteCharacterDecoration d c)
+determineFinalState :: DiscreteCharacterDecoration d c
                     => d
                     -> FitchOptimizationDecoration c
                     -> FitchOptimizationDecoration c
-determineFinalState curDecoration parentDecoration = finalDecoration
+determineFinalState parentDecoration childDecoration = finalDecoration
     where
         curIsSuperset = foldl (\acc k -> if (ancestor `testBit` k) && (preliminary `testBit` k)
                                                        then acc && False
                                                        else acc && True
                               ) True [0..alphLen]
         -- TODO: see if this short-circuits; otherwise rewrite doing testbit three times and then logical operations
-        curIsUnion    = foldl (\acc k -> acc && (popCount (left .|. right `xor` preliminary) > 0)
+        curIsUnion    = foldl (\acc _index -> acc && (popCount (left .|. right `xor` preliminary) > 0)
                               ) True [0..alphLen]                         -- preliminary is 0 if both are 0, 1 otherwise
-        finalDecoration = extendDiscreteToFitch curDecoration cost preliminary median (left, right) leafVal
-        leafVal         = curDecoration    ^. isLeaf
-        cost            = curDecoration    ^. minCost
-        preliminary     = curDecoration    ^. preliminaryMedian
+        finalDecoration = extendDiscreteToFitch parentDecoration cost preliminary median (left, right) leafVal
+        leafVal         = childDecoration    ^. isLeaf
+        cost            = childDecoration    ^. minCost
+        preliminary     = childDecoration    ^. preliminaryMedian
         ancestor        = parentDecoration ^. discreteCharacter
-        (left, right)   = curDecoration    ^. childMedians
-        alphLen         = symbolCount $ inputDecoration ^. discreteCharacter - 1
-        union :: StaticCharacter -> StaticCharacter -> StaticCharacter
+        (left, right)   = childDecoration    ^. childMedians
+        alphLen         = symbolCount $ childDecoration ^. discreteCharacter - 1
         union     l r   = l .|. r
         intersect l r   = l .&. r
         median

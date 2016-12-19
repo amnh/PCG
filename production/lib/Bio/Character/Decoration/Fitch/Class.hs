@@ -30,10 +30,11 @@ class DiscreteCharacterDecoration s a => FitchCharacterDecoration s a | s -> a w
 -- |
 -- A decoration containing a character that has been scored using Fitch's algorithm.
 class ( DiscreteCharacterDecoration s c
-      , HasChildMedians s (StaticCharacter, StaticCharacter)
+      , HasChildMedians s (c, c)
       , HasIsLeaf s Bool
       , HasMinCost s Word
-      , HasPreliminaryMedian s (StaticCharacter)
+      , HasPreliminaryMedian s (c)
+      , HasFinalMedian s c
       ) => FitchDecoration s c | s -> c where
 
 
@@ -45,7 +46,13 @@ class ( FitchDecoration s c
       ) => DiscreteExtensionFitchDecoration s c | s -> c where
 
     extendDiscreteToFitch :: DiscreteCharacterDecoration x c
-                          => x -> Word -> StaticCharacter -> StaticCharacter -> (StaticCharacter, StaticCharacter) -> Bool -> s
+                          => x
+                          -> Word
+                          -> c
+                          -> c
+                          -> (c, c)
+                          -> Bool
+                          -> s
 
 -- |
 -- A 'Lens' for the 'fitchChildMedians' field.

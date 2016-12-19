@@ -31,14 +31,14 @@ import Data.TCM
 -- type.
 data FitchOptimizationDecoration f
    = FitchOptimizationDecoration
-   { fitchMinCost           :: Word                                        -- Cost of the subtree
-   , fitchPreliminaryMedian :: StaticCharacter                             -- Held here until final state is
-                                                                           --     determined and we can assign that
-                                                                           --     into discreteCharacter
-   , fitchFinalMedian       :: StaticCharacter                             -- Eventually gets assigned to discreteCharacter
-   , fitchChildMedians      :: (StaticCharacter, StaticCharacter)          -- (left, right) so that we can do post order
-                                                                           --     pass with all of Fitch's rules
-   , fitchIsLeaf            :: Bool                                        -- need this in preorder
+   { fitchMinCost           :: Word                          -- Cost of the subtree
+   , fitchPreliminaryMedian :: f                             -- Held here until final state is
+                                                             --     determined and we can assign that
+                                                             --     into discreteCharacter
+   , fitchFinalMedian       :: f                             -- Eventually gets assigned to discreteCharacter
+   , fitchChildMedians      :: (f, f)                        -- (left, right) so that we can do post order
+                                                             --     pass with all of Fitch's rules
+   , fitchIsLeaf            :: Bool                          -- need this in preorder
    , fitchCharacterField    :: f
    , fitchMetadataField     :: DiscreteCharacterMetadataDec f
    }
@@ -107,15 +107,15 @@ instance HasMinCost (FitchOptimizationDecoration f) Word where
     minCost = lens fitchMinCost (\e x -> e { fitchMinCost = x })
 
 -- | (✔)
-instance HasPreliminaryMedian (FitchOptimizationDecoration f) StaticCharacter where
+instance HasPreliminaryMedian (FitchOptimizationDecoration f) f where
     preliminaryMedian = lens fitchPreliminaryMedian (\e x -> e { fitchPreliminaryMedian = x })
 
 -- | (✔)
-instance HasChildMedians (FitchOptimizationDecoration f) ( StaticCharacter, StaticCharacter ) where
+instance HasChildMedians (FitchOptimizationDecoration f) ( f, f ) where
     childMedians = lens fitchChildMedians (\e x -> e { fitchChildMedians = x })
 
 -- | (✔)
-instance HasFinalMedian (FitchOptimizationDecoration f) StaticCharacter where
+instance HasFinalMedian (FitchOptimizationDecoration f) f where
     finalMedian = lens fitchFinalMedian (\e x -> e { fitchFinalMedian = x })
 
 
