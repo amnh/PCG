@@ -53,8 +53,8 @@ fitchPreOrder :: EncodableStaticCharacter c
               => FitchOptimizationDecoration c
               -> [(Word, FitchOptimizationDecoration c)]
               -> FitchOptimizationDecoration c
-fitchPreOrder childDecoration (_x:_y:_)                    = childDecoration   -- two parents; shouldn't be possible, but here for completion
-fitchPreOrder childDecoration []                         = childDecoration   -- is a root TODO: need to change preliminary to final
+fitchPreOrder childDecoration (_x:_y:_) = childDecoration   -- two parents; shouldn't be possible, but here for completion
+fitchPreOrder childDecoration []        = childDecoration   -- is a root TODO: need to change preliminary to final
 fitchPreOrder childDecoration ((_, parentDecoration):[]) =
     if childDecoration ^. isLeaf
         then childDecoration

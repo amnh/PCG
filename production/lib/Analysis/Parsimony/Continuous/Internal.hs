@@ -68,7 +68,7 @@ initializeLeaf curDecoration =
     ContinuousCharacterDecoration 0 label (emptyChar, emptyChar)
     where
         label     = curDecoration ^. discreteCharacter
-        emptyChar = label `xor` label
+        emptyChar = emptyStatic $ curDecoration ^. discreteCharacter
 
 determineFinalState :: DiscreteCharacterDecoration c => ContinuousCharacterDecoration c -> ContinuousCharacterDecoration c -> ContinuousCharacterDecoration c
 determineFinalState curDecoration parentDecoration = finalDecoration
