@@ -28,7 +28,12 @@ import Control.Lens
 data ContinuousDecorationInitial c
    = ContinuousDecorationInitial
    { continuousDecorationInitialCharacter :: c
-   , metadata                             :: ContinuousCharacterMetadataDec
+   , continuousMetadaField                :: ContinuousCharacterMetadataDec
+   , continuousIsLeaf                     :: Bool
+   , continuousMinCost                    :: Double
+   , continuousPreliminaryMedian          :: c
+   , continuousInterval                   :: (Word32, Word32)
+   , continuousChildPrelims               :: ((Word32, Word32), (Word32, Word32))
    }
 
 
@@ -81,8 +86,8 @@ instance HasCharacterName (ContinuousDecorationInitial c) CharacterName where
 
     characterName = lens getter setter
       where
-         getter e   = metadata e ^. characterName
-         setter e x = e { metadata = metadata e &  characterName .~ x }
+         getter e   = continuousMetadaField e ^. characterName
+         setter e x = e { continuousMetadaField = continuousMetadaField e &  characterName .~ x }
 
 
 -- | (✔)
@@ -90,14 +95,20 @@ instance HasCharacterWeight (ContinuousDecorationInitial c) Double where
 
     characterWeight = lens getter setter
       where
-         getter e   = metadata e ^. characterWeight
-         setter e x = e { metadata = metadata e &  characterWeight .~ x }
+         getter e   = continuousMetadaField e ^. characterWeight
+         setter e x = e { continuousMetadaField = continuousMetadaField e &  characterWeight .~ x }
 
 
 -- | (✔)
-instance HasContinuousCharacter (ContinuousDecorationInitial c) c where 
+instance HasContinuousCharacter (ContinuousDecorationInitial c) c where
 
     continuousCharacter = lens continuousDecorationInitialCharacter $ \e x -> e { continuousDecorationInitialCharacter = x }
+
+
+-- | (✔)
+instance HasIsLeaf (ContinuousOptimizationDecoration f) Bool where
+
+    isLeaf = lens continuousIsLeaf (\e x -> e { continuousIsLeaf = x })
 
 
 -- | (✔)
@@ -113,5 +124,5 @@ continuousDecorationInitial :: CharacterName -> (x -> c) -> x -> ContinuousDecor
 continuousDecorationInitial name f v =
     ContinuousDecorationInitial
     { continuousDecorationInitialCharacter = f v
-    , metadata                             = continuousMetadata name 1
+    , continuousMetadaField                             = continuousMetadata name 1
     }

@@ -85,6 +85,7 @@ class HasPreliminaryMedian s a | s -> a where
     preliminaryMedian :: Lens' s a
     {-# MINIMAL preliminaryMedian #-}
 
+
 class HasFinalMedian s a | s -> a where
 
     finalMedian :: Lens' s a

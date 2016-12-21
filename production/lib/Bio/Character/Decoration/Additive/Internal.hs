@@ -22,88 +22,135 @@ import Bio.Metadata.CharacterName
 import Bio.Metadata.Discrete
 import Control.Lens
 import Data.Alphabet
+--import Data.Bits
+import Data.TCM
+--import Data.Word
 
 
 -- |
 -- An abstract initial dynamic character decoration with a polymorphic character
 -- type.
-data AdditiveDecorationInitial c
-   = AdditiveDecorationInitial
-   { additiveDecorationInitialCharacter :: c
-   , metadata                           :: DiscreteCharacterMetadataDec c
+data AdditiveOptimizationDecoration a
+   = AdditiveOptimizationDecoration
+   { additiveMinCost              :: Word
+   , additivePreliminaryInterval  :: (Word, Word)
+   , additiveChildPrelimIntervals :: ((Word, Word), (Word, Word))
+   , additiveIsLeaf               :: Bool
+   , additiveCharacterField       :: a
+   , additiveMetadataField        :: DiscreteCharacterMetadataDec a
    }
 
 
 -- | (✔)
-instance HasDiscreteCharacter (AdditiveDecorationInitial c) c where
+instance HasDiscreteCharacter (AdditiveOptimizationDecoration a) a where
 
-    discreteCharacter = lens additiveDecorationInitialCharacter (\e x -> e { additiveDecorationInitialCharacter = x })
+    discreteCharacter = lens additiveCharacterField (\e x -> e { additiveCharacterField = x })
 
 
 -- | (✔)
-instance HasCharacterAlphabet (AdditiveDecorationInitial c) (Alphabet String) where
+instance HasCharacterAlphabet (AdditiveOptimizationDecoration a) (Alphabet String) where
 
     characterAlphabet = lens getter setter
       where
-         getter e   = metadata e ^. characterAlphabet
-         setter e x = e { metadata = metadata e &  characterAlphabet .~ x }
+         getter e   = additiveMetadataField e ^. characterAlphabet
+         setter e x = e { additiveMetadataField = additiveMetadataField e &  characterAlphabet .~ x }
 
 
 -- | (✔)
-instance HasCharacterName (AdditiveDecorationInitial c) CharacterName where
+instance HasCharacterName (AdditiveOptimizationDecoration a) CharacterName where
 
     characterName = lens getter setter
       where
-         getter e   = metadata e ^. characterName
-         setter e x = e { metadata = metadata e &  characterName .~ x }
+         getter e   = additiveMetadataField e ^. characterName
+         setter e x = e { additiveMetadataField = additiveMetadataField e &  characterName .~ x }
 
 
 -- | (✔)
-instance HasCharacterSymbolTransitionCostMatrixGenerator (AdditiveDecorationInitial c) (Int -> Int -> Int) where
+instance HasCharacterSymbolTransitionCostMatrixGenerator (AdditiveOptimizationDecoration a) (Int -> Int -> Int) where
 
     characterSymbolTransitionCostMatrixGenerator = lens getter setter
       where
-         getter e   = metadata e ^. characterSymbolTransitionCostMatrixGenerator
-         setter e f = e { metadata = metadata e &  characterSymbolTransitionCostMatrixGenerator .~ f }
+         getter e   = additiveMetadataField e ^. characterSymbolTransitionCostMatrixGenerator
+         setter e f = e { additiveMetadataField = additiveMetadataField e &  characterSymbolTransitionCostMatrixGenerator .~ f }
 
 
 -- | (✔)
-instance HasCharacterTransitionCostMatrix (AdditiveDecorationInitial c) (c -> c -> (c, Int)) where
+instance HasCharacterTransitionCostMatrix (AdditiveOptimizationDecoration a) (a -> a -> (a, Int)) where
 
     characterTCM = lens getter setter
       where
-         getter e   = metadata e ^. characterTCM
-         setter e f = e { metadata = metadata e &  characterTCM .~ f }
+         getter e   = additiveMetadataField e ^. characterTCM
+         setter e f = e { additiveMetadataField = additiveMetadataField e &  characterTCM .~ f }
 
 
 -- | (✔)
-instance HasCharacterWeight (AdditiveDecorationInitial c) Double where
+instance HasCharacterWeight (AdditiveOptimizationDecoration a) Double where
 
     characterWeight = lens getter setter
       where
-         getter e   = metadata e ^. characterWeight
-         setter e x = e { metadata = metadata e &  characterWeight .~ x }
+         getter e   = additiveMetadataField e ^. characterWeight
+         setter e x = e { additiveMetadataField = additiveMetadataField e &  characterWeight .~ x }
+
+-- | (✔)
+instance HasIsLeaf (AdditiveOptimizationDecoration a) Bool where
+
+    isLeaf = lens additiveIsLeaf (\e x -> e { additiveIsLeaf = x })
+
+
+instance HasMinCost (AdditiveOptimizationDecoration a) Word where
+
+    minCost = lens additiveMinCost (\e x -> e { additiveMinCost = x })
+
+instance HasPreliminaryInterval (AdditiveOptimizationDecoration a) (Word, Word) where
+
+    preliminaryInterval = lens additivePreliminaryInterval (\e x -> e { additivePreliminaryInterval = x })
+
+
+instance HasChildPrelimIntervals (AdditiveOptimizationDecoration a) ((Word, Word),(Word, Word)) where
+
+    childPrelimIntervals = lens additiveChildPrelimIntervals (\e x -> e { additiveChildPrelimIntervals = x })
 
 
 -- | (✔)
-instance GeneralCharacterMetadata (AdditiveDecorationInitial c) where
-
--- | (✔)
-instance EncodableStreamElement c => DiscreteCharacterMetadata (AdditiveDecorationInitial c) c where
+instance GeneralCharacterMetadata (AdditiveOptimizationDecoration a) where
 
 
 -- | (✔)
-instance EncodableStaticCharacter c => DiscreteCharacterDecoration (AdditiveDecorationInitial c) c where
+instance EncodableStreamElement a => DiscreteCharacterMetadata (AdditiveOptimizationDecoration a) a where
 
 
 -- | (✔)
-instance EncodableStaticCharacter c => SimpleDiscreteCharacterDecoration (AdditiveDecorationInitial c) c where
-    toDiscreteCharacterDecoration name weight alphabet tcm g symbolSet =
-        AdditiveDecorationInitial
-        { additiveDecorationInitialCharacter = g symbolSet
-        , metadata                           = discreteMetadata name weight alphabet tcm
+instance EncodableStaticCharacter a => DiscreteCharacterDecoration (AdditiveOptimizationDecoration a) a where
+
+-- | (✔)
+instance EncodableStaticCharacter a => AdditiveCharacterDecoration (AdditiveOptimizationDecoration a) a where
+
+
+-- | (✔)
+instance EncodableStaticCharacter a => AdditiveDecoration (AdditiveOptimizationDecoration a) a where
+
+
+-- | (✔)
+instance EncodableStaticCharacter a => DiscreteExtensionAdditiveDecoration (AdditiveOptimizationDecoration a) a where
+
+    extendDiscreteToAdditive subDecoration cost prelimInterval childMedianTup isLeafVal =
+
+        AdditiveOptimizationDecoration
+        { additiveChildPrelimIntervals = childMedianTup
+        , additiveIsLeaf               = isLeafVal
+        , additiveMinCost              = cost
+        , additiveMetadataField        = metadataValue
+        , additivePreliminaryInterval  = prelimInterval
+        , additiveCharacterField       = subDecoration ^. discreteCharacter
         }
+      where
+        alphabetValue = subDecoration ^. characterAlphabet
+        tcmValue      = generate (length alphabetValue) (uncurry $ subDecoration ^. characterSymbolTransitionCostMatrixGenerator)
+        metadataValue =
+          discreteMetadata
+            <$> (^. characterName)
+            <*> (^. characterWeight)
+            <*> const alphabetValue
+            <*> const tcmValue
+            $ subDecoration
 
-
--- | (✔)
-instance EncodableStaticCharacter c => AdditiveCharacterDecoration (AdditiveDecorationInitial c) c where

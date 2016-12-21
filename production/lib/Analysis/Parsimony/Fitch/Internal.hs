@@ -68,8 +68,9 @@ updatePostOrder :: DiscreteCharacterDecoration d c
                 => d
                 -> NonEmpty (FitchOptimizationDecoration c)
                 -> FitchOptimizationDecoration c
-updatePostOrder _parentDecoration (x:|[])                        = x                    -- Shouldn't be possible, but here for completion.
-updatePostOrder parentDecoration (leftChildDec:|rightChildDec:_) = returnNodeDecoration -- Not a leaf
+updatePostOrder _parentDecoration (x:|[])                         = x                    -- Shouldn't be possible,
+                                                                                         --    but here for completion.
+updatePostOrder  parentDecoration (leftChildDec:|rightChildDec:_) = returnNodeDecoration -- Not a leaf
     where
         returnNodeDecoration =
             extendDiscreteToFitch parentDecoration totalCost median emptyChar (leftChildDec ^. preliminaryMedian, rightChildDec ^. preliminaryMedian) False
@@ -122,11 +123,11 @@ determineFinalState parentDecoration childDecoration = finalDecoration
         curIsUnion    = foldl (\acc _index -> acc && (popCount (left .|. right `xor` preliminary) > 0)
                               ) True [0..alphLen]                         -- preliminary is 0 if both are 0, 1 otherwise
         finalDecoration = extendDiscreteToFitch parentDecoration cost preliminary median (left, right) leafVal
-        leafVal         = childDecoration    ^. isLeaf
-        cost            = childDecoration    ^. minCost
-        preliminary     = childDecoration    ^. preliminaryMedian
+        leafVal         = childDecoration  ^. isLeaf
+        cost            = childDecoration  ^. minCost
+        preliminary     = childDecoration  ^. preliminaryMedian
         ancestor        = parentDecoration ^. discreteCharacter
-        (left, right)   = childDecoration    ^. childMedians
+        (left, right)   = childDecoration  ^. childMedians
         alphLen         = symbolCount $ childDecoration ^. discreteCharacter - 1
         union     l r   = l .|. r
         intersect l r   = l .&. r
