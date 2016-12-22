@@ -24,7 +24,7 @@ module Analysis.Parsimony.Additive.Internal where
 
 import Bio.Character.Decoration.Additive
 --import Bio.Character.Decoration.Discrete
---import Bio.Character.Encodable
+import Bio.Character.Encodable
 import Control.Lens
 import Control.Monad  (join)
 import Data.Bifunctor (bimap)
@@ -44,7 +44,8 @@ additivePostOrder parentDecoration xs =
         y:ys -> updatePostOrder parentDecoration (y:|ys)
 
 -- | Used on the pre-order (i.e. second) traversal.
-additivePreOrder  :: AdditiveOptimizationDecoration c
+additivePreOrder  :: EncodableStaticCharacter c
+                  => AdditiveOptimizationDecoration c
                   -> [(Word, AdditiveOptimizationDecoration c)]
                   -> AdditiveOptimizationDecoration c
 additivePreOrder childDecoration (_x:_y:_)                  = childDecoration   -- multiple parents; shouldn't be possible,
@@ -89,7 +90,8 @@ initializeLeaf curDecoration =
     where
         label  = curDecoration ^. discreteCharacter
         lower  = fromIntegral (countTrailingZeros label) :: Word
-        higher = fromIntegral (countLeadingZeros  label) :: Word
+        higher = fromIntegral (alphLen - (countLeadingZeros  label)) :: Word
+        alphLen = symbolCount $ curDecoration ^. discreteCharacter
         zero   = fromIntegral (0 :: Int) :: Word
 
 -- | Uses the preliminary intervals of a node, its parents, and its children. Follows the three rules of Fitch,
@@ -99,7 +101,8 @@ initializeLeaf curDecoration =
 -- with the parent.
 --
 -- Used on the preorder pass.
-determineFinalState :: AdditiveOptimizationDecoration c
+determineFinalState :: EncodableStaticCharacter c
+                    => AdditiveOptimizationDecoration c
                     -> AdditiveOptimizationDecoration c
                     -> AdditiveOptimizationDecoration c
 determineFinalState childDecoration parentDecoration = finalDecoration
@@ -108,11 +111,14 @@ determineFinalState childDecoration parentDecoration = finalDecoration
         ancestor        = parentDecoration ^. preliminaryInterval
         (left, right)   = childDecoration  ^. childPrelimIntervals
         thirdCase       = ancestor `union` (left `intersect` ancestor) `union` (right `intersect` ancestor)
-        (thisMin, thisMax)
+        (myMin, myMax)
             | (ancestor `intersect` preliminary) == ancestor     = ancestor                        -- Additive rule 1
             | (ancestor `union`     preliminary) == preliminary  = preliminary                     -- Additive rule 2
             | otherwise                                          = thirdCase                       -- Additive rule 3
-        finalDecoration = childDecoration  &  preliminaryInterval .~ (thisMin, thisMax)
+        interCharacter  = emptyChar      `setBit` (fromIntegral (toInteger myMin :: Integer) :: Int)
+        finalCharacter  = interCharacter `setBit` (fromIntegral (toInteger myMax :: Integer) :: Int)
+        emptyChar       = emptyStatic $ parentDecoration ^. discreteCharacter
+        finalDecoration = childDecoration  &  preliminaryInterval .~ (myMin, myMax) & discreteCharacter .~ finalCharacter
 
 -- | True if there is any overlap between the two intervals
 overlaps :: (Word, Word) -> (Word, Word) -> Bool

@@ -37,7 +37,7 @@ data AdditiveOptimizationDecoration a
    , additivePreliminaryInterval  :: (Word, Word)
    , additiveChildPrelimIntervals :: ((Word, Word), (Word, Word))
    , additiveIsLeaf               :: Bool
-   , additiveCharacterField       :: a
+   , additiveCharacterField       :: a   -- TODO: do I need this?
    , additiveMetadataField        :: DiscreteCharacterMetadataDec a
    }
 
@@ -139,7 +139,7 @@ instance EncodableStaticCharacter a => DiscreteExtensionAdditiveDecoration (Addi
         , additiveMinCost              = cost
         , additiveMetadataField        = metadataValue
         , additivePreliminaryInterval  = prelimInterval
-        , additiveCharacterField       = subDecoration ^. discreteCharacter
+        , additiveCharacterField       = subDecoration ^. discreteCharacter -- TODO: do I need this?
         }
       where
         alphabetValue = subDecoration ^. characterAlphabet

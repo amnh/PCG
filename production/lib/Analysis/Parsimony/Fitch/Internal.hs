@@ -72,7 +72,7 @@ updatePostOrder  parentDecoration (leftChildDec:|rightChildDec:_) = returnNodeDe
         indel l r k          = (isSet l k) `xor` (isSet r k)
         noSub l r k          = (isSet l k)  &&   (isSet r k)    -- Same bit is on in both characters.
         totalCost            = parentCost + (leftChildDec ^. minCost) + (rightChildDec ^. minCost)
-        emptyChar = emptyStatic $ parentDecoration ^. discreteCharacter
+        emptyChar            = emptyStatic $ parentDecoration ^. discreteCharacter
         f (inChar, cost) key _                                  -- In following, note that a 1 has been set to the character by
                                                                 -- default, above. So we never have
                                                                 -- to add value to the cost (it can never be > 1 under Fitch).
