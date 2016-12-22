@@ -16,9 +16,9 @@ module Bio.Character.Decoration.Additive.Class where
 
 
 import Bio.Character.Decoration.Discrete
---import Bio.Character.Encodable
+import Bio.Character.Decoration.Shared
 import Control.Lens
---import Data.Word
+
 
 -- |
 -- An abstract initial additive character decoration with a polymorphic character
@@ -57,14 +57,6 @@ class HasChildPrelimIntervals s a | s -> a where
 
     childPrelimIntervals :: Lens' s a
     {-# MINIMAL childPrelimIntervals #-}
-
-
--- |
--- A 'Lens' for the 'additiveIsLeaf' field.
-class HasIsLeaf s a | s -> a where
-
-    isLeaf :: Lens' s a
-    {-# MINIMAL isLeaf #-}
 
 
 -- |

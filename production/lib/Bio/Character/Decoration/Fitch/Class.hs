@@ -16,6 +16,7 @@ module Bio.Character.Decoration.Fitch.Class where
 
 
 import Bio.Character.Decoration.Discrete
+import Bio.Character.Decoration.Shared
 import Bio.Character.Encodable
 --import Bio.Metadata.Discrete
 import Control.Lens
@@ -60,14 +61,6 @@ class HasChildMedians s a | s -> a where
 
     childMedians :: Lens' s a
     {-# MINIMAL childMedians #-}
-
-
--- |
--- A 'Lens' for the 'fitchIsLeaf' field.
-class HasIsLeaf s a | s -> a where
-
-    isLeaf :: Lens' s a
-    {-# MINIMAL isLeaf #-}
 
 
 -- |

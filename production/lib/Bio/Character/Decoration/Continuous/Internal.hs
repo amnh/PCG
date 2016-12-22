@@ -16,10 +16,12 @@ module Bio.Character.Decoration.Continuous.Internal where
 
 
 import Bio.Character.Decoration.Continuous.Class
+import Bio.Character.Decoration.Shared
 import Bio.Character.Encodable
 import Bio.Metadata.Continuous
 import Bio.Metadata.CharacterName
 import Control.Lens
+import Data.Word
 
 
 -- |
@@ -106,7 +108,7 @@ instance HasContinuousCharacter (ContinuousDecorationInitial c) c where
 
 
 -- | (✔)
-instance HasIsLeaf (ContinuousOptimizationDecoration f) Bool where
+instance HasIsLeaf (ContinuousDecorationInitial f) Bool where
 
     isLeaf = lens continuousIsLeaf (\e x -> e { continuousIsLeaf = x })
 

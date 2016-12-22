@@ -17,6 +17,7 @@ module Bio.Character.Decoration.Additive.Internal where
 
 import Bio.Character.Decoration.Additive.Class
 import Bio.Character.Decoration.Discrete
+import Bio.Character.Decoration.Shared
 import Bio.Character.Encodable
 import Bio.Metadata.CharacterName
 import Bio.Metadata.Discrete

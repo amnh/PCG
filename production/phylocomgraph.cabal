@@ -118,7 +118,7 @@ library
                        Analysis.Parsimony.Fitch.Internal
                        Bio.Character
                        Bio.Character.Decoration.Additive
-                       --Bio.Character.Decoration.Continuous
+                       Bio.Character.Decoration.Continuous
                        Bio.Character.Decoration.Discrete
                        Bio.Character.Decoration.Dynamic
                        Bio.Character.Decoration.Fitch
@@ -129,7 +129,7 @@ library
                        Bio.Character.Parsed
                        Bio.Metadata
                        Bio.Metadata.CharacterName
-                       --Bio.Metadata.Continuous
+                       Bio.Metadata.Continuous
                        Bio.Metadata.Discrete
                        Bio.Metadata.Parsed
                        Bio.Sequence
@@ -193,8 +193,8 @@ library
                        Analysis.Parsimony.Binary.Constraints
                        Bio.Character.Decoration.Additive.Class
                        Bio.Character.Decoration.Additive.Internal
-                       --Bio.Character.Decoration.Continuous.Class
-                       --Bio.Character.Decoration.Continuous.Internal
+                       Bio.Character.Decoration.Continuous.Class
+                       Bio.Character.Decoration.Continuous.Internal
                        Bio.Character.Decoration.Dynamic.Class
                        Bio.Character.Decoration.Dynamic.Internal
                        Bio.Character.Decoration.Fitch.Class
@@ -203,6 +203,7 @@ library
                        Bio.Character.Decoration.Metric.Internal
                        Bio.Character.Decoration.NonMetric.Class
                        Bio.Character.Decoration.NonMetric.Internal
+                       Bio.Character.Decoration.Shared
                        Bio.Character.Encodable.Dynamic
                        Bio.Character.Encodable.Dynamic.Class
                        Bio.Character.Encodable.Dynamic.Internal
@@ -268,6 +269,7 @@ library
                        File.Format.VertexEdgeRoot.Parser
                        Test.QuickCheck.Arbitrary.Instances
 
+                       
 executable pcg
   main-is:             Main.hs
 
