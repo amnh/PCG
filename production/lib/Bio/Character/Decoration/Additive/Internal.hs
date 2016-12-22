@@ -97,16 +97,17 @@ instance HasIsLeaf (AdditiveOptimizationDecoration a) Bool where
 
     isLeaf = lens additiveIsLeaf (\e x -> e { additiveIsLeaf = x })
 
-
+-- | (✔)
 instance HasMinCost (AdditiveOptimizationDecoration a) Word where
 
     minCost = lens additiveMinCost (\e x -> e { additiveMinCost = x })
 
+-- | (✔)
 instance HasPreliminaryInterval (AdditiveOptimizationDecoration a) (Word, Word) where
 
     preliminaryInterval = lens additivePreliminaryInterval (\e x -> e { additivePreliminaryInterval = x })
 
-
+-- | (✔)
 instance HasChildPrelimIntervals (AdditiveOptimizationDecoration a) ((Word, Word),(Word, Word)) where
 
     childPrelimIntervals = lens additiveChildPrelimIntervals (\e x -> e { additiveChildPrelimIntervals = x })
@@ -115,10 +116,8 @@ instance HasChildPrelimIntervals (AdditiveOptimizationDecoration a) ((Word, Word
 -- | (✔)
 instance GeneralCharacterMetadata (AdditiveOptimizationDecoration a) where
 
-
 -- | (✔)
 instance EncodableStreamElement a => DiscreteCharacterMetadata (AdditiveOptimizationDecoration a) a where
-
 
 -- | (✔)
 instance EncodableStaticCharacter a => DiscreteCharacterDecoration (AdditiveOptimizationDecoration a) a where
@@ -126,10 +125,8 @@ instance EncodableStaticCharacter a => DiscreteCharacterDecoration (AdditiveOpti
 -- | (✔)
 instance EncodableStaticCharacter a => AdditiveCharacterDecoration (AdditiveOptimizationDecoration a) a where
 
-
 -- | (✔)
 instance EncodableStaticCharacter a => AdditiveDecoration (AdditiveOptimizationDecoration a) a where
-
 
 -- | (✔)
 instance EncodableStaticCharacter a => DiscreteExtensionAdditiveDecoration (AdditiveOptimizationDecoration a) a where

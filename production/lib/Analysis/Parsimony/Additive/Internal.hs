@@ -15,6 +15,9 @@
 --
 -- Assumes binary trees.
 --
+-- Note that this is the same procedure as for continuous characters, but with
+-- costs of Word, not Double.
+--
 -----------------------------------------------------------------------------
 
 module Analysis.Parsimony.Additive.Internal where
@@ -29,14 +32,6 @@ import Data.Bits
 import Data.List.NonEmpty (NonEmpty( (:|) ))
 --import Data.Word
 
-
--- data AdditiveOptimizationDecoration c = AdditiveOptimizationDecoration
---     { minCost           :: Word      -- cost of the subtree
---     , preliminaryInterval :: c           -- held here until final state is determined and we can assign that into discreteCharacter
---     , isLeaf            :: Bool
---     , interval          :: c
---     , childPrelims      :: (c, c)
---     }
 
 -- | Used on the post-order (i.e. first) traversal.
 additivePostOrder :: (DiscreteCharacterDecoration d c, FiniteBits c)
@@ -61,13 +56,18 @@ additivePreOrder childDecoration ((_, parentDecoration):[]) =
         then childDecoration
         else determineFinalState childDecoration parentDecoration
 
-
+-- |
+-- Updates the character on the parent of two child nodes to become an 'AdditiveOptimizationDecoration'.
+-- Determines the cost by adding the cost of the intersection of the two child nodes, then summing that value
+-- with the costs of the two children. The preliminary value of the character is the intersection of the two child intervals.
+--
+-- Used on the postorder pass.
 updatePostOrder :: DiscreteCharacterDecoration d c
                 => d
                 -> NonEmpty (AdditiveOptimizationDecoration c)
                 -> AdditiveOptimizationDecoration c
-updatePostOrder _parentDecoration (x:|[])                    = x                     -- Shouldn't be possible,
-                                                                                     --    but here for completion.
+updatePostOrder _parentDecoration (x:|[])                     = x                     -- Shouldn't be possible,
+                                                                                      --    but here for completion.
 updatePostOrder  parentDecoration (leftChild:|(rightChild:_)) = returnNodeDecoration  -- Not a leaf.
     where
         (newMin, newMax)              = leftInterval `intersect` rightInterval
@@ -78,6 +78,9 @@ updatePostOrder  parentDecoration (leftChild:|(rightChild:_)) = returnNodeDecora
         returnNodeDecoration          =
             extendDiscreteToAdditive parentDecoration totalCost newInterval (leftInterval, rightInterval) False
 
+-- | Initializes a leaf node by copying its current value into its preliminary state. Gives it a minimum cost of 0.
+--
+-- Used on the postorder pass.
 initializeLeaf :: (DiscreteCharacterDecoration d c, FiniteBits c)
                => d
                -> AdditiveOptimizationDecoration c
@@ -89,12 +92,18 @@ initializeLeaf curDecoration =
         higher = fromIntegral (countLeadingZeros  label) :: Word
         zero   = fromIntegral (0 :: Int) :: Word
 
+-- | Uses the preliminary intervals of a node, its parents, and its children. Follows the three rules of Fitch,
+-- modified for additive characters: 1) If the intersection of the current node's character with its parent == the
+-- parent interval, use the parent interval; 2) If the union of those two characters == the child, then use the
+-- child; 3) Otherwise, find the intersections of the parent and each of the children, union them, then union that
+-- with the parent.
+--
+-- Used on the preorder pass.
 determineFinalState :: AdditiveOptimizationDecoration c
                     -> AdditiveOptimizationDecoration c
                     -> AdditiveOptimizationDecoration c
 determineFinalState childDecoration parentDecoration = finalDecoration
     where
-        finalDecoration = childDecoration  &  preliminaryInterval .~ (thisMin, thisMax)
         preliminary     = childDecoration  ^. preliminaryInterval
         ancestor        = parentDecoration ^. preliminaryInterval
         (left, right)   = childDecoration  ^. childPrelimIntervals
@@ -103,8 +112,9 @@ determineFinalState childDecoration parentDecoration = finalDecoration
             | (ancestor `intersect` preliminary) == ancestor     = ancestor                        -- Additive rule 1
             | (ancestor `union`     preliminary) == preliminary  = preliminary                     -- Additive rule 2
             | otherwise                                          = thirdCase                       -- Additive rule 3
+        finalDecoration = childDecoration  &  preliminaryInterval .~ (thisMin, thisMax)
 
--- | True if there is any overlap betwet the two intervals
+-- | True if there is any overlap between the two intervals
 overlaps :: (Word, Word) -> (Word, Word) -> Bool
 overlaps leftChild rightChild =
     (rightSmallest < leftLargest) && (rightLargest > leftSmallest)
@@ -114,8 +124,9 @@ overlaps leftChild rightChild =
         leftSmallest  = fst (leftChild)
         leftLargest   = snd (leftChild)
 
--- | True if one of the intervals falls entirely between the other
--- Assumes there is an overlap
+-- | True if one of the intervals falls entirely within the other
+--
+-- Assumes there is an overlap.
 subsetted :: (Word, Word) -> (Word, Word) -> Bool
 subsetted leftChild rightChild
     | rightSmallest <= leftSmallest  && rightLargest >= leftLargest  = True
@@ -129,7 +140,8 @@ subsetted leftChild rightChild
 
 
 -- |
--- Finds the intersection of two intervals, the intersection being the smallest interval possible.
+-- Finds the intersection of two intervals, the intersection being the smallest interval possible. Does
+-- not assume there's an overlap.
 --
 -- There are six cases:
 -- 1: non-intersection with the left < right
@@ -159,8 +171,8 @@ intersect leftChild rightChild
         leftLargest   = snd (leftChild)
 
 -- |
--- Finds the union of two intervals, where the union is the largest interval possible, i.e. from the smallest value to the largest
--- in both intervals.
+-- Finds the union of two intervals, where the union is the largest interval possible, i.e. from the smallest possible
+-- value to the largest possible, considering the values in both intervals.
 --
 -- Works for overlapped or subsetted intervals, as well as non-overlapping intervals
 union :: (Word, Word) -> (Word, Word)-> (Word, Word)

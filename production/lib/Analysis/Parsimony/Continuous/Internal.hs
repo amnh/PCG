@@ -15,6 +15,9 @@
 --
 -- Assumes binary trees.
 --
+-- Note that this is the same procedure as for additive characters, but with
+-- costs of Double, not Word.
+--
 -----------------------------------------------------------------------------
 
 module Analysis.Parsimony.Continuous.Internal where
@@ -61,7 +64,12 @@ additivePreOrder childDecoration ((_, parentDecoration):[]) =
         then childDecoration
         else determineFinalState childDecoration parentDecoration
 
-
+-- |
+-- Updates the character on the parent of two child nodes to become a 'ContinuousOptimizationDecoration'.
+-- Determines the cost by adding the cost of the intersection of the two child nodes, then summing that value
+-- with the costs of the two children. The preliminary value of the character is the intersection of the two child intervals.
+--
+-- Used on the postorder pass.
 updatePostOrder :: DiscreteCharacterDecoration d c
                 => d
                 -> NonEmpty (ContinuousOptimizationDecoration c)
@@ -78,6 +86,9 @@ updatePostOrder  parentDecoration (leftChild:|(rightChild:_)) = returnNodeDecora
         returnNodeDecoration          =
             extendDiscreteToContinuous parentDecoration totalCost newInterval (leftInterval, rightInterval) False
 
+-- | Initializes a leaf node by copying its current value into its preliminary state. Gives it a minimum cost of 0.
+--
+-- Used on the postorder pass.
 initializeLeaf :: (DiscreteCharacterDecoration d c, FiniteBits c)
                => d
                -> ContinuousOptimizationDecoration c
@@ -89,6 +100,13 @@ initializeLeaf curDecoration =
         higher = label
         zero   = 0.0
 
+-- | Uses the preliminary intervals of a node, its parents, and its children. Follows the three rules of Fitch,
+-- modified for continuous characters: 1) If the intersection of the current node's character with its parent == the
+-- parent interval, use the parent interval; 2) If the union of those two characters == the child, then use the
+-- child; 3) Otherwise, find the intersections of the parent and each of the children, union them, then union that
+-- with the parent.
+--
+-- Used on the preorder pass.
 determineFinalState :: ContinuousOptimizationDecoration c
                     -> ContinuousOptimizationDecoration c
                     -> ContinuousOptimizationDecoration c
@@ -130,6 +148,7 @@ subsetted leftChild rightChild
 
 -- |
 -- Finds the intersection of two intervals, the intersection being the smallest interval possible.
+-- Does not assume there's an overlap.
 --
 -- There are six cases:
 -- 1: non-intersection with the left < right
