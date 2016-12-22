@@ -34,7 +34,7 @@ import Data.Vector                         (Vector)
 
 -- |
 -- Represents a block of charcters which are optimized atomically together across
--- networks. The 'CharcterBlock' is polymorphic over static and dynamic charcter
+-- networks. The 'CharacterBlock' is polymorphic over static and dynamic character
 -- definitions.
 --
 -- Use '(<>)' to construct larger blocks.
@@ -57,8 +57,8 @@ hexmap :: (m -> m')
        -> (f -> f')
        -> (a -> a')
        -> (d -> d')
-       -> CharacterBlock m  i  c  f  a  d 
-       -> CharacterBlock m' i' c' f' a' d' 
+       -> CharacterBlock m  i  c  f  a  d
+       -> CharacterBlock m' i' c' f' a' d'
 hexmap f1 f2 f3 f4 f5 f6 =
     CharacterBlock
     <$> (fmap f3 . continuousCharacterBins )
@@ -115,7 +115,7 @@ toMissingCharacters :: ( PossiblyMissingCharacter m
                        , PossiblyMissingCharacter f
                        , PossiblyMissingCharacter a
                        , PossiblyMissingCharacter d
-                       ) 
+                       )
                     => CharacterBlock m i c f a d
                     -> CharacterBlock m i c f a d
 toMissingCharacters cb =
@@ -131,11 +131,11 @@ toMissingCharacters cb =
 
 -- |
 -- Construct a singleton block containing a /continuous/ character.
-continuousSingleton :: CharacterName -> (a -> c) -> a -> CharacterBlock m i (ContinuousDecorationInitial c) f a d
+continuousSingleton :: CharacterName -> (a -> c) -> a -> CharacterBlock m i (ContinuousOptimizationDecoration c) f a d
 continuousSingleton nameValue transformation continuousValue =
     CharacterBlock (pure bin)  mempty  mempty  mempty mempty mempty
   where
-    bin = continuousDecorationInitial nameValue transformation continuousValue
+    bin = ContinuousOptimizationDecoration nameValue transformation continuousValue
 
 
 -- |

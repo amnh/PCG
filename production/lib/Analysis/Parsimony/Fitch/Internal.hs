@@ -29,15 +29,6 @@ import Data.Bits
 import Data.Key
 import Data.List.NonEmpty (NonEmpty( (:|) ))
 
--- data FitchCharacterDecoration c = FitchCharacterDecoration
---     { minCost           :: Word32                                               -- cost of the subtree
---     , preliminaryMedian :: (EncodableStaticCharacter)                           -- held here until final state is determined
---                                                                                 -- and we can assign that into discreteCharacter
---     , childMedians      :: (EncodableStaticCharacter, EncodableStaticCharacter) -- (left, right) so that we can do post
---                                                                                 -- order pass with all of Fitch's rules
---     , isLeaf            :: Bool                                                 -- need this in preorder
---     }
-
 -- | Used on the post-order (i.e. first) traversal.
 fitchPostOrder ::  DiscreteCharacterDecoration d c
                => d
@@ -122,7 +113,8 @@ determineFinalState parentDecoration childDecoration = finalDecoration
         -- TODO: see if this short-circuits; otherwise rewrite doing testbit three times and then logical operations
         curIsUnion    = foldl (\acc _index -> acc && (popCount (left .|. right `xor` preliminary) > 0)
                               ) True [0..alphLen]                         -- preliminary is 0 if both are 0, 1 otherwise
-        finalDecoration = extendDiscreteToFitch parentDecoration cost preliminary median (left, right) leafVal
+        finalDecoration = extendDiscreteToFitch parentDecoration cost preliminary median (left, right) leafVal -- using parentDecoration here because I need a DiscreteCharacterDecoration.
+                                                                                                               -- Safe because new char is created.
         leafVal         = childDecoration  ^. isLeaf
         cost            = childDecoration  ^. minCost
         preliminary     = childDecoration  ^. preliminaryMedian

@@ -87,7 +87,7 @@ initializeLeaf curDecoration =
         label  = curDecoration ^. discreteCharacter
         lower  = fromIntegral (countTrailingZeros label) :: Word
         higher = fromIntegral (countLeadingZeros  label) :: Word
-        zero   = fromIntegral 0 :: Word
+        zero   = fromIntegral (0 :: Int) :: Word
 
 determineFinalState :: AdditiveOptimizationDecoration c
                     -> AdditiveOptimizationDecoration c

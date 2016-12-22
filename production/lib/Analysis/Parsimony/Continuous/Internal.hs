@@ -19,88 +19,166 @@
 
 module Analysis.Parsimony.Continuous.Internal where
 
+import Bio.Character.Decoration.Continuous
+--import Bio.Character.Decoration.Discrete
+--import Bio.Character.Encodable
 import Control.Lens
-import Bio.Character.Decoration.Discrete
-import Bio.Character.Encodable
+import Control.Monad  (join)
+import Data.Bifunctor (bimap)
+import Data.Bits
+import Data.List.NonEmpty (NonEmpty( (:|) ))
+--import Data.Double
 
 
-data ContinuousCharacterDecoration c = ContinuousCharacterDecoration
-    { minCost           :: Word32                             -- cost of the subtree
-    , preliminaryMedian :: c                                  -- held here until final state is determined and we can assign that into discreteCharacter
-    , interval          :: c
-    , childPrelims      :: (c, c)
-    }
+-- data ContinuousOptimizationDecoration c = ContinuousOptimizationDecoration
+--     { minCost           :: Double      -- cost of the subtree
+--     , preliminaryInterval :: c           -- held here until final state is determined and we can assign that into discreteCharacter
+--     , isLeaf            :: Bool
+--     , interval          :: c
+--     , childPrelims      :: (c, c)
+--     }
 
 -- | Used on the post-order (i.e. first) traversal.
-continuousPostOrder :: ( EncodableStaticCharacter c, DiscreteCharacterDecoration d c ) => (d -> [d'] -> d')
-continuousPostOrder charDecoration []               = initializeLeaf charDecoration                         -- a leaf
-continuousPostOrder charDecoration childDecorations = updatePostOrder charDecoration childDecorations
+additivePostOrder :: (DiscreteCharacterDecoration d c, FiniteBits c)
+                  => d
+                  -> [ContinuousOptimizationDecoration c]
+                  -> ContinuousOptimizationDecoration c
+additivePostOrder parentDecoration xs =
+    case xs of
+        []   -> initializeLeaf  parentDecoration         -- a leaf
+        y:ys -> updatePostOrder parentDecoration (y:|ys)
 
 -- | Used on the pre-order (i.e. second) traversal.
-continuousPreOrder  :: ( HasTCM d ((c, c) -> (c, Double))
-                    , HasStaticCharacter d c
-                    , EncodableStaticCharacter c
-                    ) => (ContinuousCharacterDecoration c -> [(Word, d')] -> d')
-continuousPreOrder curDecoration (x:y:_)                    = curDecoration   -- two parents; shouldn't be possible, but here for completion
-continuousPreOrder curDecoration []                         = curDecoration   -- is a root TODO: need to change preliminary to final
-continuousPreOrder curDecoration ((_, parentDecoration):[]) =
-    if curDecoration ^. isLeaf    -- TODO: this call probably isn't right
-        then curDecoration & discreteCharacter %~ curDecoration ^. preliminaryMedian
-        else determineFinalState curDecoration parentDecoration
+additivePreOrder  :: ContinuousOptimizationDecoration c
+                  -> [(Double, ContinuousOptimizationDecoration c)]
+                  -> ContinuousOptimizationDecoration c
+additivePreOrder childDecoration (_x:_y:_)                  = childDecoration   -- multiple parents; shouldn't be possible,
+                                                                                --    but here for completion
+additivePreOrder childDecoration []                         = childDecoration   -- is a root TODO: need to change preliminary
+                                                                                --    to final
+additivePreOrder childDecoration ((_, parentDecoration):[]) =
+    if childDecoration ^. isLeaf
+        then childDecoration
+        else determineFinalState childDecoration parentDecoration
 
 
-updatePostOrder :: EncodableStaticCharacter c => c -> [ContinuousCharacterDecoration c] -> ContinuousCharacterDecoration c
-updatePostOrder curNodeDecoration []                       = curNodeDecoration    -- Leaf. Here for completion because levaes are filtered out before this call.
-updatePostOrder curNodeDecoration (x:[])                   = curNodeDecoration    -- Shouldn't be possible, but here for completion.
-updatePostOrder curNodeDecoration (leftChild:rightChild:_) = returnNodeDecoration
+updatePostOrder :: DiscreteCharacterDecoration d c
+                => d
+                -> NonEmpty (ContinuousOptimizationDecoration c)
+                -> ContinuousOptimizationDecoration c
+updatePostOrder _parentDecoration (x:|[])                    = x                     -- Shouldn't be possible,
+                                                                                     --    but here for completion.
+updatePostOrder  parentDecoration (leftChild:|(rightChild:_)) = returnNodeDecoration  -- Not a leaf.
     where
-        (preliminary, newCost)
-            | leftChild `overlaps` rightChild = (leftChild `intersect` rightChild, 0)
-            | otherwise                       = ((newMin, newMax), totalCost)
-        (newMin, newMax)     = getNonOverlapInterval leftChild rightChild
-        median               = (newMin, newMax)
-        totalCost            = thisNodeCost + (leftChild ^. minCost) + (rightChild ^. minCost)
-        thisNodeCost         = newMax - newMin
-        returnNodeDecoration = ContinuousCharacterDecoration newCost median (leftChild ^. preliminaryMedian, rightChild ^. preliminaryMedian)
+        (newMin, newMax)              = leftInterval `intersect` rightInterval
+        (leftInterval, rightInterval) = join bimap (^. preliminaryInterval) (leftChild, rightChild)
+        newInterval                   = (newMin, newMax)
+        totalCost                     = thisNodeCost + (leftChild ^. minCost) + (rightChild ^. minCost)
+        thisNodeCost                  = newMax - newMin
+        returnNodeDecoration          =
+            extendDiscreteToContinuous parentDecoration totalCost newInterval (leftInterval, rightInterval) False
 
-initializeLeaf :: ContinuousCharacterDecoration c -> ContinuousCharacterDecoration c
+initializeLeaf :: (DiscreteCharacterDecoration d c, FiniteBits c)
+               => d
+               -> ContinuousOptimizationDecoration c
 initializeLeaf curDecoration =
-    ContinuousCharacterDecoration 0 label (emptyChar, emptyChar)
+    extendDiscreteToContinuous curDecoration zero (lower, higher) ((zero,zero),(zero,zero)) True
     where
-        label     = curDecoration ^. discreteCharacter
-        emptyChar = emptyStatic $ curDecoration ^. discreteCharacter
+        label  = curDecoration ^. discreteCharacter
+        lower  = label
+        higher = label
+        zero   = 0.0
 
-determineFinalState :: DiscreteCharacterDecoration c => ContinuousCharacterDecoration c -> ContinuousCharacterDecoration c -> ContinuousCharacterDecoration c
-determineFinalState curDecoration parentDecoration = finalDecoration
+determineFinalState :: ContinuousOptimizationDecoration c
+                    -> ContinuousOptimizationDecoration c
+                    -> ContinuousOptimizationDecoration c
+determineFinalState childDecoration parentDecoration = finalDecoration
     where
-        finalDecoration = curDecoration & interval %. (min, max)
-        preliminary     = (curDecoration    ^. interval)
-        ancestor        = (parentDecoration ^. interval)
-        (left, right)   = curDecoration     ^. childMedians
+        finalDecoration = childDecoration  &  preliminaryInterval .~ (thisMin, thisMax)
+        preliminary     = childDecoration  ^. preliminaryInterval
+        ancestor        = parentDecoration ^. preliminaryInterval
+        (left, right)   = childDecoration  ^. childPrelimIntervals
+        thirdCase       = ancestor `union` (left `intersect` ancestor) `union` (right `intersect` ancestor)
+        (thisMin, thisMax)
+            | (ancestor `intersect` preliminary) == ancestor     = ancestor                        -- Continuous rule 1
+            | (ancestor `union`     preliminary) == preliminary  = preliminary                     -- Continuous rule 2
+            | otherwise                                          = thirdCase                       -- Continuous rule 3
 
-        (min, max)
-            | (ancestor `intersect` preliminary) == ancestor = ancestor                                         -- Continuous rule 1
-            | curIsUnion    = ancestor `union` preliminary                                                      -- Continuous rule 2
-            | otherwise     = ancestor `union` (left `intersect` ancestor) `union` (right `intersect` ancestor) -- Continuous rule 3
-
-union :: EncodableStaticCharacter -> EncodableStaticCharacter -> EncodableStaticCharacter
-union l r = l .|. r
-
-overlaps :: ContinuousCharacterDecoration -> ContinuousCharacterDecoration -> Bool
+-- | True if there is any overlap betwet the two intervals
+overlaps :: (Double, Double) -> (Double, Double) -> Bool
 overlaps leftChild rightChild =
-    (rightChild ^. smallestChar < leftChild ^. largestChar) && (rightChild ^. largestChar > leftChild ^. smallestChar)
+    (rightSmallest < leftLargest) && (rightLargest > leftSmallest)
+    where
+        rightSmallest = fst (rightChild)
+        rightLargest  = snd (rightChild)
+        leftSmallest  = fst (leftChild)
+        leftLargest   = snd (leftChild)
 
-getNonOverlapInterval :: ContinuousCharacterDecoration c -> ContinuousCharacterDecoration c ->
-getNonOverlapInterval leftChild rightChild =
-    if leftChild ^. largestChar < rightChild ^. smallestChar
-        then (leftChild  ^. largestChar, rightChild ^. smallestChar)
-        else (rightChild ^. largestChar, leftChild  ^. smallestChar)
+-- | True if one of the intervals falls entirely between the other
+-- Assumes there is an overlap
+subsetted :: (Double, Double) -> (Double, Double) -> Bool
+subsetted leftChild rightChild
+    | rightSmallest <= leftSmallest  && rightLargest >= leftLargest  = True
+    | leftSmallest  <= rightSmallest && leftLargest  >= rightLargest = True
+    | otherwise                                                      = False
+    where
+        rightSmallest = fst (rightChild)
+        rightLargest  = snd (rightChild)
+        leftSmallest  = fst (leftChild)
+        leftLargest   = snd (leftChild)
 
--- TODO: assumes there is an intersection. Fix that. Also, one could be proper subset of other.
-intersect :: ContinuousCharacterDecoration c -> ContinuousCharacterDecoration c -> ContinuousCharacterDecoration c
-intersect leftChild rightChild =
-    if leftChild ^. largestChar < rightChild ^. smallestChar
-        then (leftChild  ^. largestChar, rightChild ^. smallestChar)
-        else (rightChild ^. largestChar, leftChild  ^. smallestChar)
 
--- TODO: check all inequalities for inclusion of equality; use countLeadingZeroes and countTrailingZeroes.
+-- |
+-- Finds the intersection of two intervals, the intersection being the smallest interval possible.
+--
+-- There are six cases:
+-- 1: non-intersection with the left < right
+-- 2: non-intersection with the left > right
+-- 3: intersection but no subsetting, left < right
+-- 4: intersection but no subsetting, left > right
+-- 5: subsetted, right inside left
+-- 6: subsetted, left inside right
+intersect :: (Double, Double) -> (Double, Double) -> (Double, Double)
+intersect leftChild rightChild
+    | not $ leftChild `overlaps` rightChild =
+        if leftLargest < rightLargest
+            then (leftLargest, rightSmallest)
+            else (rightLargest, leftSmallest)
+    | subsetted leftChild rightChild =
+        if leftLargest > rightLargest
+            then (rightSmallest, rightLargest)
+            else (leftSmallest, leftLargest)
+    | otherwise =
+        if leftLargest < rightLargest
+            then (rightSmallest, leftLargest)
+            else (leftLargest, rightSmallest)
+    where
+        rightSmallest = fst (rightChild)
+        rightLargest  = snd (rightChild)
+        leftSmallest  = fst (leftChild)
+        leftLargest   = snd (leftChild)
+
+-- |
+-- Finds the union of two intervals, where the union is the largest interval possible, i.e. from the smallest value to the largest
+-- in both intervals.
+--
+-- Works for overlapped or subsetted intervals, as well as non-overlapping intervals
+union :: (Double, Double) -> (Double, Double)-> (Double, Double)
+union leftChild rightChild = (smallestMin, largestMax)
+    where
+        smallestMin =
+            if rightSmallest < leftSmallest
+                then rightSmallest
+                else leftSmallest
+        largestMax =
+            if rightLargest < leftLargest
+                then leftLargest
+                else rightLargest
+
+        rightSmallest = fst (rightChild)
+        rightLargest  = snd (rightChild)
+        leftSmallest  = fst (leftChild)
+        leftLargest   = snd (leftChild)
+
+
+-- TODO: check all inequalities for inclusion of equality

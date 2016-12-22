@@ -1,6 +1,6 @@
 -----------------------------------------------------------------------------
 -- |
--- Module      :  Bio.Character.Decoration.Continuous.Internal
+-- Module      :  Bio.Character.Decoration.Continuous
 -- Copyright   :  (c) 2015-2015 Ward Wheeler
 -- License     :  BSD-style
 --
@@ -10,21 +10,26 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE FlexibleContexts, FlexibleInstances, FunctionalDependencies, MultiParamTypeClasses #-}
-
 module Bio.Character.Decoration.Continuous
-  ( ContinuousDecorationInitial()
-  , ContinuousChar()
-  , ContinuousCharacter()
+  ( ContinuousOptimizationDecoration(ContinuousOptimizationDecoration)
+  , ContinuousCharacterDecoration()
+  , DiscreteExtensionContinuousDecoration(..)
   , GeneralCharacterMetadata()
+  , DiscreteCharacterMetadata()
+  , DiscreteCharacterDecoration()
+  , HasCharacterAlphabet(..)
   , HasCharacterName(..)
+  , HasCharacterSymbolTransitionCostMatrixGenerator(..)
+  , HasCharacterTransitionCostMatrix(..)
   , HasCharacterWeight(..)
-  , HasContinuousCharacter(..)
-  , continuousDecorationInitial
+  , HasDiscreteCharacter(..)
+  , HasIsLeaf(..)
+  , HasMinCost(..)
+  , HasPreliminaryInterval(..)
+  , HasChildPrelimIntervals(..)
   ) where
 
-
+import Bio.Character.Decoration.Discrete
 import Bio.Character.Decoration.Continuous.Class
 import Bio.Character.Decoration.Continuous.Internal
-import Bio.Metadata.General
-
+import Bio.Character.Decoration.Shared
