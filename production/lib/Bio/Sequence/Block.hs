@@ -128,14 +128,15 @@ toMissingCharacters cb =
     , dynamicCharacters        = toMissing <$> dynamicCharacters        cb
     }
 
+-- TODO get rid of ContinuousDecorationInitial in signiture
 
 -- |
 -- Construct a singleton block containing a /continuous/ character.
-continuousSingleton :: CharacterName -> (a -> c) -> a -> CharacterBlock m i (ContinuousOptimizationDecoration c) f a d
+continuousSingleton :: CharacterName -> (a -> c) -> a -> CharacterBlock m i (ContinuousDecorationInitial c) f a d
 continuousSingleton nameValue transformation continuousValue =
     CharacterBlock (pure bin)  mempty  mempty  mempty mempty mempty
   where
-    bin = ContinuousOptimizationDecoration nameValue transformation continuousValue
+    bin = continuousDecorationInitial nameValue transformation continuousValue
 
 
 -- |

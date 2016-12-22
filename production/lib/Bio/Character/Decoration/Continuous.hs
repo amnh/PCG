@@ -27,6 +27,14 @@ module Bio.Character.Decoration.Continuous
   , HasMinCost(..)
   , HasPreliminaryInterval(..)
   , HasChildPrelimIntervals(..)
+  , continuousDecorationInitial
+  , ContinuousDecorationInitial()
+  , ContinuousChar()
+  , ContinuousCharacter()
+  , GeneralCharacterMetadata()
+  , HasCharacterName(..)
+  , HasCharacterWeight(..)
+  , HasContinuousCharacter(..)
   ) where
 
 import Bio.Character.Decoration.Discrete

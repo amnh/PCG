@@ -14,10 +14,35 @@
 
 module Bio.Character.Decoration.Continuous.Class where
 
-
 import Bio.Character.Decoration.Discrete
 import Bio.Character.Decoration.Shared
 import Control.Lens
+
+
+-- |
+-- A decoration of an initial encoding of a dynamic character which has the
+-- appropriate 'Lens' & character class constraints.
+class ( HasContinuousCharacter s c
+      , ContinuousCharacter c
+      , GeneralCharacterMetadata s
+      ) => ContinuousDecoration s c | s -> c where
+
+  
+-- |
+-- A character class for continuous characters.
+class Ord c => ContinuousCharacter c where
+
+    toContinuousCharacter :: Real r => Maybe r -> c 
+
+
+-- |
+-- A 'Lens' for the 'continuousCharacter' field
+class HasContinuousCharacter s a | s -> a where
+
+    continuousCharacter :: Lens' s a
+    {-# MINIMAL continuousCharacter #-} 
+
+
 
 
 -- |
@@ -33,14 +58,14 @@ class ( DiscreteCharacterDecoration s c
       , HasIsLeaf s Bool
       , HasMinCost s Double
       , HasPreliminaryInterval s (Double, Double)
-      ) => ContinuousDecoration s c | s -> c where
+      ) => ContinuousAdditiveHybridDecoration s c | s -> c where
 
 
 -- |
 -- A decoration that can be constructed from a 'DiscreteCharacterDecoration' by
 -- extending the decoration to contain the requisite fields for performing
 -- Continuous's algorithm.
-class ( ContinuousDecoration s c
+class ( ContinuousAdditiveHybridDecoration s c
       ) => DiscreteExtensionContinuousDecoration s c | s -> c where
 
     extendDiscreteToContinuous :: DiscreteCharacterDecoration x c
