@@ -11,8 +11,9 @@
 -----------------------------------------------------------------------------
 
 module Bio.Character.Decoration.Additive
-  ( AdditiveDecorationInitial()
+  ( AdditiveOptimizationDecoration(AdditiveOptimizationDecoration)
   , AdditiveCharacterDecoration()
+  , DiscreteExtensionAdditiveDecoration(..)
   , GeneralCharacterMetadata()
   , DiscreteCharacterMetadata()
   , DiscreteCharacterDecoration()
@@ -22,9 +23,13 @@ module Bio.Character.Decoration.Additive
   , HasCharacterTransitionCostMatrix(..)
   , HasCharacterWeight(..)
   , HasDiscreteCharacter(..)
+  , HasIsLeaf(..)
+  , HasMinCost(..)
+  , HasPreliminaryInterval(..)
+  , HasChildPrelimIntervals(..)
   ) where
 
 import Bio.Character.Decoration.Discrete
 import Bio.Character.Decoration.Additive.Class
 import Bio.Character.Decoration.Additive.Internal
-
+import Bio.Character.Decoration.Shared

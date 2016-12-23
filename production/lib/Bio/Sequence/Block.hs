@@ -34,7 +34,7 @@ import Data.Vector                         (Vector)
 
 -- |
 -- Represents a block of charcters which are optimized atomically together across
--- networks. The 'CharcterBlock' is polymorphic over static and dynamic charcter
+-- networks. The 'CharacterBlock' is polymorphic over static and dynamic character
 -- definitions.
 --
 -- Use '(<>)' to construct larger blocks.
@@ -49,14 +49,16 @@ data CharacterBlock m i c f a d
    } deriving (Eq)
 
 
+-- |
+-- Perform a six way map over the polymorphic types.
 hexmap :: (m -> m')
        -> (i -> i')
        -> (c -> c')
        -> (f -> f')
        -> (a -> a')
        -> (d -> d')
-       -> CharacterBlock m  i  c  f  a  d 
-       -> CharacterBlock m' i' c' f' a' d' 
+       -> CharacterBlock m  i  c  f  a  d
+       -> CharacterBlock m' i' c' f' a' d'
 hexmap f1 f2 f3 f4 f5 f6 =
     CharacterBlock
     <$> (fmap f3 . continuousCharacterBins )
@@ -105,13 +107,15 @@ instance ( Show m
        ]
 
 
+-- |
+-- Convert all characters contained in the block to thier missing value.
 toMissingCharacters :: ( PossiblyMissingCharacter m
                        , PossiblyMissingCharacter i
                        , PossiblyMissingCharacter c
                        , PossiblyMissingCharacter f
                        , PossiblyMissingCharacter a
                        , PossiblyMissingCharacter d
-                       ) 
+                       )
                     => CharacterBlock m i c f a d
                     -> CharacterBlock m i c f a d
 toMissingCharacters cb =
@@ -124,7 +128,10 @@ toMissingCharacters cb =
     , dynamicCharacters        = toMissing <$> dynamicCharacters        cb
     }
 
+-- TODO get rid of ContinuousDecorationInitial in signiture
 
+-- |
+-- Construct a singleton block containing a /continuous/ character.
 continuousSingleton :: CharacterName -> (a -> c) -> a -> CharacterBlock m i (ContinuousDecorationInitial c) f a d
 continuousSingleton nameValue transformation continuousValue =
     CharacterBlock (pure bin)  mempty  mempty  mempty mempty mempty
@@ -132,6 +139,8 @@ continuousSingleton nameValue transformation continuousValue =
     bin = continuousDecorationInitial nameValue transformation continuousValue
 
 
+-- |
+-- Construct a singleton block containing a /discrete/ character.
 discreteSingleton :: TCM -> s -> CharacterBlock s s c s s d
 discreteSingleton tcmValues dec =
     case tcmStructure diagnosis of
@@ -146,5 +155,7 @@ discreteSingleton tcmValues dec =
     bin         = pure dec
 
 
+-- |
+-- Construct a singleton block containing a /dynamic/ character.
 dynamicSingleton :: d -> CharacterBlock m i c f a d
 dynamicSingleton = CharacterBlock mempty mempty mempty mempty mempty . pure

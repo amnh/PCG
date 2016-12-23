@@ -23,6 +23,8 @@ import Bio.Metadata.CharacterName
 import Control.Lens
 
 
+-- |
+-- A constraint for type containing metadata.
 class ( HasCharacterName   s CharacterName
       , HasCharacterWeight s Double
       ) => GeneralCharacterMetadata s where

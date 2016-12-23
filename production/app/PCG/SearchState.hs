@@ -83,6 +83,11 @@ type UnifiedDynamicCharacter    = Maybe (DynamicDecorationInitial DynamicChar)
 data  PhylogeneticDAG e n m i c f a d
     = PDAG (ReferenceDAG e (PhylogeneticNode n (CharacterSequence m i c f a d)))
 
+
+data  PhylogeneticDAG2 e n m i c f a d
+    = PDAG2 (ReferenceDAG e (PhylogeneticNode2 n (CharacterSequence m i c f a d)))
+
+
 instance ( Show e
          , Show n
          , Show m

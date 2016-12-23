@@ -35,6 +35,7 @@ data DynamicDecorationInitial d
    }
 
 
+-- | (✔)
 instance ( EncodableStreamElement (Element d)
          , MonoFoldable d
          , PossiblyMissingCharacter d
@@ -48,12 +49,12 @@ instance ( EncodableStreamElement (Element d)
         alphabet  = dec ^. characterAlphabet 
 
 
+-- | (✔)
 instance PossiblyMissingCharacter d => PossiblyMissingCharacter (DynamicDecorationInitial d) where
 
     isMissing = isMissing . (^. encoded)
 
     toMissing x = x & encoded %~ toMissing
-                                            
 
 
 -- | (✔)

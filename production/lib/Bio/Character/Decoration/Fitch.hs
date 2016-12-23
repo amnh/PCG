@@ -11,8 +11,9 @@
 -----------------------------------------------------------------------------
 
 module Bio.Character.Decoration.Fitch
-  ( FitchDecorationInitial()
-  , FitchCharacterDecoration()
+  ( FitchCharacterDecoration()
+  , FitchOptimizationDecoration(FitchOptimizationDecoration)
+  , DiscreteExtensionFitchDecoration(..)
   , GeneralCharacterMetadata()
   , DiscreteCharacterMetadata()
   , DiscreteCharacterDecoration()
@@ -22,9 +23,13 @@ module Bio.Character.Decoration.Fitch
   , HasCharacterTransitionCostMatrix(..)
   , HasCharacterWeight(..)
   , HasDiscreteCharacter(..)
+  , HasIsLeaf(..)
+  , HasMinCost(..)
+  , HasPreliminaryMedian(..)
+  , HasChildMedians(..)
   ) where
 
 import Bio.Character.Decoration.Discrete
 import Bio.Character.Decoration.Fitch.Class
 import Bio.Character.Decoration.Fitch.Internal
-
+import Bio.Character.Decoration.Shared

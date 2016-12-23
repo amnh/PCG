@@ -26,6 +26,8 @@ import Bio.Metadata.General
 import Control.Lens
 
 
+-- |
+-- Metadata type for a continuous character.
 newtype ContinuousCharacterMetadataDec = CCM GeneralCharacterMetadataDec
 
 

@@ -37,7 +37,7 @@ class ( HasEncoded s a
       ) => SimpleDynamicDecoration s a | s -> a where
 
 
-  -- |
+-- |
 -- A decoration of a dynamic character with all direct optimization annotations.
 --
 -- Is a sub-class of 'DynamicCharacterDecoration'.

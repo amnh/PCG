@@ -20,6 +20,7 @@ module Bio.Character.Encodable.Static.Class where
 import Bio.Character.Encodable.Internal
 import Bio.Character.Encodable.Stream
 import Data.Alphabet
+import Data.Bits
 import Data.List.NonEmpty hiding (xor) -- Why is this defined? Is foldl1' (/=) too verbose?
 import Data.MonoTraversable
 import Data.Semigroup
@@ -41,6 +42,9 @@ class ( EncodableStreamElement c
 
     encodeStatic :: (Eq a, IsString a) => Alphabet a -> AmbiguityGroup a -> c
     encodeStatic = encodeElement
+
+    emptyStatic :: c -> c
+    emptyStatic x = x `xor` x
 
 
 -- |
