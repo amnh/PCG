@@ -243,9 +243,13 @@ instance EncodableStaticCharacter a => DiscreteExtensionContinuousDecoration (Co
         , additiveCharacterField       = subDecoration ^. discreteCharacter
         }
       where
+        alphabetValue = subDecoration ^. characterAlphabet
+        tcmValue      = generate (length alphabetValue) (uncurry $ subDecoration ^. characterSymbolTransitionCostMatrixGenerator)
         metadataValue =
           discreteMetadata
             <$> (^. characterName)
             <*> (^. characterWeight)
+            <*> const alphabetValue
+            <*> const tcmValue
             $ subDecoration
 
