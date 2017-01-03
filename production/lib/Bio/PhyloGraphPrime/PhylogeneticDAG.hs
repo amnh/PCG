@@ -1,4 +1,4 @@
------------------------------------------------------------------------------
+------------------------------------------------------------------------------
 -- |
 -- Module      :  Bio.PhyloGraphPrime.PhylogeneticDAG
 -- Copyright   :  () 2015-2015 Ward Wheeler
@@ -23,27 +23,22 @@ import           Bio.Sequence.Block
 import           Bio.PhyloGraphPrime
 import           Bio.PhyloGraphPrime.Node
 import           Bio.PhyloGraphPrime.ReferenceDAG.Internal
-import           Control.Arrow            ((&&&))
+import           Control.Arrow            ((&&&), (***))
 import           Control.Evaluation
+import           Data.Bits
 import           Data.Foldable
 import qualified Data.IntMap        as IM
+import           Data.IntSet              (IntSet)
 import           Data.List.NonEmpty       (NonEmpty( (:|) ))
 import           Data.List.Utility
 -- import qualified Data.List.NonEmpty as NE
 import           Data.Monoid
+import           Data.MonoTraversable
+import           Data.Semigroup.Foldable
 import           Data.Vector              (Vector)
 import qualified Data.Vector        as V
 
 -- import Debug.Trace
-
-
-pairs :: Foldable f => f a -> [(a, a)]
-pairs = f . toList
-  where
-    f    []  = []
-    f   [_]  = []
-    f (x:xs) = ((\y -> (x, y)) <$> xs) <> f xs
-
 
 
 type SearchState = EvaluationT IO (Either TopologicalResult CharacterResult)
@@ -126,22 +121,77 @@ metric :: (m -> [m'] -> m')
        -> (PhylogeneticNode2 n (CharacterSequence m i c f a d) -> [PhylogeneticNode2 n (CharacterSequence m' i c f a d)] ->  PhylogeneticNode2 n (CharacterSequence m' i c f a d))
 metric _f = undefined
 
-{-
+
+pairs :: Foldable f => f a -> [(a, a)]
+pairs = f . toList
+  where
+    f    []  = []
+    f   [_]  = []
+    f (x:xs) = ((\y -> (x, y)) <$> xs) <> f xs
+
+
+{--}
 -- One or more 
 -- Do I need the whole DAG in scope to resolve resolutions?
 resolutionTransform :: Vector (IndexData e (PhylogeneticNode2 n (CharacterSequence m' i' c' f' a' d')))
+                    -> PhylogeneticNode2 n (CharacterSequence m i c f a d)
                     -> (CharacterSequence m i c f a d -> [CharacterSequence m' i' c' f' a' d'] -> CharacterSequence m' i' c' f' a' d')
                     -> Int
                     -> PhylogeneticNode2 n (CharacterSequence m' i' c' f' a' d')
-resolutionTransform dataVector _f index = undefined
+resolutionTransform dataVector currentNode f index = undefined
   where
+    -- TODO: A special bind here to reduce duplicate work
+    newResolutions      = selfResolutions >>= (\x -> g x <$> childListings)
+      where
+--        g :: ResolutionInformation s -> [ResolutionInformation s] -> ResolutionInformation s
+        g parentalResolution childResolutions =
+            ResInfo
+            { leafSetRepresentation = newLeafSetRep
+            , subtreeRepresentation = newSubtreeRep
+            , characterSequence     = f (characterSequence parentalResolution) (characterSequence <$> childResolutions)
+            , localSequenceCost     = sum $ localSequenceCost <$> childResolutions
+            , totalSubtreeCost      = sum $ totalSubtreeCost  <$> childResolutions
+            }
+          where
+            (newLeafSetRep, newSubtreeRep) =
+                case childResolutions of
+                  []   -> (,) <$>          leafSetRepresentation <*>          subtreeRepresentation $ parentalResolution
+                  x:xs -> (,) <$> foldMap1 leafSetRepresentation <*> foldMap1 subtreeRepresentation $ x:|xs
+
+    -- Special Bind is like normal Bind for the NonEmpty Monad except that we
+    -- use the Ord constraint to reduce duplicate work.
+    specialBind :: Ord a => NonEmpty a -> (a -> NonEmpty b) -> NonEmpty b
+    specialBind = undefined
+    
+--    childIndices :: [Int]
     childIndices        = IM.keys . childRefs $ dataVector V.! index
+
+    selfResolutions     = resolutions currentNode
+
+--    childResolutionData :: [(NonEmpty (ResolutionInformation s), IntSet)]
     childResolutionData = ((resolutions . nodeDecoration &&& parentRefs) . (dataVector V.!)) <$> childIndices
-    childListings       = const undefined $ pairs childResolutionData -- Pairwise comparisons
-    pairingLogic (x, y)
-      | isSingleton (snd x) && isSingleton (snd y) = undefined
-      | leafSetRepresentation x .&. leafSetRepresentation y > 0 = undefined 
--}  
+
+--    childListings :: NonEmpty [ResolutionInformation s]
+    childListings       =
+      case concatMap pairingLogic $ pairs childResolutionData of
+        []   -> [] :| []
+        x:xs ->  x :| xs
+      where
+        pairingLogic (lhs, rhs) =
+            case (multipleParents lhs, multipleParents rhs) of
+              (True , True ) -> pairedSet
+              (True , False) -> pairedSet <> lhsSet
+              (False, True ) -> pairedSet <> rhsSet
+              (False, False) -> pairedSet <> lhsSet <> rhsSet
+           where
+             multipleParents = isSingleton . otoList . snd
+             pairedSet = [ [x,y] | x <- lhs', y <- rhs', leafSetRepresentation x .&. leafSetRepresentation y == zeroBits]
+             lhsSet    = (pure <$> lhs')
+             rhsSet    = (pure <$> rhs')
+             lhs' = toList $ fst lhs
+             rhs' = toList $ fst rhs
+
+{--}  
 
 nodeInternalPostorderMap :: (PhylogeneticNode2 n (CharacterSequence m i c f a d) -> [PhylogeneticNode2 n' (CharacterSequence m' i' c' f' a' d')] -> PhylogeneticNode2 n' (CharacterSequence m' i' c' f' a' d'))
                          -> PhylogeneticDAG2 e n m i c f a d

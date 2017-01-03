@@ -56,6 +56,11 @@ newtype SubtreeLeafSet = LS BitVector
   deriving (Eq, Bits)
 
 
+instance Semigroup SubtreeLeafSet where
+
+    (<>) =  (.|.)
+    
+
 newtype NewickSerialization = NS String
   deriving (Eq, Semigroup)
 
