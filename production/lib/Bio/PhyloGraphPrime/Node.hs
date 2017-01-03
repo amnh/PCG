@@ -30,15 +30,15 @@ import Data.Semigroup
 -- information such as name and later a subtree structure.
 data  PhylogeneticNode n s
     = PNode
-    { nodeDecoration     :: n
-    , sequenceDecoration :: s
+    { nodeDecorationDatum :: n
+    , sequenceDecoration  :: s
     } deriving (Eq, Functor)
 
 
 data  PhylogeneticNode2 n s
     = PNode2
-    { resolutions        :: NonEmpty (ResolutionInformation s)
-    , nodeDecoration2    :: n
+    { resolutions          :: NonEmpty (ResolutionInformation s)
+    , nodeDecorationDatum2 :: n
     } deriving (Eq, Functor)
 
 
@@ -63,7 +63,7 @@ newtype NewickSerialization = NS String
 instance Bifunctor PhylogeneticNode where
 
     bimap g f = 
-      PNode <$> g . nodeDecoration
+      PNode <$> g . nodeDecorationDatum
             <*> f . sequenceDecoration
 
 
@@ -71,4 +71,4 @@ instance Bifunctor PhylogeneticNode2 where
 
     bimap g f = 
       PNode2 <$> fmap (fmap f) . resolutions
-             <*> g . nodeDecoration2
+             <*> g . nodeDecorationDatum2

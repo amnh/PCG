@@ -39,30 +39,30 @@ import           Prelude            hiding (lookup)
 -- |
 -- A constant time access representation of a directed acyclic graph.
 -- 
-data ReferenceDAG e n
-   = RefDAG
-   { references :: Vector (IndexData e n)
-   , rootRefs   :: NonEmpty Int
-   , graphData  :: GraphData
-   }
+data  ReferenceDAG e n
+    = RefDAG
+    { references :: Vector (IndexData e n)
+    , rootRefs   :: NonEmpty Int
+    , graphData  :: GraphData
+    }
 
 
 -- |
 -- A labeled record for each "node" in the graph containing the node decoration,
 -- a set of parent references, and a set of child references with edge decorations.
-data IndexData e n
-   = IndexData
-   { nodeDecoration :: n
-   , parentRefs     :: IntSet
-   , childRefs      :: IntMap e
-   } deriving (Show)
+data  IndexData e n
+    = IndexData
+    { nodeDecoration :: n
+    , parentRefs     :: IntSet
+    , childRefs      :: IntMap e
+    } deriving (Show)
 
 
 -- | Annotations which are global to the graph
-data GraphData
-   = GraphData
-   { cost :: Double
-   }
+data  GraphData
+    = GraphData
+    { cost :: Double
+    }
 
 
 -- |

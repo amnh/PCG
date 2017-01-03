@@ -156,6 +156,7 @@ library
                        Bio.PhyloGraphPrime
                        Bio.PhyloGraphPrime.Component
                        Bio.PhyloGraphPrime.Node
+                       Bio.PhyloGraphPrime.PhylogeneticDAG
                        Bio.PhyloGraphPrime.ReferenceDAG
                        Bio.PhyloGraphPrime.ZipperDAG
                        Control.Evaluation
