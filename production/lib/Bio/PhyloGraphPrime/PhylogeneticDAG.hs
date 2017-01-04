@@ -23,17 +23,20 @@ import           Bio.Sequence.Block
 import           Bio.PhyloGraphPrime
 import           Bio.PhyloGraphPrime.Node
 import           Bio.PhyloGraphPrime.ReferenceDAG.Internal
-import           Control.Arrow            ((&&&), (***))
+import           Control.Arrow            ((&&&))
 import           Control.Evaluation
 import           Data.Bits
+import           Data.DuplicateSet
+import qualified Data.DuplicateSet  as DS
 import           Data.Foldable
 import qualified Data.IntMap        as IM
 import           Data.IntSet              (IntSet)
 import           Data.List.NonEmpty       (NonEmpty( (:|) ))
 import           Data.List.Utility
 -- import qualified Data.List.NonEmpty as NE
-import           Data.Monoid
+--import           Data.Monoid
 import           Data.MonoTraversable
+import           Data.Semigroup
 import           Data.Semigroup.Foldable
 import           Data.Vector              (Vector)
 import qualified Data.Vector        as V
@@ -133,22 +136,27 @@ pairs = f . toList
 {--}
 -- One or more 
 -- Do I need the whole DAG in scope to resolve resolutions?
-resolutionTransform :: Vector (IndexData e (PhylogeneticNode2 n (CharacterSequence m' i' c' f' a' d')))
-                    -> PhylogeneticNode2 n (CharacterSequence m i c f a d)
+resolutionTransform :: Vector (IndexData e (PhylogeneticNode2 (CharacterSequence m' i' c' f' a' d') n))
+                    -> PhylogeneticNode2 (CharacterSequence m i c f a d) n
                     -> (CharacterSequence m i c f a d -> [CharacterSequence m' i' c' f' a' d'] -> CharacterSequence m' i' c' f' a' d')
                     -> Int
-                    -> PhylogeneticNode2 n (CharacterSequence m' i' c' f' a' d')
-resolutionTransform dataVector currentNode f index = undefined
+                    -> PhylogeneticNode2 (CharacterSequence m' i' c' f' a' d') n
+resolutionTransform dataVector currentNode transformation index =
+    PNode2
+    { resolutions          = newResolutions
+    , nodeDecorationDatum2 = nodeDecorationDatum2 currentNode
+    }
   where
-    -- TODO: A special bind here to reduce duplicate work
-    newResolutions      = selfResolutions >>= (\x -> g x <$> childListings)
+
+--    newResolutions = selfResolutions >>= (\x -> g x <$> childListings)
+    newResolutions = cartesianProductWith g selfResolutions childListings
       where
 --        g :: ResolutionInformation s -> [ResolutionInformation s] -> ResolutionInformation s
         g parentalResolution childResolutions =
             ResInfo
             { leafSetRepresentation = newLeafSetRep
             , subtreeRepresentation = newSubtreeRep
-            , characterSequence     = f (characterSequence parentalResolution) (characterSequence <$> childResolutions)
+            , characterSequence     = transformation (characterSequence parentalResolution) (characterSequence <$> childResolutions)
             , localSequenceCost     = sum $ localSequenceCost <$> childResolutions
             , totalSubtreeCost      = sum $ totalSubtreeCost  <$> childResolutions
             }
@@ -158,38 +166,55 @@ resolutionTransform dataVector currentNode f index = undefined
                   []   -> (,) <$>          leafSetRepresentation <*>          subtreeRepresentation $ parentalResolution
                   x:xs -> (,) <$> foldMap1 leafSetRepresentation <*> foldMap1 subtreeRepresentation $ x:|xs
 
-    -- Special Bind is like normal Bind for the NonEmpty Monad except that we
-    -- use the Ord constraint to reduce duplicate work.
-    specialBind :: Ord a => NonEmpty a -> (a -> NonEmpty b) -> NonEmpty b
-    specialBind = undefined
-    
 --    childIndices :: [Int]
     childIndices        = IM.keys . childRefs $ dataVector V.! index
 
     selfResolutions     = resolutions currentNode
 
---    childResolutionData :: [(NonEmpty (ResolutionInformation s), IntSet)]
+--    childResolutionData :: [(DuplicateSet (ResolutionInformation s), IntSet)]
     childResolutionData = ((resolutions . nodeDecoration &&& parentRefs) . (dataVector V.!)) <$> childIndices
 
---    childListings :: NonEmpty [ResolutionInformation s]
-    childListings       =
-      case concatMap pairingLogic $ pairs childResolutionData of
-        []   -> [] :| []
-        x:xs ->  x :| xs
+--    childListings :: DuplicateSet [ResolutionInformation s]
+    childListings =
+      -- Here we check the number of "real" child edges.
+      case childResolutionData of
+        []   -> singleton [] 
+        [x]  ->
+            let y = DS.map (:[]) $ fst x
+            in  if   multipleParents x
+                then y <> singleton []
+                else y
+        x:xs ->
+          case pairs $ x:xs of
+            y:ys -> foldMap1 pairingLogic $ y :| ys
+            []   -> singleton [] -- This will never happen, covered by previous case statement
       where
+        multipleParents = not . isSingleton . otoList . snd
+        pairingLogic :: ( (DuplicateSet (ResolutionInformation s), IntSet)
+                        , (DuplicateSet (ResolutionInformation s), IntSet)
+                        )
+                     -> DuplicateSet [ResolutionInformation s]
         pairingLogic (lhs, rhs) =
-            case (multipleParents lhs, multipleParents rhs) of
-              (True , True ) -> pairedSet
-              (True , False) -> pairedSet <> lhsSet
-              (False, True ) -> pairedSet <> rhsSet
-              (False, False) -> pairedSet <> lhsSet <> rhsSet
+            case (pairedSet, multipleParents lhs, multipleParents rhs) of
+              -- The Nothing cases *should* never happen, but best to handle them anyways
+              (Nothing, True , True ) -> singleton []
+              (Nothing, True , False) -> lhsSet
+              (Nothing, False, True ) -> rhsSet
+              (Nothing, False, False) -> lhsSet <> rhsSet
+              (Just ds, True , True ) -> ds
+              (Just ds, True , False) -> ds <> lhsSet
+              (Just ds, False, True ) -> ds <> rhsSet
+              (Just ds, False, False) -> ds <> lhsSet <> rhsSet
            where
-             multipleParents = isSingleton . otoList . snd
-             pairedSet = [ [x,y] | x <- lhs', y <- rhs', leafSetRepresentation x .&. leafSetRepresentation y == zeroBits]
-             lhsSet    = (pure <$> lhs')
-             rhsSet    = (pure <$> rhs')
-             lhs' = toList $ fst lhs
-             rhs' = toList $ fst rhs
+             pairedSet = cartesianProductWithFilter f lhs' rhs'
+               where
+                 f x y
+                   | leafSetRepresentation x .&. leafSetRepresentation y == zeroBits = Just [x,y]
+                   | otherwise = Nothing
+             lhsSet = DS.map (:[]) lhs'
+             rhsSet = DS.map (:[]) rhs'
+             lhs'   = fst lhs
+             rhs'   = fst rhs
 
 {--}  
 
