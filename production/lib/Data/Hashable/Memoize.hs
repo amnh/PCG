@@ -19,7 +19,7 @@ import System.IO.Unsafe
 -- __Note:__ This does /not/ memoize recursively defined functions.
 --
 -- To memoize a recursively defined function, you must redefine the function's
--- recursive calls to internally call a memoized definion in a mutually recursive
+-- recursive calls to internally call a memoized definition in a mutually recursive
 -- manner.
 --
 -- === Example:
@@ -45,7 +45,7 @@ memoize f = unsafePerformIO $ do
     ht <- new :: IO (BasicHashTable a b)
     -- This is the returned closure of a memozized f
     -- The closure captures the mutable reference to the hashtable above
-    -- Once the mutable hashtable refernce is escaped from the IO monad,
+    -- Once the mutable hashtable reference is escaped from the IO monad,
     -- this creates a new memoized reference to f.
     -- The technique should be safe for all pure functions, probably, I think.
     pure $ \k -> unsafePerformIO $ do
