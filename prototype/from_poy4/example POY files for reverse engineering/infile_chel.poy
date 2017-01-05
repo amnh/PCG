@@ -1,0 +1,6 @@
+read(nucleotides: ("./chel.fasta"))
+read("./chel_nj_tbr_rr.tre")
+transform(tcm: "./sample2.mat")
+set(iterative:exact)
+
+exit()
