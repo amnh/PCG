@@ -137,11 +137,11 @@ pairs = f . toList
 -- One or more 
 -- Do I need the whole DAG in scope to resolve resolutions?
 resolutionTransform :: Vector (IndexData e (PhylogeneticNode2 (CharacterSequence m' i' c' f' a' d') n))
-                    -> PhylogeneticNode2 (CharacterSequence m i c f a d) n
-                    -> (CharacterSequence m i c f a d -> [CharacterSequence m' i' c' f' a' d'] -> CharacterSequence m' i' c' f' a' d')
                     -> Int
+                    -> (CharacterSequence m i c f a d -> [CharacterSequence m' i' c' f' a' d'] -> CharacterSequence m' i' c' f' a' d')
+                    -> PhylogeneticNode2 (CharacterSequence m i c f a d) n
                     -> PhylogeneticNode2 (CharacterSequence m' i' c' f' a' d') n
-resolutionTransform dataVector currentNode transformation index =
+resolutionTransform dataVector index transformation currentNode =
     PNode2
     { resolutions          = newResolutions
     , nodeDecorationDatum2 = nodeDecorationDatum2 currentNode
