@@ -1,0 +1,36 @@
+digraph G { 
+	rankdir = LR;
+	node [shape = rect];
+	"HTU_1 : cost = 1062" -> "HTU_16 : cost = 79";
+	"HTU_1 : cost = 1062" -> "HTU_2 : cost = 882";
+	"HTU_10 : cost = 12" -> "Alentus";
+	"HTU_10 : cost = 12" -> "Aportus";
+	"HTU_11 : cost = 20" -> "Chanbria";
+	"HTU_11 : cost = 20" -> "Limulus";
+	"HTU_12 : cost = 55" -> "Centruoides";
+	"HTU_12 : cost = 55" -> "HTU_13 : cost = 19";
+	"HTU_13 : cost = 19" -> "Hadrurus";
+	"HTU_13 : cost = 19" -> "Pauroctonus";
+	"HTU_14 : cost = 25" -> "HTU_15 : cost = 7";
+	"HTU_14 : cost = 25" -> "Mastigoproctus";
+	"HTU_15 : cost = 7" -> "Hypochilus";
+	"HTU_15 : cost = 7" -> "Thelichoris";
+	"HTU_16 : cost = 79" -> "Americhernus";
+	"HTU_16 : cost = 79" -> "Artemia";
+	"HTU_2 : cost = 882" -> "Gea";
+	"HTU_2 : cost = 882" -> "HTU_3 : cost = 771";
+	"HTU_3 : cost = 771" -> "HTU_14 : cost = 25";
+	"HTU_3 : cost = 771" -> "HTU_4 : cost = 652";
+	"HTU_4 : cost = 652" -> "HTU_12 : cost = 55";
+	"HTU_4 : cost = 652" -> "HTU_5 : cost = 502";
+	"HTU_5 : cost = 502" -> "HTU_11 : cost = 20";
+	"HTU_5 : cost = 502" -> "HTU_6 : cost = 397";
+	"HTU_6 : cost = 397" -> "Amblypygid";
+	"HTU_6 : cost = 397" -> "HTU_7 : cost = 303";
+	"HTU_7 : cost = 303" -> "HTU_8 : cost = 200";
+	"HTU_7 : cost = 303" -> "Vonones";
+	"HTU_8 : cost = 200" -> "HTU_10 : cost = 12";
+	"HTU_8 : cost = 200" -> "HTU_9 : cost = 98";
+	"HTU_9 : cost = 98" -> "Rhiphicephalus";
+	"HTU_9 : cost = 98" -> "Thermobius";
+}
