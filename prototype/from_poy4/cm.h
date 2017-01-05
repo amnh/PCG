@@ -25,59 +25,59 @@
 #define CM_H 1
 #define Cost_matrix_struct(a) ((struct cost_matrices_2d *) Data_custom_val(a))
 #define Cost_matrix_struct_3d(a) ((struct cost_matrices_3d *) Data_custom_val(a))
-#include "debug.h"
+#include "debug_just_c.h"
 #include "matrices.h"
 #include "seq.h"
 
 /*
  * Check cost_matrices_3d for further information. This is the corresponding data
- * structure for two dimensional sequence alignment. 
+ * structure for two dimensional sequence alignment.
  */
 struct cost_matrices_2d {
-    int alphSize;        // alphabet size including gap, and including ambiguities if 
+    int alphSize;        // alphabet size including gap, and including ambiguities if
                          // combinations == True
     int lcm;             // ceiling of log_2 (alphSize)
     int gap;             // gap value (1 << (alphSize - 1))
-    int cost_model_type; /* The type of cost model to be used in the alignment, 
-                          * i.e. affine or not. 
+    int cost_model_type; /* The type of cost model to be used in the alignment,
+                          * i.e. affine or not.
                           * Based on cost_matrix.ml, values are:
-                          * • linear == 0 
+                          * • linear == 0
                           * • affine == 1
                           * • no_alignment == 2
                           */
     int combinations;    /* This is a flag set to true if we are going to accept
                           * all possible combinations of the elements in the alphabet
-                          * in the alignments. This is not true for protein sequences 
-                          * for example, where the number of elements of the alphabet 
+                          * in the alignments. This is not true for protein sequences
+                          * for example, where the number of elements of the alphabet
                           * is already too big to build all the possible combinations.
                           */
-    int gap_open;        /* The cost of opening a gap. This is only useful in 
-                          * certain cost_model_types (type 2: affine, based on my reading of ML code). 
+    int gap_open;        /* The cost of opening a gap. This is only useful in
+                          * certain cost_model_types (type 2: affine, based on my reading of ML code).
                           */
     int is_metric;       /* if tcm is symmetric
                           * Not present in 3d. */
     int all_elements;    // total number of elements TODO: figure out how this is different from alphSize
-    int *cost;           /* The transformation cost matrix, including ambiguities, 
+    int *cost;           /* The transformation cost matrix, including ambiguities,
                           * storing the **best** cost for each ambiguity pair
                           */
-    SEQT *median;        /* The matrix of possible medians between elements in the 
-                          * alphabet. The best possible medians according to the cost 
-                          * matrix. 
+    SEQT *median;        /* The matrix of possible medians between elements in the
+                          * alphabet. The best possible medians according to the cost
+                          * matrix.
                           */
-    int *worst;          /* The transformation cost matrix, including ambiguities, 
+    int *worst;          /* The transformation cost matrix, including ambiguities,
                           * storing the **worst** cost for each ambiguity pair
                           * Missing in 3d
                           */
     int *prepend_cost;   /* The cost of going from gap -> each base. For ambiguities, use best cost.
                           * Set up as all_elements x all_elements
-                          * matrix, but seemingly only first row is used. 
-                          * Missing in 3d because current version of 3d sets gap cost 
+                          * matrix, but seemingly only first row is used.
+                          * Missing in 3d because current version of 3d sets gap cost
                           * as constant.
                           */
-    int *tail_cost;      /* As prepend_cost, but with reverse directionality, 
-                          * so base -> gap. 
-                          * As with prepend_cost, seems to be allocated as too large. 
-                          * Missing in 3d because current version of 3d sets gap cost 
+    int *tail_cost;      /* As prepend_cost, but with reverse directionality,
+                          * so base -> gap.
+                          * As with prepend_cost, seems to be allocated as too large.
+                          * Missing in 3d because current version of 3d sets gap cost
                           * as constant.
                           */
 };
@@ -87,7 +87,7 @@ struct cost_matrices_2d {
  */
 typedef struct cost_matrices_2d * cost_matrices_2d_p;
 
-/** A three dimesional cost matrix 
+/** A three dimesional cost matrix
  *
  * For three way sequence alignment, this structure holds the cost of
  * transforming the elements of an alphabet.  A cost matrix can only be applied
@@ -100,26 +100,26 @@ struct cost_matrices_3d {
     int cost_model_type;    /** The type of cost model to be used in the alignment */
     int combinations;       /** This is a flag set to true if we are going to accept
                                 all possible combinations of the elements in the alphabet
-                                in the alignments. This is not true for protein sequences 
-                                for example, where the number of elements of the alphabet 
+                                in the alignments. This is not true for protein sequences
+                                for example, where the number of elements of the alphabet
                                 is already too big to build all the possible combinations.
                              */
-    int gap_open;           /** The cost of opening a gap. This is only useful in 
+    int gap_open;           /** The cost of opening a gap. This is only useful in
                                 certain cost_model_type's. */
-    int all_elements;       /** The integer that represents all the combinations, used 
+    int all_elements;       /** The integer that represents all the combinations, used
                                 for ambiguities */
     int *cost;              /** The transformation cost matrix. The ordering is row-major,
-                             *  and the lookup is a->b, where a is a row label and b is 
+                             *  and the lookup is a->b, where a is a row label and b is
                              *  a column label
                              */
-    SEQT *median;           /** The matrix of possible medians between elements in the 
-                                alphabet. The best possible medians according to the cost 
+    SEQT *median;           /** The matrix of possible medians between elements in the
+                                alphabet. The best possible medians according to the cost
                                 matrix. */
 };
 
-/* 
- * A pointer to a three dimensional cost matrix 
- */ 
+/*
+ * A pointer to a three dimensional cost matrix
+ */
 typedef struct cost_matrices_3d * cost_matrices_3d_p;
 
 void cm_print_2d (cost_matrices_2d_p c);
@@ -128,12 +128,12 @@ void cm_print_3d (cost_matrices_3d_p c);
 
 void cm_print_matrix (int* m, int w, int h);
 
-/* 
+/*
  * Creates a cost matrix with memory allocated for an alphabet of size alphSize
  * (not including the gap representation which is internally chosen), and whose
  * size must consider all possible combinations of characters in the alphabeet
  * iff combinations != 0. Set the affine gap model paramters to the values
- * stored in do_aff, gap_open, in the cost matrix res. 
+ * stored in do_aff, gap_open, in the cost matrix res.
  * In case of error the function fails with the message "Memory error.".
  */
 void cm_alloc_set_costs_2d (int alphSize, int combinations, int do_aff, int gap_open, \
@@ -146,14 +146,14 @@ cm_set_cost_2d (int a, int b, int v, cost_matrices_2d_p c);
 void
 cm_set_cost_3d (int a, int b, int cp, int v, cost_matrices_3d_p c);
 
-/* 
+/*
  * Retrieves the alphabet size flag from the transformation cost matrix.
  */
-inline int 
+inline int
 cm_get_alphabet_size (cost_matrices_2d_p c);
 
 /*
- * Retrieves the gap code as defined in the transformation cost matrix. 
+ * Retrieves the gap code as defined in the transformation cost matrix.
  */
 SEQT
 cm_get_gap_2d (const cost_matrices_2d_p c);
@@ -173,18 +173,18 @@ cm_get_gap_3d (const cost_matrices_3d_p c);
 static inline int *
 cm_get_pos_in_precalc (const int *toOutput, int s3l, int alphSize, int s1c, int s2c, int s3p);
 
-/* 
+/*
  * During the 3d alignments, calculations are performed for each element in the
  * array using the complete vectors of the precalculated matrix. This function
  * retrieves the first element in those precalculated arrays. The parameters
- * definitions are analogous to those explained in cm_get_pos_in_precalc 
+ * definitions are analogous to those explained in cm_get_pos_in_precalc
  */
 int *
 cm_get_row_precalc_3d (const int *toOutput, int s3l, int alphSize, int s1c, int s2c);
 
 /*
  * Retrieves the affine flag from the transformation cost matrix. Remember this
- * flag is 1 if true, otherwise 0. 
+ * flag is 1 if true, otherwise 0.
  */
 int
 cm_get_affine_flag (cost_matrices_2d_p c);
@@ -193,7 +193,7 @@ cm_get_affine_flag (cost_matrices_2d_p c);
  * Gets the total number of possible combinations of an alphabeet of size
  * alphSize. The size of the alphabet must be bigger than 0.
  */
-static inline int 
+static inline int
 cm_combinations_of_alphabet (const int alphSize);
 
 /*
@@ -217,12 +217,12 @@ cm_get_median (const cost_matrices_2d_p t, SEQT a, SEQT b);
 /*
  * Retrieves the transformation cost of the elements a and b as stored in the
  * transformation cost matrix tcm, containing information for an alphabet of
- * size alphSize. 
+ * size alphSize.
  */
 int
 cm_calc_cost (int *tcm, SEQT a, SEQT b, int alphSize);
 
-/* 
+/*
  * The transformation cost matrix, as stored in ocaml, may have the actual
  * matrices located at certain offset from the start of the matrix. This
  * function retrieves the actual starting position.
@@ -251,14 +251,14 @@ cm_get_row (int *tcm, SEQT a, int alphSize);
 void
 cm_set_worst (int a, int b, int v, cost_matrices_2d_p c);
 
-/* 
+/*
  * Fills a precalculated matrix with the cost of comparing each elment in the
  * sequence s with each element in the alphabet specified in the transformation
- * cost matrix costMtx. 
+ * cost matrix costMtx.
  *
  * @param costMtx is the transformation cost matrix to calculate the precalculated
  *  vectors.
- * @param toOutput is the matrix that will hold the output. 
+ * @param toOutput is the matrix that will hold the output.
  * @param s is the sequence for which the cost matrix will be precalculated.
  *
  * This function is only valid for two dimensional alignments.
@@ -267,7 +267,7 @@ cm_set_worst (int a, int b, int v, cost_matrices_2d_p c);
 void
 cm_precalc_4algn (const cost_matrices_2d_p costMtx, nw_matrices_p toOutput, const seq_p s);
 
-/* 
+/*
  * Gets the precalculated row for a particular character in the alphabet.
  * @param p is the precalculated matrix.
  * @param item is the element in the alphabet that produced p that should be
@@ -282,10 +282,10 @@ cm_get_precal_row (const int *p, SEQT item, int len);
 
 /** As with 2d, but doesn't compute worst, prepend or tail */
 void
-cm_alloc_set_costs_3d (int alphSize, int combinations, int do_aff, int gap_open, 
+cm_alloc_set_costs_3d (int alphSize, int combinations, int do_aff, int gap_open,
                        int all_elements, cost_matrices_3d_p res);
 
-/* 
+/*
  * The median between three alphabet elements a, b and c.
  * @param t is the transformation cost matrix
  * @param a is the first element in the alphabet
@@ -302,14 +302,14 @@ inline int
 cm_get_alphabet_size_3d (cost_matrices_3d_p c);
 
 /*
- * Retrieves the gap code as defined in the transformation cost matrix. 
+ * Retrieves the gap code as defined in the transformation cost matrix.
  */
 SEQT
 cm_get_gap_3d (const cost_matrices_3d_p c);
 
 /*
  * Retrieves the affine flag from the transformation cost matrix. Remember this
- * flag is 1 if true, otherwise 0. 
+ * flag is 1 if true, otherwise 0.
  */
 int
 cm_get_affine_flag_3d (cost_matrices_3d_p c);
@@ -337,7 +337,7 @@ static inline int *
 cm_get_row_3d (int *tcm, SEQT a, SEQT b, int alphSize);
 
 /*
- * Fills a three-dimensional precalculation alignment matrix for sequence s 
+ * Fills a three-dimensional precalculation alignment matrix for sequence s
  * See cm_precalc_4algn for further information. This is the
  * corresponding function for three dimensional alignments.
  * TODO: Why is this here, and not in matrices.c?
@@ -347,7 +347,7 @@ cm_precalc_4algn_3d (const cost_matrices_3d_p c, int *toOutput, const seq_p s);
 
 /*
  * Deallocates the memory structure iff there are no more pointers to it,
- * otherwise it will just decrease the garbage collection counter. 
+ * otherwise it will just decrease the garbage collection counter.
  */
 inline void
 cm_free (cost_matrices_2d_p c);

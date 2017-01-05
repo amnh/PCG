@@ -19,7 +19,6 @@
 #include <stdio.h>
 #include <assert.h>
 
-// #include "array_pool.h" ARRAY_POOL_DELETE
 #include "seq.h"
 
 void seq_print(seq_p inSeq, int num) {
@@ -68,8 +67,8 @@ seq_get_ptr (const seq_p seq, int pos) {
     // assert (p >= 0);      // calling fns.
     return (seq->begin + pos);
 }
-    
-SEQT 
+
+SEQT
 seq_get_element (const seq_p seq, int pos) {
     assert (pos < seq->len);
     assert (pos >= 0);
@@ -82,7 +81,7 @@ seq_set (seq_p seq, int pos, SEQT v) {
     if (seq->len == 0) {
         assert (pos == 0);
         seq->len++;
-    } 
+    }
     else {
         assert (pos < seq->len);
         assert (pos >= 0);
@@ -93,7 +92,7 @@ seq_set (seq_p seq, int pos, SEQT v) {
 }
 
 inline void
-seq_reverse_ip (seq_p cs) { 
+seq_reverse_ip (seq_p cs) {
     SEQT *a, *b, tmp;
     a = seq_get_begin (cs);
     b = seq_get_end (cs);
@@ -128,7 +127,7 @@ seq_reverse (seq_p src, seq_p tgt) {
     a = seq_get_begin (src);
     b = seq_get_begin (tgt);
     c = seq_get_end (src);
-    for (i = 0; i < src->len; i++) 
+    for (i = 0; i < src->len; i++)
         *(tgt->begin + i) = *(src->end - i);
     return;
 }
@@ -149,14 +148,14 @@ seq_CAML_clear (value s) {
     seq_clear (cs);
     CAMLreturn(Val_unit);
 }
-    
+
 void
 seq_CAML_free_seq (value v) {
     seq_p s;
     Seq_custom_val(s,v);
-    if (NULL == s->my_pool) 
+    if (NULL == s->my_pool)
         free (s->head);
-    else 
+    else
         pool_available (s->my_pool, s->head);
     free (s);
     return;
@@ -228,11 +227,11 @@ seq_fix_randomly (struct seq *t) {
     return;
 }
 
-#undef A 
+#undef A
 #undef C
 #undef G
 #undef T
-#undef GAP 
+#undef GAP
 
 */
 /*
@@ -244,7 +243,7 @@ seq_CAML_get_cap (value s) {
     CAMLreturn(Val_int(tmp->cap));
 }
 
-value 
+value
 seq_CAML_length (value v) {
     CAMLparam1(v);
     seq_p tmp;
@@ -282,7 +281,7 @@ seq_CAML_deserialize (void *v) {
 }
 
 void
-seq_CAML_serialize (value vo, unsigned long *wsize_32, unsigned long *wsize_64) 
+seq_CAML_serialize (value vo, unsigned long *wsize_32, unsigned long *wsize_64)
 {
     seq_p v;
     SEQT *tmp;
@@ -310,8 +309,8 @@ seq_CAML_hash (value v) {
 static struct custom_operations sequence_custom_operations  = {
     "http://www.amnh.org/poy/seq/seq.0.2",
     custom_finalize_default,
-    (&seq_CAML_compare), 
-    (&seq_CAML_hash), 
+    (&seq_CAML_compare),
+    (&seq_CAML_hash),
     (&seq_CAML_serialize),
     (&seq_CAML_deserialize)
 };
@@ -321,7 +320,7 @@ static struct custom_operations sequence_custom_operations  = {
 #define SHORT_SEQUENCES 16384
 
 /*
-value 
+value
 seq_CAML_create (value cap) {
     CAMLparam1(cap);
     CAMLlocal1(res);
@@ -330,7 +329,7 @@ seq_CAML_create (value cap) {
     size_t s;
     len = Int_val(cap);
 #ifndef USE_LONG_SEQUENCES
-    if (len > SHORT_SEQUENCES) 
+    if (len > SHORT_SEQUENCES)
         failwith ("You are analyzing long sequences. This version \
                 of POY was compiled without the --enable-long-sequences option, \
                 setting a hard-coded limit of SHORT_SEQUENCES in their length. \
@@ -339,7 +338,7 @@ seq_CAML_create (value cap) {
                 for your needs in the POY mailing list (poy4@googlegroups.com).");
 #endif
     s = sizeof (SEQT) * len;
-    res = caml_alloc_custom 
+    res = caml_alloc_custom
         (&sequence_custom_operations, (sizeof(struct seq) + s), len, SEQ_UNUSED_MEMORY);
     tmp2 = Seq_pointer(res);
     if (NULL == tmp2) failwith ("Memory error");
@@ -355,7 +354,7 @@ seq_CAML_create (value cap) {
     CAMLreturn(res);
 }
 */
-// value 
+// value
 // seq_CAML_create_same (value other_seq, value cap) {
 //     CAMLparam2(other_seq, cap);
     /*
@@ -368,10 +367,10 @@ seq_CAML_create (value cap) {
     len = Int_val(cap);
     Seq_custom_val(tmp_p,other_seq);
     if (NULL != tmp_p->my_pool)
-        res = caml_alloc_custom 
+        res = caml_alloc_custom
             (&sequence_custom_operations, (sizeof(struct seq *)), (tmp_p->my_pool->size) / (sizeof (SEQT)), SEQ_UNUSED_MEMORY);
     else
-        res = caml_alloc_custom 
+        res = caml_alloc_custom
             (&sequence_custom_operations, (sizeof(struct seq *)), len, SEQ_UNUSED_MEMORY);
     tmp3 = Seq_pointer(res);
     tmp2 = *tmp3 = (struct seq *) malloc (sizeof (struct seq));
@@ -395,7 +394,7 @@ seq_CAML_create (value cap) {
 //     CAMLreturn(seq_CAML_create (cap));
 // }
 
-// value 
+// value
 // seq_CAML_create_pool (value pl, value cap) {
 //     CAMLparam2(pl, cap);
     /*
@@ -407,7 +406,7 @@ seq_CAML_create (value cap) {
     size_t s;
     len = Int_val(cap);
     p = Pool_custom_val(pl);
-    res = caml_alloc_custom 
+    res = caml_alloc_custom
         (&sequence_custom_operations, (sizeof(struct seq *)), p->size / (sizeof(SEQT)), SEQ_UNUSED_MEMORY);
     tmp3 = Seq_pointer(res);
     tmp2 = *tmp3 = (struct seq *) malloc (sizeof (struct seq));
@@ -449,11 +448,11 @@ seq_CAML_set (value s, value p, value v) {
     Seq_custom_val(cs,s);
     cp = Int_val(p);
     cv = Int_val(v);
-    seq_set (cs, cp, cv); 
+    seq_set (cs, cp, cv);
     CAMLreturn (Val_unit);
 }
 
-value 
+value
 seq_CAML_copy (value from, value to) {
     CAMLparam2(from, to);
     seq_p cto, cfrom;
@@ -477,7 +476,7 @@ seq_CAML_reverse_ip (value s) {
     CAMLreturn(Val_unit);
 }
 
-value 
+value
 seq_CAML_reverse (value src, value tgt) {
     CAMLparam2(src, tgt);
     seq_p csrc, ctgt;
@@ -496,7 +495,7 @@ seq_CAML_prepend (value s, value v) {
     CAMLreturn(Val_unit);
 }
 
-value 
+value
 seq_CAML_register (value u) {
     CAMLparam1(u);
     register_custom_operations (&sequence_custom_operations);
@@ -504,7 +503,7 @@ seq_CAML_register (value u) {
 }
 
 value
-seq_CAML_fix_randomly (value tgt) { 
+seq_CAML_fix_randomly (value tgt) {
     CAMLparam1(tgt);
     seq_fix_randomly((struct seq *) Seq_custom_val(tgt));
     CAMLreturn (Val_unit);
@@ -519,7 +518,7 @@ seq_CAML_fix_randomly (value tgt) {
 // }
 
 /*
-value 
+value
 seq_CAML_assign_pool (value s, value p) {
     CAMLparam2(s, p);
     seq_p sc;
@@ -538,12 +537,12 @@ seq_CAML_count (value gap, value seq) {
     SEQT cgap;
     Seq_custom_val (sc,seq);
     cgap = Int_val(gap);
-    for (i = 0; i < sc->len; i++) 
+    for (i = 0; i < sc->len; i++)
         if (0 != (cgap & (seq_get (sc, i)))) cnt++;
     CAMLreturn(Val_int(cnt));
 }
 
-value 
+value
 seq_CAML_encoding (value enc, value seq) {
     CAMLparam2(enc, seq);
     CAMLlocal1(resc);
@@ -553,11 +552,11 @@ seq_CAML_encoding (value enc, value seq) {
     SEQT base;
     Seq_custom_val(sc,seq);
     ec = Data_bigarray_val(enc);
-    // TODO: This only works for DNA sequences right now 
+    // TODO: This only works for DNA sequences right now
    for (i = 1; i < sc->len; i++) {
        base = seq_get (sc, i);
        if (!(base & 16)) {
-           // Get the least expensive of all the bits 
+           // Get the least expensive of all the bits
            cost = 10000000;
            if ((base & 1) && (ec[1] < cost))
                cost = ec[1];

@@ -20,24 +20,25 @@
 #ifndef SEQ_H
 
 #define SEQ_H 1
-// #include "array_pool.h" ARRAY_POOL_DELETE
 
 // TODO: Here's another wtf:
 #define POY_SEQ_MAGIC_NUMBER 9873123
+
 /* Macro to retrieve and cast a pointer to a seq structure from the Ocaml custom
  * type. */
 #define Seq_pointer(a) ((struct seq *) Data_custom_val(a))
-#define Seq_custom_val(to_asgn,a)  to_asgn = Seq_pointer(a); \
-    to_asgn->head = (SEQT *) ((seq_p) (to_asgn + 1)); \
-    to_asgn->end = to_asgn->head + to_asgn->cap - 1; \
-    to_asgn->begin = to_asgn->end - to_asgn->len + 1; \
+#define Seq_custom_val(to_asgn,a)  to_asgn        = Seq_pointer(a); \
+                                   to_asgn->head  = (SEQT *) ((seq_p) (to_asgn + 1)); \
+                                   to_asgn->end   = to_asgn->head + to_asgn->cap - 1; \
+                                   to_asgn->begin = to_asgn->end - to_asgn->len + 1; \
     assert (to_asgn->magic_number == POY_SEQ_MAGIC_NUMBER)
 
-#ifdef USE_LARGE_ALPHABETS 
+
+#ifdef USE_LARGE_ALPHABETS
 #define SEQT unsigned int
 // #define DESERIALIZE_SEQT(a,b) caml_deserialize_block_4((a),(b))
 // #define SERIALIZE_SEQT(a,b) caml_serialize_block_4((a),(b))
-#else 
+#else
 #define SEQT unsigned char
 // #define DESERIALIZE_SEQT(a,b) caml_deserialize_block_1((a),(b))
 // #define SERIALIZE_SEQT(a,b) caml_serialize_block_1((a),(b))
@@ -49,7 +50,7 @@ struct seq {
     int cap;        /* Capacity of the sequence memory structure. */
     int len;        /* Total length of the sequence stored. */
     SEQT *head;     /* beginning of the allocated array */
-    SEQT *begin;    /* Position where the first element of 
+    SEQT *begin;    /* Position where the first element of
                        the sequence is actually stored. ***Sequence as it comes in must be in last x spaces in array!*** */
     SEQT *end;
     //struct pool *my_pool; ARRAY_POOL_DELETE
@@ -86,7 +87,7 @@ seq_get_end (const seq_p a);
 
 /* Gets the value of the element of sequence a in the position p, where a starts at position 0
  */
-SEQT 
+SEQT
 seq_get_element (const seq_p a, int p);
 
 /* Stores the value v in the position p of sequence a. */

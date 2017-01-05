@@ -287,11 +287,11 @@ dynChar_t* makeDynamicChar( size_t alphSize, size_t numElems, packedChar_p value
     return output;
 }
 
-int* dynCharToIntArr(dynChar_t* input) {
-    int* output = calloc(input->numElems, sizeof(int));
+uint64_t* dynCharToIntArr(dynChar_t* input) {
+    uint64_t* output = calloc(input->numElems, sizeof(uint64_t));
     if (output != NULL) {
         for( size_t i = 0; i < input->numElems; i++ ) {
-            output[i] = (int) *(getDCElement(i, input)->element);
+            output[i] = (uint64_t) *(getDCElement(i, input)->element);
         }
     } else {
         printf("Out of memory.\n");

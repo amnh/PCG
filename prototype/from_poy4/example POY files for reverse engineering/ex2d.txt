@@ -1,0 +1,44 @@
+(F,E);
+      
+
+Tree
+    Tree cost: 8.
+               Tree rearrangement cost: 0.
+                                        
+                                        
+                                        
+                                        root
+                                        Cost 0.
+                                        Rearrangement cost 0.
+                                        Children: F E
+                                                                                                                                                                      
+                                        Characters        Class        Cost        Rearrangement Cost        Chrom Ref        Median Map        States
+                                        ./sample2d.fa     Preliminary  8.,8.       0.                        -                -                 CATGCATG11111CAT4CAKK
+                                        ./sample2d.fa     Final        8.,8.       0.                        -                -                 CATGCATG11111CAT4CAKK
+                                        ./sample2d.fa     Single       0.,0.       0.                        -                -                 CATGCATGAAAAACATGCATG
+                                        
+                                        
+                                        
+                                        F
+                                        Cost 0.
+                                        Rearrangement cost 0.
+                                        Children:  
+                                                                                                                                                                      
+                                        Characters        Class        Cost        Rearrangement Cost        Chrom Ref        Median Map        States
+                                        ./sample2d.fa     Preliminary  0,8         0.                        -                -                 CATGCATGAAAAACATGCATG
+                                        ./sample2d.fa     Final        0,8         0.                        -                -                 CATGCATGAAAAACATGCATG
+                                        ./sample2d.fa     Single       0,0         0.                        -                -                 CATGCATGAAAAACATGCATG
+                                        
+                                        
+                                        
+                                        E
+                                        Cost 0.
+                                        Rearrangement cost 0.
+                                        Children:  
+                                                                                                                                                                
+                                        Characters        Class        Cost        Rearrangement Cost        Chrom Ref        Median Map        States
+                                        ./sample2d.fa     Preliminary  0,8         0.                        -                -                 CATGCATGCATCAGT
+                                        ./sample2d.fa     Final        0,8         0.                        -                -                 CATGCATGCATCAGT
+                                        ./sample2d.fa     Single       8,8         0.                        -                -                 CATGCATGCATCAGT
+                                        
+                                        
