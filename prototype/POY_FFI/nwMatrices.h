@@ -51,7 +51,7 @@
 #define G_G_A    (1 << 6)     /** Previously SS. Move in rows. */
 
 // TODO: Can this be a char, instead?
-#define DIRECTION_MATRIX unsigned short
+#define DIR_MTX_ARROW_t  unsigned short
 
 #define Matrices_struct(a) ((struct nwMatrices *) Data_custom_val(a))
 
@@ -63,10 +63,10 @@ struct nwMatrices {
     int cap_eff;                      // Length of the efficiency matrix; at least as large as len TODO: figure out what this actually is
     int cap_pre;                      // Length of the precalculated matrix == max(len_s1, len_s2) * (alphSize + 1) ---extra 1 is for gap
     int *nw_costMtx;                  // NW cost matrix for both 2d and 3d alignment
-    DIRECTION_MATRIX *dir_mtx_2d;     // Matrix for backtrace directions in a 2d alignment
+    DIR_MTX_ARROW_t  *dir_mtx_2d;     // Matrix for backtrace directions in a 2d alignment
     int **pointers_3d;                // Matrix of pointers to each row in a 3d align
     int *nw_costMtx3d;                // Matrix for 3d alignment, just a set of pointers into nw_costMtx -- alloced internally.
-    DIRECTION_MATRIX *nw_costMtx3d_d; // Matrix for backtrack directions in a 3d alignment, just a set of pointers
+    DIR_MTX_ARROW_t  *nw_costMtx3d_d; // Matrix for backtrace directions in a 3d alignment, just a set of pointers
                                       //     into nw_costMtx --- alloced internally
     int *precalc;                     /* a three-dimensional matrix that holds
                                        * the transition costs for the entire alphabet (of all three sequences)
@@ -85,7 +85,7 @@ void print_matrices(nw_matrices_p m, int alphSize);
  * alignment between sequences of length w, d, h with ukkonen barriers set to k
  */
 int
-mat_size_of_3d_matrix (int w, int d, int h, int k);
+mat_size_of_3d_matrix (int w, int d, int h); // originally had a fourth parameter, k for ukkunonen
 
 /*
  * Calculates the amount of memory required to perform a two dimensional
@@ -99,9 +99,10 @@ mat_size_of_2d_matrix (int w, int h);
  * Rearrange or reallocate memory if necessary to perform an alignment between
  * sequences of length w, d and h. Note that for 2d alignments is necessary to
  * set h=0, and uk=0.
+ * Order of sequences is unimportant here, as just reallocing.
  */
 void
-mat_setup_size (nw_matrices_p m, int len_seq1, int len_seq2, int len_seq3, int is_ukk, int lcm);
+mat_setup_size (nw_matrices_p m, int len_seq1, int len_seq2, int len_seq3, int lcm);
 
 /*
  * Gets the pointer to the first memory position of the 2d alignment matrix.
@@ -115,7 +116,7 @@ mat_get_2d_prec (const nw_matrices_p m);
 int *
 mat_get_3d_prec (const nw_matrices_p m);
 
-DIRECTION_MATRIX *
+DIR_MTX_ARROW_t  *
 mat_get_2d_direct (const nw_matrices_p m);
 
 /*
@@ -132,7 +133,7 @@ mat_get_3d_pointers (nw_matrices_p m);
 int *
 mat_get_3d_matrix (nw_matrices_p m);
 
-DIRECTION_MATRIX *
+DIR_MTX_ARROW_t  *
 mat_get_3d_direct (nw_matrices_p m);
 
 /* Printout the contents of the matrix */

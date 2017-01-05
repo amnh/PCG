@@ -41,8 +41,8 @@ struct cost_matrices_2d {
                           * i.e. affine or not.
                           * Based on cost_matrix.ml, values are:
                           * • linear == 0
-                          * • affine == 1
-                          * • no_alignment == 2
+                          * • no_alignment == 1 ** I don't believe this is every used.
+                          * • affine == 2
                           */
     int combinations;    /* This is a flag set to true if we are going to accept
                           * all possible combinations of the elements in the alphabet

@@ -331,7 +331,6 @@ cm_alloc_set_costs_2d (int alphSize, int combinations, int do_aff, int gap_open,
  * stored in do_aff, gap_open, in the cost matrix res.
  * In case of error the function fails with the message "Memory error.".
  */
-// TODO: remove do_aff
 void
 cm_alloc_set_costs_3d (int alphSize, int combinations, int do_aff, int gap_open,
                        int all_elements, cost_matrices_3d_p res) {
@@ -581,7 +580,7 @@ cm_set_value_2d_seq_p (SEQT a, SEQT b, SEQT v, SEQT *p, int alphSize) {
     return;
 }
 
- void
+void
 cm_set_value (int a, int b, int v, int *p, int alphSize) {
     *(p + (cm_calc_cost_position (a, b, alphSize))) = v;
     return;
@@ -773,13 +772,9 @@ cm_compare (cost_matrices_2d_p a, cost_matrices_2d_p b) {
         len   = len_g * sizeof(int);
         len1  = len_g * sizeof(SEQT);
         cmp   = memcmp (a->cost, b->cost, len);
-        if (cmp != 0) {
-            return (cmp);
-        }
+        if (cmp != 0) return (cmp);
         cmp   = memcmp (a->median, b->median, len1);
-        if (cmp != 0) {
-            return (cmp);
-        }
+        if (cmp != 0) return (cmp);
         cmp   = memcmp (a->worst, b->worst, len);
         return (cmp);
     }

@@ -63,7 +63,7 @@
 
 #include "algn.h"
 #include "cm.h"
-#include "debug.h"
+#include "debug_just_c.h"
 #include "matrices.h"
 #include "seq.h"
 #include "zarr.h"

@@ -2,57 +2,50 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "algn.h"
+#include "seqAlign.h"
 #include "c_code_alloc_setup.h"
-#include "debug.h"
+#include "debug_constants.h"
 #include "costMatrix.h"
 #include "nwMatrices.h"
 #include "ukkCheckp.h"
 #include "ukkCommon.h"
 
-int* tcm, int alphSize, int gap_open, int is_2d, seq_p longSeq
+// int* tcm, int alphSize, int gap_open, int is_2d, seq_p longSeq
 
-
-nw_matrices_p initializeNWMtx() {
-    nw_matrices_p newMtx = malloc( sizeof(struct matrices) );
+/** Allocate nw_matrices struct. Assigns initial values where necessary. Calls
+ *  mat_setup_size to allocate all internal arrays.
+ *
+ *  Order of sequence lengths doesn't matter
+ */
+void initializeNWMtx(size_t len_seq1, size_t len_seq2, size_t len_seq3, int costMtxLcm, nw_matrices_p retMtx) {
 
     // in six following allocations all matrices are set to their shortest length because they get realloced in mat_setup_size
-    newMtx->len          = 0;  // a suitably small number to trigger realloc, but be larger than len_eff
-    newMtx->len_eff      = -1; // len_eff is -1 so that len_eff < len, triggering the realloc
-    newMtx->len_pre      = 0;  // again, trigger realloc
+    retMtx->cap_nw       = 0;  // a suitably small number to trigger realloc, but be larger than len_eff
+    retMtx->cap_eff      = -1; // len_eff is -1 so that len_eff < len, triggering the realloc
+    retMtx->cap_pre      = 0;  // again, trigger realloc
 
-    newMtx->nw_costMtx   = malloc ( sizeof( int ) );
-    newMtx->dir_mtx_2d   = malloc ( sizeof( DIRECTION_MATRIX ) );
-    newMtx->pointers_3d  = malloc ( sizeof( int* ) );     // TODO: Why don't I have to dealloc all pointers in array?
-    // newMtx->cube         = malloc ( sizeof( int* ) );  // don't have to allocate these two,
-    // newMtx->cube_d       = malloc ( sizeof( int* ) );  // because they're just pointing to nw_costMtx and dir_mtx_2d
-    newMtx->precalc      = malloc ( sizeof( int ) );
+    retMtx->nw_costMtx   = malloc ( sizeof( int ) );
+    retMtx->dir_mtx_2d   = malloc ( sizeof( DIR_MTX_ARROW_t ) );
+    retMtx->pointers_3d  = malloc ( sizeof( int* ) );     // TODO: Why don't I have to dealloc all pointers in array?
+    // retMtx->cube         = malloc ( sizeof( int* ) );  // don't have to allocate these two,
+    // retMtx->cube_d       = malloc ( sizeof( int* ) );  // because they're just pointing to nw_costMtx and dir_mtx_2d
+    retMtx->precalc      = malloc ( sizeof( int ) );
 
-    return newMtx;
+    mat_setup_size (retMtx, len_seq1, len_seq2, len_seq3, costMtxLcm);
 }
 
+/** Does allocation for a sequence struct. Also sets seq pointers within array to correct positions.
+ *
+ *  resSeq must be alloced before this call.
+ */
+void initializeSeq(seq_p retSeq, size_t allocSize) {
+    retSeq->cap        = allocSize;                              // capacity
+    retSeq->array_head = calloc(allocSize, sizeof(SEQT));
 
-seq_p initializeSeq(size_t allocSize, const int *vals, size_t length) {
-    seq_p retSeq = malloc( sizeof(struct seq) );
-
-    // assign sequence into sequence struct
-    SEQT *seq = calloc(allocSize, sizeof(SEQT));
-    if (length > 0) {
-        for(size_t i = allocSize - length; i < allocSize; i++) {
-            seq[i] = (int) vals[i - allocSize + length];
-        }
-    }
-
-    retSeq->magic_number = 0; // This was only used in OCaml code
-    retSeq->cap          = allocSize; // capacity
-    retSeq->len          = length == 0 ? 0 : length;
-    retSeq->head         = seq;
-    retSeq->begin        = retSeq->head + allocSize - retSeq->len; // because the assigned values are at the end of the array
-    retSeq->end          = retSeq->begin + retSeq->len;
-
-    return retSeq;
+    retSeq->end        = retSeq->array_head + allocSize;
+    retSeq->seq_begin  = retSeq->end;
+    retSeq->len        = 0;
 }
-
 
 
 /** Find distance between an ambiguous nucleotide and an unambiguous ambElem. Return that value and the median.
@@ -81,103 +74,167 @@ int distance (int const *tcm, int alphSize, int nucleotide, int ambElem) {
     return min;
 }
 
-// may return cost_matrices_2d or cost_matrices_3d, so void *
-// no longer setting max, as algorithm to do so is unclear: see note below
-void * setupCostMtx(int* tcm, int alphSize, int gap_open, int is_2d) {
+/** Take in a cost_matrices_2d, the struct for which has already allocated. Internal arrays are allocated
+ *  in call to cm_alloc_seet_costs_2d.
+ *
+ *  Nota bene:
+ *  No longer setting max, as algorithm to do so is unclear: see note below.
+ *  Not sure which of two loops to set prepend and tail arrays is correct.
+ */
+void setup2dCostMtx(int* tcm, size_t alphSize, int gap_open, cost_matrices_2d_p retMtx) {
+
     // first allocate retMatrix
     int combinations = 1;                     // false if matrix is sparse. In this case, it's DNA, so not sparse.
-    int do_aff       = gap_open == 0 ? 0 : 2; // The 2 is because affine's cost_model_type is 2, according to my reading of ML code.
+    int do_aff       = gap_open == 0 ? 0 : 3; // The 3 is because affine's cost_model_type is 3, according to my reading of ML code.
+                                              // (Actually, I changed that; it used to be 2, now it's 3.)
                                               // This value set in cm_set_affine().
     int is_metric    = 1;
-    int all_elements = (1 << alphSize) - 1;                    // Given data is DNA (plus gap), there are 2^5 - 1 possible character states
-    cost_matrices_2d_p retMtx;
+    int all_elements = (1 << alphSize) - 1;   // Given data is DNA (plus gap), there are 2^5 - 1 possible character states
 
-    int minCost2d = INT_MAX;
-    int minCost3d = INT_MAX;
-    SEQT median2d = 0, median3d = 0;          // cumulative median for 2d and 3d; combos of median1, etc., below
-    int curCost2d, curCost3d;
+    int minCost    = INT_MAX;
+    SEQT median    = 0;        // cumulative median for 2d; combo of median1, etc., below
+    int curCost;
 
-    int median1, median2, median3;            // median of a given nucleotide and current ambElem, for each ambElem
+    int median1, median2;            // median of a given nucleotide and current ambElem, for each ambElem
 
-    if (is_2d) {
-        retMtx = malloc( sizeof(struct cost_matrices_2d) );
-        cm_alloc_set_costs_2d( alphSize,
-                               combinations,
-                               do_aff,
-                               gap_open,
-                               is_metric,
-                               all_elements,
-                               retMtx
-                              );
-    } else {
-        retMtx = malloc( sizeof(struct cost_matrices_3d) );
-        cm_alloc_set_costs_3d( alphSize,
-                               combinations,
-                               do_aff,
-                               gap_open,
-                               all_elements,
-                               (cost_matrices_3d_p) retMtx
-                              );
+    cm_alloc_set_costs_2d( alphSize,
+                           combinations,
+                           do_aff,
+                           gap_open,
+                           is_metric,
+                           all_elements,
+                           retMtx
+                          );
+    // Print TCM in pretty format
+    if(DEBUG_MAT) {
+        printf("setup2dCostMtx\n");
+        const int n = retMtx->lcm;
+        for (size_t i = 0; i < n; ++i) {
+            for (size_t j = 0; j < n; ++j) {
+                printf("%2d ", tcm[ n * i + j ]);
+            }
+            printf("\n");
+        }
     }
+
+    for (SEQT ambElem1 = 1; ambElem1 <= all_elements; ambElem1++) { // for every possible value of ambElem1, ambElem2
+        for (SEQT ambElem2 = 1; ambElem2 <= all_elements; ambElem2++) {
+            //curCost = 0;                // don't actually need to do this
+            minCost = INT_MAX;
+            median  = 0;
+            median1 = median2  = 0;
+            int nucleotide;
+            for ( nucleotide = 1; nucleotide <= alphSize; nucleotide++) {
+                curCost = distance (tcm, alphSize, nucleotide, ambElem1)
+                        + distance (tcm, alphSize, nucleotide, ambElem2);
+                // now seemingly recreating logic in distance(), but that was to get the cost for each
+                // ambElem; now we're combining those costs get overall cost and median
+                if (curCost < minCost) {
+                    // printf("less:            %d, %d\n", curCost, minCost);
+                    // printf("less n, e, e:    %d %d %d\n", nucleotide, ambElem1, ambElem2);
+                    minCost = curCost;
+                    median  = 1 << (nucleotide - 1); // median1 | median2;
+                } else if (curCost == minCost) {
+                    // printf("equal:           %d, %d\n", curCost, minCost);
+                    // printf("equal n, e, e:   %d\n", nucleotide, ambElem1, ambElem2);
+                    median |= 1 << (nucleotide - 1); // median1 | median2;
+                } else {
+                    // printf("greater:         %d, %d\n", curCost, minCost);
+                    // printf("greater n, e, e: %d\n", nucleotide, ambElem1, ambElem2);
+                }
+            } // nucleotide
+            // printf("costs:          %d, %d\n", curCost, minCost);
+            // printf("elems: n, e, e: %d %d %d\n", nucleotide, ambElem1, ambElem2);
+            // printf("%d\n", minCost);
+            cm_set_cost_2d   (ambElem1, ambElem2, minCost, retMtx);
+            // printf("%d\n", cm_get_cost(ambElem1, ambElem2, retMtx));
+            cm_set_median_2d (ambElem1, ambElem2, median,  retMtx);
+        } // ambElem2
+    } // ambElem1
+    // Gap number is alphSize - 1, which makes bit representation
+    // i << (alphSize - 1), because first char value is i << 0.
+
+    /* TODO: which of following two loops is correct? */
+
+    int gap = 1 << (alphSize - 1);
+    for ( size_t i = 1; i <= all_elements; i++) {
+        cm_set_prepend_2d (i, cm_get_cost(gap, i, retMtx), retMtx);
+        cm_set_tail_2d    (cm_get_cost(i, gap, retMtx), i, retMtx);
+    }
+    /*
+    SEQT* seqStart = longSeq->seq_begin;
+    int gap        = 1 << (alphSize - 1);
+    int seqElem;
+    for ( size_t i = 0; i < longSeq->len; i++) {
+        seqElem = (int) *(seqStart + i);
+        cm_set_prepend_2d (i, cm_get_cost(gap, seqElem, retMtx), retMtx);
+        cm_set_tail_2d    (cm_get_cost(seqElem, gap, retMtx), i, retMtx);
+    } */
+//    return retMtx;
+    if(DEBUG_COST_M) {
+        printf("2d:\n");
+        cm_print_2d (retMtx);
+    }
+}
+
+
+/** Nearly identical to setup2dCostMtx. Code duplication necessary in order to have two different return types.
+ *  I attempted to do with with a return of void *, but was having trouble with allocation, and was forced to move
+ *  it outside this fn.
+ */
+void setup3dCostMtx(int* tcm, size_t alphSize, int gap_open, cost_matrices_3d_p retMtx) {
+    // first allocate retMatrix
+    int combinations = 1;                     // false if matrix is sparse. In this case, it's DNA, so not sparse.
+    int do_aff       = gap_open == 0 ? 0 : 3; // The 3 is because affine's cost_model_type is 3, according to my reading of ML code.
+                                              // (Actually, I changed that; it used to be 2, now it's 3.)
+                                              // This value set in cm_set_affine().
+    int is_metric    = 1;
+    int all_elements = (1 << alphSize) - 1;   // Given data is DNA (plus gap), there are 2^5 - 1 possible character states
+
+    int minCost    = INT_MAX;
+    SEQT median    = 0;        // and 3d; combos of median1, etc., below
+    int curCost;
+
+    cm_alloc_set_costs_3d( alphSize,
+                           combinations,
+                           do_aff,
+                           gap_open,
+                           all_elements,
+                           retMtx
+                          );
+
 
     for (SEQT ambElem1 = 1; ambElem1 <= all_elements; ambElem1++) { // for every possible value of ambElem1, ambElem2, ambElem3
         for (SEQT ambElem2 = 1; ambElem2 <= all_elements; ambElem2++) {
             for (SEQT ambElem3 = 1; ambElem3 <= all_elements; ambElem3++) {
-                curCost2d = curCost3d = 0;                // don't actually need to do this
-                minCost2d = INT_MAX;
-                minCost3d = INT_MAX;
-                median2d  = median3d = 0;
-                median1   = median2  = median3 = 0;
+                curCost = 0;                // don't actually need to do this
+                minCost = INT_MAX;
+                median  = 0;
                 for (int nucleotide = 1; nucleotide <= alphSize; nucleotide++) {
-                    curCost2d = distance (tcm, alphSize, nucleotide, ambElem1) +
-                                distance (tcm, alphSize, nucleotide, ambElem2);
-                    // now seemingly recreating logic in distance(), but that was to get the cost for each
-                    // ambElem; now we're combining those costs get overall cost and median
-                    if (curCost2d < minCost2d) {
-                        minCost2d = curCost2d;
-                        median2d  = 1 << (nucleotide - 1); // median1 | median2;
-                    } else if (curCost2d == minCost2d) {
-                        median2d |= 1 << (nucleotide - 1); // median1 | median2;
+                    curCost = distance (tcm, alphSize, nucleotide, ambElem1)
+                              + distance (tcm, alphSize, nucleotide, ambElem2)
+                              + distance (tcm, alphSize, nucleotide, ambElem3);
+                    if (curCost < minCost) {
+                        minCost = curCost;
+                        median  = 1 << (nucleotide - 1); // median1 | median2 | median3;
+                    } else if (curCost == minCost) {
+                        median |= 1 << (nucleotide - 1); // median1 | median2 | median3;
                     }
-                    if (!is_2d) {
-                        median1   = median2 = median3 = 0;
-                        curCost3d = distance (tcm, alphSize, nucleotide, ambElem1) +
-                                    distance (tcm, alphSize, nucleotide, ambElem2) +
-                                    distance (tcm, alphSize, nucleotide, ambElem3);
-                        if (curCost3d < minCost3d) {
-                            minCost3d = curCost3d;
-                            median3d  = 1 << (nucleotide - 1); // median1 | median2 | median3;
-                        } else if (curCost3d == minCost3d) {
-                            median3d |= 1 << (nucleotide - 1); // median1 | median2 | median3;
-                        }
-                    } // end 3d cost assignment
                 } // nucleotide
 
-                if (!is_2d) {
-                    cm_set_cost_3d   (ambElem1, ambElem2, ambElem3, minCost3d, (cost_matrices_3d_p) retMtx);
-                    cm_set_median_3d (ambElem1, ambElem2, ambElem3, median3d,  (cost_matrices_3d_p) retMtx);
-                    // cm_set_worst     (ambElem1, ambElem2, max_2d,    (cost_matrices_2d_p) retMtx);    // no worst in 3d
-                }
+                cm_set_cost_3d   (ambElem1, ambElem2, ambElem3, minCost, retMtx);
+                cm_set_median_3d (ambElem1, ambElem2, ambElem3, median,  retMtx);
+                // cm_set_worst     (ambElem1, ambElem2, max_2d,    (cost_matrices_2d_p) retMtx);    // no worst in 3d
             } // ambElem3
-            cm_set_cost_2d   (ambElem1, ambElem2, minCost2d, (cost_matrices_2d_p) retMtx);
-            cm_set_median_2d (ambElem1, ambElem2, median2d,  (cost_matrices_2d_p) retMtx);
         } // ambElem2
     } // ambElem1
-    if (is_2d) {
-        SEQT* seqStart = longSeq->begin;
-        int gap        = all_elements;
-        int seqElem;
-        for ( size_t i = 1; i <= all_elements; i++) {
-            // Gap number is alphSize - 1, which makes bit representation
-            // i << (alphSize - 1), because first char value is i << 0.
-            seqElem = (int) *(seqStart + i);
-            cm_set_prepend_2d (i, cm_get_cost(gap, seqElem, retMtx), retMtx);
-            cm_set_tail_2d    (cm_get_cost(seqElem, gap, retMtx), i, retMtx);
-        }
+   // return retMtx;
+    if(DEBUG_COST_M) {
+        printf("3d:\n");
+        cm_print_3d (retMtx);
     }
-    return retMtx;
-}
 
+}
 /*** Folowing functions free alloc'ed all space allocated in above fns. ***/
 
 void freeCostMtx(void * input, int is_2d) {
@@ -212,13 +269,13 @@ void freeNWMtx(nw_matrices_p input) {
 }
 
 void freeSeq(seq_p toFree) {
-    free(toFree->head);
+    free(toFree->array_head);
     free(toFree);
 }
 
 void resetSeqValues(seq_p retSeq) {
     //retSeq->end   = retSeq->begin + retSeq->len;
-    retSeq->begin = retSeq->end;
+    retSeq->seq_begin = retSeq->end;
     retSeq->len   = 0;
 }
 

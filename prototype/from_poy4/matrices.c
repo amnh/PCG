@@ -20,12 +20,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "debug.h"
+#include "debug_just_c.h"
 #include "matrices.h"
 // #include "cm.h"
 
 
-/* 
+/*
  * For memory management efficiency, I will keep all the matrices in one big
  * chunk of memory, that I can reallocate as a whole, and reduce fragmentation
  * a lot if possible, all the alignment calculations and all the matrices that
@@ -58,9 +58,9 @@ void print_matrices(nw_matrices_p m, int alphSize) {
         for( size_t j = 0; j < alphSize; j++) {
             printf("%4d", m->precalc[i + j]);
         }
-        printf("\n"); 
+        printf("\n");
     }
-    
+
 }
 
 // TODO: wtf is with the 12 here?
@@ -74,14 +74,14 @@ void
 mat_clean_direction_matrix (nw_matrices_p m) {
     int len = m->len;
     int i;
-    for (i = 0; i < len; i++) 
+    for (i = 0; i < len; i++)
         m->dir_mtx_2d[i] = (DIRECTION_MATRIX) 0;
     return;
 }
 
 /** Allocate or reallocate space for the six matrices, for both 2d and 3d alignments.
  *  @param lcm is length of original alphabet including gap.
- *  Checks current allocation size and increases size if 
+ *  Checks current allocation size and increases size if
  */
 inline void
 mat_setup_size (nw_matrices_p m, int len_seq1, int len_seq2, int len_seq3, int is_ukk, int lcm) {
@@ -114,7 +114,7 @@ mat_setup_size (nw_matrices_p m, int len_seq1, int len_seq2, int len_seq3, int i
         if (DEBUG_MAT) {
             printf("len nw cost mtx too small. New allocation: %d\n", len_dir);
         }
-        m->cube_d = m->dir_mtx_2d = 
+        m->cube_d = m->dir_mtx_2d =
             realloc (m->dir_mtx_2d, len_dir * sizeof(DIRECTION_MATRIX) );
         if (0 != len_2d) {
             if (DEBUG_MAT) {

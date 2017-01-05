@@ -2,18 +2,18 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "algn.h"
-#include "debug.h"
+#include "seqAlign.h"
+#include "debug_constants.h"
 #include "costMatrix.h"
-#include "matrices.h"
+#include "nwMatrices.h"
 #include "ukkCheckp.h"
 #include "ukkCommon.h"
 
-#define SEQ_CAPACITY 64            // TODO: increase this size, or replace it altogether
 
-nw_matrices_p initializeNWMtx();
 
-seq_p initializeSeq(size_t allocSize, const int *vals, size_t length);
+void initializeNWMtx(size_t cap_seq1, size_t cap_seq2, size_t cap_seq3, int costMtxLcm, nw_matrices_p retMtx);
+
+void initializeSeq(seq_p retSeq, size_t allocSize);
 
 void resetSeqValues(seq_p retSeq);
 
@@ -32,7 +32,9 @@ int distance (int const *tcm, int alphSize, int nucleotide, int ambElem);
 
 // may return cost_matrices_2d or cost_matrices_3d, so void *
 // no longer setting max, as algorithm to do so is unclear: see note in .c file
-void * setupCostMtx(int* tcm, int alphSize, int gap_open, int is_2d, seq_p longSeq);
+void setup2dCostMtx(int* tcm, size_t alphSize, int gap_open, cost_matrices_2d_p retMtx);
+
+void setup3dCostMtx(int* tcm, size_t alphSize, int gap_open, cost_matrices_3d_p retMtx);
 
 void freeCostMtx(void * input, int is_2d);
 

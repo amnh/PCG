@@ -20,7 +20,6 @@
 #ifndef SEQ_H
 
 #define SEQ_H 1
-// #include "array_pool.h" ARRAY_POOL_DELETE
 
 // TODO: Here's another wtf:
 #define POY_SEQ_MAGIC_NUMBER 9873123
@@ -32,7 +31,7 @@
                                     to_asgn->array_head  = (SEQT *) ((seq_p) (to_asgn + 1)); \
                                     to_asgn->end         = to_asgn->array_head + to_asgn->cap - 1; \
                                     to_asgn->seq_begin   = to_asgn->end - to_asgn->len + 1; \
-    assert (to_asgn->magic_number == POY_SEQ_MAGIC_NUMBER)  // TODO: figure out wtf this is.
+//    assert (to_asgn->magic_number == POY_SEQ_MAGIC_NUMBER)  // TODO: figure out wtf this is.
 
 
 #ifdef USE_LARGE_ALPHABETS
@@ -48,9 +47,9 @@
 /* Sequence structure to be used inside ocaml custom types. */
 /********************* SEQUENCE AS IT COMES IN MUST BE IN LAST X SPACES IN ARRAY! *********************/
 struct seq {
-    int magic_number;
-    int cap;            /* Capacity of the sequence memory structure. */
-    int len;            /* Total length of the sequence stored. */
+//    int magic_number;
+    size_t cap;         /* Capacity of the sequence memory structure. */
+    size_t len;         /* Total length of the sequence stored. */
     SEQT *array_head;   /* beginning of the allocated array */
     SEQT *seq_begin;    /* Position where the first element of
                            the sequence is actually stored.

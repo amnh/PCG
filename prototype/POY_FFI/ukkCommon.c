@@ -337,6 +337,7 @@ int powell_3D_align (seq_p seqA,    seq_p seqB,    seq_p seqC,
         printf("powell_3D_align\n");
     }
 
+    // Nota bene: following are assigning to global vars.
     gapOpenCost      = gapOpen;
     gapExtendCost    = gapExtend;
     deleteOpenCost   = gapOpenCost;

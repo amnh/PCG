@@ -32,7 +32,7 @@
  * are precomputed to speedup the alignments are held here.
  */
 inline int
-mat_size_of_3d_matrix (int w, int d, int h, int k) {
+mat_size_of_3d_matrix (int w, int d, int h) { // originally had a fourth parameter, k for ukkunonen
     /* Not sure what this was for, as it was commented out, but kept for posterity's sake
        int basic_cube;
        int prism_1, prism_2, pyramid;
@@ -75,7 +75,7 @@ mat_clean_direction_matrix (nw_matrices_p m) {
     int cap = m->cap_nw;
     int i;
     for (i = 0; i < cap; i++)
-        m->dir_mtx_2d[i] = (DIRECTION_MATRIX) 0;
+        m->dir_mtx_2d[i] = (DIR_MTX_ARROW_t) 0;
     return;
 }
 
@@ -84,21 +84,21 @@ mat_clean_direction_matrix (nw_matrices_p m) {
  *  Checks current allocation size and increases size if
  */
 inline void
-mat_setup_size (nw_matrices_p m, int cap_seq1, int cap_seq2, int cap_seq3, int is_ukk, int lcm) {
+mat_setup_size (nw_matrices_p m, int len_seq1, int len_seq2, int len_seq3, int lcm) {
     if(DEBUG_MAT) {
         printf("\n---mat_setup_size\n");
     }
     int cap, cap_2d, cap_precalc, cap_dir;
-    if (cap_seq3 == 0) {           /* If the size setup is only for 2d */
-        cap         = mat_size_of_2d_matrix (cap_seq1, cap_seq2);
-        cap_precalc = (1 << lcm) * cap_seq1;
-        cap_dir     = (cap_seq1 + 1) * (cap_seq2 + 1);
+    if (len_seq3 == 0) {           /* If the size setup is only for 2d */
+        cap         = mat_size_of_2d_matrix (len_seq1, len_seq2);
+        cap_precalc = (1 << lcm) * len_seq1;
+        cap_dir     = (len_seq1 + 1) * (len_seq2 + 1);
         cap_2d      = 0;
     } else {                       /* If the size setup is for 3d */
-        cap         = mat_size_of_3d_matrix (cap_seq1, cap_seq2, cap_seq3, is_ukk);
-        cap_precalc = (1 << lcm) * (1 << lcm) * cap_seq2;  // TODO: why sequence 2?
-        cap_2d      = cap_seq1 * cap_seq2;
-        cap_dir     = cap_2d * cap_seq3;
+        cap         = mat_size_of_3d_matrix (len_seq1, len_seq2, len_seq3);
+        cap_precalc = (1 << lcm) * (1 << lcm) * len_seq2;  // TODO: why sequence 2?
+        cap_2d      = len_seq1 * len_seq2;
+        cap_dir     = cap_2d * len_seq3;
     }
     if (DEBUG_MAT) {
         printf("cap_eff: %d, \ncap: %d\n", m->cap_eff, cap);
@@ -115,7 +115,7 @@ mat_setup_size (nw_matrices_p m, int cap_seq1, int cap_seq2, int cap_seq3, int i
             printf("cap nw cost mtx too small. New allocation: %d\n", cap_dir);
         }
         m->nw_costMtx3d_d = m->dir_mtx_2d =
-            realloc (m->dir_mtx_2d, cap_dir * sizeof(DIRECTION_MATRIX) );
+            realloc (m->dir_mtx_2d, cap_dir * sizeof(DIR_MTX_ARROW_t) );
         if (0 != cap_2d) {
             if (DEBUG_MAT) {
                 printf("\n3d alignment. cap_2d: %d\n", cap_2d);
@@ -175,7 +175,7 @@ mat_get_2d_nwMtx (nw_matrices_p m) {
     return (m->nw_costMtx);
 }
 
-DIRECTION_MATRIX *
+DIR_MTX_ARROW_t  *
 mat_get_2d_direct (const nw_matrices_p m) {
     return (m->dir_mtx_2d);
 }
@@ -191,7 +191,7 @@ mat_get_3d_matrix (nw_matrices_p m) {
     return (m->nw_costMtx3d);
 }
 
-DIRECTION_MATRIX *
+DIR_MTX_ARROW_t  *
 mat_get_3d_direct (nw_matrices_p m) {
     return (m->nw_costMtx3d_d);
 }

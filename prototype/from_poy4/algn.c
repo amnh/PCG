@@ -63,7 +63,7 @@
 
 
 #include "algn.h"
-#include "debug.h"
+#include "debug_just_c.h"
 // #include "cm.h"
 // #include "matrices.h"
 // #include "seq.h"
@@ -3291,6 +3291,7 @@ algn_nw_limit_2d (const seq_p seq1, const seq_p seq2, const cost_matrices_2d_p c
     dirMtx = mat_get_2d_direct (nw_mtxs);
     seq1_len = seq_get_len (seq1);
     seq2_len = seq_get_len (seq2);
+    printf("%d, %d, %d, %d\n", seq1_len, len_seq1, seq2_len, len_seq2);
 
     int *cost;           // The transformation cost matrix.
     SEQT *median;        /** The matrix of possible medians between elements in the

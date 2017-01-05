@@ -17,14 +17,14 @@ align : debug_just_c.c algn.c algn.h avl.c avl.h cm.c cm.h \
 # In this case, first call hsc2hs to build .hs file from .hsc file.
 # .hsc file is weird mix of Haskell and C.
 complex_ffi : myComplexTestC.c myComplexTestC.h myComplexFFI.hsc
-	rm -f myComplex.hs
+	rm -f myComplexFFI.hs
 	hsc2hs myComplexFFI.hsc
 	clang -c myComplexTestC.c
 	ghc -O --make myComplexFFI.hs myComplexTestC.o
 
-debug_just_c : debug_just_c.c algn.c algn.h avl.c avl.h cm.c cm.h \
+debug_just_c : debug_just_c.c algn.c algn.h cm.c cm.h \
 			matrices.c matrices.h seq.c seq.h ukkCheckp.c ukkCheckp.h \
 			ukkCommon.c ukkCommon.h zarr.c zarr.h
 	rm -f *.o
-	gcc -g -c algn.c avl.c cm.c matrices.c seq.c ukkCheckp.c ukkCommon.c zarr.c
-	gcc -o debug_just_c -g debug_just_c.c algn.o avl.c cm.o matrices.o seq.o ukkCheckp.c ukkCommon.o zarr.o
+	gcc -g -c algn.c cm.c matrices.c seq.c ukkCheckp.c ukkCommon.c zarr.c
+	gcc -o debug_just_c -g debug_just_c.c algn.o cm.o matrices.o seq.o ukkCheckp.c ukkCommon.o zarr.o

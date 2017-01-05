@@ -25,7 +25,7 @@
 void seq_print(seq_p inSeq, int num) {
     SEQT * start = seq_get_seq_begin(inSeq);
     SEQT * end   = seq_get_end(inSeq);
-    printf("Seq num: %2d of length %3d\n", num, inSeq->len);
+    printf("Seq num: %2d of length %3zu\n", num, inSeq->len);
     for( ; start < end; start++) {
         printf("%2d, ", *start);
     }
@@ -110,7 +110,7 @@ seq_reverse_ip (seq_p cs) {
 void
 seq_prepend (seq_p a, SEQT v) {
     if ( a->cap <= a->len ) {
-      printf("Failing values: capacity: %d, length: %d\n", a->cap, a->len);
+      printf("Failing values: capacity: %zu, length: %zu\n", a->cap, a->len);
       assert(a->cap > a->len);
     }
     a->seq_begin    -= 1;
