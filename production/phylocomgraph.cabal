@@ -46,6 +46,7 @@ library
                      , dlist
                      , either
                      , hashable
+                     , hashtables
                      , keys
                      , lens
                      , matrix
@@ -166,6 +167,7 @@ library
                        Data.Alphabet.IUPAC
                        Data.BitMatrix
                        Data.DuplicateSet
+                       Data.Hashable.Memoize
                        Data.ReplicatedSequence
                        Data.TCM
                        File.Format.Fasta
