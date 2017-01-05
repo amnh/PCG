@@ -16,9 +16,9 @@ import System.IO.Unsafe
 -- Takes a function with a hashable and equatable first argument and returns a
 -- memoized function with constant time access for already computed values.
 --
--- *NOTE:* This does /not/ memoized recursive calls to the supplied function.
+-- __Note:__ This does /not/ memoize recursively defined functions.
 --
--- To memoize recursively defined function, you must redefine the function's
+-- To memoize a recursively defined function, you must redefine the function's
 -- recursive calls to internally call a memoized definion in a mutually recursive
 -- manner.
 --
@@ -56,7 +56,7 @@ memoize f = unsafePerformIO $ do
             let !v = f k
             in insert ht k v $> v
 
-
+{-
 -- These are included for haddock generation
 fib 0 = 0
 fib 1 = 1
@@ -69,3 +69,4 @@ fibM = f
     f 1 = 1
     f x = g (x-1) + g (x-2)
     g = memoize f
+-}
