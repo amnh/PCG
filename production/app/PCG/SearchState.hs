@@ -32,13 +32,16 @@ import           Data.Monoid
 
 -- import Debug.Trace
 
-type SearchState = EvaluationT IO (Either TopologicalResult CharacterResult)
+type SearchState = EvaluationT IO (Either TopologicalResult DecoratedCharacterResult)
 
 
 type TopologicalResult = PhylogeneticSolution (ReferenceDAG (Maybe Double) (Maybe String))
 
 
 type CharacterResult   = PhylogeneticSolution CharacterDAG
+
+
+type DecoratedCharacterResult = PhylogeneticSolution InitialDecorationDAG
 
 
 type CharacterDAG      = PhylogeneticDAG
@@ -56,7 +59,7 @@ type InitialDecorationDAG = PhylogeneticDAG
                              (Maybe String)
                              (SankoffOptimizationDecoration  StaticCharacter)
                              (SankoffOptimizationDecoration  StaticCharacter)
-                             (ContinuousOptimizationDecoration ContinuousChar)
+                             UnifiedContinuousCharacter --(ContinuousOptimizationDecoration ContinuousChar)
                              (FitchOptimizationDecoration    StaticCharacter)
                              (AdditiveOptimizationDecoration StaticCharacter)
                              UnifiedDynamicCharacter

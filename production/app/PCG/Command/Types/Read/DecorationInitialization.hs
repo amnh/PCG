@@ -1,6 +1,6 @@
 -----------------------------------------------------------------------------
 -- |
--- Module      :  PCG.Command.Types.Read.Unification.Master
+-- Module      :  PCG.Command.Types.Read.DecorationInitialization
 -- Copyright   :  () 2015-2015 Ward Wheeler
 -- License     :  BSD-style
 --
@@ -12,19 +12,31 @@
 --
 -----------------------------------------------------------------------------
 
-module PCG.Command.Types.Read.Unification.Master where
+module PCG.Command.Types.Read.DecorationInitialization where
 
+import           Analysis.Parsimony.Additive.Internal
+import           Analysis.Parsimony.Fitch.Internal
+import           Analysis.Parsimony.Sankoff.Internal
 import           Bio.Character
+
+import           Bio.Character.Decoration.Additive
+import           Bio.Character.Decoration.Continuous
+--import           Bio.Character.Decoration.Discrete
+--import           Bio.Character.Decoration.Dynamic
+import           Bio.Character.Decoration.Fitch
+import           Bio.Character.Decoration.Metric
+import           Bio.Character.Decoration.NonMetric 
+
 import           Bio.Character.Encodable
 --import           Bio.Character.Decoration.Continuous hiding (characterName)
-import           Bio.Character.Decoration.Discrete hiding (characterName)
-import           Bio.Character.Decoration.Dynamic  hiding (characterName)
+import           Bio.Character.Decoration.Discrete   hiding (characterName)
+import           Bio.Character.Decoration.Dynamic    hiding (characterName)
 import           Bio.Character.Parsed
-import           Bio.Sequence                      hiding (hexmap)
-import           Bio.Sequence.Block
-import           Bio.Metadata.CharacterName        hiding (sourceFile)
+import           Bio.Sequence
+--import           Bio.Sequence.Block
+import           Bio.Metadata.CharacterName hiding (sourceFile)
 import           Bio.Metadata.Parsed
-import           Bio.PhyloGraph.Solution           hiding (parsedChars)
+import           Bio.PhyloGraph.Solution    hiding (parsedChars)
 import           Bio.PhyloGraph.DAG
 import           Bio.PhyloGraph.Forest.Parsed
 import           Bio.PhyloGraphPrime
@@ -58,6 +70,55 @@ import           PCG.SearchState
 import           Prelude                    hiding (lookup, zip, zipWith)
 
 
+initializeDecorations :: CharacterResult -> PhylogeneticSolution InitialDecorationDAG
+initializeDecorations (PhylogeneticSolution forests) = PhylogeneticSolution $ fmap performDecoration <$> forests
+  where
+    performDecoration :: CharacterDAG -> InitialDecorationDAG
+    performDecoration (PDAG dag) = PDAG $ nodePostOrder g dag
+      where
+        g parentalNode childNodes =
+          PNode
+          { nodeDecorationDatum = (nodeDecorationDatum parentalNode) 
+          , sequenceDecoration  = f (sequenceDecoration parentalNode) (sequenceDecoration <$> childNodes)
+          } 
+
+    f :: CharacterSequence
+           UnifiedDiscreteCharacter
+           UnifiedDiscreteCharacter
+           UnifiedContinuousCharacter
+           UnifiedDiscreteCharacter
+           UnifiedDiscreteCharacter
+           UnifiedDynamicCharacter
+      -> [ CharacterSequence
+             (SankoffOptimizationDecoration  StaticCharacter)
+             (SankoffOptimizationDecoration  StaticCharacter)
+             UnifiedContinuousCharacter --(ContinuousOptimizationDecoration ContinuousChar)
+             (FitchOptimizationDecoration    StaticCharacter)
+             (AdditiveOptimizationDecoration StaticCharacter)
+             UnifiedDynamicCharacter 
+         ]
+      -> CharacterSequence
+           (SankoffOptimizationDecoration  StaticCharacter)
+           (SankoffOptimizationDecoration  StaticCharacter)
+           UnifiedContinuousCharacter --(ContinuousOptimizationDecoration ContinuousChar)
+           (FitchOptimizationDecoration    StaticCharacter)
+           (AdditiveOptimizationDecoration StaticCharacter)
+           UnifiedDynamicCharacter 
+    f currentCharSeq childCharSeqs = hexliftA2 (g sankoffPostOrder) (g sankoffPostOrder) id2 (g fitchPostOrder) (g additivePostOrder) id2 currentCharSeq childCharSeqs'
+      where
+        childCharSeqs' =
+            case childCharSeqs of
+              x:xs -> hexsequence $ x:|xs
+              []   -> let c = const []
+                      in hexmap c c c c c c currentCharSeq
+        g h  Nothing  [] = error $ "This is bad!"
+        g h (Just  v) [] = h v []
+        g h        _  xs = h undefined xs
+        id2 x _ = x
+            
+
+
+{-
 data FracturedParseResult
    = FPR
    { parsedChars   :: TreeChars
@@ -367,3 +428,5 @@ gatherForestsTerminalNames fpr = (identifiers, fpr)
           case foldMap terminalNames2 forest of
              []   -> Nothing
              x:xs -> Just $ x :| xs
+
+-}
