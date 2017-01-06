@@ -22,13 +22,16 @@ import System.IO.Unsafe
 -- recursive calls to internally call a memoized definition in a mutually recursive
 -- manner.
 --
--- === Example:
+-- === Example: Does /not/ memoize the recursive definitions
 --
 -- > fib 0 = 0
 -- > fib 1 = 1
 -- > fib x = fib (x-1) + fib (x-2)
 --
--- >>> let memo = memoize fib in memo 10000 -- does not memoize the recursive definitions
+-- >>> let memo = memoize fib in memo 10000
+--
+--
+-- === Example: Does memoize the recursive definitions
 --
 -- > fibM = f
 -- >   where
@@ -37,7 +40,7 @@ import System.IO.Unsafe
 -- >     f x = g (x-1) + g (x-2)
 -- >     g = memoize f
 --
--- >>> fibM 10000 -- will memoize the recursive definitions
+-- >>> fibM 10000
 --
 {-# NOINLINE memoize #-}
 memoize :: (Eq a, Hashable a) => (a -> b) -> a -> b

@@ -90,6 +90,12 @@ instance EncodedAmbiguityGroupContainer DynamicCharacterElement where
     symbolCount = width . unwrap
 
 
+instance FiniteBits DynamicCharacterElement where
+
+    {-# INLINE finiteBitSize #-}
+    finiteBitSize = symbolCount
+
+
 instance PossiblyMissingCharacter DynamicChar where
 
     {-# INLINE toMissing  #-}

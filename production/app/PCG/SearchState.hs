@@ -15,9 +15,13 @@
 module PCG.SearchState where
 
 import           Bio.Character
+import           Bio.Character.Decoration.Additive
 import           Bio.Character.Decoration.Continuous
 import           Bio.Character.Decoration.Discrete
 import           Bio.Character.Decoration.Dynamic
+import           Bio.Character.Decoration.Fitch
+import           Bio.Character.Decoration.Metric
+import           Bio.Character.Decoration.NonMetric
 import           Bio.Sequence
 import           Bio.Sequence.Block
 import           Bio.PhyloGraphPrime
@@ -28,13 +32,16 @@ import           Data.Monoid
 
 -- import Debug.Trace
 
-type SearchState = EvaluationT IO (Either TopologicalResult CharacterResult)
+type SearchState = EvaluationT IO (Either TopologicalResult DecoratedCharacterResult)
 
 
 type TopologicalResult = PhylogeneticSolution (ReferenceDAG (Maybe Double) (Maybe String))
 
 
 type CharacterResult   = PhylogeneticSolution CharacterDAG
+
+
+type DecoratedCharacterResult = PhylogeneticSolution InitialDecorationDAG
 
 
 type CharacterDAG      = PhylogeneticDAG
@@ -45,6 +52,16 @@ type CharacterDAG      = PhylogeneticDAG
                              UnifiedContinuousCharacter
                              UnifiedDiscreteCharacter
                              UnifiedDiscreteCharacter
+                             UnifiedDynamicCharacter
+
+type InitialDecorationDAG = PhylogeneticDAG
+                             (Maybe Double)
+                             (Maybe String)
+                             (SankoffOptimizationDecoration  StaticCharacter)
+                             (SankoffOptimizationDecoration  StaticCharacter)
+                             UnifiedContinuousCharacter --(ContinuousOptimizationDecoration ContinuousChar)
+                             (FitchOptimizationDecoration    StaticCharacter)
+                             (AdditiveOptimizationDecoration StaticCharacter)
                              UnifiedDynamicCharacter
 
 
