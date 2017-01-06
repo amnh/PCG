@@ -18,15 +18,22 @@
 
 {-# LANGUAGE ForeignFunctionInterface, BangPatterns #-}
 
-import Foreign
-import Foreign.Ptr
-import Foreign.C.String
-import Foreign.C.Types
-import Foreign.Marshall.Array
-import System.IO.Unsafe
+module Analysis.Parsimony.Dynamic.DirectOptimization.FFI where
 
-#include "seqAlign.h"
+import Foreign
+--import Foreign.Ptr
+--import Foreign.C.String
+import Foreign.C.Types
+--import Foreign.Marshal.Array
+--import Foreign.StablePtr
+import Prelude hiding (lcm, sequence, tail)
+--import System.IO.Unsafe
+
+#include "costMatrix.h"
+#include "c_code_alloc_setup.h"
+#include "c_alignment_interface.h"
 #include "nwMatrices.h"
+#include "seqAlign.h"
 
 type CArrayUnit  = CULong -- This will be compatible with uint64_t
 type CDirMtxUnit = CShort -- C short type
@@ -35,38 +42,42 @@ type CDirMtxUnit = CShort -- C short type
 
 data Alignment2d = Alignment2d { alignedSequence1 :: AlignIO
                                , alignedSequence2 :: AlignIO
-                               , alignment        :: AlignIO
+                               , medianSequence   :: AlignIO
                                , cost             :: CInt
                                }
 
-data Alignment3d = Alignment3d { alignedSequence1 :: AlignIO
-                               , alignedSequence2 :: AlignIO
+{-
+data Alignment3d = Alignment3d { sequence3d1      :: AlignIO
+                               , sequence3d2      :: AlignIO
                                , alignedSequence3 :: AlignIO
-                               , alignment        :: AlignIO
-                               , cost             :: CInt
+                               , alignment3d      :: AlignIO
+                               , cost3d           :: CInt
                                }
-
+-}
 
 data AlignIO = AlignIO { -- magic_number :: CInt     -- TODO: No idea what this is for; figure it out?
-                         sequence :: Ptr CInt     -- Capacity of the sequence memory structure.
-                       , seqLen   :: CSize        -- Total length of the sequence stored.
+                         sequence :: StablePtr CInt     --
+                       , seqLen   :: CSize        -- Total length of the sequence stored
+                       , arrCap   :: CSize        -- Total capacity of allocated array
                        }
 
 -- Because we're using a struct we need to make a Storable instance
 instance Storable AlignIO where
     sizeOf    _  = (#size struct alignIO) -- #size is a built-in that works with arrays, as are #peek and #poke, below
-    alignment _  = alignment (undefined :: CChar)
+    alignment _   = alignment (undefined :: CSize)
     peek ptr     = do                 -- to get values from the C app
-        len             <- (#peek struct alignIO, len)      ptr
-        arr :: Ptr CInt <- (#peek struct alignIO, sequence) ptr
-        seq             <- (#peekArray len arr)             ptr
+        len  <- (#peek struct alignIO, length)   ptr
+        arr  <- (#peek struct alignIO, sequence) ptr
+        cap  <- (#peek struct alignIO, capacity) ptr
 
         return  AlignIO { seqLen   = len
-                        , sequence = seq
+                        , sequence = arr
+                        , arrCap   = cap
                         }
-    poke ptr (AlignIO len seq ) = do -- to modify values in the C app
-        (#pokeArray len (struct alignIO, sequence)) ptr seq
-        (#poke struct alignIO, seqLen)              ptr len
+    poke ptr (AlignIO len arr cap) = do -- to modify values in the C app
+        (#poke struct alignIO, sequence) ptr len
+        (#poke struct alignIO, length)   ptr arr
+        (#poke struct alignIO, capacity) ptr cap
 
 
 {- ******************************************* CostMatrix declarations and Storable instances ******************************************* -}
@@ -92,27 +103,27 @@ data CostMatrix2d = CostMatrix2d { alphSize      :: CInt      -- alphabet size i
                                  , gapOpenCost   :: CInt      {- The cost of opening a gap. This is only useful in
                                                                - certain cost_model_types (type 2: affine, based on my reading of ML code).
                                                                -}
-                                 , isMetric      :: CInt      {- if tcm is symmetric
+                                 , isMetric      :: CInt      {- if tcm is metric
                                                                - Not present in 3d. -}
                                  , allElems      :: CInt      -- total number of elements TODO: figure out how this is different from alphSize
                                  , bestCost      :: Ptr CInt  {- The transformation cost matrix, including ambiguities,
                                                                - storing the **best** cost for each ambiguity pair
                                                                -}
-                                 , medians       :: Ptr CUInt {- The matrix of possible medians between elements in the
+                                 , medians       :: StablePtr CUInt {- The matrix of possible medians between elements in the
                                                                - alphabet. The best possible medians according to the cost
                                                                - matrix.
                                                                -}
-                                 , worstCost     :: Ptr CInt  {- The transformation cost matrix, including ambiguities,
+                                 , worstCost     :: StablePtr CInt  {- The transformation cost matrix, including ambiguities,
                                                                - storing the **worst** cost for each ambiguity pair
                                                                - Missing in 3d
                                                                -}
-                                 , prependCost   :: Ptr CInt  {- The cost of going from gap -> each base. For ambiguities, use best cost.
+                                 , prependCost   :: StablePtr CInt  {- The cost of going from gap -> each base. For ambiguities, use best cost.
                                                                - Set up as all_elements x all_elements
                                                                - matrix, but seemingly only first row is used.
                                                                - Missing in 3d because current version of 3d sets gap cost
                                                                - as constant.
                                                                -}
-                                 , tailCost      :: Ptr CInt  {- As prepend_cost, but with reverse directionality,
+                                 , tailCost      :: StablePtr CInt  {- As prepend_cost, but with reverse directionality,
                                                                - so base -> gap.
                                                                - As with prepend_cost, seems to be allocated as too large.
                                                                - Missing in 3d because current version of 3d sets gap cost
@@ -123,57 +134,72 @@ data CostMatrix2d = CostMatrix2d { alphSize      :: CInt      -- alphabet size i
 
 
 -- Because we're using a struct we need to make a Storable instance
-instance Storable CostMatrix3d where
+instance Storable CostMatrix2d where
     sizeOf    _   = (#size struct seq) -- #size is a built-in that works with arrays, as are #peek and #poke, below
-    alignment _   = alignment (undefined :: CChar)
+    alignment _   = alignment (undefined :: StablePtr CUInt)
     peek ptr      = do -- to get values from the C app
-        aSize     <- (#peek struct costMatrix, alphSize)        ptr
-        lcm'      <- (#peek struct costMatrix, lcm)             ptr
-        gapchar   <- (#peek struct costMatrix, gap_char)        ptr
-        costModel <- (#peek struct costMatrix, cost_model_type) ptr
-        combos    <- (#peek struct costMatrix, combinations)    ptr
-        gapOpen   <- (#peek struct costMatrix, gap_open)        ptr
-        metric    <- (#peek struct costMatrix, is_metric)       ptr
-        elems     <- (#peek struct costMatrix, all_elements)    ptr
-        best      <- (#peek struct costMatrix, cost)            ptr
-        meds      <- (#peek struct costMatrix, median)          ptr
-        worst     <- (#peek struct costMatrix, worst)           ptr
-        prepend   <- (#peek struct costMatrix, prepend_cost)    ptr
-        tail      <- (#peek struct costMatrix, tail_cost)       ptr
-        return  CostMatrix { alphSize      = aSize
-                           , lcm           = lcm'
-                           , gapChar       = gapchar
-                           , costModelType = costmodel
-                           , combinations  = combos
-                           , gapOpenCost   = gapOpen
-                           , allElems      = elems
-                           , bestCost      = best
-                           , medians       = meds
-                           , worstCost     = worst
-                           , prependCost   = prepend
-                           , tailCost      = tail
+        aSizeVal     <- (#peek struct cost_matrices_2d, alphSize)        ptr
+        lcmVal'      <- (#peek struct cost_matrices_2d, lcm)             ptr
+        gapcharVal   <- (#peek struct cost_matrices_2d, gap_char)        ptr
+        costModelVal <- (#peek struct cost_matrices_2d, cost_model_type) ptr
+        combosVal    <- (#peek struct cost_matrices_2d, combinations)    ptr
+        gapOpenVal   <- (#peek struct cost_matrices_2d, gap_open)        ptr
+        metricVal    <- (#peek struct cost_matrices_2d, is_metric)       ptr
+        elemsVal     <- (#peek struct cost_matrices_2d, all_elements)    ptr
+        bestVal      <- (#peek struct cost_matrices_2d, cost)            ptr
+        medsVal      <- (#peek struct cost_matrices_2d, median)          ptr
+        worstVal     <- (#peek struct cost_matrices_2d, worst)           ptr
+        prependVal   <- (#peek struct cost_matrices_2d, prepend_cost)    ptr
+        tailVal <- (#peek struct cost_matrices_2d, tail_cost)       ptr
+        return  CostMatrix2d { alphSize      = aSizeVal
+                             , lcm           = lcmVal'
+                             , gapChar       = gapcharVal
+                             , costModelType = costModelVal
+                             , combinations  = combosVal
+                             , gapOpenCost   = gapOpenVal
+                             , isMetric      = metricVal
+                             , allElems      = elemsVal
+                             , bestCost      = bestVal
+                             , medians       = medsVal
+                             , worstCost     = worstVal
+                             , prependCost   = prependVal
+                             , tailCost      = tailVal
                        }
 
-    poke ptr (CostMatrix3d val seqFinal) = do -- to modify values in the C app
-        (#peek struct costMatrix, alphSize)        ptr alphSize
-        (#peek struct costMatrix, lcm)             ptr lcm
-        (#peek struct costMatrix, gap_char)        ptr gapChar
-        (#peek struct costMatrix, cost_model_type) ptr costModelType
-        (#peek struct costMatrix, combinations)    ptr combinations
-        (#peek struct costMatrix, gap_open)        ptr gapOpen
-        (#peek struct costMatrix, is_metric)       ptr isMetric
-        (#peek struct costMatrix, all_elements)    ptr elems
-        (#peek struct costMatrix, cost)            ptr bestCost
-        (#peek struct costMatrix, median)          ptr medians
-        (#peek struct costMatrix, worst)           ptr worstCost
-        (#peek struct costMatrix, prepend_cost)    ptr prependCost
-        (#peek struct costMatrix, tail_cost)       ptr tailCost
+    poke ptr (CostMatrix2d
+                  alphSizeVal
+                  lcmVal
+                  gapCharVal
+                  costModelTypeVal
+                  combinationsVal
+                  gapOpenVal
+                  isMetricVal
+                  elemsVal
+                  bestCostVal
+                  mediansVal
+                  worstCostVal
+                  prependCostVal
+                  tailCostVal
+              ) = do -- to modify values in the C app
+        (#poke struct cost_matrices_2d, alphSize)        ptr alphSizeVal
+        (#poke struct cost_matrices_2d, lcm)             ptr lcmVal
+        (#poke struct cost_matrices_2d, gap_char)        ptr gapCharVal
+        (#poke struct cost_matrices_2d, cost_model_type) ptr costModelTypeVal
+        (#poke struct cost_matrices_2d, combinations)    ptr combinationsVal
+        (#poke struct cost_matrices_2d, gap_open)        ptr gapOpenVal
+        (#poke struct cost_matrices_2d, is_metric)       ptr isMetricVal
+        (#poke struct cost_matrices_2d, all_elements)    ptr elemsVal
+        (#poke struct cost_matrices_2d, cost)            ptr bestCostVal
+        (#poke struct cost_matrices_2d, median)          ptr mediansVal
+        (#poke struct cost_matrices_2d, worst)           ptr worstCostVal
+        (#poke struct cost_matrices_2d, prepend_cost)    ptr prependCostVal
+        (#poke struct cost_matrices_2d, tail_cost)       ptr tailCostVal
 
-
+{-
 {- ******************************************* CostMatrix declarations and Storable instances ******************************************* -}
 -- | Holds single cost matrix, which contains costs and medians for all
 -- possible sequence elements. It is completely filled using a TCM. See note below at 'setupCostMatrixFn_c'.
-data CostMatrix3d = CostMatrix3d { alphSize      :: CInt      -- alphabet size including gap, and including ambiguities if
+data CostMatrix3d = CostMatrix3d { sSize      :: CInt      -- alphabet size including gap, and including ambiguities if
                                                               --     combinations == True
                                  , lcm           :: CInt      -- ceiling of log_2 (alphSize)
                                  , gapChar       :: CInt      -- gap value (1 << (alphSize - 1))
@@ -206,44 +232,8 @@ data CostMatrix3d = CostMatrix3d { alphSize      :: CInt      -- alphabet size i
                                  }
 
 
+-}
 
--- Because we're using a struct we need to make a Storable instance
-instance Storable CostMatrix where
-    sizeOf    _   = (#size struct seq) -- #size is a built-in that works with arrays, as are #peek and #poke, below
-    alignment _   = alignment (undefined :: CChar)
-    peek ptr      = do -- to get values from the C app
-        aSize     <- (#peek struct costMatrix, alphSize)        ptr
-        lcm'      <- (#peek struct costMatrix, lcm)             ptr
-        gapchar   <- (#peek struct costMatrix, gap_char)        ptr
-        costModel <- (#peek struct costMatrix, cost_model_type) ptr
-        combos    <- (#peek struct costMatrix, combinations)    ptr
-        gapOpen   <- (#peek struct costMatrix, gap_open)        ptr
-        metric    <- (#peek struct costMatrix, is_metric)       ptr
-        elems     <- (#peek struct costMatrix, all_elements)    ptr
-        best      <- (#peek struct costMatrix, cost)            ptr
-        meds      <- (#peek struct costMatrix, median)          ptr
-        return  CostMatrix { alphSize      = aSize
-                           , lcm           = lcm'
-                           , gapChar       = gapchar
-                           , costModelType = costmodel
-                           , combinations  = combos
-                           , gapOpenCost   = gapOpen
-                           , allElems      = elems
-                           , bestCost      = best
-                           , medians       = meds
-                           }
-
-    poke ptr (CostMatrix val seqFinal) = do -- to modify values in the C app
-        (#peek struct costMatrix, alphSize)        ptr alphSize
-        (#peek struct costMatrix, lcm)             ptr lcm
-        (#peek struct costMatrix, gap_char)        ptr gapChar
-        (#peek struct costMatrix, cost_model_type) ptr costModelType
-        (#peek struct costMatrix, combinations)    ptr combinations
-        (#peek struct costMatrix, gap_open)        ptr gapOpen
-        (#peek struct costMatrix, is_metric)       ptr isMetric
-        (#peek struct costMatrix, all_elements)    ptr elems
-        (#peek struct costMatrix, cost)            ptr bestCost
-        (#peek struct costMatrix, median)          ptr medians
 
 
 -- | Create and allocate cost matrix
@@ -256,13 +246,13 @@ foreign import ccall unsafe "c_code_alloc_setup.h setupCostMtx"
                         -> CInt      -- alphSize
                         -> CInt      -- gap_open
                         -> CInt      -- is_2d
-                        -> Ptr CostMatrix
+                        -> Ptr CostMatrix2d
 
 foreign import ccall unsafe "c_code_alloc_setup.h initializeSeq"
-    allocateSequenceFn_c :: CSize -> CSize -> Ptr Sequence
+    allocateSequenceFn_c :: CSize -> CSize -> Ptr AlignIO
 
 
-
+{-
 
 -- | Get union of two sequences.
 -- Will only work if alignment and backtrace have already been called.
@@ -310,3 +300,4 @@ main :: IO ()
 main = putStrLn $ show callSeqAlignFn_c
 
 
+-}

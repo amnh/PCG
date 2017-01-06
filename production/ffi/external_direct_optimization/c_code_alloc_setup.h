@@ -2,12 +2,15 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#ifndef C_CODE_ALLOC_SETUP_H
+#define C_CODE_ALLOC_SETUP_H
+
 #include "seqAlign.h"
 #include "debug_constants.h"
 #include "costMatrix.h"
 #include "nwMatrices.h"
-#include "ukkCheckp.h"
-#include "ukkCommon.h"
+//#include "ukkCheckp.h"
+//#include "ukkCommon.h"
 
 
 
@@ -42,3 +45,4 @@ void freeNWMtx(nw_matrices_p input);
 
 void freeSeq(seq_p toFree);
 
+#endif // C_CODE_ALLOC_SETUP_H

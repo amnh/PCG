@@ -49,7 +49,7 @@
 #include "debug_constants.h"
 #include "seq.h"
 #include "ukkCheckp.h"
-#include "ukkCommon.h"
+//#include "ukkCommon.h"
 
 #define MAXINT INT_MAX
 // #define FIXED_NUM_PLANES TODO: this is also defined in ukkCommon.h; it was commented out, but then allocInit() failed to compile
@@ -107,7 +107,8 @@ CPType *CP(int ab, int ac, int d, int s)     {
     return getPtr(&myCPAllocInfo, ab, ac, d, s);
 }
 
-
+U_cell_type UdummyCell;
+CPType CPdummyCell;
 
 int doUkkInLimits(int sab, int sac, int sCost, int sState, int sDist,
                   int fab, int fac, int fCost, int fState, int fDist) {

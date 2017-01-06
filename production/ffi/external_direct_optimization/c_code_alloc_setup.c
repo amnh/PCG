@@ -7,8 +7,8 @@
 #include "debug_constants.h"
 #include "costMatrix.h"
 #include "nwMatrices.h"
-#include "ukkCheckp.h"
-#include "ukkCommon.h"
+//#include "ukkCheckp.h"
+//#include "ukkCommon.h"
 
 // int* tcm, int alphSize, int gap_open, int is_2d, seq_p longSeq
 

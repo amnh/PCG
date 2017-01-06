@@ -88,12 +88,21 @@ library
 
   hs-source-dirs:      lib, ffi
 
-  cc-options: --std=c99
+  cc-options: --std=c11
 
   -- We must provide the full relative path to every C file that the project depends on.
   c-sources:
     ffi/Analysis/Parsimony/Binary/SequentialAlign/seqAlignForHaskell.c
     ffi/Analysis/Parsimony/Binary/SequentialAlign/dynamicCharacterOperations.c
+    ffi/external_direct_optimization/c_alignment_interface.c
+    ffi/external_direct_optimization/c_code_alloc_setup.c
+    ffi/external_direct_optimization/costMatrix.c
+    ffi/external_direct_optimization/nwMatrices.c
+    ffi/external_direct_optimization/seq.c
+    ffi/external_direct_optimization/seqAlign.c
+    ffi/external_direct_optimization/ukkCheckp.c
+    ffi/external_direct_optimization/ukkCommon.c
+
 --    ffi/Analysis/Parsimony/Binary/SequentialAlign/myComplexBitArrayFFI.c
 
   -- Here we list all directories that contain C header files that the FFI tools will need
@@ -104,6 +113,7 @@ library
   -- The preprocesser will not recursively look in subdirectories for C header files!
   include-dirs:
     ffi/Analysis/Parsimony/Binary/SequentialAlign
+    ffi/external_direct_optimization
 
   -- Modules exported by the library.
   exposed-modules:
@@ -117,6 +127,7 @@ library
                        Analysis.Parsimony.Sankoff.Internal
                        Analysis.Parsimony.Additive.Internal
                        Analysis.Parsimony.Fitch.Internal
+                       Analysis.Parsimony.Dynamic.DirectOptimization.FFI
                        Bio.Character
                        Bio.Character.Decoration.Additive
                        Bio.Character.Decoration.Continuous
@@ -273,7 +284,7 @@ library
                        File.Format.VertexEdgeRoot.Parser
                        Test.QuickCheck.Arbitrary.Instances
 
-                       
+
 executable pcg
   main-is:             Main.hs
 

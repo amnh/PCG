@@ -17,9 +17,9 @@
 /* Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301   */
 /* USA                                                                        */
 
-#ifndef MATRICES_H
+#ifndef NWMATRICES_H
 
-#define MATRICES_H 1
+#define NWMATRICES_H
 
 /** The following consts are to define possible moves in an NW matrix.
  *  As we're only saving one possible matrix, we don't need ambiguities,
@@ -143,4 +143,4 @@ mat_print_algn_2d (nw_matrices_p m, int w, int h);
 void
 mat_print_algn_3d (nw_matrices_p m, int w, int h, int d);
 
-#endif /* MATRICES_H */
+#endif /* NWMATRICES_H */

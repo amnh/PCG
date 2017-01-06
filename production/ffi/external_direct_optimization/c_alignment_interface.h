@@ -1,3 +1,6 @@
+#ifndef C_ALIGNMENT_INTERFACE_H
+#define C_ALIGNMENT_INTERFACE_H
+
 #include "seqAlign.h"
 #include "c_code_alloc_setup.h"
 #include "debug_constants.h"
@@ -45,3 +48,5 @@ int align3d(alignIO_p seq1,
             alignIO_p seq3,
             alignIO_p medianSeq,
             cost_matrices_3d_p costMtx3d);
+
+#endif // C_ALIGNMENT_INTERFACE_H

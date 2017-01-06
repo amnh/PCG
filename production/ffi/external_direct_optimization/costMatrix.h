@@ -19,9 +19,9 @@
 
 /* A cost matrix library                                                      */
 
-#ifndef CM_H
+#ifndef COSTMATRIX_H
+#define COSTMATRIX_H
 
-#define CM_H 1
 #define Cost_matrix_struct(a) ((struct cost_matrices_2d *) Data_custom_val(a))
 #define Cost_matrix_struct_3d(a) ((struct cost_matrices_3d *) Data_custom_val(a))
 #include "debug_constants.h"
@@ -376,5 +376,5 @@ void
 cm_print_median (SEQT* m, int w, int h);
 
 
-#endif /* CM_H */
+#endif /* COSTMATRIX_H */
 

@@ -18,8 +18,7 @@
 /* USA                                                                        */
 
 #ifndef SEQ_H
-
-#define SEQ_H 1
+#define SEQ_H
 
 // TODO: Here's another wtf:
 #define POY_SEQ_MAGIC_NUMBER 9873123

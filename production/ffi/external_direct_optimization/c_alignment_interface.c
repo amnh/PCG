@@ -8,7 +8,7 @@
 #include "debug_constants.h"
 // #include "costMatrix.h"
 #include "nwMatrices.h"
-#include "ukkCheckp.h"
+//#include "ukkCheckp.h"
 #include "ukkCommon.h"
 
 void setSeq(alignIO_p input, seq_p retSeq) {

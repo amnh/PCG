@@ -47,7 +47,7 @@
 //#define NO_ALLOC_ROUTINES 1
 #include "debug_constants.h"
 #include "seq.h"
-#include "ukkCheckp.h"
+//#include "ukkCheckp.h"
 #include "ukkCommon.h"
 
 // extern variable (all from ukkCheckp.c)
@@ -67,7 +67,7 @@ extern int endA, endB, endC;
 extern int completeFromInfo;
 extern Counts counts;
 
-int  aSeqIdx, bSeqIdx, cSeqIdx, stateIdx, costIdx;
+//int  aSeqIdx, bSeqIdx, cSeqIdx, stateIdx, costIdx;
 
 
 // GLOBAL VARIABLES

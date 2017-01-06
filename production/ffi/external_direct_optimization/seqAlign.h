@@ -53,9 +53,8 @@
  *  the direction codes are different for three dimensional alignments.
  */
 
-#ifndef ALGN_H
-
-#define ALGN_H 1
+#ifndef SEQALIGN_H
+#define SEQALIGN_H
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -226,4 +225,4 @@ algn_get_median_2d_with_gaps (seq_p seq1, seq_p seq2, cost_matrices_2d_p m, seq_
 void
 algn_union (seq_p seq1, seq_p seq2, seq_p su);
 
-#endif /* ALGN_H */
+#endif /* SEQALIGN_H */
