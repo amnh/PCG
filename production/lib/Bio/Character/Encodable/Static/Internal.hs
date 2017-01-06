@@ -82,6 +82,12 @@ instance EncodedAmbiguityGroupContainer StaticCharacter where
     symbolCount = width . unwrap
 
 
+instance FiniteBits StaticCharacter where
+
+    {-# INLINE finiteBitSize #-}
+    finiteBitSize = symbolCount
+
+
 instance PossiblyMissingCharacter StaticCharacter where
 
     {-# INLINE toMissing  #-}

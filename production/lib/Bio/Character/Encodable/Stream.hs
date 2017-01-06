@@ -54,7 +54,7 @@ import           Data.String               (IsString)
    * @decodeElement alphabet (encodeElement alphabet xs .&. encodeElement alphabet ys) == toList alphabet `Data.List.intersect` (toList xs `Data.List.intersect` toList ys)@
 
 -}
-class ( Bits b
+class ( FiniteBits b
       , EncodedAmbiguityGroupContainer b
       , Num b -- Required for bit twiddling hacks
       ) => EncodableStreamElement b where
