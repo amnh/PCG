@@ -201,7 +201,7 @@ dynChar_t* makeDynamicChar( size_t alphSize, size_t numElems, packedChar_p value
  *
  *  Nota bene: limits alphabet size to whatever the width of an int is, likely 2 bytes.
  */
-int* dynCharToIntArr( dynChar_t* input );
+uint64_t* dynCharToIntArr( dynChar_t* input );
 
 /** takes as input an int array and copies its values into a packed dynamic character.
  *  This effectively recapitulates makeDynamicChar(), with one difference, this is intended to

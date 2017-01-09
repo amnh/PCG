@@ -2,7 +2,7 @@
 //  main.c
 //  version_Haskell_bit
 //
-//  Created by Yu Xiang on 11/1/22.
+//  Created by Yu Xiang on 11/1/16.
 //  Copyright © 2016 Yu Xiang. All rights reserved.
 //
 
@@ -29,10 +29,10 @@
 
 
 int main() {
-    
+
    // char seqA_main[] = "CE\0";
    // char seqB_main[] = "GCT\0";   //  Yu_Edit: here 100 is the maximum length of the sequences
-    
+
     // Since we're only dealing with dna + gap now:
     size_t alphSize = 5;
   //  int seqA_main[] = {1, 2, 3};
@@ -42,21 +42,21 @@ int main() {
     uint64_t seqB_main[] = {4, 5, 6};
     size_t seqBLen = 3;
 
-    
+
     //int wtInsertDel = 20;  //weight of insertion/deletion
     //int wtSub = 10;        //weigth of substitution
-    
-    
+
+
     int success = 1;
     retType_t* retAlign = malloc( sizeof(retType_t) );
 //    long int length = strlen(seqA_main) + strlen(seqB_main) + 5;
     long int length = sizeof(seqA_main)/sizeof(seqA_main[0]) + sizeof(seqB_main)/sizeof(seqB_main[0]) + 5;
-    
+
  //   retAlign->seq1 = calloc(length, sizeof(char));
     retAlign->seq1 = calloc(length, sizeof(int));
   //  retAlign->seq2 = calloc(length, sizeof(char));
     retAlign->seq2 = calloc(length, sizeof(int));
-    
+
     if( retAlign->seq1 == NULL || retAlign->seq2 == NULL ) {
         printf("Memory failure!\n");
         return 1;
@@ -64,7 +64,7 @@ int main() {
     // retAlign->seq1[length - 1] = '\0';
     // retAlign->seq2[length - 1] = '\0';
     retAlign->alignmentLength = length;
-    
+
     //    // printf("Please input two sequences A and B each of length at most 10 over alphabet {A,T,C,G}.\n");
     //    // printf("Input sequence A:\n");
     //    scanf(" %s", seqA);                         // important to have a space before %s!
@@ -73,9 +73,9 @@ int main() {
     //    // printf("Input sequence B:\n");
     //    scanf(" %s", seqB);
     //    // printf("sequence B = %s\n", seqB);
-    
+
     int wtSub = 1, wtInsertDel = 1;
-    
+
     //    // printf("Please input weights of substitution and insertion/deletion (both of them are integers less than 50)\n");
     //    // printf("Input weight of substitution:\n");
     //    scanf("%d", &wtSub);
@@ -84,10 +84,10 @@ int main() {
     //    // printf("Input weight of insertion/deletion:\n");
     //    scanf("%d", &wtInsertDel);
     //    // printf("weight of insertion/deletion = %d\n", wtInsertDel);
-    
-    
+
+
     success = aligner(seqA_main, seqALen, seqB_main, seqBLen, alphSize, wtInsertDel, wtSub, retAlign);
-    
+
     if (success == 0) {
         printf("\nSuccess!\n\n");
         printf("The aligned sequences are: \n%p\n%p\n", retAlign->seq1, retAlign->seq2);
@@ -100,22 +100,22 @@ int main() {
     }
     free(retAlign->seq1);
     free(retAlign->seq2);
-    
+
 }
 
 
-/** 
+/**
  *  A sample program that takes in two dynamic characters and returns two aligned dynamic chars,
  *  in the form of an alignResult_t. The third character is allocated on Haskell side and passed in by reference.
  *  Returns 0 on correct exit, 1 on allocation failure. This was used to test the Haskell FFI.
  */
 int exampleInterfaceFn(dynChar_t* seqA, dynChar_t* seqB, alignResult_t* result) {
 
-    int* seqA_main = dynCharToIntArr(seqA);
-    int* seqB_main = dynCharToIntArr(seqB);
+    uint64_t* seqA_main = dynCharToIntArr(seqA);
+    uint64_t* seqB_main = dynCharToIntArr(seqB);
 
     retType_t* retAlign = malloc( sizeof(retType_t) );
-    
+
     long int length = seqA->numElems + seqB->numElems + 5;
     retAlign->seq1 = calloc(length, sizeof(int));
     retAlign->seq2 = calloc(length, sizeof(int));
