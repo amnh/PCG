@@ -42,6 +42,11 @@ data AdditiveOptimizationDecoration a
    }
 
 
+instance EncodableStreamElement c => Show (AdditiveOptimizationDecoration c) where
+
+    show = showDiscreteCharacterElement
+
+
 -- | (✔)
 instance HasDiscreteCharacter (AdditiveOptimizationDecoration a) a where
 

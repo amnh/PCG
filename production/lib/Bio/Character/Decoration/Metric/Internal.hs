@@ -124,6 +124,11 @@ data SankoffOptimizationDecoration c
    }
 
 
+instance EncodableStreamElement c => Show (SankoffOptimizationDecoration c) where
+
+    show = showDiscreteCharacterElement
+
+
 -- | (✔)
 instance HasDiscreteCharacter (SankoffOptimizationDecoration c) c where
 

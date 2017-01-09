@@ -45,6 +45,11 @@ data FitchOptimizationDecoration f
    }
 
 
+instance EncodableStreamElement c => Show (FitchOptimizationDecoration c) where
+
+    show = showDiscreteCharacterElement
+      
+
 -- | (✔)
 instance HasDiscreteCharacter (FitchOptimizationDecoration f) f where
 
