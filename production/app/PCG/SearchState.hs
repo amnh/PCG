@@ -21,7 +21,7 @@ import           Bio.Character.Decoration.Discrete
 import           Bio.Character.Decoration.Dynamic
 import           Bio.Character.Decoration.Fitch
 import           Bio.Character.Decoration.Metric
-import           Bio.Character.Decoration.NonMetric
+-- import           Bio.Character.Decoration.NonMetric
 import           Bio.Sequence
 import           Bio.Sequence.Block
 import           Bio.PhyloGraphPrime

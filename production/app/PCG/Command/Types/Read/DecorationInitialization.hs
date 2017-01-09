@@ -20,52 +20,52 @@ import           Analysis.Parsimony.Sankoff.Internal
 import           Bio.Character
 
 import           Bio.Character.Decoration.Additive
-import           Bio.Character.Decoration.Continuous
+--import           Bio.Character.Decoration.Continuous
 --import           Bio.Character.Decoration.Discrete
 --import           Bio.Character.Decoration.Dynamic
 import           Bio.Character.Decoration.Fitch
 import           Bio.Character.Decoration.Metric
-import           Bio.Character.Decoration.NonMetric 
+--import           Bio.Character.Decoration.NonMetric 
 
-import           Bio.Character.Encodable
+--import           Bio.Character.Encodable
 --import           Bio.Character.Decoration.Continuous hiding (characterName)
-import           Bio.Character.Decoration.Discrete   hiding (characterName)
-import           Bio.Character.Decoration.Dynamic    hiding (characterName)
-import           Bio.Character.Parsed
+--import           Bio.Character.Decoration.Discrete   hiding (characterName)
+--import           Bio.Character.Decoration.Dynamic    hiding (characterName)
+--import           Bio.Character.Parsed
 import           Bio.Sequence
 --import           Bio.Sequence.Block
-import           Bio.Metadata.CharacterName hiding (sourceFile)
-import           Bio.Metadata.Parsed
-import           Bio.PhyloGraph.Solution    hiding (parsedChars)
-import           Bio.PhyloGraph.DAG
-import           Bio.PhyloGraph.Forest.Parsed
+--import           Bio.Metadata.CharacterName hiding (sourceFile)
+--import           Bio.Metadata.Parsed
+--import           Bio.PhyloGraph.Solution    hiding (parsedChars)
+--import           Bio.PhyloGraph.DAG
+--import           Bio.PhyloGraph.Forest.Parsed
 import           Bio.PhyloGraphPrime
-import           Bio.PhyloGraphPrime.Component
+--import           Bio.PhyloGraphPrime.Component
 import           Bio.PhyloGraphPrime.Node
 import           Bio.PhyloGraphPrime.ReferenceDAG
-import           Control.Arrow                     ((&&&))
-import           Control.Applicative               ((<|>))
-import           Data.Alphabet
-import           Data.Bifunctor                    (first)
-import           Data.Foldable
-import qualified Data.IntSet                as IS
-import           Data.Key
-import           Data.List                         (transpose, zip4)
+--import           Control.Arrow                     ((&&&))
+--import           Control.Applicative               ((<|>))
+--import           Data.Alphabet
+--import           Data.Bifunctor                    (first)
+--import           Data.Foldable
+--import qualified Data.IntSet                as IS
+--import           Data.Key
+--import           Data.List                         (transpose, zip4)
 import           Data.List.NonEmpty                (NonEmpty( (:|) ))
-import qualified Data.List.NonEmpty         as NE
-import           Data.List.Utility                 (duplicates)
-import           Data.Map                          (Map, intersectionWith, keys)
-import qualified Data.Map                   as Map
-import           Data.Maybe                        (catMaybes, fromMaybe, listToMaybe)
-import           Data.Semigroup                    ((<>), sconcat)
-import           Data.Semigroup.Foldable
-import           Data.Set                          (Set, (\\))
-import qualified Data.Set                   as Set
-import           Data.TCM                          (TCM)
-import qualified Data.TCM                   as TCM
-import           Data.MonoTraversable
-import           Data.Vector                       (Vector)
-import           PCG.Command.Types.Read.Unification.UnificationError
+--import qualified Data.List.NonEmpty         as NE
+--import           Data.List.Utility                 (duplicates)
+--import           Data.Map                          (Map, intersectionWith, keys)
+--import qualified Data.Map                   as Map
+--import           Data.Maybe                        (catMaybes, fromMaybe, listToMaybe)
+--import           Data.Semigroup                    ((<>), sconcat)
+--import           Data.Semigroup.Foldable
+--import           Data.Set                          (Set, (\\))
+--import qualified Data.Set                   as Set
+--import           Data.TCM                          (TCM)
+--import qualified Data.TCM                   as TCM
+--import           Data.MonoTraversable
+--import           Data.Vector                       (Vector)
+--import           PCG.Command.Types.Read.Unification.UnificationError
 import           PCG.SearchState 
 import           Prelude                    hiding (lookup, zip, zipWith)
 
