@@ -137,7 +137,7 @@ library
                        Bio.Character.Decoration.Metric
                        Bio.Character.Decoration.NonMetric
                        Bio.Character.Encodable
-                       Bio.Character.Exportable.Class
+                       Bio.Character.Exportable
                        Bio.Character.Parsed
                        Bio.Metadata
                        Bio.Metadata.CharacterName
@@ -227,6 +227,7 @@ library
                        Bio.Character.Encodable.Static.Class
                        Bio.Character.Encodable.Static.Internal
                        Bio.Character.Encodable.Stream
+                       Bio.Character.Exportable.Class
                        Bio.Character.Parsed.Class
                        Bio.Character.Parsed.Internal
                        Bio.PhyloGraph.Forest.Class

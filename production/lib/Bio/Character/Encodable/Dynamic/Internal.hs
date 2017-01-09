@@ -74,7 +74,7 @@ data  DynamicChar
 -- Represents a sinlge element of a dynamic character. 
 newtype DynamicCharacterElement
       = DCE BitVector
-      deriving (Bits, Eq, Enum, Num, Ord, Show)
+      deriving (Bits, Eq, Enum, Integral, Num, Ord, Real, Show)
 
 
 type instance Element DynamicChar = DynamicCharacterElement
@@ -275,23 +275,17 @@ instance Arbitrary DynamicChar where
 
 
 instance Exportable DynamicChar where
-    toExportable (DC bm@(BitMatrix _ bv)) =
-        ExportableCharacterSequence
-        { elementCount = x
-        , elementWidth = y
-        , bufferChunks = fmap fromIntegral $ ((bv @@) <$> slices) <> tailWord
-        }
+
+    toExportableBuffer (DC bm@(BitMatrix _ bv)) = ExportableCharacterSequence x y $ bitVectorToBufferChunks x y bv
       where
         x = numRows bm
-        y = numCols bm
-        totalBits = x * y
-        (fullWords, remainingBits) = totalBits `divMod` 64
-        slices   = take fullWords $ iterate ((64 +) `bimap` (64 +)) ((63, 0) :: (Int,Int))
-        tailWord = if   remainingBits == 0
-                   then []
-                   else [ bv @@ (totalBits - 1, totalBits - remainingBits) ]
+        y = numCols bm 
         
-    fromExportable = undefined
+    fromExportableBuffer = undefined
+
+    toExportableElements = encodableStreamToExportableCharacterElements
+    
+    fromExportableElements = DC . exportableCharacterElementsToBitMatrix 
 
 
 {-

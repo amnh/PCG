@@ -20,6 +20,7 @@
 
 module Analysis.Parsimony.Dynamic.DirectOptimization.FFI where
 
+import Bio.Character.Exportable.Class
 import Foreign
 --import Foreign.Ptr
 --import Foreign.C.String
@@ -250,6 +251,31 @@ foreign import ccall unsafe "c_code_alloc_setup.h setupCostMtx"
 
 foreign import ccall unsafe "c_code_alloc_setup.h initializeSeq"
     allocateSequenceFn_c :: CSize -> CSize -> Ptr AlignIO
+
+
+
+-- | Performs a naive direct optimization
+-- Takes in two characters to run DO on and a metadata object
+-- Returns an assignment character, the cost of that assignment, the assignment character with gaps included,
+-- the aligned version of the first input character, and the aligned version of the second input character
+-- The process for this algorithm is to generate a traversal matrix, then perform a traceback.
+naiveDO :: Exportable s
+        => s                    -- ^ First  dynamic character
+        -> s                    -- ^ Second dynamic character
+        -> (Int -> Int -> Int)  -- ^ Structure defining the transition costs between character states
+        -> (s, Double, s, s, s) -- ^ The /ungapped/ character derived from the the input characters' N-W-esque matrix traceback
+                                --
+                                --   The cost of the alignment
+                                --
+                                --   The /gapped/ character derived from the the input characters' N-W-esque matrix traceback
+                                --
+                                --   The gapped alignment of the /first/ input character when aligned with the second character
+                                --
+                                --   The gapped alignment of the /second/ input character when aligned with the first character
+naiveDO char1 char2 costStruct = undefined
+  where
+    exChar1 = toExportableElements char1
+    exChar2 = toExportableElements char2
 
 
 {-
