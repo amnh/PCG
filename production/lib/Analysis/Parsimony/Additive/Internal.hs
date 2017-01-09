@@ -34,7 +34,7 @@ import Data.List.NonEmpty (NonEmpty( (:|) ))
 
 
 -- | Used on the post-order (i.e. first) traversal.
-additivePostOrder :: (DiscreteCharacterDecoration d c, FiniteBits c)
+additivePostOrder :: (DiscreteCharacterDecoration d c)
                   => d
                   -> [AdditiveOptimizationDecoration c]
                   -> AdditiveOptimizationDecoration c
@@ -82,7 +82,7 @@ updatePostOrder  parentDecoration (leftChild:|(rightChild:_)) = returnNodeDecora
 -- | Initializes a leaf node by copying its current value into its preliminary state. Gives it a minimum cost of 0.
 --
 -- Used on the postorder pass.
-initializeLeaf :: (DiscreteCharacterDecoration d c, FiniteBits c)
+initializeLeaf :: (DiscreteCharacterDecoration d c)
                => d
                -> AdditiveOptimizationDecoration c
 initializeLeaf curDecoration =
