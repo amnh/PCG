@@ -10,7 +10,7 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE FlexibleInstances, GeneralizedNewtypeDeriving, MultiParamTypeClasses #-}
+{-# LANGUAGE FlexibleInstances, GeneralizedNewtypeDeriving, MultiParamTypeClasses, TypeFamilies #-}
 
 module Bio.PhyloGraphPrime.ReferenceDAG.Internal where
 
@@ -87,10 +87,20 @@ instance Bifunctor ReferenceDAG where
 -- | (✔) 
 instance Foldable (ReferenceDAG e) where
 
-    foldMap f = (\x -> trace "Done foldMap-ing" x)
-              . foldMap (f . nodeDecoration . (\x -> trace "In the foldMap loop" x))
-              . (\x -> trace "About to foldMap" x) . references
-  
+    foldMap f = foldMap (f . nodeDecoration) . references
+
+
+type instance Key (ReferenceDAG e) = Int
+
+
+instance FoldableWithKey (ReferenceDAG e) where
+
+    {-# INLINE foldrWithKey #-}
+    foldrWithKey f e = V.ifoldr' (\i n a -> f i (nodeDecoration n) a) e . references
+
+    {-# INLINE foldlWithKey #-}
+    foldlWithKey f e = V.ifoldl' (\a i -> f a i . nodeDecoration) e . references
+
 
 -- | (✔)
 instance Functor (ReferenceDAG e) where
