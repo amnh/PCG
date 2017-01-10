@@ -71,7 +71,8 @@ library
                      , transformers
                      , unordered-containers
                      , vector
-                     , vector-instances
+                     -- >=3.4 required for corrected definition of (!) & index
+                     , vector-instances >=3.4
 
   default-language:    Haskell2010
 
@@ -327,7 +328,7 @@ executable pcg
                      , transformers
                      , unordered-containers
                      , vector
-                     , vector-instances
+                     , vector-instances >=3.4
 
   default-language:    Haskell2010
 
