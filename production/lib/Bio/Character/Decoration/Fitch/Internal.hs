@@ -24,6 +24,7 @@ import Bio.Metadata.Discrete
 import Control.Lens
 import Data.Alphabet
 import Data.TCM
+import Data.Monoid
 --import Data.Word
 
 
@@ -47,7 +48,7 @@ data FitchOptimizationDecoration f
 
 instance EncodableStreamElement c => Show (FitchOptimizationDecoration c) where
 
-    show = showDiscreteCharacterElement
+    show c = mconcat [showDiscreteCharacterElement c, "{", show $ fitchMinCost c, "}"]
       
 
 -- | (✔)

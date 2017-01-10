@@ -12,6 +12,8 @@
 --
 -----------------------------------------------------------------------------
 
+{-# LANGUAGE BangPatterns #-}
+
 module PCG.Command.Types.Read.DecorationInitialization where
 
 import           Analysis.Parsimony.Additive.Internal
@@ -57,7 +59,7 @@ import           Data.List.NonEmpty                (NonEmpty( (:|) ))
 --import           Data.Map                          (Map, intersectionWith, keys)
 --import qualified Data.Map                   as Map
 --import           Data.Maybe                        (catMaybes, fromMaybe, listToMaybe)
---import           Data.Semigroup                    ((<>), sconcat)
+import           Data.Semigroup                    ((<>))
 --import           Data.Semigroup.Foldable
 --import           Data.Set                          (Set, (\\))
 --import qualified Data.Set                   as Set
@@ -69,11 +71,17 @@ import           Data.List.NonEmpty                (NonEmpty( (:|) ))
 import           PCG.SearchState 
 import           Prelude                    hiding (lookup, zip, zipWith)
 
+import Debug.Trace
 
-initializeDecorations :: CharacterResult -> PhylogeneticSolution InitialDecorationDAG
+traceOpt identifier x = (trace ("Before " <> identifier) ())
+                  `seq` (let !v = x
+                         in v `seq` (trace ("After " <> identifier) v)
+                        )
+
+--initializeDecorations :: CharacterResult -> PhylogeneticSolution InitialDecorationDAG
 initializeDecorations (PhylogeneticSolution forests) = PhylogeneticSolution $ fmap performDecoration <$> forests
   where
-    performDecoration :: CharacterDAG -> InitialDecorationDAG
+--    performDecoration :: CharacterDAG -> InitialDecorationDAG
     performDecoration (PDAG dag) = PDAG $ nodePostOrder g dag
       where
         g parentalNode childNodes =
@@ -81,7 +89,7 @@ initializeDecorations (PhylogeneticSolution forests) = PhylogeneticSolution $ fm
           { nodeDecorationDatum = (nodeDecorationDatum parentalNode) 
           , sequenceDecoration  = f (sequenceDecoration parentalNode) (sequenceDecoration <$> childNodes)
           } 
-
+{-
     f :: CharacterSequence
            UnifiedDiscreteCharacter
            UnifiedDiscreteCharacter
@@ -103,19 +111,32 @@ initializeDecorations (PhylogeneticSolution forests) = PhylogeneticSolution $ fm
            UnifiedContinuousCharacter --(ContinuousOptimizationDecoration ContinuousChar)
            (FitchOptimizationDecoration    StaticCharacter)
            (AdditiveOptimizationDecoration StaticCharacter)
-           UnifiedDynamicCharacter 
-    f currentCharSeq childCharSeqs = hexliftA2 (g sankoffPostOrder) (g sankoffPostOrder) id2 (g fitchPostOrder) (g additivePostOrder) id2 currentCharSeq childCharSeqs'
+           UnifiedDynamicCharacter
+-}
+    f currentCharSeq childCharSeqs =
+        hexliftA2
+--          id2
+          (traceOpt "Sankoff1" $ g sankoffPostOrder)
+--          id2
+          (traceOpt "Sankoff2" $ g sankoffPostOrder)
+          id2
+--          id2
+          (traceOpt "Fitch"    $ g fitchPostOrder)
+--          id2
+          (traceOpt "Additive" $ g additivePostOrder)
+          id2
+          currentCharSeq
+          childCharSeqs'
       where
+        id2 x _ = x
         childCharSeqs' =
             case childCharSeqs of
               x:xs -> hexsequence $ x:|xs
               []   -> let c = const []
                       in hexmap c c c c c c currentCharSeq
-        g h  Nothing  [] = error $ "This is bad!"
+        g _  Nothing  [] = error $ "Uninitialized leaf node. This is bad!"
         g h (Just  v) [] = h v []
-        g h        _  xs = h undefined xs
-        id2 x _ = x
-            
+        g h        _  xs = h (error $ "We shouldn't be using this value.") xs
 
 
 {-

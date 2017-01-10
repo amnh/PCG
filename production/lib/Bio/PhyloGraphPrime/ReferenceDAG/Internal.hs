@@ -108,9 +108,9 @@ instance Functor (ReferenceDAG e) where
 -- | (✔)
 instance PhylogeneticComponent (ReferenceDAG e n) NodeRef e n where
 
-    parents   i dag = fmap toEnum . otoList . parentRefs $ references dag V.! fromEnum i
+    parents   i dag = fmap toEnum . otoList . parentRefs $ references dag ! fromEnum i
  
-    children  i dag = fmap toEnum . IM.keys . childRefs  $ references dag V.! fromEnum i
+    children  i dag = fmap toEnum . IM.keys . childRefs  $ references dag ! fromEnum i
 
     roots           = fmap toEnum . rootRefs
 
@@ -122,29 +122,29 @@ instance PhylogeneticComponent (ReferenceDAG e n) NodeRef e n where
 
     nodeCount       = length . references
 
-    nodeDatum i dag = nodeDecoration $ references dag V.! fromEnum i
+    nodeDatum i dag = nodeDecoration $ references dag ! fromEnum i
 
-    edgeDatum (i,j) dag =  fromEnum j `lookup` childRefs (references dag V.! fromEnum i)
+    edgeDatum (i,j) dag =  fromEnum j `lookup` childRefs (references dag ! fromEnum i)
 
     -- TODO: Broken
     isComponentNode i dag = olength ps > 2
       where
-        ps = parentRefs $ references dag V.! fromEnum i
+        ps = parentRefs $ references dag ! fromEnum i
 
     -- TODO: Broken
     isNetworkNode i dag = olength ps > 2
       where
-        ps = parentRefs $ references dag V.! fromEnum i
+        ps = parentRefs $ references dag ! fromEnum i
 
     isTreeNode i dag = olength ps == 1 && length cs == 2
       where
-        iPoint = references dag V.! fromEnum i 
+        iPoint = references dag ! fromEnum i 
         ps = parentRefs iPoint
         cs = childRefs  iPoint
 
-    isLeafNode i dag =  null . childRefs  $ references dag V.! fromEnum i
+    isLeafNode i dag =  null . childRefs  $ references dag ! fromEnum i
 
-    isRootNode i dag = onull . parentRefs $ references dag V.! fromEnum i
+    isRootNode i dag = onull . parentRefs $ references dag ! fromEnum i
 
     -- TODO: Broken
     networkResolutions = pure
@@ -162,7 +162,7 @@ instance PhylogeneticNetwork (ReferenceDAG e n) NodeRef e n where
 -- | (✔)
 instance PhylogeneticTree (ReferenceDAG e n) NodeRef e n where
 
-    parent i dag = fmap toEnum . headMay . otoList . parentRefs $ references dag V.! fromEnum i
+    parent i dag = fmap toEnum . headMay . otoList . parentRefs $ references dag ! fromEnum i
 
 
 -- | (✔)
@@ -266,13 +266,13 @@ nodePostOrder f dag = RefDAG <$> const newReferences <*> rootRefs <*> graphData 
     dagSize       = length $ references dag
     newReferences = V.generate dagSize h
       where
-        h i = IndexData <$> const (memo ! i) <*> parentRefs <*> childRefs $ references dag V.! i
+        h i = IndexData <$> const (memo ! i) <*> parentRefs <*> childRefs $ references dag ! i
     memo = V.generate dagSize h
       where
-        h i = f datum $ (memo V.!) <$> childIndices
+        h i = f datum $ (memo !) <$> childIndices
           where
             datum        = nodeDecoration node 
-            node         = references dag V.! i
+            node         = references dag ! i
             childIndices = IM.keys $ childRefs node
 
 
@@ -288,15 +288,15 @@ nodePreOrder f dag = RefDAG <$> const newReferences <*> rootRefs <*> graphData $
     dagSize       = length $ references dag
     newReferences = V.generate dagSize h
       where
-        h i = IndexData <$> const (memo ! i) <*> parentRefs <*> childRefs $ references dag V.! i
+        h i = IndexData <$> const (memo ! i) <*> parentRefs <*> childRefs $ references dag ! i
     memo = V.generate dagSize h
       where
-        h i = f datum $ (childPosition &&& (memo V.!)) <$> parentIndices
+        h i = f datum $ (childPosition &&& (memo !)) <$> parentIndices
           where
             datum           = nodeDecoration node 
-            node            = references dag V.! i
+            node            = references dag ! i
             -- In sparsely connected graphs (like ours) this will be effectively constant.
-            childPosition j = fromIntegral . length . takeWhile (<i) . IM.keys . childRefs $ references dag V.! j
+            childPosition j = fromIntegral . length . takeWhile (<i) . IM.keys . childRefs $ references dag ! j
             parentIndices   = otoList $ parentRefs node
 
 

@@ -34,6 +34,9 @@ import           Data.Monoid
 
 type SearchState = EvaluationT IO (Either TopologicalResult DecoratedCharacterResult)
 
+--type SearchState = EvaluationT IO (Either TopologicalResult CharacterResult)
+
+--type SearchState = EvaluationT IO (Either TopologicalResult (PhylogeneticSolution TestDecorationDAG))
 
 type TopologicalResult = PhylogeneticSolution (ReferenceDAG (Maybe Double) (Maybe String))
 
@@ -63,7 +66,17 @@ type InitialDecorationDAG = PhylogeneticDAG
                              (FitchOptimizationDecoration    StaticCharacter)
                              (AdditiveOptimizationDecoration StaticCharacter)
                              UnifiedDynamicCharacter
-
+{-
+type TestDecorationDAG = PhylogeneticDAG
+                             (Maybe Double)
+                             (Maybe String)
+                             UnifiedDiscreteCharacter -- (SankoffOptimizationDecoration  StaticCharacter)
+                             UnifiedDiscreteCharacter -- (SankoffOptimizationDecoration  StaticCharacter)
+                             UnifiedContinuousCharacter --(ContinuousOptimizationDecoration ContinuousChar)
+                             (FitchOptimizationDecoration    StaticCharacter)
+                             (AdditiveOptimizationDecoration StaticCharacter)
+                             UnifiedDynamicCharacter
+-}
 
 type  UnifiedCharacterSequence
     = CharacterSequence
