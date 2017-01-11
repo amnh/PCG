@@ -283,9 +283,29 @@ joinSequences2 = collapseAndMerge . reduceAlphabets . deriveCorrectTCMs . derive
                   xs -> fromSymbolsWithStateNames . reduceTokens $ zip (alphabetSymbols suppliedAlphabet) xs
               where
                 reduceTokens = foldMapWithKey (\k v -> if k `oelem` missingSymbolIndicies then [] else [v])
-            reducedTCM = TCM.generate reducedDimension f
+            reducedTCM = TCM.generate reducedDimension genFunction
               where
                 reducedDimension = TCM.size tcm - olength missingSymbolIndicies
+
+                genFunction =
+                    -- In the case of Additive characters,
+                    -- we don't want to preserve the transition cost to non-observed states.
+                    --
+                    -- In the matrix below, with '2' unobserved, would be naively transformed:
+                    --
+                    -- 0 1 2 3        0 1 3
+                    -- 1 0 1 2  ===>  1 0 2
+                    -- 2 1 0 1        3 2 0
+                    -- 3 2 1 0
+                    --
+                    -- We can see that is incorrect as the Additive structure is not preserved
+                    -- after the reduction. We handle this case specially.
+                    --
+                    -- We might need to do this for Ultra-metric also..?
+                    case TCM.tcmStructure $ TCM.diagnoseTcm tcm of
+                      TCM.Additive -> \(i,j) -> toEnum . abs $ i - j
+                      _            -> f
+                
                 f (i,j) = tcm TCM.! (i', j')
                   where
                     i' = i + iOffset

@@ -134,9 +134,8 @@ instance ParsedMetadata TNT.TntResult where
               | TNT.additive inMeta = (1, Just $ TCM.generate (length characterAlphabet) genAdditive)
               | otherwise           = (1, Just $ TCM.generate (length characterAlphabet) genFitch)
               where
-                genAdditive :: (Int, Int) -> Int
-                genAdditive (i,j) = abs $ i - j
-                genFitch    :: (Int, Int) -> Int
+                genAdditive, genFitch :: (Int, Int) -> Int
+                genAdditive (i,j) = max i j - min i j
                 genFitch    (i,j) = if i == j then 0 else 1
 
 
