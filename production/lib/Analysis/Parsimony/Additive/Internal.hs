@@ -49,11 +49,11 @@ additivePreOrder  :: EncodableStaticCharacter c
                   => AdditiveOptimizationDecoration c
                   -> [(Word, AdditiveOptimizationDecoration c)]
                   -> AdditiveOptimizationDecoration c
-additivePreOrder childDecoration (_x:_y:_)                  = childDecoration   -- multiple parents; shouldn't be possible,
+additivePreOrder childDecoration (_:_:_)                 = childDecoration   -- multiple parents; shouldn't be possible,
                                                                                 --    but here for completion
-additivePreOrder childDecoration []                         = childDecoration   -- is a root TODO: need to change preliminary
-                                                                                --    to final
-additivePreOrder childDecoration ((_, parentDecoration):[]) =
+additivePreOrder childDecoration []                      = childDecoration   -- is a root TODO: need to change preliminary
+                                                                             --    to final
+additivePreOrder childDecoration [(_, parentDecoration)] =
     if childDecoration ^. isLeaf
         then childDecoration
         else determineFinalState childDecoration parentDecoration
@@ -93,7 +93,7 @@ initializeLeaf curDecoration =
     where
         label  = curDecoration ^. discreteCharacter
         lower  = fromIntegral (countTrailingZeros label) :: Word
-        higher = fromIntegral (alphLen - (countLeadingZeros  label)) :: Word
+        higher = fromIntegral (alphLen - countLeadingZeros label) :: Word
         alphLen = symbolCount $ curDecoration ^. discreteCharacter
         zero   = fromIntegral (0 :: Int) :: Word
 
@@ -130,10 +130,8 @@ overlaps :: (Word, Word) -> (Word, Word) -> Bool
 overlaps leftChild rightChild =
     (rightSmallest < leftLargest) && (rightLargest > leftSmallest)
     where
-        rightSmallest = fst (rightChild)
-        rightLargest  = snd (rightChild)
-        leftSmallest  = fst (leftChild)
-        leftLargest   = snd (leftChild)
+        (rightSmallest, rightLargest) = rightChild
+        ( leftSmallest,  leftLargest) = leftChild
 
 
 -- | True if one of the intervals falls entirely within the other
@@ -145,10 +143,8 @@ subsetted leftChild rightChild
     | leftSmallest  <= rightSmallest && leftLargest  >= rightLargest = True
     | otherwise                                                      = False
     where
-        rightSmallest = fst (rightChild)
-        rightLargest  = snd (rightChild)
-        leftSmallest  = fst (leftChild)
-        leftLargest   = snd (leftChild)
+        (rightSmallest, rightLargest) = rightChild
+        ( leftSmallest,  leftLargest) = leftChild
 
 
 -- |
@@ -177,10 +173,8 @@ intersect leftChild rightChild
             then (rightSmallest, leftLargest)
             else (leftLargest, rightSmallest)
     where
-        rightSmallest = fst (rightChild)
-        rightLargest  = snd (rightChild)
-        leftSmallest  = fst (leftChild)
-        leftLargest   = snd (leftChild)
+        (rightSmallest, rightLargest) = rightChild
+        ( leftSmallest,  leftLargest) = leftChild
 
 
 -- |
@@ -200,10 +194,8 @@ union leftChild rightChild = (smallestMin, largestMax)
                 then leftLargest
                 else rightLargest
 
-        rightSmallest = fst (rightChild)
-        rightLargest  = snd (rightChild)
-        leftSmallest  = fst (leftChild)
-        leftLargest   = snd (leftChild)
+        (rightSmallest, rightLargest) = rightChild
+        ( leftSmallest,  leftLargest) = leftChild
 
 
 -- TODO: check all inequalities for inclusion of equality

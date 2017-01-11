@@ -55,11 +55,11 @@ additivePostOrder parentDecoration xs =
 additivePreOrder  :: ContinuousOptimizationDecoration c
                   -> [(Double, ContinuousOptimizationDecoration c)]
                   -> ContinuousOptimizationDecoration c
-additivePreOrder childDecoration (_x:_y:_)                  = childDecoration   -- multiple parents; shouldn't be possible,
+additivePreOrder childDecoration (_:_:_)                 = childDecoration   -- multiple parents; shouldn't be possible,
                                                                                 --    but here for completion
-additivePreOrder childDecoration []                         = childDecoration   -- is a root TODO: need to change preliminary
+additivePreOrder childDecoration []                      = childDecoration   -- is a root TODO: need to change preliminary
                                                                                 --    to final
-additivePreOrder childDecoration ((_, parentDecoration):[]) =
+additivePreOrder childDecoration [(_, parentDecoration)] =
     if childDecoration ^. isLeaf
         then childDecoration
         else determineFinalState childDecoration parentDecoration
@@ -127,10 +127,9 @@ overlaps :: (Double, Double) -> (Double, Double) -> Bool
 overlaps leftChild rightChild =
     (rightSmallest < leftLargest) && (rightLargest > leftSmallest)
     where
-        rightSmallest = fst (rightChild)
-        rightLargest  = snd (rightChild)
-        leftSmallest  = fst (leftChild)
-        leftLargest   = snd (leftChild)
+        (rightSmallest, rightLargest) = rightChild
+        ( leftSmallest,  leftLargest) = leftChild 
+
 
 -- | True if one of the intervals falls entirely between the other
 -- Assumes there is an overlap
@@ -140,10 +139,8 @@ subsetted leftChild rightChild
     | leftSmallest  <= rightSmallest && leftLargest  >= rightLargest = True
     | otherwise                                                      = False
     where
-        rightSmallest = fst (rightChild)
-        rightLargest  = snd (rightChild)
-        leftSmallest  = fst (leftChild)
-        leftLargest   = snd (leftChild)
+        (rightSmallest, rightLargest) = rightChild
+        ( leftSmallest,  leftLargest) = leftChild 
 
 
 -- |
@@ -172,10 +169,9 @@ intersect leftChild rightChild
             then (rightSmallest, leftLargest)
             else (leftLargest, rightSmallest)
     where
-        rightSmallest = fst (rightChild)
-        rightLargest  = snd (rightChild)
-        leftSmallest  = fst (leftChild)
-        leftLargest   = snd (leftChild)
+        (rightSmallest, rightLargest) = rightChild
+        ( leftSmallest,  leftLargest) = leftChild 
+
 
 -- |
 -- Finds the union of two intervals, where the union is the largest interval possible, i.e. from the smallest value to the largest
@@ -194,10 +190,8 @@ union leftChild rightChild = (smallestMin, largestMax)
                 then leftLargest
                 else rightLargest
 
-        rightSmallest = fst (rightChild)
-        rightLargest  = snd (rightChild)
-        leftSmallest  = fst (leftChild)
-        leftLargest   = snd (leftChild)
+        (rightSmallest, rightLargest) = rightChild
+        ( leftSmallest,  leftLargest) = leftChild 
 
 
 -- TODO: check all inequalities for inclusion of equality
