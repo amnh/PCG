@@ -3618,7 +3618,7 @@ algn_print_dynmtrx_2d (const seq_p seq1, const seq_p seq2, nw_matrices_p matrice
     printf ("Sequence 2 length: %d\n", seqLen2);
     printf ("Length    Product: %d\n", seqLen1 * seqLen2);
     printf ("Length +1 Product: %d\n", n * m);
-    printf ("Allocated space  : %d\n\n", matrices->cap_nw);
+    printf ("Allocated space  : %zu\n\n", matrices->cap_nw);
 
     printf("Cost matrix:\n");
     // print column heads

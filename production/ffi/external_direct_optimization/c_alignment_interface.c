@@ -167,8 +167,12 @@ int readjust_3d(int first_gap, int* isDifferent,
 
 int align2d(alignIO_p input1,
             alignIO_p input2,
-            alignIO_p outputMedian,
-            cost_matrices_2d_p costMtx2d) {
+            alignIO_p gappedOutputSeq,
+            alignIO_p ungappedOutputSeq,
+            alignIO_p unionOutputSeq,
+            cost_matrices_2d_p costMtx2d,
+            int doUnion,
+            int doDOTraceback) {
 
     const size_t SEQ_CAPACITY = input1->length + input2->length + 1;
 
@@ -180,13 +184,11 @@ int align2d(alignIO_p input1,
     seq_p shortSeq    = malloc(sizeof(struct seq));
     seq_p retShortSeq = malloc(sizeof(struct seq));
     seq_p retLongSeq  = malloc(sizeof(struct seq));
-    seq_p medianSeq   = malloc(sizeof(struct seq));
 
     initializeSeq(longSeq,     SEQ_CAPACITY);
     initializeSeq(shortSeq,    SEQ_CAPACITY);
     initializeSeq(retLongSeq,  SEQ_CAPACITY);
     initializeSeq(retShortSeq, SEQ_CAPACITY);
-    initializeSeq(medianSeq, SEQ_CAPACITY);
 
 
     int swapped = 0;
@@ -240,18 +242,43 @@ int align2d(alignIO_p input1,
     }
     //printf("%d, %zu, %d, %zu\n", shortSeqLen, shortSeq->len, longSeqLen, longSeq->len);
     int algnCost = algn_nw_2d( shortSeq, longSeq, costMtx2d, nw_mtxs2d, deltawh );
-    algn_backtrace_2d (shortSeq, longSeq, retShortSeq, retLongSeq, nw_mtxs2d, costMtx2d, 0, 0, swapped);
-    algn_union (retShortSeq, retLongSeq, medianSeq);
+    if(doDOTraceback || doUnion) {
+        algn_backtrace_2d (shortSeq, longSeq, retShortSeq, retLongSeq, nw_mtxs2d, costMtx2d, 0, 0, swapped);
+
+        if(doDOTraceback) {
+            seq_p ungappedMedianSeq = malloc(sizeof(struct seq));
+            seq_p gappedMedianSeq   = malloc(sizeof(struct seq));
+            initializeSeq(ungappedMedianSeq, SEQ_CAPACITY);
+            initializeSeq(gappedMedianSeq,   SEQ_CAPACITY);
+
+            algn_get_median_2d_no_gaps (retShortSeq, retLongSeq, costMtx2d, ungappedMedianSeq);
+            algn_get_median_2d_with_gaps (retShortSeq, retLongSeq, costMtx2d, gappedMedianSeq);
+
+            seqToAlignIO(ungappedMedianSeq, ungappedOutputSeq);
+            seqToAlignIO(gappedMedianSeq,   gappedOutputSeq);
+
+            freeSeq(ungappedMedianSeq);
+            freeSeq(gappedMedianSeq);
+
+        }
+        if(doUnion) {
+            seq_p unionSeq = malloc(sizeof(struct seq));
+            initializeSeq(unionSeq, SEQ_CAPACITY);
+            algn_union(retShortSeq, retLongSeq, unionSeq);
+
+            seqToAlignIO(unionSeq, unionOutputSeq);
+            freeSeq(unionSeq);
+        }
+    }
+
 
     seqToAlignIO(retLongSeq, longIO);
     seqToAlignIO(retShortSeq, shortIO);
-    seqToAlignIO(medianSeq, outputMedian);
 
     //freeCostMtx(costMtx2d, 1);  // 1 is 2d
     freeNWMtx(nw_mtxs2d);
     freeSeq(shortSeq);
     freeSeq(longSeq);
-    freeSeq(medianSeq);
     freeSeq(retLongSeq);
     freeSeq(retShortSeq);
 
@@ -261,8 +288,12 @@ int align2d(alignIO_p input1,
 
 int align2dAffine(alignIO_p input1,
                   alignIO_p input2,
-                  alignIO_p outputMedian,
-                  cost_matrices_2d_p costMtx2d_affine) {
+                  alignIO_p gappedOutputSeq,
+                  alignIO_p ungappedOutputSeq,
+                  alignIO_p unionOutputSeq,
+                  cost_matrices_2d_p costMtx2d_affine,
+                  int doUnion,
+                  int doDOTraceback) {
 
     const size_t SEQ_CAPACITY = input1->length + input2->length + 2;
 
@@ -275,14 +306,12 @@ int align2dAffine(alignIO_p input1,
     seq_p shortSeq    = malloc(sizeof(struct seq));
     seq_p retShortSeq = malloc(sizeof(struct seq));
     seq_p retLongSeq  = malloc(sizeof(struct seq));
-    seq_p medianSeq   = malloc(sizeof(struct seq));
 
     printf("here!!\n");
     initializeSeq(longSeq,     SEQ_CAPACITY);
     initializeSeq(shortSeq,    SEQ_CAPACITY);
     initializeSeq(retLongSeq,  SEQ_CAPACITY);
     initializeSeq(retShortSeq, SEQ_CAPACITY);
-    initializeSeq(medianSeq,   SEQ_CAPACITY);
 
     int swapped = 0;
 
@@ -387,31 +416,42 @@ int align2dAffine(alignIO_p input1,
                                              gap_open_prec,
                                              s_horizontal_gap_extension);
 
-    algn_backtrace_affine (shortSeq,
-                           longSeq,
-                           direction_matrix,
-                           medianSeq,
-                           empty_medianSeq,
-                           retShortSeq,
-                           retLongSeq,
-                           costMtx2d_affine);
+    if(doDOTraceback) {
+        seq_p ungappedMedianSeq = malloc(sizeof(struct seq));
+        seq_p gappedMedianSeq   = malloc(sizeof(struct seq));
+        initializeSeq(ungappedMedianSeq, SEQ_CAPACITY);
+        initializeSeq(gappedMedianSeq,   SEQ_CAPACITY);
 
-    //algn_union (retShortSeq, retLongSeq, medianSeq);
+        algn_backtrace_affine (shortSeq,
+                               longSeq,
+                               direction_matrix,
+                               ungappedMedianSeq,
+                               gappedMedianSeq,
+                               retShortSeq,
+                               retLongSeq,
+                               costMtx2d_affine);
+        seqToAlignIO(ungappedMedianSeq, ungappedOutputSeq);
+        seqToAlignIO(gappedMedianSeq,   gappedOutputSeq);
 
-    seqToAlignIO(retLongSeq, longIO);
+        freeSeq(ungappedMedianSeq);
+        freeSeq(gappedMedianSeq);
+    }
+
+
+    seqToAlignIO(retLongSeq,  longIO);
     seqToAlignIO(retShortSeq, shortIO);
-    seqToAlignIO(medianSeq, outputMedian);
+
 
     freeNWMtx(nw_mtxs2dAffine);
     freeSeq(shortSeq);
     freeSeq(longSeq);
-    freeSeq(medianSeq);
     freeSeq(retLongSeq);
     freeSeq(retShortSeq);
 
     return algnCost;
 }
 
+/*
 int align3d(alignIO_p input1,
             alignIO_p input2,
             alignIO_p input3,
@@ -544,3 +584,4 @@ int align3d(alignIO_p input1,
     //free(tcm);
     return algnCost;
 }
+*/

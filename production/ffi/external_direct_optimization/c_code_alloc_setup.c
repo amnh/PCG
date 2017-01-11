@@ -20,16 +20,15 @@
 void initializeNWMtx(size_t len_seq1, size_t len_seq2, size_t len_seq3, int costMtxLcm, nw_matrices_p retMtx) {
 
     // in six following allocations all matrices are set to their shortest length because they get realloced in mat_setup_size
-    retMtx->cap_nw       = 0;  // a suitably small number to trigger realloc, but be larger than len_eff
-    retMtx->cap_eff      = -1; // len_eff is -1 so that len_eff < len, triggering the realloc
-    retMtx->cap_pre      = 0;  // again, trigger realloc
+    retMtx->cap_nw     = 0;  // a suitably small number to trigger realloc, but be larger than len_eff
+    retMtx->cap_eff    = 0; // cap_eff is -1 so that cap_eff < cap, triggering the realloc
+    retMtx->cap_pre    = 0;  // again, trigger realloc
 
-    retMtx->nw_costMtx   = malloc ( sizeof( int ) );
-    retMtx->dir_mtx_2d   = malloc ( sizeof( DIR_MTX_ARROW_t ) );
-    retMtx->pointers_3d  = malloc ( sizeof( int* ) );     // TODO: Why don't I have to dealloc all pointers in array?
-    // retMtx->cube         = malloc ( sizeof( int* ) );  // don't have to allocate these two,
-    // retMtx->cube_d       = malloc ( sizeof( int* ) );  // because they're just pointing to nw_costMtx and dir_mtx_2d
-    retMtx->precalc      = malloc ( sizeof( int ) );
+    retMtx->nw_costMtx = malloc ( sizeof( int ) );
+    retMtx->nw_dirMtx  = malloc ( sizeof( DIR_MTX_ARROW_t ) );
+    // retMtx->cube       = malloc ( sizeof( int* ) );  // don't have to allocate these two,
+    // retMtx->cube_d     = malloc ( sizeof( int* ) );  // because they're just pointing to nw_costMtx and nw_dirMtx
+    retMtx->precalcMtx = malloc ( sizeof( int ) );
 
     mat_setup_size (retMtx, len_seq1, len_seq2, len_seq3, costMtxLcm);
 }
@@ -259,11 +258,10 @@ void freeCostMtx(void * input, int is_2d) {
  */
 void freeNWMtx(nw_matrices_p input) {
     free (input->nw_costMtx);
-    free (input->dir_mtx_2d);
-    free (input->pointers_3d);
+    free (input->nw_dirMtx);
     // free (input->cube);    // don't have to deallocate these two,
-    // free (input->cube_d);  // because they're just pointing to nw_costMtx and dir_mtx_2d
-    free (input->precalc);
+    // free (input->cube_d);  // because they're just pointing to nw_costMtx and nw_dirMtx
+    free (input->precalcMtx);
 
     free(input);
 }

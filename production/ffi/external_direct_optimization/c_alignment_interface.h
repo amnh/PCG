@@ -27,8 +27,12 @@ void setSeq(alignIO_p input, seq_p retSeq);
  */
 int align2d(alignIO_p seq1,
             alignIO_p seq2,
-            alignIO_p medianSeq,
-            cost_matrices_2d_p costMtx2d);
+            alignIO_p gappedOutputSeq,
+            alignIO_p ungappedOutputSeq,
+            alignIO_p unionOutputSeq,
+            cost_matrices_2d_p costMtx2d,
+            int doUnion,
+            int doDOTraceback);
 
 /** Aligns two sequences using affine algorithm.
  *  Takes in two arrays of integer values, as well as two previously allocated
@@ -36,8 +40,12 @@ int align2d(alignIO_p seq1,
  */
 int align2dAffine(alignIO_p seq1,
                   alignIO_p seq2,
-                  alignIO_p medianSeq,
-                  cost_matrices_2d_p costMtx2d);
+                  alignIO_p gappedOutputSeq,
+                  alignIO_p ungappedOutputSeq,
+                  alignIO_p unionOutputSeq,
+                  cost_matrices_2d_p costMtx2d,
+                  int doUnion,
+                  int doDOTraceback);
 
 /** Aligns two sequences using non-affine algorithm.
  *  Takes in thee arrays of integer values, as well as three previously allocated

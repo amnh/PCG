@@ -57,23 +57,25 @@
 
 struct nwMatrices {
             /****** In each of the following calculations, seq length includes opening gap *******/
-    int cap_nw;                       /* Total length of available memory allocated to matrix or cube == | for 2d: 12 * max(len_s1, len_s2)
-                                       *                                                                 | for 3d: len_s1 * len_s2 * len_s3
-                                       */
-    int cap_eff;                      // Length of the efficiency matrix; at least as large as len TODO: figure out what this actually is
-    int cap_pre;                      // Length of the precalculated matrix == max(len_s1, len_s2) * (alphSize + 1) ---extra 1 is for gap
-    int *nw_costMtx;                  // NW cost matrix for both 2d and 3d alignment
-    DIR_MTX_ARROW_t  *dir_mtx_2d;     // Matrix for backtrace directions in a 2d alignment
-    int **pointers_3d;                // Matrix of pointers to each row in a 3d align
-    int *nw_costMtx3d;                // Matrix for 3d alignment, just a set of pointers into nw_costMtx -- alloced internally.
-    DIR_MTX_ARROW_t  *nw_costMtx3d_d; // Matrix for backtrace directions in a 3d alignment, just a set of pointers
-                                      //     into nw_costMtx --- alloced internally
-    int *precalc;                     /* a three-dimensional matrix that holds
-                                       * the transition costs for the entire alphabet (of all three sequences)
-                                       * with the sequence seq3. The columns are the bases of seq3, and the rows are
-                                       * each of the alphabet characters (possibly including ambiguities). See
-                                       * cm_precalc_4algn_3d for more information).
-                                       */
+    size_t cap_nw;                   /* Total length of available memory allocated to matrix or cube ==
+                                      *   | for 2d: 12 * max(len_s1, len_s2)
+                                      *   | for 3d: len_s1 * len_s2 * len_s3
+                                      */
+    size_t cap_eff;                  // Length of the efficiency matrix; at least as large as cap_nw.
+                                  // int because is originally set as -1
+                                  // TODO: figure out what this actually is
+    size_t cap_pre;                  // Length of the precalculated matrix == max(len_s1, len_s2) * (alphSize + 1) ---extra 1 is for gap
+    int *nw_costMtx;                 // NW cost matrix for both 2d and 3d alignment
+    DIR_MTX_ARROW_t  *nw_dirMtx;     // Matrix for backtrace directions in a 2d alignment
+    int *nw_costMtx3d_d;             // Matrix for 3d alignment, just a set of pointers into nw_costMtx -- alloced internally.
+    DIR_MTX_ARROW_t  *nw_dirMtx3d_d; // Matrix for backtrace directions in a 3d alignment, just a set of pointers
+                                     //     into nw_costMtx --- alloced internally
+    int *precalcMtx;                 /* a three-dimensional matrix that holds
+                                      * the transition costs for the entire alphabet (of all three sequences)
+                                      * with the sequence seq3. The columns are the bases of seq3, and the rows are
+                                      * each of the alphabet characters (possibly including ambiguities). See
+                                      * cm_precalc_4algn_3d for more information).
+                                      */
 };
 
 typedef struct nwMatrices * nw_matrices_p;
@@ -116,7 +118,7 @@ mat_get_2d_prec (const nw_matrices_p m);
 int *
 mat_get_3d_prec (const nw_matrices_p m);
 
-DIR_MTX_ARROW_t  *
+DIR_MTX_ARROW_t *
 mat_get_2d_direct (const nw_matrices_p m);
 
 /*
@@ -133,7 +135,7 @@ mat_get_3d_pointers (nw_matrices_p m);
 int *
 mat_get_3d_matrix (nw_matrices_p m);
 
-DIR_MTX_ARROW_t  *
+DIR_MTX_ARROW_t *
 mat_get_3d_direct (nw_matrices_p m);
 
 /* Printout the contents of the matrix */
