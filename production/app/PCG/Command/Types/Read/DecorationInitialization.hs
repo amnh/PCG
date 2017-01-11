@@ -48,10 +48,10 @@ import           Bio.PhyloGraphPrime.ReferenceDAG
 --import           Control.Arrow                     ((&&&))
 --import           Control.Applicative               ((<|>))
 --import           Data.Alphabet
---import           Data.Bifunctor                    (first)
+import           Data.Bifunctor                    (second)
 --import           Data.Foldable
 --import qualified Data.IntSet                as IS
---import           Data.Key
+import           Data.Key
 --import           Data.List                         (transpose, zip4)
 import           Data.List.NonEmpty                (NonEmpty( (:|) ))
 --import qualified Data.List.NonEmpty         as NE
@@ -73,6 +73,7 @@ import           Prelude                    hiding (lookup, zip, zipWith)
 
 --import Debug.Trace
 
+
 {-
 traceOpt :: [Char] -> a -> a
 traceOpt identifier x = (trace ("Before " <> identifier) ())
@@ -81,16 +82,23 @@ traceOpt identifier x = (trace ("Before " <> identifier) ())
                         )
 -}
 
+
 initializeDecorations :: CharacterResult -> PhylogeneticSolution InitialDecorationDAG
 initializeDecorations (PhylogeneticSolution forests) = PhylogeneticSolution $ fmap performDecoration <$> forests
   where
 --    performDecoration :: CharacterDAG -> InitialDecorationDAG
-    performDecoration (PDAG dag) = PDAG $ nodePostOrder g dag
+    performDecoration (PDAG dag) = PDAG . nodePreOrder preOrderTransformation $ nodePostOrder postOrderTransformation dag
       where
-        g parentalNode childNodes =
+        postOrderTransformation parentalNode childNodes =
           PNode
           { nodeDecorationDatum = (nodeDecorationDatum parentalNode) 
-          , sequenceDecoration  = f (sequenceDecoration parentalNode) (sequenceDecoration <$> childNodes)
+          , sequenceDecoration  = postOrderLogic (sequenceDecoration parentalNode) (sequenceDecoration <$> childNodes)
+          } 
+
+        preOrderTransformation parentalNode childNodes =
+          PNode
+          { nodeDecorationDatum = (nodeDecorationDatum parentalNode) 
+          , sequenceDecoration  = preOrderLogic (sequenceDecoration parentalNode) (second sequenceDecoration <$> childNodes)
           } 
 {-
     f :: CharacterSequence
@@ -116,12 +124,12 @@ initializeDecorations (PhylogeneticSolution forests) = PhylogeneticSolution $ fm
            (AdditiveOptimizationDecoration StaticCharacter)
            UnifiedDynamicCharacter
 -}
-    f currentCharSeq childCharSeqs =
+    postOrderLogic currentCharSeq childCharSeqs =
         hexZipWith
-          (g sankoffPostOrder)
-          (g sankoffPostOrder)
+          (g  sankoffPostOrder)
+          (g  sankoffPostOrder)
           id2
-          (g fitchPostOrder)
+          (g    fitchPostOrder)
           (g additivePostOrder)
           id2
           currentCharSeq
@@ -136,7 +144,52 @@ initializeDecorations (PhylogeneticSolution forests) = PhylogeneticSolution $ fm
         g _  Nothing  [] = error $ "Uninitialized leaf node. This is bad!"
         g h (Just  v) [] = h v []
         g h        _  xs = h (error $ "We shouldn't be using this value.") xs
-
+{-
+    preOrderLogic ::
+        CharacterSequence
+          (SankoffOptimizationDecoration  StaticCharacter)
+          (SankoffOptimizationDecoration  StaticCharacter)
+          UnifiedContinuousCharacter --(ContinuousOptimizationDecoration ContinuousChar)
+          (FitchOptimizationDecoration    StaticCharacter)
+          (AdditiveOptimizationDecoration StaticCharacter)
+          UnifiedDynamicCharacter
+      -> [ (Word
+           , CharacterSequence
+               (SankoffOptimizationDecoration  StaticCharacter)
+               (SankoffOptimizationDecoration  StaticCharacter)
+               UnifiedContinuousCharacter --(ContinuousOptimizationDecoration ContinuousChar)
+               (FitchOptimizationDecoration    StaticCharacter)
+               (AdditiveOptimizationDecoration StaticCharacter)
+               UnifiedDynamicCharacter
+           )
+         ]
+      -> CharacterSequence
+           (SankoffOptimizationDecoration  StaticCharacter)
+           (SankoffOptimizationDecoration  StaticCharacter)
+           UnifiedContinuousCharacter --(ContinuousOptimizationDecoration ContinuousChar)
+           (FitchOptimizationDecoration    StaticCharacter)
+           (AdditiveOptimizationDecoration StaticCharacter)
+           UnifiedDynamicCharacter
+-}
+    preOrderLogic currentCharSeq parentCharSeqs =
+        hexZipWith
+          sankoffPreOrder
+          sankoffPreOrder
+          id2
+          fitchPreOrder
+          additivePreOrder
+          id2
+          currentCharSeq
+          parentCharSeqs'
+      where
+        id2 x _ = x
+        parentCharSeqs' =
+            case parentCharSeqs of
+              x:xs -> hexmap f f f f f f . hexTranspose $ snd <$> x:|xs
+              []   -> let c = const []
+                      in hexmap c c c c c c currentCharSeq
+           where
+             f = foldMapWithKey $ \i e -> [(toEnum i,e)]
 
 {-
 data FracturedParseResult
