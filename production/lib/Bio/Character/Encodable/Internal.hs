@@ -12,6 +12,14 @@
 
 module Bio.Character.Encodable.Internal where
 
+import Bio.Character.Exportable
+import Control.Lens
+import Data.Bifunctor          (bimap)
+import Data.BitMatrix.Internal (BitMatrix(..))
+import Data.BitVector
+import Data.Semigroup
+import Foreign.C.Types
+
 
 -- |
 -- Represents a type which stores one or more abiuguity groups from an alphabet.
@@ -38,3 +46,22 @@ instance PossiblyMissingCharacter c => PossiblyMissingCharacter (Maybe c) where
     toMissing = fmap toMissing
 
     isMissing = maybe False isMissing
+
+
+
+bitVectorToBufferChunks :: Int -> Int -> BitVector -> [CULong]
+bitVectorToBufferChunks elemWidth elemCount bv = fmap fromIntegral $ ((bv @@) <$> slices) <> tailWord
+  where
+    totalBits = elemWidth * elemCount
+    (fullWords, remainingBits) = totalBits `divMod` 64
+    slices   = take fullWords $ iterate ((64 +) `bimap` (64 +)) ((63, 0) :: (Int,Int))
+    tailWord = if   remainingBits == 0
+               then []
+               else [ bv @@ (totalBits - 1, totalBits - remainingBits) ]
+
+
+exportableCharacterElementsToBitMatrix :: ExportableCharacterElements -> BitMatrix
+exportableCharacterElementsToBitMatrix ece = BitMatrix elementWidth $ foldMap (bitVec elementWidth) integralvalues
+  where
+    elementWidth   = ece ^. exportedElementWidth
+    integralvalues = exportedCharacterElements ece

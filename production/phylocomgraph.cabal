@@ -71,7 +71,8 @@ library
                      , transformers
                      , unordered-containers
                      , vector
-                     , vector-instances
+                     -- >=3.4 required for corrected definition of (!) & index
+                     , vector-instances >=3.4
 
   default-language:    Haskell2010
 
@@ -137,7 +138,7 @@ library
                        Bio.Character.Decoration.Metric
                        Bio.Character.Decoration.NonMetric
                        Bio.Character.Encodable
-                       Bio.Character.Exportable.Class
+                       Bio.Character.Exportable
                        Bio.Character.Parsed
                        Bio.Metadata
                        Bio.Metadata.CharacterName
@@ -227,6 +228,7 @@ library
                        Bio.Character.Encodable.Static.Class
                        Bio.Character.Encodable.Static.Internal
                        Bio.Character.Encodable.Stream
+                       Bio.Character.Exportable.Class
                        Bio.Character.Parsed.Class
                        Bio.Character.Parsed.Internal
                        Bio.PhyloGraph.Forest.Class
@@ -326,7 +328,7 @@ executable pcg
                      , transformers
                      , unordered-containers
                      , vector
-                     , vector-instances
+                     , vector-instances >=3.4
 
   default-language:    Haskell2010
 

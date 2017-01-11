@@ -98,11 +98,11 @@ updateCostVector :: DiscreteCharacterDecoration d c
                       -> NonEmpty (SankoffOptimizationDecoration c)
                       -> SankoffOptimizationDecoration c
 updateCostVector _parentDecoration (x:|[])                   = x                    -- Shouldn't be possible, but here for completion.
-updateCostVector  parentDecoration (leftChild:|rightChild:_) = returnNodeDecoration -- _Should_ be able to amend this to use non-binary children.
+updateCostVector _parentDecoration (leftChild:|rightChild:_) = returnNodeDecoration -- _Should_ be able to amend this to use non-binary children.
     where
-        (costVector, dirCostVector, charCost) = foldr findMins initialAccumulator [0..length(parentDecoration ^. characterAlphabet)]
+        (costVector, dirCostVector, charCost) = foldr findMins initialAccumulator [0..length (leftChild ^. characterAlphabet)]
         initialAccumulator     = ([], ([],[]), maxBound :: Word)  -- (min cost per state, (leftMin, rightMin), overall minimum)
-        returnNodeDecoration   = extendDiscreteToSankoff parentDecoration costVector dirCostVector $ fromIntegral charCost
+        returnNodeDecoration   = extendDiscreteToSankoff leftChild costVector dirCostVector $ fromIntegral charCost
 
         findMins charState (stateMins, (leftMin, rightMin), curMin) = returnVal
              where

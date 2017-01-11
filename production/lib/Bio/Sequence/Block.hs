@@ -18,24 +18,26 @@ module Bio.Sequence.Block
   , continuousSingleton
   , discreteSingleton
   , dynamicSingleton
-  , hexliftA2
   , hexmap
-  , hexsequence
+  , hexTranspose
+  , hexZipWith
   ) where
 
 
 import Bio.Character.Encodable
 import Bio.Character.Decoration.Continuous
 import Bio.Metadata.CharacterName
-import Control.Applicative                 (liftA2)
 import Data.Foldable
+import Data.Key
 import Data.Monoid                         (mappend)
 import Data.Semigroup
 --import Data.Semigroup.Traversable
 import Data.TCM
 import Data.Vector                         (Vector)
+import Data.Vector.Instances ()
 import qualified Data.Vector as V
-
+import Prelude hiding (zipWith)
+import Safe (headMay)
 
 -- |
 -- Represents a block of charcters which are optimized atomically together across
@@ -74,8 +76,8 @@ hexmap f1 f2 f3 f4 f5 f6 =
       <*> (fmap f6 . dynamicCharacters       )
 
 
-hexsequence :: Traversable t => t (CharacterBlock m i c f a d) -> CharacterBlock (t m) (t i) (t c) (t f) (t a) (t d)
-hexsequence = 
+hexTranspose :: Traversable t => t (CharacterBlock m i c f a d) -> CharacterBlock (t m) (t i) (t c) (t f) (t a) (t d)
+hexTranspose = 
     CharacterBlock
       <$> (transposition continuousCharacterBins )
       <*> (transposition nonAdditiveCharacterBins)
@@ -84,14 +86,16 @@ hexsequence =
       <*> (transposition nonMetricCharacterBins  )
       <*> (transposition dynamicCharacters       )
   where
-    transposition f xs = V.generate len g
+    transposition f xs =
+        case maybe 0 length . headMay $ toList listOfVectors of
+          0 -> mempty
+          n -> V.generate n g
       where
         g i = (V.! i) <$> listOfVectors
-        len = length listOfVectors
         listOfVectors = fmap f xs
 
 
-hexliftA2 :: (m1 -> m2 -> m3)
+hexZipWith :: (m1 -> m2 -> m3)
           -> (i1 -> i2 -> i3) 
           -> (c1 -> c2 -> c3)
           -> (f1 -> f2 -> f3)
@@ -100,14 +104,14 @@ hexliftA2 :: (m1 -> m2 -> m3)
           -> CharacterBlock m1 i1 c1 f1 a1 d1
           -> CharacterBlock m2 i2 c2 f2 a2 d2
           -> CharacterBlock m3 i3 c3 f3 a3 d3
-hexliftA2 f1 f2 f3 f4 f5 f6 lhs rhs =
+hexZipWith f1 f2 f3 f4 f5 f6 lhs rhs =
     CharacterBlock
-        { continuousCharacterBins  = liftA2 f3 (continuousCharacterBins  lhs) (continuousCharacterBins  rhs)
-        , nonAdditiveCharacterBins = liftA2 f4 (nonAdditiveCharacterBins lhs) (nonAdditiveCharacterBins rhs)
-        , additiveCharacterBins    = liftA2 f5 (additiveCharacterBins    lhs) (additiveCharacterBins    rhs)
-        , metricCharacterBins      = liftA2 f1 (metricCharacterBins      lhs) (metricCharacterBins      rhs)
-        , nonMetricCharacterBins   = liftA2 f2 (nonMetricCharacterBins   lhs) (nonMetricCharacterBins   rhs)
-        , dynamicCharacters        = liftA2 f6 (dynamicCharacters        lhs) (dynamicCharacters        rhs)
+        { continuousCharacterBins  = zipWith f3 (continuousCharacterBins  lhs) (continuousCharacterBins  rhs)
+        , nonAdditiveCharacterBins = zipWith f4 (nonAdditiveCharacterBins lhs) (nonAdditiveCharacterBins rhs)
+        , additiveCharacterBins    = zipWith f5 (additiveCharacterBins    lhs) (additiveCharacterBins    rhs)
+        , metricCharacterBins      = zipWith f1 (metricCharacterBins      lhs) (metricCharacterBins      rhs)
+        , nonMetricCharacterBins   = zipWith f2 (nonMetricCharacterBins   lhs) (nonMetricCharacterBins   rhs)
+        , dynamicCharacters        = zipWith f6 (dynamicCharacters        lhs) (dynamicCharacters        rhs)
         }
 
 

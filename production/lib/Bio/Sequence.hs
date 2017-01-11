@@ -21,9 +21,9 @@ module Bio.Sequence
   ( CharacterSequence()
   , toBlocks
   , fromBlocks
-  , hexliftA2
   , hexmap
-  , hexsequence 
+  , hexTranspose
+  , hexZipWith  
   ) where
 
 import Bio.Sequence.Internal

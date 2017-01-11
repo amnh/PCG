@@ -13,5 +13,6 @@ extra-deps:
 - bv-0.4.1
 - containers-0.5.8.1
 - lens-4.15.1
+- vector-instances-3.4
 
 resolver: lts-7.14

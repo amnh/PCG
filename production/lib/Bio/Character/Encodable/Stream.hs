@@ -18,6 +18,7 @@
 module Bio.Character.Encodable.Stream where
 
 import           Bio.Character.Encodable.Internal
+import           Bio.Character.Exportable
 import           Data.Alphabet
 import           Data.Alphabet.IUPAC
 import qualified Data.Bimap         as BM
@@ -31,7 +32,7 @@ import           Data.Maybe                (fromMaybe)
 import           Data.Monoid
 import           Data.MonoTraversable
 import           Data.String               (IsString)
-
+import           Foreign.C.Types
 
 {-# DEPRECATED getGapChar "Don't use getGapChar, use getGapElement instead!" #-}
 
@@ -125,3 +126,15 @@ showStreamElement alphabet element = renderAmbiguity $ toIUPAC symbols
       | isAlphabetRna       alphabet = fromMaybe x $ x `BM.lookup` BM.twist iupacToRna
       | isAlphabetAminoAcid alphabet = fromMaybe x $ x `BM.lookup` BM.twist iupacToAminoAcid
       | otherwise                    = x
+
+
+encodableStreamToExportableCharacterElements :: (EncodableStream s, EncodedAmbiguityGroupContainer s, Integral (Element s))
+                                             => s -> Maybe ExportableCharacterElements
+encodableStreamToExportableCharacterElements dc
+  | bitsInElement > bitsInLocalWord = Nothing
+  | otherwise                       = Just $ ExportableCharacterElements numberOfElements bitsInElement integralElements
+  where
+    bitsInLocalWord  = finiteBitSize (undefined :: CULong)
+    bitsInElement    = symbolCount dc
+    numberOfElements = olength dc
+    integralElements = ofoldMap (pure . fromIntegral) dc 

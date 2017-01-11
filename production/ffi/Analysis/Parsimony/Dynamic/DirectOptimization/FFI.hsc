@@ -20,7 +20,7 @@
 
 module Analysis.Parsimony.Dynamic.DirectOptimization.FFI where
 
-import Bio.Character.Exportable
+import Bio.Character.Exportable.Class
 import Foreign
 --import Foreign.Ptr
 --import Foreign.C.String
@@ -237,6 +237,32 @@ foreign import ccall unsafe "c_code_alloc_setup.h initializeSeq"
 --allocateCostMatrix ::
 
 
+-- | Performs a naive direct optimization
+-- Takes in two characters to run DO on and a metadata object
+-- Returns an assignment character, the cost of that assignment, the assignment character with gaps included,
+-- the aligned version of the first input character, and the aligned version of the second input character
+-- The process for this algorithm is to generate a traversal matrix, then perform a traceback.
+naiveDO :: Exportable s
+        => s                    -- ^ First  dynamic character
+        -> s                    -- ^ Second dynamic character
+        -> (Int -> Int -> Int)  -- ^ Structure defining the transition costs between character states
+        -> (s, Double, s, s, s) -- ^ The /ungapped/ character derived from the the input characters' N-W-esque matrix traceback
+                                --
+                                --   The cost of the alignment
+                                --
+                                --   The /gapped/ character derived from the the input characters' N-W-esque matrix traceback
+                                --
+                                --   The gapped alignment of the /first/ input character when aligned with the second character
+                                --
+                                --   The gapped alignment of the /second/ input character when aligned with the first character
+naiveDO char1 char2 costStruct = undefined
+  where
+    exChar1 = toExportableElements char1
+    exChar2 = toExportableElements char2
+
+
+{-
+
 
 -- |
 foreign import ccall unsafe "c_alignment_interface.h align2d"
@@ -311,6 +337,7 @@ main = putStrLn $ show callSeqAlignFn_c
 
 
 -}
+<<<<<<< HEAD
 
 
 {-
@@ -414,3 +441,23 @@ data CostMatrix3d = CostMatrix3d { sSize      :: CInt      -- alphabet size incl
 
 
 -}
+module Main (main) where
+
+import RGB
+
+main =
+ do
+    let a = [RGB {r = 1.0, g = 1.0, b = 1.0},
+             RGB {r = 2.0, g = 2.0, b = 2.0},
+             RGB {r = 3.0, g = 3.0, b = 3.0}]
+    let l = length a
+    print a
+    -- b <- rgbTest a
+    -- print b
+
+    c <- rgbAlloc a
+    rgbTest2 c l
+    rgbTest2 c l
+    d <- rgbPeek c l
+    print d
+    return (
