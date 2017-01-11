@@ -32,7 +32,6 @@ import           Bio.Character.Encodable.Stream
 import           Bio.Character.Exportable.Class
 import           Control.Arrow                       ((***))
 import           Data.Alphabet
-import           Data.Bifunctor                      (bimap)
 import           Data.BitMatrix
 import           Data.BitMatrix.Internal(BitMatrix(..))
 import           Data.Char                           (toLower)
@@ -127,30 +126,30 @@ instance EncodableStreamElement DynamicCharacterElement where
 instance MonoFunctor DynamicChar where
 
     {-# INLINE omap #-}
-    omap f e@Missing{} = e
+    omap _ e@Missing{} = e
     omap f (DC x)      = DC . omap (unwrap . f . DCE) $ x
 
 
 instance MonoFoldable DynamicChar where
 
     {-# INLINE ofoldMap #-}
-    ofoldMap f Missing{} = mempty
+    ofoldMap _ Missing{} = mempty
     ofoldMap f (DC x)    = ofoldMap (f . DCE) $ x
 
     {-# INLINE ofoldr #-}
-    ofoldr f e Missing{} = e
+    ofoldr _ e Missing{} = e
     ofoldr f e (DC x)    = ofoldr (f . DCE)  e $ x
 
     {-# INLINE ofoldl' #-}
-    ofoldl' f e Missing{} = e
+    ofoldl' _ e Missing{} = e
     ofoldl' f e (DC x)   = ofoldl' (\acc x -> f acc (DCE x)) e $ x
 
     {-# INLINE ofoldr1Ex #-} 
-    ofoldr1Ex f Missing{} = error "Trying to mono-morphically fold over an empty structure without supplying an inital accumulator!"
+    ofoldr1Ex _ Missing{} = error "Trying to mono-morphically fold over an empty structure without supplying an inital accumulator!"
     ofoldr1Ex f (DC x)    = DCE . ofoldr1Ex (\x y -> unwrap $ f (DCE x) (DCE y)) $ x
 
     {-# INLINE ofoldl1Ex' #-}
-    ofoldl1Ex' f Missing{} = error "Trying to mono-morphically fold over an empty structure without supplying an inital accumulator!"
+    ofoldl1Ex' _ Missing{} = error "Trying to mono-morphically fold over an empty structure without supplying an inital accumulator!"
     ofoldl1Ex' f (DC x)    = DCE . ofoldl1Ex' (\x y -> unwrap $ f (DCE x) (DCE y)) $ x
 
     {-# INLINE onull #-}
@@ -167,7 +166,7 @@ instance MonoFoldable DynamicChar where
 instance MonoTraversable DynamicChar where
 
     {-# INLINE otraverse #-}
-    otraverse f e@Missing{} = pure e
+    otraverse _ e@Missing{} = pure e
     otraverse f (DC x)      = fmap DC . otraverse (fmap unwrap . f . DCE) $ x
 
     {-# INLINE omapM #-}

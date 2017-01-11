@@ -24,8 +24,6 @@ import Bio.Metadata.Discrete
 import Control.Lens
 import Data.Alphabet
 import Data.TCM
-import Data.Monoid
---import Data.Word
 
 
 -- |

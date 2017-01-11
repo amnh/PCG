@@ -35,7 +35,6 @@ import qualified Data.Vector        as V
 import           Data.Vector.Instances     ()
 import           Prelude            hiding (lookup)
 
-import Debug.Trace (trace)
 
 -- |
 -- A constant time access representation of a directed acyclic graph.

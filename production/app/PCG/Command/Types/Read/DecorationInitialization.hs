@@ -19,14 +19,14 @@ module PCG.Command.Types.Read.DecorationInitialization where
 import           Analysis.Parsimony.Additive.Internal
 import           Analysis.Parsimony.Fitch.Internal
 import           Analysis.Parsimony.Sankoff.Internal
-import           Bio.Character
+--import           Bio.Character
 
-import           Bio.Character.Decoration.Additive
+--import           Bio.Character.Decoration.Additive
 --import           Bio.Character.Decoration.Continuous
 --import           Bio.Character.Decoration.Discrete
 --import           Bio.Character.Decoration.Dynamic
-import           Bio.Character.Decoration.Fitch
-import           Bio.Character.Decoration.Metric
+--import           Bio.Character.Decoration.Fitch
+--import           Bio.Character.Decoration.Metric
 --import           Bio.Character.Decoration.NonMetric 
 
 --import           Bio.Character.Encodable
@@ -59,7 +59,7 @@ import           Data.List.NonEmpty                (NonEmpty( (:|) ))
 --import           Data.Map                          (Map, intersectionWith, keys)
 --import qualified Data.Map                   as Map
 --import           Data.Maybe                        (catMaybes, fromMaybe, listToMaybe)
-import           Data.Semigroup                    ((<>))
+--import           Data.Semigroup                    ((<>))
 --import           Data.Semigroup.Foldable
 --import           Data.Set                          (Set, (\\))
 --import qualified Data.Set                   as Set
@@ -71,14 +71,17 @@ import           Data.Semigroup                    ((<>))
 import           PCG.SearchState 
 import           Prelude                    hiding (lookup, zip, zipWith)
 
-import Debug.Trace
+--import Debug.Trace
 
+{-
+traceOpt :: [Char] -> a -> a
 traceOpt identifier x = (trace ("Before " <> identifier) ())
                   `seq` (let !v = x
                          in v `seq` (trace ("After " <> identifier) v)
                         )
+-}
 
---initializeDecorations :: CharacterResult -> PhylogeneticSolution InitialDecorationDAG
+initializeDecorations :: CharacterResult -> PhylogeneticSolution InitialDecorationDAG
 initializeDecorations (PhylogeneticSolution forests) = PhylogeneticSolution $ fmap performDecoration <$> forests
   where
 --    performDecoration :: CharacterDAG -> InitialDecorationDAG
@@ -115,15 +118,11 @@ initializeDecorations (PhylogeneticSolution forests) = PhylogeneticSolution $ fm
 -}
     f currentCharSeq childCharSeqs =
         hexZipWith
---          id2
-          (traceOpt "Sankoff1" $ g sankoffPostOrder)
---          id2
-          (traceOpt "Sankoff2" $ g sankoffPostOrder)
+          (g sankoffPostOrder)
+          (g sankoffPostOrder)
           id2
---          id2
-          (traceOpt "Fitch"    $ g fitchPostOrder)
---          id2
-          (traceOpt "Additive" $ g additivePostOrder)
+          (g fitchPostOrder)
+          (g additivePostOrder)
           id2
           currentCharSeq
           childCharSeqs'
