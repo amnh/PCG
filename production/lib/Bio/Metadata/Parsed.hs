@@ -129,7 +129,6 @@ instance ParsedMetadata TNT.TntResult where
                           
             suppliedWeight = fromIntegral $ TNT.weight inMeta
           
---            chooseAppropriateMatrix :: TNT.CharacterMetaData -> Maybe TCM
             chooseAppropriateMatrix
               | TNT.sankoff  inMeta = maybe (1, Nothing) (second Just) $ TCM.fromList . toList <$> TNT.costTCM inMeta 
               | TNT.additive inMeta = (1, Just $ TCM.generate (length characterAlphabet) genAdditive)

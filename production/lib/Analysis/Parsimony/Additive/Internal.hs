@@ -43,6 +43,7 @@ additivePostOrder parentDecoration xs =
         []   -> initializeLeaf  parentDecoration         -- a leaf
         y:ys -> updatePostOrder parentDecoration (y:|ys)
 
+
 -- | Used on the pre-order (i.e. second) traversal.
 additivePreOrder  :: EncodableStaticCharacter c
                   => AdditiveOptimizationDecoration c
@@ -57,6 +58,7 @@ additivePreOrder childDecoration ((_, parentDecoration):[]) =
         then childDecoration
         else determineFinalState childDecoration parentDecoration
 
+
 -- |
 -- Updates the character on the parent of two child nodes to become an 'AdditiveOptimizationDecoration'.
 -- Determines the cost by adding the cost of the intersection of the two child nodes, then summing that value
@@ -69,7 +71,7 @@ updatePostOrder :: DiscreteCharacterDecoration d c
                 -> AdditiveOptimizationDecoration c
 updatePostOrder _parentDecoration (x:|[])                     = x                     -- Shouldn't be possible,
                                                                                       --    but here for completion.
-updatePostOrder  parentDecoration (leftChild:|(rightChild:_)) = returnNodeDecoration  -- Not a leaf.
+updatePostOrder _parentDecoration (leftChild:|(rightChild:_)) = returnNodeDecoration  -- Not a leaf.
     where
         (newMin, newMax)              = leftInterval `intersect` rightInterval
         (leftInterval, rightInterval) = join bimap (^. preliminaryInterval) (leftChild, rightChild)
@@ -77,7 +79,8 @@ updatePostOrder  parentDecoration (leftChild:|(rightChild:_)) = returnNodeDecora
         totalCost                     = thisNodeCost + (leftChild ^. minCost) + (rightChild ^. minCost)
         thisNodeCost                  = newMax - newMin
         returnNodeDecoration          =
-            extendDiscreteToAdditive parentDecoration totalCost newInterval (leftInterval, rightInterval) False
+            extendDiscreteToAdditive leftChild totalCost newInterval (leftInterval, rightInterval) False
+
 
 -- | Initializes a leaf node by copying its current value into its preliminary state. Gives it a minimum cost of 0.
 --
@@ -93,6 +96,7 @@ initializeLeaf curDecoration =
         higher = fromIntegral (alphLen - (countLeadingZeros  label)) :: Word
         alphLen = symbolCount $ curDecoration ^. discreteCharacter
         zero   = fromIntegral (0 :: Int) :: Word
+
 
 -- | Uses the preliminary intervals of a node, its parents, and its children. Follows the three rules of Fitch,
 -- modified for additive characters: 1) If the intersection of the current node's character with its parent == the
@@ -120,6 +124,7 @@ determineFinalState childDecoration parentDecoration = finalDecoration
         emptyChar       = emptyStatic $ parentDecoration ^. discreteCharacter
         finalDecoration = childDecoration  &  preliminaryInterval .~ (myMin, myMax) & discreteCharacter .~ finalCharacter
 
+
 -- | True if there is any overlap between the two intervals
 overlaps :: (Word, Word) -> (Word, Word) -> Bool
 overlaps leftChild rightChild =
@@ -129,6 +134,7 @@ overlaps leftChild rightChild =
         rightLargest  = snd (rightChild)
         leftSmallest  = fst (leftChild)
         leftLargest   = snd (leftChild)
+
 
 -- | True if one of the intervals falls entirely within the other
 --
@@ -175,6 +181,7 @@ intersect leftChild rightChild
         rightLargest  = snd (rightChild)
         leftSmallest  = fst (leftChild)
         leftLargest   = snd (leftChild)
+
 
 -- |
 -- Finds the union of two intervals, where the union is the largest interval possible, i.e. from the smallest possible
