@@ -100,6 +100,7 @@ instance ParsedMetadata TNT.TntResult where
             , isIgnored     = not $ TNT.active          inMeta
             }
           where
+            (rationalWeight, unfactoredTcmMay) = chooseAppropriateMatrix
 
             -- |
             -- When constructing the Alphabet for a given character, we need to
@@ -126,10 +127,18 @@ instance ParsedMetadata TNT.TntResult where
                           then fromSymbols disAlph
                           else fromSymbolsWithStateNames $ zip (toList disAlph) (toList stateNameValues)
                           
-            (rationalWeight, unfactoredTcmMay) = maybe (1, Nothing) (second Just)
-                                               $ TCM.fromList . toList <$> TNT.costTCM inMeta
-
             suppliedWeight = fromIntegral $ TNT.weight inMeta
+          
+--            chooseAppropriateMatrix :: TNT.CharacterMetaData -> Maybe TCM
+            chooseAppropriateMatrix
+              | TNT.sankoff  inMeta = maybe (1, Nothing) (second Just) $ TCM.fromList . toList <$> TNT.costTCM inMeta 
+              | TNT.additive inMeta = (1, Just $ TCM.generate (length characterAlphabet) genAdditive)
+              | otherwise           = (1, Just $ TCM.generate (length characterAlphabet) genFitch)
+              where
+                genAdditive :: (Int, Int) -> Int
+                genAdditive (i,j) = abs $ i - j
+                genFitch    :: (Int, Int) -> Int
+                genFitch    (i,j) = if i == j then 0 else 1
 
 
 -- | (✔)

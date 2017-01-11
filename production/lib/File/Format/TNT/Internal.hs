@@ -11,7 +11,14 @@
 -- Internal types and functions for TNT parseing. Only a subset of types
 -- should be exported from top level module.
 -----------------------------------------------------------------------------
-{-# LANGUAGE BangPatterns, DeriveFoldable, DeriveFunctor, DeriveTraversable, FlexibleContexts, GeneralizedNewtypeDeriving, TypeFamilies #-}
+{-# LANGUAGE BangPatterns
+           , DeriveFoldable
+           , DeriveFunctor
+           , DeriveTraversable
+           , FlexibleContexts
+           , GeneralizedNewtypeDeriving
+           , TypeFamilies
+#-}
 
 module File.Format.TNT.Internal where
 
