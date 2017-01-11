@@ -114,7 +114,7 @@ initializeDecorations (PhylogeneticSolution forests) = PhylogeneticSolution $ fm
            UnifiedDynamicCharacter
 -}
     f currentCharSeq childCharSeqs =
-        hexliftA2
+        hexZipWith
 --          id2
           (traceOpt "Sankoff1" $ g sankoffPostOrder)
 --          id2
@@ -131,7 +131,7 @@ initializeDecorations (PhylogeneticSolution forests) = PhylogeneticSolution $ fm
         id2 x _ = x
         childCharSeqs' =
             case childCharSeqs of
-              x:xs -> hexsequence $ x:|xs
+              x:xs -> hexTranspose $ x:|xs
               []   -> let c = const []
                       in hexmap c c c c c c currentCharSeq
         g _  Nothing  [] = error $ "Uninitialized leaf node. This is bad!"

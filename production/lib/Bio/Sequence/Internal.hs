@@ -22,9 +22,9 @@ module Bio.Sequence.Internal
   ( CharacterSequence()
   , toBlocks
   , fromBlocks
-  , hexliftA2
   , hexmap
-  , hexsequence
+  , hexTranspose
+  , hexZipWith
   ) where
 
 --import           Bio.Character.Encodable
@@ -68,13 +68,13 @@ hexmap :: (m -> m')
 hexmap f1 f2 f3 f4 f5 f6 = fromBlocks . fmap (Block.hexmap f1 f2 f3 f4 f5 f6) . toBlocks
 
 
-hexsequence :: Traversable1 t => t (CharacterSequence m i c f a d) -> CharacterSequence [m] [i] [c] [f] [a] [d]
-hexsequence = fromBlocks . deepTranspose . fmap toBlocks . toList
+hexTranspose :: Traversable1 t => t (CharacterSequence m i c f a d) -> CharacterSequence [m] [i] [c] [f] [a] [d]
+hexTranspose = fromBlocks . deepTranspose . fmap toBlocks . toList
   where
 --    deepTranspose :: [(NonEmpty (CharacterBlock m i c f a d))] -> NonEmpty (CharacterBlock (t m) (t i) (t c) (t f) (t a) (t d))
     deepTranspose val =
         let beta = NE.unfold f val -- :: NonEmpty [CharacterBlock m i c f a d]
-        in fmap Block.hexsequence beta
+        in fmap Block.hexTranspose beta
       where
 --        f :: [NonEmpty (CharacterBlock m i c f a d)] -> ([CharacterBlock m i c f a d], Maybe [NonEmpty (CharacterBlock m i c f a d)])
         f = second sequenceA . unzip . fmap NE.uncons
@@ -83,7 +83,7 @@ hexsequence = fromBlocks . deepTranspose . fmap toBlocks . toList
         f            xs  = (NE.head <$>    xs , Just $ NE.tail <$> xs) 
 -}
 
-hexliftA2 :: (m1 -> m2 -> m3)
+hexZipWith :: (m1 -> m2 -> m3)
           -> (i1 -> i2 -> i3)
           -> (c1 -> c2 -> c3)
           -> (f1 -> f2 -> f3)
@@ -92,7 +92,7 @@ hexliftA2 :: (m1 -> m2 -> m3)
           -> CharacterSequence m1 i1 c1 f1 a1 d1
           -> CharacterSequence m2 i2 c2 f2 a2 d2
           -> CharacterSequence m3 i3 c3 f3 a3 d3
-hexliftA2 f1 f2 f3 f4 f5 f6 lhs rhs = fromBlocks $ zipWith (Block.hexliftA2 f1 f2 f3 f4 f5 f6) (toBlocks lhs) (toBlocks rhs)
+hexZipWith f1 f2 f3 f4 f5 f6 lhs rhs = fromBlocks $ zipWith (Block.hexZipWith f1 f2 f3 f4 f5 f6) (toBlocks lhs) (toBlocks rhs)
 
 
 -- |
