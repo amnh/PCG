@@ -11,27 +11,27 @@
 //#include "ukkCheckp.h"
 #include "ukkCommon.h"
 
-void setSeq(alignIO_p input, seq_p retSeq) {
-    // assign sequence into sequence struct
-    retSeq->len = input->length;
-    retSeq->seq_begin = retSeq->end - input->length;
+void setChar(alignIO_p input, seq_p retChar) {
+    // assign character into character struct
+    retChar->len = input->length;
+    retChar->seq_begin = retChar->end - input->length;
     if (input->length > 0) {
         for(size_t i = 0; i < input->length; i++) {
-            retSeq->seq_begin[i] = (int) input->sequence[i];
+            retChar->seq_begin[i] = (int) input->character[i];
         }
     }
 }
 
-void seqToAlignIO(seq_p input, alignIO_p output) {
+void charToAlignIO(seq_p input, alignIO_p output) {
     output->length = input->len;
     for(int i = 0; i < output->length; i++) {
-        output->sequence[i] = input->seq_begin[i];
+        output->character[i] = input->seq_begin[i];
     }
 }
 
-/** Returns true if sequence length is 0 or all characters are gaps. Otherwise returns false. */
-int is_empty(seq_p seq, SEQT gap_char) {
-    for (unsigned char *pos = seq->seq_begin; pos < seq->end; pos++) {
+/** Returns true if character length is 0 or all characters are gaps. Otherwise returns false. */
+int is_empty(seq_p charToTest, SEQT gap_char) {
+    for (unsigned char *pos = charToTest->seq_begin; pos < charToTest->end; pos++) {
         if (gap_char != *pos) {
             return 0;
         }
@@ -39,13 +39,13 @@ int is_empty(seq_p seq, SEQT gap_char) {
     return 1;
 }
 
-int compare (seq_p seq1, seq_p seq2) {
-    size_t minLength = seq1->len < seq2->len ? seq1->len : seq2->len;
-    size_t difference = seq1->seq_begin[0] - seq2->seq_begin[0];
+int compare (seq_p char1, seq_p char2) {
+    size_t minLength = char1->len < char2->len ? char1->len : char2->len;
+    size_t difference = char1->seq_begin[0] - char2->seq_begin[0];
     int retVal = 0;
     if (difference) {
         for (size_t count = 1; count < minLength; count++) {
-            difference = seq1->seq_begin[count] - seq2->seq_begin[count];
+            difference = char1->seq_begin[count] - char2->seq_begin[count];
 
             if( difference ) {
                 retVal = difference;
@@ -53,23 +53,23 @@ int compare (seq_p seq1, seq_p seq2) {
             }
         }
     }
-    return retVal ? retVal : seq1->len - seq2->len;
+    return retVal ? retVal : char1->len - char2->len;
 }
 
-int align_3_powell(seq_p seq1, seq_p seq2, seq_p seq3,
-                   seq_p retSeq1, seq_p retSeq2, seq_p retSeq3,
+int align_3_powell(seq_p char1, seq_p char2, seq_p char3,
+                   seq_p retChar1, seq_p retChar2, seq_p retChar3,
                    int mismatchCost, int gapOpenCost, int gapExtendCost) {
-    size_t total_length = seq1->len + seq2->len + seq3->len;
-    int cost = powell_3D_align(seq1, seq2, seq3, retSeq1, retSeq2, retSeq3, mismatchCost, gapOpenCost, gapExtendCost);
+    size_t total_length = char1->len + char2->len + char3->len;
+    int cost = powell_3D_align(char1, char2, char3, retChar1, retChar2, retChar3, mismatchCost, gapOpenCost, gapExtendCost);
     return cost;
 
 }
 
 /** [align_3_powell_inter a b c cm cm3] generates the median and edit
-    * cost between the three sequences seq1, seq2, and seq3, according to the cost
+    * cost between the three characters char1, char2, and char3, according to the cost
     * matrices specified by costMtx2d and costMtx3d. */
-int align_3_powell_inter (seq_p seq1, seq_p seq2, seq_p seq3,
-                          seq_p retSeq1, seq_p retSeq2, seq_p retSeq3,
+int align_3_powell_inter (seq_p char1, seq_p char2, seq_p char3,
+                          seq_p retChar1, seq_p retChar2, seq_p retChar3,
                           seq_p median,
                           cost_matrices_3d_p costMtx3d) {
         SEQT gap_char = cm_get_gap_char_3d(costMtx3d);
@@ -89,12 +89,12 @@ int align_3_powell_inter (seq_p seq1, seq_p seq2, seq_p seq3,
         mismatchCost  = cm_calc_cost(costMtx3d->cost, 1, 2,  costMtx3d->lcm);
         gapExtendCost = cm_calc_cost(costMtx3d->cost, 1, 16, costMtx3d->lcm);
 
-        int cost = align_3_powell (seq1, seq2, seq3,
-                                   retSeq1, retSeq2, retSeq3,
+        int cost = align_3_powell (char1, char2, char3,
+                                   retChar1, retChar2, retChar3,
                                    mismatchCost, gapOpenCost, gapExtendCost);
 
-        for( int pos = retSeq1->len - 1; pos >= 0; pos-- ) {
-            medianChar = cm_get_median_3d(costMtx3d, seq1->seq_begin[pos], seq2->seq_begin[pos], seq3->seq_begin[pos]);
+        for( int pos = retChar1->len - 1; pos >= 0; pos-- ) {
+            medianChar = cm_get_median_3d(costMtx3d, char1->seq_begin[pos], char2->seq_begin[pos], char3->seq_begin[pos]);
             if(medianChar != gap_char) {
                 seq_prepend(median, medianChar);
             }
@@ -106,7 +106,7 @@ int align_3_powell_inter (seq_p seq1, seq_p seq2, seq_p seq3,
 }
 
 /** [readjust_3d a b mine cm cm3 p] readjust [mine] as the median between
-    * the sequences [a], [b] and [p]. The result is a triple [(ed, s, ch)],
+    * the characters [a], [b] and [p]. The result is a triple [(ed, s, ch)],
     * where [ed] is the total edit cost of the median [s], which is in the
     * center of [a], [b], and [p], and [ch] is true iff [ch] is different from
     * [mine]. */
@@ -117,44 +117,44 @@ int align_3_powell_inter (seq_p seq1, seq_p seq2, seq_p seq3,
  *  Initial call has first_gap = 0.
  */
 int readjust_3d(int first_gap, int* isDifferent,
-                seq_p seq1, seq_p seq2, seq_p seq3,
-                seq_p retSeq1, seq_p retSeq2, seq_p retSeq3,
+                seq_p char1, seq_p char2, seq_p char3,
+                seq_p retChar1, seq_p retChar2, seq_p retChar3,
                 seq_p curMedian,
                 cost_matrices_3d_p costMtx3d) {
     int cost = 0;
     seq_p median = malloc(sizeof(struct seq));
-    initializeSeq(median, seq1->len + seq2->len + seq3->len + 1);
-    if ( seq1->len      == seq2->len &&
-         curMedian->len == seq3->len &&
-         seq1->len      == curMedian->len) {
+    initializeChar(median, char1->len + char2->len + char3->len + 1);
+    if ( char1->len      == char2->len &&
+         curMedian->len == char3->len &&
+         char1->len      == curMedian->len) {
         *isDifferent = 0;
         return cost; // cost == 0
     } else {
         SEQT gap_char = cm_get_gap_char_3d(costMtx3d);
-        if (is_empty(seq1, gap_char) && !is_empty(seq2, gap_char)) {
-            *isDifferent = 0 != compare (curMedian, seq2);
-            //copy seq2 to median
+        if (is_empty(char1, gap_char) && !is_empty(char2, gap_char)) {
+            *isDifferent = 0 != compare (curMedian, char2);
+            //copy char2 to median
             return cost; // cost == 0
-        } else if (is_empty(seq2, gap_char) && !is_empty(seq1, gap_char)) {
-            *isDifferent = 0 != compare(curMedian, seq1);
-            //copy seq1 to median
+        } else if (is_empty(char2, gap_char) && !is_empty(char1, gap_char)) {
+            *isDifferent = 0 != compare(curMedian, char1);
+            //copy char1 to median
             return cost; // cost == 0
-        } else if (is_empty(seq3, gap_char)) {
-            *isDifferent = 0 != compare(curMedian, seq3);
-            //copy seq3 to median
+        } else if (is_empty(char3, gap_char)) {
+            *isDifferent = 0 != compare(curMedian, char3);
+            //copy char3 to median
             return cost; // cost == 0
         } else {
             if (first_gap) {
-                cost = align_3_powell_inter(seq1, seq2, seq3,
-                                            retSeq1, retSeq2, retSeq3,
+                cost = align_3_powell_inter(char1, char2, char3,
+                                            retChar1, retChar2, retChar3,
                                             median,
                                             costMtx3d);
             } else {
-                seq_prepend(seq1, gap_char);
-                seq_prepend(seq2, gap_char);
-                seq_prepend(seq3, gap_char);
-                cost = align_3_powell_inter(seq1, seq2, seq3,
-                                            retSeq1, retSeq2, retSeq3,
+                seq_prepend(char1, gap_char);
+                seq_prepend(char2, gap_char);
+                seq_prepend(char3, gap_char);
+                cost = align_3_powell_inter(char1, char2, char3,
+                                            retChar1, retChar2, retChar3,
                                             median,
                                             costMtx3d);
             }
@@ -167,120 +167,120 @@ int readjust_3d(int first_gap, int* isDifferent,
 
 int align2d(alignIO_p input1,
             alignIO_p input2,
-            alignIO_p gappedOutputSeq,
-            alignIO_p ungappedOutputSeq,
-            alignIO_p unionOutputSeq,
+            alignIO_p gappedOutputChar,
+            alignIO_p ungappedOutputChar,
+            alignIO_p unionOutputChar,
             cost_matrices_2d_p costMtx2d,
             int doUnion,
-            int doDOTraceback) {
+            int doMedians) {
 
-    const size_t SEQ_CAPACITY = input1->length + input2->length + 1;
+    const size_t CHAR_CAPACITY = input1->length + input2->length + 1;
 
     alignIO_p longIO,
               middleIO,
               shortIO;
 
-    seq_p longSeq     = malloc(sizeof(struct seq));
-    seq_p shortSeq    = malloc(sizeof(struct seq));
-    seq_p retShortSeq = malloc(sizeof(struct seq));
-    seq_p retLongSeq  = malloc(sizeof(struct seq));
+    seq_p longChar     = malloc(sizeof(struct seq));
+    seq_p shortChar    = malloc(sizeof(struct seq));
+    seq_p retShortChar = malloc(sizeof(struct seq));
+    seq_p retLongChar  = malloc(sizeof(struct seq));
 
-    initializeSeq(longSeq,     SEQ_CAPACITY);
-    initializeSeq(shortSeq,    SEQ_CAPACITY);
-    initializeSeq(retLongSeq,  SEQ_CAPACITY);
-    initializeSeq(retShortSeq, SEQ_CAPACITY);
+    initializeChar(longChar,     CHAR_CAPACITY);
+    initializeChar(shortChar,    CHAR_CAPACITY);
+    initializeChar(retLongChar,  CHAR_CAPACITY);
+    initializeChar(retShortChar, CHAR_CAPACITY);
 
 
     int swapped = 0;
 
     if (input1->length > input2->length) {
-        setSeq(input1, longSeq);
+        setChar(input1, longChar);
         longIO = input1;
 
-        setSeq(input2, shortSeq);
+        setChar(input2, shortChar);
         shortIO = input2;
 
         swapped        = 1;
     } else {
-        setSeq(input2, longSeq);
+        setChar(input2, longChar);
         longIO = input2;
 
-        setSeq(input1, shortSeq);
+        setChar(input1, shortChar);
         shortIO = input1;
     }
-    //initializeSeq(longSeq, SEQ_CAPACITY);
-    setSeq(longIO, longSeq);
-    // printf("%zu\n", longSeq->len);
-    // printf("%zu\n", longSeq->cap);
-    // printf("%d\n", *longSeq->array_head);
-    // for(unsigned char *i = longSeq->seq_begin; i < longSeq->end; i++){
+    //initializeChar(longChar, CHAR_CAPACITY);
+    setChar(longIO, longChar);
+    // printf("%zu\n", longChar->len);
+    // printf("%zu\n", longChar->cap);
+    // printf("%d\n", *longChar->array_head);
+    // for(unsigned char *i = longChar->seq_begin; i < longChar->end; i++){
     //         printf("%d\n", *i);
     // }
 
-    //initializeSeq(shortSeq, SEQ_CAPACITY);
-    setSeq(shortIO, shortSeq);
-    // printf("\n\n%zu\n", shortSeq->len);
-    // printf("%zu\n", shortSeq->cap);
-    // printf("%d\n", *shortSeq->array_head);
-    // for(unsigned char *i = shortSeq->seq_begin; i < shortSeq->end; i++){
+    //initializeChar(shortChar, CHAR_CAPACITY);
+    setChar(shortIO, shortChar);
+    // printf("\n\n%zu\n", shortChar->len);
+    // printf("%zu\n", shortChar->cap);
+    // printf("%d\n", *shortChar->array_head);
+    // for(unsigned char *i = shortChar->seq_begin; i < shortChar->end; i++){
     //         printf("%d\n", *i);
     // }
 
     nw_matrices_p nw_mtxs2d = malloc(sizeof(struct nwMatrices));
-    initializeNWMtx(longSeq->len, shortSeq->len, 0, costMtx2d->lcm, nw_mtxs2d);
+    initializeNWMtx(longChar->len, shortChar->len, 0, costMtx2d->lcm, nw_mtxs2d);
 
     // deltawh is for use in Ukonnen, it gives the current necessary width of the Ukk matrix.
     // The following calculation to compute deltawh, which increases the matrix height or width in algn_nw_2d,
     // was pulled from POY ML code.
     int deltawh = 0;
-    int diff = longSeq->len - shortSeq->len;
-    int lower_limit = .1 * longSeq->len;
+    int diff = longChar->len - shortChar->len;
+    int lower_limit = .1 * longChar->len;
     if (deltawh) {
         deltawh = diff < lower_limit ? lower_limit : deltawh;
     } else {
         deltawh = diff < lower_limit ? lower_limit / 2 : 2;
     }
-    //printf("%d, %zu, %d, %zu\n", shortSeqLen, shortSeq->len, longSeqLen, longSeq->len);
-    int algnCost = algn_nw_2d( shortSeq, longSeq, costMtx2d, nw_mtxs2d, deltawh );
-    if(doDOTraceback || doUnion) {
-        algn_backtrace_2d (shortSeq, longSeq, retShortSeq, retLongSeq, nw_mtxs2d, costMtx2d, 0, 0, swapped);
+    //printf("%d, %zu, %d, %zu\n", shortCharLen, shortChar->len, longCharLen, longChar->len);
+    int algnCost = algn_nw_2d( shortChar, longChar, costMtx2d, nw_mtxs2d, deltawh );
+    if(doMedians || doUnion) {
+        algn_backtrace_2d (shortChar, longChar, retShortChar, retLongChar, nw_mtxs2d, costMtx2d, 0, 0, swapped);
 
-        if(doDOTraceback) {
-            seq_p ungappedMedianSeq = malloc(sizeof(struct seq));
-            seq_p gappedMedianSeq   = malloc(sizeof(struct seq));
-            initializeSeq(ungappedMedianSeq, SEQ_CAPACITY);
-            initializeSeq(gappedMedianSeq,   SEQ_CAPACITY);
+        if(doMedians) {
+            seq_p ungappedMedianChar = malloc(sizeof(struct seq));
+            seq_p gappedMedianChar   = malloc(sizeof(struct seq));
+            initializeChar(ungappedMedianChar, CHAR_CAPACITY);
+            initializeChar(gappedMedianChar,   CHAR_CAPACITY);
 
-            algn_get_median_2d_no_gaps (retShortSeq, retLongSeq, costMtx2d, ungappedMedianSeq);
-            algn_get_median_2d_with_gaps (retShortSeq, retLongSeq, costMtx2d, gappedMedianSeq);
+            algn_get_median_2d_no_gaps (retShortChar, retLongChar, costMtx2d, ungappedMedianChar);
+            algn_get_median_2d_with_gaps (retShortChar, retLongChar, costMtx2d, gappedMedianChar);
 
-            seqToAlignIO(ungappedMedianSeq, ungappedOutputSeq);
-            seqToAlignIO(gappedMedianSeq,   gappedOutputSeq);
+            charToAlignIO(ungappedMedianChar, ungappedOutputChar);
+            charToAlignIO(gappedMedianChar,   gappedOutputChar);
 
-            freeSeq(ungappedMedianSeq);
-            freeSeq(gappedMedianSeq);
+            freeChar(ungappedMedianChar);
+            freeChar(gappedMedianChar);
 
         }
         if(doUnion) {
-            seq_p unionSeq = malloc(sizeof(struct seq));
-            initializeSeq(unionSeq, SEQ_CAPACITY);
-            algn_union(retShortSeq, retLongSeq, unionSeq);
+            seq_p unionChar = malloc(sizeof(struct seq));
+            initializeChar(unionChar, CHAR_CAPACITY);
+            algn_union(retShortChar, retLongChar, unionChar);
 
-            seqToAlignIO(unionSeq, unionOutputSeq);
-            freeSeq(unionSeq);
+            charToAlignIO(unionChar, unionOutputChar);
+            freeChar(unionChar);
         }
     }
 
 
-    seqToAlignIO(retLongSeq, longIO);
-    seqToAlignIO(retShortSeq, shortIO);
+    charToAlignIO(retLongChar, longIO);
+    charToAlignIO(retShortChar, shortIO);
 
     //freeCostMtx(costMtx2d, 1);  // 1 is 2d
     freeNWMtx(nw_mtxs2d);
-    freeSeq(shortSeq);
-    freeSeq(longSeq);
-    freeSeq(retLongSeq);
-    freeSeq(retShortSeq);
+    freeChar(shortChar);
+    freeChar(longChar);
+    freeChar(retLongChar);
+    freeChar(retShortChar);
 
     return algnCost;
 
@@ -288,53 +288,53 @@ int align2d(alignIO_p input1,
 
 int align2dAffine(alignIO_p input1,
                   alignIO_p input2,
-                  alignIO_p gappedOutputSeq,
-                  alignIO_p ungappedOutputSeq,
-                  alignIO_p unionOutputSeq,
+                  alignIO_p gappedOutputChar,
+                  alignIO_p ungappedOutputChar,
+                  alignIO_p unionOutputChar,
                   cost_matrices_2d_p costMtx2d_affine,
                   int doUnion,
-                  int doDOTraceback) {
+                  int doMedians) {
 
-    const size_t SEQ_CAPACITY = input1->length + input2->length + 2;
+    const size_t CHAR_CAPACITY = input1->length + input2->length + 2;
 
     alignIO_p longIO,
               middleIO,
               shortIO;
 
 
-    seq_p longSeq     = malloc(sizeof(struct seq));
-    seq_p shortSeq    = malloc(sizeof(struct seq));
-    seq_p retShortSeq = malloc(sizeof(struct seq));
-    seq_p retLongSeq  = malloc(sizeof(struct seq));
+    seq_p longChar     = malloc(sizeof(struct seq));
+    seq_p shortChar    = malloc(sizeof(struct seq));
+    seq_p retShortChar = malloc(sizeof(struct seq));
+    seq_p retLongChar  = malloc(sizeof(struct seq));
 
     printf("here!!\n");
-    initializeSeq(longSeq,     SEQ_CAPACITY);
-    initializeSeq(shortSeq,    SEQ_CAPACITY);
-    initializeSeq(retLongSeq,  SEQ_CAPACITY);
-    initializeSeq(retShortSeq, SEQ_CAPACITY);
+    initializeChar(longChar,     CHAR_CAPACITY);
+    initializeChar(shortChar,    CHAR_CAPACITY);
+    initializeChar(retLongChar,  CHAR_CAPACITY);
+    initializeChar(retShortChar, CHAR_CAPACITY);
 
     int swapped = 0;
 
     if (input1->length > input2->length) {
-        setSeq(input1, longSeq);
+        setChar(input1, longChar);
         longIO = input1;
 
-        setSeq(input2, shortSeq);
+        setChar(input2, shortChar);
         shortIO = input2;
 
         swapped        = 1;
     } else {
-        setSeq(input2, longSeq);
+        setChar(input2, longChar);
         longIO = input2;
 
-        setSeq(input1, shortSeq);
+        setChar(input1, shortChar);
         shortIO = input1;
     }
 
-    //initializeSeq(longSeq, SEQ_CAPACITY);
-    setSeq(longIO, longSeq);
-    //initializeSeq(shortSeq, SEQ_CAPACITY);
-    setSeq(shortIO, shortSeq);
+    //initializeChar(longChar, CHAR_CAPACITY);
+    setChar(longIO, longChar);
+    //initializeChar(shortChar, CHAR_CAPACITY);
+    setChar(shortIO, shortChar);
 
     // TODO: document these variables
     int *matrix;                        //
@@ -347,13 +347,13 @@ int align2dAffine(alignIO_p input1,
     int *matrix_2d;                     //
     int *gap_open_prec;                 // precalculated gap opening value (top row of nw matrix)
     int *s_horizontal_gap_extension;    //
-    int lenLongerSeq;                   //
+    int lenLongerChar;                   //
 
     DIR_MTX_ARROW_t  *direction_matrix;
 
     nw_matrices_p nw_mtxs2dAffine = malloc(sizeof(struct nwMatrices));
-    initializeNWMtx(longSeq->len, shortSeq->len, 0, costMtx2d_affine->lcm, nw_mtxs2dAffine);
-    lenLongerSeq = longSeq->len;
+    initializeNWMtx(longChar->len, shortChar->len, 0, costMtx2d_affine->lcm, nw_mtxs2dAffine);
+    lenLongerChar = longChar->len;
 
     matrix_2d  = mat_get_2d_nwMtx (nw_mtxs2dAffine);
     precalcMtx = mat_get_2d_prec  (nw_mtxs2dAffine);
@@ -362,36 +362,36 @@ int align2dAffine(alignIO_p input1,
     //       also note the int factors, which maybe have something to do with the unexplained 12
     //       that appears in matrices.c?
     // here and in algn.c, "block" refers to a block of gaps, so close_block_diagonal is the cost to
-    // end a subsequence of gaps, presumably with a substitution, but maybe by simply switching directions:
+    // end a subcharacter of gaps, presumably with a substitution, but maybe by simply switching directions:
     // there was a vertical gap, now there's a horizontal one.
     close_block_diagonal            = (int *)  matrix_2d;
-    extend_block_diagonal           = (int *) (matrix_2d + ( 2 * lenLongerSeq));
-    extend_vertical                 = (int *) (matrix_2d + ( 4 * lenLongerSeq));
-    extend_horizontal               = (int *) (matrix_2d + ( 6 * lenLongerSeq));
-    final_cost_matrix               = (int *) (matrix_2d + ( 8 * lenLongerSeq));
-    gap_open_prec                   = (int *) (matrix_2d + (10 * lenLongerSeq));
-    s_horizontal_gap_extension      = (int *) (matrix_2d + (11 * lenLongerSeq));
+    extend_block_diagonal           = (int *) (matrix_2d + ( 2 * lenLongerChar));
+    extend_vertical                 = (int *) (matrix_2d + ( 4 * lenLongerChar));
+    extend_horizontal               = (int *) (matrix_2d + ( 6 * lenLongerChar));
+    final_cost_matrix               = (int *) (matrix_2d + ( 8 * lenLongerChar));
+    gap_open_prec                   = (int *) (matrix_2d + (10 * lenLongerChar));
+    s_horizontal_gap_extension      = (int *) (matrix_2d + (11 * lenLongerChar));
 
 
-    // TODO: empty_medianSeq might not be necessary, as it's unused in ml code:
-    size_t medianSeqLen             = longIO->length + shortIO->length + 2;  // 2 because that's how it is in ML code
-    seq_p empty_medianSeq           = malloc( sizeof(struct seq) );
-    empty_medianSeq->cap            = medianSeqLen;
-    empty_medianSeq->array_head     = calloc( medianSeqLen, sizeof(SEQT));
-    empty_medianSeq->len            = 0;
-    empty_medianSeq->seq_begin      = empty_medianSeq->end = empty_medianSeq->array_head + medianSeqLen;
+    // TODO: empty_medianChar might not be necessary, as it's unused in ml code:
+    size_t medianCharLen             = longIO->length + shortIO->length + 2;  // 2 because that's how it is in ML code
+    seq_p empty_medianChar           = malloc( sizeof(struct seq) );
+    empty_medianChar->cap            = medianCharLen;
+    empty_medianChar->array_head     = calloc( medianCharLen, sizeof(SEQT));
+    empty_medianChar->len            = 0;
+    empty_medianChar->seq_begin      = empty_medianChar->end = empty_medianChar->array_head + medianCharLen;
 
 
 
     direction_matrix                = mat_get_2d_direct (nw_mtxs2dAffine);
 
-    cm_precalc_4algn(costMtx2d_affine, nw_mtxs2dAffine, longSeq);
+    cm_precalc_4algn(costMtx2d_affine, nw_mtxs2dAffine, longChar);
 
     // TODO: consider moving all of this into algn.
     //       the following three fns were initially not declared in algn.h
     algn_initialize_matrices_affine (costMtx2d_affine->gap_open,
-                                     shortSeq,
-                                     longSeq,
+                                     shortChar,
+                                     longChar,
                                      costMtx2d_affine,
                                      close_block_diagonal,
                                      extend_block_diagonal,
@@ -401,10 +401,10 @@ int align2dAffine(alignIO_p input1,
                                      direction_matrix,
                                      precalcMtx);
 
-    int algnCost = algn_fill_plane_2d_affine (shortSeq,
-                                             longSeq,
-                                             shortSeq->len - 1,
-                                             longSeq->len  - 1,
+    int algnCost = algn_fill_plane_2d_affine (shortChar,
+                                             longChar,
+                                             shortChar->len - 1,
+                                             longChar->len  - 1,
                                              final_cost_matrix,
                                              direction_matrix,
                                              costMtx2d_affine,
@@ -416,37 +416,37 @@ int align2dAffine(alignIO_p input1,
                                              gap_open_prec,
                                              s_horizontal_gap_extension);
 
-    if(doDOTraceback) {
-        seq_p ungappedMedianSeq = malloc(sizeof(struct seq));
-        seq_p gappedMedianSeq   = malloc(sizeof(struct seq));
-        initializeSeq(ungappedMedianSeq, SEQ_CAPACITY);
-        initializeSeq(gappedMedianSeq,   SEQ_CAPACITY);
+    if(doMedians) {
+        seq_p ungappedMedianChar = malloc(sizeof(struct seq));
+        seq_p gappedMedianChar   = malloc(sizeof(struct seq));
+        initializeChar(ungappedMedianChar, CHAR_CAPACITY);
+        initializeChar(gappedMedianChar,   CHAR_CAPACITY);
 
-        algn_backtrace_affine (shortSeq,
-                               longSeq,
+        algn_backtrace_affine (shortChar,
+                               longChar,
                                direction_matrix,
-                               ungappedMedianSeq,
-                               gappedMedianSeq,
-                               retShortSeq,
-                               retLongSeq,
+                               ungappedMedianChar,
+                               gappedMedianChar,
+                               retShortChar,
+                               retLongChar,
                                costMtx2d_affine);
-        seqToAlignIO(ungappedMedianSeq, ungappedOutputSeq);
-        seqToAlignIO(gappedMedianSeq,   gappedOutputSeq);
+        charToAlignIO(ungappedMedianChar, ungappedOutputChar);
+        charToAlignIO(gappedMedianChar,   gappedOutputChar);
 
-        freeSeq(ungappedMedianSeq);
-        freeSeq(gappedMedianSeq);
+        freeChar(ungappedMedianChar);
+        freeChar(gappedMedianChar);
     }
 
 
-    seqToAlignIO(retLongSeq,  longIO);
-    seqToAlignIO(retShortSeq, shortIO);
+    charToAlignIO(retLongChar,  longIO);
+    charToAlignIO(retShortChar, shortIO);
 
 
     freeNWMtx(nw_mtxs2dAffine);
-    freeSeq(shortSeq);
-    freeSeq(longSeq);
-    freeSeq(retLongSeq);
-    freeSeq(retShortSeq);
+    freeChar(shortChar);
+    freeChar(longChar);
+    freeChar(retLongChar);
+    freeChar(retShortChar);
 
     return algnCost;
 }
@@ -458,128 +458,128 @@ int align3d(alignIO_p input1,
             alignIO_p outputMedian,
             cost_matrices_3d_p costMtx3d) {
 
-    const size_t SEQ_CAPACITY = input1->length + input2->length + input3->length + 1;
+    const size_t CHAR_CAPACITY = input1->length + input2->length + input3->length + 1;
 
-    seq_p longSeq      = malloc(sizeof(struct seq));
-    seq_p middleSeq    = malloc(sizeof(struct seq));
-    seq_p shortSeq     = malloc(sizeof(struct seq));
-    seq_p retShortSeq  = malloc(sizeof(struct seq));
-    seq_p retMiddleSeq = malloc(sizeof(struct seq));
-    seq_p retLongSeq   = malloc(sizeof(struct seq));
-    seq_p medianSeq    = malloc(sizeof(struct seq));
+    seq_p longChar      = malloc(sizeof(struct seq));
+    seq_p middleChar    = malloc(sizeof(struct seq));
+    seq_p shortChar     = malloc(sizeof(struct seq));
+    seq_p retShortChar  = malloc(sizeof(struct seq));
+    seq_p retMiddleChar = malloc(sizeof(struct seq));
+    seq_p retLongChar   = malloc(sizeof(struct seq));
+    seq_p medianChar    = malloc(sizeof(struct seq));
 
     alignIO_p longIO,
               middleIO,
               shortIO;
 
-    initializeSeq(longSeq,      SEQ_CAPACITY);
-    initializeSeq(middleSeq,    SEQ_CAPACITY);
-    initializeSeq(shortSeq,     SEQ_CAPACITY);
-    initializeSeq(retLongSeq,   SEQ_CAPACITY);
-    initializeSeq(retMiddleSeq, SEQ_CAPACITY);
-    initializeSeq(retShortSeq,  SEQ_CAPACITY);
-    initializeSeq(medianSeq,    SEQ_CAPACITY);
+    initializeChar(longChar,      CHAR_CAPACITY);
+    initializeChar(middleChar,    CHAR_CAPACITY);
+    initializeChar(shortChar,     CHAR_CAPACITY);
+    initializeChar(retLongChar,   CHAR_CAPACITY);
+    initializeChar(retMiddleChar, CHAR_CAPACITY);
+    initializeChar(retShortChar,  CHAR_CAPACITY);
+    initializeChar(medianChar,    CHAR_CAPACITY);
 
 
     if (input1->length > input2->length) {
         if (input2->length > input3->length) {
             //s1 > s2 > s3
-            setSeq(input1, longSeq);
+            setChar(input1, longChar);
             longIO = input1;
 
-            setSeq(input2, middleSeq);
+            setChar(input2, middleChar);
             middleIO = input2;
 
-            setSeq(input3, shortSeq);
+            setChar(input3, shortChar);
             shortIO = input3;
         } else if (input3->length > input1->length) {
             //s3 > s1 > s2
-            setSeq(input3, longSeq);
+            setChar(input3, longChar);
             longIO = input3;
 
-            setSeq(input1, middleSeq);
+            setChar(input1, middleChar);
             middleIO = input1;
 
-            setSeq(input2, shortSeq);
+            setChar(input2, shortChar);
             shortIO = input2;
         } else {
             // s1 > s3 > s2
-            setSeq(input1, longSeq);
+            setChar(input1, longChar);
             longIO = input1;
 
-            setSeq(input3, middleSeq);
+            setChar(input3, middleChar);
             middleIO = input3;
 
-            setSeq(input2, shortSeq);
+            setChar(input2, shortChar);
             shortIO = input2;
 
         }
     } else { // s2 > s1
         if (input1->length > input3->length) {
             // s2 > s1 > s3
-            setSeq(input2, longSeq);
+            setChar(input2, longChar);
             longIO = input2;
 
-            setSeq(input1, middleSeq);
+            setChar(input1, middleChar);
             middleIO = input1;
 
-            setSeq(input3, shortSeq);
+            setChar(input3, shortChar);
             shortIO = input3;
 
         } else if (input3->length > input2->length) {
             // s3 > s2 > s1
-            setSeq(input3, longSeq);
+            setChar(input3, longChar);
             longIO = input3;
 
-            setSeq(input2, middleSeq);
+            setChar(input2, middleChar);
             middleIO = input2;
 
-            setSeq(input1, shortSeq);
+            setChar(input1, shortChar);
             shortIO = input1;
         } else {
             // s2 > s3 > s1
-            setSeq(input2, longSeq);
+            setChar(input2, longChar);
             longIO = input2;
 
-            setSeq(input3, middleSeq);
+            setChar(input3, middleChar);
             middleIO = input3;
 
-            setSeq(input1, shortSeq);
+            setChar(input1, shortChar);
             shortIO = input1;
         }
     }
 
-    //initializeSeq(longSeq, SEQ_CAPACITY);
-    setSeq(longIO, longSeq);
+    //initializeChar(longChar, CHAR_CAPACITY);
+    setChar(longIO, longChar);
 
-    //initializeSeq(longSeq, SEQ_CAPACITY);
-    setSeq(middleIO, middleSeq);
+    //initializeChar(longChar, CHAR_CAPACITY);
+    setChar(middleIO, middleChar);
 
-    //initializeSeq(shortSeq, SEQ_CAPACITY);
-    setSeq(shortIO, shortSeq);
+    //initializeChar(shortChar, CHAR_CAPACITY);
+    setChar(shortIO, shortChar);
 
     int *isDifferent = 0;
 
     int algnCost = readjust_3d (0, isDifferent,
-                                shortSeq,   middleSeq,    longSeq,
-                                retLongSeq, retMiddleSeq, retShortSeq,
-                                medianSeq,
+                                shortChar,   middleChar,    longChar,
+                                retLongChar, retMiddleChar, retShortChar,
+                                medianChar,
                                 costMtx3d);
 
     printf("here!!\n");
 
-    seqToAlignIO(retLongSeq,   longIO);
-    seqToAlignIO(retMiddleSeq, middleIO);
-    seqToAlignIO(retShortSeq,  shortIO);
-    seqToAlignIO(medianSeq,    outputMedian);
+    charToAlignIO(retLongChar,   longIO);
+    charToAlignIO(retMiddleChar, middleIO);
+    charToAlignIO(retShortChar,  shortIO);
+    charToAlignIO(medianChar,    outputMedian);
 
-    freeSeq(longSeq);
-    freeSeq(shortSeq);
-    freeSeq(middleSeq);
-    freeSeq(retLongSeq);
-    freeSeq(retShortSeq);
-    freeSeq(retMiddleSeq);
-    freeSeq(medianSeq);
+    freeChar(longChar);
+    freeChar(shortChar);
+    freeChar(middleChar);
+    freeChar(retLongChar);
+    freeChar(retShortChar);
+    freeChar(retMiddleChar);
+    freeChar(medianChar);
 
     //free(tcm);
     return algnCost;

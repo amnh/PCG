@@ -14,11 +14,11 @@
 
 
 
-void initializeNWMtx(size_t cap_seq1, size_t cap_seq2, size_t cap_seq3, int costMtxLcm, nw_matrices_p retMtx);
+void initializeNWMtx(size_t cap_char1, size_t cap_char2, size_t cap_char3, int costMtxLcm, nw_matrices_p retMtx);
 
-void initializeSeq(seq_p retSeq, size_t allocSize);
+void initializeChar(seq_p retChar, size_t allocSize);
 
-void resetSeqValues(seq_p retSeq);
+void resetCharValues(seq_p retChar);
 
 /** Find distance between an unambiguous nucleotide and an ambiguous ambElem. Return that value and the median.
  *  @param ambElem is ambiguous input.
@@ -43,6 +43,6 @@ void freeCostMtx(void * input, int is_2d);
 
 void freeNWMtx(nw_matrices_p input);
 
-void freeSeq(seq_p toFree);
+void freeChar(seq_p toFree);
 
 #endif // C_CODE_ALLOC_SETUP_H

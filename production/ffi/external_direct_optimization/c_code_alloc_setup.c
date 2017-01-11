@@ -10,7 +10,7 @@
 //#include "ukkCheckp.h"
 //#include "ukkCommon.h"
 
-// int* tcm, int alphSize, int gap_open, int is_2d, seq_p longSeq
+// int* tcm, int alphSize, int gap_open, int is_2d, seq_p longChar
 
 /** Allocate nw_matrices struct. Assigns initial values where necessary. Calls
  *  mat_setup_size to allocate all internal arrays.
@@ -35,15 +35,15 @@ void initializeNWMtx(size_t len_seq1, size_t len_seq2, size_t len_seq3, int cost
 
 /** Does allocation for a sequence struct. Also sets seq pointers within array to correct positions.
  *
- *  resSeq must be alloced before this call.
+ *  resChar must be alloced before this call.
  */
-void initializeSeq(seq_p retSeq, size_t allocSize) {
-    retSeq->cap        = allocSize;                              // capacity
-    retSeq->array_head = calloc(allocSize, sizeof(SEQT));
+void initializeChar(seq_p retChar, size_t allocSize) {
+    retChar->cap        = allocSize;                              // capacity
+    retChar->array_head = calloc(allocSize, sizeof(SEQT));
 
-    retSeq->end        = retSeq->array_head + allocSize;
-    retSeq->seq_begin  = retSeq->end;
-    retSeq->len        = 0;
+    retChar->end        = retChar->array_head + allocSize;
+    retChar->seq_begin  = retChar->end;
+    retChar->len        = 0;
 }
 
 
@@ -161,10 +161,10 @@ void setup2dCostMtx(int* tcm, size_t alphSize, int gap_open, cost_matrices_2d_p 
         cm_set_tail_2d    (cm_get_cost(i, gap, retMtx), i, retMtx);
     }
     /*
-    SEQT* seqStart = longSeq->seq_begin;
+    SEQT* seqStart = longChar->seq_begin;
     int gap        = 1 << (alphSize - 1);
     int seqElem;
-    for ( size_t i = 0; i < longSeq->len; i++) {
+    for ( size_t i = 0; i < longChar->len; i++) {
         seqElem = (int) *(seqStart + i);
         cm_set_prepend_2d (i, cm_get_cost(gap, seqElem, retMtx), retMtx);
         cm_set_tail_2d    (cm_get_cost(seqElem, gap, retMtx), i, retMtx);
@@ -266,14 +266,14 @@ void freeNWMtx(nw_matrices_p input) {
     free(input);
 }
 
-void freeSeq(seq_p toFree) {
+void freeChar(seq_p toFree) {
     free(toFree->array_head);
     free(toFree);
 }
 
-void resetSeqValues(seq_p retSeq) {
-    //retSeq->end   = retSeq->begin + retSeq->len;
-    retSeq->seq_begin = retSeq->end;
-    retSeq->len   = 0;
+void resetCharValues(seq_p retChar) {
+    //retChar->end   = retChar->begin + retChar->len;
+    retChar->seq_begin = retChar->end;
+    retChar->len   = 0;
 }
 

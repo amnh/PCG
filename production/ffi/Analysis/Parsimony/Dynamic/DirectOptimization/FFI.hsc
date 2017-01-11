@@ -43,7 +43,7 @@ type CDirMtxUnit = CShort
 
 {- ******************************************* Sequence declaration and Storable instance ******************************************* -}
 {-
--- | Input/output type for C. 'AlignIO' is used both to pass in unaligned sequences, and to receive aligned ones.
+-- | Input/output type for C. 'AlignIO' is used both to pass in unaligned characters, and to receive aligned ones.
 --  Input is
 data Alignment2d = Alignment2d { alignedSequence1       :: AlignIO
                                , alignedSequence2       :: AlignIO
@@ -59,23 +59,23 @@ instance Storable Alignment2d where
     alignment _   = alignment (undefined :: CSize)
     peek ptr     = do                 -- to get values from the C app
         len  <- (#peek struct alignIO, length)   ptr
-        arr  <- (#peek struct alignIO, sequence) ptr
+        arr  <- (#peek struct alignIO, character) ptr
         cap  <- (#peek struct alignIO, capacity) ptr
 
-        return  AlignIO { seqLen   = len
-                        , sequence = arr
+        return  AlignIO { charLen   = len
+                        , character = arr
                         , arrCap   = cap
                         }
     poke ptr (AlignIO len arr cap) = do -- to modify values in the C app
-        (#poke struct alignIO, sequence) ptr len
+        (#poke struct alignIO, character) ptr len
         (#poke struct alignIO, length)   ptr arr
         (#poke struct alignIO, capacity) ptr cap
 -}
 
 data AlignIO = AlignIO { -- magic_number :: CInt     -- TODO: No idea what this is for; figure it out?
-                         sequence :: StablePtr CInt     --
-                       , seqLen   :: CSize        -- Total length of the sequence stored
-                       , arrCap   :: CSize        -- Total capacity of allocated array
+                         character :: StablePtr CInt     --
+                       , charLen   :: CSize        -- Total length of the character stored
+                       , arrCap    :: CSize        -- Total capacity of allocated array
                        }
 
 -- Because we're using a struct we need to make a Storable instance
@@ -83,16 +83,16 @@ instance Storable AlignIO where
     sizeOf    _  = (#size struct alignIO) -- #size is a built-in that works with arrays, as are #peek and #poke, below
     alignment _  = alignment (undefined :: CSize)
     peek ptr     = do                 -- to get values from the C app
-        len  <- (#peek struct alignIO, length)   ptr
-        arr  <- (#peek struct alignIO, sequence) ptr
-        cap  <- (#peek struct alignIO, capacity) ptr
+        len  <- (#peek struct alignIO, length)    ptr
+        arr  <- (#peek struct alignIO, character) ptr
+        cap  <- (#peek struct alignIO, capacity)  ptr
 
-        return  AlignIO { seqLen   = len
-                        , sequence = arr
-                        , arrCap   = cap
+        return  AlignIO { charLen   = len
+                        , character = arr
+                        , arrCap    = cap
                         }
     poke ptr (AlignIO len arr cap) = do -- to modify values in the C app
-        (#poke struct alignIO, sequence) ptr len
+        (#poke struct alignIO, character) ptr len
         (#poke struct alignIO, length)   ptr arr
         (#poke struct alignIO, capacity) ptr cap
 
@@ -101,7 +101,7 @@ instance Storable AlignIO where
 
 {- ******************************************* CostMatrix declarations and Storable instances ******************************************* -}
 -- | Holds single cost matrix, which contains costs and medians for all
--- possible sequence elements. It is completely filled using a TCM. See note below at 'setupCostMatrixFn_c'.
+-- possible character elements. It is completely filled using a TCM. See note below at 'setupCostMatrixFn_c'.
 data CostMatrix2d = CostMatrix2d { alphSize      :: CInt      -- alphabet size including gap, and including ambiguities if
                                                               --     combinations == True
                                  , lcm           :: CInt      -- ceiling of log_2 (alphSize)
@@ -111,11 +111,12 @@ data CostMatrix2d = CostMatrix2d { alphSize      :: CInt      -- alphabet size i
                                                                - Based on cost_matrix.ml, values are:
                                                                - • linear == 0
                                                                - • affine == 1
-                                                               - • no_alignment == 2
+                                                               - • no_alignment == 2,
+                                                               - but I updated it. See costMatrix.h.
                                                                -}
-                                 , combinations  :: CInt    {- This is a flag set to true if we are going to accept
+                                 , combinations  :: CInt      {- This is a flag set to true if we are going to accept
                                                                - all possible combinations of the elements in the alphabet
-                                                               - in the alignments. This is not true for protein sequences
+                                                               - in the alignments. This is not true for protein characters
                                                                - for example, where the number of elements of the alphabet
                                                                - is already too big to build all the possible combinations.
                                                                -}
@@ -220,21 +221,33 @@ instance Storable CostMatrix2d where
 -- | Create and allocate cost matrix
 -- first argument, TCM, is only for non-ambiguous nucleotides, and it used to generate
 -- the entire cost matrix, which includes ambiguous elements.
--- TCM is row-major, with each row being the left sequence element.
+-- TCM is row-major, with each row being the left character element.
 -- It is therefore indexed not by powers of two, but by cardinal integer.
 -- TODO: For now we only allocate 2d matrices. 3d will come later.
 foreign import ccall unsafe "c_code_alloc_setup.h setupCostMtx"
     setupCostMatrix2dFn_c :: Ptr CInt  -- tcm
-                        -> CInt      -- alphSize
-                        -> CInt      -- gap_open
-                        -> CInt      -- is_2d
-                        -> Ptr CostMatrix2d
+                          -> CInt      -- alphSize
+                          -> CInt      -- gap_open
+                          -> CInt      -- is_2d
+                          -> Ptr CostMatrix2d
 
 
-foreign import ccall unsafe "c_code_alloc_setup.h initializeSeq"
-    allocateSequenceFn_c :: CSize -> CSize -> Ptr AlignIO
-
---allocateCostMatrix ::
+-- | Create and allocate cost matrix
+-- first argument, TCM, is only for non-ambiguous nucleotides, and it used to generate
+-- the entire cost matrix, which includes ambiguous elements.
+-- TCM is row-major, with each row being the left character element.
+-- It is therefore indexed not by powers of two, but by cardinal integer.
+-- TODO: For now we only allocate 2d matrices. 3d will come later.
+foreign import ccall unsafe "c_code_alloc_setup.h align2d"
+    align2dFn_c :: AlignIO          -- character1, input & output
+                -> AlignIO          -- character2, input & output
+                -> AlignIO          -- char1 gapped, output
+                -> AlignIO          -- char2 gapped, output
+                -> AlignIO          -- unioned output character
+                -> Ptr CostMatrix2d
+                -> Int              -- compute union
+                -> Int              -- compute gapped & ungapped medians
+                -> Int
 
 
 -- | Performs a naive direct optimization
@@ -242,24 +255,125 @@ foreign import ccall unsafe "c_code_alloc_setup.h initializeSeq"
 -- Returns an assignment character, the cost of that assignment, the assignment character with gaps included,
 -- the aligned version of the first input character, and the aligned version of the second input character
 -- The process for this algorithm is to generate a traversal matrix, then perform a traceback.
-naiveDO :: Exportable s
-        => s                    -- ^ First  dynamic character
-        -> s                    -- ^ Second dynamic character
-        -> (Int -> Int -> Int)  -- ^ Structure defining the transition costs between character states
-        -> (s, Double, s, s, s) -- ^ The /ungapped/ character derived from the the input characters' N-W-esque matrix traceback
-                                --
-                                --   The cost of the alignment
-                                --
-                                --   The /gapped/ character derived from the the input characters' N-W-esque matrix traceback
-                                --
-                                --   The gapped alignment of the /first/ input character when aligned with the second character
-                                --
-                                --   The gapped alignment of the /second/ input character when aligned with the first character
-naiveDO char1 char2 costStruct = undefined
-  where
-    exChar1 = toExportableElements char1
-    exChar2 = toExportableElements char2
+algn2d :: Exportable s
+       => s                    -- ^ First  dynamic character
+       -> s                    -- ^ Second dynamic character
+       -> (Int -> Int -> Int)  -- ^ Structure defining the transition costs between character states
+       -> Int                  -- ^ Actually used as a bool in C code, 1 is do union, 0 is don't. If both this and follwing are 0, do cost only
+       -> Int                  -- ^ Actually used as a bool in C code, 1 is do medians (gapped & ungapped), 0 is don't
+       -> (s, Double, s, s, s) -- ^ The /ungapped/ character derived from the the input characters' N-W-esque matrix traceback
+                                         --
+                                         --   The cost of the alignment
+                                         --
+                                         --   The /gapped/ character derived from the the input characters' N-W-esque matrix traceback
+                                         --
+                                         --   The gapped alignment of the /first/ input character when aligned with the second character
+                                         --
+                                         --   The gapped alignment of the /second/ input character when aligned with the first character
+algn2d char1 char2 costStruct computeUnion computeMedians = (ungappedChar, cost, gappedChar, char1Aligned, char2Aligned)
+    where
+        ungappedChar = peekArray ungappedLen ungappedPtr
+        gappedChar   = peekArray gappedLen   gappedPtr
+        char1Aligned = peekArray char1Len    retChar1Ptr
+        char2Aligned = peekArray char2Len    retChar2Ptr
 
+        inChar1 = toExportableElements char1
+        inChar2 = toExportableElements char2
+
+        lenInChar1 = exportableElementCountElements char1
+        lenInChar2 = exportableElementCountElements char2
+
+        cost_matrix = setupCostMatrix2dFn_c cm alphSize gap_open 1
+        cm = tcmToCostMtx costStruct
+        alphSize = symbolCount inChar1
+
+        AlignIO ungappedLen ungappedPtr _ = peek retUngapped
+        AlignIO gappedLen   gappedPtr   _ = peek retGapped
+        AlignIO char1Len    retChar1Ptr _ = peek retChar1
+        AlignIO char2Len    retChar2Ptr _ = peek retChar2
+
+
+
+align2dCostOnly :: Exportable s
+                => s
+                -> s
+                -> (Int -> Int -> Int)
+                -> (s, Double, s, s, s)
+align2dCostOnly c1 c2 cm = algn2 c1 c2 cm 0 0
+
+align2dWithMedian :: Exportable s
+                  => s
+                  -> s
+                  -> (Int -> Int -> Int)
+                  -> (s, Double, s, s, s)
+align2dWithMedian c1 c2 cm = algn2 c1 c2 cm 0 1
+
+align2dWithUnion :: Exportable s
+                 => s
+                 -> s
+                 -> (Int -> Int -> Int)
+                 -> (s, Double, s, s, s)
+align2dWithUnion c1 c2 cm = algn2 c1 c2 cm 1 0
+
+align2dWithBoth :: Exportable s
+                => s
+                -> s
+                -> (Int -> Int -> Int)
+                -> (s, Double, s, s, s)
+align2dWithBoth c1 c2 cm = algn2 c1 c2 cm 1 1
+
+{- Example code with peekArray
+
+{-# LANGUAGE ForeignFunctionInterface #-}
+{-# LANGUAGE CPP                      #-}
+
+module RGB where
+
+import Foreign
+import Foreign.C
+import Control.Monad (ap)
+
+#include "rgb.h"
+
+data RGB = RGB {
+      r :: CFloat, g :: CFloat, b :: CFloat
+} deriving Show
+
+instance Storable RGB where
+    sizeOf    _ = #{size rgb_t}
+    alignment _ = alignment (undefined :: CInt)
+
+    poke p rgb_t = do
+      #{poke rgb_t, r} p $ r rgb_t
+      #{poke rgb_t, g} p $ g rgb_t
+      #{poke rgb_t, b} p $ b rgb_t
+
+    peek p = return RGB
+             `ap` (#{peek rgb_t, r} p)
+             `ap` (#{peek rgb_t, g} p)
+             `ap` (#{peek rgb_t, b} p)
+
+foreign import ccall "rgb.h rgb_test" crgbTest :: Ptr RGB -> CSize -> IO ();
+
+rgbTest :: [RGB] -> IO [RGB]
+rgbTest rgbs = withArray rgbs $ \ptr ->
+               do
+                 crgbTest ptr (fromIntegral (length rgbs))
+                 peekArray (length rgbs) ptr
+
+rgbAlloc :: [RGB] -> IO (Ptr RGB)
+rgbAlloc rgbs = newArray rgbs
+
+rgbPeek :: Ptr RGB -> Int -> IO [RGB]
+rgbPeek rgbs l = peekArray l rgbs
+
+rgbTest2 :: Ptr RGB -> Int -> IO ()
+rgbTest2 ptr l =
+    do
+      crgbTest ptr (fromIntegral l)
+      return ()
+
+-}
 
 {-
 
@@ -289,20 +403,20 @@ call2dSeqAlignFn_c shortSeq longSeq costMatrix nwMatrices = unsafePerformIO $
         -- Now checking return status. If 0, then all is well, otherwise throw an error.
         if (fromIntegral status) == 0
             then do
-                Sequence val seq <- peek alignPtr
-                seqStr           <- peekCAString seq
-                free seq
-                pure $ Right (fromIntegral val, seqStr)
+                Sequence val char <- peek alignPtr
+                charStr           <- peekCAString char
+                free char
+                pure $ Right (fromIntegral val, charStr)
             else do
                 pure $ Left "Out of memory"
-
+-}
 {-
--- | First sequence must be shortest
+-- | First character must be shortest
 foreign import ccall unsafe "algn.h algn_get_median_2d_no_gaps"
     getUngappedMedianFn_c :: Ptr Sequence -> Ptr Sequence -> Ptr CostMatrix -> Ptr Sequence
 
 -- | Will only work if alignment and backtrace have already been called.
--- First sequence must be shortest
+-- First character must be shortest
 foreign import ccall unsafe "algn.h algn_get_median_2d_with_gaps"
     getGappedMedianFn_c :: Ptr Sequence -> Ptr Sequence -> Ptr CostMatrix -> Ptr Sequence
 
@@ -324,10 +438,10 @@ call2dSeqAlignFn_c shortSeq longSeq costMatrix nwMatrices = unsafePerformIO $
         -- Now checking return status. If 0, then all is well, otherwise throw an error.
         if (fromIntegral status) == 0
             then do
-                Sequence val seq <- peek alignPtr
-                seqStr           <- peekCAString seq
-                free seq
-                pure $ Right (fromIntegral val, seqStr)
+                Sequence val char <- peek alignPtr
+                charStr           <- peekCAString char
+                free char
+                pure $ Right (fromIntegral val, charStr)
             else do
                 pure $ Left "Out of memory"
 
@@ -337,12 +451,11 @@ main = putStrLn $ show callSeqAlignFn_c
 
 
 -}
-<<<<<<< HEAD
 
 
 {-
-data Alignment3d = Alignment3d { sequence3d1      :: AlignIO
-                               , sequence3d2      :: AlignIO
+data Alignment3d = Alignment3d { character3d1      :: AlignIO
+                               , character3d2      :: AlignIO
                                , alignedSequence3 :: AlignIO
                                , alignment3d      :: AlignIO
                                , cost3d           :: CInt
@@ -363,8 +476,8 @@ data NWMatrices = NWMatrices { nwCapacity        :: CSize      {- Total length o
                              , nwDirMtx3dPtrs  :: Ptr CUShort  {- Matrix for backtrace directions in a 3d alignment, just a set of pointers
                                                                 - into nw_costMtx --- alloced on C side -}
                              , precalc         :: Ptr CInt     {- a three-dimensional matrix that holds
-                                                                - the transition costs for the entire alphabet (of all three sequences)
-                                                                - with the sequence seq3. The columns are the bases of seq3, and the rows are
+                                                                - the transition costs for the entire alphabet (of all three characters)
+                                                                - with the character char3. The columns are the bases of char3, and the rows are
                                                                 - each of the alphabet characters (possibly including ambiguities). See
                                                                 - cm_precalc_4algn_3d for more information).
                                                                 -}
@@ -406,7 +519,7 @@ instance Storable NWMatrices where
 {-
 {- ******************************************* CostMatrix declarations and Storable instances ******************************************* -}
 -- | Holds single cost matrix, which contains costs and medians for all
--- possible sequence elements. It is completely filled using a TCM. See note below at 'setupCostMatrixFn_c'.
+-- possible character elements. It is completely filled using a TCM. See note below at 'setupCostMatrixFn_c'.
 data CostMatrix3d = CostMatrix3d { sSize      :: CInt      -- alphabet size including gap, and including ambiguities if
                                                               --     combinations == True
                                  , lcm           :: CInt      -- ceiling of log_2 (alphSize)
@@ -420,7 +533,7 @@ data CostMatrix3d = CostMatrix3d { sSize      :: CInt      -- alphabet size incl
                                                                -}
                                  , combinations    :: CInt     {- This is a flag set to true if we are going to accept
                                                                 - all possible combinations of the elements in the alphabet
-                                                                - in the alignments. This is not true for protein sequences
+                                                                - in the alignments. This is not true for protein characters
                                                                 - for example, where the number of elements of the alphabet
                                                                 - is already too big to build all the possible combinations.
                                                                 -}
@@ -441,23 +554,3 @@ data CostMatrix3d = CostMatrix3d { sSize      :: CInt      -- alphabet size incl
 
 
 -}
-module Main (main) where
-
-import RGB
-
-main =
- do
-    let a = [RGB {r = 1.0, g = 1.0, b = 1.0},
-             RGB {r = 2.0, g = 2.0, b = 2.0},
-             RGB {r = 3.0, g = 3.0, b = 3.0}]
-    let l = length a
-    print a
-    -- b <- rgbTest a
-    -- print b
-
-    c <- rgbAlloc a
-    rgbTest2 c l
-    rgbTest2 c l
-    d <- rgbPeek c l
-    print d
-    return (
