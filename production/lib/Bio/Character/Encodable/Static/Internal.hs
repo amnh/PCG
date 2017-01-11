@@ -31,7 +31,6 @@ import           Bio.Character.Encodable.Stream
 import           Bio.Character.Exportable.Class
 import           Control.Arrow                       ((***))
 import           Data.Alphabet
-import           Data.Bifunctor                      (bimap)
 import           Data.BitMatrix
 import           Data.BitMatrix.Internal(BitMatrix(..))
 import           Data.Char                           (toLower)
@@ -60,7 +59,7 @@ import           Test.QuickCheck.Arbitrary.Instances ()
 -- Represents an encoded static character. Supports binary and numeric operations.
 newtype StaticCharacter
       = SC BitVector
-      deriving (Bits, Eq, Enum, Num, Ord, Show)
+      deriving (Bits, Eq, Enum, Integral, Num, Ord, Real, Show)
 
 
 -- |
@@ -80,6 +79,12 @@ instance EncodedAmbiguityGroupContainer StaticCharacter where
 
     {-# INLINE symbolCount #-}
     symbolCount = width . unwrap
+
+
+instance FiniteBits StaticCharacter where
+
+    {-# INLINE finiteBitSize #-}
+    finiteBitSize = symbolCount
 
 
 instance PossiblyMissingCharacter StaticCharacter where
@@ -109,7 +114,7 @@ instance EncodableStreamElement StaticCharacter where
           | containsMissing ambiguity = fromBits $ replicate (length alphabet) True
           | otherwise                 = fromBits $ foldl' (\xs x -> (x `elem` ambiguity) : xs) [] alphabet
           where
-            containsMissing = any (== fromString "?")
+            containsMissing = elem (fromString "?")
 
 
 instance EncodableStaticCharacter StaticCharacter where
@@ -231,23 +236,17 @@ instance Arbitrary StaticCharacterBlock where
 
 
 instance Exportable StaticCharacterBlock where
-    toExportable (SCB bm@(BitMatrix _ bv)) =
-        ExportableCharacterSequence
-        { elementCount = x
-        , elementWidth = y
-        , bufferChunks = fmap fromIntegral $ ((bv @@) <$> slices) <> tailWord
-        }
+
+    toExportableBuffer (SCB bm@(BitMatrix _ bv)) = ExportableCharacterSequence x y $ bitVectorToBufferChunks x y bv 
       where
         x = numRows bm
         y = numCols bm
-        totalBits = x * y
-        (fullWords, remainingBits) = totalBits `divMod` 64
-        slices   = take fullWords $ iterate ((64 +) `bimap` (64 +)) ((63, 0) :: (Int,Int))
-        tailWord = if   remainingBits == 0
-                   then []
-                   else [ bv @@ (totalBits - 1, totalBits - remainingBits) ]
         
-    fromExportable = undefined
+    fromExportableBuffer = undefined
+
+    toExportableElements = encodableStreamToExportableCharacterElements
+
+    fromExportableElements = SCB . exportableCharacterElementsToBitMatrix
 
 
 {-# INLINE unstream #-}

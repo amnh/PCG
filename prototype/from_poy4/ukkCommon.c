@@ -45,7 +45,7 @@
 #include <stdlib.h>
 
 //#define NO_ALLOC_ROUTINES 1
-#include "debug.h"
+#include "debug_just_c.h"
 #include "seq.h"
 #include "ukkCheckp.h"
 #include "ukkCommon.h"
@@ -122,11 +122,11 @@ static inline void *allocPlane(AllocInfo *a) {
 
     a->memAllocated += a->abBlocks * a->acBlocks * sizeof(void*);
     p = calloc(a->abBlocks * a->acBlocks, sizeof(void*));
-    if (p==NULL) { 
-        fprintf(stderr,"Unable to alloc memory\n"); 
-        exit(-1); 
+    if (p==NULL) {
+        fprintf(stderr,"Unable to alloc memory\n");
+        exit(-1);
     }
-  
+
     return p;
 }
 
@@ -138,7 +138,7 @@ static inline void *allocPlane(AllocInfo *a) {
 
 {
     AllocInfo a;
-  
+
     a.memAllocated = 0;
     a.elemSize     = elemSize;
 
@@ -170,15 +170,15 @@ static inline void *allocPlane(AllocInfo *a) {
 
 static inline void *allocEntry(AllocInfo *a) {
     void *p;
-  
+
     long entries = CellsPerBlock * CellsPerBlock * numStates;
     a->memAllocated += entries * a->elemSize;
 
     p = calloc(entries, a->elemSize);
 
-    if (p == NULL) { 
-        fprintf(stderr,"Unable to alloc memory\n"); 
-        exit(-1); 
+    if (p == NULL) {
+        fprintf(stderr,"Unable to alloc memory\n");
+        exit(-1);
     }
 
     return p;
@@ -194,7 +194,7 @@ static inline long allocGetSubIndex(AllocInfo *a, int ab,int ac,int s) {
 
     //  fprintf(stderr,"ab=%d ac=%d abA=%d acA=%d abO=%d acO=%d i=%d j=%d\n",
     //    ab,ac,abAdjusted,acAdjusted,a->abOffset,a->acOffset,i,j);
-  
+
     assert(abAdjusted >= 0 && abAdjusted < CellsPerBlock);
     assert(acAdjusted >= 0 && acAdjusted < CellsPerBlock);
     assert(s>=0  && s<numStates);
@@ -209,7 +209,7 @@ static inline long allocGetSubIndex(AllocInfo *a, int ab,int ac,int s) {
 
 void allocFinal(AllocInfo *a, void *flag, void *top) {
     int usedFlag = flag-top;
-    
+
     int i, j, cIndex;
     long planesUsed = 0;
     long blocksTotal = 0, blocksUsed = 0;
@@ -243,7 +243,7 @@ void allocFinal(AllocInfo *a, void *flag, void *top) {
     }
     free (a->basePtr);
     a->basePtr = NULL;
-    
+
 };
 
 void *getPtr(AllocInfo *a, int ab, int ac, int d, int s) {
@@ -262,11 +262,11 @@ void *getPtr(AllocInfo *a, int ab, int ac, int d, int s) {
         int oldSize   = a->baseAlloc;
         a->baseAlloc *= 2;
         a->basePtr    = recalloc(a->basePtr, oldSize * sizeof(void *), a->baseAlloc * sizeof(void *));
-        if (a->basePtr == NULL) { 
-            fprintf(stderr, "Unable to alloc memory\n"); 
-            exit(-1); 
+        if (a->basePtr == NULL) {
+            fprintf(stderr, "Unable to alloc memory\n");
+            exit(-1);
         }
-        a->memAllocated += oldSize * sizeof(void *); 
+        a->memAllocated += oldSize * sizeof(void *);
     }
     assert(d >= 0 && d < a->baseAlloc);
 
@@ -284,14 +284,14 @@ void *getPtr(AllocInfo *a, int ab, int ac, int d, int s) {
     if (bPtr[(i * a->acBlocks) + j] == NULL) {
         bPtr[(i * a->acBlocks) + j] = allocEntry(a);
     }
-  
+
     base = bPtr[(i * a->acBlocks) + j];
     assert(base != NULL);
 
     index = allocGetSubIndex(a, ab, ac, s);
     assert(index >= 0);
 
-    //  fprintf(stderr,"getPtr(ab=%d,ac=%d,d=%d,s=%d): base=%p index=%d\n", 
+    //  fprintf(stderr,"getPtr(ab=%d,ac=%d,d=%d,s=%d): base=%p index=%d\n",
     //    ab,ac,d,s,
     //    base,index);
 
@@ -330,8 +330,8 @@ void copySequence (seq_p s, char *str) {
     return;
 }
 
-int powell_3D_align (seq_p seqA,    seq_p seqB,    seq_p seqC, 
-                     seq_p retSeqA, seq_p retSeqB, seq_p retSeqC, 
+int powell_3D_align (seq_p seqA,    seq_p seqB,    seq_p seqC,
+                     seq_p retSeqA, seq_p retSeqB, seq_p retSeqC,
                      int mismatch, int gapOpen, int gapExtend) {
     if (DEBUG_CALL_ORDER) {
         printf("powell_3D_align\n");
@@ -370,16 +370,16 @@ int whichCharCost(char a, char b, char c) {
     if (DEBUG_CALL_ORDER) {
         printf("whichCharCost\n");
     }
-    assert(a!=0 && b!=0 && c!=0); 
-    /* 
+    assert(a!=0 && b!=0 && c!=0);
+    /*
       When running as a ukk algorithm (ie. not the DPA), then
       a=b=c only when there is a run of matches after a state other that MMM,
       and since we are moving to a MMM state, this cost will NEVER be used,
-      so it doesn't matter what we return   
+      so it doesn't matter what we return
       When running as the DPA, it can occur at a=b=c, return 0 in this case
     */
     if (a==b && a==c) {
-      return 0; 
+      return 0;
     }
     /* return 1 for the following
          x-- -x- --x
@@ -389,7 +389,7 @@ int whichCharCost(char a, char b, char c) {
        return 2 for the following
          xy- x-y -xy
          xyz
-    */  
+    */
     // Take care of any 2 the same
     if (a==b || a==c || b==c) {
         return 1;
@@ -644,17 +644,17 @@ int alignmentCost(int states[], char *al1, char *al2, char *al3, int len) {
         // Pay for mismatches
         char ch[3];
         int localCIdx = 0;
-        if (st[0] == match) { 
-            assert(al1[i] != '-'); 
-            ch[localCIdx++] = al1[i]; 
+        if (st[0] == match) {
+            assert(al1[i] != '-');
+            ch[localCIdx++] = al1[i];
         }
-        if (st[1] == match) { 
-            assert(al2[i] != '-'); 
-            ch[localCIdx++] = al2[i]; 
+        if (st[1] == match) {
+            assert(al2[i] != '-');
+            ch[localCIdx++] = al2[i];
         }
-        if (st[2] == match) { 
-            assert(al3[i] != '-'); 
-            ch[localCIdx++] = al3[i]; 
+        if (st[2] == match) {
+            assert(al3[i] != '-');
+            ch[localCIdx++] = al3[i];
         }
         localCIdx--;
         for (; localCIdx > 0; localCIdx--) {

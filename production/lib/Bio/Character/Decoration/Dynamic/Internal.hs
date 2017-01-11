@@ -43,10 +43,10 @@ instance ( EncodableStreamElement (Element d)
 
     show dec
       | isMissing character = "<Missing>"
-      | otherwise           = ofoldMap (showStreamElement alphabet) character 
+      | otherwise           = ofoldMap (showStreamElement alphabet) character
       where
         character = dec ^. encoded
-        alphabet  = dec ^. characterAlphabet 
+        alphabet  = dec ^. characterAlphabet
 
 
 -- | (✔)
@@ -97,13 +97,13 @@ instance HasCharacterSymbolTransitionCostMatrixGenerator (DynamicDecorationIniti
 
 -- |
 -- A 'Lens' for the 'transitionCostMatrix' field
-instance (EncodableStream d, Element d ~ c) => HasCharacterTransitionCostMatrix (DynamicDecorationInitial d) (c -> c -> (c, Int)) where
+instance (Element d ~ c) => HasCharacterTransitionCostMatrix (DynamicDecorationInitial d) (c -> c -> (c, Int)) where
 
     characterTCM = lens getter setter
       where
          getter e   = metadata e ^. characterTCM
          setter e f = e { metadata = metadata e &  characterTCM .~ f }
-        
+
 
 -- | (✔)
 instance HasCharacterWeight (DynamicDecorationInitial d) Double where
@@ -121,22 +121,22 @@ instance (EncodableStream d, Element d ~ c) => DiscreteCharacterMetadata (Dynami
 -- | (✔)
 instance (EncodableDynamicCharacter d) => SimpleDynamicDecoration (DynamicDecorationInitial d) d where
 
-  
+
 -- | (✔)
 instance (EncodableDynamicCharacter d) => DynamicCharacterDecoration (DynamicDecorationInitial d) d where
 
 --    toDynamicCharacterDecoration :: CharacterName -> Double -> Alphabet String -> TCM -> (x -> a) -> x -> s
-    toDynamicCharacterDecoration name weight alphabet tcm g symbolSet = 
+    toDynamicCharacterDecoration name weight alphabet tcm g symbolSet =
         DynamicDecorationInitial
         { dynamicDecorationInitialEncodedField = g symbolSet
         , metadata                             = discreteMetadata name weight alphabet tcm
         }
-    
-  
 
 
 
-  
+
+
+
 -- |
 -- An abstract direct optimization dynamic character decoration with a
 -- polymorphic character type.
@@ -211,13 +211,13 @@ instance HasCharacterSymbolTransitionCostMatrixGenerator (DynamicDecorationDirec
 
 -- |
 -- A 'Lens' for the 'transitionCostMatrix' field
-instance (EncodableStream d, Element d ~ c) => HasCharacterTransitionCostMatrix (DynamicDecorationDirectOptimization d) (c -> c -> (c, Int)) where
+instance (Element d ~ c) => HasCharacterTransitionCostMatrix (DynamicDecorationDirectOptimization d) (c -> c -> (c, Int)) where
 
     characterTCM = lens getter setter
       where
          getter e   = dynamicDecorationDirectOptimizationMetadata e ^. characterTCM
          setter e f = e { dynamicDecorationDirectOptimizationMetadata = dynamicDecorationDirectOptimizationMetadata e &  characterTCM .~ f }
-        
+
 
 -- | (✔)
 instance HasCharacterWeight (DynamicDecorationDirectOptimization d) Double where
@@ -330,13 +330,13 @@ instance HasCharacterSymbolTransitionCostMatrixGenerator (DynamicDecorationImpli
 
 -- |
 -- A 'Lens' for the 'transitionCostMatrix' field
-instance (EncodableStream d, Element d ~ c) => HasCharacterTransitionCostMatrix (DynamicDecorationImpliedAlignment d) (c -> c -> (c, Int)) where
+instance (Element d ~ c) => HasCharacterTransitionCostMatrix (DynamicDecorationImpliedAlignment d) (c -> c -> (c, Int)) where
 
     characterTCM = lens getter setter
       where
          getter e   = dynamicDecorationImpliedAlignmentMetadata e ^. characterTCM
          setter e f = e { dynamicDecorationImpliedAlignmentMetadata = dynamicDecorationImpliedAlignmentMetadata e &  characterTCM .~ f }
-        
+
 
 -- | (✔)
 instance HasCharacterWeight (DynamicDecorationImpliedAlignment d) Double where

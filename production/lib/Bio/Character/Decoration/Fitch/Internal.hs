@@ -24,7 +24,6 @@ import Bio.Metadata.Discrete
 import Control.Lens
 import Data.Alphabet
 import Data.TCM
---import Data.Word
 
 
 -- |
@@ -44,6 +43,11 @@ data FitchOptimizationDecoration f
    , fitchMetadataField     :: DiscreteCharacterMetadataDec f
    }
 
+
+instance EncodableStreamElement c => Show (FitchOptimizationDecoration c) where
+
+    show c = mconcat [showDiscreteCharacterElement c, "{", show $ fitchMinCost c, "}"]
+      
 
 -- | (✔)
 instance HasDiscreteCharacter (FitchOptimizationDecoration f) f where

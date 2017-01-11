@@ -39,6 +39,7 @@ import           File.Format.TNT     hiding   (weight)
 import           File.Format.TransitionCostMatrix
 import           File.Format.VertexEdgeRoot
 import           PCG.Command.Types            (Command(..))
+import           PCG.Command.Types.Read.DecorationInitialization
 import           PCG.Command.Types.Read.Internal
 import           PCG.Command.Types.Read.Unification.Master
 import           PCG.SearchState
@@ -54,7 +55,9 @@ parse' :: Parsec Dec s a -> String -> s -> Either (ParseError (Token s) Dec) a
 parse' = parse
 
 
-evaluate :: Command -> EvaluationT IO a -> EvaluationT IO (Either TopologicalResult CharacterResult)
+--evaluate :: Command -> EvaluationT IO a -> EvaluationT IO (Either TopologicalResult DecoratedCharacterResult)
+--evaluate :: Command -> EvaluationT IO a -> EvaluationT IO (Either TopologicalResult CharacterResult)
+evaluate :: Command -> EvaluationT IO a -> SearchState -- EvaluationT IO (Either TopologicalResult CharacterResult)
 -- evaluate (READ fileSpecs) _old | trace ("Evaluated called: " <> show fileSpecs) False = undefined
 -- evaluate (READ fileSpecs) _old | trace "STARTING READ COMMAND" False = undefined
 evaluate (READ fileSpecs) _old = do
@@ -63,13 +66,14 @@ evaluate (READ fileSpecs) _old = do
     case result of
       Left pErr -> fail $ show pErr   -- Report structural errors here.
       Right xs ->
-        case masterUnify $ transformation <$> concat xs of
+        case decoration . masterUnify $ transformation <$> concat xs of
           Left uErr -> fail $ show uErr -- Report unification errors here.
            -- TODO: rectify against 'old' SearchState, don't just blindly merge or ignore old state
           Right g   -> (liftIO . putStrLn $ show g) $> g
 
   where
     transformation = expandIUPAC
+    decoration = fmap (fmap initializeDecorations)
 
 evaluate _ _ = fail "Invalid READ command binding"
 

@@ -67,8 +67,6 @@ module Data.Matrix.NotStupid
   , Stupid.elementwise
   , Stupid.elementwiseUnsafe
 -- * Matrix multiplication
--- ** About matrix multiplication
--- $mult
   -- ** Functions
   , Stupid.multStd
   , Stupid.multStd2

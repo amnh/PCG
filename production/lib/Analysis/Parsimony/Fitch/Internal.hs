@@ -36,7 +36,7 @@ fitchPostOrder ::  DiscreteCharacterDecoration d c
                -> FitchOptimizationDecoration c
 fitchPostOrder parentDecoration xs =
     case xs of
-        []   -> initializeLeaf  parentDecoration                  -- a leaf
+        []   -> initializeLeaf  parentDecoration         -- a leaf
         y:ys -> updatePostOrder parentDecoration (y:|ys)
 
 -- | Used on the pre-order (i.e. second) traversal.
@@ -44,9 +44,9 @@ fitchPreOrder :: EncodableStaticCharacter c
               => FitchOptimizationDecoration c
               -> [(Word, FitchOptimizationDecoration c)]
               -> FitchOptimizationDecoration c
-fitchPreOrder childDecoration (_x:_y:_) = childDecoration   -- two parents; shouldn't be possible, but here for completion
-fitchPreOrder childDecoration []        = childDecoration   -- is a root TODO: need to change preliminary to final
-fitchPreOrder childDecoration ((_, parentDecoration):[]) =
+fitchPreOrder childDecoration (_:_:_) = childDecoration   -- two parents; shouldn't be possible, but here for completion
+fitchPreOrder childDecoration []      = childDecoration   -- is a root TODO: need to change preliminary to final
+fitchPreOrder childDecoration [(_, parentDecoration)] =
     if childDecoration ^. isLeaf
         then childDecoration
         else determineFinalState parentDecoration childDecoration
@@ -59,20 +59,19 @@ updatePostOrder :: DiscreteCharacterDecoration d c
                 => d
                 -> NonEmpty (FitchOptimizationDecoration c)
                 -> FitchOptimizationDecoration c
-updatePostOrder _parentDecoration (x:|[])                         = x                    -- Shouldn't be possible,
-                                                                                         --    but here for completion.
-updatePostOrder  parentDecoration (leftChildDec:|rightChildDec:_) = returnNodeDecoration -- Not a leaf
+updatePostOrder _parentDecoration (x:|[])                         = x                    -- Shouldn't be possible, but here for completion.
+updatePostOrder _parentDecoration (leftChildDec:|rightChildDec:_) = returnNodeDecoration -- Not a leaf
     where
         returnNodeDecoration =
-            extendDiscreteToFitch parentDecoration totalCost median emptyChar (leftChildDec ^. preliminaryMedian, rightChildDec ^. preliminaryMedian) False
-        (median, parentCost) = foldlWithKey' f initializedAcc [0..length (parentDecoration ^. characterAlphabet) - 1]
+            extendDiscreteToFitch leftChildDec totalCost median emptyChar (leftChildDec ^. preliminaryMedian, rightChildDec ^. preliminaryMedian) False
+        (median, parentCost) = foldlWithKey' f initializedAcc [0..length (leftChildDec ^. characterAlphabet) - 1]
 
-        initializedAcc       = (emptyStatic $ parentDecoration ^. discreteCharacter , 1) -- Cost is set to 1 so that branches in guards below work correctly.
+        initializedAcc       = (emptyChar, 1) -- Cost is set to 1 so that branches in guards below work correctly.
         isSet decoration key = (decoration   ^. preliminaryMedian) `testBit` key
-        indel l r k          = (isSet l k) `xor` (isSet r k)
-        noSub l r k          = (isSet l k)  &&   (isSet r k)    -- Same bit is on in both characters.
+        indel l r k          = isSet l k `xor` isSet r k
+        noSub l r k          = isSet l k  &&   isSet r k    -- Same bit is on in both characters.
         totalCost            = parentCost + (leftChildDec ^. minCost) + (rightChildDec ^. minCost)
-        emptyChar = emptyStatic $ parentDecoration ^. discreteCharacter
+        emptyChar            = emptyStatic $ leftChildDec ^. discreteCharacter
         f (inChar, cost) key _                                  -- In following, note that a 1 has been set to the character by
                                                                 -- default, above. So we never have
                                                                 -- to add value to the cost (it can never be > 1 under Fitch).

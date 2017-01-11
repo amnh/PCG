@@ -69,7 +69,7 @@ instance HasCharacterSymbolTransitionCostMatrixGenerator (MetricDecorationInitia
 
 
 -- | (✔)
-instance EncodableStreamElement c => HasCharacterTransitionCostMatrix (MetricDecorationInitial c) (c -> c -> (c, Int)) where
+instance HasCharacterTransitionCostMatrix (MetricDecorationInitial c) (c -> c -> (c, Int)) where
 
     characterTCM = lens getter setter
       where
@@ -124,6 +124,11 @@ data SankoffOptimizationDecoration c
    }
 
 
+instance EncodableStreamElement c => Show (SankoffOptimizationDecoration c) where
+
+    show = showDiscreteCharacterElement
+
+
 -- | (✔)
 instance HasDiscreteCharacter (SankoffOptimizationDecoration c) c where
 
@@ -158,7 +163,7 @@ instance HasCharacterSymbolTransitionCostMatrixGenerator (SankoffOptimizationDec
 
 
 -- | (✔)
-instance EncodableStreamElement c => HasCharacterTransitionCostMatrix (SankoffOptimizationDecoration c) (c -> c -> (c, Int)) where
+instance HasCharacterTransitionCostMatrix (SankoffOptimizationDecoration c) (c -> c -> (c, Int)) where
 
     characterTCM = lens getter setter
       where

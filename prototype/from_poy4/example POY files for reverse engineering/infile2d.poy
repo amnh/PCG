@@ -1,0 +1,5 @@
+read("./sample2d.fa")
+transform(tcm:(1,1))
+read("./2d.tre")
+report("ex2d.txt")
+exit()

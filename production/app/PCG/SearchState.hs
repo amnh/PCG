@@ -15,26 +15,37 @@
 module PCG.SearchState where
 
 import           Bio.Character
+import           Bio.Character.Decoration.Additive
 import           Bio.Character.Decoration.Continuous
 import           Bio.Character.Decoration.Discrete
 import           Bio.Character.Decoration.Dynamic
+import           Bio.Character.Decoration.Fitch
+import           Bio.Character.Decoration.Metric
+-- import           Bio.Character.Decoration.NonMetric
 import           Bio.Sequence
 import           Bio.Sequence.Block
 import           Bio.PhyloGraphPrime
 import           Bio.PhyloGraphPrime.Node
 import           Bio.PhyloGraphPrime.ReferenceDAG
 import           Control.Evaluation
+import           Data.Key
 import           Data.Monoid
 
 -- import Debug.Trace
 
-type SearchState = EvaluationT IO (Either TopologicalResult CharacterResult)
+type SearchState = EvaluationT IO (Either TopologicalResult DecoratedCharacterResult)
 
+--type SearchState = EvaluationT IO (Either TopologicalResult CharacterResult)
+
+--type SearchState = EvaluationT IO (Either TopologicalResult (PhylogeneticSolution TestDecorationDAG))
 
 type TopologicalResult = PhylogeneticSolution (ReferenceDAG (Maybe Double) (Maybe String))
 
 
 type CharacterResult   = PhylogeneticSolution CharacterDAG
+
+
+type DecoratedCharacterResult = PhylogeneticSolution InitialDecorationDAG
 
 
 type CharacterDAG      = PhylogeneticDAG
@@ -47,6 +58,26 @@ type CharacterDAG      = PhylogeneticDAG
                              UnifiedDiscreteCharacter
                              UnifiedDynamicCharacter
 
+type InitialDecorationDAG = PhylogeneticDAG
+                             (Maybe Double)
+                             (Maybe String)
+                             (SankoffOptimizationDecoration  StaticCharacter)
+                             (SankoffOptimizationDecoration  StaticCharacter)
+                             UnifiedContinuousCharacter --(ContinuousOptimizationDecoration ContinuousChar)
+                             (FitchOptimizationDecoration    StaticCharacter)
+                             (AdditiveOptimizationDecoration StaticCharacter)
+                             UnifiedDynamicCharacter
+{-
+type TestDecorationDAG = PhylogeneticDAG
+                             (Maybe Double)
+                             (Maybe String)
+                             UnifiedDiscreteCharacter -- (SankoffOptimizationDecoration  StaticCharacter)
+                             UnifiedDiscreteCharacter -- (SankoffOptimizationDecoration  StaticCharacter)
+                             UnifiedContinuousCharacter --(ContinuousOptimizationDecoration ContinuousChar)
+                             (FitchOptimizationDecoration    StaticCharacter)
+                             (AdditiveOptimizationDecoration StaticCharacter)
+                             UnifiedDynamicCharacter
+-}
 
 type  UnifiedCharacterSequence
     = CharacterSequence
@@ -99,9 +130,9 @@ instance ( Show e
          ) => Show (PhylogeneticDAG e n m i c f a d) where
 
     show (PDAG dag) =
-        show dag <> "\n" <> foldMap f dag
+        show dag <> "\n" <> foldMapWithKey f dag
       where
-        f (PNode n sek) = unlines [show n, show sek]
+        f i (PNode n sek) = mconcat [ "Node {", show i, "}:\n\n", unlines [show n, show sek] ]
 
 
 nodePreorderMap :: (n -> [n'] -> n')

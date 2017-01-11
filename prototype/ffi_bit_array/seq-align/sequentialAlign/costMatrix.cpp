@@ -1,5 +1,7 @@
 #include "costMatrix.h"
 
+// TODO: I'll need this for the Haskell side of things: https://hackage.haskell.org/package/base-4.9.0.0/docs/Foreign-StablePtr.html
+
 costMedian_t* allocCostMedian_t (size_t alphabetSize) {
     costMedian_t* toReturn;
     toReturn->second = (uint64_t*) calloc(dcElemSize(alphabetSize), INT_WIDTH);

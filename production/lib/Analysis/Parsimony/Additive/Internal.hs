@@ -24,7 +24,7 @@ module Analysis.Parsimony.Additive.Internal where
 
 import Bio.Character.Decoration.Additive
 --import Bio.Character.Decoration.Discrete
---import Bio.Character.Encodable
+import Bio.Character.Encodable
 import Control.Lens
 import Control.Monad  (join)
 import Data.Bifunctor (bimap)
@@ -34,7 +34,7 @@ import Data.List.NonEmpty (NonEmpty( (:|) ))
 
 
 -- | Used on the post-order (i.e. first) traversal.
-additivePostOrder :: (DiscreteCharacterDecoration d c, FiniteBits c)
+additivePostOrder :: (DiscreteCharacterDecoration d c)
                   => d
                   -> [AdditiveOptimizationDecoration c]
                   -> AdditiveOptimizationDecoration c
@@ -43,18 +43,21 @@ additivePostOrder parentDecoration xs =
         []   -> initializeLeaf  parentDecoration         -- a leaf
         y:ys -> updatePostOrder parentDecoration (y:|ys)
 
+
 -- | Used on the pre-order (i.e. second) traversal.
-additivePreOrder  :: AdditiveOptimizationDecoration c
+additivePreOrder  :: EncodableStaticCharacter c
+                  => AdditiveOptimizationDecoration c
                   -> [(Word, AdditiveOptimizationDecoration c)]
                   -> AdditiveOptimizationDecoration c
-additivePreOrder childDecoration (_x:_y:_)                  = childDecoration   -- multiple parents; shouldn't be possible,
+additivePreOrder childDecoration (_:_:_)                 = childDecoration   -- multiple parents; shouldn't be possible,
                                                                                 --    but here for completion
-additivePreOrder childDecoration []                         = childDecoration   -- is a root TODO: need to change preliminary
-                                                                                --    to final
-additivePreOrder childDecoration ((_, parentDecoration):[]) =
+additivePreOrder childDecoration []                      = childDecoration   -- is a root TODO: need to change preliminary
+                                                                             --    to final
+additivePreOrder childDecoration [(_, parentDecoration)] =
     if childDecoration ^. isLeaf
         then childDecoration
         else determineFinalState childDecoration parentDecoration
+
 
 -- |
 -- Updates the character on the parent of two child nodes to become an 'AdditiveOptimizationDecoration'.
@@ -68,7 +71,7 @@ updatePostOrder :: DiscreteCharacterDecoration d c
                 -> AdditiveOptimizationDecoration c
 updatePostOrder _parentDecoration (x:|[])                     = x                     -- Shouldn't be possible,
                                                                                       --    but here for completion.
-updatePostOrder  parentDecoration (leftChild:|(rightChild:_)) = returnNodeDecoration  -- Not a leaf.
+updatePostOrder _parentDecoration (leftChild:|(rightChild:_)) = returnNodeDecoration  -- Not a leaf.
     where
         (newMin, newMax)              = leftInterval `intersect` rightInterval
         (leftInterval, rightInterval) = join bimap (^. preliminaryInterval) (leftChild, rightChild)
@@ -76,12 +79,13 @@ updatePostOrder  parentDecoration (leftChild:|(rightChild:_)) = returnNodeDecora
         totalCost                     = thisNodeCost + (leftChild ^. minCost) + (rightChild ^. minCost)
         thisNodeCost                  = newMax - newMin
         returnNodeDecoration          =
-            extendDiscreteToAdditive parentDecoration totalCost newInterval (leftInterval, rightInterval) False
+            extendDiscreteToAdditive leftChild totalCost newInterval (leftInterval, rightInterval) False
+
 
 -- | Initializes a leaf node by copying its current value into its preliminary state. Gives it a minimum cost of 0.
 --
 -- Used on the postorder pass.
-initializeLeaf :: (DiscreteCharacterDecoration d c, FiniteBits c)
+initializeLeaf :: (DiscreteCharacterDecoration d c)
                => d
                -> AdditiveOptimizationDecoration c
 initializeLeaf curDecoration =
@@ -89,8 +93,10 @@ initializeLeaf curDecoration =
     where
         label  = curDecoration ^. discreteCharacter
         lower  = fromIntegral (countTrailingZeros label) :: Word
-        higher = fromIntegral (countLeadingZeros  label) :: Word
+        higher = fromIntegral (alphLen - countLeadingZeros label) :: Word
+        alphLen = symbolCount $ curDecoration ^. discreteCharacter
         zero   = fromIntegral (0 :: Int) :: Word
+
 
 -- | Uses the preliminary intervals of a node, its parents, and its children. Follows the three rules of Fitch,
 -- modified for additive characters: 1) If the intersection of the current node's character with its parent == the
@@ -99,7 +105,8 @@ initializeLeaf curDecoration =
 -- with the parent.
 --
 -- Used on the preorder pass.
-determineFinalState :: AdditiveOptimizationDecoration c
+determineFinalState :: EncodableStaticCharacter c
+                    => AdditiveOptimizationDecoration c
                     -> AdditiveOptimizationDecoration c
                     -> AdditiveOptimizationDecoration c
 determineFinalState childDecoration parentDecoration = finalDecoration
@@ -108,21 +115,24 @@ determineFinalState childDecoration parentDecoration = finalDecoration
         ancestor        = parentDecoration ^. preliminaryInterval
         (left, right)   = childDecoration  ^. childPrelimIntervals
         thirdCase       = ancestor `union` (left `intersect` ancestor) `union` (right `intersect` ancestor)
-        (thisMin, thisMax)
+        (myMin, myMax)
             | (ancestor `intersect` preliminary) == ancestor     = ancestor                        -- Additive rule 1
             | (ancestor `union`     preliminary) == preliminary  = preliminary                     -- Additive rule 2
             | otherwise                                          = thirdCase                       -- Additive rule 3
-        finalDecoration = childDecoration  &  preliminaryInterval .~ (thisMin, thisMax)
+        interCharacter  = emptyChar      `setBit` (fromIntegral (toInteger myMin :: Integer) :: Int)
+        finalCharacter  = interCharacter `setBit` (fromIntegral (toInteger myMax :: Integer) :: Int)
+        emptyChar       = emptyStatic $ parentDecoration ^. discreteCharacter
+        finalDecoration = childDecoration  &  preliminaryInterval .~ (myMin, myMax) & discreteCharacter .~ finalCharacter
+
 
 -- | True if there is any overlap between the two intervals
 overlaps :: (Word, Word) -> (Word, Word) -> Bool
 overlaps leftChild rightChild =
     (rightSmallest < leftLargest) && (rightLargest > leftSmallest)
     where
-        rightSmallest = fst (rightChild)
-        rightLargest  = snd (rightChild)
-        leftSmallest  = fst (leftChild)
-        leftLargest   = snd (leftChild)
+        (rightSmallest, rightLargest) = rightChild
+        ( leftSmallest,  leftLargest) = leftChild
+
 
 -- | True if one of the intervals falls entirely within the other
 --
@@ -133,10 +143,8 @@ subsetted leftChild rightChild
     | leftSmallest  <= rightSmallest && leftLargest  >= rightLargest = True
     | otherwise                                                      = False
     where
-        rightSmallest = fst (rightChild)
-        rightLargest  = snd (rightChild)
-        leftSmallest  = fst (leftChild)
-        leftLargest   = snd (leftChild)
+        (rightSmallest, rightLargest) = rightChild
+        ( leftSmallest,  leftLargest) = leftChild
 
 
 -- |
@@ -165,10 +173,9 @@ intersect leftChild rightChild
             then (rightSmallest, leftLargest)
             else (leftLargest, rightSmallest)
     where
-        rightSmallest = fst (rightChild)
-        rightLargest  = snd (rightChild)
-        leftSmallest  = fst (leftChild)
-        leftLargest   = snd (leftChild)
+        (rightSmallest, rightLargest) = rightChild
+        ( leftSmallest,  leftLargest) = leftChild
+
 
 -- |
 -- Finds the union of two intervals, where the union is the largest interval possible, i.e. from the smallest possible
@@ -187,10 +194,8 @@ union leftChild rightChild = (smallestMin, largestMax)
                 then leftLargest
                 else rightLargest
 
-        rightSmallest = fst (rightChild)
-        rightLargest  = snd (rightChild)
-        leftSmallest  = fst (leftChild)
-        leftLargest   = snd (leftChild)
+        (rightSmallest, rightLargest) = rightChild
+        ( leftSmallest,  leftLargest) = leftChild
 
 
 -- TODO: check all inequalities for inclusion of equality

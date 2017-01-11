@@ -21,10 +21,10 @@
 
 #define MATRICES_H 1
 
-/** The following consts are to define possible moves in an NW matrix. 
+/** The following consts are to define possible moves in an NW matrix.
  *  As we're only saving one possible matrix, we don't need ambiguities,
  *  Thus for 2d we only have 3 possible states, rather than 7.
- * 
+ *
  *  Remember that we bias toward the shorter sequence, so INSERT puts a gap
  *  in the longer sequence and DELETE puts a gap in the shorter sequence. TODO: make sure shorter seq is on left
  *
@@ -33,13 +33,13 @@
 #define DIAGONAL (1 << 0)
 #define BEHIND   (1 << 1)
 #define UPPER    (1 << 2)
-#define ALIGN    DIAGONAL 
+#define ALIGN    DIAGONAL
 #define INSERT   BEHIND
 #define DELETE   UPPER
 #define SHIFT_V  3
 #define SHIFT_H  6
 #define ALIGN_V  (ALIGN << SHIFT_V)
-#define DELETE_V (DELETE << SHIFT_V) 
+#define DELETE_V (DELETE << SHIFT_V)
 #define ALIGN_H  (ALIGN << SHIFT_H)
 #define INSERT_H (INSERT << SHIFT_H)
 #define G_A_G    (1 << 0)     /** Previously P1. Move in pages (i.e., put gaps in for 1 & 3). */
@@ -58,20 +58,21 @@
 struct matrices {
                                   /****** In each of the following calculations, seq length includes opening gap *******/
     int len;                      /* Total length of available memory allocated to matrix or cube == | for 2d: 12 * max(len_s1, len_s2)
-                                   *                                                                 | for 3d: len_s1 * len_s2 * len_s3 
+                                   *                                                                 | for 3d: len_s1 * len_s2 * len_s3
                                    */
     int len_eff;                  // Length of the efficiency matrix; at least as large as len TODO: figure out what this actually is
-    int len_pre;                  // Length of the precalculated matrix == max(len_s1, len_s2) * (alphSize + 1) ---extra 1 is for gap 
-    int *nw_costMtx;              // NW cost matrix for 2d alignment 
-    DIRECTION_MATRIX *dir_mtx_2d; // Matrix for backtrace directions in a 2d alignment 
-    int **pointers_3d;            // Matrix of pointers to each row in a 3d align 
-    int *cube;                    // Matrix for 3d alignment 
-    DIRECTION_MATRIX *cube_d;     // Matrix for backtrack directions in a 3d alignment 
+    int len_pre;                  // Length of the precalculated matrix == max(len_s1, len_s2) * (alphSize + 1) ---extra 1 is for gap
+    int *nw_costMtx;              // NW cost matrix for both 2d and 3d alignment
+    DIRECTION_MATRIX *dir_mtx_2d; // Matrix for backtrace directions in a 2d alignment
+    int **pointers_3d;            // Matrix of pointers to each row in a 3d align
+    int *cube;                    // Matrix for 3d alignment, just a set of pointers into nw_costMtx -- alloced internally.
+    DIRECTION_MATRIX *cube_d;     // Matrix for backtrack directions in a 3d alignment, just a set of pointers
+                                  //     into nw_costMtx -- alloced internally
     int *precalc;                 /* a three-dimensional matrix that holds
                                    * the transition costs for the entire alphabet (of all three sequences)
-                                   * with the sequence seq3. The columns are the bases of seq3, and the rows are 
-                                   * each of the alphabet characters (possibly including ambiguities). See 
-                                   * cm_precalc_4algn_3d for more information). 
+                                   * with the sequence seq3. The columns are the bases of seq3, and the rows are
+                                   * each of the alphabet characters (possibly including ambiguities). See
+                                   * cm_precalc_4algn_3d for more information).
                                    */
 };
 
@@ -79,7 +80,7 @@ typedef struct matrices * nw_matrices_p;
 
 void print_matrices(nw_matrices_p m, int alphSize);
 
-/* 
+/*
  * Calculates the amount of memory required to perform a three dimensional
  * alignment between sequences of length w, d, h with ukkonen barriers set to k
  */
@@ -89,7 +90,7 @@ mat_size_of_3d_matrix (int w, int d, int h, int k);
 /*
  * Calculates the amount of memory required to perform a two dimensional
  * alignment between sequences of length w and d. This is a small amount of
- * memory, so no ukkonen barriers for this. 
+ * memory, so no ukkonen barriers for this.
  */
 int
 mat_size_of_2d_matrix (int w, int h);
@@ -97,13 +98,13 @@ mat_size_of_2d_matrix (int w, int h);
 /*
  * Rearrange or reallocate memory if necessary to perform an alignment between
  * sequences of length w, d and h. Note that for 2d alignments is necessary to
- * set h=0, and uk=0. 
+ * set h=0, and uk=0.
  */
 void
 mat_setup_size (nw_matrices_p m, int len_seq1, int len_seq2, int len_seq3, int is_ukk, int lcm);
 
-/* 
- * Gets the pointer to the first memory position of the 2d alignment matrix. 
+/*
+ * Gets the pointer to the first memory position of the 2d alignment matrix.
  */
 int *
 mat_get_2d_nwMtx (nw_matrices_p m);
@@ -117,7 +118,7 @@ mat_get_3d_prec (const nw_matrices_p m);
 DIRECTION_MATRIX *
 mat_get_2d_direct (const nw_matrices_p m);
 
-/* 
+/*
  * Gets a pointer to the first memory positon of the matrix of row pointers for
  * 3d aligments.
  */
@@ -126,7 +127,7 @@ mat_get_3d_pointers (nw_matrices_p m);
 
 /*
  * Gets a pointer to the first memory position of the memory batch (this is not
- * a matrix!) for the 3d alignments. 
+ * a matrix!) for the 3d alignments.
  */
 int *
 mat_get_3d_matrix (nw_matrices_p m);

@@ -2,10 +2,10 @@
 -- |
 -- a more complex example of an FFI interface, for learning
 --
--- This example uses pointers, both to structs and to fields within the 
--- structs. This is much easier to accomplish via .hsc rather than doing 
+-- This example uses pointers, both to structs and to fields within the
+-- structs. This is much easier to accomplish via .hsc rather than doing
 -- straight FFI. A .hsc file are read by hsc2hs, which then creates a .c
--- file, which is compiled and run to create an .hs file, which is then 
+-- file, which is compiled and run to create an .hs file, which is then
 -- compiled for use in outside modules.
 --
 -----------------------------------------------------------------------------
@@ -20,8 +20,8 @@ module Analysis.Parsimony.Binary.SequentialAlign.FFI
   , main
   ) where
 
-import Bio.Character.Encodable
-import Bio.Character.Exportable.Class
+--import Bio.Character.Encodable
+--import Bio.Character.Exportable.Class
 import Data.Bits
 import Data.Foldable
 import Data.Monoid
@@ -38,7 +38,7 @@ import Test.QuickCheck hiding ((.&.))
 
 -- TODO: replace when Yu Xiang updated his code for bit arrays.
 -- | STUB, DO NOT USE
-sequentialAlign :: (EncodableDynamicCharacter s, Exportable s) => Int -> Int -> s -> s -> Either String (Int, s, s)
+sequentialAlign :: Int -> Int -> s -> s -> Either String (Int, s, s)
 sequentialAlign x y a b = Right (x + y, a, b)
 
 
@@ -65,7 +65,7 @@ data CDynamicChar
    }
 
 
--- | (✔) 
+-- | (✔)
 instance Show CDynamicChar where
     show (CDynamicChar alphSize dcLen dChar) =
        mconcat
@@ -86,7 +86,7 @@ instance Show CDynamicChar where
             printedArr   = show <$> peekArray bufferLength dChar
 
 
--- | (✔) 
+-- | (✔)
 instance Arbitrary CDynamicChar where
     arbitrary = do
         alphSize <- (arbitrary :: Gen Int) `suchThat` (\x -> 0 < x && x <= 64)
@@ -117,7 +117,7 @@ instance Arbitrary CArrayUnit where
         pure $ fromIntegral num
 
 
--- | (✔) 
+-- | (✔)
 instance Storable CDynamicChar where
     sizeOf    _ = (#size struct dynChar_t) -- #size is a built-in that works with arrays, as are #peek and #poke, below
     alignment _ = alignment (undefined :: CArrayUnit)
@@ -178,15 +178,15 @@ foreign import ccall unsafe "seqAlignForHaskell aligner"
 
 -- |
 -- testFn can be called from within Haskell code.
-testFn :: CDynamicChar -> CDynamicChar -> Either String (Int, String) 
-testFn char1 char2 = unsafePerformIO $ 
-    -- have to allocate memory. Note that we're allocating via a lambda fn. In use, the lambda will take whatever is the 
+testFn :: CDynamicChar -> CDynamicChar -> Either String (Int, String)
+testFn char1 char2 = unsafePerformIO $
+    -- have to allocate memory. Note that we're allocating via a lambda fn. In use, the lambda will take whatever is the
     -- argument of testFn, but here there is no argument, so all allocation is hard-coded.
-    alloca $ \alignPtr -> do 
+    alloca $ \alignPtr -> do
         marshalledChar1 <- new char1
         marshalledChar2 <- new char2
         print marshalledChar1
-        -- Using strict here because the values need to be read before freeing, 
+        -- Using strict here because the values need to be read before freeing,
         -- so lazy is dangerous.
         let !status = callExtFn_c marshalledChar1 marshalledChar2 alignPtr
 
@@ -200,11 +200,11 @@ testFn char1 char2 = unsafePerformIO $
             else do
                 pure $ Left "Out of memory"
 
-        
+
 -- Just for testing from CLI outside of ghci.
 -- | A test driver for the FFI functionality
 main :: IO ()
-main = do 
+main = do
     char1 <- generate (arbitrary :: Gen CDynamicChar)
     --char2 <- generate (arbitrary :: Gen CDynamicChar)
     print char1

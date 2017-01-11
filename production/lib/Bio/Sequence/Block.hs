@@ -19,6 +19,8 @@ module Bio.Sequence.Block
   , discreteSingleton
   , dynamicSingleton
   , hexmap
+  , hexTranspose
+  , hexZipWith
   ) where
 
 
@@ -26,11 +28,16 @@ import Bio.Character.Encodable
 import Bio.Character.Decoration.Continuous
 import Bio.Metadata.CharacterName
 import Data.Foldable
+import Data.Key
 import Data.Monoid                         (mappend)
 import Data.Semigroup
+--import Data.Semigroup.Traversable
 import Data.TCM
 import Data.Vector                         (Vector)
-
+import Data.Vector.Instances ()
+import qualified Data.Vector as V
+import Prelude hiding (zipWith)
+import Safe (headMay)
 
 -- |
 -- Represents a block of charcters which are optimized atomically together across
@@ -61,26 +68,65 @@ hexmap :: (m -> m')
        -> CharacterBlock m' i' c' f' a' d'
 hexmap f1 f2 f3 f4 f5 f6 =
     CharacterBlock
-    <$> (fmap f3 . continuousCharacterBins )
-    <*> (fmap f4 . nonAdditiveCharacterBins)
-    <*> (fmap f5 . additiveCharacterBins   )
-    <*> (fmap f1 . metricCharacterBins     )
-    <*> (fmap f2 . nonMetricCharacterBins  )
-    <*> (fmap f6 . dynamicCharacters       )
+      <$> (fmap f3 . continuousCharacterBins )
+      <*> (fmap f4 . nonAdditiveCharacterBins)
+      <*> (fmap f5 . additiveCharacterBins   )
+      <*> (fmap f1 . metricCharacterBins     )
+      <*> (fmap f2 . nonMetricCharacterBins  )
+      <*> (fmap f6 . dynamicCharacters       )
+
+
+hexTranspose :: Traversable t => t (CharacterBlock m i c f a d) -> CharacterBlock (t m) (t i) (t c) (t f) (t a) (t d)
+hexTranspose = 
+    CharacterBlock
+      <$> transposition continuousCharacterBins
+      <*> transposition nonAdditiveCharacterBins
+      <*> transposition additiveCharacterBins
+      <*> transposition metricCharacterBins
+      <*> transposition nonMetricCharacterBins
+      <*> transposition dynamicCharacters
+  where
+    transposition f xs =
+        case maybe 0 length . headMay $ toList listOfVectors of
+          0 -> mempty
+          n -> V.generate n g
+      where
+        g i = (V.! i) <$> listOfVectors
+        listOfVectors = fmap f xs
+
+
+hexZipWith :: (m1 -> m2 -> m3)
+          -> (i1 -> i2 -> i3) 
+          -> (c1 -> c2 -> c3)
+          -> (f1 -> f2 -> f3)
+          -> (a1 -> a2 -> a3)
+          -> (d1 -> d2 -> d3)
+          -> CharacterBlock m1 i1 c1 f1 a1 d1
+          -> CharacterBlock m2 i2 c2 f2 a2 d2
+          -> CharacterBlock m3 i3 c3 f3 a3 d3
+hexZipWith f1 f2 f3 f4 f5 f6 lhs rhs =
+    CharacterBlock
+        { continuousCharacterBins  = zipWith f3 (continuousCharacterBins  lhs) (continuousCharacterBins  rhs)
+        , nonAdditiveCharacterBins = zipWith f4 (nonAdditiveCharacterBins lhs) (nonAdditiveCharacterBins rhs)
+        , additiveCharacterBins    = zipWith f5 (additiveCharacterBins    lhs) (additiveCharacterBins    rhs)
+        , metricCharacterBins      = zipWith f1 (metricCharacterBins      lhs) (metricCharacterBins      rhs)
+        , nonMetricCharacterBins   = zipWith f2 (nonMetricCharacterBins   lhs) (nonMetricCharacterBins   rhs)
+        , dynamicCharacters        = zipWith f6 (dynamicCharacters        lhs) (dynamicCharacters        rhs)
+        }
 
 
 instance Semigroup (CharacterBlock m i c f a d) where
 
     lhs <> rhs =
         CharacterBlock
-          { continuousCharacterBins   = continuousCharacterBins   lhs `mappend` continuousCharacterBins   rhs
-          , nonAdditiveCharacterBins  = nonAdditiveCharacterBins  lhs `mappend` nonAdditiveCharacterBins  rhs
-          , additiveCharacterBins     = additiveCharacterBins     lhs `mappend` additiveCharacterBins     rhs
-          , metricCharacterBins       = metricCharacterBins       lhs `mappend` metricCharacterBins       rhs
-          , nonMetricCharacterBins = nonMetricCharacterBins lhs `mappend` nonMetricCharacterBins rhs
-          , dynamicCharacters         = dynamicCharacters         lhs `mappend` dynamicCharacters         rhs
+          { continuousCharacterBins  = continuousCharacterBins  lhs `mappend` continuousCharacterBins  rhs
+          , nonAdditiveCharacterBins = nonAdditiveCharacterBins lhs `mappend` nonAdditiveCharacterBins rhs
+          , additiveCharacterBins    = additiveCharacterBins    lhs `mappend` additiveCharacterBins    rhs
+          , metricCharacterBins      = metricCharacterBins      lhs `mappend` metricCharacterBins      rhs
+          , nonMetricCharacterBins   = nonMetricCharacterBins   lhs `mappend` nonMetricCharacterBins   rhs
+          , dynamicCharacters        = dynamicCharacters        lhs `mappend` dynamicCharacters        rhs
           }
-
+          
 
 instance ( Show m
          , Show i

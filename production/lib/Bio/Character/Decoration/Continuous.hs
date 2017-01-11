@@ -31,9 +31,9 @@ module Bio.Character.Decoration.Continuous
   , ContinuousDecorationInitial()
   , ContinuousChar()
   , ContinuousCharacter()
-  , GeneralCharacterMetadata()
-  , HasCharacterName(..)
-  , HasCharacterWeight(..)
+--  , GeneralCharacterMetadata()
+--  , HasCharacterName(..)
+--  , HasCharacterWeight(..)
   , HasContinuousCharacter(..)
   ) where
 

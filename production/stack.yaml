@@ -1,4 +1,5 @@
 flags: {}
+
 setup-info:
   ghc:
     windows64:
@@ -16,10 +17,14 @@ setup-info:
         url: https://downloads.haskell.org/~ghc/8.0.2-rc2/ghc-8.0.1.20161213-x86_64-apple-darwin.tar.xz
         sha1: d87048467786a7b9667aef0a78d7ffd8779425b2
         content-length: 113359104
+
 extra-deps:
 - bv-0.4.1
 - containers-0.5.8.1
 - lens-4.15.1
+- vector-instances-3.4
+
 compiler-check: match-exact
 compiler: ghc-8.0.1.20161213
+
 resolver: lts-7.14
