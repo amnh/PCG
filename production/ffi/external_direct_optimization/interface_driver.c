@@ -113,16 +113,23 @@ int main() {
 //    initializeSeq(retShortSeq,  SEQ_CAPACITY);
 
     cost_matrices_2d_p costMtx2d        = malloc(sizeof(struct cost_matrices_2d));
-    setup2dCostMtx (tcm, alphSize, 0, costMtx2d);
-
     cost_matrices_2d_p costMtx2d_affine = malloc(sizeof(struct cost_matrices_2d));
-    setup2dCostMtx (tcm, alphSize, GAP_OPEN_COST, costMtx2d_affine);
-
     cost_matrices_3d_p costMtx3d        = malloc(sizeof(struct cost_matrices_3d));
-    setup3dCostMtx (tcm, alphSize, 0, costMtx3d);
 
-    cost_matrices_3d_p costMtx3d_affine = malloc(sizeof(struct cost_matrices_3d));
-    setup3dCostMtx (tcm, alphSize, GAP_OPEN_COST, costMtx3d);
+
+    if(DO_2D) {
+        setup2dCostMtx (tcm, alphSize, 0, costMtx2d);
+    }
+
+    if(DO_2D_AFF) {
+        setup2dCostMtx (tcm, alphSize, GAP_OPEN_COST, costMtx2d_affine);
+    }
+
+    if(DO_3D) {
+        setup3dCostMtx (tcm, alphSize, 0, costMtx3d);
+    }
+    // cost_matrices_3d_p costMtx3d_affine = malloc(sizeof(struct cost_matrices_3d));
+    // setup3dCostMtx (tcm, alphSize, GAP_OPEN_COST, costMtx3d);
 
 
 
@@ -133,15 +140,25 @@ int main() {
 
     if (DO_2D) {
         printf("\n\n\n******************** Align 2 sequences **********************\n");
-        alignIO_p seq1      = malloc(sizeof(struct alignIO));
-        alignIO_p seq2      = malloc(sizeof(struct alignIO));
-        alignIO_p medianSeq = malloc(sizeof(struct alignIO));
+        alignIO_p seq1              = malloc(sizeof(struct alignIO));
+        alignIO_p seq2              = malloc(sizeof(struct alignIO));
+        alignIO_p ungappedMedianSeq = malloc(sizeof(struct alignIO));
+        alignIO_p gappedMedianSeq   = malloc(sizeof(struct alignIO));
+        alignIO_p unionMedianSeq    = malloc(sizeof(struct alignIO));
 
         const size_t MAX_LENGTH = longSeqLen + shortSeqLen + 1;
 
-        medianSeq->sequence  = malloc(MAX_LENGTH * sizeof(int));
-        medianSeq->length    = 0;
-        medianSeq->capacity  = MAX_LENGTH;
+        ungappedMedianSeq->sequence = malloc(MAX_LENGTH * sizeof(int));
+        ungappedMedianSeq->length   = 0;
+        ungappedMedianSeq->capacity = MAX_LENGTH;
+
+        gappedMedianSeq->sequence   = malloc(MAX_LENGTH * sizeof(int));
+        gappedMedianSeq->length     = 0;
+        gappedMedianSeq->capacity   = MAX_LENGTH;
+
+        unionMedianSeq->sequence    = malloc(MAX_LENGTH * sizeof(int));
+        unionMedianSeq->length      = 0;
+        unionMedianSeq->capacity    = MAX_LENGTH;
 
         copyVals(seq1, longest_vals, longSeqLen, MAX_LENGTH);
         copyVals(seq2, shortest_vals, shortSeqLen, MAX_LENGTH);
@@ -157,8 +174,12 @@ int main() {
 
         algnCost = align2d(seq1,
                            seq2,
-                           medianSeq,
-                           costMtx2d);
+                           gappedMedianSeq,
+                           ungappedMedianSeq,
+                           unionMedianSeq,
+                           costMtx2d,
+                           1,                    // do traceback
+                           1);                   // do union
         // if (DEBUG_MAT) {
         //     printf("\n\nFinal alignment matrix: \n\n");
         //     algn_print_dynmtrx_2d( longSeq, shortSeq, algn_mtxs2d );
@@ -174,11 +195,16 @@ int main() {
 
         printf("Alignment cost: %d\n", algnCost);
 
+        printf("  Gapped sequence\n  ");
+        alignIO_print(gappedMedianSeq);
+
+        printf("  Ungapped sequence\n  ");
+        alignIO_print(ungappedMedianSeq);
+
         // union:
         //algn_union (retShortSeq, retLongSeq, algnSeq);
         printf("  Unioned sequence\n  ");
-        alignIO_print(medianSeq);
-
+        alignIO_print(unionMedianSeq);
     }
 
 
@@ -192,13 +218,23 @@ int main() {
 
         alignIO_p seq1      = malloc(sizeof(struct alignIO));
         alignIO_p seq2      = malloc(sizeof(struct alignIO));
-        alignIO_p medianSeq = malloc(sizeof(struct alignIO));
+        alignIO_p ungappedMedianSeq = malloc(sizeof(struct alignIO));
+        alignIO_p gappedMedianSeq   = malloc(sizeof(struct alignIO));
+        alignIO_p unionMedianSeq    = malloc(sizeof(struct alignIO));
 
         const size_t MAX_LENGTH = longSeqLen + shortSeqLen + 1;
 
-        medianSeq->sequence  = malloc(MAX_LENGTH * sizeof(int));
-        medianSeq->length    = 0;
-        medianSeq->capacity  = MAX_LENGTH;
+        ungappedMedianSeq->sequence = malloc(MAX_LENGTH * sizeof(int));
+        ungappedMedianSeq->length   = 0;
+        ungappedMedianSeq->capacity = MAX_LENGTH;
+
+        gappedMedianSeq->sequence   = malloc(MAX_LENGTH * sizeof(int));
+        gappedMedianSeq->length     = 0;
+        gappedMedianSeq->capacity   = MAX_LENGTH;
+
+        unionMedianSeq->sequence    = malloc(MAX_LENGTH * sizeof(int));
+        unionMedianSeq->length      = 0;
+        unionMedianSeq->capacity    = MAX_LENGTH;
 
         copyVals(seq1, longest_vals, longSeqLen, MAX_LENGTH);
         copyVals(seq2, shortest_vals, shortSeqLen, MAX_LENGTH);
@@ -209,10 +245,14 @@ int main() {
 
 
         // shorter first
-        algnCost = align2dAffine(seq2,
-                                 seq1,
-                                 medianSeq,
-                                 costMtx2d_affine);
+        algnCost = align2dAffine(seq1,
+                                 seq2,
+                                 gappedMedianSeq,
+                                 ungappedMedianSeq,
+                                 unionMedianSeq,
+                                 costMtx2d_affine,
+                                 1,                    // do traceback
+                                 1);                   // do union
 
 
 
@@ -222,17 +262,23 @@ int main() {
 
         printf("\n\nAlignment cost: %d\n", algnCost);
 
-        /****  Now get alignments  ****/
 
-        printf("\nUnioned sequences:\n");
-        alignIO_print(medianSeq);
+        printf("  Gapped sequence\n  ");
+        alignIO_print(gappedMedianSeq);
 
+        printf("  Ungapped sequence\n  ");
+        alignIO_print(ungappedMedianSeq);
+
+        // union:
+        //algn_union (retShortSeq, retLongSeq, algnSeq);
+        printf("  Unioned sequence\n  ");
+        alignIO_print(unionMedianSeq);
 
     }
 
 
 /************************************************ Do 3d alignment *************************************************/
-
+/*
     if (DO_3D) {
 
 
@@ -291,15 +337,9 @@ int main() {
         printf("\n\nAlignment cost: %d\n", algnCost);
 
         printf("\n\n\n");
-
-        // for (SEQT *base = retLongSeq->seq_begin; base != retLongSeq->end; base++) {
-        //     printf("a: %c\n", *base);
-        // }
-        // for (SEQT *base = retShortSeq->seq_begin; base != retShortSeq->end; base++) {
-        //     printf("b: %s\n", base);
-        // }
     }
-
+*/
+/*
     if (DO_3D_AFF) {
 
         printf("\n\n\n******************** Align 3 sequences affine **********************\n\n");
@@ -364,11 +404,14 @@ int main() {
         //     printf("b: %s\n", base);
         // }
     }
+*/
 
     // Next this: algn_get_median_3d (seq_p seq1, seq_p seq2, seq_p seq3,
     //                cost_matrices_3d_p m, seq_p sm)
 
-    freeCostMtx(costMtx3d, 0);  // 0 is !2d
+    if(DO_2D) freeCostMtx(costMtx2d, 1);
+    if(DO_2D_AFF) freeCostMtx(costMtx2d_affine, 1);  // 0 is !2d
+    if(DO_3D) freeCostMtx(costMtx3d, 0);  // 0 is !2d
 
     free(tcm);
 

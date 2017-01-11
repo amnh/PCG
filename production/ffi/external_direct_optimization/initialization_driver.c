@@ -135,7 +135,7 @@ int main() {
     setup2dCostMtx (tcm, alphSize, GAP_OPEN_COST, costMtx2d_affine);
     setup3dCostMtx (tcm, alphSize, 0,             costMtx3d);
     setup3dCostMtx (tcm, alphSize, GAP_OPEN_COST, costMtx3d_affine);
-    cm_print_2d (costMtx2d);
+    //cm_print_2d (costMtx2d);
 
     /****************  Allocate NW matrices  ****************/
     // in following, penultimate parameter was ukk flag, used only to set up 3d matrices.
@@ -210,7 +210,7 @@ int main() {
         seq_print(retLongSeq, 1);
         seq_print(retShortSeq, 2);
 
-        printf("Alignment cost: %d\n", algnCost);
+        printf("\nAlignment cost: %d\n", algnCost);
 
         /****  Now get alignments  ****/
 
@@ -289,19 +289,19 @@ int main() {
 
 
 
-        // TODO: empty_medianSeq might not be necessary, as it's unused in ml code:
+        // TODO: ungappedMedSeq might not be necessary, as it's unused in ml code:
         size_t medianSeqLen          = lenLongSeq + lenShortSeq + 2;  // 2 because that's how it is in ML code
-        seq_p empty_medianSeq        = malloc( sizeof(struct seq) );
-        empty_medianSeq->cap         = medianSeqLen;
-        empty_medianSeq->array_head  = calloc( medianSeqLen, sizeof(SEQT));
-        empty_medianSeq->len         = 0;
-        empty_medianSeq->seq_begin   = empty_medianSeq->end = empty_medianSeq->array_head + medianSeqLen;
+        seq_p gappedMedSeq        = malloc( sizeof(struct seq) );
+        gappedMedSeq->cap         = medianSeqLen;
+        gappedMedSeq->array_head  = calloc( medianSeqLen, sizeof(SEQT));
+        gappedMedSeq->len         = 0;
+        gappedMedSeq->seq_begin   = gappedMedSeq->end = gappedMedSeq->array_head + medianSeqLen;
 
-        seq_p medianSeq              = malloc( sizeof(struct seq) );
-        medianSeq->cap               = medianSeqLen;
-        medianSeq->array_head        = calloc( medianSeqLen, sizeof(SEQT));
-        medianSeq->len               = 0;
-        medianSeq->seq_begin         = medianSeq->end = medianSeq->array_head + medianSeqLen;
+        seq_p ungappedMedSeq              = malloc( sizeof(struct seq) );
+        ungappedMedSeq->cap               = medianSeqLen;
+        ungappedMedSeq->array_head        = calloc( medianSeqLen, sizeof(SEQT));
+        ungappedMedSeq->len               = 0;
+        ungappedMedSeq->seq_begin         = ungappedMedSeq->end = ungappedMedSeq->array_head + medianSeqLen;
 
         direction_matrix             = mat_get_2d_direct (algn_mtxs2dAffine);
 
@@ -381,8 +381,8 @@ int main() {
         algn_backtrace_affine (shortSeq,
                                longSeq,
                                direction_matrix,
-                               medianSeq,
-                               empty_medianSeq,
+                               ungappedMedSeq,
+                               gappedMedSeq,
                                retShortSeq,
                                retLongSeq,
                                costMtx2d_affine);
@@ -396,10 +396,20 @@ int main() {
           seq_print(retShortSeq, 2);
         }
 
-        freeSeq(empty_medianSeq);
-        freeSeq(medianSeq);
 
         printf("\nAlignment cost: %d\n", algnCost);
+
+        // ungapped:
+        printf("\n  Median without gaps\n  ");
+        seq_print(ungappedMedSeq, 0);
+
+        // gapped:
+        printf("\n  Median with gaps\n  ");
+        seq_print(gappedMedSeq, 0);
+
+        freeSeq(gappedMedSeq);
+        freeSeq(ungappedMedSeq);
+
     }
 
 

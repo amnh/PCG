@@ -48,15 +48,15 @@ mat_size_of_3d_matrix (int w, int d, int h) { // originally had a fourth paramet
 
 void print_matrices(nw_matrices_p m, int alphSize) {
     printf("\nMatrices:\n");
-    printf("    NW Matrix cap:         %d\n", m->cap_nw);
-    printf("    Efficiency mtx cap:    %d\n", m->cap_eff);
-    printf("    Precalc mtx cap:       %d\n", m->cap_pre);
+    printf("    NW Matrix cap:         %zu\n", m->cap_nw);
+    printf("    Efficiency mtx cap:    %zu\n", m->cap_eff);
+    printf("    precalcMtx mtx cap:    %zu\n", m->cap_pre);
 
-    printf("\n    Precalculated nw matrix:\n");
+    printf("\n    precalcMtxulated nw matrix:\n");
     for( size_t i = 0; i < m->cap_pre; i += alphSize) {
         printf("    ");
         for( size_t j = 0; j < alphSize; j++) {
-            printf("%4d", m->precalc[i + j]);
+            printf("%4d", m->precalcMtx[i + j]);
         }
         printf("\n");
     }
@@ -75,7 +75,7 @@ mat_clean_direction_matrix (nw_matrices_p m) {
     int cap = m->cap_nw;
     int i;
     for (i = 0; i < cap; i++)
-        m->dir_mtx_2d[i] = (DIR_MTX_ARROW_t) 0;
+        m->nw_dirMtx[i] = (DIR_MTX_ARROW_t) 0;
     return;
 }
 
@@ -87,87 +87,84 @@ inline void
 mat_setup_size (nw_matrices_p m, int len_seq1, int len_seq2, int len_seq3, int lcm) {
     if(DEBUG_MAT) {
         printf("\n---mat_setup_size\n");
+        printf("capacity: %zu\nefficiancy: %zu\nprecalc: %zu\n", m->cap_nw, m->cap_eff, m->cap_pre);
     }
-    int cap, cap_2d, cap_precalc, cap_dir;
+    size_t cap, cap_2d, cap_precalcMtx, cap_dir;
+    //cap_dir     = (len_seq1 + 1) * (len_seq2 + 1);
     if (len_seq3 == 0) {           /* If the size setup is only for 2d */
-        cap         = mat_size_of_2d_matrix (len_seq1, len_seq2);
-        cap_precalc = (1 << lcm) * len_seq1;
-        cap_dir     = (len_seq1 + 1) * (len_seq2 + 1);
-        cap_2d      = 0;
+        cap            = mat_size_of_2d_matrix (len_seq1, len_seq2);
+        cap_precalcMtx = (1 << lcm) * len_seq1;
+        cap_dir        = (len_seq1 + 1) * (len_seq2 + 1);
+        cap_2d         = 0;
     } else {                       /* If the size setup is for 3d */
-        cap         = mat_size_of_3d_matrix (len_seq1, len_seq2, len_seq3);
-        cap_precalc = (1 << lcm) * (1 << lcm) * len_seq2;  // TODO: why sequence 2?
-        cap_2d      = len_seq1 * len_seq2;
-        cap_dir     = cap_2d * len_seq3;
+        cap            = mat_size_of_3d_matrix (len_seq1, len_seq2, len_seq3);
+        cap_precalcMtx = (1 << lcm) * (1 << lcm) * len_seq2;  // TODO: why sequence 2?
+        cap_2d         = len_seq1 * len_seq2;
+        cap_dir        = cap_2d * len_seq3;
     }
     if (DEBUG_MAT) {
-        printf("cap_eff: %d, \ncap: %d\n", m->cap_eff, cap);
+        printf("cap_eff: %zu, \ncap_nw: %zu\n", m->cap_eff, cap);
     }
     if (m->cap_eff < cap) {         /* If the current 2d or 3d matrix is not large enough */
         if (DEBUG_MAT) {
-            printf("cap_eff too small. New allocation: %d\n", cap);
+            printf("cap_eff too small. New allocation: %zu\n", cap);
         }
-        m->nw_costMtx3d    = m->nw_costMtx = realloc (m->nw_costMtx, (cap * sizeof(int)));
+        m->nw_costMtx3d_d = m->nw_costMtx = realloc (m->nw_costMtx, (cap * sizeof(int)));
         m->cap_eff = cap;
     }
     if (m->cap_nw < cap_dir) {         /* If the other matrices are not large enough */
         if (DEBUG_MAT) {
-            printf("cap nw cost mtx too small. New allocation: %d\n", cap_dir);
+            printf("cap nw cost mtx too small. New allocation: %zu\n", cap_dir);
         }
-        m->nw_costMtx3d_d = m->dir_mtx_2d =
-            realloc (m->dir_mtx_2d, cap_dir * sizeof(DIR_MTX_ARROW_t) );
+        m->nw_dirMtx3d_d = m->nw_dirMtx =
+            realloc (m->nw_dirMtx, cap_dir * sizeof(DIR_MTX_ARROW_t) );
         if (0 != cap_2d) {
             if (DEBUG_MAT) {
-                printf("\n3d alignment. cap_2d: %d\n", cap_2d);
-            }
-            m->pointers_3d = realloc (m->pointers_3d, cap_2d * sizeof(int));
-            if (m->pointers_3d == NULL) {
-                printf("Memory allocation problem in pointers 3d.\n");
-                exit(1);
-                // failwith ("Memory allocation problem in pointers 3d.");
+                printf("\n3d alignment. cap_2d: %zu\n", cap_2d);
             }
         }
         m->cap_nw = cap_dir;
     }
-    if (m->cap_pre < cap_precalc) {
+    if (m->cap_pre < cap_precalcMtx) {
         if (DEBUG_MAT) {
-            printf("precalc matrix too small. New allocation: %d\n", cap_precalc);
+            printf("precalc matrix too small. New allocation: %zu\n", cap_precalcMtx);
         }
-        m->precalc = realloc (m->precalc, cap_precalc * sizeof(int));
-        m->cap_pre = cap_precalc;
+        m->precalcMtx = realloc (m->precalcMtx, cap_precalcMtx * sizeof(int));
+        m->cap_pre = cap_precalcMtx;
     }
     /* Check if there is an allocation error then abort program */
-    if ((cap > 0) && (m->nw_costMtx3d == NULL)) {
-        printf("Memory allocation problem in nw_costMtx3d.\n");
+    if ((cap > 0) && (m->nw_costMtx3d_d == NULL)) {
+        printf("capacity: %zu, pointer: %p\n", cap, m->nw_costMtx3d_d);
+        printf("Memory allocation problem in cost matrix.\n");
         exit(1);
-        // failwith ("Memory allocation problem in nw_costMtx3d.");
+        // failwith ("Memory allocation problem in nw_costMtx3d_d.");
     }
-    if ((cap_dir > 0) && (m->dir_mtx_2d == NULL)) {
-        printf("Memory allocation problem in dir_mtx_2d\n");
+    if ((cap_dir > 0) && (m->nw_dirMtx == NULL)) {
+        printf("Memory allocation problem in direction matrix\n");
         exit(1);
-        // failwith ("Memory allocation problem in dir_mtx_2d");
+        // failwith ("Memory allocation problem in nw_dirMtx");
     }
-    if ((cap_precalc > 0) && (m->precalc == NULL)) {
-        printf("Memory allocation problem in precalc\n");
+    if ((cap_precalcMtx > 0) && (m->precalcMtx == NULL)) {
+        printf("Memory allocation problem in precalc matrix\n");
         exit(1);
-        // failwith ("Memory allocation problem in precalc");
+        // failwith ("Memory allocation problem in precalcMtx");
     }
     if (DEBUG_MAT) {
         printf("\nFinal allocated size of matrices:\n" );
-        printf("    efficiency: %d\n", m->cap_eff);
-        printf("    nw matrix:  %d\n", m->cap_nw);
-        printf("    precalc:    %d\n", m->cap_pre);
+        printf("    efficiency: %zu\n", m->cap_eff);
+        printf("    nw matrix:  %zu\n", m->cap_nw);
+        printf("    precalcMtx: %zu\n", m->cap_pre);
     }
 }
 
 int *
 mat_get_2d_prec (const nw_matrices_p m) {
-    return (m->precalc);
+    return (m->precalcMtx);
 }
 
 int *
 mat_get_3d_prec (const nw_matrices_p m) {
-    return (m->precalc);
+    return (m->precalcMtx);
 }
 
 int *
@@ -177,26 +174,18 @@ mat_get_2d_nwMtx (nw_matrices_p m) {
 
 DIR_MTX_ARROW_t  *
 mat_get_2d_direct (const nw_matrices_p m) {
-    return (m->dir_mtx_2d);
-}
-
-// TODO: I think this can be removed, which means pointers_3d can be, also.
-int **
-mat_get_3d_pointers (nw_matrices_p m) {
-    return (m->pointers_3d);
+    return (m->nw_dirMtx);
 }
 
 int *
 mat_get_3d_matrix (nw_matrices_p m) {
-    return (m->nw_costMtx3d);
+    return (m->nw_costMtx3d_d);
 }
 
 DIR_MTX_ARROW_t  *
 mat_get_3d_direct (nw_matrices_p m) {
-    return (m->nw_costMtx3d_d);
+    return (m->nw_dirMtx3d_d);
 }
-
-
 
 void
 mat_print_algn_2d (nw_matrices_p m, int w, int h) {
