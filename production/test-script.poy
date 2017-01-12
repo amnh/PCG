@@ -1,3 +1,0 @@
-read(nucleotides:("fakeArtmor.fas"), "artmor.tre")
-report("testCrossOutput.csv",cross_references)
-report("testNewickOutput.phy",data)
