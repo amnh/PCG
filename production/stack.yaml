@@ -3,20 +3,20 @@ flags: {}
 setup-info:
   ghc:
     windows64:
-      8.0.1.20161213:
-        url: https://downloads.haskell.org/~ghc/8.0.2-rc2/ghc-8.0.1.20161213-x86_64-unknown-mingw32.tar.xz
+      8.0.2:
+        url: https://downloads.haskell.org/~ghc/8.0.2/ghc-8.0.2-x86_64-unknown-mingw32.tar.xz
         sha1: a536228cb7265aef19b2842a2c81cfe9ca372e45
-        content-length: 155494112
+        content-length: 97162136
     linux64:
-      8.0.1.20161213:
-        url: https://downloads.haskell.org/~ghc/8.0.2-rc2/ghc-8.0.1.20161213-x86_64-deb8-linux.tar.xz
-        sha1: 8c7ebec9bf96c0a37b4b27ebcd5372844cb61755
-        content-length: 111894616
+      8.0.2:
+        url: https://downloads.haskell.org/~ghc/8.0.2/ghc-8.0.2-x86_64-deb8-linux.tar.xz
+        sha1: f298b7d0f37cc9ded7ac66b2662b0fa5ac6d0809
+        content-length: 114373576
     macosx:
-      8.0.1.20161213:
-        url: https://downloads.haskell.org/~ghc/8.0.2-rc2/ghc-8.0.1.20161213-x86_64-apple-darwin.tar.xz
+      8.0.2:
+        url: https://downloads.haskell.org/~ghc/8.0.2/ghc-8.0.2-x86_64-apple-darwin.tar.xz
         sha1: d87048467786a7b9667aef0a78d7ffd8779425b2
-        content-length: 113359104
+        content-length: 113945284
 
 extra-deps:
 - bv-0.4.1
@@ -25,6 +25,6 @@ extra-deps:
 - vector-instances-3.4
 
 compiler-check: match-exact
-compiler: ghc-8.0.1.20161213
+compiler: ghc-8.0.2
 
 resolver: lts-7.14
