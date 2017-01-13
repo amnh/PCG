@@ -10,7 +10,7 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE FlexibleInstances, FunctionalDependencies, MultiParamTypeClasses #-}
+{-# LANGUAGE FlexibleInstances, MultiParamTypeClasses #-}
 
 module Bio.Metadata.Discrete.Internal
   ( DiscreteCharacterMetadataDec()
@@ -41,18 +41,17 @@ data DiscreteCharacterMetadataDec c
    = DiscreteCharacterMetadataDec
    { alphabet       :: Alphabet String
    , unambiguousTCM :: TCM
-   , fullTCM        :: (c -> c -> (c,Int))
+   , fullTCM        :: c -> c -> (c, Int)
    , generalData    :: GeneralCharacterMetadataDec
    }
 
 
 instance Eq (DiscreteCharacterMetadataDec c) where
 
-    lhs == rhs = and
-      [ alphabet       lhs == alphabet       rhs
-      , unambiguousTCM lhs == unambiguousTCM rhs
-      , generalData    lhs == generalData    rhs
-      ]
+    lhs == rhs = alphabet       lhs == alphabet       rhs
+              && unambiguousTCM lhs == unambiguousTCM rhs
+              && generalData    lhs == generalData    rhs
+
 
 instance Show (DiscreteCharacterMetadataDec c) where
 
@@ -96,7 +95,7 @@ instance HasCharacterSymbolTransitionCostMatrixGenerator (DiscreteCharacterMetad
 
     characterSymbolTransitionCostMatrixGenerator = lens getter setter
       where
-        getter e   = (\i j -> fromIntegral $ unambiguousTCM e ! (i,j))
+        getter e i j = fromIntegral $ unambiguousTCM e ! (i,j)
         setter e f = e { unambiguousTCM = newTCM }
           where
             dimension       = size $ unambiguousTCM e

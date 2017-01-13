@@ -303,7 +303,7 @@ stringDefinition :: (MonadParsec e s m, Token s ~ Char {- , Show s -}) => String
 stringDefinition blockTitle = do
     _     <- symbol $ string' blockTitle
     _     <- symbol $ char '='
-    value <- symbol $ (notKeywordWord "\"" <?> "Word that is not a Nexus keyword")
+    value <- symbol (notKeywordWord "\"" <?> "Word that is not a Nexus keyword")
     pure value
 
 

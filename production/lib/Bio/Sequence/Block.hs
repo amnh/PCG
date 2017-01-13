@@ -79,12 +79,12 @@ hexmap f1 f2 f3 f4 f5 f6 =
 hexTranspose :: Traversable t => t (CharacterBlock m i c f a d) -> CharacterBlock (t m) (t i) (t c) (t f) (t a) (t d)
 hexTranspose = 
     CharacterBlock
-      <$> (transposition continuousCharacterBins )
-      <*> (transposition nonAdditiveCharacterBins)
-      <*> (transposition additiveCharacterBins   )
-      <*> (transposition metricCharacterBins     )
-      <*> (transposition nonMetricCharacterBins  )
-      <*> (transposition dynamicCharacters       )
+      <$> transposition continuousCharacterBins
+      <*> transposition nonAdditiveCharacterBins
+      <*> transposition additiveCharacterBins
+      <*> transposition metricCharacterBins
+      <*> transposition nonMetricCharacterBins
+      <*> transposition dynamicCharacters
   where
     transposition f xs =
         case maybe 0 length . headMay $ toList listOfVectors of

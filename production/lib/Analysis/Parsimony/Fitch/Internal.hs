@@ -44,9 +44,9 @@ fitchPreOrder :: EncodableStaticCharacter c
               => FitchOptimizationDecoration c
               -> [(Word, FitchOptimizationDecoration c)]
               -> FitchOptimizationDecoration c
-fitchPreOrder childDecoration (_x:_y:_) = childDecoration   -- two parents; shouldn't be possible, but here for completion
-fitchPreOrder childDecoration []        = childDecoration   -- is a root TODO: need to change preliminary to final
-fitchPreOrder childDecoration ((_, parentDecoration):[]) =
+fitchPreOrder childDecoration (_:_:_) = childDecoration   -- two parents; shouldn't be possible, but here for completion
+fitchPreOrder childDecoration []      = childDecoration   -- is a root TODO: need to change preliminary to final
+fitchPreOrder childDecoration [(_, parentDecoration)] =
     if childDecoration ^. isLeaf
         then childDecoration
         else determineFinalState parentDecoration childDecoration
@@ -68,8 +68,8 @@ updatePostOrder _parentDecoration (leftChildDec:|rightChildDec:_) = returnNodeDe
 
         initializedAcc       = (emptyChar, 1) -- Cost is set to 1 so that branches in guards below work correctly.
         isSet decoration key = (decoration   ^. preliminaryMedian) `testBit` key
-        indel l r k          = (isSet l k) `xor` (isSet r k)
-        noSub l r k          = (isSet l k)  &&   (isSet r k)    -- Same bit is on in both characters.
+        indel l r k          = isSet l k `xor` isSet r k
+        noSub l r k          = isSet l k  &&   isSet r k    -- Same bit is on in both characters.
         totalCost            = parentCost + (leftChildDec ^. minCost) + (rightChildDec ^. minCost)
         emptyChar            = emptyStatic $ leftChildDec ^. discreteCharacter
         f (inChar, cost) key _                                  -- In following, note that a 1 has been set to the character by

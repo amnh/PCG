@@ -283,9 +283,9 @@ foldSeqs ((taxSeqMap,charMDataVec):xs)   = ((newSeqMap, newMetadata), totLength)
 translateTrees :: Vector String -> [TreeBlock] -> Either (NonEmpty String) [NewickForest]
 translateTrees taxaList treeSet =
     case partitionEithers $ handleTreeBlock <$> treeSet of
-      (x:xs,    _) -> Left  $ x :| xs
-      (   _,   []) -> Right $ []
-      (  [], x:xs) -> Right $ [x :| xs]
+      (x:xs,    _) -> Left $ x :| xs
+      (   _,   []) -> Right []
+      (  [], x:xs) -> Right [x :| xs]
     where
 
         -- |
