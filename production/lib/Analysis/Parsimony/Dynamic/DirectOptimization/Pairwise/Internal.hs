@@ -1,6 +1,6 @@
 -----------------------------------------------------------------------------
 -- |
--- Module      :  Analysis.Parsimony.Binary.DirectOptimization.Internal
+-- Module      :  Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Internal
 -- Copyright   :  (c) 2015-2015 Ward Wheeler
 -- License     :  BSD-style
 --
@@ -13,7 +13,7 @@
 -----------------------------------------------------------------------------
 {-# LANGUAGE ConstraintKinds, FlexibleContexts, TypeFamilies #-}
 
-module Analysis.Parsimony.Binary.DirectOptimization.Internal where
+module Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Internal where
 
 import Bio.Metadata
 import Bio.Character.Encodable

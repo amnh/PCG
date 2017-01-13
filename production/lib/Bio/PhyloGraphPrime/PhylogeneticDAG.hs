@@ -101,7 +101,7 @@ data  PhylogeneticDAG e n m i c f a d
 
 
 data  PhylogeneticDAG2 e n m i c f a d
-    = PDAG2 (ReferenceDAG e (PhylogeneticNode2 n (CharacterSequence m i c f a d)))
+    = PDAG2 (PhylogeneticSolution (ReferenceDAG e (PhylogeneticNode2 n (CharacterSequence m i c f a d))))
 
 
 instance ( Show e
@@ -216,13 +216,59 @@ resolutionTransform dataVector index transformation currentNode =
              lhs'   = fst lhs
              rhs'   = fst rhs
 
+
+
+{-
+-- |
+-- Applies a traversal logic function over a 'ReferenceDAG' in a /post-order/ manner.
+--
+-- The logic function takes a current node decoration,
+-- a list of child node decorations with the logic function already applied,
+-- and returns the new decoration for the current node.
+decorationPostOrder :: (m -> [m'] -> m') -- ^ post-order transformation for /metric/       characters
+                    -> (i -> [i'] -> i') -- ^ post-order transformation for /non-metric/   characters
+                    -> (c -> [c'] -> c') -- ^ post-order transformation for /continuous/   characters
+                    -> (f -> [f'] -> f') -- ^ post-order transformation for /non-additive/ characters
+                    -> (a -> [a'] -> a') -- ^ post-order transformation for /additive/     characters
+                    -> (d -> [d'] -> d') -- ^ post-order transformation for /dynamic/      characters
+                    ->  PhylogeneticDAG2 e n m  i  c  f  a  d 
+                    ->  PhylogeneticDAG2 e n m' i' c' f' a' d'
+decorationPostOrder f1 f2 f3 f4 f5 f6 (PDAG2 pSolution) =
+    PDAG2 $ decorationPostOrderDAG f1 f2 f3 f4 f5 f6 pSolution
+
+
+decorationPostOrderDAG :: (m -> [m'] -> m')
+                       -> (i -> [i'] -> i')
+                       -> (c -> [c'] -> c')
+                       -> (f -> [f'] -> f')
+                       -> (a -> [a'] -> a')
+                       -> (d -> [d'] -> d')
+                       -> ReferenceDAG e (PhylogeneticNode2 n (CharacterSequence m  i  c  f  a  d ))
+                       -> ReferenceDAG e (PhylogeneticNode2 n (CharacterSequence m' i' c' f' a' d'))
+decorationPostOrderDAG f1 f2 f3 f4 f5 f6 = RefDAG <$> generateNewReferences <*> rootRefs <*> graphData
+  where
+    newReferences dag = V.generate dagSize h
+      where
+        dagSize = length $ references dag
+        h i     = IndexData <$> const (memo ! i) <*> parentRefs <*> childRefs $ references dag ! i
+        memo    = V.generate dagSize h
+          where
+            h i = f datum $ (memo !) <$> childIndices
+              where
+                datum        = nodeDecoration node
+                node         = references dag ! i
+                childIndices = IM.keys $ childRefs node 
+-}
+
+
 {--}  
 
+{-
 nodeInternalPostorderMap :: (PhylogeneticNode2 n (CharacterSequence m i c f a d) -> [PhylogeneticNode2 n' (CharacterSequence m' i' c' f' a' d')] -> PhylogeneticNode2 n' (CharacterSequence m' i' c' f' a' d'))
                          -> PhylogeneticDAG2 e n m i c f a d
                          -> PhylogeneticDAG2 e n' m' i' c' f' a' d'
 nodeInternalPostorderMap f (PDAG2 dag) = PDAG2 $ nodePostOrder f dag
-
+-}
 
 -- TODO:
 

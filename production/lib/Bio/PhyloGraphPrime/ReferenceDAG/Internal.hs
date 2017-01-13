@@ -15,25 +15,25 @@
 module Bio.PhyloGraphPrime.ReferenceDAG.Internal where
 
 import           Bio.PhyloGraphPrime.Component
-import           Control.Arrow             ((&&&))
+import           Control.Arrow              ((&&&))
 import           Data.Bifunctor
 import           Data.Foldable
-import           Data.Hashable             (Hashable)
+import           Data.Hashable              (Hashable)
 import qualified Data.HashMap.Strict as HM
-import           Data.IntMap               (IntMap)
-import qualified Data.IntMap        as IM
-import           Data.IntSet               (IntSet)
-import qualified Data.IntSet        as IS
+import           Data.IntMap                (IntMap)
+import qualified Data.IntMap         as IM
+import           Data.IntSet                (IntSet)
+import qualified Data.IntSet         as IS
 import           Data.Key
-import           Data.List                 (intercalate)
-import           Data.List.NonEmpty        (NonEmpty)
-import qualified Data.List.NonEmpty as NE
-import           Data.Monoid               ((<>))
+import           Data.List                  (intercalate)
+import           Data.List.NonEmpty         (NonEmpty)
+import qualified Data.List.NonEmpty  as NE
+import           Data.Monoid                ((<>))
 import           Data.MonoTraversable
-import           Data.Vector               (Vector)
-import qualified Data.Vector        as V
-import           Data.Vector.Instances     ()
-import           Prelude            hiding (lookup)
+import           Data.Vector                (Vector)
+import qualified Data.Vector         as V
+import           Data.Vector.Instances      ()
+import           Prelude             hiding (lookup)
 
 
 -- |

@@ -1,6 +1,6 @@
 -----------------------------------------------------------------------------
 -- |
--- Module      :  Analysis.Parsimony.Binary.DirectOptimization 
+-- Module      :  Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise
 -- Copyright   :  (c) 2015-2015 Ward Wheeler
 -- License     :  BSD-style
 --
@@ -11,11 +11,11 @@
 -- Direct optimization export
 --
 -----------------------------------------------------------------------------
-module Analysis.Parsimony.Binary.DirectOptimization 
+module Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise
     ( doAlignment
     , getOverlap
     , minimalChoice
     , naiveDO
     ) where
 
-import Analysis.Parsimony.Binary.DirectOptimization.Internal
+import Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Internal
