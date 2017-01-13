@@ -34,7 +34,7 @@ import Prelude hiding (zip)
 
 
 directOptimizationPostOrder :: ( SimpleDynamicDecoration d c
-                               , DirectOptimizationDecoration d' c
+                               , DirectOptimizationPostOrderDecoration d' c
                                )
                  =>  d
                  -> [d']
@@ -45,6 +45,11 @@ directOptimizationPostOrder charDecoration xs = undefined
         []   -> defaultLeaf charDecoration
         y:ys -> updatefromLeaves charDecoration (y:|ys)
 -}
+
+defaultLeaf :: ( SimpleDynamicDecoration d c
+               , DirectOptimizationPostOrderDecoration d' c
+               ) => d -> [d']
+defaultLeaf = undefined
 
 {-
 -- | Used on the pre-order (i.e. second) traversal. Either calls 'initializeDirVector' on root or updateDirectionalMins.

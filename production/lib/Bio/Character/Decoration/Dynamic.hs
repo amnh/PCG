@@ -12,6 +12,7 @@
 
 module Bio.Character.Decoration.Dynamic
   ( DynamicDecorationInitial()
+  , DirectOptimizationPostOrderDecoration()
   , DynamicDecorationDirectOptimization()
   , DynamicDecorationImpliedAlignment()
   , SimpleDynamicDecoration()
