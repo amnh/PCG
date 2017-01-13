@@ -78,6 +78,22 @@ class ( SimpleDynamicDecoration s a
     {-# MINIMAL toDynamicCharacterDecoration #-}
 
 
+
+
+-- |
+-- A decoration that can be constructed from a 'DiscreteCharacterDecoration' by
+-- extending the decoration to contain the requisite fields for performing
+-- Sankoff's algorithm.
+class ( SimpleDynamicDecoration s c
+      , DirectOptimizationPostOrderDecoration s c
+      ) => SimpleDynamicExtensionPostOrderDecoration s c | s -> c where
+
+    extendDynamicToPostOrder :: (SimpleDynamicDecoration x c, DirectOptimizationPostOrderDecoration s c)
+                             => x  -- ^ Original decoration
+                             -> c  -- ^ Preliminary /ungapped/ dynamic character
+                             -> c  -- ^ Preliminary   /gapped/ dynamic character
+                             -> s -- ^ Resulting decoration
+
 {-
 instance ( DynamicCharacterDecoration s a
          , PossiblyMissingCharacter a
