@@ -21,14 +21,17 @@
 module Analysis.Parsimony.Dynamic.DirectOptimization.FFI where
 
 import Bio.Character.Exportable.Class
+import Control.Lens
+import Data.Semigroup
 import Foreign
 --import Foreign.Ptr
 --import Foreign.C.String
 import Foreign.C.Types
+import Foreign.ForeignPtr
 import Foreign.Marshal.Array
 --import Foreign.StablePtr
 import Prelude hiding (lcm, sequence, tail)
---import System.IO.Unsafe
+import System.IO.Unsafe (unsafePerformIO)
 
 #include "costMatrix.h"
 #include "c_code_alloc_setup.h"
@@ -36,10 +39,6 @@ import Prelude hiding (lcm, sequence, tail)
 #include "nwMatrices.h"
 -- #include "seqAlign.h"
 
--- | This will be compatible with uint64_t, which is type of external bit arrays.
-type CArrayUnit  = CULong
--- | C short type, but unused right now.
-type CDirMtxUnit = CShort
 
 {- ******************************************* Sequence declaration and Storable instance ******************************************* -}
 {-
@@ -73,7 +72,7 @@ instance Storable Alignment2d where
 -}
 
 data AlignIO = AlignIO { -- magic_number :: CInt     -- TODO: No idea what this is for; figure it out?
-                         character :: StablePtr CInt     --
+                         character :: Ptr CInt     --
                        , charLen   :: CSize        -- Total length of the character stored
                        , arrCap    :: CSize        -- Total capacity of allocated array
                        }
@@ -83,18 +82,19 @@ instance Storable AlignIO where
     sizeOf    _  = (#size struct alignIO) -- #size is a built-in that works with arrays, as are #peek and #poke, below
     alignment _  = alignment (undefined :: CSize)
     peek ptr     = do                 -- to get values from the C app
-        len  <- (#peek struct alignIO, length)    ptr
         arr  <- (#peek struct alignIO, character) ptr
+        len  <- (#peek struct alignIO, length)    ptr
         cap  <- (#peek struct alignIO, capacity)  ptr
 
-        return  AlignIO { charLen   = len
-                        , character = arr
+        return  AlignIO { character = arr
+                        , charLen   = len
                         , arrCap    = cap
                         }
-    poke ptr (AlignIO len arr cap) = do -- to modify values in the C app
-        (#poke struct alignIO, character) ptr len
-        (#poke struct alignIO, length)   ptr arr
-        (#poke struct alignIO, capacity) ptr cap
+
+    poke ptr (AlignIO arr len cap) = do -- to modify values used in the C app
+        (#poke struct alignIO, character) ptr arr
+        (#poke struct alignIO, length)    ptr len
+        (#poke struct alignIO, capacity)  ptr cap
 
 
 
@@ -239,15 +239,15 @@ foreign import ccall unsafe "c_code_alloc_setup.h setupCostMtx"
 -- It is therefore indexed not by powers of two, but by cardinal integer.
 -- TODO: For now we only allocate 2d matrices. 3d will come later.
 foreign import ccall unsafe "c_code_alloc_setup.h align2d"
-    align2dFn_c :: AlignIO          -- character1, input & output
-                -> AlignIO          -- character2, input & output
-                -> AlignIO          -- char1 gapped, output
-                -> AlignIO          -- char2 gapped, output
-                -> AlignIO          -- unioned output character
+    align2dFn_c :: Ptr AlignIO          -- character1, input & output
+                -> Ptr AlignIO          -- character2, input & output
+                -> Ptr AlignIO          -- gapped median output
+                -> Ptr AlignIO          -- ungapped median output
+                -> Ptr AlignIO          -- unioned median output
                 -> Ptr CostMatrix2d
                 -> Int              -- compute union
                 -> Int              -- compute gapped & ungapped medians
-                -> Int
+                -> Int              -- cost
 
 
 -- | Performs a naive direct optimization
@@ -258,7 +258,7 @@ foreign import ccall unsafe "c_code_alloc_setup.h align2d"
 algn2d :: Exportable s
        => s                    -- ^ First  dynamic character
        -> s                    -- ^ Second dynamic character
-       -> (Int -> Int -> Int)  -- ^ Structure defining the transition costs between character states
+       -> Ptr CostMatrix2d  -- ^ Structure defining the transition costs between character states
        -> Int                  -- ^ Actually used as a bool in C code, 1 is do union, 0 is don't. If both this and follwing are 0, do cost only
        -> Int                  -- ^ Actually used as a bool in C code, 1 is do medians (gapped & ungapped), 0 is don't
        -> (s, Double, s, s, s) -- ^ The /ungapped/ character derived from the the input characters' N-W-esque matrix traceback
@@ -270,57 +270,92 @@ algn2d :: Exportable s
                                          --   The gapped alignment of the /first/ input character when aligned with the second character
                                          --
                                          --   The gapped alignment of the /second/ input character when aligned with the first character
-algn2d char1 char2 costStruct computeUnion computeMedians = (ungappedChar, cost, gappedChar, char1Aligned, char2Aligned)
+algn2d char1 char2 costStruct computeUnion computeMedians =
+    case (toExportableElements char1, toExportableElements char2) of
+        (Just x, Just y) -> f x y
+        (     _,      _) -> error "Sadness, such sadness"
     where
-        ungappedChar = peekArray ungappedLen ungappedPtr
-        gappedChar   = peekArray gappedLen   gappedPtr
-        char1Aligned = peekArray char1Len    retChar1Ptr
-        char2Aligned = peekArray char2Len    retChar2Ptr
+        f exportedChar1 exportedChar2 = unsafePerformIO $
+            do
+                char1ToSend <- allocInitALignIO (map (\x -> fromIntegral x :: CInt) (exportedCharacterElements exportedChar1)) exportedChar1Len
+                char2ToSend <- allocInitALignIO (map (\x -> fromIntegral x :: CInt) (exportedCharacterElements exportedChar2)) exportedChar2Len
+                retGapped   <- allocInitALignIO [] 0
+                retUngapped <- allocInitALignIO [] 0
+                retUnion    <- allocInitALignIO [] 0
 
-        inChar1 = toExportableElements char1
-        inChar2 = toExportableElements char2
+                let !cost = align2dFn_c char1ToSend char2ToSend retGapped retUngapped retUnion costStruct computeUnion computeMedians
 
-        lenInChar1 = exportableElementCountElements char1
-        lenInChar2 = exportableElementCountElements char2
+                AlignIO ungappedCharArr ungappedLen _ <- peek retUngapped
+                AlignIO gappedCharArr   gappedLen   _ <- peek retGapped
+                AlignIO unionCharArr    unionLen    _ <- peek retUnion
+                AlignIO retChar1CharArr char1Len    _ <- peek char1ToSend
+                (AlignIO retChar2CharArr char2Len    _) <- peek char2ToSend
 
-        cost_matrix = setupCostMatrix2dFn_c cm alphSize gap_open 1
-        cm = tcmToCostMtx costStruct
-        alphSize = symbolCount inChar1
+                ungappedChar <- peekArray (fromEnum ungappedLen) ungappedCharArr
+                gappedChar   <- peekArray (fromEnum gappedLen)   gappedCharArr
+                char1Aligned <- peekArray (fromEnum char1Len)    retChar1CharArr
+                char2Aligned <- peekArray (fromEnum char2Len)    retChar2CharArr
+                unionChar    <- peekArray (fromEnum unionLen)    unionCharArr
 
-        AlignIO ungappedLen ungappedPtr _ = peek retUngapped
-        AlignIO gappedLen   gappedPtr   _ = peek retGapped
-        AlignIO char1Len    retChar1Ptr _ = peek retChar1
-        AlignIO char2Len    retChar2Ptr _ = peek retChar2
+                let resultingUngapped     = coerceToOutputType ungappedLen ungappedChar
+                let resultingGapped       = coerceToOutputType gappedLen gappedChar
+                let resultingAlignedChar1 = coerceToOutputType char1Len char1Aligned
+                let resultingAlignedChar2 = coerceToOutputType char2Len char2Aligned
+
+                pure (resultingUngapped, fromIntegral cost, resultingGapped, resultingAlignedChar1, resultingAlignedChar2)
+            where
+                elemWidth        = exportedChar1 ^. exportedElementWidth
+
+                exportedChar1Len = toEnum $ exportedChar1 ^. exportedElementCount
+                exportedChar2Len = toEnum $ exportedChar2 ^. exportedElementCount
+                maxAllocLen      = exportedChar1Len + exportedChar2Len
+
+                allocInitALignIO :: [CInt] -> CSize -> IO (Ptr AlignIO)
+                allocInitALignIO elemArr elemCount =
+                    do
+                        output <- malloc :: IO (Ptr AlignIO)
+                        outArray <- newArray paddedArr
+                        poke output $ AlignIO outArray elemCount maxAllocLen
+                        pure output
+                    where
+                        paddedArr = replicate (max 0 (fromEnum (maxAllocLen - elemCount))) 0 <> elemArr
+
+                coerceToOutputType len elements =
+                    fromExportableElements . ExportableCharacterElements (fromEnum len) elemWidth $ fmap fromIntegral elements
+
+
+
+
 
 
 
 align2dCostOnly :: Exportable s
                 => s
                 -> s
-                -> (Int -> Int -> Int)
+                -> Ptr CostMatrix2d
                 -> (s, Double, s, s, s)
-align2dCostOnly c1 c2 cm = algn2 c1 c2 cm 0 0
+align2dCostOnly c1 c2 cm = algn2d c1 c2 cm 0 0
 
 align2dWithMedian :: Exportable s
                   => s
                   -> s
-                  -> (Int -> Int -> Int)
+                  -> Ptr CostMatrix2d
                   -> (s, Double, s, s, s)
-align2dWithMedian c1 c2 cm = algn2 c1 c2 cm 0 1
+align2dWithMedian c1 c2 cm = algn2d c1 c2 cm 0 1
 
 align2dWithUnion :: Exportable s
                  => s
                  -> s
-                 -> (Int -> Int -> Int)
+                 -> Ptr CostMatrix2d
                  -> (s, Double, s, s, s)
-align2dWithUnion c1 c2 cm = algn2 c1 c2 cm 1 0
+align2dWithUnion c1 c2 cm = algn2d c1 c2 cm 1 0
 
 align2dWithBoth :: Exportable s
                 => s
                 -> s
-                -> (Int -> Int -> Int)
+                -> Ptr CostMatrix2d
                 -> (s, Double, s, s, s)
-align2dWithBoth c1 c2 cm = algn2 c1 c2 cm 1 1
+align2dWithBoth c1 c2 cm = algn2d c1 c2 cm 1 1
 
 {- Example code with peekArray
 
