@@ -3463,8 +3463,10 @@ algn_nw_2d (const seq_p shorterSeq, const seq_p longerSeq, const cost_matrices_2
     // bases are set as bit streams, with gap as most-significant bit.
     if(DEBUG_NW) {
         printf("---algn_nw_2d\n");
-        seq_print(longerSeq, 1);
-        seq_print(shorterSeq, 2);
+        printf("first sequence\n");
+        seq_print(longerSeq);
+        seq_print(shorterSeq);
+        printf("second sequence\n");
         print_matrices(nw_mtxs, costMtx->lcm);
     }
 
@@ -3738,7 +3740,7 @@ algn_backtrace_2d ( const seq_p shorterSeq, const seq_p longerSeq,
     l   = idx_shorterSeq;
 
     if (DEBUG_ALGN) {
-        printf("\nst_longerSeq: %d\n", st_longerSeq);
+        printf("\nst_longerSeq:   %d\n", st_longerSeq);
         printf("st_shorterSeq:  %d\n", st_shorterSeq);
         printf("idx_longerSeq:  %d\n", idx_longerSeq);
         printf("idx_shorterSeq: %d\n", idx_shorterSeq);

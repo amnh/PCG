@@ -59,7 +59,7 @@ struct seq {
 
 typedef struct seq * seq_p;
 
-void seq_print(seq_p inSeq, int num);
+void seq_print(seq_p inSeq);
 
 /* Gets the capacity of the sequence a. */
 int

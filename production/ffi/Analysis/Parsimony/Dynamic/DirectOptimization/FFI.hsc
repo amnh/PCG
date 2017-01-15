@@ -243,7 +243,7 @@ foreign import ccall unsafe "c_code_alloc_setup.h align2d"
                 -> Ptr AlignIO          -- character2, input & output
                 -> Ptr AlignIO          -- gapped median output
                 -> Ptr AlignIO          -- ungapped median output
-                -> Ptr AlignIO          -- unioned median output
+                -- -> Ptr AlignIO          -- unioned median output
                 -> Ptr CostMatrix2d
                 -> Int              -- compute union
                 -> Int              -- compute gapped & ungapped medians
@@ -281,21 +281,21 @@ algn2d char1 char2 costStruct computeUnion computeMedians =
                 char2ToSend <- allocInitALignIO (map (\x -> fromIntegral x :: CInt) (exportedCharacterElements exportedChar2)) exportedChar2Len
                 retGapped   <- allocInitALignIO [] 0
                 retUngapped <- allocInitALignIO [] 0
-                retUnion    <- allocInitALignIO [] 0
+                -- retUnion    <- allocInitALignIO [] 0
 
                 let !cost = align2dFn_c char1ToSend char2ToSend retGapped retUngapped retUnion costStruct computeUnion computeMedians
 
                 AlignIO ungappedCharArr ungappedLen _ <- peek retUngapped
                 AlignIO gappedCharArr   gappedLen   _ <- peek retGapped
-                AlignIO unionCharArr    unionLen    _ <- peek retUnion
+                -- AlignIO unionCharArr    unionLen    _ <- peek retUnion
                 AlignIO retChar1CharArr char1Len    _ <- peek char1ToSend
-                (AlignIO retChar2CharArr char2Len    _) <- peek char2ToSend
+                AlignIO retChar2CharArr char2Len    _ <- peek char2ToSend
 
                 ungappedChar <- peekArray (fromEnum ungappedLen) ungappedCharArr
                 gappedChar   <- peekArray (fromEnum gappedLen)   gappedCharArr
                 char1Aligned <- peekArray (fromEnum char1Len)    retChar1CharArr
                 char2Aligned <- peekArray (fromEnum char2Len)    retChar2CharArr
-                unionChar    <- peekArray (fromEnum unionLen)    unionCharArr
+                -- unionChar    <- peekArray (fromEnum unionLen)    unionCharArr
 
                 let resultingUngapped     = coerceToOutputType ungappedLen ungappedChar
                 let resultingGapped       = coerceToOutputType gappedLen gappedChar

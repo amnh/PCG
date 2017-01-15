@@ -22,10 +22,11 @@
 // #include "array_pool.h" ARRAY_POOL_DELETE
 #include "seq.h"
 
-void seq_print(seq_p inSeq, int num) {
+void seq_print(seq_p inSeq) {
     SEQT * start = seq_get_seq_begin(inSeq);
     SEQT * end   = seq_get_end(inSeq);
-    printf("Seq num: %2d of length %3zu\n", num, inSeq->len);
+    printf("Seq length %3zu\n",   inSeq->len);
+    printf("Seq capacity %3zu\n", inSeq->cap);
     for( ; start < end; start++) {
         printf("%2d, ", *start);
     }

@@ -21,7 +21,7 @@ void initializeNWMtx(size_t len_seq1, size_t len_seq2, size_t len_seq3, int cost
 
     // in six following allocations all matrices are set to their shortest length because they get realloced in mat_setup_size
     retMtx->cap_nw     = 0;  // a suitably small number to trigger realloc, but be larger than len_eff
-    retMtx->cap_eff    = 0; // cap_eff is -1 so that cap_eff < cap, triggering the realloc
+    retMtx->cap_eff    = 0; // cap_eff is -1 so that cap_eff < cap, triggering the realloc ---changed this when I switched types to size_t
     retMtx->cap_pre    = 0;  // again, trigger realloc
 
     retMtx->nw_costMtx = malloc ( sizeof( int ) );
