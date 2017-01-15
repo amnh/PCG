@@ -27,7 +27,7 @@ import Foreign
 --import Foreign.Ptr
 --import Foreign.C.String
 import Foreign.C.Types
-import Foreign.ForeignPtr
+--import Foreign.ForeignPtr
 import Foreign.Marshal.Array
 --import Foreign.StablePtr
 import Prelude hiding (lcm, sequence, tail)
@@ -71,13 +71,14 @@ instance Storable Alignment2d where
         (#poke struct alignIO, capacity) ptr cap
 -}
 
+-- | Input/output data type for C alignment code, to avoid having to write the whole seq type.
 data AlignIO = AlignIO { -- magic_number :: CInt     -- TODO: No idea what this is for; figure it out?
                          character :: Ptr CInt     --
                        , charLen   :: CSize        -- Total length of the character stored
                        , arrCap    :: CSize        -- Total capacity of allocated array
                        }
 
--- Because we're using a struct we need to make a Storable instance
+-- | Because we're using a struct we need to make a Storable instance
 instance Storable AlignIO where
     sizeOf    _  = (#size struct alignIO) -- #size is a built-in that works with arrays, as are #peek and #poke, below
     alignment _  = alignment (undefined :: CSize)
@@ -153,7 +154,7 @@ data CostMatrix2d = CostMatrix2d { alphSize      :: CInt      -- alphabet size i
 
 
 
--- Because we're using a struct we need to make a Storable instance
+-- | Because we're using a struct we need to make a Storable instance
 instance Storable CostMatrix2d where
     sizeOf    _   = (#size struct seq) -- #size is a built-in that works with arrays, as are #peek and #poke, below
     alignment _   = alignment (undefined :: StablePtr CUInt)
@@ -283,7 +284,7 @@ algn2d char1 char2 costStruct computeUnion computeMedians =
                 retUngapped <- allocInitALignIO [] 0
                 -- retUnion    <- allocInitALignIO [] 0
 
-                let !cost = align2dFn_c char1ToSend char2ToSend retGapped retUngapped retUnion costStruct computeUnion computeMedians
+                let !cost = align2dFn_c char1ToSend char2ToSend retGapped retUngapped costStruct computeUnion computeMedians
 
                 AlignIO ungappedCharArr ungappedLen _ <- peek retUngapped
                 AlignIO gappedCharArr   gappedLen   _ <- peek retGapped
@@ -320,15 +321,15 @@ algn2d char1 char2 costStruct computeUnion computeMedians =
                     where
                         paddedArr = replicate (max 0 (fromEnum (maxAllocLen - elemCount))) 0 <> elemArr
 
-                coerceToOutputType len elements =
-                    fromExportableElements . ExportableCharacterElements (fromEnum len) elemWidth $ fmap fromIntegral elements
+                coerceToOutputType len charElements =
+                    fromExportableElements . ExportableCharacterElements (fromEnum len) elemWidth $ fmap fromIntegral charElements
 
 
 
 
 
 
-
+-- | A C binding that computes only the cost of a 2d alignment
 align2dCostOnly :: Exportable s
                 => s
                 -> s
@@ -336,26 +337,29 @@ align2dCostOnly :: Exportable s
                 -> (s, Double, s, s, s)
 align2dCostOnly c1 c2 cm = algn2d c1 c2 cm 0 0
 
-align2dWithMedian :: Exportable s
-                  => s
-                  -> s
-                  -> Ptr CostMatrix2d
-                  -> (s, Double, s, s, s)
-align2dWithMedian c1 c2 cm = algn2d c1 c2 cm 0 1
+-- | A C binding that aligns two DO characters and returns the cost and the ungapped median sequence
+align2dGetUngapped :: Exportable s
+                   => s
+                   -> s
+                   -> Ptr CostMatrix2d
+                   -> (s, Double, s, s, s)
+align2dGetUngapped c1 c2 cm = algn2d c1 c2 cm 0 1
 
-align2dWithUnion :: Exportable s
-                 => s
-                 -> s
-                 -> Ptr CostMatrix2d
-                 -> (s, Double, s, s, s)
-align2dWithUnion c1 c2 cm = algn2d c1 c2 cm 1 0
-
-align2dWithBoth :: Exportable s
+-- | A C binding that aligns two DO characters and returns the cost and the union median
+align2dGetUnion :: Exportable s
                 => s
                 -> s
                 -> Ptr CostMatrix2d
                 -> (s, Double, s, s, s)
-align2dWithBoth c1 c2 cm = algn2d c1 c2 cm 1 1
+align2dGetUnion c1 c2 cm = algn2d c1 c2 cm 1 0
+
+-- | A C binding that aligns two DO characters and returns the cost and the gapped and ungapped median sequences
+align2dGappedUngapped :: Exportable s
+                      => s
+                      -> s
+                      -> Ptr CostMatrix2d
+                      -> (s, Double, s, s, s)
+align2dGappedUngapped c1 c2 cm = algn2d c1 c2 cm 1 1
 
 {- Example code with peekArray
 
