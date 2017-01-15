@@ -17,7 +17,7 @@
 module Analysis.Parsimony.Binary.Internal where
 
 import           Analysis.Parsimony.Binary.Constraints
-import           Analysis.Parsimony.Binary.DirectOptimization
+import           Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise -- Imported from new module structure.
 import           Analysis.Parsimony.Binary.Fitch
 import           Bio.Character.Encodable
 import           Bio.Metadata

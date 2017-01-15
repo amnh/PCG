@@ -120,7 +120,6 @@ library
   exposed-modules:
                        Analysis.ImpliedAlignment
                        Analysis.ImpliedAlignment.Standard
-                       Analysis.Parsimony.Binary.DirectOptimization
                        Analysis.Parsimony.Binary.Fitch
                        Analysis.Parsimony.Binary.Internal
                        Analysis.Parsimony.Binary.Optimization
@@ -128,6 +127,7 @@ library
                        Analysis.Parsimony.Sankoff.Internal
                        Analysis.Parsimony.Additive.Internal
                        Analysis.Parsimony.Fitch.Internal
+                       Analysis.Parsimony.Dynamic.DirectOptimization
                        Analysis.Parsimony.Dynamic.DirectOptimization.FFI
                        Bio.Character
                        Bio.Character.Decoration.Additive
@@ -204,9 +204,11 @@ library
                        Analysis.ImpliedAlignment.InsertionEvents
                        Analysis.ImpliedAlignment.InsertionEvents.Internal
                        Analysis.ImpliedAlignment.Internal
-                       Analysis.Parsimony.Binary.DirectOptimization.Internal
                        Analysis.Parsimony.Binary.SequentialAlign.FFI
                        Analysis.Parsimony.Binary.Constraints
+                       Analysis.Parsimony.Dynamic.DirectOptimization.Internal
+                       Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise
+                       Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Internal
                        Bio.Character.Decoration.Additive.Class
                        Bio.Character.Decoration.Additive.Internal
                        Bio.Character.Decoration.Continuous.Class
@@ -494,11 +496,11 @@ Test-Suite testsuite
                        Analysis.ImpliedAlignment.Standard
                        Analysis.ImpliedAlignment.Test
                        Analysis.ImpliedAlignment.Test.Trees
-                       Analysis.Parsimony.Binary.DirectOptimization.Internal
-                       Analysis.Parsimony.Binary.DirectOptimization.Test
+                       Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Internal
+                       Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Test
                        Analysis.Parsimony.Binary.Internal
                        Analysis.Parsimony.Binary.Test
-                       Analysis.Parsimony.Binary.DirectOptimization
+                       Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise
                        Analysis.Parsimony.Binary.Fitch
                        Bio.Character
                        Bio.Character.Decoration.Additive

@@ -23,6 +23,10 @@ import Bio.Metadata.Discrete
 import Control.Lens
 import Data.Alphabet
 import Data.MonoTraversable
+import Data.TCM
+
+-- TODO:
+-- Make a polymorpic pre-order constructor.
 
 
 -- |
@@ -134,6 +138,121 @@ instance (EncodableDynamicCharacter d) => DynamicCharacterDecoration (DynamicDec
 
 
 
+data DynamicDecorationDirectOptimizationPostOrderResult d
+   = DynamicDecorationDirectOptimizationPostOrderResult
+   { dynamicDecorationDirectOptimizationPostOrderEncodedField             :: d
+   , dynamicDecorationDirectOptimizationPostOrderPreliminaryGappedField   :: d
+   , dynamicDecorationDirectOptimizationPostOrderPreliminaryUngappedField :: d
+   , dynamicDecorationDirectOptimizationPostOrderMetadata                 :: DiscreteCharacterMetadataDec (Element d)
+   }
+
+
+-- |
+-- A decoration that can be constructed from a 'DiscreteCharacterDecoration' by
+-- extending the decoration to contain the requisite fields for performing
+-- Sankoff's algorithm.
+instance EncodableDynamicCharacter d => SimpleDynamicExtensionPostOrderDecoration (DynamicDecorationDirectOptimizationPostOrderResult d) d where
+
+    extendDynamicToPostOrder subDecoration ungapped gapped =
+        DynamicDecorationDirectOptimizationPostOrderResult
+        { dynamicDecorationDirectOptimizationPostOrderEncodedField             = subDecoration ^. encoded
+        , dynamicDecorationDirectOptimizationPostOrderPreliminaryGappedField   = gapped
+        , dynamicDecorationDirectOptimizationPostOrderPreliminaryUngappedField = ungapped
+        , dynamicDecorationDirectOptimizationPostOrderMetadata                 = metadataValue
+        }
+      where
+        alphabetValue = subDecoration ^. characterAlphabet
+        tcmValue      = generate (length alphabetValue) (uncurry $ subDecoration ^. characterSymbolTransitionCostMatrixGenerator)
+        metadataValue =
+          discreteMetadata
+            <$> (^. characterName)
+            <*> (^. characterWeight)
+            <*> const alphabetValue
+            <*> const tcmValue
+            $ subDecoration
+
+
+-- | (✔)
+instance HasEncoded (DynamicDecorationDirectOptimizationPostOrderResult d) d where
+
+    encoded = lens dynamicDecorationDirectOptimizationPostOrderEncodedField (\e x -> e { dynamicDecorationDirectOptimizationPostOrderEncodedField = x })
+      
+
+-- | (✔)
+instance HasPreliminaryGapped (DynamicDecorationDirectOptimizationPostOrderResult d) d where
+
+    preliminaryGapped = lens dynamicDecorationDirectOptimizationPostOrderPreliminaryGappedField (\e x -> e { dynamicDecorationDirectOptimizationPostOrderPreliminaryGappedField = x })
+
+
+-- | (✔)
+instance HasPreliminaryUngapped (DynamicDecorationDirectOptimizationPostOrderResult d) d where
+
+    preliminaryUngapped = lens dynamicDecorationDirectOptimizationPostOrderPreliminaryUngappedField (\e x -> e { dynamicDecorationDirectOptimizationPostOrderPreliminaryUngappedField = x })
+
+
+-- | (✔)
+instance HasCharacterAlphabet (DynamicDecorationDirectOptimizationPostOrderResult d) (Alphabet String) where
+
+    characterAlphabet = lens getter setter
+      where
+         getter e   = dynamicDecorationDirectOptimizationPostOrderMetadata e ^. characterAlphabet
+         setter e x = e { dynamicDecorationDirectOptimizationPostOrderMetadata = dynamicDecorationDirectOptimizationPostOrderMetadata e &  characterAlphabet .~ x }
+
+
+-- | (✔)
+instance HasCharacterName (DynamicDecorationDirectOptimizationPostOrderResult d) CharacterName where
+
+    characterName = lens getter setter
+      where
+         getter e   = dynamicDecorationDirectOptimizationPostOrderMetadata e ^. characterName
+         setter e x = e { dynamicDecorationDirectOptimizationPostOrderMetadata = dynamicDecorationDirectOptimizationPostOrderMetadata e &  characterName .~ x }
+
+
+-- |
+-- A 'Lens' for the 'symbolicTCMGenerator' field
+instance HasCharacterSymbolTransitionCostMatrixGenerator (DynamicDecorationDirectOptimizationPostOrderResult d) (Int -> Int -> Int) where
+
+    characterSymbolTransitionCostMatrixGenerator = lens getter setter
+      where
+         getter e   = dynamicDecorationDirectOptimizationPostOrderMetadata e ^. characterSymbolTransitionCostMatrixGenerator
+         setter e f = e { dynamicDecorationDirectOptimizationPostOrderMetadata = dynamicDecorationDirectOptimizationPostOrderMetadata e &  characterSymbolTransitionCostMatrixGenerator .~ f }
+
+
+-- |
+-- A 'Lens' for the 'transitionCostMatrix' field
+instance (Element d ~ c) => HasCharacterTransitionCostMatrix (DynamicDecorationDirectOptimizationPostOrderResult d) (c -> c -> (c, Int)) where
+
+    characterTCM = lens getter setter
+      where
+         getter e   = dynamicDecorationDirectOptimizationPostOrderMetadata e ^. characterTCM
+         setter e f = e { dynamicDecorationDirectOptimizationPostOrderMetadata = dynamicDecorationDirectOptimizationPostOrderMetadata e &  characterTCM .~ f }
+
+
+-- | (✔)
+instance HasCharacterWeight (DynamicDecorationDirectOptimizationPostOrderResult d) Double where
+
+    characterWeight = lens getter setter
+      where
+         getter e   = dynamicDecorationDirectOptimizationPostOrderMetadata e ^. characterWeight
+         setter e x = e { dynamicDecorationDirectOptimizationPostOrderMetadata = dynamicDecorationDirectOptimizationPostOrderMetadata e &  characterWeight .~ x }
+
+
+-- | (✔)
+instance EncodableDynamicCharacter d => SimpleDynamicDecoration (DynamicDecorationDirectOptimizationPostOrderResult d) d where
+
+
+-- | (✔)
+instance EncodableDynamicCharacter d => DirectOptimizationPostOrderDecoration (DynamicDecorationDirectOptimizationPostOrderResult d) d where
+
+
+-- | (✔)
+instance GeneralCharacterMetadata (DynamicDecorationDirectOptimizationPostOrderResult d) where
+
+
+-- | (✔)
+instance (EncodableStream d, Element d ~ c) => DiscreteCharacterMetadata (DynamicDecorationDirectOptimizationPostOrderResult d) c where
+
+  
 
 
 
@@ -230,6 +349,10 @@ instance HasCharacterWeight (DynamicDecorationDirectOptimization d) Double where
 
 -- | (✔)
 instance EncodableDynamicCharacter d => SimpleDynamicDecoration (DynamicDecorationDirectOptimization d) d where
+
+
+-- | (✔)
+instance EncodableDynamicCharacter d => DirectOptimizationPostOrderDecoration (DynamicDecorationDirectOptimization d) d where
 
 
 -- | (✔)
@@ -356,6 +479,10 @@ instance (EncodableStream d, Element d ~ c) => DiscreteCharacterMetadata (Dynami
 
 -- | (✔)
 instance EncodableDynamicCharacter d => SimpleDynamicDecoration (DynamicDecorationImpliedAlignment d) d where
+
+
+-- | (✔)
+instance EncodableDynamicCharacter d => DirectOptimizationPostOrderDecoration (DynamicDecorationImpliedAlignment d) d where
 
 
 -- | (✔)

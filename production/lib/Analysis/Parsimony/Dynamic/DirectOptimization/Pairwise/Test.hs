@@ -12,7 +12,7 @@
 --
 -----------------------------------------------------------------------------
 
-module Analysis.Parsimony.Binary.DirectOptimization.Test where
+module Analysis.Parsimony.Dynamic.DirectOptimization.PairWise.Test where
 
 import           Analysis.Parsimony.Binary.DirectOptimization.Internal
 import           Bio.Character.Encodable

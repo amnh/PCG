@@ -28,8 +28,14 @@ import           Bio.PhyloGraphPrime
 import           Bio.PhyloGraphPrime.Node
 import           Bio.PhyloGraphPrime.ReferenceDAG
 import           Control.Evaluation
+import qualified Data.IntMap        as IM
+import           Data.IntSet              (IntSet)
 import           Data.Key
+import           Data.List.NonEmpty       (NonEmpty( (:|) ))
+import           Data.List.Utility
+-- import qualified Data.List.NonEmpty as NE                       
 import           Data.Monoid
+import qualified Data.Vector as V
 
 -- import Debug.Trace
 
@@ -129,8 +135,7 @@ instance ( Show e
          , Show d
          ) => Show (PhylogeneticDAG e n m i c f a d) where
 
-    show (PDAG dag) =
-        show dag <> "\n" <> foldMapWithKey f dag
+    show (PDAG dag) = show dag <> "\n" <> foldMapWithKey f dag
       where
         f i (PNode n sek) = mconcat [ "Node {", show i, "}:\n\n", unlines [show n, show sek] ]
 
@@ -158,4 +163,3 @@ nodePostorderFold = undefined
 
 edgePostorderFold :: (e -> [a] -> a)
 edgePostorderFold = undefined
-

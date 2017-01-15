@@ -12,13 +12,16 @@
 
 module Bio.Character.Decoration.Dynamic
   ( DynamicDecorationInitial()
+  , DirectOptimizationPostOrderDecoration()
   , DynamicDecorationDirectOptimization()
   , DynamicDecorationImpliedAlignment()
   , SimpleDynamicDecoration()
   , DirectOptimizationDecoration()
   , ImpliedAlignmentDecoration()
   , DynamicCharacterDecoration(..)
+  , DynamicDecorationDirectOptimizationPostOrderResult()
   , GeneralCharacterMetadata()
+  , SimpleDynamicExtensionPostOrderDecoration(..)
   , HasCharacterAlphabet(..)
   , HasCharacterName(..)
   , HasCharacterSymbolTransitionCostMatrixGenerator(..)

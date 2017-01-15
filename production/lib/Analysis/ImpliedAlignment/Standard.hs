@@ -16,7 +16,7 @@
 module Analysis.ImpliedAlignment.Standard where
 
 import           Analysis.ImpliedAlignment.Internal
-import           Analysis.Parsimony.Binary.DirectOptimization
+import           Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise
 import           Bio.Character.Encodable
 import           Bio.Metadata
 import           Bio.PhyloGraph.Forest

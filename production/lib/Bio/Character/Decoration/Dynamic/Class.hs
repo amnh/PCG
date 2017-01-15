@@ -38,14 +38,24 @@ class ( HasEncoded s a
 
 
 -- |
--- A decoration of a dynamic character with all direct optimization annotations.
+-- An incomplete decoration of a dynamic character with half the direct optimization annotations.
+--
+-- Represents the result of just the post-order traversal.
 --
 -- Is a sub-class of 'DynamicCharacterDecoration'.
-class ( HasFinalGapped          s a
-      , HasFinalUngapped        s a
-      , HasPreliminaryGapped    s a
+class ( HasPreliminaryGapped    s a
       , HasPreliminaryUngapped  s a
       , SimpleDynamicDecoration s a
+      ) => DirectOptimizationPostOrderDecoration s a | s -> a where
+
+
+-- |
+-- A decoration of a dynamic character with all direct optimization annotations.
+--
+-- Is a sub-class of 'DirectOptimizationPreOrderDecoration'.
+class ( HasFinalGapped          s a
+      , HasFinalUngapped        s a
+      , DirectOptimizationPostOrderDecoration s a
       ) => DirectOptimizationDecoration s a | s -> a where
 
 
@@ -67,6 +77,22 @@ class ( SimpleDynamicDecoration s a
     toDynamicCharacterDecoration :: CharacterName -> Double -> Alphabet String -> TCM -> (x -> a) -> x -> s
     {-# MINIMAL toDynamicCharacterDecoration #-}
 
+
+
+
+-- |
+-- A decoration that can be constructed from a 'DiscreteCharacterDecoration' by
+-- extending the decoration to contain the requisite fields for performing
+-- Sankoff's algorithm.
+class ( SimpleDynamicDecoration s c
+      , DirectOptimizationPostOrderDecoration s c
+      ) => SimpleDynamicExtensionPostOrderDecoration s c | s -> c where
+
+    extendDynamicToPostOrder :: (SimpleDynamicDecoration x c, DirectOptimizationPostOrderDecoration s c)
+                             => x  -- ^ Original decoration
+                             -> c  -- ^ Preliminary /ungapped/ dynamic character
+                             -> c  -- ^ Preliminary   /gapped/ dynamic character
+                             -> s -- ^ Resulting decoration
 
 {-
 instance ( DynamicCharacterDecoration s a
