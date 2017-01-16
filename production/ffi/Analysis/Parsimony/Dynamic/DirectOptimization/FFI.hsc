@@ -1,6 +1,8 @@
 -----------------------------------------------------------------------------
 -- |
--- a more complex example of an FFI interface, for learning
+-- an FFI interface for C code that efficiently aligns either two or three
+-- sequences, using Ukkonen when appropriate, in both affine and non-affine
+-- cases.
 --
 -- This example uses pointers, both to structs and to fields within the
 -- structs. This is much easier to accomplish via .hsc rather than doing
@@ -28,7 +30,7 @@ import Foreign
 --import Foreign.C.String
 import Foreign.C.Types
 --import Foreign.ForeignPtr
-import Foreign.Marshal.Array
+--import Foreign.Marshal.Array
 --import Foreign.StablePtr
 import Prelude hiding (lcm, sequence, tail)
 import System.IO.Unsafe (unsafePerformIO)
@@ -77,6 +79,7 @@ data AlignIO = AlignIO { -- magic_number :: CInt     -- TODO: No idea what this 
                        , charLen   :: CSize        -- Total length of the character stored
                        , arrCap    :: CSize        -- Total capacity of allocated array
                        }
+
 
 -- | Because we're using a struct we need to make a Storable instance
 instance Storable AlignIO where
@@ -171,7 +174,7 @@ instance Storable CostMatrix2d where
         medsVal      <- (#peek struct cost_matrices_2d, median)          ptr
         worstVal     <- (#peek struct cost_matrices_2d, worst)           ptr
         prependVal   <- (#peek struct cost_matrices_2d, prepend_cost)    ptr
-        tailVal <- (#peek struct cost_matrices_2d, tail_cost)       ptr
+        tailVal      <- (#peek struct cost_matrices_2d, tail_cost)       ptr
         return  CostMatrix2d { alphSize      = aSizeVal
                              , lcm           = lcmVal'
                              , gapChar       = gapcharVal
@@ -185,7 +188,7 @@ instance Storable CostMatrix2d where
                              , worstCost     = worstVal
                              , prependCost   = prependVal
                              , tailCost      = tailVal
-                       }
+                             }
 
     poke ptr (CostMatrix2d
                   alphSizeVal
@@ -226,11 +229,29 @@ instance Storable CostMatrix2d where
 -- It is therefore indexed not by powers of two, but by cardinal integer.
 -- TODO: For now we only allocate 2d matrices. 3d will come later.
 foreign import ccall unsafe "c_code_alloc_setup.h setupCostMtx"
-    setupCostMatrix2dFn_c :: Ptr CInt  -- tcm
-                          -> CInt      -- alphSize
-                          -> CInt      -- gap_open
-                          -> CInt      -- is_2d
+    setupCostMatrix2dFn_c :: Ptr CInt          -- ^ tcm
+                          -> CInt              -- ^ alphSize
+                          -> CInt              -- ^ gap_open
+                          -> CInt              -- ^ is_2d
                           -> Ptr CostMatrix2d
+                          -> IO ()
+
+
+-- | Set up and return a cost matrix
+--
+-- The cost matrix is allocated strictly.
+getCostMatrix2dNonAffine :: Int
+                         -> (Int -> Int -> Int)
+                         -> Ptr CostMatrix2d
+getCostMatrix2dNonAffine alphabetSize costFn = unsafePerformIO . withArray rowMajorList $ \allocedTCM -> do
+        output <- malloc :: IO (Ptr CostMatrix2d)
+        -- Hopefully the strictness annotation forces the allocation of the CostMatrix2d to happen immediately.
+        !_ <- setupCostMatrix2dFn_c allocedTCM (toEnum alphabetSize) 0 1 output
+        pure output
+    where
+        -- This *should* be in row major order due to the manner in which list comprehensions are performed.
+        rowMajorList = [ toEnum $ costFn i j | i <- range,  j <- range ]
+        range = [0 .. alphabetSize - 1]
 
 
 -- | Create and allocate cost matrix
@@ -240,15 +261,15 @@ foreign import ccall unsafe "c_code_alloc_setup.h setupCostMtx"
 -- It is therefore indexed not by powers of two, but by cardinal integer.
 -- TODO: For now we only allocate 2d matrices. 3d will come later.
 foreign import ccall unsafe "c_code_alloc_setup.h align2d"
-    align2dFn_c :: Ptr AlignIO          -- character1, input & output
-                -> Ptr AlignIO          -- character2, input & output
-                -> Ptr AlignIO          -- gapped median output
-                -> Ptr AlignIO          -- ungapped median output
-                -- -> Ptr AlignIO          -- unioned median output
+    align2dFn_c :: Ptr AlignIO          -- ^ character1, input & output
+                -> Ptr AlignIO          -- ^ character2, input & output
+                -> Ptr AlignIO          -- ^ gapped median output
+                -> Ptr AlignIO          -- ^ ungapped median output
+                -- -> Ptr AlignIO          -- ^ unioned median output
                 -> Ptr CostMatrix2d
-                -> Int              -- compute union
-                -> Int              -- compute gapped & ungapped medians
-                -> Int              -- cost
+                -> Int                  -- ^ compute union
+                -> Int                  -- ^ compute gapped & ungapped medians
+                -> Int                  -- ^ cost
 
 
 -- | Performs a naive direct optimization
@@ -259,7 +280,7 @@ foreign import ccall unsafe "c_code_alloc_setup.h align2d"
 algn2d :: Exportable s
        => s                    -- ^ First  dynamic character
        -> s                    -- ^ Second dynamic character
-       -> Ptr CostMatrix2d  -- ^ Structure defining the transition costs between character states
+       -> Ptr CostMatrix2d     -- ^ Structure defining the transition costs between character states
        -> Int                  -- ^ Actually used as a bool in C code, 1 is do union, 0 is don't. If both this and follwing are 0, do cost only
        -> Int                  -- ^ Actually used as a bool in C code, 1 is do medians (gapped & ungapped), 0 is don't
        -> (s, Double, s, s, s) -- ^ The /ungapped/ character derived from the the input characters' N-W-esque matrix traceback
@@ -337,6 +358,7 @@ align2dCostOnly :: Exportable s
                 -> (s, Double, s, s, s)
 align2dCostOnly c1 c2 cm = algn2d c1 c2 cm 0 0
 
+
 -- | A C binding that aligns two DO characters and returns the cost and the ungapped median sequence
 align2dGetUngapped :: Exportable s
                    => s
@@ -344,6 +366,7 @@ align2dGetUngapped :: Exportable s
                    -> Ptr CostMatrix2d
                    -> (s, Double, s, s, s)
 align2dGetUngapped c1 c2 cm = algn2d c1 c2 cm 0 1
+
 
 -- | A C binding that aligns two DO characters and returns the cost and the union median
 align2dGetUnion :: Exportable s
@@ -353,6 +376,7 @@ align2dGetUnion :: Exportable s
                 -> (s, Double, s, s, s)
 align2dGetUnion c1 c2 cm = algn2d c1 c2 cm 1 0
 
+
 -- | A C binding that aligns two DO characters and returns the cost and the gapped and ungapped median sequences
 align2dGappedUngapped :: Exportable s
                       => s
@@ -360,6 +384,7 @@ align2dGappedUngapped :: Exportable s
                       -> Ptr CostMatrix2d
                       -> (s, Double, s, s, s)
 align2dGappedUngapped c1 c2 cm = algn2d c1 c2 cm 1 1
+
 
 {- Example code with peekArray
 
