@@ -2,10 +2,10 @@
 -- |
 -- a more complex example of an FFI interface, for learning
 --
--- This example uses pointers, both to structs and to fields within the 
--- structs. This is much easier to accomplish via .hsc rather than doing 
+-- This example uses pointers, both to structs and to fields within the
+-- structs. This is much easier to accomplish via .hsc rather than doing
 -- straight FFI. A .hsc file are read by hsc2hs, which then creates a .c
--- file, which is compiled and run to create an .hs file, which is then 
+-- file, which is compiled and run to create an .hs file, which is then
 -- compiled for use in outside modules.
 --
 -----------------------------------------------------------------------------
@@ -28,9 +28,41 @@ import Foreign.C.Types
 import System.IO.Unsafe
 import Test.QuickCheck hiding ((.&.))
 
+#include "costMatrix.h"
 #include "dynamicCharacterOperations.h"
 #include "seqAlignForHaskell.c"
 #include <stdint.h>
+
+data MemoizedCostMatrix
+   = MemoizedCostMatrix
+   { costMatrix :: Ptr something
+   }
+
+foreign import ccall unsafe "costMatrix matrixInit"
+    initializeMemoizedCMfn_c :: CSize -> Ptr CInt
+
+-- testFn can be called from within Haskell code.
+testFn :: CDynamicChar -> CDynamicChar -> Either String (Int, String)
+testFn char1 char2 = unsafePerformIO $
+    -- have to allocate memory. Note that we're allocating via a lambda fn. In use, the lambda will take whatever is the
+    -- argument of testFn, but here there is no argument, so all allocation is hard-coded.
+    alloca $ \alignPtr -> do
+        marshalledChar1 <- new char1
+        marshalledChar2 <- new char2
+        print marshalledChar1
+        -- Using strict here because the values need to be read before freeing,
+        -- so lazy is dangerous.
+        let !status = callExtFn_c marshalledChar1 marshalledChar2 alignPtr
+
+        -- Now checking return status. If 0, then all is well, otherwise throw an error.
+        if status == (0 :: CInt)
+            then do
+                AlignResult cost seqLen seqVal <- peek alignPtr
+                seqFinalVal                    <- peekArray (fromIntegral seqLen) seqVal
+                free seqVal
+                pure $ Right (fromIntegral cost, show seqFinalVal)
+            else do
+                pure $ Left "Out of memory"
 
 -- TODO: replace when Yu Xiang updated his code for bit arrays.
 -- | STUB, DO NOT USE
@@ -144,15 +176,15 @@ foreign import ccall unsafe "seqAlignForHaskell aligner"
     call_aligner :: Ptr CDynamicChar -> Ptr CDynamicChar -> CInt -> CInt -> Ptr AlignResult -> CInt
 
 -- testFn can be called from within Haskell code.
-testFn :: CDynamicChar -> CDynamicChar -> Either String (Int, String) 
-testFn char1 char2 = unsafePerformIO $ 
-    -- have to allocate memory. Note that we're allocating via a lambda fn. In use, the lambda will take whatever is the 
+testFn :: CDynamicChar -> CDynamicChar -> Either String (Int, String)
+testFn char1 char2 = unsafePerformIO $
+    -- have to allocate memory. Note that we're allocating via a lambda fn. In use, the lambda will take whatever is the
     -- argument of testFn, but here there is no argument, so all allocation is hard-coded.
-    alloca $ \alignPtr -> do 
+    alloca $ \alignPtr -> do
         marshalledChar1 <- new char1
         marshalledChar2 <- new char2
         print marshalledChar1
-        -- Using strict here because the values need to be read before freeing, 
+        -- Using strict here because the values need to be read before freeing,
         -- so lazy is dangerous.
         let !status = callExtFn_c marshalledChar1 marshalledChar2 alignPtr
 
@@ -165,10 +197,10 @@ testFn char1 char2 = unsafePerformIO $
                 pure $ Right (fromIntegral cost, show seqFinalVal)
             else do
                 pure $ Left "Out of memory"
-        
+
 -- Just for testing from CLI outside of ghci.
 main :: IO ()
-main = do 
+main = do
     char1 <- generate (arbitrary :: Gen CDynamicChar)
     --char2 <- generate (arbitrary :: Gen CDynamicChar)
     print char1
