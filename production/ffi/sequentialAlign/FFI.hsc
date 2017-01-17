@@ -32,9 +32,41 @@ import Foreign.C.Types
 import System.IO.Unsafe
 import Test.QuickCheck hiding ((.&.))
 
+#include "costMatrix.h"
 #include "dynamicCharacterOperations.h"
 #include "seqAlignForHaskell.c"
 #include <stdint.h>
+
+data MemoizedCostMatrix
+   = MemoizedCostMatrix
+   { costMatrix :: Ptr something
+   }
+
+foreign import ccall unsafe "costMatrix matrixInit"
+    initializeMemoizedCMfn_c :: CSize -> Ptr CInt
+
+-- testFn can be called from within Haskell code.
+testFn :: CDynamicChar -> CDynamicChar -> Either String (Int, String)
+testFn char1 char2 = unsafePerformIO $
+    -- have to allocate memory. Note that we're allocating via a lambda fn. In use, the lambda will take whatever is the
+    -- argument of testFn, but here there is no argument, so all allocation is hard-coded.
+    alloca $ \alignPtr -> do
+        marshalledChar1 <- new char1
+        marshalledChar2 <- new char2
+        print marshalledChar1
+        -- Using strict here because the values need to be read before freeing,
+        -- so lazy is dangerous.
+        let !status = callExtFn_c marshalledChar1 marshalledChar2 alignPtr
+
+        -- Now checking return status. If 0, then all is well, otherwise throw an error.
+        if status == (0 :: CInt)
+            then do
+                AlignResult cost seqLen seqVal <- peek alignPtr
+                seqFinalVal                    <- peekArray (fromIntegral seqLen) seqVal
+                free seqVal
+                pure $ Right (fromIntegral cost, show seqFinalVal)
+            else do
+                pure $ Left "Out of memory"
 
 -- TODO: replace when Yu Xiang updated his code for bit arrays.
 -- | STUB, DO NOT USE
@@ -201,6 +233,7 @@ testFn char1 char2 = unsafePerformIO $
                 pure $ Left "Out of memory"
 
 
+{-
 -- Just for testing from CLI outside of ghci.
 -- | A test driver for the FFI functionality
 main :: IO ()
@@ -210,5 +243,4 @@ main = do
     print char1
     --print char2
     print $ testFn char1 char1
-
-
+-}
