@@ -42,31 +42,38 @@ data MemoizedCostMatrix
    { costMatrix :: Ptr something
    }
 
+
+
+-- | Create and allocate cost matrix
+-- first argument, TCM, is only for non-ambiguous nucleotides, and it used to generate
+-- the entire cost matrix, which includes ambiguous elements.
+-- TCM is row-major, with each row being the left character element.
+-- It is therefore indexed not by powers of two, but by cardinal integer.
+-- TODO: For now we only allocate 2d matrices. 3d will come later.
 foreign import ccall unsafe "costMatrix matrixInit"
-    initializeMemoizedCMfn_c :: CSize -> Ptr CInt
+    initializeMemoizedCMfn_c :: Ptr CInt
+                             -> CSize
+                             -> Ptr MemoizedCostMatrix
+                             -> IO ()
 
--- testFn can be called from within Haskell code.
-testFn :: CDynamicChar -> CDynamicChar -> Either String (Int, String)
-testFn char1 char2 = unsafePerformIO $
-    -- have to allocate memory. Note that we're allocating via a lambda fn. In use, the lambda will take whatever is the
-    -- argument of testFn, but here there is no argument, so all allocation is hard-coded.
-    alloca $ \alignPtr -> do
-        marshalledChar1 <- new char1
-        marshalledChar2 <- new char2
-        print marshalledChar1
-        -- Using strict here because the values need to be read before freeing,
-        -- so lazy is dangerous.
-        let !status = callExtFn_c marshalledChar1 marshalledChar2 alignPtr
+-- | Set up and return a cost matrix
+--
+-- The cost matrix is allocated strictly.
+getMemoizedCostMatrix :: Int
+                      -> (Int -> Int -> Int)
+                      -> Ptr MemoizedCostMatrix
+getMemoizedCostMatrix alphabetSize costFn = unsafePerformIO . withArray rowMajorList $ \allocedTCM -> do
+        output <- malloc :: IO (Ptr MemoizedCostMatrix)
+        -- Hopefully the strictness annotation forces the allocation of the CostMatrix2d to happen immediately.
+        !_ <- initializeMemoizedCMfn_c allocedTCM (toEnum alphabetSize) output
+        pure output
+    where
+        -- This *should* be in row major order due to the manner in which list comprehensions are performed.
+        rowMajorList = [ toEnum $ costFn i j | i <- range,  j <- range ]
+        range = [0 .. alphabetSize - 1]
 
-        -- Now checking return status. If 0, then all is well, otherwise throw an error.
-        if status == (0 :: CInt)
-            then do
-                AlignResult cost seqLen seqVal <- peek alignPtr
-                seqFinalVal                    <- peekArray (fromIntegral seqLen) seqVal
-                free seqVal
-                pure $ Right (fromIntegral cost, show seqFinalVal)
-            else do
-                pure $ Left "Out of memory"
+-- TODO: worry about deallocating.
+
 
 -- TODO: replace when Yu Xiang updated his code for bit arrays.
 -- | STUB, DO NOT USE

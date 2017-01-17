@@ -237,7 +237,7 @@ foreign import ccall unsafe "c_code_alloc_setup.h setupCostMtx"
                           -> IO ()
 
 
--- | Set up and return a cost matrix
+-- | Set up and return a non-affine cost matrix
 --
 -- The cost matrix is allocated strictly.
 getCostMatrix2dNonAffine :: Int
@@ -247,6 +247,24 @@ getCostMatrix2dNonAffine alphabetSize costFn = unsafePerformIO . withArray rowMa
         output <- malloc :: IO (Ptr CostMatrix2d)
         -- Hopefully the strictness annotation forces the allocation of the CostMatrix2d to happen immediately.
         !_ <- setupCostMatrix2dFn_c allocedTCM (toEnum alphabetSize) 0 1 output
+        pure output
+    where
+        -- This *should* be in row major order due to the manner in which list comprehensions are performed.
+        rowMajorList = [ toEnum $ costFn i j | i <- range,  j <- range ]
+        range = [0 .. alphabetSize - 1]
+
+
+-- | Set up and return a non-affine cost matrix
+--
+-- The cost matrix is allocated strictly.
+getCostMatrix2dAffine :: Int
+                      -> (Int -> Int -> Int)
+                      -> Int                    -- gap open cost
+                      -> Ptr CostMatrix2d
+getCostMatrix2AAffine alphabetSize costFn gapOpen = unsafePerformIO . withArray rowMajorList $ \allocedTCM -> do
+        output <- malloc :: IO (Ptr CostMatrix2d)
+        -- Hopefully the strictness annotation forces the allocation of the CostMatrix2d to happen immediately.
+        !_ <- setupCostMatrix2dFn_c allocedTCM (toEnum alphabetSize) gapOpen 1 output
         pure output
     where
         -- This *should* be in row major order due to the manner in which list comprehensions are performed.
