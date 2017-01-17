@@ -37,9 +37,11 @@ import Test.QuickCheck hiding ((.&.))
 #include "seqAlignForHaskell.c"
 #include <stdint.h>
 
+data ForeignVoid = FV
+
 data MemoizedCostMatrix
    = MemoizedCostMatrix
-   { costMatrix :: Ptr something
+   { costMatrix :: Ptr ForeignVoid
    }
 
 

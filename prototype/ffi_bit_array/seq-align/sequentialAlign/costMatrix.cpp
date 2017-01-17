@@ -44,17 +44,17 @@ mapAccessPair_t* allocateMapAccessPair (size_t alphSize) {
 
 costMatrix_t matrixInit(size_t alphSize, int* tcm) {
    return new CostMatrix(alphSize, tcm);
- }
+}
 
- void matrixDestroy(costMatrix_t untyped_ptr) {
+void matrixDestroy(costMatrix_t untyped_ptr) {
     CostMatrix* typed_ptr = static_cast<CostMatrix*>(untyped_ptr);
-    delete typed_ptr;
- }
+    delete typed_ptr;  //TODO:
+}
 
- int getCost(costMatrix_t untyped_self, dcElement_t* left, dcElement_t* right, dcElement_t* retMedian) {
+int getCost(costMatrix_t untyped_self, dcElement_t* left, dcElement_t* right, dcElement_t* retMedian) {
     CostMatrix* typed_self = static_cast<CostMatrix*> (untyped_self);
     return typed_self->getSetCost(left, right, retMedian);
- }
+}
 
 // CostMatrix::CostMatrix() {
 //     alphabetSize = 2;
