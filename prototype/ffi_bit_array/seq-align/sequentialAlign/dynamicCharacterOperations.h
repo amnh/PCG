@@ -51,7 +51,7 @@
  *    of a dynamic character, but will do for our purposes.)
  *
  *  TODO: for this to be useable on |alphabet including gap| > 64, various uint64_t types below will have to be
- *        exchanged out for packedChar_p (i.e. arrays of 64-bit ints).
+ *        exchanged out for packedChar *(i.e. arrays of 64-bit ints).
  */
 
 #ifndef DYNAMIC_CHARACTER_OPERATIONS
@@ -70,14 +70,14 @@ static const size_t   WORD_WIDTH     = 8 * sizeof(uint64_t); // BITS_IN_BYTE * I
 static const uint64_t CANONICAL_ONE  = 1;
 static const uint64_t CANONICAL_ZERO = 0;
 
-typedef uint64_t* packedChar_p;
+typedef uint64_t packedChar;
 
 /* alignResult_t is where results get put for return to Haskell */
 typedef struct alignResult_t {
-    size_t       finalWt;
-    size_t       finalLength;
-    packedChar_p finalChar1;
-    packedChar_p finalChar2;
+    size_t      finalWt;
+    size_t      finalLength;
+    packedChar *finalChar1;
+    packedChar *finalChar2;
 } alignResult_t;
 
 /**
@@ -89,12 +89,12 @@ typedef struct dynChar_t {
     size_t       alphSize;
     size_t       numElems;     // how many dc elements are stored
     size_t       dynCharLen;   // how many uint64_ts are necessary to store the elements
-    packedChar_p dynChar;
+    packedChar *dynChar;
 } dynChar_t;
 
 typedef struct dcElement_t {
     size_t       alphSize;
-    packedChar_p element;
+    packedChar *element;
 } dcElement_t;
 
 typedef struct costMtx_t {
@@ -107,16 +107,16 @@ typedef struct costMtx_t {
  *  Provides operations to use an array of ints as an array of bits. In essence, creates a mask of length k and uses that
  *  mask to set, clear and test bits.
  */
-void SetBit( packedChar_p const arr, const size_t k );
+void SetBit( packedChar *const arr, const size_t k );
 
-void ClearBit( packedChar_p const arr, const size_t k );
+void ClearBit( packedChar *const arr, const size_t k );
 
-uint64_t TestBit( packedChar_p const arr, const size_t k );
+uint64_t TestBit( packedChar *const arr, const size_t k );
 
 /** Clear entire packed character: all bits set to 0;
  *  packedCharLen is pre-computed dynCharSize()
  */
-void ClearAll( packedChar_p const arr, const size_t packedCharLen);
+void ClearAll( packedChar *const arr, const size_t packedCharLen);
 
 /** Returns size_t holding length a uint64_t array needs to be to hold numElems packed dynamic characters.
  *  Note that this is different from numElems * dcElemSize.
@@ -194,7 +194,7 @@ double getCostDyn( const dynChar_t* const inDynChar1, size_t whichElem1,
  *      a) NULL checked,
  *      b) freed later using deallocations, above.
  */
-dynChar_t* makeDynamicChar( size_t alphSize, size_t numElems, packedChar_p values );
+dynChar_t* makeDynamicChar( size_t alphSize, size_t numElems, packedChar *values );
 
 /** takes as input a dynamic character and converts it to a int array. Allocates, so after returned array
  *  is no longer in use it must be deallocated.
@@ -211,12 +211,12 @@ uint64_t* dynCharToIntArr( dynChar_t* input );
 void intArrToDynChar( size_t alphSize, size_t arrayLen, int* input, dynChar_t* output );
 
 /** As above, but only allocates and fills the bit array, not whole dyn char */
-packedChar_p intArrToBitArr( size_t alphSize, size_t arrayLen, int* input );
+packedChar *intArrToBitArr( size_t alphSize, size_t arrayLen, int* input );
 
 /** Takes two packed characters (uint64_t*) and finds the value as if they were bitwise AND'ed.
  *  Allocates, so must call freeDynChar() afterwards.
  */
-packedChar_p packedCharAnd(packedChar_p lhs, packedChar_p rhs, size_t alphSize);
+packedChar *packedCharAnd(packedChar *lhs, packedChar *rhs, size_t alphSize);
 
 /** Takes two dcElements and finds the value if they were bitwise OR'ed.
  *  Allocates, so must call freeDynChar() afterwards. Uses packedCharOr()
@@ -227,7 +227,7 @@ dcElement_t* dcElementOr (dcElement_t* lhs, dcElement_t* rhs);
 /** Takes two packed characters (uint64_t*) and finds the value as if they were bitwise OR'ed.
  *  Allocates, so must call freeDynChar() afterwards.
  */
-packedChar_p packedCharOr (packedChar_p lhs, packedChar_p rhs, size_t alphSize);
+packedChar *packedCharOr (packedChar *lhs, packedChar *rhs, size_t alphSize);
 
 int dcElementEq (dcElement_t* lhs, dcElement_t* rhs);
 
@@ -248,6 +248,6 @@ void printElemBits( const dcElement_t* const input );
 void printDynChar( const dynChar_t* const input );
 
 /** Print only a packed character. */
-void printPackedChar( const packedChar_p input, size_t numElems, size_t alphSize );
+void printPackedChar( const packedChar *input, size_t numElems, size_t alphSize );
 
 #endif /* DYNAMIC_CHARACTER_OPERATIONS */

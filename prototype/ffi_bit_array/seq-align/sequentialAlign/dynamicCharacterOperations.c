@@ -51,7 +51,7 @@
  *    of a dynamic character, but will do for our purposes.)
  *
  *  TODO: for this to be useable on |alphabet including gap| > 64, various uint64_t types below will have to be
- *        exchanged out for packedChar_p (i.e. arrays of 64-bit ints).
+ *        exchanged out for packedChar *(i.e. arrays of 64-bit ints).
  *
  *  For function documentation see the header file.
  *  Please don't modify the implementation without consulting library maintainer.
@@ -64,18 +64,18 @@
 #include <stdlib.h>
 #include "dynamicCharacterOperations.h"
 
-void SetBit( packedChar_p const arr, const size_t k ) {
+void SetBit( packedChar *const arr, const size_t k ) {
     arr[ k / WORD_WIDTH ] |= (CANONICAL_ONE << (k % WORD_WIDTH));
 }
-void ClearBit( packedChar_p const arr, const size_t k ) {
+void ClearBit( packedChar *const arr, const size_t k ) {
     arr[ k / WORD_WIDTH ] &= ~(CANONICAL_ONE << (k % WORD_WIDTH));
 }
 
-uint64_t TestBit( packedChar_p const arr, const size_t k ) {
+uint64_t TestBit( packedChar *const arr, const size_t k ) {
     return arr[ k / WORD_WIDTH ] & (CANONICAL_ONE << (k % WORD_WIDTH));
 }
 
-void ClearAll( packedChar_p const arr, const size_t packedCharLen) {
+void ClearAll( packedChar *const arr, const size_t packedCharLen) {
     for (size_t i = 0; i < packedCharLen; i++) {
         arr[i] = CANONICAL_ZERO;
     }
@@ -196,7 +196,7 @@ double getCostDyn( const dynChar_t* const inDynChar1, size_t whichElem1,
     dcElement_t* char2Element = getDCElement(whichElem2, inDynChar2);
     dcElement_t* gapChar = getGap(inDynChar1);
 
-    packedChar_p overlap = packedCharAnd(char1Element->element, char2Element->element, char1Element->alphSize);
+    packedChar *overlap = packedCharAnd(char1Element->element, char2Element->element, char1Element->alphSize);
     int isOverlap = 0;
     size_t numElems = dcElemSize(inDynChar1->alphSize);
     printf("numElems: %lu\n", numElems);
@@ -260,7 +260,7 @@ double getCostDyn( const dynChar_t* const inDynChar1, size_t whichElem1,
  *
  *  If this is used, needs to free afterwards.
  */
-dynChar_t* makeDynamicChar( size_t alphSize, size_t numElems, packedChar_p values ) {
+dynChar_t* makeDynamicChar( size_t alphSize, size_t numElems, packedChar *values ) {
     // allocate dynamic character
     dynChar_t* output = malloc( sizeof(dynChar_t) );
     if (output == NULL) {
@@ -313,8 +313,8 @@ void intArrToDynChar( size_t alphSize, size_t arrayLen, int* input, dynChar_t* o
     freeDCElem(changeToThis);
 }
 
-packedChar_p intArrToBitArr( size_t alphSize, size_t arrayLen, int* input ) {
-    packedChar_p output = calloc( dynCharSize(alphSize, arrayLen), INT_WIDTH );
+packedChar *intArrToBitArr( size_t alphSize, size_t arrayLen, int* input ) {
+    packedChar *output = calloc( dynCharSize(alphSize, arrayLen), INT_WIDTH );
     if (output == NULL) {
         printf("Out of memory.\n");
         fflush(stdout);
@@ -336,10 +336,10 @@ packedChar_p intArrToBitArr( size_t alphSize, size_t arrayLen, int* input ) {
 }
 
 // TODO: test the next four fns. And make sure docs in .h file are good.
-packedChar_p packedCharAnd(packedChar_p lhs, packedChar_p rhs, size_t alphSize) {
+packedChar *packedCharAnd(packedChar *lhs, packedChar *rhs, size_t alphSize) {
     size_t length = dcElemSize(alphSize);
     printf("length: %lu\n", length);
-    packedChar_p toReturn = calloc(length, INT_WIDTH);
+    packedChar *toReturn = calloc(length, INT_WIDTH);
     for (size_t i = 0; i < length; i++) {
         toReturn[i] = lhs[i] & rhs[i];
     }
@@ -354,9 +354,9 @@ dcElement_t* dcElementOr(dcElement_t* lhs, dcElement_t* rhs) {
     return toReturn;
 }
 
-packedChar_p packedCharOr (packedChar_p lhs, packedChar_p rhs, size_t alphSize) {
+packedChar *packedCharOr (packedChar *lhs, packedChar *rhs, size_t alphSize) {
     size_t length = dcElemSize(alphSize);
-    packedChar_p toReturn = calloc(length, INT_WIDTH);
+    packedChar *toReturn = calloc(length, INT_WIDTH);
     for (size_t i = 0; i < length; i++) {
         toReturn[i] = lhs[i] | rhs[i];
     }
@@ -390,7 +390,7 @@ void printCharBits( const dynChar_t* const input ) {
     printPackedChar(input->dynChar, input->numElems, input->alphSize);
 }
 
-void printPackedChar( const packedChar_p input, size_t numElems, size_t alphSize ) {
+void printPackedChar( const packedChar *input, size_t numElems, size_t alphSize ) {
     printf("[\n");
 
     for( size_t elemNum = 0; elemNum < numElems; elemNum++ ) {

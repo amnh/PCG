@@ -1,0 +1,11 @@
+### Note that two calls to gcc to create .o files are needed, followed by two calls to compile
+
+all : bit-ops
+
+clean :
+	rm -f *.o
+
+bit-ops : bitArrayTestC.c bitArrayTestC.h dynamicCharacterOperations.c dynamicCharacterOperations.h
+	rm -f *.o
+	gcc -c bitArrayTestC.c dynamicCharacterOperations.c
+	gcc bitArrayTestC.o dynamicCharacterOperations.o
