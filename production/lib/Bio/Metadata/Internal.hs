@@ -17,7 +17,7 @@ module Bio.Metadata.Internal where
 
 import Data.Alphabet
 import Data.Foldable                       ()
-import Data.Matrix.NotStupid               (Matrix, matrix)
+import Data.Matrix.NotStupid               (Matrix, getElem, matrix)
 import Data.Monoid
 import Data.Vector                         (Vector)
 import Test.QuickCheck.Arbitrary.Instances ()
@@ -97,8 +97,16 @@ data CostStructure = TCM CostMatrix
                    | AffineCost  { gapCost :: Int, gapExtendCost :: Int, substitutionCost :: Int }
                    | GeneralCost { indelCost :: Double, subCost :: Double } deriving (Eq, Show) -- TODO: should be Ints, not Doubles
 
+
+
 -- | A cost matrix is just a matrix of floats
-type CostMatrix = Matrix Double    -- TODO: Should be Int, not Double.
+type CostMatrix = Matrix Int
+
+toCostFunction :: CostStructure -> Int -> Int -> Int
+toCostFunction (TCM tcm) = \i j -> getElem i j tcm
+toCostFunction        _  = \_ _ -> 1
+
+
 
 -- TODO: replace these calls with lenses
 -- | Prepends a 'String' to the existing character name.

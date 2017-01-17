@@ -202,7 +202,7 @@ comparativeIndelEvents edgeIdentifier ancestorCharacterUnaligned descendantChara
                            , "\nChild length: "
                            , show $ olength descendantCharacter
                            ]
-    (ancestorCharacter, descendantCharacter) = doAlignment ancestorCharacterUnaligned descendantCharacterUnaligned costStructure
+    (ancestorCharacter, descendantCharacter) = doAlignment ancestorCharacterUnaligned descendantCharacterUnaligned $ toCostFunction costStructure
     (_, resultingDeletionEvents, resultingInsertionEvents) = foldlWithKey' f (0, mempty, mempty) $ zip (otoList ancestorCharacter) (otoList descendantCharacter)
     f (parentBaseIndex, deletions, insertions) _characterIndex (ancestorElement, descendantElement)
       -- Biological "Nothing" case

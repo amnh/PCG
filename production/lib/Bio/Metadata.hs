@@ -20,6 +20,7 @@ module Bio.Metadata
   , Metadata(..)
   , ParsedMetadata(..)
   , prependName
+  , toCostFunction
   , updateAligned
   , updateAlphabet
   , updateTcm

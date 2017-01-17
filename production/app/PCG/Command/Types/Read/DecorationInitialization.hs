@@ -12,24 +12,26 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE BangPatterns #-}
+{-# LANGUAGE BangPatterns, FlexibleContexts #-}
 
 module PCG.Command.Types.Read.DecorationInitialization where
 
 import           Analysis.Parsimony.Additive.Internal
 import           Analysis.Parsimony.Fitch.Internal
 import           Analysis.Parsimony.Sankoff.Internal
---import           Bio.Character
+import           Analysis.Parsimony.Dynamic.DirectOptimization
 
---import           Bio.Character.Decoration.Additive
+import           Bio.Character
+import           Bio.Character.Decoration.Additive
 --import           Bio.Character.Decoration.Continuous
 --import           Bio.Character.Decoration.Discrete
---import           Bio.Character.Decoration.Dynamic
---import           Bio.Character.Decoration.Fitch
---import           Bio.Character.Decoration.Metric
---import           Bio.Character.Decoration.NonMetric 
+import           Bio.Character.Decoration.Dynamic
+import           Bio.Character.Decoration.Fitch
+import           Bio.Character.Decoration.Metric
+import           Bio.Character.Decoration.NonMetric 
 
 --import           Bio.Character.Encodable
+import           Bio.Character.Exportable
 --import           Bio.Character.Decoration.Continuous hiding (characterName)
 --import           Bio.Character.Decoration.Discrete   hiding (characterName)
 --import           Bio.Character.Decoration.Dynamic    hiding (characterName)
@@ -45,10 +47,11 @@ import           Bio.PhyloGraphPrime
 --import           Bio.PhyloGraphPrime.Component
 import           Bio.PhyloGraphPrime.Node
 import           Bio.PhyloGraphPrime.ReferenceDAG
+import           Control.Lens
 --import           Control.Arrow                     ((&&&))
 --import           Control.Applicative               ((<|>))
 --import           Data.Alphabet
-import           Data.Bifunctor                    (second)
+import           Data.Bifunctor                    (first, second)
 --import           Data.Foldable
 --import qualified Data.IntSet                as IS
 import           Data.Key
@@ -100,8 +103,8 @@ initializeDecorations (PhylogeneticSolution forests) = PhylogeneticSolution $ fm
           { nodeDecorationDatum = (nodeDecorationDatum parentalNode) 
           , sequenceDecoration  = preOrderLogic (sequenceDecoration parentalNode) (second sequenceDecoration <$> childNodes)
           } 
-{-
-    f :: CharacterSequence
+
+    postOrderLogic :: CharacterSequence
            UnifiedDiscreteCharacter
            UnifiedDiscreteCharacter
            UnifiedContinuousCharacter
@@ -114,7 +117,7 @@ initializeDecorations (PhylogeneticSolution forests) = PhylogeneticSolution $ fm
              UnifiedContinuousCharacter --(ContinuousOptimizationDecoration ContinuousChar)
              (FitchOptimizationDecoration    StaticCharacter)
              (AdditiveOptimizationDecoration StaticCharacter)
-             UnifiedDynamicCharacter 
+             (DynamicDecorationDirectOptimizationPostOrderResult DynamicChar) -- UnifiedDynamicCharacter
          ]
       -> CharacterSequence
            (SankoffOptimizationDecoration  StaticCharacter)
@@ -122,8 +125,8 @@ initializeDecorations (PhylogeneticSolution forests) = PhylogeneticSolution $ fm
            UnifiedContinuousCharacter --(ContinuousOptimizationDecoration ContinuousChar)
            (FitchOptimizationDecoration    StaticCharacter)
            (AdditiveOptimizationDecoration StaticCharacter)
-           UnifiedDynamicCharacter
--}
+           (DynamicDecorationDirectOptimizationPostOrderResult DynamicChar) -- UnifiedDynamicCharacter
+
     postOrderLogic currentCharSeq childCharSeqs =
         hexZipWith
           (g  sankoffPostOrder)
@@ -131,7 +134,7 @@ initializeDecorations (PhylogeneticSolution forests) = PhylogeneticSolution $ fm
           id2
           (g    fitchPostOrder)
           (g additivePostOrder)
-          id2
+          (g adaptiveDirectOptimizationPostOrder)
           currentCharSeq
           childCharSeqs'
       where
@@ -143,7 +146,11 @@ initializeDecorations (PhylogeneticSolution forests) = PhylogeneticSolution $ fm
                       in hexmap c c c c c c currentCharSeq
         g _  Nothing  [] = error $ "Uninitialized leaf node. This is bad!"
         g h (Just  v) [] = h v []
-        g h        _  xs = h (error $ "We shouldn't be using this value.") xs
+        g h        e  xs = h (error $ "We shouldn't be using this value." ++ show e ++ show (length xs)) xs
+
+        adaptiveDirectOptimizationPostOrder dec kidDecs = directOptimizationPostOrder pairwiseAlignmentFunction dec kidDecs
+          where
+            pairwiseAlignmentFunction = chooseDirectOptimizationComparison dec kidDecs
 {-
     preOrderLogic ::
         CharacterSequence
@@ -178,7 +185,7 @@ initializeDecorations (PhylogeneticSolution forests) = PhylogeneticSolution $ fm
           id2
           fitchPreOrder
           additivePreOrder
-          id2
+          adaptiveDirectOptimizationPreOrder
           currentCharSeq
           parentCharSeqs'
       where
@@ -190,6 +197,32 @@ initializeDecorations (PhylogeneticSolution forests) = PhylogeneticSolution $ fm
                       in hexmap c c c c c c currentCharSeq
            where
              f = foldMapWithKey $ \i e -> [(toEnum i,e)]
+
+        adaptiveDirectOptimizationPreOrder dec kidDecs = directOptimizationPreOrder pairwiseAlignmentFunction dec kidDecs
+          where
+            pairwiseAlignmentFunction = chooseDirectOptimizationComparison dec $ snd <$> kidDecs
+       
+
+
+chooseDirectOptimizationComparison :: ( SimpleDynamicDecoration d  c
+                                      , SimpleDynamicDecoration d' c
+                                      , Exportable c
+                                      )
+                                   => d
+                                   -> [d']
+                                   -> c
+                                   -> c
+                                   -> (c, Double, c, c, c)
+chooseDirectOptimizationComparison dec decs =
+    case first toExportableElements value of
+      (Nothing, tcm) -> \x y -> naiveDO x y tcm
+      -- Slot in FFI bindings here.
+      (Just  _, tcm) -> \x y -> naiveDO x y tcm
+  where
+    value =
+        case decs of
+          []   -> (dec ^. encoded, dec ^. characterSymbolTransitionCostMatrixGenerator)
+          x:xs -> (x   ^. encoded, x   ^. characterSymbolTransitionCostMatrixGenerator)
 
 {-
 data FracturedParseResult

@@ -25,6 +25,7 @@ module Bio.Character.Encodable
   , EncodableStreamElement(..)
   , EncodableStream(..)
   , PossiblyMissingCharacter(..)
+  , showStream
   , showStreamElement
   ) where
 

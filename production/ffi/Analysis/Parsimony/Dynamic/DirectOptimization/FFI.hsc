@@ -261,10 +261,10 @@ getCostMatrix2dAffine :: Int
                       -> (Int -> Int -> Int)
                       -> Int                    -- gap open cost
                       -> Ptr CostMatrix2d
-getCostMatrix2AAffine alphabetSize costFn gapOpen = unsafePerformIO . withArray rowMajorList $ \allocedTCM -> do
+getCostMatrix2dAffine alphabetSize costFn gapOpen = unsafePerformIO . withArray rowMajorList $ \allocedTCM -> do
         output <- malloc :: IO (Ptr CostMatrix2d)
         -- Hopefully the strictness annotation forces the allocation of the CostMatrix2d to happen immediately.
-        !_ <- setupCostMatrix2dFn_c allocedTCM (toEnum alphabetSize) gapOpen 1 output
+        !_ <- setupCostMatrix2dFn_c allocedTCM (toEnum alphabetSize) (toEnum gapOpen) 1 output
         pure output
     where
         -- This *should* be in row major order due to the manner in which list comprehensions are performed.

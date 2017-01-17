@@ -23,6 +23,7 @@ import Bio.Metadata.Discrete
 import Control.Lens
 import Data.Alphabet
 import Data.MonoTraversable
+import Data.Semigroup
 import Data.TCM
 
 -- TODO:
@@ -143,21 +144,21 @@ data DynamicDecorationDirectOptimizationPostOrderResult d
    { dynamicDecorationDirectOptimizationPostOrderEncodedField             :: d
    , dynamicDecorationDirectOptimizationPostOrderPreliminaryGappedField   :: d
    , dynamicDecorationDirectOptimizationPostOrderPreliminaryUngappedField :: d
+   , dynamicDecorationDirectOptimizationPostOrderLeftAlignmentField       :: d
+   , dynamicDecorationDirectOptimizationPostOrderRightAlignmentField      :: d
    , dynamicDecorationDirectOptimizationPostOrderMetadata                 :: DiscreteCharacterMetadataDec (Element d)
    }
 
 
--- |
--- A decoration that can be constructed from a 'DiscreteCharacterDecoration' by
--- extending the decoration to contain the requisite fields for performing
--- Sankoff's algorithm.
 instance EncodableDynamicCharacter d => SimpleDynamicExtensionPostOrderDecoration (DynamicDecorationDirectOptimizationPostOrderResult d) d where
 
-    extendDynamicToPostOrder subDecoration ungapped gapped =
+    extendDynamicToPostOrder subDecoration ungapped gapped lhsAlignment rhsAlignment=
         DynamicDecorationDirectOptimizationPostOrderResult
         { dynamicDecorationDirectOptimizationPostOrderEncodedField             = subDecoration ^. encoded
         , dynamicDecorationDirectOptimizationPostOrderPreliminaryGappedField   = gapped
         , dynamicDecorationDirectOptimizationPostOrderPreliminaryUngappedField = ungapped
+        , dynamicDecorationDirectOptimizationPostOrderLeftAlignmentField       = lhsAlignment
+        , dynamicDecorationDirectOptimizationPostOrderRightAlignmentField      = rhsAlignment
         , dynamicDecorationDirectOptimizationPostOrderMetadata                 = metadataValue
         }
       where
@@ -188,6 +189,18 @@ instance HasPreliminaryGapped (DynamicDecorationDirectOptimizationPostOrderResul
 instance HasPreliminaryUngapped (DynamicDecorationDirectOptimizationPostOrderResult d) d where
 
     preliminaryUngapped = lens dynamicDecorationDirectOptimizationPostOrderPreliminaryUngappedField (\e x -> e { dynamicDecorationDirectOptimizationPostOrderPreliminaryUngappedField = x })
+
+
+-- | (✔)
+instance HasLeftAlignment (DynamicDecorationDirectOptimizationPostOrderResult d) d where
+
+    leftAlignment = lens dynamicDecorationDirectOptimizationPostOrderLeftAlignmentField (\e x -> e { dynamicDecorationDirectOptimizationPostOrderLeftAlignmentField = x })
+
+
+-- | (✔)
+instance HasRightAlignment (DynamicDecorationDirectOptimizationPostOrderResult d) d where
+
+    rightAlignment = lens dynamicDecorationDirectOptimizationPostOrderRightAlignmentField (\e x -> e { dynamicDecorationDirectOptimizationPostOrderRightAlignmentField = x })
 
 
 -- | (✔)
@@ -266,8 +279,53 @@ data DynamicDecorationDirectOptimization d
    , dynamicDecorationDirectOptimizationFinalUngappedField       :: d
    , dynamicDecorationDirectOptimizationPreliminaryGappedField   :: d
    , dynamicDecorationDirectOptimizationPreliminaryUngappedField :: d
+   , dynamicDecorationDirectOptimizationLeftAlignmentField       :: d
+   , dynamicDecorationDirectOptimizationRightAlignmentField      :: d
    , dynamicDecorationDirectOptimizationMetadata                 :: DiscreteCharacterMetadataDec (Element d)
    }
+
+
+-- | (✔)
+instance EncodableDynamicCharacter d => PostOrderExtensionDirectOptimizationDecoration (DynamicDecorationDirectOptimization d) d where
+
+    extendPostOrderToDirectOptimization subDecoration ungapped gapped =
+        DynamicDecorationDirectOptimization
+        { dynamicDecorationDirectOptimizationEncodedField             = subDecoration ^. encoded
+        , dynamicDecorationDirectOptimizationFinalGappedField         = gapped
+        , dynamicDecorationDirectOptimizationFinalUngappedField       = ungapped
+        , dynamicDecorationDirectOptimizationPreliminaryGappedField   = subDecoration ^. preliminaryGapped
+        , dynamicDecorationDirectOptimizationPreliminaryUngappedField = subDecoration ^. preliminaryUngapped
+        , dynamicDecorationDirectOptimizationLeftAlignmentField       = subDecoration ^. leftAlignment
+        , dynamicDecorationDirectOptimizationRightAlignmentField      = subDecoration ^. rightAlignment
+        , dynamicDecorationDirectOptimizationMetadata                 = metadataValue
+        }
+      where
+        alphabetValue = subDecoration ^. characterAlphabet
+        tcmValue      = generate (length alphabetValue) (uncurry $ subDecoration ^. characterSymbolTransitionCostMatrixGenerator)
+        metadataValue =
+          discreteMetadata
+            <$> (^. characterName)
+            <*> (^. characterWeight)
+            <*> const alphabetValue
+            <*> const tcmValue
+            $ subDecoration
+
+
+-- | (✔)
+instance EncodableStream d => Show (DynamicDecorationDirectOptimization d) where
+
+    show dec = unlines $ f <$> pairs
+      where
+        f (prefix, accessor) = prefix <> showStream (dec ^. characterAlphabet) (dec ^. accessor)
+        pairs =
+          [ ("Original Encoding   : ", encoded            )
+          , ("Final         Gapped: ", finalGapped        )
+          , ("Final       Ungapped: ", finalUngapped      )
+          , ("Preliminary   Gapped: ", preliminaryGapped  )
+          , ("Preliminary Ungapped: ", preliminaryUngapped)
+          , ("Left  Alignment     : ", leftAlignment      )
+          , ("Right Alignment     : ", rightAlignment     )
+          ]
 
 
 -- | (✔)
@@ -298,6 +356,18 @@ instance HasPreliminaryGapped (DynamicDecorationDirectOptimization d) d where
 instance HasPreliminaryUngapped (DynamicDecorationDirectOptimization d) d where
 
     preliminaryUngapped = lens dynamicDecorationDirectOptimizationPreliminaryUngappedField (\e x -> e { dynamicDecorationDirectOptimizationPreliminaryUngappedField = x })
+
+
+-- | (✔)
+instance HasLeftAlignment (DynamicDecorationDirectOptimization d) d where
+
+    leftAlignment = lens dynamicDecorationDirectOptimizationLeftAlignmentField (\e x -> e { dynamicDecorationDirectOptimizationLeftAlignmentField = x })
+
+
+-- | (✔)
+instance HasRightAlignment (DynamicDecorationDirectOptimization d) d where
+
+    rightAlignment = lens dynamicDecorationDirectOptimizationRightAlignmentField (\e x -> e { dynamicDecorationDirectOptimizationRightAlignmentField = x })
 
 
 -- | (✔)
@@ -382,6 +452,8 @@ data DynamicDecorationImpliedAlignment d
    , dynamicDecorationImpliedAlignmentFinalUngappedField       :: d
    , dynamicDecorationImpliedAlignmentPreliminaryGappedField   :: d
    , dynamicDecorationImpliedAlignmentPreliminaryUngappedField :: d
+   , dynamicDecorationImpliedAlignmentLeftAlignmentField       :: d
+   , dynamicDecorationImpliedAlignmentRightAlignmentField      :: d
    , dynamicDecorationImpliedAlignmentImpliedAlignmentField    :: d
    , dynamicDecorationImpliedAlignmentMetadata                 :: DiscreteCharacterMetadataDec (Element d)
    }
@@ -415,6 +487,17 @@ instance HasPreliminaryGapped (DynamicDecorationImpliedAlignment d) d where
 instance HasPreliminaryUngapped (DynamicDecorationImpliedAlignment d) d where
 
     preliminaryUngapped = lens dynamicDecorationImpliedAlignmentPreliminaryUngappedField (\e x -> e { dynamicDecorationImpliedAlignmentPreliminaryUngappedField = x })
+
+
+instance HasLeftAlignment (DynamicDecorationImpliedAlignment d) d where
+
+    leftAlignment = lens dynamicDecorationImpliedAlignmentLeftAlignmentField (\e x -> e { dynamicDecorationImpliedAlignmentLeftAlignmentField = x })
+
+
+-- | (✔)
+instance HasRightAlignment (DynamicDecorationImpliedAlignment d) d where
+
+    rightAlignment = lens dynamicDecorationImpliedAlignmentLeftAlignmentField (\e x -> e { dynamicDecorationImpliedAlignmentLeftAlignmentField = x })
 
 
 -- | (✔)

@@ -22,6 +22,7 @@ module Bio.Character.Decoration.Dynamic
   , DynamicDecorationDirectOptimizationPostOrderResult()
   , GeneralCharacterMetadata()
   , SimpleDynamicExtensionPostOrderDecoration(..)
+  , PostOrderExtensionDirectOptimizationDecoration(..)
   , HasCharacterAlphabet(..)
   , HasCharacterName(..)
   , HasCharacterSymbolTransitionCostMatrixGenerator(..)
@@ -32,6 +33,8 @@ module Bio.Character.Decoration.Dynamic
   , HasFinalUngapped(..)
   , HasPreliminaryGapped(..)
   , HasPreliminaryUngapped(..)
+  , HasLeftAlignment(..)
+  , HasRightAlignment(..)
   , HasImpliedAlignment(..)
   , PossiblyMissingCharacter(..)
   ) where

@@ -19,7 +19,12 @@
 
 {-# LANGUAGE FlexibleContexts #-}
 
-module Analysis.Parsimony.Dynamic.DirectOptimization where
+module Analysis.Parsimony.Dynamic.DirectOptimization
+  ( directOptimizationPreOrder
+  , directOptimizationPostOrder
+  , naiveDO
+  ) where
 
 
 import Analysis.Parsimony.Dynamic.DirectOptimization.Internal
+import Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise
