@@ -139,7 +139,7 @@ instance ( Show m
 
     show block = unlines
        [ "Continuous Characters: "
-       , unlines . fmap (("  " <>) . show) . toList $ continuousCharacterBins block
+       , unlines . fmap (unlines . fmap ("  " <>) . lines . show) . toList $ continuousCharacterBins block
        , "Fitch Characters:"
        , unlines . fmap (("  " <>) . show) . toList $ nonAdditiveCharacterBins block
        , "Additive Characters:"
@@ -149,7 +149,7 @@ instance ( Show m
        , "NonMetric Characters:"
        , unlines . fmap (("  " <>) . show) . toList $ nonMetricCharacterBins block
        , "Dynamic Characters:"
-       , unlines . fmap (("  " <>) . show) . toList $ dynamicCharacters block
+       , unlines . fmap (unlines . fmap ("  " <>) . lines . show) . toList $ dynamicCharacters block
        ]
 
 

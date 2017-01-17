@@ -140,7 +140,7 @@ deriveDynamicMetadatas (x:_) = sequenceA $ V.generate (length sequenceWLOG) f
 --             , fitchMasks = (encodeDynamic alphabet' ([] :: [[String]]), encodeDynamic alphabet' ([] :: [[String]]))
            --  , fitchMasks = (undefined,undefined)
              , rootCost   = 0.0
-             , costs      = TCM $ matrix (length alphabet') (length alphabet') (const 1.0)
+             , costs      = TCM $ matrix (length alphabet') (length alphabet') (const 1)
              }
       where
         badMask   = ("-":|[]):|[]

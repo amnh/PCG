@@ -21,169 +21,157 @@
 
 module Analysis.Parsimony.Dynamic.DirectOptimization.Internal where
 
+import           Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise
+import           Bio.Character.Decoration.Dynamic
+import           Bio.Character.Encodable
+import           Control.Lens
+import           Data.IntMap        (IntMap)
+import qualified Data.IntMap as IM
+import           Data.Key    hiding ((!))
+import           Data.List.NonEmpty (NonEmpty( (:|) ))
+import           Data.Monoid
+import           Data.MonoTraversable 
+import           Data.Word
+import           Prelude     hiding (lookup, zip)
 
-import Bio.Character.Decoration.Dynamic
-import Bio.Character.Encodable
-import Control.Lens
-import Data.Bits
-import Data.Key
-import Data.List.NonEmpty (NonEmpty( (:|) ))
-import Data.Word
-import Prelude hiding (zip)
+
+type PairwiseAlignment s = s -> s -> (s, Double, s, s, s)
 
 
-
-directOptimizationPostOrder :: SimpleDynamicDecoration d c
-                            => d
-                            -> [DynamicDecorationDirectOptimizationPostOrderResult c]
-                            ->  DynamicDecorationDirectOptimizationPostOrderResult c
-directOptimizationPostOrder charDecoration xs =
+directOptimizationPostOrder
+  :: SimpleDynamicDecoration d c
+  => PairwiseAlignment c
+  -> d
+  -> [DynamicDecorationDirectOptimizationPostOrderResult c]
+  ->  DynamicDecorationDirectOptimizationPostOrderResult c
+directOptimizationPostOrder pairwiseAlignment charDecoration xs =
     case xs of
-        []   -> defaultLeaf charDecoration
-        y:ys -> updateFromLeaves $ y:|ys
+        []   -> initializeLeaf charDecoration
+        y:ys -> updateFromLeaves pairwiseAlignment $ y:|ys
 
 
-defaultLeaf :: ( SimpleDynamicDecoration d c
-               ) => d -> DynamicDecorationDirectOptimizationPostOrderResult c
-defaultLeaf = extendDynamicToPostOrder <$> id <*> (^. encoded) <*> (^. encoded)
+initializeLeaf
+  :: SimpleDynamicDecoration d c
+  => d
+  -> DynamicDecorationDirectOptimizationPostOrderResult c
+initializeLeaf = extendDynamicToPostOrder <$> id <*> (^. encoded) <*> (^. encoded) <*> (^. encoded) <*> (^. encoded)
 
 
-updateFromLeaves :: NonEmpty (DynamicDecorationDirectOptimizationPostOrderResult c)
-                 -> DynamicDecorationDirectOptimizationPostOrderResult c
-updateFromLeaves (x:|[]) = x
-updateFromLeaves (leftChild:|rightChild:[]) = undefined
+updateFromLeaves
+  :: EncodableDynamicCharacter c
+  => PairwiseAlignment c
+  -> NonEmpty (DynamicDecorationDirectOptimizationPostOrderResult c)
+  -> DynamicDecorationDirectOptimizationPostOrderResult c
+updateFromLeaves _ (x:|[]) = x
+updateFromLeaves pairwiseAlignment (leftChild:|rightChild:_) =
+    extendDynamicToPostOrder leftChild ungapped gapped lhsAlignment rhsAlignment
+  where
+    (ungapped, _cost, gapped, lhsAlignment, rhsAlignment) = pairwiseAlignment (leftChild ^. encoded) (rightChild ^. encoded)
 
 
-{-
--- | Used on the pre-order (i.e. second) traversal. Either calls 'initializeDirVector' on root or updateDirectionalMins.
--- Needs to determine which child it's updating, then sends the appropriate minlist
-sankoffPreOrder :: EncodableStaticCharacter c
-                => SankoffOptimizationDecoration c
-                -> [(Word, SankoffOptimizationDecoration c)]
-                -> SankoffOptimizationDecoration c
-sankoffPreOrder childDecoration []                                 = childDecoration -- is a root
-sankoffPreOrder childDecoration ((whichChild, parentDecoration):_) = resultDecoration $
-    case whichChild of
-        0 -> fst
-        _ -> snd
-    where
-        resultDecoration f = updateDirectionalMins parentDecoration childDecoration . f $ parentDecoration ^. directionalMinVector
+directOptimizationPreOrder
+  :: DirectOptimizationPostOrderDecoration d c
+  => PairwiseAlignment c
+  -> d
+  -> [(Word, DynamicDecorationDirectOptimization c)]
+  ->  DynamicDecorationDirectOptimization c
+directOptimizationPreOrder pairwiseAlignment charDecoration xs =
+    case xs of
+        []            -> initializeRoot charDecoration
+        (_, parent):_ -> updateFromParent pairwiseAlignment charDecoration parent
 
 
--- | Before post-order can actually occur, must initialize leaf vectors with values as such:
--- Given \(n\) character states, for a given character \(i_c\) on leaf \(i\), there are \(2^n - 1)
--- possible characters, including ambiguous characters. For extant character states \(i_c_x\) on
--- the leaf, and for each possible character state, if that character state is extant on the leaf, give
--- in an initial cost of 0, otherwise, a cost of ∞
--- TODO: finish comment nicely once MathJax is working:
--- \(i\)
--- \[ cost(i_c) =
---       \] \(i \elem s_x\), etc...
-initializeCostVector :: DiscreteCharacterDecoration d c => d -> SankoffOptimizationDecoration c
-initializeCostVector inputDecoration = returnChar
-    where
-        -- assuming metricity
-        len      = symbolCount $ inputDecoration ^. discreteCharacter
-        range    = [0..len-1]
-        costList = foldMap f range
-            where
-                f i
-                    | inputChar `testBit` i = [minBound :: Word]
-                    | otherwise             = [maxBound :: Word] -- Change this if it's actually Doubles.
-                    where inputChar = inputDecoration ^. discreteCharacter
-        returnChar = extendDiscreteToSankoff inputDecoration costList ([],[]) (minBound :: Word)
+initializeRoot
+  :: DirectOptimizationPostOrderDecoration d c
+  => d
+  -> DynamicDecorationDirectOptimization c
+initializeRoot = extendPostOrderToDirectOptimization <$> id <*> (^. preliminaryUngapped) <*> (^. preliminaryGapped)
 
+
+updateFromParent
+  :: (EncodableDynamicCharacter c, DirectOptimizationPostOrderDecoration d c)
+  => PairwiseAlignment c
+  -> d
+  -> DynamicDecorationDirectOptimization c
+  -> DynamicDecorationDirectOptimization c
+updateFromParent pairwiseAlignment currentDecoration parentDecoration =
+    extendPostOrderToDirectOptimization currentDecoration ungapped gapped
+  where
+    (ungapped, gapped) = tripleComparison pairwiseAlignment currentDecoration (parentDecoration ^. finalGapped)
+
+  
+-- |
+-- A three way comparison of characters used in the DO preorder traversal.
+tripleComparison
+  :: ( EncodableDynamicCharacter c, DirectOptimizationPostOrderDecoration d c)
+  => PairwiseAlignment c
+  -> d
+  -> c
+  -> (c, c)
+tripleComparison pairwiseAlignment childDecoration parentCharacter = (ungapped, gapped)
+  where
+    costStructure     = childDecoration ^. characterSymbolTransitionCostMatrixGenerator
+    childCharacter    = childDecoration ^. preliminaryUngapped
+    childLeftAligned  = childDecoration ^. leftAlignment
+    childRightAligned = childDecoration ^. rightAlignment
+    
+    (_, _, derivedAlignment, _, childAlignment) = pairwiseAlignment parentCharacter childCharacter
+    newGapIndicies         = newGapLocations childCharacter childAlignment
+    extendedLeftCharacter  = insertNewGaps newGapIndicies childLeftAligned
+    extendedRightCharacter = insertNewGaps newGapIndicies childRightAligned
+    (_, ungapped, gapped)  = threeWayMean costStructure derivedAlignment extendedLeftCharacter extendedRightCharacter
 
 
 -- |
--- Given current node and its children, does actual calculation of new node value
--- for each character state.
---
--- That is, folds over character states, and for each state finds the minimum cost to transition to that
--- state from the characters on each of the left and right children. Stores those mins as a tuple of lists.
--- Likewise, for each state calculates its min (min_left + min_right), as well as the overall lowest min for all states.
---
--- Assumes binary tree.
-updateCostVector :: DiscreteCharacterDecoration d c
-                      => d
-                      -> NonEmpty (SankoffOptimizationDecoration c)
-                      -> SankoffOptimizationDecoration c
-updateCostVector _parentDecoration (x:|[])                   = x                    -- Shouldn't be possible, but here for completion.
-updateCostVector _parentDecoration (leftChild:|rightChild:_) = returnNodeDecoration -- _Should_ be able to amend this to use non-binary children.
-    where
-        (costVector, dirCostVector, charCost) = foldr findMins initialAccumulator [0..length (leftChild ^. characterAlphabet)]
-        initialAccumulator     = ([], ([],[]), maxBound :: Word)  -- (min cost per state, (leftMin, rightMin), overall minimum)
-        returnNodeDecoration   = extendDiscreteToSankoff leftChild costVector dirCostVector $ fromIntegral charCost
-
-        findMins charState (stateMins, (leftMin, rightMin), curMin) = returnVal
-             where
-                 charMin = if stateMin < curMin
-                           then curMin
-                           else stateMin
-                 stateMin                      = leftChildMin + rightChildMin
-                 (leftChildMin, rightChildMin) = calcCostPerState charState leftChild rightChild
-                 returnVal                     = (stateMin : stateMins, (leftChildMin : leftMin, rightChildMin : rightMin), charMin)
+-- Returns the indicies of the gaps that were added in the second character when
+-- compared to the first character.
+newGapLocations :: EncodableDynamicCharacter c => c -> c -> IntMap Int
+newGapLocations originalChar newChar
+  | olength originalChar == olength newChar = mempty
+  | otherwise                               = newGaps
+  where
+    (_,_,newGaps) = ofoldl' f (otoList originalChar, 0, mempty) newChar
+    gap = getGapElement $ newChar `indexStream` 0
+    f (  [], i, is) e
+      | e == gap  = ([], i, IM.insertWith (+) i 1 is)
+      | otherwise = ([], i, is)
+    f (x:xs, i, is) e
+      | e == gap && x /= gap = (x:xs, i  , IM.insertWith (+) i 1 is)
+      | otherwise            = (  xs, i+1, is)
 
 
 -- |
--- Takes two decorations in, a child and a parent, and calculates the median character value of the child.
--- For each possible character state this value is based on whether that character state in the child is on
--- one of the min-cost paths from the root to the leaves. It relies on dynamic programming to do so,
--- using the minimum tuple in the parent to determine whether that character state can participate
--- in the final median. Using the left child as a template, the character state is part of the median if,
--- for some state in the parent,
--- parCharState_minCost_left == childCharState_minCost + TCM(childCharState, parCharState).
---
--- Used on second, pre-order, pass.
-updateDirectionalMins :: EncodableStaticCharacter c -- ERIC: I made this more restrictive to resolve the 'Cannot deduce EncodableStaticCharacter c from Bits c'
-                => SankoffOptimizationDecoration c
-                -> SankoffOptimizationDecoration c
-                -> [Word]
-                -> SankoffOptimizationDecoration c
-updateDirectionalMins parentDecoration childDecoration parentMins  = returnChar
-    where
-        median = foldlWithKey' (\acc parentCharState parentCharMin ->
-                                    if parentCharMin == parentDecoration ^. minCost
-                                    then foldlWithKey' (buildMedian parentCharState) acc $ parentDecoration ^. minCostVector
-                                    else acc
-                               ) startMedian parentMins
-
-        buildMedian parentCharState acc childCharState charMin
-            | charMin == totalCost childCharState parentCharState = acc `setBit` childCharState
-            | otherwise                                           = acc
-        tcmCostAsWord childState parState = fromIntegral $ (parentDecoration ^. characterSymbolTransitionCostMatrixGenerator) childState parState
-        totalCost childState parState     = parentDecoration ^. minCost + tcmCostAsWord childState parState
-        startMedian                       = emptyStatic $ parentDecoration ^. discreteCharacter -- ERIC: This is a unary function, not a nullary function.
-        returnChar                        = childDecoration & discreteCharacter .~ median
+-- Given a list of gap location and a character returns a longer character with
+-- the supplied gaps inserted at the corersponding locations.
+insertNewGaps :: EncodableDynamicCharacter c => IntMap Int -> c -> c
+insertNewGaps insertionIndicies character = constructDynamic . (<> trailingGaps) . foldMapWithKey f $ otoList character
+  where
+    len = olength character
+    gap = getGapElement $ character `indexStream` 0
+    trailingGaps = maybe [] (`replicate` gap) $ len `lookup` insertionIndicies
+    f i e =
+      case i `lookup` insertionIndicies of
+        Nothing -> [e]
+        Just n  -> replicate n gap <> [e]
 
 
--- | Take in a single character state as an Int—which represents an unambiguous character state on the parent—
--- and two decorations: the decorations of the two child states.
--- Return the minimum costs of transitioning from each of those two child decorations to the given character.
--- These mins will be saved for use at the next post-order call, to the current parent node's parent.
---
--- Note: We can throw away the medians that come back from the tcm here because we're building medians:
--- the possible character is looped over all available characters, and there's an outer loop which sends in each possible character.
-calcCostPerState :: Int -> SankoffOptimizationDecoration c -> SankoffOptimizationDecoration c -> (Word, Word)
-calcCostPerState inputCharState leftChildDec rightChildDec = retVal
-    where
-        -- Using keys, fold over alphabet states as Ints. The zipped lists will give minimum accumulated costs for
-        -- each character state in each child.
-        retVal = foldlWithKey' findMins initialAccumulator zippedCostList
-        findMins :: (Word, Word) -> Int -> (Word, Word) -> (Word, Word)
-        findMins (initLeftMin, initRightMin) childCharState (accumulatedLeftCharCost, accumulatedRightCharCost) = (leftMin, rightMin)
-            where
-                leftMin             = if curLeftMin < initLeftMin
-                                          then curLeftMin
-                                          else initLeftMin
-                rightMin            = if curRightMin < initRightMin
-                                          then curRightMin
-                                          else initRightMin
-                curLeftMin          = fromIntegral leftTransitionCost  + accumulatedLeftCharCost
-                curRightMin         = fromIntegral rightTransitionCost + accumulatedRightCharCost
-                leftTransitionCost  = ( leftChildDec ^. characterSymbolTransitionCostMatrixGenerator) inputCharState childCharState
-                rightTransitionCost = (rightChildDec ^. characterSymbolTransitionCostMatrixGenerator) inputCharState childCharState
+-- |
+-- Calculates the mean character and cost between three supplied characters.
+threeWayMean :: (EncodableDynamicCharacter c)
+             => (Int -> Int -> Int)
+             -> c -> c -> c -> (Int, c, c)
+threeWayMean costStructure char1 char2 char3
+  | not uniformLength = error $ "Three sequences supplied to 'threeWayMean' function did not have uniform length." -- <> show char1 <> show char2 <> show char3
+  | otherwise         = (sum costValues, constructDynamic $ filter (/= gap) meanStates, constructDynamic meanStates)
+  where
+    gap                 = getGapElement $ char1 `indexStream` 0
+    uniformLength       = olength char1 == olength char2 && olength char2 == olength char3
+    (meanStates, costValues) = unzip $ zipWith3 f (otoList char1) (otoList char2) (otoList char3)
+    f a b c = minimalChoice -- minimumBy (comparing snd)
+            [ getOverlap a b costStructure
+            , getOverlap a c costStructure
+            , getOverlap b c costStructure
+            ]
 
-        initialAccumulator = (maxBound :: Word, maxBound :: Word)
-        zippedCostList     = zip (leftChildDec ^. minCostVector) (rightChildDec ^. minCostVector)
--}
+
+

@@ -45,6 +45,8 @@ class ( HasEncoded s a
 -- Is a sub-class of 'DynamicCharacterDecoration'.
 class ( HasPreliminaryGapped    s a
       , HasPreliminaryUngapped  s a
+      , HasLeftAlignment        s a
+      , HasRightAlignment       s a
       , SimpleDynamicDecoration s a
       ) => DirectOptimizationPostOrderDecoration s a | s -> a where
 
@@ -89,9 +91,26 @@ class ( SimpleDynamicDecoration s c
       ) => SimpleDynamicExtensionPostOrderDecoration s c | s -> c where
 
     extendDynamicToPostOrder :: (SimpleDynamicDecoration x c, DirectOptimizationPostOrderDecoration s c)
-                             => x  -- ^ Original decoration
-                             -> c  -- ^ Preliminary /ungapped/ dynamic character
-                             -> c  -- ^ Preliminary   /gapped/ dynamic character
+                             => x -- ^ Original decoration
+                             -> c -- ^ Preliminary /ungapped/ dynamic character
+                             -> c -- ^ Preliminary   /gapped/ dynamic character
+                             -> c -- ^ Left  alignment dynamic character
+                             -> c -- ^ Right alignment dynamic character
+                             -> s -- ^ Resulting decoration
+
+
+-- |
+-- A decoration that can be constructed from a 'DiscreteCharacterDecoration' by
+-- extending the decoration to contain the requisite fields for performing
+-- Sankoff's algorithm.
+class ( DirectOptimizationPostOrderDecoration s c
+      , DirectOptimizationDecoration s c
+      ) => PostOrderExtensionDirectOptimizationDecoration s c | s -> c where
+
+    extendPostOrderToDirectOptimization :: (DirectOptimizationPostOrderDecoration x c, DirectOptimizationDecoration s c)
+                             => x -- ^ Original decoration
+                             -> c -- ^ Final /ungapped/ dynamic character
+                             -> c -- ^ Final   /gapped/ dynamic character
                              -> s -- ^ Resulting decoration
 
 {-
@@ -143,6 +162,22 @@ class HasPreliminaryUngapped s a | s -> a where
 
     preliminaryUngapped :: Lens' s a
     {-# MINIMAL preliminaryUngapped #-}
+
+
+-- |
+-- A 'Lens' for the 'leftAlignment' field
+class HasLeftAlignment s a | s -> a where
+
+    leftAlignment :: Lens' s a
+    {-# MINIMAL leftAlignment #-}
+
+
+-- |
+-- A 'Lens' for the 'rightAlignment' field
+class HasRightAlignment s a | s -> a where
+
+    rightAlignment :: Lens' s a
+    {-# MINIMAL rightAlignment #-}
 
 
 -- |

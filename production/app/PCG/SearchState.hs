@@ -72,7 +72,7 @@ type InitialDecorationDAG = PhylogeneticDAG
                              UnifiedContinuousCharacter --(ContinuousOptimizationDecoration ContinuousChar)
                              (FitchOptimizationDecoration    StaticCharacter)
                              (AdditiveOptimizationDecoration StaticCharacter)
-                             UnifiedDynamicCharacter
+                             (DynamicDecorationDirectOptimization DynamicChar) -- UnifiedDynamicCharacter
 {-
 type TestDecorationDAG = PhylogeneticDAG
                              (Maybe Double)

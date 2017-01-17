@@ -128,6 +128,11 @@ showStreamElement alphabet element = renderAmbiguity $ toIUPAC symbols
       | otherwise                    = x
 
 
+-- | Show an 'EncodableStream' by decoding it with it's corresponding alphabet.
+showStream :: EncodableStream s => Alphabet String -> s -> String
+showStream alphabet = ofoldMap (showStreamElement alphabet)
+
+
 encodableStreamToExportableCharacterElements :: (EncodableStream s, EncodedAmbiguityGroupContainer s, Integral (Element s))
                                              => s -> Maybe ExportableCharacterElements
 encodableStreamToExportableCharacterElements dc

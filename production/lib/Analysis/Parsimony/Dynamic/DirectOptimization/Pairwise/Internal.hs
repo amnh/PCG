@@ -15,7 +15,6 @@
 
 module Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Internal where
 
-import Bio.Metadata
 import Bio.Character.Encodable
 import Data.Bits
 --import Data.BitVector hiding (foldr, reverse)
@@ -34,20 +33,20 @@ data Direction = LeftArrow | DiagArrow | UpArrow deriving (Eq, Show)
 -- | A representation of an alignment matrix for DO.
 -- The matrix itself stores tuples of the cost and direction at that position.
 -- We also store a vector of characters that are generated.
-type DOAlignMatrix s = Matrix (Double, Direction, s)
+type DOAlignMatrix s = Matrix (Int, Direction, s)
 
 -- | Constraints on the input dynamic characters that direct optiomization operates on.
-type DOCharConstraint c = (EncodableDynamicCharacter c, Show c, {- Memoizable c, -} Show (Element c))
+type DOCharConstraint c = (EncodableDynamicCharacter c {-, Show c, Show (Element c) -})
 
 -- | Performs a naive direct optimization
 -- Takes in two characters to run DO on and a metadata object
 -- Returns an assignment character, the cost of that assignment, the assignment character with gaps included,
 -- the aligned version of the first input character, and the aligned version of the second input character
 -- The process for this algorithm is to generate a traversal matrix, then perform a traceback.
-naiveDO :: DOCharConstraint s  
+naiveDO :: DOCharConstraint s
         => s                    -- ^ First  dynamic character
         -> s                    -- ^ Second dynamic character
-        -> CostStructure        -- ^ Structure defining the transition costs between character states
+        -> (Int -> Int -> Int)  -- ^ Structure defining the transition costs between character states
         -> (s, Double, s, s, s) -- ^ The /ungapped/ character derived from the the input characters' N-W-esque matrix traceback
                                 -- 
                                 --   The cost of the alignment
@@ -60,7 +59,7 @@ naiveDO :: DOCharConstraint s
 naiveDO char1 char2 costStruct
     | onull char1 = (char1, 0, char1, char1, char1)
     | onull char2 = (char2, 0, char2, char2, char2)
-    | otherwise   = (ungapped, cost, gapped', out1, out2)
+    | otherwise   = (ungapped, fromIntegral cost, gapped', out1, out2)
     where
       char1Len = olength char1
       char2Len = olength char2
@@ -84,7 +83,7 @@ naiveDO char1 char2 costStruct
            
 -- | Wrapper function to do an enhanced Needleman-Wunsch algorithm.
 -- Calls naiveDO, but only returns the last two fields (gapped alignments of inputs)
-doAlignment :: DOCharConstraint s => s -> s -> CostStructure -> (s, s)
+doAlignment :: DOCharConstraint s => s -> s -> (Int -> Int -> Int) -> (s, s)
 doAlignment char1 char2 costStruct = (char1Align, char2Align)
     where
         (_, _, _, char1Align, char2Align) = naiveDO char1 char2 costStruct
@@ -107,7 +106,7 @@ filterGaps char = constructDynamic . filter (/= gap) $ otoList char
 -- Returns an 'DOAlignMatrix'.
 -- TODO: See if we can move topDynChar logic inside here. It's also necessary in DO. 
 -- Or maybe DO can just call doAlignment?
-createDOAlignMatrix :: EncodableDynamicCharacter s => s -> s -> CostStructure -> DOAlignMatrix (Element s)
+createDOAlignMatrix :: EncodableDynamicCharacter s => s -> s -> (Int -> Int -> Int) -> DOAlignMatrix (Element s)
 createDOAlignMatrix topDynChar leftDynChar costStruct = result
     where
         result = matrix (olength leftDynChar + 1) (olength topDynChar + 1) generateMat
@@ -188,17 +187,20 @@ traceback alignMat' char1' char2' = ( constructDynamic $ reverse t1
                   UpArrow   -> (row - 1, col    )
                   DiagArrow -> (row - 1, col - 1)
 
+
 -- | Simple function to get the cost from an alignment matrix
 getTotalAlignmentCost :: Matrix (a, b, c) -> a
 getTotalAlignmentCost alignmentMatrix = c
   where
     (c, _, _) = alignmentMatrix ! (nrows alignmentMatrix - 1, ncols alignmentMatrix - 1) 
 
+
 -- | Memoized wrapper of the overlap function
-getOverlap :: (EncodableStreamElement c {- , Memoizable c, -}) => c -> c -> CostStructure -> (c, Double)
+getOverlap :: (EncodableStreamElement c {- , Memoizable c, -}) => c -> c -> (Int -> Int -> Int) -> (c, Int)
 getOverlap inChar1 inChar2 costStruct = result
     where
         result = {- memoize2 -} overlap costStruct inChar1 inChar2
+
         
 -- | Takes two 'EncodableStreamElement' and a 'CostStructure' and returns a tuple of a new character, 
 -- along with the cost of obtaining that character. The return character may be (or is even likely to be)
@@ -209,24 +211,14 @@ getOverlap inChar1 inChar2 costStruct = result
 -- if @ char1 == A,T @ and @ char2 == G,C @, and the two (non-overlapping) least cost pairs are A,C and T,G, then
 -- the return value is A,C,G,T. 
 -- Tests exist in the test suite.
-overlap :: (EncodableStreamElement c {- , Show c -}) => CostStructure -> c -> c -> (c, Double)
+overlap :: (EncodableStreamElement c {- , Show c -}) => (Int -> Int -> Int) -> c -> c -> (c, Int)
 --overlap _ inChar1 inChar2 | trace (unwords [show inChar1, show inChar2]) False = undefined
 overlap costStruct char1 char2
     | intersectionStates == zeroBits = -- (\x -> trace (unwords [show char1, show char2, show x]) x) $
                                        minimalChoice $ allPossibleBaseCombosCosts costStruct char1 char2
     | otherwise                      = (intersectionStates, 0)
-    {-
-       | 0 == char1 || 0 == char2 = (zeroBitVec, 0) -- Commented out, because nonsense. Problem for testing?
-       | char1 .&. char2 == 0 = foldr1 ambigChoice allPossibleBaseCombosCosts
-       | otherwise            = (char1 .&. char2, 0)
-    -}
     where
       intersectionStates = char1 .&. char2
---        alphLen    = width char1
---        z = char1 `xor` char1
-        -- make possible combinations with a double fold
-        
-        -- now take an ambiguous minimum
 
 -- |
 -- Given a structure of character elements and costs, calculates the least
@@ -240,47 +232,28 @@ minimalChoice = foldr1 f
       | cost1 < cost2  = (val1         , cost1)
       | otherwise      = (val2         , cost2)
 
+
 -- TODO: Can we eliminate all characters from below, and just pass around Ints?
 -- |
 -- Finds the cost of a pairing of two static characters.
 -- Takes in a 'CostStructure' and two ambiguous 'EncodableStreamElement's. Returns a list of tuples of all possible unambiguous
 -- pairings, along with their costs. 
-allPossibleBaseCombosCosts :: EncodableStreamElement s => CostStructure -> s -> s -> [(s, Double)]
-allPossibleBaseCombosCosts costStruct char1 char2 = [ getCost costStruct x y | x <- getSubChars char1
-                                                                             , y <- getSubChars char2
+allPossibleBaseCombosCosts :: EncodableStreamElement s => (Int -> Int -> Int) -> s -> s -> [(s, Int)]
+allPossibleBaseCombosCosts costStruct char1 char2 = [ (x .|. y, costStruct i j)
+                                                    | (i,x) <- getSubChars char1
+                                                    , (j,y) <- getSubChars char2
                                                     ]
 
--- TODO: This won't work with an asymmetric TCM.
 -- |
 -- Given a 'CostStructure' and two tuples of an 'Int' and an unambiguous 'EncodableStreamElement', determines the cost 
 -- of a pairing (intersection) of those characters into an ambiguous character. The 'Int's are the set bits in each character
 -- and are used as lookup into the 'CostStructure'. 
 -- Tests exist in the test suite.
-getCost :: EncodableStreamElement s => CostStructure -> (Int, s) -> (Int, s) -> (s, Double)
+getCost :: EncodableStreamElement s => (Int -> Int -> Int) -> (Int, s) -> (Int, s) -> (s, Int)
 getCost costStruct seqTup1 seqTup2 = 
-    case (costStruct, seqTup1, seqTup2) of
-       -- (AffineCost {}        , _         , _         ) -> error "Cannot apply DO algorithm on affine cost" -- When this is added, remember to write a test.
-        (TCM costMatrix       , (pos1, c1), (pos2, c2)) -> (c1 .|. c2, costMatrix ! (pos1, pos2))
-        (GeneralCost indel sub, (_   , c1), (_   , c2)) -> -- f indel sub c1 c2
-                                                           if c1 == gap || c2 == gap
-                                                           then (c1 .|. c2, indel)
-                                                           else (c1 .|. c2, sub)
-    where
-      s   = snd seqTup1
---      z   = s `xor` s
-      gap = getGapElement s -- z `setBit` (symbolCount s - 1)
-{-      
-      f indel sub c1 c2
-        | indel == sub                             = (c1 .|. c2,   sub)
-        | indel >  sub &&  c1 == gap && c2 == gap  = (      gap, indel)
-        | indel >  sub &&  c1 == gap && c2 /= gap  = (       c2,   sub)
-        | indel >  sub &&  c1 /= gap && c2 == gap  = (       c1,   sub)
-        | indel >  sub                             = (c1 .|. c2,   sub)
-        | indel <  sub &&  c1 == gap && c2 == gap  = (      gap, indel)
-        | indel <  sub &&  c1 == gap && c2 /= gap  = (      gap, indel)
-        | indel <  sub &&  c1 /= gap && c2 == gap  = (      gap, indel)
-        | otherwise                                = (c1 .|. c2,   sub)
--}
+    case (seqTup1, seqTup2) of
+        ((pos1, c1), (pos2, c2)) -> (c1 .|. c2, costStruct pos1 pos2)
+
 
 -- |
 -- Takes in a 'EncodableStreamElement', possibly with more than one bit set, and returns a list of tuples of 

@@ -161,7 +161,7 @@ nodeOptimizePostorder weighting curNode lNode rNode meta = summedTotalCost `setT
                  . addPreliminary assign
                  $ setNode
             | getType metadataStructure == DirectOptimization =
-                let (ungapped, cost, gapped, leftAlignment, rightAlignment) = naiveDO (getForAlign lNode ! curPos) (getForAlign rNode ! curPos) $ getCosts metadataStructure
+                let (ungapped, cost, gapped, leftAlignment, rightAlignment) = naiveDO (getForAlign lNode ! curPos) (getForAlign rNode ! curPos) . toCostFunction $ getCosts metadataStructure
                 in addLocalCost (cost * curWeight * weighting)
                  . addAlign          gapped
                  . addPreliminary    ungapped
@@ -257,7 +257,7 @@ orderedSelection x = x .&. negate x -- Selects the least significant set bit, cl
 deriveSingleAssignment :: SeqConstraint' c => CostStructure -> c -> c -> c -> c
 deriveSingleAssignment costStructure parentSingle parentFinal childFinal = result
   where
-    (_, _, _, parentAlignment, childAlignment) = naiveDO parentFinal childFinal costStructure
+    (_, _, _, parentAlignment, childAlignment) = naiveDO parentFinal childFinal $ toCostFunction costStructure
     result = constructDynamic . reverse . snd . foldl f (0::Int, []) $ zip (otoList parentAlignment) (otoList childAlignment)
     gap    = getGapElement $ parentSingle `indexStream` 0
     f (pointer, xs) (pElement, cElement)
@@ -283,7 +283,7 @@ tripleComparison i costStructure curNode parentCharacter = (finalUngapped, final
   where
     childCharacter   = {- (\x -> trace ("childCharacter: "  <> show x) x) $ -} getChildCharacterForDoPreorder curNode ! i
 --    parentCharacter  = {- (\x -> trace ("parentCharacter: " <> show x) x) $ -} parentAccessor parentNode ! i
-    (_, _, derivedAlignment, _, childAlignment) = naiveDO parentCharacter childCharacter costStructure
+    (_, _, derivedAlignment, _, childAlignment) = naiveDO parentCharacter childCharacter $ toCostFunction costStructure
     newGapIndicies   = {- (\x -> trace ("newGapIndices: "   <> show x) x) $ -} newGapLocations childCharacter {-  $ (\x -> trace ("childAlignment: "   <> show x) x) $ -} childAlignment
     leftCharacter    = {- (\x -> trace ("leftCharacter: "   <> show x) x) $ -} insertNewGaps newGapIndicies $ getLeftAlignment  curNode ! i
     rightCharacter   = {- (\x -> trace ("rightCharacter: "  <> show x) x) $ -} insertNewGaps newGapIndicies $ getRightAlignment curNode ! i
@@ -353,7 +353,7 @@ insertNewGaps insertionIndicies character = constructDynamic . (<> trailingGaps)
 
 -- |
 -- Calculates the mean character and cost between three supplied characters.
-threeWayMean :: (Show (Element c), Show c, EncodableDynamicCharacter c {-, Memoizable (Element c) -} ) => CostStructure -> c -> c -> c -> (Double, c, c)
+threeWayMean :: (Show (Element c), Show c, EncodableDynamicCharacter c {-, Memoizable (Element c) -} ) => CostStructure -> c -> c -> c -> (Int, c, c)
 --threeWayMean _ char1 char2 char3 | trace (mconcat [show char1, show char2, show char3]) False = undefined
 threeWayMean costStructure char1 char2 char3
   | not uniformLength = error $ "Three sequences supplied to 'threeWayMean' function did not have uniform length." <> show char1 <> show char2 <> show char3
@@ -364,7 +364,7 @@ threeWayMean costStructure char1 char2 char3
     (meanStates, costValues) = unzip $ zipWith3 f (otoList char1) (otoList char2) (otoList char3)
     f a b c = minimalChoice -- minimumBy (comparing snd)
 --            $ (\x -> trace (show x) x)
-            [ getOverlap a b costStructure
-            , getOverlap a c costStructure
-            , getOverlap b c costStructure
+            [ getOverlap a b $ toCostFunction costStructure
+            , getOverlap a c $ toCostFunction costStructure
+            , getOverlap b c $ toCostFunction costStructure
             ]
