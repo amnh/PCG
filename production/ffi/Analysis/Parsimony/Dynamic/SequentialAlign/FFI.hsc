@@ -14,10 +14,10 @@
 
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
-module Analysis.Parsimony.Binary.SequentialAlign.FFI
+module Analysis.Parsimony.Dynamic.SequentialAlign.FFI
   ( sequentialAlign
-  , testFn
-  , main
+--  , testFn
+--  , main
   ) where
 
 --import Bio.Character.Encodable
@@ -39,11 +39,28 @@ import Test.QuickCheck hiding ((.&.))
 
 data ForeignVoid = FV
 
+-- |
+-- A convient type alias for improved clairity of use.
+type CArrayUnit  = CULong -- This will be compatible with uint64_t
+
+-- | (✔)
+instance Arbitrary CArrayUnit where
+    arbitrary = do
+        num <- arbitrary :: Gen Integer
+        pure $ fromIntegral num
+
+
+
 data MemoizedCostMatrix
    = MemoizedCostMatrix
    { costMatrix :: Ptr ForeignVoid
    }
 
+instance Storable MemoizedCostMatrix where
+    sizeOf    _ = (#size void*) -- #size is a built-in that works with arrays, as are #peek and #poke, below
+    alignment _ = alignment (undefined :: CArrayUnit)
+    peek ptr    = undefined
+    poke ptr    = undefined
 
 
 -- | Create and allocate cost matrix
@@ -74,7 +91,9 @@ getMemoizedCostMatrix alphabetSize costFn = unsafePerformIO . withArray rowMajor
         rowMajorList = [ toEnum $ costFn i j | i <- range,  j <- range ]
         range = [0 .. alphabetSize - 1]
 
--- TODO: worry about deallocating.
+foreign import ccall unsafe "costMatrix lookUpCost"
+    getCostfn_c :: Ptr MemoizedCostMatrix
+                -> Ptr CDynamicChar
 
 
 -- TODO: replace when Yu Xiang updated his code for bit arrays.
@@ -90,25 +109,59 @@ sequentialAlign x y a b = Right (x + y, a, b)
 -- The result of the alignment from the C side of the FFI
 data AlignResult
    = AlignResult
-   { alignmentCost :: CInt
-   , lengthFinal   :: CInt
-   , seqFinal      :: Ptr CArrayUnit
+   { weight      :: CSize
+   , finalLength :: CSize
+   , character1  :: Ptr CArrayUnit
+   , character2  :: Ptr CArrayUnit
+   , medianChar  :: Ptr CArrayUnit
    }
+
+
+-- Because we're using a struct we need to make a Storable instance
+-- | (✔)
+instance Storable AlignResult where
+    sizeOf    _ = (#size struct alignResult_t) -- #size is a built-in that works with arrays, as are #peek and #poke, below
+    alignment _ = alignment (undefined :: CArrayUnit)
+    peek ptr    = do -- to get values from the C app
+        wt      <- (#peek struct alignResult_t, finalWt )    ptr
+        len     <- (#peek struct alignResult_t, finalLength) ptr
+        char1   <- (#peek struct alignResult_t, finalChar1)  ptr
+        char2   <- (#peek struct alignResult_t, finalChar2)  ptr
+        med     <- (#peek struct alignResult_t, medianChar)  ptr
+        pure AlignResult
+             { weight      = wt
+             , finalLength = len
+             , character1  = char1
+             , character2  = char2
+             , medianChar  = med
+             }
+
+
+------------- Don't need this part, but left in for completion ---------------
+----- Will get compiler warning if left out, because of missing instances ----
+    poke ptr (AlignResult cost charLen char1Val char2Val medVal) = do -- to modify values in the C app
+        (#poke struct alignResult_t, finalWt    ) ptr cost
+        (#poke struct alignResult_t, finalLength) ptr charLen
+        (#poke struct alignResult_t, finalChar1 ) ptr char1Val
+        (#poke struct alignResult_t, finalChar2 ) ptr char2Val
+        (#poke struct alignResult_t, medianChar ) ptr medVal
+
 
 
 -- |
 -- Type of a dynamic character to pass back and forth across the FFI interface.
 data CDynamicChar
    = CDynamicChar
-   { alphabetSize :: CInt
-   , dynCharLen   :: CInt
-   , dynChar      :: Ptr CArrayUnit
+   { alphabetSizeChar :: CSize
+   , dynCharLen       :: CSize
+   , numElements      :: CSize
+   , dynChar          :: Ptr CArrayUnit
    }
 
-
+{-
 -- | (✔)
 instance Show CDynamicChar where
-    show (CDynamicChar alphSize dcLen dChar) =
+    show (CDynamicChar alphSize dcLen numElems dChar) =
        mconcat
          ["alphabetSize:  "
          , show intAlphSize
@@ -120,42 +173,30 @@ instance Show CDynamicChar where
          , show $ unsafePerformIO printedArr
          ]
         where
-            (q, r)       = (intAlphSize * intLen) `divMod` 64
-            bufferLength = q + if r == 0 then 0 else 1
-            intAlphSize  = fromIntegral alphSize
-            intLen       = fromIntegral dcLen
+            bufferLength = fromEnum numElems
+            intAlphSize  = fromEnum alphSize
+            intLen       = fromEnum dcLen
             printedArr   = show <$> peekArray bufferLength dChar
 
-
+-}
 -- | (✔)
 instance Arbitrary CDynamicChar where
     arbitrary = do
-        alphSize <- (arbitrary :: Gen Int) `suchThat` (\x -> 0 < x && x <= 64)
-        charSize <- (arbitrary :: Gen Int) `suchThat` (\x -> 0 < x && x <= 16)
-        let (q,r)   = (alphSize * charSize) `divMod` 64
-        fullBitVals <- vectorOf q (arbitrary :: Gen CArrayUnit)
+        alphSize    <- (arbitrary :: Gen Int) `suchThat` (\x -> 0 < x && x <= 64)
+        charSize    <- (arbitrary :: Gen Int) `suchThat` (\x -> 0 < x && x <= 16)
+        numElems    <- (arbitrary :: Gen Int) `suchThat` (\x -> 0 < x && x <= 100)
+        fullBitVals <- vectorOf numElems (arbitrary :: Gen CArrayUnit)
         -- Note there is a faster way to do this loop in 2 steps by utilizing 2s compliment subtraction and setbit.
-        let mask    = foldl' (\val i -> val `setBit` i) (zeroBits :: CArrayUnit) [0..r]
-        remBitVals  <- if   r == 0
+        let mask    = foldl' (\val i -> val `setBit` i) (zeroBits :: CArrayUnit) [0..numElems]
+        remBitVals  <- if   numElems == 0
                        then pure []
                        else (pure . (mask .&.)) <$> (arbitrary :: Gen CArrayUnit)
         pure CDynamicChar
-           { alphabetSize = fromIntegral alphSize
-           , dynCharLen   = fromIntegral charSize
-           , dynChar      = unsafePerformIO . newArray $ fullBitVals <> remBitVals
+           { alphabetSizeChar = toEnum alphSize
+           , dynCharLen       = toEnum charSize
+           , numElements      = toEnum numElems
+           , dynChar          = unsafePerformIO . newArray $ fullBitVals <> remBitVals
            }
-
-
--- |
--- A convient type alias for improved clairity of use.
-type CArrayUnit  = CULong -- This will be compatible with uint64_t
-
-
--- | (✔)
-instance Arbitrary CArrayUnit where
-    arbitrary = do
-        num <- arbitrary :: Gen Integer
-        pure $ fromIntegral num
 
 
 -- | (✔)
@@ -165,40 +206,42 @@ instance Storable CDynamicChar where
     peek ptr    = do -- to get values from the C app
         alphLen <- (#peek struct dynChar_t, alphSize  ) ptr
         seqLen  <- (#peek struct dynChar_t, dynCharLen) ptr
+        nElems  <- (#peek struct dynChar_t, numElems  ) ptr
         seqVal  <- (#peek struct dynChar_t, dynChar   ) ptr
         pure CDynamicChar
-             { alphabetSize = alphLen
-             , dynCharLen   = seqLen
-             , dynChar      = seqVal
+             { alphabetSizeChar = alphLen
+             , dynCharLen       = seqLen
+             , numElements      = nElems
+             , dynChar          = seqVal
              }
-    poke ptr (CDynamicChar alphLen seqLen seqVal) = do -- to modify values in the C app
+    poke ptr (CDynamicChar alphLen seqLen nElems seqVal) = do -- to modify values in the C app
         (#poke struct dynChar_t, alphSize  ) ptr alphLen
         (#poke struct dynChar_t, dynCharLen) ptr seqLen
+        (#poke struct dynChar_t, numElems  ) ptr nElems
         (#poke struct dynChar_t, dynChar   ) ptr seqVal
 
 
--- Because we're using a struct we need to make a Storable instance
+
+data DynamicCharacterElement = DynamicCharacterElement
+    { alphabetSizeElem :: CSize
+    , element          :: Ptr CArrayUnit
+    }
 -- | (✔)
-instance Storable AlignResult where
-    sizeOf    _ = (#size struct alignResult_t) -- #size is a built-in that works with arrays, as are #peek and #poke, below
-    alignment _ = alignment (undefined :: CArrayUnit)
-    peek ptr    = do -- to get values from the C app
-        value  <- (#peek struct alignResult_t, finalWt ) ptr
-        seqLen <- (#peek struct alignResult_t, finalLength) ptr
-        seqVal <- (#peek struct alignResult_t, finalStr) ptr
-        pure AlignResult
-             { alignmentCost = value
-             , lengthFinal   = seqLen
-             , seqFinal      = seqVal
-             }
+instance Storable DynamicCharacterElement where
+    sizeOf    _ = (#size struct dcElement_t)
+    alignment _ = alignment (undefined :: CULong)
+    peek ptr    = do
+        alphLen <- (#peek struct dcElement_t, alphSize) ptr
+        elem    <- (#peek struct dcElement_t, element)  ptr
+        pure DynamicCharacterElement
+            { alphabetSizeElem = alphLen
+            , element          = elem
+            }
+    poke ptr (DynamicCharacterElement alphLen elem) = do
+        (#poke struct dcElement_t, alphSize) ptr alphLen
+        (#poke struct dcElement_t, element ) ptr elem
 
 
-------------- Don't need this part, but left in for completion ---------------
------ Will get compiler warning if left out, because of missing instances ----
-    poke ptr (AlignResult cost seqLen seqVal) = do -- to modify values in the C app
-        (#poke struct alignResult_t, finalWt    ) ptr cost
-        (#poke struct alignResult_t, finalLength) ptr seqLen
-        (#poke struct alignResult_t, finalStr   ) ptr seqVal
 
 
 -- This is the declaration of the Haskell wrapper for the C function we're calling.
@@ -216,16 +259,17 @@ foreign import ccall unsafe "exportCharacter testFn"
 foreign import ccall unsafe "seqAlignForHaskell aligner"
     call_aligner :: Ptr CDynamicChar -> Ptr CDynamicChar -> CInt -> CInt -> Ptr AlignResult -> CInt
 
-
+{-
 -- |
 -- testFn can be called from within Haskell code.
 testFn :: CDynamicChar -> CDynamicChar -> Either String (Int, String)
-testFn char1 char2 = unsafePerformIO $
+testFn char1 char2 char3 = unsafePerformIO $
     -- have to allocate memory. Note that we're allocating via a lambda fn. In use, the lambda will take whatever is the
     -- argument of testFn, but here there is no argument, so all allocation is hard-coded.
     alloca $ \alignPtr -> do
         marshalledChar1 <- new char1
         marshalledChar2 <- new char2
+        marshalledChar3 <- new char3
         print marshalledChar1
         -- Using strict here because the values need to be read before freeing,
         -- so lazy is dangerous.
@@ -240,7 +284,7 @@ testFn char1 char2 = unsafePerformIO $
                 pure $ Right (fromIntegral cost, show seqFinalVal)
             else do
                 pure $ Left "Out of memory"
-
+-}
 
 {-
 -- Just for testing from CLI outside of ghci.

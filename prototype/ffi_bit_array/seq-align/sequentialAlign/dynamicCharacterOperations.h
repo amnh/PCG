@@ -186,8 +186,8 @@ dcElement_t* makeDCElement( const size_t alphSize, const uint64_t value );
  *  newElem1
  */
 double getCostDyn( const dynChar_t* const inDynChar1, size_t whichElem1,
-                const dynChar_t* const inDynChar2, size_t whichElem2,
-                costMtx_t* tcm, dcElement_t* newElem1 );
+                   const dynChar_t* const inDynChar2, size_t whichElem2,
+                   costMtx_t* tcm, dcElement_t* newElem1 );
 
 /** Allocator for dynChar_t
  *  This (obviously) allocates, so must be

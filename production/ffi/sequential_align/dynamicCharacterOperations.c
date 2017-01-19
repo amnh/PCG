@@ -71,7 +71,7 @@ void ClearBit( packedChar *const arr, const size_t k ) {
     arr[ k / WORD_WIDTH ] &= ~(CANONICAL_ONE << (k % WORD_WIDTH));
 }
 
-uint64_t TestBit( packedChar *const arr, const size_t k ) {
+uint64_t TestBit( const packedChar *const arr, const size_t k ) {
     return arr[ k / WORD_WIDTH ] & (CANONICAL_ONE << (k % WORD_WIDTH));
 }
 

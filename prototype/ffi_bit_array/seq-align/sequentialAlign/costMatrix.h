@@ -47,6 +47,9 @@ typedef std::pair<keys_t, costMedian_t> mapAccessPair_t;
 /** Allocate room for a costMedian_t. Assumes alphabetSize is already initialized. */
 costMedian_t* allocCostMedian_t (size_t alphabetSize);
 
+/** dealloc costMedian_t. */
+void freeCostMedian_t (costMedian_t *toFree);
+
 /** Allocate room for a keys_t. */
 keys_t* allocKeys_t (size_t alphSize);
 

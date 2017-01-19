@@ -78,6 +78,7 @@ typedef struct alignResult_t {
     size_t      finalLength;
     packedChar *finalChar1;
     packedChar *finalChar2;
+    packedChar *medianChar;
 } alignResult_t;
 
 /**
@@ -86,14 +87,14 @@ typedef struct alignResult_t {
  *  See note in .c file for how this is used.
  */
 typedef struct dynChar_t {
-    size_t       alphSize;
-    size_t       numElems;     // how many dc elements are stored
-    size_t       dynCharLen;   // how many uint64_ts are necessary to store the elements
+    size_t      alphSize;
+    size_t      numElems;     // how many dc elements are stored
+    size_t      dynCharLen;   // how many uint64_ts are necessary to store the elements
     packedChar *dynChar;
 } dynChar_t;
 
 typedef struct dcElement_t {
-    size_t       alphSize;
+    size_t      alphSize;
     packedChar *element;
 } dcElement_t;
 
@@ -111,7 +112,7 @@ void SetBit( packedChar *const arr, const size_t k );
 
 void ClearBit( packedChar *const arr, const size_t k );
 
-uint64_t TestBit( packedChar *const arr, const size_t k );
+uint64_t TestBit( const packedChar *const arr, const size_t k );
 
 /** Clear entire packed character: all bits set to 0;
  *  packedCharLen is pre-computed dynCharSize()

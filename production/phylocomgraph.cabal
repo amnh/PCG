@@ -89,12 +89,12 @@ library
 
   hs-source-dirs:      lib, ffi
 
-  cc-options: --std=c11
+  -- cc-options: --std=c++11
 
   -- We must provide the full relative path to every C file that the project depends on.
   c-sources:
-    ffi/Analysis/Parsimony/Binary/SequentialAlign/seqAlignForHaskell.c
-    ffi/Analysis/Parsimony/Binary/SequentialAlign/dynamicCharacterOperations.c
+    -- ffi/Analysis/Parsimony/Binary/SequentialAlign/seqAlignForHaskell.c
+    -- ffi/Analysis/Parsimony/Binary/SequentialAlign/dynamicCharacterOperations.c
     ffi/external_direct_optimization/c_alignment_interface.c
     ffi/external_direct_optimization/c_code_alloc_setup.c
     ffi/external_direct_optimization/costMatrix.c
@@ -103,8 +103,14 @@ library
     ffi/external_direct_optimization/seqAlign.c
     ffi/external_direct_optimization/ukkCheckp.c
     ffi/external_direct_optimization/ukkCommon.c
+    ffi/sequential_align/dynamicCharacterOperations.h
+    ffi/sequential_align/dynamicCharacterOperations.c
+    ffi/sequential_align/costMatrix.h
+    ffi/sequential_align/costMatrix.cpp
+    ffi/sequential_align/seqAlignForHaskell.h
+    ffi/sequential_align/seqAlignForHaskell.c
 
---    ffi/Analysis/Parsimony/Binary/SequentialAlign/myComplexBitArrayFFI.c
+    -- ffi/Analysis/Parsimony/Binary/SequentialAlign/myComplexBitArrayFFI.c
 
   -- Here we list all directories that contain C header files that the FFI tools will need
   -- to locate when preprocessing the C files. Without listing the directories containing
@@ -113,8 +119,8 @@ library
   -- Note also, that the parent directory of the nessicary C header files must be specified.
   -- The preprocesser will not recursively look in subdirectories for C header files!
   include-dirs:
-    ffi/Analysis/Parsimony/Binary/SequentialAlign
     ffi/external_direct_optimization
+    ffi/sequential_align
 
   -- Modules exported by the library.
   exposed-modules:
@@ -123,12 +129,13 @@ library
                        Analysis.Parsimony.Binary.Fitch
                        Analysis.Parsimony.Binary.Internal
                        Analysis.Parsimony.Binary.Optimization
-                       Analysis.Parsimony.Binary.SequentialAlign
+                       -- Analysis.Parsimony.Binary.SequentialAlign
                        Analysis.Parsimony.Sankoff.Internal
                        Analysis.Parsimony.Additive.Internal
                        Analysis.Parsimony.Fitch.Internal
                        Analysis.Parsimony.Dynamic.DirectOptimization
                        Analysis.Parsimony.Dynamic.DirectOptimization.FFI
+                       Analysis.Parsimony.Dynamic.SequentialAlign.FFI
                        Bio.Character
                        Bio.Character.Decoration.Additive
                        Bio.Character.Decoration.Continuous
@@ -204,7 +211,7 @@ library
                        Analysis.ImpliedAlignment.InsertionEvents
                        Analysis.ImpliedAlignment.InsertionEvents.Internal
                        Analysis.ImpliedAlignment.Internal
-                       Analysis.Parsimony.Binary.SequentialAlign.FFI
+                       -- Analysis.Parsimony.Binary.SequentialAlign.FFI
                        Analysis.Parsimony.Binary.Constraints
                        Analysis.Parsimony.Dynamic.DirectOptimization.Internal
                        Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise
@@ -667,7 +674,8 @@ Test-Suite testsuite
                        Bio.Metadata.MaskGenerator
                        Bio.PhyloGraph.DAG.Test
                        Analysis.Parsimony.Binary.Constraints
-                       Analysis.Parsimony.Binary.SequentialAlign
+                       -- Analysis.Parsimony.Binary.SequentialAlign
+                       Analysis.Parsimony.Dynamic.SequentialAlign
                        Bio.Character.Encodable.Static.Test
---                       Analysis.Parsimony.Binary.SequentialAlign.SeqAlignFFI
+                       -- Analysis.Parsimony.Binary.SequentialAlign.SeqAlignFFI
 

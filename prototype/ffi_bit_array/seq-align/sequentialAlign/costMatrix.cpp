@@ -32,6 +32,7 @@ void freeKeys_t (keys_t *toFree) {
     typedef std::pair<dcElement_t, dcElement_t> keys_t;
     freeDCElem(&toFree->first);
     freeDCElem(&toFree->second);
+    free(toFree);
 }
 
 mapAccessPair_t* allocateMapAccessPair (size_t alphSize) {
@@ -42,16 +43,16 @@ mapAccessPair_t* allocateMapAccessPair (size_t alphSize) {
     return toReturn;
 }
 
-costMatrix_t matrixInit(size_t alphSize, int* tcm) {
+costMatrix_t matrixInit(size_t alphSize, int *tcm) {
    return new CostMatrix(alphSize, tcm);
 }
 
-void matrixDestroy(costMatrix_t untyped_ptr) {
+void matrixDestroy(costMatrix_t *untyped_ptr) {
     CostMatrix* typed_ptr = static_cast<CostMatrix*>(untyped_ptr);
-    delete typed_ptr;  //TODO:
+    typed_ptr::~CostMatrix();  //TODO:
 }
 
-int getCost(costMatrix_t untyped_self, dcElement_t* left, dcElement_t* right, dcElement_t* retMedian) {
+int getCost(costMatrix_t untyped_self, dcElement_t *left, dcElement_t *right, dcElement_t *retMedian) {
     CostMatrix* typed_self = static_cast<CostMatrix*> (untyped_self);
     return typed_self->getSetCost(left, right, retMedian);
 }
@@ -61,17 +62,22 @@ int getCost(costMatrix_t untyped_self, dcElement_t* left, dcElement_t* right, dc
 
 // }
 
-CostMatrix::CostMatrix(size_t alphSize, int* tcm) {
+CostMatrix::CostMatrix(size_t alphSize, int *tcm) {
     alphabetSize = alphSize;
     setUpInitialMatrix(tcm);
 }
 
 CostMatrix::~CostMatrix() {
-    //TODO: actually write this
+    for ( auto& thing: myMatrix) {
+    // for ( auto thing = myMatrix.begin(); thing != myMatrix.end(); thing++ ) {
+        freeCostMedian_t(thing.second);
+        freeKeys_t(thing.first);
+    }
+    myMatrix.clear();
 
 }
 
-int CostMatrix::getSetCost(dcElement_t* left, dcElement_t* right, dcElement_t* retMedian) {
+int CostMatrix::getSetCost(dcElement_t *left, dcElement_t *right, dcElement_t *retMedian) {
     keys_t toLookup;
     toLookup.first  = *left;
     toLookup.second = *right;
@@ -145,7 +151,7 @@ costMedian_t* CostMatrix::computeCostMedian(keys_t key) {
     return toReturn;
 }
 
-costMedian_t* CostMatrix::findDistance (keys_t& key, int* tcm) {
+costMedian_t* CostMatrix::findDistance (keys_t &key, int *tcm) {
 
     packedChar *key1      = key.first.element;
     packedChar *key2      = key.second.element;
@@ -182,7 +188,7 @@ costMedian_t* CostMatrix::findDistance (keys_t& key, int* tcm) {
 }
 
 
-void CostMatrix::setUpInitialMatrix (int* tcm) {
+void CostMatrix::setUpInitialMatrix (int *tcm) {
     keys_t *keys;
     costMedian_t *costMedian;
     mapAccessPair_t *toInsert;
@@ -252,6 +258,6 @@ void CostMatrix::setUpInitialMatrix (int* tcm) {
     // printf("freed keys\n");
 }
 
-void CostMatrix::setValue(keys_t key, costMedian_t* median) {
+void CostMatrix::setValue(keys_t key, costMedian_t *median) {
     myMatrix.insert(std::make_pair(key, *median));
 }

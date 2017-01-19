@@ -34,18 +34,21 @@ EXTERNC {
 }
 EXTERNC costMatrix_t matrixInit(size_t alphSize, int* tcm);
 EXTERNC void matrixDestroy(costMatrix_t mytype);
-EXTERNC void getCost(costMatrix_t self, int param);
+EXTERNC int lookUpCost(costMatrix_t untyped_self, dcElement_t *left, dcElement_t *right, dcElement_t *retMedian);
 
 #undef EXTERNC
 
 // #include "CostMedPair.h"
-typedef std::pair<dcElement_t, dcElement_t> keys_t;
-typedef std::pair<int, packedChar*> costMedian_t;
-typedef std::pair<keys_t, costMedian_t> mapAccessPair_t;
+typedef std::pair<dcElement_t, dcElement_t>  keys_t;
+typedef std::pair<int,         packedChar*>  costMedian_t;
+typedef std::pair<keys_t,      costMedian_t> mapAccessPair_t;
 
 
 /** Allocate room for a costMedian_t. Assumes alphabetSize is already initialized. */
 costMedian_t* allocCostMedian_t (size_t alphabetSize);
+
+/** dealloc costMedian_t. */
+void freeCostMedian_t (costMedian_t *toFree);
 
 /** Allocate room for a keys_t. */
 keys_t* allocKeys_t (size_t alphSize);
