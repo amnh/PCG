@@ -102,11 +102,11 @@ sequentialAlign :: Int -> Int -> s -> s -> Either String (Int, s, s)
 sequentialAlign x y a b = Right (x + y, a, b)
 
 
+-- |
+-- The result of the alignment from the C side of the FFI
 -- Includes a struct (actually, a pointer thereto), and that struct, in turn, has a string
 -- in it, so Ptr CChar.
 -- Modified from code samples here: https://en.wikibooks.org/wiki/Haskell/FFI#Working_with_C_Structures
--- |
--- The result of the alignment from the C side of the FFI
 data AlignResult
    = AlignResult
    { weight      :: CSize
@@ -117,8 +117,7 @@ data AlignResult
    }
 
 
--- Because we're using a struct we need to make a Storable instance
--- | (✔)
+-- | Because we're using a struct we need to make a Storable instance
 instance Storable AlignResult where
     sizeOf    _ = (#size struct alignResult_t) -- #size is a built-in that works with arrays, as are #peek and #poke, below
     alignment _ = alignment (undefined :: CArrayUnit)
@@ -226,6 +225,7 @@ data DynamicCharacterElement = DynamicCharacterElement
     { alphabetSizeElem :: CSize
     , element          :: Ptr CArrayUnit
     }
+
 -- | (✔)
 instance Storable DynamicCharacterElement where
     sizeOf    _ = (#size struct dcElement_t)
@@ -247,12 +247,12 @@ instance Storable DynamicCharacterElement where
 -- This is the declaration of the Haskell wrapper for the C function we're calling.
 -- Note that this fn is called from testFn.f
 
-
+{-
 -- |
 -- FFI call to the C pairwise alignment algorithm with /defaulted/ sub & indel cost parameters
 foreign import ccall unsafe "exportCharacter testFn"
     callExtFn_c  :: Ptr CDynamicChar -> Ptr CDynamicChar -> Ptr AlignResult -> CInt
-
+-}
 
 -- |
 -- FFI call to the C pairwise alignment algorithm with /explicit/ sub & indel cost parameters.

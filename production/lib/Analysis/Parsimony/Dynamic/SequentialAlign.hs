@@ -14,10 +14,10 @@
 {-# LANGUAGE AllowAmbiguousTypes #-}
 {-# LANGUAGE FlexibleContexts #-}
 
-module Analysis.Parsimony.Binary.SequentialAlign (sequentialAlign) where
+module Analysis.Parsimony.Dynamic.SequentialAlign (sequentialAlign) where
 
 --import           Analysis.Parsimony.Binary.Internal
-import qualified Analysis.Parsimony.Binary.SequentialAlign.FFI as FFI (sequentialAlign)
+import qualified Analysis.Parsimony.Dynamic.SequentialAlign.FFI as FFI (sequentialAlign)
 import           Bio.Character.Encodable
 import           Bio.Character.Exportable.Class
 --import           Data.Alphabet
