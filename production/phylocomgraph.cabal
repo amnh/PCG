@@ -262,6 +262,7 @@ library
                        Bio.PhyloGraph.Tree.EdgeAware.Class
                        Bio.PhyloGraph.Tree.Rose.Class
                        Bio.PhyloGraphPrime.Forest
+                       Bio.PhyloGraphPrime.PhylogeneticDAG.Class
                        Bio.PhyloGraphPrime.ReferenceDAG.Internal
                        Bio.PhyloGraphPrime.ZipperDAG.Internal
                        Bio.Sequence.Internal
