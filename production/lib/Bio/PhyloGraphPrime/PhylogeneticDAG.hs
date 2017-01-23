@@ -30,11 +30,13 @@ import           Data.Bits
 --import           Data.DuplicateSet
 --import qualified Data.DuplicateSet  as DS
 import           Data.Foldable
+import           Data.Hashable
+import           Data.Hashable.Memoize
 import qualified Data.IntMap        as IM
 import           Data.IntSet              (IntSet)
 import           Data.Key
---import           Data.List.NonEmpty       (NonEmpty( (:|) ))
-import qualified Data.List.NonEmpty as NE
+import           Data.List.NonEmpty       (NonEmpty( (:|) ))
+--import qualified Data.List.NonEmpty as NE
 import           Data.List.Utility
 --import           Data.Monoid
 import           Data.MonoTraversable
@@ -128,7 +130,8 @@ instance ( Show e
 -- The logic function takes a current node decoration,
 -- a list of parent node decorations with the logic function already applied,
 -- and returns the new decoration for the current node.
-postorderSequence' :: (u -> [u'] -> u')
+postorderSequence' :: (Eq z, Eq z', Hashable z, Hashable z')
+                  => (u -> [u'] -> u')
                   -> (v -> [v'] -> v')
                   -> (w -> [w'] -> w')
                   -> (x -> [x'] -> x')
@@ -138,6 +141,7 @@ postorderSequence' :: (u -> [u'] -> u')
                   -> PhylogeneticDAG2 e n u' v' w' x' y' z'
 postorderSequence' f1 f2 f3 f4 f5 f6 (PDAG2 dag) = PDAG2 $ newDAG dag
   where
+    f6' = memoize2 f6
     newDAG        = RefDAG <$> const newReferences <*> rootRefs <*> graphData
     dagSize       = length $ references dag
     newReferences = V.generate dagSize h
