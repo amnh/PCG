@@ -166,21 +166,21 @@ postorderSequence' f1 f2 f3 f4 f5 f6 (PDAG2 dag) = PDAG2 $ newDAG dag
             extractResolutionContext = (resolutions . (memo !) &&& parentRefs . (references dag !))
 
             --        g :: ResolutionInformation s -> [ResolutionInformation s] -> ResolutionInformation s
-            generateLocalResolutions parentalResolution childResolutions =
+            generateLocalResolutions parentalResolutionContext childResolutionContext =
                 ResInfo
                 { leafSetRepresentation = newLeafSetRep
                 , subtreeRepresentation = newSubtreeRep
-                , characterSequence     = transformation (characterSequence parentalResolution) (characterSequence <$> childResolutions)
-                , localSequenceCost     = sum $ localSequenceCost <$> childResolutions
-                , totalSubtreeCost      = sum $ totalSubtreeCost  <$> childResolutions
+                , characterSequence     = transformation (characterSequence parentalResolutionContext) (characterSequence <$> childResolutionContext)
+                , localSequenceCost     = sum $ localSequenceCost <$> childResolutionContext
+                , totalSubtreeCost      = sum $ totalSubtreeCost  <$> childResolutionContext
                 }
               where
                 (newLeafSetRep, newSubtreeRep) =
-                    case childResolutions of
-                      []   -> (,) <$>          leafSetRepresentation <*>          subtreeRepresentation $ parentalResolution
+                    case childResolutionContext of
+                      []   -> (,) <$>          leafSetRepresentation <*>          subtreeRepresentation $ parentalResolutionContext
                       x:xs -> (,) <$> foldMap1 leafSetRepresentation <*> foldMap1 subtreeRepresentation $ x:|xs
 
-                transformation pSeq cSeqs = hexZipWith f1 f2 f3 f4 f5 f6 pSeq transposition
+                transformation pSeq cSeqs = hexZipWith f1 f2 f3 f4 f5 f6' pSeq transposition
                   where
                     transposition = 
                         case cSeqs of
