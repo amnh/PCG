@@ -15,13 +15,14 @@
 module Bio.PhyloGraphPrime.Node
   ( PhylogeneticNode (..)
   , PhylogeneticNode2(..)
+  , ResolutionCache
   , ResolutionInformation(..)
   ) where
 
 
 import Data.Bifunctor
 import Data.BitVector
-import Data.DuplicateSet
+import Data.List.NonEmpty
 import Data.Semigroup
 
 
@@ -71,7 +72,7 @@ instance Ord (ResolutionInformation s) where
           c  -> c
 
 
-type ResolutionCache s = DuplicateSet (ResolutionInformation s)
+type ResolutionCache s = NonEmpty (ResolutionInformation s)
 
 
 newtype NewickSerialization = NS String
