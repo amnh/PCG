@@ -5,9 +5,19 @@
 #include "costMatrixWrapper.h"
 // #include "seqAlignForHaskell.h"
 
+#define TCM_LEN 25
+
 int main() {
-    int tcm [16] = {0,1,1,2,1,0,1,2,1,1,0,2,2,2,2,0};
+    int tcm [TCM_LEN] = {0,1,1,1,2, 1,0,1,1,2, 1,1,1,0,2, 1,1,1,0,2, 2,2,2,2,0};
     size_t alphabetSize = 5;
+
+    if ( TCM_LEN != alphabetSize * alphabetSize ) {
+        printf("tcm wrong size\n");
+        exit(1);
+    }
+
+    int cost,
+        foundCost;
 
     size_t seqALen = 15;
     packedChar seqA_main[seqALen];
@@ -23,13 +33,14 @@ int main() {
     retType_t retMedChar = { 0, tcm, 16, tcm, 16, 0 };
 
     costMatrix_p myMatrix = matrixInit(alphabetSize, tcm);
-    getCost(5, 5, myMatrix, 5);
+    cost = getCost(5, 5, myMatrix, 5);
+
+    printf("cost on 5, 5: %i\n", cost);
 
     dcElement_t* firstKey  = makeDCElement( alphabetSize, 1 );
     dcElement_t* secondKey = makeDCElement( alphabetSize, 1 );
     dcElement_t* retMedian = makeDCElement( alphabetSize, 1 );
-    int cost,
-        foundCost;
+
 
     packedChar median;        // just a test: alphabet size == 4, so don't need packedChar*
     median = CANONICAL_ZERO;

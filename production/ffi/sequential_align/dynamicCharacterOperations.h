@@ -63,6 +63,7 @@
  */
 
 #include <stdlib.h>
+#include <stdint.h>
 
 /** Following constants must be static to prevent compilation issues. */
 static const size_t   BITS_IN_BYTE   = 8;                    // so bytes are set to 8, for all architectures
