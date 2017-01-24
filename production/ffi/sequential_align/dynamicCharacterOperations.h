@@ -62,6 +62,7 @@
  *  compile even on architectures on which int != 32 bits (and, more to the point, unsigned long int != 64 bits).
  */
 
+#include <stdint.h>
 #include <stdlib.h>
 #include <stdint.h>
 
