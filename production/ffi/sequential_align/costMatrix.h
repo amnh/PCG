@@ -20,26 +20,26 @@
 // #include <pair>
 #include <climits>
 #include <cstdlib>
-
-#ifdef __cplusplus
-
-#define EXTERNC extern "C"
-
-#include <string> // TODO: remember to delete this
 #include <unordered_map>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+
+
 // #include "costMatrixWrapper.h"
-EXTERNC {
-    #include "dynamicCharacterOperations.h"
-}
-EXTERNC costMatrix_p construct_CostMatrix_C(size_t alphSize, int* tcm);
-EXTERNC void destruct_CostMatrix_C(costMatrix_p mytype);
-EXTERNC int call_getSetCost_C(costMatrix_p untyped_self, dcElement_t* left, dcElement_t* right, dcElement_t* retMedian);
+#include "dynamicCharacterOperations.h"
+
+costMatrix_p construct_CostMatrix_C(size_t alphSize, int* tcm);
+void destruct_CostMatrix_C(costMatrix_p mytype);
+int call_getSetCost_C(costMatrix_p untyped_self, dcElement_t* left, dcElement_t* right, dcElement_t* retMedian);
     // extern "C" costMatrix_p get_CostMatrixPtr_C(costMatrix_p untyped_self);
 
 //#include "seqAlignForHaskell.h"
 
-#undef     EXTERNC
+#ifdef __cplusplus
+}
 #endif
 
 // #include "CostMedPair.h"

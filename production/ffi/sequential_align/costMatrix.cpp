@@ -3,15 +3,15 @@
 
 // TODO: I'll need this for the Haskell side of things: https://hackage.haskell.org/package/base-4.9.0.0/docs/Foreign-StablePtr.html
 
-extern "C" costMatrix_p construct_CostMatrix_C(size_t alphSize, int* tcm) {
+costMatrix_p construct_CostMatrix_C(size_t alphSize, int* tcm) {
     return new CostMatrix(alphSize, tcm);
 }
 
-extern "C" void destruct_CostMatrix_C(costMatrix_p untyped_self) {
+void destruct_CostMatrix_C(costMatrix_p untyped_self) {
     delete static_cast<CostMatrix*> (untyped_self);
 }
 
-extern "C" int call_getSetCost_C(costMatrix_p untyped_self, dcElement_t* left, dcElement_t* right, dcElement_t* retMedian) {
+int call_getSetCost_C(costMatrix_p untyped_self, dcElement_t* left, dcElement_t* right, dcElement_t* retMedian) {
     CostMatrix* thisMtx = static_cast<CostMatrix*> (untyped_self);
     return thisMtx->getSetCostMedian(left, right, retMedian);
 }
