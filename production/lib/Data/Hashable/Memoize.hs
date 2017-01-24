@@ -2,13 +2,16 @@
 
 module Data.Hashable.Memoize
   ( memoize
+  , memoize2
   ) where
+
 
 import Data.Functor
 import Data.Hashable
 import Data.HashTable.IO
 import Prelude hiding (lookup)
 import System.IO.Unsafe
+
 
 -- |
 -- /O(1)/
@@ -58,6 +61,12 @@ memoize f = unsafePerformIO $ do
           Nothing ->
             let !v = f k
             in insert ht k v $> v
+
+{-# NOINLINE memoize2 #-}
+memoize2 :: (Eq a, Eq b, Hashable a, Hashable b) => (a -> b -> c) -> a -> b -> c
+memoize2 f = let f' = memoize (uncurry f)
+             in \x y -> f' (x, y)
+
 
 {-
 -- These are included for haddock generation

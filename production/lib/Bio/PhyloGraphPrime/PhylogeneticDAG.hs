@@ -19,26 +19,30 @@ import           Bio.Character.Decoration.Continuous
 import           Bio.Character.Decoration.Discrete
 import           Bio.Character.Decoration.Dynamic
 import           Bio.Sequence
-import           Bio.Sequence.Block
+import           Bio.Sequence.Block (CharacterBlock)
 import           Bio.PhyloGraphPrime
 import           Bio.PhyloGraphPrime.Node
 import           Bio.PhyloGraphPrime.ReferenceDAG.Internal
 import           Control.Arrow            ((&&&))
+import           Control.Applicative      (liftA2)
 import           Control.Evaluation
 import           Data.Bits
-import           Data.DuplicateSet
-import qualified Data.DuplicateSet  as DS
+--import           Data.DuplicateSet
+--import qualified Data.DuplicateSet  as DS
 import           Data.Foldable
+import           Data.Hashable
+import           Data.Hashable.Memoize
 import qualified Data.IntMap        as IM
 import           Data.IntSet              (IntSet)
+import           Data.Key
 import           Data.List.NonEmpty       (NonEmpty( (:|) ))
+--import qualified Data.List.NonEmpty as NE
 import           Data.List.Utility
--- import qualified Data.List.NonEmpty as NE
 --import           Data.Monoid
 import           Data.MonoTraversable
 import           Data.Semigroup
 import           Data.Semigroup.Foldable
-import           Data.Vector              (Vector)
+--import           Data.Vector              (Vector)
 import qualified Data.Vector        as V
 
 -- import Debug.Trace
@@ -101,7 +105,7 @@ data  PhylogeneticDAG e n m i c f a d
 
 
 data  PhylogeneticDAG2 e n m i c f a d
-    = PDAG2 (PhylogeneticSolution (ReferenceDAG e (PhylogeneticNode2 n (CharacterSequence m i c f a d))))
+    = PDAG2 (ReferenceDAG e (PhylogeneticNode2 (CharacterSequence m i c f a d) n))
 
 
 instance ( Show e
@@ -120,10 +124,144 @@ instance ( Show e
         f (PNode n sek) = unlines [show n, show sek]
 
 
+-- |
+-- Applies a traversal logic function over a 'ReferenceDAG' in a /pre-order/ manner.
+--
+-- The logic function takes a current node decoration,
+-- a list of parent node decorations with the logic function already applied,
+-- and returns the new decoration for the current node.
+postorderSequence' :: (Eq z, Eq z', Hashable z, Hashable z')
+                  => (u -> [u'] -> u')
+                  -> (v -> [v'] -> v')
+                  -> (w -> [w'] -> w')
+                  -> (x -> [x'] -> x')
+                  -> (y -> [y'] -> y')
+                  -> (z -> [z'] -> z')
+                  -> PhylogeneticDAG2 e n u  v  w  x  y  z
+                  -> PhylogeneticDAG2 e n u' v' w' x' y' z'
+postorderSequence' f1 f2 f3 f4 f5 f6 (PDAG2 dag) = PDAG2 $ newDAG dag
+  where
+    f6' = memoize2 f6
+    newDAG        = RefDAG <$> const newReferences <*> rootRefs <*> graphData
+    dagSize       = length $ references dag
+    newReferences = V.generate dagSize h
+      where
+        h i = IndexData <$> const (memo ! i) <*> parentRefs <*> childRefs $ references dag ! i
+
+--    memo :: Vector (PhylogeneticNode2 n (CharacterSequence u' v' w' x' y' z'))
+    memo = V.generate dagSize h
+      where
+        h i =
+          PNode2
+              { resolutions          = liftA2 generateLocalResolutions datumResolutions childResolutions
+              , nodeDecorationDatum2 = nodeDecorationDatum2 $ nodeDecoration node
+              }
+          where
+            node             = references dag ! i
+            childIndices     = IM.keys $ childRefs node
+            datumResolutions = resolutions $ nodeDecoration node
+            
+--            childResolutions :: NonEmpty [a]
+            childResolutions = applySoftwireResolutions $ extractResolutionContext <$> childIndices
+            extractResolutionContext = (resolutions . (memo !) &&& parentRefs . (references dag !))
+
+            --        g :: ResolutionInformation s -> [ResolutionInformation s] -> ResolutionInformation s
+            generateLocalResolutions parentalResolutionContext childResolutionContext =
+                ResInfo
+                { leafSetRepresentation = newLeafSetRep
+                , subtreeRepresentation = newSubtreeRep
+                , characterSequence     = transformation (characterSequence parentalResolutionContext) (characterSequence <$> childResolutionContext)
+                , localSequenceCost     = sum $ localSequenceCost <$> childResolutionContext
+                , totalSubtreeCost      = sum $ totalSubtreeCost  <$> childResolutionContext
+                }
+              where
+                (newLeafSetRep, newSubtreeRep) =
+                    case childResolutionContext of
+                      []   -> (,) <$>          leafSetRepresentation <*>          subtreeRepresentation $ parentalResolutionContext
+                      x:xs -> (,) <$> foldMap1 leafSetRepresentation <*> foldMap1 subtreeRepresentation $ x:|xs
+
+                transformation pSeq cSeqs = hexZipWith f1 f2 f3 f4 f5 f6' pSeq transposition
+                  where
+                    transposition = 
+                        case cSeqs of
+                          x:xs -> hexTranspose $ x:|xs
+                          []   -> let c = const []
+                                  in hexmap c c c c c c pSeq
+
+
+
+
+
+applySoftwireResolutions :: [(ResolutionCache s, IntSet)] -> NonEmpty [ResolutionInformation s]
+applySoftwireResolutions inputContexts =
+    case inputContexts of
+      []   -> pure []
+      [x]  ->
+          let y = pure <$> fst x
+          in  if   multipleParents x
+              then y <> pure []
+              else y
+      x:xs ->
+        case pairs $ x:xs of
+          y:ys -> foldMap1 pairingLogic $ y :| ys
+          []   -> pure [] -- This will never happen, covered by previous case statement
+
+  where
+    multipleParents = not . isSingleton . otoList . snd
+{-
+    pairingLogic :: ( (ResolutionCache s), IntSet)
+                    , (ResolutionCache s), IntSet)
+                    )
+                 -> NonEmpty [ResolutionInformation s]
+-}
+    pairingLogic (lhs, rhs) =
+        case (multipleParents lhs, multipleParents rhs) of
+          -- The Nothing cases *should* never happen, but best to handle them anyways
+          (True , True ) -> pairedSet
+          (True , False) -> pairedSet <> lhsSet
+          (False, True ) -> pairedSet <> rhsSet
+          (False, False) -> pairedSet <> lhsSet <> rhsSet
+       where
+         lhsSet = pure <$> lhs'
+         rhsSet = pure <$> rhs'
+         lhs'   = fst lhs
+         rhs'   = fst rhs
+         pairedSet =
+             case cartesianProduct lhs' rhs' of
+               []   -> pure []
+               x:xs -> x:|xs
+--         cartesianProduct :: (Foldable t, Foldable t') => t a -> t a' -> [[a]]
+
+         cartesianProduct xs ys =
+             [ [x,y]
+             | x <- toList xs
+             , y <- toList ys
+             , leafSetRepresentation x .&. leafSetRepresentation y /= zeroBits
+             ]
+
+{-
+generatePairs :: [NonEmpty a] -> NonEmpty [a]
+generatePairs    [] =  []:|[]
+generatePairs   [x] = [x]:|[]
+generatePairs [x,y] = x `cartesianProduct` y
+generatePairs  x:xs = ((cartesianProduct x) <$> xs) <> generatePairs xs
+  where
+    cartesianProduct :: NonEmpty a -> NonEmpty a -> NonEmpty [a]
+    cartesianProduct xs ys = do
+        x <- xs
+        y <- ys
+        pure [x,y]
+-}
+
+
+
+
+{-
 metric :: (m -> [m'] -> m')
        -> (PhylogeneticNode2 n (CharacterSequence m i c f a d) -> [PhylogeneticNode2 n (CharacterSequence m' i c f a d)] ->  PhylogeneticNode2 n (CharacterSequence m' i c f a d))
 metric _f = undefined
 
+-}
 
 pairs :: Foldable f => f a -> [(a, a)]
 pairs = f . toList
@@ -133,7 +271,7 @@ pairs = f . toList
     f (x:xs) = ((\y -> (x, y)) <$> xs) <> f xs
 
 
-{--}
+{-
 -- One or more 
 -- Do I need the whole DAG in scope to resolve resolutions?
 resolutionTransform :: Vector (IndexData e (PhylogeneticNode2 (CharacterSequence m' i' c' f' a' d') n))
@@ -178,7 +316,7 @@ resolutionTransform dataVector index transformation currentNode =
     childListings =
       -- Here we check the number of "real" child edges.
       case childResolutionData of
-        []   -> singleton [] 
+        []   -> singleton []
         [x]  ->
             let y = DS.map (:[]) $ fst x
             in  if   multipleParents x
@@ -217,6 +355,7 @@ resolutionTransform dataVector index transformation currentNode =
              rhs'   = fst rhs
 
 
+-}
 
 {-
 -- |
