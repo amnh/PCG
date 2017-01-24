@@ -1,10 +1,29 @@
-#include "costMatrix.h"
+#include <stdio.h>
+
+//#include "costMatrix.h"
+#include "dynamicCharacterOperations.h"
+#include "costMatrixWrapper.h"
+// #include "seqAlignForHaskell.h"
 
 int main() {
     int tcm [16] = {0,1,1,2,1,0,1,2,1,1,0,2,2,2,2,0};
-    size_t alphabetSize = 4;
+    size_t alphabetSize = 5;
 
-    CostMatrix myMatrix(alphabetSize, tcm);
+    size_t seqALen = 15;
+    packedChar seqA_main[seqALen];
+    for (size_t i = 0; i < seqALen; i++) {
+        seqA_main[i] = 15 - i;
+    }
+    size_t seqBLen = 10;
+    packedChar seqB_main[seqBLen];
+    for (size_t i = 0; i < seqBLen; i++) {
+        seqB_main[i] = i;
+    }
+
+    retType_t retMedChar = { 0, tcm, 16, tcm, 16, 0 };
+
+    costMatrix_p myMatrix = matrixInit(alphabetSize, tcm);
+    getCost(5, 5, myMatrix, 5);
 
     dcElement_t* firstKey  = makeDCElement( alphabetSize, 1 );
     dcElement_t* secondKey = makeDCElement( alphabetSize, 1 );
@@ -25,7 +44,7 @@ int main() {
             cost = tcm[key1 * alphabetSize + key2];
             SetBit(&median, key2);
 
-            foundCost = myMatrix.getSetCost(firstKey, secondKey, retMedian);
+            foundCost = getCost(key1, key2, myMatrix, alphabetSize);
 
             if(median != *retMedian->element || cost != foundCost) {
                 printf("key 1 set: %zu\n", key1);
@@ -44,6 +63,19 @@ int main() {
         ClearBit(firstKey->element, key1);
         ClearBit(&median, key1);
     }
+
+    // int success = aligner(seqA_main, seqALen, seqB_main, seqBLen, alphabetSize, getCostMatrix(myMatrix), &retMedChar);
+
+    // if (success == 0) {
+    //     printf("\nSuccess!\n\n");
+    //     // printf("The aligned sequences are: \n%p\n%p\n", retAlign->seq1, retAlign->seq2);
+    //     // printf("The cost of the alignment is: %d\n", retAlign->weight);
+    //     // for(int i = 0; i < length; ++i) {
+    //     //     printf("%d\n",(int)retAlign->seq1[i]);
+    //     // }
+    // } else {
+    //     printf("Fail!\n");
+    // }
 
 }
 

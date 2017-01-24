@@ -216,7 +216,7 @@ instance Storable CDynamicChar where
     poke ptr (CDynamicChar alphLen seqLen nElems seqVal) = do -- to modify values in the C app
         (#poke struct dynChar_t, alphSize  ) ptr alphLen
         (#poke struct dynChar_t, dynCharLen) ptr seqLen
-        (#poke struct dynChar_t, numElems  ) ptr nElems
+        (#poke struct dynChar_t, numElems  ) ptr sequen
         (#poke struct dynChar_t, dynChar   ) ptr seqVal
 
 

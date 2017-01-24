@@ -47,10 +47,10 @@ costMatrix_t matrixInit(size_t alphSize, int *tcm) {
    return new CostMatrix(alphSize, tcm);
 }
 
-void matrixDestroy(costMatrix_t *untyped_ptr) {
-    CostMatrix* typed_ptr = static_cast<CostMatrix*>(untyped_ptr);
-    typed_ptr::~CostMatrix();  //TODO:
-}
+// void matrixDestroy(costMatrix_t untyped_ptr) {
+//     CostMatrix* typed_ptr = static_cast<CostMatrix*>(untyped_ptr);
+//     delete typed_ptr;  //TODO:
+// }
 
 int getCost(costMatrix_t untyped_self, dcElement_t *left, dcElement_t *right, dcElement_t *retMedian) {
     CostMatrix* typed_self = static_cast<CostMatrix*> (untyped_self);
@@ -70,8 +70,8 @@ CostMatrix::CostMatrix(size_t alphSize, int *tcm) {
 CostMatrix::~CostMatrix() {
     for ( auto& thing: myMatrix) {
     // for ( auto thing = myMatrix.begin(); thing != myMatrix.end(); thing++ ) {
-        freeCostMedian_t(thing.second);
-        freeKeys_t(thing.first);
+      //  freeCostMedian_t(thing.second);
+     //   freeKeys_t(thing.first);
     }
     myMatrix.clear();
 

@@ -3,8 +3,25 @@
 
 // TODO: I'll need this for the Haskell side of things: https://hackage.haskell.org/package/base-4.9.0.0/docs/Foreign-StablePtr.html
 
+extern "C" costMatrix_p construct_CostMatrix_C(size_t alphSize, int* tcm) {
+    return new CostMatrix(alphSize, tcm);
+}
+
+extern "C" void destruct_CostMatrix_C(costMatrix_p untyped_self) {
+    delete static_cast<CostMatrix*> (untyped_self);
+}
+
+extern "C" int call_getSetCost_C(costMatrix_p untyped_self, dcElement_t* left, dcElement_t* right, dcElement_t* retMedian) {
+    CostMatrix* thisMtx = static_cast<CostMatrix*> (untyped_self);
+    return thisMtx->getSetCostMedian(left, right, retMedian);
+}
+
+
+// costMatrix_p get_CostMatrixPtr_C(costMatrix_p untyped_self);
+
+
 costMedian_t* allocCostMedian_t (size_t alphabetSize) {
-    costMedian_t *toReturn = (costMedian_t*) malloc( sizeof(costMedian_t) );
+    costMedian_t* toReturn = (costMedian_t*) malloc( sizeof(costMedian_t) );
     toReturn->second       = (uint64_t*) calloc(dcElemSize(alphabetSize), INT_WIDTH);
     toReturn->first        = 0;
     return toReturn;
@@ -12,14 +29,14 @@ costMedian_t* allocCostMedian_t (size_t alphabetSize) {
 
 void freeCostMedian_t (costMedian_t* toFree) {
     free(toFree->second);
-    free(toFree);
+    // free(toFree);
 }
 
 keys_t* allocKeys_t (size_t alphSize) {
-    keys_t *toReturn   = (keys_t*) malloc(sizeof(std::pair<dcElement_t, dcElement_t>));
+    keys_t* toReturn   = (keys_t*) malloc(sizeof(std::pair<dcElement_t, dcElement_t>));
 
-    dcElement_t *left  = allocateDCElement(alphSize);
-    dcElement_t *right = allocateDCElement(alphSize);
+    dcElement_t* left  = allocateDCElement(alphSize);
+    dcElement_t* right = allocateDCElement(alphSize);
     left->alphSize     = right->alphSize = alphSize;
 
     toReturn->first    = *left;
@@ -28,33 +45,21 @@ keys_t* allocKeys_t (size_t alphSize) {
     return toReturn;
 }
 
-void freeKeys_t (keys_t *toFree) {
-    typedef std::pair<dcElement_t, dcElement_t> keys_t;
+void freeKeys_t ( const keys_t* toFree) {
+    //typedef std::pair<dcElement_t, dcElement_t> keys_t;
     freeDCElem(&toFree->first);
     freeDCElem(&toFree->second);
+    // free(&toFree);
 }
 
 mapAccessPair_t* allocateMapAccessPair (size_t alphSize) {
-    mapAccessPair_t *toReturn;
+    mapAccessPair_t* toReturn;
     toReturn = (mapAccessPair_t*) malloc( sizeof(mapAccessPair_t) );
     toReturn->first  = *allocKeys_t(alphSize);
     toReturn->second = *allocCostMedian_t(alphSize);
     return toReturn;
 }
 
-costMatrix_t matrixInit(size_t alphSize, int* tcm) {
-   return new CostMatrix(alphSize, tcm);
- }
-
- void matrixDestroy(costMatrix_t untyped_ptr) {
-    CostMatrix* typed_ptr = static_cast<CostMatrix*>(untyped_ptr);
-    delete typed_ptr;
- }
-
- int lookUpCost(costMatrix_t untyped_self, dcElement_t *left, dcElement_t *right, dcElement_t *retMedian) {
-    CostMatrix* typed_self = static_cast<CostMatrix*> (untyped_self);
-    return typed_self->getSetCost(left, right, retMedian);
- }
 
 CostMatrix::CostMatrix(size_t alphSize, int* tcm) {
     alphabetSize = alphSize;
@@ -62,11 +67,17 @@ CostMatrix::CostMatrix(size_t alphSize, int* tcm) {
 }
 
 CostMatrix::~CostMatrix() {
-    //TODO: actually write this
+    for ( auto& thing: myMatrix ) {
+    // for ( mapIterator thing = myMatrix.begin(); thing != myMatrix.end(); thing++ ) {
+        freeCostMedian_t(&thing.second);
+        freeKeys_t(&thing.first);
+    }
+    myMatrix.clear();
+    //hasher.clear();
 
 }
 
-int CostMatrix::getSetCost(dcElement_t* left, dcElement_t* right, dcElement_t* retMedian) {
+int CostMatrix::getCostMedian(dcElement_t* left, dcElement_t* right, dcElement_t* retMedian) {
     keys_t toLookup;
     toLookup.first  = *left;
     toLookup.second = *right;
@@ -76,10 +87,30 @@ int CostMatrix::getSetCost(dcElement_t* left, dcElement_t* right, dcElement_t* r
     found = myMatrix.find(toLookup);
 
     if ( found == myMatrix.end() ) {
-        printf("nope.\n");
+        return -1;
+    } else {
+        foundCost          = found->second.first;
+        retMedian->element = found->second.second;
+    }
+
+    return foundCost;
+}
+
+int CostMatrix::getSetCostMedian(dcElement_t* left, dcElement_t* right, dcElement_t* retMedian) {
+    keys_t toLookup;
+    toLookup.first  = *left;
+    toLookup.second = *right;
+    mapIterator found;
+    int foundCost;
+
+    found = myMatrix.find(toLookup);
+
+    if ( found == myMatrix.end() ) {
+        if(DEBUG) printf("\ngetSetCost didn't find %llu %llu.\n", left->element[0], right->element[0]);
         costMedian_t* computedCostMed = computeCostMedian(toLookup);
+        if(DEBUG) printf("computed cost, median: %2i %llu\n", computedCostMed->first, computedCostMed->second[0]);
         foundCost                     = computedCostMed->first;
-        retMedian->element            = computedCostMed->second;
+        copyPackedChar(computedCostMed->second, retMedian->element, alphabetSize);
 
         setValue (toLookup, computedCostMed);
     } else {
@@ -92,62 +123,96 @@ int CostMatrix::getSetCost(dcElement_t* left, dcElement_t* right, dcElement_t* r
 }
 
 costMedian_t* CostMatrix::computeCostMedian(keys_t key) {
-    int curCost                   = 0; // don't actually need to initialize this
-    dcElement_t* firstUnambigKey  = allocateDCElement(alphabetSize); // these will get set and used for lookup
-    dcElement_t* secondUnambigKey = allocateDCElement(alphabetSize);
-    packedChar *curMedian         = (packedChar*) calloc(dynCharSize(alphabetSize, 1), INT_WIDTH);
-    packedChar *interimMedian     = (packedChar*) calloc(dynCharSize(alphabetSize, 1), INT_WIDTH);
+    int curCost                    = 0;                               // don't actually need to initialize this
+    dcElement_t*  firstUnambigKey  = allocateDCElement(alphabetSize); // these will get set and used for lookup
+    dcElement_t*  secondUnambigKey = allocateDCElement(alphabetSize);
+    packedChar*   curMedian        = (packedChar*) calloc(dynCharSize(alphabetSize, 1), INT_WIDTH);
+    packedChar*   interimMedian;     // this will be allocated as it's used
+    costMedian_t* toReturn         = allocCostMedian_t(key.first.alphSize); // not allocating second,
+                                                                            // because will be alloc'ed in curMedian
+    toReturn->first                = INT_MAX;
 
-    costMedian_t* toReturn = allocCostMedian_t(key.first.alphSize); // not allocating second, because will be alloc'ed in curMedian
-    toReturn->first        = INT_MAX;
-
-    firstUnambigKey->alphSize  = alphabetSize;
-    secondUnambigKey->alphSize = alphabetSize;
-    keys_t* searchKey          = allocKeys_t(alphabetSize);
-    searchKey->first           = *firstUnambigKey;
-    searchKey->second          = *secondUnambigKey;
+    firstUnambigKey->alphSize      = alphabetSize;
+    secondUnambigKey->alphSize     = alphabetSize;
+    keys_t* searchKey              = allocKeys_t(alphabetSize);
+    searchKey->first               = *firstUnambigKey;
+    searchKey->second              = *secondUnambigKey;
 
     mapIterator found;
 
-    for (uint64_t posFirstKey = 1; posFirstKey <= alphabetSize; posFirstKey++) {
+    // if(DEBUG) {
+    //     for ( auto& thing: myMatrix ) {
+    //         printf("%2llu %2llu\n", thing.first.first.element[0], thing.first.second.element[0]);
+    //         //printElemBits(&thing.first.first);
+    //         //printElemBits(&thing.first.second);
+    //     }
+    // }
+
+    for (uint64_t posFirstKey = 0; posFirstKey < alphabetSize; ++posFirstKey) {
         if( TestBit(key.first.element, posFirstKey) ) {
-            for (uint64_t posSecondKey = 1; posSecondKey <= alphabetSize; posSecondKey++) {
+            printf("pos1: %llu\n", posFirstKey);
+            SetBit(searchKey->first.element, posFirstKey);
+            for (uint64_t posSecondKey = 0; posSecondKey < alphabetSize; ++posSecondKey) {
                 if( TestBit(key.second.element, posSecondKey) ) {
-                    SetBit(searchKey->first.element, posFirstKey);
-                    SetBit(searchKey->second.element, posFirstKey);
+                    printf("pos2: %llu\n", posSecondKey);
+                    SetBit(searchKey->second.element, posSecondKey);
                     // free(found.second);
-                    found   = myMatrix.find(key);  //TODO: should I have failure to find case here?
+                    found = myMatrix.find(*searchKey);
+                    if ( found == myMatrix.end() ) {
+                        printf("Something went wrong in cost matrix.\n");
+                        printf("missing key: %llu %llu\n", *searchKey->first.element, *searchKey->second.element);
+                        exit(1);
+                    }
+                    printf("curMin: %i curCost: %i, foundCost: %i\n", toReturn->first, curCost, found->second.first);
                     curCost = found->second.first;
+
                     // now seemingly recreating logic in CM_distance(), but that was to get the cost for each
                     // ambElem; now we're combining those costs get overall cost and median
                     if (curCost < toReturn->first) {
+                        if(DEBUG) {
+                            printf("\nNew low cost.\n");
+                            printf("keys: %llu %llu\n", *searchKey->first.element, *searchKey->second.element);
+                            printf("current median:  %llu\n", found->second.second[0]);
+                        }
                         toReturn->first = curCost;
-                        free(curMedian);
-                        curMedian = found->second.second; // TODO: this is not making a copy, so need to fix it.
+                        copyPackedChar(found->second.second, curMedian, alphabetSize);
+                        if(DEBUG) {
+                            printf("returned median: %llu\n", found->second.second[0]);
+                            printf("found cost:      %d\n",   found->second.first);
+                        }
                     } else if (curCost == toReturn->first) {
+                        if(DEBUG) {
+                            printf("\nSame cost, new median.\n");
+                            printf("keys: %llu %llu\n", *searchKey->first.element, *searchKey->second.element);
+                            printf("returned median: %llu\n", found->second.second[0]);
+                            printf("found cost:      %d\n", found->second.first);
+                        }
                         interimMedian = packedCharOr(curMedian, found->second.second, alphabetSize);
-                        free(curMedian);
+                        free(curMedian); // because curMedian will get allocation from interinMedian, which was just allocated.
                         curMedian = interimMedian;
-                        free(interimMedian);
+                        printf("new median: %llu\n", *curMedian);
                     }
+                    ClearBit(searchKey->second.element, posSecondKey);
                 } // if pos2 is set in second key
-            } // if pos1 is set in first key
-        } // posSecondKey
+            } // posSecondKey
+            ClearBit(searchKey->first.element, posFirstKey);
+        } // if pos1 is set in first key
     } // posFirstKey
     // freeDCElem(firstUnambigKey);
     // freeDCElem(secondUnambigKey);
     // freeKeys_t(searchKey);
+    copyPackedChar( curMedian, toReturn->second, alphabetSize );
     return toReturn;
 }
 
 costMedian_t* CostMatrix::findDistance (keys_t& key, int* tcm) {
 
-    packedChar *key1      = key.first.element;
-    packedChar *key2      = key.second.element;
+    packedChar* key1       = key.first.element;
+    packedChar* key2       = key.second.element;
     size_t dynCharLen      = dcElemSize(alphabetSize);
-    packedChar *curMedian = (packedChar*)  calloc( dynCharLen, INT_WIDTH );
+    packedChar* curMedian  = (packedChar*)  calloc( dynCharLen, INT_WIDTH );
     costMedian_t* toReturn = (costMedian_t*) malloc( sizeof(costMedian_t) );
-    toReturn->second    = curMedian;
+    toReturn->second       = curMedian;
     int curMin             = INT_MAX;
     int curCost            = 0;
 
@@ -178,24 +243,15 @@ costMedian_t* CostMatrix::findDistance (keys_t& key, int* tcm) {
 
 
 void CostMatrix::setUpInitialMatrix (int* tcm) {
-    keys_t *keys;
-    costMedian_t *costMedian;
-    mapAccessPair_t *toInsert;
+    keys_t* keys;
+    costMedian_t* costMedian;
+    mapAccessPair_t* toInsert;
 
-    dcElement_t *firstKey;
-    dcElement_t *secondKey;
-    packedChar *median;
+    dcElement_t* firstKey;
+    dcElement_t* secondKey;
+    packedChar* median;
     int* cost;
 
-    // mapIterator found;
-
-    //firstKey->element   = (uint64_t*) calloc(dcElemSize(alphabetSize), INT_WIDTH);
-    //secondKey->element  = (uint64_t*) calloc(dcElemSize(alphabetSize), INT_WIDTH);
-    // firstKey->alphSize  = alphabetSize;
-    // secondKey->alphSize = alphabetSize;
-    //median              = (uint64_t*) calloc(dcElemSize(alphabetSize), INT_WIDTH);
-    // median->alphSize    = alphabetSize;
-    //cost                = (int*) malloc(sizeof(int));
     for (size_t key1 = 0; key1 < alphabetSize; key1++) { // for every possible value of key1, key2
 
         // key2 starts from 0, so non-symmetric matrices should work
@@ -216,30 +272,12 @@ void CostMatrix::setUpInitialMatrix (int* tcm) {
 
             *cost = tcm[key1 * alphabetSize + key2];
 
-            // printf("key 1 set: %zu\n", key1);
-            // printf("key 2 set: %zu\n", key2);
-
-            // printf("median:\n");
-
-            // printPackedChar(median, 1, alphabetSize);
-
-            // printPackedChar(median, 1, alphabetSize);
-            myMatrix.insert(*toInsert); //.second
-            // if ( !myMatrix.insert(*toInsert).second ) {
-            //     // printf("Out of memory or collision.\n");
-            //     printf("failed to insert!!\n");
-            //     printf("first key:\n");
-            //     printPackedChar(firstKey->element, 1, alphabetSize);
-            //     printf("second key:\n");
-            //     printPackedChar(secondKey->element, 1, alphabetSize);
-            //     printf("median:\n");
-            //     printPackedChar(median, 1, alphabetSize);
-            //     exit (1);
+            // if(DEBUG) {
+            //     printf("keys set: %llu %llu\n", *firstKey->element, *secondKey->element);
+            //     printf("median: %llu   cost: %i\n", *toInsert->second.second, toInsert->second.first);
             // }
-            // found = myMatrix.find(toInsert->first);
-            // printf("found median:\n");
-            // printPackedChar (found->second.second, 1, alphabetSize);
 
+            myMatrix.insert(*toInsert);
 
         } // key2
     }

@@ -26,12 +26,7 @@
 
 //int aligner(char *seq1, char *seq2, int wtInsertDel, int wtSub, struct retType* retAlign) {
 int aligner(uint64_t *seq1, size_t seq1Len, uint64_t *seq2, size_t seq2Len, size_t alphSize,
-            int wtInsertDel, int wtSub, retType_t* retAlign) {
-
-
-    costMtx_t* tcm = malloc( sizeof(costMtx_t) );
-    tcm->subCost = 1;
-    tcm->gapCost = 2;
+            costMtx_t tcm, retType_t* retAlign) {
 
  //   int cost = getCost(char1, char2, tcm, alphSize);
 
@@ -366,7 +361,7 @@ int aligner(uint64_t *seq1, size_t seq1Len, uint64_t *seq2, size_t seq2Len, size
     };
  */
     // under \sum z_i measure
-    
+
     struct align pathFirst[3] = {
         {.partialWt = getCost(seqA[0], seqB[0], tcm, alphSize),
         .partialTrueWt = getCost(seqA[0], seqB[0], tcm, alphSize) + 2 * getCost(seqA[0], seqB[0], tcm, alphSize)* getCost(seqA[0], seqB[0], tcm, alphSize),
@@ -389,11 +384,11 @@ int aligner(uint64_t *seq1, size_t seq1Len, uint64_t *seq2, size_t seq2Len, size
         .posTrueA = 0,
         .posTrueB = 1,
         .flagWhichTree = 1}
-        
+
     };
-    
-    
-    
+
+
+
     //    struct align pathSecond[3];
     //    pathFirst[0] = {.partialWt = wtSub, .partialTrueWt = wtSub + 2 * wtSub * wtSub, .posStringA = 1, .posStringB = 1, .posTrueA = 1, .posTrueB = 1, .flagWhichTree = 1};
     //    pathFirst[1] = {
@@ -470,11 +465,11 @@ int aligner(uint64_t *seq1, size_t seq1Len, uint64_t *seq2, size_t seq2Len, size
             .flagWhichTree = 2
         }
     };
- 
+
  */
-    
+
     //  under \sum z_i^2 measure
-    
+
     struct align pathSecond[3] = {
         { .partialWt = getCost(seqA[0], seqB[0], tcm, alphSize) * getCost(seqA[0], seqB[0], tcm, alphSize),
             .partialTrueWt = getCost(seqA[0], seqB[0], tcm, alphSize) + 2 * getCost(seqA[0], seqB[0], tcm, alphSize) * getCost(seqA[0], seqB[0], tcm, alphSize),
@@ -538,7 +533,7 @@ int aligner(uint64_t *seq1, size_t seq1Len, uint64_t *seq2, size_t seq2Len, size
         }
     };
     */
-    
+
     int arrayInitial[2][6]= {
         { 10, 20, 30, 11, 21, 31 },
         {   getCost(seqA[0], seqB[0], tcm, alphSize) + 2 * getCost(seqA[0], seqB[0], tcm, alphSize) * getCost(seqA[0], seqB[0], tcm, alphSize),
@@ -549,8 +544,8 @@ int aligner(uint64_t *seq1, size_t seq1Len, uint64_t *seq2, size_t seq2Len, size
             getCost(GAP, seqB[0], tcm, alphSize) + 2 * getCost(GAP, seqB[0], tcm, alphSize) * getCost(GAP, seqB[0], tcm, alphSize)
         }
     };
-    
-    
+
+
 
     for (c = 0 ; c < ( 6 - 1 ); c++)
     {
@@ -858,9 +853,9 @@ int aligner(uint64_t *seq1, size_t seq1Len, uint64_t *seq2, size_t seq2Len, size
                 wtInsertDel + pathFirst[2].partialWt
             }
         };
- 
+
          */
-        
+
         int arrayFirst[2][9]= {
             { 10, 20, 30, 11, 21, 31, 12, 22, 32 },
             {  getCost(seqA[pathFirst[0].posTrueA], seqB[pathFirst[0].posTrueB], tcm, alphSize) + pathFirst[0].partialWt,
@@ -874,8 +869,8 @@ int aligner(uint64_t *seq1, size_t seq1Len, uint64_t *seq2, size_t seq2Len, size
                getCost(GAP, seqB[pathFirst[2].posTrueB], tcm, alphSize) + pathFirst[2].partialWt
             }
         };
-        
-        
+
+
 
         // grow tree according to second order metric: second tree
 
@@ -914,25 +909,25 @@ int aligner(uint64_t *seq1, size_t seq1Len, uint64_t *seq2, size_t seq2Len, size
             }
         };
         */
-        
+
         int arraySecond[2][9]= {
             { 10, 20, 30, 11, 21, 31, 12, 22, 32 },
             {  getCost(seqA[pathFirst[0].posTrueA], seqB[pathFirst[0].posTrueB], tcm, alphSize)*getCost(seqA[pathFirst[0].posTrueA], seqB[pathFirst[0].posTrueB], tcm, alphSize) + pathFirst[0].partialWt,
-                
+
                 getCost(seqA[pathFirst[0].posTrueA], GAP, tcm, alphSize)*getCost(seqA[pathFirst[0].posTrueA], GAP, tcm, alphSize)  + pathFirst[0].partialWt,
-                
+
                 getCost(GAP, seqB[pathFirst[0].posTrueB], tcm, alphSize)*getCost(GAP, seqB[pathFirst[0].posTrueB], tcm, alphSize) + pathFirst[0].partialWt,
-                
+
                 getCost(seqA[pathFirst[1].posTrueA], seqB[pathFirst[1].posTrueB], tcm, alphSize)*getCost(seqA[pathFirst[1].posTrueA], seqB[pathFirst[1].posTrueB], tcm, alphSize)  + pathFirst[1].partialWt,
-                
+
                 getCost(seqA[pathFirst[1].posTrueA], GAP, tcm, alphSize)*getCost(seqA[pathFirst[1].posTrueA], GAP, tcm, alphSize)  + pathFirst[1].partialWt,
-                
+
                 getCost(GAP, seqB[pathFirst[1].posTrueB], tcm, alphSize)*getCost(GAP, seqB[pathFirst[1].posTrueB], tcm, alphSize)  + pathFirst[1].partialWt,
-                
+
                 getCost(seqA[pathFirst[2].posTrueA], seqB[pathFirst[2].posTrueB], tcm, alphSize)*getCost(seqA[pathFirst[2].posTrueA], seqB[pathFirst[2].posTrueB], tcm, alphSize) + pathFirst[2].partialWt,
-                
+
                 getCost(seqA[pathFirst[2].posTrueA], GAP, tcm, alphSize)*getCost(seqA[pathFirst[2].posTrueA], GAP, tcm, alphSize) + pathFirst[2].partialWt,
-                
+
                 getCost(GAP, seqB[pathFirst[2].posTrueB], tcm, alphSize)*getCost(GAP, seqB[pathFirst[2].posTrueB], tcm, alphSize) + pathFirst[2].partialWt
             }
         };

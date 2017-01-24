@@ -4,14 +4,15 @@
 //  Created by Yu Xiang on 11/1/22.
 //  Copyright © 2016 Yu Xiang. All rights reserved.
 
+#include <inttypes.h>
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
+#include "costMatrixWrapper.h"
 #include "dynamicCharacterOperations.h"
 #include "seqAlignForHaskell.h"
-#include <inttypes.h>
 
 #define __STDC_FORMAT_MACROS
 
@@ -26,12 +27,8 @@
 
 //int aligner(char *seq1, char *seq2, int wtInsertDel, int wtSub, struct retType* retAlign) {
 int aligner(uint64_t *seq1, size_t seq1Len, uint64_t *seq2, size_t seq2Len, size_t alphSize,
-            int wtInsertDel, int wtSub, retType_t* retAlign) {
+            costMatrix_p tcm, retType_t *retAlign) {
 
-
-    costMtx_t* tcm = malloc( sizeof(costMtx_t) );
-    tcm->subCost = 1;
-    tcm->gapCost = 2;
 
  //   int cost = getCost(char1, char2, tcm, alphSize);
 
@@ -366,7 +363,7 @@ int aligner(uint64_t *seq1, size_t seq1Len, uint64_t *seq2, size_t seq2Len, size
     };
  */
     // under \sum z_i measure
-    
+
     struct align pathFirst[3] = {
         {.partialWt = getCost(seqA[0], seqB[0], tcm, alphSize),
         .partialTrueWt = getCost(seqA[0], seqB[0], tcm, alphSize) + 2 * getCost(seqA[0], seqB[0], tcm, alphSize)* getCost(seqA[0], seqB[0], tcm, alphSize),
@@ -389,11 +386,11 @@ int aligner(uint64_t *seq1, size_t seq1Len, uint64_t *seq2, size_t seq2Len, size
         .posTrueA = 0,
         .posTrueB = 1,
         .flagWhichTree = 1}
-        
+
     };
-    
-    
-    
+
+
+
     //    struct align pathSecond[3];
     //    pathFirst[0] = {.partialWt = wtSub, .partialTrueWt = wtSub + 2 * wtSub * wtSub, .posStringA = 1, .posStringB = 1, .posTrueA = 1, .posTrueB = 1, .flagWhichTree = 1};
     //    pathFirst[1] = {
@@ -470,11 +467,11 @@ int aligner(uint64_t *seq1, size_t seq1Len, uint64_t *seq2, size_t seq2Len, size
             .flagWhichTree = 2
         }
     };
- 
+
  */
-    
+
     //  under \sum z_i^2 measure
-    
+
     struct align pathSecond[3] = {
         { .partialWt = getCost(seqA[0], seqB[0], tcm, alphSize) * getCost(seqA[0], seqB[0], tcm, alphSize),
             .partialTrueWt = getCost(seqA[0], seqB[0], tcm, alphSize) + 2 * getCost(seqA[0], seqB[0], tcm, alphSize) * getCost(seqA[0], seqB[0], tcm, alphSize),
@@ -538,7 +535,7 @@ int aligner(uint64_t *seq1, size_t seq1Len, uint64_t *seq2, size_t seq2Len, size
         }
     };
     */
-    
+
     int arrayInitial[2][6]= {
         { 10, 20, 30, 11, 21, 31 },
         {   getCost(seqA[0], seqB[0], tcm, alphSize) + 2 * getCost(seqA[0], seqB[0], tcm, alphSize) * getCost(seqA[0], seqB[0], tcm, alphSize),
@@ -549,8 +546,8 @@ int aligner(uint64_t *seq1, size_t seq1Len, uint64_t *seq2, size_t seq2Len, size
             getCost(GAP, seqB[0], tcm, alphSize) + 2 * getCost(GAP, seqB[0], tcm, alphSize) * getCost(GAP, seqB[0], tcm, alphSize)
         }
     };
-    
-    
+
+
 
     for (c = 0 ; c < ( 6 - 1 ); c++)
     {
@@ -730,7 +727,7 @@ int aligner(uint64_t *seq1, size_t seq1Len, uint64_t *seq2, size_t seq2Len, size
     //test function
 
     int temp;
-    temp = trueWt(&pathFirst[0], GAP, wtInsertDel, wtSub, LENGTH);
+    temp = trueWt(&pathFirst[0], tcm, LENGTH, alphSize);
     // printf("test weight is: %d\n", temp);
     //    path[i] = pathTempFirst[k];        // update the candidate paths
     //
@@ -858,9 +855,9 @@ int aligner(uint64_t *seq1, size_t seq1Len, uint64_t *seq2, size_t seq2Len, size
                 wtInsertDel + pathFirst[2].partialWt
             }
         };
- 
+
          */
-        
+
         int arrayFirst[2][9]= {
             { 10, 20, 30, 11, 21, 31, 12, 22, 32 },
             {  getCost(seqA[pathFirst[0].posTrueA], seqB[pathFirst[0].posTrueB], tcm, alphSize) + pathFirst[0].partialWt,
@@ -874,8 +871,8 @@ int aligner(uint64_t *seq1, size_t seq1Len, uint64_t *seq2, size_t seq2Len, size
                getCost(GAP, seqB[pathFirst[2].posTrueB], tcm, alphSize) + pathFirst[2].partialWt
             }
         };
-        
-        
+
+
 
         // grow tree according to second order metric: second tree
 
@@ -914,25 +911,25 @@ int aligner(uint64_t *seq1, size_t seq1Len, uint64_t *seq2, size_t seq2Len, size
             }
         };
         */
-        
+
         int arraySecond[2][9]= {
             { 10, 20, 30, 11, 21, 31, 12, 22, 32 },
             {  getCost(seqA[pathFirst[0].posTrueA], seqB[pathFirst[0].posTrueB], tcm, alphSize)*getCost(seqA[pathFirst[0].posTrueA], seqB[pathFirst[0].posTrueB], tcm, alphSize) + pathFirst[0].partialWt,
-                
+
                 getCost(seqA[pathFirst[0].posTrueA], GAP, tcm, alphSize)*getCost(seqA[pathFirst[0].posTrueA], GAP, tcm, alphSize)  + pathFirst[0].partialWt,
-                
+
                 getCost(GAP, seqB[pathFirst[0].posTrueB], tcm, alphSize)*getCost(GAP, seqB[pathFirst[0].posTrueB], tcm, alphSize) + pathFirst[0].partialWt,
-                
+
                 getCost(seqA[pathFirst[1].posTrueA], seqB[pathFirst[1].posTrueB], tcm, alphSize)*getCost(seqA[pathFirst[1].posTrueA], seqB[pathFirst[1].posTrueB], tcm, alphSize)  + pathFirst[1].partialWt,
-                
+
                 getCost(seqA[pathFirst[1].posTrueA], GAP, tcm, alphSize)*getCost(seqA[pathFirst[1].posTrueA], GAP, tcm, alphSize)  + pathFirst[1].partialWt,
-                
+
                 getCost(GAP, seqB[pathFirst[1].posTrueB], tcm, alphSize)*getCost(GAP, seqB[pathFirst[1].posTrueB], tcm, alphSize)  + pathFirst[1].partialWt,
-                
+
                 getCost(seqA[pathFirst[2].posTrueA], seqB[pathFirst[2].posTrueB], tcm, alphSize)*getCost(seqA[pathFirst[2].posTrueA], seqB[pathFirst[2].posTrueB], tcm, alphSize) + pathFirst[2].partialWt,
-                
+
                 getCost(seqA[pathFirst[2].posTrueA], GAP, tcm, alphSize)*getCost(seqA[pathFirst[2].posTrueA], GAP, tcm, alphSize) + pathFirst[2].partialWt,
-                
+
                 getCost(GAP, seqB[pathFirst[2].posTrueB], tcm, alphSize)*getCost(GAP, seqB[pathFirst[2].posTrueB], tcm, alphSize) + pathFirst[2].partialWt
             }
         };
@@ -1056,7 +1053,7 @@ int aligner(uint64_t *seq1, size_t seq1Len, uint64_t *seq2, size_t seq2Len, size
                 pathFirst[i].posTrueB++;
                 if (flagEmpty[0] == 0) {
 
-                    pathFirst[i].partialTrueWt = trueWt(&pathFirst[i], GAP, wtInsertDel, wtSub, LENGTH);
+                    pathFirst[i].partialTrueWt = trueWt(&pathFirst[i], tcm, LENGTH, alphSize);
                 }
 
                 for (int l = 0; l < 3; l++) {
@@ -1110,7 +1107,7 @@ int aligner(uint64_t *seq1, size_t seq1Len, uint64_t *seq2, size_t seq2Len, size
                 pathFirst[i].posTrueA++;
                 if (flagEmpty[0] == 0) {
 
-                    pathFirst[i].partialTrueWt = trueWt(&pathFirst[i], GAP, wtInsertDel, wtSub, LENGTH);
+                    pathFirst[i].partialTrueWt = trueWt(&pathFirst[i], tcm, LENGTH, alphSize);
                 }
                 //  path[i].posTrueB++;
 
@@ -1164,7 +1161,7 @@ int aligner(uint64_t *seq1, size_t seq1Len, uint64_t *seq2, size_t seq2Len, size
                 pathFirst[i].posTrueB++;
                 if (flagEmpty[0] == 0) {
 
-                    pathFirst[i].partialTrueWt = trueWt(&pathFirst[i], GAP, wtInsertDel, wtSub, LENGTH);
+                    pathFirst[i].partialTrueWt = trueWt(&pathFirst[i], tcm, LENGTH, alphSize);
                 }
 
 
@@ -1278,7 +1275,7 @@ int aligner(uint64_t *seq1, size_t seq1Len, uint64_t *seq2, size_t seq2Len, size
                     pathSecond[i].posTrueA++;
                     pathSecond[i].posTrueB++;
                     if (flagEmpty[1] == 0) {
-                        pathSecond[i].partialTrueWt = trueWt(&pathSecond[i], GAP, wtInsertDel, wtSub, LENGTH);
+                        pathSecond[i].partialTrueWt = trueWt(&pathSecond[i], tcm, LENGTH, alphSize);
 
                     }
 
@@ -1327,7 +1324,7 @@ int aligner(uint64_t *seq1, size_t seq1Len, uint64_t *seq2, size_t seq2Len, size
                     pathSecond[i].posTrueA++;
                     //  path[i].posTrueB++;
                     if (flagEmpty[1] == 0) {
-                        pathSecond[i].partialTrueWt = trueWt(&pathSecond[i], GAP, wtInsertDel, wtSub, LENGTH);
+                        pathSecond[i].partialTrueWt = trueWt(&pathSecond[i], tcm, LENGTH, alphSize);
 
                     }
 
@@ -1374,7 +1371,7 @@ int aligner(uint64_t *seq1, size_t seq1Len, uint64_t *seq2, size_t seq2Len, size
                     // path[i].posTrueA++;
                     pathSecond[i].posTrueB++;
                     if (flagEmpty[1] == 0) {
-                        pathSecond[i].partialTrueWt = trueWt(&pathSecond[i], GAP, wtInsertDel, wtSub, LENGTH);
+                        pathSecond[i].partialTrueWt = trueWt(&pathSecond[i], tcm, LENGTH, alphSize);
 
                     }
 
@@ -1638,12 +1635,13 @@ int aligner(uint64_t *seq1, size_t seq1Len, uint64_t *seq2, size_t seq2Len, size
     finalAlign.partialWt = 0;
 
     for(i = 0; i < LENGTH; i++){
-        if(finalAlign.partialAlign[i] == GAP || finalAlign.partialAlign[i + LENGTH] == GAP)
-            finalAlign.partialWt = finalAlign.partialWt + wtInsertDel;                       // NEED TO BE CHANGED
-        else if(finalAlign.partialAlign[i] == finalAlign.partialAlign[i + LENGTH])
-            finalAlign.partialWt = finalAlign.partialWt;
-        else
-            finalAlign.partialWt = finalAlign.partialWt + wtSub;
+        finalAlign.partialAlign[i] = getCost(finalAlign.partialAlign[i], finalAlign.partialAlign[i + LENGTH], tcm, alphSize);
+        // if(finalAlign.partialAlign[i] == GAP || finalAlign.partialAlign[i + LENGTH] == GAP)
+        //     finalAlign.partialWt = finalAlign.partialWt + wtInsertDel;                       // NEED TO BE CHANGED
+        // else if(finalAlign.partialAlign[i] == finalAlign.partialAlign[i + LENGTH])
+        //     finalAlign.partialWt = finalAlign.partialWt;
+        // else
+        //     finalAlign.partialWt = finalAlign.partialWt + wtSub;
 
     }
 
@@ -1712,7 +1710,7 @@ int aligner(uint64_t *seq1, size_t seq1Len, uint64_t *seq2, size_t seq2Len, size
 
 //****************************************   COMBINE SORT CANDIDATES ACCORDING TO TRUE METRIC  *************************************************
 
-int trueWt(struct align *path, const int GAP, int wtInsertDel, int wtSub, int len){
+int trueWt(struct align *path, costMatrix_p tcm, int len, size_t alphSize){
 
     int i;
 
@@ -1739,15 +1737,17 @@ int trueWt(struct align *path, const int GAP, int wtInsertDel, int wtSub, int le
 
     for(i = 0; i < path->posStringA ; i++){
 
-        if (path->partialAlign[i] == GAP || path->partialAlign[i + len] == GAP) {
-            diff[i] = wtInsertDel;
-        }
-        else if (path->partialAlign[i]== path->partialAlign[i + len]) {
-            diff[i] = 0;
-        }
-        else {
-            diff[i] = wtSub;
-        }
+        diff[i] = getCost(path->partialAlign[i], path->partialAlign[i + len], tcm, alphSize);
+
+        // if (path->partialAlign[i] == GAP || path->partialAlign[i + len] == GAP) {
+        //     diff[i] = wtInsertDel;
+        // }
+        // else if (path->partialAlign[i]== path->partialAlign[i + len]) {
+        //     diff[i] = 0;
+        // }
+        // else {
+        //     diff[i] = wtSub;
+        // }
     }
     //    }
 
@@ -1775,14 +1775,14 @@ int trueWt(struct align *path, const int GAP, int wtInsertDel, int wtSub, int le
 
 }
 
-int getCost(uint64_t lhs, uint64_t rhs, costMtx_t* tcm, size_t alphSize) {
-    int gap = 1 << (alphSize - 1);
-    if (lhs == rhs)
-        return 0;
-    if (lhs == gap || rhs == gap)
-        return tcm->gapCost;
-    return tcm->subCost;
-}
+// int getCost(uint64_t lhs, uint64_t rhs, costMatrix_t tcm, size_t alphSize) {
+//     int gap = 1 << (alphSize - 1);
+//     if (lhs == rhs)
+//         return 0;
+//     if (lhs == gap || rhs == gap)
+//         return tcm->gapCost;
+//     return tcm->subCost;
+// }
 
 void freeRetType(retType_t* toFree) {
     free(toFree->seq1);
