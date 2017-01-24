@@ -36,7 +36,6 @@ data  PhylogeneticNode n s
     } deriving (Eq, Functor)
 
 
-
 -- |
 -- This serves as a computation /dependant/ node decoration designed to hold node
 -- information for a a phylogenetic network (or tree).
@@ -93,3 +92,7 @@ instance Bifunctor PhylogeneticNode where
     bimap g f = 
       PNode <$> g . nodeDecorationDatum
             <*> f . sequenceDecoration
+
+
+singletonSubtreeLeafSet :: Int -> Int -> SubtreeLeafSet
+singletonSubtreeLeafSet n i = LS . setBit i $ n `bitVec` 0

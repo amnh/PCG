@@ -57,15 +57,25 @@ type TopologicalResult = PhylogeneticSolution (ReferenceDAG (Maybe Double) (Mayb
 type CharacterResult   = PhylogeneticSolution CharacterDAG
 
 
-type CharacterDAG      = PhylogeneticDAG
-                             (Maybe Double)
-                             (Maybe String)
-                             UnifiedDiscreteCharacter
-                             UnifiedDiscreteCharacter
-                             UnifiedContinuousCharacter
-                             UnifiedDiscreteCharacter
-                             UnifiedDiscreteCharacter
-                             UnifiedDynamicCharacter
+type UnRiefiedCharacterDAG = PhylogeneticDAG
+                               (Maybe Double)
+                               (Maybe String)
+                               UnifiedDiscreteCharacter
+                               UnifiedDiscreteCharacter
+                               UnifiedContinuousCharacter
+                               UnifiedDiscreteCharacter
+                               UnifiedDiscreteCharacter
+                               UnifiedDynamicCharacter
+
+type CharacterDAG = PhylogeneticDAG2
+                        (Maybe Double)
+                        (Maybe String)
+                        UnifiedDiscreteCharacter
+                        UnifiedDiscreteCharacter
+                        UnifiedContinuousCharacter
+                        UnifiedDiscreteCharacter
+                        UnifiedDiscreteCharacter
+                        UnifiedDynamicCharacter
 
 
 type  UnifiedCharacterSequence
@@ -122,6 +132,56 @@ instance ( Show e
         show dag <> "\n" <> foldMap f dag
       where
         f (PNode n sek) = unlines [show n, show sek]
+
+
+riefiedToCharacterDAG :: UnRiefiedCharacterDAG -> CharacterDAG
+riefiedToCharacterDAG (PDAG2 dag) = PDAG2 $
+    RefDAG
+    { references = 
+    , rootRefs   = rootRefs  dag
+    , graphData  = graphData dag
+    }
+  where
+    dagSize   = length $ references dag
+    leafCount =
+
+    memo = V.generate dagSize g
+      
+    g i =
+      where
+        indexData = references dag ! i
+        newNode =
+            PNode2
+            { resolutions          = res
+            , nodeDecorationDatum2 = nodeDecorationDatum $ nodeDecoration indexData
+            }
+        res = pure $
+            ResInfo
+            { leafSetRepresentation = bv
+            , subtreeRepresentation = NS ""
+            , characterSequence     = sequenceDecoration $ nodeDecoration indexData
+            , localSequenceCost     = 0
+            , totalSubtreeCost      = 0
+            }
+        bv =
+          case buildLeafNodeAssignments ! i of
+            Just n  -> leafCount `singletonSubtreeLeafSet` n
+            Nothing ->
+              case IM.keys $ childRefs indexData of
+                x:xs -> foldMap1 (.|.) $ leafSetRepresentation . NE.head . resolutions . (memo !) <$> (x:|xs)
+                []   -> error "Never occurs."
+        
+    (leafCount, buildLeafNodeAssignments) = (`runState` 0) . traverse f . references
+      where
+        f e
+          | (not . null) childRefs e = pure Nothing
+          | otherwise = do
+              c <- get
+              modify (+1)
+              pure $ Just c
+    
+    
+
 
 
 -- |
