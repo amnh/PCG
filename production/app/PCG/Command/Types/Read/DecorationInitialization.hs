@@ -47,6 +47,7 @@ import           Bio.PhyloGraphPrime
 --import           Bio.PhyloGraphPrime.Component
 import           Bio.PhyloGraphPrime.Node
 import           Bio.PhyloGraphPrime.ReferenceDAG
+import           Bio.PhyloGraphPrime.PhylogeneticDAG
 import           Control.Lens
 --import           Control.Arrow                     ((&&&))
 --import           Control.Applicative               ((<|>))
@@ -71,7 +72,7 @@ import           Data.List.NonEmpty                (NonEmpty( (:|) ))
 --import           Data.MonoTraversable
 --import           Data.Vector                       (Vector)
 --import           PCG.Command.Types.Read.Unification.UnificationError
-import           PCG.SearchState 
+--import           PCG.SearchState 
 import           Prelude                    hiding (lookup, zip, zipWith)
 
 --import Debug.Trace
@@ -86,6 +87,43 @@ traceOpt identifier x = (trace ("Before " <> identifier) ())
 -}
 
 
+initializeDecorations2 :: CharacterResult -> PhylogeneticSolution InitialDecorationDAG
+initializeDecorations2 (PhylogeneticSolution forests) = PhylogeneticSolution $ fmap performDecoration <$> forests
+  where
+--    performDecoration :: CharacterDAG -> InitialDecorationDAG
+    performDecoration =
+      postorderSequence'
+        (g  sankoffPostOrder)
+        (g  sankoffPostOrder)
+        id2
+        (g    fitchPostOrder)
+        (g additivePostOrder)
+        (g adaptiveDirectOptimizationPostOrder)  
+      where
+        g _  Nothing  [] = error $ "Uninitialized leaf node. This is bad!"
+        g h (Just  v) [] = h v []
+        g h        e  xs = h (error $ "We shouldn't be using this value." ++ show e ++ show (length xs)) xs
+
+        id2 x _ = x
+
+        adaptiveDirectOptimizationPostOrder dec kidDecs = directOptimizationPostOrder pairwiseAlignmentFunction dec kidDecs
+          where
+            pairwiseAlignmentFunction = chooseDirectOptimizationComparison dec kidDecs
+
+{-                                                              
+        postOrderTransformation parentalNode childNodes =
+          PNode
+          { nodeDecorationDatum = (nodeDecorationDatum parentalNode) 
+          , sequenceDecoration  = postOrderLogic (sequenceDecoration parentalNode) (sequenceDecoration <$> childNodes)
+          } 
+
+        preOrderTransformation parentalNode childNodes =
+          PNode
+          { nodeDecorationDatum = (nodeDecorationDatum parentalNode) 
+          , sequenceDecoration  = preOrderLogic (sequenceDecoration parentalNode) (second sequenceDecoration <$> childNodes)
+          } 
+-}
+{-
 initializeDecorations :: CharacterResult -> PhylogeneticSolution InitialDecorationDAG
 initializeDecorations (PhylogeneticSolution forests) = PhylogeneticSolution $ fmap performDecoration <$> forests
   where
@@ -151,6 +189,7 @@ initializeDecorations (PhylogeneticSolution forests) = PhylogeneticSolution $ fm
         adaptiveDirectOptimizationPostOrder dec kidDecs = directOptimizationPostOrder pairwiseAlignmentFunction dec kidDecs
           where
             pairwiseAlignmentFunction = chooseDirectOptimizationComparison dec kidDecs
+
 {-
     preOrderLogic ::
         CharacterSequence
@@ -202,7 +241,7 @@ initializeDecorations (PhylogeneticSolution forests) = PhylogeneticSolution $ fm
           where
             pairwiseAlignmentFunction = chooseDirectOptimizationComparison dec $ snd <$> kidDecs
        
-
+-}
 
 chooseDirectOptimizationComparison :: ( SimpleDynamicDecoration d  c
                                       , SimpleDynamicDecoration d' c

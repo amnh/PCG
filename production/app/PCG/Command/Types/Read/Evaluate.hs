@@ -7,6 +7,7 @@ module PCG.Command.Types.Read.Evaluate
 import           Bio.Character.Parsed
 import           Bio.Metadata.Parsed
 import           Bio.PhyloGraph.Forest
+import           Bio.PhyloGraphPrime.PhylogeneticDAG
 --import           Bio.PhyloGraph.Solution      (SearchState)
 import           Control.Evaluation
 import           Control.Monad                (when)
@@ -42,7 +43,7 @@ import           PCG.Command.Types            (Command(..))
 import           PCG.Command.Types.Read.DecorationInitialization
 import           PCG.Command.Types.Read.Internal
 import           PCG.Command.Types.Read.Unification.Master
-import           PCG.SearchState
+--import           PCG.SearchState
 import           Prelude             hiding   (lookup)
 import           Text.Megaparsec
 
@@ -73,7 +74,7 @@ evaluate (READ fileSpecs) _old = do
 
   where
     transformation = expandIUPAC
-    decoration = fmap (fmap initializeDecorations)
+    decoration = fmap (fmap initializeDecorations2)
 
 evaluate _ _ = fail "Invalid READ command binding"
 

@@ -22,6 +22,8 @@ import Bio.Metadata.CharacterName
 import Bio.Metadata.Discrete
 import Control.Lens
 import Data.Alphabet
+import Data.Bits
+import Data.Hashable
 import Data.MonoTraversable
 import Data.Semigroup
 import Data.TCM
@@ -37,8 +39,13 @@ data DynamicDecorationInitial d
    = DynamicDecorationInitial
    { dynamicDecorationInitialEncodedField :: d
    , metadata                             :: DiscreteCharacterMetadataDec (Element d)
-   }
+   } deriving (Eq)
 
+
+instance Hashable d => Hashable (DynamicDecorationInitial d) where
+
+    hashWithSalt salt = hashWithSalt salt . dynamicDecorationInitialEncodedField 
+      
 
 -- | (✔)
 instance ( EncodableStreamElement (Element d)
@@ -147,8 +154,22 @@ data DynamicDecorationDirectOptimizationPostOrderResult d
    , dynamicDecorationDirectOptimizationPostOrderLeftAlignmentField       :: d
    , dynamicDecorationDirectOptimizationPostOrderRightAlignmentField      :: d
    , dynamicDecorationDirectOptimizationPostOrderMetadata                 :: DiscreteCharacterMetadataDec (Element d)
-   }
+   } deriving (Eq)
 
+
+instance EncodableStream d => Show (DynamicDecorationDirectOptimizationPostOrderResult d) where
+
+    show dec = unlines $ f <$> pairs
+      where
+        f (prefix, accessor) = prefix <> showStream (dec ^. characterAlphabet) (dec ^. accessor)
+        pairs =
+          [ ("Original Encoding   : ", encoded            )
+          , ("Preliminary   Gapped: ", preliminaryGapped  )
+          , ("Preliminary Ungapped: ", preliminaryUngapped)
+          , ("Left  Alignment     : ", leftAlignment      )
+          , ("Right Alignment     : ", rightAlignment     )
+          ] 
+  
 
 instance EncodableDynamicCharacter d => SimpleDynamicExtensionPostOrderDecoration (DynamicDecorationDirectOptimizationPostOrderResult d) d where
 
@@ -172,6 +193,17 @@ instance EncodableDynamicCharacter d => SimpleDynamicExtensionPostOrderDecoratio
             <*> const tcmValue
             $ subDecoration
 
+
+instance Hashable d => Hashable (DynamicDecorationDirectOptimizationPostOrderResult d) where
+
+      hashWithSalt salt dec = foldr1 xor $
+                              [ hashWithSalt salt . dynamicDecorationDirectOptimizationPostOrderEncodedField
+                              , hashWithSalt salt . dynamicDecorationDirectOptimizationPostOrderPreliminaryGappedField
+                              , hashWithSalt salt . dynamicDecorationDirectOptimizationPostOrderPreliminaryUngappedField
+                              , hashWithSalt salt . dynamicDecorationDirectOptimizationPostOrderLeftAlignmentField
+                              , hashWithSalt salt . dynamicDecorationDirectOptimizationPostOrderRightAlignmentField
+                              ] <*> [dec]
+      
 
 -- | (✔)
 instance HasEncoded (DynamicDecorationDirectOptimizationPostOrderResult d) d where

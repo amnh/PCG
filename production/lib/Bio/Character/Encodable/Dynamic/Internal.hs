@@ -39,6 +39,7 @@ import           Data.Key
 import           Data.Bits
 import           Data.BitVector               hiding (foldr, join, not, replicate)
 import           Data.Foldable
+import           Data.Hashable
 import qualified Data.List.NonEmpty           as NE
 import qualified Data.Map                     as M
 import           Data.Maybe                          (fromMaybe)
@@ -95,16 +96,6 @@ instance FiniteBits DynamicCharacterElement where
     finiteBitSize = symbolCount
 
 
-instance PossiblyMissingCharacter DynamicChar where
-
-    {-# INLINE toMissing  #-}
-    toMissing c = Missing $ symbolCount c
-
-    {-# INLINE isMissing  #-}
-    isMissing Missing{} = True
-    isMissing _         = False
-
-
 instance EncodableStreamElement DynamicCharacterElement where
 
     decodeElement alphabet character = NE.fromList $ foldMapWithKey f alphabet
@@ -121,6 +112,22 @@ instance EncodableStreamElement DynamicCharacterElement where
 
 
 --instance NFData DynamicChar
+
+
+instance Hashable DynamicChar where
+
+    hashWithSalt salt (Missing n) = salt `xor` n
+    hashWithSalt salt (DC (BitMatrix n bv)) = salt `xor` n `xor` (hashWithSalt salt $ toInteger bv)
+
+
+instance PossiblyMissingCharacter DynamicChar where
+
+    {-# INLINE toMissing  #-}
+    toMissing c = Missing $ symbolCount c
+
+    {-# INLINE isMissing  #-}
+    isMissing Missing{} = True
+    isMissing _         = False
 
 
 instance MonoFunctor DynamicChar where

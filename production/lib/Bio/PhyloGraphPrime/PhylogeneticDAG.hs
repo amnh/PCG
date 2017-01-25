@@ -1,7 +1,7 @@
 ------------------------------------------------------------------------------
 -- |
 -- Module      :  Bio.PhyloGraphPrime.PhylogeneticDAG
--- Copyright   :  () 2015-2015 Ward Wheeler
+-- Copyright   :  (c) 2015-2015 Ward Wheeler
 -- License     :  BSD-style
 --
 -- Maintainer  :  wheeler@amnh.org
@@ -12,12 +12,17 @@
 --
 -----------------------------------------------------------------------------
 
+{-# LANGUAGE FlexibleContexts #-}
+
 module Bio.PhyloGraphPrime.PhylogeneticDAG where
 
 import           Bio.Character
+import           Bio.Character.Decoration.Additive
 import           Bio.Character.Decoration.Continuous
 import           Bio.Character.Decoration.Discrete
 import           Bio.Character.Decoration.Dynamic
+import           Bio.Character.Decoration.Fitch
+import           Bio.Character.Decoration.Metric 
 import           Bio.Sequence
 import           Bio.Sequence.Block (CharacterBlock)
 import           Bio.PhyloGraphPrime
@@ -26,6 +31,7 @@ import           Bio.PhyloGraphPrime.ReferenceDAG.Internal
 import           Control.Arrow            ((&&&))
 import           Control.Applicative      (liftA2)
 import           Control.Evaluation
+import           Control.Monad.State.Lazy
 import           Data.Bits
 --import           Data.DuplicateSet
 --import qualified Data.DuplicateSet  as DS
@@ -36,7 +42,7 @@ import qualified Data.IntMap        as IM
 import           Data.IntSet              (IntSet)
 import           Data.Key
 import           Data.List.NonEmpty       (NonEmpty( (:|) ))
---import qualified Data.List.NonEmpty as NE
+import qualified Data.List.NonEmpty as NE
 import           Data.List.Utility
 --import           Data.Monoid
 import           Data.MonoTraversable
@@ -48,7 +54,7 @@ import qualified Data.Vector        as V
 -- import Debug.Trace
 
 
-type SearchState = EvaluationT IO (Either TopologicalResult CharacterResult)
+type SearchState = EvaluationT IO (Either TopologicalResult (PhylogeneticSolution InitialDecorationDAG))
 
 
 type TopologicalResult = PhylogeneticSolution (ReferenceDAG (Maybe Double) (Maybe String))
@@ -76,6 +82,21 @@ type CharacterDAG = PhylogeneticDAG2
                         UnifiedDiscreteCharacter
                         UnifiedDiscreteCharacter
                         UnifiedDynamicCharacter
+
+
+type DecoratedCharacterResult = PhylogeneticSolution InitialDecorationDAG
+
+
+type InitialDecorationDAG = PhylogeneticDAG2
+                                (Maybe Double)
+                                (Maybe String)
+                                (SankoffOptimizationDecoration  StaticCharacter)
+                                (SankoffOptimizationDecoration  StaticCharacter)
+                                UnifiedContinuousCharacter --(ContinuousOptimizationDecoration ContinuousChar)
+                                (FitchOptimizationDecoration    StaticCharacter)
+                                (AdditiveOptimizationDecoration StaticCharacter)
+                                -- (DynamicDecorationDirectOptimization DynamicChar) -- UnifiedDynamicCharacter
+                                (DynamicDecorationDirectOptimizationPostOrderResult DynamicChar)
 
 
 type  UnifiedCharacterSequence
@@ -134,54 +155,79 @@ instance ( Show e
         f (PNode n sek) = unlines [show n, show sek]
 
 
+instance ( Show e
+         , Show n
+         , Show m
+         , Show i
+         , Show c
+         , Show f
+         , Show a
+         , Show d
+         ) => Show (PhylogeneticDAG2 e n m i c f a d) where
+
+    show (PDAG2 dag) =
+        show dag <> "\n" <> foldMap f dag
+      where
+        f (PNode2 n sek) = unlines [show n, show sek]
+
+
+riefiedSolution :: PhylogeneticSolution UnRiefiedCharacterDAG -> CharacterResult
+riefiedSolution  = PhylogeneticSolution . fmap (fmap riefiedToCharacterDAG) . phylogeneticForests
+
+
 riefiedToCharacterDAG :: UnRiefiedCharacterDAG -> CharacterDAG
-riefiedToCharacterDAG (PDAG2 dag) = PDAG2 $
+riefiedToCharacterDAG (PDAG dag) = PDAG2 $
     RefDAG
-    { references = 
+    { references = newRefs
     , rootRefs   = rootRefs  dag
     , graphData  = graphData dag
     }
   where
     dagSize   = length $ references dag
-    leafCount =
+
+    newRefs = V.generate dagSize g
+      where
+        g i = IndexData <$> const (memo ! i) <*> parentRefs <*> childRefs $ references dag ! i
 
     memo = V.generate dagSize g
-      
-    g i =
       where
-        indexData = references dag ! i
-        newNode =
-            PNode2
-            { resolutions          = res
-            , nodeDecorationDatum2 = nodeDecorationDatum $ nodeDecoration indexData
-            }
-        res = pure $
-            ResInfo
-            { leafSetRepresentation = bv
-            , subtreeRepresentation = NS ""
-            , characterSequence     = sequenceDecoration $ nodeDecoration indexData
-            , localSequenceCost     = 0
-            , totalSubtreeCost      = 0
-            }
-        bv =
-          case buildLeafNodeAssignments ! i of
-            Just n  -> leafCount `singletonSubtreeLeafSet` n
-            Nothing ->
-              case IM.keys $ childRefs indexData of
-                x:xs -> foldMap1 (.|.) $ leafSetRepresentation . NE.head . resolutions . (memo !) <$> (x:|xs)
-                []   -> error "Never occurs."
+        g i = newNode -- IndexData <$> const newNode <*> parentRefs <*> childRefs $ indexData
+          where
+            indexData = references dag ! i
+            newNode =
+                PNode2
+                { resolutions          = res
+                , nodeDecorationDatum2 = nodeDecorationDatum $ nodeDecoration indexData
+                }
+            res = pure $
+                ResInfo
+                { leafSetRepresentation = bv
+                , subtreeRepresentation = ns
+                , characterSequence     = sequenceDecoration $ nodeDecoration indexData
+                , localSequenceCost     = 0
+                , totalSubtreeCost      = 0
+                }
+            
+            (bv, ns) =
+              case buildLeafNodeAssignments ! i of
+                Just n  -> ( leafCount `singletonSubtreeLeafSet` n
+                           , singletonNewickSerialization n
+                           )
+                Nothing ->
+                  case IM.keys $ childRefs indexData of
+                    x:xs -> ( foldr1 (.|.) $ leafSetRepresentation . NE.head . resolutions . (memo !) <$> (x:|xs)
+                            , foldMap1 (subtreeRepresentation . NE.head . resolutions . (memo !)) (x:|xs)
+                            )
+                    []   -> error "Never occurs."
         
-    (leafCount, buildLeafNodeAssignments) = (`runState` 0) . traverse f . references
-      where
-        f e
-          | (not . null) childRefs e = pure Nothing
-          | otherwise = do
-              c <- get
-              modify (+1)
-              pure $ Just c
-    
-    
-
+        (buildLeafNodeAssignments, leafCount) = (`runState` 0) . traverse f $ references dag
+          where
+            f e
+              | (not . null) (childRefs e) = pure Nothing
+              | otherwise = do
+                  c <- get
+                  modify (+1)
+                  pure $ Just c
 
 
 -- |

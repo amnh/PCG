@@ -1,6 +1,6 @@
 module PCG.Computation.Internal where
 
---import Bio.PhyloGraph.Solution
+import Bio.PhyloGraphPrime.PhylogeneticDAG
 import Control.Evaluation
 import Data.Char      (isSpace)
 import Data.Either    (partitionEithers)
@@ -8,7 +8,7 @@ import Data.Foldable
 import Data.Monoid
 import PCG.Command
 import PCG.Script
-import PCG.SearchState
+--import PCG.SearchState
 
 import qualified PCG.Command.Types.Read   as Read
 --import qualified PCG.Command.Types.Report as Report

@@ -29,6 +29,7 @@ import           Bio.PhyloGraph.DAG
 import           Bio.PhyloGraph.Forest.Parsed
 import           Bio.PhyloGraphPrime
 import           Bio.PhyloGraphPrime.Component
+import           Bio.PhyloGraphPrime.PhylogeneticDAG
 import           Bio.PhyloGraphPrime.Node
 import           Bio.PhyloGraphPrime.ReferenceDAG
 import           Control.Arrow                     ((&&&))
@@ -54,7 +55,7 @@ import qualified Data.TCM                   as TCM
 import           Data.MonoTraversable
 import           Data.Vector                       (Vector)
 import           PCG.Command.Types.Read.Unification.UnificationError
-import           PCG.SearchState 
+--import           PCG.SearchState 
 import           Prelude                    hiding (lookup, zip, zipWith)
 
 
@@ -95,7 +96,7 @@ rectifyResults2 :: [FracturedParseResult]
 --rectifyResults2 fprs | trace (show fprs) False = undefined
 rectifyResults2 fprs =
     case errors of
-      []   -> dagForest --      = undefined -- Right maskedSolution
+      []   -> fmap (fmap riefiedSolution) dagForest --      = undefined -- Right maskedSolution
       x:xs -> Left . sconcat $ x:|xs
   where
     -- Step 1: Gather data file contents
@@ -147,7 +148,7 @@ rectifyResults2 fprs =
 
         matchToChars :: Map String UnifiedCharacterSequence
                      -> PhylogeneticForest ParserTree
-                     -> PhylogeneticForest CharacterDAG
+                     -> PhylogeneticForest UnRiefiedCharacterDAG --CharacterDAG
         matchToChars charMapping = fmap (PDAG . fmap f)
           where
             f label = PNode label $ fromMaybe defaultCharacterSequenceDatum charLabelMay

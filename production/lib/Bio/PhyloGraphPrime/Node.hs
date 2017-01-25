@@ -17,6 +17,8 @@ module Bio.PhyloGraphPrime.Node
   , PhylogeneticNode2(..)
   , ResolutionCache
   , ResolutionInformation(..)
+  , singletonNewickSerialization
+  , singletonSubtreeLeafSet
   ) where
 
 
@@ -57,6 +59,19 @@ data  ResolutionInformation s
     } deriving (Functor)
 
 
+instance Show s => Show (ResolutionInformation s) where
+
+    show resInfo = unlines tokens
+      where
+        tokens =
+          [ "Leaf Set  : " <> show (leafSetRepresentation resInfo)
+          , "Subtree   : " <> show (subtreeRepresentation resInfo)
+          , "Local Cost: " <> show (localSequenceCost     resInfo)
+          , "Total Cost: " <> show (totalSubtreeCost      resInfo)
+          , "Decoration: " <> show (characterSequence     resInfo)
+          ]
+
+
 instance Eq  (ResolutionInformation s) where
 
     lhs == rhs = leafSetRepresentation lhs == leafSetRepresentation rhs
@@ -75,7 +90,7 @@ type ResolutionCache s = NonEmpty (ResolutionInformation s)
 
 
 newtype NewickSerialization = NS String
-  deriving (Eq, Ord, Semigroup)
+  deriving (Eq, Ord)
 
 
 newtype SubtreeLeafSet = LS BitVector
@@ -84,7 +99,24 @@ newtype SubtreeLeafSet = LS BitVector
 
 instance Semigroup SubtreeLeafSet where
 
-    (<>) =  (.|.)
+    (<>) = (.|.)
+
+
+instance Show SubtreeLeafSet where
+
+    show (LS bv) = foldMap f $ toBits bv
+      where
+        f x = if x then "1" else "0"
+    
+
+instance Semigroup NewickSerialization where
+
+    (NS lhs) <> (NS rhs) = NS $ "(" <> lhs <> "," <> rhs <> ")"
+
+
+instance Show NewickSerialization where
+
+    show (NS s) = s
     
 
 instance Bifunctor PhylogeneticNode where
@@ -94,5 +126,8 @@ instance Bifunctor PhylogeneticNode where
             <*> f . sequenceDecoration
 
 
+singletonNewickSerialization :: Int -> NewickSerialization
+singletonNewickSerialization i = NS $ show i
+
 singletonSubtreeLeafSet :: Int -> Int -> SubtreeLeafSet
-singletonSubtreeLeafSet n i = LS . setBit i $ n `bitVec` 0
+singletonSubtreeLeafSet n i = LS . (`setBit` i) $ n `bitVec` (0 :: Integer)
