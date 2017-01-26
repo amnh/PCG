@@ -24,7 +24,8 @@ module Bio.PhyloGraphPrime.Node
 
 import Data.Bifunctor
 import Data.BitVector
-import Data.List.NonEmpty
+import Data.Foldable
+import Data.List.NonEmpty (NonEmpty(..))
 import Data.Semigroup
 
 
@@ -59,6 +60,26 @@ data  ResolutionInformation s
     } deriving (Functor)
 
 
+type ResolutionCache s = NonEmpty (ResolutionInformation s)
+
+
+newtype NewickSerialization = NS String
+  deriving (Eq, Ord)
+
+
+newtype SubtreeLeafSet = LS BitVector
+  deriving (Eq, Ord, Bits)
+
+
+instance (Show n, Show s) => Show (PhylogeneticNode2 s n) where
+
+    show node = unlines
+        [ show $ nodeDecorationDatum2 node
+        , "Resolutions: {" <> (show . length . resolutions) node <> "}\n"
+        , unlines . fmap show . toList $ resolutions node
+        ] 
+
+
 instance Show s => Show (ResolutionInformation s) where
 
     show resInfo = unlines tokens
@@ -84,17 +105,6 @@ instance Ord (ResolutionInformation s) where
         case leafSetRepresentation lhs `compare` leafSetRepresentation lhs of
           EQ -> subtreeRepresentation lhs `compare` subtreeRepresentation rhs
           c  -> c
-
-
-type ResolutionCache s = NonEmpty (ResolutionInformation s)
-
-
-newtype NewickSerialization = NS String
-  deriving (Eq, Ord)
-
-
-newtype SubtreeLeafSet = LS BitVector
-  deriving (Eq, Ord, Bits)
 
 
 instance Semigroup SubtreeLeafSet where
