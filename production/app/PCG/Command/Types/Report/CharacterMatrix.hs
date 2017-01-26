@@ -16,7 +16,7 @@
 
 module PCG.Command.Types.Report.CharacterMatrix where
 
-import           Bio.Solution
+--import           Bio.Solution
 import           Bio.Metadata.Internal
 import           Data.Matrix.NotStupid        ((<->), (<|>), matrix, getElem, setElem, Matrix, getRow, nrows, ncols)
 import           Data.Maybe                   (fromMaybe)
@@ -39,7 +39,7 @@ instance Monoid CharFileMatrix where
         lowerLeftEmptyBlock  = matrix (nrows m2) (ncols m1) (const False)
         newMat =  (m1 <|> upperRightEmptyBlock) <-> (lowerLeftEmptyBlock <|> m2)
 
-crossReferenceOutput :: Solution -> String
+-- crossReferenceOutput :: Solution -> String
 crossReferenceOutput = error "Cross reference output is not yet implemented"
 
 {-

@@ -68,9 +68,12 @@ evaluate (READ fileSpecs) _old = do
       Left pErr -> fail $ show pErr   -- Report structural errors here.
       Right xs ->
         case decoration . masterUnify $ transformation <$> concat xs of
+--        case masterUnify $ transformation <$> concat xs of
           Left uErr -> fail $ show uErr -- Report unification errors here.
            -- TODO: rectify against 'old' SearchState, don't just blindly merge or ignore old state
-          Right g   -> (liftIO . putStrLn $ show g) $> g
+          Right g   -> (liftIO . putStrLn $ show g)
+                    $> g
+--                    $> (fmap initializeDecorations2 g)
 
   where
     transformation = expandIUPAC
