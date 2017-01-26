@@ -477,17 +477,29 @@ getCharMetadata :: Maybe StepMatrix -> PhyloSequence -> V.Vector CharacterMetada
 getCharMetadata mayMtx seqBlock =
     V.replicate len $ CharacterMetadata "" aligned cType alph False mayTCM additivity wt
     where
+        -- All the `case form of` statements are to handle the possibly missing format values
+        -- I think I appropriately default the values... but maybe not!
         aligned     = alignedSeq seqBlock
-        cType       = charDataType form
-        alph        = if areTokens form
-                      then syms
-                      else g $ headMay syms
-        syms        = f $ symbols form
+        cType       =
+          case form of
+            Nothing -> Standard
+            Just fm -> charDataType fm
+        alph        =
+          case form of
+            Nothing -> g $ headMay syms
+            Just fm ->
+              if areTokens fm
+              then syms
+              else g $ headMay syms
+        syms        =
+          case form of
+            Nothing -> [""]
+            Just fm -> f $ symbols fm
         f (Right x) = x
         f _         = [""] -- Shouldn't be possible, but leaving it in for completeness.
         g (Just s)  = foldr (\x acc -> [x] : acc) [] s
         g Nothing   = [""]
-        form        = head $ format seqBlock
+        form        = headMay $ format seqBlock
         len         = numChars . head $ charDims seqBlock
         mayTCM      = matrixData <$> mayMtx
         additivity  = False
