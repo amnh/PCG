@@ -29,6 +29,7 @@ module Text.Megaparsec.Custom
   ) where
 
 import           Data.Char                (isSpace)
+import           Data.Either              (either)
 import           Data.Functor             (($>))
 import           Data.List.NonEmpty       (NonEmpty)
 import qualified Data.List.NonEmpty as NE (fromList)
@@ -129,6 +130,14 @@ comment start end = commentDefinition' False
           if enquote
           then [prefix,before,comments,suffix,after]
           else [before,comments,after]
+
+
+-- |
+-- Tries to run a parser on a given file.
+-- On a parse success returns the Show value of the parsed result.
+-- On a parse failure the nice error string.
+runParserOnFile :: (MonadParsec e s m, Token s ~ Char, Show a) => m a -> FilePath -> IO String
+runParserOnFile parser filePath = either (parseErrorPretty :: ParseError Char Dec -> String) show . parse parser filePath <$> filePath
 
 
 -- | Takes a 'Stream' of 'Char's and returns a String
