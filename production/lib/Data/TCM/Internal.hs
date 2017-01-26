@@ -10,7 +10,7 @@
 --
 -----------------------------------------------------------------------------
 
--- {-# LANGUAGE Strict #-}
+{-# LANGUAGE Strict       #-}
 {-# LANGUAGE TypeFamilies #-}
 
 module Data.TCM.Internal where
@@ -137,89 +137,94 @@ data TCMDiagnosis
 
 -- | Performs a element-wise monomporphic map over the 'TCM'.
 instance MonoFunctor TCM where
+
     omap f (TCM n v) = TCM n $ V.map f v
 
 
 -- | Performs a row-major monomporphic fold over the 'TCM'.
 instance MonoFoldable TCM where
-  -- | Map each element of a structure to a 'Monoid' and combine the results.
-  {-# INLINE ofoldMap #-}
-  ofoldMap f = V.foldr (mappend . f) mempty . vec
 
-  -- | Right-associative fold of a structure.
-  {-# INLINE ofoldr #-}
-  ofoldr f e = V.foldr f e . vec
+    -- | Map each element of a structure to a 'Monoid' and combine the results.
+    {-# INLINE ofoldMap #-}
+    ofoldMap f = V.foldr (mappend . f) mempty . vec
 
-  -- | Strict left-associative fold of a structure.
-  {-# INLINE ofoldl' #-}
-  ofoldl' f e = V.foldl' f e . vec
+    -- | Right-associative fold of a structure.
+    {-# INLINE ofoldr #-}
+    ofoldr f e = V.foldr f e . vec
 
-  -- | Right-associative fold of a monomorphic container with no base element.
-  --
-  -- Note: this is a partial function. On an empty 'MonoFoldable', it will
-  -- throw an exception.
-  --
-  -- /See 'Data.MinLen.ofoldr1Ex' from "Data.MinLen" for a total version of this function./
-  {-# INLINE ofoldr1Ex #-}
-  ofoldr1Ex f = V.foldr1 f . vec
+    -- | Strict left-associative fold of a structure.
+    {-# INLINE ofoldl' #-}
+    ofoldl' f e = V.foldl' f e . vec
 
-  -- | Strict left-associative fold of a monomorphic container with no base
-  -- element.
-  --
-  -- Note: this is a partial function. On an empty 'MonoFoldable', it will
-  -- throw an exception.
-  --
-  -- /See 'Data.MinLen.ofoldl1Ex'' from "Data.MinLen" for a total version of this function./
-  {-# INLINE ofoldl1Ex' #-}
-  ofoldl1Ex' f = V.foldl1 f . vec
+    -- | Right-associative fold of a monomorphic container with no base element.
+    --
+    -- Note: this is a partial function. On an empty 'MonoFoldable', it will
+    -- throw an exception.
+    --
+    -- /See 'Data.MinLen.ofoldr1Ex' from "Data.MinLen" for a total version of this function./
+    {-# INLINE ofoldr1Ex #-}
+    ofoldr1Ex f = V.foldr1 f . vec
 
-  {-# INLINE otoList #-}
-  otoList = V.toList . vec
+    -- | Strict left-associative fold of a monomorphic container with no base
+    -- element.
+    --
+    -- Note: this is a partial function. On an empty 'MonoFoldable', it will
+    -- throw an exception.
+    --
+    -- /See 'Data.MinLen.ofoldl1Ex'' from "Data.MinLen" for a total version of this function./
+    {-# INLINE ofoldl1Ex' #-}
+    ofoldl1Ex' f = V.foldl1' f . vec
 
-  {-# INLINE onull #-}
-  onull = const False
+    {-# INLINE otoList #-}
+    otoList = V.toList . vec
 
-  {-# INLINE olength #-}
-  olength = V.length .vec
+    {-# INLINE onull #-}
+    onull = const False
+
+    {-# INLINE olength #-}
+    olength = V.length .vec
 
 
 -- | Performs a row-major monomporphic traversal over ther 'TCM'.
 instance MonoTraversable TCM where
-  -- | Map each element of a monomorphic container to an action,
-  -- evaluate these actions in row-major order and collect the results.
-  {-# INLINE otraverse #-}
-  otraverse f (TCM n v) = fmap (TCM n . V.fromList) . traverse f $ V.toList v
 
-  -- | Map each element of a monomorphic container to a monadic action,
-  -- evaluate these actions from left to right, and
-  -- collect the results.
-  {-# INLINE omapM #-}
-  omapM = otraverse
+    -- | Map each element of a monomorphic container to an action,
+    -- evaluate these actions in row-major order and collect the results.
+    {-# INLINE otraverse #-}
+    otraverse f (TCM n v) = fmap (TCM n . V.fromList) . traverse f $ V.toList v
+
+    -- | Map each element of a monomorphic container to a monadic action,
+    -- evaluate these actions from left to right, and
+    -- collect the results.
+    {-# INLINE omapM #-}
+    omapM = otraverse
 
 
 -- | Resulting TCMs will have at a dimension between 2 and 25.
 instance Arbitrary TCM where
-  arbitrary = do 
-    dimension  <- (arbitrary :: Gen Int) `suchThat` (\x -> 2 <= x && x <= 25) 
-    dataVector <- V.fromList <$> vectorOf (dimension * dimension) arbitrary
-    pure $ TCM dimension dataVector
+
+    arbitrary = do 
+        dimension  <- (arbitrary :: Gen Int) `suchThat` (\x -> 2 <= x && x <= 25) 
+        dataVector <- V.fromList <$> vectorOf (dimension * dimension) arbitrary
+        pure $ TCM dimension dataVector
 
 
 -- |
 -- A pretty printed custom show instance for 'TCM'.
 instance Show TCM where
-  show tcm = headerLine <> matrixLines
-    where
-      renderRow i = ("  "<>) . unwords $ renderValue <$> [ tcm ! (i,j) | j <- rangeValues ]
-      matrixLines = unlines $ renderRow   <$> rangeValues
-      rangeValues = [0 .. size tcm - 1] 
-      headerLine  = '\n' : unwords [ "TCM:", show $ size tcm, "x", show $ size tcm, "\n"]
-      maxValue    = maximumEx tcm
-      padSpacing  = length $ show maxValue
-      renderValue x = pad <> shown
-        where
-          shown = show x
-          pad   = (padSpacing - length shown) `replicate` ' '
+
+    show tcm = headerLine <> matrixLines
+      where
+        renderRow i = ("  "<>) . unwords $ renderValue <$> [ tcm ! (i,j) | j <- rangeValues ]
+        matrixLines = unlines $ renderRow   <$> rangeValues
+        rangeValues = [0 .. size tcm - 1] 
+        headerLine  = '\n' : unwords [ "TCM:", show $ size tcm, "x", show $ size tcm, "\n"]
+        maxValue    = maximumEx tcm
+        padSpacing  = length $ show maxValue
+        renderValue x = pad <> shown
+          where
+            shown = show x
+            pad   = (padSpacing - length shown) `replicate` ' '
         
         
 -- | /O(1)/ Indexing without bounds checking.
@@ -501,7 +506,7 @@ factorTCM tcm
   | factor <= 1 = (x,                       tcm)
   | otherwise   = (x, (`div` factor) `omap` tcm)
   where
-    factor = ofoldr1Ex gcd tcm
+    factor = ofoldl1Ex' gcd tcm
     x = fromEnum factor
 
 
