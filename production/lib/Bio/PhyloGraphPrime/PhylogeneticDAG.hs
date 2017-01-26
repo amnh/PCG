@@ -149,10 +149,9 @@ instance ( Show e
          , Show d
          ) => Show (PhylogeneticDAG e n m i c f a d) where
 
-    show (PDAG dag) =
-        show dag <> "\n" <> foldMap f dag
+    show (PDAG dag) = show dag <> "\n" <> foldMapWithKey f dag
       where
-        f (PNode n sek) = unlines [show n, show sek]
+        f i (PNode n sek) = mconcat [ "Node {", show i, "}:\n\n", unlines [show n, show sek] ] 
 
 
 instance ( Show e
@@ -165,10 +164,10 @@ instance ( Show e
          , Show d
          ) => Show (PhylogeneticDAG2 e n m i c f a d) where
 
-    show (PDAG2 dag) =
-        show dag <> "\n" <> foldMap f dag
+    show (PDAG2 dag) = show dag <> "\n" <> foldMapWithKey f dag
       where
-        f (PNode2 n sek) = unlines [show n, show sek]
+--        f i (PNode2 n sek) = mconcat [ "Node {", show i, "}:\n\n", unlines [show n, show sek], "\n\n" ] 
+        f i n = mconcat [ "Node {", show i, "}:\n\n", show n ]
 
 
 riefiedSolution :: PhylogeneticSolution UnRiefiedCharacterDAG -> CharacterResult
@@ -305,12 +304,13 @@ applySoftwireResolutions inputContexts =
       [x]  ->
           let y = pure <$> fst x
           in  if   multipleParents x
-              then y <> pure []
+              then y -- <> pure []
               else y
       x:xs ->
         case pairs $ x:xs of
           y:ys -> foldMap1 pairingLogic $ y :| ys
-          []   -> pure [] -- This will never happen, covered by previous case statement
+          -- This will never happen, covered by previous case statement
+          []   -> error "Fatal logic error in 'applySoftwireResolutions' definition when matching pattern in 'pairs' application."
 
   where
     multipleParents = not . isSingleton . otoList . snd
@@ -323,10 +323,10 @@ applySoftwireResolutions inputContexts =
     pairingLogic (lhs, rhs) =
         case (multipleParents lhs, multipleParents rhs) of
           -- The Nothing cases *should* never happen, but best to handle them anyways
-          (True , True ) -> pairedSet
-          (True , False) -> pairedSet <> lhsSet
+          (False, False) -> pairedSet
           (False, True ) -> pairedSet <> rhsSet
-          (False, False) -> pairedSet <> lhsSet <> rhsSet
+          (True , False) -> pairedSet <> lhsSet
+          (True , True ) -> pairedSet <> lhsSet <> rhsSet
        where
          lhsSet = pure <$> lhs'
          rhsSet = pure <$> rhs'
@@ -334,15 +334,15 @@ applySoftwireResolutions inputContexts =
          rhs'   = fst rhs
          pairedSet =
              case cartesianProduct lhs' rhs' of
-               []   -> pure []
                x:xs -> x:|xs
+               []   -> pure [] -- This shouldn't ever happen
 --         cartesianProduct :: (Foldable t, Foldable t') => t a -> t a' -> [[a]]
 
          cartesianProduct xs ys =
              [ [x,y]
              | x <- toList xs
              , y <- toList ys
-             , leafSetRepresentation x .&. leafSetRepresentation y /= zeroBits
+             , leafSetRepresentation x .&. leafSetRepresentation y == zeroBits
              ]
 
 {-
