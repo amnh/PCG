@@ -261,7 +261,7 @@ charFormatFieldDef = {-do
         pure block'
     where
         block = choice
-            [ CharDT      <$> try (stringDefinition       "datatype"   )
+            [ CharDT      <$> (try (stringDefinition      "datatype"   ) *> charDTDefinition)
             , SymStr      <$> try (quotedStringDefinition "symbols"    )
             , Transpose   <$> try (booleanDefinition      "transpose"  )
             , Interleave  <$> try (booleanDefinition      "interleave" )
@@ -275,7 +275,14 @@ charFormatFieldDef = {-do
             , Unlabeled   <$> try (booleanDefinition      "nolabels"   )
             , IgnFF       <$> try (ignoredSubBlockDef     ' '          )
             ]
-
+        charDTDefinition = choice
+                         [ string' "standard"   $> Standard
+                         , string' "dna"        $> DNA
+                         , string' "rna"        $> RNA
+                         , string' "nucleotide" $> Nucleotide
+                         , string' "protein"    $> Protein
+                         , string' "continuous" $> Continuous
+                         ] <?> "\nDatatype is not recognized."
 
 -- |
 -- Parses one of the two caputured field values present in a tree block.

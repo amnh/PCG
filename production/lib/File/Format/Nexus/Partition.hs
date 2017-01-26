@@ -84,7 +84,7 @@ partitionNexusBlocks = foldr f ([],[],[],[],[])
 -- 12-tuple containing the possible character formatting options present in the
 -- parsed results.
 partitionCharFormat :: [CharFormatField]
-                    -> ( String
+                    -> ( CharDataType
                        , Either String [String]
                        , Either String [String]
                        , String
@@ -97,7 +97,7 @@ partitionCharFormat :: [CharFormatField]
                        , Bool
                        , Bool
                        )
-partitionCharFormat = foldr f ("", Right [""], Right [""], "", "", "", "", False, False, False, False, False)
+partitionCharFormat = foldr f (Standard, Right [""], Right [""], "", "", "", "", False, False, False, False, False)
     where
         f (CharDT      n) (_,q,r,s,t,u,v,w,x,y,z,o) = (n,q,r,s,t,u,v,w,x,y,z,o)
         f (SymStr      n) (p,_,r,s,t,u,v,w,x,y,z,o) = (p,n,r,s,t,u,v,w,x,y,z,o)
