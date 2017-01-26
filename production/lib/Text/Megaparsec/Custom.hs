@@ -26,6 +26,7 @@ module Text.Megaparsec.Custom
   , inlineSpace
   , nonEmpty
   , somethingTill
+  , runParserOnFile
   ) where
 
 import           Data.Char                (isSpace)
@@ -136,8 +137,8 @@ comment start end = commentDefinition' False
 -- Tries to run a parser on a given file.
 -- On a parse success returns the Show value of the parsed result.
 -- On a parse failure the nice error string.
-runParserOnFile :: (MonadParsec e s m, Token s ~ Char, Show a) => m a -> FilePath -> IO String
-runParserOnFile parser filePath = either (parseErrorPretty :: ParseError Char Dec -> String) show . parse parser filePath <$> filePath
+runParserOnFile :: Show a => Parsec Dec String a -> FilePath -> IO String
+runParserOnFile parser filePath = either (parseErrorPretty :: ParseError Char Dec -> String) show . parse parser filePath <$> readFile filePath
 
 
 -- | Takes a 'Stream' of 'Char's and returns a String
