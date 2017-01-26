@@ -223,7 +223,7 @@ dimensionsDefinition = {-do
         _         <- optional $ try (symbol (string' "nTax"))
         _         <- optional $ try (symbol (char '='))
         numTaxa'  <- optional $ try (symbol integer)
-        _         <- optional $ symbol (string' "nchar")
+        _         <- optional $ symbol ((string' "nchar") *> optional (char' 's'))
         _         <- optional $ symbol (char '=')
         charCount <- optional $ try (symbol integer)
         _         <- symbol   $ char ';'
