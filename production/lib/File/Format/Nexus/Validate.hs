@@ -41,7 +41,7 @@ import           Text.Megaparsec.Prim      (MonadParsec)
 --import qualified Text.Megaparsec.Prim as P (Token)
 import           Text.Megaparsec.Custom
 
-import Debug.Trace (trace)
+-- import Debug.Trace (trace)
 
 
 -- Because some errors are dependent on passing some other validation, they've been split into

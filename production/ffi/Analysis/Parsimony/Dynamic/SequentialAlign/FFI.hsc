@@ -34,7 +34,7 @@ import Test.QuickCheck hiding ((.&.))
 
 #include "costMatrix.h"
 #include "dynamicCharacterOperations.h"
-#include "seqAlignForHaskell.c"
+-- #include "seqAlignForHaskell.c"
 #include <stdint.h>
 
 data ForeignVoid = FV
@@ -216,7 +216,7 @@ instance Storable CDynamicChar where
     poke ptr (CDynamicChar alphLen seqLen nElems seqVal) = do -- to modify values in the C app
         (#poke struct dynChar_t, alphSize  ) ptr alphLen
         (#poke struct dynChar_t, dynCharLen) ptr seqLen
-        (#poke struct dynChar_t, numElems  ) ptr sequen
+        (#poke struct dynChar_t, numElems  ) ptr nElems
         (#poke struct dynChar_t, dynChar   ) ptr seqVal
 
 
@@ -256,9 +256,9 @@ foreign import ccall unsafe "exportCharacter testFn"
 
 -- |
 -- FFI call to the C pairwise alignment algorithm with /explicit/ sub & indel cost parameters.
-foreign import ccall unsafe "seqAlignForHaskell aligner"
+{- foreign import ccall unsafe "seqAlignForHaskell aligner"
     call_aligner :: Ptr CDynamicChar -> Ptr CDynamicChar -> CInt -> CInt -> Ptr AlignResult -> CInt
-
+-}
 {-
 -- |
 -- testFn can be called from within Haskell code.

@@ -100,15 +100,15 @@ library
     ffi/external_direct_optimization/costMatrix.c
     ffi/external_direct_optimization/nwMatrices.c
     ffi/external_direct_optimization/seq.c
-    ffi/external_direct_optimization/seqAlign.c
+    -- -- ffi/external_direct_optimization/seqAlign.c
     ffi/external_direct_optimization/ukkCheckp.c
     ffi/external_direct_optimization/ukkCommon.c
     ffi/sequential_align/dynamicCharacterOperations.h
     ffi/sequential_align/dynamicCharacterOperations.c
     ffi/sequential_align/costMatrix.h
     ffi/sequential_align/costMatrix.cpp
-    ffi/sequential_align/seqAlignForHaskell.h
-    ffi/sequential_align/seqAlignForHaskell.c
+    -- ffi/sequential_align/seqAlignForHaskell.h
+    -- ffi/sequential_align/seqAlignForHaskell.c
 
     -- ffi/Analysis/Parsimony/Binary/SequentialAlign/myComplexBitArrayFFI.c
 
