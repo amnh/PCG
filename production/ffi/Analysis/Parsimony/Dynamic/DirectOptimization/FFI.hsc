@@ -20,7 +20,12 @@
 
 {-# LANGUAGE ForeignFunctionInterface, BangPatterns #-}
 
-module Analysis.Parsimony.Dynamic.DirectOptimization.FFI where
+module Analysis.Parsimony.Dynamic.DirectOptimization.FFI
+  ( CostMatrix2d
+  , ForeignDenseMatrix
+  , foreignPairwiseDO
+  , generateForeignDenseMatrix
+  ) where
 
 import Bio.Character.Exportable.Class
 import Control.Lens
@@ -40,6 +45,20 @@ import System.IO.Unsafe (unsafePerformIO)
 #include "c_alignment_interface.h"
 #include "nwMatrices.h"
 -- #include "seqAlign.h"
+
+type ForeignDenseMatrix = Ptr CostMatrix2d 
+
+generateDenseMatrix :: Int -> (Int -> Int -> Int) -> Ptr CostMatrix2d
+generateDenseMatrix alphabetSize costFunction = getCostMatrix2dNonAffine alphabetSize costFunction
+
+
+foreignPairwiseDO :: Exportable s
+                  => s                    -- ^ First  dynamic character
+                  -> s                    -- ^ Second dynamic character
+                  -> Ptr CostMatrix2d     -- ^ Structure defining the transition costs between character states
+                  -> (s, Double, s, s, s) -- ^ The /ungapped/ character derived from the the input characters' N-W-esque matrix traceback
+foreignPairwiseDO lhs rhs costMatrix = algn2d lhs rhs costMatrix 0 1
+
 
 
 {- ******************************************* Sequence declaration and Storable instance ******************************************* -}

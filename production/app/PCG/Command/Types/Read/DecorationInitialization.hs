@@ -20,6 +20,7 @@ import           Analysis.Parsimony.Additive.Internal
 import           Analysis.Parsimony.Fitch.Internal
 import           Analysis.Parsimony.Sankoff.Internal
 import           Analysis.Parsimony.Dynamic.DirectOptimization
+import           Analysis.Parsimony.Dynamic.DirectOptimization.FFI
 
 import           Bio.Character
 import           Bio.Character.Decoration.Additive
@@ -255,10 +256,11 @@ chooseDirectOptimizationComparison :: ( SimpleDynamicDecoration d  c
                                    -> c
                                    -> (c, Double, c, c, c)
 chooseDirectOptimizationComparison dec decs
-  | length alphabet <= 5 = \x y -> naiveDO x y tcm -- but not really, C code here
-  | otherwise            = \x y -> naiveDO x y tcm
+  | symbolCount <= 5 = \x y -> naiveDO x y tcm -- but not really, C code here
+  | otherwise        = \x y -> foreignPairwiseDO x y tcm
   where
---    cCostMatrixThingy = make the cCostMatrix
+    denseMatrix     = generateForeignDenseMatrix symbolCount tcm 
+    symbolCount     = length alphabet
     (alphabet, tcm) =
         case decs of
           []  -> (dec ^. characterAlphabet, dec ^. characterSymbolTransitionCostMatrixGenerator)
