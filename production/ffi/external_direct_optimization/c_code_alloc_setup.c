@@ -91,10 +91,10 @@ void setup2dCostMtx(int* tcm, size_t alphSize, int gap_open, cost_matrices_2d_p 
     int all_elements = (1 << alphSize) - 1;   // Given data is DNA (plus gap), there are 2^5 - 1 possible character states
 
     int minCost    = INT_MAX;
-    SEQT median    = 0;        // cumulative median for 2d; combo of median1, etc., below
+    SEQT median    = 0;                       // cumulative median for 2d; combo of median1, etc., below
     int curCost;
 
-    int median1, median2;            // median of a given nucleotide and current ambElem, for each ambElem
+    int median1, median2;                     // median of a given nucleotide and current ambElem, for each ambElem
 
     cm_alloc_set_costs_2d( alphSize,
                            combinations,
@@ -129,24 +129,13 @@ void setup2dCostMtx(int* tcm, size_t alphSize, int gap_open, cost_matrices_2d_p 
                 // now seemingly recreating logic in distance(), but that was to get the cost for each
                 // ambElem; now we're combining those costs get overall cost and median
                 if (curCost < minCost) {
-                    // printf("less:            %d, %d\n", curCost, minCost);
-                    // printf("less n, e, e:    %d %d %d\n", nucleotide, ambElem1, ambElem2);
                     minCost = curCost;
-                    median  = 1 << (nucleotide - 1); // median1 | median2;
+                    median  = 1 << (nucleotide - 1); // median = this nucleotide, because it has the lowest cost thus far
                 } else if (curCost == minCost) {
-                    // printf("equal:           %d, %d\n", curCost, minCost);
-                    // printf("equal n, e, e:   %d\n", nucleotide, ambElem1, ambElem2);
-                    median |= 1 << (nucleotide - 1); // median1 | median2;
-                } else {
-                    // printf("greater:         %d, %d\n", curCost, minCost);
-                    // printf("greater n, e, e: %d\n", nucleotide, ambElem1, ambElem2);
+                    median |= 1 << (nucleotide - 1); // median = this nucleotide | old median
                 }
             } // nucleotide
-            // printf("costs:          %d, %d\n", curCost, minCost);
-            // printf("elems: n, e, e: %d %d %d\n", nucleotide, ambElem1, ambElem2);
-            // printf("%d\n", minCost);
             cm_set_cost_2d   (ambElem1, ambElem2, minCost, retMtx);
-            // printf("%d\n", cm_get_cost(ambElem1, ambElem2, retMtx));
             cm_set_median_2d (ambElem1, ambElem2, median,  retMtx);
         } // ambElem2
     } // ambElem1

@@ -26,17 +26,12 @@
 extern "C" {
 #endif
 
-
-
-// #include "costMatrixWrapper.h"
 #include "dynamicCharacterOperations.h"
 
-costMatrix_p construct_CostMatrix_C(size_t alphSize, int* tcm);
-void destruct_CostMatrix_C(costMatrix_p mytype);
-int call_getSetCost_C(costMatrix_p untyped_self, dcElement_t* left, dcElement_t* right, dcElement_t* retMedian);
+costMatrix_p construct_CostMatrix_C (size_t alphSize, int* tcm);
+void destruct_CostMatrix_C (costMatrix_p mytype);
+int call_getSetCost_C (costMatrix_p untyped_self, dcElement_t* left, dcElement_t* right, dcElement_t* retMedian);
     // extern "C" costMatrix_p get_CostMatrixPtr_C(costMatrix_p untyped_self);
-
-//#include "seqAlignForHaskell.h"
 
 #ifdef __cplusplus
 }
@@ -141,7 +136,7 @@ class CostMatrix
         ~CostMatrix();
 
         /** Getter only for cost. Necessary for testing, to insure that particular
-         *  key pair has, in fact, been inserted into lookup table.
+         *  key pair has, in fact, already been inserted into lookup table.
          */
         int getCostMedian(dcElement_t* left, dcElement_t* right, dcElement_t* retMedian);
 
@@ -174,6 +169,7 @@ class CostMatrix
         /** Takes in a pair of keys_t (each of which is a single `dcElement`) and computes their lowest-cost median. */
         costMedian_t* computeCostMedian(keys_t key);
 
+        // TODO: This isn't currently in use. Can I delete it?
         // TODO: make sure this comment is correct
         /** Find distance between an ambiguous nucleotide and an unambiguous ambElem. Return that value and the median.
          *  @param ambElem is ambiguous input.
@@ -186,7 +182,7 @@ class CostMatrix
          *
          *  Nota bene: Requires symmetric, if not metric, matrix. TODO: Is this true? If so fix it?
          */
-        costMedian_t* findDistance (keys_t &key, int* tcm);
+        int findDistance (keys_t* searchKey, dcElement_t* ambElem);
 
         /** Takes in an initial TCM, which is actually just a row-major array, creates hash table of costs
          *  where cost is least cost between two elements, and medians, where median is union of characters.

@@ -2,11 +2,12 @@
 #include <stdlib.h>
 
 #include "costMatrix.h"
+#include "dynamicCharacterOperations.h"
 // #include "seqAlignForHaskell.h"
 
 int main() {
     const size_t tcmLen = 25;
-    int tcm [tcmLen] = {0,1,1,1,2, 1,0,1,1,2, 1,1,1,0,2, 1,1,1,0,2, 2,2,2,2,0};
+    int tcm [tcmLen] = {0,1,1,1,2, 1,0,1,1,2, 1,1,0,1,2, 1,1,1,0,2, 2,2,2,2,0};
     size_t alphabetSize = 5;
     if ( tcmLen != alphabetSize * alphabetSize ) {
         printf("tcm wrong size\n");
