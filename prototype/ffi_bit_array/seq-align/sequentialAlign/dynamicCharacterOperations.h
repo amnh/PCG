@@ -61,9 +61,12 @@
  *  stdint is a library that provides int values for all architectures. This will allow the code to
  *  compile even on architectures on which int != 32 bits (and, more to the point, unsigned long int != 64 bits).
  */
+
+#include <stdint.h>
+#include <stdlib.h>
 #include <stdint.h>
 
-// these must be static to prevent compilation issues.
+/** Following constants must be static to prevent compilation issues. */
 static const size_t   BITS_IN_BYTE   = 8;                    // so bytes are set to 8, for all architectures
 static const size_t   INT_WIDTH      = sizeof(uint64_t);     // don't forget: in bytes
 static const size_t   WORD_WIDTH     = 8 * sizeof(uint64_t); // BITS_IN_BYTE * INT_WIDTH; <-- because HSC is dumb!
@@ -71,14 +74,31 @@ static const uint64_t CANONICAL_ONE  = 1;
 static const uint64_t CANONICAL_ZERO = 0;
 
 typedef uint64_t packedChar;
+typedef void* costMatrix_p;
 
-/* alignResult_t is where results get put for return to Haskell */
+/** alignResult_t is where results get put for return to Haskell. For further notes see retType_t */
 typedef struct alignResult_t {
     size_t      finalWt;
     size_t      finalLength;
     packedChar *finalChar1;
     packedChar *finalChar2;
+    packedChar *medianChar;
 } alignResult_t;
+
+/** retType_t differs from alignResult_t in that it's the return type from the C sequence alignment code,
+ *  which doesn't return packedChars, but ints. Also, the output from the sequence alignment gets post-processed
+ *  to create a median, which is placed in medianChar in alignResult_t.
+ */
+typedef struct retType_t {
+    int weight;
+  //  char* seq1;
+    int *seq1;
+    size_t seq1Len;
+  //  char* seq2;
+    int *seq2;
+    size_t seq2Len;
+    long int alignmentLength;
+} retType_t;
 
 /**
  *  This holds the array of _possibly ambiguous_ static chars (i.e. a single dynamic character),
@@ -86,17 +106,22 @@ typedef struct alignResult_t {
  *  See note in .c file for how this is used.
  */
 typedef struct dynChar_t {
-    size_t       alphSize;
-    size_t       numElems;     // how many dc elements are stored
-    size_t       dynCharLen;   // how many uint64_ts are necessary to store the elements
+    size_t      alphSize;
+    size_t      numElems;     // how many dc elements are stored
+    size_t      dynCharLen;   // how many uint64_ts are necessary to store the elements
     packedChar *dynChar;
 } dynChar_t;
 
+/** This is a single element from a dynamic character. It's a separate type because the dynamic character is packed.
+ *  This may or may not have been a good judgement call, since both store some similar elements.
+ *  The dynChar_t struct cannot just have an array of dcElement_ts, because of the packing.
+ */
 typedef struct dcElement_t {
-    size_t       alphSize;
+    size_t      alphSize;
     packedChar *element;
 } dcElement_t;
 
+/** Pointer to a CostMatrix object. Needed in C for both sequential align and Haskell integration. */
 typedef struct costMtx_t {
     int subCost;
     int gapCost;
@@ -111,7 +136,7 @@ void SetBit( packedChar *const arr, const size_t k );
 
 void ClearBit( packedChar *const arr, const size_t k );
 
-uint64_t TestBit( packedChar *const arr, const size_t k );
+uint64_t TestBit( const packedChar *const arr, const size_t k );
 
 /** Clear entire packed character: all bits set to 0;
  *  packedCharLen is pre-computed dynCharSize()
@@ -129,7 +154,8 @@ size_t dcElemSize(size_t alphSize);
 /** functions to free memory. Self-explanatory. **/
 void freeDynChar( dynChar_t* p );
 
-void freeDCElem( dcElement_t* p );
+/** const because I needed it to be const when I free keys_t in CostMatrix.cpp. */
+void freeDCElem( const dcElement_t* p );
 
 /** functions to interact directly with DCElements */
 
@@ -185,13 +211,14 @@ dcElement_t* makeDCElement( const size_t alphSize, const uint64_t value );
  *
  *  newElem1
  */
-double getCostDyn( const dynChar_t* const inDynChar1, size_t whichElem1,
-                   const dynChar_t* const inDynChar2, size_t whichElem2,
-                   costMtx_t* tcm, dcElement_t* newElem1 );
+/* double getCostDyn( const dynChar_t* const inDynChar1, size_t whichElem1,
+                const dynChar_t* const inDynChar2, size_t whichElem2,
+                costMtx_t* tcm, dcElement_t* newElem1 );
+*/
 
 /** Allocator for dynChar_t
  *  This (obviously) allocates, so must be
- *      a) NULL checked,
+ *      TODO: a) NULL checked,
  *      b) freed later using deallocations, above.
  */
 dynChar_t* makeDynamicChar( size_t alphSize, size_t numElems, packedChar *values );
@@ -210,13 +237,16 @@ uint64_t* dynCharToIntArr( dynChar_t* input );
  */
 void intArrToDynChar( size_t alphSize, size_t arrayLen, int* input, dynChar_t* output );
 
+/** Copy input values to already alloced output and return a pointer to output */
+void copyPackedChar( packedChar* inChar, packedChar* outChar, size_t alphSize);
+
 /** As above, but only allocates and fills the bit array, not whole dyn char */
-packedChar *intArrToBitArr( size_t alphSize, size_t arrayLen, int* input );
+packedChar* intArrToBitArr( size_t alphSize, size_t arrayLen, int* input );
 
 /** Takes two packed characters (uint64_t*) and finds the value as if they were bitwise AND'ed.
  *  Allocates, so must call freeDynChar() afterwards.
  */
-packedChar *packedCharAnd(packedChar *lhs, packedChar *rhs, size_t alphSize);
+packedChar* packedCharAnd(packedChar *lhs, packedChar *rhs, size_t alphSize);
 
 /** Takes two dcElements and finds the value if they were bitwise OR'ed.
  *  Allocates, so must call freeDynChar() afterwards. Uses packedCharOr()
@@ -227,7 +257,7 @@ dcElement_t* dcElementOr (dcElement_t* lhs, dcElement_t* rhs);
 /** Takes two packed characters (uint64_t*) and finds the value as if they were bitwise OR'ed.
  *  Allocates, so must call freeDynChar() afterwards.
  */
-packedChar *packedCharOr (packedChar *lhs, packedChar *rhs, size_t alphSize);
+packedChar* packedCharOr (packedChar *lhs, packedChar *rhs, size_t alphSize);
 
 int dcElementEq (dcElement_t* lhs, dcElement_t* rhs);
 
