@@ -8,7 +8,7 @@
 #define TCM_LEN 25
 
 int main() {
-    int tcm [TCM_LEN] = {0,1,1,1,2, 1,0,1,1,2, 1,1,1,0,2, 1,1,1,0,2, 2,2,2,2,0};
+    int tcm [TCM_LEN] = {0,1,1,1,2, 1,0,1,1,2, 1,1,0,1,2, 1,1,1,0,2, 2,2,2,2,0};
     size_t alphabetSize = 5;
 
     if ( TCM_LEN != alphabetSize * alphabetSize ) {
@@ -37,6 +37,10 @@ int main() {
 
     printf("cost on 5, 5: %i\n", cost);
 
+    cost = getCost(5, 16, myMatrix, 5);
+
+    printf("cost on 5, 16: %i\n", cost);
+
     dcElement_t* firstKey  = makeDCElement( alphabetSize, 1 );
     dcElement_t* secondKey = makeDCElement( alphabetSize, 1 );
     dcElement_t* retMedian = makeDCElement( alphabetSize, 1 );
@@ -45,14 +49,14 @@ int main() {
     packedChar median;        // just a test: alphabet size == 4, so don't need packedChar*
     median = CANONICAL_ZERO;
 
-    for (size_t key1 = 0; key1 < alphabetSize; key1++) { // for every possible value of key1, key2
+    for (size_t key1 = 1; key1 <= alphabetSize; key1++) { // for every possible value of key1, key2
         SetBit(firstKey->element, key1);
         SetBit(&median, key1);    // computed median just for testing.
         // printPackedChar(&median, 1, alphabetSize);
 
-        for (size_t key2 = 0; key2 < alphabetSize; key2++) { // no longer assumes 0 diagonal
+        for (size_t key2 = 1; key2 <= alphabetSize; key2++) { // no longer assumes 0 diagonal
             SetBit(secondKey->element, key2);
-            cost = tcm[key1 * alphabetSize + key2];
+            cost = tcm[(key1 - 1) * alphabetSize + (key2 - 1)];
             SetBit(&median, key2);
 
             foundCost = getCost(key1, key2, myMatrix, alphabetSize);
@@ -60,10 +64,10 @@ int main() {
             if(median != *retMedian->element || cost != foundCost) {
                 printf("key 1 set: %zu\n", key1);
                 printf("key 2 set: %zu\n", key2);
-                printf("computed median:\n");
-                printPackedChar(&median, 1, alphabetSize);
-                printf("found median:\n");
-                printPackedChar(retMedian->element, 1, alphabetSize);
+                // printf("computed median:\n");
+                // printPackedChar(&median, 1, alphabetSize);
+                // printf("found median:\n");
+                // printPackedChar(retMedian->element, 1, alphabetSize);
                 printf("computed cost: %d\n", cost);
                 printf("found cost:    %d\n", foundCost);
             }

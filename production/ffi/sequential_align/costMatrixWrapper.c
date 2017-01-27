@@ -24,6 +24,9 @@ int getCost(packedChar elem1, packedChar elem2, costMatrix_p tcm, size_t alphSiz
     *packedElem1   = elem1;
     *packedElem2   = elem2;
 
+    printPackedChar(packedElem1, 1, alphSize);
+    printPackedChar(packedElem2, 1, alphSize);
+
     dcElement_t retElem = { alphSize, packedElemRet };
     dcElement_t dcElem1 = { alphSize, packedElem1 };
     dcElement_t dcElem2 = { alphSize, packedElem2 };

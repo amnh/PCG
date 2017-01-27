@@ -15,12 +15,12 @@ bit-ops : bitArrayExampleC.c bitArrayExampleC.h dynamicCharacterOperations.c dyn
 # compiler flags:
 #  -g    adds debugging information to the executable file
 #  -Wall turns on most, but not all, compiler warnings
-testCostMtx : test_costMtx.cpp costMatrix.h costMatrix.cpp costMatrixWrapper.h costMatrixWrapper.c dynamicCharacterOperations.h dynamicCharacterOperations.c
+testCostMtx : test_costMtx.cpp costMatrix.h costMatrix.cpp dynamicCharacterOperations.h dynamicCharacterOperations.c
 	rm -f test_costMtx
 	gcc -std=c11 -c dynamicCharacterOperations.c
 	g++ -std=c++14 -c costMatrix.cpp
-	g++ -std=c++14 -c test_costMtx.cpp
-	g++ -std=c++14 -g -Wall -o test_costMtx test_costMtx.cpp dynamicCharacterOperations.o costMatrix.o costMatrixWrapper.o
+	# g++ -std=c++14 -c test_costMtx.cpp
+	g++ -std=c++14 -g -Wall -o test_costMtx test_costMtx.cpp dynamicCharacterOperations.o costMatrix.o
 
 
 testCInterface : test_c_interface.c costMatrix.h costMatrix.cpp costMatrixWrapper.h costMatrixWrapper.c dynamicCharacterOperations.h dynamicCharacterOperations.c
