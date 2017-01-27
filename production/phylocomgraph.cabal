@@ -91,7 +91,7 @@ library
 
   ld-options: -lstdc++
   
-  -- cc-options: --std=c++11
+  cc-options: --std=c++11
 
   -- We must provide the full relative path to every C file that the project depends on.
   c-sources:
@@ -102,7 +102,7 @@ library
     ffi/external_direct_optimization/costMatrix.c
     ffi/external_direct_optimization/nwMatrices.c
     ffi/external_direct_optimization/seq.c
-    -- -- ffi/external_direct_optimization/seqAlign.c
+    ffi/external_direct_optimization/seqAlign.c
     ffi/external_direct_optimization/ukkCheckp.c
     ffi/external_direct_optimization/ukkCommon.c
     ffi/sequential_align/dynamicCharacterOperations.h

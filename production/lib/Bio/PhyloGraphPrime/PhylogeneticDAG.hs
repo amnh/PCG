@@ -95,7 +95,8 @@ type InitialDecorationDAG = PhylogeneticDAG2
                                 UnifiedContinuousCharacter --(ContinuousOptimizationDecoration ContinuousChar)
                                 (FitchOptimizationDecoration    StaticCharacter)
                                 (AdditiveOptimizationDecoration StaticCharacter)
-                                -- (DynamicDecorationDirectOptimization DynamicChar) -- UnifiedDynamicCharacter
+                                -- UnifiedDynamicCharacter
+                                -- (DynamicDecorationDirectOptimization DynamicChar)
                                 (DynamicDecorationDirectOptimizationPostOrderResult DynamicChar)
 
 

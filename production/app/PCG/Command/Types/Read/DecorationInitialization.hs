@@ -99,18 +99,16 @@ initializeDecorations2 (PhylogeneticSolution forests) = PhylogeneticSolution $ f
         id2
         (g    fitchPostOrder)
         (g additivePostOrder)
-        id2 -- (g adaptiveDirectOptimizationPostOrder)  
+        (g adaptiveDirectOptimizationPostOrder)  
       where
         g _  Nothing  [] = error $ "Uninitialized leaf node. This is bad!"
         g h (Just  v) [] = h v []
         g h        e  xs = h (error $ "We shouldn't be using this value." ++ show e ++ show (length xs)) xs
 
         id2 x _ = x
-{-
         adaptiveDirectOptimizationPostOrder dec kidDecs = directOptimizationPostOrder pairwiseAlignmentFunction dec kidDecs
           where
             pairwiseAlignmentFunction = chooseDirectOptimizationComparison dec kidDecs
--}
 
 
 {-                                                              
@@ -257,7 +255,7 @@ chooseDirectOptimizationComparison :: ( SimpleDynamicDecoration d  c
                                    -> (c, Double, c, c, c)
 chooseDirectOptimizationComparison dec decs
   | symbolCount <= 5 = \x y -> naiveDO x y tcm -- but not really, C code here
-  | otherwise        = \x y -> foreignPairwiseDO x y tcm
+  | otherwise        = \x y -> foreignPairwiseDO x y denseMatrix
   where
     denseMatrix     = generateForeignDenseMatrix symbolCount tcm 
     symbolCount     = length alphabet

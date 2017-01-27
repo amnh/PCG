@@ -247,7 +247,7 @@ instance Storable CostMatrix2d where
 -- TCM is row-major, with each row being the left character element.
 -- It is therefore indexed not by powers of two, but by cardinal integer.
 -- TODO: For now we only allocate 2d matrices. 3d will come later.
-foreign import ccall unsafe "c_code_alloc_setup.h setupCostMtx"
+foreign import ccall unsafe "c_code_alloc_setup.h setup2dCostMtx"
     setupCostMatrix2dFn_c :: Ptr CInt          -- ^ tcm
                           -> CInt              -- ^ alphSize
                           -> CInt              -- ^ gap_open
