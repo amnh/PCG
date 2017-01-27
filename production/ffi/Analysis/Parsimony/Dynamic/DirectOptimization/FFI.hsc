@@ -48,8 +48,8 @@ import System.IO.Unsafe (unsafePerformIO)
 
 type ForeignDenseMatrix = Ptr CostMatrix2d 
 
-generateDenseMatrix :: Int -> (Int -> Int -> Int) -> Ptr CostMatrix2d
-generateDenseMatrix alphabetSize costFunction = getCostMatrix2dNonAffine alphabetSize costFunction
+generateForeignDenseMatrix :: Int -> (Int -> Int -> Int) -> Ptr CostMatrix2d
+generateForeignDenseMatrix alphabetSize costFunction = getCostMatrix2dNonAffine alphabetSize costFunction
 
 
 foreignPairwiseDO :: Exportable s
