@@ -87,7 +87,7 @@ traceOpt identifier x = (trace ("Before " <> identifier) ())
 -}
 
 
-initializeDecorations2 :: CharacterResult -> PhylogeneticSolution InitialDecorationDAG
+--initializeDecorations2 :: CharacterResult -> PhylogeneticSolution InitialDecorationDAG
 initializeDecorations2 (PhylogeneticSolution forests) = PhylogeneticSolution $ fmap performDecoration <$> forests
   where
 --    performDecoration :: CharacterDAG -> InitialDecorationDAG
@@ -98,17 +98,19 @@ initializeDecorations2 (PhylogeneticSolution forests) = PhylogeneticSolution $ f
         id2
         (g    fitchPostOrder)
         (g additivePostOrder)
-        (g adaptiveDirectOptimizationPostOrder)  
+        id2 -- (g adaptiveDirectOptimizationPostOrder)  
       where
         g _  Nothing  [] = error $ "Uninitialized leaf node. This is bad!"
         g h (Just  v) [] = h v []
         g h        e  xs = h (error $ "We shouldn't be using this value." ++ show e ++ show (length xs)) xs
 
         id2 x _ = x
-
+{-
         adaptiveDirectOptimizationPostOrder dec kidDecs = directOptimizationPostOrder pairwiseAlignmentFunction dec kidDecs
           where
             pairwiseAlignmentFunction = chooseDirectOptimizationComparison dec kidDecs
+-}
+
 
 {-                                                              
         postOrderTransformation parentalNode childNodes =
@@ -252,16 +254,21 @@ chooseDirectOptimizationComparison :: ( SimpleDynamicDecoration d  c
                                    -> c
                                    -> c
                                    -> (c, Double, c, c, c)
-chooseDirectOptimizationComparison dec decs =
-    case first toExportableElements value of
-      (Nothing, tcm) -> \x y -> naiveDO x y tcm
-      -- Slot in FFI bindings here.
-      (Just  _, tcm) -> \x y -> naiveDO x y tcm
+chooseDirectOptimizationComparison dec decs
+  | length alphabet <= 5 = \x y -> naiveDO x y tcm -- but not really, C code here
+  | otherwise            = \x y -> naiveDO x y tcm
   where
+--    cCostMatrixThingy = make the cCostMatrix
+    (alphabet, tcm) =
+        case decs of
+          []  -> (dec ^. characterAlphabet, dec ^. characterSymbolTransitionCostMatrixGenerator)
+          x:_ -> (x   ^. characterAlphabet, x   ^. characterSymbolTransitionCostMatrixGenerator)
+{-          
     value =
         case decs of
           []   -> (dec ^. encoded, dec ^. characterSymbolTransitionCostMatrixGenerator)
           x:xs -> (x   ^. encoded, x   ^. characterSymbolTransitionCostMatrixGenerator)
+-}
 
 {-
 data FracturedParseResult

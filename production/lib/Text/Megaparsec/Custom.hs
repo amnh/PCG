@@ -27,12 +27,13 @@ module Text.Megaparsec.Custom
   , nonEmpty
   , somethingTill
   , runParserOnFile
+  , parseWithDefaultErrorType
   ) where
 
 import           Data.Char                (isSpace)
 import           Data.Either              (either)
 import           Data.Functor             (($>))
-import           Data.List.NonEmpty       (NonEmpty)
+import           Data.List.NonEmpty       (NonEmpty(..))
 import qualified Data.List.NonEmpty as NE (fromList)
 import qualified Data.Set           as S  (fromList)
 import           Text.Megaparsec
@@ -139,6 +140,10 @@ comment start end = commentDefinition' False
 -- On a parse failure the nice error string.
 runParserOnFile :: Show a => Parsec Dec String a -> FilePath -> IO String
 runParserOnFile parser filePath = either (parseErrorPretty :: ParseError Char Dec -> String) show . parse parser filePath <$> readFile filePath
+
+
+parseWithDefaultErrorType :: Parsec Dec s a -> s -> Either (ParseError (Token s) Dec) a
+parseWithDefaultErrorType c = parse c "" 
 
 
 -- | Takes a 'Stream' of 'Char's and returns a String
