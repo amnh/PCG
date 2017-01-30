@@ -47,7 +47,7 @@ data FitchOptimizationDecoration f
 instance EncodableStreamElement c => Show (FitchOptimizationDecoration c) where
 
     show c = mconcat [showDiscreteCharacterElement c, "{", show $ fitchMinCost c, "}"]
-      
+
 
 -- | (✔)
 instance HasDiscreteCharacter (FitchOptimizationDecoration f) f where

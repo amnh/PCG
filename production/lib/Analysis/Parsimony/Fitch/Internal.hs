@@ -28,6 +28,7 @@ import Control.Lens
 import Data.Bits
 import Data.Key
 import Data.List.NonEmpty (NonEmpty( (:|) ))
+import Debug.Trace
 
 -- | Used on the post-order (i.e. first) traversal.
 fitchPostOrder ::  DiscreteCharacterDecoration d c
@@ -60,10 +61,11 @@ updatePostOrder :: DiscreteCharacterDecoration d c
                 -> NonEmpty (FitchOptimizationDecoration c)
                 -> FitchOptimizationDecoration c
 updatePostOrder _parentDecoration (x:|[])                         = x                    -- Shouldn't be possible, but here for completion.
-updatePostOrder _parentDecoration (leftChildDec:|rightChildDec:_) = returnNodeDecoration -- Not a leaf
+updatePostOrder _parentDecoration (leftChildDec:|rightChildDec:_) = trace (show returnNodeDecoration) $ returnNodeDecoration -- Not a leaf
     where
         returnNodeDecoration =
-            extendDiscreteToFitch leftChildDec totalCost median emptyChar (leftChildDec ^. preliminaryMedian, rightChildDec ^. preliminaryMedian) False
+            extendDiscreteToFitch leftChildDec totalCost median emptyChar (leftChildDec ^. preliminaryMedian,
+                                                                           rightChildDec ^. preliminaryMedian) False
         (median, parentCost) = foldlWithKey' f initializedAcc [0..length (leftChildDec ^. characterAlphabet) - 1]
 
         initializedAcc       = (emptyChar, 1) -- Cost is set to 1 so that branches in guards below work correctly.
@@ -77,7 +79,8 @@ updatePostOrder _parentDecoration (leftChildDec:|rightChildDec:_) = returnNodeDe
                                                                 -- to add value to the cost (it can never be > 1 under Fitch).
             | noSub leftChildDec rightChildDec key =            -- Characters share a state.
                 if cost > 0
-                    then (emptyChar `setBit` key, 0)            -- If there's a cost, then a previous indel has registered; reset cost and char value.
+                    then (emptyChar `setBit` key, 0)            -- If there's a cost, then a previous indel has registered;
+                                                                -- reset cost and char value.
                     else (inChar    `setBit` key, 0)            -- Otherwise, add this state to character.
             | indel leftChildDec rightChildDec key =            -- There's an indel.
                 if cost > 0
@@ -112,8 +115,10 @@ determineFinalState parentDecoration childDecoration = finalDecoration
         -- TODO: see if this short-circuits; otherwise rewrite doing testbit three times and then logical operations
         curIsUnion    = foldl (\acc _index -> acc && (popCount (left .|. right `xor` preliminary) > 0)
                               ) True [0..alphLen]                         -- preliminary is 0 if both are 0, 1 otherwise
-        finalDecoration = extendDiscreteToFitch parentDecoration cost preliminary median (left, right) leafVal -- using parentDecoration here because I need a DiscreteCharacterDecoration.
-                                                                                                               -- Safe because new char is created.
+
+            -- using parentDecoration here because I need a DiscreteCharacterDecoration.
+            -- Safe because new char is created.
+        finalDecoration = extendDiscreteToFitch parentDecoration cost preliminary median (left, right) leafVal
         leafVal         = childDecoration  ^. isLeaf
         cost            = childDecoration  ^. minCost
         preliminary     = childDecoration  ^. preliminaryMedian
