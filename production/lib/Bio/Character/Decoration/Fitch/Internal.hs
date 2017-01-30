@@ -23,7 +23,9 @@ import Bio.Metadata.CharacterName
 import Bio.Metadata.Discrete
 import Control.Lens
 import Data.Alphabet
+import Data.Bifunctor ()
 import Data.TCM
+import Data.Semigroup
 
 
 -- |
@@ -46,7 +48,16 @@ data FitchOptimizationDecoration f
 
 instance EncodableStreamElement c => Show (FitchOptimizationDecoration c) where
 
-    show c = mconcat [showDiscreteCharacterElement c, "{", show $ fitchMinCost c, "}"]
+    show c = mconcat
+        [ "\"Discrete Character\" " <> showDiscreteCharacterElement c
+        , "Cost = ", show $ fitchMinCost c
+        , "Preliminary Median : " <> showStreamElement alphabet (fitchPreliminaryMedian  c)
+        , "Final       Median : " <> showStreamElement alphabet (fitchFinalMedian        c)
+        , "Child       Medians: " <> show (showStreamElement alphabet `bimap` showStreamElement alphabet $ fitchChildMedians c)
+        , "Is Leaf Node?      : " <> show (fitchIsLeaf c)
+        ]
+      where
+        alphabet = c ^. characterAlphabet
 
 
 -- | (✔)

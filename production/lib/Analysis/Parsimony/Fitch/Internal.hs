@@ -30,6 +30,7 @@ import Data.Key
 import Data.List.NonEmpty (NonEmpty( (:|) ))
 import Debug.Trace
 
+
 -- | Used on the post-order (i.e. first) traversal.
 fitchPostOrder ::  DiscreteCharacterDecoration d c
                => d
@@ -39,6 +40,7 @@ fitchPostOrder parentDecoration xs =
     case xs of
         []   -> initializeLeaf  parentDecoration         -- a leaf
         y:ys -> updatePostOrder parentDecoration (y:|ys)
+
 
 -- | Used on the pre-order (i.e. second) traversal.
 fitchPreOrder :: EncodableStaticCharacter c
@@ -52,6 +54,7 @@ fitchPreOrder childDecoration [(_, parentDecoration)] =
         then childDecoration
         else determineFinalState parentDecoration childDecoration
 
+
 -- |
 -- Used in second, preorder, pass. Take in parent and two child nodes. Using the child preliminary decorations,
 -- calculate the preliminary character state for the parent node. In addition, calculate the cost of assigning
@@ -61,7 +64,7 @@ updatePostOrder :: DiscreteCharacterDecoration d c
                 -> NonEmpty (FitchOptimizationDecoration c)
                 -> FitchOptimizationDecoration c
 updatePostOrder _parentDecoration (x:|[])                         = x                    -- Shouldn't be possible, but here for completion.
-updatePostOrder _parentDecoration (leftChildDec:|rightChildDec:_) = trace (show returnNodeDecoration) $ returnNodeDecoration -- Not a leaf
+updatePostOrder _parentDecoration (leftChildDec:|rightChildDec:_) = {- trace (show returnNodeDecoration) $ -} returnNodeDecoration -- Not a leaf
     where
         returnNodeDecoration =
             extendDiscreteToFitch leftChildDec totalCost median emptyChar (leftChildDec ^. preliminaryMedian,
@@ -87,6 +90,7 @@ updatePostOrder _parentDecoration (leftChildDec:|rightChildDec:_) = trace (show 
                     then (inChar `setBit` key, cost)            -- If there's a cost, then a previous indel has registered; add this state.
                     else (inChar,              cost)            -- Otherwise, make no changes.
             | otherwise = (inChar, cost)
+
 
 -- |
 -- A leaf has cost 0 and its preliminary character state is also its final character state.
