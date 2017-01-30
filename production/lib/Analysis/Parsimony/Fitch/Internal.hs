@@ -29,6 +29,7 @@ import Data.Bits
 import Data.Key
 import Data.List.NonEmpty (NonEmpty( (:|) ))
 
+
 -- | Used on the post-order (i.e. first) traversal.
 fitchPostOrder ::  DiscreteCharacterDecoration d c
                => d
@@ -38,6 +39,7 @@ fitchPostOrder parentDecoration xs =
     case xs of
         []   -> initializeLeaf  parentDecoration         -- a leaf
         y:ys -> updatePostOrder parentDecoration (y:|ys)
+
 
 -- | Used on the pre-order (i.e. second) traversal.
 fitchPreOrder :: EncodableStaticCharacter c
@@ -50,6 +52,7 @@ fitchPreOrder childDecoration [(_, parentDecoration)] =
     if childDecoration ^. isLeaf
         then childDecoration
         else determineFinalState parentDecoration childDecoration
+
 
 -- |
 -- Used in second, preorder, pass. Take in parent and two child nodes. Using the child preliminary decorations,
@@ -84,6 +87,7 @@ updatePostOrder _parentDecoration (leftChildDec:|rightChildDec:_) = returnNodeDe
                     then (inChar `setBit` key, cost)            -- If there's a cost, then a previous indel has registered; add this state.
                     else (inChar,              cost)            -- Otherwise, make no changes.
             | otherwise = (inChar, cost)
+
 
 -- |
 -- A leaf has cost 0 and its preliminary character state is also its final character state.
