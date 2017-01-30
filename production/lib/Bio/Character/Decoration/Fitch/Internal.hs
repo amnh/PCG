@@ -51,13 +51,16 @@ instance EncodableStreamElement c => Show (FitchOptimizationDecoration c) where
     show c = mconcat
         [ "\"Discrete Character\" " <> showDiscreteCharacterElement c
         , "Cost = ", show $ fitchMinCost c
-        , "Preliminary Median : " <> showStreamElement alphabet (fitchPreliminaryMedian  c)
-        , "Final       Median : " <> showStreamElement alphabet (fitchFinalMedian        c)
-        , "Child       Medians: " <> show (showStreamElement alphabet `bimap` showStreamElement alphabet $ fitchChildMedians c)
+        , "Preliminary Median : " <> showStatic (fitchPreliminaryMedian  c)
+        , "Final       Median : " <> showStatic (fitchFinalMedian        c)
+        , "Child       Medians: " <> show (showStatic `bimap` showStatic $ fitchChildMedians c)
         , "Is Leaf Node?      : " <> show (fitchIsLeaf c)
         ]
       where
         alphabet = c ^. characterAlphabet
+        showStatic c
+          | c == fromInteger 0 = "<Empty Character>"
+          | otherwise          = showStreamElement alphabet c
       
 
 -- | (✔)
