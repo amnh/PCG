@@ -76,7 +76,8 @@ library
 
   default-language:    Haskell2010
 
-  ghc-options:         -O2 -Wall
+  ghc-options:         -O2
+                       -Wall
                        -fwarn-duplicate-exports
                        -fwarn-incomplete-patterns
                        -fwarn-missing-signatures
@@ -89,8 +90,10 @@ library
 
   hs-source-dirs:      lib, ffi
 
-  ld-options: -lstdc++
-  
+--  ld-options: -lstdc++
+
+  extra-libraries: stdc++
+    
   cc-options: --std=c++11
 
   -- We must provide the full relative path to every C file that the project depends on.
@@ -344,7 +347,11 @@ executable pcg
 
   default-language:    Haskell2010
 
-  ghc-options:         -O2 -Wall
+  ghc-options:         -O2
+                     -- This is to enable thread parralellism at compile time
+                       -threaded -rtsopts -with-rtsopts=-N8
+                     -- The rest are "opt-in" warnings for cleanliness
+                       -Wall
                        -fwarn-duplicate-exports
                        -fwarn-incomplete-patterns
                        -fwarn-missing-signatures

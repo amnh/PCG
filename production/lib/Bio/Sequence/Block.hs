@@ -21,12 +21,15 @@ module Bio.Sequence.Block
   , hexmap
   , hexTranspose
   , hexZipWith
+  , parFmap
+  , parZipWith
   ) where
 
 
 import Bio.Character.Encodable
 import Bio.Character.Decoration.Continuous
 import Bio.Metadata.CharacterName
+import Control.Parallel.Strategies
 import Data.Foldable
 import Data.Key
 import Data.Monoid                         (mappend)
@@ -68,12 +71,19 @@ hexmap :: (m -> m')
        -> CharacterBlock m' i' c' f' a' d'
 hexmap f1 f2 f3 f4 f5 f6 =
     CharacterBlock
-      <$> (fmap f3 . continuousCharacterBins )
-      <*> (fmap f4 . nonAdditiveCharacterBins)
-      <*> (fmap f5 . additiveCharacterBins   )
-      <*> (fmap f1 . metricCharacterBins     )
-      <*> (fmap f2 . nonMetricCharacterBins  )
-      <*> (fmap f6 . dynamicCharacters       )
+      <$> (parFmap rpar f3 . continuousCharacterBins )
+      <*> (parFmap rpar f4 . nonAdditiveCharacterBins)
+      <*> (parFmap rpar f5 . additiveCharacterBins   )
+      <*> (parFmap rpar f1 . metricCharacterBins     )
+      <*> (parFmap rpar f2 . nonMetricCharacterBins  )
+      <*> (parFmap rpar f6 . dynamicCharacters       )
+
+
+parFmap :: Traversable t => Strategy b -> (a -> b) -> t a -> t b
+parFmap strat f = withStrategy (parTraversable strat) . fmap f
+
+parZipWith :: (Traversable t, Zip t) => Strategy c -> (a -> b -> c) -> t a -> t b -> t c
+parZipWith strat f lhs rhs = withStrategy (parTraversable strat) $ zipWith f lhs rhs
 
 
 hexTranspose :: Traversable t => t (CharacterBlock m i c f a d) -> CharacterBlock (t m) (t i) (t c) (t f) (t a) (t d)
@@ -96,22 +106,22 @@ hexTranspose =
 
 
 hexZipWith :: (m1 -> m2 -> m3)
-          -> (i1 -> i2 -> i3) 
-          -> (c1 -> c2 -> c3)
-          -> (f1 -> f2 -> f3)
-          -> (a1 -> a2 -> a3)
-          -> (d1 -> d2 -> d3)
-          -> CharacterBlock m1 i1 c1 f1 a1 d1
-          -> CharacterBlock m2 i2 c2 f2 a2 d2
-          -> CharacterBlock m3 i3 c3 f3 a3 d3
+           -> (i1 -> i2 -> i3) 
+           -> (c1 -> c2 -> c3)
+           -> (f1 -> f2 -> f3)
+           -> (a1 -> a2 -> a3)
+           -> (d1 -> d2 -> d3)
+           -> CharacterBlock m1 i1 c1 f1 a1 d1
+           -> CharacterBlock m2 i2 c2 f2 a2 d2
+           -> CharacterBlock m3 i3 c3 f3 a3 d3
 hexZipWith f1 f2 f3 f4 f5 f6 lhs rhs =
     CharacterBlock
-        { continuousCharacterBins  = zipWith f3 (continuousCharacterBins  lhs) (continuousCharacterBins  rhs)
-        , nonAdditiveCharacterBins = zipWith f4 (nonAdditiveCharacterBins lhs) (nonAdditiveCharacterBins rhs)
-        , additiveCharacterBins    = zipWith f5 (additiveCharacterBins    lhs) (additiveCharacterBins    rhs)
-        , metricCharacterBins      = zipWith f1 (metricCharacterBins      lhs) (metricCharacterBins      rhs)
-        , nonMetricCharacterBins   = zipWith f2 (nonMetricCharacterBins   lhs) (nonMetricCharacterBins   rhs)
-        , dynamicCharacters        = zipWith f6 (dynamicCharacters        lhs) (dynamicCharacters        rhs)
+        { continuousCharacterBins  = parZipWith rpar f3 (continuousCharacterBins  lhs) (continuousCharacterBins  rhs)
+        , nonAdditiveCharacterBins = parZipWith rpar f4 (nonAdditiveCharacterBins lhs) (nonAdditiveCharacterBins rhs)
+        , additiveCharacterBins    = parZipWith rpar f5 (additiveCharacterBins    lhs) (additiveCharacterBins    rhs)
+        , metricCharacterBins      = parZipWith rpar f1 (metricCharacterBins      lhs) (metricCharacterBins      rhs)
+        , nonMetricCharacterBins   = parZipWith rpar f2 (nonMetricCharacterBins   lhs) (nonMetricCharacterBins   rhs)
+        , dynamicCharacters        =    zipWith      f6 (dynamicCharacters        lhs) (dynamicCharacters        rhs)
         }
 
 
