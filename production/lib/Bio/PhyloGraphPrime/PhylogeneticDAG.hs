@@ -570,3 +570,61 @@ nodePostorderFold = undefined
 edgePostorderFold :: (e -> [a] -> a)
 edgePostorderFold = undefined
 
+
+type EdgeReference = (Int, Int)
+
+
+type Cost = Double
+
+
+{-
+
+-- |
+-- For every edge in the component:
+--
+-- * If the edge is *not* a network edge:
+--
+-- The re-rooting candidate cost for that edge (for a character) is the minimum
+-- cost of the cartesian product of the resolutions of the adjacent nodes.
+--
+-- * If the edge *is* a network edge:
+--
+-- The re-rooting candidate cost for that edge (for a character) is the minimum
+-- cost of the cartesian product of the resolutions of the adjacent nodes minus any
+-- resolutions that contain the "incident" network edge contained on the current
+-- network edge.
+
+assignOptimalDynamicCharacterRootEdges :: (d -> d') -> PhylogeneticDAG2 e n m i c f a d -> PhylogeneticDAG2 e n m i c f a d'
+assignOptimalDynamicCharacterRootEdges extensionTransformation (PDAG2 inputDag) =
+    case rootEdgeReference of
+      Nothing -> (PDAG2 inputDag)
+      Just er ->
+        let toInitialTuple dec  = (er, dec ^. dynamicCharacterCost)
+
+            -- Resolutions of Blocks of Vectors of characters.
+            defaultAccumulator :: NonEmpty (NonEmpty (Vector (EdgeReference, Cost) ))
+            defaultAccumulator = fmap (fmap (fmap toInitialTuple . dynamicCharacters) . toBlocks) . resolutions . nodeDecoration $ references inputDag ! rootRefWLOG
+        in  
+  where
+
+    -- These are the edges of the DAG which might, not including the current root edge,
+    -- which maybe be the optimal root for a given dynamic character.
+    otherUnrootedEdges :: [EdgeReference]
+    otherUnrootedEdges = foldMapWithKey f $ refernces inputDag
+      where
+        f i n
+          -- Don't consider edges from a root node, as the edges are "artificial" in an unrooted context.
+          | i `elem` rootRefs inputDag = []
+          | otherwise                  = foldMap (\e -> (i,e)) $ childRefs n
+
+--    defaultAccumulator :: Vector (EdgeReference, Cost)
+    rootRefWLOG = NE.head $ roofRefs inputDag
+
+    rootEdgeReference =
+        case childRefs $ references inputDag ! rootRefWLOG of
+          []   -> Nothing
+          [x]  -> Nothing
+          x:y_ -> Just (x,y)
+              
+
+-}

@@ -26,21 +26,22 @@ module Bio.Sequence.Block
   ) where
 
 
-import Bio.Character.Encodable
-import Bio.Character.Decoration.Continuous
-import Bio.Metadata.CharacterName
-import Control.Parallel.Strategies
-import Data.Foldable
-import Data.Key
-import Data.Monoid                         (mappend)
-import Data.Semigroup
---import Data.Semigroup.Traversable
-import Data.TCM
-import Data.Vector                         (Vector)
-import Data.Vector.Instances ()
-import qualified Data.Vector as V
-import Prelude hiding (zipWith)
-import Safe (headMay)
+import           Bio.Character.Encodable
+import           Bio.Character.Decoration.Continuous
+import           Bio.Metadata.CharacterName
+import           Control.Parallel.Strategies
+import           Data.Foldable
+import           Data.Key
+import           Data.Monoid                          (mappend)
+import           Data.Semigroup
+--import           Data.Semigroup.Traversable
+import           Data.TCM
+import           Data.Vector                          (Vector)
+import           Data.Vector.Instances                ()
+import qualified Data.Vector                   as V
+import           Prelude                       hiding (zipWith)
+import           Safe                                 (headMay)
+
 
 -- |
 -- Represents a block of charcters which are optimized atomically together across
