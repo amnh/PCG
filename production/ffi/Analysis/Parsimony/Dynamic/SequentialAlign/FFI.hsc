@@ -15,7 +15,10 @@
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
 module Analysis.Parsimony.Dynamic.SequentialAlign.FFI
-  ( sequentialAlign
+  ( ForeignVoid()
+  , MemoizedCostMatrix(costMatrix)
+  , getMemoizedCostMatrix
+  , sequentialAlign
 --  , testFn
 --  , main
   ) where
@@ -30,14 +33,12 @@ import Foreign         hiding (alignPtr)
 --import Foreign.C.String
 import Foreign.C.Types
 import System.IO.Unsafe
-import Test.QuickCheck hiding ((.&.))
+import Test.QuickCheck hiding ((.&.), output)
 
 #include "costMatrix.h"
 #include "dynamicCharacterOperations.h"
 -- #include "seqAlignForHaskell.c"
 #include <stdint.h>
-
-data ForeignVoid = FV
 
 -- |
 -- A convient type alias for improved clairity of use.
@@ -50,17 +51,20 @@ instance Arbitrary CArrayUnit where
         pure $ fromIntegral num
 
 
+data ForeignVoid
+
 
 data MemoizedCostMatrix
    = MemoizedCostMatrix
    { costMatrix :: Ptr ForeignVoid
    }
 
+
 instance Storable MemoizedCostMatrix where
     sizeOf    _ = (#size void*) -- #size is a built-in that works with arrays, as are #peek and #poke, below
     alignment _ = alignment (undefined :: CArrayUnit)
-    peek ptr    = undefined
-    poke ptr    = undefined
+    peek _ptr   = undefined
+    poke _ptr   = undefined
 
 
 -- | Create and allocate cost matrix
@@ -91,9 +95,12 @@ getMemoizedCostMatrix alphabetSize costFn = unsafePerformIO . withArray rowMajor
         rowMajorList = [ toEnum $ costFn i j | i <- range,  j <- range ]
         range = [0 .. alphabetSize - 1]
 
+
+{-
 foreign import ccall unsafe "costMatrix lookUpCost"
     getCostfn_c :: Ptr MemoizedCostMatrix
                 -> Ptr CDynamicChar
+-}
 
 
 -- TODO: replace when Yu Xiang updated his code for bit arrays.
@@ -223,8 +230,9 @@ instance Storable CDynamicChar where
 
 data DynamicCharacterElement = DynamicCharacterElement
     { alphabetSizeElem :: CSize
-    , element          :: Ptr CArrayUnit
+    , characterElement :: Ptr CArrayUnit
     }
+
 
 -- | (✔)
 instance Storable DynamicCharacterElement where
@@ -232,14 +240,14 @@ instance Storable DynamicCharacterElement where
     alignment _ = alignment (undefined :: CULong)
     peek ptr    = do
         alphLen <- (#peek struct dcElement_t, alphSize) ptr
-        elem    <- (#peek struct dcElement_t, element)  ptr
+        element <- (#peek struct dcElement_t, element)  ptr
         pure DynamicCharacterElement
             { alphabetSizeElem = alphLen
-            , element          = elem
+            , characterElement = element
             }
-    poke ptr (DynamicCharacterElement alphLen elem) = do
+    poke ptr (DynamicCharacterElement alphLen element) = do
         (#poke struct dcElement_t, alphSize) ptr alphLen
-        (#poke struct dcElement_t, element ) ptr elem
+        (#poke struct dcElement_t, element ) ptr element
 
 
 

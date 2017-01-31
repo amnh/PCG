@@ -17,10 +17,10 @@
 module File.Format.Nexus.Validate where
 
 import           Data.Bifunctor            (second)
-import           Data.Char                 (isSpace,toLower)
+import           Data.Char                 (isSpace)
 import           Data.Either
 import           Data.Foldable
-import           Data.List                 (sort,sortBy)
+import           Data.List                 (sort, sortBy)
 import           Data.List.NonEmpty        (NonEmpty( (:|) ))
 --import qualified Data.List.NonEmpty as NE
 import           Data.List.Split           (splitOn)

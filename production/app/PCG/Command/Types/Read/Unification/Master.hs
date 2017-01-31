@@ -34,6 +34,7 @@ import           Bio.PhyloGraphPrime.Node
 import           Bio.PhyloGraphPrime.ReferenceDAG
 import           Control.Arrow                     ((&&&))
 import           Control.Applicative               ((<|>))
+import           Control.Parallel.Custom
 import           Control.Parallel.Strategies
 import           Data.Alphabet
 import           Data.Bifunctor                    (first)
@@ -89,8 +90,9 @@ masterUnify' = undefined --rectifyResults
 masterUnify :: [FracturedParseResult] -> Either UnificationError (Either TopologicalResult CharacterResult)
 masterUnify = rectifyResults2
 
-parMap' :: (a -> b) -> [a] -> [b]
-parMap' = parMap rseq
+
+parmap' :: Traversable t => (a -> b) -> t a -> t b
+parmap' = parmap rpar
 
 
 -- |
@@ -106,25 +108,25 @@ rectifyResults2 fprs =
     -- Step 1: Gather data file contents
     dataSeqs        = filter (not . fromTreeOnlyFile) fprs
     -- Step 2: Union the taxa names together into total terminal set
-    taxaSet         = {- (\x ->  trace ("Taxa Set: " <> show x) x) . -} mconcat $ (Set.fromList . keys . parsedChars) `parMap'` dataSeqs
+    taxaSet         = {- (\x ->  trace ("Taxa Set: " <> show x) x) . -} mconcat $ (Set.fromList . keys . parsedChars) `parmap'` dataSeqs
     -- Step 3: Gather forest file data
     allForests      = {- (\x ->  trace ("Forest Lengths: " <> show (length . parsedTrees <$> x)) x) $ -} filter (not . null . parsedForests) fprs
     -- Step 4: Gather the taxa names for each forest from terminal nodes
     forestTaxa :: [([NonEmpty Identifier], FracturedParseResult)]
-    forestTaxa      = {- (\x ->  trace ("Forest Set: " <> show x) x) . -} gatherForestsTerminalNames `parMap'` allForests
+    forestTaxa      = {- (\x ->  trace ("Forest Set: " <> show x) x) . -} gatherForestsTerminalNames `parmap'` allForests
     -- Step 5: Assert that each terminal node name is unique in each forest
     duplicateNames :: [([[Identifier]], FracturedParseResult)]
-    duplicateNames  = filter (not . (all null) . fst) $ first (fmap duplicates) `parMap'` forestTaxa
+    duplicateNames  = filter (not . (all null) . fst) $ first (fmap duplicates) `parmap'` forestTaxa
     -- Step 6: Assert that each forest's terminal node set is exactly the same as the taxa set from "data files"
     extraNames   :: [([Set Identifier], FracturedParseResult)]
-    extraNames      = filter (not . (all null) . fst) $ first (fmap ((\\ taxaSet) . Set.fromList . toList)) `parMap'` forestTaxa
+    extraNames      = filter (not . (all null) . fst) $ first (fmap ((\\ taxaSet) . Set.fromList . toList)) `parmap'` forestTaxa
     missingNames :: [([Set Identifier], FracturedParseResult)]
-    missingNames    = filter (not . (all null) . fst) $ first (fmap ((taxaSet \\) . Set.fromList . toList)) `parMap'` forestTaxa
+    missingNames    = filter (not . (all null) . fst) $ first (fmap ((taxaSet \\) . Set.fromList . toList)) `parmap'` forestTaxa
     -- Step 7: Combine disparte sequences from many sources  into single metadata & character sequence.
     charSeqs        = joinSequences2 dataSeqs
     -- Step 8: Collect the parsed forests to be merged
     suppliedForests :: [PhylogeneticForest ParserTree]
-    suppliedForests = foldMap toList . catMaybes $ parsedForests `parMap'` allForests
+    suppliedForests = foldMap toList . catMaybes $ parsedForests `parmap'` allForests
       
     -- Step 9: Convert topological forests to DAGs (using reference indexing from #7 results)
     dagForest       =

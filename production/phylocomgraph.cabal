@@ -185,6 +185,7 @@ library
                        Bio.PhyloGraphPrime.ReferenceDAG
                        Bio.PhyloGraphPrime.ZipperDAG
                        Control.Evaluation
+                       Control.Parallel.Custom
                        Control.Monad.Logger
                        Data.Either.Custom
                        Data.Alphabet

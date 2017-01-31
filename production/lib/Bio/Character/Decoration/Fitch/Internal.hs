@@ -59,9 +59,9 @@ instance EncodableStreamElement c => Show (FitchOptimizationDecoration c) where
         ]
       where
         alphabet = c ^. characterAlphabet
-        showStatic c
-          | c == fromInteger 0 = "<Empty Character>"
-          | otherwise          = showStreamElement alphabet c
+        showStatic x
+          | x == fromInteger 0 = "<Empty Character>"
+          | otherwise          = showStreamElement alphabet x
       
 
 -- | (✔)
