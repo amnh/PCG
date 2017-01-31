@@ -143,20 +143,22 @@ instance ( Show m
          ) => Show (CharacterBlock m i c f a d) where
 
     show block = unlines
-       [ "Continuous Characters: "
-       , unlines . fmap (unlines . fmap ("  " <>) . lines . show) . toList $ continuousCharacterBins block
-       , "Fitch Characters:"
-       , unlines . fmap (("  " <>) . show) . toList $ nonAdditiveCharacterBins block
-       , "Additive Characters:"
-       , unlines . fmap (("  " <>) . show) . toList $ additiveCharacterBins block
-       , "Metric Characters:"
-       , unlines . fmap (("  " <>) . show) . toList $ metricCharacterBins block
-       , "NonMetric Characters:"
-       , unlines . fmap (("  " <>) . show) . toList $ nonMetricCharacterBins block
-       , "Dynamic Characters:"
-       , unlines . fmap (unlines . fmap ("  " <>) . lines . show) . toList $ dynamicCharacters block
-       ]
-
+        [ "Continuous Characters: "
+        , niceRendering $ continuousCharacterBins block
+        , "Fitch Characters:"
+        , niceRendering $ nonAdditiveCharacterBins block
+        , "Additive Characters:"
+        , niceRendering $ additiveCharacterBins block
+        , "Metric Characters:"
+        , niceRendering $ metricCharacterBins block
+        , "NonMetric Characters:"
+        , niceRendering $ nonMetricCharacterBins block
+        , "Dynamic Characters:"
+        , niceRendering $ dynamicCharacters block
+        ]
+      where
+        niceRendering :: (Foldable t, Show a) => t a -> String
+        niceRendering = unlines . fmap (unlines . fmap ("  " <>) . lines . show) . toList
 
 -- |
 -- Convert all characters contained in the block to thier missing value.
