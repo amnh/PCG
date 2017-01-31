@@ -19,9 +19,18 @@ import Control.Lens
 
 
 -- |
--- A 'Lens' for the 'fitchIsLeaf' field.
+-- A 'Lens' for the field.
 class HasIsLeaf s a | s -> a where
 
-    isLeaf :: Lens' s a
     {-# MINIMAL isLeaf #-}
+    isLeaf :: Lens' s a
+
+
+-- |
+-- A 'Lens' for the field.
+class HasCharacterCost s a | s -> a where
+
+    {-# MINIMAL characterCost #-}
+    characterCost :: Lens' s a
+
 

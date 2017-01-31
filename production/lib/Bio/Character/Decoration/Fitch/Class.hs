@@ -33,9 +33,10 @@ class DiscreteCharacterDecoration s a => FitchCharacterDecoration s a | s -> a w
 class ( DiscreteCharacterDecoration s c
       , HasChildMedians s (c, c)
       , HasIsLeaf s Bool
-      , HasMinCost s Word
+      , HasCharacterCost s Word
       , HasPreliminaryMedian s (c)
       , HasFinalMedian s c
+      
       ) => FitchDecoration s c | s -> c where
 
 
@@ -63,12 +64,14 @@ class HasChildMedians s a | s -> a where
     {-# MINIMAL childMedians #-}
 
 
+{-
 -- |
 -- A 'Lens' for the 'fitchMinCost' field.
 class HasMinCost s a | s -> a where
 
     minCost :: Lens' s a
     {-# MINIMAL minCost #-}
+-}
 
 
 -- |

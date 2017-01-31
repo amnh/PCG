@@ -73,7 +73,7 @@ updatePostOrder _parentDecoration (leftChildDec:|rightChildDec:_) = returnNodeDe
         isSet decoration key = (decoration   ^. preliminaryMedian) `testBit` key
         indel l r k          = isSet l k `xor` isSet r k
         noSub l r k          = isSet l k  &&   isSet r k    -- Same bit is on in both characters.
-        totalCost            = parentCost + (leftChildDec ^. minCost) + (rightChildDec ^. minCost)
+        totalCost            = parentCost + (leftChildDec ^. characterCost) + (rightChildDec ^. characterCost)
         emptyChar            = emptyStatic $ leftChildDec ^. discreteCharacter
         f (inChar, cost) key _                                  -- In following, note that a 1 has been set to the character by
                                                                 -- default, above. So we never have
@@ -94,10 +94,11 @@ updatePostOrder _parentDecoration (leftChildDec:|rightChildDec:_) = returnNodeDe
 -- Its "child preliminary medians" are empty lists.
 initializeLeaf :: DiscreteCharacterDecoration d c => d -> FitchOptimizationDecoration c
 initializeLeaf leafDecoration =
-    extendDiscreteToFitch leafDecoration 0 emptyChar emptyChar (emptyChar, emptyChar) True
+    extendDiscreteToFitch leafDecoration 0 leafChar emptyChar (emptyChar, emptyChar) True
     where
         --label     = leafDecoration ^. discreteCharacter -- can skip this now, because it's set in post order
-        emptyChar = emptyStatic $ leafDecoration ^. discreteCharacter
+        emptyChar = emptyStatic $ leafChar
+        leafChar  = leafDecoration ^. discreteCharacter
 
 
 -- |
@@ -119,7 +120,7 @@ determineFinalState parentDecoration childDecoration = finalDecoration
         finalDecoration = extendDiscreteToFitch parentDecoration cost preliminary median (left, right) leafVal -- using parentDecoration here because I need a DiscreteCharacterDecoration.
                                                                                                                -- Safe because new char is created.
         leafVal         = childDecoration  ^. isLeaf
-        cost            = childDecoration  ^. minCost
+        cost            = childDecoration  ^. characterCost
         preliminary     = childDecoration  ^. preliminaryMedian
         ancestor        = parentDecoration ^. discreteCharacter
         (left, right)   = childDecoration  ^. childMedians

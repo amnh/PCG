@@ -122,9 +122,9 @@ instance HasIsLeaf (FitchOptimizationDecoration f) Bool where
     isLeaf = lens fitchIsLeaf (\e x -> e { fitchIsLeaf = x })
 
 -- | (✔)
-instance HasMinCost (FitchOptimizationDecoration f) Word where
+instance HasCharacterCost (FitchOptimizationDecoration f) Word where
 
-    minCost = lens fitchMinCost (\e x -> e { fitchMinCost = x })
+    characterCost = lens fitchMinCost (\e x -> e { fitchMinCost = x })
 
 -- | (✔)
 instance HasPreliminaryMedian (FitchOptimizationDecoration f) f where

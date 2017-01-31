@@ -24,7 +24,7 @@ module Bio.Character.Decoration.Fitch
   , HasCharacterWeight(..)
   , HasDiscreteCharacter(..)
   , HasIsLeaf(..)
-  , HasMinCost(..)
+  , HasCharacterCost(..)
   , HasPreliminaryMedian(..)
   , HasChildMedians(..)
   ) where
