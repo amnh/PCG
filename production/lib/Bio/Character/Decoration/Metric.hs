@@ -25,12 +25,13 @@ module Bio.Character.Decoration.Metric
   , HasCharacterTransitionCostMatrix(..)
   , HasCharacterWeight(..)
   , HasDiscreteCharacter(..)
-  , HasMinCostVector(..)
+  , HasCharacterCost(..)
+  , HasCharacterCostVector(..)
   , HasDirectionalMinVector(..)
-  , HasMinCost(..)
   ) where
 
 import Bio.Character.Decoration.Discrete
 import Bio.Character.Decoration.Metric.Class
 import Bio.Character.Decoration.Metric.Internal
+import Bio.Character.Decoration.Shared
 

@@ -31,7 +31,7 @@ class DiscreteCharacterDecoration s a => AdditiveCharacterDecoration s a | s -> 
 class ( DiscreteCharacterDecoration s c
       , HasChildPrelimIntervals s ((Word, Word), (Word, Word))
       , HasIsLeaf s Bool
-      , HasMinCost s Word
+      , HasCharacterCost s Word
       , HasPreliminaryInterval s (Word, Word)
       ) => AdditiveDecoration s c | s -> c where
 
@@ -57,14 +57,6 @@ class HasChildPrelimIntervals s a | s -> a where
 
     childPrelimIntervals :: Lens' s a
     {-# MINIMAL childPrelimIntervals #-}
-
-
--- |
--- A 'Lens' for the 'additiveMinCost' field.
-class HasMinCost s a | s -> a where
-
-    minCost :: Lens' s a
-    {-# MINIMAL minCost #-}
 
 
 -- |

@@ -17,6 +17,7 @@
 module Bio.Character.Decoration.Dynamic.Internal where
 
 import Bio.Character.Decoration.Dynamic.Class
+import Bio.Character.Decoration.Shared
 import Bio.Character.Encodable
 import Bio.Metadata.CharacterName
 import Bio.Metadata.Discrete
@@ -148,7 +149,8 @@ instance (EncodableDynamicCharacter d) => DynamicCharacterDecoration (DynamicDec
 
 data DynamicDecorationDirectOptimizationPostOrderResult d
    = DynamicDecorationDirectOptimizationPostOrderResult
-   { dynamicDecorationDirectOptimizationPostOrderEncodedField             :: d
+   { dynamicDecorationDirectOptimizationPostOrderCharacterCost            :: Word
+   , dynamicDecorationDirectOptimizationPostOrderEncodedField             :: d
    , dynamicDecorationDirectOptimizationPostOrderPreliminaryGappedField   :: d
    , dynamicDecorationDirectOptimizationPostOrderPreliminaryUngappedField :: d
    , dynamicDecorationDirectOptimizationPostOrderLeftAlignmentField       :: d
@@ -173,9 +175,10 @@ instance EncodableStream d => Show (DynamicDecorationDirectOptimizationPostOrder
 
 instance EncodableDynamicCharacter d => SimpleDynamicExtensionPostOrderDecoration (DynamicDecorationDirectOptimizationPostOrderResult d) d where
 
-    extendDynamicToPostOrder subDecoration ungapped gapped lhsAlignment rhsAlignment=
+    extendDynamicToPostOrder subDecoration cost ungapped gapped lhsAlignment rhsAlignment =
         DynamicDecorationDirectOptimizationPostOrderResult
-        { dynamicDecorationDirectOptimizationPostOrderEncodedField             = subDecoration ^. encoded
+        { dynamicDecorationDirectOptimizationPostOrderCharacterCost            = cost
+        , dynamicDecorationDirectOptimizationPostOrderEncodedField             = subDecoration ^. encoded
         , dynamicDecorationDirectOptimizationPostOrderPreliminaryGappedField   = gapped
         , dynamicDecorationDirectOptimizationPostOrderPreliminaryUngappedField = ungapped
         , dynamicDecorationDirectOptimizationPostOrderLeftAlignmentField       = lhsAlignment
@@ -197,12 +200,19 @@ instance EncodableDynamicCharacter d => SimpleDynamicExtensionPostOrderDecoratio
 instance Hashable d => Hashable (DynamicDecorationDirectOptimizationPostOrderResult d) where
 
       hashWithSalt salt dec = foldr1 xor $
-                              [ hashWithSalt salt . dynamicDecorationDirectOptimizationPostOrderEncodedField
+                              [ hashWithSalt salt . dynamicDecorationDirectOptimizationPostOrderCharacterCost
+                              , hashWithSalt salt . dynamicDecorationDirectOptimizationPostOrderEncodedField
                               , hashWithSalt salt . dynamicDecorationDirectOptimizationPostOrderPreliminaryGappedField
                               , hashWithSalt salt . dynamicDecorationDirectOptimizationPostOrderPreliminaryUngappedField
                               , hashWithSalt salt . dynamicDecorationDirectOptimizationPostOrderLeftAlignmentField
                               , hashWithSalt salt . dynamicDecorationDirectOptimizationPostOrderRightAlignmentField
                               ] <*> [dec]
+      
+
+-- | (✔)
+instance HasCharacterCost (DynamicDecorationDirectOptimizationPostOrderResult d) Word where
+
+    characterCost = lens dynamicDecorationDirectOptimizationPostOrderCharacterCost (\e x -> e { dynamicDecorationDirectOptimizationPostOrderCharacterCost = x })
       
 
 -- | (✔)
@@ -306,7 +316,8 @@ instance (EncodableStream d, Element d ~ c) => DiscreteCharacterMetadata (Dynami
 -- polymorphic character type.
 data DynamicDecorationDirectOptimization d
    = DynamicDecorationDirectOptimization
-   { dynamicDecorationDirectOptimizationEncodedField             :: d
+   { dynamicDecorationDirectOptimizationCharacterCost            :: Word
+   , dynamicDecorationDirectOptimizationEncodedField             :: d
    , dynamicDecorationDirectOptimizationFinalGappedField         :: d
    , dynamicDecorationDirectOptimizationFinalUngappedField       :: d
    , dynamicDecorationDirectOptimizationPreliminaryGappedField   :: d
@@ -322,7 +333,8 @@ instance EncodableDynamicCharacter d => PostOrderExtensionDirectOptimizationDeco
 
     extendPostOrderToDirectOptimization subDecoration ungapped gapped =
         DynamicDecorationDirectOptimization
-        { dynamicDecorationDirectOptimizationEncodedField             = subDecoration ^. encoded
+        { dynamicDecorationDirectOptimizationCharacterCost            = subDecoration ^. characterCost
+        , dynamicDecorationDirectOptimizationEncodedField             = subDecoration ^. encoded
         , dynamicDecorationDirectOptimizationFinalGappedField         = gapped
         , dynamicDecorationDirectOptimizationFinalUngappedField       = ungapped
         , dynamicDecorationDirectOptimizationPreliminaryGappedField   = subDecoration ^. preliminaryGapped
@@ -359,6 +371,12 @@ instance EncodableStream d => Show (DynamicDecorationDirectOptimization d) where
           , ("Right Alignment     : ", rightAlignment     )
           ]
 
+
+-- | (✔)
+instance HasCharacterCost (DynamicDecorationDirectOptimization d) Word where
+
+    characterCost = lens dynamicDecorationDirectOptimizationCharacterCost (\e x -> e { dynamicDecorationDirectOptimizationCharacterCost = x })
+      
 
 -- | (✔)
 instance HasEncoded (DynamicDecorationDirectOptimization d) d where
@@ -479,7 +497,8 @@ instance (EncodableStream d, Element d ~ c) => DiscreteCharacterMetadata (Dynami
 -- character type.
 data DynamicDecorationImpliedAlignment d
    = DynamicDecorationImpliedAlignment
-   { dynamicDecorationImpliedAlignmentEncodedField             :: d
+   { dynamicDecorationImpliedAlignmentCharacterCost            :: Word
+   , dynamicDecorationImpliedAlignmentEncodedField             :: d
    , dynamicDecorationImpliedAlignmentFinalGappedField         :: d
    , dynamicDecorationImpliedAlignmentFinalUngappedField       :: d
    , dynamicDecorationImpliedAlignmentPreliminaryGappedField   :: d
@@ -490,6 +509,12 @@ data DynamicDecorationImpliedAlignment d
    , dynamicDecorationImpliedAlignmentMetadata                 :: DiscreteCharacterMetadataDec (Element d)
    }
 
+
+-- | (✔)
+instance HasCharacterCost (DynamicDecorationImpliedAlignment d) Word where
+
+    characterCost = lens dynamicDecorationImpliedAlignmentCharacterCost (\e x -> e { dynamicDecorationImpliedAlignmentCharacterCost = x })
+      
 
 -- | (✔)
 instance HasEncoded (DynamicDecorationImpliedAlignment d) d where

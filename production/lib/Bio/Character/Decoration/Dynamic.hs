@@ -24,6 +24,7 @@ module Bio.Character.Decoration.Dynamic
   , SimpleDynamicExtensionPostOrderDecoration(..)
   , PostOrderExtensionDirectOptimizationDecoration(..)
   , HasCharacterAlphabet(..)
+  , HasCharacterCost(..)
   , HasCharacterName(..)
   , HasCharacterSymbolTransitionCostMatrixGenerator(..)
   , HasCharacterTransitionCostMatrix(..)
@@ -41,6 +42,7 @@ module Bio.Character.Decoration.Dynamic
 
 import Bio.Character.Decoration.Dynamic.Class
 import Bio.Character.Decoration.Dynamic.Internal
+import Bio.Character.Decoration.Shared
 import Bio.Character.Encodable
 import Bio.Metadata.Discrete
 

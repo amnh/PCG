@@ -103,9 +103,9 @@ instance HasIsLeaf (AdditiveOptimizationDecoration a) Bool where
     isLeaf = lens additiveIsLeaf (\e x -> e { additiveIsLeaf = x })
 
 -- | (✔)
-instance HasMinCost (AdditiveOptimizationDecoration a) Word where
+instance HasCharacterCost (AdditiveOptimizationDecoration a) Word where
 
-    minCost = lens additiveMinCost (\e x -> e { additiveMinCost = x })
+    characterCost = lens additiveMinCost (\e x -> e { additiveMinCost = x })
 
 -- | (✔)
 instance HasPreliminaryInterval (AdditiveOptimizationDecoration a) (Word, Word) where

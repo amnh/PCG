@@ -76,7 +76,7 @@ updatePostOrder _parentDecoration (leftChild:|(rightChild:_)) = returnNodeDecora
         (newMin, newMax)              = leftInterval `intersect` rightInterval
         (leftInterval, rightInterval) = join bimap (^. preliminaryInterval) (leftChild, rightChild)
         newInterval                   = (newMin, newMax)
-        totalCost                     = thisNodeCost + (leftChild ^. minCost) + (rightChild ^. minCost)
+        totalCost                     = thisNodeCost + (leftChild ^. characterCost) + (rightChild ^. characterCost)
         thisNodeCost                  = newMax - newMin
         returnNodeDecoration          =
             extendDiscreteToAdditive leftChild totalCost newInterval (leftInterval, rightInterval) False

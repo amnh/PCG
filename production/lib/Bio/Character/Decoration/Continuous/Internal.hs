@@ -199,9 +199,9 @@ instance HasIsLeaf (ContinuousOptimizationDecoration a) Bool where
     isLeaf = lens additiveIsLeaf (\e x -> e { additiveIsLeaf = x })
 
 -- | (✔)
-instance HasMinCost (ContinuousOptimizationDecoration a) Double where
+instance HasCharacterCost (ContinuousOptimizationDecoration a) Double where
 
-    minCost = lens additiveMinCost (\e x -> e { additiveMinCost = x })
+    characterCost = lens additiveMinCost (\e x -> e { additiveMinCost = x })
 
 -- | (✔)
 instance HasPreliminaryInterval (ContinuousOptimizationDecoration a) (Double, Double) where

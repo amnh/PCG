@@ -17,6 +17,7 @@ module Bio.Character.Decoration.Metric.Internal where
 
 import Bio.Character.Decoration.Metric.Class
 import Bio.Character.Decoration.Discrete
+import Bio.Character.Decoration.Shared
 import Bio.Character.Encodable
 import Bio.Metadata.CharacterName
 import Bio.Metadata.Discrete
@@ -89,6 +90,7 @@ instance HasCharacterWeight (MetricDecorationInitial c) Double where
 -- | (✔)
 instance GeneralCharacterMetadata (MetricDecorationInitial c) where
 
+  
 -- | (✔)
 instance EncodableStreamElement c => DiscreteCharacterMetadata (MetricDecorationInitial c) c where
 
@@ -181,9 +183,9 @@ instance HasCharacterWeight (SankoffOptimizationDecoration c) Double where
 
 
 -- | (✔)
-instance HasMinCostVector (SankoffOptimizationDecoration c) [Word] where
+instance HasCharacterCostVector (SankoffOptimizationDecoration c) [Word] where
 
-    minCostVector = lens sankoffMinCostVector (\e x -> e { sankoffMinCostVector = x })
+    characterCostVector = lens sankoffMinCostVector (\e x -> e { sankoffMinCostVector = x })
 
 
 -- | (✔)
@@ -193,9 +195,9 @@ instance HasDirectionalMinVector (SankoffOptimizationDecoration c) ([Word], [Wor
 
 
 -- | (✔)
-instance HasMinCost (SankoffOptimizationDecoration c) Word where
+instance HasCharacterCost (SankoffOptimizationDecoration c) Word where
 
-    minCost = lens sankoffMinCost (\e x -> e { sankoffMinCost = x })
+    characterCost = lens sankoffMinCost (\e x -> e { sankoffMinCost = x })
 
 
 -- | (✔)

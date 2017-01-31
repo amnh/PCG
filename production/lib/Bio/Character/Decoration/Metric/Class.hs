@@ -16,6 +16,7 @@ module Bio.Character.Decoration.Metric.Class where
 
 
 import Bio.Character.Decoration.Discrete
+import Bio.Character.Decoration.Shared
 import Control.Lens
 
 
@@ -27,9 +28,9 @@ class DiscreteCharacterDecoration s a => MetricCharacterDecoration s a | s -> a 
 -- |
 -- A decoration containing a character that has been scored using Sankoff's algorithm.
 class ( DiscreteCharacterDecoration s c
-      , HasMinCostVector s [Word]
+      , HasCharacterCost s Word
+      , HasCharacterCostVector s [Word]
       , HasDirectionalMinVector s ([Word], [Word])
-      , HasMinCost s Word
       ) => SankoffDecoration s c | s -> c where
 
 
@@ -45,24 +46,16 @@ class ( SankoffDecoration s c
 
 -- |
 -- A 'Lens' for the 'minCostVector' field.
-class HasMinCostVector s a | s -> a where
+class HasCharacterCostVector s a | s -> a where
 
-    minCostVector :: Lens' s a
-    {-# MINIMAL minCostVector #-}
+    {-# MINIMAL characterCostVector #-}
+    characterCostVector :: Lens' s a
 
 
 -- |
 -- A 'Lens' for the 'directionalMinVector' field.
 class HasDirectionalMinVector s a | s -> a where
 
-    directionalMinVector :: Lens' s a
     {-# MINIMAL directionalMinVector #-}
-
-
--- |
--- A 'Lens' for the 'minCost' field.
-class HasMinCost s a | s -> a where
-
-    minCost :: Lens' s a
-    {-# MINIMAL minCost #-}
+    directionalMinVector :: Lens' s a
 

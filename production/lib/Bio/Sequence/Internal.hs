@@ -30,6 +30,7 @@ module Bio.Sequence.Internal
 --import           Bio.Character.Encodable
 import           Bio.Sequence.Block               (CharacterBlock)
 import qualified Bio.Sequence.Block      as Block
+import           Control.Parallel.Custom
 import           Control.Parallel.Strategies
 import           Data.Bifunctor
 import           Data.Foldable
@@ -66,7 +67,7 @@ hexmap :: (m -> m')
        -> (d -> d')
        -> CharacterSequence m  i  c  f  a  d
        -> CharacterSequence m' i' c' f' a' d'
-hexmap f1 f2 f3 f4 f5 f6 = fromBlocks . Block.parFmap rpar (Block.hexmap f1 f2 f3 f4 f5 f6) . toBlocks
+hexmap f1 f2 f3 f4 f5 f6 = fromBlocks . parmap rpar (Block.hexmap f1 f2 f3 f4 f5 f6) . toBlocks
 
 
 hexTranspose :: Traversable1 t => t (CharacterSequence m i c f a d) -> CharacterSequence [m] [i] [c] [f] [a] [d]
@@ -93,7 +94,7 @@ hexZipWith :: (m1 -> m2 -> m3)
            -> CharacterSequence m1 i1 c1 f1 a1 d1
            -> CharacterSequence m2 i2 c2 f2 a2 d2
            -> CharacterSequence m3 i3 c3 f3 a3 d3
-hexZipWith f1 f2 f3 f4 f5 f6 lhs rhs = fromBlocks $ Block.parZipWith rpar (Block.hexZipWith f1 f2 f3 f4 f5 f6) (toBlocks lhs) (toBlocks rhs)
+hexZipWith f1 f2 f3 f4 f5 f6 lhs rhs = fromBlocks $ parZipWith rpar (Block.hexZipWith f1 f2 f3 f4 f5 f6) (toBlocks lhs) (toBlocks rhs)
 
 
 -- |

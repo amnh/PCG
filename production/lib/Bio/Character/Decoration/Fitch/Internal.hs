@@ -48,13 +48,14 @@ data FitchOptimizationDecoration f
 
 instance EncodableStreamElement c => Show (FitchOptimizationDecoration c) where
 
-    show c = mconcat
+    show c = unlines
         [ "\"Discrete Character\" " <> showDiscreteCharacterElement c
         , "\nCost = ", show $ fitchMinCost c
         , "\nPreliminary Median : " <> showStatic (fitchPreliminaryMedian  c)
         , "\nFinal       Median : " <> showStatic (fitchFinalMedian        c)
         , "\nChild       Medians: " <> show (showStatic `bimap` showStatic $ fitchChildMedians c)
         , "\nIs Leaf Node?      : " <> show (fitchIsLeaf c)
+        , "\n"
         ]
       where
         alphabet = c ^. characterAlphabet
@@ -121,9 +122,9 @@ instance HasIsLeaf (FitchOptimizationDecoration f) Bool where
     isLeaf = lens fitchIsLeaf (\e x -> e { fitchIsLeaf = x })
 
 -- | (✔)
-instance HasMinCost (FitchOptimizationDecoration f) Word where
+instance HasCharacterCost (FitchOptimizationDecoration f) Word where
 
-    minCost = lens fitchMinCost (\e x -> e { fitchMinCost = x })
+    characterCost = lens fitchMinCost (\e x -> e { fitchMinCost = x })
 
 -- | (✔)
 instance HasPreliminaryMedian (FitchOptimizationDecoration f) f where

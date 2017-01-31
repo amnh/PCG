@@ -21,26 +21,26 @@ module Bio.Sequence.Block
   , hexmap
   , hexTranspose
   , hexZipWith
-  , parFmap
-  , parZipWith
   ) where
 
 
-import Bio.Character.Encodable
-import Bio.Character.Decoration.Continuous
-import Bio.Metadata.CharacterName
-import Control.Parallel.Strategies
-import Data.Foldable
-import Data.Key
-import Data.Monoid                         (mappend)
-import Data.Semigroup
---import Data.Semigroup.Traversable
-import Data.TCM
-import Data.Vector                         (Vector)
-import Data.Vector.Instances ()
-import qualified Data.Vector as V
-import Prelude hiding (zipWith)
-import Safe (headMay)
+import           Bio.Character.Encodable
+import           Bio.Character.Decoration.Continuous
+import           Bio.Metadata.CharacterName
+import           Control.Parallel.Custom
+import           Control.Parallel.Strategies
+import           Data.Foldable
+import           Data.Key
+import           Data.Monoid                          (mappend)
+import           Data.Semigroup
+--import           Data.Semigroup.Traversable
+import           Data.TCM
+import           Data.Vector                          (Vector)
+import           Data.Vector.Instances                ()
+import qualified Data.Vector                   as V
+import           Prelude                       hiding (zipWith)
+import           Safe                                 (headMay)
+
 
 -- |
 -- Represents a block of charcters which are optimized atomically together across
@@ -71,19 +71,12 @@ hexmap :: (m -> m')
        -> CharacterBlock m' i' c' f' a' d'
 hexmap f1 f2 f3 f4 f5 f6 =
     CharacterBlock
-      <$> (parFmap rpar f3 . continuousCharacterBins )
-      <*> (parFmap rpar f4 . nonAdditiveCharacterBins)
-      <*> (parFmap rpar f5 . additiveCharacterBins   )
-      <*> (parFmap rpar f1 . metricCharacterBins     )
-      <*> (parFmap rpar f2 . nonMetricCharacterBins  )
-      <*> (parFmap rpar f6 . dynamicCharacters       )
-
-
-parFmap :: Traversable t => Strategy b -> (a -> b) -> t a -> t b
-parFmap strat f = withStrategy (parTraversable strat) . fmap f
-
-parZipWith :: (Traversable t, Zip t) => Strategy c -> (a -> b -> c) -> t a -> t b -> t c
-parZipWith strat f lhs rhs = withStrategy (parTraversable strat) $ zipWith f lhs rhs
+      <$> (parmap rpar f3 . continuousCharacterBins )
+      <*> (parmap rpar f4 . nonAdditiveCharacterBins)
+      <*> (parmap rpar f5 . additiveCharacterBins   )
+      <*> (parmap rpar f1 . metricCharacterBins     )
+      <*> (parmap rpar f2 . nonMetricCharacterBins  )
+      <*> (parmap rpar f6 . dynamicCharacters       )
 
 
 hexTranspose :: Traversable t => t (CharacterBlock m i c f a d) -> CharacterBlock (t m) (t i) (t c) (t f) (t a) (t d)

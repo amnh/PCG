@@ -141,23 +141,23 @@ instance MonoFoldable DynamicChar where
 
     {-# INLINE ofoldMap #-}
     ofoldMap _ Missing{} = mempty
-    ofoldMap f (DC x)    = ofoldMap (f . DCE) $ x
+    ofoldMap f (DC c)    = ofoldMap (f . DCE) $ c
 
     {-# INLINE ofoldr #-}
     ofoldr _ e Missing{} = e
-    ofoldr f e (DC x)    = ofoldr (f . DCE)  e $ x
+    ofoldr f e (DC c)    = ofoldr (f . DCE)  e $ c
 
     {-# INLINE ofoldl' #-}
     ofoldl' _ e Missing{} = e
-    ofoldl' f e (DC x)   = ofoldl' (\acc x -> f acc (DCE x)) e $ x
+    ofoldl' f e (DC c)   = ofoldl' (\acc x -> f acc (DCE x)) e $ c
 
     {-# INLINE ofoldr1Ex #-} 
     ofoldr1Ex _ Missing{} = error "Trying to mono-morphically fold over an empty structure without supplying an inital accumulator!"
-    ofoldr1Ex f (DC x)    = DCE . ofoldr1Ex (\x y -> unwrap $ f (DCE x) (DCE y)) $ x
+    ofoldr1Ex f (DC c)    = DCE . ofoldr1Ex (\x y -> unwrap $ f (DCE x) (DCE y)) $ c
 
     {-# INLINE ofoldl1Ex' #-}
     ofoldl1Ex' _ Missing{} = error "Trying to mono-morphically fold over an empty structure without supplying an inital accumulator!"
-    ofoldl1Ex' f (DC x)    = DCE . ofoldl1Ex' (\x y -> unwrap $ f (DCE x) (DCE y)) $ x
+    ofoldl1Ex' f (DC c)    = DCE . ofoldl1Ex' (\x y -> unwrap $ f (DCE x) (DCE y)) $ c
 
     {-# INLINE onull #-}
 --    onull = const False
@@ -166,7 +166,7 @@ instance MonoFoldable DynamicChar where
 
     {-# INLINE olength #-}
     olength Missing{} = 0
-    olength (DC x)    = numRows x
+    olength (DC c)    = numRows c
 
 
 -- | Monomorphic containers that can be traversed from left to right.
@@ -174,7 +174,7 @@ instance MonoTraversable DynamicChar where
 
     {-# INLINE otraverse #-}
     otraverse _ e@Missing{} = pure e
-    otraverse f (DC x)      = fmap DC . otraverse (fmap unwrap . f . DCE) $ x
+    otraverse f (DC c)      = fmap DC . otraverse (fmap unwrap . f . DCE) $ c
 
     {-# INLINE omapM #-}
     omapM = otraverse
@@ -184,7 +184,7 @@ instance EncodedAmbiguityGroupContainer DynamicChar where
 
     {-# INLINE symbolCount #-}
     symbolCount (Missing n) = n
-    symbolCount (DC x)     = numCols x
+    symbolCount (DC c)      = numCols c
 
 
 instance EncodableStream DynamicChar where
