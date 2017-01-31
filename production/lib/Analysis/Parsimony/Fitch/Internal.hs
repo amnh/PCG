@@ -56,7 +56,7 @@ fitchPreOrder childDecoration [(_, parentDecoration)] =
 
 
 -- |
--- Used in second, preorder, pass. Take in parent and two child nodes. Using the child preliminary decorations,
+-- Used in first, postorder, pass. Take in parent and two child nodes. Using the child preliminary decorations,
 -- calculate the preliminary character state for the parent node. In addition, calculate the cost of assigning
 -- that character state to the parent.
 updatePostOrder :: DiscreteCharacterDecoration d c
@@ -69,27 +69,31 @@ updatePostOrder _parentDecoration (leftChildDec:|rightChildDec:_) = {- trace (sh
         returnNodeDecoration =
             extendDiscreteToFitch leftChildDec totalCost median emptyChar (leftChildDec ^. preliminaryMedian,
                                                                            rightChildDec ^. preliminaryMedian) False
-        (median, parentCost) = foldlWithKey' f initializedAcc [0..length (leftChildDec ^. characterAlphabet) - 1]
+        -- fold over states of character. This is Fitch so final cost is either 0 or 1.
+        (median, parentCost) = foldlWithKey f initializedAcc [0..length (leftChildDec ^. characterAlphabet) - 1]
 
         initializedAcc       = (emptyChar, 1) -- Cost is set to 1 so that branches in guards below work correctly.
-        isSet decoration key = (decoration   ^. preliminaryMedian) `testBit` key
+        isSet decoration key = (decoration ^. preliminaryMedian) `testBit` key
         indel l r k          = isSet l k `xor` isSet r k
-        noSub l r k          = isSet l k  &&   isSet r k    -- Same bit is on in both characters.
+        noSub l r k          = isSet l k  &&   isSet r k       -- Bit is on in both characters.
         totalCost            = parentCost + (leftChildDec ^. minCost) + (rightChildDec ^. minCost)
         emptyChar            = emptyStatic $ leftChildDec ^. discreteCharacter
-        f (inChar, cost) key _                                  -- In following, note that a 1 has been set to the character by
-                                                                -- default, above. So we never have
-                                                                -- to add value to the cost (it can never be > 1 under Fitch).
-            | noSub leftChildDec rightChildDec key =            -- Characters share a state.
-                if cost > 0
-                    then (emptyChar `setBit` key, 0)            -- If there's a cost, then a previous indel has registered;
-                                                                -- reset cost and char value.
+--        newCost              = leftChildDec ^. characterSymbolTransitionCostMatrixGenerator
+        f (inChar, curCost) key _                               -- In following, note that a 1 has been set to the character by
+                                                                --     default, above. So we never have
+                                                                --     to add value to the cost (it can never be > 1 under Fitch).
+            | indel leftChildDec rightChildDec key =            -- There's an indel
+                if curCost == 1
+                    then (inChar `setBit` key, curCost)            -- If there's a cost, then a previous indel has registered;
+                                                                   --     add this state to the median.
+                    else (inChar,              curCost)            -- Otherwise, make no changes.
+            | noSub leftChildDec rightChildDec key =            -- The left and right are the same.
+                if curCost > 0
+                    then (emptyChar `setBit` key, 0)            -- If there's already a cost, then a previous indel has registered;
+                                                                --     reset cost to 0 and only turn on current bit in median value.
                     else (inChar    `setBit` key, 0)            -- Otherwise, add this state to character.
-            | indel leftChildDec rightChildDec key =            -- There's an indel.
-                if cost > 0
-                    then (inChar `setBit` key, cost)            -- If there's a cost, then a previous indel has registered; add this state.
-                    else (inChar,              cost)            -- Otherwise, make no changes.
-            | otherwise = (inChar, cost)
+            | otherwise = (inChar, curCost)                     -- Neither character has bit set.
+
 
 
 -- |
@@ -97,7 +101,7 @@ updatePostOrder _parentDecoration (leftChildDec:|rightChildDec:_) = {- trace (sh
 -- Its "child preliminary medians" are empty lists.
 initializeLeaf :: DiscreteCharacterDecoration d c => d -> FitchOptimizationDecoration c
 initializeLeaf leafDecoration =
-    extendDiscreteToFitch leafDecoration 0 emptyChar emptyChar (emptyChar, emptyChar) True
+    extendDiscreteToFitch leafDecoration 0 (leafDecoration ^. discreteCharacter) emptyChar (emptyChar, emptyChar) True
     where
         --label     = leafDecoration ^. discreteCharacter -- can skip this now, because it's set in post order
         emptyChar = emptyStatic $ leafDecoration ^. discreteCharacter

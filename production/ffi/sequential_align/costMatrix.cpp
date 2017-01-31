@@ -132,7 +132,7 @@ costMedian_t* CostMatrix::computeCostMedian(keys_t keys) {
 
     packedChar* median = (packedChar*) calloc( elemArrLen, sizeof(uint64_t) );
 
-    dcElement_t*  firstKey         = &keys.first;    // probably don't need to do this,
+    dcElement_t*  firstKey         = &keys.first;
     dcElement_t*  secondKey        = &keys.second;
     dcElement_t*  singleNucleotide = (dcElement_t*) malloc(sizeof(dcElement_t));
     packedChar*   curMedian        = (packedChar*) calloc(elemArrLen, INT_WIDTH);  // don't free, it's going into toReturn
@@ -157,8 +157,8 @@ costMedian_t* CostMatrix::computeCostMedian(keys_t keys) {
         curCost = findDistance(searchKey, firstKey)
                 + findDistance(searchKey, secondKey);
 
-        // now seemingly recreating logic in CM_distance(), but that was to get the cost for each
-        // ambElem; now we're combining those costs get overall cost and median
+        // now seemingly recreating logic in findDistance(). However, that was to get the cost for the
+        // ambElem on each child; now we're combining those costs get overall cost and median
         if (curCost < minCost) {
             // printf("\nNew low cost.\n");
             // printf("current nucleotide: %llu \n", *searchKey->second.element);
