@@ -22,9 +22,9 @@ import Control.Lens
 -- |
 -- A decoration of an initial encoding of a dynamic character which has the
 -- appropriate 'Lens' & character class constraints.
-class ( HasContinuousCharacter s c
-      , ContinuousCharacter c
+class ( ContinuousCharacter c
       , GeneralCharacterMetadata s
+      , HasContinuousCharacter s c
       ) => ContinuousDecoration s c | s -> c where
 
   
@@ -56,7 +56,7 @@ class DiscreteCharacterDecoration s a => ContinuousCharacterDecoration s a | s -
 class ( DiscreteCharacterDecoration s c
       , HasChildPrelimIntervals s ((Double, Double), (Double, Double))
       , HasIsLeaf s Bool
-      , HasMinCost s Double
+      , HasCharacterCost s Double
       , HasPreliminaryInterval s (Double, Double)
       ) => ContinuousAdditiveHybridDecoration s c | s -> c where
 
@@ -82,14 +82,6 @@ class HasChildPrelimIntervals s a | s -> a where
 
     childPrelimIntervals :: Lens' s a
     {-# MINIMAL childPrelimIntervals #-}
-
-
--- |
--- A 'Lens' for the 'additiveMinCost' field.
-class HasMinCost s a | s -> a where
-
-    minCost :: Lens' s a
-    {-# MINIMAL minCost #-}
 
 
 -- |

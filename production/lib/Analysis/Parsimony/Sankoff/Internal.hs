@@ -121,7 +121,7 @@ updateCostVector _parentDecoration (leftChild:|rightChild:_) = returnNodeDecorat
 -- using the minimum tuple in the parent to determine whether that character state can participate
 -- in the final median. Using the left child as a template, the character state is part of the median if,
 -- for some state in the parent,
--- parCharState_minCost_left == childCharState_minCost + TCM(childCharState, parCharState).
+-- parCharState_characterCost_left == childCharState_characterCost + TCM(childCharState, parCharState).
 --
 -- Used on second, pre-order, pass.
 updateDirectionalMins :: EncodableStaticCharacter c -- ERIC: I made this more restrictive to resolve the 'Cannot deduce EncodableStaticCharacter c from Bits c'
@@ -132,8 +132,8 @@ updateDirectionalMins :: EncodableStaticCharacter c -- ERIC: I made this more re
 updateDirectionalMins parentDecoration childDecoration parentMins  = returnChar
     where
         median = foldlWithKey' (\acc parentCharState parentCharMin ->
-                                    if parentCharMin == parentDecoration ^. minCost
-                                    then foldlWithKey' (buildMedian parentCharState) acc $ parentDecoration ^. minCostVector
+                                    if parentCharMin == parentDecoration ^. characterCost
+                                    then foldlWithKey' (buildMedian parentCharState) acc $ parentDecoration ^. characterCostVector
                                     else acc
                                ) startMedian parentMins
 
@@ -141,7 +141,7 @@ updateDirectionalMins parentDecoration childDecoration parentMins  = returnChar
             | charMin == totalCost childCharState parentCharState = acc `setBit` childCharState
             | otherwise                                           = acc
         tcmCostAsWord childState parState = fromIntegral $ (parentDecoration ^. characterSymbolTransitionCostMatrixGenerator) childState parState
-        totalCost childState parState     = parentDecoration ^. minCost + tcmCostAsWord childState parState
+        totalCost childState parState     = parentDecoration ^. characterCost + tcmCostAsWord childState parState
         startMedian                       = emptyStatic $ parentDecoration ^. discreteCharacter -- ERIC: This is a unary function, not a nullary function.
         returnChar                        = childDecoration & discreteCharacter .~ median
 
@@ -174,4 +174,4 @@ calcCostPerState inputCharState leftChildDec rightChildDec = retVal
                 rightTransitionCost = (rightChildDec ^. characterSymbolTransitionCostMatrixGenerator) inputCharState childCharState
 
         initialAccumulator = (maxBound :: Word, maxBound :: Word)
-        zippedCostList     = zip (leftChildDec ^. minCostVector) (rightChildDec ^. minCostVector)
+        zippedCostList     = zip (leftChildDec ^. characterCostVector) (rightChildDec ^. characterCostVector)

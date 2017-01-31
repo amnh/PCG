@@ -19,6 +19,7 @@
 module Bio.Character.Decoration.Dynamic.Class where
 
 
+import Bio.Character.Decoration.Shared
 import Bio.Character.Encodable
 import Bio.Metadata.CharacterName
 import Bio.Metadata.Discrete
@@ -43,7 +44,8 @@ class ( HasEncoded s a
 -- Represents the result of just the post-order traversal.
 --
 -- Is a sub-class of 'DynamicCharacterDecoration'.
-class ( HasPreliminaryGapped    s a
+class ( HasCharacterCost        s Word
+      , HasPreliminaryGapped    s a
       , HasPreliminaryUngapped  s a
       , HasLeftAlignment        s a
       , HasRightAlignment       s a
@@ -91,12 +93,13 @@ class ( SimpleDynamicDecoration s c
       ) => SimpleDynamicExtensionPostOrderDecoration s c | s -> c where
 
     extendDynamicToPostOrder :: (SimpleDynamicDecoration x c, DirectOptimizationPostOrderDecoration s c)
-                             => x -- ^ Original decoration
-                             -> c -- ^ Preliminary /ungapped/ dynamic character
-                             -> c -- ^ Preliminary   /gapped/ dynamic character
-                             -> c -- ^ Left  alignment dynamic character
-                             -> c -- ^ Right alignment dynamic character
-                             -> s -- ^ Resulting decoration
+                             => x    -- ^ Original decoration
+                             -> Word -- ^ The cost of the alignment
+                             -> c    -- ^ Preliminary /ungapped/ dynamic character
+                             -> c    -- ^ Preliminary   /gapped/ dynamic character
+                             -> c    -- ^ Left  alignment dynamic character
+                             -> c    -- ^ Right alignment dynamic character
+                             -> s    -- ^ Resulting decoration
 
 
 -- |

@@ -24,7 +24,7 @@ module Bio.Character.Decoration.Continuous
   , HasCharacterWeight(..)
   , HasDiscreteCharacter(..)
   , HasIsLeaf(..)
-  , HasMinCost(..)
+  , HasCharacterCost(..)
   , HasPreliminaryInterval(..)
   , HasChildPrelimIntervals(..)
   , continuousDecorationInitial
