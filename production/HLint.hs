@@ -7,7 +7,7 @@ import        Control.Monad
 import        Control.Parallel.Custom
 import        Control.Parallel.Strategies
 import        Data.Maybe
-import        Data.Monoid
+import        Data.Semigroup
 
 
 warn "Use constant Functor context instead of more constrained Applicative context" = x *> pure y ==> x $> y
@@ -24,3 +24,5 @@ warn "Use less constrained function" = map ==> fmap
 warn "Use Foldable instance definition to generate list" = maybeToList ==> toList
 
 warn "Use more general custom function" = parMap ==> parmap
+
+warn "Use the Semigroup operator instead of less general concat operator" = (++) ==> (<>)
