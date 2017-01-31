@@ -50,11 +50,11 @@ instance EncodableStreamElement c => Show (FitchOptimizationDecoration c) where
 
     show c = unlines
         [ "\"Discrete Character\" " <> showDiscreteCharacterElement c
-        , "\nCost = ", show $ fitchMinCost c
-        , "\nPreliminary Median : " <> showStatic (fitchPreliminaryMedian  c)
-        , "\nFinal       Median : " <> showStatic (fitchFinalMedian        c)
-        , "\nChild       Medians: " <> show (showStatic `bimap` showStatic $ fitchChildMedians c)
-        , "\nIs Leaf Node?      : " <> show (fitchIsLeaf c)
+        , "Cost = " <> show (fitchMinCost c)
+        , "Preliminary Median : "  <> showStatic (fitchPreliminaryMedian  c)
+        , "Final       Median : "  <> showStatic (fitchFinalMedian        c)
+        , "Child       Medians: "  <> show (showStatic `bimap` showStatic $ fitchChildMedians c)
+        , "Is Leaf Node?      : "  <> show (fitchIsLeaf c)
         , "\n"
         ]
       where

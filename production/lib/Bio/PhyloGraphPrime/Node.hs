@@ -85,11 +85,11 @@ instance Show s => Show (ResolutionInformation s) where
     show resInfo = unlines tokens
       where
         tokens =
-          [ "Leaf Set  : " <> show (leafSetRepresentation resInfo)
-          , "Subtree   : " <> show (subtreeRepresentation resInfo)
-          , "Local Cost: " <> show (localSequenceCost     resInfo)
-          , "Total Cost: " <> show (totalSubtreeCost      resInfo)
-          , "Decoration: " <> show (characterSequence     resInfo)
+          [ "Leaf Set  : "    <> show (leafSetRepresentation resInfo)
+          , "Subtree   : "    <> show (subtreeRepresentation resInfo)
+          , "Local Cost: "    <> show (localSequenceCost     resInfo)
+          , "Total Cost: "    <> show (totalSubtreeCost      resInfo)
+          , "Decoration:\n\n" <> show (characterSequence     resInfo)
           ]
 
 
