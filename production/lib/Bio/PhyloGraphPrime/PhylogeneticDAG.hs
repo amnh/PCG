@@ -148,6 +148,18 @@ instance ( Show e
          , Show f
          , Show a
          , Show d
+         , HasCharacterCost   m Word
+         , HasCharacterCost   i Word
+--         , HasCharacterCost   c Double
+         , HasCharacterCost   f Word
+         , HasCharacterCost   a Word
+         , HasCharacterCost   d Word
+         , HasCharacterWeight m Double
+         , HasCharacterWeight i Double
+--         , HasCharacterWeight c Double
+         , HasCharacterWeight f Double
+         , HasCharacterWeight a Double
+         , HasCharacterWeight d Double
          ) => Show (PhylogeneticDAG e n m i c f a d) where
 
     show (PDAG dag) = show dag <> "\n" <> foldMapWithKey f dag
@@ -163,6 +175,18 @@ instance ( Show e
          , Show f
          , Show a
          , Show d
+         , HasCharacterCost   m Word
+         , HasCharacterCost   i Word
+--         , HasCharacterCost   c Double
+         , HasCharacterCost   f Word
+         , HasCharacterCost   a Word
+         , HasCharacterCost   d Word
+         , HasCharacterWeight m Double
+         , HasCharacterWeight i Double
+--         , HasCharacterWeight c Double
+         , HasCharacterWeight f Double
+         , HasCharacterWeight a Double
+         , HasCharacterWeight d Double
          ) => Show (PhylogeneticDAG2 e n m i c f a d) where
 
     show (PDAG2 dag) = show dag <> "\n" <> foldMapWithKey f dag

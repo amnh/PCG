@@ -14,6 +14,7 @@
 
 module Bio.Sequence.Block
   ( CharacterBlock(..)
+  , blockCost
   , toMissingCharacters
   , continuousSingleton
   , discreteSingleton
@@ -27,6 +28,7 @@ module Bio.Sequence.Block
 import           Bio.Character.Encodable
 import           Bio.Character.Decoration.Continuous
 import           Bio.Metadata.CharacterName
+import           Control.Lens
 import           Control.Parallel.Custom
 import           Control.Parallel.Strategies
 import           Data.Foldable
@@ -208,3 +210,40 @@ discreteSingleton tcmValues dec =
 -- Construct a singleton block containing a /dynamic/ character.
 dynamicSingleton :: d -> CharacterBlock m i c f a d
 dynamicSingleton = CharacterBlock mempty mempty mempty mempty mempty . pure
+
+
+blockCost :: ( HasCharacterCost   m e
+             , HasCharacterCost   i e
+--             , HasCharacterCost   c Double
+             , HasCharacterCost   f e
+             , HasCharacterCost   a e
+             , HasCharacterCost   d e
+             , HasCharacterWeight m Double
+             , HasCharacterWeight i Double
+--             , HasCharacterWeight c Double
+             , HasCharacterWeight f Double
+             , HasCharacterWeight a Double
+             , HasCharacterWeight d Double
+             , Integral e
+             )
+          => CharacterBlock m i c f a d
+          -> Double
+blockCost block = sum . fmap sum $
+    [ parmap rpar integralCost . nonAdditiveCharacterBins
+--    , parmap rpar floatingCost . continuousCharacterBins 
+    , parmap rpar integralCost . additiveCharacterBins   
+    , parmap rpar integralCost . metricCharacterBins     
+    , parmap rpar integralCost . nonMetricCharacterBins  
+    , parmap rpar integralCost . dynamicCharacters       
+    ] <*> [block]
+  where
+    integralCost dec = fromIntegral cost * weight
+      where
+        cost   = dec ^. characterCost
+        weight = dec ^. characterWeight
+{-
+    floatingCost dec = cost * weight
+      where
+        cost   = dec ^. characterCost
+        weight = dec ^. characterWeight
+-}

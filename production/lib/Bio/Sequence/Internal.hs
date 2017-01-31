@@ -13,7 +13,7 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE FlexibleContexts, TypeFamilies #-}
 
 --TODO: Add instance of Functor 
 --TODO: Add instance of BiFunctor 
@@ -25,9 +25,11 @@ module Bio.Sequence.Internal
   , hexmap
   , hexTranspose
   , hexZipWith
+  , sequenceCost
   ) where
 
---import           Bio.Character.Encodable
+
+import           Bio.Character.Decoration.Continuous
 import           Bio.Sequence.Block               (CharacterBlock)
 import qualified Bio.Sequence.Block      as Block
 import           Control.Parallel.Custom
@@ -160,10 +162,24 @@ instance ( Show m
          , Show f
          , Show a
          , Show d
+         , HasCharacterCost   m Word
+         , HasCharacterCost   i Word
+--         , HasCharacterCost   c Double
+         , HasCharacterCost   f Word
+         , HasCharacterCost   a Word
+         , HasCharacterCost   d Word
+         , HasCharacterWeight m Double
+         , HasCharacterWeight i Double
+--         , HasCharacterWeight c Double
+         , HasCharacterWeight f Double
+         , HasCharacterWeight a Double
+         , HasCharacterWeight d Double
          ) => Show (CharacterSequence m i c f a d) where
 
-    show = foldMapWithKey f . toBlocks
+    show seek = prefix <> "\n" <> suffix
       where
+        prefix = "Sequence Cost: " <> show (sequenceCost seek)
+        suffix = foldMapWithKey f $ toBlocks seek
         f blockNumber shownBlock = mconcat
             [ "Character Block #"
             , show blockNumber
@@ -173,3 +189,21 @@ instance ( Show m
             ]
         indent = unlines . fmap ("  "<>) . lines
 
+
+sequenceCost :: ( HasCharacterCost   m e
+                , HasCharacterCost   i e
+--                , HasCharacterCost   c Double
+                , HasCharacterCost   f e
+                , HasCharacterCost   a e
+                , HasCharacterCost   d e
+                , HasCharacterWeight m Double
+                , HasCharacterWeight i Double
+--                , HasCharacterWeight c Double
+                , HasCharacterWeight f Double
+                , HasCharacterWeight a Double
+                , HasCharacterWeight d Double
+                , Integral e
+                )
+             => CharacterSequence m i c f a d
+             -> Double
+sequenceCost = sum . parmap rpar Block.blockCost . toBlocks
