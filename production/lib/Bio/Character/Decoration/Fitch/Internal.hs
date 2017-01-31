@@ -23,7 +23,6 @@ import Bio.Metadata.CharacterName
 import Bio.Metadata.Discrete
 import Control.Lens
 import Data.Alphabet
-import Data.Bifunctor ()
 import Data.TCM
 import Data.Semigroup
 
@@ -50,14 +49,14 @@ instance EncodableStreamElement c => Show (FitchOptimizationDecoration c) where
 
     show c = unlines
         [ "Cost = " <> show (fitchMinCost c)
-        , "Discrete Character :" <> showDiscreteCharacterElement c
-        , "Preliminary Median : "  <> showStatic (fitchPreliminaryMedian  c)
-        , "Final       Median : "  <> showStatic (fitchFinalMedian        c)
+        , "Is Leaf Node?      : " <> show (fitchIsLeaf c)
+        , "Discrete Character : " <> showDiscreteCharacterElement c
+        , "Preliminary Median : " <> showStatic (fitchPreliminaryMedian  c)
+        , "Final       Median : " <> showStatic (fitchFinalMedian        c)
         , mconcat ["Child       Medians: ( ", (showStatic . fst . fitchChildMedians) c, " , ", (showStatic . snd . fitchChildMedians) c, " )"]
-        , "Is Leaf Node?      : "  <> show (fitchIsLeaf c)
         ]
       where
-        alphabet = x ^. characterAlphabet
+        alphabet = c ^. characterAlphabet
         showStatic x
           | x == fromInteger 0 = "<Empty Character>"
           | otherwise          = showStreamElement alphabet x

@@ -25,6 +25,7 @@ import Control.Lens
 import Data.Alphabet
 --import Data.Bits
 import Data.TCM
+import Data.Semigroup
 --import Data.Word
 
 
@@ -44,7 +45,13 @@ data AdditiveOptimizationDecoration a
 
 instance EncodableStreamElement c => Show (AdditiveOptimizationDecoration c) where
 
-    show = showDiscreteCharacterElement
+    show c = unlines
+        [ "Cost = "                <> show (c ^. characterCost)
+        , "Is Leaf Node?       : " <> show (c ^. isLeaf)
+        , "Discrete Character  : " <> showDiscreteCharacterElement c
+        , "Preliminary Interval: " <> show (additivePreliminaryInterval c)
+        , "Child      Intervals: " <> show (additiveChildPrelimIntervals c)
+        ]
 
 
 -- | (✔)
