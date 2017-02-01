@@ -22,9 +22,9 @@
 
 module Analysis.Parsimony.Dynamic.DirectOptimization.FFI
   ( CostMatrix2d
-  , ForeignDenseMatrix
+  , DenseTransitionCostMatrix
   , foreignPairwiseDO
-  , generateForeignDenseMatrix
+  , generateDenseTransitionCostMatrix
   ) where
 
 import Bio.Character.Exportable.Class
@@ -46,10 +46,10 @@ import System.IO.Unsafe (unsafePerformIO)
 #include "nwMatrices.h"
 -- #include "seqAlign.h"
 
-type ForeignDenseMatrix = Ptr CostMatrix2d 
+type DenseTransitionCostMatrix = Ptr CostMatrix2d 
 
-generateForeignDenseMatrix :: Int -> (Int -> Int -> Int) -> Ptr CostMatrix2d
-generateForeignDenseMatrix alphabetSize costFunction = getCostMatrix2dNonAffine alphabetSize costFunction
+generateDenseTransitionCostMatrix :: Int -> (Int -> Int -> Int) -> Ptr CostMatrix2d
+generateDenseTransitionCostMatrix alphabetSize costFunction = getCostMatrix2dNonAffine alphabetSize costFunction
 
 
 foreignPairwiseDO :: Exportable s
