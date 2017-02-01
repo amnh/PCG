@@ -48,13 +48,12 @@ class HasContinuousCharacter s a | s -> a where
 -- |
 -- An abstract initial additive character decoration with a polymorphic character
 -- type.
-class DiscreteCharacterDecoration s a => ContinuousCharacterDecoration s a | s -> a where
+class ContinuousDecoration s a => ContinuousCharacterDecoration s a | s -> a where
 
 
 -- |
 -- A decoration containing a character that has been scored using Continuous's algorithm.
-class ( DiscreteCharacterDecoration s c
-      , HasChildPrelimIntervals s ((Double, Double), (Double, Double))
+class ( HasChildPrelimIntervals s ((Double, Double), (Double, Double))
       , HasIsLeaf s Bool
       , HasCharacterCost s Double
       , HasPreliminaryInterval s (Double, Double)

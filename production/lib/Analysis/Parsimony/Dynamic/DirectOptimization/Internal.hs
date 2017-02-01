@@ -112,7 +112,7 @@ tripleComparison
   -> (c, c)
 tripleComparison pairwiseAlignment childDecoration parentCharacter = (ungapped, gapped)
   where
-    costStructure     = childDecoration ^. characterSymbolTransitionCostMatrixGenerator
+    costStructure     = childDecoration ^. symbolChangeMatrix
     childCharacter    = childDecoration ^. preliminaryUngapped
     childLeftAligned  = childDecoration ^. leftAlignment
     childRightAligned = childDecoration ^. rightAlignment
@@ -159,11 +159,15 @@ insertNewGaps insertionIndicies character = constructDynamic . (<> trailingGaps)
 
 -- |
 -- Calculates the mean character and cost between three supplied characters.
-threeWayMean :: (EncodableDynamicCharacter c)
-             => (Int -> Int -> Int)
-             -> c -> c -> c -> (Int, c, c)
+threeWayMean
+  :: (EncodableDynamicCharacter c)
+  => (Word -> Word -> Word)
+  -> c
+  -> c
+  -> c
+  -> (Word, c, c)
 threeWayMean costStructure char1 char2 char3
-  | not uniformLength = error $ "Three sequences supplied to 'threeWayMean' function did not have uniform length." -- <> show char1 <> show char2 <> show char3
+  | not uniformLength = error "Three sequences supplied to 'threeWayMean' function did not have uniform length." -- <> show char1 <> show char2 <> show char3
   | otherwise         = (sum costValues, constructDynamic $ filter (/= gap) meanStates, constructDynamic meanStates)
   where
     gap                 = getGapElement $ char1 `indexStream` 0

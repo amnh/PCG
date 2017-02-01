@@ -253,7 +253,12 @@ joinSequences2 = collapseAndMerge . reduceAlphabets . deriveCorrectTCMs . derive
           where
             selectedTCM       = fromMaybe defaultTCM $ tcmMay <|> parsedTCM charMetadata
             specifiedAlphabet = alphabet charMetadata
-            defaultTCM        = TCM.generate (length specifiedAlphabet) $ \(i,j) -> (if i == j then 0 else 1 :: Int)
+            defaultTCM        = TCM.generate (length specifiedAlphabet) defaultCost
+              where
+                defaultCost  :: (Word, Word) -> Word
+                defaultCost (i,j)
+                  | i == j    = 0
+                  | otherwise = 1
 
     reduceAlphabets :: Functor f
                     => f (Map String (NonEmpty (Maybe ParsedChar, ParsedCharacterMetadata, TCM, CharacterName)))

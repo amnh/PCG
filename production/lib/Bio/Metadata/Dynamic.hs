@@ -11,13 +11,16 @@
 -----------------------------------------------------------------------------
 
 module Bio.Metadata.Dynamic
-    ( DynamicCharacterMetadata()
+    ( DenseTransitionCostMatrix
+    , DynamicCharacterMetadata()
+    , DynamicCharacterMetadataDec()
     , HasCharacterAlphabet(..)
     , HasCharacterName(..)
     , HasCharacterWeight(..)
-    , HasDenseTransitionCostMatrix
+    , HasDenseTransitionCostMatrix(..)
     , HasSymbolChangeMatrix(..)
     , HasTransitionCostMatrix(..)
+    , dynamicMetadata
     ) where 
 
 import Bio.Metadata.Dynamic.Class

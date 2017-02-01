@@ -722,7 +722,7 @@ getSeqFromMatrix seqBlock taxaLst =
 -- Note that this fn is O(n) where n is the total length of the sequence, and not O(n^2), as originally feared.
 -- A (partial?) test exists in the test suite.
 deInterleave :: M.Map String String -> [(String, String)] -> M.Map String String
-deInterleave = foldr (\(seqName, phyloSeq) acc -> M.insertWith (++) seqName phyloSeq acc)
+deInterleave = foldr (\(seqName, phyloSeq) acc -> M.insertWith (<>) seqName phyloSeq acc)
 
 -- | getTaxonAndSeqFromMatrixRow takes a String of format "xxx[space or tab]yyy"
 -- and returns a tuple of form ("xxx","yyy")

@@ -139,23 +139,14 @@ data ContinuousOptimizationDecoration a
    , additiveChildPrelimIntervals :: ((Double, Double), (Double, Double))
    , additiveIsLeaf               :: Bool
    , additiveCharacterField       :: a
-   , additiveMetadataField        :: DiscreteCharacterMetadataDec a
+   , additiveMetadataField        :: ContinuousCharacterMetadataDec
    }
 
 
 -- | (✔)
-instance HasDiscreteCharacter (ContinuousOptimizationDecoration a) a where
+instance HasContinuousCharacter (ContinuousOptimizationDecoration c) c where 
 
-    discreteCharacter = lens additiveCharacterField (\e x -> e { additiveCharacterField = x })
-
-
--- | (✔)
-instance HasCharacterAlphabet (ContinuousOptimizationDecoration a) (Alphabet String) where
-
-    characterAlphabet = lens getter setter
-      where
-         getter e   = additiveMetadataField e ^. characterAlphabet
-         setter e x = e { additiveMetadataField = additiveMetadataField e &  characterAlphabet .~ x }
+    continuousCharacter = lens additiveCharacterField $ \e x -> e { additiveCharacterField = x }
 
 
 -- | (✔)
@@ -168,24 +159,6 @@ instance HasCharacterName (ContinuousOptimizationDecoration a) CharacterName whe
 
 
 -- | (✔)
-instance HasCharacterSymbolTransitionCostMatrixGenerator (ContinuousOptimizationDecoration a) (Int -> Int -> Int) where
-
-    characterSymbolTransitionCostMatrixGenerator = lens getter setter
-      where
-         getter e   = additiveMetadataField e ^. characterSymbolTransitionCostMatrixGenerator
-         setter e f = e { additiveMetadataField = additiveMetadataField e &  characterSymbolTransitionCostMatrixGenerator .~ f }
-
-
--- | (✔)
-instance HasCharacterTransitionCostMatrix (ContinuousOptimizationDecoration a) (a -> a -> (a, Int)) where
-
-    characterTCM = lens getter setter
-      where
-         getter e   = additiveMetadataField e ^. characterTCM
-         setter e f = e { additiveMetadataField = additiveMetadataField e &  characterTCM .~ f }
-
-
--- | (✔)
 instance HasCharacterWeight (ContinuousOptimizationDecoration a) Double where
 
     characterWeight = lens getter setter
@@ -193,20 +166,24 @@ instance HasCharacterWeight (ContinuousOptimizationDecoration a) Double where
          getter e   = additiveMetadataField e ^. characterWeight
          setter e x = e { additiveMetadataField = additiveMetadataField e &  characterWeight .~ x }
 
+
 -- | (✔)
 instance HasIsLeaf (ContinuousOptimizationDecoration a) Bool where
 
     isLeaf = lens additiveIsLeaf (\e x -> e { additiveIsLeaf = x })
+
 
 -- | (✔)
 instance HasCharacterCost (ContinuousOptimizationDecoration a) Double where
 
     characterCost = lens additiveMinCost (\e x -> e { additiveMinCost = x })
 
+
 -- | (✔)
 instance HasPreliminaryInterval (ContinuousOptimizationDecoration a) (Double, Double) where
 
     preliminaryInterval = lens additivePreliminaryInterval (\e x -> e { additivePreliminaryInterval = x })
+
 
 -- | (✔)
 instance HasChildPrelimIntervals (ContinuousOptimizationDecoration a) ((Double, Double),(Double, Double)) where
@@ -217,17 +194,29 @@ instance HasChildPrelimIntervals (ContinuousOptimizationDecoration a) ((Double, 
 -- | (✔)
 instance GeneralCharacterMetadata (ContinuousOptimizationDecoration a) where
 
+  
+{-  
 -- | (✔)
 instance EncodableStreamElement a => DiscreteCharacterMetadata (ContinuousOptimizationDecoration a) a where
 
+  
 -- | (✔)
 instance EncodableStaticCharacter a => DiscreteCharacterDecoration (ContinuousOptimizationDecoration a) a where
-
+-}
+  
+  
 -- | (✔)
-instance EncodableStaticCharacter a => ContinuousCharacterDecoration (ContinuousOptimizationDecoration a) a where
+instance ContinuousCharacter a => ContinuousDecoration (ContinuousOptimizationDecoration a) a where
 
+  
+-- | (✔)
+instance ContinuousCharacter a => ContinuousCharacterDecoration (ContinuousOptimizationDecoration a) a where
+
+  
+{-  
 -- | (✔)
 instance EncodableStaticCharacter a => ContinuousAdditiveHybridDecoration (ContinuousOptimizationDecoration a) a where
+
 
 -- | (✔)
 instance EncodableStaticCharacter a => DiscreteExtensionContinuousDecoration (ContinuousOptimizationDecoration a) a where
@@ -243,13 +232,9 @@ instance EncodableStaticCharacter a => DiscreteExtensionContinuousDecoration (Co
         , additiveCharacterField       = subDecoration ^. discreteCharacter
         }
       where
-        alphabetValue = subDecoration ^. characterAlphabet
-        tcmValue      = generate (length alphabetValue) (uncurry $ subDecoration ^. characterSymbolTransitionCostMatrixGenerator)
         metadataValue =
-          discreteMetadata
+          continuousMetadata
             <$> (^. characterName)
             <*> (^. characterWeight)
-            <*> const alphabetValue
-            <*> const tcmValue
             $ subDecoration
-
+-}

@@ -13,10 +13,12 @@
 {-# LANGUAGE FlexibleContexts, FlexibleInstances, FunctionalDependencies, MultiParamTypeClasses #-}
 
 module Bio.Metadata.Dynamic.Class
-  ( DynamicCharacterMetadata()
+  ( DenseTransitionCostMatrix
+  , DynamicCharacterMetadata()
   , HasCharacterAlphabet(..)
   , HasCharacterName(..)
   , HasCharacterWeight(..)
+  , HasDenseTransitionCostMatrix(..)
   , HasSymbolChangeMatrix(..)
   , HasTransitionCostMatrix(..)
   ) where

@@ -42,7 +42,7 @@ import Data.TCM
 data DiscreteWithTCMCharacterMetadataDec c
    = DiscreteWithTCMCharacterMetadataDec
    { alphabet                 :: Alphabet String
-   , symbolChangeMatrixData   :: (Word -> Word -> Word)
+   , symbolChangeMatrixData   :: Word -> Word -> Word
    , transitionCostMatrixData :: c -> c -> (c, Word)
    , generalData              :: GeneralCharacterMetadataDec
    }
@@ -69,7 +69,7 @@ instance Show (DiscreteWithTCMCharacterMetadataDec c) where
         , "  Alphabet:      " <> show (e ^. characterAlphabet)
         , "  Weight:        " <> show (e ^. characterWeight  )
         , "  TCM: "
-        , show $ generate dimension $ \(i,j) -> cost (toEnum i) (toEnum j)
+        , show . generate dimension $ \(i,j) -> cost (toEnum i) (toEnum j)
         ]
       where
         cost      = e ^. symbolChangeMatrix

@@ -200,7 +200,7 @@ riefiedSolution  = PhylogeneticSolution . fmap (fmap riefiedToCharacterDAG) . ph
 
 
 riefiedToCharacterDAG :: UnRiefiedCharacterDAG -> CharacterDAG
-riefiedToCharacterDAG (PDAG dag) = PDAG2 $
+riefiedToCharacterDAG (PDAG dag) = PDAG2
     RefDAG
     { references = newRefs
     , rootRefs   = rootRefs  dag
@@ -223,7 +223,7 @@ riefiedToCharacterDAG (PDAG dag) = PDAG2 $
                 { resolutions          = res
                 , nodeDecorationDatum2 = nodeDecorationDatum $ nodeDecoration indexData
                 }
-            res = pure $
+            res = pure
                 ResInfo
                 { leafSetRepresentation = bv
                 , subtreeRepresentation = ns
@@ -293,7 +293,7 @@ postorderSequence' f1 f2 f3 f4 f5 f6 (PDAG2 dag) = PDAG2 $ newDAG dag
             
 --            childResolutions :: NonEmpty [a]
             childResolutions = applySoftwireResolutions $ extractResolutionContext <$> childIndices
-            extractResolutionContext = (resolutions . (memo !) &&& parentRefs . (references dag !))
+            extractResolutionContext = resolutions . (memo !) &&& parentRefs . (references dag !)
 
             --        g :: ResolutionInformation s -> [ResolutionInformation s] -> ResolutionInformation s
             generateLocalResolutions parentalResolutionContext childResolutionContext =

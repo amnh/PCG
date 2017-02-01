@@ -33,7 +33,7 @@ data Direction = LeftArrow | DiagArrow | UpArrow deriving (Eq, Show)
 -- | A representation of an alignment matrix for DO.
 -- The matrix itself stores tuples of the cost and direction at that position.
 -- We also store a vector of characters that are generated.
-type DOAlignMatrix s = Matrix (Int, Direction, s)
+type DOAlignMatrix s = Matrix (Word, Direction, s)
 
 -- | Constraints on the input dynamic characters that direct optiomization operates on.
 type DOCharConstraint c = (EncodableDynamicCharacter c {-, Show c, Show (Element c) -})
@@ -44,18 +44,18 @@ type DOCharConstraint c = (EncodableDynamicCharacter c {-, Show c, Show (Element
 -- the aligned version of the first input character, and the aligned version of the second input character
 -- The process for this algorithm is to generate a traversal matrix, then perform a traceback.
 naiveDO :: DOCharConstraint s
-        => s                    -- ^ First  dynamic character
-        -> s                    -- ^ Second dynamic character
-        -> (Int -> Int -> Int)  -- ^ Structure defining the transition costs between character states
-        -> (s, Double, s, s, s) -- ^ The /ungapped/ character derived from the the input characters' N-W-esque matrix traceback
-                                -- 
-                                --   The cost of the alignment
-                                -- 
-                                --   The /gapped/ character derived from the the input characters' N-W-esque matrix traceback
-                                -- 
-                                --   The gapped alignment of the /first/ input character when aligned with the second character
-                                -- 
-                                --   The gapped alignment of the /second/ input character when aligned with the first character
+        => s                       -- ^ First  dynamic character
+        -> s                       -- ^ Second dynamic character
+        -> (Word -> Word -> Word)  -- ^ Structure defining the transition costs between character states
+        -> (s, Double, s, s, s)    -- ^ The /ungapped/ character derived from the the input characters' N-W-esque matrix traceback
+                                   -- 
+                                   --   The cost of the alignment
+                                   -- 
+                                   --   The /gapped/ character derived from the the input characters' N-W-esque matrix traceback
+                                   -- 
+                                   --   The gapped alignment of the /first/ input character when aligned with the second character
+                                   -- 
+                                   --   The gapped alignment of the /second/ input character when aligned with the first character
 naiveDO char1 char2 costStruct
     | onull char1 = (char1, 0, char1, char1, char1)
     | onull char2 = (char2, 0, char2, char2, char2)
@@ -83,7 +83,7 @@ naiveDO char1 char2 costStruct
            
 -- | Wrapper function to do an enhanced Needleman-Wunsch algorithm.
 -- Calls naiveDO, but only returns the last two fields (gapped alignments of inputs)
-doAlignment :: DOCharConstraint s => s -> s -> (Int -> Int -> Int) -> (s, s)
+doAlignment :: DOCharConstraint s => s -> s -> (Word -> Word -> Word) -> (s, s)
 doAlignment char1 char2 costStruct = (char1Align, char2Align)
     where
         (_, _, _, char1Align, char2Align) = naiveDO char1 char2 costStruct
@@ -106,7 +106,7 @@ filterGaps char = constructDynamic . filter (/= gap) $ otoList char
 -- Returns an 'DOAlignMatrix'.
 -- TODO: See if we can move topDynChar logic inside here. It's also necessary in DO. 
 -- Or maybe DO can just call doAlignment?
-createDOAlignMatrix :: EncodableDynamicCharacter s => s -> s -> (Int -> Int -> Int) -> DOAlignMatrix (Element s)
+createDOAlignMatrix :: EncodableDynamicCharacter s => s -> s -> (Word -> Word -> Word) -> DOAlignMatrix (Element s)
 createDOAlignMatrix topDynChar leftDynChar costStruct = result
     where
         result = matrix (olength leftDynChar + 1) (olength topDynChar + 1) generateMat
@@ -196,7 +196,7 @@ getTotalAlignmentCost alignmentMatrix = c
 
 
 -- | Memoized wrapper of the overlap function
-getOverlap :: (EncodableStreamElement c {- , Memoizable c, -}) => c -> c -> (Int -> Int -> Int) -> (c, Int)
+getOverlap :: (EncodableStreamElement c {- , Memoizable c, -}) => c -> c -> (Word -> Word -> Word) -> (c, Word)
 getOverlap inChar1 inChar2 costStruct = result
     where
         result = {- memoize2 -} overlap costStruct inChar1 inChar2
@@ -211,7 +211,7 @@ getOverlap inChar1 inChar2 costStruct = result
 -- if @ char1 == A,T @ and @ char2 == G,C @, and the two (non-overlapping) least cost pairs are A,C and T,G, then
 -- the return value is A,C,G,T. 
 -- Tests exist in the test suite.
-overlap :: (EncodableStreamElement c {- , Show c -}) => (Int -> Int -> Int) -> c -> c -> (c, Int)
+overlap :: (EncodableStreamElement c {- , Show c -}) => (Word -> Word -> Word) -> c -> c -> (c, Word)
 --overlap _ inChar1 inChar2 | trace (unwords [show inChar1, show inChar2]) False = undefined
 overlap costStruct char1 char2
     | intersectionStates == zeroBits = -- (\x -> trace (unwords [show char1, show char2, show x]) x) $
@@ -238,7 +238,7 @@ minimalChoice = foldr1 f
 -- Finds the cost of a pairing of two static characters.
 -- Takes in a 'CostStructure' and two ambiguous 'EncodableStreamElement's. Returns a list of tuples of all possible unambiguous
 -- pairings, along with their costs. 
-allPossibleBaseCombosCosts :: EncodableStreamElement s => (Int -> Int -> Int) -> s -> s -> [(s, Int)]
+allPossibleBaseCombosCosts :: EncodableStreamElement s => (Word -> Word -> Word) -> s -> s -> [(s, Word)]
 allPossibleBaseCombosCosts costStruct char1 char2 = [ (x .|. y, costStruct i j)
                                                     | (i,x) <- getSubChars char1
                                                     , (j,y) <- getSubChars char2
@@ -249,7 +249,7 @@ allPossibleBaseCombosCosts costStruct char1 char2 = [ (x .|. y, costStruct i j)
 -- of a pairing (intersection) of those characters into an ambiguous character. The 'Int's are the set bits in each character
 -- and are used as lookup into the 'CostStructure'. 
 -- Tests exist in the test suite.
-getCost :: EncodableStreamElement s => (Int -> Int -> Int) -> (Int, s) -> (Int, s) -> (s, Int)
+getCost :: EncodableStreamElement s => (Word -> Word -> Word) -> (Word, s) -> (Word, s) -> (s, Word)
 getCost costStruct seqTup1 seqTup2 = 
     case (seqTup1, seqTup2) of
         ((pos1, c1), (pos2, c2)) -> (c1 .|. c2, costStruct pos1 pos2)
@@ -261,13 +261,14 @@ getCost costStruct seqTup1 seqTup2 =
 -- a tuple with an 'Int', @ x @, giving the location of the set bit, as well as an 'EncodableStreamElement' of the same
 -- length as the input, but with only the bit at location @ x @ set.
 -- Tests exist in the test suite.
-getSubChars :: EncodableStreamElement s => s -> [(Int, s)]
+getSubChars :: EncodableStreamElement s => s -> [(Word, s)]
 getSubChars fullChar = foldMap f [0 .. symbolCount fullChar - 1]
   where
     f i
-      | fullChar `testBit` i = pure (i,  z `setBit` i)
+      | fullChar `testBit` i = pure (toEnum i,  z `setBit` i)
       | otherwise            = mempty
     z = fullChar `xor` fullChar
+
 
 -- |
 -- Transformation should no longer be nescissary

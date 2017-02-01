@@ -353,7 +353,7 @@ insertNewGaps insertionIndicies character = constructDynamic . (<> trailingGaps)
 
 -- |
 -- Calculates the mean character and cost between three supplied characters.
-threeWayMean :: (Show (Element c), Show c, EncodableDynamicCharacter c {-, Memoizable (Element c) -} ) => CostStructure -> c -> c -> c -> (Int, c, c)
+threeWayMean :: (Show (Element c), Show c, EncodableDynamicCharacter c {-, Memoizable (Element c) -} ) => CostStructure -> c -> c -> c -> (Word, c, c)
 --threeWayMean _ char1 char2 char3 | trace (mconcat [show char1, show char2, show char3]) False = undefined
 threeWayMean costStructure char1 char2 char3
   | not uniformLength = error $ "Three sequences supplied to 'threeWayMean' function did not have uniform length." <> show char1 <> show char2 <> show char3

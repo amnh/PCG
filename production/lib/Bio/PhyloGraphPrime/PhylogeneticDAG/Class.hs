@@ -48,7 +48,7 @@ class PhylogeneticDAGish dag where
                          -> (z -> [z'] -> z')
                          -> dag e n u  v  w  x  y  z
                          -> dag e n u' v' w' x' y' z'
-    postorderSequence f1 f2 f3 f4 f5 f6 = postorderDAG id' id' f1 f2 f3 f4 f5 f6
+    postorderSequence      = postorderDAG id' id'
                          
 
     postorderEdge        :: (e -> [e'] -> e')
@@ -96,7 +96,7 @@ class PhylogeneticDAGish dag where
     postorderDynamic     :: (z -> [z'] -> z')
                          -> dag e n u v w x y z
                          -> dag e n u v w x y z'
-    postorderDynamic     f = postorderDAG id' id' id' id' id' id' id' f
+    postorderDynamic       = postorderDAG id' id' id' id' id' id' id'
 
                  
 
@@ -135,7 +135,7 @@ class PhylogeneticDAGish dag where
                         -> (z -> [(Word,z')] -> z')
                         -> dag e n u  v  w  x  y  z
                         -> dag e n u' v' w' x' y' z'
-    preorderSequence f1 f2 f3 f4 f5 f6 = preorderDAG id' id' f1 f2 f3 f4 f5 f6
+    preorderSequence     = preorderDAG id' id'
                          
 
     preorderEdge        :: (e -> [(Word,e')] -> e')
@@ -183,6 +183,6 @@ class PhylogeneticDAGish dag where
     preorderDynamic     :: (z -> [(Word,z')] -> z')
                         -> dag e n u v w x y z
                         -> dag e n u v w x y z'
-    preorderDynamic     f = preorderDAG id' id' id' id' id' id' id' f
+    preorderDynamic       = preorderDAG id' id' id' id' id' id' id'
 
                  

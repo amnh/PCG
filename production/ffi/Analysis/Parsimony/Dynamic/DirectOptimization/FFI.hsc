@@ -48,7 +48,7 @@ import System.IO.Unsafe (unsafePerformIO)
 
 type DenseTransitionCostMatrix = Ptr CostMatrix2d 
 
-generateDenseTransitionCostMatrix :: Int -> (Int -> Int -> Int) -> Ptr CostMatrix2d
+generateDenseTransitionCostMatrix :: Word -> (Word -> Word -> Word) -> Ptr CostMatrix2d
 generateDenseTransitionCostMatrix alphabetSize costFunction = getCostMatrix2dNonAffine alphabetSize costFunction
 
 
@@ -259,35 +259,36 @@ foreign import ccall unsafe "c_code_alloc_setup.h setup2dCostMtx"
 -- | Set up and return a non-affine cost matrix
 --
 -- The cost matrix is allocated strictly.
-getCostMatrix2dNonAffine :: Int
-                         -> (Int -> Int -> Int)
+getCostMatrix2dNonAffine :: Word
+                         -> (Word -> Word -> Word)
                          -> Ptr CostMatrix2d
-getCostMatrix2dNonAffine alphabetSize costFn = unsafePerformIO . withArray rowMajorList $ \allocedTCM -> do
-        output <- malloc :: IO (Ptr CostMatrix2d)
-        -- Hopefully the strictness annotation forces the allocation of the CostMatrix2d to happen immediately.
-        !_ <- setupCostMatrix2dFn_c allocedTCM (toEnum alphabetSize) 0 1 output
-        pure output
-    where
-        -- This *should* be in row major order due to the manner in which list comprehensions are performed.
-        rowMajorList = [ toEnum $ costFn i j | i <- range,  j <- range ]
-        range = [0 .. alphabetSize - 1]
+getCostMatrix2dNonAffine = performForeignAlignment 1 0
 
 
 -- | Set up and return a non-affine cost matrix
 --
 -- The cost matrix is allocated strictly.
-getCostMatrix2dAffine :: Int
-                      -> (Int -> Int -> Int)
-                      -> Int                    -- gap open cost
+getCostMatrix2dAffine :: CInt -- gap open cost
+                      -> Word
+                      -> (Word -> Word -> Word)
                       -> Ptr CostMatrix2d
-getCostMatrix2dAffine alphabetSize costFn gapOpen = unsafePerformIO . withArray rowMajorList $ \allocedTCM -> do
+getCostMatrix2dAffine = performForeignAlignment 1 
+
+
+performForeignAlignment :: CInt -- Is 2d
+                        -> CInt -- gap open cost
+                        -> Word
+                        -> (Word -> Word -> Word)
+                        -> Ptr CostMatrix2d
+performForeignAlignment is2D gapOpen alphabetSize costFn = unsafePerformIO . withArray rowMajorList $ \allocedTCM -> do
         output <- malloc :: IO (Ptr CostMatrix2d)
         -- Hopefully the strictness annotation forces the allocation of the CostMatrix2d to happen immediately.
-        !_ <- setupCostMatrix2dFn_c allocedTCM (toEnum alphabetSize) (toEnum gapOpen) 1 output
+        !_ <- setupCostMatrix2dFn_c allocedTCM matrixDimension gapOpen is2D output
         pure output
     where
+        matrixDimension = toEnum $ fromEnum alphabetSize
         -- This *should* be in row major order due to the manner in which list comprehensions are performed.
-        rowMajorList = [ toEnum $ costFn i j | i <- range,  j <- range ]
+        rowMajorList = [ toEnum . fromEnum $ costFn i j | i <- range,  j <- range ]
         range = [0 .. alphabetSize - 1]
 
 

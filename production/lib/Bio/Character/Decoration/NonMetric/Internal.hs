@@ -20,6 +20,7 @@ import Bio.Character.Decoration.Discrete
 import Bio.Character.Encodable
 import Bio.Metadata.CharacterName
 import Bio.Metadata.Discrete
+import Bio.Metadata.DiscreteWithTCM
 import Control.Lens
 import Data.Alphabet
 
@@ -30,7 +31,7 @@ import Data.Alphabet
 data NonMetricDecorationInitial c
    = NonMetricDecorationInitial
    { nonMetricDecorationInitialCharacter :: c
-   , metadata                        :: DiscreteCharacterMetadataDec c
+   , metadata                        :: DiscreteWithTCMCharacterMetadataDec c
    }
 
 
@@ -60,22 +61,22 @@ instance HasCharacterName (NonMetricDecorationInitial c) CharacterName where
 
 -- |
 -- A 'Lens' for the 'symbolicTCMGenerator' field
-instance HasCharacterSymbolTransitionCostMatrixGenerator (NonMetricDecorationInitial c) (Int -> Int -> Int) where
+instance HasSymbolChangeMatrix (NonMetricDecorationInitial c) (Word -> Word -> Word) where
 
-    characterSymbolTransitionCostMatrixGenerator = lens getter setter
+    symbolChangeMatrix = lens getter setter
       where
-         getter e   = metadata e ^. characterSymbolTransitionCostMatrixGenerator
-         setter e f = e { metadata = metadata e &  characterSymbolTransitionCostMatrixGenerator .~ f }
+         getter e   = metadata e ^. symbolChangeMatrix
+         setter e f = e { metadata = metadata e & symbolChangeMatrix .~ f }
 
 
 -- |
 -- A 'Lens' for the 'transitionCostMatrix' field
-instance EncodableStreamElement c => HasCharacterTransitionCostMatrix (NonMetricDecorationInitial c) (c -> c -> (c, Int)) where
+instance EncodableStreamElement c => HasTransitionCostMatrix (NonMetricDecorationInitial c) (c -> c -> (c, Word)) where
 
-    characterTCM = lens getter setter
+    transitionCostMatrix = lens getter setter
       where
-         getter e   = metadata e ^. characterTCM
-         setter e f = e { metadata = metadata e &  characterTCM .~ f }
+         getter e   = metadata e ^. transitionCostMatrix
+         setter e f = e { metadata = metadata e & transitionCostMatrix .~ f }
         
 
 -- | (✔)
@@ -90,8 +91,13 @@ instance HasCharacterWeight (NonMetricDecorationInitial c) Double where
 -- | (✔)
 instance GeneralCharacterMetadata (NonMetricDecorationInitial c) where
 
+  
 -- | (✔)
-instance EncodableStreamElement c => DiscreteCharacterMetadata (NonMetricDecorationInitial c) c where
+instance DiscreteCharacterMetadata (NonMetricDecorationInitial c) where
+
+
+-- | (✔)
+instance EncodableStreamElement c => DiscreteWithTcmCharacterMetadata (NonMetricDecorationInitial c) c where
 
 
 -- | (✔)
@@ -103,7 +109,7 @@ instance EncodableStaticCharacter c => SimpleDiscreteCharacterDecoration (NonMet
     toDiscreteCharacterDecoration name weight alphabet tcm g symbolSet =
         NonMetricDecorationInitial
         { nonMetricDecorationInitialCharacter = g symbolSet
-        , metadata                            = discreteMetadata name weight alphabet tcm
+        , metadata                            = discreteMetadataWithTCM name weight alphabet tcm
         }    
 
 

@@ -23,10 +23,10 @@ module Bio.Character.Decoration.Discrete
   , GeneralCharacterMetadata()
   , HasCharacterAlphabet(..)
   , HasCharacterName(..)
-  , HasCharacterSymbolTransitionCostMatrixGenerator(..)
-  , HasCharacterTransitionCostMatrix(..)
   , HasCharacterWeight(..)
   , HasDiscreteCharacter(..)
+  , HasSymbolChangeMatrix(..)
+  , HasTransitionCostMatrix(..)
   , PossiblyMissingCharacter(..)
   , SimpleDiscreteCharacterDecoration(..)
   , showDiscreteCharacterElement
@@ -152,6 +152,10 @@ instance HasCharacterWeight (DiscreteDecoration c) Double where
 
 -- | (✔)
 instance GeneralCharacterMetadata (DiscreteDecoration c) where
+
+
+-- | (✔)
+instance EncodableStreamElement c => DiscreteCharacterMetadata (DiscreteDecoration c) where
 
 
 -- | (✔)

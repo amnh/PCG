@@ -26,3 +26,5 @@ warn "Use Foldable instance definition to generate list" = maybeToList ==> toLis
 warn "Use more general custom function" = parMap ==> parmap
 
 warn "Use the Semigroup operator instead of less general concat operator" = (++) ==> (<>)
+
+warn "Use the Semigroup operator instead of less general concat operator" = lhs ++ rhs ==> lhs <> rhs

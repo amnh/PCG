@@ -94,9 +94,9 @@ library
 
   extra-libraries: stdc++
 
-  cc-options: --std=c11
+--  cc-options: --std=c11
 
-  -- cc-options: --std=c++11
+  cc-options: --std=c++11
 
   -- We must provide the full relative path to every C file that the project depends on.
   c-sources:
@@ -158,6 +158,8 @@ library
                        Bio.Metadata.CharacterName
                        Bio.Metadata.Continuous
                        Bio.Metadata.Discrete
+                       Bio.Metadata.DiscreteWithTCM
+                       Bio.Metadata.Dynamic
                        Bio.Metadata.Parsed
                        Bio.Sequence
                        Bio.Sequence.Block
@@ -256,6 +258,10 @@ library
                        Bio.Metadata.General.Internal
                        Bio.Metadata.Discrete.Class
                        Bio.Metadata.Discrete.Internal
+                       Bio.Metadata.DiscreteWithTCM.Class
+                       Bio.Metadata.DiscreteWithTCM.Internal
+                       Bio.Metadata.Dynamic.Class
+                       Bio.Metadata.Dynamic.Internal
                        Bio.Metadata.Internal
                        Bio.PhyloGraph.DAG.Internal
                        Bio.PhyloGraph.DAG.Class

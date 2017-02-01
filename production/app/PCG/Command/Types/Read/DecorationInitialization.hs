@@ -253,22 +253,21 @@ chooseDirectOptimizationComparison :: ( SimpleDynamicDecoration d  c
                                    -> c
                                    -> c
                                    -> (c, Double, c, c, c)
-chooseDirectOptimizationComparison dec decs
-  | symbolCount <= 5 = \x y -> naiveDO x y tcm -- but not really, C code here
-  | otherwise        = \x y -> foreignPairwiseDO x y denseMatrix
+chooseDirectOptimizationComparison dec decs =
+    case sentinal of
+      Left dtcm -> \x y -> foreignPairwiseDO x y dtcm
+      Right scm -> \x y -> naiveDO x y scm
   where
-    denseMatrix     = generateForeignDenseMatrix symbolCount tcm 
-    symbolCount     = length alphabet
-    (alphabet, tcm) =
+    sentinal =
         case decs of
-          []  -> (dec ^. characterAlphabet, dec ^. characterSymbolTransitionCostMatrixGenerator)
-          x:_ -> (x   ^. characterAlphabet, x   ^. characterSymbolTransitionCostMatrixGenerator)
-{-          
-    value =
-        case decs of
-          []   -> (dec ^. encoded, dec ^. characterSymbolTransitionCostMatrixGenerator)
-          x:xs -> (x   ^. encoded, x   ^. characterSymbolTransitionCostMatrixGenerator)
--}
+          []  -> selectBranch dec
+          x:_ -> selectBranch x
+      where
+        selectBranch candidate =
+            case candidate ^. denseTransitionCostMatrix of
+              Just  d -> Left  $ d
+              Nothing -> Right $ candidate ^. symbolChangeMatrix
+
 
 {-
 data FracturedParseResult

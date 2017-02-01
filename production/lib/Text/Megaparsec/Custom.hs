@@ -35,6 +35,7 @@ import           Data.Either              (either)
 import           Data.Functor             (($>))
 import           Data.List.NonEmpty       (NonEmpty(..))
 import qualified Data.List.NonEmpty as NE (fromList)
+import           Data.Semigroup
 import qualified Data.Set           as S  (fromList)
 import           Text.Megaparsec
 import           Text.Megaparsec.Prim     (MonadParsec)
@@ -47,8 +48,8 @@ import           Text.Megaparsec.Lexer    (float,integer,signed)
 
 
 -- | Concatenate the result of two list producing combinators
-(<++>) :: Applicative f => f [a] -> f [a] -> f [a]
-(<++>) a b = (++) <$> a <*> b
+(<++>) :: (Applicative f, Semigroup a) => f a -> f a -> f a
+(<++>) a b = (<>) <$> a <*> b
 
 
 -- | Collects one or more of the arguments into a `NonEmpty` list.

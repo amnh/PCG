@@ -21,6 +21,7 @@ import Bio.Character.Decoration.Shared
 import Bio.Character.Encodable
 import Bio.Metadata.CharacterName
 import Bio.Metadata.Discrete
+import Bio.Metadata.DiscreteWithTCM
 import Control.Lens
 import Data.Alphabet
 --import Data.Bits
@@ -39,7 +40,7 @@ data AdditiveOptimizationDecoration a
    , additiveChildPrelimIntervals :: ((Word, Word), (Word, Word))
    , additiveIsLeaf               :: Bool
    , additiveCharacterField       :: a   -- TODO: do I need this?
-   , additiveMetadataField        :: DiscreteCharacterMetadataDec a
+   , additiveMetadataField        :: DiscreteCharacterMetadataDec
    }
 
 
@@ -79,21 +80,23 @@ instance HasCharacterName (AdditiveOptimizationDecoration a) CharacterName where
 
 
 -- | (✔)
-instance HasCharacterSymbolTransitionCostMatrixGenerator (AdditiveOptimizationDecoration a) (Int -> Int -> Int) where
+instance HasSymbolChangeMatrix (AdditiveOptimizationDecoration a) (Word -> Word -> Word) where
 
-    characterSymbolTransitionCostMatrixGenerator = lens getter setter
+    symbolChangeMatrix = lens getter setter
       where
-         getter e   = additiveMetadataField e ^. characterSymbolTransitionCostMatrixGenerator
-         setter e f = e { additiveMetadataField = additiveMetadataField e &  characterSymbolTransitionCostMatrixGenerator .~ f }
+        getter = const $ \i j -> max i j - min i j
+        setter = const
 
 
 -- | (✔)
-instance HasCharacterTransitionCostMatrix (AdditiveOptimizationDecoration a) (a -> a -> (a, Int)) where
+instance HasTransitionCostMatrix (AdditiveOptimizationDecoration a) (a -> a -> (a, Word)) where
 
-    characterTCM = lens getter setter
+
+    -- NOTE: This probably isn't sound
+    transitionCostMatrix = lens getter setter
       where
-         getter e   = additiveMetadataField e ^. characterTCM
-         setter e f = e { additiveMetadataField = additiveMetadataField e &  characterTCM .~ f }
+        getter = error "Please don't use lens accessor operations over 'transitionCostMatrix' on a AdditiveOptimizationDecoration."
+        setter = const
 
 
 -- | (✔)
@@ -104,20 +107,24 @@ instance HasCharacterWeight (AdditiveOptimizationDecoration a) Double where
          getter e   = additiveMetadataField e ^. characterWeight
          setter e x = e { additiveMetadataField = additiveMetadataField e &  characterWeight .~ x }
 
+
 -- | (✔)
 instance HasIsLeaf (AdditiveOptimizationDecoration a) Bool where
 
     isLeaf = lens additiveIsLeaf (\e x -> e { additiveIsLeaf = x })
+
 
 -- | (✔)
 instance HasCharacterCost (AdditiveOptimizationDecoration a) Word where
 
     characterCost = lens additiveMinCost (\e x -> e { additiveMinCost = x })
 
+
 -- | (✔)
 instance HasPreliminaryInterval (AdditiveOptimizationDecoration a) (Word, Word) where
 
     preliminaryInterval = lens additivePreliminaryInterval (\e x -> e { additivePreliminaryInterval = x })
+
 
 -- | (✔)
 instance HasChildPrelimIntervals (AdditiveOptimizationDecoration a) ((Word, Word),(Word, Word)) where
@@ -128,18 +135,27 @@ instance HasChildPrelimIntervals (AdditiveOptimizationDecoration a) ((Word, Word
 -- | (✔)
 instance GeneralCharacterMetadata (AdditiveOptimizationDecoration a) where
 
+  
 -- | (✔)
-instance EncodableStreamElement a => DiscreteCharacterMetadata (AdditiveOptimizationDecoration a) a where
+instance DiscreteCharacterMetadata (AdditiveOptimizationDecoration a) where
+
+
+-- | (✔)
+instance EncodableStaticCharacter a => DiscreteWithTcmCharacterMetadata (AdditiveOptimizationDecoration a) a where
+
 
 -- | (✔)
 instance EncodableStaticCharacter a => DiscreteCharacterDecoration (AdditiveOptimizationDecoration a) a where
 
+  
 -- | (✔)
 instance EncodableStaticCharacter a => AdditiveCharacterDecoration (AdditiveOptimizationDecoration a) a where
 
+  
 -- | (✔)
 instance EncodableStaticCharacter a => AdditiveDecoration (AdditiveOptimizationDecoration a) a where
 
+  
 -- | (✔)
 instance EncodableStaticCharacter a => DiscreteExtensionAdditiveDecoration (AdditiveOptimizationDecoration a) a where
 
@@ -154,13 +170,10 @@ instance EncodableStaticCharacter a => DiscreteExtensionAdditiveDecoration (Addi
         , additiveCharacterField       = subDecoration ^. discreteCharacter -- TODO: do I need this?
         }
       where
-        alphabetValue = subDecoration ^. characterAlphabet
-        tcmValue      = generate (length alphabetValue) (uncurry $ subDecoration ^. characterSymbolTransitionCostMatrixGenerator)
         metadataValue =
           discreteMetadata
             <$> (^. characterName)
             <*> (^. characterWeight)
-            <*> const alphabetValue
-            <*> const tcmValue
+            <*> (^. characterAlphabet)
             $ subDecoration
 

@@ -117,7 +117,7 @@ instance EncodableStreamElement DynamicCharacterElement where
 instance Hashable DynamicChar where
 
     hashWithSalt salt (Missing n) = salt `xor` n
-    hashWithSalt salt (DC (BitMatrix n bv)) = salt `xor` n `xor` (hashWithSalt salt $ toInteger bv)
+    hashWithSalt salt (DC (BitMatrix n bv)) = salt `xor` n `xor` hashWithSalt salt (toInteger bv)
 
 
 instance PossiblyMissingCharacter DynamicChar where
@@ -134,22 +134,22 @@ instance MonoFunctor DynamicChar where
 
     {-# INLINE omap #-}
     omap _ e@Missing{} = e
-    omap f (DC x)      = DC . omap (unwrap . f . DCE) $ x
+    omap f (DC c)      = DC . omap (unwrap . f . DCE) $ c
 
 
 instance MonoFoldable DynamicChar where
 
     {-# INLINE ofoldMap #-}
     ofoldMap _ Missing{} = mempty
-    ofoldMap f (DC c)    = ofoldMap (f . DCE) $ c
+    ofoldMap f (DC c)    = ofoldMap (f . DCE) c
 
     {-# INLINE ofoldr #-}
     ofoldr _ e Missing{} = e
-    ofoldr f e (DC c)    = ofoldr (f . DCE)  e $ c
+    ofoldr f e (DC c)    = ofoldr (f . DCE) e c
 
     {-# INLINE ofoldl' #-}
     ofoldl' _ e Missing{} = e
-    ofoldl' f e (DC c)   = ofoldl' (\acc x -> f acc (DCE x)) e $ c
+    ofoldl' f e (DC c)   = ofoldl' (\acc x -> f acc (DCE x)) e c
 
     {-# INLINE ofoldr1Ex #-} 
     ofoldr1Ex _ Missing{} = error "Trying to mono-morphically fold over an empty structure without supplying an inital accumulator!"
