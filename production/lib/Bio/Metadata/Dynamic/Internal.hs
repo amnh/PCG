@@ -10,6 +10,7 @@
 --
 -----------------------------------------------------------------------------
 
+{-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE FlexibleInstances, MultiParamTypeClasses #-}
 
 module Bio.Metadata.Dynamic.Internal
@@ -35,6 +36,8 @@ import Data.Alphabet
 import Data.List (intercalate)
 import Data.Monoid
 import Data.TCM
+
+import Debug.Trace
 
 
 -- |
@@ -149,6 +152,6 @@ dynamicMetadata name weight alpha tcm =
     diagnosis   = diagnoseTcm tcm
     denseTCM
       | len > 8   = Nothing
-      | otherwise = Just $ generateDenseTransitionCostMatrix len sigma
+      | otherwise = Just $ generateDenseTransitionCostMatrix len $ trace "Just before generating matrix" sigma
       where
         len = toEnum $ length alpha

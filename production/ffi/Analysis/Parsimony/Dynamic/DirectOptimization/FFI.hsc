@@ -40,6 +40,9 @@ import Foreign.C.Types
 import Prelude hiding (lcm, sequence, tail)
 import System.IO.Unsafe (unsafePerformIO)
 
+import Debug.Trace
+
+
 #include "costMatrix.h"
 #include "c_code_alloc_setup.h"
 #include "c_alignment_interface.h"
@@ -281,14 +284,14 @@ performForeignAlignment :: CInt -- Is 2d
                         -> (Word -> Word -> Word)
                         -> Ptr CostMatrix2d
 performForeignAlignment is2D gapOpen alphabetSize costFn = unsafePerformIO . withArray rowMajorList $ \allocedTCM -> do
-        output <- malloc :: IO (Ptr CostMatrix2d)
+        output <- trace "Before MALLOCing matrix" $ malloc :: IO (Ptr CostMatrix2d)
         -- Hopefully the strictness annotation forces the allocation of the CostMatrix2d to happen immediately.
         !_ <- setupCostMatrix2dFn_c allocedTCM matrixDimension gapOpen is2D output
-        pure output
+        pure $ trace "Just before return" output
     where
         matrixDimension = toEnum $ fromEnum alphabetSize
         -- This *should* be in row major order due to the manner in which list comprehensions are performed.
-        rowMajorList = [ toEnum . fromEnum $ costFn i j | i <- range,  j <- range ]
+        rowMajorList = (\x -> trace (mconcat ["{", show (length x), "}: ", show x]) x) [ toEnum . fromEnum $ costFn i j | i <- range,  j <- range ]
         range = [0 .. alphabetSize - 1]
 
 
