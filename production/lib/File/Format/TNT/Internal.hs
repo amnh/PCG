@@ -193,7 +193,7 @@ data XRead
 
 
 -- | The sequence information for a taxon within the TNT file's XREAD command.
--- Contains the 'TaxonName' and the naive 'TaxonSequence' 
+-- Contains the 'TaxonName' and the naive 'TaxonSequence'
 type TaxonInfo     = (TaxonName, TaxonSequence)
 
 
@@ -233,7 +233,7 @@ newtype TntDiscreteCharacter   = TntDis Word64 deriving (Bits,Eq,Ord,FiniteBits)
 
 -- | A 'TntDnaCharacter' represents a nucleotide ('"ACGT"') as an integral value
 --   in the range '[0..3]' respectively. If gap characters (\'-\') are treated as a fifth
---   state then values the additional value '4' is added to the integral range. 
+--   state then values the additional value '4' is added to the integral range.
 --   Discrete values are serialized textualy as the DNA IUPAC codes case-insensitively,
 --   along with \'-\' & \'?\' characters representing gap or missing data respecitively.
 --   Gap represents an ambiguity group of all possible proteins unless gaps are
@@ -241,7 +241,7 @@ newtype TntDiscreteCharacter   = TntDis Word64 deriving (Bits,Eq,Ord,FiniteBits)
 newtype TntDnaCharacter        = TntDna Word8 deriving (Bits,Eq,FiniteBits,Ord)
 
 
--- | A 'TntProteinCharacter' is an integral value in the range '[0..20]'. 
+-- | A 'TntProteinCharacter' is an integral value in the range '[0..20]'.
 --   Discrete values are serialized textualy as the protein IUPAC codes case-insensitively,
 --   along with \'-\' & \'?\' characters representing gap or missing data respecitively.
 --   Missing represents the empty ambiguity group.
@@ -364,7 +364,7 @@ modifyMetaDataTCM mat old = old { costTCM = Just mat }
 -- Parses both signed integral values and signed floating values
 -- if the value is non-negative and an integer.
 flexibleNonNegativeInt :: (MonadParsec e s m, Token s ~ Char) => String -> m Int
-flexibleNonNegativeInt labeling = either coerceFloating coerceIntegral . floatingOrInteger 
+flexibleNonNegativeInt labeling = either coerceFloating coerceIntegral . floatingOrInteger
                               =<< signed whitespace number <?> ("positive integer for " ++ labeling)
   where
     coerceIntegral :: (MonadParsec e s m {- , Token s ~ Char -}) => Integer -> m Int
@@ -457,7 +457,7 @@ keyword x y = abreviatable x y $> ()
         combinator      = choice partialOptions $> fullName
         partialOptions  = makePartial <$> drop minimumChars (inits fullName)
         makePartial opt = try $ string' opt <* terminator
-        terminator      = lookAhead $ satisfy (not . isAlpha) 
+        terminator      = lookAhead $ satisfy (not . isAlpha)
 
 
 -- | Parses an Int which is non-negative. This Int is not parsed flexibly.
@@ -522,7 +522,7 @@ deserializeStateDiscrete :: Map Char TntDiscreteCharacter
 deserializeStateDiscrete = insert '?' allBits core
   where
     allBits = foldl (.|.) zeroBits core
-    core    = M.fromList $ zip (['0'..'9'] ++ ['A'..'Z'] ++ ['a'..'z']) (bit <$> [0..])
+    core    = M.fromList $ zip (mconcat [['0'..'9'], ['A'..'Z'], ['a'..'z'], "-"]) (bit <$> [0..])
 
 
 -- | A map for serializing dna state chatracters.
@@ -575,7 +575,7 @@ deserializeStateProtein = insert '?' allBits . casei $ core `union` multi
 
 
 -- | Add case insensitive keys to map with the corresponding keys.
-casei :: Map Char v -> Map Char v 
+casei :: Map Char v -> Map Char v
 casei x = foldl f x $ assocs x
   where
     f m (k,v)
