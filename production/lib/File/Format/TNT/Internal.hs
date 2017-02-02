@@ -522,7 +522,7 @@ deserializeStateDiscrete :: Map Char TntDiscreteCharacter
 deserializeStateDiscrete = insert '?' allBits core
   where
     allBits = foldl (.|.) zeroBits core
-    core    = M.fromList $ zip (['0'..'9'] ++ ['A'..'Z'] ++ ['a'..'z'] ++ "-") (bit <$> [0..])
+    core    = M.fromList $ zip (['0'..'9'] ++ ['A'..'Z'] ++ ['a'..'z']) (bit <$> [0..])
 
 
 -- | A map for serializing dna state chatracters.
