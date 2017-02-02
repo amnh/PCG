@@ -19,6 +19,7 @@
 -- TODO: do I need this: https://hackage.haskell.org/package/base-4.9.0.0/docs/Foreign-StablePtr.html
 
 {-# LANGUAGE ForeignFunctionInterface, BangPatterns #-}
+{-# LANGUAGE DeriveGeneric #-}
 
 module Analysis.Parsimony.Dynamic.DirectOptimization.FFI
   ( CostMatrix2d
@@ -28,6 +29,7 @@ module Analysis.Parsimony.Dynamic.DirectOptimization.FFI
   ) where
 
 import Bio.Character.Exportable.Class
+import Control.DeepSeq
 import Control.Lens
 import Data.Semigroup
 import Foreign
@@ -37,6 +39,7 @@ import Foreign.C.Types
 --import Foreign.ForeignPtr
 --import Foreign.Marshal.Array
 --import Foreign.StablePtr
+import GHC.Generics (Generic)
 import Prelude hiding (lcm, sequence, tail)
 import System.IO.Unsafe (unsafePerformIO)
 
@@ -51,16 +54,16 @@ import Debug.Trace
 
 type DenseTransitionCostMatrix = Ptr CostMatrix2d 
 
-generateDenseTransitionCostMatrix :: Word -> (Word -> Word -> Word) -> Ptr CostMatrix2d
+generateDenseTransitionCostMatrix :: Word -> (Word -> Word -> Word) -> DenseTransitionCostMatrix
 generateDenseTransitionCostMatrix alphabetSize costFunction = getCostMatrix2dNonAffine alphabetSize costFunction
 
 
 foreignPairwiseDO :: Exportable s
-                  => s                    -- ^ First  dynamic character
-                  -> s                    -- ^ Second dynamic character
-                  -> Ptr CostMatrix2d     -- ^ Structure defining the transition costs between character states
-                  -> (s, Double, s, s, s) -- ^ The /ungapped/ character derived from the the input characters' N-W-esque matrix traceback
-foreignPairwiseDO lhs rhs costMatrix = algn2d lhs rhs costMatrix 0 1
+                  => s                         -- ^ First  dynamic character
+                  -> s                         -- ^ Second dynamic character
+                  -> DenseTransitionCostMatrix -- ^ Structure defining the transition costs between character states
+                  -> (s, Double, s, s, s)      -- ^ The /ungapped/ character derived from the the input characters' N-W-esque matrix traceback
+foreignPairwiseDO lhs rhs costMatrix = algn2d lhs rhs (trace "About to do work" costMatrix) 0 1
 
 
 
@@ -133,7 +136,7 @@ data CostMatrix2d = CostMatrix2d { alphSize      :: CInt      -- alphabet size i
                                  , lcm           :: CInt      -- ceiling of log_2 (alphSize)
                                  , gapChar       :: CInt      -- gap value (1 << (alphSize - 1))
                                  , costModelType :: CInt      {- The type of cost model to be used in the alignment,
-                                                               - i.e. affine or not.
+        System.IO                                                       - i.e. affine or not.
                                                                - Based on cost_matrix.ml, values are:
                                                                - • linear == 0
                                                                - • affine == 1
@@ -155,35 +158,55 @@ data CostMatrix2d = CostMatrix2d { alphSize      :: CInt      -- alphabet size i
                                  , bestCost      :: Ptr CInt  {- The transformation cost matrix, including ambiguities,
                                                                - storing the **best** cost for each ambiguity pair
                                                                -}
-                                 , medians       :: StablePtr CUInt {- The matrix of possible medians between elements in the
+                                 , medians       :: Ptr CUInt {- The matrix of possible medians between elements in the
                                                                - alphabet. The best possible medians according to the cost
                                                                - matrix.
                                                                -}
-                                 , worstCost     :: StablePtr CInt  {- The transformation cost matrix, including ambiguities,
+                                 , worstCost     :: Ptr CInt  {- The transformation cost matrix, including ambiguities,
                                                                - storing the **worst** cost for each ambiguity pair
                                                                - Missing in 3d
                                                                -}
-                                 , prependCost   :: StablePtr CInt  {- The cost of going from gap -> each base. For ambiguities, use best cost.
+                                 , prependCost   :: Ptr CInt  {- The cost of going from gap -> each base. For ambiguities, use best cost.
                                                                - Set up as all_elements x all_elements
                                                                - matrix, but seemingly only first row is used.
                                                                - Missing in 3d because current version of 3d sets gap cost
                                                                - as constant.
                                                                -}
-                                 , tailCost      :: StablePtr CInt  {- As prepend_cost, but with reverse directionality,
+                                 , tailCost      :: Ptr CInt  {- As prepend_cost, but with reverse directionality,
                                                                - so base -> gap.
                                                                - As with prepend_cost, seems to be allocated as too large.
                                                                - Missing in 3d because current version of 3d sets gap cost
                                                                - as constant.
                                                                -}
-                                 }
+                                 } deriving (Eq, Generic)
+
+instance NFData CostMatrix2d
+
+instance Show CostMatrix2d where
+
+    show = unlines . 
+           ([ show . alphSize
+            , show . lcm
+            , show . gapChar
+            , show . costModelType
+            , show . combinations
+            , show . gapOpenCost
+            , show . isMetric
+            , show . allElems
+            , show . bestCost
+            , show . medians
+            , show . worstCost
+            , show . prependCost
+            , show . tailCost
+            ] <*>) . pure
 
 
-
+{--}
 -- | Because we're using a struct we need to make a Storable instance
 instance Storable CostMatrix2d where
-    sizeOf    _   = (#size struct seq) -- #size is a built-in that works with arrays, as are #peek and #poke, below
-    alignment _   = alignment (undefined :: StablePtr CUInt)
-    peek ptr      = do -- to get values from the C app
+    sizeOf _  = (#size struct cost_matrices_2d) -- #size is a built-in that works with arrays, as are #peek and #poke, below
+    alignment = sizeOf -- alignment (undefined :: StablePtr CostMatrix2d)
+    peek ptr  = do -- to get values from the C app
         aSizeVal     <- (#peek struct cost_matrices_2d, alphSize)        ptr
         lcmVal'      <- (#peek struct cost_matrices_2d, lcm)             ptr
         gapcharVal   <- (#peek struct cost_matrices_2d, gap_char)        ptr
@@ -197,21 +220,21 @@ instance Storable CostMatrix2d where
         worstVal     <- (#peek struct cost_matrices_2d, worst)           ptr
         prependVal   <- (#peek struct cost_matrices_2d, prepend_cost)    ptr
         tailVal      <- (#peek struct cost_matrices_2d, tail_cost)       ptr
-        return  CostMatrix2d { alphSize      = aSizeVal
-                             , lcm           = lcmVal'
-                             , gapChar       = gapcharVal
-                             , costModelType = costModelVal
-                             , combinations  = combosVal
-                             , gapOpenCost   = gapOpenVal
-                             , isMetric      = metricVal
-                             , allElems      = elemsVal
-                             , bestCost      = bestVal
-                             , medians       = medsVal
-                             , worstCost     = worstVal
-                             , prependCost   = prependVal
-                             , tailCost      = tailVal
-                             }
-
+        pure  CostMatrix2d { alphSize      = aSizeVal
+                           , lcm           = lcmVal'
+                           , gapChar       = gapcharVal
+                           , costModelType = costModelVal
+                           , combinations  = combosVal
+                           , gapOpenCost   = gapOpenVal
+                           , isMetric      = metricVal
+                           , allElems      = elemsVal
+                           , bestCost      = bestVal
+                           , medians       = medsVal
+                           , worstCost     = worstVal
+                           , prependCost   = prependVal
+                           , tailCost      = tailVal
+                           }
+      
     poke ptr (CostMatrix2d
                   alphSizeVal
                   lcmVal
@@ -240,7 +263,7 @@ instance Storable CostMatrix2d where
         (#poke struct cost_matrices_2d, worst)           ptr worstCostVal
         (#poke struct cost_matrices_2d, prepend_cost)    ptr prependCostVal
         (#poke struct cost_matrices_2d, tail_cost)       ptr tailCostVal
-
+{--}
 
 
 
@@ -264,8 +287,8 @@ foreign import ccall unsafe "c_code_alloc_setup.h setup2dCostMtx"
 -- The cost matrix is allocated strictly.
 getCostMatrix2dNonAffine :: Word
                          -> (Word -> Word -> Word)
-                         -> Ptr CostMatrix2d
-getCostMatrix2dNonAffine = performForeignAlignment 1 0
+                         -> DenseTransitionCostMatrix
+getCostMatrix2dNonAffine = performMatrixAllocation 1 0
 
 
 -- | Set up and return a non-affine cost matrix
@@ -274,23 +297,53 @@ getCostMatrix2dNonAffine = performForeignAlignment 1 0
 getCostMatrix2dAffine :: CInt -- gap open cost
                       -> Word
                       -> (Word -> Word -> Word)
-                      -> Ptr CostMatrix2d
-getCostMatrix2dAffine = performForeignAlignment 1 
+                      -> DenseTransitionCostMatrix
+getCostMatrix2dAffine = performMatrixAllocation 1 
 
 
-performForeignAlignment :: CInt -- Is 2d
+performMatrixAllocation :: CInt -- Is 2d
                         -> CInt -- gap open cost
                         -> Word
                         -> (Word -> Word -> Word)
-                        -> Ptr CostMatrix2d
-performForeignAlignment is2D gapOpen alphabetSize costFn = unsafePerformIO . withArray rowMajorList $ \allocedTCM -> do
-        output <- trace "Before MALLOCing matrix" $ malloc :: IO (Ptr CostMatrix2d)
+                        -> DenseTransitionCostMatrix
+performMatrixAllocation is2D gapOpen alphabetSize costFn = unsafePerformIO $ {- . withArray rowMajorList $ \allocedTCM -> -} do
+
+        !_ <- trace "Before TCM Alloc" $ pure ()
+        !allocedTCM <- trace "WOWZERS" $ newArray rowMajorList
+        !_ <- trace "After  TCM Alloc" $ pure ()
+        !_ <- trace "Before Matrix MALLOC" $ pure ()
+        !output <- malloc :: IO (Ptr CostMatrix2d)
+        !_ <- trace "After Matrix MALLOC" $ pure ()
+
+        !_ <- poke output (CostMatrix2d 1 2 3 4 5 6 7 8 (plusPtr nullPtr 5) (plusPtr nullPtr 11) (plusPtr nullPtr 13) (plusPtr nullPtr 17) (plusPtr nullPtr 19))
+
+        value <- peekArray (fromEnum $ matrixDimension * matrixDimension) allocedTCM
+
+        !_ <- trace (show value) $ pure ()
+
+        value2 <- peek output
+
+        !_ <- trace (show value2) $ pure ()
+
+        !_ <- trace ("Byte count: " <> show (sizeOf value2)) $ pure ()
+
+
+
+
+
+
+
         -- Hopefully the strictness annotation forces the allocation of the CostMatrix2d to happen immediately.
+        !_ <- trace "Before handoff" $ pure ()
+        !_ <- trace "Extra" $ pure ()
         !_ <- setupCostMatrix2dFn_c allocedTCM matrixDimension gapOpen is2D output
-        pure $ trace "Just before return" output
+        !_ <- trace "After  handoff" $ pure ()
+        pure . trace "Just before return" $ output
     where
+        matrixDimension :: CInt
         matrixDimension = toEnum $ fromEnum alphabetSize
         -- This *should* be in row major order due to the manner in which list comprehensions are performed.
+        rowMajorList :: [CInt]
         rowMajorList = (\x -> trace (mconcat ["{", show (length x), "}: ", show x]) x) [ toEnum . fromEnum $ costFn i j | i <- range,  j <- range ]
         range = [0 .. alphabetSize - 1]
 
@@ -319,12 +372,12 @@ foreign import ccall unsafe "c_code_alloc_setup.h align2d"
 -- the aligned version of the first input character, and the aligned version of the second input character
 -- The process for this algorithm is to generate a traversal matrix, then perform a traceback.
 algn2d :: Exportable s
-       => s                    -- ^ First  dynamic character
-       -> s                    -- ^ Second dynamic character
-       -> Ptr CostMatrix2d     -- ^ Structure defining the transition costs between character states
-       -> Int                  -- ^ Actually used as a bool in C code, 1 is do union, 0 is don't. If both this and follwing are 0, do cost only
-       -> Int                  -- ^ Actually used as a bool in C code, 1 is do medians (gapped & ungapped), 0 is don't
-       -> (s, Double, s, s, s) -- ^ The /ungapped/ character derived from the the input characters' N-W-esque matrix traceback
+       => s                         -- ^ First  dynamic character
+       -> s                         -- ^ Second dynamic character
+       -> DenseTransitionCostMatrix -- ^ Structure defining the transition costs between character states
+       -> Int                       -- ^ Actually used as a bool in C code, 1 is do union, 0 is don't. If both this and follwing are 0, do cost only
+       -> Int                       -- ^ Actually used as a bool in C code, 1 is do medians (gapped & ungapped), 0 is don't
+       -> (s, Double, s, s, s)      -- ^ The /ungapped/ character derived from the the input characters' N-W-esque matrix traceback
                                          --
                                          --   The cost of the alignment
                                          --

@@ -82,6 +82,9 @@ int distance (int const *tcm, int alphSize, int nucleotide, int ambElem) {
  */
 void setup2dCostMtx(int* tcm, size_t alphSize, int gap_open, cost_matrices_2d_p retMtx) {
 
+    printf("HOWDY PARTNER!");
+    fflush(stdout);
+    
     // first allocate retMatrix
     int combinations = 1;                     // false if matrix is sparse. In this case, it's DNA, so not sparse.
     int do_aff       = gap_open == 0 ? 0 : 3; // The 3 is because affine's cost_model_type is 3, according to my reading of ML code.
@@ -96,6 +99,10 @@ void setup2dCostMtx(int* tcm, size_t alphSize, int gap_open, cost_matrices_2d_p 
 
     int median1, median2;                     // median of a given nucleotide and current ambElem, for each ambElem
 
+    //    int tcm2[25] = {0,1,1,1,1,1,0,1,1,1,1,1,0,1,1,1,1,1,0,1,1,1,1,1,0};
+    
+    //    tcm = tcm2;
+    
     cm_alloc_set_costs_2d( alphSize,
                            combinations,
                            do_aff,
@@ -105,7 +112,7 @@ void setup2dCostMtx(int* tcm, size_t alphSize, int gap_open, cost_matrices_2d_p 
                            retMtx
                           );
     // Print TCM in pretty format
-    if(DEBUG_MAT) {
+    if(1 || DEBUG_MAT) {
         printf("setup2dCostMtx\n");
         const int n = retMtx->lcm;
         for (size_t i = 0; i < n; ++i) {
@@ -159,7 +166,7 @@ void setup2dCostMtx(int* tcm, size_t alphSize, int gap_open, cost_matrices_2d_p 
         cm_set_tail_2d    (cm_get_cost(seqElem, gap, retMtx), i, retMtx);
     } */
 //    return retMtx;
-    if(DEBUG_COST_M) {
+    if(1 || DEBUG_COST_M) {
         printf("2d:\n");
         cm_print_2d (retMtx);
     }

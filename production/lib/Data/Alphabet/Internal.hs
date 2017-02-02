@@ -9,6 +9,8 @@
 -- Portability :  portable
 --
 -----------------------------------------------------------------------------   
+
+{-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE FlexibleContexts, FlexibleInstances, TypeFamilies #-}
 
 module Data.Alphabet.Internal
@@ -21,6 +23,7 @@ module Data.Alphabet.Internal
   , gapSymbol
   ) where
 
+import           Control.DeepSeq              (NFData)
 import           Control.Monad.State.Strict
 import           Data.Foldable
 import           Data.Key
@@ -32,6 +35,7 @@ import qualified Data.Set              as Set
 import           Data.String
 import           Data.Vector                  (Vector)
 import qualified Data.Vector           as V
+import           GHC.Generics                 (Generic)
 import           Prelude               hiding (lookup, zip)
 import           Test.Tasty.QuickCheck hiding (generate)
 import           Test.QuickCheck.Arbitrary.Instances ()
@@ -51,8 +55,14 @@ type AmbiguityGroup a = NonEmpty a
 data Alphabet a 
    = SimpleAlphabet     (Vector (UnnamedSymbol a))
    | StateNamedAlphabet (Vector (  NamedSymbol a))
+   deriving (Generic)
+
 
 type instance Key Alphabet = Int
+
+
+instance NFData a => NFData (Alphabet a)
+
 
 instance Indexable Alphabet where
   {-# INLINE index #-}
@@ -186,8 +196,12 @@ alphabetPreprocessing = V.fromList . appendGapSymbol . removeSpecialSymbolsAndDu
               pure $ x `notElem` seenSet
 
 
-newtype UnnamedSymbol a = Unnamed  a
-newtype NamedSymbol   a = Named (a,a)
+newtype UnnamedSymbol a = Unnamed  a  deriving (Generic)
+newtype NamedSymbol   a = Named (a,a) deriving (Generic)
+
+instance NFData a => NFData (UnnamedSymbol a)
+instance NFData a => NFData (  NamedSymbol a)
+
 
 
 fromUnnamed :: UnnamedSymbol t -> t

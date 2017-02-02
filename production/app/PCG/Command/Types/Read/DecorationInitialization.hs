@@ -253,6 +253,18 @@ chooseDirectOptimizationComparison :: ( SimpleDynamicDecoration d  c
                                    -> c
                                    -> c
                                    -> (c, Double, c, c, c)
+{--}
+chooseDirectOptimizationComparison dec decs = \x y -> naiveDO x y scm
+  where
+    scm =
+        case decs of
+          []  -> selectBranch dec
+          x:_ -> selectBranch x
+      where
+        selectBranch candidate = candidate ^. symbolChangeMatrix
+{--}
+{-
+-- do this when shit stops segfaulting
 chooseDirectOptimizationComparison dec decs =
     case sentinal of
       Left dtcm -> \x y -> foreignPairwiseDO x y dtcm
@@ -267,6 +279,7 @@ chooseDirectOptimizationComparison dec decs =
             case candidate ^. denseTransitionCostMatrix of
               Just  d -> Left  $ d
               Nothing -> Right $ candidate ^. symbolChangeMatrix
+-}
 
 
 {-

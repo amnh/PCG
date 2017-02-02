@@ -12,6 +12,7 @@
 
 {-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE FlexibleInstances, MultiParamTypeClasses #-}
+{-# LANGUAGE DeriveGeneric #-}
 
 module Bio.Metadata.Dynamic.Internal
   ( DynamicCharacterMetadataDec()
@@ -31,11 +32,13 @@ import Bio.Metadata.Discrete
 import Bio.Metadata.DiscreteWithTCM
 import Bio.Metadata.Dynamic.Class
 import Bio.Metadata.General
+import Control.DeepSeq
 import Control.Lens
 import Data.Alphabet
 import Data.List (intercalate)
 import Data.Monoid
 import Data.TCM
+import GHC.Generics (Generic)
 
 import Debug.Trace
 
@@ -51,7 +54,17 @@ data DynamicCharacterMetadataDec c
    , dataSymbolChangeMatrix        :: Word -> Word -> Word
    , dataTransitionCostMatrix      :: c -> c -> (c, Word)
    , dataDenseTransitionCostMatrix :: Maybe DenseTransitionCostMatrix
-   }
+   } deriving (Generic)
+
+
+instance NFData (DynamicCharacterMetadataDec a) where
+
+  rnf (DynamicCharacterMetadataDec a n w _ _ d) = ()
+    where
+      !_ = rnf a
+      !_ = rnf n
+      !_ = rnf w
+      !_ = rnf d
 
 
 instance Eq (DynamicCharacterMetadataDec c) where
@@ -137,7 +150,7 @@ instance HasTransitionCostMatrix (DynamicCharacterMetadataDec c) (c -> c -> (c, 
 -- Construct a concrete typed 'DynamicCharacterMetadataDec' value from the supplied inputs.
 dynamicMetadata :: CharacterName -> Double -> Alphabet String -> TCM -> DynamicCharacterMetadataDec c
 dynamicMetadata name weight alpha tcm =
-    DynamicCharacterMetadataDec
+    force DynamicCharacterMetadataDec
     { dataCharacterAlphabet         = alpha
     , dataCharacterName             = name
     , dataCharacterWeight           = coefficient * weight
@@ -150,8 +163,9 @@ dynamicMetadata name weight alpha tcm =
     sigma i j   = fromIntegral $ factoredTcm diagnosis ! (fromEnum i, fromEnum j)
     coefficient = fromIntegral $ factoredWeight diagnosis
     diagnosis   = diagnoseTcm tcm
-    denseTCM
+    !denseTCM
       | len > 8   = Nothing
-      | otherwise = Just $ generateDenseTransitionCostMatrix len $ trace "Just before generating matrix" sigma
+      | otherwise = let value = generateDenseTransitionCostMatrix len $ trace "Just before generating matrix" sigma
+                    in  force $ Just value
       where
         len = toEnum $ length alpha

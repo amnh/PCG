@@ -54,9 +54,9 @@ int main() {
 
 
     int alphSize = 5; // includes gap, but no ambiguities
-    int longest_vals [longCharLen]   = {16, 2, 1, 8, 4, 2, 1, 8, 4, 1, 1, 1, 1, 1, 2, 1, 8, 4, 2, 1, 8, 4}; // don't forget to change lengths!!!
-    int middle_vals  [middleCharLen] = {16, 8, 8, 2, 1, 8, 4, 2, 1, 8, 4, 1, 1, 2, 1, 8, 4, 1};             // don't forget to change lengths!!!
-    int shortest_vals[shortCharLen]  = {16, 2, 1, 8, 4, 2, 1, 8, 4, 2, 1, 8, 4, 2, 1, 8, 4};                // don't forget to change lengths!!!
+    int longest_vals [22] = {16, 2, 1, 8, 4, 2, 1, 8, 4, 1, 1, 1, 1, 1, 2, 1, 8, 4, 2, 1, 8, 4}; // don't forget to change lengths!!!
+    int middle_vals  [18] = {16, 8, 8, 2, 1, 8, 4, 2, 1, 8, 4, 1, 1, 2, 1, 8, 4, 1};             // don't forget to change lengths!!!
+    int shortest_vals[17] = {16, 2, 1, 8, 4, 2, 1, 8, 4, 2, 1, 8, 4, 2, 1, 8, 4};                // don't forget to change lengths!!!
 
 
 
@@ -202,13 +202,13 @@ int main() {
 
 
         printf("Original 2d sequences:\n");
-        seq_print(longChar, 1);
-        seq_print(shortChar, 2);
+        seq_print(longChar);
+        seq_print(shortChar);
 
         algn_backtrace_2d (shortChar, longChar, retShortChar, retLongChar, algn_mtxs2d, costMtx2d, 0, 0, 1);
         printf("\nAligned 2d sequences\n");
-        seq_print(retLongChar, 1);
-        seq_print(retShortChar, 2);
+        seq_print(retLongChar);
+        seq_print(retShortChar);
 
         printf("\nAlignment cost: %d\n", algnCost);
 
@@ -224,19 +224,19 @@ int main() {
         // union:
         algn_union (retShortChar, retLongChar, algnChar);
         printf("  Unioned sequence\n  ");
-        seq_print(algnChar, 0);
+        seq_print(algnChar);
 
         // ungapped:
         resetCharValues(algnChar);
         algn_get_median_2d_no_gaps (retShortChar, retLongChar, costMtx2d, algnChar);
         printf("\n  Median without gaps\n  ");
-        seq_print(algnChar, 0);
+        seq_print(algnChar);
 
         // gapped:
         resetCharValues(algnChar);
         algn_get_median_2d_with_gaps (retShortChar, retLongChar, costMtx2d, algnChar);
         printf("\n  Median with gaps\n  ");
-        seq_print(algnChar, 0);
+        seq_print(algnChar);
 
         free (algnChar);
     }
@@ -312,8 +312,8 @@ int main() {
         // seq_p longerCharuence = lenLongChar > lenShortChar ? longChar : shortChar;
         // seq_p shorterCharuence = lenLongChar > lenShortChar ? shortChar : longChar;
 
-        seq_print(longChar,  1);
-        seq_print(shortChar, 2);
+        seq_print(longChar);
+        seq_print(shortChar);
 
         cm_precalc_4algn(costMtx2d_affine, algn_mtxs2dAffine, longChar);
 
@@ -389,11 +389,11 @@ int main() {
 
         printf("\nAligned affine 2d sequences\n");
         if (lenLongChar > lenShortChar) {
-          seq_print(retShortChar, 1);
-          seq_print(retLongChar, 2);
+          seq_print(retShortChar);
+          seq_print(retLongChar);
         } else {
-          seq_print(retLongChar, 1);
-          seq_print(retShortChar, 2);
+          seq_print(retLongChar);
+          seq_print(retShortChar);
         }
 
 
@@ -401,11 +401,11 @@ int main() {
 
         // ungapped:
         printf("\n  Median without gaps\n  ");
-        seq_print(ungappedMedChar, 0);
+        seq_print(ungappedMedChar);
 
         // gapped:
         printf("\n  Median with gaps\n  ");
-        seq_print(gappedMedChar, 0);
+        seq_print(gappedMedChar);
 
         freeChar(gappedMedChar);
         freeChar(ungappedMedChar);
@@ -428,9 +428,9 @@ int main() {
         //algn_print_dynmtrx_2d_2d( longChar, shortChar, algn_mtxs3d );
 
         printf("Original 3d sequences:\n");
-        seq_print(longChar,   1);
-        seq_print(middleChar, 2);
-        seq_print(shortChar,  3);
+        seq_print(longChar);
+        seq_print(middleChar);
+        seq_print(shortChar);
         printf("\n");
 
         // short input, middle input, long input
@@ -447,9 +447,9 @@ int main() {
         //algn_backtrace_3d (longChar, middleChar, shortChar, retLongChar, retMiddleChar, retShortChar, costMtx3d, algn_mtxs3d);
 
         printf("\n\nAligned 3d sequences:\n");
-        seq_print(retLongChar,   1);
-        seq_print(retMiddleChar, 2);
-        seq_print(retShortChar,  3);
+        seq_print(retLongChar);
+        seq_print(retMiddleChar);
+        seq_print(retShortChar);
 
         printf("\nAlignment cost: %d\n", algnCost);
 
