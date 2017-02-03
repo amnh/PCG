@@ -53,7 +53,33 @@ import Debug.Trace
 #include "nwMatrices.h"
 -- #include "seqAlign.h"
 
+
 type DenseTransitionCostMatrix = Ptr CostMatrix2d 
+
+
+data UnionContext  = ComputeUnions  | DoNotComputeUnions
+
+
+instance Enum UnionContext where
+
+    fromEnum      ComputeUnions = 1
+    fromEnum DoNotComputeUnions = 0
+
+    toEnum 0 = DoNotComputeUnions
+    toEnum _ =      ComputeUnions
+
+
+data MedianContext = ComputeMedians | DoNotComputeMedians
+
+
+instance Enum MedianContext where
+
+    fromEnum      ComputeMedians = 1
+    fromEnum DoNotComputeMedians = 0
+
+    toEnum 0 = DoNotComputeMedians
+    toEnum _ =      ComputeMedians
+
 
 generateDenseTransitionCostMatrix :: Word -> (Word -> Word -> Word) -> DenseTransitionCostMatrix
 generateDenseTransitionCostMatrix alphabetSize costFunction = getCostMatrix2dNonAffine alphabetSize costFunction
@@ -64,7 +90,7 @@ foreignPairwiseDO :: Exportable s
                   -> s                         -- ^ Second dynamic character
                   -> DenseTransitionCostMatrix -- ^ Structure defining the transition costs between character states
                   -> (s, Double, s, s, s)      -- ^ The /ungapped/ character derived from the the input characters' N-W-esque matrix traceback
-foreignPairwiseDO lhs rhs costMatrix = algn2d lhs rhs costMatrix 0 1
+foreignPairwiseDO lhs rhs costMatrix = algn2d lhs rhs costMatrix DoNotComputeUnions ComputeMedians
 
 
 
@@ -345,8 +371,8 @@ algn2d :: Exportable s
        => s                         -- ^ First  dynamic character
        -> s                         -- ^ Second dynamic character
        -> DenseTransitionCostMatrix -- ^ Structure defining the transition costs between character states
-       -> CInt                      -- ^ Actually used as a bool in C code, 1 is do union, 0 is don't. If both this and follwing are 0, do cost only
-       -> CInt                      -- ^ Actually used as a bool in C code, 1 is do medians (gapped & ungapped), 0 is don't
+       -> UnionContext
+       -> MedianContext
        -> (s, Double, s, s, s)      -- ^ The /ungapped/ character derived from the the input characters' N-W-esque matrix traceback
                                     --
                                     --   The cost of the alignment
@@ -363,13 +389,14 @@ algn2d char1 char2 costStruct computeUnion computeMedians =
     where
         f exportedChar1 exportedChar2 = unsafePerformIO $
             do
-                char1ToSend <- allocInitALignIO (map (\x -> fromIntegral x :: CInt) (exportedCharacterElements exportedChar1)) exportedChar1Len
-                char2ToSend <- allocInitALignIO (map (\x -> fromIntegral x :: CInt) (exportedCharacterElements exportedChar2)) exportedChar2Len
-                retGapped   <- allocInitALignIO [] 0
-                retUngapped <- allocInitALignIO [] 0
-                -- retUnion    <- allocInitALignIO [] 0
+                !_ <- trace "Begining Alignment Work!" $ pure ()
+                char1ToSend <- allocInitALignIO exportedChar1Len . fmap toCInt $ exportedCharacterElements exportedChar1
+                char2ToSend <- allocInitALignIO exportedChar2Len . fmap toCInt $ exportedCharacterElements exportedChar2
+                retGapped   <- allocInitALignIO 0 []
+                retUngapped <- allocInitALignIO 0 []
+                -- retUnion    <- allocInitALignIO 0 []
 
-                let !cost = align2dFn_c char1ToSend char2ToSend retGapped retUngapped costStruct computeUnion computeMedians
+                let !cost = align2dFn_c char1ToSend char2ToSend retGapped retUngapped costStruct (toCInt computeUnion) (toCInt computeMedians)
 
                 AlignIO ungappedCharArr ungappedLen _ <- peek retUngapped
                 AlignIO gappedCharArr   gappedLen   _ <- peek retGapped
@@ -383,6 +410,13 @@ algn2d char1 char2 costStruct computeUnion computeMedians =
                 char2Aligned <- peekArray (fromEnum char2Len)    retChar2CharArr
                 -- unionChar    <- peekArray (fromEnum unionLen)    unionCharArr
 
+                !_ <- trace ("Ungapped Char: " <> show ungappedChar) $ pure ()
+                !_ <- trace ("  Gapped Char: " <> show   gappedChar) $ pure ()
+                !_ <- trace (" Aligned LHS : " <> show char1Aligned) $ pure ()
+                !_ <- trace (" Aligned RHS : " <> show char2Aligned) $ pure ()
+
+                !_ <- error "DONE"
+
                 let resultingUngapped     = coerceToOutputType ungappedLen ungappedChar
                 let resultingGapped       = coerceToOutputType gappedLen gappedChar
                 let resultingAlignedChar1 = coerceToOutputType char1Len char1Aligned
@@ -390,14 +424,17 @@ algn2d char1 char2 costStruct computeUnion computeMedians =
 
                 pure (resultingUngapped, fromIntegral cost, resultingGapped, resultingAlignedChar1, resultingAlignedChar2)
             where
+                toCInt :: (Enum a, Enum b) => a -> b
+                toCInt = toEnum . fromEnum
+              
                 elemWidth        = exportedChar1 ^. exportedElementWidth
 
                 exportedChar1Len = toEnum $ exportedChar1 ^. exportedElementCount
                 exportedChar2Len = toEnum $ exportedChar2 ^. exportedElementCount
                 maxAllocLen      = exportedChar1Len + exportedChar2Len
 
-                allocInitALignIO :: [CInt] -> CSize -> IO (Ptr AlignIO)
-                allocInitALignIO elemArr elemCount =
+                allocInitALignIO :: CSize -> [CInt] -> IO (Ptr AlignIO)
+                allocInitALignIO elemCount elemArr  =
                     do
                         output <- malloc :: IO (Ptr AlignIO)
                         outArray <- newArray paddedArr
@@ -420,7 +457,7 @@ align2dCostOnly :: Exportable s
                 -> s
                 -> Ptr CostMatrix2d
                 -> (s, Double, s, s, s)
-align2dCostOnly c1 c2 cm = trace "cost only" $ algn2d c1 c2 cm (0 :: CInt) (0 :: CInt)
+align2dCostOnly c1 c2 cm = trace "cost only" $ algn2d c1 c2 cm DoNotComputeUnions DoNotComputeMedians
 
 
 -- | A C binding that aligns two DO characters and returns the cost and the ungapped median sequence
@@ -429,7 +466,7 @@ align2dGetUngapped :: Exportable s
                    -> s
                    -> Ptr CostMatrix2d
                    -> (s, Double, s, s, s)
-align2dGetUngapped c1 c2 cm = algn2d c1 c2 cm (0 :: CInt) (1 :: CInt)
+align2dGetUngapped c1 c2 cm = algn2d c1 c2 cm DoNotComputeUnions ComputeMedians
 
 
 -- | A C binding that aligns two DO characters and returns the cost and the union median
@@ -438,7 +475,7 @@ align2dGetUnion :: Exportable s
                 -> s
                 -> Ptr CostMatrix2d
                 -> (s, Double, s, s, s)
-align2dGetUnion c1 c2 cm = algn2d c1 c2 cm (1 :: CInt) (0 :: CInt)
+align2dGetUnion c1 c2 cm = algn2d c1 c2 cm ComputeUnions DoNotComputeMedians
 
 
 -- | A C binding that aligns two DO characters and returns the cost and the gapped and ungapped median sequences
@@ -447,7 +484,7 @@ align2dGappedUngapped :: Exportable s
                       -> s
                       -> Ptr CostMatrix2d
                       -> (s, Double, s, s, s)
-align2dGappedUngapped c1 c2 cm = algn2d c1 c2 cm (1 :: CInt) (1 :: CInt)
+align2dGappedUngapped c1 c2 cm = algn2d c1 c2 cm ComputeUnions ComputeMedians
 
 
 {- Example code with peekArray
