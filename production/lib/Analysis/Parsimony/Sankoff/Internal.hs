@@ -27,6 +27,7 @@ import Bio.Character.Decoration.Metric
 import Bio.Character.Encodable
 import Control.Lens
 import Data.Bits
+import Data.ExtendedNatural
 import Data.Key
 import Data.List.NonEmpty (NonEmpty( (:|) ))
 import Data.Word
@@ -34,34 +35,6 @@ import Prelude hiding (zip)
 
 import Debug.Trace
 
--- | A natural number extended to include infinity. Where infinity == maxBound
-newtype ExtendedNatural = Cost (Maybe Word)
-
-instance Num ExtendedNatural where
-  (Cost lhs) + (Cost rhs) = liftA2 (+)
- -- need Eq, Ord, Enum, Integral also
-
-instance Num ExtendedNatural where
-  (Cost lhs) == (Cost rhs) = liftA2 (==)
-
-instance Ord ExtendedNatural where
-  (Cost lhs) < (Cost rhs) = liftA2 (<)
-
-instance Bounded Word where
-    minBound = minBound :: Word
-    maxBound = maxBound :: Word
-
-instance ToEnum ExtendedNatural where
-    fromEnum x
-        | x == maxBound = Nothing
-        | otherwise     = Cost $ Just x
-    toEnum (Cost x)
-        | Just x    = x
-        | otherwise = maxBound
-
-instance Integral ExtendedNatural where
-    toInteger x = x :: Integer
-    quotRem   x
 
 -- | Used on the post-order (i.e. first) traversal.
 sankoffPostOrder :: DiscreteCharacterDecoration d c
