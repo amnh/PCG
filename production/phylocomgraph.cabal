@@ -285,6 +285,7 @@ library
                        Control.Evaluation.Trans
                        Data.Alphabet.Internal
                        Data.BitMatrix.Internal
+                       Data.ExtendedNatural
                        Data.TCM.Internal
                        File.Format.TNT.Command.CCode
                        File.Format.TNT.Command.CNames

@@ -32,6 +32,7 @@ import Bio.Character.Exportable.Class
 import Control.DeepSeq
 import Control.Lens
 import Data.Semigroup
+import Debug.Trace
 import Foreign
 --import Foreign.Ptr
 --import Foreign.C.String
@@ -323,16 +324,16 @@ performMatrixAllocation is2D gapOpen alphabetSize costFn = unsafePerformIO . wit
 -- TCM is row-major, with each row being the left character element.
 -- It is therefore indexed not by powers of two, but by cardinal integer.
 -- TODO: For now we only allocate 2d matrices. 3d will come later.
-foreign import ccall unsafe "c_code_alloc_setup.h align2d"
+foreign import ccall unsafe "c_alignment_interface.h align2d"
     align2dFn_c :: Ptr AlignIO          -- ^ character1, input & output
                 -> Ptr AlignIO          -- ^ character2, input & output
                 -> Ptr AlignIO          -- ^ gapped median output
                 -> Ptr AlignIO          -- ^ ungapped median output
                 -- -> Ptr AlignIO          -- ^ unioned median output
                 -> Ptr CostMatrix2d
-                -> Int                  -- ^ compute union
-                -> Int                  -- ^ compute gapped & ungapped medians
-                -> Int                  -- ^ cost
+                -> CInt                  -- ^ compute union
+                -> CInt                  -- ^ compute gapped & ungapped medians
+                -> CInt                  -- ^ cost
 
 
 -- | Performs a naive direct optimization
@@ -344,17 +345,17 @@ algn2d :: Exportable s
        => s                         -- ^ First  dynamic character
        -> s                         -- ^ Second dynamic character
        -> DenseTransitionCostMatrix -- ^ Structure defining the transition costs between character states
-       -> Int                       -- ^ Actually used as a bool in C code, 1 is do union, 0 is don't. If both this and follwing are 0, do cost only
-       -> Int                       -- ^ Actually used as a bool in C code, 1 is do medians (gapped & ungapped), 0 is don't
+       -> CInt                      -- ^ Actually used as a bool in C code, 1 is do union, 0 is don't. If both this and follwing are 0, do cost only
+       -> CInt                      -- ^ Actually used as a bool in C code, 1 is do medians (gapped & ungapped), 0 is don't
        -> (s, Double, s, s, s)      -- ^ The /ungapped/ character derived from the the input characters' N-W-esque matrix traceback
-                                         --
-                                         --   The cost of the alignment
-                                         --
-                                         --   The /gapped/ character derived from the the input characters' N-W-esque matrix traceback
-                                         --
-                                         --   The gapped alignment of the /first/ input character when aligned with the second character
-                                         --
-                                         --   The gapped alignment of the /second/ input character when aligned with the first character
+                                    --
+                                    --   The cost of the alignment
+                                    --
+                                    --   The /gapped/ character derived from the the input characters' N-W-esque matrix traceback
+                                    --
+                                    --   The gapped alignment of the /first/ input character when aligned with the second character
+                                    --
+                                    --   The gapped alignment of the /second/ input character when aligned with the first character
 algn2d char1 char2 costStruct computeUnion computeMedians =
     case (toExportableElements char1, toExportableElements char2) of
         (Just x, Just y) -> f x y
@@ -419,7 +420,7 @@ align2dCostOnly :: Exportable s
                 -> s
                 -> Ptr CostMatrix2d
                 -> (s, Double, s, s, s)
-align2dCostOnly c1 c2 cm = algn2d c1 c2 cm 0 0
+align2dCostOnly c1 c2 cm = trace "cost only" $ algn2d c1 c2 cm (0 :: CInt) (0 :: CInt)
 
 
 -- | A C binding that aligns two DO characters and returns the cost and the ungapped median sequence
@@ -428,7 +429,7 @@ align2dGetUngapped :: Exportable s
                    -> s
                    -> Ptr CostMatrix2d
                    -> (s, Double, s, s, s)
-align2dGetUngapped c1 c2 cm = algn2d c1 c2 cm 0 1
+align2dGetUngapped c1 c2 cm = algn2d c1 c2 cm (0 :: CInt) (1 :: CInt)
 
 
 -- | A C binding that aligns two DO characters and returns the cost and the union median
@@ -437,7 +438,7 @@ align2dGetUnion :: Exportable s
                 -> s
                 -> Ptr CostMatrix2d
                 -> (s, Double, s, s, s)
-align2dGetUnion c1 c2 cm = algn2d c1 c2 cm 1 0
+align2dGetUnion c1 c2 cm = algn2d c1 c2 cm (1 :: CInt) (0 :: CInt)
 
 
 -- | A C binding that aligns two DO characters and returns the cost and the gapped and ungapped median sequences
@@ -446,7 +447,7 @@ align2dGappedUngapped :: Exportable s
                       -> s
                       -> Ptr CostMatrix2d
                       -> (s, Double, s, s, s)
-align2dGappedUngapped c1 c2 cm = algn2d c1 c2 cm 1 1
+align2dGappedUngapped c1 c2 cm = algn2d c1 c2 cm (1 :: CInt) (1 :: CInt)
 
 
 {- Example code with peekArray

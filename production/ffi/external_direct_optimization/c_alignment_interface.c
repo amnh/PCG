@@ -52,25 +52,32 @@ void allocAlignIO(alignIO_p toAlloc, size_t capacity) {
 }
 
 /** takes in an alignIO struct and a seq struct. Copies values of alignIO to seq.
- *  Points seq->seq_begin, seq->end to respective points in alighIO->character
+ *  Points seq->seq_begin, seq->end to respective points in alighIO->character.
+ *  Adds a gap character at the front of the array, to deal with old OCaml-forced interface.
  */
-void alignIOtoChar(alignIO_p input, seq_p retChar) {
+void alignIOtoChar(alignIO_p input, seq_p retChar, size_t alphabetSize) {
     // assign character into character struct
     retChar->len        = input->length;
     retChar->cap        = input->capacity;
     retChar->array_head = input->character;
     retChar->seq_begin  = retChar->array_head + retChar->cap - retChar->len;
     retChar->end        = retChar->seq_begin + retChar->len;
+    // now add gap to beginning
+    retChar->seq_begin--;
+    *retChar->seq_begin = alphabetSize;
 }
 
-/** Takes in an alignIO and a seq. *Copies* values of character from end of seq to beginning of alignIO->character. */
+/** Takes in an alignIO and a seq. *Copies* values of character from end of seq to beginning of alignIO->character.
+ *  Also eliminates extra gap needed by legacy code.
+ */
 void charToAlignIO(seq_p input, alignIO_p output) {
-    output->length   = input->len;
+    input->seq_begin++;                   // to start after unnecessary gap char at begining
+    output->length   = input->len - 1;    //
     output->capacity = input->cap;        // this shouldn't actually change
-    for(size_t i = 0; i < input->len; i++) {
+    for(size_t i = 0; i < output->length; i++) {
         output->character[i] = input->seq_begin[i];
     }
-    for(size_t i = input->len; i < input->cap; i++) {
+    for(size_t i = output->length; i < input->cap; i++) {
         output->character[i] = 0;
     }
 }
@@ -107,7 +114,8 @@ int align2d(alignIO_p inputChar1_aio,
         alignIO_print(inputChar2_aio);
     }
 
-
+    printf("we haven't errored out yet.\n");
+    fflush(stdout);
     const size_t CHAR_CAPACITY = inputChar1_aio->length + inputChar2_aio->length;
 
     alignIO_p longIO,
@@ -126,19 +134,21 @@ int align2d(alignIO_p inputChar1_aio,
 
     int swapped = 0;
 
+    size_t alphabetSize = costMtx2d->alphSize;
+
     if (inputChar1_aio->length > inputChar2_aio->length) {
-        alignIOtoChar(inputChar1_aio, longChar);
+        alignIOtoChar(inputChar1_aio, longChar, alphabetSize);
         longIO = inputChar1_aio;
 
-        alignIOtoChar(inputChar2_aio, shortChar);
+        alignIOtoChar(inputChar2_aio, shortChar, alphabetSize);
         shortIO = inputChar2_aio;
 
         swapped = 1;
     } else {
-        alignIOtoChar(inputChar2_aio, longChar);
+        alignIOtoChar(inputChar2_aio, longChar, alphabetSize);
         longIO = inputChar2_aio;
 
-        alignIOtoChar(inputChar1_aio, shortChar);
+        alignIOtoChar(inputChar1_aio, shortChar, alphabetSize);
         shortIO = inputChar1_aio;
     }
 
@@ -257,19 +267,21 @@ int align2dAffine(alignIO_p inputChar1_aio,
 
     int swapped = 0;
 
+    size_t alphabetSize = costMtx2d_affine->alphSize;
+
     if (inputChar1_aio->length > inputChar2_aio->length) {
-        alignIOtoChar(inputChar1_aio, longChar);
+        alignIOtoChar(inputChar1_aio, longChar, alphabetSize);
         longIO = inputChar1_aio;
 
-        alignIOtoChar(inputChar2_aio, shortChar);
+        alignIOtoChar(inputChar2_aio, shortChar, alphabetSize);
         shortIO = inputChar2_aio;
 
         swapped = 1;
     } else {
-        alignIOtoChar(inputChar2_aio, longChar);
+        alignIOtoChar(inputChar2_aio, longChar, alphabetSize);
         longIO = inputChar2_aio;
 
-        alignIOtoChar(inputChar1_aio, shortChar);
+        alignIOtoChar(inputChar1_aio, shortChar, alphabetSize);
         shortIO = inputChar1_aio;
     }
 
@@ -551,83 +563,84 @@ int align3d(alignIO_p inputChar1_aio,
     initializeChar(retShortChar,  CHAR_CAPACITY);
     initializeChar(medianChar,    CHAR_CAPACITY);
 
+    size_t alphabetSize = costmtx3d->alphSize;
 
     if (inputChar1_aio->length > inputChar2_aio->length) {
         if (inputChar2_aio->length > input3->length) {
             //s1 > s2 > s3
-            alignIOtoChar(inputChar1_aio, longChar);
+            alignIOtoChar(inputChar1_aio, longChar, alphabetSize);
             longIO = inputChar1_aio;
 
-            alignIOtoChar(inputChar2_aio, middleChar);
+            alignIOtoChar(inputChar2_aio, middleChar, alphabetSize);
             middleIO = inputChar2_aio;
 
-            alignIOtoChar(input3, shortChar);
+            alignIOtoChar(input3, shortChar, alphabetSize);
             shortIO = input3;
         } else if (input3->length > inputChar1_aio->length) {
             //s3 > s1 > s2
-            alignIOtoChar(input3, longChar);
+            alignIOtoChar(input3, longChar, alphabetSize);
             longIO = input3;
 
-            alignIOtoChar(inputChar1_aio, middleChar);
+            alignIOtoChar(inputChar1_aio, middleChar, alphabetSize);
             middleIO = inputChar1_aio;
 
-            alignIOtoChar(inputChar2_aio, shortChar);
+            alignIOtoChar(inputChar2_aio, shortChar, alphabetSize);
             shortIO = inputChar2_aio;
         } else {
             // s1 > s3 > s2
-            alignIOtoChar(inputChar1_aio, longChar);
+            alignIOtoChar(inputChar1_aio, longChar, alphabetSize);
             longIO = inputChar1_aio;
 
-            alignIOtoChar(input3, middleChar);
+            alignIOtoChar(input3, middleChar, alphabetSize);
             middleIO = input3;
 
-            alignIOtoChar(inputChar2_aio, shortChar);
+            alignIOtoChar(inputChar2_aio, shortChar, alphabetSize);
             shortIO = inputChar2_aio;
 
         }
     } else { // s2 > s1
         if (inputChar1_aio->length > input3->length) {
             // s2 > s1 > s3
-            alignIOtoChar(inputChar2_aio, longChar);
+            alignIOtoChar(inputChar2_aio, longChar, alphabetSize);
             longIO = inputChar2_aio;
 
-            alignIOtoChar(inputChar1_aio, middleChar);
+            alignIOtoChar(inputChar1_aio, middleChar, alphabetSize);
             middleIO = inputChar1_aio;
 
-            alignIOtoChar(input3, shortChar);
+            alignIOtoChar(input3, shortChar, alphabetSize);
             shortIO = input3;
 
         } else if (input3->length > inputChar2_aio->length) {
             // s3 > s2 > s1
-            alignIOtoChar(input3, longChar);
+            alignIOtoChar(input3, longChar, alphabetSize);
             longIO = input3;
 
-            alignIOtoChar(inputChar2_aio, middleChar);
+            alignIOtoChar(inputChar2_aio, middleChar, alphabetSize);
             middleIO = inputChar2_aio;
 
-            alignIOtoChar(inputChar1_aio, shortChar);
+            alignIOtoChar(inputChar1_aio, shortChar, alphabetSize);
             shortIO = inputChar1_aio;
         } else {
             // s2 > s3 > s1
-            alignIOtoChar(inputChar2_aio, longChar);
+            alignIOtoChar(inputChar2_aio, longChar, alphabetSize);
             longIO = inputChar2_aio;
 
-            alignIOtoChar(input3, middleChar);
+            alignIOtoChar(input3, middleChar, alphabetSize);
             middleIO = input3;
 
-            alignIOtoChar(inputChar1_aio, shortChar);
+            alignIOtoChar(inputChar1_aio, shortChar, alphabetSize);
             shortIO = inputChar1_aio;
         }
     }
 
     //initializeChar(longChar, CHAR_CAPACITY);
-    alignIOtoChar(longIO, longChar);
+    alignIOtoChar(longIO, longChar, alphabetSize);
 
     //initializeChar(longChar, CHAR_CAPACITY);
-    alignIOtoChar(middleIO, middleChar);
+    alignIOtoChar(middleIO, middleChar, alphabetSize);
 
     //initializeChar(shortChar, CHAR_CAPACITY);
-    alignIOtoChar(shortIO, shortChar);
+    alignIOtoChar(shortIO, shortChar, alphabetSize);
 
     int *isDifferent = 0;
 
