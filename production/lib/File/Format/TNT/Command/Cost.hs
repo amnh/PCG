@@ -11,7 +11,9 @@
 -- Parser for the COST command specifying custom TCM constructions for certain
 -- chasracter indicies. 
 ----------------------------------------------------------------------------- 
+
 {-# LANGUAGE FlexibleContexts, TypeFamilies #-}
+
 module File.Format.TNT.Command.Cost where
 
 import Data.Functor             (($>))
@@ -24,6 +26,7 @@ import Text.Megaparsec
 import Text.Megaparsec.Custom   (double, nonEmpty)
 import Text.Megaparsec.Prim     (MonadParsec)
 
+
 -- | The attributes necessary for constructing a custom TCM.
 --   Many 'TransitionCost' are expected to be folded together to form a TCm.
 data TransitionCost
@@ -34,6 +37,7 @@ data TransitionCost
    , costValue :: Double
    } deriving (Eq,Show)
 
+
 -- | Parses a Cost command that consists of:
 --
 --  * A single specification of the character state change
@@ -42,9 +46,11 @@ data TransitionCost
 costCommand :: (MonadParsec e s m, Token s ~ Char) => m Cost
 costCommand = costHeader *> costBody <* symbol (char ';')
 
+
 -- | Consumes the superflous heading for a CCODE command.
 costHeader :: (MonadParsec e s m, Token s ~ Char) => m ()
-costHeader = symbol $ keyword "cost" 2
+costHeader = symbol $ keyword "costs" 2
+
 
 -- | The nonempty body of a COST command which represents the indicies to apply
 --   a custom TCM to.
@@ -55,14 +61,17 @@ costBody = do
       transitions <- nonEmpty costDefinition
       pure . Cost idx $ condenseToMatrix transitions
 
+
 -- | Fold over a nonmepty structure of 'Transition' costs to create a custom TCM.
 condenseToMatrix :: (Foldable f, Functor f) => f TransitionCost -> Matrix Double
 condenseToMatrix costs = matrix dimensions dimensions value
   where
     dimensions   = succ . fromJust $ maximumState `indexOf` discreteStateValues
+
     maximumState = maximum $ f <$> costs
       where
         f tc = max (maximum $ origins tc) (maximum $ terminals tc)
+
     value (i,j) = fromMaybe 1 $ foldl f Nothing costs
       where
         i' = discreteStateValues ! i
@@ -73,6 +82,7 @@ condenseToMatrix costs = matrix dimensions dimensions value
           where
             inject  = i' `elem` origins x && j' `elem` terminals x
             surject = j' `elem` origins x && i' `elem` terminals x
+
     indexOf :: (Eq a, Foldable f) => a -> f a -> Maybe Int
     indexOf e = snd . foldl f (0, Nothing)
       where
@@ -80,6 +90,7 @@ condenseToMatrix costs = matrix dimensions dimensions value
         f   (i, Nothing) x
           | x == e    = (i  , Just i )
           | otherwise = (i+1, Nothing)
+
 
 -- | Parses a 'TransitionCost' from within the body of a COST command.
 --   Must contain a nonempty list of character state values and a transition
@@ -94,6 +105,7 @@ costDefinition = TransitionCost
   where
     costRelation :: (MonadParsec e s m, Token s ~ Char) => m Bool
     costRelation = (char '>' $> False) <|> (char '/' $> True )
+
     costStates :: (MonadParsec e s m, Token s ~ Char) => m (NonEmpty Char)
     costStates = singleState <|> manyStates
       where
