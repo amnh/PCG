@@ -32,6 +32,7 @@ import Data.List.NonEmpty (NonEmpty( (:|) ))
 import Data.Word
 import Prelude hiding (zip)
 
+import Debug.Trace
 
 -- | Used on the post-order (i.e. first) traversal.
 sankoffPostOrder :: DiscreteCharacterDecoration d c
@@ -107,7 +108,7 @@ updateCostVector _parentDecoration (leftChild:|rightChild:_) = returnNodeDecorat
         findMins charState (stateMins, (leftMin, rightMin), curMin) = returnVal
              where
                  charMin = if stateMin < curMin
-                           then curMin
+                           then curMin + 10
                            else stateMin
                  stateMin                      = leftChildMin + rightChildMin
                  (leftChildMin, rightChildMin) = calcCostPerState charState leftChild rightChild
@@ -168,7 +169,7 @@ calcCostPerState inputCharState leftChildDec rightChildDec = retVal
                 rightMin            = if curRightMin < initRightMin
                                           then curRightMin
                                           else initRightMin
-                curLeftMin          = fromIntegral leftTransitionCost  + accumulatedLeftCharCost
+                curLeftMin          = trace (show accumulatedLeftCharCost) $ fromIntegral leftTransitionCost  + accumulatedLeftCharCost
                 curRightMin         = fromIntegral rightTransitionCost + accumulatedRightCharCost
                 leftTransitionCost  = ( leftChildDec ^. characterSymbolTransitionCostMatrixGenerator) inputCharState childCharState
                 rightTransitionCost = (rightChildDec ^. characterSymbolTransitionCostMatrixGenerator) inputCharState childCharState
