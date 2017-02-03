@@ -32,6 +32,7 @@ import Bio.Character.Exportable.Class
 import Control.DeepSeq
 import Control.Lens
 import Data.Semigroup
+import Debug.Trace
 import Foreign
 --import Foreign.Ptr
 --import Foreign.C.String
@@ -52,7 +53,7 @@ import Debug.Trace
 #include "nwMatrices.h"
 -- #include "seqAlign.h"
 
-type DenseTransitionCostMatrix = Ptr CostMatrix2d 
+type DenseTransitionCostMatrix = Ptr CostMatrix2d
 
 generateDenseTransitionCostMatrix :: Word -> (Word -> Word -> Word) -> DenseTransitionCostMatrix
 generateDenseTransitionCostMatrix alphabetSize costFunction = getCostMatrix2dNonAffine alphabetSize costFunction
@@ -184,7 +185,7 @@ instance NFData CostMatrix2d
 
 instance Show CostMatrix2d where
 
-    show = unlines . 
+    show = unlines .
            ([ show . alphSize
             , show . lcm
             , show . gapChar
@@ -234,7 +235,7 @@ instance Storable CostMatrix2d where
                            , prependCost   = prependVal
                            , tailCost      = tailVal
                            }
-      
+
     poke ptr (CostMatrix2d
                   alphSizeVal
                   lcmVal
@@ -298,7 +299,7 @@ getCostMatrix2dAffine :: CInt -- gap open cost
                       -> Word
                       -> (Word -> Word -> Word)
                       -> DenseTransitionCostMatrix
-getCostMatrix2dAffine = performMatrixAllocation 1 
+getCostMatrix2dAffine = performMatrixAllocation 1
 
 
 performMatrixAllocation :: CInt -- Is 2d
@@ -323,16 +324,16 @@ performMatrixAllocation is2D gapOpen alphabetSize costFn = unsafePerformIO . wit
 -- TCM is row-major, with each row being the left character element.
 -- It is therefore indexed not by powers of two, but by cardinal integer.
 -- TODO: For now we only allocate 2d matrices. 3d will come later.
-foreign import ccall unsafe "c_code_alloc_setup.h align2d"
+foreign import ccall unsafe "c_alignment_interface.h align2d"
     align2dFn_c :: Ptr AlignIO          -- ^ character1, input & output
                 -> Ptr AlignIO          -- ^ character2, input & output
                 -> Ptr AlignIO          -- ^ gapped median output
                 -> Ptr AlignIO          -- ^ ungapped median output
                 -- -> Ptr AlignIO          -- ^ unioned median output
                 -> Ptr CostMatrix2d
-                -> Int                  -- ^ compute union
-                -> Int                  -- ^ compute gapped & ungapped medians
-                -> Int                  -- ^ cost
+                -> CInt                  -- ^ compute union
+                -> CInt                  -- ^ compute gapped & ungapped medians
+                -> CInt                  -- ^ cost
 
 
 -- | Performs a naive direct optimization
@@ -344,8 +345,8 @@ algn2d :: Exportable s
        => s                         -- ^ First  dynamic character
        -> s                         -- ^ Second dynamic character
        -> DenseTransitionCostMatrix -- ^ Structure defining the transition costs between character states
-       -> Int                       -- ^ Actually used as a bool in C code, 1 is do union, 0 is don't. If both this and follwing are 0, do cost only
-       -> Int                       -- ^ Actually used as a bool in C code, 1 is do medians (gapped & ungapped), 0 is don't
+       -> CInt                       -- ^ Actually used as a bool in C code, 1 is do union, 0 is don't. If both this and follwing are 0, do cost only
+       -> CInt                       -- ^ Actually used as a bool in C code, 1 is do medians (gapped & ungapped), 0 is don't
        -> (s, Double, s, s, s)      -- ^ The /ungapped/ character derived from the the input characters' N-W-esque matrix traceback
                                          --
                                          --   The cost of the alignment
@@ -362,8 +363,8 @@ algn2d char1 char2 costStruct computeUnion computeMedians =
     where
         f exportedChar1 exportedChar2 = unsafePerformIO $
             do
-                char1ToSend <- allocInitALignIO (map (\x -> fromIntegral x :: CInt) (exportedCharacterElements exportedChar1)) exportedChar1Len
-                char2ToSend <- allocInitALignIO (map (\x -> fromIntegral x :: CInt) (exportedCharacterElements exportedChar2)) exportedChar2Len
+                char1ToSend <- allocInitALignIO (map (toEnum . fromEnum) (exportedCharacterElements exportedChar1)) exportedChar1Len
+                char2ToSend <- allocInitALignIO (map (toEnum . fromEnum) (exportedCharacterElements exportedChar2)) exportedChar2Len
                 retGapped   <- allocInitALignIO [] 0
                 retUngapped <- allocInitALignIO [] 0
                 -- retUnion    <- allocInitALignIO [] 0
@@ -419,7 +420,7 @@ align2dCostOnly :: Exportable s
                 -> s
                 -> Ptr CostMatrix2d
                 -> (s, Double, s, s, s)
-align2dCostOnly c1 c2 cm = algn2d c1 c2 cm 0 0
+align2dCostOnly c1 c2 cm = trace "cost only" $ algn2d c1 c2 cm 0 0
 
 
 -- | A C binding that aligns two DO characters and returns the cost and the ungapped median sequence

@@ -35,7 +35,7 @@ void allocAlignIO(alignIO_p toAlloc, size_t capacity);
 /** Given an allocated seq struct, retChar, assign vals into correct positions
  *  in internal array (i.e. at end of array).
  */
-void alignIOtoChar(alignIO_p input, seq_p retChar);
+void alignIOtoChar(alignIO_p input, seq_p retChar, size_t alphabetSize);
 
 /** Do a 2d alignment. Depending on the values of last two inputs,
  *  | (0,0) = return only a cost

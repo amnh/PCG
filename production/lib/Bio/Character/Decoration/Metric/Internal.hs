@@ -24,6 +24,7 @@ import Bio.Metadata.CharacterName
 import Bio.Metadata.DiscreteWithTCM
 import Control.Lens
 import Data.Alphabet
+import Data.ExtendedNatural
 import Data.TCM
 
 
@@ -91,7 +92,7 @@ instance HasCharacterWeight (MetricDecorationInitial c) Double where
 -- | (✔)
 instance GeneralCharacterMetadata (MetricDecorationInitial c) where
 
-  
+
 -- | (✔)
 instance DiscreteCharacterMetadata (MetricDecorationInitial c) where
 

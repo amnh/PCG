@@ -94,9 +94,9 @@ library
 
   extra-libraries: stdc++
 
---  cc-options: --std=c11
+  cc-options: --std=c11
 
-  cc-options: --std=c++11
+--  cc-options: --std=c++11
 
   -- We must provide the full relative path to every C file that the project depends on.
   c-sources:
