@@ -74,7 +74,7 @@ updatePostOrder _parentDecoration (x:|[])                     = x               
 updatePostOrder _parentDecoration (leftChild:|(rightChild:_)) = returnNodeDecoration  -- Not a leaf.
     where
         (newMin, newMax)              = leftInterval `intersect` rightInterval
-        (leftInterval, rightInterval) = join bimap (^. preliminaryInterval) (leftChild, rightChild)
+        (leftInterval, rightInterval) = (leftChild ^. preliminaryInterval, rightChild ^. preliminaryInterval)
         newInterval                   = (newMin, newMax)
         totalCost                     = thisNodeCost + (leftChild ^. characterCost) + (rightChild ^. characterCost)
         thisNodeCost                  = newMax - newMin
