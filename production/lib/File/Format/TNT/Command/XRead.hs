@@ -165,13 +165,9 @@ continuousSequence = many (missingValue <|> presentValue)
     presentValue = Just       <$> double   <* whitespaceInline
     missingValue = Nothing    <$  char '?' <* whitespaceInline
 
--- | A sequence consisting of characters states which are a prefix of the list:
---   '"?-" <> [\'0\'..\'9\'] <> [\'a\'..\'z\'] <> [\'A\'..\'Z\']'. Ambiguity
---   groups are specified by braces enclosing two or more state values. Results
---   are bitpacked into a 64 bit structure with the ordering specified by
---   'TntDiscreteCharacter'.
-discreteSequence :: (MonadParsec e s m, Token s ~ Char) => m [TntDiscreteCharacter]
-discreteSequence = many discreteCharacter
+
+coreDiscreteSequenceThatGetsReused :: (MonadParsec e s m, Token s ~ Char) => m [TntDiscreteCharacter]
+coreDiscreteSequenceThatGetsReused = many discreteCharacter
   where
     discreteCharacter         = (ambiguityCharacter <|> singletonCharacter) <* whitespaceInline
     singletonCharacter        = bitPack . pure <$> stateToken
@@ -190,13 +186,36 @@ discreteSequence = many discreteCharacter
         hasMissing = '?' `elem` xs && not (isSingleton xs)
         hasGap     = '-' `elem` xs && not (isSingleton xs)
 
+
+-- | A sequence consisting of characters states which are a prefix of the list:
+--   '"?-" <> [\'0\'..\'9\'] <> [\'a\'..\'z\'] <> [\'A\'..\'Z\']'. Ambiguity
+--   groups are specified by braces enclosing two or more state values. Results
+--   are bitpacked into a 64 bit structure with the ordering specified by
+--   'TntDiscreteCharacter'.
+--
+-- Remeber that you can never have the character literal @'-'@ mean gap. It means
+-- missing. Why not use @'?'@ and just say what you mean? We'll never know.
+-- So we substitute gaps for missing in discrete charcters.
+discreteSequence :: (MonadParsec e s m, Token s ~ Char) => m [TntDiscreteCharacter]
+discreteSequence = substituteGapForMissingBecauseOfReasonsIllNeverUnderstand coreDiscreteSequenceThatGetsReused
+  where
+    gapOnlyChar = deserializeStateDiscrete ! '-'
+    missingChar = deserializeStateDiscrete ! '?'
+    substituteGapForMissingBecauseOfReasonsIllNeverUnderstand = fmap (fmap f)
+      where
+        f c
+          | c .&. gapOnlyChar /= zeroBits = missingChar
+          | otherwise                     = c
+
+
 -- | A sequence segment containing dna character states. This sequence segment
 --   can contain IUPAC codes which will be converted to abiguity groups, or
 --   explicit ambiguity group notation with braces. Ambiguity groups are
 --   bitpacked into 8 bit structures with the bit ordering specified by
 --   'TntDnaCharacter'.
 dnaSequence :: (MonadParsec e s m, Token s ~ Char) => m [TntDnaCharacter]
-dnaSequence = mapM discreteToDna =<< discreteSequence
+dnaSequence = mapM discreteToDna =<< coreDiscreteSequenceThatGetsReused
+
 
 -- | A sequence segment containing protein character states. This sequence
 --   segment can contain IUPAC codes which will be converted to abiguity groups,
@@ -204,7 +223,8 @@ dnaSequence = mapM discreteToDna =<< discreteSequence
 --   bitpacked into 8 bit structures with the bit ordering specified by
 --   'TntProteinCharacter'.
 proteinSequence :: (MonadParsec e s m, Token s ~ Char) => m [TntProteinCharacter]
-proteinSequence = mapM discreteToProtein =<< discreteSequence
+proteinSequence = mapM discreteToProtein =<< coreDiscreteSequenceThatGetsReused
+
 
 -- Sequence normalization & support
 --------------------------------------------------------------------------------

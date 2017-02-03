@@ -31,6 +31,7 @@ import Data.Bifunctor (bimap)
 import Data.Bits
 import Data.List.NonEmpty (NonEmpty( (:|) ))
 --import Data.Word
+import Debug.Trace
 
 
 -- | Used on the post-order (i.e. first) traversal.
@@ -71,7 +72,8 @@ updatePostOrder :: DiscreteCharacterDecoration d c
                 -> AdditiveOptimizationDecoration c
 updatePostOrder _parentDecoration (x:|[])                     = x                     -- Shouldn't be possible,
                                                                                       --    but here for completion.
-updatePostOrder _parentDecoration (leftChild:|(rightChild:_)) = returnNodeDecoration  -- Not a leaf.
+updatePostOrder _parentDecoration (leftChild:|(rightChild:_)) = {- trace (show newMin ++ " " ++ show newMax ++ " " ++ show totalCost) $ -}
+    returnNodeDecoration  -- Not a leaf.
     where
         (newMin, newMax)              = leftInterval `intersect` rightInterval
         (leftInterval, rightInterval) = (leftChild ^. preliminaryInterval, rightChild ^. preliminaryInterval)
@@ -93,7 +95,7 @@ initializeLeaf curDecoration =
     where
         label   = curDecoration ^. discreteCharacter
         lower   = fromIntegral (countTrailingZeros label) :: Word
-        higher  = fromIntegral (alphLen - countLeadingZeros label) :: Word
+        higher  = fromIntegral (alphLen - 1 - countLeadingZeros label) :: Word
         alphLen = symbolCount $ curDecoration ^. discreteCharacter
         zero    = fromIntegral (0 :: Int) :: Word
 
@@ -128,7 +130,7 @@ determineFinalState childDecoration parentDecoration = finalDecoration
 -- | True if there is any overlap between the two intervals
 overlaps :: (Word, Word) -> (Word, Word) -> Bool
 overlaps leftChild rightChild =
-    (rightSmallest < leftLargest) && (rightLargest > leftSmallest)
+    (rightSmallest <= leftLargest) && (rightLargest >= leftSmallest)
     where
         (rightSmallest, rightLargest) = rightChild
         ( leftSmallest,  leftLargest) = leftChild
@@ -151,30 +153,39 @@ subsetted leftChild rightChild
 -- Finds the intersection of two intervals, the intersection being the smallest interval possible. Does
 -- not assume there's an overlap.
 --
--- There are six cases:
+-- There are seven cases:
 -- 1: non-intersection with the left < right
 -- 2: non-intersection with the left > right
 -- 3: intersection but no subsetting, left < right
 -- 4: intersection but no subsetting, left > right
--- 5: subsetted, right inside left
--- 6: subsetted, left inside right
+-- 5: subsetted, one of two is unambiguous
+-- 6: subsetted, right inside left
+-- 7: subsetted, left inside right
 intersect :: (Word, Word) -> (Word, Word) -> (Word, Word)
 intersect leftChild rightChild
     | not $ leftChild `overlaps` rightChild =
-        if leftLargest < rightLargest
+        -- trace ("no overlap " ++ debugString) $
+        if leftLargest < rightSmallest
             then (leftLargest, rightSmallest)
             else (rightLargest, leftSmallest)
     | subsetted leftChild rightChild =
-        if leftLargest > rightLargest
-            then (rightSmallest, rightLargest)
-            else (leftSmallest, leftLargest)
+        -- trace ("subsetted   " ++ debugString) $
+        subsetCases
     | otherwise =
+        -- trace ("intersecion " ++ debugString) $
         if leftLargest < rightLargest
             then (rightSmallest, leftLargest)
-            else (leftLargest, rightSmallest)
+            else (leftSmallest, rightLargest)
     where
         (rightSmallest, rightLargest) = rightChild
         ( leftSmallest,  leftLargest) = leftChild
+        debugString = (show . unlines $ fmap show [leftSmallest, leftLargest, rightSmallest, rightLargest])
+        subsetCases
+            | leftLargest  == leftSmallest  = (leftSmallest,  leftLargest)  -- smallest closed interval is 0
+            | rightLargest == rightSmallest = (rightSmallest, rightLargest) -- smallest closed interval is 0
+            | leftLargest  >= rightLargest  = (rightSmallest, rightLargest) -- smallest closed interval is smallest of two
+            | otherwise                     = (leftSmallest, leftLargest)   -- smallest closed interval is smallest of two
+
 
 
 -- |
