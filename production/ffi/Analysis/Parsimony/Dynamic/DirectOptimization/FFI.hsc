@@ -46,9 +46,9 @@ import System.IO.Unsafe (unsafePerformIO)
 import Debug.Trace
 
 
-#include "costMatrix.h"
-#include "c_code_alloc_setup.h"
 #include "c_alignment_interface.h"
+#include "c_code_alloc_setup.h"
+#include "costMatrix.h"
 #include "nwMatrices.h"
 -- #include "seqAlign.h"
 
@@ -63,7 +63,7 @@ foreignPairwiseDO :: Exportable s
                   -> s                         -- ^ Second dynamic character
                   -> DenseTransitionCostMatrix -- ^ Structure defining the transition costs between character states
                   -> (s, Double, s, s, s)      -- ^ The /ungapped/ character derived from the the input characters' N-W-esque matrix traceback
-foreignPairwiseDO lhs rhs costMatrix = algn2d lhs rhs (trace "About to do work" costMatrix) 0 1
+foreignPairwiseDO lhs rhs costMatrix = algn2d lhs rhs costMatrix 0 1
 
 
 
@@ -275,9 +275,9 @@ instance Storable CostMatrix2d where
 -- TODO: For now we only allocate 2d matrices. 3d will come later.
 foreign import ccall unsafe "c_code_alloc_setup.h setup2dCostMtx"
     setupCostMatrix2dFn_c :: Ptr CInt          -- ^ tcm
-                          -> CInt              -- ^ alphSize
+                          -> CSize             -- ^ alphSize
                           -> CInt              -- ^ gap_open
-                          -> CInt              -- ^ is_2d
+--                          -> CInt              -- ^ is_2d
                           -> Ptr CostMatrix2d
                           -> IO ()
 
@@ -306,45 +306,14 @@ performMatrixAllocation :: CInt -- Is 2d
                         -> Word
                         -> (Word -> Word -> Word)
                         -> DenseTransitionCostMatrix
-performMatrixAllocation is2D gapOpen alphabetSize costFn = unsafePerformIO $ {- . withArray rowMajorList $ \allocedTCM -> -} do
-
-        !_ <- trace "Before TCM Alloc" $ pure ()
-        !allocedTCM <- trace "WOWZERS" $ newArray rowMajorList
-        !_ <- trace "After  TCM Alloc" $ pure ()
-        !_ <- trace "Before Matrix MALLOC" $ pure ()
+performMatrixAllocation is2D gapOpen alphabetSize costFn = unsafePerformIO . withArray rowMajorList $ \allocedTCM -> do
         !output <- malloc :: IO (Ptr CostMatrix2d)
-        !_ <- trace "After Matrix MALLOC" $ pure ()
-
-        !_ <- poke output (CostMatrix2d 1 2 3 4 5 6 7 8 (plusPtr nullPtr 5) (plusPtr nullPtr 11) (plusPtr nullPtr 13) (plusPtr nullPtr 17) (plusPtr nullPtr 19))
-
-        value <- peekArray (fromEnum $ matrixDimension * matrixDimension) allocedTCM
-
-        !_ <- trace (show value) $ pure ()
-
-        value2 <- peek output
-
-        !_ <- trace (show value2) $ pure ()
-
-        !_ <- trace ("Byte count: " <> show (sizeOf value2)) $ pure ()
-
-
-
-
-
-
-
-        -- Hopefully the strictness annotation forces the allocation of the CostMatrix2d to happen immediately.
-        !_ <- trace "Before handoff" $ pure ()
-        !_ <- trace "Extra" $ pure ()
-        !_ <- setupCostMatrix2dFn_c allocedTCM matrixDimension gapOpen is2D output
-        !_ <- trace "After  handoff" $ pure ()
-        pure . trace "Just before return" $ output
+        !_ <- setupCostMatrix2dFn_c allocedTCM matrixDimension gapOpen {- is2D -} output
+        pure output
     where
-        matrixDimension :: CInt
         matrixDimension = toEnum $ fromEnum alphabetSize
         -- This *should* be in row major order due to the manner in which list comprehensions are performed.
-        rowMajorList :: [CInt]
-        rowMajorList = (\x -> trace (mconcat ["{", show (length x), "}: ", show x]) x) [ toEnum . fromEnum $ costFn i j | i <- range,  j <- range ]
+        rowMajorList = [ toEnum . fromEnum $ costFn i j | i <- range,  j <- range ]
         range = [0 .. alphabetSize - 1]
 
 

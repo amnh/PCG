@@ -163,9 +163,8 @@ dynamicMetadata name weight alpha tcm =
     sigma i j   = fromIntegral $ factoredTcm diagnosis ! (fromEnum i, fromEnum j)
     coefficient = fromIntegral $ factoredWeight diagnosis
     diagnosis   = diagnoseTcm tcm
-    !denseTCM
+    denseTCM
       | len > 8   = Nothing
-      | otherwise = let value = generateDenseTransitionCostMatrix len $ trace "Just before generating matrix" sigma
-                    in  force $ Just value
+      | otherwise = Just $ generateDenseTransitionCostMatrix len sigma
       where
         len = toEnum $ length alpha

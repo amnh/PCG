@@ -359,7 +359,7 @@ executable pcg
   ghc-options:         -O2
                        -g
                      -- This is to enable thread parralellism at compile time
-                       -threaded -rtsopts -with-rtsopts=-N1
+                       -threaded -rtsopts -with-rtsopts=-N8
                      -- The rest are "opt-in" warnings for cleanliness
                        -Wall
                        -fwarn-duplicate-exports
