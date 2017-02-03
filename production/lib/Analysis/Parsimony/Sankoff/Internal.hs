@@ -34,6 +34,35 @@ import Prelude hiding (zip)
 
 import Debug.Trace
 
+-- | A natural number extended to include infinity. Where infinity == maxBound
+newtype ExtendedNatural = Cost (Maybe Word)
+
+instance Num ExtendedNatural where
+  (Cost lhs) + (Cost rhs) = liftA2 (+)
+ -- need Eq, Ord, Enum, Integral also
+
+instance Num ExtendedNatural where
+  (Cost lhs) == (Cost rhs) = liftA2 (==)
+
+instance Ord ExtendedNatural where
+  (Cost lhs) < (Cost rhs) = liftA2 (<)
+
+instance Bounded Word where
+    minBound = minBound :: Word
+    maxBound = maxBound :: Word
+
+instance ToEnum ExtendedNatural where
+    fromEnum x
+        | x == maxBound = Nothing
+        | otherwise     = Cost $ Just x
+    toEnum (Cost x)
+        | Just x    = x
+        | otherwise = maxBound
+
+instance Integral ExtendedNatural where
+    toInteger x = x :: Integer
+    quotRem   x
+
 -- | Used on the post-order (i.e. first) traversal.
 sankoffPostOrder :: DiscreteCharacterDecoration d c
                  => d
@@ -126,10 +155,10 @@ updateCostVector _parentDecoration (leftChild:|rightChild:_) = returnNodeDecorat
 --
 -- Used on second, pre-order, pass.
 updateDirectionalMins :: EncodableStaticCharacter c -- ERIC: I made this more restrictive to resolve the 'Cannot deduce EncodableStaticCharacter c from Bits c'
-                => SankoffOptimizationDecoration c
-                -> SankoffOptimizationDecoration c
-                -> [Word]
-                -> SankoffOptimizationDecoration c
+                      => SankoffOptimizationDecoration c
+                      -> SankoffOptimizationDecoration c
+                      -> [Word]
+                      -> SankoffOptimizationDecoration c
 updateDirectionalMins parentDecoration childDecoration parentMins  = returnChar
     where
         median = foldlWithKey' (\acc parentCharState parentCharMin ->
