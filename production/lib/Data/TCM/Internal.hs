@@ -438,18 +438,18 @@ generate n f
       where
         g i = coerce $ f (i `divMod` n)
     negativeErrorMessage = mconcat
-      [ "The call to generate ", show n, " f is malformed, "
-      , "the dimension (", show n, ") is a negative number."
+      [ "The call to 'generate ", show n, " f' is malformed, "
+      , "the dimension (", show n, ") is a negative number. "
       , "Cannot construct a TCM with a negative dimension!"
       ]
     nullErrorMessage = mconcat
-      [ "The call to generate 0 f is malformed, "
-      , "the dimension is zero."
+      [ "The call to 'generate 0 f' is malformed, "
+      , "the dimension is zero. "
       , "Cannot construct an empty TCM with a nullary dimension!"
       ]
     singletonErrorMessage = mconcat
-      [ "The call to generate ", show n, " f is malformed, "
-      , "the dimension is one."
+      [ "The call to 'generate 1 f' is malformed, "
+      , "the dimension is one. "
       , "Cannot construct a singlton TCM with a dimension of one!"
       ]
 
