@@ -266,19 +266,16 @@ chooseDirectOptimizationComparison dec decs = \x y -> naiveDO x y scm
 {--}
 -- do this when shit stops segfaulting
 chooseDirectOptimizationComparison dec decs =
-    case sentinal of
-      Left dtcm -> \x y -> foreignPairwiseDO x y dtcm
-      Right scm -> \x y -> naiveDO x y scm
+    case decs of
+      []  -> selectBranch dec
+      x:_ -> selectBranch x
   where
-    sentinal =
-        case decs of
-          []  -> selectBranch dec
-          x:_ -> selectBranch x
-      where
-        selectBranch candidate =
-            case candidate ^. denseTransitionCostMatrix of
-              Just  d -> Left  $ d
-              Nothing -> Right $ candidate ^. symbolChangeMatrix
+    selectBranch candidate =
+       case candidate ^. denseTransitionCostMatrix of
+         Just  d -> \x y -> foreignPairwiseDO x y d
+         Nothing ->
+           let !scm = (candidate ^. symbolChangeMatrix)
+           in \x y -> naiveDO x y scm
 {--}
 
 
