@@ -31,7 +31,7 @@
                                     to_asgn->end         = to_asgn->array_head + to_asgn->cap - 1; \
                                     to_asgn->seq_begin   = to_asgn->end - to_asgn->len + 1; \
 //    assert (to_asgn->magic_number == POY_SEQ_MAGIC_NUMBER)  // TODO: figure out wtf this is.
-
+#define USE_LARGE_ALPHABETS
 
 #ifdef USE_LARGE_ALPHABETS
 #define SEQT unsigned int

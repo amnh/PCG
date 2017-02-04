@@ -114,8 +114,6 @@ int align2d(alignIO_p inputChar1_aio,
         alignIO_print(inputChar2_aio);
     }
 
-    printf("we haven't errored out yet.\n");
-    fflush(stdout);
     const size_t CHAR_CAPACITY = inputChar1_aio->length + inputChar2_aio->length;
 
     alignIO_p longIO,
