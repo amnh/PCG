@@ -131,7 +131,7 @@ instance Storable Alignment2d where
 
 -- | Input/output data type for C alignment code, to avoid having to write the whole seq type.
 data AlignIO = AlignIO { -- magic_number :: CInt     -- TODO: No idea what this is for; figure it out?
-                         character :: Ptr CInt
+                         character :: Ptr CUInt
                        , charLen   :: CSize        -- Total length of the character stored
                        , arrCap    :: CSize        -- Total capacity of allocated array
                        }
@@ -305,7 +305,7 @@ instance Storable CostMatrix2d where
 -- It is therefore indexed not by powers of two, but by cardinal integer.
 -- TODO: For now we only allocate 2d matrices. 3d will come later.
 foreign import ccall unsafe "c_code_alloc_setup.h setup2dCostMtx"
-    setupCostMatrix2dFn_c :: Ptr CInt          -- ^ tcm
+    setupCostMatrix2dFn_c :: Ptr CUInt         -- ^ tcm
                           -> CSize             -- ^ alphSize
                           -> CInt              -- ^ gap_open
 --                          -> CInt              -- ^ is_2d
