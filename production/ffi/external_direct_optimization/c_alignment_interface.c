@@ -71,11 +71,22 @@ void alignIOtoChar(alignIO_p input, seq_p retChar, size_t alphabetSize) {
  *  Also eliminates extra gap needed by legacy code.
  */
 void charToAlignIO(seq_p input, alignIO_p output) {
+    printf("Length:   %d\n", input->len);
+    printf("Capacity: %d\n", input->cap);
+    fflush(stdout);
+
+    //TODO: The length is ZERO, why?
+  
     input->seq_begin++;                   // to start after unnecessary gap char at begining
     output->length   = input->len - 1;    //
     output->capacity = input->cap;        // this shouldn't actually change
+
     for(size_t i = 0; i < output->length; i++) {
+      //        printf("Before charToAlignIO[%d]\n", i);
+      //  fflush(stdout);
         output->character[i] = input->seq_begin[i];
+	//  printf("After  charToAlignIO[%d]\n", i);
+        //fflush(stdout);
     }
     for(size_t i = output->length; i < input->cap; i++) {
         output->character[i] = 0;
@@ -150,15 +161,18 @@ int align2d(alignIO_p inputChar1_aio,
         shortIO = inputChar1_aio;
     }
 
-    if (DEBUG_ALGN) {
+    if (1 || DEBUG_ALGN) {
         printf("\nafter copying, seq 1:\n");
         seq_print(longChar);
         printf("\nafter copying, seq 2:\n");
         seq_print(shortChar);
     }
-
+    printf("Before NW init.\n");
+    fflush(stdout);
     nw_matrices_p nw_mtxs2d = malloc(sizeof(struct nwMatrices));
     initializeNWMtx(longChar->len, shortChar->len, 0, costMtx2d->lcm, nw_mtxs2d);
+    printf("After  NW init.\n");
+    fflush(stdout);
 
     // deltawh is for use in Ukonnen, it gives the current necessary width of the Ukk matrix.
     // The following calculation to compute deltawh, which increases the matrix height or width in algn_nw_2d,
@@ -172,9 +186,17 @@ int align2d(alignIO_p inputChar1_aio,
         deltawh = diff < lower_limit ? lower_limit / 2 : 2;
     }
     //printf("%d, %zu, %d, %zu\n", shortCharLen, shortChar->len, longCharLen, longChar->len);
+    printf("Before align cost.\n");
+    fflush(stdout);
     int algnCost = algn_nw_2d( shortChar, longChar, costMtx2d, nw_mtxs2d, deltawh );
+    printf("Ater align cost.\n");
+    fflush(stdout);
     if (getGapped || getUngapped || getUnion) {
+        printf("Before backtrace.\n");
+        fflush(stdout);
         algn_backtrace_2d (shortChar, longChar, retShortChar, retLongChar, nw_mtxs2d, costMtx2d, 0, 0, swapped);
+        printf("After backtrace.\n");
+        fflush(stdout);
 
         if (getUngapped) {
             seq_p ungappedMedianChar = malloc(sizeof(struct seq));
@@ -191,12 +213,27 @@ int align2d(alignIO_p inputChar1_aio,
 
         }
         if (getGapped && !getUnion) {
+	    printf("In here!\n");
+	    fflush(stdout);
             seq_p gappedMedianChar   = malloc(sizeof(struct seq));
+
+	    printf("Before initialize character!\n");
+	    fflush(stdout);
             initializeChar(gappedMedianChar, CHAR_CAPACITY);
+	    printf("After  initialize character!\n");
+	    fflush(stdout);
 
+	    printf("Before algn_get_median\n");
+	    fflush(stdout);
             algn_get_median_2d_with_gaps (retShortChar, retLongChar, costMtx2d, gappedMedianChar);
+	    printf("After  algn_get_median\n");
+	    fflush(stdout);
 
+	    printf("Before charToAlignIO\n");
+	    fflush(stdout);
             charToAlignIO(gappedMedianChar, gappedOutput_aio);
+	    printf("After  charToAlignIO\n");
+	    fflush(stdout);
 
             freeChar(gappedMedianChar);
 
