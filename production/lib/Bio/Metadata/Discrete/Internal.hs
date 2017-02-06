@@ -10,10 +10,11 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE FlexibleInstances, MultiParamTypeClasses #-}
+{-# LANGUAGE FlexibleContexts, FlexibleInstances, MultiParamTypeClasses #-}
 
 module Bio.Metadata.Discrete.Internal
   ( DiscreteCharacterMetadataDec()
+  , DiscreteCharacterMetadata(..)
   , HasCharacterAlphabet(..)
   , HasCharacterName(..)
   , HasCharacterWeight(..)
@@ -40,6 +41,16 @@ data DiscreteCharacterMetadataDec
    }
 
 
+-- |
+-- A decoration of an initial encoding of a dynamic character which has the
+-- appropriate 'Lens' & character class constraints.
+class ( GeneralCharacterMetadata s
+      , HasCharacterAlphabet     s (Alphabet String)
+      ) => DiscreteCharacterMetadata s where
+
+    extractDiscreteCharacterMetadata :: s -> DiscreteCharacterMetadataDec
+      
+
 instance Eq DiscreteCharacterMetadataDec where
 
     lhs == rhs = alphabet    lhs == alphabet       rhs
@@ -57,16 +68,20 @@ instance Show DiscreteCharacterMetadataDec where
 
 
 
--- |
--- A decoration of an initial encoding of a dynamic character which has the
--- appropriate 'Lens' & character class constraints.
-instance DiscreteCharacterMetadata DiscreteCharacterMetadataDec where
-
-
 -- | (✔) 
 instance GeneralCharacterMetadata DiscreteCharacterMetadataDec where
+
+    {-# INLINE extractGeneralCharacterMetadata #-}
+    extractGeneralCharacterMetadata = generalData
+      
   
-  
+-- | (✔) 
+instance DiscreteCharacterMetadata DiscreteCharacterMetadataDec where
+
+    {-# INLINE extractDiscreteCharacterMetadata #-}
+    extractDiscreteCharacterMetadata = id
+
+
 -- | (✔)
 instance HasCharacterAlphabet DiscreteCharacterMetadataDec (Alphabet String) where
 

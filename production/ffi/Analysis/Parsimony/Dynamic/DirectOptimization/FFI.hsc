@@ -338,6 +338,7 @@ performMatrixAllocation :: CInt -- Is 2d
                         -> (Word -> Word -> Word)
                         -> DenseTransitionCostMatrix
 performMatrixAllocation is2D gapOpen alphabetSize costFn = unsafePerformIO . withArray rowMajorList $ \allocedTCM -> do
+        !_ <- trace "Allocation a Dense Matrix" $ pure ()
         !output <- malloc :: IO (Ptr CostMatrix2d)
         !_ <- setupCostMatrix2dFn_c allocedTCM matrixDimension gapOpen {- is2D -} output
         pure output

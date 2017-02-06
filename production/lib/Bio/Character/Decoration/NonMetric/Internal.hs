@@ -109,7 +109,7 @@ instance EncodableStaticCharacter c => SimpleDiscreteCharacterDecoration (NonMet
     toDiscreteCharacterDecoration name weight alphabet tcm g symbolSet =
         NonMetricDecorationInitial
         { nonMetricDecorationInitialCharacter = g symbolSet
-        , metadata                            = discreteMetadataWithTCM name weight alphabet tcm
+        , metadata                            = discreteMetadataFromTCM name weight alphabet tcm
         }    
 
 

@@ -111,7 +111,7 @@ instance EncodableStaticCharacter c => SimpleDiscreteCharacterDecoration (Metric
     toDiscreteCharacterDecoration name weight alphabet tcm g symbolSet =
         MetricDecorationInitial
         { metricDecorationInitialCharacter = g symbolSet
-        , metadata                         = discreteMetadataWithTCM name weight alphabet tcm
+        , metadata                         = discreteMetadataFromTCM name weight alphabet tcm
         }
 
 
@@ -247,8 +247,8 @@ instance EncodableStaticCharacter c => DiscreteExtensionSankoffDecoration (Sanko
         alphabetValue   = subDecoration ^. characterAlphabet
         tcmValue        = generate (length alphabetValue) generator
         generator (i,j) = (subDecoration ^. symbolChangeMatrix) (toEnum i) (toEnum j)
-        metadataValue   =
-          discreteMetadataWithTCM
+        metadataValue   = 
+          discreteMetadataFromTCM
             <$> (^. characterName)
             <*> (^. characterWeight)
             <*> const alphabetValue

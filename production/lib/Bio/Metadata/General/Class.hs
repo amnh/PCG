@@ -13,8 +13,7 @@
 {-# LANGUAGE FlexibleContexts, FlexibleInstances, FunctionalDependencies, MultiParamTypeClasses, TypeFamilies #-}
 
 module Bio.Metadata.General.Class
-  ( GeneralCharacterMetadata()
-  , HasCharacterName(..)
+  ( HasCharacterName(..)
   , HasCharacterWeight(..)
   ) where
 
@@ -23,13 +22,6 @@ import Bio.Metadata.CharacterName
 import Control.Lens
 
 
--- |
--- A constraint for type containing metadata.
-class ( HasCharacterName   s CharacterName
-      , HasCharacterWeight s Double
-      ) => GeneralCharacterMetadata s where
-
-  
 -- |
 -- A 'Lens' for the 'characterName' field
 class HasCharacterName s a | s -> a where

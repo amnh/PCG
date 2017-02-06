@@ -272,11 +272,15 @@ chooseDirectOptimizationComparison dec decs =
   where
     selectBranch candidate =
        case candidate ^. denseTransitionCostMatrix of
+         _ -> let !scm = (candidate ^. symbolChangeMatrix) in \x y -> naiveDO x y scm
+
+{-
          Just  d -> \x y -> foreignPairwiseDO x y d
          Nothing ->
            let !scm = (candidate ^. symbolChangeMatrix)
            in \x y -> naiveDO x y scm
-{--}
+-}
+
 
 
 {-

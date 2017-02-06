@@ -80,10 +80,6 @@ instance HasEncoded (DynamicDecorationInitial d) d where
 
 
 -- | (✔)
-instance GeneralCharacterMetadata (DynamicDecorationInitial d) where
-
-
--- | (✔)
 instance HasCharacterAlphabet (DynamicDecorationInitial d) (Alphabet String) where
 
     characterAlphabet = lens getter setter
@@ -140,15 +136,29 @@ instance HasCharacterWeight (DynamicDecorationInitial d) Double where
 
 
 -- | (✔)
+instance GeneralCharacterMetadata (DynamicDecorationInitial d) where
+
+    {-# INLINE extractGeneralCharacterMetadata #-}
+    extractGeneralCharacterMetadata = extractGeneralCharacterMetadata . metadata
+
+  
+
+-- | (✔)
 instance DiscreteCharacterMetadata (DynamicDecorationInitial d) where
 
+    {-# INLINE extractDiscreteCharacterMetadata #-}
+    extractDiscreteCharacterMetadata = extractDiscreteCharacterMetadata . metadata
 
+  
 -- | (✔)
 instance (EncodableStream d, Element d ~ c) => DiscreteWithTcmCharacterMetadata (DynamicDecorationInitial d) c where
 
 
 -- | (✔)
 instance (EncodableStream d, Element d ~ c) => DynamicCharacterMetadata (DynamicDecorationInitial d) c where
+
+    {-# INLINE extractDynamicCharacterMetadata #-}
+    extractDynamicCharacterMetadata = extractDynamicCharacterMetadata . metadata
 
 
 -- | (✔)
@@ -162,7 +172,7 @@ instance (EncodableDynamicCharacter d) => DynamicCharacterDecoration (DynamicDec
     toDynamicCharacterDecoration name weight alphabet tcm g symbolSet =
         DynamicDecorationInitial
         { dynamicDecorationInitialEncodedField = g symbolSet
-        , metadata                             = dynamicMetadata name weight alphabet tcm
+        , metadata                             = dynamicMetadataFromTCM name weight alphabet tcm
         }
 
 
@@ -209,13 +219,7 @@ instance EncodableDynamicCharacter d => SimpleDynamicExtensionPostOrderDecoratio
       where
         alphabetValue = subDecoration ^. characterAlphabet
         tcmValue      = generate (length alphabetValue) (uncurry $ subDecoration ^. symbolChangeMatrix)
-        metadataValue =
-          dynamicMetadata
-            <$> (^. characterName)
-            <*> (^. characterWeight)
-            <*> const alphabetValue
-            <*> const tcmValue
-            $ subDecoration
+        metadataValue = extractDynamicCharacterMetadata subDecoration
 
 
 instance Hashable d => Hashable (DynamicDecorationDirectOptimizationPostOrderResult d) where
@@ -325,11 +329,17 @@ instance HasCharacterWeight (DynamicDecorationDirectOptimizationPostOrderResult 
 -- | (✔)
 instance GeneralCharacterMetadata (DynamicDecorationDirectOptimizationPostOrderResult d) where
 
+    {-# INLINE extractGeneralCharacterMetadata #-}
+    extractGeneralCharacterMetadata = extractGeneralCharacterMetadata . dynamicDecorationDirectOptimizationPostOrderMetadata
 
+  
 -- | (✔)
 instance DiscreteCharacterMetadata (DynamicDecorationDirectOptimizationPostOrderResult d) where
 
+    {-# INLINE extractDiscreteCharacterMetadata #-}
+    extractDiscreteCharacterMetadata = extractDiscreteCharacterMetadata . dynamicDecorationDirectOptimizationPostOrderMetadata
 
+  
 -- | (✔)
 instance (EncodableStream d, Element d ~ c) => DiscreteWithTcmCharacterMetadata (DynamicDecorationDirectOptimizationPostOrderResult d) c where
 
@@ -337,8 +347,10 @@ instance (EncodableStream d, Element d ~ c) => DiscreteWithTcmCharacterMetadata 
 -- | (✔)
 instance (EncodableStream d, Element d ~ c) => DynamicCharacterMetadata (DynamicDecorationDirectOptimizationPostOrderResult d) c where
 
+    {-# INLINE extractDynamicCharacterMetadata #-}
+    extractDynamicCharacterMetadata = extractDynamicCharacterMetadata . dynamicDecorationDirectOptimizationPostOrderMetadata
 
--- | (✔)
+
 instance EncodableDynamicCharacter d => SimpleDynamicDecoration (DynamicDecorationDirectOptimizationPostOrderResult d) d where
 
 
@@ -385,13 +397,7 @@ instance EncodableDynamicCharacter d => PostOrderExtensionDirectOptimizationDeco
       where
         alphabetValue = subDecoration ^. characterAlphabet
         tcmValue      = generate (length alphabetValue) (uncurry $ subDecoration ^. symbolChangeMatrix)
-        metadataValue =
-          dynamicMetadata
-            <$> (^. characterName)
-            <*> (^. characterWeight)
-            <*> const alphabetValue
-            <*> const tcmValue
-            $ subDecoration
+        metadataValue = extractDynamicCharacterMetadata subDecoration
 
 
 -- | (✔)
@@ -518,17 +524,26 @@ instance HasCharacterWeight (DynamicDecorationDirectOptimization d) Double where
 -- | (✔)
 instance GeneralCharacterMetadata (DynamicDecorationDirectOptimization d) where
 
+    {-# INLINE extractGeneralCharacterMetadata #-}
+    extractGeneralCharacterMetadata = extractGeneralCharacterMetadata . dynamicDecorationDirectOptimizationMetadata
 
+  
 -- | (✔)
 instance DiscreteCharacterMetadata (DynamicDecorationDirectOptimization d) where
 
+    {-# INLINE extractDiscreteCharacterMetadata #-}
+    extractDiscreteCharacterMetadata = extractDiscreteCharacterMetadata . dynamicDecorationDirectOptimizationMetadata
 
+  
 -- | (✔)
 instance (EncodableStream d, Element d ~ c) => DiscreteWithTcmCharacterMetadata (DynamicDecorationDirectOptimization d) c where
 
 
 -- | (✔)
 instance (EncodableStream d, Element d ~ c) => DynamicCharacterMetadata (DynamicDecorationDirectOptimization d) c where
+
+    {-# INLINE extractDynamicCharacterMetadata #-}
+    extractDynamicCharacterMetadata = extractDynamicCharacterMetadata . dynamicDecorationDirectOptimizationMetadata
 
 
 -- | (✔)
@@ -679,19 +694,28 @@ instance (Element d ~ c) => HasDenseTransitionCostMatrix (DynamicDecorationImpli
 -- | (✔)
 instance GeneralCharacterMetadata (DynamicDecorationImpliedAlignment d) where
 
+    {-# INLINE extractGeneralCharacterMetadata #-}
+    extractGeneralCharacterMetadata = extractGeneralCharacterMetadata . dynamicDecorationImpliedAlignmentMetadata
 
+  
 -- | (✔)
 instance DiscreteCharacterMetadata (DynamicDecorationImpliedAlignment d) where
+
+    {-# INLINE extractDiscreteCharacterMetadata #-}
+    extractDiscreteCharacterMetadata = extractDiscreteCharacterMetadata . dynamicDecorationImpliedAlignmentMetadata
 
   
 -- | (✔)
 instance (EncodableStream d, Element d ~ c) => DiscreteWithTcmCharacterMetadata (DynamicDecorationImpliedAlignment d) c where
 
-  
+
 -- | (✔)
 instance (EncodableStream d, Element d ~ c) => DynamicCharacterMetadata (DynamicDecorationImpliedAlignment d) c where
 
-  
+    {-# INLINE extractDynamicCharacterMetadata #-}
+    extractDynamicCharacterMetadata = extractDynamicCharacterMetadata . dynamicDecorationImpliedAlignmentMetadata
+
+
 -- | (✔)
 instance EncodableDynamicCharacter d => SimpleDynamicDecoration (DynamicDecorationImpliedAlignment d) d where
 

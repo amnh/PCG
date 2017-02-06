@@ -11,17 +11,19 @@
 -----------------------------------------------------------------------------
 
 {-# LANGUAGE BangPatterns #-}
-{-# LANGUAGE FlexibleInstances, MultiParamTypeClasses #-}
+{-# LANGUAGE FlexibleContexts, FlexibleInstances, FunctionalDependencies, MultiParamTypeClasses #-}
 {-# LANGUAGE DeriveGeneric #-}
 
 module Bio.Metadata.Dynamic.Internal
   ( DynamicCharacterMetadataDec()
+  , DynamicCharacterMetadata(..)
   , HasCharacterAlphabet(..)
   , HasCharacterName(..)
   , HasCharacterWeight(..)
   , HasSymbolChangeMatrix(..)
   , HasTransitionCostMatrix(..)
   , dynamicMetadata
+  , dynamicMetadataFromTCM
   ) where
 
 
@@ -47,37 +49,40 @@ import Debug.Trace
 -- Represents a concrete type containing metadata fields shared across all
 -- discrete different bins. Continous bins do not have Alphabets. 
 data DynamicCharacterMetadataDec c
-   = DynamicCharacterMetadataDec
-   { dataCharacterAlphabet         :: Alphabet String
-   , dataCharacterName             :: CharacterName
-   , dataCharacterWeight           :: Double
-   , dataSymbolChangeMatrix        :: Word -> Word -> Word
-   , dataTransitionCostMatrix      :: c -> c -> (c, Word)
-   , dataDenseTransitionCostMatrix :: Maybe DenseTransitionCostMatrix
+   = DynamicCharacterMetadataDec 
+   { dataDenseTransitionCostMatrix :: Maybe DenseTransitionCostMatrix
+   , metadata                      :: DiscreteWithTCMCharacterMetadataDec c
    } deriving (Generic)
+
+
+-- |
+-- A decoration of an initial encoding of a dynamic character which has the
+-- appropriate 'Lens' & character class constraints.
+class ( DiscreteWithTcmCharacterMetadata s c
+      , HasDenseTransitionCostMatrix     s (Maybe DenseTransitionCostMatrix)
+      ) => DynamicCharacterMetadata s c | s -> c where
+
+    extractDynamicCharacterMetadata :: s -> DynamicCharacterMetadataDec c
 
 
 instance NFData (DynamicCharacterMetadataDec a) where
 
-  rnf (DynamicCharacterMetadataDec a n w _ _ d) = ()
-    where
-      !_ = rnf a
-      !_ = rnf n
-      !_ = rnf w
-      !_ = rnf d
+    rnf (DynamicCharacterMetadataDec d _) = ()
+      where
+        !_ = rnf d
 
 
 instance Eq (DynamicCharacterMetadataDec c) where
 
-    lhs == rhs = dataCharacterAlphabet lhs == dataCharacterAlphabet rhs
-              && dataCharacterName     lhs == dataCharacterName     rhs
-              && dataCharacterWeight   lhs == dataCharacterWeight   rhs
-              && and [ dataSymbolChangeMatrix lhs i j == dataSymbolChangeMatrix rhs i j
+    lhs == rhs = lhs ^. characterAlphabet == rhs ^. characterAlphabet
+              && lhs ^. characterName     == rhs ^. characterName
+              && lhs ^. characterWeight   == rhs ^. characterWeight
+              && and [ (lhs ^. symbolChangeMatrix) i j == (rhs ^. symbolChangeMatrix) i j
                      | i <- range
                      , j <- range
                      ]
       where
-        dimension = length $ dataCharacterAlphabet lhs
+        dimension = length $ lhs ^. characterAlphabet
         range     = toEnum <$> [0 .. dimension - 1 ]
 
 
@@ -96,33 +101,51 @@ instance Show (DynamicCharacterMetadataDec c) where
         dimension = length $ e ^. characterAlphabet
 
 
--- |
--- A decoration of an initial encoding of a dynamic character which has the
--- appropriate 'Lens' & character class constraints.
-instance EncodableStreamElement c => DiscreteCharacterMetadata (DynamicCharacterMetadataDec c) where
-
-
 -- | (✔) 
 instance GeneralCharacterMetadata (DynamicCharacterMetadataDec c) where
+
+    {-# INLINE extractGeneralCharacterMetadata #-}
+    extractGeneralCharacterMetadata = extractGeneralCharacterMetadata . metadata
+      
   
-  
+-- | (✔)
+instance DiscreteCharacterMetadata (DynamicCharacterMetadataDec c) where
+
+    {-# INLINE extractDiscreteCharacterMetadata #-}
+    extractDiscreteCharacterMetadata = extractDiscreteCharacterMetadata . metadata
+
+
+-- | (✔)
+instance EncodableStreamElement c => DiscreteWithTcmCharacterMetadata (DynamicCharacterMetadataDec c) c where
+
+
+-- | (✔)
+instance EncodableStreamElement c => DynamicCharacterMetadata (DynamicCharacterMetadataDec c) c where
+
+    {-# INLINE extractDynamicCharacterMetadata #-}
+    extractDynamicCharacterMetadata = id
+
+
 -- | (✔)
 instance HasCharacterAlphabet (DynamicCharacterMetadataDec c) (Alphabet String) where
 
-    characterAlphabet = lens dataCharacterAlphabet $ \e x -> e { dataCharacterAlphabet = x }
+    characterAlphabet = lens (\e -> metadata e ^. characterAlphabet)
+                      $ \e x -> e { metadata = metadata e & characterAlphabet .~ x }
 
 
 -- | (✔)
 instance HasCharacterName (DynamicCharacterMetadataDec c) CharacterName where
 
-    characterName = lens dataCharacterName
-                  $ \e x -> e { dataCharacterName = x }
+    characterName = lens (\e -> metadata e ^. characterName)
+                  $ \e x -> e { metadata = metadata e & characterName .~ x }
+
 
 
 -- | (✔)
 instance HasCharacterWeight (DynamicCharacterMetadataDec c) Double where
 
-    characterWeight = lens dataCharacterWeight $ \e x -> e { dataCharacterWeight = x }
+    characterWeight = lens (\e -> metadata e ^. characterWeight)
+                    $ \e x -> e { metadata = metadata e & characterWeight .~ x }
 
 
 -- |
@@ -136,7 +159,9 @@ instance HasDenseTransitionCostMatrix (DynamicCharacterMetadataDec c) (Maybe Den
 -- A 'Lens' for the 'symbolicTCMGenerator' field
 instance HasSymbolChangeMatrix (DynamicCharacterMetadataDec c) (Word -> Word -> Word) where
 
-    symbolChangeMatrix = lens dataSymbolChangeMatrix $ \e x -> e { dataSymbolChangeMatrix = x }
+    symbolChangeMatrix = lens (\e -> metadata e ^. symbolChangeMatrix)
+                       $ \e x -> e { metadata = metadata e & symbolChangeMatrix .~ x }
+
 
 
 -- |
@@ -148,15 +173,21 @@ instance HasTransitionCostMatrix (DynamicCharacterMetadataDec c) (c -> c -> (c, 
 
 -- |
 -- Construct a concrete typed 'DynamicCharacterMetadataDec' value from the supplied inputs.
-dynamicMetadata :: CharacterName -> Double -> Alphabet String -> TCM -> DynamicCharacterMetadataDec c
-dynamicMetadata name weight alpha tcm =
+dynamicMetadata :: CharacterName -> Double -> Alphabet String -> (Word -> Word -> Word) -> Maybe DenseTransitionCostMatrix -> DynamicCharacterMetadataDec c
+dynamicMetadata name weight alpha scm denseMay =
     force DynamicCharacterMetadataDec
-    { dataCharacterAlphabet         = alpha
-    , dataCharacterName             = name
-    , dataCharacterWeight           = coefficient * weight
-    , dataSymbolChangeMatrix        = sigma
-    , dataTransitionCostMatrix      = undefined
-    , dataDenseTransitionCostMatrix = denseTCM
+    { dataDenseTransitionCostMatrix = denseMay
+    , metadata                      = discreteMetadataWithTCM name weight alpha scm
+    }
+
+
+-- |
+-- Construct a concrete typed 'DynamicCharacterMetadataDec' value from the supplied inputs.
+dynamicMetadataFromTCM :: CharacterName -> Double -> Alphabet String -> TCM -> DynamicCharacterMetadataDec c
+dynamicMetadataFromTCM name weight alpha tcm =
+    force DynamicCharacterMetadataDec
+    { dataDenseTransitionCostMatrix = denseTCM
+    , metadata                      = discreteMetadataWithTCM name (coefficient * weight) alpha sigma
     }
   where
     sigma :: Word -> Word -> Word
