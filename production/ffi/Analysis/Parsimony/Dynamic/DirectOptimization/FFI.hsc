@@ -131,7 +131,7 @@ instance Storable Alignment2d where
 
 -- | Input/output data type for C alignment code, to avoid having to write the whole seq type.
 data AlignIO = AlignIO { -- magic_number :: CInt     -- TODO: No idea what this is for; figure it out?
-                         character :: Ptr CInt     --
+                         character :: Ptr CInt
                        , charLen   :: CSize        -- Total length of the character stored
                        , arrCap    :: CSize        -- Total capacity of allocated array
                        }
@@ -403,15 +403,26 @@ algn2d char1 char2 costStruct computeUnion computeMedians =
                 retUngapped <- allocInitALignIO 0 []
                 -- retUnion    <- allocInitALignIO 0 []
 
+{--}
+                AlignIO char1Ptr char1Len buffer1Len <- peek char1ToSend
+                AlignIO char2Ptr char2Len buffer2Len <- peek char2ToSend
+
+                input1CharArr <- peekArray (fromEnum buffer1Len) char1Ptr
+                input2CharArr <- peekArray (fromEnum buffer2Len) char2Ptr
+
+                !_ <- trace (mconcat [" Input LHS : { ", show char1Len, " / ", show buffer1Len, " } ", show input1CharArr]) $ pure ()
+                !_ <- trace (mconcat [" Input RHS : { ", show char2Len, " / ", show buffer2Len, " } ", show input2CharArr]) $ pure ()
+{--}
+
                 let !cost = align2dFn_c char1ToSend char2ToSend retGapped retUngapped costStruct neverComputeOnlyGapped (toCInt computeMedians) (toCInt computeUnion)
 
                 AlignIO ungappedCharArr ungappedLen _ <- peek retUngapped
                 AlignIO gappedCharArr   gappedLen   _ <- peek retGapped
-                -- AlignIO unionCharArr    unionLen    _ <- peek retUnion
                 AlignIO retChar1CharArr char1Len    _ <- peek char1ToSend
                 AlignIO retChar2CharArr char2Len    _ <- peek char2ToSend
+                -- AlignIO unionCharArr    unionLen    _ <- peek retUnion
 
-                ungappedChar <- peekArray (fromEnum ungappedLen) ungappedCharArr
+--                ungappedChar <- peekArray (fromEnum ungappedLen) ungappedCharArr
                 gappedChar   <- peekArray (fromEnum gappedLen)   gappedCharArr
                 char1Aligned <- peekArray (fromEnum char1Len)    retChar1CharArr
                 char2Aligned <- peekArray (fromEnum char2Len)    retChar2CharArr
@@ -422,13 +433,23 @@ algn2d char1 char2 costStruct computeUnion computeMedians =
                 let resultingGapped       = coerceToOutputType gappedLen gappedChar
                 let resultingUngapped     = filterGaps resultingGapped
 
-{-
+                !_ <- trace (" Gapped Char : " <> show   gappedChar) $ pure ()
+                !_ <- trace (" Aligned LHS : " <> show char1Aligned) $ pure ()
+                !_ <- trace (" Aligned RHS : " <> show char2Aligned) $ pure ()
+
+                output1Buffer <- peekArray (fromEnum buffer1Len) char1Ptr
+                output2Buffer <- peekArray (fromEnum buffer2Len) char2Ptr
+
+                !_ <- trace (mconcat [" Output LHS : { ", show char1Len, " / ", show buffer1Len, " } ", show output1Buffer]) $ pure ()
+                !_ <- trace (mconcat [" Output RHS : { ", show char2Len, " / ", show buffer2Len, " } ", show output2Buffer]) $ pure ()
+{--
                 !_ <- trace ("Ungapped Char: " <> show     resultingUngapped) $ pure ()
                 !_ <- trace ("  Gapped Char: " <> show       resultingGapped) $ pure ()
                 !_ <- trace (" Aligned LHS : " <> show resultingAlignedChar1) $ pure ()
                 !_ <- trace (" Aligned RHS : " <> show resultingAlignedChar2) $ pure ()
+--}
+                !_ <- trace  " > Done with FFI Alignment\n" $ pure ()
 
--}
                 pure (filterGaps resultingGapped, fromIntegral cost, resultingGapped, resultingAlignedChar1, resultingAlignedChar2)
             where
                 neverComputeOnlyGapped = 0
@@ -442,7 +463,7 @@ algn2d char1 char2 costStruct computeUnion computeMedians =
                 exportedChar2Len = toEnum $ exportedChar2 ^. exportedElementCount
                 maxAllocLen      = exportedChar1Len + exportedChar2Len
 
-                allocInitALignIO :: CSize -> [CInt] -> IO (Ptr AlignIO)
+                allocInitALignIO :: CSize -> [CUInt] -> IO (Ptr AlignIO)
                 allocInitALignIO elemCount elemArr  =
                     do
                         output <- malloc :: IO (Ptr AlignIO)
