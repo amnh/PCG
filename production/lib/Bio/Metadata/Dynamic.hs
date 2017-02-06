@@ -12,7 +12,7 @@
 
 module Bio.Metadata.Dynamic
     ( DenseTransitionCostMatrix
-    , DynamicCharacterMetadata()
+    , DynamicCharacterMetadata(..)
     , DynamicCharacterMetadataDec()
     , HasCharacterAlphabet(..)
     , HasCharacterName(..)
@@ -21,6 +21,7 @@ module Bio.Metadata.Dynamic
     , HasSymbolChangeMatrix(..)
     , HasTransitionCostMatrix(..)
     , dynamicMetadata
+    , dynamicMetadataFromTCM
     ) where 
 
 import Bio.Metadata.Dynamic.Class

@@ -153,6 +153,9 @@ instance HasCharacterWeight (DiscreteDecoration c) Double where
 -- | (✔)
 instance GeneralCharacterMetadata (DiscreteDecoration c) where
 
+    {-# INLINE extractGeneralCharacterMetadata #-}
+    extractGeneralCharacterMetadata = extractGeneralCharacterMetadata . metadata
+
 
 -- | (✔)
 instance EncodableStreamElement c => DiscreteCharacterMetadata (DiscreteDecoration c) where
@@ -171,5 +174,5 @@ instance EncodableStaticCharacter c => SimpleDiscreteCharacterDecoration (Discre
     toDiscreteCharacterDecoration name weight alphabet tcm g symbolSet =
         DiscreteDec
         { discreteDecorationCharacter = g symbolSet
-        , metadata                    = discreteMetadataWithTCM name weight alphabet tcm
+        , metadata                    = discreteMetadataFromTCM name weight alphabet tcm
         }

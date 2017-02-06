@@ -305,7 +305,7 @@ instance Storable CostMatrix2d where
 -- It is therefore indexed not by powers of two, but by cardinal integer.
 -- TODO: For now we only allocate 2d matrices. 3d will come later.
 foreign import ccall unsafe "c_code_alloc_setup.h setup2dCostMtx"
-    setupCostMatrix2dFn_c :: Ptr CInt          -- ^ tcm
+    setupCostMatrix2dFn_c :: Ptr CUInt         -- ^ tcm
                           -> CSize             -- ^ alphSize
                           -> CInt              -- ^ gap_open
 --                          -> CInt              -- ^ is_2d
@@ -338,6 +338,7 @@ performMatrixAllocation :: CInt -- Is 2d
                         -> (Word -> Word -> Word)
                         -> DenseTransitionCostMatrix
 performMatrixAllocation is2D gapOpen alphabetSize costFn = unsafePerformIO . withArray rowMajorList $ \allocedTCM -> do
+        !_ <- trace "Allocation a Dense Matrix" $ pure ()
         !output <- malloc :: IO (Ptr CostMatrix2d)
         !_ <- setupCostMatrix2dFn_c allocedTCM matrixDimension gapOpen {- is2D -} output
         pure output

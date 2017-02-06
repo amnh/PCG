@@ -14,7 +14,7 @@
 
 module Bio.Metadata.Continuous
   ( ContinuousCharacterMetadataDec()
-  , GeneralCharacterMetadata()
+  , GeneralCharacterMetadata(..)
   , HasCharacterName(..)
   , HasCharacterWeight(..) 
   , continuousMetadata
@@ -33,6 +33,9 @@ newtype ContinuousCharacterMetadataDec = CCM GeneralCharacterMetadataDec
 
 -- | (✔)
 instance GeneralCharacterMetadata ContinuousCharacterMetadataDec where
+
+    {-# INLINE extractGeneralCharacterMetadata #-}
+    extractGeneralCharacterMetadata (CCM x) = x
 
 
 -- | (✔)

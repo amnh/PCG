@@ -14,7 +14,6 @@
 
 module Bio.Metadata.Dynamic.Class
   ( DenseTransitionCostMatrix
-  , DynamicCharacterMetadata()
   , HasCharacterAlphabet(..)
   , HasCharacterName(..)
   , HasCharacterWeight(..)
@@ -29,14 +28,6 @@ import Bio.Metadata.General
 import Bio.Metadata.Discrete
 import Bio.Metadata.DiscreteWithTCM
 import Control.Lens
-
-
--- |
--- A decoration of an initial encoding of a dynamic character which has the
--- appropriate 'Lens' & character class constraints.
-class ( DiscreteWithTcmCharacterMetadata s c
-      , HasDenseTransitionCostMatrix     s (Maybe DenseTransitionCostMatrix)
-      ) => DynamicCharacterMetadata s c | s -> c where
 
 
 -- |

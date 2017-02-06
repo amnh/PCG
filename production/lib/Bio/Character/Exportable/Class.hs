@@ -52,7 +52,7 @@ data ExportableCharacterElements
    = ExportableCharacterElements
    { exportedElementCountElements :: Int
    , exportedElementWidthElements :: Int 
-   , exportedCharacterElements :: [CULong]
+   , exportedCharacterElements :: [CUInt]
    } deriving (Eq, Show)   
 
 

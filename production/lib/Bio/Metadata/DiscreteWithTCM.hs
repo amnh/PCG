@@ -18,6 +18,7 @@ module Bio.Metadata.DiscreteWithTCM
     , HasCharacterWeight(..)
     , HasSymbolChangeMatrix(..)
     , HasTransitionCostMatrix(..)
+    , discreteMetadataFromTCM
     , discreteMetadataWithTCM
     ) where 
 
