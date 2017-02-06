@@ -164,15 +164,15 @@ subsetted leftChild rightChild
 intersect :: (Word, Word) -> (Word, Word) -> (Word, Word)
 intersect leftChild rightChild
     | not $ leftChild `overlaps` rightChild =
-        trace ("no overlap " ++ debugString) $
+--        trace ("no overlap " ++ debugString) $
         if leftLargest < rightSmallest
             then (leftLargest, rightSmallest)
             else (rightLargest, leftSmallest)
     | subsetted leftChild rightChild =
-        trace ("subsetted   " ++ debugString) $
+--        trace ("subsetted   " ++ debugString) $
         subsetCases
     | otherwise =
-        trace ("intersecion " ++ debugString) $
+--        trace ("intersecion " ++ debugString) $
         if leftLargest < rightLargest
             then (rightSmallest, leftLargest)
             else (leftSmallest, rightLargest)

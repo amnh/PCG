@@ -452,6 +452,12 @@ cm_calc_median (SEQT *tcm, SEQT a, SEQT b, int alphSize) {
 int
 cm_calc_cost (int *tcm, SEQT a, SEQT b, int alphSize) {
     int *res;
+    /*    
+    printf ("(1 << alphSize) = %d\n", (1 << alphSize));
+    printf ("a = %d\n", a);
+    printf ("b = %d\n", b);
+    fflush(stdout);
+    */
     assert (alphSize >= 0);
     assert ((1 << alphSize) > a);
     assert ((1 << alphSize) > b);
@@ -594,7 +600,7 @@ cm_get_value (int a, int b, int *p, int alphSize) {
 /** Sets first row of nw cost matrix, where @param seq is column headers */
 void
 cm_precalc_4algn (const cost_matrices_2d_p costMtx_t, nw_matrices_p nwMtxs, const seq_p seq) {
-    if(DEBUG_MAT) {
+    if(1 || DEBUG_MAT) {
         printf("\n---cm_precalc_4algn\n");
     }
     size_t i, j, seqLen;
@@ -608,18 +614,47 @@ cm_precalc_4algn (const cost_matrices_2d_p costMtx_t, nw_matrices_p nwMtxs, cons
     tailCosts_t  = cm_get_tail_cost (costMtx_t);
     tmpPrecMtx_t = precalcMtx_t + seqLen;
     seq_begin_t  = seq_get_seq_begin (seq);         // Inlined seq_get for speed purposes
-    if (DEBUG_MAT) {
+    if (1 || DEBUG_MAT) {
         printf ("Precalculated transformation cost matrix.\n");
     }
+
+    printf ("sequence length: %d\n", seqLen);
+    fflush(stdout);
+    for (j = 0; j <= seqLen; j++) {
+      printf (" %d,", seq_begin_t[j]);
+    }
+    printf ("\n");
+    fflush(stdout);
+    
     // We will put the cost of the prepend in the 0th row of the precalc matrix.
     for (j = 0; j < seqLen; j++) {
-        precalcMtx_t[j] = prepend_t[seq_begin_t[j]];
-        if (DEBUG_CM) {
+
+        printf ("Before innerIndex\n");
+        fflush(stdout);
+	int innerIndex = seq_begin_t[j];
+        printf ("After  innerIndex: {%d}\n", innerIndex);
+        fflush(stdout);
+	
+        printf ("Before valueDatum\n");
+        fflush(stdout);
+	int valueDatum = prepend_t[innerIndex];
+        printf ("After  valueDatum\n");
+        fflush(stdout);
+	
+        printf ("Before Assignment\n");
+        fflush(stdout);
+	precalcMtx_t[j] = valueDatum;
+        printf ("After  Assignment\n");
+        fflush(stdout);
+
+        if (1 || DEBUG_CM) {
             printf ("%7d", precalcMtx_t[j]);
+	    fflush(stdout);
         }
     }
     if (DEBUG_MAT) {
         printf("\n");
+        fflush(stdout);
     }
     for (j = 1; j <= costMtx_t->alphSize; j++, tmpPrecMtx_t += seqLen) {
         // if (DEBUG_CM) {
@@ -629,21 +664,26 @@ cm_precalc_4algn (const cost_matrices_2d_p costMtx_t, nw_matrices_p nwMtxs, cons
         /* We fill almost the complete row. Only the first (aligning with the
          * gap), is filled using the tail cost */
         tmpPrecMtx_t[0] = tailCosts_t[j];
-        if (DEBUG_MAT) {
+        if (1 || DEBUG_MAT) {
             printf ("%7d", tmpPrecMtx_t[0]);
+    	    fflush(stdout);
+
         }
         for (i = 1; i < seqLen; i++) {
             tmpPrecMtx_t[i] = tmpCost_t[seq_begin_t[i]];
-            if (DEBUG_MAT) {
+            if (1 || DEBUG_MAT) {
                 printf ("%7d", tmpPrecMtx_t[i]);
+                fflush(stdout);
             }
         }
-        if (DEBUG_MAT) {
+        if (1 || DEBUG_MAT) {
             printf ("\n");
         }
     }
-    if (DEBUG_MAT) {
+    if (1 || DEBUG_MAT) {
         printf ("Finished printing transformation cost matrix\n");
+	fflush(stdout);
+
     }
     return;
 }

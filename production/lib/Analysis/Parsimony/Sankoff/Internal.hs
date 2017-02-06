@@ -134,7 +134,6 @@ updateDirectionalMins :: EncodableStaticCharacter c -- ERIC: I made this more re
                 -> [Word]
                 -> SankoffOptimizationDecoration c
 updateDirectionalMins parentDecoration childDecoration parentMins  = childDecoration & discreteCharacter .~ median
-
     where
         median = foldlWithKey' (\acc parentCharState parentCharMin ->
                                     if   parentCharMin == parentDecoration ^. characterCost

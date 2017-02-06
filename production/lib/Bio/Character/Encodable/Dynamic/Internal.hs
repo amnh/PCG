@@ -40,6 +40,7 @@ import           Data.Bits
 import           Data.BitVector               hiding (foldr, join, not, replicate)
 import           Data.Foldable
 import           Data.Hashable
+import           Data.List.NonEmpty                  (NonEmpty(..))
 import qualified Data.List.NonEmpty           as NE
 import qualified Data.Map                     as M
 import           Data.Maybe                          (fromMaybe)
@@ -98,7 +99,10 @@ instance FiniteBits DynamicCharacterElement where
 
 instance EncodableStreamElement DynamicCharacterElement where
 
-    decodeElement alphabet character = NE.fromList $ foldMapWithKey f alphabet
+    decodeElement alphabet character =
+        case foldMapWithKey f alphabet of
+          []   -> gapSymbol alphabet :| [gapSymbol alphabet]
+          x:xs -> x:|xs
       where
         f i symbol
           | character `testBit` i = [symbol]

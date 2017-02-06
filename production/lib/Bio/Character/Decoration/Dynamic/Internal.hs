@@ -181,8 +181,9 @@ data DynamicDecorationDirectOptimizationPostOrderResult d
 
 instance EncodableStream d => Show (DynamicDecorationDirectOptimizationPostOrderResult d) where
 
-    show dec = unlines $ f <$> pairs
+    show dec = unlines . (shownCost:) $ f <$> pairs
       where
+        shownCost = "Cost                : " <> show (dec ^. characterCost)
         f (prefix, accessor) = prefix <> showStream (dec ^. characterAlphabet) (dec ^. accessor)
         pairs =
           [ ("Original Encoding   : ", encoded            )
