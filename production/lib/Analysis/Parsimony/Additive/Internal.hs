@@ -75,11 +75,16 @@ updatePostOrder _parentDecoration (x:|[])                     = x               
 updatePostOrder _parentDecoration (leftChild:|(rightChild:_)) = {- trace (show newMin ++ " " ++ show newMax ++ " " ++ show totalCost) $ -}
     returnNodeDecoration  -- Not a leaf.
     where
-        (newMin, newMax)              = leftInterval `intersect` rightInterval
+        (newMin, newMax)              = if isOverlapping
+                                        then leftInterval `intersect` rightInterval
+                                        else leftInterval `union`     rightInterval
         (leftInterval, rightInterval) = (leftChild ^. preliminaryInterval, rightChild ^. preliminaryInterval)
         newInterval                   = (newMin, newMax)
         totalCost                     = thisNodeCost + (leftChild ^. characterCost) + (rightChild ^. characterCost)
-        thisNodeCost                  = newMax - newMin
+        thisNodeCost                  = if isOverlapping
+                                        then 0
+                                        else newMax - newMin
+        isOverlapping                 = leftInterval `overlaps` rightInterval
         returnNodeDecoration          =
             extendDiscreteToAdditive leftChild totalCost newInterval (leftInterval, rightInterval) False
 
@@ -90,7 +95,7 @@ updatePostOrder _parentDecoration (leftChild:|(rightChild:_)) = {- trace (show n
 initializeLeaf :: (DiscreteCharacterDecoration d c)
                => d
                -> AdditiveOptimizationDecoration c
-initializeLeaf curDecoration = trace (show (curDecoration ^. characterName) ++ ": " ++ show alphLen ++ " " ++ show alphabet ++ " " ++ show leading ++ " " ++ show lower ++ " " ++ show trailing ++ " " ++ show higher) $
+initializeLeaf curDecoration = trace (show (curDecoration ^. characterName) ++ ": " ++ show alphLen ++ " " ++ show leading ++ " " ++ show lower ++ " " ++ show trailing ++ " " ++ show higher) $
     extendDiscreteToAdditive curDecoration zero (lower, higher) ((zero,zero),(zero,zero)) True
     where
         label   = curDecoration ^. discreteCharacter
@@ -113,7 +118,7 @@ initializeLeaf curDecoration = trace (show (curDecoration ^. characterName) ++ "
 determineFinalState :: EncodableStaticCharacter c
                     => AdditiveOptimizationDecoration c
                     -> AdditiveOptimizationDecoration c
-                    -> AdditiveOptimizationDecoration c
+                    -> (AdditiveOptimizationDecoration c)
 determineFinalState childDecoration parentDecoration = finalDecoration
     where
         preliminary     = childDecoration  ^. preliminaryInterval
@@ -156,21 +161,14 @@ subsetted leftChild rightChild
 -- Finds the intersection of two intervals, the intersection being the smallest interval possible. Does
 -- not assume there's an overlap.
 --
--- There are seven cases:
--- 1: non-intersection with the left < right
--- 2: non-intersection with the left > right
--- 3: intersection but no subsetting, left < right
--- 4: intersection but no subsetting, left > right
--- 5: subsetted, one of two is unambiguous
--- 6: subsetted, right inside left
--- 7: subsetted, left inside right
+-- There are five cases:
+-- 1: intersection but no subsetting, left < right
+-- 2: intersection but no subsetting, left > right
+-- 3: subsetted, one of two is unambiguous
+-- 4: subsetted, right inside left
+-- 5: subsetted, left inside right
 intersect :: (Word, Word) -> (Word, Word) -> (Word, Word)
 intersect leftChild rightChild
-    | not $ leftChild `overlaps` rightChild =
---        trace ("no overlap " ++ debugString) $
-        if leftLargest < rightSmallest
-            then (leftLargest, rightSmallest)
-            else (rightLargest, leftSmallest)
     | subsetted leftChild rightChild =
 --        trace ("subsetted   " ++ debugString) $
         subsetCases
@@ -187,7 +185,7 @@ intersect leftChild rightChild
             | leftLargest  == leftSmallest  = (leftSmallest,  leftLargest)  -- smallest closed interval is 0
             | rightLargest == rightSmallest = (rightSmallest, rightLargest) -- smallest closed interval is 0
             | leftLargest  >= rightLargest  = (rightSmallest, rightLargest) -- smallest closed interval is smallest of two
-            | otherwise                     = (leftSmallest, leftLargest)   -- smallest closed interval is smallest of two
+            | otherwise                     = (leftSmallest,  leftLargest)  -- smallest closed interval is smallest of two
 
 
 

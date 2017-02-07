@@ -24,7 +24,8 @@ module Analysis.Parsimony.Dynamic.SequentialAlign.FFI
   ) where
 
 --import Bio.Character.Encodable
---import Bio.Character.Exportable.Class
+import Bio.Character.Exportable
+import Control.Lens
 import Data.Bits
 import Data.Foldable
 import Data.Monoid
@@ -79,6 +80,7 @@ foreign import ccall unsafe "costMatrix matrixInit"
                              -> Ptr MemoizedCostMatrix
                              -> IO ()
 
+
 -- | Set up and return a cost matrix
 --
 -- The cost matrix is allocated strictly.
@@ -96,6 +98,56 @@ getMemoizedCostMatrix alphabetSize costFn = unsafePerformIO . withArray rowMajor
         range = [0 .. alphabetSize - 1]
 
 
+data DynamicCharacterElement = DynamicCharacterElement
+    { alphabetSizeElem :: CSize
+    , characterElement :: Ptr CArrayUnit
+    }
+
+
+-- | (✔)
+instance Storable DynamicCharacterElement where
+    sizeOf    _ = (#size struct dcElement_t)
+    alignment _ = alignment (undefined :: CULong)
+    peek ptr    = do
+        alphLen <- (#peek struct dcElement_t, alphSize) ptr
+        element <- (#peek struct dcElement_t, element)  ptr
+        pure DynamicCharacterElement
+            { alphabetSizeElem = alphLen
+            , characterElement = element
+            }
+    poke ptr (DynamicCharacterElement alphLen element) = do
+        (#poke struct dcElement_t, alphSize) ptr alphLen
+        (#poke struct dcElement_t, element ) ptr element
+
+{-
+
+foreign import ccall unsafe "costMatrix call_getSetCost_C"
+    getCostMedianfn_c :: Ptr MemoizedCostMatrix
+                      -> Ptr DynamicCharacterElement
+                      -> Ptr DynamicCharacterElement
+                      -> Ptr DynamicCharacterElement
+                      -> CInt
+
+lookupCostAndMedian :: Exportable s => Ptr MemoizedCostMatrix -> s -> s -> (s, Word)
+lookupCostAndMedian tcm lhs rhs = unsafePerformIO $ do
+    firstElem  <- malloc :: IO (Ptr leftInput)
+    secondElem <- malloc :: IO (Ptr DynamicCharacterElement)
+    outputPtr  <- malloc :: IO (Ptr DynamicCharacterElement)
+
+    !cost <- getCostMedianfn_c tcm firstElem secondElem outputPtr
+
+    pure(exportableOutput, cost :: fromEnum)
+    where
+        alphSize              = lhsExportableSequence ^. alphabetSize
+        lhsExportableSequence = toExportable lhs
+        leftInput             = DynamicCharacterElement alphSize (lhsExportableSequence ^. discreteCharacter)
+        rhsExportableSequence = toExportable rhs
+        rightInput            = DynamicCharacterElement alphSize (rhsExportableSequence ^. discreteCharacter)
+        retVal                = DynamicCharacterElement alphSize (lhsExportableSequence ^. discreteCharacter)
+        exportableOutput      = Exportable 1 alphSize peek outputElem
+        (_, outputElem)       = peek retVal
+-}
+
 {-
 foreign import ccall unsafe "costMatrix lookUpCost"
     getCostfn_c :: Ptr MemoizedCostMatrix
@@ -103,7 +155,7 @@ foreign import ccall unsafe "costMatrix lookUpCost"
 -}
 
 
--- TODO: replace when Yu Xiang updated his code for bit arrays.
+-- TODO: replace when Yu Xiang updates his code for bit arrays.
 -- | STUB, DO NOT USE
 sequentialAlign :: Int -> Int -> s -> s -> Either String (Int, s, s)
 sequentialAlign x y a b = Right (x + y, a, b)
@@ -228,26 +280,7 @@ instance Storable CDynamicChar where
 
 
 
-data DynamicCharacterElement = DynamicCharacterElement
-    { alphabetSizeElem :: CSize
-    , characterElement :: Ptr CArrayUnit
-    }
 
-
--- | (✔)
-instance Storable DynamicCharacterElement where
-    sizeOf    _ = (#size struct dcElement_t)
-    alignment _ = alignment (undefined :: CULong)
-    peek ptr    = do
-        alphLen <- (#peek struct dcElement_t, alphSize) ptr
-        element <- (#peek struct dcElement_t, element)  ptr
-        pure DynamicCharacterElement
-            { alphabetSizeElem = alphLen
-            , characterElement = element
-            }
-    poke ptr (DynamicCharacterElement alphLen element) = do
-        (#poke struct dcElement_t, alphSize) ptr alphLen
-        (#poke struct dcElement_t, element ) ptr element
 
 
 
