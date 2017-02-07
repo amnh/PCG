@@ -275,8 +275,8 @@ joinSequences2 = collapseAndMerge . reduceAlphabets . deriveCorrectTCMs . derive
                generateObservedSymbolSetForCharacter input =
                  case input of
                    []               -> mempty
-                   x@(_,m,tcm,_):xs ->
-                     case TCM.tcmStructure $ TCM.diagnoseTcm tcm of
+                   x@(_,m,v,_):xs ->
+                     case TCM.tcmStructure $ TCM.diagnoseTcm v of
                        TCM.Additive -> Set.fromList . toList $ alphabet m
                        _            -> foldMap f $ x:xs                        
 
