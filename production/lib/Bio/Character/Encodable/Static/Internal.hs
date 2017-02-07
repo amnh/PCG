@@ -86,6 +86,14 @@ instance FiniteBits StaticCharacter where
     {-# INLINE finiteBitSize #-}
     finiteBitSize = symbolCount
 
+    -- Default implementation gets these backwards for no apparent reason.
+
+    {-# INLINE countLeadingZeros #-}
+    countLeadingZeros  = countTrailingZeros
+
+    {-# INLINE countTrailingZeros #-}
+    countTrailingZeros = countLeadingZeros
+
 
 instance PossiblyMissingCharacter StaticCharacter where
 
