@@ -76,7 +76,7 @@ import           Control.Lens
 --import           PCG.SearchState 
 import           Prelude                    hiding (lookup, zip, zipWith)
 
---import Debug.Trace
+import Debug.Trace
 
 
 {-
@@ -106,6 +106,8 @@ initializeDecorations2 (PhylogeneticSolution forests) = PhylogeneticSolution $ f
         g h        e  xs = h (error $ "We shouldn't be using this value." ++ show e ++ show (length xs)) xs
 
         id2 x _ = x
+
+        adaptiveDirectOptimizationPostOrder _ _ | trace "DO call" False = undefined
         adaptiveDirectOptimizationPostOrder dec kidDecs = directOptimizationPostOrder pairwiseAlignmentFunction dec kidDecs
           where
             pairwiseAlignmentFunction = chooseDirectOptimizationComparison dec kidDecs

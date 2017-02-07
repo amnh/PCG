@@ -270,8 +270,17 @@ joinSequences2 = collapseAndMerge . reduceAlphabets . deriveCorrectTCMs . derive
         reduceFileBlock mapping = fmap (zipWith removeExtraneousSymbols observedSymbolSets) mapping
           where
             observedSymbolSets :: NonEmpty (Set String)
-            observedSymbolSets = fmap (foldMap f) . NE.fromList . transpose . fmap toList $ toList mapping
+            observedSymbolSets = fmap generateObservedSymbolSetForCharacter . NE.fromList . transpose . fmap toList $ toList mapping
              where
+               generateObservedSymbolSetForCharacter input =
+                 case input of
+                   []               -> mempty
+                   x@(_,m,tcm,_):xs ->
+                     case TCM.tcmStructure $ TCM.diagnoseTcm tcm of
+                       TCM.Additive -> Set.fromList . toList $ alphabet m
+                       _            -> foldMap f $ x:xs                        
+
+                 
                f (x,_,_,_) = foldMap (foldMap (Set.fromList . toList)) x
 
         removeExtraneousSymbols :: Set String
@@ -317,7 +326,7 @@ joinSequences2 = collapseAndMerge . reduceAlphabets . deriveCorrectTCMs . derive
                     --
                     -- We might need to do this for Ultra-metric also..?
                     case TCM.tcmStructure $ TCM.diagnoseTcm tcm of
-                      TCM.Additive -> \(i,j) -> toEnum . abs $ i - j
+                      TCM.Additive -> \(i,j) -> toEnum $ max i j - min i j
                       _            -> f
                 
                 f (i,j) = tcm TCM.! (i', j')

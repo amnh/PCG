@@ -25,7 +25,7 @@ import Data.Matrix.NotStupid (Matrix, matrix, nrows, ncols)
 import Data.MonoTraversable
 import Data.Ord
 
---import Debug.Trace (trace)
+import Debug.Trace (trace)
 
 -- | The direction to align the character at a given matrix point.
 data Direction = LeftArrow | DiagArrow | UpArrow deriving (Eq, Show)
@@ -56,6 +56,7 @@ naiveDO :: DOCharConstraint s
                                    --   The gapped alignment of the /first/ input character when aligned with the second character
                                    -- 
                                    --   The gapped alignment of the /second/ input character when aligned with the first character
+naiveDO _ _ _ | trace "Call to Naive DO" False = undefined
 naiveDO char1 char2 costStruct
     | onull char1 = (char1, 0, char1, char1, char1)
     | onull char2 = (char2, 0, char2, char2, char2)
