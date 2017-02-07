@@ -136,7 +136,7 @@ lookupCostAndMedian tcm lhs rhs = unsafePerformIO $ do
 
     !cost <- getCostMedianfn_c tcm firstElem secondElem outputPtr
 
-    pure(exportableOutput, cost :: fromEnum)
+    pure (exportableOutput, fromIntegral cost)
     where
         alphSize              = lhsExportableSequence ^. alphabetSize
         lhsExportableSequence = toExportable lhs

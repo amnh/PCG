@@ -90,10 +90,10 @@ instance FiniteBits StaticCharacter where
     -- Default implementation gets these backwards for no apparent reason.
 
     {-# INLINE countLeadingZeros #-}
-    countLeadingZeros  = countTrailingZeros . unwrap
+    countLeadingZeros  = countLeadingZeros . unwrap
 
     {-# INLINE countTrailingZeros #-}
-    countTrailingZeros = countLeadingZeros  . unwrap
+    countTrailingZeros = countTrailingZeros  . unwrap
 
 
 instance PossiblyMissingCharacter StaticCharacter where

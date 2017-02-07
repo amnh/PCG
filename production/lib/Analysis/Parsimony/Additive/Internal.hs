@@ -77,7 +77,7 @@ updatePostOrder _parentDecoration (leftChild:|(rightChild:_)) = {- trace (show n
     where
         (newMin, newMax)              = if isOverlapping
                                         then leftInterval `intersect` rightInterval
-                                        else leftInterval `union`     rightInterval
+                                        else leftInterval `smallestClosed`     rightInterval
         (leftInterval, rightInterval) = (leftChild ^. preliminaryInterval, rightChild ^. preliminaryInterval)
         newInterval                   = (newMin, newMax)
         totalCost                     = thisNodeCost + (leftChild ^. characterCost) + (rightChild ^. characterCost)
@@ -95,7 +95,7 @@ updatePostOrder _parentDecoration (leftChild:|(rightChild:_)) = {- trace (show n
 initializeLeaf :: (DiscreteCharacterDecoration d c)
                => d
                -> AdditiveOptimizationDecoration c
-initializeLeaf curDecoration = trace (show (curDecoration ^. characterName) ++ ": " ++ show alphLen ++ " " ++ show leading ++ " " ++ show lower ++ " " ++ show trailing ++ " " ++ show higher) $
+initializeLeaf curDecoration = {- trace (show (curDecoration ^. characterName) ++ ": " ++ show alphLen ++ " " ++ show leading ++ " " ++ show lower ++ " " ++ show trailing ++ " " ++ show higher) $ -}
     extendDiscreteToAdditive curDecoration zero (lower, higher) ((zero,zero),(zero,zero)) True
     where
         label   = curDecoration ^. discreteCharacter
@@ -188,6 +188,13 @@ intersect leftChild rightChild
             | otherwise                     = (leftSmallest,  leftLargest)  -- smallest closed interval is smallest of two
 
 
+smallestClosed :: (Word, Word) -> (Word, Word) -> (Word, Word)
+smallestClosed leftChild rightChild
+    | leftLargest < rightSmallest = (leftLargest, rightSmallest)
+    | otherwise                   = (rightLargest, leftSmallest)
+   where
+        (rightSmallest, rightLargest) = rightChild
+        ( leftSmallest,  leftLargest) = leftChild
 
 -- |
 -- Finds the union of two intervals, where the union is the largest interval possible, i.e. from the smallest possible
