@@ -32,11 +32,12 @@ import           Bio.Character.Exportable.Class
 import           Control.Arrow                       ((***))
 import           Data.Alphabet
 import           Data.BitMatrix
-import           Data.BitMatrix.Internal(BitMatrix(..))
+import           Data.BitMatrix.Internal             (BitMatrix(..))
 import           Data.Char                           (toLower)
 import           Data.Key
 import           Data.Bits
 import           Data.BitVector               hiding (foldr, join, not, replicate)
+import           Data.BitVector.Instances            ()
 import           Data.Foldable
 import qualified Data.List.NonEmpty           as NE
 import qualified Data.Map                     as M
@@ -88,12 +89,12 @@ instance FiniteBits StaticCharacter where
 
     -- Default implementation gets these backwards for no apparent reason.
 
-{-    {-# INLINE countLeadingZeros #-}
-    countLeadingZeros  = countTrailingZeros
+    {-# INLINE countLeadingZeros #-}
+    countLeadingZeros  = countTrailingZeros . unwrap
 
     {-# INLINE countTrailingZeros #-}
-    countTrailingZeros = countLeadingZeros
--}
+    countTrailingZeros = countLeadingZeros  . unwrap
+
 
 instance PossiblyMissingCharacter StaticCharacter where
 

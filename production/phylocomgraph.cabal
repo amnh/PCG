@@ -47,6 +47,8 @@ library
                      , either
                      , hashable
                      , hashtables
+--                     , integer-logarithms
+                     , integer-gmp
                      , keys
                      , lens
                      , matrix
@@ -55,6 +57,7 @@ library
                      , mtl
 --                     , memoize
                      , parallel
+                     , primitive
                      , QuickCheck
                      , quickcheck-properties
                      , safe
@@ -285,6 +288,7 @@ library
                        Control.Evaluation.Trans
                        Data.Alphabet.Internal
                        Data.BitMatrix.Internal
+                       Data.BitVector.Instances
                        Data.ExtendedNatural
                        Data.TCM.Internal
                        File.Format.TNT.Command.CCode
