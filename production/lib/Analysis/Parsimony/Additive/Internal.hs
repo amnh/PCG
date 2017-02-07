@@ -26,8 +26,8 @@ import Bio.Character.Decoration.Additive
 --import Bio.Character.Decoration.Discrete
 import Bio.Character.Encodable
 import Control.Lens
-import Control.Monad  (join)
-import Data.Bifunctor (bimap)
+-- import Control.Monad  (join)
+-- import Data.Bifunctor (bimap)
 import Data.Bits
 import Data.List.NonEmpty (NonEmpty( (:|) ))
 --import Data.Word
@@ -90,14 +90,17 @@ updatePostOrder _parentDecoration (leftChild:|(rightChild:_)) = {- trace (show n
 initializeLeaf :: (DiscreteCharacterDecoration d c)
                => d
                -> AdditiveOptimizationDecoration c
-initializeLeaf curDecoration =
+initializeLeaf curDecoration = trace (show (curDecoration ^. characterName) ++ ": " ++ show alphLen ++ " " ++ show alphabet ++ " " ++ show leading ++ " " ++ show lower ++ " " ++ show trailing ++ " " ++ show higher) $
     extendDiscreteToAdditive curDecoration zero (lower, higher) ((zero,zero),(zero,zero)) True
     where
         label   = curDecoration ^. discreteCharacter
-        lower   = fromIntegral (countTrailingZeros label) :: Word
-        higher  = fromIntegral (alphLen - 1 - countLeadingZeros label) :: Word
+        lower   = (fromIntegral leading :: Word)
+        higher  = (fromIntegral (alphLen - 1 - trailing) :: Word)
         alphLen = symbolCount $ curDecoration ^. discreteCharacter
+        trailing = countTrailingZeros label
+        leading  = countLeadingZeros label
         zero    = fromIntegral (0 :: Int) :: Word
+        alphabet = curDecoration ^. characterAlphabet
 
 
 -- | Uses the preliminary intervals of a node, its parents, and its children. Follows the three rules of Fitch,
@@ -179,7 +182,7 @@ intersect leftChild rightChild
     where
         (rightSmallest, rightLargest) = rightChild
         ( leftSmallest,  leftLargest) = leftChild
-        debugString = (show . unlines $ fmap show [leftSmallest, leftLargest, rightSmallest, rightLargest])
+--        debugString = (show . unlines $ fmap show [leftSmallest, leftLargest, rightSmallest, rightLargest])
         subsetCases
             | leftLargest  == leftSmallest  = (leftSmallest,  leftLargest)  -- smallest closed interval is 0
             | rightLargest == rightSmallest = (rightSmallest, rightLargest) -- smallest closed interval is 0
