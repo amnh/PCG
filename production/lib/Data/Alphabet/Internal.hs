@@ -21,13 +21,14 @@ module Data.Alphabet.Internal
   , fromSymbols
   , fromSymbolsWithStateNames
   , gapSymbol
+  , truncateAtSymbol
   ) where
 
 import           Control.DeepSeq              (NFData)
 import           Control.Monad.State.Strict
 import           Data.Foldable
 import           Data.Key
-import           Data.List                    (intercalate, sort)
+import           Data.List                    (elemIndex, intercalate, sort)
 import           Data.List.NonEmpty           (NonEmpty)
 import           Data.Maybe
 import           Data.Monoid
@@ -171,6 +172,22 @@ alphabetStateNames (StateNamedAlphabet v) = toList $ snd . fromNamed <$> v
 gapSymbol :: Alphabet a -> a
 gapSymbol alphabet = alphabet ! (length alphabet - 1)
 
+-- |
+-- Attempts to find the symbol in the Alphabet.
+-- If the symbol exists, returns an alphabet with all the symbols occuring
+-- before the supplied symbol included and all symbols occring after the
+-- supplied symbol excluded. The gap character is preserved in the alphabet
+-- regardless of the supplied symbol.
+--
+-- /O(n*log(n)/
+truncateAtSymbol :: (Ord a, IsString a) => a -> Alphabet a -> Alphabet a
+truncateAtSymbol symbol alphabet =
+    case elemIndex symbol $ toList alphabet of
+      Nothing -> alphabet
+      Just i  ->
+        case alphabet of
+          SimpleAlphabet     _ -> fromSymbols . take i $ alphabetSymbols alphabet
+          StateNamedAlphabet _ -> fromSymbolsWithStateNames . take i $ zip (alphabetSymbols alphabet) (alphabetStateNames alphabet)
 
 
 {-
