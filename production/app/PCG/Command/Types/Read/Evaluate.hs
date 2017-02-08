@@ -15,6 +15,7 @@ import           Control.Monad.IO.Class
 import           Control.Monad.Trans.Either
 import           Control.Parallel.Strategies
 import           Data.Alphabet   --    hiding (AmbiguityGroup)
+import           Data.Alphabet.IUPAC
 import           Data.Bifunctor               (bimap,first)
 import           Data.Char                    (isLower,toLower,isUpper,toUpper)
 import           Data.Either.Custom
@@ -76,7 +77,7 @@ evaluate (READ fileSpecs) _old = do
                     $> g
 --                    $> (fmap initializeDecorations2 g)
   where
-    transformation = expandIUPAC
+    transformation = id -- expandIUPAC
     decoration = fmap (fmap initializeDecorations2)
 
 evaluate _ _ = fail "Invalid READ command binding"
@@ -202,12 +203,12 @@ expandIUPAC fpr = fpr { parsedChars = newTreeChars }
             h :: ParsedCharacterMetadata -> Maybe ParsedChar -> Maybe ParsedChar
             h cInfo seqMay = expandCodes <$> seqMay
               where
-                cAlph = toList $ alphabet cInfo
+                cAlph = alphabet cInfo
 
                 expandCodes :: ParsedChar -> ParsedChar
                 expandCodes x
-                  | cAlph `subsetOf` (concatMap toList . keys) nucleotideIUPAC = expandOrId nucleotideIUPAC <$> x
-                  | cAlph `subsetOf` (concatMap toList . keys) aminoAcidIUPAC  = expandOrId aminoAcidIUPAC  <$> x
+                  | isAlphabetDna       cAlph = expandOrId nucleotideIUPAC <$> x
+                  | isAlphabetAminoAcid cAlph = expandOrId aminoAcidIUPAC  <$> x
                   | otherwise = x
     expandOrId m x = fromMaybe x $ x `lookup` m
 

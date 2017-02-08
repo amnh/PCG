@@ -283,6 +283,8 @@ library
                        Bio.PhyloGraphPrime.ReferenceDAG.Internal
                        Bio.PhyloGraphPrime.ZipperDAG.Internal
                        Bio.Sequence.Internal
+                       Bio.Sequence.Block.Builder
+                       Bio.Sequence.Block.Internal
                        Control.Evaluation.Unit
                        Control.Evaluation.Internal
                        Control.Evaluation.Trans

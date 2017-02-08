@@ -12,6 +12,8 @@
 --
 -----------------------------------------------------------------------------
 
+{-# LANGUAGE FlexibleContexts #-}
+
 module PCG.Command.Types.Read.Unification.Master where
 
 import           Bio.Character
@@ -25,7 +27,7 @@ import           Bio.Sequence.Block
 import           Bio.Metadata.CharacterName        hiding (sourceFile)
 import           Bio.Metadata.Parsed
 import           Bio.PhyloGraph.Solution           hiding (parsedChars)
-import           Bio.PhyloGraph.DAG
+import           Bio.PhyloGraph.DAG                hiding (structure)
 import           Bio.PhyloGraph.Forest.Parsed
 import           Bio.PhyloGraphPrime
 import           Bio.PhyloGraphPrime.Component
@@ -52,7 +54,7 @@ import           Data.Semigroup                    ((<>), sconcat)
 import           Data.Semigroup.Foldable
 import           Data.Set                          (Set, (\\))
 import qualified Data.Set                   as Set
-import           Data.TCM                          (TCM)
+import           Data.TCM                          (TCM, TCMStructure)
 import qualified Data.TCM                   as TCM
 import           Data.MonoTraversable
 import           Data.Vector                       (Vector)
@@ -264,33 +266,43 @@ joinSequences2 = collapseAndMerge . reduceAlphabets . deriveCorrectTCMs . derive
 
     reduceAlphabets :: Functor f
                     => f (Map String (NonEmpty (Maybe ParsedChar, ParsedCharacterMetadata, TCM, CharacterName)))
-                    -> f (Map String (NonEmpty (Maybe ParsedChar, ParsedCharacterMetadata, TCM, CharacterName)))
+                    -> f (Map String (NonEmpty (Maybe ParsedChar, ParsedCharacterMetadata, TCM, CharacterName, TCMStructure)))
     reduceAlphabets = fmap reduceFileBlock
       where
         reduceFileBlock mapping = fmap (zipWith removeExtraneousSymbols observedSymbolSets) mapping
           where
-            observedSymbolSets :: NonEmpty (Set String)
+            observedSymbolSets :: NonEmpty (Set String, Int, TCM, TCMStructure)
             observedSymbolSets = fmap generateObservedSymbolSetForCharacter . NE.fromList . transpose . fmap toList $ toList mapping
              where
                generateObservedSymbolSetForCharacter input =
                  case input of
-                   []               -> mempty
-                   x@(_,m,v,_):xs ->
-                     case TCM.tcmStructure $ TCM.diagnoseTcm v of
-                       TCM.Additive -> Set.fromList . toList $ alphabet m
-                       _            -> foldMap f $ x:xs                        
+                   []             -> error "Should never happen in reduceAlphabets.reduceFileBlock.observedSymbolSets.generateObservedSymbolSetForCharacter" -- mempty
+                   x@(_,m,tcm,_):xs ->
+                     let diagnosis   = TCM.diagnoseTcm tcm
+                         weighting   = TCM.factoredWeight diagnosis
+                         tcm'        = TCM.factoredTcm    diagnosis
+                         structure   = TCM.tcmStructure   diagnosis
+                         seenSymbols =
+                             case structure of
+                               TCM.Additive -> Set.fromList . toList $ alphabet m
+                               _            -> foldMap f $ x:xs
+                         
+                     in (seenSymbols, weighting, tcm', structure)
+                     -- TCM structure won't change with columns removed!
 
                  
                f (x,_,_,_) = foldMap (foldMap (Set.fromList . toList)) x
 
-        removeExtraneousSymbols :: Set String
+        removeExtraneousSymbols :: (Set String, Int, TCM, TCMStructure)
                                 -> (Maybe ParsedChar, ParsedCharacterMetadata, TCM, CharacterName)
-                                -> (Maybe ParsedChar, ParsedCharacterMetadata, TCM, CharacterName)
-        removeExtraneousSymbols observedSymbols input@(charMay, charMetadata, tcm, charName)
-          | isDynamic charMetadata      = input
-          | onull missingSymbolIndicies = input
-          | otherwise                   = (charMay, charMetadata { alphabet = reducedAlphabet }, reducedTCM, charName)
+                                -> (Maybe ParsedChar, ParsedCharacterMetadata, TCM, CharacterName, TCMStructure)
+        removeExtraneousSymbols (observedSymbols, coefficient, tcm, structure) (charMay, charMetadata, _, charName)
+          | isDynamic charMetadata      = (charMay, charMetadata' , tcm, charName, structure)
+          | onull missingSymbolIndicies = (charMay, charMetadata' , tcm, charName, structure)
+          | otherwise                   = (charMay, charMetadata'', reducedTCM, charName, structure)
           where
+            charMetadata'  = charMetadata  { weight   = weight charMetadata * fromIntegral coefficient }
+            charMetadata'' = charMetadata' { alphabet = reducedAlphabet }
 --            observedSymbols       = observedSymbols' `Set.remove` "?"
             missingSymbolIndicies = foldMapWithKey f suppliedAlphabet
               where
@@ -336,11 +348,21 @@ joinSequences2 = collapseAndMerge . reduceAlphabets . deriveCorrectTCMs . derive
                     xs = otoList missingSymbolIndicies
                     iOffset = length $ filter (<=i) xs
                     jOffset = length $ filter (<=j) xs
-
+{-
+    collapseAndMerge2 :: Foldable f => f (Map String (NonEmpty (Maybe ParsedChar, ParsedCharacterMetadata, TCM, CharacterName))) -> Map String UnifiedCharacterSequence
+    collapseAndMerge2 = h . g . f
+      where
+        f :: Foldable f => f (Map String (NonEmpty (Maybe ParsedChar, ParsedCharacterMetadata, TCM, CharacterName))) -> f (Map String (Map OptToken [OptValueWrapper]))
+        f = undefined
+        g :: Foldable f => f (Map String (Map OptToken [OptValueWrapper])) -> Map String (f (Map OptToken [OptValueWrapper]))
+        g = undefined
+        h :: Foldable f => Map String (f (Map OptToken [OptValueWrapper])) -> Map String UnifiedCharacterSequence 
+        h = undefined
+-}
     collapseAndMerge = fmap fromBlocks . fst . foldl' f (mempty, [])
       where
         f :: (Map String (NonEmpty UnifiedCharacterBlock), [UnifiedCharacterBlock])
-          ->  Map String (NonEmpty (Maybe ParsedChar, ParsedCharacterMetadata, TCM, CharacterName))
+          ->  Map String (NonEmpty (Maybe ParsedChar, ParsedCharacterMetadata, TCM, CharacterName, TCM.TCMStructure))
           -> (Map String (NonEmpty UnifiedCharacterBlock), [UnifiedCharacterBlock])
         f (prevMapping, prevPad) currTreeChars = (nextMapping, nextPad)
           where
@@ -360,15 +382,15 @@ joinSequences2 = collapseAndMerge . reduceAlphabets . deriveCorrectTCMs . derive
                 rhs = Set.fromList $ keys y
 
             encodeToBlock :: Foldable1 t
-                          => t (Maybe ParsedChar, ParsedCharacterMetadata, TCM, CharacterName)
+                          => t (Maybe ParsedChar, ParsedCharacterMetadata, TCM, CharacterName, TCM.TCMStructure)
                           -> UnifiedCharacterBlock
-            encodeToBlock = foldMap1 encodeBinToSingletonBlock
+            encodeToBlock = finalizeCharacterBlock . foldMap1 encodeBinToSingletonBlock
               where
-                encodeBinToSingletonBlock :: (Maybe ParsedChar, ParsedCharacterMetadata, TCM, CharacterName)
-                                          -> UnifiedCharacterBlock
-                encodeBinToSingletonBlock (charMay, charMeta, tcm, charName)
-                  | isDynamic charMeta = dynamicSingleton     dynamicCharacter
-                  | otherwise          = discreteSingleton tcm staticCharacter
+--                encodeBinToSingletonBlock :: (Maybe ParsedChar, ParsedCharacterMetadata, TCM, CharacterName, TCM.TCMStructure)
+--                                          -> UnifiedCharacterBlock
+                encodeBinToSingletonBlock (charMay, charMeta, tcm, charName, structure)
+                  | isDynamic charMeta = dynamicSingleton dynamicCharacter
+                  | otherwise          = discreteSingleton structure staticCharacter
                   where
                     alphabetLength    = length specifiedAlphabet
                     specifiedAlphabet = alphabet charMeta

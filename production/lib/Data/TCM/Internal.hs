@@ -463,12 +463,12 @@ generate n f
 -- the TCM.
 diagnoseTcm :: TCM -> TCMDiagnosis
 diagnoseTcm tcm
-  | isNonAdditive  tcm' = diagnosis  NonAdditive
-  | isAdditive     tcm' = diagnosis     Additive
-  | isUltraMetric  tcm' = diagnosis  UltraMetric
-  | isMetric       tcm' = diagnosis       Metric
-  | isSymmetric    tcm' = diagnosis    Symmetric
-  | otherwise           = diagnosis NonSymmetric
+  | not $ isSymmetric   tcm' = diagnosis NonSymmetric
+  | not $ isMetric      tcm' = diagnosis    Symmetric
+  |       isAdditive    tcm' = diagnosis     Additive
+  | not $ isUltraMetric tcm' = diagnosis       Metric
+  | not $ isNonAdditive tcm' = diagnosis  UltraMetric
+  | otherwise                = diagnosis  NonAdditive
   where
     (weight, tcm') = factorTCM tcm
     diagnosis = TCMDiagnosis weight tcm'
@@ -553,7 +553,6 @@ isMetric tcm = conditions `allSatisfiedBy` tcm
   where
     conditions =
         [ zeroDiagonalOnly
-        , isSymmetric
         , triangleInequality
         ]
     triangleInequality x = all triangleInequalityIndex [(i,k,j) | i <- range, j <- range, k <- range, i < j, j < k ]
@@ -584,11 +583,7 @@ isSymmetric tcm = all isSymmetricIndex [(i,j) | i <- range, j <- range, i <= j ]
 isUltraMetric :: TCM -> Bool
 isUltraMetric tcm = conditions `allSatisfiedBy` tcm
   where
-    conditions = 
-        [ zeroDiagonalOnly      
-        , isSymmetric           
-        , ultraMetricInequality
-        ]
+    conditions = [ ultraMetricInequality ]
     ultraMetricInequality x = all ultraMetricInequalityIndex [(i,k,j) | i <- range, j <- range, k <- range, i < j, j < k ]
       where
         ultraMetricInequalityIndex (i,j,k) = x ! (i,k) <= max (x ! (i,j)) (x ! (j,k))
