@@ -19,6 +19,13 @@
 
 module Bio.Sequence
   ( CharacterSequence()
+  , CharacterBlock(..)
+  , PartialCharacterBlock()
+  , continuousSingleton
+  , discreteSingleton
+  , dynamicSingleton 
+  , finalizeCharacterBlock
+  , toMissingCharacters
   , toBlocks
   , fromBlocks
   , hexmap
@@ -27,3 +34,5 @@ module Bio.Sequence
   ) where
 
 import Bio.Sequence.Internal
+import Bio.Sequence.Block hiding (hexmap, hexTranspose, hexZipWith)
+import Bio.Sequence.Block.Builder

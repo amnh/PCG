@@ -12,6 +12,8 @@
 --
 -----------------------------------------------------------------------------
 
+{-# LANGUAGE FlexibleContexts #-}
+
 module PCG.Command.Types.Read.Unification.Master where
 
 import           Bio.Character
@@ -336,7 +338,17 @@ joinSequences2 = collapseAndMerge . reduceAlphabets . deriveCorrectTCMs . derive
                     xs = otoList missingSymbolIndicies
                     iOffset = length $ filter (<=i) xs
                     jOffset = length $ filter (<=j) xs
-
+{-
+    collapseAndMerge2 :: Foldable f => f (Map String (NonEmpty (Maybe ParsedChar, ParsedCharacterMetadata, TCM, CharacterName))) -> Map String UnifiedCharacterSequence
+    collapseAndMerge2 = h . g . f
+      where
+        f :: Foldable f => f (Map String (NonEmpty (Maybe ParsedChar, ParsedCharacterMetadata, TCM, CharacterName))) -> f (Map String (Map OptToken [OptValueWrapper]))
+        f = undefined
+        g :: Foldable f => f (Map String (Map OptToken [OptValueWrapper])) -> Map String (f (Map OptToken [OptValueWrapper]))
+        g = undefined
+        h :: Foldable f => Map String (f (Map OptToken [OptValueWrapper])) -> Map String UnifiedCharacterSequence 
+        h = undefined
+-}
     collapseAndMerge = fmap fromBlocks . fst . foldl' f (mempty, [])
       where
         f :: (Map String (NonEmpty UnifiedCharacterBlock), [UnifiedCharacterBlock])
@@ -362,10 +374,10 @@ joinSequences2 = collapseAndMerge . reduceAlphabets . deriveCorrectTCMs . derive
             encodeToBlock :: Foldable1 t
                           => t (Maybe ParsedChar, ParsedCharacterMetadata, TCM, CharacterName)
                           -> UnifiedCharacterBlock
-            encodeToBlock = foldMap1 encodeBinToSingletonBlock
+            encodeToBlock = finalizeCharacterBlock . foldMap1 encodeBinToSingletonBlock
               where
-                encodeBinToSingletonBlock :: (Maybe ParsedChar, ParsedCharacterMetadata, TCM, CharacterName)
-                                          -> UnifiedCharacterBlock
+--                encodeBinToSingletonBlock :: (Maybe ParsedChar, ParsedCharacterMetadata, TCM, CharacterName)
+--                                          -> UnifiedCharacterBlock
                 encodeBinToSingletonBlock (charMay, charMeta, tcm, charName)
                   | isDynamic charMeta = dynamicSingleton     dynamicCharacter
                   | otherwise          = discreteSingleton tcm staticCharacter

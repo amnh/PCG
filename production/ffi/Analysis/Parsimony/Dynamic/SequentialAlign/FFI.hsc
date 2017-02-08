@@ -82,19 +82,22 @@ foreign import ccall unsafe "costMatrix matrixInit"
 -- | Set up and return a cost matrix
 --
 -- The cost matrix is allocated strictly.
-getMemoizedCostMatrix :: Int
-                      -> (Int -> Int -> Int)
+getMemoizedCostMatrix :: Word
+                      -> (Word -> Word -> Word)
                       -> Ptr MemoizedCostMatrix
 getMemoizedCostMatrix alphabetSize costFn = unsafePerformIO . withArray rowMajorList $ \allocedTCM -> do
         output <- malloc :: IO (Ptr MemoizedCostMatrix)
         -- Hopefully the strictness annotation forces the allocation of the CostMatrix2d to happen immediately.
-        !_ <- initializeMemoizedCMfn_c allocedTCM (toEnum alphabetSize) output
+        !_ <- initializeMemoizedCMfn_c allocedTCM (coerceEnum alphabetSize) output
         pure output
     where
         -- This *should* be in row major order due to the manner in which list comprehensions are performed.
-        rowMajorList = [ toEnum $ costFn i j | i <- range,  j <- range ]
+        rowMajorList = [ coerceEnum $ costFn i j | i <- range,  j <- range ]
         range = [0 .. alphabetSize - 1]
 
+
+coerceEnum :: (Enum a, Enum b) => a -> b
+coerceEnum = toEnum . fromEnum
 
 {-
 foreign import ccall unsafe "costMatrix lookUpCost"
