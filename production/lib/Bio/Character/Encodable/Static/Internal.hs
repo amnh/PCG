@@ -9,7 +9,7 @@
 -- Portability :  portable
 --
 -- Data structures and instances for coded characters
--- Coded characters are dynamic characters recoded as 
+-- Coded characters are dynamic characters recoded as
 --
 -----------------------------------------------------------------------------
 
@@ -90,10 +90,10 @@ instance FiniteBits StaticCharacter where
     -- Default implementation gets these backwards for no apparent reason.
 
     {-# INLINE countLeadingZeros #-}
-    countLeadingZeros  = countTrailingZeros . unwrap
+    countLeadingZeros  = countLeadingZeros . unwrap
 
     {-# INLINE countTrailingZeros #-}
-    countTrailingZeros = countLeadingZeros  . unwrap
+    countTrailingZeros = countTrailingZeros  . unwrap
 
 
 instance PossiblyMissingCharacter StaticCharacter where
@@ -103,7 +103,7 @@ instance PossiblyMissingCharacter StaticCharacter where
 
     {-# INLINE isMissing  #-}
     isMissing c = c == toMissing c
-                                       
+
 
 instance EncodableStreamElement StaticCharacter where
 
@@ -130,13 +130,13 @@ instance EncodableStaticCharacter StaticCharacter where
 
     {-# INLINE emptyStatic #-}
     emptyStatic (SC x) = SC $ bitVec (width x) (0 :: Integer)
-            
+
 
 instance MonoFunctor StaticCharacterBlock where
 
     {-# INLINE omap #-}
     omap f = SCB . omap (unwrap . f . SC) . unstream
-  
+
 
 instance Semigroup StaticCharacterBlock where
 
@@ -191,7 +191,7 @@ instance EncodedAmbiguityGroupContainer StaticCharacterBlock where
 instance EncodableStream StaticCharacterBlock where
 
     decodeStream alphabet char
-      | alphabet /= dnaAlphabet = rawResult 
+      | alphabet /= dnaAlphabet = rawResult
       | otherwise               = (dnaIUPAC !) <$> rawResult
       where
         rawResult   = NE.fromList . ofoldMap (pure . decodeElement alphabet) . otoList $ char
@@ -207,7 +207,7 @@ instance EncodableStream StaticCharacterBlock where
               , ('C', "C"   )
               , ('G', "G"   )
               , ('T', "T"   )
-              , ('M', "AC"  ) 
+              , ('M', "AC"  )
               , ('R', "AG"  )
               , ('W', "AT"  )
               , ('S', "CG"  )
@@ -236,7 +236,7 @@ instance EncodableStaticCharacterStream StaticCharacterBlock where
 
 
 instance Arbitrary StaticCharacterBlock where
-    arbitrary = do 
+    arbitrary = do
         alphabetLen  <- arbitrary `suchThat` (\x -> 0 < x && x <= 62) :: Gen Int
         characterLen <- arbitrary `suchThat` (> 0) :: Gen Int
         let randVal  =  choose (1, 2 ^ alphabetLen - 1) :: Gen Integer
@@ -246,11 +246,11 @@ instance Arbitrary StaticCharacterBlock where
 
 instance Exportable StaticCharacterBlock where
 
-    toExportableBuffer (SCB bm@(BitMatrix _ bv)) = ExportableCharacterSequence x y $ bitVectorToBufferChunks x y bv 
+    toExportableBuffer (SCB bm@(BitMatrix _ bv)) = ExportableCharacterSequence x y $ bitVectorToBufferChunks x y bv
       where
         x = numRows bm
         y = numCols bm
-        
+
     fromExportableBuffer = undefined
 
     toExportableElements = encodableStreamToExportableCharacterElements

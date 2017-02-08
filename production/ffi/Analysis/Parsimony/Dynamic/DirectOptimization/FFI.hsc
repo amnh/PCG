@@ -56,7 +56,7 @@ import Debug.Trace
 -- #include "seqAlign.h"
 
 
-type DenseTransitionCostMatrix = Ptr CostMatrix2d 
+type DenseTransitionCostMatrix = Ptr CostMatrix2d
 
 
 data UnionContext  = ComputeUnions  | DoNotComputeUnions
@@ -215,7 +215,7 @@ instance NFData CostMatrix2d
 
 instance Show CostMatrix2d where
 
-    show = unlines . 
+    show = unlines .
            ([ show . alphSize
             , show . lcm
             , show . gapChar
@@ -265,7 +265,7 @@ instance Storable CostMatrix2d where
                            , prependCost   = prependVal
                            , tailCost      = tailVal
                            }
-      
+
     poke ptr (CostMatrix2d
                   alphSizeVal
                   lcmVal
@@ -329,7 +329,7 @@ getCostMatrix2dAffine :: CInt -- gap open cost
                       -> Word
                       -> (Word -> Word -> Word)
                       -> DenseTransitionCostMatrix
-getCostMatrix2dAffine = performMatrixAllocation 1 
+getCostMatrix2dAffine = performMatrixAllocation 1
 
 
 performMatrixAllocation :: CInt -- Is 2d
@@ -453,10 +453,10 @@ algn2d char1 char2 costStruct computeUnion computeMedians =
                 pure (filterGaps resultingGapped, fromIntegral cost, resultingGapped, resultingAlignedChar1, resultingAlignedChar2)
             where
                 neverComputeOnlyGapped = 0
-              
+
                 toCInt :: (Enum a, Enum b) => a -> b
                 toCInt = toEnum . fromEnum
-              
+
                 elemWidth        = exportedChar1 ^. exportedElementWidth
 
                 exportedChar1Len = toEnum $ exportedChar1 ^. exportedElementCount

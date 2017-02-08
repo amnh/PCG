@@ -71,12 +71,12 @@ void alignIOtoChar(alignIO_p input, seq_p retChar, size_t alphabetSize) {
  *  Also eliminates extra gap needed by legacy code.
  */
 void charToAlignIO(seq_p input, alignIO_p output) {
-    printf("Length:   %d\n", input->len);
-    printf("Capacity: %d\n", input->cap);
+    printf("Length:   %zu\n", input->len);
+    printf("Capacity: %zu\n", input->cap);
     fflush(stdout);
 
     //TODO: The length is ZERO, why?
-  
+
     input->seq_begin++;                   // to start after unnecessary gap char at begining
     output->length   = input->len - 1;    //
     output->capacity = input->cap;        // this shouldn't actually change
