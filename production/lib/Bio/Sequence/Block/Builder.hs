@@ -123,9 +123,9 @@ continuousSingleton nameValue transformation continuousValue =
 
 -- |
 -- Construct a singleton block containing a /discrete/ character.
-discreteSingleton :: TCM -> s -> PartialCharacterBlock s s c s s d
-discreteSingleton tcmValues dec =
-    case tcmStructure diagnosis of
+discreteSingleton :: TCMStructure -> s -> PartialCharacterBlock s s c s s d
+discreteSingleton struct dec =
+    case struct of
       NonSymmetric -> PartialCharacterBlock mempty mempty mempty mempty bin    mempty
       Symmetric    -> PartialCharacterBlock mempty mempty mempty mempty bin    mempty
       Metric       -> PartialCharacterBlock mempty mempty mempty bin    mempty mempty
@@ -133,8 +133,7 @@ discreteSingleton tcmValues dec =
       Additive     -> PartialCharacterBlock mempty mempty bin    mempty mempty mempty
       NonAdditive  -> PartialCharacterBlock mempty bin    mempty mempty mempty mempty
   where
-    diagnosis   = diagnoseTcm tcmValues
-    bin         = pure dec
+    bin = pure dec
 
 
 -- |
