@@ -42,7 +42,22 @@ instance Eq ExtendedNatural where
 
 instance Ord ExtendedNatural where
 
-    (Cost lhs) <= (Cost rhs) = lhs <= rhs
+    (Cost lhs) <= (Cost rhs) =
+        case (lhs, rhs) of
+            (Nothing, Nothing) -> True
+            (Nothing, Just _)  -> False
+            (Just _,  Nothing) -> True
+            (Just x,  Just y)  -> x <= y
+
+    (Cost lhs) < (Cost rhs) =
+        case lhs of
+            Nothing  -> False
+            (Just x) ->
+                case rhs of
+                    Nothing  -> True
+                    (Just y) -> x <= y
+
+
 
 
 instance Enum ExtendedNatural where
@@ -51,6 +66,23 @@ instance Enum ExtendedNatural where
 
     toEnum = Cost . Just . toEnum
 
+{-}
+
+instance Eq ExtendedNatural where
+
+    (Cost lhs) == (Cost rhs)
+        | lhs == Nothing && rhs == Nothing = True
+        | lhs == Nothing                   = False
+        | rhs == Nothing                   = False
+        | lhs /= rhs                       = False
+        | otherwise                        = True
+
+
+instance Ord ExtendedNatural where
+
+    (Cost lhs) <= (Cost rhs) = lhs <= rhs
+
+-}
 
 instance Integral ExtendedNatural where
 
