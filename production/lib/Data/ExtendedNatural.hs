@@ -1,7 +1,6 @@
 module Data.ExtendedNatural
  ( ExtendedNatural()
- , infinityCost
- , minCost
+ , infinity
  , toWord
  , fromWord
  ) where
@@ -14,24 +13,23 @@ import Data.Maybe          (fromMaybe)
 -- | A natural number extended to include infinity. Where infinity == maxBound
 newtype ExtendedNatural = Cost (Maybe Word)
 
-infinityCost :: ExtendedNatural
-infinityCost = maxBound :: ExtendedNatural
 
-minCost :: ExtendedNatural
-minCost = minBound :: ExtendedNatural
+-- | A synonym for 'maxBound'
+infinity :: ExtendedNatural
+infinity = maxBound
+
 
 toWord :: ExtendedNatural -> Word
 toWord (Cost x) = fromMaybe (maxBound :: Word) x
+
 
 fromWord :: Word -> ExtendedNatural
 fromWord = Cost . Just
 
 
 instance Show ExtendedNatural where
-    show input =
-        case input of
-            Cost (Just c) -> show c
-            _      -> show "Nothing"
+
+    show (Cost input) = maybe "∞" show input
 
 
 instance Bounded ExtendedNatural where
@@ -69,19 +67,25 @@ instance Ord ExtendedNatural where
     (Cost lhs) <= (Cost rhs) =
         case (lhs, rhs) of
             (Nothing, Nothing) -> True
-            (Nothing, Just _)  -> False
+            (Nothing, Just _ ) -> False
             (Just _,  Nothing) -> True
-            (Just x,  Just y)  -> x <= y
+            (Just x,  Just y ) -> x <= y
 
     (Cost lhs) < (Cost rhs) =
         case lhs of
-            Nothing  -> False
-            (Just x) ->
+            Nothing -> False
+            Just x  ->
                 case rhs of
-                    Nothing  -> True
-                    (Just y) -> x <= y
+                    Nothing -> True
+                    Just y  -> x < y
 
-
+    (Cost lhs) > (Cost rhs) =
+        case rhs of
+            Nothing -> False
+            Just x  ->
+                case lhs of
+                    Nothing -> True
+                    Just y  -> x > y
 
 
 instance Enum ExtendedNatural where
@@ -90,23 +94,6 @@ instance Enum ExtendedNatural where
 
     toEnum = Cost . Just . toEnum
 
-{-}
-
-instance Eq ExtendedNatural where
-
-    (Cost lhs) == (Cost rhs)
-        | lhs == Nothing && rhs == Nothing = True
-        | lhs == Nothing                   = False
-        | rhs == Nothing                   = False
-        | lhs /= rhs                       = False
-        | otherwise                        = True
-
-
-instance Ord ExtendedNatural where
-
-    (Cost lhs) <= (Cost rhs) = lhs <= rhs
-
--}
 
 instance Integral ExtendedNatural where
 

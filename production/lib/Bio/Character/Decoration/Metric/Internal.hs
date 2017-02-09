@@ -126,7 +126,7 @@ data SankoffOptimizationDecoration c
    = SankoffOptimizationDecoration
    { sankoffDirectionalMins :: ([ExtendedNatural], [ExtendedNatural])
    , sankoffMinCostVector   ::  [ExtendedNatural]
-   , sankoffMinCost         ::   ExtendedNatural
+   , sankoffMinCost         :: Word
    , sankoffMetadataField   :: DiscreteWithTCMCharacterMetadataDec c
    , sankoffCharacterField  :: c
    }
@@ -201,7 +201,7 @@ instance HasDirectionalMinVector (SankoffOptimizationDecoration c) ([ExtendedNat
 
 
 -- | (✔)
-instance HasCharacterCost (SankoffOptimizationDecoration c) ExtendedNatural where
+instance HasCharacterCost (SankoffOptimizationDecoration c) Word where
 
     characterCost = lens sankoffMinCost (\e x -> e { sankoffMinCost = x })
 
