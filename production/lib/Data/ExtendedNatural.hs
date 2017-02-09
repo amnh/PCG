@@ -1,13 +1,37 @@
 module Data.ExtendedNatural
  ( ExtendedNatural()
+ , infinityCost
+ , minCost
+ , toWord
+ , fromWord
  ) where
 
 
 import Control.Applicative (liftA2)
+import Data.Maybe          (fromMaybe)
 
 
 -- | A natural number extended to include infinity. Where infinity == maxBound
 newtype ExtendedNatural = Cost (Maybe Word)
+
+infinityCost :: ExtendedNatural
+infinityCost = maxBound :: ExtendedNatural
+
+minCost :: ExtendedNatural
+minCost = minBound :: ExtendedNatural
+
+toWord :: ExtendedNatural -> Word
+toWord (Cost x) = fromMaybe (maxBound :: Word) x
+
+fromWord :: Word -> ExtendedNatural
+fromWord = Cost . Just
+
+
+instance Show ExtendedNatural where
+    show input =
+        case input of
+            Cost (Just c) -> show c
+            _      -> show "Nothing"
 
 
 instance Bounded ExtendedNatural where
@@ -97,3 +121,4 @@ instance Integral ExtendedNatural where
 instance Real ExtendedNatural where
 
     toRational = toRational . toInteger
+

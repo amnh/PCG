@@ -124,9 +124,9 @@ instance EncodableStaticCharacter c => MetricCharacterDecoration (MetricDecorati
 -- A concrete type representing the results of performing Sankoff's algorithm.
 data SankoffOptimizationDecoration c
    = SankoffOptimizationDecoration
-   { sankoffDirectionalMins :: ([Word], [Word])
-   , sankoffMinCostVector   ::  [Word]
-   , sankoffMinCost         ::   Word
+   { sankoffDirectionalMins :: ([ExtendedNatural], [ExtendedNatural])
+   , sankoffMinCostVector   ::  [ExtendedNatural]
+   , sankoffMinCost         ::   ExtendedNatural
    , sankoffMetadataField   :: DiscreteWithTCMCharacterMetadataDec c
    , sankoffCharacterField  :: c
    }
@@ -189,19 +189,19 @@ instance HasCharacterWeight (SankoffOptimizationDecoration c) Double where
 
 
 -- | (✔)
-instance HasCharacterCostVector (SankoffOptimizationDecoration c) [Word] where
+instance HasCharacterCostVector (SankoffOptimizationDecoration c) [ExtendedNatural] where
 
     characterCostVector = lens sankoffMinCostVector (\e x -> e { sankoffMinCostVector = x })
 
 
 -- | (✔)
-instance HasDirectionalMinVector (SankoffOptimizationDecoration c) ([Word], [Word]) where
+instance HasDirectionalMinVector (SankoffOptimizationDecoration c) ([ExtendedNatural], [ExtendedNatural]) where
 
     directionalMinVector = lens sankoffDirectionalMins (\e x -> e { sankoffDirectionalMins = x })
 
 
 -- | (✔)
-instance HasCharacterCost (SankoffOptimizationDecoration c) Word where
+instance HasCharacterCost (SankoffOptimizationDecoration c) ExtendedNatural where
 
     characterCost = lens sankoffMinCost (\e x -> e { sankoffMinCost = x })
 
@@ -233,7 +233,7 @@ instance EncodableStaticCharacter c => SankoffDecoration (SankoffOptimizationDec
 -- | (✔)
 instance EncodableStaticCharacter c => DiscreteExtensionSankoffDecoration (SankoffOptimizationDecoration c) c where
 
---    extendToSankoff :: DiscreteCharacterDecoration x c => x -> [Word] -> ([Word], [Word]) -> Word -> s
+--    extendDiscreteToSankoff :: DiscreteCharacterDecoration x c => x -> [Word] -> ([Word], [Word]) -> Word -> s
     extendDiscreteToSankoff subDecoration costVector directionVector cost =
 
         SankoffOptimizationDecoration
@@ -247,7 +247,7 @@ instance EncodableStaticCharacter c => DiscreteExtensionSankoffDecoration (Sanko
         alphabetValue   = subDecoration ^. characterAlphabet
         tcmValue        = generate (length alphabetValue) generator
         generator (i,j) = (subDecoration ^. symbolChangeMatrix) (toEnum i) (toEnum j)
-        metadataValue   = 
+        metadataValue   =
           discreteMetadataFromTCM
             <$> (^. characterName)
             <*> (^. characterWeight)
