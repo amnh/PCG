@@ -94,7 +94,7 @@ class ( HasDiscreteCharacter s a
 -- | (✔)
 class DiscreteCharacterDecoration s a => SimpleDiscreteCharacterDecoration s a | s -> a where
 
-    toDiscreteCharacterDecoration :: CharacterName -> Double -> Alphabet String -> TCM -> (x -> a) -> x -> s
+    toDiscreteCharacterDecoration :: CharacterName -> Double -> Alphabet String -> (Word -> Word -> Word) -> (x -> a) -> x -> s
     {-# MINIMAL toDiscreteCharacterDecoration #-}
 
 
@@ -171,8 +171,8 @@ instance EncodableStaticCharacter c => DiscreteCharacterDecoration (DiscreteDeco
 
 -- | (✔)
 instance EncodableStaticCharacter c => SimpleDiscreteCharacterDecoration (DiscreteDecoration c) c where
-    toDiscreteCharacterDecoration name weight alphabet tcm g symbolSet =
+    toDiscreteCharacterDecoration name weight alphabet scm g symbolSet =
         DiscreteDec
         { discreteDecorationCharacter = g symbolSet
-        , metadata                    = discreteMetadataFromTCM name weight alphabet tcm
+        , metadata                    = discreteMetadataWithTCM name weight alphabet scm
         }

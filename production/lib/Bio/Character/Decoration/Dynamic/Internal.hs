@@ -169,11 +169,13 @@ instance (EncodableDynamicCharacter d) => SimpleDynamicDecoration (DynamicDecora
 instance (EncodableDynamicCharacter d) => DynamicCharacterDecoration (DynamicDecorationInitial d) d where
 
 --    toDynamicCharacterDecoration :: CharacterName -> Double -> Alphabet String -> TCM -> (x -> a) -> x -> s
-    toDynamicCharacterDecoration name weight alphabet tcm g symbolSet =
+    toDynamicCharacterDecoration name weight alphabet scm g symbolSet =
         DynamicDecorationInitial
         { dynamicDecorationInitialEncodedField = g symbolSet
-        , metadata                             = dynamicMetadataFromTCM name weight alphabet tcm
+        , metadata                             = dynamicMetadata name weight alphabet scm denseMay
         }
+      where
+        denseMay = maybeConstructDenseTransitionCostMatrix alphabet scm
 
 
 

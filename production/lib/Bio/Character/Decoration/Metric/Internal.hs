@@ -108,10 +108,10 @@ instance EncodableStaticCharacter c => DiscreteCharacterDecoration (MetricDecora
 -- | (✔)
 instance EncodableStaticCharacter c => SimpleDiscreteCharacterDecoration (MetricDecorationInitial c) c where
 
-    toDiscreteCharacterDecoration name weight alphabet tcm g symbolSet =
+    toDiscreteCharacterDecoration name weight alphabet scm g symbolSet =
         MetricDecorationInitial
         { metricDecorationInitialCharacter = g symbolSet
-        , metadata                         = discreteMetadataFromTCM name weight alphabet tcm
+        , metadata                         = discreteMetadataWithTCM name weight alphabet scm
         }
 
 

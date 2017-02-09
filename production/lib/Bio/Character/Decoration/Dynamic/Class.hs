@@ -79,10 +79,8 @@ class ( HasImpliedAlignment           s a
 class ( SimpleDynamicDecoration s a
       ) => DynamicCharacterDecoration s a | s -> a where
 
-    toDynamicCharacterDecoration :: CharacterName -> Double -> Alphabet String -> TCM -> (x -> a) -> x -> s
+    toDynamicCharacterDecoration :: CharacterName -> Double -> Alphabet String -> (Word -> Word -> Word) -> (x -> a) -> x -> s
     {-# MINIMAL toDynamicCharacterDecoration #-}
-
-
 
 
 -- |
