@@ -30,6 +30,7 @@ import qualified Data.Map              as M
 import           Data.Maybe                   (fromMaybe)
 import           Data.Monoid                  ((<>))
 import           Data.Ord                     (comparing)
+import           Data.TCM                     (TCMDiagnosis(..), TCMStructure(..), diagnoseTcm)
 import qualified Data.TCM              as TCM
 import           Data.Vector                  (Vector)
 import qualified Data.Vector           as V   (zipWith)
@@ -108,15 +109,16 @@ setTcm t tcmPath fpr =
    case relatedTcm fpr of
      Just _  -> Left $ multipleTCMs (sourceFile fpr) tcmPath
      Nothing ->
-       let (factoredWeight, factoredTCM) = TCM.fromList . (\x -> (trace . show $ length x) x) . toList $ transitionCosts t
-           relatedAlphabet               = fromSymbols $ customAlphabet t
+       let (coefficient, resultTCM, structure) = (,,) <$> factoredWeight <*> factoredTcm <*> tcmStructure $ diagnoseTcm unfactoredTCM
+           (unfactoredWeight, unfactoredTCM)   = TCM.fromList . toList $ transitionCosts t
+           relatedAlphabet                     = fromSymbols $ customAlphabet t
            metadataUpdate x = x
-               { weight = weight x * fromRational factoredWeight
+               { weight   = weight x * fromRational unfactoredWeight * fromIntegral coefficient
                , alphabet = relatedAlphabet
                }
        in  pure $ fpr
            { parsedMetas = metadataUpdate <$> parsedMetas fpr
-           , relatedTcm  = Just factoredTCM
+           , relatedTcm  = Just (resultTCM, structure)
            }
 
 
@@ -256,7 +258,7 @@ progressiveParse inputPath = do
     acidParser = fastaStreamConverter Fasta.DNA =<< fastaStreamParser
     
 
-toFractured :: (ParsedMetadata a, ParsedCharacters a, ParsedForest a) => Maybe TCM.TCM -> FilePath -> a -> FracturedParseResult
+toFractured :: (ParsedMetadata a, ParsedCharacters a, ParsedForest a) => Maybe (TCM.TCM, TCMStructure) -> FilePath -> a -> FracturedParseResult
 toFractured tcmMat path =
     FPR <$> unifyCharacters
         <*> unifyMetadata

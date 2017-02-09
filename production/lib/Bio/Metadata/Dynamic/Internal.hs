@@ -24,6 +24,7 @@ module Bio.Metadata.Dynamic.Internal
   , HasTransitionCostMatrix(..)
   , dynamicMetadata
   , dynamicMetadataFromTCM
+  , maybeConstructDenseTransitionCostMatrix
   ) where
 
 
@@ -175,6 +176,7 @@ instance HasTransitionCostMatrix (DynamicCharacterMetadataDec c) (c -> c -> (c, 
 -- Construct a concrete typed 'DynamicCharacterMetadataDec' value from the supplied inputs.
 dynamicMetadata :: CharacterName -> Double -> Alphabet String -> (Word -> Word -> Word) -> Maybe DenseTransitionCostMatrix -> DynamicCharacterMetadataDec c
 dynamicMetadata name weight alpha scm denseMay =
+    -- TODO: Maybe don't force here.
     force DynamicCharacterMetadataDec
     { dataDenseTransitionCostMatrix = denseMay
     , metadata                      = discreteMetadataWithTCM name weight alpha scm
@@ -185,6 +187,7 @@ dynamicMetadata name weight alpha scm denseMay =
 -- Construct a concrete typed 'DynamicCharacterMetadataDec' value from the supplied inputs.
 dynamicMetadataFromTCM :: CharacterName -> Double -> Alphabet String -> TCM -> DynamicCharacterMetadataDec c
 dynamicMetadataFromTCM name weight alpha tcm =
+    -- TODO: Maybe don't force here.
     force DynamicCharacterMetadataDec
     { dataDenseTransitionCostMatrix = denseTCM
     , metadata                      = discreteMetadataWithTCM name (coefficient * weight) alpha sigma
@@ -194,7 +197,13 @@ dynamicMetadataFromTCM name weight alpha tcm =
     sigma i j   = fromIntegral $ factoredTcm diagnosis ! (fromEnum i, fromEnum j)
     coefficient = fromIntegral $ factoredWeight diagnosis
     diagnosis   = diagnoseTcm tcm
-    denseTCM
+    denseTCM = maybeConstructDenseTransitionCostMatrix alpha sigma
+
+
+maybeConstructDenseTransitionCostMatrix :: Alphabet a -> (Word -> Word -> Word) -> Maybe DenseTransitionCostMatrix
+maybeConstructDenseTransitionCostMatrix alpha sigma = force f
+  where
+    f 
       | len > 8   = Nothing
       | otherwise = Just $ generateDenseTransitionCostMatrix len sigma
       where

@@ -22,6 +22,7 @@ module Bio.Metadata.Dynamic
     , HasTransitionCostMatrix(..)
     , dynamicMetadata
     , dynamicMetadataFromTCM
+    , maybeConstructDenseTransitionCostMatrix
     ) where 
 
 import Bio.Metadata.Dynamic.Class
