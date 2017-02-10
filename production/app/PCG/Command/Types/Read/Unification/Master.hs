@@ -387,7 +387,7 @@ joinSequences2 = collapseAndMerge . performMetadataTransformations . deriveCorre
                          -- We might need to do this for Ultra-metric also..?
                    seenSymbols =
                        case structure of
-                         Additive -> Set.fromList . toList $ alphabet m
+                         Additive -> foldMap gatherSymbols $ x:xs -- Set.fromList . toList $ alphabet m
                          _        -> foldMap gatherSymbols $ x:xs
 
 --            observedSymbols       = observedSymbols' `Set.remove` "?"
@@ -400,9 +400,12 @@ joinSequences2 = collapseAndMerge . performMetadataTransformations . deriveCorre
                   
                    suppliedAlphabet      = alphabet m
                    reducedAlphabet       =
-                       case alphabetStateNames suppliedAlphabet of
-                         [] -> fromSymbols               . reduceTokens $      alphabetSymbols suppliedAlphabet
-                         ys -> fromSymbolsWithStateNames . reduceTokens $ zip (alphabetSymbols suppliedAlphabet) ys
+                       case structure of
+                         Additive -> truncateAtMaxSymbol seenSymbols suppliedAlphabet
+                         _        ->
+                           case alphabetStateNames suppliedAlphabet of
+                             [] -> fromSymbols               . reduceTokens $      alphabetSymbols suppliedAlphabet
+                             ys -> fromSymbolsWithStateNames . reduceTokens $ zip (alphabetSymbols suppliedAlphabet) ys
                      where
                        reduceTokens = foldMapWithKey (\k v -> if k `oelem` missingSymbolIndicies then [] else [v])
 

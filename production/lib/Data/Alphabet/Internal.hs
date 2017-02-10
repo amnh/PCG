@@ -22,6 +22,7 @@ module Data.Alphabet.Internal
   , fromSymbolsWithStateNames
   , gapSymbol
   , truncateAtSymbol
+  , truncateAtMaxSymbol
   ) where
 
 import           Control.DeepSeq              (NFData)
@@ -188,6 +189,25 @@ truncateAtSymbol symbol alphabet =
         case alphabet of
           SimpleAlphabet     _ -> fromSymbols . take i $ alphabetSymbols alphabet
           StateNamedAlphabet _ -> fromSymbolsWithStateNames . take i $ zip (alphabetSymbols alphabet) (alphabetStateNames alphabet)
+
+
+
+truncateAtMaxSymbol :: (Foldable t, Ord a, IsString a) => t a -> Alphabet a -> Alphabet a
+truncateAtMaxSymbol symbols alphabet =
+    case maxIndex of
+      Nothing -> alphabet
+      Just i  ->
+        case alphabet of
+          SimpleAlphabet     _ -> fromSymbols               . take (i + 1) $      alphabetSymbols alphabet
+          StateNamedAlphabet _ -> fromSymbolsWithStateNames . take (i + 1) $ zip (alphabetSymbols alphabet) (alphabetStateNames alphabet)
+  where
+    maxIndex = foldlWithKey' f Nothing alphabet
+    f e k v
+      | v `notElem` symbols = e
+      | otherwise =
+        case e of
+          Nothing -> Just k
+          Just  i -> Just $ max k i
 
 
 {-
