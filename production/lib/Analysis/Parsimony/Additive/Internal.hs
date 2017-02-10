@@ -76,8 +76,8 @@ updatePostOrder _parentDecoration (leftChild:|(rightChild:_)) = {- trace (show n
     returnNodeDecoration  -- Not a leaf.
     where
         (newMin, newMax)              = if isOverlapping
-                                        then leftInterval `intersect` rightInterval
-                                        else leftInterval `smallestClosed`     rightInterval
+                                        then leftInterval `intersect`      rightInterval
+                                        else leftInterval `smallestClosed` rightInterval
         (leftInterval, rightInterval) = (leftChild ^. preliminaryInterval, rightChild ^. preliminaryInterval)
         newInterval                   = (newMin, newMax)
         totalCost                     = thisNodeCost + (leftChild ^. characterCost) + (rightChild ^. characterCost)
@@ -98,13 +98,13 @@ initializeLeaf :: (DiscreteCharacterDecoration d c)
 initializeLeaf curDecoration =
     extendDiscreteToAdditive curDecoration zero (lower, higher) ((zero,zero),(zero,zero)) True
     where
-        label   = curDecoration ^. discreteCharacter
-        lower   = (fromIntegral leading :: Word)
-        higher  = (fromIntegral (alphLen - 1 - trailing) :: Word)
-        alphLen = symbolCount $ curDecoration ^. discreteCharacter
+        label    = curDecoration ^. discreteCharacter
+        lower    = (fromIntegral leading :: Word)
+        higher   = (fromIntegral (alphLen - 1 - trailing) :: Word)
+        alphLen  = symbolCount $ curDecoration ^. discreteCharacter
         trailing = countTrailingZeros label
         leading  = countLeadingZeros label
-        zero    = fromIntegral (0 :: Int) :: Word
+        zero     = fromIntegral (0 :: Int) :: Word
 
 
 -- | Uses the preliminary intervals of a node, its parents, and its children. Follows the three rules of Fitch,

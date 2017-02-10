@@ -129,10 +129,10 @@ updateCostVector _parentDecoration (leftChild:|rightChild:_) = returnNodeDecorat
 --
 -- Used on second, pre-order, pass.
 updateDirectionalMins :: EncodableStaticCharacter c -- ERIC: I made this more restrictive to resolve the 'Cannot deduce EncodableStaticCharacter c from Bits c'
-                => SankoffOptimizationDecoration c
-                -> SankoffOptimizationDecoration c
-                -> [ExtendedNatural]
-                -> SankoffOptimizationDecoration c
+                      => SankoffOptimizationDecoration c
+                      -> SankoffOptimizationDecoration c
+                      -> [ExtendedNatural]
+                      -> SankoffOptimizationDecoration c
 updateDirectionalMins parentDecoration childDecoration parentMins  = childDecoration & discreteCharacter .~ resultMedian
     where
         parentCostVector    = parentDecoration ^. characterCostVector
@@ -156,7 +156,7 @@ updateDirectionalMins parentDecoration childDecoration parentMins  = childDecora
         tcmCost   i j = scm (toEnum i) (toEnum j)
 
 
--- | Take in a single character state as an Int---which represents an unambiguous character state on the parent---
+-- | Take in a single character state as a Word---which represents an unambiguous character state on the parent---
 -- and two decorations: the decorations of the two child states.
 -- Return the minimum costs of transitioning from each of those two child decorations to the given character.
 -- These mins will be saved for use at the next post-order call, to the current parent node's parent.
@@ -172,14 +172,10 @@ calcCostPerState inputCharState leftChildDec rightChildDec = retVal
         findMins :: (ExtendedNatural, ExtendedNatural) -> Int -> (ExtendedNatural, ExtendedNatural) -> (ExtendedNatural, ExtendedNatural)
         findMins (initLeftMin, initRightMin) childCharState (accumulatedLeftCharCost, accumulatedRightCharCost) = (leftMin, rightMin)
             where
-                leftMin             = if curLeftMin < initLeftMin
-                                          then curLeftMin
-                                          else initLeftMin
-                rightMin            = if curRightMin < initRightMin
-                                          then curRightMin
-                                          else initRightMin
-                curLeftMin          = trace (show accumulatedLeftCharCost) $ fromIntegral leftTransitionCost  + accumulatedLeftCharCost
-                curRightMin         = fromIntegral rightTransitionCost + accumulatedRightCharCost
+                leftMin             = min curLeftMin initLeftMin
+                rightMin            = min curRightMin initRightMin
+                curLeftMin          = trace ("left:  " ++ show accumulatedLeftCharCost ++ " " ++ show leftTransitionCost) $ fromIntegral leftTransitionCost + accumulatedLeftCharCost
+                curRightMin         = trace ("left:  " ++ show accumulatedRightCharCost ++ " " ++ show rightyTransitionCost) $fromIntegral rightTransitionCost + accumulatedRightCharCost
                 leftTransitionCost  = fromWord $ ( leftChildDec ^. symbolChangeMatrix) inputCharState $ fromIntegral childCharState
                 rightTransitionCost = fromWord $ (rightChildDec ^. symbolChangeMatrix) inputCharState $ fromIntegral childCharState
 
