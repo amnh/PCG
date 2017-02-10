@@ -170,7 +170,7 @@ rootCosts :: ( HasCharacterWeight u Double
           => PhylogeneticDAG2 s t u v w x y z -> NonEmpty Double
 rootCosts (PDAG2 dag) = sequenceCost <$> rootDecs
   where
-    roots     = (\x -> trace (show x) x) $ rootRefs dag
+    roots     = rootRefs dag
     rootDecs  = (characterSequence . NE.head . resolutions . nodeDecoration . (references dag !)) <$> roots
 
 
