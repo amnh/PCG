@@ -27,18 +27,26 @@ import Data.Ord
 
 import Debug.Trace (trace)
 
+
 -- | The direction to align the character at a given matrix point.
 data Direction = LeftArrow | DiagArrow | UpArrow deriving (Eq, Show)
+
 
 -- | A representation of an alignment matrix for DO.
 -- The matrix itself stores tuples of the cost and direction at that position.
 -- We also store a vector of characters that are generated.
 type DOAlignMatrix s = Matrix (Word, Direction, s)
 
+
 -- | Constraints on the input dynamic characters that direct optiomization operates on.
 type DOCharConstraint c = (EncodableDynamicCharacter c {-, Show c, Show (Element c) -})
 
--- | Performs a naive direct optimization
+
+type OverlapFunction c = c -> c -> (c, Word)
+
+
+-- |
+-- Performs a naive direct optimization.
 -- Takes in two characters to run DO on and a metadata object
 -- Returns an assignment character, the cost of that assignment, the assignment character with gaps included,
 -- the aligned version of the first input character, and the aligned version of the second input character
@@ -57,31 +65,16 @@ naiveDO :: DOCharConstraint s
                                    -- 
                                    --   The gapped alignment of the /second/ input character when aligned with the first character
 naiveDO _ _ _ | trace "Call to Naive DO" False = undefined
-naiveDO char1 char2 costStruct
-    | onull char1 = (char1, 0, char1, char1, char1)
-    | onull char2 = (char2, 0, char2, char2, char2)
-    | otherwise   = (ungapped, fromIntegral cost, gapped', out1, out2)
-    where
-      char1Len = olength char1
-      char2Len = olength char2
-      (shorterChar, longerChar, _longLen) = if   char1Len > char2Len
-                                            then (char2, char1, char1Len)
-                                            else (char1, char2, char2Len)
-      traversalMat = -- (\x -> trace (show $ (\(a,b,_) -> (a,b)) <$> x) x) $
-                      createDOAlignMatrix longerChar shorterChar costStruct
-      cost = getTotalAlignmentCost traversalMat
-      (gapped , left , right ) = traceback traversalMat shorterChar longerChar
---      (gapped', left', right') = traceback traversalMat shorterChar longerChar
-{--}
-      (gapped', left', right') = (\(x,y,z) -> (constructDynamic x, constructDynamic y, constructDynamic z)) 
-                               $ correctBiasing (getGapElement $ gapped `indexStream` 0) (otoList gapped, otoList left, otoList right)
-{--}
-      -- TODO: change to occur in traceback, to remove constant factor.
-      ungapped = filterGaps gapped'
-      (out1, out2) = if char1Len > char2Len
-                     then (right', left')
-                     else (left', right')
-           
+naiveDO char1 char2 costStruct = naiveDOInternal char1 char2 (overlap costStruct)
+
+                          
+-- |
+-- The same as 'naiveDO' except that the "cost structure" parameter is ignored.
+-- Instead a constant cost is used.
+naiveDOConst :: DOCharConstraint s => s -> s -> (Word -> Word -> Word) -> (s, Double, s, s, s)
+naiveDOConst char1 char2 _ = naiveDOInternal char1 char2 overlapConst
+
+
 -- | Wrapper function to do an enhanced Needleman-Wunsch algorithm.
 -- Calls naiveDO, but only returns the last two fields (gapped alignments of inputs)
 doAlignment :: DOCharConstraint s => s -> s -> (Word -> Word -> Word) -> (s, s)
@@ -107,49 +100,49 @@ filterGaps char = constructDynamic . filter (/= gap) $ otoList char
 -- Returns an 'DOAlignMatrix'.
 -- TODO: See if we can move topDynChar logic inside here. It's also necessary in DO. 
 -- Or maybe DO can just call doAlignment?
-createDOAlignMatrix :: EncodableDynamicCharacter s => s -> s -> (Word -> Word -> Word) -> DOAlignMatrix (Element s)
-createDOAlignMatrix topDynChar leftDynChar costStruct = result
-    where
-        result = matrix (olength leftDynChar + 1) (olength topDynChar + 1) generateMat
+createDOAlignMatrix :: EncodableDynamicCharacter s => s -> s -> OverlapFunction (Element s) -> DOAlignMatrix (Element s)
+createDOAlignMatrix topDynChar leftDynChar overlapFunction = result
+  where
+    result = matrix (olength leftDynChar + 1) (olength topDynChar + 1) generateMat
 
-        -- TODO: attempt to make tail recursive? Maybe not possible, given multiple tuple values.
-        -- | Internal generator function for the matrix
-        -- Deals with both first row and other cases, a merge of two previous algorithms
-        -- generateMat :: (EncodableStreamElement b) => (Int, Int) -> (Double, Direction, b)
-        -- generateMat (row, col) | trace (mconcat ["(",show row,",",show col,")"]) False = undefined
-        generateMat (row, col)
-          | row == 0 && col == 0                    = (0                               , DiagArrow, gap      )
-          | row == 0 && rightChar /= gap            = (leftwardValue + rightOverlapCost, LeftArrow, staticCharFromLeft)
-          | row == 0                                = (leftwardValue                   , LeftArrow, staticCharFromLeft)
-          | col == 0 && downChar  /= gap            = (upwardValue + downOverlapCost   , UpArrow  , staticCharFromTop )
-          | col == 0                                = (upwardValue                     , UpArrow  , staticCharFromTop )
-          | staticCharFromLeft == gap &&
-            staticCharFromTop  == gap               = (diagCost                        , DiagArrow, gap)
-          | staticCharFromLeft == staticCharFromTop = (diagCost                        , DiagArrow, staticCharFromTop)
-          | otherwise                               = (minCost                         , minDir   , minState )
-          where
-            gap                           = gapOfStream leftDynChar -- Why would you give me an empty Dynamic Character?
-            staticCharFromLeft            = topDynChar  `indexStream` (col - 1)
-            staticCharFromTop             = leftDynChar `indexStream` (row - 1)
-            (leftwardValue, _, _)         = result ! (row    , col - 1)
-            (diagonalValue, _, _)         = result ! (row - 1, col - 1)
-            (upwardValue  , _, _)         = result ! (row - 1, col)
-            (rightChar, rightOverlapCost) = overlap costStruct staticCharFromLeft gap               
-            (diagChar , diagOverlapCost)  = overlap costStruct staticCharFromLeft staticCharFromTop 
-            (downChar , downOverlapCost)  = overlap costStruct gap                staticCharFromTop 
-            rightCost                     = rightOverlapCost + leftwardValue
-            diagCost                      = diagOverlapCost  + diagonalValue
-            downCost                      = downOverlapCost  + upwardValue
-            (minCost, minState, minDir)   = minimumBy (comparing (\(a,_,_) -> a))
-                                          -- This order is important!
-                                          -- In the event of equal cost we want to
-                                          -- prioritize elements earlier in the list.
-                                          -- TODO: POY prioritizes gaps to shorter char, make sure it prioritizes
-                                          -- right on equal-length chars
-                                          [ (rightCost, rightChar, LeftArrow)
-                                          , (downCost , downChar , UpArrow  )
-                                          , (diagCost , diagChar , DiagArrow)
-                                          ]
+    -- TODO: attempt to make tail recursive? Maybe not possible, given multiple tuple values.
+    -- | Internal generator function for the matrix
+    -- Deals with both first row and other cases, a merge of two previous algorithms
+    -- generateMat :: (EncodableStreamElement b) => (Int, Int) -> (Double, Direction, b)
+    -- generateMat (row, col) | trace (mconcat ["(",show row,",",show col,")"]) False = undefined
+    generateMat (row, col)
+      | row == 0 && col == 0                    = (0                               , DiagArrow, gap      )
+      | row == 0 && rightChar /= gap            = (leftwardValue + rightOverlapCost, LeftArrow, staticCharFromLeft)
+      | row == 0                                = (leftwardValue                   , LeftArrow, staticCharFromLeft)
+      | col == 0 && downChar  /= gap            = (upwardValue + downOverlapCost   , UpArrow  , staticCharFromTop )
+      | col == 0                                = (upwardValue                     , UpArrow  , staticCharFromTop )
+      | staticCharFromLeft == gap &&
+        staticCharFromTop  == gap               = (diagCost                        , DiagArrow, gap)
+      | staticCharFromLeft == staticCharFromTop = (diagCost                        , DiagArrow, staticCharFromTop)
+      | otherwise                               = (minCost                         , minDir   , minState )
+      where
+        gap                           = gapOfStream leftDynChar -- Why would you give me an empty Dynamic Character?
+        staticCharFromLeft            = topDynChar  `indexStream` (col - 1)
+        staticCharFromTop             = leftDynChar `indexStream` (row - 1)
+        (leftwardValue, _, _)         = result ! (row    , col - 1)
+        (diagonalValue, _, _)         = result ! (row - 1, col - 1)
+        (upwardValue  , _, _)         = result ! (row - 1, col)
+        (rightChar, rightOverlapCost) = overlapFunction staticCharFromLeft gap
+        (diagChar , diagOverlapCost)  = overlapFunction staticCharFromLeft staticCharFromTop
+        (downChar , downOverlapCost)  = overlapFunction gap                staticCharFromTop
+        rightCost                     = rightOverlapCost + leftwardValue
+        diagCost                      = diagOverlapCost  + diagonalValue
+        downCost                      = downOverlapCost  + upwardValue
+        (minCost, minState, minDir)   = minimumBy (comparing (\(a,_,_) -> a))
+                                      -- This order is important!
+                                      -- In the event of equal cost we want to
+                                      -- prioritize elements earlier in the list.
+                                      -- TODO: POY prioritizes gaps to shorter char, make sure it prioritizes
+                                      -- right on equal-length chars
+                                      [ (rightCost, rightChar, LeftArrow)
+                                      , (downCost , downChar , UpArrow  )
+                                      , (diagCost , diagChar , DiagArrow)
+                                      ]
 
 
 -- | Performs the traceback of an 'DOAlignMatrix'.
@@ -287,3 +280,44 @@ correctBiasing gap (x1:x2:xs, y1:y2:ys, z1:z2:zs)
     (xs' , ys' , zs' ) = correctBiasing gap ( x2:xs, y2:ys, z2:zs )
     (xs'', ys'', zs'') = correctBiasing gap ( x1:xs, y1:ys, z1:zs )
 -}
+
+
+overlapConst :: (EncodableStreamElement c {- , Show c -}) => c -> c -> (c, Word)
+overlapConst lhs rhs
+  | intersect == zeroBits = (lhs .|. rhs, 1)
+  | otherwise             = (intersect  , 0)
+  where
+    intersect = lhs .&. rhs
+
+
+naiveDOInternal :: DOCharConstraint s
+        => s
+        -> s
+        -> OverlapFunction (Element s)
+        -> (s, Double, s, s, s)
+naiveDOInternal char1 char2 overlapFunction
+    | onull char1 = (char1, 0, char1, char1, char1)
+    | onull char2 = (char2, 0, char2, char2, char2)
+    | otherwise   = (ungapped, fromIntegral cost, gapped', out1, out2)
+    where
+      char1Len = olength char1
+      char2Len = olength char2
+      (shorterChar, longerChar, _longLen) = if   char1Len > char2Len
+                                            then (char2, char1, char1Len)
+                                            else (char1, char2, char2Len)
+      traversalMat = -- (\x -> trace (show $ (\(a,b,_) -> (a,b)) <$> x) x) $
+                      createDOAlignMatrix longerChar shorterChar overlapFunction
+      cost = getTotalAlignmentCost traversalMat
+      (gapped , left , right ) = traceback traversalMat shorterChar longerChar
+--      (gapped', left', right') = traceback traversalMat shorterChar longerChar
+{--}
+      (gapped', left', right') = (\(x,y,z) -> (constructDynamic x, constructDynamic y, constructDynamic z)) 
+                               $ correctBiasing (getGapElement $ gapped `indexStream` 0) (otoList gapped, otoList left, otoList right)
+{--}
+      -- TODO: change to occur in traceback, to remove constant factor.
+      ungapped = filterGaps gapped'
+      (out1, out2) = if char1Len > char2Len
+                     then (right', left')
+                     else (left', right')
+
+

@@ -99,18 +99,21 @@ initializeDecorations2 (PhylogeneticSolution forests) = PhylogeneticSolution $ f
         id2
         (g    fitchPostOrder)
         (g additivePostOrder)
-        (g adaptiveDirectOptimizationPostOrder)  
+        (g dynamicScoring)  
+--        (g adaptiveDirectOptimizationPostOrder)  
       where
         g _  Nothing  [] = error $ "Uninitialized leaf node. This is bad!"
         g h (Just  v) [] = h v []
         g h        e  xs = h (error $ "We shouldn't be using this value." ++ show e ++ show (length xs)) xs
 
         id2 x _ = x
-
+        dynamicScoring = directOptimizationPostOrder (\x y -> naiveDOConst x y undefined)
+{-
         adaptiveDirectOptimizationPostOrder _ _ | trace "DO call" False = undefined
         adaptiveDirectOptimizationPostOrder dec kidDecs = directOptimizationPostOrder pairwiseAlignmentFunction dec kidDecs
           where
             pairwiseAlignmentFunction = chooseDirectOptimizationComparison dec kidDecs
+-}
 
 
 {-                                                              
@@ -255,6 +258,7 @@ chooseDirectOptimizationComparison :: ( SimpleDynamicDecoration d  c
                                    -> c
                                    -> c
                                    -> (c, Double, c, c, c)
+chooseDirectOptimizationComparison _ _ = (\x y -> naiveDOConst x y undefined)
 {--
 chooseDirectOptimizationComparison dec decs = \x y -> naiveDO x y scm
   where
@@ -267,22 +271,18 @@ chooseDirectOptimizationComparison dec decs = \x y -> naiveDO x y scm
 --}
 {--}
 -- do this when shit stops segfaulting
+{-
 chooseDirectOptimizationComparison dec decs =
     case decs of
       []  -> selectBranch dec
       x:_ -> selectBranch x
   where
     selectBranch candidate =
-       case candidate ^. denseTransitionCostMatrix of
-         _ -> let !scm = (candidate ^. symbolChangeMatrix) in \x y -> naiveDO x y scm
-
-{-
          Just  d -> \x y -> foreignPairwiseDO x y d
          Nothing ->
            let !scm = (candidate ^. symbolChangeMatrix)
            in \x y -> naiveDO x y scm
 -}
-
 
 
 {-
