@@ -30,7 +30,8 @@ module Bio.Sequence
   , fromBlocks
   , hexmap
   , hexTranspose
-  , hexZipWith  
+  , hexZipWith
+  , sequenceCost
   ) where
 
 import Bio.Sequence.Internal

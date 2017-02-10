@@ -51,7 +51,7 @@ import           Data.Semigroup.Foldable
 --import           Data.Vector              (Vector)
 import qualified Data.Vector        as V
 
--- import Debug.Trace
+import Debug.Trace
 
 
 type SearchState = EvaluationT IO (Either TopologicalResult (PhylogeneticSolution InitialDecorationDAG))
@@ -138,6 +138,40 @@ data  PhylogeneticDAG e n m i c f a d
 
 data  PhylogeneticDAG2 e n m i c f a d
     = PDAG2 (ReferenceDAG e (PhylogeneticNode2 (CharacterSequence m i c f a d) n))
+
+
+--rootCosts :: PhylogeneticDAG2 -> NonEmpty Double
+
+rootCosts :: ( Integral e
+             , HasCharacterWeight u Double
+             , HasCharacterWeight v Double
+             , HasCharacterWeight x Double
+             , HasCharacterWeight y Double
+             , HasCharacterWeight z Double
+             , HasCharacterCost u e
+             , HasCharacterCost v e
+             , HasCharacterCost x e
+             , HasCharacterCost y e
+             , HasCharacterCost z e
+             )
+{--
+rootCosts :: ( HasCharacterWeight u Double
+             , HasCharacterWeight v Double
+             , HasCharacterWeight x Double
+             , HasCharacterWeight y Double
+             , HasCharacterWeight z Double
+             , HasCharacterCost u Word
+             , HasCharacterCost v Word
+             , HasCharacterCost x Word
+             , HasCharacterCost y Word
+             , HasCharacterCost z Word
+             )
+-}
+          => PhylogeneticDAG2 s t u v w x y z -> NonEmpty Double
+rootCosts (PDAG2 dag) = sequenceCost <$> rootDecs
+  where
+    roots     = (\x -> trace (show x) x) $ rootRefs dag
+    rootDecs  = (characterSequence . NE.head . resolutions . nodeDecoration . (references dag !)) <$> roots
 
 
 instance ( Show e
