@@ -385,10 +385,12 @@ joinSequences2 = collapseAndMerge . performMetadataTransformations . deriveCorre
                          -- after the reduction. We handle this case specially.
                          --
                          -- We might need to do this for Ultra-metric also..?
-                   seenSymbols =
+                   seenSymbols = foldMap gatherSymbols $ x:xs
+{-
                        case structure of
-                         Additive -> foldMap gatherSymbols $ x:xs -- Set.fromList . toList $ alphabet m
+                         Additive -> Set.fromList . toList $ alphabet m
                          _        -> foldMap gatherSymbols $ x:xs
+-}
 
 --            observedSymbols       = observedSymbols' `Set.remove` "?"
                    missingSymbolIndicies = foldMapWithKey f suppliedAlphabet
