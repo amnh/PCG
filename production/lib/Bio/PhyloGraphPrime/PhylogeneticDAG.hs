@@ -73,7 +73,7 @@ type UnRiefiedCharacterDAG = PhylogeneticDAG
                                UnifiedDiscreteCharacter
                                UnifiedDynamicCharacter
 
-type CharacterDAG = PhylogeneticDAG2
+type CharacterDAG = PhylogeneticDAG
                         (Maybe Double)
                         (Maybe String)
                         UnifiedDiscreteCharacter
@@ -87,7 +87,7 @@ type CharacterDAG = PhylogeneticDAG2
 type DecoratedCharacterResult = PhylogeneticSolution InitialDecorationDAG
 
 
-type InitialDecorationDAG = PhylogeneticDAG2
+type InitialDecorationDAG = PhylogeneticDAG
                                 (Maybe Double)
                                 (Maybe String)
                                 (SankoffOptimizationDecoration  StaticCharacter)
@@ -96,8 +96,8 @@ type InitialDecorationDAG = PhylogeneticDAG2
                                 (FitchOptimizationDecoration    StaticCharacter)
                                 (AdditiveOptimizationDecoration StaticCharacter)
                                 -- UnifiedDynamicCharacter
-                                -- (DynamicDecorationDirectOptimization DynamicChar)
-                                (DynamicDecorationDirectOptimizationPostOrderResult DynamicChar)
+                                (DynamicDecorationDirectOptimization DynamicChar)
+                                --(DynamicDecorationDirectOptimizationPostOrderResult DynamicChar)
 
 
 type  UnifiedCharacterSequence
@@ -194,7 +194,7 @@ instance ( Show e
 --        f i (PNode2 n sek) = mconcat [ "Node {", show i, "}:\n\n", unlines [show n, show sek], "\n\n" ] 
         f i n = mconcat [ "Node {", show i, "}:\n\n", show n ]
 
-
+{-
 riefiedSolution :: PhylogeneticSolution UnRiefiedCharacterDAG -> CharacterResult
 riefiedSolution  = PhylogeneticSolution . fmap (fmap riefiedToCharacterDAG) . phylogeneticForests
 
@@ -252,7 +252,7 @@ riefiedToCharacterDAG (PDAG dag) = PDAG2
                   c <- get
                   modify (+1)
                   pure $ Just c
-
+-}
 
 -- |
 -- Applies a traversal logic function over a 'ReferenceDAG' in a /pre-order/ manner.

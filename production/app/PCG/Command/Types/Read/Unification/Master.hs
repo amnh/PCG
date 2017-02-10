@@ -106,7 +106,7 @@ rectifyResults2 :: [FracturedParseResult]
 --rectifyResults2 fprs | trace (show fprs) False = undefined
 rectifyResults2 fprs =
     case errors of
-      []   -> fmap (fmap riefiedSolution) dagForest --      = undefined -- Right maskedSolution
+      []   -> {- fmap (fmap riefiedSolution) -} dagForest --      = undefined -- Right maskedSolution
       x:xs -> Left . sconcat $ x:|xs
   where
     -- Step 1: Gather data file contents

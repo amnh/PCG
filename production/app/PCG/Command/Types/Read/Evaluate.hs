@@ -79,7 +79,7 @@ evaluate (READ fileSpecs) _old = do
 --                    $> (fmap initializeDecorations2 g)
   where
     transformation = id -- expandIUPAC
-    decoration = fmap (fmap initializeDecorations2)
+    decoration = fmap (fmap initializeDecorations)
 
 evaluate _ _ = fail "Invalid READ command binding"
 

@@ -51,7 +51,7 @@ sankoffPostOrder charDecoration xs =
 -- Needs to determine which child it's updating, then sends the appropriate minlist
 sankoffPreOrder :: EncodableStaticCharacter c
                 => SankoffOptimizationDecoration c
-                -> [(Int, SankoffOptimizationDecoration c)]
+                -> [(Word, SankoffOptimizationDecoration c)]
                 -> SankoffOptimizationDecoration c
 sankoffPreOrder childDecoration []                                 = childDecoration -- is a root
 sankoffPreOrder childDecoration ((whichChild, parentDecoration):_) = resultDecoration $

@@ -24,12 +24,12 @@ import           Analysis.Parsimony.Dynamic.DirectOptimization.FFI
 
 import           Bio.Character
 import           Bio.Character.Decoration.Additive
---import           Bio.Character.Decoration.Continuous
---import           Bio.Character.Decoration.Discrete
+import           Bio.Character.Decoration.Continuous
+import           Bio.Character.Decoration.Discrete
 import           Bio.Character.Decoration.Dynamic
---import           Bio.Character.Decoration.Fitch
---import           Bio.Character.Decoration.Metric
---import           Bio.Character.Decoration.NonMetric 
+import           Bio.Character.Decoration.Fitch
+import           Bio.Character.Decoration.Metric
+import           Bio.Character.Decoration.NonMetric 
 
 --import           Bio.Character.Encodable
 --import           Bio.Character.Exportable
@@ -37,7 +37,7 @@ import           Bio.Character.Decoration.Dynamic
 --import           Bio.Character.Decoration.Discrete   hiding (characterName)
 --import           Bio.Character.Decoration.Dynamic    hiding (characterName)
 --import           Bio.Character.Parsed
---import           Bio.Sequence
+import           Bio.Sequence
 --import           Bio.Sequence.Block
 --import           Bio.Metadata.CharacterName hiding (sourceFile)
 --import           Bio.Metadata.Parsed
@@ -46,20 +46,20 @@ import           Bio.Character.Decoration.Dynamic
 --import           Bio.PhyloGraph.Forest.Parsed
 import           Bio.PhyloGraphPrime
 --import           Bio.PhyloGraphPrime.Component
---import           Bio.PhyloGraphPrime.Node
---import           Bio.PhyloGraphPrime.ReferenceDAG
+import           Bio.PhyloGraphPrime.Node
+import           Bio.PhyloGraphPrime.ReferenceDAG
 import           Bio.PhyloGraphPrime.PhylogeneticDAG
 import           Control.Lens
 --import           Control.Arrow                     ((&&&))
 --import           Control.Applicative               ((<|>))
 --import           Data.Alphabet
---import           Data.Bifunctor                    (first, second)
+import           Data.Bifunctor                    (first, second)
 --import           Data.Foldable
 --import qualified Data.IntSet                as IS
---import           Data.Key
+import           Data.Key
 --import           Data.List                         (transpose, zip4)
---import           Data.List.NonEmpty                (NonEmpty( (:|) ))
---import qualified Data.List.NonEmpty         as NE
+import           Data.List.NonEmpty                (NonEmpty( (:|) ))
+import qualified Data.List.NonEmpty         as NE
 --import           Data.List.Utility                 (duplicates)
 --import           Data.Map                          (Map, intersectionWith, keys)
 --import qualified Data.Map                   as Map
@@ -87,7 +87,7 @@ traceOpt identifier x = (trace ("Before " <> identifier) ())
                         )
 -}
 
-
+{-
 --initializeDecorations2 :: CharacterResult -> PhylogeneticSolution InitialDecorationDAG
 initializeDecorations2 (PhylogeneticSolution forests) = PhylogeneticSolution $ fmap performDecoration <$> forests
   where
@@ -126,7 +126,8 @@ initializeDecorations2 (PhylogeneticSolution forests) = PhylogeneticSolution $ f
           , sequenceDecoration  = preOrderLogic (sequenceDecoration parentalNode) (second sequenceDecoration <$> childNodes)
           } 
 -}
-{-
+-}
+{--}
 initializeDecorations :: CharacterResult -> PhylogeneticSolution InitialDecorationDAG
 initializeDecorations (PhylogeneticSolution forests) = PhylogeneticSolution $ fmap performDecoration <$> forests
   where
@@ -232,6 +233,15 @@ initializeDecorations (PhylogeneticSolution forests) = PhylogeneticSolution $ fm
           parentCharSeqs'
       where
         id2 x _ = x
+{-
+        parentCharSeqs' :: CharacterSequence
+                               [(Word, SankoffOptimizationDecoration   StaticCharacter)]
+                               [(Word, SankoffOptimizationDecoration   StaticCharacter)]
+                               [(Word, UnifiedContinuousCharacter)]
+                               [(Word, FitchOptimizationDecoration     StaticCharacter)]
+                               [(Word, AdditiveOptimizationDecoration  StaticCharacter)]
+                               [(Word, DynamicDecorationDirectOptimization DynamicChar)]
+-}
         parentCharSeqs' =
             case parentCharSeqs of
               x:xs -> hexmap f f f f f f . hexTranspose $ snd <$> x:|xs
@@ -244,7 +254,7 @@ initializeDecorations (PhylogeneticSolution forests) = PhylogeneticSolution $ fm
           where
             pairwiseAlignmentFunction = chooseDirectOptimizationComparison dec $ snd <$> kidDecs
        
--}
+{--}
 
 chooseDirectOptimizationComparison :: ( SimpleDynamicDecoration d  c
                                       , SimpleDynamicDecoration d' c
