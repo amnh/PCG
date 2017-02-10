@@ -96,15 +96,14 @@ initializeLeaf :: (DiscreteCharacterDecoration d c)
                => d
                -> AdditiveOptimizationDecoration c
 initializeLeaf curDecoration =
-    extendDiscreteToAdditive curDecoration zero (lower, higher) ((zero,zero),(zero,zero)) True
+    extendDiscreteToAdditive curDecoration 0 (lower, higher) ((0,0),(0,0)) True
     where
         label    = curDecoration ^. discreteCharacter
-        lower    = (fromIntegral leading :: Word)
-        higher   = (fromIntegral (alphLen - 1 - trailing) :: Word)
-        alphLen  = symbolCount $ curDecoration ^. discreteCharacter
+        alphLen  = symbolCount label
         trailing = countTrailingZeros label
-        leading  = countLeadingZeros label
-        zero     = fromIntegral (0 :: Int) :: Word
+        leading  = countLeadingZeros  label
+        lower    = toEnum leading
+        higher   = toEnum (alphLen - 1 - trailing)
 
 
 -- | Uses the preliminary intervals of a node, its parents, and its children. Follows the three rules of Fitch,
