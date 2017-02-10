@@ -201,7 +201,7 @@ dynamicMetadataFromTCM name weight alpha tcm =
 
 
 maybeConstructDenseTransitionCostMatrix :: Alphabet a -> (Word -> Word -> Word) -> Maybe DenseTransitionCostMatrix
-maybeConstructDenseTransitionCostMatrix alpha sigma = force f
+maybeConstructDenseTransitionCostMatrix alpha sigma = Nothing -- force f
   where
     f 
       | len > 8   = Nothing
