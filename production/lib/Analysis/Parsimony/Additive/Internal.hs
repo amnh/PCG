@@ -30,8 +30,8 @@ import Control.Lens
 -- import Data.Bifunctor (bimap)
 import Data.Bits
 import Data.List.NonEmpty (NonEmpty( (:|) ))
---import Data.Word
-import Debug.Trace
+-- import Data.Word
+-- import Debug.Trace
 
 
 -- | Used on the post-order (i.e. first) traversal.
@@ -95,7 +95,7 @@ updatePostOrder _parentDecoration (leftChild:|(rightChild:_)) = {- trace (show n
 initializeLeaf :: (DiscreteCharacterDecoration d c)
                => d
                -> AdditiveOptimizationDecoration c
-initializeLeaf curDecoration = {- trace (show (curDecoration ^. characterName) ++ ": " ++ show alphLen ++ " " ++ show leading ++ " " ++ show lower ++ " " ++ show trailing ++ " " ++ show higher) $ -}
+initializeLeaf curDecoration =
     extendDiscreteToAdditive curDecoration zero (lower, higher) ((zero,zero),(zero,zero)) True
     where
         label   = curDecoration ^. discreteCharacter
@@ -105,7 +105,6 @@ initializeLeaf curDecoration = {- trace (show (curDecoration ^. characterName) +
         trailing = countTrailingZeros label
         leading  = countLeadingZeros label
         zero    = fromIntegral (0 :: Int) :: Word
-        alphabet = curDecoration ^. characterAlphabet
 
 
 -- | Uses the preliminary intervals of a node, its parents, and its children. Follows the three rules of Fitch,
@@ -144,57 +143,26 @@ overlaps leftChild rightChild =
         ( leftSmallest,  leftLargest) = leftChild
 
 
--- | True if one of the intervals falls entirely within the other
---
--- Assumes there is an overlap.
-subsetted :: (Word, Word) -> (Word, Word) -> Bool
-subsetted leftChild rightChild
-    | rightSmallest <= leftSmallest  && rightLargest >= leftLargest  = True
-    | leftSmallest  <= rightSmallest && leftLargest  >= rightLargest = True
-    | otherwise                                                      = False
-    where
-        (rightSmallest, rightLargest) = rightChild
-        ( leftSmallest,  leftLargest) = leftChild
-
 
 -- |
 -- Finds the intersection of two intervals, the intersection being the smallest interval possible. Does
 -- not assume there's an overlap.
---
--- There are five cases:
--- 1: intersection but no subsetting, left < right
--- 2: intersection but no subsetting, left > right
--- 3: subsetted, one of two is unambiguous
--- 4: subsetted, right inside left
--- 5: subsetted, left inside right
 intersect :: (Word, Word) -> (Word, Word) -> (Word, Word)
-intersect leftChild rightChild
-    | subsetted leftChild rightChild =
---        trace ("subsetted   " ++ debugString) $
-        subsetCases
-    | otherwise =
---        trace ("intersecion " ++ debugString) $
-        if leftLargest < rightLargest
-            then (rightSmallest, leftLargest)
-            else (leftSmallest, rightLargest)
+intersect leftChild rightChild = (max leftSmallest rightSmallest, min leftLargest rightLargest)
     where
         (rightSmallest, rightLargest) = rightChild
         ( leftSmallest,  leftLargest) = leftChild
---        debugString = (show . unlines $ fmap show [leftSmallest, leftLargest, rightSmallest, rightLargest])
-        subsetCases
-            | leftLargest  == leftSmallest  = (leftSmallest,  leftLargest)  -- smallest closed interval is 0
-            | rightLargest == rightSmallest = (rightSmallest, rightLargest) -- smallest closed interval is 0
-            | leftLargest  >= rightLargest  = (rightSmallest, rightLargest) -- smallest closed interval is smallest of two
-            | otherwise                     = (leftSmallest,  leftLargest)  -- smallest closed interval is smallest of two
+
 
 
 smallestClosed :: (Word, Word) -> (Word, Word) -> (Word, Word)
-smallestClosed leftChild rightChild
-    | leftLargest < rightSmallest = (leftLargest, rightSmallest)
+smallestClosed leftChild rightChild = (min leftLargest rightLargest, max leftSmallest rightSmallest)
+{-}    | leftLargest < rightSmallest = (leftLargest, rightSmallest)
     | otherwise                   = (rightLargest, leftSmallest)
-   where
+ -}  where
         (rightSmallest, rightLargest) = rightChild
         ( leftSmallest,  leftLargest) = leftChild
+
 
 -- |
 -- Finds the union of two intervals, where the union is the largest interval possible, i.e. from the smallest possible
@@ -202,19 +170,9 @@ smallestClosed leftChild rightChild
 --
 -- Works for overlapped or subsetted intervals, as well as non-overlapping intervals
 union :: (Word, Word) -> (Word, Word)-> (Word, Word)
-union leftChild rightChild = (smallestMin, largestMax)
+union leftChild rightChild = (min leftSmallest rightSmallest, max leftLargest rightLargest)
     where
-        smallestMin =
-            if rightSmallest < leftSmallest
-                then rightSmallest
-                else leftSmallest
-        largestMax =
-            if rightLargest < leftLargest
-                then leftLargest
-                else rightLargest
-
         (rightSmallest, rightLargest) = rightChild
         ( leftSmallest,  leftLargest) = leftChild
 
 
--- TODO: check all inequalities for inclusion of equality

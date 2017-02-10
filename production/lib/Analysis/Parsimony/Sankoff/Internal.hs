@@ -111,8 +111,8 @@ updateCostVector _parentDecoration (leftChild:|rightChild:_) = returnNodeDecorat
         findMins charState (stateMins, (leftMin, rightMin), curMin) = returnVal
              where
                  charMin = if stateMin < curMin
-                           then curMin + 10
-                           else stateMin
+                           then stateMin
+                           else curMin
                  stateMin                      = leftChildMin + rightChildMin
                  (leftChildMin, rightChildMin) = calcCostPerState charState leftChild rightChild
                  returnVal                     = (stateMin : stateMins, (leftChildMin : leftMin, rightChildMin : rightMin), charMin)
