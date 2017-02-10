@@ -174,8 +174,8 @@ calcCostPerState inputCharState leftChildDec rightChildDec = retVal
             where
                 leftMin             = min curLeftMin initLeftMin
                 rightMin            = min curRightMin initRightMin
-                curLeftMin          = trace ("left:  " ++ show accumulatedLeftCharCost ++ " " ++ show leftTransitionCost) $ fromIntegral leftTransitionCost + accumulatedLeftCharCost
-                curRightMin         = trace ("left:  " ++ show accumulatedRightCharCost ++ " " ++ show rightyTransitionCost) $fromIntegral rightTransitionCost + accumulatedRightCharCost
+                curLeftMin          = trace ("left:  " ++ show  accumulatedLeftCharCost ++ " " ++ show  leftTransitionCost) $ fromIntegral leftTransitionCost + accumulatedLeftCharCost
+                curRightMin         = trace ("left:  " ++ show accumulatedRightCharCost ++ " " ++ show rightTransitionCost) $fromIntegral rightTransitionCost + accumulatedRightCharCost
                 leftTransitionCost  = fromWord $ ( leftChildDec ^. symbolChangeMatrix) inputCharState $ fromIntegral childCharState
                 rightTransitionCost = fromWord $ (rightChildDec ^. symbolChangeMatrix) inputCharState $ fromIntegral childCharState
 
