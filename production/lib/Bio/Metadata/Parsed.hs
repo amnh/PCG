@@ -25,7 +25,7 @@ import           Data.Key
 import           Data.List                               (transpose)
 import           Data.List.NonEmpty                      (NonEmpty)
 import           Data.Monoid
-import           Data.TCM                                (TCM)
+import           Data.TCM                                (TCM, TCMDiagnosis(..), TCMStructure(..), diagnoseTcm, )
 import qualified Data.TCM                         as TCM
 import           Data.Vector                             (Vector)
 import qualified Data.Vector                      as V
@@ -47,7 +47,7 @@ data ParsedCharacterMetadata
    { alphabet      :: Alphabet String
    , characterName :: String
    , weight        :: Double
-   , parsedTCM     :: Maybe TCM
+   , parsedTCM     :: Maybe (TCM, TCMStructure)
    , isDynamic     :: Bool
    , isIgnored     :: Bool
    } deriving (Show)
@@ -114,14 +114,11 @@ instance ParsedMetadata TNT.TntResult where
                   Nothing       -> (1, fullAlphabet, Nothing)
                   Just (v, tcm) ->
                     let truncatedSymbols = V.take (TCM.size tcm - 1) initialSymbolSet
-                    in  (v, toAlphabet truncatedSymbols, Just tcm)
+                    in  (v, toAlphabet truncatedSymbols, Just (tcm, NonSymmetric)) -- TODO: Maybe we can do the diagnosis here
                   
-              | TNT.additive inMeta = (1, fullAlphabet, Just $ TCM.generate matrixDimension genAdditive)
-              | otherwise           = (1, fullAlphabet, Just $ TCM.generate matrixDimension genFitch   )
+              | TNT.additive inMeta = (1, fullAlphabet, Just $ (TCM.generate matrixDimension genAdditive,    Additive))
+              | otherwise           = (1, fullAlphabet, Just $ (TCM.generate matrixDimension genFitch   , NonAdditive))
               where
-                genAdditive, genFitch :: (Int, Int) -> Int
-                genAdditive (i,j) = max i j - min i j
-                genFitch    (i,j) = if i == j then 0 else 1
                 matrixDimension   = length initialSymbolSet
                 fullAlphabet      = toAlphabet initialSymbolSet
 
@@ -162,19 +159,25 @@ instance ParsedMetadata TNT.TntResult where
 -}
                           
 
+genAdditive, genFitch :: (Int, Int) -> Int
+genAdditive (i,j) = max i j - min i j
+genFitch    (i,j) = if i == j then 0 else 1
+
+
 -- | (✔)
 instance ParsedMetadata F.TCM where
     unifyMetadata (F.TCM alph mat) =
         pure ParsedCharacterMetadata
         { alphabet      = fromSymbols alph
         , characterName = ""
-        , weight        = fromRational rationalWeight
-        , parsedTCM     = Just unfactoredTCM 
+        , weight        = fromRational rationalWeight * fromIntegral coefficient
+        , parsedTCM     = Just (resultTCM, structure) 
         , isDynamic     = False
         , isIgnored     = False -- Maybe this should be True?
         }
       where
-        (rationalWeight, unfactoredTCM) = TCM.fromList $ toList mat
+        (coefficient, resultTCM, structure) = (,,) <$> factoredWeight <*> factoredTcm <*> tcmStructure $ diagnoseTcm unfactoredTCM
+        (rationalWeight, unfactoredTCM)     = TCM.fromList $ toList mat
 
 
 -- | (✔)
@@ -192,15 +195,24 @@ instance ParsedMetadata Nexus where
             ParsedCharacterMetadata
             { alphabet      = developedAlphabet
             , characterName = Nex.name inMeta
-            , weight        = fromRational rationalWeight * suppliedWeight
-            , parsedTCM     = unfactoredTcmMay
+            , weight        = fromRational chosenWeight * suppliedWeight
+            , parsedTCM     = chosenTCM
             , isDynamic     = not $ Nex.isAligned inMeta 
             , isIgnored     = Nex.ignored inMeta
             }
           where
             suppliedWeight = fromIntegral $ Nex.weight inMeta
-            (rationalWeight, unfactoredTcmMay) = maybe (1, Nothing) (second Just)
-                                               $ TCM.fromList . toList . F.transitionCosts <$> Nex.costM inMeta
+            (chosenWeight, chosenTCM) =
+              if Nex.additive inMeta
+              then (1, Just (TCM.generate (length $ Nex.alphabet inMeta) genAdditive, Additive))
+              else
+                case Nex.costM inMeta of
+                  Nothing   -> (1, Nothing)
+                  Just vals ->
+                    let (rationalWeight, unfactoredTcm)     = TCM.fromList . toList $ F.transitionCosts vals
+                        (coefficient, resultTCM, structure) = (,,) <$> factoredWeight <*> factoredTcm <*> tcmStructure $ diagnoseTcm unfactoredTcm
+                    in  (fromIntegral coefficient * rationalWeight, Just (resultTCM, structure))
+
 
 
 disAlph, dnaAlph, rnaAlph, aaAlph :: Vector String

@@ -44,6 +44,8 @@ module Data.Alphabet
   , fromSymbols
   , fromSymbolsWithStateNames
   , gapSymbol
+  , truncateAtSymbol
+  , truncateAtMaxSymbol
   ) where
 
 import Data.Alphabet.Internal

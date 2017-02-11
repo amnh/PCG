@@ -15,6 +15,7 @@
 
 module Data.TCM.Internal where
 
+import           Control.Arrow                 ((***))
 import           Data.Foldable
 import           Data.List                     (transpose)
 import           Data.List.Utility             (equalityOf, occurances)
@@ -229,14 +230,14 @@ instance Show TCM where
         
 -- | /O(1)/ Indexing without bounds checking.
 {-# INLINE (!) #-}
-(!) :: TCM -> (Int, Int) -> Word32
-(!) (TCM n v) (i,j) = v `V.unsafeIndex` (i * n + j)
+(!) :: Enum i => TCM -> (i, i) -> Word32
+(!) (TCM n v) (i,j) = v `V.unsafeIndex` (fromEnum i * n + fromEnum j)
 
 
 -- | /O(1)/ Safe indexing.
 {-# INLINE (!?) #-}
-(!?) :: TCM -> (Int, Int) -> Maybe Word32
-(!?) (TCM n v) (i,j) = v V.!? (i * n + j)
+(!?) :: Enum i => TCM -> (i, i) -> Maybe Word32
+(!?) (TCM n v) (i,j) = v V.!? (fromEnum i * n + fromEnum j)
 
 
 -- | /O(1)/
@@ -424,9 +425,11 @@ modeAndOutlierLengths xs = (mode, otherLengths)
 --   1 1 1 1 1 1 0 1
 --   1 1 1 1 1 1 1 0
 --
-generate :: Integral a
-         => Int              -- ^ Number of rows & columns in the TCM.
-         -> ((Int,Int) -> a) -- ^ Function to determine the value of a given index.
+generate :: ( Enum i
+            , Integral a
+            )
+         => Int          -- ^ Number of rows & columns in the TCM.
+         -> ((i,i) -> a) -- ^ Function to determine the value of a given index.
          -> TCM
 generate n f
   | n <  0    = error negativeErrorMessage
@@ -436,7 +439,7 @@ generate n f
   where
     resultVector = V.generate (n*n) g
       where
-        g i = coerce $ f (i `divMod` n)
+        g i = coerce . f . (toEnum *** toEnum) $ (i `divMod` n)
     negativeErrorMessage = mconcat
       [ "The call to 'generate ", show n, " f' is malformed, "
       , "the dimension (", show n, ") is a negative number. "
@@ -460,12 +463,12 @@ generate n f
 -- the TCM.
 diagnoseTcm :: TCM -> TCMDiagnosis
 diagnoseTcm tcm
-  | isNonAdditive  tcm' = diagnosis  NonAdditive
-  | isAdditive     tcm' = diagnosis     Additive
-  | isUltraMetric  tcm' = diagnosis  UltraMetric
-  | isMetric       tcm' = diagnosis       Metric
-  | isSymmetric    tcm' = diagnosis    Symmetric
-  | otherwise           = diagnosis NonSymmetric
+  | not $ isSymmetric   tcm' = diagnosis NonSymmetric
+  | not $ isMetric      tcm' = diagnosis    Symmetric
+  |       isAdditive    tcm' = diagnosis     Additive
+  | not $ isUltraMetric tcm' = diagnosis       Metric
+  | not $ isNonAdditive tcm' = diagnosis  UltraMetric
+  | otherwise                = diagnosis  NonAdditive
   where
     (weight, tcm') = factorTCM tcm
     diagnosis = TCMDiagnosis weight tcm'
@@ -550,7 +553,6 @@ isMetric tcm = conditions `allSatisfiedBy` tcm
   where
     conditions =
         [ zeroDiagonalOnly
-        , isSymmetric
         , triangleInequality
         ]
     triangleInequality x = all triangleInequalityIndex [(i,k,j) | i <- range, j <- range, k <- range, i < j, j < k ]
@@ -581,11 +583,7 @@ isSymmetric tcm = all isSymmetricIndex [(i,j) | i <- range, j <- range, i <= j ]
 isUltraMetric :: TCM -> Bool
 isUltraMetric tcm = conditions `allSatisfiedBy` tcm
   where
-    conditions = 
-        [ zeroDiagonalOnly      
-        , isSymmetric           
-        , ultraMetricInequality
-        ]
+    conditions = [ ultraMetricInequality ]
     ultraMetricInequality x = all ultraMetricInequalityIndex [(i,k,j) | i <- range, j <- range, k <- range, i < j, j < k ]
       where
         ultraMetricInequalityIndex (i,j,k) = x ! (i,k) <= max (x ! (i,j)) (x ! (j,k))

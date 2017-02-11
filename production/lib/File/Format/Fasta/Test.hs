@@ -108,7 +108,7 @@ validTaxonCommentLines     = zip validTaxonLabels validTaxonCommentedLabels
 validTaxonCommentlessLines :: [(String, String)]
 validTaxonCommentlessLines = zip  validTaxonLabels (inlineLabel <$> validTaxonLabels)
 validTaxonCommentedLabels  :: [String]
-validTaxonCommentedLabels  = inlineLabel <$> zipWith (++) validTaxonLabels validCommentBodies
+validTaxonCommentedLabels  = inlineLabel <$> zipWith (<>) validTaxonLabels validCommentBodies
 inlineLabel :: String -> String
 inlineLabel x = concat ["> ", x, "\n"]
 

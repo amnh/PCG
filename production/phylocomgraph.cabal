@@ -47,6 +47,8 @@ library
                      , either
                      , hashable
                      , hashtables
+--                     , integer-logarithms
+                     , integer-gmp
                      , keys
                      , lens
                      , matrix
@@ -55,6 +57,7 @@ library
                      , mtl
 --                     , memoize
                      , parallel
+                     , primitive
                      , QuickCheck
                      , quickcheck-properties
                      , safe
@@ -94,9 +97,9 @@ library
 
   extra-libraries: stdc++
 
-  cc-options: --std=c11
+--  cc-options: --std=c11
 
-  -- cc-options: --std=c++11
+  cc-options: --std=c++11
 
   -- We must provide the full relative path to every C file that the project depends on.
   c-sources:
@@ -158,6 +161,8 @@ library
                        Bio.Metadata.CharacterName
                        Bio.Metadata.Continuous
                        Bio.Metadata.Discrete
+                       Bio.Metadata.DiscreteWithTCM
+                       Bio.Metadata.Dynamic
                        Bio.Metadata.Parsed
                        Bio.Sequence
                        Bio.Sequence.Block
@@ -256,6 +261,10 @@ library
                        Bio.Metadata.General.Internal
                        Bio.Metadata.Discrete.Class
                        Bio.Metadata.Discrete.Internal
+                       Bio.Metadata.DiscreteWithTCM.Class
+                       Bio.Metadata.DiscreteWithTCM.Internal
+                       Bio.Metadata.Dynamic.Class
+                       Bio.Metadata.Dynamic.Internal
                        Bio.Metadata.Internal
                        Bio.PhyloGraph.DAG.Internal
                        Bio.PhyloGraph.DAG.Class
@@ -274,11 +283,14 @@ library
                        Bio.PhyloGraphPrime.ReferenceDAG.Internal
                        Bio.PhyloGraphPrime.ZipperDAG.Internal
                        Bio.Sequence.Internal
+                       Bio.Sequence.Block.Builder
+                       Bio.Sequence.Block.Internal
                        Control.Evaluation.Unit
                        Control.Evaluation.Internal
                        Control.Evaluation.Trans
                        Data.Alphabet.Internal
                        Data.BitMatrix.Internal
+                       Data.BitVector.Instances
                        Data.ExtendedNatural
                        Data.TCM.Internal
                        File.Format.TNT.Command.CCode
@@ -352,6 +364,7 @@ executable pcg
   default-language:    Haskell2010
 
   ghc-options:         -O2
+                       -g
                      -- This is to enable thread parralellism at compile time
                        -threaded -rtsopts -with-rtsopts=-N8
                      -- The rest are "opt-in" warnings for cleanliness

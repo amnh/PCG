@@ -23,6 +23,7 @@ import Bio.Character.Decoration.Shared
 import Bio.Character.Encodable
 import Bio.Metadata.CharacterName
 import Bio.Metadata.Discrete
+import Bio.Metadata.Dynamic
 import Control.Lens
 import Data.Alphabet
 import Data.MonoTraversable
@@ -33,8 +34,8 @@ import Data.TCM
 -- A decoration of an initial encoding of a dynamic character which has the
 -- appropriate 'Lens' & character class constraints.
 class ( HasEncoded s a
-      , EncodableDynamicCharacter a
-      , DiscreteCharacterMetadata s (Element a)
+      , EncodableDynamicCharacter  a
+      , DynamicCharacterMetadata   s (Element a)
       ) => SimpleDynamicDecoration s a | s -> a where
 
 
@@ -78,10 +79,8 @@ class ( HasImpliedAlignment           s a
 class ( SimpleDynamicDecoration s a
       ) => DynamicCharacterDecoration s a | s -> a where
 
-    toDynamicCharacterDecoration :: CharacterName -> Double -> Alphabet String -> TCM -> (x -> a) -> x -> s
+    toDynamicCharacterDecoration :: CharacterName -> Double -> Alphabet String -> (Word -> Word -> Word) -> (x -> a) -> x -> s
     {-# MINIMAL toDynamicCharacterDecoration #-}
-
-
 
 
 -- |

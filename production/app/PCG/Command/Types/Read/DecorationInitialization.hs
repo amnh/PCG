@@ -76,7 +76,7 @@ import           Control.Lens
 --import           PCG.SearchState 
 import           Prelude                    hiding (lookup, zip, zipWith)
 
---import Debug.Trace
+import Debug.Trace
 
 
 {-
@@ -99,16 +99,21 @@ initializeDecorations2 (PhylogeneticSolution forests) = PhylogeneticSolution $ f
         id2
         (g    fitchPostOrder)
         (g additivePostOrder)
-        (g adaptiveDirectOptimizationPostOrder)  
+        (g dynamicScoring)  
+--        (g adaptiveDirectOptimizationPostOrder)  
       where
         g _  Nothing  [] = error $ "Uninitialized leaf node. This is bad!"
         g h (Just  v) [] = h v []
         g h        e  xs = h (error $ "We shouldn't be using this value." ++ show e ++ show (length xs)) xs
 
         id2 x _ = x
+        dynamicScoring = directOptimizationPostOrder (\x y -> naiveDOConst x y undefined)
+{-
+        adaptiveDirectOptimizationPostOrder _ _ | trace "DO call" False = undefined
         adaptiveDirectOptimizationPostOrder dec kidDecs = directOptimizationPostOrder pairwiseAlignmentFunction dec kidDecs
           where
             pairwiseAlignmentFunction = chooseDirectOptimizationComparison dec kidDecs
+-}
 
 
 {-                                                              
@@ -253,22 +258,32 @@ chooseDirectOptimizationComparison :: ( SimpleDynamicDecoration d  c
                                    -> c
                                    -> c
                                    -> (c, Double, c, c, c)
-chooseDirectOptimizationComparison dec decs
-  | symbolCount <= 5 = \x y -> naiveDO x y tcm -- but not really, C code here
-  | otherwise        = \x y -> foreignPairwiseDO x y denseMatrix
+chooseDirectOptimizationComparison _ _ = (\x y -> naiveDOConst x y undefined)
+{--
+chooseDirectOptimizationComparison dec decs = \x y -> naiveDO x y scm
   where
-    denseMatrix     = generateForeignDenseMatrix symbolCount tcm 
-    symbolCount     = length alphabet
-    (alphabet, tcm) =
+    scm =
         case decs of
-          []  -> (dec ^. characterAlphabet, dec ^. characterSymbolTransitionCostMatrixGenerator)
-          x:_ -> (x   ^. characterAlphabet, x   ^. characterSymbolTransitionCostMatrixGenerator)
-{-          
-    value =
-        case decs of
-          []   -> (dec ^. encoded, dec ^. characterSymbolTransitionCostMatrixGenerator)
-          x:xs -> (x   ^. encoded, x   ^. characterSymbolTransitionCostMatrixGenerator)
+          []  -> selectBranch dec
+          x:_ -> selectBranch x
+      where
+        selectBranch candidate = candidate ^. symbolChangeMatrix
+--}
+{--}
+-- do this when shit stops segfaulting
+{-
+chooseDirectOptimizationComparison dec decs =
+    case decs of
+      []  -> selectBranch dec
+      x:_ -> selectBranch x
+  where
+    selectBranch candidate =
+         Just  d -> \x y -> foreignPairwiseDO x y d
+         Nothing ->
+           let !scm = (candidate ^. symbolChangeMatrix)
+           in \x y -> naiveDO x y scm
 -}
+
 
 {-
 data FracturedParseResult

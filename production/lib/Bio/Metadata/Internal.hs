@@ -102,8 +102,8 @@ data CostStructure = TCM CostMatrix
 -- | A cost matrix is just a matrix of floats
 type CostMatrix = Matrix Int
 
-toCostFunction :: CostStructure -> Int -> Int -> Int
-toCostFunction (TCM tcm) = \i j -> getElem i j tcm
+toCostFunction :: CostStructure -> Word -> Word -> Word
+toCostFunction (TCM tcm) = \i j -> toEnum $ getElem (fromEnum i) (fromEnum j) tcm
 toCostFunction        _  = \_ _ -> 1
 
 

@@ -29,9 +29,9 @@ class DiscreteCharacterDecoration s a => MetricCharacterDecoration s a | s -> a 
 -- |
 -- A decoration containing a character that has been scored using Sankoff's algorithm.
 class ( DiscreteCharacterDecoration s c
-      , HasCharacterCost s Word
-      , HasCharacterCostVector s [Word]
-      , HasDirectionalMinVector s ([Word], [Word])
+      , HasCharacterCost        s Word
+      , HasCharacterCostVector  s  [ExtendedNatural]
+      , HasDirectionalMinVector s ([ExtendedNatural], [ExtendedNatural])
       ) => SankoffDecoration s c | s -> c where
 
 
@@ -42,7 +42,7 @@ class ( DiscreteCharacterDecoration s c
 class ( SankoffDecoration s c
       ) => DiscreteExtensionSankoffDecoration s c | s -> c where
 
-    extendDiscreteToSankoff :: DiscreteCharacterDecoration x c => x -> [Word] -> ([Word], [Word]) -> Word -> s
+    extendDiscreteToSankoff :: DiscreteCharacterDecoration x c => x -> [ExtendedNatural] -> ([ExtendedNatural], [ExtendedNatural]) -> Word -> s
 
 
 -- |

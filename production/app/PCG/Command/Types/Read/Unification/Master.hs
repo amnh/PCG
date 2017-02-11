@@ -12,6 +12,8 @@
 --
 -----------------------------------------------------------------------------
 
+{-# LANGUAGE BangPatterns, FlexibleContexts #-}
+
 module PCG.Command.Types.Read.Unification.Master where
 
 import           Bio.Character
@@ -25,7 +27,7 @@ import           Bio.Sequence.Block
 import           Bio.Metadata.CharacterName        hiding (sourceFile)
 import           Bio.Metadata.Parsed
 import           Bio.PhyloGraph.Solution           hiding (parsedChars)
-import           Bio.PhyloGraph.DAG
+import           Bio.PhyloGraph.DAG                hiding (structure)
 import           Bio.PhyloGraph.Forest.Parsed
 import           Bio.PhyloGraphPrime
 import           Bio.PhyloGraphPrime.Component
@@ -52,7 +54,7 @@ import           Data.Semigroup                    ((<>), sconcat)
 import           Data.Semigroup.Foldable
 import           Data.Set                          (Set, (\\))
 import qualified Data.Set                   as Set
-import           Data.TCM                          (TCM)
+import           Data.TCM                          (TCM, TCMStructure(..))
 import qualified Data.TCM                   as TCM
 import           Data.MonoTraversable
 import           Data.Vector                       (Vector)
@@ -68,7 +70,7 @@ data FracturedParseResult
    { parsedChars   :: TreeChars
    , parsedMetas   :: Vector ParsedCharacterMetadata -- Vector StandardMetadata
    , parsedForests :: ParserForestSet
-   , relatedTcm    :: Maybe TCM
+   , relatedTcm    :: Maybe (TCM, TCMStructure)
    , sourceFile    :: FilePath
    }
 
@@ -223,13 +225,13 @@ rectifyResults2 fprs =
 --   blocks wrapped together as a charcter sequence. This will properly add
 --   missing character values to taxa provided in other files.
 joinSequences2 :: Foldable t => t FracturedParseResult -> Map String UnifiedCharacterSequence
-joinSequences2 = collapseAndMerge . reduceAlphabets . deriveCorrectTCMs . deriveCharacterNames
+joinSequences2 = collapseAndMerge . performMetadataTransformations . deriveCorrectTCMs . deriveCharacterNames
   where
     
     -- We do this to correctly construct the CharacterNames.
     deriveCharacterNames :: Foldable t
                          => t FracturedParseResult
-                         -> [ Map String (NonEmpty (Maybe ParsedChar, ParsedCharacterMetadata, Maybe TCM, CharacterName)) ]
+                         -> [ Map String (NonEmpty (Maybe ParsedChar, ParsedCharacterMetadata, Maybe (TCM, TCMStructure), CharacterName)) ]
     deriveCharacterNames xs = reverse . snd $ foldl' g (charNames, []) xs
       where
         g (propperNames, ys) fpr = (drop (length localMetadata) propperNames, newMap:ys)
@@ -247,36 +249,61 @@ joinSequences2 = collapseAndMerge . reduceAlphabets . deriveCorrectTCMs . derive
                 correctName ys = Just ys
 
     deriveCorrectTCMs :: Functor f
-                      => f (Map String (NonEmpty (Maybe ParsedChar, ParsedCharacterMetadata, Maybe TCM, CharacterName)))
-                      -> f (Map String (NonEmpty (Maybe ParsedChar, ParsedCharacterMetadata,       TCM, CharacterName)))
+                      => f (Map String (NonEmpty (Maybe ParsedChar, ParsedCharacterMetadata, Maybe (TCM, TCMStructure), CharacterName)))
+                      -> f (Map String (NonEmpty (Maybe ParsedChar, ParsedCharacterMetadata,        TCM, TCMStructure, CharacterName)))
     deriveCorrectTCMs = fmap (fmap (fmap selectTCM))
       where
-        selectTCM (charMay, charMetadata, tcmMay, charName) = (charMay, charMetadata, selectedTCM, charName)
+        selectTCM (charMay, charMetadata, tcmMay, charName) = (charMay, charMetadata, selectedTCM, selectedStructure, charName)
           where
-            selectedTCM       = fromMaybe defaultTCM $ tcmMay <|> parsedTCM charMetadata
+            (selectedTCM, selectedStructure) = fromMaybe defaultTCM $ tcmMay <|> parsedTCM charMetadata
             specifiedAlphabet = alphabet charMetadata
-            defaultTCM        = TCM.generate (length specifiedAlphabet) $ \(i,j) -> (if i == j then 0 else 1 :: Int)
-
+            defaultTCM        = (TCM.generate (length specifiedAlphabet) defaultCost, NonAdditive)
+              where
+                defaultCost  :: (Word, Word) -> Word
+                defaultCost (i,j)
+                  | i == j    = 0
+                  | otherwise = 1
+{-
     reduceAlphabets :: Functor f
-                    => f (Map String (NonEmpty (Maybe ParsedChar, ParsedCharacterMetadata, TCM, CharacterName)))
-                    -> f (Map String (NonEmpty (Maybe ParsedChar, ParsedCharacterMetadata, TCM, CharacterName)))
+                    => f (Map String (NonEmpty (Maybe ParsedChar, ParsedCharacterMetadata, TCM, TCMStructure, CharacterName)))
+                    -> f (Map String (NonEmpty (Maybe ParsedChar, ParsedCharacterMetadata, TCM, TCMStructure, CharacterName)))
     reduceAlphabets = fmap reduceFileBlock
       where
         reduceFileBlock mapping = fmap (zipWith removeExtraneousSymbols observedSymbolSets) mapping
           where
-            observedSymbolSets :: NonEmpty (Set String)
-            observedSymbolSets = fmap (foldMap f) . NE.fromList . transpose . fmap toList $ toList mapping
+            observedSymbolSets :: NonEmpty (Set String, Int, TCM, TCMStructure)
+            observedSymbolSets = fmap generateObservedSymbolSetForCharacter . NE.fromList . transpose . fmap toList $ toList mapping
              where
+               generateObservedSymbolSetForCharacter input =
+                 case input of
+                   []             -> error "Should never happen in reduceAlphabets.reduceFileBlock.observedSymbolSets.generateObservedSymbolSetForCharacter" -- mempty
+                   x@(_,m,tcm,_):xs ->
+                     let diagnosis   = TCM.diagnoseTcm tcm
+                         weighting   = TCM.factoredWeight diagnosis
+                         tcm'        = TCM.factoredTcm    diagnosis
+                         structure   = TCM.tcmStructure   diagnosis
+                         seenSymbols =
+                             case structure of
+                               TCM.Additive -> Set.fromList . toList $ alphabet m
+                               _            -> foldMap f $ x:xs
+                         
+                     in (seenSymbols, weighting, tcm', structure)
+                     -- TCM structure won't change with columns removed!
+
+                 
                f (x,_,_,_) = foldMap (foldMap (Set.fromList . toList)) x
 
-        removeExtraneousSymbols :: Set String
-                                -> (Maybe ParsedChar, ParsedCharacterMetadata, TCM, CharacterName)
-                                -> (Maybe ParsedChar, ParsedCharacterMetadata, TCM, CharacterName)
-        removeExtraneousSymbols observedSymbols input@(charMay, charMetadata, tcm, charName)
-          | isDynamic charMetadata      = input
-          | onull missingSymbolIndicies = input
-          | otherwise                   = (charMay, charMetadata { alphabet = reducedAlphabet }, reducedTCM, charName)
+
+        removeExtraneousSymbols :: (Set String, Int, TCM, TCMStructure)
+                                -> (Maybe ParsedChar, ParsedCharacterMetadata, TCM, TCMStructure, CharacterName)
+                                -> (Maybe ParsedChar, ParsedCharacterMetadata, TCM, TCMStructure, CharacterName)
+        removeExtraneousSymbols (observedSymbols, coefficient, tcm, structure) (charMay, charMetadata, _, inputStruct, charName)
+          | isDynamic charMetadata      = (charMay, charMetadata' ,        tcm, charName, structure)
+          | onull missingSymbolIndicies = (charMay, charMetadata' ,        tcm, charName, structure)
+          | otherwise                   = (charMay, charMetadata'', reducedTCM, charName, structure)
           where
+            charMetadata'  = charMetadata  { weight   = weight charMetadata * fromIntegral coefficient }
+            charMetadata'' = charMetadata' { alphabet = reducedAlphabet }
 --            observedSymbols       = observedSymbols' `Set.remove` "?"
             missingSymbolIndicies = foldMapWithKey f suppliedAlphabet
               where
@@ -312,7 +339,7 @@ joinSequences2 = collapseAndMerge . reduceAlphabets . deriveCorrectTCMs . derive
                     --
                     -- We might need to do this for Ultra-metric also..?
                     case TCM.tcmStructure $ TCM.diagnoseTcm tcm of
-                      TCM.Additive -> \(i,j) -> toEnum . abs $ i - j
+                      TCM.Additive -> \(i,j) -> toEnum $ max i j - min i j
                       _            -> f
                 
                 f (i,j) = tcm TCM.! (i', j')
@@ -322,11 +349,112 @@ joinSequences2 = collapseAndMerge . reduceAlphabets . deriveCorrectTCMs . derive
                     xs = otoList missingSymbolIndicies
                     iOffset = length $ filter (<=i) xs
                     jOffset = length $ filter (<=j) xs
+-}
 
+
+    performMetadataTransformations :: Functor f
+                    => f (Map String (NonEmpty (Maybe ParsedChar, ParsedCharacterMetadata, TCM, TCMStructure, CharacterName)))
+                    -> f (Map String (NonEmpty (Maybe ParsedChar, ParsedCharacterMetadata, (Word -> Word -> Word), TCMStructure, CharacterName)))
+    performMetadataTransformations = fmap reduceFileBlock
+      where
+        reduceFileBlock mapping = fmap (zipWith updateMetadataInformation updatedMetadataTokens) mapping
+          where
+            updatedMetadataTokens :: NonEmpty (Alphabet String, Word -> Word -> Word)
+            updatedMetadataTokens = fmap generateMetadataToken . NE.fromList . transpose . fmap toList $ toList mapping
+             where
+               gatherSymbols (x,_,_,_,_) = foldMap (foldMap (Set.fromList . toList)) x
+
+               generateMetadataToken                []  = error "Should never happen in reduceAlphabets.reduceFileBlock.observedSymbolSets.generateObservedSymbolSetForCharacter" -- mempty
+               generateMetadataToken (x@(_,m,tcm,structure,_):xs) = (reducedAlphabet, reducedTCM)
+                 where
+--                   diagnosis   = TCM.diagnoseTcm tcm
+--                   weighting   = TCM.factoredWeight diagnosis
+--                   tcm'        = TCM.factoredTcm    diagnosis
+--                   structure   = TCM.tcmStructure   diagnosis
+                         -- In the case of Additive characters,
+                         -- we don't want to preserve the transition cost to non-observed states.
+                         --
+                         -- In the matrix below, with '2' unobserved, would be naively transformed:
+                         --
+                         -- 0 1 2 3        0 1 3
+                         -- 1 0 1 2  ===>  1 0 2
+                         -- 2 1 0 1        3 2 0
+                         -- 3 2 1 0
+                         --
+                         -- We can see that is incorrect as the Additive structure is not preserved
+                         -- after the reduction. We handle this case specially.
+                         --
+                         -- We might need to do this for Ultra-metric also..?
+                   seenSymbols = foldMap gatherSymbols $ x:xs
+{-
+                       case structure of
+                         Additive -> Set.fromList . toList $ alphabet m
+                         _        -> foldMap gatherSymbols $ x:xs
+-}
+
+--            observedSymbols       = observedSymbols' `Set.remove` "?"
+                   missingSymbolIndicies = foldMapWithKey f suppliedAlphabet
+                     where
+                       f k v
+                         |    v `notElem` seenSymbols
+                           && v /= gapSymbol suppliedAlphabet = IS.singleton k
+                         | otherwise = mempty
+                  
+                   suppliedAlphabet      = alphabet m
+                   reducedAlphabet       =
+                       case structure of
+                         Additive -> truncateAtMaxSymbol seenSymbols suppliedAlphabet
+                         _        ->
+                           case alphabetStateNames suppliedAlphabet of
+                             [] -> fromSymbols               . reduceTokens $      alphabetSymbols suppliedAlphabet
+                             ys -> fromSymbolsWithStateNames . reduceTokens $ zip (alphabetSymbols suppliedAlphabet) ys
+                     where
+                       reduceTokens = foldMapWithKey (\k v -> if k `oelem` missingSymbolIndicies then [] else [v])
+
+                   indices = otoList missingSymbolIndicies
+
+                   reducedTCM =
+                       case structure of
+                         NonAdditive -> nonAdditiveDistanceFunction
+                         Additive    -> additiveDistanceFunction
+                         _           -> let !tcm' = TCM.generate reducedDimension genFunction
+                                        in (\i j -> toEnum . fromEnum $ tcm' TCM.! (i,j))
+                     where
+                       reducedDimension  = TCM.size tcm - olength missingSymbolIndicies
+                       genFunction (i,j) = tcm TCM.! (i', j')
+                         where
+                           i' = i + iOffset
+                           j' = j + jOffset
+                           iOffset = length $ filter (<=i) indices
+                           jOffset = length $ filter (<=j) indices
+                    
+
+        updateMetadataInformation :: (Alphabet String, Word -> Word -> Word)
+                                 -> (Maybe ParsedChar, ParsedCharacterMetadata, TCM, TCMStructure, CharacterName)
+                                 -> (Maybe ParsedChar, ParsedCharacterMetadata, Word -> Word -> Word, TCMStructure, CharacterName)
+        updateMetadataInformation (reducedAlphabet, symbolDistance) (charMay, charMetadata, _, structure, charName) =
+            ( charMay
+            , charMetadata { alphabet = reducedAlphabet }
+            , symbolDistance
+            , structure
+            , charName
+            )
+
+{-
+    collapseAndMerge2 :: Foldable f => f (Map String (NonEmpty (Maybe ParsedChar, ParsedCharacterMetadata, TCM, CharacterName))) -> Map String UnifiedCharacterSequence
+    collapseAndMerge2 = h . g . f
+      where
+        f :: Foldable f => f (Map String (NonEmpty (Maybe ParsedChar, ParsedCharacterMetadata, TCM, CharacterName))) -> f (Map String (Map OptToken [OptValueWrapper]))
+        f = undefined
+        g :: Foldable f => f (Map String (Map OptToken [OptValueWrapper])) -> Map String (f (Map OptToken [OptValueWrapper]))
+        g = undefined
+        h :: Foldable f => Map String (f (Map OptToken [OptValueWrapper])) -> Map String UnifiedCharacterSequence 
+        h = undefined
+-}
     collapseAndMerge = fmap fromBlocks . fst . foldl' f (mempty, [])
       where
         f :: (Map String (NonEmpty UnifiedCharacterBlock), [UnifiedCharacterBlock])
-          ->  Map String (NonEmpty (Maybe ParsedChar, ParsedCharacterMetadata, TCM, CharacterName))
+          ->  Map String (NonEmpty (Maybe ParsedChar, ParsedCharacterMetadata, Word -> Word -> Word, TCMStructure, CharacterName))
           -> (Map String (NonEmpty UnifiedCharacterBlock), [UnifiedCharacterBlock])
         f (prevMapping, prevPad) currTreeChars = (nextMapping, nextPad)
           where
@@ -346,24 +474,25 @@ joinSequences2 = collapseAndMerge . reduceAlphabets . deriveCorrectTCMs . derive
                 rhs = Set.fromList $ keys y
 
             encodeToBlock :: Foldable1 t
-                          => t (Maybe ParsedChar, ParsedCharacterMetadata, TCM, CharacterName)
+                          => t (Maybe ParsedChar, ParsedCharacterMetadata, Word -> Word -> Word, TCMStructure, CharacterName)
                           -> UnifiedCharacterBlock
-            encodeToBlock = foldMap1 encodeBinToSingletonBlock
+            encodeToBlock = finalizeCharacterBlock . foldMap1 encodeBinToSingletonBlock
               where
-                encodeBinToSingletonBlock :: (Maybe ParsedChar, ParsedCharacterMetadata, TCM, CharacterName)
-                                          -> UnifiedCharacterBlock
-                encodeBinToSingletonBlock (charMay, charMeta, tcm, charName)
-                  | isDynamic charMeta = dynamicSingleton     dynamicCharacter
-                  | otherwise          = discreteSingleton tcm staticCharacter
+--                encodeBinToSingletonBlock :: (Maybe ParsedChar, ParsedCharacterMetadata, Word -> Word -> Word, TCMStructure, CharacterName)
+--                                          -> UnifiedCharacterBlock
+                encodeBinToSingletonBlock (charMay, charMeta, scm, structure, charName)
+                  | isDynamic charMeta = dynamicSingleton dynamicCharacter
+                  | otherwise          = discreteSingleton structure staticCharacter
                   where
                     alphabetLength    = length specifiedAlphabet
                     specifiedAlphabet = alphabet charMeta
                     charWeight        = weight   charMeta
                     missingCharValue  = NE.fromList $ toList specifiedAlphabet
+                    
                     staticTransform   = encodeElement specifiedAlphabet . maybe missingCharValue NE.head
-                    staticCharacter   = Just $ toDiscreteCharacterDecoration charName charWeight specifiedAlphabet tcm staticTransform charMay
+                    staticCharacter   = Just $ toDiscreteCharacterDecoration charName charWeight specifiedAlphabet scm staticTransform charMay
                     dynamicTransform  = maybe (Missing alphabetLength) (encodeStream specifiedAlphabet)
-                    dynamicCharacter  = Just $ toDynamicCharacterDecoration  charName charWeight specifiedAlphabet tcm dynamicTransform charMay
+                    dynamicCharacter  = Just $ toDynamicCharacterDecoration charName charWeight specifiedAlphabet scm dynamicTransform charMay
                         
 
             -- Necessary for mixing [] with NonEmpty
@@ -396,3 +525,16 @@ gatherForestsTerminalNames fpr = (identifiers, fpr)
           case foldMap terminalNames2 forest of
              []   -> Nothing
              x:xs -> Just $ x :| xs
+
+
+additiveDistanceFunction :: Word -> Word -> Word
+additiveDistanceFunction i j = max i j - min i j
+
+nonAdditiveDistanceFunction :: Word -> Word -> Word
+nonAdditiveDistanceFunction i j
+  | i == j    = 0
+  | otherwise = 1
+
+
+
+

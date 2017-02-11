@@ -34,6 +34,7 @@
 -- 
 -----------------------------------------------------------------------------
 
+{-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE FlexibleContexts #-}
 
 module Bio.Metadata.CharacterName
@@ -43,11 +44,13 @@ module Bio.Metadata.CharacterName
   , sourceFile
   ) where
 
+import Control.DeepSeq
 import Control.Monad.State.Lazy
 import Data.Traversable
 import Data.List       (isPrefixOf)
 import Data.Map hiding (null)
 import Data.Monoid
+import GHC.Generics    (Generic)
 import Prelude  hiding (lookup)
 import Text.Show       (showListWith, showString)
 
@@ -58,7 +61,9 @@ import Text.Show       (showListWith, showString)
 data CharacterName
    = UserDefined FilePath String
    | Default     FilePath Int
-   deriving (Eq)
+   deriving (Eq, Generic)
+
+instance NFData CharacterName
 
 -- A custom 'Show' instance for more legible rendering of lists
 instance Show CharacterName where

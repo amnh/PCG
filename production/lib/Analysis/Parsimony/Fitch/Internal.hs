@@ -88,7 +88,7 @@ initializeLeaf leafDecoration =
     extendDiscreteToFitch leafDecoration 0 leafChar emptyChar (emptyChar, emptyChar) True
     where
         --label     = leafDecoration ^. discreteCharacter -- can skip this now, because it's set in post order
-        emptyChar = emptyStatic $ leafChar
+        emptyChar = emptyStatic leafChar
         leafChar  = leafDecoration ^. discreteCharacter
 
 

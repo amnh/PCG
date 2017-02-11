@@ -96,6 +96,10 @@ void setup2dCostMtx(int* tcm, size_t alphSize, int gap_open, cost_matrices_2d_p 
 
     int median1, median2;                     // median of a given nucleotide and current ambElem, for each ambElem
 
+    //    int tcm2[25] = {0,1,1,1,1,1,0,1,1,1,1,1,0,1,1,1,1,1,0,1,1,1,1,1,0};
+    
+    //    tcm = tcm2;
+    
     cm_alloc_set_costs_2d( alphSize,
                            combinations,
                            do_aff,

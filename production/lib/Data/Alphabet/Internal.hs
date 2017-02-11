@@ -9,6 +9,8 @@
 -- Portability :  portable
 --
 -----------------------------------------------------------------------------   
+
+{-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE FlexibleContexts, FlexibleInstances, TypeFamilies #-}
 
 module Data.Alphabet.Internal
@@ -19,13 +21,16 @@ module Data.Alphabet.Internal
   , fromSymbols
   , fromSymbolsWithStateNames
   , gapSymbol
+  , truncateAtSymbol
+  , truncateAtMaxSymbol
   ) where
 
+import           Control.DeepSeq              (NFData)
 import           Control.Monad.State.Strict
 import           Data.Bifunctor               (first)
 import           Data.Foldable
 import           Data.Key
-import           Data.List                    (intercalate, sort)
+import           Data.List                    (elemIndex, intercalate, sort)
 import           Data.List.NonEmpty           (NonEmpty)
 import           Data.Maybe
 import           Data.Monoid
@@ -33,6 +38,7 @@ import qualified Data.Set              as Set
 import           Data.String
 import           Data.Vector                  (Vector)
 import qualified Data.Vector           as V
+import           GHC.Generics                 (Generic)
 import           Prelude               hiding (lookup, zip)
 import           Test.Tasty.QuickCheck hiding (generate)
 import           Test.QuickCheck.Arbitrary.Instances ()
@@ -57,6 +63,9 @@ data Alphabet a =
 
 
 type instance Key Alphabet = Int
+
+
+instance NFData a => NFData (Alphabet a)
 
 
 instance Indexable Alphabet where
@@ -169,6 +178,41 @@ alphabetStateNames = stateNames
 gapSymbol :: Alphabet a -> a
 gapSymbol alphabet = alphabet ! (length alphabet - 1)
 
+-- |
+-- Attempts to find the symbol in the Alphabet.
+-- If the symbol exists, returns an alphabet with all the symbols occuring
+-- before the supplied symbol included and all symbols occring after the
+-- supplied symbol excluded. The gap character is preserved in the alphabet
+-- regardless of the supplied symbol.
+--
+-- /O(n*log(n)/
+truncateAtSymbol :: (Ord a, IsString a) => a -> Alphabet a -> Alphabet a
+truncateAtSymbol symbol alphabet =
+    case elemIndex symbol $ toList alphabet of
+      Nothing -> alphabet
+      Just i  ->
+        case alphabet of
+          SimpleAlphabet     _ -> fromSymbols . take i $ alphabetSymbols alphabet
+          StateNamedAlphabet _ -> fromSymbolsWithStateNames . take i $ zip (alphabetSymbols alphabet) (alphabetStateNames alphabet)
+
+
+
+truncateAtMaxSymbol :: (Foldable t, Ord a, IsString a) => t a -> Alphabet a -> Alphabet a
+truncateAtMaxSymbol symbols alphabet =
+    case maxIndex of
+      Nothing -> alphabet
+      Just i  ->
+        case alphabet of
+          SimpleAlphabet     _ -> fromSymbols               . take (i + 1) $      alphabetSymbols alphabet
+          StateNamedAlphabet _ -> fromSymbolsWithStateNames . take (i + 1) $ zip (alphabetSymbols alphabet) (alphabetStateNames alphabet)
+  where
+    maxIndex = foldlWithKey' f Nothing alphabet
+    f e k v
+      | v `notElem` symbols = e
+      | otherwise =
+        case e of
+          Nothing -> Just k
+          Just  i -> Just $ max k i
 
 
 {-
@@ -194,8 +238,12 @@ alphabetPreprocessing = appendGapSymbol . removeSpecialSymbolsAndDuplicates . to
               pure $ x `notElem` seenSet
 
 
-newtype UnnamedSymbol a = Unnamed  a
-newtype NamedSymbol   a = Named (a,a)
+newtype UnnamedSymbol a = Unnamed  a  deriving (Generic)
+newtype NamedSymbol   a = Named (a,a) deriving (Generic)
+
+instance NFData a => NFData (UnnamedSymbol a)
+instance NFData a => NFData (  NamedSymbol a)
+
 
 
 fromUnnamed :: UnnamedSymbol t -> t

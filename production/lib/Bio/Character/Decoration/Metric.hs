@@ -20,14 +20,14 @@ module Bio.Character.Decoration.Metric
   , DiscreteCharacterMetadata()
   , DiscreteCharacterDecoration()
   , HasCharacterAlphabet(..)
-  , HasCharacterName(..)
-  , HasCharacterSymbolTransitionCostMatrixGenerator(..)
-  , HasCharacterTransitionCostMatrix(..)
-  , HasCharacterWeight(..)
-  , HasDiscreteCharacter(..)
   , HasCharacterCost(..)
   , HasCharacterCostVector(..)
+  , HasCharacterName(..)
+  , HasCharacterWeight(..)
   , HasDirectionalMinVector(..)
+  , HasDiscreteCharacter(..)
+  , HasSymbolChangeMatrix(..)
+  , HasTransitionCostMatrix(..)
   ) where
 
 import Bio.Character.Decoration.Discrete

@@ -51,7 +51,7 @@ sankoffPostOrder charDecoration xs =
 -- Needs to determine which child it's updating, then sends the appropriate minlist
 sankoffPreOrder :: EncodableStaticCharacter c
                 => SankoffOptimizationDecoration c
-                -> [(Word, SankoffOptimizationDecoration c)]
+                -> [(Int, SankoffOptimizationDecoration c)]
                 -> SankoffOptimizationDecoration c
 sankoffPreOrder childDecoration []                                 = childDecoration -- is a root
 sankoffPreOrder childDecoration ((whichChild, parentDecoration):_) = resultDecoration $
@@ -75,15 +75,15 @@ initializeCostVector :: DiscreteCharacterDecoration d c => d -> SankoffOptimizat
 initializeCostVector inputDecoration = returnChar
     where
         -- assuming metricity
-        len      = symbolCount $ inputDecoration ^. discreteCharacter
-        range    = [0..len-1]
-        costList = foldMap f range
+        inputChar = inputDecoration ^. discreteCharacter
+        len       = symbolCount $ inputChar
+        range     = [0..len-1]
+        costList  = fmap f range
             where
                 f i
-                    | inputChar `testBit` i = [minBound :: Word]
-                    | otherwise             = [maxBound :: Word] -- Change this if it's actually Doubles.
-                    where inputChar = inputDecoration ^. discreteCharacter
-        returnChar = extendDiscreteToSankoff inputDecoration costList ([],[]) (minBound :: Word)
+                    | inputChar `testBit` i = minBound
+                    | otherwise             = infinity -- Change this if it's actually Doubles.
+        returnChar = extendDiscreteToSankoff inputDecoration costList ([],[]) minBound
 
 
 
@@ -97,21 +97,22 @@ initializeCostVector inputDecoration = returnChar
 --
 -- Assumes binary tree.
 updateCostVector :: DiscreteCharacterDecoration d c
-                      => d
-                      -> NonEmpty (SankoffOptimizationDecoration c)
-                      -> SankoffOptimizationDecoration c
+                 => d
+                 -> NonEmpty (SankoffOptimizationDecoration c)
+                 -> SankoffOptimizationDecoration c
 updateCostVector _parentDecoration (x:|[])                   = x                    -- Shouldn't be possible, but here for completion.
 updateCostVector _parentDecoration (leftChild:|rightChild:_) = returnNodeDecoration -- _Should_ be able to amend this to use non-binary children.
     where
-        (costVector, dirCostVector, charCost) = foldr findMins initialAccumulator [0..length (leftChild ^. characterAlphabet)]
-        initialAccumulator     = ([], ([],[]), maxBound :: Word)  -- (min cost per state, (leftMin, rightMin), overall minimum)
-        returnNodeDecoration   = extendDiscreteToSankoff leftChild costVector dirCostVector $ fromIntegral charCost
+        (costVector, dirCostVector, charCost) = foldr findMins initialAccumulator range
+        range = [0 .. toEnum . length $ leftChild ^. characterAlphabet]
+        initialAccumulator     = ([], ([],[]), infinity)  -- (min cost per state, (leftMin, rightMin), overall minimum)
+        returnNodeDecoration   = extendDiscreteToSankoff leftChild costVector dirCostVector $ toWord charCost
 
         findMins charState (stateMins, (leftMin, rightMin), curMin) = returnVal
              where
                  charMin = if stateMin < curMin
-                           then curMin + 10
-                           else stateMin
+                           then stateMin
+                           else curMin
                  stateMin                      = leftChildMin + rightChildMin
                  (leftChildMin, rightChildMin) = calcCostPerState charState leftChild rightChild
                  returnVal                     = (stateMin : stateMins, (leftChildMin : leftMin, rightChildMin : rightMin), charMin)
@@ -130,51 +131,53 @@ updateCostVector _parentDecoration (leftChild:|rightChild:_) = returnNodeDecorat
 updateDirectionalMins :: EncodableStaticCharacter c -- ERIC: I made this more restrictive to resolve the 'Cannot deduce EncodableStaticCharacter c from Bits c'
                       => SankoffOptimizationDecoration c
                       -> SankoffOptimizationDecoration c
-                      -> [Word]
+                      -> [ExtendedNatural]
                       -> SankoffOptimizationDecoration c
-updateDirectionalMins parentDecoration childDecoration parentMins  = returnChar
+updateDirectionalMins parentDecoration childDecoration parentMins  = childDecoration & discreteCharacter .~ resultMedian
     where
-        median = foldlWithKey' (\acc parentCharState parentCharMin ->
-                                    if parentCharMin == parentDecoration ^. characterCost
-                                    then foldlWithKey' (buildMedian parentCharState) acc $ parentDecoration ^. characterCostVector
-                                    else acc
-                               ) startMedian parentMins
+        parentCostVector    = parentDecoration ^. characterCostVector
+        parentCharacterCost = parentDecoration ^. characterCost
+        emptyMedian         = emptyStatic $ parentDecoration ^. discreteCharacter
+        resultMedian        = foldlWithKey' someOtherFunctionThatNeedsName emptyMedian parentMins
 
+        someOtherFunctionThatNeedsName :: EncodableStaticCharacter c => c -> Int -> ExtendedNatural -> c
+        someOtherFunctionThatNeedsName acc parentCharState parentCharMin
+            | parentCharMin == fromWord parentCharacterCost = foldlWithKey' (buildMedian parentCharState) acc parentCostVector
+            | otherwise                                     = acc
+
+        buildMedian :: EncodableStaticCharacter c => Int -> c -> Int -> ExtendedNatural -> c
         buildMedian parentCharState acc childCharState charMin
-            | charMin == totalCost childCharState parentCharState = acc `setBit` childCharState
+            | charMin == totalCost childCharState parentCharState = acc `setBit` fromEnum childCharState
             | otherwise                                           = acc
-        tcmCostAsWord childState parState = fromIntegral $ (parentDecoration ^. characterSymbolTransitionCostMatrixGenerator) childState parState
-        totalCost childState parState     = parentDecoration ^. characterCost + tcmCostAsWord childState parState
-        startMedian                       = emptyStatic $ parentDecoration ^. discreteCharacter -- ERIC: This is a unary function, not a nullary function.
-        returnChar                        = childDecoration & discreteCharacter .~ median
+
+        scm = parentDecoration ^. symbolChangeMatrix
+
+        totalCost i j = fromWord $ parentCharacterCost + tcmCost i j
+        tcmCost   i j = scm (toEnum i) (toEnum j)
 
 
--- | Take in a single character state as an Int—which represents an unambiguous character state on the parent—
+-- | Take in a single character state as a Word---which represents an unambiguous character state on the parent---
 -- and two decorations: the decorations of the two child states.
 -- Return the minimum costs of transitioning from each of those two child decorations to the given character.
 -- These mins will be saved for use at the next post-order call, to the current parent node's parent.
 --
 -- Note: We can throw away the medians that come back from the tcm here because we're building medians:
 -- the possible character is looped over all available characters, and there's an outer loop which sends in each possible character.
-calcCostPerState :: Int -> SankoffOptimizationDecoration c -> SankoffOptimizationDecoration c -> (Word, Word)
+calcCostPerState :: Word -> SankoffOptimizationDecoration c -> SankoffOptimizationDecoration c -> (ExtendedNatural, ExtendedNatural)
 calcCostPerState inputCharState leftChildDec rightChildDec = retVal
     where
         -- Using keys, fold over alphabet states as Ints. The zipped lists will give minimum accumulated costs for
         -- each character state in each child.
         retVal = foldlWithKey' findMins initialAccumulator zippedCostList
-        findMins :: (Word, Word) -> Int -> (Word, Word) -> (Word, Word)
+        findMins :: (ExtendedNatural, ExtendedNatural) -> Int -> (ExtendedNatural, ExtendedNatural) -> (ExtendedNatural, ExtendedNatural)
         findMins (initLeftMin, initRightMin) childCharState (accumulatedLeftCharCost, accumulatedRightCharCost) = (leftMin, rightMin)
             where
-                leftMin             = if curLeftMin < initLeftMin
-                                          then curLeftMin
-                                          else initLeftMin
-                rightMin            = if curRightMin < initRightMin
-                                          then curRightMin
-                                          else initRightMin
-                curLeftMin          = trace (show accumulatedLeftCharCost) $ fromIntegral leftTransitionCost  + accumulatedLeftCharCost
-                curRightMin         = fromIntegral rightTransitionCost + accumulatedRightCharCost
-                leftTransitionCost  = ( leftChildDec ^. characterSymbolTransitionCostMatrixGenerator) inputCharState childCharState
-                rightTransitionCost = (rightChildDec ^. characterSymbolTransitionCostMatrixGenerator) inputCharState childCharState
+                leftMin             = min curLeftMin initLeftMin
+                rightMin            = min curRightMin initRightMin
+                curLeftMin          = trace ("left:  " ++ show  accumulatedLeftCharCost ++ " " ++ show  leftTransitionCost) $ fromIntegral leftTransitionCost + accumulatedLeftCharCost
+                curRightMin         = trace ("left:  " ++ show accumulatedRightCharCost ++ " " ++ show rightTransitionCost) $fromIntegral rightTransitionCost + accumulatedRightCharCost
+                leftTransitionCost  = fromWord $ ( leftChildDec ^. symbolChangeMatrix) inputCharState $ fromIntegral childCharState
+                rightTransitionCost = fromWord $ (rightChildDec ^. symbolChangeMatrix) inputCharState $ fromIntegral childCharState
 
-        initialAccumulator = (maxBound :: Word, maxBound :: Word)
+        initialAccumulator = (infinity, infinity)
         zippedCostList     = zip (leftChildDec ^. characterCostVector) (rightChildDec ^. characterCostVector)

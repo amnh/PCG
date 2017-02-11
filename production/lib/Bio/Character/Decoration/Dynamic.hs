@@ -21,13 +21,14 @@ module Bio.Character.Decoration.Dynamic
   , DynamicCharacterDecoration(..)
   , DynamicDecorationDirectOptimizationPostOrderResult()
   , GeneralCharacterMetadata()
+  , DiscreteCharacterMetadata()
+  , DiscreteWithTcmCharacterMetadata()
+  , DynamicCharacterMetadata()
   , SimpleDynamicExtensionPostOrderDecoration(..)
   , PostOrderExtensionDirectOptimizationDecoration(..)
   , HasCharacterAlphabet(..)
   , HasCharacterCost(..)
   , HasCharacterName(..)
-  , HasCharacterSymbolTransitionCostMatrixGenerator(..)
-  , HasCharacterTransitionCostMatrix(..)
   , HasCharacterWeight(..)
   , HasEncoded(..)
   , HasFinalGapped(..)
@@ -37,6 +38,9 @@ module Bio.Character.Decoration.Dynamic
   , HasLeftAlignment(..)
   , HasRightAlignment(..)
   , HasImpliedAlignment(..)
+  , HasSymbolChangeMatrix(..)
+  , HasTransitionCostMatrix(..)
+  , HasDenseTransitionCostMatrix(..)
   , PossiblyMissingCharacter(..)
   ) where
 
@@ -45,4 +49,7 @@ import Bio.Character.Decoration.Dynamic.Internal
 import Bio.Character.Decoration.Shared
 import Bio.Character.Encodable
 import Bio.Metadata.Discrete
+import Bio.Metadata.DiscreteWithTCM
+import Bio.Metadata.Dynamic
+import Bio.Metadata.General
 

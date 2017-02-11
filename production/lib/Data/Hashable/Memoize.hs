@@ -65,7 +65,7 @@ memoize f = unsafePerformIO $ do
 {-# NOINLINE memoize2 #-}
 memoize2 :: (Eq a, Eq b, Hashable a, Hashable b) => (a -> b -> c) -> a -> b -> c
 memoize2 f = let f' = memoize (uncurry f)
-             in \x y -> f' (x, y)
+             in curry f'
 
 
 {-

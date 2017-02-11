@@ -26,12 +26,12 @@ import Bio.Character.Decoration.Additive
 --import Bio.Character.Decoration.Discrete
 import Bio.Character.Encodable
 import Control.Lens
-import Control.Monad  (join)
-import Data.Bifunctor (bimap)
+-- import Control.Monad  (join)
+-- import Data.Bifunctor (bimap)
 import Data.Bits
 import Data.List.NonEmpty (NonEmpty( (:|) ))
---import Data.Word
-import Debug.Trace
+-- import Data.Word
+-- import Debug.Trace
 
 
 -- | Used on the post-order (i.e. first) traversal.
@@ -75,11 +75,16 @@ updatePostOrder _parentDecoration (x:|[])                     = x               
 updatePostOrder _parentDecoration (leftChild:|(rightChild:_)) = {- trace (show newMin ++ " " ++ show newMax ++ " " ++ show totalCost) $ -}
     returnNodeDecoration  -- Not a leaf.
     where
-        (newMin, newMax)              = leftInterval `intersect` rightInterval
-        (leftInterval, rightInterval) = join bimap (^. preliminaryInterval) (leftChild, rightChild)
+        (newMin, newMax)              = if isOverlapping
+                                        then leftInterval `intersect`      rightInterval
+                                        else leftInterval `smallestClosed` rightInterval
+        (leftInterval, rightInterval) = (leftChild ^. preliminaryInterval, rightChild ^. preliminaryInterval)
         newInterval                   = (newMin, newMax)
         totalCost                     = thisNodeCost + (leftChild ^. characterCost) + (rightChild ^. characterCost)
-        thisNodeCost                  = newMax - newMin
+        thisNodeCost                  = if isOverlapping
+                                        then 0
+                                        else newMax - newMin
+        isOverlapping                 = leftInterval `overlaps` rightInterval
         returnNodeDecoration          =
             extendDiscreteToAdditive leftChild totalCost newInterval (leftInterval, rightInterval) False
 
@@ -91,13 +96,14 @@ initializeLeaf :: (DiscreteCharacterDecoration d c)
                => d
                -> AdditiveOptimizationDecoration c
 initializeLeaf curDecoration =
-    extendDiscreteToAdditive curDecoration zero (lower, higher) ((zero,zero),(zero,zero)) True
+    extendDiscreteToAdditive curDecoration 0 (lower, higher) ((0,0),(0,0)) True
     where
-        label   = curDecoration ^. discreteCharacter
-        lower   = fromIntegral (countTrailingZeros label) :: Word
-        higher  = fromIntegral (alphLen - 1 - countLeadingZeros label) :: Word
-        alphLen = symbolCount $ curDecoration ^. discreteCharacter
-        zero    = fromIntegral (0 :: Int) :: Word
+        label    = curDecoration ^. discreteCharacter
+        alphLen  = symbolCount label
+        trailing = countTrailingZeros label
+        leading  = countLeadingZeros  label
+        lower    = toEnum leading
+        higher   = toEnum (alphLen - 1 - trailing)
 
 
 -- | Uses the preliminary intervals of a node, its parents, and its children. Follows the three rules of Fitch,
@@ -110,7 +116,7 @@ initializeLeaf curDecoration =
 determineFinalState :: EncodableStaticCharacter c
                     => AdditiveOptimizationDecoration c
                     -> AdditiveOptimizationDecoration c
-                    -> AdditiveOptimizationDecoration c
+                    -> (AdditiveOptimizationDecoration c)
 determineFinalState childDecoration parentDecoration = finalDecoration
     where
         preliminary     = childDecoration  ^. preliminaryInterval
@@ -136,56 +142,25 @@ overlaps leftChild rightChild =
         ( leftSmallest,  leftLargest) = leftChild
 
 
--- | True if one of the intervals falls entirely within the other
---
--- Assumes there is an overlap.
-subsetted :: (Word, Word) -> (Word, Word) -> Bool
-subsetted leftChild rightChild
-    | rightSmallest <= leftSmallest  && rightLargest >= leftLargest  = True
-    | leftSmallest  <= rightSmallest && leftLargest  >= rightLargest = True
-    | otherwise                                                      = False
-    where
-        (rightSmallest, rightLargest) = rightChild
-        ( leftSmallest,  leftLargest) = leftChild
-
 
 -- |
 -- Finds the intersection of two intervals, the intersection being the smallest interval possible. Does
 -- not assume there's an overlap.
---
--- There are seven cases:
--- 1: non-intersection with the left < right
--- 2: non-intersection with the left > right
--- 3: intersection but no subsetting, left < right
--- 4: intersection but no subsetting, left > right
--- 5: subsetted, one of two is unambiguous
--- 6: subsetted, right inside left
--- 7: subsetted, left inside right
 intersect :: (Word, Word) -> (Word, Word) -> (Word, Word)
-intersect leftChild rightChild
-    | not $ leftChild `overlaps` rightChild =
-        trace ("no overlap " ++ debugString) $
-        if leftLargest < rightSmallest
-            then (leftLargest, rightSmallest)
-            else (rightLargest, leftSmallest)
-    | subsetted leftChild rightChild =
-        trace ("subsetted   " ++ debugString) $
-        subsetCases
-    | otherwise =
-        trace ("intersecion " ++ debugString) $
-        if leftLargest < rightLargest
-            then (rightSmallest, leftLargest)
-            else (leftSmallest, rightLargest)
+intersect leftChild rightChild = (max leftSmallest rightSmallest, min leftLargest rightLargest)
     where
         (rightSmallest, rightLargest) = rightChild
         ( leftSmallest,  leftLargest) = leftChild
-        debugString = (show . unlines $ fmap show [leftSmallest, leftLargest, rightSmallest, rightLargest])
-        subsetCases
-            | leftLargest  == leftSmallest  = (leftSmallest,  leftLargest)  -- smallest closed interval is 0
-            | rightLargest == rightSmallest = (rightSmallest, rightLargest) -- smallest closed interval is 0
-            | leftLargest  >= rightLargest  = (rightSmallest, rightLargest) -- smallest closed interval is smallest of two
-            | otherwise                     = (leftSmallest, leftLargest)   -- smallest closed interval is smallest of two
 
+
+
+smallestClosed :: (Word, Word) -> (Word, Word) -> (Word, Word)
+smallestClosed leftChild rightChild = (min leftLargest rightLargest, max leftSmallest rightSmallest)
+{-}    | leftLargest < rightSmallest = (leftLargest, rightSmallest)
+    | otherwise                   = (rightLargest, leftSmallest)
+ -}  where
+        (rightSmallest, rightLargest) = rightChild
+        ( leftSmallest,  leftLargest) = leftChild
 
 
 -- |
@@ -194,19 +169,9 @@ intersect leftChild rightChild
 --
 -- Works for overlapped or subsetted intervals, as well as non-overlapping intervals
 union :: (Word, Word) -> (Word, Word)-> (Word, Word)
-union leftChild rightChild = (smallestMin, largestMax)
+union leftChild rightChild = (min leftSmallest rightSmallest, max leftLargest rightLargest)
     where
-        smallestMin =
-            if rightSmallest < leftSmallest
-                then rightSmallest
-                else leftSmallest
-        largestMax =
-            if rightLargest < leftLargest
-                then leftLargest
-                else rightLargest
-
         (rightSmallest, rightLargest) = rightChild
         ( leftSmallest,  leftLargest) = leftChild
 
 
--- TODO: check all inequalities for inclusion of equality

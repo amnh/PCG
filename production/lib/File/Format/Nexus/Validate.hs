@@ -145,7 +145,8 @@ validateNexusParseResult (NexusParseResult inputSeqBlocks taxas treeSet assumpti
         -- wrongDataTypeErrors = foldr (\x acc -> wrongDataType x : acc) [] inputSeqBlocks
 
       -- Dependent errors
-        dependentErrors = catMaybes $ incorrectTaxaBlockCount : ({- seqDimsError ++ -} missingCloseQuotes ++ seqTaxaCountErrors {- ++ {- mtxTaxonCountErrors ++ TODO: decide if I can really delete this and seqDimsError and incorrectCharCount. -} incorrectCharCount -} )
+        dependentErrors = catMaybes $ incorrectTaxaBlockCount : ({- seqDimsError ++ -} missingCloseQuotes ++ seqTaxaCountErrors {- ++ {- mtxTaxonCountErrors ++
+                                                                 TODO: decide if I can really delete this and seqDimsError and incorrectCharCount. -} incorrectCharCount -} )
 
       -- types of dependent errors
         incorrectTaxaBlockCount = f taxas >>= \(TaxaSpecification num listedTaxa) ->
@@ -164,7 +165,9 @@ validateNexusParseResult (NexusParseResult inputSeqBlocks taxas treeSet assumpti
 --        DEFINED BUT NOT USED: (mtxTaxonCountErrors)
 --        mtxTaxonCountErrors = foldr (\x acc -> getMatrixTaxonRecurrenceErrors x ++ acc) [] inputSeqBlocks -- errors 12, 22
 
- --       incorrectCharCount  = checkSeqLength (filter (\x -> alignedSeq x) inputSeqBlocks) outputSeqTups -- TODO: This doesn't work, because it takes an entire list of PhyloSequence blocks and the complete, concatted sequences. It needs to take place at a different point in the process.
+--        incorrectCharCount  = checkSeqLength (filter (\x -> alignedSeq x) inputSeqBlocks) outputSeqTups
+--        TODO: This doesn't work, because it takes an entire list of PhyloSequence blocks and the complete, concatted sequences.
+--              It needs to take place at a different point in the process.
 
       -- dependencies for dependent errors
         equates  = foldr (\x acc -> getEquates x : acc) [] inputSeqBlocks
@@ -207,7 +210,7 @@ decisionTree inputSeqBlocks taxaLst
 
 isItTransposed :: PhyloSequence -> V.Vector String -> Either String TaxonSequenceMap
 isItTransposed block taxaLst
-    | any transpose $ format block = Left "Uh-oh there's a transposed block. That was very sneaky of you but I saw you!!!" -- TODO: Nice errors, handle transposed case
+    | any transpose $ format block = Left "There is a transposed block." -- TODO: Nice errors, handle transposed case
     | otherwise = handleNontransposedSeqs block taxaLst
 
 handleNontransposedSeqs :: PhyloSequence -> V.Vector String -> Either String TaxonSequenceMap
@@ -230,7 +233,8 @@ handleLabeledNotInterleavedSeqs :: PhyloSequence -> V.Vector String -> Either St
 handleLabeledNotInterleavedSeqs block taxaLst
     | alignedSeq block = Right $ getSeqFromMatrix block taxaLst
     | otherwise = Left $ "The " ++ blockType block ++
-        " block is labeled, not aligned, and not interleaved. Since the Nexus spec dictates that whitespace (hence line returns) in non-interleaved sequence matrices is ignored, it is impossible to discriminate between sequences and taxon names."
+        " block is labeled, not aligned, and not interleaved. Since the Nexus spec dictates that whitespace " ++
+        "(hence line returns) in non-interleaved sequence matrices is ignored, it is impossible to discriminate between sequences and taxon names."
 
 handleUnlabeledNotInterleavedSeqs :: PhyloSequence -> V.Vector String -> Either String TaxonSequenceMap
 handleUnlabeledNotInterleavedSeqs block taxaLst
@@ -246,7 +250,8 @@ handleUnlabeledNotInterleavedSeqsWithSepTaxa :: PhyloSequence -> V.Vector String
 handleUnlabeledNotInterleavedSeqsWithSepTaxa block taxaLst taxlabels'
     | not (null taxaLst) && not (null taxlabels') =
         Left $ "In a " ++ blockType block ++
-            " block there is an unlabeled matrix, but there are both newtaxa defined in the block, and there is a separate taxa block. Thus, the ordering of the sequences in this block is unclear.\n"
+            " block there is an unlabeled matrix, but there are both newtaxa defined in the block, and there is a separate taxa block. " ++
+            "Thus, the ordering of the sequences in this block is unclear.\n"
     | null taxaLst = handleUnlabeledCheckTaxaCardinality block taxaLst
     | otherwise    = handleUnlabeledCheckTaxaCardinality block taxlabels'
 
@@ -257,7 +262,7 @@ handleUnlabeledCheckTaxaCardinality block taxaLst
             " block, either the number of taxa or the number of sequences in incorrect. " ++
             show (length taxaLst) ++ " are given, but there are " ++ show mtxLength ++ " sequences in the matrix.\n"
     | otherwise = Right $ getSeqFromMatrix block taxaLst
-    where mtxLength = length . head $ seqMatrix block -- this is safe, as we've already checked to make sure this blcok has a matrix.
+    where mtxLength = length . head $ seqMatrix block -- this is safe, as we've already checked to make sure this block has a matrix.
 
 ------------------------------------------------------  End decision tree logic  ------------------------------------------------------
 
@@ -362,8 +367,11 @@ translateTrees taxaList treeSet =
                     | otherwise -> Left $ "Translation specifcation: " <> show xs <> " is not a subset of: " <> show (toList taxaList)
                   -- Alledged /total/ symbol to taxa mapping
                   ([], xs)
-                    | not $ Set.fromList (snd <$> xs) `Set.isSubsetOf` taxaSet -> Left "There was an element in the co-domain of the Translation specifaction that is not an element of the taxa set."
-                    | not $ leafSet `Set.isSubsetOf` Set.fromList (fst <$> xs) -> Left $ "There was an element in the domain of the Translation specifaction that is not an element of the leaf node label set.\n  LeafSet - Symbols: " <> show (toList $ leafSet `Set.difference` Set.fromList (fst <$> xs))
+                    | not $ Set.fromList (snd <$> xs) `Set.isSubsetOf` taxaSet -> Left $ "There was an element in the co-domain of the Translation specifaction " <>
+                                                                                         "that is not an element of the taxa set."
+                    | not $ leafSet `Set.isSubsetOf` Set.fromList (fst <$> xs) -> Left $ "There was an element in the domain of the Translation specifaction that is " <>
+                                                                                          "not an element of the leaf node label set.\n  LeafSet - Symbols: " <>
+                                                                                          show (toList $ leafSet `Set.difference` Set.fromList (fst <$> xs))
                     | otherwise -> Right $ M.fromList xs
                   -- Inconsistent Translate formatting
                   ( _,  _) -> Left "All elements of the Translation specifaction were not either all singleton tokens or pairwise tokens."
@@ -425,7 +433,8 @@ checkSeqLength [] _            = [Nothing]
 checkSeqLength seqBlockLst (seqMap,_) =
     M.foldrWithKey (\key val acc -> (if length val == len
                                      then Nothing
-                                     else Just (key ++ "'s sequence is the wrong length in an aligned block. It should be " ++ show len ++ ", but is " ++ show (length val) {- ++ ":\n" ++ show val -} ++ "\n")) : acc) [] seqMap
+                                     else Just (key ++ "'s sequence is the wrong length in an aligned block. It should be " ++ show len ++ ", but is " ++
+                                                show (length val) {- ++ ":\n" ++ show val -} ++ "\n")) : acc) [] seqMap
     where
         len = numChars . head . charDims $ head seqBlockLst -- TODO: fix this line
 
@@ -514,14 +523,16 @@ getMatrixTaxonRecurrenceErrors :: PhyloSequence -> [Maybe String]
 getMatrixTaxonRecurrenceErrors seq' = wrongCountErrors -- ++ extraTaxonErrors
     where
         wrongCountErrors = M.foldrWithKey (\key val acc -> (if val /= median
-                                                               then Just ("\"" ++ key ++ "\" appears the wrong number of times in a sequeblock matrix. It should appear " ++ show median ++ " times, but it actually appears " ++ show val ++ " times.\n")
+                                                               then Just ("\"" ++ key ++ "\" appears the wrong number of times in a sequence block matrix. " ++
+                                                                          "It should appear " ++ show median ++ " times, but it actually appears " ++ show val ++ " times.\n")
                                                                else Nothing) : acc
                                           ) [] seqTaxaMap
         seqTaxaMap       = getTaxaFromMatrix seq'
         median           = findMedian $ M.elems seqTaxaMap
 
 -- | findMedian sorts a Vector of orderables, then returns the middle value. It assumes there is at least one element in the Vector.
--- TODO: change this to use Vectors; will require jumping through Monad hoops. See: http://stackoverflow.com/questions/3655329/how-does-one-sort-with-data-vector-generic-mutable
+-- TODO: change this to use Vectors; will require jumping through Monad hoops.
+-- See: http://stackoverflow.com/questions/3655329/how-does-one-sort-with-data-vector-generic-mutable
 findMedian :: Ord a => [a] -> a
 findMedian xs = sort xs !! quot (length xs) 2
 
@@ -530,7 +541,8 @@ findMedian xs = sort xs !! quot (length xs) 2
 getEquates :: PhyloSequence -> Either String [String]
 getEquates = maybe (Right [""]) equate . headMay . format
 
--- | getTaxaFromMatrix takes a PhyloSequence and returns a map from String to Int, where the String is a taxon name, and the Int is the number of times it appears in the sequence matrix.
+-- | getTaxaFromMatrix takes a PhyloSequence and returns a map from String to Int, where the String is a taxon name,
+-- and the Int is the number of times it appears in the sequence matrix.
 getTaxaFromMatrix :: PhyloSequence -> M.Map String Int
 getTaxaFromMatrix seq' = {-trace (show taxa) $ -}
     if noLabels
@@ -722,7 +734,7 @@ getSeqFromMatrix seqBlock taxaLst =
 -- Note that this fn is O(n) where n is the total length of the sequence, and not O(n^2), as originally feared.
 -- A (partial?) test exists in the test suite.
 deInterleave :: M.Map String String -> [(String, String)] -> M.Map String String
-deInterleave = foldr (\(seqName, phyloSeq) acc -> M.insertWith (++) seqName phyloSeq acc)
+deInterleave = foldr (\(seqName, phyloSeq) acc -> M.insertWith (<>) seqName phyloSeq acc)
 
 -- | getTaxonAndSeqFromMatrixRow takes a String of format "xxx[space or tab]yyy"
 -- and returns a tuple of form ("xxx","yyy")
@@ -790,6 +802,7 @@ getTaxaAndSeqsFromEntireMatrixHelper tokenized seqLen curLen mtx acc
             newTup = (fst $ head acc, headSeq)
             headSeq = snd (head acc) ++ seq'
         in getTaxaAndSeqsFromEntireMatrixHelper tokenized seqLen newLen (tail mtx) newAcc
+  --  | curLen > seqLen = Left $ "Length of sequence, " <> (show curLen) <> " does not match nchar, " <> (show seqLen) <> "."
     | otherwise =
         let
             newTup = (taxon, seq')

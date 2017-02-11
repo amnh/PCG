@@ -185,7 +185,7 @@ unfoldDAG :: (Eq b, Hashable b) => (b -> ([(e,b)], n, [(e,b)])) -> b -> Referenc
 unfoldDAG f origin =
     RefDAG
     { references = referenceVector
-    , rootRefs   = NE.fromList $ otoList rootIndices
+    , rootRefs   = NE.fromList $ roots2 -- otoList rootIndices
     , graphData  = GraphData 0
     }
   where
@@ -198,8 +198,17 @@ unfoldDAG f origin =
             , childRefs      = iMap
             }
 
+    -- TODO:
+    -- _rootIndices seems to be wrong so we do this.
+    -- slightly inefficient, see if we can correct the _rootIndices value.
+    roots2 = foldMapWithKey h resultMap
+      where
+        h k (v,_,_)
+          | onull v   = [k]
+          | otherwise = []
+
     initialAccumulator = (-1, -1, (Nothing,mempty), mempty, mempty)
-    (_, _, _, rootIndices, resultMap) = g initialAccumulator origin
+    (_, _, _, _rootIndices, resultMap) = g initialAccumulator origin
     g (counter, _otherIndex, previousContext@(previousIndex, previousSeenSet), currentRoots, currentMap) currentValue =
       case currentValue `lookup` previousSeenSet of
          -- If this value is in the previously seen set we don't recurse.

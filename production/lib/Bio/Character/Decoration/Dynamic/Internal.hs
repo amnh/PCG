@@ -21,6 +21,9 @@ import Bio.Character.Decoration.Shared
 import Bio.Character.Encodable
 import Bio.Metadata.CharacterName
 import Bio.Metadata.Discrete
+import Bio.Metadata.DiscreteWithTCM
+import Bio.Metadata.Dynamic
+import Bio.Metadata.General
 import Control.Lens
 import Data.Alphabet
 import Data.Bits
@@ -39,7 +42,7 @@ import Data.TCM
 data DynamicDecorationInitial d
    = DynamicDecorationInitial
    { dynamicDecorationInitialEncodedField :: d
-   , metadata                             :: DiscreteCharacterMetadataDec (Element d)
+   , metadata                             :: DynamicCharacterMetadataDec (Element d)
    } deriving (Eq)
 
 
@@ -77,10 +80,6 @@ instance HasEncoded (DynamicDecorationInitial d) d where
 
 
 -- | (✔)
-instance GeneralCharacterMetadata (DynamicDecorationInitial d) where
-
-
--- | (✔)
 instance HasCharacterAlphabet (DynamicDecorationInitial d) (Alphabet String) where
 
     characterAlphabet = lens getter setter
@@ -100,22 +99,31 @@ instance HasCharacterName (DynamicDecorationInitial d) CharacterName where
 
 -- |
 -- A 'Lens' for the 'symbolicTCMGenerator' field
-instance HasCharacterSymbolTransitionCostMatrixGenerator (DynamicDecorationInitial d) (Int -> Int -> Int) where
+instance HasSymbolChangeMatrix (DynamicDecorationInitial d) (Word -> Word -> Word) where
 
-    characterSymbolTransitionCostMatrixGenerator = lens getter setter
+    symbolChangeMatrix = lens getter setter
       where
-         getter e   = metadata e ^. characterSymbolTransitionCostMatrixGenerator
-         setter e f = e { metadata = metadata e &  characterSymbolTransitionCostMatrixGenerator .~ f }
+         getter e   = metadata e ^. symbolChangeMatrix
+         setter e f = e { metadata = metadata e & symbolChangeMatrix .~ f }
 
 
 -- |
 -- A 'Lens' for the 'transitionCostMatrix' field
-instance (Element d ~ c) => HasCharacterTransitionCostMatrix (DynamicDecorationInitial d) (c -> c -> (c, Int)) where
+instance (Element d ~ c) => HasTransitionCostMatrix (DynamicDecorationInitial d) (c -> c -> (c, Word)) where
 
-    characterTCM = lens getter setter
+    transitionCostMatrix = lens getter setter
       where
-         getter e   = metadata e ^. characterTCM
-         setter e f = e { metadata = metadata e &  characterTCM .~ f }
+         getter e   = metadata e ^. transitionCostMatrix
+         setter e f = e { metadata = metadata e & transitionCostMatrix .~ f }
+
+
+-- | (✔)
+instance (Element d ~ c) => HasDenseTransitionCostMatrix (DynamicDecorationInitial d) (Maybe DenseTransitionCostMatrix) where
+
+    denseTransitionCostMatrix = lens getter setter
+      where
+         getter e   = metadata e ^. denseTransitionCostMatrix
+         setter e f = e { metadata = metadata e & denseTransitionCostMatrix .~ f }
 
 
 -- | (✔)
@@ -128,7 +136,29 @@ instance HasCharacterWeight (DynamicDecorationInitial d) Double where
 
 
 -- | (✔)
-instance (EncodableStream d, Element d ~ c) => DiscreteCharacterMetadata (DynamicDecorationInitial d) c where
+instance GeneralCharacterMetadata (DynamicDecorationInitial d) where
+
+    {-# INLINE extractGeneralCharacterMetadata #-}
+    extractGeneralCharacterMetadata = extractGeneralCharacterMetadata . metadata
+
+  
+
+-- | (✔)
+instance DiscreteCharacterMetadata (DynamicDecorationInitial d) where
+
+    {-# INLINE extractDiscreteCharacterMetadata #-}
+    extractDiscreteCharacterMetadata = extractDiscreteCharacterMetadata . metadata
+
+  
+-- | (✔)
+instance (EncodableStream d, Element d ~ c) => DiscreteWithTcmCharacterMetadata (DynamicDecorationInitial d) c where
+
+
+-- | (✔)
+instance (EncodableStream d, Element d ~ c) => DynamicCharacterMetadata (DynamicDecorationInitial d) c where
+
+    {-# INLINE extractDynamicCharacterMetadata #-}
+    extractDynamicCharacterMetadata = extractDynamicCharacterMetadata . metadata
 
 
 -- | (✔)
@@ -139,11 +169,13 @@ instance (EncodableDynamicCharacter d) => SimpleDynamicDecoration (DynamicDecora
 instance (EncodableDynamicCharacter d) => DynamicCharacterDecoration (DynamicDecorationInitial d) d where
 
 --    toDynamicCharacterDecoration :: CharacterName -> Double -> Alphabet String -> TCM -> (x -> a) -> x -> s
-    toDynamicCharacterDecoration name weight alphabet tcm g symbolSet =
+    toDynamicCharacterDecoration name weight alphabet scm g symbolSet =
         DynamicDecorationInitial
         { dynamicDecorationInitialEncodedField = g symbolSet
-        , metadata                             = discreteMetadata name weight alphabet tcm
+        , metadata                             = dynamicMetadata name weight alphabet scm denseMay
         }
+      where
+        denseMay = maybeConstructDenseTransitionCostMatrix alphabet scm
 
 
 
@@ -155,14 +187,15 @@ data DynamicDecorationDirectOptimizationPostOrderResult d
    , dynamicDecorationDirectOptimizationPostOrderPreliminaryUngappedField :: d
    , dynamicDecorationDirectOptimizationPostOrderLeftAlignmentField       :: d
    , dynamicDecorationDirectOptimizationPostOrderRightAlignmentField      :: d
-   , dynamicDecorationDirectOptimizationPostOrderMetadata                 :: DiscreteCharacterMetadataDec (Element d)
+   , dynamicDecorationDirectOptimizationPostOrderMetadata                 :: DynamicCharacterMetadataDec (Element d)
    } deriving (Eq)
 
 
 instance EncodableStream d => Show (DynamicDecorationDirectOptimizationPostOrderResult d) where
 
-    show dec = unlines $ f <$> pairs
+    show dec = unlines . (shownCost:) $ f <$> pairs
       where
+        shownCost = "Cost                : " <> show (dec ^. characterCost)
         f (prefix, accessor) = prefix <> showStream (dec ^. characterAlphabet) (dec ^. accessor)
         pairs =
           [ ("Original Encoding   : ", encoded            )
@@ -187,14 +220,8 @@ instance EncodableDynamicCharacter d => SimpleDynamicExtensionPostOrderDecoratio
         }
       where
         alphabetValue = subDecoration ^. characterAlphabet
-        tcmValue      = generate (length alphabetValue) (uncurry $ subDecoration ^. characterSymbolTransitionCostMatrixGenerator)
-        metadataValue =
-          discreteMetadata
-            <$> (^. characterName)
-            <*> (^. characterWeight)
-            <*> const alphabetValue
-            <*> const tcmValue
-            $ subDecoration
+        tcmValue      = generate (length alphabetValue) (uncurry $ subDecoration ^. symbolChangeMatrix)
+        metadataValue = extractDynamicCharacterMetadata subDecoration
 
 
 instance Hashable d => Hashable (DynamicDecorationDirectOptimizationPostOrderResult d) where
@@ -265,22 +292,31 @@ instance HasCharacterName (DynamicDecorationDirectOptimizationPostOrderResult d)
 
 -- |
 -- A 'Lens' for the 'symbolicTCMGenerator' field
-instance HasCharacterSymbolTransitionCostMatrixGenerator (DynamicDecorationDirectOptimizationPostOrderResult d) (Int -> Int -> Int) where
+instance HasSymbolChangeMatrix (DynamicDecorationDirectOptimizationPostOrderResult d) (Word -> Word -> Word) where
 
-    characterSymbolTransitionCostMatrixGenerator = lens getter setter
+    symbolChangeMatrix = lens getter setter
       where
-         getter e   = dynamicDecorationDirectOptimizationPostOrderMetadata e ^. characterSymbolTransitionCostMatrixGenerator
-         setter e f = e { dynamicDecorationDirectOptimizationPostOrderMetadata = dynamicDecorationDirectOptimizationPostOrderMetadata e &  characterSymbolTransitionCostMatrixGenerator .~ f }
+         getter e   = dynamicDecorationDirectOptimizationPostOrderMetadata e ^. symbolChangeMatrix
+         setter e f = e { dynamicDecorationDirectOptimizationPostOrderMetadata = dynamicDecorationDirectOptimizationPostOrderMetadata e & symbolChangeMatrix .~ f }
 
 
 -- |
 -- A 'Lens' for the 'transitionCostMatrix' field
-instance (Element d ~ c) => HasCharacterTransitionCostMatrix (DynamicDecorationDirectOptimizationPostOrderResult d) (c -> c -> (c, Int)) where
+instance (Element d ~ c) => HasTransitionCostMatrix (DynamicDecorationDirectOptimizationPostOrderResult d) (c -> c -> (c, Word)) where
 
-    characterTCM = lens getter setter
+    transitionCostMatrix = lens getter setter
       where
-         getter e   = dynamicDecorationDirectOptimizationPostOrderMetadata e ^. characterTCM
-         setter e f = e { dynamicDecorationDirectOptimizationPostOrderMetadata = dynamicDecorationDirectOptimizationPostOrderMetadata e &  characterTCM .~ f }
+         getter e   = dynamicDecorationDirectOptimizationPostOrderMetadata e ^. transitionCostMatrix
+         setter e f = e { dynamicDecorationDirectOptimizationPostOrderMetadata = dynamicDecorationDirectOptimizationPostOrderMetadata e & transitionCostMatrix .~ f }
+
+
+-- | (✔)
+instance (Element d ~ c) => HasDenseTransitionCostMatrix (DynamicDecorationDirectOptimizationPostOrderResult d) (Maybe DenseTransitionCostMatrix) where
+
+    denseTransitionCostMatrix = lens getter setter
+      where
+         getter e   = dynamicDecorationDirectOptimizationPostOrderMetadata e ^. denseTransitionCostMatrix
+         setter e f = e { dynamicDecorationDirectOptimizationPostOrderMetadata = dynamicDecorationDirectOptimizationPostOrderMetadata e & denseTransitionCostMatrix .~ f }
 
 
 -- | (✔)
@@ -293,19 +329,36 @@ instance HasCharacterWeight (DynamicDecorationDirectOptimizationPostOrderResult 
 
 
 -- | (✔)
+instance GeneralCharacterMetadata (DynamicDecorationDirectOptimizationPostOrderResult d) where
+
+    {-# INLINE extractGeneralCharacterMetadata #-}
+    extractGeneralCharacterMetadata = extractGeneralCharacterMetadata . dynamicDecorationDirectOptimizationPostOrderMetadata
+
+  
+-- | (✔)
+instance DiscreteCharacterMetadata (DynamicDecorationDirectOptimizationPostOrderResult d) where
+
+    {-# INLINE extractDiscreteCharacterMetadata #-}
+    extractDiscreteCharacterMetadata = extractDiscreteCharacterMetadata . dynamicDecorationDirectOptimizationPostOrderMetadata
+
+  
+-- | (✔)
+instance (EncodableStream d, Element d ~ c) => DiscreteWithTcmCharacterMetadata (DynamicDecorationDirectOptimizationPostOrderResult d) c where
+
+
+-- | (✔)
+instance (EncodableStream d, Element d ~ c) => DynamicCharacterMetadata (DynamicDecorationDirectOptimizationPostOrderResult d) c where
+
+    {-# INLINE extractDynamicCharacterMetadata #-}
+    extractDynamicCharacterMetadata = extractDynamicCharacterMetadata . dynamicDecorationDirectOptimizationPostOrderMetadata
+
+
 instance EncodableDynamicCharacter d => SimpleDynamicDecoration (DynamicDecorationDirectOptimizationPostOrderResult d) d where
+
 
 
 -- | (✔)
 instance EncodableDynamicCharacter d => DirectOptimizationPostOrderDecoration (DynamicDecorationDirectOptimizationPostOrderResult d) d where
-
-
--- | (✔)
-instance GeneralCharacterMetadata (DynamicDecorationDirectOptimizationPostOrderResult d) where
-
-
--- | (✔)
-instance (EncodableStream d, Element d ~ c) => DiscreteCharacterMetadata (DynamicDecorationDirectOptimizationPostOrderResult d) c where
 
   
 
@@ -324,7 +377,7 @@ data DynamicDecorationDirectOptimization d
    , dynamicDecorationDirectOptimizationPreliminaryUngappedField :: d
    , dynamicDecorationDirectOptimizationLeftAlignmentField       :: d
    , dynamicDecorationDirectOptimizationRightAlignmentField      :: d
-   , dynamicDecorationDirectOptimizationMetadata                 :: DiscreteCharacterMetadataDec (Element d)
+   , dynamicDecorationDirectOptimizationMetadata                 :: DynamicCharacterMetadataDec (Element d)
    }
 
 
@@ -345,14 +398,8 @@ instance EncodableDynamicCharacter d => PostOrderExtensionDirectOptimizationDeco
         }
       where
         alphabetValue = subDecoration ^. characterAlphabet
-        tcmValue      = generate (length alphabetValue) (uncurry $ subDecoration ^. characterSymbolTransitionCostMatrixGenerator)
-        metadataValue =
-          discreteMetadata
-            <$> (^. characterName)
-            <*> (^. characterWeight)
-            <*> const alphabetValue
-            <*> const tcmValue
-            $ subDecoration
+        tcmValue      = generate (length alphabetValue) (uncurry $ subDecoration ^. symbolChangeMatrix)
+        metadataValue = extractDynamicCharacterMetadata subDecoration
 
 
 -- | (✔)
@@ -440,22 +487,31 @@ instance HasCharacterName (DynamicDecorationDirectOptimization d) CharacterName 
 
 -- |
 -- A 'Lens' for the 'symbolicTCMGenerator' field
-instance HasCharacterSymbolTransitionCostMatrixGenerator (DynamicDecorationDirectOptimization d) (Int -> Int -> Int) where
+instance HasSymbolChangeMatrix (DynamicDecorationDirectOptimization d) (Word -> Word -> Word) where
 
-    characterSymbolTransitionCostMatrixGenerator = lens getter setter
+    symbolChangeMatrix = lens getter setter
       where
-         getter e   = dynamicDecorationDirectOptimizationMetadata e ^. characterSymbolTransitionCostMatrixGenerator
-         setter e f = e { dynamicDecorationDirectOptimizationMetadata = dynamicDecorationDirectOptimizationMetadata e &  characterSymbolTransitionCostMatrixGenerator .~ f }
+         getter e   = dynamicDecorationDirectOptimizationMetadata e ^. symbolChangeMatrix
+         setter e f = e { dynamicDecorationDirectOptimizationMetadata = dynamicDecorationDirectOptimizationMetadata e & symbolChangeMatrix .~ f }
 
 
 -- |
 -- A 'Lens' for the 'transitionCostMatrix' field
-instance (Element d ~ c) => HasCharacterTransitionCostMatrix (DynamicDecorationDirectOptimization d) (c -> c -> (c, Int)) where
+instance (Element d ~ c) => HasTransitionCostMatrix (DynamicDecorationDirectOptimization d) (c -> c -> (c, Word)) where
 
-    characterTCM = lens getter setter
+    transitionCostMatrix = lens getter setter
       where
-         getter e   = dynamicDecorationDirectOptimizationMetadata e ^. characterTCM
-         setter e f = e { dynamicDecorationDirectOptimizationMetadata = dynamicDecorationDirectOptimizationMetadata e &  characterTCM .~ f }
+         getter e   = dynamicDecorationDirectOptimizationMetadata e ^. transitionCostMatrix
+         setter e f = e { dynamicDecorationDirectOptimizationMetadata = dynamicDecorationDirectOptimizationMetadata e & transitionCostMatrix .~ f }
+
+
+-- | (✔)
+instance (Element d ~ c) => HasDenseTransitionCostMatrix (DynamicDecorationDirectOptimization d) (Maybe DenseTransitionCostMatrix) where
+
+    denseTransitionCostMatrix = lens getter setter
+      where
+        getter e   = dynamicDecorationDirectOptimizationMetadata e ^. denseTransitionCostMatrix
+        setter e f = e { dynamicDecorationDirectOptimizationMetadata = dynamicDecorationDirectOptimizationMetadata e & denseTransitionCostMatrix .~ f }
 
 
 -- | (✔)
@@ -465,6 +521,31 @@ instance HasCharacterWeight (DynamicDecorationDirectOptimization d) Double where
       where
          getter e   = dynamicDecorationDirectOptimizationMetadata e ^. characterWeight
          setter e x = e { dynamicDecorationDirectOptimizationMetadata = dynamicDecorationDirectOptimizationMetadata e &  characterWeight .~ x }
+
+
+-- | (✔)
+instance GeneralCharacterMetadata (DynamicDecorationDirectOptimization d) where
+
+    {-# INLINE extractGeneralCharacterMetadata #-}
+    extractGeneralCharacterMetadata = extractGeneralCharacterMetadata . dynamicDecorationDirectOptimizationMetadata
+
+  
+-- | (✔)
+instance DiscreteCharacterMetadata (DynamicDecorationDirectOptimization d) where
+
+    {-# INLINE extractDiscreteCharacterMetadata #-}
+    extractDiscreteCharacterMetadata = extractDiscreteCharacterMetadata . dynamicDecorationDirectOptimizationMetadata
+
+  
+-- | (✔)
+instance (EncodableStream d, Element d ~ c) => DiscreteWithTcmCharacterMetadata (DynamicDecorationDirectOptimization d) c where
+
+
+-- | (✔)
+instance (EncodableStream d, Element d ~ c) => DynamicCharacterMetadata (DynamicDecorationDirectOptimization d) c where
+
+    {-# INLINE extractDynamicCharacterMetadata #-}
+    extractDynamicCharacterMetadata = extractDynamicCharacterMetadata . dynamicDecorationDirectOptimizationMetadata
 
 
 -- | (✔)
@@ -478,13 +559,6 @@ instance EncodableDynamicCharacter d => DirectOptimizationPostOrderDecoration (D
 -- | (✔)
 instance EncodableDynamicCharacter d => DirectOptimizationDecoration (DynamicDecorationDirectOptimization d) d where
 
-
--- | (✔)
-instance GeneralCharacterMetadata (DynamicDecorationDirectOptimization d) where
-
-
--- | (✔)
-instance (EncodableStream d, Element d ~ c) => DiscreteCharacterMetadata (DynamicDecorationDirectOptimization d) c where
 
 
 
@@ -506,7 +580,7 @@ data DynamicDecorationImpliedAlignment d
    , dynamicDecorationImpliedAlignmentLeftAlignmentField       :: d
    , dynamicDecorationImpliedAlignmentRightAlignmentField      :: d
    , dynamicDecorationImpliedAlignmentImpliedAlignmentField    :: d
-   , dynamicDecorationImpliedAlignmentMetadata                 :: DiscreteCharacterMetadataDec (Element d)
+   , dynamicDecorationImpliedAlignmentMetadata                 :: DynamicCharacterMetadataDec (Element d)
    }
 
 
@@ -581,26 +655,6 @@ instance HasCharacterName (DynamicDecorationImpliedAlignment d) CharacterName wh
          setter e x = e { dynamicDecorationImpliedAlignmentMetadata = dynamicDecorationImpliedAlignmentMetadata e &  characterName .~ x }
 
 
--- |
--- A 'Lens' for the 'symbolicTCMGenerator' field
-instance HasCharacterSymbolTransitionCostMatrixGenerator (DynamicDecorationImpliedAlignment d) (Int -> Int -> Int) where
-
-    characterSymbolTransitionCostMatrixGenerator = lens getter setter
-      where
-         getter e   = dynamicDecorationImpliedAlignmentMetadata e ^. characterSymbolTransitionCostMatrixGenerator
-         setter e f = e { dynamicDecorationImpliedAlignmentMetadata = dynamicDecorationImpliedAlignmentMetadata e &  characterSymbolTransitionCostMatrixGenerator .~ f }
-
-
--- |
--- A 'Lens' for the 'transitionCostMatrix' field
-instance (Element d ~ c) => HasCharacterTransitionCostMatrix (DynamicDecorationImpliedAlignment d) (c -> c -> (c, Int)) where
-
-    characterTCM = lens getter setter
-      where
-         getter e   = dynamicDecorationImpliedAlignmentMetadata e ^. characterTCM
-         setter e f = e { dynamicDecorationImpliedAlignmentMetadata = dynamicDecorationImpliedAlignmentMetadata e &  characterTCM .~ f }
-
-
 -- | (✔)
 instance HasCharacterWeight (DynamicDecorationImpliedAlignment d) Double where
 
@@ -610,12 +664,59 @@ instance HasCharacterWeight (DynamicDecorationImpliedAlignment d) Double where
          setter e x = e { dynamicDecorationImpliedAlignmentMetadata = dynamicDecorationImpliedAlignmentMetadata e &  characterWeight .~ x }
 
 
+-- |
+-- A 'Lens' for the 'symbolicTCMGenerator' field
+instance HasSymbolChangeMatrix (DynamicDecorationImpliedAlignment d) (Word -> Word -> Word) where
+
+    symbolChangeMatrix = lens getter setter
+      where
+         getter e   = dynamicDecorationImpliedAlignmentMetadata e ^. symbolChangeMatrix
+         setter e f = e { dynamicDecorationImpliedAlignmentMetadata = dynamicDecorationImpliedAlignmentMetadata e & symbolChangeMatrix .~ f }
+
+
+-- |
+-- A 'Lens' for the 'transitionCostMatrix' field
+instance (Element d ~ c) => HasTransitionCostMatrix (DynamicDecorationImpliedAlignment d) (c -> c -> (c, Word)) where
+
+    transitionCostMatrix = lens getter setter
+      where
+         getter e   = dynamicDecorationImpliedAlignmentMetadata e ^. transitionCostMatrix
+         setter e f = e { dynamicDecorationImpliedAlignmentMetadata = dynamicDecorationImpliedAlignmentMetadata e & transitionCostMatrix .~ f }
+
+
+-- | (✔)
+instance (Element d ~ c) => HasDenseTransitionCostMatrix (DynamicDecorationImpliedAlignment d) (Maybe DenseTransitionCostMatrix) where
+
+    denseTransitionCostMatrix = lens getter setter
+      where
+        getter e   = dynamicDecorationImpliedAlignmentMetadata e ^. denseTransitionCostMatrix
+        setter e f = e { dynamicDecorationImpliedAlignmentMetadata = dynamicDecorationImpliedAlignmentMetadata e & denseTransitionCostMatrix .~ f }
+
+
 -- | (✔)
 instance GeneralCharacterMetadata (DynamicDecorationImpliedAlignment d) where
 
+    {-# INLINE extractGeneralCharacterMetadata #-}
+    extractGeneralCharacterMetadata = extractGeneralCharacterMetadata . dynamicDecorationImpliedAlignmentMetadata
+
+  
+-- | (✔)
+instance DiscreteCharacterMetadata (DynamicDecorationImpliedAlignment d) where
+
+    {-# INLINE extractDiscreteCharacterMetadata #-}
+    extractDiscreteCharacterMetadata = extractDiscreteCharacterMetadata . dynamicDecorationImpliedAlignmentMetadata
+
+  
+-- | (✔)
+instance (EncodableStream d, Element d ~ c) => DiscreteWithTcmCharacterMetadata (DynamicDecorationImpliedAlignment d) c where
+
 
 -- | (✔)
-instance (EncodableStream d, Element d ~ c) => DiscreteCharacterMetadata (DynamicDecorationImpliedAlignment d) c where
+instance (EncodableStream d, Element d ~ c) => DynamicCharacterMetadata (DynamicDecorationImpliedAlignment d) c where
+
+    {-# INLINE extractDynamicCharacterMetadata #-}
+    extractDynamicCharacterMetadata = extractDynamicCharacterMetadata . dynamicDecorationImpliedAlignmentMetadata
+
 
 -- | (✔)
 instance EncodableDynamicCharacter d => SimpleDynamicDecoration (DynamicDecorationImpliedAlignment d) d where
