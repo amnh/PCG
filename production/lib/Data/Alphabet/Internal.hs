@@ -22,6 +22,7 @@ module Data.Alphabet.Internal
   ) where
 
 import           Control.Monad.State.Strict
+import           Data.Bifunctor               (first)
 import           Data.Foldable
 import           Data.Key
 import           Data.List                    (intercalate, sort)
@@ -48,11 +49,15 @@ type AmbiguityGroup a = NonEmpty a
 
 -- |
 -- A collection of symbols and optional corresponding state names.
-data Alphabet a 
-   = SimpleAlphabet     (Vector (UnnamedSymbol a))
-   | StateNamedAlphabet (Vector (  NamedSymbol a))
+data Alphabet a =
+     Alphabet
+     { symbolVector      :: Vector a
+     , stateNames        :: [a]
+     }
+
 
 type instance Key Alphabet = Int
+
 
 instance Indexable Alphabet where
   {-# INLINE index #-}
@@ -124,7 +129,9 @@ instance (Ord a, IsString a) => Arbitrary (Alphabet a) where
 --
 --   /O(n * log n)/
 fromSymbols :: (Ord a, IsString a, Foldable t) => t a -> Alphabet a
-fromSymbols = SimpleAlphabet . fmap (Unnamed . toSingle) . alphabetPreprocessing . fmap fromSingle . toList
+fromSymbols inputSymbols = Alphabet symbols []
+  where
+    symbols = V.fromList . fmap toSingle . alphabetPreprocessing . fmap fromSingle $ toList inputSymbols
 
 
 -- | Constructs an 'Alphabet' from a 'Foldable' structure of symbols and
@@ -134,7 +141,9 @@ fromSymbols = SimpleAlphabet . fmap (Unnamed . toSingle) . alphabetPreprocessing
 --
 --   /O(n * log n)/
 fromSymbolsWithStateNames :: (Ord a, IsString a, Foldable t) => t (a,a) -> Alphabet a
-fromSymbolsWithStateNames = StateNamedAlphabet . fmap (Named . toTuple) . alphabetPreprocessing . fmap fromTuple . toList
+fromSymbolsWithStateNames inputSymbols = Alphabet symbols names
+  where
+    (symbols, names) = first V.fromList . unzip . fmap toTuple . alphabetPreprocessing . fmap fromTuple $ toList inputSymbols
 
 
 -- | Retreives the symbols of the 'Alphabet'. Synonym for 'toList'.
@@ -151,8 +160,7 @@ alphabetSymbols = toList
 --
 -- /O(n)/
 alphabetStateNames :: Alphabet a -> [a]
-alphabetStateNames      SimpleAlphabet{}  = []
-alphabetStateNames (StateNamedAlphabet v) = toList $ snd . fromNamed <$> v
+alphabetStateNames = stateNames
 
 
 -- | Retreives the "gap character" from the alphabet.
@@ -171,8 +179,8 @@ gapSymbol alphabet = alphabet ! (length alphabet - 1)
 
 
 
-alphabetPreprocessing :: (Ord a, InternalClass a, Foldable t) => t a -> Vector a
-alphabetPreprocessing = V.fromList . appendGapSymbol . removeSpecialSymbolsAndDuplicates . toList
+alphabetPreprocessing :: (Ord a, InternalClass a, Foldable t) => t a ->  [a]
+alphabetPreprocessing = appendGapSymbol . removeSpecialSymbolsAndDuplicates . toList
   where
     appendGapSymbol       = (<> [gapSymbol'])
     removeSpecialSymbolsAndDuplicates = (`evalState` mempty) . filterM f
@@ -197,11 +205,11 @@ fromUnnamed (Unnamed x) = x
 fromNamed   :: NamedSymbol t -> (t, t)
 fromNamed   (Named   x) = x
 
-
+{-
 symbolVector :: Alphabet b -> Vector b
 symbolVector (SimpleAlphabet     v) =       fromUnnamed <$> v
 symbolVector (StateNamedAlphabet v) = fst . fromNamed   <$> v
-
+-}
 
 -- Newtypes for corecing and consolidation of alphabet input processing logic
 newtype AlphabetInputSingle a = ASI  { toSingle ::  a    } deriving (Eq,Ord)
