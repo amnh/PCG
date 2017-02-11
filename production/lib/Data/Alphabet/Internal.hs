@@ -59,7 +59,7 @@ data Alphabet a =
      Alphabet
      { symbolVector      :: Vector a
      , stateNames        :: [a]
-     }
+     } deriving (Generic)
 
 
 type instance Key Alphabet = Int
@@ -191,10 +191,9 @@ truncateAtSymbol symbol alphabet =
     case elemIndex symbol $ toList alphabet of
       Nothing -> alphabet
       Just i  ->
-        case alphabet of
-          SimpleAlphabet     _ -> fromSymbols . take i $ alphabetSymbols alphabet
-          StateNamedAlphabet _ -> fromSymbolsWithStateNames . take i $ zip (alphabetSymbols alphabet) (alphabetStateNames alphabet)
-
+        case alphabetStateNames alphabet of
+          [] -> fromSymbols               . take (i + 1) $      alphabetSymbols alphabet
+          xs -> fromSymbolsWithStateNames . take (i + 1) $ zip (alphabetSymbols alphabet) xs
 
 
 truncateAtMaxSymbol :: (Foldable t, Ord a, IsString a) => t a -> Alphabet a -> Alphabet a
@@ -202,9 +201,9 @@ truncateAtMaxSymbol symbols alphabet =
     case maxIndex of
       Nothing -> alphabet
       Just i  ->
-        case alphabet of
-          SimpleAlphabet     _ -> fromSymbols               . take (i + 1) $      alphabetSymbols alphabet
-          StateNamedAlphabet _ -> fromSymbolsWithStateNames . take (i + 1) $ zip (alphabetSymbols alphabet) (alphabetStateNames alphabet)
+        case alphabetStateNames alphabet of
+          [] -> fromSymbols               . take (i + 1) $      alphabetSymbols alphabet
+          xs -> fromSymbolsWithStateNames . take (i + 1) $ zip (alphabetSymbols alphabet) xs
   where
     maxIndex = foldlWithKey' f Nothing alphabet
     f e k v
