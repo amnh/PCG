@@ -43,15 +43,15 @@ fitchPostOrder parentDecoration xs =
 
 
 -- | Used on the pre-order (i.e. second) traversal.
-fitchPreOrder :: EncodableStaticCharacter c
+fitchPreOrder :: (EncodableStaticCharacter c, Show c)
               => FitchOptimizationDecoration c
               -> [(Word, FitchOptimizationDecoration c)]
               -> FitchOptimizationDecoration c
 fitchPreOrder childDecoration (_:_:_) = childDecoration   -- two parents; shouldn't be possible, but here for completion
-fitchPreOrder childDecoration []      = childDecoration   -- is a root TODO: need to change preliminary to final
+fitchPreOrder childDecoration []      = childDecoration & finalMedian .~ (childDecoration ^. preliminaryMedian)
 fitchPreOrder childDecoration [(_, parentDecoration)] =
     if childDecoration ^. isLeaf
-        then childDecoration
+        then childDecoration & finalMedian .~ (childDecoration ^. preliminaryMedian)
         else determineFinalState parentDecoration childDecoration
 
 
@@ -95,19 +95,16 @@ initializeLeaf leafDecoration =
 -- |
 -- Using the preliminary state of the current node, as well as the preliminary states of its parent and sibling,
 -- compute the final state of the character using Fitch's ordered rules.
-determineFinalState :: DiscreteCharacterDecoration d c
-                    => d
+determineFinalState :: (EncodableStaticCharacter c, Show c)
+                    => FitchOptimizationDecoration c
                     -> FitchOptimizationDecoration c
                     -> FitchOptimizationDecoration c
 determineFinalState parentDecoration childDecoration = finalDecoration
     where
-        curIsSuperset = foldl (\acc k -> if (ancestor `testBit` k) && (preliminary `testBit` k)
-                                                       then acc && False
-                                                       else acc && True
-                              ) True [0..alphLen]
-        -- TODO: see if this short-circuits; otherwise rewrite doing testbit three times and then logical operations
-        curIsUnion    = foldl (\acc _index -> acc && (popCount (left .|. right `xor` preliminary) > 0)
-                              ) True [0..alphLen]                         -- preliminary is 0 if both are 0, 1 otherwise
+        -- following two should both short-circuit
+        curIsSuperset = (ancestor `intersect` preliminary) == ancestor
+
+        curIsUnion    = (left `union` right) == preliminary
 
             -- using parentDecoration here because I need a DiscreteCharacterDecoration.
             -- Safe because new char is created.
@@ -115,9 +112,8 @@ determineFinalState parentDecoration childDecoration = finalDecoration
         leafVal         = childDecoration  ^. isLeaf
         cost            = childDecoration  ^. characterCost
         preliminary     = childDecoration  ^. preliminaryMedian
-        ancestor        = parentDecoration ^. discreteCharacter
+        ancestor        = parentDecoration ^. finalMedian
         (left, right)   = childDecoration  ^. childMedians
-        alphLen         = symbolCount $ childDecoration ^. discreteCharacter - 1
         union     l r   = l .|. r
         intersect l r   = l .&. r
         median

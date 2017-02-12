@@ -48,12 +48,12 @@ data FitchOptimizationDecoration f
 instance EncodableStreamElement c => Show (FitchOptimizationDecoration c) where
 
     show c = unlines
-        [ "Cost = " <> show (fitchMinCost c)
+        [ {- "Cost = " <> show (fitchMinCost c)
         , "Is Leaf Node?      : " <> show (fitchIsLeaf c)
         , "Discrete Character : " <> showDiscreteCharacterElement c
-        , "Preliminary Median : " <> showStatic (fitchPreliminaryMedian  c)
+        , -} "Preliminary Median : " <> showStatic (fitchPreliminaryMedian  c)
         , "Final       Median : " <> showStatic (fitchFinalMedian        c)
-        , mconcat ["Child       Medians: ( ", (showStatic . fst . fitchChildMedians) c, " , ", (showStatic . snd . fitchChildMedians) c, " )"]
+        -- , mconcat ["Child       Medians: ( ", (showStatic . fst . fitchChildMedians) c, " , ", (showStatic . snd . fitchChildMedians) c, " )"]
         ]
       where
         alphabet = c ^. characterAlphabet
@@ -104,7 +104,7 @@ instance HasTransitionCostMatrix (FitchOptimizationDecoration f) (f -> f -> (f, 
     transitionCostMatrix = lens getter setter
       where
         getter = error "Please don't use lens accessor operations over 'transitionCostMatrix' on a FitchOptimizationDecoration."
-        setter = const 
+        setter = const
 
 
 -- | (✔)

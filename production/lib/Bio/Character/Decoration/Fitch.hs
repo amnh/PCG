@@ -21,6 +21,7 @@ module Bio.Character.Decoration.Fitch
   , HasCharacterName(..)
   , HasCharacterWeight(..)
   , HasDiscreteCharacter(..)
+  , HasFinalMedian(..)
   , HasSymbolChangeMatrix(..)
   , HasTransitionCostMatrix(..)
   , HasIsLeaf(..)

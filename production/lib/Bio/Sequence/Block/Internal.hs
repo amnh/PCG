@@ -64,7 +64,7 @@ instance Semigroup (CharacterBlock m i c f a d) where
           , nonMetricCharacterBins   = nonMetricCharacterBins   lhs `mappend` nonMetricCharacterBins   rhs
           , dynamicCharacters        = dynamicCharacters        lhs `mappend` dynamicCharacters        rhs
           }
-          
+
 
 instance ( Show m
          , Show i
@@ -76,18 +76,18 @@ instance ( Show m
          ) => Show (CharacterBlock m i c f a d) where
 
     show block = unlines
-        [ "Continuous Characters: "
-        , niceRendering $ continuousCharacterBins block
-        , "Fitch Characters:"
+        [ {- "Fitch Characters:"
         , niceRendering $ nonAdditiveCharacterBins block
-        , "Additive Characters:"
-        , niceRendering $ additiveCharacterBins block
-        , "Metric Characters:"
-        , niceRendering $ metricCharacterBins block
+        ,-} "Additive Characters:"
+        , niceRendering $ additiveCharacterBins block {-
         , "NonMetric Characters:"
         , niceRendering $ nonMetricCharacterBins block
+        , "Continuous Characters: "
+        , niceRendering $ continuousCharacterBins block
+        , "Metric Characters:"
+        , niceRendering $ metricCharacterBins block
         , "Dynamic Characters:"
-        , niceRendering $ dynamicCharacters block
+        , niceRendering $ dynamicCharacters block -}
         ]
       where
         niceRendering :: (Foldable t, Show a) => t a -> String
