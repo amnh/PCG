@@ -26,6 +26,7 @@ module Bio.Character.Decoration.Additive
   , HasIsLeaf(..)
   , HasCharacterCost(..)
   , HasPreliminaryInterval(..)
+  , HasFinalInterval(..)
   , HasChildPrelimIntervals(..)
   ) where
 

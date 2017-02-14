@@ -43,7 +43,7 @@ fitchPostOrder parentDecoration xs =
 
 
 -- | Used on the pre-order (i.e. second) traversal.
-fitchPreOrder :: (EncodableStaticCharacter c, Show c)
+fitchPreOrder :: EncodableStaticCharacter c
               => FitchOptimizationDecoration c
               -> [(Word, FitchOptimizationDecoration c)]
               -> FitchOptimizationDecoration c
@@ -95,7 +95,7 @@ initializeLeaf leafDecoration =
 -- |
 -- Using the preliminary state of the current node, as well as the preliminary states of its parent and sibling,
 -- compute the final state of the character using Fitch's ordered rules.
-determineFinalState :: (EncodableStaticCharacter c, Show c)
+determineFinalState :: EncodableStaticCharacter c
                     => FitchOptimizationDecoration c
                     -> FitchOptimizationDecoration c
                     -> FitchOptimizationDecoration c
@@ -112,7 +112,7 @@ determineFinalState parentDecoration childDecoration = finalDecoration
         leafVal         = childDecoration  ^. isLeaf
         cost            = childDecoration  ^. characterCost
         preliminary     = childDecoration  ^. preliminaryMedian
-        ancestor        = parentDecoration ^. finalMedian
+        ancestor        = parentDecoration ^. preliminaryMedian
         (left, right)   = childDecoration  ^. childMedians
         union     l r   = l .|. r
         intersect l r   = l .&. r

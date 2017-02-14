@@ -25,7 +25,7 @@ import Bio.Metadata.DiscreteWithTCM
 import Control.Lens
 import Data.Alphabet
 --import Data.Bits
-import Data.TCM
+-- import Data.TCM
 import Data.Semigroup
 --import Data.Word
 
@@ -37,6 +37,7 @@ data AdditiveOptimizationDecoration a
    = AdditiveOptimizationDecoration
    { additiveMinCost              :: Word
    , additivePreliminaryInterval  :: (Word, Word)
+   , additiveFinalInterval        :: (Word, Word)
    , additiveChildPrelimIntervals :: ((Word, Word), (Word, Word))
    , additiveIsLeaf               :: Bool
    , additiveCharacterField       :: a   -- TODO: do I need this?
@@ -51,6 +52,7 @@ instance EncodableStreamElement c => Show (AdditiveOptimizationDecoration c) whe
         , "Is Leaf Node?       : " <> show (c ^. isLeaf)
         , "Discrete Character  : " <> showDiscreteCharacterElement c
         , "Preliminary Interval: " <> show (additivePreliminaryInterval c)
+        , "Final Interval      : " <> show (additiveFinalInterval c)
         , "Child      Intervals: " <> show (additiveChildPrelimIntervals c)
         ]
 
@@ -127,6 +129,12 @@ instance HasPreliminaryInterval (AdditiveOptimizationDecoration a) (Word, Word) 
 
 
 -- | (✔)
+instance HasFinalInterval (AdditiveOptimizationDecoration a) (Word, Word) where
+
+    finalInterval = lens additiveFinalInterval (\e x -> e { additiveFinalInterval = x })
+
+
+-- | (✔)
 instance HasChildPrelimIntervals (AdditiveOptimizationDecoration a) ((Word, Word),(Word, Word)) where
 
     childPrelimIntervals = lens additiveChildPrelimIntervals (\e x -> e { additiveChildPrelimIntervals = x })
@@ -135,7 +143,7 @@ instance HasChildPrelimIntervals (AdditiveOptimizationDecoration a) ((Word, Word
 -- | (✔)
 instance GeneralCharacterMetadata (AdditiveOptimizationDecoration a) where
 
-  
+
 -- | (✔)
 instance DiscreteCharacterMetadata (AdditiveOptimizationDecoration a) where
 
@@ -147,19 +155,19 @@ instance EncodableStaticCharacter a => DiscreteWithTcmCharacterMetadata (Additiv
 -- | (✔)
 instance EncodableStaticCharacter a => DiscreteCharacterDecoration (AdditiveOptimizationDecoration a) a where
 
-  
+
 -- | (✔)
 instance EncodableStaticCharacter a => AdditiveCharacterDecoration (AdditiveOptimizationDecoration a) a where
 
-  
+
 -- | (✔)
 instance EncodableStaticCharacter a => AdditiveDecoration (AdditiveOptimizationDecoration a) a where
 
-  
+
 -- | (✔)
 instance EncodableStaticCharacter a => DiscreteExtensionAdditiveDecoration (AdditiveOptimizationDecoration a) a where
 
-    extendDiscreteToAdditive subDecoration cost prelimInterval childMedianTup isLeafVal =
+    extendDiscreteToAdditive subDecoration cost prelimInterval finalInter childMedianTup isLeafVal =
 
         AdditiveOptimizationDecoration
         { additiveChildPrelimIntervals = childMedianTup
@@ -167,6 +175,7 @@ instance EncodableStaticCharacter a => DiscreteExtensionAdditiveDecoration (Addi
         , additiveMinCost              = cost
         , additiveMetadataField        = metadataValue
         , additivePreliminaryInterval  = prelimInterval
+        , additiveFinalInterval        = finalInter
         , additiveCharacterField       = subDecoration ^. discreteCharacter -- TODO: do I need this?
         }
       where

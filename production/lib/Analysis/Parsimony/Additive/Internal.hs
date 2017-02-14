@@ -31,7 +31,7 @@ import Control.Lens
 import Data.Bits
 import Data.List.NonEmpty (NonEmpty( (:|) ))
 -- import Data.Word
--- import Debug.Trace
+import Debug.Trace
 
 
 -- | Used on the post-order (i.e. first) traversal.
@@ -50,14 +50,16 @@ additivePreOrder  :: EncodableStaticCharacter c
                   => AdditiveOptimizationDecoration c
                   -> [(Word, AdditiveOptimizationDecoration c)]
                   -> AdditiveOptimizationDecoration c
-additivePreOrder childDecoration (_:_:_)                 = childDecoration   -- multiple parents; shouldn't be possible,
-                                                                                --    but here for completion
-additivePreOrder childDecoration []                      = childDecoration   -- is a root TODO: need to change preliminary
-                                                                             --    to final
+additivePreOrder childDecoration (_:_:_)                 = childDecoration                      -- multiple parents; shouldn't be possible,
+                                                                                                --    but here for completion
+additivePreOrder childDecoration []                      = finalDecoration                      -- root
+    where
+        interDecoration = computeFinalDiscrete (childDecoration ^. preliminaryInterval) childDecoration
+        finalDecoration = interDecoration & finalInterval .~ childDecoration ^. preliminaryInterval
 additivePreOrder childDecoration [(_, parentDecoration)] =
     if childDecoration ^. isLeaf
-        then childDecoration
-        else determineFinalState childDecoration parentDecoration
+        then childDecoration & finalInterval .~ childDecoration ^. preliminaryInterval          -- leaf
+        else determineFinalState childDecoration parentDecoration                               -- internal node
 
 
 -- |
@@ -76,7 +78,7 @@ updatePostOrder _parentDecoration (leftChild:|(rightChild:_)) = {- trace (show n
     returnNodeDecoration  -- Not a leaf.
     where
         (newMin, newMax)              = if isOverlapping
-                                        then leftInterval `intersect`      rightInterval
+                                        then leftInterval `intersection`   rightInterval
                                         else leftInterval `smallestClosed` rightInterval
         (leftInterval, rightInterval) = (leftChild ^. preliminaryInterval, rightChild ^. preliminaryInterval)
         newInterval                   = (newMin, newMax)
@@ -84,9 +86,10 @@ updatePostOrder _parentDecoration (leftChild:|(rightChild:_)) = {- trace (show n
         thisNodeCost                  = if isOverlapping
                                         then 0
                                         else newMax - newMin
-        isOverlapping                 = leftInterval `overlaps` rightInterval
+        isOverlapping                 = leftInterval `intersects` rightInterval
+        zero                          = fromIntegral (0 :: Int) :: Word
         returnNodeDecoration          =
-            extendDiscreteToAdditive leftChild totalCost newInterval (leftInterval, rightInterval) False
+            extendDiscreteToAdditive leftChild totalCost newInterval (zero, zero) (leftInterval, rightInterval) False
 
 
 -- | Initializes a leaf node by copying its current value into its preliminary state. Gives it a minimum cost of 0.
@@ -96,7 +99,7 @@ initializeLeaf :: (DiscreteCharacterDecoration d c)
                => d
                -> AdditiveOptimizationDecoration c
 initializeLeaf curDecoration =
-    extendDiscreteToAdditive curDecoration zero (lower, higher) ((zero,zero),(zero,zero)) True
+    extendDiscreteToAdditive curDecoration zero (lower, higher) (zero, zero) ((zero,zero),(zero,zero)) True
     where
         label    = curDecoration ^. discreteCharacter
         lower    = (fromIntegral leading :: Word)
@@ -117,51 +120,81 @@ initializeLeaf curDecoration =
 determineFinalState :: EncodableStaticCharacter c
                     => AdditiveOptimizationDecoration c
                     -> AdditiveOptimizationDecoration c
-                    -> (AdditiveOptimizationDecoration c)
+                    -> AdditiveOptimizationDecoration c
 determineFinalState childDecoration parentDecoration = finalDecoration
     where
+        curIsSuperset   = (ancestor `intersection` preliminary) == ancestor
+        finalDecoration = computeFinalDiscrete (myMin, myMax) childDecoration
         preliminary     = childDecoration  ^. preliminaryInterval
-        ancestor        = parentDecoration ^. preliminaryInterval
+        ancestor        = parentDecoration ^. finalInterval
         (left, right)   = childDecoration  ^. childPrelimIntervals
-        thirdCase       = ancestor `union` (left `intersect` ancestor) `union` (right `intersect` ancestor)
+        chi             = (leftUnionright `union` preliminary) `intersection` ancestor
+        leftUnionright  = left `union` right
+        prelimClosestA  = closestState preliminary ancestor
+        childsCloseestA = closestState leftUnionright ancestor
         (myMin, myMax)
-            | (ancestor `intersect` preliminary) == ancestor     = ancestor                        -- Additive rule 1
-            | (ancestor `union`     preliminary) == preliminary  = preliminary                     -- Additive rule 2
-            | otherwise                                          = thirdCase                       -- Additive rule 3
+            | curIsSuperset = trace "cur is supeset" $ ancestor                                                              -- Additive rule 1
+            | leftUnionright `intersects` ancestor  =                                               -- Additive rule 2
+                if chi `intersects` preliminary
+                then trace ("chi intersects prelim ") $ chi
+                else trace "not chi" $ largestClosed (closestState preliminary chi) chi
+            | otherwise = trace "otherwise" $ (min prelimClosestA childsCloseestA, max prelimClosestA childsCloseestA)  -- Additive rule 3
+
+
+computeFinalDiscrete :: EncodableStaticCharacter c
+                    => (Word,Word)
+                    -> AdditiveOptimizationDecoration c
+                    -> AdditiveOptimizationDecoration c
+computeFinalDiscrete (myMin, myMax) childDecoration = finalDecoration
+    where
         interCharacter  = emptyChar      `setBit` (fromIntegral (toInteger myMin :: Integer) :: Int)
         finalCharacter  = interCharacter `setBit` (fromIntegral (toInteger myMax :: Integer) :: Int)
-        emptyChar       = emptyStatic $ parentDecoration ^. discreteCharacter
-        finalDecoration = childDecoration  &  preliminaryInterval .~ (myMin, myMax) & discreteCharacter .~ finalCharacter
-
+        emptyChar       = emptyStatic $ childDecoration ^. discreteCharacter
+        finalDecoration = childDecoration & finalInterval .~ (myMin, myMax) & discreteCharacter .~ finalCharacter
 
 -- | True if there is any overlap between the two intervals
-overlaps :: (Word, Word) -> (Word, Word) -> Bool
-overlaps leftChild rightChild =
+intersects :: (Word, Word) -> (Word, Word) -> Bool
+intersects leftChild rightChild =
     (rightSmallest <= leftLargest) && (rightLargest >= leftSmallest)
     where
         (rightSmallest, rightLargest) = rightChild
         ( leftSmallest,  leftLargest) = leftChild
 
 
-
 -- |
 -- Finds the intersection of two intervals, the intersection being the smallest interval possible. Does
 -- not assume there's an overlap.
-intersect :: (Word, Word) -> (Word, Word) -> (Word, Word)
-intersect leftChild rightChild = (max leftSmallest rightSmallest, min leftLargest rightLargest)
+intersection :: (Word, Word) -> (Word, Word) -> (Word, Word)
+intersection leftChild rightChild = (max leftSmallest rightSmallest, min leftLargest rightLargest)
     where
         (rightSmallest, rightLargest) = rightChild
         ( leftSmallest,  leftLargest) = leftChild
 
 
-
+-- | The smallest closed interval is the smallext interval between two non-overlapping intervals, so the
+-- largest value in the leftmost interval on the number line to the smallest value of the rightmost.
 smallestClosed :: (Word, Word) -> (Word, Word) -> (Word, Word)
 smallestClosed leftChild rightChild = (min leftLargest rightLargest, max leftSmallest rightSmallest)
-{-}    | leftLargest < rightSmallest = (leftLargest, rightSmallest)
-    | otherwise                   = (rightLargest, leftSmallest)
- -}  where
+    where
         (rightSmallest, rightLargest) = rightChild
         ( leftSmallest,  leftLargest) = leftChild
+
+
+-- | The largest closed interval between the single value on the left and the interval on the right.
+-- This is the equivalent of `union`, but works for a single value on the left, rather than an interval.
+largestClosed :: Word -> (Word, Word) -> (Word, Word)
+largestClosed lhs rhs = (min lhs rightLargest, max lhs rightSmallest)
+    where
+        (rightSmallest, rightLargest) = rhs
+
+
+-- | The closest state is the closest value in the left interval to the right interval.
+-- This assumes that there is no overlap between the intervals. If the two intervals intersect
+-- incorrect results will be returned.
+closestState :: (Word, Word) -> (Word, Word) -> Word
+closestState (leftSmallest, leftLargest) (rightSmallest, _rightLargest)
+    | leftLargest < rightSmallest = leftLargest
+    | otherwise                   = leftSmallest
 
 
 -- |

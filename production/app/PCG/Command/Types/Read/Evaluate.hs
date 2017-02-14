@@ -15,25 +15,25 @@ import           Control.Monad.IO.Class
 import           Control.Monad.Trans.Either
 import           Control.Parallel.Strategies
 import           Data.Alphabet   --    hiding (AmbiguityGroup)
-import           Data.Alphabet.IUPAC
+-- import           Data.Alphabet.IUPAC
 import           Data.Bifunctor               (bimap,first)
-import           Data.Char                    (isLower,toLower,isUpper,toUpper)
+-- import           Data.Char                    (isLower,toLower,isUpper,toUpper)
 import           Data.Either.Custom
 import           Data.Foldable
 import           Data.Functor
-import           Data.Key                     ((!),lookup)
-import           Data.List.NonEmpty           (NonEmpty( (:|) ))
-import qualified Data.List.NonEmpty    as NE
-import           Data.List.Utility            (subsetOf)
-import           Data.Map                     (Map,assocs,insert,union, keys)
-import qualified Data.Map              as M
-import           Data.Maybe                   (fromMaybe)
-import           Data.Monoid                  ((<>))
+-- import           Data.Key                     ((!),lookup)
+-- import           Data.List.NonEmpty           (NonEmpty( (:|) ))
+-- import qualified Data.List.NonEmpty    as NE
+-- import           Data.List.Utility            (subsetOf)
+-- import           Data.Map                     (Map,assocs,insert,union)
+-- import qualified Data.Map              as M
+-- import           Data.Maybe                   (fromMaybe)
+-- import           Data.Monoid                  ((<>))
 import           Data.Ord                     (comparing)
 import           Data.TCM                     (TCMDiagnosis(..), TCMStructure(..), diagnoseTcm)
 import qualified Data.TCM              as TCM
-import           Data.Vector                  (Vector)
-import qualified Data.Vector           as V   (zipWith)
+-- import           Data.Vector                  (Vector)
+-- import qualified Data.Vector           as V   (zipWith)
 import           File.Format.Fasta   hiding   (FastaSequenceType(..))
 import qualified File.Format.Fasta   as Fasta (FastaSequenceType(..))
 import           File.Format.Fastc   hiding   (Identifier)
@@ -153,8 +153,8 @@ parseCustomAlphabet spec = getSpecifiedContent spec >>= (hoistEither . parseSpec
   where
     parse'' m (path, content) =
         case m of
-          Nothing     -> fracturedResult 
-          Just oldTCM -> setTcm oldTCM path =<< fracturedResult 
+          Nothing     -> fracturedResult
+          Just oldTCM -> setTcm oldTCM path =<< fracturedResult
       where
         fracturedResult = toFractured Nothing path <$> parseResult
         parseResult     = first unparsable $ parse' fastcStreamParser path content
@@ -191,7 +191,7 @@ setCharactersToAligned fpr = fpr { parsedMetas = setAligned <$> parsedMetas fpr 
   where
     setAligned x = x { isDynamic = False }
 
-
+{- removed to eliminate compilation warning
 expandIUPAC :: FracturedParseResult -> FracturedParseResult
 expandIUPAC fpr = fpr { parsedChars = newTreeChars }
   where
@@ -213,7 +213,7 @@ expandIUPAC fpr = fpr { parsedChars = newTreeChars }
                   | isAlphabetAminoAcid cAlph = expandOrId aminoAcidIUPAC  <$> x
                   | otherwise = x
     expandOrId m x = fromMaybe x $ x `lookup` m
-
+-}
 
 -- TODO: check file extension, to guess which parser to use first
 progressiveParse :: FilePath -> EitherT ReadError IO FracturedParseResult
@@ -256,7 +256,7 @@ progressiveParse inputPath = do
     farthestParseErr err = maximum $ errorPos err
     nukeParser = (\x -> try (fastaStreamConverter Fasta.DNA x) <|> fastaStreamConverter Fasta.RNA x) =<< fastaStreamParser
     acidParser = fastaStreamConverter Fasta.DNA =<< fastaStreamParser
-    
+
 
 toFractured :: (ParsedMetadata a, ParsedCharacters a, ParsedForest a) => Maybe (TCM.TCM, TCMStructure) -> FilePath -> a -> FracturedParseResult
 toFractured tcmMat path =
@@ -267,7 +267,7 @@ toFractured tcmMat path =
         <*> const path
 {--}
 
-
+{- removed to eliminate compilation warning
 nucleotideIUPAC :: Map (AmbiguityGroup String) (AmbiguityGroup String)
 nucleotideIUPAC = casei $ nonEmptyMap core
   where
@@ -321,5 +321,5 @@ casei x = foldl f x $ assocs x
       | isUpper k  = insert (pure . pure $ toLower k) v m
       | otherwise  = m
     f m (_    , _) = m
-
+-}
 
