@@ -109,7 +109,9 @@ class ( EncodableStreamElement (Element s)
 
 -- | Show an 'EncodableStreamElement' by decoding it with it's corresponding alphabet.
 showStreamElement :: EncodableStreamElement e => Alphabet String -> e -> String
-showStreamElement alphabet element = renderAmbiguity $ toIUPAC symbols
+showStreamElement alphabet element
+  | zeroBits == element = "<Empty Character>"
+  | otherwise           = renderAmbiguity $ toIUPAC symbols
   where
     symbols   = decodeElement alphabet element
     renderAmbiguity amb =
