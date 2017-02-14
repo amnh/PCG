@@ -159,7 +159,7 @@ updateDirectionalMins parentDecoration childDecoration parentMins  = childDecora
 
 -- | Take in a single character state as a Word---which represents an unambiguous character state on the parent---
 -- and two decorations: the decorations of the two child states.
--- Return the minimum costs of transitioning from each of those two child decorations to the given character.
+-- Return the minimum costs of transitioning from the input character to each of those two child decorations.
 -- These mins will be saved for use at the next post-order call, to the current parent node's parent.
 --
 -- Note: We can throw away the medians that come back from the tcm here because we're building medians:
@@ -170,18 +170,18 @@ calcCostPerState ::EncodedAmbiguityGroupContainer c => Word
                                                     -> (ExtendedNatural, ExtendedNatural)
 calcCostPerState inputCharState leftChildDec rightChildDec = retVal
     where
-        -- Using keys, fold over alphabet states as Ints. The zipped lists will give minimum accumulated costs for
-        -- each character state in each child.
-        retVal = foldlWithKey' findMins initialAccumulator $ trace (show showableTCM) zippedCostList
+        -- Using keys, fold over alphabet states as Ints. Look up the transition from inputCharState to that alphabet state.
+        -- For each alphabet state the zipped cost list has the minimum accumulated costs for that character state in each child.
+        -- calcCostPerState is called inside another loop, so here we loop only over the child states.
+        retVal = foldlWithKey' findMins initialAccumulator zippedCostList
         findMins :: (ExtendedNatural, ExtendedNatural) -> Int -> (ExtendedNatural, ExtendedNatural) -> (ExtendedNatural, ExtendedNatural)
         findMins (initLeftMin, initRightMin) childCharState (accumulatedLeftCharCost, accumulatedRightCharCost) = (leftMin, rightMin)
             where
                 leftMin             = min curLeftMin  initLeftMin
                 rightMin            = min curRightMin initRightMin
-                curLeftMin          = trace (unwords ["left : ", show len, show inputCharState, show childCharState, show  accumulatedLeftCharCost, show  leftTransitionCost]) $  leftTransitionCost + accumulatedLeftCharCost
-                curRightMin         = trace (unwords ["right: ", show len, show inputCharState, show childCharState, show accumulatedRightCharCost, show rightTransitionCost]) $ rightTransitionCost + accumulatedRightCharCost
-                leftTransitionCost  = fromWord . scm inputCharState $ toEnum childCharState
-                rightTransitionCost = fromWord . scm inputCharState $ toEnum childCharState
+                curLeftMin          = trace (unwords ["left : ", show len, show inputCharState, show childCharState, show  accumulatedLeftCharCost, show  transitionCost, show showableTCM]) $  transitionCost + accumulatedLeftCharCost
+                curRightMin         = trace (unwords ["right: ", show len, show inputCharState, show childCharState, show accumulatedRightCharCost, show transitionCost, show showableTCM]) $ transitionCost + accumulatedRightCharCost
+                transitionCost  = fromWord . scm inputCharState $ toEnum childCharState
 
         initialAccumulator = (infinity, infinity)
         zippedCostList     = zip (leftChildDec ^. characterCostVector) (rightChildDec ^. characterCostVector)

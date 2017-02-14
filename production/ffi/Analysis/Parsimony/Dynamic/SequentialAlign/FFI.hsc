@@ -122,33 +122,33 @@ instance Storable DynamicCharacterElement where
         (#poke struct dcElement_t, alphSize) ptr alphLen
         (#poke struct dcElement_t, element ) ptr element
 
-{-
-
-foreign import ccall unsafe "costMatrix call_getSetCost_C"
+{-}
+foreign import ccall unsafe "costMatrix getCostAndMedian"
     getCostMedianfn_c :: Ptr MemoizedCostMatrix
-                      -> Ptr DynamicCharacterElement
-                      -> Ptr DynamicCharacterElement
-                      -> Ptr DynamicCharacterElement
+                      -> Ptr CArrayUnit
+                      -> Ptr CArrayUnit
+                      -> Ptr CArrayUnit
+                      -> CSize
                       -> CInt
 
 lookupCostAndMedian :: Exportable s => Ptr MemoizedCostMatrix -> s -> s -> (s, Word)
 lookupCostAndMedian tcm lhs rhs = unsafePerformIO $ do
     firstElem  <- malloc :: IO (Ptr leftInput)
-    secondElem <- malloc :: IO (Ptr DynamicCharacterElement)
-    outputPtr  <- malloc :: IO (Ptr DynamicCharacterElement)
+    secondElem <- malloc :: IO (Ptr rightInput)
+    outputPtr  <- malloc :: IO (Ptr CArrayUnit)
 
-    !cost <- getCostMedianfn_c tcm firstElem secondElem outputPtr
+    !cost <- getCostMedianfn_c tcm firstElem secondElem outputPtr alphSize
 
-    pure (exportableOutput, fromIntegral cost)
+    pure (exportableOutput, outCost)
     where
-        alphSize              = lhsExportableSequence ^. alphabetSize
+        alphSize              = lhs ^. exportedElementWidth ^. alphabetSize
         lhsExportableSequence = toExportable lhs
         leftInput             = DynamicCharacterElement alphSize (lhsExportableSequence ^. discreteCharacter)
         rhsExportableSequence = toExportable rhs
         rightInput            = DynamicCharacterElement alphSize (rhsExportableSequence ^. discreteCharacter)
         retVal                = DynamicCharacterElement alphSize (lhsExportableSequence ^. discreteCharacter)
-        exportableOutput      = Exportable 1 alphSize peek outputElem
-        (_, outputElem)       = peek retVal
+        exportableOutput      = Exportable 1 alphSize peek retVal
+        outCost               = toEnum (fromEnum cost) :: Word
 -}
 
 
