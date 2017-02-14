@@ -180,7 +180,7 @@ calcCostPerState inputCharState leftChildDec rightChildDec = retVal
                 rightMin            = min curRightMin initRightMin
                 curLeftMin          = trace ("left :  " ++ show inputCharState ++ " " ++ show childCharState ++ " " ++ show  accumulatedLeftCharCost ++ " " ++ show  leftTransitionCost ++ show showableTCM) $ fromIntegral leftTransitionCost + accumulatedLeftCharCost
                 curRightMin         = trace ("right:  " ++ show inputCharState ++ " " ++ show childCharState ++ " " ++ show accumulatedRightCharCost ++ " " ++ show rightTransitionCost) $fromIntegral rightTransitionCost + accumulatedRightCharCost
-                leftTransitionCost  = trace (show showableTCM) $ fromWord $ ( leftChildDec ^. symbolChangeMatrix) inputCharState $ fromIntegral childCharState
+                leftTransitionCost  = {- trace (show showableTCM) . -} fromWord . scm inputCharState $ toEnum childCharState
                 rightTransitionCost = fromWord $ (rightChildDec ^. symbolChangeMatrix) inputCharState $ fromIntegral childCharState
 
         initialAccumulator = (infinity, infinity)
