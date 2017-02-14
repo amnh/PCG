@@ -50,8 +50,8 @@ instance EncodableStreamElement c => Show (FitchOptimizationDecoration c) where
     show c = unlines
         [ {- "Cost = " <> show (fitchMinCost c)
         , "Is Leaf Node?      : " <> show (fitchIsLeaf c)
-        , "Discrete Character : " <> showDiscreteCharacterElement c
-        , -} "Preliminary Median : " <> showStatic (fitchPreliminaryMedian  c)
+        , -} "Discrete Character : " <> showDiscreteCharacterElement c
+        , "Preliminary Median : " <> showStatic (fitchPreliminaryMedian  c)
         , "Final       Median : " <> showStatic (fitchFinalMedian        c)
         -- , mconcat ["Child       Medians: ( ", (showStatic . fst . fitchChildMedians) c, " , ", (showStatic . snd . fitchChildMedians) c, " )"]
         ]

@@ -30,6 +30,7 @@ import Data.Bits
 import Data.ExtendedNatural
 import Data.Key
 import Data.List.NonEmpty (NonEmpty( (:|) ))
+import qualified Data.TCM as TCM
 import Data.Word
 import Prelude hiding (zip)
 
@@ -163,7 +164,10 @@ updateDirectionalMins parentDecoration childDecoration parentMins  = childDecora
 --
 -- Note: We can throw away the medians that come back from the tcm here because we're building medians:
 -- the possible character is looped over all available characters, and there's an outer loop which sends in each possible character.
-calcCostPerState :: Word -> SankoffOptimizationDecoration c -> SankoffOptimizationDecoration c -> (ExtendedNatural, ExtendedNatural)
+calcCostPerState ::EncodedAmbiguityGroupContainer c => Word
+                                                    -> SankoffOptimizationDecoration c
+                                                    -> SankoffOptimizationDecoration c
+                                                    -> (ExtendedNatural, ExtendedNatural)
 calcCostPerState inputCharState leftChildDec rightChildDec = retVal
     where
         -- Using keys, fold over alphabet states as Ints. The zipped lists will give minimum accumulated costs for
@@ -174,10 +178,15 @@ calcCostPerState inputCharState leftChildDec rightChildDec = retVal
             where
                 leftMin             = min curLeftMin initLeftMin
                 rightMin            = min curRightMin initRightMin
-                curLeftMin          = trace ("left:  " ++ show  accumulatedLeftCharCost ++ " " ++ show  leftTransitionCost) $ fromIntegral leftTransitionCost + accumulatedLeftCharCost
-                curRightMin         = trace ("left:  " ++ show accumulatedRightCharCost ++ " " ++ show rightTransitionCost) $fromIntegral rightTransitionCost + accumulatedRightCharCost
-                leftTransitionCost  = fromWord $ ( leftChildDec ^. symbolChangeMatrix) inputCharState $ fromIntegral childCharState
+                curLeftMin          = trace ("left :  " ++ show inputCharState ++ " " ++ show childCharState ++ " " ++ show  accumulatedLeftCharCost ++ " " ++ show  leftTransitionCost ++ show showableTCM) $ fromIntegral leftTransitionCost + accumulatedLeftCharCost
+                curRightMin         = trace ("right:  " ++ show inputCharState ++ " " ++ show childCharState ++ " " ++ show accumulatedRightCharCost ++ " " ++ show rightTransitionCost) $fromIntegral rightTransitionCost + accumulatedRightCharCost
+                leftTransitionCost  = trace (show showableTCM) $ fromWord $ ( leftChildDec ^. symbolChangeMatrix) inputCharState $ fromIntegral childCharState
                 rightTransitionCost = fromWord $ (rightChildDec ^. symbolChangeMatrix) inputCharState $ fromIntegral childCharState
 
         initialAccumulator = (infinity, infinity)
         zippedCostList     = zip (leftChildDec ^. characterCostVector) (rightChildDec ^. characterCostVector)
+
+        len       = symbolCount $ leftChildDec ^. discreteCharacter
+        showableTCM = TCM.generate len g
+        g (i,j) = fromEnum $ scm (toWord i) (toWord j)
+        scm = leftChildDec ^. symbolChangeMatrix

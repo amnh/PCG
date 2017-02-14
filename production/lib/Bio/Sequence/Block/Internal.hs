@@ -76,12 +76,12 @@ instance ( Show m
          ) => Show (CharacterBlock m i c f a d) where
 
     show block = unlines
-        [ {- "Fitch Characters:"
+        [ "Fitch Characters:"
         , niceRendering $ nonAdditiveCharacterBins block
-        ,-} "Additive Characters:"
-        , niceRendering $ additiveCharacterBins block {-
+        {- , "Additive Characters:"
+        , niceRendering $ additiveCharacterBins block -}
         , "NonMetric Characters:"
-        , niceRendering $ nonMetricCharacterBins block
+        , niceRendering $ nonMetricCharacterBins block {-
         , "Continuous Characters: "
         , niceRendering $ continuousCharacterBins block
         , "Metric Characters:"
