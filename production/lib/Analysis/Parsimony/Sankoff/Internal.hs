@@ -105,7 +105,7 @@ updateCostVector _parentDecoration (x:|[])                   = x                
 updateCostVector _parentDecoration (leftChild:|rightChild:_) = returnNodeDecoration -- _Should_ be able to amend this to use non-binary children.
     where
         (costVector, dirCostVector, charCost) = foldr findMins initialAccumulator range
-        range = [0 .. toEnum . length $ leftChild ^. characterAlphabet]
+        range = [0 .. toEnum $ length (leftChild ^. characterAlphabet) - 1]
         initialAccumulator     = ([], ([],[]), infinity)  -- (min cost per state, (leftMin, rightMin), overall minimum)
         returnNodeDecoration   = extendDiscreteToSankoff leftChild costVector dirCostVector $ toWord charCost
 
