@@ -18,7 +18,7 @@
 module File.Format.TNT.Parser where
 
 import           Control.Monad            ((<=<),liftM3)
-import           Data.Foldable            (toList)
+import           Data.Foldable
 import           Data.IntMap              (IntMap,insertWith,mapWithKey,toAscList)
 import qualified Data.IntMap        as IM (lookup)
 import qualified Data.Map           as M  (fromList,lookup)
@@ -131,16 +131,16 @@ ccodeCoalesce charCount ccodeCommands = generate charCount f
     f = fromMaybe initialMetaData . (`IM.lookup` stateMapping)
 
     stateMapping :: IntMap CharacterMetaData
-    stateMapping = foldl (foldl addChangeSet) mempty ccodeCommands
+    stateMapping = foldl' (foldl' addChangeSet) mempty ccodeCommands
 
     addChangeSet :: IntMap CharacterMetaData -> CCodeAugment -> IntMap CharacterMetaData
-    addChangeSet mapping (CCodeAugment states indicies) = foldl applyChanges mapping indicies
+    addChangeSet mapping (CCodeAugment states indicies) = foldl' applyChanges mapping indicies
       where
         applyChanges :: IntMap CharacterMetaData -> CharacterSet -> IntMap CharacterMetaData
-        applyChanges mapping' changeSet = foldl (insertStates states) mapping' (range charCount changeSet)
+        applyChanges mapping' changeSet = foldl' (insertStates states) mapping' (range charCount changeSet)
 
     insertStates :: Foldable t => t CharacterState -> IntMap CharacterMetaData ->  Int -> IntMap CharacterMetaData
-    insertStates states mapping index = foldl insertState mapping states
+    insertStates states mapping index = foldl' insertState mapping states
       where
         insertState mapping' state = insertWith translation index defaultValue mapping'
           where

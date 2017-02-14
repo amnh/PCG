@@ -62,7 +62,7 @@ import           PCG.Command.Types.Read.Unification.UnificationError
 --import           PCG.SearchState 
 import           Prelude                    hiding (lookup, zip, zipWith)
 
-import Debug.Trace
+-- import Debug.Trace
 
 
 data FracturedParseResult
