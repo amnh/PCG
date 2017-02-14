@@ -17,6 +17,7 @@ module Data.TCM.Internal where
 
 import           Control.Arrow                 ((***))
 import           Data.Foldable
+import           Data.IntSet                   (IntSet)
 import           Data.List                     (transpose)
 import           Data.List.Utility             (equalityOf, occurances)
 import           Data.Map                      (delete, findMax, keys)
@@ -28,7 +29,7 @@ import           Data.Vector.Unboxed           (Vector)
 import qualified Data.Vector.Unboxed  as V
 import           Data.Word
 import           Prelude              hiding   (lookup)
-import           Test.QuickCheck
+import           Test.QuickCheck      hiding   (generate)
 
 
 import Debug.Trace
@@ -230,7 +231,20 @@ instance Show TCM where
             shown = show x
             pad   = (padSpacing - length shown) `replicate` ' '
         
-        
+
+reduceTcm :: IntSet -> TCM -> TCM
+reduceTcm missingSymbolIndicies tcm = generate reducedDimension genFunction
+  where
+    indices = otoList missingSymbolIndicies
+    reducedDimension  = size tcm - olength missingSymbolIndicies
+    genFunction (i,j) = tcm ! (i', j')
+      where
+        i' = i + iOffset
+        j' = j + jOffset
+        iOffset = length $ filter (<=i) indices
+        jOffset = length $ filter (<=j) indices
+
+
 -- | /O(1)/ Indexing without bounds checking.
 {-# INLINE (!) #-}
 (!) :: (Enum i, Show i) => TCM -> (i, i) -> Word32

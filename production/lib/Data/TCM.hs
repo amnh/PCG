@@ -28,6 +28,7 @@ module Data.TCM
   , size
     -- * Specialization Utility
   , diagnoseTcm
+  , reduceTcm
   ) where
 
 import Data.TCM.Internal
