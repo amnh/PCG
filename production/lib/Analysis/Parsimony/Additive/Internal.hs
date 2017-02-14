@@ -31,7 +31,7 @@ import Control.Lens
 import Data.Bits
 import Data.List.NonEmpty (NonEmpty( (:|) ))
 -- import Data.Word
-import Debug.Trace
+-- import Debug.Trace
 
 
 -- | Used on the post-order (i.e. first) traversal.
@@ -133,12 +133,12 @@ determineFinalState childDecoration parentDecoration = finalDecoration
         prelimClosestA  = closestState preliminary ancestor
         childsCloseestA = closestState leftUnionright ancestor
         (myMin, myMax)
-            | curIsSuperset = trace "cur is supeset" $ ancestor                                                              -- Additive rule 1
+            | curIsSuperset = ancestor                                                              -- Additive rule 1
             | leftUnionright `intersects` ancestor  =                                               -- Additive rule 2
                 if chi `intersects` preliminary
-                then trace ("chi intersects prelim ") $ chi
-                else trace "not chi" $ largestClosed (closestState preliminary chi) chi
-            | otherwise = trace "otherwise" $ (min prelimClosestA childsCloseestA, max prelimClosestA childsCloseestA)  -- Additive rule 3
+                then chi
+                else largestClosed (closestState preliminary chi) chi
+            | otherwise = (min prelimClosestA childsCloseestA, max prelimClosestA childsCloseestA)  -- Additive rule 3
 
 
 computeFinalDiscrete :: EncodableStaticCharacter c

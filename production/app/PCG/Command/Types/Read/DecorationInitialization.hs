@@ -20,16 +20,16 @@ import           Analysis.Parsimony.Additive.Internal
 import           Analysis.Parsimony.Fitch.Internal
 import           Analysis.Parsimony.Sankoff.Internal
 import           Analysis.Parsimony.Dynamic.DirectOptimization
-import           Analysis.Parsimony.Dynamic.DirectOptimization.FFI
+--import           Analysis.Parsimony.Dynamic.DirectOptimization.FFI
 
 import           Bio.Character
 import           Bio.Character.Decoration.Additive
-import           Bio.Character.Decoration.Continuous
-import           Bio.Character.Decoration.Discrete
+--import           Bio.Character.Decoration.Continuous
+--import           Bio.Character.Decoration.Discrete
 import           Bio.Character.Decoration.Dynamic
 import           Bio.Character.Decoration.Fitch
 import           Bio.Character.Decoration.Metric
-import           Bio.Character.Decoration.NonMetric 
+--import           Bio.Character.Decoration.NonMetric
 
 --import           Bio.Character.Encodable
 --import           Bio.Character.Exportable
@@ -53,13 +53,13 @@ import           Control.Lens
 --import           Control.Arrow                     ((&&&))
 --import           Control.Applicative               ((<|>))
 --import           Data.Alphabet
-import           Data.Bifunctor                    (first, second)
+import           Data.Bifunctor                    (second)
 --import           Data.Foldable
 --import qualified Data.IntSet                as IS
 import           Data.Key
 --import           Data.List                         (transpose, zip4)
 import           Data.List.NonEmpty                (NonEmpty( (:|) ))
-import qualified Data.List.NonEmpty         as NE
+--import qualified Data.List.NonEmpty         as NE
 --import           Data.List.Utility                 (duplicates)
 --import           Data.Map                          (Map, intersectionWith, keys)
 --import qualified Data.Map                   as Map
@@ -73,10 +73,10 @@ import qualified Data.List.NonEmpty         as NE
 --import           Data.MonoTraversable
 --import           Data.Vector                       (Vector)
 --import           PCG.Command.Types.Read.Unification.UnificationError
---import           PCG.SearchState 
+--import           PCG.SearchState
 import           Prelude                    hiding (lookup, zip, zipWith)
 
-import Debug.Trace
+--import Debug.Trace
 
 
 {-
@@ -99,7 +99,7 @@ initializeDecorations2 (PhylogeneticSolution forests) = PhylogeneticSolution $ f
         id2
         (g    fitchPostOrder)
         (g additivePostOrder)
-        (g adaptiveDirectOptimizationPostOrder)  
+        (g adaptiveDirectOptimizationPostOrder)
       where
         g _  Nothing  [] = error $ "Uninitialized leaf node. This is bad!"
         g h (Just  v) [] = h v []
@@ -113,18 +113,18 @@ initializeDecorations2 (PhylogeneticSolution forests) = PhylogeneticSolution $ f
             pairwiseAlignmentFunction = chooseDirectOptimizationComparison dec kidDecs
 
 
-{-                                                              
+{-
         postOrderTransformation parentalNode childNodes =
           PNode
-          { nodeDecorationDatum = (nodeDecorationDatum parentalNode) 
+          { nodeDecorationDatum = (nodeDecorationDatum parentalNode)
           , sequenceDecoration  = postOrderLogic (sequenceDecoration parentalNode) (sequenceDecoration <$> childNodes)
-          } 
+          }
 
         preOrderTransformation parentalNode childNodes =
           PNode
-          { nodeDecorationDatum = (nodeDecorationDatum parentalNode) 
+          { nodeDecorationDatum = (nodeDecorationDatum parentalNode)
           , sequenceDecoration  = preOrderLogic (sequenceDecoration parentalNode) (second sequenceDecoration <$> childNodes)
-          } 
+          }
 -}
 -}
 {--}
@@ -136,15 +136,15 @@ initializeDecorations (PhylogeneticSolution forests) = PhylogeneticSolution $ fm
       where
         postOrderTransformation parentalNode childNodes =
           PNode
-          { nodeDecorationDatum = (nodeDecorationDatum parentalNode) 
+          { nodeDecorationDatum = (nodeDecorationDatum parentalNode)
           , sequenceDecoration  = postOrderLogic (sequenceDecoration parentalNode) (sequenceDecoration <$> childNodes)
-          } 
+          }
 
         preOrderTransformation parentalNode childNodes =
           PNode
-          { nodeDecorationDatum = (nodeDecorationDatum parentalNode) 
+          { nodeDecorationDatum = (nodeDecorationDatum parentalNode)
           , sequenceDecoration  = preOrderLogic (sequenceDecoration parentalNode) (second sequenceDecoration <$> childNodes)
-          } 
+          }
 
     postOrderLogic :: CharacterSequence
            UnifiedDiscreteCharacter
@@ -253,12 +253,12 @@ initializeDecorations (PhylogeneticSolution forests) = PhylogeneticSolution $ fm
         adaptiveDirectOptimizationPreOrder dec kidDecs = directOptimizationPreOrder pairwiseAlignmentFunction dec kidDecs
           where
             pairwiseAlignmentFunction = chooseDirectOptimizationComparison dec $ snd <$> kidDecs
-       
+
 {--}
 
 chooseDirectOptimizationComparison :: ( SimpleDynamicDecoration d  c
                                       , SimpleDynamicDecoration d' c
-                                      , Exportable c
+                                      {- , Exportable c -}
                                       )
                                    => d
                                    -> [d']
@@ -307,7 +307,7 @@ data FracturedParseResult
 
 
 instance Show FracturedParseResult where
-    show fpr = unlines 
+    show fpr = unlines
         [ "FPR"
         , "  { parsedChars   = " <> show (parsedChars fpr)
         , "  , parsedMetas   = " <> show (parsedMetas fpr)
@@ -316,7 +316,7 @@ instance Show FracturedParseResult where
         , "  , sourceFile    = " <> show (sourceFile  fpr)
         , "  }"
         ]
-    
+
 
 masterUnify' :: [FracturedParseResult] -> Either UnificationError (Solution DAG)
 masterUnify' = undefined --rectifyResults
@@ -358,7 +358,7 @@ rectifyResults2 fprs =
     -- Step 8: Collect the parsed forests to be merged
     suppliedForests :: [PhylogeneticForest ParserTree]
     suppliedForests = foldMap toList . catMaybes $ parsedForests <$> allForests
-      
+
     -- Step 9: Convert topological forests to DAGs (using reference indexing from #7 results)
     dagForest       =
         case (null suppliedForests, null charSeqs) of
@@ -376,7 +376,7 @@ rectifyResults2 fprs =
           where
             blockTransform = hexmap f f f f f f
             f = const Nothing
-        
+
         singletonComponent (label, datum) = PhylogeneticForest . pure . PDAG $ unfoldDAG rootLeafGen True
           where
             rootLeafGen x
@@ -396,7 +396,7 @@ rectifyResults2 fprs =
                   Nothing    -> PNode "HTU" Nothing
                   Just label -> PNode label $ label `lookup` charMapping
 -}
--- Omitted from old unifcation process            
+-- Omitted from old unifcation process
 --    combinedData    = Solution (HM.fromList $ assocs charSeqs) combinedMetadata dagForests
     -- Step 9:  TODO: Node encoding
 --    encodedSolution = encodeSolution combinedData
@@ -427,7 +427,7 @@ rectifyResults2 fprs =
         f (ys, fpr) = (\x -> (x, fpr)) <$> ys
 
 
--- | 
+-- |
 -- Joins the sequences of a fractured parse result. This requires several
 -- sequential steps. Each fractured parse result will be placed into a seperate
 -- character block by default. We collapse and merge these seperate parse results
@@ -441,7 +441,7 @@ rectifyResults2 fprs =
 --   character. We assume that the fractured parse result alphabet that is
 --   supplied is of equal length to the selected TCM dimension. This assumption
 --   should be safe, though it is the burden of the caller to ensure this input
---   invariant. 
+--   invariant.
 --
 -- * Afterwards we attempt to reduce the alphabet and TCMs by looking for
 --   symbols present in the alphabet that do not appear in any input character.
@@ -454,7 +454,7 @@ rectifyResults2 fprs =
 joinSequences2 :: Foldable t => t FracturedParseResult -> Map String UnifiedCharacterSequence
 joinSequences2 = collapseAndMerge . reduceAlphabets . deriveCorrectTCMs . deriveCharacterNames
   where
-    
+
     -- We do this to correctly construct the CharacterNames.
     deriveCharacterNames :: Foldable t
                          => t FracturedParseResult
@@ -513,7 +513,7 @@ joinSequences2 = collapseAndMerge . reduceAlphabets . deriveCorrectTCMs . derive
                   |    v `notElem` observedSymbols
                     && v /= gapSymbol suppliedAlphabet = IS.singleton k
                   | otherwise = mempty
-                  
+
             suppliedAlphabet      = alphabet charMetadata
             reducedAlphabet       =
                 case alphabetStateNames suppliedAlphabet of
@@ -548,7 +548,7 @@ joinSequences2 = collapseAndMerge . reduceAlphabets . deriveCorrectTCMs . derive
             inBoth         = intersectionWith (<>) prevMapping currMapping-- oldTreeChars nextTreeChars
             inOnlyCurr     =  prepend prevPad  <$> getUnique currMapping prevMapping
             inOnlyPrev     = (<>      currPad) <$> getUnique prevMapping currMapping
-        
+
             getUnique x y = x `Map.restrictKeys` (lhs `Set.difference` rhs)
               where
                 lhs = Set.fromList $ keys x
@@ -573,14 +573,14 @@ joinSequences2 = collapseAndMerge . reduceAlphabets . deriveCorrectTCMs . derive
                     staticCharacter   = Just $ toDiscreteCharacterDecoration charName charWeight specifiedAlphabet tcm staticTransform charMay
                     dynamicTransform  = maybe (Missing alphabetLength) (encodeStream specifiedAlphabet)
                     dynamicCharacter  = Just $ toDynamicCharacterDecoration  charName charWeight specifiedAlphabet tcm dynamicTransform charMay
-                        
+
 
             -- Necessary for mixing [] with NonEmpty
             prepend :: [a] -> NonEmpty a -> NonEmpty a
             prepend list ne =
               case list of
                 []   -> ne
-                x:xs -> x :| (xs <> toList ne) 
+                x:xs -> x :| (xs <> toList ne)
 
 
 fromTreeOnlyFile :: FracturedParseResult -> Bool
