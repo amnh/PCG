@@ -38,6 +38,31 @@ int getCost(packedChar elem1, packedChar elem2, costMatrix_p tcm, size_t alphSiz
     return cost;
 }
 
+int getCostAndMedian(packedChar elem1, packedChar elem2, packedChar retElem, costMatrix_p tcm, size_t alphSize){
+    // Need to create new pointers, because of copying into cost matrix.
+    // TODO: valgrind this.
+    packedChar *packedElemRet = (packedChar*) malloc(sizeof(packedChar));
+    packedChar *packedElem1   = (packedChar*) malloc(sizeof(packedChar));
+    packedChar *packedElem2   = (packedChar*) malloc(sizeof(packedChar));
+
+    *packedElemRet = CANONICAL_ZERO;
+    *packedElem1   = elem1;
+    *packedElem2   = elem2;
+
+    printPackedChar(packedElem1, 1, alphSize);
+    printPackedChar(packedElem2, 1, alphSize);
+
+    dcElement_t retElem = { alphSize, packedElemRet };
+    dcElement_t dcElem1 = { alphSize, packedElem1 };
+    dcElement_t dcElem2 = { alphSize, packedElem2 };
+
+    int cost = call_getSetCost_C(tcm, &dcElem1, &dcElem2, &retElem);
+
+    free
+
+    return cost;
+}
+
 // costMatrix_p getCostMatrix(costMatrix_p untyped_self) {
 //     return (costMatrix_p) untyped_self;
 // }
