@@ -499,7 +499,7 @@ characterStateChar = oneOf (toList discreteStateValues)
 
 -- | The only 64 (case-insensitive) valid state values for a TNT file.
 discreteStateValues :: Vector Char
-discreteStateValues = V.fromList $ keys deserializeStateDiscrete
+discreteStateValues = V.fromList $ mconcat [['0'..'9'], ['A'..'Z'], ['a'..'z'], "-", "?"]
 
 
 -- | The only valid state values for a DNA character.
@@ -522,7 +522,7 @@ deserializeStateDiscrete :: Map Char TntDiscreteCharacter
 deserializeStateDiscrete = insert '?' allBits core
   where
     allBits = foldl (.|.) zeroBits core
-    core    = M.fromList $ zip (mconcat [['0'..'9'], ['A'..'Z'], ['a'..'z'], "-"]) (bit <$> [0..])
+    core    = M.fromList $ zip (toList discreteStateValues) (bit <$> [0..])
 
 
 -- | A map for serializing dna state chatracters.

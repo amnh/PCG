@@ -16,6 +16,7 @@
 
 module File.Format.TNT.Command.Cost where
 
+import Data.Foldable
 import Data.Functor             (($>))
 import Data.List.NonEmpty       (NonEmpty)
 import Data.Matrix.NotStupid    (Matrix,matrix)
@@ -72,7 +73,7 @@ condenseToMatrix costs = matrix dimensions dimensions value
       where
         f tc = max (maximum $ origins tc) (maximum $ terminals tc)
 
-    value (i,j) = fromMaybe 1 $ foldl f Nothing costs
+    value (i,j) = fromMaybe 1 $ foldl' f Nothing costs
       where
         i' = discreteStateValues ! i
         j' = discreteStateValues ! j
@@ -84,7 +85,7 @@ condenseToMatrix costs = matrix dimensions dimensions value
             surject = j' `elem` origins x && i' `elem` terminals x
 
     indexOf :: (Eq a, Foldable f) => a -> f a -> Maybe Int
-    indexOf e = snd . foldl f (0, Nothing)
+    indexOf e = snd . foldl' f (0, Nothing)
       where
         f a@(_, Just _ ) _ = a
         f   (i, Nothing) x

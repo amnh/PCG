@@ -62,7 +62,7 @@ import           PCG.Command.Types.Read.Unification.UnificationError
 --import           PCG.SearchState 
 import           Prelude                    hiding (lookup, zip, zipWith)
 
-import Debug.Trace
+-- import Debug.Trace
 
 
 data FracturedParseResult
@@ -406,23 +406,12 @@ joinSequences2 = collapseAndMerge . performMetadataTransformations . deriveCorre
                      where
                        reduceTokens = foldMapWithKey (\k v -> if k `oelem` missingSymbolIndicies then [] else [v])
 
-                   indices = otoList missingSymbolIndicies
-
                    reducedTCM =
                        case structure of
                          NonAdditive -> nonAdditiveDistanceFunction
                          Additive    -> additiveDistanceFunction
-                         _           -> let !tcm' = TCM.generate reducedDimension genFunction
+                         _           -> let !tcm' = TCM.reduceTcm missingSymbolIndicies tcm
                                         in (\i j -> toEnum . fromEnum $ tcm' TCM.! (i,j))
-                     where
-                       reducedDimension  = TCM.size tcm - olength missingSymbolIndicies
-                       genFunction (i,j) = tcm TCM.! (i', j')
-                         where
-                           i' = i + iOffset
-                           j' = j + jOffset
-                           iOffset = length $ filter (<=i) indices
-                           jOffset = length $ filter (<=j) indices
-                    
 
         updateMetadataInformation :: (Alphabet String, Word -> Word -> Word)
                                  -> (Maybe ParsedChar, ParsedCharacterMetadata, TCM, TCMStructure, CharacterName)

@@ -41,6 +41,9 @@ import           File.Format.VertexEdgeRoot
 import           Prelude                          hiding (zip, zipWith)
 
 
+-- import Debug.Trace
+
+
 -- | An intermediate composite type for parse result coercion.
 data ParsedCharacterMetadata
    = ParsedCharacterMetadata

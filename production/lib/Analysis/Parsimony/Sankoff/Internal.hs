@@ -106,8 +106,8 @@ updateCostVector _parentDecoration (leftChild:|rightChild:_) = returnNodeDecorat
     where
         (costVector, dirCostVector, charCost) = foldr findMins initialAccumulator range
         range = [0 .. toEnum $ length (leftChild ^. characterAlphabet) - 1]
-        initialAccumulator     = ([], ([],[]), infinity)  -- (min cost per state, (leftMin, rightMin), overall minimum)
-        returnNodeDecoration   = extendDiscreteToSankoff leftChild costVector dirCostVector $ toWord charCost
+        initialAccumulator   = ([], ([],[]), infinity)  -- (min cost per state, (leftMin, rightMin), overall minimum)
+        returnNodeDecoration = extendDiscreteToSankoff leftChild costVector dirCostVector $ toWord charCost
 
         findMins charState (stateMins, (leftMin, rightMin), curMin) = returnVal
              where
@@ -134,7 +134,7 @@ updateDirectionalMins :: EncodableStaticCharacter c -- ERIC: I made this more re
                       -> SankoffOptimizationDecoration c
                       -> [ExtendedNatural]
                       -> SankoffOptimizationDecoration c
-updateDirectionalMins parentDecoration childDecoration parentMins  = childDecoration & discreteCharacter .~ resultMedian
+updateDirectionalMins parentDecoration childDecoration parentMins = childDecoration & discreteCharacter .~ resultMedian
     where
         parentCostVector    = parentDecoration ^. characterCostVector
         parentCharacterCost = parentDecoration ^. characterCost
@@ -164,10 +164,12 @@ updateDirectionalMins parentDecoration childDecoration parentMins  = childDecora
 --
 -- Note: We can throw away the medians that come back from the tcm here because we're building medians:
 -- the possible character is looped over all available characters, and there's an outer loop which sends in each possible character.
-calcCostPerState ::EncodedAmbiguityGroupContainer c => Word
-                                                    -> SankoffOptimizationDecoration c
-                                                    -> SankoffOptimizationDecoration c
-                                                    -> (ExtendedNatural, ExtendedNatural)
+calcCostPerState
+    :: EncodedAmbiguityGroupContainer c
+    => Word
+    -> SankoffOptimizationDecoration c
+    -> SankoffOptimizationDecoration c
+    -> (ExtendedNatural, ExtendedNatural)
 calcCostPerState inputCharState leftChildDec rightChildDec = retVal
     where
         -- Using keys, fold over alphabet states as Ints. Look up the transition from inputCharState to that alphabet state.
