@@ -114,7 +114,7 @@ updateCostVector _parentDecoration (leftChild:|rightChild:_) = returnNodeDecorat
                  charMin = if stateMin < curMin
                            then stateMin
                            else curMin
-                 stateMin                      = leftChildMin + rightChildMin
+                 stateMin                      = {- trace ("stateMins: " ++ show (leftChildMin, rightChildMin, leftChildMin + rightChildMin)) $ -} leftChildMin + rightChildMin
                  (leftChildMin, rightChildMin) = calcCostPerState charState leftChild rightChild
                  returnVal                     = (stateMin : stateMins, (leftChildMin : leftMin, rightChildMin : rightMin), charMin)
 
@@ -164,12 +164,11 @@ updateDirectionalMins parentDecoration childDecoration parentMins = childDecorat
 --
 -- Note: We can throw away the medians that come back from the tcm here because we're building medians:
 -- the possible character is looped over all available characters, and there's an outer loop which sends in each possible character.
-calcCostPerState
-    :: EncodedAmbiguityGroupContainer c
-    => Word
-    -> SankoffOptimizationDecoration c
-    -> SankoffOptimizationDecoration c
-    -> (ExtendedNatural, ExtendedNatural)
+calcCostPerState :: EncodedAmbiguityGroupContainer c
+                 => Word
+                 -> SankoffOptimizationDecoration c
+                 -> SankoffOptimizationDecoration c
+                 -> (ExtendedNatural, ExtendedNatural)
 calcCostPerState inputCharState leftChildDec rightChildDec = retVal
     where
         -- Using keys, fold over alphabet states as Ints. Look up the transition from inputCharState to that alphabet state.
@@ -177,18 +176,24 @@ calcCostPerState inputCharState leftChildDec rightChildDec = retVal
         -- calcCostPerState is called inside another loop, so here we loop only over the child states.
         retVal = foldlWithKey' findMins initialAccumulator zippedCostList
         findMins :: (ExtendedNatural, ExtendedNatural) -> Int -> (ExtendedNatural, ExtendedNatural) -> (ExtendedNatural, ExtendedNatural)
-        findMins (initLeftMin, initRightMin) childCharState (accumulatedLeftCharCost, accumulatedRightCharCost) = (leftMin, rightMin)
+        findMins (initLeftMin, initRightMin) childCharState (accumulatedLeftCharCost, accumulatedRightCharCost) = trace ("costPer: " ++ show (inputCharState, initLeftMin, initRightMin, transitionCost, leftMin, rightMin, leftMin + rightMin)) $ (leftMin, rightMin)
             where
-                leftMin             = min curLeftMin  initLeftMin
-                rightMin            = min curRightMin initRightMin
-                curLeftMin          = trace (unwords ["left : ", show len, show inputCharState, show childCharState, show  accumulatedLeftCharCost, show  transitionCost, show showableTCM]) $  transitionCost + accumulatedLeftCharCost
-                curRightMin         = trace (unwords ["right: ", show len, show inputCharState, show childCharState, show accumulatedRightCharCost, show transitionCost, show showableTCM]) $ transitionCost + accumulatedRightCharCost
+                leftMin         = trace ("left:  " ++ show (inputCharState, childCharState, initLeftMin,  transitionCost, accumulatedLeftCharCost,  curLeftMin))  $  min curLeftMin  initLeftMin
+                rightMin        = trace ("Right: " ++ show (inputCharState, childCharState, initRightMin, transitionCost, accumulatedRightCharCost, curRightMin)) $  min curRightMin initRightMin
+                curLeftMin      = transitionCost + accumulatedLeftCharCost
+                curRightMin     = transitionCost + accumulatedRightCharCost
                 transitionCost  = fromWord . scm inputCharState $ toEnum childCharState
 
         initialAccumulator = (infinity, infinity)
         zippedCostList     = zip (leftChildDec ^. characterCostVector) (rightChildDec ^. characterCostVector)
+        scm                = leftChildDec ^. symbolChangeMatrix
 
-        len       = symbolCount $ leftChildDec ^. discreteCharacter
+        {- FOR PRINTING/DEBUGGING
+        len         = symbolCount $ leftChildDec ^. discreteCharacter
         showableTCM = TCM.generate len g
-        g (i,j) = fromEnum $ scm i j
-        scm = leftChildDec ^. symbolChangeMatrix
+        g (i,j)     = fromEnum $ scm i j
+        scm         = leftChildDec ^. symbolChangeMatrix
+        -}
+
+{- trace (unwords ["right: ", show len, show inputCharState, show childCharState, show accumulatedRightCharCost, show transitionCost, show showableTCM]) $ -}
+{- trace (unwords ["left : ", show len, show inputCharState, show childCharState, show  accumulatedLeftCharCost, show  transitionCost, show showableTCM]) $ -}
