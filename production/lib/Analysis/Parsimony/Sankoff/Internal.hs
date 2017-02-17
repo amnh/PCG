@@ -176,10 +176,10 @@ calcCostPerState inputCharState leftChildDec rightChildDec = retVal
         -- calcCostPerState is called inside another loop, so here we loop only over the child states.
         retVal = foldlWithKey' findMins initialAccumulator zippedCostList
         findMins :: (ExtendedNatural, ExtendedNatural) -> Int -> (ExtendedNatural, ExtendedNatural) -> (ExtendedNatural, ExtendedNatural)
-        findMins (initLeftMin, initRightMin) childCharState (accumulatedLeftCharCost, accumulatedRightCharCost) = trace ("costPer: " ++ show (inputCharState, initLeftMin, initRightMin, transitionCost, leftMin, rightMin, leftMin + rightMin)) $ (leftMin, rightMin)
+        findMins (initLeftMin, initRightMin) childCharState (accumulatedLeftCharCost, accumulatedRightCharCost) = {- trace ("costPer: " ++ show (inputCharState, initLeftMin, initRightMin, transitionCost, leftMin, rightMin, leftMin + rightMin)) $ -} (leftMin, rightMin)
             where
-                leftMin         = trace ("left:  " ++ show (inputCharState, childCharState, initLeftMin,  transitionCost, accumulatedLeftCharCost,  curLeftMin))  $  min curLeftMin  initLeftMin
-                rightMin        = trace ("Right: " ++ show (inputCharState, childCharState, initRightMin, transitionCost, accumulatedRightCharCost, curRightMin)) $  min curRightMin initRightMin
+                leftMin         = trace (unwords ["left : ", show len, show inputCharState, show childCharState, show  accumulatedLeftCharCost,  show  transitionCost, show showableTCM]) $  min curLeftMin  initLeftMin
+                rightMin        = trace (unwords ["right: ", show len, show inputCharState, show childCharState, show  accumulatedRightCharCost, show  transitionCost, show showableTCM]) $  min curRightMin initRightMin
                 curLeftMin      = transitionCost + accumulatedLeftCharCost
                 curRightMin     = transitionCost + accumulatedRightCharCost
                 transitionCost  = fromWord . scm inputCharState $ toEnum childCharState
@@ -188,12 +188,11 @@ calcCostPerState inputCharState leftChildDec rightChildDec = retVal
         zippedCostList     = zip (leftChildDec ^. characterCostVector) (rightChildDec ^. characterCostVector)
         scm                = leftChildDec ^. symbolChangeMatrix
 
-        {- FOR PRINTING/DEBUGGING
+
         len         = symbolCount $ leftChildDec ^. discreteCharacter
         showableTCM = TCM.generate len g
         g (i,j)     = fromEnum $ scm i j
-        scm         = leftChildDec ^. symbolChangeMatrix
-        -}
+
 
 {- trace (unwords ["right: ", show len, show inputCharState, show childCharState, show accumulatedRightCharCost, show transitionCost, show showableTCM]) $ -}
 {- trace (unwords ["left : ", show len, show inputCharState, show childCharState, show  accumulatedLeftCharCost, show  transitionCost, show showableTCM]) $ -}
