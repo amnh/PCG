@@ -399,18 +399,20 @@ joinSequences2 = collapseAndMerge . performMetadataTransformations . deriveCorre
                          | otherwise = mempty
                   
                    suppliedAlphabet      = alphabet m
+                   reducedAlphabet       = suppliedAlphabet
+{-
                    reducedAlphabet       =
                        case alphabetStateNames suppliedAlphabet of
                          [] -> fromSymbols               . reduceTokens $      alphabetSymbols suppliedAlphabet
                          ys -> fromSymbolsWithStateNames . reduceTokens $ zip (alphabetSymbols suppliedAlphabet) ys
                      where
                        reduceTokens = foldMapWithKey (\k v -> if k `oelem` missingSymbolIndicies then [] else [v])
-
+-}
                    reducedTCM =
                        case structure of
                          NonAdditive -> nonAdditiveDistanceFunction
                          Additive    -> additiveDistanceFunction
-                         _           -> let !tcm' = TCM.reduceTcm missingSymbolIndicies tcm
+                         _           -> let !tcm' = tcm -- TCM.reduceTcm missingSymbolIndicies tcm
                                         in (\i j -> toEnum . fromEnum $ tcm' TCM.! (i,j))
 
         updateMetadataInformation :: (Alphabet String, Word -> Word -> Word)
