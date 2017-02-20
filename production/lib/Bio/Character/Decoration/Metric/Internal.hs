@@ -119,17 +119,22 @@ instance EncodableStaticCharacter c => SimpleDiscreteCharacterDecoration (Metric
 instance EncodableStaticCharacter c => MetricCharacterDecoration (MetricDecorationInitial c) c where
 
 
-
 -- |
 -- A concrete type representing the results of performing Sankoff's algorithm.
 data SankoffOptimizationDecoration c
    = SankoffOptimizationDecoration
-   { sankoffDirectionalMins :: ([ExtendedNatural], [ExtendedNatural])
-   , sankoffMinCostVector   ::  [ExtendedNatural]
-   , sankoffMinCost         :: Word
-   , sankoffMetadataField   :: DiscreteWithTCMCharacterMetadataDec c
-   , sankoffCharacterField  :: c
+   { sankoffMinStateTuple  :: ([StateContributionList], [StateContributionList]) -- tuple of (a,a) where a is a per-parent-state list of lists of child
+                                                                                 -- states that contributed to the minimum cost of that state
+   , sankoffMinCostVector  ::  [ExtendedNatural]                                 -- minimum total cost per state (left + right)
+   , sankoffMinCost        :: Word                                               -- overall minimum cost for all states
+   , sankoffMetadataField  :: DiscreteWithTCMCharacterMetadataDec c
+   , sankoffCharacterField :: c                                                  -- Bit Vector version of median character
+   , sankoffIsLeaf         :: Bool
    }
+
+-- | A list of states on the child that contribute to the lowest score on each state in the parent
+-- Used to simplify? SankoffOptimizationDecoration
+type StateContributionList = [Word]
 
 
 instance EncodableStreamElement c => Show (SankoffOptimizationDecoration c) where
@@ -195,15 +200,21 @@ instance HasCharacterCostVector (SankoffOptimizationDecoration c) [ExtendedNatur
 
 
 -- | (✔)
-instance HasDirectionalMinVector (SankoffOptimizationDecoration c) ([ExtendedNatural], [ExtendedNatural]) where
+instance HasStateMinTuple (SankoffOptimizationDecoration c) ([StateContributionList], [StateContributionList]) where
 
-    directionalMinVector = lens sankoffDirectionalMins (\e x -> e { sankoffDirectionalMins = x })
+    minStateTuple = lens sankoffMinStateTuple (\e x -> e { sankoffMinStateTuple = x })
 
 
 -- | (✔)
 instance HasCharacterCost (SankoffOptimizationDecoration c) Word where
 
     characterCost = lens sankoffMinCost (\e x -> e { sankoffMinCost = x })
+
+
+-- | (✔)
+instance HasIsLeaf (SankoffOptimizationDecoration c) Bool where
+
+    isLeaf = lens sankoffIsLeaf (\e x -> e { sankoffIsLeaf = x })
 
 
 -- | (✔)
@@ -234,14 +245,15 @@ instance EncodableStaticCharacter c => SankoffDecoration (SankoffOptimizationDec
 instance EncodableStaticCharacter c => DiscreteExtensionSankoffDecoration (SankoffOptimizationDecoration c) c where
 
 --    extendDiscreteToSankoff :: DiscreteCharacterDecoration x c => x -> [Word] -> ([Word], [Word]) -> Word -> s
-    extendDiscreteToSankoff subDecoration costVector directionVector cost =
+    extendDiscreteToSankoff subDecoration costVector childMinStates cost newMedian leaf =
 
         SankoffOptimizationDecoration
-        { sankoffDirectionalMins = directionVector
-        , sankoffMinCostVector   = costVector
-        , sankoffMinCost         = cost
-        , sankoffMetadataField   = metadataValue
-        , sankoffCharacterField  = subDecoration ^. discreteCharacter
+        { sankoffMinStateTuple  = childMinStates
+        , sankoffMinCostVector  = costVector
+        , sankoffMinCost        = cost
+        , sankoffMetadataField  = metadataValue
+        , sankoffCharacterField = newMedian
+        , sankoffIsLeaf         = leaf
         }
       where
         alphabetValue   = subDecoration ^. characterAlphabet

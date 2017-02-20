@@ -31,7 +31,7 @@ class DiscreteCharacterDecoration s a => MetricCharacterDecoration s a | s -> a 
 class ( DiscreteCharacterDecoration s c
       , HasCharacterCost        s Word
       , HasCharacterCostVector  s  [ExtendedNatural]
-      , HasDirectionalMinVector s ([ExtendedNatural], [ExtendedNatural])
+      , HasStateMinTuple s ([[Word]], [[Word]])
       ) => SankoffDecoration s c | s -> c where
 
 
@@ -42,7 +42,14 @@ class ( DiscreteCharacterDecoration s c
 class ( SankoffDecoration s c
       ) => DiscreteExtensionSankoffDecoration s c | s -> c where
 
-    extendDiscreteToSankoff :: DiscreteCharacterDecoration x c => x -> [ExtendedNatural] -> ([ExtendedNatural], [ExtendedNatural]) -> Word -> s
+    extendDiscreteToSankoff :: DiscreteCharacterDecoration x c
+                            => x
+                            -> [ExtendedNatural]
+                            -> ([[Word]], [[Word]])
+                            -> Word
+                            -> c
+                            -> Bool
+                            -> s
 
 
 -- |
@@ -54,9 +61,9 @@ class HasCharacterCostVector s a | s -> a where
 
 
 -- |
--- A 'Lens' for the 'directionalMinVector' field.
-class HasDirectionalMinVector s a | s -> a where
+-- A 'Lens' for the 'minStateTuple' field.
+class HasStateMinTuple s a | s -> a where
 
-    {-# MINIMAL directionalMinVector #-}
-    directionalMinVector :: Lens' s a
+    {-# MINIMAL minStateTuple #-}
+    minStateTuple :: Lens' s a
 

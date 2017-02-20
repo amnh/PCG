@@ -30,6 +30,7 @@ import Data.Bits
 import Data.ExtendedNatural
 import Data.Key
 import Data.List.NonEmpty (NonEmpty( (:|) ))
+import Data.Monoid        ((<>))
 import qualified Data.TCM as TCM
 import Data.Word
 import Prelude hiding (zip)
@@ -45,7 +46,7 @@ sankoffPostOrder :: DiscreteCharacterDecoration d c
 sankoffPostOrder charDecoration xs =
     case xs of
         []   -> initializeCostVector charDecoration              -- is a leaf
-        y:ys -> updateCostVector     charDecoration (y:|ys)
+        y:ys -> {- trace "post order" $ -} updateCostVector charDecoration (y:|ys)
 
 
 -- | Used on the pre-order (i.e. second) traversal. Either calls 'initializeDirVector' on root or updateDirectionalMins.
@@ -54,13 +55,32 @@ sankoffPreOrder :: EncodableStaticCharacter c
                 => SankoffOptimizationDecoration c
                 -> [(Word, SankoffOptimizationDecoration c)]
                 -> SankoffOptimizationDecoration c
-sankoffPreOrder childDecoration []                                 = childDecoration -- is a root
-sankoffPreOrder childDecoration ((whichChild, parentDecoration):_) = resultDecoration $
-    case whichChild of
+sankoffPreOrder childDecoration [] = childDecoration & discreteCharacter .~ newChar-- is a root
+    where
+        childMins   = childDecoration ^. characterCostVector
+        overallMin  = childDecoration ^. characterCost
+        emptyMedian = emptyStatic $ childDecoration ^. discreteCharacter
+        newChar     = foldlWithKey' setState emptyMedian childMins
+
+        setState acc pos childMin
+            | toWord childMin == overallMin = trace (show $ unwords ["root:"
+                                                                    , show overallMin
+                                                                    , show pos
+                                                                    , show childMin
+                                                                    ]
+                                                    ) $ acc `setBit` pos
+            | otherwise                     = {- trace (show $ unwords ["nope:"
+                                                                    , show overallMin
+                                                                    , show pos
+                                                                    , show childMin
+                                                                    ]
+                                                    ) $ -} acc
+sankoffPreOrder childDecoration ((whichChild, parentDecoration):_) =  trace "pre order" $ resultDecoration $
+    case traceShowId whichChild of
         0 -> fst
         _ -> snd
     where
-        resultDecoration f = updateDirectionalMins parentDecoration childDecoration . f $ parentDecoration ^. directionalMinVector
+        resultDecoration f = updateDirectionalMins parentDecoration childDecoration $ f (parentDecoration ^. minStateTuple)
 
 
 -- | Before post-order can actually occur, must initialize leaf vectors with values as such:
@@ -77,15 +97,14 @@ initializeCostVector inputDecoration = returnChar
     where
         -- assuming metricity
         inputChar = inputDecoration ^. discreteCharacter
-        len       = symbolCount $ inputChar
-        range     = [0..len-1]
+--        len       = symbolCount $ inputChar
+        range     = [0..5]
         costList  = fmap f range
             where
                 f i
                     | inputChar `testBit` i = minBound
                     | otherwise             = infinity -- Change this if it's actually Doubles.
-        returnChar = extendDiscreteToSankoff inputDecoration costList ([],[]) minBound
-
+        returnChar = extendDiscreteToSankoff inputDecoration costList ([],[]) minBound inputChar True
 
 
 -- |
@@ -96,27 +115,46 @@ initializeCostVector inputDecoration = returnChar
 -- state from the characters on each of the left and right children. Stores those mins as a tuple of lists.
 -- Likewise, for each state calculates its min (min_left + min_right), as well as the overall lowest min for all states.
 --
--- Assumes binary tree.
+-- This node is not a leaf node. Assumes binary tree.
 updateCostVector :: DiscreteCharacterDecoration d c
                  => d
                  -> NonEmpty (SankoffOptimizationDecoration c)
                  -> SankoffOptimizationDecoration c
 updateCostVector _parentDecoration (x:|[])                   = x                    -- Shouldn't be possible, but here for completion.
-updateCostVector _parentDecoration (leftChild:|rightChild:_) = returnNodeDecoration -- _Should_ be able to amend this to use non-binary children.
+updateCostVector _parentDecoration (leftChild:|rightChild:_) = returnNodeDecoration -- May? be able to amend this to use non-binary children.
     where
-        (costVector, dirCostVector, charCost) = foldr findMins initialAccumulator range
-        range = [0 .. toEnum $ length (leftChild ^. characterAlphabet) - 1]
+        (costVector, dirStateTuple, charCost) = foldr findMins initialAccumulator range
+        range = [0..5 :: Word]
+        -- leaf  = leftChild ^. isLeaf
         initialAccumulator   = ([], ([],[]), infinity)  -- (min cost per state, (leftMin, rightMin), overall minimum)
-        returnNodeDecoration = extendDiscreteToSankoff leftChild costVector dirCostVector $ toWord charCost
+        returnNodeDecoration = {- trace (show costVector) $ -} extendDiscreteToSankoff leftChild costVector dirStateTuple (toWord charCost) emptyMedian False
+        emptyMedian          = emptyStatic $ leftChild ^. discreteCharacter
 
-        findMins charState (stateMins, (leftMin, rightMin), curMin) = returnVal
+        findMins :: Word
+                 -> ([ExtendedNatural], ([StateContributionList], [StateContributionList]), ExtendedNatural)
+                 -> ([ExtendedNatural], ([StateContributionList], [StateContributionList]), ExtendedNatural)
+        findMins charState (stateMins, (accumulatedLeftChildStates, accumulatedRightChildStates), accMin) = returnVal
              where
-                 charMin = if stateMin < curMin
-                           then stateMin
-                           else curMin
-                 stateMin                      = {- trace ("stateMins: " ++ show (leftChildMin, rightChildMin, leftChildMin + rightChildMin)) $ -} leftChildMin + rightChildMin
-                 (leftChildMin, rightChildMin) = calcCostPerState charState leftChild rightChild
-                 returnVal                     = (stateMin : stateMins, (leftChildMin : leftMin, rightChildMin : rightMin), charMin)
+                 curMin = if stateMin < accMin
+                          then stateMin
+                          else accMin
+                 stateMin  = -- trace ("stateMins: " ++ show (leftMin, rightMin, leftMin + rightMin)) $
+                     leftMin + rightMin
+                 ((leftMin, leftChildRetStates), (rightMin, rightChildRetStates)) = calcCostPerState charState leftChild rightChild
+
+                 returnVal = {- trace (unlines [ "new left "
+                                            , show leftChildRetStates
+                                            , "acc left "
+                                            , show accumulatedLeftChildStates
+                                            , "new right"
+                                            , show rightChildRetStates
+                                            , "acc right"
+                                            , show accumulatedRightChildStates
+                                            , show stateMin
+                                            , show curMin
+                                            ]
+                                   ) $ -}
+                     (stateMin : stateMins, (leftChildRetStates : accumulatedLeftChildStates, rightChildRetStates : accumulatedRightChildStates), curMin)
 
 
 -- |
@@ -126,35 +164,40 @@ updateCostVector _parentDecoration (leftChild:|rightChild:_) = returnNodeDecorat
 -- using the minimum tuple in the parent to determine whether that character state can participate
 -- in the final median. Using the left child as a template, the character state is part of the median if,
 -- for some state in the parent,
--- parCharState_characterCost_left == childCharState_characterCost + TCM(childCharState, parCharState).
+-- parCharState_characterCost_left == childCharState_characterCost + TCM(parCharState, childCharState).
 --
 -- Used on second, pre-order, pass.
 updateDirectionalMins :: EncodableStaticCharacter c -- ERIC: I made this more restrictive to resolve the 'Cannot deduce EncodableStaticCharacter c from Bits c'
                       => SankoffOptimizationDecoration c
                       -> SankoffOptimizationDecoration c
-                      -> [ExtendedNatural]
+                      -> [StateContributionList]
                       -> SankoffOptimizationDecoration c
-updateDirectionalMins parentDecoration childDecoration parentMins = childDecoration & discreteCharacter .~ resultMedian
+updateDirectionalMins parentDecoration childDecoration childStateMinsFromParent = childDecoration & discreteCharacter .~ resultMedian
     where
-        parentCostVector    = parentDecoration ^. characterCostVector
-        parentCharacterCost = parentDecoration ^. characterCost
+        parentFinalMedian    = parentDecoration ^. discreteCharacter
+        -- parentOverallMin    = parentDecoration ^. characterCost
+        -- childStateCosts     = childDecoration  ^. characterCostVector
         emptyMedian         = emptyStatic $ parentDecoration ^. discreteCharacter
-        resultMedian        = foldlWithKey' someOtherFunctionThatNeedsName emptyMedian parentMins
 
-        someOtherFunctionThatNeedsName :: EncodableStaticCharacter c => c -> Int -> ExtendedNatural -> c
-        someOtherFunctionThatNeedsName acc parentCharState parentCharMin
-            | parentCharMin == fromWord parentCharacterCost = foldlWithKey' (buildMedian parentCharState) acc parentCostVector
-            | otherwise                                     = acc
+        -- scm                 = parentDecoration ^. symbolChangeMatrix
+        -- totalCost baseCost i j       = fromWord $ baseCost + tcmCost i j
+        -- tcmCost   i j       = scm (toEnum i) (toEnum j)
 
-        buildMedian :: EncodableStaticCharacter c => Int -> c -> Int -> ExtendedNatural -> c
-        buildMedian parentCharState acc childCharState charMin
-            | charMin == totalCost childCharState parentCharState = acc `setBit` fromEnum childCharState
-            | otherwise                                           = acc
+        --TODO: change directionalMins here to some sort of range; get rid of foldlWithKey
+        resultMedian        = if childDecoration ^. isLeaf
+                                  then {- trace ("leaf child mins" ++ show childStateMinsFromParent) $ -} childDecoration ^. discreteCharacter                                 -- discreteChar doesn't change
+                                  else {- trace ("internal node mins" ++ show childStateMinsFromParent) $ -} foldlWithKey' determineWhetherToIncludeState emptyMedian $ reverse childStateMinsFromParent  -- need to create new bit vector
 
-        scm = parentDecoration ^. symbolChangeMatrix
-
-        totalCost i j = fromWord $ parentCharacterCost + tcmCost i j
-        tcmCost   i j = scm (toEnum i) (toEnum j)
+        -- If this character state in the parent is one of the low-cost states, then add all states in child that can contribute
+        -- to this parent state.
+        determineWhetherToIncludeState :: EncodableStaticCharacter c => c -> Int-> StateContributionList -> c
+        determineWhetherToIncludeState acc parentCharState childStateMinList
+            | parentFinalMedian `testBit` parentCharState = {- trace (unwords ["set bits:", show parentCharState, show childStateMinList]) $ -}
+                                                              foldl setState acc childStateMinList
+            | otherwise                                   = {- trace ("nope: " ++ show (parentCharState)) $ -}
+                                                              acc
+        setState :: EncodableStaticCharacter c => c -> Word -> c
+        setState newMedian charState = {- trace (show charState) $ -} newMedian `setBit` (fromIntegral charState :: Int)
 
 
 -- | Take in a single character state as a Word---which represents an unambiguous character state on the parent---
@@ -168,31 +211,105 @@ calcCostPerState :: EncodedAmbiguityGroupContainer c
                  => Word
                  -> SankoffOptimizationDecoration c
                  -> SankoffOptimizationDecoration c
-                 -> (ExtendedNatural, ExtendedNatural)
-calcCostPerState inputCharState leftChildDec rightChildDec = retVal
+                 -> ((ExtendedNatural, StateContributionList), (ExtendedNatural, StateContributionList))
+calcCostPerState parentCharState leftChildDec rightChildDec = retVal
     where
-        -- Using keys, fold over alphabet states as Ints. Look up the transition from inputCharState to that alphabet state.
-        -- For each alphabet state the zipped cost list has the minimum accumulated costs for that character state in each child.
+        -- Using keys, fold over child alphabet states as Ints. Look up the transition from parentCharState to that alphabet state.
+        -- For each child alphabet state the zipped cost list has the minimum accumulated costs for that character state in each child.
         -- calcCostPerState is called inside another loop, so here we loop only over the child states.
         retVal = foldlWithKey' findMins initialAccumulator zippedCostList
-        findMins :: (ExtendedNatural, ExtendedNatural) -> Int -> (ExtendedNatural, ExtendedNatural) -> (ExtendedNatural, ExtendedNatural)
-        findMins (initLeftMin, initRightMin) childCharState (accumulatedLeftCharCost, accumulatedRightCharCost) = {- trace ("costPer: " ++ show (inputCharState, initLeftMin, initRightMin, transitionCost, leftMin, rightMin, leftMin + rightMin)) $ -} (leftMin, rightMin)
-            where
-                leftMin         = trace (unwords ["left : ", show len, show inputCharState, show childCharState, show  accumulatedLeftCharCost,  show  transitionCost, show showableTCM]) $  min curLeftMin  initLeftMin
-                rightMin        = trace (unwords ["right: ", show len, show inputCharState, show childCharState, show  accumulatedRightCharCost, show  transitionCost, show showableTCM]) $  min curRightMin initRightMin
-                curLeftMin      = transitionCost + accumulatedLeftCharCost
-                curRightMin     = transitionCost + accumulatedRightCharCost
-                transitionCost  = fromWord . scm inputCharState $ toEnum childCharState
-
-        initialAccumulator = (infinity, infinity)
+        initialAccumulator = ((infinity,[]), (infinity,[]))
         zippedCostList     = zip (leftChildDec ^. characterCostVector) (rightChildDec ^. characterCostVector)
         scm                = leftChildDec ^. symbolChangeMatrix
 
+        findMins :: ((ExtendedNatural, [Word]), (ExtendedNatural, [Word]))
+                 -> Int
+                 -> (ExtendedNatural, ExtendedNatural)
+                 -> ((ExtendedNatural, [Word]), (ExtendedNatural, [Word]))
+        findMins ((accumulatedLeftCharCost, originalLeftStates), (accumulatedRightCharCost, originalRightStates))
+                  childCharState
+                 (leftMinFromVector, rightMinFromVector) =
+                {- trace ("costPer: " ++ show (parentCharState, leftMin, rightMin, leftMin + rightMin)) $ -}
+                ((leftMin, minLeftStates), (rightMin, minRightStates))
+            where
+                (leftMin, minLeftStates)
+                    | curLeftMin < accumulatedLeftCharCost = {- trace (unwords [ "left min: "
+                                                                            , show parentCharState
+                                                                            , show childCharState
+                                                                            , show accumulatedLeftCharCost
+                                                                            , show transitionCost
+                                                                            , show curLeftMin
+                                                                            , show leftMinFromVector
+                                                                            , show originalLeftStates
+                                                                            ]
+                                                                   ) $ -}
+                        (curLeftMin, [toEnum childCharState])
+                    | curLeftMin == accumulatedLeftCharCost = {- trace (unwords [ "left eq : "
+                                                                             , show parentCharState
+                                                                             , show childCharState
+                                                                             , show accumulatedLeftCharCost
+                                                                             , show transitionCost
+                                                                             , show curLeftMin
+                                                                             , show leftMinFromVector
+                                                                             , show originalLeftStates
+                                                                             ]
+                                                                    ) $ -}
+                        (accumulatedLeftCharCost, (toEnum childCharState) : originalLeftStates)
+                    | otherwise = {- trace (unwords [ "left max: "
+                                                 , show parentCharState
+                                                 , show childCharState
+                                                 , show accumulatedLeftCharCost
+                                                 , show transitionCost
+                                                 , show curLeftMin
+                                                 , show leftMinFromVector
+                                                 , show originalLeftStates
+                                                 ]
+                                        ) $ -}
+                    (accumulatedLeftCharCost, originalLeftStates)
 
+                (rightMin, minRightStates)
+                     | curRightMin < accumulatedRightCharCost = {- trace (unwords [ "Right min: "
+                                                                               , show parentCharState
+                                                                               , show childCharState
+                                                                               , show accumulatedRightCharCost
+                                                                               , show transitionCost
+                                                                               , show curRightMin
+                                                                               , show rightMinFromVector
+                                                                               , show originalRightStates
+                                                                               ]
+                                                                      ) $ -}
+                        (curRightMin, [(toEnum childCharState)])
+                     | curRightMin == accumulatedRightCharCost = {- trace (unwords [ "Right eq : "
+                                                                                , show parentCharState
+                                                                                , show childCharState
+                                                                                , show accumulatedRightCharCost
+                                                                                , show transitionCost
+                                                                                , show curRightMin
+                                                                                , show rightMinFromVector
+                                                                                , show originalRightStates
+                                                                                ]
+                                                                       ) $ -}
+                        (accumulatedRightCharCost, (toEnum childCharState) : originalRightStates)
+                     | otherwise = {- trace (unwords [ "Right max: "
+                                                  , show parentCharState
+                                                  , show childCharState
+                                                  , show accumulatedRightCharCost
+                                                  , show transitionCost
+                                                  , show curRightMin
+                                                  , show rightMinFromVector
+                                                  , show originalRightStates
+                                                  ]
+                                         ) $ -}
+                         (accumulatedRightCharCost, originalRightStates)
+
+                curLeftMin      = transitionCost + leftMinFromVector
+                curRightMin     = transitionCost + rightMinFromVector
+                transitionCost  = fromWord . scm parentCharState $ toEnum childCharState
+
+
+        -- Following needed for outputting TCM in trace statements
+{-
         len         = symbolCount $ leftChildDec ^. discreteCharacter
         showableTCM = TCM.generate len g
         g (i,j)     = fromEnum $ scm i j
-
-
-{- trace (unwords ["right: ", show len, show inputCharState, show childCharState, show accumulatedRightCharCost, show transitionCost, show showableTCM]) $ -}
-{- trace (unwords ["left : ", show len, show inputCharState, show childCharState, show  accumulatedLeftCharCost, show  transitionCost, show showableTCM]) $ -}
+-}
