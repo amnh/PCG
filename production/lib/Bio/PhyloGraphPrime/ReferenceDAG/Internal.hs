@@ -305,7 +305,7 @@ nodePreOrder f dag = RefDAG <$> const newReferences <*> rootRefs <*> graphData $
             datum           = nodeDecoration node 
             node            = references dag ! i
             -- In sparsely connected graphs (like ours) this will be effectively constant.
-            childPosition j = fromIntegral . length . takeWhile (<i) . IM.keys . childRefs $ references dag ! j
+            childPosition j = toEnum . length . takeWhile (/=i) . IM.keys . childRefs $ references dag ! j
             parentIndices   = otoList $ parentRefs node
 
 
