@@ -640,6 +640,13 @@ type IncidentEdges = [EdgeReference]
 type Cost = Double
 
 
+type ReRootedEdgeContext u v w x y z =
+   ( ResolutionCache (CharacterSequence u v w x y z)
+   , ResolutionCache (CharacterSequence u v w x y z)
+   , ResolutionCache (CharacterSequence u v w x y z)
+   )
+   
+
 {--}
 
 -- |
@@ -704,14 +711,32 @@ assignOptimalDynamicCharacterRootEdges extensionTransformation (PDAG2 inputDag) 
     referenceEdgeMapping :: HashMap EdgeReference IncidentEdges
     referenceEdgeMapping = foldMap f otherUnrootedEdges <> foldMap g rootEdgeReferences
       where
-        f (i,j) = pRefs <> cRefs
+        f (i,j) = parRefs <> cldRefs
           where
-            pRefs = ofoldMap (\e -> [(e,i)])           . parentRefs $ refVec ! i
-            cRefs =  foldMap (\e -> [(j,e)]) . IM.keys .  childRefs $ refVec ! j
+            parRefs = ofoldMap (\e -> [(e,i)])           . parentRefs $ refVec ! i
+            cldRefs =  foldMap (\e -> [(j,e)]) . IM.keys .  childRefs $ refVec ! j
         g (i,j) = lhsRefs <> rhsRefs
           where
             lhsRefs =  foldMap (\e -> [(i,e)]) . IM.keys .  childRefs $ refVec ! i
             rhsRefs = ofoldMap (\e -> [(j,e)]) . IM.keys .  childRefs $ refVec ! j
+
+
+
+
+    rerootedEdgeContexts :: HashMap EdgeReference (ReRootedEdgeContext u v w x y z)
+    rerootedEdgeContexts = foldMap f unrootedEdges
+      where
+        f e@(i,j)
+          | e `elem` rootEdgeReferences = HM.singleton e (getCache i, getRootByChildren e, getCache j) undefined -- identity case
+          | otherwise                   = undefined -- memoized reference case
+   
+    getCache i = resolutions . nodeDecoration $ refVec ! i
+
+    getRootByChildren (i,j) = fst . head . NE.filter findMatchingChildren rootChildren
+      where
+        rootChildren = id &&& IM.keys . childRefs . (refVec !) <$> rootRefs inputDag
+        findMatchingChildren (_,is) = i `elem` is && j `elem` is
+
 
 {--}
 
