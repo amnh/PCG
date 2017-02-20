@@ -38,6 +38,8 @@ import           Data.Bits
 import           Data.Foldable
 import           Data.Hashable
 import           Data.Hashable.Memoize
+import           Data.HashMap.Lazy        (HashMap)
+import qualified Data.HashMap.Lazy  as HM
 import qualified Data.IntMap        as IM
 import           Data.IntSet              (IntSet)
 import           Data.Key
@@ -632,10 +634,13 @@ edgePostorderFold = undefined
 type EdgeReference = (Int, Int)
 
 
+type IncidentEdges = [EdgeReference]
+
+    
 type Cost = Double
 
 
-{-
+{--}
 
 -- |
 -- For every edge in the component:
@@ -665,16 +670,6 @@ assignOptimalDynamicCharacterRootEdges extensionTransformation (PDAG2 inputDag) 
         in  
   where
 
-    -- These are the edges of the DAG which might, not including the current root edge,
-    -- which maybe be the optimal root for a given dynamic character.
-    otherUnrootedEdges :: [EdgeReference]
-    otherUnrootedEdges = foldMapWithKey f $ refernces inputDag
-      where
-        f i n
-          -- Don't consider edges from a root node, as the edges are "artificial" in an unrooted context.
-          | i `elem` rootRefs inputDag = []
-          | otherwise                  = foldMap (\e -> (i,e)) $ childRefs n
-
 --    defaultAccumulator :: Vector (EdgeReference, Cost)
     rootRefWLOG = NE.head $ roofRefs inputDag
 
@@ -683,6 +678,45 @@ assignOptimalDynamicCharacterRootEdges extensionTransformation (PDAG2 inputDag) 
           []   -> Nothing
           [x]  -> Nothing
           x:y_ -> Just (x,y)
-              
 
--}
+    -- These are the edges of the DAG which might, not including the current root edge,
+    -- which maybe be the optimal root for a given dynamic character.
+    otherUnrootedEdges :: [EdgeReference]
+    otherUnrootedEdges = foldMapWithKey f refVec
+      where
+        f i n
+          -- Don't consider edges from a root node, as the edges are "artificial" in an unrooted context.
+          | i `elem` rootRefs inputDag = []
+          | otherwise                  = foldMap (\e -> (i,e)) $ childRefs n
+
+    rootEdgeReferences = foldMap f $ roofRefs inputDag
+      where
+        f i =
+          case IM.keys . childRefs $ refVec ! i of
+            []    -> []
+            [x]   -> []
+            x:y:_ -> [(x,y)]
+
+    refVec = references inputDag
+
+    unrootedEdges = rootEdgeReferences <> otherUnrootedEdges
+
+    referenceEdgeMapping :: HashMap EdgeReference IncidentEdges
+    referenceEdgeMapping = foldMap f otherUnrootedEdges <> foldMap g rootEdgeReferences
+      where
+        f (i,j) = pRefs <> cRefs
+          where
+            pRefs = ofoldMap (\e -> [(e,i)])           . parentRefs $ refVec ! i
+            cRefs =  foldMap (\e -> [(j,e)]) . IM.keys .  childRefs $ refVec ! j
+        g (i,j) = lhsRefs <> rhsRefs
+          where
+            lhsRefs =  foldMap (\e -> [(i,e)]) . IM.keys .  childRefs $ refVec ! i
+            rhsRefs = ofoldMap (\e -> [(j,e)]) . IM.keys .  childRefs $ refVec ! j
+
+{--}
+
+
+-- Step 1: Construct a hashmap of all the edges and thier incident egdes.
+-- Step 2: Create a lazy memoized hashmap of the edge costs for each dynmaic character.
+-- Step 3: For each dynamic character, mind the minimal cost edge(s).
+-- Step 4: Update the dynamic character decoration's cost & add an edge reference.
