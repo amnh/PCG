@@ -42,15 +42,18 @@ import           Data.HashMap.Lazy        (HashMap)
 import qualified Data.HashMap.Lazy  as HM
 import qualified Data.IntMap        as IM
 import           Data.IntSet              (IntSet)
+import qualified Data.IntSet        as IS
 import           Data.Key
 import           Data.List.NonEmpty       (NonEmpty( (:|) ))
 import qualified Data.List.NonEmpty as NE
 import           Data.List.Utility
+import           Data.Map                 (Map)
+import qualified Data.Map           as M
 --import           Data.Monoid
 import           Data.MonoTraversable
 import           Data.Semigroup
 import           Data.Semigroup.Foldable
---import           Data.Vector              (Vector)
+import           Data.Vector              (Vector)
 import qualified Data.Vector        as V
 
 import Debug.Trace
@@ -297,14 +300,14 @@ riefiedToCharacterDAG (PDAG dag) = PDAG2
 -- a list of parent node decorations with the logic function already applied,
 -- and returns the new decoration for the current node.
 postorderSequence' :: (Eq z, Eq z', Hashable z, Hashable z')
-                  => (u -> [u'] -> u')
-                  -> (v -> [v'] -> v')
-                  -> (w -> [w'] -> w')
-                  -> (x -> [x'] -> x')
-                  -> (y -> [y'] -> y')
-                  -> (z -> [z'] -> z')
-                  -> PhylogeneticDAG2 e n u  v  w  x  y  z
-                  -> PhylogeneticDAG2 e n u' v' w' x' y' z'
+                   => (u -> [u'] -> u')
+                   -> (v -> [v'] -> v')
+                   -> (w -> [w'] -> w')
+                   -> (x -> [x'] -> x')
+                   -> (y -> [y'] -> y')
+                   -> (z -> [z'] -> z')
+                   -> PhylogeneticDAG2 e n u  v  w  x  y  z
+                   -> PhylogeneticDAG2 e n u' v' w' x' y' z'
 postorderSequence' f1 f2 f3 f4 f5 f6 (PDAG2 dag) = PDAG2 $ newDAG dag
   where
     f6' = memoize2 f6
@@ -319,7 +322,7 @@ postorderSequence' f1 f2 f3 f4 f5 f6 (PDAG2 dag) = PDAG2 $ newDAG dag
       where
         h i =
           PNode2
-              { resolutions          = liftA2 generateLocalResolutions datumResolutions childResolutions
+              { resolutions          = liftA2 (generateLocalResolutions f1 f2 f3 f4 f5 f6) datumResolutions childResolutions
               , nodeDecorationDatum2 = nodeDecorationDatum2 $ nodeDecoration node
               }
           where
@@ -332,7 +335,7 @@ postorderSequence' f1 f2 f3 f4 f5 f6 (PDAG2 dag) = PDAG2 $ newDAG dag
             extractResolutionContext = resolutions . (memo !) &&& parentRefs . (references dag !)
 
             --        g :: ResolutionInformation s -> [ResolutionInformation s] -> ResolutionInformation s
-            generateLocalResolutions parentalResolutionContext childResolutionContext =
+generateLocalResolutions f1 f2 f3 f4 f5 f6 parentalResolutionContext childResolutionContext =
                 ResInfo
                 { leafSetRepresentation = newLeafSetRep
                 , subtreeRepresentation = newSubtreeRep
@@ -346,7 +349,7 @@ postorderSequence' f1 f2 f3 f4 f5 f6 (PDAG2 dag) = PDAG2 $ newDAG dag
                       []   -> (,) <$>          leafSetRepresentation <*>          subtreeRepresentation $ parentalResolutionContext
                       x:xs -> (,) <$> foldMap1 leafSetRepresentation <*> foldMap1 subtreeRepresentation $ x:|xs
 
-                transformation pSeq cSeqs = hexZipWith f1 f2 f3 f4 f5 f6' pSeq transposition
+                transformation pSeq cSeqs = hexZipWith f1 f2 f3 f4 f5 f6 pSeq transposition
                   where
                     transposition = 
                         case cSeqs of
@@ -664,8 +667,13 @@ type ReRootedEdgeContext u v w x y z =
 -- resolutions that contain the "incident" network edge contained on the current
 -- network edge.
 
-assignOptimalDynamicCharacterRootEdges :: (d -> d') -> PhylogeneticDAG2 e n m i c f a d -> PhylogeneticDAG2 e n m i c f a d'
+assignOptimalDynamicCharacterRootEdges :: (d -> [d] -> d) -> PhylogeneticDAG2 e n m i c f a d -> PhylogeneticDAG2 e n m i c f a d'
 assignOptimalDynamicCharacterRootEdges extensionTransformation (PDAG2 inputDag) = undefined
+-- Step 1: Construct a hashmap of all the edges and thier incident egdes.
+-- Step 2: Create a lazy memoized hashmap of the edge costs for each dynmaic character.
+-- Step 3: For each dynamic character, mind the minimal cost edge(s).
+-- Step 4: Update the dynamic character decoration's cost & add an edge reference.
+
 {-
     case rootEdgeReference of
       Nothing -> (PDAG2 inputDag)
@@ -680,8 +688,9 @@ assignOptimalDynamicCharacterRootEdges extensionTransformation (PDAG2 inputDag) 
   where
 
 --    defaultAccumulator :: Vector (EdgeReference, Cost)
+    rootRefWLOG  = NE.head $ rootRefs inputDag
+    sequenceWLOG = fmap dynamicCharacters . toBlocks . characterSequence . NE.head $ getCache rootRefWLOG
 {-
-    rootRefWLOG = NE.head $ rootRefs inputDag
 
     rootEdgeReference =
         case childRefs $ refVec ! rootRefWLOG of
@@ -689,6 +698,17 @@ assignOptimalDynamicCharacterRootEdges extensionTransformation (PDAG2 inputDag) 
           [x]  -> Nothing
           x:y_ -> Just (x,y)
 -}
+
+    -- Step 1: Construct a hashmap of all the edges.
+    unrootedEdges = rootEdgeReferences <> otherUnrootedEdges
+    
+    -- Step 2: Create a lazy memoized hashmap of the edge costs for each dynmaic character.
+
+    edgeCostMapping = referenceEdgeMapping
+
+    -- Step 3: For each dynamic character, find the minimal cost edge(s).
+    
+    -- Step 4: Update the dynamic character decoration's cost & add an edge reference.
 
 
     -- These are the edges of the DAG which might, not including the current root edge,
@@ -711,8 +731,7 @@ assignOptimalDynamicCharacterRootEdges extensionTransformation (PDAG2 inputDag) 
 
     refVec = references inputDag
 
-    unrootedEdges = rootEdgeReferences <> otherUnrootedEdges
-
+{-
     referenceEdgeMapping :: HashMap EdgeReference IncidentEdges
     referenceEdgeMapping = HM.fromList $ foldMap f otherUnrootedEdges <> foldMap g rootEdgeReferences
       where
@@ -724,29 +743,78 @@ assignOptimalDynamicCharacterRootEdges extensionTransformation (PDAG2 inputDag) 
           where
             lhsRefs =  foldMap (\k -> [(i,k)]) . IM.keys .  childRefs $ refVec ! i
             rhsRefs = ofoldMap (\k -> [(j,k)]) . IM.keys .  childRefs $ refVec ! j
+-}
 
-
+--    referenceEdgeMapping :: HashMap EdgeReference (ResolutionCache (CharacterSequence u v w x y z))
+    referenceEdgeMapping = foldMap f unrootedEdges
+      where
+        f e@(i,j) = M.singleton e $ localResolutionApplication extensionTransformation lhsContext rhsContext
+          where
+            lhsContext = (contextualNodeDatum ! i) ! (i,j)
+            rhsContext = (contextualNodeDatum ! j) ! (j,i)
+    
 
 
 --    rerootedEdgeContexts :: HashMap EdgeReference (ReRootedEdgeContext u v w x y z)
+{-
     rerootedEdgeContexts = foldMap f unrootedEdges
       where
         f e@(i,j)
           | e `elem` rootEdgeReferences = HM.singleton e (getCache i, getRootByChildren e, getCache j) -- identity case
           | otherwise                   = undefined -- memoized reference case
+          where
+-}            
    
     getCache i = resolutions . nodeDecoration $ refVec ! i
-
+{-
     getRootByChildren (i,j) = resolutions . nodeDecoration . fst . head $ NE.filter findMatchingChildren rootChildren
       where
         rootChildren = (id &&& IM.keys . childRefs) . (refVec !) <$> rootRefs inputDag
         findMatchingChildren (_,is) = i `elem` is && j `elem` is
+-}
+--    contextualNodeDatum :: Vector (Map EdgeReference (ResolutionCache (CharacterSequence u v w x y z)))
+    contextualNodeDatum = V.generate (length refVec) f
+      where
+        f i
+          | i `elem` rootRefs inputDag = undefined
+          | otherwise                  = parentEdgeValue <> childEdgeValues
+          where
+            parentRef
+              | candidate `notElem` rootRefs inputDag = candidate
+              | otherwise = sibling
+              where
+                candidate = head . otoList . parentRefs $ refVec ! i
+                sibling   = head . filter (/=i) . IM.keys .  childRefs $ refVec ! candidate
+                
+            kidRefs          = IM.keys .  childRefs $ refVec ! i 
+            parentEdgeValue  = M.singleton (i, parentRef) $ getCache i
+            childEdgeValues  = foldMap deriveDirectionalDatum [ (x,y) | x <- kidRefs, y <- kidRefs, x /= y ]
+            deriveDirectionalDatum (j, k) = M.singleton (i,j) relativeSubtreeDatumValue
 
+              where
+                childMemoizedSubstructure    = (contextualNodeDatum ! k        ) ! (        k, i)
+                parentalMemoizedSubstructure = (contextualNodeDatum ! parentRef) ! (parentRef, i)
+                relativeSubtreeDatumValue    = localResolutionApplication extensionTransformation parentalMemoizedSubstructure childMemoizedSubstructure
+
+
+localResolutionApplication f x y =
+    liftA2 (generateLocalResolutions id2 id2 id2 id2 id2 f) mutalatedChild relativeChildResolutions
+  where
+    relativeChildResolutions = applySoftwireResolutions
+      [ (x, IS.singleton 0)
+      , (y, IS.singleton 0)
+      ]
+    id2 x _ = x
+    mutalatedChild = pure
+        ResInfo
+        { leafSetRepresentation = zeroBits
+        , subtreeRepresentation = singletonNewickSerialization 0
+        , characterSequence     = characterSequence $ NE.head x
+        , localSequenceCost     = 0
+        , totalSubtreeCost      = 0
+        }
+  
 
 {--}
 
 
--- Step 1: Construct a hashmap of all the edges and thier incident egdes.
--- Step 2: Create a lazy memoized hashmap of the edge costs for each dynmaic character.
--- Step 3: For each dynamic character, mind the minimal cost edge(s).
--- Step 4: Update the dynamic character decoration's cost & add an edge reference.
