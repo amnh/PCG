@@ -665,7 +665,8 @@ type ReRootedEdgeContext u v w x y z =
 -- network edge.
 
 assignOptimalDynamicCharacterRootEdges :: (d -> d') -> PhylogeneticDAG2 e n m i c f a d -> PhylogeneticDAG2 e n m i c f a d'
-assignOptimalDynamicCharacterRootEdges extensionTransformation (PDAG2 inputDag) =
+assignOptimalDynamicCharacterRootEdges extensionTransformation (PDAG2 inputDag) = undefined
+{-
     case rootEdgeReference of
       Nothing -> (PDAG2 inputDag)
       Just er ->
@@ -675,16 +676,20 @@ assignOptimalDynamicCharacterRootEdges extensionTransformation (PDAG2 inputDag) 
             defaultAccumulator :: NonEmpty (NonEmpty (Vector (EdgeReference, Cost) ))
             defaultAccumulator = fmap (fmap (fmap toInitialTuple . dynamicCharacters) . toBlocks) . resolutions . nodeDecoration $ references inputDag ! rootRefWLOG
         in  
+-}
   where
 
 --    defaultAccumulator :: Vector (EdgeReference, Cost)
-    rootRefWLOG = NE.head $ roofRefs inputDag
+{-
+    rootRefWLOG = NE.head $ rootRefs inputDag
 
     rootEdgeReference =
-        case childRefs $ references inputDag ! rootRefWLOG of
+        case childRefs $ refVec ! rootRefWLOG of
           []   -> Nothing
           [x]  -> Nothing
           x:y_ -> Just (x,y)
+-}
+
 
     -- These are the edges of the DAG which might, not including the current root edge,
     -- which maybe be the optimal root for a given dynamic character.
@@ -694,9 +699,9 @@ assignOptimalDynamicCharacterRootEdges extensionTransformation (PDAG2 inputDag) 
         f i n
           -- Don't consider edges from a root node, as the edges are "artificial" in an unrooted context.
           | i `elem` rootRefs inputDag = []
-          | otherwise                  = foldMap (\e -> (i,e)) $ childRefs n
+          | otherwise                  = fmap (\e -> (i,e)) . IM.keys $ childRefs n
 
-    rootEdgeReferences = foldMap f $ roofRefs inputDag
+    rootEdgeReferences = foldMap f $ rootRefs inputDag
       where
         f i =
           case IM.keys . childRefs $ refVec ! i of
@@ -709,32 +714,32 @@ assignOptimalDynamicCharacterRootEdges extensionTransformation (PDAG2 inputDag) 
     unrootedEdges = rootEdgeReferences <> otherUnrootedEdges
 
     referenceEdgeMapping :: HashMap EdgeReference IncidentEdges
-    referenceEdgeMapping = foldMap f otherUnrootedEdges <> foldMap g rootEdgeReferences
+    referenceEdgeMapping = HM.fromList $ foldMap f otherUnrootedEdges <> foldMap g rootEdgeReferences
       where
-        f (i,j) = parRefs <> cldRefs
+        f e@(i,j) = [(e, parRefs <> cldRefs)]
           where
-            parRefs = ofoldMap (\e -> [(e,i)])           . parentRefs $ refVec ! i
-            cldRefs =  foldMap (\e -> [(j,e)]) . IM.keys .  childRefs $ refVec ! j
-        g (i,j) = lhsRefs <> rhsRefs
+            parRefs = ofoldMap (\k -> [(k,i)])           . parentRefs $ refVec ! i
+            cldRefs =  foldMap (\k -> [(j,k)]) . IM.keys .  childRefs $ refVec ! j
+        g e@(i,j) = [(e, lhsRefs <> rhsRefs)]
           where
-            lhsRefs =  foldMap (\e -> [(i,e)]) . IM.keys .  childRefs $ refVec ! i
-            rhsRefs = ofoldMap (\e -> [(j,e)]) . IM.keys .  childRefs $ refVec ! j
+            lhsRefs =  foldMap (\k -> [(i,k)]) . IM.keys .  childRefs $ refVec ! i
+            rhsRefs = ofoldMap (\k -> [(j,k)]) . IM.keys .  childRefs $ refVec ! j
 
 
 
 
-    rerootedEdgeContexts :: HashMap EdgeReference (ReRootedEdgeContext u v w x y z)
+--    rerootedEdgeContexts :: HashMap EdgeReference (ReRootedEdgeContext u v w x y z)
     rerootedEdgeContexts = foldMap f unrootedEdges
       where
         f e@(i,j)
-          | e `elem` rootEdgeReferences = HM.singleton e (getCache i, getRootByChildren e, getCache j) undefined -- identity case
+          | e `elem` rootEdgeReferences = HM.singleton e (getCache i, getRootByChildren e, getCache j) -- identity case
           | otherwise                   = undefined -- memoized reference case
    
     getCache i = resolutions . nodeDecoration $ refVec ! i
 
-    getRootByChildren (i,j) = fst . head . NE.filter findMatchingChildren rootChildren
+    getRootByChildren (i,j) = resolutions . nodeDecoration . fst . head $ NE.filter findMatchingChildren rootChildren
       where
-        rootChildren = id &&& IM.keys . childRefs . (refVec !) <$> rootRefs inputDag
+        rootChildren = (id &&& IM.keys . childRefs) . (refVec !) <$> rootRefs inputDag
         findMatchingChildren (_,is) = i `elem` is && j `elem` is
 
 
