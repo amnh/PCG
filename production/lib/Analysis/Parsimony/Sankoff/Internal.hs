@@ -63,12 +63,12 @@ sankoffPreOrder childDecoration [] = childDecoration & discreteCharacter .~ newC
         newChar     = foldlWithKey' setState emptyMedian childMins
 
         setState acc pos childMin
-            | toWord childMin == overallMin = trace (show $ unwords ["root:"
+            | toWord childMin == overallMin = {- trace (show $ unwords ["root:"
                                                                     , show overallMin
                                                                     , show pos
                                                                     , show childMin
                                                                     ]
-                                                    ) $ acc `setBit` pos
+                                                    ) $ -} acc `setBit` pos
             | otherwise                     = {- trace (show $ unwords ["nope:"
                                                                     , show overallMin
                                                                     , show pos
@@ -76,7 +76,7 @@ sankoffPreOrder childDecoration [] = childDecoration & discreteCharacter .~ newC
                                                                     ]
                                                     ) $ -} acc
 sankoffPreOrder childDecoration ((whichChild, parentDecoration):_) = {- trace "pre order" $ -} resultDecoration $
-    case traceShowId whichChild of
+    case {- traceShowId -} whichChild of
         0 -> fst
         _ -> snd
     where
@@ -185,7 +185,7 @@ updateDirectionalMins parentDecoration childDecoration childStateMinsFromParent 
 
         resultMedian        = if childDecoration ^. isLeaf
                                   then {- trace ("leaf child mins" ++ show childStateMinsFromParent) $ -} childDecoration ^. discreteCharacter                                 -- discreteChar doesn't change
-                                  else  trace ("internal node mins" ++ show childStateMinsFromParent) $  foldlWithKey' determineWhetherToIncludeState emptyMedian childStateMinsFromParent  -- need to create new bit vector
+                                  else {- trace ("internal node mins" ++ show childStateMinsFromParent) $ -} foldlWithKey' determineWhetherToIncludeState emptyMedian childStateMinsFromParent  -- need to create new bit vector
 
         -- If this character state in the parent is one of the low-cost states, then add all states in child that can contribute
         -- to this parent state.
