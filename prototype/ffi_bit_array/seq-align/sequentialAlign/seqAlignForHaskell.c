@@ -4,14 +4,15 @@
 //  Created by Yu Xiang on 11/1/22.
 //  Copyright © 2016 Yu Xiang. All rights reserved.
 
+#include <inttypes.h>
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
 #include "dynamicCharacterOperations.h"
+#include "costMatrixWrapper.h"
 #include "seqAlignForHaskell.h"
-#include <inttypes.h>
 
 #define __STDC_FORMAT_MACROS
 
@@ -1055,7 +1056,7 @@ int aligner(uint64_t *seq1, size_t seq1Len, uint64_t *seq2, size_t seq2Len, size
                  //   getCost(GAP, seqB[pathSecond[kSecond].posTrueB], tcm, alphSize)
                 //    pathFirst[i].partialTrueWt = trueWt(&pathFirst[i], GAP, wtInsertDel, wtSub, LENGTH);
                     pathFirst[i].partialTrueWt = trueWt(&pathFirst[i], tcm, alphSize, LENGTH);
-                    
+
                 }
 
                 for (int l = 0; l < 3; l++) {
@@ -1282,7 +1283,7 @@ int aligner(uint64_t *seq1, size_t seq1Len, uint64_t *seq2, size_t seq2Len, size
                     if (flagEmpty[1] == 0) {
                     //    pathSecond[i].partialTrueWt = trueWt(&pathSecond[i], GAP, wtInsertDel, wtSub, LENGTH);
                         pathSecond[i].partialTrueWt = trueWt(&pathSecond[i], tcm, alphSize, LENGTH);
-                        
+
 
                     }
 
@@ -1660,9 +1661,9 @@ int aligner(uint64_t *seq1, size_t seq1Len, uint64_t *seq2, size_t seq2Len, size
             finalAlign.partialWt = finalAlign.partialWt + getCost(finalAlign.partialAlign[i] , finalAlign.partialAlign[i + LENGTH], tcm, alphSize);
         else
             finalAlign.partialWt = finalAlign.partialWt + getCost(finalAlign.partialAlign[i] , finalAlign.partialAlign[i + LENGTH], tcm, alphSize);
-        
+
     }
-    
+
 
     //  // printf("the final weight is:%d\n", finalAlign.partialWt);
 
@@ -1794,30 +1795,30 @@ int aligner(uint64_t *seq1, size_t seq1Len, uint64_t *seq2, size_t seq2Len, size
 
 //int trueWt(struct align *path, const int GAP, int wtInsertDel, int wtSub, int len){
 int trueWt(struct align *path, costMtx_t* tcm, size_t alphSize, int len){
-    
+
     int i;
-    
+
     int wtTempFirst = 0, wtTempSecond = 0;
     int wtTemp;
-    
+
     for(i = 0; i < path->posStringA ; i++){
-        
+
         wtTempFirst = getCost(path->partialAlign[i], path->partialAlign[i+len], tcm, alphSize) + wtTempFirst;
 
     }
-    
-    
+
+
     for(i = 0; i < path->posStringA ; i++){
-        
+
         wtTempSecond = getCost(path->partialAlign[i], path->partialAlign[i+len], tcm, alphSize)*getCost(path->partialAlign[i], path->partialAlign[i+len], tcm, alphSize) + wtTempSecond;
-        
+
     }
-    
+
     wtTempFirst = wtTempFirst * wtTempFirst + wtTempFirst;
     wtTemp = wtTempFirst + wtTempSecond;
 
     return wtTemp;
-    
+
 }
 
 

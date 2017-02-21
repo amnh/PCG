@@ -51,7 +51,7 @@ int aligner(uint64_t *seq1, size_t seq1Len, uint64_t *seq2, size_t seq2Len, size
 
 void freeRetType(retType_t* toFree);
 
-int getCost(uint64_t lhs, uint64_t rhs, costMtx_t* tcm, size_t alphSize);
+// int getCost(uint64_t lhs, uint64_t rhs, costMtx_t* tcm, size_t alphSize);
 
 
 #endif /* YUALIGN_H */

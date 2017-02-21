@@ -30,8 +30,8 @@ import Data.Bits
 import Data.ExtendedNatural
 import Data.Key
 import Data.List.NonEmpty (NonEmpty( (:|) ))
-import Data.Monoid        ((<>))
-import qualified Data.TCM as TCM
+-- import Data.Monoid        ((<>))
+-- import qualified Data.TCM as TCM
 import Data.Word
 import Prelude hiding (zip)
 
@@ -75,7 +75,7 @@ sankoffPreOrder childDecoration [] = childDecoration & discreteCharacter .~ newC
                                                                     , show childMin
                                                                     ]
                                                     ) $ -} acc
-sankoffPreOrder childDecoration ((whichChild, parentDecoration):_) =  trace "pre order" $ resultDecoration $
+sankoffPreOrder childDecoration ((whichChild, parentDecoration):_) = {- trace "pre order" $ -} resultDecoration $
     case traceShowId whichChild of
         0 -> fst
         _ -> snd
@@ -183,10 +183,9 @@ updateDirectionalMins parentDecoration childDecoration childStateMinsFromParent 
         -- totalCost baseCost i j       = fromWord $ baseCost + tcmCost i j
         -- tcmCost   i j       = scm (toEnum i) (toEnum j)
 
-        --TODO: change directionalMins here to some sort of range; get rid of foldlWithKey
         resultMedian        = if childDecoration ^. isLeaf
                                   then {- trace ("leaf child mins" ++ show childStateMinsFromParent) $ -} childDecoration ^. discreteCharacter                                 -- discreteChar doesn't change
-                                  else {- trace ("internal node mins" ++ show childStateMinsFromParent) $ -} foldlWithKey' determineWhetherToIncludeState emptyMedian $ reverse childStateMinsFromParent  -- need to create new bit vector
+                                  else  trace ("internal node mins" ++ show childStateMinsFromParent) $  foldlWithKey' determineWhetherToIncludeState emptyMedian $ reverse childStateMinsFromParent  -- need to create new bit vector
 
         -- If this character state in the parent is one of the low-cost states, then add all states in child that can contribute
         -- to this parent state.
@@ -207,8 +206,8 @@ updateDirectionalMins parentDecoration childDecoration childStateMinsFromParent 
 --
 -- Note: We can throw away the medians that come back from the tcm here because we're building medians:
 -- the possible character is looped over all available characters, and there's an outer loop which sends in each possible character.
-calcCostPerState :: EncodedAmbiguityGroupContainer c
-                 => Word
+calcCostPerState :: {- EncodedAmbiguityGroupContainer c
+                 => -} Word
                  -> SankoffOptimizationDecoration c
                  -> SankoffOptimizationDecoration c
                  -> ((ExtendedNatural, StateContributionList), (ExtendedNatural, StateContributionList))
