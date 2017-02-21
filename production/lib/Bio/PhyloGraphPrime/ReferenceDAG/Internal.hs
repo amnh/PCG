@@ -36,6 +36,9 @@ import           Data.Vector.Instances      ()
 import           Prelude             hiding (lookup)
 
 
+import Debug.Trace
+
+
 -- |
 -- A constant time access representation of a directed acyclic graph.
 -- 
@@ -302,11 +305,12 @@ nodePreOrder f dag = RefDAG <$> const newReferences <*> rootRefs <*> graphData $
       where
         h i = f datum $ (childPosition &&& (memo !)) <$> parentIndices
           where
-            datum           = nodeDecoration node 
             node            = references dag ! i
+            datum           = nodeDecoration node 
+            parentIndices   = otoList $ parentRefs node
             -- In sparsely connected graphs (like ours) this will be effectively constant.
             childPosition j = toEnum . length . takeWhile (/=i) . IM.keys . childRefs $ references dag ! j
-            parentIndices   = otoList $ parentRefs node
+
 
 
 -- |
