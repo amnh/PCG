@@ -140,10 +140,10 @@ initializeDecorations (PhylogeneticSolution forests) = PhylogeneticSolution $ fm
           , sequenceDecoration  = postOrderLogic (sequenceDecoration parentalNode) (sequenceDecoration <$> childNodes)
           }
 
-        preOrderTransformation parentalNode childNodes =
+        preOrderTransformation childNode parentNodes =
           PNode
-          { nodeDecorationDatum = (nodeDecorationDatum parentalNode)
-          , sequenceDecoration  = preOrderLogic (sequenceDecoration parentalNode) (second sequenceDecoration <$> childNodes)
+          { nodeDecorationDatum = (nodeDecorationDatum childNode)
+          , sequenceDecoration  = preOrderLogic (sequenceDecoration childNode) (second sequenceDecoration <$> parentNodes)
           }
 
     postOrderLogic :: CharacterSequence
@@ -244,11 +244,10 @@ initializeDecorations (PhylogeneticSolution forests) = PhylogeneticSolution $ fm
 -}
         parentCharSeqs' =
             case parentCharSeqs of
-              x:xs -> hexmap f f f f f f . hexTranspose $ snd <$> x:|xs
               []   -> let c = const []
                       in hexmap c c c c c c currentCharSeq
-           where
-             f = foldMapWithKey $ \i e -> [(toEnum i,e)]
+              x:xs -> let f = zip (fst <$> (x:xs))
+                      in hexmap f f f f f f . hexTranspose $ snd <$> x:|xs
 
         adaptiveDirectOptimizationPreOrder dec kidDecs = directOptimizationPreOrder pairwiseAlignmentFunction dec kidDecs
           where
