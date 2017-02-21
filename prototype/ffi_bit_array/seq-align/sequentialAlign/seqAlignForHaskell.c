@@ -27,7 +27,7 @@
 
 //int aligner(char *seq1, char *seq2, int wtInsertDel, int wtSub, struct retType* retAlign) {
 int aligner(uint64_t *seq1, size_t seq1Len, uint64_t *seq2, size_t seq2Len, size_t alphSize,
-            costMtx_t tcm, retType_t* retAlign) {
+            costMtx_t *tcm, retType_t* retAlign) {
 
  //   int cost = getCost(char1, char2, tcm, alphSize);
 
@@ -1821,7 +1821,7 @@ int trueWt(struct align *path, costMtx_t* tcm, size_t alphSize, int len){
 
 }
 
-
+/** no longer in use. Use costMatrixWrapper.getCost instead.
 int getCost(uint64_t lhs, uint64_t rhs, costMtx_t* tcm, size_t alphSize) {
     int gap = 1 << (alphSize - 1);
     if (lhs == rhs)
@@ -1830,6 +1830,7 @@ int getCost(uint64_t lhs, uint64_t rhs, costMtx_t* tcm, size_t alphSize) {
         return tcm->gapCost;
     return tcm->subCost;
 }
+*/
 
 void freeRetType(retType_t* toFree) {
     free(toFree->seq1);

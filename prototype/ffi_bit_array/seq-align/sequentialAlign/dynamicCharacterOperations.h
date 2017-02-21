@@ -91,11 +91,9 @@ typedef struct alignResult_t {
  */
 typedef struct retType_t {
     int weight;
-  //  char* seq1;
-    int *seq1;
+    uint64_t *seq1;
     size_t seq1Len;
-  //  char* seq2;
-    int *seq2;
+    uint64_t *seq2;
     size_t seq2Len;
     long int alignmentLength;
 } retType_t;

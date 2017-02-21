@@ -1,6 +1,6 @@
 ### Note that two calls to gcc to create .o files are needed, followed by two calls to compile
 
-all : sequentialAligne
+all : sequentialAlign
 
 clean :
 	rm -f *.o
@@ -42,7 +42,8 @@ testSequentialAlign : main.c seqAlignForHaskell.h seqAlignForHaskell.c $(costMat
 	# g++ -std=c++14 -c costMatrix.h
 	g++ -std=c++14 -c costMatrix.cpp
 	# gcc -std=c11 -c costMatrixWrapper.h
-	gcc -std=c11 -c costMatrixWrapper.c seqAlignForHaskell.c
+	gcc -std=c11 -c costMatrixWrapper.c
+	gcc -std=c11 -c seqAlignForHaskell.c
 	# in next line, need -lc++ so that it calls correct linker: we need C compiler, but C++ libraries in scope.
 	gcc -std=c11 -o testSeqAlign -Wall main.c seqAlignForHaskell.o costMatrixWrapper.o dynamicCharacterOperations.o costMatrix.o costMatrixWrapper.o -lstdc++
 
