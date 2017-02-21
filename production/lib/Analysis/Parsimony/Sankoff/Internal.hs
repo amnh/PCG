@@ -185,7 +185,7 @@ updateDirectionalMins parentDecoration childDecoration childStateMinsFromParent 
 
         resultMedian        = if childDecoration ^. isLeaf
                                   then {- trace ("leaf child mins" ++ show childStateMinsFromParent) $ -} childDecoration ^. discreteCharacter                                 -- discreteChar doesn't change
-                                  else  trace ("internal node mins" ++ show childStateMinsFromParent) $  foldlWithKey' determineWhetherToIncludeState emptyMedian $ reverse childStateMinsFromParent  -- need to create new bit vector
+                                  else  trace ("internal node mins" ++ show childStateMinsFromParent) $  foldlWithKey' determineWhetherToIncludeState emptyMedian childStateMinsFromParent  -- need to create new bit vector
 
         -- If this character state in the parent is one of the low-cost states, then add all states in child that can contribute
         -- to this parent state.
