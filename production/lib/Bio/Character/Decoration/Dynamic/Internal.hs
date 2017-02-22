@@ -182,6 +182,7 @@ instance (EncodableDynamicCharacter d) => DynamicCharacterDecoration (DynamicDec
 data DynamicDecorationDirectOptimizationPostOrderResult d
    = DynamicDecorationDirectOptimizationPostOrderResult
    { dynamicDecorationDirectOptimizationPostOrderCharacterCost            :: Word
+   , dynamicDecorationDirectOptimizationPostOrderCharacterLocalCost       :: Word
    , dynamicDecorationDirectOptimizationPostOrderEncodedField             :: d
    , dynamicDecorationDirectOptimizationPostOrderPreliminaryGappedField   :: d
    , dynamicDecorationDirectOptimizationPostOrderPreliminaryUngappedField :: d
@@ -193,9 +194,8 @@ data DynamicDecorationDirectOptimizationPostOrderResult d
 
 instance EncodableStream d => Show (DynamicDecorationDirectOptimizationPostOrderResult d) where
 
-    show dec = unlines . (shownCost:) $ f <$> pairs
+    show dec = unlines . (shownAlphabet:) . (shownCost:) $ f <$> pairs
       where
-        shownCost = "Cost                : " <> show (dec ^. characterCost)
         f (prefix, accessor) = prefix <> showStream (dec ^. characterAlphabet) (dec ^. accessor)
         pairs =
           [ ("Original Encoding   : ", encoded            )
@@ -203,14 +203,25 @@ instance EncodableStream d => Show (DynamicDecorationDirectOptimizationPostOrder
           , ("Preliminary Ungapped: ", preliminaryUngapped)
           , ("Left  Alignment     : ", leftAlignment      )
           , ("Right Alignment     : ", rightAlignment     )
-          ] 
+          ]
+
+        shownAlphabet = show (dec ^. characterAlphabet)
+        
+        shownCost = unwords
+          [ "Cost                :"
+          , show (dec ^. characterCost)
+          , "{"
+          , show (dec ^. characterLocalCost)
+          , "}"
+          ]
   
 
 instance EncodableDynamicCharacter d => SimpleDynamicExtensionPostOrderDecoration (DynamicDecorationDirectOptimizationPostOrderResult d) d where
 
-    extendDynamicToPostOrder subDecoration cost ungapped gapped lhsAlignment rhsAlignment =
+    extendDynamicToPostOrder subDecoration localCost totalCost ungapped gapped lhsAlignment rhsAlignment =
         DynamicDecorationDirectOptimizationPostOrderResult
-        { dynamicDecorationDirectOptimizationPostOrderCharacterCost            = cost
+        { dynamicDecorationDirectOptimizationPostOrderCharacterCost            = totalCost
+        , dynamicDecorationDirectOptimizationPostOrderCharacterLocalCost       = localCost
         , dynamicDecorationDirectOptimizationPostOrderEncodedField             = subDecoration ^. encoded
         , dynamicDecorationDirectOptimizationPostOrderPreliminaryGappedField   = gapped
         , dynamicDecorationDirectOptimizationPostOrderPreliminaryUngappedField = ungapped
@@ -240,6 +251,12 @@ instance Hashable d => Hashable (DynamicDecorationDirectOptimizationPostOrderRes
 instance HasCharacterCost (DynamicDecorationDirectOptimizationPostOrderResult d) Word where
 
     characterCost = lens dynamicDecorationDirectOptimizationPostOrderCharacterCost (\e x -> e { dynamicDecorationDirectOptimizationPostOrderCharacterCost = x })
+      
+
+-- | (✔)
+instance HasCharacterLocalCost (DynamicDecorationDirectOptimizationPostOrderResult d) Word where
+
+    characterLocalCost = lens dynamicDecorationDirectOptimizationPostOrderCharacterLocalCost (\e x -> e { dynamicDecorationDirectOptimizationPostOrderCharacterLocalCost = x })
       
 
 -- | (✔)
@@ -370,6 +387,7 @@ instance EncodableDynamicCharacter d => DirectOptimizationPostOrderDecoration (D
 data DynamicDecorationDirectOptimization d
    = DynamicDecorationDirectOptimization
    { dynamicDecorationDirectOptimizationCharacterCost            :: Word
+   , dynamicDecorationDirectOptimizationCharacterLocalCost       :: Word
    , dynamicDecorationDirectOptimizationEncodedField             :: d
    , dynamicDecorationDirectOptimizationFinalGappedField         :: d
    , dynamicDecorationDirectOptimizationFinalUngappedField       :: d
@@ -387,6 +405,7 @@ instance EncodableDynamicCharacter d => PostOrderExtensionDirectOptimizationDeco
     extendPostOrderToDirectOptimization subDecoration ungapped gapped =
         DynamicDecorationDirectOptimization
         { dynamicDecorationDirectOptimizationCharacterCost            = subDecoration ^. characterCost
+        , dynamicDecorationDirectOptimizationCharacterLocalCost       = subDecoration ^. characterLocalCost
         , dynamicDecorationDirectOptimizationEncodedField             = subDecoration ^. encoded
         , dynamicDecorationDirectOptimizationFinalGappedField         = gapped
         , dynamicDecorationDirectOptimizationFinalUngappedField       = ungapped
@@ -423,6 +442,12 @@ instance EncodableStream d => Show (DynamicDecorationDirectOptimization d) where
 instance HasCharacterCost (DynamicDecorationDirectOptimization d) Word where
 
     characterCost = lens dynamicDecorationDirectOptimizationCharacterCost (\e x -> e { dynamicDecorationDirectOptimizationCharacterCost = x })
+      
+
+-- | (✔)
+instance HasCharacterLocalCost (DynamicDecorationDirectOptimization d) Word where
+
+    characterLocalCost = lens dynamicDecorationDirectOptimizationCharacterLocalCost (\e x -> e { dynamicDecorationDirectOptimizationCharacterLocalCost = x })
       
 
 -- | (✔)
@@ -572,6 +597,7 @@ instance EncodableDynamicCharacter d => DirectOptimizationDecoration (DynamicDec
 data DynamicDecorationImpliedAlignment d
    = DynamicDecorationImpliedAlignment
    { dynamicDecorationImpliedAlignmentCharacterCost            :: Word
+   , dynamicDecorationImpliedAlignmentCharacterLocalCost       :: Word
    , dynamicDecorationImpliedAlignmentEncodedField             :: d
    , dynamicDecorationImpliedAlignmentFinalGappedField         :: d
    , dynamicDecorationImpliedAlignmentFinalUngappedField       :: d
@@ -588,6 +614,12 @@ data DynamicDecorationImpliedAlignment d
 instance HasCharacterCost (DynamicDecorationImpliedAlignment d) Word where
 
     characterCost = lens dynamicDecorationImpliedAlignmentCharacterCost (\e x -> e { dynamicDecorationImpliedAlignmentCharacterCost = x })
+      
+
+-- | (✔)
+instance HasCharacterLocalCost (DynamicDecorationImpliedAlignment d) Word where
+
+    characterLocalCost = lens dynamicDecorationImpliedAlignmentCharacterLocalCost (\e x -> e { dynamicDecorationImpliedAlignmentCharacterLocalCost = x })
       
 
 -- | (✔)

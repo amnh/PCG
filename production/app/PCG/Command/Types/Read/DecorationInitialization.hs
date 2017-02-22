@@ -88,11 +88,11 @@ traceOpt identifier x = (trace ("Before " <> identifier) ())
 -}
 
 
---initializeDecorations2 :: CharacterResult -> PhylogeneticSolution InitialDecorationDAG
+initializeDecorations2 :: CharacterResult -> PhylogeneticSolution InitialDecorationDAG
 initializeDecorations2 (PhylogeneticSolution forests) = PhylogeneticSolution $ fmap performDecoration <$> forests
   where
 --    performDecoration :: CharacterDAG -> InitialDecorationDAG
-    performDecoration =
+    performDecoration = assignOptimalDynamicCharacterRootEdges dynamicScoring2 .
       postorderSequence'
         (g  sankoffPostOrder)
         (g  sankoffPostOrder)
@@ -107,13 +107,15 @@ initializeDecorations2 (PhylogeneticSolution forests) = PhylogeneticSolution $ f
         g h        e  xs = h (error $ "We shouldn't be using this value." ++ show e ++ show (length xs)) xs
 
         id2 x _ = x
-        dynamicScoring = directOptimizationPostOrder (\x y -> naiveDOConst x y undefined)
-{-
+        dynamicScoring  = directOptimizationPostOrder (\x y -> naiveDOConst x y undefined)
+        -- Because of monomophism BS
+        dynamicScoring2 = directOptimizationPostOrder (\x y -> naiveDOConst x y undefined)
+{--
         adaptiveDirectOptimizationPostOrder _ _ | trace "DO call" False = undefined
         adaptiveDirectOptimizationPostOrder dec kidDecs = directOptimizationPostOrder pairwiseAlignmentFunction dec kidDecs
           where
             pairwiseAlignmentFunction = chooseDirectOptimizationComparison dec kidDecs
--}
+--}
 
 
 {-                                                              
@@ -258,8 +260,8 @@ chooseDirectOptimizationComparison :: ( SimpleDynamicDecoration d  c
                                    -> c
                                    -> c
                                    -> (c, Double, c, c, c)
-chooseDirectOptimizationComparison _ _ = (\x y -> naiveDOConst x y undefined)
-{--
+--chooseDirectOptimizationComparison _ _ = (\x y -> naiveDOConst x y undefined)
+{--}
 chooseDirectOptimizationComparison dec decs = \x y -> naiveDO x y scm
   where
     scm =
@@ -268,7 +270,7 @@ chooseDirectOptimizationComparison dec decs = \x y -> naiveDO x y scm
           x:_ -> selectBranch x
       where
         selectBranch candidate = candidate ^. symbolChangeMatrix
---}
+{--}
 {--}
 -- do this when shit stops segfaulting
 {-

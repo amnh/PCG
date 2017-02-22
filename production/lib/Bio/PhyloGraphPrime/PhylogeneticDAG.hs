@@ -24,12 +24,12 @@ import           Bio.Character.Decoration.Dynamic
 import           Bio.Character.Decoration.Fitch
 import           Bio.Character.Decoration.Metric 
 import           Bio.Sequence
-import           Bio.Sequence.Block (CharacterBlock)
+import           Bio.Sequence.Block        (CharacterBlock)
 import           Bio.PhyloGraphPrime
 import           Bio.PhyloGraphPrime.Node
 import           Bio.PhyloGraphPrime.ReferenceDAG.Internal
-import           Control.Arrow            ((&&&))
-import           Control.Applicative      (liftA2)
+import           Control.Arrow             ((&&&))
+import           Control.Applicative       (liftA2)
 import           Control.Evaluation
 import           Control.Lens
 import           Control.Monad.State.Lazy
@@ -39,24 +39,26 @@ import           Data.Bits
 import           Data.Foldable
 import           Data.Hashable
 import           Data.Hashable.Memoize
-import           Data.HashMap.Lazy        (HashMap)
+import           Data.HashMap.Lazy         (HashMap)
 import qualified Data.HashMap.Lazy  as HM
 import qualified Data.IntMap        as IM
-import           Data.IntSet              (IntSet)
+import           Data.IntSet               (IntSet)
 import qualified Data.IntSet        as IS
 import           Data.Key
-import           Data.List.NonEmpty       (NonEmpty( (:|) ))
+import           Data.List.NonEmpty        (NonEmpty( (:|) ))
 import qualified Data.List.NonEmpty as NE
 import           Data.List.Utility
-import           Data.Map                 (Map)
+import           Data.Map                  (Map)
 import qualified Data.Map           as M
 import           Data.Maybe
 --import           Data.Monoid
 import           Data.MonoTraversable
 import           Data.Semigroup
 import           Data.Semigroup.Foldable
-import           Data.Vector              (Vector)
+import           Data.Vector               (Vector)
 import qualified Data.Vector        as V
+
+import           Prelude            hiding (zipWith)
 
 import Debug.Trace
 
@@ -669,35 +671,29 @@ type ReRootedEdgeContext u v w x y z =
 -- resolutions that contain the "incident" network edge contained on the current
 -- network edge.
 
-assignOptimalDynamicCharacterRootEdges :: (HasCharacterCost d a, Ord a) => (d -> [d] -> d) -> PhylogeneticDAG2 e n m i c f a d -> PhylogeneticDAG2 e n m i c f a d'
-assignOptimalDynamicCharacterRootEdges extensionTransformation (PDAG2 inputDag) = undefined
--- Step 1: Construct a hashmap of all the edges and thier incident egdes.
--- Step 2: Create a lazy memoized hashmap of the edge costs for each dynmaic character.
--- Step 3: For each dynamic character, mind the minimal cost edge(s).
--- Step 4: Update the dynamic character decoration's cost & add an edge reference.
-
-{-
-    case rootEdgeReference of
-      Nothing -> (PDAG2 inputDag)
-      Just er ->
-        let toInitialTuple dec  = (er, dec ^. dynamicCharacterCost)
-
-            -- Resolutions of Blocks of Vectors of characters.
-            defaultAccumulator :: NonEmpty (NonEmpty (Vector (EdgeReference, Cost) ))
-            defaultAccumulator = fmap (fmap (fmap toInitialTuple . dynamicCharacters) . toBlocks) . resolutions . nodeDecoration $ references inputDag ! rootRefWLOG
-        in  
--}
+assignOptimalDynamicCharacterRootEdges
+  :: ( HasCharacterCost m Word
+     , HasCharacterCost i Word
+     , HasCharacterCost f Word
+     , HasCharacterCost a Word
+     , HasCharacterCost d Word
+     , HasCharacterWeight m Double
+     , HasCharacterWeight i Double
+     , HasCharacterWeight f Double
+     , HasCharacterWeight a Double
+     , HasCharacterWeight d Double
+     , Show m
+     , Show i
+     , Show c
+     , Show f
+     , Show a
+     , Show d
+     ) --x, Ord x, Show x)
+  => (d -> [d] -> d)
+  -> PhylogeneticDAG2 e n m i c f a d
+  -> PhylogeneticDAG2 e n m i c f a d
+assignOptimalDynamicCharacterRootEdges extensionTransformation (PDAG2 inputDag) = PDAG2 updatedDag
   where
-
---    defaultAccumulator :: Vector (EdgeReference, Cost)
-{-
-
-    rootEdgeReference =
-        case childRefs $ refVec ! rootRefWLOG of
-          []   -> Nothing
-          [x]  -> Nothing
-          x:y_ -> Just (x,y)
--}
 
     -- Step 1: Construct a hashmap of all the edges.
     unrootedEdges = rootEdgeReferences <> otherUnrootedEdges
@@ -710,7 +706,7 @@ assignOptimalDynamicCharacterRootEdges extensionTransformation (PDAG2 inputDag) 
     minimalCostSequence = sequenceOfEdgesWithMinimalCost
     
     -- Step 4: Update the dynamic character decoration's cost & add an edge reference.
-    -- = rootRefs inputDag
+    updatedDag = inputDag { references = refVec V.// toList modifiedRootRefs }
 
 
     -- These are the edges of the DAG which might, not including the current root edge,
@@ -820,25 +816,24 @@ assignOptimalDynamicCharacterRootEdges extensionTransformation (PDAG2 inputDag) 
                     c = minimum cs
 
 
-    minimalCostSequence = sequenceOfEdgesWithMinimalCost
-
     -- Step 4: Update the dynamic character decoration's cost & add an edge reference.
-    modifiedRootValues = (id &&& modifyRootCosts . (refVec !)) <$> rootRefs inputDag
+    modifiedRootRefs = (id &&& modifyRootCosts . (refVec !)) <$> rootRefs inputDag
       where
-        modifyRootCosts node =
-            PNode2
-            { resolutions          = undefined
-            , nodeDecorationDatum2 = nodeDecorationDatum2 node
-            }
+        modifyRootCosts idxData = idxData { nodeDecoration = nodeDatum }
           where
-            = fmap f $ resolutions node
+            node = nodeDecoration idxData
+            nodeDatum =
+                PNode2
+                { resolutions          = fmap f $ resolutions node
+                , nodeDecorationDatum2 = nodeDecorationDatum2 node
+                }
         f resInfo = resInfo { characterSequence = modifiedSequence  }
           where
-            -- TODO: This needs to be a foldmap withkey for the multi dimensional sequence structure.
-            modifiedSequence = fromBlocks . fmap g . toBlocks $ characterSequence resInfo
-        g charBlock = charBlock { dynamicCharacters = dynamicCharacters }
+            modifiedSequence = fromBlocks . foldMapWithKey1 g . toBlocks $ characterSequence resInfo
+        g k charBlock = pure $ charBlock { dynamicCharacters = modifiedDynamicChars }
           where
-            modifiedDynamicChars = fmap h $ dynamicCharacters charBlock
+            modifiedDynamicChars = zipWith h (minimalCostSequence ! k) $ dynamicCharacters charBlock
+            h (_edgeVal, costVal) originalDec = originalDec & characterCost .~ costVal
         
 
 localResolutionApplication f x y =
