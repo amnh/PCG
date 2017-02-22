@@ -30,7 +30,7 @@ int main() {
         seqB_main[i] = i;
     }
 
-    retType_t retMedChar = { 0, tcm, 16, tcm, 16, 0 };
+    // retType_t *retMedChar = malloc(sizeof(retType_t));
 
     costMatrix_p myMatrix = matrixInit(alphabetSize, tcm);
     cost = getCost(5, 5, myMatrix, 5);
@@ -41,9 +41,20 @@ int main() {
 
     printf("cost on 5, 16: %i\n", cost);
 
+    cost = getCost(4, 8, myMatrix, 5);
+
+    printf("cost on 4, 8: %i\n", cost);
+
+
     dcElement_t* firstKey  = makeDCElement( alphabetSize, 1 );
     dcElement_t* secondKey = makeDCElement( alphabetSize, 1 );
     dcElement_t* retMedian = makeDCElement( alphabetSize, 1 );
+
+//    cost = getCostAndMedian(firstKey, secondKey, retMedian, tcm);
+
+    // printf("median:\n");
+    // printElemBits(retMedian);
+    // printf("\ncost:%d\n", cost);
 
 
     packedChar median;        // just a test: alphabet size == 4, so don't need packedChar*
@@ -59,7 +70,7 @@ int main() {
             cost = tcm[(key1 - 1) * alphabetSize + (key2 - 1)];
             SetBit(&median, key2);
 
-            foundCost = getCost(key1, key2, myMatrix, alphabetSize);
+            foundCost = getCostAndMedian(firstKey, secondKey, retMedian, tcm);
 
             if(median != *retMedian->element || cost != foundCost) {
                 printf("key 1 set: %zu\n", key1);

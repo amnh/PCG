@@ -25,7 +25,7 @@ module Analysis.Parsimony.Dynamic.SequentialAlign.FFI
 
 --import Bio.Character.Encodable
 import Bio.Character.Exportable
-import Control.Lens
+import Control.Lens    hiding (element)
 import Data.Bits
 import Data.Foldable
 import Data.Monoid
@@ -75,10 +75,9 @@ instance Storable MemoizedCostMatrix where
 -- It is therefore indexed not by powers of two, but by cardinal integer.
 -- TODO: For now we only allocate 2d matrices. 3d will come later.
 foreign import ccall unsafe "costMatrix matrixInit"
-    initializeMemoizedCMfn_c :: Ptr CInt
-                             -> CSize
-                             -> Ptr MemoizedCostMatrix
-                             -> IO ()
+    initializeMemoizedCMfn_c :: CSize
+                             -> Ptr CInt
+                             -> IO (Ptr ForeignVoid) -- MemoizedCostMatrix
 
 
 -- | Set up and return a cost matrix
@@ -86,12 +85,12 @@ foreign import ccall unsafe "costMatrix matrixInit"
 -- The cost matrix is allocated strictly.
 getMemoizedCostMatrix :: Word
                       -> (Word -> Word -> Word)
-                      -> Ptr MemoizedCostMatrix
+                      -> MemoizedCostMatrix
 getMemoizedCostMatrix alphabetSize costFn = unsafePerformIO . withArray rowMajorList $ \allocedTCM -> do
-        output <- malloc :: IO (Ptr MemoizedCostMatrix)
+--        output <- malloc :: IO (Ptr MemoizedCostMatrix)
         -- Hopefully the strictness annotation forces the allocation of the CostMatrix2d to happen immediately.
-        !_ <- initializeMemoizedCMfn_c allocedTCM (coerceEnum alphabetSize) output
-        pure output
+        ! resultPtr <- initializeMemoizedCMfn_c (coerceEnum alphabetSize) allocedTCM
+        pure $ MemoizedCostMatrix resultPtr
     where
         -- This *should* be in row major order due to the manner in which list comprehensions are performed.
         rowMajorList = [ coerceEnum $ costFn i j | i <- range,  j <- range ]
