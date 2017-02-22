@@ -31,6 +31,7 @@ import           Bio.PhyloGraphPrime.ReferenceDAG.Internal
 import           Control.Arrow            ((&&&))
 import           Control.Applicative      (liftA2)
 import           Control.Evaluation
+import           Control.Lens
 import           Control.Monad.State.Lazy
 import           Data.Bits
 --import           Data.DuplicateSet
@@ -49,6 +50,7 @@ import qualified Data.List.NonEmpty as NE
 import           Data.List.Utility
 import           Data.Map                 (Map)
 import qualified Data.Map           as M
+import           Data.Maybe
 --import           Data.Monoid
 import           Data.MonoTraversable
 import           Data.Semigroup
@@ -667,7 +669,7 @@ type ReRootedEdgeContext u v w x y z =
 -- resolutions that contain the "incident" network edge contained on the current
 -- network edge.
 
-assignOptimalDynamicCharacterRootEdges :: (d -> [d] -> d) -> PhylogeneticDAG2 e n m i c f a d -> PhylogeneticDAG2 e n m i c f a d'
+assignOptimalDynamicCharacterRootEdges :: (HasCharacterCost d a, Ord a) => (d -> [d] -> d) -> PhylogeneticDAG2 e n m i c f a d -> PhylogeneticDAG2 e n m i c f a d'
 assignOptimalDynamicCharacterRootEdges extensionTransformation (PDAG2 inputDag) = undefined
 -- Step 1: Construct a hashmap of all the edges and thier incident egdes.
 -- Step 2: Create a lazy memoized hashmap of the edge costs for each dynmaic character.
@@ -688,8 +690,6 @@ assignOptimalDynamicCharacterRootEdges extensionTransformation (PDAG2 inputDag) 
   where
 
 --    defaultAccumulator :: Vector (EdgeReference, Cost)
-    rootRefWLOG  = NE.head $ rootRefs inputDag
-    sequenceWLOG = fmap dynamicCharacters . toBlocks . characterSequence . NE.head $ getCache rootRefWLOG
 {-
 
     rootEdgeReference =
@@ -707,8 +707,10 @@ assignOptimalDynamicCharacterRootEdges extensionTransformation (PDAG2 inputDag) 
     edgeCostMapping = referenceEdgeMapping
 
     -- Step 3: For each dynamic character, find the minimal cost edge(s).
+    minimalCostSequence = sequenceOfEdgesWithMinimalCost
     
     -- Step 4: Update the dynamic character decoration's cost & add an edge reference.
+    -- = rootRefs inputDag
 
 
     -- These are the edges of the DAG which might, not including the current root edge,
@@ -796,6 +798,48 @@ assignOptimalDynamicCharacterRootEdges extensionTransformation (PDAG2 inputDag) 
                 parentalMemoizedSubstructure = (contextualNodeDatum ! parentRef) ! (parentRef, i)
                 relativeSubtreeDatumValue    = localResolutionApplication extensionTransformation parentalMemoizedSubstructure childMemoizedSubstructure
 
+    rootRefWLOG  = NE.head $ rootRefs inputDag
+    sequenceWLOG = fmap dynamicCharacters . toBlocks . characterSequence . NE.head $ getCache rootRefWLOG
+
+    sequenceOfEdgesWithMinimalCost = foldMapWithKey1 f sequenceWLOG
+      where
+        f k v = (V.generate (length v) g) :| []
+          where
+            g i = result
+              where
+                result@(minimumEdge, minimumCost) = fromJust $ foldlWithKey h Nothing edgeIndexCostMapping
+                edgeIndexCostMapping = fmap (fmap ((^. characterCost) . (! i) . dynamicCharacters . (! k) . toBlocks . characterSequence)) edgeCostMapping
+                h acc e cs =
+                    case acc of
+                      Nothing      -> Just (e, c)
+                      Just (e',c') ->
+                        if   c < c'
+                        then Just (e, c)
+                        else acc
+                  where
+                    c = minimum cs
+
+
+    minimalCostSequence = sequenceOfEdgesWithMinimalCost
+
+    -- Step 4: Update the dynamic character decoration's cost & add an edge reference.
+    modifiedRootValues = (id &&& modifyRootCosts . (refVec !)) <$> rootRefs inputDag
+      where
+        modifyRootCosts node =
+            PNode2
+            { resolutions          = undefined
+            , nodeDecorationDatum2 = nodeDecorationDatum2 node
+            }
+          where
+            = fmap f $ resolutions node
+        f resInfo = resInfo { characterSequence = modifiedSequence  }
+          where
+            -- TODO: This needs to be a foldmap withkey for the multi dimensional sequence structure.
+            modifiedSequence = fromBlocks . fmap g . toBlocks $ characterSequence resInfo
+        g charBlock = charBlock { dynamicCharacters = dynamicCharacters }
+          where
+            modifiedDynamicChars = fmap h $ dynamicCharacters charBlock
+        
 
 localResolutionApplication f x y =
     liftA2 (generateLocalResolutions id2 id2 id2 id2 id2 f) mutalatedChild relativeChildResolutions
