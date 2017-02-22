@@ -172,7 +172,7 @@ sequentialAlign x y a b = Right (x + y, a, b)
 -- Modified from code samples here: https://en.wikibooks.org/wiki/Haskell/FFI#Working_with_C_Structures
 data AlignResult
    = AlignResult
-   { weight      :: CSize
+   { cost        :: CSize
    , finalLength :: CSize
    , character1  :: Ptr CArrayUnit
    , character2  :: Ptr CArrayUnit
@@ -185,13 +185,13 @@ instance Storable AlignResult where
     sizeOf    _ = (#size struct alignResult_t) -- #size is a built-in that works with arrays, as are #peek and #poke, below
     alignment _ = alignment (undefined :: CArrayUnit)
     peek ptr    = do -- to get values from the C app
-        wt      <- (#peek struct alignResult_t, finalWt )    ptr
+        newCost <- (#peek struct alignResult_t, finalWt )    ptr
         len     <- (#peek struct alignResult_t, finalLength) ptr
         char1   <- (#peek struct alignResult_t, finalChar1)  ptr
         char2   <- (#peek struct alignResult_t, finalChar2)  ptr
         med     <- (#peek struct alignResult_t, medianChar)  ptr
         pure AlignResult
-             { weight      = wt
+             { cost        = newCost
              , finalLength = len
              , character1  = char1
              , character2  = char2
