@@ -46,9 +46,9 @@ int main() {
     printf("cost on 4, 8: %i\n", cost);
 
 
-    dcElement_t* firstKey  = makeDCElement( alphabetSize, 1 );
-    dcElement_t* secondKey = makeDCElement( alphabetSize, 1 );
-    dcElement_t* retMedian = makeDCElement( alphabetSize, 1 );
+    dcElement_t* firstKey  = allocateDCElement( alphabetSize );
+    dcElement_t* secondKey = allocateDCElement( alphabetSize );
+    dcElement_t* retMedian = allocateDCElement( alphabetSize );
 
 //    cost = getCostAndMedian(firstKey, secondKey, retMedian, tcm);
 

@@ -168,7 +168,8 @@ dcElement_t* allocateDCElement( const size_t alphSize ) {
 
 dcElement_t* makeDCElement( const size_t alphSize, const uint64_t value ) {
     dcElement_t *output = allocateDCElement( alphSize );
-
+    //TODO: this looks like a lot of extra work. Couldn't I just copy the value?
+    // or I could TestBit on the value.
     // need a check here for longer alphabets
     for( size_t bitIdx = 0; bitIdx < alphSize; bitIdx++ ) {
         if( value & (CANONICAL_ONE << bitIdx) ) {
