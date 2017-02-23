@@ -28,6 +28,7 @@ extern "C" {
 
 #include "dynamicCharacterOperations.h"
 
+/** Next three fns defined here to use on C side. */
 costMatrix_p construct_CostMatrix_C (size_t alphSize, int* tcm);
 void destruct_CostMatrix_C (costMatrix_p mytype);
 int call_getSetCost_C (costMatrix_p untyped_self, dcElement_t* left, dcElement_t* right, dcElement_t* retMedian);
