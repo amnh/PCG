@@ -51,8 +51,21 @@ int getCostAndMedian(dcElement_t *elem1, dcElement_t *elem2, dcElement_t *retEle
     copyPackedChar( elem1->element, elem1copy->element, alphSize);
     copyPackedChar( elem2->element, elem2copy->element, alphSize);
 
+    printf("Here we go:\n");
+    printPackedChar(elem1copy->element, 1, alphSize);
+    printf("Go again:\n");
+    printPackedChar(elem2copy->element, 1, alphSize);
+
+
+    printPackedChar(  elem1->element, 1, alphSize);
+    printPackedChar(  elem2->element, 1, alphSize);
+    printPackedChar(retElem->element, 1, alphSize);
+
+    printf("Get dat cost:\n");
     int cost = call_getSetCost_C(tcm, elem1copy, elem2copy, retElem);
 
+    printf("success!?");
+    
     //TODO: return a success value
     int success = 0;
 
