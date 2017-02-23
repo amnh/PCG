@@ -79,6 +79,8 @@ int main() {
         ClearBit(&median, key1);
     }
 
+    matrixDestroy(myMatrix);
+    
     // int success = aligner(seqA_main, seqALen, seqB_main, seqBLen, alphabetSize, getCostMatrix(myMatrix), &retMedChar);
 
     // if (success == 0) {
