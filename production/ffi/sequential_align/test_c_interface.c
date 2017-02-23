@@ -60,12 +60,12 @@ int main() {
     packedChar median;        // just a test: alphabet size == 4, so don't need packedChar*
     median = CANONICAL_ZERO;
 
-    for (size_t key1 = 1; key1 <= alphabetSize; key1++) { // for every possible value of key1, key2
+    for (size_t key1 = 0; key1 < alphabetSize; key1++) { // for every possible value of key1, key2
         SetBit(firstKey->element, key1);
         SetBit(&median, key1);    // computed median just for testing.
         // printPackedChar(&median, 1, alphabetSize);
 
-        for (size_t key2 = 1; key2 <= alphabetSize; key2++) { // no longer assumes 0 diagonal
+        for (size_t key2 = 0; key2 < alphabetSize; key2++) { // no longer assumes 0 diagonal
             SetBit(secondKey->element, key2);
             cost = tcm[(key1 - 1) * alphabetSize + (key2 - 1)];
             SetBit(&median, key2);

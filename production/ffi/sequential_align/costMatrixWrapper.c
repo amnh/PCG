@@ -56,9 +56,10 @@ int getCostAndMedian(dcElement_t *elem1, dcElement_t *elem2, dcElement_t *retEle
     printf("Go again:\n");
     printPackedChar(elem2copy->element, 1, alphSize);
 
-
+    printf("Inputs:\n");
     printPackedChar(  elem1->element, 1, alphSize);
     printPackedChar(  elem2->element, 1, alphSize);
+    printf("Output buffer:\n");
     printPackedChar(retElem->element, 1, alphSize);
 
     printf("Get dat cost:\n");
