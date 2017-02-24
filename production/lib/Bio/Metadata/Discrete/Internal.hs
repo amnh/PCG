@@ -33,7 +33,7 @@ import Data.Monoid
 
 -- |
 -- Represents a concrete type containing metadata fields shared across all
--- discrete different bins. Continous bins do not have Alphabets. 
+-- discrete different bins. Continous bins do not have Alphabets.
 data DiscreteCharacterMetadataDec
    = DiscreteCharacterMetadataDec
    { alphabet       :: Alphabet String
@@ -49,7 +49,7 @@ class ( GeneralCharacterMetadata s
       ) => DiscreteCharacterMetadata s where
 
     extractDiscreteCharacterMetadata :: s -> DiscreteCharacterMetadataDec
-      
+
 
 instance Eq DiscreteCharacterMetadataDec where
 
@@ -68,14 +68,14 @@ instance Show DiscreteCharacterMetadataDec where
 
 
 
--- | (✔) 
+-- | (✔)
 instance GeneralCharacterMetadata DiscreteCharacterMetadataDec where
 
     {-# INLINE extractGeneralCharacterMetadata #-}
     extractGeneralCharacterMetadata = generalData
-      
-  
--- | (✔) 
+
+
+-- | (✔)
 instance DiscreteCharacterMetadata DiscreteCharacterMetadataDec where
 
     {-# INLINE extractDiscreteCharacterMetadata #-}

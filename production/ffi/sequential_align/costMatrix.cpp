@@ -12,6 +12,7 @@ void destruct_CostMatrix_C(costMatrix_p untyped_self) {
 }
 
 int call_getSetCost_C(costMatrix_p untyped_self, dcElement_t* left, dcElement_t* right, dcElement_t* retMedian) {
+
     CostMatrix* thisMtx = static_cast<CostMatrix*> (untyped_self);
     return thisMtx->getSetCostMedian(left, right, retMedian);
 }
@@ -106,9 +107,9 @@ int CostMatrix::getSetCostMedian(dcElement_t* left, dcElement_t* right, dcElemen
     mapIterator found;
     int foundCost;
 
-    printf("1st: {%zu}: %lu\n", toLookup->first.alphSize , *toLookup->first.element );
-    printf("2nd: {%zu}: %lu\n", toLookup->second.alphSize, *toLookup->second.element);
-    
+    // printf("1st: {%zu}: %llu\n", toLookup->first.alphSize , *toLookup->first.element );
+    // printf("2nd: {%zu}: %llu\n", toLookup->second.alphSize, *toLookup->second.element);
+
     found = myMatrix.find(*toLookup);
 
     if ( found == myMatrix.end() ) {
