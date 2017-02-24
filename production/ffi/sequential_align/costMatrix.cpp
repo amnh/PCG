@@ -12,6 +12,7 @@ void destruct_CostMatrix_C(costMatrix_p untyped_self) {
 }
 
 int call_getSetCost_C(costMatrix_p untyped_self, dcElement_t* left, dcElement_t* right, dcElement_t* retMedian) {
+
     CostMatrix* thisMtx = static_cast<CostMatrix*> (untyped_self);
     return thisMtx->getSetCostMedian(left, right, retMedian);
 }
@@ -105,9 +106,9 @@ int CostMatrix::getSetCostMedian(dcElement_t* left, dcElement_t* right, dcElemen
     toLookup.second = *right;
     mapIterator found;
     int foundCost;
-
+    printf("not yet found\n");
     found = myMatrix.find(toLookup);
-
+    printf("found\n");
     if ( found == myMatrix.end() ) {
         if(DEBUG) printf("\ngetSetCost didn't find %llu %llu.\n", left->element[0], right->element[0]);
         costMedian_t* computedCostMed = computeCostMedian(toLookup);

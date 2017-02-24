@@ -31,13 +31,6 @@ import Bio.Metadata.Discrete
 import Bio.Metadata.DiscreteWithTCM
 import Control.Lens
 
--- |
--- A decoration of an initial encoding of a dynamic character which has the
--- appropriate 'Lens' & character class constraints.
-class ( DiscreteWithTcmCharacterMetadata    s c
-      , HasDenseTransitionCostMatrix        s MemoizedCostMatrix
-      , HasSparseTransitionCostMatrix       s DenseTransitionCostMatrix
-      ) => DynamicCharacterMetadata s c | s -> c where
 
 -- |
 -- A 'Lens' for the 'denseTransitionCostMatrix' field

@@ -22,8 +22,14 @@ int getCost(packedChar elem1, packedChar elem2, costMatrix_p tcm, size_t alphSiz
     packedChar *packedElem2   = malloc(sizeof(packedChar));
 
     *packedElemRet = CANONICAL_ZERO;
-    *packedElem1   = elem1;
+    *packedElem1   = elem1;    // should be okay, because elem1 and elem2 are just ints, so pass by copy
     *packedElem2   = elem2;
+
+    printf("** %llu\n", elem1);
+    printPackedChar(packedElem1, 1, alphSize);
+    printf("** %llu\n", elem2);
+    printPackedChar(packedElem2, 1, alphSize);
+
 
     dcElement_t retElem = { alphSize, packedElemRet };
     dcElement_t dcElem1 = { alphSize, packedElem1 };
@@ -31,6 +37,7 @@ int getCost(packedChar elem1, packedChar elem2, costMatrix_p tcm, size_t alphSiz
 
     int cost = call_getSetCost_C(tcm, &dcElem1, &dcElem2, &retElem);
 
+    printf("cost: %d\n", cost);
     free(packedElemRet);
 
     return cost;
