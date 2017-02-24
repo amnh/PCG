@@ -11,7 +11,7 @@ import Data.Either.Combinators    (isRight, rightToMaybe)
 import Data.Maybe                 (fromJust,isNothing)
 import PCG.Command.Types
 import PCG.Command.Types.Read.Internal
-import PCG.Script.Types           (Argument(..),Lident(..),Primative(..))
+import PCG.Script.Types
 
 import Debug.Trace
 
@@ -23,29 +23,36 @@ validate xs =
     ([]  , ys) -> Right $ READ ys
 
 validateReadArg :: Argument -> Either String FileSpecification
-validateReadArg x | traceShow x False = undefined
+--validateReadArg x | traceShow x False = undefined
+--validateReadArg x | trace "[1] First!" False = undefined
 validateReadArg (PrimativeArg   (TextValue str))   = Right $ UnspecifiedFile [str]
+--validateReadArg x | trace "[2] Second" False = undefined
 validateReadArg (LidentNamedArg (Lident identifier) (ArgumentList xs)) | (\x -> x == "aminoacid"  || x == "aminoacids"     ) $ toLower <$> identifier =
   case partitionEithers $ primativeString <$> xs of
     ([]    , filePaths) -> Right $ AminoAcidFile  filePaths
     (errors, _        ) -> Left  $ unlines errors
+--validateReadArg x | trace "[3] Third" False = undefined
 validateReadArg (LidentNamedArg (Lident identifier) (ArgumentList xs)) | (\x -> x == "nucleotide" || x == "nucleotides"    ) $ toLower <$> identifier =
   case partitionEithers $ primativeString <$> xs of
     ([]    , filePaths) -> Right $ NucleotideFile filePaths
     (errors, _        ) -> Left  $ unlines errors
+--validateReadArg x | trace "[4] Fourth" False = undefined
 validateReadArg (LidentNamedArg (Lident identifier) (ArgumentList xs)) | "annotated"  == (toLower <$> identifier) =
   case partitionEithers $ primativeString <$> xs of
     ([]    , filePaths) -> Right $ AnnotatedFile  filePaths
     (errors, _        ) -> Left  $ unlines errors
+--validateReadArg x | trace "[5] Fifth" False = undefined
 validateReadArg (LidentNamedArg (Lident identifier) (ArgumentList xs)) | (\x -> x == "chomosome"  || x == "chromosomes"    ) $ toLower <$> identifier =
   case partitionEithers $ primativeString <$> xs of
     ([]    , filePaths) -> Right $ ChromosomeFile filePaths
     (errors, _        ) -> Left  $ unlines errors
+--validateReadArg x | trace "[6] Sixth" False = undefined
 validateReadArg (LidentNamedArg (Lident identifier) (ArgumentList xs)) | (\x -> x == "genome"     || x == "genomes"        ) $ toLower <$> identifier =
   case partitionEithers $ primativeString <$> xs of
     ([]    , filePaths) -> Right $ GenomeFile     filePaths
     (errors, _        ) -> Left  $ unlines errors
-validateReadArg (LidentNamedArg (Lident identifier) (ArgumentList xs)) | (\x -> x == "breakinv"   || x == "custom_alphabet") $ toLower <$> identifier = subDefinition
+--validateReadArg x | trace "[7] Seventh" False = undefined
+validateReadArg (CommandArg (DubiousCommand (Lident identifier) xs)) | (\x -> x == "breakinv"   || x == "custom_alphabet") $ toLower <$> identifier = subDefinition
   where
     (files,suffix) = span (isRight . primativeString) xs
     files'  = (fromJust . rightToMaybe . primativeString) <$> files
@@ -83,7 +90,7 @@ validateReadArg (LidentNamedArg (Lident identifier) (ArgumentList (arg:args))) |
     _                              -> Left "Too many arguments"
   where
     val = validateReadArg arg
-validateReadArg _ = Left "Unknown argument in read command"
+validateReadArg _ = traceShowId $ Left "Unknown argument in read command"
 
 partitionOptions :: [CustomAlphabetOptions] -> ([CustomAlphabetOptions],[CustomAlphabetOptions],[CustomAlphabetOptions])
 partitionOptions = foldr f ([],[],[])
