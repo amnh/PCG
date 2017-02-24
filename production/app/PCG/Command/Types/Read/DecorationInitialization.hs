@@ -94,7 +94,7 @@ traceOpt identifier x = (trace ("Before " <> identifier) ())
 initializeDecorations2 (PhylogeneticSolution forests) = PhylogeneticSolution $ fmap performDecoration <$> forests
   where
 --    performDecoration :: CharacterDAG -> InitialDecorationDAG
-    performDecoration =
+    performDecoration = assignOptimalDynamicCharacterRootEdges dynamicScoring2 .
       postorderSequence'
         (g  sankoffPostOrder)
         (g  sankoffPostOrder)
@@ -108,11 +108,15 @@ initializeDecorations2 (PhylogeneticSolution forests) = PhylogeneticSolution $ f
         g h        e  xs = h (error $ "We shouldn't be using this value." ++ show e ++ show (length xs)) xs
 
         id2 x _ = x
-
+        dynamicScoring  = directOptimizationPostOrder (\x y -> naiveDOConst x y undefined)
+        -- Because of monomophism BS
+        dynamicScoring2 = directOptimizationPostOrder (\x y -> naiveDOConst x y undefined)
+{--
         adaptiveDirectOptimizationPostOrder _ _ | trace "DO call" False = undefined
         adaptiveDirectOptimizationPostOrder dec kidDecs = directOptimizationPostOrder pairwiseAlignmentFunction dec kidDecs
           where
             pairwiseAlignmentFunction = chooseDirectOptimizationComparison dec kidDecs
+--}
 
 
 {-
@@ -266,6 +270,7 @@ chooseDirectOptimizationComparison :: ( SimpleDynamicDecoration d  c
                                    -> c
                                    -> c
                                    -> (c, Double, c, c, c)
+--chooseDirectOptimizationComparison _ _ = (\x y -> naiveDOConst x y undefined)
 {--
 chooseDirectOptimizationComparison dec decs = \x y -> naiveDO x y scm
   where
@@ -283,7 +288,7 @@ chooseDirectOptimizationComparison dec decs =
   where
 --    selectBranch candidate = pairwiseSequentialAlignment (candidate ^. sparseTransitionCostMatrix) 
     selectBranch candidate = let !_ = force (candidate ^. sparseTransitionCostMatrix)
-                             in \x y -> (x,1,x,x,y) -- pairwiseSequentialAlignment (candidate ^. sparseTransitionCostMatrix) 
+                             in \x y -> naiveDOConst x y undefined -- pairwiseSequentialAlignment (candidate ^. sparseTransitionCostMatrix) 
 {--}
 -- do this when shit stops segfaulting
 {-
@@ -302,7 +307,6 @@ chooseDirectOptimizationComparison dec decs =
            let !scm = (candidate ^. symbolChangeMatrix)
            in \x y -> naiveDO x y scm
 -}
-
 
 
 {-

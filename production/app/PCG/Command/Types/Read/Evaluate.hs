@@ -7,6 +7,7 @@ module PCG.Command.Types.Read.Evaluate
 import           Bio.Character.Parsed
 import           Bio.Metadata.Parsed
 import           Bio.PhyloGraph.Forest
+import           Bio.PhyloGraphPrime
 import           Bio.PhyloGraphPrime.PhylogeneticDAG
 --import           Bio.PhyloGraph.Solution      (SearchState)
 import           Control.Evaluation
@@ -21,14 +22,14 @@ import           Data.Bifunctor               (bimap,first)
 import           Data.Either.Custom
 import           Data.Foldable
 import           Data.Functor
--- import           Data.Key                     ((!),lookup)
+import           Data.Key
 -- import           Data.List.NonEmpty           (NonEmpty( (:|) ))
 -- import qualified Data.List.NonEmpty    as NE
 -- import           Data.List.Utility            (subsetOf)
 -- import           Data.Map                     (Map,assocs,insert,union)
 -- import qualified Data.Map              as M
 -- import           Data.Maybe                   (fromMaybe)
--- import           Data.Monoid                  ((<>))
+import           Data.Monoid                  ((<>))
 import           Data.Ord                     (comparing)
 import           Data.TCM                     (TCMDiagnosis(..), TCMStructure(..), diagnoseTcm)
 import qualified Data.TCM              as TCM
@@ -74,14 +75,35 @@ evaluate (READ fileSpecs) _old = do
 --        case masterUnify $ transformation <$> concat xs of
           Left uErr -> fail $ show uErr -- Report unification errors here.
            -- TODO: rectify against 'old' SearchState, don't just blindly merge or ignore old state
-          Right g   -> (liftIO . putStrLn $ show g)
+          Right g   ->  (liftIO . putStrLn {- . take 500000 -} $ show g)
+                       -- (liftIO . putStrLn $ renderSequenceCosts g)
                     $> g
---                    $> (fmap initializeDecorations2 g)
   where
     transformation = id -- expandIUPAC
     decoration = fmap (fmap initializeDecorations)
 
 evaluate _ _ = fail "Invalid READ command binding"
+
+renderSequenceCosts (Left    x) = "<Trees only>"
+renderSequenceCosts (Right sol) = outputStream
+  where
+    outputStream = foldMapWithKey f $ phylogeneticForests sol
+    f key forest = unlines
+        [ "Solution #" <> show key
+        , ""
+        , foldMapWithKey g forest
+        ]
+    g key dag = unlines
+        [ "Forest #" <> show key
+        , ""
+        , foldMapWithKey h $ rootCosts dag
+        ]
+    h key rootCost = unlines
+        [ "Root #"  <> show key
+        , "Cost = " <> show rootCost
+        ]
+      
+--    unlines . toList . fmap (unlines . toList . fmap (unlines . fmap show . toList . rootCosts)) . phylogeneticForests
 
 
 parseSpecifiedFile  :: FileSpecification -> EitherT ReadError IO [FracturedParseResult]

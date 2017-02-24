@@ -54,7 +54,15 @@ initializeLeaf
   :: SimpleDynamicDecoration d c
   => d
   -> DynamicDecorationDirectOptimizationPostOrderResult c
-initializeLeaf = extendDynamicToPostOrder <$> id <*> const 0 <*> (^. encoded) <*> (^. encoded) <*> (^. encoded) <*> (^. encoded)
+initializeLeaf =
+    extendDynamicToPostOrder
+      <$> id
+      <*> const 0
+      <*> const 0
+      <*> (^. encoded)
+      <*> (^. encoded)
+      <*> (^. encoded)
+      <*> (^. encoded)
 
 
 updateFromLeaves
@@ -62,13 +70,15 @@ updateFromLeaves
   => PairwiseAlignment c
   -> NonEmpty (DynamicDecorationDirectOptimizationPostOrderResult c)
   -> DynamicDecorationDirectOptimizationPostOrderResult c
-updateFromLeaves _ (x:|[]) = x
+updateFromLeaves _ (x:|[]) = x -- This shouldn't happen
 updateFromLeaves pairwiseAlignment (leftChild:|rightChild:_) =
-    extendDynamicToPostOrder leftChild (truncate cost) ungapped gapped lhsAlignment rhsAlignment
+    extendDynamicToPostOrder leftChild localCost totalCost ungapped gapped lhsAlignment rhsAlignment
   where
     -- TODO:
     -- Change type of 'cost' to an integral value like 'Word'
-    (ungapped, cost, gapped, lhsAlignment, rhsAlignment) = pairwiseAlignment (leftChild ^. encoded) (rightChild ^. encoded)
+    (ungapped, cost, gapped, lhsAlignment, rhsAlignment) = pairwiseAlignment (leftChild ^. preliminaryUngapped) (rightChild ^. preliminaryUngapped)
+    localCost = truncate cost
+    totalCost = localCost + leftChild ^. characterCost + rightChild ^. characterCost
 
 
 directOptimizationPreOrder
