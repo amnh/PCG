@@ -25,11 +25,25 @@ int getCost(packedChar elem1, packedChar elem2, costMatrix_p tcm, size_t alphSiz
     *packedElem1   = elem1;
     *packedElem2   = elem2;
 
+    /**
     dcElement_t retElem = { alphSize, packedElemRet };
-    dcElement_t dcElem1 = { alphSize, packedElem1 };
-    dcElement_t dcElem2 = { alphSize, packedElem2 };
+    dcElement_t dcElem1 = { alphSize, packedElem1   };
+    dcElement_t dcElem2 = { alphSize, packedElem2   };
+    **/
 
-    int cost = call_getSetCost_C(tcm, &dcElem1, &dcElem2, &retElem);
+    dcElement_t *retElem = malloc(sizeof(dcElement_t));
+    dcElement_t *dcElem1 = malloc(sizeof(dcElement_t));
+    dcElement_t *dcElem2 = malloc(sizeof(dcElement_t));
+
+    retElem->alphSize = alphSize;
+    dcElem1->alphSize = alphSize;
+    dcElem2->alphSize = alphSize;
+
+    retElem->element = packedElemRet;
+    dcElem1->element = packedElem1;
+    dcElem2->element = packedElem2;
+
+    int cost = call_getSetCost_C(tcm, dcElem1, dcElem2, retElem);
 
     free(packedElemRet);
 

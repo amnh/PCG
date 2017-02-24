@@ -70,7 +70,7 @@ int main() {
             cost = tcm[(key1 - 1) * alphabetSize + (key2 - 1)];
             SetBit(&median, key2);
 
-            foundCost = getCostAndMedian(firstKey, secondKey, retMedian, tcm);
+            foundCost = getCost(*firstKey->element, *secondKey->element, myMatrix, alphabetSize);
 
             if(median != *retMedian->element || cost != foundCost) {
                 printf("key 1 set: %zu\n", key1);
@@ -92,6 +92,12 @@ int main() {
 
     matrixDestroy(myMatrix);
     
+    free(firstKey->element );
+    free(secondKey->element);
+    free(retMedian->element);
+    free(firstKey );
+    free(secondKey);
+    free(retMedian);
     // int success = aligner(seqA_main, seqALen, seqB_main, seqBLen, alphabetSize, getCostMatrix(myMatrix), &retMedChar);
 
     // if (success == 0) {

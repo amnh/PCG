@@ -100,26 +100,29 @@ int CostMatrix::getCostMedian(dcElement_t* left, dcElement_t* right, dcElement_t
 }
 
 int CostMatrix::getSetCostMedian(dcElement_t* left, dcElement_t* right, dcElement_t* retMedian) {
-    keys_t toLookup;
-    toLookup.first  = *left;
-    toLookup.second = *right;
+    keys_t* toLookup = allocKeys_t(left->alphSize);
+    toLookup->first  = *left;
+    toLookup->second = *right;
     mapIterator found;
     int foundCost;
 
-    found = myMatrix.find(toLookup);
+    printf("1st: {%zu}: %lu\n", toLookup->first.alphSize , *toLookup->first.element );
+    printf("2nd: {%zu}: %lu\n", toLookup->second.alphSize, *toLookup->second.element);
+    
+    found = myMatrix.find(*toLookup);
 
     if ( found == myMatrix.end() ) {
         if(DEBUG) printf("\ngetSetCost didn't find %llu %llu.\n", left->element[0], right->element[0]);
-        costMedian_t* computedCostMed = computeCostMedian(toLookup);
+        costMedian_t* computedCostMed = computeCostMedian(*toLookup);
         if(DEBUG) printf("computed cost, median: %2i %llu\n", computedCostMed->first, computedCostMed->second[0]);
         foundCost                     = computedCostMed->first;
         copyPackedChar(computedCostMed->second, retMedian->element, alphabetSize);
 
         setValue (toLookup, computedCostMed);
     } else {
-            // because in the next two lines, I get back a pair<keys, costMedian_t>
+        // because in the next two lines, I get back a pair<keys, costMedian_t>
         foundCost          = found->second.first;
-        retMedian->element = found->second.second;
+        // retMedian->element = found->second.second;
     }
 
     return foundCost;
@@ -261,6 +264,6 @@ void CostMatrix::setUpInitialMatrix (int* tcm) {
     // printf("freed keys\n");
 }
 
-void CostMatrix::setValue(keys_t key, costMedian_t* median) {
-    myMatrix.insert(std::make_pair(key, *median));
+void CostMatrix::setValue(keys_t* key, costMedian_t* median) {
+    myMatrix.insert(std::make_pair(*key, *median));
 }

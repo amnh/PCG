@@ -50,6 +50,7 @@ import           Bio.PhyloGraphPrime
 import           Bio.PhyloGraphPrime.Node
 import           Bio.PhyloGraphPrime.ReferenceDAG
 import           Bio.PhyloGraphPrime.PhylogeneticDAG
+import           Control.DeepSeq
 import           Control.Lens
 --import           Control.Arrow                     ((&&&))
 --import           Control.Applicative               ((<|>))
@@ -280,7 +281,9 @@ chooseDirectOptimizationComparison dec decs =
       []  -> selectBranch dec
       x:_ -> selectBranch x
   where
-    selectBranch candidate = pairwiseSequentialAlignment (candidate ^. sparseTransitionCostMatrix)
+--    selectBranch candidate = pairwiseSequentialAlignment (candidate ^. sparseTransitionCostMatrix) 
+    selectBranch candidate = let !_ = force (candidate ^. sparseTransitionCostMatrix)
+                             in \x y -> (x,1,x,x,y) -- pairwiseSequentialAlignment (candidate ^. sparseTransitionCostMatrix) 
 {--}
 -- do this when shit stops segfaulting
 {-
