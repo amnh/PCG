@@ -31,6 +31,7 @@ import           Bio.Character.Encodable.Internal
 import           Bio.Character.Encodable.Stream
 import           Bio.Character.Exportable.Class
 import           Control.Arrow                       ((***))
+import           Control.Lens
 import           Data.Alphabet
 import           Data.BitMatrix
 import           Data.BitMatrix.Internal(BitMatrix(..))
@@ -291,7 +292,11 @@ instance Exportable DynamicChar where
         x = numRows bm
         y = numCols bm 
         
-    fromExportableBuffer = undefined
+    fromExportableBuffer ecs = DC $ BitMatrix elemWidth newBitVec
+      where
+        newBitVec = bufferChunksToBitVector elemCount elemWidth $ exportedBufferChunks ecs
+        elemCount = ecs ^. exportedElementCount
+        elemWidth = ecs ^. exportedElementWidth
 
     toExportableElements = encodableStreamToExportableCharacterElements
     
