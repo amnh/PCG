@@ -17,6 +17,10 @@ void matrixDestroy(costMatrix_p untyped_ptr) {
 int getCost(packedChar elem1, packedChar elem2, costMatrix_p tcm, size_t alphSize) {
     // Need to create new pointers, because of copying into cost matrix.
     // TODO: valgrind this.
+    if (elem1 == 0 || elem2 == 0) {
+      return 1337;
+    }
+  
     packedChar *packedElemRet = malloc(sizeof(packedChar));
     packedChar *packedElem1   = malloc(sizeof(packedChar));
     packedChar *packedElem2   = malloc(sizeof(packedChar));
@@ -43,8 +47,14 @@ int getCost(packedChar elem1, packedChar elem2, costMatrix_p tcm, size_t alphSiz
     dcElem1->element = packedElem1;
     dcElem2->element = packedElem2;
 
+    printf("Before 'getSetCost' call\n");
+    fflush(stdout);
+    
     int cost = call_getSetCost_C(tcm, dcElem1, dcElem2, retElem);
 
+    printf("After  'getSetCost' call\n");
+    fflush(stdout);
+    
     free(packedElemRet);
 
     return cost;
