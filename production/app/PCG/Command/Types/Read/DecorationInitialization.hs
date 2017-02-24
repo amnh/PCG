@@ -138,7 +138,7 @@ initializeDecorations :: CharacterResult -> PhylogeneticSolution InitialDecorati
 initializeDecorations (PhylogeneticSolution forests) = PhylogeneticSolution $ fmap performDecoration <$> forests
   where
 --    performDecoration :: CharacterDAG -> InitialDecorationDAG
-    performDecoration (PDAG dag) = PDAG . nodePreOrder preOrderTransformation $ nodePostOrder postOrderTransformation dag
+    performDecoration (PDAG dag) = PDAG {- . nodePreOrder preOrderTransformation -} $ nodePostOrder postOrderTransformation dag
       where
         postOrderTransformation parentalNode childNodes =
           PNode
@@ -286,9 +286,9 @@ chooseDirectOptimizationComparison dec decs =
       []  -> selectBranch dec
       x:_ -> selectBranch x
   where
---    selectBranch candidate = pairwiseSequentialAlignment (candidate ^. sparseTransitionCostMatrix) 
-    selectBranch candidate = let !_ = force (candidate ^. sparseTransitionCostMatrix)
-                             in \x y -> naiveDOConst x y undefined -- pairwiseSequentialAlignment (candidate ^. sparseTransitionCostMatrix) 
+    selectBranch candidate = pairwiseSequentialAlignment (candidate ^. sparseTransitionCostMatrix)
+--    selectBranch candidate = let !_ = force (candidate ^. sparseTransitionCostMatrix) in \x y -> naiveDOConst x y undefined
+
 {--}
 -- do this when shit stops segfaulting
 {-
