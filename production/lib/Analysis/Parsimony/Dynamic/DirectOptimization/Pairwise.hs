@@ -17,6 +17,7 @@ module Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise
     , getOverlap
     , minimalChoice
     , naiveDO
+    , naiveDOConst
     ) where
 
 import Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Internal

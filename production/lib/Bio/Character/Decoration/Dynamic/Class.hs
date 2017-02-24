@@ -46,6 +46,7 @@ class ( HasEncoded s a
 --
 -- Is a sub-class of 'DynamicCharacterDecoration'.
 class ( HasCharacterCost        s Word
+      , HasCharacterLocalCost   s Word
       , HasPreliminaryGapped    s a
       , HasPreliminaryUngapped  s a
       , HasLeftAlignment        s a
@@ -94,6 +95,7 @@ class ( SimpleDynamicDecoration s c
     extendDynamicToPostOrder :: (SimpleDynamicDecoration x c, DirectOptimizationPostOrderDecoration s c)
                              => x    -- ^ Original decoration
                              -> Word -- ^ The cost of the alignment
+                             -> Word -- ^ The cost of the alignment and the child subtrees
                              -> c    -- ^ Preliminary /ungapped/ dynamic character
                              -> c    -- ^ Preliminary   /gapped/ dynamic character
                              -> c    -- ^ Left  alignment dynamic character
@@ -124,6 +126,14 @@ instance ( DynamicCharacterDecoration s a
 
     toMissing x = x & encoded %~ toMissing 
 -}
+
+
+-- |
+-- A 'Lens' for the 'encoded' field
+class HasCharacterLocalCost s a | s -> a where
+
+    characterLocalCost :: Lens' s a
+    {-# MINIMAL characterLocalCost #-}
 
 
 -- |

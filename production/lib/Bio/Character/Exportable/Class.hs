@@ -26,6 +26,7 @@ import Foreign.C.Types
 -- Represents a sequence of fixed width characters packed into a bitwise form
 -- consumable by lower level functions.
 class Exportable c where
+
     toExportableBuffer     :: c -> ExportableCharacterSequence
     fromExportableBuffer   :: ExportableCharacterSequence -> c
 

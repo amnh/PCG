@@ -23,6 +23,7 @@ module Analysis.Parsimony.Dynamic.DirectOptimization
   ( directOptimizationPreOrder
   , directOptimizationPostOrder
   , naiveDO
+  , naiveDOConst
   ) where
 
 

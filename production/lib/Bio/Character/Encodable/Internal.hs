@@ -17,6 +17,7 @@ import Control.Lens
 import Data.Bifunctor          (bimap)
 import Data.BitMatrix.Internal (BitMatrix(..))
 import Data.BitVector
+import Data.Foldable
 import Data.Semigroup
 import Foreign.C.Types
 
@@ -59,6 +60,19 @@ bitVectorToBufferChunks elemWidth elemCount bv = fmap fromIntegral $ ((bv @@) <$
                then []
                else [ bv @@ (totalBits - 1, totalBits - remainingBits) ]
 
+
+bufferChunksToBitVector :: Int -> Int -> [CULong] -> BitVector
+bufferChunksToBitVector elemWidth elemCount chunks = bitVec totalBits . fst $ foldl' f initialAccumulator chunks
+  where
+    initialAccumulator :: (Integer, Int)
+    initialAccumulator = (0,0)
+
+    totalBits = elemWidth * elemCount
+
+    f (summation, shiftDistance) e = (summation + addend, shiftDistance + 64)
+      where
+        addend = fromIntegral e `shift` shiftDistance
+    
 
 exportableCharacterElementsToBitMatrix :: ExportableCharacterElements -> BitMatrix
 exportableCharacterElementsToBitMatrix ece = BitMatrix elementWidth $ foldMap (bitVec elementWidth) integralvalues
