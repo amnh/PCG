@@ -13,6 +13,7 @@
 -----------------------------------------------------------------------------
 module Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise
     ( doAlignment
+    , filterGaps
     , getOverlap
     , minimalChoice
     , naiveDO

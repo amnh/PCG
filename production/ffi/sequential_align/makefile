@@ -1,13 +1,13 @@
 ### Note that two calls to gcc to create .o files are needed, followed by two calls to compile
 
-all : testCostMtx
+all : sequentialAlign
 
 clean :
 	rm -f *.o
 	rm -f *.out
 	rm -rf *.dSYM
 
-bit-ops : bitArrayExampleC.c bitArrayExampleC.h dynamicCharacterOperations.c dynamicCharacterOperations.h
+bit-ops : bitArrayExampleC.c bitArrayExampleC.h $(dynamicChar)
 	rm -f *.o
 	gcc -std=c11 -c bitArrayExampleC.c dynamicCharacterOperations.c
 	gcc -std=c11 bitArrayExampleC.o dynamicCharacterOperations.o
@@ -15,7 +15,7 @@ bit-ops : bitArrayExampleC.c bitArrayExampleC.h dynamicCharacterOperations.c dyn
 # compiler flags:
 #  -g    adds debugging information to the executable file
 #  -Wall turns on most, but not all, compiler warnings
-testCostMtx : test_costMtx.cpp costMatrix.h costMatrix.cpp dynamicCharacterOperations.h dynamicCharacterOperations.c
+testCostMtx : test_costMtx.cpp costMatrix.h costMatrix.cpp $(dynamicChar)
 	rm -f test_costMtx
 	gcc -std=c11 -c dynamicCharacterOperations.c
 	g++ -std=c++14 -c costMatrix.cpp
@@ -23,7 +23,7 @@ testCostMtx : test_costMtx.cpp costMatrix.h costMatrix.cpp dynamicCharacterOpera
 	g++ -std=c++14 -g -Wall -o test_costMtx test_costMtx.cpp dynamicCharacterOperations.o costMatrix.o
 
 
-testCInterface : test_c_interface.c costMatrix.h costMatrix.cpp costMatrixWrapper.h costMatrixWrapper.c dynamicCharacterOperations.h dynamicCharacterOperations.c
+testCInterface : test_c_interface.c $(costMatrix) $(dynamicChar)
 	rm -f test_c_interface
 	gcc -std=c11 -g -c dynamicCharacterOperations.c
 	# g++ -std=c++14 -c costMatrix.h
@@ -36,9 +36,52 @@ testCInterface : test_c_interface.c costMatrix.h costMatrix.cpp costMatrixWrappe
 	# ld -demangle -dynamic -arch x86_64 -o test_c_interface test_c_interface.o dynamicCharacterOperations.o costMatrix.o costMatrixWrapper.o -lc++ -lSystem
 
 
+testSequentialAlign : seqAlignTest.c seqAlignForHaskell.h seqAlignForHaskell.c $(costMatrix) $(dynamicChar)
+	rm -f testSeqAlign
+	gcc -std=c11 -c dynamicCharacterOperations.c
+	# g++ -std=c++14 -c costMatrix.h
+	g++ -std=c++14 -c costMatrix.cpp
+	# gcc -std=c11 -c costMatrixWrapper.h
+	gcc -std=c11 -c costMatrixWrapper.c
+	gcc -std=c11 -c seqAlignForHaskell.c
+	# in next line, need -lc++ so that it calls correct linker: we need C compiler, but C++ libraries in scope.
+	gcc -std=c11 -o testSeqAlign -Wall seqAlignTest.c seqAlignForHaskell.o costMatrixWrapper.o dynamicCharacterOperations.o costMatrix.o costMatrixWrapper.o -lstdc++
 
 
+sequentialAlignTest : seqAlignForHaskell.h seqAlignForHaskell.c $(costMatrix) $(dynamicChar)
+	rm -f seqAlign
+	gcc -std=c11 -c dynamicCharacterOperations.c
+	# g++ -std=c++14 -c costMatrix.h
+	g++ -std=c++14 -c costMatrix.cpp
+	# gcc -std=c11 -c costMatrixWrapper.h
+	gcc -std=c11 -c costMatrixWrapper.c
+	# in next line, need -lc++ so that it calls correct linker: we need C compiler, but C++ libraries in scope.
+	gcc -std=c11 -c seqAlignForHaskell.c
+	gcc -std=c11 -o seqAlignTest -Wall seqAlignTest.c seqAlignForHaskell.o dynamicCharacterOperations.o costMatrix.o costMatrixWrapper.o -lstdc++
+	# gcc -std=c11 -c -v -Wall test_c_interface.c # dynamicCharacterOperations.o costMatrix.o costMatrixWrapper.o
+	# ld -demangle -dynamic -arch x86_64 -o test_c_interface test_c_interface.o dynamicCharacterOperations.o costMatrix.o costMatrixWrapper.o -lc++ -lSystem
 
+
+sequentialAlign : seqAlignForHaskell.h seqAlignForHaskell.c $(costMatrix) $(dynamicChar)
+	rm -f seqAlign
+	gcc -std=c11 -c dynamicCharacterOperations.c
+	# g++ -std=c++14 -c costMatrix.h
+	g++ -std=c++14 -c costMatrix.cpp
+	# gcc -std=c11 -c costMatrixWrapper.h
+	gcc -std=c11 -c costMatrixWrapper.c
+	# in next line, need -lc++ so that it calls correct linker: we need C compiler, but C++ libraries in scope.
+	gcc -std=c11 -o seqAlign -Wall seqAlignForHaskell.c dynamicCharacterOperations.o costMatrix.o costMatrixWrapper.o -lstdc++
+	# gcc -std=c11 -c -v -Wall test_c_interface.c # dynamicCharacterOperations.o costMatrix.o costMatrixWrapper.o
+	# ld -demangle -dynamic -arch x86_64 -o test_c_interface test_c_interface.o dynamicCharacterOperations.o costMatrix.o costMatrixWrapper.o -lc++ -lSystem
+
+
+dynamicChar = dynamicCharacterOperations.h \
+			dynamicCharacterOperations.c
+
+costMatrix = costMatrix.h \
+			costMatrix.cpp \
+			costMatrixWrapper.h \
+			costMatrixWrapper.c
 
 
 # seqAlign: costMatrix.h costMatrix.cpp costMatrixWrapper.h costMatrixWrapper.c seqAlignForHaskell.h seqAlignForHaskell.c dynamicCharacterOperations.h dynamicCharacterOperations.c

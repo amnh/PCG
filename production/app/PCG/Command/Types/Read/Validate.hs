@@ -13,6 +13,8 @@ import PCG.Command.Types
 import PCG.Command.Types.Read.Internal
 import PCG.Script.Types           (Argument(..),Lident(..),Primative(..))
 
+import Debug.Trace
+
 validate :: [Argument] -> Either String Command
 validate xs =
   case partitionEithers $ validateReadArg <$> xs of
@@ -21,6 +23,7 @@ validate xs =
     ([]  , ys) -> Right $ READ ys
 
 validateReadArg :: Argument -> Either String FileSpecification
+validateReadArg x | traceShow x False = undefined
 validateReadArg (PrimativeArg   (TextValue str))   = Right $ UnspecifiedFile [str]
 validateReadArg (LidentNamedArg (Lident identifier) (ArgumentList xs)) | (\x -> x == "aminoacid"  || x == "aminoacids"     ) $ toLower <$> identifier =
   case partitionEithers $ primativeString <$> xs of
@@ -88,7 +91,7 @@ partitionOptions = foldr f ([],[],[])
     f e@(Init3D     _) (x,y,z) = (e:x,  y,  z)
     f e@(Level    _ _) (x,y,z) = (  x,e:y,  z)
     f e@(Tiebreaker _) (x,y,z) = (  x,  y,e:z)
-        
+
 getCustomAlphabetOption :: Argument -> Maybe CustomAlphabetOptions
 getCustomAlphabetOption (LidentNamedArg (Lident identifier) (PrimativeArg (BitValue b)))
   | "init3d"     == (toLower <$> identifier) = Just $ Init3D b

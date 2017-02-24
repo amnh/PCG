@@ -20,10 +20,11 @@ module Bio.Metadata.Dynamic
     , HasDenseTransitionCostMatrix(..)
     , HasSymbolChangeMatrix(..)
     , HasTransitionCostMatrix(..)
+    , MemoizedCostMatrix()
     , dynamicMetadata
     , dynamicMetadataFromTCM
     , maybeConstructDenseTransitionCostMatrix
-    ) where 
+    ) where
 
 import Bio.Metadata.Dynamic.Class
 import Bio.Metadata.Dynamic.Internal

@@ -40,6 +40,7 @@ module Bio.Character.Decoration.Dynamic
   , HasImpliedAlignment(..)
   , HasSymbolChangeMatrix(..)
   , HasTransitionCostMatrix(..)
+  , HasSparseTransitionCostMatrix(..)
   , HasDenseTransitionCostMatrix(..)
   , PossiblyMissingCharacter(..)
   ) where

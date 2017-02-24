@@ -134,7 +134,7 @@ costMedian_t* CostMatrix::computeCostMedian(keys_t keys) {
 
     dcElement_t*  firstKey         = &keys.first;
     dcElement_t*  secondKey        = &keys.second;
-    //    dcElement_t*  singleNucleotide = (dcElement_t*) malloc(sizeof(dcElement_t));
+    // dcElement_t*  singleNucleotide = (dcElement_t*) malloc(sizeof(dcElement_t));
     packedChar*   curMedian        = (packedChar*) calloc(elemArrLen, INT_WIDTH);  // don't free, it's going into toReturn
     costMedian_t* toReturn         = (costMedian_t*) malloc(sizeof(costMedian_t)); // array is alloc'ed above
 
@@ -184,7 +184,7 @@ costMedian_t* CostMatrix::computeCostMedian(keys_t keys) {
 
     freeKeys_t(searchKey);
     free(searchKey);
-    //    freeDCElem(singleNucleotide);
+    // freeDCElem(singleNucleotide);
 
     return toReturn;
 }

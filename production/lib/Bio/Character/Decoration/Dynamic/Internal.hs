@@ -48,8 +48,8 @@ data DynamicDecorationInitial d
 
 instance Hashable d => Hashable (DynamicDecorationInitial d) where
 
-    hashWithSalt salt = hashWithSalt salt . dynamicDecorationInitialEncodedField 
-      
+    hashWithSalt salt = hashWithSalt salt . dynamicDecorationInitialEncodedField
+
 
 -- | (✔)
 instance ( EncodableStreamElement (Element d)
@@ -117,6 +117,16 @@ instance (Element d ~ c) => HasTransitionCostMatrix (DynamicDecorationInitial d)
          setter e f = e { metadata = metadata e & transitionCostMatrix .~ f }
 
 
+-- |
+-- A 'Lens' for the 'transitionCostMatrix' field
+instance (Element d ~ c) => HasSparseTransitionCostMatrix (DynamicDecorationInitial d) MemoizedCostMatrix where
+
+    sparseTransitionCostMatrix = lens getter setter
+      where
+         getter e   = metadata e ^. sparseTransitionCostMatrix
+         setter e f = e { metadata = metadata e & sparseTransitionCostMatrix .~ f }
+
+
 -- | (✔)
 instance (Element d ~ c) => HasDenseTransitionCostMatrix (DynamicDecorationInitial d) (Maybe DenseTransitionCostMatrix) where
 
@@ -141,7 +151,7 @@ instance GeneralCharacterMetadata (DynamicDecorationInitial d) where
     {-# INLINE extractGeneralCharacterMetadata #-}
     extractGeneralCharacterMetadata = extractGeneralCharacterMetadata . metadata
 
-  
+
 
 -- | (✔)
 instance DiscreteCharacterMetadata (DynamicDecorationInitial d) where
@@ -149,7 +159,7 @@ instance DiscreteCharacterMetadata (DynamicDecorationInitial d) where
     {-# INLINE extractDiscreteCharacterMetadata #-}
     extractDiscreteCharacterMetadata = extractDiscreteCharacterMetadata . metadata
 
-  
+
 -- | (✔)
 instance (EncodableStream d, Element d ~ c) => DiscreteWithTcmCharacterMetadata (DynamicDecorationInitial d) c where
 
@@ -203,8 +213,8 @@ instance EncodableStream d => Show (DynamicDecorationDirectOptimizationPostOrder
           , ("Preliminary Ungapped: ", preliminaryUngapped)
           , ("Left  Alignment     : ", leftAlignment      )
           , ("Right Alignment     : ", rightAlignment     )
-          ] 
-  
+          ]
+
 
 instance EncodableDynamicCharacter d => SimpleDynamicExtensionPostOrderDecoration (DynamicDecorationDirectOptimizationPostOrderResult d) d where
 
@@ -234,19 +244,19 @@ instance Hashable d => Hashable (DynamicDecorationDirectOptimizationPostOrderRes
                               , hashWithSalt salt . dynamicDecorationDirectOptimizationPostOrderLeftAlignmentField
                               , hashWithSalt salt . dynamicDecorationDirectOptimizationPostOrderRightAlignmentField
                               ] <*> [dec]
-      
+
 
 -- | (✔)
 instance HasCharacterCost (DynamicDecorationDirectOptimizationPostOrderResult d) Word where
 
     characterCost = lens dynamicDecorationDirectOptimizationPostOrderCharacterCost (\e x -> e { dynamicDecorationDirectOptimizationPostOrderCharacterCost = x })
-      
+
 
 -- | (✔)
 instance HasEncoded (DynamicDecorationDirectOptimizationPostOrderResult d) d where
 
     encoded = lens dynamicDecorationDirectOptimizationPostOrderEncodedField (\e x -> e { dynamicDecorationDirectOptimizationPostOrderEncodedField = x })
-      
+
 
 -- | (✔)
 instance HasPreliminaryGapped (DynamicDecorationDirectOptimizationPostOrderResult d) d where
@@ -310,6 +320,16 @@ instance (Element d ~ c) => HasTransitionCostMatrix (DynamicDecorationDirectOpti
          setter e f = e { dynamicDecorationDirectOptimizationPostOrderMetadata = dynamicDecorationDirectOptimizationPostOrderMetadata e & transitionCostMatrix .~ f }
 
 
+-- |
+-- A 'Lens' for the 'transitionCostMatrix' field
+instance (Element d ~ c) => HasSparseTransitionCostMatrix (DynamicDecorationDirectOptimizationPostOrderResult d) MemoizedCostMatrix where
+
+    sparseTransitionCostMatrix = lens getter setter
+      where
+         getter e   = dynamicDecorationDirectOptimizationPostOrderMetadata e ^. sparseTransitionCostMatrix
+         setter e f = e { dynamicDecorationDirectOptimizationPostOrderMetadata = dynamicDecorationDirectOptimizationPostOrderMetadata e & sparseTransitionCostMatrix .~ f }
+
+
 -- | (✔)
 instance (Element d ~ c) => HasDenseTransitionCostMatrix (DynamicDecorationDirectOptimizationPostOrderResult d) (Maybe DenseTransitionCostMatrix) where
 
@@ -334,14 +354,14 @@ instance GeneralCharacterMetadata (DynamicDecorationDirectOptimizationPostOrderR
     {-# INLINE extractGeneralCharacterMetadata #-}
     extractGeneralCharacterMetadata = extractGeneralCharacterMetadata . dynamicDecorationDirectOptimizationPostOrderMetadata
 
-  
+
 -- | (✔)
 instance DiscreteCharacterMetadata (DynamicDecorationDirectOptimizationPostOrderResult d) where
 
     {-# INLINE extractDiscreteCharacterMetadata #-}
     extractDiscreteCharacterMetadata = extractDiscreteCharacterMetadata . dynamicDecorationDirectOptimizationPostOrderMetadata
 
-  
+
 -- | (✔)
 instance (EncodableStream d, Element d ~ c) => DiscreteWithTcmCharacterMetadata (DynamicDecorationDirectOptimizationPostOrderResult d) c where
 
@@ -360,7 +380,7 @@ instance EncodableDynamicCharacter d => SimpleDynamicDecoration (DynamicDecorati
 -- | (✔)
 instance EncodableDynamicCharacter d => DirectOptimizationPostOrderDecoration (DynamicDecorationDirectOptimizationPostOrderResult d) d where
 
-  
+
 
 
 
@@ -423,7 +443,7 @@ instance EncodableStream d => Show (DynamicDecorationDirectOptimization d) where
 instance HasCharacterCost (DynamicDecorationDirectOptimization d) Word where
 
     characterCost = lens dynamicDecorationDirectOptimizationCharacterCost (\e x -> e { dynamicDecorationDirectOptimizationCharacterCost = x })
-      
+
 
 -- | (✔)
 instance HasEncoded (DynamicDecorationDirectOptimization d) d where
@@ -505,6 +525,16 @@ instance (Element d ~ c) => HasTransitionCostMatrix (DynamicDecorationDirectOpti
          setter e f = e { dynamicDecorationDirectOptimizationMetadata = dynamicDecorationDirectOptimizationMetadata e & transitionCostMatrix .~ f }
 
 
+-- |
+-- A 'Lens' for the 'transitionCostMatrix' field
+instance (Element d ~ c) => HasSparseTransitionCostMatrix (DynamicDecorationDirectOptimization d) MemoizedCostMatrix where
+
+    sparseTransitionCostMatrix = lens getter setter
+      where
+         getter e   = dynamicDecorationDirectOptimizationMetadata e ^. sparseTransitionCostMatrix
+         setter e f = e { dynamicDecorationDirectOptimizationMetadata = dynamicDecorationDirectOptimizationMetadata e & sparseTransitionCostMatrix .~ f }
+
+
 -- | (✔)
 instance (Element d ~ c) => HasDenseTransitionCostMatrix (DynamicDecorationDirectOptimization d) (Maybe DenseTransitionCostMatrix) where
 
@@ -529,14 +559,14 @@ instance GeneralCharacterMetadata (DynamicDecorationDirectOptimization d) where
     {-# INLINE extractGeneralCharacterMetadata #-}
     extractGeneralCharacterMetadata = extractGeneralCharacterMetadata . dynamicDecorationDirectOptimizationMetadata
 
-  
+
 -- | (✔)
 instance DiscreteCharacterMetadata (DynamicDecorationDirectOptimization d) where
 
     {-# INLINE extractDiscreteCharacterMetadata #-}
     extractDiscreteCharacterMetadata = extractDiscreteCharacterMetadata . dynamicDecorationDirectOptimizationMetadata
 
-  
+
 -- | (✔)
 instance (EncodableStream d, Element d ~ c) => DiscreteWithTcmCharacterMetadata (DynamicDecorationDirectOptimization d) c where
 
@@ -588,7 +618,7 @@ data DynamicDecorationImpliedAlignment d
 instance HasCharacterCost (DynamicDecorationImpliedAlignment d) Word where
 
     characterCost = lens dynamicDecorationImpliedAlignmentCharacterCost (\e x -> e { dynamicDecorationImpliedAlignmentCharacterCost = x })
-      
+
 
 -- | (✔)
 instance HasEncoded (DynamicDecorationImpliedAlignment d) d where
@@ -693,20 +723,30 @@ instance (Element d ~ c) => HasDenseTransitionCostMatrix (DynamicDecorationImpli
         setter e f = e { dynamicDecorationImpliedAlignmentMetadata = dynamicDecorationImpliedAlignmentMetadata e & denseTransitionCostMatrix .~ f }
 
 
+-- |
+-- A 'Lens' for the 'transitionCostMatrix' field
+instance (Element d ~ c) => HasSparseTransitionCostMatrix (DynamicDecorationImpliedAlignment d) MemoizedCostMatrix where
+
+    sparseTransitionCostMatrix = lens getter setter
+      where
+         getter e   = dynamicDecorationImpliedAlignmentMetadata e ^. sparseTransitionCostMatrix
+         setter e f = e { dynamicDecorationImpliedAlignmentMetadata = dynamicDecorationImpliedAlignmentMetadata e & sparseTransitionCostMatrix .~ f }
+
+
 -- | (✔)
 instance GeneralCharacterMetadata (DynamicDecorationImpliedAlignment d) where
 
     {-# INLINE extractGeneralCharacterMetadata #-}
     extractGeneralCharacterMetadata = extractGeneralCharacterMetadata . dynamicDecorationImpliedAlignmentMetadata
 
-  
+
 -- | (✔)
 instance DiscreteCharacterMetadata (DynamicDecorationImpliedAlignment d) where
 
     {-# INLINE extractDiscreteCharacterMetadata #-}
     extractDiscreteCharacterMetadata = extractDiscreteCharacterMetadata . dynamicDecorationImpliedAlignmentMetadata
 
-  
+
 -- | (✔)
 instance (EncodableStream d, Element d ~ c) => DiscreteWithTcmCharacterMetadata (DynamicDecorationImpliedAlignment d) c where
 

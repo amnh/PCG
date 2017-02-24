@@ -90,7 +90,7 @@ size_t dcElemSize(size_t alphSize) {
     return (alphSize / WORD_WIDTH) + ((alphSize % WORD_WIDTH) ? 1 : 0);
 }
 
-dcElement_t* getGap(const dynChar_t *const character) {
+dcElement_t *getGap(const dynChar_t *const character) {
     dcElement_t *toReturn = malloc(sizeof(dynChar_t));
     toReturn->alphSize    = character->alphSize;
     toReturn->element     = calloc(character->dynCharLen, INT_WIDTH);
@@ -99,7 +99,7 @@ dcElement_t* getGap(const dynChar_t *const character) {
 }
 
 int setDCElement( const size_t whichIdx, const dcElement_t *const changeToThis,
-                  dynChar_t* const charToBeAltered ) {
+                  dynChar_t *const charToBeAltered ) {
     if ( whichIdx >= charToBeAltered->numElems ) {
         return 1;
     }
@@ -118,7 +118,7 @@ int setDCElement( const size_t whichIdx, const dcElement_t *const changeToThis,
     return 0;
 }
 
-dcElement_t* getDCElement( const size_t whichChar, const dynChar_t *const inDynChar ) {
+dcElement_t *getDCElement( const size_t whichChar, const dynChar_t *const inDynChar ) {
 
     dcElement_t *output = malloc( sizeof(dcElement_t) );
     if (output == NULL) {
@@ -153,7 +153,7 @@ dcElement_t* getDCElement( const size_t whichChar, const dynChar_t *const inDynC
     return output;
 }
 
-dcElement_t* allocateDCElement( const size_t alphSize ) {
+dcElement_t *allocateDCElement( const size_t alphSize ) {
     // First create dynamic character with empty character field.
     dcElement_t *output = malloc( sizeof(dcElement_t) );
     output->alphSize    = alphSize;
@@ -166,7 +166,7 @@ dcElement_t* allocateDCElement( const size_t alphSize ) {
     return output;
 }
 
-dcElement_t* makeDCElement( const size_t alphSize, const uint64_t value ) {
+dcElement_t *makeDCElement( const size_t alphSize, const uint64_t value ) {
     dcElement_t *output = allocateDCElement( alphSize );
     //TODO: this looks like a lot of extra work. Couldn't I just copy the value?
     // or I could TestBit on the value.
@@ -189,7 +189,7 @@ dcElement_t* makeDCElement( const size_t alphSize, const uint64_t value ) {
  *
  *  If this is used, needs to free afterwards.
  */
-dynChar_t* makeDynamicChar( size_t alphSize, size_t numElems, packedChar *values ) {
+dynChar_t *makeDynamicChar( size_t alphSize, size_t numElems, packedChar *values ) {
     // allocate dynamic character
     dynChar_t *output = malloc( sizeof(dynChar_t) );
     if (output == NULL) {
@@ -216,7 +216,7 @@ dynChar_t* makeDynamicChar( size_t alphSize, size_t numElems, packedChar *values
     return output;
 }
 
-uint64_t* dynCharToIntArr(dynChar_t *input) {
+uint64_t *dynCharToIntArr(dynChar_t *input) {
     uint64_t *output = calloc(input->numElems, sizeof(uint64_t));
     if (output != NULL) {
         for( size_t i = 0; i < input->numElems; i++ ) {
@@ -230,7 +230,7 @@ uint64_t* dynCharToIntArr(dynChar_t *input) {
     return output;
 }
 
-void intArrToDynChar( size_t alphSize, size_t arrayLen, int *input, dynChar_t *output) {
+void intArrToDynChar( size_t alphSize, size_t arrayLen, uint64_t *input, dynChar_t *output) {
     dcElement_t *changeToThis = makeDCElement( alphSize, CANONICAL_ZERO );
     output->alphSize   = alphSize;
     output->numElems   = arrayLen;
@@ -242,7 +242,7 @@ void intArrToDynChar( size_t alphSize, size_t arrayLen, int *input, dynChar_t *o
     freeDCElem(changeToThis);
 }
 
-packedChar* intArrToBitArr( size_t alphSize, size_t arrayLen, int *input ) {
+packedChar *intArrToBitArr( size_t alphSize, size_t arrayLen, uint64_t *input ) {
     packedChar *output = calloc( dynCharSize(alphSize, arrayLen), INT_WIDTH );
     if (output == NULL) {
         printf("Out of memory.\n");
@@ -272,7 +272,7 @@ void copyPackedChar( packedChar *inChar, packedChar *outChar, size_t alphSize) {
 }
 
 // TODO: test the next four fns. And make sure docs in .h file are good.
-packedChar* packedCharAnd(packedChar *lhs, packedChar *rhs, size_t alphSize) {
+packedChar *packedCharAnd(packedChar *lhs, packedChar *rhs, size_t alphSize) {
     size_t length = dcElemSize(alphSize);
     // printf("length: %lu\n", length);
     packedChar *toReturn = calloc(length, INT_WIDTH);
@@ -282,7 +282,7 @@ packedChar* packedCharAnd(packedChar *lhs, packedChar *rhs, size_t alphSize) {
     return toReturn;
 }
 
-dcElement_t* dcElementOr(dcElement_t *lhs, dcElement_t *rhs) {
+dcElement_t *dcElementOr(dcElement_t *lhs, dcElement_t *rhs) {
     dcElement_t *toReturn = malloc(sizeof(dcElement_t));
     size_t elementSz      = dcElemSize(lhs->alphSize);
     toReturn->alphSize    = lhs->alphSize;
@@ -290,7 +290,7 @@ dcElement_t* dcElementOr(dcElement_t *lhs, dcElement_t *rhs) {
     return toReturn;
 }
 
-packedChar* packedCharOr (packedChar *lhs, packedChar *rhs, size_t alphSize) {
+packedChar *packedCharOr (packedChar *lhs, packedChar *rhs, size_t alphSize) {
     size_t length = dcElemSize(alphSize);
     packedChar *toReturn = calloc(length, INT_WIDTH);
     for (size_t i = 0; i < length; i++) {

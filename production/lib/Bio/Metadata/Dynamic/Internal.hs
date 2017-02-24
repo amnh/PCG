@@ -15,13 +15,15 @@
 {-# LANGUAGE DeriveGeneric #-}
 
 module Bio.Metadata.Dynamic.Internal
-  ( DynamicCharacterMetadataDec()
+  ( DenseTransitionCostMatrix
+  , DynamicCharacterMetadataDec()
   , DynamicCharacterMetadata(..)
   , HasCharacterAlphabet(..)
   , HasCharacterName(..)
   , HasCharacterWeight(..)
   , HasSymbolChangeMatrix(..)
   , HasTransitionCostMatrix(..)
+  , MemoizedCostMatrix()
   , dynamicMetadata
   , dynamicMetadataFromTCM
   , maybeConstructDenseTransitionCostMatrix
@@ -48,9 +50,9 @@ import Debug.Trace
 
 -- |
 -- Represents a concrete type containing metadata fields shared across all
--- discrete different bins. Continous bins do not have Alphabets. 
+-- discrete different bins. Continous bins do not have Alphabets.
 data DynamicCharacterMetadataDec c
-   = DynamicCharacterMetadataDec 
+   = DynamicCharacterMetadataDec
    { dataDenseTransitionCostMatrix :: Maybe DenseTransitionCostMatrix
    , metadata                      :: DiscreteWithTCMCharacterMetadataDec c
    } deriving (Generic)
@@ -61,6 +63,7 @@ data DynamicCharacterMetadataDec c
 -- appropriate 'Lens' & character class constraints.
 class ( DiscreteWithTcmCharacterMetadata s c
       , HasDenseTransitionCostMatrix     s (Maybe DenseTransitionCostMatrix)
+      , HasSparseTransitionCostMatrix    s MemoizedCostMatrix
       ) => DynamicCharacterMetadata s c | s -> c where
 
     extractDynamicCharacterMetadata :: s -> DynamicCharacterMetadataDec c
@@ -102,13 +105,13 @@ instance Show (DynamicCharacterMetadataDec c) where
         dimension = length $ e ^. characterAlphabet
 
 
--- | (✔) 
+-- | (✔)
 instance GeneralCharacterMetadata (DynamicCharacterMetadataDec c) where
 
     {-# INLINE extractGeneralCharacterMetadata #-}
     extractGeneralCharacterMetadata = extractGeneralCharacterMetadata . metadata
-      
-  
+
+
 -- | (✔)
 instance DiscreteCharacterMetadata (DynamicCharacterMetadataDec c) where
 
@@ -164,6 +167,13 @@ instance HasSymbolChangeMatrix (DynamicCharacterMetadataDec c) (Word -> Word -> 
                        $ \e x -> e { metadata = metadata e & symbolChangeMatrix .~ x }
 
 
+-- |
+-- A 'Lens' for the 'symbolicTCMGenerator' field
+instance HasSparseTransitionCostMatrix (DynamicCharacterMetadataDec c) MemoizedCostMatrix where
+
+    sparseTransitionCostMatrix = lens (\e -> metadata e ^. sparseTransitionCostMatrix)
+                               $ \e x -> e { metadata = metadata e & sparseTransitionCostMatrix .~ x }
+
 
 -- |
 -- A 'Lens' for the 'transitionCostMatrix' field
@@ -203,7 +213,7 @@ dynamicMetadataFromTCM name weight alpha tcm =
 maybeConstructDenseTransitionCostMatrix :: Alphabet a -> (Word -> Word -> Word) -> Maybe DenseTransitionCostMatrix
 maybeConstructDenseTransitionCostMatrix alpha sigma = Nothing -- force f
   where
-    f 
+    f
       | len > 8   = Nothing
       | otherwise = Just $ generateDenseTransitionCostMatrix len sigma
       where

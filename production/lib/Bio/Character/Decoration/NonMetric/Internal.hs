@@ -77,7 +77,7 @@ instance EncodableStreamElement c => HasTransitionCostMatrix (NonMetricDecoratio
       where
          getter e   = metadata e ^. transitionCostMatrix
          setter e f = e { metadata = metadata e & transitionCostMatrix .~ f }
-        
+
 
 -- | (✔)
 instance HasCharacterWeight (NonMetricDecorationInitial c) Double where
@@ -91,7 +91,7 @@ instance HasCharacterWeight (NonMetricDecorationInitial c) Double where
 -- | (✔)
 instance GeneralCharacterMetadata (NonMetricDecorationInitial c) where
 
-  
+
 -- | (✔)
 instance DiscreteCharacterMetadata (NonMetricDecorationInitial c) where
 
@@ -101,16 +101,16 @@ instance EncodableStreamElement c => DiscreteWithTcmCharacterMetadata (NonMetric
 
 
 -- | (✔)
-instance EncodableStaticCharacter c => DiscreteCharacterDecoration (NonMetricDecorationInitial c) c where 
+instance EncodableStaticCharacter c => DiscreteCharacterDecoration (NonMetricDecorationInitial c) c where
 
-  
+
 -- | (✔)
-instance EncodableStaticCharacter c => SimpleDiscreteCharacterDecoration (NonMetricDecorationInitial c) c where 
+instance EncodableStaticCharacter c => SimpleDiscreteCharacterDecoration (NonMetricDecorationInitial c) c where
     toDiscreteCharacterDecoration name weight alphabet scm g symbolSet =
         NonMetricDecorationInitial
         { nonMetricDecorationInitialCharacter = g symbolSet
         , metadata                            = discreteMetadataWithTCM name weight alphabet scm
-        }    
+        }
 
 
 -- | (✔)

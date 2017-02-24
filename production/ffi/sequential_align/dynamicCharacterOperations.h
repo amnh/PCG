@@ -74,7 +74,7 @@ static const uint64_t CANONICAL_ONE  = 1;
 static const uint64_t CANONICAL_ZERO = 0;
 
 typedef uint64_t packedChar;
-typedef void* costMatrix_p;
+typedef void *costMatrix_p;
 
 /** alignResult_t is where results get put for return to Haskell. For further notes see retType_t */
 typedef struct alignResult_t {
@@ -91,11 +91,9 @@ typedef struct alignResult_t {
  */
 typedef struct retType_t {
     int weight;
-  //  char* seq1;
-    int *seq1;
+    uint64_t *seq1;
     size_t seq1Len;
-  //  char* seq2;
-    int *seq2;
+    uint64_t *seq2;
     size_t seq2Len;
     long int alignmentLength;
 } retType_t;
@@ -152,17 +150,17 @@ size_t dynCharSize(size_t alphSize, size_t numElems);
 size_t dcElemSize(size_t alphSize);
 
 /** functions to free memory. Self-explanatory. **/
-void freeDynChar( dynChar_t* p );
+void freeDynChar( dynChar_t *p );
 
 /** const because I needed it to be const when I free keys_t in CostMatrix.cpp. */
-void freeDCElem( const dcElement_t* p );
+void freeDCElem( const dcElement_t *p );
 
 /** functions to interact directly with DCElements */
 
 /** Returns the correct gap value for this character.
  *  Allocates, so much be deallocated after each use.
  */
-dcElement_t* getGap(const dynChar_t* const character);
+dcElement_t *getGap(const dynChar_t *const character);
 
 /**
  *  Takes in a dynamic character to be altered, as well as the index of the element that will
@@ -172,7 +170,7 @@ dcElement_t* getGap(const dynChar_t* const character);
  *  Makes a copy of value in changeToThis, so can deallocate or mutate changeToThis later with no worries.
  */
 int setDCElement( const size_t whichIdx,
-                 const dcElement_t* const changeToThis, dynChar_t* const charToBeAltered );
+                 const dcElement_t *const changeToThis, dynChar_t *const charToBeAltered );
 
 /**
  *  Find and return an element from a packed dynamic character.
@@ -184,13 +182,13 @@ int setDCElement( const size_t whichIdx,
  *      a) NULL checked,
  *      b) freed later using deallocations, above.
  */
-dcElement_t* getDCElement( const size_t whichChar, const dynChar_t* const indynChar_t);
+dcElement_t *getDCElement( const size_t whichChar, const dynChar_t *const indynChar_t);
 
 
 /** Allocates a dcElement_t. Sets the element to 0 of the appropriate length,
  *  and the alphSize to alphSize.
  */
-dcElement_t* allocateDCElement( const size_t alphSize );
+dcElement_t *allocateDCElement( const size_t alphSize );
 
 /**
  *  Create an empty dynamic character element (i.e., a dynamic character with only one sub-character)
@@ -200,7 +198,7 @@ dcElement_t* allocateDCElement( const size_t alphSize );
  *      a) NULL checked,
  *      b) freed later using deallocations, above.
  */
-dcElement_t* makeDCElement( const size_t alphSize, const uint64_t value );
+dcElement_t *makeDCElement( const size_t alphSize, const uint64_t value );
 
 /**
  *  Send in two elements. If there's an overlap, put that overlap into return dyn char, return 0.
@@ -211,9 +209,9 @@ dcElement_t* makeDCElement( const size_t alphSize, const uint64_t value );
  *
  *  newElem1
  */
-/* double getCostDyn( const dynChar_t* const inDynChar1, size_t whichElem1,
-                const dynChar_t* const inDynChar2, size_t whichElem2,
-                costMtx_t* tcm, dcElement_t* newElem1 );
+/* double getCostDyn( const dynChar_t *const inDynChar1, size_t whichElem1,
+                const dynChar_t *const inDynChar2, size_t whichElem2,
+                costMtx_t *tcm, dcElement_t *newElem1 );
 */
 
 /** Allocator for dynChar_t
@@ -221,61 +219,61 @@ dcElement_t* makeDCElement( const size_t alphSize, const uint64_t value );
  *      TODO: a) NULL checked,
  *      b) freed later using deallocations, above.
  */
-dynChar_t* makeDynamicChar( size_t alphSize, size_t numElems, packedChar *values );
+dynChar_t *makeDynamicChar( size_t alphSize, size_t numElems, packedChar *values );
 
 /** takes as input a dynamic character and converts it to a int array. Allocates, so after returned array
  *  is no longer in use it must be deallocated.
  *
  *  Nota bene: limits alphabet size to whatever the width of an int is, likely 2 bytes.
  */
-uint64_t* dynCharToIntArr( dynChar_t* input );
+uint64_t *dynCharToIntArr( dynChar_t *input );
 
 /** takes as input an int array and copies its values into a packed dynamic character.
  *  This effectively recapitulates makeDynamicChar(), with one difference, this is intended to
  *  *copy* the contents, so it requires a preallocated dynChar_t. This is so that it can be placed
  *  into a container allocated on the other side of the FFI, and deallocated there, as well.
  */
-void intArrToDynChar( size_t alphSize, size_t arrayLen, int* input, dynChar_t* output );
+void intArrToDynChar( size_t alphSize, size_t arrayLen, uint64_t *input, dynChar_t *output );
 
 /** Copy input values to already alloced output and return a pointer to output */
-void copyPackedChar( packedChar* inChar, packedChar* outChar, size_t alphSize);
+void copyPackedChar( packedChar *inChar, packedChar *outChar, size_t alphSize);
 
 /** As above, but only allocates and fills the bit array, not whole dyn char */
-packedChar* intArrToBitArr( size_t alphSize, size_t arrayLen, int* input );
+packedChar *intArrToBitArr( size_t alphSize, size_t arrayLen, uint64_t *input );
 
 /** Takes two packed characters (uint64_t*) and finds the value as if they were bitwise AND'ed.
  *  Allocates, so must call freeDynChar() afterwards.
  */
-packedChar* packedCharAnd(packedChar *lhs, packedChar *rhs, size_t alphSize);
+packedChar *packedCharAnd(packedChar *lhs, packedChar *rhs, size_t alphSize);
 
 /** Takes two dcElements and finds the value if they were bitwise OR'ed.
  *  Allocates, so must call freeDynChar() afterwards. Uses packedCharOr()
  *  to find | of elements.
  */
-dcElement_t* dcElementOr (dcElement_t* lhs, dcElement_t* rhs);
+dcElement_t *dcElementOr (dcElement_t *lhs, dcElement_t *rhs);
 
 /** Takes two packed characters (uint64_t*) and finds the value as if they were bitwise OR'ed.
  *  Allocates, so must call freeDynChar() afterwards.
  */
-packedChar* packedCharOr (packedChar *lhs, packedChar *rhs, size_t alphSize);
+packedChar *packedCharOr (packedChar *lhs, packedChar *rhs, size_t alphSize);
 
-int dcElementEq (dcElement_t* lhs, dcElement_t* rhs);
+int dcElementEq (dcElement_t *lhs, dcElement_t *rhs);
 
 /** Print only the bit representation of an element of a dynamic character as a matrix.
  *  Calls printPackedChar().
  */
-void printCharBits( const dynChar_t* const input );
+void printCharBits( const dynChar_t *const input );
 
 /** Print only the bit representation of an element of a dynamic character element.
  * Calls printPackedChar().
  */
-void printElemBits( const dcElement_t* const input );
+void printElemBits( const dcElement_t *const input );
 
 /** Print the bit representation of an element of a dynamic character as a matrix
  *  but also print the alphabet size.
  *  Calls printCharBits().
  */
-void printDynChar( const dynChar_t* const input );
+void printDynChar( const dynChar_t *const input );
 
 /** Print only a packed character. */
 void printPackedChar( const packedChar *input, size_t numElems, size_t alphSize );

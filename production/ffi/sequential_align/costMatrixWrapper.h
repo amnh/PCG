@@ -9,7 +9,7 @@
 costMatrix_p matrixInit(size_t alphSize, int *tcm);
 
 /** C wrapper for cpp destructor */
-void matrixDestroy(costMatrix_p mytype);
+void matrixDestroy(costMatrix_p untyped_ptr);
 
 /** No longer sure why this is here. */
 int lookUpCost(costMatrix_p untyped_self, dcElement_t *left, dcElement_t *right, dcElement_t *retMedian);

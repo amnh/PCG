@@ -99,7 +99,7 @@ library
 
   cc-options: --std=c11
 
---  cc-options: --std=c++11
+ -- cc-options: --std=c++11
 
   -- We must provide the full relative path to every C file that the project depends on.
   c-sources:
@@ -117,10 +117,13 @@ library
     ffi/sequential_align/dynamicCharacterOperations.c
     ffi/sequential_align/costMatrix.h
     ffi/sequential_align/costMatrix.cpp
-    -- ffi/sequential_align/seqAlignForHaskell.h
-    -- ffi/sequential_align/seqAlignForHaskell.c
+    ffi/sequential_align/costMatrixWrapper.h
+    ffi/sequential_align/costMatrixWrapper.c
+    ffi/sequential_align/seqAlignInterface.h
+    ffi/sequential_align/seqAlignInterface.c
+    ffi/sequential_align/seqAlignForHaskell.h
+    ffi/sequential_align/seqAlignForHaskell.c
 
-    -- ffi/Analysis/Parsimony/Binary/SequentialAlign/myComplexBitArrayFFI.c
 
   -- Here we list all directories that contain C header files that the FFI tools will need
   -- to locate when preprocessing the C files. Without listing the directories containing

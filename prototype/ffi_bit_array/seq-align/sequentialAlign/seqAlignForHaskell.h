@@ -11,7 +11,10 @@
 
 #include <stddef.h>
 
+#include "costMatrixWrapper.h"
 #include "dynamicCharacterOperations.h"
+
+typedef void* costMatrix_p;
 
 struct align {
     int partialWt;
@@ -27,17 +30,12 @@ struct align {
 };
 
 
-//int trueWt(struct align *path, const int alphSize, int wtInsertDel, int wtSub, int len);
-int trueWt(struct align *path, costMtx_t* tcm, size_t alphSize, int len);
+int trueWt(struct align *path, costMatrix_p, int len, size_t alphSize);
 
 // EDIT: rectified with .c file.
 //int aligner(char*, char*, int, int, struct retType*);
 int aligner(uint64_t *seq1, size_t seq1Len, uint64_t *seq2, size_t seq2Len, size_t alphSize,
-            costMtx_t *tcm, retType_t* retAlign);
-
-/** no longer in use. Use costMatrixWrapper.getCost instead.
-int getCost(uint64_t lhs, uint64_t rhs, costMtx_t* tcm, size_t alphSize)
-*/
+            costMatrix_p tcm, retType_t *retAlign);
 
 void freeRetType(retType_t* toFree);
 

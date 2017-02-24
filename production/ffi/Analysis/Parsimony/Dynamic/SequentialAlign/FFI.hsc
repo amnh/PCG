@@ -18,13 +18,15 @@ module Analysis.Parsimony.Dynamic.SequentialAlign.FFI
   ( ForeignVoid()
   , MemoizedCostMatrix(costMatrix)
   , getMemoizedCostMatrix
-  , sequentialAlign
+  , pairwiseSequentialAlignment
+--  , sequentialAlign
 --  , testFn
 --  , main
   ) where
 
---import Bio.Character.Encodable
-import Bio.Character.Exportable
+import Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise (filterGaps)
+import Bio.Character.Encodable
+import Bio.Character.Exportable.Class
 import Control.Lens    hiding (element)
 import Data.Bits
 import Data.Foldable
@@ -36,8 +38,9 @@ import Foreign.C.Types
 import System.IO.Unsafe
 import Test.QuickCheck hiding ((.&.), output)
 
-#include "costMatrix.h"
+#include "costMatrixWrapper.h"
 #include "dynamicCharacterOperations.h"
+#include "seqAlignInterface.h"
 -- #include "seqAlignForHaskell.c"
 #include <stdint.h>
 
@@ -68,13 +71,35 @@ instance Storable MemoizedCostMatrix where
     poke _ptr   = undefined
 
 
+
+data DCElement = DCElement
+    { alphabetSizeElem :: CSize
+    , characterElement :: Ptr CArrayUnit
+    }
+
+
+-- | (✔)
+instance Storable DCElement where
+    sizeOf    _ = (#size struct dcElement_t)
+    alignment _ = alignment (undefined :: CULong)
+    peek ptr    = do
+        alphLen <- (#peek struct dcElement_t, alphSize) ptr
+        element <- (#peek struct dcElement_t, element)  ptr
+        pure DCElement
+            { alphabetSizeElem = alphLen
+            , characterElement = element
+            }
+    poke ptr (DCElement alphLen element) = do
+        (#poke struct dcElement_t, alphSize) ptr alphLen
+        (#poke struct dcElement_t, element ) ptr element
+
 -- | Create and allocate cost matrix
 -- first argument, TCM, is only for non-ambiguous nucleotides, and it used to generate
 -- the entire cost matrix, which includes ambiguous elements.
 -- TCM is row-major, with each row being the left character element.
 -- It is therefore indexed not by powers of two, but by cardinal integer.
 -- TODO: For now we only allocate 2d matrices. 3d will come later.
-foreign import ccall unsafe "costMatrix matrixInit"
+foreign import ccall unsafe "costMatrixWrapper matrixInit"
     initializeMemoizedCMfn_c :: CSize
                              -> Ptr CInt
                              -> IO (Ptr ForeignVoid) -- MemoizedCostMatrix
@@ -100,26 +125,63 @@ getMemoizedCostMatrix alphabetSize costFn = unsafePerformIO . withArray rowMajor
 coerceEnum :: (Enum a, Enum b) => a -> b
 coerceEnum = toEnum . fromEnum
 
-data DynamicCharacterElement = DynamicCharacterElement
-    { alphabetSizeElem :: CSize
-    , characterElement :: Ptr CArrayUnit
-    }
 
 
--- | (✔)
-instance Storable DynamicCharacterElement where
-    sizeOf    _ = (#size struct dcElement_t)
-    alignment _ = alignment (undefined :: CULong)
-    peek ptr    = do
-        alphLen <- (#peek struct dcElement_t, alphSize) ptr
-        element <- (#peek struct dcElement_t, element)  ptr
-        pure DynamicCharacterElement
-            { alphabetSizeElem = alphLen
-            , characterElement = element
+-- |
+-- FFI call to the C pairwise alignment algorithm with /explicit/ sub & indel cost parameters.
+{- foreign import ccall unsafe "seqAlignForHaskell aligner"
+    call_aligner :: Ptr CDynamicChar -> Ptr CDynamicChar -> CInt -> CInt -> Ptr AlignResult -> CInt
+-}
+pairwiseSequentialAlignment :: (EncodableDynamicCharacter s, Exportable s) => MemoizedCostMatrix -> s -> s -> (s, Double, s, s, s)
+pairwiseSequentialAlignment memo char1 char2 = unsafePerformIO $ do
+        char1'        <- constructCDynamicCharacterFromExportableCharacter char1
+        char2'        <- constructCDynamicCharacterFromExportableCharacter char2
+        resultPointer <- malloc :: IO (Ptr AlignResult)
+        !success      <- performSeqAlignfn_c char1' char2' (costMatrix memo) resultPointer
+        _ <- free char1'
+        _ <- free char2'
+        resultStruct  <- peek resultPointer
+        let alignmentCost   = fromIntegral $ cost resultStruct
+            resultElemCount = coerceEnum $ finalLength resultStruct
+            bufferLength    = calculateBufferLength width resultElemCount
+            buildExportable = ExportableCharacterSequence resultElemCount width
+            generalizeFromBuffer = fromExportableBuffer . buildExportable
+        !alignedChar1    <- fmap generalizeFromBuffer . peekArray bufferLength $ character1 resultStruct
+        !alignedChar2    <- fmap generalizeFromBuffer . peekArray bufferLength $ character2 resultStruct
+        !medianAlignment <- fmap generalizeFromBuffer . peekArray bufferLength $ medianChar resultStruct
+        let !ungapped = filterGaps medianAlignment
+        _ <- free resultPointer
+        pure (ungapped, alignmentCost, medianAlignment, alignedChar1, alignedChar2)
+    where
+        width = exportedElementWidthSequence $ toExportableBuffer char1
+
+
+constructCDynamicCharacterFromExportableCharacter :: Exportable s => s -> IO (Ptr CDynamicChar)
+constructCDynamicCharacterFromExportableCharacter exChar = do
+        valueBuffer <- newArray $ exportedBufferChunks exportableBuffer
+        charPointer <- malloc :: IO (Ptr CDynamicChar)
+        let charValue = CDynamicChar (coerceEnum width) (coerceEnum count) bufLen valueBuffer
+        {-
+            CDynamicChar
+            { alphabetSizeChar = width
+            , dynCharLen       = count
+            , numElements      = bufLen
+            , dynChar          = valueBuffer
             }
-    poke ptr (DynamicCharacterElement alphLen element) = do
-        (#poke struct dcElement_t, alphSize) ptr alphLen
-        (#poke struct dcElement_t, element ) ptr element
+            -}
+        !_ <- poke charPointer charValue
+        pure charPointer
+    where
+        count  = exportedElementCountSequence exportableBuffer
+        width  = exportedElementWidthSequence exportableBuffer
+        bufLen = calculateBufferLength count width
+        exportableBuffer = toExportableBuffer exChar
+
+calculateBufferLength count width = coerceEnum $ q + if r == 0 then 0 else 1
+    where
+        (q,r)  = (count * width) `divMod` finiteBitSize (undefined :: CULong)
+
+
 
 {-}
 foreign import ccall unsafe "costMatrix getCostAndMedian"
@@ -142,10 +204,10 @@ lookupCostAndMedian tcm lhs rhs = unsafePerformIO $ do
     where
         alphSize              = lhs ^. exportedElementWidth ^. alphabetSize
         lhsExportableSequence = toExportable lhs
-        leftInput             = DynamicCharacterElement alphSize (lhsExportableSequence ^. discreteCharacter)
+        leftInput             = DCElement alphSize (lhsExportableSequence ^. discreteCharacter)
         rhsExportableSequence = toExportable rhs
-        rightInput            = DynamicCharacterElement alphSize (rhsExportableSequence ^. discreteCharacter)
-        retVal                = DynamicCharacterElement alphSize (lhsExportableSequence ^. discreteCharacter)
+        rightInput            = DCElement alphSize (rhsExportableSequence ^. discreteCharacter)
+        retVal                = DCElement alphSize (lhsExportableSequence ^. discreteCharacter)
         exportableOutput      = Exportable 1 alphSize peek retVal
         outCost               = toEnum (fromEnum cost) :: Word
 -}
@@ -156,6 +218,13 @@ foreign import ccall unsafe "costMatrix lookUpCost"
     getCostfn_c :: Ptr MemoizedCostMatrix
                 -> Ptr CDynamicChar
 -}
+
+foreign import ccall unsafe "seqAlignInteface performSequentialAlignment"
+    performSeqAlignfn_c :: Ptr CDynamicChar
+                        -> Ptr CDynamicChar
+                        -> Ptr ForeignVoid
+                        -> Ptr AlignResult
+                        -> IO CInt
 
 
 -- TODO: replace when Yu Xiang updates his code for bit arrays.
@@ -284,25 +353,15 @@ instance Storable CDynamicChar where
 
 
 
-
-
-
-
--- This is the declaration of the Haskell wrapper for the C function we're calling.
--- Note that this fn is called from testFn.f
-
-{-
 -- |
 -- FFI call to the C pairwise alignment algorithm with /defaulted/ sub & indel cost parameters
 foreign import ccall unsafe "exportCharacter testFn"
     callExtFn_c  :: Ptr CDynamicChar -> Ptr CDynamicChar -> Ptr AlignResult -> CInt
--}
 
--- |
--- FFI call to the C pairwise alignment algorithm with /explicit/ sub & indel cost parameters.
-{- foreign import ccall unsafe "seqAlignForHaskell aligner"
-    call_aligner :: Ptr CDynamicChar -> Ptr CDynamicChar -> CInt -> CInt -> Ptr AlignResult -> CInt
--}
+
+
+
+
 {-
 -- |
 -- testFn can be called from within Haskell code.
@@ -328,6 +387,7 @@ testFn char1 char2 char3 = unsafePerformIO $
                 pure $ Right (fromIntegral cost, show seqFinalVal)
             else do
                 pure $ Left "Out of memory"
+
 -}
 
 {-

@@ -18,9 +18,10 @@ module Bio.Metadata.DiscreteWithTCM
     , HasCharacterWeight(..)
     , HasSymbolChangeMatrix(..)
     , HasTransitionCostMatrix(..)
+    , HasSparseTransitionCostMatrix(..)
     , discreteMetadataFromTCM
     , discreteMetadataWithTCM
-    ) where 
+    ) where
 
 import Bio.Metadata.DiscreteWithTCM.Class
 import Bio.Metadata.DiscreteWithTCM.Internal

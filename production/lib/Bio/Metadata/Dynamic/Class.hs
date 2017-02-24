@@ -20,15 +20,24 @@ module Bio.Metadata.Dynamic.Class
   , HasDenseTransitionCostMatrix(..)
   , HasSymbolChangeMatrix(..)
   , HasTransitionCostMatrix(..)
+  , MemoizedCostMatrix()
   ) where
 
 --import Bio.Character.Encodable
 import Analysis.Parsimony.Dynamic.DirectOptimization.FFI (DenseTransitionCostMatrix)
-import Bio.Metadata.General 
+import Analysis.Parsimony.Dynamic.SequentialAlign.FFI    (MemoizedCostMatrix)
+import Bio.Metadata.General
 import Bio.Metadata.Discrete
 import Bio.Metadata.DiscreteWithTCM
 import Control.Lens
 
+-- |
+-- A decoration of an initial encoding of a dynamic character which has the
+-- appropriate 'Lens' & character class constraints.
+class ( DiscreteWithTcmCharacterMetadata    s c
+      , HasDenseTransitionCostMatrix        s MemoizedCostMatrix
+      , HasSparseTransitionCostMatrix       s DenseTransitionCostMatrix
+      ) => DynamicCharacterMetadata s c | s -> c where
 
 -- |
 -- A 'Lens' for the 'denseTransitionCostMatrix' field

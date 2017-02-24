@@ -20,6 +20,7 @@ import           Analysis.Parsimony.Additive.Internal
 import           Analysis.Parsimony.Fitch.Internal
 import           Analysis.Parsimony.Sankoff.Internal
 import           Analysis.Parsimony.Dynamic.DirectOptimization
+import           Analysis.Parsimony.Dynamic.SequentialAlign.FFI
 --import           Analysis.Parsimony.Dynamic.DirectOptimization.FFI
 
 import           Bio.Character
@@ -257,7 +258,7 @@ initializeDecorations (PhylogeneticSolution forests) = PhylogeneticSolution $ fm
 
 chooseDirectOptimizationComparison :: ( SimpleDynamicDecoration d  c
                                       , SimpleDynamicDecoration d' c
-                                      {- , Exportable c -}
+                                      , Exportable c
                                       )
                                    => d
                                    -> [d']
@@ -274,8 +275,15 @@ chooseDirectOptimizationComparison dec decs = \x y -> naiveDO x y scm
       where
         selectBranch candidate = candidate ^. symbolChangeMatrix
 --}
+chooseDirectOptimizationComparison dec decs =
+    case decs of
+      []  -> selectBranch dec
+      x:_ -> selectBranch x
+  where
+    selectBranch candidate = pairwiseSequentialAlignment (candidate ^. sparseTransitionCostMatrix)
 {--}
 -- do this when shit stops segfaulting
+{-
 chooseDirectOptimizationComparison dec decs =
     case decs of
       []  -> selectBranch dec
@@ -284,7 +292,7 @@ chooseDirectOptimizationComparison dec decs =
     selectBranch candidate =
        case candidate ^. denseTransitionCostMatrix of
          _ -> let !scm = (candidate ^. symbolChangeMatrix) in \x y -> naiveDO x y scm
-
+-}
 {-
          Just  d -> \x y -> foreignPairwiseDO x y d
          Nothing ->

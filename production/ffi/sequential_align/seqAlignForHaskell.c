@@ -10,7 +10,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "costMatrixWrapper.h"
+//#include "costMatrixWrapper.h"
 #include "dynamicCharacterOperations.h"
 #include "seqAlignForHaskell.h"
 
@@ -48,7 +48,7 @@ int aligner(uint64_t *seq1, size_t seq1Len, uint64_t *seq2, size_t seq2Len, size
 
     const long int LENGTH = seq1Len + seq2Len - 5; // strlen(seq1) + strlen(seq2);
 
-    const int GAP = 1 << (alphSize - 1);
+    const uint64_t GAP = 1 << (alphSize - 1);
 
 
     //printf("length is %ld\n", LENGTH);
@@ -59,7 +59,7 @@ int aligner(uint64_t *seq1, size_t seq1Len, uint64_t *seq2, size_t seq2Len, size
 
 
  //   char* initArr = calloc( INIT_LENGTH, sizeof(int) );
-    int* initArr = calloc( INIT_LENGTH, sizeof(int) );
+    uint64_t *initArr = calloc( INIT_LENGTH, sizeof(uint64_t) );
 
 
     // Now, test for allocation. Return 1 if it fails.
@@ -1635,13 +1635,12 @@ int aligner(uint64_t *seq1, size_t seq1Len, uint64_t *seq2, size_t seq2Len, size
     finalAlign.partialWt = 0;
 
     for(i = 0; i < LENGTH; i++){
-        finalAlign.partialAlign[i] = getCost(finalAlign.partialAlign[i], finalAlign.partialAlign[i + LENGTH], tcm, alphSize);
-        // if(finalAlign.partialAlign[i] == GAP || finalAlign.partialAlign[i + LENGTH] == GAP)
-        //     finalAlign.partialWt = finalAlign.partialWt + wtInsertDel;                       // NEED TO BE CHANGED
-        // else if(finalAlign.partialAlign[i] == finalAlign.partialAlign[i + LENGTH])
-        //     finalAlign.partialWt = finalAlign.partialWt;
-        // else
-        //     finalAlign.partialWt = finalAlign.partialWt + wtSub;
+        if(finalAlign.partialAlign[i] == GAP || finalAlign.partialAlign[i + LENGTH] == GAP)
+            finalAlign.partialWt = finalAlign.partialWt + getCost(GAP , GAP, tcm, alphSize);
+        else if(finalAlign.partialAlign[i] == finalAlign.partialAlign[i + LENGTH])
+            finalAlign.partialWt = finalAlign.partialWt + getCost(finalAlign.partialAlign[i] , finalAlign.partialAlign[i + LENGTH], tcm, alphSize);
+        else
+            finalAlign.partialWt = finalAlign.partialWt + getCost(finalAlign.partialAlign[i] , finalAlign.partialAlign[i + LENGTH], tcm, alphSize);
 
     }
 
@@ -1709,23 +1708,75 @@ int aligner(uint64_t *seq1, size_t seq1Len, uint64_t *seq2, size_t seq2Len, size
 }
 
 //****************************************   COMBINE SORT CANDIDATES ACCORDING TO TRUE METRIC  *************************************************
+//
+//int trueWt(struct align *path, const int GAP, int wtInsertDel, int wtSub, int len){
+//
+//    int i;
+//
+//    int *diff = calloc(len, sizeof(int));           // difference between two sequences
+//
+//    for (i = 0; i < len; i++) {
+//        diff[i] = 0;
+//    }
+//    //   a =malloc(sizeof(int) * 10);
+//
+//
+//    //    int diff[10] = {0,0,0,0,0,0,0,0,0,0};           // difference between two sequences
+//    // int wtTemp = 0,
+//    // int wtSub = 10;
+//    // int wtInsertDel = 20;
+//    int wtTempFirst = 0, wtTempSecond = 0;
+//    int wtTemp;
+//
+//
+//    // // printf("function value is: %s\n", path->partialAlign);
+//    // // printf("path->posStringA is :%d\n", path->posStringA);
+//
+//    //   for(j = 0;j < 3;j++){
+//
+//    for(i = 0; i < path->posStringA ; i++){
+//
+//        if (path->partialAlign[i] == GAP || path->partialAlign[i + len] == GAP) {
+//            diff[i] = wtInsertDel;
+//        }
+//        else if (path->partialAlign[i]== path->partialAlign[i + len]) {
+//            diff[i] = 0;
+//        }
+//        else {
+//            diff[i] = wtSub;
+//        }
+//    }
+//    //    }
+//
+//    for(i = 0; i < path->posStringA; i++){
+//
+//        wtTempFirst = wtTempFirst + diff[i];
+//    }
+//    wtTempFirst = wtTempFirst * wtTempFirst + wtTempFirst;
+//
+//    // // printf("wtTempFirst is: %d\n", wtTempFirst);
+//    for(i = 0; i < path->posStringA ; i++){
+//
+//        wtTempSecond = wtTempSecond + diff[i] * diff[i];
+//    }
+//
+//    // // printf("wtTempSecond is: %d\n", wtTempSecond);
+//    wtTemp = wtTempFirst + wtTempSecond;
+//
+//    // test output
+//
+//    // // printf("wtTemp is:%d\n", wtTemp);
+//
+//    free(diff);
+//    return wtTemp;
+//
+//}
+
 
 int trueWt(struct align *path, costMatrix_p tcm, int len, size_t alphSize){
 
     int i;
 
-    int *diff = calloc(len, sizeof(int));           // difference between two sequences
-
-    for (i = 0; i < len; i++) {
-        diff[i] = 0;
-    }
-    //   a =malloc(sizeof(int) * 10);
-
-
-    //    int diff[10] = {0,0,0,0,0,0,0,0,0,0};           // difference between two sequences
-    // int wtTemp = 0,
-    // int wtSub = 10;
-    // int wtInsertDel = 20;
     int wtTempFirst = 0, wtTempSecond = 0;
     int wtTemp;
 
@@ -1737,55 +1788,43 @@ int trueWt(struct align *path, costMatrix_p tcm, int len, size_t alphSize){
 
     for(i = 0; i < path->posStringA ; i++){
 
-        diff[i] = getCost(path->partialAlign[i], path->partialAlign[i + len], tcm, alphSize);
+        wtTempFirst = getCost(path->partialAlign[i], path->partialAlign[i+len], tcm, alphSize) + wtTempFirst;
 
-        // if (path->partialAlign[i] == GAP || path->partialAlign[i + len] == GAP) {
-        //     diff[i] = wtInsertDel;
-        // }
-        // else if (path->partialAlign[i]== path->partialAlign[i + len]) {
-        //     diff[i] = 0;
-        // }
-        // else {
-        //     diff[i] = wtSub;
-        // }
+
     }
-    //    }
+//  }
 
-    for(i = 0; i < path->posStringA; i++){
-
-        wtTempFirst = wtTempFirst + diff[i];
-    }
-    wtTempFirst = wtTempFirst * wtTempFirst + wtTempFirst;
-
-    // // printf("wtTempFirst is: %d\n", wtTempFirst);
     for(i = 0; i < path->posStringA ; i++){
 
-        wtTempSecond = wtTempSecond + diff[i] * diff[i];
+        wtTempSecond = getCost(path->partialAlign[i], path->partialAlign[i+len], tcm, alphSize)*getCost(path->partialAlign[i], path->partialAlign[i+len], tcm, alphSize) + wtTempSecond;
+
     }
 
-    // // printf("wtTempSecond is: %d\n", wtTempSecond);
+    wtTempFirst = wtTempFirst * wtTempFirst + wtTempFirst;
     wtTemp = wtTempFirst + wtTempSecond;
 
     // test output
 
-    // // printf("wtTemp is:%d\n", wtTemp);
+    // printf("wtTemp is:%d\n", wtTemp);
 
-    free(diff);
     return wtTemp;
 
 }
 
-// int getCost(uint64_t lhs, uint64_t rhs, costMatrix_t tcm, size_t alphSize) {
-//     int gap = 1 << (alphSize - 1);
-//     if (lhs == rhs)
-//         return 0;
-//     if (lhs == gap || rhs == gap)
-//         return tcm->gapCost;
-//     return tcm->subCost;
-// }
+/** no longer in use. Use costMatrixWrapper.getCost instead.
+int getCost(uint64_t lhs, uint64_t rhs, costMtx_t* tcm, size_t alphSize) {
+    int gap = 1 << (alphSize - 1);
+    if (lhs == rhs)
+        return 0;
+    if (lhs == gap || rhs == gap)
+        return tcm->gapCost;
+    return tcm->subCost;
+}
+*/
 
 void freeRetType(retType_t* toFree) {
     free(toFree->seq1);
     free(toFree->seq2);
     free(toFree);
+    toFree = NULL;
 }

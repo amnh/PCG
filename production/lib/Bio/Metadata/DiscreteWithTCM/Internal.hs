@@ -25,6 +25,7 @@ module Bio.Metadata.DiscreteWithTCM.Internal
   ) where
 
 
+import Analysis.Parsimony.Dynamic.SequentialAlign.FFI
 import Bio.Character.Encodable
 import Bio.Metadata.CharacterName
 import Bio.Metadata.Discrete
@@ -39,11 +40,12 @@ import Data.TCM
 
 -- |
 -- Represents a concrete type containing metadata fields shared across all
--- discrete different bins. Continous bins do not have Alphabets. 
+-- discrete different bins. Continous bins do not have Alphabets.
 data DiscreteWithTCMCharacterMetadataDec c
    = DiscreteWithTCMCharacterMetadataDec
    { symbolChangeMatrixData   :: Word -> Word -> Word
    , transitionCostMatrixData :: c -> c -> (c, Word)
+   , foreignPointerData       :: MemoizedCostMatrix
    , discreteData             :: DiscreteCharacterMetadataDec
    }
 
@@ -75,13 +77,13 @@ instance Show (DiscreteWithTCMCharacterMetadataDec c) where
         dimension = length $ e ^. characterAlphabet
 
 
--- | (✔) 
+-- | (✔)
 instance GeneralCharacterMetadata (DiscreteWithTCMCharacterMetadataDec c) where
 
     {-# INLINE extractGeneralCharacterMetadata #-}
     extractGeneralCharacterMetadata =  extractGeneralCharacterMetadata . discreteData
-      
-  
+
+
 -- | (✔)
 instance DiscreteCharacterMetadata (DiscreteWithTCMCharacterMetadataDec c) where
 
@@ -117,6 +119,13 @@ instance HasTransitionCostMatrix (DiscreteWithTCMCharacterMetadataDec c) (c -> c
     transitionCostMatrix = lens undefined undefined
 
 
+-- |
+-- A 'Lens' for the 'symbolicTCMGenerator' field
+instance HasSparseTransitionCostMatrix (DiscreteWithTCMCharacterMetadataDec c) MemoizedCostMatrix where
+
+    sparseTransitionCostMatrix = lens foreignPointerData $ \e x -> e { foreignPointerData = x }
+
+
 -- | (✔)
 instance HasCharacterWeight (DiscreteWithTCMCharacterMetadataDec c) Double where
 
@@ -129,14 +138,16 @@ instance HasCharacterWeight (DiscreteWithTCMCharacterMetadataDec c) Double where
 discreteMetadataFromTCM :: CharacterName -> Double -> Alphabet String -> TCM -> DiscreteWithTCMCharacterMetadataDec c
 discreteMetadataFromTCM name weight alpha tcm =
     DiscreteWithTCMCharacterMetadataDec
-    { symbolChangeMatrixData   = \i j -> toEnum . fromEnum $ factoredTcm diagnosis ! (fromEnum i, fromEnum j)
+    { symbolChangeMatrixData   = sigma
     , transitionCostMatrixData = undefined
+    , foreignPointerData       = getMemoizedCostMatrix (toEnum $ length alpha) sigma
     , discreteData             = discreteMetadata name (weight * coefficient) alpha
     }
   where
+    sigma  i j  = toEnum . fromEnum $ factoredTcm diagnosis ! (fromEnum i, fromEnum j)
     diagnosis   = diagnoseTcm tcm
     coefficient = fromIntegral $ factoredWeight diagnosis
-           
+
 
 
 -- |
@@ -146,6 +157,7 @@ discreteMetadataWithTCM name weight alpha scm =
     DiscreteWithTCMCharacterMetadataDec
     { symbolChangeMatrixData   = scm
     , transitionCostMatrixData = undefined
+    , foreignPointerData       = getMemoizedCostMatrix (toEnum $ length alpha) scm
     , discreteData             = discreteMetadata name weight alpha
     }
-           
+
