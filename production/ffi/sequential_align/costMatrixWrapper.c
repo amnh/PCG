@@ -25,19 +25,36 @@ int getCost(packedChar elem1, packedChar elem2, costMatrix_p tcm, size_t alphSiz
     *packedElem1   = elem1;    // should be okay, because elem1 and elem2 are just ints, so pass by copy
     *packedElem2   = elem2;
 
-    printf("** %llu\n", elem1);
-    printPackedChar(packedElem1, 1, alphSize);
-    printf("** %llu\n", elem2);
-    printPackedChar(packedElem2, 1, alphSize);
+    // printf("** %llu\n", elem1);
+    // printPackedChar(packedElem1, 1, alphSize);
+    // printf("** %llu\n", elem2);
+    // printPackedChar(packedElem2, 1, alphSize);
 
 
+    /**
     dcElement_t retElem = { alphSize, packedElemRet };
-    dcElement_t dcElem1 = { alphSize, packedElem1 };
-    dcElement_t dcElem2 = { alphSize, packedElem2 };
+    dcElement_t dcElem1 = { alphSize, packedElem1   };
+    dcElement_t dcElem2 = { alphSize, packedElem2   };
+    **/
 
-    int cost = call_getSetCost_C(tcm, &dcElem1, &dcElem2, &retElem);
+    dcElement_t *retElem = malloc(sizeof(dcElement_t));
+    dcElement_t *dcElem1 = malloc(sizeof(dcElement_t));
+    dcElement_t *dcElem2 = malloc(sizeof(dcElement_t));
 
-    printf("cost: %d\n", cost);
+    retElem->alphSize = alphSize;
+    dcElem1->alphSize = alphSize;
+    dcElem2->alphSize = alphSize;
+
+    retElem->element = packedElemRet;
+    dcElem1->element = packedElem1;
+    dcElem2->element = packedElem2;
+
+    printf("key1: %llu\n", *dcElem1->element);
+    printf("key2: %llu\n", *dcElem2->element);
+
+    int cost = call_getSetCost_C(tcm, dcElem1, dcElem2, retElem);
+
+    // printf("cost: %d\n", cost);
     free(packedElemRet);
 
     return cost;

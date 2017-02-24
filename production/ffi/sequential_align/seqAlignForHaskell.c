@@ -77,27 +77,27 @@ int aligner(uint64_t *seq1, size_t seq1Len, uint64_t *seq2, size_t seq2Len, size
     //*******************  initialize struct ***************************
     struct align path[3] = {
         { .partialWt = 0,
-            .partialTrueWt = 0,
-            .posStringA = 0,
-            .posStringB = 0,
-            .posTrueA = 0,
-            .posTrueB = 0,
-            .flagWhichTree = 1
+          .partialTrueWt = 0,
+          .posStringA = 0,
+          .posStringB = 0,
+          .posTrueA = 0,
+          .posTrueB = 0,
+          .flagWhichTree = 1
         },
         { .partialWt = 0,
-            .partialTrueWt = 0,
-            .posStringA = 0,
-            .posStringB = 0,
-            .posTrueA = 0,
-            .posTrueB = 0,
-            .flagWhichTree = 1
+          .partialTrueWt = 0,
+          .posStringA = 0,
+          .posStringB = 0,
+          .posTrueA = 0,
+          .posTrueB = 0,
+          .flagWhichTree = 1
         },
         { .partialWt = 0,
-            .partialTrueWt = 0,
-            .posStringA = 0,
-            .posStringB = 0,
-            .posTrueA = 0,
-            .posTrueB = 0,
+          .partialTrueWt = 0,
+          .posStringA = 0,
+          .posStringB = 0,
+          .posTrueA = 0,
+          .posTrueB = 0,
             .flagWhichTree = 1
         }
     };
@@ -142,28 +142,28 @@ int aligner(uint64_t *seq1, size_t seq1Len, uint64_t *seq2, size_t seq2Len, size
     struct align pathTempFirst[3] =
     {
         { .partialWt = 0,
-            .partialTrueWt = 0,
-            .posStringA = 0,
-            .posStringB = 0,
-            .posTrueA = 0,
-            .posTrueB = 0,
-            .flagWhichTree = 1
+          .partialTrueWt = 0,
+          .posStringA = 0,
+          .posStringB = 0,
+          .posTrueA = 0,
+          .posTrueB = 0,
+          .flagWhichTree = 1
         },
         { .partialWt = 0,
-            .partialTrueWt = 0,
-            .posStringA = 0,
-            .posStringB = 0,
-            .posTrueA = 0,
-            .posTrueB = 0,
-            .flagWhichTree = 1
+          .partialTrueWt = 0,
+          .posStringA = 0,
+          .posStringB = 0,
+          .posTrueA = 0,
+          .posTrueB = 0,
+          .flagWhichTree = 1
         },
         { .partialWt = 0,
-            .partialTrueWt = 0,
-            .posStringA = 0,
-            .posStringB = 0,
-            .posTrueA = 0,
-            .posTrueB = 0,
-            .flagWhichTree = 1
+          .partialTrueWt = 0,
+          .posStringA = 0,
+          .posStringB = 0,
+          .posTrueA = 0,
+          .posTrueB = 0,
+          .flagWhichTree = 1
         }
     };
 
@@ -188,9 +188,31 @@ int aligner(uint64_t *seq1, size_t seq1Len, uint64_t *seq2, size_t seq2Len, size
     //    }
 
 
-    struct align pathTempSecond[3] = { {.partialWt = 0, .partialTrueWt = 0, .posStringA = 0, .posStringB = 0, .posTrueA = 0, .posTrueB = 0, .flagWhichTree = 1},
-        {.partialWt = 0, .partialTrueWt = 0, .posStringA = 0, .posStringB = 0, .posTrueA = 0, .posTrueB = 0, .flagWhichTree = 1},
-        {.partialWt = 0, .partialTrueWt = 0, .posStringA = 0, .posStringB = 0, .posTrueA = 0, .posTrueB = 0, .flagWhichTree = 1}};
+    struct align pathTempSecond[3] = { {.partialWt = 0,
+                                        .partialTrueWt = 0,
+                                        .posStringA = 0,
+                                        .posStringB = 0,
+                                        .posTrueA = 0,
+                                        .posTrueB = 0,
+                                        .flagWhichTree = 1
+                                       },
+                                       {.partialWt = 0,
+                                        .partialTrueWt = 0,
+                                        .posStringA = 0,
+                                        .posStringB = 0,
+                                        .posTrueA = 0,
+                                        .posTrueB = 0,
+                                        .flagWhichTree = 1
+                                       },
+                                       {.partialWt = 0,
+                                        .partialTrueWt = 0,
+                                        .posStringA = 0,
+                                        .posStringB = 0,
+                                        .posTrueA = 0,
+                                        .posTrueB = 0,
+                                        .flagWhichTree = 1
+                                       }
+                                     };
 
     for (int i = 0; i < 3; i++) {
     //    pathTempSecond[i].partialAlign = calloc( INIT_LENGTH, sizeof(int) );
@@ -205,7 +227,13 @@ int aligner(uint64_t *seq1, size_t seq1Len, uint64_t *seq2, size_t seq2Len, size
     }
 
 
-    struct align pathFirstInfinite = {.partialWt = 100000, .partialTrueWt = 100000, .posStringA = 0, .posStringB = 0, .posTrueA = 0, .posTrueB = 0, .flagWhichTree = 1};
+    struct align pathFirstInfinite = {.partialWt = 100000,
+                                      .partialTrueWt = 100000,
+                                      .posStringA = 0,
+                                      .posStringB = 0,
+                                      .posTrueA = 0,
+                                      .posTrueB = 0,
+                                      .flagWhichTree = 1};
   //  pathFirstInfinite.partialAlign = calloc( INIT_LENGTH, sizeof(int) );
     pathFirstInfinite.partialAlign = calloc( INIT_LENGTH, sizeof(int) );
     if( pathFirstInfinite.partialAlign == NULL ) {
@@ -213,7 +241,13 @@ int aligner(uint64_t *seq1, size_t seq1Len, uint64_t *seq2, size_t seq2Len, size
     }
     memcpy(pathFirstInfinite.partialAlign, initArr, sizeof(int) * INIT_LENGTH);
 
-    struct align pathSecondInfinite = {.partialWt = 100000, .partialTrueWt = 100000, .posStringA = 0, .posStringB = 0, .posTrueA = 0, .posTrueB = 0, .flagWhichTree = 2};
+    struct align pathSecondInfinite = {.partialWt = 100000,
+                                       .partialTrueWt = 100000,
+                                       .posStringA = 0,
+                                       .posStringB = 0,
+                                       .posTrueA = 0,
+                                       .posTrueB = 0,
+                                       .flagWhichTree = 2};
     pathSecondInfinite.partialAlign = calloc( INIT_LENGTH, sizeof(int) );
     if( pathSecondInfinite.partialAlign == NULL ) {
         return 1;
@@ -234,8 +268,13 @@ int aligner(uint64_t *seq1, size_t seq1Len, uint64_t *seq2, size_t seq2Len, size
 
 
 
-    struct align finalAlign =
-    {.partialWt = 0, .partialTrueWt = 0, .posStringA = 0, .posStringB = 0, .posTrueA = 0, .posTrueB = 0, .flagWhichTree = 1};
+    struct align finalAlign = {.partialWt = 0,
+                               .partialTrueWt = 0,
+                               .posStringA = 0,
+                               .posStringB = 0,
+                               .posTrueA = 0,
+                               .posTrueB = 0,
+                               .flagWhichTree = 1};
 
 
     finalAlign.partialAlign = calloc( INIT_LENGTH, sizeof(int) );
@@ -256,14 +295,14 @@ int aligner(uint64_t *seq1, size_t seq1Len, uint64_t *seq2, size_t seq2Len, size
 
 
   //  char* seqA = calloc(strlen(seq1) + 1, sizeof(int));
-    int* seqA = calloc(sizeof(seq1)/sizeof(seq1[0]) + 1, sizeof(int));
+    int* seqA = calloc( sizeof(seq1) / sizeof(seq1[0]) + 1, sizeof(int) );
 
     // Now, test for allocation. Return 1 if it fails.
     if( seqA == NULL ) {
         return 1;
     }
  //   char* seqB = calloc(strlen(seq2) + 1, sizeof(int));
-    int* seqB = calloc(sizeof(seq2)/sizeof(seq2[0]) + 1, sizeof(int));
+    int* seqB = calloc( sizeof(seq2) / sizeof(seq2[0]) + 1, sizeof(int) );
 
     // Now, test for allocation. Return 1 if it fails.
     if( seqB == NULL ) {
@@ -333,8 +372,8 @@ int aligner(uint64_t *seq1, size_t seq1Len, uint64_t *seq2, size_t seq2Len, size
 
   //  lengthSeqA = strlen(seqA);
   //  lengthSeqB = strlen(seqB);
-    lengthSeqA = sizeof(seqA)/sizeof(seqA[0]);
-    lengthSeqB = sizeof(seqB)/sizeof(seqB[0]);
+    lengthSeqA = sizeof(seqA) / sizeof(seqA[0]);
+    lengthSeqB = sizeof(seqB) / sizeof(seqB[0]);
 
     // printf("length of seqA: %ld\n", lengthSeqA);
     // printf("length of seqB: %ld\n", lengthSeqB);
@@ -365,27 +404,39 @@ int aligner(uint64_t *seq1, size_t seq1Len, uint64_t *seq2, size_t seq2Len, size
     // under \sum z_i measure
 
     struct align pathFirst[3] = {
-        {.partialWt = getCost(seqA[0], seqB[0], tcm, alphSize),
-        .partialTrueWt = getCost(seqA[0], seqB[0], tcm, alphSize) + 2 * getCost(seqA[0], seqB[0], tcm, alphSize)* getCost(seqA[0], seqB[0], tcm, alphSize),
-        .posStringA = 1,
-        .posStringB = 1,
-        .posTrueA = 1,
-        .posTrueB = 1,
-        .flagWhichTree = 1},
-        {.partialWt = getCost(seqA[0], GAP, tcm, alphSize),
-        .partialTrueWt = getCost(seqA[0], GAP, tcm, alphSize) + 2 * getCost(seqA[0], GAP, tcm, alphSize) * getCost(seqA[0], GAP, tcm, alphSize),
-        .posStringA = 1,
-        .posStringB = 1,
-        .posTrueA = 1,
-        .posTrueB = 0,
-        .flagWhichTree = 1},
-        {.partialWt = getCost(GAP, seqB[0], tcm, alphSize),
-        .partialTrueWt = getCost(GAP, seqB[0], tcm, alphSize) + 2 * getCost(GAP, seqB[0], tcm, alphSize) * getCost(GAP, seqB[0], tcm, alphSize),
-        .posStringA = 1,
-        .posStringB = 1,
-        .posTrueA = 0,
-        .posTrueB = 1,
-        .flagWhichTree = 1}
+        {.partialWt     = getCost(seqA[0], seqB[0], tcm, alphSize),
+         .partialTrueWt = getCost(seqA[0], seqB[0], tcm, alphSize)
+                          + 2
+                          * getCost(seqA[0], seqB[0], tcm, alphSize)
+                          * getCost(seqA[0], seqB[0], tcm, alphSize),
+         .posStringA    = 1,
+         .posStringB    = 1,
+         .posTrueA      = 1,
+         .posTrueB      = 1,
+         .flagWhichTree = 1
+        },
+        {.partialWt     = getCost(seqA[0], GAP, tcm, alphSize),
+         .partialTrueWt = getCost(seqA[0], GAP, tcm, alphSize)
+                          + 2
+                          * getCost(seqA[0], GAP, tcm, alphSize)
+                          * getCost(seqA[0], GAP, tcm, alphSize),
+         .posStringA    = 1,
+         .posStringB    = 1,
+         .posTrueA      = 1,
+         .posTrueB      = 0,
+         .flagWhichTree = 1
+        },
+        {.partialWt     = getCost(GAP, seqB[0], tcm, alphSize),
+         .partialTrueWt = getCost(GAP, seqB[0], tcm, alphSize)
+                          + 2
+                          * getCost(GAP, seqB[0], tcm, alphSize)
+                          * getCost(GAP, seqB[0], tcm,  alphSize),
+         .posStringA    = 1,
+         .posStringB    = 1,
+         .posTrueA      = 0,
+         .posTrueB      = 1,
+         .flagWhichTree = 1
+        }
 
     };
 
@@ -473,13 +524,17 @@ int aligner(uint64_t *seq1, size_t seq1Len, uint64_t *seq2, size_t seq2Len, size
     //  under \sum z_i^2 measure
 
     struct align pathSecond[3] = {
-        { .partialWt = getCost(seqA[0], seqB[0], tcm, alphSize) * getCost(seqA[0], seqB[0], tcm, alphSize),
-            .partialTrueWt = getCost(seqA[0], seqB[0], tcm, alphSize) + 2 * getCost(seqA[0], seqB[0], tcm, alphSize) * getCost(seqA[0], seqB[0], tcm, alphSize),
-            .posStringA = 1,
-            .posStringB = 1,
-            .posTrueA = 1,
-            .posTrueB = 1,
-            .flagWhichTree = 2
+        { .partialWt = getCost(seqA[0], seqB[0], tcm, alphSize)
+                     * getCost(seqA[0], seqB[0], tcm, alphSize),
+           .partialTrueWt = getCost(seqA[0], seqB[0], tcm, alphSize)
+                          + 2
+                          * getCost(seqA[0], seqB[0], tcm, alphSize)
+                          * getCost(seqA[0],seqB[0], tcm, alphSize),
+           .posStringA = 1,
+           .posStringB = 1,
+           .posTrueA = 1,
+           .posTrueB = 1,
+           .flagWhichTree = 2
         },
         { .partialWt = getCost(seqA[0], GAP, tcm, alphSize) * getCost(seqA[0], GAP, tcm, alphSize),
             .partialTrueWt = getCost(seqA[0], GAP, tcm, alphSize) + 2 * getCost(seqA[0], GAP, tcm, alphSize) * getCost(seqA[0], GAP, tcm, alphSize),

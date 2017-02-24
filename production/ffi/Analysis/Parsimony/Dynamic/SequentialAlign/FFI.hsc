@@ -10,7 +10,7 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE ForeignFunctionInterface, BangPatterns, TypeSynonymInstances, FlexibleInstances #-}
+{-# LANGUAGE BangPatterns, DeriveGeneric, FlexibleInstances, ForeignFunctionInterface, TypeSynonymInstances #-}
 
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
@@ -27,14 +27,17 @@ module Analysis.Parsimony.Dynamic.SequentialAlign.FFI
 import Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise (filterGaps)
 import Bio.Character.Encodable
 import Bio.Character.Exportable.Class
+import Control.DeepSeq
 import Control.Lens    hiding (element)
 import Data.Bits
 import Data.Foldable
 import Data.Monoid
+--import Data.Void
 import Foreign         hiding (alignPtr)
 --import Foreign.Ptr
 --import Foreign.C.String
 import Foreign.C.Types
+import GHC.Generics           (Generic)
 import System.IO.Unsafe
 import Test.QuickCheck hiding ((.&.), output)
 
@@ -55,13 +58,21 @@ instance Arbitrary CArrayUnit where
         pure $ fromIntegral num
 
 
-data ForeignVoid
+data ForeignVoid deriving (Generic)
+
+
+instance NFData ForeignVoid
 
 
 data MemoizedCostMatrix
    = MemoizedCostMatrix
-   { costMatrix :: Ptr ForeignVoid
-   }
+   { costMatrix :: StablePtr ForeignVoid
+   } deriving (Eq, Generic)
+
+
+instance NFData MemoizedCostMatrix where
+
+    rnf (MemoizedCostMatrix !x) = ()
 
 
 instance Storable MemoizedCostMatrix where
@@ -102,7 +113,7 @@ instance Storable DCElement where
 foreign import ccall unsafe "costMatrixWrapper matrixInit"
     initializeMemoizedCMfn_c :: CSize
                              -> Ptr CInt
-                             -> IO (Ptr ForeignVoid) -- MemoizedCostMatrix
+                             -> IO (StablePtr ForeignVoid) -- MemoizedCostMatrix
 
 
 -- | Set up and return a cost matrix
@@ -115,6 +126,7 @@ getMemoizedCostMatrix alphabetSize costFn = unsafePerformIO . withArray rowMajor
 --        output <- malloc :: IO (Ptr MemoizedCostMatrix)
         -- Hopefully the strictness annotation forces the allocation of the CostMatrix2d to happen immediately.
         ! resultPtr <- initializeMemoizedCMfn_c (coerceEnum alphabetSize) allocedTCM
+        !_ <- putStrLn "Initialized Sparse Memoized TCM through FFI binding!"
         pure $ MemoizedCostMatrix resultPtr
     where
         -- This *should* be in row major order due to the manner in which list comprehensions are performed.
@@ -222,7 +234,7 @@ foreign import ccall unsafe "costMatrix lookUpCost"
 foreign import ccall unsafe "seqAlignInteface performSequentialAlignment"
     performSeqAlignfn_c :: Ptr CDynamicChar
                         -> Ptr CDynamicChar
-                        -> Ptr ForeignVoid
+                        -> StablePtr ForeignVoid
                         -> Ptr AlignResult
                         -> IO CInt
 

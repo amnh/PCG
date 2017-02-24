@@ -80,8 +80,10 @@ struct KeyHash {
         std::size_t right_seed = 2718281828; // E  used as arbitrarily random seed
 
         std::hash<uint64_t> hasher;
-        size_t elemArrWidth = lhs.alphSize / INT_WIDTH + (lhs.alphSize % INT_WIDTH ? 1 : 0);
-        for (size_t i = 0; i < elemArrWidth; i++) {
+        size_t elemArrCount = dcElemSize(lhs.alphSize);
+	//printf("alphabetSize: %d\n", lhs.alphSize);
+	//printf("elemArrCount: %d\n", elemArrCount);
+        for (size_t i = 0; i < elemArrCount; i++) {
             left_seed  ^= hasher(lhs.element[i]) + 0x9e3779b9 + (left_seed  << 6) + (left_seed  >> 2);
             right_seed ^= hasher(rhs.element[i]) + 0x9e3779b9 + (right_seed << 6) + (right_seed >> 2);
         }
@@ -103,7 +105,15 @@ struct KeyEqual {
     // Return true if every `uint64_t` in lhs->element and rhs->element is equal, else false.
     bool operator()(const keys_t& lhs, const keys_t& rhs) const
     {
-        size_t elemArrWidth = lhs.first.alphSize / INT_WIDTH + ((lhs.first.alphSize % INT_WIDTH) ? 1 : 0); // assume that alphabet sizes for all four dcElements are the same
+      // Assert that all key components share the same alphSize value
+      if (   lhs.first.alphSize  != rhs.first.alphSize
+	  || lhs.first.alphSize  != lhs.second.alphSize
+          || lhs.second.alphSize != rhs.second.alphSize) {
+  	  return false;
+      }
+
+      //Assert that the left key elements match the right key elements
+      size_t elemArrWidth = dcElemSize(lhs.first.alphSize);
         // printf("operator equal ()\n");
         // printPackedChar(lhs.first.element, 1, lhs.first.alphSize);
         // printPackedChar(rhs.first.element, 1, rhs.first.alphSize);
@@ -165,7 +175,7 @@ class CostMatrix
         /** Takes in a `keys_t` and a `costMedian_t` and updates myMap to store the new values,
          *  with @key as a key, and @median as the value.
          */
-        void setValue(keys_t key, costMedian_t* median);
+        void setValue(keys_t* key, costMedian_t* median);
 
         /** Takes in a pair of keys_t (each of which is a single `dcElement`) and computes their lowest-cost median. */
         costMedian_t* computeCostMedian(keys_t key);
