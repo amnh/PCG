@@ -1203,7 +1203,6 @@ int aligner(uint64_t *seq1, size_t seq1Len, uint64_t *seq2, size_t seq2Len, size
 
     retAlign->weight = finalAlign.partialWt;
 
-/*  TODO: fix this later?
     free(initArr);
     for (int i = 0; i < 3; i++) {
         free(path[i].partialAlign);
@@ -1213,7 +1212,7 @@ int aligner(uint64_t *seq1, size_t seq1Len, uint64_t *seq2, size_t seq2Len, size
     free(pathSecondInfinite.partialAlign);
 
     for (i = 0; i < 3; i++) {
-        free(pathFirst[i].partialAlign);
+      //  free(pathFirst[i].partialAlign);
         free(pathSecond[i].partialAlign);
     }
     for (i = 0; i < 3; i++) {
@@ -1224,8 +1223,8 @@ int aligner(uint64_t *seq1, size_t seq1Len, uint64_t *seq2, size_t seq2Len, size
     free(seqA);
     free(seqB);
     free(finalAlign.partialAlign);
-    free(alignFinal);
-*/
+    //free(alignFinal);
+
     // EDIT: returning success code.
     return 0;
 }
