@@ -1,4 +1,3 @@
-
 #include <inttypes.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -9,6 +8,9 @@
 #include "seqAlignForHaskell.h"
 
 int performSequentialAlignment(dynChar_t* seqA, dynChar_t* seqB, costMatrix_p costMatrix, alignResult_t* result) {
+
+    //printf("Successfully entered Yu Xiang's code on the other side of the FFI.\n");
+    //fflush(stdout);
 
     uint64_t* seqA_main = dynCharToIntArr(seqA);
     uint64_t* seqB_main = dynCharToIntArr(seqB);
@@ -24,9 +26,25 @@ int performSequentialAlignment(dynChar_t* seqA, dynChar_t* seqB, costMatrix_p co
     }
     retAlign->alignmentLength = length;
 
+    /**
+    getCost(1,  1, costMatrix, seqA->alphSize);
+    getCost(5,  7, costMatrix, seqA->alphSize);
+    getCost(9, 15, costMatrix, seqA->alphSize);
+    **/
+    /**/
+
+    //printDynChar(seqA);
+    //printDynChar(seqB);
+    
+    //printf("Before 'Aligner' call\n");
+    //fflush(stdout);
 
     int success = aligner(seqA_main, seqA->numElems, seqB_main, seqB->numElems, seqA->alphSize, costMatrix, retAlign);
 
+    //printf("After  'Aligner' call\n");
+    //fflush(stdout);
+
+    /**/
     result->finalChar1  = intArrToBitArr (seqA->alphSize, retAlign->alignmentLength, retAlign->seq1);
     result->finalChar2  = intArrToBitArr (seqA->alphSize, retAlign->alignmentLength, retAlign->seq2);
     result->medianChar  = seqA->dynChar;  //findMedian(result->finalChar1, result->finalChar2, );
@@ -35,5 +53,5 @@ int performSequentialAlignment(dynChar_t* seqA, dynChar_t* seqB, costMatrix_p co
 
     // freeRetType(retAlign); NO! It's pointers all the way down!
 
-    return success;
+    return 0;//success;
 }

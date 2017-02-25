@@ -80,6 +80,8 @@ library
   default-language:    Haskell2010
 
   ghc-options:         -O2
+                       -g
+--                       -debug -optl-static
                        -Wall
                        -fwarn-duplicate-exports
                        -fwarn-incomplete-patterns
@@ -99,7 +101,7 @@ library
 
  -- cc-options: --std=c11
 
-  cc-options: --std=c++11
+  cc-options: --std=c++11 -g
 
   -- We must provide the full relative path to every C file that the project depends on.
   c-sources:
@@ -368,8 +370,9 @@ executable pcg
 
   ghc-options:         -O2
                        -g
+--                       -debug -optl-static
                      -- This is to enable thread parralellism at compile time
-                       -threaded -rtsopts -with-rtsopts=-N8
+--                       -threaded -rtsopts -with-rtsopts=-N8
                      -- The rest are "opt-in" warnings for cleanliness
                        -Wall
                        -fwarn-duplicate-exports

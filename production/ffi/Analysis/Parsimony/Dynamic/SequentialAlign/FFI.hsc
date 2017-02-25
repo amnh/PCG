@@ -41,6 +41,8 @@ import GHC.Generics           (Generic)
 import System.IO.Unsafe
 import Test.QuickCheck hiding ((.&.), output)
 
+import Debug.Trace
+
 #include "costMatrixWrapper.h"
 #include "dynamicCharacterOperations.h"
 #include "seqAlignInterface.h"
@@ -144,12 +146,27 @@ coerceEnum = toEnum . fromEnum
 {- foreign import ccall unsafe "seqAlignForHaskell aligner"
     call_aligner :: Ptr CDynamicChar -> Ptr CDynamicChar -> CInt -> CInt -> Ptr AlignResult -> CInt
 -}
-pairwiseSequentialAlignment :: (EncodableDynamicCharacter s, Exportable s) => MemoizedCostMatrix -> s -> s -> (s, Double, s, s, s)
+pairwiseSequentialAlignment :: (EncodableDynamicCharacter s, Exportable s, Show s) => MemoizedCostMatrix -> s -> s -> (s, Double, s, s, s)
 pairwiseSequentialAlignment memo char1 char2 = unsafePerformIO $ do
+        !_ <- trace "Before constructing char1" $ pure ()
         char1'        <- constructCDynamicCharacterFromExportableCharacter char1
+        !_ <- trace "After  constructing char1" $ pure ()
+
+        !_ <- trace "Before constructing char2" $ pure ()
         char2'        <- constructCDynamicCharacterFromExportableCharacter char2
+        !_ <- trace "After  constructing char1" $ pure ()
+
+        !_ <- trace "Before mallocing result " $ pure ()
         resultPointer <- malloc :: IO (Ptr AlignResult)
+        !_ <- trace "After  mallocing result " $ pure ()
+
+        !_ <- trace ("Shown character 1: " <> show char1) $ pure ()
+        !_ <- trace ("Shown character 2: " <> show char2) $ pure ()
+        
+        !_ <- trace "Before FFI call" $ pure ()
         !success      <- performSeqAlignfn_c char1' char2' (costMatrix memo) resultPointer
+        !_ <- trace "After  FFI call" $ pure ()
+
         _ <- free char1'
         _ <- free char2'
         resultStruct  <- peek resultPointer
@@ -163,6 +180,12 @@ pairwiseSequentialAlignment memo char1 char2 = unsafePerformIO $ do
         !medianAlignment <- fmap generalizeFromBuffer . peekArray bufferLength $ medianChar resultStruct
         let !ungapped = filterGaps medianAlignment
         _ <- free resultPointer
+
+        !_ <- trace ("Shown   gapped           : " <> show medianAlignment) $ pure ()
+        !_ <- trace ("Shown ungapped           : " <> show ungapped       ) $ pure ()
+        !_ <- trace ("Shown character 1 aligned: " <> show alignedChar1   ) $ pure ()
+        !_ <- trace ("Shown character 2 aligned: " <> show alignedChar2   ) $ pure ()
+
         pure (ungapped, alignmentCost, medianAlignment, alignedChar1, alignedChar2)
     where
         width = exportedElementWidthSequence $ toExportableBuffer char1
@@ -170,6 +193,7 @@ pairwiseSequentialAlignment memo char1 char2 = unsafePerformIO $ do
 
 constructCDynamicCharacterFromExportableCharacter :: Exportable s => s -> IO (Ptr CDynamicChar)
 constructCDynamicCharacterFromExportableCharacter exChar = do
+        !_ <- trace (show exportableBuffer) $ pure ()
         valueBuffer <- newArray $ exportedBufferChunks exportableBuffer
         charPointer <- malloc :: IO (Ptr CDynamicChar)
         let charValue = CDynamicChar (coerceEnum width) (coerceEnum count) bufLen valueBuffer
@@ -295,8 +319,8 @@ instance Storable AlignResult where
 data CDynamicChar
    = CDynamicChar
    { alphabetSizeChar :: CSize
-   , dynCharLen       :: CSize
    , numElements      :: CSize
+   , dynCharLen       :: CSize
    , dynChar          :: Ptr CArrayUnit
    }
 
@@ -347,19 +371,19 @@ instance Storable CDynamicChar where
     alignment _ = alignment (undefined :: CArrayUnit)
     peek ptr    = do -- to get values from the C app
         alphLen <- (#peek struct dynChar_t, alphSize  ) ptr
-        seqLen  <- (#peek struct dynChar_t, dynCharLen) ptr
         nElems  <- (#peek struct dynChar_t, numElems  ) ptr
+        seqLen  <- (#peek struct dynChar_t, dynCharLen) ptr
         seqVal  <- (#peek struct dynChar_t, dynChar   ) ptr
         pure CDynamicChar
              { alphabetSizeChar = alphLen
-             , dynCharLen       = seqLen
              , numElements      = nElems
+             , dynCharLen       = seqLen
              , dynChar          = seqVal
              }
-    poke ptr (CDynamicChar alphLen seqLen nElems seqVal) = do -- to modify values in the C app
+    poke ptr (CDynamicChar alphLen nElems seqLen seqVal) = do -- to modify values in the C app
         (#poke struct dynChar_t, alphSize  ) ptr alphLen
-        (#poke struct dynChar_t, dynCharLen) ptr seqLen
         (#poke struct dynChar_t, numElems  ) ptr nElems
+        (#poke struct dynChar_t, dynCharLen) ptr seqLen
         (#poke struct dynChar_t, dynChar   ) ptr seqVal
 
 

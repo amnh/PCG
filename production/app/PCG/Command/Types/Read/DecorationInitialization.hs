@@ -264,6 +264,7 @@ initializeDecorations (PhylogeneticSolution forests) = PhylogeneticSolution $ fm
 chooseDirectOptimizationComparison :: ( SimpleDynamicDecoration d  c
                                       , SimpleDynamicDecoration d' c
                                       , Exportable c
+                                      , Show c
                                       )
                                    => d
                                    -> [d']

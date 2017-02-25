@@ -31,7 +31,8 @@ int aligner(uint64_t *seq1, size_t seq1Len, uint64_t *seq2, size_t seq2Len, size
 
  //   int cost = getCost(char1, char2, tcm, alphSize);
 
-
+    printf("S1 len: %zu\n", seq1Len);
+    printf("S2 len: %zu\n", seq2Len);
 
     //Yu_Edit: changed the length of INIT_LENGTH
     const long int INIT_LENGTH = 2 * (seq1Len + seq2Len); // Will be used to initialize all subsequent alignment arrays.
@@ -285,7 +286,7 @@ int aligner(uint64_t *seq1, size_t seq1Len, uint64_t *seq2, size_t seq2Len, size
         aToGap,
         gapToB;
 
-    printf("%zu\n", );
+    //    printf("%zu\n", );
     aToB   = getCost(seqA[0], seqB[0], tcm, alphSize);
     aToGap = getCost(seqA[0], GAP, tcm, alphSize);
     gapToB = getCost(GAP, seqB[0], tcm, alphSize);
@@ -1232,7 +1233,7 @@ int aligner(uint64_t *seq1, size_t seq1Len, uint64_t *seq2, size_t seq2Len, size
 /**************************************   COMBINE SORT CANDIDATES ACCORDING TO TRUE METRIC  *********************************************/
 
 
-int trueWt(struct align *path, costMatrix_p tcm, int len, size_t alphSize){
+int trueWt(struct align *path, costMatrix_p tcm, size_t len, size_t alphSize){
 
     int i;
 
