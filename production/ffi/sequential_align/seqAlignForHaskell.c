@@ -295,22 +295,22 @@ int aligner(uint64_t *seq1, size_t seq1Len, uint64_t *seq2, size_t seq2Len, size
 
 
   //  char* seqA = calloc(strlen(seq1) + 1, sizeof(int));
-    int* seqA = calloc( sizeof(seq1) / sizeof(seq1[0]) + 1, sizeof(int) );
+    int* seqA = calloc(seq1Len, sizeof(int) );
 
     // Now, test for allocation. Return 1 if it fails.
     if( seqA == NULL ) {
         return 1;
     }
  //   char* seqB = calloc(strlen(seq2) + 1, sizeof(int));
-    int* seqB = calloc( sizeof(seq2) / sizeof(seq2[0]) + 1, sizeof(int) );
+    int* seqB = calloc(seq2Len, sizeof(int) );
 
     // Now, test for allocation. Return 1 if it fails.
     if( seqB == NULL ) {
         return 1;
     }
 
-    memcpy(seqA, seq1, sizeof(int) * (seq1Len + 1));
-    memcpy(seqB, seq2, sizeof(int) * (seq2Len + 1));
+    memcpy(seqA, seq1, sizeof(int) * (seq1Len));
+    memcpy(seqB, seq2, sizeof(int) * (seq2Len));
 
     // printf("seqA is %s\n", seqA);
     // printf("seqB is %s\n", seqB);
