@@ -28,6 +28,7 @@ module Bio.Character.Decoration.Dynamic
   , PostOrderExtensionDirectOptimizationDecoration(..)
   , HasCharacterAlphabet(..)
   , HasCharacterCost(..)
+  , HasCharacterLocalCost(..)
   , HasCharacterName(..)
   , HasCharacterWeight(..)
   , HasEncoded(..)

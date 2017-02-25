@@ -14,6 +14,7 @@ module Bio.PhyloGraphPrime.ReferenceDAG
   ( -- * Efficient access
     ReferenceDAG()
   , NodeRef()
+  , nodeFoldMap
   , nodePostOrder
   , nodePreOrder
   , unfoldDAG

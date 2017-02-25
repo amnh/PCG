@@ -400,6 +400,7 @@ executable pcg
                        PCG.Command.Types.Read.Validate
                        PCG.Command.Types.Report
                        PCG.Command.Types.Report.CharacterMatrix
+                       PCG.Command.Types.Report.DynamicCharacterTable
                        PCG.Command.Types.Report.Evaluate
                        PCG.Command.Types.Report.GraphViz
                        PCG.Command.Types.Report.ImpliedAlignmentFasta

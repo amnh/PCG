@@ -15,12 +15,14 @@ import           Control.Monad.Logger
 import           Data.Foldable
 import           Data.List.NonEmpty
 import           PCG.Command.Types (Command(..))
-import           PCG.Command.Types.Report.TaxonMatrix
+import           PCG.Command.Types.Report.DynamicCharacterTable
 import           PCG.Command.Types.Report.GraphViz
+import           PCG.Command.Types.Report.ImpliedAlignmentFasta
 import           PCG.Command.Types.Report.Internal
 import           PCG.Command.Types.Report.Metadata
 import           PCG.Command.Types.Report.Newick
-import           PCG.Command.Types.Report.ImpliedAlignmentFasta
+import           PCG.Command.Types.Report.TaxonMatrix
+
 
 evaluate :: Command -> SearchState -> SearchState
 evaluate (REPORT target format) old = do
@@ -34,6 +36,8 @@ evaluate (REPORT target format) old = do
          OutputToFile f -> old <* liftIO (writeFile f output)
 
 evaluate _ _ = fail "Invalid READ command binding"
+
+
 -- | Function to add optimization to the newick reporting
 -- TODO: change this error into a warning
 addOptimization :: StandardSolution -> StandardSolution
@@ -41,6 +45,7 @@ addOptimization result
   | allBinary = solutionOptimization 1 result
   | otherwise = error "Cannot perform optimization because graph is not binary, outputting zero cost"
     where allBinary = all (all verifyBinary) (forests result)
+
 
 -- TODO: Redo reporting
 generateOutput :: StandardSolution -> OutputFormat -> FileStreamContext
