@@ -34,6 +34,7 @@ import           Data.MonoTraversable
 import           Data.Word
 import           Prelude     hiding (lookup, zip)
 
+import Debug.Trace
 
 type PairwiseAlignment s = s -> s -> (s, Double, s, s, s)
 
@@ -82,7 +83,7 @@ updateFromLeaves pairwiseAlignment (leftChild:|rightChild:_) =
 
 
 directOptimizationPreOrder
-  :: DirectOptimizationPostOrderDecoration d c
+  :: (DirectOptimizationPostOrderDecoration d c, Show c)
   => PairwiseAlignment c
   -> d
   -> [(Word, DynamicDecorationDirectOptimization c)]
@@ -97,11 +98,15 @@ initializeRoot
   :: DirectOptimizationPostOrderDecoration d c
   => d
   -> DynamicDecorationDirectOptimization c
-initializeRoot = extendPostOrderToDirectOptimization <$> id <*> (^. preliminaryUngapped) <*> (^. preliminaryGapped)
+initializeRoot =
+    extendPostOrderToDirectOptimization
+      <$> id
+      <*> (^. preliminaryUngapped)
+      <*> (^. preliminaryGapped)
 
 
 updateFromParent
-  :: (EncodableDynamicCharacter c, DirectOptimizationPostOrderDecoration d c)
+  :: (EncodableDynamicCharacter c, DirectOptimizationPostOrderDecoration d c, Show c)
   => PairwiseAlignment c
   -> d
   -> DynamicDecorationDirectOptimization c
@@ -115,7 +120,7 @@ updateFromParent pairwiseAlignment currentDecoration parentDecoration =
 -- |
 -- A three way comparison of characters used in the DO preorder traversal.
 tripleComparison
-  :: ( EncodableDynamicCharacter c, DirectOptimizationPostOrderDecoration d c)
+  :: ( EncodableDynamicCharacter c, DirectOptimizationPostOrderDecoration d c, Show c)
   => PairwiseAlignment c
   -> d
   -> c
@@ -123,7 +128,7 @@ tripleComparison
 tripleComparison pairwiseAlignment childDecoration parentCharacter = (ungapped, gapped)
   where
     costStructure     = childDecoration ^. symbolChangeMatrix
-    childCharacter    = childDecoration ^. preliminaryUngapped
+    childCharacter    = childDecoration ^. preliminaryGapped
     childLeftAligned  = childDecoration ^. leftAlignment
     childRightAligned = childDecoration ^. rightAlignment
     
@@ -131,7 +136,22 @@ tripleComparison pairwiseAlignment childDecoration parentCharacter = (ungapped, 
     newGapIndicies         = newGapLocations childCharacter childAlignment
     extendedLeftCharacter  = insertNewGaps newGapIndicies childLeftAligned
     extendedRightCharacter = insertNewGaps newGapIndicies childRightAligned
-    (_, ungapped, gapped)  = threeWayMean costStructure derivedAlignment extendedLeftCharacter extendedRightCharacter
+    (_, ungapped, gapped)  = trace context $ threeWayMean costStructure derivedAlignment extendedLeftCharacter extendedRightCharacter
+    context = unlines
+        [ show newGapIndicies
+        , "Parent:"
+        , show parentCharacter
+        , show derivedAlignment
+        , "Center char:"
+        , show childCharacter
+        , show childAlignment
+        , "Left  chars:"
+        , show childLeftAligned
+        , show extendedLeftCharacter
+        , "Right chars:"
+        , show childRightAligned
+        , show extendedRightCharacter
+        ]
 
 
 -- |
@@ -170,14 +190,14 @@ insertNewGaps insertionIndicies character = constructDynamic . (<> trailingGaps)
 -- |
 -- Calculates the mean character and cost between three supplied characters.
 threeWayMean
-  :: (EncodableDynamicCharacter c)
+  :: (EncodableDynamicCharacter c, Show c)
   => (Word -> Word -> Word)
   -> c
   -> c
   -> c
   -> (Word, c, c)
 threeWayMean costStructure char1 char2 char3
-  | not uniformLength = error "Three sequences supplied to 'threeWayMean' function did not have uniform length." -- <> show char1 <> show char2 <> show char3
+  | not uniformLength = error $ unwords ["Three sequences supplied to 'threeWayMean' function did not have uniform length."{- , show char1, show char2, show char3 -}]
   | otherwise         = (sum costValues, constructDynamic $ filter (/= gap) meanStates, constructDynamic meanStates)
   where
     gap                 = getGapElement $ char1 `indexStream` 0
