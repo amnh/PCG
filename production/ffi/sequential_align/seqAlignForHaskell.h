@@ -20,17 +20,17 @@ struct align {
     int partialWt;
     int partialTrueWt;
  //   char* partialAlign; // EDIT: made it dynamically allocable.
-    int* partialAlign; // EDIT: made it dynamically allocable.
+    uint64_t* partialAlign; // EDIT: made it dynamically allocable.
     // char partialAlign[20];
-    int posStringA;   // position at stringA
-    int posStringB;   // position at stringB
-    int posTrueA;     // position without gap
-    int posTrueB;     // position without gap
+    size_t posStringA;   // position at stringA
+    size_t posStringB;   // position at stringB
+    size_t posTrueA;     // position without gap
+    size_t posTrueB;     // position without gap
     int flagWhichTree;  // belongs to first or second tree
 };
 
 
-int trueWt(struct align *path, costMatrix_p, int len, size_t alphSize);
+int trueWt(struct align *path, costMatrix_p, size_t len, size_t alphSize);
 
 // EDIT: rectified with .c file.
 //int aligner(char*, char*, int, int, struct retType*);
