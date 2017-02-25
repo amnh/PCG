@@ -1,5 +1,6 @@
 #include "costMatrix.h"
 #include "dynamicCharacterOperations.h"
+#include <cstring> //for memcpy;
 
 // TODO: I'll need this for the Haskell side of things: https://hackage.haskell.org/package/base-4.9.0.0/docs/Foreign-StablePtr.html
 
@@ -189,6 +190,56 @@ costMedian_t* CostMatrix::computeCostMedian(keys_t keys) {
     freeKeys_t(searchKey);
     free(searchKey);
     // freeDCElem(singleNucleotide);
+
+    return toReturn;
+}
+
+costMedian_t* CostMatrix::computeCostMedianFitchy(keys_t keys) {
+
+    size_t elemArrLen = dcElemSize(alphabetSize);
+
+    dcElement_t*  firstUnambigugous = allocateDCElement(alphabetSize);
+    dcElement_t* secondUnambigugous = allocateDCElement(alphabetSize);
+    dcElement_t*    pointwiseMedian = allocateDCElement(alphabetSize);
+    dcElement_t*      minimalMedian = allocateDCElement(alphabetSize);
+
+    int minimalCost   = INT_MAX;
+    int pointwiseCost;
+    
+    for (size_t i = 0; i < alphabetSize; ++i) {
+      if (TestBit(keys.first.element, i)) {
+	SetBit(firstUnambigugous->element, i);
+        for (size_t j = 0; j < alphabetSize; ++j) {
+           if (TestBit(keys.second.element, j)) {
+	     SetBit(secondUnambigugous->element, j);
+             pointwiseCost = getSetCostMedian(firstUnambigugous, secondUnambigugous, pointwiseMedian);
+             if (pointwiseCost == minimalCost) {
+	       packedChar* newPackedChar = packedCharOr(pointwiseMedian->element, minimalMedian->element, alphabetSize);
+	       free(minimalMedian->element);
+	       minimalMedian->element = newPackedChar;	       
+	     }
+	     else if (pointwiseCost < minimalCost) {
+	       memcpy(minimalMedian->element, pointwiseMedian->element, elemArrLen * sizeof(*pointwiseMedian->element));
+	       minimalCost = pointwiseCost;
+	     }
+	     else {
+	       // Greater than current minimal cost, don't accumulate.
+	     }
+	     ClearBit(secondUnambigugous->element, j);
+	   }
+	}
+	ClearBit(firstUnambigugous->element, i);
+      }
+    }
+
+    freeDCElem( firstUnambigugous);
+    freeDCElem(secondUnambigugous);
+    freeDCElem(   pointwiseMedian);
+    
+    costMedian_t* toReturn = (costMedian_t*) malloc(sizeof(costMedian_t));
+
+    toReturn->first  = minimalCost;
+    toReturn->second = minimalMedian->element;
 
     return toReturn;
 }
