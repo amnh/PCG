@@ -14,50 +14,47 @@
 #ifndef _COSTMATRIX_H
 #define _COSTMATRIX_H
 
-#define DEBUG 0
-
 // #include <cstdint>
 // #include <pair>
 #include <climits>
-#include <cstdlib>
+#include <stdlib.h>
+#include <string> // TODO: remember to delete this
 #include <unordered_map>
 
+typedef void* costMatrix_t;
+
 #ifdef __cplusplus
-extern "C" {
+#define EXTERNC extern "C"
+#else
+#define EXTERNC
 #endif
 
-#include "dynamicCharacterOperations.h"
-
-/** Next three fns defined here to use on C side. */
-costMatrix_p construct_CostMatrix_C (size_t alphSize, int* tcm);
-void destruct_CostMatrix_C (costMatrix_p mytype);
-int call_getSetCost_C (costMatrix_p untyped_self, dcElement_t* left, dcElement_t* right, dcElement_t* retMedian);
-    // extern "C" costMatrix_p get_CostMatrixPtr_C(costMatrix_p untyped_self);
-
-#ifdef __cplusplus
+EXTERNC {
+    #include "dynamicCharacterOperations.h"
 }
-#endif
+EXTERNC costMatrix_t matrixInit(size_t alphSize, int* tcm);
+EXTERNC void matrixDestroy(costMatrix_t mytype);
+EXTERNC void getCost(costMatrix_t self, int param);
+
+#undef EXTERNC
 
 // #include "CostMedPair.h"
-typedef std::pair<dcElement_t, dcElement_t>  keys_t;
-typedef std::pair<int,         packedChar*>  costMedian_t;
-typedef std::pair<keys_t,      costMedian_t> mapAccessPair_t;
-
-typedef void* costMatrix_p;
-
+typedef std::pair<dcElement_t, dcElement_t> keys_t;
+typedef std::pair<int, packedChar*> costMedian_t;
+typedef std::pair<keys_t, costMedian_t> mapAccessPair_t;
 
 
 /** Allocate room for a costMedian_t. Assumes alphabetSize is already initialized. */
 costMedian_t* allocCostMedian_t (size_t alphabetSize);
 
 /** dealloc costMedian_t. */
-void freeCostMedian_t (costMedian_t* toFree);
+void freeCostMedian_t (costMedian_t *toFree);
 
 /** Allocate room for a keys_t. */
 keys_t* allocKeys_t (size_t alphSize);
 
 /** dealloc keys_t. Calls various other free fns. */
-void freeKeys_t (const keys_t* toFree);
+void freeKeys_t (keys_t *toFree);
 
 /** Allocate space for Pair<keys_t, costMedian_t>, calling allocators for both types. */
 mapAccessPair_t* allocateMapAccessPair (size_t alphSize);
@@ -134,14 +131,10 @@ class CostMatrix
 
         CostMatrix(size_t alphSize, int* tcm);
 
-        ~CostMatrix();
+        ~CostMatrix();  // TODO: actually write this.
 
-        /** Getter only for cost. Necessary for testing, to insure that particular
-         *  key pair has, in fact, already been inserted into lookup table.
-         */
-        int getCostMedian(dcElement_t* left, dcElement_t* right, dcElement_t* retMedian);
-
-        /** Acts as both a setter and getter, mutating myMap.
+        /** This is the only way to interact with this class. Acts as both a setter
+         *  and getter, mutating myMap.
          *
          *  Receives two dcElements and computes the transformation cost as well as
          *  the median for the two. Puts the median and alphabet size into retMedian,
@@ -152,7 +145,7 @@ class CostMatrix
          *  assumption. Maybe after I work on the C wrapper I'll figure out how to
          *  have only a single `keys_t` argument and return a `costMedian_t`.
          */
-        int getSetCostMedian(dcElement_t* left, dcElement_t* right, dcElement_t* retMedian);
+        int getSetCost(dcElement_t* left, dcElement_t* right, dcElement_t* retMedian);
 
     private:
         std::unordered_map <keys_t, costMedian_t, KeyHash, KeyEqual> myMatrix;
@@ -170,7 +163,6 @@ class CostMatrix
         /** Takes in a pair of keys_t (each of which is a single `dcElement`) and computes their lowest-cost median. */
         costMedian_t* computeCostMedian(keys_t key);
 
-        // TODO: This isn't currently in use. Can I delete it?
         // TODO: make sure this comment is correct
         /** Find distance between an ambiguous nucleotide and an unambiguous ambElem. Return that value and the median.
          *  @param ambElem is ambiguous input.
@@ -183,7 +175,7 @@ class CostMatrix
          *
          *  Nota bene: Requires symmetric, if not metric, matrix. TODO: Is this true? If so fix it?
          */
-        int findDistance (keys_t* searchKey, dcElement_t* ambElem);
+        costMedian_t* findDistance (keys_t &key, int *tcm);
 
         /** Takes in an initial TCM, which is actually just a row-major array, creates hash table of costs
          *  where cost is least cost between two elements, and medians, where median is union of characters.
@@ -191,7 +183,7 @@ class CostMatrix
          *  Nota bene:
          *  Can only be called once this.alphabetSize has been set.
          */
-        void setUpInitialMatrix (int* tcm);
+        void setUpInitialMatrix (int *tcm);
 
 };
 

@@ -22,69 +22,74 @@
 #include <stdlib.h>
 #include <stdint.h>
 
-//#include "costMatrixWrapper.h"
+#include "costMatrixWrapper.h"
 #include "dynamicCharacterOperations.h"
-#include "seqAlignForHaskell.h"
+//#include "seqAlignForHaskell.h"
+#include "seqAlignInterface.h"
 
 #define __STDC_FORMAT_MACROS
 
 int main() {
 
-    const size_t TCM_LENGTH = 25;
+    const size_t TCM_LENGTH    = 25;
+    const size_t ALPHABET_SIZE = 5;
+
     int tcm[25] = {0,1,1,1,2, 1,0,1,1,2, 1,1,0,1,2, 1,1,1,0,2, 2,2,2,2,0};
-    size_t alphabetSize = 5;
-    if ( TCM_LENGTH != alphabetSize * alphabetSize ) {
+
+    if ( TCM_LENGTH != ALPHABET_SIZE * ALPHABET_SIZE ) {
         printf("tcm wrong size\n");
         exit(1);
     }
 
-    costMatrix_p costMatrix = matrixInit(alphabetSize, tcm);
+    uint64_t s1[3] = {1, 2, 4};
+    uint64_t s2[3] = {1, 2, 4};
 
-    uint64_t seqA_main[] = {1, 2, 3};
-    size_t seqALen = 3;
+    costMatrix_p costMatrix = matrixInit(ALPHABET_SIZE, tcm);
 
-    uint64_t seqB_main[] = {4, 5, 6};
-    size_t seqBLen = 3;
+    dynChar_t *seqA  = malloc(sizeof(dynChar_t));
+    seqA->alphSize   = ALPHABET_SIZE;
+    seqA->numElems   = 3;
+    seqA->dynCharLen = 1;
+    seqA->dynChar    = intArrToBitArr(ALPHABET_SIZE, seqA->numElems, s1);
 
 
+    dynChar_t *seqB  = malloc(sizeof(dynChar_t));
+    seqB->alphSize   = ALPHABET_SIZE;
+    seqB->numElems   = 3;
+    seqB->dynCharLen = 1;
+    seqB->dynChar    = intArrToBitArr(ALPHABET_SIZE, seqB->numElems, s2);
 
     int success = 1;
-    retType_t* retAlign = malloc( sizeof(retType_t) );
 
-    long int length = sizeof(seqA_main)/sizeof(seqA_main[0]) + sizeof(seqB_main)/sizeof(seqB_main[0]) + 5;
 
- //   retAlign->seq1 = calloc(length, sizeof(char));
-    retAlign->seq1 = calloc(length, sizeof(uint64_t));
-  //  retAlign->seq2 = calloc(length, sizeof(char));
-    retAlign->seq2 = calloc(length, sizeof(uint64_t));
+    alignResult_t *result = malloc(sizeof(alignResult_t));
 
-    if( retAlign->seq1 == NULL || retAlign->seq2 == NULL ) {
-        printf("Memory failure!\n");
-        return 1;
-    }
-    retAlign->alignmentLength = length;
-
-    success = aligner(seqA_main, seqALen, seqB_main, seqBLen, alphabetSize, costMatrix, retAlign);
+    success = performSequentialAlignment(seqA, seqB, costMatrix, result);
 
     if (success == 0) {
         printf("\nSuccess!\n\n");
         printf("The aligned sequences are:");
-        printf("  sequence 1:  [");
-        for(size_t i = 0; i < length; ++i) {
-            printf("%llu, ", retAlign->seq1[i]);
+        printf("  sequence 1:      [");
+        for(size_t i = 0; i < result->finalLength; ++i) {
+            printf("%llu, ", result->finalChar1[i]);
         }
-        printf("]\n  sequence 1:  [");
-        for(size_t i = 0; i < length; ++i) {
-            printf("%llu, ", retAlign->seq1[i]);
+        printf("]\n  sequence 2:      [");
+        for(size_t i = 0; i < result->finalLength; ++i) {
+            printf("%llu, ", result->finalChar2[i]);
         }
         printf("]\n");
-        printf("The cost of the alignment is: %d\n", retAlign->weight);
+        printf("]\n  median sequence:  [");
+        for(size_t i = 0; i < result->finalLength; ++i) {
+            printf("%llu, ", result->medianChar[i]);
+        }
+        printf("]\n");
+        printf("The cost of the alignment is: %zu\n", result->finalWt);
 
     } else {
         printf("Fail!\n");
     }
-    free(retAlign->seq1);
-    free(retAlign->seq2);
+    // free(retAlign->seq1);
+    // free(retAlign->seq2);
     matrixDestroy(costMatrix);
 
 }
@@ -95,7 +100,7 @@ int main() {
  *  in the form of an alignResult_t. The third character is allocated on Haskell side and passed in by reference.
  *  Returns 0 on correct exit, 1 on allocation failure. This was used to test the Haskell FFI.
  */
-
+/*
 int exampleInterfaceFn(dynChar_t* seqA, dynChar_t* seqB, alignResult_t* result) {
 
     uint64_t* seqA_main = dynCharToIntArr(seqA);
@@ -116,13 +121,13 @@ int exampleInterfaceFn(dynChar_t* seqA, dynChar_t* seqB, alignResult_t* result) 
     // The following as an example
     const size_t TCM_LENGTH = 25;
     int tcm[25] = {0,1,1,1,2, 1,0,1,1,2, 1,1,0,1,2, 1,1,1,0,2, 2,2,2,2,0};
-    size_t alphabetSize = 5;
-    if ( TCM_LENGTH != alphabetSize * alphabetSize ) {
+    size_t ALPHABET_SIZE = 5;
+    if ( TCM_LENGTH != ALPHABET_SIZE * ALPHABET_SIZE ) {
         printf("tcm wrong size\n");
         exit(1);
     }
 
-    costMatrix_p costMatrix = matrixInit(alphabetSize, tcm);
+    costMatrix_p costMatrix = matrixInit(ALPHABET_SIZE, tcm);
 
     int success = aligner(seqA_main, seqA->numElems, seqB_main, seqB->numElems, seqA->alphSize, costMatrix, retAlign);
     result->finalChar1 = intArrToBitArr (seqA->alphSize, retAlign->alignmentLength, retAlign->seq1);
@@ -136,3 +141,4 @@ int exampleInterfaceFn(dynChar_t* seqA, dynChar_t* seqB, alignResult_t* result) 
 
     return success;
 }
+*/
