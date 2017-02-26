@@ -1227,19 +1227,19 @@ int aligner(uint64_t *seq1, size_t seq1Len, uint64_t *seq2, size_t seq2Len, size
 
     // EDIT: here I'm assigning to retAlign. You might have a better way to do this.
     int strIdx = 0;
-    while( finalAlign.partialAlign[strIdx] != 0 ) {
+    while( finalAlign.partialAlign[strIdx] != 0 && strIdx < INIT_LENGTH - 1) {
         retAlign->seq1[strIdx] = finalAlign.partialAlign[strIdx];
         strIdx++;
     }
     retAlign->seq1Len = strIdx;
     //retAlign->seq1[strIdx] = '\0';
 
-    while( finalAlign.partialAlign[strIdx] == 0 ) {
+    while( finalAlign.partialAlign[strIdx] == 0 && strIdx < INIT_LENGTH - 1) {
         strIdx++;
     }
     int normalizer = strIdx;
 
-    while( finalAlign.partialAlign[strIdx] != 0 ) {
+    while( finalAlign.partialAlign[strIdx] != 0 && strIdx < INIT_LENGTH - 1) {
         retAlign->seq2[strIdx - normalizer] = finalAlign.partialAlign[strIdx];
         strIdx++;
     }
@@ -1248,6 +1248,16 @@ int aligner(uint64_t *seq1, size_t seq1Len, uint64_t *seq2, size_t seq2Len, size
 
     retAlign->weight = finalAlign.partialWt;
 
+    retAlign->alignmentLength = (retAlign->seq1Len < retAlign->seq2Len) ? retAlign->seq1Len : retAlign->seq2Len;
+
+    for (i = 0; i < INIT_LENGTH; ++i) {
+      printf("buf[%d]: %lu\n", i, finalAlign.partialAlign[i]);
+    }
+    
+    printf("s1 len: %zu\n", retAlign->seq1Len        );
+    printf("s2 len: %zu\n", retAlign->seq2Len        );
+    printf("align : %zu\n", retAlign->alignmentLength);
+    
     free(initArr);
     for (i = 0; i < 3; i++) {
         free(path[i].partialAlign);

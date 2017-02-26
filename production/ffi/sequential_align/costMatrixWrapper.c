@@ -53,17 +53,7 @@ int getCost(packedChar elem1, packedChar elem2, costMatrix_p tcm, size_t alphSiz
     retElem->element = packedElemRet;
     dcElem1->element = packedElem1;
     dcElem2->element = packedElem2;
-<<<<<<< HEAD
 
-    // printf("Before 'getSetCost' call\n");
-    // fflush(stdout);
-
-    int cost = call_getSetCost_C(tcm, dcElem1, dcElem2, retElem);
-
-    // printf("After  'getSetCost' call\n");
-    // fflush(stdout);
-
-=======
     /*
     printf("Before 'getSetCost' call\n");
     printf("Elem 1: %lu\n", elem1);
@@ -85,7 +75,7 @@ int getCost(packedChar elem1, packedChar elem2, costMatrix_p tcm, size_t alphSiz
     free(strs);
     fflush(stdout);
     */
->>>>>>> 1a66dd909ff5ed736da805202536d17228086042
+
     free(packedElemRet);
 
     return cost;

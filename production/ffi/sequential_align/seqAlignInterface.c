@@ -37,18 +37,18 @@ int performSequentialAlignment(dynChar_t *seqA, dynChar_t *seqB, costMatrix_p co
 
     result->medianChar  = calloc(finalBufferLength, sizeof(packedChar));
 
-    getMedian(result, costMatrix, alphSize);
-
-
     result->finalWt     = retAlign->weight;
     result->finalLength = retAlign->alignmentLength;
+
+    getMedian(result, costMatrix, alphSize);
+
 
     // freeRetType(retAlign); NO! It's pointers all the way down!
 
     return 0;//success;
 }
 
-void getMedian(alignResult_t *input, costMatrix_p *costMatrix, size_t alphSize)
+void getMedian(alignResult_t *input, costMatrix_p costMatrix, size_t alphSize)
 {
     dcElement_t *key1   = malloc(sizeof(dcElement_t));
     key1->alphSize      = alphSize;
@@ -64,7 +64,7 @@ void getMedian(alignResult_t *input, costMatrix_p *costMatrix, size_t alphSize)
 
     input->medianChar   = median->element;
 
-    for( size_t i; i < input->finalLength; i++ ) {
+    for( size_t i = 0; i < input->finalLength; i++ ) {
         input->medianChar[i] = getCostAndMedian(key1, key2, median, costMatrix);
     }
     free(key1);
