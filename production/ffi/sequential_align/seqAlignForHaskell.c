@@ -316,7 +316,7 @@ int aligner(uint64_t *seq1, size_t seq1Len, uint64_t *seq2, size_t seq2Len, size
     int iFirst = 0,
         iSecond = 0;
     lengthSeqA = seq1Len;
-    lengthSeqB = seq1Len;
+    lengthSeqB = seq2Len;
 
 
     //*******************************  Initialization first level generation for both trees ****************************//
@@ -749,14 +749,14 @@ int aligner(uint64_t *seq1, size_t seq1Len, uint64_t *seq2, size_t seq2Len, size
                 if (pathFirst[i].posTrueA >= lengthSeqA || pathFirst[i].posTrueB >= lengthSeqB ) {
 
                     if (pathFirst[i].posTrueA >= lengthSeqA) {
-                        for (j = 0; j < lengthSeqB-pathFirst[i].posTrueB; j++) {
+                        for (j = 0; j < lengthSeqB - pathFirst[i].posTrueB; j++) {
                             pathFirst[i].partialAlign[pathFirst[i].posStringA + j] = GAP;
                             pathFirst[i].partialAlign[BUFFER_OFFSET + pathFirst[i].posStringB + j] = seqB[pathFirst[i].posTrueB + j];
                         }
                     }
 
                     if (pathFirst[i].posTrueB >= lengthSeqB) {
-                        for (j = 0; j < lengthSeqA-pathFirst[i].posTrueA; j++) {
+                        for (j = 0; j < lengthSeqA - pathFirst[i].posTrueA; j++) {
                             pathFirst[i].partialAlign[BUFFER_OFFSET + pathFirst[i].posStringB + j] = GAP;
                             pathFirst[i].partialAlign[pathFirst[i].posStringA + j] = seqA[pathFirst[i].posTrueA + j];
                         }
@@ -1041,7 +1041,6 @@ int aligner(uint64_t *seq1, size_t seq1Len, uint64_t *seq2, size_t seq2Len, size
             }
             else if(path[i].flagWhichTree == 2) {
                 copyAligmentStruct(path, i, pathSecond, iSecond, INIT_LENGTH);
-                Second].partialAlign, path[i].partialAlign, sizeof(uint64_t) * INIT_LENGTH);
                 iSecond++;
             }
         }

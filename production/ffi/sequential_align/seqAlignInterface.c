@@ -15,11 +15,12 @@ int performSequentialAlignment(dynChar_t *seqA, dynChar_t *seqB, costMatrix_p co
     uint64_t* seqB_main = dynCharToIntArr(seqB);
 
     size_t length       = seqA->numElems + seqB->numElems + 5;
+    printf("retAlign buffer length: %zu\n", length);
     size_t alphSize     = seqA->alphSize;
 
     retType_t *retAlign       = malloc( sizeof(retType_t) );
-    retAlign->seq1            = calloc(length, sizeof(int));
-    retAlign->seq2            = calloc(length, sizeof(int));
+    retAlign->seq1            = calloc(length, sizeof(uint64_t));
+    retAlign->seq2            = calloc(length, sizeof(uint64_t));
     retAlign->alignmentLength = 0;
 
     if( retAlign->seq1 == NULL || retAlign->seq2 == NULL ) {
