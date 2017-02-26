@@ -148,24 +148,24 @@ coerceEnum = toEnum . fromEnum
 -}
 pairwiseSequentialAlignment :: (EncodableDynamicCharacter s, Exportable s, Show s) => MemoizedCostMatrix -> s -> s -> (s, Double, s, s, s)
 pairwiseSequentialAlignment memo char1 char2 = unsafePerformIO $ do
-        !_ <- trace "Before constructing char1" $ pure ()
+--        !_ <- trace "Before constructing char1" $ pure ()
         char1'        <- constructCDynamicCharacterFromExportableCharacter char1
-        !_ <- trace "After  constructing char1" $ pure ()
+--        !_ <- trace "After  constructing char1" $ pure ()
 
-        !_ <- trace "Before constructing char2" $ pure ()
+--        !_ <- trace "Before constructing char2" $ pure ()
         char2'        <- constructCDynamicCharacterFromExportableCharacter char2
-        !_ <- trace "After  constructing char1" $ pure ()
+--        !_ <- trace "After  constructing char1" $ pure ()
 
-        !_ <- trace "Before mallocing result " $ pure ()
+--        !_ <- trace "Before mallocing result " $ pure ()
         resultPointer <- malloc :: IO (Ptr AlignResult)
-        !_ <- trace "After  mallocing result " $ pure ()
+--        !_ <- trace "After  mallocing result " $ pure ()
 
-        !_ <- trace ("Shown character 1: " <> show char1) $ pure ()
-        !_ <- trace ("Shown character 2: " <> show char2) $ pure ()
+--        !_ <- trace ("Shown character 1: " <> show char1) $ pure ()
+--        !_ <- trace ("Shown character 2: " <> show char2) $ pure ()
         
-        !_ <- trace "Before FFI call" $ pure ()
+--        !_ <- trace "Before FFI call" $ pure ()
         !success      <- performSeqAlignfn_c char1' char2' (costMatrix memo) resultPointer
-        !_ <- trace "After  FFI call" $ pure ()
+--        !_ <- trace "After  FFI call" $ pure ()
 
         _ <- free char1'
         _ <- free char2'
@@ -180,12 +180,12 @@ pairwiseSequentialAlignment memo char1 char2 = unsafePerformIO $ do
         !medianAlignment <- fmap generalizeFromBuffer . peekArray bufferLength $ medianChar resultStruct
         let !ungapped = filterGaps medianAlignment
         _ <- free resultPointer
-
+{-
         !_ <- trace ("Shown   gapped           : " <> show medianAlignment) $ pure ()
         !_ <- trace ("Shown ungapped           : " <> show ungapped       ) $ pure ()
         !_ <- trace ("Shown character 1 aligned: " <> show alignedChar1   ) $ pure ()
         !_ <- trace ("Shown character 2 aligned: " <> show alignedChar2   ) $ pure ()
-
+-}
         pure (ungapped, alignmentCost, medianAlignment, alignedChar1, alignedChar2)
     where
         width = exportedElementWidthSequence $ toExportableBuffer char1

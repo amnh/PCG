@@ -136,7 +136,8 @@ tripleComparison pairwiseAlignment childDecoration parentCharacter = (ungapped, 
     newGapIndicies         = newGapLocations childCharacter childAlignment
     extendedLeftCharacter  = insertNewGaps newGapIndicies childLeftAligned
     extendedRightCharacter = insertNewGaps newGapIndicies childRightAligned
-    (_, ungapped, gapped)  = trace context $ threeWayMean costStructure derivedAlignment extendedLeftCharacter extendedRightCharacter
+    (_, ungapped, gapped)  = threeWayMean costStructure derivedAlignment extendedLeftCharacter extendedRightCharacter
+    {-
     context = unlines
         [ show newGapIndicies
         , "Parent:"
@@ -152,7 +153,7 @@ tripleComparison pairwiseAlignment childDecoration parentCharacter = (ungapped, 
         , show childRightAligned
         , show extendedRightCharacter
         ]
-
+    -}
 
 -- |
 -- Returns the indicies of the gaps that were added in the second character when
