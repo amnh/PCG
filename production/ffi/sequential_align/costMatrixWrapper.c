@@ -90,7 +90,7 @@ int getCostAndMedian(dcElement_t *elem1, dcElement_t *elem2, dcElement_t *retEle
     printf("Get dat cost:\n");
     int cost = call_getSetCost_C(tcm, elem1copy, elem2copy, retElem);
 
-    printf("success!?");
+    printf("success!?\n");
 
     //TODO: return a success value
     int success = 0;

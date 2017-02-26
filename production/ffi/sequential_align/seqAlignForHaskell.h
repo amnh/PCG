@@ -50,6 +50,10 @@ void copyAligmentStruct ( alignment_t *copyFrom
                          , size_t copyToIdx
                          , const size_t initLength);
 
+void printCostBuffer(int *buffer, size_t bufLen, char *prefix);
+
+void printBuffer(uint64_t *buffer, size_t bufLen, char *prefix);
+
 /** no longer in use. Use costMatrixWrapper.getCost instead.
 int getCost(uint64_t lhs, uint64_t rhs, costMtx_t* tcm, size_t alphSize)
 */

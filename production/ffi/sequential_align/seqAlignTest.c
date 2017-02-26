@@ -41,8 +41,8 @@ int main() {
         exit(1);
     }
 
-    uint64_t s1[6] = {1, 2, 4, 8, 2, 3, 5};
-    uint64_t s2[5] = {4, 2, 1, 8, 4, 9};
+    uint64_t s1[6] = {1, 2, 4, 8, 2, 3};
+    uint64_t s2[5] = {4, 2, 1, 8, 4};
 
     costMatrix_p costMatrix = matrixInit(ALPHABET_SIZE, tcm);
 
