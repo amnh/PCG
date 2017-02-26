@@ -95,7 +95,7 @@ typedef struct retType_t {
     size_t    seq1Len;
     uint64_t *seq2;
     size_t    seq2Len;
-    long int  alignmentLength;
+    size_t    alignmentLength;
 } retType_t;
 
 /**
