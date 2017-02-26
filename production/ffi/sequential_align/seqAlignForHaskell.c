@@ -29,10 +29,6 @@ int aligner(uint64_t *seq1, size_t seq1Len, uint64_t *seq2, size_t seq2Len, size
 {
 
 
- //   int cost = getCost(char1, char2, tcm, alphSize);
-
-    // printf("S1 len: %zu\n", seq1Len);
-    // printf("S2 len: %zu\n", seq2Len);
 
     //Yu_Edit: changed the length of INIT_LENGTH
     const size_t INIT_LENGTH = 2 * (seq1Len + seq2Len); // Will be used to initialize all subsequent alignment arrays.
@@ -450,64 +446,16 @@ int aligner(uint64_t *seq1, size_t seq1Len, uint64_t *seq2, size_t seq2Len, size
 
         if (kInitial == 0 && 9 < indicatorInitial && indicatorInitial < 12) {
             copyAligmentStruct(pathFirst, 0, path, i, INIT_LENGTH);
-            // path[i].partialWt     = pathFirst[0].partialWt;
-            // path[i].partialTrueWt = pathFirst[0].partialTrueWt;
-            // path[i].posStringA    = pathFirst[0].posStringA;
-            // path[i].posStringB    = pathFirst[0].posStringB;
-            // path[i].posTrueA      = pathFirst[0].posTrueA;
-            // path[i].posTrueB      = pathFirst[0].posTrueB;
-            // path[i].flagWhichTree = pathFirst[0].flagWhichTree;
-            // memcpy(path[i].partialAlign, pathFirst[0].partialAlign, sizeof(uint64_t) * INIT_LENGTH);
         } else if (kInitial == 0 && 19 < indicatorInitial && indicatorInitial < 22) {
             copyAligmentStruct(pathFirst, 1, path, i, INIT_LENGTH);
-            // path[i].partialWt     = pathFirst[1].partialWt;
-            // path[i].partialTrueWt = pathFirst[1].partialTrueWt;
-            // path[i].posStringA    = pathFirst[1].posStringA;
-            // path[i].posStringB    = pathFirst[1].posStringB;
-            // path[i].posTrueA      = pathFirst[1].posTrueA;
-            // path[i].posTrueB      = pathFirst[1].posTrueB;
-            // path[i].flagWhichTree = pathFirst[1].flagWhichTree;
-            // memcpy(path[i].partialAlign, pathFirst[1].partialAlign, sizeof(uint64_t) * INIT_LENGTH);
         } else if (kInitial == 0 && 29 < indicatorInitial && indicatorInitial < 32) {
             copyAligmentStruct(pathFirst, 2, path, i, INIT_LENGTH);
-            // path[i].partialWt     = pathFirst[2].partialWt;
-            // path[i].partialTrueWt = pathFirst[2].partialTrueWt;
-            // path[i].posStringA    = pathFirst[2].posStringA;
-            // path[i].posStringB    = pathFirst[2].posStringB;
-            // path[i].posTrueA      = pathFirst[2].posTrueA;
-            // path[i].posTrueB      = pathFirst[2].posTrueB;
-            // path[i].flagWhichTree = pathFirst[2].flagWhichTree;
-            // memcpy(path[i].partialAlign, pathFirst[2].partialAlign, sizeof(uint64_t) * INIT_LENGTH);
         } else if (kInitial == 1 && 9 < indicatorInitial && indicatorInitial < 12) {
             copyAligmentStruct(pathSecond, 0, path, i, INIT_LENGTH);
-            // path[i].partialWt     = pathSecond[0].partialWt;
-            // path[i].partialTrueWt = pathSecond[0].partialTrueWt;
-            // path[i].posStringA    = pathSecond[0].posStringA;
-            // path[i].posStringB    = pathSecond[0].posStringB;
-            // path[i].posTrueA      = pathSecond[0].posTrueA;
-            // path[i].posTrueB      = pathSecond[0].posTrueB;
-            // path[i].flagWhichTree = pathSecond[0].flagWhichTree;
-            // memcpy(path[i].partialAlign, pathSecond[0].partialAlign, sizeof(uint64_t) * INIT_LENGTH);
         } else if (kInitial == 1 && 19 < indicatorInitial && indicatorInitial < 22) {
             copyAligmentStruct(pathSecond, 1, path, i, INIT_LENGTH);
-            // path[i].partialWt     = pathSecond[1].partialWt;
-            // path[i].partialTrueWt = pathSecond[1].partialTrueWt;
-            // path[i].posStringA    = pathSecond[1].posStringA;
-            // path[i].posStringB    = pathSecond[1].posStringB;
-            // path[i].posTrueA      = pathSecond[1].posTrueA;
-            // path[i].posTrueB      = pathSecond[1].posTrueB;
-            // path[i].flagWhichTree = pathSecond[1].flagWhichTree;
-            // memcpy(path[i].partialAlign, pathSecond[1].partialAlign, sizeof(uint64_t) * INIT_LENGTH);
         } else{
             copyAligmentStruct(pathSecond, 2, path, i, INIT_LENGTH);
-            // path[i].partialWt     = pathSecond[2].partialWt;
-            // path[i].partialTrueWt = pathSecond[2].partialTrueWt;
-            // path[i].posStringA    = pathSecond[2].posStringA;
-            // path[i].posStringB    = pathSecond[2].posStringB;
-            // path[i].posTrueA      = pathSecond[2].posTrueA;
-            // path[i].posTrueB      = pathSecond[2].posTrueB;
-            // path[i].flagWhichTree = pathSecond[2].flagWhichTree;
-            // memcpy(path[i].partialAlign, pathSecond[2].partialAlign, sizeof(uint64_t) * INIT_LENGTH);
         }
 
     }
@@ -536,27 +484,10 @@ int aligner(uint64_t *seq1, size_t seq1Len, uint64_t *seq2, size_t seq2Len, size
     for (i = 0; i < 3; i++) {              // assign three candidate nodes to the two trees and other nodes are infinite nodes
         if (path[i].flagWhichTree == 1) {
             copyAligmentStruct(path, i, pathFirst, iFirst, INIT_LENGTH);
-
-            // pathFirst[iFirst].partialWt     = path[i].partialWt;
-            // pathFirst[iFirst].partialTrueWt = path[i].partialTrueWt;
-            // pathFirst[iFirst].posStringA    = path[i].posStringA;
-            // pathFirst[iFirst].posStringB    = path[i].posStringB;
-            // pathFirst[iFirst].posTrueA      = path[i].posTrueA;
-            // pathFirst[iFirst].posTrueB      = path[i].posTrueB;
-            // pathFirst[iFirst].flagWhichTree = path[i].flagWhichTree;
-            // memcpy(pathFirst[iFirst].partialAlign, path[i].partialAlign, sizeof(uint64_t) * INIT_LENGTH);
             iFirst++;
         }
         else if(path[i].flagWhichTree == 2) {
             copyAligmentStruct(path, i, pathSecond, iSecond, INIT_LENGTH);
-            // pathSecond[iSecond].partialWt     = path[i].partialWt;
-            // pathSecond[iSecond].partialTrueWt = path[i].partialTrueWt;
-            // pathSecond[iSecond].posStringA    = path[i].posStringA;
-            // pathSecond[iSecond].posStringB    = path[i].posStringB;
-            // pathSecond[iSecond].posTrueA      = path[i].posTrueA;
-            // pathSecond[iSecond].posTrueB      = path[i].posTrueB;
-            // pathSecond[iSecond].flagWhichTree = path[i].flagWhichTree;
-            // memcpy(pathSecond[iSecond].partialAlign, path[i].partialAlign, sizeof(uint64_t) * INIT_LENGTH);
             iSecond++;
         }
     }
@@ -711,16 +642,7 @@ int aligner(uint64_t *seq1, size_t seq1Len, uint64_t *seq2, size_t seq2Len, size
 
 
         for (j = 0; j < 3; j++) {        // make a copy of previous paths, this is crutial since we need to keep track of the path
-            // in order to decide whether there is a match or substitution in the next position
             copyAligmentStruct(pathFirst, j, pathTempFirst, j, INIT_LENGTH);
-            // pathTempFirst[j].partialWt     = pathFirst[j].partialWt;
-            // pathTempFirst[j].partialTrueWt = pathFirst[j].partialTrueWt;
-            // pathTempFirst[j].posStringA    = pathFirst[j].posStringA;
-            // pathTempFirst[j].posStringB    = pathFirst[j].posStringB;
-            // pathTempFirst[j].posTrueA      = pathFirst[j].posTrueA;
-            // pathTempFirst[j].posTrueB      = pathFirst[j].posTrueB;
-            // pathTempFirst[j].flagWhichTree = pathFirst[j].flagWhichTree;
-            // memcpy(pathTempFirst[j].partialAlign, pathFirst[j].partialAlign, sizeof(uint64_t) * INIT_LENGTH);
         }
 
 
@@ -732,16 +654,6 @@ int aligner(uint64_t *seq1, size_t seq1Len, uint64_t *seq2, size_t seq2Len, size
             kFirst         = *( arrayFirst[0] + i) % 10;      // decide which path it belongs to
 
             copyAligmentStruct(pathTempFirst, kFirst, pathFirst, i, INIT_LENGTH);
-
-            // pathFirst[i].partialWt     = pathTempFirst[kFirst].partialWt;
-            // pathFirst[i].partialTrueWt = pathTempFirst[kFirst].partialTrueWt;
-            // pathFirst[i].posStringA    = pathTempFirst[kFirst].posStringA;
-            // pathFirst[i].posStringB    = pathTempFirst[kFirst].posStringB;
-            // pathFirst[i].posTrueA      = pathTempFirst[kFirst].posTrueA;
-            // pathFirst[i].posTrueB      = pathTempFirst[kFirst].posTrueB;
-            // pathFirst[i].flagWhichTree = pathTempFirst[kFirst].flagWhichTree;
-            // memcpy(pathFirst[i].partialAlign, pathTempFirst[kFirst].partialAlign, sizeof(uint64_t) * INIT_LENGTH);
-
 
             if ( indicatorFirst > 9 && indicatorFirst < 15) { // substitution
                 printf("nth   a: %2llu b: %2llu \n", seqA[pathFirst[kFirst].posTrueA], seqB[pathFirst[kFirst].posTrueB]);
@@ -867,24 +779,7 @@ int aligner(uint64_t *seq1, size_t seq1Len, uint64_t *seq2, size_t seq2Len, size
             for (j = 0; j < 3; j++) {        // make a copy of previous paths, this is crucial since we need to keep track of the path
                 // in order to decide whether there is a match or substitution in the next position
                 copyAligmentStruct(pathSecond, j, pathTempSecond, j, INIT_LENGTH);
-                // pathTempSecond[j].partialWt = pathSecond[j].partialWt;
-                // pathTempSecond[j].partialTrueWt = pathSecond[j].partialTrueWt;
-                // pathTempSecond[j].posStringA = pathSecond[j].posStringA;
-                // pathTempSecond[j].posStringB = pathSecond[j].posStringB;
-                // pathTempSecond[j].posTrueA = pathSecond[j].posTrueA;
-                // pathTempSecond[j].posTrueB = pathSecond[j].posTrueB;
-                // pathTempSecond[j].flagWhichTree = pathSecond[j].flagWhichTree;
-                // memcpy(pathTempSecond[j].partialAlign, pathSecond[j].partialAlign, sizeof(uint64_t) * INIT_LENGTH);
-
                 copyAligmentStruct(pathFirst, j, pathTempFirst, j, INIT_LENGTH);
-                // pathTempFirst[j].partialWt = pathFirst[j].partialWt;
-                // pathTempFirst[j].partialTrueWt = pathFirst[j].partialTrueWt;
-                // pathTempFirst[j].posStringA = pathFirst[j].posStringA;
-                // pathTempFirst[j].posStringB = pathFirst[j].posStringB;
-                // pathTempFirst[j].posTrueA = pathFirst[j].posTrueA;
-                // pathTempFirst[j].posTrueB = pathFirst[j].posTrueB;
-                // pathTempFirst[j].flagWhichTree = pathFirst[j].flagWhichTree;
-                // memcpy(pathTempFirst[j].partialAlign, pathFirst[j].partialAlign, sizeof(int) * INIT_LENGTH);
             }
 
 
@@ -893,16 +788,6 @@ int aligner(uint64_t *seq1, size_t seq1Len, uint64_t *seq2, size_t seq2Len, size
                 kSecond = *( * (arraySecond + 0) + i) % 10;      // decide which path it belongs to
 
                 copyAligmentStruct(pathTempSecond, kSecond, pathSecond, i, INIT_LENGTH);
-                // pathSecond[i].partialWt = pathTempSecond[kSecond].partialWt;
-                // pathSecond[i].partialTrueWt = pathTempSecond[kSecond].partialTrueWt;
-                // pathSecond[i].posStringA = pathTempSecond[kSecond].posStringA;
-                // pathSecond[i].posStringB = pathTempSecond[kSecond].posStringB;
-                // pathSecond[i].posTrueA = pathTempSecond[kSecond].posTrueA;
-                // pathSecond[i].posTrueB = pathTempSecond[kSecond].posTrueB;
-                // pathSecond[i].flagWhichTree = pathTempSecond[kSecond].flagWhichTree;
-                // memcpy(pathSecond[i].partialAlign, pathTempSecond[kSecond].partialAlign, sizeof(uint64_t) * INIT_LENGTH);
-
-
 
                 if ( indicatorSecond > 9 && indicatorSecond < 15) { // substitution
                     printf("n+3th a: %2llu b: %2llu \n", seqA[pathFirst[kFirst].posTrueA], seqB[pathFirst[kFirst].posTrueB]);
@@ -1055,69 +940,16 @@ int aligner(uint64_t *seq1, size_t seq1Len, uint64_t *seq2, size_t seq2Len, size
 
             if (kMix == 0 && 9 < indicatorMix && indicatorMix < 12) {
                 copyAligmentStruct(pathFirst, 0, path, i, INIT_LENGTH);
-                // path[i].partialWt     = pathFirst[0].partialWt;
-                // path[i].partialTrueWt = pathFirst[0].partialTrueWt;
-                // path[i].posStringA    = pathFirst[0].posStringA;
-                // path[i].posStringB    = pathFirst[0].posStringB;
-                // path[i].posTrueA      = pathFirst[0].posTrueA;
-                // path[i].posTrueB      = pathFirst[0].posTrueB;
-                // path[i].flagWhichTree = pathFirst[0].flagWhichTree;
-                // memcpy(path[i].partialAlign, pathFirst[0].partialAlign, sizeof(uint64_t) * INIT_LENGTH);
-
             } else if (kMix == 0 && 19 < indicatorMix && indicatorMix < 22) {
                 copyAligmentStruct(pathFirst, 1, path, i, INIT_LENGTH);
-                // path[i].partialWt     = pathFirst[1].partialWt;
-                // path[i].partialTrueWt = pathFirst[1].partialTrueWt;
-                // path[i].posStringA    = pathFirst[1].posStringA;
-                // path[i].posStringB    = pathFirst[1].posStringB;
-                // path[i].posTrueA      = pathFirst[1].posTrueA;
-                // path[i].posTrueB      = pathFirst[1].posTrueB;
-                // path[i].flagWhichTree = pathFirst[1].flagWhichTree;
-                // memcpy(path[i].partialAlign, pathFirst[1].partialAlign, sizeof(uint64_t) * INIT_LENGTH);
-
             } else if (kMix == 0 && 29 < indicatorMix && indicatorMix <32) {
                 copyAligmentStruct(pathFirst, 2, path, i, INIT_LENGTH);
-                // path[i].partialWt     = pathFirst[2].partialWt;
-                // path[i].partialTrueWt = pathFirst[2].partialTrueWt;
-                // path[i].posStringA    = pathFirst[2].posStringA;
-                // path[i].posStringB    = pathFirst[2].posStringB;
-                // path[i].posTrueA      = pathFirst[2].posTrueA;
-                // path[i].posTrueB      = pathFirst[2].posTrueB;
-                // path[i].flagWhichTree = pathFirst[2].flagWhichTree;
-                // memcpy(path[i].partialAlign, pathFirst[2].partialAlign, sizeof(uint64_t) * INIT_LENGTH);
-
             } else if (kMix == 1 && 9< indicatorMix && indicatorMix <12) {
                 copyAligmentStruct(pathSecond, 0, path, i, INIT_LENGTH);
-                // path[i].partialWt     = pathSecond[0].partialWt;
-                // path[i].partialTrueWt = pathSecond[0].partialTrueWt;
-                // path[i].posStringA    = pathSecond[0].posStringA;
-                // path[i].posStringB    = pathSecond[0].posStringB;
-                // path[i].posTrueA      = pathSecond[0].posTrueA;
-                // path[i].posTrueB      = pathSecond[0].posTrueB;
-                // path[i].flagWhichTree = pathSecond[0].flagWhichTree;
-                // memcpy(path[i].partialAlign, pathSecond[0].partialAlign, sizeof(uint64_t) * INIT_LENGTH);
-
             } else if (kMix == 1 && 19< indicatorMix && indicatorMix <22) {
                 copyAligmentStruct(pathSecond, 1, path, i, INIT_LENGTH);
-                // path[i].partialWt     = pathSecond[1].partialWt;
-                // path[i].partialTrueWt = pathSecond[1].partialTrueWt;
-                // path[i].posStringA    = pathSecond[1].posStringA;
-                // path[i].posStringB    = pathSecond[1].posStringB;
-                // path[i].posTrueA      = pathSecond[1].posTrueA;
-                // path[i].posTrueB      = pathSecond[1].posTrueB;
-                // path[i].flagWhichTree = pathSecond[1].flagWhichTree;
-                // memcpy(path[i].partialAlign, pathSecond[1].partialAlign, sizeof(uint64_t) * INIT_LENGTH);
-
             } else {
                 copyAligmentStruct(pathSecond, 2, path, i, INIT_LENGTH);
-                // path[i].partialWt     = pathSecond[2].partialWt;
-                // path[i].partialTrueWt = pathSecond[2].partialTrueWt;
-                // path[i].posStringA    = pathSecond[2].posStringA;
-                // path[i].posStringB    = pathSecond[2].posStringB;
-                // path[i].posTrueA      = pathSecond[2].posTrueA;
-                // path[i].posTrueB      = pathSecond[2].posTrueB;
-                // path[i].flagWhichTree = pathSecond[2].flagWhichTree;
-                // memcpy(path[i].partialAlign, pathSecond[2].partialAlign, sizeof(uint64_t) * INIT_LENGTH);
             }
 
         }
@@ -1154,29 +986,12 @@ int aligner(uint64_t *seq1, size_t seq1Len, uint64_t *seq2, size_t seq2Len, size
 
         for (i = 0; i < 3; i++) {                            // assign three candidate nodes to the two trees and other nodes are infinite nodes
             if (path[i].flagWhichTree == 1) {
-                //    pathFirst[iFirst] = path[i];
                 copyAligmentStruct(path, i, pathFirst, iFirst, INIT_LENGTH);
-                // pathFirst[iFirst].partialWt     = path[i].partialWt;
-                // pathFirst[iFirst].partialTrueWt = path[i].partialTrueWt;
-                // pathFirst[iFirst].posStringA    = path[i].posStringA;
-                // pathFirst[iFirst].posStringB    = path[i].posStringB;
-                // pathFirst[iFirst].posTrueA      = path[i].posTrueA;
-                // pathFirst[iFirst].posTrueB      = path[i].posTrueB;
-                // pathFirst[iFirst].flagWhichTree = path[i].flagWhichTree;
-                // memcpy(pathFirst[iFirst].partialAlign, path[i].partialAlign, sizeof(uint64_t) * INIT_LENGTH);
                 iFirst++;
             }
             else if(path[i].flagWhichTree == 2) {
-                // pathSecond[iSecond] = path[i];
                 copyAligmentStruct(path, i, pathSecond, iSecond, INIT_LENGTH);
-                // pathSecond[iSecond].partialWt     = path[i].partialWt;
-                // pathSecond[iSecond].partialTrueWt = path[i].partialTrueWt;
-                // pathSecond[iSecond].posStringA    = path[i].posStringA;
-                // pathSecond[iSecond].posStringB    = path[i].posStringB;
-                // pathSecond[iSecond].posTrueA      = path[i].posTrueA;
-                // pathSecond[iSecond].posTrueB      = path[i].posTrueB;
-                // pathSecond[iSecond].flagWhichTree = path[i].flagWhichTree;
-                // memcpy(pathSecond[iSecond].partialAlign, path[i].partialAlign, sizeof(uint64_t) * INIT_LENGTH);
+                Second].partialAlign, path[i].partialAlign, sizeof(uint64_t) * INIT_LENGTH);
                 iSecond++;
             }
         }
