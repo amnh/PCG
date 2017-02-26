@@ -11,10 +11,7 @@
 
 #include <stddef.h>
 
-#include "costMatrixWrapper.h"
 #include "dynamicCharacterOperations.h"
-
-typedef void* costMatrix_p;
 
 struct align {
     int partialWt;
@@ -29,15 +26,32 @@ struct align {
     int flagWhichTree;  // belongs to first or second tree
 };
 
+// EDIT: Added this struct so the job on my end would be easier.
+// Wasn't sure what the final weight was, so copied partialTrueWt.
 
-int trueWt(struct align *path, costMatrix_p, int len, size_t alphSize);
+// I updated retType so that it returns two sequences. I thought I'd done that before, but I guess not.
+// Since sequences are int arrays, they're not terminated by \0, and therefore the two lengths are also necessary
+typedef struct retType {
+    int weight;
+  //  char* seq1;
+    int* seq1;
+    size_t seq1Len;
+  //  char* seq2;
+    int* seq2;
+    size_t seq2Len;
+    long int alignmentLength;
+} retType_t;
 
+//int trueWt(struct align *path, const int alphSize, int wtInsertDel, int wtSub, int len);
+int trueWt(struct align *path, costMtx_t* tcm, size_t alphSize, int len);
 // EDIT: rectified with .c file.
 //int aligner(char*, char*, int, int, struct retType*);
 int aligner(uint64_t *seq1, size_t seq1Len, uint64_t *seq2, size_t seq2Len, size_t alphSize,
-            costMatrix_p tcm, retType_t *retAlign);
+            int wtInsertDel, int wtSub, retType_t* retAlign);
 
 void freeRetType(retType_t* toFree);
+
+int getCost(uint64_t lhs, uint64_t rhs, costMtx_t* tcm, size_t alphSize);
 
 
 #endif /* YUALIGN_H */

@@ -16,28 +16,39 @@
 
 typedef void* costMatrix_p;
 
-struct align {
+typedef struct align {
     int partialWt;
     int partialTrueWt;
- //   char* partialAlign; // EDIT: made it dynamically allocable.
-    uint64_t* partialAlign; // EDIT: made it dynamically allocable.
-    // char partialAlign[20];
-    size_t posStringA;   // position at stringA
-    size_t posStringB;   // position at stringB
-    size_t posTrueA;     // position without gap
-    size_t posTrueB;     // position without gap
-    int flagWhichTree;  // belongs to first or second tree
-};
+    uint64_t* partialAlign;   // EDIT: made it dynamically allocable.
+   // uint64_t* partialAlignB;   // EDIT: made it dynamically allocable.
+    size_t posStringA;        // position at stringA
+    size_t posStringB;        // position at stringB
+    size_t posTrueA;          // position without gap
+    size_t posTrueB;          // position without gap
+    int flagWhichTree;        // belongs to first or second tree
+} alignment_t;
 
 
 int trueWt(struct align *path, costMatrix_p, size_t len, size_t alphSize);
 
 // EDIT: rectified with .c file.
 //int aligner(char*, char*, int, int, struct retType*);
-int aligner(uint64_t *seq1, size_t seq1Len, uint64_t *seq2, size_t seq2Len, size_t alphSize,
-            costMatrix_p tcm, retType_t *retAlign);
+int aligner( uint64_t *seq1
+           , size_t seq1Len
+           , uint64_t *seq2
+           , size_t seq2Len
+           , size_t alphSize
+           , costMatrix_p tcm
+           , retType_t *retAlign
+           );
 
 void freeRetType(retType_t* toFree);
+
+void copyAligmentStruct ( alignment_t *copyFrom
+                         , size_t copyFromIdx
+                         , alignment_t *copyTo
+                         , size_t copyToIdx
+                         , const size_t initLength);
 
 /** no longer in use. Use costMatrixWrapper.getCost instead.
 int getCost(uint64_t lhs, uint64_t rhs, costMtx_t* tcm, size_t alphSize)

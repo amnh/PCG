@@ -19,9 +19,12 @@ int getCost(packedChar elem1, packedChar elem2, costMatrix_p tcm, size_t alphSiz
     // Need to create new pointers, because of copying into cost matrix.
     // TODO: valgrind this.
     if (elem1 == 0 || elem2 == 0) {
+      printf("Gave me a zero, kuddos to you brave soul!\n");
+      printf("Element 1: %lu\n", elem1);
+      printf("Element 2: %lu\n", elem2);
       return 1337;
     }
-  
+
     packedChar *packedElemRet = malloc(sizeof(packedChar));
     packedChar *packedElem1   = malloc(sizeof(packedChar));
     packedChar *packedElem2   = malloc(sizeof(packedChar));
@@ -53,27 +56,9 @@ int getCost(packedChar elem1, packedChar elem2, costMatrix_p tcm, size_t alphSiz
     retElem->element = packedElemRet;
     dcElem1->element = packedElem1;
     dcElem2->element = packedElem2;
-    /*
-    printf("Before 'getSetCost' call\n");
-    printf("Elem 1: %lu\n", elem1);
-    printf("Elem 2: %lu\n", elem2);
-    fflush(stdout);
-    */
-    
+
     int cost = call_getSetCost_C(tcm, dcElem1, dcElem2, retElem);
 
-    /*
-    printf("After  'getSetCost' call\n");
-    printf("Entering Yu Xiang's context:\n");
-    void* callstack[128];
-    int i, frames = backtrace(callstack, 128);
-    char** strs = backtrace_symbols(callstack, frames);
-    for (i = 0; i < frames; ++i) {
-      printf("%s\n", strs[i]);
-    }
-    free(strs);
-    fflush(stdout);
-    */
     free(packedElemRet);
 
     return cost;
