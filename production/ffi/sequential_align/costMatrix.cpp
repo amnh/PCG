@@ -124,7 +124,7 @@ int CostMatrix::getSetCostMedian(dcElement_t* left, dcElement_t* right, dcElemen
     } else {
         // because in the next two lines, I get back a pair<keys, costMedian_t>
         foundCost          = found->second.first;
-        // retMedian->element = found->second.second;
+        retMedian->element = found->second.second;
     }
 
     return foundCost;

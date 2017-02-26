@@ -70,23 +70,33 @@ int main() {
 
     if (success == 0) {
         printf("\nSuccess!\n\n");
-	/*	
-        printf("The aligned sequences are:\n");
-        printf("  sequence 1:      [");
-        for(size_t i = 0; i < result->finalLength; ++i) {
-            printf("%llu, ", result->finalChar1[i]);
-        }
-        printf("]\n  sequence 2:      [");
-        for(size_t i = 0; i < result->finalLength; ++i) {
-            printf("%llu, ", result->finalChar2[i]);
-        }
-        printf("]\n");
-        printf("]\n  median sequence:  [");
-        for(size_t i = 0; i < result->finalLength; ++i) {
-            printf("%llu, ", result->medianChar[i]);
-        }
-        printf("]\n");
-        */
+	dynChar_t *seqARes = malloc(sizeof(dynChar_t));
+	dynChar_t *seqBRes = malloc(sizeof(dynChar_t));
+	dynChar_t *median  = malloc(sizeof(dynChar_t));
+
+        seqARes->alphSize = ALPHABET_SIZE;
+        seqBRes->alphSize = ALPHABET_SIZE;
+        median ->alphSize = ALPHABET_SIZE;
+
+        seqARes->numElems = result->finalLength;
+        seqBRes->numElems = result->finalLength;
+        median ->numElems = result->finalLength;
+
+        seqARes->dynCharLen = dynCharSize(seqARes->alphSize, seqARes->numElems);
+        seqBRes->dynCharLen = dynCharSize(seqBRes->alphSize, seqBRes->numElems);
+        median ->dynCharLen = dynCharSize(median ->alphSize, median ->numElems);
+
+        seqARes->dynChar = result->finalChar1;
+        seqBRes->dynChar = result->finalChar2;
+        median ->dynChar = result->medianChar;
+
+	printf("Resulting Character 1 Alignment:\n");
+        printDynChar(seqARes);
+	printf("Resulting Character 2 Alignment:\n");
+        printDynChar(seqBRes);
+        printf("Median    Character   Alignment:\n");
+        printDynChar(median );
+	
         printf("The cost of the alignment is: %zu\n", result->finalWt);
 
     } else {

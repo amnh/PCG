@@ -33,57 +33,48 @@ int performSequentialAlignment(dynChar_t *seqA, dynChar_t *seqB, costMatrix_p co
     size_t finalBufferLength = retAlign->alignmentLength * dcElemSize(alphSize);
 
     // TODO: wrong types, not dyn char, need just the buffers
-    //result->finalChar1  = intArrToBitArr (alphSize, retAlign->alignmentLength, retAlign->seq1);
-    result->finalChar1  = makeDynamicChar(alphSize, retAlign->alignmentLength, retAlign->seq1);
+    result->finalChar1  = intArrToBitArr (alphSize, retAlign->alignmentLength, retAlign->seq1);
+    //result->finalChar1  = makeDynamicChar(alphSize, retAlign->alignmentLength, retAlign->seq1);
 
-    //result->finalChar2  = intArrToBitArr (alphSize, retAlign->alignmentLength, retAlign->seq2);
-    result->finalChar2  = makeDynamicChar(alphSize, retAlign->alignmentLength, retAlign->seq2);
+    result->finalChar2  = intArrToBitArr (alphSize, retAlign->alignmentLength, retAlign->seq2);
+    //result->finalChar2  = makeDynamicChar(alphSize, retAlign->alignmentLength, retAlign->seq2);
 
-    printf("Char 1 result construction:\n");
-    printDynChar(result->finalChar1);
-    printf("Char 2 result construction:\n");
-    printDynChar(result->finalChar2);
+    //printf("Char 1 result construction:\n");
+    //printDynChar(result->finalChar1);
+    //printf("Char 2 result construction:\n");
+    //printDynChar(result->finalChar2);
     
     //    result->medianChar  = malloc(sizeof(dynChar_t));
     //result->medianChar  = malloc(sizeof(dynChar_t));
 
+    result->medianChar  = getMedian(retAlign->seq1, retAlign->seq2, retAlign->alignmentLength, alphSize, costMatrix);
+
     result->finalWt     = retAlign->weight;
     result->finalLength = retAlign->alignmentLength;
 
-    getMedian(result, costMatrix, alphSize);
-
-    printf("Median result construction:\n");
-    printDynChar(result->medianChar);
+    //printf("Median result construction:\n");
+    //printDynChar(result->medianChar);
 
     // freeRetType(retAlign); NO! It's pointers all the way down!
 
     return 0;//success;
 }
 
-void getMedian(alignResult_t *input, costMatrix_p costMatrix, size_t alphSize)
+packedChar *getMedian(const packedChar const *lhs, const packedChar const *rhs, const size_t length, const size_t alphSize, costMatrix_p costMatrix)
 {
-    dcElement_t *key1   = malloc(sizeof(dcElement_t));
-    key1->alphSize      = alphSize;
-    key1->element       = input->finalChar1;
-
-    dcElement_t *key2   = malloc(sizeof(dcElement_t));
-    key2->alphSize      = alphSize;
-    key2->element       = input->finalChar2;
-
     dcElement_t *median = malloc(sizeof(dcElement_t));
     median->alphSize    = alphSize;
-    median->element     = calloc(input->finalLength, sizeof(packedChar));
+    median->element     = calloc(length, sizeof(packedChar));
 
-    uint64_t *integralStateBuffer = calloc( input->finalLength, sizeof(packedChar));
+    uint64_t *integralStateBuffer = calloc(length, sizeof(packedChar));
 
-    for( size_t i = 0; i < input->finalLength; i++ ) {
-        getCostAndMedian(key1, key2, median, costMatrix);
-	integralStateBuffer[i] = *median->element;
+    for( size_t i = 0; i < length; i++ ) {
+        getCostInternal(lhs[i], rhs[i], costMatrix, alphSize, median);
+	uint64_t value = *median->element;
+	printf("value[%d]: %lu\n",i,value);
+	integralStateBuffer[i] = value;
     }
-
-    input->medianChar = makeDynamicChar(alphSize, input->finalLength, integralStateBuffer); 
     
-    free(key1);
-    free(key2);
     free(median);
+    return intArrToBitArr(alphSize, length, integralStateBuffer); 
 }
