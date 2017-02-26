@@ -66,6 +66,8 @@ int main() {
 
     success = performSequentialAlignment(seqA, seqB, costMatrix, result);
 
+    printf("%zu\n", result->finalLength);
+
     if (success == 0) {
         printf("\nSuccess!\n\n");
         printf("The aligned sequences are:");

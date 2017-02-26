@@ -1673,12 +1673,16 @@ int aligner(uint64_t *seq1, size_t seq1Len, uint64_t *seq2, size_t seq2Len, size
 
 
     // EDIT: here I'm assigning to retAlign. You might have a better way to do this.
+
+    for (i = 0; i < INIT_LENGTH; ++i) {
+        printf("buf[%2d] %8d\n",i,finalAlign.partialAlign[i]);
+    }
+
     int strIdx = 0;
     while( finalAlign.partialAlign[strIdx] != '*' && finalAlign.partialAlign[strIdx] != '\0' ) {
         retAlign->seq1[strIdx] = finalAlign.partialAlign[strIdx];
         strIdx++;
     }
-    printf("%d\n", strIdx);
     retAlign->seq1[strIdx] = '\0';
 
     while( finalAlign.partialAlign[strIdx] == '*' && finalAlign.partialAlign[strIdx] != '\0' ) { strIdx++; }
