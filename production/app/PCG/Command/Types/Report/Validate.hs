@@ -9,7 +9,8 @@ import Data.Either                (partitionEithers)
 import Data.Monoid                ((<>))
 import PCG.Command.Types
 import PCG.Command.Types.Report.Internal
-import PCG.Script.Types           (Argument(..),Lident(..),Primative(..))
+import PCG.Script.Types         --  (Argument(..),Lident(..),Primative(..))
+
 
 validate :: [Argument] -> Either String Command
 validate xs =
@@ -29,6 +30,7 @@ validate xs =
     moreThanSingleton (_:_:_) = True
     moreThanSingleton _       = False
 
+
 validateReportArg :: Argument -> Either String (Either FileName OutputFormat)
 validateReportArg (PrimativeArg   (TextValue str))   = Right $ Left str
 validateReportArg (LidentArg (Lident identifier))
@@ -47,9 +49,12 @@ validateReportArg (LidentArg (Lident identifier))
 validateReportArg (LidentArg (Lident identifier))
   |  "metadata" == (toLower <$> identifier) = Right $ Right Metadata
 validateReportArg (LidentArg (Lident identifier))
+  |  "dynamic_table" == (toLower <$> identifier) = Right $ Right DynamicTable
+validateReportArg (LidentArg (Lident identifier))
   |  "implied_alignment" == (toLower <$> identifier) = Right $ Right ImpliedAlignmentCharacters
 
 validateReportArg x = Left $ "Unrecognized report command(s): " <> show x
+
 
 primativeString :: Argument -> Either String FilePath
 primativeString (PrimativeArg   (TextValue str)) = Right str
@@ -58,6 +63,7 @@ primativeString (LidentArg      (Lident i)     ) = Left $ "Identifier '"       <
 primativeString (LidentNamedArg (Lident i) _   ) = Left $ "Labeled argument '" <> i <> "' " <> primativeStringErrorSuffix
 primativeString (CommandArg     _              ) = Left $ "Command argument "  <>              primativeStringErrorSuffix
 primativeString (ArgumentList   _              ) = Left $ "Argument list "     <>              primativeStringErrorSuffix
+
 
 primativeStringErrorSuffix :: String
 primativeStringErrorSuffix = "found where a string argument containing a file path was expected"
