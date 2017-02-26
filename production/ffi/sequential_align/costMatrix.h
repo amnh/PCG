@@ -180,6 +180,8 @@ class CostMatrix
         /** Takes in a pair of keys_t (each of which is a single `dcElement`) and computes their lowest-cost median. */
         costMedian_t* computeCostMedian(keys_t key);
 
+	costMedian_t* computeCostMedianFitchy(keys_t keys);
+	
         // TODO: This isn't currently in use. Can I delete it?
         // TODO: make sure this comment is correct
         /** Find distance between an ambiguous nucleotide and an unambiguous ambElem. Return that value and the median.

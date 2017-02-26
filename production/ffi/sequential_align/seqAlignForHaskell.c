@@ -24,7 +24,6 @@
 // EDIT: I changed the fn name to something more evocative.
 // Obviously, feel free to make it yet more so.
 
-//int aligner(char *seq1, char *seq2, int wtInsertDel, int wtSub, struct retType* retAlign) {
 int aligner(uint64_t *seq1, size_t seq1Len, uint64_t *seq2, size_t seq2Len, size_t alphSize,
             costMatrix_p tcm, retType_t *retAlign)
 {
@@ -32,7 +31,8 @@ int aligner(uint64_t *seq1, size_t seq1Len, uint64_t *seq2, size_t seq2Len, size
 
  //   int cost = getCost(char1, char2, tcm, alphSize);
 
-
+    // printf("S1 len: %zu\n", seq1Len);
+    // printf("S2 len: %zu\n", seq2Len);
 
     //Yu_Edit: changed the length of INIT_LENGTH
     const size_t INIT_LENGTH = 2 * (seq1Len + seq2Len); // Will be used to initialize all subsequent alignment arrays.
@@ -51,7 +51,6 @@ int aligner(uint64_t *seq1, size_t seq1Len, uint64_t *seq2, size_t seq2Len, size
     const uint64_t GAP = 1 << (alphSize - 1);
 
     size_t i, j; // because i and j are being used a lot, and they were declared later on anyway
-
 
     //printf("length is %ld\n", LENGTH);
     if (LENGTH == 0) {
@@ -300,6 +299,7 @@ int aligner(uint64_t *seq1, size_t seq1Len, uint64_t *seq2, size_t seq2Len, size
         gapToB;
 
     printf("1st   a: %2llu b: %2llu\n", seqA[0], seqB[0]);
+
     aToB   = getCost(seqA[0], seqB[0], tcm, alphSize);
     aToGap = getCost(seqA[0], GAP,     tcm, alphSize);
     gapToB = getCost(GAP,     seqB[0], tcm, alphSize);
@@ -356,7 +356,7 @@ int aligner(uint64_t *seq1, size_t seq1Len, uint64_t *seq2, size_t seq2Len, size
 
     //  under \sum z_i^2 measure
 
-    printf("2nd   a: %2llu b: %2llu\n", seqA[0], seqB[0]);
+    // printf("2nd   a: %2llu b: %2llu\n", seqA[0], seqB[0]);
     aToB   = getCost(seqA[0], seqB[0], tcm, alphSize);
     aToGap = getCost(seqA[0], GAP, tcm, alphSize);
     gapToB = getCost(GAP, seqB[0], tcm, alphSize);
@@ -1279,7 +1279,6 @@ int aligner(uint64_t *seq1, size_t seq1Len, uint64_t *seq2, size_t seq2Len, size
 
 int trueWt(alignment_t *path, costMatrix_p tcm, size_t len, size_t alphSize)
 {
-
     size_t i;
 
     int wtTempFirst = 0, wtTempSecond = 0;

@@ -1,4 +1,3 @@
-
 #include <inttypes.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -12,8 +11,8 @@
 int performSequentialAlignment(dynChar_t *seqA, dynChar_t *seqB, costMatrix_p costMatrix, alignResult_t *result)
 {
 
-    uint64_t *seqA_main = dynCharToIntArr(seqA);
-    uint64_t *seqB_main = dynCharToIntArr(seqB);
+    uint64_t* seqA_main = dynCharToIntArr(seqA);
+    uint64_t* seqB_main = dynCharToIntArr(seqB);
 
     size_t length       = seqA->numElems + seqB->numElems + 5;
     size_t alphSize     = seqA->alphSize;
@@ -40,12 +39,13 @@ int performSequentialAlignment(dynChar_t *seqA, dynChar_t *seqB, costMatrix_p co
 
     getMedian(result, costMatrix, alphSize);
 
+
     result->finalWt     = retAlign->weight;
     result->finalLength = retAlign->alignmentLength;
 
     // freeRetType(retAlign); NO! It's pointers all the way down!
 
-    return success;
+    return 0;//success;
 }
 
 void getMedian(alignResult_t *input, costMatrix_p *costMatrix, size_t alphSize)

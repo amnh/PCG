@@ -28,6 +28,7 @@ module Bio.Character.Decoration.Dynamic
   , PostOrderExtensionDirectOptimizationDecoration(..)
   , HasCharacterAlphabet(..)
   , HasCharacterCost(..)
+  , HasCharacterLocalCost(..)
   , HasCharacterName(..)
   , HasCharacterWeight(..)
   , HasEncoded(..)
@@ -53,4 +54,3 @@ import Bio.Metadata.Discrete
 import Bio.Metadata.DiscreteWithTCM
 import Bio.Metadata.Dynamic
 import Bio.Metadata.General
-

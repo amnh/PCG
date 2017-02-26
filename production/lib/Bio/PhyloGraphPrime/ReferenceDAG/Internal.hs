@@ -359,6 +359,9 @@ referenceRendering dag = unlines $ [shownRootRefs] <> toList shownDataLines
     pad n (x:xs) = x : pad (n-1) xs
 
 
+nodeFoldMap :: Monoid m => (n -> m) -> ReferenceDAG e n -> m
+nodeFoldMap f = foldMap f . fmap nodeDecoration . references
+
 -- A test for unfoldDAG containing all node types!
 {--
 
