@@ -31,6 +31,7 @@ int performSequentialAlignment(dynChar_t *seqA, dynChar_t *seqB, costMatrix_p co
 
     size_t finalBufferLength = retAlign->alignmentLength * dcElemSize(alphSize);
 
+    // TODO: wrong types, not dyn char, need just the buffers
     //result->finalChar1  = intArrToBitArr (alphSize, retAlign->alignmentLength, retAlign->seq1);
     result->finalChar1  = makeDynamicChar(alphSize, retAlign->alignmentLength, retAlign->seq1);
 
