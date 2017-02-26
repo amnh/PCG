@@ -51,6 +51,6 @@ generateTabularData (PDAG dag) = header <> nodeFoldMap f dag
         x:_ -> let alphabet           = x ^. characterAlphabet  
                    localCost          = show $ x ^. characterLocalCost
                    subTreeCost        = show $ x ^. characterCost
-                   preliminaryMedians = showStream alphabet $ x ^. preliminaryGapped
-                   finalMedians       = showStream alphabet $ x ^.       finalGapped
+                   preliminaryMedians = showStream alphabet $ x ^. preliminaryUngapped
+                   finalMedians       = showStream alphabet $ x ^.       finalUngapped
                in  intercalate "," [localCost, subTreeCost, preliminaryMedians, finalMedians] <> "\n"
