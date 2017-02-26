@@ -41,21 +41,21 @@ int main() {
         exit(1);
     }
 
-    uint64_t s1[3] = {1, 2, 4};
-    uint64_t s2[3] = {1, 2, 4};
+    uint64_t s1[6] = {1, 2, 4, 8, 2, 3, 5};
+    uint64_t s2[5] = {4, 2, 1, 8, 4, 9};
 
     costMatrix_p costMatrix = matrixInit(ALPHABET_SIZE, tcm);
 
     dynChar_t *seqA  = malloc(sizeof(dynChar_t));
     seqA->alphSize   = ALPHABET_SIZE;
-    seqA->numElems   = 3;
+    seqA->numElems   = 6;
     seqA->dynCharLen = 1;
     seqA->dynChar    = intArrToBitArr(ALPHABET_SIZE, seqA->numElems, s1);
 
 
     dynChar_t *seqB  = malloc(sizeof(dynChar_t));
     seqB->alphSize   = ALPHABET_SIZE;
-    seqB->numElems   = 3;
+    seqB->numElems   = 5;
     seqB->dynCharLen = 1;
     seqB->dynChar    = intArrToBitArr(ALPHABET_SIZE, seqB->numElems, s2);
 
@@ -70,7 +70,7 @@ int main() {
 
     if (success == 0) {
         printf("\nSuccess!\n\n");
-        printf("The aligned sequences are:");
+        printf("The aligned sequences are:\n");
         printf("  sequence 1:      [");
         for(size_t i = 0; i < result->finalLength; ++i) {
             printf("%llu, ", result->finalChar1[i]);
