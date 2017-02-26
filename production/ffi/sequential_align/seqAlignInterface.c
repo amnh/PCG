@@ -31,17 +31,27 @@ int performSequentialAlignment(dynChar_t *seqA, dynChar_t *seqB, costMatrix_p co
 
     size_t finalBufferLength = retAlign->alignmentLength * dcElemSize(alphSize);
 
-    result->finalChar1  = intArrToBitArr (alphSize, retAlign->alignmentLength, retAlign->seq1);
+    //result->finalChar1  = intArrToBitArr (alphSize, retAlign->alignmentLength, retAlign->seq1);
+    result->finalChar1  = makeDynamicChar(alphSize, retAlign->alignmentLength, retAlign->seq1);
 
-    result->finalChar2  = intArrToBitArr (alphSize, retAlign->alignmentLength, retAlign->seq2);
+    //result->finalChar2  = intArrToBitArr (alphSize, retAlign->alignmentLength, retAlign->seq2);
+    result->finalChar2  = makeDynamicChar(alphSize, retAlign->alignmentLength, retAlign->seq2);
 
-    result->medianChar  = calloc(finalBufferLength, sizeof(packedChar));
+    printf("Char 1 result construction:\n");
+    printDynChar(result->finalChar1);
+    printf("Char 2 result construction:\n");
+    printDynChar(result->finalChar2);
+    
+    //    result->medianChar  = malloc(sizeof(dynChar_t));
+    //result->medianChar  = malloc(sizeof(dynChar_t));
 
     result->finalWt     = retAlign->weight;
     result->finalLength = retAlign->alignmentLength;
 
     getMedian(result, costMatrix, alphSize);
 
+    printf("Median result construction:\n");
+    printDynChar(result->medianChar);
 
     // freeRetType(retAlign); NO! It's pointers all the way down!
 
@@ -60,13 +70,17 @@ void getMedian(alignResult_t *input, costMatrix_p costMatrix, size_t alphSize)
 
     dcElement_t *median = malloc(sizeof(dcElement_t));
     median->alphSize    = alphSize;
-    // median->element is already allocated before call to getMedian
+    median->element     = calloc(input->finalLength, sizeof(packedChar));
 
-    input->medianChar   = median->element;
+    uint64_t *integralStateBuffer = calloc( input->finalLength, sizeof(packedChar));
 
     for( size_t i = 0; i < input->finalLength; i++ ) {
-        input->medianChar[i] = getCostAndMedian(key1, key2, median, costMatrix);
+        getCostAndMedian(key1, key2, median, costMatrix);
+	integralStateBuffer[i] = *median->element;
     }
+
+    input->medianChar = makeDynamicChar(alphSize, input->finalLength, integralStateBuffer); 
+    
     free(key1);
     free(key2);
     free(median);

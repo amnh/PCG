@@ -31,7 +31,7 @@ int aligner(uint64_t *seq1, size_t seq1Len, uint64_t *seq2, size_t seq2Len, size
 
 
     //Yu_Edit: changed the length of INIT_LENGTH
-    const size_t INIT_LENGTH = 2 * (seq1Len + seq2Len); // Will be used to initialize all subsequent alignment arrays.
+    const size_t INIT_LENGTH = 2 * (seq1Len + seq2Len + 1); // Will be used to initialize all subsequent alignment arrays.
     // int arrays are not terminated with a special character, so must know length of each array. Also, don't need extra
     // space for terminal character.
     // I updated retType so that it returns two sequences. I thought I'd done that before, but I guess not.
@@ -42,7 +42,8 @@ int aligner(uint64_t *seq1, size_t seq1Len, uint64_t *seq2, size_t seq2Len, size
     // However, the length was originally padded for a NULL, so one of those needs
     // to be removed.
 
-    const size_t LENGTH = seq1Len + seq2Len - 5; // strlen(seq1) + strlen(seq2);
+    //  const size_t LENGTH = seq1Len + seq2Len - 5; // strlen(seq1) + strlen(seq2);
+    const size_t LENGTH = (2 * seq1Len) + 1; //Used for buffer offset so we don't overwrite seqA later
 
     const uint64_t GAP = 1 << (alphSize - 1);
 
@@ -54,14 +55,18 @@ int aligner(uint64_t *seq1, size_t seq1Len, uint64_t *seq2, size_t seq2Len, size
         return 2;
     }
 
-    uint64_t *initArr = calloc( INIT_LENGTH, sizeof(uint64_t) );
+    //We don't need this because we have calloc
+    //uint64_t *initArr = calloc( INIT_LENGTH, sizeof(uint64_t) );
 
     // Now, test for allocation. Return 1 if it fails.
+    /*
     if( initArr == NULL ) {
         printf("Out of memory\n");
         fflush(stdout);
         return 1;
     }
+    */
+    
     // for( i = 0; i < INIT_LENGTH; i++ ) {
     //     initArr[i] = 0;      // in bit representation, use 0 to replace * in the previous version
     // }
@@ -75,7 +80,7 @@ int aligner(uint64_t *seq1, size_t seq1Len, uint64_t *seq2, size_t seq2Len, size
           .posStringB    = 0,
           .posTrueA      = 0,
           .posTrueB      = 0,
-          .flagWhichTree = 1
+	  .flagWhichTree = 1
         },
         { .partialWt     = 0,
           .partialTrueWt = 0,
@@ -100,12 +105,14 @@ int aligner(uint64_t *seq1, size_t seq1Len, uint64_t *seq2, size_t seq2Len, size
         if( path[i].partialAlign == NULL ) {
             return 1;
         }
-       // memcpy(path[i].partialAlign, initArr, sizeof(uint64_t) * INIT_LENGTH);
+        // No need, already zeros from calloc
+        // memcpy(path[i].partialAlign, initArr, sizeof(uint64_t) * INIT_LENGTH);
     }
+    
     // original metric
-    // a(\sum z_i)^2 + b (\sum z_i) + c (\sum z_i^2)
-    // WLOG let a = b=c = 1
-    // (\sum z_i)^2 +  (\sum z_i) + (\sum z_i^2)
+    // a*(\sum z_i)^2 + b*(\sum z_i) + c*(\sum z_i^2)
+    // WLOG let a = b = c = 1
+    //   (\sum z_i)^2 +   (\sum z_i) +   (\sum z_i^2)
 
 
     // first metric
@@ -149,10 +156,13 @@ int aligner(uint64_t *seq1, size_t seq1Len, uint64_t *seq2, size_t seq2Len, size
         }
     }
 
+    // No need, source array is already zeroes from calloc, just like the desitination from calloc
+    /*
     for (i = 0; i < 3; i++) {
         memcpy(pathTempFirst[i].partialAlign, initArr, sizeof(uint64_t) * INIT_LENGTH);
     }
-
+    */
+    
     alignment_t pathTempSecond[3] = {
                                        { .partialWt     = 0,
                                          .partialTrueWt = 0,
@@ -187,10 +197,13 @@ int aligner(uint64_t *seq1, size_t seq1Len, uint64_t *seq2, size_t seq2Len, size
         }
     }
 
+    // No need, source array is already zeroes from calloc, just like the desitination from calloc
+    /*
     for (i = 0; i < 3; i++) {
         memcpy(pathTempSecond[i].partialAlign, initArr, sizeof(uint64_t) * INIT_LENGTH);
     }
-
+    */
+    
     alignment_t pathFirstInfinite = { .partialWt     = 100000,
                                       .partialTrueWt = 100000,
                                       .posStringA    = 0,
@@ -205,7 +218,9 @@ int aligner(uint64_t *seq1, size_t seq1Len, uint64_t *seq2, size_t seq2Len, size
     if( pathFirstInfinite.partialAlign == NULL ) {
         return 1;
     }
-    memcpy(pathFirstInfinite.partialAlign, initArr, sizeof(uint64_t) * INIT_LENGTH);
+
+    // No need, source array is already zeroes from calloc, just like the desitination from calloc
+    //memcpy(pathFirstInfinite.partialAlign, initArr, sizeof(uint64_t) * INIT_LENGTH);
 
     alignment_t pathSecondInfinite = { .partialWt     = 100000,
                                        .partialTrueWt = 100000,
@@ -221,7 +236,9 @@ int aligner(uint64_t *seq1, size_t seq1Len, uint64_t *seq2, size_t seq2Len, size
     if( pathSecondInfinite.partialAlign == NULL ) {
         return 1;
     }
-    memcpy(pathSecondInfinite.partialAlign, initArr, sizeof(uint64_t) * INIT_LENGTH);
+
+    // No need, source array is already zeroes from calloc, just like the desitination from calloc
+    //memcpy(pathSecondInfinite.partialAlign, initArr, sizeof(uint64_t) * INIT_LENGTH);
 
     alignment_t finalAlign = { .partialWt     = 0,
                                .partialTrueWt = 0,
@@ -238,7 +255,9 @@ int aligner(uint64_t *seq1, size_t seq1Len, uint64_t *seq2, size_t seq2Len, size
     if( finalAlign.partialAlign == NULL ) {
         return 1;
     }
-    memcpy(finalAlign.partialAlign, initArr, sizeof(uint64_t) * INIT_LENGTH);
+
+    // No need, source array is already zeroes from calloc, just like the desitination from calloc
+    //memcpy(finalAlign.partialAlign, initArr, sizeof(uint64_t) * INIT_LENGTH);
 
     uint64_t *seqA = calloc(seq1Len, sizeof(uint64_t) );
 
@@ -254,9 +273,15 @@ int aligner(uint64_t *seq1, size_t seq1Len, uint64_t *seq2, size_t seq2Len, size
         return 1;
     }
 
+    // This looks good, making sure not to clobber your input
     memcpy( seqA, seq1, sizeof(uint64_t) * (seq1Len) );
     memcpy( seqB, seq2, sizeof(uint64_t) * (seq2Len) );
 
+    printBuffer(seqA, seq1Len, "SeqA");
+    printBuffer(seqB, seq2Len, "SeqB");
+
+
+    
     int flag = 0;
     int flagEmpty[2] = {1,1};   // indicator for the case when one tree becomes empty,
                                 // i.e., all the candidates nodes have converged to the other tree
@@ -278,7 +303,9 @@ int aligner(uint64_t *seq1, size_t seq1Len, uint64_t *seq2, size_t seq2Len, size
     if( alignFinal == NULL ) {
         return 1;
     }
-    memcpy(alignFinal, initArr, sizeof(uint64_t) * INIT_LENGTH);
+    
+    // No need, source array is already zeroes from calloc, just like the desitination from calloc
+    //memcpy(alignFinal, initArr, sizeof(uint64_t) * INIT_LENGTH);
 
 
     int iFirst = 0,
@@ -332,7 +359,8 @@ int aligner(uint64_t *seq1, size_t seq1Len, uint64_t *seq2, size_t seq2Len, size
         if( pathFirst[i].partialAlign == NULL ) {
             return 1;
         }
-        memcpy(pathFirst[i].partialAlign, initArr, sizeof(uint64_t) * INIT_LENGTH);
+	// No need, source array is already zeroes from calloc, just like the desitination from calloc
+        //memcpy(pathFirst[i].partialAlign, initArr, sizeof(uint64_t) * INIT_LENGTH);
     }
 
     pathFirst[0].partialAlign[0]      = seqA[0];
@@ -389,7 +417,8 @@ int aligner(uint64_t *seq1, size_t seq1Len, uint64_t *seq2, size_t seq2Len, size
         if( pathSecond[i].partialAlign == NULL ) {
             return 1;
         }
-        memcpy(pathSecond[i].partialAlign, initArr, sizeof(uint64_t) * INIT_LENGTH);
+	// No need, source array is already zeroes from calloc, just like the desitination from calloc
+        //memcpy(pathSecond[i].partialAlign, initArr, sizeof(uint64_t) * INIT_LENGTH);
 
     }
 
@@ -569,7 +598,7 @@ int aligner(uint64_t *seq1, size_t seq1Len, uint64_t *seq2, size_t seq2Len, size
         aToB      = getCost( seqA[pathFirst[0].posTrueA], seqB[pathFirst[0].posTrueB], tcm, alphSize);
         int aToB1 = getCost( seqA[pathFirst[1].posTrueA], seqB[pathFirst[1].posTrueB], tcm, alphSize);
         aToGap = getCost( seqA[pathFirst[0].posTrueA], GAP,                         tcm, alphSize);
-        iint aToGap1 = getCost( seqA[pathFirst[1].posTrueA], GAP,                         tcm, alphSize);
+        int aToGap1 = getCost( seqA[pathFirst[1].posTrueA], GAP,                         tcm, alphSize);
         gapToB = getCost( GAP,                         seqB[pathFirst[0].posTrueB], tcm, alphSize);
         int arraySecond[2][9]= {
             { 10, 20, 30, 11, 21, 31, 12, 22, 32 },
@@ -656,12 +685,16 @@ int aligner(uint64_t *seq1, size_t seq1Len, uint64_t *seq2, size_t seq2Len, size
             copyAligmentStruct(pathTempFirst, kFirst, pathFirst, i, INIT_LENGTH);
 
             if ( indicatorFirst > 9 && indicatorFirst < 15) { // substitution
+                printBuffer(pathFirst[i].partialAlign, INIT_LENGTH, "pathFirst[i] (1), indicatorFirst in [10, 14]:");
+
                 printf("nth   a: %2llu b: %2llu \n", seqA[pathFirst[kFirst].posTrueA], seqB[pathFirst[kFirst].posTrueB]);
                 pathFirst[i].partialWt = pathFirst[i].partialWt
                                        + getCost( seqA[pathFirst[kFirst].posTrueA], seqB[pathFirst[kFirst].posTrueB], tcm, alphSize );
 
                 pathFirst[i].partialAlign[pathFirst[i].posStringA]          = seqA[pathFirst[i].posTrueA];
+		printBuffer(pathFirst[i].partialAlign, INIT_LENGTH, "partialAlign (1)");
                 pathFirst[i].partialAlign[LENGTH + pathFirst[i].posStringB] = seqB[pathFirst[i].posTrueB];
+		printBuffer(pathFirst[i].partialAlign, INIT_LENGTH, "partialAlign (2)");
                 pathFirst[i].posStringA++;
                 pathFirst[i].posStringB++;
                 pathFirst[i].posTrueA++;
@@ -686,6 +719,7 @@ int aligner(uint64_t *seq1, size_t seq1Len, uint64_t *seq2, size_t seq2Len, size
                     }
 
                     memcpy(alignFinal, pathFirst[i].partialAlign, sizeof(uint64_t) * INIT_LENGTH);
+		    printBuffer(alignFinal, INIT_LENGTH, "From pathFirst (1), indicatorFirst in [10, 14]:");
                     flag = 1;
                     break;
                 }
@@ -693,7 +727,8 @@ int aligner(uint64_t *seq1, size_t seq1Len, uint64_t *seq2, size_t seq2Len, size
             }
 
             if ( indicatorFirst > 19 && indicatorFirst < 25) {   // gap in seqB
-                printf("n+1th a: %2llu b: %2llu \n", seqA[pathFirst[kFirst].posTrueA], seqB[pathFirst[kFirst].posTrueB]);
+	      //printf("n+1th a: %2llu b: %2llu \n", seqA[pathFirst[kFirst].posTrueA], seqB[pathFirst[kFirst].posTrueB]);
+                printf("n+1th a: %2llu b: %2llu \n", seqA[pathFirst[kFirst].posTrueA], GAP);
                 pathFirst[i].partialWt = pathFirst[i].partialWt
                                        + getCost(seqA[pathFirst[kFirst].posTrueA], GAP, tcm, alphSize);
                 pathFirst[i].partialAlign[pathFirst[i].posStringA]          = seqA[pathFirst[i].posTrueA];
@@ -722,6 +757,7 @@ int aligner(uint64_t *seq1, size_t seq1Len, uint64_t *seq2, size_t seq2Len, size
                     }
 
                     memcpy(alignFinal, pathFirst[i].partialAlign, sizeof(uint64_t) * INIT_LENGTH);
+		    printBuffer(alignFinal, INIT_LENGTH, "From pathFirst (1), indicatorFirst in [20, 24]:");
 
                     flag = 1;
                     break;
@@ -730,7 +766,8 @@ int aligner(uint64_t *seq1, size_t seq1Len, uint64_t *seq2, size_t seq2Len, size
 
             if ( indicatorFirst > 29 && indicatorFirst < 35)    // gap in seqA
             {
-                printf("n+2th a: %2llu b: %2llu \n", seqA[pathFirst[kFirst].posTrueA], seqB[pathFirst[kFirst].posTrueB]);
+	        printf("n+2th a: %2llu b: %2llu \n", GAP, seqB[pathFirst[kFirst].posTrueB]);
+	        printf("kFirst: %2lu pathFirst[k]: %2lu \n", kFirst, pathFirst[kFirst].posTrueB);
 
                 pathFirst[i].partialWt = pathFirst[i].partialWt
                                        + getCost(GAP, seqB[pathFirst[kFirst].posTrueB], tcm, alphSize);
@@ -761,6 +798,7 @@ int aligner(uint64_t *seq1, size_t seq1Len, uint64_t *seq2, size_t seq2Len, size
                     }
 
                     memcpy(alignFinal, pathFirst[i].partialAlign, sizeof(uint64_t) * INIT_LENGTH);
+    		    printBuffer(alignFinal, INIT_LENGTH, "From pathFirst (1), indicatorFirst in [30, 34]:");
                     flag = 1;
                     break;
                 }
@@ -824,6 +862,7 @@ int aligner(uint64_t *seq1, size_t seq1Len, uint64_t *seq2, size_t seq2Len, size
                             }
                         }
                         memcpy(alignFinal, pathFirst[i].partialAlign, sizeof(uint64_t) * INIT_LENGTH);
+ 	                printBuffer(alignFinal, INIT_LENGTH, "From pathFirst (2), indicatorFirst in [10, 14]:");
 
                         flag = 1;
                         break;
@@ -864,6 +903,7 @@ int aligner(uint64_t *seq1, size_t seq1Len, uint64_t *seq2, size_t seq2Len, size
                             }
                         }
                         memcpy(alignFinal, pathFirst[i].partialAlign, sizeof(uint64_t) * INIT_LENGTH);
+                        printBuffer(alignFinal, INIT_LENGTH, "From pathFirst (2), indicatorFirst in [20, 24]:");
 
                         flag = 1;
                         break;
@@ -899,6 +939,7 @@ int aligner(uint64_t *seq1, size_t seq1Len, uint64_t *seq2, size_t seq2Len, size
                             }
                         }
                         memcpy(alignFinal, pathFirst[i].partialAlign, sizeof(uint64_t) * INIT_LENGTH);
+                        printBuffer(alignFinal, INIT_LENGTH, "From pathFirst (2), indicatorFirst in [30, 34]:");
 
                         flag = 1;
                         break;
@@ -1018,7 +1059,7 @@ int aligner(uint64_t *seq1, size_t seq1Len, uint64_t *seq2, size_t seq2Len, size
 
     finalAlign.partialWt = 0;
 
-    for(i = 0; i < LENGTH; i++){
+    for(i = 0; i < LENGTH-1; i++){
         printf("n+6th a: %2llu b: %2llu \n", finalAlign.partialAlign[i], finalAlign.partialAlign[i + LENGTH]);
 
         if (finalAlign.partialAlign[i] == GAP || finalAlign.partialAlign[i + LENGTH] == GAP) {
@@ -1063,11 +1104,19 @@ int aligner(uint64_t *seq1, size_t seq1Len, uint64_t *seq2, size_t seq2Len, size
       printf("buf[%d]: %lu\n", i, finalAlign.partialAlign[i]);
     }
 
+    for (i = 0; i < retAlign->seq1Len ; ++i) {
+      printf("seq1[%d]: %lu\n", i, retAlign->seq1[i]);
+    }
+
+    for (i = 0; i < retAlign->seq2Len ; ++i) {
+      printf("seq2[%d]: %lu\n", i, retAlign->seq2[i]);
+    }
+
     printf("s1 len: %zu\n", retAlign->seq1Len        );
     printf("s2 len: %zu\n", retAlign->seq2Len        );
     printf("align : %zu\n", retAlign->alignmentLength);
 
-    free(initArr);
+    //free(initArr);
     for (i = 0; i < 3; i++) {
         free(path[i].partialAlign);
 
@@ -1151,7 +1200,7 @@ void copyAligmentStruct ( alignment_t *copyFrom
 void printBuffer(uint64_t *buffer, size_t bufLen, char *prefix)
 {
     printf("which buffer: %s\n", prefix);
-    printf("[ ", );
+    printf("[ ");
     for(size_t i = 0; i < bufLen; i++) {
         printf("%llu, ", buffer[i]);
     }

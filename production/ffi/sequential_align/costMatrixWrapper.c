@@ -19,6 +19,9 @@ int getCost(packedChar elem1, packedChar elem2, costMatrix_p tcm, size_t alphSiz
     // Need to create new pointers, because of copying into cost matrix.
     // TODO: valgrind this.
     if (elem1 == 0 || elem2 == 0) {
+      printf("Gave me a zero, kuddos to you brave soul!\n");
+      printf("Element 1: %lu\n", elem1);
+      printf("Element 2: %lu\n", elem2);
       return 1337;
     }
 
