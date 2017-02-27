@@ -14,10 +14,14 @@ void matrixDestroy(costMatrix_p untyped_ptr);
 /** No longer sure why this is here. */
 int lookUpCost(costMatrix_p untyped_self, dcElement_t *left, dcElement_t *right, dcElement_t *retMedian);
 
+// TODO: figure out how to eliminate at least one of the next three.
 /** C wrapper for getting and setting values in a memoized cost matrix. Receives two ints and get a cost back.
  *  Contrast with getCostAndMedian, which also returns a pointer to a median value.
  */
 int getCost(packedChar elem1, packedChar elem2, costMatrix_p tcm, size_t alphSize);
+
+/** used by getCost. Allocates. */
+int getCostInternal(packedChar elem1, packedChar elem2, costMatrix_p tcm, size_t alphSize, dcElement_t *retElem);
 
 /** Like getCost, but also returns a pointer to a median value. */
 int getCostAndMedian(dcElement_t *elem1, dcElement_t *elem2, dcElement_t *retElem, costMatrix_p tcm);

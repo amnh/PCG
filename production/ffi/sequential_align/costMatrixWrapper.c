@@ -17,49 +17,47 @@ void matrixDestroy(costMatrix_p untyped_ptr) {
 
 int getCost(packedChar elem1, packedChar elem2, costMatrix_p tcm, size_t alphSize) {
     // Need to create new pointers, because of copying into cost matrix.
-    // TODO: valgrind this.
     if (elem1 == 0 || elem2 == 0) {
-      printf("Gave me a zero, kuddos to you brave soul!\n");
-      printf("Element 1: %lu\n", elem1);
-      printf("Element 2: %lu\n", elem2);
+      // printf("Gave me a zero, kuddos to you brave soul!\n");
+      // printf("Element 1: %lu\n", elem1);
+      // printf("Element 2: %lu\n", elem2);
       return 1337;
     }
 
+
     packedChar *packedElemRet = malloc(sizeof(packedChar));
+    dcElement_t *retElem      = malloc(sizeof(dcElement_t));
+
+    *packedElemRet    = CANONICAL_ZERO;
+    retElem->alphSize = alphSize;
+    retElem->element  = packedElemRet;
+
+    int cost = getCostInternal(elem1, elem2, tcm, alphSize, retElem);
+
+    free(packedElemRet);
+
+    return cost;
+}
+
+int getCostInternal(packedChar elem1, packedChar elem2, costMatrix_p tcm, size_t alphSize, dcElement_t *retElem) {
+    // Need to create new pointers, because of copying into cost matrix.
+
     packedChar *packedElem1   = malloc(sizeof(packedChar));
     packedChar *packedElem2   = malloc(sizeof(packedChar));
 
-    *packedElemRet = CANONICAL_ZERO;
     *packedElem1   = elem1;    // should be okay, because elem1 and elem2 are just ints, so pass by copy
     *packedElem2   = elem2;
 
-    // printf("** %llu\n", elem1);
-    // printPackedChar(packedElem1, 1, alphSize);
-    // printf("** %llu\n", elem2);
-    // printPackedChar(packedElem2, 1, alphSize);
-
-
-    /**
-    dcElement_t retElem = { alphSize, packedElemRet };
-    dcElement_t dcElem1 = { alphSize, packedElem1   };
-    dcElement_t dcElem2 = { alphSize, packedElem2   };
-    **/
-
-    dcElement_t *retElem = malloc(sizeof(dcElement_t));
     dcElement_t *dcElem1 = malloc(sizeof(dcElement_t));
     dcElement_t *dcElem2 = malloc(sizeof(dcElement_t));
 
-    retElem->alphSize = alphSize;
     dcElem1->alphSize = alphSize;
     dcElem2->alphSize = alphSize;
 
-    retElem->element = packedElemRet;
     dcElem1->element = packedElem1;
     dcElem2->element = packedElem2;
 
     int cost = call_getSetCost_C(tcm, dcElem1, dcElem2, retElem);
-
-    free(packedElemRet);
 
     return cost;
 }
@@ -76,21 +74,21 @@ int getCostAndMedian(dcElement_t *elem1, dcElement_t *elem2, dcElement_t *retEle
     copyPackedChar( elem1->element, elem1copy->element, alphSize);
     copyPackedChar( elem2->element, elem2copy->element, alphSize);
 
-    printf("Here we go:\n");
-    printPackedChar(elem1copy->element, 1, alphSize);
-    printf("Go again:\n");
-    printPackedChar(elem2copy->element, 1, alphSize);
+    //// printf("Here we go:\n");
+    // printPackedChar(elem1copy->element, 1, alphSize);
+    //printf("Go again:\n");
+    // printPackedChar(elem2copy->element, 1, alphSize);
 
-    printf("Inputs:\n");
-    printPackedChar(  elem1->element, 1, alphSize);
-    printPackedChar(  elem2->element, 1, alphSize);
-    printf("Output buffer:\n");
-    printPackedChar(retElem->element, 1, alphSize);
+    // printf("Inputs:\n");
+    // printPackedChar(  elem1->element, 1, alphSize);
+    // printPackedChar(  elem2->element, 1, alphSize);
+    // printf("Output buffer:\n");
+    // printPackedChar(retElem->element, 1, alphSize);
 
-    printf("Get dat cost:\n");
+    // printf("Get dat cost:\n");
     int cost = call_getSetCost_C(tcm, elem1copy, elem2copy, retElem);
 
-    printf("success!?\n");
+    // printf("Got dat cost!?\n");
 
     //TODO: return a success value
     int success = 0;

@@ -41,21 +41,21 @@ int main() {
         exit(1);
     }
 
-    uint64_t s1[6] = {1, 2, 4, 8, 2, 3};
-    uint64_t s2[5] = {4, 2, 1, 8, 4};
+    uint64_t s1[14] = {1, 2, 4, 8, 2, 3, 5, 1, 12, 4, 4, 8, 14, 1};
+    uint64_t s2[12]  = {4, 2, 1, 8, 4, 9, 4, 1,  8, 4, 4, 8};
 
     costMatrix_p costMatrix = matrixInit(ALPHABET_SIZE, tcm);
 
     dynChar_t *seqA  = malloc(sizeof(dynChar_t));
     seqA->alphSize   = ALPHABET_SIZE;
-    seqA->numElems   = 6;
+    seqA->numElems   = 14;
     seqA->dynCharLen = 1;
     seqA->dynChar    = intArrToBitArr(ALPHABET_SIZE, seqA->numElems, s1);
 
 
     dynChar_t *seqB  = malloc(sizeof(dynChar_t));
     seqB->alphSize   = ALPHABET_SIZE;
-    seqB->numElems   = 5;
+    seqB->numElems   = 12;
     seqB->dynCharLen = 1;
     seqB->dynChar    = intArrToBitArr(ALPHABET_SIZE, seqB->numElems, s2);
 
@@ -70,21 +70,33 @@ int main() {
 
     if (success == 0) {
         printf("\nSuccess!\n\n");
-        printf("The aligned sequences are:\n");
-        printf("  sequence 1:      [");
-        for(size_t i = 0; i < result->finalLength; ++i) {
-            printf("%llu, ", result->finalChar1[i]);
-        }
-        printf("]\n  sequence 2:      [");
-        for(size_t i = 0; i < result->finalLength; ++i) {
-            printf("%llu, ", result->finalChar2[i]);
-        }
-        printf("]\n");
-        printf("]\n  median sequence:  [");
-        for(size_t i = 0; i < result->finalLength; ++i) {
-            printf("%llu, ", result->medianChar[i]);
-        }
-        printf("]\n");
+	dynChar_t *seqARes = malloc(sizeof(dynChar_t));
+	dynChar_t *seqBRes = malloc(sizeof(dynChar_t));
+	dynChar_t *median  = malloc(sizeof(dynChar_t));
+
+        seqARes->alphSize = ALPHABET_SIZE;
+        seqBRes->alphSize = ALPHABET_SIZE;
+        median ->alphSize = ALPHABET_SIZE;
+
+        seqARes->numElems = result->finalLength;
+        seqBRes->numElems = result->finalLength;
+        median ->numElems = result->finalLength;
+
+        seqARes->dynCharLen = dynCharSize(seqARes->alphSize, seqARes->numElems);
+        seqBRes->dynCharLen = dynCharSize(seqBRes->alphSize, seqBRes->numElems);
+        median ->dynCharLen = dynCharSize(median ->alphSize, median ->numElems);
+
+        seqARes->dynChar = result->finalChar1;
+        seqBRes->dynChar = result->finalChar2;
+        median ->dynChar = result->medianChar;
+
+	printf("Resulting Character 1 Alignment:\n");
+        printDynChar(seqARes);
+	printf("Resulting Character 2 Alignment:\n");
+        printDynChar(seqBRes);
+        printf("Median    Character   Alignment:\n");
+        printDynChar(median );
+
         printf("The cost of the alignment is: %zu\n", result->finalWt);
 
     } else {

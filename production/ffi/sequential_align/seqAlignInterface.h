@@ -6,6 +6,6 @@
 /** TODO: put some documentation!! */
 int performSequentialAlignment(dynChar_t* seqA, dynChar_t* seqB, costMatrix_p costMatrix, alignResult_t* result);
 
-void getMedian(alignResult_t *input, costMatrix_p costMatrix, size_t alphSize);
+packedChar *getMedian(const packedChar * const lhs, const packedChar * const rhs, const size_t length, const size_t alphSize, costMatrix_p costMatrix);
 
 #endif // SEQ_ALIGN_INTERFACE
