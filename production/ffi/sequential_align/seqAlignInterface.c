@@ -15,7 +15,7 @@ int performSequentialAlignment(dynChar_t *seqA, dynChar_t *seqB, costMatrix_p co
     uint64_t* seqB_main = dynCharToIntArr(seqB);
 
     size_t length       = seqA->numElems + seqB->numElems + 5;
-    printf("retAlign buffer length: %zu\n", length);
+    // printf("retAlign buffer length: %zu\n", length);
     size_t alphSize     = seqA->alphSize;
 
     retType_t *retAlign       = malloc( sizeof(retType_t) );

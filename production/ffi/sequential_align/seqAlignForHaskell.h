@@ -29,7 +29,7 @@ typedef struct align {
 } alignment_t;
 
 
-int trueWt(struct align *path, costMatrix_p, size_t len, size_t alphSize);
+int trueWt(alignment_t *path, costMatrix_p tcm, size_t offset, size_t maxLen, size_t alphSize);
 
 // EDIT: rectified with .c file.
 //int aligner(char*, char*, int, int, struct retType*);
