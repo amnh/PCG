@@ -35,51 +35,23 @@ int aligner( uint64_t *seq1
 {
     setbuf(stdout, NULL);
 
-    //  const size_t LENGTH = seq1Len + seq2Len - 5; // strlen(seq1) + strlen(seq2);
-
     const uint64_t GAP         = 1 << (alphSize - 1);
 
-    const size_t SEQ_MAX_LEN   = seq1Len + seq2Len; // Maximum alignment length of either seqA and seqB (pathological)
+    const size_t SEQ_MAX_LEN   = seq1Len + seq2Len;        // Maximum alignment length of either seqA and seqB (pathological)
 
-    const size_t BUFFER_PAD    = 1; // Number of beffer cells between seqA and seqB
+    const size_t BUFFER_PAD    = 1;                        // Number of beffer cells between seqA and seqB
 
-    const size_t BUFFER_OFFSET = SEQ_MAX_LEN + BUFFER_PAD; //Used for buffer offset so we don't overwrite seqA later
+    const size_t BUFFER_OFFSET = SEQ_MAX_LEN + BUFFER_PAD; // Used for buffer offset so we don't overwrite seqA later
 
     //Yu_Edit: changed the length of INIT_LENGTH
     const size_t INIT_LENGTH = (2 * SEQ_MAX_LEN) + BUFFER_PAD; // Will be used to initialize all subsequent alignment arrays.
 
-    // int arrays are not terminated with a special character, so must know length of each array. Also, don't need extra
-    // space for terminal character.
-    // I updated retType so that it returns two sequences. I thought I'd done that before, but I guess not.
-    // Since sequences are int arrays, they're not terminated by \0, and therefore the two lengths are also necessary
-
-    // Since a single array will hold both seqs, and each seq has length
-    // alignmentLength, this number needs to be twice that, plus 1 for NULL.
-    // However, the length was originally padded for a NULL, so one of those needs
-    // to be removed.
-
-    size_t i, j; // because i and j are being used a lot, and they were declared later on anyway
+    size_t i, j;     // because i and j are being used a lot, and they were declared later on anyway
 
     if (SEQ_MAX_LEN == 0) {
         // printf("The lengths of the both sequences are zero!\n");
         return 2;
     }
-
-    //We don't need this because we have calloc
-    //uint64_t *initArr = calloc( INIT_LENGTH, sizeof(uint64_t) );
-
-    // Now, test for allocation. Return 1 if it fails.
-    /*
-    if( initArr == NULL ) {
-        printf("Out of memory\n");
-        fflush(stdout);
-        return 1;
-    }
-    */
-
-    // for( i = 0; i < INIT_LENGTH; i++ ) {
-    //     initArr[i] = 0;      // in bit representation, use 0 to replace * in the previous version
-    // }
 
     //Yu_Edit  dynamically allocate struct
     //*******************  initialize struct ***************************
@@ -158,9 +130,6 @@ int aligner( uint64_t *seq1
         return 1;
     }
 
-    // No need, source array is already zeroes from calloc, just like the desitination from calloc
-    //memcpy(alignFinal, initArr, sizeof(uint64_t) * INIT_LENGTH);
-
 
     int iFirst = 0,
         iSecond = 0;
@@ -212,8 +181,8 @@ int aligner( uint64_t *seq1
 
     // printf("2nd   a: %2llu b: %2llu\n", seqA[0], seqB[0]);
     aToB0   = getCost(seqA[0], seqB[0], tcm, alphSize);
-    aToGap0 = getCost(seqA[0], GAP, tcm, alphSize);
-    gapToB0 = getCost(GAP, seqB[0], tcm, alphSize);
+    aToGap0 = getCost(seqA[0], GAP,     tcm, alphSize);
+    gapToB0 = getCost(GAP,     seqB[0], tcm, alphSize);
 
     alignment_t pathSecond[3];
     pathSecond[0] = *initAlignment(aToB0   * aToB0,   aToB0   + 2 * aToB0   * aToB0,   1, 1, 1, 1, 2, INIT_LENGTH);
@@ -283,12 +252,16 @@ int aligner( uint64_t *seq1
         // if lowest cost is
         else if (kInitial == 0 && 19 < indicatorInitial && indicatorInitial < 22) {
             copyAligmentStruct(pathFirst, 1, path, i, INIT_LENGTH);
+
         } else if (kInitial == 0 && 29 < indicatorInitial && indicatorInitial < 32) {
             copyAligmentStruct(pathFirst, 2, path, i, INIT_LENGTH);
+
         } else if (kInitial == 1 && 9 < indicatorInitial && indicatorInitial < 12) {
             copyAligmentStruct(pathSecond, 0, path, i, INIT_LENGTH);
+
         } else if (kInitial == 1 && 19 < indicatorInitial && indicatorInitial < 22) {
             copyAligmentStruct(pathSecond, 1, path, i, INIT_LENGTH);
+
         } else{
             copyAligmentStruct(pathSecond, 2, path, i, INIT_LENGTH);
         }
@@ -377,19 +350,18 @@ int aligner( uint64_t *seq1
         gapToB2 = getCost( GAP,                         seqB[pathFirst[2].posTrueB], tcm, alphSize );
 
 
-        int arrayFirst[2][9]= {
-            { 10, 20, 30, 11, 21, 31, 12, 22, 32 },
-            {  aToB0   + pathFirst[0].partialWt,
-               aToGap0 + pathFirst[0].partialWt,
-               gapToB0 + pathFirst[0].partialWt,
-               aToB1   + pathFirst[1].partialWt,
-               aToGap1 + pathFirst[1].partialWt,
-               gapToB1 + pathFirst[1].partialWt,
-               aToB2   + pathFirst[2].partialWt,
-               aToGap2 + pathFirst[2].partialWt,
-               gapToB2 + pathFirst[2].partialWt
-            }
-        };
+        int arrayFirst[2][9]= { { 10, 20, 30, 11, 21, 31, 12, 22, 32 }
+                              , {  aToB0   + pathFirst[0].partialWt
+                                ,  aToGap0 + pathFirst[0].partialWt
+                                ,  gapToB0 + pathFirst[0].partialWt
+                                ,  aToB1   + pathFirst[1].partialWt
+                                ,  aToGap1 + pathFirst[1].partialWt
+                                ,  gapToB1 + pathFirst[1].partialWt
+                                ,  aToB2   + pathFirst[2].partialWt
+                                ,  aToGap2 + pathFirst[2].partialWt
+                                ,  gapToB2 + pathFirst[2].partialWt
+                                }
+                              };
 
         // grow tree according to second order metric: second tree
 
@@ -424,19 +396,18 @@ int aligner( uint64_t *seq1
         gapToB1 = getCost( GAP,                         seqB[pathFirst[1].posTrueB], tcm, alphSize);
         gapToB2 = getCost( GAP,                         seqB[pathFirst[2].posTrueB], tcm, alphSize);
 
-        int arraySecond[2][9]= {
-            { 10, 20, 30, 11, 21, 31, 12, 22, 32 },
-            {   aToB0   * aToB0   + pathFirst[0].partialWt
-            ,   aToGap0 * aToGap0 + pathFirst[0].partialWt
-            ,   gapToB0 * gapToB0 + pathFirst[0].partialWt
-            ,   aToB1   * aToB1   + pathFirst[1].partialWt
-            ,   aToGap1 * aToGap1 + pathFirst[1].partialWt
-            ,   gapToB1 * gapToB1 + pathFirst[1].partialWt
-            ,   aToB2   * aToB2   + pathFirst[2].partialWt
-            ,   aToGap2 * aToGap2 + pathFirst[2].partialWt
-            ,   gapToB2 * gapToB2 + pathFirst[2].partialWt
-            }
-        };
+        int arraySecond[2][9]= { { 10, 20, 30, 11, 21, 31, 12, 22, 32 }
+                               , {  aToB0   * aToB0   + pathFirst[0].partialWt
+                                 ,  aToGap0 * aToGap0 + pathFirst[0].partialWt
+                                 ,  gapToB0 * gapToB0 + pathFirst[0].partialWt
+                                 ,  aToB1   * aToB1   + pathFirst[1].partialWt
+                                 ,  aToGap1 * aToGap1 + pathFirst[1].partialWt
+                                 ,  gapToB1 * gapToB1 + pathFirst[1].partialWt
+                                 ,  aToB2   * aToB2   + pathFirst[2].partialWt
+                                 ,  aToGap2 * aToGap2 + pathFirst[2].partialWt
+                                 ,  gapToB2 * gapToB2 + pathFirst[2].partialWt
+                                 }
+                               };
 
 
         //************************************  SORT TWO TREES  *********************************************************
@@ -835,40 +806,24 @@ int aligner( uint64_t *seq1
         iSecond = 0;
 
 
-        for (i = 0; i < 3; i++) {                            // set all six nodes to be infinite nodes
-            pathFirst[i].partialWt     = pathFirstInfinite.partialWt;
-            pathFirst[i].partialTrueWt = pathFirstInfinite.partialTrueWt;
-            pathFirst[i].posStringA    = pathFirstInfinite.posStringA;
-            pathFirst[i].posStringB    = pathFirstInfinite.posStringB;
-            pathFirst[i].posTrueA      = pathFirstInfinite.posTrueA;
-            pathFirst[i].posTrueB      = pathFirstInfinite.posTrueB;
-            pathFirst[i].flagWhichTree = pathFirstInfinite.flagWhichTree;
-            memcpy(pathFirst[i].partialAlign, pathFirstInfinite.partialAlign, sizeof(uint64_t) * INIT_LENGTH);
-
-            //    pathSecond[i] = pathSecondInfinite;
-            pathSecond[i].partialWt     = pathSecondInfinite.partialWt;
-            pathSecond[i].partialTrueWt = pathSecondInfinite.partialTrueWt;
-            pathSecond[i].posStringA    = pathSecondInfinite.posStringA;
-            pathSecond[i].posStringB    = pathSecondInfinite.posStringB;
-            pathSecond[i].posTrueA      = pathSecondInfinite.posTrueA;
-            pathSecond[i].posTrueB      = pathSecondInfinite.posTrueB;
-            pathSecond[i].flagWhichTree = pathSecondInfinite.flagWhichTree;
-            memcpy(pathSecond[i].partialAlign, pathSecondInfinite.partialAlign, sizeof(uint64_t) * INIT_LENGTH);
+        for (i = 0; i < 3; i++) {            // set all six nodes to be infinite nodes
+            copyAligmentStruct ( &pathFirstInfinite,  0, pathFirst,  i, INIT_LENGTH );
+            copyAligmentStruct ( &pathSecondInfinite, 0, pathSecond, i, INIT_LENGTH );
         }
 
-        for (i = 0; i < 3; i++) {                            // assign three candidate nodes to the two trees and other nodes are infinite nodes
+        for (i = 0; i < 3; i++) {            // assign three candidate nodes to the two trees and other nodes are infinite nodes
             if (path[i].flagWhichTree == 1) {
-                copyAligmentStruct(path, i, pathFirst, iFirst, INIT_LENGTH);
+                copyAligmentStruct( path, i, pathFirst, iFirst, INIT_LENGTH );
                 iFirst++;
             }
-            else if(path[i].flagWhichTree == 2) {
-                copyAligmentStruct(path, i, pathSecond, iSecond, INIT_LENGTH);
+            else if (path[i].flagWhichTree == 2) {
+                copyAligmentStruct( path, i, pathSecond, iSecond, INIT_LENGTH );
                 iSecond++;
             }
         }
 
         for (i = 0; i < 3; i++) {
-            if(path[i].flagWhichTree == 1){
+            if (path[i].flagWhichTree == 1) {
                 flagEmpty[0] = 0;
                 break;
             }
@@ -894,10 +849,12 @@ int aligner( uint64_t *seq1
 
         if (finalAlign.partialAlign[i] == GAP || finalAlign.partialAlign[i + BUFFER_OFFSET] == GAP) {
             finalAlign.partialWt = finalAlign.partialWt
-                                 + getCost(GAP,                        GAP,                                 tcm, alphSize);
+                                 + getCost(GAP, GAP, tcm, alphSize);
+
         } else if (finalAlign.partialAlign[i] == finalAlign.partialAlign[i + BUFFER_OFFSET]) {
             finalAlign.partialWt = finalAlign.partialWt
                                  + getCost(finalAlign.partialAlign[i], finalAlign.partialAlign[i + BUFFER_OFFSET], tcm, alphSize);
+
         } else {
             finalAlign.partialWt = finalAlign.partialWt
                                  + getCost(finalAlign.partialAlign[i], finalAlign.partialAlign[i + BUFFER_OFFSET], tcm, alphSize);
