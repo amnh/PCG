@@ -136,8 +136,7 @@ tripleComparison pairwiseAlignment childDecoration parentCharacter = (ungapped, 
     newGapIndicies         = newGapLocations childCharacter childAlignment
     extendedLeftCharacter  = insertNewGaps newGapIndicies childLeftAligned
     extendedRightCharacter = insertNewGaps newGapIndicies childRightAligned
-    (_, ungapped, gapped)  = threeWayMean costStructure derivedAlignment extendedLeftCharacter extendedRightCharacter
-    {-
+    (_, ungapped, gapped)  = trace context $ threeWayMean costStructure derivedAlignment extendedLeftCharacter extendedRightCharacter
     context = unlines
         [ show newGapIndicies
         , "Parent:"
@@ -153,7 +152,7 @@ tripleComparison pairwiseAlignment childDecoration parentCharacter = (ungapped, 
         , show childRightAligned
         , show extendedRightCharacter
         ]
-    -}
+
 
 -- |
 -- Returns the indicies of the gaps that were added in the second character when
@@ -165,13 +164,19 @@ newGapLocations originalChar newChar
   where
     (_,_,newGaps) = ofoldl' f (otoList originalChar, 0, mempty) newChar
     gap = getGapElement $ newChar `indexStream` 0
-    f (  [], i, is) e
+    f acc@([], i, is) e
       | e == gap  = ([], i, IM.insertWith (+) i 1 is)
-      | otherwise = ([], i, is)
+      | otherwise = acc
     f (x:xs, i, is) e
       | e == gap && x /= gap = (x:xs, i  , IM.insertWith (+) i 1 is)
       | otherwise            = (  xs, i+1, is)
-
+{-      
+      case (e == gap && x == gap) of
+        (True , True ) -> (  xs, i+1, is)
+        (True , False) -> (x:xs, i  , IM.insertWith (+) i 1 is)
+        (False, True ) -> -- ??
+        (False, False) -> (  xs, i+1, is)
+-}
 
 -- |
 -- Given a list of gap location and a character returns a longer character with
@@ -198,7 +203,7 @@ threeWayMean
   -> c
   -> (Word, c, c)
 threeWayMean costStructure char1 char2 char3
-  | not uniformLength = error $ unwords ["Three sequences supplied to 'threeWayMean' function did not have uniform length."{- , show char1, show char2, show char3 -}]
+  | not uniformLength = error $ unwords [ "Three sequences supplied to 'threeWayMean' function did not have uniform length.", show (olength char1), show (olength char2), show (olength char3) ]
   | otherwise         = (sum costValues, constructDynamic $ filter (/= gap) meanStates, constructDynamic meanStates)
   where
     gap                 = getGapElement $ char1 `indexStream` 0

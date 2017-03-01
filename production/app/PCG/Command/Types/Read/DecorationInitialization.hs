@@ -21,7 +21,7 @@ import           Analysis.Parsimony.Fitch.Internal
 import           Analysis.Parsimony.Sankoff.Internal
 import           Analysis.Parsimony.Dynamic.DirectOptimization
 import           Analysis.Parsimony.Dynamic.SequentialAlign.FFI
---import           Analysis.Parsimony.Dynamic.DirectOptimization.FFI
+import           Analysis.Parsimony.Dynamic.DirectOptimization.FFI
 
 import           Bio.Character
 import           Bio.Character.Decoration.Additive
@@ -282,6 +282,7 @@ chooseDirectOptimizationComparison dec decs = \x y -> naiveDO x y scm
       where
         selectBranch candidate = candidate ^. symbolChangeMatrix
 --}
+{-
 chooseDirectOptimizationComparison dec decs =
     case decs of
       []  -> selectBranch dec
@@ -289,10 +290,10 @@ chooseDirectOptimizationComparison dec decs =
   where
 --    selectBranch candidate = pairwiseSequentialAlignment (candidate ^. sparseTransitionCostMatrix)
     selectBranch candidate = let !_ = force (candidate ^. sparseTransitionCostMatrix) in \x y -> naiveDOConst x y undefined
-
+-}
 {--}
 -- do this when shit stops segfaulting
-{-
+{--}
 chooseDirectOptimizationComparison dec decs =
     case decs of
       []  -> selectBranch dec
@@ -300,14 +301,16 @@ chooseDirectOptimizationComparison dec decs =
   where
     selectBranch candidate =
        case candidate ^. denseTransitionCostMatrix of
+      {-
          _ -> let !scm = (candidate ^. symbolChangeMatrix) in \x y -> naiveDO x y scm
 -}
-{-
+{--}
          Just  d -> \x y -> foreignPairwiseDO x y d
          Nothing ->
            let !scm = (candidate ^. symbolChangeMatrix)
            in \x y -> naiveDO x y scm
--}
+{--}
+{--}
 
 
 {-
