@@ -61,10 +61,10 @@ void alignIOtoChar(alignIO_p input, seq_p retChar, size_t alphabetSize) {
     retChar->cap        = input->capacity;
     retChar->array_head = input->character;
     retChar->seq_begin  = retChar->array_head + retChar->cap - retChar->len;
-    retChar->end        = retChar->seq_begin + retChar->len;
+    retChar->end        = retChar->seq_begin  + retChar->len;
     // now add gap to beginning
     retChar->seq_begin--;
-    *retChar->seq_begin = alphabetSize;
+    *retChar->seq_begin = 1 << (alphabetSize - 1);
 }
 
 /** Takes in an alignIO and a seq. *Copies* values of character from end of seq to beginning of alignIO->character.
@@ -77,9 +77,9 @@ void charToAlignIO(seq_p input, alignIO_p output) {
 
     //TODO: The length is ZERO, why?
 
-    input->seq_begin++;                   // to start after unnecessary gap char at begining
-    output->length   = input->len - 1;    //
-    output->capacity = input->cap;        // this shouldn't actually change
+    input->seq_begin++;                // to start after unnecessary gap char at begining
+    output->length   = input->len - 1; // (decrement because of the leading gap char?)
+    output->capacity = input->cap;     // this shouldn't actually change
 
     for(size_t i = 0; i < output->length; i++) {
       //        printf("Before charToAlignIO[%d]\n", i);
@@ -143,7 +143,8 @@ int align2d(alignIO_p inputChar1_aio,
 
     int swapped = 0;
 
-    size_t alphabetSize = costMtx2d->alphSize;
+    // size_t alphabetSize = costMtx2d->alphSize;
+    size_t alphabetSize = costMtx2d->lcm;
 
     if (inputChar1_aio->length > inputChar2_aio->length) {
         alignIOtoChar(inputChar1_aio, longChar, alphabetSize);
