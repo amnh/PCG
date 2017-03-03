@@ -56,25 +56,38 @@ void allocAlignIO(alignIO_p toAlloc, size_t capacity) {
  *  Adds a gap character at the front of the array, to deal with old OCaml-forced interface.
  */
 void alignIOtoChar(alignIO_p input, seq_p retChar, size_t alphabetSize) {
+    //printf("Input Length:     %2d\n", input->length  );
+    //printf("Input Capacity:   %2d\n", input->capacity);
+    
     // assign character into character struct
     retChar->len        = input->length;
     retChar->cap        = input->capacity;
     retChar->array_head = input->character;
     retChar->seq_begin  = retChar->array_head + retChar->cap - retChar->len;
-    retChar->end        = retChar->seq_begin  + retChar->len;
+    retChar->end        = retChar->seq_begin  + retChar->len - 1;
     // now add gap to beginning
-    retChar->seq_begin--;
-    *retChar->seq_begin = 1 << (alphabetSize - 1);
+    retChar->seq_begin--; // Add another cell, prepended to the array
+    *retChar->seq_begin = 1 << (alphabetSize - 1); //Prepend a gap to the array.
+    retChar->len++;
+    /*
+    printf("Sequence Length:     %2d\n", retChar->len);
+    printf("Sequence Capacity:   %2d\n", retChar->cap);
+    printf("Sequence Array Head: %2d <- %p\n", retChar->array_head[0], retChar->array_head);
+    printf("Sequence Begin:      %2d <- %p\n", retChar->seq_begin[0] , retChar->seq_begin );
+    printf("Sequence End:        %2d <- %p\n", retChar->end[0]       , retChar->end       );
+    fflush(stdout);
+    */
 }
 
 /** Takes in an alignIO and a seq. *Copies* values of character from end of seq to beginning of alignIO->character.
  *  Also eliminates extra gap needed by legacy code.
  */
 void charToAlignIO(seq_p input, alignIO_p output) {
+  /*
     printf("Length:   %zu\n", input->len);
     printf("Capacity: %zu\n", input->cap);
     fflush(stdout);
-
+  */
     //TODO: The length is ZERO, why?
 
     input->seq_begin++;                // to start after unnecessary gap char at begining
@@ -168,12 +181,12 @@ int align2d(alignIO_p inputChar1_aio,
         printf("\nafter copying, seq 2:\n");
         seq_print(shortChar);
     }
-    printf("Before NW init.\n");
-    fflush(stdout);
+    //printf("Before NW init.\n");
+    //fflush(stdout);
     nw_matrices_p nw_mtxs2d = malloc(sizeof(struct nwMatrices));
     initializeNWMtx(longChar->len, shortChar->len, 0, costMtx2d->lcm, nw_mtxs2d);
-    printf("After  NW init.\n");
-    fflush(stdout);
+    //printf("After  NW init.\n");
+    //fflush(stdout);
 
     // deltawh is for use in Ukonnen, it gives the current necessary width of the Ukk matrix.
     // The following calculation to compute deltawh, which increases the matrix height or width in algn_nw_2d,
@@ -193,11 +206,9 @@ int align2d(alignIO_p inputChar1_aio,
     printf("Ater align cost.\n");
     fflush(stdout);
     if (getGapped || getUngapped || getUnion) {
-        printf("Before backtrace.\n");
-        fflush(stdout);
+        //printf("Before backtrace.\n"), fflush(stdout);
         algn_backtrace_2d (shortChar, longChar, retShortChar, retLongChar, nw_mtxs2d, costMtx2d, 0, 0, swapped);
-        printf("After backtrace.\n");
-        fflush(stdout);
+        //printf("After  backtrace.\n"), fflush(stdout);
 
         if (getUngapped) {
             seq_p ungappedMedianChar = malloc(sizeof(struct seq));
@@ -214,27 +225,20 @@ int align2d(alignIO_p inputChar1_aio,
 
         }
         if (getGapped && !getUnion) {
-	    printf("In here!\n");
-	    fflush(stdout);
+	    //printf("In here!\n"), fflush(stdout);
             seq_p gappedMedianChar   = malloc(sizeof(struct seq));
 
-	    printf("Before initialize character!\n");
-	    fflush(stdout);
+	    //printf("Before initialize character!\n"), fflush(stdout);
             initializeChar(gappedMedianChar, CHAR_CAPACITY);
-	    printf("After  initialize character!\n");
-	    fflush(stdout);
+	    //printf("After  initialize character!\n"), fflush(stdout);
 
-	    printf("Before algn_get_median\n");
-	    fflush(stdout);
+	    //printf("Before algn_get_median\n"), fflush(stdout);
             algn_get_median_2d_with_gaps (retShortChar, retLongChar, costMtx2d, gappedMedianChar);
-	    printf("After  algn_get_median\n");
-	    fflush(stdout);
+	    //printf("After  algn_get_median\n"), fflush(stdout);
 
-	    printf("Before charToAlignIO\n");
-	    fflush(stdout);
+	    //printf("Before charToAlignIO\n"), fflush(stdout);
             charToAlignIO(gappedMedianChar, gappedOutput_aio);
-	    printf("After  charToAlignIO\n");
-	    fflush(stdout);
+	    //printf("After  charToAlignIO\n"),  fflush(stdout);
 
             freeChar(gappedMedianChar);
 
