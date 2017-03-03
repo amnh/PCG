@@ -33,6 +33,8 @@ import Bio.Character.Encodable
 import Bio.Character.Exportable.Class
 import Control.DeepSeq
 import Control.Lens
+import Data.Foldable
+import Data.List        (intercalate)
 import Data.Semigroup
 import Debug.Trace
 import Foreign
@@ -42,8 +44,8 @@ import Foreign.C.Types
 --import Foreign.ForeignPtr
 --import Foreign.Marshal.Array
 --import Foreign.StablePtr
-import GHC.Generics (Generic)
-import Prelude hiding (lcm, sequence, tail)
+import GHC.Generics     (Generic)
+import Prelude   hiding (lcm, sequence, tail)
 import System.IO.Unsafe (unsafePerformIO)
 
 import Debug.Trace
@@ -89,6 +91,7 @@ generateDenseTransitionCostMatrix alphabetSize costFunction = getCostMatrix2dNon
 
 foreignPairwiseDO :: ( EncodableDynamicCharacter s
                      , Exportable s
+                     , Show s
                      )
                   => s                         -- ^ First  dynamic character
                   -> s                         -- ^ Second dynamic character
@@ -375,6 +378,7 @@ foreign import ccall unsafe "c_alignment_interface.h align2d"
 -- The process for this algorithm is to generate a traversal matrix, then perform a traceback.
 algn2d :: ( EncodableDynamicCharacter s
           , Exportable s
+          , Show s
           )
        => s                         -- ^ First  dynamic character
        -> s                         -- ^ Second dynamic character
@@ -391,12 +395,20 @@ algn2d :: ( EncodableDynamicCharacter s
                                     --
                                     --   The gapped alignment of the /second/ input character when aligned with the first character
 algn2d char1 char2 costStruct computeUnion computeMedians =
-    case (toExportableElements char1, toExportableElements char2) of
-        (Just x, Just y) -> f x y
-        (     _,      _) -> error "Sadness, such sadness"
+    -- Appropriately handle missing data:
+    case (isMissing char1, isMissing char2) of
+        (True , True ) -> (char1, 0, char1, char1, char2) --WLOG
+        (True , False) -> (char2, 0, char2, char2, char2)
+        (False, True ) -> (char1, 0, char1, char1, char1)
+        (False, False) ->
+          case (toExportableElements char1, toExportableElements char2) of
+            (Just x, Just y) -> f x y
+            (     _,      _) -> error "Sadness, such sadness"
     where
         f exportedChar1 exportedChar2 = unsafePerformIO $
             do
+--                !_ <- trace ("char 1: " <> show char1) $ pure ()
+--                !_ <- trace ("char 2: " <> show char2) $ pure ()
                 char1ToSend <- allocInitALignIO exportedChar1Len . fmap toCInt $ exportedCharacterElements exportedChar1
                 char2ToSend <- allocInitALignIO exportedChar2Len . fmap toCInt $ exportedCharacterElements exportedChar2
                 retGapped   <- allocInitALignIO 0 []
@@ -410,8 +422,8 @@ algn2d char1 char2 costStruct computeUnion computeMedians =
                 input1CharArr <- peekArray (fromEnum buffer1Len) char1Ptr
                 input2CharArr <- peekArray (fromEnum buffer2Len) char2Ptr
 
-                !_ <- trace (mconcat [" Input LHS : { ", show char1Len, " / ", show buffer1Len, " } ", show input1CharArr]) $ pure ()
-                !_ <- trace (mconcat [" Input RHS : { ", show char2Len, " / ", show buffer2Len, " } ", show input2CharArr]) $ pure ()
+--                !_ <- trace (mconcat [" Input LHS : { ", show char1Len, " / ", show buffer1Len, " } ", renderBuffer input1CharArr]) $ pure ()
+--                !_ <- trace (mconcat [" Input RHS : { ", show char2Len, " / ", show buffer2Len, " } ", renderBuffer input2CharArr]) $ pure ()
 {--}
 
                 let !cost = align2dFn_c char1ToSend char2ToSend retGapped retUngapped costStruct neverComputeOnlyGapped (toCInt computeMedians) (toCInt computeUnion)
@@ -421,6 +433,15 @@ algn2d char1 char2 costStruct computeUnion computeMedians =
                 AlignIO retChar1CharArr char1Len    _ <- peek char1ToSend
                 AlignIO retChar2CharArr char2Len    _ <- peek char2ToSend
                 -- AlignIO unionCharArr    unionLen    _ <- peek retUnion
+
+                _ <- if gappedLen == char1Len && gappedLen == char2Len
+                     then pure ()
+                     else error $ unlines
+                         [ "Sequences returned from POY C code were not actually \"aligned.\""
+                         , "gappedLen = " <> show gappedLen
+                         , " char1Len = " <> show char1Len
+                         , " char2Len = " <> show char2Len
+                         ]
 
 --                ungappedChar <- peekArray (fromEnum ungappedLen) ungappedCharArr
                 gappedChar   <- peekArray (fromEnum gappedLen)   gappedCharArr
@@ -433,22 +454,22 @@ algn2d char1 char2 costStruct computeUnion computeMedians =
                 let resultingGapped       = coerceToOutputType gappedLen gappedChar
                 let resultingUngapped     = filterGaps resultingGapped
 
-                !_ <- trace (" Gapped Char : " <> show   gappedChar) $ pure ()
-                !_ <- trace (" Aligned LHS : " <> show char1Aligned) $ pure ()
-                !_ <- trace (" Aligned RHS : " <> show char2Aligned) $ pure ()
+--                !_ <- trace (" Gapped Char : " <> renderBuffer   gappedChar) $ pure ()
+--                !_ <- trace (" Aligned LHS : " <> renderBuffer char1Aligned) $ pure ()
+--                !_ <- trace (" Aligned RHS : " <> renderBuffer char2Aligned) $ pure ()
 
                 output1Buffer <- peekArray (fromEnum buffer1Len) char1Ptr
                 output2Buffer <- peekArray (fromEnum buffer2Len) char2Ptr
 
-                !_ <- trace (mconcat [" Output LHS : { ", show char1Len, " / ", show buffer1Len, " } ", show output1Buffer]) $ pure ()
-                !_ <- trace (mconcat [" Output RHS : { ", show char2Len, " / ", show buffer2Len, " } ", show output2Buffer]) $ pure ()
+--                !_ <- trace (mconcat [" Output LHS : { ", show char1Len, " / ", show buffer1Len, " } ", renderBuffer output1Buffer]) $ pure ()
+--                !_ <- trace (mconcat [" Output RHS : { ", show char2Len, " / ", show buffer2Len, " } ", renderBuffer output2Buffer]) $ pure ()
 {--
                 !_ <- trace ("Ungapped Char: " <> show     resultingUngapped) $ pure ()
                 !_ <- trace ("  Gapped Char: " <> show       resultingGapped) $ pure ()
                 !_ <- trace (" Aligned LHS : " <> show resultingAlignedChar1) $ pure ()
                 !_ <- trace (" Aligned RHS : " <> show resultingAlignedChar2) $ pure ()
 --}
-                !_ <- trace  " > Done with FFI Alignment\n" $ pure ()
+--                !_ <- trace  " > Done with FFI Alignment\n" $ pure ()
 
                 pure (filterGaps resultingGapped, fromIntegral cost, resultingGapped, resultingAlignedChar1, resultingAlignedChar2)
             where
@@ -476,6 +497,13 @@ algn2d char1 char2 costStruct computeUnion computeMedians =
                 coerceToOutputType len charElements =
                     fromExportableElements . ExportableCharacterElements (fromEnum len) elemWidth $ fmap fromIntegral charElements
 
+                renderBuffer buf = "[" <> intercalate "," (fmap pad shownElems) <> "]"
+                  where
+                    maxElemChars = maximum $ fmap length shownElems
+                    shownElems   = fmap show buf
+                    pad e        = replicate (maxElemChars - length e) ' ' <> e
+
+
 
 
 
@@ -485,6 +513,7 @@ algn2d char1 char2 costStruct computeUnion computeMedians =
 align2dCostOnly
   :: ( EncodableDynamicCharacter s
      , Exportable s
+     , Show s
      )
   => s
   -> s
@@ -497,6 +526,7 @@ align2dCostOnly c1 c2 cm = trace "cost only" $ algn2d c1 c2 cm DoNotComputeUnion
 align2dGetUngapped
   :: ( EncodableDynamicCharacter s
      , Exportable s
+     , Show s
      )
   => s
   -> s
@@ -509,6 +539,7 @@ align2dGetUngapped c1 c2 cm = algn2d c1 c2 cm DoNotComputeUnions ComputeMedians
 align2dGetUnion
   :: ( EncodableDynamicCharacter s
      , Exportable s
+     , Show s
      )
   => s
   -> s
@@ -521,6 +552,7 @@ align2dGetUnion c1 c2 cm = algn2d c1 c2 cm ComputeUnions DoNotComputeMedians
 align2dGappedUngapped
   :: ( EncodableDynamicCharacter s
      , Exportable s
+     , Show s
      )
   => s
   -> s

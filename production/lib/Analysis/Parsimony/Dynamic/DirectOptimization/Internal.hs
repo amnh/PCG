@@ -25,6 +25,7 @@ import           Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise
 import           Bio.Character.Decoration.Dynamic
 import           Bio.Character.Encodable
 import           Control.Lens
+import           Data.Bits
 import           Data.IntMap        (IntMap)
 import qualified Data.IntMap as IM
 import           Data.Key    hiding ((!))
@@ -138,19 +139,19 @@ tripleComparison pairwiseAlignment childDecoration parentCharacter = (ungapped, 
     extendedRightCharacter = insertNewGaps newGapIndicies childRightAligned
     (_, ungapped, gapped)  = trace context $ threeWayMean costStructure derivedAlignment extendedLeftCharacter extendedRightCharacter
     context = unlines
-        [ show newGapIndicies
+        [ "New Gap indices: |" <> show (sum newGapIndicies) <> "| " <> show newGapIndicies
         , "Parent:"
-        , show parentCharacter
-        , show derivedAlignment
+        , show (olength parentCharacter)
+        , show (olength derivedAlignment)
         , "Center char:"
-        , show childCharacter
-        , show childAlignment
+        , show (childCharacter)
+        , show (childAlignment)
         , "Left  chars:"
-        , show childLeftAligned
-        , show extendedLeftCharacter
+        , show (olength childLeftAligned)
+        , show (olength extendedLeftCharacter)
         , "Right chars:"
-        , show childRightAligned
-        , show extendedRightCharacter
+        , show (olength childRightAligned)
+        , show (olength extendedRightCharacter)
         ]
 
 
@@ -165,11 +166,13 @@ newGapLocations originalChar newChar
     (_,_,newGaps) = ofoldl' f (otoList originalChar, 0, mempty) newChar
     gap = getGapElement $ newChar `indexStream` 0
     f acc@([], i, is) e
-      | e == gap  = ([], i, IM.insertWith (+) i 1 is)
+      | e == gap  = ([], i, incrementAt i is)
       | otherwise = acc
     f (x:xs, i, is) e
-      | e == gap && x /= gap = (x:xs, i  , IM.insertWith (+) i 1 is)
+      | e == gap && x /= gap = (x:xs, i  , incrementAt i is)
       | otherwise            = (  xs, i+1, is)
+    incrementAt i is = IM.insertWith (+) i 1 is
+    containsGap x = x .&. gap /= zeroBits
 {-      
       case (e == gap && x == gap) of
         (True , True ) -> (  xs, i+1, is)
