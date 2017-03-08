@@ -600,7 +600,7 @@ cm_get_value (int a, int b, int *p, int alphSize) {
 /** Sets first row of nw cost matrix, where @param seq is column headers */
 void
 cm_precalc_4algn (const cost_matrices_2d_p costMtx_t, nw_matrices_p nwMtxs, const seq_p seq) {
-    if(1 || DEBUG_MAT) {
+    if(DEBUG_MAT) {
         printf("\n---cm_precalc_4algn\n");
     }
     size_t i, j, seqLen;
@@ -643,7 +643,7 @@ cm_precalc_4algn (const cost_matrices_2d_p costMtx_t, nw_matrices_p nwMtxs, cons
 	precalcMtx_t[j] = valueDatum;
         //printf ("After  Assignment\n"), fflush(stdout);
 
-        if (1 || DEBUG_CM) {
+        if (DEBUG_CM) {
             printf ("%7d", precalcMtx_t[j]);
 	    fflush(stdout);
         }

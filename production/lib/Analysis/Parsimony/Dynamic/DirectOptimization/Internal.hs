@@ -115,7 +115,7 @@ updateFromParent
 updateFromParent pairwiseAlignment currentDecoration parentDecoration =
     extendPostOrderToDirectOptimization currentDecoration ungapped gapped
   where
-    (ungapped, gapped) = tripleComparison pairwiseAlignment currentDecoration (parentDecoration ^. finalGapped)
+    (ungapped, gapped) = tripleComparison pairwiseAlignment currentDecoration (parentDecoration ^. finalUngapped)
 
   
 -- |
@@ -133,7 +133,7 @@ tripleComparison pairwiseAlignment childDecoration parentCharacter = (ungapped, 
     childLeftAligned  = childDecoration ^. leftAlignment
     childRightAligned = childDecoration ^. rightAlignment
     
-    (_, _, derivedAlignment, _, childAlignment) = pairwiseAlignment parentCharacter childCharacter
+    (_, _, derivedAlignment, _, childAlignment) = pairwiseAlignment (traceShowId parentCharacter) (traceShowId childCharacter)
     newGapIndicies         = newGapLocations childCharacter childAlignment
     extendedLeftCharacter  = insertNewGaps newGapIndicies childLeftAligned
     extendedRightCharacter = insertNewGaps newGapIndicies childRightAligned
@@ -160,7 +160,7 @@ tripleComparison pairwiseAlignment childDecoration parentCharacter = (ungapped, 
 -- compared to the first character.
 newGapLocations :: EncodableDynamicCharacter c => c -> c -> IntMap Int
 newGapLocations originalChar newChar
-  | olength originalChar == olength newChar = mempty
+--  | olength originalChar == olength newChar = mempty
   | otherwise                               = newGaps
   where
     (_,_,newGaps) = ofoldl' f (otoList originalChar, 0, mempty) newChar

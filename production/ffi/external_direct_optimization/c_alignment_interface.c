@@ -175,7 +175,7 @@ int align2d(alignIO_p inputChar1_aio,
         shortIO = inputChar1_aio;
     }
 
-    if (1 || DEBUG_ALGN) {
+    if (DEBUG_ALGN) {
         printf("\nafter copying, seq 1:\n");
         seq_print(longChar);
         printf("\nafter copying, seq 2:\n");

@@ -54,7 +54,7 @@ import           Prelude                      hiding (lookup)
 import           Test.Tasty.QuickCheck        hiding ((.&.))
 import           Test.QuickCheck.Arbitrary.Instances ()
 
---import Debug.Trace
+import Debug.Trace
 
 -- TODO: Change DynamicChar/Sequences to DynamicCharacters
         -- Make a missing a null vector
@@ -188,7 +188,7 @@ instance MonoTraversable DynamicChar where
 instance EncodedAmbiguityGroupContainer DynamicChar where
 
     {-# INLINE symbolCount #-}
-    symbolCount (Missing n) = n
+    symbolCount (Missing n) = trace ("Missing: " <> show n) n
     symbolCount (DC c)      = numCols c
 
 
