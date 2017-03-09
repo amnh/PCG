@@ -439,9 +439,9 @@ algn2d char1 char2 costStruct computeUnion computeMedians = handleMissingCharact
                          ]
 
 --                ungappedChar <- peekArray (fromEnum ungappedLen) ungappedCharArr
-                gappedChar   <- {- reverse <$> -} peekArray (fromEnum gappedLen)   gappedCharArr
-                char1Aligned <- {- reverse <$> -} peekArray (fromEnum char1Len)    retChar1CharArr
-                char2Aligned <- {- reverse <$> -} peekArray (fromEnum char2Len)    retChar2CharArr
+                gappedChar   <- reverse <$> peekArray (fromEnum gappedLen)   gappedCharArr
+                char1Aligned <- reverse <$> peekArray (fromEnum char1Len)    retChar1CharArr
+                char2Aligned <- reverse <$> peekArray (fromEnum char2Len)    retChar2CharArr
                 -- unionChar    <- peekArray (fromEnum unionLen)    unionCharArr
 
                 let resultingAlignedChar1 = coerceToOutputType char1Len char1Aligned
@@ -466,8 +466,9 @@ algn2d char1 char2 costStruct computeUnion computeMedians = handleMissingCharact
 --}
 --                !_ <- trace  " > Done with FFI Alignment\n" $ pure ()
 
-
-                pure (filterGaps resultingGapped, fromIntegral cost, resultingGapped, resultingAlignedChar1, resultingAlignedChar2)
+                -- NOTE: We swapped resultingAlignedChar1 & resultingAlignedChar2
+                -- because the C code returns the values in the wrong order!
+                pure (filterGaps resultingGapped, fromIntegral cost, resultingGapped, resultingAlignedChar2, resultingAlignedChar1)
             where
                 neverComputeOnlyGapped = 0
 
