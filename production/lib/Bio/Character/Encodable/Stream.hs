@@ -116,7 +116,7 @@ showStreamElement alphabet element
   |  allBits == element = "?"
   | otherwise           = renderAmbiguity $ toIUPAC symbols
   where
-    allBits = (\x -> trace (showBits x) x) . fromIntegral . succ . (2^) $ length alphabet
+    allBits = fromIntegral . pred . (2^) $ length alphabet
     symbols = decodeElement alphabet element
     renderAmbiguity amb =
         case toList amb of

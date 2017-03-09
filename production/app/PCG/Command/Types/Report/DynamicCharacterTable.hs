@@ -32,14 +32,16 @@ import qualified Data.List.NonEmpty as NE
 -- Outputs tabluar data of the first dynamic character of the first network in
 -- the first forest of the solution.
 outputDynamicCharacterTablularData 
-  :: DirectOptimizationDecoration z a
+--  :: DirectOptimizationDecoration z a
+  :: DirectOptimizationPostOrderDecoration z a
   => PhylogeneticSolution (PhylogeneticDAG e n u v w x y z)
   -> String
 outputDynamicCharacterTablularData = generateTabularData . head . toList . NE.head . phylogeneticForests
 
 
 generateTabularData
-  :: DirectOptimizationDecoration z a
+--  :: DirectOptimizationDecoration z a
+  :: DirectOptimizationPostOrderDecoration z a
   => PhylogeneticDAG e n u v w x y z
   -> String
 generateTabularData (PDAG dag) = header <> nodeFoldMap f dag
@@ -52,5 +54,5 @@ generateTabularData (PDAG dag) = header <> nodeFoldMap f dag
                    localCost          = show $ x ^. characterLocalCost
                    subTreeCost        = show $ x ^. characterCost
                    preliminaryMedians = showStream alphabet $ x ^. preliminaryUngapped
-                   finalMedians       = showStream alphabet $ x ^.       finalUngapped
-               in  intercalate "," [localCost, subTreeCost, preliminaryMedians, finalMedians] <> "\n"
+--                   finalMedians       = showStream alphabet $ x ^.       finalUngapped
+               in  intercalate "," [localCost, subTreeCost, preliminaryMedians {- , finalMedians -} ] <> "\n"

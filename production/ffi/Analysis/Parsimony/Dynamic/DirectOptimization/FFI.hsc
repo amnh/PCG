@@ -28,7 +28,7 @@ module Analysis.Parsimony.Dynamic.DirectOptimization.FFI
   , generateDenseTransitionCostMatrix
   ) where
 
-import Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Internal (filterGaps)
+import Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Internal (filterGaps, handleMissingCharacter)
 import Bio.Character.Encodable
 import Bio.Character.Exportable.Class
 import Control.DeepSeq
@@ -394,16 +394,10 @@ algn2d :: ( EncodableDynamicCharacter s
                                     --   The gapped alignment of the /first/ input character when aligned with the second character
                                     --
                                     --   The gapped alignment of the /second/ input character when aligned with the first character
-algn2d char1 char2 costStruct computeUnion computeMedians =
-    -- Appropriately handle missing data:
-    case (isMissing char1, isMissing char2) of
-        (True , True ) -> (char1, 0, char1, char1, char2) --WLOG
-        (True , False) -> (char2, 0, char2, char2, char2)
-        (False, True ) -> (char1, 0, char1, char1, char1)
-        (False, False) ->
-          case (toExportableElements char1, toExportableElements char2) of
-            (Just x, Just y) -> f x y
-            (     _,      _) -> error "Sadness, such sadness"
+algn2d char1 char2 costStruct computeUnion computeMedians = handleMissingCharacter char1 char2 $
+    case (toExportableElements char1, toExportableElements char2) of
+      (Just x, Just y) -> f x y
+      (     _,      _) -> error "Sadness, such sadness"
     where
         f exportedChar1 exportedChar2 = unsafePerformIO $
             do
@@ -434,6 +428,7 @@ algn2d char1 char2 costStruct computeUnion computeMedians =
                 AlignIO retChar2CharArr char2Len    _ <- peek char2ToSend
                 -- AlignIO unionCharArr    unionLen    _ <- peek retUnion
 
+                -- TODO: remove this check later.
                 _ <- if gappedLen == char1Len && gappedLen == char2Len
                      then pure ()
                      else error $ unlines
@@ -444,9 +439,9 @@ algn2d char1 char2 costStruct computeUnion computeMedians =
                          ]
 
 --                ungappedChar <- peekArray (fromEnum ungappedLen) ungappedCharArr
-                gappedChar   <- peekArray (fromEnum gappedLen)   gappedCharArr
-                char1Aligned <- peekArray (fromEnum char1Len)    retChar1CharArr
-                char2Aligned <- peekArray (fromEnum char2Len)    retChar2CharArr
+                gappedChar   <- {- reverse <$> -} peekArray (fromEnum gappedLen)   gappedCharArr
+                char1Aligned <- {- reverse <$> -} peekArray (fromEnum char1Len)    retChar1CharArr
+                char2Aligned <- {- reverse <$> -} peekArray (fromEnum char2Len)    retChar2CharArr
                 -- unionChar    <- peekArray (fromEnum unionLen)    unionCharArr
 
                 let resultingAlignedChar1 = coerceToOutputType char1Len char1Aligned
@@ -470,6 +465,7 @@ algn2d char1 char2 costStruct computeUnion computeMedians =
                 !_ <- trace (" Aligned RHS : " <> show resultingAlignedChar2) $ pure ()
 --}
 --                !_ <- trace  " > Done with FFI Alignment\n" $ pure ()
+
 
                 pure (filterGaps resultingGapped, fromIntegral cost, resultingGapped, resultingAlignedChar1, resultingAlignedChar2)
             where

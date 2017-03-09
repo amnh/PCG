@@ -163,12 +163,12 @@ pairwiseSequentialAlignment memo char1 char2 = unsafePerformIO $ do
 --        !_ <- trace ("Shown character 1: " <> show char1) $ pure ()
 --        !_ <- trace ("Shown character 2: " <> show char2) $ pure ()
         
---        !_ <- trace "Before FFI call" $ pure ()
+        !_ <- trace "Before FFI call" $ pure ()
         !success      <- performSeqAlignfn_c char1' char2' (costMatrix memo) resultPointer
---        !_ <- trace "After  FFI call" $ pure ()
+        !_ <- trace "After  FFI call" $ pure ()
 
-        _ <- free char1'
-        _ <- free char2'
+--        _ <- free char1'
+--        _ <- free char2'
         resultStruct  <- peek resultPointer
         let alignmentCost   = fromIntegral $ cost resultStruct
             resultElemCount = coerceEnum $ finalLength resultStruct
@@ -179,13 +179,14 @@ pairwiseSequentialAlignment memo char1 char2 = unsafePerformIO $ do
         !alignedChar2    <- fmap generalizeFromBuffer . peekArray bufferLength $ character2 resultStruct
         !medianAlignment <- fmap generalizeFromBuffer . peekArray bufferLength $ medianChar resultStruct
         let !ungapped = filterGaps medianAlignment
-        _ <- free resultPointer
-{-
+--        _ <- free resultPointer
+{--
         !_ <- trace ("Shown   gapped           : " <> show medianAlignment) $ pure ()
         !_ <- trace ("Shown ungapped           : " <> show ungapped       ) $ pure ()
         !_ <- trace ("Shown character 1 aligned: " <> show alignedChar1   ) $ pure ()
         !_ <- trace ("Shown character 2 aligned: " <> show alignedChar2   ) $ pure ()
--}
+--}
+        !_ <- trace "Right Before Return" $ pure ()
         pure (ungapped, alignmentCost, medianAlignment, alignedChar1, alignedChar2)
     where
         width = exportedElementWidthSequence $ toExportableBuffer char1
@@ -193,7 +194,7 @@ pairwiseSequentialAlignment memo char1 char2 = unsafePerformIO $ do
 
 constructCDynamicCharacterFromExportableCharacter :: Exportable s => s -> IO (Ptr CDynamicChar)
 constructCDynamicCharacterFromExportableCharacter exChar = do
-        !_ <- trace (show exportableBuffer) $ pure ()
+--        !_ <- trace (show exportableBuffer) $ pure ()
         valueBuffer <- newArray $ exportedBufferChunks exportableBuffer
         charPointer <- malloc :: IO (Ptr CDynamicChar)
         let charValue = CDynamicChar (coerceEnum width) (coerceEnum count) bufLen valueBuffer

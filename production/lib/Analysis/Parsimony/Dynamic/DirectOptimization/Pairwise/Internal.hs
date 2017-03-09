@@ -25,7 +25,7 @@ import Data.Matrix.NotStupid (Matrix, matrix, nrows, ncols)
 import Data.MonoTraversable
 import Data.Ord
 
-import Debug.Trace (trace)
+--import Debug.Trace (trace)
 
 
 -- | The direction to align the character at a given matrix point.
@@ -64,15 +64,15 @@ naiveDO :: DOCharConstraint s
                                    --   The gapped alignment of the /first/ input character when aligned with the second character
                                    -- 
                                    --   The gapped alignment of the /second/ input character when aligned with the first character
-naiveDO _ _ _ | trace "Call to Naive DO" False = undefined
-naiveDO char1 char2 costStruct = naiveDOInternal char1 char2 (overlap costStruct)
+--naiveDO _ _ _ | trace "Call to Naive DO" False = undefined
+naiveDO char1 char2 costStruct = handleMissingCharacter char1 char2 $ naiveDOInternal char1 char2 (overlap costStruct)
 
-                          
+
 -- |
 -- The same as 'naiveDO' except that the "cost structure" parameter is ignored.
 -- Instead a constant cost is used.
 naiveDOConst :: DOCharConstraint s => s -> s -> (Word -> Word -> Word) -> (s, Double, s, s, s)
-naiveDOConst char1 char2 _ = naiveDOInternal char1 char2 overlapConst
+naiveDOConst char1 char2 _ = handleMissingCharacter char1 char2 $ naiveDOInternal char1 char2 overlapConst
 
 
 -- | Wrapper function to do an enhanced Needleman-Wunsch algorithm.
@@ -320,4 +320,16 @@ naiveDOInternal char1 char2 overlapFunction
                      then (right', left')
                      else (left', right')
 
-
+handleMissingCharacter
+  :: PossiblyMissingCharacter s
+  => s
+  -> s
+  -> (s, Double, s, s, s)
+  -> (s, Double, s, s, s) 
+handleMissingCharacter lhs rhs v =
+    -- Appropriately handle missing data:
+    case (isMissing lhs, isMissing rhs) of
+      (True , True ) -> (lhs, 0, lhs, lhs, rhs) --WLOG
+      (True , False) -> (rhs, 0, rhs, rhs, rhs)
+      (False, True ) -> (lhs, 0, lhs, lhs, lhs)
+      (False, False) -> v

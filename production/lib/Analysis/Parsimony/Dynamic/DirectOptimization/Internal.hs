@@ -33,7 +33,7 @@ import           Data.List.NonEmpty (NonEmpty( (:|) ))
 import           Data.Monoid
 import           Data.MonoTraversable 
 import           Data.Word
-import           Prelude     hiding (lookup, zip)
+import           Prelude     hiding (lookup, zip, zipWith)
 
 import Debug.Trace
 
@@ -84,7 +84,7 @@ updateFromLeaves pairwiseAlignment (leftChild:|rightChild:_) =
 
 
 directOptimizationPreOrder
-  :: (DirectOptimizationPostOrderDecoration d c, Show c)
+  :: (DirectOptimizationPostOrderDecoration d c, Show c, Show (Element c))
   => PairwiseAlignment c
   -> d
   -> [(Word, DynamicDecorationDirectOptimization c)]
@@ -107,7 +107,7 @@ initializeRoot =
 
 
 updateFromParent
-  :: (EncodableDynamicCharacter c, DirectOptimizationPostOrderDecoration d c, Show c)
+  :: (EncodableDynamicCharacter c, DirectOptimizationPostOrderDecoration d c, Show c, Show (Element c))
   => PairwiseAlignment c
   -> d
   -> DynamicDecorationDirectOptimization c
@@ -115,13 +115,28 @@ updateFromParent
 updateFromParent pairwiseAlignment currentDecoration parentDecoration =
     extendPostOrderToDirectOptimization currentDecoration ungapped gapped
   where
-    (ungapped, gapped) = tripleComparison pairwiseAlignment currentDecoration (parentDecoration ^. finalUngapped)
+    -- If the current node has a missing character value representing it's
+    -- preliminary median assignment, then we take the parent's final assingment
+    -- values and assign them to the current node as it's own final assignments.
+    --
+    -- Otherwise we perform a local alignmnet between the parent's *UNGAPPED*
+    -- final assignments and the current node's *GAPPED* preliminary assignment.
+    -- Afterwards we calculate the indicies of the new gaps in the alignment,
+    -- insert them into the current node's left and right child alignments.
+    -- Lastly a three-way mean between the locally aligned parent assignment and
+    -- the expanded left and right child alignments is used to calculate the
+    -- final assignment of the current node.
+    (ungapped, gapped)
+      | isMissing $ currentDecoration ^. preliminaryGapped = (pUngapped, pGapped)
+      | otherwise =  tripleComparison pairwiseAlignment currentDecoration pUngapped
+    pUngapped = parentDecoration ^. finalUngapped
+    pGapped   = parentDecoration ^. finalGapped
 
   
 -- |
 -- A three way comparison of characters used in the DO preorder traversal.
 tripleComparison
-  :: ( EncodableDynamicCharacter c, DirectOptimizationPostOrderDecoration d c, Show c)
+  :: ( EncodableDynamicCharacter c, DirectOptimizationPostOrderDecoration d c, Show c, Show (Element c))
   => PairwiseAlignment c
   -> d
   -> c
@@ -133,7 +148,7 @@ tripleComparison pairwiseAlignment childDecoration parentCharacter = (ungapped, 
     childLeftAligned  = childDecoration ^. leftAlignment
     childRightAligned = childDecoration ^. rightAlignment
     
-    (_, _, derivedAlignment, _, childAlignment) = pairwiseAlignment (traceShowId parentCharacter) (traceShowId childCharacter)
+    (_, _, derivedAlignment, _, childAlignment) = pairwiseAlignment parentCharacter childCharacter
     newGapIndicies         = newGapLocations childCharacter childAlignment
     extendedLeftCharacter  = insertNewGaps newGapIndicies childLeftAligned
     extendedRightCharacter = insertNewGaps newGapIndicies childRightAligned
@@ -144,8 +159,8 @@ tripleComparison pairwiseAlignment childDecoration parentCharacter = (ungapped, 
         , show (olength parentCharacter)
         , show (olength derivedAlignment)
         , "Center char:"
-        , show (childCharacter)
-        , show (childAlignment)
+        , show (olength childCharacter)
+        , show (olength childAlignment)
         , "Left  chars:"
         , show (olength childLeftAligned)
         , show (olength extendedLeftCharacter)
@@ -158,21 +173,26 @@ tripleComparison pairwiseAlignment childDecoration parentCharacter = (ungapped, 
 -- |
 -- Returns the indicies of the gaps that were added in the second character when
 -- compared to the first character.
-newGapLocations :: EncodableDynamicCharacter c => c -> c -> IntMap Int
+newGapLocations :: (EncodableDynamicCharacter c, Show (Element c)) => c -> c -> IntMap Int
 newGapLocations originalChar newChar
---  | olength originalChar == olength newChar = mempty
+  | olength originalChar == olength newChar = mempty
   | otherwise                               = newGaps
   where
     (_,_,newGaps) = ofoldl' f (otoList originalChar, 0, mempty) newChar
     gap = getGapElement $ newChar `indexStream` 0
+
+--    f :: ([c], Int, IntMap a) -> c -> ([c], Int, IntMap a)
     f acc@([], i, is) e
-      | e == gap  = ([], i, incrementAt i is)
-      | otherwise = acc
+      | e == gap             = trace (g e gap     ) ([], i, incrementAt i is)
+      | otherwise            = trace ("Other case") acc
     f (x:xs, i, is) e
-      | e == gap && x /= gap = (x:xs, i  , incrementAt i is)
-      | otherwise            = (  xs, i+1, is)
+      | e == gap && x /= gap = trace (g e x) (x:xs, i  , incrementAt i is)
+      | otherwise            = trace (g e x) (  xs, i+1, is)
     incrementAt i is = IM.insertWith (+) i 1 is
     containsGap x = x .&. gap /= zeroBits
+
+--    g :: (Show e, Eq e) => e -> e -> String
+    g x y = unwords [show x, if x == gap && y /= gap then "~!~" else "===", show y]
 {-      
       case (e == gap && x == gap) of
         (True , True ) -> (  xs, i+1, is)
