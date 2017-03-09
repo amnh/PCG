@@ -1,12 +1,6 @@
 -----------------------------------------------------------------------------
 -- |
--- a more complex example of an FFI interface, for learning
---
--- This example uses pointers, both to structs and to fields within the
--- structs. This is much easier to accomplish via .hsc rather than doing
--- straight FFI. A .hsc file are read by hsc2hs, which then creates a .c
--- file, which is compiled and run to create an .hs file, which is then
--- compiled for use in outside modules.
+-- TODO: Document module.
 --
 -----------------------------------------------------------------------------
 

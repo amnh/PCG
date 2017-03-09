@@ -22,10 +22,14 @@
 module Analysis.Parsimony.Dynamic.DirectOptimization
   ( directOptimizationPreOrder
   , directOptimizationPostOrder
+  , foreignPairwiseDO
+  , generateDenseTransitionCostMatrix
   , naiveDO
   , naiveDOConst
   ) where
 
 
+import Analysis.Parsimony.Dynamic.DirectOptimization.FFI
 import Analysis.Parsimony.Dynamic.DirectOptimization.Internal
 import Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise
+

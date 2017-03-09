@@ -152,7 +152,7 @@ tripleComparison pairwiseAlignment childDecoration parentCharacter = (ungapped, 
     newGapIndicies         = newGapLocations childCharacter childAlignment
     extendedLeftCharacter  = insertNewGaps newGapIndicies childLeftAligned
     extendedRightCharacter = insertNewGaps newGapIndicies childRightAligned
-    (_, ungapped, gapped)  = trace context $ threeWayMean costStructure derivedAlignment extendedLeftCharacter extendedRightCharacter
+    (_, ungapped, gapped)  = {- trace context $ -} threeWayMean costStructure derivedAlignment extendedLeftCharacter extendedRightCharacter
     context = unlines
         [ "New Gap indices: |" <> show (sum newGapIndicies) <> "| " <> show newGapIndicies
         , "Parent:"
@@ -180,26 +180,17 @@ newGapLocations originalChar newChar
   where
     (_,_,newGaps) = ofoldl' f (otoList originalChar, 0, mempty) newChar
     gap = getGapElement $ newChar `indexStream` 0
-
---    f :: ([c], Int, IntMap a) -> c -> ([c], Int, IntMap a)
-    f acc@([], i, is) e
-      | e == gap             = trace (g e gap     ) ([], i, incrementAt i is)
-      | otherwise            = trace ("Other case") acc
-    f (x:xs, i, is) e
-      | e == gap && x /= gap = trace (g e x) (x:xs, i  , incrementAt i is)
-      | otherwise            = trace (g e x) (  xs, i+1, is)
     incrementAt i is = IM.insertWith (+) i 1 is
-    containsGap x = x .&. gap /= zeroBits
 
---    g :: (Show e, Eq e) => e -> e -> String
-    g x y = unwords [show x, if x == gap && y /= gap then "~!~" else "===", show y]
-{-      
-      case (e == gap && x == gap) of
-        (True , True ) -> (  xs, i+1, is)
-        (True , False) -> (x:xs, i  , IM.insertWith (+) i 1 is)
-        (False, True ) -> -- ??
-        (False, False) -> (  xs, i+1, is)
--}
+    
+    f acc@([], i, is) e
+      | e == gap             = ([], i, incrementAt i is)
+      | otherwise            = acc
+    f (x:xs, i, is) e
+      | e == gap && x /= gap = (x:xs, i  , incrementAt i is)
+      | otherwise            = (  xs, i+1, is)
+
+
 
 -- |
 -- Given a list of gap location and a character returns a longer character with

@@ -14,10 +14,13 @@
 {-# LANGUAGE AllowAmbiguousTypes #-}
 {-# LANGUAGE FlexibleContexts #-}
 
-module Analysis.Parsimony.Dynamic.SequentialAlign (sequentialAlign) where
+module Analysis.Parsimony.Dynamic.SequentialAlign
+  ( generateMemoizedCostMatrix
+  , sequentialAlign
+  ) where
 
 --import           Analysis.Parsimony.Binary.Internal
-import qualified Analysis.Parsimony.Dynamic.SequentialAlign.FFI as FFI (sequentialAlign)
+import qualified Analysis.Parsimony.Dynamic.SequentialAlign.FFI as FFI
 import           Bio.Character.Encodable
 import           Bio.Character.Exportable.Class
 --import           Data.Alphabet
@@ -26,33 +29,10 @@ import           Bio.Character.Exportable.Class
 --import           Data.List.Split (chunksOf)
 import           Data.MonoTraversable
 
--- | sequentialAlign is similar to DO, but uses Yu's and Vahid's information theoretical sequential alignment algorithm to produce the alignment
--- It gets called from Analysis.Parsimony.Binary.Optimization:preorderNodeOptimize
--- The particular version of SeqConstraint used here is found in Analysis.Parsimony.Binary.Internal
--- and has these constraints: (EncodableDynamicCharacter s b, Eq s, CharConstraint b, Show s, Bits s, Monoid s)
---
-sequentialAlign :: (EncodableDynamicCharacter s, Exportable s) => s -> s -> (s, Double, s, s, s)
-sequentialAlign inpSeq1 inpSeq2 = ( constructDynamic inferredParent
-                                  , fromIntegral cost :: Double
-                                  , constructDynamic alignedParent
-                                  , alignment1
-                                  , alignment2
-                                  )
-    where
-      (cost, alignment1, alignment2) =
-        case FFI.sequentialAlign 1 1 inpSeq1 inpSeq2 of
-          Left  e -> error e -- TODO: Better error handling later
-          Right r -> r
+-- |
+-- sequentialAlign is similar to DO, but uses Yu's and Vahid's information theoretical sequential alignment algorithm to produce the alignment
+sequentialAlign :: (EncodableDynamicCharacter s, Exportable s, Show s) => FFI.MemoizedCostMatrix -> s -> s -> (s, Double, s, s, s)
+sequentialAlign = FFI.pairwiseSequentialAlignment
 
-      (inferredParent, alignedParent) = foldr (\(x, y) acc -> createParentSeqs x y acc) ([],[])
-                                      $ zip (otoList alignment1) (otoList alignment2)
-      createParentSeqs x y (xs, ys)
-        | x == gap && y == gap = (xs    , gap : ys)
-        | x == gap             = (xs, x : ys) -- So I'm prioritizing gap over everything else
-        | y == gap             = (xs, y : ys) -- Note that '-' comes before letters alphabetically,
-                                              -- but I still have to do this to deal with gap removal in inferred Parent
---        | x < y                = (x : xs, x : ys)
---        | y < x                = (y : xs, y : ys)
-        | otherwise            = (x : xs, x : ys) -- they must be equal, so choose x
---      inferredParent' = constructDynamic inferredParent
-      gap = getGapElement $ inpSeq1 `indexStream` 0
+-- TODO: put this in Bio.Metadata probably
+generateMemoizedCostMatrix = FFI.getMemoizedCostMatrix

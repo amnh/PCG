@@ -20,8 +20,7 @@ import           Analysis.Parsimony.Additive.Internal
 import           Analysis.Parsimony.Fitch.Internal
 import           Analysis.Parsimony.Sankoff.Internal
 import           Analysis.Parsimony.Dynamic.DirectOptimization
-import           Analysis.Parsimony.Dynamic.SequentialAlign.FFI
-import           Analysis.Parsimony.Dynamic.DirectOptimization.FFI
+import           Analysis.Parsimony.Dynamic.SequentialAlign
 
 import           Bio.Character
 import           Bio.Character.Decoration.Additive
