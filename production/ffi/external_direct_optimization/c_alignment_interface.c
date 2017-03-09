@@ -200,11 +200,11 @@ int align2d(alignIO_p inputChar1_aio,
         deltawh = diff < lower_limit ? lower_limit / 2 : 2;
     }
     //printf("%d, %zu, %d, %zu\n", shortCharLen, shortChar->len, longCharLen, longChar->len);
-    printf("Before align cost.\n");
-    fflush(stdout);
+    //printf("Before align cost.\n");
+    //fflush(stdout);
     int algnCost = algn_nw_2d( shortChar, longChar, costMtx2d, nw_mtxs2d, deltawh );
-    printf("Ater align cost.\n");
-    fflush(stdout);
+    //printf("Ater align cost.\n");
+    //fflush(stdout);
     if (getGapped || getUngapped || getUnion) {
         //printf("Before backtrace.\n"), fflush(stdout);
         algn_backtrace_2d (shortChar, longChar, retShortChar, retLongChar, nw_mtxs2d, costMtx2d, 0, 0, swapped);
