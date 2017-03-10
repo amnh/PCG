@@ -52,7 +52,8 @@ performComparison lhs rhs = (renderResult nativeDOResult, renderResult foreignDO
     readSequence :: String -> DynamicChar
     readSequence = encodeStream alphabet . fmap ((iupacToDna BM.!) . pure . pure) . NE.fromList
     renderResult (w, c, x, y, z) = unlines
-        [ "Median Ungapped: " <> showStream alphabet w
+        [ "Cost           : " <> show c 
+        , "Median ungapped: " <> showStream alphabet w
         , "Median   gapped: " <> showStream alphabet x
         , "LHS   alignment: " <> showStream alphabet y
         , "RHS   alignment: " <> showStream alphabet z
