@@ -18,20 +18,39 @@ import           Data.Set                  (difference, intersection)
 import qualified Data.Set           as Set (fromList)
 import           File.Format.Fasta
 import           System.Environment        (getArgs)
-import           Text.Megaparsec    -- (parse, parseErrorPretty)
+import           Test.Custom.NucleotideSequence
+import           Test.QuickCheck
 
 main :: IO ()
 main = do
     args <- getArgs
     case parseArgs args of
-      Left  argsError -> putStrLn argsError
+      Left  argsError -> quickCheckWith stdArgs { maxSuccess = 1000 } counterExampleSearch
       Right (lhs,rhs) ->
         let (nativeMessage, foreignMessage) = performComparison lhs rhs
         in do putStrLn "Native DO Result:"
               putStrLn nativeMessage
               putStrLn "Foreign DO Result:"
               putStrLn foreignMessage
+    
+
+counterExampleSearch :: (NucleotideSequence, NucleotideSequence) -> Bool
+counterExampleSearch (NS lhs, NS rhs) = nativeDOResult == foreignDOResult
   where
+    nativeDOResult  = naiveDO           lhs rhs costStructure
+    foreignDOResult = foreignPairwiseDO lhs rhs matrixValue
+    matrixValue     = generateDenseTransitionCostMatrix 5 costStructure
+    alphabet = fromSymbols ["A","C","G","T"]
+    costStructure i j = if i /= j then 1 else 0
+{-    
+    renderResult (w, c, x, y, z) = unlines
+        [ "Cost           : " <> show c 
+        , "Median ungapped: " <> showStream alphabet w
+        , "Median   gapped: " <> showStream alphabet x
+        , "LHS   alignment: " <> showStream alphabet y
+        , "RHS   alignment: " <> showStream alphabet z
+        ]
+-}
 
 
 parseArgs :: [String] -> Either String (String, String)
@@ -43,12 +62,13 @@ parseArgs args =
 
 performComparison lhs rhs = (renderResult nativeDOResult, renderResult foreignDOResult)
   where
-    nativeDOResult  = naiveDOConst      char1 char2 undefined
+    nativeDOResult  = naiveDO           char1 char2 costStructure
     foreignDOResult = foreignPairwiseDO char1 char2 matrixValue
-    matrixValue     = generateDenseTransitionCostMatrix 5 $ \i j -> if i /= j then 1 else 0
+    matrixValue     = generateDenseTransitionCostMatrix 5 costStructure
     char1 = readSequence lhs
     char2 = readSequence rhs
     alphabet = fromSymbols ["A","C","G","T"]
+    costStructure i j = if i /= j then 1 else 0
     readSequence :: String -> DynamicChar
     readSequence = encodeStream alphabet . fmap ((iupacToDna BM.!) . pure . pure) . NE.fromList
     renderResult (w, c, x, y, z) = unlines

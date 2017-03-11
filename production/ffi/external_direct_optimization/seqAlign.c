@@ -3599,111 +3599,122 @@ algn_print_bcktrck_2d (const seq_p seq1, const seq_p seq2,
 
 void
 algn_print_dynmtrx_2d (const seq_p seq1, const seq_p seq2, nw_matrices_p matrices) {
-    int i, j;
 
-    const int seqLen1 = seq_get_len (seq1);
-    const int seqLen2 = seq_get_len (seq2);
+  int i, j;
 
-    const seq_p longerSeq  = seqLen1 > seqLen2 ? seq1 : seq2;
-    const seq_p lesserSeq  = seqLen1 > seqLen2 ? seq2 : seq1;
+  const int seqLen1 = seq_get_len (seq1);
+  const int seqLen2 = seq_get_len (seq2);
 
-    const int longerSeqLen = seqLen1 > seqLen2 ? seqLen1 : seqLen2;
-    const int lesserSeqLen = seqLen1 > seqLen2 ? seqLen2 : seqLen1;
+  const seq_p longerSeq  = seqLen1 > seqLen2 ? seq1 : seq2;
+  const seq_p lesserSeq  = seqLen1 > seqLen2 ? seq2 : seq1;
 
-    const int n       = longerSeqLen + 1;
-    const int m       = lesserSeqLen + 1;
-    int *nw_costMtx;
-    nw_costMtx = mat_get_2d_nwMtx (matrices);
-    DIR_MTX_ARROW_t *nw_dirMtx  = mat_get_2d_direct (matrices);
+  const int longerSeqLen = seqLen1 > seqLen2 ? seqLen1 : seqLen2;
+  const int lesserSeqLen = seqLen1 > seqLen2 ? seqLen2 : seqLen1;
 
-    printf ("Sequence 1 length: %d\n", seqLen1);
-    printf ("Sequence 2 length: %d\n", seqLen2);
-    printf ("Length    Product: %d\n", seqLen1 * seqLen2);
-    printf ("Length +1 Product: %d\n", n * m);
-    printf ("Allocated space  : %zu\n\n", matrices->cap_nw);
+  const int n       = longerSeqLen + 1;
+  const int m       = lesserSeqLen + 1;
 
-    printf("Cost matrix:\n");
-    // print column heads
-    printf("  x |       * ");
-    for (i = 1; i < lesserSeqLen; i++) {
-        printf("%7d ", lesserSeq->seq_begin[i]);
+  int *nw_costMtx;
+
+  nw_costMtx = mat_get_2d_nwMtx (matrices);
+
+  DIR_MTX_ARROW_t *nw_dirMtx  = mat_get_2d_direct (matrices);
+
+  printf ("Sequence 1 length: %d\n", seqLen1);
+  printf ("Sequence 2 length: %d\n", seqLen2);
+  printf ("Length    Product: %d\n", seqLen1 * seqLen2);
+  printf ("Length +1 Product: %d\n", n * m);
+  printf ("Allocated space  : %zu\n\n", matrices->cap_nw);
+
+  printf("Cost matrix:\n");
+
+  // print column heads
+
+  printf("  x |       * ");
+  for (i = 1; i < longerSeqLen; i++) {
+    printf("%7d ", longerSeq->seq_begin[i]);
+  }
+  printf("\n");
+  printf(" ---+-");
+
+  for (i = 0; i < longerSeqLen; i++) {
+    printf("--------");
+  }
+  printf("\n");
+
+  for(i=0; i< n * m; ++i) {
+    printf("[%d] = %d\n", i, nw_costMtx[i]);
+  }
+  
+  for (i = 0; i < lesserSeqLen; i++) {
+    if (i == 0) printf ("  * | ");
+    else        printf (" %2d | ", lesserSeq->seq_begin[i]);
+
+    for (j = 0; j < longerSeqLen; j++) {
+      // if (j == 0 && i == 0) {
+      //     printf("%7d ", 0);
+      // } else {
+      printf ("%7d ", nw_costMtx[lesserSeqLen * j + i]);
+      // }
     }
-    printf("\n");
-    printf(" ---+-");
-    for (i = 1; i < lesserSeqLen; i++) {
-      printf("--------");
+    printf ("\n");
+  }
+
+  // Print direction matrix
+  setlocale(LC_CTYPE, "en_US.UTF-8");
+
+  wchar_t *name;
+  printf("\n\nDirection matrix:\n");
+
+  // print column heads
+  printf("  x |       * ");
+  for (i = 1; i < longerSeqLen; i++) {
+    printf("%7d ", longerSeq->seq_begin[i]);
+  }
+  printf("\n");
+  printf(" ---+-");
+
+  for (i = 1; i < longerSeqLen + 1; i++) {
+    printf("--------");
+  }
+  printf("\n");
+
+  for (i = 0; i < lesserSeqLen; i++) {
+    if (i == 0) printf ("  * | ");
+    else        printf (" %2d | ", lesserSeq->seq_begin[i]);
+
+    for (j = 0; j < longerSeqLen; j++) {
+      DIR_MTX_ARROW_t dirToken = nw_dirMtx[lesserSeqLen * j + i];
+
+      printf("    "); // leading pad
+      printf("%s", dirToken & DELETE ? "<"  : " " );
+      printf("%s", dirToken & ALIGN  ? "\\" : " " );
+      printf("%s", dirToken & INSERT ? "^"  : " " );
+      printf(" ");
+      /*
+      printf("    "); // leading pad
+      printf("%d", dirToken`);
+      wprintf(L"%s", dirToken & DELETE ? (wchar_t *) "\u2191" : (wchar_t *) " ");
+      wprintf(L"%s", dirToken & ALIGN  ? (wchar_t *) "\u2196" : (wchar_t *) " ");
+      wprintf(L"%s", dirToken & INSERT ? (wchar_t *) "\u2190" : (wchar_t *) " ");
+      printf(" ");
+      */
     }
-    printf("\n");
+    printf ("\n");
+  }
 
-    for (i = 0; i < longerSeqLen; i++) {
-        if (i == 0) printf ("  * | ");
-        else        printf (" %2d | ", longerSeq->seq_begin[i]);
-
-        for (j = 0; j < lesserSeqLen; j++) {
-            // if (j == 0 && i == 0) {
-            //     printf("%7d ", 0);
-            // } else {
-                printf ("%7d ", (int) nw_costMtx[lesserSeqLen * i + j]);
-            // }
-        }
-        printf ("\n");
-    }
-
-    // Print direction matrix
-    setlocale(LC_CTYPE, "en_US.UTF-8");
-
-    wchar_t *name;
-    printf("\n\nDirection matrix:\n");
-    // print column heads
-    printf("  x |       * ");
-    for (i = 1; i < lesserSeqLen; i++) {
-        printf("%7d ", lesserSeq->seq_begin[i]);
-    }
-    printf("\n");
-    printf(" ---+-");
-    for (i = 1; i < lesserSeqLen + 1; i++) {
-      printf("--------");
-    }
-    printf("\n");
-
-
-    for (i = 0; i < longerSeqLen; i++) {
-        if (i == 0) printf ("  * | ");
-        else        printf (" %2d | ", longerSeq->seq_begin[i]);
-
-        for (j = 0; j < lesserSeqLen; j++) {
-            DIR_MTX_ARROW_t dirToken = nw_dirMtx[lesserSeqLen * i + j];
-
-            //if (dirToken & ALIGN)    printf ("A");
-            //if (dirToken & DELETE)   printf ("D");
-            //if (dirToken & INSERT)   printf ("I");
-            //if (dirToken & ALIGN_V)  printf ("VA");
-            //if (dirToken & DELETE_V) printf ("VD");
-            //if (dirToken & ALIGN_H)  printf ("HA");
-            //if (dirToken & INSERT_H) printf ("HI");
-            //printf("\t");
-
-            printf("    "); // leading pad
-            wprintf(L"%s", dirToken & DELETE ? (wchar_t *) "\u2191" : (wchar_t *) " ");
-            wprintf(L"%s", dirToken & ALIGN  ? (wchar_t *) "\u2196" : (wchar_t *) " ");
-            wprintf(L"%s", dirToken & INSERT ? (wchar_t *) "\u2190" : (wchar_t*) " ");
-            printf(" ");
-        }
-        printf ("\n");
-    }
-
-
-      return;
+  return;
 }
+
 
 void
 algn_string_of_2d_direction (DIR_MTX_ARROW_t v) {
-    if (v & ALIGN) printf ("A");
-    if (v & DELETE) printf ("D");
-    if (v & INSERT) printf ("I");
-    if (v & ALIGN_V) printf ("VA");
+    if (v & ALIGN   ) printf ("A");
+    if (v & DELETE  ) printf ("D");
+    if (v & INSERT  ) printf ("I");
+    if (v & ALIGN_V ) printf ("VA");
     if (v & DELETE_V) printf ("VD");
-    if (v & ALIGN_H) printf ("HA");
+    if (v & ALIGN_H ) printf ("HA");
     if (v & INSERT_H) printf ("HI");
     return;
 }

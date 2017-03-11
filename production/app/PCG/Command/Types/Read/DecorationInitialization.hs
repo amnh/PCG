@@ -65,6 +65,7 @@ import           Data.List.NonEmpty                (NonEmpty( (:|) ))
 --import           Data.Map                          (Map, intersectionWith, keys)
 --import qualified Data.Map                   as Map
 --import           Data.Maybe                        (catMaybes, fromMaybe, listToMaybe)
+import           Data.MonoTraversable (Element)
 --import           Data.Semigroup                    ((<>))
 --import           Data.Semigroup.Foldable
 --import           Data.Set                          (Set, (\\))
@@ -137,7 +138,7 @@ initializeDecorations :: CharacterResult -> PhylogeneticSolution InitialDecorati
 initializeDecorations (PhylogeneticSolution forests) = PhylogeneticSolution $ fmap performDecoration <$> forests
   where
 --    performDecoration :: CharacterDAG -> InitialDecorationDAG
-    performDecoration (PDAG dag) = PDAG . nodePreOrder preOrderTransformation $ nodePostOrder postOrderTransformation dag
+    performDecoration (PDAG dag) = PDAG {- y. nodePreOrder preOrderTransformation -} $ nodePostOrder postOrderTransformation dag
       where
         postOrderTransformation parentalNode childNodes =
           PNode
@@ -264,6 +265,7 @@ chooseDirectOptimizationComparison :: ( SimpleDynamicDecoration d  c
                                       , SimpleDynamicDecoration d' c
                                       , Exportable c
                                       , Show c
+                                      , Show (Element c)
                                       )
                                    => d
                                    -> [d']

@@ -159,20 +159,20 @@ int align2d(alignIO_p inputChar1_aio,
     // size_t alphabetSize = costMtx2d->alphSize;
     size_t alphabetSize = costMtx2d->lcm;
 
-    if (inputChar1_aio->length > inputChar2_aio->length) {
+    if (inputChar1_aio->length >= inputChar2_aio->length) {
         alignIOtoChar(inputChar1_aio, longChar, alphabetSize);
         longIO = inputChar1_aio;
 
         alignIOtoChar(inputChar2_aio, shortChar, alphabetSize);
         shortIO = inputChar2_aio;
 
-        swapped = 1;
     } else {
         alignIOtoChar(inputChar2_aio, longChar, alphabetSize);
         longIO = inputChar2_aio;
 
         alignIOtoChar(inputChar1_aio, shortChar, alphabetSize);
         shortIO = inputChar1_aio;
+        swapped = 1;
     }
 
     if (DEBUG_ALGN) {
@@ -206,6 +206,7 @@ int align2d(alignIO_p inputChar1_aio,
     //printf("Ater align cost.\n");
     //fflush(stdout);
     if (getGapped || getUngapped || getUnion) {
+        algn_print_dynmtrx_2d (shortChar, longChar, nw_mtxs2d);
         //printf("Before backtrace.\n"), fflush(stdout);
         algn_backtrace_2d (shortChar, longChar, retShortChar, retLongChar, nw_mtxs2d, costMtx2d, 0, 0, swapped);
         //printf("After  backtrace.\n"), fflush(stdout);

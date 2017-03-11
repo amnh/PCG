@@ -220,7 +220,8 @@ library
                        Data.List.Utility
                        Data.Matrix.NotStupid
                        Text.Megaparsec.Custom
-
+                       Test.Custom.NucleotideSequence
+                       
   -- Modules included in this library but not exported.
   other-modules:       Analysis.ImpliedAlignment.AlignmentContext
                        Analysis.ImpliedAlignment.DeletionEvents
