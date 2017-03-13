@@ -111,7 +111,7 @@ void setup2dCostMtx(int* tcm, size_t alphSize, int gap_open, cost_matrices_2d_p 
     // Print TCM in pretty format
     if(DEBUG_MAT) {
         printf("setup2dCostMtx\n");
-        const int n = retCostMtx->lcm;
+        const int n = retCostMtx->costMtxDimension;
         for (size_t i = 0; i < n; ++i) {
             for (size_t j = 0; j < n; ++j) {
                 printf("%2d ", tcm[ n * i + j ]);
@@ -150,8 +150,8 @@ void setup2dCostMtx(int* tcm, size_t alphSize, int gap_open, cost_matrices_2d_p 
 
     int gap = 1 << (alphSize - 1);
     for ( size_t i = 1; i <= all_elements; i++) {
-        cm_set_prepend_2d (i, cm_get_cost(gap, i, retCostMtx), retCostMtx);
-        cm_set_tail_2d    (cm_get_cost(i, gap, retCostMtx), i, retCostMtx);
+        cm_set_prepend_2d (i, cm_get_cost(gap,   i, retCostMtx),    retCostMtx);
+        cm_set_tail_2d    (i, cm_get_cost(  i, gap, retCostMtx), retCostMtx);
     }
     /*
     SEQT* seqStart = longChar->seq_begin;
