@@ -390,8 +390,8 @@ algn_fill_row (int *currRow,
     }
     printf("]\n");
     fflush(stdout);
-    
-    
+
+
     for (i = startIndex; i <= finalIndex; i++) {
         // try align with substitution
         upwardCost   = prevRow[i    ] + c;
@@ -425,7 +425,7 @@ algn_fill_row (int *currRow,
                 currRow[i] = leftwardCost;
                 dirVect[i] = ALIGN | INSERT;
             }
-        } else { // diagonalCost == upwardCost 
+        } else { // diagonalCost == upwardCost
             if (diagonalCost < leftwardCost) {
                 currRow[i] = diagonalCost;
                 dirVect[i] = ALIGN | DELETE;
@@ -448,7 +448,7 @@ algn_fill_row (int *currRow,
             printf ("\t");
         }
         if (DEBUG_COST_M) {
-	    // Print the cost matrix 
+	    // Print the cost matrix
             printf ("%d\t", currRow[i]);
             fflush (stdout);
         }
@@ -470,7 +470,7 @@ algn_fill_row (int *currRow,
     }
     printf("]\n\n");
     fflush(stdout);
-    
+
     return;
 }
 /*
@@ -746,8 +746,8 @@ algn_fill_extending_left_right (const seq_p seq1,
         algn_fill_ukk_right_cell (curRow, prevRow, gap_row, align_row, dirMtx, const_val,
                                   start_column + len - 1);
         /** Invariants block */
-        tmp = curRow;
-        curRow = prevRow;
+        tmp     = curRow;
+        curRow  = prevRow;
         prevRow = tmp;
         i++;
         dirMtx += seq2_len;
@@ -915,7 +915,7 @@ algn_fill_plane (const seq_p longerSequence,
     if (DEBUG_DIR_M || DEBUG_COST_M) {
         printf ("\n");
     }
-    
+
     int j;
     printf("Cost Matrix Row [0]: [");
     for (j = 0; j < lesserSequenceLength; j++) {
@@ -956,7 +956,7 @@ algn_fill_plane (const seq_p longerSequence,
 	  printf("%d, ", curRow[j]);
 	}
 	printf("]\n");
-	
+
         tmp      = curRow;
         curRow   = newNWMtx;
         newNWMtx = tmp;

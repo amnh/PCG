@@ -80,7 +80,7 @@ int distance (int const *tcm, int alphSize, int nucleotide, int ambElem) {
  *  No longer setting max, as algorithm to do so is unclear: see note below.
  *  Not sure which of two loops to set prepend and tail arrays is correct.
  */
-void setup2dCostMtx(int* tcm, size_t alphSize, int gap_open, cost_matrices_2d_p retMtx) {
+void setup2dCostMtx(int* tcm, size_t alphSize, int gap_open, cost_matrices_2d_p retCostMtx) {
 
     // first allocate retMatrix
     int combinations = 1;                     // false if matrix is sparse. In this case, it's DNA, so not sparse.
@@ -106,12 +106,12 @@ void setup2dCostMtx(int* tcm, size_t alphSize, int gap_open, cost_matrices_2d_p 
                            gap_open,
                            is_metric,
                            all_elements,
-                           retMtx
+                           retCostMtx
                           );
     // Print TCM in pretty format
     if(DEBUG_MAT) {
         printf("setup2dCostMtx\n");
-        const int n = retMtx->lcm;
+        const int n = retCostMtx->lcm;
         for (size_t i = 0; i < n; ++i) {
             for (size_t j = 0; j < n; ++j) {
                 printf("%2d ", tcm[ n * i + j ]);
@@ -139,8 +139,8 @@ void setup2dCostMtx(int* tcm, size_t alphSize, int gap_open, cost_matrices_2d_p 
                     median |= 1 << (nucleotide - 1); // median = this nucleotide | old median
                 }
             } // nucleotide
-            cm_set_cost_2d   (ambElem1, ambElem2, minCost, retMtx);
-            cm_set_median_2d (ambElem1, ambElem2, median,  retMtx);
+            cm_set_cost_2d   (ambElem1, ambElem2, minCost, retCostMtx);
+            cm_set_median_2d (ambElem1, ambElem2, median,  retCostMtx);
         } // ambElem2
     } // ambElem1
     // Gap number is alphSize - 1, which makes bit representation
@@ -150,8 +150,8 @@ void setup2dCostMtx(int* tcm, size_t alphSize, int gap_open, cost_matrices_2d_p 
 
     int gap = 1 << (alphSize - 1);
     for ( size_t i = 1; i <= all_elements; i++) {
-        cm_set_prepend_2d (i, cm_get_cost(gap, i, retMtx), retMtx);
-        cm_set_tail_2d    (cm_get_cost(i, gap, retMtx), i, retMtx);
+        cm_set_prepend_2d (i, cm_get_cost(gap, i, retCostMtx), retCostMtx);
+        cm_set_tail_2d    (cm_get_cost(i, gap, retCostMtx), i, retCostMtx);
     }
     /*
     SEQT* seqStart = longChar->seq_begin;
@@ -159,13 +159,13 @@ void setup2dCostMtx(int* tcm, size_t alphSize, int gap_open, cost_matrices_2d_p 
     int seqElem;
     for ( size_t i = 0; i < longChar->len; i++) {
         seqElem = (int) *(seqStart + i);
-        cm_set_prepend_2d (i, cm_get_cost(gap, seqElem, retMtx), retMtx);
-        cm_set_tail_2d    (cm_get_cost(seqElem, gap, retMtx), i, retMtx);
+        cm_set_prepend_2d (i, cm_get_cost(gap, seqElem, retCostMtx), retCostMtx);
+        cm_set_tail_2d    (cm_get_cost(seqElem, gap, retCostMtx), i, retCostMtx);
     } */
-//    return retMtx;
+//    return retCostMtx;
     if(DEBUG_COST_M) {
         printf("2d:\n");
-        cm_print_2d (retMtx);
+        cm_print_2d (retCostMtx);
     }
 }
 
