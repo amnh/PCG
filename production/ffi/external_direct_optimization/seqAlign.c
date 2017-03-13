@@ -78,6 +78,7 @@ int *_algn_max_matrix = NULL;
 DIR_MTX_ARROW_t *_algn_max_direction = NULL;
 #endif
 
+/*
 #if ( __GNUC__ && __MMX__ )
 static inline void
 algn_fill_row (int *curRow, const int *prevRow, const int *gap_row,
@@ -94,6 +95,7 @@ algn_fill_row (int *curRow, const int *prevRow, const int *gap_row,
         aa = prevRow[i - 1] + alg_row[i]; // aka tmp3
         bb += gap_row[i]; // aka tmp2
         cc = prevRow[i] + c; // aka tmp1
+*/
         /**
          *  The algorithm has not changed. Only the conditional branches been eliminated for
          *  better performance.
@@ -122,7 +124,7 @@ algn_fill_row (int *curRow, const int *prevRow, const int *gap_row,
          *  since this one generates exactly same results.
          */
 
-
+/*
         __asm__(
             "cmp %0, %1\n\t"    // compare aa with bb (the needed cmp flag remains even if registers are switched)
             "cmovg %0, %1\n\t"  // if bb > aa was flagged, put aa into bb's register. Now we know that bb is always the smallest value
@@ -354,77 +356,101 @@ algn_fill_row (int *curRow, const int *prevRow, const int *gap_row,
     }
     return;
 }
-#else /* __GNUC__ */
+#else // __GNUC__
+*/
 
 static inline void
-algn_fill_row (int *curRow,
+algn_fill_row (int *currRow,
                const int *prevRow,
                const int *gap_row,
-               const int *alg_row,
-               DIR_MTX_ARROW_t *dirMtx,
+               const int *align_row,
+               DIR_MTX_ARROW_t *dirVect,
                int c,
-               int st,
-               int end) {
-    int i, tmp1, tmp2, tmp3;
+               int startIndex,
+               int finalIndex) {
+    int i, upwardCost, leftwardCost, diagonalCost;
 
-    for (i = st; i <= end; i++) {
-        /* try align with substitution */
-        tmp1 = prevRow[i] + c;
-        tmp2 = curRow[i - 1] + gap_row[i];
-        tmp3 = prevRow[i - 1] + alg_row[i];
+
+    printf("Start Index 'startIndex': %d\n", startIndex);
+    printf("End   Index 'finalIndex': %d\n", finalIndex);
+    printf("Input Array 'prevRow': \n[ ");
+    for (i = startIndex; i <= finalIndex; i++) {
+        printf("%d, ", prevRow[i]);
+    }
+    printf("]\n");
+
+    printf("Input Array 'gap_row': \n[ ");
+    for (i = startIndex; i <= finalIndex; i++) {
+        printf("%d, ", gap_row[i]);
+    }
+    printf("]\n");
+
+    printf("Input Array 'align_row': \n[ ");
+    for (i = startIndex; i <= finalIndex; i++) {
+        printf("%d, ", align_row[i]);
+    }
+    printf("]\n");
+    fflush(stdout);
+    
+    
+    for (i = startIndex; i <= finalIndex; i++) {
+        // try align with substitution
+        upwardCost   = prevRow[i    ] + c;
+        leftwardCost = currRow[i - 1] + gap_row[i];
+        diagonalCost = prevRow[i - 1] + align_row[i];
         /* check whether insertion is better */
         /* This option will allow all the possible optimal paths to be stored
          * concurrently on the same backtrace matrix. This is important for the
          * sequences being able to choose the appropriate direction while
          * keeping the algorithm that assumes that seq2 is at most as long as seq1.
          * */
-        if (tmp1 < tmp3) {
-            if (tmp1 < tmp2) {
-                curRow[i] = tmp1;
-                dirMtx[i] = DELETE;
-            } else if (tmp2 < tmp1) {
-                curRow[i] = tmp2;
-                dirMtx[i] = INSERT;
+        if (upwardCost < diagonalCost) {
+            if (upwardCost < leftwardCost) {
+                currRow[i] = upwardCost;
+                dirVect[i] = DELETE;
+            } else if (leftwardCost < upwardCost) {
+                currRow[i] = leftwardCost;
+                dirVect[i] = INSERT;
             } else {
-                curRow[i] = tmp2;
-                dirMtx[i] = (INSERT | DELETE);
+                currRow[i] = leftwardCost;
+                dirVect[i] = INSERT | DELETE;
             }
-        } else if (tmp3 < tmp1) {
-            if (tmp3 < tmp2) {
-                curRow[i] = tmp3;
-                dirMtx[i] = ALIGN;
-            } else if (tmp2 < tmp3) {
-                curRow[i] = tmp2;
-                dirMtx[i] = INSERT;
+        } else if (diagonalCost < upwardCost) {
+            if (diagonalCost < leftwardCost) {
+                currRow[i] = diagonalCost;
+                dirVect[i] = ALIGN;
+            } else if (leftwardCost < diagonalCost) {
+                currRow[i] = leftwardCost;
+                dirVect[i] = INSERT;
             } else {
-                curRow[i] = tmp2;
-                dirMtx[i] = (ALIGN | INSERT);
+                currRow[i] = leftwardCost;
+                dirVect[i] = ALIGN | INSERT;
             }
-        } else { /* tmp3 == tmp1 */
-            if (tmp3 < tmp2) {
-                curRow[i] = tmp3;
-                dirMtx[i] = (ALIGN | DELETE);
-            } else if (tmp2 < tmp3) {
-                curRow[i] = tmp2;
-                dirMtx[i] = INSERT;
+        } else { // diagonalCost == upwardCost 
+            if (diagonalCost < leftwardCost) {
+                currRow[i] = diagonalCost;
+                dirVect[i] = ALIGN | DELETE;
+            } else if (leftwardCost < diagonalCost) {
+                currRow[i] = leftwardCost;
+                dirVect[i] = INSERT;
             } else {
-                curRow[i] = tmp2;
-                dirMtx[i] = (DELETE | INSERT | ALIGN);
+                currRow[i] = leftwardCost;
+                dirVect[i] = DELETE | INSERT | ALIGN;
             }
         }
         if (DEBUG_DIR_M) {
-            /* Print the alignment matrix */
-            if (INSERT & dirMtx[i])
+	    // Print the alignment matrix
+            if (INSERT & dirVect[i])
                 printf ("I");
-            if (DELETE & dirMtx[i])
+            if (DELETE & dirVect[i])
                 printf ("D");
-            if (ALIGN & dirMtx[i])
+            if (ALIGN & dirVect[i])
                 printf ("A");
             printf ("\t");
         }
         if (DEBUG_COST_M) {
-            /* Print the cost matrix */
-            printf ("%d\t", curRow[i]);
+	    // Print the cost matrix 
+            printf ("%d\t", currRow[i]);
             fflush (stdout);
         }
     }
@@ -432,9 +458,25 @@ algn_fill_row (int *curRow,
         printf ("\n");
         fflush (stdout);
     }
+
+    printf("Result Array 'currRow': \n[ ");
+    for (i = startIndex; i <= finalIndex; i++) {
+        printf("%d, ", currRow[i]);
+    }
+    printf("]\n");
+
+    printf("Result Array 'dirVect': \n[ ");
+    for (i = startIndex; i <= finalIndex; i++) {
+        printf("%d, ", currRow[i]);
+    }
+    printf("]\n\n");
+    fflush(stdout);
+    
     return;
 }
-#endif /* __GNUC__ */
+/*
+#endif // __GNUC__
+*/
 
 static inline void
 algn_fill_ukk_right_cell (int *curRow,
@@ -526,16 +568,16 @@ algn_fill_ukk_left_cell (int *curRow,
 }
 
 static inline void
-algn_fill_last_column (int *curRow, const int *prevRow, int tlc, int l, DIR_MTX_ARROW_t *dirMtx) {
-    int cst;
-    if (l > 0) {
-        cst = tlc + prevRow[l];
-        if (cst < curRow[l]) {
-            curRow[l] = cst;
-            dirMtx[l] = DELETE;
+algn_fill_last_column (int *curRow, const int *prevRow, int tlc, int lastColumnIndex, DIR_MTX_ARROW_t *dirMtx) {
+    int cost;
+    if (lastColumnIndex > 0) {
+        cost = prevRow[lastColumnIndex] + tlc; // Gotta add some tender loving care to the cost!
+        if (cost < curRow[lastColumnIndex]) {
+	    curRow[lastColumnIndex] = cost;
+            dirMtx[lastColumnIndex] = DELETE;
         }
-        else if (cst == curRow[l])
-            dirMtx[l] = dirMtx[l] | DELETE;
+        else if (cost == curRow[lastColumnIndex])
+	    dirMtx[lastColumnIndex] = dirMtx[lastColumnIndex] | DELETE;
     }
     return;
 }
@@ -548,7 +590,7 @@ algn_fill_full_row (int *curRow,
                     DIR_MTX_ARROW_t *dirMtx,
                     int c,
                     int tlc,
-                    int l) {
+                    int rowLength) {
     /* first entry is delete */
     curRow[0] = c + prevRow[0];
     dirMtx[0] = DELETE;
@@ -559,8 +601,8 @@ algn_fill_full_row (int *curRow,
     if (DEBUG_DIR_M) {
         printf ("D\t");
     }
-    algn_fill_row (curRow, prevRow, gap_row, alg_row, dirMtx, c, 1, l - 1);
-    algn_fill_last_column (curRow, prevRow, tlc, l - 1, dirMtx);
+    algn_fill_row (curRow, prevRow, gap_row, alg_row, dirMtx, c, 1, rowLength - 1);
+    algn_fill_last_column (curRow, prevRow, tlc, rowLength - 1, dirMtx);
     return;
 }
 
@@ -818,25 +860,29 @@ algn_fill_no_extending (const seq_p seq1,
     return (curRow);
 }
 
-/* Simiilar to the previous but when no barriers are set */
+/* Similar to the previous but when no barriers are set */
+
 static inline int
-algn_fill_plane (const seq_p seq1,
+algn_fill_plane (const seq_p longerSequence,
                  int *precalcMtx,
-                 int seq1_len,
-                 int seq2_len,
+                 int longerSequenceLength, //larger, horizontal dimension
+                 int lesserSequenceLength, //smaller,  vertical dimension
                  int *curRow,
                  DIR_MTX_ARROW_t *dirMtx,
                  const cost_matrices_2d_p c) {
+    printf("lesserSequenceLength: %d\n", lesserSequenceLength);
+    printf("longerSequenceLength: %d\n", longerSequenceLength);
+
     int i;
     const int *alg_row;
     int const_val, const_val_tail, *newNWMtx, *tmp;
     const int *gap_row, *first_gap_row;
     int gapcode;
     /* A precalculated cost of a gap aligned with each base in the array */
-    gapcode = cm_get_gap_char_2d (c);
-    gap_row = cm_get_precal_row (precalcMtx, gapcode, seq2_len);
-    first_gap_row = cm_get_precal_row (precalcMtx, 0, seq2_len);
-    newNWMtx = curRow;
+    gapcode       = cm_get_gap_char_2d (c);
+    gap_row       = cm_get_precal_row (precalcMtx, gapcode, lesserSequenceLength);
+    first_gap_row = cm_get_precal_row (precalcMtx,       0, lesserSequenceLength);
+    newNWMtx  = curRow;
     curRow[0] = 0;
     dirMtx[0] = ALIGN;
     if (DEBUG_COST_M) {
@@ -845,8 +891,9 @@ algn_fill_plane (const seq_p seq1,
     if (DEBUG_DIR_M) {
         printf ("A\t");
     }
+
     /* We fill the first row to start with */
-    for (i = 1; i < seq2_len; i++) {
+    for (i = 1; i < lesserSequenceLength; i++) {
         curRow[i] = curRow[i - 1] + first_gap_row[i];
         dirMtx[i] = INSERT;
         if (DEBUG_COST_M) {
@@ -859,21 +906,39 @@ algn_fill_plane (const seq_p seq1,
     if (DEBUG_DIR_M || DEBUG_COST_M) {
         printf ("\n");
     }
-    curRow += seq2_len;
+    
+    int j;
+    printf("Cost Matrix Row [0]: [", i);
+    for (j = 0; j < lesserSequenceLength; j++) {
+        printf("%d, ", curRow[j]);
+    }
+    printf("]\n");
+
+    curRow += lesserSequenceLength;
+
+
     /* Now we fill the rest of the matrix */
-    for (i = 1, dirMtx += seq2_len; i < seq1_len; i++, dirMtx += seq2_len) {
-        const_val_tail = (cm_get_tail_cost(c))[seq_get_element(seq1, i)]; // get tail cost in c at pointer
-                                                                // at position i in seq1
-        const_val = cm_calc_cost (c->cost, seq_get_element(seq1, i), c->gap_char, c->lcm);
-        alg_row = cm_get_precal_row (precalcMtx, seq_get_element (seq1, i), seq2_len);
-        algn_fill_full_row (curRow, newNWMtx, gap_row, alg_row, dirMtx, const_val,
-                            const_val_tail, seq2_len);
+    for (i = 1, dirMtx += lesserSequenceLength; i < longerSequenceLength; i++, dirMtx += lesserSequenceLength) {
+        const_val_tail = (cm_get_tail_cost(c))[seq_get_element(longerSequence, i)]; // get tail cost in c at pointer
+                                                                                    // at position i in seq1
+	printf("const_val_tail: %d\n",const_val_tail);
+        const_val = cm_calc_cost (c->cost, seq_get_element(longerSequence, i), c->gap_char, c->lcm);
+        alg_row = cm_get_precal_row (precalcMtx, seq_get_element (longerSequence, i), lesserSequenceLength);
+        algn_fill_full_row (curRow, newNWMtx, gap_row, alg_row, dirMtx, const_val, const_val_tail, lesserSequenceLength);
         /* We swap curRow and newNWMtx for the next round */
+
+	int j;
+	printf("Cost Matrix Row [%d]: [", i);
+	for (j = 0; j < lesserSequenceLength; j++) {
+	  printf("%d, ", curRow[j]);
+	}
+	printf("]\n");
+	
         tmp      = curRow;
-        curRow    = newNWMtx;
+        curRow   = newNWMtx;
         newNWMtx = tmp;
     }
-    return (newNWMtx[seq2_len - 1]);
+    return (newNWMtx[lesserSequenceLength - 1]);
 }
 
 static inline int *
@@ -885,8 +950,8 @@ choose_other (int *compare, int *a, int *b) {
 static inline int
 algn_fill_plane_2 (const seq_p seq1,
                    int *precalcMtx,
-                   int seq1_len,
-                   int seq2_len,
+                   int seq1_len, //longer
+                   int seq2_len, //lesser
                    int *curRow,
                    DIR_MTX_ARROW_t *dirMtx,
                    const cost_matrices_2d_p c,
@@ -894,7 +959,7 @@ algn_fill_plane_2 (const seq_p seq1,
                    int height,
                    int dwidth_height) {
     // printf("algn_fill_plane_2 %d", iteration);
-    fflush(stdout);
+    //fflush(stdout);
     int *next_row;
     int *next_prevRow;
     int *a, *b;
@@ -3407,10 +3472,10 @@ algn_nw_limit_2d (const seq_p shorterSeq, const seq_p longerSeq, const cost_matr
     DIR_MTX_ARROW_t  *dirMtx;
     slongerSeq     = seq_get_seq_begin (longerSeq);
     sshorterSeq    = seq_get_seq_begin (shorterSeq);
-    curRow         = mat_get_2d_nwMtx (nw_mtxs);
+    curRow         = mat_get_2d_nwMtx  (nw_mtxs);
     dirMtx         = mat_get_2d_direct (nw_mtxs);
 
-    int *cost;           // The transformation cost matrix.
+    int  *cost;          // The transformation cost matrix.
     SEQT *median;        /** The matrix of possible medians between elements in the
                           *  alphabet. The best possible medians according to the cost
                           *  matrix.
