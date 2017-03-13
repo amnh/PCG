@@ -107,11 +107,11 @@ int main() {
     first  = &firstVal;
     second = &secondVal;
     third  = &thirdVal;
-    result = packedCharOr(first, second, alphabetSize);
+    result = packedCharOr( first, second, alphabetSize, 1 );
 
     printf("%" PRIu64 "\n", *result);
     //free(result);
-    result2 = packedCharOr(result, third, alphabetSize);
+    result2 = packedCharOr( result, third, alphabetSize, 1 );
     printf("%" PRIu64 "\n", *result2);
 
     /****** This next to test Yu Xiang's code, once you can. ******/

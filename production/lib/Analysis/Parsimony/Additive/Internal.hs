@@ -56,8 +56,9 @@ additivePreOrder childDecoration []                      = finalDecoration      
     where
         interDecoration = computeFinalDiscrete (childDecoration ^. preliminaryInterval) childDecoration
         finalDecoration = interDecoration & finalInterval .~ childDecoration ^. preliminaryInterval
+
 additivePreOrder childDecoration [(_, parentDecoration)] =
-    if childDecoration ^. isLeaf
+        if   childDecoration ^. isLeaf
         then childDecoration & finalInterval .~ childDecoration ^. preliminaryInterval          -- leaf
         else determineFinalState childDecoration parentDecoration                               -- internal node
 
@@ -134,7 +135,7 @@ determineFinalState childDecoration parentDecoration = finalDecoration
         (myMin, myMax)
             | curIsSuperset = ancestor                                                              -- Additive rule 1
             | leftUnionright `intersects` ancestor  =                                               -- Additive rule 2
-                if chi `intersects` preliminary
+                if   chi `intersects` preliminary
                 then chi
                 else largestClosed (closestState preliminary chi) chi
             | otherwise = (min prelimClosestA childsCloseestA, max prelimClosestA childsCloseestA)  -- Additive rule 3

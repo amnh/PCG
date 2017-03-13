@@ -60,9 +60,7 @@ int aligner( uint64_t *seq1
     path[1] = *initAlignment(0, 0, 0, 0, 0, 0, 1, INIT_LENGTH);
     path[2] = *initAlignment(0, 0, 0, 0, 0, 0, 1, INIT_LENGTH);
 
-
-
-    // original metric
+    /************************************************ original metric *****************************************************/
     // a*(\sum z_i)^2 + b*(\sum z_i) + c*(\sum z_i^2)
     // WLOG let a = b = c = 1
     //   (\sum z_i)^2 +   (\sum z_i) +   (\sum z_i^2)
@@ -78,8 +76,6 @@ int aligner( uint64_t *seq1
     pathTempFirst[0] = *initAlignment(0, 0, 0, 0, 0, 0, 1, INIT_LENGTH);
     pathTempFirst[1] = *initAlignment(0, 0, 0, 0, 0, 0, 1, INIT_LENGTH);
     pathTempFirst[2] = *initAlignment(0, 0, 0, 0, 0, 0, 1, INIT_LENGTH);
-
-
 
     alignment_t pathTempSecond[3];
     pathTempSecond[0] = *initAlignment(0, 0, 0, 0, 0, 0, 1, INIT_LENGTH);
@@ -138,8 +134,8 @@ int aligner( uint64_t *seq1
 
 
     //*******************************  Initialization first level generation for both trees ****************************//
-
     // under \sum z_i measure
+
     int aToB0,    // following will hold getCost values, so we don't have to call getCost() over and over
         aToGap0,  // 0 values get cost using sequence at 0 index in array of structs, etc.
         gapToB0,
@@ -171,11 +167,9 @@ int aligner( uint64_t *seq1
     pathFirst[2].partialAlign[0]             = GAP;
     pathFirst[2].partialAlign[BUFFER_OFFSET] = seqB[0];
 
-
-
     // !! the two weights (wtSub, wtInsertDel) are the same as in pathFirst
-    //!! wtSub=getCost(seqA[0],seqB[0]);
-    //!! wtInsertDel=getCost(seqa[0], '-');
+    // !! wtSub=getCost(seqA[0],seqB[0]);
+    // !! wtInsertDel=getCost(seqa[0], '-');
 
     //  under \sum z_i^2 measure
 
@@ -189,8 +183,6 @@ int aligner( uint64_t *seq1
     pathSecond[1] = *initAlignment(aToGap0 * aToGap0, aToGap0 + 2 * aToGap0 * aToGap0, 1, 1, 1, 0, 2, INIT_LENGTH);
     pathSecond[2] = *initAlignment(gapToB0 * gapToB0, gapToB0 + 2 * gapToB0 * gapToB0, 1, 1, 0, 1, 2, INIT_LENGTH);
 
-
-
     pathSecond[0].partialAlign[0]             = seqA[0];
     pathSecond[0].partialAlign[BUFFER_OFFSET] = seqB[0];
 
@@ -200,11 +192,11 @@ int aligner( uint64_t *seq1
     pathSecond[2].partialAlign[0]             = GAP;
     pathSecond[2].partialAlign[BUFFER_OFFSET] = seqB[0];
 
+
     // printf("3rd   a: %2llu b: %2llu\n", seqA[0], seqB[0]);
     aToB0   = getCost(seqA[0], seqB[0], tcm, alphSize);
     aToGap0 = getCost(seqA[0], GAP,     tcm, alphSize);
     gapToB0 = getCost(GAP,     seqB[0], tcm, alphSize);
-
 
     int arrayInitial[2][6] = {
         { 10, 20, 30, 11, 21, 31 },
@@ -219,6 +211,7 @@ int aligner( uint64_t *seq1
     // printf("arrayInitial[0][0]: %2d\n", arrayInitial[0][0]);
     // printCostBuffer(arrayInitial[0], 6, "arrayInitial[0]");
     // printCostBuffer(arrayInitial[1], 6, "arrayInitial[1]");
+
 
     // Bubble sort, keeping values in arrayInitial[0] in same relative order as arrayInitial[1]
     for (c = 0; c < 5; c++) {
@@ -269,38 +262,20 @@ int aligner( uint64_t *seq1
     }
 
     for (i = 0; i < 3; i++) {
-        pathFirst[i].partialWt     = pathFirstInfinite.partialWt;
-        pathFirst[i].partialTrueWt = pathFirstInfinite.partialTrueWt;
-        pathFirst[i].posStringA    = pathFirstInfinite.posStringA;
-        pathFirst[i].posStringB    = pathFirstInfinite.posStringB;
-        pathFirst[i].posTrueA      = pathFirstInfinite.posTrueA;
-        pathFirst[i].posTrueB      = pathFirstInfinite.posTrueB;
-        pathFirst[i].flagWhichTree = pathFirstInfinite.flagWhichTree;
-        memcpy(pathFirst[i].partialAlign, pathFirstInfinite.partialAlign, sizeof(uint64_t) * INIT_LENGTH);
-
-        pathSecond[i].partialWt     = pathSecondInfinite.partialWt;
-        pathSecond[i].partialTrueWt = pathSecondInfinite.partialTrueWt;
-        pathSecond[i].posStringA    = pathSecondInfinite.posStringA;
-        pathSecond[i].posStringB    = pathSecondInfinite.posStringB;
-        pathSecond[i].posTrueA      = pathSecondInfinite.posTrueA;
-        pathSecond[i].posTrueB      = pathSecondInfinite.posTrueB;
-        pathSecond[i].flagWhichTree = pathSecondInfinite.flagWhichTree;
-        memcpy(pathSecond[i].partialAlign, pathSecondInfinite.partialAlign, sizeof(uint64_t) * INIT_LENGTH);
+        copyAligmentStruct( &pathFirstInfinite,  0, pathFirst,  i, INIT_LENGTH );
+        copyAligmentStruct( &pathSecondInfinite, 0, pathSecond, i, INIT_LENGTH );
     }
-
 
     for (i = 0; i < 3; i++) {              // assign three candidate nodes to the two trees and other nodes are infinite nodes
         if (path[i].flagWhichTree == 1) {
-            copyAligmentStruct(path, i, pathFirst, iFirst, INIT_LENGTH);
+            copyAligmentStruct( path, i, pathFirst, iFirst, INIT_LENGTH );
             iFirst++;
+
         } else if (path[i].flagWhichTree == 2) {
-            copyAligmentStruct(path, i, pathSecond, iSecond, INIT_LENGTH);
+            copyAligmentStruct( path, i, pathSecond, iSecond, INIT_LENGTH );
             iSecond++;
         }
     }
-
-
-
 
     //test function
 
@@ -315,8 +290,6 @@ int aligner( uint64_t *seq1
 
         //*************************************** GROW TWO TREES BASED ON TWO METRICS  ******************************************************
 
-
-
         // grow tree according to first order metric: first tree
 
         for (i = 0; i < 3; i++) {
@@ -326,7 +299,7 @@ int aligner( uint64_t *seq1
                 iMatchFirst[i] = 0;
             } else if (    seqA[pathFirst[i].posTrueA] != seqB[pathFirst[i].posTrueB]
                         && pathFirst[i].posTrueA + 1 <= lengthSeqA
-                        && pathFirst[i].posTrueB + 1<= lengthSeqB) {
+                        && pathFirst[i].posTrueB + 1 <= lengthSeqB) {
                 iMatchFirst[i] = 1;
             } else {
                 iMatchFirst[i] = 1000;
@@ -456,16 +429,15 @@ int aligner( uint64_t *seq1
 
 
         for (j = 0; j < 3; j++) {        // make a copy of previous paths, this is crutial since we need to keep track of the path
-            copyAligmentStruct(pathFirst, j, pathTempFirst, j, INIT_LENGTH);
+            copyAligmentStruct( pathFirst, j, pathTempFirst, j, INIT_LENGTH );
         }
 
 
         for (i = 0; i < 3; i++) {
 
             // TODO: figure out what's going on here and fix dereferencing
-            indicatorFirst = *( arrayFirst[0] + i);           // decide which operation to make
-
-            kFirst         = *( arrayFirst[0] + i) % 10;      // decide which path it belongs to
+            indicatorFirst = arrayFirst[0][i];           // decide which operation to make
+            kFirst         = indicatorFirst % 10;        // decide which path it belongs to
 
             copyAligmentStruct(pathTempFirst, kFirst, pathFirst, i, INIT_LENGTH);
 
@@ -613,8 +585,8 @@ int aligner( uint64_t *seq1
 
 
             for (i = 0; i < 3; i++){
-                indicatorSecond = *( * (arraySecond + 0) + i);   // decide which operation to make
-                kSecond = *( * (arraySecond + 0) + i) % 10;      // decide which path it belongs to
+                indicatorSecond = arraySecond[0][i];     // decide which operation to make
+                kSecond         = indicatorSecond % 10;  // decide which path it belongs to
 
                 copyAligmentStruct(pathTempSecond, kSecond, pathSecond, i, INIT_LENGTH);
 
@@ -773,8 +745,8 @@ int aligner( uint64_t *seq1
 
         for (i = 0; i < 3; i++) {
 
-            indicatorMix = *( *(arrayMix + 0) + i);   // decide which operation to make
-            kMix = *( *(arrayMix + 0) + i) % 10;      // decide which path it belongs to
+            indicatorMix = arrayMix[0][i];     // decide which operation to make
+            kMix         = indicatorMix % 10;  // decide which path it belongs to
 
             if (kMix == 0 && 9 < indicatorMix && indicatorMix < 12) {
                 copyAligmentStruct(pathFirst, 0, path, i, INIT_LENGTH);

@@ -14,47 +14,50 @@
 #ifndef _COSTMATRIX_H
 #define _COSTMATRIX_H
 
+#define DEBUG 0
+
 // #include <cstdint>
 // #include <pair>
 #include <climits>
-#include <stdlib.h>
-#include <string> // TODO: remember to delete this
+#include <cstdlib>
 #include <unordered_map>
 
-typedef void* costMatrix_t;
-
 #ifdef __cplusplus
-#define EXTERNC extern "C"
-#else
-#define EXTERNC
+extern "C" {
 #endif
 
-EXTERNC {
-    #include "dynamicCharacterOperations.h"
-}
-EXTERNC costMatrix_t matrixInit(size_t alphSize, int* tcm);
-EXTERNC void matrixDestroy(costMatrix_t mytype);
-EXTERNC void getCost(costMatrix_t self, int param);
+#include "dynamicCharacterOperations.h"
 
-#undef EXTERNC
+/** Next three fns defined here to use on C side. */
+costMatrix_p construct_CostMatrix_C (size_t alphSize, int* tcm);
+void destruct_CostMatrix_C (costMatrix_p mytype);
+int call_getSetCost_C (costMatrix_p untyped_self, dcElement_t* left, dcElement_t* right, dcElement_t* retMedian);
+    // extern "C" costMatrix_p get_CostMatrixPtr_C(costMatrix_p untyped_self);
+
+#ifdef __cplusplus
+}
+#endif
 
 // #include "CostMedPair.h"
-typedef std::pair<dcElement_t, dcElement_t> keys_t;
-typedef std::pair<int, packedChar*> costMedian_t;
-typedef std::pair<keys_t, costMedian_t> mapAccessPair_t;
+typedef std::pair<dcElement_t, dcElement_t>  keys_t;
+typedef std::pair<int,         packedChar*>  costMedian_t;
+typedef std::pair<keys_t,      costMedian_t> mapAccessPair_t;
+
+typedef void* costMatrix_p;
+
 
 
 /** Allocate room for a costMedian_t. Assumes alphabetSize is already initialized. */
 costMedian_t* allocCostMedian_t (size_t alphabetSize);
 
 /** dealloc costMedian_t. */
-void freeCostMedian_t (costMedian_t *toFree);
+void freeCostMedian_t (costMedian_t* toFree);
 
 /** Allocate room for a keys_t. */
 keys_t* allocKeys_t (size_t alphSize);
 
 /** dealloc keys_t. Calls various other free fns. */
-void freeKeys_t (keys_t *toFree);
+void freeKeys_t (const keys_t* toFree);
 
 /** Allocate space for Pair<keys_t, costMedian_t>, calling allocators for both types. */
 mapAccessPair_t* allocateMapAccessPair (size_t alphSize);
@@ -77,8 +80,10 @@ struct KeyHash {
         std::size_t right_seed = 2718281828; // E  used as arbitrarily random seed
 
         std::hash<uint64_t> hasher;
-        size_t elemArrWidth = lhs.alphSize / INT_WIDTH + (lhs.alphSize % INT_WIDTH ? 1 : 0);
-        for (size_t i = 0; i < elemArrWidth; i++) {
+        size_t elemArrCount = dcElemSize(lhs.alphSize);
+        //printf("alphabetSize: %d\n", lhs.alphSize);
+        //printf("elemArrCount: %d\n", elemArrCount);
+        for (size_t i = 0; i < elemArrCount; i++) {
             left_seed  ^= hasher(lhs.element[i]) + 0x9e3779b9 + (left_seed  << 6) + (left_seed  >> 2);
             right_seed ^= hasher(rhs.element[i]) + 0x9e3779b9 + (right_seed << 6) + (right_seed >> 2);
         }
@@ -100,7 +105,15 @@ struct KeyEqual {
     // Return true if every `uint64_t` in lhs->element and rhs->element is equal, else false.
     bool operator()(const keys_t& lhs, const keys_t& rhs) const
     {
-        size_t elemArrWidth = lhs.first.alphSize / INT_WIDTH + ((lhs.first.alphSize % INT_WIDTH) ? 1 : 0); // assume that alphabet sizes for all four dcElements are the same
+      // Assert that all key components share the same alphSize value
+      if (   lhs.first.alphSize  != rhs.first.alphSize
+          || lhs.first.alphSize  != lhs.second.alphSize
+          || lhs.second.alphSize != rhs.second.alphSize) {
+          return false;
+      }
+
+      //Assert that the left key elements match the right key elements
+      size_t elemArrWidth = dcElemSize(lhs.first.alphSize);
         // printf("operator equal ()\n");
         // printPackedChar(lhs.first.element, 1, lhs.first.alphSize);
         // printPackedChar(rhs.first.element, 1, rhs.first.alphSize);
@@ -131,21 +144,23 @@ class CostMatrix
 
         CostMatrix(size_t alphSize, int* tcm);
 
-        ~CostMatrix();  // TODO: actually write this.
+        ~CostMatrix();
 
-        /** This is the only way to interact with this class. Acts as both a setter
-         *  and getter, mutating myMap.
+        /** Getter only for cost. Necessary for testing, to insure that particular
+         *  key pair has, in fact, already been inserted into lookup table.
+         */
+        int getCostMedian(dcElement_t* left, dcElement_t* right, dcElement_t* retMedian);
+
+        /** Acts as both a setter and getter, mutating myMap.
          *
          *  Receives two dcElements and computes the transformation cost as well as
          *  the median for the two. Puts the median and alphabet size into retMedian,
          *  which must therefore by necessity be allocated elsewhere.
          *
-         *  This fn will interact with C, so has to return cost primitive int,
-         *  and median will be returned by reference. At least that's my naive
-         *  assumption. Maybe after I work on the C wrapper I'll figure out how to
-         *  have only a single `keys_t` argument and return a `costMedian_t`.
+         *  This functin allocates _if necessary_. So freeing inputs after a call will not
+         *  cause invalid reads from the cost matrix.
          */
-        int getSetCost(dcElement_t* left, dcElement_t* right, dcElement_t* retMedian);
+        int getSetCostMedian(dcElement_t* left, dcElement_t* right, dcElement_t* retMedian);
 
     private:
         std::unordered_map <keys_t, costMedian_t, KeyHash, KeyEqual> myMatrix;
@@ -158,11 +173,14 @@ class CostMatrix
         /** Takes in a `keys_t` and a `costMedian_t` and updates myMap to store the new values,
          *  with @key as a key, and @median as the value.
          */
-        void setValue(keys_t key, costMedian_t* median);
+        void setValue(keys_t* key, costMedian_t* median);
 
         /** Takes in a pair of keys_t (each of which is a single `dcElement`) and computes their lowest-cost median. */
         costMedian_t* computeCostMedian(keys_t key);
 
+        costMedian_t* computeCostMedianFitchy(keys_t keys);
+
+        // TODO: This isn't currently in use. Can I delete it?
         // TODO: make sure this comment is correct
         /** Find distance between an ambiguous nucleotide and an unambiguous ambElem. Return that value and the median.
          *  @param ambElem is ambiguous input.
@@ -175,7 +193,7 @@ class CostMatrix
          *
          *  Nota bene: Requires symmetric, if not metric, matrix. TODO: Is this true? If so fix it?
          */
-        costMedian_t* findDistance (keys_t &key, int *tcm);
+        int findDistance (keys_t* searchKey, dcElement_t* ambElem);
 
         /** Takes in an initial TCM, which is actually just a row-major array, creates hash table of costs
          *  where cost is least cost between two elements, and medians, where median is union of characters.
@@ -183,7 +201,7 @@ class CostMatrix
          *  Nota bene:
          *  Can only be called once this.alphabetSize has been set.
          */
-        void setUpInitialMatrix (int *tcm);
+        void setUpInitialMatrix (int* tcm);
 
 };
 

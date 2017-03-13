@@ -17,7 +17,7 @@ external_c_alignment : externalCAlignment.hsc $(necessary_c_files) $(necessary_h
 
 ######### Test only c functions that allocate and initialize various
 ######### internal structs. c_alignment_interface.c relies on these.
-test_initialization : initialization_driver.c $(necessary_c_files) $(necessary_h_files)\
+test_initialization : initialization_driver.c $(necessary_c_files) $(necessary_h_files)
 	rm -f *.o
 	gcc -g -c $(necessary_c_files)
 	gcc -o initialization_driver -g initialization_driver.c $(object_files)
