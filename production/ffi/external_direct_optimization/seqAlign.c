@@ -686,7 +686,7 @@ algn_fill_extending_right (const seq_p seq1,
     while (i < end_row) {
         /** Invariants block */
         cur_seq1 = seq1->seq_begin[i];
-        const_val = cm_calc_cost (c->cost, cur_seq1, c->gap_char, c->lcm);
+        const_val = cm_calc_cost (c->cost, cur_seq1, c->gap_char, c->costMtxDimension);
         /* This is conceptually what we do in the next line
         align_row = cm_get_precal_row (precalcMtx, cur_seq1, seq2_len);
         */
@@ -734,7 +734,7 @@ algn_fill_extending_left_right (const seq_p seq1,
     while (i < end_row) {
         /** Invariants block */
         cur_seq1 = seq1->seq_begin[i];
-        const_val = cm_calc_cost (c->cost, cur_seq1, c->gap_char, c->lcm);
+        const_val = cm_calc_cost (c->cost, cur_seq1, c->gap_char, c->costMtxDimension);
         /* Conceptually,
            align_row = cm_get_precal_row (precalcMtx, cur_seq1, seq2_len);
         */
@@ -783,7 +783,7 @@ algn_fill_extending_left (const seq_p seq1,
     while (i < end_row) {
         /** Invariants block */
         cur_seq1 = seq1->seq_begin[i];
-        const_val = cm_calc_cost (c->cost, cur_seq1, c->gap_char, c->lcm);
+        const_val = cm_calc_cost (c->cost, cur_seq1, c->gap_char, c->costMtxDimension);
         const_val_tail = (cm_get_tail_cost (c))[cur_seq1];
         /* Conceptually,
            align_row = cm_get_precal_row (precalcMtx, cur_seq1, seq2_len);
@@ -841,7 +841,7 @@ algn_fill_no_extending (const seq_p seq1,
     while (i < end_row) {
         /** Invariants block */
         cur_seq1 = seq1->seq_begin[i];
-        const_val = cm_calc_cost (c->cost, cur_seq1, c->gap_char, c->lcm);
+        const_val = cm_calc_cost (c->cost, cur_seq1, c->gap_char, c->costMtxDimension);
         const_val_tail = (cm_get_tail_cost (c))[cur_seq1];
         /* Conceptually,
            align_row = cm_get_precal_row (precalcMtx, cur_seq1, seq2_len);
@@ -930,12 +930,12 @@ algn_fill_plane (const seq_p longerSequence,
     for (i = 1, dirMtx += lesserSequenceLength; i < longerSequenceLength; i++, dirMtx += lesserSequenceLength) {
         curSeq1_elem   = seq_get_element(longerSequence, i);
         const_val_tail = (cm_get_tail_cost(costMtx))[curSeq1_elem]; // get tail cost in c at pointer
-                                                                   // at position i in seq1
+                                                                    // at position i in seq1
 	printf("const_val_tail: %d\n",const_val_tail);
         const_val = cm_calc_cost ( costMtx->cost
                                  , seq_get_element(longerSequence, i)
                                  , costMtx->gap_char
-                                 , costMtx->lcm);
+                                 , costMtx->costMtxDimension);
         align_row = cm_get_precal_row ( precalcMtx
    				      , seq_get_element (longerSequence, i)
                                       , lesserSequenceLength);
@@ -1620,8 +1620,8 @@ algn_fill_extending_right_affine (const seq_p seq1,
         assert (i > 0);
         prev_seq1 = seq1->seq_begin[i - 1];
         cur_seq1 = seq1->seq_begin[i];
-        const_val = cm_calc_cost (c->cost, cur_seq1, c->gap_char, c->lcm);
-        prev_const_val = cm_calc_cost (c->cost, prev_seq1, c->gap_char, c->lcm);
+        const_val = cm_calc_cost (c->cost, cur_seq1, c->gap_char, c->costMtxDimension);
+        prev_const_val = cm_calc_cost (c->cost, prev_seq1, c->gap_char, c->costMtxDimension);
         /* This is conceptually what we do in the next line
          * align_row = cm_get_precal_row (precalcMtx, cur_seq1, seq2_len);
          */
@@ -1681,8 +1681,8 @@ algn_fill_extending_left_right_affine (const seq_p seq1,
         assert (i > 0);
         prev_seq1 = seq1->seq_begin[i - 1];
         cur_seq1 = seq1->seq_begin[i];
-        const_val = cm_calc_cost (c->cost, cur_seq1, c->gap_char, c->lcm);
-        prev_const_val = cm_calc_cost (c->cost, prev_seq1, c->gap_char, c->lcm);
+        const_val = cm_calc_cost (c->cost, cur_seq1, c->gap_char, c->costMtxDimension);
+        prev_const_val = cm_calc_cost (c->cost, prev_seq1, c->gap_char, c->costMtxDimension);
         /* Conceptually,
          * align_row = cm_get_precal_row (precalcMtx, cur_seq1, seq2_len);
          */
@@ -1744,8 +1744,8 @@ algn_fill_extending_left_affine (const seq_p seq1,
         assert (i > 0);
         prev_seq1 = seq1->seq_begin[i - 1];
         cur_seq1 = seq1->seq_begin[i];
-        prev_const_val = cm_calc_cost (c->cost, prev_seq1, c->gap_char, c->lcm);
-        const_val = cm_calc_cost (c->cost, cur_seq1, c->gap_char, c->lcm);
+        prev_const_val = cm_calc_cost (c->cost, prev_seq1, c->gap_char, c->costMtxDimension);
+        const_val = cm_calc_cost (c->cost, cur_seq1, c->gap_char, c->costMtxDimension);
         const_val_tail = (cm_get_tail_cost (c))[cur_seq1];
         prev_const_val_tail = (cm_get_tail_cost (c))[prev_seq1];
         /* Conceptually,
@@ -1804,8 +1804,8 @@ algn_fill_no_extending_affine (const seq_p seq1, int *precalcMtx, int seq1_len,
         assert (i > 0);
         prev_seq1 = seq1->seq_begin[i - 1];
         cur_seq1 = seq1->seq_begin[i];
-        const_val = cm_calc_cost (c->cost, cur_seq1, c->gap_char, c->lcm);
-        prev_const_val = cm_calc_cost (c->cost, prev_seq1, c->gap_char, c->lcm);
+        const_val = cm_calc_cost (c->cost, cur_seq1, c->gap_char, c->costMtxDimension);
+        prev_const_val = cm_calc_cost (c->cost, prev_seq1, c->gap_char, c->costMtxDimension);
         const_val_tail = (cm_get_tail_cost (c))[cur_seq1];
         prev_const_val_tail = (cm_get_tail_cost (c))[prev_seq1];
         /* Conceptually,
@@ -1879,9 +1879,9 @@ algn_fill_plane_affine (const seq_p seq1, int *precalcMtx, int seq1_len,
     /* Now we fill the rest of the matrix */
     for (i = 1, dirMtx += seq2_len; i < seq1_len; i++, dirMtx += seq2_len) {
         prev_const_val_tail = (cm_get_tail_cost (c))[seq_get_element(seq1, i - 1)];
-        prev_const_val = cm_calc_cost (c->cost, seq_get_element(seq1, i - 1), c->gap_char, c->lcm);
+        prev_const_val = cm_calc_cost (c->cost, seq_get_element(seq1, i - 1), c->gap_char, c->costMtxDimension);
         const_val_tail = (cm_get_tail_cost (c))[seq_get_element(seq1, i)];
-        const_val = cm_calc_cost (c->cost, seq_get_element(seq1, i), c->gap_char, c->lcm);
+        const_val = cm_calc_cost (c->cost, seq_get_element(seq1, i), c->gap_char, c->costMtxDimension);
         align_row = cm_get_precal_row (precalcMtx, seq_get_element (seq1, i), seq2_len);
         algn_fill_full_row_affine (curRow, newNWMtx, gap_row, align_row, dirMtx, const_val,
                                 prev_const_val, const_val_tail, prev_const_val_tail, seq2_len,
@@ -1939,7 +1939,7 @@ algn_choose_affine_other (int *next_row, int *curRow, int **next_dncurRow,
 
 static inline int
 HAS_GAP_EXTENSION (SEQT base, const cost_matrices_2d_p c) {
-    return (cm_calc_cost(c->cost, base, c->gap_char, c->lcm));
+    return (cm_calc_cost(c->cost, base, c->gap_char, c->costMtxDimension));
 }
 
 static inline int
@@ -2086,7 +2086,7 @@ FILL_CLOSE_BLOCK_DIAGONAL_NOBT(SEQT si_base, SEQT sj_base, SEQT si_no_gap,
     int algn, from_vertical, from_horizontal, from_diagonal;
     diag = c[sj_no_gap];
     /*
-    diag = cm_calc_cost(c->cost, si_no_gap, sj_no_gap, c->lcm);
+    diag = cm_calc_cost(c->cost, si_no_gap, sj_no_gap, c->costMtxDimension);
     */
     extra_gap_opening = (sj_gap_opening < si_gap_opening)?si_gap_opening:sj_gap_opening;
     if (DEBUG_AFFINE) {
@@ -2125,7 +2125,7 @@ FILL_CLOSE_BLOCK_DIAGONAL(SEQT si_base, SEQT sj_base, SEQT si_no_gap, SEQT sj_no
     DIR_MTX_ARROW_t mask;
     diag = c[sj_no_gap];
     /*
-        cm_calc_cost(c->cost, si_no_gap, sj_no_gap, c->lcm);
+        cm_calc_cost(c->cost, si_no_gap, sj_no_gap, c->costMtxDimension);
         */
     extra_gap_opening =
         (sj_gap_opening < si_gap_opening)?si_gap_opening:sj_gap_opening;
@@ -2667,7 +2667,7 @@ algn_fill_plane_2d_affine_nobt (const seq_p shortSeq,
         extend_vertical      [start_pos - 1] = r;
         longSeqElem                          = seq_beginj[start_pos - 1];
         close_block_diagonal [start_pos - 1] = VERY_LARGE_NUMBER;
-        shortSeq_no_gap_vector = costMtx->cost + (shortSeq_no_gap << costMtx->lcm);
+        shortSeq_no_gap_vector = costMtx->cost + (shortSeq_no_gap << costMtx->costMtxDimension);
 
         for (j=start_pos; j <= end_pos; j++) {
             longSeqPrevElem       = longSeqElem;
@@ -2846,7 +2846,7 @@ algn_fill_plane_2d_affine (const seq_p shortSeq,
         direction_matrix     [start_pos - 1] = DO_VERTICAL | END_VERTICAL;
         longSeqElem                          = seq_beginj[start_pos - 1];
         close_block_diagonal [start_pos - 1] = VERY_LARGE_NUMBER;
-        shortSeq_no_gap_vector               = c->cost + (shortSeq_no_gap << c->lcm);
+        shortSeq_no_gap_vector               = c->cost + (shortSeq_no_gap << c->costMtxDimension);
 
         for (j = start_pos; j <= end_pos; j++) {
             longSeqPrevElem       = longSeqElem;
@@ -3657,7 +3657,7 @@ algn_nw_2d ( const seq_p shorterSeq
         seq_print(longerSeq);
         seq_print(shorterSeq);
         printf("second sequence\n");
-        print_matrices(nw_mtxs, costMtx->lcm);
+        print_matrices(nw_mtxs, costMtx->costMtxDimension);
     }
 
 
@@ -3697,7 +3697,7 @@ algn_nw_3d ( const seq_p seq1
                    , seq_get_len (seq2)
                    , seq_get_len (seq3)
                    , seq_get_len (seq1)
-                   , costMtx->lcm);
+                   , costMtx->costMtxDimension);
 
     costMtxVals = mat_get_3d_matrix (nwMtxs);
     dirMtx      = mat_get_3d_direct (nwMtxs);
@@ -3779,7 +3779,7 @@ algn_calculate_from_2_aligned (seq_p seq1, seq_p seq2, cost_matrices_2d_p c, int
                 else gap_row = 0;
             }
         }
-        res += (cm_calc_cost (matrix, seq_get_element (seq1, i), seq_get_element (seq2, i), c->lcm));
+        res += (cm_calc_cost (matrix, seq_get_element (seq1, i), seq_get_element (seq2, i), c->costMtxDimension));
     }
     return (res);
 }

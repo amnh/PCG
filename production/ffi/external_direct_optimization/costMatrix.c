@@ -303,7 +303,7 @@ cm_alloc_set_costs_2d ( int alphSize
     cm_set_affine (res, do_aff, gap_open);
 
     size_t size = 2 * (1 << (res->costMtxDimension)) * (1 << (res->costMtxDimension)) * sizeof(int); // size for cost matrices
-    if (size == NULL) {
+    if (size == 0) {
         printf("Your cost matrix is too large to fit in memory. I can't continue with your data loading.\n");
         exit(1);
     }
@@ -313,7 +313,7 @@ cm_alloc_set_costs_2d ( int alphSize
     res->tail_cost    = calloc (size, 1);
 
     size = 2 * (1 << (res->costMtxDimension)) * (1 << (res->costMtxDimension)) * sizeof(SEQT); // size for median matrix
-    if (size == NULL) {
+    if (size == 0) {
         printf("Your cost matrix is too large to fit in your memory. I can't continue with your data loading.\n");
         exit(1);
     }
@@ -575,11 +575,11 @@ cm_get_row_3d (int *tcm, SEQT a, SEQT b, int alphSize) {
         exit(1);
     }
     if ((1 << alphSize) <= a) {
-        printf("%hhu is bigger than alphabet size\n", a);
+        printf("%u is bigger than alphabet size\n", a);
         exit(1);
     }
     if ((1 << alphSize) <= b) {
-        printf("%hhu is bigger than alphabet size\n", b);
+        printf("%u is bigger than alphabet size\n", b);
         exit(1);
     }
     return (tcm + (((a << alphSize) + b) << alphSize));
