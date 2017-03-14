@@ -157,7 +157,7 @@ int align2d(alignIO_p inputChar1_aio,
     int swapped = 0;
 
     // size_t alphabetSize = costMtx2d->alphSize;
-    size_t alphabetSize = costMtx2d->lcm;
+    size_t alphabetSize = costMtx2d->costMtxDimension;
 
     if (inputChar1_aio->length >= inputChar2_aio->length) {
         alignIOtoChar(inputChar1_aio, longChar, alphabetSize);
@@ -184,7 +184,7 @@ int align2d(alignIO_p inputChar1_aio,
     //printf("Before NW init.\n");
     //fflush(stdout);
     nw_matrices_p nw_mtxs2d = malloc(sizeof(struct nwMatrices));
-    initializeNWMtx(longChar->len, shortChar->len, 0, costMtx2d->lcm, nw_mtxs2d);
+    initializeNWMtx(longChar->len, shortChar->len, 0, costMtx2d->costMtxDimension, nw_mtxs2d);
     //printf("After  NW init.\n");
     //fflush(stdout);
 
@@ -342,7 +342,7 @@ int align2dAffine(alignIO_p inputChar1_aio,
     DIR_MTX_ARROW_t  *direction_matrix;
 
     nw_matrices_p nw_mtxs2dAffine = malloc(sizeof(struct nwMatrices));
-    initializeNWMtx(longChar->len, shortChar->len, 0, costMtx2d_affine->lcm, nw_mtxs2dAffine);
+    initializeNWMtx(longChar->len, shortChar->len, 0, costMtx2d_affine->costMtxDimension, nw_mtxs2dAffine);
     lenLongerChar = longChar->len;
 
     matrix_2d  = mat_get_2d_nwMtx (nw_mtxs2dAffine);

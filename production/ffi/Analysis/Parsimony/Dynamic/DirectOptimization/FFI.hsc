@@ -241,19 +241,19 @@ instance Storable CostMatrix2d where
     sizeOf _  = (#size struct cost_matrices_2d) -- #size is a built-in that works with arrays, as are #peek and #poke, below
     alignment = sizeOf -- alignment (undefined :: StablePtr CostMatrix2d)
     peek ptr  = do -- to get values from the C app
-        aSizeVal           <- (#peek struct cost_matrices_2d, alphSize        ) ptr
-        costMtxDimensionVa <- (#peek struct cost_matrices_2d, costMtxDimension) ptr
-        gapcharVal         <- (#peek struct cost_matrices_2d, gap_char        ) ptr
-        costModelVal       <- (#peek struct cost_matrices_2d, cost_model_type ) ptr
-        combosVal          <- (#peek struct cost_matrices_2d, combinations    ) ptr
-        gapOpenVal         <- (#peek struct cost_matrices_2d, gap_open        ) ptr
-        metricVal          <- (#peek struct cost_matrices_2d, is_metric       ) ptr
-        elemsVal           <- (#peek struct cost_matrices_2d, all_elements    ) ptr
-        bestVal            <- (#peek struct cost_matrices_2d, cost            ) ptr
-        medsVal            <- (#peek struct cost_matrices_2d, median          ) ptr
-        worstVal           <- (#peek struct cost_matrices_2d, worst           ) ptr
-        prependVal         <- (#peek struct cost_matrices_2d, prepend_cost    ) ptr
-        tailVal            <- (#peek struct cost_matrices_2d, tail_cost       ) ptr
+        aSizeVal            <- (#peek struct cost_matrices_2d, alphSize        ) ptr
+        costMtxDimensionVal <- (#peek struct cost_matrices_2d, costMtxDimension) ptr
+        gapcharVal          <- (#peek struct cost_matrices_2d, gap_char        ) ptr
+        costModelVal        <- (#peek struct cost_matrices_2d, cost_model_type ) ptr
+        combosVal           <- (#peek struct cost_matrices_2d, combinations    ) ptr
+        gapOpenVal          <- (#peek struct cost_matrices_2d, gap_open        ) ptr
+        metricVal           <- (#peek struct cost_matrices_2d, is_metric       ) ptr
+        elemsVal            <- (#peek struct cost_matrices_2d, all_elements    ) ptr
+        bestVal             <- (#peek struct cost_matrices_2d, cost            ) ptr
+        medsVal             <- (#peek struct cost_matrices_2d, median          ) ptr
+        worstVal            <- (#peek struct cost_matrices_2d, worst           ) ptr
+        prependVal          <- (#peek struct cost_matrices_2d, prepend_cost    ) ptr
+        tailVal             <- (#peek struct cost_matrices_2d, tail_cost       ) ptr
         pure CostMatrix2d { alphSize         = aSizeVal
                           , costMtxDimension = costMtxDimensionVal
                           , gapChar          = gapcharVal
