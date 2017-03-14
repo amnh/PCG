@@ -916,13 +916,6 @@ algn_fill_plane (const seq_p longerSequence,
         printf ("\n");
     }
 
-    int j;
-    printf("Cost Matrix Row [0]: [");
-    for (j = 0; j < lesserSequenceLength; j++) {
-        printf("%d, ", curRow[j]);
-    }
-    printf("]\n");
-
     curRow += lesserSequenceLength;
 
 
@@ -949,14 +942,6 @@ algn_fill_plane (const seq_p longerSequence,
                            , lesserSequenceLength);
 
         /* We swap curRow and newNWMtx for the next round */
-
-	int j;
-	printf("Cost Matrix Row [%d]: [", i);
-	for (j = 0; j < lesserSequenceLength; j++) {
-	  printf("%d, ", curRow[j]);
-	}
-	printf("]\n");
-
         tmp      = curRow;
         curRow   = newNWMtx;
         newNWMtx = tmp;
@@ -3861,15 +3846,30 @@ algn_print_dynmtrx_2d (const seq_p seq1, const seq_p seq2, nw_matrices_p matrice
   }
   printf("\n");
 
-  for(i=0; i< n * m; ++i) {
-    printf("[%d] = %d\n", i, nw_costMtx[i]);
-  }
-
   for (i = 0; i < lesserSeqLen; i++) {
     if (i == 0) printf ("  * | ");
     else        printf (" %2d | ", lesserSeq->seq_begin[i]);
 
-    for (j = 0; j < longerSeqLen; j++) {
+    // We do this because only the last two "rows" are ever used and constantly
+    // overwritten as the algorithm moves from the first "row" to the last row.
+    // This means that only the last two "rows" are preserved in memory.
+    // We place this loop here to pad out the unkown values.
+    //
+    // Also, the algorithm works on the transpose of the standard needleman-wunsh
+    // matrix, so we actually access the "rows" as columns in the traditional
+    // needleman-wunsh matrix with the longer sequence on the top and the shorter
+    // on the left.
+    //
+    // The result of these design choices is that we can only see the last two
+    // columns in the "propper" cost matrix. Hurray! /s
+    for (j = 0; j < longerSeqLen - 2; j++) {
+      // if (j == 0 && i == 0) {
+      //     printf("%7d ", 0);
+      // } else {
+      printf ("      ? ");
+      // }
+    }
+    for (j = 0; j < 2; j++) {
       // if (j == 0 && i == 0) {
       //     printf("%7d ", 0);
       // } else {
