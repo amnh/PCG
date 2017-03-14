@@ -118,15 +118,19 @@ filterGaps char = constructDynamic . filter (/= gap) $ otoList char
 -- TODO: See if we can move topDynChar logic inside here. It's also necessary in DO. 
 -- Or maybe DO can just call doAlignment?
 createDOAlignMatrix :: (EncodableDynamicCharacter s, Show (Element s)) => s -> s -> OverlapFunction (Element s) -> DOAlignMatrix (Element s)
-createDOAlignMatrix topChar leftChar overlapFunction = {- trace (show matrixCorner) $ -} result
+createDOAlignMatrix topChar leftChar overlapFunction = trace (show matrixCorner) $ result
   where
     -- :)
-    matrixCorner = matrix 3 5 $ \(i,j) -> showCell (getElem i j result)
+    matrixCorner = matrix (olength leftChar + 1) (olength topChar + 1) $ \(i,j) -> showCell (getElem i j result)
     showCell (c,d,_) = (c, d)
 
     result = matrix (olength leftChar + 1) (olength topChar + 1) generateMat
+    gap    = gapOfStream leftChar -- The constructors of DynamicChar prevent an empty character construction.
 
-    -- TODO: attempt to make tail recursive? Maybe not possible, given multiple tuple values.
+    applyGap e
+      | e .&. gap == zeroBits = e .|. gap
+      | otherwise             = gap
+
     -- | Internal generator function for the matrix
     -- Deals with both first row and other cases, a merge of two previous algorithms
     -- generateMat :: (EncodableStreamElement b) => (Int, Int) -> (Double, Direction, b)
@@ -134,16 +138,15 @@ createDOAlignMatrix topChar leftChar overlapFunction = {- trace (show matrixCorn
     generateMat (row, col)
       -- :)
       | row == 0 && col == 0         = (0                               , DiagArrow,         gap)
-      | row == 0 && rightChar /= gap = (leftwardValue + rightOverlapCost, LeftArrow,  topElement .|. gap)
-      | row == 0                     = (leftwardValue                   , LeftArrow,  topElement .|. gap)
-      | col == 0 && downChar  /= gap = (  upwardValue +  downOverlapCost,   UpArrow, leftElement .|. gap)
-      | col == 0                     = (  upwardValue                   ,   UpArrow, leftElement .|. gap)
+      | row == 0 && rightChar /= gap = (leftwardValue + rightOverlapCost, LeftArrow,   rightChar)
+      | row == 0                     = (leftwardValue                   , LeftArrow,   rightChar)
+      | col == 0 &&  downChar /= gap = (  upwardValue +  downOverlapCost,   UpArrow,    downChar)
+      | col == 0                     = (  upwardValue                   ,   UpArrow,    downChar)
       | leftElement == gap &&
          topElement == gap           = (diagCost                        , DiagArrow,         gap)
       | leftElement == topElement    = (diagCost                        , DiagArrow, leftElement) -- WLOG
       | otherwise                    = (minCost                         , minDir   ,    minState)
       where
-        gap                           = gapOfStream leftChar -- Why would you give me an empty Dynamic Character?
         -- | 
         topElement                    = ( topChar `indexStream` (col - 1))
         leftElement                   = (leftChar `indexStream` (row - 1))
@@ -163,6 +166,7 @@ createDOAlignMatrix topChar leftChar overlapFunction = {- trace (show matrixCorn
                                       , (rightCost, rightChar .|. gap, LeftArrow)
                                       , (downCost ,  downChar .|. gap, UpArrow  )
                                       ]
+     
 --        showCell (c,d,_) = unwords [show (row, col), show c, show d]
 
 
