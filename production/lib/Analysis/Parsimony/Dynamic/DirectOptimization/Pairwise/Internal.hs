@@ -38,7 +38,7 @@ import Debug.Trace
 -- deterministic way. Without loss of generality in determining the ordering,
 -- we choose the same biasing as in POY 5.
 -- | The direction to align the character at a given matrix point.
-data Direction = LeftArrow | DiagArrow | UpArrow
+data Direction = DiagArrow | LeftArrow | UpArrow
   deriving (Eq, Ord)
 
 
@@ -118,7 +118,7 @@ filterGaps char = constructDynamic . filter (/= gap) $ otoList char
 -- TODO: See if we can move topDynChar logic inside here. It's also necessary in DO. 
 -- Or maybe DO can just call doAlignment?
 createDOAlignMatrix :: (EncodableDynamicCharacter s, Show (Element s)) => s -> s -> OverlapFunction (Element s) -> DOAlignMatrix (Element s)
-createDOAlignMatrix topChar leftChar overlapFunction = trace (show matrixCorner) $ result
+createDOAlignMatrix topChar leftChar overlapFunction = {- trace (show matrixCorner) $ -} result
   where
     -- :)
     matrixCorner = matrix 3 5 $ \(i,j) -> showCell (getElem i j result)
@@ -134,10 +134,10 @@ createDOAlignMatrix topChar leftChar overlapFunction = trace (show matrixCorner)
     generateMat (row, col)
       -- :)
       | row == 0 && col == 0         = (0                               , DiagArrow,         gap)
-      | row == 0 && rightChar /= gap = (leftwardValue + rightOverlapCost, LeftArrow,  topElement)
-      | row == 0                     = (leftwardValue                   , LeftArrow,  topElement)
-      | col == 0 && downChar  /= gap = (  upwardValue +  downOverlapCost,   UpArrow, leftElement)
-      | col == 0                     = (  upwardValue                   ,   UpArrow, leftElement)
+      | row == 0 && rightChar /= gap = (leftwardValue + rightOverlapCost, LeftArrow,  topElement .|. gap)
+      | row == 0                     = (leftwardValue                   , LeftArrow,  topElement .|. gap)
+      | col == 0 && downChar  /= gap = (  upwardValue +  downOverlapCost,   UpArrow, leftElement .|. gap)
+      | col == 0                     = (  upwardValue                   ,   UpArrow, leftElement .|. gap)
       | leftElement == gap &&
          topElement == gap           = (diagCost                        , DiagArrow,         gap)
       | leftElement == topElement    = (diagCost                        , DiagArrow, leftElement) -- WLOG
@@ -145,8 +145,8 @@ createDOAlignMatrix topChar leftChar overlapFunction = trace (show matrixCorner)
       where
         gap                           = gapOfStream leftChar -- Why would you give me an empty Dynamic Character?
         -- | 
-        topElement                    =  topChar `indexStream` (col - 1)
-        leftElement                   = leftChar `indexStream` (row - 1)
+        topElement                    = ( topChar `indexStream` (col - 1))
+        leftElement                   = (leftChar `indexStream` (row - 1))
         (leftwardValue, _, _)         = result ! (row    , col - 1)
         (diagonalValue, _, _)         = result ! (row - 1, col - 1)
         (  upwardValue, _, _)         = result ! (row - 1, col    )
@@ -157,15 +157,11 @@ createDOAlignMatrix topChar leftChar overlapFunction = trace (show matrixCorner)
         diagCost                      =  diagOverlapCost + diagonalValue
         downCost                      =  downOverlapCost +   upwardValue
         (minCost, minState, minDir)   = minimumBy (comparing (\(c,_,d) -> (c,d)))
-                                      -- This order is important!
-                                      -- In the event of equal cost we want to
-                                      -- prioritize elements earlier in the list.
                                       -- TODO: POY prioritizes gaps to shorter char, make sure it prioritizes
                                       -- right on equal-length chars
---                                      $ reverse
-                                      [ (rightCost, rightChar, LeftArrow)
-                                      , (diagCost , diagChar , DiagArrow)
-                                      , (downCost , downChar , UpArrow  )
+                                      [ (diagCost ,  diagChar        , DiagArrow)
+                                      , (rightCost, rightChar .|. gap, LeftArrow)
+                                      , (downCost ,  downChar .|. gap, UpArrow  )
                                       ]
 --        showCell (c,d,_) = unwords [show (row, col), show c, show d]
 
