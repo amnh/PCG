@@ -34,13 +34,17 @@ import Debug.Trace
 -- It should be noted that the ordering of the three arrow types are important
 -- as it guarantees that the derived Ord instance will have the following property:
 --
--- LeftArrow < DiagArrow < UpArrow
+-- DiagArrow < LeftArrow < UpArrow
+--
+-- This means DiagArrow is biased towards most   when one or more costs are equal
+--            LeftArrow is biased towards second when one or more costs are equal
+--              UpArrow is biased towards least  when one or more costs are equal
 --
 -- Using this Ord instance, we can resolve ambiguous transformations in a
 -- deterministic way. Without loss of generality in determining the ordering,
 -- we choose the same biasing as in POY 5.
 -- | The direction to align the character at a given matrix point.
-data Direction = DiagArrow | UpArrow | LeftArrow
+data Direction = DiagArrow | LeftArrow | UpArrow
   deriving (Eq, Ord)
 
 
@@ -150,8 +154,8 @@ createDOAlignMatrix topChar leftChar overlapFunction = trace renderedMatrix $ re
       | otherwise                    = (minCost                         , minDir   ,    minState)
       where
         -- | 
-        topElement                    = ( topChar `indexStream` (col - 1))
-        leftElement                   = (leftChar `indexStream` (row - 1))
+        topElement                    =  topChar `indexStream` (col - 1)
+        leftElement                   = leftChar `indexStream` (row - 1)
         (leftwardValue, _, _)         = result ! (row    , col - 1)
         (diagonalValue, _, _)         = result ! (row - 1, col - 1)
         (  upwardValue, _, _)         = result ! (row - 1, col    )
@@ -171,8 +175,10 @@ createDOAlignMatrix topChar leftChar overlapFunction = trace renderedMatrix $ re
         err = unlines
           [ show (row, col)
           , "  right: " <> show (fromIntegral rightChar, rightOverlapCost, leftwardValue, rightCost)
-          , "   down: " <> show (fromIntegral  downChar,  downOverlapCost,   upwardValue,  diagCost)
-          , "   diag: " <> show (fromIntegral  diagChar,  diagOverlapCost, diagonalValue,  downCost)
+          , "   down: " <> show (fromIntegral  downChar,  downOverlapCost,   upwardValue,  downCost)
+          , "   diag: " <> show (fromIntegral  diagChar,  diagOverlapCost, diagonalValue,  diagCost)
+          , "Chosen:"
+          , "  " <> show (minCost, fromIntegral minState, minDir) 
           ]            
 --        showCell (c,d,_) = unwords [show (row, col), show c, show d]
 
@@ -198,9 +204,9 @@ renderCostMatrix lhs rhs mtx = unlines
 
     dimensionPrefix  = " " <> unwords
         [ "Dimensions:"
-        , show $ olength longer
+        , show $ olength longer + 1
         , "X"
-        , show $ olength lesser
+        , show $ olength lesser + 1
         ]
     
     headerRow = mconcat
