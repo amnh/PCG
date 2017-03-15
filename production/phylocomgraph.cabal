@@ -139,16 +139,16 @@ library
 
   -- Modules exported by the library.
   exposed-modules:
-                       Analysis.ImpliedAlignment
-                       Analysis.ImpliedAlignment.Standard
-                       Analysis.Parsimony.Binary.Fitch
-                       Analysis.Parsimony.Binary.Internal
-                       Analysis.Parsimony.Binary.Optimization
-                       Analysis.Parsimony.Sankoff.Internal
+--                       Analysis.ImpliedAlignment
+--                       Analysis.ImpliedAlignment.Standard
+--                       Analysis.Parsimony.Binary.Fitch
+--                       Analysis.Parsimony.Binary.Internal
+--                       Analysis.Parsimony.Binary.Optimization
                        Analysis.Parsimony.Additive.Internal
-                       Analysis.Parsimony.Fitch.Internal
                        Analysis.Parsimony.Dynamic.DirectOptimization
                        Analysis.Parsimony.Dynamic.SequentialAlign
+                       Analysis.Parsimony.Fitch.Internal
+                       Analysis.Parsimony.Sankoff.Internal
                        Bio.Character
                        Bio.Character.Decoration.Additive
                        Bio.Character.Decoration.Continuous
@@ -223,14 +223,15 @@ library
                        Test.Custom.NucleotideSequence
                        
   -- Modules included in this library but not exported.
-  other-modules:       Analysis.ImpliedAlignment.AlignmentContext
-                       Analysis.ImpliedAlignment.DeletionEvents
-                       Analysis.ImpliedAlignment.DynamicProgramming
-                       Analysis.ImpliedAlignment.InsertionEvents
-                       Analysis.ImpliedAlignment.InsertionEvents.Internal
-                       Analysis.ImpliedAlignment.Internal
-                       -- Analysis.Parsimony.Binary.SequentialAlign.FFI
-                       Analysis.Parsimony.Binary.Constraints
+  other-modules:
+                    --   Analysis.ImpliedAlignment.AlignmentContext
+                    --   Analysis.ImpliedAlignment.DeletionEvents
+                    --   Analysis.ImpliedAlignment.DynamicProgramming
+                    --   Analysis.ImpliedAlignment.InsertionEvents
+                    --   Analysis.ImpliedAlignment.InsertionEvents.Internal
+                    --   Analysis.ImpliedAlignment.Internal
+                    --   Analysis.Parsimony.Binary.SequentialAlign.FFI
+                    --   Analysis.Parsimony.Binary.Constraints
                        Analysis.Parsimony.Dynamic.DirectOptimization.FFI
                        Analysis.Parsimony.Dynamic.DirectOptimization.Internal
                        Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise
@@ -597,10 +598,10 @@ Test-Suite testsuite
                        Analysis.ImpliedAlignment.Test.Trees
                        Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Internal
                        Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Test
-                       Analysis.Parsimony.Binary.Internal
-                       Analysis.Parsimony.Binary.Test
+--                       Analysis.Parsimony.Binary.Internal
+--                       Analysis.Parsimony.Binary.Test
                        Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise
-                       Analysis.Parsimony.Binary.Fitch
+--                       Analysis.Parsimony.Binary.Fitch
                        Bio.Character
                        Bio.Character.Decoration.Additive
                        --Bio.Character.Decoration.Continuous

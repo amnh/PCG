@@ -32,6 +32,9 @@ main = do
               putStrLn nativeMessage
               putStrLn "Foreign DO Result:"
               putStrLn foreignMessage
+              if nativeMessage == foreignMessage
+              then putStrLn "[!] Results MATCH"
+              else putStrLn "[X] Results DO NOT MATCH"
     
 
 counterExampleSearch :: (NucleotideSequence, NucleotideSequence) -> Bool
