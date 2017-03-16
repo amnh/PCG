@@ -907,8 +907,8 @@ algn_fill_plane ( const seq_p longerSequence
                 , const cost_matrices_2d_p costMatrix
                 )
 {
-    printf("lesserSequenceLength: %d\n", lesserSequenceLength);
-    printf("longerSequenceLength: %d\n", longerSequenceLength);
+    // printf("lesserSequenceLength: %d\n", lesserSequenceLength);
+    // printf("longerSequenceLength: %d\n", longerSequenceLength);
 
     size_t i, j;
     const int *align_row,
@@ -4616,7 +4616,7 @@ algn_get_median_2d_with_gaps ( seq_p shorterSeq
     seq_begin_longerSeq  = longerSeq->seq_begin;
     seq_begin_shorterSeq = shorterSeq->seq_begin;
 
-    printf("seqLen - 1 of longer: %zu\n", longerSeq->len - 1);
+    // printf("seqLen - 1 of longer: %zu\n", longerSeq->len - 1);
 
     for (i = longerSeq->len - 1; i >= 0; i--) {
         interim = cm_get_median (costMatrix, seq_begin_longerSeq[i], seq_begin_shorterSeq[i]);

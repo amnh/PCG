@@ -63,7 +63,8 @@ void print_matrices(nw_matrices_p m, int alphSize) {
 
 }
 
-// TODO: wtf is with the 12 here?
+// The 12 is because we only use 2 rows of the matrix at a time on the alignment matrix,
+// and we have four alignment matrices plus two shorter ones for the gap costs.
 inline int
 mat_size_of_2d_matrix (int w, int h) {
     if (w > h) return (w * 12);
