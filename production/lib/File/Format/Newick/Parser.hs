@@ -19,8 +19,9 @@ module File.Format.Newick.Parser where
 
 import Data.Char                  (isSpace)
 import Data.List                  (intercalate)
-import Data.Map            hiding (filter,foldl,foldr,null)
-import Data.Maybe                 (fromJust,fromMaybe,isJust)
+import Data.Map            hiding (filter, foldl, foldr, null)
+import Data.Maybe                 (fromJust, fromMaybe, isJust)
+import Data.Semigroup
 import File.Format.Newick.Internal
 import Prelude             hiding (lookup)
 import Text.Megaparsec     hiding (label)
@@ -171,7 +172,7 @@ joinNonUniqueLabeledNodes root = joinNonUniqueLabeledNodes' [] root
       where
         labeledNodes           = filter (isJust . newickLabel) $ toList' root 
         joinNodes :: Map String [NewickNode] -> NewickNode -> Map String [NewickNode]
-        joinNodes mapping node = insertWith (++) (fromJust $ newickLabel node) (descendants node) mapping
+        joinNodes mapping node = insertWith (<>) (fromJust $ newickLabel node) (descendants node) mapping
         toList' node = node : ((=<<) toList' . descendants) node
     -- When transforming the Newick Tree to the Newick Network by joining 
     -- identically labeled nodes, there exists the possiblily that a directed 
@@ -197,7 +198,7 @@ joinNonUniqueLabeledNodes root = joinNonUniqueLabeledNodes' [] root
         stack'     = label : stack
         hasCycle   = isJust label
                   && (not . null . dropWhile (/=label)) stack
-        cycle'     = (label : takeWhile (/=label) stack) ++ [label]
+        cycle'     = (label : takeWhile (/=label) stack) <> [label]
         cycleError = init $ unlines -- we use init to remove trailing newline
                    [ "Cycle detected in Newick tree definition"
                    , prettyErr cycle'

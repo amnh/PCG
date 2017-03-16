@@ -15,22 +15,25 @@ module Bio.Character.Decoration.Metric
   , MetricCharacterDecoration()
   , SankoffOptimizationDecoration()
   , SankoffDecoration()
+  , StateContributionList
   , DiscreteExtensionSankoffDecoration(..)
   , GeneralCharacterMetadata()
   , DiscreteCharacterMetadata()
   , DiscreteCharacterDecoration()
   , HasCharacterAlphabet(..)
+  , HasCharacterCost(..)
+  , HasCharacterCostVector(..)
   , HasCharacterName(..)
-  , HasCharacterSymbolTransitionCostMatrixGenerator(..)
-  , HasCharacterTransitionCostMatrix(..)
   , HasCharacterWeight(..)
+  , HasStateMinTuple(..)
   , HasDiscreteCharacter(..)
-  , HasMinCostVector(..)
-  , HasDirectionalMinVector(..)
-  , HasMinCost(..)
+  , HasSymbolChangeMatrix(..)
+  , HasTransitionCostMatrix(..)
+  , HasIsLeaf(..)
   ) where
 
 import Bio.Character.Decoration.Discrete
 import Bio.Character.Decoration.Metric.Class
 import Bio.Character.Decoration.Metric.Internal
+import Bio.Character.Decoration.Shared
 

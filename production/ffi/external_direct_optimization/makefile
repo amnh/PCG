@@ -12,21 +12,21 @@ external_c_alignment : externalCAlignment.hsc $(necessary_c_files) $(necessary_h
 					c_alignment_interface.c c_alignment_interface.h
 	rm -f externalCAlignment.hs
 	hsc2hs externalCAlignment.hsc
-	gcc -c externalCAlignment.c
+	gcc -c -Wall externalCAlignment.c
 	ghc -O --make externalCAlignment.hs alignment_interface.o $(object_files)
 
 ######### Test only c functions that allocate and initialize various
 ######### internal structs. c_alignment_interface.c relies on these.
-test_initialization : initialization_driver.c $(necessary_c_files $(necessary_h_files)\
+test_initialization : initialization_driver.c $(necessary_c_files) $(necessary_h_files)
 	rm -f *.o
-	gcc -g -c $(necessary_c_files)
+	gcc -g -c -Wall $(necessary_c_files)
 	gcc -o initialization_driver -g initialization_driver.c $(object_files)
 
 ######### Test the actual C interface that Hakell interact with.
 test_interface : interface_driver.c c_alignment_interface.c c_alignment_interface.h \
 				$(necessary_c_files) $(necessary_h_files)
 	rm -f *.o
-	gcc -g -c c_alignment_interface.c $(necessary_c_files)
+	gcc -g -c -Wall c_alignment_interface.c $(necessary_c_files)
 	gcc -o interface_driver -g interface_driver.c c_alignment_interface.o $(object_files)
 
 

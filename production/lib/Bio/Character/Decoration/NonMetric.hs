@@ -18,10 +18,10 @@ module Bio.Character.Decoration.NonMetric
   , DiscreteCharacterDecoration()
   , HasCharacterAlphabet(..)
   , HasCharacterName(..)
-  , HasCharacterSymbolTransitionCostMatrixGenerator(..)
-  , HasCharacterTransitionCostMatrix(..)
   , HasCharacterWeight(..)
   , HasDiscreteCharacter(..)
+  , HasSymbolChangeMatrix(..)
+  , HasTransitionCostMatrix(..)
   ) where
 
 import Bio.Character.Decoration.Discrete

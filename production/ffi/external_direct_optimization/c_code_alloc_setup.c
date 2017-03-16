@@ -10,7 +10,7 @@
 //#include "ukkCheckp.h"
 //#include "ukkCommon.h"
 
-// int* tcm, int alphSize, int gap_open, int is_2d, seq_p longSeq
+// int* tcm, int alphSize, int gap_open, int is_2d, seq_p longChar
 
 /** Allocate nw_matrices struct. Assigns initial values where necessary. Calls
  *  mat_setup_size to allocate all internal arrays.
@@ -21,7 +21,7 @@ void initializeNWMtx(size_t len_seq1, size_t len_seq2, size_t len_seq3, int cost
 
     // in six following allocations all matrices are set to their shortest length because they get realloced in mat_setup_size
     retMtx->cap_nw     = 0;  // a suitably small number to trigger realloc, but be larger than len_eff
-    retMtx->cap_eff    = 0; // cap_eff is -1 so that cap_eff < cap, triggering the realloc
+    retMtx->cap_eff    = 0; // cap_eff is -1 so that cap_eff < cap, triggering the realloc ---changed this when I switched types to size_t
     retMtx->cap_pre    = 0;  // again, trigger realloc
 
     retMtx->nw_costMtx = malloc ( sizeof( int ) );
@@ -35,15 +35,15 @@ void initializeNWMtx(size_t len_seq1, size_t len_seq2, size_t len_seq3, int cost
 
 /** Does allocation for a sequence struct. Also sets seq pointers within array to correct positions.
  *
- *  resSeq must be alloced before this call.
+ *  resChar must be alloced before this call.
  */
-void initializeSeq(seq_p retSeq, size_t allocSize) {
-    retSeq->cap        = allocSize;                              // capacity
-    retSeq->array_head = calloc(allocSize, sizeof(SEQT));
+void initializeChar(seq_p retChar, size_t allocSize) {
+    retChar->cap        = allocSize;                              // capacity
+    retChar->array_head = calloc(allocSize, sizeof(SEQT));
 
-    retSeq->end        = retSeq->array_head + allocSize;
-    retSeq->seq_begin  = retSeq->end;
-    retSeq->len        = 0;
+    retChar->end        = retChar->array_head + allocSize;
+    retChar->seq_begin  = retChar->end;
+    retChar->len        = 0;
 }
 
 
@@ -80,7 +80,7 @@ int distance (int const *tcm, int alphSize, int nucleotide, int ambElem) {
  *  No longer setting max, as algorithm to do so is unclear: see note below.
  *  Not sure which of two loops to set prepend and tail arrays is correct.
  */
-void setup2dCostMtx(int* tcm, size_t alphSize, int gap_open, cost_matrices_2d_p retMtx) {
+void setup2dCostMtx(int* tcm, size_t alphSize, int gap_open, cost_matrices_2d_p retCostMtx) {
 
     // first allocate retMatrix
     int combinations = 1;                     // false if matrix is sparse. In this case, it's DNA, so not sparse.
@@ -91,10 +91,14 @@ void setup2dCostMtx(int* tcm, size_t alphSize, int gap_open, cost_matrices_2d_p 
     int all_elements = (1 << alphSize) - 1;   // Given data is DNA (plus gap), there are 2^5 - 1 possible character states
 
     int minCost    = INT_MAX;
-    SEQT median    = 0;        // cumulative median for 2d; combo of median1, etc., below
+    SEQT median    = 0;                       // cumulative median for 2d; combo of median1, etc., below
     int curCost;
 
-    int median1, median2;            // median of a given nucleotide and current ambElem, for each ambElem
+    int median1, median2;                     // median of a given nucleotide and current ambElem, for each ambElem
+
+    //    int tcm2[25] = {0,1,1,1,1,1,0,1,1,1,1,1,0,1,1,1,1,1,0,1,1,1,1,1,0};
+
+    //    tcm = tcm2;
 
     cm_alloc_set_costs_2d( alphSize,
                            combinations,
@@ -102,12 +106,12 @@ void setup2dCostMtx(int* tcm, size_t alphSize, int gap_open, cost_matrices_2d_p 
                            gap_open,
                            is_metric,
                            all_elements,
-                           retMtx
+                           retCostMtx
                           );
     // Print TCM in pretty format
     if(DEBUG_MAT) {
         printf("setup2dCostMtx\n");
-        const int n = retMtx->lcm;
+        const int n = retCostMtx->costMatrixDimension;
         for (size_t i = 0; i < n; ++i) {
             for (size_t j = 0; j < n; ++j) {
                 printf("%2d ", tcm[ n * i + j ]);
@@ -129,25 +133,14 @@ void setup2dCostMtx(int* tcm, size_t alphSize, int gap_open, cost_matrices_2d_p 
                 // now seemingly recreating logic in distance(), but that was to get the cost for each
                 // ambElem; now we're combining those costs get overall cost and median
                 if (curCost < minCost) {
-                    // printf("less:            %d, %d\n", curCost, minCost);
-                    // printf("less n, e, e:    %d %d %d\n", nucleotide, ambElem1, ambElem2);
                     minCost = curCost;
-                    median  = 1 << (nucleotide - 1); // median1 | median2;
+                    median  = 1 << (nucleotide - 1); // median = this nucleotide, because it has the lowest cost thus far
                 } else if (curCost == minCost) {
-                    // printf("equal:           %d, %d\n", curCost, minCost);
-                    // printf("equal n, e, e:   %d\n", nucleotide, ambElem1, ambElem2);
-                    median |= 1 << (nucleotide - 1); // median1 | median2;
-                } else {
-                    // printf("greater:         %d, %d\n", curCost, minCost);
-                    // printf("greater n, e, e: %d\n", nucleotide, ambElem1, ambElem2);
+                    median |= 1 << (nucleotide - 1); // median = this nucleotide | old median
                 }
             } // nucleotide
-            // printf("costs:          %d, %d\n", curCost, minCost);
-            // printf("elems: n, e, e: %d %d %d\n", nucleotide, ambElem1, ambElem2);
-            // printf("%d\n", minCost);
-            cm_set_cost_2d   (ambElem1, ambElem2, minCost, retMtx);
-            // printf("%d\n", cm_get_cost(ambElem1, ambElem2, retMtx));
-            cm_set_median_2d (ambElem1, ambElem2, median,  retMtx);
+            cm_set_cost_2d   (ambElem1, ambElem2, minCost, retCostMtx);
+            cm_set_median_2d (ambElem1, ambElem2, median,  retCostMtx);
         } // ambElem2
     } // ambElem1
     // Gap number is alphSize - 1, which makes bit representation
@@ -157,22 +150,23 @@ void setup2dCostMtx(int* tcm, size_t alphSize, int gap_open, cost_matrices_2d_p 
 
     int gap = 1 << (alphSize - 1);
     for ( size_t i = 1; i <= all_elements; i++) {
-        cm_set_prepend_2d (i, cm_get_cost(gap, i, retMtx), retMtx);
-        cm_set_tail_2d    (cm_get_cost(i, gap, retMtx), i, retMtx);
+        cm_set_prepend_2d (i, cm_get_cost(gap,   i, retCostMtx), retCostMtx);
+        cm_set_tail_2d    (i, cm_get_cost(  i, gap, retCostMtx), retCostMtx);
     }
+
     /*
-    SEQT* seqStart = longSeq->seq_begin;
+    SEQT* seqStart = longChar->seq_begin;
     int gap        = 1 << (alphSize - 1);
     int seqElem;
-    for ( size_t i = 0; i < longSeq->len; i++) {
+    for ( size_t i = 0; i < longChar->len; i++) {
         seqElem = (int) *(seqStart + i);
-        cm_set_prepend_2d (i, cm_get_cost(gap, seqElem, retMtx), retMtx);
-        cm_set_tail_2d    (cm_get_cost(seqElem, gap, retMtx), i, retMtx);
+        cm_set_prepend_2d (i, cm_get_cost(gap, seqElem, retCostMtx), retCostMtx);
+        cm_set_tail_2d    (cm_get_cost(seqElem, gap, retCostMtx), i, retCostMtx);
     } */
-//    return retMtx;
+//    return retCostMtx;
     if(DEBUG_COST_M) {
         printf("2d:\n");
-        cm_print_2d (retMtx);
+        cm_print_2d (retCostMtx);
     }
 }
 
@@ -187,7 +181,7 @@ void setup3dCostMtx(int* tcm, size_t alphSize, int gap_open, cost_matrices_3d_p 
     int do_aff       = gap_open == 0 ? 0 : 3; // The 3 is because affine's cost_model_type is 3, according to my reading of ML code.
                                               // (Actually, I changed that; it used to be 2, now it's 3.)
                                               // This value set in cm_set_affine().
-    int is_metric    = 1;
+    // int is_metric    = 1;
     int all_elements = (1 << alphSize) - 1;   // Given data is DNA (plus gap), there are 2^5 - 1 possible character states
 
     int minCost    = INT_MAX;
@@ -266,14 +260,14 @@ void freeNWMtx(nw_matrices_p input) {
     free(input);
 }
 
-void freeSeq(seq_p toFree) {
+void freeChar(seq_p toFree) {
     free(toFree->array_head);
     free(toFree);
 }
 
-void resetSeqValues(seq_p retSeq) {
-    //retSeq->end   = retSeq->begin + retSeq->len;
-    retSeq->seq_begin = retSeq->end;
-    retSeq->len   = 0;
+void resetCharValues(seq_p retChar) {
+    //retChar->end   = retChar->begin + retChar->len;
+    retChar->seq_begin = retChar->end;
+    retChar->len   = 0;
 }
 

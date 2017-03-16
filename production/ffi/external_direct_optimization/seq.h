@@ -31,17 +31,17 @@
                                     to_asgn->end         = to_asgn->array_head + to_asgn->cap - 1; \
                                     to_asgn->seq_begin   = to_asgn->end - to_asgn->len + 1; \
 //    assert (to_asgn->magic_number == POY_SEQ_MAGIC_NUMBER)  // TODO: figure out wtf this is.
+#define USE_LARGE_ALPHABETS
 
-
-#ifdef USE_LARGE_ALPHABETS
+// #ifdef USE_LARGE_ALPHABETS
 #define SEQT unsigned int
 // #define DESERIALIZE_SEQT(a,b) caml_deserialize_block_4((a),(b))
 // #define SERIALIZE_SEQT(a,b) caml_serialize_block_4((a),(b))
-#else
-#define SEQT unsigned char
-// #define DESERIALIZE_SEQT(a,b) caml_deserialize_block_1((a),(b))
-// #define SERIALIZE_SEQT(a,b) caml_serialize_block_1((a),(b))
-#endif
+// #else
+// #define SEQT unsigned char
+// // #define DESERIALIZE_SEQT(a,b) caml_deserialize_block_1((a),(b))
+// // #define SERIALIZE_SEQT(a,b) caml_serialize_block_1((a),(b))
+// #endif
 
 /* Sequence structure to be used inside ocaml custom types. */
 /********************* SEQUENCE AS IT COMES IN MUST BE IN LAST X SPACES IN ARRAY! *********************/
@@ -59,40 +59,14 @@ struct seq {
 
 typedef struct seq * seq_p;
 
-void seq_print(seq_p inSeq, int num);
-
-/* Gets the capacity of the sequence a. */
-int
-seq_get_cap (const seq_p a);
+void seq_print(seq_p inSeq);
 
 void
 seq_prepend (seq_p a, SEQT v);
 
-/* Gets the total length of the sequence a */
-int
-seq_get_len (const seq_p a);
-
-/* Gets a pointer to the beginning of the sequence a */
- SEQT *
-seq_get_seq_begin (const seq_p a);
-
-/* Gets a pointer to the beginning of the array where the sequence is stored.
- * Note that begin != array_head. */
- SEQT *
-seq_get_array_head (const seq_p a);
-
-/* Gets a pointer to the memory location where the last element of the sequence
- * a is stored. */
- SEQT *
-seq_get_end (const seq_p a);
-
-/* Gets the value of the element of sequence a in the position p, where a starts at position 0
- */
-SEQT
-seq_get_element (const seq_p a, int p);
 
 /* Stores the value v in the position p of sequence a. */
 void
-seq_set (seq_p a, int p, SEQT v);
+seq_set (seq_p sequence, int position, SEQT value);
 
 #endif /* SEQ_H */

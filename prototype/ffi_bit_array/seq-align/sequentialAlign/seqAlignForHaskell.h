@@ -42,8 +42,8 @@ typedef struct retType {
     long int alignmentLength;
 } retType_t;
 
-int trueWt(struct align *path, const int alphSize, int wtInsertDel, int wtSub, int len);
-
+//int trueWt(struct align *path, const int alphSize, int wtInsertDel, int wtSub, int len);
+int trueWt(struct align *path, costMtx_t* tcm, size_t alphSize, int len);
 // EDIT: rectified with .c file.
 //int aligner(char*, char*, int, int, struct retType*);
 int aligner(uint64_t *seq1, size_t seq1Len, uint64_t *seq2, size_t seq2Len, size_t alphSize,

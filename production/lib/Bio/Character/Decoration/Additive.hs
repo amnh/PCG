@@ -19,13 +19,14 @@ module Bio.Character.Decoration.Additive
   , DiscreteCharacterDecoration()
   , HasCharacterAlphabet(..)
   , HasCharacterName(..)
-  , HasCharacterSymbolTransitionCostMatrixGenerator(..)
-  , HasCharacterTransitionCostMatrix(..)
+  , HasSymbolChangeMatrix(..)
+  , HasTransitionCostMatrix(..)
   , HasCharacterWeight(..)
   , HasDiscreteCharacter(..)
   , HasIsLeaf(..)
-  , HasMinCost(..)
+  , HasCharacterCost(..)
   , HasPreliminaryInterval(..)
+  , HasFinalInterval(..)
   , HasChildPrelimIntervals(..)
   ) where
 

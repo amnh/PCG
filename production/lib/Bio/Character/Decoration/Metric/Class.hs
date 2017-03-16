@@ -16,7 +16,9 @@ module Bio.Character.Decoration.Metric.Class where
 
 
 import Bio.Character.Decoration.Discrete
+import Bio.Character.Decoration.Shared
 import Control.Lens
+import Data.ExtendedNatural
 
 
 -- |
@@ -27,9 +29,9 @@ class DiscreteCharacterDecoration s a => MetricCharacterDecoration s a | s -> a 
 -- |
 -- A decoration containing a character that has been scored using Sankoff's algorithm.
 class ( DiscreteCharacterDecoration s c
-      , HasMinCostVector s [Word]
-      , HasDirectionalMinVector s ([Word], [Word])
-      , HasMinCost s Word
+      , HasCharacterCost        s Word
+      , HasCharacterCostVector  s  [ExtendedNatural]
+      , HasStateMinTuple s ([[Word]], [[Word]])
       ) => SankoffDecoration s c | s -> c where
 
 
@@ -40,29 +42,28 @@ class ( DiscreteCharacterDecoration s c
 class ( SankoffDecoration s c
       ) => DiscreteExtensionSankoffDecoration s c | s -> c where
 
-    extendDiscreteToSankoff :: DiscreteCharacterDecoration x c => x -> [Word] -> ([Word], [Word]) -> Word -> s
+    extendDiscreteToSankoff :: DiscreteCharacterDecoration x c
+                            => x
+                            -> [ExtendedNatural]
+                            -> ([[Word]], [[Word]])
+                            -> Word
+                            -> c
+                            -> Bool
+                            -> s
 
 
 -- |
 -- A 'Lens' for the 'minCostVector' field.
-class HasMinCostVector s a | s -> a where
+class HasCharacterCostVector s a | s -> a where
 
-    minCostVector :: Lens' s a
-    {-# MINIMAL minCostVector #-}
-
-
--- |
--- A 'Lens' for the 'directionalMinVector' field.
-class HasDirectionalMinVector s a | s -> a where
-
-    directionalMinVector :: Lens' s a
-    {-# MINIMAL directionalMinVector #-}
+    {-# MINIMAL characterCostVector #-}
+    characterCostVector :: Lens' s a
 
 
 -- |
--- A 'Lens' for the 'minCost' field.
-class HasMinCost s a | s -> a where
+-- A 'Lens' for the 'minStateTuple' field.
+class HasStateMinTuple s a | s -> a where
 
-    minCost :: Lens' s a
-    {-# MINIMAL minCost #-}
+    {-# MINIMAL minStateTuple #-}
+    minStateTuple :: Lens' s a
 

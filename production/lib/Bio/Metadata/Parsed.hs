@@ -11,6 +11,7 @@
 -- Typeclass for metadata extracted from parsed results
 --
 -----------------------------------------------------------------------------
+
 {-# LANGUAGE FlexibleInstances, MultiParamTypeClasses, TypeSynonymInstances #-}
 
 module Bio.Metadata.Parsed where
@@ -20,13 +21,15 @@ import           Data.Alphabet
 import           Data.Bifunctor                          (second)
 import           Data.Char
 import           Data.Foldable
+import           Data.Key
 import           Data.List                               (transpose)
 import           Data.List.NonEmpty                      (NonEmpty)
 import           Data.Monoid
-import           Data.TCM                                (TCM)
+import           Data.TCM                                (TCM, TCMDiagnosis(..), TCMStructure(..), diagnoseTcm, )
 import qualified Data.TCM                         as TCM
 import           Data.Vector                             (Vector)
 import qualified Data.Vector                      as V
+import           Data.Vector.Instances                   ()
 import           File.Format.Fasta                       (FastaParseResult,TaxonSequenceMap)
 import           File.Format.Fastc
 import           File.Format.Newick
@@ -35,6 +38,10 @@ import qualified File.Format.Nexus.Data           as Nex
 import qualified File.Format.TNT                  as TNT
 import qualified File.Format.TransitionCostMatrix as F
 import           File.Format.VertexEdgeRoot
+import           Prelude                          hiding (zip, zipWith)
+
+
+-- import Debug.Trace
 
 
 -- | An intermediate composite type for parse result coercion.
@@ -43,7 +50,7 @@ data ParsedCharacterMetadata
    { alphabet      :: Alphabet String
    , characterName :: String
    , weight        :: Double
-   , parsedTCM     :: Maybe TCM
+   , parsedTCM     :: Maybe (TCM, TCMStructure)
    , isDynamic     :: Bool
    , isIgnored     :: Bool
    } deriving (Show)
@@ -100,43 +107,64 @@ instance ParsedMetadata TNT.TntResult where
             , isIgnored     = not $ TNT.active          inMeta
             }
           where
-            (rationalWeight, unfactoredTcmMay) = chooseAppropriateMatrix
+            (rationalWeight, characterAlphabet, unfactoredTcmMay) = chooseAppropriateMatrixAndAlphabet
 
-            -- |
-            -- When constructing the Alphabet for a given character, we need to
-            -- take into account several things.
-            --
-            -- * We must consider the well typed nature of the character. If
-            --   the character type is Continuous, no alphabet exists. We
-            --   supply 'undefined' in place of the alphabet as a hack to make
-            --   later processing easier. This is inherently unsafe, but with
-            --   proper character type checking later, we will never attempt
-            --   to reference the undefined value.
-            --
-            -- * If the charcter type is Discrete (not DNA or Amino Acid), then
-            --   we must check for supplied state names
-            characterAlphabet =
-                case inChar of
-                  TNT.Continuous {} -> undefined -- I'm sure this will never blow up in our face /s
-                  TNT.Dna        {} -> fromSymbols dnaAlph
-                  TNT.Protein    {} -> fromSymbols aaAlph
-                  TNT.Discrete   {} -> 
-                      let stateNameValues = TNT.characterStates inMeta
-                      in
-                          if   null stateNameValues
-                          then fromSymbols disAlph
-                          else fromSymbolsWithStateNames $ zip (toList disAlph) (toList stateNameValues)
-                          
             suppliedWeight = fromIntegral $ TNT.weight inMeta
           
-            chooseAppropriateMatrix
-              | TNT.sankoff  inMeta = maybe (1, Nothing) (second Just) $ TCM.fromList . toList <$> TNT.costTCM inMeta 
-              | TNT.additive inMeta = (1, Just $ TCM.generate (length characterAlphabet) genAdditive)
-              | otherwise           = (1, Just $ TCM.generate (length characterAlphabet) genFitch)
+            chooseAppropriateMatrixAndAlphabet
+              | TNT.sankoff  inMeta =
+                case TCM.fromList . toList <$> TNT.costTCM inMeta of
+                  Nothing       -> (1, fullAlphabet, Nothing)
+                  Just (v, tcm) ->
+                    let truncatedSymbols = V.take (TCM.size tcm - 1) initialSymbolSet
+                    in  (v, toAlphabet truncatedSymbols, Just (tcm, NonSymmetric)) -- TODO: Maybe we can do the diagnosis here
+                  
+              | TNT.additive inMeta = (1, fullAlphabet, Just $ (TCM.generate matrixDimension genAdditive,    Additive))
+              | otherwise           = (1, fullAlphabet, Just $ (TCM.generate matrixDimension genFitch   , NonAdditive))
               where
-                genAdditive, genFitch :: (Int, Int) -> Int
-                genAdditive (i,j) = max i j - min i j
-                genFitch    (i,j) = if i == j then 0 else 1
+                matrixDimension   = length initialSymbolSet
+                fullAlphabet      = toAlphabet initialSymbolSet
+
+                toAlphabet xs
+                  | null stateNameValues = fromSymbols xs
+                  | otherwise            = fromSymbolsWithStateNames $ zip xs stateNameValues
+                  where
+                    stateNameValues = TNT.characterStates inMeta
+
+                -- |
+                -- When constructing the Alphabet for a given character, we need to
+                -- take into account several things.
+                --
+                -- * We must consider the well typed nature of the character. If
+                --   the character type is Continuous, no alphabet exists. We
+                --   supply 'undefined' in place of the alphabet as a hack to make
+                --   later processing easier. This is inherently unsafe, but with
+                --   proper character type checking later, we will never attempt
+                --   to reference the undefined value.
+                --
+                -- * If the charcter type is Discrete (not DNA or Amino Acid), then
+                --   we must check for supplied state names
+                --
+                -- * If the charcter has a Sankoff TCM defined, we truncate the
+                -- character alphabet
+                initialSymbolSet =
+                    case inChar of
+                      TNT.Continuous {} -> undefined -- I'm sure this will never blow up in our face /s
+                      TNT.Dna        {} -> dnaAlph
+                      TNT.Protein    {} -> aaAlph
+                      TNT.Discrete   {} -> disAlph
+{-                        
+                          let stateNameValues = TNT.characterStates inMeta
+                          in
+                              if   null stateNameValues
+                              then fromSymbols disAlph
+                              else fromSymbolsWithStateNames $ zip (toList disAlph) (toList stateNameValues)
+-}
+                          
+
+genAdditive, genFitch :: (Int, Int) -> Int
+genAdditive (i,j) = max i j - min i j
+genFitch    (i,j) = if i == j then 0 else 1
 
 
 -- | (✔)
@@ -145,13 +173,14 @@ instance ParsedMetadata F.TCM where
         pure ParsedCharacterMetadata
         { alphabet      = fromSymbols alph
         , characterName = ""
-        , weight        = fromRational rationalWeight
-        , parsedTCM     = Just unfactoredTCM 
+        , weight        = fromRational rationalWeight * fromIntegral coefficient
+        , parsedTCM     = Just (resultTCM, structure) 
         , isDynamic     = False
         , isIgnored     = False -- Maybe this should be True?
         }
       where
-        (rationalWeight, unfactoredTCM) = TCM.fromList $ toList mat
+        (coefficient, resultTCM, structure) = (,,) <$> factoredWeight <*> factoredTcm <*> tcmStructure $ diagnoseTcm unfactoredTCM
+        (rationalWeight, unfactoredTCM)     = TCM.fromList $ toList mat
 
 
 -- | (✔)
@@ -169,15 +198,24 @@ instance ParsedMetadata Nexus where
             ParsedCharacterMetadata
             { alphabet      = developedAlphabet
             , characterName = Nex.name inMeta
-            , weight        = fromRational rationalWeight * suppliedWeight
-            , parsedTCM     = unfactoredTcmMay
+            , weight        = fromRational chosenWeight * suppliedWeight
+            , parsedTCM     = chosenTCM
             , isDynamic     = not $ Nex.isAligned inMeta 
             , isIgnored     = Nex.ignored inMeta
             }
           where
             suppliedWeight = fromIntegral $ Nex.weight inMeta
-            (rationalWeight, unfactoredTcmMay) = maybe (1, Nothing) (second Just)
-                                               $ TCM.fromList . toList . F.transitionCosts <$> Nex.costM inMeta
+            (chosenWeight, chosenTCM) =
+              if Nex.additive inMeta
+              then (1, Just (TCM.generate (length $ Nex.alphabet inMeta) genAdditive, Additive))
+              else
+                case Nex.costM inMeta of
+                  Nothing   -> (1, Nothing)
+                  Just vals ->
+                    let (rationalWeight, unfactoredTcm)     = TCM.fromList . toList $ F.transitionCosts vals
+                        (coefficient, resultTCM, structure) = (,,) <$> factoredWeight <*> factoredTcm <*> tcmStructure $ diagnoseTcm unfactoredTcm
+                    in  (fromIntegral coefficient * rationalWeight, Just (resultTCM, structure))
+
 
 
 disAlph, dnaAlph, rnaAlph, aaAlph :: Vector String

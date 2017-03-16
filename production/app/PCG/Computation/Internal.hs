@@ -1,6 +1,6 @@
 module PCG.Computation.Internal where
 
---import Bio.PhyloGraph.Solution
+import Bio.PhyloGraphPrime.PhylogeneticDAG
 import Control.Evaluation
 import Data.Char      (isSpace)
 import Data.Either    (partitionEithers)
@@ -8,10 +8,10 @@ import Data.Foldable
 import Data.Monoid
 import PCG.Command
 import PCG.Script
-import PCG.SearchState
+--import PCG.SearchState
 
 import qualified PCG.Command.Types.Read   as Read
---import qualified PCG.Command.Types.Report as Report
+import qualified PCG.Command.Types.Report as Report
 
 data Computation = Computation [Command]
   deriving (Show)
@@ -35,7 +35,7 @@ evaluate (Computation xs) = foldl' (flip f) mempty xs
   where
     f :: Command -> SearchState -> SearchState
     f x@READ   {} = Read.evaluate   x
-   -- f x@REPORT {} = Report.evaluate x
+    f x@REPORT {} = Report.evaluate x
     f _ = error "NOT YET IMPLEMENTED"
 
 renderSearchState :: Evaluation a -> IO ()

@@ -31,6 +31,7 @@ import           Bio.Character.Encodable.Internal
 import           Bio.Character.Encodable.Stream
 import           Bio.Character.Exportable.Class
 import           Control.Arrow                       ((***))
+import           Control.Lens
 import           Data.Alphabet
 import           Data.BitMatrix
 import           Data.BitMatrix.Internal(BitMatrix(..))
@@ -39,6 +40,8 @@ import           Data.Key
 import           Data.Bits
 import           Data.BitVector               hiding (foldr, join, not, replicate)
 import           Data.Foldable
+import           Data.Hashable
+import           Data.List.NonEmpty                  (NonEmpty(..))
 import qualified Data.List.NonEmpty           as NE
 import qualified Data.Map                     as M
 import           Data.Maybe                          (fromMaybe)
@@ -51,7 +54,7 @@ import           Prelude                      hiding (lookup)
 import           Test.Tasty.QuickCheck        hiding ((.&.))
 import           Test.QuickCheck.Arbitrary.Instances ()
 
---import Debug.Trace
+import Debug.Trace
 
 -- TODO: Change DynamicChar/Sequences to DynamicCharacters
         -- Make a missing a null vector
@@ -95,19 +98,12 @@ instance FiniteBits DynamicCharacterElement where
     finiteBitSize = symbolCount
 
 
-instance PossiblyMissingCharacter DynamicChar where
-
-    {-# INLINE toMissing  #-}
-    toMissing c = Missing $ symbolCount c
-
-    {-# INLINE isMissing  #-}
-    isMissing Missing{} = True
-    isMissing _         = False
-
-
 instance EncodableStreamElement DynamicCharacterElement where
 
-    decodeElement alphabet character = NE.fromList $ foldMapWithKey f alphabet
+    decodeElement alphabet character =
+        case foldMapWithKey f alphabet of
+          []   -> gapSymbol alphabet :| [gapSymbol alphabet]
+          x:xs -> x:|xs
       where
         f i symbol
           | character `testBit` i = [symbol]
@@ -123,34 +119,50 @@ instance EncodableStreamElement DynamicCharacterElement where
 --instance NFData DynamicChar
 
 
+instance Hashable DynamicChar where
+
+    hashWithSalt salt (Missing n) = salt `xor` n
+    hashWithSalt salt (DC (BitMatrix n bv)) = salt `xor` n `xor` hashWithSalt salt (toInteger bv)
+
+
+instance PossiblyMissingCharacter DynamicChar where
+
+    {-# INLINE toMissing  #-}
+    toMissing c = Missing $ symbolCount c
+
+    {-# INLINE isMissing  #-}
+    isMissing Missing{} = True
+    isMissing _         = False
+
+
 instance MonoFunctor DynamicChar where
 
     {-# INLINE omap #-}
     omap _ e@Missing{} = e
-    omap f (DC x)      = DC . omap (unwrap . f . DCE) $ x
+    omap f (DC c)      = DC . omap (unwrap . f . DCE) $ c
 
 
 instance MonoFoldable DynamicChar where
 
     {-# INLINE ofoldMap #-}
     ofoldMap _ Missing{} = mempty
-    ofoldMap f (DC x)    = ofoldMap (f . DCE) $ x
+    ofoldMap f (DC c)    = ofoldMap (f . DCE) c
 
     {-# INLINE ofoldr #-}
     ofoldr _ e Missing{} = e
-    ofoldr f e (DC x)    = ofoldr (f . DCE)  e $ x
+    ofoldr f e (DC c)    = ofoldr (f . DCE) e c
 
     {-# INLINE ofoldl' #-}
     ofoldl' _ e Missing{} = e
-    ofoldl' f e (DC x)   = ofoldl' (\acc x -> f acc (DCE x)) e $ x
+    ofoldl' f e (DC c)   = ofoldl' (\acc x -> f acc (DCE x)) e c
 
     {-# INLINE ofoldr1Ex #-} 
     ofoldr1Ex _ Missing{} = error "Trying to mono-morphically fold over an empty structure without supplying an inital accumulator!"
-    ofoldr1Ex f (DC x)    = DCE . ofoldr1Ex (\x y -> unwrap $ f (DCE x) (DCE y)) $ x
+    ofoldr1Ex f (DC c)    = DCE . ofoldr1Ex (\x y -> unwrap $ f (DCE x) (DCE y)) $ c
 
     {-# INLINE ofoldl1Ex' #-}
     ofoldl1Ex' _ Missing{} = error "Trying to mono-morphically fold over an empty structure without supplying an inital accumulator!"
-    ofoldl1Ex' f (DC x)    = DCE . ofoldl1Ex' (\x y -> unwrap $ f (DCE x) (DCE y)) $ x
+    ofoldl1Ex' f (DC c)    = DCE . ofoldl1Ex' (\x y -> unwrap $ f (DCE x) (DCE y)) $ c
 
     {-# INLINE onull #-}
 --    onull = const False
@@ -159,7 +171,7 @@ instance MonoFoldable DynamicChar where
 
     {-# INLINE olength #-}
     olength Missing{} = 0
-    olength (DC x)    = numRows x
+    olength (DC c)    = numRows c
 
 
 -- | Monomorphic containers that can be traversed from left to right.
@@ -167,7 +179,7 @@ instance MonoTraversable DynamicChar where
 
     {-# INLINE otraverse #-}
     otraverse _ e@Missing{} = pure e
-    otraverse f (DC x)      = fmap DC . otraverse (fmap unwrap . f . DCE) $ x
+    otraverse f (DC c)      = fmap DC . otraverse (fmap unwrap . f . DCE) $ c
 
     {-# INLINE omapM #-}
     omapM = otraverse
@@ -176,8 +188,8 @@ instance MonoTraversable DynamicChar where
 instance EncodedAmbiguityGroupContainer DynamicChar where
 
     {-# INLINE symbolCount #-}
-    symbolCount (Missing n) = n
-    symbolCount (DC x)     = numCols x
+    symbolCount (Missing n) = trace ("Missing: " <> show n) n
+    symbolCount (DC c)      = numCols c
 
 
 instance EncodableStream DynamicChar where
@@ -280,7 +292,11 @@ instance Exportable DynamicChar where
         x = numRows bm
         y = numCols bm 
         
-    fromExportableBuffer = undefined
+    fromExportableBuffer ecs = DC $ BitMatrix elemWidth newBitVec
+      where
+        newBitVec = bufferChunksToBitVector elemCount elemWidth $ exportedBufferChunks ecs
+        elemCount = ecs ^. exportedElementCount
+        elemWidth = ecs ^. exportedElementWidth
 
     toExportableElements = encodableStreamToExportableCharacterElements
     

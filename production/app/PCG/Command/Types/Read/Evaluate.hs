@@ -7,29 +7,34 @@ module PCG.Command.Types.Read.Evaluate
 import           Bio.Character.Parsed
 import           Bio.Metadata.Parsed
 import           Bio.PhyloGraph.Forest
+import           Bio.PhyloGraphPrime
+import           Bio.PhyloGraphPrime.PhylogeneticDAG
 --import           Bio.PhyloGraph.Solution      (SearchState)
 import           Control.Evaluation
 import           Control.Monad                (when)
 import           Control.Monad.IO.Class
 import           Control.Monad.Trans.Either
+import           Control.Parallel.Strategies
 import           Data.Alphabet   --    hiding (AmbiguityGroup)
+-- import           Data.Alphabet.IUPAC
 import           Data.Bifunctor               (bimap,first)
-import           Data.Char                    (isLower,toLower,isUpper,toUpper)
+-- import           Data.Char                    (isLower,toLower,isUpper,toUpper)
 import           Data.Either.Custom
 import           Data.Foldable
 import           Data.Functor
-import           Data.Key                     ((!),lookup)
-import           Data.List.NonEmpty           (NonEmpty( (:|) ))
-import qualified Data.List.NonEmpty    as NE
-import           Data.List.Utility            (subsetOf)
-import           Data.Map                     (Map,assocs,insert,union, keys)
-import qualified Data.Map              as M
-import           Data.Maybe                   (fromMaybe)
+import           Data.Key
+-- import           Data.List.NonEmpty           (NonEmpty( (:|) ))
+-- import qualified Data.List.NonEmpty    as NE
+-- import           Data.List.Utility            (subsetOf)
+-- import           Data.Map                     (Map,assocs,insert,union)
+-- import qualified Data.Map              as M
+-- import           Data.Maybe                   (fromMaybe)
 import           Data.Monoid                  ((<>))
 import           Data.Ord                     (comparing)
+import           Data.TCM                     (TCMDiagnosis(..), TCMStructure(..), diagnoseTcm)
 import qualified Data.TCM              as TCM
-import           Data.Vector                  (Vector)
-import qualified Data.Vector           as V   (zipWith)
+-- import           Data.Vector                  (Vector)
+-- import qualified Data.Vector           as V   (zipWith)
 import           File.Format.Fasta   hiding   (FastaSequenceType(..))
 import qualified File.Format.Fasta   as Fasta (FastaSequenceType(..))
 import           File.Format.Fastc   hiding   (Identifier)
@@ -42,7 +47,7 @@ import           PCG.Command.Types            (Command(..))
 import           PCG.Command.Types.Read.DecorationInitialization
 import           PCG.Command.Types.Read.Internal
 import           PCG.Command.Types.Read.Unification.Master
-import           PCG.SearchState
+--import           PCG.SearchState
 import           Prelude             hiding   (lookup)
 import           Text.Megaparsec
 
@@ -62,20 +67,43 @@ evaluate :: Command -> EvaluationT IO a -> SearchState -- EvaluationT IO (Either
 -- evaluate (READ fileSpecs) _old | trace "STARTING READ COMMAND" False = undefined
 evaluate (READ fileSpecs) _old = do
     when (null fileSpecs) $ fail "No files specified in 'read()' command"
-    result <- liftIO . runEitherT . eitherTValidation $ parseSpecifiedFile <$> fileSpecs
+    result <- liftIO . runEitherT . eitherTValidation $ parMap rpar parseSpecifiedFile fileSpecs
     case result of
       Left pErr -> fail $ show pErr   -- Report structural errors here.
       Right xs ->
         case decoration . masterUnify $ transformation <$> concat xs of
+--        case masterUnify $ transformation <$> concat xs of
           Left uErr -> fail $ show uErr -- Report unification errors here.
            -- TODO: rectify against 'old' SearchState, don't just blindly merge or ignore old state
-          Right g   -> (liftIO . putStrLn $ show g) $> g
-
+          Right g   ->  (liftIO . putStrLn {- . take 500000 -} $ show g)
+                       -- (liftIO . putStrLn $ renderSequenceCosts g)
+                    $> g
   where
-    transformation = expandIUPAC
+    transformation = id -- expandIUPAC
     decoration = fmap (fmap initializeDecorations)
 
 evaluate _ _ = fail "Invalid READ command binding"
+
+renderSequenceCosts (Left    x) = "<Trees only>"
+renderSequenceCosts (Right sol) = outputStream
+  where
+    outputStream = foldMapWithKey f $ phylogeneticForests sol
+    f key forest = unlines
+        [ "Solution #" <> show key
+        , ""
+        , foldMapWithKey g forest
+        ]
+    g key dag = unlines
+        [ "Forest #" <> show key
+        , ""
+        , foldMapWithKey h $ rootCosts dag
+        ]
+    h key rootCost = unlines
+        [ "Root #"  <> show key
+        , "Cost = " <> show rootCost
+        ]
+      
+--    unlines . toList . fmap (unlines . toList . fmap (unlines . fmap show . toList . rootCosts)) . phylogeneticForests
 
 
 parseSpecifiedFile  :: FileSpecification -> EitherT ReadError IO [FracturedParseResult]
@@ -103,15 +131,16 @@ setTcm t tcmPath fpr =
    case relatedTcm fpr of
      Just _  -> Left $ multipleTCMs (sourceFile fpr) tcmPath
      Nothing ->
-       let (factoredWeight, factoredTCM) = TCM.fromList . (\x -> (trace . show $ length x) x) . toList $ transitionCosts t
-           relatedAlphabet               = fromSymbols $ customAlphabet t
+       let (coefficient, resultTCM, structure) = (,,) <$> factoredWeight <*> factoredTcm <*> tcmStructure $ diagnoseTcm unfactoredTCM
+           (unfactoredWeight, unfactoredTCM)   = TCM.fromList . toList $ transitionCosts t
+           relatedAlphabet                     = fromSymbols $ customAlphabet t
            metadataUpdate x = x
-               { weight = weight x * fromRational factoredWeight
+               { weight   = weight x * fromRational unfactoredWeight * fromIntegral coefficient
                , alphabet = relatedAlphabet
                }
        in  pure $ fpr
            { parsedMetas = metadataUpdate <$> parsedMetas fpr
-           , relatedTcm  = Just factoredTCM
+           , relatedTcm  = Just (resultTCM, structure)
            }
 
 
@@ -146,8 +175,8 @@ parseCustomAlphabet spec = getSpecifiedContent spec >>= (hoistEither . parseSpec
   where
     parse'' m (path, content) =
         case m of
-          Nothing     -> fracturedResult 
-          Just oldTCM -> setTcm oldTCM path =<< fracturedResult 
+          Nothing     -> fracturedResult
+          Just oldTCM -> setTcm oldTCM path =<< fracturedResult
       where
         fracturedResult = toFractured Nothing path <$> parseResult
         parseResult     = first unparsable $ parse' fastcStreamParser path content
@@ -184,7 +213,7 @@ setCharactersToAligned fpr = fpr { parsedMetas = setAligned <$> parsedMetas fpr 
   where
     setAligned x = x { isDynamic = False }
 
-
+{- removed to eliminate compilation warning
 expandIUPAC :: FracturedParseResult -> FracturedParseResult
 expandIUPAC fpr = fpr { parsedChars = newTreeChars }
   where
@@ -198,15 +227,15 @@ expandIUPAC fpr = fpr { parsedChars = newTreeChars }
             h :: ParsedCharacterMetadata -> Maybe ParsedChar -> Maybe ParsedChar
             h cInfo seqMay = expandCodes <$> seqMay
               where
-                cAlph = toList $ alphabet cInfo
+                cAlph = alphabet cInfo
 
                 expandCodes :: ParsedChar -> ParsedChar
                 expandCodes x
-                  | cAlph `subsetOf` (concatMap toList . keys) nucleotideIUPAC = expandOrId nucleotideIUPAC <$> x
-                  | cAlph `subsetOf` (concatMap toList . keys) aminoAcidIUPAC  = expandOrId aminoAcidIUPAC  <$> x
+                  | isAlphabetDna       cAlph = expandOrId nucleotideIUPAC <$> x
+                  | isAlphabetAminoAcid cAlph = expandOrId aminoAcidIUPAC  <$> x
                   | otherwise = x
     expandOrId m x = fromMaybe x $ x `lookup` m
-
+-}
 
 -- TODO: check file extension, to guess which parser to use first
 progressiveParse :: FilePath -> EitherT ReadError IO FracturedParseResult
@@ -249,9 +278,9 @@ progressiveParse inputPath = do
     farthestParseErr err = maximum $ errorPos err
     nukeParser = (\x -> try (fastaStreamConverter Fasta.DNA x) <|> fastaStreamConverter Fasta.RNA x) =<< fastaStreamParser
     acidParser = fastaStreamConverter Fasta.DNA =<< fastaStreamParser
-    
 
-toFractured :: (ParsedMetadata a, ParsedCharacters a, ParsedForest a) => Maybe TCM.TCM -> FilePath -> a -> FracturedParseResult
+
+toFractured :: (ParsedMetadata a, ParsedCharacters a, ParsedForest a) => Maybe (TCM.TCM, TCMStructure) -> FilePath -> a -> FracturedParseResult
 toFractured tcmMat path =
     FPR <$> unifyCharacters
         <*> unifyMetadata
@@ -260,7 +289,7 @@ toFractured tcmMat path =
         <*> const path
 {--}
 
-
+{- removed to eliminate compilation warning
 nucleotideIUPAC :: Map (AmbiguityGroup String) (AmbiguityGroup String)
 nucleotideIUPAC = casei $ nonEmptyMap core
   where
@@ -314,5 +343,5 @@ casei x = foldl f x $ assocs x
       | isUpper k  = insert (pure . pure $ toLower k) v m
       | otherwise  = m
     f m (_    , _) = m
-
+-}
 

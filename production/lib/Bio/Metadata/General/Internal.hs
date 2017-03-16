@@ -10,10 +10,11 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE FlexibleInstances, MultiParamTypeClasses, TypeFamilies #-}
+{-# LANGUAGE FlexibleContexts, FlexibleInstances, MultiParamTypeClasses, TypeFamilies #-}
 
 module Bio.Metadata.General.Internal
   ( GeneralCharacterMetadataDec()
+  , GeneralCharacterMetadata(..)
   , generalMetadata
   ) where
 
@@ -33,8 +34,20 @@ data GeneralCharacterMetadataDec
    } deriving (Eq, Show) 
 
 
+-- |
+-- A constraint for type containing metadata.
+class ( HasCharacterName   s CharacterName
+      , HasCharacterWeight s Double
+      ) => GeneralCharacterMetadata s where  
+
+    extractGeneralCharacterMetadata :: s -> GeneralCharacterMetadataDec
+
+
 -- | (✔)
 instance GeneralCharacterMetadata GeneralCharacterMetadataDec where
+
+    {-# INLINE extractGeneralCharacterMetadata #-}
+    extractGeneralCharacterMetadata = id
 
 
 -- | (✔)

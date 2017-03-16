@@ -13,7 +13,7 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE FlexibleContexts, TypeFamilies #-}
 
 --TODO: Add instance of Functor 
 --TODO: Add instance of BiFunctor 
@@ -25,11 +25,15 @@ module Bio.Sequence.Internal
   , hexmap
   , hexTranspose
   , hexZipWith
+  , sequenceCost
   ) where
 
---import           Bio.Character.Encodable
+
+import           Bio.Character.Decoration.Continuous
 import           Bio.Sequence.Block               (CharacterBlock)
 import qualified Bio.Sequence.Block      as Block
+import           Control.Parallel.Custom
+import           Control.Parallel.Strategies
 import           Data.Bifunctor
 import           Data.Foldable
 import           Data.Key
@@ -65,7 +69,7 @@ hexmap :: (m -> m')
        -> (d -> d')
        -> CharacterSequence m  i  c  f  a  d
        -> CharacterSequence m' i' c' f' a' d'
-hexmap f1 f2 f3 f4 f5 f6 = fromBlocks . fmap (Block.hexmap f1 f2 f3 f4 f5 f6) . toBlocks
+hexmap f1 f2 f3 f4 f5 f6 = fromBlocks . parmap rpar (Block.hexmap f1 f2 f3 f4 f5 f6) . toBlocks
 
 
 hexTranspose :: Traversable1 t => t (CharacterSequence m i c f a d) -> CharacterSequence [m] [i] [c] [f] [a] [d]
@@ -84,15 +88,15 @@ hexTranspose = fromBlocks . deepTranspose . fmap toBlocks . toList
 -}
 
 hexZipWith :: (m1 -> m2 -> m3)
-          -> (i1 -> i2 -> i3)
-          -> (c1 -> c2 -> c3)
-          -> (f1 -> f2 -> f3)
-          -> (a1 -> a2 -> a3)
-          -> (d1 -> d2 -> d3)
-          -> CharacterSequence m1 i1 c1 f1 a1 d1
-          -> CharacterSequence m2 i2 c2 f2 a2 d2
-          -> CharacterSequence m3 i3 c3 f3 a3 d3
-hexZipWith f1 f2 f3 f4 f5 f6 lhs rhs = fromBlocks $ zipWith (Block.hexZipWith f1 f2 f3 f4 f5 f6) (toBlocks lhs) (toBlocks rhs)
+           -> (i1 -> i2 -> i3)
+           -> (c1 -> c2 -> c3)
+           -> (f1 -> f2 -> f3)
+           -> (a1 -> a2 -> a3)
+           -> (d1 -> d2 -> d3)
+           -> CharacterSequence m1 i1 c1 f1 a1 d1
+           -> CharacterSequence m2 i2 c2 f2 a2 d2
+           -> CharacterSequence m3 i3 c3 f3 a3 d3
+hexZipWith f1 f2 f3 f4 f5 f6 lhs rhs = fromBlocks $ parZipWith rpar (Block.hexZipWith f1 f2 f3 f4 f5 f6) (toBlocks lhs) (toBlocks rhs)
 
 
 -- |
@@ -158,10 +162,24 @@ instance ( Show m
          , Show f
          , Show a
          , Show d
+         , HasCharacterCost   m Word
+         , HasCharacterCost   i Word
+--         , HasCharacterCost   c Double
+         , HasCharacterCost   f Word
+         , HasCharacterCost   a Word
+         , HasCharacterCost   d Word
+         , HasCharacterWeight m Double
+         , HasCharacterWeight i Double
+--         , HasCharacterWeight c Double
+         , HasCharacterWeight f Double
+         , HasCharacterWeight a Double
+         , HasCharacterWeight d Double
          ) => Show (CharacterSequence m i c f a d) where
 
-    show = foldMapWithKey f . toBlocks
+    show seek = prefix <> "\n" <> suffix
       where
+        prefix = "Sequence Cost: " <> show (sequenceCost seek)
+        suffix = foldMapWithKey f $ toBlocks seek
         f blockNumber shownBlock = mconcat
             [ "Character Block #"
             , show blockNumber
@@ -171,3 +189,21 @@ instance ( Show m
             ]
         indent = unlines . fmap ("  "<>) . lines
 
+
+sequenceCost :: ( HasCharacterCost   m e
+                , HasCharacterCost   i e
+--                , HasCharacterCost   c Double
+                , HasCharacterCost   f e
+                , HasCharacterCost   a e
+                , HasCharacterCost   d e
+                , HasCharacterWeight m Double
+                , HasCharacterWeight i Double
+--                , HasCharacterWeight c Double
+                , HasCharacterWeight f Double
+                , HasCharacterWeight a Double
+                , HasCharacterWeight d Double
+                , Integral e
+                )
+             => CharacterSequence m i c f a d
+             -> Double
+sequenceCost = sum . parmap rpar Block.blockCost . toBlocks

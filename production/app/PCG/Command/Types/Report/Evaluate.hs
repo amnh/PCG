@@ -5,22 +5,23 @@ module PCG.Command.Types.Report.Evaluate
   ) where
 
 --import           Analysis.ImpliedAlignment.Standard
-import           Analysis.ImpliedAlignment
-import           Analysis.Parsimony.Binary.Optimization
+--import           Analysis.ImpliedAlignment
+--import           Analysis.Parsimony.Binary.Optimization
 import           Bio.Metadata
-import           Bio.PhyloGraph.Solution
-import           Bio.PhyloGraph.Tree.Binary
+import           Bio.PhyloGraphPrime.PhylogeneticDAG
 import           Control.Monad.IO.Class
 import           Control.Monad.Logger
 import           Data.Foldable
 import           Data.List.NonEmpty
 import           PCG.Command.Types (Command(..))
-import           PCG.Command.Types.Report.TaxonMatrix
+import           PCG.Command.Types.Report.DynamicCharacterTable
 import           PCG.Command.Types.Report.GraphViz
+import           PCG.Command.Types.Report.ImpliedAlignmentFasta
 import           PCG.Command.Types.Report.Internal
 import           PCG.Command.Types.Report.Metadata
 import           PCG.Command.Types.Report.Newick
-import           PCG.Command.Types.Report.ImpliedAlignmentFasta
+import           PCG.Command.Types.Report.TaxonMatrix
+
 
 evaluate :: Command -> SearchState -> SearchState
 evaluate (REPORT target format) old = do
@@ -34,20 +35,26 @@ evaluate (REPORT target format) old = do
          OutputToFile f -> old <* liftIO (writeFile f output)
 
 evaluate _ _ = fail "Invalid READ command binding"
+
+
 -- | Function to add optimization to the newick reporting
 -- TODO: change this error into a warning
+{-
 addOptimization :: StandardSolution -> StandardSolution
 addOptimization result
   | allBinary = solutionOptimization 1 result
   | otherwise = error "Cannot perform optimization because graph is not binary, outputting zero cost"
     where allBinary = all (all verifyBinary) (forests result)
+-}
 
 -- TODO: Redo reporting
-generateOutput :: StandardSolution -> OutputFormat -> FileStreamContext
-generateOutput g (CrossReferences fileNames)   = SingleStream $ taxonReferenceOutput g fileNames
-generateOutput g Data                       {} = SingleStream . newickReport $ addOptimization g
-generateOutput g DotFile                    {} = SingleStream $ dotOutput g
-generateOutput g Metadata                   {} = SingleStream $ metadataCsvOutput g
+--generateOutput :: StandardSolution -> OutputFormat -> FileStreamContext
+--generateOutput g (CrossReferences fileNames)   = SingleStream $ taxonReferenceOutput g fileNames
+--generateOutput g Data                       {} = SingleStream . newickReport $ addOptimization g
+--generateOutput g DotFile                    {} = SingleStream $ dotOutput g
+generateOutput (Right g) DynamicTable               {} = SingleStream $ outputDynamicCharacterTablularData g
+--generateOutput g Metadata                   {} = SingleStream $ metadataCsvOutput g
+{-
 generateOutput g ImpliedAlignmentCharacters {} =
   case getForests g of
     [] -> ErrorCase "The graph contains an empty forest."
@@ -58,6 +65,7 @@ generateOutput g ImpliedAlignmentCharacters {} =
           case iaOutput . iaSolution $ addOptimization g of
             [] -> ErrorCase "There were no Dynamic homology characters on which to perform an implied alignment."
             zs -> MultiStream $ fromList zs
+-}
 {-
   case getForests g of
     [] -> ErrorCase "The graph contains an empty forest."
@@ -83,9 +91,11 @@ data FileStreamContext
    | SingleStream FileContent
    | MultiStream  (NonEmpty (FilePath,FileContent))
 
+{-
 dynamicCharacterCount :: MetadataSolution m StandardMetadata => m -> Int
 dynamicCharacterCount = foldl' f 0 . getMetadata
   where
     f n e = if   getType e == DirectOptimization
             then n + 1
             else n
+-}

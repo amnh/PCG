@@ -24,6 +24,8 @@ module Bio.Character
   , EncodableStream(..)
   , EncodableStreamElement(..)
   , Exportable(..)
+  , showStream
+  , showStreamElement 
   ) where
 
 import Bio.Character.Encodable

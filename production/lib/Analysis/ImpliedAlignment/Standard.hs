@@ -16,7 +16,7 @@
 module Analysis.ImpliedAlignment.Standard where
 
 import           Analysis.ImpliedAlignment.Internal
-import           Analysis.Parsimony.Binary.DirectOptimization
+import           Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise
 import           Bio.Character.Encodable
 import           Bio.Metadata
 import           Bio.PhyloGraph.Forest
@@ -160,7 +160,7 @@ numeratePreorder initTree initNode inMeta curCounts
                     final1 = getForAlign node1
                     final2 = getForAlign node2
                     allUnzip = V.unzip allDO
-                    allDO = V.zipWith3 checkThenAlign final1 final2 $ getCosts <$> inMeta
+                    allDO = V.zipWith3 checkThenAlign final1 final2 $ toCostFunction . getCosts <$> inMeta
                     checkThenAlign s1 s2 m = if olength s1 == olength s2 then (s1, s2) else doAlignment s1 s2 m
 
 -- | Back propagation to be performed after insertion events occur in a numeration

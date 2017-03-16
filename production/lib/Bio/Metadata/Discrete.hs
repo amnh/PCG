@@ -12,12 +12,9 @@
 
 module Bio.Metadata.Discrete
   ( DiscreteCharacterMetadataDec()
-  , DiscreteCharacterMetadata()
-  , GeneralCharacterMetadata()
+  , DiscreteCharacterMetadata(..)
   , HasCharacterAlphabet(..)
   , HasCharacterName(..)
-  , HasCharacterSymbolTransitionCostMatrixGenerator(..)
-  , HasCharacterTransitionCostMatrix(..)
   , HasCharacterWeight(..)
   , discreteMetadata
   ) where

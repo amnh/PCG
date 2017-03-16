@@ -15,25 +15,28 @@
 module Bio.PhyloGraphPrime.ReferenceDAG.Internal where
 
 import           Bio.PhyloGraphPrime.Component
-import           Control.Arrow             ((&&&))
+import           Control.Arrow              ((&&&))
 import           Data.Bifunctor
 import           Data.Foldable
-import           Data.Hashable             (Hashable)
+import           Data.Hashable              (Hashable)
 import qualified Data.HashMap.Strict as HM
-import           Data.IntMap               (IntMap)
-import qualified Data.IntMap        as IM
-import           Data.IntSet               (IntSet)
-import qualified Data.IntSet        as IS
+import           Data.IntMap                (IntMap)
+import qualified Data.IntMap         as IM
+import           Data.IntSet                (IntSet)
+import qualified Data.IntSet         as IS
 import           Data.Key
-import           Data.List                 (intercalate)
-import           Data.List.NonEmpty        (NonEmpty)
-import qualified Data.List.NonEmpty as NE
-import           Data.Monoid               ((<>))
+import           Data.List                  (intercalate)
+import           Data.List.NonEmpty         (NonEmpty)
+import qualified Data.List.NonEmpty  as NE
+import           Data.Monoid                ((<>))
 import           Data.MonoTraversable
-import           Data.Vector               (Vector)
-import qualified Data.Vector        as V
-import           Data.Vector.Instances     ()
-import           Prelude            hiding (lookup)
+import           Data.Vector                (Vector)
+import qualified Data.Vector         as V
+import           Data.Vector.Instances      ()
+import           Prelude             hiding (lookup)
+
+
+import Debug.Trace
 
 
 -- |
@@ -185,7 +188,7 @@ unfoldDAG :: (Eq b, Hashable b) => (b -> ([(e,b)], n, [(e,b)])) -> b -> Referenc
 unfoldDAG f origin =
     RefDAG
     { references = referenceVector
-    , rootRefs   = NE.fromList $ otoList rootIndices
+    , rootRefs   = NE.fromList $ roots2 -- otoList rootIndices
     , graphData  = GraphData 0
     }
   where
@@ -198,8 +201,17 @@ unfoldDAG f origin =
             , childRefs      = iMap
             }
 
+    -- TODO:
+    -- _rootIndices seems to be wrong so we do this.
+    -- slightly inefficient, see if we can correct the _rootIndices value.
+    roots2 = foldMapWithKey h resultMap
+      where
+        h k (v,_,_)
+          | onull v   = [k]
+          | otherwise = []
+
     initialAccumulator = (-1, -1, (Nothing,mempty), mempty, mempty)
-    (_, _, _, rootIndices, resultMap) = g initialAccumulator origin
+    (_, _, _, _rootIndices, resultMap) = g initialAccumulator origin
     g (counter, _otherIndex, previousContext@(previousIndex, previousSeenSet), currentRoots, currentMap) currentValue =
       case currentValue `lookup` previousSeenSet of
          -- If this value is in the previously seen set we don't recurse.
@@ -302,11 +314,12 @@ nodePreOrder f dag = RefDAG <$> const newReferences <*> rootRefs <*> graphData $
       where
         h i = f datum $ (childPosition &&& (memo !)) <$> parentIndices
           where
-            datum           = nodeDecoration node 
             node            = references dag ! i
-            -- In sparsely connected graphs (like ours) this will be effectively constant.
-            childPosition j = fromIntegral . length . takeWhile (<i) . IM.keys . childRefs $ references dag ! j
+            datum           = nodeDecoration node 
             parentIndices   = otoList $ parentRefs node
+            -- In sparsely connected graphs (like ours) this will be effectively constant.
+            childPosition j = toEnum . length . takeWhile (/=i) . IM.keys . childRefs $ references dag ! j
+
 
 
 -- |
@@ -345,6 +358,9 @@ referenceRendering dag = unlines $ [shownRootRefs] <> toList shownDataLines
     pad 0    xs  = xs
     pad n (x:xs) = x : pad (n-1) xs
 
+
+nodeFoldMap :: Monoid m => (n -> m) -> ReferenceDAG e n -> m
+nodeFoldMap f = foldMap f . fmap nodeDecoration . references
 
 -- A test for unfoldDAG containing all node types!
 {--

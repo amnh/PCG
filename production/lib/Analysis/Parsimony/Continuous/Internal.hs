@@ -34,7 +34,7 @@ import Data.List.NonEmpty (NonEmpty( (:|) ))
 
 
 -- data ContinuousOptimizationDecoration c = ContinuousOptimizationDecoration
---     { minCost           :: Double      -- cost of the subtree
+--     { characterCost           :: Double      -- cost of the subtree
 --     , preliminaryInterval :: c           -- held here until final state is determined and we can assign that into discreteCharacter
 --     , isLeaf            :: Bool
 --     , interval          :: c
@@ -81,7 +81,7 @@ updatePostOrder  parentDecoration (leftChild:|(rightChild:_)) = returnNodeDecora
         (newMin, newMax)              = leftInterval `intersect` rightInterval
         (leftInterval, rightInterval) = join bimap (^. preliminaryInterval) (leftChild, rightChild)
         newInterval                   = (newMin, newMax)
-        totalCost                     = thisNodeCost + (leftChild ^. minCost) + (rightChild ^. minCost)
+        totalCost                     = thisNodeCost + (leftChild ^. characterCost) + (rightChild ^. characterCost)
         thisNodeCost                  = newMax - newMin
         returnNodeDecoration          =
             extendDiscreteToContinuous parentDecoration totalCost newInterval (leftInterval, rightInterval) False

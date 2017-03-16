@@ -63,7 +63,8 @@ void print_matrices(nw_matrices_p m, int alphSize) {
 
 }
 
-// TODO: wtf is with the 12 here?
+// The 12 is because we only use 2 rows of the matrix at a time on the alignment matrix,
+// and we have four alignment matrices plus two shorter ones for the gap costs.
 inline int
 mat_size_of_2d_matrix (int w, int h) {
     if (w > h) return (w * 12);
@@ -76,7 +77,6 @@ mat_clean_direction_matrix (nw_matrices_p m) {
     int i;
     for (i = 0; i < cap; i++)
         m->nw_dirMtx[i] = (DIR_MTX_ARROW_t) 0;
-    return;
 }
 
 /** Allocate or reallocate space for the six matrices, for both 2d and 3d alignments.
@@ -157,66 +157,36 @@ mat_setup_size (nw_matrices_p m, int len_seq1, int len_seq2, int len_seq3, int l
     }
 }
 
-int *
-mat_get_2d_prec (const nw_matrices_p m) {
-    return (m->precalcMtx);
-}
-
-int *
-mat_get_3d_prec (const nw_matrices_p m) {
-    return (m->precalcMtx);
-}
-
-int *
-mat_get_2d_nwMtx (nw_matrices_p m) {
-    return (m->nw_costMtx);
-}
-
-DIR_MTX_ARROW_t  *
-mat_get_2d_direct (const nw_matrices_p m) {
-    return (m->nw_dirMtx);
-}
-
-int *
-mat_get_3d_matrix (nw_matrices_p m) {
-    return (m->nw_costMtx3d_d);
-}
-
-DIR_MTX_ARROW_t  *
-mat_get_3d_direct (nw_matrices_p m) {
-    return (m->nw_dirMtx3d_d);
-}
 
 void
 mat_print_algn_2d (nw_matrices_p m, int w, int h) {
     int *mm;
     int i, j;
-    mm = mat_get_2d_nwMtx (m);
+    mm = m->nw_costMtx;
     for (i = 0; i < h; i++) {
         for (j = 0; j < w; j++)
             fprintf (stdout, "%d\t", *(mm + (w * i) + j));
         fprintf (stdout, "\n");
     }
     fprintf (stdout, "\n");
-    return;
 }
 
 
 void
-mat_print_algn_3d (nw_matrices_p m, int w, int h, int d) {
-    int *mm;
-    int i, j, k, pos;
-    mm = mat_get_3d_matrix (m);
+mat_print_algn_3d (nw_matrices_p alignmentMatrices, int w, int h, int d) {
+    int *costs;
+    size_t i, j, k, pos;
+
+    costs = alignmentMatrices->nw_costMtx3d_d;
     for (i = 0; i < h; i++) {
         for (j = 0; j < d; j++) {
             for (k = 0; k < w; k++) {
                 pos = (i * d * w) + (d * j) + k;
-                fprintf (stdout, "%d\t", *(mm +pos));
+                fprintf (stdout, "%d\t", *(costs + pos));
             }
             fprintf (stdout, "\n");
         }
         fprintf (stdout, "\n");
     }
     fprintf (stdout, "\n");
-    return;
 }

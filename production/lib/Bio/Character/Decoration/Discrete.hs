@@ -23,10 +23,10 @@ module Bio.Character.Decoration.Discrete
   , GeneralCharacterMetadata()
   , HasCharacterAlphabet(..)
   , HasCharacterName(..)
-  , HasCharacterSymbolTransitionCostMatrixGenerator(..)
-  , HasCharacterTransitionCostMatrix(..)
   , HasCharacterWeight(..)
   , HasDiscreteCharacter(..)
+  , HasSymbolChangeMatrix(..)
+  , HasTransitionCostMatrix(..)
   , PossiblyMissingCharacter(..)
   , SimpleDiscreteCharacterDecoration(..)
   , showDiscreteCharacterElement
@@ -35,6 +35,8 @@ module Bio.Character.Decoration.Discrete
 
 import Bio.Character.Encodable
 import Bio.Metadata.Discrete
+import Bio.Metadata.DiscreteWithTCM
+import Bio.Metadata.General
 import Bio.Metadata.CharacterName
 import Control.Lens
 import Data.Alphabet
@@ -46,7 +48,7 @@ import Data.TCM
 data DiscreteDecoration c
    = DiscreteDec
    { discreteDecorationCharacter :: c
-   , metadata                    :: DiscreteCharacterMetadataDec c
+   , metadata                    :: DiscreteWithTCMCharacterMetadataDec c
    }
 
 
@@ -85,14 +87,14 @@ class HasDiscreteCharacter s a | s -> a where
 -- | (✔)
 class ( HasDiscreteCharacter s a
       , EncodableStaticCharacter a
-      , DiscreteCharacterMetadata s a
+      , DiscreteWithTcmCharacterMetadata s a
       ) => DiscreteCharacterDecoration s a | s -> a where
 
 
 -- | (✔)
 class DiscreteCharacterDecoration s a => SimpleDiscreteCharacterDecoration s a | s -> a where
 
-    toDiscreteCharacterDecoration :: CharacterName -> Double -> Alphabet String -> TCM -> (x -> a) -> x -> s
+    toDiscreteCharacterDecoration :: CharacterName -> Double -> Alphabet String -> (Word -> Word -> Word) -> (x -> a) -> x -> s
     {-# MINIMAL toDiscreteCharacterDecoration #-}
 
 
@@ -122,21 +124,21 @@ instance HasCharacterName (DiscreteDecoration c) CharacterName where
 
 
 -- | (✔)
-instance HasCharacterSymbolTransitionCostMatrixGenerator (DiscreteDecoration c) (Int -> Int -> Int) where
+instance HasSymbolChangeMatrix (DiscreteDecoration c) (Word -> Word -> Word) where
 
-    characterSymbolTransitionCostMatrixGenerator = lens getter setter
+    symbolChangeMatrix = lens getter setter
       where
-         getter e   = metadata e ^. characterSymbolTransitionCostMatrixGenerator
-         setter e f = e { metadata = metadata e &  characterSymbolTransitionCostMatrixGenerator .~ f }
+         getter e   = metadata e ^. symbolChangeMatrix
+         setter e f = e { metadata = metadata e & symbolChangeMatrix .~ f }
 
 
 -- | (✔)
-instance HasCharacterTransitionCostMatrix (DiscreteDecoration c) (c -> c -> (c, Int)) where
+instance HasTransitionCostMatrix (DiscreteDecoration c) (c -> c -> (c, Word)) where
 
-    characterTCM = lens getter setter
+    transitionCostMatrix = lens getter setter
       where
-         getter e   = metadata e ^. characterTCM
-         setter e f = e { metadata = metadata e &  characterTCM .~ f }
+         getter e   = metadata e ^. transitionCostMatrix
+         setter e f = e { metadata = metadata e & transitionCostMatrix .~ f }
 
 
 -- | (✔)
@@ -151,9 +153,16 @@ instance HasCharacterWeight (DiscreteDecoration c) Double where
 -- | (✔)
 instance GeneralCharacterMetadata (DiscreteDecoration c) where
 
+    {-# INLINE extractGeneralCharacterMetadata #-}
+    extractGeneralCharacterMetadata = extractGeneralCharacterMetadata . metadata
+
 
 -- | (✔)
-instance EncodableStreamElement c => DiscreteCharacterMetadata (DiscreteDecoration c) c where
+instance EncodableStreamElement c => DiscreteCharacterMetadata (DiscreteDecoration c) where
+
+
+-- | (✔)
+instance EncodableStreamElement c => DiscreteWithTcmCharacterMetadata (DiscreteDecoration c) c where
 
 
 -- | (✔)
@@ -162,8 +171,8 @@ instance EncodableStaticCharacter c => DiscreteCharacterDecoration (DiscreteDeco
 
 -- | (✔)
 instance EncodableStaticCharacter c => SimpleDiscreteCharacterDecoration (DiscreteDecoration c) c where
-    toDiscreteCharacterDecoration name weight alphabet tcm g symbolSet =
+    toDiscreteCharacterDecoration name weight alphabet scm g symbolSet =
         DiscreteDec
         { discreteDecorationCharacter = g symbolSet
-        , metadata                    = discreteMetadata name weight alphabet tcm
+        , metadata                    = discreteMetadataWithTCM name weight alphabet scm
         }

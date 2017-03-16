@@ -12,29 +12,45 @@
 
 module Bio.Character.Decoration.Dynamic
   ( DynamicDecorationInitial()
+  , DirectOptimizationPostOrderDecoration()
   , DynamicDecorationDirectOptimization()
   , DynamicDecorationImpliedAlignment()
   , SimpleDynamicDecoration()
   , DirectOptimizationDecoration()
   , ImpliedAlignmentDecoration()
   , DynamicCharacterDecoration(..)
+  , DynamicDecorationDirectOptimizationPostOrderResult()
   , GeneralCharacterMetadata()
+  , DiscreteCharacterMetadata()
+  , DiscreteWithTcmCharacterMetadata()
+  , DynamicCharacterMetadata()
+  , SimpleDynamicExtensionPostOrderDecoration(..)
+  , PostOrderExtensionDirectOptimizationDecoration(..)
   , HasCharacterAlphabet(..)
+  , HasCharacterCost(..)
+  , HasCharacterLocalCost(..)
   , HasCharacterName(..)
-  , HasCharacterSymbolTransitionCostMatrixGenerator(..)
-  , HasCharacterTransitionCostMatrix(..)
   , HasCharacterWeight(..)
   , HasEncoded(..)
   , HasFinalGapped(..)
   , HasFinalUngapped(..)
   , HasPreliminaryGapped(..)
   , HasPreliminaryUngapped(..)
+  , HasLeftAlignment(..)
+  , HasRightAlignment(..)
   , HasImpliedAlignment(..)
+  , HasSymbolChangeMatrix(..)
+  , HasTransitionCostMatrix(..)
+  , HasSparseTransitionCostMatrix(..)
+  , HasDenseTransitionCostMatrix(..)
   , PossiblyMissingCharacter(..)
   ) where
 
 import Bio.Character.Decoration.Dynamic.Class
 import Bio.Character.Decoration.Dynamic.Internal
+import Bio.Character.Decoration.Shared
 import Bio.Character.Encodable
 import Bio.Metadata.Discrete
-
+import Bio.Metadata.DiscreteWithTCM
+import Bio.Metadata.Dynamic
+import Bio.Metadata.General

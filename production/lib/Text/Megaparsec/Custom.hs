@@ -26,12 +26,16 @@ module Text.Megaparsec.Custom
   , inlineSpace
   , nonEmpty
   , somethingTill
+  , runParserOnFile
+  , parseWithDefaultErrorType
   ) where
 
 import           Data.Char                (isSpace)
+import           Data.Either              (either)
 import           Data.Functor             (($>))
-import           Data.List.NonEmpty       (NonEmpty)
+import           Data.List.NonEmpty       (NonEmpty(..))
 import qualified Data.List.NonEmpty as NE (fromList)
+import           Data.Semigroup
 import qualified Data.Set           as S  (fromList)
 import           Text.Megaparsec
 import           Text.Megaparsec.Prim     (MonadParsec)
@@ -44,8 +48,8 @@ import           Text.Megaparsec.Lexer    (float,integer,signed)
 
 
 -- | Concatenate the result of two list producing combinators
-(<++>) :: Applicative f => f [a] -> f [a] -> f [a]
-(<++>) a b = (++) <$> a <*> b
+(<++>) :: (Applicative f, Semigroup a) => f a -> f a -> f a
+(<++>) a b = (<>) <$> a <*> b
 
 
 -- | Collects one or more of the arguments into a `NonEmpty` list.
@@ -129,6 +133,18 @@ comment start end = commentDefinition' False
           if enquote
           then [prefix,before,comments,suffix,after]
           else [before,comments,after]
+
+
+-- |
+-- Tries to run a parser on a given file.
+-- On a parse success returns the Show value of the parsed result.
+-- On a parse failure the nice error string.
+runParserOnFile :: Show a => Parsec Dec String a -> FilePath -> IO String
+runParserOnFile parser filePath = either (parseErrorPretty :: ParseError Char Dec -> String) show . parse parser filePath <$> readFile filePath
+
+
+parseWithDefaultErrorType :: Parsec Dec s a -> s -> Either (ParseError (Token s) Dec) a
+parseWithDefaultErrorType c = parse c "" 
 
 
 -- | Takes a 'Stream' of 'Char's and returns a String

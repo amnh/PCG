@@ -12,24 +12,27 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE BangPatterns #-}
+{-# LANGUAGE BangPatterns, FlexibleContexts #-}
 
 module PCG.Command.Types.Read.DecorationInitialization where
 
 import           Analysis.Parsimony.Additive.Internal
 import           Analysis.Parsimony.Fitch.Internal
 import           Analysis.Parsimony.Sankoff.Internal
---import           Bio.Character
+import           Analysis.Parsimony.Dynamic.DirectOptimization
+import           Analysis.Parsimony.Dynamic.SequentialAlign
 
---import           Bio.Character.Decoration.Additive
+import           Bio.Character
+import           Bio.Character.Decoration.Additive
 --import           Bio.Character.Decoration.Continuous
 --import           Bio.Character.Decoration.Discrete
---import           Bio.Character.Decoration.Dynamic
---import           Bio.Character.Decoration.Fitch
---import           Bio.Character.Decoration.Metric
---import           Bio.Character.Decoration.NonMetric 
+import           Bio.Character.Decoration.Dynamic
+import           Bio.Character.Decoration.Fitch
+import           Bio.Character.Decoration.Metric
+--import           Bio.Character.Decoration.NonMetric
 
 --import           Bio.Character.Encodable
+--import           Bio.Character.Exportable
 --import           Bio.Character.Decoration.Continuous hiding (characterName)
 --import           Bio.Character.Decoration.Discrete   hiding (characterName)
 --import           Bio.Character.Decoration.Dynamic    hiding (characterName)
@@ -45,6 +48,9 @@ import           Bio.PhyloGraphPrime
 --import           Bio.PhyloGraphPrime.Component
 import           Bio.PhyloGraphPrime.Node
 import           Bio.PhyloGraphPrime.ReferenceDAG
+import           Bio.PhyloGraphPrime.PhylogeneticDAG
+import           Control.DeepSeq
+import           Control.Lens
 --import           Control.Arrow                     ((&&&))
 --import           Control.Applicative               ((<|>))
 --import           Data.Alphabet
@@ -59,6 +65,7 @@ import           Data.List.NonEmpty                (NonEmpty( (:|) ))
 --import           Data.Map                          (Map, intersectionWith, keys)
 --import qualified Data.Map                   as Map
 --import           Data.Maybe                        (catMaybes, fromMaybe, listToMaybe)
+import           Data.MonoTraversable (Element)
 --import           Data.Semigroup                    ((<>))
 --import           Data.Semigroup.Foldable
 --import           Data.Set                          (Set, (\\))
@@ -68,7 +75,7 @@ import           Data.List.NonEmpty                (NonEmpty( (:|) ))
 --import           Data.MonoTraversable
 --import           Data.Vector                       (Vector)
 --import           PCG.Command.Types.Read.Unification.UnificationError
-import           PCG.SearchState 
+--import           PCG.SearchState
 import           Prelude                    hiding (lookup, zip, zipWith)
 
 --import Debug.Trace
@@ -82,26 +89,70 @@ traceOpt identifier x = (trace ("Before " <> identifier) ())
                         )
 -}
 
+{-
+--initializeDecorations2 :: CharacterResult -> PhylogeneticSolution InitialDecorationDAG
+initializeDecorations2 (PhylogeneticSolution forests) = PhylogeneticSolution $ fmap performDecoration <$> forests
+  where
+--    performDecoration :: CharacterDAG -> InitialDecorationDAG
+    performDecoration = assignOptimalDynamicCharacterRootEdges dynamicScoring2 .
+      postorderSequence'
+        (g  sankoffPostOrder)
+        (g  sankoffPostOrder)
+        id2
+        (g    fitchPostOrder)
+        (g additivePostOrder)
+        (g adaptiveDirectOptimizationPostOrder)
+      where
+        g _  Nothing  [] = error $ "Uninitialized leaf node. This is bad!"
+        g h (Just  v) [] = h v []
+        g h        e  xs = h (error $ "We shouldn't be using this value." ++ show e ++ show (length xs)) xs
 
+        id2 x _ = x
+        dynamicScoring  = directOptimizationPostOrder (\x y -> naiveDOConst x y undefined)
+        -- Because of monomophism BS
+        dynamicScoring2 = directOptimizationPostOrder (\x y -> naiveDOConst x y undefined)
+{--
+        adaptiveDirectOptimizationPostOrder _ _ | trace "DO call" False = undefined
+        adaptiveDirectOptimizationPostOrder dec kidDecs = directOptimizationPostOrder pairwiseAlignmentFunction dec kidDecs
+          where
+            pairwiseAlignmentFunction = chooseDirectOptimizationComparison dec kidDecs
+--}
+
+
+{-
+        postOrderTransformation parentalNode childNodes =
+          PNode
+          { nodeDecorationDatum = (nodeDecorationDatum parentalNode)
+          , sequenceDecoration  = postOrderLogic (sequenceDecoration parentalNode) (sequenceDecoration <$> childNodes)
+          }
+
+        preOrderTransformation parentalNode childNodes =
+          PNode
+          { nodeDecorationDatum = (nodeDecorationDatum parentalNode)
+          , sequenceDecoration  = preOrderLogic (sequenceDecoration parentalNode) (second sequenceDecoration <$> childNodes)
+          }
+-}
+-}
+{--}
 initializeDecorations :: CharacterResult -> PhylogeneticSolution InitialDecorationDAG
 initializeDecorations (PhylogeneticSolution forests) = PhylogeneticSolution $ fmap performDecoration <$> forests
   where
 --    performDecoration :: CharacterDAG -> InitialDecorationDAG
-    performDecoration (PDAG dag) = PDAG . nodePreOrder preOrderTransformation $ nodePostOrder postOrderTransformation dag
+    performDecoration (PDAG dag) = PDAG {- y. nodePreOrder preOrderTransformation -} $ nodePostOrder postOrderTransformation dag
       where
         postOrderTransformation parentalNode childNodes =
           PNode
-          { nodeDecorationDatum = (nodeDecorationDatum parentalNode) 
+          { nodeDecorationDatum = (nodeDecorationDatum parentalNode)
           , sequenceDecoration  = postOrderLogic (sequenceDecoration parentalNode) (sequenceDecoration <$> childNodes)
-          } 
+          }
 
-        preOrderTransformation parentalNode childNodes =
+        preOrderTransformation childNode parentNodes =
           PNode
-          { nodeDecorationDatum = (nodeDecorationDatum parentalNode) 
-          , sequenceDecoration  = preOrderLogic (sequenceDecoration parentalNode) (second sequenceDecoration <$> childNodes)
-          } 
-{-
-    f :: CharacterSequence
+          { nodeDecorationDatum = (nodeDecorationDatum childNode)
+          , sequenceDecoration  = preOrderLogic (sequenceDecoration childNode) (second sequenceDecoration <$> parentNodes)
+          }
+
+    postOrderLogic :: CharacterSequence
            UnifiedDiscreteCharacter
            UnifiedDiscreteCharacter
            UnifiedContinuousCharacter
@@ -114,7 +165,7 @@ initializeDecorations (PhylogeneticSolution forests) = PhylogeneticSolution $ fm
              UnifiedContinuousCharacter --(ContinuousOptimizationDecoration ContinuousChar)
              (FitchOptimizationDecoration    StaticCharacter)
              (AdditiveOptimizationDecoration StaticCharacter)
-             UnifiedDynamicCharacter 
+             (DynamicDecorationDirectOptimizationPostOrderResult DynamicChar) -- UnifiedDynamicCharacter
          ]
       -> CharacterSequence
            (SankoffOptimizationDecoration  StaticCharacter)
@@ -122,8 +173,8 @@ initializeDecorations (PhylogeneticSolution forests) = PhylogeneticSolution $ fm
            UnifiedContinuousCharacter --(ContinuousOptimizationDecoration ContinuousChar)
            (FitchOptimizationDecoration    StaticCharacter)
            (AdditiveOptimizationDecoration StaticCharacter)
-           UnifiedDynamicCharacter
--}
+           (DynamicDecorationDirectOptimizationPostOrderResult DynamicChar) -- UnifiedDynamicCharacter
+
     postOrderLogic currentCharSeq childCharSeqs =
         hexZipWith
           (g  sankoffPostOrder)
@@ -131,7 +182,7 @@ initializeDecorations (PhylogeneticSolution forests) = PhylogeneticSolution $ fm
           id2
           (g    fitchPostOrder)
           (g additivePostOrder)
-          id2
+          (g adaptiveDirectOptimizationPostOrder)
           currentCharSeq
           childCharSeqs'
       where
@@ -143,7 +194,12 @@ initializeDecorations (PhylogeneticSolution forests) = PhylogeneticSolution $ fm
                       in hexmap c c c c c c currentCharSeq
         g _  Nothing  [] = error $ "Uninitialized leaf node. This is bad!"
         g h (Just  v) [] = h v []
-        g h        _  xs = h (error $ "We shouldn't be using this value.") xs
+        g h        e  xs = h (error $ "We shouldn't be using this value." ++ show e ++ show (length xs)) xs
+
+        adaptiveDirectOptimizationPostOrder dec kidDecs = directOptimizationPostOrder pairwiseAlignmentFunction dec kidDecs
+          where
+            pairwiseAlignmentFunction = chooseDirectOptimizationComparison dec kidDecs
+
 {-
     preOrderLogic ::
         CharacterSequence
@@ -178,18 +234,86 @@ initializeDecorations (PhylogeneticSolution forests) = PhylogeneticSolution $ fm
           id2
           fitchPreOrder
           additivePreOrder
-          id2
+          adaptiveDirectOptimizationPreOrder
           currentCharSeq
           parentCharSeqs'
       where
         id2 x _ = x
+{-
+        parentCharSeqs' :: CharacterSequence
+                               [(Word, SankoffOptimizationDecoration   StaticCharacter)]
+                               [(Word, SankoffOptimizationDecoration   StaticCharacter)]
+                               [(Word, UnifiedContinuousCharacter)]
+                               [(Word, FitchOptimizationDecoration     StaticCharacter)]
+                               [(Word, AdditiveOptimizationDecoration  StaticCharacter)]
+                               [(Word, DynamicDecorationDirectOptimization DynamicChar)]
+-}
         parentCharSeqs' =
             case parentCharSeqs of
-              x:xs -> hexmap f f f f f f . hexTranspose $ snd <$> x:|xs
               []   -> let c = const []
                       in hexmap c c c c c c currentCharSeq
-           where
-             f = foldMapWithKey $ \i e -> [(toEnum i,e)]
+              x:xs -> let f = zip (fst <$> (x:xs))
+                      in hexmap f f f f f f . hexTranspose $ snd <$> x:|xs
+
+        adaptiveDirectOptimizationPreOrder dec kidDecs = directOptimizationPreOrder pairwiseAlignmentFunction dec kidDecs
+          where
+            pairwiseAlignmentFunction = chooseDirectOptimizationComparison dec $ snd <$> kidDecs
+
+{--}
+
+chooseDirectOptimizationComparison :: ( SimpleDynamicDecoration d  c
+                                      , SimpleDynamicDecoration d' c
+                                      , Exportable c
+                                      , Show c
+                                      , Show (Element c)
+                                      , Integral (Element c) 
+                                      )
+                                   => d
+                                   -> [d']
+                                   -> c
+                                   -> c
+                                   -> (c, Double, c, c, c)
+--chooseDirectOptimizationComparison _ _ = (\x y -> naiveDOConst x y undefined)
+{--
+chooseDirectOptimizationComparison dec decs = \x y -> naiveDO x y scm
+  where
+    scm =
+        case decs of
+          []  -> selectBranch dec
+          x:_ -> selectBranch x
+      where
+        selectBranch candidate = candidate ^. symbolChangeMatrix
+--}
+{-
+chooseDirectOptimizationComparison dec decs =
+    case decs of
+      []  -> selectBranch dec
+      x:_ -> selectBranch x
+  where
+--    selectBranch candidate = pairwiseSequentialAlignment (candidate ^. sparseTransitionCostMatrix)
+    selectBranch candidate = let !_ = force (candidate ^. sparseTransitionCostMatrix) in \x y -> naiveDOConst x y undefined
+-}
+{--}
+-- do this when shit stops segfaulting
+{--}
+chooseDirectOptimizationComparison dec decs =
+    case decs of
+      []  -> selectBranch dec
+      x:_ -> selectBranch x
+  where
+    selectBranch candidate =
+       case candidate ^. denseTransitionCostMatrix of
+{--
+         _ -> let !scm = (candidate ^. symbolChangeMatrix) in \x y -> naiveDO x y scm
+--}
+{--}
+         Just  d -> \x y -> foreignPairwiseDO x y d
+         Nothing ->
+           let !scm = (candidate ^. symbolChangeMatrix)
+           in \x y -> naiveDO x y scm
+{--}
+{--}
+
 
 {-
 data FracturedParseResult
@@ -203,7 +327,7 @@ data FracturedParseResult
 
 
 instance Show FracturedParseResult where
-    show fpr = unlines 
+    show fpr = unlines
         [ "FPR"
         , "  { parsedChars   = " <> show (parsedChars fpr)
         , "  , parsedMetas   = " <> show (parsedMetas fpr)
@@ -212,7 +336,7 @@ instance Show FracturedParseResult where
         , "  , sourceFile    = " <> show (sourceFile  fpr)
         , "  }"
         ]
-    
+
 
 masterUnify' :: [FracturedParseResult] -> Either UnificationError (Solution DAG)
 masterUnify' = undefined --rectifyResults
@@ -254,7 +378,7 @@ rectifyResults2 fprs =
     -- Step 8: Collect the parsed forests to be merged
     suppliedForests :: [PhylogeneticForest ParserTree]
     suppliedForests = foldMap toList . catMaybes $ parsedForests <$> allForests
-      
+
     -- Step 9: Convert topological forests to DAGs (using reference indexing from #7 results)
     dagForest       =
         case (null suppliedForests, null charSeqs) of
@@ -272,7 +396,7 @@ rectifyResults2 fprs =
           where
             blockTransform = hexmap f f f f f f
             f = const Nothing
-        
+
         singletonComponent (label, datum) = PhylogeneticForest . pure . PDAG $ unfoldDAG rootLeafGen True
           where
             rootLeafGen x
@@ -292,7 +416,7 @@ rectifyResults2 fprs =
                   Nothing    -> PNode "HTU" Nothing
                   Just label -> PNode label $ label `lookup` charMapping
 -}
--- Omitted from old unifcation process            
+-- Omitted from old unifcation process
 --    combinedData    = Solution (HM.fromList $ assocs charSeqs) combinedMetadata dagForests
     -- Step 9:  TODO: Node encoding
 --    encodedSolution = encodeSolution combinedData
@@ -323,7 +447,7 @@ rectifyResults2 fprs =
         f (ys, fpr) = (\x -> (x, fpr)) <$> ys
 
 
--- | 
+-- |
 -- Joins the sequences of a fractured parse result. This requires several
 -- sequential steps. Each fractured parse result will be placed into a seperate
 -- character block by default. We collapse and merge these seperate parse results
@@ -337,7 +461,7 @@ rectifyResults2 fprs =
 --   character. We assume that the fractured parse result alphabet that is
 --   supplied is of equal length to the selected TCM dimension. This assumption
 --   should be safe, though it is the burden of the caller to ensure this input
---   invariant. 
+--   invariant.
 --
 -- * Afterwards we attempt to reduce the alphabet and TCMs by looking for
 --   symbols present in the alphabet that do not appear in any input character.
@@ -350,7 +474,7 @@ rectifyResults2 fprs =
 joinSequences2 :: Foldable t => t FracturedParseResult -> Map String UnifiedCharacterSequence
 joinSequences2 = collapseAndMerge . reduceAlphabets . deriveCorrectTCMs . deriveCharacterNames
   where
-    
+
     -- We do this to correctly construct the CharacterNames.
     deriveCharacterNames :: Foldable t
                          => t FracturedParseResult
@@ -409,7 +533,7 @@ joinSequences2 = collapseAndMerge . reduceAlphabets . deriveCorrectTCMs . derive
                   |    v `notElem` observedSymbols
                     && v /= gapSymbol suppliedAlphabet = IS.singleton k
                   | otherwise = mempty
-                  
+
             suppliedAlphabet      = alphabet charMetadata
             reducedAlphabet       =
                 case alphabetStateNames suppliedAlphabet of
@@ -444,7 +568,7 @@ joinSequences2 = collapseAndMerge . reduceAlphabets . deriveCorrectTCMs . derive
             inBoth         = intersectionWith (<>) prevMapping currMapping-- oldTreeChars nextTreeChars
             inOnlyCurr     =  prepend prevPad  <$> getUnique currMapping prevMapping
             inOnlyPrev     = (<>      currPad) <$> getUnique prevMapping currMapping
-        
+
             getUnique x y = x `Map.restrictKeys` (lhs `Set.difference` rhs)
               where
                 lhs = Set.fromList $ keys x
@@ -469,14 +593,14 @@ joinSequences2 = collapseAndMerge . reduceAlphabets . deriveCorrectTCMs . derive
                     staticCharacter   = Just $ toDiscreteCharacterDecoration charName charWeight specifiedAlphabet tcm staticTransform charMay
                     dynamicTransform  = maybe (Missing alphabetLength) (encodeStream specifiedAlphabet)
                     dynamicCharacter  = Just $ toDynamicCharacterDecoration  charName charWeight specifiedAlphabet tcm dynamicTransform charMay
-                        
+
 
             -- Necessary for mixing [] with NonEmpty
             prepend :: [a] -> NonEmpty a -> NonEmpty a
             prepend list ne =
               case list of
                 []   -> ne
-                x:xs -> x :| (xs <> toList ne) 
+                x:xs -> x :| (xs <> toList ne)
 
 
 fromTreeOnlyFile :: FracturedParseResult -> Bool

@@ -34,6 +34,8 @@ import           Data.MonoTraversable
 import           Data.String               (IsString)
 import           Foreign.C.Types
 
+import Debug.Trace
+
 {-# DEPRECATED getGapChar "Don't use getGapChar, use getGapElement instead!" #-}
 
 
@@ -109,9 +111,13 @@ class ( EncodableStreamElement (Element s)
 
 -- | Show an 'EncodableStreamElement' by decoding it with it's corresponding alphabet.
 showStreamElement :: EncodableStreamElement e => Alphabet String -> e -> String
-showStreamElement alphabet element = renderAmbiguity $ toIUPAC symbols
+showStreamElement alphabet element
+  | zeroBits == element = "<Empty Character>"
+  |  allBits == element = "?"
+  | otherwise           = renderAmbiguity $ toIUPAC symbols
   where
-    symbols   = decodeElement alphabet element
+    allBits = fromIntegral . pred . (2^) $ length alphabet
+    symbols = decodeElement alphabet element
     renderAmbiguity amb =
         case toList amb of
           []  -> undefined -- Never occurs!
@@ -119,13 +125,26 @@ showStreamElement alphabet element = renderAmbiguity $ toIUPAC symbols
           xs  ->
               case invariantTransformation length xs of
                 Just 1 -> "[" <> concat xs <> "]"
-                _      -> "{" <> intercalate ", " xs <> "}"
+                _      -> "[" <> intercalate " " xs <> "]"
 
     toIUPAC x
       | isAlphabetDna       alphabet = fromMaybe x $ x `BM.lookup` BM.twist iupacToDna
       | isAlphabetRna       alphabet = fromMaybe x $ x `BM.lookup` BM.twist iupacToRna
       | isAlphabetAminoAcid alphabet = fromMaybe x $ x `BM.lookup` BM.twist iupacToAminoAcid
       | otherwise                    = x
+
+
+showBits :: FiniteBits b => b -> String
+showBits b = foldMap f [0 .. finiteBitSize b - 1]
+  where
+    f i
+      | b `testBit`  i = "1"
+      | otherwise      = "0"
+
+
+-- | Show an 'EncodableStream' by decoding it with it's corresponding alphabet.
+showStream :: EncodableStream s => Alphabet String -> s -> String
+showStream alphabet = ofoldMap (showStreamElement alphabet)
 
 
 encodableStreamToExportableCharacterElements :: (EncodableStream s, EncodedAmbiguityGroupContainer s, Integral (Element s))

@@ -10,12 +10,14 @@
 --
 -----------------------------------------------------------------------------
 
--- {-# LANGUAGE Strict #-}
+{-# LANGUAGE Strict       #-}
 {-# LANGUAGE TypeFamilies #-}
 
 module Data.TCM.Internal where
 
+import           Control.Arrow                 ((***))
 import           Data.Foldable
+import           Data.IntSet                   (IntSet)
 import           Data.List                     (transpose)
 import           Data.List.Utility             (equalityOf, occurances)
 import           Data.Map                      (delete, findMax, keys)
@@ -27,7 +29,10 @@ import           Data.Vector.Unboxed           (Vector)
 import qualified Data.Vector.Unboxed  as V
 import           Data.Word
 import           Prelude              hiding   (lookup)
-import           Test.QuickCheck
+import           Test.QuickCheck      hiding   (generate)
+
+
+import Debug.Trace
 
 
 -- | A data structure for storing a two dimensional, square array of dimensionality
@@ -137,101 +142,120 @@ data TCMDiagnosis
 
 -- | Performs a element-wise monomporphic map over the 'TCM'.
 instance MonoFunctor TCM where
+
     omap f (TCM n v) = TCM n $ V.map f v
 
 
 -- | Performs a row-major monomporphic fold over the 'TCM'.
 instance MonoFoldable TCM where
-  -- | Map each element of a structure to a 'Monoid' and combine the results.
-  {-# INLINE ofoldMap #-}
-  ofoldMap f = V.foldr (mappend . f) mempty . vec
 
-  -- | Right-associative fold of a structure.
-  {-# INLINE ofoldr #-}
-  ofoldr f e = V.foldr f e . vec
+    -- | Map each element of a structure to a 'Monoid' and combine the results.
+    {-# INLINE ofoldMap #-}
+    ofoldMap f = V.foldr (mappend . f) mempty . vec
 
-  -- | Strict left-associative fold of a structure.
-  {-# INLINE ofoldl' #-}
-  ofoldl' f e = V.foldl' f e . vec
+    -- | Right-associative fold of a structure.
+    {-# INLINE ofoldr #-}
+    ofoldr f e = V.foldr f e . vec
 
-  -- | Right-associative fold of a monomorphic container with no base element.
-  --
-  -- Note: this is a partial function. On an empty 'MonoFoldable', it will
-  -- throw an exception.
-  --
-  -- /See 'Data.MinLen.ofoldr1Ex' from "Data.MinLen" for a total version of this function./
-  {-# INLINE ofoldr1Ex #-}
-  ofoldr1Ex f = V.foldr1 f . vec
+    -- | Strict left-associative fold of a structure.
+    {-# INLINE ofoldl' #-}
+    ofoldl' f e = V.foldl' f e . vec
 
-  -- | Strict left-associative fold of a monomorphic container with no base
-  -- element.
-  --
-  -- Note: this is a partial function. On an empty 'MonoFoldable', it will
-  -- throw an exception.
-  --
-  -- /See 'Data.MinLen.ofoldl1Ex'' from "Data.MinLen" for a total version of this function./
-  {-# INLINE ofoldl1Ex' #-}
-  ofoldl1Ex' f = V.foldl1 f . vec
+    -- | Right-associative fold of a monomorphic container with no base element.
+    --
+    -- Note: this is a partial function. On an empty 'MonoFoldable', it will
+    -- throw an exception.
+    --
+    -- /See 'Data.MinLen.ofoldr1Ex' from "Data.MinLen" for a total version of this function./
+    {-# INLINE ofoldr1Ex #-}
+    ofoldr1Ex f = V.foldr1 f . vec
 
-  {-# INLINE otoList #-}
-  otoList = V.toList . vec
+    -- | Strict left-associative fold of a monomorphic container with no base
+    -- element.
+    --
+    -- Note: this is a partial function. On an empty 'MonoFoldable', it will
+    -- throw an exception.
+    --
+    -- /See 'Data.MinLen.ofoldl1Ex'' from "Data.MinLen" for a total version of this function./
+    {-# INLINE ofoldl1Ex' #-}
+    ofoldl1Ex' f = V.foldl1' f . vec
 
-  {-# INLINE onull #-}
-  onull = const False
+    {-# INLINE otoList #-}
+    otoList = V.toList . vec
 
-  {-# INLINE olength #-}
-  olength = V.length .vec
+    {-# INLINE onull #-}
+    onull = const False
+
+    {-# INLINE olength #-}
+    olength = V.length .vec
 
 
 -- | Performs a row-major monomporphic traversal over ther 'TCM'.
 instance MonoTraversable TCM where
-  -- | Map each element of a monomorphic container to an action,
-  -- evaluate these actions in row-major order and collect the results.
-  {-# INLINE otraverse #-}
-  otraverse f (TCM n v) = fmap (TCM n . V.fromList) . traverse f $ V.toList v
 
-  -- | Map each element of a monomorphic container to a monadic action,
-  -- evaluate these actions from left to right, and
-  -- collect the results.
-  {-# INLINE omapM #-}
-  omapM = otraverse
+    -- | Map each element of a monomorphic container to an action,
+    -- evaluate these actions in row-major order and collect the results.
+    {-# INLINE otraverse #-}
+    otraverse f (TCM n v) = fmap (TCM n . V.fromList) . traverse f $ V.toList v
+
+    -- | Map each element of a monomorphic container to a monadic action,
+    -- evaluate these actions from left to right, and
+    -- collect the results.
+    {-# INLINE omapM #-}
+    omapM = otraverse
 
 
 -- | Resulting TCMs will have at a dimension between 2 and 25.
 instance Arbitrary TCM where
-  arbitrary = do 
-    dimension  <- (arbitrary :: Gen Int) `suchThat` (\x -> 2 <= x && x <= 25) 
-    dataVector <- V.fromList <$> vectorOf (dimension * dimension) arbitrary
-    pure $ TCM dimension dataVector
+
+    arbitrary = do 
+        dimension  <- (arbitrary :: Gen Int) `suchThat` (\x -> 2 <= x && x <= 25) 
+        dataVector <- V.fromList <$> vectorOf (dimension * dimension) arbitrary
+        pure $ TCM dimension dataVector
 
 
 -- |
 -- A pretty printed custom show instance for 'TCM'.
 instance Show TCM where
-  show tcm = headerLine <> matrixLines
-    where
-      renderRow i = ("  "<>) . unwords $ renderValue <$> [ tcm ! (i,j) | j <- rangeValues ]
-      matrixLines = unlines $ renderRow   <$> rangeValues
-      rangeValues = [0 .. size tcm - 1] 
-      headerLine  = '\n' : unwords [ "TCM:", show $ size tcm, "x", show $ size tcm, "\n"]
-      maxValue    = maximumEx tcm
-      padSpacing  = length $ show maxValue
-      renderValue x = pad <> shown
-        where
-          shown = show x
-          pad   = (padSpacing - length shown) `replicate` ' '
+
+    show tcm = headerLine <> matrixLines
+      where
+        renderRow i = ("  "<>) . unwords $ renderValue <$> [ tcm ! (i,j) | j <- rangeValues ]
+        matrixLines = unlines $ renderRow   <$> rangeValues
+        rangeValues = [0 .. size tcm - 1] 
+        headerLine  = '\n' : unwords [ "TCM:", show $ size tcm, "x", show $ size tcm, "\n"]
+        maxValue    = maximumEx tcm
+        padSpacing  = length $ show maxValue
+        renderValue x = pad <> shown
+          where
+            shown = show x
+            pad   = (padSpacing - length shown) `replicate` ' '
         
-        
+
+reduceTcm :: IntSet -> TCM -> TCM
+reduceTcm missingSymbolIndicies tcm = generate reducedDimension genFunction
+  where
+    indices = otoList missingSymbolIndicies
+    reducedDimension  = size tcm - olength missingSymbolIndicies
+    genFunction (i,j) = tcm ! (i', j')
+      where
+        i' = i + iOffset
+        j' = j + jOffset
+        iOffset = length $ filter (<=i) indices
+        jOffset = length $ filter (<=j) indices
+
+
 -- | /O(1)/ Indexing without bounds checking.
 {-# INLINE (!) #-}
-(!) :: TCM -> (Int, Int) -> Word32
-(!) (TCM n v) (i,j) = v `V.unsafeIndex` (i * n + j)
+(!) :: (Enum i, Show i) => TCM -> (i, i) -> Word32
+(!) (TCM n v) (i,j) = v `V.unsafeIndex` (fromEnum i * n + fromEnum j)
+--(!) (TCM n v) (i,j) = trace (show n <> ": " <> show (i,j) ) $ v V.! (fromEnum i * n + fromEnum j)
 
 
 -- | /O(1)/ Safe indexing.
 {-# INLINE (!?) #-}
-(!?) :: TCM -> (Int, Int) -> Maybe Word32
-(!?) (TCM n v) (i,j) = v V.!? (i * n + j)
+(!?) :: Enum i => TCM -> (i, i) -> Maybe Word32
+(!?) (TCM n v) (i,j) = v V.!? (fromEnum i * n + fromEnum j)
 
 
 -- | /O(1)/
@@ -419,9 +443,11 @@ modeAndOutlierLengths xs = (mode, otherLengths)
 --   1 1 1 1 1 1 0 1
 --   1 1 1 1 1 1 1 0
 --
-generate :: Integral a
-         => Int              -- ^ Number of rows & columns in the TCM.
-         -> ((Int,Int) -> a) -- ^ Function to determine the value of a given index.
+generate :: ( Enum i
+            , Integral a
+            )
+         => Int          -- ^ Number of rows & columns in the TCM.
+         -> ((i,i) -> a) -- ^ Function to determine the value of a given index.
          -> TCM
 generate n f
   | n <  0    = error negativeErrorMessage
@@ -431,20 +457,20 @@ generate n f
   where
     resultVector = V.generate (n*n) g
       where
-        g i = coerce $ f (i `divMod` n)
+        g i = coerce . f . (toEnum *** toEnum) $ (i `divMod` n)
     negativeErrorMessage = mconcat
-      [ "The call to generate ", show n, " f is malformed, "
-      , "the dimension (", show n, ") is a negative number."
+      [ "The call to 'generate ", show n, " f' is malformed, "
+      , "the dimension (", show n, ") is a negative number. "
       , "Cannot construct a TCM with a negative dimension!"
       ]
     nullErrorMessage = mconcat
-      [ "The call to generate 0 f is malformed, "
-      , "the dimension is zero."
+      [ "The call to 'generate 0 f' is malformed, "
+      , "the dimension is zero. "
       , "Cannot construct an empty TCM with a nullary dimension!"
       ]
     singletonErrorMessage = mconcat
-      [ "The call to generate ", show n, " f is malformed, "
-      , "the dimension is one."
+      [ "The call to 'generate 1 f' is malformed, "
+      , "the dimension is one. "
       , "Cannot construct a singlton TCM with a dimension of one!"
       ]
 
@@ -455,12 +481,12 @@ generate n f
 -- the TCM.
 diagnoseTcm :: TCM -> TCMDiagnosis
 diagnoseTcm tcm
-  | isNonAdditive  tcm' = diagnosis  NonAdditive
-  | isAdditive     tcm' = diagnosis     Additive
-  | isUltraMetric  tcm' = diagnosis  UltraMetric
-  | isMetric       tcm' = diagnosis       Metric
-  | isSymmetric    tcm' = diagnosis    Symmetric
-  | otherwise           = diagnosis NonSymmetric
+  | not $ isSymmetric   tcm' = diagnosis NonSymmetric
+  | not $ isMetric      tcm' = diagnosis    Symmetric
+  |       isAdditive    tcm' = diagnosis     Additive
+  | not $ isUltraMetric tcm' = diagnosis       Metric
+  | not $ isNonAdditive tcm' = diagnosis  UltraMetric
+  | otherwise                = diagnosis  NonAdditive
   where
     (weight, tcm') = factorTCM tcm
     diagnosis = TCMDiagnosis weight tcm'
@@ -501,7 +527,7 @@ factorTCM tcm
   | factor <= 1 = (x,                       tcm)
   | otherwise   = (x, (`div` factor) `omap` tcm)
   where
-    factor = ofoldr1Ex gcd tcm
+    factor = ofoldl1Ex' gcd tcm
     x = fromEnum factor
 
 
@@ -545,7 +571,6 @@ isMetric tcm = conditions `allSatisfiedBy` tcm
   where
     conditions =
         [ zeroDiagonalOnly
-        , isSymmetric
         , triangleInequality
         ]
     triangleInequality x = all triangleInequalityIndex [(i,k,j) | i <- range, j <- range, k <- range, i < j, j < k ]
@@ -576,11 +601,7 @@ isSymmetric tcm = all isSymmetricIndex [(i,j) | i <- range, j <- range, i <= j ]
 isUltraMetric :: TCM -> Bool
 isUltraMetric tcm = conditions `allSatisfiedBy` tcm
   where
-    conditions = 
-        [ zeroDiagonalOnly      
-        , isSymmetric           
-        , ultraMetricInequality
-        ]
+    conditions = [ ultraMetricInequality ]
     ultraMetricInequality x = all ultraMetricInequalityIndex [(i,k,j) | i <- range, j <- range, k <- range, i < j, j < k ]
       where
         ultraMetricInequalityIndex (i,j,k) = x ! (i,k) <= max (x ! (i,j)) (x ! (j,k))

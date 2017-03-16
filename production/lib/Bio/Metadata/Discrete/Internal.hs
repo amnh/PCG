@@ -10,20 +10,18 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE FlexibleInstances, MultiParamTypeClasses #-}
+{-# LANGUAGE FlexibleContexts, FlexibleInstances, MultiParamTypeClasses #-}
 
 module Bio.Metadata.Discrete.Internal
   ( DiscreteCharacterMetadataDec()
+  , DiscreteCharacterMetadata(..)
   , HasCharacterAlphabet(..)
   , HasCharacterName(..)
-  , HasCharacterSymbolTransitionCostMatrixGenerator(..)
-  , HasCharacterTransitionCostMatrix(..)
   , HasCharacterWeight(..)
   , discreteMetadata
   ) where
 
 
-import Bio.Character.Encodable
 import Bio.Metadata.CharacterName
 import Bio.Metadata.Discrete.Class
 import Bio.Metadata.General
@@ -31,87 +29,74 @@ import Control.Lens
 import Data.Alphabet
 import Data.List (intercalate)
 import Data.Monoid
-import Data.TCM
 
 
 -- |
 -- Represents a concrete type containing metadata fields shared across all
--- discrete different bins. Continous bins do not have Alphabets. 
-data DiscreteCharacterMetadataDec c
+-- discrete different bins. Continous bins do not have Alphabets.
+data DiscreteCharacterMetadataDec
    = DiscreteCharacterMetadataDec
    { alphabet       :: Alphabet String
-   , unambiguousTCM :: TCM
-   , fullTCM        :: c -> c -> (c, Int)
    , generalData    :: GeneralCharacterMetadataDec
    }
 
 
-instance Eq (DiscreteCharacterMetadataDec c) where
+-- |
+-- A decoration of an initial encoding of a dynamic character which has the
+-- appropriate 'Lens' & character class constraints.
+class ( GeneralCharacterMetadata s
+      , HasCharacterAlphabet     s (Alphabet String)
+      ) => DiscreteCharacterMetadata s where
 
-    lhs == rhs = alphabet       lhs == alphabet       rhs
-              && unambiguousTCM lhs == unambiguousTCM rhs
-              && generalData    lhs == generalData    rhs
+    extractDiscreteCharacterMetadata :: s -> DiscreteCharacterMetadataDec
 
 
-instance Show (DiscreteCharacterMetadataDec c) where
+instance Eq DiscreteCharacterMetadataDec where
+
+    lhs == rhs = alphabet    lhs == alphabet       rhs
+              && generalData lhs == generalData    rhs
+
+
+instance Show DiscreteCharacterMetadataDec where
 
     show e = intercalate "\n"
       [ "DiscreteCharacterMetadata"
       , "  CharacterName: " <> show (e ^. characterName    )
       , "  Alphabet:      " <> show (e ^. characterAlphabet)
       , "  Weight:        " <> show (e ^. characterWeight  )
-      , "  TCM: "
-      , show $ unambiguousTCM e
       ]
 
 
 
--- |
--- A decoration of an initial encoding of a dynamic character which has the
--- appropriate 'Lens' & character class constraints.
-instance EncodableStreamElement c => DiscreteCharacterMetadata (DiscreteCharacterMetadataDec c) c where
-
-
--- | (✔) 
-instance GeneralCharacterMetadata (DiscreteCharacterMetadataDec c) where
-  
-  
 -- | (✔)
-instance HasCharacterAlphabet (DiscreteCharacterMetadataDec c) (Alphabet String) where
+instance GeneralCharacterMetadata DiscreteCharacterMetadataDec where
+
+    {-# INLINE extractGeneralCharacterMetadata #-}
+    extractGeneralCharacterMetadata = generalData
+
+
+-- | (✔)
+instance DiscreteCharacterMetadata DiscreteCharacterMetadataDec where
+
+    {-# INLINE extractDiscreteCharacterMetadata #-}
+    extractDiscreteCharacterMetadata = id
+
+
+-- | (✔)
+instance HasCharacterAlphabet DiscreteCharacterMetadataDec (Alphabet String) where
 
     characterAlphabet = lens alphabet $ \e x -> e { alphabet = x }
 
 
 -- | (✔)
-instance HasCharacterName (DiscreteCharacterMetadataDec c) CharacterName where
+instance HasCharacterName DiscreteCharacterMetadataDec CharacterName where
 
     characterName = lens (\e -> generalData e ^. characterName)
                   $ \e x -> e { generalData = generalData e & characterName .~ x }
 
 
--- |
--- A 'Lens' for the 'symbolicTCMGenerator' field
-instance HasCharacterSymbolTransitionCostMatrixGenerator (DiscreteCharacterMetadataDec c) (Int -> Int -> Int) where
-
-    characterSymbolTransitionCostMatrixGenerator = lens getter setter
-      where
-        getter e i j = fromIntegral $ unambiguousTCM e ! (i,j)
-        setter e f = e { unambiguousTCM = newTCM }
-          where
-            dimension       = size $ unambiguousTCM e
-            generator (i,j) = f i j
-            newTCM          = generate dimension generator
-
-
--- |
--- A 'Lens' for the 'transitionCostMatrix' field
-instance HasCharacterTransitionCostMatrix (DiscreteCharacterMetadataDec c) (c -> c -> (c, Int)) where
-
-    characterTCM = lens undefined undefined
-
-
 -- | (✔)
-instance HasCharacterWeight (DiscreteCharacterMetadataDec c) Double where
+instance HasCharacterWeight DiscreteCharacterMetadataDec Double where
 
     characterWeight = lens (\e -> generalData e ^. characterWeight)
                     $ \e x -> e { generalData = generalData e & characterWeight .~ x }
@@ -119,15 +104,9 @@ instance HasCharacterWeight (DiscreteCharacterMetadataDec c) Double where
 
 -- |
 -- Construct a concrete typed 'DiscreteCharacterMetadataDec' value from the supplied inputs.
-discreteMetadata :: CharacterName -> Double -> Alphabet String -> TCM -> DiscreteCharacterMetadataDec c
-discreteMetadata name weight alpha tcm =
+discreteMetadata :: CharacterName -> Double -> Alphabet String -> DiscreteCharacterMetadataDec
+discreteMetadata name weight alpha =
     DiscreteCharacterMetadataDec
     { alphabet       = alpha
-    , unambiguousTCM = factoredTcm diagnosis
-    , fullTCM        = undefined
-    , generalData    = generalMetadata name (weight * coefficient)
+    , generalData    = generalMetadata name weight
     }
-  where
-    diagnosis   = diagnoseTcm tcm
-    coefficient = fromIntegral $ factoredWeight diagnosis
-           

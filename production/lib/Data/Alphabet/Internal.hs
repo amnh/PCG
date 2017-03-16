@@ -9,6 +9,8 @@
 -- Portability :  portable
 --
 -----------------------------------------------------------------------------   
+
+{-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE FlexibleContexts, FlexibleInstances, TypeFamilies #-}
 
 module Data.Alphabet.Internal
@@ -19,12 +21,16 @@ module Data.Alphabet.Internal
   , fromSymbols
   , fromSymbolsWithStateNames
   , gapSymbol
+  , truncateAtSymbol
+  , truncateAtMaxSymbol
   ) where
 
+import           Control.DeepSeq              (NFData)
 import           Control.Monad.State.Strict
+import           Data.Bifunctor               (first)
 import           Data.Foldable
 import           Data.Key
-import           Data.List                    (intercalate, sort)
+import           Data.List                    (elemIndex, intercalate, sort)
 import           Data.List.NonEmpty           (NonEmpty)
 import           Data.Maybe
 import           Data.Monoid
@@ -32,6 +38,7 @@ import qualified Data.Set              as Set
 import           Data.String
 import           Data.Vector                  (Vector)
 import qualified Data.Vector           as V
+import           GHC.Generics                 (Generic)
 import           Prelude               hiding (lookup, zip)
 import           Test.Tasty.QuickCheck hiding (generate)
 import           Test.QuickCheck.Arbitrary.Instances ()
@@ -48,11 +55,18 @@ type AmbiguityGroup a = NonEmpty a
 
 -- |
 -- A collection of symbols and optional corresponding state names.
-data Alphabet a 
-   = SimpleAlphabet     (Vector (UnnamedSymbol a))
-   | StateNamedAlphabet (Vector (  NamedSymbol a))
+data Alphabet a =
+     Alphabet
+     { symbolVector      :: Vector a
+     , stateNames        :: [a]
+     } deriving (Generic)
+
 
 type instance Key Alphabet = Int
+
+
+instance NFData a => NFData (Alphabet a)
+
 
 instance Indexable Alphabet where
   {-# INLINE index #-}
@@ -124,7 +138,9 @@ instance (Ord a, IsString a) => Arbitrary (Alphabet a) where
 --
 --   /O(n * log n)/
 fromSymbols :: (Ord a, IsString a, Foldable t) => t a -> Alphabet a
-fromSymbols = SimpleAlphabet . fmap (Unnamed . toSingle) . alphabetPreprocessing . fmap fromSingle . toList
+fromSymbols inputSymbols = Alphabet symbols []
+  where
+    symbols = V.fromList . fmap toSingle . alphabetPreprocessing . fmap fromSingle $ toList inputSymbols
 
 
 -- | Constructs an 'Alphabet' from a 'Foldable' structure of symbols and
@@ -134,7 +150,9 @@ fromSymbols = SimpleAlphabet . fmap (Unnamed . toSingle) . alphabetPreprocessing
 --
 --   /O(n * log n)/
 fromSymbolsWithStateNames :: (Ord a, IsString a, Foldable t) => t (a,a) -> Alphabet a
-fromSymbolsWithStateNames = StateNamedAlphabet . fmap (Named . toTuple) . alphabetPreprocessing . fmap fromTuple . toList
+fromSymbolsWithStateNames inputSymbols = Alphabet symbols names
+  where
+    (symbols, names) = first V.fromList . unzip . fmap toTuple . alphabetPreprocessing . fmap fromTuple $ toList inputSymbols
 
 
 -- | Retreives the symbols of the 'Alphabet'. Synonym for 'toList'.
@@ -151,8 +169,7 @@ alphabetSymbols = toList
 --
 -- /O(n)/
 alphabetStateNames :: Alphabet a -> [a]
-alphabetStateNames      SimpleAlphabet{}  = []
-alphabetStateNames (StateNamedAlphabet v) = toList $ snd . fromNamed <$> v
+alphabetStateNames = stateNames
 
 
 -- | Retreives the "gap character" from the alphabet.
@@ -161,6 +178,40 @@ alphabetStateNames (StateNamedAlphabet v) = toList $ snd . fromNamed <$> v
 gapSymbol :: Alphabet a -> a
 gapSymbol alphabet = alphabet ! (length alphabet - 1)
 
+-- |
+-- Attempts to find the symbol in the Alphabet.
+-- If the symbol exists, returns an alphabet with all the symbols occuring
+-- before the supplied symbol included and all symbols occring after the
+-- supplied symbol excluded. The gap character is preserved in the alphabet
+-- regardless of the supplied symbol.
+--
+-- /O(n*log(n)/
+truncateAtSymbol :: (Ord a, IsString a) => a -> Alphabet a -> Alphabet a
+truncateAtSymbol symbol alphabet =
+    case elemIndex symbol $ toList alphabet of
+      Nothing -> alphabet
+      Just i  ->
+        case alphabetStateNames alphabet of
+          [] -> fromSymbols               . take (i + 1) $      alphabetSymbols alphabet
+          xs -> fromSymbolsWithStateNames . take (i + 1) $ zip (alphabetSymbols alphabet) xs
+
+
+truncateAtMaxSymbol :: (Foldable t, Ord a, IsString a) => t a -> Alphabet a -> Alphabet a
+truncateAtMaxSymbol symbols alphabet =
+    case maxIndex of
+      Nothing -> alphabet
+      Just i  ->
+        case alphabetStateNames alphabet of
+          [] -> fromSymbols               . take (i + 1) $      alphabetSymbols alphabet
+          xs -> fromSymbolsWithStateNames . take (i + 1) $ zip (alphabetSymbols alphabet) xs
+  where
+    maxIndex = foldlWithKey' f Nothing alphabet
+    f e k v
+      | v `notElem` symbols = e
+      | otherwise =
+        case e of
+          Nothing -> Just k
+          Just  i -> Just $ max k i
 
 
 {-
@@ -171,8 +222,8 @@ gapSymbol alphabet = alphabet ! (length alphabet - 1)
 
 
 
-alphabetPreprocessing :: (Ord a, InternalClass a, Foldable t) => t a -> Vector a
-alphabetPreprocessing = V.fromList . appendGapSymbol . removeSpecialSymbolsAndDuplicates . toList
+alphabetPreprocessing :: (Ord a, InternalClass a, Foldable t) => t a ->  [a]
+alphabetPreprocessing = appendGapSymbol . removeSpecialSymbolsAndDuplicates . toList
   where
     appendGapSymbol       = (<> [gapSymbol'])
     removeSpecialSymbolsAndDuplicates = (`evalState` mempty) . filterM f
@@ -186,8 +237,12 @@ alphabetPreprocessing = V.fromList . appendGapSymbol . removeSpecialSymbolsAndDu
               pure $ x `notElem` seenSet
 
 
-newtype UnnamedSymbol a = Unnamed  a
-newtype NamedSymbol   a = Named (a,a)
+newtype UnnamedSymbol a = Unnamed  a  deriving (Generic)
+newtype NamedSymbol   a = Named (a,a) deriving (Generic)
+
+instance NFData a => NFData (UnnamedSymbol a)
+instance NFData a => NFData (  NamedSymbol a)
+
 
 
 fromUnnamed :: UnnamedSymbol t -> t
@@ -197,11 +252,11 @@ fromUnnamed (Unnamed x) = x
 fromNamed   :: NamedSymbol t -> (t, t)
 fromNamed   (Named   x) = x
 
-
+{-
 symbolVector :: Alphabet b -> Vector b
 symbolVector (SimpleAlphabet     v) =       fromUnnamed <$> v
 symbolVector (StateNamedAlphabet v) = fst . fromNamed   <$> v
-
+-}
 
 -- Newtypes for corecing and consolidation of alphabet input processing logic
 newtype AlphabetInputSingle a = ASI  { toSingle ::  a    } deriving (Eq,Ord)

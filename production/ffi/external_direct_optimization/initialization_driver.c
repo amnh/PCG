@@ -10,7 +10,7 @@
 #include "ukkCheckp.h"
 #include "ukkCommon.h"
 
-// #define SEQ_CAPACITY 64
+// #define CHAR_CAPACITY 64
 
 int power_2 (int input) {
     if (input == 1)  return 1;
@@ -23,13 +23,13 @@ int power_2 (int input) {
 
 
 
-void setSeq(const int *vals, size_t length, seq_p retSeq) {
+void setChar(const int *vals, size_t length, seq_p retChar) {
     // assign sequence into sequence struct
-    retSeq->len = length;
-    retSeq->seq_begin = retSeq->end - length;
+    retChar->len = length;
+    retChar->seq_begin = retChar->end - length;
     if (length > 0) {
         for(size_t i = 0; i < length; i++) {
-            retSeq->seq_begin[i] = (int) vals[i];
+            retChar->seq_begin[i] = (int) vals[i];
         }
     }
 }
@@ -46,40 +46,40 @@ int main() {
 
         //***** for following seqs, affine requires gap at start of sequence!!! *****/
 
-    const int longSeqLen   = 22;
-    const int middleSeqLen = 18;
-    const int shortSeqLen  = 17;
+    const int longCharLen   = 22;
+    const int middleCharLen = 18;
+    const int shortCharLen  = 17;
 
-    const size_t SEQ_CAPACITY = longSeqLen + shortSeqLen + middleSeqLen;
+    const size_t CHAR_CAPACITY = longCharLen + shortCharLen + middleCharLen;
 
 
     int alphSize = 5; // includes gap, but no ambiguities
-    int longest_vals [longSeqLen]   = {16, 2, 1, 8, 4, 2, 1, 8, 4, 1, 1, 1, 1, 1, 2, 1, 8, 4, 2, 1, 8, 4}; // don't forget to change lengths!!!
-    int middle_vals  [middleSeqLen] = {16, 8, 8, 2, 1, 8, 4, 2, 1, 8, 4, 1, 1, 2, 1, 8, 4, 1};             // don't forget to change lengths!!!
-    int shortest_vals[shortSeqLen]  = {16, 2, 1, 8, 4, 2, 1, 8, 4, 2, 1, 8, 4, 2, 1, 8, 4};                // don't forget to change lengths!!!
+    int longest_vals [22] = {16, 2, 1, 8, 4, 2, 1, 8, 4, 1, 1, 1, 1, 1, 2, 1, 8, 4, 2, 1, 8, 4}; // don't forget to change lengths!!!
+    int middle_vals  [18] = {16, 8, 8, 2, 1, 8, 4, 2, 1, 8, 4, 1, 1, 2, 1, 8, 4, 1};             // don't forget to change lengths!!!
+    int shortest_vals[17] = {16, 2, 1, 8, 4, 2, 1, 8, 4, 2, 1, 8, 4, 2, 1, 8, 4};                // don't forget to change lengths!!!
 
 
 
-    seq_p shortSeq     = malloc(sizeof(struct seq));
-    initializeSeq(shortSeq, SEQ_CAPACITY);
-    setSeq(shortest_vals, shortSeqLen, shortSeq);
+    seq_p shortChar     = malloc(sizeof(struct seq));
+    initializeChar(shortChar, CHAR_CAPACITY);
+    setChar(shortest_vals, shortCharLen, shortChar);
 
-    seq_p middleSeq    = malloc(sizeof(struct seq));
-    initializeSeq(middleSeq, SEQ_CAPACITY);
-    setSeq(middle_vals, middleSeqLen, middleSeq);
+    seq_p middleChar    = malloc(sizeof(struct seq));
+    initializeChar(middleChar, CHAR_CAPACITY);
+    setChar(middle_vals, middleCharLen, middleChar);
 
-    seq_p longSeq      = malloc(sizeof(struct seq));
-    initializeSeq(longSeq, SEQ_CAPACITY);
-    setSeq(longest_vals, longSeqLen, longSeq);
+    seq_p longChar      = malloc(sizeof(struct seq));
+    initializeChar(longChar, CHAR_CAPACITY);
+    setChar(longest_vals, longCharLen, longChar);
 
-    seq_p retShortSeq  = malloc( sizeof(struct seq) );
-    initializeSeq(retShortSeq,  SEQ_CAPACITY);
+    seq_p retShortChar  = malloc( sizeof(struct seq) );
+    initializeChar(retShortChar,  CHAR_CAPACITY);
 
-    seq_p retMiddleSeq = malloc( sizeof(struct seq) );
-    initializeSeq(retMiddleSeq, SEQ_CAPACITY);
+    seq_p retMiddleChar = malloc( sizeof(struct seq) );
+    initializeChar(retMiddleChar, CHAR_CAPACITY);
 
-    seq_p retLongSeq   = malloc( sizeof(struct seq) );
-    initializeSeq(retLongSeq,   SEQ_CAPACITY);
+    seq_p retLongChar   = malloc( sizeof(struct seq) );
+    initializeChar(retLongChar,   CHAR_CAPACITY);
 
 
 
@@ -145,23 +145,23 @@ int main() {
     nw_matrices_p algn_mtxs3dAffine = malloc(sizeof(struct nwMatrices));
 
     if (DO_2D) {
-        initializeNWMtx(longSeq->len, shortSeq->len,  0,             costMtx2d->lcm,        algn_mtxs2d);
+        initializeNWMtx(longChar->len, shortChar->len,  0,             costMtx2d->costMatrixDimension,        algn_mtxs2d);
     }
     if (DO_2D_AFF) {
-        initializeNWMtx(longSeq->len, shortSeq->len,  0,             costMtx2d_affine->lcm, algn_mtxs2dAffine);
+        initializeNWMtx(longChar->len, shortChar->len,  0,             costMtx2d_affine->costMatrixDimension, algn_mtxs2dAffine);
     }
     if (DO_3D) {
-        initializeNWMtx(longSeq->len, middleSeq->len, shortSeq->len, costMtx3d->lcm,        algn_mtxs3d);
+        initializeNWMtx(longChar->len, middleChar->len, shortChar->len, costMtx3d->costMatrixDimension,        algn_mtxs3d);
     }
     if (DO_3D_AFF) {
-        initializeNWMtx(longSeq->len, middleSeq->len, shortSeq->len, costMtx3d_affine->lcm, algn_mtxs3dAffine);
+        initializeNWMtx(longChar->len, middleChar->len, shortChar->len, costMtx3d_affine->costMatrixDimension, algn_mtxs3dAffine);
     }
 
     int algnCost;
 
     /**
     // Print TCM in pretty format
-    const int n = costMtx2d->lcm;
+    const int n = costMtx2d->costMatrixDimension;
     for (size_t i = 0; i < n; ++i) {
         for (size_t j = 0; j < n; ++j) {
             printf("%2d ", tcm[ n*i + j ]);
@@ -174,8 +174,8 @@ int main() {
     // pulled from ML code
     // deltawh is for use in Ukonnen, it gives the current necessary width of the Ukk matrix
     int deltawh     = 0;
-    int diff        = longSeq->len - shortSeq->len;
-    int lower_limit = .1 * longSeq->len;
+    int diff        = longChar->len - shortChar->len;
+    int lower_limit = .1 * longChar->len;
     if (deltawh) {
         deltawh = diff < lower_limit ? lower_limit : deltawh;
     } else {
@@ -191,54 +191,54 @@ int main() {
         printf("\n\n\n******************** Align 2 sequences **********************\n");
 
         // printf("Original alignment matrix before algn_nw_2d: \n");
-        // algn_print_dynmtrx_2d( longSeq, shortSeq, algn_mtxs2d );
+        // algn_print_dynmtrx_2d( longChar, shortChar, algn_mtxs2d );
 
-        algnCost = algn_nw_2d( shortSeq, longSeq, costMtx2d, algn_mtxs2d, deltawh );
+        algnCost = algn_nw_2d( shortChar, longChar, costMtx2d, algn_mtxs2d, deltawh );
 
         if (DEBUG_MAT) {
             printf("\n\nFinal alignment matrix: \n\n");
-            algn_print_dynmtrx_2d( longSeq, shortSeq, algn_mtxs2d );
+            algn_print_dynmtrx_2d( longChar, shortChar, algn_mtxs2d );
         }
 
 
         printf("Original 2d sequences:\n");
-        seq_print(longSeq, 1);
-        seq_print(shortSeq, 2);
+        seq_print(longChar);
+        seq_print(shortChar);
 
-        algn_backtrace_2d (shortSeq, longSeq, retShortSeq, retLongSeq, algn_mtxs2d, costMtx2d, 0, 0, 1);
+        algn_backtrace_2d (shortChar, longChar, retShortChar, retLongChar, algn_mtxs2d, costMtx2d, 0, 0, 1);
         printf("\nAligned 2d sequences\n");
-        seq_print(retLongSeq, 1);
-        seq_print(retShortSeq, 2);
+        seq_print(retLongChar);
+        seq_print(retShortChar);
 
         printf("\nAlignment cost: %d\n", algnCost);
 
         /****  Now get alignments  ****/
 
         printf("\nAligned sequences:\n");
-        //int *algnSeqVals = calloc(retLongSeq->len, sizeof(int));
-        seq_p algnSeq = malloc( sizeof(struct seq) );;
-        initializeSeq(algnSeq, SEQ_CAPACITY);
-        //free (algnSeqVals);
-        resetSeqValues(algnSeq);
+        //int *algnCharVals = calloc(retLongChar->len, sizeof(int));
+        seq_p algnChar = malloc( sizeof(struct seq) );;
+        initializeChar(algnChar, CHAR_CAPACITY);
+        //free (algnCharVals);
+        resetCharValues(algnChar);
 
         // union:
-        algn_union (retShortSeq, retLongSeq, algnSeq);
+        algn_union (retShortChar, retLongChar, algnChar);
         printf("  Unioned sequence\n  ");
-        seq_print(algnSeq, 0);
+        seq_print(algnChar);
 
         // ungapped:
-        resetSeqValues(algnSeq);
-        algn_get_median_2d_no_gaps (retShortSeq, retLongSeq, costMtx2d, algnSeq);
+        resetCharValues(algnChar);
+        algn_get_median_2d_no_gaps (retShortChar, retLongChar, costMtx2d, algnChar);
         printf("\n  Median without gaps\n  ");
-        seq_print(algnSeq, 0);
+        seq_print(algnChar);
 
         // gapped:
-        resetSeqValues(algnSeq);
-        algn_get_median_2d_with_gaps (retShortSeq, retLongSeq, costMtx2d, algnSeq);
+        resetCharValues(algnChar);
+        algn_get_median_2d_with_gaps (retShortChar, retLongChar, costMtx2d, algnChar);
         printf("\n  Median with gaps\n  ");
-        seq_print(algnSeq, 0);
+        seq_print(algnChar);
 
-        free (algnSeq);
+        free (algnChar);
     }
 
 
@@ -248,8 +248,8 @@ int main() {
     /*** must have gap at start of sequence!!! ***/
 
     if (DO_2D_AFF) {
-        resetSeqValues(retLongSeq);
-        resetSeqValues(retShortSeq);
+        resetCharValues(retLongChar);
+        resetCharValues(retShortChar);
 
         // TODO: document these variables
         int *matrix;                        //
@@ -262,16 +262,16 @@ int main() {
         int *matrix_2d;                     //
         int *gap_open_prec;                 // precalculated gap opening value (top row of nw matrix)
         int *s_horizontal_gap_extension;    //
-        int lenLongerSeq;                   //
+        int lenLongerChar;                   //
 
         DIR_MTX_ARROW_t *direction_matrix;
-        size_t lenLongSeq  = seq_get_len(longSeq);
-        size_t lenShortSeq = seq_get_len(shortSeq);
-        lenLongerSeq = (lenLongSeq > lenShortSeq) ? lenLongSeq : lenShortSeq;
+        size_t lenLongChar  = longChar->len;
+        size_t lenShortChar = shortChar->len;
+        lenLongerChar = (lenLongChar > lenShortChar) ? lenLongChar : lenShortChar;
 
-        //    mat_setup_size (algn_mtxs2dAffine, lenLongerSeq, lenLongerSeq, 0, 0, cm_get_lcm (costMtx2d_affine));
-        matrix_2d  = mat_get_2d_nwMtx (algn_mtxs2dAffine);
-        precalcMtx = mat_get_2d_prec  (algn_mtxs2dAffine);
+        //    mat_setup_size (algn_mtxs2dAffine, lenLongerChar, lenLongerChar, 0, 0, cm_get_costMatrixDimension (costMtx2d_affine));
+        matrix_2d  = algn_mtxs2dAffine->nw_costMtx;
+        precalcMtx = algn_mtxs2dAffine->precalcMtx;
 
         // TODO: figure out what the following seven values do/are
         //       also note the int factors, which maybe have something to do with the unexplained 12
@@ -279,49 +279,49 @@ int main() {
         // here and in algn.c, "block" refers to a block of gaps, so close_block_diagonal is the cost to
         // end a subsequence of gaps, presumably with a substitution, but maybe by simply switching directions:
         // there was a vertical gap, now there's a horizontal one.
-        close_block_diagonal       = (int *)  matrix_2d;
-        extend_block_diagonal      = (int *) (matrix_2d + ( 2 * lenLongerSeq));
-        extend_vertical            = (int *) (matrix_2d + ( 4 * lenLongerSeq));
-        extend_horizontal          = (int *) (matrix_2d + ( 6 * lenLongerSeq));
-        final_cost_matrix          = (int *) (matrix_2d + ( 8 * lenLongerSeq));
-        gap_open_prec              = (int *) (matrix_2d + (10 * lenLongerSeq));
-        s_horizontal_gap_extension = (int *) (matrix_2d + (11 * lenLongerSeq));
+        close_block_diagonal       = matrix_2d;
+        extend_block_diagonal      = matrix_2d + ( 2 * lenLongerChar);
+        extend_vertical            = matrix_2d + ( 4 * lenLongerChar);
+        extend_horizontal          = matrix_2d + ( 6 * lenLongerChar);
+        final_cost_matrix          = matrix_2d + ( 8 * lenLongerChar);
+        gap_open_prec              = matrix_2d + (10 * lenLongerChar);
+        s_horizontal_gap_extension = matrix_2d + (11 * lenLongerChar);
 
 
 
-        // TODO: ungappedMedSeq might not be necessary, as it's unused in ml code:
-        size_t medianSeqLen          = lenLongSeq + lenShortSeq + 2;  // 2 because that's how it is in ML code
-        seq_p gappedMedSeq        = malloc( sizeof(struct seq) );
-        gappedMedSeq->cap         = medianSeqLen;
-        gappedMedSeq->array_head  = calloc( medianSeqLen, sizeof(SEQT));
-        gappedMedSeq->len         = 0;
-        gappedMedSeq->seq_begin   = gappedMedSeq->end = gappedMedSeq->array_head + medianSeqLen;
+        // TODO: ungappedMedChar might not be necessary, as it's unused in ml code:
+        size_t medianCharLen       = lenLongChar + lenShortChar + 2;  // 2 because that's how it is in ML code
+        seq_p gappedMedChar        = malloc( sizeof(struct seq) );
+        gappedMedChar->cap         = medianCharLen;
+        gappedMedChar->array_head  = calloc( medianCharLen, sizeof(SEQT));
+        gappedMedChar->len         = 0;
+        gappedMedChar->seq_begin   = gappedMedChar->end = gappedMedChar->array_head + medianCharLen;
 
-        seq_p ungappedMedSeq              = malloc( sizeof(struct seq) );
-        ungappedMedSeq->cap               = medianSeqLen;
-        ungappedMedSeq->array_head        = calloc( medianSeqLen, sizeof(SEQT));
-        ungappedMedSeq->len               = 0;
-        ungappedMedSeq->seq_begin         = ungappedMedSeq->end = ungappedMedSeq->array_head + medianSeqLen;
+        seq_p ungappedMedChar       = malloc( sizeof(struct seq) );
+        ungappedMedChar->cap        = medianCharLen;
+        ungappedMedChar->array_head = calloc( medianCharLen, sizeof(SEQT));
+        ungappedMedChar->len        = 0;
+        ungappedMedChar->seq_begin  = ungappedMedChar->end = ungappedMedChar->array_head + medianCharLen;
 
-        direction_matrix             = mat_get_2d_direct (algn_mtxs2dAffine);
+        direction_matrix            = algn_mtxs2dAffine->nw_dirMtx;
 
         printf("\n\n\n***************** Align 2 sequences affine ********************\n\n");
 
         printf("Original affine 2d sequences:\n");
 
-        // seq_p longerSequence = lenLongSeq > lenShortSeq ? longSeq : shortSeq;
-        // seq_p shorterSequence = lenLongSeq > lenShortSeq ? shortSeq : longSeq;
+        // seq_p longerCharuence = lenLongChar > lenShortChar ? longChar : shortChar;
+        // seq_p shorterCharuence = lenLongChar > lenShortChar ? shortChar : longChar;
 
-        seq_print(longSeq,  1);
-        seq_print(shortSeq, 2);
+        seq_print(longChar);
+        seq_print(shortChar);
 
-        cm_precalc_4algn(costMtx2d_affine, algn_mtxs2dAffine, longSeq);
+        cm_precalc_4algn(costMtx2d_affine, algn_mtxs2dAffine, longChar);
 
         // TODO: consider moving all of this into algn.
         //       the following three fns were initially not declared in algn.h
         algn_initialize_matrices_affine (costMtx2d_affine->gap_open,
-                                         shortSeq,
-                                         longSeq,
+                                         shortChar,
+                                         longChar,
                                          costMtx2d_affine,
                                          close_block_diagonal,
                                          extend_block_diagonal,
@@ -345,7 +345,7 @@ int main() {
 
        // for (int *i = matrix_2d, j = 0; i < matrix_2d + algn_mtxs2dAffine->len; i++, j++) {
        //     printf("%d, ", *i);
-       //     if (j % (lenLongerSeq ) == 0) {
+       //     if (j % (lenLongerChar ) == 0) {
        //         printf("\n");
        //     }
        // }
@@ -353,47 +353,47 @@ int main() {
 
         // shorter first
         // TODO: why isn't this argument order consistent with next fn call?
-        algnCost = algn_fill_plane_2d_affine (shortSeq,
-                                             longSeq,
-                                             shortSeq->len - 1,
-                                             longSeq->len - 1,
-                                             final_cost_matrix,
-                                             direction_matrix,
-                                             costMtx2d_affine,
-                                             extend_horizontal,
-                                             extend_vertical,
-                                             close_block_diagonal,
-                                             extend_block_diagonal,
-                                             precalcMtx,
-                                             gap_open_prec,
-                                             s_horizontal_gap_extension);
+        algnCost = algn_fill_plane_2d_affine (shortChar,
+                                              longChar,
+                                              shortChar->len - 1,
+                                              longChar->len - 1,
+                                              final_cost_matrix,
+                                              direction_matrix,
+                                              costMtx2d_affine,
+                                              extend_horizontal,
+                                              extend_vertical,
+                                              close_block_diagonal,
+                                              extend_block_diagonal,
+                                              precalcMtx,
+                                              gap_open_prec,
+                                              s_horizontal_gap_extension);
 
 
 
         if (DEBUG_MAT) {
             printf("\n\nFinal alignment matrix, affine: \n\n");
-            algn_print_dynmtrx_2d( shortSeq, longSeq, algn_mtxs2dAffine );
+            algn_print_dynmtrx_2d( shortChar, longChar, algn_mtxs2dAffine );
         }
 
 
         // shorter first
         // TODO: fix this to make it consistent
-        algn_backtrace_affine (shortSeq,
-                               longSeq,
+        algn_backtrace_affine (shortChar,
+                               longChar,
                                direction_matrix,
-                               ungappedMedSeq,
-                               gappedMedSeq,
-                               retShortSeq,
-                               retLongSeq,
+                               ungappedMedChar,
+                               gappedMedChar,
+                               retShortChar,
+                               retLongChar,
                                costMtx2d_affine);
 
         printf("\nAligned affine 2d sequences\n");
-        if (lenLongSeq > lenShortSeq) {
-          seq_print(retShortSeq, 1);
-          seq_print(retLongSeq, 2);
+        if (lenLongChar > lenShortChar) {
+          seq_print(retShortChar);
+          seq_print(retLongChar);
         } else {
-          seq_print(retLongSeq, 1);
-          seq_print(retShortSeq, 2);
+          seq_print(retLongChar);
+          seq_print(retShortChar);
         }
 
 
@@ -401,14 +401,14 @@ int main() {
 
         // ungapped:
         printf("\n  Median without gaps\n  ");
-        seq_print(ungappedMedSeq, 0);
+        seq_print(ungappedMedChar);
 
         // gapped:
         printf("\n  Median with gaps\n  ");
-        seq_print(gappedMedSeq, 0);
+        seq_print(gappedMedChar);
 
-        freeSeq(gappedMedSeq);
-        freeSeq(ungappedMedSeq);
+        freeChar(gappedMedChar);
+        freeChar(ungappedMedChar);
 
     }
 
@@ -419,46 +419,46 @@ int main() {
 
         printf("\n\n\n******************** Align 3 sequences **********************\n\n");
 
-        // must first reset values in retLongSeq and retShortSeq
-        resetSeqValues(retLongSeq);
-        resetSeqValues(retShortSeq);
+        // must first reset values in retLongChar and retShortChar
+        resetCharValues(retLongChar);
+        resetCharValues(retShortChar);
 
-        // algnCost = algn_nw_3d (longSeq, middleSeq, shortSeq, costMtx3d, algn_mtxs3d, deltawh);
+        // algnCost = algn_nw_3d (longChar, middleChar, shortChar, costMtx3d, algn_mtxs3d, deltawh);
         //printf("Final alignment matrix: \n");
-        //algn_print_dynmtrx_2d_2d( longSeq, shortSeq, algn_mtxs3d );
+        //algn_print_dynmtrx_2d_2d( longChar, shortChar, algn_mtxs3d );
 
         printf("Original 3d sequences:\n");
-        seq_print(longSeq,   1);
-        seq_print(middleSeq, 2);
-        seq_print(shortSeq,  3);
+        seq_print(longChar);
+        seq_print(middleChar);
+        seq_print(shortChar);
         printf("\n");
 
         // short input, middle input, long input
         // short return, middle return, long return
         // sub, gap open, gap extend
-        algnCost = powell_3D_align (shortSeq,    middleSeq,    longSeq,
-                                    retLongSeq, retMiddleSeq, retShortSeq,
+        algnCost = powell_3D_align (shortChar,    middleChar,    longChar,
+                                    retLongChar, retMiddleChar, retShortChar,
                                     1, 2, 1);
 
-        // algn_backtrace_3d(shortSeq, middleSeq, longSeq,
-        //                   retShortSeq, retMiddleSeq, retLongSeq,
+        // algn_backtrace_3d(shortChar, middleChar, longChar,
+        //                   retShortChar, retMiddleChar, retLongChar,
         //                   costMtx3d, algn_nw_3d);
 
-        //algn_backtrace_3d (longSeq, middleSeq, shortSeq, retLongSeq, retMiddleSeq, retShortSeq, costMtx3d, algn_mtxs3d);
+        //algn_backtrace_3d (longChar, middleChar, shortChar, retLongChar, retMiddleChar, retShortChar, costMtx3d, algn_mtxs3d);
 
         printf("\n\nAligned 3d sequences:\n");
-        seq_print(retLongSeq,   1);
-        seq_print(retMiddleSeq, 2);
-        seq_print(retShortSeq,  3);
+        seq_print(retLongChar);
+        seq_print(retMiddleChar);
+        seq_print(retShortChar);
 
         printf("\nAlignment cost: %d\n", algnCost);
 
         printf("\n\n\n");
 
-        // for (SEQT *base = retLongSeq->seq_begin; base != retLongSeq->end; base++) {
+        // for (SEQT *base = retLongChar->seq_begin; base != retLongChar->end; base++) {
         //     printf("a: %c\n", *base);
         // }
-        // for (SEQT *base = retShortSeq->seq_begin; base != retShortSeq->end; base++) {
+        // for (SEQT *base = retShortChar->seq_begin; base != retShortChar->end; base++) {
         //     printf("b: %s\n", base);
         // }
     }
@@ -474,12 +474,12 @@ int main() {
     freeNWMtx(algn_mtxs2dAffine);
     freeNWMtx(algn_mtxs3d);
 
-    freeSeq(longSeq);
-    freeSeq(shortSeq);
-    freeSeq(middleSeq);
-    freeSeq(retLongSeq);
-    freeSeq(retShortSeq);
-    freeSeq(retMiddleSeq);
+    freeChar(longChar);
+    freeChar(shortChar);
+    freeChar(middleChar);
+    freeChar(retLongChar);
+    freeChar(retShortChar);
+    freeChar(retMiddleChar);
 
     free(tcm);
 

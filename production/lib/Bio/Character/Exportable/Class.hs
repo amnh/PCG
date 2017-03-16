@@ -26,6 +26,7 @@ import Foreign.C.Types
 -- Represents a sequence of fixed width characters packed into a bitwise form
 -- consumable by lower level functions.
 class Exportable c where
+
     toExportableBuffer     :: c -> ExportableCharacterSequence
     fromExportableBuffer   :: ExportableCharacterSequence -> c
 
@@ -52,7 +53,7 @@ data ExportableCharacterElements
    = ExportableCharacterElements
    { exportedElementCountElements :: Int
    , exportedElementWidthElements :: Int 
-   , exportedCharacterElements :: [CULong]
+   , exportedCharacterElements :: [CUInt]
    } deriving (Eq, Show)   
 
 

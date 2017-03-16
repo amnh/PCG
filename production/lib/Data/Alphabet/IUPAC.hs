@@ -139,7 +139,7 @@ isAlphabetSubsetOf alpha str = alphaSet `Set.isSubsetOf` strSet
 toBimap :: [(Char,String)] ->  Bimap (AmbiguityGroup String) (AmbiguityGroup String)
 toBimap = BM.fromList . fmap transform
   where
-    transform = (pure . pure *** fmap pure . NE.fromList)
+    transform = pure . pure *** fmap pure . NE.fromList
     
 
 

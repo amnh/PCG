@@ -223,7 +223,7 @@ dimensionsDefinition = {-do
         _         <- optional $ try (symbol (string' "nTax"))
         _         <- optional $ try (symbol (char '='))
         numTaxa'  <- optional $ try (symbol integer)
-        _         <- optional $ symbol (string' "nchar")
+        _         <- optional $ symbol (string' "nchar" *> optional (char' 's'))
         _         <- optional $ symbol (char '=')
         charCount <- optional $ try (symbol integer)
         _         <- symbol   $ char ';'
@@ -261,7 +261,7 @@ charFormatFieldDef = {-do
         pure block'
     where
         block = choice
-            [ CharDT      <$> try (stringDefinition       "datatype"   )
+            [ CharDT      <$> try (string' "datatype" *> symbol (char '=') *> charDTDefinition)
             , SymStr      <$> try (quotedStringDefinition "symbols"    )
             , Transpose   <$> try (booleanDefinition      "transpose"  )
             , Interleave  <$> try (booleanDefinition      "interleave" )
@@ -275,7 +275,14 @@ charFormatFieldDef = {-do
             , Unlabeled   <$> try (booleanDefinition      "nolabels"   )
             , IgnFF       <$> try (ignoredSubBlockDef     ' '          )
             ]
-
+        charDTDefinition = choice
+                         [ string' "standard"   $> Standard
+                         , string' "dna"        $> DNA
+                         , string' "rna"        $> RNA
+                         , string' "nucleotide" $> Nucleotide
+                         , string' "protein"    $> Protein
+                         , string' "continuous" $> Continuous
+                         ] <?> "\nDatatype is not recognized."
 
 -- |
 -- Parses one of the two caputured field values present in a tree block.
@@ -303,8 +310,7 @@ stringDefinition :: (MonadParsec e s m, Token s ~ Char {- , Show s -}) => String
 stringDefinition blockTitle = do
     _     <- symbol $ string' blockTitle
     _     <- symbol $ char '='
-    value <- symbol (notKeywordWord "\"" <?> "Word that is not a Nexus keyword")
-    pure value
+    symbol (notKeywordWord "\"" <?> "Word that is not a Nexus keyword")
 
 
 -- | quotedStringDefinition takes a string of format TITLE="value1 value2 ...";
@@ -317,7 +323,7 @@ quotedStringDefinition :: (MonadParsec e s m, Token s ~ Char {- , Show s -}) => 
 quotedStringDefinition blockTitle = {-do
     x <- getInput
     trace (("some quotedStringDefinition " ++ blockTitle)  ++ show x) $ -}do
-    _     <- symbol (string' blockTitle)
+    _     <- symbol $ string' blockTitle
     _     <- symbol $ char '='
     _     <- symbol $ char '"'
     value <- some $ symbol (notKeywordWord "\"" <?> "Word that is not a Nexus keyword")
@@ -456,7 +462,7 @@ space1 = skipSome spaceChar
 notKeywordWord :: (MonadParsec e s m, Token s ~ Char {- , Show s -}) => String -> m String
 notKeywordWord avoidChars = do
     word <- lookAhead nextWord
-    if (toLower <$> word) `S.member` nexusKeywords
+    if (toLower <$> word) `elem` nexusKeywords
     then fail $ "Unexpected keyword '" ++ word ++ "', perhaps you are missing a semicolon?"
     else nextWord
   where
