@@ -369,29 +369,6 @@ algn_fill_row (int *currRow,
                int finalIndex) {
     int i, upwardCost, leftwardCost, diagonalCost;
 
-    /*
-    printf("Start Index 'startIndex': %d\n", startIndex);
-    printf("End   Index 'finalIndex': %d\n", finalIndex);
-    printf("Input Array 'prevRow': \n[ ");
-    for (i = startIndex; i <= finalIndex; i++) {
-        printf("%d, ", prevRow[i]);
-    }
-    printf("]\n");
-
-    printf("Input Array 'gap_row': \n[ ");
-    for (i = startIndex; i <= finalIndex; i++) {
-        printf("%d, ", gap_row[i]);
-    }
-    printf("]\n");
-
-    printf("Input Array 'align_row': \n[ ");
-    for (i = startIndex; i <= finalIndex; i++) {
-        printf("%d, ", align_row[i]);
-    }
-    printf("]\n");
-    fflush(stdout);
-    */
-
     for (i = startIndex; i <= finalIndex; i++) {
         // try align with substitution
         upwardCost   = prevRow[i    ] + c;
@@ -452,21 +429,6 @@ algn_fill_row (int *currRow,
         printf ("\n");
         fflush (stdout);
     }
-
-    /*
-    printf("Result Array 'currRow': \n[ ");
-    for (i = startIndex; i <= finalIndex; i++) {
-        printf("%d, ", currRow[i]);
-    }
-    printf("]\n");
-
-    printf("Result Array 'dirVect': \n[ ");
-    for (i = startIndex; i <= finalIndex; i++) {
-        printf("%d, ", currRow[i]);
-    }
-    printf("]\n\n");
-    fflush(stdout);
-    */
 
 }
 #endif // __GNUC__
