@@ -308,8 +308,8 @@ void copySequence (seq_p s, char *str) {
     }
     int len, i;
     SEQT *seq_begin;
-    len       = seq_get_len (s);
-    seq_begin = seq_get_seq_begin(s);
+    len       = s->len;
+    seq_begin = s->seq_begin;
 
     for (i = 1; i < len; i++) {
         if (seq_begin[i] & 1) {
@@ -357,9 +357,9 @@ int powell_3D_align (seq_p seqA,    seq_p seqB,    seq_p seqC,
     copySequence (seqB, bStr);
     copySequence (seqC, cStr);
 
-    aLen = seq_get_len (seqA);
-    bLen = seq_get_len (seqB);
-    cLen = seq_get_len (seqC);
+    aLen = seqA->len;
+    bLen = seqB->len;
+    cLen = seqC->len;
 
     setup();
 

@@ -145,23 +145,23 @@ int main() {
     nw_matrices_p algn_mtxs3dAffine = malloc(sizeof(struct nwMatrices));
 
     if (DO_2D) {
-        initializeNWMtx(longChar->len, shortChar->len,  0,             costMtx2d->lcm,        algn_mtxs2d);
+        initializeNWMtx(longChar->len, shortChar->len,  0,             costMtx2d->costMatrixDimension,        algn_mtxs2d);
     }
     if (DO_2D_AFF) {
-        initializeNWMtx(longChar->len, shortChar->len,  0,             costMtx2d_affine->lcm, algn_mtxs2dAffine);
+        initializeNWMtx(longChar->len, shortChar->len,  0,             costMtx2d_affine->costMatrixDimension, algn_mtxs2dAffine);
     }
     if (DO_3D) {
-        initializeNWMtx(longChar->len, middleChar->len, shortChar->len, costMtx3d->lcm,        algn_mtxs3d);
+        initializeNWMtx(longChar->len, middleChar->len, shortChar->len, costMtx3d->costMatrixDimension,        algn_mtxs3d);
     }
     if (DO_3D_AFF) {
-        initializeNWMtx(longChar->len, middleChar->len, shortChar->len, costMtx3d_affine->lcm, algn_mtxs3dAffine);
+        initializeNWMtx(longChar->len, middleChar->len, shortChar->len, costMtx3d_affine->costMatrixDimension, algn_mtxs3dAffine);
     }
 
     int algnCost;
 
     /**
     // Print TCM in pretty format
-    const int n = costMtx2d->lcm;
+    const int n = costMtx2d->costMatrixDimension;
     for (size_t i = 0; i < n; ++i) {
         for (size_t j = 0; j < n; ++j) {
             printf("%2d ", tcm[ n*i + j ]);
@@ -265,13 +265,13 @@ int main() {
         int lenLongerChar;                   //
 
         DIR_MTX_ARROW_t *direction_matrix;
-        size_t lenLongChar  = seq_get_len(longChar);
-        size_t lenShortChar = seq_get_len(shortChar);
+        size_t lenLongChar  = longChar->len;
+        size_t lenShortChar = shortChar->len;
         lenLongerChar = (lenLongChar > lenShortChar) ? lenLongChar : lenShortChar;
 
-        //    mat_setup_size (algn_mtxs2dAffine, lenLongerChar, lenLongerChar, 0, 0, cm_get_lcm (costMtx2d_affine));
-        matrix_2d  = mat_get_2d_nwMtx (algn_mtxs2dAffine);
-        precalcMtx = mat_get_2d_prec  (algn_mtxs2dAffine);
+        //    mat_setup_size (algn_mtxs2dAffine, lenLongerChar, lenLongerChar, 0, 0, cm_get_costMatrixDimension (costMtx2d_affine));
+        matrix_2d  = algn_mtxs2dAffine->nw_costMtx;
+        precalcMtx = algn_mtxs2dAffine->precalcMtx;
 
         // TODO: figure out what the following seven values do/are
         //       also note the int factors, which maybe have something to do with the unexplained 12
@@ -279,31 +279,31 @@ int main() {
         // here and in algn.c, "block" refers to a block of gaps, so close_block_diagonal is the cost to
         // end a subsequence of gaps, presumably with a substitution, but maybe by simply switching directions:
         // there was a vertical gap, now there's a horizontal one.
-        close_block_diagonal       = (int *)  matrix_2d;
-        extend_block_diagonal      = (int *) (matrix_2d + ( 2 * lenLongerChar));
-        extend_vertical            = (int *) (matrix_2d + ( 4 * lenLongerChar));
-        extend_horizontal          = (int *) (matrix_2d + ( 6 * lenLongerChar));
-        final_cost_matrix          = (int *) (matrix_2d + ( 8 * lenLongerChar));
-        gap_open_prec              = (int *) (matrix_2d + (10 * lenLongerChar));
-        s_horizontal_gap_extension = (int *) (matrix_2d + (11 * lenLongerChar));
+        close_block_diagonal       = matrix_2d;
+        extend_block_diagonal      = matrix_2d + ( 2 * lenLongerChar);
+        extend_vertical            = matrix_2d + ( 4 * lenLongerChar);
+        extend_horizontal          = matrix_2d + ( 6 * lenLongerChar);
+        final_cost_matrix          = matrix_2d + ( 8 * lenLongerChar);
+        gap_open_prec              = matrix_2d + (10 * lenLongerChar);
+        s_horizontal_gap_extension = matrix_2d + (11 * lenLongerChar);
 
 
 
         // TODO: ungappedMedChar might not be necessary, as it's unused in ml code:
-        size_t medianCharLen          = lenLongChar + lenShortChar + 2;  // 2 because that's how it is in ML code
+        size_t medianCharLen       = lenLongChar + lenShortChar + 2;  // 2 because that's how it is in ML code
         seq_p gappedMedChar        = malloc( sizeof(struct seq) );
         gappedMedChar->cap         = medianCharLen;
         gappedMedChar->array_head  = calloc( medianCharLen, sizeof(SEQT));
         gappedMedChar->len         = 0;
         gappedMedChar->seq_begin   = gappedMedChar->end = gappedMedChar->array_head + medianCharLen;
 
-        seq_p ungappedMedChar              = malloc( sizeof(struct seq) );
-        ungappedMedChar->cap               = medianCharLen;
-        ungappedMedChar->array_head        = calloc( medianCharLen, sizeof(SEQT));
-        ungappedMedChar->len               = 0;
-        ungappedMedChar->seq_begin         = ungappedMedChar->end = ungappedMedChar->array_head + medianCharLen;
+        seq_p ungappedMedChar       = malloc( sizeof(struct seq) );
+        ungappedMedChar->cap        = medianCharLen;
+        ungappedMedChar->array_head = calloc( medianCharLen, sizeof(SEQT));
+        ungappedMedChar->len        = 0;
+        ungappedMedChar->seq_begin  = ungappedMedChar->end = ungappedMedChar->array_head + medianCharLen;
 
-        direction_matrix             = mat_get_2d_direct (algn_mtxs2dAffine);
+        direction_matrix            = algn_mtxs2dAffine->nw_dirMtx;
 
         printf("\n\n\n***************** Align 2 sequences affine ********************\n\n");
 
@@ -354,19 +354,19 @@ int main() {
         // shorter first
         // TODO: why isn't this argument order consistent with next fn call?
         algnCost = algn_fill_plane_2d_affine (shortChar,
-                                             longChar,
-                                             shortChar->len - 1,
-                                             longChar->len - 1,
-                                             final_cost_matrix,
-                                             direction_matrix,
-                                             costMtx2d_affine,
-                                             extend_horizontal,
-                                             extend_vertical,
-                                             close_block_diagonal,
-                                             extend_block_diagonal,
-                                             precalcMtx,
-                                             gap_open_prec,
-                                             s_horizontal_gap_extension);
+                                              longChar,
+                                              shortChar->len - 1,
+                                              longChar->len - 1,
+                                              final_cost_matrix,
+                                              direction_matrix,
+                                              costMtx2d_affine,
+                                              extend_horizontal,
+                                              extend_vertical,
+                                              close_block_diagonal,
+                                              extend_block_diagonal,
+                                              precalcMtx,
+                                              gap_open_prec,
+                                              s_horizontal_gap_extension);
 
 
 

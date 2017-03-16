@@ -58,7 +58,7 @@ void allocAlignIO(alignIO_p toAlloc, size_t capacity) {
 void alignIOtoChar(alignIO_p input, seq_p retChar, size_t alphabetSize) {
     //printf("Input Length:     %2d\n", input->length  );
     //printf("Input Capacity:   %2d\n", input->capacity);
-    
+
     // assign character into character struct
     retChar->len        = input->length;
     retChar->cap        = input->capacity;
@@ -164,12 +164,12 @@ int align2d(alignIO_p inputChar1_aio,
     //       not require this conditional biasing. We handle all swapping in this
     //       C interface.
     //
-    //       I beleive that the swapped flag is superflous for our interface and
+    //       I believe that the swapped flag is superflous for our interface and
     //       the swapped != 0 code branches in algn_backtrace_2d is all dead code.
     const int swapped = 0;
 
     // size_t alphabetSize = costMtx2d->alphSize;
-    size_t alphabetSize = costMtx2d->costMtxDimension;
+    size_t alphabetSize = costMtx2d->costMatrixDimension;
 
     if (inputChar1_aio->length >= inputChar2_aio->length) {
         alignIOtoChar(inputChar1_aio, longChar, alphabetSize);
@@ -195,7 +195,7 @@ int align2d(alignIO_p inputChar1_aio,
     //printf("Before NW init.\n");
     //fflush(stdout);
     nw_matrices_p nw_mtxs2d = malloc(sizeof(struct nwMatrices));
-    initializeNWMtx(longChar->len, shortChar->len, 0, costMtx2d->costMtxDimension, nw_mtxs2d);
+    initializeNWMtx(longChar->len, shortChar->len, 0, costMtx2d->costMatrixDimension, nw_mtxs2d);
     //printf("After  NW init.\n");
     //fflush(stdout);
 
@@ -298,7 +298,8 @@ int align2dAffine(alignIO_p inputChar1_aio,
                   alignIO_p ungappedOutput_aio,
                   // alignIO_p unionOutput_aio,
                   cost_matrices_2d_p costMtx2d_affine,
-                  int getMedians) {
+                  int getMedians)
+{
 
     const size_t CHAR_CAPACITY = inputChar1_aio->length + inputChar2_aio->length + 2;
 
@@ -316,7 +317,7 @@ int align2dAffine(alignIO_p inputChar1_aio,
     initializeChar(retLongChar,  CHAR_CAPACITY);
     initializeChar(retShortChar, CHAR_CAPACITY);
 
-    const int swapped = 0;
+    // const int swapped = 0; no longer used.
 
     size_t alphabetSize = costMtx2d_affine->alphSize;
 
@@ -336,7 +337,7 @@ int align2dAffine(alignIO_p inputChar1_aio,
     }
 
     // TODO: document these variables
-    int *matrix;                        //
+    // int *matrix;                        //
     int *close_block_diagonal;          //
     int *extend_block_diagonal;         //
     int *extend_vertical;               //
@@ -351,11 +352,11 @@ int align2dAffine(alignIO_p inputChar1_aio,
     DIR_MTX_ARROW_t  *direction_matrix;
 
     nw_matrices_p nw_mtxs2dAffine = malloc(sizeof(struct nwMatrices));
-    initializeNWMtx(longChar->len, shortChar->len, 0, costMtx2d_affine->costMtxDimension, nw_mtxs2dAffine);
+    initializeNWMtx(longChar->len, shortChar->len, 0, costMtx2d_affine->costMatrixDimension, nw_mtxs2dAffine);
     lenLongerChar = longChar->len;
 
-    matrix_2d  = mat_get_2d_nwMtx (nw_mtxs2dAffine);
-    precalcMtx = mat_get_2d_prec  (nw_mtxs2dAffine);
+    matrix_2d  = nw_mtxs2dAffine->nw_costMtx;
+    precalcMtx = nw_mtxs2dAffine->precalcMtx;
 
     // TODO: figure out what the following seven values do/are
     //       also note the int factors, which maybe have something to do with the unexplained 12
@@ -382,7 +383,7 @@ int align2dAffine(alignIO_p inputChar1_aio,
 
 
 
-    direction_matrix                = mat_get_2d_direct (nw_mtxs2dAffine);
+    direction_matrix                = nw_mtxs2dAffine->nw_dirMtx;
 
     cm_precalc_4algn(costMtx2d_affine, nw_mtxs2dAffine, longChar);
 

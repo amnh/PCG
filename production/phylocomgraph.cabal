@@ -99,9 +99,9 @@ library
 
   extra-libraries: stdc++
 
- -- cc-options: --std=c11
+  cc-options: --std=c11
 
-  cc-options: --std=c++11 -g
+ -- cc-options: --std=c++11 -g
 
   -- We must provide the full relative path to every C file that the project depends on.
   c-sources:
@@ -221,7 +221,7 @@ library
                        Data.Matrix.NotStupid
                        Text.Megaparsec.Custom
                        Test.Custom.NucleotideSequence
-                       
+
   -- Modules included in this library but not exported.
   other-modules:
                     --   Analysis.ImpliedAlignment.AlignmentContext
@@ -472,7 +472,7 @@ executable fasta-differ
 
   hs-source-dirs:      utils
 
-  
+
 executable do-comparison
 
   main-is:             do-comparison.hs

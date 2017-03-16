@@ -61,38 +61,12 @@ typedef struct seq * seq_p;
 
 void seq_print(seq_p inSeq);
 
-/* Gets the capacity of the sequence a. */
-int
-seq_get_cap (const seq_p a);
-
 void
 seq_prepend (seq_p a, SEQT v);
 
-/* Gets the total length of the sequence a */
-int
-seq_get_len (const seq_p a);
-
-/* Gets a pointer to the beginning of the sequence a */
- SEQT *
-seq_get_seq_begin (const seq_p a);
-
-/* Gets a pointer to the beginning of the array where the sequence is stored.
- * Note that begin != array_head. */
- SEQT *
-seq_get_array_head (const seq_p a);
-
-/* Gets a pointer to the memory location where the last element of the sequence
- * a is stored. */
- SEQT *
-seq_get_end (const seq_p a);
-
-/* Gets the value of the element of sequence a in the position p, where a starts at position 0
- */
-SEQT
-seq_get_element (const seq_p a, int p);
 
 /* Stores the value v in the position p of sequence a. */
 void
-seq_set (seq_p a, int p, SEQT v);
+seq_set (seq_p sequence, int position, SEQT value);
 
 #endif /* SEQ_H */

@@ -111,7 +111,7 @@ void setup2dCostMtx(int* tcm, size_t alphSize, int gap_open, cost_matrices_2d_p 
     // Print TCM in pretty format
     if(DEBUG_MAT) {
         printf("setup2dCostMtx\n");
-        const int n = retCostMtx->costMtxDimension;
+        const int n = retCostMtx->costMatrixDimension;
         for (size_t i = 0; i < n; ++i) {
             for (size_t j = 0; j < n; ++j) {
                 printf("%2d ", tcm[ n * i + j ]);
@@ -150,9 +150,10 @@ void setup2dCostMtx(int* tcm, size_t alphSize, int gap_open, cost_matrices_2d_p 
 
     int gap = 1 << (alphSize - 1);
     for ( size_t i = 1; i <= all_elements; i++) {
-        cm_set_prepend_2d (i, cm_get_cost(gap,   i, retCostMtx),    retCostMtx);
+        cm_set_prepend_2d (i, cm_get_cost(gap,   i, retCostMtx), retCostMtx);
         cm_set_tail_2d    (i, cm_get_cost(  i, gap, retCostMtx), retCostMtx);
     }
+
     /*
     SEQT* seqStart = longChar->seq_begin;
     int gap        = 1 << (alphSize - 1);
@@ -180,7 +181,7 @@ void setup3dCostMtx(int* tcm, size_t alphSize, int gap_open, cost_matrices_3d_p 
     int do_aff       = gap_open == 0 ? 0 : 3; // The 3 is because affine's cost_model_type is 3, according to my reading of ML code.
                                               // (Actually, I changed that; it used to be 2, now it's 3.)
                                               // This value set in cm_set_affine().
-    int is_metric    = 1;
+    // int is_metric    = 1;
     int all_elements = (1 << alphSize) - 1;   // Given data is DNA (plus gap), there are 2^5 - 1 possible character states
 
     int minCost    = INT_MAX;
