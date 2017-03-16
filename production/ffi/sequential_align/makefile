@@ -17,8 +17,8 @@ bit-ops : bitArrayExampleC.c bitArrayExampleC.h $(dynamicChar)
 #  -Wall turns on most, but not all, compiler warnings
 testCostMtx : test_costMtx.cpp costMatrix.h costMatrix.cpp $(dynamicChar)
 	rm -f test_costMtx
-	gcc -std=c11 -c dynamicCharacterOperations.c
-	g++ -std=c++14 -c costMatrix.cpp
+	gcc -std=c11 -c -g dynamicCharacterOperations.c
+	g++ -std=c++14 -c -g costMatrix.cpp
 	# g++ -std=c++14 -c test_costMtx.cpp
 	g++ -std=c++14 -g -Wall -o test_costMtx test_costMtx.cpp dynamicCharacterOperations.o costMatrix.o
 

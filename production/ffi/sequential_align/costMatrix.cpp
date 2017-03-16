@@ -1,6 +1,10 @@
+#include <inttypes.h>
+
 #include "costMatrix.h"
 #include "dynamicCharacterOperations.h"
 #include <cstring> //for memcpy;
+
+#define __STDC_FORMAT_MACROS
 
 // TODO: I'll need this for the Haskell side of things: https://hackage.haskell.org/package/base-4.9.0.0/docs/Foreign-StablePtr.html
 
@@ -102,29 +106,46 @@ int CostMatrix::getCostMedian(dcElement_t* left, dcElement_t* right, dcElement_t
 }
 
 int CostMatrix::getSetCostMedian(dcElement_t* left, dcElement_t* right, dcElement_t* retMedian) {
-    keys_t* toLookup = allocKeys_t(left->alphSize);
+    // not using allocKeys_t because we're making a copy of the packed characters _if we need to_
+    keys_t* toLookup = (keys_t*) malloc( sizeof(keys_t) );
     toLookup->first  = *left;
     toLookup->second = *right;
     mapIterator found;
     int foundCost;
 
-    // printf("1st: {%zu}: %llu\n", toLookup->first.alphSize , *toLookup->first.element );
-    // printf("2nd: {%zu}: %llu\n", toLookup->second.alphSize, *toLookup->second.element);
+    // printf("1st: {%zu}: %" PRIu64 "\n", toLookup->first.alphSize , *toLookup->first.element );
+    // printf("2nd: {%zu}: %" PRIu64 "\n", toLookup->second.alphSize, *toLookup->second.element);
 
     found = myMatrix.find(*toLookup);
 
+    // if (retMedian->element == NULL) {
+    //     retMedian->element = (packedChar*) calloc( dcElemSize(alphabetSize), sizeof(packedChar) );
+    // }
+
     if ( found == myMatrix.end() ) {
-        if(DEBUG) printf("\ngetSetCost didn't find %llu %llu.\n", left->element[0], right->element[0]);
-        costMedian_t* computedCostMed = computeCostMedian(*toLookup);
-        if(DEBUG) printf("computed cost, median: %2i %llu\n", computedCostMed->first, computedCostMed->second[0]);
-        foundCost                     = computedCostMed->first;
-        copyPackedChar(computedCostMed->second, retMedian->element, alphabetSize);
+        if(DEBUG) printf("\ngetSetCost didn't find %" PRIu64 " %" PRIu64 ".\n", left->element[0], right->element[0]);
+
+        // costMedian_t* computedCostMed = computeCostMedian(*toLookup);
+        costMedian_t* computedCostMed = computeCostMedianFitchy(*toLookup);
+
+        if(DEBUG) printf("computed cost, median: %2i %" PRIu64 "\n", computedCostMed->first, computedCostMed->second[0]);
+
+        foundCost          = computedCostMed->first;
+        retMedian->element = makePackedCharCopy( computedCostMed->second, alphabetSize, 1 );
+
+        // Can't use allocateDCElement here, because makePackedCharCopy() allocates.
+        toLookup->first           = *(dcElement_t*) malloc( sizeof(dcElement_t) );
+        toLookup->first.alphSize  = left->alphSize;
+        toLookup->first.element   = makePackedCharCopy(left->element, left->alphSize, 1);
+        toLookup->second          = *(dcElement_t*) malloc( sizeof(dcElement_t) );
+        toLookup->second.alphSize = left->alphSize;
+        toLookup->second.element  = makePackedCharCopy( right->element, right->alphSize, 1 );
 
         setValue (toLookup, computedCostMed);
     } else {
         // because in the next two lines, I get back a pair<keys, costMedian_t>
         foundCost          = found->second.first;
-        retMedian->element = found->second.second;
+        retMedian->element = makePackedCharCopy( found->second.second, left->alphSize, 1 );
     }
 
     return foundCost;
@@ -166,7 +187,7 @@ costMedian_t* CostMatrix::computeCostMedian(keys_t keys) {
         // ambElem on each child; now we're combining those costs get overall cost and median
         if (curCost < minCost) {
             // printf("\nNew low cost.\n");
-            // printf("current nucleotide: %llu \n", *searchKey->second.element);
+            // printf("current nucleotide: %" PRIu64 " \n", *searchKey->second.element);
             // printf("found cost:      %d\n", curCost);
 
             minCost = curCost;
@@ -174,13 +195,13 @@ costMedian_t* CostMatrix::computeCostMedian(keys_t keys) {
             SetBit(curMedian, curNucleotideIdx);
         } else if (curCost == minCost) {
             // printf("\nSame cost, new median.\n");
-            // printf("current nucleotide: %llu \n", *searchKey->second.element);
-            // printf("median: %llu\n", *curMedian);
+            // printf("current nucleotide: %" PRIu64 " \n", *searchKey->second.element);
+            // printf("median: %" PRIu64 "\n", *curMedian);
             // printf("found cost:      %d\n", curCost);
 
             SetBit(curMedian, curNucleotideIdx);
 
-            // printf("new median: %llu\n", *curMedian);
+            // printf("new median: %" PRIu64 "\n", *curMedian);
         }
         ClearBit(singleNucleotide->element, curNucleotideIdx);
     } // curNucleotideIdx
@@ -198,48 +219,62 @@ costMedian_t* CostMatrix::computeCostMedianFitchy(keys_t keys) {
 
     size_t elemArrLen = dcElemSize(alphabetSize);
 
-    dcElement_t*  firstUnambigugous = allocateDCElement(alphabetSize);
-    dcElement_t* secondUnambigugous = allocateDCElement(alphabetSize);
+    dcElement_t*  firstUnambiguous  = allocateDCElement(alphabetSize);
+    dcElement_t* secondUnambiguous  = allocateDCElement(alphabetSize);
     dcElement_t*    pointwiseMedian = allocateDCElement(alphabetSize);
     dcElement_t*      minimalMedian = allocateDCElement(alphabetSize);
 
-    int minimalCost   = INT_MAX;
+    int minimalCost = INT_MAX;
     int pointwiseCost;
-    
     for (size_t i = 0; i < alphabetSize; ++i) {
       if (TestBit(keys.first.element, i)) {
-	SetBit(firstUnambigugous->element, i);
+        SetBit(firstUnambiguous->element, i);
         for (size_t j = 0; j < alphabetSize; ++j) {
            if (TestBit(keys.second.element, j)) {
-	     SetBit(secondUnambigugous->element, j);
-             pointwiseCost = getSetCostMedian(firstUnambigugous, secondUnambigugous, pointwiseMedian);
+             SetBit(secondUnambiguous->element, j);
+             // printf("secondUnambiguous: %" PRIu64 "\n", *secondUnambiguous->element);
+             pointwiseCost = getSetCostMedian(firstUnambiguous, secondUnambiguous, pointwiseMedian);
+             // printf("bit1: %zu, bit2: %zu, cost: %d\n", i, j, pointwiseCost);
              if (pointwiseCost == minimalCost) {
-	       packedChar* newPackedChar = packedCharOr(pointwiseMedian->element, minimalMedian->element, alphabetSize);
-	       free(minimalMedian->element);
-	       minimalMedian->element = newPackedChar;	       
-	     }
-	     else if (pointwiseCost < minimalCost) {
-	       memcpy(minimalMedian->element, pointwiseMedian->element, elemArrLen * sizeof(*pointwiseMedian->element));
-	       minimalCost = pointwiseCost;
-	     }
-	     else {
-	       // Greater than current minimal cost, don't accumulate.
-	     }
-	     ClearBit(secondUnambigugous->element, j);
-	   }
-	}
-	ClearBit(firstUnambigugous->element, i);
+               // printf("union\n");
+               // printf("old median: %" PRIu64 "\n", *minimalMedian->element);
+               // printf("secondUnambiguous: %" PRIu64 "\n", *secondUnambiguous->element);
+               SetBit(minimalMedian->element, i);
+               SetBit(minimalMedian->element, j);
+               //packedChar *newPackedChar = packedCharOr(secondUnambiguous->element, minimalMedian->element, alphabetSize);
+               //free(minimalMedian->element);
+               //minimalMedian->element = newPackedChar;
+               // printf("new element: %" PRIu64 "\n", *minimalMedian->element);
+             } else if (pointwiseCost < minimalCost) {
+                 // printf("new min\n");
+               //memcpy(minimalMedian->element, pointwiseMedian->element, elemArrLen * sizeof(*pointwiseMedian->element));
+               memset(minimalMedian->element, 0, elemArrLen);
+               SetBit(minimalMedian->element, i);
+               SetBit(minimalMedian->element, j);
+               minimalCost = pointwiseCost;
+               // printf("new element: %" PRIu64 "\n", *minimalMedian->element);
+             } else {
+                 // printf("discarded\n");
+               // Greater than current minimal cost, don't accumulate.
+               // This is hear because Alex is crazy. "So you know it's intentional, you know, for completion!"
+             }
+             ClearBit(secondUnambiguous->element, j);
+           }
+        }
+        ClearBit(firstUnambiguous->element, i);
       }
     }
 
-    freeDCElem( firstUnambigugous);
-    freeDCElem(secondUnambigugous);
+    freeDCElem( firstUnambiguous);
+    freeDCElem(secondUnambiguous);
     freeDCElem(   pointwiseMedian);
-    
+
     costMedian_t* toReturn = (costMedian_t*) malloc(sizeof(costMedian_t));
 
     toReturn->first  = minimalCost;
     toReturn->second = minimalMedian->element;
+
+    free(minimalMedian);
 
     return toReturn;
 }
@@ -257,7 +292,7 @@ int CostMatrix::findDistance (keys_t* searchKey, dcElement_t* ambElem) {
             found = myMatrix.find(*searchKey);
             if ( found == myMatrix.end() ) {
                 printf("Something went wrong in the memoized cost matrix.\n");
-                printf("missing key: %llu %llu\n", *searchKey->first.element, *searchKey->second.element);
+                printf("missing key: %" PRIu64 " %" PRIu64 "\n", *searchKey->first.element, *searchKey->second.element);
                 exit(1);
             }
             curCost = found->second.first;
@@ -267,7 +302,7 @@ int CostMatrix::findDistance (keys_t* searchKey, dcElement_t* ambElem) {
             ClearBit(searchKey->first.element, pos);
         }
     }
-    // printf("distance ambElem: %llu, nucleotide: %llu\n", ambElem->element[0], *searchKey->second.element);
+    // printf("distance ambElem: %" PRIu64 ", nucleotide: %" PRIu64 "\n", ambElem->element[0], *searchKey->second.element);
     // printf("cost: %i\n", min);
     return min;
 }
@@ -295,6 +330,7 @@ void CostMatrix::setUpInitialMatrix (int* tcm) {
             median    = toInsert->second.second;
             cost      = &toInsert->second.first;
 
+            // we allocated a new pair above, so we never will clear the bits set here.
             SetBit(firstKey->element, key1);
             SetBit(median, key1);
 
@@ -304,8 +340,8 @@ void CostMatrix::setUpInitialMatrix (int* tcm) {
             *cost = tcm[key1 * alphabetSize + key2];
 
             // if(DEBUG) {
-            //     printf("keys set: %llu %llu\n", *firstKey->element, *secondKey->element);
-            //     printf("median: %llu   cost: %i\n", *toInsert->second.second, toInsert->second.first);
+            //     printf("keys set: %" PRIu64 " %" PRIu64 "\n", *firstKey->element, *secondKey->element);
+            //     printf("median: %" PRIu64 "   cost: %i\n", *toInsert->second.second, toInsert->second.first);
             // }
 
             myMatrix.insert(*toInsert);
