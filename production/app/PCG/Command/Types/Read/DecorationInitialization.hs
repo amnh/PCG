@@ -266,6 +266,7 @@ chooseDirectOptimizationComparison :: ( SimpleDynamicDecoration d  c
                                       , Exportable c
                                       , Show c
                                       , Show (Element c)
+                                      , Integral (Element c) 
                                       )
                                    => d
                                    -> [d']

@@ -5,8 +5,8 @@ module PCG.Command.Types.Report.Evaluate
   ) where
 
 --import           Analysis.ImpliedAlignment.Standard
-import           Analysis.ImpliedAlignment
-import           Analysis.Parsimony.Binary.Optimization
+--import           Analysis.ImpliedAlignment
+--import           Analysis.Parsimony.Binary.Optimization
 import           Bio.Metadata
 import           Bio.PhyloGraphPrime.PhylogeneticDAG
 import           Control.Monad.IO.Class
