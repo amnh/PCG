@@ -35,6 +35,7 @@ import Control.DeepSeq
 import Control.Lens
 import Data.Foldable
 import Data.List        (intercalate)
+import Data.MonoTraversable
 import Data.Semigroup
 import Debug.Trace
 import Foreign
@@ -468,7 +469,9 @@ algn2d char1 char2 costStruct computeUnion computeMedians = handleMissingCharact
 
                 -- NOTE: We swapped resultingAlignedChar1 & resultingAlignedChar2
                 -- because the C code returns the values in the wrong order!
-                pure (filterGaps resultingGapped, fromIntegral cost, resultingGapped, resultingAlignedChar2, resultingAlignedChar1)
+                pure $ if olength char1 == olength char2
+                       then (filterGaps resultingGapped, fromIntegral cost, resultingGapped, resultingAlignedChar1, resultingAlignedChar2)
+                       else (filterGaps resultingGapped, fromIntegral cost, resultingGapped, resultingAlignedChar2, resultingAlignedChar1)
             where
                 neverComputeOnlyGapped = 0
 
