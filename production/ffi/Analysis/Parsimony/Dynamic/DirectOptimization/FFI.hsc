@@ -167,7 +167,7 @@ instance Storable AlignIO where
 -- possible character elements. It is completely filled using a TCM. See note below at 'setupCostMatrixFn_c'.
 data CostMatrix2d = CostMatrix2d { alphSize         :: CInt      -- alphabet size including gap, and including ambiguities if
                                                               --     combinations == True
-                                 , costMtxDimension :: CInt      -- ceiling of log_2 (alphSize)
+                                 , costMatrixDimension :: CInt      -- ceiling of log_2 (alphSize)
                                  , gapChar          :: CInt      -- gap value (1 << (alphSize - 1))
                                  , costModelType    :: CInt      {- The type of cost model to be used in the alignment,
         System.IO                                                       - i.e. affine or not.
@@ -220,7 +220,7 @@ instance Show CostMatrix2d where
 
     show = unlines .
            ([ show . alphSize
-            , show . costMtxDimension
+            , show . costMatrixDimension
             , show . gapChar
             , show . costModelType
             , show . combinations
@@ -242,7 +242,7 @@ instance Storable CostMatrix2d where
     alignment = sizeOf -- alignment (undefined :: StablePtr CostMatrix2d)
     peek ptr  = do -- to get values from the C app
         aSizeVal            <- (#peek struct cost_matrices_2d, alphSize        ) ptr
-        costMtxDimensionVal <- (#peek struct cost_matrices_2d, costMtxDimension) ptr
+        costMatrixDimensionVal <- (#peek struct cost_matrices_2d, costMatrixDimension) ptr
         gapcharVal          <- (#peek struct cost_matrices_2d, gap_char        ) ptr
         costModelVal        <- (#peek struct cost_matrices_2d, cost_model_type ) ptr
         combosVal           <- (#peek struct cost_matrices_2d, combinations    ) ptr
@@ -255,7 +255,7 @@ instance Storable CostMatrix2d where
         prependVal          <- (#peek struct cost_matrices_2d, prepend_cost    ) ptr
         tailVal             <- (#peek struct cost_matrices_2d, tail_cost       ) ptr
         pure CostMatrix2d { alphSize         = aSizeVal
-                          , costMtxDimension = costMtxDimensionVal
+                          , costMatrixDimension = costMatrixDimensionVal
                           , gapChar          = gapcharVal
                           , costModelType    = costModelVal
                           , combinations     = combosVal
@@ -271,7 +271,7 @@ instance Storable CostMatrix2d where
 
     poke ptr (CostMatrix2d
                   alphSizeVal
-                  costMtxDimensionVal
+                  costMatrixDimensionVal
                   gapCharVal
                   costModelTypeVal
                   combinationsVal
@@ -285,7 +285,7 @@ instance Storable CostMatrix2d where
                   tailCostVal
               ) = do -- to modify values in the C app
         (#poke struct cost_matrices_2d, alphSize        ) ptr alphSizeVal
-        (#poke struct cost_matrices_2d, costMtxDimension) ptr costMtxDimensionVal
+        (#poke struct cost_matrices_2d, costMatrixDimension) ptr costMatrixDimensionVal
         (#poke struct cost_matrices_2d, gap_char        ) ptr gapCharVal
         (#poke struct cost_matrices_2d, cost_model_type ) ptr costModelTypeVal
         (#poke struct cost_matrices_2d, combinations    ) ptr combinationsVal
@@ -758,7 +758,7 @@ instance Storable NWMatrices where
 -- possible character elements. It is completely filled using a TCM. See note below at 'setupCostMatrixFn_c'.
 data CostMatrix3d = CostMatrix3d { sSize      :: CInt      -- alphabet size including gap, and including ambiguities if
                                                               --     combinations == True
-                                 , costMtxDimension :: CInt      -- ceiling of log_2 (alphSize)
+                                 , costMatrixDimension :: CInt      -- ceiling of log_2 (alphSize)
                                  , gapChar       :: CInt      -- gap value (1 << (alphSize - 1))
                                  , costModelType :: CInt      {- The type of cost model to be used in the alignment,
                                                                - i.e. affine or not.
