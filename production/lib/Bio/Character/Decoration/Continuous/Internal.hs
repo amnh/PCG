@@ -127,7 +127,7 @@ instance ContinuousCharacter c => ContinuousDecoration (ContinuousDecorationInit
 
 
 
-
+{-
 data ContinuousOptimizationDecoration a
    = ContinuousOptimizationDecoration
    { continuousMinCost              :: Double
@@ -233,4 +233,5 @@ instance EncodableStaticCharacter a => DiscreteExtensionContinuousDecoration (Co
             <$> (^. characterName)
             <*> (^. characterWeight)
             $ subDecoration
+-}
 -}
