@@ -78,7 +78,7 @@ int *_algn_max_matrix = NULL;
 DIR_MTX_ARROW_t *_algn_max_direction = NULL;
 #endif
 
-/*
+
 #if ( __GNUC__ && __MMX__ )
 static inline void
 algn_fill_row (int *curRow, const int *prevRow, const int *gap_row,
@@ -95,7 +95,7 @@ algn_fill_row (int *curRow, const int *prevRow, const int *gap_row,
         aa = prevRow[i - 1] + align_row[i]; // aka tmp3
         bb += gap_row[i]; // aka tmp2
         cc = prevRow[i] + c; // aka tmp1
-*/
+
         /**
          *  The algorithm has not changed. Only the conditional branches been eliminated for
          *  better performance.
@@ -124,7 +124,7 @@ algn_fill_row (int *curRow, const int *prevRow, const int *gap_row,
          *  since this one generates exactly same results.
          */
 
-/*
+
         __asm__(
             "cmp %0, %1\n\t"    // compare aa with bb (the needed cmp flag remains even if registers are switched)
             "cmovg %0, %1\n\t"  // if bb > aa was flagged, put aa into bb's register. Now we know that bb is always the smallest value
@@ -357,7 +357,7 @@ algn_fill_row (int *curRow, const int *prevRow, const int *gap_row,
     return;
 }
 #else // __GNUC__
-*/
+
 
 static inline void
 algn_fill_row (int *currRow,
@@ -369,29 +369,6 @@ algn_fill_row (int *currRow,
                int startIndex,
                int finalIndex) {
     int i, upwardCost, leftwardCost, diagonalCost;
-
-    /*
-    printf("Start Index 'startIndex': %d\n", startIndex);
-    printf("End   Index 'finalIndex': %d\n", finalIndex);
-    printf("Input Array 'prevRow': \n[ ");
-    for (i = startIndex; i <= finalIndex; i++) {
-        printf("%d, ", prevRow[i]);
-    }
-    printf("]\n");
-
-    printf("Input Array 'gap_row': \n[ ");
-    for (i = startIndex; i <= finalIndex; i++) {
-        printf("%d, ", gap_row[i]);
-    }
-    printf("]\n");
-
-    printf("Input Array 'align_row': \n[ ");
-    for (i = startIndex; i <= finalIndex; i++) {
-        printf("%d, ", align_row[i]);
-    }
-    printf("]\n");
-    fflush(stdout);
-    */
 
     for (i = startIndex; i <= finalIndex; i++) {
         // try align with substitution
@@ -454,26 +431,11 @@ algn_fill_row (int *currRow,
         fflush (stdout);
     }
 
-    /*
-    printf("Result Array 'currRow': \n[ ");
-    for (i = startIndex; i <= finalIndex; i++) {
-        printf("%d, ", currRow[i]);
-    }
-    printf("]\n");
-
-    printf("Result Array 'dirVect': \n[ ");
-    for (i = startIndex; i <= finalIndex; i++) {
-        printf("%d, ", currRow[i]);
-    }
-    printf("]\n\n");
-    fflush(stdout);
-    */
-    
     return;
 }
-/*
+
 #endif // __GNUC__
-*/
+
 
 static inline void
 algn_fill_ukk_right_cell (int *curRow,
