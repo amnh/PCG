@@ -882,6 +882,9 @@ algn_fill_plane (const seq_p longerSequence,
 
     int* debugCostMatrixBuffer = NULL; // Only used in DEBUG_COST_M branches
 
+    // change to 1 || DEBUG_COST_M to just print the cost matrix in here.
+    const int LOCAL_DEBUG_COST_M = DEBUG_COST_M;
+    
     /* A precalculated cost of a gap aligned with each base in the array */
     gapcode       = cm_get_gap_char_2d (costMtx);
     gap_row       = cm_get_precal_row (precalcMtx, gapcode, lesserSequenceLength);
@@ -890,7 +893,7 @@ algn_fill_plane (const seq_p longerSequence,
     curRow[0] = 0;
     dirMtx[0] = ALIGN;
 
-    if (DEBUG_COST_M) {
+    if (LOCAL_DEBUG_COST_M) {
         //Allocate space to store cost matrix proper as it is continually overwritten in the algorithm below.
         debugCostMatrixBuffer = malloc(longerSequenceLength * lesserSequenceLength * sizeof(int));
     }
@@ -910,7 +913,7 @@ algn_fill_plane (const seq_p longerSequence,
         printf ("\n");
     }
 
-    if (DEBUG_COST_M) {
+    if (LOCAL_DEBUG_COST_M) {
         for (i = 0; i < lesserSequenceLength; i++) {
             debugCostMatrixBuffer[i] = curRow[i]; 
         }
@@ -940,7 +943,7 @@ algn_fill_plane (const seq_p longerSequence,
                            , const_val_tail
                            , lesserSequenceLength);
 
-        if (DEBUG_COST_M) {
+        if (LOCAL_DEBUG_COST_M) {
             for (j = 0; j < lesserSequenceLength; j++) {
                 debugCostMatrixBuffer[(lesserSequenceLength * i) + j] = curRow[j]; 
             }
@@ -952,7 +955,7 @@ algn_fill_plane (const seq_p longerSequence,
         newNWMtx = tmp;
     }
 
-    if (DEBUG_COST_M) {
+    if (LOCAL_DEBUG_COST_M) {
         printf("Cost matrix:\n");
 
         // Print cost matrix column headers
