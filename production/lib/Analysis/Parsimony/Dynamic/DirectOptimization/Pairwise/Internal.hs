@@ -394,9 +394,9 @@ naiveDOInternal char1 char2 overlapFunction
     where
       char1Len = olength char1
       char2Len = olength char2
-      (shorterChar, longerChar, _longLen) = if   char1Len > char2Len
-                                            then (char2, char1, char1Len)
-                                            else (char1, char2, char2Len)
+      (longerChar, shorterChar, _longLen) = if   char1Len >= char2Len
+                                            then (char1, char2, char1Len)
+                                            else (char2, char1, char2Len)
       traversalMat = -- (\x -> trace (show $ (\(a,b,_) -> (a,b)) <$> x) x) $
                       createDOAlignMatrix longerChar shorterChar overlapFunction
       cost = getTotalAlignmentCost traversalMat
