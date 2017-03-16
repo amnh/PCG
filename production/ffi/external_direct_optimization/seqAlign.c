@@ -3582,8 +3582,7 @@ algn_fill_3dMtx_ukk (const seq_p seq1, const seq_p seq2, const int *precalcMtx,
 static inline int
 algn_nw_limit_2d (const seq_p shorterSeq, const seq_p longerSeq, const cost_matrices_2d_p costMtx,
                   nw_matrices_p nw_mtxs, int deltawh, int len_shorterSeq, int len_longerSeq) {
-    printf("algn_nw_limit_2d %d\n", deltawh);
-    fflush(stdout);
+
     const SEQT *slongerSeq, *sshorterSeq;
     int *curRow, *precalcMtx;
     DIR_MTX_ARROW_t  *dirMtx;
@@ -3601,19 +3600,19 @@ algn_nw_limit_2d (const seq_p shorterSeq, const seq_p longerSeq, const cost_matr
     int *prepend_cost;   /* Missing in 3d */
     int *tail_cost;      /* Missing in 3d */
 
-
-    printf("before pre-calc \n");
-    fflush(stdout);
+    
+    //printf("before pre-calc \n");
+    //fflush(stdout);
     precalcMtx = mat_get_2d_prec (nw_mtxs);
-    printf("after  pre-calc \n");
-    fflush(stdout);
+    //printf("after  pre-calc \n");
+    //fflush(stdout);
 
-    printf("before pre-calc alignment\n");
-    fflush(stdout);
+    //printf("before pre-calc alignment\n");
+    //fflush(stdout);
     cm_precalc_4algn (costMtx, nw_mtxs, shorterSeq); // returns precalculated cost matrix (in matrices) computed using sequence from shorterSeq.
                                                // shorterSeq bases will be column heads of that matrix
-    printf("after  pre-calc alignment\n");
-    fflush(stdout);
+    //printf("after  pre-calc alignment\n");
+    //fflush(stdout);
 
     if (cm_get_affine_flag (costMtx)) {
         return algn_fill_plane_2_affine ( longerSeq, precalcMtx
@@ -4081,7 +4080,7 @@ algn_backtrace_2d ( const seq_p shorterSeq, const seq_p longerSeq,
                         printf("  new item a: %d, new item b: %d\n", new_item_for_ret_longerSeq, new_item_for_ret_shorterSeq);
                     }
                 }
-                else if ((*end & DELETE)) {
+                else if (*end & DELETE) {
                     idx_longerSeq--;
                     new_item_for_ret_longerSeq = my_get (longerSeq, idx_longerSeq);
                     my_prepend(ret_longerSeq, new_item_for_ret_longerSeq);
@@ -4383,7 +4382,7 @@ algn_get_median_2d_with_gaps (seq_p shorterSeq, seq_p longerSeq, cost_matrices_2
     int i;
     seq_begin_longerSeq  = seq_get_seq_begin (longerSeq);
     seq_begin_shorterSeq = seq_get_seq_begin (shorterSeq);
-    printf("seqLen-1 of longer: %d\n", seq_get_len (longerSeq) - 1);
+
     for (i = seq_get_len (longerSeq) - 1; i >= 0; i--) {
         interm = cm_get_median (m, seq_begin_longerSeq[i], seq_begin_shorterSeq[i]);
         seq_prepend (sm, interm);

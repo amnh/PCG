@@ -153,8 +153,20 @@ int align2d(alignIO_p inputChar1_aio,
     initializeChar(retLongChar,  CHAR_CAPACITY);
     initializeChar(retShortChar, CHAR_CAPACITY);
 
-
-    int swapped = 0;
+    // NOTE: We do not set the swapped flag, regardless of if we swap the inputs.
+    //       Doing so causes the C algorithm to return inconsitent reults inputs
+    //       which create a NW matrix that contains a cell with equally costly
+    //       left-arrow (INSERT) and up-arrow (DELETE) directions but a more
+    //       costly diagonal-arrow (ALIGN) direction. This is because internally
+    //       the algn_backtrace_2d function will check the 'swapped' flag and
+    //       conditionally change the bias prefference between left-arrow (INSERT)
+    //       and up-arrow (DELETE) directions. For our use of the C code, we do
+    //       not require this conditional biasing. We handle all swapping in this
+    //       C interface.
+    //
+    //       I beleive that the swapped flag is superflous for our interface and
+    //       the swapped != 0 code branches in algn_backtrace_2d is all dead code.
+    const int swapped = 0;
 
     // size_t alphabetSize = costMtx2d->alphSize;
     size_t alphabetSize = costMtx2d->costMtxDimension;
@@ -172,7 +184,6 @@ int align2d(alignIO_p inputChar1_aio,
 
         alignIOtoChar(inputChar1_aio, shortChar, alphabetSize);
         shortIO = inputChar1_aio;
-        swapped = 1;
     }
 
     if (DEBUG_ALGN) {
@@ -206,7 +217,6 @@ int align2d(alignIO_p inputChar1_aio,
     //printf("Ater align cost.\n");
     //fflush(stdout);
     if (getGapped || getUngapped || getUnion) {
-        algn_print_dynmtrx_2d (shortChar, longChar, nw_mtxs2d);
         //printf("Before backtrace.\n"), fflush(stdout);
         algn_backtrace_2d (shortChar, longChar, retShortChar, retLongChar, nw_mtxs2d, costMtx2d, 0, 0, swapped);
         //printf("After  backtrace.\n"), fflush(stdout);
@@ -306,7 +316,7 @@ int align2dAffine(alignIO_p inputChar1_aio,
     initializeChar(retLongChar,  CHAR_CAPACITY);
     initializeChar(retShortChar, CHAR_CAPACITY);
 
-    int swapped = 0;
+    const int swapped = 0;
 
     size_t alphabetSize = costMtx2d_affine->alphSize;
 
@@ -317,7 +327,6 @@ int align2dAffine(alignIO_p inputChar1_aio,
         alignIOtoChar(inputChar2_aio, shortChar, alphabetSize);
         shortIO = inputChar2_aio;
 
-        swapped = 1;
     } else {
         alignIOtoChar(inputChar2_aio, longChar, alphabetSize);
         longIO = inputChar2_aio;

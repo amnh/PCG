@@ -124,14 +124,11 @@ filterGaps char = constructDynamic . filter (/= gap) $ otoList char
 -- TODO: See if we can move topDynChar logic inside here. It's also necessary in DO. 
 -- Or maybe DO can just call doAlignment?
 createDOAlignMatrix :: DOCharConstraint s => s -> s -> OverlapFunction (Element s) -> DOAlignMatrix (Element s)
-createDOAlignMatrix topChar leftChar overlapFunction = trace renderedMatrix $ result
+createDOAlignMatrix topChar leftChar overlapFunction = {- trace renderedMatrix $ -} result
   where
     -- :)
     renderedMatrix = renderCostMatrix topChar leftChar result
     
-    matrixCorner = matrix (olength leftChar + 1) (olength topChar + 1) $ \(i,j) -> showCell (getElem i j result)
-    showCell (c,d,_) = (c, d)
-
     result = matrix (olength leftChar + 1) (olength topChar + 1) generateMat
     gap    = gapOfStream leftChar -- The constructors of DynamicChar prevent an empty character construction.
 
@@ -150,7 +147,6 @@ createDOAlignMatrix topChar leftChar overlapFunction = trace renderedMatrix $ re
       | col == 0                     = (  upwardValue                   ,   UpArrow,    downChar)
       | leftElement == gap &&
          topElement == gap           = (diagCost                        , DiagArrow,         gap)
---      | leftElement == topElement    = (diagCost                        , DiagArrow, leftElement) -- WLOG
       | otherwise                    = (minCost                         , minDir   ,    minState)
       where
         -- | 
@@ -166,8 +162,6 @@ createDOAlignMatrix topChar leftChar overlapFunction = trace renderedMatrix $ re
         diagCost                      =  diagOverlapCost + diagonalValue
         downCost                      =  downOverlapCost +   upwardValue
         (minCost, minState, minDir)   = minimumBy (comparing (\(c,_,d) -> (c,d)))
-                                      -- TODO: POY prioritizes gaps to shorter char, make sure it prioritizes
-                                      -- right on equal-length chars
                                       [ (diagCost ,  diagChar        , DiagArrow)
                                       , (rightCost, rightChar .|. gap, LeftArrow)
                                       , (downCost ,  downChar .|. gap, UpArrow  )
@@ -180,7 +174,6 @@ createDOAlignMatrix topChar leftChar overlapFunction = trace renderedMatrix $ re
           , "Chosen:"
           , "  " <> show (minCost, fromIntegral minState, minDir) 
           ]            
---        showCell (c,d,_) = unwords [show (row, col), show c, show d]
 
 
 renderCostMatrix :: DOCharConstraint s => s -> s -> DOAlignMatrix a -> String
