@@ -30,6 +30,7 @@ import Control.Lens
 -- import Data.Bifunctor (bimap)
 import Data.Bits
 import Data.List.NonEmpty (NonEmpty( (:|) ))
+import Data.Range
 -- import Data.Word
 -- import Debug.Trace
 
@@ -73,24 +74,20 @@ updatePostOrder :: DiscreteCharacterDecoration d c
                 => d
                 -> NonEmpty (AdditiveOptimizationDecoration c)
                 -> AdditiveOptimizationDecoration c
-updatePostOrder _parentDecoration (x:|[])                     = x                     -- Shouldn't be possible,
-                                                                                      --    but here for completion.
+updatePostOrder _parentDecoration (x:|[])                     = x                     -- Shouldn't be possible, but here for completion.
 updatePostOrder _parentDecoration (leftChild:|(rightChild:_)) = {- trace (show newMin ++ " " ++ show newMax ++ " " ++ show totalCost) $ -}
-    returnNodeDecoration  -- Not a leaf.
+    extendDiscreteToAdditive leftChild totalCost newInterval (unitRange minbound) childIntervals False
     where
-        (newMin, newMax)              = if isOverlapping
-                                        then leftInterval `intersection`   rightInterval
-                                        else leftInterval `smallestClosed` rightInterval
-        (leftInterval, rightInterval) = (leftChild ^. preliminaryInterval, rightChild ^. preliminaryInterval)
-        newInterval                   = (newMin, newMax)
-        totalCost                     = thisNodeCost + (leftChild ^. characterCost) + (rightChild ^. characterCost)
-        thisNodeCost                  = if isOverlapping
-                                        then 0
-                                        else newMax - newMin
-        isOverlapping                 = leftInterval `intersects` rightInterval
-        zero                          = fromIntegral (0 :: Int) :: Word
-        returnNodeDecoration          =
-            extendDiscreteToAdditive leftChild totalCost newInterval (zero, zero) (leftInterval, rightInterval) False
+        newInterval@(newMin, newMax) = if isOverlapping
+                                       then lhs `intersection`   rhs
+                                       else lhs `smallestClosed` rhs
+        childIntervals@(lhs, rhs)    = (leftChild ^. preliminaryInterval, rightChild ^. preliminaryInterval)
+        totalCost                    = thisNodeCost + (leftChild ^. characterCost) + (rightChild ^. characterCost)
+        thisNodeCost                 = if isOverlapping
+                                       then 0
+                                       else newMax - newMin
+        isOverlapping                = lhs `intersects` rhs
+
 
 
 -- | Initializes a leaf node by copying its current value into its preliminary state. Gives it a minimum cost of 0.
@@ -100,14 +97,10 @@ initializeLeaf :: (DiscreteCharacterDecoration d c)
                => d
                -> AdditiveOptimizationDecoration c
 initializeLeaf curDecoration =
-    extendDiscreteToAdditive curDecoration 0 (lower, higher) (0,0) ((0,0),(0,0)) True
+    extendDiscreteToAdditive curDecoration 0 (toRange label) zeroRange (zeroRange, zeroRange) True
     where
-        label    = curDecoration ^. discreteCharacter
-        alphLen  = symbolCount label
-        trailing = countTrailingZeros label
-        leading  = countLeadingZeros  label
-        lower    = toEnum leading
-        higher   = toEnum (alphLen - 1 - trailing)
+        label     = curDecoration ^. discreteCharacter
+        zeroRange = unitRange minBound
 
 
 -- | Uses the preliminary intervals of a node, its parents, and its children. Follows the three rules of Fitch,
@@ -124,7 +117,7 @@ determineFinalState :: EncodableStaticCharacter c
 determineFinalState childDecoration parentDecoration = finalDecoration
     where
         curIsSuperset   = (ancestor `intersection` preliminary) == ancestor
-        finalDecoration = computeFinalDiscrete (myMin, myMax) childDecoration
+        finalDecoration = fromRange x (childDecoration ^. discreteCharacter)
         preliminary     = childDecoration  ^. preliminaryInterval
         ancestor        = parentDecoration ^. finalInterval
         (left, right)   = childDecoration  ^. childPrelimIntervals
@@ -132,7 +125,7 @@ determineFinalState childDecoration parentDecoration = finalDecoration
         leftUnionright  = left `union` right
         prelimClosestA  = closestState preliminary ancestor
         childsCloseestA = closestState leftUnionright ancestor
-        (myMin, myMax)
+        x@(myMin, myMax)
             | curIsSuperset = ancestor                                                              -- Additive rule 1
             | leftUnionright `intersects` ancestor  =                                               -- Additive rule 2
                 if   chi `intersects` preliminary
@@ -152,6 +145,8 @@ computeFinalDiscrete (myMin, myMax) childDecoration = finalDecoration
         emptyChar       = emptyStatic $ childDecoration ^. discreteCharacter
         finalDecoration = childDecoration & finalInterval .~ (myMin, myMax) & discreteCharacter .~ finalCharacter
 
+
+{-
 -- | True if there is any overlap between the two intervals
 intersects :: (Word, Word) -> (Word, Word) -> Bool
 intersects leftChild rightChild =
@@ -208,4 +203,4 @@ union leftChild rightChild = (min leftSmallest rightSmallest, max leftLargest ri
         (rightSmallest, rightLargest) = rightChild
         ( leftSmallest,  leftLargest) = leftChild
 
-
+-}

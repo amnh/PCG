@@ -31,24 +31,25 @@ import           Bio.Character.Encodable.Stream
 import           Bio.Character.Exportable.Class
 import           Control.Arrow                       ((***))
 import           Data.Alphabet
+import           Data.Bits
 import           Data.BitMatrix
 import           Data.BitMatrix.Internal             (BitMatrix(..))
-import           Data.Char                           (toLower)
-import           Data.Key
-import           Data.Bits
 import           Data.BitVector               hiding (foldr, join, not, replicate)
 import           Data.BitVector.Instances            ()
+import           Data.Char                           (toLower)
 import           Data.Foldable
+import           Data.Key
 import qualified Data.List.NonEmpty           as NE
 import qualified Data.Map                     as M
 import           Data.Monoid                  hiding ((<>))
 import           Data.MonoTraversable
+import           Data.Range
 import           Data.Semigroup
 import           Data.String                         (fromString)
 import           Data.Tuple                          (swap)
 import           Prelude                      hiding (lookup)
-import           Test.Tasty.QuickCheck        hiding ((.&.))
 import           Test.QuickCheck.Arbitrary.Instances ()
+import           Test.Tasty.QuickCheck        hiding ((.&.))
 
 --import Debug.Trace
 
@@ -256,6 +257,25 @@ instance Exportable StaticCharacterBlock where
     toExportableElements = encodableStreamToExportableCharacterElements
 
     fromExportableElements = SCB . exportableCharacterElementsToBitMatrix
+
+
+type instance Bound StaticCharacter = Word
+
+
+instance Ranged StaticCharacter where
+
+    toRange :: a -> Range (Bound a)
+    toRange sc = Range (countLeadingZeros sc) lastSetBit
+        where
+            lastSetBit = finiteBitSize sc - countTrailingZeros sc - 1
+
+    fromRange :: Range (Bound a) -> a
+    fromRange (Range lhs rhs) value = zeroVector .|. (allBitsUpperBound `xor` allBitsLowerBound)
+        where
+            allBitsUpperBound = 2 ^ rhs - 1
+            allBitsLowerBound = 2 ^ lhs - 1
+            zeroVector  = (zeroBits `setBit` boundaryBit) `clearBit` boundaryBit
+            boundaryBit = symbolCount value - 1
 
 
 {-# INLINE unstream #-}

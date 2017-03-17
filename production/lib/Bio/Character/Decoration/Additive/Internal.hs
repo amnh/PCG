@@ -26,6 +26,7 @@ import Control.Lens
 import Data.Alphabet
 --import Data.Bits
 -- import Data.TCM
+import Data.Range
 import Data.Semigroup
 --import Data.Word
 
@@ -35,10 +36,10 @@ import Data.Semigroup
 -- type.
 data AdditiveOptimizationDecoration a
    = AdditiveOptimizationDecoration
-   { additiveMinCost              :: Word
-   , additivePreliminaryInterval  :: (Word, Word)
-   , additiveFinalInterval        :: (Word, Word)
-   , additiveChildPrelimIntervals :: ((Word, Word), (Word, Word))
+   { additiveCost                 :: Bound a
+   , additivePreliminaryInterval  :: Range (Bound a)
+   , additiveFinalInterval        :: Range (Bound a)
+   , additiveChildPrelimIntervals :: (Range (Bound a), Range (Bound a))
    , additiveIsLeaf               :: Bool
    , additiveCharacterField       :: a   -- TODO: do I need this?
    , additiveMetadataField        :: DiscreteCharacterMetadataDec
@@ -117,25 +118,25 @@ instance HasIsLeaf (AdditiveOptimizationDecoration a) Bool where
 
 
 -- | (✔)
-instance HasCharacterCost (AdditiveOptimizationDecoration a) Word where
+instance HasCharacterCost (AdditiveOptimizationDecoration a) (Bound a) where
 
-    characterCost = lens additiveMinCost (\e x -> e { additiveMinCost = x })
+    characterCost = lens additiveCost (\e x -> e { additiveCost = x })
 
 
 -- | (✔)
-instance HasPreliminaryInterval (AdditiveOptimizationDecoration a) (Word, Word) where
+instance HasPreliminaryInterval (AdditiveOptimizationDecoration a) (Range (Bound a)) where
 
     preliminaryInterval = lens additivePreliminaryInterval (\e x -> e { additivePreliminaryInterval = x })
 
 
 -- | (✔)
-instance HasFinalInterval (AdditiveOptimizationDecoration a) (Word, Word) where
+instance HasFinalInterval (AdditiveOptimizationDecoration a) (Range (Bound a)) where
 
     finalInterval = lens additiveFinalInterval (\e x -> e { additiveFinalInterval = x })
 
 
 -- | (✔)
-instance HasChildPrelimIntervals (AdditiveOptimizationDecoration a) ((Word, Word),(Word, Word)) where
+instance HasChildPrelimIntervals (AdditiveOptimizationDecoration a) ((Range (Bound a)),(Range (Bound a))) where
 
     childPrelimIntervals = lens additiveChildPrelimIntervals (\e x -> e { additiveChildPrelimIntervals = x })
 
@@ -172,7 +173,7 @@ instance EncodableStaticCharacter a => DiscreteExtensionAdditiveDecoration (Addi
         AdditiveOptimizationDecoration
         { additiveChildPrelimIntervals = childMedianTup
         , additiveIsLeaf               = isLeafVal
-        , additiveMinCost              = cost
+        , additiveCost                 = cost
         , additiveMetadataField        = metadataValue
         , additivePreliminaryInterval  = prelimInterval
         , additiveFinalInterval        = finalInter
