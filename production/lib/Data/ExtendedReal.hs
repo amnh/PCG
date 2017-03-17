@@ -7,6 +7,7 @@ module Data.ExtendedReal
 
 
 import Control.Applicative (liftA2)
+import Data.Ratio
 import Data.Maybe          (fromMaybe)
 
 
@@ -49,7 +50,7 @@ instance Num ExtendedReal where
 
   abs = id
 
-  signum (Cost (Just x)) = signum x -- the second signum is Double.signum
+  signum (Cost (Just x)) = Cost . Just $ signum x -- the second signum is Double.signum
   signum               _ = 1
 
   fromInteger = Cost . Just . fromInteger
@@ -88,6 +89,7 @@ instance Ord ExtendedReal where
                     Just y  -> x > y
 
 
+-- TODO: maybe remove this? 
 instance Enum ExtendedReal where
 
     fromEnum (Cost x) = maybe (maxBound :: Int) fromEnum x
@@ -97,4 +99,18 @@ instance Enum ExtendedReal where
 
 instance Real ExtendedReal where
 
-    toRational (Cost x) = toRational x
+    toRational (Cost x) = maybe (1%0) toRational x
+
+
+instance Fractional ExtendedReal where
+
+    (Cost lhs) / (Cost rhs) =
+        case (lhs, rhs) of
+          (Nothing,       _) -> Cost Nothing
+          (Just _ , Nothing) -> Cost $ Just 0.0
+          (Just x , Just y ) -> Cost . Just $ x / y
+
+    recip (Cost x) = Cost $ recip <$> x
+    
+    fromRational = Cost . Just . fromRational
+
