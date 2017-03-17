@@ -15,7 +15,7 @@
 
 {-# LANGUAGE FlexibleContexts, TypeFamilies #-}
 
-module Data.Ranged
+module Data.Range
   ( Range()
   , Ranged(..)
   -- * Constructors
