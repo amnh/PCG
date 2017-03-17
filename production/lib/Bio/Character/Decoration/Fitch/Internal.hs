@@ -155,7 +155,7 @@ instance DiscreteCharacterMetadata (FitchOptimizationDecoration f) where
 
 
 -- | (✔)
-instance EncodableStaticCharacter f => DiscreteWithTcmCharacterMetadata (FitchOptimizationDecoration f) f where
+instance EncodableStaticCharacter f => DiscreteWithTcmCharacterMetadata (FitchOptimizationDecoration f) f
 
 
 -- | (✔)

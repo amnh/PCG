@@ -18,7 +18,6 @@ module Bio.Metadata.General.Class
   ) where
 
 
-import Bio.Metadata.CharacterName
 import Control.Lens
 
 

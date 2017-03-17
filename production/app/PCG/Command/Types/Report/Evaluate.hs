@@ -7,20 +7,22 @@ module PCG.Command.Types.Report.Evaluate
 --import           Analysis.ImpliedAlignment.Standard
 --import           Analysis.ImpliedAlignment
 --import           Analysis.Parsimony.Binary.Optimization
-import           Bio.Metadata
+--import           Bio.Metadata
+import           Bio.Character.Decoration.Dynamic
+import           Bio.PhyloGraphPrime
 import           Bio.PhyloGraphPrime.PhylogeneticDAG
 import           Control.Monad.IO.Class
 import           Control.Monad.Logger
-import           Data.Foldable
+--import           Data.Foldable
 import           Data.List.NonEmpty
 import           PCG.Command.Types (Command(..))
 import           PCG.Command.Types.Report.DynamicCharacterTable
-import           PCG.Command.Types.Report.GraphViz
-import           PCG.Command.Types.Report.ImpliedAlignmentFasta
+--import           PCG.Command.Types.Report.GraphViz
+--import           PCG.Command.Types.Report.ImpliedAlignmentFasta
 import           PCG.Command.Types.Report.Internal
-import           PCG.Command.Types.Report.Metadata
-import           PCG.Command.Types.Report.Newick
-import           PCG.Command.Types.Report.TaxonMatrix
+--import           PCG.Command.Types.Report.Metadata
+--import           PCG.Command.Types.Report.Newick
+--import           PCG.Command.Types.Report.TaxonMatrix
 
 
 evaluate :: Command -> SearchState -> SearchState
@@ -48,6 +50,11 @@ addOptimization result
 -}
 
 -- TODO: Redo reporting
+generateOutput :: DirectOptimizationPostOrderDecoration z a
+               => Either t (PhylogeneticSolution (PhylogeneticDAG e n u v w x y z))
+               -> OutputFormat
+               -> FileStreamContext
+                                                                                                      
 --generateOutput :: StandardSolution -> OutputFormat -> FileStreamContext
 --generateOutput g (CrossReferences fileNames)   = SingleStream $ taxonReferenceOutput g fileNames
 --generateOutput g Data                       {} = SingleStream . newickReport $ addOptimization g
