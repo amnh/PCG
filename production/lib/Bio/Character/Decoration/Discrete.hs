@@ -40,7 +40,7 @@ import Bio.Metadata.General
 import Bio.Metadata.CharacterName
 import Control.Lens
 import Data.Alphabet
-import Data.TCM
+--import Data.TCM
 
 
 -- |

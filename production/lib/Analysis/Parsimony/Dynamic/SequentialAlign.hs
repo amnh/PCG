@@ -19,15 +19,10 @@ module Analysis.Parsimony.Dynamic.SequentialAlign
   , sequentialAlign
   ) where
 
---import           Analysis.Parsimony.Binary.Internal
 import qualified Analysis.Parsimony.Dynamic.SequentialAlign.FFI as FFI
 import           Bio.Character.Encodable
 import           Bio.Character.Exportable.Class
---import           Data.Alphabet
---import           Data.Vector     (fromList)
---import           Data.Foldable
---import           Data.List.Split (chunksOf)
-import           Data.MonoTraversable
+
 
 -- |
 -- sequentialAlign is similar to DO, but uses Yu's and Vahid's information theoretical sequential alignment algorithm to produce the alignment
@@ -35,4 +30,5 @@ sequentialAlign :: (EncodableDynamicCharacter s, Exportable s, Show s) => FFI.Me
 sequentialAlign = FFI.pairwiseSequentialAlignment
 
 -- TODO: put this in Bio.Metadata probably
+generateMemoizedCostMatrix :: Word -> (Word -> Word -> Word) -> FFI.MemoizedCostMatrix
 generateMemoizedCostMatrix = FFI.getMemoizedCostMatrix

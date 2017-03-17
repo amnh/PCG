@@ -17,10 +17,7 @@ module Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Internal where
 
 import Bio.Character.Encodable
 import Data.Bits
---import Data.BitVector hiding (foldr, reverse)
 import Data.Foldable
-import Data.Functor          (($>))
---import Data.Function.Memoize
 import Data.Key              ((!))
 import Data.Matrix.NotStupid (Matrix, getElem, getRow, matrix, nrows, ncols, toLists)
 import Data.MonoTraversable
@@ -127,14 +124,10 @@ createDOAlignMatrix :: DOCharConstraint s => s -> s -> OverlapFunction (Element 
 createDOAlignMatrix topChar leftChar overlapFunction = {- trace renderedMatrix $ -} result
   where
     -- :)
-    renderedMatrix = renderCostMatrix topChar leftChar result
+    -- renderedMatrix = renderCostMatrix topChar leftChar result
     
     result = matrix (olength leftChar + 1) (olength topChar + 1) generateMat
     gap    = gapOfStream leftChar -- The constructors of DynamicChar prevent an empty character construction.
-
-    applyGap e
-      | e .&. gap == zeroBits = e .|. gap
-      | otherwise             = gap
 
     -- | Internal generator function for the matrix
     -- Deals with both first row and other cases.
@@ -166,6 +159,7 @@ createDOAlignMatrix topChar leftChar overlapFunction = {- trace renderedMatrix $
                                       , (rightCost, rightChar .|. gap, LeftArrow)
                                       , (downCost ,  downChar .|. gap, UpArrow  )
                                       ]
+{-                                        
         err = unlines
           [ show (row, col)
           , "  right: " <> show (fromIntegral rightChar, rightOverlapCost, leftwardValue, rightCost)
@@ -174,6 +168,7 @@ createDOAlignMatrix topChar leftChar overlapFunction = {- trace renderedMatrix $
           , "Chosen:"
           , "  " <> show (minCost, fromIntegral minState, minDir) 
           ]            
+-}
 
 
 renderCostMatrix :: DOCharConstraint s => s -> s -> DOAlignMatrix a -> String
@@ -187,8 +182,9 @@ renderCostMatrix lhs rhs mtx = unlines
     (longer, lesser)
       | olength lhs >= olength rhs = (lhs, rhs)
       | otherwise                  = (rhs, lhs)
-    longerTokens     = show . fromIntegral <$> otoList longer
-    lesserTokens     = show . fromIntegral <$> otoList lesser
+    longerTokens     = toShownIntegers longer
+    lesserTokens     = toShownIntegers lesser
+    toShownIntegers  = fmap (show . (fromIntegral :: Integral a => a -> Integer)) . otoList
     matrixTokens     = showCell <$> mtx
     showCell (c,d,_) = show c <> show d
     maxPrefixWidth   = maxLengthOf lesserTokens
