@@ -264,16 +264,14 @@ type instance Bound StaticCharacter = Word
 
 instance Ranged StaticCharacter where
 
-    toRange :: a -> Range (Bound a)
-    toRange sc = Range (countLeadingZeros sc) lastSetBit
+    toRange sc = fromTuple (toEnum $ countLeadingZeros sc, lastSetBit)
         where
-            lastSetBit = finiteBitSize sc - countTrailingZeros sc - 1
+            lastSetBit = toEnum $ finiteBitSize sc - countTrailingZeros sc - 1
 
-    fromRange :: Range (Bound a) -> a
-    fromRange (Range lhs rhs) value = zeroVector .|. (allBitsUpperBound `xor` allBitsLowerBound)
+    fromRange x value = zeroVector .|. (allBitsUpperBound `xor` allBitsLowerBound)
         where
-            allBitsUpperBound = 2 ^ rhs - 1
-            allBitsLowerBound = 2 ^ lhs - 1
+            allBitsUpperBound = 2 ^ (upperBound x) - 1
+            allBitsLowerBound = 2 ^ (lowerBound x) - 1
             zeroVector  = (zeroBits `setBit` boundaryBit) `clearBit` boundaryBit
             boundaryBit = symbolCount value - 1
 
