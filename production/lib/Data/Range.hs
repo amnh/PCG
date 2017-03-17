@@ -16,7 +16,8 @@
 {-# LANGUAGE FlexibleContexts, TypeFamilies #-}
 
 module Data.Range
-  ( Range()
+  ( Bound()
+  , Range()
   , Ranged(..)
   -- * Constructors
   , fromTuple
