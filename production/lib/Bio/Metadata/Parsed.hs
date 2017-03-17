@@ -18,7 +18,6 @@ module Bio.Metadata.Parsed where
 
 import           Bio.Character.Parsed
 import           Data.Alphabet
-import           Data.Bifunctor                          (second)
 import           Data.Char
 import           Data.Foldable
 import           Data.Key
