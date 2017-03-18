@@ -12,6 +12,9 @@
 
 {-# LANGUAGE FlexibleContexts, FlexibleInstances, MultiParamTypeClasses, TypeFamilies #-}
 
+-- We need this for the generalized type family derivation of Ranged instances.
+{-# LANGUAGE UndecidableInstances #-}
+
 module Bio.Character.Decoration.Additive.Internal where
 
 
@@ -46,7 +49,11 @@ data AdditiveOptimizationDecoration a
    }
 
 
-instance EncodableStreamElement c => Show (AdditiveOptimizationDecoration c) where
+instance
+  ( EncodableStreamElement c
+  , Show (Bound c)
+  , Show (Range (Bound c))
+  ) => Show (AdditiveOptimizationDecoration c) where
 
     show c = unlines
         [ "Cost = "                <> show (c ^. characterCost)
@@ -118,25 +125,25 @@ instance HasIsLeaf (AdditiveOptimizationDecoration a) Bool where
 
 
 -- | (✔)
-instance HasCharacterCost (AdditiveOptimizationDecoration a) (Bound a) where
+instance (Bound a ~ c) => HasCharacterCost (AdditiveOptimizationDecoration a) c where
 
     characterCost = lens additiveCost (\e x -> e { additiveCost = x })
 
 
 -- | (✔)
-instance HasPreliminaryInterval (AdditiveOptimizationDecoration a) (Range (Bound a)) where
+instance (Bound a ~ c) => HasPreliminaryInterval (AdditiveOptimizationDecoration a) (Range c) where
 
     preliminaryInterval = lens additivePreliminaryInterval (\e x -> e { additivePreliminaryInterval = x })
 
 
 -- | (✔)
-instance HasFinalInterval (AdditiveOptimizationDecoration a) (Range (Bound a)) where
+instance (Bound a ~ c) => HasFinalInterval (AdditiveOptimizationDecoration a) (Range c) where
 
     finalInterval = lens additiveFinalInterval (\e x -> e { additiveFinalInterval = x })
 
 
 -- | (✔)
-instance HasChildPrelimIntervals (AdditiveOptimizationDecoration a) ((Range (Bound a)),(Range (Bound a))) where
+instance (Bound a ~ c) => HasChildPrelimIntervals (AdditiveOptimizationDecoration a) (Range c, Range c) where
 
     childPrelimIntervals = lens additiveChildPrelimIntervals (\e x -> e { additiveChildPrelimIntervals = x })
 
