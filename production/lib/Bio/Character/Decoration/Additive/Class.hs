@@ -10,7 +10,7 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE FlexibleContexts, FunctionalDependencies, MultiParamTypeClasses #-}
+{-# LANGUAGE FlexibleContexts, FunctionalDependencies, MultiParamTypeClasses, TypeFamilies #-}
 
 module Bio.Character.Decoration.Additive.Class where
 
@@ -18,6 +18,7 @@ module Bio.Character.Decoration.Additive.Class where
 import Bio.Character.Decoration.Discrete
 import Bio.Character.Decoration.Shared
 import Control.Lens
+import Data.Range
 
 
 -- |
@@ -29,11 +30,11 @@ class DiscreteCharacterDecoration s a => AdditiveCharacterDecoration s a | s -> 
 -- |
 -- A decoration containing a character that has been scored using Additive's algorithm.
 class ( DiscreteCharacterDecoration s c
-      , HasChildPrelimIntervals s ((Word, Word), (Word, Word))
+      , HasChildPrelimIntervals s (Range (Bound c), Range (Bound c))
       , HasIsLeaf s Bool
-      , HasCharacterCost s Word
-      , HasPreliminaryInterval s (Word, Word)
-      , HasFinalInterval s (Word, Word)
+      , HasCharacterCost s (Bound c)
+      , HasPreliminaryInterval s (Range (Bound c))
+      , HasFinalInterval s (Range (Bound c))
       ) => AdditiveDecoration s c | s -> c where
 
 
@@ -44,12 +45,14 @@ class ( DiscreteCharacterDecoration s c
 class ( AdditiveDecoration s c
       ) => DiscreteExtensionAdditiveDecoration s c | s -> c where
 
-    extendDiscreteToAdditive :: DiscreteCharacterDecoration x c
+    extendDiscreteToAdditive :: ( DiscreteCharacterDecoration x c
+                                , Bound c ~ r
+                                )
                              => x
-                             -> Word
-                             -> (Word, Word)
-                             -> (Word, Word)
-                             -> ((Word, Word), (Word, Word))
+                             -> r
+                             -> Range r
+                             -> Range r
+                             -> (Range r, Range r)
                              -> Bool
                              -> s
 
