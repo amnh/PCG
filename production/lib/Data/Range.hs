@@ -37,7 +37,9 @@ module Data.Range
 
 newtype Range r = Range (r,r)
 
+
 type family Bound (f :: *)
+
 
 class Ranged a where
 
@@ -45,6 +47,11 @@ class Ranged a where
 
     fromRange :: Range (Bound a) -> a -> a
 
+
+instance Show r => Show (Range r) where
+
+    show (Range (x,y)) = mconcat [ "[" , show x, ", ", show y, "]" ]
+    
 
 unitRange :: r -> Range r
 unitRange x = fromTuple (x, x)
