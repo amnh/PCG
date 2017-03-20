@@ -25,15 +25,10 @@
 module Analysis.Parsimony.Additive.Internal where
 
 import Bio.Character.Decoration.Additive
---import Bio.Character.Decoration.Discrete
-import Bio.Character.Encodable
 import Control.Lens
--- import Control.Monad  (join)
--- import Data.Bifunctor (bimap)
-import Data.Bits
 import Data.List.NonEmpty (NonEmpty( (:|) ))
 import Data.Range
--- import Data.Word
+
 -- import Debug.Trace
 
 
@@ -47,20 +42,20 @@ additivePostOrder :: ( DiscreteCharacterDecoration d c
                      , DiscreteCharacterMetadata d'
                      , RangedExtensionPostorder  d' c
                      )
-                  => d -> [d'] -> d' --AdditiveOptimizationDecoration c
+                  => d -> [d'] -> d'
 additivePostOrder parentDecoration xs =
     case xs of
-        []   -> initializeLeaf  parentDecoration         -- a leaf
+        []   -> initializeLeaf  parentDecoration -- a leaf
         y:ys -> updatePostOrder parentDecoration (y:|ys)
 
 
--- | Initializes a leaf node by copying its current value into its preliminary state. Gives it a minimum cost of 0.
+-- |
+-- Initializes a leaf node by copying its current value into its preliminary state. Gives it a minimum cost of 0.
 --
 -- Used on the postorder pass.
 initializeLeaf :: ( DiscreteCharacterDecoration d c
                   , RangedCharacterDecoration d c
                   , Ranged c
---                  , Bounded (Bound c)
                   , Num (Bound c)
                   , Ord (Bound c)
                   , RangedExtensionPostorder d' c
@@ -83,7 +78,6 @@ initializeLeaf curDecoration =
 updatePostOrder :: ( DiscreteCharacterDecoration d c
                    , RangedCharacterDecoration   d c
                    , Ranged c
---                   , Bounded (Bound c)
                    , Num (Bound c)
                    , Ord (Bound c)
                    , DiscreteCharacterMetadata d'
@@ -105,13 +99,12 @@ updatePostOrder _parentDecoration (leftChild:|(rightChild:_)) =
                                    else upperBound newInterval - lowerBound newInterval
 
 
--- | Used on the pre-order (i.e. second) traversal.
+-- |
+-- Used on the pre-order (i.e. second) traversal.
 additivePreOrder  :: ( Ranged c
                      , Eq (Range (Bound c))
---                     , Bounded (Bound c)
                      , Num (Bound c)
                      , Ord (Bound c)
---                     , AdditiveDecoration d c
                      , DiscreteCharacterMetadata d
                      , RangedExtensionPostorder  d  c
                      , RangedExtensionPostorder  d' c
@@ -125,12 +118,18 @@ additivePreOrder childDecoration ((_, parentDecoration):_)
     | otherwise                 = extendRangedToPreorder childDecoration $ determineFinalState childDecoration parentDecoration
 
 
+finalizeLeaf :: ( RangedExtensionPreorder   d' c
+                , DiscreteCharacterMetadata d
+                , RangedPostorderDecoration d  c
+                )
+             => d -> d'
 finalizeLeaf decoration =
     extendRangedToPreorder decoration (decoration ^. preliminaryInterval)
                 & discreteCharacter .~ decoration ^. discreteCharacter -- Un-overwrite the character data
 
 
--- | Uses the preliminary intervals of a node, its parents, and its children. Follows the three rules of Fitch,
+-- |
+-- Uses the preliminary intervals of a node, its parents, and its children. Follows the three rules of Fitch,
 -- modified for additive characters: 1) If the intersection of the current node's character with its parent == the
 -- parent interval, use the parent interval; 2) If the union of those two characters == the child, then use the
 -- child; 3) Otherwise, find the intersections of the parent and each of the children, union them, then union that
@@ -153,8 +152,6 @@ determineFinalState childDecoration parentDecoration = resultRange
     (left, right)   = childDecoration  ^. childPrelimIntervals
     chi             = (leftUnionright `union` preliminary) `intersection` ancestor
     leftUnionright  = left `union` right
-    prelimClosestA  = closestState preliminary ancestor
-    childsCloseestA = closestState leftUnionright ancestor
     resultRange
         | curIsSuperset = ancestor                                                              -- Additive rule 1
         | leftUnionright `intersects` ancestor  =                                               -- Additive rule 2
