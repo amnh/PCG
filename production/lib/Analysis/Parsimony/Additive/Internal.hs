@@ -20,6 +20,8 @@
 --
 -----------------------------------------------------------------------------
 
+{-# LANGUAGE FlexibleContexts #-}
+
 module Analysis.Parsimony.Additive.Internal where
 
 import Bio.Character.Decoration.Additive
@@ -36,7 +38,12 @@ import Data.Range
 
 
 -- | Used on the post-order (i.e. first) traversal.
-additivePostOrder :: (DiscreteCharacterDecoration d c)
+additivePostOrder :: ( DiscreteCharacterDecoration d c
+                     , Ranged c
+                     , Bounded (Bound c)
+                     , Num (Bound c)
+                     , Ord (Bound c)
+                     )
                   => d
                   -> [AdditiveOptimizationDecoration c]
                   -> AdditiveOptimizationDecoration c
@@ -47,21 +54,24 @@ additivePostOrder parentDecoration xs =
 
 
 -- | Used on the pre-order (i.e. second) traversal.
-additivePreOrder  :: EncodableStaticCharacter c
+additivePreOrder  :: ( Ranged c
+                     , Eq (Range (Bound c))
+                     , Bounded (Bound c)
+                     , Num (Bound c)
+                     , Ord (Bound c)
+--                     , AdditiveDecoration d c
+                     )
                   => AdditiveOptimizationDecoration c
                   -> [(Word, AdditiveOptimizationDecoration c)]
                   -> AdditiveOptimizationDecoration c
-additivePreOrder childDecoration (_:_:_)                 = childDecoration                      -- multiple parents; shouldn't be possible,
-                                                                                                --    but here for completion
 additivePreOrder childDecoration []                      = finalDecoration                      -- root
     where
         interDecoration = computeFinalDiscrete (childDecoration ^. preliminaryInterval) childDecoration
         finalDecoration = interDecoration & finalInterval .~ childDecoration ^. preliminaryInterval
 
-additivePreOrder childDecoration [(_, parentDecoration)] =
-        if   childDecoration ^. isLeaf
-        then childDecoration & finalInterval .~ childDecoration ^. preliminaryInterval          -- leaf
-        else determineFinalState childDecoration parentDecoration                               -- internal node
+additivePreOrder childDecoration ((_, parentDecoration):_)
+    | childDecoration ^. isLeaf = childDecoration & finalInterval .~ childDecoration ^. preliminaryInterval
+    | otherwise                 = determineFinalState childDecoration parentDecoration
 
 
 -- |
@@ -70,30 +80,40 @@ additivePreOrder childDecoration [(_, parentDecoration)] =
 -- with the costs of the two children. The preliminary value of the character is the intersection of the two child intervals.
 --
 -- Used on the postorder pass.
-updatePostOrder :: DiscreteCharacterDecoration d c
+updatePostOrder :: ( DiscreteCharacterDecoration d c
+                   , Ranged c
+                   , Bounded (Bound c)
+                   , Num (Bound c)
+                   , Ord (Bound c)
+                   )
                 => d
                 -> NonEmpty (AdditiveOptimizationDecoration c)
                 -> AdditiveOptimizationDecoration c
 updatePostOrder _parentDecoration (x:|[])                     = x                     -- Shouldn't be possible, but here for completion.
 updatePostOrder _parentDecoration (leftChild:|(rightChild:_)) = {- trace (show newMin ++ " " ++ show newMax ++ " " ++ show totalCost) $ -}
-    extendDiscreteToAdditive leftChild totalCost newInterval (unitRange minbound) childIntervals False
-    where
-        newInterval@(newMin, newMax) = if isOverlapping
-                                       then lhs `intersection`   rhs
-                                       else lhs `smallestClosed` rhs
-        childIntervals@(lhs, rhs)    = (leftChild ^. preliminaryInterval, rightChild ^. preliminaryInterval)
-        totalCost                    = thisNodeCost + (leftChild ^. characterCost) + (rightChild ^. characterCost)
-        thisNodeCost                 = if isOverlapping
-                                       then 0
-                                       else newMax - newMin
-        isOverlapping                = lhs `intersects` rhs
+    extendDiscreteToAdditive leftChild totalCost newInterval (unitRange minBound) childIntervals False
+  where
+    newInterval                  = if isOverlapping
+                                   then lhs `intersection`   rhs
+                                   else lhs `smallestClosed` rhs
+    childIntervals@(lhs, rhs)    = (leftChild ^. preliminaryInterval, rightChild ^. preliminaryInterval)
+    totalCost                    = thisNodeCost + (leftChild ^. characterCost) + (rightChild ^. characterCost)
+    thisNodeCost                 = if isOverlapping
+                                   then 0
+                                   else upperBound newInterval - lowerBound newInterval
+    isOverlapping                = lhs `intersects` rhs
 
 
 
 -- | Initializes a leaf node by copying its current value into its preliminary state. Gives it a minimum cost of 0.
 --
 -- Used on the postorder pass.
-initializeLeaf :: (DiscreteCharacterDecoration d c)
+initializeLeaf :: ( DiscreteCharacterDecoration d c
+                  , Ranged c
+                  , Bounded (Bound c)
+                  , Num (Bound c)
+                  , Ord (Bound c)
+                  )
                => d
                -> AdditiveOptimizationDecoration c
 initializeLeaf curDecoration =
@@ -110,34 +130,40 @@ initializeLeaf curDecoration =
 -- with the parent.
 --
 -- Used on the preorder pass.
-determineFinalState :: EncodableStaticCharacter c
+determineFinalState :: ( Ranged c
+                       , Eq (Range (Bound c))
+                       , Bounded (Bound c)
+                       , Num (Bound c)
+                       , Ord (Bound c)
+                       )
                     => AdditiveOptimizationDecoration c
                     -> AdditiveOptimizationDecoration c
                     -> AdditiveOptimizationDecoration c
-determineFinalState childDecoration parentDecoration = finalDecoration
-    where
-        curIsSuperset   = (ancestor `intersection` preliminary) == ancestor
-        finalDecoration = fromRange x (childDecoration ^. discreteCharacter)
-        preliminary     = childDecoration  ^. preliminaryInterval
-        ancestor        = parentDecoration ^. finalInterval
-        (left, right)   = childDecoration  ^. childPrelimIntervals
-        chi             = (leftUnionright `union` preliminary) `intersection` ancestor
-        leftUnionright  = left `union` right
-        prelimClosestA  = closestState preliminary ancestor
-        childsCloseestA = closestState leftUnionright ancestor
-        x@(myMin, myMax)
-            | curIsSuperset = ancestor                                                              -- Additive rule 1
-            | leftUnionright `intersects` ancestor  =                                               -- Additive rule 2
-                if   chi `intersects` preliminary
-                then chi
-                else largestClosed (closestState preliminary chi) chi
-            | otherwise = (min prelimClosestA childsCloseestA, max prelimClosestA childsCloseestA)  -- Additive rule 3
+determineFinalState childDecoration parentDecoration = childDecoration & discreteCharacter .~ finalCharacter
+  where
+    finalCharacter  = fromRange x (childDecoration ^. discreteCharacter)
+    curIsSuperset   = (ancestor `intersection` preliminary) == ancestor
+    preliminary     = childDecoration  ^. preliminaryInterval
+    ancestor        = parentDecoration ^. finalInterval
+    (left, right)   = childDecoration  ^. childPrelimIntervals
+    chi             = (leftUnionright `union` preliminary) `intersection` ancestor
+    leftUnionright  = left `union` right
+    prelimClosestA  = closestState preliminary ancestor
+    childsCloseestA = closestState leftUnionright ancestor
+    x
+        | curIsSuperset = ancestor                                                              -- Additive rule 1
+        | leftUnionright `intersects` ancestor  =                                               -- Additive rule 2
+            if   chi `intersects` preliminary
+            then chi
+            else largestClosed (closestState preliminary chi) chi
+        | otherwise = fromTuple (min prelimClosestA childsCloseestA, max prelimClosestA childsCloseestA)  -- Additive rule 3
 
 
-computeFinalDiscrete :: Ranged c
-                     => Range (Bound c)
-                     -> AdditiveOptimizationDecoration c
-                     -> AdditiveOptimizationDecoration c
+computeFinalDiscrete :: ( Ranged c
+                        , HasDiscreteCharacter d c
+                        , HasFinalInterval     d (Range (Bound c))
+                        )
+                     => Range (Bound c) -> d -> d
 computeFinalDiscrete interval decoration =
     decoration
       & finalInterval     .~ interval

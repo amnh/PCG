@@ -26,6 +26,7 @@ import Data.Range
 -- type.
 class DiscreteCharacterDecoration s a => AdditiveCharacterDecoration s a | s -> a where
 
+  
 -- TODO: Make these range generalized
 -- |
 -- A decoration containing a character that has been scored using Additive's algorithm.

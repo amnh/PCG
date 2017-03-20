@@ -13,6 +13,7 @@
 module Bio.Character.Decoration.Additive
   ( AdditiveOptimizationDecoration(AdditiveOptimizationDecoration)
   , AdditiveCharacterDecoration()
+  , AdditiveDecoration()
   , DiscreteExtensionAdditiveDecoration(..)
   , GeneralCharacterMetadata()
   , DiscreteCharacterMetadata()
