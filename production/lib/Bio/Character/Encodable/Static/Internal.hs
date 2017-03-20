@@ -16,7 +16,7 @@
 -- TODO: Remove all commented-out code.
 
 -- TODO: are all of these necessary?
-{-# LANGUAGE GeneralizedNewtypeDeriving, TypeFamilies #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving, MultiParamTypeClasses, TypeFamilies #-}
 -- TODO: fix and remove this ghc option (is it needed for Arbitrary?):
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
@@ -41,6 +41,7 @@ import           Data.Foldable
 import           Data.Key
 import qualified Data.List.NonEmpty           as NE
 import qualified Data.Map                     as M
+import           Data.Maybe
 import           Data.Monoid                  hiding ((<>))
 import           Data.MonoTraversable
 import           Data.Range
@@ -259,21 +260,22 @@ instance Exportable StaticCharacterBlock where
     fromExportableElements = SCB . exportableCharacterElementsToBitMatrix
 
 
-type instance Bound StaticCharacter = Word
+instance Ranged StaticCharacter Word where
 
-
-instance Ranged StaticCharacter where
-
-    toRange sc = fromTuple (toEnum $ countLeadingZeros sc, lastSetBit)
+    toRange sc = fromTupleWithPrecision (firstSetBit, lastSetBit) totalBits
         where
-            lastSetBit = toEnum $ finiteBitSize sc - countTrailingZeros sc - 1
+            firstSetBit = toEnum $ countLeadingZeros sc
+            lastSetBit  = toEnum $ totalBits - countTrailingZeros sc - 1
+            totalBits   = finiteBitSize sc
 
-    fromRange x value = zeroVector .|. (allBitsUpperBound `xor` allBitsLowerBound)
+    fromRange x = zeroVector .|. (allBitsUpperBound `xor` allBitsLowerBound)
         where
             allBitsUpperBound = 2 ^ (upperBound x) - 1
             allBitsLowerBound = 2 ^ (lowerBound x) - 1
             zeroVector  = (zeroBits `setBit` boundaryBit) `clearBit` boundaryBit
-            boundaryBit = symbolCount value - 1
+            boundaryBit = fromJust (precision x) - 1
+
+    zeroRange sc = fromTupleWithPrecision (0,0) $ finiteBitSize sc
 
 
 {-# INLINE unstream #-}

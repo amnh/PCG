@@ -21,34 +21,55 @@ import Control.Lens
 import Data.Range
 
 
+class ( HasStaticCharacter d c
+      , Ranged c r
+      , Num r
+      , Ord r
+      ) RangedCharacterDecoration d c where
+
+  
+class ( RangedCharacterDecoration s c
+      , Ranged c r
+      , HasCharacterCost s r
+      , HasChildPrelimIntervals s (Range r, Range r)
+      , HasIsLeaf s Bool
+      , HasPreliminaryInterval s (Range r)
+      ) => RangedPostOrderDecoration s c | s -> c where
+
+
+class ( RangedCharacterDecoration s c
+      , Ranged c r
+      , HasFinalInterval s (Range r)
+      ) => RangedDecorationOptimization s c | s -> c where
+
+
 -- |
 -- An abstract initial additive character decoration with a polymorphic character
 -- type.
 class DiscreteCharacterDecoration s a => AdditiveCharacterDecoration s a | s -> a where
 
   
--- TODO: Make these range generalized
--- |
--- A decoration containing a character that has been scored using Additive's algorithm.
-class ( DiscreteCharacterDecoration s c
-      , HasChildPrelimIntervals s (Range (Bound c), Range (Bound c))
-      , HasIsLeaf s Bool
-      , HasCharacterCost s (Bound c)
-      , HasPreliminaryInterval s (Range (Bound c))
-      , HasFinalInterval s (Range (Bound c))
-      ) => AdditiveDecoration s c | s -> c where
+class ( RangedPostOrderDecoration s c
+      ) => RangedPostOrderExtention s c | s -> c where
 
+    extendRangedToPostorder :: ( RangedCharacterDecoration x c
+                               , Bound c ~ r
+                               )
+                            => x
+                            -> r
+                            -> Range r
+                            -> Range r
+                            -> (Range r, Range r)
+                            -> Bool
+                            -> s
 
--- |
--- A decoration that can be constructed from a 'DiscreteCharacterDecoration' by
--- extending the decoration to contain the requisite fields for performing
--- Additive's algorithm.
-class ( AdditiveDecoration s c
-      ) => DiscreteExtensionAdditiveDecoration s c | s -> c where
+{-
+class ( RangedCharacterDecoration s c
+      ) => RangedPostOrderDecoration s c | s -> c where
 
-    extendDiscreteToAdditive :: ( DiscreteCharacterDecoration x c
-                                , Bound c ~ r
-                                )
+    extendRangedToPreorder :: ( DiscreteCharacterDecoration x c
+                              , Bound c ~ r
+                              )
                              => x
                              -> r
                              -> Range r
@@ -56,6 +77,7 @@ class ( AdditiveDecoration s c
                              -> (Range r, Range r)
                              -> Bool
                              -> s
+-}
 
 -- |
 -- A 'Lens' for the 'additiveChildPrelimIntervals' field.

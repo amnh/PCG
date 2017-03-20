@@ -82,7 +82,7 @@ additivePreOrder childDecoration ((_, parentDecoration):_)
 -- Used on the postorder pass.
 updatePostOrder :: ( DiscreteCharacterDecoration d c
                    , Ranged c
-                   , Bounded (Bound c)
+--                   , Bounded (Bound c)
                    , Num (Bound c)
                    , Ord (Bound c)
                    )
@@ -91,7 +91,7 @@ updatePostOrder :: ( DiscreteCharacterDecoration d c
                 -> AdditiveOptimizationDecoration c
 updatePostOrder _parentDecoration (x:|[])                     = x                     -- Shouldn't be possible, but here for completion.
 updatePostOrder _parentDecoration (leftChild:|(rightChild:_)) = {- trace (show newMin ++ " " ++ show newMax ++ " " ++ show totalCost) $ -}
-    extendDiscreteToAdditive leftChild totalCost newInterval (unitRange minBound) childIntervals False
+    extendDiscreteToAdditive leftChild totalCost newInterval (unitRange 0) childIntervals False
   where
     newInterval                  = if isOverlapping
                                    then lhs `intersection`   rhs
@@ -117,10 +117,10 @@ initializeLeaf :: ( DiscreteCharacterDecoration d c
                => d
                -> AdditiveOptimizationDecoration c
 initializeLeaf curDecoration =
-    extendDiscreteToAdditive curDecoration 0 (toRange label) zeroRange (zeroRange, zeroRange) True
-    where
-        label     = curDecoration ^. discreteCharacter
-        zeroRange = unitRange minBound
+    extendDiscreteToAdditive curDecoration 0 (toRange label) unitRange (unitRange, unitRange) True
+  where
+    label     = curDecoration ^. discreteCharacter
+    unitRange = zeroRange label
 
 
 -- | Uses the preliminary intervals of a node, its parents, and its children. Follows the three rules of Fitch,
@@ -141,7 +141,7 @@ determineFinalState :: ( Ranged c
                     -> AdditiveOptimizationDecoration c
 determineFinalState childDecoration parentDecoration = childDecoration & discreteCharacter .~ finalCharacter
   where
-    finalCharacter  = fromRange x (childDecoration ^. discreteCharacter)
+    finalCharacter  = fromRange resultRange (childDecoration ^. discreteCharacter)
     curIsSuperset   = (ancestor `intersection` preliminary) == ancestor
     preliminary     = childDecoration  ^. preliminaryInterval
     ancestor        = parentDecoration ^. finalInterval
@@ -150,13 +150,13 @@ determineFinalState childDecoration parentDecoration = childDecoration & discret
     leftUnionright  = left `union` right
     prelimClosestA  = closestState preliminary ancestor
     childsCloseestA = closestState leftUnionright ancestor
-    x
+    resultRange
         | curIsSuperset = ancestor                                                              -- Additive rule 1
         | leftUnionright `intersects` ancestor  =                                               -- Additive rule 2
             if   chi `intersects` preliminary
             then chi
             else largestClosed (closestState preliminary chi) chi
-        | otherwise = fromTuple (min prelimClosestA childsCloseestA, max prelimClosestA childsCloseestA)  -- Additive rule 3
+        | otherwise = threeWayRange ancestor preliminary leftUnionright -- Additive rule 3
 
 
 computeFinalDiscrete :: ( Ranged c

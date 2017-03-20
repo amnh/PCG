@@ -13,17 +13,19 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE FlexibleContexts, TypeFamilies #-}
+{-# LANGUAGE FlexibleContexts, FunctionalDependencies, MultiParamTypeClasses #-}
 
 module Data.Range
-  ( Bound()
-  , Range()
+  ( --Bound()
+    Range()
   , Ranged(..)
   -- * Constructors
   , fromTuple
+  , fromTupleWithPrecision
+  -- * Accessors
   , lowerBound
   , upperBound
-  , unitRange
+  , precision
   -- * Set-like operations on Range
   , intersects
   , intersection
@@ -32,86 +34,93 @@ module Data.Range
   , closestState
   , largestClosed
   , smallestClosed
+  , threeWayRange
   ) where
 
 
-newtype Range r = Range (r,r)
+newtype Range r = Range (r, r, Maybe Int)
+  deriving (Eq)
 
 
-type family Bound (f :: *)
+-- type family Bound (f :: *)
 
 
-class Ranged a where
+class Num r => Ranged a r | a -> r where
 
-    toRange :: a -> Range (Bound a)
+    toRange :: a -> Range r
 
-    fromRange :: Range (Bound a) -> a -> a
+    fromRange :: Range r -> a
+
+    zeroRange :: a -> Range r
 
 
 instance Show r => Show (Range r) where
 
-    show (Range (x,y)) = mconcat [ "[" , show x, ", ", show y, "]" ]
+    show (Range (x,y,_)) = mconcat [ "[" , show x, ", ", show y, "]" ]
     
 
-unitRange :: r -> Range r
-unitRange x = fromTuple (x, x)
-
-
 fromTuple :: (r, r) -> Range r
-fromTuple = Range
+fromTuple (x,y) = Range (x, y, Nothing)
 
 
-lowerBound :: Range r -> r
-lowerBound (Range (lhs, _)) = lhs
-
-
-upperBound :: Range r -> r
-upperBound (Range (_, rhs)) = rhs
+fromTupleWithPrecision :: (r, r) -> Int -> Range r
+fromTupleWithPrecision (x,y) d = Range (x, y, Just d)
 
 
 -- |
+-- Represents the precision of the Range.
+-- A Nothing value represents infinite precision.
+-- A Just    value represents a finite precision.
+precision :: Range r -> Maybe Int
+precision  (Range (_, _, p)) = p
+
+
+lowerBound :: Range r -> r
+lowerBound (Range (lhs, _, _)) = lhs
+
+
+upperBound :: Range r -> r
+upperBound (Range (_, rhs, _)) = rhs
+
+
+-- |
+-- /O(1)/
+--
+-- True if there is any overlap between the two intervals.
+intersects :: Ord r => Range r -> Range r -> Bool
+intersects lhs rhs = lowerBound rhs <= upperBound lhs
+                  && upperBound rhs >= lowerBound lhs
+
+
+-- |
+-- /O(1)/
+--
 -- Finds the intersection of two intervals, the intersection being the smallest interval possible. Does
 -- not assume there's an overlap.
 intersection :: Ord r => Range r -> Range r -> Range r
-intersection lhs rhs = Range (newLowerBound, newUpperBound)
+intersection lhs rhs = Range (newLowerBound, newUpperBound, precision lhs)
     where
        newLowerBound = max (lowerBound lhs) (lowerBound rhs)
        newUpperBound = min (upperBound lhs) (upperBound rhs)
 
 
 -- |
+-- /O(1)/
+--
 -- Finds the union of two intervals, where the union is the largest interval possible, i.e. from the smallest possible
 -- value to the largest possible, considering the values in both intervals.
 --
 -- Works for overlapped or subsetted intervals, as well as non-overlapping intervals.
 union :: Ord r => Range r -> Range r -> Range r
-union lhs rhs = Range (newLowerBound, newUpperBound)
+union lhs rhs = Range (newLowerBound, newUpperBound, precision lhs)
     where
         newLowerBound = min (lowerBound lhs) (lowerBound rhs)
         newUpperBound = max (upperBound lhs) (upperBound rhs)
 
 
 -- |
--- The smallest closed interval is the smallext interval between two non-overlapping intervals, so the
--- largest value in the leftmost interval on the number line to the smallest value of the rightmost.
-smallestClosed :: Ord r => Range r -> Range r -> Range r
-smallestClosed lhs rhs = Range (newLowerBound, newUpperBound)
-    where
-        newLowerBound = min (upperBound lhs) (upperBound rhs)
-        newUpperBound = max (lowerBound lhs) (lowerBound rhs)
-
-
--- |
--- The largest closed interval between the single value on the left and the interval on the right.
--- This is the equivalent of 'union', but works for a single value on the left, rather than an interval.
-largestClosed :: Ord r => r -> Range r -> Range r
-largestClosed value interval = Range (newLowerBound, newUpperBound)
-    where
-        newLowerBound = min value $ upperBound interval
-        newUpperBound = max value $ lowerBound interval
-
-
--- |
+-- /O(1)/
+--
 -- The closest state is the closest value in the left interval to the right interval.
 -- This assumes that there is no overlap between the intervals. If the two intervals intersect.
 -- incorrect results will be returned.
@@ -122,7 +131,33 @@ closestState lhs rhs
 
 
 -- |
--- True if there is any overlap between the two intervals.
-intersects :: Ord r => Range r -> Range r -> Bool
-intersects lhs rhs = lowerBound rhs <= upperBound lhs
-                  && upperBound rhs >= lowerBound lhs
+-- /O(1)/
+--
+-- The smallest closed interval is the smallext interval between two non-overlapping intervals, so the
+-- largest value in the leftmost interval on the number line to the smallest value of the rightmost.
+smallestClosed :: Ord r => Range r -> Range r -> Range r
+smallestClosed lhs rhs = Range (newLowerBound, newUpperBound, precision lhs)
+    where
+        newLowerBound = min (upperBound lhs) (upperBound rhs)
+        newUpperBound = max (lowerBound lhs) (lowerBound rhs)
+
+
+-- |
+-- /O(1)/
+--
+-- The largest closed interval between the single value on the left and the interval on the right.
+-- This is the equivalent of 'union', but works for a single value on the left, rather than an interval.
+largestClosed :: Ord r => r -> Range r -> Range r
+largestClosed value interval = Range (newLowerBound, newUpperBound, precision interval)
+    where
+        newLowerBound = min value $ upperBound interval
+        newUpperBound = max value $ lowerBound interval
+
+
+threeWayRange :: Ord r => Range r -> Range r -> Range r -> Range r
+threeWayRange ancestoralInterval selfInterval descendantInterval = Range (newLowerBound, newUpperBound, precision selfInterval) 
+    where
+        selfClosestBound  = closestState ancestoralInterval selfInterval
+        heirClosestBound  = closestState ancestoralInterval descendantInterval
+        newLowerBound     = min selfClosestBound heirClosestBound
+        newUpperBound     = max selfClosestBound heirClosestBound
