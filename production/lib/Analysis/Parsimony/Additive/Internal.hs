@@ -134,16 +134,16 @@ determineFinalState childDecoration parentDecoration = finalDecoration
             | otherwise = (min prelimClosestA childsCloseestA, max prelimClosestA childsCloseestA)  -- Additive rule 3
 
 
-computeFinalDiscrete :: EncodableStaticCharacter c
-                    => (Word,Word)
-                    -> AdditiveOptimizationDecoration c
-                    -> AdditiveOptimizationDecoration c
-computeFinalDiscrete (myMin, myMax) childDecoration = finalDecoration
-    where
-        interCharacter  = emptyChar      `setBit` (fromIntegral (toInteger myMin :: Integer) :: Int)
-        finalCharacter  = interCharacter `setBit` (fromIntegral (toInteger myMax :: Integer) :: Int)
-        emptyChar       = emptyStatic $ childDecoration ^. discreteCharacter
-        finalDecoration = childDecoration & finalInterval .~ (myMin, myMax) & discreteCharacter .~ finalCharacter
+computeFinalDiscrete :: Ranged c
+                     => Range (Bound c)
+                     -> AdditiveOptimizationDecoration c
+                     -> AdditiveOptimizationDecoration c
+computeFinalDiscrete interval decoration =
+    decoration
+      & finalInterval     .~ interval
+      & discreteCharacter .~ (fromRange interval character)
+  where
+    character = decoration ^. discreteCharacter
 
 
 {-
