@@ -39,39 +39,39 @@ import Data.Range
 
 -- | Used on the post-order (i.e. first) traversal.
 additivePostOrder :: ( DiscreteCharacterDecoration d c
+                     , RangedCharacterDecoration   d c
                      , Ranged c
                      , Bounded (Bound c)
                      , Num (Bound c)
                      , Ord (Bound c)
+                     , DiscreteCharacterMetadata d'
+                     , RangedExtensionPostorder  d' c
                      )
-                  => d
-                  -> [AdditiveOptimizationDecoration c]
-                  -> AdditiveOptimizationDecoration c
+                  => d -> [d'] -> d' --AdditiveOptimizationDecoration c
 additivePostOrder parentDecoration xs =
     case xs of
         []   -> initializeLeaf  parentDecoration         -- a leaf
         y:ys -> updatePostOrder parentDecoration (y:|ys)
 
 
--- | Used on the pre-order (i.e. second) traversal.
-additivePreOrder  :: ( Ranged c
-                     , Eq (Range (Bound c))
-                     , Bounded (Bound c)
-                     , Num (Bound c)
-                     , Ord (Bound c)
---                     , AdditiveDecoration d c
-                     )
-                  => AdditiveOptimizationDecoration c
-                  -> [(Word, AdditiveOptimizationDecoration c)]
-                  -> AdditiveOptimizationDecoration c
-additivePreOrder childDecoration []                      = finalDecoration                      -- root
-    where
-        interDecoration = computeFinalDiscrete (childDecoration ^. preliminaryInterval) childDecoration
-        finalDecoration = interDecoration & finalInterval .~ childDecoration ^. preliminaryInterval
-
-additivePreOrder childDecoration ((_, parentDecoration):_)
-    | childDecoration ^. isLeaf = childDecoration & finalInterval .~ childDecoration ^. preliminaryInterval
-    | otherwise                 = determineFinalState childDecoration parentDecoration
+-- | Initializes a leaf node by copying its current value into its preliminary state. Gives it a minimum cost of 0.
+--
+-- Used on the postorder pass.
+initializeLeaf :: ( DiscreteCharacterDecoration d c
+                  , RangedCharacterDecoration d c
+                  , Ranged c
+--                  , Bounded (Bound c)
+                  , Num (Bound c)
+                  , Ord (Bound c)
+                  , RangedExtensionPostorder d' c
+                  )
+               => d
+               -> d'
+initializeLeaf curDecoration =
+    extendRangedToPostorder curDecoration 0 (toRange label) (unitRange, unitRange) True
+  where
+    label     = curDecoration ^. discreteCharacter
+    unitRange = zeroRange label
 
 
 -- |
@@ -81,18 +81,20 @@ additivePreOrder childDecoration ((_, parentDecoration):_)
 --
 -- Used on the postorder pass.
 updatePostOrder :: ( DiscreteCharacterDecoration d c
+                   , RangedCharacterDecoration   d c
                    , Ranged c
 --                   , Bounded (Bound c)
                    , Num (Bound c)
                    , Ord (Bound c)
+                   , DiscreteCharacterMetadata d'
+                   , RangedExtensionPostorder  d' c
                    )
-                => d
-                -> NonEmpty (AdditiveOptimizationDecoration c)
-                -> AdditiveOptimizationDecoration c
-updatePostOrder _parentDecoration (x:|[])                     = x                     -- Shouldn't be possible, but here for completion.
-updatePostOrder _parentDecoration (leftChild:|(rightChild:_)) = {- trace (show newMin ++ " " ++ show newMax ++ " " ++ show totalCost) $ -}
-    extendDiscreteToAdditive leftChild totalCost newInterval (unitRange 0) childIntervals False
+                => d -> NonEmpty d' -> d'
+updatePostOrder _parentDecoration (x:|[])                     = x
+updatePostOrder _parentDecoration (leftChild:|(rightChild:_)) =
+    extendRangedToPostorder leftChild totalCost newInterval childIntervals False
   where
+    isOverlapping                = lhs `intersects` rhs
     newInterval                  = if isOverlapping
                                    then lhs `intersection`   rhs
                                    else lhs `smallestClosed` rhs
@@ -101,26 +103,31 @@ updatePostOrder _parentDecoration (leftChild:|(rightChild:_)) = {- trace (show n
     thisNodeCost                 = if isOverlapping
                                    then 0
                                    else upperBound newInterval - lowerBound newInterval
-    isOverlapping                = lhs `intersects` rhs
 
 
+-- | Used on the pre-order (i.e. second) traversal.
+additivePreOrder  :: ( Ranged c
+                     , Eq (Range (Bound c))
+--                     , Bounded (Bound c)
+                     , Num (Bound c)
+                     , Ord (Bound c)
+--                     , AdditiveDecoration d c
+                     , DiscreteCharacterMetadata d
+                     , RangedExtensionPostorder  d  c
+                     , RangedExtensionPostorder  d' c
+                     , RangedExtensionPreorder   d' c
+                     , RangedCharacterDecoration d' c
+                     )
+                  => d -> [(Word, d')] -> d'
+additivePreOrder childDecoration [] = extendRangedToPreorder childDecoration $ childDecoration ^. preliminaryInterval
+additivePreOrder childDecoration ((_, parentDecoration):_)
+    | childDecoration ^. isLeaf = finalizeLeaf childDecoration
+    | otherwise                 = extendRangedToPreorder childDecoration $ determineFinalState childDecoration parentDecoration
 
--- | Initializes a leaf node by copying its current value into its preliminary state. Gives it a minimum cost of 0.
---
--- Used on the postorder pass.
-initializeLeaf :: ( DiscreteCharacterDecoration d c
-                  , Ranged c
-                  , Bounded (Bound c)
-                  , Num (Bound c)
-                  , Ord (Bound c)
-                  )
-               => d
-               -> AdditiveOptimizationDecoration c
-initializeLeaf curDecoration =
-    extendDiscreteToAdditive curDecoration 0 (toRange label) unitRange (unitRange, unitRange) True
-  where
-    label     = curDecoration ^. discreteCharacter
-    unitRange = zeroRange label
+
+finalizeLeaf decoration =
+    extendRangedToPreorder decoration (decoration ^. preliminaryInterval)
+                & discreteCharacter .~ decoration ^. discreteCharacter -- Un-overwrite the character data
 
 
 -- | Uses the preliminary intervals of a node, its parents, and its children. Follows the three rules of Fitch,
@@ -131,17 +138,15 @@ initializeLeaf curDecoration =
 --
 -- Used on the preorder pass.
 determineFinalState :: ( Ranged c
-                       , Eq (Range (Bound c))
-                       , Bounded (Bound c)
                        , Num (Bound c)
                        , Ord (Bound c)
+                       , DiscreteCharacterMetadata    d
+                       , RangedExtensionPostorder     d  c
+                       , RangedDecorationOptimization d' c
                        )
-                    => AdditiveOptimizationDecoration c
-                    -> AdditiveOptimizationDecoration c
-                    -> AdditiveOptimizationDecoration c
-determineFinalState childDecoration parentDecoration = childDecoration & discreteCharacter .~ finalCharacter
+                    => d -> d'-> Range (Bound c)
+determineFinalState childDecoration parentDecoration = resultRange
   where
-    finalCharacter  = fromRange resultRange (childDecoration ^. discreteCharacter)
     curIsSuperset   = (ancestor `intersection` preliminary) == ancestor
     preliminary     = childDecoration  ^. preliminaryInterval
     ancestor        = parentDecoration ^. finalInterval
@@ -157,76 +162,3 @@ determineFinalState childDecoration parentDecoration = childDecoration & discret
             then chi
             else largestClosed (closestState preliminary chi) chi
         | otherwise = threeWayRange ancestor preliminary leftUnionright -- Additive rule 3
-
-
-computeFinalDiscrete :: ( Ranged c
-                        , HasDiscreteCharacter d c
-                        , HasFinalInterval     d (Range (Bound c))
-                        )
-                     => Range (Bound c) -> d -> d
-computeFinalDiscrete interval decoration =
-    decoration
-      & finalInterval     .~ interval
-      & discreteCharacter .~ (fromRange interval character)
-  where
-    character = decoration ^. discreteCharacter
-
-
-{-
--- | True if there is any overlap between the two intervals
-intersects :: (Word, Word) -> (Word, Word) -> Bool
-intersects leftChild rightChild =
-    (rightSmallest <= leftLargest) && (rightLargest >= leftSmallest)
-    where
-        (rightSmallest, rightLargest) = rightChild
-        ( leftSmallest,  leftLargest) = leftChild
-
-
--- |
--- Finds the intersection of two intervals, the intersection being the smallest interval possible. Does
--- not assume there's an overlap.
-intersection :: (Word, Word) -> (Word, Word) -> (Word, Word)
-intersection leftChild rightChild = (max leftSmallest rightSmallest, min leftLargest rightLargest)
-    where
-        (rightSmallest, rightLargest) = rightChild
-        ( leftSmallest,  leftLargest) = leftChild
-
-
--- | The smallest closed interval is the smallext interval between two non-overlapping intervals, so the
--- largest value in the leftmost interval on the number line to the smallest value of the rightmost.
-smallestClosed :: (Word, Word) -> (Word, Word) -> (Word, Word)
-smallestClosed leftChild rightChild = (min leftLargest rightLargest, max leftSmallest rightSmallest)
-    where
-        (rightSmallest, rightLargest) = rightChild
-        ( leftSmallest,  leftLargest) = leftChild
-
-
--- | The largest closed interval between the single value on the left and the interval on the right.
--- This is the equivalent of `union`, but works for a single value on the left, rather than an interval.
-largestClosed :: Word -> (Word, Word) -> (Word, Word)
-largestClosed lhs rhs = (min lhs rightLargest, max lhs rightSmallest)
-    where
-        (rightSmallest, rightLargest) = rhs
-
-
--- | The closest state is the closest value in the left interval to the right interval.
--- This assumes that there is no overlap between the intervals. If the two intervals intersect
--- incorrect results will be returned.
-closestState :: (Word, Word) -> (Word, Word) -> Word
-closestState (leftSmallest, leftLargest) (rightSmallest, _rightLargest)
-    | leftLargest < rightSmallest = leftLargest
-    | otherwise                   = leftSmallest
-
-
--- |
--- Finds the union of two intervals, where the union is the largest interval possible, i.e. from the smallest possible
--- value to the largest possible, considering the values in both intervals.
---
--- Works for overlapped or subsetted intervals, as well as non-overlapping intervals
-union :: (Word, Word) -> (Word, Word)-> (Word, Word)
-union leftChild rightChild = (min leftSmallest rightSmallest, max leftLargest rightLargest)
-    where
-        (rightSmallest, rightLargest) = rightChild
-        ( leftSmallest,  leftLargest) = leftChild
-
--}

@@ -13,11 +13,11 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE FlexibleContexts, FunctionalDependencies, MultiParamTypeClasses #-}
+{-# LANGUAGE FlexibleContexts, TypeFamilies #-}
 
 module Data.Range
-  ( --Bound()
-    Range()
+  ( Bound()
+  , Range()
   , Ranged(..)
   -- * Constructors
   , fromTuple
@@ -42,16 +42,16 @@ newtype Range r = Range (r, r, Maybe Int)
   deriving (Eq)
 
 
--- type family Bound (f :: *)
+type family Bound (f :: *)
 
 
-class Num r => Ranged a r | a -> r where
+class Num (Bound a) => Ranged a where
 
-    toRange :: a -> Range r
+    toRange :: a -> Range (Bound a)
 
-    fromRange :: Range r -> a
+    fromRange :: Range (Bound a) -> a
 
-    zeroRange :: a -> Range r
+    zeroRange :: a -> Range (Bound a)
 
 
 instance Show r => Show (Range r) where

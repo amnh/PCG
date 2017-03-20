@@ -21,83 +21,78 @@ import Control.Lens
 import Data.Range
 
 
-class ( HasStaticCharacter d c
-      , Ranged c r
-      , Num r
-      , Ord r
-      ) RangedCharacterDecoration d c where
+
+class ( HasDiscreteCharacter d c
+      , Ranged c
+      , Num (Bound c)
+      , Ord (Bound c)
+      ) => RangedCharacterDecoration d c where
 
   
 class ( RangedCharacterDecoration s c
-      , Ranged c r
-      , HasCharacterCost s r
-      , HasChildPrelimIntervals s (Range r, Range r)
+      , HasCharacterCost s (Bound c)
+      , HasChildPrelimIntervals s (Range (Bound c), Range (Bound c))
       , HasIsLeaf s Bool
-      , HasPreliminaryInterval s (Range r)
-      ) => RangedPostOrderDecoration s c | s -> c where
+      , HasPreliminaryInterval s (Range (Bound c))
+      ) => RangedPostorderDecoration s c | s -> c where
 
 
 class ( RangedCharacterDecoration s c
-      , Ranged c r
-      , HasFinalInterval s (Range r)
+      , HasFinalInterval s (Range (Bound c))
       ) => RangedDecorationOptimization s c | s -> c where
 
 
 -- |
 -- An abstract initial additive character decoration with a polymorphic character
 -- type.
-class DiscreteCharacterDecoration s a => AdditiveCharacterDecoration s a | s -> a where
 
+-- class DiscreteCharacterDecoration s a => AdditiveCharacterDecoration s a | s -> a where
   
-class ( RangedPostOrderDecoration s c
-      ) => RangedPostOrderExtention s c | s -> c where
+class RangedPostorderDecoration s c => RangedExtensionPostorder s c | s -> c where
 
-    extendRangedToPostorder :: ( RangedCharacterDecoration x c
-                               , Bound c ~ r
+    extendRangedToPostorder :: ( DiscreteCharacterMetadata x
+                               , RangedCharacterDecoration x c
                                )
-                            => x
-                            -> r
-                            -> Range r
-                            -> Range r
-                            -> (Range r, Range r)
-                            -> Bool
+                            => x                                  -- ^ Input decoration
+                            -> Bound c                            -- ^ Local cost
+                            ->  Range (Bound c)                   -- ^ Preliminary interval
+                            -> (Range (Bound c), Range (Bound c)) -- ^ Child intervals
+                            -> Bool                               -- ^ Is leaf node?
                             -> s
 
-{-
-class ( RangedCharacterDecoration s c
-      ) => RangedPostOrderDecoration s c | s -> c where
 
-    extendRangedToPreorder :: ( DiscreteCharacterDecoration x c
-                              , Bound c ~ r
+class ( RangedDecorationOptimization s c
+      ) => RangedExtensionPreorder s c | s -> c where
+
+    extendRangedToPreorder :: ( DiscreteCharacterMetadata x
+                              , RangedPostorderDecoration x c
                               )
-                             => x
-                             -> r
-                             -> Range r
-                             -> Range r
-                             -> (Range r, Range r)
-                             -> Bool
-                             -> s
--}
+                           => x
+                           -> Range (Bound c)
+                           -> s
+
+
+
 
 -- |
 -- A 'Lens' for the 'additiveChildPrelimIntervals' field.
 class HasChildPrelimIntervals s a | s -> a where
 
-    childPrelimIntervals :: Lens' s a
     {-# MINIMAL childPrelimIntervals #-}
+    childPrelimIntervals :: Lens' s a
 
 
 -- |
 -- A 'Lens' for the 'additivePreliminaryInterval' field.
 class HasPreliminaryInterval s a | s -> a where
 
-    preliminaryInterval :: Lens' s a
     {-# MINIMAL preliminaryInterval #-}
+    preliminaryInterval :: Lens' s a
 
 
 -- |
 -- A 'Lens' for the 'additiveFinalInterval' field.
 class HasFinalInterval s a | s -> a where
 
-    finalInterval :: Lens' s a
     {-# MINIMAL finalInterval #-}
+    finalInterval :: Lens' s a

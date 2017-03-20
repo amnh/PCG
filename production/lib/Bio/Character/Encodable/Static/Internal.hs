@@ -260,7 +260,10 @@ instance Exportable StaticCharacterBlock where
     fromExportableElements = SCB . exportableCharacterElementsToBitMatrix
 
 
-instance Ranged StaticCharacter Word where
+type instance Bound StaticCharacter = Word
+
+
+instance Ranged StaticCharacter where
 
     toRange sc = fromTupleWithPrecision (firstSetBit, lastSetBit) totalBits
         where

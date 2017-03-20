@@ -50,7 +50,10 @@ instance ContinuousCharacter ContinuousChar where
     toContinuousCharacter = CC . fmap (fromRational . toRational)
 
 
-instance Ranged ContinuousChar ExtendedReal where
+type instance ContinuousChar = ExtendedReal
+
+
+instance Ranged ContinuousChar where
 
     toRange (CC interval) = fromTuple interval
 
