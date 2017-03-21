@@ -11,7 +11,7 @@
 -----------------------------------------------------------------------------
 
 module Bio.Character.Decoration.Additive
-  ( AdditivePreorderDecoration()
+  ( AdditivePostorderDecoration()
   , AdditiveOptimizationDecoration()
 --  , AdditiveCharacterDecoration()
 --  , AdditiveDecoration()

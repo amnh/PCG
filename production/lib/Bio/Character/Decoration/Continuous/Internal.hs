@@ -1,4 +1,4 @@
------------------------------------------------------------------------------
+ -----------------------------------------------------------------------------
 -- |
 -- Module      :  Bio.Character.Decoration.Continuous.Internal
 -- Copyright   :  (c) 2015-2015 Ward Wheeler
@@ -228,9 +228,10 @@ instance EncodableStaticCharacter a => DiscreteExtensionContinuousDecoration (Co
 newtype ContinuousPostorderDecoration c = CPostD (AdditivePostorderDecoration c)
 
 
-getterCPostD f (CPostD e)   = CPostD $ e ^. f
-setterCPostD f (CPostD e) x = CPostD $ e &  f .~ x
-lensCPostD   f              = lens (getterCPreD f) $ setterCPreD f
+lensCPostD f g = lens (getterCPostD f) (setterCPostD g)
+  where
+    getterCPostD f (CPostD e)   = e ^. f
+    setterCPostD f (CPostD e) x = CPostD $ e & f .~ x
 
 
 instance
@@ -251,49 +252,49 @@ instance
 -- | (✔)
 instance HasDiscreteCharacter (ContinuousPostorderDecoration a) a where
 
-    discreteCharacter = lensCPostD discreteCharacter
+    discreteCharacter = lensCPostD discreteCharacter discreteCharacter
 
 
 -- | (✔)
 instance HasCharacterAlphabet (ContinuousPostorderDecoration a) (Alphabet String) where
 
-    characterAlphabet = lensCPostD characterAlphabet
+    characterAlphabet = lensCPostD characterAlphabet characterAlphabet
 
 
 -- | (✔)
 instance HasCharacterName (ContinuousPostorderDecoration a) CharacterName where
 
-    characterName = lensCPostD characterName
+    characterName = lensCPostD characterName characterName
 
 
 -- | (✔)
 instance HasCharacterWeight (ContinuousPostorderDecoration a) Double where
 
-    characterWeight = lensCPostD characterWeight
+    characterWeight = lensCPostD characterWeight characterWeight
 
 
 -- | (✔)
 instance HasIsLeaf (ContinuousPostorderDecoration a) Bool where
 
-    isLeaf = lensCPostD isLeaf
+    isLeaf = lensCPostD isLeaf isLeaf
 
 
 -- | (✔)
 instance (Bound a ~ c) => HasCharacterCost (ContinuousPostorderDecoration a) c where
 
-    characterCost = lensCPostD characterCost
+    characterCost = lensCPostD characterCost characterCost
 
 
 -- | (✔)
 instance (Bound a ~ c) => HasPreliminaryInterval (ContinuousPostorderDecoration a) (Range c) where
 
-    preliminaryInterval = lensCPostD preliminaryInterval
+    preliminaryInterval = lensCPostD preliminaryInterval preliminaryInterval
 
 
 -- | (✔)
 instance (Bound a ~ c) => HasChildPrelimIntervals (ContinuousPostorderDecoration a) (Range c, Range c) where
 
-    childPrelimIntervals = lensCPostD childPrelimIntervals
+    childPrelimIntervals = lensCPostD childPrelimIntervals childPrelimIntervals
 
 
 -- | (✔)
@@ -326,6 +327,8 @@ class ( RangedCharacterDecoration s c
 -- | (✔)
 instance ( DiscreteCharacterMetadata   (ContinuousPostorderDecoration a)
          , RangedPostorderDecoration   (ContinuousPostorderDecoration a) a
+         , RangedCharacterDecoration   (AdditivePostorderDecoration a) a
+         , RangedPostorderDecoration   (AdditivePostorderDecoration a) a
          ) => RangedExtensionPostorder (ContinuousPostorderDecoration a) a where
 
     extendRangedToPostorder subDecoration cost prelimInterval childMedianTup isLeafVal =
@@ -337,14 +340,12 @@ instance ( DiscreteCharacterMetadata   (ContinuousPostorderDecoration a)
 
 
 
-
-newtype ContinuousPreorderDecoration  c = CPreD  (AdditiveOptimizationDecoration c)
-
-
-getterCPreD f (CPreD e)   = CPreD $ e ^. f
-setterCPreD f (CPreD e) x = CPreD $ e .~ x
-lensCPreD   f (CPreD e)   = lens (getterCPreD f) $ setterCPreD f
+{-
+newtype ContinuousOptimizationDecoration  c = COptD  (AdditiveOptimizationDecoration c)
 
 
+getterCPreD f (COptD e)   = COptD $ e ^. f
+setterCPreD f (COptD e) x = COptD $ e .~ x
+lensCPreD   f (COptD e)   = lens (getterCPreD f) $ setterCPreD f
 
-
+-}

@@ -12,8 +12,8 @@
 
 module Bio.Character.Encodable.Continuous
   ( ContinuousChar()
-  , ContinuousCharacter(..)
-  , PossiblyMissingCharacter(..)
+  , ContinuousCharacter()
+--  , PossiblyMissingCharacter(..)
   ) where
 
 import Bio.Character.Encodable.Continuous.Class

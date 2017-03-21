@@ -34,8 +34,8 @@ import Data.Semigroup
 -- |
 -- An abstract initial dynamic character decoration with a polymorphic character
 -- type.
-data AdditivePreorderDecoration a
-   = AdditivePreorderDecoration
+data AdditivePostorderDecoration a
+   = AdditivePostorderDecoration
    { additiveCost                 :: Bound a
    , additivePreliminaryInterval  :: Range (Bound a)
    , additiveChildPrelimIntervals :: (Range (Bound a), Range (Bound a))
@@ -49,7 +49,7 @@ instance
   ( EncodableStreamElement c
   , Show (Bound c)
   , Show (Range (Bound c))
-  ) => Show (AdditivePreorderDecoration c) where
+  ) => Show (AdditivePostorderDecoration c) where
 
     show c = unlines
         [ "Cost = "                 <> show (c ^. characterCost)
@@ -61,13 +61,13 @@ instance
 
 
 -- | (✔)
-instance HasDiscreteCharacter (AdditivePreorderDecoration a) a where
+instance HasDiscreteCharacter (AdditivePostorderDecoration a) a where
 
     discreteCharacter = lens additiveCharacterField (\e x -> e { additiveCharacterField = x })
 
 
 -- | (✔)
-instance HasCharacterAlphabet (AdditivePreorderDecoration a) (Alphabet String) where
+instance HasCharacterAlphabet (AdditivePostorderDecoration a) (Alphabet String) where
 
     characterAlphabet = lens getter setter
       where
@@ -76,7 +76,7 @@ instance HasCharacterAlphabet (AdditivePreorderDecoration a) (Alphabet String) w
 
 
 -- | (✔)
-instance HasCharacterName (AdditivePreorderDecoration a) CharacterName where
+instance HasCharacterName (AdditivePostorderDecoration a) CharacterName where
 
     characterName = lens getter setter
       where
@@ -85,7 +85,7 @@ instance HasCharacterName (AdditivePreorderDecoration a) CharacterName where
 
 
 -- | (✔)
-instance HasSymbolChangeMatrix (AdditivePreorderDecoration a) (Word -> Word -> Word) where
+instance HasSymbolChangeMatrix (AdditivePostorderDecoration a) (Word -> Word -> Word) where
 
     symbolChangeMatrix = lens getter setter
       where
@@ -94,7 +94,7 @@ instance HasSymbolChangeMatrix (AdditivePreorderDecoration a) (Word -> Word -> W
 
 
 -- | (✔)
-instance HasTransitionCostMatrix (AdditivePreorderDecoration a) (a -> a -> (a, Word)) where
+instance HasTransitionCostMatrix (AdditivePostorderDecoration a) (a -> a -> (a, Word)) where
 
 
     -- NOTE: This probably isn't sound
@@ -105,7 +105,7 @@ instance HasTransitionCostMatrix (AdditivePreorderDecoration a) (a -> a -> (a, W
 
 
 -- | (✔)
-instance HasCharacterWeight (AdditivePreorderDecoration a) Double where
+instance HasCharacterWeight (AdditivePostorderDecoration a) Double where
 
     characterWeight = lens getter setter
       where
@@ -114,48 +114,61 @@ instance HasCharacterWeight (AdditivePreorderDecoration a) Double where
 
 
 -- | (✔)
-instance HasIsLeaf (AdditivePreorderDecoration a) Bool where
+instance HasIsLeaf (AdditivePostorderDecoration a) Bool where
 
     isLeaf = lens additiveIsLeaf (\e x -> e { additiveIsLeaf = x })
 
 
 -- | (✔)
-instance (Bound a ~ c) => HasCharacterCost (AdditivePreorderDecoration a) c where
+instance (Bound a ~ c) => HasCharacterCost (AdditivePostorderDecoration a) c where
 
     characterCost = lens additiveCost (\e x -> e { additiveCost = x })
 
 
 -- | (✔)
-instance (Bound a ~ c) => HasPreliminaryInterval (AdditivePreorderDecoration a) (Range c) where
+instance (Bound a ~ c) => HasPreliminaryInterval (AdditivePostorderDecoration a) (Range c) where
 
     preliminaryInterval = lens additivePreliminaryInterval (\e x -> e { additivePreliminaryInterval = x })
 
 
 -- | (✔)
-instance (Bound a ~ c) => HasChildPrelimIntervals (AdditivePreorderDecoration a) (Range c, Range c) where
+instance (Bound a ~ c) => HasChildPrelimIntervals (AdditivePostorderDecoration a) (Range c, Range c) where
 
     childPrelimIntervals = lens additiveChildPrelimIntervals (\e x -> e { additiveChildPrelimIntervals = x })
 
 
 -- | (✔)
-instance GeneralCharacterMetadata (AdditivePreorderDecoration a) where
+instance GeneralCharacterMetadata (AdditivePostorderDecoration a) where
 
     extractGeneralCharacterMetadata = extractGeneralCharacterMetadata . additiveMetadataField
 
 
 -- | (✔)
-instance DiscreteCharacterMetadata (AdditivePreorderDecoration a) where
+instance DiscreteCharacterMetadata (AdditivePostorderDecoration a) where
 
     extractDiscreteCharacterMetadata = additiveMetadataField
 
 
 -- | (✔)
-instance EncodableStaticCharacter a => DiscreteWithTcmCharacterMetadata (AdditivePreorderDecoration a) a where
+instance EncodableStaticCharacter a => DiscreteWithTcmCharacterMetadata (AdditivePostorderDecoration a) a where
 
 
 -- | (✔)
-instance EncodableStaticCharacter a => DiscreteCharacterDecoration (AdditivePreorderDecoration a) a where
+instance EncodableStaticCharacter a => DiscreteCharacterDecoration (AdditivePostorderDecoration a) a where
 
+
+--- | (✔)
+--instance DiscreteCharacterDecoration a => RangedPostorderDecoration (AdditivePostorderDecoration a) a where
+
+  {-
+-- | (✔)
+instance RangedCharacterDecoration s c
+         , HasCharacterCost s (Bound c)
+         , HasChildPrelimIntervals s (Range (Bound c), Range (Bound c))
+         , HasIsLeaf s Bool
+         , HasPreliminaryInterval s (Range (Bound c))
+         ) => RangedPostorderDecoration (AdditivePostorderDecoration a) a where
+-}
 
 {-
 class ( RangedCharacterDecoration s c
@@ -173,13 +186,13 @@ class ( RangedCharacterDecoration s c
   
 
 -- | (✔)
-instance ( DiscreteCharacterMetadata   (AdditivePreorderDecoration a)
-         , RangedPostorderDecoration   (AdditivePreorderDecoration a) a
-         ) => RangedExtensionPostorder (AdditivePreorderDecoration a) a where
+instance ( DiscreteCharacterMetadata   (AdditivePostorderDecoration a)
+         , RangedPostorderDecoration   (AdditivePostorderDecoration a) a
+         ) => RangedExtensionPostorder (AdditivePostorderDecoration a) a where
 
     extendRangedToPostorder subDecoration cost prelimInterval childMedianTup isLeafVal =
 
-        AdditivePreorderDecoration
+        AdditivePostorderDecoration
         { additiveChildPrelimIntervals = childMedianTup
         , additiveIsLeaf               = isLeafVal
         , additiveCost                 = cost
@@ -196,7 +209,7 @@ instance ( DiscreteCharacterMetadata   (AdditivePreorderDecoration a)
 data AdditiveOptimizationDecoration a
    = AdditiveOptimizationDecoration
    { additiveFinalInterval :: Range (Bound a)
-   , preorderDecoration    :: AdditivePreorderDecoration a
+   , preorderDecoration    :: AdditivePostorderDecoration a
    }
 
 
@@ -356,19 +369,19 @@ instance ( DiscreteCharacterMetadata    (AdditiveOptimizationDecoration a)
          , RangedPostorderDecoration    (AdditiveOptimizationDecoration a) a
          ) => RangedExtensionPreorder   (AdditiveOptimizationDecoration a) a where
 
-    extendRangedToPreorder subDecoration finalInterval =
+    extendRangedToPreorder subDecoration interval =
 
         AdditiveOptimizationDecoration
-        { additiveFinalInterval = finalInterval
+        { additiveFinalInterval = interval
         , preorderDecoration    = preorder
         }
       where
         preorder =
-            AdditivePreorderDecoration
+            AdditivePostorderDecoration
             { additiveChildPrelimIntervals = subDecoration ^. childPrelimIntervals
             , additiveIsLeaf               = subDecoration ^. isLeaf
             , additiveCost                 = subDecoration ^. characterCost
             , additiveMetadataField        = extractDiscreteCharacterMetadata subDecoration
             , additivePreliminaryInterval  = subDecoration ^. preliminaryInterval
-            , additiveCharacterField       = fromRange finalInterval
+            , additiveCharacterField       = fromRange interval
             }

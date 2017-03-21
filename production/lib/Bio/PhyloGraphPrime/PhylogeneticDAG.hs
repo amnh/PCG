@@ -17,6 +17,7 @@
 module Bio.PhyloGraphPrime.PhylogeneticDAG where
 
 import           Bio.Character
+import           Bio.Character.Encodable.Continuous
 import           Bio.Character.Decoration.Additive
 import           Bio.Character.Decoration.Continuous
 import           Bio.Character.Decoration.Discrete

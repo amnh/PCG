@@ -26,11 +26,11 @@ newtype ContinuousChar = CC (ExtendedReal, ExtendedReal)
 -- | (✔)
 instance Show ContinuousChar where
 
-    show (CC (lower, upper)) =
-        | lower == upper = show lower
-        | otherwise      = renderRange lower upper
-        where
-            renderRange x y = "[" <> show x <> ", " <> show y <> "]"
+    show (CC (lower, upper))
+      | lower == upper = show lower
+      | otherwise      = renderRange lower upper
+      where
+        renderRange x y = mconcat [ "[", show x, ", ", show y, "]" ]
 
 
 -- -- | (✔)
@@ -44,26 +44,22 @@ instance Show ContinuousChar where
 --     isMissing _            = False
 
 
+{-
 -- | (✔)
 instance ContinuousCharacter ContinuousChar where
 
     toContinuousCharacter = CC . fmap (fromRational . toRational)
+-}
 
 
-type instance ContinuousChar = ExtendedReal
+type instance Bound ContinuousChar = ExtendedReal
 
 
 instance Ranged ContinuousChar where
 
     toRange (CC interval) = fromTuple interval
 
-    fromRange interval _ = CC (lowerBound interval, upperBound interval)
+    fromRange interval = CC (lowerBound interval, upperBound interval)
 
     zeroRange _ = fromTuple (0,0)
 
-
-instance Bounded ContinuousChar where
-
-    toEnum x = CC (toEnum x, toEnum)
-
-    fromEnum (CC (lower, upper)) =

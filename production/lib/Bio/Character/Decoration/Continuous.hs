@@ -25,8 +25,7 @@ module Bio.Character.Decoration.Continuous
   , HasChildPrelimIntervals(..)
   , continuousDecorationInitial
   , ContinuousDecorationInitial()
-  , ContinuousChar()
-  , ContinuousCharacter()
+--  , ContinuousCharacter()
 --  , GeneralCharacterMetadata()
 --  , HasCharacterName(..)
 --  , HasCharacterWeight(..)
