@@ -36,7 +36,6 @@ import Bio.Metadata.CharacterName
 import Bio.Metadata.Discrete
 import Bio.Metadata.DiscreteWithTCM
 import Bio.Metadata.Dynamic.Class
-import Bio.Metadata.General
 import Control.DeepSeq
 import Control.Lens
 import Data.Alphabet
@@ -45,7 +44,7 @@ import Data.Monoid
 import Data.TCM
 import GHC.Generics (Generic)
 
-import Debug.Trace
+--import Debug.Trace
 
 
 -- |

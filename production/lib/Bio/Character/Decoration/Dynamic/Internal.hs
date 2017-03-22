@@ -23,14 +23,13 @@ import Bio.Metadata.CharacterName
 import Bio.Metadata.Discrete
 import Bio.Metadata.DiscreteWithTCM
 import Bio.Metadata.Dynamic
-import Bio.Metadata.General
 import Control.Lens
 import Data.Alphabet
 import Data.Bits
 import Data.Hashable
 import Data.MonoTraversable
 import Data.Semigroup
-import Data.TCM
+
 
 -- TODO:
 -- Make a polymorpic pre-order constructor.
@@ -237,12 +236,8 @@ instance EncodableDynamicCharacter d => SimpleDynamicExtensionPostOrderDecoratio
         , dynamicDecorationDirectOptimizationPostOrderPreliminaryUngappedField = ungapped
         , dynamicDecorationDirectOptimizationPostOrderLeftAlignmentField       = lhsAlignment
         , dynamicDecorationDirectOptimizationPostOrderRightAlignmentField      = rhsAlignment
-        , dynamicDecorationDirectOptimizationPostOrderMetadata                 = metadataValue
+        , dynamicDecorationDirectOptimizationPostOrderMetadata                 = extractDynamicCharacterMetadata subDecoration
         }
-      where
-        alphabetValue = subDecoration ^. characterAlphabet
-        tcmValue      = generate (length alphabetValue) (uncurry $ subDecoration ^. symbolChangeMatrix)
-        metadataValue = extractDynamicCharacterMetadata subDecoration
 
 
 instance Hashable d => Hashable (DynamicDecorationDirectOptimizationPostOrderResult d) where
@@ -433,12 +428,8 @@ instance EncodableDynamicCharacter d => PostOrderExtensionDirectOptimizationDeco
         , dynamicDecorationDirectOptimizationPreliminaryUngappedField = subDecoration ^. preliminaryUngapped
         , dynamicDecorationDirectOptimizationLeftAlignmentField       = subDecoration ^. leftAlignment
         , dynamicDecorationDirectOptimizationRightAlignmentField      = subDecoration ^. rightAlignment
-        , dynamicDecorationDirectOptimizationMetadata                 = metadataValue
+        , dynamicDecorationDirectOptimizationMetadata                 = extractDynamicCharacterMetadata subDecoration
         }
-      where
-        alphabetValue = subDecoration ^. characterAlphabet
-        tcmValue      = generate (length alphabetValue) (uncurry $ subDecoration ^. symbolChangeMatrix)
-        metadataValue = extractDynamicCharacterMetadata subDecoration
 
 
 -- | (✔)

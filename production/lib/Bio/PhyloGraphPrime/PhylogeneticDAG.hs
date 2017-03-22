@@ -40,8 +40,8 @@ import           Data.Bits
 import           Data.Foldable
 import           Data.Hashable
 import           Data.Hashable.Memoize
-import           Data.HashMap.Lazy         (HashMap)
-import qualified Data.HashMap.Lazy  as HM
+--import           Data.HashMap.Lazy         (HashMap)
+--import qualified Data.HashMap.Lazy  as HM
 import qualified Data.IntMap        as IM
 import           Data.IntSet               (IntSet)
 import qualified Data.IntSet        as IS
@@ -49,19 +49,19 @@ import           Data.Key
 import           Data.List.NonEmpty        (NonEmpty( (:|) ))
 import qualified Data.List.NonEmpty as NE
 import           Data.List.Utility
-import           Data.Map                  (Map)
+--import           Data.Map                  (Map)
 import qualified Data.Map           as M
 import           Data.Maybe
 --import           Data.Monoid
 import           Data.MonoTraversable
 import           Data.Semigroup
 import           Data.Semigroup.Foldable
-import           Data.Vector               (Vector)
+--import           Data.Vector               (Vector)
 import qualified Data.Vector        as V
 
 import           Prelude            hiding (zipWith)
 
-import Debug.Trace
+--import Debug.Trace
 
 
 type SearchState = EvaluationT IO (Either TopologicalResult (PhylogeneticSolution InitialDecorationDAG))

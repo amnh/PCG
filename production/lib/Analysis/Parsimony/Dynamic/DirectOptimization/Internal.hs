@@ -25,7 +25,6 @@ import           Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise
 import           Bio.Character.Decoration.Dynamic
 import           Bio.Character.Encodable
 import           Control.Lens
-import           Data.Bits
 import           Data.IntMap        (IntMap)
 import qualified Data.IntMap as IM
 import           Data.Key    hiding ((!))
@@ -35,7 +34,8 @@ import           Data.MonoTraversable
 import           Data.Word
 import           Prelude     hiding (lookup, zip, zipWith)
 
-import Debug.Trace
+--import Debug.Trace
+
 
 type PairwiseAlignment s = s -> s -> (s, Double, s, s, s)
 
@@ -153,6 +153,7 @@ tripleComparison pairwiseAlignment childDecoration parentCharacter = (ungapped, 
     extendedLeftCharacter  = insertNewGaps newGapIndicies childLeftAligned
     extendedRightCharacter = insertNewGaps newGapIndicies childRightAligned
     (_, ungapped, gapped)  = {- trace context $ -} threeWayMean costStructure derivedAlignment extendedLeftCharacter extendedRightCharacter
+    {--
     context = unlines
         [ "New Gap indices: |" <> show (sum newGapIndicies) <> "| " <> show newGapIndicies
         , "Parent:"
@@ -168,7 +169,8 @@ tripleComparison pairwiseAlignment childDecoration parentCharacter = (ungapped, 
         , show (olength childRightAligned)
         , show (olength extendedRightCharacter)
         ]
-
+    --}
+    
 
 -- |
 -- Returns the indicies of the gaps that were added in the second character when

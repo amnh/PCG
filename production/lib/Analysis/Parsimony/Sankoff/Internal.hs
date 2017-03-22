@@ -35,7 +35,7 @@ import Data.List.NonEmpty (NonEmpty( (:|) ))
 import Data.Word
 import Prelude hiding (zip)
 
-import Debug.Trace
+--import Debug.Trace
 
 
 -- | Used on the post-order (i.e. first) traversal.
