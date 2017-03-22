@@ -107,7 +107,7 @@ additivePreOrder  :: ( Ranged c
                      , Ord (Bound c)
                      , DiscreteCharacterMetadata d
                      , RangedExtensionPostorder  d  c
-                     , RangedExtensionPostorder  d' c
+--                     , RangedExtensionPostorder  d' c
                      , RangedExtensionPreorder   d' c
                      , RangedCharacterDecoration d' c
                      )

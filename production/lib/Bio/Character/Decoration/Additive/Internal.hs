@@ -163,8 +163,12 @@ instance EncodableStaticCharacter a => DiscreteWithTcmCharacterMetadata (Additiv
 instance EncodableStaticCharacter a => DiscreteCharacterDecoration (AdditivePostorderDecoration a) a where
 
 
---- | (✔)
---instance DiscreteCharacterDecoration a => RangedPostorderDecoration (AdditivePostorderDecoration a) a where
+-- | (✔)
+instance (Ranged c, Num (Bound c), Ord (Bound c)) => RangedCharacterDecoration (AdditivePostorderDecoration c) c where
+
+
+-- | (✔)
+instance RangedCharacterDecoration (AdditivePostorderDecoration c) c => RangedPostorderDecoration (AdditivePostorderDecoration c) c where
 
   {-
 -- | (✔)
@@ -371,9 +375,15 @@ instance RangedCharacterDecoration (AdditiveOptimizationDecoration c) c => Range
 
 
 -- | (✔)
-instance (Ranged c, Num (Bound c), Ord (Bound c)) => RangedExtensionPostorder (AdditiveOptimizationDecoration c) c where
+instance RangedCharacterDecoration (AdditiveOptimizationDecoration c) c => RangedExtensionPostorder (AdditiveOptimizationDecoration c) c where
 
 
+-- | (✔)
+instance ( RangedCharacterDecoration (AdditiveOptimizationDecoration c) c
+         , HasFinalInterval (AdditiveOptimizationDecoration c) (Range (Bound c))
+         ) => RangedDecorationOptimization (AdditiveOptimizationDecoration c) c where 
+
+  
   {-
 -- | (✔)
 instance ( RangedPostorderDecoration   (AdditiveOptimizationDecoration a) a

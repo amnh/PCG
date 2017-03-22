@@ -138,7 +138,7 @@ initializeDecorations :: CharacterResult -> PhylogeneticSolution InitialDecorati
 initializeDecorations (PhylogeneticSolution forests) = PhylogeneticSolution $ fmap performDecoration <$> forests
   where
 --    performDecoration :: CharacterDAG -> InitialDecorationDAG
-    performDecoration (PDAG dag) = PDAG {- y. nodePreOrder preOrderTransformation -} $ nodePostOrder postOrderTransformation dag
+    performDecoration (PDAG dag) = PDAG . nodePreOrder preOrderTransformation $ nodePostOrder postOrderTransformation dag
       where
         postOrderTransformation parentalNode childNodes =
           PNode
@@ -164,7 +164,7 @@ initializeDecorations (PhylogeneticSolution forests) = PhylogeneticSolution $ fm
              (SankoffOptimizationDecoration  StaticCharacter)
              UnifiedContinuousCharacter --(ContinuousOptimizationDecoration ContinuousChar)
              (FitchOptimizationDecoration    StaticCharacter)
-             (AdditiveOptimizationDecoration StaticCharacter)
+             (AdditivePostorderDecoration StaticCharacter)
              (DynamicDecorationDirectOptimizationPostOrderResult DynamicChar) -- UnifiedDynamicCharacter
          ]
       -> CharacterSequence
@@ -172,7 +172,7 @@ initializeDecorations (PhylogeneticSolution forests) = PhylogeneticSolution $ fm
            (SankoffOptimizationDecoration  StaticCharacter)
            UnifiedContinuousCharacter --(ContinuousOptimizationDecoration ContinuousChar)
            (FitchOptimizationDecoration    StaticCharacter)
-           (AdditiveOptimizationDecoration StaticCharacter)
+           (AdditivePostorderDecoration    StaticCharacter)
            (DynamicDecorationDirectOptimizationPostOrderResult DynamicChar) -- UnifiedDynamicCharacter
 
     postOrderLogic currentCharSeq childCharSeqs =
