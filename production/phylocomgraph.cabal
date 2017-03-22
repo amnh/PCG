@@ -158,6 +158,7 @@ library
                        Bio.Character.Decoration.Metric
                        Bio.Character.Decoration.NonMetric
                        Bio.Character.Encodable
+                       Bio.Character.Encodable.Continuous
                        Bio.Character.Exportable
                        Bio.Character.Parsed
                        Bio.Metadata
@@ -250,6 +251,8 @@ library
                        Bio.Character.Decoration.NonMetric.Class
                        Bio.Character.Decoration.NonMetric.Internal
                        Bio.Character.Decoration.Shared
+                       Bio.Character.Encodable.Continuous.Class
+                       Bio.Character.Encodable.Continuous.Internal
                        Bio.Character.Encodable.Dynamic
                        Bio.Character.Encodable.Dynamic.Class
                        Bio.Character.Encodable.Dynamic.Internal

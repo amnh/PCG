@@ -17,17 +17,17 @@ module Bio.Character.Decoration.Continuous.Internal where
 
 import Bio.Character.Decoration.Additive
 --import Bio.Character.Decoration.Continuous.Class
-import Bio.Character.Decoration.Discrete
-import Bio.Character.Decoration.Shared
+--import Bio.Character.Decoration.Discrete
+--import Bio.Character.Decoration.Shared
 import Bio.Character.Encodable
 import Bio.Metadata.CharacterName
 import Bio.Metadata.Continuous
-import Bio.Metadata.Discrete
+--import Bio.Metadata.Discrete
 import Control.Lens
 import Data.Alphabet
 import Data.Range
 import Data.Semigroup
-import Data.TCM
+--import Data.TCM
 
 
 -- |
@@ -49,30 +49,26 @@ continuousDecorationInitial name f v =
     }
 
 
+-- | (✔)
+instance PossiblyMissingCharacter c => PossiblyMissingCharacter (ContinuousDecorationInitial c) where
+
+    isMissing = isMissing . (^. discreteCharacter)
+
+    toMissing x = x & discreteCharacter %~ toMissing
+
+
+-- | (✔)
+instance HasDiscreteCharacter (ContinuousDecorationInitial a) a where
+
+    discreteCharacter = lens continuousDecorationInitialCharacter
+                      $ \e x -> e { continuousDecorationInitialCharacter = x }
+
+
 {-
 -- | (✔)
 instance Show c => Show (ContinuousDecorationInitial c) where
 
     show = show . (^. continuousCharacter)
-
-
--- | (✔)
-instance PossiblyMissingCharacter c => PossiblyMissingCharacter (ContinuousDecorationInitial c) where
-
-    isMissing = isMissing . (^. continuousCharacter)
-
-    toMissing x = x & continuousCharacter %~ toMissing
-
-
--- | (✔)
-instance PossiblyMissingCharacter ContinuousChar where
-
-    {-# INLINE toMissing #-}
-    toMissing = const $ CC Nothing
-
-    {-# INLINE isMissing #-}
-    isMissing (CC Nothing) = True
-    isMissing _            = False
 
 
 -- | (✔)
@@ -228,10 +224,16 @@ instance EncodableStaticCharacter a => DiscreteExtensionContinuousDecoration (Co
 newtype ContinuousPostorderDecoration c = CPostD (AdditivePostorderDecoration c)
 
 
+lensCPostD :: Functor f
+           => Getting a1 (AdditivePostorderDecoration t) a1
+           -> ASetter (AdditivePostorderDecoration t) (AdditivePostorderDecoration c) a b
+           -> (a1 -> f b)
+           -> ContinuousPostorderDecoration t
+           -> f (ContinuousPostorderDecoration c)
 lensCPostD f g = lens (getterCPostD f) (setterCPostD g)
   where
-    getterCPostD f (CPostD e)   = e ^. f
-    setterCPostD f (CPostD e) x = CPostD $ e & f .~ x
+    getterCPostD h (CPostD e)   = e ^. h
+    setterCPostD h (CPostD e) x = CPostD $ e & h .~ x
 
 
 instance
@@ -340,12 +342,128 @@ instance ( DiscreteCharacterMetadata   (ContinuousPostorderDecoration a)
 
 
 
-{-
 newtype ContinuousOptimizationDecoration  c = COptD  (AdditiveOptimizationDecoration c)
 
 
-getterCPreD f (COptD e)   = COptD $ e ^. f
-setterCPreD f (COptD e) x = COptD $ e .~ x
-lensCPreD   f (COptD e)   = lens (getterCPreD f) $ setterCPreD f
+lensCOptD :: Functor f
+          => Getting a1 (AdditiveOptimizationDecoration t) a1
+          -> ASetter (AdditiveOptimizationDecoration t) (AdditiveOptimizationDecoration c) a b
+          -> (a1 -> f b)
+          -> ContinuousOptimizationDecoration t
+          -> f (ContinuousOptimizationDecoration c)
+lensCOptD f g = lens (getterCPostD f) (setterCPostD g)
+  where
+    getterCPostD h (COptD e)   = e ^. h
+    setterCPostD h (COptD e) x = COptD $ e & h .~ x
 
+
+instance
+    ( Show c
+    , Show (Bound c)
+    , Show (Range (Bound c))
+    ) => Show (ContinuousOptimizationDecoration c) where
+
+    show c = unlines
+        [ "Cost = "                 <> show (c ^. characterCost)
+        , "Is Leaf Node?        : " <> show (c ^. isLeaf)
+        , "Discrete Character   : " <> show  c
+        , "Preliminary Interval : " <> show (c ^. preliminaryInterval)
+        , "Child       Intervals: " <> show (c ^. childPrelimIntervals)
+        , "Final       Interval : " <> show (c ^. finalInterval)
+        ]
+
+
+-- | (✔)
+instance HasDiscreteCharacter (ContinuousOptimizationDecoration a) a where
+
+    discreteCharacter = lensCOptD discreteCharacter discreteCharacter
+
+
+-- | (✔)
+instance HasCharacterAlphabet (ContinuousOptimizationDecoration a) (Alphabet String) where
+
+    characterAlphabet = lensCOptD characterAlphabet characterAlphabet
+
+
+-- | (✔)
+instance HasCharacterName (ContinuousOptimizationDecoration a) CharacterName where
+
+    characterName = lensCOptD characterName characterName
+
+
+-- | (✔)
+instance HasCharacterWeight (ContinuousOptimizationDecoration a) Double where
+
+    characterWeight = lensCOptD characterWeight characterWeight
+
+
+-- | (✔)
+instance HasIsLeaf (ContinuousOptimizationDecoration a) Bool where
+
+    isLeaf = lensCOptD isLeaf isLeaf
+
+
+-- | (✔)
+instance (Bound a ~ c) => HasCharacterCost (ContinuousOptimizationDecoration a) c where
+
+    characterCost = lensCOptD characterCost characterCost
+
+
+-- | (✔)
+instance (Bound a ~ c) => HasPreliminaryInterval (ContinuousOptimizationDecoration a) (Range c) where
+
+    preliminaryInterval = lensCOptD preliminaryInterval preliminaryInterval
+
+
+-- | (✔)
+instance (Bound a ~ c) => HasChildPrelimIntervals (ContinuousOptimizationDecoration a) (Range c, Range c) where
+
+    childPrelimIntervals = lensCOptD childPrelimIntervals childPrelimIntervals
+
+
+-- | (✔)
+instance (Bound a ~ c) => HasFinalInterval (ContinuousOptimizationDecoration a) (Range c) where
+
+    finalInterval = lensCOptD finalInterval finalInterval
+
+
+-- | (✔)
+instance GeneralCharacterMetadata (ContinuousOptimizationDecoration a) where
+
+    extractGeneralCharacterMetadata (COptD x) = extractGeneralCharacterMetadata x
+
+
+
+{-
+-- | (✔)
+instance EncodableStaticCharacter a => DiscreteCharacterDecoration (ContinuousOptimizationDecoration a) a where
 -}
+
+
+{-
+class ( RangedCharacterDecoration s c
+      , HasCharacterCost s (Bound c)
+      , HasChildPrelimIntervals s (Range (Bound c), Range (Bound c))
+      , HasIsLeaf s Bool
+      , HasPreliminaryInterval s (Range (Bound c))
+      ) => RangedPostOrderDecoration s c | s -> c where
+
+
+class ( RangedCharacterDecoration s c
+      , HasFinalInterval s (Range (Bound c))
+      ) => RangedDecorationOptimization s c | s -> c where 
+-}
+  
+
+-- | (✔)
+instance ( DiscreteCharacterMetadata   (ContinuousOptimizationDecoration a)
+         , RangedPostorderDecoration   (ContinuousOptimizationDecoration a) a
+         , RangedCharacterDecoration   (AdditiveOptimizationDecoration   a) a
+         , RangedExtensionPostorder    (AdditiveOptimizationDecoration   a) a
+         ) => RangedExtensionPostorder (ContinuousOptimizationDecoration a) a where
+
+    extendRangedToPostorder subDecoration cost prelimInterval childMedianTup isLeafVal =
+
+        COptD $ extendRangedToPostorder subDecoration cost prelimInterval childMedianTup isLeafVal
+
+

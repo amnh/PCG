@@ -14,7 +14,8 @@
 
 module Bio.Character.Encodable.Continuous.Internal where
 
---import Data.Double
+
+import Bio.Character.Encodable.Internal
 import Data.ExtendedReal
 import Data.Range
 
@@ -31,6 +32,17 @@ instance Show ContinuousChar where
       | otherwise      = renderRange lower upper
       where
         renderRange x y = mconcat [ "[", show x, ", ", show y, "]" ]
+
+
+-- | (✔)
+instance PossiblyMissingCharacter ContinuousChar where
+
+    {-# INLINE toMissing #-}
+    toMissing = const . CC $ (minBound, maxBound)
+
+    {-# INLINE isMissing #-}
+    isMissing (CC (x,y)) = x == minBound && y == maxBound
+    isMissing _          = False 
 
 
 -- -- | (✔)
