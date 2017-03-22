@@ -33,11 +33,8 @@ import Data.Range
 
 
 -- | Used on the post-order (i.e. first) traversal.
-additivePostOrder :: ( RangedCharacterDecoration   d c
-                     , Ranged c
-                     , Bounded (Bound c)
-                     , Num (Bound c)
-                     , Ord (Bound c)
+additivePostOrder :: ( DiscreteCharacterMetadata d
+                     , RangedCharacterDecoration d  c
                      , DiscreteCharacterMetadata d'
                      , RangedExtensionPostorder  d' c
                      )
@@ -52,10 +49,8 @@ additivePostOrder parentDecoration xs =
 -- Initializes a leaf node by copying its current value into its preliminary state. Gives it a minimum cost of 0.
 --
 -- Used on the postorder pass.
-initializeLeaf :: ( RangedCharacterDecoration d c
---                  , Ranged c
---                  , Num (Bound c)
---                  , Ord (Bound c)
+initializeLeaf :: ( DiscreteCharacterMetadata d
+                  , RangedCharacterDecoration d  c
                   , RangedCharacterDecoration d' c
                   , RangedExtensionPostorder  d' c
                   )
@@ -64,7 +59,7 @@ initializeLeaf :: ( RangedCharacterDecoration d c
 initializeLeaf curDecoration =
     extendRangedToPostorder curDecoration 0 (toRange label) (unitRange, unitRange) True
   where
-    label     = curDecoration ^. discreteCharacter
+    label     = curDecoration ^. intervalCharacter
     unitRange = zeroRange label
 
 
@@ -74,10 +69,8 @@ initializeLeaf curDecoration =
 -- with the costs of the two children. The preliminary value of the character is the intersection of the two child intervals.
 --
 -- Used on the postorder pass.
-updatePostOrder :: ( RangedCharacterDecoration   d c
-                   , Ranged c
-                   , Num (Bound c)
-                   , Ord (Bound c)
+updatePostOrder :: ( DiscreteCharacterMetadata d
+                   , RangedCharacterDecoration d c
                    , DiscreteCharacterMetadata d'
                    , RangedExtensionPostorder  d' c
                    )

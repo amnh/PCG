@@ -17,12 +17,11 @@ module Bio.Character.Decoration.Continuous.Internal where
 
 import Bio.Character.Decoration.Additive
 --import Bio.Character.Decoration.Continuous.Class
---import Bio.Character.Decoration.Discrete
 import Bio.Character.Decoration.Shared
 import Bio.Character.Encodable
 import Bio.Metadata.CharacterName
 import Bio.Metadata.Continuous
---import Bio.Metadata.Discrete
+import Bio.Metadata.Discrete
 import Control.Lens
 import Data.Alphabet
 import Data.Range
@@ -104,6 +103,20 @@ instance HasCharacterWeight (ContinuousDecorationInitial c) Double where
          setter e x = e { continuousMetadataField = continuousMetadataField e &  characterWeight .~ x }
 
 
+-- | This will throw errors, I advise against using this Lens.
+instance HasCharacterAlphabet (ContinuousDecorationInitial c) (Alphabet String) where
+
+    characterAlphabet = lens getter setter
+      where
+         setter e _ = e
+         getter _   = error $ unwords
+            [ "This is a kluge."
+            , "Please don't ask for the alphabet of a continuous character."
+            , "This exists solely to satisfy incoherent constraints due to bad design desicions."
+            , "My bad team :("
+            ]
+
+
 {-
 -- | (✔)
 instance HasContinuousCharacter (ContinuousDecorationInitial c) c where
@@ -117,7 +130,19 @@ instance GeneralCharacterMetadata (ContinuousDecorationInitial d) where
 
     extractGeneralCharacterMetadata = extractGeneralCharacterMetadata . continuousMetadataField
 
-  
+
+-- | (✔)
+instance DiscreteCharacterMetadata (ContinuousDecorationInitial d) where
+
+    extractDiscreteCharacterMetadata x = discreteMetadata
+                                           (x ^. characterName    )
+                                           (x ^. characterWeight  )
+                                           (x ^. characterAlphabet)
+
+-- | (✔)
+instance (Ranged c, Num (Bound c), Ord (Bound c)) => RangedCharacterDecoration (ContinuousDecorationInitial c) c where
+
+
 {-
 -- | (✔)
 instance ContinuousCharacter c => ContinuousDecoration (ContinuousDecorationInitial c) c where
@@ -267,9 +292,9 @@ instance
 
 
 -- | (✔)
-instance HasDiscreteCharacter (ContinuousPostorderDecoration a) a where
+instance HasIntervalCharacter (ContinuousPostorderDecoration a) a where
 
-    discreteCharacter = lensCPostD discreteCharacter discreteCharacter
+    intervalCharacter = lensCPostD intervalCharacter intervalCharacter
 
 
 -- | (✔)
@@ -318,6 +343,20 @@ instance (Bound a ~ c) => HasChildPrelimIntervals (ContinuousPostorderDecoration
 instance GeneralCharacterMetadata (ContinuousPostorderDecoration a) where
 
     extractGeneralCharacterMetadata (CPostD x) = extractGeneralCharacterMetadata x
+
+
+-- | (✔)
+instance DiscreteCharacterMetadata (ContinuousPostorderDecoration a) where
+
+    extractDiscreteCharacterMetadata (CPostD x) = extractDiscreteCharacterMetadata x
+
+
+-- | (✔)
+instance (Ranged c, Num (Bound c), Ord (Bound c)) => RangedCharacterDecoration (ContinuousPostorderDecoration c) c where
+
+
+-- | (✔)
+instance RangedCharacterDecoration (ContinuousPostorderDecoration c) c => RangedPostorderDecoration (ContinuousPostorderDecoration c) c where
 
 
 {-
@@ -389,9 +428,9 @@ instance
 
 
 -- | (✔)
-instance HasDiscreteCharacter (ContinuousOptimizationDecoration a) a where
+instance HasIntervalCharacter (ContinuousOptimizationDecoration a) a where
 
-    discreteCharacter = lensCOptD discreteCharacter discreteCharacter
+    intervalCharacter = lensCOptD intervalCharacter intervalCharacter
 
 
 -- | (✔)
@@ -448,6 +487,24 @@ instance GeneralCharacterMetadata (ContinuousOptimizationDecoration a) where
     extractGeneralCharacterMetadata (COptD x) = extractGeneralCharacterMetadata x
 
 
+-- | (✔)
+instance DiscreteCharacterMetadata (ContinuousOptimizationDecoration a) where
+
+    extractDiscreteCharacterMetadata (COptD x) = extractDiscreteCharacterMetadata x
+
+
+-- | (✔)
+instance (Ranged c, Num (Bound c), Ord (Bound c)) => RangedCharacterDecoration (ContinuousOptimizationDecoration c) c where
+
+
+-- | (✔)
+instance RangedCharacterDecoration (ContinuousOptimizationDecoration c) c => RangedPostorderDecoration (ContinuousOptimizationDecoration c) c where
+
+
+-- | (✔)
+instance ( RangedCharacterDecoration (ContinuousOptimizationDecoration c) c
+         , HasFinalInterval (ContinuousOptimizationDecoration c) (Range (Bound c))
+         ) => RangedDecorationOptimization (ContinuousOptimizationDecoration c) c where 
 
 {-
 -- | (✔)
@@ -471,14 +528,14 @@ class ( RangedCharacterDecoration s c
   
 
 -- | (✔)
-instance ( DiscreteCharacterMetadata   (ContinuousOptimizationDecoration a)
-         , RangedPostorderDecoration   (ContinuousOptimizationDecoration a) a
-         , RangedCharacterDecoration   (AdditiveOptimizationDecoration   a) a
-         , RangedExtensionPostorder    (AdditiveOptimizationDecoration   a) a
-         ) => RangedExtensionPostorder (ContinuousOptimizationDecoration a) a where
+instance ( DiscreteCharacterMetadata    (ContinuousOptimizationDecoration a)
+         , RangedDecorationOptimization (ContinuousOptimizationDecoration a) a
+         , RangedCharacterDecoration    (AdditiveOptimizationDecoration   a) a
+         , RangedExtensionPreorder      (AdditiveOptimizationDecoration   a) a
+         ) => RangedExtensionPreorder   (ContinuousOptimizationDecoration a) a where
 
-    extendRangedToPostorder subDecoration cost prelimInterval childMedianTup isLeafVal =
+    extendRangedToPreorder subDecoration intervalValue =
 
-        COptD $ extendRangedToPostorder subDecoration cost prelimInterval childMedianTup isLeafVal
+        COptD $ extendRangedToPreorder subDecoration intervalValue
 
 
