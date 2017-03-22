@@ -33,8 +33,7 @@ import Data.Range
 
 
 -- | Used on the post-order (i.e. first) traversal.
-additivePostOrder :: ( DiscreteCharacterDecoration d c
-                     , RangedCharacterDecoration   d c
+additivePostOrder :: ( RangedCharacterDecoration   d c
                      , Ranged c
                      , Bounded (Bound c)
                      , Num (Bound c)
@@ -53,12 +52,12 @@ additivePostOrder parentDecoration xs =
 -- Initializes a leaf node by copying its current value into its preliminary state. Gives it a minimum cost of 0.
 --
 -- Used on the postorder pass.
-initializeLeaf :: ( DiscreteCharacterDecoration d c
-                  , RangedCharacterDecoration d c
-                  , Ranged c
-                  , Num (Bound c)
-                  , Ord (Bound c)
-                  , RangedExtensionPostorder d' c
+initializeLeaf :: ( RangedCharacterDecoration d c
+--                  , Ranged c
+--                  , Num (Bound c)
+--                  , Ord (Bound c)
+                  , RangedCharacterDecoration d' c
+                  , RangedExtensionPostorder  d' c
                   )
                => d
                -> d'
@@ -75,8 +74,7 @@ initializeLeaf curDecoration =
 -- with the costs of the two children. The preliminary value of the character is the intersection of the two child intervals.
 --
 -- Used on the postorder pass.
-updatePostOrder :: ( DiscreteCharacterDecoration d c
-                   , RangedCharacterDecoration   d c
+updatePostOrder :: ( RangedCharacterDecoration   d c
                    , Ranged c
                    , Num (Bound c)
                    , Ord (Bound c)

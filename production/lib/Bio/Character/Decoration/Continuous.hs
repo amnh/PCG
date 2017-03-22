@@ -11,8 +11,9 @@
 -----------------------------------------------------------------------------
 
 module Bio.Character.Decoration.Continuous
-  ( --ContinuousOptimizationDecoration(ContinuousOptimizationDecoration)
-    ContinuousCharacterDecoration()
+  ( ContinuousOptimizationDecoration()
+  , ContinuousPostorderDecoration()
+  , ContinuousCharacterDecoration()
   , DiscreteExtensionContinuousDecoration(..)
   , GeneralCharacterMetadata()
   , DiscreteCharacterMetadata()

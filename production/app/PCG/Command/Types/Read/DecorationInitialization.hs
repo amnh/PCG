@@ -24,7 +24,7 @@ import           Analysis.Parsimony.Dynamic.SequentialAlign
 
 import           Bio.Character
 import           Bio.Character.Decoration.Additive
---import           Bio.Character.Decoration.Continuous
+import           Bio.Character.Decoration.Continuous
 --import           Bio.Character.Decoration.Discrete
 import           Bio.Character.Decoration.Dynamic
 import           Bio.Character.Decoration.Fitch
@@ -231,7 +231,7 @@ initializeDecorations (PhylogeneticSolution forests) = PhylogeneticSolution $ fm
         hexZipWith
           sankoffPreOrder
           sankoffPreOrder
-          id2
+          additivePreOrder
           fitchPreOrder
           additivePreOrder
           adaptiveDirectOptimizationPreOrder

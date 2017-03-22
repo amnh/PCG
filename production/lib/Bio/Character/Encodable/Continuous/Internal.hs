@@ -15,7 +15,9 @@
 module Bio.Character.Encodable.Continuous.Internal where
 
 
+import Bio.Character.Encodable.Continuous.Class
 import Bio.Character.Encodable.Internal
+import Control.Arrow     ((&&&))
 import Data.ExtendedReal
 import Data.Range
 
@@ -38,12 +40,14 @@ instance Show ContinuousChar where
 instance PossiblyMissingCharacter ContinuousChar where
 
     {-# INLINE toMissing #-}
-    toMissing = const . CC $ (minBound, maxBound)
+    toMissing = const $ CC missingRange
 
     {-# INLINE isMissing #-}
-    isMissing (CC (x,y)) = x == minBound && y == maxBound
-    isMissing _          = False 
+    isMissing (CC c) = c == missingRange
 
+
+missingRange :: (ExtendedReal, ExtendedReal)
+missingRange = (minBound, maxBound)
 
 -- -- | (✔)
 -- instance PossiblyMissingCharacter ContinuousChar where
@@ -56,12 +60,12 @@ instance PossiblyMissingCharacter ContinuousChar where
 --     isMissing _            = False
 
 
-{-
 -- | (✔)
 instance ContinuousCharacter ContinuousChar where
 
-    toContinuousCharacter = CC . fmap (fromRational . toRational)
--}
+    toContinuousCharacter = CC . maybe missingRange (f &&& f)
+      where
+        f = fromRational . toRational
 
 
 type instance Bound ContinuousChar = ExtendedReal
