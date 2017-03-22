@@ -100,8 +100,6 @@ class DiscreteCharacterDecoration s a => SimpleDiscreteCharacterDecoration s a |
 
 
 
-
-
 -- | (✔)
 instance HasDiscreteCharacter (DiscreteDecoration c) c where
 
@@ -173,6 +171,9 @@ instance GeneralCharacterMetadata (DiscreteDecoration c) where
 -- | (✔)
 instance EncodableStreamElement c => DiscreteCharacterMetadata (DiscreteDecoration c) where
 
+    {-# INLINE extractDiscreteCharacterMetadata #-}
+    extractDiscreteCharacterMetadata = extractDiscreteCharacterMetadata . metadata
+
 
 -- | (✔)
 instance EncodableStreamElement c => DiscreteWithTcmCharacterMetadata (DiscreteDecoration c) c where
@@ -184,6 +185,7 @@ instance EncodableStaticCharacter c => DiscreteCharacterDecoration (DiscreteDeco
 
 -- | (✔)
 instance EncodableStaticCharacter c => SimpleDiscreteCharacterDecoration (DiscreteDecoration c) c where
+
     toDiscreteCharacterDecoration name weight alphabet scm g symbolSet =
         DiscreteDec
         { discreteDecorationCharacter = g symbolSet
