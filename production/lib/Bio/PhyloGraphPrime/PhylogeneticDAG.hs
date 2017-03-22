@@ -102,7 +102,8 @@ type InitialDecorationDAG = PhylogeneticDAG
                                 (Maybe String)
                                 (SankoffOptimizationDecoration  StaticCharacter)
                                 (SankoffOptimizationDecoration  StaticCharacter)
-                                UnifiedContinuousCharacter --(ContinuousOptimizationDecoration ContinuousChar)
+                                --UnifiedContinuousCharacter
+                                (ContinuousOptimizationDecoration ContinuousChar)
                                 (FitchOptimizationDecoration    StaticCharacter)
                                 (AdditiveOptimizationDecoration StaticCharacter)
                                 -- UnifiedDynamicCharacter

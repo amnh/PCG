@@ -162,7 +162,7 @@ initializeDecorations (PhylogeneticSolution forests) = PhylogeneticSolution $ fm
       -> [ CharacterSequence
              (SankoffOptimizationDecoration  StaticCharacter)
              (SankoffOptimizationDecoration  StaticCharacter)
-             UnifiedContinuousCharacter --(ContinuousOptimizationDecoration ContinuousChar)
+             (ContinuousPostorderDecoration  ContinuousChar ) --(ContinuousOptimizationDecoration ContinuousChar)
              (FitchOptimizationDecoration    StaticCharacter)
              (AdditivePostorderDecoration StaticCharacter)
              (DynamicDecorationDirectOptimizationPostOrderResult DynamicChar) -- UnifiedDynamicCharacter
@@ -170,7 +170,7 @@ initializeDecorations (PhylogeneticSolution forests) = PhylogeneticSolution $ fm
       -> CharacterSequence
            (SankoffOptimizationDecoration  StaticCharacter)
            (SankoffOptimizationDecoration  StaticCharacter)
-           UnifiedContinuousCharacter --(ContinuousOptimizationDecoration ContinuousChar)
+           (ContinuousPostorderDecoration  ContinuousChar ) --(ContinuousOptimizationDecoration ContinuousChar)
            (FitchOptimizationDecoration    StaticCharacter)
            (AdditivePostorderDecoration    StaticCharacter)
            (DynamicDecorationDirectOptimizationPostOrderResult DynamicChar) -- UnifiedDynamicCharacter
@@ -179,7 +179,7 @@ initializeDecorations (PhylogeneticSolution forests) = PhylogeneticSolution $ fm
         hexZipWith
           (g  sankoffPostOrder)
           (g  sankoffPostOrder)
-          id2
+          (g additivePostOrder)
           (g    fitchPostOrder)
           (g additivePostOrder)
           (g adaptiveDirectOptimizationPostOrder)
