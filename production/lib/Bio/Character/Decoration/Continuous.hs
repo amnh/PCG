@@ -23,6 +23,7 @@ module Bio.Character.Decoration.Continuous
   , HasCharacterCost(..)
   , HasPreliminaryInterval(..)
   , HasChildPrelimIntervals(..)
+  , HasIntervalCharacter(..)
   , continuousDecorationInitial
   , ContinuousDecorationInitial()
 --  , ContinuousCharacter()

@@ -21,14 +21,6 @@ import Control.Lens
 import Data.Range
 
 
-
-class ( HasDiscreteCharacter d c
-      , Ranged c
-      , Num (Bound c)
-      , Ord (Bound c)
-      ) => RangedCharacterDecoration d c where
-
-  
 class ( RangedCharacterDecoration s c
       , HasCharacterCost s (Bound c)
       , HasChildPrelimIntervals s (Range (Bound c), Range (Bound c))

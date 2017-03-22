@@ -18,7 +18,7 @@ module Bio.Character.Decoration.Continuous.Internal where
 import Bio.Character.Decoration.Additive
 --import Bio.Character.Decoration.Continuous.Class
 --import Bio.Character.Decoration.Discrete
---import Bio.Character.Decoration.Shared
+import Bio.Character.Decoration.Shared
 import Bio.Character.Encodable
 import Bio.Metadata.CharacterName
 import Bio.Metadata.Continuous
@@ -52,30 +52,39 @@ continuousDecorationInitial name f v =
 -- | (✔)
 instance PossiblyMissingCharacter c => PossiblyMissingCharacter (ContinuousDecorationInitial c) where
 
-    isMissing = isMissing . (^. discreteCharacter)
+    isMissing = isMissing . (^. intervalCharacter)
 
-    toMissing x = x & discreteCharacter %~ toMissing
+    toMissing x = x & intervalCharacter %~ toMissing
 
 
--- | (✔)
+{-
 instance HasDiscreteCharacter (ContinuousDecorationInitial a) a where
 
     discreteCharacter = lens continuousDecorationInitialCharacter
                       $ \e x -> e { continuousDecorationInitialCharacter = x }
+-}
 
 
-{-
+-- | (✔)
+instance HasIntervalCharacter (ContinuousDecorationInitial c) c where
+
+    intervalCharacter = lens continuousDecorationInitialCharacter
+                      $ \e x -> e { continuousDecorationInitialCharacter = x }
+
+
 -- | (✔)
 instance Show c => Show (ContinuousDecorationInitial c) where
 
-    show = show . (^. continuousCharacter)
+    show = show . (^. intervalCharacter)
 
 
+{-
 -- | (✔)
 instance ContinuousCharacter ContinuousChar where
 
     toContinuousCharacter = CC . fmap (fromRational . toRational)
 
+-}
 
 -- | (✔)
 instance HasCharacterName (ContinuousDecorationInitial c) CharacterName where
@@ -95,20 +104,26 @@ instance HasCharacterWeight (ContinuousDecorationInitial c) Double where
          setter e x = e { continuousMetadataField = continuousMetadataField e &  characterWeight .~ x }
 
 
+{-
 -- | (✔)
 instance HasContinuousCharacter (ContinuousDecorationInitial c) c where
 
     continuousCharacter = lens continuousDecorationInitialCharacter $ \e x -> e { continuousDecorationInitialCharacter = x }
+-}
 
 
 -- | (✔)
 instance GeneralCharacterMetadata (ContinuousDecorationInitial d) where
 
+    extractGeneralCharacterMetadata = extractGeneralCharacterMetadata . continuousMetadataField
 
+  
+{-
 -- | (✔)
 instance ContinuousCharacter c => ContinuousDecoration (ContinuousDecorationInitial c) c where
 -}
 
+  
 
 {-
 data ContinuousOptimizationDecoration a

@@ -33,6 +33,7 @@ module Bio.Character.Decoration.Discrete
   ) where
 
 
+import Bio.Character.Decoration.Shared
 import Bio.Character.Encodable
 import Bio.Metadata.Discrete
 import Bio.Metadata.DiscreteWithTCM
@@ -40,7 +41,7 @@ import Bio.Metadata.General
 import Bio.Metadata.CharacterName
 import Control.Lens
 import Data.Alphabet
---import Data.TCM
+import Data.Range
 
 
 -- |
@@ -99,10 +100,22 @@ class DiscreteCharacterDecoration s a => SimpleDiscreteCharacterDecoration s a |
 
 
 
+
+
 -- | (✔)
 instance HasDiscreteCharacter (DiscreteDecoration c) c where
 
     discreteCharacter = lens discreteDecorationCharacter (\e x -> e { discreteDecorationCharacter = x })
+
+
+-- | (✔)
+instance HasIntervalCharacter (DiscreteDecoration c) c where
+
+    intervalCharacter = discreteCharacter
+
+
+-- | (✔)
+instance (Ranged c, Num (Bound c), Ord (Bound c)) => RangedCharacterDecoration (DiscreteDecoration c) c where
 
 
 -- | (✔)

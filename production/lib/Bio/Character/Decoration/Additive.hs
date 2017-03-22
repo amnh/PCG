@@ -24,6 +24,7 @@ module Bio.Character.Decoration.Additive
   , HasTransitionCostMatrix(..)
   , HasCharacterWeight(..)
   , HasDiscreteCharacter(..)
+  , HasIntervalCharacter(..)
   , HasIsLeaf(..)
   , HasCharacterCost(..)
   , HasPreliminaryInterval(..)

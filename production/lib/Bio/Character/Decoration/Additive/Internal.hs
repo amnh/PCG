@@ -61,6 +61,12 @@ instance
 
 
 -- | (✔)
+instance HasIntervalCharacter (AdditivePostorderDecoration a) a where
+
+    intervalCharacter = discreteCharacter
+
+
+-- | (✔)
 instance HasDiscreteCharacter (AdditivePostorderDecoration a) a where
 
     discreteCharacter = lens additiveCharacterField (\e x -> e { additiveCharacterField = x })
@@ -198,7 +204,7 @@ instance ( DiscreteCharacterMetadata   (AdditivePostorderDecoration a)
         , additiveCost                 = cost
         , additiveMetadataField        = extractDiscreteCharacterMetadata subDecoration
         , additivePreliminaryInterval  = prelimInterval
-        , additiveCharacterField       = subDecoration ^. discreteCharacter
+        , additiveCharacterField       = subDecoration ^. intervalCharacter
         }
 
 
@@ -227,6 +233,13 @@ instance
         , "Child       Intervals: " <> show (c ^. childPrelimIntervals)
         , "Final       Interval : " <> show (c ^. finalInterval       )
         ]
+
+
+-- | (✔)
+instance HasIntervalCharacter (AdditiveOptimizationDecoration a) a where
+
+    {-# INLINE intervalCharacter #-}
+    intervalCharacter = discreteCharacter
 
 
 -- | (✔)
@@ -357,11 +370,27 @@ instance (Ranged c, Num (Bound c), Ord (Bound c)) => RangedCharacterDecoration (
 instance RangedCharacterDecoration (AdditiveOptimizationDecoration c) c => RangedPostorderDecoration (AdditiveOptimizationDecoration c) c where
 
 
-{-
 -- | (✔)
-instance RangedExtensionPostorder (AdditiveOptimizationDecoration c) c where
--}
+instance (Ranged c, Num (Bound c), Ord (Bound c)) => RangedExtensionPostorder (AdditiveOptimizationDecoration c) c where
 
+
+  {-
+-- | (✔)
+instance ( RangedPostorderDecoration   (AdditiveOptimizationDecoration a) a
+         ) => RangedExtensionPostorder (AdditiveOptimizationDecoration a) a where
+
+    extendRangedToPostorder subDecoration cost prelimInterval childMedianTup isLeafVal =
+
+        AdditiveOptimizationDecoration
+        { additiveChildPrelimIntervals = childMedianTup
+        , additiveIsLeaf               = isLeafVal
+        , additiveCost                 = cost
+        , additiveMetadataField        = extractDiscreteCharacterMetadata subDecoration
+        , additivePreliminaryInterval  = prelimInterval
+        , additiveCharacterField       = subDecoration ^. intervalCharacter
+        }
+-}
+  
 
 -- | (✔)
 instance ( DiscreteCharacterMetadata    (AdditiveOptimizationDecoration a)

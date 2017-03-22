@@ -125,7 +125,7 @@ finalizeLeaf :: ( RangedExtensionPreorder   d' c
              => d -> d'
 finalizeLeaf decoration =
     extendRangedToPreorder decoration (decoration ^. preliminaryInterval)
-                & discreteCharacter .~ decoration ^. discreteCharacter -- Un-overwrite the character data
+                & intervalCharacter .~ decoration ^. intervalCharacter -- Un-overwrite the character data
 
 
 -- |
