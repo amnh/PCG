@@ -28,7 +28,7 @@ int performSequentialAlignment(dynChar_t *seqA, dynChar_t *seqB, costMatrix_p co
         return 1;
     }
 
-    int success         = aligner(seqA_main, seqA->numElems, seqB_main, seqB->numElems, alphSize, costMatrix, retAlign);
+    int success              = aligner(seqA_main, seqA->numElems, seqB_main, seqB->numElems, alphSize, costMatrix, retAlign);
 
     size_t finalBufferLength = retAlign->alignmentLength * dcElemSize(alphSize);
 
@@ -71,7 +71,7 @@ packedChar *getMedian(const packedChar * const lhs, const packedChar * const rhs
     for( size_t i = 0; i < length; i++ ) {
         getCostInternal(lhs[i], rhs[i], costMatrix, alphSize, median);
         uint64_t value = *median->element;
-        // printf("value[%zu]: %lu\n",i,value);
+        printf("%zu: a: %5lu, b: %5lu,  median: %5lu\n",i,value);
         integralStateBuffer[i] = value;
     }
 
