@@ -99,9 +99,9 @@ library
 
   extra-libraries: stdc++
 
- -- cc-options: --std=c11
+  cc-options: --std=c11
 
-  cc-options: --std=c++11 -g
+--  cc-options: --std=c++11 -g
 
   -- We must provide the full relative path to every C file that the project depends on.
   c-sources:
@@ -226,15 +226,15 @@ library
   -- Modules included in this library but not exported.
   other-modules:
                     --   Analysis.ImpliedAlignment.AlignmentContext
-                    --   Analysis.ImpliedAlignment.DeletionEvents
                     --   Analysis.ImpliedAlignment.DynamicProgramming
-                    --   Analysis.ImpliedAlignment.InsertionEvents
-                    --   Analysis.ImpliedAlignment.InsertionEvents.Internal
                     --   Analysis.ImpliedAlignment.Internal
                     --   Analysis.Parsimony.Binary.SequentialAlign.FFI
                     --   Analysis.Parsimony.Binary.Constraints
+                       Analysis.Parsimony.Dynamic.DirectOptimization.DeletionEvents
                        Analysis.Parsimony.Dynamic.DirectOptimization.FFI
                        Analysis.Parsimony.Dynamic.DirectOptimization.Internal
+                       Analysis.Parsimony.Dynamic.DirectOptimization.InsertionEvents
+                       Analysis.Parsimony.Dynamic.DirectOptimization.InsertionEvents.Internal
                        Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise
                        Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Internal
                        Analysis.Parsimony.Dynamic.SequentialAlign.FFI
@@ -592,11 +592,7 @@ Test-Suite testsuite
                        -fwarn-unused-matches
   other-modules:
                        Analysis.ImpliedAlignment.AlignmentContext
-                       Analysis.ImpliedAlignment.DeletionEvents
                        Analysis.ImpliedAlignment.DynamicProgramming
-                       Analysis.ImpliedAlignment.InsertionEvents
-                       Analysis.ImpliedAlignment.InsertionEvents.Internal
-                       Analysis.ImpliedAlignment.InsertionEvents.Test
                        Analysis.ImpliedAlignment.Internal
                        Analysis.ImpliedAlignment.Standard
                        Analysis.ImpliedAlignment.Test
@@ -605,7 +601,11 @@ Test-Suite testsuite
                        Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Test
 --                       Analysis.Parsimony.Binary.Internal
 --                       Analysis.Parsimony.Binary.Test
+                       Analysis.Parsimony.Dynamic.DirectOptimization.DeletionEvents
                        Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise
+                       Analysis.Parsimony.Dynamic.DirectOptimization.InsertionEvents
+                       Analysis.Parsimony.Dynamic.DirectOptimization.InsertionEvents.Internal
+                       Analysis.Parsimony.Dynamic.DirectOptimization.InsertionEvents.Test
 --                       Analysis.Parsimony.Binary.Fitch
                        Bio.Character
                        Bio.Character.Decoration.Additive
