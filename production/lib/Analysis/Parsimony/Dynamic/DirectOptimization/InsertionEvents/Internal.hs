@@ -1,6 +1,6 @@
 -----------------------------------------------------------------------------
 -- |
--- Module      :  Analysis.ImpliedAlignment.InsertionEvents.Internal
+-- Module      :  Analysis.Parsimony.Dynamic.InsertionEvents.Internal
 -- Copyright   :  (c) 2015-2015 Ward Wheeler
 -- License     :  BSD-style
 --
@@ -13,12 +13,13 @@
 
 {-# LANGUAGE FlexibleContexts #-}
 
-module Analysis.ImpliedAlignment.InsertionEvents.Internal where
+module Analysis.Parsimony.Dynamic.DirectOptimization.InsertionEvents.Internal where
 
-import           Analysis.ImpliedAlignment.DeletionEvents       (DeletionEvents)
+
+import           Analysis.Parsimony.Dynamic.DirectOptimization.DeletionEvents
 import           Data.Bifunctor         (bimap)
 import           Data.Foldable
-import           Data.IntMap            (IntMap)
+import           Data.IntMap            (IntMap)
 import qualified Data.IntMap     as IM
 import           Data.Key
 import           Data.List              (intercalate)
@@ -29,6 +30,7 @@ import           Data.Sequence          (Seq)
 import qualified Data.Sequence   as Seq
 import           Prelude         hiding (lookup,splitAt,zip,zipWith)
 import           Test.QuickCheck hiding (output)
+
 
 {- |
   Represents a collection of insertion events. This collection may be indicative
@@ -51,54 +53,58 @@ import           Test.QuickCheck hiding (output)
 -}
 newtype InsertionEvents e = IE (IntMap (Seq e)) deriving (Eq)
 
+
 -- |
 -- An instance with all values on the same edge.
 instance (Arbitrary e) => Arbitrary (InsertionEvents e) where
-  arbitrary = do
-    let gen = arbitrary
-    keys <- fmap getNonNegative . getNonEmpty <$> (arbitrary :: Gen (NonEmptyList (NonNegative Int)))
-    vals <- vectorOf (length keys) (listOf1 gen) 
-    pure . IE . IM.fromList $ zipWith (\x y -> (x, Seq.fromList y)) keys vals
+
+    arbitrary = do
+      let gen = arbitrary
+      keys <- fmap getNonNegative . getNonEmpty <$> (arbitrary :: Gen (NonEmptyList (NonNegative Int)))
+      vals <- vectorOf (length keys) (listOf1 gen)
+      pure . IE . IM.fromList $ zipWith (\x y -> (x, Seq.fromList y)) keys vals
+
 
 -- |
 -- A custom monoid instance to account for ordered accumulation at a given index.
 instance Monoid (InsertionEvents e) where
-  -- | This represent no insertion vents occurring on an edge
-  mempty = IE mempty
 
-  -- | This operator is valid /only/ when combineing sibling edges.
-  --   For combining insertion events on the edge between grandparent and parent
-  --   'p' with insertion events of edges between parent and one or more children
-  --   `cEdges`, use the following: 'p <^> mconcat cEdges'.
-  (IE lhs) `mappend` (IE rhs) = IE $ foldlWithKey' f lhs rhs
-    where
-      f mapping k v = IM.insertWith (flip (<>)) k v mapping
+    -- | This represent no insertion vents occurring on an edge
+    mempty = IE mempty
+
+    -- | This operator is valid /only/ when combineing sibling edges.
+    --   For combining insertion events on the edge between grandparent and parent
+    --   'p' with insertion events of edges between parent and one or more children
+    --   `cEdges`, use the following: 'p <^> mconcat cEdges'.
+    (IE lhs) `mappend` (IE rhs) = IE $ foldlWithKey' f lhs rhs
+      where
+        f mapping k v = IM.insertWith (flip (<>)) k v mapping
 
 
 -- | A nicer version of Show hiding the internal structure.
 instance Show e => Show (InsertionEvents e) where
-  show (IE xs) = mconcat
-      [ "{"
-      , intercalate "," $ render <$> kvs
-      , "}"
-      ]
-    where
-      kvs = IM.assocs xs
-      render (k, v) = mconcat
-          [ "("
-          , show k
-          , ","
-          , renderedValue
-          , ")"
-          ]
-        where
-          unenquote = filter (\x -> x /= '\'' && x /= '"') 
-          renderedValue
-            | all singleChar shown = concatMap unenquote shown
-            | otherwise            = show shown
-            where
-              singleChar = (1==) . length . unenquote
-              shown = toList $ show <$> v
+    show (IE xs) = mconcat
+        [ "{"
+        , intercalate "," $ render <$> kvs
+        , "}"
+        ]
+      where
+        kvs = IM.assocs xs
+        render (k, v) = mconcat
+            [ "("
+            , show k
+            , ","
+            , renderedValue
+            , ")"
+            ]
+          where
+            unenquote = filter (\x -> x /= '\'' && x /= '"')
+            renderedValue
+              | all singleChar shown = concatMap unenquote shown
+              | otherwise            = show shown
+              where
+                singleChar = (1==) . length . unenquote
+                shown = toList $ show <$> v
 
 
 {-
@@ -109,7 +115,8 @@ instance (Show e) => Show (InsertionEvents a e) where
       f (a,b)   = mconcat ["(",a,",",b,")"]
 -}
 
--- | This operator is used for combining an direct ancestoral edge with the
+
+-- | This operator is used for combining a direct ancestral edge with the
 --   combined insertion events of child edges.
 --
 --   Pronounced <http://www.dictionary.com/browse/coalesce "coalesce"> operator.
@@ -132,10 +139,10 @@ instance (Show e) => Show (InsertionEvents a e) where
               newAns = (ok, getState iter)
               {- How many element of the ancestor insertion sequence must be consumed for
                  the ancestoral key `ok` and the decendant key `ek` to be equal?
-         
+
                  The following equation represents the "shift backwards" to align the
                  insertion events, answering the question above.
-         
+
                  We want to solve the equation ``` ek - dec - x = ok ``` to determine the
                  index `x` for the IntMap. Basic algebra shows us the solution is:
                  ``` x = ek - dec - ok ```
@@ -144,8 +151,6 @@ instance (Show e) => Show (InsertionEvents a e) where
           in if ek - (dec + len) > ok
              then f (dec + len, next iter         , newAns:ries) ek ev
              else   (dec      , mutate ansMod iter,        ries)
-
-
 
 
 -- | This operator is used for combining an direct ancestoral edge with the
@@ -198,7 +203,7 @@ coalesce ancestorDeletions (IE ancestorMap) descendantEvents
                                  -- then we increment the offest by one.
                                    then f (off - len, dels, next iter         , newAns:ries) ek ev
                                    else g off iter dels ries ok ov ek ev
-          
+
         (Just (ok,ov), de:ds) -> if ok > de && de < ek + off
                                  then f (off + 1,   ds,      iter,                ries) ek ev
                                  else g off iter dels ries ok ov ek ev
@@ -211,10 +216,6 @@ coalesce ancestorDeletions (IE ancestorMap) descendantEvents
           len    = length ov
           newAns = (ok, getState iter)
           ansMod = (ek + off - ok, ev)
-          
-        
-
-
 
 
 -- |
@@ -225,6 +226,7 @@ fromList = IE . IM.fromList . fmap (fromEnum `bimap` toSeq) . toList
   where
     toSeq = Seq.fromList . toList
 
+
 -- |
 -- Constructs an 'InsertionEvents' collection from an 'IntMap Int' and a given
 -- edge so that the resulting 'InsertionEvents' has all insertion events in the
@@ -234,18 +236,28 @@ fromEdgeMapping edgeToken mapping = IE $ f <$> mapping
   where
     f count = Seq.fromList $ replicate count edgeToken
 
+
 -- | Constructs an InsertionEvents collection from an IntMap of Sequences
 wrap :: IntMap (Seq e) -> InsertionEvents e
 wrap = IE
+
 
 -- | Extracts an IntMap of Sequences from an InsertionEvents collection.
 unwrap :: InsertionEvents e -> IntMap (Seq e)
 unwrap (IE x) = x
 
--- | The number of distinct insertion events stored in the 'InsertionEvents' 
+
+-- | The number of distinct insertion events stored in the 'InsertionEvents'
 size :: InsertionEvents e -> Int
 size (IE im) = sum $ length <$> im
 
+
+-- |
+-- /O(i)
+--
+-- Efficient conversion to a a count of insertion events at their corresponding indices.
+toInsertionCounts :: InsertionEvents e -> IntMap Int
+toInsertionCounts = fmap length . unwrap
 
 
 -- INTERNAL STRUCTURES:
@@ -258,6 +270,7 @@ size (IE im) = sum $ length <$> im
 -- Convenience type alias for Key-Value Pairs.
 type KVP a = (Int, Seq a)
 
+
 -- |
 -- Used in the coalesce fold's accumulator.
 -- Enforces invariants when consuming the ancestoral insertion events.
@@ -265,6 +278,7 @@ data MutationIterator a
    = Done
    | Curr (KVP a) (IntMap (Seq a)) [KVP a]
    deriving (Show)
+
 
 -- |
 -- Takes a list of key-value pairs and produces a MutationIterator for consuming
@@ -277,6 +291,7 @@ initializeMutationIterator xs =
     []   -> Done
     e:es -> Curr e mempty es
 
+
 -- |
 -- Moves the MutationIterator forward one element in the ordered insertion event
 -- stream.
@@ -284,17 +299,20 @@ next :: MutationIterator a -> MutationIterator a
 next  Done         = Done
 next (Curr _ _ xs) = initializeMutationIterator xs
 
+
 -- |
 -- Takes a MutationIterator an returns the unconsumed key-value pairs.
 remaining :: MutationIterator a -> [KVP a]
 remaining  Done              = []
 remaining (Curr (k,v) im xs) =  (k, im `applyMutations` v):xs
 
+
 -- |
 -- Attempts to retreive the current value in the stream of the iterator.
 getCurr :: MutationIterator a -> Maybe (Int, Seq a)
 getCurr  Done            = Nothing
 getCurr (Curr (k,v) _ _) = Just (k,v)
+
 
 -- |
 -- Adds a mutation to the 'MutationIterator''s internal state.
@@ -303,6 +321,7 @@ mutate     _  Done             = Done
 mutate (i,e) (Curr (k,v) im xs) = Curr (k,v) im' xs
   where
     im' = IM.insertWith (<>) i e im
+
 
 -- |
 -- Retreives the current state of the 'MutationIterator'.
