@@ -1,0 +1,69 @@
+
+{-# LANGUAGE FlexibleContexts #-}
+
+module Test.Custom.DynamicCharacterNode
+  ( DynamicCharacterNode()
+  , getDynamicCharacterDecoration
+  , constructNode
+  ) where
+
+
+import           Analysis.Parsimony.Dynamic.DirectOptimization
+import           Bio.Character
+import           Bio.Character.Decoration.Dynamic
+import           Data.Alphabet.IUPAC
+import           Data.Bimap               (elems)
+import qualified Data.List.NonEmpty as NE
+import           Data.String
+import           Test.Custom.NucleotideSequence
+import           Test.QuickCheck
+
+
+newtype DynamicCharacterNode = DCN
+    { getDynamicCharacterDecoration :: DynamicDecorationDirectOptimization DynamicChar
+    }
+    deriving (Show)
+
+
+instance Arbitrary DynamicCharacterNode where
+
+    arbitrary = do
+        NS lhs <- arbitrary :: Gen NucleotideSequence
+        NS rhs <- arbitrary :: Gen NucleotideSequence
+        pure . DCN $ constructNode lhs rhs
+
+
+constructNode :: DynamicChar -> DynamicChar -> DynamicDecorationDirectOptimization DynamicChar
+constructNode lhs rhs = directOptimizationPreOrder pairwiseFunction lhsDec [(0,rootDec)]
+  where
+    lhsDec  = toLeafNode $ initDec lhs
+    rhsDec  = toLeafNode $ initDec rhs
+    rootDec = toRootNode lhsDec rhsDec
+
+
+toLeafNode c = directOptimizationPostOrder pairwiseFunction c []
+
+
+toRootNode x y = directOptimizationPreOrder pairwiseFunction z []
+  where
+    z :: DynamicDecorationDirectOptimizationPostOrderResult DynamicChar 
+    z = directOptimizationPostOrder pairwiseFunction e [x,y]
+    e :: DynamicDecorationDirectOptimizationPostOrderResult DynamicChar
+    e = undefined
+
+
+pairwiseFunction x y = naiveDO x y scm
+
+
+scm :: Word -> Word -> Word
+scm i j = if i == j then 0 else 1
+
+
+initDec :: DynamicChar -> DynamicDecorationInitial DynamicChar
+initDec = toDynamicCharacterDecoration name weight alphabet scm id
+  where
+    name   = fromString "Test Character"
+    weight = 1
+    alphabet = fromSymbols ["A","C","G","T"] 
+
+
