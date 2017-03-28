@@ -155,8 +155,8 @@ tripleComparison pairwiseAlignment childDecoration parentCharacter = (ungapped, 
     childRightAligned = childDecoration ^. rightAlignment
 
     (_, _, derivedAlignment, parentAlignment, childAlignment) = pairwiseAlignment parentCharacter childCharacter
---    newGapIndicies         = newGapLocations childCharacter childAlignment parentAlignment
-    newGapIndicies         = toInsertionCounts . snd . traceShowId $ comparativeIndelEvents () childAlignment parentAlignment
+    newGapIndicies         = newGapLocations parentCharacter childCharacter parentAlignment childAlignment 
+--    newGapIndicies         = toInsertionCounts . snd . traceShowId $ comparativeIndelEvents () childAlignment parentAlignment
     extendedLeftCharacter  = insertNewGaps newGapIndicies childLeftAligned
     extendedRightCharacter = insertNewGaps newGapIndicies childRightAligned
     (_, ungapped, gapped)  = trace context $ threeWayMean costStructure derivedAlignment extendedLeftCharacter extendedRightCharacter
@@ -165,7 +165,7 @@ tripleComparison pairwiseAlignment childDecoration parentCharacter = (ungapped, 
         [ "New Gap indices: |" <> show (sum newGapIndicies) <> "| " <> show newGapIndicies
         , "Parent:"
         , show (parentCharacter)
-        , show (derivedAlignment)
+        , show (parentAlignment)
         , "Center char:"
         , show (childCharacter)
         , show (childAlignment)
@@ -182,23 +182,69 @@ tripleComparison pairwiseAlignment childDecoration parentCharacter = (ungapped, 
 -- |
 -- Returns the indicies of the gaps that were added in the second character when
 -- compared to the first character.
-newGapLocations :: (EncodableDynamicCharacter c, Show (Element c)) => c -> c -> c -> IntMap Int
-newGapLocations originalChildChar alignedChildChar alignedParentChar
-  | olength originalChildChar == olength alignedChildChar = mempty
-  | otherwise                                             = newGaps
+newGapLocations :: (EncodableDynamicCharacter c, Show (Element c)) => c -> c -> c -> c -> IntMap Int
+newGapLocations unalignedAncestor unalignedDescendant alignedAncestor alignedDescendant
+  | olength unalignedDescendant == olength alignedDescendant = mempty
+  | otherwise                                                = newGaps
   where
-    (_,_,newGaps)    = foldl' f (otoList originalChildChar, 0, mempty) . zip (otoList alignedChildChar) $ otoList alignedParentChar
-    gap              = getGapElement $ alignedChildChar `indexStream` 0
-    incrementAt i is = IM.insertWith (+) i 1 is
+    (_,_,_,_,newGaps) = foldl' f accumulator . zip (otoList alignedAncestor) $ otoList alignedDescendant
+    accumulator       = (otoList unalignedAncestor, otoList unalignedDescendant, 0, 0, mempty)
+    gap               = gapOfStream alignedAncestor
+    incrementAt is i  = IM.insertWith (+) i 1 is
 
+    f acc@(xs, ys, ancestoralIndex, decendantIndex, newGapIndicesInDescendant) (x', y') =
+        case (xs, ys) of
 
-    f acc@([], i, is) (x,_)
+          -- In the case that both unaligned input sequences have had all their
+          -- bases accounted for, we can determine if a deletion event happened
+          -- by simply checking whether the remaining base from the aligned
+          -- descendant sequence is a gap character.
+          (  [] ,   [] ) -> (xs, ys, ancestoralIndex, decendantIndex, if y' == gap then incrementedGapIndicesInDescendant else newGapIndicesInDescendant)
+
+          -- In the case that only the unaligned ancestral sequence has all of
+          -- its bases accounted for, but the unaligned descendant sequence has
+          -- remaining unaccounted bases, we use the standard logic for
+          -- determining if a deletion event occured.
+          (  [] , y:ys') ->
+              let ( decendantIndex', ys'', newGapIndicesInDescendant') = calculateDelationEventResults  (y:ys') y'
+              in  (xs, ys'', ancestoralIndex, decendantIndex', newGapIndicesInDescendant')
+
+          -- In the case that only the unaligned descendant sequence has all of
+          -- its bases accounted for, but the unaligned ancestoral sequence has
+          -- remaining unaccounted bases, we use the standard logic for
+          -- determining if an insertion event occured.
+          (x:xs',   [] ) ->
+              let (ancestoralIndex', xs'')                             = calculateInsertionEventResults (x:xs') x'
+              in  (xs'', ys, ancestoralIndex', decendantIndex, if y' == gap then incrementedGapIndicesInDescendant else newGapIndicesInDescendant)
+
+          -- In the case that both of the unaligned sequences have unaccounted
+          -- bases, we use the standard logic for determining if an insertion
+          -- and/or a deletion event occured. These events are independent,
+          -- Which allows for simplified logic.
+          (x:xs', y:ys') ->
+              let (ancestoralIndex', xs'')                             = calculateInsertionEventResults (x:xs') x' -- if  insertionEventOccured then (ancestoralIndex, x:xs') else (ancestoralIndex+1, xs')
+                  ( decendantIndex', ys'', newGapIndicesInDescendant') = calculateDelationEventResults  (y:ys') y' -- if   deletionEventOccured then (descendantIndex, y:ys') else (descendantIndex+1, ys')
+              in  (xs'', ys'', ancestoralIndex', decendantIndex', newGapIndicesInDescendant')
+      where
+        incrementedGapIndicesInDescendant = newGapIndicesInDescendant `incrementAt` decendantIndex
+
+        calculateInsertionEventResults (a:as) a'
+          | a' == gap = (ancestoralIndex    , a:as)
+          | otherwise = (ancestoralIndex + 1,   as)
+
+        calculateDelationEventResults (d:ds) d'
+          | d  /= gap && d' == gap = (decendantIndex    , d:ds, incrementedGapIndicesInDescendant)
+          | otherwise              = (decendantIndex + 1,   ds,         newGapIndicesInDescendant)
+        
+
+{-
+    f ([], i, is) (x,_)
       | x == gap  = ([], i, incrementAt i is)
       | otherwise = acc
     f (e:es, i, is) (x,y)
       | x == gap && (x .&. y) /= gap = (e:es, i  , incrementAt i is)
       | otherwise                    = (  es, i+1, is)
-
+-}
 
 
 -- |

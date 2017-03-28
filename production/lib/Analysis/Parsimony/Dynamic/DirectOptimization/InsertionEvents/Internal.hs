@@ -32,6 +32,9 @@ import           Prelude         hiding (lookup,splitAt,zip,zipWith)
 import           Test.QuickCheck hiding (output)
 
 
+{-# DEPRECATED (<^>) "Don't use (<^>), it is an old and incorrect operator. Use coalesce instead!" #-}
+
+
 {- |
   Represents a collection of insertion events. This collection may be indicative
   of the insertion events on a single edge, the accumulation of insertion events
@@ -116,10 +119,12 @@ instance (Show e) => Show (InsertionEvents a e) where
 -}
 
 
--- | This operator is used for combining a direct ancestral edge with the
---   combined insertion events of child edges.
+-- TODO: This isn't used, probably an incorrect operator. Remove later!
+-- |
+-- This operator is used for combining a direct ancestral edge with the
+-- combined insertion events of child edges.
 --
---   Pronounced <http://www.dictionary.com/browse/coalesce "coalesce"> operator.
+-- Pronounced <http://www.dictionary.com/browse/coalesce "coalesce"> operator.
 (<^>) :: InsertionEvents e -> InsertionEvents e -> InsertionEvents e
 (<^>) (IE ancestorMap) (IE descendantMap) = IE . IM.fromList $ result <> remaining acc
   where
@@ -153,10 +158,11 @@ instance (Show e) => Show (InsertionEvents a e) where
              else   (dec      , mutate ansMod iter,        ries)
 
 
--- | This operator is used for combining an direct ancestoral edge with the
---   combined insertion events of child edges.
+-- |
+-- This operator is used for combining an direct ancestoral edge with the
+-- combined insertion events of child edges.
 --
---   Pronounced <http://www.dictionary.com/browse/coalesce "coalesce"> operator.
+-- Pronounced <http://www.dictionary.com/browse/coalesce "coalesce"> operator.
 coalesce :: (Eq e, Foldable t) => DeletionEvents -> InsertionEvents e -> t (InsertionEvents e) -> InsertionEvents e
 coalesce ancestorDeletions (IE ancestorMap) descendantEvents
   | any (<0) $ IM.keys descendantMap = error "A negative key value was created"
