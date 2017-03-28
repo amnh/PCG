@@ -85,7 +85,6 @@ naiveDO :: DOCharConstraint s
                                    --   The gapped alignment of the /first/ input character when aligned with the second character
                                    -- 
                                    --   The gapped alignment of the /second/ input character when aligned with the first character
---naiveDO _ _ _ | trace "Call to Naive DO" False = undefined
 naiveDO char1 char2 costStruct = handleMissingCharacter char1 char2 $ naiveDOInternal char1 char2 (overlap costStruct)
 
 
@@ -112,7 +111,8 @@ filterGaps char = constructDynamic . filter (/= gap) $ otoList char
     gap = getGapElement $ char `indexStream` 0
 
 
--- | Main function to generate an 'DOAlignMatrix'. Works as in Needleman-Wunsch,
+-- |
+-- Main function to generate an 'DOAlignMatrix'. Works as in Needleman-Wunsch,
 -- but allows for multiple indel/replacement costs, depending on the 'CostStructure'.
 -- Also, returns the aligned parent characters, with appropriate ambiguities, as the third of
 -- each tuple in the matrix.
@@ -130,7 +130,7 @@ createDOAlignMatrix topChar leftChar overlapFunction = {- trace renderedMatrix $
     result = matrix (olength leftChar + 1) (olength topChar + 1) generateMat
     gap    = gapOfStream leftChar -- The constructors of DynamicChar prevent an empty character construction.
 
-    -- | Internal generator function for the matrix
+    -- Internal generator function for the matrix
     -- Deals with both first row and other cases.
     generateMat (row, col)
       -- :)
@@ -247,7 +247,7 @@ traceback alignMatrix longerChar lesserChar = ( constructDynamic medianStates
                                               , constructDynamic alignedLesserChar
                                               )
   where
-      (medianStates, alignedLongerChar, alignedLesserChar) = tracebackInternal $ traceShowId (nrows alignMatrix - 1, ncols alignMatrix - 1)
+      (medianStates, alignedLongerChar, alignedLesserChar) = tracebackInternal (nrows alignMatrix - 1, ncols alignMatrix - 1)
       gap = gapOfStream longerChar
 
       tracebackInternal p@(row, col)
@@ -259,30 +259,33 @@ traceback alignMatrix longerChar lesserChar = ( constructDynamic medianStates
         where
           (previousMedianCharElements, previousLongerCharElements, previousLesserCharElements) = tracebackInternal (row', col')
               
-          (_, directionArrow, medianElement) = traceShowId $ alignMatrix ! traceShowId p
+          (_, directionArrow, medianElement) = alignMatrix ! p
 
           (row', col', longerElement, lesserElement) =
               case directionArrow of
-                LeftArrow -> (row    , col - 1, longerChar `indexStream` col - 1,                              gap)
-                UpArrow   -> (row - 1, col    ,                              gap, lesserChar `indexStream` row - 1)
-                DiagArrow -> (row - 1, col - 1, longerChar `indexStream` col - 1, lesserChar `indexStream` row - 1)
+                LeftArrow -> (row    , col - 1, longerChar `indexStream` (col - 1),                               gap )
+                UpArrow   -> (row - 1, col    ,                               gap , lesserChar `indexStream` (row - 1))
+                DiagArrow -> (row - 1, col - 1, longerChar `indexStream` (col - 1), lesserChar `indexStream` (row - 1))
 
 
--- | Simple function to get the cost from an alignment matrix
+-- |
+-- Simple function to get the cost from an alignment matrix
 getTotalAlignmentCost :: Matrix (a, b, c) -> a
-getTotalAlignmentCost alignmentMatrix = c
+getTotalAlignmentCost alignmentMatrix = cost
   where
-    (c, _, _) = alignmentMatrix ! (nrows alignmentMatrix - 1, ncols alignmentMatrix - 1) 
+    (cost, _, _) = alignmentMatrix ! (nrows alignmentMatrix - 1, ncols alignmentMatrix - 1) 
 
 
--- | Memoized wrapper of the overlap function
+-- |
+-- Memoized wrapper of the overlap function
 getOverlap :: (EncodableStreamElement c {- , Memoizable c, -}) => c -> c -> (Word -> Word -> Word) -> (c, Word)
 getOverlap inChar1 inChar2 costStruct = result
     where
         result = {- memoize2 -} overlap costStruct inChar1 inChar2
 
         
--- | Takes two 'EncodableStreamElement' and a 'CostStructure' and returns a tuple of a new character, 
+-- |
+-- Takes two 'EncodableStreamElement' and a 'CostStructure' and returns a tuple of a new character, 
 -- along with the cost of obtaining that character. The return character may be (or is even likely to be)
 -- ambiguous. Will attempt to intersect the two characters, but will union them if that is not possible,
 -- based on the 'CostStructure'. 
