@@ -182,23 +182,45 @@ tripleComparison pairwiseAlignment childDecoration parentCharacter = (ungapped, 
 -- |
 -- Returns the indicies of the gaps that were added in the second character when
 -- compared to the first character.
-newGapLocations :: (EncodableDynamicCharacter c, Show (Element c)) => c -> c -> c -> IntMap Int
-newGapLocations originalChildChar alignedChildChar alignedParentChar
-  | olength originalChildChar == olength alignedChildChar = mempty
-  | otherwise                                             = newGaps
+newGapLocations :: (EncodableDynamicCharacter c, Show (Element c)) => c -> c -> c -> c -> IntMap Int
+newGapLocations unalignedAncestor unalignedDescendant alignedAncestor alignedDescendant
+  | olength unalignedDescendant == olength alignedDescendant = mempty
+  | otherwise                                                = newGaps
   where
-    (_,_,newGaps)    = foldl' f (otoList originalChildChar, 0, mempty) . zip (otoList alignedChildChar) $ otoList alignedParentChar
+    (_,_,newGaps)    = foldl' f accumulator . zip (otoList alignedAncestor) $ otoList alignedDescendant
+    accumulator      = (otoList unalignedAncestor, otoList unalignedDescendant, 0, 0, mempty)
     gap              = getGapElement $ alignedChildChar `indexStream` 0
-    incrementAt i is = IM.insertWith (+) i 1 is
+    incrementAt is i = IM.insertWith (+) i 1 is
 
+    f acc@(xs, ys, ancestoralIndex, decendantIndex, newGapIndicesInDescendant) (x', y') =
+        case (xs, ys) of
+          (  [] ,   [] ) -> (xs, ys, ancestoralIndex, decendantIndex, if y' == gap then newGapIndicesInDescendant' else newGapIndicesInDescendant)
+          (  [] , y:ys') -> undefined
+          (x:xs',   [] ) -> undefined
+          (x:xs', y:ys') ->
+            if x == gap && y == gap && x' == gap && y' == gap then (xs', ys', ancestoralIndex+1, decendantIndex+1, newGapIndicesInDescendant ) else
+            if x == gap && y == gap && x' == gap && y' /= gap then undefined else
+            if x == gap && y == gap && x' /= gap && y' == gap then undefined else
+            if x == gap && y == gap && x' /= gap && y' /= gap then undefined else
+            if x == gap && y /= gap && x' == gap && y' == gap then undefined else
+            if x == gap && y /= gap && x' == gap && y' /= gap then undefined else
+            if x == gap && y /= gap && x' /= gap && y' == gap then undefined else
+            if x == gap && y /= gap && x' /= gap && y' /= gap then undefined else
 
-    f acc@([], i, is) (x,_)
+              
+            if x /= gap && y /= gap && x' == gap && y' /= gap then (xs , ys', ancestoralIndex  , decendantIndex+1, newGapIndicesInDescendant ) else
+            if x /= gap && y /= gap && x' /= gap && y' == gap then (xs', ys , ancestoralIndex+1, decendantIndex  , newGapIndicesInDescendant') else
+      where
+        newGapIndicesInDescendant' = newGapIndicesInDescendant `incrementAt` decendantIndex
+            
+{-
+    f ([], i, is) (x,_)
       | x == gap  = ([], i, incrementAt i is)
       | otherwise = acc
     f (e:es, i, is) (x,y)
       | x == gap && (x .&. y) /= gap = (e:es, i  , incrementAt i is)
       | otherwise                    = (  es, i+1, is)
-
+-}
 
 
 -- |
