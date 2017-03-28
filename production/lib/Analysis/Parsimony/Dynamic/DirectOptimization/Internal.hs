@@ -159,8 +159,8 @@ tripleComparison pairwiseAlignment childDecoration parentCharacter = (ungapped, 
 --    newGapIndicies         = toInsertionCounts . snd . traceShowId $ comparativeIndelEvents () childAlignment parentAlignment
     extendedLeftCharacter  = insertNewGaps newGapIndicies childLeftAligned
     extendedRightCharacter = insertNewGaps newGapIndicies childRightAligned
-    (_, ungapped, gapped)  = trace context $ threeWayMean costStructure derivedAlignment extendedLeftCharacter extendedRightCharacter
-    {--}
+    (_, ungapped, gapped)  = {- trace context $ -} threeWayMean costStructure derivedAlignment extendedLeftCharacter extendedRightCharacter
+    {--
     context = unlines
         [ "New Gap indices: |" <> show (sum newGapIndicies) <> "| " <> show newGapIndicies
         , "Parent:"
@@ -176,7 +176,7 @@ tripleComparison pairwiseAlignment childDecoration parentCharacter = (ungapped, 
         , show (olength childRightAligned)
         , show (olength extendedRightCharacter)
         ]
-    {--}
+    --}
 
 
 -- |
