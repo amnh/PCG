@@ -165,11 +165,13 @@ instance Show DeletionEvents where
     show = (\x -> "{" <> x <> "}") . intercalate "," . fmap show . otoList
 
 
--- | The element for monomorphic maps & folds.
+-- |
+-- The element for monomorphic maps & folds.
 type instance Element DeletionEvents = Int
 
 
--- | Performs monomporphic fold over the 'DeletionEvents'.
+-- |
+-- Performs monomporphic fold over the 'DeletionEvents'.
 instance MonoFoldable DeletionEvents where
 
     -- | Map each element of a monomorphic container to a 'Monoid'
