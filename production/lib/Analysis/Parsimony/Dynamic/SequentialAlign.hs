@@ -20,6 +20,7 @@ module Analysis.Parsimony.Dynamic.SequentialAlign
   ) where
 
 import qualified Analysis.Parsimony.Dynamic.SequentialAlign.FFI as FFI
+import           Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Internal (handleMissingCharacter)
 import           Bio.Character.Encodable
 import           Bio.Character.Exportable.Class
 
@@ -27,7 +28,7 @@ import           Bio.Character.Exportable.Class
 -- |
 -- sequentialAlign is similar to DO, but uses Yu's and Vahid's information theoretical sequential alignment algorithm to produce the alignment
 sequentialAlign :: (EncodableDynamicCharacter s, Exportable s, Show s) => FFI.MemoizedCostMatrix -> s -> s -> (s, Double, s, s, s)
-sequentialAlign = FFI.pairwiseSequentialAlignment
+sequentialAlign matrix lhs rhs = handleMissingCharacter lhs rhs $ FFI.pairwiseSequentialAlignment matrix lhs rhs
 
 -- TODO: put this in Bio.Metadata probably
 generateMemoizedCostMatrix :: Word -> (Word -> Word -> Word) -> FFI.MemoizedCostMatrix
