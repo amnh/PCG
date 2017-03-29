@@ -9,11 +9,11 @@ module Test.Custom.DynamicCharacterNode
 
 
 import           Analysis.Parsimony.Dynamic.DirectOptimization
+import           Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise (filterGaps)
 import           Bio.Character
 import           Bio.Character.Decoration.Dynamic
 import           Data.Alphabet.IUPAC
-import           Data.Bimap               (elems)
-import qualified Data.List.NonEmpty as NE
+import           Data.MonoTraversable
 import           Data.String
 import           Test.Custom.NucleotideSequence
 import           Test.QuickCheck
@@ -28,9 +28,12 @@ newtype DynamicCharacterNode = DCN
 instance Arbitrary DynamicCharacterNode where
 
     arbitrary = do
-        NS lhs <- arbitrary :: Gen NucleotideSequence
-        NS rhs <- arbitrary :: Gen NucleotideSequence
+        lhs <- (unwrap <$> arbitrary) `suchThat` isNotAllGaps
+        rhs <- (unwrap <$> arbitrary) `suchThat` isNotAllGaps
         pure . DCN $ constructNode lhs rhs
+      where
+        isNotAllGaps  = not . onull . filterGaps
+        unwrap (NS x) = x
 
 
 constructNode :: DynamicChar -> DynamicChar -> DynamicDecorationDirectOptimization DynamicChar
@@ -41,9 +44,18 @@ constructNode lhs rhs = directOptimizationPreOrder pairwiseFunction lhsDec [(0,r
     rootDec = toRootNode lhsDec rhsDec
 
 
+toLeafNode :: ( Show c
+              , Show (Element c)
+              , Integral (Element c)
+              , SimpleDynamicDecoration d c
+              )
+           => d -> DynamicDecorationDirectOptimizationPostOrderResult c
 toLeafNode c = directOptimizationPostOrder pairwiseFunction c []
 
 
+toRootNode :: DynamicDecorationDirectOptimizationPostOrderResult DynamicChar
+           -> DynamicDecorationDirectOptimizationPostOrderResult DynamicChar
+           -> DynamicDecorationDirectOptimization DynamicChar
 toRootNode x y = directOptimizationPreOrder pairwiseFunction z []
   where
     z :: DynamicDecorationDirectOptimizationPostOrderResult DynamicChar 
@@ -52,6 +64,11 @@ toRootNode x y = directOptimizationPreOrder pairwiseFunction z []
     e = undefined
 
 
+pairwiseFunction :: ( Integral (Element s)
+                    , Show (Element s)
+                    , Show s
+                    , EncodableDynamicCharacter s
+                    ) => s -> s -> (s, Double, s, s, s)
 pairwiseFunction x y = naiveDO x y scm
 
 
