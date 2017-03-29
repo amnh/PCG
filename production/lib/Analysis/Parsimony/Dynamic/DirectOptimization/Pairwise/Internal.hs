@@ -128,7 +128,8 @@ createDOAlignMatrix topChar leftChar overlapFunction = {- trace renderedMatrix $
     -- renderedMatrix = renderCostMatrix topChar leftChar result
     
     result = matrix (olength leftChar + 1) (olength topChar + 1) generateMat
-    gap    = gapOfStream leftChar -- The constructors of DynamicChar prevent an empty character construction.
+--    gap    = gapOfStream leftChar -- The constructors of DynamicChar prevent an empty character construction.
+    gap = gapOfStream topChar
 
     -- Internal generator function for the matrix
     -- Deals with both first row and other cases.

@@ -179,8 +179,9 @@ tripleComparison pairwiseAlignment childDecoration parentCharacter = (ungapped, 
     --}
 
 
+-- TODO: Explore removing the ancestoral sequence and ancestoral index, and checking for insertion events.
 -- |
--- Returns the indicies of the gaps that were added in the second character when
+-- Returns the indices of the gaps that were added in the second character when
 -- compared to the first character.
 newGapLocations :: (EncodableDynamicCharacter c, Show (Element c)) => c -> c -> c -> c -> IntMap Int
 newGapLocations unalignedAncestor unalignedDescendant alignedAncestor alignedDescendant
@@ -235,16 +236,6 @@ newGapLocations unalignedAncestor unalignedDescendant alignedAncestor alignedDes
         calculateDelationEventResults (d:ds) d'
           | d  /= gap && d' == gap = (decendantIndex    , d:ds, incrementedGapIndicesInDescendant)
           | otherwise              = (decendantIndex + 1,   ds,         newGapIndicesInDescendant)
-        
-
-{-
-    f ([], i, is) (x,_)
-      | x == gap  = ([], i, incrementAt i is)
-      | otherwise = acc
-    f (e:es, i, is) (x,y)
-      | x == gap && (x .&. y) /= gap = (e:es, i  , incrementAt i is)
-      | otherwise                    = (  es, i+1, is)
--}
 
 
 -- |

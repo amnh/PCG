@@ -15,7 +15,8 @@
 {-# LANGUAGE FlexibleContexts #-}
 
 module Analysis.Parsimony.Dynamic.SequentialAlign
-  ( generateMemoizedCostMatrix
+  ( FFI.MemoizedCostMatrix
+  , generateMemoizedCostMatrix
   , sequentialAlign
   ) where
 
