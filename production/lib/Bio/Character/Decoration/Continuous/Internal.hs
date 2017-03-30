@@ -26,7 +26,6 @@ import Control.Lens
 import Data.Alphabet
 import Data.Range
 import Data.Semigroup
---import Data.TCM
 
 
 -- |
@@ -39,12 +38,13 @@ data ContinuousDecorationInitial c
    }
 
 
--- | A smart constructor for a continuous character.
-continuousDecorationInitial :: CharacterName -> (x -> c) -> x -> ContinuousDecorationInitial c
-continuousDecorationInitial name f v =
+-- |
+-- A smart constructor for a continuous character.
+continuousDecorationInitial :: CharacterName -> Double -> c -> ContinuousDecorationInitial c
+continuousDecorationInitial name weight value =
     ContinuousDecorationInitial
-    { continuousDecorationInitialCharacter = f v
-    , continuousMetadataField              = continuousMetadata name 1
+    { continuousDecorationInitialCharacter = value
+    , continuousMetadataField              = continuousMetadata name weight
     }
 
 

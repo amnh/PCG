@@ -18,16 +18,16 @@ module PCG.Command.Types.Read.Unification.Master where
 
 import           Bio.Character
 import           Bio.Character.Encodable
---import           Bio.Character.Decoration.Continuous hiding (characterName)
-import           Bio.Character.Decoration.Discrete hiding (characterName)
-import           Bio.Character.Decoration.Dynamic  hiding (characterName)
+import           Bio.Character.Decoration.Continuous hiding (characterName)
+import           Bio.Character.Decoration.Discrete   hiding (characterName)
+import           Bio.Character.Decoration.Dynamic    hiding (characterName)
 import           Bio.Character.Parsed
-import           Bio.Sequence                      hiding (hexmap)
+import           Bio.Sequence                        hiding (hexmap)
 import           Bio.Sequence.Block
-import           Bio.Metadata.CharacterName        hiding (sourceFile)
+import           Bio.Metadata.CharacterName          hiding (sourceFile)
 import           Bio.Metadata.Parsed
---import           Bio.PhyloGraph.Solution           hiding (parsedChars)
---import           Bio.PhyloGraph.DAG                hiding (structure)
+--import           Bio.PhyloGraph.Solution             hiding (parsedChars)
+--import           Bio.PhyloGraph.DAG                  hiding (structure)
 import           Bio.PhyloGraph.Forest.Parsed
 import           Bio.PhyloGraphPrime
 import           Bio.PhyloGraphPrime.Component
@@ -473,9 +473,9 @@ joinSequences2 = collapseAndMerge . performMetadataTransformations . deriveCorre
 --                                          -> UnifiedCharacterBlock
                 encodeBinToSingletonBlock (charMay, charMeta, scm, structure, charName) =
                     case charMay of
-                      ParsedContinuousCharacter continuousMay -> undefined
-                      ParsedDiscreteCharacter     discreteMay -> discreteSingleton structure . Just $ toDiscreteCharacterDecoration charName charWeight specifiedAlphabet scm  staticTransform discreteMay
-                      ParsedDynamicCharacter       dynamicMay ->  dynamicSingleton           . Just $  toDynamicCharacterDecoration charName charWeight specifiedAlphabet scm dynamicTransform  dynamicMay
+                      ParsedContinuousCharacter continuousMay -> continuousSingleton           . Just .   continuousDecorationInitial charName charWeight $ toContinuousCharacter continuousMay
+                      ParsedDiscreteCharacter     discreteMay ->   discreteSingleton structure . Just $ toDiscreteCharacterDecoration charName charWeight specifiedAlphabet scm  staticTransform discreteMay
+                      ParsedDynamicCharacter       dynamicMay ->    dynamicSingleton           . Just $  toDynamicCharacterDecoration charName charWeight specifiedAlphabet scm dynamicTransform  dynamicMay
                   where
                     alphabetLength    = length specifiedAlphabet
                     charWeight        = weight   charMeta
