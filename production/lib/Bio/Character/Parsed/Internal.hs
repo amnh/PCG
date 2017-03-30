@@ -28,27 +28,22 @@ import           Data.Map                 (Map)
 import           Test.QuickCheck
 
 
-data ParsedCharacter
-   = ParsedContinuousCharacter  Double
-   | ParsedDiscreteCharacter   (AmbiguityGroup String)
-   | ParsedDynamicCharacter    (NonEmpty (AmbiguityGroup String))
-   deriving (Eq, Show)
-
-
--- | An ordered dynamic character of ambiguity groups. This represents a dynamic
---   homology character when it comes from the parser (so is not yet encoded
----  or packed, if those are options.)
-
--- type ParsedChar = NonEmpty (AmbiguityGroup String)
+-- | A mapping from taxon identifiers to thier corresponding sequences.
+type TaxonCharacters = Map Identifier ParsedChars
 
 
 -- | Represents a character sequence containing possibly missing character data.
-type ParsedChars = Vector (Maybe ParsedCharacter)
+type ParsedChars = Vector ParsedCharacter
 
 
--- TODO: Add a TaxonIdentifier or TerminalName as type string - lots of aliasing
--- | A mapping from taxon identifiers to thier corresponding sequences.
-type TaxonCharacters = Map String ParsedChars
+type Identifier = String
+
+
+data ParsedCharacter
+   = ParsedContinuousCharacter (Maybe Double)
+   | ParsedDiscreteCharacter   (Maybe (AmbiguityGroup String))
+   | ParsedDynamicCharacter    (Maybe (NonEmpty (AmbiguityGroup String)))
+   deriving (Eq, Show)
 
 
 {-

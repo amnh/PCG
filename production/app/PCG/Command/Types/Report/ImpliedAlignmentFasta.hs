@@ -18,7 +18,7 @@ module PCG.Command.Types.Report.ImpliedAlignmentFasta where
 import Bio.Character.Encodable
 import Bio.Metadata    hiding (name)
 import Bio.PhyloGraph.DAG
-import Bio.PhyloGraph.Network (nodeIsLeaf)
+--import Bio.PhyloGraph.Network (nodeIsLeaf)
 import Bio.PhyloGraph.Node
 import Bio.PhyloGraph.Solution
 import Data.Alphabet

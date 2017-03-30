@@ -32,7 +32,7 @@ import           Data.Vector.Instances                   ()
 import           File.Format.Fasta                       (FastaParseResult,TaxonSequenceMap)
 import           File.Format.Fastc
 import           File.Format.Newick
-import           File.Format.Nexus                hiding (CharacterMetadata, DNA, RNA, Nucleotide, TaxonSequenceMap)
+import           File.Format.Nexus                hiding (CharacterMetadata(..), DNA, RNA, Nucleotide, TaxonSequenceMap)
 import qualified File.Format.Nexus.Data           as Nex
 import qualified File.Format.TNT                  as TNT
 import qualified File.Format.TransitionCostMatrix as F
@@ -238,7 +238,7 @@ addOtherCases (x:xs)
 
 
 -- | Functionality to make char info from tree seqs
-makeEncodeInfo :: TreeChars -> Vector ParsedCharacterMetadata
+makeEncodeInfo :: TaxonCharacters -> Vector ParsedCharacterMetadata
 makeEncodeInfo = fmap makeOneInfo . developAlphabets
 
 
@@ -264,5 +264,9 @@ makeOneInfo alph =
 -- characters may be missing, hence Maybe Vector [String]
 -- each taxon may have a sequence (multiple characters), hence Vector Maybe Vector [String]
 -- sequences are values mapped to using taxon names as keys, hence Map String Vector Maybe Vector [String]
-developAlphabets :: TreeChars -> Vector (Alphabet String)
-developAlphabets = V.fromList . fmap (fromSymbols . foldMap (foldMap (foldMap toList))) . transpose . fmap toList . toList 
+developAlphabets :: TaxonCharacters -> Vector (Alphabet String)
+developAlphabets = V.fromList . fmap (fromSymbols . (foldMap f)) . transpose . fmap toList . toList
+  where
+    f (ParsedContinuousCharacter     _) = mempty
+    f (ParsedDiscreteCharacter  static) = foldMap toList static
+    f (ParsedDynamicCharacter  dynamic) = foldMap (foldMap toList) dynamic

@@ -6,7 +6,7 @@ module PCG.Command.Types.Read.Evaluate
 
 import           Bio.Character.Parsed
 import           Bio.Metadata.Parsed
-import           Bio.PhyloGraph.Forest
+import           Bio.PhyloGraph.Forest.Parsed
 import           Bio.PhyloGraphPrime
 import           Bio.PhyloGraphPrime.PhylogeneticDAG
 --import           Bio.PhyloGraph.Solution      (SearchState)

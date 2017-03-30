@@ -19,6 +19,7 @@ import           Bio.Character.Parsed.Internal
 import           Control.Arrow             ((&&&))
 import           Data.Bifunctor            (second)
 import           Data.Foldable
+import           Data.Key
 import           Data.List.NonEmpty        (NonEmpty)
 import qualified Data.List.NonEmpty as NE
 import           Data.Map                  (Map, insert, mergeWithKey)
@@ -28,14 +29,18 @@ import           Data.Monoid
 import           Data.Semigroup.Foldable
 import           Data.Tree
 import qualified Data.Vector        as V
+import           Data.Vector.Instances()
 import           File.Format.Fasta
 import           File.Format.Fastc
 import           File.Format.Newick
 import           File.Format.Nexus  hiding (TaxonSequenceMap)
 import           File.Format.TNT
+import qualified File.Format.TNT    as TNT
 import           File.Format.TransitionCostMatrix
 import           File.Format.VertexEdgeRoot
-
+import           Prelude            hiding (zipWith)
+import           Safe                      (headMay)
+  
 
 {-
 data ParsedCharacter
@@ -80,7 +85,7 @@ instance ParsedCharacters FastaParseResult where
     unifyCharacters = foldMap f
       where
         f (FastaSequence n s) = M.singleton n $ convertSeq s
-        convertSeq = pure . Just . ParsedDynamicCharacter . NE.fromList . fmap (pure . pure)
+        convertSeq = pure . ParsedDynamicCharacter . Just . NE.fromList . fmap (pure . pure)
 
 
 -- | (✔)
@@ -112,11 +117,14 @@ instance ParsedCharacters (NonEmpty NewickForest) where
 -- | (✔)
 instance ParsedCharacters Nexus where
 
-    unifyCharacters (Nexus (seqMap, _metadataVector) _) = f <$> seqMap
+    unifyCharacters (Nexus (seqMap, metadataVector) _) = f <$> seqMap
       where
-        -- TODO: Be very sophisticated here.
-        -- Use the metadata vector to determin if the character is static or dynamic or continuous
-        f = fmap (fmap (ParsedDynamicCharacter . fmap NE.fromList . NE.fromList . toList))  
+
+        f = zipWith g metadataVector
+
+        g m e
+          | isAligned m = ParsedDiscreteCharacter $  NE.fromList <$> (headMay . toList =<< e)
+          | otherwise   = ParsedDynamicCharacter  $ fmap NE.fromList . NE.fromList . toList <$> e
 
 
 -- | (✔)
@@ -124,10 +132,10 @@ instance ParsedCharacters TntResult where
 
     unifyCharacters (Left forest) = mergeMaps $ foldl f mempty forest
       where
-        f xs tree = foldl g mempty tree : xs
-        g m (Index  i) = insert (show i) mempty m
-        g m (Name   n) = insert n mempty m
-        g m (Prefix p) = insert p mempty m
+        f xs tree = foldMap g tree : xs
+        g (Index  i) = M.singleton (show i) mempty 
+        g (Name   n) = M.singleton n mempty 
+        g (Prefix p) = M.singleton p mempty 
 
     unifyCharacters (Right (WithTaxa seqs _ []    )) = M.fromList . toList $ second tntToTheSuperSequence   <$> seqs
     -- maybe just use the seq vaiable like above and remove this case?
@@ -156,21 +164,25 @@ instance ParsedCharacters VertexEdgeRoot where
 
 
 convertCharacterSequenceLikeFASTA :: CharacterSequence -> ParsedChars
-convertCharacterSequenceLikeFASTA = pure . Just . ParsedDynamicCharacter . NE.fromList . toList
+convertCharacterSequenceLikeFASTA = pure . ParsedDynamicCharacter . Just . NE.fromList . toList
 
 
--- | Coalesce the 'TaxonSequence' to the larger type 'ParsedSequences'
+-- |
+-- Coalesce the 'TaxonSequence' to the larger type 'ParsedSequences'
 tntToTheSuperSequence :: TaxonSequence -> ParsedChars
-tntToTheSuperSequence = V.fromList . fmap (Just . pure . f . show)
+tntToTheSuperSequence = V.fromList . fmap f
   where
-    f :: String -> NonEmpty String
-    f ('[':xs) = NE.fromList $ pure <$> init xs
-    f e        = pure e
+    f (TNT.Continuous c) = ParsedContinuousCharacter c
+    f discreteCharacter  = ParsedDiscreteCharacter . Just . coerceDiscreteRendering $ show discreteCharacter
+
+    coerceDiscreteRendering ('[':xs) = NE.fromList $ pure <$> init xs
+    coerceDiscreteRendering e        = pure e
 
 
--- | Takes a 'Foldable' structure of 'Map's and returns the union 'Map'
---   containing all the key value pairs. This fold is right biased with respect
---   to duplicate keys. When identical keys occur in multiple 'Map's, the value
---   occuring last in the 'Foldable' structure is returned.
+-- |
+-- Takes a 'Foldable' structure of 'Map's and returns the union 'Map'
+-- containing all the key value pairs. This fold is right biased with respect
+-- to duplicate keys. When identical keys occur in multiple 'Map's, the value
+-- occuring last in the 'Foldable' structure is returned.
 mergeMaps :: (Foldable t, Ord k) => t (Map k v) -> Map k v
 mergeMaps = foldl (mergeWithKey (\_ _ b -> Just b) id id) mempty
