@@ -21,8 +21,8 @@ import           Data.Bifunctor            (second)
 import           Data.Foldable
 import           Data.List.NonEmpty        (NonEmpty)
 import qualified Data.List.NonEmpty as NE
-import           Data.Map                  (Map,insert,mergeWithKey)
-import qualified Data.Map           as M   (fromList)
+import           Data.Map                  (Map, insert, mergeWithKey)
+import qualified Data.Map           as M
 import           Data.Maybe
 import           Data.Monoid
 import           Data.Semigroup.Foldable
@@ -37,51 +37,64 @@ import           File.Format.TransitionCostMatrix
 import           File.Format.VertexEdgeRoot
 
 
+{-
+data ParsedCharacter
+   = ParsedContinuousCharacter  Double
+   | ParsedDiscreteCharacter   (AmbiguityGroup String)
+   | ParsedDynamicCharacter    (NonEmpty (AmbiguityGroup String))
+
+type ParsedChars = Vector (Maybe ParsedCharacter)
+
+type TaxonCharacters = Map String ParsedChars
+-}
+
+
 -- TODO: Make sure that pipelines don't undo and redo the conversion to treeSeqs
 -- currently we pack and unpack codes, make parsers dumber in the future. Read below!
 
--- | Instances provide a method to extract Character sequences from raw parsed results.
---   The 'TreeSeqs' are agnostic of character data types. "Tree-only" return values from
---   files will extract the taxa labels from leaf nodes only with empty sequences.
+-- |
+-- Instances provide a method to extract Character sequences from raw parsed results.
+-- The 'TreeSeqs' are agnostic of character data types. "Tree-only" return values from
+-- files will extract the taxa labels from leaf nodes only with empty sequences.
 --
---   Characters of types DNA, RNA, protein, and amino acid will *not* have thier IUPAC
---   codes translated to the apropriate groups. This abiguity group translation will
---   occur later during the rectification process with the character metadata. Parsers
---   which produce expanded ambiguity groups for these character types will be collapsed
---   back to the IUPAC code for the ambiguity group during the type-class's extraction
---   process.
+-- Characters of types DNA, RNA, protein, and amino acid will *not* have thier IUPAC
+-- codes translated to the apropriate groups. This abiguity group translation will
+-- occur later during the rectification process with the character metadata. Parsers
+-- which produce expanded ambiguity groups for these character types will be collapsed
+-- back to the IUPAC code for the ambiguity group during the type-class's extraction
+-- process.
 --
---   It is expected that parsers will altered to return simpler character literals for
---   time efficientcy in the future.
+-- It is expected that parsers will altered to return simpler character literals for
+-- time efficientcy in the future.
 --
 -- I need to think about how this might interact with some things in Nexus, but it seems
 -- to make sense. It might make verification in the parsers more difficult... thinking...
 class ParsedCharacters a where
 
-    unifyCharacters :: a -> TreeChars
+    unifyCharacters :: a -> TaxonCharacters
 
 
 -- | (✔)
 instance ParsedCharacters FastaParseResult where
 
-    unifyCharacters = foldr f mempty
+    unifyCharacters = foldMap f
       where
-        convertSeq = V.fromList . fmap (Just . pure . pure . pure)
-        f (FastaSequence n s) = insert n (convertSeq s)
-
-
--- | (✔)
-instance ParsedCharacters TaxonSequenceMap where
-
-    unifyCharacters = fmap (pure . pure . NE.fromList . toList)
+        f (FastaSequence n s) = M.singleton n $ convertSeq s
+        convertSeq = pure . Just . ParsedDynamicCharacter . NE.fromList . fmap (pure . pure)
 
 
 -- | (✔)
 instance ParsedCharacters FastcParseResult where
 
-    unifyCharacters = foldl f mempty
+    unifyCharacters = foldMap f
       where
-        f m (FastcSequence label symbols) = insert label (pure . pure . NE.fromList . toList $ symbols) m
+        f (FastcSequence label symbols) = M.singleton label $ convertCharacterSequenceLikeFASTA symbols
+
+
+-- | (✔)
+instance ParsedCharacters TaxonSequenceMap where
+
+    unifyCharacters = fmap convertCharacterSequenceLikeFASTA
 
 
 -- | (✔)
@@ -89,9 +102,8 @@ instance ParsedCharacters (NonEmpty NewickForest) where
 
     unifyCharacters = mergeMaps . foldMap1 (fmap f)
       where
-        f :: NewickNode -> TreeChars
         f node 
-          | null (descendants node) = insert name mempty mempty
+          | null (descendants node) = M.singleton name mempty
           | otherwise = foldl1 (<>) $ f <$> descendants node
           where
             name = fromMaybe "" $ newickLabel node
@@ -100,9 +112,11 @@ instance ParsedCharacters (NonEmpty NewickForest) where
 -- | (✔)
 instance ParsedCharacters Nexus where
 
-    unifyCharacters (Nexus (seqMap, _) _) = f <$> seqMap
+    unifyCharacters (Nexus (seqMap, _metadataVector) _) = f <$> seqMap
       where
-        f = fmap (fmap (fmap NE.fromList . NE.fromList . toList))  
+        -- TODO: Be very sophisticated here.
+        -- Use the metadata vector to determin if the character is static or dynamic or continuous
+        f = fmap (fmap (ParsedDynamicCharacter . fmap NE.fromList . NE.fromList . toList))  
 
 
 -- | (✔)
@@ -138,6 +152,11 @@ instance ParsedCharacters VertexEdgeRoot where
         buildTree name = Node name kids
           where
             kids = fmap (buildTree . snd) . filter ((==name) . fst) $ (edgeOrigin &&& edgeTarget) <$> es
+
+
+
+convertCharacterSequenceLikeFASTA :: CharacterSequence -> ParsedChars
+convertCharacterSequenceLikeFASTA = pure . Just . ParsedDynamicCharacter . NE.fromList . toList
 
 
 -- | Coalesce the 'TaxonSequence' to the larger type 'ParsedSequences'
