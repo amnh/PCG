@@ -33,6 +33,7 @@ import Data.Range
 
 
 -- | Used on the post-order (i.e. first) traversal.
+-- Applies appropriate logic to internal node and leaf node cases.
 additivePostOrder :: ( DiscreteCharacterMetadata d
                      , RangedCharacterDecoration d  c
                      , DiscreteCharacterMetadata d'
@@ -42,7 +43,7 @@ additivePostOrder :: ( DiscreteCharacterMetadata d
 additivePostOrder parentDecoration xs =
     case xs of
         []   -> initializeLeaf  parentDecoration -- a leaf
-        y:ys -> updatePostOrder parentDecoration (y:|ys)
+        y:ys -> updatePostOrder parentDecoration $ y:|ys
 
 
 -- |
@@ -92,6 +93,7 @@ updatePostOrder _parentDecoration (leftChild:|(rightChild:_)) =
 
 -- |
 -- Used on the pre-order (i.e. second) traversal.
+-- Applies appropriate logic to root node, internal node, and leaf node cases.
 additivePreOrder  :: ( Ranged c
                      , Eq (Range (Bound c))
                      , Num (Bound c)
@@ -109,6 +111,9 @@ additivePreOrder childDecoration ((_, parentDecoration):_)
     | otherwise                 = extendRangedToPreorder childDecoration $ determineFinalState childDecoration parentDecoration
 
 
+-- |
+-- Finalize a leaf node on a pre-order traversal.
+-- Set the preliminary interval as the final interval of the leaf decoration.
 finalizeLeaf :: ( RangedExtensionPreorder   d' c
                 , DiscreteCharacterMetadata d
                 , RangedPostorderDecoration d  c
@@ -121,10 +126,15 @@ finalizeLeaf decoration =
 
 -- |
 -- Uses the preliminary intervals of a node, its parents, and its children. Follows the three rules of Fitch,
--- modified for additive characters: 1) If the intersection of the current node's character with its parent == the
--- parent interval, use the parent interval; 2) If the union of those two characters == the child, then use the
--- child; 3) Otherwise, find the intersections of the parent and each of the children, union them, then union that
--- with the parent.
+-- modified for additive characters:
+--
+-- 1. If the intersection of the current node's character with its parent == the
+-- parent interval, use the parent interval
+--
+-- 2. If the union of those two characters == the child, then use the child
+--
+-- 3. Otherwise, find the intersections of the parent and each of the children,
+-- union them, then union that with the parent.
 --
 -- Used on the preorder pass.
 determineFinalState :: ( Ranged c
@@ -137,16 +147,21 @@ determineFinalState :: ( Ranged c
                     => d -> d'-> Range (Bound c)
 determineFinalState childDecoration parentDecoration = resultRange
   where
-    curIsSuperset   = (ancestor `intersection` preliminary) == ancestor
-    preliminary     = childDecoration  ^. preliminaryInterval
-    ancestor        = parentDecoration ^. finalInterval
-    (left, right)   = childDecoration  ^. childPrelimIntervals
-    chi             = (leftUnionright `union` preliminary) `intersection` ancestor
-    leftUnionright  = left `union` right
+    preliminary    = childDecoration  ^. preliminaryInterval
+    ancestor       = parentDecoration ^. finalInterval
+    (left, right)  = childDecoration  ^. childPrelimIntervals
+    curIsSuperset  = (ancestor `intersection` preliminary) == ancestor
+    chi            = (leftUnionright  `union` preliminary) `intersection` ancestor
+    leftUnionright = left `union` right
     resultRange
-        | curIsSuperset = ancestor                                                              -- Additive rule 1
-        | leftUnionright `intersects` ancestor  =                                               -- Additive rule 2
+        -- Additive rule 1
+        | curIsSuperset = ancestor
+
+        -- Additive rule 2
+        | leftUnionright `intersects` ancestor =
             if   chi `intersects` preliminary
             then chi
             else largestClosed (closestState preliminary chi) chi
-        | otherwise = threeWayRange ancestor preliminary leftUnionright -- Additive rule 3
+
+        -- Additive rule 3
+        | otherwise = threeWayRange ancestor preliminary leftUnionright 
