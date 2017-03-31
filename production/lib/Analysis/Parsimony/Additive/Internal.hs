@@ -47,7 +47,8 @@ additivePostOrder parentDecoration xs =
 
 
 -- |
--- Initializes a leaf node by copying its current value into its preliminary state. Gives it a minimum cost of 0.
+-- Initializes a leaf node by copying its current value into its preliminary
+-- state. Gives it a minimum cost of 0.
 --
 -- Used on the postorder pass.
 initializeLeaf :: ( DiscreteCharacterMetadata d
@@ -65,9 +66,11 @@ initializeLeaf curDecoration =
 
 
 -- |
--- Updates the character on the parent of two child nodes to become an 'AdditiveOptimizationDecoration'.
--- Determines the cost by adding the cost of the intersection of the two child nodes, then summing that value
--- with the costs of the two children. The preliminary value of the character is the intersection of the two child intervals.
+-- Updates the character on the parent of two child nodes to become an
+-- 'AdditiveOptimizationDecoration'. Determines the cost by adding the cost of
+-- the intersection of the two child nodes, then summing that value with the
+-- costs of the two children. The preliminary value of the character is the
+-- intersection of the two child intervals.
 --
 -- Used on the postorder pass.
 updatePostOrder :: ( DiscreteCharacterMetadata d
@@ -125,8 +128,8 @@ finalizeLeaf decoration =
 
 
 -- |
--- Uses the preliminary intervals of a node, its parents, and its children. Follows the three rules of Fitch,
--- modified for additive characters:
+-- Uses the preliminary intervals of a node, its parents, and its children.
+-- Follows the three rules of Fitch, modified for additive characters:
 --
 -- 1. If the intersection of the current node's character with its parent == the
 -- parent interval, use the parent interval
