@@ -16,6 +16,7 @@
 
 module File.Format.TNT.Command.Cost where
 
+
 import Data.Foldable
 import Data.Functor             (($>))
 import Data.List.NonEmpty       (NonEmpty)
@@ -28,8 +29,9 @@ import Text.Megaparsec.Custom   (double, nonEmpty)
 import Text.Megaparsec.Prim     (MonadParsec)
 
 
--- | The attributes necessary for constructing a custom TCM.
---   Many 'TransitionCost' are expected to be folded together to form a TCm.
+-- |
+-- The attributes necessary for constructing a custom TCM.
+-- Many 'TransitionCost' are expected to be folded together to form a TCm.
 data TransitionCost
    = TransitionCost
    { origins   :: NonEmpty Char
@@ -39,7 +41,8 @@ data TransitionCost
    } deriving (Eq,Show)
 
 
--- | Parses a Cost command that consists of:
+-- |
+-- Parses a Cost command that consists of:
 --
 --  * A single specification of the character state change
 --
@@ -48,13 +51,15 @@ costCommand :: (MonadParsec e s m, Token s ~ Char) => m Cost
 costCommand = costHeader *> costBody <* symbol (char ';')
 
 
--- | Consumes the superflous heading for a CCODE command.
+-- |
+-- Consumes the superflous heading for a CCODE command.
 costHeader :: (MonadParsec e s m, Token s ~ Char) => m ()
 costHeader = symbol $ keyword "costs" 2
 
 
--- | The nonempty body of a COST command which represents the indicies to apply
---   a custom TCM to.
+-- |
+-- The nonempty body of a COST command which represents the indicies to apply
+-- a custom TCM to.
 costBody :: (MonadParsec e s m, Token s ~ Char) => m Cost
 costBody = do
       idx <- symbol characterIndicies
@@ -63,7 +68,8 @@ costBody = do
       pure . Cost idx $ condenseToMatrix transitions
 
 
--- | Fold over a nonmepty structure of 'Transition' costs to create a custom TCM.
+-- |
+-- Fold over a nonmepty structure of 'Transition' costs to create a custom TCM.
 condenseToMatrix :: (Foldable f, Functor f) => f TransitionCost -> Matrix Double
 condenseToMatrix costs = matrix dimensions dimensions value
   where
@@ -93,10 +99,11 @@ condenseToMatrix costs = matrix dimensions dimensions value
           | otherwise = (i+1, Nothing)
 
 
--- | Parses a 'TransitionCost' from within the body of a COST command.
---   Must contain a nonempty list of character state values and a transition
---   cost value. The transitional cost is interpreted as directed by default but
---   may optionally be specified as a symetric relation.
+-- |
+-- Parses a 'TransitionCost' from within the body of a COST command.
+-- Must contain a nonempty list of character state values and a transition
+-- cost value. The transitional cost is interpreted as directed by default but
+-- may optionally be specified as a symetric relation.
 costDefinition :: (MonadParsec e s m, Token s ~ Char) => m TransitionCost
 costDefinition = TransitionCost
              <$> symbol costStates
