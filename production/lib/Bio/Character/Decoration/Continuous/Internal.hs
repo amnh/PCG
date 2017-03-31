@@ -285,7 +285,7 @@ instance
     show c = unlines
         [ "Cost = "                 <> show (c ^. characterCost)
         , "Is Leaf Node?        : " <> show (c ^. isLeaf)
-        , "Discrete Character   : " <> show  c
+        , "Continuous Character : " <> show (c ^. intervalCharacter)
         , "Preliminary Interval : " <> show (c ^. preliminaryInterval)
         , "Child       Intervals: " <> show (c ^. childPrelimIntervals)
         ]
@@ -420,7 +420,7 @@ instance
     show c = unlines
         [ "Cost = "                 <> show (c ^. characterCost)
         , "Is Leaf Node?        : " <> show (c ^. isLeaf)
-        , "Discrete Character   : " <> show  c
+        , "Continuous Character : " <> show (c ^. intervalCharacter)
         , "Preliminary Interval : " <> show (c ^. preliminaryInterval)
         , "Child       Intervals: " <> show (c ^. childPrelimIntervals)
         , "Final       Interval : " <> show (c ^. finalInterval)
