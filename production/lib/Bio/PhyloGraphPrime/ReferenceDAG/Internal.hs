@@ -179,12 +179,26 @@ instance {- (Show e, Show n) => -} Show (ReferenceDAG e n) where
     show = referenceRendering 
 
 
--- | Build the graph functionally from a generating function.
-unfoldDAG :: (Eq a, Hashable a) => (a -> ([(e,a)], n, [(e,a)])) -> a -> ReferenceDAG e n
+-- |
+-- Probably, hopefully /O(n)/. 
+--
+-- Build the graph functionally from a generating function.
+--
+-- The generating function produces three results:
+--
+-- 1. A list of parent edge decorations and corresponding ancestral values
+--
+-- 2. The node decoration for the input value
+--
+-- 3. A list of child edge decorations and corresponding descendent values
+unfoldDAG :: (Eq a, Hashable a)
+          => (a -> ([(e,a)], n, [(e,a)]))
+          -> a
+          -> ReferenceDAG e n
 unfoldDAG f origin =
     RefDAG
     { references = referenceVector
-    , rootRefs   = NE.fromList $ roots2 -- otoList rootIndices
+    , rootRefs   = NE.fromList roots2 -- otoList rootIndices
     , graphData  = GraphData 0
     }
   where

@@ -118,8 +118,8 @@ instance ParsedMetadata TNT.TntResult where
                     let truncatedSymbols = V.take (TCM.size tcm - 1) initialSymbolSet
                     in  (v, toAlphabet truncatedSymbols, Just (tcm, NonSymmetric)) -- TODO: Maybe we can do the diagnosis here
                   
-              | TNT.additive inMeta = (1, fullAlphabet, Just $ (TCM.generate matrixDimension genAdditive,    Additive))
-              | otherwise           = (1, fullAlphabet, Just $ (TCM.generate matrixDimension genFitch   , NonAdditive))
+              | TNT.additive inMeta = (1, fullAlphabet, Just (TCM.generate matrixDimension genAdditive,    Additive))
+              | otherwise           = (1, fullAlphabet, Just (TCM.generate matrixDimension genFitch   , NonAdditive))
               where
                 matrixDimension   = length initialSymbolSet
                 fullAlphabet      = toAlphabet initialSymbolSet
@@ -265,7 +265,7 @@ makeOneInfo alph =
 -- each taxon may have a sequence (multiple characters), hence Vector Maybe Vector [String]
 -- sequences are values mapped to using taxon names as keys, hence Map String Vector Maybe Vector [String]
 developAlphabets :: TaxonCharacters -> Vector (Alphabet String)
-developAlphabets = V.fromList . fmap (fromSymbols . (foldMap f)) . transpose . fmap toList . toList
+developAlphabets = V.fromList . fmap (fromSymbols . foldMap f) . transpose . fmap toList . toList
   where
     f (ParsedContinuousCharacter     _) = mempty
     f (ParsedDiscreteCharacter  static) = foldMap toList static

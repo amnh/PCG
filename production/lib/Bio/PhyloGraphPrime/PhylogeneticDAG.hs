@@ -373,6 +373,7 @@ applySoftwireResolutions inputContexts =
       []   -> pure []
       [x]  ->
           let y = pure <$> fst x
+          -- TODO: review this logic thouroughly
           in  if   multipleParents x
               then y -- <> pure []
               else y
@@ -801,7 +802,7 @@ assignOptimalDynamicCharacterRootEdges extensionTransformation (PDAG2 inputDag) 
 
     sequenceOfEdgesWithMinimalCost = foldMapWithKey1 f sequenceWLOG
       where
-        f k v = (V.generate (length v) g) :| []
+        f k v = V.generate (length v) g :| []
           where
             g i = result
               where
@@ -826,7 +827,7 @@ assignOptimalDynamicCharacterRootEdges extensionTransformation (PDAG2 inputDag) 
             node = nodeDecoration idxData
             nodeDatum =
                 PNode2
-                { resolutions          = fmap f $ resolutions node
+                { resolutions          = f <$> resolutions node
                 , nodeDecorationDatum2 = nodeDecorationDatum2 node
                 }
         f resInfo = resInfo { characterSequence = modifiedSequence  }

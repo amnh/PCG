@@ -229,7 +229,7 @@ renderCostMatrix lhs rhs mtx = unlines
 
 
 renderMatrix :: DOAlignMatrix a -> String
-renderMatrix mat = trace pokedVal $ unlines . fmap unwords . toLists $ showCell <$> mat
+renderMatrix mat = trace pokedVal . unlines . fmap unwords . toLists $ showCell <$> mat
   where
     showCell (c,d,_) = show (c, d)
     pokedVal = showCell $ getElem (nrows mat -1) (ncols mat - 1) mat
