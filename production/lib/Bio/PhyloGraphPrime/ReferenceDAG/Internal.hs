@@ -38,7 +38,6 @@ import           Prelude             hiding (lookup)
 
 -- |
 -- A constant time access representation of a directed acyclic graph.
--- 
 data  ReferenceDAG e n
     = RefDAG
     { references :: Vector (IndexData e n)
@@ -181,7 +180,7 @@ instance {- (Show e, Show n) => -} Show (ReferenceDAG e n) where
 
 
 -- | Build the graph functionally from a generating function.
-unfoldDAG :: (Eq b, Hashable b) => (b -> ([(e,b)], n, [(e,b)])) -> b -> ReferenceDAG e n
+unfoldDAG :: (Eq a, Hashable a) => (a -> ([(e,a)], n, [(e,a)])) -> a -> ReferenceDAG e n
 unfoldDAG f origin =
     RefDAG
     { references = referenceVector
@@ -210,11 +209,11 @@ unfoldDAG f origin =
     initialAccumulator = (-1, -1, (Nothing,mempty), mempty, mempty)
     (_, _, _, _rootIndices, resultMap) = g initialAccumulator origin
     g (counter, _otherIndex, previousContext@(previousIndex, previousSeenSet), currentRoots, currentMap) currentValue =
-      case currentValue `lookup` previousSeenSet of
-         -- If this value is in the previously seen set we don't recurse.
-         -- We just return the supplied accumulator with a mutated otherIndex value.
-        Just i  -> (counter, i, previousContext, currentRoots, currentMap)
-        Nothing -> result
+        case currentValue `lookup` previousSeenSet of
+          -- If this value is in the previously seen set we don't recurse.
+          -- We just return the supplied accumulator with a mutated otherIndex value.
+          Just i  -> (counter, i, previousContext, currentRoots, currentMap)
+          Nothing -> result
       where
         result = ( cCounter
                  , currentIndex
