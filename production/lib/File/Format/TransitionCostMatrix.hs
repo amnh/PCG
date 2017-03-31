@@ -17,4 +17,5 @@ module File.Format.TransitionCostMatrix
   , tcmStreamParser
   ) where
 
+
 import File.Format.TransitionCostMatrix.Parser

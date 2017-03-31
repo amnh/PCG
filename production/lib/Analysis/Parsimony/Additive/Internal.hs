@@ -32,8 +32,78 @@ import Data.Range
 
 -- import Debug.Trace
 
+{-
+  TODO: Add these trees to the new test-suite
 
--- | Used on the post-order (i.e. first) traversal.
+  To test pre-order additive logic Case 1:
+    ((A, B), C)
+    A: 1
+    B: 2
+    C: 2
+
+      R
+     / \
+    A   *
+       / \
+       B C
+
+
+  To test pre-order additive logic Case 2a:
+    ((A, B), (C, D))
+    A: 1
+    B: 2
+    C: 3
+    D: 4
+
+      R
+     / \
+    *   *
+   / \ / \
+   A B C D
+
+
+  To test pre-order additive logic Case 2b:
+    (A, (B, ((C, D), (E, F))))
+    A: 5
+    B: 5
+    C: 5
+    D: 3
+    E: 4
+    F: 2 
+
+      R
+     / \
+    A   *
+       / \
+      B   *
+         / \
+        *   *
+       / \ / \
+       C D E F
+
+
+  To test pre-order additive logic Case 3:
+    (A, ((B, C), (D, E)))
+    A: 4
+    B: 1
+    C: 2
+    D: 3
+    E: 4
+
+      R
+     / \
+    A   *
+       / \
+      *   *
+     / \ / \
+     B C D E
+
+
+ -}
+
+
+-- |
+-- Used on the post-order (i.e. first) traversal.
 -- Applies appropriate logic to internal node and leaf node cases.
 additivePostOrder :: ( DiscreteCharacterMetadata d
                      , RangedCharacterDecoration d  c
@@ -151,21 +221,20 @@ determineFinalState :: ( Ranged c
                     => d -> d'-> Range (Bound c)
 determineFinalState childDecoration parentDecoration = resultRange
   where
-    preliminary    = childDecoration  ^. preliminaryInterval
     ancestor       = parentDecoration ^. finalInterval
+    preliminary    = childDecoration  ^. preliminaryInterval
     (left, right)  = childDecoration  ^. childPrelimIntervals
-    curIsSuperset  = (ancestor `intersection` preliminary) == ancestor
-    chi            = (leftUnionright  `union` preliminary) `intersection` ancestor
-    leftUnionright = left `union` right
+    chi            = (leftUnionRight `union` preliminary) `intersection` ancestor
+    leftUnionRight = left `union` right
     resultRange
         -- Additive rule 1
-        | curIsSuperset = ancestor
+        | (ancestor `intersection` preliminary) == ancestor = ancestor
 
         -- Additive rule 2
-        | leftUnionright `intersects` ancestor =
+        | leftUnionRight `intersects` ancestor =
             if   chi `intersects` preliminary
             then chi
-            else largestClosed (closestState preliminary chi) chi
+            else chi `largestClosed` (preliminary `closestStateTo` chi)
 
         -- Additive rule 3
-        | otherwise = threeWayRange ancestor preliminary leftUnionright 
+        | otherwise = threeWayRange ancestor preliminary leftUnionRight 

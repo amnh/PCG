@@ -52,11 +52,13 @@ import           Data.Monoid
   -}
 
 
--- | One or more trees in a "Phylogenetic Forest".
+-- |
+-- One or more trees in a "Phylogenetic Forest".
 type NewickForest = NonEmpty NewickNode
 
 
--- | A node in a "Phylogenetic Forest"
+-- |
+-- A node in a "Phylogenetic Forest"
 data NewickNode
    = NewickNode
    { descendants  :: [NewickNode] -- leaf nodes are empty lists
@@ -77,7 +79,8 @@ instance Monoid NewickNode where
   mappend (NewickNode des1 label1 len1) (NewickNode des2 label2 len2) = NewickNode (des1 <> des2) (label1 <> label2) (liftA2 (+) len1 len2)
 
 
--- | Smart constructor for a 'NewickNode' preseriving the invariant:
+-- |
+-- Smart constructor for a 'NewickNode' preseriving the invariant:
 --
 -- > null nodes ==> isJust . label
 newickNode :: [NewickNode] -> Maybe String -> Maybe Double -> Maybe NewickNode
@@ -86,7 +89,8 @@ newickNode nodes label length'
   | otherwise = Just $ NewickNode nodes label length'
 
 
--- | Determines whether a given 'NewickNode' is a leaf node in the tree.
+-- |
+-- Determines whether a given 'NewickNode' is a leaf node in the tree.
 isLeaf :: NewickNode -> Bool
 isLeaf node = (null . descendants) node && (isJust . newickLabel) node
 
@@ -120,5 +124,4 @@ instance N.Network NewickNode NewickNode where
         tallyNodes = succ . sum . fmap tallyNodes . descendants
 
     addNode t n = t { descendants = n : descendants t }
-
 
