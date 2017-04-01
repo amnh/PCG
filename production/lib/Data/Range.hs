@@ -31,7 +31,7 @@ module Data.Range
   , intersection
   , union
   -- * Specialized operations on Range for Additive/Continuous characters
-  , closestState
+  , closestStateTo
   , largestClosed
   , smallestClosed
   , threeWayRange
@@ -124,8 +124,8 @@ union lhs rhs = Range (newLowerBound, newUpperBound, precision lhs)
 -- The closest state is the closest value in the left interval to the right interval.
 -- This assumes that there is no overlap between the intervals. If the two intervals intersect.
 -- incorrect results will be returned.
-closestState :: Ord r => Range r -> Range r -> r
-closestState lhs rhs
+closestStateTo :: Ord r => Range r -> Range r -> r
+closestStateTo lhs rhs
     | upperBound lhs < lowerBound rhs = upperBound lhs
     | otherwise                       = lowerBound lhs
 
@@ -147,8 +147,8 @@ smallestClosed lhs rhs = Range (newLowerBound, newUpperBound, precision lhs)
 --
 -- The largest closed interval between the single value on the left and the interval on the right.
 -- This is the equivalent of 'union', but works for a single value on the left, rather than an interval.
-largestClosed :: Ord r => r -> Range r -> Range r
-largestClosed value interval = Range (newLowerBound, newUpperBound, precision interval)
+largestClosed :: Ord r => Range r -> r -> Range r
+largestClosed interval value = Range (newLowerBound, newUpperBound, precision interval)
     where
         newLowerBound = min value $ upperBound interval
         newUpperBound = max value $ lowerBound interval
@@ -157,7 +157,7 @@ largestClosed value interval = Range (newLowerBound, newUpperBound, precision in
 threeWayRange :: Ord r => Range r -> Range r -> Range r -> Range r
 threeWayRange ancestoralInterval selfInterval descendantInterval = Range (newLowerBound, newUpperBound, precision selfInterval) 
     where
-        selfClosestBound  = closestState ancestoralInterval selfInterval
-        heirClosestBound  = closestState ancestoralInterval descendantInterval
+        selfClosestBound  =       selfInterval `closestStateTo` ancestoralInterval 
+        heirClosestBound  = descendantInterval `closestStateTo` ancestoralInterval 
         newLowerBound     = min selfClosestBound heirClosestBound
         newUpperBound     = max selfClosestBound heirClosestBound

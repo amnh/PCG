@@ -97,7 +97,7 @@ instance Enum ExtendedNatural where
 
 instance Integral ExtendedNatural where
 
-    toInteger (Cost x) = toInteger $ maybe (maxBound :: Word) id x
+    toInteger (Cost x) = toInteger $ fromMaybe (maxBound :: Word) x
 
     quotRem   (Cost lhs) (Cost rhs) =
         case liftA2 quotRem lhs rhs of

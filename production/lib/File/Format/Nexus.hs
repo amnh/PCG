@@ -23,7 +23,7 @@ module File.Format.Nexus
   ( AlphabetSymbol
   , AmbiguityGroup
   , Character
-  , CharacterMetadata
+  , CharacterMetadata(..)
   , CharDataType(..)
   , Nexus(..)
   , Sequence
@@ -33,12 +33,15 @@ module File.Format.Nexus
   , nexusStreamParser
   ) where
 
+
 import File.Format.Nexus.Data
 import File.Format.Nexus.Parser
 import File.Format.Nexus.Validate
 import Text.Megaparsec
 import Text.Megaparsec.Prim      (MonadParsec)
 
--- | Parses the entirety of a stream consisting of a single Nexus file resulting a 'Nexus'.
+
+-- |
+-- Parses the entirety of a stream consisting of a single Nexus file resulting a 'Nexus'.
 nexusStreamParser :: (MonadParsec e s m, Token s ~ Char {- , Show s -}) => m Nexus
 nexusStreamParser = validateNexusParseResult =<< parseNexus <* eof

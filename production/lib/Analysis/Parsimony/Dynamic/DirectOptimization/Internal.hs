@@ -21,18 +21,13 @@
 
 module Analysis.Parsimony.Dynamic.DirectOptimization.Internal where
 
-import           Analysis.Parsimony.Dynamic.DirectOptimization.DeletionEvents
-import           Analysis.Parsimony.Dynamic.DirectOptimization.InsertionEvents
 import           Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise
 import           Bio.Character.Decoration.Dynamic
 import           Bio.Character.Encodable
 import           Control.Lens
-import           Data.Bits
 import           Data.Foldable
 import           Data.IntMap        (IntMap)
 import qualified Data.IntMap as IM
-import           Data.IntSet        (IntSet)
-import qualified Data.IntSet as IS
 import           Data.Key    hiding ((!))
 import           Data.List.NonEmpty (NonEmpty( (:|) ))
 import           Data.Monoid
@@ -154,18 +149,18 @@ tripleComparison pairwiseAlignment childDecoration parentCharacter = (ungapped, 
     childLeftAligned  = childDecoration ^. leftAlignment
     childRightAligned = childDecoration ^. rightAlignment
 
-    (_, _, derivedAlignment, parentAlignment, childAlignment) = pairwiseAlignment parentCharacter childCharacter
---    newGapIndicies         = newGapLocations childCharacter childAlignment parentAlignment
-    newGapIndicies         = toInsertionCounts . snd $ comparativeIndelEvents () childAlignment parentAlignment
+    (_, _, derivedAlignment, _parentAlignment, childAlignment) = pairwiseAlignment parentCharacter childCharacter
+    newGapIndicies         = newGapLocations childCharacter childAlignment
+--    newGapIndicies         = toInsertionCounts . snd . traceShowId $ comparativeIndelEvents () childAlignment parentAlignment
     extendedLeftCharacter  = insertNewGaps newGapIndicies childLeftAligned
     extendedRightCharacter = insertNewGaps newGapIndicies childRightAligned
-    (_, ungapped, gapped)  = trace context $ threeWayMean costStructure derivedAlignment extendedLeftCharacter extendedRightCharacter
-    {--}
+    (_, ungapped, gapped)  = {- trace context $ -} threeWayMean costStructure derivedAlignment extendedLeftCharacter extendedRightCharacter
+    {--
     context = unlines
         [ "New Gap indices: |" <> show (sum newGapIndicies) <> "| " <> show newGapIndicies
         , "Parent:"
-        , show (parentCharacter)
-        , show (derivedAlignment)
+        , show ( parentCharacter)
+        , show (_parentAlignment)
         , "Center char:"
         , show (childCharacter)
         , show (childAlignment)
@@ -176,29 +171,52 @@ tripleComparison pairwiseAlignment childDecoration parentCharacter = (ungapped, 
         , show (olength childRightAligned)
         , show (olength extendedRightCharacter)
         ]
-    {--}
+    --}
 
 
 -- |
--- Returns the indicies of the gaps that were added in the second character when
+-- Returns the indices of the gaps that were added in the second character when
 -- compared to the first character.
-newGapLocations :: (EncodableDynamicCharacter c, Show (Element c)) => c -> c -> c -> IntMap Int
-newGapLocations originalChildChar alignedChildChar alignedParentChar
-  | olength originalChildChar == olength alignedChildChar = mempty
-  | otherwise                                             = newGaps
+newGapLocations :: (EncodableDynamicCharacter c, Show (Element c)) => c -> c -> IntMap Int
+newGapLocations unaligned aligned
+  | olength unaligned == olength aligned = mempty
+  | otherwise                            = newGaps
   where
-    (_,_,newGaps)    = foldl' f (otoList originalChildChar, 0, mempty) . zip (otoList alignedChildChar) $ otoList alignedParentChar
-    gap              = getGapElement $ alignedChildChar `indexStream` 0
-    incrementAt i is = IM.insertWith (+) i 1 is
+    (_, _, newGaps)  = ofoldl' f accumulator aligned
+    accumulator      = (otoList unaligned, 0, mempty)
+    gap              = gapOfStream unaligned
+    incrementAt is i = IM.insertWith (+) i 1 is
 
+    f (remainingUnalignedElements, unalignedIndex, newGapIndices) alignedElement =
+        case remainingUnalignedElements of
 
-    f acc@([], i, is) (x,_)
-      | x == gap  = ([], i, incrementAt i is)
-      | otherwise = acc
-    f (e:es, i, is) (x,y)
-      | x == gap && (x .&. y) /= gap = (e:es, i  , incrementAt i is)
-      | otherwise                    = (  es, i+1, is)
+          -- In the case that the unaligned input character has had all of its
+          -- elements accounted for, we can determine if a deletion event happened
+          -- by simply checking whether the remaining element from the aligned
+          -- character is a gap character.
+          []   -> ( remainingUnalignedElements
+                  , unalignedIndex
+                  , if   alignedElement == gap
+                    then incrementedGapIndices
+                    else newGapIndices
+                  )
 
+          -- In the case that the unaligned character has one or more elements
+          -- that have not been accounted for in the alignment, we use standard
+          -- logic for determining if a deletion event occured.
+          --
+          -- If a deletion event *DID* occur, we note the index in the unaligned
+          -- character where deletion event occurred and *DO NOT* advance the
+          -- "cursor" in our accumulator.
+          -- 
+          -- If a deletion event *DID NOT* occur, we just advance the "cursor"
+          -- in our accumulator.
+          unalignedElement:tailUnalignedElements ->
+              if   unalignedElement /= gap && alignedElement == gap -- Deletion Event Occured!
+              then (remainingUnalignedElements, unalignedIndex    , incrementedGapIndices)
+              else (     tailUnalignedElements, unalignedIndex + 1,         newGapIndices)
+      where
+        incrementedGapIndices = newGapIndices `incrementAt` unalignedIndex
 
 
 -- |
@@ -238,43 +256,3 @@ threeWayMean costStructure char1 char2 char3
             , getOverlap b c costStructure
             ]
 
-
--- | Calculates the 'IndelEvents' that occur given two sequences of an edge.
-comparativeIndelEvents :: (Eq e, EncodableDynamicCharacter c) => e -> c -> c -> (DeletionEvents, InsertionEvents e)
-comparativeIndelEvents edgeIdentifier ancestorCharacter descendantCharacter =
-    (DE resultingDeletionEvents, fromEdgeMapping edgeIdentifier resultingInsertionEvents)
-  where
-    errorMessage = mconcat [ "Lengths of sequences are not equal!\n"
-                           , "Parent length: "
-                           , show $ olength ancestorCharacter
-                           , "\nChild length:  "
-                           , show $ olength descendantCharacter
-                           ]
-    (_, resultingDeletionEvents, resultingInsertionEvents) = foldlWithKey' f (0, mempty, mempty) $ zip (otoList ancestorCharacter) (otoList descendantCharacter)
-    f (parentBaseIndex, deletions, insertions) _characterIndex (ancestorElement, descendantElement)
-      -- Biological "Nothing" case
---      | nothingLogic                                       = (parentBaseIndex    , deletions , insertions )
-      | ancestorElement == gap && descendantElement == gap = (parentBaseIndex    , deletions , insertions )
-      -- Biological deletion event case
-      | deletionEventLogic                                 = (parentBaseIndex + 1, deletions', insertions )
-      -- Biological insertion event case
-      | insertionEventLogic                                = (parentBaseIndex    , deletions , insertions')
-      -- Biological substitution / non-substitution cases
-      | ancestorElement == gap                             = (parentBaseIndex    , deletions , insertions )
-      | otherwise {- Both not gap -}                       = (parentBaseIndex + 1, deletions , insertions )
-      where
-        deletions'          = parentBaseIndex `IS.insert` deletions
-        insertions'         = parentBaseIndex `incInsMap` insertions
-        gap                 = getGapElement ancestorElement
---      containsGap char    = gap .&. char /= zeroBits
-        insertionEventLogic =     ancestorElement == gap && descendantElement /= gap -- not (containsGap descendantElement)
-        deletionEventLogic  =   descendantElement == gap && ancestorElement   /= gap --not (containsGap   ancestorElement)
-{-
-        nothingLogic        =  (  ancestorElement == gap && containsGap descendantElement)
-                            || (descendantElement == gap && containsGap   ancestorElement)
--}
-
-        incInsMap :: Int -> IntMap Int -> IntMap Int
-        incInsMap key = IM.insertWith g key 1
-          where
-            g = const succ

@@ -162,6 +162,7 @@ deriveDynamicMetadatas (x:_) = sequenceA $ V.generate (length sequenceWLOG) f
         c:_ -> getChildNodeWLOG c
 
 
+{-
 -- TODO: Is this correct? Do we need to derived generic Parsed values?
 -- | Derive 'Arbitrary' parsed character from the supplied metadata structures.
 arbitraryCharsGivenMeta :: Vector StandardMetadata -> Gen Parsed
@@ -171,3 +172,4 @@ arbitraryCharsGivenMeta allMeta = do
     let alphs     = toList $ V.map alphabet allMeta
     parsed        <- vectorOf nodeCount (parsedCharsGivenAlph alphs)
     pure . fromList $ zip names parsed
+-}

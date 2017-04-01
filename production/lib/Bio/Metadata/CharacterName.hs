@@ -50,11 +50,13 @@ import Data.Traversable
 import Data.List       (isPrefixOf)
 import Data.Map hiding (null)
 import Data.Monoid
+import Data.String
 import GHC.Generics    (Generic)
 import Prelude  hiding (lookup)
 import Text.Show       (showListWith, showString)
 
 -- import Debug.Trace
+
 
 -- |
 -- Represents the name of a character in a type-safe manner which resolves namespace ambiguities.
@@ -63,16 +65,24 @@ data CharacterName
    | Default     FilePath Int
    deriving (Eq, Generic)
 
+
 instance NFData CharacterName
+
+
+instance IsString CharacterName where
+
+    fromString = UserDefined "Unspecified Path"
+
 
 -- A custom 'Show' instance for more legible rendering of lists
 instance Show CharacterName where
-  show (UserDefined _ name) = name
-  show (Default path index) = path <> ":" <> show index
+    show (UserDefined _ name) = name
+    show (Default path index) = path <> ":" <> show index
 
-  showList = showListWith f
-    where
-      f x = showString $ "\"" <> show x <> "\""
+    showList = showListWith f
+      where
+        f x = showString $ "\"" <> show x <> "\""
+
 
 -- Ordering biases user defined names with a file path prefix before defaulted names with the same prefix.
 instance Ord CharacterName where
@@ -85,6 +95,7 @@ instance Ord CharacterName where
     | (path <> ":") `isPrefixOf` name = LT
     | otherwise = strCmp lhs rhs
   lhs `compare` rhs = strCmp lhs rhs
+
 
 -- Used internally for orderign logic after special cases are checked.
 strCmp :: Show a => a -> a -> Ordering

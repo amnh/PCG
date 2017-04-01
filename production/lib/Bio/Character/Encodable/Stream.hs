@@ -125,8 +125,8 @@ showStreamElement alphabet element
           [x] -> x
           xs  ->
               case invariantTransformation length xs of
-                Just 1 -> "[" <> concat xs <> "]"
-                _      -> "[" <> intercalate " " xs <> "]"
+                Just 1 -> "[" <> concat  xs <> "]"
+                _      -> "[" <> unwords xs <> "]"
 
     toIUPAC x
       | isAlphabetDna       alphabet = fromMaybe x $ x `BM.lookup` BM.twist iupacToDna

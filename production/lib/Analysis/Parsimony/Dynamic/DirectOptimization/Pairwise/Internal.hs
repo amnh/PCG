@@ -17,6 +17,7 @@ module Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Internal where
 
 import Bio.Character.Encodable
 import Data.Bits
+import Data.DList            (snoc)
 import Data.Foldable
 import Data.Key              ((!))
 import Data.Matrix.NotStupid (Matrix, getElem, getRow, matrix, nrows, ncols, toLists)
@@ -84,7 +85,6 @@ naiveDO :: DOCharConstraint s
                                    --   The gapped alignment of the /first/ input character when aligned with the second character
                                    -- 
                                    --   The gapped alignment of the /second/ input character when aligned with the first character
---naiveDO _ _ _ | trace "Call to Naive DO" False = undefined
 naiveDO char1 char2 costStruct = handleMissingCharacter char1 char2 $ naiveDOInternal char1 char2 (overlap costStruct)
 
 
@@ -111,7 +111,8 @@ filterGaps char = constructDynamic . filter (/= gap) $ otoList char
     gap = getGapElement $ char `indexStream` 0
 
 
--- | Main function to generate an 'DOAlignMatrix'. Works as in Needleman-Wunsch,
+-- |
+-- Main function to generate an 'DOAlignMatrix'. Works as in Needleman-Wunsch,
 -- but allows for multiple indel/replacement costs, depending on the 'CostStructure'.
 -- Also, returns the aligned parent characters, with appropriate ambiguities, as the third of
 -- each tuple in the matrix.
@@ -127,9 +128,10 @@ createDOAlignMatrix topChar leftChar overlapFunction = {- trace renderedMatrix $
     -- renderedMatrix = renderCostMatrix topChar leftChar result
     
     result = matrix (olength leftChar + 1) (olength topChar + 1) generateMat
-    gap    = gapOfStream leftChar -- The constructors of DynamicChar prevent an empty character construction.
+--    gap    = gapOfStream leftChar -- The constructors of DynamicChar prevent an empty character construction.
+    gap = gapOfStream topChar
 
-    -- | Internal generator function for the matrix
+    -- Internal generator function for the matrix
     -- Deals with both first row and other cases.
     generateMat (row, col)
       -- :)
@@ -227,64 +229,64 @@ renderCostMatrix lhs rhs mtx = unlines
 
 
 renderMatrix :: DOAlignMatrix a -> String
-renderMatrix mat = trace pokedVal $ unlines . fmap unwords . toLists $ showCell <$> mat
+renderMatrix mat = trace pokedVal . unlines . fmap unwords . toLists $ showCell <$> mat
   where
     showCell (c,d,_) = show (c, d)
     pokedVal = showCell $ getElem (nrows mat -1) (ncols mat - 1) mat
 
 
--- | Performs the traceback of an 'DOAlignMatrix'.
--- Takes in an 'DOAlignMatrix', two 'EncodableDynamicCharacter's, and the 'Alphabet' length.
+-- |
+-- Performs the traceback of an 'DOAlignMatrix'.
+-- Takes in an 'DOAlignMatrix', two 'EncodableDynamicCharacter's
 -- Returns an aligned 'EncodableDynamicCharacter', as well as the aligned versions of the two inputs.
 -- Essentially does the second step of Needleman-Wunsch, following the arrows from the bottom right corner, 
 -- accumulating the sequences as it goes, but returns three alignments: the left character, the right character,
 -- and the parent. The child alignments *should* be biased toward the shorter of the two sequences.
--- TODO: Change order of input characters to match createDOAlignMatrix inputs.
 traceback :: (DOCharConstraint s) => DOAlignMatrix (Element s) -> s -> s -> (s, s, s)
-traceback alignMat' char1' char2' = ( constructDynamic $ reverse t1
-                                    , constructDynamic $ reverse t2
-                                    , constructDynamic $ reverse t3
-                                    )
-    where
-        (t1, t2, t3) = tracebackInternal alignMat' char1' char2' (nrows alignMat' - 1, ncols alignMat' - 1)
-        -- read it from the matrix instead of grabbing
-        tracebackInternal :: (DOCharConstraint s) => DOAlignMatrix (Element s) -> s -> s -> (Int, Int) -> ([Element s], [Element s], [Element s]) -- TODO: make s's into Element s
-        tracebackInternal alignMat char1 char2 (row, col)
-            | nrows alignMat < row - 1 || ncols alignMat < col - 1 = error "Traceback cannot function because matrix is incomplete"
-            | row == 0 && col == 0 = (mempty, mempty, mempty)
-            | otherwise = -- trace (mconcat ["(",show row,",",show col,") ",show curState]) $ 
-                let (trace1, trace2, trace3) = tracebackInternal alignMat char1 char2 (i, j)
-                in (curState : trace1, leftCharacter : trace2, rightCharacter : trace3)
-            where
-              (_, curDirect, curState) = alignMat ! (row, col)
-              leftCharacter            = if row == i 
-                                         then getGapElement curState
-                                         else char1 `indexStream` i
-              rightCharacter           = if col == j 
-                                         then getGapElement curState
-                                         else char2 `indexStream` j
-              (i, j) =
-                case curDirect of
-                  LeftArrow -> (row    , col - 1)
-                  UpArrow   -> (row - 1, col    )
-                  DiagArrow -> (row - 1, col - 1)
-
-
--- | Simple function to get the cost from an alignment matrix
-getTotalAlignmentCost :: Matrix (a, b, c) -> a
-getTotalAlignmentCost alignmentMatrix = c
+traceback alignMatrix longerChar lesserChar = ( constructDynamic medianStates
+                                              , constructDynamic alignedLongerChar
+                                              , constructDynamic alignedLesserChar
+                                              )
   where
-    (c, _, _) = alignmentMatrix ! (nrows alignmentMatrix - 1, ncols alignmentMatrix - 1) 
+      (medianStates, alignedLongerChar, alignedLesserChar) = tracebackInternal (nrows alignMatrix - 1, ncols alignMatrix - 1)
+      gap = gapOfStream longerChar
+
+      tracebackInternal p@(row, col)
+        | p == (0,0) = (mempty, mempty, mempty)
+        | otherwise  = ( previousMedianCharElements `snoc` medianElement
+                       , previousLongerCharElements `snoc` longerElement
+                       , previousLesserCharElements `snoc` lesserElement
+                       )
+        where
+          (previousMedianCharElements, previousLongerCharElements, previousLesserCharElements) = tracebackInternal (row', col')
+              
+          (_, directionArrow, medianElement) = alignMatrix ! p
+
+          (row', col', longerElement, lesserElement) =
+              case directionArrow of
+                LeftArrow -> (row    , col - 1, longerChar `indexStream` (col - 1),                               gap )
+                UpArrow   -> (row - 1, col    ,                               gap , lesserChar `indexStream` (row - 1))
+                DiagArrow -> (row - 1, col - 1, longerChar `indexStream` (col - 1), lesserChar `indexStream` (row - 1))
 
 
--- | Memoized wrapper of the overlap function
+-- |
+-- Simple function to get the cost from an alignment matrix
+getTotalAlignmentCost :: Matrix (a, b, c) -> a
+getTotalAlignmentCost alignmentMatrix = cost
+  where
+    (cost, _, _) = alignmentMatrix ! (nrows alignmentMatrix - 1, ncols alignmentMatrix - 1) 
+
+
+-- |
+-- Memoized wrapper of the overlap function
 getOverlap :: (EncodableStreamElement c {- , Memoizable c, -}) => c -> c -> (Word -> Word -> Word) -> (c, Word)
 getOverlap inChar1 inChar2 costStruct = result
     where
         result = {- memoize2 -} overlap costStruct inChar1 inChar2
 
         
--- | Takes two 'EncodableStreamElement' and a 'CostStructure' and returns a tuple of a new character, 
+-- |
+-- Takes two 'EncodableStreamElement' and a 'CostStructure' and returns a tuple of a new character, 
 -- along with the cost of obtaining that character. The return character may be (or is even likely to be)
 -- ambiguous. Will attempt to intersect the two characters, but will union them if that is not possible,
 -- based on the 'CostStructure'. 
@@ -383,30 +385,24 @@ naiveDOInternal :: (DOCharConstraint s, Show (Element s))
         -> s
         -> OverlapFunction (Element s)
         -> (s, Double, s, s, s)
-naiveDOInternal char1 char2 overlapFunction
-    | onull char1 = (char1, 0, char1, char1, char1)
-    | onull char2 = (char2, 0, char2, char2, char2)
-    | otherwise   = (ungapped, fromIntegral cost, gapped', out1, out2)
+naiveDOInternal char1 char2 overlapFunction = (ungapped, fromIntegral alignmentCost, gapped', alignedChar1, alignedChar2)
     where
       char1Len = olength char1
       char2Len = olength char2
-      (longerChar, shorterChar, _longLen) = if   char1Len >= char2Len
-                                            then (char1, char2, char1Len)
-                                            else (char2, char1, char2Len)
-      traversalMat = -- (\x -> trace (show $ (\(a,b,_) -> (a,b)) <$> x) x) $
-                      createDOAlignMatrix longerChar shorterChar overlapFunction
-      cost = getTotalAlignmentCost traversalMat
-      (gapped , left , right ) = traceback traversalMat shorterChar longerChar
---      (gapped', left', right') = traceback traversalMat shorterChar longerChar
-{--}
+      swapped  = char1Len < char2Len
+      (longerChar, shorterChar)
+        | swapped   = (char2, char1)
+        | otherwise = (char1, char2)
+      traversalMat  = createDOAlignMatrix longerChar shorterChar overlapFunction
+      alignmentCost = getTotalAlignmentCost traversalMat
+      (gapped , left , right ) = traceback traversalMat longerChar shorterChar
       (gapped', left', right') = (\(x,y,z) -> (constructDynamic x, constructDynamic y, constructDynamic z)) 
                                $ correctBiasing (getGapElement $ gapped `indexStream` 0) (otoList gapped, otoList left, otoList right)
-{--}
       -- TODO: change to occur in traceback, to remove constant factor.
       ungapped = filterGaps gapped'
-      (out1, out2) = if char1Len > char2Len
-                     then (right', left')
-                     else (left', right')
+      (alignedChar1, alignedChar2)
+        | swapped   = (right', left' )
+        | otherwise = (left' , right')
 
 handleMissingCharacter
   :: PossiblyMissingCharacter s

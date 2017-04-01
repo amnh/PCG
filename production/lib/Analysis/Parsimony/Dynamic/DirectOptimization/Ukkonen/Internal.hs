@@ -103,14 +103,14 @@ tracebackUkkonen :: V.Vector (V.Vector (Int, Int64, Direction)) -> BaseChar -> B
 tracebackUkkonen nwMatrix inlSeq inrSeq posR posL maxGap rInDel lInDel | trace ("tracebackUkkonen " ++ show posR ++ show posL ++ show inlSeq ++ show inrSeq) False = undefined
 tracebackUkkonen nwMatrix inlSeq inrSeq posR posL maxGap rInDel lInDel
 --trace ("psLR " ++ show posR ++ " " ++ show posL ++ " Left " ++ show lInDel ++ " Right " ++ show rInDel ++ " maxGap " ++ show maxGap) (
-    | (rInDel  > (maxGap - 2)) || (lInDel > (maxGap - 2)) = V.singleton ((0 :: Int64), (0 :: Int64), (0 :: Int64))  
+    | (rInDel  > (maxGap - 2)) || (lInDel > (maxGap - 2)) = V.singleton (0, 0, 0) :: V.Vector (Int64,Int64,Int64)  
     | posL <= 0 && posR <= 0 = trace "not y" V.empty
     | otherwise = trace "y" $ let 
         y   | direction == LeftDir = V.cons (state, inDelBit, inrSeq V.! (posR - 1)) (tracebackUkkonen nwMatrix inlSeq inrSeq posR (posL - 1) maxGap rInDel (lInDel + 1))
             | direction == DownDir = V.cons (state, inlSeq V.! (posL - 1), inDelBit) (tracebackUkkonen nwMatrix inlSeq inrSeq (posR - 1) posL maxGap (rInDel + 1) lInDel)  
             | otherwise = V.cons (state, inlSeq V.! (posL - 1), inrSeq V.! (posR - 1)) (tracebackUkkonen nwMatrix inlSeq inrSeq (posR - 1) (posL - 1) maxGap rInDel lInDel)
         in trace (show y) y
-        where (_, state, direction) = (nwMatrix V.! posR) V.! (transformFullYShortY posL posR  maxGap) --(transformFullYShortY posL posR maxGap)
+        where (_, state, direction) = (nwMatrix V.! posR) V.! transformFullYShortY posL posR  maxGap --(transformFullYShortY posL posR maxGap)
 
 
 -- |
@@ -139,7 +139,7 @@ getFirstRowUkkonen indelCost rowLength position prevCost lSeq  maxGap
 getRowsUkkonen :: BaseChar -> BaseChar -> Int -> Int -> Int -> V.Vector (Int, Int64, Direction) -> Int -> V.Vector (V.Vector (Int, Int64, Direction))
 getRowsUkkonen lSeq rSeq indelCost subCost rowNum prevRow maxGap | trace "getRowsUkkonen" False = undefined
 getRowsUkkonen lSeq rSeq indelCost subCost rowNum prevRow maxGap
-    | rowNum == ((V.length rSeq) + 1) = V.empty
+    | rowNum == (length rSeq + 1) = V.empty
     | startPosition == 0 = --trace ("Row " ++ show rowNum ++ " of " ++ show (V.length rSeq) ++ " starts " ++ show startPosition ++ ":" ++ show thisRowZero) (
                 V.cons thisRowZero (getRowsUkkonen lSeq rSeq indelCost subCost (rowNum + 1) thisRowZero maxGap) --)
     | otherwise = --trace ("Row " ++ show rowNum ++ " of " ++ show (V.length rSeq) ++" starts " ++ show startPosition ++ ":" ++ show thisRowNonZero) (
@@ -171,9 +171,9 @@ getThisRowUkkonen lSeq rSeq indelCost subCost rowNum prevRow position rowLength 
             lSeqPos = position - 1 --since first is '-' the index is row/pos - 1
             rSeqRow = rowNum - 1 --since first is '-' the index is row/pos - 1
             leftCost = getOverlapCost prevCost indelCost (lSeq V.! lSeqPos) --need to check for overlap
-            (upValue, _, _) = prevRow V.! (transformFullYShortY  position (rowNum - 1) maxGap)
+            (upValue, _, _) = prevRow V.! transformFullYShortY  position (rowNum - 1) maxGap
             downCost = getOverlapCost upValue indelCost (rSeq V.! rSeqRow) --need to check for overlap
-            (diagValue, _, _) = prevRow V.! (transformFullYShortY  (position - 1) (rowNum - 1) maxGap)
+            (diagValue, _, _) = prevRow V.! transformFullYShortY  (position - 1) (rowNum - 1) maxGap
             intersection = (lSeq V.! lSeqPos) .&. (rSeq V.! rSeqRow)
             union = (lSeq V.! lSeqPos) .|. (rSeq V.! rSeqRow)
             (diagCost, diagState) = getDiagDirCost diagValue intersection union subCost

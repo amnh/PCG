@@ -11,8 +11,11 @@
 -- Collects a subset of all TNT commands representing the set of commands
 -- relevant to processing character data.
 -----------------------------------------------------------------------------
+
 {-# LANGUAGE FlexibleContexts, TypeFamilies #-}
+
 module File.Format.TNT.Partitioning where
+
 
 import Data.Char (isAlpha)
 import File.Format.TNT.Command.CCode
@@ -27,7 +30,9 @@ import Text.Megaparsec
 import Text.Megaparsec.Custom
 import Text.Megaparsec.Prim (MonadParsec)
 
--- | The TNT command subset which is parsed.
+
+-- |
+-- The TNT command subset which is parsed.
 data Part
    = CC CCode
    | CN CNames
@@ -37,11 +42,15 @@ data Part
    | XR XRead
    | Ignore
 
--- | A collection of the TNT commands found in the file.
+
+-- |
+-- A collection of the TNT commands found in the file.
 type Commands = ([CCode],[CNames],[Cost],[NStates],[TRead],[XRead])
 
--- | Collects the subset of the TNT commands related to processing character
---   sequences. Returns the relavent commands in a tuple.
+
+-- |
+-- Collects the subset of the TNT commands related to processing character
+-- sequences. Returns the relavent commands in a tuple.
 gatherCommands :: (MonadParsec e s m, Token s ~ Char) => m Commands
 gatherCommands = partition <$> many commands
   where
@@ -55,6 +64,7 @@ gatherCommands = partition <$> many commands
               , Ignore <$      procedureCommand
               , Ignore <$      ignoredCommand
               ]
+
     partition = foldr f ([],[],[],[],[],[])
       where
         f (CC e) (u,v,w,x,y,z) = (e:u,  v,  w,  x,  y,  z)
@@ -65,8 +75,10 @@ gatherCommands = partition <$> many commands
         f (XR e) (u,v,w,x,y,z) = (  u,  v,  w,  x,  y,e:z)
         f Ignore x             = x
 
--- | A parser for consuming a command that is not part of the subset of TNT
---   commands relavent to Character sequence processing.
+
+-- |
+-- A parser for consuming a command that is not part of the subset of TNT
+-- commands relavent to Character sequence processing.
 ignoredCommand :: (MonadParsec e s m, Token s ~ Char) => m String
 ignoredCommand = commandKeyword <* optional commandBody <* terminal
   where

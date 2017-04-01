@@ -105,11 +105,8 @@ toMissingCharacters cb =
 
 -- |
 -- Construct a singleton block containing a /continuous/ character.
-continuousSingleton :: CharacterName -> (a -> c) -> a -> PartialCharacterBlock m i (ContinuousDecorationInitial c) f a d
-continuousSingleton nameValue transformation continuousValue =
-    PartialCharacterBlock (pure bin)  mempty  mempty  mempty mempty mempty
-  where
-    bin = continuousDecorationInitial nameValue transformation continuousValue
+continuousSingleton :: c -> PartialCharacterBlock m i c f a d
+continuousSingleton dec = PartialCharacterBlock (pure dec) mempty mempty mempty mempty mempty
 
 
 -- |

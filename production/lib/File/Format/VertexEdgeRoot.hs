@@ -25,4 +25,5 @@ module File.Format.VertexEdgeRoot
   , verStreamParser
   ) where
 
+
 import File.Format.VertexEdgeRoot.Parser

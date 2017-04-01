@@ -99,9 +99,9 @@ library
 
   extra-libraries: stdc++
 
-  cc-options: --std=c11
+--  cc-options: --std=c11
 
---  cc-options: --std=c++11 -g
+  cc-options: --std=c++11 -g
 
   -- We must provide the full relative path to every C file that the project depends on.
   c-sources:
@@ -146,6 +146,7 @@ library
 --                       Analysis.Parsimony.Binary.Optimization
                        Analysis.Parsimony.Additive.Internal
                        Analysis.Parsimony.Dynamic.DirectOptimization
+                       Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise
                        Analysis.Parsimony.Dynamic.SequentialAlign
                        Analysis.Parsimony.Fitch.Internal
                        Analysis.Parsimony.Sankoff.Internal
@@ -170,25 +171,25 @@ library
                        Bio.Metadata.Parsed
                        Bio.Sequence
                        Bio.Sequence.Block
-                       Bio.PhyloGraph
-                       Bio.PhyloGraph.DAG
-                       Bio.PhyloGraph.Edge
-                       Bio.PhyloGraph.Forest
-                       Bio.PhyloGraph.Network
-                       Bio.PhyloGraph.Solution
-                       Bio.PhyloGraph.Tree.Binary
-                       Bio.PhyloGraph.Tree.EdgeAware
-                       Bio.PhyloGraph.Node
-                       Bio.PhyloGraph.Node.Encoded
-                       Bio.PhyloGraph.Node.Final
-                       Bio.PhyloGraph.Node.ImpliedAlign
-                       Bio.PhyloGraph.Node.Internal
-                       Bio.PhyloGraph.Node.Packed
-                       Bio.PhyloGraph.Node.Preliminary
-                       Bio.PhyloGraph.Node.Referential
+--                       Bio.PhyloGraph
+--                       Bio.PhyloGraph.DAG
+--                       Bio.PhyloGraph.Edge
+--                       Bio.PhyloGraph.Forest
                        Bio.PhyloGraph.Forest.Parsed
-                       Bio.PhyloGraph.Tree.Referential
-                       Bio.PhyloGraph.Tree.Rose
+                       Bio.PhyloGraph.Network
+--                       Bio.PhyloGraph.Solution
+--                       Bio.PhyloGraph.Tree.Binary
+--                       Bio.PhyloGraph.Tree.EdgeAware
+--                       Bio.PhyloGraph.Node
+--                       Bio.PhyloGraph.Node.Encoded
+--                       Bio.PhyloGraph.Node.Final
+--                       Bio.PhyloGraph.Node.ImpliedAlign
+--                       Bio.PhyloGraph.Node.Internal
+--                       Bio.PhyloGraph.Node.Packed
+--                       Bio.PhyloGraph.Node.Preliminary
+--                       Bio.PhyloGraph.Node.Referential
+--                       Bio.PhyloGraph.Tree.Referential
+--                       Bio.PhyloGraph.Tree.Rose
                        Bio.PhyloGraphPrime
                        Bio.PhyloGraphPrime.Component
                        Bio.PhyloGraphPrime.Node
@@ -216,13 +217,14 @@ library
                        File.Format.TransitionCostMatrix
 
   -- probably can be moved to other-modules:
-                       Bio.Metadata.MaskGenerator
-                       Bio.PhyloGraph.Node.Topological
+--                       Bio.Metadata.MaskGenerator
+--                       Bio.PhyloGraph.Node.Topological
                        Data.List.Utility
                        Data.Matrix.NotStupid
                        Text.Megaparsec.Custom
                        Test.Custom.NucleotideSequence
-
+                       Test.Custom.DynamicCharacterNode
+        
   -- Modules included in this library but not exported.
   other-modules:
                     --   Analysis.ImpliedAlignment.AlignmentContext
@@ -235,7 +237,6 @@ library
                        Analysis.Parsimony.Dynamic.DirectOptimization.Internal
                        Analysis.Parsimony.Dynamic.DirectOptimization.InsertionEvents
                        Analysis.Parsimony.Dynamic.DirectOptimization.InsertionEvents.Internal
-                       Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise
                        Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Internal
                        Analysis.Parsimony.Dynamic.SequentialAlign.FFI
                        Bio.Character.Decoration.Additive.Class
@@ -264,8 +265,6 @@ library
                        Bio.Character.Exportable.Class
                        Bio.Character.Parsed.Class
                        Bio.Character.Parsed.Internal
-                       Bio.PhyloGraph.Forest.Class
-                       Bio.PhyloGraph.Forest.Internal
                        Bio.Metadata.Class
                        Bio.Metadata.General
                        Bio.Metadata.General.Class
@@ -277,18 +276,20 @@ library
                        Bio.Metadata.Dynamic.Class
                        Bio.Metadata.Dynamic.Internal
                        Bio.Metadata.Internal
-                       Bio.PhyloGraph.DAG.Internal
-                       Bio.PhyloGraph.DAG.Class
-                       Bio.PhyloGraph.Edge.Internal
-                       Bio.PhyloGraph.Edge.Class
+--                       Bio.PhyloGraph.DAG.Internal
+--                       Bio.PhyloGraph.DAG.Class
+--                       Bio.PhyloGraph.Edge.Internal
+--                       Bio.PhyloGraph.Edge.Class
+--                       Bio.PhyloGraph.Forest.Class
+--                       Bio.PhyloGraph.Forest.Internal
                        Bio.PhyloGraph.Network.Class
                        Bio.PhyloGraph.Network.Subsettable
-                       Bio.PhyloGraph.Solution.Class
-                       Bio.PhyloGraph.Solution.Internal
-                       Bio.PhyloGraph.Solution.Metadata
-                       Bio.PhyloGraph.Tree.Binary.Class
-                       Bio.PhyloGraph.Tree.EdgeAware.Class
-                       Bio.PhyloGraph.Tree.Rose.Class
+--                       Bio.PhyloGraph.Solution.Class
+--                       Bio.PhyloGraph.Solution.Internal
+--                       Bio.PhyloGraph.Solution.Metadata
+--                       Bio.PhyloGraph.Tree.Binary.Class
+--                       Bio.PhyloGraph.Tree.EdgeAware.Class
+--                       Bio.PhyloGraph.Tree.Rose.Class
                        Bio.PhyloGraphPrime.Forest
                        Bio.PhyloGraphPrime.PhylogeneticDAG.Class
                        Bio.PhyloGraphPrime.ZipperDAG.Internal
@@ -406,15 +407,15 @@ executable pcg
                        PCG.Command.Types.Read.Unification.UnificationError
                        PCG.Command.Types.Read.Validate
                        PCG.Command.Types.Report
-                       PCG.Command.Types.Report.CharacterMatrix
+--                       PCG.Command.Types.Report.CharacterMatrix
                        PCG.Command.Types.Report.DynamicCharacterTable
                        PCG.Command.Types.Report.Evaluate
-                       PCG.Command.Types.Report.GraphViz
-                       PCG.Command.Types.Report.ImpliedAlignmentFasta
+--                       PCG.Command.Types.Report.GraphViz
+--                       PCG.Command.Types.Report.ImpliedAlignmentFasta
                        PCG.Command.Types.Report.Internal
-                       PCG.Command.Types.Report.Metadata
-                       PCG.Command.Types.Report.TaxonMatrix
-                       PCG.Command.Types.Report.Newick
+--                       PCG.Command.Types.Report.Metadata
+--                       PCG.Command.Types.Report.TaxonMatrix
+--                       PCG.Command.Types.Report.Newick
                        PCG.Command.Types.Report.Validate
                        PCG.Computation.Internal
                        PCG.Script
@@ -534,6 +535,119 @@ executable do-comparison
   hs-source-dirs:      utils
 
 
+executable sequential-alignment-invariants
+
+  main-is:             sequential-alignment-invariants.hs
+
+  build-depends:       base                  >=4.8
+                     , bimap
+                     , bv                    -any
+                     , containers            -any
+                     , criterion             -any
+                     , deepseq               -any
+                     , directory             -any
+                     , dlist                 -any
+                     , either                -any
+                     , Glob                  -any
+                     , hashable              -any
+                     , keys                  -any
+                     , matrix                -any
+                     , megaparsec            >=5.0
+                     , mtl                  -any
+--                     , memoize               -any
+                     , mono-traversable      -any
+                     , parallel              -any
+                     , phylocomgraph         -any
+                     , QuickCheck            -any
+                     , safe                  -any
+                     , scientific            -any
+                     , semigroups            -any
+                     , smallcheck            -any
+                     , split                 -any
+                     , tasty                 -any
+                     , tasty-hunit           -any
+                     , tasty-quickcheck      -any
+                     , tasty-smallcheck      -any
+                     , text                  -any
+                     , time                  -any
+                     , transformers          -any
+                     , unordered-containers  -any
+                     , vector                -any
+                     , vector-instances      -any
+
+  default-language:    Haskell2010
+
+  ghc-options:         -O2 -Wall
+                       -fwarn-duplicate-exports
+                       -fwarn-incomplete-patterns
+                       -fwarn-missing-signatures
+                       -fwarn-overlapping-patterns
+                       -fwarn-tabs
+                       -fwarn-unused-binds
+                       -fwarn-unused-do-bind
+                       -fwarn-unused-imports
+                       -fwarn-unused-matches
+
+  hs-source-dirs:      utils
+
+
+executable three-way-mean-check
+
+  main-is:             three-way-mean-check.hs
+
+  build-depends:       base                  >=4.8
+                     , bimap
+                     , bv                    -any
+                     , containers            -any
+                     , criterion             -any
+                     , deepseq               -any
+                     , directory             -any
+                     , dlist                 -any
+                     , either                -any
+                     , Glob                  -any
+                     , hashable              -any
+                     , keys                  -any
+                     , lens
+                     , matrix                -any
+                     , megaparsec            >=5.0
+                     , mtl                  -any
+--                     , memoize               -any
+                     , mono-traversable      -any
+                     , parallel              -any
+                     , phylocomgraph         -any
+                     , QuickCheck            -any
+                     , safe                  -any
+                     , scientific            -any
+                     , semigroups            -any
+                     , smallcheck            -any
+                     , split                 -any
+                     , tasty                 -any
+                     , tasty-hunit           -any
+                     , tasty-quickcheck      -any
+                     , tasty-smallcheck      -any
+                     , text                  -any
+                     , time                  -any
+                     , transformers          -any
+                     , unordered-containers  -any
+                     , vector                -any
+                     , vector-instances      -any
+
+  default-language:    Haskell2010
+
+  ghc-options:         -O2 -Wall
+                       -fwarn-duplicate-exports
+                       -fwarn-incomplete-patterns
+                       -fwarn-missing-signatures
+                       -fwarn-overlapping-patterns
+                       -fwarn-tabs
+                       -fwarn-unused-binds
+                       -fwarn-unused-do-bind
+                       -fwarn-unused-imports
+                       -fwarn-unused-matches
+
+  hs-source-dirs:      utils
+                       
+  
 Test-Suite testsuite
   type:                exitcode-stdio-1.0
 
