@@ -456,11 +456,11 @@ int aligner( uint64_t *seq1
                 pathFirst[i].partialAlign[BUFFER_OFFSET + pathFirst[i].posStringB] = seqB[pathFirst[i].posTrueB];
                 // printBuffer(pathFirst[i].partialAlign, INIT_LENGTH, "partialAlign (2)");
 
-                pathFirst[i].posStringA = pathFirst[i].posStringA + 1 >= SEQ_MAX_LEN ? SEQ_MAX_LEN - 1: pathFirst[i].posStringA + 1;
-                pathFirst[i].posStringB = pathFirst[i].posStringB + 1 >= SEQ_MAX_LEN ? SEQ_MAX_LEN - 1: pathFirst[i].posStringB + 1;
-                //LOOK: It gets incremented here!
-                pathFirst[i].posTrueA = pathFirst[i].posTrueA + 1 >= seq1Len ? pathFirst[i].posTrueA : pathFirst[i].posTrueA + 1;
-                pathFirst[i].posTrueB = pathFirst[i].posTrueB + 1 >= seq2Len ? pathFirst[i].posTrueB : pathFirst[i].posTrueB + 1;
+                pathFirst[i].posStringA = boundedIncrement(pathFirst[i].posStringA, SEQ_MAX_LEN);
+                pathFirst[i].posStringB = boundedIncrement(pathFirst[i].posStringB, SEQ_MAX_LEN);
+
+                pathFirst[i].posTrueA = boundedIncrement(pathFirst[i].posTrueA, seq1Len);
+                pathFirst[i].posTrueB = boundedIncrement(pathFirst[i].posTrueB, seq1Len);
 
                 if (flagEmpty[0] == 0) {
                     pathFirst[i].partialTrueWt = trueWt(&pathFirst[i], tcm, BUFFER_OFFSET, SEQ_MAX_LEN, alphSize);
@@ -495,9 +495,10 @@ int aligner( uint64_t *seq1
                                        + getCost(seqA[pathFirst[kFirst].posTrueA], GAP, tcm, alphSize);
                 pathFirst[i].partialAlign[pathFirst[i].posStringA]          = seqA[pathFirst[i].posTrueA];
                 pathFirst[i].partialAlign[BUFFER_OFFSET + pathFirst[i].posStringB] = GAP;
-                pathFirst[i].posStringA = pathFirst[i].posStringA + 1 >= SEQ_MAX_LEN ? SEQ_MAX_LEN - 1 : pathFirst[i].posStringA + 1;
-                pathFirst[i].posStringB = pathFirst[i].posStringB + 1 >= SEQ_MAX_LEN ? SEQ_MAX_LEN - 1 : pathFirst[i].posStringB + 1;
-                pathFirst[i].posTrueA = pathFirst[i].posTrueA >= seq1Len ? pathFirst[i].posTrueA : pathFirst[i].posTrueA + 1;
+
+                pathFirst[i].posStringA = boundedIncrement(pathFirst[i].posStringA, SEQ_MAX_LEN);
+                pathFirst[i].posStringB = boundedIncrement(pathFirst[i].posStringB, SEQ_MAX_LEN);
+                pathFirst[i].posTrueA   = boundedIncrement(pathFirst[i].posTrueA  , seq1Len    );
 
                 if (flagEmpty[0] == 0) {
                     pathFirst[i].partialTrueWt = trueWt(&pathFirst[i], tcm, BUFFER_OFFSET, SEQ_MAX_LEN, alphSize);
@@ -535,10 +536,10 @@ int aligner( uint64_t *seq1
                                        + getCost(GAP, seqB[pathFirst[kFirst].posTrueB], tcm, alphSize);
                 pathFirst[i].partialAlign[pathFirst[i].posStringA] = GAP;
                 pathFirst[i].partialAlign[BUFFER_OFFSET + pathFirst[i].posStringB] = seqB[pathFirst[i].posTrueB];
-                pathFirst[i].posStringA = pathFirst[i].posStringA + 1 >= SEQ_MAX_LEN ? SEQ_MAX_LEN - 1 : pathFirst[i].posStringA + 1;
-                pathFirst[i].posStringB = pathFirst[i].posStringB + 1 >= SEQ_MAX_LEN ? SEQ_MAX_LEN - 1 : pathFirst[i].posStringB + 1;
-                //LOOK: incremented
-                pathFirst[i].posTrueB = pathFirst[i].posTrueB + 1 >= seq2Len ? pathFirst[i].posTrueB : pathFirst[i].posTrueB + 1;
+
+                pathFirst[i].posStringA = boundedIncrement(pathFirst[i].posStringA, SEQ_MAX_LEN);
+                pathFirst[i].posStringB = boundedIncrement(pathFirst[i].posStringB, SEQ_MAX_LEN);
+                pathFirst[i].posTrueB   = boundedIncrement(pathFirst[i].posTrueB  , seq2Len    );
 
                 if (flagEmpty[0] == 0) {
 
@@ -600,11 +601,11 @@ int aligner( uint64_t *seq1
 
                     pathSecond[i].partialAlign[pathSecond[i].posStringA]          = seqA[pathSecond[i].posTrueA];
                     pathSecond[i].partialAlign[BUFFER_OFFSET + pathSecond[i].posStringB] = seqB[pathSecond[i].posTrueB];
-                    pathSecond[i].posStringA = pathSecond[i].posStringA + 1 >= SEQ_MAX_LEN ? SEQ_MAX_LEN - 1 : pathSecond[i].posStringA + 1;
-                    pathSecond[i].posStringB = pathSecond[i].posStringB + 1 >= SEQ_MAX_LEN ? SEQ_MAX_LEN - 1 : pathSecond[i].posStringB + 1;
-                    //LOOK: Inc
-                    pathSecond[i].posTrueA = pathSecond[i].posTrueA + 1 >= seq1Len ? pathSecond[i].posTrueA : pathSecond[i].posTrueA + 1;
-                    pathSecond[i].posTrueB = pathSecond[i].posTrueB + 1 >= seq2Len ? pathSecond[i].posTrueB : pathSecond[i].posTrueB + 1;
+
+                    pathSecond[i].posStringA = boundedIncrement(pathSecond[i].posStringA, SEQ_MAX_LEN);
+                    pathSecond[i].posStringB = boundedIncrement(pathSecond[i].posStringB, SEQ_MAX_LEN);
+                    pathSecond[i].posTrueA   = boundedIncrement(pathSecond[i].posTrueA  , seq1Len    );
+                    pathSecond[i].posTrueB   = boundedIncrement(pathSecond[i].posTrueB  , seq2Len    );
 
                     if (flagEmpty[1] == 0) {
                         pathSecond[i].partialTrueWt = trueWt(&pathSecond[i], tcm, BUFFER_OFFSET, SEQ_MAX_LEN, alphSize);
@@ -642,9 +643,10 @@ int aligner( uint64_t *seq1
                     pathSecond[i].partialWt                                       = pathSecond[i].partialWt  + aToGap0 * aToGap0;
                     pathSecond[i].partialAlign[pathSecond[i].posStringA]          = seqA[pathSecond[i].posTrueA];
                     pathSecond[i].partialAlign[BUFFER_OFFSET + pathSecond[i].posStringB] = GAP;
-                    pathSecond[i].posStringA = pathSecond[i].posStringA + 1 >= SEQ_MAX_LEN ? SEQ_MAX_LEN - 1 : pathSecond[i].posStringA + 1;
-                    pathSecond[i].posStringB = pathSecond[i].posStringB + 1 >= SEQ_MAX_LEN ? SEQ_MAX_LEN - 1 : pathSecond[i].posStringB + 1;
-                    pathSecond[i].posTrueA   = pathSecond[i].posTrueA + 1 >= seq1Len ? pathSecond[i].posTrueA : pathSecond[i].posTrueA + 1;
+
+                    pathSecond[i].posStringA = boundedIncrement(pathSecond[i].posStringA, SEQ_MAX_LEN);
+                    pathSecond[i].posStringB = boundedIncrement(pathSecond[i].posStringB, SEQ_MAX_LEN);
+                    pathSecond[i].posTrueA   = boundedIncrement(pathSecond[i].posTrueA  , seq1Len    );
 
                     if (flagEmpty[1] == 0) {
                         pathSecond[i].partialTrueWt = trueWt(&pathSecond[i], tcm, BUFFER_OFFSET, SEQ_MAX_LEN, alphSize);
@@ -681,10 +683,10 @@ int aligner( uint64_t *seq1
                     pathSecond[i].partialWt                                       = pathSecond[i].partialWt  + gapToB0 * gapToB0;
                     pathSecond[i].partialAlign[pathSecond[i].posStringA]          = GAP;
                     pathSecond[i].partialAlign[BUFFER_OFFSET + pathSecond[i].posStringB] = seqB[pathSecond[i].posTrueB];
-                    pathSecond[i].posStringA = pathSecond[i].posStringA + 1 >= SEQ_MAX_LEN ? SEQ_MAX_LEN - 1 : pathSecond[i].posStringA + 1;
-                    pathSecond[i].posStringB = pathSecond[i].posStringB + 1 >= SEQ_MAX_LEN ? SEQ_MAX_LEN - 1 : pathSecond[i].posStringB + 1;
-                    //LOOK: Inc
-                    pathSecond[i].posTrueB = pathSecond[i].posTrueB + 1 >= seq2Len ? pathSecond[i].posTrueB : pathSecond[i].posTrueB + 1;
+
+                    pathSecond[i].posStringA = boundedIncrement(pathSecond[i].posStringA, SEQ_MAX_LEN);
+                    pathSecond[i].posStringB = boundedIncrement(pathSecond[i].posStringB, SEQ_MAX_LEN);
+                    pathSecond[i].posTrueB   = boundedIncrement(pathSecond[i].posTrueB  , seq2Len    );
 
                     if (flagEmpty[1] == 0) {
                         pathSecond[i].partialTrueWt = trueWt(&pathSecond[i], tcm, BUFFER_OFFSET, SEQ_MAX_LEN, alphSize);
@@ -1013,4 +1015,13 @@ void printBuffer(uint64_t *buffer, size_t bufLen, char *prefix)
         printf("%" PRIu64 ", ", buffer[i]);
     }
     printf("]\n");
+}
+
+
+size_t boundedIncrement(size_t value, size_t bound)
+{
+  size_t incrementedValue = value++;
+  return incrementedValue < bound
+       ? incrementedValue
+       : value;
 }

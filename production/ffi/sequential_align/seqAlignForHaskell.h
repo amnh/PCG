@@ -66,6 +66,8 @@ void printCostBuffer(int *buffer, size_t bufLen, char *prefix);
 
 void printBuffer(uint64_t *buffer, size_t bufLen, char *prefix);
 
+size_t boundedIncrement(size_t value, size_t bound);
+
 /** no longer in use. Use costMatrixWrapper.getCost instead.
 int getCost(uint64_t lhs, uint64_t rhs, costMtx_t* tcm, size_t alphSize)
 */
