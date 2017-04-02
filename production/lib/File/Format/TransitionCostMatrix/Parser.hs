@@ -21,10 +21,11 @@ import           Data.Char                   (isSpace)
 import           Data.Foldable               (toList)
 import           Data.List.NonEmpty          (NonEmpty)
 import qualified Data.List.NonEmpty    as NE (fromList)
-import           Data.List.Utility           (duplicates,mostCommon)
-import           Data.Matrix.NotStupid       (Matrix,ncols,nrows)
+import           Data.List.Utility           (duplicates, mostCommon)
+import           Data.Matrix.NotStupid       (Matrix, ncols, nrows)
 import qualified Data.Matrix.NotStupid as M  (fromList)
-import           Data.Maybe                  (catMaybes,fromJust)
+import           Data.Maybe                  (catMaybes, fromJust)
+import           Data.Semigroup
 import           Text.Megaparsec
 import           Text.Megaparsec.Custom
 import           Text.Megaparsec.Prim        (MonadParsec)

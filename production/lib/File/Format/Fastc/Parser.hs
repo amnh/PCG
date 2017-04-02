@@ -57,7 +57,8 @@ fastcStreamParser = NE.fromList <$> some fastcTaxonSequenceDefinition <* eof
 
 
 -- |
--- Parses a FASTC 'Identifier' and the associated sequence, discarding any comments
+-- Parses a FASTC 'Identifier' and the associated sequence, discarding any
+-- comments
 fastcTaxonSequenceDefinition :: (MonadParsec e s m, Token s ~ Char) => m FastcSequence
 fastcTaxonSequenceDefinition = do
     name <- identifierLine
@@ -77,20 +78,22 @@ fastcSymbolSequence = V.fromList <$> (space *> fullSequence)
 
 
 -- |
--- Parses either an ambiguity group of 'Symbol's or a single, unambiguous 'Symbol'.
+-- Parses either an ambiguity group of 'Symbol's or a single, unambiguous
+-- 'Symbol'.
 symbolGroup :: (MonadParsec e s m, Token s ~ Char) => m (NonEmpty String)
-symbolGroup = ambiguityGroup
-          <|> (pure <$> validSymbol)
+symbolGroup = ambiguityGroup <|> (pure <$> validSymbol)
 
 
 -- |
--- Parses an ambiguity group of symbols. Ambiguity groups are delimited by the '\'|\'' character.
+-- Parses an ambiguity group of symbols. Ambiguity groups are delimited by the
+-- '\'|\'' character.
 ambiguityGroup :: (MonadParsec e s m, Token s ~ Char) => m (NonEmpty String)
 ambiguityGroup = NE.fromList <$> (validSymbol `sepBy1` (char '|' <* inlineSpace))
 
 
 -- |
--- Parses a 'Symbol' token ending with whitespace and excluding the forbidden characters: '[\'>\',\'|\']'.
+-- Parses a 'Symbol' token ending with whitespace and excluding the forbidden
+-- characters: '[\'>\',\'|\']'.
 validSymbol :: (MonadParsec e s m, Token s ~ Char) => m String
 validSymbol = (validStartChar <:> many validBodyChar) <* inlineSpace
   where

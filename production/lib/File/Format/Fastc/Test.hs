@@ -1,3 +1,4 @@
+
 {-# LANGUAGE FlexibleContexts, TypeFamilies #-}
 
 module File.Format.Fastc.Test
@@ -16,9 +17,9 @@ import Test.Tasty.HUnit
 
 testSuite :: TestTree
 testSuite = testGroup "Fastc Format"
-  [ testGroup "Fastc Parser"
-      [fastcSymbolSequence',fastcTaxonSequenceDefinition',fastcStreamParser']
-  ]
+    [ testGroup "Fastc Parser"
+        [fastcSymbolSequence',fastcTaxonSequenceDefinition',fastcStreamParser']
+    ]
 
 
 fastcSymbolSequence' :: TestTree
@@ -30,13 +31,13 @@ fastcSymbolSequence' = testGroup "fastcSymbolSequence" [valid]
 
 validSequences :: [(Vector [String],String)]
 validSequences = first fromList <$>
-  [ ([["wow"]]                                           , "wow\n"                         )
-  , ([["wow"],["such"]]                                  , "wow such\n"                    )
-  , ([["wow"],["such"],["very"]]                         , " wow such very \n"             )
-  , ([["wow"],["such","very","much"],["success"]]        , "wow such | very | much success\n")
-  , ([["wow"],["such","very"],["success"],["many","much"]
-     ,["compile"],["so","amaze"],["parse"],["wow"]]      , "wow such|very success many|much compile so|amaze parse wow\n")
-  ]
+    [ ([["wow"]]                                           , "wow\n"                         )
+    , ([["wow"],["such"]]                                  , "wow such\n"                    )
+    , ([["wow"],["such"],["very"]]                         , " wow such very \n"             )
+    , ([["wow"],["such","very","much"],["success"]]        , "wow such | very | much success\n")
+    , ([["wow"],["such","very"],["success"],["many","much"]
+       ,["compile"],["so","amaze"],["parse"],["wow"]]      , "wow such|very success many|much compile so|amaze parse wow\n")
+    ]
 
 
 fastcTaxonSequenceDefinition' :: TestTree

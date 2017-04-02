@@ -16,7 +16,6 @@
 
 module File.Format.Fasta.Converter where
 
-
 import           Data.List                         (intercalate,partition)
 import           Data.List.NonEmpty                (NonEmpty) 
 import qualified Data.List.NonEmpty         as NE 

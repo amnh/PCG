@@ -1,7 +1,7 @@
+
 {-# LANGUAGE FlexibleContexts, TypeFamilies #-}
 
 module File.Format.Fasta.Translator where
-
 
 import           Data.Map                   hiding (foldr,fromList,partition, (!))
 import           Data.Key                          ((!), lookup)

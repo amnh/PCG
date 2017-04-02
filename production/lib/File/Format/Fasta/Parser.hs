@@ -43,8 +43,8 @@ type FastaParseResult = [FastaSequence]
 
 
 -- |
--- Consumes a stream of 'Char's and parses the stream into a 'FastaParseResult' that
--- has been validated for information consistency
+-- Consumes a stream of 'Char's and parses the stream into a 'FastaParseResult'
+-- that has been validated for information consistency
 fastaStreamParser :: (MonadParsec e s m, Token s ~ Char) => m FastaParseResult
 fastaStreamParser = validate =<< seqTranslation <$> (some fastaTaxonSequenceDefinition <* eof)
 
@@ -151,8 +151,8 @@ validateSequenceConsistency = validateConsistentPartition <=< validateConsistent
 
 
 -- |
--- Validates that all elements of all sequences are consistent with each other sequence.
--- Sequences of differing types cannot be mixed.
+-- Validates that all elements of all sequences are consistent with each other
+-- sequence. Sequences of differing types cannot be mixed.
 validateConsistentAlphabet :: (MonadParsec e s m {- , Token s ~ Char -}) => FastaParseResult -> m FastaParseResult
 validateConsistentAlphabet xs =
   case partition snd results of
@@ -161,20 +161,23 @@ validateConsistentAlphabet xs =
   where
     results            = validation <$> xs
     validation         = taxonName &&& consistentAlphabet . taxonSequence
+
     consistentAlphabet  seq' = all (`elem` iupacAminoAcidChars ) seq'
                             || all (`elem` iupacNucleotideChars) seq'
                             || all (`elem` iupacRNAChars       ) seq'
+
     errorMessage (n,_) = concat 
-                       [ "Error in sequence for taxon name: '"
-                       ,  n
-                       , "' the sequence data includes characters from multiple data formats. "
-                       , "Check this taxon's sequence to ensure that it contains characted codes "
-                       , "from only one data format."
-                       ]
+        [ "Error in sequence for taxon name: '"
+        ,  n
+        , "' the sequence data includes characters from multiple data formats. "
+        , "Check this taxon's sequence to ensure that it contains characted codes "
+        , "from only one data format."
+        ]
 
 
 -- |
--- Validates that sequences partitioned with the '\'#\'' character are all of the same length.
+-- Validates that sequences partitioned with the '\'#\'' character are all of
+-- the same length.
 validateConsistentPartition :: (MonadParsec e s m {- , Token s ~ Char -}) => FastaParseResult -> m FastaParseResult
 validateConsistentPartition xs
   |  null xs
@@ -186,13 +189,14 @@ validateConsistentPartition xs
     withPartitionCount     = (partitionCount &&& id) <$> xs
     inconsistentPartitions = filter ((/= expectedPartitions) . fst) withPartitionCount
     errors                 = errorMessage <$> inconsistentPartitions
+
     errorMessage (actualPartitions, taxa) = concat
-      [ "Error in sequence for taxon name: '"
-      ,  taxonName taxa
-      , "' the sequence includes "
-      , show actualPartitions
-      , " partition characters ('#'). "
-      , "Expecting "
-      , show expectedPartitions
-      , " partition characters in the sequence."
-      ]
+        [ "Error in sequence for taxon name: '"
+        ,  taxonName taxa
+        , "' the sequence includes "
+        , show actualPartitions
+        , " partition characters ('#'). "
+        , "Expecting "
+        , show expectedPartitions
+        , " partition characters in the sequence."
+        ]

@@ -5,7 +5,6 @@ module File.Format.Fasta.Test
   , validTaxonLines
   ) where
 
-
 import Control.Arrow              (second)
 import Data.Char                  (isSpace)
 import Data.Maybe                 (fromMaybe)
@@ -127,11 +126,12 @@ fastaSequence' = testGroup "fastaSequence" [valid,nonDNAValid]
     valid             = testGroup "Valid DNA sequences"     $ success <$> validSequences
     nonDNAValid       = testGroup "Valid non-DNA sequences" $ success <$> nonDNASequences
     success (res,str) = testCase (show str) $ parseEquals fastaSequence str res
-    nonDNASequences   = [ ("-.?"                 , "-.?\n"                 ) -- Gap / Missing
-                        , ("#"                   , "#\n"                   ) -- Sequence Partition 
-                        , ("RYSWKMBDHVN"         , "RYSWKMBDHVN\n"         ) -- IUPAC Ambiguity Codes
-                        , ("ACDEFGHIKLMNPQRSTVWY", "ACDEFGHIKLMNPQRSTVWY\n") -- AminoAcids
-                        ]
+    nonDNASequences   =
+        [ ("-.?"                 , "-.?\n"                 ) -- Gap / Missing
+        , ("#"                   , "#\n"                   ) -- Sequence Partition 
+        , ("RYSWKMBDHVN"         , "RYSWKMBDHVN\n"         ) -- IUPAC Ambiguity Codes
+        , ("ACDEFGHIKLMNPQRSTVWY", "ACDEFGHIKLMNPQRSTVWY\n") -- AminoAcids
+        ]
 
 
 -- add X as ambiguity for AminoAcids
