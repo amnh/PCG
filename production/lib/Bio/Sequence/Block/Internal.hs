@@ -17,23 +17,12 @@ module Bio.Sequence.Block.Internal
   ) where
 
 
-import           Bio.Character.Encodable
-import           Bio.Character.Decoration.Continuous
-import           Bio.Metadata.CharacterName
-import           Control.Lens
-import           Control.Parallel.Custom
-import           Control.Parallel.Strategies
 import           Data.Foldable
-import           Data.Key
-import           Data.Monoid                          (mappend)
+import           Data.Monoid                  (mappend)
 import           Data.Semigroup
---import           Data.Semigroup.Traversable
-import           Data.TCM
-import           Data.Vector                          (Vector)
-import           Data.Vector.Instances                ()
-import qualified Data.Vector                   as V
-import           Prelude                       hiding (zipWith)
-import           Safe                                 (headMay)
+import           Data.Vector                  (Vector)
+import           Data.Vector.Instances        ()
+import           Prelude               hiding (zipWith)
 
 
 -- |
