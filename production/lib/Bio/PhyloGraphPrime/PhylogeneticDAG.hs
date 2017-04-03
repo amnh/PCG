@@ -37,6 +37,7 @@ import           Control.Monad.State.Lazy
 import           Data.Bits
 --import           Data.DuplicateSet
 --import qualified Data.DuplicateSet  as DS
+import           Data.EdgeLength
 import           Data.Foldable
 import           Data.Hashable
 import           Data.Hashable.Memoize
@@ -67,14 +68,14 @@ import           Prelude            hiding (zipWith)
 type SearchState = EvaluationT IO (Either TopologicalResult (PhylogeneticSolution InitialDecorationDAG))
 
 
-type TopologicalResult = PhylogeneticSolution (ReferenceDAG (Maybe Double) (Maybe String))
+type TopologicalResult = PhylogeneticSolution (ReferenceDAG EdgeLength (Maybe String))
 
 
 type CharacterResult   = PhylogeneticSolution CharacterDAG
 
 
 type UnRiefiedCharacterDAG = PhylogeneticDAG
-                               (Maybe Double)
+                               EdgeLength
                                (Maybe String)
                                UnifiedDiscreteCharacter
                                UnifiedDiscreteCharacter
@@ -84,7 +85,7 @@ type UnRiefiedCharacterDAG = PhylogeneticDAG
                                UnifiedDynamicCharacter
 
 type CharacterDAG = PhylogeneticDAG
-                        (Maybe Double)
+                        EdgeLength
                         (Maybe String)
                         UnifiedDiscreteCharacter
                         UnifiedDiscreteCharacter
@@ -98,7 +99,7 @@ type DecoratedCharacterResult = PhylogeneticSolution InitialDecorationDAG
 
 
 type InitialDecorationDAG = PhylogeneticDAG
-                                (Maybe Double)
+                                EdgeLength
                                 (Maybe String)
                                 (SankoffOptimizationDecoration  StaticCharacter)
                                 (SankoffOptimizationDecoration  StaticCharacter)

@@ -191,7 +191,7 @@ instance {- (Show e, Show n) => -} Show (ReferenceDAG e n) where
 -- 2. The node decoration for the input value
 --
 -- 3. A list of child edge decorations and corresponding descendent values
-unfoldDAG :: (Eq a, Hashable a)
+unfoldDAG :: (Eq a, Hashable a, Monoid e)
           => (a -> ([(e,a)], n, [(e,a)]))
           -> a
           -> ReferenceDAG e n
@@ -210,6 +210,39 @@ unfoldDAG f origin =
             , parentRefs     = iSet
             , childRefs      = iMap
             }
+
+    expandedMap = foldl' h (maxIndex, resultMap) $ IM.keys resultMap
+      where
+        (maxIndex, _) = IM.findMax resultMap
+        h (counter, currentMapping) key
+          -- base cases
+          | parentCount == 0 && childCount <= 2 = (counter  , currentMapping)
+          | parentCount == 1 && childCount == 2 = (counter  , currentMapping)
+          | parentCount == 2 && childCount == 1 = (counter  , currentMapping)
+          | parentCount == 1 && childCount == 0 = (counter  , currentMapping)
+          | parentCount == 2 && childCount == 2 = (counter+1, updatedMapping)
+          | parentCount == 2 && childCount == 0 = (counter+1, updatedMapping)
+          -- recursive case
+          | otherwise = undefined
+          where
+            v@(iSet, nDatum, iMap) = currentMapping ! key
+            parentCount = olength iSet
+            childCount  =  length iMap
+
+            ancestoralVertex  = (            iSet, nDatum, IM.singleton counter mempty)
+            descendentVertex  = (IS.singleton key, nDatum,                        iMap)
+
+            expandedMapping = IM.insert counter descendentVertex
+                            . IM.insert key     ancestoralVertex
+                            $ currentMapping
+
+            updatedMapping = foldl' updateParent expandedMapping $ IM.keys iMap
+              where
+                updateParent = flip (adjust setParent)
+                setParent (x,y,z) = (IS.singleton counter, y, z) 
+
+            
+
 
     -- TODO:
     -- _rootIndices seems to be wrong so we do this.

@@ -58,6 +58,7 @@ stack-build-quick: phylocomgraph.cabal stack.yaml
 
 # Builds with profiling enabled
 stack-build-profiling: phylocomgraph.cabal stack.yaml
+	stack install $(profiling) --flag phylocomgraph:build-cpp-files
 	stack install $(profiling) --ghc-options="-fprof-cafs"
 
 # Builds with profiling enabled

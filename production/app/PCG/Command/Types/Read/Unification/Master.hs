@@ -149,8 +149,8 @@ rectifyResults2 fprs =
         singletonComponent (label, datum) = PhylogeneticForest . pure . PDAG $ unfoldDAG rootLeafGen True
           where
             rootLeafGen x
-              | x         = (                [], PNode (Just "Trivial Root") defaultCharacterSequenceDatum, [(Nothing, not x)])
-              | otherwise = ([(Nothing, not x)], PNode (Just label         )                         datum, []                )
+              | x         = (               [], PNode (Just "Trivial Root") defaultCharacterSequenceDatum, [(mempty, not x)])
+              | otherwise = ([(mempty, not x)], PNode (Just label         )                         datum, []               )
 
         matchToChars :: Map String UnifiedCharacterSequence
                      -> PhylogeneticForest ParserTree
@@ -499,7 +499,7 @@ fromTreeOnlyFile fpr = null chars || all null chars
     chars = parsedChars fpr
 
 
-terminalNames2 :: ReferenceDAG (Maybe Double) (Maybe String) -> [Identifier]
+terminalNames2 :: ReferenceDAG a (Maybe String) -> [Identifier]
 terminalNames2 dag = catMaybes $ (`nodeDatum` dag) <$> leaves dag
 
 

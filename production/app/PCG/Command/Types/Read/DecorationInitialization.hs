@@ -16,12 +16,12 @@
 
 module PCG.Command.Types.Read.DecorationInitialization where
 
+
 import           Analysis.Parsimony.Additive.Internal
 import           Analysis.Parsimony.Fitch.Internal
 import           Analysis.Parsimony.Sankoff.Internal
 import           Analysis.Parsimony.Dynamic.DirectOptimization
 import           Analysis.Parsimony.Dynamic.SequentialAlign
-
 import           Bio.Character
 import           Bio.Character.Decoration.Additive
 import           Bio.Character.Decoration.Continuous
@@ -91,7 +91,8 @@ traceOpt identifier x = (trace ("Before " <> identifier) ())
 
 -- | sequentialAlignOverride, iff True forces seqAlign to run; otherwise, DO runs.
 sequentialAlignOverride :: Bool
-sequentialAlignOverride = False
+sequentialAlignOverride = True
+
 
 chooseDirectOptimizationComparison :: ( SimpleDynamicDecoration d  c
                                       , SimpleDynamicDecoration d' c

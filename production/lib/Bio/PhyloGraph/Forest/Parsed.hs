@@ -20,6 +20,7 @@ module Bio.PhyloGraph.Forest.Parsed where
 import           Bio.PhyloGraphPrime.Forest
 import           Bio.PhyloGraphPrime.ReferenceDAG
 -- import           Bio.PhyloGraphPrime.ZipperDAG
+import           Data.EdgeLength
 import           Data.Foldable
 import           Data.IntMap                              (IntMap)
 import qualified Data.IntMap                       as IM
@@ -37,7 +38,7 @@ import           File.Format.Newick
 import           File.Format.Nexus                 hiding (TaxonSequenceMap)
 import           File.Format.TNT
 import           File.Format.TransitionCostMatrix
-import           File.Format.VertexEdgeRoot.Parser
+import           File.Format.VertexEdgeRoot.Parser hiding (EdgeLength)
 import qualified File.Format.VertexEdgeRoot.Parser as VER
 import           Prelude                           hiding (lookup)
 
@@ -46,7 +47,7 @@ import           Prelude                           hiding (lookup)
 
 -- |
 -- The type of possibly present decorations on a tree from a parsed file.
-type ParserTree   = ReferenceDAG (Maybe Double) (Maybe String)
+type ParserTree   = ReferenceDAG EdgeLength (Maybe String)
 
 
 -- |
@@ -130,25 +131,26 @@ instance ParsedForest (NonEmpty NewickForest) where
                             in  (seen'', n', enumed)
 
         -- We use the unique indicies from the 'enumerate' step to build a local connectivity map.
-        relationMap :: NewickEnum -> IntMap ([(Maybe Double, Int)], Maybe String, [(Maybe Double, Int)])
+        relationMap :: NewickEnum -> IntMap ([(EdgeLength, Int)], Maybe String, [(EdgeLength, Int)])
         relationMap root = subCall Nothing root mempty
           where
             subCall :: Maybe Int
                     -> NewickEnum
-                    -> IntMap ([(Maybe Double, Int)], Maybe String, [(Maybe Double, Int)])
-                    -> IntMap ([(Maybe Double, Int)], Maybe String, [(Maybe Double, Int)])
+                    -> IntMap ([(EdgeLength, Int)], Maybe String, [(EdgeLength, Int)])
+                    -> IntMap ([(EdgeLength, Int)], Maybe String, [(EdgeLength, Int)])
             subCall parentMay (NE ref labelMay costMay children) prevMap =
                 case ref `lookup` prevMap of
-                  Just (xs, datum, ys) -> IM.insert ref ((costMay, fromJust parentMay):xs, datum, ys) prevMap
+                  Just (xs, datum, ys) -> IM.insert ref ((fromDoubleMay costMay, fromJust parentMay):xs, datum, ys) prevMap
                   Nothing              ->
                     let parentRefs = 
                           case parentMay of
                             Nothing -> []
-                            Just x  -> [(costMay,x)]
+                            Just x  -> [(fromDoubleMay costMay,x)]
                         currMap    = IM.insert ref (parentRefs, labelMay, f <$> children) prevMap
                     in  foldr (subCall (Just ref)) currMap children
               where
-                f (NE x _ y _) = (y,x)
+                f (NE x _ y _) = (fromDoubleMay y,x)
+                
               
 
 -- | (✔)
@@ -168,7 +170,7 @@ instance ParsedForest TntResult where
             f i = (g $ toList parentMay, datum, g childRefs)
               where
                 (parentMay, datum, childRefs) = mapping ! i
-                g = fmap (\j -> (Nothing, j))
+                g = fmap (\j -> (mempty, j))
 
         -- | We assign a unique index to each node and creating an adjcentcy matrix.
         enumerate :: (n -> String) -> LeafyTree n -> IntMap (Maybe Int, Maybe String, [Int])
@@ -200,21 +202,15 @@ instance ParsedForest VER.VertexEdgeRoot where
     unifyGraph (VER vs es rs) = Just . pure . PhylogeneticForest . fmap convertToDAG . NE.fromList $ toList disconnectedRoots
       where
 
-        childMapping = foldMap f vs
-          where
-            f v = Map.singleton v $ foldMap g es
-              where
-                g e
-                  | edgeOrigin e == v = Set.singleton (edgeLength e, edgeTarget e)
-                  | otherwise         = mempty
+        childMapping  = foldMap (collectEdges edgeTarget) vs
 
-        parentMapping = foldMap f vs
+        parentMapping = foldMap (collectEdges edgeOrigin) vs
+
+        collectEdges f v = Map.singleton v $ foldMap g es
           where
-            f v = Map.singleton v $ foldMap g es
-              where
-                g e
-                  | edgeTarget e == v = Set.singleton (edgeLength e, edgeOrigin e)
-                  | otherwise         = mempty
+            g e
+              | edgeTarget e == v = Set.singleton (fromDoubleMay $ edgeLength e, f e)
+              | otherwise         = mempty
 
         -- |
         -- We collect only disconnected roots so that we don't generate duplicate
