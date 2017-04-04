@@ -47,12 +47,15 @@ import GHC.Generics (Generic)
 --import Debug.Trace
 
 
+type TraversalLociEdge = (Int, Int)
+
 -- |
 -- Represents a concrete type containing metadata fields shared across all
 -- discrete different bins. Continous bins do not have Alphabets.
 data DynamicCharacterMetadataDec c
    = DynamicCharacterMetadataDec
    { dataDenseTransitionCostMatrix :: Maybe DenseTransitionCostMatrix
+   , optimalTraversalLocus         :: Maybe TraversalLociEdge
    , metadata                      :: DiscreteWithTCMCharacterMetadataDec c
    } deriving (Generic)
 
@@ -70,9 +73,10 @@ class ( DiscreteWithTcmCharacterMetadata s c
 
 instance NFData (DynamicCharacterMetadataDec a) where
 
-    rnf (DynamicCharacterMetadataDec d _) = ()
+    rnf (DynamicCharacterMetadataDec d e _) = ()
       where
         !_ = rnf d
+        !_ = rnf e
 
 
 instance Eq (DynamicCharacterMetadataDec c) where
@@ -159,6 +163,13 @@ instance HasDenseTransitionCostMatrix (DynamicCharacterMetadataDec c) (Maybe Den
 
 
 -- |
+-- A 'Lens' for the 'transitionCostMatrix' field
+instance HasTraversalLoci (DynamicCharacterMetadataDec c) (Maybe TraversalLociEdge) where
+
+    traversalLoci = lens optimalTraversalLocus $ \e x -> e { optimalTraversalLocus = x }
+
+
+-- |
 -- A 'Lens' for the 'symbolicTCMGenerator' field
 instance HasSymbolChangeMatrix (DynamicCharacterMetadataDec c) (Word -> Word -> Word) where
 
@@ -188,6 +199,7 @@ dynamicMetadata name weight alpha scm denseMay =
     -- TODO: Maybe don't force here.
     force DynamicCharacterMetadataDec
     { dataDenseTransitionCostMatrix = denseMay
+    , optimalTraversalLocus         = Nothing
     , metadata                      = discreteMetadataWithTCM name weight alpha scm
     }
 
@@ -199,6 +211,7 @@ dynamicMetadataFromTCM name weight alpha tcm =
     -- TODO: Maybe don't force here.
     force DynamicCharacterMetadataDec
     { dataDenseTransitionCostMatrix = denseTCM
+    , optimalTraversalLocus         = Nothing
     , metadata                      = discreteMetadataWithTCM name (coefficient * weight) alpha sigma
     }
   where
