@@ -35,7 +35,7 @@ int aligner( uint64_t *seq1
 {
     setbuf(stdout, NULL);
 
-    const uint64_t GAP         = ((uint64_t) 1) << (alphSize - 1);
+    const uint64_t GAP         = CANONICAL_ONE << (alphSize - 1);
     printf("alphSize: %zu  %llu\n", alphSize, GAP);
 
     const size_t SEQ_MAX_LEN   = seq1Len + seq2Len;        // Maximum alignment length of either seqA and seqB (pathological)

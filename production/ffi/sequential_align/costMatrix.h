@@ -175,12 +175,19 @@ class CostMatrix
          */
         void setValue(keys_t* key, costMedian_t* median);
 
-        /** Takes in a pair of keys_t (each of which is a single `dcElement`) and computes their lowest-cost median. */
+        /** Takes in a pair of keys_t (each of which is a single `dcElement`) and computes their lowest-cost median.
+         *  Uses a Sankoff-like algorithm, where all bases are considered, and the lowest cost bases are included in the
+         *  cost and median calculations. That means a base might appear in the median that is not present in either of
+         *  the two elements being compared.
+         */
         costMedian_t* computeCostMedian(keys_t key);
 
+        /** Takes in a pair of keys_t (each of which is a single `dcElement`) and computes their lowest-cost median.
+         *  Contrast with computeCostMedian(). In this algorithm only bases which are present in at least one of
+         *  the two elements being compared are considered.
+         */
         costMedian_t* computeCostMedianFitchy(keys_t keys);
 
-        // TODO: This isn't currently in use. Can I delete it?
         // TODO: make sure this comment is correct
         /** Find distance between an ambiguous nucleotide and an unambiguous ambElem. Return that value and the median.
          *  @param ambElem is ambiguous input.

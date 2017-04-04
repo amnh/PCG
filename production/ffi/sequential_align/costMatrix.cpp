@@ -315,7 +315,7 @@ void CostMatrix::setUpInitialMatrix (int* tcm) {
 
     dcElement_t* firstKey;
     dcElement_t* secondKey;
-    packedChar* median;
+    packedChar*  median;
     int* cost;
 
     for (size_t key1 = 0; key1 < alphabetSize; key1++) { // for every possible value of key1, key2
@@ -323,14 +323,16 @@ void CostMatrix::setUpInitialMatrix (int* tcm) {
         // key2 starts from 0, so non-symmetric matrices should work
         for (size_t key2 = 0; key2 < alphabetSize; key2++) { // doesn't assumes 0 diagonal
 
-            toInsert = allocateMapAccessPair(alphabetSize);
+            toInsert  = allocateMapAccessPair(alphabetSize);
 
+            // First three have been alloc'ed in allocate fn. above, so use only pointers.
+            // median is allocated as a pointer, so don't need to derefernce.
             firstKey  = &toInsert->first.first;
             secondKey = &toInsert->first.second;
-            median    = toInsert->second.second;
             cost      = &toInsert->second.first;
+            median    =  toInsert->second.second;
 
-            // we allocated a new pair above, so we never will clear the bits set here.
+            // We allocated a new pair above, so we never will clear the bits set here.
             SetBit(firstKey->element, key1);
             SetBit(median, key1);
 
