@@ -1,11 +1,11 @@
+#include <inttypes.h>
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "costMatrix.h"
-#include "dynamicCharacterOperations.h"
+#include "../costMatrix.h"
+#include "../dynamicCharacterOperations.h"
 
 #define __STDC_FORMAT_MACROS
-#include <inttypes.h>
 
 // #include "seqAlignForHaskell.h"
 

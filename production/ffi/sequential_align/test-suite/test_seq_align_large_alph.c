@@ -1,31 +1,18 @@
-//
-//  main.c
-//  version_Haskell_bit
-//
-//  Created by Yu Xiang on 11/1/16.
-//  Copyright © 2016 Yu Xiang. All rights reserved.
-//
-
-
-// recent changes: 1. Changed all malloc()s to calloc()s. calloc() initializes memory, as well as allocating.
-//                    This could very easily be changed back for speed efficiency, but it kept showing up as an error in valgrind.
-//                 2. Added a return value of 2. Now 0 is success, 1 is memory allocation error, 2 is inputs were both 0 length.
-//                 3. Changed strncpy(retAlign, _, _) to be a series of loops, each terminating at '*'.
-//                    Also terminated both strings with '\0', for good measure.
-//                 4. Made INIT_LENGTH a const.
-//                 5. INIT_LENGTH = 2 * retAlign->alignmentLength - 1.
-//                 6. Made LENGTH a const.
-//                 7. Some style changes to enhance legibility for myself.
+/**
+ *  test_seq_align_.c
+ *
+ *  tests sequential alignment---and as a side effect cost matrix---code on large alphabets
+ */
 
 #include <inttypes.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
 
-#include "costMatrixWrapper.h"
-#include "dynamicCharacterOperations.h"
-//#include "seqAlignForHaskell.h"
-#include "seqAlignInterface.h"
+#include "../costMatrixWrapper.h"
+#include "../dynamicCharacterOperations.h"
+//#include "../seqAlignForHaskell.h"
+#include "../seqAlignInterface.h"
 
 #define __STDC_FORMAT_MACROS
 

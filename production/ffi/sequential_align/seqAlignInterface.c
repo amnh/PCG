@@ -1,12 +1,14 @@
 #include <inttypes.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <stdint.h>
 
 #include "costMatrixWrapper.h"
 #include "dynamicCharacterOperations.h"
 #include "seqAlignForHaskell.h"
 #include "seqAlignInterface.h"
+
+#define __STDC_FORMAT_MACROS
 
 int performSequentialAlignment(dynChar_t *seqA, dynChar_t *seqB, costMatrix_p costMatrix, alignResult_t *result)
 {
@@ -71,7 +73,7 @@ packedChar *getMedian(const packedChar * const lhs, const packedChar * const rhs
     for( size_t i = 0; i < length; i++ ) {
         getCostInternal(lhs[i], rhs[i], costMatrix, alphSize, median);
         uint64_t value = *median->element;
-        printf("%zu: a: %5lu, b: %5lu,  median: %5lu\n",i,value);
+        printf("%zu: a: %" PRIu64 ", b: %" PRIu64 ", median: %" PRIu64 "\n", i, lhs[i], rhs[i], value);
         integralStateBuffer[i] = value;
     }
 

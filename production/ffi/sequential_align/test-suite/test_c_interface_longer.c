@@ -1,8 +1,8 @@
 #include <stdio.h>
 
 //#include "costMatrix.h"
-#include "dynamicCharacterOperations.h"
-#include "costMatrixWrapper.h"
+#include "../dynamicCharacterOperations.h"
+#include "../costMatrixWrapper.h"
 // #include "seqAlignForHaskell.h"
 
 #define TCM_LEN 4096

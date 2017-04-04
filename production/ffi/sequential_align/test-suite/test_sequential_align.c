@@ -17,21 +17,22 @@
 //                 6. Made LENGTH a const.
 //                 7. Some style changes to enhance legibility for myself.
 
+#include <inttypes.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <stdint.h>
 
-#include "costMatrixWrapper.h"
-#include "dynamicCharacterOperations.h"
-#include "seqAlignForHaskell.h"
-#include <inttypes.h>
+#include "../costMatrixWrapper.h"
+#include "../dynamicCharacterOperations.h"
+#include "../seqAlignForHaskell.h"
 
 #define __STDC_FORMAT_MACROS
 
+#define TCM_LENGTH 25
+
 int main() {
 
-    const size_t TCM_LENGTH = 25;
-    int tcm[25] = {0,1,1,1,1, 1,0,1,1,1, 1,1,0,1,1, 1,1,1,0,1, 1,1,1,1,0};
+    int tcm[TCM_LENGTH] = {0,1,1,1,1, 1,0,1,1,1, 1,1,0,1,1, 1,1,1,0,1, 1,1,1,1,0};
     size_t alphabetSize = 5;
     if ( TCM_LENGTH != alphabetSize * alphabetSize ) {
         printf("tcm wrong size\n");
@@ -40,10 +41,10 @@ int main() {
 
     costMatrix_p costMatrix = matrixInit(alphabetSize, tcm);
 
-    uint64_t seqA_main[] = {5, 2};
+    uint64_t seqA_main[] = {1, 16};
     size_t seqALen = 2;
 
-    uint64_t seqB_main[] = {31, 1};
+    uint64_t seqB_main[] = {15, 1};
     size_t seqBLen = 2;
 
 
@@ -71,11 +72,11 @@ int main() {
         printf("The aligned sequences are:");
         printf("  sequence 1:  [");
         for(size_t i = 0; i < length; ++i) {
-            printf("%llu, ", retAlign->seq1[i]);
+            printf("%" PRIu64 ", ", retAlign->seq1[i]);
         }
-        printf("]\n  sequence 1:  [");
+        printf("]\n  sequence 2:  [");
         for(size_t i = 0; i < length; ++i) {
-            printf("%llu, ", retAlign->seq1[i]);
+            printf("%" PRIu64 ", ", retAlign->seq2[i]);
         }
         printf("]\n");
         printf("The cost of the alignment is: %d\n", retAlign->weight);
