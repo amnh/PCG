@@ -17,15 +17,17 @@ import Test.Tasty.HUnit
 import Test.Tasty.QuickCheck
 import Text.Megaparsec            (parse,eof)
 
+
 testSuite :: TestTree
 testSuite = testGroup "Fasta Format"
-  [ testGroup "Fasta Generalized Combinators" 
-      [identifier',commentBody',identifierLine']
-  , testGroup "Fasta Parser"
-      [fastaSequence',fastaTaxonSequenceDefinition',fastaStreamParser']
-  , testGroup "Fasta Converter"
-      []
-  ]
+    [ testGroup "Fasta Generalized Combinators" 
+        [identifier',commentBody',identifierLine']
+    , testGroup "Fasta Parser"
+        [fastaSequence',fastaTaxonSequenceDefinition',fastaStreamParser']
+    , testGroup "Fasta Converter"
+        []
+    ]
+
 
 identifier' :: TestTree
 identifier' = testGroup "identifier" [invariant, valid, invalid]
@@ -48,14 +50,16 @@ identifier' = testGroup "identifier" [invariant, valid, invalid]
             str = takeWhile validIdentifierChar x
             res = headOrEmpty $ words str
 
+
 validTaxonLabels :: [String]
 validTaxonLabels = 
-  [ "Peripatidae"
-  , "Colossendeis"
-  , "Ammotheidae"
-  , "Buthidae"
-  , "Mygalomorphae"
-  ]
+    [ "Peripatidae"
+    , "Colossendeis"
+    , "Ammotheidae"
+    , "Buthidae"
+    , "Mygalomorphae"
+    ]
+
 
 commentBody' :: TestTree
 commentBody' = testGroup "commentBody" [generalComment, prependedDollarSign, validComments]
@@ -87,14 +91,16 @@ commentBody' = testGroup "commentBody" [generalComment, prependedDollarSign, val
       where 
         success str = testCase (show str) $ parseEquals (commentBody <* eof) str "A species of animal"
 
+
 validCommentBodies :: [String]
 validCommentBodies =
-  [ "$A species of animal"
-  , " $A species of animal"
-  , "$ A species of animal"
-  , " $ A species of animal"
-  , " A species of animal"
-  ]
+    [ "$A species of animal"
+    , " $A species of animal"
+    , "$ A species of animal"
+    , " $ A species of animal"
+    , " A species of animal"
+    ]
+
 
 identifierLine' :: TestTree
 identifierLine' = testGroup "fastaLabelLine" [validWithoutComments, validWithComments]
@@ -102,6 +108,7 @@ identifierLine' = testGroup "fastaLabelLine" [validWithoutComments, validWithCom
     validWithoutComments = testGroup "Valid taxon label lines without comments" $ success <$> validTaxonCommentlessLines
     validWithComments    = testGroup "Valid taxon label lines with comments"    $ success <$> validTaxonCommentLines
     success (res,str)    = testCase (show str) $ parseEquals (identifierLine <* eof) str res
+
 
 validTaxonCommentLines     :: [(String, String)]
 validTaxonCommentLines     = zip validTaxonLabels validTaxonCommentedLabels 
@@ -112,32 +119,38 @@ validTaxonCommentedLabels  = inlineLabel <$> zipWith (<>) validTaxonLabels valid
 inlineLabel :: String -> String
 inlineLabel x = concat ["> ", x, "\n"]
 
+
 fastaSequence' :: TestTree
 fastaSequence' = testGroup "fastaSequence" [valid,nonDNAValid]
   where
     valid             = testGroup "Valid DNA sequences"     $ success <$> validSequences
     nonDNAValid       = testGroup "Valid non-DNA sequences" $ success <$> nonDNASequences
     success (res,str) = testCase (show str) $ parseEquals fastaSequence str res
-    nonDNASequences   = [ ("-.?"                 , "-.?\n"                 ) -- Gap / Missing
-                        , ("#"                   , "#\n"                   ) -- Sequence Partition 
-                        , ("RYSWKMBDHVN"         , "RYSWKMBDHVN\n"         ) -- IUPAC Ambiguity Codes
-                        , ("ACDEFGHIKLMNPQRSTVWY", "ACDEFGHIKLMNPQRSTVWY\n") -- AminoAcids
-                        ]
+    nonDNASequences   =
+        [ ("-.?"                 , "-.?\n"                 ) -- Gap / Missing
+        , ("#"                   , "#\n"                   ) -- Sequence Partition 
+        , ("RYSWKMBDHVN"         , "RYSWKMBDHVN\n"         ) -- IUPAC Ambiguity Codes
+        , ("ACDEFGHIKLMNPQRSTVWY", "ACDEFGHIKLMNPQRSTVWY\n") -- AminoAcids
+        ]
+
+
 -- add X as ambiguity for AminoAcids
 validSequences :: [(String,String)]
 validSequences =
-  [ ("-GATACA-"            , "-GATACA-\n"            )
-  , ("-GATACA-"            , "- G ATA CA- \n"        )
-  , ("-GATACA-"            , "-GAT\nACA-\n"          )
-  , ("-GATACA-"            , " -G A\nT\n AC A- \n"   )
-  , ("-GATACA-"            , "-GA\n\nT\n \nACA-\n"   )
-  ]
+    [ ("-GATACA-"            , "-GATACA-\n"            )
+    , ("-GATACA-"            , "- G ATA CA- \n"        )
+    , ("-GATACA-"            , "-GAT\nACA-\n"          )
+    , ("-GATACA-"            , " -G A\nT\n AC A- \n"   )
+    , ("-GATACA-"            , "-GA\n\nT\n \nACA-\n"   )
+    ]
+
 
 fastaTaxonSequenceDefinition' :: TestTree
 fastaTaxonSequenceDefinition' = testGroup "fastaTaxonSequenceDefinition" [valid]
   where
     valid             = testGroup "Valid sequences" $ success <$> validTaxonSequences
     success (res,str) = testCase (show str) $ parseEquals fastaTaxonSequenceDefinition str res
+
 
 validTaxonLines     :: [(String,String)]
 validTaxonLines     = validTaxonCommentLines ++ validTaxonCommentlessLines
@@ -146,11 +159,13 @@ validTaxonSequences = zipWith f validTaxonLines validSequences
   where
     f (x,str) (y,seq')  = (FastaSequence x y, concat [str,"\n",seq'])
 
+
 fastaStreamParser' :: TestTree
 fastaStreamParser' = testGroup "fastaStreamParser" [testGroup "Valid stream" [validStream]]
   where
     validStream = testCase "Concatenateed fasta stream" $ parseEquals fastaStreamParser str res
     (res,str)   = second concat $ unzip validTaxonSequences
+
 
 headOrEmpty :: [[a]] -> [a]
 headOrEmpty = fromMaybe [] . headMay

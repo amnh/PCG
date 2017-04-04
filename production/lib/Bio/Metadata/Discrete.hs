@@ -13,6 +13,7 @@
 module Bio.Metadata.Discrete
   ( DiscreteCharacterMetadataDec()
   , DiscreteCharacterMetadata(..)
+  , GeneralCharacterMetadata(..)
   , HasCharacterAlphabet(..)
   , HasCharacterName(..)
   , HasCharacterWeight(..)

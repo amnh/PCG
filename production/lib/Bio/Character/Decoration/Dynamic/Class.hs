@@ -22,12 +22,10 @@ module Bio.Character.Decoration.Dynamic.Class where
 import Bio.Character.Decoration.Shared
 import Bio.Character.Encodable
 import Bio.Metadata.CharacterName
-import Bio.Metadata.Discrete
 import Bio.Metadata.Dynamic
 import Control.Lens
 import Data.Alphabet
 import Data.MonoTraversable
-import Data.TCM
 
 
 -- |

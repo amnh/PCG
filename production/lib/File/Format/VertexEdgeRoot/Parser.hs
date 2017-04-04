@@ -17,6 +17,7 @@
 
 module File.Format.VertexEdgeRoot.Parser where
 
+
 import           Data.Char                 (isSpace)
 import           Data.Either               (partitionEithers)
 import           Data.Foldable
@@ -39,21 +40,25 @@ import           Text.Megaparsec.Custom
 import           Text.Megaparsec.Prim      (MonadParsec)
 
 
--- | A textual identifier for a node in the graph
+-- |
+-- A textual identifier for a node in the graph
 type  VertexLabel   = String
 
 
--- | The possibly calculated distance between two nodes in the graph
+-- |
+-- The possibly calculated distance between two nodes in the graph
 type  EdgeLength    = Maybe Double
 
 
--- | The two types of sets of nodes present in a VER file
+-- |
+-- The two types of sets of nodes present in a VER file
 data  VertexSetType = Vertices | Roots deriving (Eq,Show)
 
 
--- | Connection between two nodes in the graph along with the distance of the connection
---   Edges are interpred as bidirectional when read in and given direction when interpreted
---   relative to the root of the tree.
+-- |
+-- Connection between two nodes in the graph along with the distance of the
+-- connection. Edges are interpred as bidirectional when read in and given
+-- direction when interpreted relative to the root of the tree.
 data  EdgeInfo
     = EdgeInfo
     { edgeOrigin :: VertexLabel -- ^ Extract the origin of the directed edge
@@ -62,7 +67,8 @@ data  EdgeInfo
     } deriving (Eq, Ord)
 
 
--- | Collection of Vericies, roots, and edges representing a "Phylogenetic Forest"
+-- |
+-- Collection of Vericies, roots, and edges representing a "Phylogenetic Forest"
 data  VertexEdgeRoot
     = VER
     { vertices :: Set VertexLabel
@@ -78,10 +84,11 @@ instance Show EdgeInfo where
       renderCost = fmap ((":" <>) . show) . toList
 
 
--- | For a given vertex, attempts to get the connected vertex from the 'EdgeInfo'.
---   If the input vertex was present in the 'EdgeInfo', returns 'Just v' where
---   'v' is the corresponsing 'VertexLabel'. If the input vertex was not present
---   in the 'EdgeInfo'.
+-- |
+-- For a given vertex, attempts to get the connected vertex from the 'EdgeInfo'.
+-- If the input vertex was present in the 'EdgeInfo', returns 'Just v' where
+-- 'v' is the corresponsing 'VertexLabel'. If the input vertex was not present
+-- in the 'EdgeInfo'.
 connectedVertex :: VertexLabel -> EdgeInfo -> Maybe VertexLabel
 connectedVertex v (EdgeInfo a b _)
   | v == a    = Just b
@@ -89,7 +96,8 @@ connectedVertex v (EdgeInfo a b _)
   | otherwise = Nothing
 
 
--- | Reads two vertex sets and an edge set, conditionally infers the root set
+-- |
+-- Reads two vertex sets and an edge set, conditionally infers the root set
 -- when vertex sets are unlabeled. Ensures that the elements of the root set
 -- are not connected in the forest. Ensures that the rooted trees in the
 -- forest do not contain cycles.
@@ -111,7 +119,8 @@ verStreamParser = validateForest =<< verDefinition
 -- nodes by inspecting the possibly provided set labels or in the absence of
 -- labels by comparing the size of the sets; as the set of all verticies is 
 -- surely a superset of the set of root nodes.
--- | Parses exactly one vertex set, one edge set, and one root set.
+-- |
+-- Parses exactly one vertex set, one edge set, and one root set.
 verDefinition :: (MonadParsec e s m, Token s ~ Char) => m VertexEdgeRoot
 verDefinition = do
     sets <- many setDefinition
@@ -145,7 +154,8 @@ verDefinition = do
     message x y             = concat [x," ",y," defined in input"]
 
 
--- | We read a set from the input. The set can be an edge set or a vertex set.
+-- |
+-- We read a set from the input. The set can be an edge set or a vertex set.
 -- If it is a vertex set, it may be labeled as a specific set of verticies or
 -- a set of roots. We use the Either type as a return type to denote the 
 -- conditional type of the result.
@@ -157,14 +167,16 @@ setDefinition = do
       Nothing -> Right <$> vertexSetDefinition
 
 
--- | A vertex set can be labeled or unlabeled. We first attempt to read in a 
+-- |
+-- A vertex set can be labeled or unlabeled. We first attempt to read in a 
 -- labeled vertex set, and if that fails an unlabeled vertex set. The label
 -- is returned contidionally in a Maybe type.
 vertexSetDefinition :: (MonadParsec e s m, Token s ~ Char) => m (Maybe VertexSetType, Set VertexLabel)
 vertexSetDefinition = try labeledVertexSetDefinition <|> unlabeledVertexSetDefinition
 
 
--- | A labeled vertex set contains a label followed by an unlabeled vertex set
+-- |
+-- A labeled vertex set contains a label followed by an unlabeled vertex set
 labeledVertexSetDefinition :: (MonadParsec e s m, Token s ~ Char) => m (Maybe VertexSetType, Set VertexLabel )
 labeledVertexSetDefinition = do
     setType <- vertexSetType
@@ -173,7 +185,8 @@ labeledVertexSetDefinition = do
     pure (Just setType, set)
 
 
--- | A vertex set label is one of the following case insensative strings:
+-- |
+-- A vertex set label is one of the following case insensative strings:
 -- "vertexset", rootset"
 vertexSetType :: (MonadParsec e s m, Token s ~ Char) => m VertexSetType
 vertexSetType = do
@@ -183,8 +196,9 @@ vertexSetType = do
       Nothing -> symbol (string' "RootSet") $> Roots
 
 
--- | A vertex set with an optional set label enclosed in braces.
--- A vertex set cannot have duplicate verticies
+-- |
+-- A vertex set with an optional set label enclosed in braces. A vertex set
+-- cannot have duplicate verticies.
 unlabeledVertexSetDefinition :: (MonadParsec e s m, Token s ~ Char) => m (Maybe VertexSetType, Set VertexLabel)
 unlabeledVertexSetDefinition = validateVertexSet =<< unlabeledVertexSetDefinition'
   where
@@ -203,15 +217,17 @@ unlabeledVertexSetDefinition = validateVertexSet =<< unlabeledVertexSetDefinitio
         errorMessage = "The following verticies were defined multiple times: " ++ show dupes
 
 
--- | A vertex label is any non-scpace character that is also not a brace, paren, or comma.
+-- |
+-- A vertex label is any non-scpace character that is also not a brace, paren,
+-- or comma.
 vertexLabelDefinition :: (MonadParsec e s m, Token s ~ Char) => m String
 vertexLabelDefinition = some validChar
   where
-    validChar = satisfy $ \x -> x `notElem` "{}(),"
-                             && (not . isSpace) x
+    validChar = satisfy $ \x -> x `notElem` "{}()," && (not . isSpace) x
 
 
--- | Parses an edge set with an optional edge set label.
+-- |
+-- Parses an edge set with an optional edge set label.
 -- Edges cannot be from one node to the same node.
 -- Edges are undirected, with duplicate edges prohibited.
 edgeSetDefinition :: (MonadParsec e s m, Token s ~ Char) => m (Set EdgeInfo)
@@ -253,20 +269,22 @@ edgeSetDefinition = validateEdgeSet =<< edgeSetDefinition'
                 g (lhs, rhs) = show lhs <> " <--> " <> show rhs
               
 
-
--- | Converts EdgeInfo to an tuple of VertexLabels, representing edge direction.
+-- |
+-- Converts EdgeInfo to an tuple of VertexLabels, representing edge direction.
 toTuple :: EdgeInfo -> (VertexLabel, VertexLabel)
 toTuple (EdgeInfo x y _) = (x, y)
 
 
--- | Determine if two edges satisfy the reflexive relation.
+-- |
+-- Determine if two edges satisfy the reflexive relation.
 isReflexive :: EdgeInfo -> EdgeInfo -> Bool
 isReflexive (EdgeInfo a b _) (EdgeInfo x y _) = a == y && b == x
 
 
 
--- | Defines the serialized format of an edge connecting nodes 'a' and 'b' as '"(a,b)"'.
--- Allows for optional "branch length" annotation as '"(a,b):12.34"'.
+-- |
+-- Defines the serialized format of an edge connecting nodes 'a' and 'b' as
+-- '"(a,b)"'. Allows for optional "branch length" annotation as '"(a,b):12.34"'.
 edgeDefinition :: (MonadParsec e s m, Token s ~ Char) => m EdgeInfo
 edgeDefinition = symbol $ do
     _ <- space
@@ -281,12 +299,16 @@ edgeDefinition = symbol $ do
     branchLengthDefinition = symbol (char ':') *> symbol double
 
 
--- | Convinence combinator to consume trailing whitespace.
+-- |
+-- Convinence combinator to consume trailing whitespace.
 symbol :: (MonadParsec e s m, Token s ~ Char) => m a -> m a
 symbol x = x <* space
 
 
--- | Validates a parse result to ensure that the resulting forest is internally consistent.
+-- |
+-- Validates a parse result to ensure that the resulting forest is internally
+-- consistent.
+-- 
 -- A VER forest is not consistent if:
 --
 --   * Any spcified root node has in-degree greater than 0
@@ -391,7 +413,9 @@ validateForest ver@(VER vs es rs ) =
       
 
 
--- | Convience method for building a connection 'Map' based on the existing edges in the graph.
+-- |
+-- Convience method for building a connection 'Map' based on the existing edges
+-- in the graph.
 buildEdgeMap :: Set VertexLabel -> Set EdgeInfo -> Map VertexLabel (Set VertexLabel)
 buildEdgeMap vs es = foldMap buildMap vs
   where

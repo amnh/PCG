@@ -389,20 +389,20 @@ cm_get_row (int *tcm, SEQT a, int alphSize) {
 }
 
 static inline int *
-cm_get_row_3d (int *tcm, SEQT a, SEQT b, int alphSize) {
+cm_get_row_3d (int *tcm, SEQT seq1, SEQT seq2, int alphSize) {
     if (alphSize <= 0) {
         printf("Alphabet size = 4\n");
         exit(1);
     }
-    if ((1 << alphSize) <= a) {
-        printf("%u is bigger than alphabet size\n", a);
+    if ((1 << alphSize) <= seq1) {
+        printf("%u is bigger than alphabet size\n", seq1);
         exit(1);
     }
-    if ((1 << alphSize) <= b) {
-        printf("%u is bigger than alphabet size\n", b);
+    if ((1 << alphSize) <= seq2) {
+        printf("%u is bigger than alphabet size\n", seq2);
         exit(1);
     }
-    return (tcm + (((a << alphSize) + b) << alphSize));
+    return (tcm + (((seq1 << alphSize) + seq2) << alphSize));
 }
 
 void
@@ -442,28 +442,22 @@ cm_precalc_4algn (const cost_matrices_2d_p costMatrix, nw_matrices_p alignmentMa
         printf ("Precalculated transformation cost matrix.\n");
     }
 
-    /*
-    printf ("sequence length: %d\n", seqLen);
-    fflush(stdout);
-    for (j = 0; j <= seqLen; j++) {
-      printf (" %d,", seq_begin_t[j]);
-    }
-    printf ("\n");
-    fflush(stdout);
-    */
-
     // We will put the cost of the prepend in the 0th row of the precalc matrix.
     for (j = 0; j < seqLen; j++) {
 
         //printf ("Before innerIndex\n"), fflush(stdout);
 	int innerIndex = seq_begin_t[j];
-        //printf ("After  innerIndex: {%d}\n", innerIndex), fflush(stdout);
+        // printf ("After  innerIndex: {%d}\n", innerIndex);
+        // fflush(stdout);
 
-        //printf ("Before valueDatum\n"), fflush(stdout);
+        // printf ("Before valueDatum\n");
+        // fflush(stdout);
 	int valueDatum = prepend_t[innerIndex];
-        //printf ("After  valueDatum\n"), fflush(stdout);
+        // printf ("After  valueDatum\n");
+        // fflush(stdout);
 
-        //printf ("Before Assignment\n"), fflush(stdout);
+        // printf ("Before Assignment\n");
+        // fflush(stdout);
 	precalcMtx_t[j] = valueDatum;
         //printf ("After  Assignment\n"), fflush(stdout);
 

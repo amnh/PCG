@@ -189,7 +189,14 @@ precomputeTreeReferences tree =
               where
                 (subCounter',ys) = f n (Just counter) (subCounter+1)
 
--- | Calculates the 'IndelEvents' that occur given two sequences of an edge.
+
+-- |
+-- Calculates the 'IndelEvents' that occur given two sequences of an edge.
+--
+-- Note that as a precondition to this linear time algorithim, it is assumed
+-- that both input sequences are ungapped. There can be no gaps in the input
+-- sequences. If gaps exist in the input sequences, even from user input, this
+-- function may return incorrect results!
 comparativeIndelEvents :: (Eq e, SeqConstraint s) => e -> s -> s -> CostStructure -> (DeletionEvents, InsertionEvents e, s ,s)
 comparativeIndelEvents edgeIdentifier ancestorCharacterUnaligned descendantCharacterUnaligned costStructure
   | olength ancestorCharacter /= olength descendantCharacter = error errorMessage

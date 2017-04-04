@@ -719,7 +719,7 @@ algn_fill_extending_left_right ( const seq_p seq1
 }
 
 int *
-algn_fill_extending_left (const seq_p seq1
+algn_fill_extending_left ( const seq_p seq1
                          , int *precalcMtx
                          , int seq1_len
                          , int seq2_len

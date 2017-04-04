@@ -245,12 +245,12 @@ instance NFData a => NFData (  NamedSymbol a)
 
 
 
-fromUnnamed :: UnnamedSymbol t -> t
-fromUnnamed (Unnamed x) = x
+--fromUnnamed :: UnnamedSymbol t -> t
+--fromUnnamed (Unnamed x) = x
 
 
-fromNamed   :: NamedSymbol t -> (t, t)
-fromNamed   (Named   x) = x
+--fromNamed   :: NamedSymbol t -> (t, t)
+--fromNamed   (Named   x) = x
 
 {-
 symbolVector :: Alphabet b -> Vector b

@@ -16,6 +16,14 @@ module Bio.Character.Decoration.Shared where
 
 
 import Control.Lens
+import Data.Range
+
+
+class ( HasIntervalCharacter d c
+      , Ranged c
+      , Num (Bound c)
+      , Ord (Bound c)
+      ) => RangedCharacterDecoration d c where
 
 
 -- |
@@ -33,4 +41,9 @@ class HasCharacterCost s a | s -> a where
     {-# MINIMAL characterCost #-}
     characterCost :: Lens' s a
 
+
+class HasIntervalCharacter s a | s -> a where
+
+    {-# MINIMAL intervalCharacter #-}
+    intervalCharacter :: Lens' s a
 

@@ -25,17 +25,18 @@ import           Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise
 import           Bio.Character.Decoration.Dynamic
 import           Bio.Character.Encodable
 import           Control.Lens
-import           Data.Bits
+import           Data.Foldable
 import           Data.IntMap        (IntMap)
 import qualified Data.IntMap as IM
 import           Data.Key    hiding ((!))
 import           Data.List.NonEmpty (NonEmpty( (:|) ))
 import           Data.Monoid
-import           Data.MonoTraversable 
+import           Data.MonoTraversable
 import           Data.Word
 import           Prelude     hiding (lookup, zip, zipWith)
 
 import Debug.Trace
+
 
 type PairwiseAlignment s = s -> s -> (s, Double, s, s, s)
 
@@ -132,7 +133,7 @@ updateFromParent pairwiseAlignment currentDecoration parentDecoration =
     pUngapped = parentDecoration ^. finalUngapped
     pGapped   = parentDecoration ^. finalGapped
 
-  
+
 -- |
 -- A three way comparison of characters used in the DO preorder traversal.
 tripleComparison
@@ -147,20 +148,22 @@ tripleComparison pairwiseAlignment childDecoration parentCharacter = (ungapped, 
     childCharacter    = childDecoration ^. preliminaryGapped
     childLeftAligned  = childDecoration ^. leftAlignment
     childRightAligned = childDecoration ^. rightAlignment
-    
-    (_, _, derivedAlignment, _, childAlignment) = pairwiseAlignment parentCharacter childCharacter
+
+    (_, _, derivedAlignment, _parentAlignment, childAlignment) = pairwiseAlignment parentCharacter childCharacter
     newGapIndicies         = newGapLocations childCharacter childAlignment
+--    newGapIndicies         = toInsertionCounts . snd . traceShowId $ comparativeIndelEvents () childAlignment parentAlignment
     extendedLeftCharacter  = insertNewGaps newGapIndicies childLeftAligned
     extendedRightCharacter = insertNewGaps newGapIndicies childRightAligned
     (_, ungapped, gapped)  = {- trace context $ -} threeWayMean costStructure derivedAlignment extendedLeftCharacter extendedRightCharacter
+    {--
     context = unlines
         [ "New Gap indices: |" <> show (sum newGapIndicies) <> "| " <> show newGapIndicies
         , "Parent:"
-        , show (olength parentCharacter)
-        , show (olength derivedAlignment)
+        , show ( parentCharacter)
+        , show (_parentAlignment)
         , "Center char:"
-        , show (olength childCharacter)
-        , show (olength childAlignment)
+        , show (childCharacter)
+        , show (childAlignment)
         , "Left  chars:"
         , show (olength childLeftAligned)
         , show (olength extendedLeftCharacter)
@@ -168,28 +171,52 @@ tripleComparison pairwiseAlignment childDecoration parentCharacter = (ungapped, 
         , show (olength childRightAligned)
         , show (olength extendedRightCharacter)
         ]
+    --}
 
 
 -- |
--- Returns the indicies of the gaps that were added in the second character when
+-- Returns the indices of the gaps that were added in the second character when
 -- compared to the first character.
 newGapLocations :: (EncodableDynamicCharacter c, Show (Element c)) => c -> c -> IntMap Int
-newGapLocations originalChar newChar
-  | olength originalChar == olength newChar = mempty
-  | otherwise                               = newGaps
+newGapLocations unaligned aligned
+  | olength unaligned == olength aligned = mempty
+  | otherwise                            = newGaps
   where
-    (_,_,newGaps) = ofoldl' f (otoList originalChar, 0, mempty) newChar
-    gap = getGapElement $ newChar `indexStream` 0
-    incrementAt i is = IM.insertWith (+) i 1 is
+    (_, _, newGaps)  = ofoldl' f accumulator aligned
+    accumulator      = (otoList unaligned, 0, mempty)
+    gap              = gapOfStream unaligned
+    incrementAt is i = IM.insertWith (+) i 1 is
 
-    
-    f acc@([], i, is) e
-      | e == gap             = ([], i, incrementAt i is)
-      | otherwise            = acc
-    f (x:xs, i, is) e
-      | e == gap && x /= gap = (x:xs, i  , incrementAt i is)
-      | otherwise            = (  xs, i+1, is)
+    f (remainingUnalignedElements, unalignedIndex, newGapIndices) alignedElement =
+        case remainingUnalignedElements of
 
+          -- In the case that the unaligned input character has had all of its
+          -- elements accounted for, we can determine if a deletion event happened
+          -- by simply checking whether the remaining element from the aligned
+          -- character is a gap character.
+          []   -> ( remainingUnalignedElements
+                  , unalignedIndex
+                  , if   alignedElement == gap
+                    then incrementedGapIndices
+                    else newGapIndices
+                  )
+
+          -- In the case that the unaligned character has one or more elements
+          -- that have not been accounted for in the alignment, we use standard
+          -- logic for determining if a deletion event occured.
+          --
+          -- If a deletion event *DID* occur, we note the index in the unaligned
+          -- character where deletion event occurred and *DO NOT* advance the
+          -- "cursor" in our accumulator.
+          -- 
+          -- If a deletion event *DID NOT* occur, we just advance the "cursor"
+          -- in our accumulator.
+          unalignedElement:tailUnalignedElements ->
+              if   unalignedElement /= gap && alignedElement == gap -- Deletion Event Occured!
+              then (remainingUnalignedElements, unalignedIndex    , incrementedGapIndices)
+              else (     tailUnalignedElements, unalignedIndex + 1,         newGapIndices)
+      where
+        incrementedGapIndices = newGapIndices `incrementAt` unalignedIndex
 
 
 -- |
@@ -228,6 +255,4 @@ threeWayMean costStructure char1 char2 char3
             , getOverlap a c costStructure
             , getOverlap b c costStructure
             ]
-
-
 

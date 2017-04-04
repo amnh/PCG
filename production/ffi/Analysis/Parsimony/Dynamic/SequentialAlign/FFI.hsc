@@ -22,7 +22,6 @@ import Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise (filterGaps)
 import Bio.Character.Encodable
 import Bio.Character.Exportable.Class
 import Control.DeepSeq
-import Control.Lens    hiding (element)
 import Data.Bits
 import Data.Foldable
 import Data.Monoid
@@ -68,7 +67,7 @@ data MemoizedCostMatrix
 
 instance NFData MemoizedCostMatrix where
 
-    rnf (MemoizedCostMatrix !x) = ()
+    rnf (MemoizedCostMatrix !_) = ()
 
 
 instance Storable MemoizedCostMatrix where
@@ -158,7 +157,7 @@ pairwiseSequentialAlignment memo char1 char2 = unsafePerformIO $ do
 --        !_ <- trace ("Shown character 2: " <> show char2) $ pure ()
         
         !_ <- trace "Before FFI call" $ pure ()
-        !success      <- performSeqAlignfn_c char1' char2' (costMatrix memo) resultPointer
+        !_success     <- performSeqAlignfn_c char1' char2' (costMatrix memo) resultPointer
         !_ <- trace "After  FFI call" $ pure ()
 
 --        _ <- free char1'
@@ -208,6 +207,7 @@ constructCDynamicCharacterFromExportableCharacter exChar = do
         bufLen = calculateBufferLength count width
         exportableBuffer = toExportableBuffer exChar
 
+calculateBufferLength :: Enum b => Int -> Int -> b
 calculateBufferLength count width = coerceEnum $ q + if r == 0 then 0 else 1
     where
         (q,r)  = (count * width) `divMod` finiteBitSize (undefined :: CULong)
@@ -258,12 +258,6 @@ foreign import ccall unsafe "seqAlignInteface performSequentialAlignment"
                         -> IO CInt
 
 
--- TODO: replace when Yu Xiang updates his code for bit arrays.
--- | STUB, DO NOT USE
-sequentialAlign :: Int -> Int -> s -> s -> Either String (Int, s, s)
-sequentialAlign x y a b = Right (x + y, a, b)
-
-
 -- |
 -- The result of the alignment from the C side of the FFI
 -- Includes a struct (actually, a pointer thereto), and that struct, in turn, has a string
@@ -300,8 +294,8 @@ instance Storable AlignResult where
 
 ------------- Don't need this part, but left in for completion ---------------
 ----- Will get compiler warning if left out, because of missing instances ----
-    poke ptr (AlignResult cost charLen char1Val char2Val medVal) = do -- to modify values in the C app
-        (#poke struct alignResult_t, finalWt    ) ptr cost
+    poke ptr (AlignResult costVal charLen char1Val char2Val medVal) = do -- to modify values in the C app
+        (#poke struct alignResult_t, finalWt    ) ptr costVal
         (#poke struct alignResult_t, finalLength) ptr charLen
         (#poke struct alignResult_t, finalChar1 ) ptr char1Val
         (#poke struct alignResult_t, finalChar2 ) ptr char2Val
@@ -383,12 +377,12 @@ instance Storable CDynamicChar where
 
 
 
-
+{-
 -- |
 -- FFI call to the C pairwise alignment algorithm with /defaulted/ sub & indel cost parameters
 foreign import ccall unsafe "exportCharacter testFn"
     callExtFn_c  :: Ptr CDynamicChar -> Ptr CDynamicChar -> Ptr AlignResult -> CInt
-
+-}
 
 
 

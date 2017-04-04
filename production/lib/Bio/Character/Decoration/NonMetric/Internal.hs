@@ -19,7 +19,7 @@ import Bio.Character.Decoration.NonMetric.Class
 import Bio.Character.Decoration.Discrete
 import Bio.Character.Encodable
 import Bio.Metadata.CharacterName
-import Bio.Metadata.Discrete
+--import Bio.Metadata.Discrete
 import Bio.Metadata.DiscreteWithTCM
 import Control.Lens
 import Data.Alphabet

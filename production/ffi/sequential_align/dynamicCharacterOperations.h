@@ -235,29 +235,38 @@ uint64_t *dynCharToIntArr( dynChar_t *input );
  */
 void intArrToDynChar( size_t alphSize, size_t arrayLen, uint64_t *input, dynChar_t *output );
 
-/** Copy input values to already alloced output and return a pointer to output */
-void copyPackedChar( packedChar *inChar, packedChar *outChar, size_t alphSize);
+/** allocates enough room for an array of packedChars big enough to hold an element given alphSize */
+packedChar *allocatePackedChar( size_t alphSize, size_t numElems );
 
-/** As above, but only allocates and fills the bit array, not whole dyn char */
+/** Allocates new packedChar Copy input values to already alloced output and return a pointer to output */
+packedChar *makePackedCharCopy( packedChar *inChar, size_t alphSize, size_t numElems );
+
+/** As intArrToDynChar, but only allocates and fills the bit array, not whole dyn char */
 packedChar *intArrToBitArr( size_t alphSize, size_t arrayLen, uint64_t *input );
 
 /** Takes two packed characters (uint64_t*) and finds the value as if they were bitwise AND'ed.
  *  Allocates, so must call freeDynChar() afterwards.
+ *
+ *  Does no check to ensure that the alphabets sizes of the two inputs are equal.
  */
-packedChar *packedCharAnd(packedChar *lhs, packedChar *rhs, size_t alphSize);
+packedChar *packedCharAnd( packedChar *lhs, packedChar *rhs, size_t alphSize, size_t numElems );
 
 /** Takes two dcElements and finds the value if they were bitwise OR'ed.
  *  Allocates, so must call freeDynChar() afterwards. Uses packedCharOr()
  *  to find | of elements.
+ *
+ *  Does no check to ensure that the alphabets sizes of the two inputs are equal.
  */
-dcElement_t *dcElementOr (dcElement_t *lhs, dcElement_t *rhs);
+dcElement_t *dcElementOr ( dcElement_t *lhs, dcElement_t *rhs );
 
 /** Takes two packed characters (uint64_t*) and finds the value as if they were bitwise OR'ed.
  *  Allocates, so must call freeDynChar() afterwards.
+ *
+ *  Does no check to ensure that the alphabets sizes of the two inputs are equal.
  */
-packedChar *packedCharOr (packedChar *lhs, packedChar *rhs, size_t alphSize);
+packedChar *packedCharOr ( packedChar *lhs, packedChar *rhs, size_t alphSize, size_t numElems );
 
-int dcElementEq (dcElement_t *lhs, dcElement_t *rhs);
+int dcElementEq ( dcElement_t *lhs, dcElement_t *rhs );
 
 /** Print only the bit representation of an element of a dynamic character as a matrix.
  *  Calls printPackedChar().

@@ -1,6 +1,7 @@
 read(nucleotides: ("./chel.fasta"))
-read("./chel_nj_tbr_rr.tre")
-transform(tcm: "./sample2.mat")
-set(iterative:exact)
+read("./chel_bad_root.tre")
+transform(tcm:(1,1))
+report("chel_out.txt", diagnosis, trees)
+
 
 exit()

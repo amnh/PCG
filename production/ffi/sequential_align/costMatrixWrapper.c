@@ -42,11 +42,11 @@ int getCost(packedChar elem1, packedChar elem2, costMatrix_p tcm, size_t alphSiz
 int getCostInternal(packedChar elem1, packedChar elem2, costMatrix_p tcm, size_t alphSize, dcElement_t *retElem) {
     // Need to create new pointers, because of copying into cost matrix.
 
-    packedChar *packedElem1   = malloc(sizeof(packedChar));
-    packedChar *packedElem2   = malloc(sizeof(packedChar));
+    packedChar *packedElem1 = malloc(sizeof(packedChar));
+    packedChar *packedElem2 = malloc(sizeof(packedChar));
 
-    *packedElem1   = elem1;    // should be okay, because elem1 and elem2 are just ints, so pass by copy
-    *packedElem2   = elem2;
+    *packedElem1 = elem1;    // should be okay, because elem1 and elem2 are just ints, so pass by copy
+    *packedElem2 = elem2;
 
     dcElement_t *dcElem1 = malloc(sizeof(dcElement_t));
     dcElement_t *dcElem2 = malloc(sizeof(dcElement_t));
@@ -67,12 +67,16 @@ int getCostAndMedian(dcElement_t *elem1, dcElement_t *elem2, dcElement_t *retEle
     // Need to create new pointers, because of copying into cost matrix.
     // TODO: valgrind this.
     size_t alphSize = elem1->alphSize;
-    dcElement_t *elem1copy = allocateDCElement( alphSize );
-    dcElement_t *elem2copy = allocateDCElement( alphSize );
-//    dcElement_t *elem3copy = allocateDCElement( alphSize );
+    // dcElement_t *elem1copy = allocateDCElement( alphSize );
+    // dcElement_t *elem2copy = allocateDCElement( alphSize );
+    // Can't use allocateDCElement because makePackedCharCopy allocates
+    dcElement_t *elem1copy = malloc(sizeof(dcElement_t));
+    elem1copy->alphSize    = alphSize;
+    dcElement_t *elem2copy = malloc(sizeof(dcElement_t));
+    elem2copy->alphSize    = alphSize;
 
-    copyPackedChar( elem1->element, elem1copy->element, alphSize);
-    copyPackedChar( elem2->element, elem2copy->element, alphSize);
+    elem1copy->element = makePackedCharCopy( elem1->element, alphSize, 1 );
+    elem2copy->element = makePackedCharCopy( elem2->element, alphSize, 1 );
 
     //// printf("Here we go:\n");
     // printPackedChar(elem1copy->element, 1, alphSize);

@@ -12,18 +12,21 @@
 
 module Bio.Character
   (  -- * Character Types
-    DynamicChar()
+    ContinuousChar()
+  , DynamicChar()
   , DynamicChars
   , ExportableCharacterSequence(..)
   , StaticCharacter()
   , StaticCharacterBlock()
     -- * Character Classes
+  , ContinuousCharacter(..)
   , EncodableDynamicCharacter(..)
   , EncodableStaticCharacter(..)
   , EncodableStaticCharacterStream(..)
   , EncodableStream(..)
   , EncodableStreamElement(..)
   , Exportable(..)
+  , PossiblyMissingCharacter(..)
   , showStream
   , showStreamElement 
   ) where

@@ -22,25 +22,16 @@ module Bio.Sequence.Block.Builder
   ) where
 
 
-import           Bio.Character.Encodable
 import           Bio.Character.Decoration.Continuous
 import           Bio.Metadata.CharacterName
 import           Bio.Sequence.Block.Internal
-import           Control.Lens
-import           Control.Parallel.Custom
-import           Control.Parallel.Strategies
 import           Data.DList                    hiding (toList)
 import           Data.Foldable
-import           Data.Key
-import           Data.Monoid                          (mappend)
 import           Data.Semigroup
 --import           Data.Semigroup.Traversable
 import           Data.TCM
-import           Data.Vector                          (Vector)
 import           Data.Vector.Instances                ()
 import qualified Data.Vector                   as V
-import           Prelude                       hiding (zipWith)
-import           Safe                                 (headMay)
 
 
 -- |
@@ -114,11 +105,8 @@ toMissingCharacters cb =
 
 -- |
 -- Construct a singleton block containing a /continuous/ character.
-continuousSingleton :: CharacterName -> (a -> c) -> a -> PartialCharacterBlock m i (ContinuousDecorationInitial c) f a d
-continuousSingleton nameValue transformation continuousValue =
-    PartialCharacterBlock (pure bin)  mempty  mempty  mempty mempty mempty
-  where
-    bin = continuousDecorationInitial nameValue transformation continuousValue
+continuousSingleton :: c -> PartialCharacterBlock m i c f a d
+continuousSingleton dec = PartialCharacterBlock (pure dec) mempty mempty mempty mempty mempty
 
 
 -- |

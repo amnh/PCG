@@ -35,10 +35,11 @@ import Data.List.NonEmpty (NonEmpty( (:|) ))
 import Data.Word
 import Prelude hiding (zip)
 
-import Debug.Trace
+--import Debug.Trace
 
 
--- | Used on the post-order (i.e. first) traversal.
+-- |
+-- Used on the post-order (i.e. first) traversal.
 sankoffPostOrder :: DiscreteCharacterDecoration d c
                  => d
                  -> [SankoffOptimizationDecoration c]
@@ -49,8 +50,12 @@ sankoffPostOrder charDecoration xs =
         y:ys -> {- trace "post order" $ -} updateCostVector charDecoration (y:|ys)
 
 
--- | Used on the pre-order (i.e. second) traversal. Either calls 'initializeDirVector' on root or updateDirectionalMins.
--- Needs to determine which child it's updating, then sends the appropriate minlist
+-- |
+-- Used on the pre-order (i.e. second) traversal.
+--
+-- Either calls 'initializeDirVector' on root or updateDirectionalMins.
+-- Needs to determine which child it's updating, then sends the appropriate
+-- minlist.
 sankoffPreOrder :: EncodableStaticCharacter c
                 => SankoffOptimizationDecoration c
                 -> [(Word, SankoffOptimizationDecoration c)]
@@ -83,11 +88,16 @@ sankoffPreOrder childDecoration ((whichChild, parentDecoration):_) = {- trace "p
         resultDecoration f = updateDirectionalMins parentDecoration childDecoration $ f (parentDecoration ^. minStateTuple)
 
 
--- | Before post-order can actually occur, must initialize leaf vectors with values as such:
--- Given \(n\) character states, for a given character \(i_c\) on leaf \(i\), there are \(2^n - 1)
--- possible characters, including ambiguous characters. For extant character states \(i_c_x\) on
--- the leaf, and for each possible character state, if that character state is extant on the leaf, give
--- in an initial cost of 0, otherwise, a cost of ∞
+-- |
+-- Before post-order can actually occur, must initialize leaf vectors with values
+-- as such:
+--
+-- Given \(n\) character states, for a given character \(i_c\) on leaf \(i\),
+-- there are \(2^n - 1) possible characters, including ambiguous characters. For
+-- extant character states \(i_c_x\) on the leaf, and for each possible character
+-- state, if that character state is extant on the leaf, give in an initial cost
+-- of 0, otherwise, a cost of ∞
+--
 -- TODO: finish comment nicely once MathJax is working:
 -- \(i\)
 -- \[ cost(i_c) =
@@ -158,12 +168,14 @@ updateCostVector _parentDecoration (leftChild:|rightChild:_) = returnNodeDecorat
 
 
 -- |
--- Takes two decorations in, a child and a parent, and calculates the median character value of the child.
--- For each possible character state this value is based on whether that character state in the child is on
--- one of the min-cost paths from the root to the leaves. It relies on dynamic programming to do so,
--- using the minimum tuple in the parent to determine whether that character state can participate
--- in the final median. Using the left child as a template, the character state is part of the median if,
--- for some state in the parent,
+-- Takes two decorations in, a child and a parent, and calculates the median
+-- character value of the child. For each possible character state this value is
+-- based on whether that character state in the child is on one of the min-cost
+-- paths from the root to the leaves. It relies on dynamic programming to do so,
+-- using the minimum tuple in the parent to determine whether that character
+-- state can participate in the final median. Using the left child as a template,
+-- the character state is part of the median if, for some state in the parent,
+--
 -- parCharState_characterCost_left == childCharState_characterCost + TCM(parCharState, childCharState).
 --
 -- Used on second, pre-order, pass.
@@ -253,7 +265,7 @@ calcCostPerState parentCharState leftChildDec rightChildDec = retVal
                                                                              , show originalLeftStates
                                                                              ]
                                                                     ) $ -}
-                        (accumulatedLeftCharCost, (toEnum childCharState) : originalLeftStates)
+                        (accumulatedLeftCharCost, toEnum childCharState : originalLeftStates)
                     | otherwise = {- trace (unwords [ "left max: "
                                                  , show parentCharState
                                                  , show childCharState
@@ -277,7 +289,7 @@ calcCostPerState parentCharState leftChildDec rightChildDec = retVal
                                                                                , show originalRightStates
                                                                                ]
                                                                       ) $ -}
-                        (curRightMin, [(toEnum childCharState)])
+                        (curRightMin, [toEnum childCharState])
                      | curRightMin == accumulatedRightCharCost = {- trace (unwords [ "Right eq : "
                                                                                 , show parentCharState
                                                                                 , show childCharState
@@ -288,7 +300,7 @@ calcCostPerState parentCharState leftChildDec rightChildDec = retVal
                                                                                 , show originalRightStates
                                                                                 ]
                                                                        ) $ -}
-                        (accumulatedRightCharCost, (toEnum childCharState) : originalRightStates)
+                        (accumulatedRightCharCost, toEnum childCharState : originalRightStates)
                      | otherwise = {- trace (unwords [ "Right max: "
                                                   , show parentCharState
                                                   , show childCharState

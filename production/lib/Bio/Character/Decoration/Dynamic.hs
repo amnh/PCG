@@ -53,4 +53,4 @@ import Bio.Character.Encodable
 import Bio.Metadata.Discrete
 import Bio.Metadata.DiscreteWithTCM
 import Bio.Metadata.Dynamic
-import Bio.Metadata.General
+

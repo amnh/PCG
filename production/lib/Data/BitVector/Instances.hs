@@ -1,5 +1,6 @@
 
 {-# LANGUAGE MagicHash #-}
+{-# OPTIONS_GHC -fno-warn-orphans #-}
 
 module Data.BitVector.Instances () where
 

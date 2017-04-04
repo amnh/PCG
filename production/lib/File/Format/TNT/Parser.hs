@@ -35,14 +35,15 @@ import           Text.Megaparsec.Custom
 import           Text.Megaparsec.Prim                     (MonadParsec,Token)
 
 
--- | Parses the contents of a TNT file stream into a 'TntResult'. A file stream
---   can contain either:
+-- |
+-- Parses the contents of a TNT file stream into a 'TntResult'. A file stream
+-- can contain either:
 --
---   * Only a forest of trees with labeled leaf nodes and the set of leaf nodes
---     is the same across the forest.
+-- * Only a forest of trees with labeled leaf nodes and the set of leaf nodes
+--   is the same across the forest.
 --
---   * A collection of taxa sequences with coresponsing metadata and possibly
---     corresponding forest of trees whose leaf sets are equal to the taxa set.
+-- * A collection of taxa sequences with coresponsing metadata and possibly
+--   corresponding forest of trees whose leaf sets are equal to the taxa set.
 tntStreamParser :: (MonadParsec e s m, Token s ~ Char) => m TntResult
 tntStreamParser = (colateResult <=< collapseStructures) =<< (whitespace *> gatherCommands)
   where
@@ -77,8 +78,9 @@ tntStreamParser = (colateResult <=< collapseStructures) =<< (whitespace *> gathe
             substituteLeaf (Prefix _) = undefined
 
 
--- | Performs an inital structural collapse to the various type lists to make
---   subsequent folding easier.
+-- |
+-- Performs an inital structural collapse to the various type lists to make
+-- subsequent folding easier.
 collapseStructures :: (MonadParsec e s m {- , Token s ~ Char -}) => Commands -> m ([CCode],[CharacterName],[Cost],[NStates],[TReadTree],[XRead])
 collapseStructures (ccodes, cnames, costs, nstates, treads, xreads)
   | not (null errors) = fails errors
@@ -92,8 +94,9 @@ collapseStructures (ccodes, cnames, costs, nstates, treads, xreads)
                       else duplicateIndexMessages $ NE.fromList collapsedCNames
 
 
--- | Mutate the metadata structure by replacing the default character naming
---   information with information defined in CNAME command(s).
+-- |
+-- Mutate the metadata structure by replacing the default character naming
+-- information with information defined in CNAME command(s).
 applyCNames :: Foldable f => f CharacterName -> Vector CharacterMetaData -> Vector CharacterMetaData
 applyCNames charNames metaData = metaData // toAscList names
   where
@@ -106,8 +109,9 @@ applyCNames charNames metaData = metaData // toAscList names
         g mapping name = insertWith const (sequenceIndex name) name mapping
 
 
--- | Mutate the metadata structure by replacing the default TCM costs with
---   custom TCMs defined in COST command(s).
+-- |
+-- Mutate the metadata structure by replacing the default TCM costs with
+-- custom TCMs defined in COST command(s).
 applyCosts :: Foldable f => f Cost -> Vector CharacterMetaData -> Vector CharacterMetaData
 applyCosts charCosts metaData = metaData // toAscList matricies
   where
@@ -122,8 +126,9 @@ applyCosts charCosts metaData = metaData // toAscList matricies
         insertTCM mat mapping index = insertWith const index mat mapping
 
 
--- | Coalesces many CCODE commands respecting thier structural order
---   into a single index ordered mapping.
+-- |
+-- Coalesces many CCODE commands respecting thier structural order
+-- into a single index ordered mapping.
 ccodeCoalesce :: Foldable t => Int -> t CCode -> Vector CharacterMetaData
 ccodeCoalesce charCount ccodeCommands = generate charCount f
   where
@@ -148,7 +153,8 @@ ccodeCoalesce charCount ccodeCommands = generate charCount f
             translation  = const (modifyMetaDataState state)
 
 
--- | Derive an ascending sequence of indicies from a specified index range.
+-- |
+-- Derive an ascending sequence of indicies from a specified index range.
 range :: Int -> CharacterSet -> [Int]
 range _ (Single    i  ) = [i..i]
 range _ (Range     i j) = [i..j]

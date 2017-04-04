@@ -23,4 +23,5 @@ module File.Format.Fastc
   , fastcStreamParser
   ) where
 
+
 import File.Format.Fastc.Parser

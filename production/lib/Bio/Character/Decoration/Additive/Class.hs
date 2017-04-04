@@ -10,7 +10,7 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE FlexibleContexts, FunctionalDependencies, MultiParamTypeClasses #-}
+{-# LANGUAGE FlexibleContexts, FunctionalDependencies, MultiParamTypeClasses, TypeFamilies #-}
 
 module Bio.Character.Decoration.Additive.Class where
 
@@ -18,60 +18,73 @@ module Bio.Character.Decoration.Additive.Class where
 import Bio.Character.Decoration.Discrete
 import Bio.Character.Decoration.Shared
 import Control.Lens
+import Data.Range
+
+
+class ( RangedCharacterDecoration s c
+      , HasCharacterCost s (Bound c)
+      , HasChildPrelimIntervals s (Range (Bound c), Range (Bound c))
+      , HasIsLeaf s Bool
+      , HasPreliminaryInterval s (Range (Bound c))
+      ) => RangedPostorderDecoration s c | s -> c where
+
+
+class ( RangedCharacterDecoration s c
+      , HasFinalInterval s (Range (Bound c))
+      ) => RangedDecorationOptimization s c | s -> c where
 
 
 -- |
 -- An abstract initial additive character decoration with a polymorphic character
 -- type.
-class DiscreteCharacterDecoration s a => AdditiveCharacterDecoration s a | s -> a where
+
+-- class DiscreteCharacterDecoration s a => AdditiveCharacterDecoration s a | s -> a where
+  
+class RangedPostorderDecoration s c => RangedExtensionPostorder s c | s -> c where
+
+    extendRangedToPostorder :: ( DiscreteCharacterMetadata x
+                               , RangedCharacterDecoration x c
+                               )
+                            => x                                  -- ^ Input decoration
+                            -> Bound c                            -- ^ Local cost
+                            ->  Range (Bound c)                   -- ^ Preliminary interval
+                            -> (Range (Bound c), Range (Bound c)) -- ^ Child intervals
+                            -> Bool                               -- ^ Is leaf node?
+                            -> s
 
 
--- |
--- A decoration containing a character that has been scored using Additive's algorithm.
-class ( DiscreteCharacterDecoration s c
-      , HasChildPrelimIntervals s ((Word, Word), (Word, Word))
-      , HasIsLeaf s Bool
-      , HasCharacterCost s Word
-      , HasPreliminaryInterval s (Word, Word)
-      , HasFinalInterval s (Word, Word)
-      ) => AdditiveDecoration s c | s -> c where
+class ( RangedDecorationOptimization s c
+      ) => RangedExtensionPreorder s c | s -> c where
+
+    extendRangedToPreorder :: ( DiscreteCharacterMetadata x
+                              , RangedPostorderDecoration x c
+                              )
+                           => x
+                           -> Range (Bound c)
+                           -> s
 
 
--- |
--- A decoration that can be constructed from a 'DiscreteCharacterDecoration' by
--- extending the decoration to contain the requisite fields for performing
--- Additive's algorithm.
-class ( AdditiveDecoration s c
-      ) => DiscreteExtensionAdditiveDecoration s c | s -> c where
 
-    extendDiscreteToAdditive :: DiscreteCharacterDecoration x c
-                             => x
-                             -> Word
-                             -> (Word, Word)
-                             -> (Word, Word)
-                             -> ((Word, Word), (Word, Word))
-                             -> Bool
-                             -> s
 
 -- |
 -- A 'Lens' for the 'additiveChildPrelimIntervals' field.
 class HasChildPrelimIntervals s a | s -> a where
 
-    childPrelimIntervals :: Lens' s a
     {-# MINIMAL childPrelimIntervals #-}
+    childPrelimIntervals :: Lens' s a
 
 
 -- |
 -- A 'Lens' for the 'additivePreliminaryInterval' field.
 class HasPreliminaryInterval s a | s -> a where
 
-    preliminaryInterval :: Lens' s a
     {-# MINIMAL preliminaryInterval #-}
+    preliminaryInterval :: Lens' s a
 
 
 -- |
 -- A 'Lens' for the 'additiveFinalInterval' field.
 class HasFinalInterval s a | s -> a where
 
-    finalInterval :: Lens' s a
     {-# MINIMAL finalInterval #-}
+    finalInterval :: Lens' s a

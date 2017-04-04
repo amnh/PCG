@@ -17,6 +17,7 @@
 module Bio.PhyloGraphPrime.PhylogeneticDAG where
 
 import           Bio.Character
+import           Bio.Character.Encodable.Continuous
 import           Bio.Character.Decoration.Additive
 import           Bio.Character.Decoration.Continuous
 import           Bio.Character.Decoration.Discrete
@@ -36,11 +37,12 @@ import           Control.Monad.State.Lazy
 import           Data.Bits
 --import           Data.DuplicateSet
 --import qualified Data.DuplicateSet  as DS
+import           Data.EdgeLength
 import           Data.Foldable
 import           Data.Hashable
 import           Data.Hashable.Memoize
-import           Data.HashMap.Lazy         (HashMap)
-import qualified Data.HashMap.Lazy  as HM
+--import           Data.HashMap.Lazy         (HashMap)
+--import qualified Data.HashMap.Lazy  as HM
 import qualified Data.IntMap        as IM
 import           Data.IntSet               (IntSet)
 import qualified Data.IntSet        as IS
@@ -48,32 +50,32 @@ import           Data.Key
 import           Data.List.NonEmpty        (NonEmpty( (:|) ))
 import qualified Data.List.NonEmpty as NE
 import           Data.List.Utility
-import           Data.Map                  (Map)
+--import           Data.Map                  (Map)
 import qualified Data.Map           as M
 import           Data.Maybe
 --import           Data.Monoid
 import           Data.MonoTraversable
 import           Data.Semigroup
 import           Data.Semigroup.Foldable
-import           Data.Vector               (Vector)
+--import           Data.Vector               (Vector)
 import qualified Data.Vector        as V
 
 import           Prelude            hiding (zipWith)
 
-import Debug.Trace
+--import Debug.Trace
 
 
 type SearchState = EvaluationT IO (Either TopologicalResult (PhylogeneticSolution InitialDecorationDAG))
 
 
-type TopologicalResult = PhylogeneticSolution (ReferenceDAG (Maybe Double) (Maybe String))
+type TopologicalResult = PhylogeneticSolution (ReferenceDAG EdgeLength (Maybe String))
 
 
 type CharacterResult   = PhylogeneticSolution CharacterDAG
 
 
 type UnRiefiedCharacterDAG = PhylogeneticDAG
-                               (Maybe Double)
+                               EdgeLength
                                (Maybe String)
                                UnifiedDiscreteCharacter
                                UnifiedDiscreteCharacter
@@ -83,7 +85,7 @@ type UnRiefiedCharacterDAG = PhylogeneticDAG
                                UnifiedDynamicCharacter
 
 type CharacterDAG = PhylogeneticDAG
-                        (Maybe Double)
+                        EdgeLength
                         (Maybe String)
                         UnifiedDiscreteCharacter
                         UnifiedDiscreteCharacter
@@ -97,16 +99,17 @@ type DecoratedCharacterResult = PhylogeneticSolution InitialDecorationDAG
 
 
 type InitialDecorationDAG = PhylogeneticDAG
-                                (Maybe Double)
+                                EdgeLength
                                 (Maybe String)
                                 (SankoffOptimizationDecoration  StaticCharacter)
                                 (SankoffOptimizationDecoration  StaticCharacter)
-                                UnifiedContinuousCharacter --(ContinuousOptimizationDecoration ContinuousChar)
+                                --UnifiedContinuousCharacter
+                                (ContinuousOptimizationDecoration ContinuousChar)
                                 (FitchOptimizationDecoration    StaticCharacter)
                                 (AdditiveOptimizationDecoration StaticCharacter)
                                 -- UnifiedDynamicCharacter
-                                -- (DynamicDecorationDirectOptimization DynamicChar)
-                                (DynamicDecorationDirectOptimizationPostOrderResult DynamicChar)
+                                (DynamicDecorationDirectOptimization DynamicChar)
+                                --(DynamicDecorationDirectOptimizationPostOrderResult DynamicChar)
 
 
 type  UnifiedCharacterSequence
@@ -371,6 +374,7 @@ applySoftwireResolutions inputContexts =
       []   -> pure []
       [x]  ->
           let y = pure <$> fst x
+          -- TODO: review this logic thouroughly
           in  if   multipleParents x
               then y -- <> pure []
               else y
@@ -799,7 +803,7 @@ assignOptimalDynamicCharacterRootEdges extensionTransformation (PDAG2 inputDag) 
 
     sequenceOfEdgesWithMinimalCost = foldMapWithKey1 f sequenceWLOG
       where
-        f k v = (V.generate (length v) g) :| []
+        f k v = V.generate (length v) g :| []
           where
             g i = result
               where
@@ -824,7 +828,7 @@ assignOptimalDynamicCharacterRootEdges extensionTransformation (PDAG2 inputDag) 
             node = nodeDecoration idxData
             nodeDatum =
                 PNode2
-                { resolutions          = fmap f $ resolutions node
+                { resolutions          = f <$> resolutions node
                 , nodeDecorationDatum2 = nodeDecorationDatum2 node
                 }
         f resInfo = resInfo { characterSequence = modifiedSequence  }

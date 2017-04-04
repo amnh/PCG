@@ -31,7 +31,7 @@ import           Bio.Character.Encodable.Internal
 import           Bio.Character.Encodable.Stream
 import           Bio.Character.Exportable.Class
 import           Control.Arrow                       ((***))
-import           Control.Lens
+import           Control.Lens                 hiding (mapping)
 import           Data.Alphabet
 import           Data.BitMatrix
 import           Data.BitMatrix.Internal(BitMatrix(..))
@@ -201,6 +201,7 @@ instance EncodableStream DynamicChar where
         rawResult   = NE.fromList . ofoldMap (pure . decodeElement alphabet) . otoList $ char
         dnaAlphabet = fromSymbols $ fromString <$> ["A","C","G","T"]
 --        dnaIUPAC :: (IsString a, Ord a) => Map [a] [a]
+        -- TODO: Maybe use Data.Alphabet.IUPAC Bimap definition
         dnaIUPAC    = M.fromList . fmap (swap . (NE.fromList . pure . fromChar *** NE.fromList . fmap fromChar)) $ mapping
           where
             fromChar = fromString . pure
@@ -229,6 +230,7 @@ instance EncodableStream DynamicChar where
     lookupStream (DC bm) i
       | 0 <= i && i < numRows bm = Just . DCE $ bm `row` i
       | otherwise                = Nothing
+    lookupStream _ _ = Nothing
 
     {-# INLINE gapOfStream #-}
     gapOfStream = bit . pred . symbolCount 
@@ -243,19 +245,42 @@ instance EncodableDynamicCharacter DynamicChar where
 
 -- TODO: Probably remove?
 instance Bits DynamicChar where
-    (.&.)        (DC lhs) (DC rhs)  = DC $ lhs  .&.  rhs
-    (.|.)        (DC lhs) (DC rhs)  = DC $ lhs  .|.  rhs
-    xor          (DC lhs) (DC rhs)  = DC $ lhs `xor` rhs
-    complement   (DC b)             = DC $ complement b
-    shift        (DC b)   n         = DC $ b `shift`  n
-    rotate       (DC b)   n         = DC $ b `rotate` n
-    setBit       (DC b)   i         = DC $ b `setBit` i
-    testBit      (DC b)   i         = b `testBit` i
-    bit i                           = DC $ fromRows [bit i]
-    bitSize                         = fromMaybe 0 . bitSizeMaybe
-    bitSizeMaybe (DC b)             = bitSizeMaybe b
-    isSigned     (DC b)             = isSigned b
-    popCount     (DC b)             = popCount b
+
+    (DC lhs)  .&.  (DC rhs) = DC $ lhs  .&.  rhs
+    lhs       .&.  rhs      = Missing $ max (symbolCount lhs) (symbolCount rhs)
+
+    (DC lhs)  .|.  (DC rhs) = DC $ lhs  .|.  rhs
+    lhs       .|.  rhs      = Missing $ max (symbolCount lhs) (symbolCount rhs)
+
+    (DC lhs) `xor` (DC rhs) = DC $ lhs `xor` rhs
+    lhs      `xor` rhs      = Missing $ max (symbolCount lhs) (symbolCount rhs)
+
+    complement   (DC b)     = DC $ complement b
+    complement   x          = x
+
+    shift        (DC b)   n = DC $ b `shift`  n
+    shift        x        _ = x
+
+    rotate       (DC b)   n = DC $ b `rotate` n
+    rotate       x        _ = x
+
+    setBit       (DC b)   i = DC $ b `setBit` i
+    setBit       x        _ = x
+
+    testBit      (DC b)   i = b `testBit` i
+    testBit      _        _ = False
+
+    bit i                   = DC $ fromRows [bit i]
+
+    bitSize                 = fromMaybe 0 . bitSizeMaybe
+
+    bitSizeMaybe (DC b)     = bitSizeMaybe b
+    bitSizeMaybe _          = Nothing
+
+    isSigned     _          = False
+
+    popCount     (DC b)     = popCount b
+    popCount     _          = 0
 
 
 {-
@@ -287,6 +312,7 @@ instance Arbitrary DynamicChar where
 
 instance Exportable DynamicChar where
 
+    toExportableBuffer Missing {} = error "Attempted to 'Export' a missing dynamic character to foreign functions."
     toExportableBuffer (DC bm@(BitMatrix _ bv)) = ExportableCharacterSequence x y $ bitVectorToBufferChunks x y bv
       where
         x = numRows bm

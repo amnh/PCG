@@ -29,12 +29,17 @@
 
 #define __STDC_FORMAT_MACROS
 
+#define TCM_LENGTH    3600
+#define ALPHABET_SIZE 60
+#define SEQ_A_LEN     8
+#define SEQ_B_LEN     6
+
 int main() {
 
-    const size_t TCM_LENGTH    = 3600;
-    const size_t ALPHABET_SIZE = 60;
 
-    int tcm[3600] = {0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,
+
+
+    int tcm[TCM_LENGTH] = {0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,
 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,
 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,
 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,
@@ -100,22 +105,36 @@ int main() {
         exit(1);
     }
 
-    uint64_t s1[8] = {36028797018963968, 18155135997837824, 2269391999730688, 140737488355328, 134217728, 134217728, 134217728, 134217728};
+    uint64_t s1[SEQ_A_LEN] = { 36028797018963968
+                             , 18155135997837824
+                             , 2269391999730688
+                             , 140737488355328
+                             , 134217728
+                             , 134217728
+                             , 134217728
+                             , 134217728
+                             };
 
-    uint64_t s2[6] = {36028797018963968, 17592186044928, 140737488355328, 134217728, 134217728, 34493956096};
+    uint64_t s2[SEQ_B_LEN] = { 36028797018963968
+                             , 17592186044928
+                             , 140737488355328
+                             , 134217728
+                             , 134217728
+                             , 34493956096
+                             };
 
     costMatrix_p costMatrix = matrixInit(ALPHABET_SIZE, tcm);
 
-    dynChar_t *seqA  = malloc(sizeof(dynChar_t));
+    dynChar_t *seqA  = malloc( sizeof(dynChar_t) );
     seqA->alphSize   = ALPHABET_SIZE;
-    seqA->numElems   = 8;
+    seqA->numElems   = SEQ_A_LEN;
     seqA->dynCharLen = dynCharSize(ALPHABET_SIZE, seqA->numElems);
     seqA->dynChar    = intArrToBitArr(ALPHABET_SIZE, seqA->numElems, s1);
 
 
-    dynChar_t *seqB  = malloc(sizeof(dynChar_t));
+    dynChar_t *seqB  = malloc( sizeof(dynChar_t) );
     seqB->alphSize   = ALPHABET_SIZE;
-    seqB->numElems   = 6;
+    seqB->numElems   = SEQ_B_LEN;
     seqB->dynCharLen = dynCharSize(ALPHABET_SIZE, seqB->numElems);
     seqB->dynChar    = intArrToBitArr(ALPHABET_SIZE, seqB->numElems, s2);
 

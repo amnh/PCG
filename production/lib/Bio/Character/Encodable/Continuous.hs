@@ -18,3 +18,4 @@ module Bio.Character.Encodable.Continuous
 
 import Bio.Character.Encodable.Continuous.Class
 import Bio.Character.Encodable.Continuous.Internal
+import Bio.Character.Encodable.Internal (PossiblyMissingCharacter(..))

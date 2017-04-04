@@ -33,7 +33,7 @@
 
 module File.Format.Newick
   ( NewickForest 
-  , NewickNode(branchLength,descendants,newickLabel)
+  , NewickNode(branchLength, descendants, newickLabel)
   , isLeaf
   , newickNode
   , newickStreamParser
@@ -48,15 +48,19 @@ import Text.Megaparsec.Custom
 import Text.Megaparsec.Prim        (MonadParsec)
 
 
--- | Parses an entire stream into a zero or more 'NewickForest's.
+-- |
+-- Parses an entire stream into a zero or more 'NewickForest's.
 newickStreamParser :: (MonadParsec e s m, Token s ~ Char) => m (NonEmpty NewickForest)
 newickStreamParser = nonEmpty forestDefinitions <* eof
+
 
 forestDefinitions :: (MonadParsec e s m, Token s ~ Char) => m NewickForest 
 forestDefinitions = explicitForest <|> implicitForest
 
+
 explicitForest :: (MonadParsec e s m, Token s ~ Char) => m NewickForest
 explicitForest = try newickForestDefinition
+
 
 implicitForest :: (MonadParsec e s m, Token s ~ Char) => m NewickForest
 implicitForest = pure <$> newickExtendedDefinition

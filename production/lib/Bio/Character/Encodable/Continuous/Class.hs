@@ -10,13 +10,13 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE FlexibleContexts, FunctionalDependencies, MultiParamTypeClasses #-}
+{-# LANGUAGE FlexibleContexts, MultiParamTypeClasses #-}
 
 module Bio.Character.Encodable.Continuous.Class where
 
 
 -- |
 -- A character class for continuous characters.
-class Ord c => ContinuousCharacter c where
+class ContinuousCharacter c where
 
     toContinuousCharacter :: Real r => Maybe r -> c

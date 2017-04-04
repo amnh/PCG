@@ -1,16 +1,20 @@
 module Main (main) where
 
-import Text.Megaparsec
+
+import Control.Evaluation
 --import Data.Functor ((<$))
 import PCG.Computation.Internal
-import Control.Evaluation
 import PCG.Script
-
 --import System.Environment (getContents)
+import System.IO
+import Text.Megaparsec
+
+
 --main = undefined
 {--}
 main :: IO ()
-main = getContents
+main = hSetBuffering stdout NoBuffering
+   >>  getContents
    >>= checkInput . parse' scriptStreamParser "STDIN stream"
    where
      checkInput (Left  err) = putStrLn $ parseErrorPretty err

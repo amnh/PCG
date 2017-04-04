@@ -15,6 +15,7 @@
 module Bio.Metadata.Discrete.Internal
   ( DiscreteCharacterMetadataDec()
   , DiscreteCharacterMetadata(..)
+  , GeneralCharacterMetadata(..)
   , HasCharacterAlphabet(..)
   , HasCharacterName(..)
   , HasCharacterWeight(..)

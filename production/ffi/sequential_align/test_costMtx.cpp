@@ -3,12 +3,17 @@
 
 #include "costMatrix.h"
 #include "dynamicCharacterOperations.h"
+
+#define __STDC_FORMAT_MACROS
+#include <inttypes.h>
+
 // #include "seqAlignForHaskell.h"
 
 int main() {
-    const size_t tcmLen = 25;
+    const size_t tcmLen       = 25;
+    const size_t alphabetSize = 5;
+
     int tcm [tcmLen] = {0,1,1,1,2, 1,0,1,1,2, 1,1,0,1,2, 1,1,1,0,2, 2,2,2,2,0};
-    size_t alphabetSize = 5;
     if ( tcmLen != alphabetSize * alphabetSize ) {
         printf("tcm wrong size\n");
         exit(1);
@@ -65,7 +70,7 @@ int main() {
                 exit(1);
             }
             // else {
-            //     printf("Unambiguous success! key1: %zu, key2: %zu, cost: %i, median: %llu \n", key1, key2, cost, median);
+            //     printf("Unambiguous success! key1: %zu, key2: %zu, cost: %i, median: %" PRIu64 " \n", key1, key2, cost, median);
             // }
             if(key2 != key1) ClearBit(&median, key2); // the key1 bit needs to persist on the median
             ClearBit(secondKey->element, key2);
@@ -76,7 +81,7 @@ int main() {
     printf("Passed!\n\n\n");
 
     printf("\n\n\n******* Testing ambiguous characters: get/set of ambiguous characters. ******\n");
-    int numSetInKey;
+    size_t numSetInKey;
     for(size_t i = 0; i < 25; ++i) {
         printf("\n\niteration %2zu\n", i + 1);
         numSetInKey = rand() % alphabetSize + 1;
@@ -87,12 +92,27 @@ int main() {
         for(size_t setIdx = 0; setIdx < numSetInKey; ++setIdx) {
             SetBit(secondKey->element, rand() % alphabetSize);
         }
-        printf("key1: %2llu, key2: %2llu\n", *firstKey->element, *secondKey->element);
+        printf("key1: %2" PRIu64 ", key2: %2" PRIu64 "\n", *firstKey->element, *secondKey->element);
         foundCost = myMatrix.getSetCostMedian(firstKey, secondKey, retMedian);
-        printf("***Final cost: %i median: %llu\n", foundCost, *retMedian->element);
+        printf("***Final cost: %i median: %" PRIu64 "\n", foundCost, *retMedian->element);
+        printPackedChar(retMedian->element, 1, alphabetSize);
         ClearAll( firstKey->element, dynCharSize(alphabetSize, 1) );
         ClearAll(secondKey->element, dynCharSize(alphabetSize, 1) );
     }
+    packedChar *first, *second, *third, *result, *result2;
+    packedChar firstVal  = 1,
+               secondVal = 4,
+               thirdVal  = 16;
+
+    first  = &firstVal;
+    second = &secondVal;
+    third  = &thirdVal;
+    result = packedCharOr( first, second, alphabetSize, 1 );
+
+    printf("%" PRIu64 "\n", *result);
+    //free(result);
+    result2 = packedCharOr( result, third, alphabetSize, 1 );
+    printf("%" PRIu64 "\n", *result2);
 
     /****** This next to test Yu Xiang's code, once you can. ******/
 

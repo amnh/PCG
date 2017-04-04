@@ -1,45 +1,46 @@
-module Data.ExtendedNatural
- ( ExtendedNatural()
+module Data.ExtendedReal
+ ( ExtendedReal()
  , infinity
- , toWord
- , fromWord
+ , toDouble
+ , fromDouble
  ) where
 
 
 import Control.Applicative (liftA2)
+import Data.Ratio
 import Data.Maybe          (fromMaybe)
 
 
--- | A natural number extended to include infinity. Where infinity == maxBound
-newtype ExtendedNatural = Cost (Maybe Word)
+-- | A non-negative real number extended to include infinity, where infinity == maxBound.
+newtype ExtendedReal = Cost (Maybe Double)
 
 
 -- | A synonym for 'maxBound'
-infinity :: ExtendedNatural
+infinity :: ExtendedReal
 infinity = maxBound
 
 
-toWord :: ExtendedNatural -> Word
-toWord (Cost x) = fromMaybe (maxBound :: Word) x
+toDouble :: ExtendedReal -> Double
+toDouble (Cost x) = fromMaybe (read "infinity" :: Double) x
 
 
-fromWord :: Word -> ExtendedNatural
-fromWord = Cost . Just
+fromDouble :: Double -> ExtendedReal
+fromDouble = Cost . Just
 
 
-instance Show ExtendedNatural where
+instance Show ExtendedReal where
 
     show (Cost input) = maybe "∞" show input
 
 
-instance Bounded ExtendedNatural where
+instance Bounded ExtendedReal where
 
     maxBound = Cost Nothing
 
-    minBound = Cost $ Just minBound
+    minBound = Cost $ Just 0.0
 
 
-instance Num ExtendedNatural where
+instance Num ExtendedReal where
 
   (Cost lhs) + (Cost rhs) = Cost $ liftA2 (+) lhs rhs
 
@@ -49,7 +50,7 @@ instance Num ExtendedNatural where
 
   abs = id
 
-  signum (Cost (Just 0)) = 0
+  signum (Cost (Just x)) = Cost . Just $ signum x -- the second signum is Double.signum
   signum               _ = 1
 
   fromInteger = Cost . Just . fromInteger
@@ -57,12 +58,12 @@ instance Num ExtendedNatural where
   negate = id
 
 
-instance Eq ExtendedNatural where
+instance Eq ExtendedReal where
 
     (Cost lhs) == (Cost rhs) = lhs == rhs
 
 
-instance Ord ExtendedNatural where
+instance Ord ExtendedReal where
 
     (Cost lhs) <= (Cost rhs) =
         case (lhs, rhs) of
@@ -88,24 +89,28 @@ instance Ord ExtendedNatural where
                     Just y  -> x > y
 
 
-instance Enum ExtendedNatural where
+-- TODO: maybe remove this? 
+instance Enum ExtendedReal where
 
     fromEnum (Cost x) = maybe (maxBound :: Int) fromEnum x
 
     toEnum = Cost . Just . toEnum
 
 
-instance Integral ExtendedNatural where
+instance Real ExtendedReal where
 
-    toInteger (Cost x) = toInteger $ fromMaybe (maxBound :: Word) x
-
-    quotRem   (Cost lhs) (Cost rhs) =
-        case liftA2 quotRem lhs rhs of
-          Nothing -> (Cost Nothing, 0)
-          Just (q,r) -> (Cost $ Just q, Cost $ Just r)
+    toRational (Cost x) = maybe (1%0) toRational x
 
 
-instance Real ExtendedNatural where
+instance Fractional ExtendedReal where
 
-    toRational = toRational . toInteger
+    (Cost lhs) / (Cost rhs) =
+        case (lhs, rhs) of
+          (Nothing,       _) -> Cost Nothing
+          (Just _ , Nothing) -> Cost $ Just 0.0
+          (Just x , Just y ) -> Cost . Just $ x / y
+
+    recip (Cost x) = Cost $ recip <$> x
+    
+    fromRational = Cost . Just . fromRational
 

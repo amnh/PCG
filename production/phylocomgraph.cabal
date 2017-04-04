@@ -31,6 +31,11 @@ extra-source-files:  README.md
 
 cabal-version:       >= 1.22
 
+flag build-cpp-files
+  description: Toggles the C++ files being successfully build.
+  default: True
+
+                     
 library
   -- LANGUAGE extensions used by modules in this package.
   other-extensions:    FlexibleContexts, BangPatterns, DeriveGeneric
@@ -95,13 +100,14 @@ library
 
   hs-source-dirs:      lib, ffi
 
-  -- ld-options: -lstdc++
+--  ld-options: -lstdc++
 
   extra-libraries: stdc++
 
-  cc-options: --std=c11
-
- -- cc-options: --std=c++11 -g
+  if  flag(build-cpp-files)
+    cc-options: --std=c++11 -g
+  else
+    cc-options: --std=c11
 
   -- We must provide the full relative path to every C file that the project depends on.
   c-sources:
@@ -146,6 +152,7 @@ library
 --                       Analysis.Parsimony.Binary.Optimization
                        Analysis.Parsimony.Additive.Internal
                        Analysis.Parsimony.Dynamic.DirectOptimization
+                       Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise
                        Analysis.Parsimony.Dynamic.SequentialAlign
                        Analysis.Parsimony.Fitch.Internal
                        Analysis.Parsimony.Sankoff.Internal
@@ -158,6 +165,7 @@ library
                        Bio.Character.Decoration.Metric
                        Bio.Character.Decoration.NonMetric
                        Bio.Character.Encodable
+                       Bio.Character.Encodable.Continuous
                        Bio.Character.Exportable
                        Bio.Character.Parsed
                        Bio.Metadata
@@ -169,25 +177,25 @@ library
                        Bio.Metadata.Parsed
                        Bio.Sequence
                        Bio.Sequence.Block
-                       Bio.PhyloGraph
-                       Bio.PhyloGraph.DAG
-                       Bio.PhyloGraph.Edge
-                       Bio.PhyloGraph.Forest
-                       Bio.PhyloGraph.Network
-                       Bio.PhyloGraph.Solution
-                       Bio.PhyloGraph.Tree.Binary
-                       Bio.PhyloGraph.Tree.EdgeAware
-                       Bio.PhyloGraph.Node
-                       Bio.PhyloGraph.Node.Encoded
-                       Bio.PhyloGraph.Node.Final
-                       Bio.PhyloGraph.Node.ImpliedAlign
-                       Bio.PhyloGraph.Node.Internal
-                       Bio.PhyloGraph.Node.Packed
-                       Bio.PhyloGraph.Node.Preliminary
-                       Bio.PhyloGraph.Node.Referential
+--                       Bio.PhyloGraph
+--                       Bio.PhyloGraph.DAG
+--                       Bio.PhyloGraph.Edge
+--                       Bio.PhyloGraph.Forest
                        Bio.PhyloGraph.Forest.Parsed
-                       Bio.PhyloGraph.Tree.Referential
-                       Bio.PhyloGraph.Tree.Rose
+                       Bio.PhyloGraph.Network
+--                       Bio.PhyloGraph.Solution
+--                       Bio.PhyloGraph.Tree.Binary
+--                       Bio.PhyloGraph.Tree.EdgeAware
+--                       Bio.PhyloGraph.Node
+--                       Bio.PhyloGraph.Node.Encoded
+--                       Bio.PhyloGraph.Node.Final
+--                       Bio.PhyloGraph.Node.ImpliedAlign
+--                       Bio.PhyloGraph.Node.Internal
+--                       Bio.PhyloGraph.Node.Packed
+--                       Bio.PhyloGraph.Node.Preliminary
+--                       Bio.PhyloGraph.Node.Referential
+--                       Bio.PhyloGraph.Tree.Referential
+--                       Bio.PhyloGraph.Tree.Rose
                        Bio.PhyloGraphPrime
                        Bio.PhyloGraphPrime.Component
                        Bio.PhyloGraphPrime.Node
@@ -203,6 +211,7 @@ library
                        Data.Alphabet.IUPAC
                        Data.BitMatrix
                        Data.DuplicateSet
+                       Data.EdgeLength
                        Data.Hashable.Memoize
                        Data.ReplicatedSequence
                        Data.TCM
@@ -215,26 +224,26 @@ library
                        File.Format.TransitionCostMatrix
 
   -- probably can be moved to other-modules:
-                       Bio.Metadata.MaskGenerator
-                       Bio.PhyloGraph.Node.Topological
+--                       Bio.Metadata.MaskGenerator
+--                       Bio.PhyloGraph.Node.Topological
                        Data.List.Utility
                        Data.Matrix.NotStupid
                        Text.Megaparsec.Custom
                        Test.Custom.NucleotideSequence
-
+                       Test.Custom.DynamicCharacterNode
+        
   -- Modules included in this library but not exported.
   other-modules:
                     --   Analysis.ImpliedAlignment.AlignmentContext
-                    --   Analysis.ImpliedAlignment.DeletionEvents
                     --   Analysis.ImpliedAlignment.DynamicProgramming
-                    --   Analysis.ImpliedAlignment.InsertionEvents
-                    --   Analysis.ImpliedAlignment.InsertionEvents.Internal
                     --   Analysis.ImpliedAlignment.Internal
                     --   Analysis.Parsimony.Binary.SequentialAlign.FFI
                     --   Analysis.Parsimony.Binary.Constraints
+                       Analysis.Parsimony.Dynamic.DirectOptimization.DeletionEvents
                        Analysis.Parsimony.Dynamic.DirectOptimization.FFI
                        Analysis.Parsimony.Dynamic.DirectOptimization.Internal
-                       Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise
+                       Analysis.Parsimony.Dynamic.DirectOptimization.InsertionEvents
+                       Analysis.Parsimony.Dynamic.DirectOptimization.InsertionEvents.Internal
                        Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Internal
                        Analysis.Parsimony.Dynamic.SequentialAlign.FFI
                        Bio.Character.Decoration.Additive.Class
@@ -250,6 +259,8 @@ library
                        Bio.Character.Decoration.NonMetric.Class
                        Bio.Character.Decoration.NonMetric.Internal
                        Bio.Character.Decoration.Shared
+                       Bio.Character.Encodable.Continuous.Class
+                       Bio.Character.Encodable.Continuous.Internal
                        Bio.Character.Encodable.Dynamic
                        Bio.Character.Encodable.Dynamic.Class
                        Bio.Character.Encodable.Dynamic.Internal
@@ -261,8 +272,6 @@ library
                        Bio.Character.Exportable.Class
                        Bio.Character.Parsed.Class
                        Bio.Character.Parsed.Internal
-                       Bio.PhyloGraph.Forest.Class
-                       Bio.PhyloGraph.Forest.Internal
                        Bio.Metadata.Class
                        Bio.Metadata.General
                        Bio.Metadata.General.Class
@@ -274,18 +283,20 @@ library
                        Bio.Metadata.Dynamic.Class
                        Bio.Metadata.Dynamic.Internal
                        Bio.Metadata.Internal
-                       Bio.PhyloGraph.DAG.Internal
-                       Bio.PhyloGraph.DAG.Class
-                       Bio.PhyloGraph.Edge.Internal
-                       Bio.PhyloGraph.Edge.Class
+--                       Bio.PhyloGraph.DAG.Internal
+--                       Bio.PhyloGraph.DAG.Class
+--                       Bio.PhyloGraph.Edge.Internal
+--                       Bio.PhyloGraph.Edge.Class
+--                       Bio.PhyloGraph.Forest.Class
+--                       Bio.PhyloGraph.Forest.Internal
                        Bio.PhyloGraph.Network.Class
                        Bio.PhyloGraph.Network.Subsettable
-                       Bio.PhyloGraph.Solution.Class
-                       Bio.PhyloGraph.Solution.Internal
-                       Bio.PhyloGraph.Solution.Metadata
-                       Bio.PhyloGraph.Tree.Binary.Class
-                       Bio.PhyloGraph.Tree.EdgeAware.Class
-                       Bio.PhyloGraph.Tree.Rose.Class
+--                       Bio.PhyloGraph.Solution.Class
+--                       Bio.PhyloGraph.Solution.Internal
+--                       Bio.PhyloGraph.Solution.Metadata
+--                       Bio.PhyloGraph.Tree.Binary.Class
+--                       Bio.PhyloGraph.Tree.EdgeAware.Class
+--                       Bio.PhyloGraph.Tree.Rose.Class
                        Bio.PhyloGraphPrime.Forest
                        Bio.PhyloGraphPrime.PhylogeneticDAG.Class
                        Bio.PhyloGraphPrime.ZipperDAG.Internal
@@ -299,6 +310,8 @@ library
                        Data.BitMatrix.Internal
                        Data.BitVector.Instances
                        Data.ExtendedNatural
+                       Data.ExtendedReal
+                       Data.Range
                        Data.TCM.Internal
                        File.Format.TNT.Command.CCode
                        File.Format.TNT.Command.CNames
@@ -401,15 +414,15 @@ executable pcg
                        PCG.Command.Types.Read.Unification.UnificationError
                        PCG.Command.Types.Read.Validate
                        PCG.Command.Types.Report
-                       PCG.Command.Types.Report.CharacterMatrix
+--                       PCG.Command.Types.Report.CharacterMatrix
                        PCG.Command.Types.Report.DynamicCharacterTable
                        PCG.Command.Types.Report.Evaluate
-                       PCG.Command.Types.Report.GraphViz
-                       PCG.Command.Types.Report.ImpliedAlignmentFasta
+--                       PCG.Command.Types.Report.GraphViz
+--                       PCG.Command.Types.Report.ImpliedAlignmentFasta
                        PCG.Command.Types.Report.Internal
-                       PCG.Command.Types.Report.Metadata
-                       PCG.Command.Types.Report.TaxonMatrix
-                       PCG.Command.Types.Report.Newick
+--                       PCG.Command.Types.Report.Metadata
+--                       PCG.Command.Types.Report.TaxonMatrix
+--                       PCG.Command.Types.Report.Newick
                        PCG.Command.Types.Report.Validate
                        PCG.Computation.Internal
                        PCG.Script
@@ -529,6 +542,119 @@ executable do-comparison
   hs-source-dirs:      utils
 
 
+executable sequential-alignment-invariants
+
+  main-is:             sequential-alignment-invariants.hs
+
+  build-depends:       base                  >=4.8
+                     , bimap
+                     , bv                    -any
+                     , containers            -any
+                     , criterion             -any
+                     , deepseq               -any
+                     , directory             -any
+                     , dlist                 -any
+                     , either                -any
+                     , Glob                  -any
+                     , hashable              -any
+                     , keys                  -any
+                     , matrix                -any
+                     , megaparsec            >=5.0
+                     , mtl                  -any
+--                     , memoize               -any
+                     , mono-traversable      -any
+                     , parallel              -any
+                     , phylocomgraph         -any
+                     , QuickCheck            -any
+                     , safe                  -any
+                     , scientific            -any
+                     , semigroups            -any
+                     , smallcheck            -any
+                     , split                 -any
+                     , tasty                 -any
+                     , tasty-hunit           -any
+                     , tasty-quickcheck      -any
+                     , tasty-smallcheck      -any
+                     , text                  -any
+                     , time                  -any
+                     , transformers          -any
+                     , unordered-containers  -any
+                     , vector                -any
+                     , vector-instances      -any
+
+  default-language:    Haskell2010
+
+  ghc-options:         -O2 -Wall
+                       -fwarn-duplicate-exports
+                       -fwarn-incomplete-patterns
+                       -fwarn-missing-signatures
+                       -fwarn-overlapping-patterns
+                       -fwarn-tabs
+                       -fwarn-unused-binds
+                       -fwarn-unused-do-bind
+                       -fwarn-unused-imports
+                       -fwarn-unused-matches
+
+  hs-source-dirs:      utils
+
+
+executable three-way-mean-check
+
+  main-is:             three-way-mean-check.hs
+
+  build-depends:       base                  >=4.8
+                     , bimap
+                     , bv                    -any
+                     , containers            -any
+                     , criterion             -any
+                     , deepseq               -any
+                     , directory             -any
+                     , dlist                 -any
+                     , either                -any
+                     , Glob                  -any
+                     , hashable              -any
+                     , keys                  -any
+                     , lens
+                     , matrix                -any
+                     , megaparsec            >=5.0
+                     , mtl                  -any
+--                     , memoize               -any
+                     , mono-traversable      -any
+                     , parallel              -any
+                     , phylocomgraph         -any
+                     , QuickCheck            -any
+                     , safe                  -any
+                     , scientific            -any
+                     , semigroups            -any
+                     , smallcheck            -any
+                     , split                 -any
+                     , tasty                 -any
+                     , tasty-hunit           -any
+                     , tasty-quickcheck      -any
+                     , tasty-smallcheck      -any
+                     , text                  -any
+                     , time                  -any
+                     , transformers          -any
+                     , unordered-containers  -any
+                     , vector                -any
+                     , vector-instances      -any
+
+  default-language:    Haskell2010
+
+  ghc-options:         -O2 -Wall
+                       -fwarn-duplicate-exports
+                       -fwarn-incomplete-patterns
+                       -fwarn-missing-signatures
+                       -fwarn-overlapping-patterns
+                       -fwarn-tabs
+                       -fwarn-unused-binds
+                       -fwarn-unused-do-bind
+                       -fwarn-unused-imports
+                       -fwarn-unused-matches
+
+  hs-source-dirs:      utils
+                       
+  
 Test-Suite testsuite
   type:                exitcode-stdio-1.0
 
@@ -587,11 +713,7 @@ Test-Suite testsuite
                        -fwarn-unused-matches
   other-modules:
                        Analysis.ImpliedAlignment.AlignmentContext
-                       Analysis.ImpliedAlignment.DeletionEvents
                        Analysis.ImpliedAlignment.DynamicProgramming
-                       Analysis.ImpliedAlignment.InsertionEvents
-                       Analysis.ImpliedAlignment.InsertionEvents.Internal
-                       Analysis.ImpliedAlignment.InsertionEvents.Test
                        Analysis.ImpliedAlignment.Internal
                        Analysis.ImpliedAlignment.Standard
                        Analysis.ImpliedAlignment.Test
@@ -600,7 +722,11 @@ Test-Suite testsuite
                        Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Test
 --                       Analysis.Parsimony.Binary.Internal
 --                       Analysis.Parsimony.Binary.Test
+                       Analysis.Parsimony.Dynamic.DirectOptimization.DeletionEvents
                        Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise
+                       Analysis.Parsimony.Dynamic.DirectOptimization.InsertionEvents
+                       Analysis.Parsimony.Dynamic.DirectOptimization.InsertionEvents.Internal
+                       Analysis.Parsimony.Dynamic.DirectOptimization.InsertionEvents.Test
 --                       Analysis.Parsimony.Binary.Fitch
                        Bio.Character
                        Bio.Character.Decoration.Additive

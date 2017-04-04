@@ -34,7 +34,6 @@ import           Data.MonoTraversable
 import           Data.String               (IsString)
 import           Foreign.C.Types
 
-import Debug.Trace
 
 {-# DEPRECATED getGapChar "Don't use getGapChar, use getGapElement instead!" #-}
 
@@ -116,7 +115,9 @@ showStreamElement alphabet element
   |  allBits == element = "?"
   | otherwise           = renderAmbiguity $ toIUPAC symbols
   where
-    allBits = fromIntegral . pred . (2^) $ length alphabet
+    allBits = fromIntegral . continuousBits $ length alphabet
+    continuousBits :: Int -> Integer
+    continuousBits = pred . (2^)
     symbols = decodeElement alphabet element
     renderAmbiguity amb =
         case toList amb of
@@ -124,8 +125,8 @@ showStreamElement alphabet element
           [x] -> x
           xs  ->
               case invariantTransformation length xs of
-                Just 1 -> "[" <> concat xs <> "]"
-                _      -> "[" <> intercalate " " xs <> "]"
+                Just 1 -> "[" <> concat  xs <> "]"
+                _      -> "[" <> unwords xs <> "]"
 
     toIUPAC x
       | isAlphabetDna       alphabet = fromMaybe x $ x `BM.lookup` BM.twist iupacToDna

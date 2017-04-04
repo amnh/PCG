@@ -32,9 +32,6 @@ import           Prelude              hiding   (lookup)
 import           Test.QuickCheck      hiding   (generate)
 
 
-import Debug.Trace
-
-
 -- | A data structure for storing a two dimensional, square array of dimensionality
 --   greater that or equal to two with positive cost values at the array indices.
 --   Values are stored in an unboxed structure for cache efficiency.
@@ -249,7 +246,6 @@ reduceTcm missingSymbolIndicies tcm = generate reducedDimension genFunction
 {-# INLINE (!) #-}
 (!) :: (Enum i, Show i) => TCM -> (i, i) -> Word32
 (!) (TCM n v) (i,j) = v `V.unsafeIndex` (fromEnum i * n + fromEnum j)
---(!) (TCM n v) (i,j) = trace (show n <> ": " <> show (i,j) ) $ v V.! (fromEnum i * n + fromEnum j)
 
 
 -- | /O(1)/ Safe indexing.

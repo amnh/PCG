@@ -26,11 +26,9 @@ module Bio.Metadata.DiscreteWithTCM.Internal
 
 
 import Analysis.Parsimony.Dynamic.SequentialAlign.FFI
-import Bio.Character.Encodable
 import Bio.Metadata.CharacterName
 import Bio.Metadata.Discrete
 import Bio.Metadata.DiscreteWithTCM.Class
-import Bio.Metadata.General
 import Control.Lens
 import Data.Alphabet
 import Data.List (intercalate)

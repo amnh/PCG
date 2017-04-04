@@ -33,6 +33,7 @@ module Bio.Character.Decoration.Discrete
   ) where
 
 
+import Bio.Character.Decoration.Shared
 import Bio.Character.Encodable
 import Bio.Metadata.Discrete
 import Bio.Metadata.DiscreteWithTCM
@@ -40,7 +41,7 @@ import Bio.Metadata.General
 import Bio.Metadata.CharacterName
 import Control.Lens
 import Data.Alphabet
-import Data.TCM
+import Data.Range
 
 
 -- |
@@ -106,6 +107,16 @@ instance HasDiscreteCharacter (DiscreteDecoration c) c where
 
 
 -- | (✔)
+instance HasIntervalCharacter (DiscreteDecoration c) c where
+
+    intervalCharacter = discreteCharacter
+
+
+-- | (✔)
+instance (Ranged c, Num (Bound c), Ord (Bound c)) => RangedCharacterDecoration (DiscreteDecoration c) c where
+
+
+-- | (✔)
 instance HasCharacterAlphabet (DiscreteDecoration c) (Alphabet String) where
 
     characterAlphabet = lens getter setter
@@ -160,6 +171,9 @@ instance GeneralCharacterMetadata (DiscreteDecoration c) where
 -- | (✔)
 instance EncodableStreamElement c => DiscreteCharacterMetadata (DiscreteDecoration c) where
 
+    {-# INLINE extractDiscreteCharacterMetadata #-}
+    extractDiscreteCharacterMetadata = extractDiscreteCharacterMetadata . metadata
+
 
 -- | (✔)
 instance EncodableStreamElement c => DiscreteWithTcmCharacterMetadata (DiscreteDecoration c) c where
@@ -171,6 +185,7 @@ instance EncodableStaticCharacter c => DiscreteCharacterDecoration (DiscreteDeco
 
 -- | (✔)
 instance EncodableStaticCharacter c => SimpleDiscreteCharacterDecoration (DiscreteDecoration c) c where
+
     toDiscreteCharacterDecoration name weight alphabet scm g symbolSet =
         DiscreteDec
         { discreteDecorationCharacter = g symbolSet
