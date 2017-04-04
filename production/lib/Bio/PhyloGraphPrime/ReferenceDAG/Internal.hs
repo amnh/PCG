@@ -15,7 +15,7 @@
 module Bio.PhyloGraphPrime.ReferenceDAG.Internal where
 
 import           Bio.PhyloGraphPrime.Component
-import           Control.Arrow              ((&&&))
+import           Control.Arrow              ((&&&),(***))
 import           Data.Bifunctor
 import           Data.Foldable
 import           Data.Hashable              (Hashable)
@@ -202,7 +202,7 @@ unfoldDAG f origin =
     , graphData  = GraphData 0
     }
   where
-    referenceVector = V.fromList . fmap h $ toList resultMap
+    referenceVector = V.fromList . fmap h $ toList expandedMap
       where
         h (iSet, nDatum, iMap) =
             IndexData
@@ -211,38 +211,8 @@ unfoldDAG f origin =
             , childRefs      = iMap
             }
 
-    expandedMap = foldl' h (maxIndex, resultMap) $ IM.keys resultMap
-      where
-        (maxIndex, _) = IM.findMax resultMap
-        h (counter, currentMapping) key
-          -- base cases
-          | parentCount == 0 && childCount <= 2 = (counter  , currentMapping)
-          | parentCount == 1 && childCount == 2 = (counter  , currentMapping)
-          | parentCount == 2 && childCount == 1 = (counter  , currentMapping)
-          | parentCount == 1 && childCount == 0 = (counter  , currentMapping)
-          | parentCount == 2 && childCount == 2 = (counter+1, updatedMapping)
-          | parentCount == 2 && childCount == 0 = (counter+1, updatedMapping)
-          -- recursive case
-          | otherwise = undefined
-          where
-            v@(iSet, nDatum, iMap) = currentMapping ! key
-            parentCount = olength iSet
-            childCount  =  length iMap
-
-            ancestoralVertex  = (            iSet, nDatum, IM.singleton counter mempty)
-            descendentVertex  = (IS.singleton key, nDatum,                        iMap)
-
-            expandedMapping = IM.insert counter descendentVertex
-                            . IM.insert key     ancestoralVertex
-                            $ currentMapping
-
-            updatedMapping = foldl' updateParent expandedMapping $ IM.keys iMap
-              where
-                updateParent = flip (adjust setParent)
-                setParent (x,y,z) = (IS.singleton counter, y, z) 
-
-            
-
+--    expandedMap = contractToContiguousVertexMapping $ expandVertexMapping resultMap
+    expandedMap = resultMap
 
     -- TODO:
     -- _rootIndices seems to be wrong so we do this.
@@ -420,3 +390,203 @@ gen1 x = (pops, show x, kids)
         Nothing -> []
         Just xs -> (\y -> (-1,y)) <$> xs
 --}
+
+
+-- |
+-- /O(n*i)/ where /i/ is the number of missing indicies.
+-- Assuming all indicies in the input /x/ are positive, /i/ = 'findMax x - length x'.
+--
+-- Takes an IntMap that might not have a contiguous index range and makes the
+-- range contiguous [0, length n - 1].
+contractToContiguousVertexMapping :: IntMap (IntSet, t, IntMap a) -> IntMap (IntSet, t, IntMap a)
+contractToContiguousVertexMapping inputMap = foldMapWithKey contractIndices inputMap
+  where
+    missingIndicies = otoList . snd . foldl' f (0, mempty) $ IM.keys inputMap
+      where
+        f (expectedValue, missing) actualValue
+          | expectedValue == actualValue = (expectedValue + 1, missing)
+          | otherwise                    = (  actualValue + 1, missing <> IS.fromList [expectedValue .. actualValue - 1])
+
+    decrementIndex originalIndex = originalIndex - subtrahend
+      where
+        subtrahend = length $ takeWhile (<originalIndex) missingIndicies
+
+    contractIndices key (iSet, datum, iMap) = IM.singleton key' value'
+      where
+        key'   = decrementIndex key
+        value' = (IS.map decrementIndex iSet, datum, IM.mapKeysMonotonic decrementIndex iMap) 
+    
+
+-- TODO: Test this and make sure it works!
+expandVertexMapping :: Monoid a => IntMap (IntSet, t, IntMap a) -> IntMap (IntSet, t, IntMap a)
+expandVertexMapping unexpandedMap = snd . foldl' f (initialCounter, unexpandedMap) $ IM.keys unexpandedMap
+  where
+    (initialCounter, _) = IM.findMax unexpandedMap
+    
+    f acc key = expandEdges acc key
+
+    expandEdges acc@(counter, mapping) key =
+        case parentCount of
+          0 -> if   childCount <= 2
+               then acc
+               else handleTooManyChildren
+
+          1 -> case childCount of
+                  0 -> acc
+                  1 -> collapseEdge
+                  2 -> acc
+                  -- One too many childern
+                  3 -> expandOutExtraChild
+                  -- Far too many children
+                  _ -> handleTooManyChildren
+
+          2 -> case childCount of
+                  0 -> expandOutVertexToChild
+                  1 -> acc
+                  -- Too many children
+                  _ -> expandEdges expandOutVertexToChild counter
+
+          -- One too many parents
+          3 -> expandEdges expandOutExtraParent counter
+
+          -- Far too many parents
+          _ -> expandEdges handleTooManyParents key
+          
+      where
+        (iSet, nDatum, iMap) = mapping ! key
+
+        parentCount = olength iSet
+        childCount  =  length iMap
+
+        -- To collapse an edge
+        collapseEdge = (counter, collapsedEdgeMapping)
+          where
+            updateAncestoralEdge (x,y,z) = (IS.insert parentKey $ IS.delete key x, y, z)
+            updateDescendentEdge (x,y,z) = (x, y, IM.insert childKey edgeValue $ IM.delete key z)
+            parentKey             = IS.findMin iSet
+            (childKey, edgeValue) = IM.findMin iMap
+            collapsedEdgeMapping  = IM.adjust updateAncestoralEdge  childKey 
+                                  . IM.adjust updateDescendentEdge parentKey
+                                  . IM.delete key
+                                  $ mapping
+
+        
+        expandOutVertexToChild = (counter + 1, expandedMapping)
+          where
+            ancestoralVertex = (            iSet, nDatum, IM.singleton counter mempty)
+            descendentVertex = (IS.singleton key, nDatum,                        iMap)
+
+            updateParent = flip (adjust setParent)
+              where
+                setParent (_,y,z) = (IS.singleton counter, y, z) 
+
+            expandedMapping  = replace counter descendentVertex
+                             . replace key     ancestoralVertex
+                             . foldl' updateParent mapping
+                             $ IM.keys iMap
+
+
+        expandOutExtraChild  = (counter + 1, expandedMapping)
+          where
+            ancestoralVertex = (            iSet, nDatum, singledChildMap)
+            descendentVertex = (IS.singleton key, nDatum, reducedChildMap)
+
+            singledChildMap  = IM.singleton counter mempty <> IM.singleton minChildKey edgeValue
+            reducedChildMap  = IM.delete minChildKey iMap
+
+            (minChildKey, edgeValue) = IM.findMin iMap
+
+            updateParent = flip (adjust setParent)
+              where
+                setParent (_,y,z) = (IS.singleton counter, y, z) 
+
+            expandedMapping  = replace counter descendentVertex
+                             . replace key     ancestoralVertex
+                             . foldl' updateParent mapping
+                             $ IM.keys reducedChildMap
+
+
+        handleTooManyChildren = rhsRecursiveResult
+          where
+            (lhsChildMap, rhsChildMap) = (IM.fromList *** IM.fromList) . splitAt (childCount `div` 2) $ toKeyedList iMap
+            
+            ancestoralVertex = (            iSet, nDatum, newChildMap)
+            lhsNewVertex     = (IS.singleton key, nDatum, lhsChildMap)
+            rhsNewVertex     = (IS.singleton key, nDatum, rhsChildMap)
+
+            newChildMap      = IM.singleton counter mempty <> IM.singleton (counter+1) mempty
+
+            lhsUpdateParent = flip (adjust setParent)
+              where
+                setParent (_,y,z) = (IS.singleton  counter  , y, z) 
+
+            rhsUpdateParent = flip (adjust setParent)
+              where
+                setParent (_,y,z) = (IS.singleton (counter+1), y, z) 
+
+            expandedMapping  = replace  counter    lhsNewVertex
+                             . replace (counter+1) rhsNewVertex 
+                             . replace  key        ancestoralVertex
+                             . flip (foldl' rhsUpdateParent) (IM.keys rhsChildMap)
+                             . foldl' lhsUpdateParent mapping
+                             $ IM.keys lhsChildMap
+
+            lhsRecursiveResult = expandEdges (counter+2, expandedMapping) counter
+            rhsRecursiveResult = expandEdges lhsRecursiveResult (counter+1)
+            
+        
+        expandOutExtraParent = (counter + 1, expandedMapping)
+          where
+            ancestoralVertex = (reducedParentMap, nDatum, singledChildMap)
+            descendentVertex = (singledParentMap, nDatum,            iMap)
+
+            
+            singledChildMap  = IM.singleton counter mempty
+            singledParentMap = IS.fromList [key, maxParentKey]
+            reducedParentMap = IS.delete    maxParentKey iSet
+
+            maxParentKey = IS.findMax iSet
+
+            updateChildRef (x,y,z) = (x, y, replace counter (z ! key) $ IM.delete key z)
+
+            updateParent = flip (adjust setParent)
+              where
+                setParent (_,y,z) = (IS.singleton counter, y, z) 
+
+            expandedMapping  = replace counter descendentVertex
+                             . replace key     ancestoralVertex
+                             . adjust updateChildRef maxParentKey
+                             . foldl' updateParent mapping
+                             $ IM.keys iMap
+
+
+        handleTooManyParents = rhsRecursiveResult
+          where
+            (lhsParentSet, rhsParentSet) = (IS.fromList *** IS.fromList) . splitAt (childCount `div` 2) $ otoList iSet
+            
+            descendantVertex = (newParentSet, nDatum, iMap)
+            lhsNewVertex     = (lhsParentSet, nDatum, IM.singleton key mempty)
+            rhsNewVertex     = (rhsParentSet, nDatum, IM.singleton key mempty)
+
+            newParentSet = IS.fromList [counter, counter+1]
+
+            lhsUpdateChildren = flip (adjust setChild)
+              where
+                setChild (x,y,z) = (x, y, replace  counter    (z ! key) $ IM.delete key z)
+
+            rhsUpdateChildren = flip (adjust setChild)
+              where
+                setChild (x,y,z) = (x, y, replace (counter+1) (z ! key) $ IM.delete key z)
+
+            expandedMapping = replace  counter    lhsNewVertex
+                            . replace (counter+1) rhsNewVertex 
+                            . replace  key        descendantVertex
+                            . flip (ofoldl' rhsUpdateChildren) rhsParentSet
+                            . ofoldl' lhsUpdateChildren mapping
+                            $ lhsParentSet
+
+            lhsRecursiveResult = expandEdges (counter+2, expandedMapping) counter
+            rhsRecursiveResult = expandEdges lhsRecursiveResult (counter+1)
+
+        
+

@@ -12,7 +12,6 @@ import           Data.Alphabet
 import           Data.Alphabet.IUPAC
 import qualified Data.Bimap         as BM
 import qualified Data.List.NonEmpty as NE
-import           Data.Semigroup
 import           System.Environment        (getArgs) 
 import           Test.Custom.DynamicCharacterNode
 import           Test.QuickCheck
