@@ -202,7 +202,7 @@ unfoldDAG f origin =
     , graphData  = GraphData 0
     }
   where
-    referenceVector = V.fromList . fmap h $ toList resultMap
+    referenceVector = V.fromList . fmap h $ toList expandedMap
       where
         h (iSet, nDatum, iMap) =
             IndexData
@@ -210,6 +210,9 @@ unfoldDAG f origin =
             , parentRefs     = iSet
             , childRefs      = iMap
             }
+
+--    expandedMap = contractToContiguousVertexMapping $ expandVertexMapping resultMap
+    expandedMap = resultMap
 
     -- TODO:
     -- _rootIndices seems to be wrong so we do this.
@@ -389,9 +392,32 @@ gen1 x = (pops, show x, kids)
 --}
 
 
+-- |
+-- /O(n*i)/ where /i/ is the number of missing indicies.
+-- Assuming all indicies in the input /x/ are positive, /i/ = 'findMax x - length x'.
+--
+-- Takes an IntMap that might not have a contiguous index range and makes the
+-- range contiguous [0, length n - 1].
+contractToContiguousVertexMapping :: IntMap (IntSet, t, IntMap a) -> IntMap (IntSet, t, IntMap a)
+contractToContiguousVertexMapping inputMap = foldMapWithKey contractIndices inputMap
+  where
+    missingIndicies = otoList . snd . foldl' f (0, mempty) $ IM.keys inputMap
+      where
+        f (expectedValue, missing) actualValue
+          | expectedValue == actualValue = (expectedValue + 1, missing)
+          | otherwise                    = (  actualValue + 1, missing <> IS.fromList [expectedValue .. actualValue - 1])
 
+    decrementIndex originalIndex = originalIndex - subtrahend
+      where
+        subtrahend = length $ takeWhile (<originalIndex) missingIndicies
 
--- TODO: expand the map correctly!
+    contractIndices key (iSet, datum, iMap) = IM.singleton key' value'
+      where
+        key'   = decrementIndex key
+        value' = (IS.map decrementIndex iSet, datum, IM.mapKeysMonotonic decrementIndex iMap) 
+    
+
+-- TODO: Test this and make sure it works!
 expandVertexMapping :: Monoid a => IntMap (IntSet, t, IntMap a) -> IntMap (IntSet, t, IntMap a)
 expandVertexMapping unexpandedMap = snd . foldl' f (initialCounter, unexpandedMap) $ IM.keys unexpandedMap
   where
@@ -420,10 +446,14 @@ expandVertexMapping unexpandedMap = snd . foldl' f (initialCounter, unexpandedMa
                   -- Too many children
                   _ -> expandEdges expandOutVertexToChild counter
 
-          _ -> handleTooManyParents
+          -- One too many parents
+          3 -> expandEdges expandOutExtraParent counter
+
+          -- Far too many parents
+          _ -> expandEdges handleTooManyParents key
           
       where
-        value@(iSet, nDatum, iMap) = mapping ! key
+        (iSet, nDatum, iMap) = mapping ! key
 
         parentCount = olength iSet
         childCount  =  length iMap
@@ -439,6 +469,7 @@ expandVertexMapping unexpandedMap = snd . foldl' f (initialCounter, unexpandedMa
                                   . IM.adjust updateDescendentEdge parentKey
                                   . IM.delete key
                                   $ mapping
+
         
         expandOutVertexToChild = (counter + 1, expandedMapping)
           where
@@ -447,35 +478,37 @@ expandVertexMapping unexpandedMap = snd . foldl' f (initialCounter, unexpandedMa
 
             updateParent = flip (adjust setParent)
               where
-                setParent (x,y,z) = (IS.singleton counter, y, z) 
+                setParent (_,y,z) = (IS.singleton counter, y, z) 
 
-            expandedMapping  = IM.insert counter descendentVertex
-                             . IM.insert key     ancestoralVertex
+            expandedMapping  = replace counter descendentVertex
+                             . replace key     ancestoralVertex
                              . foldl' updateParent mapping
                              $ IM.keys iMap
+
 
         expandOutExtraChild  = (counter + 1, expandedMapping)
           where
             ancestoralVertex = (            iSet, nDatum, singledChildMap)
             descendentVertex = (IS.singleton key, nDatum, reducedChildMap)
 
-            singledChildMap = IM.singleton counter mempty <> IM.singleton minChildKey edgeValue
-            reducedChildMap = IM.delete minChildKey iMap
+            singledChildMap  = IM.singleton counter mempty <> IM.singleton minChildKey edgeValue
+            reducedChildMap  = IM.delete minChildKey iMap
 
             (minChildKey, edgeValue) = IM.findMin iMap
 
             updateParent = flip (adjust setParent)
               where
-                setParent (x,y,z) = (IS.singleton counter, y, z) 
+                setParent (_,y,z) = (IS.singleton counter, y, z) 
 
-            expandedMapping  = IM.insert counter descendentVertex
-                             . IM.insert key     ancestoralVertex
+            expandedMapping  = replace counter descendentVertex
+                             . replace key     ancestoralVertex
                              . foldl' updateParent mapping
                              $ IM.keys reducedChildMap
 
+
         handleTooManyChildren = rhsRecursiveResult
           where
-            (lhsChildMap, rhsChildMap) = (IM.fromList *** IM.fromList) . splitAt (childCount `div` 2) $ IM.assocs iMap
+            (lhsChildMap, rhsChildMap) = (IM.fromList *** IM.fromList) . splitAt (childCount `div` 2) $ toKeyedList iMap
             
             ancestoralVertex = (            iSet, nDatum, newChildMap)
             lhsNewVertex     = (IS.singleton key, nDatum, lhsChildMap)
@@ -483,19 +516,17 @@ expandVertexMapping unexpandedMap = snd . foldl' f (initialCounter, unexpandedMa
 
             newChildMap      = IM.singleton counter mempty <> IM.singleton (counter+1) mempty
 
-            (minChildKey, edgeValue) = IM.findMin iMap
-
             lhsUpdateParent = flip (adjust setParent)
               where
-                setParent (x,y,z) = (IS.singleton  counter  , y, z) 
+                setParent (_,y,z) = (IS.singleton  counter  , y, z) 
 
             rhsUpdateParent = flip (adjust setParent)
               where
-                setParent (x,y,z) = (IS.singleton (counter+1), y, z) 
+                setParent (_,y,z) = (IS.singleton (counter+1), y, z) 
 
-            expandedMapping  = IM.insert  counter    lhsNewVertex
-                             . IM.insert (counter+1) rhsNewVertex 
-                             . IM.insert  key        ancestoralVertex
+            expandedMapping  = replace  counter    lhsNewVertex
+                             . replace (counter+1) rhsNewVertex 
+                             . replace  key        ancestoralVertex
                              . flip (foldl' rhsUpdateParent) (IM.keys rhsChildMap)
                              . foldl' lhsUpdateParent mapping
                              $ IM.keys lhsChildMap
@@ -504,6 +535,58 @@ expandVertexMapping unexpandedMap = snd . foldl' f (initialCounter, unexpandedMa
             rhsRecursiveResult = expandEdges lhsRecursiveResult (counter+1)
             
         
-        handleTooManyParents   = undefined
+        expandOutExtraParent = (counter + 1, expandedMapping)
+          where
+            ancestoralVertex = (reducedParentMap, nDatum, singledChildMap)
+            descendentVertex = (singledParentMap, nDatum,            iMap)
+
+            
+            singledChildMap  = IM.singleton counter mempty
+            singledParentMap = IS.fromList [key, maxParentKey]
+            reducedParentMap = IS.delete    maxParentKey iSet
+
+            maxParentKey = IS.findMax iSet
+
+            updateChildRef (x,y,z) = (x, y, replace counter (z ! key) $ IM.delete key z)
+
+            updateParent = flip (adjust setParent)
+              where
+                setParent (_,y,z) = (IS.singleton counter, y, z) 
+
+            expandedMapping  = replace counter descendentVertex
+                             . replace key     ancestoralVertex
+                             . adjust updateChildRef maxParentKey
+                             . foldl' updateParent mapping
+                             $ IM.keys iMap
+
+
+        handleTooManyParents = rhsRecursiveResult
+          where
+            (lhsParentSet, rhsParentSet) = (IS.fromList *** IS.fromList) . splitAt (childCount `div` 2) $ otoList iSet
+            
+            descendantVertex = (newParentSet, nDatum, iMap)
+            lhsNewVertex     = (lhsParentSet, nDatum, IM.singleton key mempty)
+            rhsNewVertex     = (rhsParentSet, nDatum, IM.singleton key mempty)
+
+            newParentSet = IS.fromList [counter, counter+1]
+
+            lhsUpdateChildren = flip (adjust setChild)
+              where
+                setChild (x,y,z) = (x, y, replace  counter    (z ! key) $ IM.delete key z)
+
+            rhsUpdateChildren = flip (adjust setChild)
+              where
+                setChild (x,y,z) = (x, y, replace (counter+1) (z ! key) $ IM.delete key z)
+
+            expandedMapping = replace  counter    lhsNewVertex
+                            . replace (counter+1) rhsNewVertex 
+                            . replace  key        descendantVertex
+                            . flip (ofoldl' rhsUpdateChildren) rhsParentSet
+                            . ofoldl' lhsUpdateChildren mapping
+                            $ lhsParentSet
+
+            lhsRecursiveResult = expandEdges (counter+2, expandedMapping) counter
+            rhsRecursiveResult = expandEdges lhsRecursiveResult (counter+1)
+
         
 
