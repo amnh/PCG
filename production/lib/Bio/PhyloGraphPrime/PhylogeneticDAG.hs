@@ -686,6 +686,7 @@ assignOptimalDynamicCharacterRootEdges
      , HasCharacterWeight f Double
      , HasCharacterWeight a Double
      , HasCharacterWeight d Double
+     , HasTraversalLocus  d (Maybe TraversalLocusEdge)
      , Show m
      , Show i
      , Show c
@@ -839,8 +840,8 @@ assignOptimalDynamicCharacterRootEdges extensionTransformation (PDAG2 inputDag) 
           where
             modifiedDynamicChars = zipWith h (minimalCostSequence ! k) $ dynamicCharacters charBlock
             h (edgeVal, costVal) originalDec = originalDec
-                                                 & characterCost .~ costVal
-                                                 & traversalLoci .~ (Just edgeVal)
+                                                 & characterCost  .~ costVal
+                                                 & traversalLocus .~ (Just edgeVal)
         
 
 localResolutionApplication f x y =

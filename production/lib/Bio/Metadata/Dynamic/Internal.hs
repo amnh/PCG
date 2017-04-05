@@ -24,6 +24,7 @@ module Bio.Metadata.Dynamic.Internal
   , HasSymbolChangeMatrix(..)
   , HasTransitionCostMatrix(..)
   , MemoizedCostMatrix()
+  , TraversalLocusEdge
   , dynamicMetadata
   , dynamicMetadataFromTCM
   , maybeConstructDenseTransitionCostMatrix
@@ -49,6 +50,7 @@ import GHC.Generics (Generic)
 
 type TraversalLocusEdge = (Int, Int)
 
+
 -- |
 -- Represents a concrete type containing metadata fields shared across all
 -- discrete different bins. Continous bins do not have Alphabets.
@@ -66,6 +68,7 @@ data DynamicCharacterMetadataDec c
 class ( DiscreteWithTcmCharacterMetadata s c
       , HasDenseTransitionCostMatrix     s (Maybe DenseTransitionCostMatrix)
       , HasSparseTransitionCostMatrix    s MemoizedCostMatrix
+      , HasTraversalLocus                s (Maybe TraversalLocusEdge)
       ) => DynamicCharacterMetadata s c | s -> c where
 
     extractDynamicCharacterMetadata :: s -> DynamicCharacterMetadataDec c

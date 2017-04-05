@@ -45,6 +45,7 @@ module Bio.Character.Decoration.Dynamic
   , HasSparseTransitionCostMatrix(..)
   , HasDenseTransitionCostMatrix(..)
   , PossiblyMissingCharacter(..)
+  , TraversalLocusEdge
   ) where
 
 import Bio.Character.Decoration.Dynamic.Class

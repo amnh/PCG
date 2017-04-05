@@ -20,7 +20,7 @@ module Bio.Metadata.Dynamic.Class
   , HasDenseTransitionCostMatrix(..)
   , HasSymbolChangeMatrix(..)
   , HasTransitionCostMatrix(..)
-  , HasTraversalLoci(..)
+  , HasTraversalLocus(..)
   , MemoizedCostMatrix()
   ) where
 
