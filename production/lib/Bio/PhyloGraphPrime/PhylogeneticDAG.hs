@@ -801,6 +801,7 @@ assignOptimalDynamicCharacterRootEdges extensionTransformation (PDAG2 inputDag) 
     rootRefWLOG  = NE.head $ rootRefs inputDag
     sequenceWLOG = fmap dynamicCharacters . toBlocks . characterSequence . NE.head $ getCache rootRefWLOG
 
+
     sequenceOfEdgesWithMinimalCost = foldMapWithKey1 f sequenceWLOG
       where
         f k v = V.generate (length v) g :| []
@@ -837,7 +838,9 @@ assignOptimalDynamicCharacterRootEdges extensionTransformation (PDAG2 inputDag) 
         g k charBlock = pure $ charBlock { dynamicCharacters = modifiedDynamicChars }
           where
             modifiedDynamicChars = zipWith h (minimalCostSequence ! k) $ dynamicCharacters charBlock
-            h (_edgeVal, costVal) originalDec = originalDec & characterCost .~ costVal
+            h (edgeVal, costVal) originalDec = originalDec
+                                                 & characterCost .~ costVal
+                                                 & traversalLoci .~ (Just edgeVal)
         
 
 localResolutionApplication f x y =

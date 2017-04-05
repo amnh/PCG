@@ -47,7 +47,7 @@ import GHC.Generics (Generic)
 --import Debug.Trace
 
 
-type TraversalLociEdge = (Int, Int)
+type TraversalLocusEdge = (Int, Int)
 
 -- |
 -- Represents a concrete type containing metadata fields shared across all
@@ -55,7 +55,7 @@ type TraversalLociEdge = (Int, Int)
 data DynamicCharacterMetadataDec c
    = DynamicCharacterMetadataDec
    { dataDenseTransitionCostMatrix :: Maybe DenseTransitionCostMatrix
-   , optimalTraversalLocus         :: Maybe TraversalLociEdge
+   , optimalTraversalLocus         :: Maybe TraversalLocusEdge
    , metadata                      :: DiscreteWithTCMCharacterMetadataDec c
    } deriving (Generic)
 
@@ -147,7 +147,6 @@ instance HasCharacterName (DynamicCharacterMetadataDec c) CharacterName where
                   $ \e x -> e { metadata = metadata e & characterName .~ x }
 
 
-
 -- | (✔)
 instance HasCharacterWeight (DynamicCharacterMetadataDec c) Double where
 
@@ -155,38 +154,33 @@ instance HasCharacterWeight (DynamicCharacterMetadataDec c) Double where
                     $ \e x -> e { metadata = metadata e & characterWeight .~ x }
 
 
--- |
--- A 'Lens' for the 'transitionCostMatrix' field
+-- | (✔)
 instance HasDenseTransitionCostMatrix (DynamicCharacterMetadataDec c) (Maybe DenseTransitionCostMatrix) where
 
     denseTransitionCostMatrix = lens dataDenseTransitionCostMatrix $ \e x -> e { dataDenseTransitionCostMatrix = x }
 
 
--- |
--- A 'Lens' for the 'transitionCostMatrix' field
-instance HasTraversalLoci (DynamicCharacterMetadataDec c) (Maybe TraversalLociEdge) where
+-- | (✔)
+instance HasTraversalLocus (DynamicCharacterMetadataDec c) (Maybe TraversalLocusEdge) where
 
-    traversalLoci = lens optimalTraversalLocus $ \e x -> e { optimalTraversalLocus = x }
+    traversalLocus = lens optimalTraversalLocus $ \e x -> e { optimalTraversalLocus = x }
 
 
--- |
--- A 'Lens' for the 'symbolicTCMGenerator' field
+-- | (✔)
 instance HasSymbolChangeMatrix (DynamicCharacterMetadataDec c) (Word -> Word -> Word) where
 
     symbolChangeMatrix = lens (\e -> metadata e ^. symbolChangeMatrix)
                        $ \e x -> e { metadata = metadata e & symbolChangeMatrix .~ x }
 
 
--- |
--- A 'Lens' for the 'symbolicTCMGenerator' field
+-- | (✔)
 instance HasSparseTransitionCostMatrix (DynamicCharacterMetadataDec c) MemoizedCostMatrix where
 
     sparseTransitionCostMatrix = lens (\e -> metadata e ^. sparseTransitionCostMatrix)
                                $ \e x -> e { metadata = metadata e & sparseTransitionCostMatrix .~ x }
 
 
--- |
--- A 'Lens' for the 'transitionCostMatrix' field
+-- | (✔)
 instance HasTransitionCostMatrix (DynamicCharacterMetadataDec c) (c -> c -> (c, Word)) where
 
     transitionCostMatrix = lens undefined undefined

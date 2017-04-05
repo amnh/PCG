@@ -24,6 +24,7 @@ module Bio.Metadata.Dynamic.Class
   , MemoizedCostMatrix()
   ) where
 
+
 --import Bio.Character.Encodable
 import Analysis.Parsimony.Dynamic.DirectOptimization.FFI (DenseTransitionCostMatrix)
 import Analysis.Parsimony.Dynamic.SequentialAlign.FFI    (MemoizedCostMatrix)
@@ -43,7 +44,7 @@ class HasDenseTransitionCostMatrix s a | s -> a where
 
 -- |
 -- A 'Lens' for the 'denseTransitionCostMatrix' field
-class HasTraversalLoci s a | s -> a where
+class HasTraversalLocus s a | s -> a where
 
-    {-# MINIMAL traversalLoci #-}
-    traversalLoci  :: Lens' s a
+    {-# MINIMAL traversalLocus #-}
+    traversalLocus  :: Lens' s a

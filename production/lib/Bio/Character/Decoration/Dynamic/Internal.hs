@@ -136,6 +136,15 @@ instance (Element d ~ c) => HasDenseTransitionCostMatrix (DynamicDecorationIniti
 
 
 -- | (✔)
+instance HasTraversalLoci (DynamicDecorationInitial c) (Maybe TraversalLociEdge) where
+
+    traversalLoci = lens getter setter
+      where
+         getter e   = dynamicDecorationDirectOptimizationPostOrderMetadata e ^. traversalLoci
+         setter e x = e { dynamicDecorationDirectOptimizationPostOrderMetadata = dynamicDecorationDirectOptimizationPostOrderMetadata e &  traversalLoci .~ x }
+
+
+-- | (✔)
 instance HasCharacterWeight (DynamicDecorationInitial d) Double where
 
     characterWeight = lens getter setter
@@ -352,6 +361,15 @@ instance (Element d ~ c) => HasDenseTransitionCostMatrix (DynamicDecorationDirec
 
 
 -- | (✔)
+instance HasTraversalLoci (DynamicDecorationDirectOptimizationPostOrderResult c) (Maybe TraversalLociEdge) where
+
+    traversalLoci = lens getter setter
+      where
+         getter e   = dynamicDecorationDirectOptimizationPostOrderMetadata e ^. traversalLoci
+         setter e x = e { dynamicDecorationDirectOptimizationPostOrderMetadata = dynamicDecorationDirectOptimizationPostOrderMetadata e &  traversalLoci .~ x }
+      
+
+-- | (✔)
 instance HasCharacterWeight (DynamicDecorationDirectOptimizationPostOrderResult d) Double where
 
     characterWeight = lens getter setter
@@ -561,6 +579,15 @@ instance (Element d ~ c) => HasDenseTransitionCostMatrix (DynamicDecorationDirec
 
 
 -- | (✔)
+instance HasTraversalLoci (DynamicDecorationDirectOptimization c) (Maybe TraversalLociEdge) where
+
+    traversalLoci = lens getter setter
+      where
+         getter e   = dynamicDecorationDirectOptimizationPostOrderMetadata e ^. traversalLoci
+         setter e x = e { dynamicDecorationDirectOptimizationPostOrderMetadata = dynamicDecorationDirectOptimizationPostOrderMetadata e &  traversalLoci .~ x }
+
+
+-- | (✔)
 instance HasCharacterWeight (DynamicDecorationDirectOptimization d) Double where
 
     characterWeight = lens getter setter
@@ -746,8 +773,16 @@ instance (Element d ~ c) => HasDenseTransitionCostMatrix (DynamicDecorationImpli
         setter e f = e { dynamicDecorationImpliedAlignmentMetadata = dynamicDecorationImpliedAlignmentMetadata e & denseTransitionCostMatrix .~ f }
 
 
--- |
--- A 'Lens' for the 'transitionCostMatrix' field
+-- | (✔)
+instance HasTraversalLoci (DynamicDecorationImpliedAlignment c) (Maybe TraversalLociEdge) where
+
+    traversalLoci = lens getter setter
+      where
+         getter e   = dynamicDecorationDirectOptimizationPostOrderMetadata e ^. traversalLoci
+         setter e x = e { dynamicDecorationDirectOptimizationPostOrderMetadata = dynamicDecorationDirectOptimizationPostOrderMetadata e &  traversalLoci .~ x }
+
+
+-- | (✔)
 instance (Element d ~ c) => HasSparseTransitionCostMatrix (DynamicDecorationImpliedAlignment d) MemoizedCostMatrix where
 
     sparseTransitionCostMatrix = lens getter setter
