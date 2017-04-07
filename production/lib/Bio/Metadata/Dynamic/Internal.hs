@@ -24,6 +24,7 @@ module Bio.Metadata.Dynamic.Internal
   , HasSymbolChangeMatrix(..)
   , HasTransitionCostMatrix(..)
   , MemoizedCostMatrix()
+  , TraversalLocusEdge
   , dynamicMetadata
   , dynamicMetadataFromTCM
   , maybeConstructDenseTransitionCostMatrix
@@ -47,12 +48,16 @@ import GHC.Generics (Generic)
 --import Debug.Trace
 
 
+type TraversalLocusEdge = (Int, Int)
+
+
 -- |
 -- Represents a concrete type containing metadata fields shared across all
 -- discrete different bins. Continous bins do not have Alphabets.
 data DynamicCharacterMetadataDec c
    = DynamicCharacterMetadataDec
    { dataDenseTransitionCostMatrix :: Maybe DenseTransitionCostMatrix
+   , optimalTraversalLocus         :: Maybe TraversalLocusEdge
    , metadata                      :: DiscreteWithTCMCharacterMetadataDec c
    } deriving (Generic)
 
@@ -63,6 +68,7 @@ data DynamicCharacterMetadataDec c
 class ( DiscreteWithTcmCharacterMetadata s c
       , HasDenseTransitionCostMatrix     s (Maybe DenseTransitionCostMatrix)
       , HasSparseTransitionCostMatrix    s MemoizedCostMatrix
+      , HasTraversalLocus                s (Maybe TraversalLocusEdge)
       ) => DynamicCharacterMetadata s c | s -> c where
 
     extractDynamicCharacterMetadata :: s -> DynamicCharacterMetadataDec c
@@ -70,9 +76,10 @@ class ( DiscreteWithTcmCharacterMetadata s c
 
 instance NFData (DynamicCharacterMetadataDec a) where
 
-    rnf (DynamicCharacterMetadataDec d _) = ()
+    rnf (DynamicCharacterMetadataDec d e _) = ()
       where
         !_ = rnf d
+        !_ = rnf e
 
 
 instance Eq (DynamicCharacterMetadataDec c) where
@@ -143,7 +150,6 @@ instance HasCharacterName (DynamicCharacterMetadataDec c) CharacterName where
                   $ \e x -> e { metadata = metadata e & characterName .~ x }
 
 
-
 -- | (✔)
 instance HasCharacterWeight (DynamicCharacterMetadataDec c) Double where
 
@@ -151,31 +157,33 @@ instance HasCharacterWeight (DynamicCharacterMetadataDec c) Double where
                     $ \e x -> e { metadata = metadata e & characterWeight .~ x }
 
 
--- |
--- A 'Lens' for the 'transitionCostMatrix' field
+-- | (✔)
 instance HasDenseTransitionCostMatrix (DynamicCharacterMetadataDec c) (Maybe DenseTransitionCostMatrix) where
 
     denseTransitionCostMatrix = lens dataDenseTransitionCostMatrix $ \e x -> e { dataDenseTransitionCostMatrix = x }
 
 
--- |
--- A 'Lens' for the 'symbolicTCMGenerator' field
+-- | (✔)
+instance HasTraversalLocus (DynamicCharacterMetadataDec c) (Maybe TraversalLocusEdge) where
+
+    traversalLocus = lens optimalTraversalLocus $ \e x -> e { optimalTraversalLocus = x }
+
+
+-- | (✔)
 instance HasSymbolChangeMatrix (DynamicCharacterMetadataDec c) (Word -> Word -> Word) where
 
     symbolChangeMatrix = lens (\e -> metadata e ^. symbolChangeMatrix)
                        $ \e x -> e { metadata = metadata e & symbolChangeMatrix .~ x }
 
 
--- |
--- A 'Lens' for the 'symbolicTCMGenerator' field
+-- | (✔)
 instance HasSparseTransitionCostMatrix (DynamicCharacterMetadataDec c) MemoizedCostMatrix where
 
     sparseTransitionCostMatrix = lens (\e -> metadata e ^. sparseTransitionCostMatrix)
                                $ \e x -> e { metadata = metadata e & sparseTransitionCostMatrix .~ x }
 
 
--- |
--- A 'Lens' for the 'transitionCostMatrix' field
+-- | (✔)
 instance HasTransitionCostMatrix (DynamicCharacterMetadataDec c) (c -> c -> (c, Word)) where
 
     transitionCostMatrix = lens undefined undefined
@@ -188,6 +196,7 @@ dynamicMetadata name weight alpha scm denseMay =
     -- TODO: Maybe don't force here.
     force DynamicCharacterMetadataDec
     { dataDenseTransitionCostMatrix = denseMay
+    , optimalTraversalLocus         = Nothing
     , metadata                      = discreteMetadataWithTCM name weight alpha scm
     }
 
@@ -199,6 +208,7 @@ dynamicMetadataFromTCM name weight alpha tcm =
     -- TODO: Maybe don't force here.
     force DynamicCharacterMetadataDec
     { dataDenseTransitionCostMatrix = denseTCM
+    , optimalTraversalLocus         = Nothing
     , metadata                      = discreteMetadataWithTCM name (coefficient * weight) alpha sigma
     }
   where

@@ -20,8 +20,10 @@ module Bio.Metadata.Dynamic.Class
   , HasDenseTransitionCostMatrix(..)
   , HasSymbolChangeMatrix(..)
   , HasTransitionCostMatrix(..)
+  , HasTraversalLocus(..)
   , MemoizedCostMatrix()
   ) where
+
 
 --import Bio.Character.Encodable
 import Analysis.Parsimony.Dynamic.DirectOptimization.FFI (DenseTransitionCostMatrix)
@@ -38,3 +40,11 @@ class HasDenseTransitionCostMatrix s a | s -> a where
 
     {-# MINIMAL denseTransitionCostMatrix #-}
     denseTransitionCostMatrix  :: Lens' s a
+
+
+-- |
+-- A 'Lens' for the 'denseTransitionCostMatrix' field
+class HasTraversalLocus s a | s -> a where
+
+    {-# MINIMAL traversalLocus #-}
+    traversalLocus  :: Lens' s a

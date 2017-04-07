@@ -69,14 +69,14 @@ int main() {
 
     if (success == 0) {
         printf("\nSuccess!\n\n");
-        printf("The aligned sequences are:");
+        printf("The aligned sequences are:\n");
         printf("  sequence 1:  [");
         for(size_t i = 0; i < length; ++i) {
-            printf("%" PRIu64 ", ", retAlign->seq1[i]);
+            printf("%2" PRIu64 ", ", retAlign->seq1[i]);
         }
         printf("]\n  sequence 2:  [");
         for(size_t i = 0; i < length; ++i) {
-            printf("%" PRIu64 ", ", retAlign->seq2[i]);
+            printf("%2" PRIu64 ", ", retAlign->seq2[i]);
         }
         printf("]\n");
         printf("The cost of the alignment is: %d\n", retAlign->weight);
