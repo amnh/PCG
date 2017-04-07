@@ -11,8 +11,8 @@
 
 #include <stddef.h>
 
-#include "costMatrixWrapper.h"
-#include "dynamicCharacterOperations.h"
+#include "../memoized_tcm/costMatrixWrapper.h"
+#include "../memoized_tcm/dynamicCharacterOperations.h"
 
 typedef void* costMatrix_p;
 

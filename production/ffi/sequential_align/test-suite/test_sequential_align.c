@@ -22,8 +22,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "../costMatrixWrapper.h"
-#include "../dynamicCharacterOperations.h"
+#include "../../memoized_tcm/costMatrixWrapper.h"
+#include "../../memoized_tcm/dynamicCharacterOperations.h"
 #include "../seqAlignForHaskell.h"
 
 #define __STDC_FORMAT_MACROS
