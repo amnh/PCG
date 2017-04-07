@@ -90,9 +90,14 @@ library
                        -Wall
                        -fwarn-duplicate-exports
                        -fwarn-incomplete-patterns
+                       -fwarn-missing-fields
+                       -fwarn-missing-monadfail-instances
                        -fwarn-missing-signatures
                        -fwarn-overlapping-patterns
+                       -fwarn-redundant-constraints
+                       -fwarn-semigroup
                        -fwarn-tabs
+                       -fwarn-unrecognised-warning-flags
                        -fwarn-unused-binds
                        -fwarn-unused-do-bind
                        -fwarn-unused-imports
