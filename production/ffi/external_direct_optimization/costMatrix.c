@@ -442,24 +442,24 @@ cm_precalc_4algn (const cost_matrices_2d_p costMatrix, nw_matrices_p alignmentMa
         printf ("Precalculated transformation cost matrix.\n");
     }
 
-    // We will put the cost of the prepend in the 0th row of the precalc matrix.
     for (j = 0; j < seqLen; j++) {
+        printf ("seq_begin_t[%d]: %d)\n", j, seq_begin_t[j]), fflush(stdout);
+    }
+    
+    // We will put the cost of the prepend in the 0th row of the precalc matrix.
+    for (j = 1; j < seqLen; j++) {
 
-        //printf ("Before innerIndex\n"), fflush(stdout);
+        printf ("Before innerIndex (j = %d)\n", j), fflush(stdout);
 	int innerIndex = seq_begin_t[j];
-        // printf ("After  innerIndex: {%d}\n", innerIndex);
-        // fflush(stdout);
+        printf ("After  innerIndex: {%d}\n", innerIndex), fflush(stdout);
 
-        // printf ("Before valueDatum\n");
-        // fflush(stdout);
+        printf ("Before valueDatum\n"), fflush(stdout);
 	int valueDatum = prepend_t[innerIndex];
-        // printf ("After  valueDatum\n");
-        // fflush(stdout);
+        printf ("After  valueDatum\n"), fflush(stdout);
 
-        // printf ("Before Assignment\n");
-        // fflush(stdout);
+        printf ("Before Assignment\n"), fflush(stdout);
 	precalcMtx_t[j] = valueDatum;
-        //printf ("After  Assignment\n"), fflush(stdout);
+        printf ("After  Assignment\n"), fflush(stdout);
 
         if (DEBUG_CM) {
             printf ("%7d", precalcMtx_t[j]);
