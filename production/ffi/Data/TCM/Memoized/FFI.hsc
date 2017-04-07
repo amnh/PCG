@@ -8,11 +8,10 @@
 
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
-module Analysis.Parsimony.Dynamic.SequentialAlign.FFI
-  ( pairwiseSequentialAlignment
---  , sequentialAlign
---  , testFn
---  , main
+module Data.TCM.Memoized.FFI
+  ( ForeignVoid()
+  , MemoizedCostMatrix(costMatrix)
+  , getMemoizedCostMatrix
   ) where
 
 import Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise (filterGaps)
@@ -22,7 +21,6 @@ import Control.DeepSeq
 import Data.Bits
 import Data.Foldable
 import Data.Monoid
-import Data.TCM.Memoized.FFI
 --import Data.Void
 import Foreign         hiding (alignPtr)
 --import Foreign.Ptr
@@ -34,16 +32,97 @@ import Test.QuickCheck hiding ((.&.), output)
 
 import Debug.Trace
 
--- #include "costMatrixWrapper.h"
--- #include "dynamicCharacterOperations.h"
+#include "costMatrixWrapper.h"
+#include "dynamicCharacterOperations.h"
 #include "seqAlignInterface.h"
-#include "seqAlignOutputTypes.h"
 -- #include "seqAlignForHaskell.c"
 #include <stdint.h>
 
 -- |
 -- A convient type alias for improved clairity of use.
 type CArrayUnit  = CULong -- This will be compatible with uint64_t
+
+-- | (✔)
+instance Arbitrary CArrayUnit where
+    arbitrary = do
+        num <- arbitrary :: Gen Integer
+        pure $ fromIntegral num
+
+
+data ForeignVoid deriving (Generic)
+
+
+instance NFData ForeignVoid
+
+
+data MemoizedCostMatrix
+   = MemoizedCostMatrix
+   { costMatrix :: StablePtr ForeignVoid
+   } deriving (Eq, Generic)
+
+
+instance NFData MemoizedCostMatrix where
+
+    rnf (MemoizedCostMatrix !_) = ()
+
+
+instance Storable MemoizedCostMatrix where
+    sizeOf    _ = (#size void*) -- #size is a built-in that works with arrays, as are #peek and #poke, below
+    alignment _ = alignment (undefined :: CArrayUnit)
+    peek _ptr   = undefined
+    poke _ptr   = undefined
+
+
+
+data DCElement = DCElement
+    { alphabetSizeElem :: CSize
+    , characterElement :: Ptr CArrayUnit
+    }
+
+
+-- | (✔)
+instance Storable DCElement where
+    sizeOf    _ = (#size struct dcElement_t)
+    alignment _ = alignment (undefined :: CULong)
+    peek ptr    = do
+        alphLen <- (#peek struct dcElement_t, alphSize) ptr
+        element <- (#peek struct dcElement_t, element)  ptr
+        pure DCElement
+            { alphabetSizeElem = alphLen
+            , characterElement = element
+            }
+    poke ptr (DCElement alphLen element) = do
+        (#poke struct dcElement_t, alphSize) ptr alphLen
+        (#poke struct dcElement_t, element ) ptr element
+
+-- | Create and allocate cost matrix
+-- first argument, TCM, is only for non-ambiguous nucleotides, and it used to generate
+-- the entire cost matrix, which includes ambiguous elements.
+-- TCM is row-major, with each row being the left character element.
+-- It is therefore indexed not by powers of two, but by cardinal integer.
+-- TODO: For now we only allocate 2d matrices. 3d will come later.
+foreign import ccall unsafe "costMatrixWrapper matrixInit"
+    initializeMemoizedCMfn_c :: CSize
+                             -> Ptr CInt
+                             -> IO (StablePtr ForeignVoid) -- MemoizedCostMatrix
+
+
+-- | Set up and return a cost matrix
+--
+-- The cost matrix is allocated strictly.
+getMemoizedCostMatrix :: Word
+                      -> (Word -> Word -> Word)
+                      -> MemoizedCostMatrix
+getMemoizedCostMatrix alphabetSize costFn = unsafePerformIO . withArray rowMajorList $ \allocedTCM -> do
+--        output <- malloc :: IO (Ptr MemoizedCostMatrix)
+        -- Hopefully the strictness annotation forces the allocation of the CostMatrix2d to happen immediately.
+        ! resultPtr <- initializeMemoizedCMfn_c (coerceEnum alphabetSize) allocedTCM
+        !_ <- putStrLn "Initialized Sparse Memoized TCM through FFI binding!"
+        pure $ MemoizedCostMatrix resultPtr
+    where
+        -- This *should* be in row major order due to the manner in which list comprehensions are performed.
+        rowMajorList = [ coerceEnum $ costFn i j | i <- range,  j <- range ]
+        range = [0 .. alphabetSize - 1]
 
 
 coerceEnum :: (Enum a, Enum b) => a -> b
@@ -131,6 +210,42 @@ calculateBufferLength count width = coerceEnum $ q + if r == 0 then 0 else 1
 
 
 
+{-}
+foreign import ccall unsafe "costMatrix getCostAndMedian"
+    getCostMedianfn_c :: Ptr MemoizedCostMatrix
+                      -> Ptr CArrayUnit
+                      -> Ptr CArrayUnit
+                      -> Ptr CArrayUnit
+                      -> CSize
+                      -> CInt
+
+lookupCostAndMedian :: Exportable s => Ptr MemoizedCostMatrix -> s -> s -> (s, Word)
+lookupCostAndMedian tcm lhs rhs = unsafePerformIO $ do
+    firstElem  <- malloc :: IO (Ptr leftInput)
+    secondElem <- malloc :: IO (Ptr rightInput)
+    outputPtr  <- malloc :: IO (Ptr CArrayUnit)
+
+    !cost <- getCostMedianfn_c tcm firstElem secondElem outputPtr alphSize
+
+    pure (exportableOutput, outCost)
+    where
+        alphSize              = lhs ^. exportedElementWidth ^. alphabetSize
+        lhsExportableSequence = toExportable lhs
+        leftInput             = DCElement alphSize (lhsExportableSequence ^. discreteCharacter)
+        rhsExportableSequence = toExportable rhs
+        rightInput            = DCElement alphSize (rhsExportableSequence ^. discreteCharacter)
+        retVal                = DCElement alphSize (lhsExportableSequence ^. discreteCharacter)
+        exportableOutput      = Exportable 1 alphSize peek retVal
+        outCost               = toEnum (fromEnum cost) :: Word
+-}
+
+
+{-
+foreign import ccall unsafe "costMatrix lookUpCost"
+    getCostfn_c :: Ptr MemoizedCostMatrix
+                -> Ptr CDynamicChar
+-}
+
 foreign import ccall unsafe "seqAlignInteface performSequentialAlignment"
     performSeqAlignfn_c :: Ptr CDynamicChar
                         -> Ptr CDynamicChar
@@ -194,6 +309,45 @@ data CDynamicChar
    , dynChar          :: Ptr CArrayUnit
    }
 
+{-
+-- | (✔)
+instance Show CDynamicChar where
+    show (CDynamicChar alphSize dcLen numElems dChar) =
+       mconcat
+         ["alphabetSize:  "
+         , show intAlphSize
+         , "\ndynCharLen: "
+         , show intLen
+         , "\nbuffer length: "
+         , show bufferLength
+         , "\ndynChar:    "
+         , show $ unsafePerformIO printedArr
+         ]
+        where
+            bufferLength = fromEnum numElems
+            intAlphSize  = fromEnum alphSize
+            intLen       = fromEnum dcLen
+            printedArr   = show <$> peekArray bufferLength dChar
+
+-}
+-- | (✔)
+instance Arbitrary CDynamicChar where
+    arbitrary = do
+        alphSize    <- (arbitrary :: Gen Int) `suchThat` (\x -> 0 < x && x <= 64)
+        charSize    <- (arbitrary :: Gen Int) `suchThat` (\x -> 0 < x && x <= 16)
+        numElems    <- (arbitrary :: Gen Int) `suchThat` (\x -> 0 < x && x <= 100)
+        fullBitVals <- vectorOf numElems (arbitrary :: Gen CArrayUnit)
+        -- Note there is a faster way to do this loop in 2 steps by utilizing 2s compliment subtraction and setbit.
+        let mask    = foldl' (\val i -> val `setBit` i) (zeroBits :: CArrayUnit) [0..numElems]
+        remBitVals  <- if   numElems == 0
+                       then pure []
+                       else (pure . (mask .&.)) <$> (arbitrary :: Gen CArrayUnit)
+        pure CDynamicChar
+           { alphabetSizeChar = toEnum alphSize
+           , dynCharLen       = toEnum charSize
+           , numElements      = toEnum numElems
+           , dynChar          = unsafePerformIO . newArray $ fullBitVals <> remBitVals
+           }
 
 
 -- | (✔)

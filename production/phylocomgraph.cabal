@@ -121,16 +121,17 @@ library
     ffi/external_direct_optimization/seqAlign.c
     ffi/external_direct_optimization/ukkCheckp.c
     ffi/external_direct_optimization/ukkCommon.c
-    ffi/memoized_tcm/dynamicCharacterOperations.h
+    -- ffi/memoized_tcm/dynamicCharacterOperations.h
     ffi/memoized_tcm/dynamicCharacterOperations.c
-    ffi/memoized_tcm/costMatrix.h
+    -- ffi/memoized_tcm/costMatrix.h
     ffi/memoized_tcm/costMatrix.cpp
-    ffi/memoized_tcm/costMatrixWrapper.h
+    -- ffi/memoized_tcm/costMatrixWrapper.h
     ffi/memoized_tcm/costMatrixWrapper.c
-    ffi/sequential_align/seqAlignInterface.h
+    -- ffi/sequential_align/seqAlignInterface.h
     ffi/sequential_align/seqAlignInterface.c
-    ffi/sequential_align/seqAlignForHaskell.h
+    -- ffi/sequential_align/seqAlignForHaskell.h
     ffi/sequential_align/seqAlignForHaskell.c
+    -- ffi/sequential_align/seqAlignOutputTypes.h
 
 
   -- Here we list all directories that contain C header files that the FFI tools will need
@@ -216,6 +217,7 @@ library
                        Data.Hashable.Memoize
                        Data.ReplicatedSequence
                        Data.TCM
+                       Data.TCM.Memoized
                        File.Format.Fasta
                        File.Format.Fastc
                        File.Format.Newick
@@ -314,6 +316,7 @@ library
                        Data.ExtendedReal
                        Data.Range
                        Data.TCM.Internal
+                       Data.TCM.Memoized.FFI
                        File.Format.TNT.Command.CCode
                        File.Format.TNT.Command.CNames
                        File.Format.TNT.Command.Cost

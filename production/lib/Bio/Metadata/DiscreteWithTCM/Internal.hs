@@ -25,7 +25,6 @@ module Bio.Metadata.DiscreteWithTCM.Internal
   ) where
 
 
-import Analysis.Parsimony.Dynamic.SequentialAlign.FFI
 import Bio.Metadata.CharacterName
 import Bio.Metadata.Discrete
 import Bio.Metadata.DiscreteWithTCM.Class
@@ -34,6 +33,7 @@ import Data.Alphabet
 import Data.List (intercalate)
 import Data.Monoid
 import Data.TCM
+import Data.TCM.Memoized
 
 
 -- |
@@ -138,7 +138,7 @@ discreteMetadataFromTCM name weight alpha tcm =
     DiscreteWithTCMCharacterMetadataDec
     { symbolChangeMatrixData   = sigma
     , transitionCostMatrixData = undefined
-    , foreignPointerData       = getMemoizedCostMatrix (toEnum $ length alpha) sigma
+    , foreignPointerData       = generateMemoizedCostMatrix (toEnum $ length alpha) sigma
     , discreteData             = discreteMetadata name (weight * coefficient) alpha
     }
   where
@@ -155,7 +155,7 @@ discreteMetadataWithTCM name weight alpha scm =
     DiscreteWithTCMCharacterMetadataDec
     { symbolChangeMatrixData   = scm
     , transitionCostMatrixData = undefined
-    , foreignPointerData       = getMemoizedCostMatrix (toEnum $ length alpha) scm
+    , foreignPointerData       = generateMemoizedCostMatrix (toEnum $ length alpha) scm
     , discreteData             = discreteMetadata name weight alpha
     }
 

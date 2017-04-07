@@ -13,6 +13,7 @@
 
 #include "../memoized_tcm/costMatrixWrapper.h"
 #include "../memoized_tcm/dynamicCharacterOperations.h"
+#include "seqAlignOutputTypes.h"
 
 typedef void* costMatrix_p;
 
@@ -62,7 +63,7 @@ int aligner( uint64_t     *seq1
            , retType_t    *retAlign
            );
 
-void freeRetType(retType_t* toFree);
+void freeRetType(retType_t *toFree);
 
 /** copy contents of one alignment struct into another */
 void copyAligmentStruct ( alignment_t  *copyTo

@@ -12,7 +12,8 @@ wrapper       = ../../memoized_tcm/costMatrixWrapper.h \
 seqAlignFiles = ../seqAlignForHaskell.h \
 				../seqAlignForHaskell.c \
 				../seqAlignInterface.h \
-				../seqAlignInterface.c
+				../seqAlignInterface.c \
+				../seqAlignOutputTypes.h
 
 exe_align     = test_sequential_align
 

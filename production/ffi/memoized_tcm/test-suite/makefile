@@ -34,7 +34,7 @@ test_cost_matrix : test_cost_matrix.cpp $(costMatrix) $(dynamicChar)
 test_c_interface : test_c_interface.c $(costMatrix) $(dynamicChar) $(wrapper)
 	gcc -std=c11   -g -c $(dynamicChar)
 	# g++ -std=c++14 -c costMatrix.h
-	g++ -std=c++14 -g -c ../costMatrix.cpp
+	g++ -std=c++14 -g -c $(costMatrix)
 	# gcc -std=c11 -c costMatrixWrapper.h
 	gcc -std=c11   -g -c $(wrapper)
 	# in next line, need -lc++ so that it calls correct linker: we need C compiler, but C++ libraries in scope.

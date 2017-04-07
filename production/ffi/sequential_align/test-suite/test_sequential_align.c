@@ -25,6 +25,7 @@
 #include "../../memoized_tcm/costMatrixWrapper.h"
 #include "../../memoized_tcm/dynamicCharacterOperations.h"
 #include "../seqAlignForHaskell.h"
+#include "../seqAlignOutputTypes.h"
 
 #define __STDC_FORMAT_MACROS
 
@@ -79,7 +80,7 @@ int main() {
             printf("%2" PRIu64 ", ", retAlign->seq2[i]);
         }
         printf("]\n");
-        printf("The cost of the alignment is: %d\n", retAlign->weight);
+        printf("The cost of the alignment is: %d\n", retAlign->cost);
 
     } else {
         printf("Fail!\n");
@@ -119,7 +120,7 @@ int exampleInterfaceFn(dynChar_t* seqA, dynChar_t* seqB, alignResult_t* result) 
     result->finalChar1 = intArrToBitArr (seqA->slphSize, retAlign->alignmentLength, retAlign->seq1);
     result->finalChar2 = intArrToBitArr (seqA->slphSize, retAlign->alignmentLength, retAlign->seq2);
 
-    result->finalWt      = retAlign->weight;
+    result->finalCost    = retAlign->cost;
     result->finalLength  = retAlign->alignmentLength;
 
     freeRetType(retAlign);
