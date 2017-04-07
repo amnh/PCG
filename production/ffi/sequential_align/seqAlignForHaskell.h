@@ -16,16 +16,17 @@
 
 typedef void* costMatrix_p;
 
+/** Holds intermediate alignments and current pointers into those arrays. */
 typedef struct align {
-    int       gapped_partialWt;
-    int       ungapped_partialWt;
-    uint64_t *partialAlignA;      // EDIT: made it dynamically allocable.
-    uint64_t *partialAlignB;     // EDIT: made it dynamically allocable.
-    size_t    gapped_sequenceA_ptr;     // current index in gapped sequenceA
-    size_t    gapped_sequenceB_ptr;     // current index in gapped sequenceB
-    size_t    ungapped_sequenceA_ptr; // current index in ungapped sequenceA
-    size_t    ungapped_sequenceB_ptr; // current index in ungapped sequenceB
-    int       flagWhichTree;     // belongs to first or second tree
+    int       gapped_partialCost;        //TODO: figure out what these do.
+    int       ungapped_partialCost;
+    uint64_t *partialAlign_A;
+    uint64_t *partialAlign_B;
+    size_t    aligned_sequence_A_end_ptr;     // current index in aligned sequenceA
+    size_t    aligned_sequence_B_end_ptr;     // current index in aligned sequenceB
+    size_t    input_sequence_A_ptr;           // current index in input sequenceA   -- for input sequences, since there are
+    size_t    input_sequence_B_ptr;           // current index in input sequenceB   -- we need a pointer for each of multiple alignments
+    int       flagWhichTree;                  // belongs to first or second tree
 } alignment_t;
 
 /** for use in updateSequences(), to know whether I'm going A -> GAP, GAP -> B, A -> B */
@@ -34,24 +35,24 @@ enum transition { A_TO_GAP, GAP_TO_B, A_TO_B };
 /** Allocs enough space to hold four sequences: two gapped and two ungapped.
  *  Also assigns input values to pointers into each sequence
  */
-alignment_t *initAlignment( int    in_gapped_partialWt
-                          , int    in_ungapped_partialWt
-                          , size_t in_gapped_sequenceA_ptr
-                          , size_t in_gapped_sequenceB_ptr
-                          , size_t in_ungapped_sequenceA_ptr
-                          , size_t in_ungapped_sequenceB_ptr
+alignment_t *initAlignment( int    in_gapped_partialCost
+                          , int    in_ungapped_partialCost
+                          , size_t in_aligned_sequence_A_end_ptr
+                          , size_t in_aligned_sequence_B_end_ptr
+                          , size_t in_input_sequence_A_ptr
+                          , size_t in_input_sequence_B_ptr
                           , int    in_flagWhichTree
                           , size_t initLength
                           );
 
-int ungappedWt( alignment_t  *path
+/** Computes the quadratic (?) cost of the gapped alignment to that point. */
+int currentAlignmentCost( alignment_t  *path
               , costMatrix_p  tcm
               , size_t        maxLen
               , size_t        alphSize
               );
 
-// EDIT: rectified with .c file.
-//int aligner(char*, char*, int, int, struct retType*);
+/** Does actual alignment */
 int aligner( uint64_t     *seq1
            , size_t        seq1Len
            , uint64_t     *seq2
@@ -82,7 +83,7 @@ void printBuffer(uint64_t *buffer, size_t bufLen, char *prefix);
 size_t boundedIncrement(size_t value, size_t bound);
 
 /** Honestly not yet sure what this does. It shuffles a bunch of values back and forth inside path
- *  and updates path->partialWt.
+ *  and updates path->partialCost.
  */
 int updateSequences( alignment_t       *path
                    , uint64_t          *seqA
@@ -97,7 +98,5 @@ int updateSequences( alignment_t       *path
                    , enum transition    whichSub
                    , int                cost);
 
-/** no longer in use. Use costMatrixWrapper.getCost instead.
-int getCost(uint64_t lhs, uint64_t rhs, costMtx_t* tcm, size_t alphSize)
-*/
+
 #endif /* YUALIGN_H */
