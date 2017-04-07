@@ -86,8 +86,22 @@ instance Enum MedianContext where
     toEnum _ =      ComputeMedians
 
 
+data AlignmentStrategy = Linear | Affine | Other deriving (Eq, Show)
+
+
+instance Enum AlignmentStrategy where
+
+    fromEnum Linear = 0
+    fromEnum Affine = 3
+    fromEnum Other  = -1
+
+    toEnum 0 = Linear
+    toEnum 3 = Affine
+    toEnum _ = Other
+
+
 generateDenseTransitionCostMatrix :: Word -> (Word -> Word -> Word) -> DenseTransitionCostMatrix
-generateDenseTransitionCostMatrix alphabetSize costFunction = getCostMatrix2dNonAffine alphabetSize costFunction
+generateDenseTransitionCostMatrix alphabetSize costFunction = getCostMatrix2dAffine 3 alphabetSize costFunction
 
 
 foreignPairwiseDO :: ( EncodableDynamicCharacter s
@@ -174,7 +188,7 @@ data CostMatrix2d = CostMatrix2d { alphSize         :: CInt      -- alphabet siz
         System.IO                                                       - i.e. affine or not.
                                                                - Based on cost_matrix.ml, values are:
                                                                - • linear == 0
-                                                               - • affine == 1
+                                                               - • affine == 3
                                                                - • no_alignment == 2,
                                                                - but I updated it. See costMatrix.h.
                                                                -}
@@ -242,32 +256,32 @@ instance Storable CostMatrix2d where
     sizeOf _  = (#size struct cost_matrices_2d) -- #size is a built-in that works with arrays, as are #peek and #poke, below
     alignment = sizeOf -- alignment (undefined :: StablePtr CostMatrix2d)
     peek ptr  = do -- to get values from the C app
-        aSizeVal            <- (#peek struct cost_matrices_2d, alphSize        ) ptr
+        aSizeVal               <- (#peek struct cost_matrices_2d, alphSize        ) ptr
         costMatrixDimensionVal <- (#peek struct cost_matrices_2d, costMatrixDimension) ptr
-        gapcharVal          <- (#peek struct cost_matrices_2d, gap_char        ) ptr
-        costModelVal        <- (#peek struct cost_matrices_2d, cost_model_type ) ptr
-        combosVal           <- (#peek struct cost_matrices_2d, combinations    ) ptr
-        gapOpenVal          <- (#peek struct cost_matrices_2d, gap_open        ) ptr
-        metricVal           <- (#peek struct cost_matrices_2d, is_metric       ) ptr
-        elemsVal            <- (#peek struct cost_matrices_2d, all_elements    ) ptr
-        bestVal             <- (#peek struct cost_matrices_2d, cost            ) ptr
-        medsVal             <- (#peek struct cost_matrices_2d, median          ) ptr
-        worstVal            <- (#peek struct cost_matrices_2d, worst           ) ptr
-        prependVal          <- (#peek struct cost_matrices_2d, prepend_cost    ) ptr
-        tailVal             <- (#peek struct cost_matrices_2d, tail_cost       ) ptr
-        pure CostMatrix2d { alphSize         = aSizeVal
+        gapcharVal             <- (#peek struct cost_matrices_2d, gap_char        ) ptr
+        costModelVal           <- (#peek struct cost_matrices_2d, cost_model_type ) ptr
+        combosVal              <- (#peek struct cost_matrices_2d, combinations    ) ptr
+        gapOpenVal             <- (#peek struct cost_matrices_2d, gap_open        ) ptr
+        metricVal              <- (#peek struct cost_matrices_2d, is_metric       ) ptr
+        elemsVal               <- (#peek struct cost_matrices_2d, all_elements    ) ptr
+        bestVal                <- (#peek struct cost_matrices_2d, cost            ) ptr
+        medsVal                <- (#peek struct cost_matrices_2d, median          ) ptr
+        worstVal               <- (#peek struct cost_matrices_2d, worst           ) ptr
+        prependVal             <- (#peek struct cost_matrices_2d, prepend_cost    ) ptr
+        tailVal                <- (#peek struct cost_matrices_2d, tail_cost       ) ptr
+        pure CostMatrix2d { alphSize            = aSizeVal
                           , costMatrixDimension = costMatrixDimensionVal
-                          , gapChar          = gapcharVal
-                          , costModelType    = costModelVal
-                          , combinations     = combosVal
-                          , gapOpenCost      = gapOpenVal
-                          , isMetric         = metricVal
-                          , allElems         = elemsVal
-                          , bestCost         = bestVal
-                          , medians          = medsVal
-                          , worstCost        = worstVal
-                          , prependCost      = prependVal
-                          , tailCost         = tailVal
+                          , gapChar             = gapcharVal
+                          , costModelType       = costModelVal
+                          , combinations        = combosVal
+                          , gapOpenCost         = gapOpenVal
+                          , isMetric            = metricVal
+                          , allElems            = elemsVal
+                          , bestCost            = bestVal
+                          , medians             = medsVal
+                          , worstCost           = worstVal
+                          , prependCost         = prependVal
+                          , tailCost            = tailVal
                           }
 
     poke ptr (CostMatrix2d
@@ -285,19 +299,19 @@ instance Storable CostMatrix2d where
                   prependCostVal
                   tailCostVal
               ) = do -- to modify values in the C app
-        (#poke struct cost_matrices_2d, alphSize        ) ptr alphSizeVal
+        (#poke struct cost_matrices_2d, alphSize           ) ptr alphSizeVal
         (#poke struct cost_matrices_2d, costMatrixDimension) ptr costMatrixDimensionVal
-        (#poke struct cost_matrices_2d, gap_char        ) ptr gapCharVal
-        (#poke struct cost_matrices_2d, cost_model_type ) ptr costModelTypeVal
-        (#poke struct cost_matrices_2d, combinations    ) ptr combinationsVal
-        (#poke struct cost_matrices_2d, gap_open        ) ptr gapOpenVal
-        (#poke struct cost_matrices_2d, is_metric       ) ptr isMetricVal
-        (#poke struct cost_matrices_2d, all_elements    ) ptr elemsVal
-        (#poke struct cost_matrices_2d, cost            ) ptr bestCostVal
-        (#poke struct cost_matrices_2d, median          ) ptr mediansVal
-        (#poke struct cost_matrices_2d, worst           ) ptr worstCostVal
-        (#poke struct cost_matrices_2d, prepend_cost    ) ptr prependCostVal
-        (#poke struct cost_matrices_2d, tail_cost       ) ptr tailCostVal
+        (#poke struct cost_matrices_2d, gap_char           ) ptr gapCharVal
+        (#poke struct cost_matrices_2d, cost_model_type    ) ptr costModelTypeVal
+        (#poke struct cost_matrices_2d, combinations       ) ptr combinationsVal
+        (#poke struct cost_matrices_2d, gap_open           ) ptr gapOpenVal
+        (#poke struct cost_matrices_2d, is_metric          ) ptr isMetricVal
+        (#poke struct cost_matrices_2d, all_elements       ) ptr elemsVal
+        (#poke struct cost_matrices_2d, cost               ) ptr bestCostVal
+        (#poke struct cost_matrices_2d, median             ) ptr mediansVal
+        (#poke struct cost_matrices_2d, worst              ) ptr worstCostVal
+        (#poke struct cost_matrices_2d, prepend_cost       ) ptr prependCostVal
+        (#poke struct cost_matrices_2d, tail_cost          ) ptr tailCostVal
 {--}
 
 
@@ -315,6 +329,12 @@ foreign import ccall unsafe "c_code_alloc_setup.h setup2dCostMtx"
 --                          -> CInt              -- ^ is_2d
                           -> Ptr CostMatrix2d
                           -> IO ()
+
+
+-- |
+-- Determine the alignment strategy encoded for the matrix.
+getAlignmentStrategy :: CostMatrix2d -> AlignmentStrategy
+getAlignmentStrategy = toEnum . fromEnum . costModelType
 
 
 -- | Set up and return a non-affine cost matrix
@@ -341,10 +361,10 @@ performMatrixAllocation :: CInt -- Is 2d
                         -> Word
                         -> (Word -> Word -> Word)
                         -> DenseTransitionCostMatrix
-performMatrixAllocation is2D gapOpen alphabetSize costFn = unsafePerformIO . withArray rowMajorList $ \allocedTCM -> do
+performMatrixAllocation _is2D gapOpen alphabetSize costFn = unsafePerformIO . withArray rowMajorList $ \allocedTCM -> do
         !_ <- trace "Allocation a Dense Matrix" $ pure ()
         !output <- malloc :: IO (Ptr CostMatrix2d)
-        !_ <- setupCostMatrix2dFn_c allocedTCM matrixDimension gapOpen {- is2D -} output
+        !_ <- setupCostMatrix2dFn_c allocedTCM matrixDimension gapOpen output
         pure output
     where
         matrixDimension = toEnum $ fromEnum alphabetSize
@@ -360,19 +380,38 @@ performMatrixAllocation is2D gapOpen alphabetSize costFn = unsafePerformIO . wit
 -- It is therefore indexed not by powers of two, but by cardinal integer.
 -- TODO: For now we only allocate 2d matrices. 3d will come later.
 foreign import ccall unsafe "c_alignment_interface.h align2d"
-    align2dFn_c :: Ptr AlignIO          -- ^ character1, input & output
-                -> Ptr AlignIO          -- ^ character2, input & output
-                -> Ptr AlignIO          -- ^ gapped median output
-                -> Ptr AlignIO          -- ^ ungapped median output
-                -- -> Ptr AlignIO          -- ^ unioned median output
+    align2dFn_c :: Ptr AlignIO -- ^ character1, input & output
+                -> Ptr AlignIO -- ^ character2, input & output
+                -> Ptr AlignIO -- ^ gapped median output
+                -> Ptr AlignIO -- ^ ungapped median output
                 -> DenseTransitionCostMatrix
-                -> CInt                  -- ^ compute ungapped & not   gapped medians
-                -> CInt                  -- ^ compute   gapped & not ungapped medians
-                -> CInt                  -- ^ compute union
-                -> CInt                  -- ^ cost
+                -> CInt        -- ^ compute ungapped & not   gapped medians
+                -> CInt        -- ^ compute   gapped & not ungapped medians
+                -> CInt        -- ^ compute union
+                -> CInt        -- ^ cost
 
 
--- | Performs a naive direct optimization
+{-
+int align2dAffine(const alignIO_p char1,
+                  const alignIO_p char2,
+                  const alignIO_p gappedOutputSeq,
+                  const alignIO_p ungappedOutputSeq,
+                  // alignIO_p unionOutputSeq,
+                  const cost_matrices_2d_p costMtx2d,
+                  int doMedians); 
+-}
+foreign import ccall unsafe "c_alignment_interface.h align2dAffine"
+    align2dAffineFn_c :: Ptr AlignIO -- ^ character1, input & output
+                      -> Ptr AlignIO -- ^ character2, input & output
+                      -> Ptr AlignIO -- ^ gapped median output
+                      -> Ptr AlignIO -- ^ ungapped median output
+                      -> DenseTransitionCostMatrix
+                      -> CInt        -- ^ compute medians
+                      -> CInt        -- ^ cost
+
+
+-- |
+-- Performs a naive direct optimization
 -- Takes in two characters to run DO on and a metadata object
 -- Returns an assignment character, the cost of that assignment, the assignment character with gaps included,
 -- the aligned version of the first input character, and the aligned version of the second input character
@@ -420,8 +459,12 @@ algn2d char1 char2 costStruct computeUnion computeMedians = handleMissingCharact
 --                !_ <- trace (mconcat [" Input LHS : { ", show char1Len, " / ", show buffer1Len, " } ", renderBuffer input1CharArr]) $ pure ()
 --                !_ <- trace (mconcat [" Input RHS : { ", show char2Len, " / ", show buffer2Len, " } ", renderBuffer input2CharArr]) $ pure ()
 {--}
-
-                let !cost = align2dFn_c char1ToSend char2ToSend retGapped retUngapped costStruct neverComputeOnlyGapped (toCInt computeMedians) (toCInt computeUnion)
+                strategy <- getAlignmentStrategy <$> peek costStruct
+                !_ <- trace (show strategy) $ pure ()
+                
+                let !cost = case strategy of
+                              Affine -> align2dAffineFn_c char1ToSend char2ToSend retGapped retUngapped costStruct                        (toCInt computeMedians)
+                              _      -> align2dFn_c       char1ToSend char2ToSend retGapped retUngapped costStruct neverComputeOnlyGapped (toCInt computeMedians) (toCInt computeUnion)
 
                 AlignIO ungappedCharArr ungappedLen _ <- peek retUngapped
                 AlignIO gappedCharArr   gappedLen   _ <- peek retGapped
