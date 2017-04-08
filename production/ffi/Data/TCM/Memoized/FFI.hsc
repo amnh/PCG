@@ -209,7 +209,7 @@ foreign import ccall unsafe "costMatrix getCostAndMedian"
     getCostAndMedianFn_c :: Ptr DCElement
                          -> Ptr DCElement
                          -> Ptr DCElement
-                         -> CSize
+--                         -> CSize
                          -> StablePtr ForeignVoid
                          -> IO CInt
 
@@ -242,14 +242,14 @@ getMedianAndCost memo lhs rhs = unsafePerformIO $ do
     !_ <- trace (show lhs''') $ pure ()
 
     !_ <- trace "Before FFI call" $ pure ()
-    !cost         <- getCostAndMedianFn_c lhs' rhs' medianPtr width (costMatrix memo)
+    !cost         <- getCostAndMedianFn_c lhs' rhs' medianPtr (costMatrix memo)
     !_ <- trace "After  FFI call" $ pure ()
 
     medianElement <- peek medianPtr
     medianValue   <- fmap buildExportable . peekArray bufferLength $ characterElement medianElement
     pure (medianValue, coerceEnum cost)
   where
-    width           = toEnum alphabetSize
+--    width           = toEnum alphabetSize
     alphabetSize    = exportedElementWidthSequence $ toExportableBuffer lhs
     buildExportable = fromExportableBuffer . ExportableCharacterSequence 1 alphabetSize
     bufferLength    = calculateBufferLength alphabetSize 1
