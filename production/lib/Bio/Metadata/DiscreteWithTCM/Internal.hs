@@ -25,6 +25,7 @@ module Bio.Metadata.DiscreteWithTCM.Internal
   ) where
 
 
+import Bio.Character.Exportable
 import Bio.Metadata.CharacterName
 import Bio.Metadata.Discrete
 import Bio.Metadata.DiscreteWithTCM.Class
@@ -114,7 +115,7 @@ instance HasSymbolChangeMatrix (DiscreteWithTCMCharacterMetadataDec c) (Word -> 
 -- A 'Lens' for the 'transitionCostMatrix' field
 instance HasTransitionCostMatrix (DiscreteWithTCMCharacterMetadataDec c) (c -> c -> (c, Word)) where
 
-    transitionCostMatrix = lens undefined undefined
+    transitionCostMatrix = lens transitionCostMatrixData $ \e x -> e { transitionCostMatrixData = x }
 
 
 -- |
@@ -137,14 +138,15 @@ discreteMetadataFromTCM :: CharacterName -> Double -> Alphabet String -> TCM -> 
 discreteMetadataFromTCM name weight alpha tcm =
     DiscreteWithTCMCharacterMetadataDec
     { symbolChangeMatrixData   = sigma
-    , transitionCostMatrixData = undefined
-    , foreignPointerData       = generateMemoizedTransitionCostMatrix (toEnum $ length alpha) sigma
+    , transitionCostMatrixData = undefined -- getMedianAndCost memoMatrixValue
+    , foreignPointerData       = memoMatrixValue
     , discreteData             = discreteMetadata name (weight * coefficient) alpha
     }
   where
-    sigma  i j  = toEnum . fromEnum $ factoredTcm diagnosis ! (fromEnum i, fromEnum j)
-    diagnosis   = diagnoseTcm tcm
-    coefficient = fromIntegral $ factoredWeight diagnosis
+    coefficient     = fromIntegral $ factoredWeight diagnosis
+    sigma  i j      = toEnum . fromEnum $ factoredTcm diagnosis ! (fromEnum i, fromEnum j)
+    diagnosis       = diagnoseTcm tcm
+    memoMatrixValue = generateMemoizedTransitionCostMatrix (toEnum $ length alpha) sigma
 
 
 
@@ -154,8 +156,10 @@ discreteMetadataWithTCM :: CharacterName -> Double -> Alphabet String -> (Word -
 discreteMetadataWithTCM name weight alpha scm =
     DiscreteWithTCMCharacterMetadataDec
     { symbolChangeMatrixData   = scm
-    , transitionCostMatrixData = undefined
-    , foreignPointerData       = generateMemoizedTransitionCostMatrix (toEnum $ length alpha) scm
+    , transitionCostMatrixData = undefined -- getMedianAndCost memoMatrixValue
+    , foreignPointerData       = memoMatrixValue
     , discreteData             = discreteMetadata name weight alpha
     }
+  where
+    memoMatrixValue = generateMemoizedTransitionCostMatrix (toEnum $ length alpha) scm
 
