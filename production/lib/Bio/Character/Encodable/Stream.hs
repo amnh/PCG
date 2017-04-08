@@ -148,13 +148,15 @@ showStream :: EncodableStream s => Alphabet String -> s -> String
 showStream alphabet = ofoldMap (showStreamElement alphabet)
 
 
+bitsInLocalWord  = finiteBitSize (undefined :: CULong)
+
+
 encodableStreamToExportableCharacterElements :: (EncodableStream s, EncodedAmbiguityGroupContainer s, Integral (Element s))
                                              => s -> Maybe ExportableCharacterElements
 encodableStreamToExportableCharacterElements dc
   | bitsInElement > bitsInLocalWord = Nothing
   | otherwise                       = Just $ ExportableCharacterElements numberOfElements bitsInElement integralElements
   where
-    bitsInLocalWord  = finiteBitSize (undefined :: CULong)
     bitsInElement    = symbolCount dc
     numberOfElements = olength dc
     integralElements = ofoldMap (pure . fromIntegral) dc 

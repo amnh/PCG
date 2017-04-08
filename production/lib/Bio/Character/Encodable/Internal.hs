@@ -49,7 +49,6 @@ instance PossiblyMissingCharacter c => PossiblyMissingCharacter (Maybe c) where
     isMissing = maybe False isMissing
 
 
-
 bitVectorToBufferChunks :: Int -> Int -> BitVector -> [CULong]
 bitVectorToBufferChunks elemWidth elemCount bv = fmap fromIntegral $ ((bv @@) <$> slices) <> tailWord
   where
@@ -75,7 +74,14 @@ bufferChunksToBitVector elemWidth elemCount chunks = bitVec totalBits . fst $ fo
     
 
 exportableCharacterElementsToBitMatrix :: ExportableCharacterElements -> BitMatrix
-exportableCharacterElementsToBitMatrix ece = BitMatrix elementWidth $ foldMap (bitVec elementWidth) integralvalues
+exportableCharacterElementsToBitMatrix ece = BitMatrix elementWidth $ foldMap (bitVec elementWidth) integralValues
   where
     elementWidth   = ece ^. exportedElementWidth
-    integralvalues = exportedCharacterElements ece
+    integralValues = exportedCharacterElements ece
+
+
+exportableCharacterElementsHeadToBitVector :: ExportableCharacterElements -> BitVector
+exportableCharacterElementsHeadToBitVector ece = bitVec elementWidth $ head integralValues
+  where
+    elementWidth   = ece ^. exportedElementWidth
+    integralValues = exportedCharacterElements ece
