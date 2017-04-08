@@ -138,16 +138,19 @@ int CostMatrix::getSetCostMedian(dcElement_t* left, dcElement_t* right, dcElemen
         // Can't use allocateDCElement here, because makePackedCharCopy() allocates.
         toLookup->first           = *(dcElement_t*) malloc( sizeof(dcElement_t) );
         toLookup->first.alphSize  = left->alphSize;
-        toLookup->first.element   = makePackedCharCopy(left->element, left->alphSize, 1);
+        toLookup->first.element   = makePackedCharCopy( left->element , alphabetSize, 1 );
         toLookup->second          = *(dcElement_t*) malloc( sizeof(dcElement_t) );
         toLookup->second.alphSize = left->alphSize;
-        toLookup->second.element  = makePackedCharCopy( right->element, right->alphSize, 1 );
+        toLookup->second.element  = makePackedCharCopy( right->element, alphabetSize, 1 );
 
         setValue (toLookup, computedCostMed);
     } else {
         // because in the next two lines, I get back a pair<keys, costMedian_t>
         foundCost          = found->second.first;
-        retMedian->element = makePackedCharCopy( found->second.second, left->alphSize, 1 );
+	
+        printf("retMedian          %p\n",retMedian), fflush(stdout);
+        printf("retMedian->element %p\n",retMedian->element), fflush(stdout);
+        retMedian->element = makePackedCharCopy( found->second.second, alphabetSize, 1 );
     }
 
     return foundCost;

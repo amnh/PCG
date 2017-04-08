@@ -61,7 +61,7 @@ int main() {
 
     int count = 0;
     for(size_t i = 0; i < SEQ_A_LEN; i++) {
-        foundCost = getCostAndMedian(bitRepresentation( seqA_main[i]), bitRepresentation( seqB_main[i]), myMatrix, alphabetSize);
+        foundCost = getCost(bitRepresentation( seqA_main[i]), bitRepresentation( seqB_main[i]), myMatrix, alphabetSize);
         //printf("iteration %2zu a: %llu b: %llu\n", i, seqA_main[i], seqB_main[i]);
         cost = tcm[(seqA_main[i]) * alphabetSize + (seqB_main[i])];
         printf("computed cost: %d\n", cost);
@@ -80,7 +80,7 @@ int main() {
     // printElemBits(retMedian);
     // printf("\ncost:%d\n", cost);
 
-/*
+    /**/
 
     dcElement_t* firstKey  = allocateDCElement( alphabetSize );
     dcElement_t* secondKey = allocateDCElement( alphabetSize );
@@ -101,7 +101,7 @@ int main() {
             cost = tcm[(key1 - 1) * alphabetSize + (key2 - 1)];
             SetBit(&median, key2);
 
-            foundCost = getCost(*firstKey->element, *secondKey->element, myMatrix, alphabetSize);
+            foundCost = getCostAndMedian(firstKey, secondKey, retMedian, myMatrix);
 
             if(median != *retMedian->element || cost != foundCost) {
                 printf("key 1 set: %zu\n", key1);
@@ -120,7 +120,7 @@ int main() {
         ClearBit(firstKey->element, key1);
         ClearBit(&median, key1);
     }
-*/
+/**/
     matrixDestroy(myMatrix);
  /*
     free(firstKey->element );

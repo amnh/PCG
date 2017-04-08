@@ -272,6 +272,7 @@ packedChar *makePackedCharCopy( packedChar *inChar, size_t alphSize, size_t numE
     printf("alphSize: %d\n", alphSize), fflush(stdout);
     printf("numElems: %d\n", numElems), fflush(stdout);
     printf("length  : %d\n", length  ), fflush(stdout);
+    printf("inChar  : %p\n", inChar  ), fflush(stdout);
     for (size_t i = 0; i < length; i++) {
         outChar[i] = inChar[i];
     }

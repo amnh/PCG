@@ -42,9 +42,12 @@ counterExampleCheck (NS lhs, NS rhs) = nativeDOResult == foreignDOResult
   where
     nativeDOResult  = naiveDOMemo       lhs rhs (getMedianAndCost memoMatrixValue)
     foreignDOResult = foreignPairwiseDO lhs rhs  denseMatrixValue
-    denseMatrixValue = generateDenseTransitionCostMatrix    5 costStructure
-    memoMatrixValue  = generateMemoizedTransitionCostMatrix 5 costStructure
     costStructure i j = if i /= j then 1 else 0
+
+
+denseMatrixValue = generateDenseTransitionCostMatrix    5 costStructure
+memoMatrixValue  = generateMemoizedTransitionCostMatrix 5 costStructure
+costStructure i j = if i /= j then 1 else 0
 
 
 performImplementationComparison :: String -> String -> IO ()
@@ -61,12 +64,9 @@ performImplementationComparison lhs rhs = do
     foreignMessage   = renderResult foreignDOResult
     nativeDOResult   = naiveDOMemo       char1 char2 (getMedianAndCost memoMatrixValue)
     foreignDOResult  = foreignPairwiseDO char1 char2  denseMatrixValue
-    denseMatrixValue = generateDenseTransitionCostMatrix    5 costStructure
-    memoMatrixValue  = generateMemoizedTransitionCostMatrix 5 costStructure
     char1 = readSequence lhs
     char2 = readSequence rhs
     alphabet = fromSymbols ["A","C","G","T"]
-    costStructure i j = if i /= j then 1 else 0
     readSequence :: String -> DynamicChar
     readSequence = encodeStream alphabet . fmap ((iupacToDna BM.!) . pure . pure) . NE.fromList
     renderResult (w, c, x, y, z) = unlines
