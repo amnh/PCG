@@ -125,8 +125,8 @@ int CostMatrix::getSetCostMedian(dcElement_t* left, dcElement_t* right, dcElemen
     if ( found == myMatrix.end() ) {
         if(DEBUG) printf("\ngetSetCost didn't find %" PRIu64 " %" PRIu64 ".\n", left->element[0], right->element[0]);
 
-        // costMedian_t* computedCostMed = computeCostMedian(*toLookup);
-        costMedian_t* computedCostMed = computeCostMedianFitchy(*toLookup);
+        costMedian_t* computedCostMed = computeCostMedian(*toLookup);
+        //costMedian_t* computedCostMed = computeCostMedianFitchy(*toLookup);
 
         if(DEBUG) printf("computed cost, median: %2i %" PRIu64 "\n", computedCostMed->first, computedCostMed->second[0]);
 
