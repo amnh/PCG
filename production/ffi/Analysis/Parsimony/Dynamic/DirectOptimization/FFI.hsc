@@ -62,7 +62,7 @@ import System.IO.Unsafe (unsafePerformIO)
 type DenseTransitionCostMatrix = Ptr CostMatrix2d
 
 
-data UnionContext  = ComputeUnions  | DoNotComputeUnions
+data UnionContext  = ComputeUnions | DoNotComputeUnions
 
 
 instance Enum UnionContext where
@@ -101,7 +101,7 @@ instance Enum AlignmentStrategy where
 
 
 generateDenseTransitionCostMatrix :: Word -> (Word -> Word -> Word) -> DenseTransitionCostMatrix
-generateDenseTransitionCostMatrix alphabetSize costFunction = getCostMatrix2dAffine 3 alphabetSize costFunction
+generateDenseTransitionCostMatrix alphabetSize costFunction = getCostMatrix2dNonAffine alphabetSize costFunction
 
 
 foreignPairwiseDO :: ( EncodableDynamicCharacter s
@@ -460,7 +460,7 @@ algn2d char1 char2 costStruct computeUnion computeMedians = handleMissingCharact
 --                !_ <- trace (mconcat [" Input RHS : { ", show char2Len, " / ", show buffer2Len, " } ", renderBuffer input2CharArr]) $ pure ()
 {--}
                 strategy <- getAlignmentStrategy <$> peek costStruct
-                !_ <- trace (show strategy) $ pure ()
+--                !_ <- trace (show strategy) $ pure ()
                 
                 let !cost = case strategy of
                               Affine -> align2dAffineFn_c char1ToSend char2ToSend retGapped retUngapped costStruct                        (toCInt computeMedians)

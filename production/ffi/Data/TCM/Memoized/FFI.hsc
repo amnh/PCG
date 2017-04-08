@@ -189,7 +189,6 @@ instance Storable MemoizedCostMatrix where
     poke _ptr   = undefined
 
 
-
 -- TODO: For now we only allocate 2d matrices. 3d will come later.
 -- |
 -- Create and allocate cost matrix.
