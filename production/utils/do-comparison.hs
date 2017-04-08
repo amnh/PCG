@@ -38,7 +38,6 @@ performCounterExampleSearch = do
 
 counterExampleCheck :: (NucleotideSequence, NucleotideSequence) -> Bool
 counterExampleCheck (NS lhs, NS rhs) = nativeDOResult == foreignDOResult
-                                    || True
   where
     nativeDOResult  = naiveDOMemo       lhs rhs (getMedianAndCost memoMatrixValue)
     foreignDOResult = foreignPairwiseDO lhs rhs  denseMatrixValue
@@ -73,6 +72,7 @@ performImplementationComparison lhs rhs = do
 
 
 costStructure :: (Ord a, Num a) => a -> a -> a
+--costStructure i j = if i /= j then 1 else 0
 costStructure i j = max i j - min i j
 
 
