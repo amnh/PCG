@@ -234,22 +234,11 @@ getMedianAndCost memo lhs rhs = unsafePerformIO $ do
     medianPtr     <- constructEmptyElement alphabetSize
     lhs'          <- constructElementFromExportable lhs
     rhs'          <- constructElementFromExportable rhs
-
-    lhs''  <- peek lhs'
-    lhs''' <- peekArray 1 $ characterElement lhs'' 
-    !_ <- trace (show lhs'  ) $ pure ()
-    !_ <- trace (show lhs'' ) $ pure ()
-    !_ <- trace (show lhs''') $ pure ()
-
-    !_ <- trace "Before FFI call" $ pure ()
     !cost         <- getCostAndMedianFn_c lhs' rhs' medianPtr (costMatrix memo)
-    !_ <- trace "After  FFI call" $ pure ()
-
     medianElement <- peek medianPtr
     medianValue   <- fmap buildExportable . peekArray bufferLength $ characterElement medianElement
     pure (medianValue, coerceEnum cost)
   where
---    width           = toEnum alphabetSize
     alphabetSize    = exportedElementWidthSequence $ toExportableBuffer lhs
     buildExportable = fromExportableBuffer . ExportableCharacterSequence 1 alphabetSize
     bufferLength    = calculateBufferLength alphabetSize 1
