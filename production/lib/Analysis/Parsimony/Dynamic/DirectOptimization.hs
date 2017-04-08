@@ -20,7 +20,8 @@
 {-# LANGUAGE FlexibleContexts #-}
 
 module Analysis.Parsimony.Dynamic.DirectOptimization
-  ( directOptimizationPreOrder
+  ( DenseTransitionCostMatrix
+  , directOptimizationPreOrder
   , directOptimizationPostOrder
   , foreignPairwiseDO
   , generateDenseTransitionCostMatrix

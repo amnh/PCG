@@ -42,12 +42,6 @@ counterExampleCheck (NS lhs, NS rhs) = nativeDOResult == foreignDOResult
   where
     nativeDOResult  = naiveDOMemo       lhs rhs (getMedianAndCost memoMatrixValue)
     foreignDOResult = foreignPairwiseDO lhs rhs  denseMatrixValue
-    costStructure i j = if i /= j then 1 else 0
-
-
-denseMatrixValue = generateDenseTransitionCostMatrix    5 costStructure
-memoMatrixValue  = generateMemoizedTransitionCostMatrix 5 costStructure
-costStructure i j = if i /= j then 1 else 0
 
 
 performImplementationComparison :: String -> String -> IO ()
@@ -76,3 +70,15 @@ performImplementationComparison lhs rhs = do
         , "LHS   alignment: " <> showStream alphabet y
         , "RHS   alignment: " <> showStream alphabet z
         ]
+
+
+costStructure :: (Ord a, Num a) => a -> a -> a
+costStructure i j = max i j - min i j
+
+
+denseMatrixValue :: DenseTransitionCostMatrix
+denseMatrixValue = generateDenseTransitionCostMatrix    5 costStructure
+
+
+memoMatrixValue :: MemoizedCostMatrix
+memoMatrixValue  = generateMemoizedTransitionCostMatrix 5 costStructure
