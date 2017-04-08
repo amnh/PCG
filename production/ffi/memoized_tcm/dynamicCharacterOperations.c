@@ -268,7 +268,10 @@ packedChar *allocatePackedChar( size_t alphSize, size_t numElems ) {
 
 packedChar *makePackedCharCopy( packedChar *inChar, size_t alphSize, size_t numElems) {
     packedChar *outChar = allocatePackedChar(alphSize, numElems);
-    size_t length = dcElemSize(alphSize);
+    size_t length = dynCharSize(alphSize, numElems);
+    printf("alphSize: %d\n", alphSize), fflush(stdout);
+    printf("numElems: %d\n", numElems), fflush(stdout);
+    printf("length  : %d\n", length  ), fflush(stdout);
     for (size_t i = 0; i < length; i++) {
         outChar[i] = inChar[i];
     }

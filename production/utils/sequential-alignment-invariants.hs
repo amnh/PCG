@@ -45,7 +45,7 @@ counterExampleCheck (NS lhs, NS rhs) = lhs == filterGaps lhs'
 
 
 tcm :: MemoizedCostMatrix
-tcm = generateMemoizedCostMatrix (toEnum $ length alphabet) costStructure
+tcm = generateMemoizedTransitionCostMatrix (toEnum $ length alphabet) costStructure
   where
     costStructure i j = if i /= j then 1 else 0
 

@@ -113,10 +113,12 @@ int CostMatrix::getSetCostMedian(dcElement_t* left, dcElement_t* right, dcElemen
     mapIterator found;
     int foundCost;
 
-    // printf("1st: {%zu}: %" PRIu64 "\n", toLookup->first.alphSize , *toLookup->first.element );
-    // printf("2nd: {%zu}: %" PRIu64 "\n", toLookup->second.alphSize, *toLookup->second.element);
+    printf("1st: {%zu}: %" PRIu64 "\n", toLookup->first.alphSize , *toLookup->first.element ), fflush(stdout);
+    printf("2nd: {%zu}: %" PRIu64 "\n", toLookup->second.alphSize, *toLookup->second.element), fflush(stdout);
 
+    printf("Can we find it?\n"), fflush(stdout);
     found = myMatrix.find(*toLookup);
+    printf("Yes we can!\n"), fflush(stdout);
 
     // if (retMedian->element == NULL) {
     //     retMedian->element = (packedChar*) calloc( dcElemSize(alphabetSize), sizeof(packedChar) );

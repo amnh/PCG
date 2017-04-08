@@ -12,15 +12,15 @@
 
 module Data.TCM.Memoized
   ( FFI.MemoizedCostMatrix
-  , generateMemoizedCostMatrix
+  , generateMemoizedTransitionCostMatrix
   , FFI.getMedianAndCost
   ) where
 
 import qualified Data.TCM.Memoized.FFI as FFI
 
 
-generateMemoizedCostMatrix :: Word -> (Word -> Word -> Word) -> FFI.MemoizedCostMatrix
-generateMemoizedCostMatrix = FFI.getMemoizedCostMatrix
+generateMemoizedTransitionCostMatrix :: Word -> (Word -> Word -> Word) -> FFI.MemoizedCostMatrix
+generateMemoizedTransitionCostMatrix = FFI.getMemoizedCostMatrix
 
 {-
 -- Causes ambiguity with Data.TCM.(!)

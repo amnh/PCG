@@ -23,6 +23,7 @@ module Data.TCM.Memoized.FFI
   , coerceEnum
   , constructCharacterFromExportable
   , constructElementFromExportable
+  , constructEmptyElement
   ) where
 
 import Bio.Character.Exportable.Class
@@ -36,7 +37,7 @@ import GHC.Generics           (Generic)
 import System.IO.Unsafe
 import Test.QuickCheck hiding ((.&.), output)
 
---import Debug.Trace
+import Debug.Trace
 
 #include "costMatrixWrapper.h"
 #include "dynamicCharacterOperations.h"
@@ -61,7 +62,7 @@ data CDynamicChar
 data DCElement = DCElement
     { alphabetSizeElem :: CSize
     , characterElement :: Ptr CBufferUnit
-    }
+    } deriving (Show)
 
 
 data ForeignVoid deriving (Generic)
@@ -163,11 +164,11 @@ instance Storable DCElement where
 
     sizeOf    _ = (#size struct dcElement_t)
 
-    alignment _ = alignment (undefined :: CULong)
+    alignment _ = alignment (undefined :: CBufferUnit)
 
     peek ptr    = do
         alphLen <- (#peek struct dcElement_t, alphSize) ptr
-        element <- (#peek struct dcElement_t, element)  ptr
+        element <- (#peek struct dcElement_t, element ) ptr
         pure DCElement
             { alphabetSizeElem = alphLen
             , characterElement = element
@@ -178,6 +179,7 @@ instance Storable DCElement where
         (#poke struct dcElement_t, element ) ptr element
 
 
+{-
 instance Storable MemoizedCostMatrix where
 
     sizeOf    _ = (#size void*) -- #size is a built-in that works with arrays, as are #peek and #poke, below
@@ -187,6 +189,7 @@ instance Storable MemoizedCostMatrix where
     peek _ptr   = undefined
 
     poke _ptr   = undefined
+-}
 
 
 -- TODO: For now we only allocate 2d matrices. 3d will come later.
@@ -203,12 +206,12 @@ foreign import ccall unsafe "costMatrixWrapper matrixInit"
 
 
 foreign import ccall unsafe "costMatrix getCostAndMedian"
-    getCostMedianfn_c :: StablePtr ForeignVoid
-                      -> Ptr DCElement
-                      -> Ptr DCElement
-                      -> Ptr DCElement
-                      -> CSize
-                      -> IO CInt
+    getCostAndMedianFn_c :: Ptr DCElement
+                         -> Ptr DCElement
+                         -> Ptr DCElement
+                         -> CSize
+                         -> StablePtr ForeignVoid
+                         -> IO CInt
 
 
 -- |
@@ -219,20 +222,29 @@ getMemoizedCostMatrix :: Word
                       -> (Word -> Word -> Word)
                       -> MemoizedCostMatrix
 getMemoizedCostMatrix alphabetSize costFn = unsafePerformIO . withArray rowMajorList $ \allocedTCM -> do
-        ! resultPtr <- initializeMemoizedCMfn_c (coerceEnum alphabetSize) allocedTCM
-        !_ <- putStrLn "Initialized Sparse Memoized TCM through FFI binding!"
-        pure $ MemoizedCostMatrix resultPtr
-    where
-        rowMajorList = [ coerceEnum $ costFn i j | i <- range,  j <- range ]
-        range = [0 .. alphabetSize - 1]
+    !resultPtr <- initializeMemoizedCMfn_c (coerceEnum alphabetSize) allocedTCM
+    pure $ MemoizedCostMatrix resultPtr
+  where
+    rowMajorList = [ coerceEnum $ costFn i j | i <- range,  j <- range ]
+    range = [0 .. alphabetSize - 1]
 
 
 getMedianAndCost :: Exportable s => MemoizedCostMatrix -> s -> s -> (s, Word)
 getMedianAndCost memo lhs rhs = unsafePerformIO $ do
-    medianPtr     <- malloc :: IO (Ptr DCElement)
+    medianPtr     <- constructEmptyElement alphabetSize
     lhs'          <- constructElementFromExportable lhs
     rhs'          <- constructElementFromExportable rhs
-    !cost         <- getCostMedianfn_c (costMatrix memo) lhs' rhs' medianPtr width
+
+    lhs''  <- peek lhs'
+    lhs''' <- peekArray 1 $ characterElement lhs'' 
+    !_ <- trace (show lhs'  ) $ pure ()
+    !_ <- trace (show lhs'' ) $ pure ()
+    !_ <- trace (show lhs''') $ pure ()
+
+    !_ <- trace "Before FFI call" $ pure ()
+    !cost         <- getCostAndMedianFn_c lhs' rhs' medianPtr width (costMatrix memo)
+    !_ <- trace "After  FFI call" $ pure ()
+
     medianElement <- peek medianPtr
     medianValue   <- fmap buildExportable . peekArray bufferLength $ characterElement medianElement
     pure (medianValue, coerceEnum cost)
@@ -278,3 +290,13 @@ constructElementFromExportable exChar = do
     width  = exportedElementWidthSequence exportableBuffer
     exportableBuffer = toExportableBuffer exChar
 
+
+constructEmptyElement :: Int -> IO (Ptr DCElement)
+constructEmptyElement alphabetSize = do
+    elementPointer <- malloc :: IO (Ptr DCElement)
+    valueBuffer    <- mallocArray bufferLength
+    let elementValue = DCElement (coerceEnum alphabetSize) valueBuffer
+    !_ <- poke elementPointer elementValue
+    pure elementPointer
+  where
+    bufferLength = calculateBufferLength alphabetSize 1

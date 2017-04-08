@@ -18,6 +18,7 @@ module Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise
     , minimalChoice
     , naiveDO
     , naiveDOConst
+    , naiveDOMemo
     ) where
 
 import Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Internal

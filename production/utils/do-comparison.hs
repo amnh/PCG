@@ -9,6 +9,7 @@ import           Data.Alphabet.IUPAC
 import qualified Data.Bimap         as BM
 import qualified Data.List.NonEmpty as NE
 import           Data.Semigroup
+import           Data.TCM.Memoized
 import           System.Environment        (getArgs)
 import           Test.Custom.NucleotideSequence
 import           Test.QuickCheck
@@ -39,9 +40,10 @@ counterExampleCheck :: (NucleotideSequence, NucleotideSequence) -> Bool
 counterExampleCheck (NS lhs, NS rhs) = nativeDOResult == foreignDOResult
                                     || True
   where
-    nativeDOResult  = naiveDO           lhs rhs costStructure
-    foreignDOResult = foreignPairwiseDO lhs rhs matrixValue
-    matrixValue     = generateDenseTransitionCostMatrix 5 costStructure
+    nativeDOResult  = naiveDOMemo       lhs rhs (getMedianAndCost memoMatrixValue)
+    foreignDOResult = foreignPairwiseDO lhs rhs  denseMatrixValue
+    denseMatrixValue = generateDenseTransitionCostMatrix    5 costStructure
+    memoMatrixValue  = generateMemoizedTransitionCostMatrix 5 costStructure
     costStructure i j = if i /= j then 1 else 0
 
 
@@ -55,11 +57,12 @@ performImplementationComparison lhs rhs = do
     then putStrLn "[!] Results MATCH"
     else putStrLn "[X] Results DO NOT MATCH"
   where
-    nativeMessage   = renderResult nativeDOResult
-    foreignMessage  = renderResult foreignDOResult
-    nativeDOResult  = naiveDO           char1 char2 costStructure
-    foreignDOResult = foreignPairwiseDO char1 char2 matrixValue
-    matrixValue     = generateDenseTransitionCostMatrix 5 costStructure
+    nativeMessage    = renderResult nativeDOResult
+    foreignMessage   = renderResult foreignDOResult
+    nativeDOResult   = naiveDOMemo       char1 char2 (getMedianAndCost memoMatrixValue)
+    foreignDOResult  = foreignPairwiseDO char1 char2  denseMatrixValue
+    denseMatrixValue = generateDenseTransitionCostMatrix    5 costStructure
+    memoMatrixValue  = generateMemoizedTransitionCostMatrix 5 costStructure
     char1 = readSequence lhs
     char2 = readSequence rhs
     alphabet = fromSymbols ["A","C","G","T"]

@@ -138,7 +138,7 @@ discreteMetadataFromTCM name weight alpha tcm =
     DiscreteWithTCMCharacterMetadataDec
     { symbolChangeMatrixData   = sigma
     , transitionCostMatrixData = undefined
-    , foreignPointerData       = generateMemoizedCostMatrix (toEnum $ length alpha) sigma
+    , foreignPointerData       = generateMemoizedTransitionCostMatrix (toEnum $ length alpha) sigma
     , discreteData             = discreteMetadata name (weight * coefficient) alpha
     }
   where
@@ -155,7 +155,7 @@ discreteMetadataWithTCM name weight alpha scm =
     DiscreteWithTCMCharacterMetadataDec
     { symbolChangeMatrixData   = scm
     , transitionCostMatrixData = undefined
-    , foreignPointerData       = generateMemoizedCostMatrix (toEnum $ length alpha) scm
+    , foreignPointerData       = generateMemoizedTransitionCostMatrix (toEnum $ length alpha) scm
     , discreteData             = discreteMetadata name weight alpha
     }
 

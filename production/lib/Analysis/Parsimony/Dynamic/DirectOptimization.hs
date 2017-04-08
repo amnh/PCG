@@ -26,6 +26,7 @@ module Analysis.Parsimony.Dynamic.DirectOptimization
   , generateDenseTransitionCostMatrix
   , naiveDO
   , naiveDOConst
+  , naiveDOMemo
   ) where
 
 

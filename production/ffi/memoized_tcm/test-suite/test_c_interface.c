@@ -61,7 +61,7 @@ int main() {
 
     int count = 0;
     for(size_t i = 0; i < SEQ_A_LEN; i++) {
-        foundCost = getCost(bitRepresentation( seqA_main[i]), bitRepresentation( seqB_main[i]), myMatrix, alphabetSize);
+        foundCost = getCostAndMedian(bitRepresentation( seqA_main[i]), bitRepresentation( seqB_main[i]), myMatrix, alphabetSize);
         //printf("iteration %2zu a: %llu b: %llu\n", i, seqA_main[i], seqB_main[i]);
         cost = tcm[(seqA_main[i]) * alphabetSize + (seqB_main[i])];
         printf("computed cost: %d\n", cost);
