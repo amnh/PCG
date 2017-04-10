@@ -17,6 +17,8 @@ module Bio.PhyloGraphPrime.Node
   , PhylogeneticNode2(..)
   , ResolutionCache
   , ResolutionInformation(..)
+  , addEdgeToEdgeSet
+  , singletonEdgeSet
   , singletonNewickSerialization
   , singletonSubtreeLeafSet
   ) where
@@ -27,6 +29,7 @@ import Data.BitVector
 import Data.Foldable
 import Data.List.NonEmpty (NonEmpty(..))
 import Data.Semigroup
+import Data.Set           (Set, insert, singleton)
 
 
 -- |
@@ -52,12 +55,16 @@ data  PhylogeneticNode2 s n
 -- | A collection of information used to memoize network optimizations.
 data  ResolutionInformation s
     = ResInfo
-    { leafSetRepresentation :: SubtreeLeafSet
-    , subtreeRepresentation :: NewickSerialization
-    , characterSequence     :: s
+    { totalSubtreeCost      :: Double
     , localSequenceCost     :: Double
-    , totalSubtreeCost      :: Double 
+    , leafSetRepresentation :: SubtreeLeafSet
+    , subtreeRepresentation :: NewickSerialization
+    , subtreeEdgeSet        :: EdgeSet
+    , characterSequence     :: s
     } deriving (Functor)
+
+
+type EdgeSet = Set (Int, Int)
 
 
 type ResolutionCache s = NonEmpty (ResolutionInformation s)
@@ -141,3 +148,9 @@ singletonNewickSerialization i = NS $ show i
 
 singletonSubtreeLeafSet :: Int -> Int -> SubtreeLeafSet
 singletonSubtreeLeafSet n i = LS . (`setBit` i) $ n `bitVec` (0 :: Integer)
+
+singletonEdgeSet :: (Int, Int) -> EdgeSet
+singletonEdgeSet = singleton
+
+addEdgeToEdgeSet :: (Int, Int) -> ResolutionInformation s -> ResolutionInformation s
+addEdgeToEdgeSet e r = r { subtreeEdgeSet = insert e $ subtreeEdgeSet r }
