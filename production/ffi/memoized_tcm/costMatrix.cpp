@@ -189,7 +189,7 @@ costMedian_t* CostMatrix::computeCostMedian(keys_t keys) {
         // now seemingly recreating logic in findDistance(). However, that was to get the cost for the
         // ambElem on each child; now we're combining those costs get overall cost and median
         if (curCost < minCost) {
-            printf("\nNew low cost.\n");
+            printf("\ncomputeCostMedian: New low cost.\n");
             printf("current nucleotide: %" PRIu64 " \n", *searchKey->second.element);
             printf("found cost:      %d\n", curCost);
 
@@ -236,11 +236,12 @@ int CostMatrix::findDistance (keys_t* searchKey, dcElement_t* ambElem) {
                 // do unambiguous calculation here
                 if( !isAmbiguous(ambElem->element, dcElemSize(alphabetSize)) ) {
                     unambElemIdx = 0;
-                    while( unambElemIdx < alphabetSize && !TestBit(ambElem->element, unambElemIdx) ) {
+                    while( unambElemIdx < alphabetSize && !TestBit(searchKey->second.element, unambElemIdx) ) {
                         unambElemIdx++;
                     }
 
                     curCost = tcm[pos * alphabetSize + unambElemIdx];
+                    // printf("\n--findDistance-- \n    ambElemIdx: %zu, nucleotide: %zu, cost: %d\n", unambElemIdx, pos, curCost);
                 } else {
                     printf("Something went wrong in the memoized cost matrix.\n");
                     printf("missing key: %" PRIu64 " %" PRIu64 "\n", *searchKey->first.element, *searchKey->second.element);
@@ -256,7 +257,7 @@ int CostMatrix::findDistance (keys_t* searchKey, dcElement_t* ambElem) {
             ClearBit(searchKey->first.element, pos);
         }
     }
-    printf("distance ambElem: %" PRIu64 ", nucleotide: %" PRIu64 "\n", ambElem->element[0], *searchKey->second.element);
+    printf("\n--findDistance-- \nambElem: %" PRIu64 ", nucleotide: %" PRIu64 "\n", ambElem->element[0], *searchKey->second.element);
     printf("cost: %i\n", minCost);
     return minCost;
 }
