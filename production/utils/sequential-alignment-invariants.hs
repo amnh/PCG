@@ -10,6 +10,7 @@ import           Data.Alphabet.IUPAC
 import qualified Data.Bimap         as BM
 import qualified Data.List.NonEmpty as NE
 import           Data.Semigroup
+import           Data.TCM.Memoized
 import           System.Environment       (getArgs)
 import           Test.Custom.NucleotideSequence
 import           Test.QuickCheck
@@ -31,7 +32,7 @@ parseArgs args =
 
 
 performCounterExampleSearch :: IO ()
-performCounterExampleSearch = do 
+performCounterExampleSearch = do
     putStrLn "Performing stocastic counter-example search:"
     quickCheckWith stdArgs { maxSuccess = 10000 } counterExampleCheck
 
@@ -44,7 +45,7 @@ counterExampleCheck (NS lhs, NS rhs) = lhs == filterGaps lhs'
 
 
 tcm :: MemoizedCostMatrix
-tcm = generateMemoizedCostMatrix (toEnum $ length alphabet) costStructure
+tcm = generateMemoizedTransitionCostMatrix (toEnum $ length alphabet) costStructure
   where
     costStructure i j = if i /= j then 1 else 0
 

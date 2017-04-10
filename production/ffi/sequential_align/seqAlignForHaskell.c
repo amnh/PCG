@@ -10,7 +10,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "dynamicCharacterOperations.h"
+#include "../memoized_tcm/dynamicCharacterOperations.h"
 #include "seqAlignForHaskell.h"
 
 // this and <inttypes.h> so I can use PRIu64 instead of llu
@@ -148,9 +148,9 @@ int aligner( uint64_t *inSeq1
     pathFirst[2].partialAlign_A[0] = GAP;
     pathFirst[2].partialAlign_B[0] = seqB[0];
 
-    // !! the two weights (wtSub, wtInsertDel) are the same as in pathFirst
-    // !! wtSub=getCost(seqA[0],seqB[0]);
-    // !! wtInsertDel=getCost(seqa[0], '-');
+    // !! the two costs (costSub, costInsertDel) are the same as in pathFirst
+    // !! costSub=getCost(seqA[0],seqB[0]);
+    // !! costInsertDel=getCost(seqa[0], '-');
 
     //  under \sum z_i^2 measure
 
@@ -183,12 +183,12 @@ int aligner( uint64_t *inSeq1
 
     int arrayInitial[2][6] = {
         { 10, 20, 30, 11, 21, 31 },
-        { aToB0   + 2 * aToB0   * aToB0   // gapped partial weight of pathSecond[0] (see above)
-        , aToGap0 + 2 * aToGap0 * aToGap0 // gapped partial weight of pathSecond[1]
-        , gapToB0 + 2 * gapToB0 * gapToB0 // gapped partial weight of pathSecond[2]
-        , aToB0   + 2 * aToB0   * aToB0   // gapped partial weight of pathSecond[0]
-        , aToGap0 + 2 * aToGap0 * aToGap0 // gapped partial weight of pathSecond[1]
-        , gapToB0 + 2 * gapToB0 * gapToB0 // gapped partial weight of pathSecond[2]
+        { aToB0   + 2 * aToB0   * aToB0   // gapped partial cost of pathSecond[0] (see above)
+        , aToGap0 + 2 * aToGap0 * aToGap0 // gapped partial cost of pathSecond[1]
+        , gapToB0 + 2 * gapToB0 * gapToB0 // gapped partial cost of pathSecond[2]
+        , aToB0   + 2 * aToB0   * aToB0   // gapped partial cost of pathSecond[0]
+        , aToGap0 + 2 * aToGap0 * aToGap0 // gapped partial cost of pathSecond[1]
+        , gapToB0 + 2 * gapToB0 * gapToB0 // gapped partial cost of pathSecond[2]
         }
     };
     printf("arrayInitial[0][0]: %2d\n", arrayInitial[0][0]);
@@ -698,7 +698,7 @@ int aligner( uint64_t *inSeq1
     }
     retAlign->seq2Len = i;
 
-    retAlign->weight = finalAlign.gapped_partialCost;
+    retAlign->cost = finalAlign.gapped_partialCost;
 
     // TODO: why would I need a ternary here? Shouldn't they be the same?
     retAlign->alignmentLength = (retAlign->seq1Len < retAlign->seq2Len) ? retAlign->seq1Len : retAlign->seq2Len;
@@ -718,7 +718,7 @@ int aligner( uint64_t *inSeq1
     // printf("s1    len: %zu\n", retAlign->seq1Len        );
     // printf("s2    len: %zu\n", retAlign->seq2Len        );
     // printf("align len: %zu\n", retAlign->alignmentLength);
-    // printf("cost  val: %d\n" , retAlign->weight         );
+    // printf("cost  val: %d\n" , retAlign->cost         );
 
 
     for (i = 0; i < 3; i++) {
@@ -755,22 +755,22 @@ int currentAlignmentCost(alignment_t *path, costMatrix_p tcm, size_t maxLen, siz
 {
     size_t i;
 
-    int wtTempFirst  = 0,
-        wtTempSecond = 0,
-        wtTemp,
+    int costTempFirst  = 0,
+        costTempSecond = 0,
+        costTemp,
         cost;
 
     // TODO: check that bounds checking is appropriate here
     for(i = 0; i < path->aligned_sequence_A_end_ptr && i < maxLen; i++) {
         // printf("n+7th a: %2" PRIu64 " b: %2" PRIu64 " (not indexing seqA or seqB)\n", path->partialAlign_A[i], path->partialAlign_B[i]);
         cost = getCost(path->partialAlign_A[i], path->partialAlign_B[i], tcm, alphSize);
-        wtTempFirst  += cost;
-        wtTempSecond += cost * cost;
+        costTempFirst  += cost;
+        costTempSecond += cost * cost;
     }
 
-    wtTempFirst += wtTempFirst * wtTempFirst;
+    costTempFirst += costTempFirst * costTempFirst;
 
-    return wtTempFirst + wtTempSecond;;
+    return costTempFirst + costTempSecond;;
 }
 
 void freeRetType(retType_t* toFree)

@@ -80,7 +80,7 @@ int main() {
     // printElemBits(retMedian);
     // printf("\ncost:%d\n", cost);
 
-/*
+    /**/
 
     dcElement_t* firstKey  = allocateDCElement( alphabetSize );
     dcElement_t* secondKey = allocateDCElement( alphabetSize );
@@ -101,7 +101,7 @@ int main() {
             cost = tcm[(key1 - 1) * alphabetSize + (key2 - 1)];
             SetBit(&median, key2);
 
-            foundCost = getCost(*firstKey->element, *secondKey->element, myMatrix, alphabetSize);
+            foundCost = getCostAndMedian(firstKey, secondKey, retMedian, myMatrix);
 
             if(median != *retMedian->element || cost != foundCost) {
                 printf("key 1 set: %zu\n", key1);
@@ -120,7 +120,7 @@ int main() {
         ClearBit(firstKey->element, key1);
         ClearBit(&median, key1);
     }
-*/
+/**/
     matrixDestroy(myMatrix);
  /*
     free(firstKey->element );

@@ -186,7 +186,8 @@ instance HasSparseTransitionCostMatrix (DynamicCharacterMetadataDec c) MemoizedC
 -- | (✔)
 instance HasTransitionCostMatrix (DynamicCharacterMetadataDec c) (c -> c -> (c, Word)) where
 
-    transitionCostMatrix = lens undefined undefined
+    transitionCostMatrix = lens (\e -> metadata e ^. transitionCostMatrix)
+                         $ \e x -> e { metadata = metadata e & transitionCostMatrix .~ x }
 
 
 -- |

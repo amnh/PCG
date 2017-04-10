@@ -329,6 +329,26 @@ instance Exportable DynamicChar where
     fromExportableElements = DC . exportableCharacterElementsToBitMatrix 
 
 
+instance Exportable DynamicCharacterElement where
+
+    toExportableBuffer e@(DCE bv) = ExportableCharacterSequence 1 width $ bitVectorToBufferChunks 1 width bv
+      where
+        width = symbolCount e
+          
+    fromExportableBuffer ecs = DCE newBitVec
+      where
+        newBitVec = bufferChunksToBitVector 1 elemWidth $ exportedBufferChunks ecs
+        elemWidth = ecs ^. exportedElementWidth
+
+    toExportableElements e@(DCE bv)
+      | bitsInElement > bitsInLocalWord = Nothing
+      | otherwise                       = Just $ ExportableCharacterElements 1 bitsInElement [fromIntegral bv]
+      where
+        bitsInElement   = symbolCount e
+
+    fromExportableElements = DCE . exportableCharacterElementsHeadToBitVector
+
+
 {-
 {-# INLINE unstream #-}
 unstream :: DynamicChar -> BitMatrix

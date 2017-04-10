@@ -56,12 +56,12 @@ int align2d(const alignIO_p char1,
             int getUnion);
 
 /** As align2d, but affine */
-int align2dAffine(alignIO_p char1,
-                  alignIO_p char2,
-                  alignIO_p gappedOutputSeq,
-                  alignIO_p ungappedOutputSeq,
+int align2dAffine(const alignIO_p char1,
+                  const alignIO_p char2,
+                  const alignIO_p gappedOutputSeq,
+                  const alignIO_p ungappedOutputSeq,
                   // alignIO_p unionOutputSeq,
-                  cost_matrices_2d_p costMtx2d,
+                  const cost_matrices_2d_p costMtx2d,
                   int doMedians);
 
 /** Aligns three characters using non-affine algorithm.

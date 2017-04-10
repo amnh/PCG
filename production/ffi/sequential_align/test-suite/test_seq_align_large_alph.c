@@ -13,6 +13,7 @@
 #include "../dynamicCharacterOperations.h"
 //#include "../seqAlignForHaskell.h"
 #include "../seqAlignInterface.h"
+#include "../seqAlignOutputTypes.h"
 
 #define __STDC_FORMAT_MACROS
 

@@ -9,6 +9,7 @@ import           Data.Alphabet.IUPAC
 import qualified Data.Bimap         as BM
 import qualified Data.List.NonEmpty as NE
 import           Data.Semigroup
+import           Data.TCM.Memoized
 import           System.Environment        (getArgs)
 import           Test.Custom.NucleotideSequence
 import           Test.QuickCheck
@@ -38,10 +39,8 @@ performCounterExampleSearch = do
 counterExampleCheck :: (NucleotideSequence, NucleotideSequence) -> Bool
 counterExampleCheck (NS lhs, NS rhs) = nativeDOResult == foreignDOResult
   where
-    nativeDOResult  = naiveDO           lhs rhs costStructure
-    foreignDOResult = foreignPairwiseDO lhs rhs matrixValue
-    matrixValue     = generateDenseTransitionCostMatrix 5 costStructure
-    costStructure i j = if i /= j then 1 else 0
+    nativeDOResult  = naiveDOMemo       lhs rhs (getMedianAndCost memoMatrixValue)
+    foreignDOResult = foreignPairwiseDO lhs rhs  denseMatrixValue
 
 
 performImplementationComparison :: String -> String -> IO ()
@@ -54,15 +53,13 @@ performImplementationComparison lhs rhs = do
     then putStrLn "[!] Results MATCH"
     else putStrLn "[X] Results DO NOT MATCH"
   where
-    nativeMessage   = renderResult nativeDOResult
-    foreignMessage  = renderResult foreignDOResult
-    nativeDOResult  = naiveDO           char1 char2 costStructure
-    foreignDOResult = foreignPairwiseDO char1 char2 matrixValue
-    matrixValue     = generateDenseTransitionCostMatrix 5 costStructure
+    nativeMessage    = renderResult nativeDOResult
+    foreignMessage   = renderResult foreignDOResult
+    nativeDOResult   = naiveDOMemo       char1 char2 (getMedianAndCost memoMatrixValue)
+    foreignDOResult  = foreignPairwiseDO char1 char2  denseMatrixValue
     char1 = readSequence lhs
     char2 = readSequence rhs
     alphabet = fromSymbols ["A","C","G","T"]
-    costStructure i j = if i /= j then 1 else 0
     readSequence :: String -> DynamicChar
     readSequence = encodeStream alphabet . fmap ((iupacToDna BM.!) . pure . pure) . NE.fromList
     renderResult (w, c, x, y, z) = unlines
@@ -72,3 +69,16 @@ performImplementationComparison lhs rhs = do
         , "LHS   alignment: " <> showStream alphabet y
         , "RHS   alignment: " <> showStream alphabet z
         ]
+
+
+costStructure :: (Ord a, Num a) => a -> a -> a
+--costStructure i j = if i /= j then 1 else 0
+costStructure i j = max i j - min i j
+
+
+denseMatrixValue :: DenseTransitionCostMatrix
+denseMatrixValue = generateDenseTransitionCostMatrix    5 costStructure
+
+
+memoMatrixValue :: MemoizedCostMatrix
+memoMatrixValue  = generateMemoizedTransitionCostMatrix 5 costStructure

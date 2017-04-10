@@ -35,7 +35,7 @@ flag build-cpp-files
   description: Toggles the C++ files being successfully build.
   default: True
 
-                     
+
 library
   -- LANGUAGE extensions used by modules in this package.
   other-extensions:    FlexibleContexts, BangPatterns, DeriveGeneric
@@ -126,16 +126,17 @@ library
     ffi/external_direct_optimization/seqAlign.c
     ffi/external_direct_optimization/ukkCheckp.c
     ffi/external_direct_optimization/ukkCommon.c
-    ffi/sequential_align/dynamicCharacterOperations.h
-    ffi/sequential_align/dynamicCharacterOperations.c
-    ffi/sequential_align/costMatrix.h
-    ffi/sequential_align/costMatrix.cpp
-    ffi/sequential_align/costMatrixWrapper.h
-    ffi/sequential_align/costMatrixWrapper.c
-    ffi/sequential_align/seqAlignInterface.h
+    -- ffi/memoized_tcm/dynamicCharacterOperations.h
+    ffi/memoized_tcm/dynamicCharacterOperations.c
+    -- ffi/memoized_tcm/costMatrix.h
+    ffi/memoized_tcm/costMatrix.cpp
+    -- ffi/memoized_tcm/costMatrixWrapper.h
+    ffi/memoized_tcm/costMatrixWrapper.c
+    -- ffi/sequential_align/seqAlignInterface.h
     ffi/sequential_align/seqAlignInterface.c
-    ffi/sequential_align/seqAlignForHaskell.h
+    -- ffi/sequential_align/seqAlignForHaskell.h
     ffi/sequential_align/seqAlignForHaskell.c
+    -- ffi/sequential_align/seqAlignOutputTypes.h
 
 
   -- Here we list all directories that contain C header files that the FFI tools will need
@@ -146,6 +147,7 @@ library
   -- The preprocesser will not recursively look in subdirectories for C header files!
   include-dirs:
     ffi/external_direct_optimization
+    ffi/memoized_tcm
     ffi/sequential_align
 
   -- Modules exported by the library.
@@ -220,6 +222,7 @@ library
                        Data.Hashable.Memoize
                        Data.ReplicatedSequence
                        Data.TCM
+                       Data.TCM.Memoized
                        File.Format.Fasta
                        File.Format.Fastc
                        File.Format.Newick
@@ -236,7 +239,7 @@ library
                        Text.Megaparsec.Custom
                        Test.Custom.NucleotideSequence
                        Test.Custom.DynamicCharacterNode
-        
+
   -- Modules included in this library but not exported.
   other-modules:
                     --   Analysis.ImpliedAlignment.AlignmentContext
@@ -318,6 +321,7 @@ library
                        Data.ExtendedReal
                        Data.Range
                        Data.TCM.Internal
+                       Data.TCM.Memoized.FFI
                        File.Format.TNT.Command.CCode
                        File.Format.TNT.Command.CNames
                        File.Format.TNT.Command.Cost
@@ -658,8 +662,8 @@ executable three-way-mean-check
                        -fwarn-unused-matches
 
   hs-source-dirs:      utils
-                       
-  
+
+
 Test-Suite testsuite
   type:                exitcode-stdio-1.0
 

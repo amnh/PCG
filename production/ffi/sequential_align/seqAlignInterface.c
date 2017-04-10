@@ -3,10 +3,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "costMatrixWrapper.h"
-#include "dynamicCharacterOperations.h"
+#include "../memoized_tcm/costMatrixWrapper.h"
+#include "../memoized_tcm/dynamicCharacterOperations.h"
 #include "seqAlignForHaskell.h"
 #include "seqAlignInterface.h"
+#include "seqAlignOutputTypes.h"
 
 #define __STDC_FORMAT_MACROS
 
@@ -32,26 +33,14 @@ int performSequentialAlignment(dynChar_t *seqA, dynChar_t *seqB, costMatrix_p co
 
     int success              = aligner(seqA_main, seqA->numElems, seqB_main, seqB->numElems, alphSize, costMatrix, retAlign);
 
-    size_t finalBufferLength = retAlign->alignmentLength * dcElemSize(alphSize);
+    // size_t finalBufferLength = retAlign->alignmentLength * dcElemSize(alphSize);
 
-    // TODO: wrong types, not dyn char, need just the buffers
     result->finalChar1  = intArrToBitArr (alphSize, retAlign->alignmentLength, retAlign->seq1);
-    //result->finalChar1  = makeDynamicChar(alphSize, retAlign->alignmentLength, retAlign->seq1);
-
     result->finalChar2  = intArrToBitArr (alphSize, retAlign->alignmentLength, retAlign->seq2);
-    //result->finalChar2  = makeDynamicChar(alphSize, retAlign->alignmentLength, retAlign->seq2);
-
-    //printf("Char 1 result construction:\n");
-    //printDynChar(result->finalChar1);
-    //printf("Char 2 result construction:\n");
-    //printDynChar(result->finalChar2);
-
-    //    result->medianChar  = malloc(sizeof(dynChar_t));
-    //result->medianChar  = malloc(sizeof(dynChar_t));
 
     result->medianChar  = getMedian(retAlign->seq1, retAlign->seq2, retAlign->alignmentLength, alphSize, costMatrix);
 
-    result->finalWt     = retAlign->weight;
+    result->finalCost   = retAlign->cost;
     result->finalLength = retAlign->alignmentLength;
 
     //printf("Median result construction:\n");
@@ -59,10 +48,10 @@ int performSequentialAlignment(dynChar_t *seqA, dynChar_t *seqB, costMatrix_p co
 
     // freeRetType(retAlign); NO! It's pointers all the way down!
 
-    return 0;//success;
+    return success;
 }
 
-packedChar *getMedian(const packedChar * const lhs, const packedChar * const rhs, const size_t length, const size_t alphSize, costMatrix_p costMatrix)
+packedChar *getMedian(const packedChar *const lhs, const packedChar *const rhs, const size_t length, const size_t alphSize, costMatrix_p costMatrix)
 {
     dcElement_t *median = malloc(sizeof(dcElement_t));
     median->alphSize    = alphSize;

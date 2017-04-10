@@ -20,12 +20,14 @@
 {-# LANGUAGE FlexibleContexts #-}
 
 module Analysis.Parsimony.Dynamic.DirectOptimization
-  ( directOptimizationPreOrder
+  ( DenseTransitionCostMatrix
+  , directOptimizationPreOrder
   , directOptimizationPostOrder
   , foreignPairwiseDO
   , generateDenseTransitionCostMatrix
   , naiveDO
   , naiveDOConst
+  , naiveDOMemo
   ) where
 
 

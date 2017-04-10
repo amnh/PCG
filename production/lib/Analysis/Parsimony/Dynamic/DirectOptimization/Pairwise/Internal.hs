@@ -95,6 +95,14 @@ naiveDOConst :: DOCharConstraint s => s -> s -> (Word -> Word -> Word) -> (s, Do
 naiveDOConst char1 char2 _ = handleMissingCharacter char1 char2 $ naiveDOInternal char1 char2 overlapConst
 
 
+naiveDOMemo :: DOCharConstraint s
+            => s
+            -> s
+            -> OverlapFunction (Element s)
+            -> (s, Double, s, s, s)
+naiveDOMemo char1 char2 tcm = handleMissingCharacter char1 char2 $ naiveDOInternal char1 char2 tcm
+
+
 -- | Wrapper function to do an enhanced Needleman-Wunsch algorithm.
 -- Calls naiveDO, but only returns the last two fields (gapped alignments of inputs)
 doAlignment :: DOCharConstraint s => s -> s -> (Word -> Word -> Word) -> (s, s)
@@ -303,6 +311,7 @@ overlap costStruct char1 char2
     | otherwise                      = (intersectionStates, 0)
     where
       intersectionStates = char1 .&. char2
+
 
 -- |
 -- Given a structure of character elements and costs, calculates the least

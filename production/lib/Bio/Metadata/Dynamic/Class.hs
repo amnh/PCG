@@ -27,11 +27,11 @@ module Bio.Metadata.Dynamic.Class
 
 --import Bio.Character.Encodable
 import Analysis.Parsimony.Dynamic.DirectOptimization.FFI (DenseTransitionCostMatrix)
-import Analysis.Parsimony.Dynamic.SequentialAlign.FFI    (MemoizedCostMatrix)
 import Bio.Metadata.General
 import Bio.Metadata.Discrete
 import Bio.Metadata.DiscreteWithTCM
 import Control.Lens
+import Data.TCM.Memoized
 
 
 -- |

@@ -8,29 +8,24 @@
 -- Stability   :  provisional
 -- Portability :  portable
 --
--- Module exposing an alignment optimization from Yu Xiang's research at Harvard.
+-- Module exposing a sequential alignment optimization.
 -----------------------------------------------------------------------------
 {-# LANGUAGE ConstraintKinds #-}
 {-# LANGUAGE AllowAmbiguousTypes #-}
 {-# LANGUAGE FlexibleContexts #-}
 
 module Analysis.Parsimony.Dynamic.SequentialAlign
-  ( FFI.MemoizedCostMatrix
-  , generateMemoizedCostMatrix
-  , sequentialAlign
+  ( sequentialAlign
   ) where
 
 import qualified Analysis.Parsimony.Dynamic.SequentialAlign.FFI as FFI
 import           Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Internal (handleMissingCharacter)
 import           Bio.Character.Encodable
 import           Bio.Character.Exportable.Class
+import           Data.TCM.Memoized
 
 
 -- |
 -- sequentialAlign is similar to DO, but uses Yu's and Vahid's information theoretical sequential alignment algorithm to produce the alignment
-sequentialAlign :: (EncodableDynamicCharacter s, Exportable s, Show s) => FFI.MemoizedCostMatrix -> s -> s -> (s, Double, s, s, s)
+sequentialAlign :: (EncodableDynamicCharacter s, Exportable s, Show s) => MemoizedCostMatrix -> s -> s -> (s, Double, s, s, s)
 sequentialAlign matrix lhs rhs = handleMissingCharacter lhs rhs $ FFI.pairwiseSequentialAlignment matrix lhs rhs
-
--- TODO: put this in Bio.Metadata probably
-generateMemoizedCostMatrix :: Word -> (Word -> Word -> Word) -> FFI.MemoizedCostMatrix
-generateMemoizedCostMatrix = FFI.getMemoizedCostMatrix
