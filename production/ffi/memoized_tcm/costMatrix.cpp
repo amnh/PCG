@@ -232,7 +232,7 @@ int CostMatrix::findDistance (keys_t* searchKey, dcElement_t* ambElem) {
             found = myMatrix.find(*searchKey);
             if ( found == myMatrix.end() ) {
                 // do unambiguous calculation here
-                if( !isAmbiguous(ambElem->element, alphabetSize) ) {
+                if( !isAmbiguous(ambElem->element, dcElemSize(alphabetSize)) ) {
                     ambElemIdx = 0;
 
                     while( ambElemIdx < alphabetSize && TestBit(ambElem->element, ambElemIdx) ) {
