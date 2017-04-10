@@ -236,7 +236,6 @@ int CostMatrix::findDistance (keys_t* searchKey, dcElement_t* ambElem) {
                 // do unambiguous calculation here
                 if( !isAmbiguous(ambElem->element, dcElemSize(alphabetSize)) ) {
                     unambElemIdx = 0;
-
                     while( unambElemIdx < alphabetSize && !TestBit(searchKey->second.element, unambElemIdx) ) {
                         unambElemIdx++;
                     }

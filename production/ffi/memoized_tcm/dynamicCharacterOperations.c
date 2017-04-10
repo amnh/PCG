@@ -88,6 +88,7 @@ void ClearAll( packedChar *const arr, const size_t packedCharLen) {
 int isAmbiguous( packedChar *const arr, const size_t packedCharLen )
 {
     int count = 0;
+    // short-circuit if count > 1
     for (size_t i = 0; i < packedCharLen && count <= 1; i++) {
         count += __builtin_popcount(arr[i]);
     }
