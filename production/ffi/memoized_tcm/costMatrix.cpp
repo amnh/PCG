@@ -69,7 +69,9 @@ mapAccessPair_t* allocateMapAccessPair (size_t alphSize) {
 
 CostMatrix::CostMatrix(size_t alphSize, int* inTcm) {
     alphabetSize = alphSize;
-    memcpy(tcm, inTcm, alphabetSize * alphabetSize * sizeof(int));
+    size_t space = alphabetSize * alphabetSize * sizeof(int);
+    tcm = (int*) malloc(space);
+    memcpy(tcm, inTcm, space);
     initializeMatrix();
 }
 
@@ -224,7 +226,7 @@ int CostMatrix::findDistance (keys_t* searchKey, dcElement_t* ambElem) {
     mapIterator found;
     int    minCost = INT_MAX;
     int    curCost;
-    size_t ambElemIdx;
+    size_t unambElemIdx;
 
     for (size_t pos = 0; pos < alphabetSize; pos++) {
         if ( TestBit(ambElem->element, pos) ) {
@@ -233,19 +235,19 @@ int CostMatrix::findDistance (keys_t* searchKey, dcElement_t* ambElem) {
             if ( found == myMatrix.end() ) {
                 // do unambiguous calculation here
                 if( !isAmbiguous(ambElem->element, dcElemSize(alphabetSize)) ) {
-                    ambElemIdx = 0;
-
-                    while( ambElemIdx < alphabetSize && TestBit(ambElem->element, ambElemIdx) ) {
-                        ambElemIdx++;
+                    unambElemIdx = 0;
+                    while( unambElemIdx < alphabetSize && !TestBit(ambElem->element, unambElemIdx) ) {
+                        unambElemIdx++;
                     }
 
-                    curCost = tcm[pos * alphabetSize + ambElemIdx];
+                    curCost = tcm[pos * alphabetSize + unambElemIdx];
                 } else {
                     printf("Something went wrong in the memoized cost matrix.\n");
                     printf("missing key: %" PRIu64 " %" PRIu64 "\n", *searchKey->first.element, *searchKey->second.element);
                     exit(1);
                 }
             } else {
+	    // We found the memoized cost for the elements in the TCM.
                 curCost = found->second.first;
             }
             if (curCost < minCost) {
