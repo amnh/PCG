@@ -17,7 +17,7 @@
 module Bio.PhyloGraphPrime.PhylogeneticDAG where
 
 import           Bio.Character
-import           Bio.Character.Encodable.Continuous
+--import           Bio.Character.Encodable.Continuous
 import           Bio.Character.Decoration.Additive
 import           Bio.Character.Decoration.Continuous
 import           Bio.Character.Decoration.Discrete
@@ -329,7 +329,7 @@ postorderSequence' f1 f2 f3 f4 f5 f6 (PDAG2 dag) = PDAG2 $ newDAG dag
       where
         h i =
           PNode2
-              { resolutions          = liftA2 (generateLocalResolutions f1 f2 f3 f4 f5 f6) datumResolutions childResolutions
+              { resolutions          = liftA2 (generateLocalResolutions f1 f2 f3 f4 f5 f6') datumResolutions childResolutions
               , nodeDecorationDatum2 = nodeDecorationDatum2 $ nodeDecoration node
               }
           where
@@ -339,18 +339,31 @@ postorderSequence' f1 f2 f3 f4 f5 f6 (PDAG2 dag) = PDAG2 $ newDAG dag
             
 --            childResolutions :: NonEmpty [a]
             childResolutions = applySoftwireResolutions $ extractResolutionContext <$> childIndices
-            extractResolutionContext = resolutions . (memo !) &&& parentRefs . (references dag !)
+            extractResolutionContext = getResolutions &&& parentRefs . (references dag !)
+            getResolutions j = fmap (addEdgeToEdgeSet (i,j)) . resolutions $ memo ! j
 
-            --        g :: ResolutionInformation s -> [ResolutionInformation s] -> ResolutionInformation s
+
+generateLocalResolutions :: (u -> [u'] -> u'')
+                         -> (v -> [v'] -> v'')
+                         -> (w -> [w'] -> w'')
+                         -> (x -> [x'] -> x'')
+                         -> (y -> [y'] -> y'')
+                         -> (z -> [z'] -> z'')
+                         ->  ResolutionInformation (CharacterSequence u   v   w   x   y   z  )
+                         -> [ResolutionInformation (CharacterSequence u'  v'  w'  x'  y'  z' )]
+                         ->  ResolutionInformation (CharacterSequence u'' v'' w'' x'' y'' z'')
 generateLocalResolutions f1 f2 f3 f4 f5 f6 parentalResolutionContext childResolutionContext =
                 ResInfo
-                { leafSetRepresentation = newLeafSetRep
+                { totalSubtreeCost      = sum $ totalSubtreeCost  <$> childResolutionContext
+                , localSequenceCost     = sum $ localSequenceCost <$> childResolutionContext
+                , subtreeEdgeSet        = newSubtreeEdgeSet
+                , leafSetRepresentation = newLeafSetRep
                 , subtreeRepresentation = newSubtreeRep
                 , characterSequence     = transformation (characterSequence parentalResolutionContext) (characterSequence <$> childResolutionContext)
-                , localSequenceCost     = sum $ localSequenceCost <$> childResolutionContext
-                , totalSubtreeCost      = sum $ totalSubtreeCost  <$> childResolutionContext
                 }
               where
+                newSubtreeEdgeSet = foldMap subtreeEdgeSet childResolutionContext
+
                 (newLeafSetRep, newSubtreeRep) =
                     case childResolutionContext of
                       []   -> (,) <$>          leafSetRepresentation <*>          subtreeRepresentation $ parentalResolutionContext
@@ -363,9 +376,6 @@ generateLocalResolutions f1 f2 f3 f4 f5 f6 parentalResolutionContext childResolu
                           x:xs -> hexTranspose $ x:|xs
                           []   -> let c = const []
                                   in hexmap c c c c c c pSeq
-
-
-
 
 
 applySoftwireResolutions :: [(ResolutionCache s, IntSet)] -> NonEmpty [ResolutionInformation s]
@@ -394,7 +404,6 @@ applySoftwireResolutions inputContexts =
 -}
     pairingLogic (lhs, rhs) =
         case (multipleParents lhs, multipleParents rhs) of
-          -- The Nothing cases *should* never happen, but best to handle them anyways
           (False, False) -> pairedSet
           (False, True ) -> pairedSet <> rhsSet
           (True , False) -> pairedSet <> lhsSet
@@ -729,7 +738,7 @@ assignOptimalDynamicCharacterRootEdges extensionTransformation (PDAG2 inputDag) 
         f i =
           case IM.keys . childRefs $ refVec ! i of
             []    -> []
-            [x]   -> []
+            [_]   -> []
             x:y:_ -> [(x,y)]
 
     refVec = references inputDag
@@ -809,12 +818,12 @@ assignOptimalDynamicCharacterRootEdges extensionTransformation (PDAG2 inputDag) 
           where
             g i = result
               where
-                result@(minimumEdge, minimumCost) = fromJust $ foldlWithKey h Nothing edgeIndexCostMapping
+                result@(_minimumEdge, _minimumCost) = fromJust $ foldlWithKey h Nothing edgeIndexCostMapping
                 edgeIndexCostMapping = fmap (fmap ((^. characterCost) . (! i) . dynamicCharacters . (! k) . toBlocks . characterSequence)) edgeCostMapping
                 h acc e cs =
                     case acc of
                       Nothing      -> Just (e, c)
-                      Just (e',c') ->
+                      Just (_e', c') ->
                         if   c < c'
                         then Just (e, c)
                         else acc
@@ -844,6 +853,10 @@ assignOptimalDynamicCharacterRootEdges extensionTransformation (PDAG2 inputDag) 
                                                  & traversalLocus .~ (Just edgeVal)
         
 
+localResolutionApplication :: (d -> [d] -> d')
+                           -> NonEmpty (ResolutionInformation (CharacterSequence u v w x y d))
+                           -> ResolutionCache (CharacterSequence u v w x y d)
+                           -> NonEmpty (ResolutionInformation (CharacterSequence u v w x y d'))
 localResolutionApplication f x y =
     liftA2 (generateLocalResolutions id2 id2 id2 id2 id2 f) mutalatedChild relativeChildResolutions
   where
@@ -851,17 +864,16 @@ localResolutionApplication f x y =
       [ (x, IS.singleton 0)
       , (y, IS.singleton 0)
       ]
-    id2 x _ = x
+    id2 z _ = z
     mutalatedChild = pure
         ResInfo
-        { leafSetRepresentation = zeroBits
+        { totalSubtreeCost      = 0
+        , localSequenceCost     = 0
+        , subtreeEdgeSet        = mempty
+        , leafSetRepresentation = zeroBits
         , subtreeRepresentation = singletonNewickSerialization 0
         , characterSequence     = characterSequence $ NE.head x
-        , localSequenceCost     = 0
-        , totalSubtreeCost      = 0
         }
   
 
 {--}
-
-
