@@ -117,7 +117,7 @@ uint64_t TestBit( const packedChar *const arr, const size_t k );
 /** Clear entire packed character: all bits set to 0;
  *  packedCharLen is pre-computed dynCharSize()
  */
-void ClearAll( packedChar *const arr, const size_t packedCharLen);
+void ClearAll( packedChar *const arr, const size_t packedCharLen );
 
 /** Returns size_t holding length a uint64_t array needs to be to hold numElems packed dynamic characters.
  *  Note that this is different from numElems * dcElemSize.
@@ -132,6 +132,9 @@ void freeDynChar( dynChar_t *p );
 
 /** const because I needed it to be const when I free keys_t in CostMatrix.cpp. */
 void freeDCElem( const dcElement_t *p );
+
+/** Loops over bit array representing character elements and determines whether character is ambiguous */
+int isAmbiguous( packedChar *const arr, const size_t packedCharLen );
 
 /** functions to interact directly with DCElements */
 

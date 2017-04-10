@@ -85,6 +85,15 @@ void ClearAll( packedChar *const arr, const size_t packedCharLen) {
     }
 }
 
+int isAmbiguous( packedChar *const arr, const size_t packedCharLen )
+{
+    int count = 0;
+    for (size_t i = 0; i < packedCharLen && count <= 1; i++) {
+        count += __builtin_popcount(arr[i]);
+    }
+    return count == 1;
+}
+
 size_t dynCharSize(size_t alphSize, size_t numElems) {
     size_t totalBits = numElems * alphSize;
     return (totalBits / WORD_WIDTH) + ((totalBits % WORD_WIDTH) ? 1 : 0);

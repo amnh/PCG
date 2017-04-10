@@ -13,7 +13,7 @@ int main() {
     const size_t tcmLen       = 25;
     const size_t alphabetSize = 5;
 
-    int tcm [tcmLen] = {0,1,1,1,2, 1,0,1,1,2, 1,1,0,1,2, 1,1,1,0,2, 2,2,2,2,0};
+    int tcm [tcmLen] = {0,1,2,3,4, 1,0,1,2,3, 2,1,0,1,2, 3,2,1,0,1, 4,3,2,1,0};
     if ( tcmLen != alphabetSize * alphabetSize ) {
         printf("tcm wrong size\n");
         exit(1);
@@ -69,9 +69,9 @@ int main() {
                 printf("found cost:    %d\n", foundCost);
                 exit(1);
             }
-            // else {
-            //     printf("Unambiguous success! key1: %zu, key2: %zu, cost: %i, median: %" PRIu64 " \n", key1, key2, cost, median);
-            // }
+            else {
+                printf("Unambiguous success! key1: %zu, key2: %zu, cost: %i, median: %" PRIu64 " \n", key1, key2, cost, median);
+            }
             if(key2 != key1) ClearBit(&median, key2); // the key1 bit needs to persist on the median
             ClearBit(secondKey->element, key2);
         } // key2
