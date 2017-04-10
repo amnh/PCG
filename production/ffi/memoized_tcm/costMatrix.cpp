@@ -116,8 +116,10 @@ int CostMatrix::getSetCostMedian(dcElement_t* left, dcElement_t* right, dcElemen
     mapIterator found;
     int foundCost;
 
-    printf("1st: {%zu}: %" PRIu64 "\n", toLookup->first.alphSize , *toLookup->first.element ), fflush(stdout);
-    printf("2nd: {%zu}: %" PRIu64 "\n", toLookup->second.alphSize, *toLookup->second.element), fflush(stdout);
+    if(DEBUG) {
+        printf("1st: {%zu}: %" PRIu64 "\n", toLookup->first.alphSize , *toLookup->first.element ), fflush(stdout);
+        printf("2nd: {%zu}: %" PRIu64 "\n", toLookup->second.alphSize, *toLookup->second.element), fflush(stdout);
+    }
 
     found = myMatrix.find(*toLookup);
 
@@ -155,32 +157,27 @@ int CostMatrix::getSetCostMedian(dcElement_t* left, dcElement_t* right, dcElemen
 }
 
 costMedian_t* CostMatrix::computeCostMedian(keys_t keys) {
-    int curCost;
-    int minCost = INT_MAX;
-    size_t elemArrLen = dcElemSize(alphabetSize);
+    int curCost, minCost;
 
-    packedChar* median = (packedChar*) calloc( elemArrLen, sizeof(uint64_t) );
-
-    dcElement_t*  firstKey         = &keys.first;
-    dcElement_t*  secondKey        = &keys.second;
-    // dcElement_t*  singleNucleotide = (dcElement_t*) malloc(sizeof(dcElement_t));
-    packedChar*   curMedian        = (packedChar*) calloc(elemArrLen, INT_WIDTH);  // don't free, it's going into toReturn
-    costMedian_t* toReturn         = (costMedian_t*) malloc(sizeof(costMedian_t)); // array is alloc'ed above
-
-    keys_t* searchKey              = allocKeys_t(alphabetSize);
+    size_t        elemArrLen = dcElemSize(alphabetSize);
+    packedChar*   median     = (packedChar*) calloc( elemArrLen, sizeof(uint64_t) );
+    dcElement_t*  firstKey   = &keys.first;
+    dcElement_t*  secondKey  = &keys.second;
+    packedChar*   curMedian  = (packedChar*  ) calloc(elemArrLen, INT_WIDTH);  // don't free, it's going into toReturn
+    costMedian_t* toReturn   = (costMedian_t*) malloc(sizeof(costMedian_t)); // array is alloc'ed above
+    keys_t*       searchKey  = allocKeys_t(alphabetSize);
 
     dcElement_t* singleNucleotide = &searchKey->second;
 
     if(DEBUG) {
         for ( auto& thing: myMatrix ) {
-            printf("%2llu %2llu\n", thing.first.first.element[0], thing.first.second.element[0]);
+            printf("%" PRIu64 " %" PRIu64 "\n", thing.first.first.element[0], thing.first.second.element[0]);
             printElemBits(&thing.first.first);
             printElemBits(&thing.first.second);
         }
     }
 
-
-    curCost  = INT_MAX;
+    curCost = minCost = INT_MAX;
     for (size_t curNucleotideIdx = 0; curNucleotideIdx < alphabetSize; ++curNucleotideIdx) {
         SetBit(singleNucleotide->element, curNucleotideIdx);
         curCost = findDistance(searchKey, firstKey)
@@ -189,22 +186,24 @@ costMedian_t* CostMatrix::computeCostMedian(keys_t keys) {
         // now seemingly recreating logic in findDistance(). However, that was to get the cost for the
         // ambElem on each child; now we're combining those costs get overall cost and median
         if (curCost < minCost) {
-            printf("\ncomputeCostMedian: New low cost.\n");
-            printf("current nucleotide: %" PRIu64 " \n", *searchKey->second.element);
-            printf("found cost:      %d\n", curCost);
-
+            /*
+            printf("\n--computeCostMedian: New low cost.\n");
+            printf("    current nucleotide: %" PRIu64 " \n", *searchKey->second.element);
+            printf("    found cost:      %d\n", curCost);
+          */
             minCost = curCost;
             ClearAll(curMedian, elemArrLen);
             SetBit(curMedian, curNucleotideIdx);
         } else if (curCost == minCost) {
+      /*
             printf("\nSame cost, new median.\n");
             printf("current nucleotide: %" PRIu64 " \n", *searchKey->second.element);
             printf("median: %" PRIu64 "\n", *curMedian);
             printf("found cost:      %d\n", curCost);
-
+      */
             SetBit(curMedian, curNucleotideIdx);
 
-            printf("new median: %" PRIu64 "\n", *curMedian);
+            // printf("new median: %" PRIu64 "\n", *curMedian);
         }
         ClearBit(singleNucleotide->element, curNucleotideIdx);
     } // curNucleotideIdx
@@ -224,9 +223,10 @@ costMedian_t* CostMatrix::computeCostMedian(keys_t keys) {
  */
 int CostMatrix::findDistance (keys_t* searchKey, dcElement_t* ambElem) {
     mapIterator found;
-    int    minCost = INT_MAX;
-    int    curCost;
+    int    minCost, curCost;
     size_t unambElemIdx;
+
+    curCost = minCost = INT_MAX;
 
     for (size_t pos = 0; pos < alphabetSize; pos++) {
         if ( TestBit(ambElem->element, pos) ) {
@@ -239,7 +239,6 @@ int CostMatrix::findDistance (keys_t* searchKey, dcElement_t* ambElem) {
                     while( unambElemIdx < alphabetSize && !TestBit(searchKey->second.element, unambElemIdx) ) {
                         unambElemIdx++;
                     }
-
                     curCost = tcm[pos * alphabetSize + unambElemIdx];
                     // printf("\n--findDistance-- \n    ambElemIdx: %zu, nucleotide: %zu, cost: %d\n", unambElemIdx, pos, curCost);
                 } else {
@@ -257,8 +256,12 @@ int CostMatrix::findDistance (keys_t* searchKey, dcElement_t* ambElem) {
             ClearBit(searchKey->first.element, pos);
         }
     }
-    printf("\n--findDistance-- \nambElem: %" PRIu64 ", nucleotide: %" PRIu64 "\n", ambElem->element[0], *searchKey->second.element);
-    printf("cost: %i\n", minCost);
+
+    if (DEBUG) {
+        printf("distance ambElem: %" PRIu64 ", nucleotide: %" PRIu64 "\n", ambElem->element[0], *searchKey->second.element);
+        printf("cost: %i\n", minCost);
+    }
+
     return minCost;
 }
 
