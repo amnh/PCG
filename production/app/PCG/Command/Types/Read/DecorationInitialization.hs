@@ -122,7 +122,7 @@ chooseDirectOptimizationComparison dec decs =
               in \x y -> naiveDO x y scm
 
 
-{-
+{--}
 --initializeDecorations2 :: CharacterResult -> PhylogeneticSolution InitialDecorationDAG
 initializeDecorations2 (PhylogeneticSolution forests) = PhylogeneticSolution $ fmap performDecoration <$> forests
   where
@@ -131,7 +131,7 @@ initializeDecorations2 (PhylogeneticSolution forests) = PhylogeneticSolution $ f
       postorderSequence'
         (g  sankoffPostOrder)
         (g  sankoffPostOrder)
-        id2
+        (g additivePostOrder)
         (g    fitchPostOrder)
         (g additivePostOrder)
         (g adaptiveDirectOptimizationPostOrder)
@@ -140,16 +140,15 @@ initializeDecorations2 (PhylogeneticSolution forests) = PhylogeneticSolution $ f
         g h (Just  v) [] = h v []
         g h        e  xs = h (error $ "We shouldn't be using this value." ++ show e ++ show (length xs)) xs
 
-        id2 x _ = x
-        dynamicScoring  = directOptimizationPostOrder (\x y -> naiveDOConst x y undefined)
+--        id2 x _ = x
+        -- dynamicScoring  = directOptimizationPostOrder (\x y -> naiveDOConst x y undefined)
         -- Because of monomophism BS
         dynamicScoring2 = directOptimizationPostOrder (\x y -> naiveDOConst x y undefined)
-{--
-        adaptiveDirectOptimizationPostOrder _ _ | trace "DO call" False = undefined
+{--}
         adaptiveDirectOptimizationPostOrder dec kidDecs = directOptimizationPostOrder pairwiseAlignmentFunction dec kidDecs
           where
             pairwiseAlignmentFunction = chooseDirectOptimizationComparison dec kidDecs
---}
+{--}
 
 
 {-
@@ -165,8 +164,8 @@ initializeDecorations2 (PhylogeneticSolution forests) = PhylogeneticSolution $ f
           , sequenceDecoration  = preOrderLogic (sequenceDecoration parentalNode) (second sequenceDecoration <$> childNodes)
           }
 -}
--}
 {--}
+{--
 initializeDecorations :: CharacterResult -> PhylogeneticSolution InitialDecorationDAG
 initializeDecorations (PhylogeneticSolution forests) = PhylogeneticSolution $ fmap performDecoration <$> forests
   where
@@ -292,6 +291,6 @@ initializeDecorations (PhylogeneticSolution forests) = PhylogeneticSolution $ fm
           where
             pairwiseAlignmentFunction = chooseDirectOptimizationComparison dec $ snd <$> kidDecs
 
-{--}
+--}
 
 

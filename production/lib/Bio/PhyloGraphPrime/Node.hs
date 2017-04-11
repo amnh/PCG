@@ -21,6 +21,7 @@ module Bio.PhyloGraphPrime.Node
   , singletonEdgeSet
   , singletonNewickSerialization
   , singletonSubtreeLeafSet
+  , pNode2
   ) where
 
 
@@ -50,6 +51,9 @@ data  PhylogeneticNode2 s n
     { resolutions          :: ResolutionCache s
     , nodeDecorationDatum2 :: n
     } deriving (Eq, Functor)
+
+
+pNode2 = flip PNode2
 
 
 -- | A collection of information used to memoize network optimizations.
@@ -92,12 +96,13 @@ instance Show s => Show (ResolutionInformation s) where
     show resInfo = unlines tokens
       where
         tokens =
-          [ "Leaf Set  : "    <> show (leafSetRepresentation resInfo)
-          , "Subtree   : "    <> show (subtreeRepresentation resInfo)
-          , "Local Cost: "    <> show (localSequenceCost     resInfo)
-          , "Total Cost: "    <> show (totalSubtreeCost      resInfo)
-          , "Decoration:\n\n" <> show (characterSequence     resInfo)
-          ]
+           [ "Total Cost: "    <> show (totalSubtreeCost      resInfo)
+           , "Local Cost: "    <> show (localSequenceCost     resInfo)
+           , "Edge Set  : "    <> show (subtreeEdgeSet        resInfo)
+           , "Leaf Set  : "    <> show (leafSetRepresentation resInfo)
+           , "Subtree   : "    <> show (subtreeRepresentation resInfo)
+           , "Decoration:\n\n" <> show (characterSequence     resInfo)
+           ]
 
 
 instance Eq  (ResolutionInformation s) where

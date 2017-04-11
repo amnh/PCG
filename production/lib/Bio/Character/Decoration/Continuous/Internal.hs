@@ -260,7 +260,6 @@ instance EncodableStaticCharacter a => DiscreteExtensionContinuousDecoration (Co
 -}
 
 
-
 newtype ContinuousPostorderDecoration c = CPostD (AdditivePostorderDecoration c)
 
 
