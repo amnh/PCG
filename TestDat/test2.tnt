@@ -1,0 +1,12 @@
+xread
+'test data for zero-six terminals'
+7 6
+zero  0000000
+one   0001011
+two   1001112
+three 1110113
+four  1110214
+five  1110205
+;
+cc -.;
+proc /;
