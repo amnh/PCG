@@ -1,8 +1,9 @@
 *.*~
 *.*#
-*.o
-*.hi
-*.ss
+*.dSYM
 *.gch
+*.hi
+*.o
+*.ss
 production/bin
 production/.stack-work
