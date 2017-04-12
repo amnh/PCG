@@ -2,16 +2,17 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "seqAlign.h"
-#include "c_alignment_interface.h"
-#include "c_code_alloc_setup.h"
-#include "debug_constants.h"
-#include "costMatrix.h"
-#include "nwMatrices.h"
-#include "ukkCheckp.h"
-#include "ukkCommon.h"
+#include "../seqAlign.h"
+#include "../c_alignment_interface.h"
+#include "../c_code_alloc_setup.h"
+#include "../debug_constants.h"
+#include "../costMatrix.h"
+#include "../nwMatrices.h"
+#include "../ukkCheckp.h"
+#include "../ukkCommon.h"
 
 // #define SEQ_CAPACITY 64
+
 
 int power_2 (int input) {
     if (input == 1)  return 1;
@@ -64,16 +65,15 @@ int main() {
 
         //***** for following characters, affine requires gap at start of character!!! *****/
 
-    const size_t longSeqLen   = 22;
-    const size_t middleSeqLen = 18;
-    const size_t shortSeqLen  = 17;
+    const size_t longSeqLen   = 7;
+    const size_t middleSeqLen = 7;
+    const size_t shortSeqLen  = 5;
 
     const size_t SEQ_CAPACITY = longSeqLen + shortSeqLen + middleSeqLen;
 
-
-    SEQT longest_vals [22] = {16, 2, 1, 8, 4, 2, 1, 8, 4, 1, 1, 1, 1, 1, 2, 1, 8, 4, 2, 1, 8, 4}; // don't forget to change lengths!!!
-    SEQT middle_vals  [18] = {16, 8, 8, 2, 1, 8, 4, 2, 1, 8, 4, 1, 1, 2, 1, 8, 4, 1};             // don't forget to change lengths!!!
-    SEQT shortest_vals[17] = {16, 2, 1, 8, 4, 2, 1, 8, 4, 2, 1, 8, 4, 2, 1, 8, 4};                // don't forget to change lengths!!!
+    SEQT longest_vals [6] = {16, 4, 1, 8, 3, 1, 1};  // don't forget to change lengths!!!
+    SEQT middle_vals  [6] = {16, 4, 1, 8, 1, 2, 3};  // don't forget to change lengths!!!
+    SEQT shortest_vals[5] = {16, 4, 1, 8, 1, 2, 3};     // don't forget to change lengths!!!
 
     seq_p shortSeq = malloc( sizeof(struct seq) );
     // initializeSeq(shortSeq, SEQ_CAPACITY);

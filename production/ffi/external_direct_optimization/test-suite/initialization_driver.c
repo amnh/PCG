@@ -2,23 +2,18 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "seqAlign.h"
-#include "c_code_alloc_setup.h"
-#include "debug_constants.h"
-// #include "costMatrix.h"
-#include "nwMatrices.h"
-#include "ukkCheckp.h"
-#include "ukkCommon.h"
+#include "../seqAlign.h"
+#include "../c_code_alloc_setup.h"
+#include "../debug_constants.h"
+// #include "../costMatrix.h"
+#include "../nwMatrices.h"
+#include "../ukkCheckp.h"
+#include "../ukkCommon.h"
 
 // #define CHAR_CAPACITY 64
 
 int power_2 (int input) {
-    if (input == 1)  return 1;
-    if (input == 2)  return 1;
-    if (input == 4)  return 1;
-    if (input == 8)  return 1;
-    if (input == 16) return 1;
-    return 0;
+    return __builtin_popcount(input) == 1;
 }
 
 
