@@ -30,6 +30,9 @@ import           Data.List.NonEmpty         (NonEmpty)
 import qualified Data.List.NonEmpty  as NE
 import           Data.Monoid                ((<>))
 import           Data.MonoTraversable
+import           Data.Semigroup.Foldable
+import           Data.Set                   (Set)
+import qualified Data.Set            as Set
 import           Data.Vector                (Vector)
 import qualified Data.Vector         as V
 import           Data.Vector.Instances      ()
@@ -177,6 +180,17 @@ instance PhylogeneticTree (ReferenceDAG e n) NodeRef e n where
 instance {- (Show e, Show n) => -} Show (ReferenceDAG e n) where
 
     show = referenceRendering 
+
+
+getEdges :: ReferenceDAG e n -> Set (Int, Int)
+getEdges dag = foldMap1 f $ rootRefs dag
+  where
+    refs = references dag
+    f :: Int -> Set (Int, Int)
+    f i  = foldMap f childKeys <> currentEdges
+      where
+        childKeys    = IM.keys . childRefs $ refs ! i
+        currentEdges = foldMap (\x -> Set.singleton (i,x)) childKeys
 
 
 -- |
@@ -589,4 +603,3 @@ expandVertexMapping unexpandedMap = snd . foldl' f (initialCounter, unexpandedMa
             rhsRecursiveResult = expandEdges lhsRecursiveResult (counter+1)
 
         
-

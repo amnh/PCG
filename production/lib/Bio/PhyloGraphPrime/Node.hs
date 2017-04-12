@@ -13,7 +13,8 @@
 {-# LANGUAGE DeriveFunctor, GeneralizedNewtypeDeriving #-}
 
 module Bio.PhyloGraphPrime.Node
-  ( PhylogeneticNode (..)
+  ( EdgeSet
+  , PhylogeneticNode (..)
   , PhylogeneticNode2(..)
   , ResolutionCache
   , ResolutionInformation(..)
@@ -53,6 +54,7 @@ data  PhylogeneticNode2 s n
     } deriving (Eq, Functor)
 
 
+pNode2 :: n -> ResolutionCache s -> PhylogeneticNode2 s n
 pNode2 = flip PNode2
 
 

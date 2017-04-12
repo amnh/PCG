@@ -307,6 +307,11 @@ library
 --                       Bio.PhyloGraph.Tree.Rose.Class
                        Bio.PhyloGraphPrime.Forest
                        Bio.PhyloGraphPrime.PhylogeneticDAG.Class
+                       Bio.PhyloGraphPrime.PhylogeneticDAG.Internal
+                       Bio.PhyloGraphPrime.PhylogeneticDAG.NetworkEdgeQuantification
+                       Bio.PhyloGraphPrime.PhylogeneticDAG.DynamicCharacterRerooting
+                       Bio.PhyloGraphPrime.PhylogeneticDAG.Postorder
+                       Bio.PhyloGraphPrime.PhylogeneticDAG.Riefication
                        Bio.PhyloGraphPrime.ZipperDAG.Internal
                        Bio.Sequence.Internal
                        Bio.Sequence.Block.Builder
