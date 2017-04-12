@@ -1,0 +1,8 @@
+*.*~
+*.*#
+*.o
+*.hi
+*.ss
+*.gch
+production/bin
+production/.stack-work
