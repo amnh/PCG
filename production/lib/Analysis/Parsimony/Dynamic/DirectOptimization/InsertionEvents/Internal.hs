@@ -24,8 +24,9 @@ import qualified Data.IntMap     as IM
 import           Data.Key
 import           Data.List              (intercalate)
 import           Data.Maybe             (fromMaybe)
-import           Data.Monoid
+import           Data.Monoid     hiding ((<>))
 import           Data.MonoTraversable
+import           Data.Semigroup         (Semigroup(..))
 import           Data.Sequence          (Seq)
 import qualified Data.Sequence   as Seq
 import           Prelude         hiding (lookup,splitAt,zip,zipWith)
@@ -72,14 +73,22 @@ instance (Arbitrary e) => Arbitrary (InsertionEvents e) where
 -- A custom monoid instance to account for ordered accumulation at a given index.
 instance Monoid (InsertionEvents e) where
 
-    -- | This represent no insertion vents occurring on an edge
+    -- | This represent no insertion events occurring on an edge
     mempty = IE mempty
+
+    -- | See the 'Semigroup' operator '(<>)'
+    mappend = (<>)
+
+
+-- |
+-- A custom monoid instance to account for ordered accumulation at a given index.
+instance Semigroup (InsertionEvents e) where
 
     -- | This operator is valid /only/ when combineing sibling edges.
     --   For combining insertion events on the edge between grandparent and parent
     --   'p' with insertion events of edges between parent and one or more children
     --   `cEdges`, use the following: 'p <^> mconcat cEdges'.
-    (IE lhs) `mappend` (IE rhs) = IE $ foldlWithKey' f lhs rhs
+    (IE lhs) <> (IE rhs) = IE $ foldlWithKey' f lhs rhs
       where
         f mapping k v = IM.insertWith (flip (<>)) k v mapping
 
