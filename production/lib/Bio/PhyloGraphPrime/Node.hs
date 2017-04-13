@@ -26,12 +26,12 @@ module Bio.PhyloGraphPrime.Node
   ) where
 
 
+import Bio.PhyloGraphPrime.EdgeSet
 import Data.Bifunctor
 import Data.BitVector
 import Data.Foldable
 import Data.List.NonEmpty (NonEmpty(..))
 import Data.Semigroup
-import Data.Set           (Set, insert, singleton)
 
 
 -- |
@@ -65,12 +65,9 @@ data  ResolutionInformation s
     , localSequenceCost     :: Double
     , leafSetRepresentation :: SubtreeLeafSet
     , subtreeRepresentation :: NewickSerialization
-    , subtreeEdgeSet        :: EdgeSet
+    , subtreeEdgeSet        :: EdgeSet (Int, Int)
     , characterSequence     :: s
     } deriving (Functor)
-
-
-type EdgeSet = Set (Int, Int)
 
 
 type ResolutionCache s = NonEmpty (ResolutionInformation s)
@@ -153,11 +150,10 @@ instance Bifunctor PhylogeneticNode where
 singletonNewickSerialization :: Int -> NewickSerialization
 singletonNewickSerialization i = NS $ show i
 
+
 singletonSubtreeLeafSet :: Int -> Int -> SubtreeLeafSet
 singletonSubtreeLeafSet n i = LS . (`setBit` i) $ n `bitVec` (0 :: Integer)
 
-singletonEdgeSet :: (Int, Int) -> EdgeSet
-singletonEdgeSet = singleton
 
 addEdgeToEdgeSet :: (Int, Int) -> ResolutionInformation s -> ResolutionInformation s
-addEdgeToEdgeSet e r = r { subtreeEdgeSet = insert e $ subtreeEdgeSet r }
+addEdgeToEdgeSet e r = r { subtreeEdgeSet = singletonEdgeSet e <> subtreeEdgeSet r }

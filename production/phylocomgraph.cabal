@@ -307,6 +307,7 @@ library
 --                       Bio.PhyloGraph.Tree.Rose.Class
                        Bio.PhyloGraphPrime.Forest
                        Bio.PhyloGraphPrime.PhylogeneticDAG.Class
+                       Bio.PhyloGraphPrime.EdgeSet
                        Bio.PhyloGraphPrime.PhylogeneticDAG.Internal
                        Bio.PhyloGraphPrime.PhylogeneticDAG.NetworkEdgeQuantification
                        Bio.PhyloGraphPrime.PhylogeneticDAG.DynamicCharacterRerooting
