@@ -16,26 +16,27 @@
 
 module Bio.PhyloGraphPrime.PhylogeneticDAG.NetworkEdgeQuantification where
 
-import           Bio.Sequence.Block (CharacterBlock)
+import           Bio.Sequence.Block       (CharacterBlock)
 import           Bio.PhyloGraphPrime.EdgeSet
 import           Bio.PhyloGraphPrime.Node
 import           Bio.PhyloGraphPrime.PhylogeneticDAG.Internal
 import           Bio.PhyloGraphPrime.ReferenceDAG.Internal
 import           Data.Key
-import           Data.List.NonEmpty (NonEmpty, transpose)
-import           Prelude     hiding (zipWith)
+import           Data.List.NonEmpty       (NonEmpty)
+import qualified Data.List.NonEmpty as NE
+import           Data.List.Utility
+import           Data.Ord
+import           Prelude            hiding (zipWith)
 
 
 extractNetworkMinimalDisplayTrees :: PhylogeneticDAG2 e n u v w x y z -> NonEmpty (NetworkDisplayEdgeSet (Int, Int))
 extractNetworkMinimalDisplayTrees (PDAG2 dag) = rootTransformation rootResolutions
   where
-    -- We transpose the resolutions of the root nodes by transposing the
-    -- NonEmpty structures, then collecting the edgesets of each root in each
-    -- resolution together to create a NonEmpty collection of "network displays"
-    --
     -- Since the number of roots in a DAG is fixed, deach network display will
     -- contain an equal number of elements in the network display.
-    rootTransformation = fmap (fromEdgeSets . fmap subtreeEdgeSet) . transpose
+    rootTransformation = fmap (fromEdgeSets . NE.fromList . fmap subtreeEdgeSet)
+                       . NE.fromList . minimaBy (comparing (sum . fmap totalSubtreeCost))
+                       . pairwiseSequence resolutionsDoNotOverlap
 
     -- First we collect all resolutions for each root node
     rootResolutions = resolutions . nodeDecoration . (refs !) <$> rootRefs dag
@@ -49,6 +50,6 @@ extractNetworkEdgeSet (PDAG2 dag) = getEdges dag
 extractBlocksMinimalEdgeSets :: PhylogeneticDAG2 e n u v w x y z -> NonEmpty (CharacterBlock u v w x y z, NonEmpty (NetworkDisplayEdgeSet (Int,Int)))
 extractBlocksMinimalEdgeSets (PDAG2 dag) = undefined
   where
-    roots = (refs !) <$> rootRefs dag
+    roots = resolutions . nodeDecoration . (refs !) <$> rootRefs dag
     refs  = references dag
     

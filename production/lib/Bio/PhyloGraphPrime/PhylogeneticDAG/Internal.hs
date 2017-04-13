@@ -251,8 +251,12 @@ applySoftwireResolutions inputContexts =
              [ [x,y]
              | x <- toList xs
              , y <- toList ys
-             , leafSetRepresentation x .&. leafSetRepresentation y == zeroBits
+             , resolutionsDoNotOverlap x y
              ]
+
+
+resolutionsDoNotOverlap :: ResolutionInformation a -> ResolutionInformation b -> Bool
+resolutionsDoNotOverlap x y = leafSetRepresentation x .&. leafSetRepresentation y == zeroBits
 
 
 localResolutionApplication :: (d -> [d] -> d')
