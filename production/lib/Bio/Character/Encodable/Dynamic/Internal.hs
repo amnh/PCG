@@ -331,9 +331,9 @@ instance Exportable DynamicChar where
 
 instance Exportable DynamicCharacterElement where
 
-    toExportableBuffer e@(DCE bv) = ExportableCharacterSequence 1 width $ bitVectorToBufferChunks 1 width bv
+    toExportableBuffer e@(DCE bv) = ExportableCharacterSequence 1 widthValue $ bitVectorToBufferChunks 1 widthValue bv
       where
-        width = symbolCount e
+        widthValue = symbolCount e
           
     fromExportableBuffer ecs = DCE newBitVec
       where

@@ -244,7 +244,7 @@ reduceTcm missingSymbolIndicies tcm = generate reducedDimension genFunction
 
 -- | /O(1)/ Indexing without bounds checking.
 {-# INLINE (!) #-}
-(!) :: (Enum i, Show i) => TCM -> (i, i) -> Word32
+(!) :: Enum i => TCM -> (i, i) -> Word32
 (!) (TCM n v) (i,j) = v `V.unsafeIndex` (fromEnum i * n + fromEnum j)
 
 
