@@ -19,7 +19,7 @@ import Data.Foldable
 import Data.List     (sort, sortBy)
 import Data.Map      (assocs, empty, insertWith)
 import Data.Ord      (comparing)
-
+  
 
 -- | Determines whether a foldable structure contains a single element.
 isSingleton :: Foldable t => t a -> Bool
@@ -110,3 +110,50 @@ invariantTransformation f xs =
       in  if all (\e -> f e == v) ys
           then Just v
           else Nothing
+
+
+-- |
+-- Provide a pairwise predicate used to filter elements and a nested structure.
+-- Returns the "product" of elements across the inner Foldable structure. Each
+-- result must have all elements satisfy the predicate when compared to all
+-- other elements.
+--
+-- ==_Example==
+--
+-- >>> pairwiseSequence (\x y = snd x /= snd y) [[('A',1),('B',2)],[('X',1),('Y',2),('Z',3)],[('I',1),('J',2),('K',3),('L',4)]]
+-- [[('A',1),('Y',2),('K',3)],[('A',1),('Y',2),('L',4)],[('A',1),('Z',3),('J',2)],[('A',1),('Z',3),('L',4)],[('B',2),('X',1),('K',3)],[('B',2),('X',1),('L',4)],[('B',2),('Z',3),('I',1)],[('B',2),('Z',3),('L',4)]]
+--
+pairwiseSequence :: (Foldable t, Foldable t') => (a -> a -> Bool) -> t (t' a) -> [[a]]
+pairwiseSequence predicate structure = f [] $ toList <$> toList structure
+  where
+    f thread     [] = [reverse thread]
+    f thread (x:xs) = foldMap g x
+      where
+        g e = f (e:thread) $ fmap (filter (predicate e)) xs
+
+
+maximaBy :: Traversable t => (a -> a -> Ordering) -> t a -> [a]
+maximaBy cmp = foldr f []
+  where
+    f e es =
+        case es of
+          []  -> [e]
+          x:_ ->
+              case cmp e x of
+                EQ -> e:es
+                GT -> [e]
+                LT -> es
+  
+
+minimaBy :: Traversable t => (a -> a -> Ordering) -> t a -> [a]
+minimaBy cmp = foldr f []
+  where
+    f e es =
+        case es of
+          []  -> [e]
+          x:_ ->
+              case cmp e x of
+                EQ -> e:es
+                GT -> es
+                LT -> [e]
+  
