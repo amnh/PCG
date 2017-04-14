@@ -32,6 +32,7 @@ module Bio.Sequence
   , hexTranspose
   , hexZipWith
   , sequenceCost
+  , blockCost
   ) where
 
 import Bio.Sequence.Internal
