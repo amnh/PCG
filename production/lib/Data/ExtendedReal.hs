@@ -15,6 +15,14 @@ import Data.Maybe          (fromMaybe)
 newtype ExtendedReal = Cost (Maybe Double)
 
 
+type family Finite (f :: *)
+
+
+class ExtendedNumber n where
+
+    unsafeToFinite :: n -> Finite n
+
+
 -- | A synonym for 'maxBound'
 infinity :: ExtendedReal
 infinity = maxBound
