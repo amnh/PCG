@@ -264,9 +264,9 @@ newtype ContinuousPostorderDecoration c = CPostD (AdditivePostorderDecoration c)
 
 
 lensCPostD :: Functor f
-           => Getting a1 (AdditivePostorderDecoration t) a1
+           => Getting x (AdditivePostorderDecoration t) x
            -> ASetter (AdditivePostorderDecoration t) (AdditivePostorderDecoration c) a b
-           -> (a1 -> f b)
+           -> (x -> f b)
            -> ContinuousPostorderDecoration t
            -> f (ContinuousPostorderDecoration c)
 lensCPostD f g = lens (getterCPostD f) (setterCPostD g)
@@ -399,9 +399,9 @@ newtype ContinuousOptimizationDecoration  c = COptD  (AdditiveOptimizationDecora
 
 
 lensCOptD :: Functor f
-          => Getting a1 (AdditiveOptimizationDecoration t) a1
+          => Getting x (AdditiveOptimizationDecoration t) x
           -> ASetter (AdditiveOptimizationDecoration t) (AdditiveOptimizationDecoration c) a b
-          -> (a1 -> f b)
+          -> (x -> f b)
           -> ContinuousOptimizationDecoration t
           -> f (ContinuousOptimizationDecoration c)
 lensCOptD f g = lens (getterCPostD f) (setterCPostD g)
