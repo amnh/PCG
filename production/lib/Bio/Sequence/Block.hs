@@ -120,13 +120,13 @@ toMissingCharacters cb =
 
 blockCost :: ( HasCharacterCost   m e
              , HasCharacterCost   i e
---             , HasCharacterCost   c Double
+             , HasCharacterCost   c Double
              , HasCharacterCost   f e
              , HasCharacterCost   a e
              , HasCharacterCost   d e
              , HasCharacterWeight m Double
              , HasCharacterWeight i Double
---             , HasCharacterWeight c Double
+             , HasCharacterWeight c Double
              , HasCharacterWeight f Double
              , HasCharacterWeight a Double
              , HasCharacterWeight d Double
@@ -136,7 +136,7 @@ blockCost :: ( HasCharacterCost   m e
           -> Double
 blockCost block = sum . fmap sum $
     [ parmap rpar integralCost . nonAdditiveCharacterBins
---    , parmap rpar floatingCost . continuousCharacterBins 
+    , parmap rpar floatingCost . continuousCharacterBins 
     , parmap rpar integralCost . additiveCharacterBins   
     , parmap rpar integralCost . metricCharacterBins     
     , parmap rpar integralCost . nonMetricCharacterBins  
@@ -147,9 +147,9 @@ blockCost block = sum . fmap sum $
       where
         cost   = dec ^. characterCost
         weight = dec ^. characterWeight
-{-
+
     floatingCost dec = cost * weight
       where
         cost   = dec ^. characterCost
         weight = dec ^. characterWeight
--}
+

@@ -145,13 +145,13 @@ instance ( Show e
          , Show d
          , HasCharacterCost   m Word
          , HasCharacterCost   i Word
---         , HasCharacterCost   c Double
+         , HasCharacterCost   c Double
          , HasCharacterCost   f Word
          , HasCharacterCost   a Word
          , HasCharacterCost   d Word
          , HasCharacterWeight m Double
          , HasCharacterWeight i Double
---         , HasCharacterWeight c Double
+         , HasCharacterWeight c Double
          , HasCharacterWeight f Double
          , HasCharacterWeight a Double
          , HasCharacterWeight d Double
@@ -172,13 +172,13 @@ instance ( Show e
          , Show d
          , HasCharacterCost   m Word
          , HasCharacterCost   i Word
---         , HasCharacterCost   c Double
+         , HasCharacterCost   c Double
          , HasCharacterCost   f Word
          , HasCharacterCost   a Word
          , HasCharacterCost   d Word
          , HasCharacterWeight m Double
          , HasCharacterWeight i Double
---         , HasCharacterWeight c Double
+         , HasCharacterWeight c Double
          , HasCharacterWeight f Double
          , HasCharacterWeight a Double
          , HasCharacterWeight d Double

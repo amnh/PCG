@@ -164,13 +164,13 @@ instance ( Show m
          , Show d
          , HasCharacterCost   m Word
          , HasCharacterCost   i Word
---         , HasCharacterCost   c Double
+         , HasCharacterCost   c Double
          , HasCharacterCost   f Word
          , HasCharacterCost   a Word
          , HasCharacterCost   d Word
          , HasCharacterWeight m Double
          , HasCharacterWeight i Double
---         , HasCharacterWeight c Double
+         , HasCharacterWeight c Double
          , HasCharacterWeight f Double
          , HasCharacterWeight a Double
          , HasCharacterWeight d Double
@@ -192,13 +192,13 @@ instance ( Show m
 
 sequenceCost :: ( HasCharacterCost   m e
                 , HasCharacterCost   i e
---                , HasCharacterCost   c Double
+                , HasCharacterCost   c Double
                 , HasCharacterCost   f e
                 , HasCharacterCost   a e
                 , HasCharacterCost   d e
                 , HasCharacterWeight m Double
                 , HasCharacterWeight i Double
---                , HasCharacterWeight c Double
+                , HasCharacterWeight c Double
                 , HasCharacterWeight f Double
                 , HasCharacterWeight a Double
                 , HasCharacterWeight d Double
