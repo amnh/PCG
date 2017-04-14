@@ -323,6 +323,7 @@ library
                        Data.Alphabet.Internal
                        Data.BitMatrix.Internal
                        Data.BitVector.Instances
+                       Data.ExtendedFinite
                        Data.ExtendedNatural
                        Data.ExtendedReal
                        Data.Range

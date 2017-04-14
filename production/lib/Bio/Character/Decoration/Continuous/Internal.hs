@@ -24,6 +24,7 @@ import Bio.Metadata.Continuous
 import Bio.Metadata.Discrete
 import Control.Lens
 import Data.Alphabet
+import Data.ExtendedFinite
 import Data.Range
 import Data.Semigroup
 
@@ -140,7 +141,7 @@ instance DiscreteCharacterMetadata (ContinuousDecorationInitial d) where
                                            (x ^. characterAlphabet)
 
 -- | (✔)
-instance (Ranged c, Num (Bound c), Ord (Bound c)) => RangedCharacterDecoration (ContinuousDecorationInitial c) c where
+instance (Ranged c, ExtendedNumber (Bound c), Num (Finite (Bound c)), Num (Bound c), Ord (Bound c)) => RangedCharacterDecoration (ContinuousDecorationInitial c) c where
 
 
 {-
@@ -278,7 +279,8 @@ lensCPostD f g = lens (getterCPostD f) (setterCPostD g)
 instance
     ( Show c
     , Show (Bound c)
-    , Show (Range (Bound c))
+    , Show (Finite (Bound c))
+    , Show (Range  (Bound c))
     ) => Show (ContinuousPostorderDecoration c) where
 
     show c = unlines
@@ -321,7 +323,7 @@ instance HasIsLeaf (ContinuousPostorderDecoration a) Bool where
 
 
 -- | (✔)
-instance (Bound a ~ c) => HasCharacterCost (ContinuousPostorderDecoration a) c where
+instance (Finite (Bound a) ~ c) => HasCharacterCost (ContinuousPostorderDecoration a) c where
 
     characterCost = lensCPostD characterCost characterCost
 
@@ -351,7 +353,7 @@ instance DiscreteCharacterMetadata (ContinuousPostorderDecoration a) where
 
 
 -- | (✔)
-instance (Ranged c, Num (Bound c), Ord (Bound c)) => RangedCharacterDecoration (ContinuousPostorderDecoration c) c where
+instance (Ranged c, ExtendedNumber (Bound c), Num (Finite (Bound c)), Num (Bound c), Ord (Bound c)) => RangedCharacterDecoration (ContinuousPostorderDecoration c) c where
 
 
 -- | (✔)
@@ -413,7 +415,8 @@ lensCOptD f g = lens (getterCPostD f) (setterCPostD g)
 instance
     ( Show c
     , Show (Bound c)
-    , Show (Range (Bound c))
+    , Show (Finite (Bound c))
+    , Show (Range  (Bound c))
     ) => Show (ContinuousOptimizationDecoration c) where
 
     show c = unlines
@@ -457,7 +460,7 @@ instance HasIsLeaf (ContinuousOptimizationDecoration a) Bool where
 
 
 -- | (✔)
-instance (Bound a ~ c) => HasCharacterCost (ContinuousOptimizationDecoration a) c where
+instance (Finite (Bound a) ~ c) => HasCharacterCost (ContinuousOptimizationDecoration a) c where
 
     characterCost = lensCOptD characterCost characterCost
 
@@ -493,7 +496,7 @@ instance DiscreteCharacterMetadata (ContinuousOptimizationDecoration a) where
 
 
 -- | (✔)
-instance (Ranged c, Num (Bound c), Ord (Bound c)) => RangedCharacterDecoration (ContinuousOptimizationDecoration c) c where
+instance (Ranged c, ExtendedNumber (Bound c), Num (Finite (Bound c)), Num (Bound c), Ord (Bound c)) => RangedCharacterDecoration (ContinuousOptimizationDecoration c) c where
 
 
 -- | (✔)

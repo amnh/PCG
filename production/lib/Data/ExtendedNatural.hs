@@ -1,12 +1,16 @@
+{-# LANGUAGE TypeFamilies #-}
+
 module Data.ExtendedNatural
  ( ExtendedNatural()
- , infinity
+ , ExtendedNumber(..)
+ , Finite
  , toWord
  , fromWord
  ) where
 
 
 import Control.Applicative (liftA2)
+import Data.ExtendedFinite
 import Data.Maybe          (fromMaybe)
 
 
@@ -14,17 +18,16 @@ import Data.Maybe          (fromMaybe)
 newtype ExtendedNatural = Cost (Maybe Word)
 
 
--- | A synonym for 'maxBound'
-infinity :: ExtendedNatural
-infinity = maxBound
+type instance Finite ExtendedNatural = Word
 
 
-toWord :: ExtendedNatural -> Word
-toWord (Cost x) = fromMaybe (maxBound :: Word) x
+instance ExtendedNumber ExtendedNatural where
 
+    unsafeToFinite = toWord
 
-fromWord :: Word -> ExtendedNatural
-fromWord = Cost . Just
+    fromFinite = fromWord
+
+    infinity = maxBound
 
 
 instance Show ExtendedNatural where
@@ -108,4 +111,13 @@ instance Integral ExtendedNatural where
 instance Real ExtendedNatural where
 
     toRational = toRational . toInteger
+
+
+toWord :: ExtendedNatural -> Word
+toWord (Cost x) = fromMaybe (maxBound :: Word) x
+
+
+fromWord :: Word -> ExtendedNatural
+fromWord = Cost . Just
+
 

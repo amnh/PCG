@@ -41,6 +41,7 @@ import Bio.Metadata.General
 import Bio.Metadata.CharacterName
 import Control.Lens
 import Data.Alphabet
+import Data.ExtendedFinite
 import Data.Range
 
 
@@ -113,7 +114,7 @@ instance HasIntervalCharacter (DiscreteDecoration c) c where
 
 
 -- | (✔)
-instance (Ranged c, Num (Bound c), Ord (Bound c)) => RangedCharacterDecoration (DiscreteDecoration c) c where
+instance (Ranged c, ExtendedNumber (Bound c), Num (Finite (Bound c)), Num (Bound c), Ord (Bound c)) => RangedCharacterDecoration (DiscreteDecoration c) c where
 
 
 -- | (✔)

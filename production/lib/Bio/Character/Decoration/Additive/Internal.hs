@@ -27,6 +27,7 @@ import Bio.Metadata.Discrete
 import Bio.Metadata.DiscreteWithTCM
 import Control.Lens
 import Data.Alphabet
+import Data.ExtendedFinite
 import Data.Range
 import Data.Semigroup
 
@@ -36,7 +37,7 @@ import Data.Semigroup
 -- type.
 data AdditivePostorderDecoration a
    = AdditivePostorderDecoration
-   { additiveCost                 :: Bound a
+   { additiveCost                 :: Finite (Bound a)
    , additivePreliminaryInterval  :: Range (Bound a)
    , additiveChildPrelimIntervals :: (Range (Bound a), Range (Bound a))
    , additiveIsLeaf               :: Bool
@@ -48,7 +49,8 @@ data AdditivePostorderDecoration a
 instance
   ( EncodableStreamElement c
   , Show (Bound c)
-  , Show (Range (Bound c))
+  , Show (Finite (Bound c))
+  , Show (Range  (Bound c))
   ) => Show (AdditivePostorderDecoration c) where
 
     show c = unlines
@@ -126,7 +128,7 @@ instance HasIsLeaf (AdditivePostorderDecoration a) Bool where
 
 
 -- | (✔)
-instance (Bound a ~ c) => HasCharacterCost (AdditivePostorderDecoration a) c where
+instance (Finite (Bound a) ~ c) => HasCharacterCost (AdditivePostorderDecoration a) c where
 
     characterCost = lens additiveCost (\e x -> e { additiveCost = x })
 
@@ -164,7 +166,7 @@ instance EncodableStaticCharacter a => DiscreteCharacterDecoration (AdditivePost
 
 
 -- | (✔)
-instance (Ranged c, Num (Bound c), Ord (Bound c)) => RangedCharacterDecoration (AdditivePostorderDecoration c) c where
+instance (Ranged c, ExtendedNumber (Bound c), Num (Finite (Bound c)), Num (Bound c), Ord (Bound c)) => RangedCharacterDecoration (AdditivePostorderDecoration c) c where
 
 
 -- | (✔)
@@ -226,7 +228,8 @@ data AdditiveOptimizationDecoration a
 instance
   ( EncodableStreamElement c
   , Show (Bound c)
-  , Show (Range (Bound c))
+  , Show (Finite (Bound c))
+  , Show (Range  (Bound c))
   ) => Show (AdditiveOptimizationDecoration c) where
 
     show c = unlines
@@ -314,7 +317,7 @@ instance HasIsLeaf (AdditiveOptimizationDecoration a) Bool where
 
 
 -- | (✔)
-instance (Bound a ~ c) => HasCharacterCost (AdditiveOptimizationDecoration a) c where
+instance (Finite (Bound a) ~ c) => HasCharacterCost (AdditiveOptimizationDecoration a) c where
 
     characterCost = lens getter setter
       where
@@ -367,7 +370,7 @@ instance EncodableStaticCharacter a => DiscreteCharacterDecoration (AdditiveOpti
 
 
 -- | (✔)
-instance (Ranged c, Num (Bound c), Ord (Bound c)) => RangedCharacterDecoration (AdditiveOptimizationDecoration c) c where
+instance (Ranged c, ExtendedNumber (Bound c), Num (Finite (Bound c)), Num (Bound c), Ord (Bound c)) => RangedCharacterDecoration (AdditiveOptimizationDecoration c) c where
 
 
 -- | (✔)

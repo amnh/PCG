@@ -16,11 +16,14 @@ module Bio.Character.Decoration.Shared where
 
 
 import Control.Lens
+import Data.ExtendedFinite
 import Data.Range
 
 
 class ( HasIntervalCharacter d c
       , Ranged c
+      , ExtendedNumber (Bound c)
+      , Num (Finite (Bound c))
       , Num (Bound c)
       , Ord (Bound c)
       ) => RangedCharacterDecoration d c where

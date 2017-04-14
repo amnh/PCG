@@ -28,6 +28,7 @@ module Analysis.Parsimony.Additive.Internal where
 import Bio.Character.Decoration.Additive
 import Control.Lens
 import Data.List.NonEmpty (NonEmpty( (:|) ))
+import Data.ExtendedFinite
 import Data.Range
 
 -- import Debug.Trace
@@ -162,7 +163,7 @@ updatePostOrder _parentDecoration (leftChild:|(rightChild:_)) =
     totalCost                    = thisNodeCost + (leftChild ^. characterCost) + (rightChild ^. characterCost)
     thisNodeCost                 = if isOverlapping
                                    then 0
-                                   else upperBound newInterval - lowerBound newInterval
+                                   else unsafeToFinite $ upperBound newInterval - lowerBound newInterval
 
 
 -- |

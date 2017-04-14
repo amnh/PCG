@@ -18,11 +18,12 @@ module Bio.Character.Decoration.Additive.Class where
 import Bio.Character.Decoration.Discrete
 import Bio.Character.Decoration.Shared
 import Control.Lens
+import Data.ExtendedFinite
 import Data.Range
 
 
 class ( RangedCharacterDecoration s c
-      , HasCharacterCost s (Bound c)
+      , HasCharacterCost s (Finite (Bound c))
       , HasChildPrelimIntervals s (Range (Bound c), Range (Bound c))
       , HasIsLeaf s Bool
       , HasPreliminaryInterval s (Range (Bound c))
@@ -46,7 +47,7 @@ class RangedPostorderDecoration s c => RangedExtensionPostorder s c | s -> c whe
                                , RangedCharacterDecoration x c
                                )
                             => x                                  -- ^ Input decoration
-                            -> Bound c                            -- ^ Local cost
+                            -> Finite (Bound c)                   -- ^ Local cost
                             ->  Range (Bound c)                   -- ^ Preliminary interval
                             -> (Range (Bound c), Range (Bound c)) -- ^ Child intervals
                             -> Bool                               -- ^ Is leaf node?
