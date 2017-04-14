@@ -35,6 +35,8 @@ import qualified Data.Vector         as V
 import           Data.Vector.Instances      ()
 import           Prelude             hiding (lookup)
 
+import           Debug.Trace
+
 
 -- |
 -- A constant time access representation of a directed acyclic graph.
@@ -61,7 +63,7 @@ data  IndexData e n
 data  GraphData
     = GraphData
     { cost :: Double
-    }
+    } deriving (Show)
 
 
 -- |
@@ -211,7 +213,11 @@ unfoldDAG f origin =
             , childRefs      = iMap
             }
 
---    expandedMap = contractToContiguousVertexMapping $ expandVertexMapping resultMap
+    {-
+    expandedMap = contractToContiguousVertexMapping $ traceShowMapping $ expandVertexMapping $ traceShowMapping resultMap
+      where
+        traceShowMapping v = trace (show $ fmap (\(x,_,y) -> (x, IM.keys y)) v) v
+    -}
     expandedMap = resultMap
 
     -- TODO:
