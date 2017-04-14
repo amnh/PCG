@@ -35,23 +35,10 @@ import           Prelude            hiding (zipWith)
 
 
 
-calculatePunativeNetworkEdgeCost ::
-    ( HasCharacterCost   u Word
-    , HasCharacterCost   v Word
-    , HasCharacterCost   w Double
-    , HasCharacterCost   x Word
-    , HasCharacterCost   y Word
-    , HasCharacterCost   z Word
-    , HasCharacterWeight u Double
-    , HasCharacterWeight v Double
-    , HasCharacterWeight w Double
-    , HasCharacterWeight x Double
-    , HasCharacterWeight y Double
-    , HasCharacterWeight z Double
-    ) => PhylogeneticDAG2 e n u v w x y z -> ExtendedReal
+calculatePunativeNetworkEdgeCost :: HasBlockCost u v w x y z i r => PhylogeneticDAG2 e n u v w x y z -> ExtendedReal
 calculatePunativeNetworkEdgeCost inputDag
   | cardinality extraneousEdges > 0 = infinity
-  | otherwise                       = realToFrac $ numerator / denominator
+  | otherwise                       = realToFrac numerator / realToFrac denominator
   where
     extraneousEdges        = entireNetworkEdgeSet `difference` minimalRequiredEdgeSet 
     minimalRequiredEdgeSet = foldMap (\(_,_,x) -> collapseToEdgeSet x) minimalBlockNetworkDisplay
@@ -96,20 +83,9 @@ extractNetworkEdgeSet :: PhylogeneticDAG2 e n u v w x y z -> EdgeSet (Int, Int)
 extractNetworkEdgeSet (PDAG2 dag) = getEdges dag
 
 
-extractBlocksMinimalEdgeSets ::
-  ( HasCharacterCost   u Word
-  , HasCharacterCost   v Word
-  , HasCharacterCost   w Double
-  , HasCharacterCost   x Word
-  , HasCharacterCost   y Word
-  , HasCharacterCost   z Word
-  , HasCharacterWeight u Double
-  , HasCharacterWeight v Double
-  , HasCharacterWeight w Double
-  , HasCharacterWeight x Double
-  , HasCharacterWeight y Double
-  , HasCharacterWeight z Double
-  ) => PhylogeneticDAG2 e n u v w x y z -> NonEmpty (Double, NonEmpty (NetworkDisplayEdgeSet (Int,Int)))
+extractBlocksMinimalEdgeSets :: HasBlockCost u v w x y z i r 
+                             => PhylogeneticDAG2 e n u v w x y z
+                             -> NonEmpty (r, NonEmpty (NetworkDisplayEdgeSet (Int,Int)))
 extractBlocksMinimalEdgeSets (PDAG2 dag) = foldMapWithKey1 f sequenceBlocksWLOG
   where
     generateBlockCosts = fmap (fmap (fmap (fmap blockCost . toBlocks)))

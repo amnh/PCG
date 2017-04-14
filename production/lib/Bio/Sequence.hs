@@ -20,6 +20,7 @@
 module Bio.Sequence
   ( CharacterSequence()
   , CharacterBlock(..)
+  , HasBlockCost
   , PartialCharacterBlock()
   , continuousSingleton
   , discreteSingleton

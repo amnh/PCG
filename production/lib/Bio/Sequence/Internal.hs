@@ -15,11 +15,16 @@
 
 {-# LANGUAGE FlexibleContexts, TypeFamilies #-}
 
+-- This is so that the Show instance compiles, even though the "real valued"
+-- cost variable 'r' doesn't appear on the right hand side of the double arrow.
+{-# LANGUAGE UndecidableInstances #-}
+
 --TODO: Add instance of Functor 
 --TODO: Add instance of BiFunctor 
 
 module Bio.Sequence.Internal
   ( CharacterSequence()
+  , HasBlockCost
   , toBlocks
   , fromBlocks
   , hexmap
@@ -29,21 +34,21 @@ module Bio.Sequence.Internal
   ) where
 
 
-import           Bio.Character.Decoration.Continuous
-import           Bio.Sequence.Block               (CharacterBlock)
-import qualified Bio.Sequence.Block      as Block
+--import           Bio.Character.Decoration.Continuous
+import           Bio.Sequence.Block             (CharacterBlock, HasBlockCost)
+import qualified Bio.Sequence.Block      as Blk
 import           Control.Parallel.Custom
 import           Control.Parallel.Strategies
 import           Data.Bifunctor
 import           Data.Foldable
 import           Data.Key
-import           Data.List.NonEmpty               (NonEmpty)
+import           Data.List.NonEmpty             (NonEmpty)
 import qualified Data.List.NonEmpty      as NE    
 import           Data.Monoid
 import           Data.MonoTraversable
 --import           Data.Semigroup.Foldable
 import           Data.Semigroup.Traversable
-import           Prelude                 hiding   (zipWith)
+import           Prelude                 hiding (zipWith)
 
 
 -- |
@@ -69,7 +74,7 @@ hexmap :: (m -> m')
        -> (d -> d')
        -> CharacterSequence m  i  c  f  a  d
        -> CharacterSequence m' i' c' f' a' d'
-hexmap f1 f2 f3 f4 f5 f6 = fromBlocks . parmap rpar (Block.hexmap f1 f2 f3 f4 f5 f6) . toBlocks
+hexmap f1 f2 f3 f4 f5 f6 = fromBlocks . parmap rpar (Blk.hexmap f1 f2 f3 f4 f5 f6) . toBlocks
 
 
 hexTranspose :: Traversable1 t => t (CharacterSequence m i c f a d) -> CharacterSequence [m] [i] [c] [f] [a] [d]
@@ -78,7 +83,7 @@ hexTranspose = fromBlocks . deepTranspose . fmap toBlocks . toList
 --    deepTranspose :: [(NonEmpty (CharacterBlock m i c f a d))] -> NonEmpty (CharacterBlock (t m) (t i) (t c) (t f) (t a) (t d))
     deepTranspose val =
         let beta = NE.unfold f val -- :: NonEmpty [CharacterBlock m i c f a d]
-        in fmap Block.hexTranspose beta
+        in fmap Blk.hexTranspose beta
       where
 --        f :: [NonEmpty (CharacterBlock m i c f a d)] -> ([CharacterBlock m i c f a d], Maybe [NonEmpty (CharacterBlock m i c f a d)])
         f = second sequenceA . unzip . fmap NE.uncons
@@ -96,7 +101,7 @@ hexZipWith :: (m1 -> m2 -> m3)
            -> CharacterSequence m1 i1 c1 f1 a1 d1
            -> CharacterSequence m2 i2 c2 f2 a2 d2
            -> CharacterSequence m3 i3 c3 f3 a3 d3
-hexZipWith f1 f2 f3 f4 f5 f6 lhs rhs = fromBlocks $ parZipWith rpar (Block.hexZipWith f1 f2 f3 f4 f5 f6) (toBlocks lhs) (toBlocks rhs)
+hexZipWith f1 f2 f3 f4 f5 f6 lhs rhs = fromBlocks $ parZipWith rpar (Blk.hexZipWith f1 f2 f3 f4 f5 f6) (toBlocks lhs) (toBlocks rhs)
 
 
 -- |
@@ -156,25 +161,15 @@ instance MonoTraversable (CharacterSequence m i c f a d) where
     omapM = otraverse
 
 
-instance ( Show m
-         , Show i
-         , Show c
-         , Show f
-         , Show a
-         , Show d
-         , HasCharacterCost   m Word
-         , HasCharacterCost   i Word
-         , HasCharacterCost   c Double
-         , HasCharacterCost   f Word
-         , HasCharacterCost   a Word
-         , HasCharacterCost   d Word
-         , HasCharacterWeight m Double
-         , HasCharacterWeight i Double
-         , HasCharacterWeight c Double
-         , HasCharacterWeight f Double
-         , HasCharacterWeight a Double
-         , HasCharacterWeight d Double
-         ) => Show (CharacterSequence m i c f a d) where
+instance ( Show u
+         , Show v
+         , Show w
+         , Show x
+         , Show y
+         , Show z
+         , Show r
+         , HasBlockCost u v w x y z i r
+         ) => Show (CharacterSequence u v w x y z) where
 
     show seek = prefix <> "\n" <> suffix
       where
@@ -190,20 +185,5 @@ instance ( Show m
         indent = unlines . fmap ("  "<>) . lines
 
 
-sequenceCost :: ( HasCharacterCost   m e
-                , HasCharacterCost   i e
-                , HasCharacterCost   c Double
-                , HasCharacterCost   f e
-                , HasCharacterCost   a e
-                , HasCharacterCost   d e
-                , HasCharacterWeight m Double
-                , HasCharacterWeight i Double
-                , HasCharacterWeight c Double
-                , HasCharacterWeight f Double
-                , HasCharacterWeight a Double
-                , HasCharacterWeight d Double
-                , Integral e
-                )
-             => CharacterSequence m i c f a d
-             -> Double
-sequenceCost = sum . parmap rpar Block.blockCost . toBlocks
+sequenceCost :: HasBlockCost u v w x y z i r => CharacterSequence u v w x y z -> r
+sequenceCost = sum . parmap rpar Blk.blockCost . toBlocks
