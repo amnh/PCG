@@ -48,6 +48,8 @@ class SetLike s where
 
     difference :: s -> s -> s
 
+    cardinality :: s -> Word
+
 
 instance Ord a => SetLike (Set a) where
 
@@ -56,6 +58,8 @@ instance Ord a => SetLike (Set a) where
     intersection = Set.intersection
 
     difference   = Set.difference
+
+    cardinality  = fromIntegral . length 
 
 
 instance Ord a => SetLike (EdgeSet a) where
@@ -66,6 +70,8 @@ instance Ord a => SetLike (EdgeSet a) where
 
     difference   (ES x) (ES y) = ES $ difference x y 
 
+    cardinality  (ES x) = cardinality x
+
 
 instance Ord a => SetLike (NetworkDisplayEdgeSet a) where
 
@@ -74,6 +80,8 @@ instance Ord a => SetLike (NetworkDisplayEdgeSet a) where
     intersection (NDES x) (NDES y) = NDES $ zipWith intersection x y 
 
     difference   (NDES x) (NDES y) = NDES $ zipWith difference x y 
+
+    cardinality  (NDES x) = sum $ cardinality <$> x
 
 
 instance Ord a => Semigroup (NetworkDisplayEdgeSet a) where
