@@ -91,7 +91,7 @@ traceOpt identifier x = (trace ("Before " <> identifier) ())
 
 -- | sequentialAlignOverride, iff True forces seqAlign to run; otherwise, DO runs.
 sequentialAlignOverride :: Bool
-sequentialAlignOverride = True
+sequentialAlignOverride = False
 
 
 chooseDirectOptimizationComparison :: ( SimpleDynamicDecoration d  c
@@ -128,7 +128,7 @@ initializeDecorations2 (PhylogeneticSolution forests) = PhylogeneticSolution $ f
   where
 --    performDecoration :: CharacterDAG -> InitialDecorationDAG
     performDecoration = assignPunativeNetworkEdgeCost
-                      . assignOptimalDynamicCharacterRootEdges dynamicScoring2
+                      . assignOptimalDynamicCharacterRootEdges adaptiveDirectOptimizationPostOrder
                       . postorderSequence'
                           (g  sankoffPostOrder)
                           (g  sankoffPostOrder)
@@ -140,11 +140,6 @@ initializeDecorations2 (PhylogeneticSolution forests) = PhylogeneticSolution $ f
         g _  Nothing  [] = error $ "Uninitialized leaf node. This is bad!"
         g h (Just  v) [] = h v []
         g h        e  xs = h (error $ "We shouldn't be using this value." ++ show e ++ show (length xs)) xs
-
---        id2 x _ = x
-        -- dynamicScoring  = directOptimizationPostOrder (\x y -> naiveDOConst x y undefined)
-        -- Because of monomophism BS
-        dynamicScoring2 = directOptimizationPostOrder (\x y -> naiveDOConst x y undefined)
 {--}
         adaptiveDirectOptimizationPostOrder dec kidDecs = directOptimizationPostOrder pairwiseAlignmentFunction dec kidDecs
           where
