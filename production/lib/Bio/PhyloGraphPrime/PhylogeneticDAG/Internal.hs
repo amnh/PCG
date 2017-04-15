@@ -216,12 +216,7 @@ applySoftwireResolutions inputContexts =
           in  if   multipleParents x
               then y -- <> pure []
               else y
-      x:xs ->
-        case pairs $ x:xs of
-          y:ys -> foldMap1 pairingLogic $ y :| ys
-          -- This will never happen, covered by previous case statement
-          []   -> error "Fatal logic error in 'applySoftwireResolutions' definition when matching pattern in 'pairs' application."
-
+      x:y:_ -> pairingLogic (x,y)
   where
     multipleParents = not . isSingleton . otoList . snd
 {-
@@ -233,8 +228,8 @@ applySoftwireResolutions inputContexts =
     pairingLogic (lhs, rhs) =
         case (multipleParents lhs, multipleParents rhs) of
           (False, False) -> pairedSet
-          (False, True ) -> pairedSet <> rhsSet
-          (True , False) -> pairedSet <> lhsSet
+          (False, True ) -> pairedSet <> lhsSet
+          (True , False) -> pairedSet <> rhsSet
           (True , True ) -> pairedSet <> lhsSet <> rhsSet
        where
          lhsSet = pure <$> lhs'
@@ -244,7 +239,18 @@ applySoftwireResolutions inputContexts =
          pairedSet =
              case cartesianProduct lhs' rhs' of
                x:xs -> x:|xs
-               []   -> pure [] -- This shouldn't ever happen
+               []   -> error errorContext -- pure [] -- This shouldn't ever happen
+           where
+             errorContext = unlines
+                 [ "The impossible happened!"
+                 , "LHS:"
+                 , shownLHS
+                 , "RHS:"
+                 , shownRHS
+                 ]
+               where
+                 shownLHS = unlines . toList $ show . leafSetRepresentation <$> fst lhs
+                 shownRHS = unlines . toList $ show . leafSetRepresentation <$> fst rhs
 --         cartesianProduct :: (Foldable t, Foldable t') => t a -> t a' -> [[a]]
 
          cartesianProduct xs ys =
