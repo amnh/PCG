@@ -57,27 +57,18 @@ import           Prelude            hiding (lookup, zipWith)
 -- network edge.
 
 assignOptimalDynamicCharacterRootEdges
-  :: ( HasCharacterCost m Word
-     , HasCharacterCost i Word
-     , HasCharacterCost f Word
-     , HasCharacterCost a Word
-     , HasCharacterCost d Word
-     , HasCharacterWeight m Double
-     , HasCharacterWeight i Double
-     , HasCharacterWeight f Double
-     , HasCharacterWeight a Double
-     , HasCharacterWeight d Double
-     , HasTraversalLocus  d (Maybe TraversalLocusEdge)
-     , Show m
-     , Show i
-     , Show c
-     , Show f
-     , Show a
-     , Show d
+  :: ( HasBlockCost u v w x y z Word Double
+     , HasTraversalLocus z (Maybe TraversalLocusEdge)
+     , Show u
+     , Show v
+     , Show w
+     , Show x
+     , Show y
+     , Show z
      ) --x, Ord x, Show x)
-  => (d -> [d] -> d)
-  -> PhylogeneticDAG2 e n m i c f a d
-  -> PhylogeneticDAG2 e n m i c f a d
+  => (z -> [z] -> z)
+  -> PhylogeneticDAG2 e n u v w x y z
+  -> PhylogeneticDAG2 e n u v w x y z
 assignOptimalDynamicCharacterRootEdges extensionTransformation (PDAG2 inputDag) = PDAG2 updatedDag
   where
 
@@ -168,23 +159,27 @@ assignOptimalDynamicCharacterRootEdges extensionTransformation (PDAG2 inputDag) 
       where
         f i
           | i `elem` rootRefs inputDag = mempty -- undefined
-          | otherwise                  = parentEdgeValue <> childEdgeValues
+          | otherwise                  = parentEdgeValues <> childEdgeValues
           where
-            parentRef
-              | candidate `notElem` rootRefs inputDag = candidate
-              | otherwise = sibling
+            
+            unrootedParentRefs = fmap g . otoList . parentRefs $ refVec ! i
               where
-                candidate = head . otoList . parentRefs $ refVec ! i
-                sibling   = head . filter (/=i) . IM.keys .  childRefs $ refVec ! candidate
-                
-            kidRefs          = IM.keys .  childRefs $ refVec ! i 
-            parentEdgeValue  = M.singleton (i, parentRef) $ getCache i
-            childEdgeValues  = foldMap deriveDirectionalDatum [ (x,y) | x <- kidRefs, y <- kidRefs, x /= y ]
-            deriveDirectionalDatum (j, k) = M.singleton (i,j) relativeSubtreeDatumValue
+                g candidate
+                  | candidate `notElem` rootRefs inputDag = candidate
+                  | otherwise = sibling
+                  where
+                    sibling   = head . filter (/=i) . IM.keys .  childRefs $ refVec ! candidate
 
+            parentRef = head unrootedParentRefs
+            childRef  = head kidRefs
+            
+            kidRefs          = IM.keys .  childRefs $ refVec ! i 
+            parentEdgeValues = foldMap (\p -> M.singleton (i, p) $ getCache i) unrootedParentRefs
+            childEdgeValues  = foldMap deriveDirectionalDatum $ [ (x, y, parentRef) | x <- kidRefs, y <- kidRefs, x /= y ] <> [ (childRef, x, y) | x <- unrootedParentRefs, y <- unrootedParentRefs, x /= y ]
+            deriveDirectionalDatum (j, k, p) = M.singleton (i,j) relativeSubtreeDatumValue
               where
-                childMemoizedSubstructure    = (contextualNodeDatum ! k        ) ! (        k, i)
-                parentalMemoizedSubstructure = (contextualNodeDatum ! parentRef) ! (parentRef, i)
+                childMemoizedSubstructure    = (contextualNodeDatum ! k) ! (k, i)
+                parentalMemoizedSubstructure = (contextualNodeDatum ! p) ! (p, i)
                 relativeSubtreeDatumValue    = localResolutionApplication extensionTransformation parentalMemoizedSubstructure childMemoizedSubstructure
 
     rootRefWLOG  = NE.head $ rootRefs inputDag

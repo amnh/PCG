@@ -137,25 +137,14 @@ data PhylogeneticDAG2 e n m i c f a d
 
 instance ( Show e
          , Show n
-         , Show m
-         , Show i
-         , Show c
-         , Show f
-         , Show a
-         , Show d
-         , HasCharacterCost   m Word
-         , HasCharacterCost   i Word
-         , HasCharacterCost   c Double
-         , HasCharacterCost   f Word
-         , HasCharacterCost   a Word
-         , HasCharacterCost   d Word
-         , HasCharacterWeight m Double
-         , HasCharacterWeight i Double
-         , HasCharacterWeight c Double
-         , HasCharacterWeight f Double
-         , HasCharacterWeight a Double
-         , HasCharacterWeight d Double
-         ) => Show (PhylogeneticDAG e n m i c f a d) where
+         , Show u
+         , Show v
+         , Show w
+         , Show x
+         , Show y
+         , Show z
+         , HasBlockCost u v w x y z Word Double
+         ) => Show (PhylogeneticDAG e n u v w x y z) where
 
     show (PDAG dag) = show dag <> "\n" <> foldMapWithKey f dag
       where
@@ -164,27 +153,20 @@ instance ( Show e
 
 instance ( Show e
          , Show n
-         , Show m
-         , Show i
-         , Show c
-         , Show f
-         , Show a
-         , Show d
-         , HasCharacterCost   m Word
-         , HasCharacterCost   i Word
-         , HasCharacterCost   c Double
-         , HasCharacterCost   f Word
-         , HasCharacterCost   a Word
-         , HasCharacterCost   d Word
-         , HasCharacterWeight m Double
-         , HasCharacterWeight i Double
-         , HasCharacterWeight c Double
-         , HasCharacterWeight f Double
-         , HasCharacterWeight a Double
-         , HasCharacterWeight d Double
-         ) => Show (PhylogeneticDAG2 e n m i c f a d) where
+         , Show u
+         , Show v
+         , Show w
+         , Show x
+         , Show y
+         , Show z
+         , HasBlockCost u v w x y z Word Double
+         ) => Show (PhylogeneticDAG2 e n u v w x y z) where
 
-    show (PDAG2 dag) = show dag <> "\n" <> foldMapWithKey f dag
+    show (PDAG2 dag) = unlines
+        [ show dag
+        , show $ graphData dag
+        , foldMapWithKey f dag
+        ]
       where
 --        f i (PNode2 n sek) = mconcat [ "Node {", show i, "}:\n\n", unlines [show n, show sek], "\n\n" ] 
         f i n = mconcat [ "Node {", show i, "}:\n\n", show n ]
@@ -265,7 +247,8 @@ resolutionsDoNotOverlap :: ResolutionInformation a -> ResolutionInformation b ->
 resolutionsDoNotOverlap x y = leafSetRepresentation x .&. leafSetRepresentation y == zeroBits
 
 
-localResolutionApplication :: (d -> [d] -> d')
+localResolutionApplication :: HasBlockCost u v w x y d' Word Double
+                           => (d -> [d] -> d')
                            -> NonEmpty (ResolutionInformation (CharacterSequence u v w x y d))
                            -> ResolutionCache (CharacterSequence u v w x y d)
                            -> NonEmpty (ResolutionInformation (CharacterSequence u v w x y d'))
@@ -288,7 +271,8 @@ localResolutionApplication f x y =
         }
 
 
-generateLocalResolutions :: (u -> [u'] -> u'')
+generateLocalResolutions :: HasBlockCost u'' v'' w'' x'' y'' z'' Word Double
+                         => (u -> [u'] -> u'')
                          -> (v -> [v'] -> v'')
                          -> (w -> [w'] -> w'')
                          -> (x -> [x'] -> x'')
@@ -299,14 +283,16 @@ generateLocalResolutions :: (u -> [u'] -> u'')
                          ->  ResolutionInformation (CharacterSequence u'' v'' w'' x'' y'' z'')
 generateLocalResolutions f1 f2 f3 f4 f5 f6 parentalResolutionContext childResolutionContext =
                 ResInfo
-                { totalSubtreeCost      = sum $ totalSubtreeCost  <$> childResolutionContext
-                , localSequenceCost     = sum $ localSequenceCost <$> childResolutionContext
+                { totalSubtreeCost      = newLocalCost + sum (totalSubtreeCost <$> childResolutionContext)
+                , localSequenceCost     = newLocalCost
                 , subtreeEdgeSet        = newSubtreeEdgeSet
                 , leafSetRepresentation = newLeafSetRep
                 , subtreeRepresentation = newSubtreeRep
-                , characterSequence     = transformation (characterSequence parentalResolutionContext) (characterSequence <$> childResolutionContext)
+                , characterSequence     = newCharacterSequence
                 }
               where
+                newLocalCost         = sequenceCost newCharacterSequence
+                newCharacterSequence = transformation (characterSequence parentalResolutionContext) (characterSequence <$> childResolutionContext)
                 newSubtreeEdgeSet = foldMap subtreeEdgeSet childResolutionContext
 
                 (newLeafSetRep, newSubtreeRep) =

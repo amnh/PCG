@@ -21,6 +21,7 @@ module Bio.PhyloGraphPrime.PhylogeneticDAG.Postorder
 import           Bio.PhyloGraphPrime.Node
 import           Bio.PhyloGraphPrime.PhylogeneticDAG.Internal
 import           Bio.PhyloGraphPrime.ReferenceDAG.Internal
+import           Bio.Sequence
 import           Control.Arrow             ((&&&))
 import           Control.Applicative       (liftA2)
 import           Control.Monad.State.Lazy
@@ -39,7 +40,9 @@ import           Prelude            hiding (zipWith)
 -- The logic function takes a current node decoration,
 -- a list of parent node decorations with the logic function already applied,
 -- and returns the new decoration for the current node.
-postorderSequence' :: (Eq z, Eq z', Hashable z, Hashable z')
+postorderSequence' :: ( Eq z, Eq z', Hashable z, Hashable z'
+                      , HasBlockCost u' v' w' x' y' z' Word Double
+                      )
                    => (u -> [u'] -> u')
                    -> (v -> [v'] -> v')
                    -> (w -> [w'] -> w')
