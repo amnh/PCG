@@ -1,2 +1,2 @@
-read("artmor.ss")
+read("artmor.tnt")
 read(newick:("artmor.tre"))

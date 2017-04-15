@@ -180,18 +180,18 @@ instance Storable AlignIO where
 {- ******************************************* CostMatrix declarations and Storable instances ******************************************* -}
 -- | Holds single cost matrix, which contains costs and medians for all
 -- possible character elements. It is completely filled using a TCM. See note below at 'setupCostMatrixFn_c'.
-data CostMatrix2d = CostMatrix2d { alphSize         :: CInt      -- alphabet size including gap, and including ambiguities if
-                                                              --     combinations == True
+data CostMatrix2d = CostMatrix2d { alphSize            :: CInt      -- alphabet size including gap, and including ambiguities if
+                                                                    --     combinations == True
                                  , costMatrixDimension :: CInt      -- ceiling of log_2 (alphSize)
-                                 , gapChar          :: CInt      -- gap value (1 << (alphSize - 1))
-                                 , costModelType    :: CInt      {- The type of cost model to be used in the alignment,
-        System.IO                                                       - i.e. affine or not.
-                                                               - Based on cost_matrix.ml, values are:
-                                                               - • linear == 0
-                                                               - • affine == 3
-                                                               - • no_alignment == 2,
-                                                               - but I updated it. See costMatrix.h.
-                                                               -}
+                                 , gapChar             :: CInt      -- gap value (1 << (alphSize - 1))
+                                 , costModelType       :: CInt      {- The type of cost model to be used in the alignment,
+                                                                         - i.e. affine or not.
+                                                                     - Based on cost_matrix.ml, values are:
+                                                                     - • linear == 0
+                                                                     - • affine == 3
+                                                                     - • no_alignment == 2,
+                                                                     - but I updated it. See costMatrix.h.
+                                                                     -}
                                  , combinations  :: CInt      {- This is a flag set to true if we are going to accept
                                                                - all possible combinations of the elements in the alphabet
                                                                - in the alignments. This is not true for protein characters
@@ -397,7 +397,7 @@ int align2dAffine(const alignIO_p char1,
                   const alignIO_p ungappedOutputSeq,
                   // alignIO_p unionOutputSeq,
                   const cost_matrices_2d_p costMtx2d,
-                  int doMedians); 
+                  int doMedians);
 -}
 foreign import ccall unsafe "c_alignment_interface.h align2dAffine"
     align2dAffineFn_c :: Ptr AlignIO -- ^ character1, input & output
@@ -460,7 +460,7 @@ algn2d char1 char2 costStruct computeUnion computeMedians = handleMissingCharact
 {--}
                 strategy <- getAlignmentStrategy <$> peek costStruct
 --                !_ <- trace (show strategy) $ pure ()
-                
+
                 let !cost = case strategy of
                               Affine -> align2dAffineFn_c char1ToSend char2ToSend retGapped retUngapped costStruct                        (toCInt computeMedians)
                               _      -> align2dFn_c       char1ToSend char2ToSend retGapped retUngapped costStruct neverComputeOnlyGapped (toCInt computeMedians) (toCInt computeUnion)
