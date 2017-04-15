@@ -41,7 +41,7 @@ data  PhylogeneticNode n s
     = PNode
     { nodeDecorationDatum :: n
     , sequenceDecoration  :: s
-    } deriving (Eq, Functor)
+    } deriving (Eq, Functor, Show)
 
 
 -- |
