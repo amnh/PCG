@@ -35,6 +35,12 @@ import           Prelude            hiding (zipWith)
 
 
 
+assignPunativeNetworkEdgeCost :: HasBlockCost u v w x y z i r => PhylogeneticDAG2 e n u v w x y z -> PhylogeneticDAG2 e n u v w x y z
+assignPunativeNetworkEdgeCost input@(PDAG2 dag) = PDAG2 $ dag { graphData = (graphData dag) { networkEdgeCost = value } }
+  where
+    value = calculatePunativeNetworkEdgeCost input
+
+
 calculatePunativeNetworkEdgeCost :: HasBlockCost u v w x y z i r => PhylogeneticDAG2 e n u v w x y z -> ExtendedReal
 calculatePunativeNetworkEdgeCost inputDag
   | cardinality extraneousEdges > 0 = infinity
@@ -102,3 +108,4 @@ extractBlocksMinimalEdgeSets (PDAG2 dag) = foldMapWithKey1 f sequenceBlocksWLOG
           []   -> error ""
       where
         minimaValues = minimaBy (comparing fst) $ focusOnBlockIndex k <$> rootingResolutions
+

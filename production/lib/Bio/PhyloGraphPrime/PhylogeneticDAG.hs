@@ -31,6 +31,7 @@ module Bio.PhyloGraphPrime.PhylogeneticDAG
   , UnifiedDynamicCharacter
   , UnRiefiedCharacterDAG
   , assignOptimalDynamicCharacterRootEdges
+  , assignPunativeNetworkEdgeCost
   , generateLocalResolutions
   , postorderSequence'
   , rootCosts
@@ -54,6 +55,7 @@ import           Bio.PhyloGraphPrime.Node
 import           Bio.PhyloGraphPrime.PhylogeneticDAG.Class
 import           Bio.PhyloGraphPrime.PhylogeneticDAG.DynamicCharacterRerooting
 import           Bio.PhyloGraphPrime.PhylogeneticDAG.Internal
+import           Bio.PhyloGraphPrime.PhylogeneticDAG.NetworkEdgeQuantification
 import           Bio.PhyloGraphPrime.PhylogeneticDAG.Postorder
 import           Bio.PhyloGraphPrime.PhylogeneticDAG.Riefication
 import           Bio.PhyloGraphPrime.ReferenceDAG.Internal

@@ -127,14 +127,15 @@ chooseDirectOptimizationComparison dec decs =
 initializeDecorations2 (PhylogeneticSolution forests) = PhylogeneticSolution $ fmap performDecoration <$> forests
   where
 --    performDecoration :: CharacterDAG -> InitialDecorationDAG
-    performDecoration = assignOptimalDynamicCharacterRootEdges dynamicScoring2 .
-      postorderSequence'
-        (g  sankoffPostOrder)
-        (g  sankoffPostOrder)
-        (g additivePostOrder)
-        (g    fitchPostOrder)
-        (g additivePostOrder)
-        (g adaptiveDirectOptimizationPostOrder)
+    performDecoration = assignPunativeNetworkEdgeCost
+                      . assignOptimalDynamicCharacterRootEdges dynamicScoring2
+                      . postorderSequence'
+                          (g  sankoffPostOrder)
+                          (g  sankoffPostOrder)
+                          (g additivePostOrder)
+                          (g    fitchPostOrder)
+                          (g additivePostOrder)
+                          (g adaptiveDirectOptimizationPostOrder)
       where
         g _  Nothing  [] = error $ "Uninitialized leaf node. This is bad!"
         g h (Just  v) [] = h v []

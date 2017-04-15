@@ -18,6 +18,7 @@ import           Bio.PhyloGraphPrime.Component
 import           Bio.PhyloGraphPrime.EdgeSet
 import           Control.Arrow              ((&&&),(***))
 import           Data.Bifunctor
+import           Data.ExtendedReal
 import           Data.Foldable
 import           Data.Hashable              (Hashable)
 import qualified Data.HashMap.Strict as HM
@@ -63,6 +64,7 @@ data  IndexData e n
 data  GraphData
     = GraphData
     { cost :: Double
+    , networkEdgeCost :: ExtendedReal
     }
 
 
@@ -211,7 +213,7 @@ unfoldDAG f origin =
     RefDAG
     { references = referenceVector
     , rootRefs   = NE.fromList roots2 -- otoList rootIndices
-    , graphData  = GraphData 0
+    , graphData  = GraphData 0 0
     }
   where
     referenceVector = V.fromList . fmap h $ toList expandedMap
@@ -223,7 +225,7 @@ unfoldDAG f origin =
             , childRefs      = iMap
             }
 
---    expandedMap = contractToContiguousVertexMapping $ expandVertexMapping resultMap
+    expandedMap = contractToContiguousVertexMapping $ expandVertexMapping resultMap
     expandedMap = resultMap
 
     -- TODO:
