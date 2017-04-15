@@ -24,6 +24,7 @@ import           Bio.Sequence
 import           Bio.PhyloGraphPrime.Node
 import           Bio.PhyloGraphPrime.PhylogeneticDAG.Internal
 import           Bio.PhyloGraphPrime.ReferenceDAG.Internal
+import           Control.Applicative
 import           Control.Arrow             ((&&&))
 import           Control.Lens
 import           Control.Monad.State.Lazy
@@ -37,7 +38,7 @@ import           Data.Maybe
 import           Data.MonoTraversable
 import           Data.Semigroup
 import qualified Data.Vector        as V
-import           Prelude            hiding (zipWith)
+import           Prelude            hiding (lookup, zipWith)
 
 
 -- |
@@ -131,10 +132,17 @@ assignOptimalDynamicCharacterRootEdges extensionTransformation (PDAG2 inputDag) 
 --    referenceEdgeMapping :: HashMap EdgeReference (ResolutionCache (CharacterSequence u v w x y z))
     referenceEdgeMapping = foldMap f unrootedEdges
       where
-        f e@(i,j) = M.singleton e $ localResolutionApplication extensionTransformation lhsContext rhsContext
+        f e@(i,j) =
+            case liftA2 (,) lhsContext rhsContext of
+              Just (lhs, rhs) -> M.singleton e $ localResolutionApplication extensionTransformation lhs rhs
+              Nothing         -> error errorContext
           where
-            lhsContext = (contextualNodeDatum ! i) ! (i,j)
-            rhsContext = (contextualNodeDatum ! j) ! (j,i)
+            lhsContext = (i `lookup` contextualNodeDatum) >>= ((i,j) `lookup`)
+            rhsContext = (j `lookup` contextualNodeDatum) >>= ((j,i) `lookup`)
+            errorContext = unlines
+                [ show e
+                , show $ M.keys <$> contextualNodeDatum
+                ]
     
 
 
@@ -159,7 +167,7 @@ assignOptimalDynamicCharacterRootEdges extensionTransformation (PDAG2 inputDag) 
     contextualNodeDatum = V.generate (length refVec) f
       where
         f i
-          | i `elem` rootRefs inputDag = undefined
+          | i `elem` rootRefs inputDag = mempty -- undefined
           | otherwise                  = parentEdgeValue <> childEdgeValues
           where
             parentRef
