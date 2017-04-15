@@ -452,9 +452,9 @@ cm_precalc_4algn (const cost_matrices_2d_p costMatrix, nw_matrices_p alignmentMa
 
       //printf ("Before innerIndex (j = %d)\n", j), fflush(stdout);
 	int innerIndex = seq_begin_t[j];
-        printf ("After  innerIndex: {%d}\n", innerIndex), fflush(stdout);
+        //printf ("After  innerIndex: {%d}\n", innerIndex), fflush(stdout);
 
-        printf ("Before valueDatum\n"), fflush(stdout);
+        //printf ("Before valueDatum\n"), fflush(stdout);
 	int valueDatum = prepend_t[innerIndex];
         //printf ("After  valueDatum\n"), fflush(stdout);
 

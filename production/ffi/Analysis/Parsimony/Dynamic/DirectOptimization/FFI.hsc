@@ -37,7 +37,6 @@ import Data.Foldable
 import Data.List        (intercalate)
 --import Data.MonoTraversable
 import Data.Semigroup
-import Debug.Trace
 import Foreign
 --import Foreign.Ptr
 --import Foreign.C.String
@@ -49,7 +48,7 @@ import GHC.Generics     (Generic)
 import Prelude   hiding (sequence, tail)
 import System.IO.Unsafe (unsafePerformIO)
 
---import Debug.Trace
+import Debug.Trace
 
 
 #include "c_alignment_interface.h"
