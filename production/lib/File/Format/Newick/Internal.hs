@@ -19,14 +19,16 @@ module File.Format.Newick.Internal
   , NewickNode(..)
   , isLeaf
   , newickNode
+  , renderNewickForest
   ) where
 
 
 import           Control.Applicative (liftA2)
-import           Data.Maybe (isJust,isNothing)
+import           Data.Tree
+import           Data.Maybe
 import qualified Bio.PhyloGraph.Network as N
 import           Data.List
-import           Data.List.NonEmpty  (NonEmpty)
+import           Data.List.NonEmpty  (NonEmpty, toList)
 import           Data.Monoid
 
 
@@ -77,6 +79,12 @@ instance Show NewickNode where
 instance Monoid NewickNode where
   mempty = NewickNode [] Nothing Nothing
   mappend (NewickNode des1 label1 len1) (NewickNode des2 label2 len2) = NewickNode (des1 <> des2) (label1 <> label2) (liftA2 (+) len1 len2)
+
+
+renderNewickForest :: NewickForest -> String
+renderNewickForest = drawForest . unfoldForest f . toList
+  where
+    f = (,) <$> fromMaybe "X" . newickLabel <*> descendants
 
 
 -- |

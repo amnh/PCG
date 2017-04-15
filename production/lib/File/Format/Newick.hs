@@ -37,6 +37,7 @@ module File.Format.Newick
   , isLeaf
   , newickNode
   , newickStreamParser
+  , renderNewickForest
   ) where
 
 
