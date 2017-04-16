@@ -163,14 +163,20 @@ instance ( Show e
          , HasBlockCost u v w x y z Word Double
          ) => Show (PhylogeneticDAG2 e n u v w x y z) where
 
-    show (PDAG2 dag) = unlines
-        [ show dag
-        , show $ graphData dag
+    show p@(PDAG2 dag) = unlines
+        [ renderSummary p
         , foldMapWithKey f dag
         ]
       where
 --        f i (PNode2 n sek) = mconcat [ "Node {", show i, "}:\n\n", unlines [show n, show sek], "\n\n" ] 
         f i n = mconcat [ "Node {", show i, "}:\n\n", show n ]
+
+
+renderSummary :: PhylogeneticDAG2 e n u v w x y z -> String
+renderSummary (PDAG2 dag) = unlines
+    [ show dag
+    , show $ graphData dag
+    ]
 
 
 type EdgeReference = (Int, Int)

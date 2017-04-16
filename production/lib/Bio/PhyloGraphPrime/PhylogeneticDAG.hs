@@ -34,9 +34,10 @@ module Bio.PhyloGraphPrime.PhylogeneticDAG
   , assignPunativeNetworkEdgeCost
   , generateLocalResolutions
   , postorderSequence'
-  , rootCosts
+  , renderSummary
   , riefiedSolution
   , riefiedToCharacterDAG
+  , rootCosts
   -- * Mapping over networks
   , edgePreorderMap
   , edgePostorderMap
