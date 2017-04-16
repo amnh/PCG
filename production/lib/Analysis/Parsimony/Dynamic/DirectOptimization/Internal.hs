@@ -35,7 +35,7 @@ import           Data.MonoTraversable
 import           Data.Word
 import           Prelude     hiding (lookup, zip, zipWith)
 
-import Debug.Trace
+-- import Debug.Trace
 
 
 type PairwiseAlignment s = s -> s -> (s, Double, s, s, s)

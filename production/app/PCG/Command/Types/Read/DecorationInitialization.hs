@@ -78,7 +78,7 @@ import           Data.MonoTraversable (Element)
 --import           PCG.SearchState
 import           Prelude                    hiding (lookup, zip, zipWith)
 
-import Debug.Trace
+-- import Debug.Trace
 
 
 {-
@@ -111,7 +111,7 @@ chooseDirectOptimizationComparison dec decs =
       []  -> selectBranch dec
       x:_ -> selectBranch x
   where
-    selectBranch x | trace (show . length $ x ^. characterAlphabet) False = undefined
+--    selectBranch x | trace (show . length $ x ^. characterAlphabet) False = undefined
     selectBranch candidate
       | sequentialAlignOverride = sequentialAlign (candidate ^. sparseTransitionCostMatrix)
       | otherwise =
@@ -128,7 +128,7 @@ initializeDecorations2 (PhylogeneticSolution forests) = PhylogeneticSolution $ f
   where
 --    performDecoration :: CharacterDAG -> InitialDecorationDAG
     performDecoration = assignPunativeNetworkEdgeCost
-                      . assignOptimalDynamicCharacterRootEdges adaptiveDirectOptimizationPostOrder
+--                      . assignOptimalDynamicCharacterRootEdges adaptiveDirectOptimizationPostOrder
                       . postorderSequence'
                           (g  sankoffPostOrder)
                           (g  sankoffPostOrder)

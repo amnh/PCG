@@ -48,7 +48,7 @@ import GHC.Generics     (Generic)
 import Prelude   hiding (sequence, tail)
 import System.IO.Unsafe (unsafePerformIO)
 
-import Debug.Trace
+-- import Debug.Trace
 
 
 #include "c_alignment_interface.h"
@@ -559,7 +559,7 @@ align2dCostOnly
   -> s
   -> DenseTransitionCostMatrix
   -> (s, Double, s, s, s)
-align2dCostOnly c1 c2 cm = trace "cost only" $ algn2d c1 c2 cm DoNotComputeUnions DoNotComputeMedians
+align2dCostOnly c1 c2 cm = algn2d c1 c2 cm DoNotComputeUnions DoNotComputeMedians
 
 
 -- | A C binding that aligns two DO characters and returns the cost and the ungapped median sequence

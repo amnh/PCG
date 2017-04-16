@@ -42,7 +42,7 @@ import           File.Format.VertexEdgeRoot.Parser hiding (EdgeLength)
 import qualified File.Format.VertexEdgeRoot.Parser as VER
 import           Prelude                           hiding (lookup)
 
-import Debug.Trace
+-- import Debug.Trace
 
 
 -- type ParserTree   = ZipperNode (Maybe Double) (Maybe String)
@@ -100,7 +100,7 @@ instance ParsedForest Nexus where
 
 -- | (✔)
 instance ParsedForest (NonEmpty NewickForest) where
-    unifyGraph = Just . fmap (PhylogeneticForest . fmap (coerceTree . relationMap . enumerate)) . (\x -> trace (unlines $ renderNewickForest <$> toList x) x)
+    unifyGraph = Just . fmap (PhylogeneticForest . fmap (coerceTree . relationMap . enumerate)) {- . (\x -> trace (unlines $ renderNewickForest <$> toList x) x) -}
       where
 
         -- Apply generating function by indexing adjacentcy matrix.

@@ -38,7 +38,7 @@ import qualified Data.Vector         as V
 import           Data.Vector.Instances      ()
 import           Prelude             hiding (lookup)
 
-import           Debug.Trace
+-- import           Debug.Trace
 
 
 -- |
@@ -238,12 +238,12 @@ unfoldDAG f origin =
             , childRefs      = iMap
             }
 
-    {--}
+    {--
     expandedMap = {- contractToContiguousVertexMapping $ traceShowMapping $ expandVertexMapping $ -} traceShowMapping resultMap
       where
         traceShowMapping v = trace (show $ fmap (\(x,_,y) -> (x, IM.keys y)) v) v
-    {--}
-    --expandedMap = resultMap
+    --}
+    expandedMap = resultMap
 
     -- TODO:
     -- _rootIndices seems to be wrong so we do this.

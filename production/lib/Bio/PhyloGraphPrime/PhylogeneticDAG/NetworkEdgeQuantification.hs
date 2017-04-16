@@ -32,7 +32,7 @@ import           Data.Semigroup
 import           Data.Ord
 import           Prelude            hiding (zipWith)
 
-import Debug.Trace
+-- import Debug.Trace
 
 
 assignPunativeNetworkEdgeCost :: HasBlockCost u v w x y z i r => PhylogeneticDAG2 e n u v w x y z -> PhylogeneticDAG2 e n u v w x y z
@@ -50,10 +50,10 @@ assignPunativeNetworkEdgeCost input@(PDAG2 dag) = PDAG2 $ dag { graphData = newG
 
 calculatePunativeNetworkEdgeCost :: HasBlockCost u v w x y z i r => PhylogeneticDAG2 e n u v w x y z -> ExtendedReal
 calculatePunativeNetworkEdgeCost inputDag
-  | cardinality extraneousEdges > 0 = trace ("Extraneous edges: " <> show extraneousEdges)
-                                    $ trace ("Entire     edges: " <> show entireNetworkEdgeSet)
-                                    $ trace ("Minimal Block edges: " <> show ((\(_,_,x) -> collapseToEdgeSet x) <$> minimalBlockNetworkDisplay))
-                                    $ infinity
+  | cardinality extraneousEdges > 0 = --trace ("Extraneous edges: " <> show extraneousEdges)
+                                  --  $ trace ("Entire     edges: " <> show entireNetworkEdgeSet)
+                                  --  $ trace ("Minimal Block edges: " <> show ((\(_,_,x) -> collapseToEdgeSet x) <$> minimalBlockNetworkDisplay))
+                                      infinity
   | otherwise                       = realToFrac numerator / realToFrac denominator
   where
     extraneousEdges        = entireNetworkEdgeSet `difference` minimalRequiredEdgeSet 
