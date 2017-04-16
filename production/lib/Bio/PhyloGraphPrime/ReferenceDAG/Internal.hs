@@ -77,7 +77,7 @@ instance Show GraphData where
         [ "DAG total cost:          " <> show (dagCost x)
         , "DAG network edge cost:   " <> show (networkEdgeCost x)
         , "DAG root sequence costs:"
-        , unlines . toList $ show <$> rootSequenceCosts x
+        , unlines . toList $ (\k v -> "  Root #" <> show k <> ": " <> show v) <#$> rootSequenceCosts x
         ]
 
 
