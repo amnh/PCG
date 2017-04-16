@@ -14,10 +14,12 @@
 
 module Bio.PhyloGraphPrime.Node
   ( EdgeSet
+  , NewickSerialization()
   , PhylogeneticNode (..)
   , PhylogeneticNode2(..)
   , ResolutionCache
   , ResolutionInformation(..)
+  , SubtreeLeafSet()
   , addEdgeToEdgeSet
   , singletonEdgeSet
   , singletonNewickSerialization

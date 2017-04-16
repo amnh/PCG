@@ -25,11 +25,14 @@ import           Bio.Sequence
 import           Control.Arrow             ((&&&))
 import           Control.Applicative       (liftA2)
 import           Control.Monad.State.Lazy
+import           Data.Bits
 import           Data.Foldable
 import           Data.Hashable
 import           Data.Hashable.Memoize
 import qualified Data.IntMap        as IM
 import           Data.Key
+import           Data.List.NonEmpty        (NonEmpty( (:|) ))
+import qualified Data.List.NonEmpty as NE
 import qualified Data.Vector        as V
 import           Prelude            hiding (zipWith)
 
@@ -65,10 +68,23 @@ postorderSequence' f1 f2 f3 f4 f5 f6 (PDAG2 dag) = PDAG2 $ newDAG dag
       where
         h i =
           PNode2
-              { resolutions          = liftA2 (generateLocalResolutions f1 f2 f3 f4 f5 f6') datumResolutions childResolutions
+              { resolutions          = newResolutions
               , nodeDecorationDatum2 = nodeDecorationDatum2 $ nodeDecoration node
               }
           where
+            newResolutions
+              | i `notElem` rootRefs dag = localResolutions
+              | otherwise =
+                  case NE.filter completeCoverage localResolutions of
+                    x:xs -> x:|xs
+                    _    -> error "Root Node with no complete coverage resolutions!!! This should be logically impossible."
+
+            completeCoverage = (completeLeafSet ==) . (completeLeafSet .&.) . leafSetRepresentation
+            localResolutions = liftA2 (generateLocalResolutions f1 f2 f3 f4 f5 f6') datumResolutions childResolutions
+            completeLeafSet  = complement $ wlog `xor`wlog
+              where
+                wlog = leafSetRepresentation $ NE.head localResolutions
+                
             node             = references dag ! i
             childIndices     = IM.keys $ childRefs node
             datumResolutions = resolutions $ nodeDecoration node

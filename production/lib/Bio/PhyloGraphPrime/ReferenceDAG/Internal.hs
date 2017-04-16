@@ -28,7 +28,7 @@ import           Data.IntSet                (IntSet)
 import qualified Data.IntSet         as IS
 import           Data.Key
 import           Data.List                  (intercalate)
-import           Data.List.NonEmpty         (NonEmpty)
+import           Data.List.NonEmpty         (NonEmpty ((:|)))
 import qualified Data.List.NonEmpty  as NE
 import           Data.Monoid                ((<>))
 import           Data.MonoTraversable
@@ -65,9 +65,20 @@ data  IndexData e n
 -- | Annotations which are global to the graph
 data  GraphData
     = GraphData
-    { cost :: Double
-    , networkEdgeCost :: ExtendedReal
-    } deriving (Show)
+    { dagCost           :: ExtendedReal
+    , networkEdgeCost   :: ExtendedReal
+    , rootSequenceCosts :: NonEmpty Double
+    }
+
+
+instance Show GraphData where
+  
+    show x = unlines
+        [ "DAG total cost:          " <> show (dagCost x)
+        , "DAG network edge cost:   " <> show (networkEdgeCost x)
+        , "DAG root sequence costs:"
+        , unlines . toList $ show <$> rootSequenceCosts x
+        ]
 
 
 -- |
@@ -215,7 +226,7 @@ unfoldDAG f origin =
     RefDAG
     { references = referenceVector
     , rootRefs   = NE.fromList roots2 -- otoList rootIndices
-    , graphData  = GraphData 0 0
+    , graphData  = GraphData 0 0 (0:|[])
     }
   where
     referenceVector = V.fromList . fmap h $ toList expandedMap

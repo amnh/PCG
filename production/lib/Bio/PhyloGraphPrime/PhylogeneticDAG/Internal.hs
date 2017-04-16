@@ -41,6 +41,7 @@ import qualified Data.List.NonEmpty as NE
 import           Data.List.Utility
 import           Data.Maybe
 import           Data.MonoTraversable
+import           Data.Ord
 import           Data.Semigroup
 import           Data.Semigroup.Foldable
 import           Prelude            hiding (zipWith)
@@ -218,9 +219,9 @@ applySoftwireResolutions inputContexts =
          rhsSet = pure <$> rhs'
          lhs'   = fst lhs
          rhs'   = fst rhs
-         pairedSet =
+         pairedSet = 
              case cartesianProduct lhs' rhs' of
-               x:xs -> x:|xs
+               x:xs -> {- NE.fromList . ensureNoLeavesWereOmmitted $ -} x:|xs
                []   -> error errorContext -- pure [] -- This shouldn't ever happen
            where
              errorContext = unlines
@@ -233,14 +234,19 @@ applySoftwireResolutions inputContexts =
                where
                  shownLHS = unlines . toList $ show . leafSetRepresentation <$> fst lhs
                  shownRHS = unlines . toList $ show . leafSetRepresentation <$> fst rhs
---         cartesianProduct :: (Foldable t, Foldable t') => t a -> t a' -> [[a]]
 
-         cartesianProduct xs ys =
+         cartesianProduct xs ys = 
              [ [x,y]
              | x <- toList xs
              , y <- toList ys
              , resolutionsDoNotOverlap x y
              ]
+           where
+             xMask = foldMap1 leafSetRepresentation xs
+             yMask = foldMap1 leafSetRepresentation ys
+             overlapMask = xMask .&. yMask
+             properOverlapInclusion x y =
+               (leafSetRepresentation x .&. overlapMask) `xor` (leafSetRepresentation y .&. overlapMask) == zeroBits
 
 
 resolutionsDoNotOverlap :: ResolutionInformation a -> ResolutionInformation b -> Bool
@@ -293,7 +299,7 @@ generateLocalResolutions f1 f2 f3 f4 f5 f6 parentalResolutionContext childResolu
               where
                 newLocalCost         = sequenceCost newCharacterSequence
                 newCharacterSequence = transformation (characterSequence parentalResolutionContext) (characterSequence <$> childResolutionContext)
-                newSubtreeEdgeSet = foldMap subtreeEdgeSet childResolutionContext
+                newSubtreeEdgeSet    = foldMap subtreeEdgeSet childResolutionContext
 
                 (newLeafSetRep, newSubtreeRep) =
                     case childResolutionContext of

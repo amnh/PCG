@@ -8,8 +8,6 @@
 -- Stability   :  provisional
 -- Portability :  portable
 --
--- Containing the master command for unifying all input types: tree, metadata, and sequence
---
 -----------------------------------------------------------------------------
 
 {-# LANGUAGE FlexibleContexts #-}
@@ -30,20 +28,32 @@ import           Data.Key
 import           Data.List.NonEmpty       (NonEmpty((:|)))
 import qualified Data.List.NonEmpty as NE
 import           Data.List.Utility
+import           Data.Semigroup
 import           Data.Ord
 import           Prelude            hiding (zipWith)
 
+import Debug.Trace
 
 
 assignPunativeNetworkEdgeCost :: HasBlockCost u v w x y z i r => PhylogeneticDAG2 e n u v w x y z -> PhylogeneticDAG2 e n u v w x y z
-assignPunativeNetworkEdgeCost input@(PDAG2 dag) = PDAG2 $ dag { graphData = (graphData dag) { networkEdgeCost = value } }
+assignPunativeNetworkEdgeCost input@(PDAG2 dag) = PDAG2 $ dag { graphData = newGraphData }
   where
-    value = calculatePunativeNetworkEdgeCost input
-
+    punativeCost  = calculatePunativeNetworkEdgeCost input
+    sequenceCosts = minimum . fmap totalSubtreeCost . resolutions . nodeDecoration . (references dag !) <$> rootRefs dag
+    newGraphData  =
+        GraphData        
+        { dagCost           = punativeCost + realToFrac (sum sequenceCosts)
+        , networkEdgeCost   = punativeCost
+        , rootSequenceCosts = sequenceCosts
+        }
+        
 
 calculatePunativeNetworkEdgeCost :: HasBlockCost u v w x y z i r => PhylogeneticDAG2 e n u v w x y z -> ExtendedReal
 calculatePunativeNetworkEdgeCost inputDag
-  | cardinality extraneousEdges > 0 = infinity
+  | cardinality extraneousEdges > 0 = trace ("Extraneous edges: " <> show extraneousEdges)
+                                    $ trace ("Entire     edges: " <> show entireNetworkEdgeSet)
+                                    $ trace ("Minimal Block edges: " <> show ((\(_,_,x) -> collapseToEdgeSet x) <$> minimalBlockNetworkDisplay))
+                                    $ infinity
   | otherwise                       = realToFrac numerator / realToFrac denominator
   where
     extraneousEdges        = entireNetworkEdgeSet `difference` minimalRequiredEdgeSet 
