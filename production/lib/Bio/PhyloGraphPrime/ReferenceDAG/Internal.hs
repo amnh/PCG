@@ -592,17 +592,17 @@ expandVertexMapping unexpandedMap = snd . foldl' f (initialCounter+1, unexpanded
             expandedMapping  = IM.insert counter        descendentVertex
                              . replace   key            ancestoralVertex
                              . adjust    updateChildRef maxParentKey
-                             . foldl'    updateParent mapping
+                             . foldl'    updateParent   mapping
                              $ IM.keys iMap
 
 
         handleTooManyParents = rhsRecursiveResult
           where
-            (lhsParentSet, rhsParentSet) = (IS.fromList *** IS.fromList) . splitAt (childCount `div` 2) $ otoList iSet
+            (lhsParentSet, rhsParentSet) = traceShowId $ (IS.fromList *** IS.fromList) . splitAt (parentCount `div` 2) $ otoList iSet
             
-            descendantVertex = (newParentSet, nDatum, iMap)
-            lhsNewVertex     = (lhsParentSet, nDatum, IM.singleton key mempty)
-            rhsNewVertex     = (rhsParentSet, nDatum, IM.singleton key mempty)
+            descendantVertex = (\e@(x,_,y) -> trace ("Changed: " <> show (x,y)) e) (newParentSet, nDatum, iMap)
+            lhsNewVertex     = (\e@(x,_,y) -> trace ("New LHS: " <> show (x,y)) e) (lhsParentSet, nDatum, IM.singleton key mempty)
+            rhsNewVertex     = (\e@(x,_,y) -> trace ("New RHS: " <> show (x,y)) e) (rhsParentSet, nDatum, IM.singleton key mempty)
 
             newParentSet = IS.fromList [counter, counter+1]
 
