@@ -262,7 +262,7 @@ void freeNWMtx(nw_matrices_p input) {
 
 void freeChar(seq_p toFree) {
     free(toFree->array_head);
-    free(toFree);
+    //free(toFree);
 }
 
 void resetCharValues(seq_p retChar) {

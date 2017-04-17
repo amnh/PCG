@@ -91,7 +91,7 @@ traceOpt identifier x = (trace ("Before " <> identifier) ())
 
 -- | sequentialAlignOverride, iff True forces seqAlign to run; otherwise, DO runs.
 sequentialAlignOverride :: Bool
-sequentialAlignOverride = True
+sequentialAlignOverride = False
 
 
 chooseDirectOptimizationComparison :: ( SimpleDynamicDecoration d  c
