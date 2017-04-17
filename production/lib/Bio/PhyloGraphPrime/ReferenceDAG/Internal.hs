@@ -15,7 +15,7 @@
 module Bio.PhyloGraphPrime.ReferenceDAG.Internal where
 
 import           Bio.PhyloGraphPrime.Component
---import           Bio.PhyloGraphPrime.EdgeSet
+import           Bio.PhyloGraphPrime.EdgeSet
 import           Control.Arrow              ((&&&),(***))
 import           Data.Bifunctor
 import           Data.ExtendedReal
@@ -38,9 +38,9 @@ import qualified Data.Vector         as V
 import           Data.Vector.Instances      ()
 import           Prelude             hiding (lookup)
 
-import           Debug.Trace
+--import           Debug.Trace
 
-{-
+
 -- |
 -- A constant time access representation of a directed acyclic graph.
 data  ReferenceDAG e n
@@ -238,12 +238,8 @@ unfoldDAG f origin =
             , childRefs      = iMap
             }
 
-    {--
-    expandedMap = {- contractToContiguousVertexMapping $ traceShowMapping $ expandVertexMapping $ -} traceShowMapping resultMap
-      where
-        traceShowMapping v = trace (show $ fmap (\(x,_,y) -> (x, IM.keys y)) v) v
-    --}
-    expandedMap = resultMap
+    expandedMap = contractToContiguousVertexMapping $ expandVertexMapping resultMap
+--    expandedMap = resultMap
 
     -- TODO:
     -- _rootIndices seems to be wrong so we do this.
@@ -422,7 +418,6 @@ gen1 x = (pops, show x, kids)
         Just xs -> (\y -> (-1,y)) <$> xs
 --}
 
--}
 
 -- |
 -- /O(n*i)/ where /i/ is the number of missing indicies.
@@ -449,8 +444,7 @@ contractToContiguousVertexMapping inputMap = foldMapWithKey contractIndices inpu
         value' = (IS.map decrementIndex iSet, datum, IM.mapKeysMonotonic decrementIndex iMap) 
     
 
--- TODO: Test this and make sure it works!
-expandVertexMapping :: (Monoid a, Show a) => IntMap (IntSet, t, IntMap a) -> IntMap (IntSet, t, IntMap a)
+expandVertexMapping :: Monoid a => IntMap (IntSet, t, IntMap a) -> IntMap (IntSet, t, IntMap a)
 expandVertexMapping unexpandedMap = snd . foldl' f (initialCounter+1, unexpandedMap) $ IM.keys unexpandedMap
   where
     (initialCounter, _) = IM.findMax unexpandedMap
@@ -461,28 +455,28 @@ expandVertexMapping unexpandedMap = snd . foldl' f (initialCounter+1, unexpanded
         case parentCount of
           0 -> if   childCount <= 2
                then acc
-               else trace "Handling too many children with 0 parents" handleTooManyChildren
+               else handleTooManyChildren
 
           1 -> case childCount of
                   0 -> acc
                   1 -> collapseEdge
                   2 -> acc
                   -- One too many childern
-                  3 -> trace "Handling one extra child" expandOutExtraChild
+                  3 -> expandOutExtraChild
                   -- Far too many children
-                  _ -> trace "Handling too many children with 1 parents" handleTooManyChildren
+                  _ -> handleTooManyChildren
 
           2 -> case childCount of
-                  0 -> trace "Expanding out leaf node with 2 parents to have a single parent" expandOutVertexToChild
+                  0 -> expandOutVertexToChild
                   1 -> acc
                   -- Too many children
-                  _ -> trace "Handling too many children with 2 parents" $ expandEdges expandOutVertexToChild counter
+                  _ -> expandEdges expandOutVertexToChild counter
 
           -- One too many parents
-          3 -> trace "Handling one extra parent" $ expandEdges expandOutExtraParent counter
+          3 -> expandEdges expandOutExtraParent counter
 
           -- Far too many parents
-          _ -> trace "Handling too extra parents" $ expandEdges handleTooManyParents key
+          _ -> expandEdges handleTooManyParents key
           
       where
         (iSet, nDatum, iMap) = mapping ! key
@@ -575,7 +569,7 @@ expandVertexMapping unexpandedMap = snd . foldl' f (initialCounter+1, unexpanded
             ancestoralVertex = (reducedParentMap, nDatum, singledChildMap)
             -- Should pointed at by the current node and the pruned parent
             -- Sholud point   to the original subtree
-            descendentVertex = (\e@(x,_,y) -> trace (show (x,y)) e) (singledParentMap, nDatum,            iMap)
+            descendentVertex = (singledParentMap, nDatum,            iMap)
 
             singledChildMap  = IM.singleton counter mempty
             singledParentMap = IS.fromList [key, maxParentKey]
@@ -598,11 +592,11 @@ expandVertexMapping unexpandedMap = snd . foldl' f (initialCounter+1, unexpanded
 
         handleTooManyParents = rhsRecursiveResult
           where
-            (lhsParentSet, rhsParentSet) = traceShowId $ (IS.fromList *** IS.fromList) . splitAt (parentCount `div` 2) $ otoList iSet
+            (lhsParentSet, rhsParentSet) = (IS.fromList *** IS.fromList) . splitAt (parentCount `div` 2) $ otoList iSet
             
-            descendantVertex = (\e@(x,_,y) -> trace ("Changed: " <> show (x,y)) e) (newParentSet, nDatum, iMap)
-            lhsNewVertex     = (\e@(x,_,y) -> trace ("New LHS: " <> show (x,y)) e) (lhsParentSet, nDatum, IM.singleton key mempty)
-            rhsNewVertex     = (\e@(x,_,y) -> trace ("New RHS: " <> show (x,y)) e) (rhsParentSet, nDatum, IM.singleton key mempty)
+            descendantVertex = (newParentSet, nDatum, iMap)
+            lhsNewVertex     = (lhsParentSet, nDatum, IM.singleton key mempty)
+            rhsNewVertex     = (rhsParentSet, nDatum, IM.singleton key mempty)
 
             newParentSet = IS.fromList [counter, counter+1]
 
