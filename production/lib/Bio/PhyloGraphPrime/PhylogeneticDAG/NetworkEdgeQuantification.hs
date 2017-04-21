@@ -14,8 +14,8 @@
 
 module Bio.PhyloGraphPrime.PhylogeneticDAG.NetworkEdgeQuantification where
 
-import           Bio.Character.Decoration.Shared
-import           Bio.Metadata.General
+--import           Bio.Character.Decoration.Shared
+--import           Bio.Metadata.General
 import           Bio.Sequence
 import           Bio.PhyloGraphPrime.EdgeSet
 import           Bio.PhyloGraphPrime.Node
@@ -28,7 +28,7 @@ import           Data.Key
 import           Data.List.NonEmpty       (NonEmpty((:|)))
 import qualified Data.List.NonEmpty as NE
 import           Data.List.Utility
-import           Data.Semigroup
+--import           Data.Semigroup
 import           Data.Ord
 import           Prelude            hiding (zipWith)
 
@@ -60,8 +60,9 @@ calculatePunativeNetworkEdgeCost inputDag
     minimalRequiredEdgeSet = foldMap (\(_,_,x) -> collapseToEdgeSet x) minimalBlockNetworkDisplay
     entireNetworkEdgeSet   = extractNetworkEdgeSet inputDag
 
-    numerator       = punativeEdgeCost minResult
-    denominator     = fromIntegral $ cardinality minimalTotalNetworkDisplay --WLOG, all should be the same number of edges
+    numerator   = punativeEdgeCost minResult
+    denominator :: Word
+    denominator = fromIntegral $ cardinality minimalTotalNetworkDisplay --WLOG, all should be the same number of edges
     
     minResult@(minimalTotalNetworkDisplay, minimalBlockNetworkDisplay) = minimumBy (comparing punativeEdgeCost) minimalNetworkDisplaysWithMinimalBlocks
 

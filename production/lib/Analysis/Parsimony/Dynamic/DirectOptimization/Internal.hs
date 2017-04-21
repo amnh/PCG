@@ -85,7 +85,7 @@ updateFromLeaves pairwiseAlignment (leftChild:|rightChild:_) =
 
 
 directOptimizationPreOrder
-  :: (DirectOptimizationPostOrderDecoration d c, Show c, Show (Element c))
+  :: (DirectOptimizationPostOrderDecoration d c, Show c {-, Show (Element c)-})
   => PairwiseAlignment c
   -> d
   -> [(Word, DynamicDecorationDirectOptimization c)]
@@ -108,7 +108,7 @@ initializeRoot =
 
 
 updateFromParent
-  :: (EncodableDynamicCharacter c, DirectOptimizationPostOrderDecoration d c, Show c, Show (Element c))
+  :: (EncodableDynamicCharacter c, DirectOptimizationPostOrderDecoration d c, Show c {-, Show (Element c)-})
   => PairwiseAlignment c
   -> d
   -> DynamicDecorationDirectOptimization c
@@ -137,7 +137,7 @@ updateFromParent pairwiseAlignment currentDecoration parentDecoration =
 -- |
 -- A three way comparison of characters used in the DO preorder traversal.
 tripleComparison
-  :: ( EncodableDynamicCharacter c, DirectOptimizationPostOrderDecoration d c, Show c, Show (Element c))
+  :: ( {- EncodableDynamicCharacter c, -} DirectOptimizationPostOrderDecoration d c, Show c {-, Show (Element c) -})
   => PairwiseAlignment c
   -> d
   -> c
@@ -177,7 +177,7 @@ tripleComparison pairwiseAlignment childDecoration parentCharacter = (ungapped, 
 -- |
 -- Returns the indices of the gaps that were added in the second character when
 -- compared to the first character.
-newGapLocations :: (EncodableDynamicCharacter c, Show (Element c)) => c -> c -> IntMap Int
+newGapLocations :: EncodableDynamicCharacter c => c -> c -> IntMap Int
 newGapLocations unaligned aligned
   | olength unaligned == olength aligned = mempty
   | otherwise                            = newGaps

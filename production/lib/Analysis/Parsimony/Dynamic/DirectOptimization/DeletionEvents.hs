@@ -19,11 +19,12 @@ module Analysis.Parsimony.Dynamic.DirectOptimization.DeletionEvents
   ) where
 
 
-import           Data.IntSet          (IntSet)
-import qualified Data.IntSet    as IS
-import           Data.List            (intercalate)
-import           Data.Monoid
+import           Data.IntSet       (IntSet)
+import qualified Data.IntSet as IS
+import           Data.List         (intercalate)
+import           Data.Monoid       ()
 import           Data.MonoTraversable
+import           Data.Semigroup
 
 
 -- TODO: Use BitVectors here for efficency!
@@ -36,6 +37,11 @@ newtype DeletionEvents = DE IntSet deriving (Eq)
 instance Monoid DeletionEvents where
 
     mempty = DE mempty
+
+    mappend = (<>)
+
+
+instance Semigroup DeletionEvents where
 
     {- | /O(m)/ where m is sequence length
 
@@ -128,7 +134,7 @@ instance Monoid DeletionEvents where
 
     -}
 
-    ancestorSet@(DE as) `mappend` descendantSet = DE . (as <>) $ ancestorSet `incrementDescendant` descendantSet
+    ancestorSet@(DE as) <> descendantSet = DE . (as <>) $ ancestorSet `incrementDescendant` descendantSet
 
 
 incrementDescendant :: DeletionEvents -> DeletionEvents -> IntSet

@@ -37,7 +37,6 @@ import Bio.Character.Decoration.Shared
 import Bio.Character.Encodable
 import Bio.Metadata.Discrete
 import Bio.Metadata.DiscreteWithTCM
-import Bio.Metadata.General
 import Bio.Metadata.CharacterName
 import Control.Lens
 import Data.Alphabet
@@ -170,7 +169,7 @@ instance GeneralCharacterMetadata (DiscreteDecoration c) where
 
 
 -- | (✔)
-instance EncodableStreamElement c => DiscreteCharacterMetadata (DiscreteDecoration c) where
+instance DiscreteCharacterMetadata (DiscreteDecoration c) where
 
     {-# INLINE extractDiscreteCharacterMetadata #-}
     extractDiscreteCharacterMetadata = extractDiscreteCharacterMetadata . metadata

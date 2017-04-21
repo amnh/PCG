@@ -18,14 +18,10 @@
 
 module Bio.Character.Parsed.Internal where
 
-import           Data.Alphabet
-import           Data.Foldable
-import           Data.List.NonEmpty       (NonEmpty)
-import qualified Data.List.NonEmpty as NE
-import           Data.Vector              (Vector)
-import qualified Data.Vector        as V
-import           Data.Map                 (Map)
-import           Test.QuickCheck
+import Data.Alphabet
+import Data.List.NonEmpty (NonEmpty)
+import Data.Map           (Map)
+import Data.Vector        (Vector)
 
 
 -- | A mapping from taxon identifiers to thier corresponding sequences.

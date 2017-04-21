@@ -14,7 +14,9 @@
 {-# LANGUAGE FlexibleInstances, MultiParamTypeClasses #-}
 
 module Bio.Metadata.DiscreteWithTCM.Internal
-  ( DiscreteWithTCMCharacterMetadataDec()
+  ( DiscreteCharacterMetadata(..)
+  , DiscreteWithTCMCharacterMetadataDec()
+  , GeneralCharacterMetadata(..)
   , HasCharacterAlphabet(..)
   , HasCharacterName(..)
   , HasCharacterWeight(..)
@@ -25,7 +27,6 @@ module Bio.Metadata.DiscreteWithTCM.Internal
   ) where
 
 
-import Bio.Character.Exportable
 import Bio.Metadata.CharacterName
 import Bio.Metadata.Discrete
 import Bio.Metadata.DiscreteWithTCM.Class

@@ -85,7 +85,9 @@ evaluate (READ fileSpecs) _old = do
 
 evaluate _ _ = fail "Invalid READ command binding"
 
-renderSequenceCosts (Left    x) = "<Trees only>"
+
+renderSequenceCosts :: Either t (PhylogeneticSolution (PhylogeneticDAG2 e n u v w x y z)) -> [Char]
+renderSequenceCosts (Left    _) = "<Trees only>"
 renderSequenceCosts (Right sol) = outputStream
   where
     outputStream = foldMapWithKey f $ phylogeneticForests sol

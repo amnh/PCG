@@ -17,7 +17,6 @@ module Bio.Character.Decoration.Continuous.Internal where
 
 import Bio.Character.Decoration.Additive
 --import Bio.Character.Decoration.Continuous.Class
-import Bio.Character.Decoration.Shared
 import Bio.Character.Encodable
 import Bio.Metadata.CharacterName
 import Bio.Metadata.Continuous

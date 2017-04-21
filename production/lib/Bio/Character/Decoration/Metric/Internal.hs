@@ -92,9 +92,13 @@ instance HasCharacterWeight (MetricDecorationInitial c) Double where
 -- | (✔)
 instance GeneralCharacterMetadata (MetricDecorationInitial c) where
 
+    extractGeneralCharacterMetadata = extractGeneralCharacterMetadata . metadata
+      
 
 -- | (✔)
 instance DiscreteCharacterMetadata (MetricDecorationInitial c) where
+
+    extractDiscreteCharacterMetadata = extractDiscreteCharacterMetadata . metadata
 
 
 -- | (✔)
@@ -220,9 +224,13 @@ instance HasIsLeaf (SankoffOptimizationDecoration c) Bool where
 -- | (✔)
 instance GeneralCharacterMetadata (SankoffOptimizationDecoration c) where
 
+    extractGeneralCharacterMetadata = extractGeneralCharacterMetadata . sankoffMetadataField
+
 
 -- | (✔)
 instance DiscreteCharacterMetadata (SankoffOptimizationDecoration c) where
+
+    extractDiscreteCharacterMetadata = extractDiscreteCharacterMetadata . sankoffMetadataField
 
 
 -- | (✔)

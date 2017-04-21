@@ -41,7 +41,6 @@ import qualified Data.List.NonEmpty as NE
 import           Data.List.Utility
 import           Data.Maybe
 import           Data.MonoTraversable
-import           Data.Ord
 import           Data.Semigroup
 import           Data.Semigroup.Foldable
 import           Prelude            hiding (zipWith)
@@ -87,13 +86,14 @@ type InitialDecorationDAG =
        PhylogeneticDAG2
          EdgeLength
          (Maybe String)
-         (SankoffOptimizationDecoration  StaticCharacter)
-         (SankoffOptimizationDecoration  StaticCharacter)
+         (SankoffOptimizationDecoration StaticCharacter)
+         (SankoffOptimizationDecoration StaticCharacter)
          -- UnifiedContinuousCharacter
          -- (ContinuousOptimizationDecoration ContinuousChar)
          (ContinuousPostorderDecoration  ContinuousChar)
-         (FitchOptimizationDecoration    StaticCharacter)
-         (AdditiveOptimizationDecoration StaticCharacter)
+         (FitchOptimizationDecoration   StaticCharacter)
+         (AdditivePostorderDecoration   StaticCharacter)
+         -- (AdditiveOptimizationDecoration StaticCharacter)
          -- UnifiedDynamicCharacter
          -- (DynamicDecorationDirectOptimization DynamicChar)
          (DynamicDecorationDirectOptimizationPostOrderResult DynamicChar)
@@ -247,12 +247,14 @@ applySoftwireResolutions inputContexts =
              , y <- toList ys
              , resolutionsDoNotOverlap x y
              ]
+{-
            where
              xMask = foldMap1 leafSetRepresentation xs
              yMask = foldMap1 leafSetRepresentation ys
              overlapMask = xMask .&. yMask
              properOverlapInclusion x y =
                (leafSetRepresentation x .&. overlapMask) `xor` (leafSetRepresentation y .&. overlapMask) == zeroBits
+-}
 
 
 resolutionsDoNotOverlap :: ResolutionInformation a -> ResolutionInformation b -> Bool

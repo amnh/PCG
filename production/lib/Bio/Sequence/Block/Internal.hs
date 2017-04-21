@@ -17,12 +17,11 @@ module Bio.Sequence.Block.Internal
   ) where
 
 
-import           Data.Foldable
-import           Data.Monoid                  (mappend)
-import           Data.Semigroup
-import           Data.Vector                  (Vector)
-import           Data.Vector.Instances        ()
-import           Prelude               hiding (zipWith)
+import Data.Foldable
+import Data.Semigroup
+import Data.Vector                  (Vector)
+import Data.Vector.Instances        ()
+import Prelude               hiding (zipWith)
 
 
 -- |
@@ -46,17 +45,16 @@ instance Semigroup (CharacterBlock m i c f a d) where
 
     lhs <> rhs =
         CharacterBlock
-          { continuousCharacterBins  = continuousCharacterBins  lhs `mappend` continuousCharacterBins  rhs
-          , nonAdditiveCharacterBins = nonAdditiveCharacterBins lhs `mappend` nonAdditiveCharacterBins rhs
-          , additiveCharacterBins    = additiveCharacterBins    lhs `mappend` additiveCharacterBins    rhs
-          , metricCharacterBins      = metricCharacterBins      lhs `mappend` metricCharacterBins      rhs
-          , nonMetricCharacterBins   = nonMetricCharacterBins   lhs `mappend` nonMetricCharacterBins   rhs
-          , dynamicCharacters        = dynamicCharacters        lhs `mappend` dynamicCharacters        rhs
+          { continuousCharacterBins  = continuousCharacterBins  lhs <> continuousCharacterBins  rhs
+          , nonAdditiveCharacterBins = nonAdditiveCharacterBins lhs <> nonAdditiveCharacterBins rhs
+          , additiveCharacterBins    = additiveCharacterBins    lhs <> additiveCharacterBins    rhs
+          , metricCharacterBins      = metricCharacterBins      lhs <> metricCharacterBins      rhs
+          , nonMetricCharacterBins   = nonMetricCharacterBins   lhs <> nonMetricCharacterBins   rhs
+          , dynamicCharacters        = dynamicCharacters        lhs <> dynamicCharacters        rhs
           }
 
 
 instance ( Show m
-         , Show i
          , Show i
          , Show c
          , Show f

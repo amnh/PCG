@@ -20,7 +20,7 @@ import Data.Bits
 import Data.DList            (snoc)
 import Data.Foldable
 import Data.Key              ((!))
-import Data.Matrix.NotStupid (Matrix, getElem, getRow, matrix, nrows, ncols, toLists)
+import Data.Matrix.NotStupid (Matrix, getRow, matrix, nrows, ncols, toLists)
 import Data.MonoTraversable
 import Data.Ord
 import Data.Semigroup
@@ -389,7 +389,7 @@ overlapConst lhs rhs
     intersect = lhs .&. rhs
 
 
-naiveDOInternal :: (DOCharConstraint s, Show (Element s))
+naiveDOInternal :: DOCharConstraint s
         => s
         -> s
         -> OverlapFunction (Element s)

@@ -14,8 +14,8 @@
 module Control.Evaluation.Unit where
 
 import Control.Applicative
-import Control.Monad      (MonadPlus(mzero, mplus))
-import Data.Monoid hiding ((<>))
+import Control.Monad (MonadPlus(mzero, mplus))
+import Data.Monoid   ()
 import Data.Semigroup
 import Test.QuickCheck
 

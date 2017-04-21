@@ -192,7 +192,7 @@ cartesianProduct = cartesianProductWith (,)
 -- |
 -- /O(x*y)/ where /x/ is the number of unique elements in the left-hand side
 -- and /y/ is the number of unique elements in the right-hand side.
-cartesianProductWith :: (Eq a, Eq b, Eq c) => (a -> b -> c) -> DuplicateSet a -> DuplicateSet b -> DuplicateSet c
+cartesianProductWith :: (Eq c) => (a -> b -> c) -> DuplicateSet a -> DuplicateSet b -> DuplicateSet c
 cartesianProductWith f lhs rhs = fromJust $ cartesianProductWithFilter (\x y -> Just $ f x y) lhs rhs
 
 

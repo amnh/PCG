@@ -22,13 +22,10 @@ module Bio.Sequence.Block.Builder
   ) where
 
 
-import           Bio.Character.Decoration.Continuous
-import           Bio.Metadata.CharacterName
 import           Bio.Sequence.Block.Internal
 import           Data.DList                    hiding (toList)
 import           Data.Foldable
 import           Data.Semigroup
---import           Data.Semigroup.Traversable
 import           Data.TCM
 import           Data.Vector.Instances                ()
 import qualified Data.Vector                   as V

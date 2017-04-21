@@ -17,10 +17,10 @@ module Control.Evaluation.Internal where
 
 import Control.Applicative
 import Control.Evaluation.Unit
-import Control.Monad           (MonadPlus(mzero, mplus))
+import Control.Monad (MonadPlus(mzero, mplus))
 import Control.Monad.Logger
-import Data.DList              (DList, toList)
-import Data.Monoid      hiding ((<>))
+import Data.DList    (DList, toList)
+import Data.Monoid   ()
 import Data.Semigroup
 import Test.QuickCheck
 

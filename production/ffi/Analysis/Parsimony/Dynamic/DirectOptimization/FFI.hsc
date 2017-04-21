@@ -33,8 +33,8 @@ import Bio.Character.Encodable
 import Bio.Character.Exportable.Class
 import Control.DeepSeq
 import Control.Lens
-import Data.Foldable
-import Data.List        (intercalate)
+--import Data.Foldable
+--import Data.List        (intercalate)
 --import Data.MonoTraversable
 import Data.Semigroup
 import Foreign
@@ -448,11 +448,11 @@ algn2d char1 char2 costStruct computeUnion computeMedians = handleMissingCharact
                 -- retUnion    <- allocInitALignIO 0 []
 
 {--}
-                AlignIO char1Ptr char1Len buffer1Len <- peek char1ToSend
-                AlignIO char2Ptr char2Len buffer2Len <- peek char2ToSend
+                AlignIO char1Ptr _char1Len buffer1Len <- peek char1ToSend
+                AlignIO char2Ptr _char2Len buffer2Len <- peek char2ToSend
 
-                input1CharArr <- peekArray (fromEnum buffer1Len) char1Ptr
-                input2CharArr <- peekArray (fromEnum buffer2Len) char2Ptr
+                _input1CharArr <- peekArray (fromEnum buffer1Len) char1Ptr
+                _input2CharArr <- peekArray (fromEnum buffer2Len) char2Ptr
 
 --                !_ <- trace (mconcat [" Input LHS : { ", show char1Len, " / ", show buffer1Len, " } ", renderBuffer input1CharArr]) $ pure ()
 --                !_ <- trace (mconcat [" Input RHS : { ", show char2Len, " / ", show buffer2Len, " } ", renderBuffer input2CharArr]) $ pure ()
@@ -464,13 +464,14 @@ algn2d char1 char2 costStruct computeUnion computeMedians = handleMissingCharact
                               Affine -> align2dAffineFn_c char1ToSend char2ToSend retGapped retUngapped costStruct                        (toCInt computeMedians)
                               _      -> align2dFn_c       char1ToSend char2ToSend retGapped retUngapped costStruct neverComputeOnlyGapped (toCInt computeMedians) (toCInt computeUnion)
 
-                AlignIO ungappedCharArr ungappedLen _ <- peek retUngapped
-                AlignIO gappedCharArr   gappedLen   _ <- peek retGapped
-                AlignIO retChar1CharArr char1Len    _ <- peek char1ToSend
-                AlignIO retChar2CharArr char2Len    _ <- peek char2ToSend
+                AlignIO _ungappedCharArr _ungappedArrLen _ <- peek retUngapped
+                AlignIO    gappedCharArr    gappedArrLen _ <- peek retGapped
+                AlignIO  retChar1CharArr     char1ArrLen _ <- peek char1ToSend
+                AlignIO  retChar2CharArr     char2ArrLen _ <- peek char2ToSend
                 -- AlignIO unionCharArr    unionLen    _ <- peek retUnion
 
-                -- TODO: remove this check later.
+                -- A sanity check to ensure that the sequences were aligned
+                {-
                 _ <- if gappedLen == char1Len && gappedLen == char2Len
                      then pure ()
                      else error $ unlines
@@ -479,24 +480,25 @@ algn2d char1 char2 costStruct computeUnion computeMedians = handleMissingCharact
                          , " char1Len = " <> show char1Len
                          , " char2Len = " <> show char2Len
                          ]
+                -}
 
 --                ungappedChar <- peekArray (fromEnum ungappedLen) ungappedCharArr
-                gappedChar   <- reverse <$> peekArray (fromEnum gappedLen)   gappedCharArr
-                char1Aligned <- reverse <$> peekArray (fromEnum char1Len)    retChar1CharArr
-                char2Aligned <- reverse <$> peekArray (fromEnum char2Len)    retChar2CharArr
+                gappedChar   <- reverse <$> peekArray (fromEnum gappedArrLen)   gappedCharArr
+                char1Aligned <- reverse <$> peekArray (fromEnum  char1ArrLen) retChar1CharArr
+                char2Aligned <- reverse <$> peekArray (fromEnum  char2ArrLen) retChar2CharArr
                 -- unionChar    <- peekArray (fromEnum unionLen)    unionCharArr
 
-                let resultingAlignedChar1 = coerceToOutputType char1Len char1Aligned
-                let resultingAlignedChar2 = coerceToOutputType char2Len char2Aligned
-                let resultingGapped       = coerceToOutputType gappedLen gappedChar
+                let resultingAlignedChar1 = coerceToOutputType  char1ArrLen char1Aligned
+                let resultingAlignedChar2 = coerceToOutputType  char2ArrLen char2Aligned
+                let resultingGapped       = coerceToOutputType gappedArrLen gappedChar
                 let resultingUngapped     = filterGaps resultingGapped
 
 --                !_ <- trace (" Gapped Char : " <> renderBuffer   gappedChar) $ pure ()
 --                !_ <- trace (" Aligned LHS : " <> renderBuffer char1Aligned) $ pure ()
 --                !_ <- trace (" Aligned RHS : " <> renderBuffer char2Aligned) $ pure ()
 
-                output1Buffer <- peekArray (fromEnum buffer1Len) char1Ptr
-                output2Buffer <- peekArray (fromEnum buffer2Len) char2Ptr
+--                output1Buffer <- peekArray (fromEnum buffer1Len) char1Ptr
+--                output2Buffer <- peekArray (fromEnum buffer2Len) char2Ptr
 
 --                !_ <- trace (mconcat [" Output LHS : { ", show char1Len, " / ", show buffer1Len, " } ", renderBuffer output1Buffer]) $ pure ()
 --                !_ <- trace (mconcat [" Output RHS : { ", show char2Len, " / ", show buffer2Len, " } ", renderBuffer output2Buffer]) $ pure ()
@@ -510,7 +512,7 @@ algn2d char1 char2 costStruct computeUnion computeMedians = handleMissingCharact
 
                 -- NOTE: We swapped resultingAlignedChar1 & resultingAlignedChar2
                 -- because the C code returns the values in the wrong order!
-                pure (filterGaps resultingGapped, fromIntegral cost, resultingGapped, resultingAlignedChar2, resultingAlignedChar1)
+                pure (resultingUngapped, fromIntegral cost, resultingGapped, resultingAlignedChar2, resultingAlignedChar1)
 
             where
                 neverComputeOnlyGapped = 0
@@ -537,12 +539,14 @@ algn2d char1 char2 costStruct computeUnion computeMedians = handleMissingCharact
                 coerceToOutputType len charElements =
                     fromExportableElements . ExportableCharacterElements (fromEnum len) elemWidth $ fmap fromIntegral charElements
 
+                -- Used for debugging
+{-                
                 renderBuffer buf = "[" <> intercalate "," (fmap pad shownElems) <> "]"
                   where
                     maxElemChars = maximum $ fmap length shownElems
                     shownElems   = fmap show buf
                     pad e        = replicate (maxElemChars - length e) ' ' <> e
-
+-}
 
 
 
