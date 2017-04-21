@@ -23,11 +23,11 @@
 #include "seq.h"
 
 void seq_print(seq_p inSeq) {
-    SEQT * start = inSeq->seq_begin;
-    SEQT * end   = inSeq->end;
-    printf("Seq length %3zu\n",   inSeq->len);
+    SEQT *start = inSeq->seq_begin;
+    SEQT *end   = inSeq->end;
+    printf("Seq length   %3zu\n", inSeq->len);
     printf("Seq capacity %3zu\n", inSeq->cap);
-    for( ; start < end; start++) {
+    for( ; start <= end; start++) {
         printf("%2d, ", *start);
     }
     printf("\n");

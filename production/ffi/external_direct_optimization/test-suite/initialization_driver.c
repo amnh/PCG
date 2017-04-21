@@ -140,16 +140,16 @@ int main() {
     nw_matrices_p algn_mtxs3dAffine = malloc(sizeof(struct nwMatrices));
 
     if (DO_2D) {
-        initializeNWMtx(longChar->len, shortChar->len,  0,             costMtx2d->costMatrixDimension,        algn_mtxs2d);
+        initializeNWMtx(algn_mtxs2d,       longChar->len, shortChar->len,  0,             costMtx2d->costMatrixDimension);
     }
     if (DO_2D_AFF) {
-        initializeNWMtx(longChar->len, shortChar->len,  0,             costMtx2d_affine->costMatrixDimension, algn_mtxs2dAffine);
+        initializeNWMtx(algn_mtxs2dAffine, longChar->len, shortChar->len,  0,             costMtx2d_affine->costMatrixDimension);
     }
     if (DO_3D) {
-        initializeNWMtx(longChar->len, middleChar->len, shortChar->len, costMtx3d->costMatrixDimension,        algn_mtxs3d);
+        initializeNWMtx(algn_mtxs3d,       longChar->len, middleChar->len, shortChar->len, costMtx3d->costMatrixDimension);
     }
     if (DO_3D_AFF) {
-        initializeNWMtx(longChar->len, middleChar->len, shortChar->len, costMtx3d_affine->costMatrixDimension, algn_mtxs3dAffine);
+        initializeNWMtx(algn_mtxs3dAffine, longChar->len, middleChar->len, shortChar->len, costMtx3d_affine->costMatrixDimension);
     }
 
     int algnCost;

@@ -1,6 +1,7 @@
 #include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "alignSequences.h"
 #include "c_code_alloc_setup.h"
@@ -17,7 +18,7 @@
  *
  *  Order of sequence lengths doesn't matter
  */
-void initializeNWMtx(size_t len_seq1, size_t len_seq2, size_t len_seq3, int costMtxLcm, nw_matrices_p retMtx) {
+void initializeNWMtx(nw_matrices_p retMtx, size_t len_seq1, size_t len_seq2, size_t len_seq3, int costMtxLcm) {
 
     // in six following allocations all matrices are set to their shortest length because they get realloced in mat_setup_size
     retMtx->cap_nw     = 0;  // a suitably small number to trigger realloc, but be larger than len_eff
@@ -267,7 +268,8 @@ void freeChar(seq_p toFree) {
 
 void resetCharValues(seq_p retChar) {
     //retChar->end   = retChar->begin + retChar->len;
+    memset(retChar->seq_begin, 0, retChar->cap * sizeof(SEQT));
     retChar->seq_begin = retChar->end;
-    retChar->len   = 0;
+    retChar->len       = 0;
 }
 

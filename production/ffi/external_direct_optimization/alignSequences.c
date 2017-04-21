@@ -3283,7 +3283,12 @@ algn_fill_plane_2d_affine ( const seq_p shortSeq
 
     for (j = 1; j <= len_longerSeq; j++) {
         printf("j: %zu\n", j);
-        printf("%d, %d\n", seq_beginj[j - 1], seq_beginj[j]);
+        printf("\tseq_begin %d\n", seq_beginj[j - 1]);
+        printf("\tseq_begin %d\n", seq_beginj[j]);
+        printf("\tlongSeq_horizontal_extension %d\n", longSeq_horizontal_extension[j - 1]);
+        printf("\tgap_open_prec %d\n", gap_open_prec[j]);
+        printf("\tgap_row %d\n", gap_row[j]);
+        printf("\tgap_char%d\n", gap_char);
         gap_open_prec[j] = HAS_GAP_OPENING(seq_beginj[j - 1], seq_beginj[j], gap_char, gap_open);
         if (     (seq_beginj[j - 1] & gap_char)
             && (!(seq_beginj[j]     & gap_char)) ) {
@@ -3295,9 +3300,9 @@ algn_fill_plane_2d_affine ( const seq_p shortSeq
     }
     longSeq_horizontal_extension[1] = gap_row[1];
     int r;
-    printf("j: %zu\n", j);
-    printf("%d, %d\n", seq_beginj[j - 1], seq_beginj[j]);
     for (;i <= lenShortSeq; i++) {
+        printf("i: %zu\n", i);
+        //printf("%d, %d\n", seq_begini[i - 1], seq_begini[i]);
 
         prev_extend_horizontal     = init_extend_horizontal +
                                        (((i - 1) % 2) * (len_longerSeq + 1));
@@ -4277,16 +4282,6 @@ algn_nw_limit_2d ( const seq_p shorterSeq
     curRow      = nw_mtxs->nw_costMtx;
     dirMtx      = nw_mtxs->nw_dirMtx;
 
-    // int  *cost;          // The transformation cost matrix.
-    /** SEQT *median;         The matrix of possible medians between elements in the
-                          *  alphabet. The best possible medians according to the cost
-                          *  matrix.
-                          */
-    // int *worst;          /* Missing in 3d */
-    // int *prepend_cost;   /* Missing in 3d */
-    // int *tail_cost;      /* Missing in 3d */
-
-
     // printf("before pre-calc \n");
     // fflush(stdout);
     precalcMtx = nw_mtxs->precalcMtx;
@@ -4300,8 +4295,10 @@ algn_nw_limit_2d ( const seq_p shorterSeq
     //printf("after  pre-calc alignment\n");
     //fflush(stdout);
 
+    // cost_model_type is 1 for affine, 0 for non-affine
     if (costMatrix->cost_model_type) {
-        return algn_fill_plane_2_affine ( longerSeq, precalcMtx
+        return algn_fill_plane_2_affine ( longerSeq
+                                        , precalcMtx
                                         , len_longerSeq
                                         , len_shorterSeq
                                         , curRow
@@ -4367,10 +4364,9 @@ algn_nw_2d ( const seq_p shorterSeq
     }
 
 
-    int len_longerSeq,
-        shorterSeq_len;
-    len_longerSeq  = longerSeq->len;
-    shorterSeq_len = shorterSeq->len;
+    int len_longerSeq  = longerSeq->len,
+        shorterSeq_len = shorterSeq->len;
+
     assert (len_longerSeq >= shorterSeq_len);
     return algn_nw_limit_2d ( shorterSeq
                             , longerSeq
@@ -5292,6 +5288,7 @@ algn_get_median_3d ( seq_p seq1
     endSeq1 = seq1->end;
     endSeq2 = seq2->end;
     endSeq3 = seq3->end;
+    // TODO: does this for loop actually do anything?
     for (i = seq1->len - 1; i >= 0; i--) {
         interim = cm_get_median_3d (costMatrix, *endSeq1, *endSeq2, *endSeq3);
         seq_prepend (medianToReturn, interim);
