@@ -160,7 +160,7 @@ costMedian_t* CostMatrix::computeCostMedian(keys_t keys) {
     int curCost, minCost;
 
     size_t        elemArrLen = dcElemSize(alphabetSize);
-    packedChar*   median     = (packedChar*) calloc( elemArrLen, sizeof(uint64_t) );
+//    packedChar*   median     = (packedChar*) calloc( elemArrLen, sizeof(uint64_t) );
     dcElement_t*  firstKey   = &keys.first;
     dcElement_t*  secondKey  = &keys.second;
     packedChar*   curMedian  = (packedChar*  ) calloc(elemArrLen, INT_WIDTH);  // don't free, it's going into toReturn
@@ -275,7 +275,7 @@ void CostMatrix::initializeMatrix () {
     dcElement_t* secondKey = allocateDCElement( alphabetSize );
     dcElement_t* retMedian = allocateDCElement( alphabetSize );
     // packedChar*  median;
-    int cost;
+//    int cost;
 
     for (size_t key1 = 0; key1 < alphabetSize; key1++) { // for every possible value of key1, key2
         SetBit(firstKey->element, key1);
@@ -291,12 +291,13 @@ void CostMatrix::initializeMatrix () {
 
             // We allocated a new pair above, so we never will clear the bits set here.
             // SetBit(firstKey->element, key1);
-           // SetBit(median, key1);
+            // SetBit(median, key1);
 
             SetBit(secondKey->element, key2);
-           // SetBit(median, key2);
+            // SetBit(median, key2);
 
-            cost = CostMatrix::getSetCostMedian(firstKey, secondKey, retMedian);
+            CostMatrix::getSetCostMedian(firstKey, secondKey, retMedian);
+            // cost = CostMatrix::getSetCostMedian(firstKey, secondKey, retMedian);
 
             // if(DEBUG) {
             //     printf("keys set: %" PRIu64 " %" PRIu64 "\n", *firstKey->element, *secondKey->element);

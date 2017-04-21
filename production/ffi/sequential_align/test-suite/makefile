@@ -1,21 +1,24 @@
 ### Note that two calls to gcc to create .o files are needed, followed by two calls to compile
 
-dynamicChar   = ../../memoized_tcm/dynamicCharacterOperations.h \
-			    ../../memoized_tcm/dynamicCharacterOperations.c
+sanityWarnings = -Wall -Wextra -pedantic
 
-costMatrix    = ../../memoized_tcm/costMatrix.h \
-			    ../../memoized_tcm/costMatrix.cpp
+dynamicChar    = ../../memoized_tcm/dynamicCharacterOperations.h \
+                 ../../memoized_tcm/dynamicCharacterOperations.c
 
-wrapper       = ../../memoized_tcm/costMatrixWrapper.h \
-			    ../../memoized_tcm/costMatrixWrapper.c
+costMatrix     = ../../memoized_tcm/costMatrix.h \
+                 ../../memoized_tcm/costMatrix.cpp
 
-seqAlignFiles = ../seqAlignForHaskell.h \
-				../seqAlignForHaskell.c \
-				../seqAlignInterface.h \
-				../seqAlignInterface.c \
-				../seqAlignOutputTypes.h
+wrapper        = ../../memoized_tcm/costMatrixWrapper.h \
+                 ../../memoized_tcm/costMatrixWrapper.c
 
-exe_align     = test_sequential_align
+seqAlignFiles  = ../seqAlignForHaskell.h \
+                 ../seqAlignForHaskell.c \
+                 ../seqAlignInterface.h \
+                 ../seqAlignInterface.c \
+                 ../seqAlignOutputTypes.h
+
+exe_align      = test_sequential_align
+
 
 all : test_sequential_align
 
@@ -32,12 +35,12 @@ clean :
 #  -g    adds debugging information to the executable file
 #  -Wall turns on most, but not all, compiler warnings
 test_sequential_align : test_sequential_align.c $(seqAlignFiles) $(costMatrix) $(wrapper) $(dynamicChar)
-	gcc -std=c11 -g -c $(dynamicChar)
+	gcc -std=c11   $(sanityWarnings) -g -c $(dynamicChar)
 	# g++ -std=c++14 -c costMatrix.h
-	g++ -std=c++14 -c $(costMatrix)
+	g++ -std=c++14 $(sanityWarnings) -c $(costMatrix)
 	# gcc -std=c11 -c costMatrixWrapper.h
-	gcc -std=c11 -g -c $(wrapper)
-	gcc -std=c11 -g -c $(seqAlignFiles)
+	gcc -std=c11   $(sanityWarnings) -g -c $(wrapper)
+	gcc -std=c11   $(sanityWarnings) -g -c $(seqAlignFiles)
 #	gcc -std=c11 -g -c ../seqAlignInterface.c
 	# in next line, need -lc++ so that it calls correct linker: we need C compiler, but C++ libraries in scope.
-	gcc -std=c11 -g -o $(exe_align) -Wall test_sequential_align.c seqAlignInterface.o seqAlignForHaskell.o costMatrixWrapper.o dynamicCharacterOperations.o costMatrix.o -lstdc++
+	gcc -std=c11   $(sanityWarnings) -g -o $(exe_align) -Wall test_sequential_align.c seqAlignInterface.o seqAlignForHaskell.o costMatrixWrapper.o dynamicCharacterOperations.o costMatrix.o -lstdc++
