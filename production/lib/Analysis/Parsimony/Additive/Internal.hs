@@ -172,8 +172,8 @@ updatePostOrder _parentDecoration (leftChild:|(rightChild:_)) =
 additivePreOrder  :: (-- Ranged c
 --                     , Eq (Range (Bound c))
 --                     , Num (Bound c)
-                       Ord (Bound c)
-                     , DiscreteCharacterMetadata d
+--                       Ord (Bound c)
+                       DiscreteCharacterMetadata d
                      , RangedExtensionPostorder  d  c
 --                     , RangedExtensionPostorder  d' c
                      , RangedExtensionPreorder   d' c

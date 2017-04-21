@@ -2,4 +2,4 @@ flags: {}
 extra-deps:
 - containers-0.5.8.1
 - quickcheck-properties-0.1
-resolver: lts-8.8
+resolver: lts-8.11
