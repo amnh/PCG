@@ -38,7 +38,7 @@ flag build-cpp-files
 
 library
   -- LANGUAGE extensions used by modules in this package.
-  other-extensions:    FlexibleContexts, BangPatterns, DeriveGeneric
+  other-extensions: MonadFailDesugaring
 
   -- Other library packages from which modules are imported.
   build-depends:       base             >=4.8
@@ -87,21 +87,27 @@ library
   ghc-options:         -O2
                        -g
 --                       -debug -optl-static
+                    -- Turns on *almost* all warnings
                        -Wall
+                    -- Checks for future compatibility with predicted language changes
+                       -Wcompat
+                       -fwarn-dodgy-foreign-imports
                        -fwarn-duplicate-exports
                        -fwarn-incomplete-patterns
+                       -fwarn-incomplete-record-updates
                        -fwarn-missing-fields
                        -fwarn-missing-monadfail-instances
                        -fwarn-missing-signatures
+--                       -fwarn-mrp-compat
                        -fwarn-overlapping-patterns
                        -fwarn-redundant-constraints
-                       -fwarn-semigroup
                        -fwarn-tabs
                        -fwarn-unrecognised-warning-flags
                        -fwarn-unused-binds
                        -fwarn-unused-do-bind
                        -fwarn-unused-imports
                        -fwarn-unused-matches
+                       -Wincomplete-uni-patterns
 
   hs-source-dirs:      lib, ffi
 

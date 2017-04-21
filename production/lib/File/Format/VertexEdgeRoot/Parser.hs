@@ -23,7 +23,7 @@ import           Data.Either               (partitionEithers)
 import           Data.Foldable
 import           Data.Functor              (($>))
 import           Data.Key
-import           Data.List                 (intercalate, partition, maximumBy, sortBy)
+import           Data.List                 (intercalate, partition)
 import           Data.List.NonEmpty        (NonEmpty( (:|) ))
 import qualified Data.List.NonEmpty as NE
 import           Data.List.Utility         (duplicates)
@@ -130,7 +130,9 @@ verDefinition = do
   where
     formVertexEdgeRoot x@(typeA, setA) y@(typeB, setB) edges' =
       case (typeA, typeB) of
-        (Nothing       , Nothing      ) -> let [m,n] = sortBy (comparing length) [setA,setB]
+        (Nothing       , Nothing      ) -> let -- [m,n] = sortBy (comparing length) [setA,setB]
+                                               m = minimumBy (comparing length) [setA, setB]
+                                               n = maximumBy (comparing length) [setA, setB]
                                            in pure $ VER n    edges' m
         (Nothing       , Just Vertices) ->    pure $ VER setB edges' setA
         (Nothing       , Just Roots   ) ->    pure $ VER setA edges' setB
