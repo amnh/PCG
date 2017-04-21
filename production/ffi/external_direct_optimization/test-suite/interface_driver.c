@@ -162,7 +162,7 @@ int main() {
 
         printf("Alignment cost: %d\n", algnCost);
 
-        printf("\nAligned 2d characters\n");
+        printf("\nAligned 2d characters (should be the same as inputs, as no backtrace has been performed)\n");
         alignIO_print(char1);
         alignIO_print(char2);
 

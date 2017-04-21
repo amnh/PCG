@@ -251,7 +251,7 @@ int aligner( uint64_t *inSeq1
 
     //test function
 
-    int temp = currentAlignmentCost(&pathFirst[0], tcm, SEQ_MAX_LEN, alphSize);
+    currentAlignmentCost(&pathFirst[0], tcm, SEQ_MAX_LEN, alphSize);
 
     //********************************************************************************************************
     //******************************** grow both trees based on initialization *******************************
@@ -757,7 +757,6 @@ int currentAlignmentCost(alignment_t *path, costMatrix_p tcm, size_t maxLen, siz
 
     int costTempFirst  = 0,
         costTempSecond = 0,
-        costTemp,
         cost;
 
     // TODO: check that bounds checking is appropriate here

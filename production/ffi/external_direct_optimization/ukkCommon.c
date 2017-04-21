@@ -284,7 +284,7 @@ void *getPtr(AllocInfo *a, int ab, int ac, size_t d, int s) {
         }
         a->memAllocated += oldSize * sizeof(void *);
     }
-    assert(d >= 0 && d < a->baseAlloc);
+    assert(d < a->baseAlloc);
 
     if (a->basePtr[d] == NULL) {
         a->basePtr[d] = allocPlane(a);
@@ -294,8 +294,8 @@ void *getPtr(AllocInfo *a, int ab, int ac, size_t d, int s) {
 
     i = (ab + a->abOffset) / CELLS_PER_BLOCK;
     j = (ac + a->acOffset) / CELLS_PER_BLOCK;
-    assert(i >= 0 && i < a->abBlocks);
-    assert(j >= 0 && j < a->acBlocks);
+    assert(i < a->abBlocks);
+    assert(j < a->acBlocks);
 
     if (bPtr[(i * a->acBlocks) + j] == NULL) {
         bPtr[(i * a->acBlocks) + j] = allocEntry(a);
@@ -305,7 +305,6 @@ void *getPtr(AllocInfo *a, int ab, int ac, size_t d, int s) {
     assert(base != NULL);
 
     index = allocGetSubIndex(a, ab, ac, s);
-    assert(index >= 0);
 
     //  fprintf(stderr,"getPtr(ab=%d,ac=%d,d=%d,s=%d): base=%p index=%d\n",
     //    ab,ac,d,s,

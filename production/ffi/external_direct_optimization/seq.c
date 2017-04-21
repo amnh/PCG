@@ -47,7 +47,6 @@ seq_set (seq_p seq, size_t pos, SEQT val)
         seq->len++;
     } else {
         assert (pos < seq->len);
-        assert (pos >= 0);
     }
     *(seq->seq_begin + pos) = val;
 }

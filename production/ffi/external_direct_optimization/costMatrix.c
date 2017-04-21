@@ -302,9 +302,11 @@ cm_calc_cost_position_3d (int a, int b, int c, int alphSize) {
 static inline SEQT
 cm_calc_median (SEQT *tcm, SEQT a, SEQT b, int alphSize) {
     SEQT *res;
+    unsigned int one = 1;
+    unsigned int upperBound = one << alphSize;
     assert (alphSize >= 0);
-    assert ((1 << alphSize) > a);
-    assert ((1 << alphSize) > b);
+    assert (upperBound > a);
+    assert (upperBound > b);
     res = tcm + cm_calc_cost_position_seq_p (a, b, alphSize);
     return (*res);
 }
@@ -312,6 +314,8 @@ cm_calc_median (SEQT *tcm, SEQT a, SEQT b, int alphSize) {
 int
 cm_calc_cost (int *tcm, SEQT a, SEQT b, int alphSize) {
     int *res;
+    unsigned int one = 1;
+    unsigned int upperBound = one << alphSize;
     /*
     printf ("(1 << alphSize) = %d\n", (1 << alphSize));
     printf ("a = %d\n", a);
@@ -319,23 +323,26 @@ cm_calc_cost (int *tcm, SEQT a, SEQT b, int alphSize) {
     fflush(stdout);
     */
     assert (alphSize >= 0);
-    assert ((1 << alphSize) > a);
-    assert ((1 << alphSize) > b);
+    assert (upperBound > a);
+    assert (upperBound > b);
     res = tcm + cm_calc_cost_position_seq_p (a, b, alphSize);
     return (*res);
 }
 
 static inline SEQT
 cm_calc_median_3d (SEQT *tcm, SEQT a, SEQT b, SEQT c, int alphSize) {
+    unsigned int one = 1;
+    unsigned int upperBound = one << alphSize;
+
     if (alphSize <= 0) {
         printf("Alphabet size = 2");
         exit(1);
     }
-    if ((1 << alphSize) <= a) {
+    if (upperBound <= a) {
         printf("2a is bigger than alphabet size\n");
         exit(1);
     }
-    if ((1 << alphSize) <= b) {
+    if (upperBound <= b) {
         printf("b is bigger than alphabet size\n");
         exit(1);
     }
@@ -391,11 +398,14 @@ cm_calc_median_position (SEQT a, SEQT b, int alphSize) {
 
 static inline int *
 cm_get_row (int *tcm, SEQT a, int alphSize) {
+    unsigned int one = 1;
+    unsigned int upperBound = one << alphSize;
+
     if (alphSize <= 0) {
         printf("Alphabet size = 3\n");
         exit(1);
     }
-    if ((1 << alphSize) <= a) {
+    if (upperBound <= a) {
         printf("3a is bigger than alphabet size\n");
         exit(1);
     }
@@ -404,15 +414,18 @@ cm_get_row (int *tcm, SEQT a, int alphSize) {
 
 static inline int *
 cm_get_row_3d (int *tcm, SEQT seq1, SEQT seq2, int alphSize) {
+    unsigned int one = 1;
+    unsigned int upperBound = one << alphSize;
+
     if (alphSize <= 0) {
         printf("Alphabet size = 4\n");
         exit(1);
     }
-    if ((1 << alphSize) <= seq1) {
+    if (upperBound <= seq1) {
         printf("%u is bigger than alphabet size\n", seq1);
         exit(1);
     }
-    if ((1 << alphSize) <= seq2) {
+    if (upperBound <= seq2) {
         printf("%u is bigger than alphabet size\n", seq2);
         exit(1);
     }
