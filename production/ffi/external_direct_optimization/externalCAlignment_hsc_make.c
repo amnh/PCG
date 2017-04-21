@@ -1,6 +1,6 @@
 #include "/Library/Frameworks/GHC.framework/Versions/7.10.3-x86_64/usr/lib/ghc-7.10.3/template-hsc.h"
 #line 28 "externalCAlignment.hsc"
-#include "seqAlign.h"
+#include "alignSequences.h"
 #line 29 "externalCAlignment.hsc"
 #include "nwMatrices.h"
 

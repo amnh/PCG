@@ -40,96 +40,96 @@ cm_combinations_of_alphabet (const int alphSize) {
     return ((1 << alphSize) - 1); // ignore empty set
 }
 
-void cm_print_2d (cost_matrices_2d_p c) {
+void cm_print_2d (cost_matrices_2d_p costMatrix) {
     printf("\nCost matrix fields:\n");
-    printf("  alphabet size: %d\n", c->alphSize);
-    printf("  costMatrixDimension:           %d\n", c->costMatrixDimension);
-    printf("  gap_char:      %d\n", c->gap_char);
-    printf("  cost model:    %d\n", c->cost_model_type);
-    printf("  combinations:  %d\n", c->combinations);
-    printf("  gap open:      %d\n", c->gap_open);
-    printf("  is metric:     %d\n", c->is_metric);
-    printf("  all elements:  %d\n", c->all_elements);
+    printf("  alphabet size: %d\n", costMatrix->alphSize);
+    printf("  costMatrixDimension:           %zu\n", costMatrix->costMatrixDimension);
+    printf("  gap_char:      %d\n", costMatrix->gap_char);
+    printf("  cost model:    %d\n", costMatrix->cost_model_type);
+    printf("  combinations:  %d\n", costMatrix->combinations);
+    printf("  gap open:      %d\n", costMatrix->gap_open);
+    printf("  is metric:     %d\n", costMatrix->is_metric);
+    printf("  all elements:  %d\n", costMatrix->all_elements);
 
     printf("\n  Cost matrix:\n    ");
-    cm_print_matrix(c->cost,         c->alphSize + 1, c->alphSize + 1);
+    cm_print_matrix(costMatrix->cost,         costMatrix->alphSize + 1, costMatrix->alphSize + 1);
     printf("  Prepend cost\n    ");
-    cm_print_matrix(c->prepend_cost, 1,               c->alphSize + 1);
+    cm_print_matrix(costMatrix->prepend_cost, 1,               costMatrix->alphSize + 1);
  //   printf("  Worst\n    ");
- //   cm_print_matrix(c->worst,        c->alphSize + 1, c->alphSize + 1);
+ //   cm_print_matrix(c->worst,        costMatrix->alphSize + 1, costMatrix->alphSize + 1);
     printf("  Tail cost:\n    ");
-    cm_print_matrix(c->tail_cost,    1,               c->alphSize);
+    cm_print_matrix(costMatrix->tail_cost,    1,               costMatrix->alphSize);
     printf("  Median costs:\n    ");
-    cm_print_median(c->median,        c->alphSize + 1, c->alphSize + 1);
+    cm_print_median(costMatrix->median,        costMatrix->alphSize + 1, costMatrix->alphSize + 1);
 }
 
-void cm_print_3d (cost_matrices_3d_p c) {
+void cm_print_3d (cost_matrices_3d_p costMatrix) {
     printf("\nCost matrix fields:\n");
-    printf("  alphabet size: %d\n",                 c->alphSize);
-    printf("  costMatrixDimension:           %d\n", c->costMatrixDimension);
-    printf("  gap_char:      %d\n",                 c->gap_char);
-    printf("  cost model:    %d\n",                 c->cost_model_type);
-    printf("  combinations:  %d\n",                 c->combinations);
-    printf("  gap open:      %d\n",                 c->gap_open);
-    printf("  all elements:  %d\n",                 c->all_elements);
+    printf("  alphabet size: %zu\n",                 costMatrix->alphSize);
+    printf("  costMatrixDimension:           %zu\n", costMatrix->costMatrixDimension);
+    printf("  gap_char:      %u\n",                  costMatrix->gap_char);
+    printf("  cost model:    %d\n",                  costMatrix->cost_model_type);
+    printf("  combinations:  %d\n",                  costMatrix->combinations);
+    printf("  gap open:      %d\n",                  costMatrix->gap_open);
+    printf("  all elements:  %d\n",                  costMatrix->all_elements);
 
     printf("\n  Cost matrix:\n    ");
-    cm_print_matrix(c->cost,   c->alphSize + 1, c->alphSize + 1);
+    cm_print_matrix(costMatrix->cost,   costMatrix->alphSize + 1, costMatrix->alphSize + 1);
     printf("  Median costs:\n    ");
-    cm_print_median(c->median, c->alphSize + 1, c->alphSize + 1);
+    cm_print_median(costMatrix->median, costMatrix->alphSize + 1, costMatrix->alphSize + 1);
 }
 
 void
-cm_print_matrix (int* m, int w, int h) {
+cm_print_matrix (int *costMatrix, size_t w, size_t h) {
     size_t i, j;
     for (i = 0; i < h; i++) {
         //fprintf(stdout,"%zu: ", i);
         for (j = 0; j < w; j++)
-            printf ("%4d", *(m + (w * i) + j));
+            printf ("%4d", *(costMatrix + (w * i) + j));
         printf ("\n    ");
     }
 }
 
 void
-cm_print_median (SEQT* m, int w, int h) {
+cm_print_median (SEQT *costMatrix, size_t w, size_t h) {
     size_t i, j;
     for (i = 0; i < h; i++) {
         //fprintf(stdout,"%zu: ", i);
         for (j = 0; j < w; j++)
-            printf ("%4d", *(m + (w * i) + j));
+            printf ("%d", *(costMatrix + (w * i) + j));
         printf ("\n    ");
     }
 }
 
 void
-cm_free (cost_matrices_2d_p c) {
-    free (c->cost);
-    free (c->median);
-    free (c->worst);
-    free (c->prepend_cost);
-    free (c->tail_cost);
-    free (c);
+cm_free (cost_matrices_2d_p costMatrix) {
+    free (costMatrix->cost);
+    free (costMatrix->median);
+    free (costMatrix->worst);
+    free (costMatrix->prepend_cost);
+    free (costMatrix->tail_cost);
+    free (costMatrix);
 }
 
 void
-cm_3d_free (cost_matrices_2d_p c) {
-    free (c->cost);
-    free (c->median);
-    free (c);
+cm_3d_free (cost_matrices_2d_p costMatrix) {
+    free (costMatrix->cost);
+    free (costMatrix->median);
+    free (costMatrix);
 }
 
 static inline void
-cm_set_affine (cost_matrices_2d_p c, int do_aff, int go) {
-    assert(c != NULL);
-    c->cost_model_type = do_aff;
-    c->gap_open = go;
+cm_set_affine (cost_matrices_2d_p costMatrix, int do_aff, int gapOpenCost) {
+    assert(costMatrix != NULL);
+    costMatrix->cost_model_type = do_aff;
+    costMatrix->gap_open        = gapOpenCost;
 }
 
 static inline void
-cm_set_affine_3d (cost_matrices_3d_p c, int do_aff, int go) {
-    assert(c != NULL);
-    c->cost_model_type = do_aff;
-    c->gap_open = go;
+cm_set_affine_3d (cost_matrices_3d_p costMatrix, int do_aff, int gapOpenCost) {
+    assert(costMatrix != NULL);
+    costMatrix->cost_model_type = do_aff;
+    costMatrix->gap_open        = gapOpenCost;
 }
 
 /*
@@ -178,7 +178,11 @@ cm_alloc_set_costs_2d ( int alphSize
     res->is_metric    = is_metric;
     cm_set_affine (res, do_aff, gap_open);
 
-    size_t size = 2 * (1 << (res->costMatrixDimension)) * (1 << (res->costMatrixDimension)) * sizeof(int); // size for cost matrices
+    size_t size = 2
+                * (1 << (res->costMatrixDimension))
+                * (1 << (res->costMatrixDimension))
+                * sizeof(int); // size for cost matrices
+
     if (size == 0) {
         printf("Your cost matrix is too large to fit in memory. I can't continue with your data loading.\n");
         exit(1);
@@ -188,12 +192,17 @@ cm_alloc_set_costs_2d ( int alphSize
     res->prepend_cost = calloc (size, 1);
     res->tail_cost    = calloc (size, 1);
 
-    size = 2 * (1 << (res->costMatrixDimension)) * (1 << (res->costMatrixDimension)) * sizeof(SEQT); // size for median matrix
+    size = 2
+         * (1 << (res->costMatrixDimension))
+         * (1 << (res->costMatrixDimension))
+         * sizeof(SEQT); // size for median matrix
+
     if (size == 0) {
         printf("Your cost matrix is too large to fit in your memory. I can't continue with your data loading.\n");
         exit(1);
     }
     res->median = (SEQT *) calloc (size, 1);
+
     if ((res->cost == NULL) || (res->median == NULL)) {
         free (res->cost);
         free (res->median);
@@ -244,9 +253,13 @@ cm_alloc_set_costs_3d ( int alphSize
 
     res->all_elements = all_elements;
     cm_set_affine_3d (res, do_aff, gap_open);
-    size              = (1 << (res->costMatrixDimension + 1)) * (1 << (res->costMatrixDimension + 1)) * (1 << (res->costMatrixDimension + 1));
+    size              = (1 << (res->costMatrixDimension + 1))
+                      * (1 << (res->costMatrixDimension + 1))
+                      * (1 << (res->costMatrixDimension + 1));
+
     res->cost         = calloc (size * sizeof(int),  1);
     res->median       = calloc (size * sizeof(SEQT), 1);
+
     if ((res->cost == NULL) || (res->median == NULL)) {
         free (res->cost);
         free (res->median);
@@ -329,7 +342,8 @@ cm_calc_median_3d (SEQT *tcm, SEQT a, SEQT b, SEQT c, int alphSize) {
     return (*(tcm + cm_calc_cost_position_3d (a, b, c, alphSize)));
 }
 
-inline int
+/* TODO: dead code?
+static inline int
 cm_calc_cost_3d (int *tcm, SEQT a, SEQT b, SEQT c, int alphSize) {
     if (alphSize <= 0) {
         printf("Alphabet size = 2\n");
@@ -346,7 +360,7 @@ cm_calc_cost_3d (int *tcm, SEQT a, SEQT b, SEQT c, int alphSize) {
     return (*(tcm + cm_calc_cost_position_3d (a, b, c, alphSize)));
 }
 
-inline SEQT
+static inline SEQT
 cm_calc_cost_3d_seq_p (SEQT *tcm, SEQT a, SEQT b, SEQT c, int alphSize) {
     if (alphSize <= 0) {
         printf("Alphabet size = 2\n");
@@ -363,12 +377,12 @@ cm_calc_cost_3d_seq_p (SEQT *tcm, SEQT a, SEQT b, SEQT c, int alphSize) {
     return (*(tcm + cm_calc_cost_position_3d (a, b, c, alphSize)));
 }
 
-inline int
+
+static inline int
 cm_calc_tmm (int *tmm, int a, int b, int alphSize) {
     return (cm_calc_cost (tmm, a, b, alphSize));
 }
 
-/*
 inline int
 cm_calc_median_position (SEQT a, SEQT b, int alphSize) {
     return (cm_calc_cost_position (a, b, alphSize));
@@ -442,29 +456,31 @@ cm_precalc_4algn (const cost_matrices_2d_p costMatrix, nw_matrices_p alignmentMa
         printf ("Precalculated transformation cost matrix.\n");
     }
 
-    /*
-    for (j = 0; j < seqLen; j++) {
-        printf ("seq_begin_t[%d]: %d\n", j, seq_begin_t[j]), fflush(stdout);
+    if (DEBUG_MAT) {
+        for (j = 0; j < seqLen; j++) {
+            printf ("seq_begin_t[%zu]: %d\n", j, seq_begin_t[j]), fflush(stdout);
+        }
     }
-    */
+
     // We will put the cost of the prepend in the 0th row of the precalc matrix.
     for (j = 1; j < seqLen; j++) {
 
       //printf ("Before innerIndex (j = %d)\n", j), fflush(stdout);
-	int innerIndex = seq_begin_t[j];
-        printf ("After  innerIndex: {%d}\n", innerIndex), fflush(stdout);
+        int innerIndex = seq_begin_t[j];
+        // printf ("After  innerIndex: {%d}\n", innerIndex), fflush(stdout);
 
-        printf ("Before valueDatum\n"), fflush(stdout);
-	int valueDatum = prepend_t[innerIndex];
+        // printf ("Before valueDatum\n");
+        //fflush(stdout);
+        int valueDatum = prepend_t[innerIndex];
         //printf ("After  valueDatum\n"), fflush(stdout);
 
         //printf ("Before Assignment\n"), fflush(stdout);
-	precalcMtx_t[j] = valueDatum;
+        precalcMtx_t[j] = valueDatum;
         //printf ("After  Assignment\n"), fflush(stdout);
 
         if (DEBUG_CM) {
             printf ("%7d", precalcMtx_t[j]);
-	    fflush(stdout);
+            fflush(stdout);
         }
     }
     if (DEBUG_MAT) {
@@ -481,7 +497,7 @@ cm_precalc_4algn (const cost_matrices_2d_p costMatrix, nw_matrices_p alignmentMa
         tmpPrecMtx_t[0] = tailCosts_t[j];
         if (DEBUG_MAT) {
             printf ("%7d", tmpPrecMtx_t[0]);
-    	    fflush(stdout);
+            fflush(stdout);
 
         }
         for (i = 1; i < seqLen; i++) {
@@ -497,7 +513,7 @@ cm_precalc_4algn (const cost_matrices_2d_p costMatrix, nw_matrices_p alignmentMa
     }
     if (DEBUG_MAT) {
         printf ("Finished printing transformation cost matrix\n");
-	fflush(stdout);
+        fflush(stdout);
 
     }
 }
@@ -523,22 +539,42 @@ cm_get_row_precalc_3d (const int *outPrecalcMtx, int seq3Len, int alphSize, int 
 
 void
 cm_precalc_4algn_3d (const cost_matrices_3d_p costMtx, int *outPrecalcMtx, const seq_p seq3) {
-    int seq3idx, seq1idx, seq2idx, seq3Len, *tmp_cost, *tcm;
-    int sequence, *precalc_pos;
+    size_t seq3idx,
+           seq1idx,
+           seq2idx,
+           seq3Len;
+
+    int *tmp_cost,
+        *tcm,
+         sequence,
+        *precalc_pos;
+
     seq3Len = seq3->len;
     tcm     = costMtx->cost;
-    for (seq1idx = 1; seq1idx < costMtx->alphSize + 1; seq1idx++)
+    for (seq1idx = 1; seq1idx < costMtx->alphSize + 1; seq1idx++) {
         for (seq2idx = 1; seq2idx < costMtx->alphSize + 1; seq2idx++) {
-            tmp_cost = cm_get_row_3d (tcm, seq1idx, seq2idx, costMtx->costMatrixDimension);
+            tmp_cost = cm_get_row_3d ( tcm
+                                     , seq1idx
+                                     , seq2idx
+                                     , costMtx->costMatrixDimension
+                                     );
+
             //printf("seq1: %d,    seq2: %d,    cost: %d\n", seq1idx, seq2idx, *(tmp_cost+1));
             for (seq3idx = 0; seq3idx < seq3Len; seq3idx++) {
                 sequence     = seq3->seq_begin[seq3idx];
-                precalc_pos  = (int *) cm_get_pos_in_precalc (outPrecalcMtx, seq3Len, costMtx->alphSize,
-                                                              seq1idx, seq2idx, seq3idx);
+
+                precalc_pos  = (int *) cm_get_pos_in_precalc ( outPrecalcMtx
+                                                             , seq3Len
+                                                             , costMtx->alphSize
+                                                             , seq1idx
+                                                             , seq2idx
+                                                             , seq3idx
+                                                             );
                 *precalc_pos = *(tmp_cost + sequence);
                 // printf("seq1: %2d,    seq2: %2d,    sequence: %2d,    cost: %2d\n", seq1idx, seq2idx, sequence, *(precalc_pos));
             }
         }
+    }
 }
 
 void

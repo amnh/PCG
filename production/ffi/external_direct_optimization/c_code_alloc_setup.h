@@ -5,7 +5,7 @@
 #ifndef C_CODE_ALLOC_SETUP_H
 #define C_CODE_ALLOC_SETUP_H
 
-#include "seqAlign.h"
+#include "alignSequences.h"
 #include "debug_constants.h"
 #include "costMatrix.h"
 #include "nwMatrices.h"
@@ -31,7 +31,7 @@ void resetCharValues(seq_p retChar);
  *
  *  Requires symmetric, if not metric, matrix.
  */
-int distance (int const *tcm, int alphSize, int nucleotide, int ambElem);
+int distance (int const *tcm, size_t alphSize, int nucleotide, int ambElem);
 
 // may return cost_matrices_2d or cost_matrices_3d, so void *
 // no longer setting max, as algorithm to do so is unclear: see note in .c file

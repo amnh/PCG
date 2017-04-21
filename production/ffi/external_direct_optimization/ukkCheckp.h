@@ -38,8 +38,8 @@
 // AllocInfo myCPAllocInfo;
 
 typedef struct {
-    long cells,
-    innerLoop;
+    long cells;
+    long innerLoop;
 } Counts;
 
 //typedef struct {int dist; long computed;} U_cell_type;
@@ -64,13 +64,11 @@ typedef struct {
 //typedef struct {int from_ab,from_ac,from_cost,from_state;} From_type;
 
 
-U_cell_type *U(int ab, int ac, int d, int s);
-
-static inline CPType *CP(int ab, int ac, int d, int s);
+//U_cell_type *U(int ab, int ac, int d, int s);
 
 // doUkkInLimits - for Ukkonen check point between to specified points in the U matrix
-int doUkkInLimits(int sab, int sac, int sCost, int sState, int sDist,
-                  int fab, int fac, int fCost, int fState, int fDist);
+size_t doUkkInLimits(int sab, int sac, int sCost, int sState, int sDist,
+                     int fab, int fac, int fCost, int fState, int fDist);
 
 // getSplitRecurse - extracts info from the 'from' and CP info then recurses with doUkkInLimits
 //                   for the two subparts
@@ -89,8 +87,6 @@ int Ukk(int ab,int ac,int d,int state);
 // best distance is returned, or the best final state (needed for ukk.alloc traceback)
 int best(int ab, int ac, int d, int wantState);
 
-static inline void sort(int aval[], int len);
-
 int calcUkk(int ab, int ac, int d, int toState);
 
 int okIndex(int a, int da, int end);
@@ -102,8 +98,6 @@ int doUkk(seq_p retSeqA, seq_p retSeqB, seq_p retSeqC);
 int char_to_base (char v);
 
 void printTraceBack(seq_p retSeqA, seq_p retSeqB, seq_p retSeqC);
-
-static inline int withinMatrix(int ab, int ac, int d);
 
 int calcUkk(int ab, int ac, int d, int toState);
 

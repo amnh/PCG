@@ -1,6 +1,6 @@
 ### Note that multiple calls to gcc to create .o files are needed, followed by multiple additional calls for linking and final compilation
 
-all : test_interface test_initialization
+all : test_interface # test_initialization
 
 clean :
 	rm -f *.o *.hi *.out
@@ -11,21 +11,21 @@ clean :
 external_c_alignment : externalCAlignment.hsc $(necessary_c_files) $(necessary_h_files)
 	rm -f externalCAlignment.hs
 	hsc2hs externalCAlignment.hsc
-	gcc -c -Wall externalCAlignment.c
+	gcc -std=c11 -c -Wall -Wextra -pedantic externalCAlignment.c
 	ghc -O --make externalCAlignment.hs $(object_files)
 
 ######### Test only c functions that allocate and initialize various
 ######### internal structs. c_alignment_interface.c relies on these.
 test_initialization : initialization_driver.c $(necessary_c_files) $(necessary_h_files)
 	rm -f *.o
-	gcc -g -c -Wall $(necessary_c_files)
-	gcc -o initialization_driver -g initialization_driver.c $(object_files)
+	gcc -std=c11 -g -c -Wall -Wextra -pedantic $(necessary_c_files)
+	gcc -std=c11 -o initialization_driver -g initialization_driver.c $(object_files)
 
 ######### Test the actual C interface that Hakell interact with.
-test_interface : interface_driver.c
+test_interface : interface_driver.c $(necessary_c_files) $(necessary_h_files)
 	rm -f *.o
-	gcc -g -c -Wall $(necessary_c_files)
-	gcc -o interface_driver -g interface_driver.c $(object_files)
+	gcc -std=c11 -g -c -Wall -Wextra -pedantic $(necessary_c_files)
+	gcc -std=c11 -o interface_driver -g interface_driver.c $(object_files)
 
 
 
@@ -34,7 +34,7 @@ necessary_c_files = ../c_alignment_interface.c \
 					../costMatrix.c \
 					../nwMatrices.c \
 					../seq.c \
-					../seqAlign.c \
+					../alignSequences.c \
 					../ukkCheckp.c \
 					../ukkCommon.c
 
@@ -43,7 +43,7 @@ necessary_h_files = ./c_alignment_interface.h \
 					./costMatrix.h \
 					./nwMatrices.h \
 					./seq.h \
-					./seqAlign.h \
+					./alignSequences.h \
 					./ukkCheckp.h \
 					./ukkCommon.h
 
@@ -52,6 +52,6 @@ object_files = c_alignment_interface.o \
 			   costMatrix.o \
 			   nwMatrices.o \
 			   seq.o \
-			   seqAlign.o \
+			   alignSequences.o \
 			   ukkCheckp.o \
 			   ukkCommon.o

@@ -55,6 +55,7 @@
 
 #define Matrices_struct(a) ((struct nwMatrices *) Data_custom_val(a))
 
+// TODO: change ints to unsigned ints?
 struct nwMatrices {
             /****** In each of the following calculations, seq length includes opening gap *******/
     size_t            cap_nw;         /* Total length of available memory allocated to matrix or cube ==
@@ -78,24 +79,24 @@ struct nwMatrices {
                                        */
 };
 
-typedef struct nwMatrices * nw_matrices_p;
+typedef struct nwMatrices *nw_matrices_p;
 
-void print_matrices(nw_matrices_p m, int alphSize);
+void print_matrices(nw_matrices_p m, size_t alphSize);
 
 /*
  * Calculates the amount of memory required to perform a three dimensional
  * alignment between sequences of length w, d, h with ukkonen barriers set to k
  */
-int
-mat_size_of_3d_matrix (int w, int d, int h); // originally had a fourth parameter, k for ukkunonen
+size_t
+mat_size_of_3d_matrix (size_t w, size_t d, size_t h); // originally had a fourth parameter, k for ukkunonen
 
 /*
  * Calculates the amount of memory required to perform a two dimensional
  * alignment between sequences of length w and d. This is a small amount of
  * memory, so no ukkonen barriers for this.
  */
-int
-mat_size_of_2d_matrix (int w, int h);
+size_t
+mat_size_of_2d_matrix (size_t w, size_t h);
 
 /*
  * Rearrange or reallocate memory if necessary to perform an alignment between
@@ -104,13 +105,13 @@ mat_size_of_2d_matrix (int w, int h);
  * Order of sequences is unimportant here, as just reallocing.
  */
 void
-mat_setup_size (nw_matrices_p m, int len_seq1, int len_seq2, int len_seq3, int lcm);
+mat_setup_size (nw_matrices_p m, size_t len_seq1, size_t len_seq2, size_t len_seq3, size_t lcm);
 
 /* Printout the contents of the matrix */
 void
-mat_print_algn_2d (nw_matrices_p m, int w, int h);
+mat_print_algn_2d (nw_matrices_p m, size_t w, size_t h);
 
 void
-mat_print_algn_3d (nw_matrices_p m, int w, int h, int d);
+mat_print_algn_3d (nw_matrices_p m, size_t w, size_t h, size_t d);
 
 #endif /* NWMATRICES_H */
