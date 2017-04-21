@@ -1,5 +1,9 @@
 flags: {}
+
 extra-deps:
 - containers-0.5.8.1
 - quickcheck-properties-0.1
+
+local-bin-path: bin
+
 resolver: lts-8.11

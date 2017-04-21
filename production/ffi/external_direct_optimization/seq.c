@@ -33,21 +33,20 @@ void seq_print(seq_p inSeq) {
     printf("\n");
 }
 
-inline int
-seq_begin (int cap, int len) {
+inline size_t
+seq_begin (size_t cap, size_t len) {
     return (cap - len);
 }
 
 
 void
-seq_set (seq_p seq, int pos, SEQT val)
+seq_set (seq_p seq, size_t pos, SEQT val)
 {
     if (seq->len == 0) {
         assert (pos == 0);
         seq->len++;
     } else {
         assert (pos < seq->len);
-        assert (pos >= 0);
     }
     *(seq->seq_begin + pos) = val;
 }

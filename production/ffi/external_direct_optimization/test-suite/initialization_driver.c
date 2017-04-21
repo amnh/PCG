@@ -2,7 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "../seqAlign.h"
+#include "../alignSequences.h"
 #include "../c_code_alloc_setup.h"
 #include "../debug_constants.h"
 // #include "../costMatrix.h"

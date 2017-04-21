@@ -1,14 +1,16 @@
 #ifndef C_ALIGNMENT_INTERFACE_H
 #define C_ALIGNMENT_INTERFACE_H
 
-#include "seqAlign.h"
+#include "alignSequences.h"
 #include "c_code_alloc_setup.h"
 #include "debug_constants.h"
 #include "costMatrix.h"
 #include "nwMatrices.h"
-#include "seqAlign.h"
+#include "alignSequences.h"
 
-/** Input/output structure for Haskell FFI */
+/** Input/output structure for Haskell FFI.
+ *  Note that the sequence will be in the last `length` elements of the array.
+ */
 struct alignIO {
     SEQT *character;
     size_t length;
@@ -32,10 +34,18 @@ void freeAlignIO(alignIO_p toFree);
 
 void allocAlignIO(alignIO_p toAlloc, size_t capacity);
 
-/** Given an allocated seq struct, retChar, assign vals into correct positions
- *  in internal array (i.e. at end of array).
+/** Takes in an alignIO struct and a seq struct. Copies values of alignIO to seq.
+ *  Points seq->seq_begin, seq->end to respective points in alighIO->character.
+ *  Adds a gap character at the front of the array, to deal with old OCaml-forced interface.
+ *
+ *  Nota bene: assumes that retChar->character has already been allocated correctly.
  */
-void alignIOtoChar(alignIO_p input, seq_p retChar, size_t alphabetSize);
+void alignIOtoChar(seq_p retChar, alignIO_p input, size_t alphabetSize);
+
+/** Takes in an alignIO and a seq. *Copies* values of character from _end_ of seq to _beginning_ of alignIO->character.
+ *  Also eliminates extra gap needed by legacy code.
+ */
+void charToAlignIO(alignIO_p output, seq_p input);
 
 /** Do a 2d alignment. Depending on the values of last two inputs,
  *  | (0,0) = return only a cost

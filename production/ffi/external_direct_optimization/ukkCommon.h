@@ -48,24 +48,27 @@
 
 #define FIXED_NUM_PLANES 1
 
-#define CellsPerBlock   10
+#define CELLS_PER_BLOCK   10
 
 typedef enum {match, del, ins} Trans;  // The 3 possible state-machine states
 
 typedef struct {
-    int elemSize;
-    int abSize, acSize;
-    int abOffset, acOffset;
-    long abBlocks, acBlocks;
+    size_t elemSize;
+    size_t abSize;
+    size_t acSize;
+    size_t abOffset;
+    size_t acOffset;
+    size_t abBlocks;
+    size_t acBlocks;
 
     #ifdef FIXED_NUM_PLANES
         int costSize;
     #endif
 
-    long baseAlloc;
-    void **basePtr;
+    size_t baseAlloc;
+    void **basePtr;     // void because may point at U_cell_type or CPTye
 
-    long memAllocated;
+    size_t memAllocated;
 } AllocInfo;
 
 
@@ -83,19 +86,20 @@ typedef struct {
     extern int transCost [MAX_STATES][MAX_STATES];
     extern int stateNum  [MAX_STATES];
 
-    extern int numStates;
-    extern int maxSingleStep;
+    extern size_t numStates;
+    extern size_t maxSingleStep;
 
     extern char aStr[MAX_STR];
     extern char bStr[MAX_STR];
     extern char cStr[MAX_STR];
-    extern int  aLen, bLen, cLen;
+    extern size_t  aLen, bLen, cLen;
 
 #endif
 
 #define maxSingleCost (maxSingleStep * 2)
 
 int whichCharCost(char a, char b, char c);
+
 int okIndex(int a, int da, int end);
 
 // Setup routines
@@ -113,11 +117,19 @@ void revIntArray(int *arr, int start, int end);
 void revCharArray(char *arr, int start, int end);
 int  alignmentCost(int states[], char *al1, char *al2, char *al3, int len);
 
-void *getPtr(AllocInfo *a, int ab, int ac, int d, int s);
+void *getPtr(AllocInfo *a, int ab, int ac, size_t d, int s);
 
-int powell_3D_align (seq_p seqA,    seq_p seqB,    seq_p seqC,
-                     seq_p retSeqA, seq_p retSeqB, seq_p retSeqC,
-                     int mismatch, int gapOpen, int gapExtend);
+// TODO: unsigned ints for costs:
+int powell_3D_align ( seq_p seqA
+                    , seq_p seqB
+                    , seq_p seqC
+                    , seq_p retSeqA
+                    , seq_p retSeqB
+                    , seq_p retSeqC
+                    , int mismatch
+                    , int gapOpen
+                    , int gapExtend
+                    );
 
 // allocation routines. Were previously commented out.
 void allocFinal(AllocInfo *a, void *flag, void *top);

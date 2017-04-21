@@ -216,8 +216,8 @@ dynChar_t *makeDynamicChar( size_t alphSize, size_t numElems, packedChar *values
         fflush(stdout);
         exit(1);
     }
-    for( int elemNum = 0; elemNum < numElems; elemNum++ ) {
-        for( int bitIdx = 0; bitIdx < alphSize; bitIdx++ ) {
+    for( size_t elemNum = 0; elemNum < numElems; elemNum++ ) {
+        for( size_t bitIdx = 0; bitIdx < alphSize; bitIdx++ ) {
             if( values[elemNum] & (CANONICAL_ONE << bitIdx) ) {
                 SetBit(output->dynChar, elemNum * alphSize + bitIdx);
             }

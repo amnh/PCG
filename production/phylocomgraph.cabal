@@ -129,7 +129,7 @@ library
     ffi/external_direct_optimization/costMatrix.c
     ffi/external_direct_optimization/nwMatrices.c
     ffi/external_direct_optimization/seq.c
-    ffi/external_direct_optimization/seqAlign.c
+    ffi/external_direct_optimization/alignSequences.c
     ffi/external_direct_optimization/ukkCheckp.c
     ffi/external_direct_optimization/ukkCommon.c
     -- ffi/memoized_tcm/dynamicCharacterOperations.h
@@ -470,7 +470,7 @@ executable fasta-differ
                      , keys                  -any
                      , matrix                -any
                      , megaparsec            >=5.0
-                     , mtl                  -any
+                     , mtl                   -any
 --                     , memoize               -any
                      , mono-traversable      -any
                      , parallel              -any
@@ -526,7 +526,63 @@ executable do-comparison
                      , keys                  -any
                      , matrix                -any
                      , megaparsec            >=5.0
-                     , mtl                  -any
+                     , mtl                   -any
+--                     , memoize               -any
+                     , mono-traversable      -any
+                     , parallel              -any
+                     , phylocomgraph         -any
+                     , QuickCheck            -any
+                     , safe                  -any
+                     , scientific            -any
+                     , semigroups            -any
+                     , smallcheck            -any
+                     , split                 -any
+                     , tasty                 -any
+                     , tasty-hunit           -any
+                     , tasty-quickcheck      -any
+                     , tasty-smallcheck      -any
+                     , text                  -any
+                     , time                  -any
+                     , transformers          -any
+                     , unordered-containers  -any
+                     , vector                -any
+                     , vector-instances      -any
+
+  default-language:    Haskell2010
+
+  ghc-options:         -O2 -Wall
+                       -fwarn-duplicate-exports
+                       -fwarn-incomplete-patterns
+                       -fwarn-missing-signatures
+                       -fwarn-overlapping-patterns
+                       -fwarn-tabs
+                       -fwarn-unused-binds
+                       -fwarn-unused-do-bind
+                       -fwarn-unused-imports
+                       -fwarn-unused-matches
+
+  hs-source-dirs:      utils
+
+
+executable affine-safety
+
+  main-is:             affine-safety.hs
+
+  build-depends:       base                  >=4.8
+                     , bimap
+                     , bv                    -any
+                     , containers            -any
+                     , criterion             -any
+                     , deepseq               -any
+                     , directory             -any
+                     , dlist                 -any
+                     , either                -any
+                     , Glob                  -any
+                     , hashable              -any
+                     , keys                  -any
+                     , matrix                -any
+                     , megaparsec            >=5.0
+                     , mtl                   -any
 --                     , memoize               -any
                      , mono-traversable      -any
                      , parallel              -any
@@ -582,7 +638,7 @@ executable sequential-alignment-invariants
                      , keys                  -any
                      , matrix                -any
                      , megaparsec            >=5.0
-                     , mtl                  -any
+                     , mtl                   -any
 --                     , memoize               -any
                      , mono-traversable      -any
                      , parallel              -any
@@ -639,7 +695,7 @@ executable three-way-mean-check
                      , lens
                      , matrix                -any
                      , megaparsec            >=5.0
-                     , mtl                  -any
+                     , mtl                   -any
 --                     , memoize               -any
                      , mono-traversable      -any
                      , parallel              -any

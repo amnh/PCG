@@ -35,6 +35,7 @@
 
 // #ifdef USE_LARGE_ALPHABETS
 #define SEQT unsigned int
+
 // #define DESERIALIZE_SEQT(a,b) caml_deserialize_block_4((a),(b))
 // #define SERIALIZE_SEQT(a,b) caml_serialize_block_4((a),(b))
 // #else
@@ -50,23 +51,32 @@ struct seq {
     size_t cap;         /* Capacity of the sequence memory structure. */
     size_t len;         /* Total length of the sequence stored. */
     SEQT *array_head;   /* beginning of the allocated array */
-    SEQT *seq_begin;    /* Position where the first element of
-                           the sequence is actually stored.
-                        */
+    SEQT *seq_begin;    /* Position where the first element of the sequence is actually stored. */
     SEQT *end;
     //struct pool *my_pool; ARRAY_POOL_DELETE
 };
 
-typedef struct seq * seq_p;
+typedef struct seq *seq_p;
 
 void seq_print(seq_p inSeq);
 
-void
-seq_prepend (seq_p a, SEQT v);
+void seq_prepend (seq_p a, SEQT v);
+
+/** Does allocation for a sequence struct. Also sets seq pointers within array to correct positions.
+ *
+ *  resChar must be alloced before this call.
+ */
+// seq_p initializeChar(seq_p retChar, size_t allocSize) {
+//     retChar->cap        = allocSize;                              // capacity
+//     retChar->array_head = calloc(allocSize, sizeof(SEQT));        // beginning of array that holds dynamic character
+
+//     retChar->end        = retChar->array_head + allocSize;        // end of array
+//     retChar->seq_begin  = retChar->end;                           // position of first element in dynamic character
+//     retChar->len        = 0;                                      // number of elements in character
+// }
 
 
 /* Stores the value v in the position p of sequence a. */
-void
-seq_set (seq_p sequence, int position, SEQT value);
+void seq_set (seq_p sequence, size_t position, SEQT value);
 
 #endif /* SEQ_H */

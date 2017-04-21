@@ -69,7 +69,7 @@ extern int gapExtendCost;
 // costOffset - added to the 'computed' field of each cell.  'costOffset' is
 // recursive step of the checlpoint algorithm.  'Tis really a hack so I don't
 // have to reinitialize the memory structures.
-long costOffset = 1;
+long costOffset = 1;    // must be signed for future comparisons
 long finalCost;
 
 int furthestReached = -1;
@@ -99,20 +99,74 @@ int  aSeqIdx = 0, bSeqIdx = 0, cSeqIdx = 0, stateIdx = 0, costIdx = 0;
 char resultA[MAX_STR * 2],   resultB[MAX_STR * 2], resultC[MAX_STR * 2];
 int  states[MAX_STR * 2],    cost[MAX_STR * 2];
 
-U_cell_type *U(int ab, int ac, int d, int s) {
+static inline U_cell_type *U(int ab, int ac, int d, int s) {
     return getPtr(&myUAllocInfo, ab, ac, d, s);
-}
-
-CPType *CP(int ab, int ac, int d, int s)     {
-    return getPtr(&myCPAllocInfo, ab, ac, d, s);
 }
 
 U_cell_type UdummyCell;
 CPType CPdummyCell;
 
-int doUkkInLimits(int sab, int sac, int sCost, int sState, int sDist,
-                  int fab, int fac, int fCost, int fState, int fDist) {
 
+/************* next three functions are static inline, so not in .h file. ******************/
+static inline CPType *CP(int ab, int ac, int d, int s)     {
+    return getPtr(&myCPAllocInfo, ab, ac, d, s);
+}
+
+
+static inline void sort(int aval[], int len) {
+    int i, j;
+
+    for (i = 0; i < len; i++) {
+        int minI = i, t;
+        for (j = i + 1; j < len; j++) {
+            if (aval[j] < aval[minI]) {
+                minI = j;
+            }
+        }
+        t = aval[i];
+        aval[i] = aval[minI];
+        aval[minI] = t;
+    }
+}
+
+static inline int withinMatrix(int ab, int ac, int d) {
+    // The new method for checking the boundary condition.  Much tighter ~20%(?)  -- 28/02/1999
+    int bc = ac - ab;
+    int aval[3];
+    int g, h, cheapest;
+
+    if (d < 0) {
+        return 0;
+    }
+
+    aval[0] = abs(sabG - ab);
+    aval[1] = abs(sacG - ac);
+    aval[2] = abs((sacG - sabG) - bc);
+
+    // Set g and h to the smallest and second smallest of aval[] respectively
+    sort(aval, 3);
+    g = aval[0];
+    h = aval[1];
+
+    if (sStateG == 0) {
+        // We know a good boudary check if the start state is MMM
+        cheapest = (g==0 ? 0 : gapOpenCost + g * gapExtendCost) + (h==0 ? 0 : gapOpenCost + h * gapExtendCost);
+    } else {
+        // If start state is something else.  Can't charge for start of gaps unless we
+        // do something more clever,
+        cheapest = (g==0 ? 0 : g*gapExtendCost) + (h==0 ? 0 : h * gapExtendCost);
+    }
+
+    if (cheapest + sCostG > d) {
+        return 0;
+    } else {
+        return 1;
+    }
+}
+
+size_t doUkkInLimits( int sab, int sac, int sCost, int sState, int sDist,
+                      int fab, int fac, int fCost, int fState, int fDist)
+{
     assert(sCost >= 0 && fCost >= 0);
 
     sabG    = sab;
@@ -398,18 +452,20 @@ void printTraceBack(seq_p retSeqA, seq_p retSeqB, seq_p retSeqC) {
     // Add the first run of matches to the alignment
     // NB. The first run of matches must be added in reverse order.
 
-    int endRun, i = 0;
-    while ( i<aLen && (aStr[i]==bStr[i] && aStr[i]==cStr[i]) ) {
+    size_t endRun,
+           i = 0;
+
+    while ( i < aLen && (aStr[i] == bStr[i] && aStr[i] == cStr[i]) ) {
       i++;
     }
     endRun = i;
 
-    for (i = endRun - 1; i >= 0; i--)  {
-      resultA[aSeqIdx++]    = aStr[i];
-      resultB[bSeqIdx++]    = bStr[i];
-      resultC[cSeqIdx++]    = cStr[i];
-      states[stateIdx++]  = 0;        /* The match state */
-      cost[costIdx++] = 0;
+    for (int j = endRun - 1; j >= 0; j--)  {
+      resultA[aSeqIdx++] = aStr[j];
+      resultB[bSeqIdx++] = bStr[j];
+      resultC[cSeqIdx++] = cStr[j];
+      states[stateIdx++] = 0;        /* The match state */
+      cost[costIdx++]    = 0;
     }
     // end print alignment
 
@@ -423,16 +479,16 @@ void printTraceBack(seq_p retSeqA, seq_p retSeqB, seq_p retSeqC) {
     // end reverse alignments
 
     // Print out the alignment
-    for (int i = aSeqIdx - 1; i >= 0; i--) {
-      seq_prepend (retSeqA, char_to_base (resultA[i]));
-      seq_prepend (retSeqB, char_to_base (resultB[i]));
-      seq_prepend (retSeqC, char_to_base (resultC[i]));
+    for (int j = aSeqIdx - 1; j >= 0; j--) {
+      seq_prepend (retSeqA, char_to_base (resultA[j]));
+      seq_prepend (retSeqB, char_to_base (resultB[j]));
+      seq_prepend (retSeqC, char_to_base (resultC[j]));
     }
     seq_prepend (retSeqA, 16);
     seq_prepend (retSeqB, 16);
     seq_prepend (retSeqC, 16);
 
-    assert(aSeqIdx==bSeqIdx && aSeqIdx==cSeqIdx && aSeqIdx==stateIdx && aSeqIdx==costIdx);
+    assert(aSeqIdx == bSeqIdx && aSeqIdx == cSeqIdx && aSeqIdx == stateIdx && aSeqIdx == costIdx);
 
     checkAlign(resultA, aSeqIdx, aStr, aLen);
     checkAlign(resultB, bSeqIdx, bStr, bLen);
@@ -445,14 +501,15 @@ void printTraceBack(seq_p retSeqA, seq_p retSeqB, seq_p retSeqC) {
 // best distance is returned, or the best final state (needed for ukk.alloc traceback)
 int best(int ab, int ac, int d, int wantState) {
 
-    int s;
-    int best = -INFINITY;
+    size_t s;
+    int best      = -INFINITY;
     int bestState = -1;
     for (s = 0; s < numStates; s++) {
-    if ( (U(ab, ac, d, s)->computed == d + costOffset) && (U(ab, ac, d, s)->dist > best) ) {
-      best = U(ab, ac, d, s)->dist;
-      bestState = s;
-    }
+        if (    ( U(ab, ac, d, s)->computed == d + costOffset )
+             && ( U(ab, ac, d, s)->dist > best) ) {
+          best = U(ab, ac, d, s)->dist;
+          bestState = s;
+        }
     }
 
 //  fprintf(stderr,"best(%2d,%2d,%2d,(%2d))=%2d\n",ab,ac,d,bestState,best);
@@ -464,58 +521,7 @@ int best(int ab, int ac, int d, int wantState) {
     }
 }
 
-static inline void sort(int aval[], int len) {
-    int i, j;
-
-    for (i = 0; i < len; i++) {
-        int minI = i, t;
-        for (j = i + 1; j < len; j++) {
-            if (aval[j] < aval[minI]) {
-                minI = j;
-            }
-        }
-        t = aval[i];
-        aval[i] = aval[minI];
-        aval[minI] = t;
-    }
-}
-
-static inline int withinMatrix(int ab, int ac, int d) {
-    // The new method for checking the boundary condition.  Much tighter ~20%(?)  -- 28/02/1999
-    int bc = ac - ab;
-    int aval[3];
-    int g, h, cheapest;
-
-    if (d < 0) {
-        return 0;
-    }
-
-    aval[0] = abs(sabG - ab);
-    aval[1] = abs(sacG - ac);
-    aval[2] = abs((sacG - sabG) - bc);
-
-    // Set g and h to the smallest and second smallest of aval[] respectively
-    sort(aval, 3);
-    g = aval[0];
-    h = aval[1];
-
-    if (sStateG == 0) {
-        // We know a good boudary check if the start state is MMM
-        cheapest = (g==0 ? 0 : gapOpenCost + g * gapExtendCost) + (h==0 ? 0 : gapOpenCost + h * gapExtendCost);
-    } else {
-        // If start state is something else.  Can't charge for start of gaps unless we
-        // do something more clever,
-        cheapest = (g==0 ? 0 : g*gapExtendCost) + (h==0 ? 0 : h * gapExtendCost);
-    }
-
-    if (cheapest + sCostG > d) {
-        return 0;
-    } else {
-        return 1;
-    }
-}
-
-int Ukk(int ab,int ac,int d,int state) {
+int Ukk(int ab, int ac, int d, int state) {
 
     if (!withinMatrix(ab, ac, d)) {
         return -INFINITY;
@@ -577,9 +583,9 @@ int doUkk(seq_p retSeqA, seq_p retSeqB, seq_p retSeqC) {
     sCostG  = 0;
     sStateG = 0;
 
-    int curDist = -1;
-    int finalab, finalac;
-    int startDist;
+    size_t curDist;
+    size_t finalab, finalac;
+    size_t startDist;
 
     CPwidth = maxSingleStep;
     // Concern: what is the correct value to use for Umatrix depth.
@@ -597,10 +603,9 @@ int doUkk(seq_p retSeqA, seq_p retSeqB, seq_p retSeqC) {
         curDist++;
         counts.innerLoop++;
     }
-    U(0, 0, 0, 0)->dist = curDist;
+    U(0, 0, 0, 0)->dist     = curDist;
     U(0, 0, 0, 0)->computed = 0 + costOffset;
     startDist = curDist;
-
 
     finalab = aLen - bLen;
     finalac = aLen - cLen;
@@ -615,11 +620,12 @@ int doUkk(seq_p retSeqA, seq_p retSeqB, seq_p retSeqC) {
         Ukk(finalab, finalac, curDist, 0);
 
         if (DEBUG_3D) {
-            fprintf(stderr, "Furthest reached for cost %2d is %2d.\n",
+            fprintf(stderr, "Furthest reached for cost %2zu is %2d.\n",
                     curDist, furthestReached);
         }
 
-        if (CPonDist && furthestReached >= aLen / 2) {
+        int half_aLen = (int) aLen / 2;
+        if (CPonDist && furthestReached >= half_aLen) {
             CPcost   = curDist + 1;
             CPonDist = 0;
 
@@ -629,9 +635,9 @@ int doUkk(seq_p retSeqA, seq_p retSeqB, seq_p retSeqC) {
         }
 
 
-    } while (best(finalab, finalac, curDist, 0) < aLen);
+    } while (best(finalab, finalac, curDist, 0) < (int) aLen);
 
-    assert(best(finalab, finalac, curDist, 0) == aLen);
+    assert(best(finalab, finalac, curDist, 0) == (int) aLen);
 
     CPonDist  = 0;
     finalCost = curDist;
@@ -639,7 +645,7 @@ int doUkk(seq_p retSeqA, seq_p retSeqB, seq_p retSeqC) {
 
     // Recurse for alignment
     int fState = best(finalab, finalac, finalCost, 1);
-    int dist;
+    size_t dist;
 
     if ( U(finalab, finalac, finalCost, fState)->from.cost <= 0) {
         // We check pointed too late on this first pass.
@@ -660,8 +666,8 @@ int doUkk(seq_p retSeqA, seq_p retSeqB, seq_p retSeqC) {
     allocFinal(&myUAllocInfo,  (&UdummyCell.computed), (&UdummyCell));
     allocFinal(&myCPAllocInfo, (&CPdummyCell.cost),    (&CPdummyCell));
 
-    printf("doUkk: dist: = %2d\n", curDist);
-    return curDist;
+    printf("doUkk: dist: = %2zu\n", curDist);
+    return (int) curDist;
 }
 
 int calcUkk(int ab, int ac, int d, int toState) {
@@ -703,7 +709,7 @@ int calcUkk(int ab, int ac, int d, int toState) {
 
     // calculate if its a valid diagonal
     if (ab1 >= -endB && ab1 <= endA && ac1 >= -endC && ac1 <= endA) {
-        int fromState;
+        size_t fromState;
 
         // Loop over possible state we are moving from
         //   May be possible to limit this?
@@ -793,9 +799,9 @@ int calcUkk(int ab, int ac, int d, int toState) {
 
         // Get furthest of states for this cost
         int dist = -INFINITY;
-        int from_state = -1, s;
+        int from_state = -1;
 
-        for (s = 0; s < numStates; s++) {
+        for (size_t s = 0; s < numStates; s++) {
             int thisdist;
             thisdist = (s == 0) ? bestDist : Ukk(ab,ac,d,s);
             if (thisdist > dist) {
