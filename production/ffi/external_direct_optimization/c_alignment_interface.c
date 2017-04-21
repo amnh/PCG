@@ -110,7 +110,7 @@ void charToAlignIO(alignIO_p output, seq_p input) {
     input->seq_begin++;                // to start after unnecessary gap char at begining
     output->length   = input->len - 1; // (decrement because of the leading gap char?)
     output->capacity = input->cap;     // this shouldn't actually change
-    size_t offset    = output->capacity - output->length;
+    //size_t offset    = output->capacity - output->length;
 
     // TODO: is this necessary? Is it calloc'ed, and if not do these values matter?
     memset(output->character, 0, input->cap * sizeof(SEQT));

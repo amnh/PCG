@@ -155,8 +155,8 @@ cm_set_cost_3d (int a, int b, int cp, int v, cost_matrices_3d_p c);
  * the character from s1, and s2c is defined in an analogous manner. s3p is the
  * position in the sequence s3 of interest. s3p should be less than s3l.
  */
-static inline int *
-cm_get_pos_in_precalc (const int *toOutput, int s3l, int alphSize, int s1c, int s2c, int s3p);
+//static inline int *
+//cm_get_pos_in_precalc (const int *toOutput, int s3l, int alphSize, int s1c, int s2c, int s3p);
 
 /*
  * During the 3d alignments, calculations are performed for each element in the
@@ -171,8 +171,8 @@ cm_get_row_precalc_3d (const int *toOutput, int s3l, int alphSize, int s1c, int 
  * Gets the total number of possible combinations of an alphabeet of size
  * alphSize. The size of the alphabet must be bigger than 0.
  */
-static inline int
-cm_combinations_of_alphabet (const int alphSize);
+//static inline int
+//cm_combinations_of_alphabet (const int alphSize);
 
 /*
  * Calculates the median position in a transformation cost matrix for an
@@ -214,11 +214,13 @@ cm_calc_cost ( int *tcm
  * of character a are located, when tcm holds information for an alphabet of
  * size alphSize.
  */
+/*
 static inline int *
 cm_get_row ( int *tcm
            , SEQT a
            , int alphSize
            );
+*/
 
 /* set the value of c->worst at location (a,b) to v */
 void
@@ -291,8 +293,8 @@ cm_get_median_3d (const cost_matrices_3d_p t, SEQT a, SEQT b, SEQT c);
  * of character a are located, when tcm holds information for an alphabet of
  * size alphSize.
  */
-static inline int *
-cm_get_row_3d (int *tcm, SEQT a, SEQT b, int alphSize);
+//static inline int *
+//cm_get_row_3d (int *tcm, SEQT a, SEQT b, int alphSize);
 
 /*
  * Fills a three-dimensional precalculation alignment matrix for sequence s

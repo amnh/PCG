@@ -94,7 +94,7 @@ void setup2dCostMtx(int* tcm, size_t alphSize, int gap_open, cost_matrices_2d_p 
     SEQT median       = 0;                     // cumulative median for 2d; combo of median1, etc., below
     int curCost;
 
-    int median1, median2;                      // median of a given nucleotide and current ambElem, for each ambElem
+    // int median1, median2;                      // median of a given nucleotide and current ambElem, for each ambElem
 
     //    int tcm2[25] = {0,1,1,1,1,1,0,1,1,1,1,1,0,1,1,1,1,1,0,1,1,1,1,1,0};
 
@@ -111,7 +111,7 @@ void setup2dCostMtx(int* tcm, size_t alphSize, int gap_open, cost_matrices_2d_p 
     // Print TCM in pretty format
     if(DEBUG_MAT) {
         printf("setup2dCostMtx\n");
-        const int n = retCostMtx->costMatrixDimension;
+        const size_t n = retCostMtx->costMatrixDimension;
         for (size_t i = 0; i < n; ++i) {
             for (size_t j = 0; j < n; ++j) {
                 printf("%2d ", tcm[ n * i + j ]);
@@ -125,7 +125,7 @@ void setup2dCostMtx(int* tcm, size_t alphSize, int gap_open, cost_matrices_2d_p 
             //curCost = 0;                // don't actually need to do this
             minCost = INT_MAX;
             median  = 0;
-            median1 = median2 = 0;
+            // median1 = median2 = 0;
 
             SEQT nucleotide;
             for ( nucleotide = 1; nucleotide <= alphSize; nucleotide++) {

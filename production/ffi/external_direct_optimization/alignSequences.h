@@ -73,7 +73,7 @@
  * As standard, all the caml binding functions are called algn_CAML_<function
  * name>
  */
-
+/*
 static inline void
 algn_fill_row (       int *curRow
               , const int *prevRow
@@ -84,7 +84,9 @@ algn_fill_row (       int *curRow
               ,       int i
               ,       int end
               );
+*/
 
+/*
 static inline int
 algn_fill_plane ( const seq_p seq1
                 ,       int *precalcMtx
@@ -94,6 +96,7 @@ algn_fill_plane ( const seq_p seq1
                 ,       DIR_MTX_ARROW_t *dirMtx
                 , const cost_matrices_2d_p c
                 );
+*/
 
 
 /* These two seem to be missing in .c file:
@@ -108,6 +111,7 @@ algn_fill_plane_uk (const struct seq *seq1, int *prec, int seq1_len,
 */
 
 
+/*
 static inline void
 fill_moved (       size_t seq3_len
            , const int *prev_m
@@ -119,6 +123,8 @@ fill_moved (       size_t seq3_len
            ,       int *curRow
            ,       DIR_MTX_ARROW_t *dirMtx
            );
+*/
+
 
 void
 fill_parallel (       size_t seq3_len
