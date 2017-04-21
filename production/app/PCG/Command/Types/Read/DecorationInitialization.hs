@@ -24,11 +24,11 @@ import           Analysis.Parsimony.Dynamic.DirectOptimization
 import           Analysis.Parsimony.Dynamic.SequentialAlign
 import           Bio.Character
 import           Bio.Character.Decoration.Additive
-import           Bio.Character.Decoration.Continuous
+--import           Bio.Character.Decoration.Continuous
 --import           Bio.Character.Decoration.Discrete
 import           Bio.Character.Decoration.Dynamic
-import           Bio.Character.Decoration.Fitch
-import           Bio.Character.Decoration.Metric
+--import           Bio.Character.Decoration.Fitch
+--import           Bio.Character.Decoration.Metric
 --import           Bio.Character.Decoration.NonMetric
 
 --import           Bio.Character.Encodable
@@ -37,7 +37,7 @@ import           Bio.Character.Decoration.Metric
 --import           Bio.Character.Decoration.Discrete   hiding (characterName)
 --import           Bio.Character.Decoration.Dynamic    hiding (characterName)
 --import           Bio.Character.Parsed
-import           Bio.Sequence
+--import           Bio.Sequence
 --import           Bio.Sequence.Block
 --import           Bio.Metadata.CharacterName hiding (sourceFile)
 --import           Bio.Metadata.Parsed
@@ -46,20 +46,20 @@ import           Bio.Sequence
 --import           Bio.PhyloGraph.Forest.Parsed
 import           Bio.PhyloGraphPrime
 --import           Bio.PhyloGraphPrime.Component
-import           Bio.PhyloGraphPrime.Node
-import           Bio.PhyloGraphPrime.ReferenceDAG
+--import           Bio.PhyloGraphPrime.Node
+--import           Bio.PhyloGraphPrime.ReferenceDAG
 import           Bio.PhyloGraphPrime.PhylogeneticDAG
-import           Control.DeepSeq
+--import           Control.DeepSeq
 import           Control.Lens
 --import           Control.Arrow                     ((&&&))
 --import           Control.Applicative               ((<|>))
 --import           Data.Alphabet
-import           Data.Bifunctor                    (second)
+--import           Data.Bifunctor                    (second)
 --import           Data.Foldable
 --import qualified Data.IntSet                as IS
-import           Data.Key
+--import           Data.Key
 --import           Data.List                         (transpose, zip4)
-import           Data.List.NonEmpty                (NonEmpty( (:|) ))
+--import           Data.List.NonEmpty                (NonEmpty( (:|) ))
 --import qualified Data.List.NonEmpty         as NE
 --import           Data.List.Utility                 (duplicates)
 --import           Data.Map                          (Map, intersectionWith, keys)
@@ -78,7 +78,7 @@ import           Data.MonoTraversable (Element)
 --import           PCG.SearchState
 import           Prelude                    hiding (lookup, zip, zipWith)
 
-import Debug.Trace
+-- import Debug.Trace
 
 
 {-
@@ -91,7 +91,7 @@ traceOpt identifier x = (trace ("Before " <> identifier) ())
 
 -- | sequentialAlignOverride, iff True forces seqAlign to run; otherwise, DO runs.
 sequentialAlignOverride :: Bool
-sequentialAlignOverride = True
+sequentialAlignOverride = False
 
 
 chooseDirectOptimizationComparison :: ( SimpleDynamicDecoration d  c
@@ -111,7 +111,7 @@ chooseDirectOptimizationComparison dec decs =
       []  -> selectBranch dec
       x:_ -> selectBranch x
   where
-    selectBranch x | trace (show . length $ x ^. characterAlphabet) False = undefined
+--    selectBranch x | trace (show . length $ x ^. characterAlphabet) False = undefined
     selectBranch candidate
       | sequentialAlignOverride = sequentialAlign (candidate ^. sparseTransitionCostMatrix)
       | otherwise =
@@ -122,34 +122,29 @@ chooseDirectOptimizationComparison dec decs =
               in \x y -> naiveDO x y scm
 
 
-{-
+{--}
 --initializeDecorations2 :: CharacterResult -> PhylogeneticSolution InitialDecorationDAG
 initializeDecorations2 (PhylogeneticSolution forests) = PhylogeneticSolution $ fmap performDecoration <$> forests
   where
 --    performDecoration :: CharacterDAG -> InitialDecorationDAG
-    performDecoration = assignOptimalDynamicCharacterRootEdges dynamicScoring2 .
-      postorderSequence'
-        (g  sankoffPostOrder)
-        (g  sankoffPostOrder)
-        id2
-        (g    fitchPostOrder)
-        (g additivePostOrder)
-        (g adaptiveDirectOptimizationPostOrder)
+    performDecoration = assignPunativeNetworkEdgeCost
+--                      . assignOptimalDynamicCharacterRootEdges adaptiveDirectOptimizationPostOrder
+                      . postorderSequence'
+                          (g  sankoffPostOrder)
+                          (g  sankoffPostOrder)
+                          (g additivePostOrder)
+                          (g    fitchPostOrder)
+                          (g additivePostOrder)
+                          (g adaptiveDirectOptimizationPostOrder)
       where
         g _  Nothing  [] = error $ "Uninitialized leaf node. This is bad!"
         g h (Just  v) [] = h v []
         g h        e  xs = h (error $ "We shouldn't be using this value." ++ show e ++ show (length xs)) xs
-
-        id2 x _ = x
-        dynamicScoring  = directOptimizationPostOrder (\x y -> naiveDOConst x y undefined)
-        -- Because of monomophism BS
-        dynamicScoring2 = directOptimizationPostOrder (\x y -> naiveDOConst x y undefined)
-{--
-        adaptiveDirectOptimizationPostOrder _ _ | trace "DO call" False = undefined
+{--}
         adaptiveDirectOptimizationPostOrder dec kidDecs = directOptimizationPostOrder pairwiseAlignmentFunction dec kidDecs
           where
             pairwiseAlignmentFunction = chooseDirectOptimizationComparison dec kidDecs
---}
+{--}
 
 
 {-
@@ -165,8 +160,8 @@ initializeDecorations2 (PhylogeneticSolution forests) = PhylogeneticSolution $ f
           , sequenceDecoration  = preOrderLogic (sequenceDecoration parentalNode) (second sequenceDecoration <$> childNodes)
           }
 -}
--}
 {--}
+{--
 initializeDecorations :: CharacterResult -> PhylogeneticSolution InitialDecorationDAG
 initializeDecorations (PhylogeneticSolution forests) = PhylogeneticSolution $ fmap performDecoration <$> forests
   where
@@ -292,6 +287,6 @@ initializeDecorations (PhylogeneticSolution forests) = PhylogeneticSolution $ fm
           where
             pairwiseAlignmentFunction = chooseDirectOptimizationComparison dec $ snd <$> kidDecs
 
-{--}
+--}
 
 

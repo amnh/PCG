@@ -15,9 +15,10 @@ void alignIO_print(alignIO_p character) {
     printf("\n");
     printf("Length:   %zu\n", character->length);
     printf("Capacity: %zu\n", character->capacity);
-    for(int i = 0; i < character->capacity; i++) {
-        if (character->character[i] == 0) continue;
-        printf("%2d, ", character->character[i]);
+    size_t loopOffset = character->capacity - character->length;
+    for(int i = 0; i < character->length; i++) {
+        printf("print %d: %2d, ", i, character->character[i+loopOffset]);
+        if (character->character[i+loopOffset] == 0) continue;
     }
     printf("\n");
 }
@@ -31,8 +32,8 @@ void copyValsToAIO(alignIO_p outChar, SEQT *vals, size_t length, size_t capacity
     // printf("here!!\n");
     size_t loopOffset = capacity - length;
     for(size_t i = 0; i < length; i++) {
-        // printf("%d, ", vals[i]);
         outChar->character[i+loopOffset] = vals[i];
+        printf("copy %zu: %d, ", i, vals[i]);
     }
     // printf("here!!!\n");
 }

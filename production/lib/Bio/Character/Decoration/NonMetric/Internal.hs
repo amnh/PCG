@@ -71,7 +71,7 @@ instance HasSymbolChangeMatrix (NonMetricDecorationInitial c) (Word -> Word -> W
 
 -- |
 -- A 'Lens' for the 'transitionCostMatrix' field
-instance EncodableStreamElement c => HasTransitionCostMatrix (NonMetricDecorationInitial c) (c -> c -> (c, Word)) where
+instance HasTransitionCostMatrix (NonMetricDecorationInitial c) (c -> c -> (c, Word)) where
 
     transitionCostMatrix = lens getter setter
       where
@@ -91,10 +91,14 @@ instance HasCharacterWeight (NonMetricDecorationInitial c) Double where
 -- | (✔)
 instance GeneralCharacterMetadata (NonMetricDecorationInitial c) where
 
+    extractGeneralCharacterMetadata = extractGeneralCharacterMetadata . metadata
+  
 
 -- | (✔)
 instance DiscreteCharacterMetadata (NonMetricDecorationInitial c) where
 
+    extractDiscreteCharacterMetadata = extractDiscreteCharacterMetadata . metadata
+  
 
 -- | (✔)
 instance EncodableStreamElement c => DiscreteWithTcmCharacterMetadata (NonMetricDecorationInitial c) c where

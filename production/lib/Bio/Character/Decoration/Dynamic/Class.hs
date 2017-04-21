@@ -90,7 +90,7 @@ class ( SimpleDynamicDecoration s c
       , DirectOptimizationPostOrderDecoration s c
       ) => SimpleDynamicExtensionPostOrderDecoration s c | s -> c where
 
-    extendDynamicToPostOrder :: (SimpleDynamicDecoration x c, DirectOptimizationPostOrderDecoration s c)
+    extendDynamicToPostOrder :: SimpleDynamicDecoration x c
                              => x    -- ^ Original decoration
                              -> Word -- ^ The cost of the alignment
                              -> Word -- ^ The cost of the alignment and the child subtrees
@@ -109,11 +109,11 @@ class ( DirectOptimizationPostOrderDecoration s c
       , DirectOptimizationDecoration s c
       ) => PostOrderExtensionDirectOptimizationDecoration s c | s -> c where
 
-    extendPostOrderToDirectOptimization :: (DirectOptimizationPostOrderDecoration x c, DirectOptimizationDecoration s c)
-                             => x -- ^ Original decoration
-                             -> c -- ^ Final /ungapped/ dynamic character
-                             -> c -- ^ Final   /gapped/ dynamic character
-                             -> s -- ^ Resulting decoration
+    extendPostOrderToDirectOptimization :: DirectOptimizationPostOrderDecoration x c
+                                        => x -- ^ Original decoration
+                                        -> c -- ^ Final /ungapped/ dynamic character
+                                        -> c -- ^ Final   /gapped/ dynamic character
+                                        -> s -- ^ Resulting decoration
 
 {-
 instance ( DynamicCharacterDecoration s a

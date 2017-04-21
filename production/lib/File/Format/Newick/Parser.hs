@@ -103,10 +103,10 @@ quotedLabel = do
   where 
     quotedLabelData = do
       prefix <- many (noneOf $ '\'':invalidQuotedLabelChars)
-      _      <- char '\'' 
-      suffix <- optional (char '\'' <:> quotedLabelData)
+      _      <- char '\''
+      suffix <- optional (try quotedLabelData)
       case suffix of
-        Just y  -> pure $ prefix <> y
+        Just y  -> pure $ prefix <> ('\'':y)
         Nothing -> pure prefix
 
 

@@ -108,10 +108,10 @@ instance ParsedCharacters (NonEmpty NewickForest) where
     unifyCharacters = mergeMaps . foldMap1 (fmap f)
       where
         f node 
-          | null (descendants node) = M.singleton name mempty
-          | otherwise = foldl1 (<>) $ f <$> descendants node
+          | null (descendants node) = M.singleton nodeName mempty
+          | otherwise = foldMap f $ descendants node -- foldl1 (<>) $ f <$> descendants node
           where
-            name = fromMaybe "" $ newickLabel node
+            nodeName = fromMaybe "" $ newickLabel node
 
 
 -- | (✔)
@@ -157,9 +157,9 @@ instance ParsedCharacters VertexEdgeRoot where
         f node 
           | null (subForest node) = insert (rootLabel node) mempty mempty
           | otherwise = foldl1 (<>) $ f <$> subForest node
-        buildTree name = Node name kids
+        buildTree nodeName = Node nodeName kids
           where
-            kids = fmap (buildTree . snd) . filter ((==name) . fst) $ (edgeOrigin &&& edgeTarget) <$> es
+            kids = fmap (buildTree . snd) . filter ((==nodeName) . fst) $ (edgeOrigin &&& edgeTarget) <$> es
 
 
 

@@ -142,7 +142,7 @@ replicate i e
 --
 -- Create a singleton 'DuplicateSet' with one element value occuring one time.
 {-# INLINE singleton #-}
-singleton :: Ord a => a -> DuplicateSet a
+singleton :: a -> DuplicateSet a
 singleton = DSet . (`Map.singleton` 1)
 
 -- |
@@ -192,7 +192,7 @@ cartesianProduct = cartesianProductWith (,)
 -- |
 -- /O(x*y)/ where /x/ is the number of unique elements in the left-hand side
 -- and /y/ is the number of unique elements in the right-hand side.
-cartesianProductWith :: (Eq a, Eq b, Eq c) => (a -> b -> c) -> DuplicateSet a -> DuplicateSet b -> DuplicateSet c
+cartesianProductWith :: (Eq c) => (a -> b -> c) -> DuplicateSet a -> DuplicateSet b -> DuplicateSet c
 cartesianProductWith f lhs rhs = fromJust $ cartesianProductWithFilter (\x y -> Just $ f x y) lhs rhs
 
 
@@ -208,7 +208,7 @@ cartesianProductWith f lhs rhs = fromJust $ cartesianProductWithFilter (\x y -> 
 
 -- I think that the use of Map.fromAscList is safe here.
 -- If not we can change the call to Map.fromList as the cartesian product is /O(x*y)/.
-cartesianProductWithFilter :: (Eq a, Eq b, Eq c) => (a -> b -> Maybe c) -> DuplicateSet a -> DuplicateSet b -> Maybe (DuplicateSet c)
+cartesianProductWithFilter :: Eq c => (a -> b -> Maybe c) -> DuplicateSet a -> DuplicateSet b -> Maybe (DuplicateSet c)
 cartesianProductWithFilter f lhs rhs =
     case resultList of
       [] -> Nothing

@@ -37,10 +37,10 @@ import Bio.Character.Decoration.Shared
 import Bio.Character.Encodable
 import Bio.Metadata.Discrete
 import Bio.Metadata.DiscreteWithTCM
-import Bio.Metadata.General
 import Bio.Metadata.CharacterName
 import Control.Lens
 import Data.Alphabet
+import Data.ExtendedFinite
 import Data.Range
 
 
@@ -113,7 +113,7 @@ instance HasIntervalCharacter (DiscreteDecoration c) c where
 
 
 -- | (✔)
-instance (Ranged c, Num (Bound c), Ord (Bound c)) => RangedCharacterDecoration (DiscreteDecoration c) c where
+instance (Ranged c, ExtendedNumber (Bound c), Num (Finite (Bound c)), Num (Bound c), Ord (Bound c)) => RangedCharacterDecoration (DiscreteDecoration c) c where
 
 
 -- | (✔)
@@ -169,7 +169,7 @@ instance GeneralCharacterMetadata (DiscreteDecoration c) where
 
 
 -- | (✔)
-instance EncodableStreamElement c => DiscreteCharacterMetadata (DiscreteDecoration c) where
+instance DiscreteCharacterMetadata (DiscreteDecoration c) where
 
     {-# INLINE extractDiscreteCharacterMetadata #-}
     extractDiscreteCharacterMetadata = extractDiscreteCharacterMetadata . metadata

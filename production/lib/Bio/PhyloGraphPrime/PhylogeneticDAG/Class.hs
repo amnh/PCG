@@ -14,8 +14,10 @@
 
 module Bio.PhyloGraphPrime.PhylogeneticDAG.Class where
 
+
 id' :: a -> b -> a
 id' x _ = x
+
 
 class PhylogeneticDAGish dag where
 

@@ -19,15 +19,16 @@ module File.Format.Newick.Internal
   , NewickNode(..)
   , isLeaf
   , newickNode
+  , renderNewickForest
   ) where
 
 
-import           Control.Applicative (liftA2)
-import           Data.Maybe (isJust,isNothing)
+import           Data.Tree
+import           Data.Maybe
 import qualified Bio.PhyloGraph.Network as N
 import           Data.List
-import           Data.List.NonEmpty  (NonEmpty)
-import           Data.Monoid
+import           Data.List.NonEmpty  (NonEmpty, toList)
+import           Data.Semigroup
 
 
 {----
@@ -68,15 +69,27 @@ data NewickNode
 
 
 instance Show NewickNode where
-  show (NewickNode d n b) = name <> len <> " " <> show d 
-    where
-      name = maybe "Node" show n
-      len  = maybe "" (\x -> ':' : show x) b
+
+    show (NewickNode d n b) = name <> len <> " " <> show d 
+      where
+        name = maybe "Node" show n
+        len  = maybe "" (\x -> ':' : show x) b
 
 
-instance Monoid NewickNode where
-  mempty = NewickNode [] Nothing Nothing
-  mappend (NewickNode des1 label1 len1) (NewickNode des2 label2 len2) = NewickNode (des1 <> des2) (label1 <> label2) (liftA2 (+) len1 len2)
+instance Semigroup NewickNode where
+
+    lhs <> rhs =
+        NewickNode
+        { descendants  = [lhs,rhs]
+        , newickLabel  = Nothing
+        , branchLength = Nothing
+        }
+
+
+renderNewickForest :: NewickForest -> String
+renderNewickForest = drawForest . unfoldForest f . toList
+  where
+    f = (,) <$> fromMaybe "X" . newickLabel <*> descendants
 
 
 -- |

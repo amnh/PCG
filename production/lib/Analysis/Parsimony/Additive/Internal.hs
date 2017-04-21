@@ -28,6 +28,7 @@ module Analysis.Parsimony.Additive.Internal where
 import Bio.Character.Decoration.Additive
 import Control.Lens
 import Data.List.NonEmpty (NonEmpty( (:|) ))
+import Data.ExtendedFinite
 import Data.Range
 
 -- import Debug.Trace
@@ -124,7 +125,7 @@ additivePostOrder parentDecoration xs =
 -- Used on the postorder pass.
 initializeLeaf :: ( DiscreteCharacterMetadata d
                   , RangedCharacterDecoration d  c
-                  , RangedCharacterDecoration d' c
+--                  , RangedCharacterDecoration d' c
                   , RangedExtensionPostorder  d' c
                   )
                => d
@@ -144,8 +145,8 @@ initializeLeaf curDecoration =
 -- intersection of the two child intervals.
 --
 -- Used on the postorder pass.
-updatePostOrder :: ( DiscreteCharacterMetadata d
-                   , RangedCharacterDecoration d c
+updatePostOrder :: (-- DiscreteCharacterMetadata d
+                     RangedCharacterDecoration d c
                    , DiscreteCharacterMetadata d'
                    , RangedExtensionPostorder  d' c
                    )
@@ -162,21 +163,21 @@ updatePostOrder _parentDecoration (leftChild:|(rightChild:_)) =
     totalCost                    = thisNodeCost + (leftChild ^. characterCost) + (rightChild ^. characterCost)
     thisNodeCost                 = if isOverlapping
                                    then 0
-                                   else upperBound newInterval - lowerBound newInterval
+                                   else unsafeToFinite $ upperBound newInterval - lowerBound newInterval
 
 
 -- |
 -- Used on the pre-order (i.e. second) traversal.
 -- Applies appropriate logic to root node, internal node, and leaf node cases.
-additivePreOrder  :: ( Ranged c
-                     , Eq (Range (Bound c))
-                     , Num (Bound c)
-                     , Ord (Bound c)
+additivePreOrder  :: (-- Ranged c
+--                     , Eq (Range (Bound c))
+--                     , Num (Bound c)
+                       Ord (Bound c)
                      , DiscreteCharacterMetadata d
                      , RangedExtensionPostorder  d  c
 --                     , RangedExtensionPostorder  d' c
                      , RangedExtensionPreorder   d' c
-                     , RangedCharacterDecoration d' c
+--                     , RangedCharacterDecoration d' c
                      )
                   => d -> [(Word, d')] -> d'
 additivePreOrder childDecoration [] = extendRangedToPreorder childDecoration $ childDecoration ^. preliminaryInterval
@@ -211,10 +212,10 @@ finalizeLeaf decoration =
 -- union them, then union that with the parent.
 --
 -- Used on the preorder pass.
-determineFinalState :: ( Ranged c
-                       , Num (Bound c)
-                       , Ord (Bound c)
-                       , DiscreteCharacterMetadata    d
+determineFinalState :: (-- Ranged c
+--                       , Num (Bound c)
+                         Ord (Bound c)
+--                       , DiscreteCharacterMetadata    d
                        , RangedExtensionPostorder     d  c
                        , RangedDecorationOptimization d' c
                        )

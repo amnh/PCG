@@ -11,8 +11,10 @@
 -----------------------------------------------------------------------------
 
 module Bio.Metadata.DiscreteWithTCM
-    ( DiscreteWithTcmCharacterMetadata()
+    ( DiscreteCharacterMetadata(..)
+    , DiscreteWithTcmCharacterMetadata()
     , DiscreteWithTCMCharacterMetadataDec()
+    , GeneralCharacterMetadata(..)
     , HasCharacterAlphabet(..)
     , HasCharacterName(..)
     , HasCharacterWeight(..)

@@ -41,7 +41,7 @@ import           Control.Parallel.Strategies
 import           Data.Alphabet
 import           Data.Bifunctor                    (first)
 import           Data.Foldable
-import qualified Data.IntSet                as IS
+--import qualified Data.IntSet                as IS
 import           Data.Key
 import           Data.List                         (transpose, zip4)
 import           Data.List.NonEmpty                (NonEmpty( (:|) ))
@@ -56,7 +56,7 @@ import           Data.Set                          (Set, (\\))
 import qualified Data.Set                   as Set
 import           Data.TCM                          (TCM, TCMStructure(..))
 import qualified Data.TCM                   as TCM
-import           Data.MonoTraversable
+--import           Data.MonoTraversable
 import           Data.Vector                       (Vector)
 import           PCG.Command.Types.Read.Unification.UnificationError
 --import           PCG.SearchState 
@@ -102,7 +102,7 @@ rectifyResults2 :: [FracturedParseResult]
 --rectifyResults2 fprs | trace (show fprs) False = undefined
 rectifyResults2 fprs =
     case errors of
-      []   -> {- fmap (fmap riefiedSolution) -} dagForest --      = undefined -- Right maskedSolution
+      []   -> fmap (fmap riefiedSolution) dagForest --      = undefined -- Right maskedSolution
       x:xs -> Left . sconcat $ x:|xs
   where
     -- Step 1: Gather data file contents
@@ -358,14 +358,16 @@ joinSequences2 = collapseAndMerge . performMetadataTransformations . deriveCorre
             updatedMetadataTokens :: NonEmpty (Alphabet String, Word -> Word -> Word)
             updatedMetadataTokens = fmap generateMetadataToken . NE.fromList . transpose . fmap toList $ toList mapping
              where
+{-               
                gatherSymbols (x,_,_,_,_) =
                    case x of
                      ParsedContinuousCharacter     _ -> mempty
                      ParsedDiscreteCharacter  static -> foldMap (Set.fromList . toList) static
                      ParsedDynamicCharacter  dynamic -> foldMap (foldMap (Set.fromList . toList)) dynamic 
-
+-}
+               
                generateMetadataToken                []  = error "Should never happen in reduceAlphabets.reduceFileBlock.observedSymbolSets.generateObservedSymbolSetForCharacter" -- mempty
-               generateMetadataToken (x@(_,m,tcm,structure,_):xs) = (reducedAlphabet, reducedTCM)
+               generateMetadataToken (_x@(_,m,tcm,structure,_):_xs) = (reducedAlphabet, reducedTCM)
                  where
 --                   diagnosis   = TCM.diagnoseTcm tcm
 --                   weighting   = TCM.factoredWeight diagnosis
@@ -385,7 +387,7 @@ joinSequences2 = collapseAndMerge . performMetadataTransformations . deriveCorre
                          -- after the reduction. We handle this case specially.
                          --
                          -- We might need to do this for Ultra-metric also..?
-                   seenSymbols = foldMap gatherSymbols $ x:xs
+--                   seenSymbols = foldMap gatherSymbols $ x:xs
 {-
                        case structure of
                          Additive -> Set.fromList . toList $ alphabet m
@@ -393,13 +395,14 @@ joinSequences2 = collapseAndMerge . performMetadataTransformations . deriveCorre
 -}
 
 --            observedSymbols       = observedSymbols' `Set.remove` "?"
+{-                   
                    missingSymbolIndicies = foldMapWithKey f suppliedAlphabet
                      where
                        f k v
                          |    v `notElem` seenSymbols
                            && v /= gapSymbol suppliedAlphabet = IS.singleton k
                          | otherwise = mempty
-                  
+-}                  
                    suppliedAlphabet      = alphabet m
                    reducedAlphabet       = suppliedAlphabet
 {-

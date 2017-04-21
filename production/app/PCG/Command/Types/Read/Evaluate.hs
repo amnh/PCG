@@ -23,6 +23,7 @@ import           Data.Either.Custom
 import           Data.Foldable
 import           Data.Functor
 import           Data.Key
+import           Data.List                    (intercalate)
 -- import           Data.List.NonEmpty           (NonEmpty( (:|) ))
 -- import qualified Data.List.NonEmpty    as NE
 -- import           Data.List.Utility            (subsetOf)
@@ -75,34 +76,32 @@ evaluate (READ fileSpecs) _old = do
 --        case masterUnify $ transformation <$> concat xs of
           Left uErr -> fail $ show uErr -- Report unification errors here.
            -- TODO: rectify against 'old' SearchState, don't just blindly merge or ignore old state
-          Right g   ->  (liftIO . putStrLn {- . take 500000 -} $ show g)
-                       -- (liftIO . putStrLn $ renderSequenceCosts g)
+          Right g   -> -- (liftIO . putStrLn {- . take 500000 -} . show g)
+                        (liftIO . putStrLn $ renderSequenceCosts g)
                     $> g
   where
     transformation = id -- expandIUPAC
-    decoration = fmap (fmap initializeDecorations)
+    decoration = fmap (fmap initializeDecorations2)
 
 evaluate _ _ = fail "Invalid READ command binding"
 
-renderSequenceCosts (Left    x) = "<Trees only>"
+
+renderSequenceCosts :: Either t (PhylogeneticSolution (PhylogeneticDAG2 e n u v w x y z)) -> [Char]
+renderSequenceCosts (Left    _) = "<Trees only>"
 renderSequenceCosts (Right sol) = outputStream
   where
     outputStream = foldMapWithKey f $ phylogeneticForests sol
     f key forest = unlines
         [ "Solution #" <> show key
         , ""
-        , foldMapWithKey g forest
+        , indent $ foldMapWithKey g forest
         ]
-    g key dag = unlines
+    g key dags = unlines
         [ "Forest #" <> show key
         , ""
-        , foldMapWithKey h $ rootCosts dag
+        , indent $ renderSummary dags
         ]
-    h key rootCost = unlines
-        [ "Root #"  <> show key
-        , "Cost = " <> show rootCost
-        ]
-      
+    indent = intercalate "\n" . fmap ("  "<>) . lines
 --    unlines . toList . fmap (unlines . toList . fmap (unlines . fmap show . toList . rootCosts)) . phylogeneticForests
 
 

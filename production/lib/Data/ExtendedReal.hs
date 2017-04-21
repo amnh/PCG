@@ -1,12 +1,16 @@
+{-# LANGUAGE TypeFamilies #-}
+
 module Data.ExtendedReal
  ( ExtendedReal()
- , infinity
+ , ExtendedNumber(..)
+ , Finite
  , toDouble
  , fromDouble
  ) where
 
 
 import Control.Applicative (liftA2)
+import Data.ExtendedFinite
 import Data.Ratio
 import Data.Maybe          (fromMaybe)
 
@@ -15,17 +19,16 @@ import Data.Maybe          (fromMaybe)
 newtype ExtendedReal = Cost (Maybe Double)
 
 
--- | A synonym for 'maxBound'
-infinity :: ExtendedReal
-infinity = maxBound
+type instance Finite ExtendedReal = Double
 
 
-toDouble :: ExtendedReal -> Double
-toDouble (Cost x) = fromMaybe (read "infinity" :: Double) x
+instance ExtendedNumber ExtendedReal where
 
+    unsafeToFinite = toDouble
 
-fromDouble :: Double -> ExtendedReal
-fromDouble = Cost . Just
+    fromFinite = fromDouble
+
+    infinity = maxBound
 
 
 instance Show ExtendedReal where
@@ -113,4 +116,13 @@ instance Fractional ExtendedReal where
     recip (Cost x) = Cost $ recip <$> x
     
     fromRational = Cost . Just . fromRational
+
+
+toDouble :: ExtendedReal -> Double
+toDouble (Cost x) = fromMaybe (read "infinity" :: Double) x
+
+
+fromDouble :: Double -> ExtendedReal
+fromDouble = Cost . Just
+
 

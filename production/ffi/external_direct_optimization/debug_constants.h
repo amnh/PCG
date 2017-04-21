@@ -7,7 +7,7 @@
 #define DO_3D_AFF        0
 
 #define IDENTITY_COST    0
-#define INDEL_COST       1
+#define INDEL_COST       2
 #define SUB_COST         1
 #define GAP_OPEN_COST    2
 

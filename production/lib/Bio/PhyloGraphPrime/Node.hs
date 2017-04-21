@@ -13,23 +13,27 @@
 {-# LANGUAGE DeriveFunctor, GeneralizedNewtypeDeriving #-}
 
 module Bio.PhyloGraphPrime.Node
-  ( PhylogeneticNode (..)
+  ( EdgeSet
+  , NewickSerialization()
+  , PhylogeneticNode (..)
   , PhylogeneticNode2(..)
   , ResolutionCache
   , ResolutionInformation(..)
+  , SubtreeLeafSet()
   , addEdgeToEdgeSet
   , singletonEdgeSet
   , singletonNewickSerialization
   , singletonSubtreeLeafSet
+  , pNode2
   ) where
 
 
+import Bio.PhyloGraphPrime.EdgeSet
 import Data.Bifunctor
 import Data.BitVector
 import Data.Foldable
 import Data.List.NonEmpty (NonEmpty(..))
 import Data.Semigroup
-import Data.Set           (Set, insert, singleton)
 
 
 -- |
@@ -39,7 +43,7 @@ data  PhylogeneticNode n s
     = PNode
     { nodeDecorationDatum :: n
     , sequenceDecoration  :: s
-    } deriving (Eq, Functor)
+    } deriving (Eq, Functor, Show)
 
 
 -- |
@@ -52,6 +56,10 @@ data  PhylogeneticNode2 s n
     } deriving (Eq, Functor)
 
 
+pNode2 :: n -> ResolutionCache s -> PhylogeneticNode2 s n
+pNode2 = flip PNode2
+
+
 -- | A collection of information used to memoize network optimizations.
 data  ResolutionInformation s
     = ResInfo
@@ -59,12 +67,9 @@ data  ResolutionInformation s
     , localSequenceCost     :: Double
     , leafSetRepresentation :: SubtreeLeafSet
     , subtreeRepresentation :: NewickSerialization
-    , subtreeEdgeSet        :: EdgeSet
+    , subtreeEdgeSet        :: EdgeSet (Int, Int)
     , characterSequence     :: s
     } deriving (Functor)
-
-
-type EdgeSet = Set (Int, Int)
 
 
 type ResolutionCache s = NonEmpty (ResolutionInformation s)
@@ -92,12 +97,13 @@ instance Show s => Show (ResolutionInformation s) where
     show resInfo = unlines tokens
       where
         tokens =
-          [ "Leaf Set  : "    <> show (leafSetRepresentation resInfo)
-          , "Subtree   : "    <> show (subtreeRepresentation resInfo)
-          , "Local Cost: "    <> show (localSequenceCost     resInfo)
-          , "Total Cost: "    <> show (totalSubtreeCost      resInfo)
-          , "Decoration:\n\n" <> show (characterSequence     resInfo)
-          ]
+           [ "Total Cost: "    <> show (totalSubtreeCost      resInfo)
+           , "Local Cost: "    <> show (localSequenceCost     resInfo)
+           , "Edge Set  : "    <> show (subtreeEdgeSet        resInfo)
+           , "Leaf Set  : "    <> show (leafSetRepresentation resInfo)
+           , "Subtree   : "    <> show (subtreeRepresentation resInfo)
+           , "Decoration:\n\n" <> show (characterSequence     resInfo)
+           ]
 
 
 instance Eq  (ResolutionInformation s) where
@@ -146,11 +152,10 @@ instance Bifunctor PhylogeneticNode where
 singletonNewickSerialization :: Int -> NewickSerialization
 singletonNewickSerialization i = NS $ show i
 
+
 singletonSubtreeLeafSet :: Int -> Int -> SubtreeLeafSet
 singletonSubtreeLeafSet n i = LS . (`setBit` i) $ n `bitVec` (0 :: Integer)
 
-singletonEdgeSet :: (Int, Int) -> EdgeSet
-singletonEdgeSet = singleton
 
 addEdgeToEdgeSet :: (Int, Int) -> ResolutionInformation s -> ResolutionInformation s
-addEdgeToEdgeSet e r = r { subtreeEdgeSet = insert e $ subtreeEdgeSet r }
+addEdgeToEdgeSet e r = r { subtreeEdgeSet = singletonEdgeSet e <> subtreeEdgeSet r }

@@ -149,10 +149,14 @@ instance HasFinalMedian (FitchOptimizationDecoration f) f where
 -- | (✔)
 instance GeneralCharacterMetadata (FitchOptimizationDecoration f) where
 
+    extractGeneralCharacterMetadata = extractGeneralCharacterMetadata . fitchMetadataField
+
 
 -- | (✔)
 instance DiscreteCharacterMetadata (FitchOptimizationDecoration f) where
 
+    extractDiscreteCharacterMetadata = fitchMetadataField
+  
 
 -- | (✔)
 instance EncodableStaticCharacter f => DiscreteWithTcmCharacterMetadata (FitchOptimizationDecoration f) f

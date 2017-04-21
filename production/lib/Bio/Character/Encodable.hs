@@ -33,6 +33,5 @@ module Bio.Character.Encodable
 
 import Bio.Character.Encodable.Continuous
 import Bio.Character.Encodable.Dynamic
-import Bio.Character.Encodable.Internal
 import Bio.Character.Encodable.Static
 import Bio.Character.Encodable.Stream

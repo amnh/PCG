@@ -20,12 +20,12 @@ import Data.Bits
 import Data.DList            (snoc)
 import Data.Foldable
 import Data.Key              ((!))
-import Data.Matrix.NotStupid (Matrix, getElem, getRow, matrix, nrows, ncols, toLists)
+import Data.Matrix.NotStupid (Matrix, getRow, matrix, nrows, ncols, toLists)
 import Data.MonoTraversable
 import Data.Ord
 import Data.Semigroup
 
-import Debug.Trace
+-- import Debug.Trace
 
 
 
@@ -237,10 +237,10 @@ renderCostMatrix lhs rhs mtx = unlines
 
 
 renderMatrix :: DOAlignMatrix a -> String
-renderMatrix mat = trace pokedVal . unlines . fmap unwords . toLists $ showCell <$> mat
+renderMatrix mat = unlines . fmap unwords . toLists $ showCell <$> mat
   where
     showCell (c,d,_) = show (c, d)
-    pokedVal = showCell $ getElem (nrows mat -1) (ncols mat - 1) mat
+--    pokedVal = showCell $ getElem (nrows mat -1) (ncols mat - 1) mat
 
 
 -- |
@@ -389,7 +389,7 @@ overlapConst lhs rhs
     intersect = lhs .&. rhs
 
 
-naiveDOInternal :: (DOCharConstraint s, Show (Element s))
+naiveDOInternal :: DOCharConstraint s
         => s
         -> s
         -> OverlapFunction (Element s)

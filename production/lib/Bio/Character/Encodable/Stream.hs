@@ -24,7 +24,6 @@ import           Data.Alphabet.IUPAC
 import qualified Data.Bimap         as BM
 import           Data.BitVector     hiding (concat)
 import           Data.Foldable
-import           Data.List                 (intercalate)
 import           Data.List.NonEmpty        (NonEmpty)
 import qualified Data.List.NonEmpty as NE
 import           Data.List.Utility 
@@ -148,6 +147,8 @@ showStream :: EncodableStream s => Alphabet String -> s -> String
 showStream alphabet = ofoldMap (showStreamElement alphabet)
 
 
+-- | Number of bits in a `Word` or `Int` type on this machine, derived at compile time.
+bitsInLocalWord :: Int
 bitsInLocalWord  = finiteBitSize (undefined :: CULong)
 
 

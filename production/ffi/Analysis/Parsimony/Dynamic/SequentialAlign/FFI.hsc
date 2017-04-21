@@ -15,8 +15,6 @@ module Analysis.Parsimony.Dynamic.SequentialAlign.FFI
 import Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise (filterGaps)
 import Bio.Character.Encodable
 import Bio.Character.Exportable.Class
-import Data.Bits
---import Data.Monoid
 import Data.TCM.Memoized.FFI
 import Foreign         hiding (alignPtr)
 import Foreign.C.Types
@@ -26,7 +24,6 @@ import Debug.Trace
 
 #include "seqAlignInterface.h"
 #include "seqAlignOutputTypes.h"
--- #include <stdint.h>
 
   
 -- |
@@ -84,7 +81,7 @@ foreign import ccall unsafe "seqAlignInteface performSequentialAlignment"
 
 -- |
 -- FFI call to the C pairwise alignment algorithm with /explicit/ sub & indel cost parameters.
-pairwiseSequentialAlignment :: (EncodableDynamicCharacter s, Exportable s, Show s) => MemoizedCostMatrix -> s -> s -> (s, Double, s, s, s)
+pairwiseSequentialAlignment :: (EncodableDynamicCharacter s, Exportable s {-, Show s -}) => MemoizedCostMatrix -> s -> s -> (s, Double, s, s, s)
 pairwiseSequentialAlignment memo char1 char2 = unsafePerformIO $ do
 --        !_ <- trace "Before constructing char1" $ pure ()
         char1'        <- constructCharacterFromExportable char1

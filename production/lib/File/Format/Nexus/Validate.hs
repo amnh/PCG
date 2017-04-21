@@ -30,6 +30,7 @@ import qualified Data.Map.Lazy      as M
 import           Data.Maybe
 import           Data.Monoid
 import           Data.Ord                  (comparing)
+import           Data.Semigroup.Foldable
 import           Data.Set                  (Set)
 import qualified Data.Set           as Set
 import           Data.Vector               (Vector)
@@ -305,7 +306,10 @@ translateTrees taxaList treeSet =
         -- nodes properly labeled with taxa names.
         handleTreeBlock :: TreeBlock -> Either String NewickNode
         handleTreeBlock (TreeBlock translateFields labeledTrees) =
-            (\x -> foldMap (translateTree x. snd) labeledTrees) <$> labelMappingEither
+            case labeledTrees of
+              []   -> Left "No trees in forest"
+              x:xs -> let forest = x:|xs
+                      in (\y -> foldMap1 (translateTree y . snd) forest) <$> labelMappingEither
           where
 
             -- |
@@ -324,11 +328,9 @@ translateTrees taxaList treeSet =
             -- Applies a translation of leaf label symbols to taxa labels over
             -- a forest.
             translateTree :: Map String String -> NewickNode -> NewickNode
-            translateTree mapping = f
-              where
-                f node
-                  | isLeaf node = node { newickLabel = newickLabel node >>= (`M.lookup` mapping)  }
-                  | otherwise   = node { descendants = translateTree mapping <$> descendants node }
+            translateTree mapping node
+              | isLeaf node = node { newickLabel = newickLabel node >>= (`M.lookup` mapping)  }
+              | otherwise   = node { descendants = translateTree mapping <$> descendants node }
 
             -- |
             -- Construct the leaf node symbol to taxon label mapping when there

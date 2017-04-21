@@ -13,7 +13,8 @@ import PCG.Command.Types
 import PCG.Command.Types.Read.Internal
 import PCG.Script.Types
 
-import Debug.Trace
+--import Debug.Trace
+
 
 validate :: [Argument] -> Either String Command
 validate xs =
@@ -52,7 +53,8 @@ validateReadArg (LidentNamedArg (Lident identifier) (ArgumentList xs)) | (\x -> 
     ([]    , filePaths) -> Right $ GenomeFile     filePaths
     (errors, _        ) -> Left  $ unlines errors
 --validateReadArg x | trace "[7] Seventh" False = undefined
-validateReadArg (CommandArg (DubiousCommand (Lident identifier) xs)) | (\x -> x == "breakinv"   || x == "custom_alphabet") $ toLower <$> identifier = subDefinition
+--validateReadArg (CommandArg (DubiousCommand (Lident identifier) xs)) | (\x -> x == "breakinv"   || x == "custom_alphabet") $ toLower <$> identifier = subDefinition
+validateReadArg (LidentNamedArg (Lident identifier) (ArgumentList xs)) | (\x -> x == "breakinv"   || x == "custom_alphabet") $ toLower <$> identifier = subDefinition
   where
     (files,suffix) = span (isRight . primativeString) xs
     files'  = (fromJust . rightToMaybe . primativeString) <$> files
@@ -90,7 +92,7 @@ validateReadArg (LidentNamedArg (Lident identifier) (ArgumentList (arg:args))) |
     _                              -> Left "Too many arguments"
   where
     val = validateReadArg arg
-validateReadArg _ = traceShowId $ Left "Unknown argument in read command"
+validateReadArg _ = Left "Unknown argument in read command"
 
 partitionOptions :: [CustomAlphabetOptions] -> ([CustomAlphabetOptions],[CustomAlphabetOptions],[CustomAlphabetOptions])
 partitionOptions = foldr f ([],[],[])

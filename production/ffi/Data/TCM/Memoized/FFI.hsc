@@ -37,7 +37,7 @@ import GHC.Generics           (Generic)
 import System.IO.Unsafe
 import Test.QuickCheck hiding ((.&.), output)
 
-import Debug.Trace
+-- import Debug.Trace
 
 #include "costMatrixWrapper.h"
 #include "dynamicCharacterOperations.h"

@@ -10,10 +10,11 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE FlexibleContexts, FlexibleInstances, MultiParamTypeClasses #-}
+{-# LANGUAGE ConstraintKinds, FlexibleContexts, FlexibleInstances, MultiParamTypeClasses #-}
 
 module Bio.Sequence.Block
   ( CharacterBlock(..)
+  , HasBlockCost
   , blockCost
   , toMissingCharacters
   , hexmap
@@ -35,6 +36,25 @@ import           Data.Vector.Instances                ()
 import qualified Data.Vector                   as V
 import           Prelude                       hiding (zipWith)
 import           Safe                                 (headMay)
+
+-- |
+-- CharacterBlocks satisfying this constraint have a calculable cost.
+type HasBlockCost u v w x y z i r =
+    ( HasCharacterCost   u i
+    , HasCharacterCost   v i
+    , HasCharacterCost   w r
+    , HasCharacterCost   x i
+    , HasCharacterCost   y i
+    , HasCharacterCost   z i
+    , HasCharacterWeight u r
+    , HasCharacterWeight v r
+    , HasCharacterWeight w r
+    , HasCharacterWeight x r
+    , HasCharacterWeight y r
+    , HasCharacterWeight z r
+    , Integral i
+    , Real     r
+    )
 
 
 -- |
@@ -118,25 +138,10 @@ toMissingCharacters cb =
     }
 
 
-blockCost :: ( HasCharacterCost   m e
-             , HasCharacterCost   i e
---             , HasCharacterCost   c Double
-             , HasCharacterCost   f e
-             , HasCharacterCost   a e
-             , HasCharacterCost   d e
-             , HasCharacterWeight m Double
-             , HasCharacterWeight i Double
---             , HasCharacterWeight c Double
-             , HasCharacterWeight f Double
-             , HasCharacterWeight a Double
-             , HasCharacterWeight d Double
-             , Integral e
-             )
-          => CharacterBlock m i c f a d
-          -> Double
+blockCost :: HasBlockCost u v w x y z i r => CharacterBlock u v w x y z -> r
 blockCost block = sum . fmap sum $
     [ parmap rpar integralCost . nonAdditiveCharacterBins
---    , parmap rpar floatingCost . continuousCharacterBins 
+    , parmap rpar floatingCost . continuousCharacterBins 
     , parmap rpar integralCost . additiveCharacterBins   
     , parmap rpar integralCost . metricCharacterBins     
     , parmap rpar integralCost . nonMetricCharacterBins  
@@ -147,9 +152,9 @@ blockCost block = sum . fmap sum $
       where
         cost   = dec ^. characterCost
         weight = dec ^. characterWeight
-{-
+
     floatingCost dec = cost * weight
       where
         cost   = dec ^. characterCost
         weight = dec ^. characterWeight
--}
+
