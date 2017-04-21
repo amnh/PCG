@@ -119,7 +119,7 @@ void charToAlignIO(alignIO_p output, seq_p input) {
     // }
 
     // TODO: use copyValsToAIO here, somehow, so process is consistent?
-    memcpy( output->character + offset, input->seq_begin, output->length * sizeof(SEQT));
+    memcpy( output->character, input->seq_begin, output->length * sizeof(SEQT));
  //    for(size_t i = 0; i < output->length; i++) {
  //      //        printf("Before charToAlignIO[%d]\n", i);
  //      //  fflush(stdout);
