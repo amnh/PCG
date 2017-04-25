@@ -1,0 +1,57 @@
+\documentclass[11pt]{article}
+\usepackage{setspace}
+\usepackage{graphicx}
+\usepackage{subfigure}
+\usepackage{lscape}
+\usepackage{flafter}  % Don't place floats before their definition
+\usepackage{bm}  % Define \bm{} to use bold math fonts
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{amssymb}
+\usepackage{MnSymbol}
+\usepackage{url}
+\usepackage{natbib}
+%\usepackage{fullpage}
+\bibliographystyle{cbe}
+\citestyle{aa}
+%\usepackage{algorithmic}
+%\usepackage[vlined,algochapter,ruled]{algorithm2e}
+\usepackage[vlined,ruled]{algorithm2e}
+\SetKwComment{Comment}{$\triangleright\ $}{}
+
+%ROOT PRIORS?
+%Add Giribet and Wheeler arth, ratchet cite, Arango sea spiders
+
+\title{Algorithmic Descriptions and Pseudo-Code for Rerooting Logic in a Phylogenetic Network.}
+\author{  Alex Washburn
+       \\ Division of Invertebrate Zoology,
+       \\ American Museum of Natural History,
+       \\ Central Park West @ 79th Street,
+       \\ New York, NY 10024-5192,
+       \\ USA,
+       \\ alex.washburn@recursion.ninja
+       }
+	%\date{}
+\begin{document}
+
+\maketitle
+\begin{abstract}
+    Description of memoized implementation of rerooting logic on an unrooted binary tree and extension to memoized rerooting on a phylogentic network. The network extension requires resolving potential cycles.
+\end{abstract}
+%\newpage
+%\tableofcontents
+%\newpage
+
+%\doublespacing
+\section{Introduction}
+Rerooting is the method of considering every edge in a rooted tree to be the potential root, determining the cost and character states for the tree if that edge was selected as the root. A precondition is that a postorder scoring of the tree has already occurred with an arbitrary edge in the unrooted tree selected as the root.
+
+\section{Memoized rerooting of an unrooted binary tree}
+ 
+\section{Unary set of directed memoization choices on unrooted binary tree}
+ 
+\section{Trinary set of directed memoization choices on unrooted phylogenetic network}
+
+\section{Pruning cyclic subtree resolutions on unrooted phylogenetic network}
+
+\end{document}
