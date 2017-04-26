@@ -33,6 +33,7 @@ import qualified Data.IntMap        as IM
 import           Data.Key
 import           Data.List.NonEmpty        (NonEmpty( (:|) ))
 import qualified Data.List.NonEmpty as NE
+import           Data.Map                  (Map)
 import qualified Data.Map           as M
 import           Data.Maybe
 import           Data.MonoTraversable
@@ -69,6 +70,8 @@ assignOptimalDynamicCharacterRootEdges
   => (z -> [z] -> z)
   -> PhylogeneticDAG2 e n u v w x y z
   -> PhylogeneticDAG2 e n u v w x y z
+--assignOptimalDynamicCharacterRootEdges extensionTransformation (PDAG2 inputDag) = undefined
+{--}
 assignOptimalDynamicCharacterRootEdges extensionTransformation (PDAG2 inputDag) = PDAG2 updatedDag
   where
 
@@ -105,6 +108,8 @@ assignOptimalDynamicCharacterRootEdges extensionTransformation (PDAG2 inputDag) 
             x:y:_ -> [(x,y)]
 
     refVec = references inputDag
+
+    roots  = rootRefs   inputDag
 
 {-
     referenceEdgeMapping :: HashMap EdgeReference IncidentEdges
@@ -154,33 +159,119 @@ assignOptimalDynamicCharacterRootEdges extensionTransformation (PDAG2 inputDag) 
         rootChildren = (id &&& IM.keys . childRefs) . (refVec !) <$> rootRefs inputDag
         findMatchingChildren (_,is) = i `elem` is && j `elem` is
 -}
+
+
+    -- |
+    -- Construct at each memoized datum index 'n' in the vector 'memo' such that
+    -- for node 'n' the directed edge references '[(i,n),(j,n),(k,n)]' in the
+    -- following undirected subgraph store the directed subtree resolutions  of
+    -- the complete graph:
+    -- >
+    -- >    (i)
+    -- >     |
+    -- >    (n)
+    -- >   /   \
+    -- > (j)   (k)
+    --
+    -- However, for each directed edge we must apply filtering to the resolutions
+    -- of the memoized subtree.
+    -- WLOG let (i,n) be our directed edge.
+    --
+    -- > (memo ! n) ! (i, n) = mconcat . fmap (filterEdges i) $
+    -- > [ liftA2 (<>) ((memo ! j) ! (n, j)) ((memo ! k) ! (n, k))
+    -- > , (filterEdges k) $ (memo ! j) ! (n, j)
+    -- > , (filterEdges j) $ (memo ! k) ! (n, k)
+    -- > ]
+    --
+
 --    contextualNodeDatum :: Vector (Map EdgeReference (ResolutionCache (CharacterSequence u v w x y z)))
-    contextualNodeDatum = V.generate (length refVec) f
+    contextualNodeDatum = V.generate (length refVec) generateMemoizedDatum
       where
-        f i
-          | i `elem` rootRefs inputDag = mempty -- undefined
-          | otherwise                  = parentEdgeValues <> childEdgeValues
+
+        -- Determine if the memoized point is a root node of the phylogenetic DAG
+        -- component. If so, we do not generate an memoized directional edge data
+        -- for the component root since the component root has a forced direction
+        -- on it's incident edges.
+        --
+        -- If the memoized point corresponds to a non-root vertex in the phylogentic
+        -- DAG component we will consider the subtree resolutions for enteing the
+        -- node on each edge.
+        --
+        -- There should only be 0, 1, or 3 directed subtree values at each
+        -- memoized point.
+        --
+        -- - 0 values if the point is a root node of the component
+        --
+        -- - 1 value  if the point is a leaf node of the component
+        --
+        -- - 3 values if the point is an internal node of the component
+        --
+        
+--        generateMemoizedDatum :: Int -> Map EdgeReference (ResolutionCache (CharacterSequence u v w x y z))
+        generateMemoizedDatum n
+          -- Root node case
+          | n `elem` roots         = mempty
+          -- Leaf node case
+          | null unrootedChildRefs = M.singleton (parentRef, n) $ getCache n
+          -- Internal node case
+          | otherwise              = foldMap deriveDirectedEdgeDatum edgeCombinations
           where
+
+            -- These are the child edge references from the DAG context.
+            unrootedChildRefs = IM.keys .  childRefs $ refVec ! n 
             
-            unrootedParentRefs = fmap g . otoList . parentRefs $ refVec ! i
+            -- Here we remove any root nodes that were in the parents references
+            -- of the DAG and replace them with undirected edges references.
+            -- We never reference a "root" node of the component which contains
+            -- inherently directed edges, only the sister node on the undirected
+            -- edge.
+            unrootedParentRefs = fmap g . otoList . parentRefs $ refVec ! n
               where
                 g candidate
                   | candidate `notElem` rootRefs inputDag = candidate
                   | otherwise = sibling
                   where
-                    sibling   = head . filter (/=i) . IM.keys .  childRefs $ refVec ! candidate
+                    sibling   = head . filter (/=n) . IM.keys .  childRefs $ refVec ! candidate
 
+            -- WLOG, single parent/child reference
             parentRef = head unrootedParentRefs
-            childRef  = head kidRefs
-            
-            kidRefs          = IM.keys .  childRefs $ refVec ! i 
-            parentEdgeValues = foldMap (\p -> M.singleton (i, p) $ getCache i) unrootedParentRefs
-            childEdgeValues  = foldMap deriveDirectionalDatum $ [ (x, y, parentRef) | x <- kidRefs, y <- kidRefs, x /= y ] <> [ (childRef, x, y) | x <- unrootedParentRefs, y <- unrootedParentRefs, x /= y ]
-            deriveDirectionalDatum (j, k, p) = M.singleton (i,j) relativeSubtreeDatumValue
+            childRef  = head unrootedChildRefs
+
+            -- The adjacent vertex indices
+            unrootedAdjacentRefs = take 3 $ take 2 unrootedChildRefs <> take 2 unrootedParentRefs
+
+            -- All the combinations of adjacent edges. The first position in the
+            -- tuple is the only position that matters because the operation on
+            -- the subtree is commutative. Hence swapping the last two elements
+            -- of the tuple will result in the same value.
+            edgeCombinations :: NonEmpty (Int, Int, Int)
+            edgeCombinations = f unrootedAdjacentRefs
               where
-                childMemoizedSubstructure    = (contextualNodeDatum ! k) ! (k, i)
-                parentalMemoizedSubstructure = (contextualNodeDatum ! p) ! (p, i)
-                relativeSubtreeDatumValue    = localResolutionApplication extensionTransformation parentalMemoizedSubstructure childMemoizedSubstructure
+                f [i,j,k] = (i,j,k) :| [(j,k,i),(k,i,j)]
+                f xs = error $ unlines
+                    [ "There were not exactly 3 adjacent nodes in a non-root, non-leaf re-rooting context."
+                    , "Expected exactly 3 adjacent nodes."
+                    , "Found: {" <> show (length xs) <> "} " <> show xs
+                    ]
+
+            -- Given the three adjacent edges, generate the subtree resolutions
+            -- defined by the first element of the tuple being an incomming edge.
+            deriveDirectedEdgeDatum :: (Int, Int, Int) -> Map EdgeReference (ResolutionCache (CharacterSequence u v w x y z))
+            deriveDirectedEdgeDatum (i,j,k) = M.singleton (i, n) subtreeResolutions
+              where
+                subtreeResolutions = edgeReferenceFilter i . sconcat $ joinedContext :| [lhsContext, rhsContext]
+                lhsContext = edgeReferenceFilter k $ (contextualNodeDatum ! j) ! (j, n) 
+                rhsContext = edgeReferenceFilter j $ (contextualNodeDatum ! k) ! (k, n) 
+                joinedContext
+                  -- Recursive memoized form's base case
+                  | [i] == unrootedParentRefs = getCache n
+                  -- Recursive memoization
+                  | otherwise = localResolutionApplication extensionTransformation lhsContext rhsContext
+
+            -- Filter from the resolution cache all resolutions that have 'x'
+            -- connected to the subtree.
+            edgeReferenceFilter x = undefined
+
 
     rootRefWLOG  = NE.head $ rootRefs inputDag
     sequenceWLOG = fmap dynamicCharacters . toBlocks . characterSequence . NE.head $ getCache rootRefWLOG
@@ -225,3 +316,4 @@ assignOptimalDynamicCharacterRootEdges extensionTransformation (PDAG2 inputDag) 
             h (edgeVal, costVal) originalDec = originalDec
                                                  & characterCost  .~ costVal
                                                  & traversalLocus .~ Just edgeVal
+{--}

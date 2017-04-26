@@ -25,8 +25,8 @@ module File.Format.Newick.Internal
 
 import           Data.Tree
 import           Data.Maybe
-import qualified Bio.PhyloGraph.Network as N
-import           Data.List
+--import qualified Bio.PhyloGraph.Network as N
+--import           Data.List
 import           Data.List.NonEmpty  (NonEmpty, toList)
 import           Data.Semigroup
 
@@ -107,7 +107,7 @@ newickNode nodes label length'
 isLeaf :: NewickNode -> Bool
 isLeaf node = (null . descendants) node && (isJust . newickLabel) node
 
-
+{-
 instance N.Network NewickNode NewickNode where
 
     root     t   = t
@@ -137,4 +137,4 @@ instance N.Network NewickNode NewickNode where
         tallyNodes = succ . sum . fmap tallyNodes . descendants
 
     addNode t n = t { descendants = n : descendants t }
-
+-}
