@@ -44,8 +44,8 @@ renderSearchState e = do
           [] -> pure ()
           xs -> putStrLn . unlines $ show <$> xs
    case evaluationResult e of
-     NoOp         -> putStrLn   "[?] No computation speciified...?"
+     NoOp         -> putStrLn   "[❓] No computation speciified...?"
      Value _      -> putStrLn   "[✔] Computation complete!"
-     Error errMsg -> putStrLn $ "[X] Error: "<> trimR errMsg
+     Error errMsg -> putStrLn $ "[✘] Error: "<> trimR errMsg
   where
     trimR = reverse . dropWhile isSpace . reverse
