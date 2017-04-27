@@ -48,7 +48,7 @@ int main() {
     const size_t CHAR_CAPACITY = longCharLen + shortCharLen + middleCharLen;
 
 
-    int alphSize = 5; // includes gap, but no ambiguities
+    size_t alphSize = 5; // includes gap, but no ambiguities
     int longest_vals [22] = {16, 2, 1, 8, 4, 2, 1, 8, 4, 1, 1, 1, 1, 1, 2, 1, 8, 4, 2, 1, 8, 4}; // don't forget to change lengths!!!
     int middle_vals  [18] = {16, 8, 8, 2, 1, 8, 4, 2, 1, 8, 4, 1, 1, 2, 1, 8, 4, 1};             // don't forget to change lengths!!!
     int shortest_vals[17] = {16, 2, 1, 8, 4, 2, 1, 8, 4, 2, 1, 8, 4, 2, 1, 8, 4};                // don't forget to change lengths!!!
@@ -111,10 +111,10 @@ int main() {
     }
 
     // Print TCM in pretty format
-    const int n = alphSize;
-    for (size_t i = 0; i < n; ++i) {
-        for (size_t j = 0; j < n; ++j) {
-            printf("%2d ", tcm[ n*i + j ]);
+    //const size_t n = alphSize;
+    for (size_t i = 0; i < alphSize; ++i) {
+        for (size_t j = 0; j < alphSize; ++j) {
+            printf("%2d ", tcm[ alphSize*i + j ]);
         }
         printf("\n");
     }
@@ -126,10 +126,10 @@ int main() {
     cost_matrices_3d_p costMtx3d_affine = malloc(sizeof(struct cost_matrices_3d));
 
     // tcm is tcm; alphSize includes gap; third param is gap opening cost
-    setup2dCostMtx (tcm, alphSize, 0,             costMtx2d);
-    setup2dCostMtx (tcm, alphSize, GAP_OPEN_COST, costMtx2d_affine);
-    setup3dCostMtx (tcm, alphSize, 0,             costMtx3d);
-    setup3dCostMtx (tcm, alphSize, GAP_OPEN_COST, costMtx3d_affine);
+    setUp2dCostMtx (tcm, alphSize, 0,             costMtx2d);
+    setUp2dCostMtx (tcm, alphSize, GAP_OPEN_COST, costMtx2d_affine);
+    setUp3dCostMtx (tcm, alphSize, 0,             costMtx3d);
+    setUp3dCostMtx (tcm, alphSize, GAP_OPEN_COST, costMtx3d_affine);
     //cm_print_2d (costMtx2d);
 
     /****************  Allocate NW matrices  ****************/
@@ -247,7 +247,7 @@ int main() {
         resetCharValues(retShortChar);
 
         // TODO: document these variables
-        int *matrix;                        //
+//        int *matrix;                        //
         int *close_block_diagonal;          //
         int *extend_block_diagonal;         //
         int *extend_vertical;               //
@@ -257,7 +257,7 @@ int main() {
         int *matrix_2d;                     //
         int *gap_open_prec;                 // precalculated gap opening value (top row of nw matrix)
         int *s_horizontal_gap_extension;    //
-        int lenLongerChar;                   //
+        int lenLongerChar;                  //
 
         DIR_MTX_ARROW_t *direction_matrix;
         size_t lenLongChar  = longChar->len;
