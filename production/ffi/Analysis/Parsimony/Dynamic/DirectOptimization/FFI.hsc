@@ -136,6 +136,8 @@ data CostMatrix3d
    } deriving (Eq, Generic)
 
 
+-- |
+-- Exposed wrapper for C allocated cost matrix structs.
 data DenseTransitionCostMatrix
    = DenseTransitionCostMatrix
    { costMatrix2D :: Ptr CostMatrix2d
@@ -146,7 +148,7 @@ data DenseTransitionCostMatrix
 data MedianContext = ComputeMedians | DoNotComputeMedians
 
 
-data UnionContext  = ComputeUnions | DoNotComputeUnions
+data UnionContext  = ComputeUnions  | DoNotComputeUnions
 
 
 -- | Because we're using a struct we need to make a Storable instance
@@ -417,8 +419,12 @@ foreign import ccall unsafe "c_alignment_interface.h align2dAffine"
                       -> CInt        -- ^ cost
 
 
+{- Exported Functions -}
+
+
 generateDenseTransitionCostMatrix :: Word -> (Word -> Word -> Word) -> DenseTransitionCostMatrix
-generateDenseTransitionCostMatrix alphabetSize costFunction = getCostMatrix2dAffine 3 alphabetSize costFunction
+generateDenseTransitionCostMatrix alphabetSize costFunction = getCostMatrix2dNonAffine alphabetSize costFunction
+--generateDenseTransitionCostMatrix alphabetSize costFunction = getCostMatrix2dAffine 3 alphabetSize costFunction
 
 
 foreignPairwiseDO :: ( EncodableDynamicCharacter s
@@ -432,38 +438,25 @@ foreignPairwiseDO :: ( EncodableDynamicCharacter s
 foreignPairwiseDO lhs rhs costMatrix = algn2d lhs rhs costMatrix DoNotComputeUnions ComputeMedians
 
 
-
--- |
--- Determine the alignment strategy encoded for the matrix.
-getAlignmentStrategy :: CostMatrix2d -> AlignmentStrategy
-getAlignmentStrategy = toEnum . fromEnum . costModelType
+{- Matrix allocation functionality -}
 
 
 -- | Set up and return a non-affine cost matrix
 --
 -- The cost matrix is allocated strictly.
-getCostMatrix2dNonAffine :: Word
-                         -> (Word -> Word -> Word)
-                         -> DenseTransitionCostMatrix
-getCostMatrix2dNonAffine = performMatrixAllocation 1 0
+getCostMatrix2dNonAffine :: Word -> (Word -> Word -> Word) -> DenseTransitionCostMatrix
+getCostMatrix2dNonAffine = performMatrixAllocation 0
 
 
 -- | Set up and return a non-affine cost matrix
 --
 -- The cost matrix is allocated strictly.
-getCostMatrix2dAffine :: CInt -- gap open cost
-                      -> Word
-                      -> (Word -> Word -> Word)
-                      -> DenseTransitionCostMatrix
-getCostMatrix2dAffine = performMatrixAllocation 1
+getCostMatrix2dAffine :: Word -> Word -> (Word -> Word -> Word) -> DenseTransitionCostMatrix
+getCostMatrix2dAffine = performMatrixAllocation
 
 
-performMatrixAllocation :: CInt -- Is 2d
-                        -> CInt -- gap open cost
-                        -> Word
-                        -> (Word -> Word -> Word)
-                        -> DenseTransitionCostMatrix
-performMatrixAllocation _is2D gapOpen alphabetSize costFn = unsafePerformIO . withArray rowMajorList $ \allocedTCM -> do
+performMatrixAllocation :: Word -> Word -> (Word -> Word -> Word) -> DenseTransitionCostMatrix
+performMatrixAllocation openningCost alphabetSize costFn = unsafePerformIO . withArray rowMajorList $ \allocedTCM -> do
         !ptr2D <- malloc :: IO (Ptr CostMatrix2d)
         !ptr3D <- malloc :: IO (Ptr CostMatrix3d)
         !_ <- setupCostMatrix2dFn_c allocedTCM matrixDimension gapOpen ptr2D
@@ -473,10 +466,14 @@ performMatrixAllocation _is2D gapOpen alphabetSize costFn = unsafePerformIO . wi
              , costMatrix3D = ptr3D
              }
     where
-        matrixDimension = toEnum $ fromEnum alphabetSize
+        matrixDimension = coerceEnum alphabetSize
+        gapOpen         = coerceEnum openningCost
+        range           = [0 .. alphabetSize - 1]
         -- This *should* be in row major order due to the manner in which list comprehensions are performed.
-        rowMajorList = [ toEnum . fromEnum $ costFn i j | i <- range,  j <- range ]
-        range = [0 .. alphabetSize - 1]
+        rowMajorList    = [ coerceEnum $ costFn i j | i <- range,  j <- range ]
+
+
+{- Alignment functionality -}
 
 
 -- |
@@ -512,8 +509,8 @@ algn2d char1 char2 denseTCMs computeUnion computeMedians = handleMissingCharacte
             do
 --                !_ <- trace ("char 1: " <> show char1) $ pure ()
 --                !_ <- trace ("char 2: " <> show char2) $ pure ()
-                char1ToSend <- allocInitALignIO exportedChar1Len . fmap toCInt $ exportedCharacterElements exportedChar1
-                char2ToSend <- allocInitALignIO exportedChar2Len . fmap toCInt $ exportedCharacterElements exportedChar2
+                char1ToSend <- allocInitALignIO exportedChar1Len . fmap coerceEnum $ exportedCharacterElements exportedChar1
+                char2ToSend <- allocInitALignIO exportedChar2Len . fmap coerceEnum $ exportedCharacterElements exportedChar2
                 retGapped   <- allocInitALignIO 0 []
                 retUngapped <- allocInitALignIO 0 []
                 -- retUnion    <- allocInitALignIO 0 []
@@ -532,8 +529,8 @@ algn2d char1 char2 denseTCMs computeUnion computeMedians = handleMissingCharacte
 --                !_ <- trace (show strategy) $ pure ()
 
                 let !cost = case strategy of
-                              Affine -> align2dAffineFn_c char1ToSend char2ToSend retGapped retUngapped costStruct                        (toCInt computeMedians)
-                              _      -> align2dFn_c       char1ToSend char2ToSend retGapped retUngapped costStruct neverComputeOnlyGapped (toCInt computeMedians) (toCInt computeUnion)
+                              Affine -> align2dAffineFn_c char1ToSend char2ToSend retGapped retUngapped costStruct                        (coerceEnum computeMedians)
+                              _      -> align2dFn_c       char1ToSend char2ToSend retGapped retUngapped costStruct neverComputeOnlyGapped (coerceEnum computeMedians) (coerceEnum computeUnion)
 
                 AlignIO ungappedCharArr ungappedLen _ <- peek retUngapped
                 AlignIO gappedCharArr   gappedLen   _ <- peek retGapped
@@ -586,9 +583,6 @@ algn2d char1 char2 denseTCMs computeUnion computeMedians = handleMissingCharacte
             where
                 costStruct = costMatrix2D denseTCMs
                 neverComputeOnlyGapped = 0
-
-                toCInt :: (Enum a, Enum b) => a -> b
-                toCInt = toEnum . fromEnum
 
                 elemWidth        = exportedChar1 ^. exportedElementWidth
 
@@ -666,3 +660,18 @@ align2dGappedUngapped
   -> DenseTransitionCostMatrix
   -> (s, Double, s, s, s)
 align2dGappedUngapped c1 c2 cm = algn2d c1 c2 cm ComputeUnions ComputeMedians
+
+
+{- Generic helper functions -}
+
+
+-- |
+-- Determine the alignment strategy encoded for the matrix.
+getAlignmentStrategy :: CostMatrix2d -> AlignmentStrategy
+getAlignmentStrategy = toEnum . fromEnum . costModelType
+
+
+-- |
+-- Coercing one 'Enum' to another through thier corresponding 'Int' values.
+coerceEnum :: (Enum a, Enum b) => a -> b
+coerceEnum = toEnum . fromEnum
