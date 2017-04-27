@@ -42,7 +42,7 @@ void initializeChar(seq_p retChar, size_t allocSize) {
     retChar->cap        = allocSize;                              // capacity
     retChar->array_head = calloc(allocSize, sizeof(SEQT));        // beginning of array that holds dynamic character
 
-    retChar->end        = retChar->array_head + allocSize;        // end of array
+    retChar->end        = retChar->array_head + allocSize - 1;    // end of array
     retChar->seq_begin  = retChar->end;                           // position of first element in dynamic character
     retChar->len        = 0;                                      // number of elements in character
 }
@@ -268,7 +268,7 @@ void freeChar(seq_p toFree) {
 
 void resetCharValues(seq_p retChar) {
     //retChar->end   = retChar->begin + retChar->len;
-    memset(retChar->seq_begin, 0, retChar->cap * sizeof(SEQT));
+    memset(retChar->array_head, 0, retChar->cap * sizeof(SEQT));
     retChar->seq_begin = retChar->end;
     retChar->len       = 0;
 }
