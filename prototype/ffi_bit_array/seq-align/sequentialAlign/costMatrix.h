@@ -167,21 +167,25 @@ class CostMatrix
 
         std::unordered_map <keys_t, costMedian_t, KeyHash, KeyEqual> hasher;
 
-        // TODO: not positive we need this, as the alphabet size is always stored in the incoming dcElements
         size_t alphabetSize;
+
+        /** Stored unambiguous tcm, necessary to do first calls to findDistance() without having to rewrite findDistance()
+         *  and computeCostMedian()
+         */
+        int *tcm;
 
         /** Takes in a `keys_t` and a `costMedian_t` and updates myMap to store the new values,
          *  with @key as a key, and @median as the value.
          */
         void setValue(keys_t* key, costMedian_t* median);
 
-        /** Takes in a pair of keys_t (each of which is a single `dcElement`) and computes their lowest-cost median. */
+        /** Takes in a pair of keys_t (each of which is a single `dcElement`) and computes their lowest-cost median.
+         *  Uses a Sankoff-like algorithm, where all bases are considered, and the lowest cost bases are included in the
+         *  cost and median calculations. That means a base might appear in the median that is not present in either of
+         *  the two elements being compared.
+         */
         costMedian_t* computeCostMedian(keys_t key);
 
-        costMedian_t* computeCostMedianFitchy(keys_t keys);
-
-        // TODO: This isn't currently in use. Can I delete it?
-        // TODO: make sure this comment is correct
         /** Find distance between an ambiguous nucleotide and an unambiguous ambElem. Return that value and the median.
          *  @param ambElem is ambiguous input.
          *  @param nucleotide is unambiguous.
@@ -201,7 +205,14 @@ class CostMatrix
          *  Nota bene:
          *  Can only be called once this.alphabetSize has been set.
          */
-        void setUpInitialMatrix (int* tcm);
+        void initializeMatrix ();
+
+        // DEPRECATED!!!
+        /** Takes in a pair of keys_t (each of which is a single `dcElement`) and computes their lowest-cost median.
+         *  Contrast with computeCostMedian(). In this algorithm only bases which are present in at least one of
+         *  the two elements being compared are considered.
+         */
+        /* costMedian_t* computeCostMedianFitchy(keys_t keys); */
 
 };
 

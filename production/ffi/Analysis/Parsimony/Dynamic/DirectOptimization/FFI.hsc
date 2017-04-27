@@ -179,7 +179,7 @@ instance Storable AlignIO where
 
 {- ******************************************* CostMatrix declarations and Storable instances ******************************************* -}
 -- | Holds single cost matrix, which contains costs and medians for all
--- possible character elements. It is completely filled using a TCM. See note below at 'setupCostMatrixFn_c'.
+-- possible character elements. It is completely filled using a TCM. See note below at 'setUpCostMatrixFn_c'.
 data CostMatrix2d = CostMatrix2d { alphSize            :: CInt      -- alphabet size including gap, and including ambiguities if
                                                                     --     combinations == True
                                  , costMatrixDimension :: CInt      -- ceiling of log_2 (alphSize)
@@ -322,8 +322,8 @@ instance Storable CostMatrix2d where
 -- TCM is row-major, with each row being the left character element.
 -- It is therefore indexed not by powers of two, but by cardinal integer.
 -- TODO: For now we only allocate 2d matrices. 3d will come later.
-foreign import ccall unsafe "c_code_alloc_setup.h setup2dCostMtx"
-    setupCostMatrix2dFn_c :: Ptr CUInt         -- ^ tcm
+foreign import ccall unsafe "c_code_alloc_setup.h setUp2dCostMtx"
+    setUpCostMatrix2dFn_c :: Ptr CUInt         -- ^ tcm
                           -> CSize             -- ^ alphSize
                           -> CInt              -- ^ gap_open
 --                          -> CInt              -- ^ is_2d
@@ -363,7 +363,7 @@ performMatrixAllocation :: CInt -- Is 2d
                         -> DenseTransitionCostMatrix
 performMatrixAllocation _is2D gapOpen alphabetSize costFn = unsafePerformIO . withArray rowMajorList $ \allocedTCM -> do
         !output <- malloc :: IO (Ptr CostMatrix2d)
-        !_ <- setupCostMatrix2dFn_c allocedTCM matrixDimension gapOpen output
+        !_ <- setUpCostMatrix2dFn_c allocedTCM matrixDimension gapOpen output
         pure output
     where
         matrixDimension = toEnum $ fromEnum alphabetSize
@@ -799,7 +799,7 @@ instance Storable NWMatrices where
 {-
 {- ******************************************* CostMatrix declarations and Storable instances ******************************************* -}
 -- | Holds single cost matrix, which contains costs and medians for all
--- possible character elements. It is completely filled using a TCM. See note below at 'setupCostMatrixFn_c'.
+-- possible character elements. It is completely filled using a TCM. See note below at 'setUpCostMatrixFn_c'.
 data CostMatrix3d = CostMatrix3d { sSize      :: CInt      -- alphabet size including gap, and including ambiguities if
                                                               --     combinations == True
                                  , costMatrixDimension :: CInt      -- ceiling of log_2 (alphSize)

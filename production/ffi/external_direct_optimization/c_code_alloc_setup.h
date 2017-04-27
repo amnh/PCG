@@ -18,7 +18,7 @@
  *
  *  Order of sequence lengths doesn't matter
  */
-void initializeNWMtx(nw_matrices_p retMtx, size_t cap_char1, size_t cap_char2, size_t cap_char3, int costMtxLcm);
+void initializeNWMtx(nw_matrices_p retMtx, size_t cap_char1, size_t cap_char2, size_t cap_char3, int alphSize);
 
 /** Does internal allocation for a sequence struct. Also sets seq pointers within array to correct positions.
  *
@@ -46,9 +46,9 @@ void resetCharValues(seq_p retChar);
  */
 int distance (int const *tcm, size_t alphSize, int nucleotide, int ambElem);
 
-void setup2dCostMtx(int* tcm, size_t alphSize, int gap_open, cost_matrices_2d_p retMtx);
+void setUp2dCostMtx(int* tcm, size_t alphSize, int gap_open, cost_matrices_2d_p retMtx);
 
-void setup3dCostMtx(int* tcm, size_t alphSize, int gap_open, cost_matrices_3d_p retMtx);
+void setUp3dCostMtx(int* tcm, size_t alphSize, int gap_open, cost_matrices_3d_p retMtx);
 
 void freeCostMtx(void * input, int is_2d);
 

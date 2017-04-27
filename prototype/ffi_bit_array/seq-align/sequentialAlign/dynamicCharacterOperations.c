@@ -85,6 +85,16 @@ void ClearAll( packedChar *const arr, const size_t packedCharLen) {
     }
 }
 
+int isAmbiguous( packedChar *const arr, const size_t packedCharLen )
+{
+    int count = 0;
+    // short-circuit if count > 1
+    for (size_t i = 0; i < packedCharLen && count <= 1; i++) {
+        count += __builtin_popcount(arr[i]);
+    }
+    return count != 1;
+}
+
 size_t dynCharSize(size_t alphSize, size_t numElems) {
     size_t totalBits = numElems * alphSize;
     return (totalBits / WORD_WIDTH) + ((totalBits % WORD_WIDTH) ? 1 : 0);
@@ -206,8 +216,8 @@ dynChar_t *makeDynamicChar( size_t alphSize, size_t numElems, packedChar *values
         fflush(stdout);
         exit(1);
     }
-    for( int elemNum = 0; elemNum < numElems; elemNum++ ) {
-        for( int bitIdx = 0; bitIdx < alphSize; bitIdx++ ) {
+    for( size_t elemNum = 0; elemNum < numElems; elemNum++ ) {
+        for( size_t bitIdx = 0; bitIdx < alphSize; bitIdx++ ) {
             if( values[elemNum] & (CANONICAL_ONE << bitIdx) ) {
                 SetBit(output->dynChar, elemNum * alphSize + bitIdx);
             }
@@ -268,7 +278,7 @@ packedChar *allocatePackedChar( size_t alphSize, size_t numElems ) {
 
 packedChar *makePackedCharCopy( packedChar *inChar, size_t alphSize, size_t numElems) {
     packedChar *outChar = allocatePackedChar(alphSize, numElems);
-    size_t length = dcElemSize(alphSize);
+    size_t length = dynCharSize(alphSize, numElems);
     for (size_t i = 0; i < length; i++) {
         outChar[i] = inChar[i];
     }

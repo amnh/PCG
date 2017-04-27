@@ -314,17 +314,18 @@ int main() {
 
         // TODO: consider moving all of this into algn.
         //       the following three fns were initially not declared in algn.h
-        algn_initialize_matrices_affine (costMtx2d_affine->gap_open,
-                                         shortChar,
-                                         longChar,
-                                         costMtx2d_affine,
-                                         close_block_diagonal,
-                                         extend_block_diagonal,
-                                         extend_vertical,
-                                         extend_horizontal,
-                                         final_cost_matrix,
-                                         direction_matrix,
-                                         precalcMtx);
+        algn_initialize_matrices_affine ( costMtx2d_affine->gap_open
+                                        , shortChar
+                                        , longChar
+                                        , costMtx2d_affine
+                                        , close_block_diagonal
+                                        , extend_block_diagonal
+                                        , extend_vertical
+                                        , extend_horizontal
+                                        , final_cost_matrix
+                                        , direction_matrix
+                                        , precalcMtx
+                                        );
 
         if (DEBUG_AFFINE) {
             printf("\n");

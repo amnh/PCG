@@ -53,7 +53,7 @@ int main() {
     int success = 1;
     retType_t* retAlign = malloc( sizeof(retType_t) );
 
-    long int length = sizeof(seqA_main)/sizeof(seqA_main[0]) + sizeof(seqB_main)/sizeof(seqB_main[0]) + 5;
+    size_t length = sizeof(seqA_main)/sizeof(seqA_main[0]) + sizeof(seqB_main)/sizeof(seqB_main[0]) + 5;
 
  //   retAlign->seq1 = calloc(length, sizeof(char));
     retAlign->seq1 = calloc(length, sizeof(uint64_t));
