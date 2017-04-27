@@ -372,18 +372,18 @@ instance Enum UnionContext where
 -- the entire cost matrix, which includes ambiguous elements.
 -- TCM is row-major, with each row being the left character element.
 -- It is therefore indexed not by powers of two, but by cardinal integer.
-foreign import ccall unsafe "c_code_alloc_setup.h setup2dCostMtx"
+foreign import ccall unsafe "c_code_alloc_setup.h setUp2dCostMtx"
 
-    setupCostMatrix2dFn_c :: Ptr CUInt         -- ^ tcm
+    setUpCostMatrix2dFn_c :: Ptr CUInt         -- ^ tcm
                           -> CSize             -- ^ alphSize
                           -> CInt              -- ^ gap_open
                           -> Ptr CostMatrix2d
                           -> IO ()
 
 
-foreign import ccall unsafe "c_code_alloc_setup.h setup3dCostMtx"
+foreign import ccall unsafe "c_code_alloc_setup.h setUp3dCostMtx"
 
-    setupCostMatrix3dFn_c :: Ptr CUInt         -- ^ tcm
+    setUpCostMatrix3dFn_c :: Ptr CUInt         -- ^ tcm
                           -> CSize             -- ^ alphSize
                           -> CInt              -- ^ gap_open
                           -> Ptr CostMatrix3d
@@ -423,8 +423,7 @@ foreign import ccall unsafe "c_alignment_interface.h align2dAffine"
 
 
 generateDenseTransitionCostMatrix :: Word -> (Word -> Word -> Word) -> DenseTransitionCostMatrix
-generateDenseTransitionCostMatrix alphabetSize costFunction = getCostMatrix2dNonAffine alphabetSize costFunction
---generateDenseTransitionCostMatrix alphabetSize costFunction = getCostMatrix2dAffine 3 alphabetSize costFunction
+generateDenseTransitionCostMatrix alphabetSize costFunction = getCostMatrix2dAffine 3 alphabetSize costFunction
 
 
 foreignPairwiseDO :: ( EncodableDynamicCharacter s
@@ -459,8 +458,8 @@ performMatrixAllocation :: Word -> Word -> (Word -> Word -> Word) -> DenseTransi
 performMatrixAllocation openningCost alphabetSize costFn = unsafePerformIO . withArray rowMajorList $ \allocedTCM -> do
         !ptr2D <- malloc :: IO (Ptr CostMatrix2d)
         !ptr3D <- malloc :: IO (Ptr CostMatrix3d)
-        !_ <- setupCostMatrix2dFn_c allocedTCM matrixDimension gapOpen ptr2D
-        !_ <- setupCostMatrix3dFn_c allocedTCM matrixDimension gapOpen ptr3D
+        !_ <- setUpCostMatrix2dFn_c allocedTCM matrixDimension gapOpen ptr2D
+        !_ <- setUpCostMatrix3dFn_c allocedTCM matrixDimension gapOpen ptr3D
         pure DenseTransitionCostMatrix
              { costMatrix2D = ptr2D
              , costMatrix3D = ptr3D

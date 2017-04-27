@@ -18,12 +18,12 @@
  *
  *  Order of sequence lengths doesn't matter
  */
-void initializeNWMtx(nw_matrices_p retMtx, size_t len_seq1, size_t len_seq2, size_t len_seq3, int costMtxLcm) {
+void initializeNWMtx(nw_matrices_p retMtx, size_t len_seq1, size_t len_seq2, size_t len_seq3, int alphSize) {
 
     // in six following allocations all matrices are set to their shortest length because they get realloced in mat_setup_size
-    retMtx->cap_nw     = 0;  // a suitably small number to trigger realloc, but be larger than len_eff
-    retMtx->cap_eff    = 0;  // cap_eff was -1 so that cap_eff < cap, triggering the realloc ---changed this when types switched to size_t
-    retMtx->cap_pre    = 0;  // again, trigger realloc
+    retMtx->cap_nw     =  0;  // a suitably small number to trigger realloc, but be larger than len_eff
+    retMtx->cap_eff    = -1;  // cap_eff was -1 so that cap_eff < cap, triggering the realloc ---changed this when types switched to size_t
+    retMtx->cap_pre    =  0;  // again, trigger realloc
 
     retMtx->nw_costMtx = malloc ( sizeof( int ) );
     retMtx->nw_dirMtx  = malloc ( sizeof( DIR_MTX_ARROW_t ) );
@@ -31,7 +31,7 @@ void initializeNWMtx(nw_matrices_p retMtx, size_t len_seq1, size_t len_seq2, siz
     // retMtx->cube_d     = malloc ( sizeof( int* ) );  // because they're just pointing to nw_costMtx and nw_dirMtx
     retMtx->precalcMtx = malloc ( sizeof( int ) );
 
-    mat_setup_size (retMtx, len_seq1, len_seq2, len_seq3, costMtxLcm);
+    mat_setup_size (retMtx, len_seq1, len_seq2, len_seq3, alphSize);
 }
 
 /** Does allocation for a sequence struct. Also sets seq pointers within array to correct positions.
@@ -81,7 +81,7 @@ int distance (int const *tcm, size_t alphSize, int nucleotide, int ambElem) {
  *  No longer setting max, as algorithm to do so is unclear: see note below.
  *  Not sure which of two loops to set prepend and tail arrays is correct.
  */
-void setup2dCostMtx(int* tcm, size_t alphSize, int gap_open, cost_matrices_2d_p retCostMtx) {
+void setUp2dCostMtx(int* tcm, size_t alphSize, int gap_open, cost_matrices_2d_p retCostMtx) {
 
     // first allocate retMatrix
     int combinations  = 1;                     // false if matrix is sparse. In this case, it's DNA, so not sparse.
@@ -111,7 +111,7 @@ void setup2dCostMtx(int* tcm, size_t alphSize, int gap_open, cost_matrices_2d_p 
                          );
     // Print TCM in pretty format
     if(DEBUG_MAT) {
-        printf("setup2dCostMtx\n");
+        printf("setUp2dCostMtx\n");
         const size_t n = retCostMtx->costMatrixDimension;
         for (size_t i = 0; i < n; ++i) {
             for (size_t j = 0; j < n; ++j) {
@@ -173,11 +173,11 @@ void setup2dCostMtx(int* tcm, size_t alphSize, int gap_open, cost_matrices_2d_p 
 }
 
 
-/** Nearly identical to setup2dCostMtx. Code duplication necessary in order to have two different return types.
+/** Nearly identical to setUp2dCostMtx. Code duplication necessary in order to have two different return types.
  *  I attempted to do with with a return of void *, but was having trouble with allocation, and was forced to move
  *  it outside this fn.
  */
-void setup3dCostMtx(int* tcm, size_t alphSize, int gap_open, cost_matrices_3d_p retMtx) {
+void setUp3dCostMtx(int* tcm, size_t alphSize, int gap_open, cost_matrices_3d_p retMtx) {
     // first allocate retMatrix
     int combinations = 1;                     // false if matrix is sparse. In this case, it's DNA, so not sparse.
     int do_aff       = gap_open == 0 ? 0 : 3; // The 3 is because affine's cost_model_type is 3, according to my reading of ML code.

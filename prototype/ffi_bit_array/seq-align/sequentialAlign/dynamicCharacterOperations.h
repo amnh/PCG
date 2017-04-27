@@ -51,7 +51,7 @@
  *    of a dynamic character, but will do for our purposes.)
  *
  *  TODO: for this to be useable on |alphabet including gap| > 64, various uint64_t types below will have to be
- *        exchanged out for packedChar *(i.e. arrays of 64-bit ints).
+ *        exchanged for packedChar* (i.e. arrays of 64-bit ints).
  */
 
 #ifndef DYNAMIC_CHARACTER_OPERATIONS
@@ -61,7 +61,6 @@
  *  stdint is a library that provides int values for all architectures. This will allow the code to
  *  compile even on architectures on which int != 32 bits (and, more to the point, unsigned long int != 64 bits).
  */
-
 #include <stdint.h>
 #include <stdlib.h>
 #include <stdint.h>
@@ -76,27 +75,6 @@ static const uint64_t CANONICAL_ZERO = 0;
 typedef uint64_t packedChar;
 typedef void *costMatrix_p;
 
-/** alignResult_t is where results get put for return to Haskell. For further notes see retType_t */
-typedef struct alignResult_t {
-    size_t      finalWt;
-    size_t      finalLength;
-    packedChar *finalChar1;
-    packedChar *finalChar2;
-    packedChar *medianChar;
-} alignResult_t;
-
-/** retType_t differs from alignResult_t in that it's the return type from the C sequence alignment code,
- *  which doesn't return packedChars, but ints. Also, the output from the sequence alignment gets post-processed
- *  to create a median, which is placed in medianChar in alignResult_t.
- */
-typedef struct retType_t {
-    int weight;
-    uint64_t *seq1;
-    size_t    seq1Len;
-    uint64_t *seq2;
-    size_t    seq2Len;
-    size_t    alignmentLength;
-} retType_t;
 
 /**
  *  This holds the array of _possibly ambiguous_ static chars (i.e. a single dynamic character),
@@ -139,7 +117,7 @@ uint64_t TestBit( const packedChar *const arr, const size_t k );
 /** Clear entire packed character: all bits set to 0;
  *  packedCharLen is pre-computed dynCharSize()
  */
-void ClearAll( packedChar *const arr, const size_t packedCharLen);
+void ClearAll( packedChar *const arr, const size_t packedCharLen );
 
 /** Returns size_t holding length a uint64_t array needs to be to hold numElems packed dynamic characters.
  *  Note that this is different from numElems * dcElemSize.
@@ -154,6 +132,9 @@ void freeDynChar( dynChar_t *p );
 
 /** const because I needed it to be const when I free keys_t in CostMatrix.cpp. */
 void freeDCElem( const dcElement_t *p );
+
+/** Loops over bit array representing character elements and determines whether character is ambiguous */
+int isAmbiguous( packedChar *const arr, const size_t packedCharLen );
 
 /** functions to interact directly with DCElements */
 
