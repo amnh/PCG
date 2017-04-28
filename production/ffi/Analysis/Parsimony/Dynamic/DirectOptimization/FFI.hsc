@@ -578,7 +578,7 @@ algn2d char1 char2 denseTCMs computeUnion computeMedians = handleMissingCharacte
 
                 -- NOTE: We swapped resultingAlignedChar1 & resultingAlignedChar2
                 -- because the C code returns the values in the wrong order!
-                pure (filterGaps resultingGapped, fromIntegral cost, resultingGapped, resultingAlignedChar2, resultingAlignedChar1)
+                pure (resultingUngapped, fromIntegral cost, resultingGapped, resultingAlignedChar2, resultingAlignedChar1)
 
             where
                 costStruct = costMatrix2D denseTCMs
@@ -588,12 +588,14 @@ algn2d char1 char2 denseTCMs computeUnion computeMedians = handleMissingCharacte
 
                 exportedChar1Len = toEnum $ exportedChar1 ^. exportedElementCount
                 exportedChar2Len = toEnum $ exportedChar2 ^. exportedElementCount
-                maxAllocLen      = exportedChar1Len + exportedChar2Len
+                -- Add two because the C code needs stupid gap prepended to each character.
+                -- Forgetting to do this will eventually corrupt the heap memory
+                maxAllocLen      = exportedChar1Len + exportedChar2Len + 2
 
                 allocInitAlignIO :: CSize -> [CUInt] -> IO (Ptr AlignIO)
                 allocInitAlignIO elemCount elemArr  =
                     do
-                        output <- malloc :: IO (Ptr AlignIO)
+                        output   <- malloc :: IO (Ptr AlignIO)
                         outArray <- newArray paddedArr
                         poke output $ AlignIO outArray elemCount maxAllocLen
                         pure output
@@ -681,7 +683,7 @@ extractFromAlignIO elemWidth ptr = do
     buffer <- peekArray bufferLen bufferPtr
     let !charElems = fmap fromIntegral $ drop (bufferLen - charLen) buffer
     let  exportVal = ExportableCharacterElements charLen elemWidth charElems
---    _ <- free bufferPtr
+    _ <- free bufferPtr
     _ <- free ptr
     pure $ fromExportableElements exportVal
 
