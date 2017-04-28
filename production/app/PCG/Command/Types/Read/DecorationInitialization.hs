@@ -128,7 +128,7 @@ initializeDecorations2 (PhylogeneticSolution forests) = PhylogeneticSolution $ f
   where
 --    performDecoration :: CharacterDAG -> InitialDecorationDAG
     performDecoration = assignPunativeNetworkEdgeCost
---                      . assignOptimalDynamicCharacterRootEdges adaptiveDirectOptimizationPostOrder
+                      . assignOptimalDynamicCharacterRootEdges adaptiveDirectOptimizationPostOrder
                       . postorderSequence'
                           (g  sankoffPostOrder)
                           (g  sankoffPostOrder)
