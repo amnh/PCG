@@ -62,7 +62,7 @@ struct nwMatrices {
                                        *   | for 2d: 12 * max(len_s1, len_s2)
                                        *   | for 3d: len_s1 * len_s2 * len_s3
                                        */
-    size_t            cap_eff;        // Length of the efficiency matrix; at least as large as cap_nw.
+    int               cap_eff;        // Length of the efficiency matrix; at least as large as cap_nw.
                                       // int because is originally set as -1
                                       // TODO: figure out what this actually is
     size_t            cap_pre;        // Length of the precalculated matrix == max(len_s1, len_s2) * (alphSize + 1) ---extra 1 is for gap

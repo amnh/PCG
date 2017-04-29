@@ -54,7 +54,9 @@ struct cost_matrices_2d {
                                  * certain cost_model_types (type 2: affine, based on my reading of ML code).
                                  */
     int is_metric;              /* if tcm is symmetric
-                                 * Not present in 3d. */
+                                 *
+                                 * > MISSING IN 3D
+                                 */
     int all_elements;           // total number of elements. This is alphSize if we're using only unambiguous elems, otherwise |power set|
     int *cost;                  /* The transformation cost matrix, including ambiguities,
                                  * storing the **best** cost for each ambiguity pair
@@ -65,20 +67,25 @@ struct cost_matrices_2d {
                                  */
     int *worst;                 /* The transformation cost matrix, including ambiguities,
                                  * storing the **worst** cost for each ambiguity pair
-                                 * Missing in 3d
+                                 *
+                                 * > MISSING IN 3D
                                  */
     int *prepend_cost;          /* The cost of going from gap -> each base. For ambiguities, use best cost.
                                  * Set up as all_elements x all_elements
                                  * matrix, but seemingly only first row is used.               <-- TODO: fix this, and in tail_cost below.
                                  * Missing in 3d because current version of 3d sets gap cost
                                  * as constant.
+                                 *
+                                 * > MISSING IN 3D
                                  */
     int *tail_cost;             /* As prepend_cost, but with reverse directionality,
                                  * so base -> gap.
                                  * As with prepend_cost, seems to be allocated as too large.
                                  * Missing in 3d because current version of 3d sets gap cost
                                  * as constant.
-                              */
+                                 *
+                                 * > MISSING IN 3D
+                                 */
 };
 
 /*

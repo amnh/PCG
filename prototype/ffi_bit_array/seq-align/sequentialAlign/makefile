@@ -65,17 +65,17 @@ sequentialAlign :  $(seqAlignFiles) $(costMatrix) $(dynamicChar)
 
 
 dynamicChar = dynamicCharacterOperations.h \
-			dynamicCharacterOperations.c
+              dynamicCharacterOperations.c
 
 costMatrix = costMatrix.h \
-			costMatrix.cpp \
-			costMatrixWrapper.h \
-			costMatrixWrapper.c
+             costMatrix.cpp \
+             costMatrixWrapper.h \
+             costMatrixWrapper.c
 
 seqAlignFiles = seqAlignForHaskell.h \
-				seqAlignForHaskell.c \
-				seqAlignInterface.h \
-				seqAlignInterface.c
+                seqAlignForHaskell.c \
+                seqAlignInterface.h \
+                seqAlignInterface.c
 
 
 # seqAlign: costMatrix.h costMatrix.cpp costMatrixWrapper.h costMatrixWrapper.c seqAlignForHaskell.h seqAlignForHaskell.c dynamicCharacterOperations.h dynamicCharacterOperations.c

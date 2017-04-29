@@ -14,6 +14,7 @@ import           System.Environment        (getArgs)
 import           Test.Custom.NucleotideSequence
 import           Test.QuickCheck
 
+
 main :: IO ()
 main = do
     args <- getArgs

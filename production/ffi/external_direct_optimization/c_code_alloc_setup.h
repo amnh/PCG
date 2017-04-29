@@ -13,11 +13,24 @@
 //#include "ukkCommon.h"
 
 
+/** Allocate nw_matrices struct. Assigns initial values where necessary. Calls
+ *  mat_setup_size to allocate all internal arrays.
+ *
+ *  Order of sequence lengths doesn't matter
+ */
+void initializeNWMtx(nw_matrices_p retMtx, size_t cap_char1, size_t cap_char2, size_t cap_char3, int alphSize);
 
-void initializeNWMtx(size_t cap_char1, size_t cap_char2, size_t cap_char3, int costMtxLcm, nw_matrices_p retMtx);
-
+/** Does internal allocation for a sequence struct. Also sets seq pointers within array to correct positions.
+ *
+ *  resChar must be alloced before this call. This is because allocation must be done on other side of FFI for pass
+ *  by ref to be correct.
+ */
 void initializeChar(seq_p retChar, size_t allocSize);
 
+/** Resets character array to all 0s.
+ *  Makes length 0.
+ *  Points beginning of sequence to end of character array.
+ */
 void resetCharValues(seq_p retChar);
 
 /** Find distance between an unambiguous nucleotide and an ambiguous ambElem. Return that value and the median.
@@ -33,11 +46,9 @@ void resetCharValues(seq_p retChar);
  */
 int distance (int const *tcm, size_t alphSize, int nucleotide, int ambElem);
 
-// may return cost_matrices_2d or cost_matrices_3d, so void *
-// no longer setting max, as algorithm to do so is unclear: see note in .c file
-void setup2dCostMtx(int* tcm, size_t alphSize, int gap_open, cost_matrices_2d_p retMtx);
+void setUp2dCostMtx(int* tcm, size_t alphSize, int gap_open, cost_matrices_2d_p retMtx);
 
-void setup3dCostMtx(int* tcm, size_t alphSize, int gap_open, cost_matrices_3d_p retMtx);
+void setUp3dCostMtx(int* tcm, size_t alphSize, int gap_open, cost_matrices_3d_p retMtx);
 
 void freeCostMtx(void * input, int is_2d);
 

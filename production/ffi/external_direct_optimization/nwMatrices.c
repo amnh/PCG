@@ -49,7 +49,7 @@ mat_size_of_3d_matrix (size_t w, size_t d, size_t h) { // originally had a fourt
 void print_matrices(nw_matrices_p nwMatrix, size_t alphSize) {
     printf("\nMatrices:\n");
     printf("    NW Matrix cap:         %zu\n", nwMatrix->cap_nw);
-    printf("    Efficiency mtx cap:    %zu\n", nwMatrix->cap_eff);
+    printf("    Efficiency mtx cap:    %d\n",  nwMatrix->cap_eff);
     printf("    precalcMtx mtx cap:    %zu\n", nwMatrix->cap_pre);
 
     printf("\n    precalcMtxulated nw matrix:\n");
@@ -81,35 +81,38 @@ mat_clean_direction_matrix (nw_matrices_p nwMatrix) {
 }
 
 /** Allocate or reallocate space for the six matrices, for both 2d and 3d alignments.
- *  @param lcm is length of original alphabet including gap.
- *  Checks current allocation size and increases size if
+ *  @param slphabetSize is length of original alphabet including gap.
+ *  Checks current allocation size and increases size if necessary.
  */
 inline void
-mat_setup_size (nw_matrices_p nwMatrix, size_t len_seq1, size_t len_seq2, size_t len_seq3, size_t lcm) {
+mat_setup_size (nw_matrices_p nwMatrix, size_t len_seq1, size_t len_seq2, size_t len_seq3, size_t alphabetSize) {
     if(DEBUG_MAT) {
         printf("\n---mat_setup_size\n");
-        printf("capacity: %zu\nefficiancy: %zu\nprecalc: %zu\n", nwMatrix->cap_nw, nwMatrix->cap_eff, nwMatrix->cap_pre);
+        printf("capacity: %zu\nefficiency: %d\nprecalc: %zu\n", nwMatrix->cap_nw, nwMatrix->cap_eff, nwMatrix->cap_pre);
     }
-    size_t cap, cap_2d, cap_precalcMtx, cap_dir;
+    int cap;
+    size_t cap_2d,
+           cap_precalcMtx,
+           cap_dir;
     //cap_dir     = (len_seq1 + 1) * (len_seq2 + 1);
 
     if (len_seq3 == 0) {           /* If the size setup is only for 2d */
-        cap            = mat_size_of_2d_matrix (len_seq1, len_seq2);
-        cap_precalcMtx = (1 << lcm) * len_seq1;
+        cap            = (int) mat_size_of_2d_matrix (len_seq1, len_seq2);
+        cap_precalcMtx = (1 << alphabetSize) * len_seq1;
         cap_dir        = (len_seq1 + 1) * (len_seq2 + 1);
         cap_2d         = 0;
     } else {                       /* If the size setup is for 3d */
-        cap            = mat_size_of_3d_matrix (len_seq1, len_seq2, len_seq3);
-        cap_precalcMtx = (1 << lcm) * (1 << lcm) * len_seq2;  // TODO: why sequence 2?
+        cap            = (int) mat_size_of_3d_matrix (len_seq1, len_seq2, len_seq3);
+        cap_precalcMtx = (1 << alphabetSize) * (1 << alphabetSize) * len_seq2;  // TODO: why sequence 2?
         cap_2d         = len_seq1 * len_seq2;
         cap_dir        = cap_2d * len_seq3;
     }
     if (DEBUG_MAT) {
-        printf("cap_eff: %zu, \ncap_nw: %zu\n", nwMatrix->cap_eff, cap);
+        printf("cap_eff: %d, \ncap_nw: %d\n", nwMatrix->cap_eff, cap);
     }
     if (nwMatrix->cap_eff < cap) {         /* If the current 2d or 3d matrix is not large enough */
         if (DEBUG_MAT) {
-            printf("cap_eff too small. New allocation: %zu\n", cap);
+            printf("cap_eff too small. New allocation: %d\n", cap);
         }
         nwMatrix->nw_costMtx3d_d = nwMatrix->nw_costMtx = realloc (nwMatrix->nw_costMtx, (cap * sizeof(int)));
         nwMatrix->cap_eff = cap;
@@ -136,7 +139,7 @@ mat_setup_size (nw_matrices_p nwMatrix, size_t len_seq1, size_t len_seq2, size_t
     }
     /* Check if there is an allocation error then abort program */
     if ((cap > 0) && (nwMatrix->nw_costMtx3d_d == NULL)) {
-        printf("capacity: %zu:\n", cap);
+        printf("capacity: %d:\n", cap);
         printf("Memory allocation problem in cost matrix.\n");
         exit(1);
         // failwith ("Memory allocation problem in nw_costMtx3d_d.");
@@ -153,7 +156,7 @@ mat_setup_size (nw_matrices_p nwMatrix, size_t len_seq1, size_t len_seq2, size_t
     }
     if (DEBUG_MAT) {
         printf("\nFinal allocated size of matrices:\n" );
-        printf("    efficiency: %zu\n", nwMatrix->cap_eff);
+        printf("    efficiency: %d\n",  nwMatrix->cap_eff);
         printf("    nw matrix:  %zu\n", nwMatrix->cap_nw);
         printf("    precalcMtx: %zu\n", nwMatrix->cap_pre);
     }

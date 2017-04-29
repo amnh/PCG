@@ -67,13 +67,13 @@ int main() {
 
     const size_t longSeqLen   = 6;
     const size_t middleSeqLen = 6;
-    const size_t shortSeqLen  = 4;
+    const size_t shortSeqLen  = 6;
 
     const size_t SEQ_CAPACITY_2D = longSeqLen + shortSeqLen + 2; // extra 2 for gaps? TODO: Think about this
 
-    SEQT longest_vals [6] = {4, 1, 8, 3, 1, 15};  // don't forget to change lengths!!!
-    SEQT middle_vals  [6] = {4, 1, 8, 1, 2, 3};  // don't forget to change lengths!!!
-    SEQT shortest_vals[4] = {4, 1, 8, 1};  // don't forget to change lengths!!!
+    SEQT longest_vals [6] = {1, 2, 4, 1, 2, 1};  // don't forget to change lengths!!!
+    SEQT middle_vals  [6] = {2, 1, 8, 9, 1, 30};  // don't forget to change lengths!!!
+    SEQT shortest_vals[6] = {2, 1, 8, 9, 1, 30};  // don't forget to change lengths!!!
 
     seq_p shortSeq = malloc( sizeof(struct seq) );
     // initializeSeq(shortSeq, SEQ_CAPACITY);
@@ -99,15 +99,15 @@ int main() {
 
 
     if(DO_2D) {
-        setup2dCostMtx (tcm, alphSize, 0, costMtx2d);
+        setUp2dCostMtx (tcm, alphSize, 0, costMtx2d);
     }
 
     if(DO_2D_AFF) {
-        setup2dCostMtx (tcm, alphSize, GAP_OPEN_COST, costMtx2d_affine);
+        setUp2dCostMtx (tcm, alphSize, GAP_OPEN_COST, costMtx2d_affine);
     }
 
     if(DO_3D) {
-        setup3dCostMtx (tcm, alphSize, 0, costMtx3d);
+        setUp3dCostMtx (tcm, alphSize, 0, costMtx3d);
     }
     // cost_matrices_3d_p costMtx3d_affine = malloc(sizeof(struct cost_matrices_3d));
     // setup3dCostMtx (tcm, alphSize, GAP_OPEN_COST, costMtx3d);
@@ -120,7 +120,7 @@ int main() {
 /**************************************************** Do 2d alignment ********************************************************/
 
     if (DO_2D) {
-        printf("\n\n\n******************** Align 2 characters **********************\n");
+        printf("\n\n\n******************** Align 2 characters ********************\n");
         alignIO_p char1             = malloc(sizeof(struct alignIO));
         alignIO_p char2             = malloc(sizeof(struct alignIO));
         alignIO_p ungappedMedianSeq = malloc(sizeof(struct alignIO));
@@ -128,48 +128,49 @@ int main() {
         // alignIO_p unionMedianSeq    = malloc(sizeof(struct alignIO));
 
         // TODO: When should I add gaps at beginning of characters? Probably on this side of FFI, so work out math on this correctly.
-        const size_t MAX_LENGTH      = longSeqLen + shortSeqLen + 3; // 3 because there are two gaps added (1 on beginning of each)
+        const size_t MAX_LENGTH      = longSeqLen + shortSeqLen + 2; // 2 because there are two gaps added (1 on beginning of each)
 
-        // need to allocate space for return alignIOs, as they're no long alloced in c_alignment_interface
+        // need to allocate space for return alignIOs, as they're no longer alloc'ed in c_alignment_interface
         allocAlignIO(char1,             MAX_LENGTH);
         allocAlignIO(char2,             MAX_LENGTH);
         allocAlignIO(ungappedMedianSeq, MAX_LENGTH);
         allocAlignIO(gappedMedianSeq,   MAX_LENGTH);
         //allocAlignIO(unionMedianSeq,    MAX_LENGTH);
 
-        copyValsToAIO(char1, longest_vals,  longSeqLen,  MAX_LENGTH);
-        copyValsToAIO(char2, shortest_vals, shortSeqLen, MAX_LENGTH);
+        // copyValsToAIO(char1, longest_vals,  longSeqLen,  MAX_LENGTH);
+        // copyValsToAIO(char2, shortest_vals, shortSeqLen, MAX_LENGTH);
 
-        printf("\n\n********** Cost only (all chars should be empty): **********\n");
-        printf("\n********** Original 2d characters: **********\n");
-        alignIO_print(char1);
-        alignIO_print(char2);
+        // printf("\n\n********** Cost only (all chars should be empty): **********\n");
+        // printf("  \n***************** Original 2d characters: ******************\n");
+        // alignIO_print(char1, );
+        // alignIO_print(char2, );
 
-        algnCost = align2d(char1,
-                           char2,
-                           gappedMedianSeq,
-                           ungappedMedianSeq,
-                           // unionMedianSeq,
-                           costMtx2d,
-                           0,                    // do ungapped
-                           0,                    // do gapped
-                           0);                   // do union
-        // if (DEBUG_MAT) {
-        //     printf("\n\nFinal alignment matrix: \n\n");
-        //     algn_print_dynmtrx_2d( longSeq, shortSeq, algn_mtxs2d );
-        // }
+        // algnCost = align2d(char1,
+        //                    char2,
+        //                    gappedMedianSeq,
+        //                    ungappedMedianSeq,
+        //                    // unionMedianSeq,
+        //                    costMtx2d,
+        //                    0,                    // do ungapped
+        //                    0,                    // do gapped
+        //                    0                     // do union
+        //                    );
+        // // if (DEBUG_MAT) {
+        // //     printf("\n\nFinal alignment matrix: \n\n");
+        // //     algn_print_dynmtrx_2d( longSeq, shortSeq, algn_mtxs2d );
+        // // }
 
-        printf("Alignment cost: %d\n", algnCost);
+        // printf("Alignment cost: %d\n", algnCost);
 
-        printf("\nAligned 2d characters\n");
-        alignIO_print(char1);
-        alignIO_print(char2);
+        // printf("\nAligned 2d characters (should be the same as inputs, as no backtrace has been performed)\n");
+        // alignIO_print(char1);
+        // alignIO_print(char2);
 
-        printf("\n  Gapped character  ");
-        alignIO_print(gappedMedianSeq);
+        // printf("\n  Gapped character  ");
+        // alignIO_print(gappedMedianSeq);
 
-        printf("\n  Ungapped character  ");
-        alignIO_print(ungappedMedianSeq);
+        // printf("\n  Ungapped character  ");
+        // alignIO_print(ungappedMedianSeq);
 
         // union:
         //algn_union (retShortSeq, retLongSeq, algnSeq);
@@ -187,7 +188,7 @@ int main() {
         copyValsToAIO(char2, shortest_vals, shortSeqLen, MAX_LENGTH);
 
         printf("\n\n********** Ungapped only (gapped should be empty): **********\n");
-        printf("\n**********Original 2d characters:**********\n");
+        printf("  \n****************** Original 2d characters: ******************\n");
         alignIO_print(char1);
         alignIO_print(char2);
 
@@ -218,13 +219,12 @@ int main() {
         resetAlignIO(char2);
         resetAlignIO(ungappedMedianSeq);
         resetAlignIO(gappedMedianSeq);
-        printf("copy longer\n");
+
         copyValsToAIO(char1, longest_vals, longSeqLen, MAX_LENGTH);
-        printf("copy shorter\n");
         copyValsToAIO(char2, shortest_vals, shortSeqLen, MAX_LENGTH);
 
         printf("\n\n********** Gapped only (ungapped should be empty): **********\n");
-        printf("\n**********Original 2d characters:**********\n");
+        printf("  \n*******************Original 2d characters:*******************\n");
         alignIO_print(char1);
         alignIO_print(char2);
 
@@ -266,8 +266,8 @@ int main() {
         copyValsToAIO(char1, longest_vals, longSeqLen, MAX_LENGTH);
         copyValsToAIO(char2, shortest_vals, shortSeqLen, MAX_LENGTH);
 
-        printf("\n\n********** Gapped and ungapped: **********\n");
-        printf("\n**********Original 2d characters:**********\n");
+        printf("\n\n******************** Gapped and ungapped: ******************\n");
+        printf(  "\n****************** Original 2d characters: *****************\n");
         alignIO_print(char1);
         alignIO_print(char2);
 
@@ -301,43 +301,43 @@ int main() {
         copyValsToAIO(char1, longest_vals, longSeqLen, MAX_LENGTH);
         copyValsToAIO(char2, shortest_vals, shortSeqLen, MAX_LENGTH);
 
-        printf("\n\n********** Gapped and union (ungapped should be empty, union should override ungapped): **********\n");
-        printf("\n**********Original 2d characters:**********\n");
+        // printf("\n\n********** Gapped and union (ungapped should be empty, union should override ungapped): **********\n");
+        // printf(  "\n************************************ Original 2d characters: *************************************\n");
 
 
-        alignIO_print(char1);
-        alignIO_print(char2);
+        // alignIO_print(char1);
+        // alignIO_print(char2);
 
 
-        algnCost = align2d(char1,
-                           char2,
-                           gappedMedianSeq,
-                           ungappedMedianSeq,
-                           // unionMedianSeq,
-                           costMtx2d,
-                           0,                    // do ungapped
-                           1,                    // do gapped
-                           1);                   // do union
+        // algnCost = align2d(char1,
+        //                    char2,
+        //                    gappedMedianSeq,
+        //                    ungappedMedianSeq,
+        //                    // unionMedianSeq,
+        //                    costMtx2d,
+        //                    0,                    // do ungapped
+        //                    1,                    // do gapped
+        //                    1);                   // do union
 
 
-        printf("\nAligned 2d characters\n");
-        alignIO_print(char1);
-        alignIO_print(char2);
-        printf("Alignment cost: %d\n", algnCost);
+        // printf("\nAligned 2d characters\n");
+        // alignIO_print(char1);
+        // alignIO_print(char2);
+        // printf("Alignment cost: %d\n", algnCost);
 
 
-        printf("\n  Union character  ");
-        alignIO_print(gappedMedianSeq);
+        // printf("\n  Union character  ");
+        // alignIO_print(gappedMedianSeq);
 
-        printf("\n  Ungapped character  ");
-        alignIO_print(ungappedMedianSeq);
+        // printf("\n  Ungapped character  ");
+        // alignIO_print(ungappedMedianSeq);
 
 
-        freeAlignIO(char1);
-        freeAlignIO(char2);
-        freeAlignIO(ungappedMedianSeq);
-        freeAlignIO(gappedMedianSeq);
-        // freeAlignIO(unionMedianSeq);
+        // freeAlignIO(char1);
+        // freeAlignIO(char2);
+        // freeAlignIO(ungappedMedianSeq);
+        // freeAlignIO(gappedMedianSeq);
+        // // freeAlignIO(unionMedianSeq);
 
     } // Do 2D
 
@@ -348,7 +348,7 @@ int main() {
     /*** must have gap at start of character!!! ***/
 
     if (DO_2D_AFF) {
-        printf("\n\n\n******************** Align 2 characters affine **********************\n");
+        printf("\n\n\n***************** Align 2 characters affine ****************\n");
 
         alignIO_p char1             = malloc(sizeof(struct alignIO));
         alignIO_p char2             = malloc(sizeof(struct alignIO));
@@ -362,13 +362,11 @@ int main() {
         allocAlignIO(ungappedMedianSeq, MAX_LENGTH);
         allocAlignIO(gappedMedianSeq,   MAX_LENGTH);
 
-        printf("copy longer\n");
         copyValsToAIO(char1, longest_vals,  longSeqLen,  MAX_LENGTH);
-        printf("\n\ncopy shorter\n");
         copyValsToAIO(char2, shortest_vals, shortSeqLen, MAX_LENGTH);
 
         printf("\n\n********** Cost only (all chars should be empty): **********\n");
-        printf("\n******************* Original 2d characters: *******************\n");
+        printf("  \n***************** Original 2d characters: ******************\n");
         alignIO_print(char1);
         alignIO_print(char2);
 
@@ -400,8 +398,8 @@ int main() {
         copyValsToAIO(char1, longest_vals, longSeqLen, MAX_LENGTH);
         copyValsToAIO(char2, shortest_vals, shortSeqLen, MAX_LENGTH);
 
-        printf("\n\n********** With medians: **********\n");
-        printf("\n**********Original 2d characters:**********\n");
+        printf("\n\n*********************** With medians: ***********************\n");
+        printf("  \n****************** Original 2d characters: ******************\n");
 
         alignIO_print(char1);
         alignIO_print(char2);
