@@ -18,7 +18,7 @@
  *
  *  Order of sequence lengths doesn't matter
  */
-void initializeNWMtx(nw_matrices_p retMtx, size_t len_seq1, size_t len_seq2, size_t len_seq3, int alphSize) {
+void initializeNWMtx(nw_matrices_p retMtx, size_t len_char1, size_t len_char2, size_t len_char3, int alphSize) {
 
     // in six following allocations all matrices are set to their shortest length because they get realloced in mat_setup_size
     retMtx->cap_nw     =  0;  // a suitably small number to trigger realloc, but be larger than len_eff
@@ -31,10 +31,10 @@ void initializeNWMtx(nw_matrices_p retMtx, size_t len_seq1, size_t len_seq2, siz
     // retMtx->cube_d     = malloc ( sizeof( int* ) );  // because they're just pointing to nw_costMtx and nw_dirMtx
     retMtx->precalcMtx = malloc ( sizeof( int ) );
 
-    mat_setup_size (retMtx, len_seq1, len_seq2, len_seq3, alphSize);
+    mat_setup_size (retMtx, len_char1, len_char2, len_char3, alphSize);
 }
 
-/** Does allocation for a sequence struct. Also sets seq pointers within array to correct positions.
+/** Does allocation for a sequence struct. Also sets char pointers within array to correct positions.
  *
  *  resChar must be alloced before this call.
  */
@@ -157,13 +157,13 @@ void setUp2dCostMtx(int* tcm, size_t alphSize, int gap_open, cost_matrices_2d_p 
     }
 
     /*
-    SEQT* seqStart = longChar->seq_begin;
+    SEQT* charStart = longChar->seq_begin;
     int gap        = 1 << (alphSize - 1);
-    int seqElem;
+    int charElem;
     for ( size_t i = 0; i < longChar->len; i++) {
-        seqElem = (int) *(seqStart + i);
-        cm_set_prepend_2d (i, cm_get_cost(gap, seqElem, retCostMtx), retCostMtx);
-        cm_set_tail_2d    (cm_get_cost(seqElem, gap, retCostMtx), i, retCostMtx);
+        charElem = (int) *(charStart + i);
+        cm_set_prepend_2d (i, cm_get_cost(gap, charElem, retCostMtx), retCostMtx);
+        cm_set_tail_2d    (cm_get_cost(charElem, gap, retCostMtx), i, retCostMtx);
     } */
 //    return retCostMtx;
     if(DEBUG_COST_M) {

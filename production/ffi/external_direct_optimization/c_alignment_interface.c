@@ -58,6 +58,12 @@ void allocAlignIO(alignIO_p toAlloc, size_t capacity) {
     toAlloc->character = calloc(capacity, sizeof(SEQT));
 }
 
+void reallocAlignIO(alignIO_p toAlloc, size_t capacity) {
+    toAlloc->length    = 0;
+    toAlloc->capacity  = capacity;
+    toAlloc->character = realloc(toAlloc->character, capacity * sizeof(SEQT));
+}
+
 
 /** Copy an input/output type into the seq type needed by code ported forward from POY.
  *  The values in the last `length` elements in `input` get copied to the last `length` elements in the array in`retChar`.

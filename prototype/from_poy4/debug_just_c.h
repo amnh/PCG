@@ -3,7 +3,7 @@
 
 #define DO_2D            1
 #define DO_AFF           1
-#define DO_3D            1
+#define DO_3D            0
 
 #define IDENTITY_COST    0
 #define INDEL_COST       1

@@ -25,14 +25,18 @@ void alignIO_print(alignIO_p character);
 /** Takes in an array of values. Copies those values into an already alloced alignIO struct. Then sets length to input length and
  *  capacity to input capacity. Does not allocate.
  */
-void copyValsToAIO(alignIO_p outChar, SEQT *vals, size_t length, size_t capacity) ;
+void copyValsToAIO(alignIO_p outChar, SEQT *vals, size_t length, size_t capacity);
 
 /** resets an alignIO struct. Note: does not realloc or change capacity, so can only be reused if not changing allocation size. */
 void resetAlignIO(alignIO_p inChar);
 
 void freeAlignIO(alignIO_p toFree);
 
+/** Allocates alignIO, setting length to 0 and capacity to capacity */
 void allocAlignIO(alignIO_p toAlloc, size_t capacity);
+
+/** As allocAlignIO, but reallocs character. */
+void reallocAlignIO(alignIO_p toAlloc, size_t capacity);
 
 /** Takes in an alignIO struct and a seq struct. Copies values of alignIO to seq.
  *  Points seq->seq_begin, seq->end to respective points in alighIO->character.
