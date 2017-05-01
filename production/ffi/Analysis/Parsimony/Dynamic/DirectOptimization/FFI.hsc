@@ -422,8 +422,15 @@ foreign import ccall unsafe "c_alignment_interface.h align2dAffine"
 {- Exported Functions -}
 
 
-generateDenseTransitionCostMatrix :: Word -> (Word -> Word -> Word) -> DenseTransitionCostMatrix
-generateDenseTransitionCostMatrix alphabetSize costFunction = getCostMatrix2dAffine 3 alphabetSize costFunction
+generateDenseTransitionCostMatrix
+  :: Word                   -- ^ The gap open cost. A zero value indicates non-affine alignment context
+  -> Word                   -- ^ The character alphabet size
+  -> (Word -> Word -> Word) -- ^ The function defining the cost to transition between two symbols
+  -> DenseTransitionCostMatrix
+generateDenseTransitionCostMatrix affineCost alphabetSize costFunction =
+    case affineCost of
+      0 -> getCostMatrix2dNonAffine            alphabetSize costFunction
+      _ -> getCostMatrix2dAffine    affineCost alphabetSize costFunction
 
 
 foreignPairwiseDO :: ( EncodableDynamicCharacter s
@@ -508,29 +515,27 @@ algn2d char1 char2 denseTCMs computeUnion computeMedians = handleMissingCharacte
             do
 --                !_ <- trace ("char 1: " <> show char1) $ pure ()
 --                !_ <- trace ("char 2: " <> show char2) $ pure ()
-                char1ToSend <- allocInitALignIO exportedChar1Len . fmap coerceEnum $ exportedCharacterElements exportedChar1
-                char2ToSend <- allocInitALignIO exportedChar2Len . fmap coerceEnum $ exportedCharacterElements exportedChar2
-                retGapped   <- allocInitALignIO 0 []
-                retUngapped <- allocInitALignIO 0 []
+                char1ToSend <- allocInitAlignIO exportedChar1Len . fmap coerceEnum $ exportedCharacterElements exportedChar1
+                char2ToSend <- allocInitAlignIO exportedChar2Len . fmap coerceEnum $ exportedCharacterElements exportedChar2
+                retGapped   <- allocInitAlignIO 0 []
+                retUngapped <- allocInitAlignIO 0 []
                 -- retUnion    <- allocInitALignIO 0 []
 
-{--}
+{--
                 AlignIO char1Ptr char1Len buffer1Len <- peek char1ToSend
                 AlignIO char2Ptr char2Len buffer2Len <- peek char2ToSend
-
                 input1CharArr <- peekArray (fromEnum buffer1Len) char1Ptr
                 input2CharArr <- peekArray (fromEnum buffer2Len) char2Ptr
+                !_ <- trace (mconcat [" Input LHS : { ", show char1Len, " / ", show buffer1Len, " } ", renderBuffer input1CharArr]) $ pure ()
+                !_ <- trace (mconcat [" Input RHS : { ", show char2Len, " / ", show buffer2Len, " } ", renderBuffer input2CharArr]) $ pure ()
+--}
 
---                !_ <- trace (mconcat [" Input LHS : { ", show char1Len, " / ", show buffer1Len, " } ", renderBuffer input1CharArr]) $ pure ()
---                !_ <- trace (mconcat [" Input RHS : { ", show char2Len, " / ", show buffer2Len, " } ", renderBuffer input2CharArr]) $ pure ()
-{--}
                 strategy <- getAlignmentStrategy <$> peek costStruct
---                !_ <- trace (show strategy) $ pure ()
-
                 let !cost = case strategy of
                               Affine -> align2dAffineFn_c char1ToSend char2ToSend retGapped retUngapped costStruct                        (coerceEnum computeMedians)
                               _      -> align2dFn_c       char1ToSend char2ToSend retGapped retUngapped costStruct neverComputeOnlyGapped (coerceEnum computeMedians) (coerceEnum computeUnion)
 
+{-
                 AlignIO ungappedCharArr ungappedLen _ <- peek retUngapped
                 AlignIO gappedCharArr   gappedLen   _ <- peek retGapped
                 AlignIO retChar1CharArr char1Len    _ <- peek char1ToSend
@@ -546,27 +551,30 @@ algn2d char1 char2 denseTCMs computeUnion computeMedians = handleMissingCharacte
                          , " char1Len = " <> show char1Len
                          , " char2Len = " <> show char2Len
                          ]
-
 --                ungappedChar <- peekArray (fromEnum ungappedLen) ungappedCharArr
                 gappedChar   <- reverse <$> peekArray (fromEnum gappedLen)   gappedCharArr
                 char1Aligned <- reverse <$> peekArray (fromEnum char1Len)    retChar1CharArr
                 char2Aligned <- reverse <$> peekArray (fromEnum char2Len)    retChar2CharArr
                 -- unionChar    <- peekArray (fromEnum unionLen)    unionCharArr
-
-                let resultingAlignedChar1 = coerceToOutputType char1Len char1Aligned
-                let resultingAlignedChar2 = coerceToOutputType char2Len char2Aligned
-                let resultingGapped       = coerceToOutputType gappedLen gappedChar
-                let resultingUngapped     = filterGaps resultingGapped
-
 --                !_ <- trace (" Gapped Char : " <> renderBuffer   gappedChar) $ pure ()
 --                !_ <- trace (" Aligned LHS : " <> renderBuffer char1Aligned) $ pure ()
 --                !_ <- trace (" Aligned RHS : " <> renderBuffer char2Aligned) $ pure ()
+-}
+                
+{-                
+                AlignIO char1Ptr' char1Len' buffer1Len' <- peek char1ToSend
+                AlignIO char2Ptr' char2Len' buffer2Len' <- peek char2ToSend
+                output1Buffer <- peekArray (fromEnum buffer1Len') char1Ptr'
+                output2Buffer <- peekArray (fromEnum buffer2Len') char2Ptr'
+                !_ <- trace (mconcat [" Output LHS : { ", show char1Len', " / ", show buffer1Len', " } ", renderBuffer output1Buffer]) $ pure ()
+                !_ <- trace (mconcat [" Output RHS : { ", show char2Len', " / ", show buffer2Len', " } ", renderBuffer output2Buffer]) $ pure ()
+-}
+                
+                resultingAlignedChar1 <- extractFromAlignIO elemWidth char1ToSend
+                resultingAlignedChar2 <- extractFromAlignIO elemWidth char2ToSend
+                resultingGapped       <- extractFromAlignIO elemWidth retGapped
+                let resultingUngapped = filterGaps resultingGapped
 
-                output1Buffer <- peekArray (fromEnum buffer1Len) char1Ptr
-                output2Buffer <- peekArray (fromEnum buffer2Len) char2Ptr
-
---                !_ <- trace (mconcat [" Output LHS : { ", show char1Len, " / ", show buffer1Len, " } ", renderBuffer output1Buffer]) $ pure ()
---                !_ <- trace (mconcat [" Output RHS : { ", show char2Len, " / ", show buffer2Len, " } ", renderBuffer output2Buffer]) $ pure ()
 {--
                 !_ <- trace ("Ungapped Char: " <> show     resultingUngapped) $ pure ()
                 !_ <- trace ("  Gapped Char: " <> show       resultingGapped) $ pure ()
@@ -577,7 +585,7 @@ algn2d char1 char2 denseTCMs computeUnion computeMedians = handleMissingCharacte
 
                 -- NOTE: We swapped resultingAlignedChar1 & resultingAlignedChar2
                 -- because the C code returns the values in the wrong order!
-                pure (filterGaps resultingGapped, fromIntegral cost, resultingGapped, resultingAlignedChar2, resultingAlignedChar1)
+                pure (resultingUngapped, fromIntegral cost, resultingGapped, resultingAlignedChar2, resultingAlignedChar1)
 
             where
                 costStruct = costMatrix2D denseTCMs
@@ -587,12 +595,14 @@ algn2d char1 char2 denseTCMs computeUnion computeMedians = handleMissingCharacte
 
                 exportedChar1Len = toEnum $ exportedChar1 ^. exportedElementCount
                 exportedChar2Len = toEnum $ exportedChar2 ^. exportedElementCount
-                maxAllocLen      = exportedChar1Len + exportedChar2Len
+                -- Add two because the C code needs stupid gap prepended to each character.
+                -- Forgetting to do this will eventually corrupt the heap memory
+                maxAllocLen      = exportedChar1Len + exportedChar2Len + 2
 
-                allocInitALignIO :: CSize -> [CUInt] -> IO (Ptr AlignIO)
-                allocInitALignIO elemCount elemArr  =
+                allocInitAlignIO :: CSize -> [CUInt] -> IO (Ptr AlignIO)
+                allocInitAlignIO elemCount elemArr  =
                     do
-                        output <- malloc :: IO (Ptr AlignIO)
+                        output   <- malloc :: IO (Ptr AlignIO)
                         outArray <- newArray paddedArr
                         poke output $ AlignIO outArray elemCount maxAllocLen
                         pure output
@@ -665,12 +675,29 @@ align2dGappedUngapped c1 c2 cm = algn2d c1 c2 cm ComputeUnions ComputeMedians
 
 
 -- |
+-- Coercing one 'Enum' to another through thier corresponding 'Int' values.
+coerceEnum :: (Enum a, Enum b) => a -> b
+coerceEnum = toEnum . fromEnum
+
+
+-- |
+-- Converts the data behind an 'AlignIO' pointer to an 'Exportable' type.
+extractFromAlignIO :: Exportable s => Int -> Ptr AlignIO -> IO s
+extractFromAlignIO elemWidth ptr = do
+    AlignIO bufferPtr charLenC bufferLenC <- peek ptr
+    let    charLen = fromEnum   charLenC
+    let  bufferLen = fromEnum bufferLenC
+    buffer <- peekArray bufferLen bufferPtr
+    let !charElems = fmap fromIntegral $ drop (bufferLen - charLen) buffer
+    let  exportVal = ExportableCharacterElements charLen elemWidth charElems
+    _ <- free bufferPtr
+    _ <- free ptr
+    pure $ fromExportableElements exportVal
+
+
+-- |
 -- Determine the alignment strategy encoded for the matrix.
 getAlignmentStrategy :: CostMatrix2d -> AlignmentStrategy
 getAlignmentStrategy = toEnum . fromEnum . costModelType
 
 
--- |
--- Coercing one 'Enum' to another through thier corresponding 'Int' values.
-coerceEnum :: (Enum a, Enum b) => a -> b
-coerceEnum = toEnum . fromEnum

@@ -15,7 +15,7 @@ module Bio.Character.Encodable.Internal where
 import Bio.Character.Exportable
 import Control.Lens
 import Data.Bifunctor          (bimap)
-import Data.BitMatrix.Internal (BitMatrix(..))
+import Data.BitMatrix.Internal (BitMatrix, fromRows)
 import Data.BitVector
 import Data.Foldable
 import Data.Semigroup
@@ -73,8 +73,10 @@ bufferChunksToBitVector elemWidth elemCount chunks = bitVec totalBits . fst $ fo
         addend = fromIntegral e `shift` shiftDistance
     
 
+-- Use 'Data.BitMatrix.fromRows' which corrects the Semigroup operator for
+-- 'BitVector's to behave correctly.
 exportableCharacterElementsToBitMatrix :: ExportableCharacterElements -> BitMatrix
-exportableCharacterElementsToBitMatrix ece = BitMatrix elementWidth $ foldMap (bitVec elementWidth) integralValues
+exportableCharacterElementsToBitMatrix ece = fromRows $ bitVec elementWidth <$> integralValues
   where
     elementWidth   = ece ^. exportedElementWidth
     integralValues = exportedCharacterElements ece

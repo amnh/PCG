@@ -71,14 +71,20 @@ performImplementationComparison lhs rhs = do
         ]
 
 
+alphabetSize :: Word
+alphabetSize = 5
+
+gapOpenCost :: Word
+gapOpenCost = 3
+
 costStructure :: (Ord a, Num a) => a -> a -> a
 --costStructure i j = if i /= j then 1 else 0
 costStructure i j = max i j - min i j
 
 
 denseMatrixValue :: DenseTransitionCostMatrix
-denseMatrixValue = generateDenseTransitionCostMatrix    5 costStructure
+denseMatrixValue = generateDenseTransitionCostMatrix gapOpenCost alphabetSize costStructure
 
 
 memoMatrixValue :: MemoizedCostMatrix
-memoMatrixValue  = generateMemoizedTransitionCostMatrix 5 costStructure
+memoMatrixValue  = generateMemoizedTransitionCostMatrix alphabetSize costStructure
