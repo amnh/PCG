@@ -422,8 +422,15 @@ foreign import ccall unsafe "c_alignment_interface.h align2dAffine"
 {- Exported Functions -}
 
 
-generateDenseTransitionCostMatrix :: Word -> (Word -> Word -> Word) -> DenseTransitionCostMatrix
-generateDenseTransitionCostMatrix alphabetSize costFunction = getCostMatrix2dAffine 3 alphabetSize costFunction
+generateDenseTransitionCostMatrix
+  :: Word                   -- ^ The gap open cost. A zero value indicates non-affine alignment context
+  -> Word                   -- ^ The character alphabet size
+  -> (Word -> Word -> Word) -- ^ The function defining the cost to transition between two symbols
+  -> DenseTransitionCostMatrix
+generateDenseTransitionCostMatrix affineCost alphabetSize costFunction =
+    case affineCost of
+      0 -> getCostMatrix2dNonAffine            alphabetSize costFunction
+      _ -> getCostMatrix2dAffine    affineCost alphabetSize costFunction
 
 
 foreignPairwiseDO :: ( EncodableDynamicCharacter s

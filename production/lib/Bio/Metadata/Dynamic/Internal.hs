@@ -225,6 +225,6 @@ maybeConstructDenseTransitionCostMatrix alpha sigma = force f
   where
     f
       | len > 8   = Nothing
-      | otherwise = Just $ generateDenseTransitionCostMatrix len sigma
+      | otherwise = Just $ generateDenseTransitionCostMatrix 0 len sigma
       where
         len = toEnum $ length alpha
